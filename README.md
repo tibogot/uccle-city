@@ -23,9 +23,10 @@ lat 50.7905–50.8075). It is cut into 500 m tiles named `A1` to `H4`.
 ```sh
 python3 -m venv ../venv && ../venv/bin/pip install -r pipeline/requirements.txt
 ../venv/bin/python pipeline/fetch_osm.py            # one Overpass request for the whole area
-../venv/bin/python pipeline/fetch_urbis.py          # UrbIS sheets listed in pipeline/sources.json (G4's for now)
-../venv/bin/python pipeline/run_tile.py G4 --id-field INSPIRE_ID --layer BuildingSolids
-node tools/check_roads.mjs G4                         # build roads.json with the road engine, list its issues
+../venv/bin/python pipeline/find_sheets.py          # UrbIS sheet URLs for the whole grid -> sources.json
+../venv/bin/python pipeline/fetch_urbis.py          # ~790 MB into data/raw/urbis/
+../venv/bin/python pipeline/run_tile.py --all --network   # network -> refine (Node 22) -> cut, + terrain/buildings/features
+node tools/check_roads.mjs --all                     # road-engine errors per tile
 ```
 
 ## View a tile

@@ -5,44 +5,128 @@
       "title": "UrbIS - 3D Constructions",
       "page": "https://datastore.brussels/web/data/dataset/e9ec2aa4-cffd-11ee-bccc-00090ffe0001",
       "urls": [
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Buildings3D/SHP/UrbISBuildings3D_31370_SHP_146164_20261003.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Buildings3D/SHP/UrbISBuildings3D_31370_SHP_146165_20261003.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Buildings3D/SHP/UrbISBuildings3D_31370_SHP_146166_20261003.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Buildings3D/SHP/UrbISBuildings3D_31370_SHP_147164_20261003.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Buildings3D/SHP/UrbISBuildings3D_31370_SHP_147165_20261003.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Buildings3D/SHP/UrbISBuildings3D_31370_SHP_147166_20261003.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Buildings3D/SHP/UrbISBuildings3D_31370_SHP_148164_20261003.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Buildings3D/SHP/UrbISBuildings3D_31370_SHP_148165_20261003.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Buildings3D/SHP/UrbISBuildings3D_31370_SHP_148166_20261003.zip",
         "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Buildings3D/SHP/UrbISBuildings3D_31370_SHP_149164_20261003.zip",
-        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Buildings3D/SHP/UrbISBuildings3D_31370_SHP_150164_20261003.zip",
         "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Buildings3D/SHP/UrbISBuildings3D_31370_SHP_149165_20261003.zip",
-        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Buildings3D/SHP/UrbISBuildings3D_31370_SHP_150165_20261003.zip"
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Buildings3D/SHP/UrbISBuildings3D_31370_SHP_149166_20261003.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Buildings3D/SHP/UrbISBuildings3D_31370_SHP_150164_20261003.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Buildings3D/SHP/UrbISBuildings3D_31370_SHP_150165_20261003.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Buildings3D/SHP/UrbISBuildings3D_31370_SHP_150166_20261003.zip"
       ],
       "expect": "Shapefile (SHP), EPSG:31370. The 3D solid classes are not in the GeoPackage edition, so SHP is used. Also offered as DWG and SKP.",
       "idField": null,
       "verified": "2026-11-02",
       "atom": "https://urbisdownload.datastore.brussels/atomfeed/e9ec2aa4-cffd-11ee-bccc-00090ffe0001-en.xml",
-      "licence": "CC0 1.0"
+      "licence": "CC0 1.0",
+      "sheets": {
+        "146164": "20261003",
+        "146165": "20261003",
+        "146166": "20261003",
+        "147164": "20261003",
+        "147165": "20261003",
+        "147166": "20261003",
+        "148164": "20261003",
+        "148165": "20261003",
+        "148166": "20261003",
+        "149164": "20261003",
+        "149165": "20261003",
+        "149166": "20261003",
+        "150164": "20261003",
+        "150165": "20261003",
+        "150166": "20261003"
+      }
     },
     "dtm": {
       "title": "Digital terrain model (DTM 2021, 50 cm)",
       "page": "https://datastore.brussels/web/data/dataset/1d7bd49d-fe83-4388-af85-6f5dc8ec7909",
       "urls": [
+        "https://urbisdownload.datastore.brussels/UrbIS/Grid/DTM/DTM2021/TIFF/DTM_31370_TIFF_146164_20211009_50.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Grid/DTM/DTM2021/TIFF/DTM_31370_TIFF_146165_20211009_50.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Grid/DTM/DTM2021/TIFF/DTM_31370_TIFF_146166_20211009_50.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Grid/DTM/DTM2021/TIFF/DTM_31370_TIFF_147164_20211009_50.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Grid/DTM/DTM2021/TIFF/DTM_31370_TIFF_147165_20211009_50.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Grid/DTM/DTM2021/TIFF/DTM_31370_TIFF_147166_20211009_50.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Grid/DTM/DTM2021/TIFF/DTM_31370_TIFF_148164_20211009_50.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Grid/DTM/DTM2021/TIFF/DTM_31370_TIFF_148165_20211009_50.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Grid/DTM/DTM2021/TIFF/DTM_31370_TIFF_148166_20211009_50.zip",
         "https://urbisdownload.datastore.brussels/UrbIS/Grid/DTM/DTM2021/TIFF/DTM_31370_TIFF_149164_20211009_50.zip",
-        "https://urbisdownload.datastore.brussels/UrbIS/Grid/DTM/DTM2021/TIFF/DTM_31370_TIFF_150164_20211009_50.zip",
         "https://urbisdownload.datastore.brussels/UrbIS/Grid/DTM/DTM2021/TIFF/DTM_31370_TIFF_149165_20211009_50.zip",
-        "https://urbisdownload.datastore.brussels/UrbIS/Grid/DTM/DTM2021/TIFF/DTM_31370_TIFF_150165_20211009_50.zip"
+        "https://urbisdownload.datastore.brussels/UrbIS/Grid/DTM/DTM2021/TIFF/DTM_31370_TIFF_149166_20211009_50.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Grid/DTM/DTM2021/TIFF/DTM_31370_TIFF_150164_20211009_50.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Grid/DTM/DTM2021/TIFF/DTM_31370_TIFF_150165_20211009_50.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Grid/DTM/DTM2021/TIFF/DTM_31370_TIFF_150166_20211009_50.zip"
       ],
       "expect": "GeoTIFF, EPSG:31370, 0.5 m grid (file suffix _50), heights in m TAW.",
       "verified": "2026-11-02",
       "atom": "https://urbisdownload.datastore.brussels/atomfeed/1d7bd49d-fe83-4388-af85-6f5dc8ec7909-en.xml",
-      "licence": "CC0 1.0"
+      "licence": "CC0 1.0",
+      "sheets": {
+        "146164": "20211009",
+        "146165": "20211009",
+        "146166": "20211009",
+        "147164": "20211009",
+        "147165": "20211009",
+        "147166": "20211009",
+        "148164": "20211009",
+        "148165": "20211009",
+        "148166": "20211009",
+        "149164": "20211009",
+        "149165": "20211009",
+        "149166": "20211009",
+        "150164": "20211009",
+        "150165": "20211009",
+        "150166": "20211009"
+      }
     },
     "transport": {
       "title": "UrbIS - Transport networks",
       "page": "https://datastore.brussels/web/data/dataset/af847c40-848b-11ee-9a1f-00090ffe0001",
       "urls": [
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Network/GPKG/UrbISNetwork_31370_GPKG_146164_20261002.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Network/GPKG/UrbISNetwork_31370_GPKG_146165_20261002.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Network/GPKG/UrbISNetwork_31370_GPKG_146166_20261002.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Network/GPKG/UrbISNetwork_31370_GPKG_147164_20261002.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Network/GPKG/UrbISNetwork_31370_GPKG_147165_20261002.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Network/GPKG/UrbISNetwork_31370_GPKG_147166_20261002.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Network/GPKG/UrbISNetwork_31370_GPKG_148164_20261002.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Network/GPKG/UrbISNetwork_31370_GPKG_148165_20261002.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Network/GPKG/UrbISNetwork_31370_GPKG_148166_20261002.zip",
         "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Network/GPKG/UrbISNetwork_31370_GPKG_149164_20261002.zip",
-        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Network/GPKG/UrbISNetwork_31370_GPKG_150164_20261002.zip",
         "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Network/GPKG/UrbISNetwork_31370_GPKG_149165_20261002.zip",
-        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Network/GPKG/UrbISNetwork_31370_GPKG_150165_20261002.zip"
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Network/GPKG/UrbISNetwork_31370_GPKG_149166_20261002.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Network/GPKG/UrbISNetwork_31370_GPKG_150164_20261002.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Network/GPKG/UrbISNetwork_31370_GPKG_150165_20261002.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Network/GPKG/UrbISNetwork_31370_GPKG_150166_20261002.zip"
       ],
       "expect": "GeoPackage, EPSG:31370: road, tram and train network. Used only to check names on the OSM graph (Session 2).",
       "verified": "2026-11-02",
       "atom": "https://urbisdownload.datastore.brussels/atomfeed/af847c40-848b-11ee-9a1f-00090ffe0001-en.xml",
-      "licence": "CC0 1.0"
+      "licence": "CC0 1.0",
+      "sheets": {
+        "146164": "20261002",
+        "146165": "20261002",
+        "146166": "20261002",
+        "147164": "20261002",
+        "147165": "20261002",
+        "147166": "20261002",
+        "148164": "20261002",
+        "148165": "20261002",
+        "148166": "20261002",
+        "149164": "20261002",
+        "149165": "20261002",
+        "149166": "20261002",
+        "150164": "20261002",
+        "150165": "20261002",
+        "150166": "20261002"
+      }
     }
   }
 }

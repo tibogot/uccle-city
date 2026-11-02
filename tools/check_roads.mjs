@@ -1,6 +1,7 @@
 // Build a tile's roads.json with the vendored road engine and print its checks.
 //
 //   node tools/check_roads.mjs [G4] [--flat] [--json]
+//   node tools/check_roads.mjs --all          # every built tile + data/roads/network.json (flat), one line each
 //
 // ground(x, z) = bilinear lookup in the tile's terrain.u16 (CONTRACT §5.3). Points in the
 // 150 m road buffer outside the tile are clamped to the nearest edge sample (neighbour tiles
@@ -30,6 +31,33 @@ export function loadGround(dir) {
     if (q.includes(h.nodata)) return undefined;
     return ((q[0] * (1 - fc) + q[1] * fc) * (1 - fr) + (q[2] * (1 - fc) + q[3] * fc) * fr) / 100;
   };
+}
+
+if (args.includes("--all")) {
+  const { existsSync } = await import("node:fs");
+  const errs = (issues) => { const c = {}; for (const i of issues) if (i.level === "error") c[i.code] = (c[i.code] || 0) + 1; return c; };
+  // b = tile bounds: only errors located inside the tile count (the 150 m buffer has cut stubs by design)
+  const line = (name, d, opts, b) => {
+    const n = buildRoadNetwork(d, opts);
+    const inside = (i) => !b || (i.x >= b.x[0] && i.x < b.x[1] && i.z >= b.z[0] && i.z < b.z[1]);
+    const e = errs(n.issues.filter(inside)), ne = Object.values(e).reduce((a, c) => a + c, 0);
+    const buf = errs(n.issues.filter((i) => !inside(i)));
+    console.log(`${name.padEnd(8)} ${String(d.roads.length).padStart(5)} roads ${String(ne).padStart(4)} errors${b ? " in tile" : ""}  ${JSON.stringify(e)}` +
+      (b ? `   (buffer: ${Object.values(buf).reduce((a, c) => a + c, 0)})` : ""));
+    return ne;
+  };
+  let total = 0;
+  const man = JSON.parse(readFileSync(join(ROOT, "data", "tiles", "manifest.json"), "utf8"));
+  for (const t of man.tiles) {
+    const d = join(ROOT, "data", "tiles", t.name);
+    if (!existsSync(join(d, "roads.json"))) continue;
+    const data = JSON.parse(readFileSync(join(d, "roads.json"), "utf8"));
+    total += line(t.name, data, existsSync(join(d, "terrain.u16")) ? { ground: loadGround(d) } : {}, t.bounds);
+  }
+  const nf = join(ROOT, "data", "roads", "network.json");
+  if (existsSync(nf)) line("network", JSON.parse(readFileSync(nf, "utf8")), {});
+  console.log(`tiles total: ${total} errors inside tiles`);
+  process.exit(0);
 }
 
 const data = JSON.parse(readFileSync(join(tdir, "roads.json"), "utf8"));

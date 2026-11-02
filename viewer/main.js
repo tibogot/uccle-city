@@ -327,8 +327,14 @@ function roadStart(data, x, z, bounds) {
 // ------------------------------------------------------------------ main
 
 async function main() {
-  $("tileName").textContent = TILE;
   const manifest = await getJSON("manifest.json");
+  const sel = $("tileSel");
+  for (const t of manifest.tiles) {
+    const o = new Option(`${t.name}${t.status === "built" ? "" : ` (${t.status})`}`, t.name, false, t.name === TILE);
+    o.disabled = t.status === "missing";
+    sel.add(o);
+  }
+  sel.onchange = () => { params.set("tile", sel.value); location.search = params.toString(); };
   const entry = manifest.tiles.find((t) => t.name === TILE);
   if (!entry || entry.status === "missing") throw new Error(`tile ${TILE} is not built (manifest status: ${entry?.status})`);
   const F = entry.files;
@@ -396,11 +402,15 @@ async function main() {
   controls.enableDamping = true;
   controls.maxPolarAngle = Math.PI * 0.495;
   const walker = new Walker(camera, renderer.domElement, hm);
-  const start = roadStart(roads, 1153.1, 540.1, bounds);     // Place de Saint-Job (CONTRACT 3)
-  const walk = () => { controls.enabled = false; walker.start(start.x, start.z, start.yaw); };
+  const start = TILE === "G4" ? roadStart(roads, 1153.1, 540.1, bounds) : roadStart(roads, cx, cz, bounds);   // Place de Saint-Job on G4
+  if (!start) $("btnWalk").disabled = true;
+  const walk = () => { if (!start) return; controls.enabled = false; walker.start(start.x, start.z, start.yaw); };
   const views = {
     overview: () => { camera.position.set(cx - 330, cy + 300, cz + 400); controls.target.set(cx, cy, cz); },
-    stjob: () => { const x = 1153, z = 540, y = hm.surface(x, z); camera.position.set(x + 70, y + 45, z + 110); controls.target.set(x, y, z); },
+    stjob: () => {   // Place de Saint-Job on G4; the tile centre elsewhere
+      const [x, z] = TILE === "G4" ? [1153, 540] : [cx, cz], y = hm.surface(x, z);
+      camera.position.set(x + 70, y + 45, z + 110); controls.target.set(x, y, z);
+    },
   };
   const setView = (v) => { walker.on = false; controls.enabled = true; views[v](); controls.update(); };
   walker.onExit = () => setView("stjob");

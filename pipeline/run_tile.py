@@ -1,57 +1,72 @@
-"""Full pipeline for one tile. Raw inputs must already be in data/raw/ (fetch_osm.py, fetch_urbis.py).
+"""Full pipeline for one or more tiles. Raw inputs must already be in data/raw/ (fetch_osm.py, fetch_urbis.py).
 
-    python pipeline/run_tile.py G4 [--skip-buildings] [--skip-terrain] [--id-field X] [--height-field H] [--layer L]
+    python pipeline/run_tile.py G4 [F4 ...] | --all  [--network] [--skip-buildings] [--skip-terrain]
+                                [--id-field X] [--height-field H] [--layer L]
 
-UrbIS 3D Constructions (SHP):  --id-field INSPIRE_ID --layer BuildingSolids
+UrbIS 3D Constructions (SHP):  --id-field INSPIRE_ID --layer BuildingSolids  (the defaults)
 
-A missing UrbIS input skips that layer with a message (never substitutes data).
+Roads: --network first rebuilds data/roads/network.json from OSM (build_roads.py --all) and cleans it
+with the road engine (refine_roads.mjs, needs Node 22+). Each tile's roads.json is then cut from that
+network (cut_roads.py), so ids are shared across tiles. Without --network the existing network.json
+is used. A missing UrbIS input skips that layer with a message (never substitutes data).
 """
 from __future__ import annotations
 
 import argparse
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
+from common import DATA, all_tiles
+
 HERE = Path(__file__).resolve().parent
 
 
-def step(args):
-    print(f"\n$ {' '.join(args)}", file=sys.stderr)
-    return subprocess.call([sys.executable, *args], cwd=HERE)
+def step(args, exe=None):
+    cmd = [exe or sys.executable, *args]
+    print(f"\n$ {' '.join(map(str, cmd))}", file=sys.stderr)
+    return subprocess.call(cmd, cwd=HERE)
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("tile")
+    ap.add_argument("tiles", nargs="*")
+    ap.add_argument("--all", action="store_true")
+    ap.add_argument("--network", action="store_true", help="rebuild + refine data/roads/network.json first")
     ap.add_argument("--skip-buildings", action="store_true")
     ap.add_argument("--skip-terrain", action="store_true")
-    ap.add_argument("--id-field")
+    ap.add_argument("--id-field", default="INSPIRE_ID")
     ap.add_argument("--height-field")
-    ap.add_argument("--layer", help="buildings: only layers whose name contains this (UrbIS SHP: BuildingSolids)")
+    ap.add_argument("--layer", default="BuildingSolids", help="buildings: only layers whose name contains this")
     a = ap.parse_args()
-    t = a.tile.upper()
+    tiles = list(all_tiles()) if a.all else [t.upper() for t in a.tiles]
+    if not tiles:
+        ap.error("give tile names or --all")
     failed = []
-    for name, cmd in (("roads", ["build_roads.py", "--tile", t]), ("features", ["build_features.py", "--tile", t])):
-        if step(cmd):
-            failed.append(name)
-    if not a.skip_terrain and step(["build_terrain.py", "--tile", t]):
-        failed.append("terrain")
-    if not a.skip_buildings:
-        cmd = ["build_buildings.py", "--tile", t]
-        if a.id_field:
-            cmd += ["--id-field", a.id_field]
-        if a.height_field:
-            cmd += ["--height-field", a.height_field]
-        if a.layer:
-            cmd += ["--layer", a.layer]
-        if step(cmd):
-            failed.append("buildings")
+    network = DATA / "roads" / "network.json"
+    if a.network or not network.exists():
+        node = shutil.which("node")
+        if step(["build_roads.py", "--all"]) or not node or step(["refine_roads.mjs", str(network)], exe=node):
+            failed.append("network")
+    for t in tiles:
+        if step(["cut_roads.py", "--tile", t]):
+            failed.append(f"{t}:roads")
+        if step(["build_features.py", "--tile", t]):
+            failed.append(f"{t}:features")
+        if not a.skip_terrain and step(["build_terrain.py", "--tile", t]):
+            failed.append(f"{t}:terrain")
+        if not a.skip_buildings:
+            cmd = ["build_buildings.py", "--tile", t, "--id-field", a.id_field, "--layer", a.layer]
+            if a.height_field:
+                cmd += ["--height-field", a.height_field]
+            if step(cmd):
+                failed.append(f"{t}:buildings")
     step(["build_manifest.py"])
     if failed:
-        print(f"\nFAILED layers: {failed}", file=sys.stderr)
+        print(f"\nFAILED: {failed}", file=sys.stderr)
         sys.exit(1)
-    print(f"\nTile {t} built. Open debug/index.html via a local server (see README).", file=sys.stderr)
+    print(f"\nBuilt {len(tiles)} tile(s). Open viewer/index.html?tile=<name> via a local server (see README).", file=sys.stderr)
 
 
 if __name__ == "__main__":

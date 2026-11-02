@@ -31,13 +31,13 @@
 </head>
 <body>
 <div id="hud">
-  <h1>Uccle 3D — <span id="tileName">G4</span></h1>
+  <h1>Uccle 3D — <select id="tileSel"></select></h1>
   <label><input type="checkbox" data-layer="terrain" checked> terrain</label>
   <label><input type="checkbox" data-layer="buildings" checked> buildings</label>
   <label><input type="checkbox" data-layer="roads" checked> roads (road engine)</label>
   <label><input type="checkbox" data-layer="features" checked> tram lines, trees</label>
   <label><input type="checkbox" id="contours"> contour lines (1 m)</label>
-  <button id="btnOrbit">Overview</button><button id="btnStJob">Saint-Job</button><button id="btnWalk">Walk</button>
+  <button id="btnOrbit">Overview</button><button id="btnStJob">Close-up</button><button id="btnWalk">Walk</button>
   <div id="stats">loading…</div>
   <div id="log"></div>
   <div id="help">Orbit: drag / right-drag / wheel. Walk: WASD or arrows, drag to look, Shift = run, Esc = back to orbit.</div>

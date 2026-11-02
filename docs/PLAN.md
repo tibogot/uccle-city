@@ -127,7 +127,51 @@ game-engine-v1, not vendored), neighbour tiles and streaming, a proper sky,
 park polygons, picking. The road-engine errors (Session 2) show as gaps and
 oversized junction pads, mostly around Place de Saint-Job.
 
-## Session 2: full-area road import
+## Session 2: full-area road import — part 1 done (2026-11-02)
+
+### Done
+
+- **Data for all 32 tiles.** `pipeline/find_sheets.py` reads each dataset's
+  Atom feed and writes the newest release of every sheet the grid needs into
+  `sources.json` (15 sheets × 3 datasets, all published). `fetch_urbis.py`
+  downloaded them (about 790 MB in `data/raw/`, git-ignored).
+- **All 32 tiles built** (`run_tile.py --all --network`, 80 s): terrain,
+  buildings, features and roads everywhere. 38 MB in `data/tiles/`. Only C2
+  (the Uccle centre) is over the 2 MB target, at 2.4 MB.
+- **One road network, cut into tiles.** `build_roads.py --all` →
+  `refine_roads.mjs` → `cut_roads.py`, so ids are shared across tiles
+  (CONTRACT 0.3, 5.1 "Pipeline").
+- **`refine_roads.mjs`** runs the road engine in a loop and fixes what it
+  reports (tighter kerb radii, junction-cluster merges, dropped stubs, dropped
+  bend points, kinks made into corners), with a rollback when a change makes
+  roads cross. Whole network: **386 → 58 errors** (1,280 → 1,117 roads).
+- **`tools/check_roads.mjs --all`**: one line per tile, counting only errors
+  inside the tile (the 150 m buffer has cut stubs by design), plus the network.
+  **55 errors inside tiles; 16 of 32 tiles have none, G4 included.**
+- Viewer: tile picker.
+
+### Left (part 2)
+
+The 58 network errors are mostly the structural cases:
+
+1. **Dual carriageways** (15 swallowed roads, plus most of the 12 at
+   roundabouts): Avenue Brugmann, Avenue De Fré, Avenue Wolvendael, Chaussée de
+   Saint-Job, Avenue du Prince de Ligne. OSM draws each direction as its own
+   one-way way, so every crossing street makes two junctions 10–30 m apart.
+   Plan: pair parallel one-way ways with the same name (Hausdorff distance under
+   about 25 m, opposite directions) and replace them with one two-way road whose
+   `lanes.center` is a raised median of the measured width. Or keep both and
+   mark the junction pairs as one `split` node. Prototype both on F4 and C4.
+2. **Crowded roundabouts** (`ring-crowded` ×9): flared or dual entries. Merge the
+   entry pairs first (item 1), then check `ring.radius` against the UrbIS axes.
+3. **Leftover tight bends** (8) and short local roads (about 15): look at them
+   one by one in the viewer.
+4. Then the rest of the original list: lane tags (`turn:lanes` → `sections`),
+   bridges / tunnels (`layer`), UrbIS name and connectivity check, crossings.
+
+Done when `check_roads.mjs --all` reports 0 errors inside tiles.
+
+### Original Session 2 plan (for reference)
 
 Goal: `data/roads/network.json` for the whole study box, one road-lab network
 that `buildRoadNetwork(data, { ground })` builds with **no errors** and few
@@ -186,6 +230,35 @@ warnings, plus per-tile `roads.json` cut from it.
 
 Done when: the check script reports 0 errors for the full network, all 32
 tiles have `roads.json`, and the debug page shows them.
+
+## Realism roadmap (asked for 2026-11-02)
+
+The geometry is already real (UrbIS LoD2 roofs and heights, the 2021 LiDAR
+terrain, OSM road layout). What's missing is surface detail. In order of payoff:
+
+1. **Orthophoto 2024** (datastore.brussels, CC0, 5 cm and 40 cm, RGB + NIR, per
+   1 km sheet). Drape it on the terrain and project it onto roofs: real grass,
+   pavement, roof colours and solar panels. Bake per tile to a 2048² texture
+   (25 cm/px) or a 4096² one (12 cm/px). Check whether it is a true ortho (roofs
+   not leaning) before projecting onto roofs.
+2. **Procedural façades** (TSL): storeys from building height (about 3 m),
+   windows, doors on the street side (the wall facing the nearest road),
+   brick / render / stone palettes per building. Uccle is mostly brick and
+   white render.
+3. **Road paint:** port or vendor the asphalt paint shader
+   (`v3/render/roads/laneRoadPaint.js` upstream) so the engine's marking atlas
+   is drawn. Kerb and sidewalk materials.
+4. **Trees:** OSM has very few in the south (3 in G4) but more in the centre.
+   Find a Brussels tree inventory (Brussels Environment / Bruxelles Mobilité
+   street trees). Otherwise detect canopy from the orthophoto NIR band (NDVI)
+   minus buildings, and place instanced trees.
+5. **Sky, sun and atmosphere:** physical sky, fog, sun position for Brussels,
+   shadows tuned per tile.
+6. **Street furniture** from OSM points (lamps, benches, bus stops, tram
+   stops), and tram rails and overhead wires along `features.lines`.
+
+The result to aim for is a recognisable, game-quality Uccle, not photogrammetry:
+the real Saint-Job church and the real houses, with plausible windows and walls.
 
 ## Session 3: 3D viewer (three.js WebGPURenderer + TSL)
 
