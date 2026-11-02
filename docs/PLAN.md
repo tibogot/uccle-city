@@ -96,6 +96,37 @@ node tools/check_roads.mjs G4
 - `docs/CONTRACT.md` is now **v0.2** (clarifications only, see its change list).
 - `data/LICENSE` (ODbL, with attributions).
 
+## Session 2b (done early): minimal 3D viewer of G4
+
+`viewer/index.html` + `viewer/main.js`, no build step. three.js **0.180.0** from
+jsDelivr through an import map (`three/webgpu`, `three/tsl`, `three/addons/`, and
+`three/src/` so `vendor/roads/mesh/triangulate.js` finds earcut).
+
+- **Terrain:** a 501 × 501 vertex mesh from `terrain.u16`. A TSL material
+  colours it by height and slope, with optional 1 m / 5 m contour lines.
+- **Buildings:** `buildings.bin` split into a roof mesh and a wall mesh. Flat
+  normals, a small colour jitter per building, and shadows.
+- **Roads:** built live with `buildRoadNetwork(roads, { ground })` and
+  `buildLaneRoadMesh(net, { markings: false })`, giving asphalt, concrete
+  (kerbs and sidewalks) and grass. Triangles outside the tile are dropped.
+  Under every road triangle the terrain grid is carved to 12 cm below the road
+  surface, plus a one-cell shoulder, so the ground doesn't poke through.
+  Polygon offset on the road materials.
+- **Features:** tram lines and paths as one `LineSegments` each, draped on the
+  ground; the 3 OSM trees as instanced trunks and crowns.
+- **Camera:** orbit (Overview, Saint-Job), and Walk: WASD, drag to look, eye at
+  1.7 m, starting on the road nearest Place de Saint-Job. Stats overlay with
+  draw calls, triangles and fps; a load log with timings and road-engine errors.
+- **Measured** in headless Chromium (no GPU, so WebGL2 on SwiftShader): load
+  about 0.6–1 s, 14 draw calls including the shadow pass, 581k triangles drawn,
+  about 45 fps at 1400 × 900. Screenshots: `docs/img/viewer-G4-*.png`.
+  **Not tested on real WebGPU**: there was no adapter in headless Chromium.
+
+Not done yet (Session 3 proper): road markings (the asphalt paint shader is in
+game-engine-v1, not vendored), neighbour tiles and streaming, a proper sky,
+park polygons, picking. The road-engine errors (Session 2) show as gaps and
+oversized junction pads, mostly around Place de Saint-Job.
+
 ## Session 2: full-area road import
 
 Goal: `data/roads/network.json` for the whole study box, one road-lab network
@@ -160,6 +191,9 @@ tiles have `roads.json`, and the debug page shows them.
 
 Goal: `viewer/index.html` streams tiles from the manifest and renders terrain,
 buildings and the road engine's meshes in one y-up scene in local metres.
+Steps 1–5 exist for a single tile (Session 2b above); what is left is
+streaming (6), markings, the 9-tile performance target, and checking it on a
+real GPU with WebGPU.
 
 1. Setup: three.js r17x+ through an import map (pin an exact version) with
    `three/webgpu` and `three/tsl`. Use `WebGPURenderer` with its WebGL2

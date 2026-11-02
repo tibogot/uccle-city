@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Uccle 3D</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #b9c9d6; overflow: hidden; font: 13px/1.4 system-ui, sans-serif; }
+  canvas { display: block; }
+  #hud { position: fixed; top: 10px; left: 10px; background: rgba(20, 24, 30, .82); color: #e6e9ee;
+         padding: 10px 12px; border-radius: 6px; max-width: 330px; }
+  #hud h1 { font-size: 14px; margin: 0 0 6px; }
+  #hud label { display: block; white-space: nowrap; }
+  #hud button { margin: 6px 4px 0 0; }
+  #stats, #log { font: 12px/1.35 ui-monospace, monospace; white-space: pre; margin-top: 6px; color: #b8c2cc; }
+  #log { color: #f0c27a; white-space: pre-wrap; }
+  #help { color: #8f9aa6; font-size: 12px; margin-top: 6px; }
+</style>
+<!-- three.js pinned to an exact version. "three/src/" is needed by vendor/roads/mesh/triangulate.js (earcut). -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.webgpu.js",
+    "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.webgpu.js",
+    "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.tsl.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+    "three/src/": "https://cdn.jsdelivr.net/npm/three@0.180.0/src/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="hud">
+  <h1>Uccle 3D — <span id="tileName">G4</span></h1>
+  <label><input type="checkbox" data-layer="terrain" checked> terrain</label>
+  <label><input type="checkbox" data-layer="buildings" checked> buildings</label>
+  <label><input type="checkbox" data-layer="roads" checked> roads (road engine)</label>
+  <label><input type="checkbox" data-layer="features" checked> tram lines, trees</label>
+  <label><input type="checkbox" id="contours"> contour lines (1 m)</label>
+  <button id="btnOrbit">Overview</button><button id="btnStJob">Saint-Job</button><button id="btnWalk">Walk</button>
+  <div id="stats">loading…</div>
+  <div id="log"></div>
+  <div id="help">Orbit: drag / right-drag / wheel. Walk: WASD or arrows, drag to look, Shift = run, Esc = back to orbit.</div>
+</div>
+<script type="module" src="./main.js"></script>
+</body>
+</html>
