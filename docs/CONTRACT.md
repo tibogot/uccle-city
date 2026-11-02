@@ -1,7 +1,13 @@
-# uccle-city data contract — v0.3
+# uccle-city data contract — v0.4
 
 ### Changes
 
+- **0.4 (2026-11-02)**, Session 2 part 2. Dual carriageways are collapsed into one
+  two-way road with a median (5.1 "Dual carriageways"): new road ids
+  `r<wayA>d<wayB>_<k>`, carriageway remainders `r<wayId>r<q>_<k>`, `split`
+  nodes, `meta.dual`. New refine actions for crowded roundabouts (node
+  `radius`, parking removed from short arms, `ring.radius` grown up to 3 m with
+  `meta.ringGrownM`). `roads.json` `meta.dual` lists the collapsed pairs.
 - **0.3 (2026-11-02)**, Session 2 part 1. Roads are now built once for the whole area,
   cleaned with the road engine (`refine`), then cut into tiles (5.1 "Pipeline" and
   "Tiling"). New node fields from the clean-up: `radius`, `kind: "junction"`,
@@ -112,7 +118,7 @@ The processed files for one tile should stay under about 2 MB in total.
 ## 5. Formats
 
 All JSON is UTF-8. Coordinates are rounded to **0.01 m**. Every file has a
-top-level `"contract": "0.3"`, except `roads.json`, which must stay exactly the
+top-level `"contract": "0.4"`, except `roads.json`, which must stay exactly the
 road lab's own format. It carries `meta.contract` instead (see 5.1).
 
 ### 5.1 Roads — `roads.json` (the road lab's saved-data JSON)
@@ -135,7 +141,7 @@ writes and reads:
               "lanes"?: { "center": {width, kind}, "left": [{type,width}], "right": [{type,width}] },
               "sections": [], "profile": { "mode": "terrain" },
               "meta"?: { ... } }],
-  "meta": { "contract": "0.3", "tile": "G4", "bufferM": 150, "source": "osm", "osmBase": "<overpass timestamp>",
+  "meta": { "contract": "0.4", "tile": "G4", "bufferM": 150, "source": "osm", "osmBase": "<overpass timestamp>",
             "from": "data/roads/network.json", "refineActions": { "<action>": <count> }, "generated": "<iso>" }
 }
 ```
@@ -179,6 +185,25 @@ writes and reads:
   `node.src` and `road.src`):
   - roads: `{ osm: wayId, name, highway, maxspeed, surface, tram: bool, cut: bool }`
   - nodes: `{ osm: nodeId, crossing: bool, signals: bool, cut: bool, merged?: [nodeId, ...] }`
+- **Dual carriageways (from 0.4, `pipeline/dual.py`):** two one-way OSM ways
+  with the same `name`, running opposite ways 4–35 m apart (or sharing the node
+  where they diverge) over at least 12 m, are replaced on that stretch by one
+  two-way road:
+  - id `r<wayA>d<wayB>_<k>` (A is the way whose nodes form the centreline);
+  - centreline at the midpoint of the two carriageways. Node ids stay OSM node
+    ids (positions move). A cross street that met both carriageways meets one
+    node;
+  - `lanes`: A's travel side on the right, B's on the left, `center` =
+    `{ width: median, kind: "raised" | "painted" | "line" }` with median =
+    measured gap − half of each side's driving width (raised from 1.5 m,
+    painted from 0.5 m);
+  - `meta.dual = { ways: [wayA, wayB], gapM, medianM }`.
+
+  The carriageways' parts outside the stretch remain as one-way roads with ids
+  `r<wayId>r<q>_<k>`. Where both continue past an end, the end node gets
+  `kind: "split"` and `meta.dualSplit`. Where both reach the same roundabout
+  within 70 m, they are dropped and the two-way road enters the ring as one arm.
+  `roads.json` / `network.json` `meta.dual` lists every collapsed stretch.
 - **Pipeline (from 0.3):**
   1. `build_roads.py --all` converts OSM for the study box + 150 m into
      `data/roads/network.json` (cut at that boundary, `meta.cut` as below).
@@ -199,7 +224,11 @@ writes and reads:
        too sharp to smooth, so it is built as a corner;
      - `drop-parallel`: of two service/alley roads joining the same two nodes,
        drops one;
-     - `rollback`: undoes a round that made roads cross.
+     - `rollback`: undoes a round that made roads cross;
+     - for `ring-crowded` (from 0.4), in order: `ring-tight-corners` (ring node
+       `radius` = 3), `ring-no-parking` (parking lanes removed from arms
+       shorter than 80 m, written as a custom `lanes`), `ring-grow` (`ring.radius`
+       + 1 m, at most 3 m in total, recorded in node `meta.ringGrownM`).
   3. `cut_roads.py` cuts the refined network into tiles (below).
 - **Tiling:** a tile's `roads.json` holds every road of `network.json` with any
   part within **150 m** of the tile, cut at that buffer. Ids are the network's,
@@ -220,7 +249,7 @@ are never split across tiles.
 
 ```jsonc
 {
-  "contract": "0.3", "tile": "G4", "count": 598,
+  "contract": "0.4", "tile": "G4", "count": 598,
   "bin": "buildings.bin", "binLayout": "positions:f32x3, indices:u32 (see below)",
   "buildings": [{
     "id": "<source id>", "source": "urbis3d",
@@ -279,7 +308,7 @@ u32 indices[triangleCount * 3]      // counter-clockwise seen from outside, so n
 - Resampling is bilinear from the source DTM, which is reprojected to
   EPSG:31370 first if it isn't already.
 - `terrain.json`:
-  `{ "contract":"0.3", "tile":"G4", "x0":1000, "z0":500, "size":500, "step":1.0, "cols":501, "rows":501, "encoding":"u16le-cm", "nodata":65535, "min":.., "max":.., "nodataCount":.., "source":"urbis-dtm", "inputs":[{ "file", "res", "crs" }] }`
+  `{ "contract":"0.4", "tile":"G4", "x0":1000, "z0":500, "size":500, "step":1.0, "cols":501, "rows":501, "encoding":"u16le-cm", "nodata":65535, "min":.., "max":.., "nodataCount":.., "source":"urbis-dtm", "inputs":[{ "file", "res", "crs" }] }`
   (`file` relative to `data/raw/urbis/dtm/`).
 - Source sheets are mosaicked before resampling, so sheet seams don't show.
 - `ground(x, z)` for the road engine is a bilinear lookup in this grid.
@@ -288,7 +317,7 @@ u32 indices[triangleCount * 3]      // counter-clockwise seen from outside, so n
 
 ```jsonc
 {
-  "contract": "0.3", "tile": "G4",
+  "contract": "0.4", "tile": "G4",
   "trees":   [{ "x", "z", "y"?, "id": "osm:n123", "species"?, "genus"?, "leafType"?, "height"?, "crown"? }],
   "treeRows":[{ "id": "osm:w1", "line": [[x,z],...] }],
   "areas":   [{ "id": "osm:w2", "kind": "park|grass|wood|garden|playground|water|cemetery",
@@ -307,7 +336,7 @@ the tile; the clipped pieces keep their source `id`.
 
 ```jsonc
 {
-  "contract": "0.3",
+  "contract": "0.4",
   "crs": { "source": "EPSG:31370", "proj4": "<string above>", "origin": [148643, 165394],
            "axes": "x=east, z=south, y=up (m TAW)" },
   "studyBox": { "lon": [4.327, 4.372], "lat": [50.7905, 50.8075], "local": { "x": [..], "z": [..] } },

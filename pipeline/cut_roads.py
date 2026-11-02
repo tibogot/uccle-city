@@ -71,7 +71,9 @@ def cut(net, tile, buffer=ROAD_BUFFER):
             r2["meta"]["cut"] = True
             out_roads.append(r2)
 
-    meta = {k: v for k, v in net.get("meta", {}).items() if k not in ("refine", "stats", "tile", "bufferM")}
+    meta = {k: v for k, v in net.get("meta", {}).items() if k not in ("refine", "stats", "tile", "bufferM", "dual")}
+    present = {r["id"].rsplit("_", 1)[0][1:] for r in out_roads}
+    meta["dual"] = [d for d in net.get("meta", {}).get("dual", []) if d["way"] in present]
     refine = net.get("meta", {}).get("refine", {})
     meta.update({"contract": CONTRACT, "tile": tile, "bufferM": buffer, "from": "data/roads/network.json",
                  "refineActions": refine.get("actions"), "generated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),

@@ -407,8 +407,9 @@ async function main() {
   const walk = () => { if (!start) return; controls.enabled = false; walker.start(start.x, start.z, start.yaw); };
   const views = {
     overview: () => { camera.position.set(cx - 330, cy + 300, cz + 400); controls.target.set(cx, cy, cz); },
-    stjob: () => {   // Place de Saint-Job on G4; the tile centre elsewhere
-      const [x, z] = TILE === "G4" ? [1153, 540] : [cx, cz], y = hm.surface(x, z);
+    stjob: () => {   // ?at=x,z, else Place de Saint-Job on G4, else the tile centre
+      const at = params.get("at")?.split(",").map(Number);
+      const [x, z] = at?.length === 2 ? at : TILE === "G4" ? [1153, 540] : [cx, cz], y = hm.surface(x, z);
       camera.position.set(x + 70, y + 45, z + 110); controls.target.set(x, y, z);
     },
   };
@@ -417,7 +418,7 @@ async function main() {
   $("btnOrbit").onclick = () => setView("overview");
   $("btnStJob").onclick = () => setView("stjob");
   $("btnWalk").onclick = walk;
-  const v0 = params.get("view");
+  const v0 = params.get("view") || (params.get("at") ? "stjob" : null);
   if (v0 === "walk") walk(); else setView(v0 === "stjob" ? "stjob" : "overview");
 
   addEventListener("resize", () => {

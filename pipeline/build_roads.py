@@ -17,6 +17,7 @@ from shapely.geometry import LineString, MultiLineString, Point, box
 from shapely.ops import unary_union
 
 from common import CONTRACT, DATA, ROAD_BUFFER, TILES, round2, study_box_local, tile_bounds, write_json
+import dual
 from osm import load_osm
 
 # Defaults copied from vendor/roads/roadCrossSection.js ROAD_TYPES (only the types we emit).
@@ -195,8 +196,8 @@ def pis_from_polyline(pts, rtype):
 
 # ---------------------------------------------------------------- build
 
-def build(osm, region=None, tile=None, buffer=0.0):
-    nodes = osm.nodes
+def build(osm, region=None, tile=None, buffer=0.0, collapse_dual=True):
+    nodes = dict(osm.nodes)          # dual.collapse moves some nodes onto centrelines
     ways = {wid: w for wid, w in osm.ways.items() if is_car_road(w["tags"]) and len(w["nodes"]) >= 2}
 
     # --- roundabouts: connected junction=roundabout ways -> one centre node
@@ -238,6 +239,12 @@ def build(osm, region=None, tile=None, buffer=0.0):
             ring_of[n] = key
     ring_way_set = {w for r in rings.values() for w in r["ways"]}
 
+    # --- dual carriageways -> one two-way road with a median (see dual.py)
+    splits, dual_report = set(), []
+    if collapse_dual:
+        splits, ring_join, dual_report = dual.collapse(ways, nodes, ring_of, oneway_dir, lane_stack, HIGHWAY_TYPE)
+        ring_of.update(ring_join)
+
     # --- vertices: way ends + nodes shared by several ways
     use = defaultdict(int)
     for wid, w in ways.items():
@@ -278,11 +285,11 @@ def build(osm, region=None, tile=None, buffer=0.0):
     # --- type + stack per piece, then merge chains through degree-2 nodes with identical attributes
     for p in pieces:
         t = p["tags"]
-        rtype = HIGHWAY_TYPE[t["highway"]]
+        rtype = t.get("__type") or HIGHWAY_TYPE[t["highway"]]
         if p["ow"] and rtype not in ("avenue", "collector"):
             rtype = "oneWay"
         p["type"] = rtype
-        p["lanes"] = lane_stack(rtype, t, p["ow"], p["reverse"])
+        p["lanes"] = t["__lanes"] if "__lanes" in t else lane_stack(rtype, t, p["ow"], p["reverse"])
         p["sig"] = (rtype, repr(p["lanes"]), p["ow"], t.get("name"), t.get("bridge"), t.get("tunnel"), t.get("layer"))
 
     signals = {nid for nid, n in nodes.items() if n["tags"].get("highway") == "traffic_signals"}
@@ -386,6 +393,8 @@ def build(osm, region=None, tile=None, buffer=0.0):
         meta = {"osm": way_id, "highway": p["tags"]["highway"]}
         if len(p["ids"]) > 1:
             meta["osmWays"] = sorted({w for w, _ in p["ids"]})
+        if "__dual" in p["tags"]:
+            meta["dual"] = p["tags"]["__dual"]
         for tag in ("name", "maxspeed", "surface", "bridge", "tunnel", "layer", "lanes", "oneway"):
             if tag in p["tags"]:
                 meta[tag] = p["tags"][tag]
@@ -443,6 +452,11 @@ def build(osm, region=None, tile=None, buffer=0.0):
     for rd in data_roads:
         deg[rd["a"]] += 1
         deg[rd["b"]] += 1
+    for nid in splits:                  # where a dual carriageway's two halves meet its centreline
+        n = data_nodes.get(f"n{nid}")
+        if n and deg[n["id"]] == 3 and n.get("kind") != "roundabout":
+            n["kind"] = "split"
+            n.setdefault("meta", {})["dualSplit"] = True
     for nkey, n in data_nodes.items():
         if n.get("meta", {}).get("signals") and deg[nkey] >= 3:
             n["control"] = "signal"
@@ -466,7 +480,8 @@ def build(osm, region=None, tile=None, buffer=0.0):
         "nodes": out_nodes, "roads": data_roads,
         "meta": {"contract": CONTRACT, "tile": tile, "bufferM": buffer, "source": "osm",
                  "osmBase": osm.meta.get("osm_base"), "generated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-                 "stats": {"roads": len(data_roads), "nodes": len(out_nodes), "roundabouts": sum(1 for n in out_nodes if n.get("kind") == "roundabout"),
+                 "dual": dual_report,
+                 "stats": {"dual": len(dual_report), "roads": len(data_roads), "nodes": len(out_nodes), "roundabouts": sum(1 for n in out_nodes if n.get("kind") == "roundabout"),
                            "cut": cut_count, "tram": sum(1 for r in data_roads if r["meta"].get("tram")),
                            "signals": sum(1 for n in out_nodes if n.get("control") == "signal")}},
     }

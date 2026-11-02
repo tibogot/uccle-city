@@ -21,6 +21,10 @@
 // A round that creates a new "crossing" error (a merge moved a node so roads now cross) is rolled
 // back, and the merges/stub drops near the new crossing are not tried again.
 //
+//   ring-crowded    (roundabout entries overlap)
+//     1. tight kerb fillets at the ring (node.radius = 3); 2. drop parking lanes from arms
+//        shorter than 80 m; 3. grow ring.radius by 1 m, at most 3 m in total (meta.ringGrownM).
+//
 // Every action is listed in meta.refine. The engine is not changed.
 import { readFileSync, writeFileSync } from "node:fs";
 import { buildRoadNetwork } from "../vendor/roads/roadNetwork.js";
@@ -32,6 +36,23 @@ const MAX_MERGE = 45;          // m: never merge junctions further apart than th
 const [inPath, outPath = inPath] = process.argv.slice(2);
 if (!inPath) { console.error("usage: node pipeline/refine_roads.mjs <in.json> [out.json]"); process.exit(2); }
 const data = JSON.parse(readFileSync(inPath, "utf8"));
+
+// Lane stacks: the type defaults that have parking (mirrors build_roads.py TYPE_DEFAULTS).
+const TYPE_STACK = {
+  local: { center: { width: 0, kind: "line" }, drive: 3.0, parking: 2.2, sidewalk: 2.5, n: 1 },
+  avenue: { center: { width: 0, kind: "line" }, drive: 3.25, parking: 2.3, sidewalk: 3.5, n: 2 },
+  oneWay: { center: { width: 0, kind: "line" }, drive: 3.2, parking: 2.2, sidewalk: 2.5, n: 1, oneWay: true },
+};
+const PARKING_DEFAULT = new Set(Object.keys(TYPE_STACK));
+function noParking(r) {
+  if (r.lanes) {
+    const strip = (side) => side.filter((l) => l.type !== "parking");
+    return { ...r.lanes, left: strip(r.lanes.left), right: strip(r.lanes.right) };
+  }
+  const t = TYPE_STACK[r.type];
+  const side = (n) => [...Array(n)].map(() => ({ type: "driving", width: t.drive })).concat([{ type: "sidewalk", width: t.sidewalk }]);
+  return { center: { ...t.center }, right: side(t.n), left: t.oneWay ? [{ type: "sidewalk", width: t.sidewalk }] : side(t.n) };
+}
 
 const counts = (issues) => {
   const c = {};
@@ -61,6 +82,32 @@ for (let round = 0; round < MAX_ROUNDS; round++) {
   const moved = [];               // [road id, node ids] of merges and stub drops this round
 
   for (const e of errors) {
+    if (e.code === "ring-crowded") {
+      const ring = N.get(e.nodeId);
+      if (!ring || touched.has(ring.id)) continue;
+      touched.add(ring.id);
+      const arms = data.roads.filter((r) => r.a === ring.id || r.b === ring.id);
+      const short = arms.filter((r) => {
+        const A = N.get(r.a), B = N.get(r.b);
+        const pts = [A, ...r.pts, B];
+        let L = 0;
+        for (let k = 1; k < pts.length; k++) L += Math.hypot(pts[k].x - pts[k - 1].x, pts[k].z - pts[k - 1].z);
+        return L < 80 && (r.lanes ? [...r.lanes.left, ...r.lanes.right].some((l) => l.type === "parking") : PARKING_DEFAULT.has(r.type));
+      });
+      if (!(ring.radius <= 3)) {
+        ring.radius = 3;
+        log.push({ round, action: "ring-tight-corners", node: ring.id });
+      } else if (short.length) {
+        for (const r of short) r.lanes = noParking(r);
+        log.push({ round, action: "ring-no-parking", node: ring.id, roads: short.map((r) => r.id) });
+      } else if ((ring.meta?.ringGrownM ?? 0) < 3) {
+        ring.ring = { ...ring.ring, radius: +(ring.ring.radius + 1).toFixed(2) };
+        ring.meta = { ...(ring.meta || {}), ringGrownM: (ring.meta?.ringGrownM ?? 0) + 1 };
+        log.push({ round, action: "ring-grow", node: ring.id, radius: ring.ring.radius });
+      } else continue;
+      changed++;
+      continue;
+    }
     const road = R.get(e.roadId);
     if (!road || touched.has(road.id) || touched.has(road.a) || touched.has(road.b)) continue;
     const A = N.get(road.a), B = N.get(road.b);
