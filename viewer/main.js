@@ -11,6 +11,7 @@ import {
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { buildRoadNetwork } from "../vendor/roads/roadNetwork.js";
 import { buildLaneRoadMesh } from "../vendor/roads/mesh/laneRoadMesh.js";
+import { asphaltMaterial, concreteMaterial, vergeMaterial, surfaceAttribute } from "./roadPaint.js";
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -194,12 +195,9 @@ function clipToTile(part, b) {
 }
 
 function roadMeshes(net, hm, bounds) {
-  const built = buildLaneRoadMesh(net, { markings: false });
-  const mats = {
-    asphalt: new THREE.MeshStandardMaterial({ color: 0x3b3d40, roughness: 0.92, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
-    concrete: new THREE.MeshStandardMaterial({ color: 0xa9a59c, roughness: 0.9, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
-    grass: new THREE.MeshStandardMaterial({ color: 0x5f7f3c, roughness: 1, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
-  };
+  const built = buildLaneRoadMesh(net, { markings: true });
+  const mats = { asphalt: asphaltMaterial(built.atlas), concrete: concreteMaterial(), grass: vergeMaterial() };
+  if (built.atlas) log(`marking atlas: ${built.atlas.width}x${built.atlas.height} at ${(built.atlas.texel * 100).toFixed(1)} cm, ${built.atlas.stats.regions} junctions`);
   const meshes = [];
   let carvedCells = 0, tris = 0;
   for (const name of ["asphalt", "concrete", "grass"]) {
@@ -210,6 +208,9 @@ function roadMeshes(net, hm, bounds) {
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.BufferAttribute(part.position, 3));
     g.setAttribute("normal", new THREE.BufferAttribute(part.normal, 3));
+    g.setAttribute("uv", new THREE.BufferAttribute(part.uv, 2));
+    for (const [k, a] of Object.entries(part.attributes)) g.setAttribute(k, new THREE.BufferAttribute(a.array, a.itemSize));
+    if (name === "asphalt") g.setAttribute("aSurf", new THREE.BufferAttribute(surfaceAttribute(net, part), 1));
     g.setIndex(new THREE.BufferAttribute(index, 1));
     const m = new THREE.Mesh(g, mats[name]);
     m.receiveShadow = true;
@@ -226,32 +227,50 @@ function featureObjects(f, hm, bounds) {
   const group = new THREE.Group();
   group.name = "features";
   const inTile = (x, z) => x >= bounds.x0 && x <= bounds.x1 && z >= bounds.z0 && z <= bounds.z1;
-  const lineMat = {
-    tram: new THREE.LineBasicMaterial({ color: 0xd94bd0 }),
-    other: new THREE.LineBasicMaterial({ color: 0xe0c48a, transparent: true, opacity: 0.6 }),
+  // Tram rails: two grooved steel rails at standard gauge (1.435 m) along each OSM tram line, laid on
+  // the road surface. (Footpaths etc. in features.lines are not drawn here: the 2D debug page has them.)
+  const GAUGE = 1.435, RAIL = 0.07, GROOVE = 0.035;
+  const steel = [], groove = [];
+  const ribbon = (out, pts, off, w) => {
+    for (let k = 0; k + 1 < pts.length; k++) {
+      const q = [pts[k], pts[k + 1]].map(([x, z, nx, nz]) => [[x + nx * (off - w / 2), z + nz * (off - w / 2)], [x + nx * (off + w / 2), z + nz * (off + w / 2)]]);
+      const y = (p) => hm.surface(p[0], p[1]) + CARVE + 0.012;
+      const [a0, a1] = q[0], [b0, b1] = q[1];
+      out.push(a0[0], y(a0), a0[1], b0[0], y(b0), b0[1], a1[0], y(a1), a1[1]);
+      out.push(a1[0], y(a1), a1[1], b0[0], y(b0), b0[1], b1[0], y(b1), b1[1]);
+    }
   };
-  const segs = { tram: [], other: [] };          // one LineSegments per kind = one draw call each
-  const at = (x, z) => [x, hm.surface(x, z) + CARVE + 0.08, z];
   for (const l of f.lines || []) {
-    const out = segs[l.kind === "tram" ? "tram" : "other"];
+    if (l.kind !== "tram") continue;
+    const dense = [];
     for (let k = 1; k < l.line.length; k++) {
       const [ax, az] = l.line[k - 1], [bx, bz] = l.line[k];
-      if (!inTile(ax, az) || !inTile(bx, bz)) continue;
-      const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 2));   // densify to follow the ground
-      for (let s = 0; s < n; s++) {
-        const t0 = s / n, t1 = (s + 1) / n;
-        out.push(...at(ax + (bx - ax) * t0, az + (bz - az) * t0), ...at(ax + (bx - ax) * t1, az + (bz - az) * t1));
-      }
+      const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az)));      // every metre, so rails follow the ground
+      for (let s2 = k === 1 ? 0 : 1; s2 <= n; s2++) dense.push([ax + (bx - ax) * s2 / n, az + (bz - az) * s2 / n]);
+    }
+    const pts = dense.filter(([x, z]) => inTile(x, z)).map(([x, z], i, arr) => {
+      const p = arr[Math.max(0, i - 1)], q = arr[Math.min(arr.length - 1, i + 1)];
+      const dx = q[0] - p[0], dz = q[1] - p[1], L = Math.hypot(dx, dz) || 1;
+      return [x, z, -dz / L, dx / L];
+    });
+    if (pts.length < 2) continue;
+    for (const side of [-1, 1]) {
+      ribbon(steel, pts, side * (GAUGE / 2 + RAIL / 2), RAIL);
+      ribbon(groove, pts, side * (GAUGE / 2 - GROOVE / 2), GROOVE);   // the groove on the gauge side
     }
   }
-  for (const [kind, arr] of Object.entries(segs)) {
-    if (!arr.length) continue;
+  const mk = (arr, mat, name) => {
+    if (!arr.length) return;
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.Float32BufferAttribute(arr, 3));
-    const ls = new THREE.LineSegments(g, lineMat[kind]);
-    ls.name = `lines-${kind}`;
-    group.add(ls);
-  }
+    g.computeVertexNormals();
+    const mesh = new THREE.Mesh(g, mat);
+    mesh.name = name; mesh.receiveShadow = true;
+    group.add(mesh);
+  };
+  const off = { polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, side: THREE.DoubleSide };
+  mk(steel, new THREE.MeshStandardMaterial({ color: 0x9a9da0, metalness: 0.3, roughness: 0.4, ...off }), "tram-rails");
+  mk(groove, new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.9, ...off }), "tram-grooves");
   const trees = (f.trees || []).filter((t) => inTile(t.x, t.z));
   if (trees.length) {
     const trunkG = new THREE.CylinderGeometry(0.18, 0.25, 3, 6).translate(0, 1.5, 0);
@@ -369,9 +388,10 @@ async function main() {
   sun.target.position.set(cx, cy, cz);
   sun.castShadow = true;
   sun.shadow.mapSize.set(4096, 4096);
-  Object.assign(sun.shadow.camera, { left: -380, right: 380, top: 380, bottom: -380, near: 10, far: 1500 });
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  Object.assign(sun.shadow.camera, { left: -380, right: 380, top: 380, bottom: -380, near: 10, far: 1600 });
   sun.shadow.bias = -0.0004;
-  sun.shadow.normalBias = 0.4;
+  sun.shadow.normalBias = 0.05;
   scene.add(sun, sun.target);
 
   const layers = { terrain: new THREE.Group(), buildings: new THREE.Group(), roads: new THREE.Group(), features: new THREE.Group() };
@@ -402,7 +422,9 @@ async function main() {
   controls.enableDamping = true;
   controls.maxPolarAngle = Math.PI * 0.495;
   const walker = new Walker(camera, renderer.domElement, hm);
-  const start = TILE === "G4" ? roadStart(roads, 1153.1, 540.1, bounds) : roadStart(roads, cx, cz, bounds);   // Place de Saint-Job on G4
+  const atP = params.get("at")?.split(",").map(Number);
+  const start = atP?.length === 2 ? roadStart(roads, atP[0], atP[1], bounds)
+    : TILE === "G4" ? roadStart(roads, 1153.1, 540.1, bounds) : roadStart(roads, cx, cz, bounds);   // ?at=, else Place de Saint-Job on G4
   if (!start) $("btnWalk").disabled = true;
   const walk = () => { if (!start) return; controls.enabled = false; walker.start(start.x, start.z, start.yaw); };
   const views = {
@@ -418,7 +440,7 @@ async function main() {
   $("btnOrbit").onclick = () => setView("overview");
   $("btnStJob").onclick = () => setView("stjob");
   $("btnWalk").onclick = walk;
-  const v0 = params.get("view") || (params.get("at") ? "stjob" : null);
+  const v0 = params.get("view") || (params.get("at") ? "stjob" : null);   // ?at=x,z&view=walk stands on the nearest road
   if (v0 === "walk") walk(); else setView(v0 === "stjob" ? "stjob" : "overview");
 
   addEventListener("resize", () => {
@@ -427,7 +449,24 @@ async function main() {
 
   let last = performance.now(), fpsAcc = 0, fpsN = 0, fps = 0, frames = 0;
   const info = renderer.info;
+  // Shadow box follows what the camera looks at, sized to the view: sharp at street level.
+  const sunDir = new THREE.Vector3(-260, 420, 300).normalize();
+  const focus = new THREE.Vector3();
+  const fitShadow = () => {
+    if (walker.on) focus.copy(camera.position).addScaledVector(camera.getWorldDirection(new THREE.Vector3()).setY(0).normalize(), 40);
+    else focus.copy(controls.target);
+    const half = walker.on ? 70 : THREE.MathUtils.clamp(camera.position.distanceTo(controls.target) * 0.9, 60, 380);
+    const sc = sun.shadow.camera;
+    if (Math.abs(sc.right - half) > half * 0.1) {
+      Object.assign(sc, { left: -half, right: half, top: half, bottom: -half });
+      sc.updateProjectionMatrix();
+    }
+    sun.position.copy(focus).addScaledVector(sunDir, 700);
+    sun.target.position.copy(focus);
+    sun.target.updateMatrixWorld();
+  };
   renderer.setAnimationLoop(() => {
+    fitShadow();
     const now = performance.now(), dt = Math.min((now - last) / 1000, 0.1);
     last = now;
     fpsAcc += dt; fpsN++;

@@ -268,6 +268,28 @@ modular kits**, and real data only decides **which material goes where**.
    markings drawn by a paint shader (port or vendor upstream
    `v3/render/roads/laneRoadPaint.js`); kerb stone and sidewalk paving
    materials; wear and puddle variation in TSL.
+   **Done 2026-11-02 (first pass), `viewer/roadPaint.js`:**
+   - asphalt: two-scale noise (patches, grain), per-road tone, polished wheel
+     paths from `aLateral`;
+   - OSM `surface=` per road → `aSurf` per vertex via the mesh's per-road hash
+     (`aPiece.x`): granite setts (72 roads, e.g. Avenue Vanderaey), 20 × 10 cm
+     pavers, unhewn cobbles, gravel. Pads take their roads' majority surface.
+     Stone patterns fade to their average tone with distance (no moiré);
+   - paint: lines along the road decoded from `aEdges` (width, dash pattern
+     and phase, yellow, double), junction markings from the engine's
+     signed-distance atlas (crosswalks, stop lines, arrows, ring lines),
+     parking-bay ticks, noise wear;
+   - sidewalks: 30 cm concrete tiles; kerbs: Belgian blue stone; roundabout
+     aprons: red setts; grass verges;
+   - tram rails: grooved steel rails at 1.435 m gauge along OSM tram lines
+     (replacing the pink debug lines); shadow box follows the camera
+     (PCF soft, 4096²).
+   Screenshots: `docs/img/viewer-G4-street.png`, `viewer-C3-setts.png`,
+   `viewer-C2-brugmann-ring.png`.
+   **Still to do on roads:** a normal/bump response for setts and kerbs (they
+   are flat-shaded colour now); metal needs an environment map (step 5); wet
+   look; manholes and drains; the marking atlas is 3300 × 3700 RG8 per tile
+   (about 24 MB of GPU memory), so page or shrink it before 9-tile streaming.
 2. **Façades: modular kit.** Window, door, shopfront, balcony and cornice
    modules stacked per storey (about 3 m, from the UrbIS height), on the wall
    segments of each building. The street-facing wall (nearest road) gets the
