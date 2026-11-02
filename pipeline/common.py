@@ -8,7 +8,7 @@ from pathlib import Path
 
 from pyproj import CRS, Transformer
 
-CONTRACT = "0.4"
+CONTRACT = "0.5"
 
 ROOT = Path(__file__).resolve().parent.parent
 # UCCLE_DATA overrides the data folder (used for throwaway smoke tests outside the repo).

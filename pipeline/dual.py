@@ -21,6 +21,8 @@ replaces each paired stretch with ONE two-way way:
   joins A's and B's remainders to the centreline: a `split` node (returned in `splits`). If
   both remainders reach the same roundabout within RING_REACH m, they are dropped and the end
   node joins the ring (returned in `ring_join`), so the avenue enters it as one arm.
+- A run shorter than SHORT_SPLIT m with a split end is skipped: it is the narrow tip of an
+  island wider than PAIR_MAX (an "eye"), and the two carriageways are kept.
 
 Node ids stay OSM node ids; positions move to the centreline.
 """
@@ -33,6 +35,7 @@ PAIR_MIN, PAIR_MAX = 4.0, 35.0
 MIN_RUN = 12.0
 SNAP = 6.0
 RING_REACH = 70.0
+SHORT_SPLIT = 40.0   # a run shorter than this that ends in a split is the tip of a wider island: skipped
 
 
 def _proj(px, pz, pts):
@@ -121,8 +124,11 @@ def _ring_reach(rem, nodes, ring_of):
     return None
 
 
-def collapse(ways, nodes, ring_of, oneway_dir, lane_stack, highway_type):
-    """Mutates `ways` and `nodes`. Returns (splits, ring_join, report)."""
+def collapse(ways, nodes, ring_of, oneway_dir, lane_stack, highway_type, skip_pairs=()):
+    """Mutates `ways` and `nodes`. Returns (splits, ring_join, report).
+
+    skip_pairs: {frozenset({wayA, wayB})} never collapsed (pipeline/overrides.json dual.skipWays)."""
+    skip = {frozenset(map(int, p)) for p in skip_pairs}
     cand = []
     for wid, w in ways.items():
         t = w["tags"]
@@ -188,7 +194,7 @@ def collapse(ways, nodes, ring_of, oneway_dir, lane_stack, highway_type):
                         j += 1
                     if A["cum"][j] - A["cum"][i] >= MIN_RUN and not overlap(A["consumed"], i, j):
                         _make(A, B, i, j, flags, nodes, ring_of, is_junction, remap, new_ways, splits, ring_join, report,
-                              lane_stack, highway_type, overlap)
+                              lane_stack, highway_type, overlap, skip)
                     i = j + 1
     if not report:
         return splits, ring_join, report
@@ -230,11 +236,13 @@ def collapse(ways, nodes, ring_of, oneway_dir, lane_stack, highway_type):
 
 
 def _make(A, B, i, j, flags, nodes, ring_of, is_junction, remap, new_ways, splits, ring_join, report,
-          lane_stack, highway_type, overlap):
+          lane_stack, highway_type, overlap, skip=frozenset()):
     # B runs the other way: A's run START is beside B's later stations, A's run END beside the earlier ones
     near = lambda s: min(range(len(B["cum"])), key=lambda q: abs(B["cum"][q] - s))
     b_in, b_out = near(flags[j][1]), near(flags[i][1])     # B enters the shared stretch at b_in, leaves at b_out
     if b_in >= b_out or overlap(B["consumed"], b_in, b_out):
+        return
+    if frozenset((_owner(A, i), _owner(B, b_in))) in skip or frozenset((_owner(A, j - 1 if j else 0), _owner(B, b_out - 1))) in skip:
         return
     start, end = A["seq"][i], A["seq"][j]
     name = A["name"]
@@ -253,7 +261,7 @@ def _make(A, B, i, j, flags, nodes, ring_of, is_junction, remap, new_ways, split
         pr = _proj(nodes[nid]["x"], nodes[nid]["z"], apts)
         cl.append([A["cum"][i] + pr[1], nid, (nodes[nid]["x"] + pr[2]) / 2, (nodes[nid]["z"] + pr[3]) / 2])
     cl.sort()
-    merged = []
+    merged, snapped = [], {}
     for st, nid, x, z in cl:
         if merged and st - merged[-1][0] < SNAP:
             last = merged[-1]
@@ -263,7 +271,7 @@ def _make(A, B, i, j, flags, nodes, ring_of, is_junction, remap, new_ways, split
                 continue
             keep = last[1] if last[1] in ends else nid if nid in ends else min(last[1], nid)
             gone = nid if keep == last[1] else last[1]
-            remap[gone] = keep
+            snapped[gone] = keep
             pos = (last[2], last[3]) if last[1] in ends else (x, z) if nid in ends else ((last[2] + x) / 2, (last[3] + z) / 2)
             merged[-1] = [last[0], keep, pos[0], pos[1]]
             continue
@@ -271,6 +279,20 @@ def _make(A, B, i, j, flags, nodes, ring_of, is_junction, remap, new_ways, split
     seq = [m[1] for m in merged]
     if len(seq) < 2 or seq[0] != start or seq[-1] != end:
         return
+    # end kinds, decided before anything changes
+    plan = []
+    for end_node, a_rem, b_rem, at_start in ((start, A["seq"][:i + 1][::-1], B["seq"][b_out:], True),
+                                             (end, A["seq"][j:], B["seq"][:b_in + 1][::-1], False)):
+        ia, ib = _ring_reach(a_rem, nodes, ring_of), _ring_reach(b_rem, nodes, ring_of)
+        if ia is not None and ib is not None and ring_of[a_rem[ia]] == ring_of[b_rem[ib]]:
+            plan.append(("ring", end_node, at_start, ia, ib, ring_of[a_rem[ia]]))
+        elif len(a_rem) >= 2 and len(b_rem) >= 2:
+            plan.append(("split", end_node, at_start, None, None, None))
+        else:
+            plan.append(("join", end_node, at_start, None, None, None))
+    if A["cum"][j] - A["cum"][i] < SHORT_SPLIT and any(p[0] == "split" for p in plan):
+        return       # the narrow tip of a wider island: keep the two carriageways
+    remap.update(snapped)
     for _, nid, x, z in merged:
         nodes[nid] = {**nodes[nid], "x": x, "z": z}
     remap[B["seq"][b_out]] = start
@@ -302,22 +324,17 @@ def _make(A, B, i, j, flags, nodes, ring_of, is_junction, remap, new_ways, split
     new_ways[wid] = {"nodes": seq, "tags": tags}
 
     ends_kind = []
-    for end_node, a_rem, b_rem, at_start in ((start, A["seq"][:i + 1][::-1], B["seq"][b_out:], True),
-                                             (end, A["seq"][j:], B["seq"][:b_in + 1][::-1], False)):
-        ia, ib = _ring_reach(a_rem, nodes, ring_of), _ring_reach(b_rem, nodes, ring_of)
-        if ia is not None and ib is not None and ring_of[a_rem[ia]] == ring_of[b_rem[ib]]:
-            ring_join[end_node] = ring_of[a_rem[ia]]
+    for kind_, end_node, at_start, ia, ib, ring in plan:
+        if kind_ == "ring":
+            ring_join[end_node] = ring
             if at_start:
                 A["consumed"].append((i - ia, i))
                 B["consumed"].append((b_out, b_out + ib))
             else:
                 A["consumed"].append((j, j + ia))
                 B["consumed"].append((b_in - ib, b_in))
-            ends_kind.append("ring")
-        elif len(a_rem) >= 2 and len(b_rem) >= 2:
+        elif kind_ == "split":
             splits.add(end_node)               # both carriageways carry on past this node
-            ends_kind.append("split")
-        else:
-            ends_kind.append("join")           # the pair ends at a junction: it is now one node
+        ends_kind.append(kind_)                # "join": the pair ends at a junction, now one node
     report.append({"way": wid, "name": name, "lengthM": round(A["cum"][j] - A["cum"][i], 1), "gapM": round(gap, 2),
                    "medianM": round(median, 2), "median": kind, "nodes": len(seq), "ends": ends_kind})

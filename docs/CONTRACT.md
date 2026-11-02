@@ -1,7 +1,11 @@
-# uccle-city data contract — v0.4
+# uccle-city data contract — v0.5
 
 ### Changes
 
+- **0.5 (2026-11-02)**, Session 2 part 3. Hand overrides (`pipeline/overrides.json`,
+  5.1 "Overrides"); new refine actions `join-ring` (node `meta.joined`),
+  `unsplit`, `drop-slip`; `dual.py` skips short island tips. `network.json`
+  `meta.refine.overrides` lists the applied overrides. File layout unchanged.
 - **0.4 (2026-11-02)**, Session 2 part 2. Dual carriageways are collapsed into one
   two-way road with a median (5.1 "Dual carriageways"): new road ids
   `r<wayA>d<wayB>_<k>`, carriageway remainders `r<wayId>r<q>_<k>`, `split`
@@ -118,7 +122,7 @@ The processed files for one tile should stay under about 2 MB in total.
 ## 5. Formats
 
 All JSON is UTF-8. Coordinates are rounded to **0.01 m**. Every file has a
-top-level `"contract": "0.4"`, except `roads.json`, which must stay exactly the
+top-level `"contract": "0.5"`, except `roads.json`, which must stay exactly the
 road lab's own format. It carries `meta.contract` instead (see 5.1).
 
 ### 5.1 Roads — `roads.json` (the road lab's saved-data JSON)
@@ -141,7 +145,7 @@ writes and reads:
               "lanes"?: { "center": {width, kind}, "left": [{type,width}], "right": [{type,width}] },
               "sections": [], "profile": { "mode": "terrain" },
               "meta"?: { ... } }],
-  "meta": { "contract": "0.4", "tile": "G4", "bufferM": 150, "source": "osm", "osmBase": "<overpass timestamp>",
+  "meta": { "contract": "0.5", "tile": "G4", "bufferM": 150, "source": "osm", "osmBase": "<overpass timestamp>",
             "from": "data/roads/network.json", "refineActions": { "<action>": <count> }, "generated": "<iso>" }
 }
 ```
@@ -225,11 +229,29 @@ writes and reads:
      - `drop-parallel`: of two service/alley roads joining the same two nodes,
        drops one;
      - `rollback`: undoes a round that made roads cross;
+     - `join-ring` (from 0.5): a junction swallowed by an adjacent roundabout is
+       folded into it. Its other roads now end at the ring (its position stays
+       as a PI), and the ring lists it in `meta.joined`;
+     - `unsplit` (from 0.5): a `split` node whose short branch can't turn becomes
+       a plain junction;
+     - `drop-slip` (from 0.5): a one-way slip road of 35 m or less between two
+       junctions that still bends too tightly is dropped;
      - for `ring-crowded` (from 0.4), in order: `ring-tight-corners` (ring node
        `radius` = 3), `ring-no-parking` (parking lanes removed from arms
        shorter than 80 m, written as a custom `lanes`), `ring-grow` (`ring.radius`
        + 1 m, at most 3 m in total, recorded in node `meta.ringGrownM`).
   3. `cut_roads.py` cuts the refined network into tiles (below).
+- **Overrides (from 0.5):** `pipeline/overrides.json` holds hand fixes for
+  places no rule handles. Every entry has a `why` naming the place.
+  - `dual.skipWays`: OSM way pairs `dual.py` must not collapse.
+  - `roads`: ops applied by `refine_roads.mjs` before its loop, on converter ids:
+    `merge-nodes {nodes: [keep, ...], at?}`, `drop-road {road}`,
+    `set-node {node, set}`, `set-road {road, set}` (a `null` value removes the
+    key).
+
+  Ops that match nothing are reported on stderr and marked `ok: false` in
+  `network.json` `meta.refine.overrides`. `tools/plot_area.mjs` draws a
+  network around a point with its ids and engine errors, for writing them.
 - **Tiling:** a tile's `roads.json` holds every road of `network.json` with any
   part within **150 m** of the tile, cut at that buffer. Ids are the network's,
   so a road or node has the same id in every tile. A piece cut at the buffer ends
@@ -249,7 +271,7 @@ are never split across tiles.
 
 ```jsonc
 {
-  "contract": "0.4", "tile": "G4", "count": 598,
+  "contract": "0.5", "tile": "G4", "count": 598,
   "bin": "buildings.bin", "binLayout": "positions:f32x3, indices:u32 (see below)",
   "buildings": [{
     "id": "<source id>", "source": "urbis3d",
@@ -308,7 +330,7 @@ u32 indices[triangleCount * 3]      // counter-clockwise seen from outside, so n
 - Resampling is bilinear from the source DTM, which is reprojected to
   EPSG:31370 first if it isn't already.
 - `terrain.json`:
-  `{ "contract":"0.4", "tile":"G4", "x0":1000, "z0":500, "size":500, "step":1.0, "cols":501, "rows":501, "encoding":"u16le-cm", "nodata":65535, "min":.., "max":.., "nodataCount":.., "source":"urbis-dtm", "inputs":[{ "file", "res", "crs" }] }`
+  `{ "contract":"0.5", "tile":"G4", "x0":1000, "z0":500, "size":500, "step":1.0, "cols":501, "rows":501, "encoding":"u16le-cm", "nodata":65535, "min":.., "max":.., "nodataCount":.., "source":"urbis-dtm", "inputs":[{ "file", "res", "crs" }] }`
   (`file` relative to `data/raw/urbis/dtm/`).
 - Source sheets are mosaicked before resampling, so sheet seams don't show.
 - `ground(x, z)` for the road engine is a bilinear lookup in this grid.
@@ -317,7 +339,7 @@ u32 indices[triangleCount * 3]      // counter-clockwise seen from outside, so n
 
 ```jsonc
 {
-  "contract": "0.4", "tile": "G4",
+  "contract": "0.5", "tile": "G4",
   "trees":   [{ "x", "z", "y"?, "id": "osm:n123", "species"?, "genus"?, "leafType"?, "height"?, "crown"? }],
   "treeRows":[{ "id": "osm:w1", "line": [[x,z],...] }],
   "areas":   [{ "id": "osm:w2", "kind": "park|grass|wood|garden|playground|water|cemetery",
@@ -336,7 +358,7 @@ the tile; the clipped pieces keep their source `id`.
 
 ```jsonc
 {
-  "contract": "0.4",
+  "contract": "0.5",
   "crs": { "source": "EPSG:31370", "proj4": "<string above>", "origin": [148643, 165394],
            "axes": "x=east, z=south, y=up (m TAW)" },
   "studyBox": { "lon": [4.327, 4.372], "lat": [50.7905, 50.8075], "local": { "x": [..], "z": [..] } },

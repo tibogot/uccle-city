@@ -8,10 +8,12 @@ The output is what vendor/roads/roadNetwork.js buildRoadNetwork() takes (style '
 from __future__ import annotations
 
 import argparse
+import json
 import math
 import sys
 import time
 from collections import defaultdict
+from pathlib import Path
 
 from shapely.geometry import LineString, MultiLineString, Point, box
 from shapely.ops import unary_union
@@ -242,7 +244,9 @@ def build(osm, region=None, tile=None, buffer=0.0, collapse_dual=True):
     # --- dual carriageways -> one two-way road with a median (see dual.py)
     splits, dual_report = set(), []
     if collapse_dual:
-        splits, ring_join, dual_report = dual.collapse(ways, nodes, ring_of, oneway_dir, lane_stack, HIGHWAY_TYPE)
+        ov = Path(__file__).resolve().parent / "overrides.json"
+        skip = json.loads(ov.read_text(encoding="utf-8")).get("dual", {}).get("skipWays", []) if ov.exists() else []
+        splits, ring_join, dual_report = dual.collapse(ways, nodes, ring_of, oneway_dir, lane_stack, HIGHWAY_TYPE, skip)
         ring_of.update(ring_join)
 
     # --- vertices: way ends + nodes shared by several ways

@@ -1,5 +1,5 @@
 {
- "contract": "0.4",
+ "contract": "0.5",
  "crs": {
   "source": "EPSG:31370",
   "proj4": "+proj=lcc +lat_0=90 +lat_1=51.16666723333333 +lat_2=49.8333339 +lon_0=4.367486666666666 +x_0=150000.013 +y_0=5400088.438 +ellps=intl +towgs84=-106.8686,52.2978,-103.7239,0.3366,-0.457,1.8422,-1.2747 +units=m +no_defs",
@@ -171,7 +171,7 @@
    },
    "missingLayers": [],
    "counts": {
-    "roads": 96,
+    "roads": 95,
     "nodes": 82,
     "buildings": 534,
     "trees": 20,
@@ -224,7 +224,7 @@
    "missingLayers": [],
    "counts": {
     "roads": 86,
-    "nodes": 78,
+    "nodes": 79,
     "buildings": 197,
     "trees": 26,
     "areas": 6,
@@ -565,8 +565,8 @@
    },
    "missingLayers": [],
    "counts": {
-    "roads": 146,
-    "nodes": 114,
+    "roads": 137,
+    "nodes": 110,
     "buildings": 779,
     "trees": 60,
     "areas": 17,
@@ -613,8 +613,8 @@
    },
    "missingLayers": [],
    "counts": {
-    "roads": 109,
-    "nodes": 96,
+    "roads": 101,
+    "nodes": 93,
     "buildings": 178,
     "trees": 19,
     "areas": 18,
@@ -947,8 +947,8 @@
    },
    "missingLayers": [],
    "counts": {
-    "roads": 101,
-    "nodes": 88,
+    "roads": 100,
+    "nodes": 87,
     "buildings": 666,
     "trees": 15,
     "areas": 5,
@@ -999,8 +999,8 @@
    },
    "missingLayers": [],
    "counts": {
-    "roads": 82,
-    "nodes": 82,
+    "roads": 81,
+    "nodes": 81,
     "buildings": 303,
     "trees": 3,
     "areas": 14,
@@ -1147,8 +1147,8 @@
    },
    "missingLayers": [],
    "counts": {
-    "roads": 96,
-    "nodes": 85,
+    "roads": 89,
+    "nodes": 81,
     "buildings": 349,
     "trees": 0,
     "areas": 9,
@@ -1199,8 +1199,8 @@
    },
    "missingLayers": [],
    "counts": {
-    "roads": 66,
-    "nodes": 59,
+    "roads": 61,
+    "nodes": 58,
     "buildings": 63,
     "trees": 0,
     "areas": 5,
@@ -1341,8 +1341,8 @@
    },
    "missingLayers": [],
    "counts": {
-    "roads": 106,
-    "nodes": 99,
+    "roads": 103,
+    "nodes": 97,
     "buildings": 424,
     "trees": 2,
     "areas": 3,
@@ -1389,8 +1389,8 @@
    },
    "missingLayers": [],
    "counts": {
-    "roads": 112,
-    "nodes": 109,
+    "roads": 110,
+    "nodes": 107,
     "buildings": 461,
     "trees": 17,
     "areas": 13,
@@ -1529,8 +1529,8 @@
    },
    "missingLayers": [],
    "counts": {
-    "roads": 76,
-    "nodes": 71,
+    "roads": 69,
+    "nodes": 67,
     "buildings": 598,
     "trees": 3,
     "areas": 4,
@@ -1577,8 +1577,8 @@
    },
    "missingLayers": [],
    "counts": {
-    "roads": 48,
-    "nodes": 50,
+    "roads": 43,
+    "nodes": 49,
     "buildings": 43,
     "trees": 0,
     "areas": 0,

@@ -16,7 +16,8 @@ lat 50.7905–50.8075). It is cut into 500 m tiles named `A1` to `H4`.
 | `data/tiles/` | Processed tiles + `manifest.json`. `data/raw/` is git-ignored. |
 | `debug/index.html` | 2D tile viewer: roads, buildings, terrain contours (screenshots in `docs/img/`). |
 | `viewer/index.html` | Minimal 3D viewer (three.js r180 WebGPURenderer + TSL, WebGL2 fallback). |
-| `tools/check_roads.mjs` | Node check: runs `buildRoadNetwork` on a tile's `roads.json`. |
+| `tools/check_roads.mjs` | Node check: runs `buildRoadNetwork` on a tile's `roads.json` (`--all`: every tile). |
+| `tools/plot_area.mjs` | SVG of a road network around a point (ids, errors), for writing `pipeline/overrides.json`. |
 
 ## Run the pipeline
 

@@ -166,26 +166,32 @@ oversized junction pads, mostly around Place de Saint-Job.
   `docs/img/viewer-C4-roundabout.png` shows the Saint-Job roundabout (Chaussée
   de Saint-Job / Rue Papenkasteel) as one ring with single two-way arms.
 
-### Left (part 3)
+### Part 3 (done 2026-11-02): overrides and the last junction types
 
-Per `check_roads.mjs --all`:
+- **refine** gained `join-ring` (a junction inside a roundabout's footprint
+  joins the ring), `unsplit` and `drop-slip`. A rollback whose culprit is unclear
+  no longer bans the whole round; refine redoes it one change per round.
+  Fixed: the roundabout fix marked rings as "touched" every round, which
+  silently blocked every other fix at roundabouts.
+- **dual.py** skips short runs whose end is a split (the narrow tip of a wide
+  "eye" island) and no longer leaks node remaps from abandoned runs.
+- **`pipeline/overrides.json`** (9 entries, each with a `why`): Avenue du
+  Prince de Ligne island (H3), the tram track and a service loop at the
+  Brugmann/Wolvendael roundabout (C2), the Wolvendael split. Written with
+  **`tools/plot_area.mjs`** (SVG of ids and errors around a point).
+- **Result:** network errors 43 → **17**; inside tiles 39 → **14**;
+  **23 of 32 tiles clean**. `docs/img/viewer-C2-brugmann-ring.png` shows the
+  Brugmann/Wolvendael roundabout with its dual arms.
 
-1. **C2, the Uccle centre (16)**: Place Saint-Pierre, Brugmann / Wolvendael and
-   the dense one-way grid. Look at each in the viewer.
-2. **H3 (8): one junction** on Avenue du Prince de Ligne (x 1600–1675,
-   z 360), where a dual stretch meets flared slip roads. Probably needs a
-   hand-written override (see 4).
-3. **Leftover tight bends (16)**, mostly short one-way slip roads that meet the
-   avenue at an angle (channelised turns, e.g. Avenue De Fré). `dual.py`
-   correctly does not pair them. Options: treat them as turn lanes (`sections`)
-   of the avenue, or drop slip roads under 25 m.
-4. **Overrides file:** `pipeline/overrides.json` for the few places no rule
-   fixes (move a node, set a ring radius, drop a road), applied after refine
-   and listed in the manifest. Keeps hand fixes explicit and reproducible.
-5. Then lane tags (`turn:lanes` → `sections`), bridges / tunnels (`layer`), the
-   UrbIS name and connectivity check, and crossings.
+### Left (part 4, small)
 
-Done when `check_roads.mjs --all` reports 0 errors inside tiles.
+14 errors inside tiles, 17 in the network, at about 12 places. Each is one
+override or a close look: the Chaussée d'Alsemberg / Brugmann sharp Y (C2,
+x -919 z -105; a 25° junction), two crowded roundabouts (C4 Saint-Job / Rue
+Papenkasteel; F2 Square Charles Lagrange, 6 arms), Rue Engeland, Dieweg,
+Avenue Joseph Jongen, Clos Dandoy. List them with `node tools/check_roads.mjs
+--all`, look with `tools/plot_area.mjs`, fix in `overrides.json`. Then: lane
+tags (`turn:lanes`), bridges / tunnels, the UrbIS name check.
 
 ### Original Session 2 plan (for reference)
 
