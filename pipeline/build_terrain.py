@@ -15,6 +15,7 @@ import numpy as np
 import rasterio
 from rasterio.crs import CRS as RioCRS
 from rasterio.transform import from_origin
+from rasterio.merge import merge
 from rasterio.warp import Resampling, reproject, transform_bounds
 
 from common import CONTRACT, L72_PROJ4, ORIGIN_E, ORIGIN_N, RAW, TERRAIN_STEP, TILE, TILES, tile_bounds, write_json
@@ -42,6 +43,7 @@ def build(tile: str, src: Path):
 
     out = np.full((n, n), np.nan, dtype=np.float64)
     used = []
+    native = []          # EPSG:31370 sheets touching the tile: mosaicked first so bilinear works across sheet seams
     for f in files:
         with rasterio.open(f) as ds:
             src_crs = ds.crs
@@ -49,20 +51,43 @@ def build(tile: str, src: Path):
                 print(f"  {f.name}: no CRS in file, assuming EPSG:31370", file=sys.stderr)
                 src_crs = RioCRS.from_epsg(31370)
             same = src_crs.to_epsg() == 31370
-            dst_crs = src_crs if same else l72
             b = ds.bounds if same else transform_bounds(src_crs, l72, *ds.bounds)
             if b[2] < dst_bounds[0] or b[0] > dst_bounds[2] or b[3] < dst_bounds[1] or b[1] > dst_bounds[3]:
+                continue
+            used.append({"file": f.relative_to(src).as_posix(), "res": [abs(ds.transform.a), abs(ds.transform.e)], "crs": str(src_crs)})
+            if same:
+                native.append(f)
                 continue
             tmp = np.full((n, n), np.nan, dtype=np.float64)
             reproject(
                 source=rasterio.band(ds, 1), destination=tmp,
                 src_transform=ds.transform, src_crs=src_crs, src_nodata=ds.nodata,
-                dst_transform=dst_transform, dst_crs=dst_crs, dst_nodata=np.nan,
+                dst_transform=dst_transform, dst_crs=l72, dst_nodata=np.nan,
                 resampling=Resampling.bilinear,
             )
             fill = np.isnan(out) & ~np.isnan(tmp)
             out[fill] = tmp[fill]
-            used.append({"file": f.name, "res": [abs(ds.transform.a), abs(ds.transform.e)], "crs": str(src_crs)})
+    if native:
+        pad = 4.0
+        mb = (dst_bounds[0] - pad, dst_bounds[1] - pad, dst_bounds[2] + pad, dst_bounds[3] + pad)
+        dss = [rasterio.open(f) for f in native]
+        src_nod = dss[0].nodata
+        try:
+            mos, mtr = merge(dss, bounds=mb, nodata=np.nan, dtype="float64",
+                             resampling=Resampling.bilinear)
+        finally:
+            for d in dss:
+                d.close()
+        a = mos[0]
+        if src_nod is not None and not np.isnan(src_nod):
+            a[a == src_nod] = np.nan
+        a[a < -1000] = np.nan            # UrbIS DTM nodata is -3.4e38 (float32 min)
+        tmp = np.full((n, n), np.nan, dtype=np.float64)
+        reproject(source=a, destination=tmp, src_transform=mtr, src_crs=RioCRS.from_epsg(31370), src_nodata=np.nan,
+                  dst_transform=dst_transform, dst_crs=RioCRS.from_epsg(31370), dst_nodata=np.nan,
+                  resampling=Resampling.bilinear)
+        fill = np.isnan(out) & ~np.isnan(tmp)
+        out[fill] = tmp[fill]
     if not used:
         raise SystemExit(f"no DTM raster under {src} covers tile {tile}")
 

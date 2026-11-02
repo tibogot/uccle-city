@@ -1,5 +1,5 @@
 {
- "contract": "0.1",
+ "contract": "0.2",
  "crs": {
   "source": "EPSG:31370",
   "proj4": "+proj=lcc +lat_0=90 +lat_1=51.16666723333333 +lat_2=49.8333339 +lon_0=4.367486666666666 +x_0=150000.013 +y_0=5400088.438 +ellps=intl +towgs84=-106.8686,52.2978,-103.7239,0.3366,-0.457,1.8422,-1.2747 +units=m +no_defs",
@@ -540,7 +540,39 @@
      1000.0
     ]
    },
-   "status": "missing"
+   "status": "built",
+   "files": {
+    "roads": "G4/roads.json",
+    "buildings": "G4/buildings.json",
+    "buildingsBin": "G4/buildings.bin",
+    "terrain": "G4/terrain.u16",
+    "terrainHeader": "G4/terrain.json",
+    "features": "G4/features.json"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 92,
+    "nodes": 89,
+    "buildings": 598,
+    "trees": 3,
+    "areas": 4,
+    "points": 47,
+    "terrainMinMax": [
+     65.29,
+     96.97
+    ]
+   },
+   "sources": {
+    "osm": "2026-06-01T08:52:28Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_149164_20261003/shp/UrbISBuildings3D_149164_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_150164_20261003/shp/UrbISBuildings3D_150164_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_149164_20211009_50/UrbDTM_2021_149164.tif",
+     "DTM_31370_TIFF_150164_20211009_50/UrbDTM_2021_150164.tif"
+    ]
+   }
   },
   {
    "name": "H4",

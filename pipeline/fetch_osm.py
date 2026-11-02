@@ -12,12 +12,16 @@ import json
 import math
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 
 from common import LAT_MAX, LAT_MIN, LON_MAX, LON_MIN, RAW
 
 DEFAULT_ENDPOINT = "https://overpass-api.de/api/interpreter"
+# Tried in order when --endpoint is not given. kumi.systems can lag behind OSM by weeks or months:
+# check osm_base in the output (it is recorded in every roads.json and in the manifest).
+FALLBACKS = ["https://overpass.kumi.systems/api/interpreter"]
 
 QUERY = """
 [out:json][timeout:300][bbox:{s},{w},{n},{e}];
@@ -46,7 +50,7 @@ out body qt;
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--margin", type=float, default=250.0, help="metres added around the study box")
-    ap.add_argument("--endpoint", default=DEFAULT_ENDPOINT)
+    ap.add_argument("--endpoint", help=f"Overpass endpoint (default: {DEFAULT_ENDPOINT}, then {FALLBACKS})")
     args = ap.parse_args()
 
     lat_m = args.margin / 111_320.0
@@ -57,11 +61,21 @@ def main():
     out = RAW / "osm" / "area.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     body = urllib.parse.urlencode({"data": q}).encode()
-    req = urllib.request.Request(args.endpoint, data=body, headers={"User-Agent": "uccle-city-pipeline/0.1 (one-off study-area extract)"})
+    endpoints = [args.endpoint] if args.endpoint else [DEFAULT_ENDPOINT, *FALLBACKS]
     t0 = time.time()
-    print(f"Overpass: bbox s={s:.5f} w={w:.5f} n={n:.5f} e={e:.5f} -> {out}", file=sys.stderr)
-    with urllib.request.urlopen(req, timeout=400) as r:
-        data = r.read()
+    data = None
+    for ep in endpoints:
+        req = urllib.request.Request(ep, data=body, headers={"User-Agent": "uccle-city-pipeline/0.1 (one-off study-area extract)"})
+        print(f"Overpass {ep}: bbox s={s:.5f} w={w:.5f} n={n:.5f} e={e:.5f} -> {out}", file=sys.stderr)
+        try:
+            with urllib.request.urlopen(req, timeout=400) as r:
+                data = r.read()
+            args.endpoint = ep
+            break
+        except (urllib.error.URLError, OSError) as err:
+            print(f"  failed: {err}", file=sys.stderr)
+    if data is None:
+        raise SystemExit("all Overpass endpoints failed")
     doc = json.loads(data)
     if "elements" not in doc:
         raise SystemExit(f"unexpected Overpass reply: {data[:500]!r}")

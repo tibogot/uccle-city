@@ -14,16 +14,17 @@ lat 50.7905–50.8075). It is cut into 500 m tiles named `A1` to `H4`.
 | `vendor/roads/` | Road lab from game-engine-v1, unchanged (`ORIGIN.md`). |
 | `pipeline/` | Python: download (OSM Overpass, UrbIS), then build tile files. |
 | `data/tiles/` | Processed tiles + `manifest.json`. `data/raw/` is git-ignored. |
-| `debug/index.html` | 2D tile viewer: roads, buildings, terrain contours. |
+| `debug/index.html` | 2D tile viewer: roads, buildings, terrain contours (screenshots in `docs/img/`). |
+| `tools/check_roads.mjs` | Node check: runs `buildRoadNetwork` on a tile's `roads.json`. |
 
 ## Run the pipeline
 
 ```sh
 python3 -m venv ../venv && ../venv/bin/pip install -r pipeline/requirements.txt
 ../venv/bin/python pipeline/fetch_osm.py            # one Overpass request for the whole area
-# put the UrbIS URLs in pipeline/sources.json (or drop the files in data/raw/urbis/<key>/), then:
-../venv/bin/python pipeline/fetch_urbis.py
-../venv/bin/python pipeline/run_tile.py G4 --id-field <building id field>
+../venv/bin/python pipeline/fetch_urbis.py          # UrbIS sheets listed in pipeline/sources.json (G4's for now)
+../venv/bin/python pipeline/run_tile.py G4 --id-field INSPIRE_ID --layer BuildingSolids
+node tools/check_roads.mjs G4                         # build roads.json with the road engine, list its issues
 ```
 
 ## View a tile

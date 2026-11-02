@@ -36,7 +36,7 @@ def main():
             if "buildings" in present:
                 b = read_json(d / FILES["buildings"])
                 counts["buildings"] = b["count"]
-                sources["urbis3d"] = [f"{x['file']}:{x['layer']}" for x in b.get("inputs", [])]
+                sources["urbis3d"] = [x["file"] for x in b.get("inputs", []) if x.get("features")]
             if "features" in present:
                 f = read_json(d / FILES["features"])
                 counts.update(trees=f["counts"]["trees"], areas=f["counts"]["areas"], points=f["counts"]["points"])

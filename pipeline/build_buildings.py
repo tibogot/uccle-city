@@ -185,7 +185,7 @@ def iter_sources(src: Path, layer_filter):
             print(f"  skip {f.name}: {e}", file=sys.stderr)
             continue
         for name, gtype in layers:
-            if layer_filter and name != layer_filter:
+            if layer_filter and layer_filter not in name:   # substring: UrbIS layer names carry the sheet number
                 continue
             yield f, name
 
@@ -242,7 +242,7 @@ def build(tile, src, id_field=None, height_field=None, layer=None):
             if height_field and height_field in attrs:
                 g["extrude"] = float(attrs[height_field])
             nfeat += 1
-        inputs.append({"file": f.name, "layer": lname, "features": nfeat, "crs": crs.to_string()})
+        inputs.append({"file": f.relative_to(src).as_posix(), "layer": lname, "features": nfeat, "crs": crs.to_string()})
 
     positions, indices, buildings = [], [], []
     tri_count = 0
@@ -383,7 +383,7 @@ def main():
     ap.add_argument("--src", type=Path, default=RAW / "urbis" / "buildings3d")
     ap.add_argument("--id-field")
     ap.add_argument("--height-field", help="for 2D-only footprints: attribute holding the building height (m)")
-    ap.add_argument("--layer")
+    ap.add_argument("--layer", help="only layers whose name contains this text (UrbIS SHP: BuildingSolids)")
     args = ap.parse_args()
     doc = build(args.tile.upper(), args.src, args.id_field, args.height_field, args.layer)
     print(f"buildings {doc['tile']}: {doc['count']} kept, skipped {doc['skipped']}, inputs {doc['inputs']}", file=sys.stderr)

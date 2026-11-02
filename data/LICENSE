@@ -1,0 +1,26 @@
+Licence for the data in this folder (data/tiles/, data/roads/)
+
+These files form a database derived from OpenStreetMap and are made available
+under the Open Data Commons Open Database License (ODbL) 1.0:
+https://opendatacommons.org/licenses/odbl/1-0/
+Individual contents are under the Database Contents License (DbCL) 1.0:
+https://opendatacommons.org/licenses/dbcl/1-0/
+
+Attribution:
+
+  © OpenStreetMap contributors — https://www.openstreetmap.org/copyright
+    (roads.json, features.json)
+
+  UrbIS - 3D Constructions, © Paradigm (paradigm.brussels), CC0 1.0
+    (buildings.json, buildings.bin)
+
+  Digital terrain model 2021, © Paradigm (paradigm.brussels), CC0 1.0
+    (terrain.u16, terrain.json)
+
+The Paradigm datasets are public domain (CC0 1.0); they are credited as a
+courtesy and add no conditions. buildings.* and terrain.* contain no
+OpenStreetMap data. See ../CREDITS.md for sources, versions and the dates the
+licences were checked.
+
+This licence covers the data only. Code in this repository is licensed
+separately.

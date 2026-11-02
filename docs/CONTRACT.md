@@ -1,4 +1,13 @@
-# uccle-city data contract — v0.1
+# uccle-city data contract — v0.2
+
+### Changes
+
+- **0.2 (2026-11-02)**, after building tile G4 from real data. No layout or encoding
+  changed, so 0.1 readers still work. Clarified from what the real files are:
+  source table (2.1); building ids, solids and the meaning of `base` (5.2); extra
+  header keys `inputs` / `skipped` / `nodataCount` (5.2, 5.3); what the manifest
+  `sources` hold (5.5); UrbIS licence is CC0 (6).
+- **0.1 (2026-11-02)**, first version, written before any real data was downloaded.
 
 This is the spec every session must follow. If code and this file disagree, fix
 the code, or change this file on purpose and bump the version. Constants that
@@ -18,7 +27,9 @@ both.
 
 | Source | CRS |
 |---|---|
-| UrbIS (buildings 3D, DTM, transport network) | EPSG:31370 natively. Heights in m above TAW/DNG (Belgian datum, Ostend). |
+| UrbIS 3D Constructions (SHP, MultiPolygon Z per building solid) | EPSG:31370 (`.prj` present). Heights in m TAW. |
+| Digital terrain model, 2021 LiDAR, 0.5 m GeoTIFF per 1 km sheet | EPSG:31370 by its sheet grid and `.tfw`; the GeoTIFFs carry **no CRS tag**, so the pipeline assumes 31370. The metadata does not name the height datum; values agree with the UrbIS 3D heights to about 1 m, so it is taken as TAW. |
+| UrbIS Transport networks (GPKG: `StreetAxes`, `StreetNodes`, `Railways`) | EPSG:31370. 2D. |
 | OpenStreetMap | WGS84 (EPSG:4326) |
 
 The pipeline's single planar CRS is **EPSG:31370**. OSM is converted with this
@@ -95,7 +106,7 @@ The processed files for one tile should stay under about 2 MB in total.
 ## 5. Formats
 
 All JSON is UTF-8. Coordinates are rounded to **0.01 m**. Every file has a
-top-level `"contract": "0.1"`, except `roads.json`, which must stay exactly the
+top-level `"contract": "0.2"`, except `roads.json`, which must stay exactly the
 road lab's own format. It carries `meta.contract` instead (see 5.1).
 
 ### 5.1 Roads — `roads.json` (the road lab's saved-data JSON)
@@ -118,7 +129,7 @@ writes and reads:
               "lanes"?: { "center": {width, kind}, "left": [{type,width}], "right": [{type,width}] },
               "sections": [], "profile": { "mode": "terrain" },
               "meta"?: { ... } }],
-  "meta": { "contract": "0.1", "tile": "G4", "bufferM": 150, "source": "osm", "generated": "<iso>" }
+  "meta": { "contract": "0.2", "tile": "G4", "bufferM": 150, "source": "osm", "generated": "<iso>" }
 }
 ```
 
@@ -177,7 +188,7 @@ are never split across tiles.
 
 ```jsonc
 {
-  "contract": "0.1", "tile": "G4", "count": 812,
+  "contract": "0.2", "tile": "G4", "count": 598,
   "bin": "buildings.bin", "binLayout": "positions:f32x3, indices:u32 (see below)",
   "buildings": [{
     "id": "<source id>", "source": "urbis3d",
@@ -189,9 +200,22 @@ are never split across tiles.
     "roof":  { "first": <tri index>, "count": <tri count> },
     "walls": { "first": <tri index>, "count": <tri count> },
     "attrs": { ... }          // source attributes passed through (e.g. UrbIS id, type, levels), keys as in source
-  }]
+  }],
+  "inputs": [{ "file", "layer", "features", "crs" }],   // file relative to data/raw/urbis/buildings3d/
+  "skipped": { "<reason>": <count> }
 }
 ```
+
+- **UrbIS (from 0.2):** one record per UrbIS *BuildingSolid* (layer `*_BuildingSolids`,
+  `--id-field INSPIRE_ID --layer BuildingSolids`). `id` is the solid's `INSPIRE_ID`
+  URI (`https://databrussels.be/id/buildingsolid/<n>`). Several solids can share a
+  building: `attrs.BU_ID` is the building URI (sometimes absent). `attrs.DETAILSLEV`
+  is the level of detail (2 = LoD2). Engineering structures (`EngineeringWork*`
+  layers) and the separate `BuildingFaces` layer are not used yet.
+- **`base` vs geometry (from 0.2):** UrbIS walls often reach *below* the DTM. In G4
+  the lowest vertex is a median 1.0 m under `base` (5 %–95 %: 1.5 m below to 0.1 m
+  below). `base` stays the DTM value; viewers should let walls sink into the
+  ground rather than clip them.
 
 `buildings.bin` is little-endian:
 
@@ -223,14 +247,16 @@ u32 indices[triangleCount * 3]      // counter-clockwise seen from outside, so n
 - Resampling is bilinear from the source DTM, which is reprojected to
   EPSG:31370 first if it isn't already.
 - `terrain.json`:
-  `{ "contract":"0.1", "tile":"G4", "x0":1000, "z0":500, "size":500, "step":1.0, "cols":501, "rows":501, "encoding":"u16le-cm", "nodata":65535, "min":.., "max":.., "source":"urbis-dtm" }`
+  `{ "contract":"0.2", "tile":"G4", "x0":1000, "z0":500, "size":500, "step":1.0, "cols":501, "rows":501, "encoding":"u16le-cm", "nodata":65535, "min":.., "max":.., "nodataCount":.., "source":"urbis-dtm", "inputs":[{ "file", "res", "crs" }] }`
+  (`file` relative to `data/raw/urbis/dtm/`).
+- Source sheets are mosaicked before resampling, so sheet seams don't show.
 - `ground(x, z)` for the road engine is a bilinear lookup in this grid.
 
 ### 5.4 Trees and point features — `features.json`
 
 ```jsonc
 {
-  "contract": "0.1", "tile": "G4",
+  "contract": "0.2", "tile": "G4",
   "trees":   [{ "x", "z", "y"?, "id": "osm:n123", "species"?, "genus"?, "leafType"?, "height"?, "crown"? }],
   "treeRows":[{ "id": "osm:w1", "line": [[x,z],...] }],
   "areas":   [{ "id": "osm:w2", "kind": "park|grass|wood|garden|playground|water|cemetery",
@@ -249,7 +275,7 @@ the tile; the clipped pieces keep their source `id`.
 
 ```jsonc
 {
-  "contract": "0.1",
+  "contract": "0.2",
   "crs": { "source": "EPSG:31370", "proj4": "<string above>", "origin": [148643, 165394],
            "axes": "x=east, z=south, y=up (m TAW)" },
   "studyBox": { "lon": [4.327, 4.372], "lat": [50.7905, 50.8075], "local": { "x": [..], "z": [..] } },
@@ -259,9 +285,14 @@ the tile; the clipped pieces keep their source `id`.
               "files": { "roads": "G4/roads.json", "buildings": "G4/buildings.json", "buildingsBin": "G4/buildings.bin",
                          "terrain": "G4/terrain.u16", "terrainHeader": "G4/terrain.json", "features": "G4/features.json" },
               "counts": { "roads": .., "nodes": .., "buildings": .., "trees": .. },
-              "sources": { "osm": "<overpass timestamp>", "urbis3d": "<file/version>", "dtm": "<file/version>" } }]
+              "sources": { "osm": "<overpass timestamp>", "urbis3d": ["<path>", ...], "dtm": ["<path>", ...] } }]
 }
 ```
+
+`sources.osm` is the Overpass `timestamp_osm_base`. `urbis3d` and `dtm` list the
+input files that contributed, relative to `data/raw/urbis/<key>/`. The first path
+part is the release folder, which carries the sheet and date, e.g.
+`UrbISBuildings3D_31370_SHP_149164_20261003/shp/…`.
 
 All 32 tiles are listed. Tiles that haven't been built have
 `status: "missing"` and no `files`.
@@ -274,4 +305,4 @@ All 32 tiles are listed. Tiles that haven't been built have
 - Never mock or invent data. If a source is missing, the tile is `missing`, or
   the layer is omitted and the manifest says so.
 - Licence notes in `CREDITS.md` must be kept accurate. OSM-derived files are
-  ODbL (see CREDITS.md).
+  ODbL. UrbIS and the DTM are CC0 (checked 2026-11-02, see CREDITS.md).

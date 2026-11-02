@@ -1,27 +1,48 @@
 {
-  "_note": "UrbIS download URLs were NOT checkable when this was written (datastore.brussels blocked). Fill 'url' from the dataset page on https://datastore.brussels (search 'UrbIS'), set 'verified' to the date checked, and record the licence in CREDITS.md. If a dataset is offered per municipality, take Uccle/Ukkel; if per map sheet, list several URLs. Files can also be dropped by hand into data/raw/urbis/<key>/ (zip or extracted).",
+  "_note": "UrbIS data on datastore.brussels is published per 1 km map sheet (sheet name = SW corner in km, EPSG:31370: '149164' = E 149000-150000, N 164000-165000), plus a whole-region archive (sheet code 21001 / 04000). The full list of files is in each dataset's INSPIRE Atom feed ('atom'). The URLs below are the four sheets covering tile G4 + its 150 m road buffer (E 149493-150293, N 164244-165044). Other tiles need other sheets: add them here. Files can also be dropped by hand into data/raw/urbis/<key>/.",
   "sources": {
     "buildings3d": {
-      "title": "UrbIS 3D Constructions (buildings LOD2)",
-      "page": "https://datastore.brussels (search: UrbIS 3D)",
-      "urls": [],
-      "expect": "a vector format GDAL/OGR reads with 3D faces: CityGML/GML, 3D Shapefile (PolygonZ/MultiPatch), GeoPackage, DXF (3DFACE) or FileGDB. EPSG:31370 expected.",
+      "title": "UrbIS - 3D Constructions",
+      "page": "https://datastore.brussels/web/data/dataset/e9ec2aa4-cffd-11ee-bccc-00090ffe0001",
+      "urls": [
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Buildings3D/SHP/UrbISBuildings3D_31370_SHP_149164_20261003.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Buildings3D/SHP/UrbISBuildings3D_31370_SHP_150164_20261003.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Buildings3D/SHP/UrbISBuildings3D_31370_SHP_149165_20261003.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Buildings3D/SHP/UrbISBuildings3D_31370_SHP_150165_20261003.zip"
+      ],
+      "expect": "Shapefile (SHP), EPSG:31370. The 3D solid classes are not in the GeoPackage edition, so SHP is used. Also offered as DWG and SKP.",
       "idField": null,
-      "verified": null
+      "verified": "2026-11-02",
+      "atom": "https://urbisdownload.datastore.brussels/atomfeed/e9ec2aa4-cffd-11ee-bccc-00090ffe0001-en.xml",
+      "licence": "CC0 1.0"
     },
     "dtm": {
-      "title": "UrbIS digital terrain model (MNT/DTM)",
-      "page": "https://datastore.brussels (search: UrbIS DTM / MNT / terrain)",
-      "urls": [],
-      "expect": "a raster rasterio reads (GeoTIFF, ASCII grid, XYZ). Heights in m TAW. Any CRS (reprojected to EPSG:31370).",
-      "verified": null
+      "title": "Digital terrain model (DTM 2021, 50 cm)",
+      "page": "https://datastore.brussels/web/data/dataset/1d7bd49d-fe83-4388-af85-6f5dc8ec7909",
+      "urls": [
+        "https://urbisdownload.datastore.brussels/UrbIS/Grid/DTM/DTM2021/TIFF/DTM_31370_TIFF_149164_20211009_50.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Grid/DTM/DTM2021/TIFF/DTM_31370_TIFF_150164_20211009_50.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Grid/DTM/DTM2021/TIFF/DTM_31370_TIFF_149165_20211009_50.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Grid/DTM/DTM2021/TIFF/DTM_31370_TIFF_150165_20211009_50.zip"
+      ],
+      "expect": "GeoTIFF, EPSG:31370, 0.5 m grid (file suffix _50), heights in m TAW.",
+      "verified": "2026-11-02",
+      "atom": "https://urbisdownload.datastore.brussels/atomfeed/1d7bd49d-fe83-4388-af85-6f5dc8ec7909-en.xml",
+      "licence": "CC0 1.0"
     },
     "transport": {
-      "title": "UrbIS transport network (street axes)",
-      "page": "https://datastore.brussels (search: UrbIS streets / transport network)",
-      "urls": [],
-      "expect": "vector lines with street names. Used only to check names on the OSM graph (optional).",
-      "verified": null
+      "title": "UrbIS - Transport networks",
+      "page": "https://datastore.brussels/web/data/dataset/af847c40-848b-11ee-9a1f-00090ffe0001",
+      "urls": [
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Network/GPKG/UrbISNetwork_31370_GPKG_149164_20261002.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Network/GPKG/UrbISNetwork_31370_GPKG_150164_20261002.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Network/GPKG/UrbISNetwork_31370_GPKG_149165_20261002.zip",
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Network/GPKG/UrbISNetwork_31370_GPKG_150165_20261002.zip"
+      ],
+      "expect": "GeoPackage, EPSG:31370: road, tram and train network. Used only to check names on the OSM graph (Session 2).",
+      "verified": "2026-11-02",
+      "atom": "https://urbisdownload.datastore.brussels/atomfeed/af847c40-848b-11ee-9a1f-00090ffe0001-en.xml",
+      "licence": "CC0 1.0"
     }
   }
 }

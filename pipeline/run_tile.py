@@ -1,6 +1,8 @@
 """Full pipeline for one tile. Raw inputs must already be in data/raw/ (fetch_osm.py, fetch_urbis.py).
 
-    python pipeline/run_tile.py G4 [--skip-buildings] [--skip-terrain] [--id-field X] [--height-field H]
+    python pipeline/run_tile.py G4 [--skip-buildings] [--skip-terrain] [--id-field X] [--height-field H] [--layer L]
+
+UrbIS 3D Constructions (SHP):  --id-field INSPIRE_ID --layer BuildingSolids
 
 A missing UrbIS input skips that layer with a message (never substitutes data).
 """
@@ -26,6 +28,7 @@ def main():
     ap.add_argument("--skip-terrain", action="store_true")
     ap.add_argument("--id-field")
     ap.add_argument("--height-field")
+    ap.add_argument("--layer", help="buildings: only layers whose name contains this (UrbIS SHP: BuildingSolids)")
     a = ap.parse_args()
     t = a.tile.upper()
     failed = []
@@ -40,6 +43,8 @@ def main():
             cmd += ["--id-field", a.id_field]
         if a.height_field:
             cmd += ["--height-field", a.height_field]
+        if a.layer:
+            cmd += ["--layer", a.layer]
         if step(cmd):
             failed.append("buildings")
     step(["build_manifest.py"])
