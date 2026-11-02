@@ -1,0 +1,7 @@
+# Python >= 3.10. Install into a venv OUTSIDE the repo:  python3 -m venv ../venv && ../venv/bin/pip install -r pipeline/requirements.txt
+pyproj==3.8.0
+shapely==2.2.0
+numpy==2.5.4
+pyogrio==0.13.0
+rasterio==1.5.2
+mapbox_earcut==2.1.0

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Uccle tile debug</title>
+<style>
+  :root { --bg: #11161a; --panel: #182026; --line: #2a3640; --text: #dbe4ea; --muted: #8a9ba8; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 13px/1.4 system-ui, sans-serif; }
+  #wrap { display: grid; grid-template-columns: 1fr 260px; height: 100%; }
+  canvas { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+  #side { background: var(--panel); border-left: 1px solid var(--line); padding: 12px; overflow: auto; }
+  h1 { font-size: 14px; margin: 0 0 8px; }
+  label { display: block; margin: 3px 0; }
+  select { width: 100%; background: #0e1316; color: var(--text); border: 1px solid var(--line); padding: 3px; }
+  #read { font: 12px ui-monospace, monospace; color: var(--muted); white-space: pre; margin-top: 10px; }
+  #msg { color: #f0b46a; margin: 8px 0; white-space: pre-wrap; }
+  .sw { display: inline-block; width: 10px; height: 10px; margin-right: 4px; vertical-align: -1px; border-radius: 2px; }
+  @media (max-width: 700px) { #wrap { grid-template-columns: 1fr; grid-template-rows: 1fr auto; } #side { max-height: 40vh; } }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c"></canvas>
+  <div id="side">
+    <h1>Uccle tile debug (2D)</h1>
+    <select id="tile"></select>
+    <div id="msg"></div>
+    <label><input type="checkbox" data-l="terrain" checked> terrain contours (1 m, bold every 5 m)</label>
+    <label><input type="checkbox" data-l="shade" checked> height tint</label>
+    <label><input type="checkbox" data-l="areas" checked><span class="sw" style="background:#2f5a35"></span>parks / green</label>
+    <label><input type="checkbox" data-l="buildings" checked><span class="sw" style="background:#c9a77c"></span>buildings (by height)</label>
+    <label><input type="checkbox" data-l="roads" checked><span class="sw" style="background:#e8e8e8"></span>roads (PI polyline)</label>
+    <label><input type="checkbox" data-l="lines" checked><span class="sw" style="background:#d65ad6"></span>tram / foot lines</label>
+    <label><input type="checkbox" data-l="trees" checked><span class="sw" style="background:#5fbf5f"></span>trees</label>
+    <label><input type="checkbox" data-l="points" checked><span class="sw" style="background:#5ab4ff"></span>points</label>
+    <label><input type="checkbox" data-l="labels"> street names</label>
+    <div id="read"></div>
+    <p style="color:var(--muted);font-size:12px">Drag to pan, wheel to zoom. Local metres: +x east, +z south (down), y = m TAW.
+      The dashed square is the tile. Roads extend into the 150 m buffer.</p>
+  </div>
+</div>
+<script type="module">
+const BASE = new URL("../data/tiles/", location.href);
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+const sel = document.getElementById("tile"), msg = document.getElementById("msg"), read = document.getElementById("read");
+const layers = {};
+document.querySelectorAll("[data-l]").forEach((el) => { layers[el.dataset.l] = el.checked; el.onchange = () => { layers[el.dataset.l] = el.checked; draw(); }; });
+
+let manifest = null, T = null; // current tile data
+const view = { cx: 0, cz: 0, s: 1 };   // world centre + pixels per metre
+
+const getJSON = async (p) => { const r = await fetch(new URL(p, BASE)); if (!r.ok) throw new Error(`${p}: ${r.status}`); return r.json(); };
+const getBin = async (p) => { const r = await fetch(new URL(p, BASE)); if (!r.ok) throw new Error(`${p}: ${r.status}`); return r.arrayBuffer(); };
+
+async function init() {
+  try { manifest = await getJSON("manifest.json"); }
+  catch (e) { msg.textContent = `No manifest (${e.message}).\nRun the pipeline (pipeline/run_tile.py G4) and serve the repo root.`; return; }
+  const built = manifest.tiles.filter((t) => t.status !== "missing");
+  if (!built.length) { msg.textContent = "Manifest lists no built tiles yet.\nRun: python pipeline/run_tile.py G4"; return; }
+  for (const t of built) sel.add(new Option(`${t.name} (${t.status})`, t.name));
+  sel.onchange = () => load(sel.value);
+  const want = new URLSearchParams(location.search).get("tile");
+  if (want && built.some((t) => t.name === want)) sel.value = want;
+  await load(sel.value);
+}
+
+async function load(name) {
+  const t = manifest.tiles.find((q) => q.name === name);
+  const f = t.files || {};
+  const out = { meta: t, roads: null, buildings: null, terrain: null, features: null };
+  const notes = [];
+  const tryLoad = async (key, fn) => { try { out[key] = await fn(); } catch (e) { notes.push(`${key}: ${e.message}`); } };
+  await Promise.all([
+    f.roads && tryLoad("roads", () => getJSON(f.roads)),
+    f.buildings && tryLoad("buildings", () => getJSON(f.buildings)),
+    f.features && tryLoad("features", () => getJSON(f.features)),
+    f.terrainHeader && tryLoad("terrain", async () => {
+      const h = await getJSON(f.terrainHeader);
+      return { h, g: new Uint16Array(await getBin(f.terrain)) };
+    }),
+  ]);
+  for (const k of ["roads", "buildings", "terrain", "features"]) if (!out[k] && !notes.some((n) => n.startsWith(k))) notes.push(`${k}: not built`);
+  msg.textContent = notes.join("\n");
+  T = out;
+  if (T.terrain) T.contours = contours(T.terrain);
+  const b = t.bounds;
+  view.cx = (b.x[0] + b.x[1]) / 2; view.cz = (b.z[0] + b.z[1]) / 2;
+  fit();
+  draw();
+}
+
+/* ------------------------------------------------------------ terrain */
+function hAt(tr, c, r) { const v = tr.g[r * tr.h.cols + c]; return v === tr.h.nodata ? NaN : v / 100; }
+function heightAtWorld(x, z) {
+  if (!T?.terrain) return NaN;
+  const { h } = T.terrain, c = (x - h.x0) / h.step, r = (z - h.z0) / h.step;
+  if (c < 0 || r < 0 || c >= h.cols - 1 || r >= h.rows - 1) return NaN;
+  const c0 = Math.floor(c), r0 = Math.floor(r), fc = c - c0, fr = r - r0, tr = T.terrain;
+  return hAt(tr, c0, r0) * (1 - fc) * (1 - fr) + hAt(tr, c0 + 1, r0) * fc * (1 - fr) + hAt(tr, c0, r0 + 1) * (1 - fc) * fr + hAt(tr, c0 + 1, r0 + 1) * fc * fr;
+}
+// Marching squares on a 2 m subsample: segments per level.
+function contours(tr) {
+  const { h } = tr, k = 2, cols = Math.floor((h.cols - 1) / k) + 1, rows = Math.floor((h.rows - 1) / k) + 1;
+  const v = (c, r) => hAt(tr, c * k, r * k);
+  const lo = Math.ceil(h.min), hi = Math.floor(h.max), segs = [];
+  for (let L = lo; L <= hi; L++) {
+    const s = [];
+    for (let r = 0; r < rows - 1; r++) for (let c = 0; c < cols - 1; c++) {
+      const a = v(c, r), b = v(c + 1, r), d = v(c, r + 1), e = v(c + 1, r + 1);
+      if ([a, b, d, e].some(Number.isNaN)) continue;
+      const pts = [];
+      const edge = (p, q, x0, z0, x1, z1) => { if ((p < L) !== (q < L)) { const t = (L - p) / (q - p); pts.push([x0 + (x1 - x0) * t, z0 + (z1 - z0) * t]); } };
+      edge(a, b, c, r, c + 1, r); edge(b, e, c + 1, r, c + 1, r + 1); edge(e, d, c + 1, r + 1, c, r + 1); edge(d, a, c, r + 1, c, r);
+      for (let i = 0; i + 1 < pts.length; i += 2) s.push(pts[i], pts[i + 1]);
+    }
+    segs.push({ L, s: s.map(([c, r]) => [h.x0 + c * k * h.step, h.z0 + r * k * h.step]) });
+  }
+  // tint image (1 px per 2 m)
+  const img = new ImageData(cols, rows);
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const y = v(c, r), i = (r * cols + c) * 4, t = Number.isNaN(y) ? 0 : (y - h.min) / Math.max(1, h.max - h.min);
+    img.data[i] = 30 + 60 * t; img.data[i + 1] = 40 + 45 * t; img.data[i + 2] = 48 + 20 * t; img.data[i + 3] = Number.isNaN(y) ? 0 : 255;
+  }
+  const off = new OffscreenCanvas(cols, rows); off.getContext("2d").putImageData(img, 0, 0);
+  return { segs, tint: off, w: (cols - 1) * k * h.step, hgt: (rows - 1) * k * h.step };
+}
+
+/* ------------------------------------------------------------ drawing */
+const W2S = (x, z) => [(x - view.cx) * view.s + cv.width / 2, (z - view.cz) * view.s + cv.height / 2];
+const S2W = (px, pz) => [(px - cv.width / 2) / view.s + view.cx, (pz - cv.height / 2) / view.s + view.cz];
+function fit() {
+  resize();
+  view.s = Math.min(cv.width, cv.height) / 820;
+}
+function resize() {
+  const dpr = devicePixelRatio || 1, r = cv.getBoundingClientRect();
+  cv.width = Math.max(1, r.width * dpr); cv.height = Math.max(1, r.height * dpr);
+}
+function path(pts, close) {
+  ctx.beginPath();
+  pts.forEach((p, i) => { const [x, y] = W2S(p[0], p[1]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+  if (close) ctx.closePath();
+}
+const ROAD_W = { alley: 5.2, local: 10.4, collector: 9.7, avenue: 17.6, boulevard: 22, oneWay: 6.9 };
+function roadWidth(r) {
+  if (!r.lanes) return ROAD_W[r.type] ?? 8;
+  let w = r.lanes.center?.width || 0;
+  for (const s of ["left", "right"]) for (const l of r.lanes[s] || []) if (l.type !== "sidewalk" && l.type !== "verge") w += l.width;
+  return w;
+}
+function heightColor(h) { const t = Math.max(0, Math.min(1, h / 30)); return `hsl(${35 - 25 * t} ${40 + 20 * t}% ${70 - 25 * t}%)`; }
+
+function draw() {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = "#11161a"; ctx.fillRect(0, 0, cv.width, cv.height);
+  if (!T) return;
+  const b = T.meta.bounds;
+  if (T.terrain && layers.shade) {
+    const [x, y] = W2S(T.terrain.h.x0, T.terrain.h.z0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(T.contours.tint, x, y, T.contours.w * view.s, T.contours.hgt * view.s);
+  }
+  if (T.terrain && layers.terrain) {
+    for (const { L, s } of T.contours.segs) {
+      ctx.strokeStyle = L % 5 === 0 ? "rgba(240,210,160,.55)" : "rgba(240,210,160,.2)";
+      ctx.lineWidth = L % 5 === 0 ? 1.4 : 0.8;
+      ctx.beginPath();
+      for (let i = 0; i < s.length; i += 2) { const [ax, ay] = W2S(...s[i]), [bx, by] = W2S(...s[i + 1]); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); }
+      ctx.stroke();
+    }
+  }
+  const F = T.features;
+  if (F && layers.areas) for (const a of F.areas) {
+    ctx.fillStyle = a.kind === "water" ? "rgba(60,110,170,.6)" : a.kind === "cemetery" ? "rgba(90,110,90,.5)" : "rgba(47,90,53,.55)";
+    ctx.beginPath();
+    for (const ring of a.rings) ring.forEach((p, i) => { const [x, y] = W2S(p[0], p[1]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }), ctx.closePath();
+    ctx.fill("evenodd");
+  }
+  if (T.roads && layers.roads) {
+    const N = new Map(T.roads.nodes.map((n) => [n.id, n]));
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    for (const pass of [0, 1]) for (const r of T.roads.roads) {
+      const A = N.get(r.a), B = N.get(r.b);
+      if (!A || !B) continue;
+      const pts = [[A.x, A.z], ...r.pts.map((p) => [p.x, p.z]), [B.x, B.z]];
+      path(pts);
+      if (pass === 0) { ctx.strokeStyle = r.meta?.tram ? "#6b4d6b" : "#4a5560"; ctx.lineWidth = Math.max(1.5, roadWidth(r) * view.s); }
+      else { ctx.strokeStyle = r.type === "avenue" ? "#ffd27a" : r.type === "collector" ? "#f2f2a0" : "#e8e8e8"; ctx.lineWidth = 1.2; }
+      ctx.stroke();
+      if (pass === 1 && r.type === "oneWay" || (pass === 1 && r.lanes && !(r.lanes.left || []).some((l) => l.type === "driving"))) {
+        const m = Math.floor(pts.length / 2) - 1 < 0 ? 0 : Math.floor(pts.length / 2) - 1, p = pts[m], q = pts[m + 1];
+        const mx = (p[0] + q[0]) / 2, mz = (p[1] + q[1]) / 2, th = Math.atan2(q[1] - p[1], q[0] - p[0]);
+        const [sx, sy] = W2S(mx, mz);
+        ctx.save(); ctx.translate(sx, sy); ctx.rotate(th); ctx.fillStyle = "#e8e8e8";
+        ctx.beginPath(); ctx.moveTo(6, 0); ctx.lineTo(-4, -4); ctx.lineTo(-4, 4); ctx.fill(); ctx.restore();
+      }
+    }
+    for (const n of T.roads.nodes) {
+      const [x, y] = W2S(n.x, n.z);
+      if (n.kind === "roundabout") { ctx.strokeStyle = "#ffb070"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, n.ring.radius * view.s, 0, 7); ctx.stroke(); }
+      else if (n.meta?.cut) { ctx.fillStyle = "#ff5a5a"; ctx.fillRect(x - 2.5, y - 2.5, 5, 5); }
+      else if (n.control === "signal") { ctx.fillStyle = "#ff4d4d"; ctx.beginPath(); ctx.arc(x, y, 4, 0, 7); ctx.fill(); }
+      else { ctx.fillStyle = "#9fb2c0"; ctx.beginPath(); ctx.arc(x, y, 1.8, 0, 7); ctx.fill(); }
+    }
+    if (layers.labels) {
+      ctx.fillStyle = "#fff"; ctx.font = `${11 * (devicePixelRatio || 1)}px system-ui`; ctx.textAlign = "center";
+      for (const r of T.roads.roads) {
+        if (!r.meta?.name) continue;
+        const A = N.get(r.a), B = N.get(r.b), [x, y] = W2S((A.x + B.x) / 2, (A.z + B.z) / 2);
+        ctx.fillText(r.meta.name, x, y - 4);
+      }
+    }
+  }
+  if (F && layers.lines) for (const l of F.lines) {
+    path(l.line);
+    ctx.setLineDash(l.kind === "tram" ? [] : [4, 3]);
+    ctx.strokeStyle = l.kind === "tram" ? "#d65ad6" : l.kind === "rail" ? "#bbb" : l.kind === "cycleway" ? "#5ab4ff" : "#c8a070";
+    ctx.lineWidth = l.kind === "tram" ? 2 : 1; ctx.stroke(); ctx.setLineDash([]);
+  }
+  if (T.buildings && layers.buildings) for (const bd of T.buildings.buildings) {
+    ctx.beginPath();
+    for (const ring of bd.footprint) ring.forEach((p, i) => { const [x, y] = W2S(p[0], p[1]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }), ctx.closePath();
+    ctx.fillStyle = heightColor(bd.height); ctx.fill("evenodd");
+    ctx.strokeStyle = "rgba(0,0,0,.45)"; ctx.lineWidth = 0.7; ctx.stroke();
+  }
+  if (F && layers.trees) {
+    ctx.fillStyle = "rgba(95,191,95,.85)";
+    for (const t of F.trees) { const [x, y] = W2S(t.x, t.z); ctx.beginPath(); ctx.arc(x, y, Math.max(1.5, (t.crown || 6) / 2 * view.s), 0, 7); ctx.fill(); }
+    ctx.strokeStyle = "rgba(95,191,95,.85)"; ctx.lineWidth = Math.max(1.5, 4 * view.s); ctx.setLineDash([2, 6]);
+    for (const r of F.treeRows) { path(r.line); ctx.stroke(); }
+    ctx.setLineDash([]);
+  }
+  if (F && layers.points) for (const p of F.points) {
+    const [x, y] = W2S(p.x, p.z);
+    ctx.fillStyle = p.kind === "crossing" ? "#ffffff" : p.kind === "traffic_signals" ? "#ff4d4d" : p.kind.includes("stop") || p.kind.startsWith("pt_") ? "#5ab4ff" : "#c0c0c0";
+    ctx.fillRect(x - 2, y - 2, 4, 4);
+  }
+  // tile frame
+  const [ax, ay] = W2S(b.x[0], b.z[0]), [bx, by] = W2S(b.x[1], b.z[1]);
+  ctx.setLineDash([8, 6]); ctx.strokeStyle = "#7fd0ff"; ctx.lineWidth = 1.5; ctx.strokeRect(ax, ay, bx - ax, by - ay); ctx.setLineDash([]);
+  ctx.fillStyle = "#7fd0ff"; ctx.font = `${12 * (devicePixelRatio || 1)}px system-ui`; ctx.textAlign = "left";
+  ctx.fillText(`${T.meta.name}  x ${b.x[0]}…${b.x[1]}  z ${b.z[0]}…${b.z[1]}`, ax + 6, ay - 6);
+  // 100 m scale bar
+  const sb = 100 * view.s, y0 = cv.height - 20;
+  ctx.fillStyle = "#dbe4ea"; ctx.fillRect(16, y0, sb, 3); ctx.fillText("100 m", 16, y0 - 6);
+}
+
+/* ------------------------------------------------------------ interaction */
+let drag = null;
+cv.addEventListener("pointerdown", (e) => { drag = { x: e.clientX, y: e.clientY, cx: view.cx, cz: view.cz }; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener("pointerup", () => (drag = null));
+cv.addEventListener("pointermove", (e) => {
+  const dpr = devicePixelRatio || 1;
+  if (drag) { view.cx = drag.cx - (e.clientX - drag.x) * dpr / view.s; view.cz = drag.cz - (e.clientY - drag.y) * dpr / view.s; draw(); }
+  const r = cv.getBoundingClientRect(), [x, z] = S2W((e.clientX - r.left) * dpr, (e.clientY - r.top) * dpr);
+  const o = manifest?.crs?.origin || [0, 0], h = heightAtWorld(x, z);
+  read.textContent = `x ${x.toFixed(1)}  z ${z.toFixed(1)}\nE ${(x + o[0]).toFixed(1)}  N ${(o[1] - z).toFixed(1)}\ny ${Number.isNaN(h) ? "—" : h.toFixed(2) + " m TAW"}`;
+});
+cv.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  const dpr = devicePixelRatio || 1, r = cv.getBoundingClientRect(), px = (e.clientX - r.left) * dpr, py = (e.clientY - r.top) * dpr;
+  const [wx, wz] = S2W(px, py), k = Math.exp(-e.deltaY * 0.0015);
+  view.s = Math.max(0.05, Math.min(40, view.s * k));
+  view.cx = wx - (px - cv.width / 2) / view.s; view.cz = wz - (py - cv.height / 2) / view.s;
+  draw();
+}, { passive: false });
+addEventListener("resize", () => { resize(); draw(); });
+init();
+</script>
+</body>
+</html>

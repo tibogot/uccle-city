@@ -1,0 +1,27 @@
+{
+  "_note": "UrbIS download URLs were NOT checkable when this was written (datastore.brussels blocked). Fill 'url' from the dataset page on https://datastore.brussels (search 'UrbIS'), set 'verified' to the date checked, and record the licence in CREDITS.md. If a dataset is offered per municipality, take Uccle/Ukkel; if per map sheet, list several URLs. Files can also be dropped by hand into data/raw/urbis/<key>/ (zip or extracted).",
+  "sources": {
+    "buildings3d": {
+      "title": "UrbIS 3D Constructions (buildings LOD2)",
+      "page": "https://datastore.brussels (search: UrbIS 3D)",
+      "urls": [],
+      "expect": "a vector format GDAL/OGR reads with 3D faces: CityGML/GML, 3D Shapefile (PolygonZ/MultiPatch), GeoPackage, DXF (3DFACE) or FileGDB. EPSG:31370 expected.",
+      "idField": null,
+      "verified": null
+    },
+    "dtm": {
+      "title": "UrbIS digital terrain model (MNT/DTM)",
+      "page": "https://datastore.brussels (search: UrbIS DTM / MNT / terrain)",
+      "urls": [],
+      "expect": "a raster rasterio reads (GeoTIFF, ASCII grid, XYZ). Heights in m TAW. Any CRS (reprojected to EPSG:31370).",
+      "verified": null
+    },
+    "transport": {
+      "title": "UrbIS transport network (street axes)",
+      "page": "https://datastore.brussels (search: UrbIS streets / transport network)",
+      "urls": [],
+      "expect": "vector lines with street names. Used only to check names on the OSM graph (optional).",
+      "verified": null
+    }
+  }
+}
