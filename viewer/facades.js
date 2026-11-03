@@ -679,7 +679,9 @@ export function wallMaterial() {
   paint = mix(paint, C(0.2, 0.035, 0.045), band(shopPaint, 1));
   paint = mix(paint, C(0.03, 0.05, 0.13), band(shopPaint, 2));
   paint = mix(paint, C(0.025, 0.025, 0.025), band(shopPaint, 3));
-  const shopInside = mix(C(0.05, 0.042, 0.035), C(0.2, 0.16, 0.11), smoothstep(0.6, 2.2, h).mul(0.5));
+  const shelf = step(0.82, fract(h.div(0.42))).mul(step(0.9, h)).mul(step(h, 2.3));
+  const goods = hash2D(vec2(floor(su.div(0.22)), floor(h.div(0.42)))).mul(step(0.9, h)).mul(step(h, 2.3));
+  const shopInside = mix(mix(C(0.025, 0.022, 0.02), C(0.09, 0.07, 0.05).mul(goods.add(0.4)), step(0.35, goods)), C(0.012, 0.012, 0.012), shelf);
   const shopGlassCol = mix(shopInside, vec3(env.uSkyHorizon).mul(0.5), fres);
   const shopCol = mix(paint.mul(mix(float(1), float(0.7), step(h, 0.45))), shopGlassCol, shopGlass);
   const notShop = float(1).sub(isShop);
@@ -802,7 +804,7 @@ export function wallMaterial() {
   m.roughnessNode = mix(mix(mix(mix(float(0.85), float(0.93), isBrick), float(0.5), frame), mix(float(0.12), float(0.4), dirt.sub(0.4).mul(2.5)), glassPart),
     mix(float(0.8), float(0.15), lmGlass), isLM);
   m.metalnessNode = glassPart.add(lmGlass).add(shopGlass).mul(fres).mul(0.6);                               // lets SSR reflect the street in the glass
-  m.emissiveNode = C(1.0, 0.8, 0.55).mul(shopGlass).mul(env.uInteriorGlow).mul(1.3)                 // lit shop interiors
+  m.emissiveNode = C(1.0, 0.8, 0.55).mul(shopInside.mul(3.5).add(0.1)).mul(shopGlass).mul(env.uInteriorGlow).mul(mix(float(0.25), float(1.1), env.uNight))   // lit shop interiors
     .add(room.rgb.mul(room.a).mul(float(1).sub(fres.mul(0.82))).mul(glassPart).mul(env.uInteriorGlow).mul(0.76)
     .add(sg.mul(lmGlass).mul(env.uInteriorGlow).mul(env.uNight).mul(2.2)));                    // stained glass lit from inside at night
   // height AO: wall feet and narrow gaps between houses get less sky

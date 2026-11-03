@@ -449,7 +449,8 @@ async function main() {
   const start = atP?.length === 2 ? roadStart(roads, atP[0], atP[1], bounds)
     : TILE === "G4" ? roadStart(roads, 1153.1, 540.1, bounds) : roadStart(roads, cx, cz, bounds);   // ?at=, else Place de Saint-Job on G4
   if (!start) $("btnWalk").disabled = true;
-  const walk = () => { if (!start) return; controls.enabled = false; walker.start(start.x, start.z, start.yaw); };
+  const yawP = params.get("yaw");                                        // ?yaw=deg: walk facing (0 = -z / north-ish, 90 = -x)
+  const walk = () => { if (!start) return; controls.enabled = false; walker.start(start.x, start.z, yawP != null ? +yawP * Math.PI / 180 : start.yaw); };
   const views = {
     overview: () => { camera.position.set(cx - 330, cy + 300, cz + 400); controls.target.set(cx, cy, cz); },
     stjob: () => {   // ?at=x,z, else Place de Saint-Job on G4, else the tile centre

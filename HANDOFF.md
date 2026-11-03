@@ -17,7 +17,7 @@ Read this first when resuming (with Claude or by hand). Details are in `docs/PLA
 python3 -m http.server 8765        # from the repo root
 open http://localhost:8765/viewer/index.html?tile=G4
 ```
-Useful URL params: `tile=A1..H4`, `view=stjob|walk`, `at=x,z`, `cam=x,z,height`,
+Useful URL params: `tile=A1..H4`, `ring=0|1|2` (neighbour tiles), `yaw=deg` (walk facing), `view=stjob|walk`, `at=x,z`, `cam=x,z,height`,
 `time=golden|midday|overcast|twilight|night`, `fx=0` (no post effects), `trees=simple`
 (old leaf-card trees), `sunlight=1` (cascaded shadows). Use Chrome/Edge with WebGPU for real
 speed; headless screenshots use the slower WebGL2 fallback.
@@ -45,20 +45,27 @@ Pipeline (raw data must be fetched first, see README): `python pipeline/run_tile
 3. **Houses**: (chimneys, eaves + gutters done) shopfronts from OSM `shop=*`, gable attic
    windows, parallax window reveals.
 4. **Night and props**: (street lamps done, procedural placement: `viewer/lamps.js`; bus stops,
-   signals, bike racks, benches done from OSM points: `viewer/furniture.js`) left: tram platforms and
-   overhead wires, bins, bollards, shopfronts (add `node["shop"]` to `pipeline/fetch_osm.py` and re-fetch).
+   signals, bike racks, benches done from OSM points: `viewer/furniture.js`; shopfronts done from
+   OSM shops; tram platforms, shelters and overhead wires done: `viewer/tram.js`) left: shop name
+   signs, bins, bollards, a tram vehicle, parked cars.
 5. **Ground**: UrbIS Land cover for grass/garden/paving materials, hedges.
 6. **Roads**: the ~12 remaining bad spots (Alsemberg/Brugmann sharp Y, crowded rings in
    C4/F2; run `node tools/check_roads.mjs --all`), bump on setts and kerbs, wet look,
    manholes; the marking atlas is ~24 MB per tile, so shrink it before streaming.
-7. **Multi-tile streaming + LOD**: load neighbouring tiles around the player, tree LOD /
-   impostors, far tiles with the draped orthophoto.
+7. **Multi-tile streaming + LOD**: first version done (`?ring=1` loads the neighbours of the
+   chosen tile). Left: re-centre on the player as they move, unload far tiles, tree LOD /
+   impostors, far tiles with the draped orthophoto. Whole Brussels region (~650 tiles,
+   ~1.2 GB of tile data) is the realistic maximum with UrbIS.
 
 ## Blender assets
 
 Plan for better houses/props made in Blender without losing performance: `docs/BLENDER.md`.
 
 ## Tips for the next session
+
+- Pipeline order matters: `build_features.py` rewrites `features.json`, so run `build_trees.py`
+  after it (as `run_tile.py` does). Python venv: `/home/user/venv` in the cloud container
+  (`../venv` from the repo, see README).
 
 - Start by asking Claude to read `HANDOFF.md`, `docs/PLAN.md` and `docs/CONTRACT.md`.
 - Screenshots in headless Chromium take 1–3 minutes per frame (software WebGL2); keep the

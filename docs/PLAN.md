@@ -393,6 +393,23 @@ modular kits**, and real data only decides **which material goes where**.
    the platform ways, not fetched yet.
    Eaves: the low edge of every pitched roof oversails the wall by 30 cm, with a zinc
    gutter under the lip (G4: 1,048 edges).
+   **Streaming, shops, trams (2026-11-03):**
+   - neighbouring tiles stream in after the first frame (`?ring=1` default, `0` one tile,
+     `2` = 5x5), nearest first; ground, walker and lighting query the tile under the camera
+     (`world` in `viewer/main.js`). Point lights only on the main tile. Screenshot
+     `docs/img/viewer-G4-ring1.png`. Next: unload far tiles, simpler LOD for ring 2+,
+     move the main tile with the player;
+   - OSM extract now includes `shop=*`, food/drink amenities and platform ways
+     (`fetch_osm.py`; `build_features.py` → point kind `shop`, line kind `platform`;
+     `build_trees.py` must run after `build_features.py`, it writes the same file);
+   - shopfronts (`facades.js`): each OSM shop takes the nearest street face of its building:
+     painted frame (4 Brussels colours), stall riser, display glass with shelves, glazed door,
+     fascia board and, for food and drink shops, a canopy as geometry; lit at night
+     (`docs/img/viewer-G4-shopfront.png`, `-night.png`). Next: shop names on the fascia
+     (text atlas), shops without an OSM node on commercial streets;
+   - trams (`viewer/tram.js`): contact wire 5.8 m above each OSM tram line, poles every 32 m
+     with cantilever arms, raised tram platforms with edge strips and STIB shelters where
+     `shelter=yes` (`docs/img/viewer-G4-tram-stop.png`). Next: a tram vehicle.
    **Next for the church:** check materials against a photo; the drum and dome could
    use their own windows (oculi) and lantern detail.
 
