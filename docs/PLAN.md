@@ -424,6 +424,24 @@ modular kits**, and real data only decides **which material goes where**.
    → gravel 1.6 m wide, water → dark glossy), grass everywhere else with three noise scales
    (lush / dry / clover patches, worn earth), bare earth on steep banks, fine bump. Next:
    UrbIS Land cover (CC0) for gardens vs paving vs lawns, hedges along garden edges.
+   **Tile worker (2026-11-03):** the CPU half of loading a tile (fetch, heightmap, road engine,
+   lane meshes + marking atlas, carving, terrain grid + normals, façade analysis, land cover) runs
+   in a Web Worker (`viewer/tileData.js` → `tileWorker.js`, bundled to `tileWorker.bundle.js` by
+   `node tools/build_worker.mjs`, committed; rebuild after editing any module it imports).
+   `?worker=0` or a worker failure → same code on the main thread. The main thread only builds
+   GPU meshes, one step per frame; building/road/tree materials are shared between tiles. Measured
+   (software renderer): 2.7 s of tile CPU work off the main thread; main-thread work ~400 ms per
+   tile, longest slice the tree field (~350 ms for the first tile; its atlas, material and
+   geometries are now built once, `vendor/slop-trees/CHANGES.md`).
+   **Tram 92 on the real timetable (2026-11-03):** `pipeline/build_transit.py` extracts line 92
+   from STIB's GTFS feed (CC BY 4.0, Belgian Mobility open data: 670 trips for a weekday /
+   Saturday / Sunday, 13 shapes, 71 stops) to `data/transit/stib-92.json`. `viewer/tramline.js`
+   moves every running trip along its shape (snapped to the OSM tracks), stopping at the real
+   stops at the real times, as 5-module articulated trams in the line's colour (19 running at
+   08:00 on a weekday). Clock = Brussels time now, `?clock=HH:MM`, `?timescale=N`, `?trams=0`.
+   Next: a proper T3000/T4000 model (Blender), live positions from STIB's real-time feed
+   (VehiclePositions, same platform; needs a key and probably a small CORS proxy), other lines
+   (4, 51, 97 ... same script with `--line`), buses.
    **Next for the church:** check materials against a photo; the drum and dome could
    use their own windows (oculi) and lantern detail.
 

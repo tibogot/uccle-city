@@ -12,6 +12,6 @@ The tree system is taken from **mrdoob/slop-newyork** (MIT, © Mr.doob; see `LIC
 
 ## Rules
 
-- Do not edit these files. Adaptation lives in `viewer/treesSlop.js`, which maps our LiDAR trees
+- Do not edit these files without logging it in `CHANGES.md` (one change so far: shared assets). Adaptation lives in `viewer/treesSlop.js`, which maps our LiDAR trees
   (`trees` field, CONTRACT 0.7) onto slop-newyork's species and sizes.
 - To update, re-copy from a newer upstream commit and update the hash above.

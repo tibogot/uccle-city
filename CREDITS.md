@@ -57,3 +57,17 @@ the check dates are in `pipeline/sources.json`.
 | scipy | BSD-3 | pipeline (tree peaks in the canopy height model) |
 | mrdoob/slop-newyork (techniques and adapted code in `viewer/lighting.js`, `post.js`, `tslkit.js`, `facades.js` interiors, `trees.js` approach) | MIT, © 2026 Mr.doob | Notice kept in `viewer/tslkit.js`; source credited in each file header. |
 | mrdoob/slop-newyork tree system (`vendor/slop-trees/`: `trees.js`, `building-collision.js`, tree material), commit `737b7691` | MIT, © Mr.doob | `vendor/slop-trees/LICENSE` and `ORIGIN.md`. Used by `viewer/treesSlop.js` |
+
+## Public transport
+
+| Data | Licence | Notes |
+|---|---|---|
+| STIB-MIVB GTFS static feed (line 92 shapes, stops, timetable), via the Belgian Mobility open-data platform, data.belgianmobility.io | CC BY 4.0 | **Source: STIB-MIVB – Open Data – 20261026** (GTFS 2_24_20261026_010708). Raw feed in `data/raw/gtfs/` (not committed); derived `data/transit/stib-92.json` by `pipeline/build_transit.py`. Shown in the viewer's log. |
+
+## Build tools
+
+| Tool | Licence | Use |
+|---|---|---|
+| esbuild 0.25 | MIT | `tools/build_worker.mjs` bundles the tile worker (`viewer/tileWorker.bundle.js`) |
+| three.js earcut (inside the worker bundle) | ISC / MIT | road polygon triangulation (via vendor/roads) |
+

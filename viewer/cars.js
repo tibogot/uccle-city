@@ -59,6 +59,13 @@ export function buildCars(roads, feats, ground, bounds) {
   const N = new Map(roads.nodes.map((n) => [n.id, n]));
   const avoid = (feats.points || []).filter((p) => p.kind === "crossing" || p.kind === "bus_stop" || p.kind === "traffic_signals")
     .map((p) => [p.x, p.z, p.kind === "bus_stop" ? 15 : 10]);
+  // never on a tram reservation: drop slots within 3 m of an OSM tram track or platform
+  const rails = [];
+  for (const l of feats.lines || []) if (l.kind === "tram" || l.kind === "platform") for (let i = 1; i < l.line.length; i++) rails.push([...l.line[i - 1], ...l.line[i]]);
+  const onRails = (x, z) => rails.some(([ax, az, bx, bz]) => {
+    const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1e-9, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2));
+    return (ax + dx * t - x) ** 2 + (az + dz * t - z) ** 2 < 9;
+  });
   const sites = [];
   for (const r of roads.roads) {
     if (!ROAD_TYPES[r.type] || r.meta?.highway === "service") continue;
@@ -82,7 +89,7 @@ export function buildCars(roads, feats, ground, bounds) {
         const x = a.x + (b.x - a.x) * tt + lx * off, z = a.z + (b.z - a.z) * tt + lz * off;
         const hv = hash(x * 0.37, z * 0.53 + k);
         const ok = hv < 0.65 && x >= bounds.x0 && x <= bounds.x1 && z >= bounds.z0 && z <= bounds.z1
-          && !avoid.some(([ax, az, rr]) => (ax - x) ** 2 + (az - z) ** 2 < rr * rr);
+          && !avoid.some(([ax, az, rr]) => (ax - x) ** 2 + (az - z) ** 2 < rr * rr) && !onRails(x, z);
         // right-hand traffic: cars face the direction of their side's traffic
         const fwd = side === "right" ? Math.atan2(-dz, dx) : Math.atan2(dz, -dx);
         if (ok) sites.push({ x: x + dx * (hv - 0.3) * 0.6, z: z + dz * (hv - 0.3) * 0.6, yaw: fwd + (hv - 0.3) * 0.04, c: Math.floor(hash(z, x) * PALETTE.length) });

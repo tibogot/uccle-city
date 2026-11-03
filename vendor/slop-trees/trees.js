@@ -862,14 +862,26 @@ function createTreeClearance(colliders) {
  * `update(cameraPosition)` from the frame loop to keep each tree's level of detail up to date. Returns
  * { group, material, atlas, sites (accepted placements), update(cameraPosition) }.
  */
+// uccle-city change (see CHANGES.md): atlas, material and geometries are built once and shared by
+// every field (one field per streamed tile), marked userData.shared so a tile unload keeps them.
+let SHARED_ASSETS = null;
+function sharedTreeAssets() {
+  if (!SHARED_ASSETS) {
+    const atlas = createLeafAtlas();
+    const material = createTreeMaterial(atlas.texture);
+    material.userData.shared = true;
+    const geos = SPECIES.map((_, s) => [0, 1].map((v) => buildTreeGeometries(s, v, atlas.tileMeters)));
+    for (const g of geos.flat(2)) g.userData.shared = true;
+    SHARED_ASSETS = { atlas, material, geos };
+  }
+  return SHARED_ASSETS;
+}
+
 function createTreeField(_scene, sites, colliders = []) {
   const group = new THREE.Group();
   group.name = 'Trees';
-  const atlas = createLeafAtlas();
-  const material = createTreeMaterial(atlas.texture);
-
+  const { atlas, material, geos } = sharedTreeAssets();   // uccle-city: shared (was built per call)
   // Geometries: [species][variant][lod]
-  const geos = SPECIES.map((_, s) => [0, 1].map((v) => buildTreeGeometries(s, v, atlas.tileMeters)));
   const clearOfBuildings = createTreeClearance(colliders);
   const treeBounds = geos.map((variants) => variants.map((levels) => {
     const bounds = new THREE.Box3();

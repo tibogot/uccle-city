@@ -9,14 +9,14 @@ import {
   color, float, uniform, positionWorld, normalWorld, fract, min, fwidth, smoothstep, mix, abs,
 } from "three/tsl";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { buildRoadNetwork } from "../vendor/roads/roadNetwork.js";
 import { buildLamps } from "./lamps.js";
 import { buildFurniture } from "./furniture.js";
 import { buildTram } from "./tram.js";
 import { buildCars } from "./cars.js";
 import { landCoverTexture, groundMaterial } from "./ground.js";
-import { buildLaneRoadMesh } from "../vendor/roads/mesh/laneRoadMesh.js";
-import { asphaltMaterial, concreteMaterial, vergeMaterial, surfaceAttribute } from "./roadPaint.js";
+import { Heightmap } from "./heightmap.js";
+import { createTramLine } from "./tramline.js";
+import { asphaltMaterial, concreteMaterial, vergeMaterial } from "./roadPaint.js";
 import { buildingMeshes as facadeMeshes } from "./facades.js";
 import { Lighting, PRESETS } from "./lighting.js";
 import { createPipeline } from "./post.js";
@@ -38,93 +38,11 @@ const getBin = async (p) => { const r = await fetch(new URL(p, DATA)); if (!r.ok
 
 // ------------------------------------------------------------------ terrain grid
 
-class Heightmap {
-  constructor(hdr, buf) {
-    this.h = hdr;
-    const raw = new Uint16Array(buf);
-    this.y = new Float32Array(raw.length);
-    let lo = Infinity;
-    for (let k = 0; k < raw.length; k++) if (raw[k] !== hdr.nodata) lo = Math.min(lo, raw[k]);
-    for (let k = 0; k < raw.length; k++) this.y[k] = (raw[k] === hdr.nodata ? lo : raw[k]) / 100;
-    this.orig = this.y.slice();   // un-carved, for the road engine's ground()
-  }
-  /** Bilinear lookup; points outside the tile are clamped to the edge (neighbour tiles aren't loaded). */
-  sample(arr, x, z) {
-    const h = this.h;
-    const c = Math.min(Math.max((x - h.x0) / h.step, 0), h.cols - 1);
-    const r = Math.min(Math.max((z - h.z0) / h.step, 0), h.rows - 1);
-    const c0 = Math.min(Math.floor(c), h.cols - 2), r0 = Math.min(Math.floor(r), h.rows - 2);
-    const fc = c - c0, fr = r - r0, i = r0 * h.cols + c0;
-    return (arr[i] * (1 - fc) + arr[i + 1] * fc) * (1 - fr) + (arr[i + h.cols] * (1 - fc) + arr[i + h.cols + 1] * fc) * fr;
-  }
-  ground = (x, z) => this.sample(this.orig, x, z);
-  surface = (x, z) => this.sample(this.y, x, z);
-
-  /** Push the grid under the given triangles (local xyz arrays + index) to `y − depth`, then one ring of neighbours. */
-  carve(position, index, depth) {
-    const { x0, z0, cols, rows, step } = this.h;
-    const carved = new Uint8Array(cols * rows);
-    const Y = this.y;
-    for (let t = 0; t < index.length; t += 3) {
-      const a = index[t] * 3, b = index[t + 1] * 3, c = index[t + 2] * 3;
-      const ax = position[a], az = position[a + 2], bx = position[b], bz = position[b + 2], cx = position[c], cz = position[c + 2];
-      const det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
-      if (Math.abs(det) < 1e-9) continue;
-      const c0 = Math.max(0, Math.ceil((Math.min(ax, bx, cx) - x0) / step)), c1 = Math.min(cols - 1, Math.floor((Math.max(ax, bx, cx) - x0) / step));
-      const r0 = Math.max(0, Math.ceil((Math.min(az, bz, cz) - z0) / step)), r1 = Math.min(rows - 1, Math.floor((Math.max(az, bz, cz) - z0) / step));
-      for (let r = r0; r <= r1; r++) {
-        const pz = z0 + r * step;
-        for (let cc = c0; cc <= c1; cc++) {
-          const px = x0 + cc * step;
-          const l1 = ((bz - cz) * (px - cx) + (cx - bx) * (pz - cz)) / det;
-          const l2 = ((cz - az) * (px - cx) + (ax - cx) * (pz - cz)) / det;
-          const l3 = 1 - l1 - l2;
-          if (l1 < -1e-6 || l2 < -1e-6 || l3 < -1e-6) continue;
-          const y = l1 * position[a + 1] + l2 * position[b + 1] + l3 * position[c + 1] - depth;
-          const k = r * cols + cc;
-          if (y < Y[k]) Y[k] = y;
-          carved[k] = 1;
-        }
-      }
-    }
-    // One-cell shoulder so terrain triangles that straddle a road edge don't poke through it.
-    const out = Y.slice();
-    let n = 0;
-    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
-      const k = r * cols + c;
-      if (carved[k]) { n++; continue; }
-      let best = Infinity;
-      for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
-        const rr = r + dr, cc = c + dc;
-        if (rr < 0 || cc < 0 || rr >= rows || cc >= cols) continue;
-        const kk = rr * cols + cc;
-        if (carved[kk]) best = Math.min(best, Y[kk] + 0.05);
-      }
-      if (best < out[k]) out[k] = best;
-    }
-    this.y = out;
-    return n;
-  }
-}
-
-function terrainMesh(hm, contourOn, feats, bounds) {
-  const { x0, z0, cols, rows, step } = hm.h;
-  const pos = new Float32Array(cols * rows * 3);
-  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
-    const k = r * cols + c;
-    pos[k * 3] = x0 + c * step; pos[k * 3 + 1] = hm.y[k]; pos[k * 3 + 2] = z0 + r * step;
-  }
-  const idx = new Uint32Array((cols - 1) * (rows - 1) * 6);
-  let o = 0;
-  for (let r = 0; r < rows - 1; r++) for (let c = 0; c < cols - 1; c++) {
-    const a = r * cols + c, b = a + cols, cc = a + 1, d = b + 1;   // (a, b, c) faces +y with +z = south
-    idx[o++] = a; idx[o++] = b; idx[o++] = cc;
-    idx[o++] = cc; idx[o++] = b; idx[o++] = d;
-  }
+function terrainMesh(t, contourOn, feats, bounds, coverData) {
   const g = new THREE.BufferGeometry();
-  g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-  g.setIndex(new THREE.BufferAttribute(idx, 1));
-  g.computeVertexNormals();
+  g.setAttribute("position", new THREE.BufferAttribute(t.pos, 3));
+  g.setAttribute("normal", new THREE.BufferAttribute(t.nrm, 3));
+  g.setIndex(new THREE.BufferAttribute(t.idx, 1));
 
   // TSL ground: OSM land cover mask + procedural grass (viewer/ground.js); optional 1 m / 5 m contour lines
   const h = positionWorld.y;
@@ -134,7 +52,7 @@ function terrainMesh(hm, contourOn, feats, bounds) {
     return float(1).sub(smoothstep(float(0), fwidth(h).mul(width), d));
   };
   const lines = mix(line(1, 1.0).mul(0.35), float(0.8), line(5, 1.4));
-  const cover = landCoverTexture(feats, bounds);
+  const cover = landCoverTexture(feats, bounds, coverData);
   const m = groundMaterial(cover, bounds, (col) => mix(col, color(0x2b2418), lines.mul(contourOn)));
   const mesh = new THREE.Mesh(g, m);
   mesh.receiveShadow = true;
@@ -188,42 +106,31 @@ function buildingMeshes(doc, buf) {
 
 // ------------------------------------------------------------------ roads
 
-/** Keep only triangles whose centroid is inside the tile (the 150 m buffer is for complete junctions only). */
-function clipToTile(part, b) {
-  const p = part.position, src = part.index, keep = [];
-  for (let t = 0; t < src.length; t += 3) {
-    const a = src[t] * 3, bb = src[t + 1] * 3, c = src[t + 2] * 3;
-    const x = (p[a] + p[bb] + p[c]) / 3, z = (p[a + 2] + p[bb + 2] + p[c + 2]) / 3;
-    if (x >= b.x0 && x < b.x1 && z >= b.z0 && z < b.z1) keep.push(src[t], src[t + 1], src[t + 2]);
-  }
-  return Uint32Array.from(keep);
-}
-
-function roadMeshes(net, hm, bounds) {
-  const built = buildLaneRoadMesh(net, { markings: true });
-  const mats = { asphalt: asphaltMaterial(built.atlas), concrete: concreteMaterial(), grass: vergeMaterial() };
-  if (built.atlas) log(`marking atlas: ${built.atlas.width}x${built.atlas.height} at ${(built.atlas.texel * 100).toFixed(1)} cm, ${built.atlas.stats.regions} junctions`);
+/** GPU meshes for a tile's roads from the worker's data (tileData.js). */
+function roadMeshes(road) {
+  const mats = { asphalt: asphaltMaterial(road.atlas), concrete: sharedMat("concrete", concreteMaterial), grass: sharedMat("verge", vergeMaterial) };
   const meshes = [];
-  let carvedCells = 0, tris = 0;
-  for (const name of ["asphalt", "concrete", "grass"]) {
-    const part = built[name];
-    if (!part.vertexCount) continue;
-    const index = clipToTile(part, bounds);
-    carvedCells += hm.carve(part.position, index, CARVE);
+  for (const [name, part] of Object.entries(road.parts)) {
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.BufferAttribute(part.position, 3));
     g.setAttribute("normal", new THREE.BufferAttribute(part.normal, 3));
     g.setAttribute("uv", new THREE.BufferAttribute(part.uv, 2));
     for (const [k, a] of Object.entries(part.attributes)) g.setAttribute(k, new THREE.BufferAttribute(a.array, a.itemSize));
-    if (name === "asphalt") g.setAttribute("aSurf", new THREE.BufferAttribute(surfaceAttribute(net, part), 1));
-    g.setIndex(new THREE.BufferAttribute(index, 1));
+    if (part.aSurf) g.setAttribute("aSurf", new THREE.BufferAttribute(part.aSurf, 1));
+    g.setIndex(new THREE.BufferAttribute(part.index, 1));
     const m = new THREE.Mesh(g, mats[name]);
     m.receiveShadow = true;
     m.name = `roads-${name}`;
     meshes.push(m);
-    tris += index.length / 3;
   }
-  return { meshes, stats: built.stats, carvedCells, triangles: tris, textures: built.atlas?.texture ? [built.atlas.texture] : [] };
+  return { meshes, textures: road.atlas?.texture ? [road.atlas.texture] : [] };
+}
+
+/** Materials that don't depend on the tile: made once, never disposed with a tile. */
+const shared = new Map();
+function sharedMat(key, make) {
+  if (!shared.has(key)) { const m = make(); m.userData.shared = true; shared.set(key, m); }
+  return shared.get(key);
 }
 
 // ------------------------------------------------------------------ features (tram lines, trees)
@@ -285,6 +192,7 @@ function featureObjects(f, hm, bounds) {
   return group;
 }
 
+let tramLine = null;       // real STIB line 92 on its timetable (tramline.js)
 const updaters = [];       // per-frame updates (tree LOD, lamp lights) of every loaded tile
 
 // ------------------------------------------------------------------ walk mode
@@ -341,6 +249,28 @@ function roadStart(data, x, z, bounds) {
   return best;
 }
 
+// ------------------------------------------------------------------ tile worker
+
+let tileWorker = null, reqId = 0;
+const pendingReq = new Map();
+if (params.get("worker") !== "0") {
+  try {
+    tileWorker = new Worker(new URL("./tileWorker.bundle.js", import.meta.url), { type: "module" });
+    tileWorker.onmessage = (e) => { const p = pendingReq.get(e.data.id); pendingReq.delete(e.data.id); e.data.error ? p.reject(new Error(e.data.error)) : p.resolve(e.data.r); };
+    tileWorker.onerror = (e) => { log(`tile worker failed (${e.message || "error"}): building tiles on the main thread`); tileWorker = null; for (const p of pendingReq.values()) p.retry(); pendingReq.clear(); };
+  } catch (e) { tileWorker = null; }
+}
+/** CPU data for a tile: from the worker, or on the main thread (?worker=0, or if the worker fails). */
+function tileData(entry) {
+  const local = () => import("./tileData.js").then((m) => m.buildTileData(entry, DATA.href));
+  if (!tileWorker) return local();
+  return new Promise((resolve, reject) => {
+    const id = ++reqId;
+    pendingReq.set(id, { resolve, reject, retry: () => local().then(resolve, reject) });
+    tileWorker.postMessage({ id, entry, base: DATA.href });
+  });
+}
+
 /** Load and build one tile into the shared layer groups. Returns what the viewer needs from it. */
 async function loadTile(entry, { layers, contourOn, verbose }) {
   const F = entry.files;
@@ -351,31 +281,31 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const own = {};
   for (const k of Object.keys(layers)) { own[k] = new THREE.Group(); own[k].name = `${entry.name}-${k}`; layers[k].add(own[k]); }
   const ups = [];
-  const timed = verbose ? timedGlobal : async (_l, f) => f();
-  const [tHdr, tBuf, bDoc, bBuf, roads, feats] = await timed("fetch", () => Promise.all([
-    getJSON(F.terrainHeader), getBin(F.terrain), getJSON(F.buildings), getBin(F.buildingsBin), getJSON(F.roads), getJSON(F.features),
-  ]));
-  const hm = new Heightmap(tHdr, tBuf);
-
-
-  // Roads first: they carve the heightmap the terrain mesh is built from.
-  const net = await timed("buildRoadNetwork", () => buildRoadNetwork(roads, { ground: hm.ground }));
-  const errors = net.issues.filter((i) => i.level === "error");
-  const byCode = {};
-  for (const i of errors) byCode[i.code] = (byCode[i.code] || 0) + 1;
-  say(`road engine: ${net.roads.length} roads, ${net.nodes.length} nodes, ${errors.length} errors ${JSON.stringify(byCode)}, ${net.issues.length - errors.length} warnings/info`);
-  const R = await timed("road meshes + carve", () => roadMeshes(net, hm, bounds));
+  const t0 = performance.now();
+  const d = await tileData(entry);
+  let busy = 0, longest = 0, mark = performance.now(), worst = "";
+  const frame = (label = "") => { const dt = performance.now() - mark; busy += dt; if (dt > longest) { longest = dt; worst = label; } return new Promise((r) => requestAnimationFrame(() => { mark = performance.now(); r(); })); };   // spread GPU-side work over frames
+  const { roads, feats } = d;
+  const hm = Heightmap.from(d.hdr, d.y, d.orig);
+  const ni = d.netInfo;
+  say(`tile ${entry.name} built ${tileWorker ? "in the worker" : "on the main thread"}: ${Object.entries(d.times).map(([k, v]) => `${k} ${v} ms`).join(", ")}`);
+  say(`road engine: ${ni.roads} roads, ${ni.nodes} nodes, ${ni.errors} errors ${JSON.stringify(ni.byCode)}, ${ni.warnings} warnings/info`);
+  if (d.road.atlas) say(`marking atlas: ${d.road.atlas.width}x${d.road.atlas.height} at ${(d.road.atlas.texel * 100).toFixed(1)} cm, ${d.road.atlas.stats.regions} junctions`);
+  const R = roadMeshes(d.road);
   own.roads.add(...R.meshes);
-
-  const terr = await timed("terrain mesh", () => terrainMesh(hm, contourOn, feats, bounds));
+  await frame("roads");
+  const terr = terrainMesh(d.terrain, contourOn, feats, bounds, d.cover);
   own.terrain.add(terr);
   R.textures.push(...terr.userData.textures);
-  const B = await timed("building meshes + façades", () => facadeMeshes(bDoc, bBuf, roads, feats));
+  await frame("terrain");
+  const B = facadeMeshes(null, null, null, null, d.buildings);
   say(`façades: ${B.stats.faces} wall faces, ${B.stats.party} party walls, ${B.stats.street} facing a street; details: ${B.stats.cornices} cornices, ${B.stats.buttresses} buttresses, ${B.stats.ridges} ridge/hip caps, ${B.stats.chimneys} chimneys, ${B.stats.eaves || 0} eaves, ${B.stats.shops} shopfronts (OSM shops)`);
   own.buildings.add(...B.meshes);
+  await frame("buildings");
   const fo = featureObjects(feats, hm, bounds);
   own.features.add(fo);
   if (fo.userData.update) ups.push(fo.userData.update);
+  await frame("features+trees");
   const lamps = buildLamps(roads, (x, z) => hm.ground(x, z), bounds, { lights: verbose });   // point lights: main tile only
   own.features.add(lamps.group);
   ups.push(lamps.update);
@@ -389,18 +319,21 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   say(`tram (OSM): ${tram.counts.wireSegments} wire segments, ${tram.counts.poles} poles, ${tram.counts.platforms} platforms, ${tram.counts.shelters} shelters`);
   say(`street furniture (OSM points): ${Object.entries(furn.counts).map(([k, v]) => `${v} ${k}`).join(", ")}`);
   say(`street lamps: ${lamps.count} (placed along the kerbs, ROAD_TYPES lampSpacing; OSM has none here)`);
-  say(`buildings: ${bDoc.count} (${B.triangles} triangles), roads: ${R.triangles} triangles in tile, terrain cells carved: ${R.carvedCells}`);
+  say(`buildings: ${d.buildingCount} (${B.triangles} triangles), roads: ${d.road.triangles} triangles in tile, terrain cells carved: ${d.road.carvedCells}; tile ready in ${(performance.now() - t0).toFixed(0)} ms`);
 
   for (const u of ups) updaters.push(u);
   const dispose = () => {
     for (const u of ups) { const i = updaters.indexOf(u); if (i >= 0) updaters.splice(i, 1); }
     for (const g of Object.values(own)) {
-      g.traverse((o) => { o.geometry?.dispose(); for (const m of [].concat(o.material || [])) m.dispose?.(); o.dispose?.(); });
+      g.traverse((o) => { if (!o.geometry?.userData?.shared) o.geometry?.dispose(); for (const m of [].concat(o.material || [])) if (!m.userData?.shared) m.dispose?.(); o.dispose?.(); });
       g.removeFromParent();
     }
     for (const t of R.textures) t.dispose();
   };
-  return { name: entry.name, hm, roads, net, bounds, dispose };
+  tramLine?.snapTile(entry.name, feats, bounds);
+  frame("lamps, furniture, tram, cars");
+  log(`tile ${entry.name}: main-thread work ${busy.toFixed(0)} ms, longest slice ${longest.toFixed(0)} ms (${worst}); ${tileWorker ? "CPU build in the worker" : "CPU build ALSO on the main thread"}`);
+  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose };
 }
 
 // ------------------------------------------------------------------ main
@@ -451,6 +384,15 @@ async function main() {
   const T0 = await loadTile(entry, { layers, contourOn, verbose: true });
   world.tiles.push(T0);
   const { hm, roads, net } = T0;
+  if (params.get("trams") !== "0") {
+    try {
+      tramLine = await createTramLine(new URL("../data/transit/stib-92.json", import.meta.url), scene, (x, z) => world.surface(x, z) + CARVE);
+      for (const t of world.tiles) tramLine.snapTile(t.name, t.feats, t.bounds);
+      updaters.push(tramLine.update);
+      tramLine.update(new THREE.Vector3(cx, 0, cz));
+      log(tramLine.info());
+    } catch (e) { log(`tram line: ${e.message}`); }
+  }
   const cy = hm.ground(cx, cz);
 
   // UI
@@ -520,7 +462,8 @@ async function main() {
       $("stats").textContent =
         `${backend}  ${fps.toFixed(0)} fps\n` +
         `draw calls ${r.drawCalls ?? r.calls}  triangles ${(r.triangles / 1000).toFixed(0)}k\n` +
-        `cam x ${camera.position.x.toFixed(0)} z ${camera.position.z.toFixed(0)} y ${camera.position.y.toFixed(1)} m TAW`;
+        `cam x ${camera.position.x.toFixed(0)} z ${camera.position.z.toFixed(0)} y ${camera.position.y.toFixed(1)} m TAW` +
+        (tramLine ? `\n${tramLine.info().split(". Source")[0]}` : "");
     }
   });
   // Streaming: keep the tiles within `ring` of the tile under the camera loaded (nearest first) and

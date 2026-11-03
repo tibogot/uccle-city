@@ -17,7 +17,7 @@ Read this first when resuming (with Claude or by hand). Details are in `docs/PLA
 python3 -m http.server 8765        # from the repo root
 open http://localhost:8765/viewer/index.html?tile=G4
 ```
-Useful URL params: `tile=A1..H4`, `ring=0|1|2` (neighbour tiles), `yaw=deg` (walk facing), `view=stjob|walk`, `at=x,z`, `cam=x,z,height`,
+Useful URL params: `clock=HH:MM`, `timescale=N`, `trams=0`, `worker=0`, `tile=A1..H4`, `ring=0|1|2` (neighbour tiles), `yaw=deg` (walk facing), `view=stjob|walk`, `at=x,z`, `cam=x,z,height`,
 `time=golden|midday|overcast|twilight|night`, `fx=0` (no post effects), `trees=simple`
 (old leaf-card trees), `sunlight=1` (cascaded shadows). Use Chrome/Edge with WebGPU for real
 speed; headless screenshots use the slower WebGL2 fallback.
@@ -47,15 +47,18 @@ Pipeline (raw data must be fetched first, see README): `python pipeline/run_tile
 4. **Night and props**: (street lamps done, procedural placement: `viewer/lamps.js`; bus stops,
    signals, bike racks, benches done from OSM points: `viewer/furniture.js`; shopfronts done from
    OSM shops; tram platforms, shelters and overhead wires done: `viewer/tram.js`) parked cars done
-   (procedural, `viewer/cars.js`, simple model). Left: shop name signs, bins, bollards, a tram
-   vehicle, a better car model (Blender).
+   (procedural, `viewer/cars.js`, simple model). Tram 92 runs on STIB's real timetable
+   (`viewer/tramline.js`, `pipeline/build_transit.py`). Left: shop name signs, bins, bollards,
+   better car and tram models (Blender), live STIB vehicle positions, more lines.
 5. **Ground**: OSM land-cover mask + procedural grass done (`viewer/ground.js`). Left: UrbIS
    Land cover (gardens / paving / lawns), hedges.
 6. **Roads**: the ~12 remaining bad spots (Alsemberg/Brugmann sharp Y, crowded rings in
    C4/F2; run `node tools/check_roads.mjs --all`), bump on setts and kerbs, wet look,
    manholes; the marking atlas is ~24 MB per tile, so shrink it before streaming.
 7. **Multi-tile streaming + LOD**: done: tiles load around the player and unload behind
-   (`?ring=`). Left: build tiles in a web worker (loading a tile hitches 0.5–3 s), tree LOD /
+   (`?ring=`), tile CPU work in a web worker (`viewer/tileWorker.bundle.js`, rebuild with
+   `node tools/build_worker.mjs` after editing tileData.js / heightmap.js / facadeGeom.js /
+   landcover.js / roadData.js; `cd tools/worker && npm install` first). Left: tree LOD /
    impostors, far tiles with the draped orthophoto. Whole Brussels region (~650 tiles,
    ~1.2 GB of tile data) is the realistic maximum with UrbIS.
 
