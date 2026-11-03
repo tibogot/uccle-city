@@ -14,6 +14,7 @@ import { buildLamps } from "./lamps.js";
 import { buildFurniture } from "./furniture.js";
 import { buildTram } from "./tram.js";
 import { buildCars } from "./cars.js";
+import { landCoverTexture, groundMaterial } from "./ground.js";
 import { buildLaneRoadMesh } from "../vendor/roads/mesh/laneRoadMesh.js";
 import { asphaltMaterial, concreteMaterial, vergeMaterial, surfaceAttribute } from "./roadPaint.js";
 import { buildingMeshes as facadeMeshes } from "./facades.js";
@@ -106,7 +107,7 @@ class Heightmap {
   }
 }
 
-function terrainMesh(hm, contourOn) {
+function terrainMesh(hm, contourOn, feats, bounds) {
   const { x0, z0, cols, rows, step } = hm.h;
   const pos = new Float32Array(cols * rows * 3);
   for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
@@ -125,25 +126,20 @@ function terrainMesh(hm, contourOn) {
   g.setIndex(new THREE.BufferAttribute(idx, 1));
   g.computeVertexNormals();
 
-  // TSL: green low ground → paler high ground, earthy on slopes, optional 1 m / 5 m contour lines.
+  // TSL ground: OSM land cover mask + procedural grass (viewer/ground.js); optional 1 m / 5 m contour lines
   const h = positionWorld.y;
-  const lo = float(hm.h.min), hi = float(hm.h.max);
-  const t = smoothstep(lo, hi, h);
-  const base = mix(color(0x58733d), color(0x8f9a5c), t);
-  const slope = smoothstep(float(0.93), float(0.75), normalWorld.y);
-  let col = mix(base, color(0x7d6a4f), slope);
   const line = (period, width) => {
     const f = fract(h.div(period));
     const d = min(f, f.oneMinus()).mul(period);
     return float(1).sub(smoothstep(float(0), fwidth(h).mul(width), d));
   };
   const lines = mix(line(1, 1.0).mul(0.35), float(0.8), line(5, 1.4));
-  col = mix(col, color(0x2b2418), lines.mul(contourOn));
-  const m = new THREE.MeshStandardNodeMaterial({ roughness: 0.95, metalness: 0 });
-  m.colorNode = col;
+  const cover = landCoverTexture(feats, bounds);
+  const m = groundMaterial(cover, bounds, (col) => mix(col, color(0x2b2418), lines.mul(contourOn)));
   const mesh = new THREE.Mesh(g, m);
   mesh.receiveShadow = true;
   mesh.name = "terrain";
+  mesh.userData.textures = [cover.tex];
   return mesh;
 }
 
@@ -371,7 +367,9 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const R = await timed("road meshes + carve", () => roadMeshes(net, hm, bounds));
   own.roads.add(...R.meshes);
 
-  own.terrain.add(await timed("terrain mesh", () => terrainMesh(hm, contourOn)));
+  const terr = await timed("terrain mesh", () => terrainMesh(hm, contourOn, feats, bounds));
+  own.terrain.add(terr);
+  R.textures.push(...terr.userData.textures);
   const B = await timed("building meshes + façades", () => facadeMeshes(bDoc, bBuf, roads, feats));
   say(`façades: ${B.stats.faces} wall faces, ${B.stats.party} party walls, ${B.stats.street} facing a street; details: ${B.stats.cornices} cornices, ${B.stats.buttresses} buttresses, ${B.stats.ridges} ridge/hip caps, ${B.stats.chimneys} chimneys, ${B.stats.eaves || 0} eaves, ${B.stats.shops} shopfronts (OSM shops)`);
   own.buildings.add(...B.meshes);

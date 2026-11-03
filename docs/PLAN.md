@@ -419,6 +419,11 @@ modular kits**, and real data only decides **which material goes where**.
    per-car paint (G4: 470). The car is a simple tapered-box model: replace with a Blender kit
    car (several body types, LODs), see `docs/BLENDER.md`. Screenshot
    `docs/img/viewer-G4-parked-cars.png`.
+   **Ground (2026-11-03), `viewer/ground.js`:** a per-tile 1 m land-cover mask painted at load
+   from the OSM areas and paths (wood/scrub → leaf litter and moss, playground → sand, paths
+   → gravel 1.6 m wide, water → dark glossy), grass everywhere else with three noise scales
+   (lush / dry / clover patches, worn earth), bare earth on steep banks, fine bump. Next:
+   UrbIS Land cover (CC0) for gardens vs paving vs lawns, hedges along garden edges.
    **Next for the church:** check materials against a photo; the drum and dome could
    use their own windows (oculi) and lantern detail.
 

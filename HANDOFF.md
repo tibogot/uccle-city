@@ -49,7 +49,8 @@ Pipeline (raw data must be fetched first, see README): `python pipeline/run_tile
    OSM shops; tram platforms, shelters and overhead wires done: `viewer/tram.js`) parked cars done
    (procedural, `viewer/cars.js`, simple model). Left: shop name signs, bins, bollards, a tram
    vehicle, a better car model (Blender).
-5. **Ground**: UrbIS Land cover for grass/garden/paving materials, hedges.
+5. **Ground**: OSM land-cover mask + procedural grass done (`viewer/ground.js`). Left: UrbIS
+   Land cover (gardens / paving / lawns), hedges.
 6. **Roads**: the ~12 remaining bad spots (Alsemberg/Brugmann sharp Y, crowded rings in
    C4/F2; run `node tools/check_roads.mjs --all`), bump on setts and kerbs, wet look,
    manholes; the marking atlas is ~24 MB per tile, so shrink it before streaming.
