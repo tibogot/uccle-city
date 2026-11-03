@@ -46,8 +46,9 @@ Pipeline (raw data must be fetched first, see README): `python pipeline/run_tile
    windows, parallax window reveals.
 4. **Night and props**: (street lamps done, procedural placement: `viewer/lamps.js`; bus stops,
    signals, bike racks, benches done from OSM points: `viewer/furniture.js`; shopfronts done from
-   OSM shops; tram platforms, shelters and overhead wires done: `viewer/tram.js`) left: shop name
-   signs, bins, bollards, a tram vehicle, parked cars.
+   OSM shops; tram platforms, shelters and overhead wires done: `viewer/tram.js`) parked cars done
+   (procedural, `viewer/cars.js`, simple model). Left: shop name signs, bins, bollards, a tram
+   vehicle, a better car model (Blender).
 5. **Ground**: UrbIS Land cover for grass/garden/paving materials, hedges.
 6. **Roads**: the ~12 remaining bad spots (Alsemberg/Brugmann sharp Y, crowded rings in
    C4/F2; run `node tools/check_roads.mjs --all`), bump on setts and kerbs, wet look,

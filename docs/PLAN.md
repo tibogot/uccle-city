@@ -412,6 +412,13 @@ modular kits**, and real data only decides **which material goes where**.
    - trams (`viewer/tram.js`): contact wire 5.8 m above each OSM tram line, poles every 32 m
      with cantilever arms, raised tram platforms with edge strips and STIB shelters where
      `shelter=yes` (`docs/img/viewer-G4-tram-stop.png`). Next: a tram vehicle.
+   **Parked cars (2026-11-03), `viewer/cars.js`:** placed procedurally (no data source) in
+   every parking lane of the road engine's per-road layout (`resolveStack` + `layoutAt`, so
+   parking that ends before a corner is respected): 5.6 m slots, ~65 % occupied, none near
+   crossings, signals or bus stops; right-hand traffic orientation; one InstancedMesh with
+   per-car paint (G4: 470). The car is a simple tapered-box model: replace with a Blender kit
+   car (several body types, LODs), see `docs/BLENDER.md`. Screenshot
+   `docs/img/viewer-G4-parked-cars.png`.
    **Next for the church:** check materials against a photo; the drum and dome could
    use their own windows (oculi) and lantern detail.
 

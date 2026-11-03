@@ -13,6 +13,7 @@ import { buildRoadNetwork } from "../vendor/roads/roadNetwork.js";
 import { buildLamps } from "./lamps.js";
 import { buildFurniture } from "./furniture.js";
 import { buildTram } from "./tram.js";
+import { buildCars } from "./cars.js";
 import { buildLaneRoadMesh } from "../vendor/roads/mesh/laneRoadMesh.js";
 import { asphaltMaterial, concreteMaterial, vergeMaterial, surfaceAttribute } from "./roadPaint.js";
 import { buildingMeshes as facadeMeshes } from "./facades.js";
@@ -384,6 +385,9 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   own.features.add(furn.group);
   const tram = buildTram(feats, (x, z) => hm.surface(x, z) + CARVE, bounds);
   own.features.add(tram.group);
+  const cars = buildCars(roads, feats, (x, z) => hm.surface(x, z) + CARVE, bounds);
+  own.features.add(cars.group);
+  say(`parked cars: ${cars.count} (placed procedurally in the parking lanes)`);
   say(`tram (OSM): ${tram.counts.wireSegments} wire segments, ${tram.counts.poles} poles, ${tram.counts.platforms} platforms, ${tram.counts.shelters} shelters`);
   say(`street furniture (OSM points): ${Object.entries(furn.counts).map(([k, v]) => `${v} ${k}`).join(", ")}`);
   say(`street lamps: ${lamps.count} (placed along the kerbs, ROAD_TYPES lampSpacing; OSM has none here)`);
@@ -530,7 +534,7 @@ async function main() {
   let busy = null;
   const stream = async () => {
     // the manifest tile under (or nearest to) the camera, loaded or not
-    const fp = walker.on ? camera.position : controls.target, px = fp.x, pz = fp.z;   // orbit: what you look at
+    const px = walker.on ? walker.x : controls.target.x, pz = walker.on ? walker.z : controls.target.z;   // orbit: what you look at
     const cell = manifest.tiles.filter((t) => t.status !== "missing").map((t) => {
       const dx = Math.max(t.bounds.x[0] - px, 0, px - t.bounds.x[1]), dz = Math.max(t.bounds.z[0] - pz, 0, pz - t.bounds.z[1]);
       return [dx * dx + dz * dz, t];
@@ -541,7 +545,7 @@ async function main() {
     // unload (never the tile under the camera)
     for (const t of [...world.tiles]) {
       const e = manifest.tiles.find((m) => m.name === t.name);
-      if (t !== here && e && dist(e) > ring + 1.01) { t.dispose(); world.tiles.splice(world.tiles.indexOf(t), 1); log(`- tile ${t.name}`); }
+      if (t !== here && e && dist(e) > ring + 1.01 && world.tiles.length > 1) { t.dispose(); world.tiles.splice(world.tiles.indexOf(t), 1); log(`- tile ${t.name}`); }
     }
     const want = manifest.tiles.filter((t) => t.status !== "missing" && dist(t) <= ring + 0.01 && !world.tiles.some((w) => w.name === t.name))
       .sort((a, b) => dist(a) - dist(b));
