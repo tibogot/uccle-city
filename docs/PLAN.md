@@ -296,6 +296,27 @@ modular kits**, and real data only decides **which material goes where**.
    door; party walls (shared with a neighbour) stay blank. Palettes from what
    Uccle is built of: red/brown brick, white or cream render, some stone.
    Variation seeded per building id so it is stable.
+   **Done 2026-11-03 (first pass, procedural rather than a mesh kit), `viewer/facades.js`:**
+   - at load, wall triangles are grouped into planar faces; each vertex gets
+     face coordinates (`aWall`: along-face metres, face width, height above
+     base, eaves height);
+   - party walls detected by probing 0.35 m outside each face for another
+     footprint (G4: 1,597 of 8,007 faces), no windows; street faces (a road
+     centreline within 30 m in front) get the front door (2,102 faces);
+   - style per building from a hash of its UrbIS `BU_ID`: red / brown / yellow
+     brick (real brick courses), white / cream / grey render; tall blocks lean
+     to render. Blue-stone plinth, cornice band;
+   - storeys 3.4 m + 3.0 m, window bays sized to each face, frames (mostly
+     white), mullion and transom, sills, glass with a sky gradient and some
+     curtains; panelled front doors in Brussels colours;
+   - roofs in slope coordinates: clay tiles, dark glazed tiles or slate, moss;
+     flat roofs bitumen/gravel.
+   Screenshots: `docs/img/viewer-G4-saint-job.png`, `viewer-G4-street.png`,
+   `viewer-C2-brugmann-street.png`. Costs about 0.2-0.4 s per tile at load.
+   **Next:** real relief (window reveals, sills, cornices as geometry or
+   parallax), shopfronts from OSM `shop=*` points, gable attic windows, the
+   church and other landmarks treated by hand, roof colour from the
+   orthophoto (step 4).
 3. **Ground materials.** UrbIS **Land cover** (CC0, same 1 km sheets) plus OSM
    areas say where grass, garden, paving, water and woodland are. Tiling grass,
    soil, gravel and paving materials, plus hedges along garden edges.

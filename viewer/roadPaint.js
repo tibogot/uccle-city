@@ -55,12 +55,12 @@ export function surfaceAttribute(net, part) {
 
 // ---------------------------------------------------------------- shared TSL helpers
 
-const n3 = (x, y, z) => mx_noise_float(vec3(x, y, z));          // -1..1
-const band = (d, k) => step(float(k - 0.5), d).mul(float(1).sub(step(float(k + 0.5), d)));   // d == k
+export const n3 = (x, y, z) => mx_noise_float(vec3(x, y, z));          // -1..1
+export const band = (d, k) => step(float(k - 0.5), d).mul(float(1).sub(step(float(k + 0.5), d)));   // d == k
 
 /** Stone courses: rows along `a` (length la), stones along `b` (length lb), staggered half a stone.
  *  Returns { joint 0..1, tone 0..1 per stone }. jw = joint width (m). */
-function courses(a, b, la, lb, jw, seed) {
+export function courses(a, b, la, lb, jw, seed) {
   const ra = a.div(la), row = floor(ra), fa = fract(ra);
   const rb = b.div(lb).add(row.mul(0.5)), col = floor(rb), fb = fract(rb);
   const d = min(min(fa, fa.oneMinus()).mul(la), min(fb, fb.oneMinus()).mul(lb));
