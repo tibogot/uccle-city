@@ -348,6 +348,24 @@ modular kits**, and real data only decides **which material goes where**.
    party-wall treatment, wet roads, chimneys and eaves; check the real Saint-Job
    church materials against a photo; night windows show speckle (drape pattern)
    in the software renderer: check on WebGPU.
+   **Depth and trees, second pass (2026-11-03):**
+   - walls and roofs are double-sided, and each wall face is turned to point out of its
+     own footprint (fixes houses that looked hollow and the see-through gap in the
+     church dome, where LoD2 triangles were wound inward);
+   - real geometry in `facades.js`: a two-step cornice along the top edge of every
+     non-party wall, ridge tiles and hip ribs on every convex roof edge (stone ribs on
+     landmarks, so the dome reads as ribbed), stepped buttresses with weathering caps
+     between the church's bays (nave and aisles only). These cast shadows and get AO.
+     G4: 1,841 cornice runs, 1,701 ridge/hip caps, 57 buttresses, about +100k triangles;
+   - church windows: stone tracery (central mullion, oculus in the arch head), iron
+     saddle bars; stained glass reads dark by day and only glows at night;
+   - trees: replaced our leaf cards with **mrdoob/slop-newyork's tree system**
+     (`vendor/slop-trees/`, MIT, see `ORIGIN.md`): real branch geometry, three
+     species (London plane, honey locust, elm), foliage lighting model. Our LiDAR
+     trees are mapped onto it (`viewer/treesSlop.js`: height → scale, crown width →
+     horizontal stretch, species by hash). The old cards stay behind `?trees=simple`.
+   **Next for the church:** parallax-depth window reveals, a proper rose window on the
+   west front, the tower's louvred belfry openings, check materials against a photo.
 
 3. **Ground materials.** UrbIS **Land cover** (CC0, same 1 km sheets) plus OSM
    areas say where grass, garden, paving, water and woodland are. Tiling grass,

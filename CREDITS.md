@@ -56,3 +56,4 @@ the check dates are in `pipeline/sources.json`.
 | mapbox-earcut (Python) | ISC | pipeline (triangulates 3D faces) |
 | scipy | BSD-3 | pipeline (tree peaks in the canopy height model) |
 | mrdoob/slop-newyork (techniques and adapted code in `viewer/lighting.js`, `post.js`, `tslkit.js`, `facades.js` interiors, `trees.js` approach) | MIT, © 2026 Mr.doob | Notice kept in `viewer/tslkit.js`; source credited in each file header. |
+| mrdoob/slop-newyork tree system (`vendor/slop-trees/`: `trees.js`, `building-collision.js`, tree material), commit `737b7691` | MIT, © Mr.doob | `vendor/slop-trees/LICENSE` and `ORIGIN.md`. Used by `viewer/treesSlop.js` |

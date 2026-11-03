@@ -16,6 +16,7 @@ import { buildingMeshes as facadeMeshes } from "./facades.js";
 import { Lighting, PRESETS } from "./lighting.js";
 import { createPipeline } from "./post.js";
 import { buildTrees } from "./trees.js";
+import { buildTreeField } from "./treesSlop.js";
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -275,11 +276,16 @@ function featureObjects(f, hm, bounds) {
   const off = { polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, side: THREE.DoubleSide };
   mk(steel, new THREE.MeshStandardMaterial({ color: 0x9a9da0, metalness: 0.3, roughness: 0.4, ...off }), "tram-rails");
   mk(groove, new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.9, ...off }), "tram-grooves");
-  const T = buildTrees(f.trees || [], (x, z) => hm.surface(x, z), inTile);
+  // ?trees=simple: our own leaf-card crowns (viewer/trees.js); default: slop-newyork's tree system
+  const T = params.get("trees") === "simple" ? buildTrees(f.trees || [], (x, z) => hm.surface(x, z), inTile)
+    : buildTreeField(f.trees || [], (x, z) => hm.surface(x, z), inTile);
   group.add(T.group);
-  log(`trees: ${T.count} (LiDAR canopy peaks + OSM)`);
+  treeUpdate = T.update || null;
+  log(`trees: ${T.count} (LiDAR canopy peaks + OSM)` + (T.sizes ? `, species heights ${T.sizes.map((z) => z.h.toFixed(1)).join("/")} m` : ""));
   return group;
 }
+
+let treeUpdate = null;     // per-frame LOD update of the tree field
 
 // ------------------------------------------------------------------ walk mode
 
@@ -388,7 +394,7 @@ async function main() {
   const contourOn = uniform(0);
   layers.terrain.add(await timed("terrain mesh", () => terrainMesh(hm, contourOn)));
   const B = await timed("building meshes + façades", () => facadeMeshes(bDoc, bBuf, roads));
-  log(`façades: ${B.stats.faces} wall faces, ${B.stats.party} party walls, ${B.stats.street} facing a street`);
+  log(`façades: ${B.stats.faces} wall faces, ${B.stats.party} party walls, ${B.stats.street} facing a street; details: ${B.stats.cornices} cornices, ${B.stats.buttresses} buttresses, ${B.stats.ridges} ridge/hip caps`);
   layers.buildings.add(...B.meshes);
   layers.features.add(featureObjects(feats, hm, bounds));
   log(`buildings: ${bDoc.count} (${B.triangles} triangles), roads: ${R.triangles} triangles in tile, terrain cells carved: ${R.carvedCells}`);
@@ -451,6 +457,7 @@ async function main() {
     fpsAcc += dt; fpsN++;
     if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
     if (walker.on) walker.update(dt); else controls.update();
+    treeUpdate?.(camera.position);
     renderFrame();
     frames++;
     if (frames % 10 === 1) {
@@ -461,7 +468,8 @@ async function main() {
         `cam x ${camera.position.x.toFixed(0)} z ${camera.position.z.toFixed(0)} y ${camera.position.y.toFixed(1)} m TAW`;
     }
   });
-  window.viewer = { scene, camera, renderer, net, hm, frames: () => frames, setView, renderFrame, lighting };
+  window.viewer = { scene, camera, renderer, net, hm, frames: () => frames, setView, lighting,
+    renderFrame: () => { treeUpdate?.(camera.position); renderFrame(); } };
 }
 
 main().catch((e) => { log(`ERROR: ${e.message}`); console.error(e); });

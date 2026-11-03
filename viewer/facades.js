@@ -116,6 +116,50 @@ function triOf(P, I, t) {
  * @param roads roads.json (for street-facing walls)
  * @returns { walls: {position, normal, aWall, aBld}, roofs: {position, normal, aRoof}, stats }
  */
+/** Push a box that sticks out of a wall: the wall segment A->B (xz), extruded `depth` along the outward
+ *  normal (nx, nz), from yTop - height to yTop. Flat normals, one colour. The back (inside the wall) is skipped. */
+function box(D, A, B, yTop, height, depth, nx, nz, col) {
+  if (height <= 0.01) return;
+  const y0 = yTop - height, y1 = yTop;
+  const ax = A[0], az = A[2], bx = B[0], bz = B[2];
+  const ox = nx * depth, oz = nz * depth;
+  let tx = bx - ax, tz = bz - az; const tl = Math.hypot(tx, tz) || 1; tx /= tl; tz /= tl;
+  const quad = (p0, p1, p2, p3, n) => {
+    for (const q of [p0, p1, p2, p0, p2, p3]) {
+      D.position.push(q[0], q[1], q[2]); D.normal.push(n[0], n[1], n[2]); D.color.push(col[0], col[1], col[2]);
+    }
+  };
+  const a0 = [ax, y0, az], b0 = [bx, y0, bz], a1 = [ax, y1, az], b1 = [bx, y1, bz];
+  const A0 = [ax + ox, y0, az + oz], B0 = [bx + ox, y0, bz + oz], A1 = [ax + ox, y1, az + oz], B1 = [bx + ox, y1, bz + oz];
+  quad(A0, B0, B1, A1, [nx, 0, nz]);           // front
+  quad(a1, A1, B1, b1, [0, 1, 0]);             // top
+  quad(a0, b0, B0, A0, [0, -1, 0]);            // soffit
+  quad(a0, A0, A1, a1, [-tx, 0, -tz]);         // end at A
+  quad(b0, b1, B1, B0, [tx, 0, tz]);           // end at B
+}
+
+/** Push a capping beam along a 3D roof edge P0->P1 (ridge tiles, hip ribs): a square-ish section of width w
+ *  and height h sitting on the edge, oriented by the edge direction. Top and both sides only. */
+function beam(D, P0, P1, w, h, col) {
+  let dx = P1[0] - P0[0], dy = P1[1] - P0[1], dz = P1[2] - P0[2];
+  const L = Math.hypot(dx, dy, dz); if (L < 0.3) return;
+  dx /= L; dy /= L; dz /= L;
+  let sx = -dz, sz = dx; const sl = Math.hypot(sx, sz) || 1; sx /= sl; sz /= sl;   // horizontal, across the edge
+  const ux = -sz * dy, uy = sz * dx - sx * dz, uz = sx * dy;                        // up' = s x d
+  const at = (P, a, b) => [P[0] + sx * a + ux * b, P[1] + uy * b, P[2] + sz * a + uz * b];
+  const hw = w / 2, lo = -h * 0.35, hi = h * 0.65;
+  const quad = (p0, p1, p2, p3, n) => {
+    for (const q of [p0, p1, p2, p0, p2, p3]) {
+      D.position.push(q[0], q[1], q[2]); D.normal.push(n[0], n[1], n[2]); D.color.push(col[0], col[1], col[2]);
+    }
+  };
+  // rounded look from three faces: top, and two sloped shoulders
+  quad(at(P0, -hw * 0.6, hi), at(P1, -hw * 0.6, hi), at(P1, hw * 0.6, hi), at(P0, hw * 0.6, hi), [ux, uy, uz]);
+  const n1 = [ux * 0.6 + sx * 0.8, uy * 0.6, uz * 0.6 + sz * 0.8], n2 = [ux * 0.6 - sx * 0.8, uy * 0.6, uz * 0.6 - sz * 0.8];
+  quad(at(P0, hw * 0.6, hi), at(P1, hw * 0.6, hi), at(P1, hw, lo), at(P0, hw, lo), n1);
+  quad(at(P0, -hw, lo), at(P1, -hw, lo), at(P1, -hw * 0.6, hi), at(P0, -hw * 0.6, hi), n2);
+}
+
 export function analyseBuildings(doc, buf, roads) {
   const dv = new DataView(buf);
   const V = dv.getUint32(0, true), T = dv.getUint32(4, true);
@@ -176,8 +220,9 @@ export function analyseBuildings(doc, buf, roads) {
   };
 
   const W = { position: [], normal: [], aWall: [], aBld: [] };
+  const D = { position: [], normal: [], color: [] };                             // detail geometry
   const R = { position: [], normal: [], aRoof: [], aRoofCol: [] };
-  const stats = { faces: 0, party: 0, street: 0 };
+  const stats = { faces: 0, party: 0, street: 0, cornices: 0, buttresses: 0, ridges: 0 };
   doc.buildings.forEach((b, bi) => {
     const base = b.base, eaves = (b.eaves ?? b.top) - base;
     const key = String(b.attrs?.BU_ID ?? b.id);
@@ -201,7 +246,15 @@ export function analyseBuildings(doc, buf, roads) {
       if (!faces.has(k)) faces.set(k, { tris: [], nx: nx / h, nz: nz / h });
       faces.get(k).tris.push({ p, n: tri.n, src: tri });
     }
+    const ownRing = b.footprint[0];
     for (const f of faces.values()) {
+      // outward: a point 0.5 m along the normal must be outside the building's own footprint
+      {
+        let mx = 0, mz = 0, k = 0;
+        for (const { p } of f.tris) for (const q of p) { mx += q[0]; mz += q[2]; k++; }
+        mx /= k; mz /= k;
+        if (pip(mx + f.nx * 0.5, mz + f.nz * 0.5, ownRing) && !pip(mx - f.nx * 0.5, mz - f.nz * 0.5, ownRing)) { f.nx = -f.nx; f.nz = -f.nz; }
+      }
       const tx = -f.nz, tz = f.nx;                       // along the face, left to right seen from outside
       let u0 = Infinity, u1 = -Infinity, cx = 0, cz = 0, n = 0, top = -Infinity;
       for (const { p } of f.tris) for (const q of p) {
@@ -220,12 +273,70 @@ export function analyseBuildings(doc, buf, roads) {
       const party = partyH > 0 ? 1 : 0;
       const street = partyH < 999 && facesStreet(cx, cz, f.nx, f.nz) ? 1 : 0;
       stats.faces++; stats.party += party; stats.street += street;
+
+      // ---- detail geometry: cornices along the eaves, buttresses on landmarks
+      const faceH = top - base;
+      if (partyH < 999 && width > 1.2 && faceH > 3) {
+        const seen = new Set();
+        for (const { p } of f.tris) for (let e = 0; e < 3; e++) {
+          const A = p[e], B = p[(e + 1) % 3];
+          if (Math.abs(A[1] - B[1]) > 0.05 || Math.abs(A[1] - top) > 0.08) continue;     // horizontal edge at the face top
+          const L = Math.hypot(B[0] - A[0], B[2] - A[2]);
+          const key = [A[0], A[2], B[0], B[2]].map((v) => Math.round(v * 20)).sort().join();
+          if (L < 0.6 || seen.has(key)) continue;
+          seen.add(key);
+          const col = landmark ? [0.5, 0.47, 0.42] : style >= 3 ? [0.6, 0.58, 0.54] : [0.52, 0.5, 0.46];
+          // two-step moulding: a deep top course and a shallower one under it
+          box(D, A, B, top - 0.02, 0.16, landmark ? 0.32 : 0.22, f.nx, f.nz, col);
+          box(D, A, B, top - 0.18, 0.12, landmark ? 0.18 : 0.12, f.nx, f.nz, col.map((c) => c * 0.93));
+          stats.cornices++;
+        }
+      }
+      if (landmark && partyH < 999 && width >= 4 && faceH >= 5 && faceH <= 16) {    // nave and aisles, not towers or drums
+        const nbL = Math.max(1, Math.floor(width / 3.6 + 0.5)), bwL = width / nbL;
+        let q0 = f.tris[0].p[0];
+        const uq = q0[0] * tx + q0[2] * tz - u0;
+        for (let k = 0; k <= nbL; k++) {
+          const uu = Math.min(width - 0.35, Math.max(0.35, k * bwL)) - uq;
+          const cxk = q0[0] + tx * uu, czk = q0[2] + tz * uu;
+          const hw = 0.4, A = [cxk - tx * hw, 0, czk - tz * hw], B = [cxk + tx * hw, 0, czk + tz * hw];
+          const h1 = base + faceH * 0.55, h2 = base + faceH * 0.85;
+          box(D, A, B, h1, h1 - base + 0.3, 0.55, f.nx, f.nz, [0.5, 0.47, 0.41]);      // lower stage, deep
+          box(D, A, B, h2, h2 - h1, 0.32, f.nx, f.nz, [0.52, 0.49, 0.43]);              // upper stage, set back
+          box(D, A, B, h1 + 0.12, 0.12, 0.62, f.nx, f.nz, [0.44, 0.42, 0.38]);           // weathering cap
+          stats.buttresses++;
+        }
+      }
       for (const { p, n: nn, src } of f.tris) for (const q of p) {
         W.position.push(q[0], q[1], q[2]);
         const sn = src ? smooth(src, q) : nn;
         W.normal.push(sn[0], sn[1], sn[2]);
         W.aWall.push(q[0] * tx + q[2] * tz - u0, width, q[1] - base, faceEaves);
         W.aBld.push(style, partyH, street, rnd);
+      }
+    }
+    // --- ridge tiles and hip ribs: convex roof edges shared by two roof faces that meet at > 12°
+    {
+      const edges = new Map(), kv = (q) => `${Math.round(q[0] * 50)},${Math.round(q[1] * 50)},${Math.round(q[2] * 50)}`;
+      for (let k = wallTris; k < all.length; k++) {
+        const tri = all[k];
+        for (let e = 0; e < 3; e++) {
+          const A = tri.p[e], B = tri.p[(e + 1) % 3], ka = kv(A), kb = kv(B);
+          const key = ka < kb ? ka + "|" + kb : kb + "|" + ka;
+          if (!edges.has(key)) edges.set(key, []);
+          edges.get(key).push({ tri, A, B, C: tri.p[(e + 2) % 3] });
+        }
+      }
+      const capCol = landmark ? [0.47, 0.45, 0.4] : [rc[0] * 0.72, rc[1] * 0.72, rc[2] * 0.72];
+      for (const list of edges.values()) {
+        if (list.length !== 2) continue;
+        const [e1, e2] = list, up = (n) => (n[1] < 0 ? n.map((v) => -v) : n), n1 = up(e1.tri.n), n2 = up(e2.tri.n);
+        if (n1[0] * n2[0] + n1[1] * n2[1] + n1[2] * n2[2] > 0.978) continue;               // coplanar-ish
+        if (n1[1] < 0.15 || n2[1] < 0.15) continue;                                         // not a roof slope
+        const C = e2.C, A = e1.A;                                                           // convex: e2's far corner below e1's plane
+        if ((C[0] - A[0]) * n1[0] + (C[1] - A[1]) * n1[1] + (C[2] - A[2]) * n1[2] > -0.02) continue;
+        beam(D, e1.A, e1.B, landmark ? 0.34 : 0.26, landmark ? 0.2 : 0.14, capCol);
+        stats.ridges++;
       }
     }
     // --- roofs: slope-aligned coordinates, smoothed shading normals, real colour
@@ -247,6 +358,7 @@ export function analyseBuildings(doc, buf, roads) {
   const f32 = (a) => new Float32Array(a);
   return {
     walls: { position: f32(W.position), normal: f32(W.normal), aWall: f32(W.aWall), aBld: f32(W.aBld) },
+    details: { position: f32(D.position), normal: f32(D.normal), aCol: f32(D.color) },
     roofs: { position: f32(R.position), normal: f32(R.normal), aRoof: f32(R.aRoof), aRoofCol: f32(R.aRoofCol) },
     stats: { ...stats, triangles: T, vertices: V },
   };
@@ -336,7 +448,7 @@ const interiorRoom = Fn(([gx, gy, winUV, cellId, bayW, storeyH, seed, litProb, f
 });
 
 export function wallMaterial() {
-  const m = new THREE.MeshStandardNodeMaterial({ metalness: 0 });
+  const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, side: THREE.DoubleSide });   // some UrbIS faces are wound inward: never cull them
   const P = positionWorld;
   const wall = attribute("aWall", "vec4"), bld = attribute("aBld", "vec4");
   const u = wall.x, fw = wall.y, h = wall.z, eh = wall.w;
@@ -501,7 +613,16 @@ export function wallMaterial() {
   const leadK = lead.mul(near.mul(0.6).add(0.4));
   // from outside by day stained glass reads dark, a hint of colour and the sky's sheen
   const sgDay = mix(sg.mul(0.28).add(C(0.012, 0.012, 0.015)), vec3(env.uSkyHorizon).mul(0.22), fres.mul(0.7));
-  lmCol = mix(lmCol, mix(sgDay, C(0.02, 0.02, 0.022), leadK), lmWin);
+  // stone tracery: a central mullion splitting the lancet in two, an oculus ring in the arch head, iron saddle bars
+  const aaT = fwidth(lx).add(0.004);
+  const ocY = ySpring.add(hwL.mul(0.32)), ocR = hwL.mul(0.42);
+  const mullion = smoothstep(float(0.055).add(aaT), float(0.055).sub(aaT), abs(lx)).mul(step(h, ocY.sub(ocR)));
+  const oculus = smoothstep(float(0.045).add(aaT), float(0.045).sub(aaT), abs(length(vec2(lx, h.sub(ocY))).sub(ocR)));
+  const tracery = max(mullion, oculus).mul(lmWin).toVar();
+  const saddle = smoothstep(float(0.03).add(aaT), float(0.03).sub(aaT), abs(fract(h.sub(y0).div(0.9)).sub(0.5).mul(0.9))).mul(step(h, ySpring));
+  lmCol = mix(lmCol, mix(sgDay, C(0.02, 0.02, 0.022), max(leadK, saddle)), lmWin);
+  lmCol = mix(lmCol, C(0.48, 0.46, 0.42).mul(ash.tone.sub(0.5).mul(0.15).add(1.0)), tracery);
+  lmH = lmH.add(tracery.mul(0.17));
   // portal: on a street face, the bay nearest the middle of the wall
   const midBay = floor(fw.div(bwL).mul(0.5));
   const isPortal = street.mul(lmOk).mul(step(abs(floor(u.div(bwL)).sub(midBay)), 0.5));
@@ -511,7 +632,7 @@ export function wallMaterial() {
   const wood = C(0.09, 0.05, 0.025).mul(step(0.5, fract(lx.div(0.28))).mul(0.25).add(0.8));
   lmCol = mix(lmCol, wood, portal);
   lmH = lmH.sub(portal.mul(0.3));
-  const lmGlass = lmWin.mul(float(1).sub(portal)).mul(float(1).sub(leadK)).toVar();
+  const lmGlass = lmWin.mul(float(1).sub(portal)).mul(float(1).sub(leadK)).mul(float(1).sub(tracery)).toVar();
   col = mix(col, lmCol, isLM);
   height = mix(height, lmH, isLM);
 
@@ -523,14 +644,14 @@ export function wallMaterial() {
     mix(float(0.8), float(0.15), lmGlass), isLM);
   m.metalnessNode = glassPart.add(lmGlass).mul(fres).mul(0.6);                               // lets SSR reflect the street in the glass
   m.emissiveNode = room.rgb.mul(room.a).mul(float(1).sub(fres.mul(0.82))).mul(glassPart).mul(env.uInteriorGlow).mul(0.76)
-    .add(sg.mul(lmGlass).mul(env.uInteriorGlow).mul(2.2));                     // stained glass lit from inside at night
+    .add(sg.mul(lmGlass).mul(env.uInteriorGlow).mul(env.uNight).mul(2.2));                     // stained glass lit from inside at night
   // height AO: wall feet and narrow gaps between houses get less sky
   m.aoNode = mix(float(0.62), float(1.0), smoothstep(0.0, 9.0, h)).mul(smoothstep(0.0, 1.2, h).mul(0.2).add(0.8));
   return m;
 }
 
 export function roofMaterial() {
-  const m = new THREE.MeshStandardNodeMaterial({ metalness: 0 });
+  const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, side: THREE.DoubleSide });   // some UrbIS faces are wound inward: never cull them
   const P = positionWorld;
   const r = attribute("aRoof", "vec4"), base = attribute("aRoofCol", "vec3");
   const u = r.x, v = r.y, flat = r.z, style = r.w;
@@ -575,9 +696,13 @@ export function buildingMeshes(doc, buf, roads) {
     mesh.name = name;
     return mesh;
   };
+  const detailMat = new THREE.MeshStandardNodeMaterial({ roughness: 0.82, side: THREE.DoubleSide });
+  detailMat.colorNode = attribute("aCol", "vec3");
+  const meshes = [mk(a.walls, [["aWall", 4], ["aBld", 4]], wallMaterial(), "buildings-walls"),
+    mk(a.roofs, [["aRoof", 4], ["aRoofCol", 3]], roofMaterial(), "buildings-roofs")];
+  if (a.details.position.length) meshes.push(mk(a.details, [["aCol", 3]], detailMat, "buildings-details"));
   return {
-    meshes: [mk(a.walls, [["aWall", 4], ["aBld", 4]], wallMaterial(), "buildings-walls"),
-      mk(a.roofs, [["aRoof", 4], ["aRoofCol", 3]], roofMaterial(), "buildings-roofs")],
+    meshes,
     stats: a.stats, triangles: a.stats.triangles, vertices: a.stats.vertices,
   };
 }
