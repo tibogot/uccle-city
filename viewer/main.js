@@ -11,6 +11,7 @@ import {
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { buildRoadNetwork } from "../vendor/roads/roadNetwork.js";
 import { buildLamps } from "./lamps.js";
+import { buildFurniture } from "./furniture.js";
 import { buildLaneRoadMesh } from "../vendor/roads/mesh/laneRoadMesh.js";
 import { asphaltMaterial, concreteMaterial, vergeMaterial, surfaceAttribute } from "./roadPaint.js";
 import { buildingMeshes as facadeMeshes } from "./facades.js";
@@ -402,6 +403,9 @@ async function main() {
   const lamps = buildLamps(roads, (x, z) => hm.ground(x, z), bounds);
   layers.features.add(lamps.group);
   lampUpdate = lamps.update;
+  const furn = buildFurniture(feats, roads, (x, z) => hm.ground(x, z), bounds);
+  layers.features.add(furn.group);
+  log(`street furniture (OSM points): ${Object.entries(furn.counts).map(([k, v]) => `${v} ${k}`).join(", ")}`);
   log(`street lamps: ${lamps.count} (placed along the kerbs, ROAD_TYPES lampSpacing; OSM has none here)`);
   log(`buildings: ${bDoc.count} (${B.triangles} triangles), roads: ${R.triangles} triangles in tile, terrain cells carved: ${R.carvedCells}`);
 

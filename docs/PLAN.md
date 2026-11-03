@@ -384,6 +384,13 @@ modular kits**, and real data only decides **which material goes where**.
    lamps nearest the camera (`?lamplights=0` to disable). Screenshots
    `docs/img/viewer-G4-night-street.png`, `viewer-G4-church-night.png`.
    Replace with real positions if Brussels publishes a lamp inventory (search datastore.brussels).
+   **Street furniture from OSM points (2026-11-03), `viewer/furniture.js`:** bus stops (STIB
+   pole + sign + timetable; a glass shelter only where OSM has `shelter=yes`), traffic signals
+   (a post each side of the road, Belgian white band, red lit), bicycle parking (row of five
+   U hoops), benches. Kerb offset and facing from the nearest road and `ROAD_TYPES`. One
+   InstancedMesh per kind. G4: 6 stops, 8 signal posts, 8 bike racks (OSM has no benches or
+   shelter tags here). Tram stop_positions (on the rails) are skipped: tram platforms need
+   the platform ways, not fetched yet.
    **Next for the church:** check materials against a photo; the drum and dome could
    use their own windows (oculi) and lantern detail.
 
