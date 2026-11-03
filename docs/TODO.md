@@ -1,5 +1,7 @@
 # Everything still to do
 
+> Continuing in Cursor / another Claude session? Read **`HANDOFF.md`** first (setup, rules, how to run).
+
 One list of all open work, roughly in priority order. `HANDOFF.md` says how to run things;
 `docs/PLAN.md` has the history and details of what is done. Rule of thumb for every item:
 **look better without costing frame time** (instancing, shared materials, LOD, compressed assets).
@@ -21,11 +23,11 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
       `node tools/check_roads.mjs --all`).
 
 ## 2. Streaming and performance
-- [ ] Far LOD: tiles beyond ring 1 as cheap blocks + orthophoto-draped terrain (no façade shader,
-      no trees, no props); impostors for far trees.
-- [ ] Move the tree field build into the worker as data (sites, matrices), or build it over
-      several frames.
-- [ ] Shrink the road marking atlas (~24 MB GPU per tile: R8, lower resolution, or paged).
+- [x] Far LOD (`?far=`, default 3): orthophoto-draped 4 m terrain + flat-coloured solids, 2 draw calls
+      per tile (`buildLiteData` in tileData.js, `loadLiteTile` in main.js). Next: impostors for far trees.
+- [x] Tree assets shared between tiles: streamed tiles now cost 20–115 ms main-thread work each
+      (first tile ~265 ms, it builds the shared assets).
+- [x] Road marking atlas R8 at half resolution (8x less GPU memory, e.g. 20 MB -> 2.5 MB).
 - [ ] Unload by distance with hysteresis; cap GPU memory; a loading indicator.
 - [ ] One shared terrain / ground material for all tiles (bounds as uniforms), fewer shader variants.
 - [ ] Profile and cap point lights / shadow casters at night.

@@ -73,6 +73,8 @@ def main():
                 failed.append(f"{t}:roofcolors")
             if step(["tag_landmarks.py", "--tile", t]):             # needs data/raw/osm/landmarks.json
                 failed.append(f"{t}:landmarks")
+            if step(["build_ortho_lod.py", "--tile", t]):           # far-LOD photo from the cached orthophoto
+                failed.append(f"{t}:ortho")
     step(["build_manifest.py"])
     if failed:
         print(f"\nFAILED: {failed}", file=sys.stderr)

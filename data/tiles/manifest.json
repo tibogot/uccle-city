@@ -67,7 +67,8 @@
     "buildingsBin": "A1/buildings.bin",
     "terrain": "A1/terrain.u16",
     "terrainHeader": "A1/terrain.json",
-    "features": "A1/features.json"
+    "features": "A1/features.json",
+    "ortho": "A1/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -119,7 +120,8 @@
     "buildingsBin": "B1/buildings.bin",
     "terrain": "B1/terrain.u16",
     "terrainHeader": "B1/terrain.json",
-    "features": "B1/features.json"
+    "features": "B1/features.json",
+    "ortho": "B1/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -128,7 +130,7 @@
     "buildings": 580,
     "trees": 0,
     "areas": 4,
-    "points": 56,
+    "points": 60,
     "terrainMinMax": [
      53.95,
      82.18
@@ -167,7 +169,8 @@
     "buildingsBin": "C1/buildings.bin",
     "terrain": "C1/terrain.u16",
     "terrainHeader": "C1/terrain.json",
-    "features": "C1/features.json"
+    "features": "C1/features.json",
+    "ortho": "C1/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -176,7 +179,7 @@
     "buildings": 534,
     "trees": 20,
     "areas": 6,
-    "points": 72,
+    "points": 101,
     "terrainMinMax": [
      46.36,
      84.19
@@ -219,7 +222,8 @@
     "buildingsBin": "D1/buildings.bin",
     "terrain": "D1/terrain.u16",
     "terrainHeader": "D1/terrain.json",
-    "features": "D1/features.json"
+    "features": "D1/features.json",
+    "ortho": "D1/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -267,7 +271,8 @@
     "buildingsBin": "E1/buildings.bin",
     "terrain": "E1/terrain.u16",
     "terrainHeader": "E1/terrain.json",
-    "features": "E1/features.json"
+    "features": "E1/features.json",
+    "ortho": "E1/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -276,7 +281,7 @@
     "buildings": 150,
     "trees": 33,
     "areas": 18,
-    "points": 7,
+    "points": 9,
     "terrainMinMax": [
      53.42,
      94.8
@@ -319,7 +324,8 @@
     "buildingsBin": "F1/buildings.bin",
     "terrain": "F1/terrain.u16",
     "terrainHeader": "F1/terrain.json",
-    "features": "F1/features.json"
+    "features": "F1/features.json",
+    "ortho": "F1/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -328,7 +334,7 @@
     "buildings": 345,
     "trees": 21,
     "areas": 2,
-    "points": 54,
+    "points": 59,
     "terrainMinMax": [
      69.68,
      109.99
@@ -367,7 +373,8 @@
     "buildingsBin": "G1/buildings.bin",
     "terrain": "G1/terrain.u16",
     "terrainHeader": "G1/terrain.json",
-    "features": "G1/features.json"
+    "features": "G1/features.json",
+    "ortho": "G1/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -376,7 +383,7 @@
     "buildings": 331,
     "trees": 21,
     "areas": 3,
-    "points": 32,
+    "points": 34,
     "terrainMinMax": [
      87.38,
      118.27
@@ -419,7 +426,8 @@
     "buildingsBin": "H1/buildings.bin",
     "terrain": "H1/terrain.u16",
     "terrainHeader": "H1/terrain.json",
-    "features": "H1/features.json"
+    "features": "H1/features.json",
+    "ortho": "H1/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -428,7 +436,7 @@
     "buildings": 34,
     "trees": 1,
     "areas": 2,
-    "points": 14,
+    "points": 16,
     "terrainMinMax": [
      94.07,
      118.51
@@ -467,7 +475,8 @@
     "buildingsBin": "A2/buildings.bin",
     "terrain": "A2/terrain.u16",
     "terrainHeader": "A2/terrain.json",
-    "features": "A2/features.json"
+    "features": "A2/features.json",
+    "ortho": "A2/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -515,7 +524,8 @@
     "buildingsBin": "B2/buildings.bin",
     "terrain": "B2/terrain.u16",
     "terrainHeader": "B2/terrain.json",
-    "features": "B2/features.json"
+    "features": "B2/features.json",
+    "ortho": "B2/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -524,7 +534,7 @@
     "buildings": 432,
     "trees": 18,
     "areas": 12,
-    "points": 45,
+    "points": 46,
     "terrainMinMax": [
      35.04,
      77.4
@@ -561,7 +571,8 @@
     "buildingsBin": "C2/buildings.bin",
     "terrain": "C2/terrain.u16",
     "terrainHeader": "C2/terrain.json",
-    "features": "C2/features.json"
+    "features": "C2/features.json",
+    "ortho": "C2/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -570,7 +581,7 @@
     "buildings": 779,
     "trees": 60,
     "areas": 17,
-    "points": 164,
+    "points": 219,
     "terrainMinMax": [
      38.19,
      67.54
@@ -609,7 +620,8 @@
     "buildingsBin": "D2/buildings.bin",
     "terrain": "D2/terrain.u16",
     "terrainHeader": "D2/terrain.json",
-    "features": "D2/features.json"
+    "features": "D2/features.json",
+    "ortho": "D2/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -655,7 +667,8 @@
     "buildingsBin": "E2/buildings.bin",
     "terrain": "E2/terrain.u16",
     "terrainHeader": "E2/terrain.json",
-    "features": "E2/features.json"
+    "features": "E2/features.json",
+    "ortho": "E2/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -703,7 +716,8 @@
     "buildingsBin": "F2/buildings.bin",
     "terrain": "F2/terrain.u16",
     "terrainHeader": "F2/terrain.json",
-    "features": "F2/features.json"
+    "features": "F2/features.json",
+    "ortho": "F2/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -749,7 +763,8 @@
     "buildingsBin": "G2/buildings.bin",
     "terrain": "G2/terrain.u16",
     "terrainHeader": "G2/terrain.json",
-    "features": "G2/features.json"
+    "features": "G2/features.json",
+    "ortho": "G2/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -797,7 +812,8 @@
     "buildingsBin": "H2/buildings.bin",
     "terrain": "H2/terrain.u16",
     "terrainHeader": "H2/terrain.json",
-    "features": "H2/features.json"
+    "features": "H2/features.json",
+    "ortho": "H2/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -843,7 +859,8 @@
     "buildingsBin": "A3/buildings.bin",
     "terrain": "A3/terrain.u16",
     "terrainHeader": "A3/terrain.json",
-    "features": "A3/features.json"
+    "features": "A3/features.json",
+    "ortho": "A3/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -895,7 +912,8 @@
     "buildingsBin": "B3/buildings.bin",
     "terrain": "B3/terrain.u16",
     "terrainHeader": "B3/terrain.json",
-    "features": "B3/features.json"
+    "features": "B3/features.json",
+    "ortho": "B3/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -904,7 +922,7 @@
     "buildings": 456,
     "trees": 1,
     "areas": 13,
-    "points": 37,
+    "points": 38,
     "terrainMinMax": [
      30.8,
      53.44
@@ -943,7 +961,8 @@
     "buildingsBin": "C3/buildings.bin",
     "terrain": "C3/terrain.u16",
     "terrainHeader": "C3/terrain.json",
-    "features": "C3/features.json"
+    "features": "C3/features.json",
+    "ortho": "C3/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -952,7 +971,7 @@
     "buildings": 666,
     "trees": 15,
     "areas": 5,
-    "points": 40,
+    "points": 43,
     "terrainMinMax": [
      39.41,
      79.86
@@ -995,7 +1014,8 @@
     "buildingsBin": "D3/buildings.bin",
     "terrain": "D3/terrain.u16",
     "terrainHeader": "D3/terrain.json",
-    "features": "D3/features.json"
+    "features": "D3/features.json",
+    "ortho": "D3/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -1004,7 +1024,7 @@
     "buildings": 303,
     "trees": 3,
     "areas": 14,
-    "points": 55,
+    "points": 61,
     "terrainMinMax": [
      62.81,
      92.15
@@ -1043,7 +1063,8 @@
     "buildingsBin": "E3/buildings.bin",
     "terrain": "E3/terrain.u16",
     "terrainHeader": "E3/terrain.json",
-    "features": "E3/features.json"
+    "features": "E3/features.json",
+    "ortho": "E3/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -1095,7 +1116,8 @@
     "buildingsBin": "F3/buildings.bin",
     "terrain": "F3/terrain.u16",
     "terrainHeader": "F3/terrain.json",
-    "features": "F3/features.json"
+    "features": "F3/features.json",
+    "ortho": "F3/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -1143,7 +1165,8 @@
     "buildingsBin": "G3/buildings.bin",
     "terrain": "G3/terrain.u16",
     "terrainHeader": "G3/terrain.json",
-    "features": "G3/features.json"
+    "features": "G3/features.json",
+    "ortho": "G3/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -1152,7 +1175,7 @@
     "buildings": 349,
     "trees": 0,
     "areas": 9,
-    "points": 18,
+    "points": 32,
     "terrainMinMax": [
      69.49,
      111.14
@@ -1195,7 +1218,8 @@
     "buildingsBin": "H3/buildings.bin",
     "terrain": "H3/terrain.u16",
     "terrainHeader": "H3/terrain.json",
-    "features": "H3/features.json"
+    "features": "H3/features.json",
+    "ortho": "H3/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -1243,7 +1267,8 @@
     "buildingsBin": "A4/buildings.bin",
     "terrain": "A4/terrain.u16",
     "terrainHeader": "A4/terrain.json",
-    "features": "A4/features.json"
+    "features": "A4/features.json",
+    "ortho": "A4/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -1291,7 +1316,8 @@
     "buildingsBin": "B4/buildings.bin",
     "terrain": "B4/terrain.u16",
     "terrainHeader": "B4/terrain.json",
-    "features": "B4/features.json"
+    "features": "B4/features.json",
+    "ortho": "B4/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -1300,7 +1326,7 @@
     "buildings": 346,
     "trees": 10,
     "areas": 18,
-    "points": 76,
+    "points": 89,
     "terrainMinMax": [
      38.39,
      73.2
@@ -1337,7 +1363,8 @@
     "buildingsBin": "C4/buildings.bin",
     "terrain": "C4/terrain.u16",
     "terrainHeader": "C4/terrain.json",
-    "features": "C4/features.json"
+    "features": "C4/features.json",
+    "ortho": "C4/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -1385,7 +1412,8 @@
     "buildingsBin": "D4/buildings.bin",
     "terrain": "D4/terrain.u16",
     "terrainHeader": "D4/terrain.json",
-    "features": "D4/features.json"
+    "features": "D4/features.json",
+    "ortho": "D4/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -1394,7 +1422,7 @@
     "buildings": 461,
     "trees": 17,
     "areas": 13,
-    "points": 35,
+    "points": 37,
     "terrainMinMax": [
      46.14,
      80.34
@@ -1431,7 +1459,8 @@
     "buildingsBin": "E4/buildings.bin",
     "terrain": "E4/terrain.u16",
     "terrainHeader": "E4/terrain.json",
-    "features": "E4/features.json"
+    "features": "E4/features.json",
+    "ortho": "E4/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -1440,7 +1469,7 @@
     "buildings": 415,
     "trees": 0,
     "areas": 10,
-    "points": 26,
+    "points": 33,
     "terrainMinMax": [
      56.23,
      90.99
@@ -1479,7 +1508,8 @@
     "buildingsBin": "F4/buildings.bin",
     "terrain": "F4/terrain.u16",
     "terrainHeader": "F4/terrain.json",
-    "features": "F4/features.json"
+    "features": "F4/features.json",
+    "ortho": "F4/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -1488,7 +1518,7 @@
     "buildings": 479,
     "trees": 13,
     "areas": 7,
-    "points": 36,
+    "points": 40,
     "terrainMinMax": [
      59.44,
      96.89
@@ -1525,7 +1555,8 @@
     "buildingsBin": "G4/buildings.bin",
     "terrain": "G4/terrain.u16",
     "terrainHeader": "G4/terrain.json",
-    "features": "G4/features.json"
+    "features": "G4/features.json",
+    "ortho": "G4/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -1534,7 +1565,7 @@
     "buildings": 598,
     "trees": 3,
     "areas": 4,
-    "points": 47,
+    "points": 56,
     "terrainMinMax": [
      65.29,
      96.97
@@ -1573,7 +1604,8 @@
     "buildingsBin": "H4/buildings.bin",
     "terrain": "H4/terrain.u16",
     "terrainHeader": "H4/terrain.json",
-    "features": "H4/features.json"
+    "features": "H4/features.json",
+    "ortho": "H4/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {

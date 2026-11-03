@@ -126,7 +126,9 @@ export function asphaltMaterial(atlas) {
 
   // --- junction markings from the signed-distance atlas
   if (atlas) {
-    const tex = new THREE.DataTexture(atlas.data, atlas.width, atlas.height, THREE.RGFormat, THREE.UnsignedByteType);
+    const r8 = atlas.format === "R8";                // compacted by the tile worker (R only, half resolution)
+    const tex = new THREE.DataTexture(atlas.data, atlas.width, atlas.height, r8 ? THREE.RedFormat : THREE.RGFormat, THREE.UnsignedByteType);
+    tex.unpackAlignment = 1;
     tex.magFilter = THREE.LinearFilter;
     tex.minFilter = THREE.LinearFilter;
     tex.generateMipmaps = false;

@@ -10,7 +10,8 @@ from common import (CONTRACT, COLS, I_RANGE, J_RANGE, L72_PROJ4, LAT_MAX, LAT_MI
                     ORIGIN_N, TILE, TILES, all_tiles, read_json, round2, study_box_local, tile_bounds, tile_ij, write_json)
 
 FILES = {"roads": "roads.json", "buildings": "buildings.json", "buildingsBin": "buildings.bin",
-         "terrain": "terrain.u16", "terrainHeader": "terrain.json", "features": "features.json"}
+         "terrain": "terrain.u16", "terrainHeader": "terrain.json", "features": "features.json",
+         "ortho": "ortho.jpg"}
 
 
 def main():

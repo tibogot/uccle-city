@@ -11,7 +11,7 @@ export function hash01(str) {
 }
 
 /** Wall style from a hash; tall blocks (flats) lean to render / concrete. */
-function wallStyle(r, height) {
+export function wallStyle(r, height) {
   const tall = height > 14;
   const table = tall ? [[0, 0.15], [1, 0.25], [2, 0.3], [3, 0.55], [4, 0.7], [5, 1]] : [[0, 0.3], [1, 0.48], [2, 0.56], [3, 0.8], [4, 0.93], [5, 1]];
   for (const [s, c] of table) if (r < c) return s;

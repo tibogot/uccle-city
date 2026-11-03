@@ -261,14 +261,49 @@ if (params.get("worker") !== "0") {
   } catch (e) { tileWorker = null; }
 }
 /** CPU data for a tile: from the worker, or on the main thread (?worker=0, or if the worker fails). */
-function tileData(entry) {
-  const local = () => import("./tileData.js").then((m) => m.buildTileData(entry, DATA.href));
+function tileData(entry, lite = false) {
+  const local = () => import("./tileData.js").then((m) => (lite ? m.buildLiteData : m.buildTileData)(entry, DATA.href));
   if (!tileWorker) return local();
   return new Promise((resolve, reject) => {
     const id = ++reqId;
     pendingReq.set(id, { resolve, reject, retry: () => local().then(resolve, reject) });
-    tileWorker.postMessage({ id, entry, base: DATA.href });
+    tileWorker.postMessage({ id, entry, base: DATA.href, lite });
   });
+}
+
+/** Far level of detail of a tile (tileData.js buildLiteData): orthophoto-draped 4 m terrain and
+ *  flat-coloured UrbIS solids. 2 draw calls, no shadows, no per-frame work. */
+const texLoader = new THREE.TextureLoader();
+async function loadLiteTile(entry, group) {
+  const d = await tileData(entry, true);
+  const g = new THREE.Group();
+  g.name = `${entry.name}-lite`;
+  const tg = new THREE.BufferGeometry();
+  tg.setAttribute("position", new THREE.BufferAttribute(d.terrain.pos, 3));
+  tg.setAttribute("normal", new THREE.BufferAttribute(d.terrain.nrm, 3));
+  tg.setAttribute("uv", new THREE.BufferAttribute(d.terrain.uv, 2));
+  tg.setIndex(new THREE.BufferAttribute(d.terrain.idx, 1));
+  const tm = new THREE.MeshStandardNodeMaterial({ roughness: 0.95, color: 0x5d6e45 });
+  const textures = [];
+  if (entry.files.ortho) {
+    const tex = await texLoader.loadAsync(new URL(entry.files.ortho, DATA).href).catch(() => null);
+    if (tex) { tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4; tm.map = tex; tm.color.set(0xffffff); textures.push(tex); }
+  }
+  g.add(new THREE.Mesh(tg, tm));
+  const bg = new THREE.BufferGeometry();
+  bg.setAttribute("position", new THREE.BufferAttribute(d.buildings.position, 3));
+  bg.setAttribute("normal", new THREE.BufferAttribute(d.buildings.normal, 3));
+  bg.setAttribute("color", new THREE.BufferAttribute(d.buildings.color, 3));
+  g.add(new THREE.Mesh(bg, sharedMat("lite-buildings", () => new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.85 }))));
+  group.add(g);
+  return {
+    name: entry.name,
+    dispose: () => {
+      g.traverse((o) => { o.geometry?.dispose(); if (o.material && !o.material.userData?.shared) o.material.dispose(); });
+      for (const t of textures) t.dispose();
+      g.removeFromParent();
+    },
+  };
 }
 
 /** Load and build one tile into the shared layer groups. Returns what the viewer needs from it. */
@@ -466,47 +501,64 @@ async function main() {
         (tramLine ? `\n${tramLine.info().split(". Source")[0]}` : "");
     }
   });
-  // Streaming: keep the tiles within `ring` of the tile under the camera loaded (nearest first) and
-  // unload tiles beyond ring + 1. ?ring=0 shows the chosen tile only; 2 = 5x5. Checked every second.
+  // Streaming: full-detail tiles within `ring` of the tile under the player (?ring=, default 1),
+  // far-LOD tiles out to `far` (?far=, default 3, 0 = none). Hysteresis of one tile for unloading.
+  // One full tile per step (nearest first), then up to two lite tiles. Checked every second.
   const ring = Math.max(0, Math.min(2, +(params.get("ring") ?? 1)));
+  const far = Math.max(ring, Math.min(6, +(params.get("far") ?? 3)));
   const T = x1 - x0;
   const centre = (t) => [(t.bounds.x[0] + t.bounds.x[1]) / 2, (t.bounds.z[0] + t.bounds.z[1]) / 2];
+  const liteGroup = new THREE.Group();
+  liteGroup.name = "far-lod";
+  scene.add(liteGroup);
+  const lite = new Map();                 // name -> lite tile
   const pending = new Set();
   let busy = null;
   const stream = async () => {
-    // the manifest tile under (or nearest to) the camera, loaded or not
-    const px = walker.on ? walker.x : controls.target.x, pz = walker.on ? walker.z : controls.target.z;   // orbit: what you look at
-    const cell = manifest.tiles.filter((t) => t.status !== "missing").map((t) => {
+    // the manifest tile under (or nearest to) the player / orbit target, loaded or not
+    const px = walker.on ? walker.x : controls.target.x, pz = walker.on ? walker.z : controls.target.z;
+    const built = manifest.tiles.filter((t) => t.status !== "missing");
+    const cell = built.map((t) => {
       const dx = Math.max(t.bounds.x[0] - px, 0, px - t.bounds.x[1]), dz = Math.max(t.bounds.z[0] - pz, 0, pz - t.bounds.z[1]);
       return [dx * dx + dz * dz, t];
     }).sort((a, b) => a[0] - b[0])[0][1];
     const [hx, hz] = centre(cell);
     const here = world.tiles.find((t) => t.name === cell.name);
     const dist = (t) => { const [tx, tz] = centre(t); return Math.max(Math.abs(tx - hx), Math.abs(tz - hz)) / T; };
-    // unload (never the tile under the camera)
+    const byName = (n) => built.find((m) => m.name === n);
     for (const t of [...world.tiles]) {
-      const e = manifest.tiles.find((m) => m.name === t.name);
-      if (t !== here && e && dist(e) > ring + 1.01 && world.tiles.length > 1) { t.dispose(); world.tiles.splice(world.tiles.indexOf(t), 1); log(`- tile ${t.name}`); }
+      if (t !== here && dist(byName(t.name)) > ring + 1.01 && world.tiles.length > 1) { t.dispose(); world.tiles.splice(world.tiles.indexOf(t), 1); log(`- tile ${t.name}`); }
     }
-    const want = manifest.tiles.filter((t) => t.status !== "missing" && dist(t) <= ring + 0.01 && !world.tiles.some((w) => w.name === t.name))
-      .sort((a, b) => dist(a) - dist(b));
+    for (const [n, l] of lite) if (dist(byName(n)) > far + 1.01 || world.tiles.some((w) => w.name === n)) { l.dispose(); lite.delete(n); }
+    const want = built.filter((t) => dist(t) <= ring + 0.01 && !world.tiles.some((w) => w.name === t.name)).sort((a, b) => dist(a) - dist(b));
     for (const t of want) {
       if (pending.has(t.name)) continue;
       pending.add(t.name);
       const t0 = performance.now();
       try {
         world.tiles.push(await loadTile(t, { layers, contourOn, verbose: false }));
+        lite.get(t.name)?.dispose(); lite.delete(t.name);
         log(`+ tile ${t.name} (${(performance.now() - t0).toFixed(0)} ms)`);
       } catch (e) { log(`tile ${t.name} failed: ${e.message}`); }
       pending.delete(t.name);
-      break;                                      // one tile per step: re-check where the camera is
+      return true;                                // one full tile per step: re-check where the player is
     }
-    return want.length > 1;
+    // far LOD: tiles not loaded in full, within `far`, nearest first (two per step)
+    const wantLite = built.filter((t) => dist(t) <= far + 0.01 && !lite.has(t.name) && !world.tiles.some((w) => w.name === t.name) && !pending.has(t.name))
+      .sort((a, b) => dist(a) - dist(b)).slice(0, 2);
+    await Promise.all(wantLite.map(async (t) => {
+      pending.add(t.name);
+      try { lite.set(t.name, await loadLiteTile(t, liteGroup)); } catch (e) { log(`far tile ${t.name} failed: ${e.message}`); }
+      pending.delete(t.name);
+    }));
+    if (wantLite.length && !want.length && built.filter((t) => dist(t) <= far + 0.01 && !lite.has(t.name) && !world.tiles.some((w) => w.name === t.name)).length === 0)
+      log(`far LOD: ${lite.size} tiles (out to ring ${far}), full: ${world.tiles.map((t) => t.name).join(" ")}`);
+    return wantLite.length > 0;
   };
   const loading = (async () => { while (await stream()); })();   // initial fill around the start tile
   busy = loading.finally(() => { busy = null; });
   setInterval(() => { if (!busy) busy = stream().finally(() => { busy = null; }); }, 1000);
-  window.viewer = { loading, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting,
+  window.viewer = { loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting,
     world, renderFrame: () => { for (const u of updaters) u(camera.position); renderFrame(); } };
 }
 
