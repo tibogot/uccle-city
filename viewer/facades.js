@@ -253,8 +253,26 @@ export function analyseBuildings(doc, buf, roads) {
       if (!faces.has(k)) faces.set(k, { tris: [], nx: nx / h, nz: nz / h });
       faces.get(k).tris.push({ p, n: tri.n, src: tri });
     }
+    // merge faces of one plane split by the key rounding (same direction within ~3°, offset within 0.3 m,
+    // touching along the face): a gable front must be ONE face so its openings are laid out once
+    const fl = [...faces.values()];
+    for (const f of fl) {
+      const tx = -f.nz, tz = f.nx;
+      let u0 = Infinity, u1 = -Infinity, dd = 0, k = 0;
+      for (const { p } of f.tris) for (const q of p) { const uu = q[0] * tx + q[2] * tz; u0 = Math.min(u0, uu); u1 = Math.max(u1, uu); dd += q[0] * f.nx + q[2] * f.nz; k++; }
+      f.u0 = u0; f.u1 = u1; f.d = dd / k;
+    }
+    for (let i = 0; i < fl.length; i++) {
+      const a = fl[i]; if (a.dead) continue;
+      for (let j = i + 1; j < fl.length; j++) {
+        const c = fl[j]; if (c.dead) continue;
+        if (a.nx * c.nx + a.nz * c.nz < 0.9985 || Math.abs(a.d - c.d) > 0.3) continue;
+        if (c.u0 > a.u1 + 0.15 || a.u0 > c.u1 + 0.15) continue;
+        a.tris.push(...c.tris); a.u0 = Math.min(a.u0, c.u0); a.u1 = Math.max(a.u1, c.u1); c.dead = true; j = i;   // rescan
+      }
+    }
     const ownRing = b.footprint[0];
-    for (const f of faces.values()) {
+    for (const f of fl.filter((q) => !q.dead)) {
       // outward: a point 0.5 m along the normal must be outside the building's own footprint
       {
         let mx = 0, mz = 0, k = 0;
@@ -601,7 +619,7 @@ export function wallMaterial() {
   const bwL = fw.div(nbL);
   const lxC = u.sub(fw.mul(0.5)).toVar();                                       // from the middle of the face
   const roseFace = street.mul(step(float(10.0), eh)).mul(float(1).sub(step(float(6.1), style))).mul(step(float(4.5), fw)).toVar();
-  const R = min(min(float(1.7), fw.mul(0.2)), min(eh.sub(1.5), float(13.4)).sub(4.6).sub(0.9).mul(0.5)).toVar();
+  const R = min(min(float(2.1), fw.mul(0.21)), min(eh.sub(1.5), float(13.4)).sub(4.6).sub(0.9).mul(0.5)).toVar();
   const roseBay = roseFace.mul(step(float(0.6), R)).mul(step(abs(lxC), R.add(0.45))).toVar();   // lancets give way to the rose
   const lx = fract(u.div(bwL)).sub(0.5).mul(bwL).toVar();
   const hwL = mix(min(float(0.7), bwL.mul(0.21)), min(float(0.8), fw.mul(0.17)), tower).toVar();
@@ -663,7 +681,7 @@ export function wallMaterial() {
   lmCol = mix(lmCol, wood, portal);
   lmH = lmH.sub(portal.mul(0.3));
   // rose window above the portal: 12 spokes, an inner ring, a hub, a moulded surround; glass set back by parallax
-  const cyR = pTop.add(0.7).add(R).toVar();
+  const cyR = max(pTop.add(0.7).add(R), min(eh.sub(1.5), float(13.4)).sub(R).sub(0.6)).toVar();   // high in the gable, clear of the portal
   const roseOk = roseFace.mul(lmOk).mul(step(float(0.6), R)).toVar();
   const rr = length(vec2(lxC, h.sub(cyR))).toVar();
   const aaR = fwidth(rr).add(0.003);

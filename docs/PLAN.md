@@ -370,9 +370,11 @@ modular kits**, and real data only decides **which material goes where**.
    above the portal on wide street faces, louvred belfry openings on tower solids
    (landmark solids under 11 m across and over 16 m tall, style 6.25).
    Screenshot `docs/img/viewer-G4-church-front.png`.
-   **Next for the church:** the front gable of Saint-Job is split into two UrbIS faces,
-   so it gets two lancets and two portals instead of the rose: merge coplanar
-   neighbouring faces of a landmark before placing openings; check materials against a photo.
+   Coplanar wall faces split by the grouping's rounding are now merged (all buildings;
+   G4 8,007 → 7,142 faces), so the Saint-Job front is one face: one portal, the rose
+   window high in the gable, lancets either side.
+   **Next for the church:** check materials against a photo; the drum and dome could
+   use their own windows (oculi) and lantern detail.
 
 3. **Ground materials.** UrbIS **Land cover** (CC0, same 1 km sheets) plus OSM
    areas say where grass, garden, paving, water and woodland are. Tiling grass,

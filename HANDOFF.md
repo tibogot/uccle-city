@@ -40,8 +40,8 @@ Pipeline (raw data must be fetched first, see README): `python pipeline/run_tile
 1. **Check on a real GPU (WebGPU)** in a browser: performance with all trees (1,600 per tile,
    47k total), the night-window speckle seen in software rendering, buttress/cornice look.
 2. **Church**: done: deep (parallax) openings, tracery, rose window, belfry louvres,
-   buttresses, ribs. Left: merge the split front-gable faces so the rose window lands on
-   the main front (see PLAN), compare materials with a photo of Saint-Job.
+   buttresses, ribs. Rose window on the main front. Left: compare materials with a photo of
+   Saint-Job, oculi on the dome drum, lantern detail.
 3. **Houses**: chimneys, roof eaves overhang, shopfronts from OSM `shop=*`, gable attic
    windows, parallax window reveals.
 4. **Night and props**: street lamps (pooled lights), benches, bus/tram stops, signals,
