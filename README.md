@@ -35,5 +35,5 @@ node tools/check_roads.mjs --all                     # road-engine errors per ti
 ```sh
 python3 -m http.server 8000      # from the repo root
 # open http://localhost:8000/debug/index.html?tile=G4     (2D)
-# open http://localhost:8000/viewer/index.html?tile=G4    (3D; &view=walk, &at=x,z for a spot, e.g. ?tile=C3&at=-609,309&view=walk)
+# open http://localhost:8000/viewer/index.html?tile=G4    (3D; &view=walk, &at=x,z, &time=golden|midday|overcast|twilight|night, &fx=0 = no post effects)
 ```

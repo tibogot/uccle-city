@@ -13,6 +13,8 @@ import { buildRoadNetwork } from "../vendor/roads/roadNetwork.js";
 import { buildLaneRoadMesh } from "../vendor/roads/mesh/laneRoadMesh.js";
 import { asphaltMaterial, concreteMaterial, vergeMaterial, surfaceAttribute } from "./roadPaint.js";
 import { buildingMeshes as facadeMeshes } from "./facades.js";
+import { Lighting, PRESETS } from "./lighting.js";
+import { createPipeline } from "./post.js";
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -361,22 +363,18 @@ async function main() {
   const [x0, x1] = entry.bounds.x, [z0, z1] = entry.bounds.z;
   const bounds = { x0, x1, z0, z1 };
 
-  const renderer = new THREE.WebGPURenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  const renderer = new THREE.WebGPURenderer({ antialias: true, powerPreference: "high-performance", reversedDepthBuffer: params.get("rdepth") !== "0" });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = true;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
   document.body.prepend(renderer.domElement);
   await renderer.init();
   const backend = renderer.backend.isWebGPUBackend ? "WebGPU" : "WebGL2 (fallback)";
   log(`renderer: ${backend}`);
 
   const scene = new THREE.Scene();
-  const sky = new THREE.Color(0xb9c9d6);
-  scene.background = sky;
-  scene.fog = new THREE.Fog(sky, 700, 2600);
-  scene.add(new THREE.HemisphereLight(0xdfe9f3, 0x5b5140, 1.4));
-  const sun = new THREE.DirectionalLight(0xfff2dd, 2.6);
+  const timeId = PRESETS[params.get("time")] ? params.get("time") : "golden";
+  const lighting = new Lighting(scene, renderer, timeId, { sunLight: params.get("sunlight") === "1" });
   const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
 
   const [tHdr, tBuf, bDoc, bBuf, roads, feats] = await timed("fetch", () => Promise.all([
@@ -385,15 +383,6 @@ async function main() {
   const hm = new Heightmap(tHdr, tBuf);
   const cy = hm.ground(cx, cz);
 
-  sun.position.set(cx - 260, cy + 420, cz + 300);   // high in the south-west (+z is south)
-  sun.target.position.set(cx, cy, cz);
-  sun.castShadow = true;
-  sun.shadow.mapSize.set(4096, 4096);
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  Object.assign(sun.shadow.camera, { left: -380, right: 380, top: 380, bottom: -380, near: 10, far: 1600 });
-  sun.shadow.bias = -0.0004;
-  sun.shadow.normalBias = 0.05;
-  scene.add(sun, sun.target);
 
   const layers = { terrain: new THREE.Group(), buildings: new THREE.Group(), roads: new THREE.Group(), features: new THREE.Group() };
   for (const g of Object.values(layers)) scene.add(g);
@@ -451,30 +440,26 @@ async function main() {
 
   let last = performance.now(), fpsAcc = 0, fpsN = 0, fps = 0, frames = 0;
   const info = renderer.info;
-  // Shadow box follows what the camera looks at, sized to the view: sharp at street level.
-  const sunDir = new THREE.Vector3(-260, 420, 300).normalize();
-  const focus = new THREE.Vector3();
-  const fitShadow = () => {
-    if (walker.on) focus.copy(camera.position).addScaledVector(camera.getWorldDirection(new THREE.Vector3()).setY(0).normalize(), 40);
-    else focus.copy(controls.target);
-    const half = walker.on ? 70 : THREE.MathUtils.clamp(camera.position.distanceTo(controls.target) * 0.9, 60, 380);
-    const sc = sun.shadow.camera;
-    if (Math.abs(sc.right - half) > half * 0.1) {
-      Object.assign(sc, { left: -half, right: half, top: half, bottom: -half });
-      sc.updateProjectionMatrix();
-    }
-    sun.position.copy(focus).addScaledVector(sunDir, 700);
-    sun.target.position.copy(focus);
-    sun.target.updateMatrixWorld();
-  };
+  // Render pipeline: AO + reflections + bloom + grade (?fx=0: plain render, for slow machines)
+  const fx = params.get("fx") !== "0";
+  const pipe = fx ? createPipeline(renderer, scene, camera) : null;
+  if (pipe) pipe.look(timeId); else renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  const focus = new THREE.Vector3(), fwd = new THREE.Vector3();
+  const renderFrame = () => (pipe ? pipe.render() : renderer.render(scene, camera));
+  const tsel = $("timeSel");
+  for (const k of Object.keys(PRESETS)) tsel.add(new Option(k, k, false, k === timeId));
+  tsel.onchange = () => { lighting.apply(tsel.value); pipe?.look(tsel.value); };
   renderer.setAnimationLoop(() => {
-    fitShadow();
+    if (walker.on) focus.copy(camera.position).addScaledVector(camera.getWorldDirection(fwd).setY(0).normalize(), 45);
+    else focus.copy(controls.target);
+    const half = walker.on ? 80 : THREE.MathUtils.clamp(camera.position.distanceTo(controls.target) * 0.9, 60, 380);
+    lighting.update(camera.position.y, hm.surface(camera.position.x, camera.position.z), focus, half);
     const now = performance.now(), dt = Math.min((now - last) / 1000, 0.1);
     last = now;
     fpsAcc += dt; fpsN++;
     if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
     if (walker.on) walker.update(dt); else controls.update();
-    renderer.render(scene, camera);
+    renderFrame();
     frames++;
     if (frames % 10 === 1) {
       const r = info.render;
@@ -484,7 +469,7 @@ async function main() {
         `cam x ${camera.position.x.toFixed(0)} z ${camera.position.z.toFixed(0)} y ${camera.position.y.toFixed(1)} m TAW`;
     }
   });
-  window.viewer = { scene, camera, renderer, net, hm, frames: () => frames, setView };
+  window.viewer = { scene, camera, renderer, net, hm, frames: () => frames, setView, renderFrame, lighting };
 }
 
 main().catch((e) => { log(`ERROR: ${e.message}`); console.error(e); });

@@ -22,7 +22,12 @@
 // Style choice is a stable hash of the UrbIS building id (BU_ID, so all solids of one building
 // match). The orthophoto can replace the roof guess later (PLAN, realism step 4).
 import * as THREE from "three/webgpu";
-import { attribute, positionWorld, float, vec3, mix, step, smoothstep, floor, fract, abs, min, max, fwidth } from "three/tsl";
+import {
+  Fn, If, attribute, positionWorld, normalWorld, cameraPosition, color, float, vec2, vec3, vec4, mix, step, smoothstep, floor, fract,
+  abs, min, max, clamp, fwidth, sin, sign, dot, normalize, length, pow,
+} from "three/tsl";
+import { hash2D, noise2D, bumpNormal, filteredPulse } from "./tslkit.js";
+import { env } from "./lighting.js";
 import { n3, band, courses } from "./roadPaint.js";
 
 const PARTY_PROBE = 0.35, STREET_REACH = 30;
@@ -195,93 +200,219 @@ export function analyseBuildings(doc, buf, roads) {
 
 const C = (r, g, b) => vec3(r, g, b);
 
+/**
+ * Room behind a window, raycast in metres (interior mapping). Adapted from evaluateApartmentInterior in
+ * mrdoob/slop-newyork js/tsl-materials.js (MIT, © 2026 Mr.doob); the frame comes from our face normal.
+ * gx: bay coordinate along the wall (bays), gy: storey coordinate (storeys), winUV: 0..1 inside the
+ * window, bayW / storeyH in metres. Returns vec4(colour, emission 0..1).
+ */
+const interiorRoom = Fn(([gx, gy, winUV, cellId, bayW, storeyH, seed, litProb, fw, drapeFw]) => {
+  const floorIdx = floor(gy).toVar();
+  const fh1 = fract(sin(floorIdx.mul(41.3).add(seed)).mul(43758.5453));
+  const fh2 = fract(sin(floorIdx.mul(73.7).add(seed.mul(1.7))).mul(43758.5453));
+  const roomBays = mix(float(1.0), float(2.0), step(0.5, fh1)).toVar();          // Uccle houses: 1-2 bay rooms
+  const roomU = gx.add(floor(fh2.mul(roomBays))).div(roomBays).toVar();
+  const roomId = vec2(floor(roomU), floorIdx).toVar();
+  const roomW = bayW.mul(roomBays).toVar();
+  const roomH = storeyH.mul(0.92).toVar();
+  const setback = float(0.18);                                                   // thick brick walls
+  const depth = roomH.mul(1.5).toVar();
+  const ox = fract(roomU).sub(0.5).mul(roomW).toVar();
+  const oy = winUV.y.sub(0.46).mul(roomH.mul(0.62)).toVar();
+  const n = normalize(vec3(normalWorld.x, 0.0, normalWorld.z)).toVar();
+  const ray = normalize(positionWorld.sub(cameraPosition)).toVar();
+  const dirX = dot(ray, vec3(n.z.negate(), 0.0, n.x)).toVar();
+  const dirY = ray.y.toVar();
+  const dirZ = max(abs(dot(ray, n)), 0.05).toVar();
+  const hw = roomW.mul(0.5), hh = roomH.mul(0.5);
+  const tX = hw.sub(ox.mul(sign(dirX))).div(max(abs(dirX), 0.0001)).toVar();
+  const tY = hh.sub(oy.mul(sign(dirY))).div(max(abs(dirY), 0.0001)).toVar();
+  const tZ = setback.add(depth).div(dirZ).toVar();
+  const t = min(min(tX, tY), tZ).toVar();
+  const hit = vec3(ox.add(dirX.mul(t)), oy.add(dirY.mul(t)), dirZ.mul(t));
+  const q = clamp(vec3(hit.x.div(roomW).add(0.5), hit.y.div(roomH).add(0.5), hit.z.sub(setback).div(depth)), vec3(0), vec3(1)).toVar();
+  const onBack = step(tZ, tX).mul(step(tZ, tY)).toVar();
+  const isY = step(tY, tX).mul(step(tY, tZ)).toVar();
+  const onCeil = isY.mul(step(0.0, dirY)), onFloor = isY.mul(float(1).sub(step(0.0, dirY)));
+  const s1 = hash2D(roomId.add(vec2(seed, 19.4))).toVar(), s2 = hash2D(roomId.add(vec2(seed.mul(1.9), 83.1))).toVar();
+  const s3 = hash2D(roomId.add(vec2(63.2, seed.mul(0.7))));
+  const lod = smoothstep(0.3, 0.8, max(fw.x, fw.y)).toVar();
+  const litRoom = step(float(1).sub(litProb), s3).toVar();
+  const lit = mix(litRoom, 1.0, lod);
+  const lightCol = mix(mix(color(0xdfe8ff), color(0x9fb6ff), s2), mix(color(0xffb845), color(0xffe49c), s1), step(0.3, s2)).toVar();
+  const wallBase = mix(mix(color(0x9a8b73), color(0x7d8580), s1), color(0xc9bda5), s2.mul(0.6)).toVar();
+  const wallCol = mix(wallBase, wallBase.mul(0.5), smoothstep(0.06, 0.04, q.y));
+  const boards = mix(color(0x4a3320), color(0x6a4c30), s1).mul(float(1).sub(step(0.92, fract(q.x.mul(7.0))).mul(0.3)));
+  const rug = mix(color(0x7a3b32), color(0x3a5760), s2);
+  const floorCol = mix(boards, rug, step(abs(q.x.sub(0.5)), 0.28).mul(step(abs(q.z.sub(0.58)), 0.25)).mul(0.88));
+  const lamp = smoothstep(0.18, 0.11, length(vec2(q.x.sub(0.5), q.z.sub(0.5)))).mul(float(1).sub(lod));
+  const ceilCol = mix(mix(wallBase, color(0xe8e2d5), 0.28), lightCol.mul(mix(float(0.85), float(3.8), lit)), lamp);
+  const doorX = mix(float(0.24), float(0.76), s1);
+  const inDoor = step(abs(q.x.sub(doorX)), 0.09).mul(step(abs(q.y.sub(0.34)), 0.34));
+  const picX = mix(float(0.72), float(0.28), step(0.5, s1));
+  const inFrame = step(abs(q.x.sub(picX)), 0.085).mul(step(abs(q.y.sub(0.56)), 0.095));
+  const inCanvas = step(abs(q.x.sub(picX)), 0.065).mul(step(abs(q.y.sub(0.56)), 0.075));
+  const backCol = mix(mix(mix(wallCol, mix(color(0x5a4631), color(0x39383c), step(0.5, s2)), inDoor), color(0x141210), inFrame),
+    mix(color(0x2c3a4a), color(0x7a5a3a), fract(s1.add(s2))), inCanvas);
+  const shell = mix(mix(mix(wallCol, floorCol, onFloor), ceilCol, onCeil), backCol, onBack);
+  const ao = (v) => smoothstep(0.0, 0.16, v).mul(smoothstep(0.0, 0.16, float(1).sub(v)));
+  const edgeAO = mix(mix(ao(q.y).mul(ao(q.z)), ao(q.x).mul(ao(q.z)), isY), ao(q.x).mul(ao(q.y)), onBack);
+  const room = shell.mul(mix(float(0.66), float(1), edgeAO)).mul(mix(float(1), float(0.42), q.z)).toVar();
+  // curtains just behind the glass (lace or drapes), parallax-shifted
+  const cU = clamp(winUV.x.add(dirX.div(dirZ).mul(0.06)), 0.0, 1.0).toVar();
+  const w1 = hash2D(cellId.add(vec2(seed.mul(0.8), 41.2))), w2 = hash2D(cellId.add(vec2(17.9, seed.mul(1.3))));
+  const sL = smoothstep(0.18, 1.0, w1), sR = smoothstep(0.18, 1.0, w2);
+  const lw = sL.mul(sL).mul(0.48), rw = sR.mul(sR).mul(0.48);
+  const aa = drapeFw.add(0.015);
+  const inL = smoothstep(lw.add(aa), lw.sub(aa), cU).mul(step(0.03, lw));
+  const inR = smoothstep(float(1).sub(rw).sub(aa), float(1).sub(rw).add(aa), cU).mul(step(0.03, rw));
+  // Belgian lace half-curtains (vitrage) over the lower part of many windows
+  const lace = step(0.55, fract(s1.mul(3.1).add(w1))).mul(smoothstep(0.52, 0.48, winUV.y));
+  const inDrape = mix(clamp(max(max(inL, inR), lace.mul(0.85)), 0.0, 1.0), 0.29, lod).toVar();
+  const pick = fract(s1.mul(5.7)).mul(4.0);
+  const fabric = mix(mix(mix(mix(color(0xd8cdb8), color(0xe8e4da), lace), color(0x8a7a64), step(1.0, pick).mul(float(1).sub(lace))),
+    color(0x6f818b), step(2.0, pick).mul(float(1).sub(lace))), color(0x8c5a44), step(3.0, pick).mul(float(1).sub(lace)));
+  const pleat = sin(cU.mul(48.0).add(w1.mul(6.28))).mul(float(1).sub(smoothstep(0.6, 1.6, drapeFw.mul(48.0)))).mul(0.2).add(0.95);
+  const col = mix(room, fabric.mul(pleat).mul(0.92), inDrape);
+  const emit = mix(float(1), float(0.25), inDrape);
+  const warm = mix(vec3(1), lightCol, lit.mul(0.85));
+  return vec4(col.mul(warm).mul(mix(float(0.85), float(1.35), lit)), litRoom.mul(emit));
+});
+
 export function wallMaterial() {
   const m = new THREE.MeshStandardNodeMaterial({ metalness: 0 });
   const P = positionWorld;
   const wall = attribute("aWall", "vec4"), bld = attribute("aBld", "vec4");
   const u = wall.x, fw = wall.y, h = wall.z, eh = wall.w;
   const style = bld.x, party = bld.y, street = bld.z, rnd = bld.w;
+  const camDist = length(P.sub(cameraPosition)).toVar();
+  const near = float(1).sub(smoothstep(16.0, 150.0, camDist)).toVar();       // relief and fine detail fade with distance
   const grain = n3(P.x.mul(5.0), P.y.mul(5.0), P.z.mul(5.0));
-  const stain = n3(P.x.mul(0.4), P.y.mul(0.9), P.z.mul(0.4));
 
-  // --- wall surface by style
-  const brick = courses(h, u, 0.0675, 0.23, float(0.01), rnd.mul(97.0));
-  const brickTone = brick.tone.sub(0.5).mul(0.35).add(1.0);
-  const mortar = C(0.32, 0.3, 0.27);
-  const brickOf = (col) => mix(col.mul(brickTone).add(grain.mul(0.01)), mortar, brick.joint);
-  const red = brickOf(C(0.29, 0.085, 0.05)), brown = brickOf(C(0.17, 0.075, 0.045)), yellow = brickOf(C(0.4, 0.27, 0.14));
-  const renderOf = (col) => col.add(grain.mul(0.012)).sub(stain.mul(0.025)).sub(smoothstep(float(1.5), float(0.0), h).mul(0.05));
-  const white = renderOf(C(0.62, 0.6, 0.55)), cream = renderOf(C(0.56, 0.47, 0.32)), grey = renderOf(C(0.3, 0.29, 0.27));
-  let col = red;
-  col = mix(col, brown, band(style, 1));
-  col = mix(col, yellow, band(style, 2));
-  col = mix(col, white, band(style, 3));
-  col = mix(col, cream, band(style, 4));
-  col = mix(col, grey, band(style, 5));
-  const isBrick = float(1).sub(step(float(2.5), style));
-  let rough = mix(float(0.85), float(0.92), isBrick);
-
-  // --- plinth (Belgian blue stone) and cornice band under the eaves
-  const aaH = fwidth(h).add(0.002);
-  const plinth = float(1).sub(smoothstep(float(0.5).sub(aaH), float(0.5).add(aaH), h));
-  col = mix(col, C(0.075, 0.08, 0.09).add(grain.mul(0.01)), plinth);
-  const corn = smoothstep(eh.sub(0.42).sub(aaH), eh.sub(0.42).add(aaH), h).mul(float(1).sub(smoothstep(eh.sub(0.12).sub(aaH), eh.sub(0.12).add(aaH), h)))
-    .mul(step(float(4.5), eh)).mul(float(1).sub(party));
-  col = mix(col, C(0.55, 0.53, 0.49), corn.mul(0.85));
-
-  // --- storeys and window bays
-  const nb = max(floor(fw.div(2.7)), float(1));
-  const bw = fw.div(nb);
-  const bay = floor(u.div(bw));
-  const ub = fract(u.div(bw)).sub(0.5).mul(bw);                 // metres from the bay centre
-  const ww = min(float(1.25), bw.mul(0.5));
+  // ---- window grid: corner piers, whole bays, storeys (ground floor 3.4 m, then 3.0 m)
+  const pier = float(0.55);
+  const usable = max(fw.sub(pier.mul(2)), float(0.001));
+  const nb = max(floor(usable.div(2.6).add(0.5)), float(1)).toVar();
+  const bw = usable.div(nb).toVar();
+  const gx = u.sub(pier).div(bw).toVar();                                       // bay coordinate
   const G = float(3.4), S = float(3.0);
   const up = step(G, h);
-  const fl = floor(h.sub(G).div(S)).add(1).mul(up);             // 0 = ground floor
-  const hz = mix(h, h.sub(G).sub(fl.sub(1).mul(S)), up);        // height inside the storey
-  const lo = mix(float(0.95), float(0.85), up), hi = mix(float(2.6), float(2.35), up);
-  const floorTop = h.sub(hz).add(hi);                           // absolute height of this storey's window top
-  const allowed = float(1).sub(party).mul(step(float(1.8), fw)).mul(step(float(3.0), eh))
-    .mul(step(floorTop.add(0.3), eh));                         // the whole window fits under the eaves
-  const aaU = fwidth(u).add(0.002);
-  const box = (cx, hw, y0, y1, a) =>
-    smoothstep(hw.add(a), hw.sub(a), abs(ub.sub(cx))).mul(smoothstep(y0.sub(a), y0.add(a), hz)).mul(smoothstep(y1.add(a), y1.sub(a), hz));
-  let win = box(float(0), ww.mul(0.5), lo, hi, aaU).mul(allowed);
-  // the front door: ground floor of a street face, one bay chosen per building
+  const gy = mix(h.div(G), h.sub(G).div(S).add(1.0), up).toVar();              // storey coordinate
+  const storeyH = mix(G, S, up);
+  const fwx = fwidth(gx).toVar(), fwy = fwidth(gy).toVar();
+  const ww = min(float(1.2), bw.mul(0.52));
+  const xa = float(0.5).sub(ww.div(bw).mul(0.5)).toVar(), xb = float(1).sub(xa).toVar();
+  const ya = mix(float(0.27), float(0.29), up).toVar(), yb = mix(float(0.77), float(0.79), up).toVar();
+  const fl = floor(gy);
+  const winTopAbs = mix(yb.mul(G), G.add(fl.sub(1).add(yb).mul(S)), up);
+  const ok = float(1).sub(party).mul(step(float(1.6), fw)).mul(step(float(2.8), eh))
+    .mul(step(winTopAbs.add(0.35), eh))                                          // the whole window fits under the eaves
+    .mul(step(0.0, gx)).mul(step(gx, nb)).toVar();
+  // the front door replaces one ground-floor window on a street face
   const doorBay = floor(rnd.mul(nb));
-  const isDoor = street.mul(band(bay.sub(doorBay), 0)).mul(float(1).sub(up)).mul(step(float(1.8), fw)).mul(step(float(2.8), eh));
-  const door = box(float(0), float(0.55), float(0.0), float(2.45), aaU).mul(isDoor);
-  win = win.mul(float(1).sub(isDoor));
-  // frame: the outer 7 cm of the window; glazing bars: a centre mullion and a transom at 70 %
-  const inner = box(float(0), ww.mul(0.5).sub(0.07), lo.add(0.07), hi.sub(0.07), aaU);
-  const mull = smoothstep(float(0.03).add(aaU), float(0.03).sub(aaU), abs(ub)).mul(step(float(0.9), ww));
-  const tr = lo.add(hi.sub(lo).mul(0.7));
-  const trans = smoothstep(float(0.03).add(aaU), float(0.03).sub(aaU), abs(hz.sub(tr)));
-  const glass = inner.mul(float(1).sub(max(mull, trans)));
-  const frame = win.mul(float(1).sub(glass));
-  // sill under each window
-  const sill = box(float(0), ww.mul(0.5).add(0.06), lo.sub(0.09), lo, aaU).mul(allowed).mul(float(1).sub(isDoor));
-  col = mix(col, C(0.5, 0.49, 0.46), sill);
-  // glass: dark, a sky gradient toward the top, some windows with lighter curtains
-  const curtain = step(float(0.65), fract(rnd.mul(13.0).add(bay.mul(0.37)).add(fl.mul(0.61))));
-  const glassCol = mix(C(0.025, 0.03, 0.04), C(0.13, 0.16, 0.2), smoothstep(lo, hi, hz).mul(0.8)).add(curtain.mul(C(0.06, 0.055, 0.045)));
-  const frameCol = mix(C(0.6, 0.6, 0.58), C(0.07, 0.065, 0.06), step(float(0.8), fract(rnd.mul(7.0))));   // white, some dark frames
-  col = mix(col, frameCol, frame);
-  col = mix(col, glassCol, glass.mul(win));
-  rough = mix(rough, float(0.5), frame);
-  rough = mix(rough, float(0.08), glass.mul(win));
-  // door: painted (Brussels green, oxblood, navy, natural wood), panelled
+  const isDoor = street.mul(step(abs(floor(gx).sub(doorBay)), 0.5)).mul(float(1).sub(up)).mul(ok).toVar();
+  const dxa = float(0.5).sub(float(0.55).div(bw)), dxb = float(1).sub(dxa);
+  const wxa = mix(xa, dxa, isDoor), wxb = mix(xb, dxb, isDoor);
+  const wya = mix(ya, float(0.0), isDoor), wyb = mix(yb, float(0.72), isDoor);
+  const cx = filteredPulse(gx, wxa, wxb, fwx), cy = filteredPulse(gy, wya, wyb, fwy);
+  const opening = cx.mul(cy).mul(ok).toVar();                                    // whole opening (frame + glass)
+  // frame 7 cm, glass inside; a mullion and a transom
+  const fX = float(0.07).div(bw), fY = float(0.07).div(storeyH);
+  const gxa = wxa.add(fX), gxb = wxb.sub(fX), gya = wya.add(fY), gyb = wyb.sub(fY);
+  const glassBox = filteredPulse(gx, gxa, gxb, fwx).mul(filteredPulse(gy, gya, gyb, fwy)).mul(ok).toVar();
+  const wu = clamp(fract(gx).sub(gxa).div(gxb.sub(gxa)), 0.0, 1.0).toVar();      // 0..1 inside the glass
+  const wv = clamp(fract(gy).sub(gya).div(gyb.sub(gya)), 0.0, 1.0).toVar();
+  const barX = smoothstep(float(0.035).div(ww), float(0.0), abs(wu.sub(0.5))).mul(step(float(0.95), ww));
+  const barY = smoothstep(float(0.035).div(storeyH.mul(0.5)), float(0.0), abs(wv.sub(0.7)));
+  const bars = max(barX, barY).mul(float(1).sub(isDoor)).mul(near.mul(0.7).add(0.3));
+  const glass = glassBox.mul(float(1).sub(bars)).toVar();
+  const frame = opening.sub(glassBox).add(glassBox.mul(bars)).max(0).toVar();
+
+  // ---- wall surface by style, with relief heights
+  const brick = courses(h, u, 0.0675, 0.23, float(0.01), rnd.mul(97.0));
+  const brickTone = brick.tone.sub(0.5).mul(0.35).add(1.0);
+  const mortar = C(0.3, 0.28, 0.25);
+  const brickOf = (c) => mix(c.mul(brickTone).add(grain.mul(0.01)), mortar, brick.joint);
+  const stain = noise2D(vec2(u.mul(1.4), h.mul(0.05).add(rnd.mul(13.0))));      // soot streaks run down the wall
+  const renderOf = (c) => c.add(grain.mul(0.012)).mul(float(1).sub(stain.mul(0.12))).sub(smoothstep(float(1.4), float(0.0), h).mul(0.05));
+  let col = brickOf(C(0.29, 0.085, 0.05));
+  col = mix(col, brickOf(C(0.17, 0.075, 0.045)), band(style, 1));
+  col = mix(col, brickOf(C(0.4, 0.27, 0.14)), band(style, 2));
+  col = mix(col, renderOf(C(0.62, 0.6, 0.55)), band(style, 3));
+  col = mix(col, renderOf(C(0.56, 0.47, 0.32)), band(style, 4));
+  col = mix(col, renderOf(C(0.3, 0.29, 0.27)), band(style, 5));
+  const isBrick = float(1).sub(step(float(2.5), style)).toVar();
+  // relief: domed bricks, recessed openings, protruding sills / plinth / cornice (metres)
+  let height = isBrick.mul(float(1).sub(brick.joint)).mul(0.0045);
+  height = height.sub(opening.mul(0.12));                                        // reveal: the opening sits 12 cm back
+  const aaH = fwidth(h).add(0.002);
+  const plinth = float(1).sub(smoothstep(float(0.5).sub(aaH), float(0.5).add(aaH), h)).toVar();
+  col = mix(col, C(0.075, 0.08, 0.09).add(grain.mul(0.01)), plinth);
+  height = height.add(plinth.mul(0.03));
+  const corn = smoothstep(eh.sub(0.42).sub(aaH), eh.sub(0.42).add(aaH), h).mul(float(1).sub(smoothstep(eh.sub(0.12).sub(aaH), eh.sub(0.12).add(aaH), h)))
+    .mul(step(float(4.5), eh)).mul(float(1).sub(party)).toVar();
+  col = mix(col, C(0.55, 0.53, 0.49), corn.mul(0.85));
+  height = height.add(corn.mul(0.05));
+  // sills (blue stone) under every window, a shadow beneath them, lit top
+  const sillX = filteredPulse(gx, wxa.sub(float(0.06).div(bw)), wxb.add(float(0.06).div(bw)), fwx);
+  const sillY = filteredPulse(gy, wya.sub(float(0.08).div(storeyH)), wya, fwy);
+  const sill = sillX.mul(sillY).mul(ok).mul(float(1).sub(isDoor)).toVar();
+  const underSill = sillX.mul(filteredPulse(gy, wya.sub(float(0.3).div(storeyH)), wya.sub(float(0.08).div(storeyH)), fwy)).mul(ok).mul(float(1).sub(isDoor));
+  col = mix(col, C(0.16, 0.165, 0.17).add(env.uSunColor.mul(0.04)), sill);
+  col = col.mul(float(1).sub(underSill.mul(0.25)));
+  height = height.add(sill.mul(0.04));
+  // reveal shadows on the wall just inside the opening: lintel (top) and jambs
+  const revealTop = smoothstep(gyb.sub(float(0.12).div(storeyH)), gyb, fract(gy)).mul(glassBox);
+  const revealSide = max(smoothstep(gxa.add(float(0.1).div(bw)), gxa, fract(gx)), smoothstep(gxb.sub(float(0.1).div(bw)), gxb, fract(gx))).mul(glassBox);
+
+  // ---- glass with the room behind it
+  const n = normalize(vec3(normalWorld.x, 0.0, normalWorld.z));
+  const view = normalize(cameraPosition.sub(P));
+  const fres = pow(float(1).sub(abs(dot(view, normalWorld))), 2.0).mul(0.52).add(0.08).toVar();
+  const cellId = vec2(floor(gx), floor(gy));
+  const litProb = float(0.55).mul(0.62);
+  const drapeFootprint = fwidth(wu);                                            // derivatives before the branch
+  const room = Fn(() => {
+    const fwv = vec2(fwx, fwy).toVar(), drapeFw = float(drapeFootprint).toVar();
+    const r = vec4(0).toVar();
+    If(glass.greaterThan(0.0), () => {                                           // rooms only where there is glass
+      r.assign(interiorRoom(gx, gy, vec2(wu, wv), cellId, bw, storeyH, rnd.mul(100.0), litProb, fwv, drapeFw));
+    });
+    return r;
+  })();
+  const dirt = float(0.4).add(smoothstep(0.25, 0.0, wv).mul(0.2));
+  const sky = mix(vec3(env.uSkyHorizon), vec3(env.uSkyTop), clamp(view.y.negate().mul(2.0).add(0.4), 0.0, 1.0));
+  let glassCol = mix(room.rgb.mul(C(0.71, 0.78, 0.75)), C(0.05, 0.06, 0.065), dirt.mul(0.3));
+  glassCol = mix(glassCol, sky.mul(0.7), fres);
+  glassCol = glassCol.mul(float(1).sub(revealTop.mul(0.42))).mul(float(1).sub(revealSide.mul(0.3)));
+  // door: painted, panelled, glazed fanlight above
   const di = floor(fract(rnd.mul(31.0)).mul(4.0));
   let doorCol = C(0.05, 0.12, 0.07);
   doorCol = mix(doorCol, C(0.16, 0.03, 0.03), band(di, 1));
   doorCol = mix(doorCol, C(0.03, 0.05, 0.11), band(di, 2));
   doorCol = mix(doorCol, C(0.12, 0.06, 0.025), band(di, 3));
-  const panel = box(float(0), float(0.4), float(0.25), float(1.15), aaU).add(box(float(0), float(0.4), float(1.35), float(2.25), aaU));
-  doorCol = mix(doorCol.mul(0.75), doorCol, min(panel, float(1)));
-  col = mix(col, doorCol, door);
-  rough = mix(rough, float(0.45), door);
+  const fan = step(0.78, wv);
+  const panel = step(abs(wu.sub(0.5)), 0.36).mul(max(step(abs(wv.sub(0.25)), 0.17), step(abs(wv.sub(0.58)), 0.14)));
+  doorCol = mix(doorCol.mul(0.7), doorCol, panel);
+  const doorGlass = isDoor.mul(fan);
+  const frameCol = mix(C(0.6, 0.6, 0.58), C(0.07, 0.065, 0.06), step(float(0.8), fract(rnd.mul(7.0))));
+
+  col = mix(col, frameCol, frame);
+  const glassPart = glass.mul(mix(float(1), doorGlass, isDoor)).toVar();
+  const doorPart = glass.mul(isDoor).mul(float(1).sub(fan));
+  col = mix(col, glassCol, glassPart);
+  col = mix(col, doorCol, doorPart);
+  height = height.add(frame.mul(0.03));
+
+  // ---- lighting terms
+  const relief = bumpNormal(height.mul(near));
+  m.normalNode = relief;
   m.colorNode = col;
-  m.roughnessNode = rough;
+  m.roughnessNode = mix(mix(mix(float(0.85), float(0.93), isBrick), float(0.5), frame), mix(float(0.12), float(0.4), dirt.sub(0.4).mul(2.5)), glassPart);
+  m.metalnessNode = glassPart.mul(fres).mul(0.6);                               // lets SSR reflect the street in the glass
+  m.emissiveNode = room.rgb.mul(room.a).mul(float(1).sub(fres.mul(0.82))).mul(glassPart).mul(env.uInteriorGlow).mul(0.76);
+  // height AO: wall feet and narrow gaps between houses get less sky
+  m.aoNode = mix(float(0.62), float(1.0), smoothstep(0.0, 9.0, h)).mul(smoothstep(0.0, 1.2, h).mul(0.2).add(0.8));
   return m;
 }
 

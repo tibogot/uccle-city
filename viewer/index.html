@@ -20,11 +20,11 @@
 <script type="importmap">
 {
   "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.webgpu.js",
-    "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.webgpu.js",
-    "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.tsl.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
-    "three/src/": "https://cdn.jsdelivr.net/npm/three@0.180.0/src/"
+    "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.tsl.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/",
+    "three/src/": "https://cdn.jsdelivr.net/npm/three@0.187.0/src/"
   }
 }
 </script>
@@ -37,6 +37,7 @@
   <label><input type="checkbox" data-layer="roads" checked> roads (road engine)</label>
   <label><input type="checkbox" data-layer="features" checked> tram rails, trees</label>
   <label><input type="checkbox" id="contours"> contour lines (1 m)</label>
+  <label>time <select id="timeSel"></select></label>
   <button id="btnOrbit">Overview</button><button id="btnStJob">Close-up</button><button id="btnWalk">Walk</button>
   <div id="stats">loading…</div>
   <div id="log"></div>

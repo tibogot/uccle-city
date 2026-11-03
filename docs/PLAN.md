@@ -317,6 +317,23 @@ modular kits**, and real data only decides **which material goes where**.
    parallax), shopfronts from OSM `shop=*` points, gable attic windows, the
    church and other landmarks treated by hand, roof colour from the
    orthophoto (step 4).
+2b. **Lighting, post and interiors (2026-11-03), after studying mrdoob/slop-newyork (MIT):**
+   three.js r180 -> **r187**. `viewer/lighting.js`: physical sky with clouds baked into an
+   environment map (IBL), sun with camera-fitted shadows (the cascaded `SunLight` is
+   behind `?sunlight=1`: it cast no shadows in our WebGL2 tests), hemisphere canyon bounce,
+   sky-coloured aerial fog, presets golden / midday / overcast / twilight / night
+   (`?time=`, HUD selector). `viewer/post.js`: GTAO ambient occlusion, screen-space
+   reflections, bloom, colour grade, vignette (`?fx=0` turns them off). Reversed depth
+   buffer (`?rdepth=0` to disable). `viewer/tslkit.js`: ported helpers (box-filtered
+   pulses, surface-gradient bump, value noise). Façades: box-filtered window grid with
+   corner piers, **interior-mapped rooms** behind every window (adapted from slop-newyork:
+   floors, rugs, lamps, doors, pictures, drapes and Belgian lace half-curtains, lit or not),
+   Fresnel glass reflecting the sky (and SSR), reveal shadows, bump relief (bricks,
+   recessed openings, sills, plinth, cornice), soot streaks, height AO, glowing windows
+   at night.
+   **Next:** real trees (leaf-card crowns, wind; ours are icosahedra), street lamps with
+   a pooled set of lights for night, shopfronts, exposed party-wall treatment, wet roads.
+
 3. **Ground materials.** UrbIS **Land cover** (CC0, same 1 km sheets) plus OSM
    areas say where grass, garden, paving, water and woodland are. Tiling grass,
    soil, gravel and paving materials, plus hedges along garden edges.
