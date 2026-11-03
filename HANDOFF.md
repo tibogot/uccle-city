@@ -42,7 +42,7 @@ Pipeline (raw data must be fetched first, see README): `python pipeline/run_tile
 2. **Church**: done: deep (parallax) openings, tracery, rose window, belfry louvres,
    buttresses, ribs. Rose window on the main front. Left: compare materials with a photo of
    Saint-Job, oculi on the dome drum, lantern detail.
-3. **Houses**: chimneys, roof eaves overhang, shopfronts from OSM `shop=*`, gable attic
+3. **Houses**: (chimneys done) roof eaves overhang, shopfronts from OSM `shop=*`, gable attic
    windows, parallax window reveals.
 4. **Night and props**: street lamps (pooled lights), benches, bus/tram stops, signals,
    tram overhead wires (all from OSM points/lines).
@@ -52,6 +52,10 @@ Pipeline (raw data must be fetched first, see README): `python pipeline/run_tile
    manholes; the marking atlas is ~24 MB per tile, so shrink it before streaming.
 7. **Multi-tile streaming + LOD**: load neighbouring tiles around the player, tree LOD /
    impostors, far tiles with the draped orthophoto.
+
+## Blender assets
+
+Plan for better houses/props made in Blender without losing performance: `docs/BLENDER.md`.
 
 ## Tips for the next session
 

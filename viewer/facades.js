@@ -222,7 +222,7 @@ export function analyseBuildings(doc, buf, roads) {
   const W = { position: [], normal: [], aWall: [], aBld: [], aFN: [] };
   const D = { position: [], normal: [], color: [] };                             // detail geometry
   const R = { position: [], normal: [], aRoof: [], aRoofCol: [] };
-  const stats = { faces: 0, party: 0, street: 0, cornices: 0, buttresses: 0, ridges: 0 };
+  const stats = { faces: 0, party: 0, street: 0, cornices: 0, buttresses: 0, ridges: 0, chimneys: 0 };
   doc.buildings.forEach((b, bi) => {
     const base = b.base, eaves = (b.eaves ?? b.top) - base;
     const key = String(b.attrs?.BU_ID ?? b.id);
@@ -330,6 +330,29 @@ export function analyseBuildings(doc, buf, roads) {
           box(D, A, B, h2, h2 - h1, 0.32, f.nx, f.nz, [0.52, 0.49, 0.43]);              // upper stage, set back
           box(D, A, B, h1 + 0.12, 0.12, 0.62, f.nx, f.nz, [0.44, 0.42, 0.38]);           // weathering cap
           stats.buttresses++;
+        }
+      }
+      // chimney stacks: Brussels terraces put them on the party walls, at the highest point of the gable
+      if (!landmark && partyH >= 999 && faceH > 5 && width > 3 && hash01(key + "c" + Math.round(cx) + Math.round(cz)) < 0.7) {
+        let hq = null;
+        for (const { p } of f.tris) for (const q of p) if (!hq || q[1] > hq[1]) hq = q;
+        if (hq && hq[1] - base > eaves + 0.8) {                                     // only on a real gable (pitched roof)
+          const uq = hq[0] * tx + hq[2] * tz;
+          const um = Math.min(Math.max(uq, u0 + 0.8), u1 - 0.8) - uq;              // keep the stack on the wall
+          const cxq = hq[0] + tx * um, czq = hq[2] + tz * um;
+          const hw = 0.45, A = [cxq - tx * hw, 0, czq - tz * hw], B = [cxq + tx * hw, 0, czq + tz * hw];
+          const top = hq[1] + 1.1, brick = style <= 2 ? [0.2, 0.085, 0.055] : [0.24, 0.11, 0.07];
+          // straddles the party wall (half on each side) so both neighbours agree
+          const A2 = [A[0] + f.nx * 0.3, 0, A[2] + f.nz * 0.3], B2 = [B[0] + f.nx * 0.3, 0, B[2] + f.nz * 0.3];
+          box(D, A2, B2, top, 2.4, 0.6, -f.nx, -f.nz, brick);
+          const cA = [A2[0] - tx * 0.06 + f.nx * 0.06, 0, A2[2] - tz * 0.06 + f.nz * 0.06];
+          const cB = [B2[0] + tx * 0.06 + f.nx * 0.06, 0, B2[2] + tz * 0.06 + f.nz * 0.06];
+          box(D, cA, cB, top + 0.1, 0.14, 0.72, -f.nx, -f.nz, [0.42, 0.41, 0.39]);   // stone cap
+          for (const k of [-0.2, 0.2]) {                                            // two clay pots
+            const px = cxq + tx * k - f.nx * 0.0, pz = czq + tz * k - f.nz * 0.0;
+            box(D, [px - tx * 0.09, 0, pz - tz * 0.09], [px + tx * 0.09, 0, pz + tz * 0.09], top + 0.42, 0.32, 0.18, f.nx, f.nz, [0.33, 0.13, 0.07]);
+          }
+          stats.chimneys++;
         }
       }
       for (const { p, n: nn, src } of f.tris) for (const q of p) {

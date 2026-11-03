@@ -373,6 +373,9 @@ modular kits**, and real data only decides **which material goes where**.
    Coplanar wall faces split by the grouping's rounding are now merged (all buildings;
    G4 8,007 → 7,142 faces), so the Saint-Job front is one face: one portal, the rose
    window high in the gable, lancets either side.
+   Chimney stacks (brick, stone cap, two clay pots) straddle party walls at the gable's
+   highest point, about 70 % of them (G4: 496). Plan for Blender-made kit pieces and hero
+   models without losing performance: `docs/BLENDER.md`.
    **Next for the church:** check materials against a photo; the drum and dome could
    use their own windows (oculi) and lantern detail.
 

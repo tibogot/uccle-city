@@ -394,7 +394,7 @@ async function main() {
   const contourOn = uniform(0);
   layers.terrain.add(await timed("terrain mesh", () => terrainMesh(hm, contourOn)));
   const B = await timed("building meshes + façades", () => facadeMeshes(bDoc, bBuf, roads));
-  log(`façades: ${B.stats.faces} wall faces, ${B.stats.party} party walls, ${B.stats.street} facing a street; details: ${B.stats.cornices} cornices, ${B.stats.buttresses} buttresses, ${B.stats.ridges} ridge/hip caps`);
+  log(`façades: ${B.stats.faces} wall faces, ${B.stats.party} party walls, ${B.stats.street} facing a street; details: ${B.stats.cornices} cornices, ${B.stats.buttresses} buttresses, ${B.stats.ridges} ridge/hip caps, ${B.stats.chimneys} chimneys`);
   layers.buildings.add(...B.meshes);
   layers.features.add(featureObjects(feats, hm, bounds));
   log(`buildings: ${bDoc.count} (${B.triangles} triangles), roads: ${R.triangles} triangles in tile, terrain cells carved: ${R.carvedCells}`);
