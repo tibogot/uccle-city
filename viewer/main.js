@@ -12,6 +12,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { buildRoadNetwork } from "../vendor/roads/roadNetwork.js";
 import { buildLamps } from "./lamps.js";
 import { buildFurniture } from "./furniture.js";
+import { buildTram } from "./tram.js";
 import { buildLaneRoadMesh } from "../vendor/roads/mesh/laneRoadMesh.js";
 import { asphaltMaterial, concreteMaterial, vergeMaterial, surfaceAttribute } from "./roadPaint.js";
 import { buildingMeshes as facadeMeshes } from "./facades.js";
@@ -29,7 +30,7 @@ const CARVE = 0.12;         // terrain is pushed this far under any road surface
 const $ = (id) => document.getElementById(id);
 const logLines = [];
 const log = (s) => { logLines.push(s); $("log").textContent = logLines.join("\n"); console.log(s); };
-const timed = async (label, fn) => { const t = performance.now(); const r = await fn(); log(`${label}: ${(performance.now() - t).toFixed(0)} ms`); return r; };
+const timedGlobal = async (label, fn) => { const t = performance.now(); const r = await fn(); log(`${label}: ${(performance.now() - t).toFixed(0)} ms`); return r; };
 const getJSON = async (p) => { const r = await fetch(new URL(p, DATA)); if (!r.ok) throw new Error(`${p}: HTTP ${r.status}`); return r.json(); };
 const getBin = async (p) => { const r = await fetch(new URL(p, DATA)); if (!r.ok) throw new Error(`${p}: HTTP ${r.status}`); return r.arrayBuffer(); };
 
@@ -282,13 +283,12 @@ function featureObjects(f, hm, bounds) {
   const T = params.get("trees") === "simple" ? buildTrees(f.trees || [], (x, z) => hm.surface(x, z), inTile)
     : buildTreeField(f.trees || [], (x, z) => hm.surface(x, z), inTile);
   group.add(T.group);
-  treeUpdate = T.update || null;
+  if (T.update) updaters.push(T.update);
   log(`trees: ${T.count} (LiDAR canopy peaks + OSM)` + (T.sizes ? `, species heights ${T.sizes.map((z) => z.h.toFixed(1)).join("/")} m` : ""));
   return group;
 }
 
-let lampUpdate = null;     // night: point lights follow the nearest lamps
-let treeUpdate = null;     // per-frame LOD update of the tree field
+const updaters = [];       // per-frame updates (tree LOD, lamp lights) of every loaded tile
 
 // ------------------------------------------------------------------ walk mode
 
@@ -319,8 +319,8 @@ class Walker {
     if (k.has("KeyD") || k.has("ArrowRight")) { mx -= fz; mz += fx; }
     const l = Math.hypot(mx, mz);
     if (l) { this.x += mx / l * sp; this.z += mz / l * sp; }
-    const { x0, z0, size } = this.hm.h;
-    this.x = Math.min(Math.max(this.x, x0), x0 + size); this.z = Math.min(Math.max(this.z, z0), z0 + size);
+    const { x0, z0, x1, z1 } = this.hm.h;
+    this.x = Math.min(Math.max(this.x, x0), x1); this.z = Math.min(Math.max(this.z, z0), z1);
     this.camera.position.set(this.x, this.hm.surface(this.x, this.z) + CARVE + EYE, this.z);
     this.camera.rotation.set(this.pitch, this.yaw, 0, "YXZ");
   }
@@ -342,6 +342,48 @@ function roadStart(data, x, z, bounds) {
     }
   }
   return best;
+}
+
+/** Load and build one tile into the shared layer groups. Returns what the viewer needs from it. */
+async function loadTile(entry, { layers, contourOn, verbose }) {
+  const F = entry.files;
+  const [x0, x1] = entry.bounds.x, [z0, z1] = entry.bounds.z;
+  const bounds = { x0, x1, z0, z1 };
+  const say = verbose ? log : () => {};
+  const timed = verbose ? timedGlobal : async (_l, f) => f();
+  const [tHdr, tBuf, bDoc, bBuf, roads, feats] = await timed("fetch", () => Promise.all([
+    getJSON(F.terrainHeader), getBin(F.terrain), getJSON(F.buildings), getBin(F.buildingsBin), getJSON(F.roads), getJSON(F.features),
+  ]));
+  const hm = new Heightmap(tHdr, tBuf);
+
+
+  // Roads first: they carve the heightmap the terrain mesh is built from.
+  const net = await timed("buildRoadNetwork", () => buildRoadNetwork(roads, { ground: hm.ground }));
+  const errors = net.issues.filter((i) => i.level === "error");
+  const byCode = {};
+  for (const i of errors) byCode[i.code] = (byCode[i.code] || 0) + 1;
+  say(`road engine: ${net.roads.length} roads, ${net.nodes.length} nodes, ${errors.length} errors ${JSON.stringify(byCode)}, ${net.issues.length - errors.length} warnings/info`);
+  const R = await timed("road meshes + carve", () => roadMeshes(net, hm, bounds));
+  layers.roads.add(...R.meshes);
+
+  layers.terrain.add(await timed("terrain mesh", () => terrainMesh(hm, contourOn)));
+  const B = await timed("building meshes + façades", () => facadeMeshes(bDoc, bBuf, roads, feats));
+  say(`façades: ${B.stats.faces} wall faces, ${B.stats.party} party walls, ${B.stats.street} facing a street; details: ${B.stats.cornices} cornices, ${B.stats.buttresses} buttresses, ${B.stats.ridges} ridge/hip caps, ${B.stats.chimneys} chimneys, ${B.stats.eaves || 0} eaves, ${B.stats.shops} shopfronts (OSM shops)`);
+  layers.buildings.add(...B.meshes);
+  layers.features.add(featureObjects(feats, hm, bounds));
+  const lamps = buildLamps(roads, (x, z) => hm.ground(x, z), bounds, { lights: verbose });   // point lights: main tile only
+  layers.features.add(lamps.group);
+  updaters.push(lamps.update);
+  const furn = buildFurniture(feats, roads, (x, z) => hm.ground(x, z), bounds);
+  layers.features.add(furn.group);
+  const tram = buildTram(feats, (x, z) => hm.surface(x, z) + CARVE, bounds);
+  layers.features.add(tram.group);
+  say(`tram (OSM): ${tram.counts.wireSegments} wire segments, ${tram.counts.poles} poles, ${tram.counts.platforms} platforms, ${tram.counts.shelters} shelters`);
+  say(`street furniture (OSM points): ${Object.entries(furn.counts).map(([k, v]) => `${v} ${k}`).join(", ")}`);
+  say(`street lamps: ${lamps.count} (placed along the kerbs, ROAD_TYPES lampSpacing; OSM has none here)`);
+  say(`buildings: ${bDoc.count} (${B.triangles} triangles), roads: ${R.triangles} triangles in tile, terrain cells carved: ${R.carvedCells}`);
+
+  return { name: entry.name, hm, roads, net, bounds };
 }
 
 // ------------------------------------------------------------------ main
@@ -375,39 +417,24 @@ async function main() {
   const lighting = new Lighting(scene, renderer, timeId, { sunLight: params.get("sunlight") === "1" });
   const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
 
-  const [tHdr, tBuf, bDoc, bBuf, roads, feats] = await timed("fetch", () => Promise.all([
-    getJSON(F.terrainHeader), getBin(F.terrain), getJSON(F.buildings), getBin(F.buildingsBin), getJSON(F.roads), getJSON(F.features),
-  ]));
-  const hm = new Heightmap(tHdr, tBuf);
-  const cy = hm.ground(cx, cz);
-
-
+  const contourOn = uniform(0);
   const layers = { terrain: new THREE.Group(), buildings: new THREE.Group(), roads: new THREE.Group(), features: new THREE.Group() };
   for (const g of Object.values(layers)) scene.add(g);
-
-  // Roads first: they carve the heightmap the terrain mesh is built from.
-  const net = await timed("buildRoadNetwork", () => buildRoadNetwork(roads, { ground: hm.ground }));
-  const errors = net.issues.filter((i) => i.level === "error");
-  const byCode = {};
-  for (const i of errors) byCode[i.code] = (byCode[i.code] || 0) + 1;
-  log(`road engine: ${net.roads.length} roads, ${net.nodes.length} nodes, ${errors.length} errors ${JSON.stringify(byCode)}, ${net.issues.length - errors.length} warnings/info`);
-  const R = await timed("road meshes + carve", () => roadMeshes(net, hm, bounds));
-  layers.roads.add(...R.meshes);
-
-  const contourOn = uniform(0);
-  layers.terrain.add(await timed("terrain mesh", () => terrainMesh(hm, contourOn)));
-  const B = await timed("building meshes + façades", () => facadeMeshes(bDoc, bBuf, roads));
-  log(`façades: ${B.stats.faces} wall faces, ${B.stats.party} party walls, ${B.stats.street} facing a street; details: ${B.stats.cornices} cornices, ${B.stats.buttresses} buttresses, ${B.stats.ridges} ridge/hip caps, ${B.stats.chimneys} chimneys, ${B.stats.eaves || 0} eaves`);
-  layers.buildings.add(...B.meshes);
-  layers.features.add(featureObjects(feats, hm, bounds));
-  const lamps = buildLamps(roads, (x, z) => hm.ground(x, z), bounds);
-  layers.features.add(lamps.group);
-  lampUpdate = lamps.update;
-  const furn = buildFurniture(feats, roads, (x, z) => hm.ground(x, z), bounds);
-  layers.features.add(furn.group);
-  log(`street furniture (OSM points): ${Object.entries(furn.counts).map(([k, v]) => `${v} ${k}`).join(", ")}`);
-  log(`street lamps: ${lamps.count} (placed along the kerbs, ROAD_TYPES lampSpacing; OSM has none here)`);
-  log(`buildings: ${bDoc.count} (${B.triangles} triangles), roads: ${R.triangles} triangles in tile, terrain cells carved: ${R.carvedCells}`);
+  // the world: the main tile now, its neighbours streamed in after the first frame (?ring=0|1|2)
+  const world = {
+    tiles: [],
+    at(x, z) { return this.tiles.find((t) => x >= t.bounds.x0 && x <= t.bounds.x1 && z >= t.bounds.z0 && z <= t.bounds.z1) || this.tiles[0]; },
+    surface(x, z) { return this.at(x, z).hm.surface(x, z); },
+    ground(x, z) { return this.at(x, z).hm.ground(x, z); },
+    get h() {
+      const b = this.tiles.map((t) => t.bounds);
+      return { x0: Math.min(...b.map((q) => q.x0)), z0: Math.min(...b.map((q) => q.z0)), x1: Math.max(...b.map((q) => q.x1)), z1: Math.max(...b.map((q) => q.z1)) };
+    },
+  };
+  const T0 = await loadTile(entry, { layers, contourOn, verbose: true });
+  world.tiles.push(T0);
+  const { hm, roads, net } = T0;
+  const cy = hm.ground(cx, cz);
 
   // UI
   for (const el of document.querySelectorAll("[data-layer]")) el.addEventListener("change", () => { layers[el.dataset.layer].visible = el.checked; });
@@ -417,7 +444,7 @@ async function main() {
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.maxPolarAngle = Math.PI * 0.495;
-  const walker = new Walker(camera, renderer.domElement, hm);
+  const walker = new Walker(camera, renderer.domElement, world);
   const atP = params.get("at")?.split(",").map(Number);
   const start = atP?.length === 2 ? roadStart(roads, atP[0], atP[1], bounds)
     : TILE === "G4" ? roadStart(roads, 1153.1, 540.1, bounds) : roadStart(roads, cx, cz, bounds);   // ?at=, else Place de Saint-Job on G4
@@ -461,13 +488,13 @@ async function main() {
     if (walker.on) focus.copy(camera.position).addScaledVector(camera.getWorldDirection(fwd).setY(0).normalize(), 45);
     else focus.copy(controls.target);
     const half = walker.on ? 80 : THREE.MathUtils.clamp(camera.position.distanceTo(controls.target) * 0.9, 60, 380);
-    lighting.update(camera.position.y, hm.surface(camera.position.x, camera.position.z), focus, half);
+    lighting.update(camera.position.y, world.surface(camera.position.x, camera.position.z), focus, half);
     const now = performance.now(), dt = Math.min((now - last) / 1000, 0.1);
     last = now;
     fpsAcc += dt; fpsN++;
     if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
     if (walker.on) walker.update(dt); else controls.update();
-    treeUpdate?.(camera.position); lampUpdate?.(camera.position);
+    for (const u of updaters) u(camera.position);
     renderFrame();
     frames++;
     if (frames % 10 === 1) {
@@ -478,8 +505,23 @@ async function main() {
         `cam x ${camera.position.x.toFixed(0)} z ${camera.position.z.toFixed(0)} y ${camera.position.y.toFixed(1)} m TAW`;
     }
   });
-  window.viewer = { scene, camera, renderer, net, hm, frames: () => frames, setView, lighting,
-    renderFrame: () => { treeUpdate?.(camera.position); lampUpdate?.(camera.position); renderFrame(); } };
+  // stream in the neighbouring tiles, nearest first (?ring=0 for one tile only, 2 for 5x5)
+  const ring = Math.max(0, Math.min(2, +(params.get("ring") ?? 1)));
+  const loading = (async () => {
+    const near = manifest.tiles.filter((t) => t.status !== "missing" && t.name !== TILE).map((t) => {
+      const tx = (t.bounds.x[0] + t.bounds.x[1]) / 2, tz = (t.bounds.z[0] + t.bounds.z[1]) / 2;
+      return { t, d: Math.max(Math.abs(tx - cx), Math.abs(tz - cz)) };
+    }).filter((o) => o.d <= ring * (x1 - x0) + 1).sort((a, b) => a.d - b.d);
+    for (const { t } of near) {
+      const t0 = performance.now();
+      try {
+        world.tiles.push(await loadTile(t, { layers, contourOn, verbose: false }));
+        log(`+ tile ${t.name} (${(performance.now() - t0).toFixed(0)} ms)`);
+      } catch (e) { log(`tile ${t.name} failed: ${e.message}`); }
+    }
+  })();
+  window.viewer = { loading, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting,
+    world, renderFrame: () => { for (const u of updaters) u(camera.position); renderFrame(); } };
 }
 
 main().catch((e) => { log(`ERROR: ${e.message}`); console.error(e); });

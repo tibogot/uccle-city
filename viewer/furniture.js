@@ -32,7 +32,7 @@ const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 const cyl = (r, h, s = 8) => new THREE.CylinderGeometry(r, r, h, s);
 
 // local frame: +x along the street, -z toward the road, origin on the sidewalk at ground level
-const MODELS = {
+export const MODELS = {
   stopPole: () => mergeGeometries([
     part(cyl(0.045, 3.0), C.steel, 0, 0, 1.5, 0),
     part(box(0.5, 0.5, 0.04), C.stib, 0.15, 0, 2.75, 0),                         // red STIB sign

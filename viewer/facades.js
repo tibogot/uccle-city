@@ -160,7 +160,7 @@ function beam(D, P0, P1, w, h, col) {
   quad(at(P0, -hw, lo), at(P1, -hw, lo), at(P1, -hw * 0.6, hi), at(P0, -hw * 0.6, hi), n2);
 }
 
-export function analyseBuildings(doc, buf, roads) {
+export function analyseBuildings(doc, buf, roads, feats) {
   const dv = new DataView(buf);
   const V = dv.getUint32(0, true), T = dv.getUint32(4, true);
   const P = new Float32Array(buf, 8, V * 3);
@@ -220,9 +220,14 @@ export function analyseBuildings(doc, buf, roads) {
   };
 
   const W = { position: [], normal: [], aWall: [], aBld: [], aFN: [] };
+  // OSM shops (features.json points kind "shop") -> a shopfront on the nearest street face
+  const shops = new Grid(40);
+  for (const p of feats?.points || []) if (p.kind === "shop") { p.used = false; shops.add(p.x, p.z, p.x, p.z, p); }
+  const PAINT = [[0.03, 0.09, 0.06], [0.2, 0.035, 0.045], [0.03, 0.05, 0.13], [0.025, 0.025, 0.025]];
+  const AWNING = new Set(["cafe", "restaurant", "bar", "pub", "bakery", "ice_cream", "butcher", "greengrocer", "pastry", "chocolate"]);
   const D = { position: [], normal: [], color: [] };                             // detail geometry
   const R = { position: [], normal: [], aRoof: [], aRoofCol: [] };
-  const stats = { faces: 0, party: 0, street: 0, cornices: 0, buttresses: 0, ridges: 0, chimneys: 0 };
+  const stats = { faces: 0, party: 0, street: 0, cornices: 0, buttresses: 0, ridges: 0, chimneys: 0, shops: 0 };
   doc.buildings.forEach((b, bi) => {
     const base = b.base, eaves = (b.eaves ?? b.top) - base;
     const key = String(b.attrs?.BU_ID ?? b.id);
@@ -298,6 +303,36 @@ export function analyseBuildings(doc, buf, roads) {
       const party = partyH > 0 ? 1 : 0;
       const street = partyH < 999 && facesStreet(cx, cz, f.nx, f.nz) ? 1 : 0;
       stats.faces++; stats.party += party; stats.street += street;
+      // shopfront: an unused shop point inside this building (or up to 6 m in front of the face), within the face's span
+      let shopU = 0, shopW = 0;
+      if (street && !landmark && width > 3.2) {
+        let best = null;
+        for (const sp of shops.near(cx, cz, width / 2 + 12)) {
+          if (sp.used) continue;
+          const dp = (sp.x - cx) * f.nx + (sp.z - cz) * f.nz, uu = sp.x * tx + sp.z * tz;
+          if (uu < u0 - 1 || uu > u1 + 1) continue;
+          if (!(dp > 0 && dp < 6) && !(dp <= 0 && dp > -14 && pip(sp.x, sp.z, ownRing))) continue;
+          if (!best || Math.abs(dp) < best.d) best = { sp, d: Math.abs(dp), uu };
+        }
+        if (best) {
+          best.sp.used = true;
+          const sw = Math.min(width - 0.8, 6.5), paint = Math.floor(hash01(best.sp.id) * 4);
+          const uc = Math.min(Math.max(best.uu, u0 + sw / 2 + 0.4), u1 - sw / 2 - 0.4);
+          shopU = uc - u0; shopW = sw + 10 * paint;
+          // fascia board and (food / drink shops) a canopy, as geometry
+          const ox = cx - tx * ((cx * tx + cz * tz) - uc), oz = cz - tz * ((cx * tx + cz * tz) - uc);   // face point at u = uc
+          const fa = [ox - tx * (sw / 2 + 0.15), 0, oz - tz * (sw / 2 + 0.15)], fb = [ox + tx * (sw / 2 + 0.15), 0, oz + tz * (sw / 2 + 0.15)];
+          const pc = PAINT[paint];
+          box(D, fa, fb, base + 3.5, 0.55, 0.12, f.nx, f.nz, pc);
+          const kind = best.sp.tags?.shop || best.sp.tags?.amenity;
+          if (AWNING.has(kind)) {
+            const ac = hash01(best.sp.id + "a") < 0.5 ? [0.45, 0.06, 0.05] : [0.6, 0.55, 0.42];
+            box(D, fa, fb, base + 2.95, 0.07, 1.25, f.nx, f.nz, ac);
+            box(D, [fa[0] + f.nx * 1.2, 0, fa[2] + f.nz * 1.2], [fb[0] + f.nx * 1.2, 0, fb[2] + f.nz * 1.2], base + 2.95, 0.28, 0.05, f.nx, f.nz, ac);   // valance
+          }
+          stats.shops++;
+        }
+      }
 
       // ---- detail geometry: cornices along the eaves, buttresses on landmarks
       const faceH = top - base;
@@ -361,7 +396,7 @@ export function analyseBuildings(doc, buf, roads) {
         W.normal.push(sn[0], sn[1], sn[2]);
         W.aWall.push(q[0] * tx + q[2] * tz - u0, width, q[1] - base, faceEaves);
         W.aBld.push(style, partyH, street, rnd);
-        W.aFN.push(f.nx, f.nz);                                                  // outward face normal (xz)
+        W.aFN.push(f.nx, f.nz, shopU, shopW);                                    // outward normal (xz), shopfront centre / width + 10 * paint
       }
     }
     // --- ridge tiles and hip ribs: convex roof edges shared by two roof faces that meet at > 12°
@@ -629,12 +664,33 @@ export function wallMaterial() {
   const doorGlass = isDoor.mul(fan);
   const frameCol = mix(C(0.6, 0.6, 0.58), C(0.07, 0.065, 0.06), step(float(0.8), fract(rnd.mul(7.0))));
 
-  col = mix(col, frameCol, frame);
-  const glassPart = glass.mul(mix(float(1), doorGlass, isDoor)).toVar();
-  const doorPart = glass.mul(isDoor).mul(float(1).sub(fan));
+  // ---- shopfront (OSM shop on this face): painted timber frame, stall riser, big display glass, a glazed door
+  const fnA = attribute("aFN", "vec4");
+  const shopPaint = floor(fnA.w.div(10.0)), shopW = fnA.w.sub(shopPaint.mul(10.0));
+  const su = u.sub(fnA.z).toVar();
+  const isShop = step(0.5, shopW).mul(float(1).sub(isLM)).mul(step(abs(su), shopW.mul(0.5))).mul(step(h, 3.0)).toVar();
+  const fwU = fwidth(u).add(0.002), fwH = fwidth(h).add(0.002);
+  const inGlass = smoothstep(0.45, 0.45 + 0.02, h).mul(smoothstep(2.72, 2.7, h)).mul(smoothstep(shopW.mul(0.5).sub(0.1), shopW.mul(0.5).sub(0.12), abs(su)));
+  const sDoor = step(abs(su), 0.55);
+  const doorGl = sDoor.mul(step(h, 2.55)).mul(step(abs(su), 0.47)).mul(step(0.12, h));
+  const shopMull = smoothstep(fwU.add(0.035), fwU.sub(0.0).add(0.03), abs(fract(su.div(1.55).add(0.5)).sub(0.5)).mul(1.55)).mul(float(1).sub(sDoor));
+  const shopGlass = max(inGlass.mul(float(1).sub(shopMull)).mul(float(1).sub(sDoor)), doorGl).mul(isShop).toVar();
+  let paint = C(0.03, 0.09, 0.06);
+  paint = mix(paint, C(0.2, 0.035, 0.045), band(shopPaint, 1));
+  paint = mix(paint, C(0.03, 0.05, 0.13), band(shopPaint, 2));
+  paint = mix(paint, C(0.025, 0.025, 0.025), band(shopPaint, 3));
+  const shopInside = mix(C(0.05, 0.042, 0.035), C(0.2, 0.16, 0.11), smoothstep(0.6, 2.2, h).mul(0.5));
+  const shopGlassCol = mix(shopInside, vec3(env.uSkyHorizon).mul(0.5), fres);
+  const shopCol = mix(paint.mul(mix(float(1), float(0.7), step(h, 0.45))), shopGlassCol, shopGlass);
+  const notShop = float(1).sub(isShop);
+
+  col = mix(col, frameCol, frame.mul(notShop));
+  const glassPart = glass.mul(mix(float(1), doorGlass, isDoor)).mul(notShop).toVar();
+  const doorPart = glass.mul(isDoor).mul(float(1).sub(fan)).mul(notShop);
   col = mix(col, glassCol, glassPart);
   col = mix(col, doorCol, doorPart);
-  height = height.add(frame.mul(0.03));
+  col = mix(col, shopCol, isShop);
+  height = height.add(frame.mul(0.03).mul(notShop)).sub(shopGlass.mul(0.08).mul(near));
 
   // ---- landmarks: ashlar stone, tall round-arched stained-glass windows, a portal
   const ash = courses(h, u, 0.32, 0.62, float(0.012), rnd.mul(31.0));
@@ -672,7 +728,7 @@ export function wallMaterial() {
   lmH = lmH.add(surround.mul(0.04)).sub(lmWin.mul(0.2));
   // deep reveal by parallax: the glass sits REVEAL m behind the wall face. Trace the view ray to that plane;
   // where it lands outside the opening we see the stone jamb / soffit / sill instead of glass.
-  const fn = attribute("aFN", "vec2");
+  const fn = fnA;
   const nO = vec3(fn.x, 0.0, fn.y), tA = vec3(fn.y.negate(), 0.0, fn.x);   // outward normal, along-face (+u)
   const ray = normalize(P.sub(cameraPosition));
   const rz = max(dot(ray, nO).negate(), 0.08);
@@ -745,9 +801,10 @@ export function wallMaterial() {
   m.colorNode = col;
   m.roughnessNode = mix(mix(mix(mix(float(0.85), float(0.93), isBrick), float(0.5), frame), mix(float(0.12), float(0.4), dirt.sub(0.4).mul(2.5)), glassPart),
     mix(float(0.8), float(0.15), lmGlass), isLM);
-  m.metalnessNode = glassPart.add(lmGlass).mul(fres).mul(0.6);                               // lets SSR reflect the street in the glass
-  m.emissiveNode = room.rgb.mul(room.a).mul(float(1).sub(fres.mul(0.82))).mul(glassPart).mul(env.uInteriorGlow).mul(0.76)
-    .add(sg.mul(lmGlass).mul(env.uInteriorGlow).mul(env.uNight).mul(2.2));                     // stained glass lit from inside at night
+  m.metalnessNode = glassPart.add(lmGlass).add(shopGlass).mul(fres).mul(0.6);                               // lets SSR reflect the street in the glass
+  m.emissiveNode = C(1.0, 0.8, 0.55).mul(shopGlass).mul(env.uInteriorGlow).mul(1.3)                 // lit shop interiors
+    .add(room.rgb.mul(room.a).mul(float(1).sub(fres.mul(0.82))).mul(glassPart).mul(env.uInteriorGlow).mul(0.76)
+    .add(sg.mul(lmGlass).mul(env.uInteriorGlow).mul(env.uNight).mul(2.2)));                    // stained glass lit from inside at night
   // height AO: wall feet and narrow gaps between houses get less sky
   m.aoNode = mix(float(0.62), float(1.0), smoothstep(0.0, 9.0, h)).mul(smoothstep(0.0, 1.2, h).mul(0.2).add(0.8));
   return m;
@@ -787,8 +844,8 @@ export function roofMaterial() {
 }
 
 /** Meshes for one tile. */
-export function buildingMeshes(doc, buf, roads) {
-  const a = analyseBuildings(doc, buf, roads);
+export function buildingMeshes(doc, buf, roads, feats) {
+  const a = analyseBuildings(doc, buf, roads, feats);
   const mk = (part, attrs, mat, name) => {
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.BufferAttribute(part.position, 3));
@@ -801,7 +858,7 @@ export function buildingMeshes(doc, buf, roads) {
   };
   const detailMat = new THREE.MeshStandardNodeMaterial({ roughness: 0.82, side: THREE.DoubleSide });
   detailMat.colorNode = attribute("aCol", "vec3");
-  const meshes = [mk(a.walls, [["aWall", 4], ["aBld", 4], ["aFN", 2]], wallMaterial(), "buildings-walls"),
+  const meshes = [mk(a.walls, [["aWall", 4], ["aBld", 4], ["aFN", 4]], wallMaterial(), "buildings-walls"),
     mk(a.roofs, [["aRoof", 4], ["aRoofCol", 3]], roofMaterial(), "buildings-roofs")];
   if (a.details.position.length) meshes.push(mk(a.details, [["aCol", 3]], detailMat, "buildings-details"));
   return {

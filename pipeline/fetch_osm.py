@@ -41,6 +41,10 @@ QUERY = """
   node["railway"~"^(tram_stop|crossing|level_crossing)$"];
   node["public_transport"];
   node["amenity"~"^(bench|bicycle_parking|fountain)$"];
+  node["shop"];
+  node["amenity"~"^(cafe|restaurant|bar|pub|fast_food|pharmacy|bank|ice_cream)$"];
+  way["railway"="platform"];
+  way["public_transport"="platform"];
   way["amenity"="place_of_worship"];
   relation["amenity"="place_of_worship"];
   way["building"~"^(church|chapel|cathedral|temple|mosque|synagogue)$"];

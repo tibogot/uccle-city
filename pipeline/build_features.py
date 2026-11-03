@@ -30,7 +30,8 @@ POINT_KIND = {
     ("railway", "tram_stop"): "tram_stop", ("railway", "crossing"): "rail_crossing", ("railway", "level_crossing"): "level_crossing",
     ("amenity", "bench"): "bench", ("amenity", "bicycle_parking"): "bicycle_parking", ("amenity", "fountain"): "fountain",
 }
-KEEP_TAGS = ("name", "crossing", "crossing:markings", "crossing:signals", "ref", "route_ref", "network", "operator",
+SHOP_AMENITIES = ("cafe", "restaurant", "bar", "pub", "fast_food", "pharmacy", "bank", "ice_cream")
+KEEP_TAGS = ("shop", "amenity", "shelter", "tram", "bus", "name", "crossing", "crossing:markings", "crossing:signals", "ref", "route_ref", "network", "operator",
              "surface", "lit", "bicycle", "foot", "layer", "bridge", "tunnel", "railway", "highway", "public_transport")
 
 
@@ -93,6 +94,8 @@ def build(osm, tile):
             out["trees"].append(tree)
             continue
         kind = next((kd for (k, v), kd in POINT_KIND.items() if t.get(k) == v), None)
+        if kind is None and (t.get("shop") or t.get("amenity") in SHOP_AMENITIES):
+            kind = "shop"                                   # ground-floor shopfronts (viewer/shopfronts)
         if kind is None and t.get("public_transport") in ("platform", "stop_position"):
             kind = "pt_" + t["public_transport"]
         if kind:
@@ -122,6 +125,8 @@ def build(osm, tile):
             kind = "tram"
         elif t.get("railway") in ("rail", "light_rail"):
             kind = "rail"
+        elif t.get("railway") == "platform" or t.get("public_transport") == "platform":
+            kind = "platform"                               # tram / bus platform edge (line or closed outline)
         elif t.get("highway") in LINE_KIND:
             kind = LINE_KIND[t["highway"]]
         if kind:

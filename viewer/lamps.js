@@ -69,7 +69,7 @@ function postGeometry() {
   return mergeGeometries(parts);
 }
 
-export function buildLamps(roads, ground, bounds) {
+export function buildLamps(roads, ground, bounds, { lights: withLights = true } = {}) {
   const sites = lampSites(roads, bounds);
   const group = new THREE.Group();
   group.name = "street-lamps";
@@ -106,7 +106,7 @@ export function buildLamps(roads, ground, bounds) {
 
   // a few real lights on the nearest lamps at night
   const lights = [];
-  const usePool = !/[?&]lamplights=0/.test(location.search);
+  const usePool = withLights && !/[?&]lamplights=0/.test(location.search);
   if (usePool) for (let i = 0; i < POOL; i++) {
     const l = new THREE.PointLight(0xffc27a, 0, 18, 2);
     lights.push(l); group.add(l);
