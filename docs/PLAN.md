@@ -376,6 +376,14 @@ modular kits**, and real data only decides **which material goes where**.
    Chimney stacks (brick, stone cap, two clay pots) straddle party walls at the gable's
    highest point, about 70 % of them (G4: 496). Plan for Blender-made kit pieces and hero
    models without losing performance: `docs/BLENDER.md`.
+   **Street lamps (2026-11-03), `viewer/lamps.js`:** OSM has no `street_lamp` nodes in G4,
+   so lamps are placed procedurally (stated in the HUD log): at the kerb from the road
+   engine's `ROAD_TYPES` cross-section, every `lampSpacing` m, alternating sides, none
+   within 10 m of a road end (G4: 111). Cast-iron post and lantern; 3 draw calls in all
+   (instanced post, glass, additive ground light pool); at night 6 PointLights follow the
+   lamps nearest the camera (`?lamplights=0` to disable). Screenshots
+   `docs/img/viewer-G4-night-street.png`, `viewer-G4-church-night.png`.
+   Replace with real positions if Brussels publishes a lamp inventory (search datastore.brussels).
    **Next for the church:** check materials against a photo; the drum and dome could
    use their own windows (oculi) and lantern detail.
 

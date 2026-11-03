@@ -10,6 +10,7 @@ import {
 } from "three/tsl";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { buildRoadNetwork } from "../vendor/roads/roadNetwork.js";
+import { buildLamps } from "./lamps.js";
 import { buildLaneRoadMesh } from "../vendor/roads/mesh/laneRoadMesh.js";
 import { asphaltMaterial, concreteMaterial, vergeMaterial, surfaceAttribute } from "./roadPaint.js";
 import { buildingMeshes as facadeMeshes } from "./facades.js";
@@ -285,6 +286,7 @@ function featureObjects(f, hm, bounds) {
   return group;
 }
 
+let lampUpdate = null;     // night: point lights follow the nearest lamps
 let treeUpdate = null;     // per-frame LOD update of the tree field
 
 // ------------------------------------------------------------------ walk mode
@@ -397,6 +399,10 @@ async function main() {
   log(`façades: ${B.stats.faces} wall faces, ${B.stats.party} party walls, ${B.stats.street} facing a street; details: ${B.stats.cornices} cornices, ${B.stats.buttresses} buttresses, ${B.stats.ridges} ridge/hip caps, ${B.stats.chimneys} chimneys`);
   layers.buildings.add(...B.meshes);
   layers.features.add(featureObjects(feats, hm, bounds));
+  const lamps = buildLamps(roads, (x, z) => hm.ground(x, z), bounds);
+  layers.features.add(lamps.group);
+  lampUpdate = lamps.update;
+  log(`street lamps: ${lamps.count} (placed along the kerbs, ROAD_TYPES lampSpacing; OSM has none here)`);
   log(`buildings: ${bDoc.count} (${B.triangles} triangles), roads: ${R.triangles} triangles in tile, terrain cells carved: ${R.carvedCells}`);
 
   // UI
@@ -457,7 +463,7 @@ async function main() {
     fpsAcc += dt; fpsN++;
     if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
     if (walker.on) walker.update(dt); else controls.update();
-    treeUpdate?.(camera.position);
+    treeUpdate?.(camera.position); lampUpdate?.(camera.position);
     renderFrame();
     frames++;
     if (frames % 10 === 1) {
@@ -469,7 +475,7 @@ async function main() {
     }
   });
   window.viewer = { scene, camera, renderer, net, hm, frames: () => frames, setView, lighting,
-    renderFrame: () => { treeUpdate?.(camera.position); renderFrame(); } };
+    renderFrame: () => { treeUpdate?.(camera.position); lampUpdate?.(camera.position); renderFrame(); } };
 }
 
 main().catch((e) => { log(`ERROR: ${e.message}`); console.error(e); });

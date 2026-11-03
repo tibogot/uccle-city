@@ -44,7 +44,7 @@ Pipeline (raw data must be fetched first, see README): `python pipeline/run_tile
    Saint-Job, oculi on the dome drum, lantern detail.
 3. **Houses**: (chimneys done) roof eaves overhang, shopfronts from OSM `shop=*`, gable attic
    windows, parallax window reveals.
-4. **Night and props**: street lamps (pooled lights), benches, bus/tram stops, signals,
+4. **Night and props**: (street lamps done, procedural placement: `viewer/lamps.js`) benches, bus/tram stops, signals,
    tram overhead wires (all from OSM points/lines).
 5. **Ground**: UrbIS Land cover for grass/garden/paving materials, hedges.
 6. **Roads**: the ~12 remaining bad spots (Alsemberg/Brugmann sharp Y, crowded rings in
