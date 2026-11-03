@@ -21,7 +21,7 @@ from common import LAT_MAX, LAT_MIN, LON_MAX, LON_MIN, RAW
 DEFAULT_ENDPOINT = "https://overpass-api.de/api/interpreter"
 # Tried in order when --endpoint is not given. kumi.systems can lag behind OSM by weeks or months:
 # check osm_base in the output (it is recorded in every roads.json and in the manifest).
-FALLBACKS = ["https://overpass.kumi.systems/api/interpreter"]
+FALLBACKS = ["https://overpass.kumi.systems/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter"]
 
 QUERY = """
 [out:json][timeout:300][bbox:{s},{w},{n},{e}];
@@ -41,6 +41,10 @@ QUERY = """
   node["railway"~"^(tram_stop|crossing|level_crossing)$"];
   node["public_transport"];
   node["amenity"~"^(bench|bicycle_parking|fountain)$"];
+  way["amenity"="place_of_worship"];
+  relation["amenity"="place_of_worship"];
+  way["building"~"^(church|chapel|cathedral|temple|mosque|synagogue)$"];
+  way["historic"~"^(church|chapel|castle|manor)$"];
 );
 (._; >;);
 out body qt;

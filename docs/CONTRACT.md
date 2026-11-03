@@ -1,7 +1,11 @@
-# uccle-city data contract — v0.6
+# uccle-city data contract — v0.7
 
 ### Changes
 
+- **0.7 (2026-11-03)**: buildings get `roofColor` (real roof albedo from the 2024
+  orthophoto, `build_roofcolors.py`) and, for churches / chapels / synagogues,
+  `attrs._landmark` (from OSM, `tag_landmarks.py`). `buildings.json` gains
+  `roofColorSource`. See 5.2.
 - **0.6 (2026-11-03)**: `features.json` trees now come mostly from LiDAR (canopy
   height model = UrbIS DSM − DTM, `pipeline/build_trees.py`), with `height`,
   `crown`, `source` (`urbis-chm` | `osm`) and `osm` (matched OSM tree id);
@@ -126,7 +130,7 @@ The processed files for one tile should stay under about 2 MB in total.
 ## 5. Formats
 
 All JSON is UTF-8. Coordinates are rounded to **0.01 m**. Every file has a
-top-level `"contract": "0.6"`, except `roads.json`, which must stay exactly the
+top-level `"contract": "0.7"`, except `roads.json`, which must stay exactly the
 road lab's own format. It carries `meta.contract` instead (see 5.1).
 
 ### 5.1 Roads — `roads.json` (the road lab's saved-data JSON)
@@ -149,7 +153,7 @@ writes and reads:
               "lanes"?: { "center": {width, kind}, "left": [{type,width}], "right": [{type,width}] },
               "sections": [], "profile": { "mode": "terrain" },
               "meta"?: { ... } }],
-  "meta": { "contract": "0.6", "tile": "G4", "bufferM": 150, "source": "osm", "osmBase": "<overpass timestamp>",
+  "meta": { "contract": "0.7", "tile": "G4", "bufferM": 150, "source": "osm", "osmBase": "<overpass timestamp>",
             "from": "data/roads/network.json", "refineActions": { "<action>": <count> }, "generated": "<iso>" }
 }
 ```
@@ -275,7 +279,7 @@ are never split across tiles.
 
 ```jsonc
 {
-  "contract": "0.6", "tile": "G4", "count": 598,
+  "contract": "0.7", "tile": "G4", "count": 598,
   "bin": "buildings.bin", "binLayout": "positions:f32x3, indices:u32 (see below)",
   "buildings": [{
     "id": "<source id>", "source": "urbis3d",
@@ -299,6 +303,14 @@ are never split across tiles.
   building: `attrs.BU_ID` is the building URI (sometimes absent). `attrs.DETAILSLEV`
   is the level of detail (2 = LoD2). Engineering structures (`EngineeringWork*`
   layers) and the separate `BuildingFaces` layer are not used yet.
+- **`roofColor` (from 0.7):** `[r, g, b]` linear albedo of the roof: the median of the
+  sunlit half of the 2024 orthophoto pixels under the roof triangles (layer
+  `Ortho2024NS`, a true ortho, 25 cm/px, via the Brussels raster WMS), vegetation
+  pixels excluded, green casts pulled 70 % to grey, ×0.85 exposure.
+- **`attrs._landmark` (from 0.7):** `{ kind: church|chapel|synagogue|orthodox|worship,
+  name, osm, material?, colour?, roofMaterial? }` on solids at least 30 % inside an OSM
+  place-of-worship outline (`data/raw/osm/landmarks.json`), and on every solid with
+  the same `BU_ID`.
 - **`base` vs geometry (from 0.2):** UrbIS walls often reach *below* the DTM. In G4
   the lowest vertex is a median 1.0 m under `base` (5 %–95 %: 1.5 m below to 0.1 m
   below). `base` stays the DTM value; viewers should let walls sink into the
@@ -334,7 +346,7 @@ u32 indices[triangleCount * 3]      // counter-clockwise seen from outside, so n
 - Resampling is bilinear from the source DTM, which is reprojected to
   EPSG:31370 first if it isn't already.
 - `terrain.json`:
-  `{ "contract":"0.6", "tile":"G4", "x0":1000, "z0":500, "size":500, "step":1.0, "cols":501, "rows":501, "encoding":"u16le-cm", "nodata":65535, "min":.., "max":.., "nodataCount":.., "source":"urbis-dtm", "inputs":[{ "file", "res", "crs" }] }`
+  `{ "contract":"0.7", "tile":"G4", "x0":1000, "z0":500, "size":500, "step":1.0, "cols":501, "rows":501, "encoding":"u16le-cm", "nodata":65535, "min":.., "max":.., "nodataCount":.., "source":"urbis-dtm", "inputs":[{ "file", "res", "crs" }] }`
   (`file` relative to `data/raw/urbis/dtm/`).
 - Source sheets are mosaicked before resampling, so sheet seams don't show.
 - `ground(x, z)` for the road engine is a bilinear lookup in this grid.
@@ -343,7 +355,7 @@ u32 indices[triangleCount * 3]      // counter-clockwise seen from outside, so n
 
 ```jsonc
 {
-  "contract": "0.6", "tile": "G4",
+  "contract": "0.7", "tile": "G4",
   "trees":   [{ "x", "z", "y"?, "id": "chm:<2E>_<2N>" | "osm:n123", "source": "urbis-chm" | "osm",
                 "height"?, "crown"?, "species"?, "genus"?, "leafType"?, "osm"?: "osm:n123" }],
   "treesSource": { "chm": { "dsm": [..], "dtm": [..], "minHeight": 3, "res": 0.5 }, "osmMatched": n, "osmOnly": n },
@@ -373,7 +385,7 @@ the tile; the clipped pieces keep their source `id`.
 
 ```jsonc
 {
-  "contract": "0.6",
+  "contract": "0.7",
   "crs": { "source": "EPSG:31370", "proj4": "<string above>", "origin": [148643, 165394],
            "axes": "x=east, z=south, y=up (m TAW)" },
   "studyBox": { "lon": [4.327, 4.372], "lat": [50.7905, 50.8075], "local": { "x": [..], "z": [..] } },

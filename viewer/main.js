@@ -412,7 +412,10 @@ async function main() {
     stjob: () => {   // ?at=x,z, else Place de Saint-Job on G4, else the tile centre
       const at = params.get("at")?.split(",").map(Number);
       const [x, z] = at?.length === 2 ? at : TILE === "G4" ? [1153, 540] : [cx, cz], y = hm.surface(x, z);
-      camera.position.set(x + 70, y + 45, z + 110); controls.target.set(x, y, z);
+      const cam = params.get("cam")?.split(",").map(Number);           // ?cam=x,z,height-above-ground
+      if (cam?.length === 3) camera.position.set(cam[0], hm.surface(cam[0], cam[1]) + cam[2], cam[1]);
+      else camera.position.set(x + 70, y + 45, z + 110);
+      controls.target.set(x, y + (cam?.length === 3 ? 12 : 0), z);
     },
   };
   const setView = (v) => { walker.on = false; controls.enabled = true; views[v](); controls.update(); };

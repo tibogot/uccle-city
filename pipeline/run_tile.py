@@ -68,6 +68,11 @@ def main():
     for t in tiles:
         if (RAW_DSM.exists() and any(RAW_DSM.rglob("*.tif"))) and step(["build_trees.py", "--tile", t]):
             failed.append(f"{t}:trees")
+        if not a.skip_buildings:
+            if step(["build_roofcolors.py", "--tile", t]):          # orthophoto 2024 via WMS (cached in data/raw/ortho)
+                failed.append(f"{t}:roofcolors")
+            if step(["tag_landmarks.py", "--tile", t]):             # needs data/raw/osm/landmarks.json
+                failed.append(f"{t}:landmarks")
     step(["build_manifest.py"])
     if failed:
         print(f"\nFAILED: {failed}", file=sys.stderr)

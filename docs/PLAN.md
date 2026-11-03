@@ -337,8 +337,17 @@ modular kits**, and real data only decides **which material goes where**.
    AO, coverage-preserving alpha mips, back-lit translucency and wind (approach after
    slop-newyork). Watch overdraw at street level (alpha-tested cards); add distance LOD
    (fewer cards / a crown impostor) before multi-tile streaming.
+   **Buildings and landmarks (2026-11-03):** crease-angle smooth shading (curved
+   domes, spires, towers no longer faceted); real roof colours from the 2024
+   orthophoto with clay/slate courses and relief; churches from OSM get stone
+   ashlar, round-arched stained-glass windows that glow at night, string courses and
+   an arched portal (stone is a default: OSM has no material tags for them); party
+   walls between parts of one building or on landmarks are blank only up to the
+   neighbour's roof. Screenshot `docs/img/viewer-G4-church.png`.
    **Next:** street lamps with a pooled set of lights for night, shopfronts, exposed
-   party-wall treatment, wet roads.
+   party-wall treatment, wet roads, chimneys and eaves; check the real Saint-Job
+   church materials against a photo; night windows show speckle (drape pattern)
+   in the software renderer: check on WebGPU.
 
 3. **Ground materials.** UrbIS **Land cover** (CC0, same 1 km sheets) plus OSM
    areas say where grass, garden, paving, water and woodland are. Tiling grass,

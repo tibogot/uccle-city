@@ -6,3 +6,4 @@ pyogrio==0.13.0
 rasterio==1.5.2
 mapbox_earcut==2.1.0
 scipy==1.16.3
+pillow==13.0.0

@@ -20,6 +20,11 @@ Attribution:
   UrbIS Digital surface model 2021, © Paradigm (paradigm.brussels), CC0 1.0
     (tree positions, heights and crowns in features.json)
 
+  Orthophoto 2024, © Paradigm (paradigm.brussels), CC0 1.0
+    (roofColor in buildings.json)
+
+  Landmark tags (attrs._landmark in buildings.json): © OpenStreetMap contributors, ODbL
+
 The Paradigm datasets are public domain (CC0 1.0); they are credited as a
 courtesy and add no conditions. buildings.* and terrain.* contain no
 OpenStreetMap data. See ../CREDITS.md for sources, versions and the dates the
