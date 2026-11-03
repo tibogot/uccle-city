@@ -1,5 +1,7 @@
 # Handoff: where the project stands and what's left
 
+**Full list of open work: `docs/TODO.md`.**
+
 Read this first when resuming (with Claude or by hand). Details are in `docs/PLAN.md`
 (roadmap and history) and `docs/CONTRACT.md` (data format, v0.7).
 
