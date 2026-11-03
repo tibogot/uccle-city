@@ -42,10 +42,11 @@ Pipeline (raw data must be fetched first, see README): `python pipeline/run_tile
 2. **Church**: done: deep (parallax) openings, tracery, rose window, belfry louvres,
    buttresses, ribs. Rose window on the main front. Left: compare materials with a photo of
    Saint-Job, oculi on the dome drum, lantern detail.
-3. **Houses**: (chimneys done) roof eaves overhang, shopfronts from OSM `shop=*`, gable attic
+3. **Houses**: (chimneys, eaves + gutters done) shopfronts from OSM `shop=*`, gable attic
    windows, parallax window reveals.
-4. **Night and props**: (street lamps done, procedural placement: `viewer/lamps.js`) benches, bus/tram stops, signals,
-   tram overhead wires (all from OSM points/lines).
+4. **Night and props**: (street lamps done, procedural placement: `viewer/lamps.js`; bus stops,
+   signals, bike racks, benches done from OSM points: `viewer/furniture.js`) left: tram platforms and
+   overhead wires, bins, bollards, shopfronts (add `node["shop"]` to `pipeline/fetch_osm.py` and re-fetch).
 5. **Ground**: UrbIS Land cover for grass/garden/paving materials, hedges.
 6. **Roads**: the ~12 remaining bad spots (Alsemberg/Brugmann sharp Y, crowded rings in
    C4/F2; run `node tools/check_roads.mjs --all`), bump on setts and kerbs, wet look,

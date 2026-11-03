@@ -378,6 +378,19 @@ export function analyseBuildings(doc, buf, roads) {
       }
       const capCol = landmark ? [0.47, 0.45, 0.4] : [rc[0] * 0.72, rc[1] * 0.72, rc[2] * 0.72];
       for (const list of edges.values()) {
+        // eaves: a roof edge with no other roof face, horizontal, the low edge of a pitched slope ->
+        // the roof oversails the wall by 30 cm, with a zinc gutter under its lip
+        if (list.length === 1 && !landmark) {
+          const { tri, A, B, C } = list[0], n = tri.n[1] < 0 ? tri.n.map((v) => -v) : tri.n;
+          if (n[1] > 0.2 && n[1] < 0.97 && Math.abs(A[1] - B[1]) < 0.05 && C[1] > A[1] + 0.3) {
+            const hl = Math.hypot(n[0], n[2]) || 1, ox = n[0] / hl, oz = n[2] / hl;   // downhill, outward
+            box(D, A, B, A[1] + 0.03, 0.1, 0.32, ox, oz, [rc[0] * 0.8, rc[1] * 0.8, rc[2] * 0.8]);
+            const gA = [A[0] + ox * 0.26, 0, A[2] + oz * 0.26], gB = [B[0] + ox * 0.26, 0, B[2] + oz * 0.26];
+            box(D, gA, gB, A[1] - 0.05, 0.12, 0.13, ox, oz, [0.3, 0.31, 0.32]);
+            stats.eaves = (stats.eaves || 0) + 1;
+          }
+          continue;
+        }
         if (list.length !== 2) continue;
         const [e1, e2] = list, up = (n) => (n[1] < 0 ? n.map((v) => -v) : n), n1 = up(e1.tri.n), n2 = up(e2.tri.n);
         if (n1[0] * n2[0] + n1[1] * n2[1] + n1[2] * n2[2] > 0.978) continue;               // coplanar-ish

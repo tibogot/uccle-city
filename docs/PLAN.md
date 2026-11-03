@@ -391,6 +391,8 @@ modular kits**, and real data only decides **which material goes where**.
    InstancedMesh per kind. G4: 6 stops, 8 signal posts, 8 bike racks (OSM has no benches or
    shelter tags here). Tram stop_positions (on the rails) are skipped: tram platforms need
    the platform ways, not fetched yet.
+   Eaves: the low edge of every pitched roof oversails the wall by 30 cm, with a zinc
+   gutter under the lip (G4: 1,048 edges).
    **Next for the church:** check materials against a photo; the drum and dome could
    use their own windows (oculi) and lantern detail.
 
