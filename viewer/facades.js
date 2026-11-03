@@ -25,7 +25,7 @@
 import * as THREE from "three/webgpu";
 import {
   Fn, If, attribute, positionWorld, normalWorld, cameraPosition, color, float, vec2, vec3, vec4, mix, step, smoothstep, floor, fract,
-  abs, min, max, clamp, fwidth, sin, sign, dot, normalize, length, pow,
+  abs, min, max, clamp, fwidth, sin, sign, dot, normalize, length, pow, atan,
 } from "three/tsl";
 import { hash2D, noise2D, bumpNormal, filteredPulse } from "./tslkit.js";
 import { env } from "./lighting.js";
@@ -219,7 +219,7 @@ export function analyseBuildings(doc, buf, roads) {
     return best < STREET_REACH;
   };
 
-  const W = { position: [], normal: [], aWall: [], aBld: [] };
+  const W = { position: [], normal: [], aWall: [], aBld: [], aFN: [] };
   const D = { position: [], normal: [], color: [] };                             // detail geometry
   const R = { position: [], normal: [], aRoof: [], aRoofCol: [] };
   const stats = { faces: 0, party: 0, street: 0, cornices: 0, buttresses: 0, ridges: 0 };
@@ -227,7 +227,14 @@ export function analyseBuildings(doc, buf, roads) {
     const base = b.base, eaves = (b.eaves ?? b.top) - base;
     const key = String(b.attrs?.BU_ID ?? b.id);
     const landmark = b.attrs?._landmark;
-    const rnd = hash01(key), style = landmark ? 6 : wallStyle(hash01(key + "s"), b.height);
+    const rnd = hash01(key);
+    // landmark towers (small footprint, tall): style 6.25 -> louvred belfry openings instead of lancets
+    let ext = 0;
+    if (landmark) {
+      const xs = b.footprint[0].map((q) => q[0]), zs = b.footprint[0].map((q) => q[1]);
+      ext = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs));
+    }
+    const style = landmark ? (ext < 11 && b.height > 16 ? 6.25 : 6) : wallStyle(hash01(key + "s"), b.height);
     const roofStyle = hash01(key + "r");
     // real roof colour from the orthophoto (build_roofcolors.py), else a guess from the hash
     const rc = b.roofColor || (roofStyle < 0.4 ? [0.27, 0.085, 0.05] : [0.06, 0.065, 0.075]);
@@ -313,6 +320,7 @@ export function analyseBuildings(doc, buf, roads) {
         W.normal.push(sn[0], sn[1], sn[2]);
         W.aWall.push(q[0] * tx + q[2] * tz - u0, width, q[1] - base, faceEaves);
         W.aBld.push(style, partyH, street, rnd);
+        W.aFN.push(f.nx, f.nz);                                                  // outward face normal (xz)
       }
     }
     // --- ridge tiles and hip ribs: convex roof edges shared by two roof faces that meet at > 12°
@@ -357,7 +365,7 @@ export function analyseBuildings(doc, buf, roads) {
   });
   const f32 = (a) => new Float32Array(a);
   return {
-    walls: { position: f32(W.position), normal: f32(W.normal), aWall: f32(W.aWall), aBld: f32(W.aBld) },
+    walls: { position: f32(W.position), normal: f32(W.normal), aWall: f32(W.aWall), aBld: f32(W.aBld), aFN: f32(W.aFN) },
     details: { position: f32(D.position), normal: f32(D.normal), aCol: f32(D.color) },
     roofs: { position: f32(R.position), normal: f32(R.normal), aRoof: f32(R.aRoof), aRoofCol: f32(R.aRoofCol) },
     stats: { ...stats, triangles: T, vertices: V },
@@ -586,53 +594,94 @@ export function wallMaterial() {
     smoothstep(float(0.14).add(aaH), float(0.14).sub(aaH), abs(fract(h.sub(3.0).div(7.0)).sub(0.5).mul(7.0).abs().sub(3.5)))).mul(step(float(3.5), eh));
   lmCol = mix(lmCol, C(0.5, 0.48, 0.44), sc);
   lmH = lmH.add(sc.mul(0.05));
-  // windows: bays of ~3.6 m, window 1.4 m wide, from 3.4 m to the eaves - 1.5 m (max 10 m), round arch on top
-  const nbL = max(floor(fw.div(3.6).add(0.5)), float(1));
+  // windows: bays of ~3.6 m, window 1.4 m wide, from 3.4 m to the eaves - 1.5 m (max 10 m), round arch on top.
+  // Towers (tall narrow faces) get a louvred belfry opening near the top instead.
+  const tower = step(float(6.1), style).mul(step(float(12.0), eh)).toVar();
+  const nbL = mix(max(floor(fw.div(3.6).add(0.5)), float(1)), float(1), tower);
   const bwL = fw.div(nbL);
+  const lxC = u.sub(fw.mul(0.5)).toVar();                                       // from the middle of the face
+  const roseFace = street.mul(step(float(10.0), eh)).mul(float(1).sub(step(float(6.1), style))).mul(step(float(4.5), fw)).toVar();
+  const R = min(min(float(1.7), fw.mul(0.2)), min(eh.sub(1.5), float(13.4)).sub(4.6).sub(0.9).mul(0.5)).toVar();
+  const roseBay = roseFace.mul(step(float(0.6), R)).mul(step(abs(lxC), R.add(0.45))).toVar();   // lancets give way to the rose
   const lx = fract(u.div(bwL)).sub(0.5).mul(bwL).toVar();
-  const hwL = min(float(0.7), bwL.mul(0.21)).toVar();
-  const y0 = mix(float(2.4), float(3.4), step(float(8.0), eh)), yTop = min(eh.sub(mix(float(0.9), float(1.5), step(float(8.0), eh))), float(13.4)).toVar();
+  const hwL = mix(min(float(0.7), bwL.mul(0.21)), min(float(0.8), fw.mul(0.17)), tower).toVar();
+  const y0 = mix(mix(float(2.4), float(3.4), step(float(8.0), eh)), eh.sub(7.2), tower).toVar();
+  const yTop = mix(min(eh.sub(mix(float(0.9), float(1.5), step(float(8.0), eh))), float(13.4)), eh.sub(2.0), tower).toVar();
   const ySpring = yTop.sub(hwL).toVar();
-  const dRect = max(abs(lx).sub(hwL), y0.sub(h));
-  const dArch = length(vec2(lx, h.sub(ySpring))).sub(hwL);
-  const dWin = h.lessThan(ySpring).select(dRect, dArch).toVar();
+  const winSD = (x, y) => y.lessThan(ySpring).select(max(abs(x).sub(hwL), y0.sub(y)), length(vec2(x, y.sub(ySpring))).sub(hwL));
+  const dWin = winSD(lx, h).toVar();
   const lmOk = isLM.mul(float(1).sub(party)).mul(step(float(2.2), fw)).mul(step(float(5.2), eh)).toVar();
   const aaW = fwidth(dWin).add(0.003);
-  const lmWin = smoothstep(aaW, aaW.negate(), dWin).mul(lmOk).toVar();
+  const lmWin = smoothstep(aaW, aaW.negate(), dWin).mul(lmOk).mul(float(1).sub(roseBay)).toVar();
   const surround = smoothstep(aaW, aaW.negate(), dWin.sub(0.16)).mul(float(1).sub(lmWin)).mul(lmOk);
   lmCol = mix(lmCol, C(0.5, 0.48, 0.44), surround);
   lmH = lmH.add(surround.mul(0.04)).sub(lmWin.mul(0.2));
-  // stained glass: leaded diamond lattice, a colour per pane
-  const ga = lx.add(h).div(0.26), gb = lx.sub(h).div(0.26);
+  // deep reveal by parallax: the glass sits REVEAL m behind the wall face. Trace the view ray to that plane;
+  // where it lands outside the opening we see the stone jamb / soffit / sill instead of glass.
+  const fn = attribute("aFN", "vec2");
+  const nO = vec3(fn.x, 0.0, fn.y), tA = vec3(fn.y.negate(), 0.0, fn.x);   // outward normal, along-face (+u)
+  const ray = normalize(P.sub(cameraPosition));
+  const rz = max(dot(ray, nO).negate(), 0.08);
+  const REVEAL = mix(float(0.38), float(0.5), tower);
+  const lxs = lx.add(dot(ray, tA).div(rz).mul(REVEAL)).toVar(), hs = h.add(ray.y.div(rz).mul(REVEAL)).toVar();
+  const dIn = winSD(lxs, hs);
+  const glassVis = smoothstep(aaW, aaW.negate(), dIn).mul(lmWin).toVar();
+  const revealK = lmWin.sub(glassVis).max(0).toVar();                           // the visible side of the opening
+  // stained glass: leaded diamond lattice, a colour per pane (at the glass plane)
+  const ga = lxs.add(hs).div(0.26), gb = lxs.sub(hs).div(0.26);
   const lead = max(smoothstep(0.08, 0.0, min(fract(ga), float(1).sub(fract(ga)))), smoothstep(0.08, 0.0, min(fract(gb), float(1).sub(fract(gb)))));
   const pane = hash2D(vec2(floor(ga), floor(gb)).add(rnd.mul(17.0)));
   let sg = C(0.02, 0.035, 0.12);
   sg = mix(sg, C(0.13, 0.012, 0.015), step(0.35, pane));
   sg = mix(sg, C(0.15, 0.085, 0.012), step(0.62, pane));
   sg = mix(sg, C(0.02, 0.07, 0.03), step(0.84, pane));
-  const leadK = lead.mul(near.mul(0.6).add(0.4));
+  const leadK = lead.mul(near.mul(0.6).add(0.4)).mul(float(1).sub(tower));
   // from outside by day stained glass reads dark, a hint of colour and the sky's sheen
   const sgDay = mix(sg.mul(0.28).add(C(0.012, 0.012, 0.015)), vec3(env.uSkyHorizon).mul(0.22), fres.mul(0.7));
+  // belfry louvres: slanted boards, lit on top, dark gaps between
+  const slat = fract(hs.sub(y0).div(0.24));
+  const louvre = mix(C(0.015, 0.014, 0.013), C(0.16, 0.15, 0.135), smoothstep(0.45, 0.85, slat)).mul(mix(float(1), float(0.6), smoothstep(0.85, 1.0, slat)));
   // stone tracery: a central mullion splitting the lancet in two, an oculus ring in the arch head, iron saddle bars
   const aaT = fwidth(lx).add(0.004);
   const ocY = ySpring.add(hwL.mul(0.32)), ocR = hwL.mul(0.42);
   const mullion = smoothstep(float(0.055).add(aaT), float(0.055).sub(aaT), abs(lx)).mul(step(h, ocY.sub(ocR)));
   const oculus = smoothstep(float(0.045).add(aaT), float(0.045).sub(aaT), abs(length(vec2(lx, h.sub(ocY))).sub(ocR)));
-  const tracery = max(mullion, oculus).mul(lmWin).toVar();
-  const saddle = smoothstep(float(0.03).add(aaT), float(0.03).sub(aaT), abs(fract(h.sub(y0).div(0.9)).sub(0.5).mul(0.9))).mul(step(h, ySpring));
-  lmCol = mix(lmCol, mix(sgDay, C(0.02, 0.02, 0.022), max(leadK, saddle)), lmWin);
+  const tracery = max(mullion, oculus).mul(lmWin).mul(float(1).sub(tower)).toVar();
+  const saddle = smoothstep(float(0.03).add(aaT), float(0.03).sub(aaT), abs(fract(hs.sub(y0).div(0.9)).sub(0.5).mul(0.9))).mul(step(hs, ySpring)).mul(float(1).sub(tower));
+  const fill = mix(mix(sgDay, C(0.02, 0.02, 0.022), max(leadK, saddle)), louvre, tower);
+  // reveal stone: in shade, darker toward the glass (soffit darkest)
+  const revCol = C(0.27, 0.255, 0.23).mul(ash.tone.sub(0.5).mul(0.15).add(1.0)).mul(mix(float(0.75), float(0.45), step(ySpring, hs)));
+  lmCol = mix(lmCol, mix(fill, revCol, revealK), lmWin);
   lmCol = mix(lmCol, C(0.48, 0.46, 0.42).mul(ash.tone.sub(0.5).mul(0.15).add(1.0)), tracery);
   lmH = lmH.add(tracery.mul(0.17));
   // portal: on a street face, the bay nearest the middle of the wall
-  const midBay = floor(fw.div(bwL).mul(0.5));
-  const isPortal = street.mul(lmOk).mul(step(abs(floor(u.div(bwL)).sub(midBay)), 0.5));
+  const isPortal = street.mul(lmOk);
   const pw = float(1.15), pTop = float(4.6);
-  const dPortal = h.lessThan(pTop.sub(pw)).select(max(abs(lx).sub(pw), h.negate()), length(vec2(lx, h.sub(pTop.sub(pw)))).sub(pw));
+  const dPortal = h.lessThan(pTop.sub(pw)).select(max(abs(lxC).sub(pw), h.negate()), length(vec2(lxC, h.sub(pTop.sub(pw)))).sub(pw));
   const portal = smoothstep(aaW, aaW.negate(), dPortal).mul(isPortal).toVar();
-  const wood = C(0.09, 0.05, 0.025).mul(step(0.5, fract(lx.div(0.28))).mul(0.25).add(0.8));
+  const wood = C(0.09, 0.05, 0.025).mul(step(0.5, fract(lxC.div(0.28))).mul(0.25).add(0.8));
   lmCol = mix(lmCol, wood, portal);
   lmH = lmH.sub(portal.mul(0.3));
-  const lmGlass = lmWin.mul(float(1).sub(portal)).mul(float(1).sub(leadK)).mul(float(1).sub(tracery)).toVar();
+  // rose window above the portal: 12 spokes, an inner ring, a hub, a moulded surround; glass set back by parallax
+  const cyR = pTop.add(0.7).add(R).toVar();
+  const roseOk = roseFace.mul(lmOk).mul(step(float(0.6), R)).toVar();
+  const rr = length(vec2(lxC, h.sub(cyR))).toVar();
+  const aaR = fwidth(rr).add(0.003);
+  const roseIn = smoothstep(R.add(aaR), R.sub(aaR), rr).mul(roseOk).toVar();
+  const roseMould = smoothstep(R.add(0.24).add(aaR), R.add(0.24).sub(aaR), rr).mul(roseOk).sub(roseIn).max(0);
+  const rrs = length(vec2(lxs.sub(lx).add(lxC), hs.sub(cyR)));
+  const ang = atan(h.sub(cyR), lxC);
+  const spokeD = abs(fract(ang.mul(12.0 / 6.2831853).add(0.5)).sub(0.5)).mul(6.2831853 / 12.0).mul(rr);
+  const roseStone = max(max(smoothstep(float(0.06).add(aaR), float(0.06).sub(aaR), spokeD).mul(step(R.mul(0.14), rr)),
+    smoothstep(float(0.05).add(aaR), float(0.05).sub(aaR), abs(rr.sub(R.mul(0.42))))),
+    smoothstep(R.mul(0.16).add(aaR), R.mul(0.16).sub(aaR), rr)).mul(roseIn).toVar();
+  const roseGlass = roseIn.sub(roseStone).max(0).mul(smoothstep(R.add(aaR), R.sub(aaR), rrs)).toVar();
+  const roseRev = roseIn.sub(roseStone).max(0).sub(roseGlass).max(0);
+  lmCol = mix(lmCol, C(0.5, 0.48, 0.44), roseMould);
+  lmCol = mix(lmCol, mix(mix(sgDay, C(0.02, 0.02, 0.022), leadK), revCol, roseRev), roseIn.sub(roseStone).max(0));
+  lmCol = mix(lmCol, C(0.48, 0.46, 0.42).mul(ash.tone.sub(0.5).mul(0.15).add(1.0)), roseStone);
+  lmH = lmH.add(roseMould.mul(0.06)).add(roseStone.mul(0.15)).sub(roseIn.mul(0.15));
+  const lmGlass = roseGlass.mul(float(1).sub(leadK)).add(glassVis.mul(float(1).sub(portal)).mul(float(1).sub(leadK)).mul(float(1).sub(tracery)).mul(float(1).sub(tower))).toVar();
   col = mix(col, lmCol, isLM);
   height = mix(height, lmH, isLM);
 
@@ -698,7 +747,7 @@ export function buildingMeshes(doc, buf, roads) {
   };
   const detailMat = new THREE.MeshStandardNodeMaterial({ roughness: 0.82, side: THREE.DoubleSide });
   detailMat.colorNode = attribute("aCol", "vec3");
-  const meshes = [mk(a.walls, [["aWall", 4], ["aBld", 4]], wallMaterial(), "buildings-walls"),
+  const meshes = [mk(a.walls, [["aWall", 4], ["aBld", 4], ["aFN", 2]], wallMaterial(), "buildings-walls"),
     mk(a.roofs, [["aRoof", 4], ["aRoofCol", 3]], roofMaterial(), "buildings-roofs")];
   if (a.details.position.length) meshes.push(mk(a.details, [["aCol", 3]], detailMat, "buildings-details"));
   return {

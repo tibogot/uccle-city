@@ -364,8 +364,15 @@ modular kits**, and real data only decides **which material goes where**.
      species (London plane, honey locust, elm), foliage lighting model. Our LiDAR
      trees are mapped onto it (`viewer/treesSlop.js`: height → scale, crown width →
      horizontal stretch, species by hash). The old cards stay behind `?trees=simple`.
-   **Next for the church:** parallax-depth window reveals, a proper rose window on the
-   west front, the tower's louvred belfry openings, check materials against a photo.
+   **Church pass 2 (2026-11-03):** parallax-depth openings (glass 38 cm behind the wall,
+   the shaded stone jambs and soffit show as the view moves; the wall's outward normal is
+   now a vertex attribute `aFN`), a rose window (12 spokes, ring, hub, moulding) centred
+   above the portal on wide street faces, louvred belfry openings on tower solids
+   (landmark solids under 11 m across and over 16 m tall, style 6.25).
+   Screenshot `docs/img/viewer-G4-church-front.png`.
+   **Next for the church:** the front gable of Saint-Job is split into two UrbIS faces,
+   so it gets two lancets and two portals instead of the rose: merge coplanar
+   neighbouring faces of a landmark before placing openings; check materials against a photo.
 
 3. **Ground materials.** UrbIS **Land cover** (CC0, same 1 km sheets) plus OSM
    areas say where grass, garden, paving, water and woodland are. Tiling grass,
