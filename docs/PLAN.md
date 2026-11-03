@@ -331,8 +331,14 @@ modular kits**, and real data only decides **which material goes where**.
    Fresnel glass reflecting the sky (and SSR), reveal shadows, bump relief (bricks,
    recessed openings, sills, plinth, cornice), soot streaks, height AO, glowing windows
    at night.
-   **Next:** real trees (leaf-card crowns, wind; ours are icosahedra), street lamps with
-   a pooled set of lights for night, shopfronts, exposed party-wall treatment, wet roads.
+   **Trees (done 2026-11-03):** about 47,000 trees from the LiDAR canopy height model
+   (UrbIS DSM − DTM, `pipeline/build_trees.py`, CONTRACT 0.6) instead of a few hundred
+   in OSM; `viewer/trees.js` draws instanced leaf-card crowns with shell normals, crown
+   AO, coverage-preserving alpha mips, back-lit translucency and wind (approach after
+   slop-newyork). Watch overdraw at street level (alpha-tested cards); add distance LOD
+   (fewer cards / a crown impostor) before multi-tile streaming.
+   **Next:** street lamps with a pooled set of lights for night, shopfronts, exposed
+   party-wall treatment, wet roads.
 
 3. **Ground materials.** UrbIS **Land cover** (CC0, same 1 km sheets) plus OSM
    areas say where grass, garden, paving, water and woodland are. Tiling grass,

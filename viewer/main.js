@@ -15,6 +15,7 @@ import { asphaltMaterial, concreteMaterial, vergeMaterial, surfaceAttribute } fr
 import { buildingMeshes as facadeMeshes } from "./facades.js";
 import { Lighting, PRESETS } from "./lighting.js";
 import { createPipeline } from "./post.js";
+import { buildTrees } from "./trees.js";
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -274,21 +275,9 @@ function featureObjects(f, hm, bounds) {
   const off = { polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, side: THREE.DoubleSide };
   mk(steel, new THREE.MeshStandardMaterial({ color: 0x9a9da0, metalness: 0.3, roughness: 0.4, ...off }), "tram-rails");
   mk(groove, new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.9, ...off }), "tram-grooves");
-  const trees = (f.trees || []).filter((t) => inTile(t.x, t.z));
-  if (trees.length) {
-    const trunkG = new THREE.CylinderGeometry(0.18, 0.25, 3, 6).translate(0, 1.5, 0);
-    const crownG = new THREE.IcosahedronGeometry(2.6, 1).translate(0, 5, 0);
-    const trunk = new THREE.InstancedMesh(trunkG, new THREE.MeshStandardMaterial({ color: 0x5a4330 }), trees.length);
-    const crown = new THREE.InstancedMesh(crownG, new THREE.MeshStandardMaterial({ color: 0x3f6b2e, flatShading: true }), trees.length);
-    const m = new THREE.Matrix4();
-    trees.forEach((t, i) => {
-      const s = t.height ? t.height / 8 : 1;
-      m.makeScale(s, s, s).setPosition(t.x, hm.surface(t.x, t.z), t.z);
-      trunk.setMatrixAt(i, m); crown.setMatrixAt(i, m);
-    });
-    trunk.castShadow = crown.castShadow = true;
-    group.add(trunk, crown);
-  }
+  const T = buildTrees(f.trees || [], (x, z) => hm.surface(x, z), inTile);
+  group.add(T.group);
+  log(`trees: ${T.count} (LiDAR canopy peaks + OSM)`);
   return group;
 }
 

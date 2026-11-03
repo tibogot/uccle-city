@@ -21,7 +21,7 @@ from pathlib import Path
 from common import ORIGIN_E, ORIGIN_N, all_tiles, tile_bounds
 
 HERE = Path(__file__).resolve().parent
-FORMAT = {"buildings3d": "SHP", "dtm": "TIFF", "transport": "GPKG"}
+FORMAT = {"buildings3d": "SHP", "dtm": "TIFF", "transport": "GPKG", "dsm": "TIFF"}
 
 
 def sheets_for(tiles, pad=0.0):

@@ -1,7 +1,11 @@
-# uccle-city data contract — v0.5
+# uccle-city data contract — v0.6
 
 ### Changes
 
+- **0.6 (2026-11-03)**: `features.json` trees now come mostly from LiDAR (canopy
+  height model = UrbIS DSM − DTM, `pipeline/build_trees.py`), with `height`,
+  `crown`, `source` (`urbis-chm` | `osm`) and `osm` (matched OSM tree id);
+  new top-level `treesSource`. See 5.4.
 - **0.5 (2026-11-02)**, Session 2 part 3. Hand overrides (`pipeline/overrides.json`,
   5.1 "Overrides"); new refine actions `join-ring` (node `meta.joined`),
   `unsplit`, `drop-slip`; `dual.py` skips short island tips. `network.json`
@@ -122,7 +126,7 @@ The processed files for one tile should stay under about 2 MB in total.
 ## 5. Formats
 
 All JSON is UTF-8. Coordinates are rounded to **0.01 m**. Every file has a
-top-level `"contract": "0.5"`, except `roads.json`, which must stay exactly the
+top-level `"contract": "0.6"`, except `roads.json`, which must stay exactly the
 road lab's own format. It carries `meta.contract` instead (see 5.1).
 
 ### 5.1 Roads — `roads.json` (the road lab's saved-data JSON)
@@ -145,7 +149,7 @@ writes and reads:
               "lanes"?: { "center": {width, kind}, "left": [{type,width}], "right": [{type,width}] },
               "sections": [], "profile": { "mode": "terrain" },
               "meta"?: { ... } }],
-  "meta": { "contract": "0.5", "tile": "G4", "bufferM": 150, "source": "osm", "osmBase": "<overpass timestamp>",
+  "meta": { "contract": "0.6", "tile": "G4", "bufferM": 150, "source": "osm", "osmBase": "<overpass timestamp>",
             "from": "data/roads/network.json", "refineActions": { "<action>": <count> }, "generated": "<iso>" }
 }
 ```
@@ -271,7 +275,7 @@ are never split across tiles.
 
 ```jsonc
 {
-  "contract": "0.5", "tile": "G4", "count": 598,
+  "contract": "0.6", "tile": "G4", "count": 598,
   "bin": "buildings.bin", "binLayout": "positions:f32x3, indices:u32 (see below)",
   "buildings": [{
     "id": "<source id>", "source": "urbis3d",
@@ -330,7 +334,7 @@ u32 indices[triangleCount * 3]      // counter-clockwise seen from outside, so n
 - Resampling is bilinear from the source DTM, which is reprojected to
   EPSG:31370 first if it isn't already.
 - `terrain.json`:
-  `{ "contract":"0.5", "tile":"G4", "x0":1000, "z0":500, "size":500, "step":1.0, "cols":501, "rows":501, "encoding":"u16le-cm", "nodata":65535, "min":.., "max":.., "nodataCount":.., "source":"urbis-dtm", "inputs":[{ "file", "res", "crs" }] }`
+  `{ "contract":"0.6", "tile":"G4", "x0":1000, "z0":500, "size":500, "step":1.0, "cols":501, "rows":501, "encoding":"u16le-cm", "nodata":65535, "min":.., "max":.., "nodataCount":.., "source":"urbis-dtm", "inputs":[{ "file", "res", "crs" }] }`
   (`file` relative to `data/raw/urbis/dtm/`).
 - Source sheets are mosaicked before resampling, so sheet seams don't show.
 - `ground(x, z)` for the road engine is a bilinear lookup in this grid.
@@ -339,8 +343,10 @@ u32 indices[triangleCount * 3]      // counter-clockwise seen from outside, so n
 
 ```jsonc
 {
-  "contract": "0.5", "tile": "G4",
-  "trees":   [{ "x", "z", "y"?, "id": "osm:n123", "species"?, "genus"?, "leafType"?, "height"?, "crown"? }],
+  "contract": "0.6", "tile": "G4",
+  "trees":   [{ "x", "z", "y"?, "id": "chm:<2E>_<2N>" | "osm:n123", "source": "urbis-chm" | "osm",
+                "height"?, "crown"?, "species"?, "genus"?, "leafType"?, "osm"?: "osm:n123" }],
+  "treesSource": { "chm": { "dsm": [..], "dtm": [..], "minHeight": 3, "res": 0.5 }, "osmMatched": n, "osmOnly": n },
   "treeRows":[{ "id": "osm:w1", "line": [[x,z],...] }],
   "areas":   [{ "id": "osm:w2", "kind": "park|grass|wood|garden|playground|water|cemetery",
                 "rings": [[[x,z],...], ...], "name"? }],
@@ -351,6 +357,15 @@ u32 indices[triangleCount * 3]      // counter-clockwise seen from outside, so n
 }
 ```
 
+Trees (from 0.6): local maxima of the canopy height model (UrbIS DSM 2021 − DTM
+2021, both 0.5 m, same LiDAR flight), at least 3 m tall, outside building
+footprints grown by 1.5 m. `y` = DTM ground (m TAW), `height` = canopy top
+above ground (m), `crown` = crown radius (m): clamp(0.18 h + 0.8, 1.2, 7.0),
+capped at 0.6 × the distance to the nearest taller tree. An OSM tree within
+3 m lends its species tags (`osm` = its id); unmatched OSM trees are kept with
+`source: "osm"`. LiDAR from October 2021: trees felled or planted since are
+not reflected.
+
 Points and trees belong to the tile they fall in. Lines and areas are clipped to
 the tile; the clipped pieces keep their source `id`.
 
@@ -358,7 +373,7 @@ the tile; the clipped pieces keep their source `id`.
 
 ```jsonc
 {
-  "contract": "0.5",
+  "contract": "0.6",
   "crs": { "source": "EPSG:31370", "proj4": "<string above>", "origin": [148643, 165394],
            "axes": "x=east, z=south, y=up (m TAW)" },
   "studyBox": { "lon": [4.327, 4.372], "lat": [50.7905, 50.8075], "local": { "x": [..], "z": [..] } },

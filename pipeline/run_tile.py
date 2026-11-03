@@ -18,7 +18,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-from common import DATA, all_tiles
+from common import DATA, RAW, all_tiles
+
+RAW_DSM = RAW / "urbis" / "dsm"
 
 HERE = Path(__file__).resolve().parent
 
@@ -62,6 +64,10 @@ def main():
                 cmd += ["--height-field", a.height_field]
             if step(cmd):
                 failed.append(f"{t}:buildings")
+    # trees need the buildings of the neighbouring tiles (to mask roofs), so they run after all buildings
+    for t in tiles:
+        if (RAW_DSM.exists() and any(RAW_DSM.rglob("*.tif"))) and step(["build_trees.py", "--tile", t]):
+            failed.append(f"{t}:trees")
     step(["build_manifest.py"])
     if failed:
         print(f"\nFAILED: {failed}", file=sys.stderr)

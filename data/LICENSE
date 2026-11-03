@@ -15,7 +15,10 @@ Attribution:
     (buildings.json, buildings.bin)
 
   Digital terrain model 2021, © Paradigm (paradigm.brussels), CC0 1.0
-    (terrain.u16, terrain.json)
+    (terrain.u16, terrain.json; tree heights in features.json)
+
+  UrbIS Digital surface model 2021, © Paradigm (paradigm.brussels), CC0 1.0
+    (tree positions, heights and crowns in features.json)
 
 The Paradigm datasets are public domain (CC0 1.0); they are credited as a
 courtesy and add no conditions. buildings.* and terrain.* contain no
