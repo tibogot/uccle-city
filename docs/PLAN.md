@@ -394,11 +394,13 @@ modular kits**, and real data only decides **which material goes where**.
    Eaves: the low edge of every pitched roof oversails the wall by 30 cm, with a zinc
    gutter under the lip (G4: 1,048 edges).
    **Streaming, shops, trams (2026-11-03):**
-   - neighbouring tiles stream in after the first frame (`?ring=1` default, `0` one tile,
-     `2` = 5x5), nearest first; ground, walker and lighting query the tile under the camera
-     (`world` in `viewer/main.js`). Point lights only on the main tile. Screenshot
-     `docs/img/viewer-G4-ring1.png`. Next: unload far tiles, simpler LOD for ring 2+,
-     move the main tile with the player;
+   - streaming: every second the viewer finds the tile under the player (walk) or under the
+     orbit target, loads the tiles within `?ring=` (default 1, 0 = one tile, 2 = 5x5) nearest
+     first, one per step, and unloads tiles beyond ring + 1 (geometry, materials and the
+     marking atlas are disposed). Ground, walker and lighting query the tile under the camera
+     (`world` in `viewer/main.js`). Point lights only on the first tile. Tested by moving 1.2 km
+     west from G4: E3/E4/D3/D4 loaded, H3/H4 unloaded. Screenshot `docs/img/viewer-G4-ring1.png`.
+     Next: simpler LOD for ring 2+, load work off the main thread (a worker) to avoid hitches;
    - OSM extract now includes `shop=*`, food/drink amenities and platform ways
      (`fetch_osm.py`; `build_features.py` → point kind `shop`, line kind `platform`;
      `build_trees.py` must run after `build_features.py`, it writes the same file);

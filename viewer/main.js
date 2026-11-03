@@ -226,7 +226,7 @@ function roadMeshes(net, hm, bounds) {
     meshes.push(m);
     tris += index.length / 3;
   }
-  return { meshes, stats: built.stats, carvedCells, triangles: tris };
+  return { meshes, stats: built.stats, carvedCells, triangles: tris, textures: built.atlas?.texture ? [built.atlas.texture] : [] };
 }
 
 // ------------------------------------------------------------------ features (tram lines, trees)
@@ -283,7 +283,7 @@ function featureObjects(f, hm, bounds) {
   const T = params.get("trees") === "simple" ? buildTrees(f.trees || [], (x, z) => hm.surface(x, z), inTile)
     : buildTreeField(f.trees || [], (x, z) => hm.surface(x, z), inTile);
   group.add(T.group);
-  if (T.update) updaters.push(T.update);
+  group.userData.update = T.update || null;
   log(`trees: ${T.count} (LiDAR canopy peaks + OSM)` + (T.sizes ? `, species heights ${T.sizes.map((z) => z.h.toFixed(1)).join("/")} m` : ""));
   return group;
 }
@@ -350,6 +350,10 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const [x0, x1] = entry.bounds.x, [z0, z1] = entry.bounds.z;
   const bounds = { x0, x1, z0, z1 };
   const say = verbose ? log : () => {};
+  // per-tile groups inside the shared layers, so the tile can be unloaded
+  const own = {};
+  for (const k of Object.keys(layers)) { own[k] = new THREE.Group(); own[k].name = `${entry.name}-${k}`; layers[k].add(own[k]); }
+  const ups = [];
   const timed = verbose ? timedGlobal : async (_l, f) => f();
   const [tHdr, tBuf, bDoc, bBuf, roads, feats] = await timed("fetch", () => Promise.all([
     getJSON(F.terrainHeader), getBin(F.terrain), getJSON(F.buildings), getBin(F.buildingsBin), getJSON(F.roads), getJSON(F.features),
@@ -364,26 +368,37 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   for (const i of errors) byCode[i.code] = (byCode[i.code] || 0) + 1;
   say(`road engine: ${net.roads.length} roads, ${net.nodes.length} nodes, ${errors.length} errors ${JSON.stringify(byCode)}, ${net.issues.length - errors.length} warnings/info`);
   const R = await timed("road meshes + carve", () => roadMeshes(net, hm, bounds));
-  layers.roads.add(...R.meshes);
+  own.roads.add(...R.meshes);
 
-  layers.terrain.add(await timed("terrain mesh", () => terrainMesh(hm, contourOn)));
+  own.terrain.add(await timed("terrain mesh", () => terrainMesh(hm, contourOn)));
   const B = await timed("building meshes + façades", () => facadeMeshes(bDoc, bBuf, roads, feats));
   say(`façades: ${B.stats.faces} wall faces, ${B.stats.party} party walls, ${B.stats.street} facing a street; details: ${B.stats.cornices} cornices, ${B.stats.buttresses} buttresses, ${B.stats.ridges} ridge/hip caps, ${B.stats.chimneys} chimneys, ${B.stats.eaves || 0} eaves, ${B.stats.shops} shopfronts (OSM shops)`);
-  layers.buildings.add(...B.meshes);
-  layers.features.add(featureObjects(feats, hm, bounds));
+  own.buildings.add(...B.meshes);
+  const fo = featureObjects(feats, hm, bounds);
+  own.features.add(fo);
+  if (fo.userData.update) ups.push(fo.userData.update);
   const lamps = buildLamps(roads, (x, z) => hm.ground(x, z), bounds, { lights: verbose });   // point lights: main tile only
-  layers.features.add(lamps.group);
-  updaters.push(lamps.update);
+  own.features.add(lamps.group);
+  ups.push(lamps.update);
   const furn = buildFurniture(feats, roads, (x, z) => hm.ground(x, z), bounds);
-  layers.features.add(furn.group);
+  own.features.add(furn.group);
   const tram = buildTram(feats, (x, z) => hm.surface(x, z) + CARVE, bounds);
-  layers.features.add(tram.group);
+  own.features.add(tram.group);
   say(`tram (OSM): ${tram.counts.wireSegments} wire segments, ${tram.counts.poles} poles, ${tram.counts.platforms} platforms, ${tram.counts.shelters} shelters`);
   say(`street furniture (OSM points): ${Object.entries(furn.counts).map(([k, v]) => `${v} ${k}`).join(", ")}`);
   say(`street lamps: ${lamps.count} (placed along the kerbs, ROAD_TYPES lampSpacing; OSM has none here)`);
   say(`buildings: ${bDoc.count} (${B.triangles} triangles), roads: ${R.triangles} triangles in tile, terrain cells carved: ${R.carvedCells}`);
 
-  return { name: entry.name, hm, roads, net, bounds };
+  for (const u of ups) updaters.push(u);
+  const dispose = () => {
+    for (const u of ups) { const i = updaters.indexOf(u); if (i >= 0) updaters.splice(i, 1); }
+    for (const g of Object.values(own)) {
+      g.traverse((o) => { o.geometry?.dispose(); for (const m of [].concat(o.material || [])) m.dispose?.(); o.dispose?.(); });
+      g.removeFromParent();
+    }
+    for (const t of R.textures) t.dispose();
+  };
+  return { name: entry.name, hm, roads, net, bounds, dispose };
 }
 
 // ------------------------------------------------------------------ main
@@ -506,22 +521,47 @@ async function main() {
         `cam x ${camera.position.x.toFixed(0)} z ${camera.position.z.toFixed(0)} y ${camera.position.y.toFixed(1)} m TAW`;
     }
   });
-  // stream in the neighbouring tiles, nearest first (?ring=0 for one tile only, 2 for 5x5)
+  // Streaming: keep the tiles within `ring` of the tile under the camera loaded (nearest first) and
+  // unload tiles beyond ring + 1. ?ring=0 shows the chosen tile only; 2 = 5x5. Checked every second.
   const ring = Math.max(0, Math.min(2, +(params.get("ring") ?? 1)));
-  const loading = (async () => {
-    const near = manifest.tiles.filter((t) => t.status !== "missing" && t.name !== TILE).map((t) => {
-      const tx = (t.bounds.x[0] + t.bounds.x[1]) / 2, tz = (t.bounds.z[0] + t.bounds.z[1]) / 2;
-      return { t, d: Math.max(Math.abs(tx - cx), Math.abs(tz - cz)) };
-    }).filter((o) => o.d <= ring * (x1 - x0) + 1).sort((a, b) => a.d - b.d);
-    for (const { t } of near) {
+  const T = x1 - x0;
+  const centre = (t) => [(t.bounds.x[0] + t.bounds.x[1]) / 2, (t.bounds.z[0] + t.bounds.z[1]) / 2];
+  const pending = new Set();
+  let busy = null;
+  const stream = async () => {
+    // the manifest tile under (or nearest to) the camera, loaded or not
+    const fp = walker.on ? camera.position : controls.target, px = fp.x, pz = fp.z;   // orbit: what you look at
+    const cell = manifest.tiles.filter((t) => t.status !== "missing").map((t) => {
+      const dx = Math.max(t.bounds.x[0] - px, 0, px - t.bounds.x[1]), dz = Math.max(t.bounds.z[0] - pz, 0, pz - t.bounds.z[1]);
+      return [dx * dx + dz * dz, t];
+    }).sort((a, b) => a[0] - b[0])[0][1];
+    const [hx, hz] = centre(cell);
+    const here = world.tiles.find((t) => t.name === cell.name);
+    const dist = (t) => { const [tx, tz] = centre(t); return Math.max(Math.abs(tx - hx), Math.abs(tz - hz)) / T; };
+    // unload (never the tile under the camera)
+    for (const t of [...world.tiles]) {
+      const e = manifest.tiles.find((m) => m.name === t.name);
+      if (t !== here && e && dist(e) > ring + 1.01) { t.dispose(); world.tiles.splice(world.tiles.indexOf(t), 1); log(`- tile ${t.name}`); }
+    }
+    const want = manifest.tiles.filter((t) => t.status !== "missing" && dist(t) <= ring + 0.01 && !world.tiles.some((w) => w.name === t.name))
+      .sort((a, b) => dist(a) - dist(b));
+    for (const t of want) {
+      if (pending.has(t.name)) continue;
+      pending.add(t.name);
       const t0 = performance.now();
       try {
         world.tiles.push(await loadTile(t, { layers, contourOn, verbose: false }));
         log(`+ tile ${t.name} (${(performance.now() - t0).toFixed(0)} ms)`);
       } catch (e) { log(`tile ${t.name} failed: ${e.message}`); }
+      pending.delete(t.name);
+      break;                                      // one tile per step: re-check where the camera is
     }
-  })();
-  window.viewer = { loading, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting,
+    return want.length > 1;
+  };
+  const loading = (async () => { while (await stream()); })();   // initial fill around the start tile
+  busy = loading.finally(() => { busy = null; });
+  setInterval(() => { if (!busy) busy = stream().finally(() => { busy = null; }); }, 1000);
+  window.viewer = { loading, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting,
     world, renderFrame: () => { for (const u of updaters) u(camera.position); renderFrame(); } };
 }
 

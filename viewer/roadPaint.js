@@ -160,6 +160,7 @@ export function asphaltMaterial(atlas) {
     tex.minFilter = THREE.LinearFilter;
     tex.generateMipmaps = false;
     tex.needsUpdate = true;
+    atlas.texture = tex;                     // so the viewer can dispose it when the tile unloads
     const auv = vec2(x, z).mul(vec2(atlas.scale[0], atlas.scale[1])).add(mark.xy);
     const sd = texture(tex, auv).r.sub(0.5).mul(2 * atlas.range);
     const aaA = fwidth(sd).add(0.002);
