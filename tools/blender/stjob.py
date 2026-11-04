@@ -612,6 +612,15 @@ def dome():
         fbox(fr, -e, e, lt, LANTERN_DECK - 0.25, -0.2, 0.0, MASONRY, BRICK, 1, skip=("back",))
         fbox(fr, -e - 0.1, e + 0.1, LANTERN_DECK - 0.25, LANTERN_DECK, -0.2, 0.22, MASONRY, STONE, skip=("back",))
     face_up([ang_dir(45 * k + 22.5) * (2.17 / cosk) + Z * LANTERN_DECK for k in range(8)], MASONRY, STONE)
+    # lead flashing where the lantern drum (flat radius 1.95) stands on the dome, whose last ring is at 2.2: without it
+    # a 25 cm ring stays open into the hollow dome. Skirt from the drum face down onto the slates (laps 0.3 m over them).
+    r_in, z_in = 1.95, DOME[-1][1] + 0.22
+    r_out = 2.5
+    z_out = DOME[-2][1] + (DOME[-1][1] - DOME[-2][1]) * (r_out - DOME[-2][0]) / (DOME[-1][0] - DOME[-2][0]) + 0.03
+    for k in range(8):
+        a0, a1 = 45 * k - 22.5, 45 * k + 22.5
+        face_out([ang_dir(a0) * (r_out / cosk) + Z * z_out, ang_dir(a1) * (r_out / cosk) + Z * z_out,
+                  ang_dir(a1) * (r_in / cosk) + Z * z_in, ang_dir(a0) * (r_in / cosk) + Z * z_in], Vector((0, 0, z_out - 50)), ROOF, LEAD)
     if not FAR: railing(2.08, LANTERN_DECK, 1.0)
     # the open lantern: eight piers, arches, entablature
     lantern()
