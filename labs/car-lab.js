@@ -1,4 +1,5 @@
-// THE CAR LAB: the Blender hatchback (models/car/hatchback.glb via viewer/drive/carModel.js) and the driving model
+// THE CAR LAB: a car from the one loader (viewer/drive/carModel.js: the scripted hatchback, or ?car=kenney:<id> /
+// quaternius:<id>; the comparison of the models is car-compare.js, ?mode=compare) and the driving model
 // drive mode uses (viewer/drive/carPhysics.js, colliders.js, carEnv.js, chaseCamera.js: the very same code), on a test
 // ground: a concave building with an open courtyard, a building with an enclosed courtyard (a hole), a narrow alley,
 // an angled block, a kerb island and a median, a row of bollards, trunks and lamp posts, a sidewalk kerb to climb,
@@ -8,7 +9,7 @@ import * as THREE from "three/webgpu";
 import { color, positionWorld, floor, mod, mix, float, abs, fract, smoothstep, min } from "three/tsl";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { Panel } from "../viewer/panelUI.js";
-import { loadCarModel, createCar, CAR_LODS, PAINTS, carLights } from "../viewer/drive/carModel.js";
+import { loadCarModel, carChoices, createCar, fitBody, PAINTS, carLights } from "../viewer/drive/carModel.js";
 import { HANDLING, BODY, createCarState, stepCar } from "../viewer/drive/carPhysics.js";
 import { buildColliders, KIND } from "../viewer/drive/colliders.js";
 import { createCarEnv } from "../viewer/drive/carEnv.js";
@@ -17,7 +18,8 @@ import { ColliderDebug } from "../viewer/drive/debugDraw.js";
 import { DriveKeys } from "../viewer/drive/input.js";
 
 const $info = document.getElementById("info"), $speedo = document.getElementById("speedo");
-const renderer = new THREE.WebGPURenderer({ antialias: true });
+// same renderer settings as the city (reversed depth, near plane 0.1 m): no z-fighting surprises between lab and city
+const renderer = new THREE.WebGPURenderer({ antialias: true, reversedDepthBuffer: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
@@ -115,7 +117,10 @@ post(-25, -10, 0.45, KIND.tree, 3.5);
 const COL = buildColliders(polys, circles, { x0: -SIZE / 2, x1: SIZE / 2, z0: -SIZE / 2, z1: SIZE / 2 });
 
 // ---------------------------------------------------------------- the car
-const model = await loadCarModel();
+// any model of the one loader (viewer/drive/carModel.js): ?car=scripted | kenney:<id> | quaternius:<id>
+const CAR = new URLSearchParams(location.search).get("car") || "scripted";
+const model = await loadCarModel(CAR).catch(() => loadCarModel("scripted"));
+fitBody(model);
 const car = createCar(model);
 scene.add(car.root);
 const START = { x: 0, z: -20, h: Math.PI };                       // facing -z (north on the city's axes)
@@ -132,7 +137,7 @@ const keys = new DriveKeys({ onKey: (k) => {
 reset();
 
 // ---------------------------------------------------------------- panel
-const P = { paint: "metallic blue", lod: "auto", colliders: false, wireframe: false, night: false, spot: "start",
+const P = { paint: model.spec === "scripted" ? "metallic blue" : "as designed", lod: "auto", colliders: false, wireframe: false, night: false, spot: "start",
   speed: "", contacts: "", frame: "", tris: "" };
 const ui = new Panel({ title: "Car Lab" });
 const fh = ui.addFolder("Handling");
@@ -158,8 +163,11 @@ fc.add(CAMERA, "height", 0.8, 8, 0.1).name("height");
 fc.add(CAMERA, "fov", 35, 90, 1).name("field of view");
 fc.add(CAMERA, "stiffness", 2, 20, 0.5).name("stiffness");
 const fv = ui.addFolder("Car");
-fv.add(P, "paint", Object.keys(PAINTS)).onChange((v) => model.mats.Paint.color.setHex(PAINTS[v]));
-fv.add(P, "lod", ["auto", "LOD0", "LOD1", "LOD2"]).name("level of detail");
+const choices = await carChoices();
+P.car = model.spec;
+fv.add(P, "car", choices.map((c) => c.spec)).name("model").onChange((v) => { location.search = `?car=${encodeURIComponent(v)}`; });
+fv.add(P, "paint", ["as designed", ...Object.keys(PAINTS)]).onChange((v) => model.setPaint(v === "as designed" ? null : PAINTS[v]));
+fv.add(P, "lod", ["auto", ...model.lods.map((_, k) => `LOD${k}`)]).name("level of detail");
 fv.add(P, "tris").name("triangles").listen();
 fv.add(P, "night").onChange(applyNight);
 fv.add(P, "wireframe").onChange((v) => { for (const m of Object.values(model.mats)) m.wireframe = v; });
@@ -182,7 +190,7 @@ function applyNight() {
 const headL = new THREE.SpotLight(0xfff1dc, 120, 60, 0.5, 0.5, 1.5);
 headL.position.set(0, 0.7, 2.0); headL.target.position.set(0, 0, 14); car.chassis.add(headL, headL.target); headL.visible = false;
 
-$info.textContent = model.lods.map((l, k) => `LOD${k}: ${Math.round(l.tris)} triangles${k ? `, meshoptimizer ${(CAR_LODS[k].error * 1000).toFixed(0)} mm` : ", the Blender model"}, up to ${CAR_LODS[k].until} m`).join("\n") +
+$info.textContent = `${model.label}\n` + model.lods.map((l, k) => `LOD${k}: ${Math.round(l.tris)} triangles${k ? ", meshoptimizer" : ", the source model"}, up to ${model.lodDist[k]} m`).join("\n") +
   `\nW/S ↑↓ throttle · brake · reverse   A/D ←→ steer   Space handbrake   R reset   C camera   G colliders\nsource tools/blender/car.py · viewer/drive/ (the city uses the same code)`;
 
 // ---------------------------------------------------------------- loop
@@ -195,7 +203,7 @@ renderer.setAnimationLoop(() => {
   phys = phys * 0.95 + (performance.now() - t0) * 0.05;
   carLights.brake.value = state.braking ? 1 : 0;
   const dist = camera.position.distanceTo(car.root.position);
-  car.setLod(P.lod === "auto" ? Math.max(0, CAR_LODS.findIndex((l) => dist < l.until)) : +P.lod.slice(3));
+  car.setLod(P.lod === "auto" ? Math.max(0, model.lodDist.findIndex((u) => dist < u)) : +P.lod.slice(3));
   car.update(state);
   chase.update(state, dt, ground);
   sun.position.set(state.x + 30, state.y + 60, state.z + 25); sun.target.position.set(state.x, state.y, state.z);

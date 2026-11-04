@@ -46,8 +46,8 @@ const SOURCES = {
   quaternius: {
     dir: "quaternius/glb", credit: "Quaternius, Cars Pack (quaternius.com, via poly.pizza), CC0",
     cars: [
-      { file: "car_a.glb", id: "car_a", label: "hatchback (NormalCar1)", type: "hatchback" },
-      { file: "car_b.glb", id: "car_b", label: "saloon (NormalCar2)", type: "sedan" },
+      { file: "car_a.glb", id: "car_a", label: "saloon (NormalCar1)", type: "sedan" },
+      { file: "car_b.glb", id: "car_b", label: "small hatchback (NormalCar2)", type: "hatchback" },
       { file: "taxi.glb", id: "taxi", label: "taxi", type: "taxi", keepPaint: true },
       { file: "suv.glb", id: "suv", label: "SUV", type: "suv" },
       { file: "police.glb", id: "police", label: "police", type: "police", keepPaint: true },

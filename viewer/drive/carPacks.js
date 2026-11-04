@@ -7,7 +7,7 @@
 // Paint comes from a uniform (one car) or a per-instance attribute "paint" (parked cars). LODs are made here at load by
 // meshoptimizer (absolute error in metres; colour seams are open borders, so the simplifier keeps them as borders).
 import * as THREE from "three/webgpu";
-import { attribute, color, float, mrt, positionView, select, smoothstep, uniform, vec3 } from "three/tsl";
+import { attribute, color, float, select, uniform } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 
@@ -17,8 +17,9 @@ export const PACK_SOURCES = {
 };
 export const PACK_LODS = [
   { error: 0, until: 25 },         // LOD0: the pack's mesh
-  { error: 0.012, until: 80 },     // LOD1: 1.2 cm
-  { error: 0.045, until: 500 },    // LOD2: 4.5 cm
+  { error: 0.012, until: 70 },     // LOD1: 1.2 cm
+  { error: 0.045, until: 160 },    // LOD2: 4.5 cm
+  { error: 0.12, until: 600 },     // LOD3: 12 cm (a few pixels at 160 m)
 ];
 
 const cache = new Map();
@@ -40,7 +41,7 @@ export function loadPack(source) {
         const name = o.parent === node ? o.name : o.parent.name;     // GLTFLoader keeps node names (Body / Wheel_FL ...)
         const geo = o.geometry;
         for (const k of Object.keys(geo.attributes)) if (!["position", "normal", "color", "_kind"].includes(k)) geo.deleteAttribute(k);
-        parts[name] = { geo, pos: o.position.toArray() };
+        parts[name.replace(/_\d+$/, "")] = { geo, pos: o.position.toArray() };   // GLTFLoader makes names unique: Body_3
       });
       const lods = PACK_LODS.map(({ error }) => {
         const out = { tris: 0 };
@@ -61,10 +62,54 @@ export function loadPack(source) {
 }
 
 function simplify(g, error) {
-  const [idx] = MeshoptSimplifier.simplify(new Uint32Array(g.index.array), g.attributes.position.array, 3, 0, error, ["ErrorAbsolute"]);
+  const src = new Uint32Array(g.index.array), P = g.attributes.position.array;
+  const [idx] = MeshoptSimplifier.simplify(src, P, 3, 0, error, ["ErrorAbsolute"]);
+  if (idx.length < src.length * 0.85) {
+    const s = new THREE.BufferGeometry();
+    for (const [k, a] of Object.entries(g.attributes)) s.setAttribute(k, a);
+    s.setIndex(new THREE.BufferAttribute(idx, 1));
+    return s;
+  }
+  return simplifyWelded(g, error);
+}
+
+/**
+ * Flat-shaded packs (Quaternius, Kenney) split vertices per face (hard normals): nearly every edge is a border and
+ * the simplifier can hardly move. Simplify on an index WELDED by position + colour + kind instead (normals ignored):
+ * colour seams stay borders (kept closed with LockBorder up close), flat faces merge; then flat face normals again.
+ */
+function simplifyWelded(g, error) {
+  const P = g.attributes.position.array, C = g.attributes.color.array, K = g.attributes._kind.array, n = P.length / 3;
+  const key = (i) => `${Math.round(P[i * 3] * 1e4)},${Math.round(P[i * 3 + 1] * 1e4)},${Math.round(P[i * 3 + 2] * 1e4)}|${K[i]}|` +
+    `${Math.round(C[i * 3] * 500)},${Math.round(C[i * 3 + 1] * 500)},${Math.round(C[i * 3 + 2] * 500)}`;
+  const map = new Map(), weld = new Uint32Array(n), rep = [];
+  for (let i = 0; i < n; i++) {
+    const k = key(i);
+    let w = map.get(k);
+    if (w == null) { w = rep.length; map.set(k, w); rep.push(i); }
+    weld[i] = w;
+  }
+  const wpos = new Float32Array(rep.length * 3);
+  rep.forEach((i, w) => wpos.set(P.subarray(i * 3, i * 3 + 3), w * 3));
+  const widx = Uint32Array.from(g.index.array, (i) => weld[i]);
+  const [idx] = MeshoptSimplifier.simplify(widx, wpos, 3, 0, error, error < 0.02 ? ["ErrorAbsolute", "LockBorder"] : ["ErrorAbsolute"]);
+  const T = idx.length / 3, pos = new Float32Array(T * 9), nrm = new Float32Array(T * 9), col = new Float32Array(T * 9), kind = new Float32Array(T * 3);
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+  for (let t = 0; t < T; t++) {
+    const w = [idx[t * 3], idx[t * 3 + 1], idx[t * 3 + 2]];
+    a.fromArray(wpos, w[0] * 3); b.fromArray(wpos, w[1] * 3); c.fromArray(wpos, w[2] * 3);
+    const nn = b.clone().sub(a).cross(c.clone().sub(a)).normalize();
+    for (let k = 0; k < 3; k++) {
+      const o = t * 3 + k, src = rep[w[k]];
+      pos.set(wpos.subarray(w[k] * 3, w[k] * 3 + 3), o * 3);
+      nrm[o * 3] = nn.x; nrm[o * 3 + 1] = nn.y; nrm[o * 3 + 2] = nn.z;
+      col.set(C.subarray(src * 3, src * 3 + 3), o * 3); kind[o] = K[src];
+    }
+  }
   const s = new THREE.BufferGeometry();
-  for (const [k, a] of Object.entries(g.attributes)) s.setAttribute(k, a);
-  s.setIndex(new THREE.BufferAttribute(idx, 1));
+  s.setAttribute("position", new THREE.BufferAttribute(pos, 3)); s.setAttribute("normal", new THREE.BufferAttribute(nrm, 3));
+  s.setAttribute("color", new THREE.BufferAttribute(col, 3)); s.setAttribute("_kind", new THREE.BufferAttribute(kind, 1));
+  s.setIndex(new THREE.BufferAttribute(Uint32Array.from({ length: T * 3 }, (_, i) => i), 1));
   return s;
 }
 
@@ -86,10 +131,8 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
     const tail = select(isTail, lights.tail.mul(1.2).add(lights.brake ? lights.brake.mul(5) : float(0)), float(0));
     m.emissiveNode = color(0xfff1dc).mul(head).add(color(0xff1408).mul(tail));
   }
-  // post chain (viewer/post.js): SSR on paint and glass, faded out far away; no screen-space AO on glass and lamps
-  const rough = m.roughnessNode, metal = m.metalnessNode, ssrFade = smoothstep(360.0, 180.0, positionView.z.negate());
-  const noAO = select(isGlass.or(isHead).or(isTail), float(0), float(1));
-  m.mrtNode = mrt({ metalRough: vec3(select(rough.lessThan(0.75), metal.mul(ssrFade), float(0)), rough, noAO) });
+  // no mrtNode: the post chain's MRT (viewer/post.js) reads this roughness / metalness itself (SSR on paint and glass),
+  // and an mrtNode breaks the shader where no MRT is set (labs, ?fx=0: "structures must have at least one member")
   m.userData.paint = uPaint;
   m.userData.shared = true;
   return m;
