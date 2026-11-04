@@ -1,6 +1,6 @@
 # Everything still to do
 
-> Continuing in Cursor / another Claude session? Read **`HANDOFF.md`** first (setup, rules, how to run).
+> Continuing in Cursor / another Claude session? Read **`HANDOFF.md`** first (setup, rules, how to run). Look + performance plan: **`docs/RENDER_PLAN.md`**.
 
 One list of all open work, roughly in priority order. `HANDOFF.md` says how to run things;
 `docs/PLAN.md` has the history and details of what is done. Rule of thumb for every item:

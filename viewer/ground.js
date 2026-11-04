@@ -9,7 +9,7 @@
 // for patches of greener and drier grass, worn earth near the low end of slopes, clover-dark spots,
 // and a fine bump. Steep ground turns to bare earth.
 import * as THREE from "three/webgpu";
-import { Fn, float, vec2, vec3, color, mix, smoothstep, positionWorld, normalWorld, texture, uv, clamp, max } from "three/tsl";
+import { Fn, float, vec2, vec3, color, mix, smoothstep, positionWorld, normalWorld, texture, uv, clamp, max, uniform } from "three/tsl";
 import { noise2D, bumpNormal } from "./tslkit.js";
 
 import { landCoverData } from "./landcover.js";
@@ -27,7 +27,11 @@ export function landCoverTexture(feats, bounds, pre) {
 /** The terrain material: grass by default, the mask's covers where OSM has them. */
 export function groundMaterial(cover, bounds, contour) {
   const P = positionWorld;
-  const muv = vec2(P.x.sub(bounds.x0).div(bounds.x1 - bounds.x0), P.z.sub(bounds.z0).div(bounds.z1 - bounds.z0));
+  // tile bounds as uniforms, not constants: constants end up in the WGSL text, so each tile would compile
+  // its own copy of this shader (a ~450 ms freeze per streamed tile on Windows/DXC)
+  const uOrigin = uniform(new THREE.Vector2(bounds.x0, bounds.z0));
+  const uInvSize = uniform(new THREE.Vector2(1 / (bounds.x1 - bounds.x0), 1 / (bounds.z1 - bounds.z0)));
+  const muv = vec2(P.x, P.z).sub(uOrigin).mul(uInvSize);
   const mk = texture(cover.tex, muv);
   const xz = vec2(P.x, P.z);
   const n1 = noise2D(xz.mul(0.035)), n2 = noise2D(xz.mul(0.21).add(17.3)), n3 = noise2D(xz.mul(1.7).add(5.1));

@@ -18,7 +18,7 @@
 import * as THREE from "three/webgpu";
 import {
   attribute, uv, texture, positionWorld, float, vec2, vec3, mix, step, smoothstep, floor, fract, abs, min, max,
-  fwidth, hash, mx_noise_float,
+  fwidth, hash, mx_noise_float, uniform,
 } from "three/tsl";
 
 import { SURFACE, hashPhase, surfaceAttribute } from "./roadData.js";
@@ -134,8 +134,12 @@ export function asphaltMaterial(atlas) {
     tex.generateMipmaps = false;
     tex.needsUpdate = true;
     atlas.texture = tex;                     // so the viewer can dispose it when the tile unloads
-    const auv = vec2(x, z).mul(vec2(atlas.scale[0], atlas.scale[1])).add(mark.xy);
-    const sd = texture(tex, auv).r.sub(0.5).mul(2 * atlas.range);
+    // per-tile numbers as uniforms, never JS constants: a constant is written into the WGSL, so every
+    // tile would get different shader text and Windows (DXC) recompiles this ~40 KB shader (~450 ms freeze)
+    const uScale = uniform(new THREE.Vector2(atlas.scale[0], atlas.scale[1]));
+    const uRange = uniform(2 * atlas.range);
+    const auv = vec2(x, z).mul(uScale).add(mark.xy);
+    const sd = texture(tex, auv).r.sub(0.5).mul(uRange);
     const aaA = fwidth(sd).add(0.002);
     paint = max(paint, smoothstep(aaA.negate(), aaA, sd).mul(step(float(0.5), mark.z)));
   }

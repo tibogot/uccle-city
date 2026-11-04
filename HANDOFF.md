@@ -2,7 +2,7 @@
 
 **Full list of open work: `docs/TODO.md`.**
 
-Read this first when resuming (with Claude or by hand). Details are in `docs/PLAN.md`
+Read this first when resuming (with Claude or by hand). Rendering and performance plan: `docs/RENDER_PLAN.md`. Details are in `docs/PLAN.md`
 (roadmap and history) and `docs/CONTRACT.md` (data format, v0.7).
 
 ## Rules that still hold
