@@ -6,6 +6,33 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 `docs/PLAN.md` has the history and details of what is done. Rule of thumb for every item:
 **look better without costing frame time** (instancing, shared materials, LOD, compressed assets).
 
+## NEXT SESSION (agreed order, 2026-11-04)
+
+1. **Roof / building collision for fly mode** (BVH of the buildings built in the tile worker; driving needs it too).
+2. **Parked cars from Blender**: 4-6 scripted body types, meshoptimizer LODs, a **Car Lab** first, owner approves,
+   then they replace the boxes (also a GPU saving: cars are ~784k triangles per view).
+3. **All of Uccle**: re-fetch raw data on this machine, set up the Python pipeline, extend the grid (section 1).
+Then: road fixes (z-fighting, breaks in curves, grooved tram rails), STIB tram model (Tram Lab), rain / wet roads,
+winter (7b), dev panel teleports to named places.
+
+**Rules agreed with the owner (keep):** every new asset gets a lab in `labs/` first and goes into the city only after
+the owner approves it there; panels and labs use our own `viewer/panelUI.js` (never lil-gui); game-engine-v1 is
+read-only (copy into `vendor/` with ORIGIN.md); measure GPU ms before / after (stats line, `viewer.gpuStats()`).
+
+**Open owner decisions / inputs:**
+- The fly-mode bird: the current model (repainted peregrine, original clips only) is weak; the owner is looking for a
+  better rigged, animated peregrine falcon (CC0 / CC-BY) to drop into `models/bird/` (+ `bird.json`). Then: falcon
+  nest in the Saint-Job belfry, takeoff / landing clips. Procedural flight layers are off (`?birdlayers=1`).
+- Setts: procedural is the default; the Poly Haven scan stays as `?setts=tex` for a later texture pass (KTX2).
+- Volumetric fog is opt-in only (`?vfog=1`, dev panel) until it is tuned.
+- Tree impostors off (`?impostors=1`) until 16x16 views + depth atlas.
+
+## Done 2026-11-04 (details: docs/RENDER_PLAN.md, docs/RESEARCH.md)
+Streaming freezes fixed (per-tile shader constants), boot warm-up, Vercel deploy, GPU timer, terrain simplified,
+stylized branch trees + depth pre-pass, Firmament sky + haze + night look, every lamp lights the street, foliage /
+window bugs (hash of interpolated values), Place de Saint-Job setts, the Blender lamp with LODs, fly mode with the
+falcon, labs (Bird, Lamp), the dev panel.
+
 ## 0. Check first (needs a real browser with WebGPU)
 - [ ] Frame rate on a mid-range GPU with `?ring=1` (default) and `?ring=2`; draw calls, GPU memory.
 - [ ] Stutter while tiles stream in (worker is on; remaining main-thread slice: tree field ~350 ms
@@ -55,7 +82,7 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 - [ ] Other squares and pedestrian areas: fetch OSM `amenity=parking`, `area:highway`, `highway=pedestrian` areas,
       `place=square` (Overpass was overloaded on 2026-11-04) so no square falls back to grass.
 - [ ] Setts look pass 2: rounder, less regular stones, slightly less blue; parking on the plaza itself.
-- [ ] Brussels swan-neck street lamp (dark green, white globe): Blender pilot.
+- [x] Brussels swan-neck street lamp (dark green, white globe): Blender, in the city with LODs (Lamp Lab).
 
 ## 5. Ground, vegetation, water
 - [ ] UrbIS Land cover (CC0) for gardens vs paving vs lawns; driveways, terraces.
