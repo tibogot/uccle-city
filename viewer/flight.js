@@ -136,6 +136,9 @@ export class Flyer {
     s.fold = ease(s.fold, tuck ? 1 : Math.max(0, -this.pitch - 0.35) * 1.5, 5);             // 1. dives
     s.brake = ease(s.brake, !flapping && this.pitch > 0.2 && this.speed < CRUISE ? 1 : 0, 4); // 4. braking
     const q = new THREE.Quaternion();
+    // the pose each layered bone had after the mixer, kept to restore before the next mixer update
+    this.layerSaved ??= new Map();
+    for (const l of Object.values(L)) if (l) (this.layerSaved.get(l.bone) || this.layerSaved.set(l.bone, new THREE.Quaternion()).get(l.bone)).copy(l.bone.quaternion);
     const add = (l, a) => { if (l && a) l.bone.quaternion.multiply(q.setFromAxisAngle(l.axis, a)); };
     // 1. wings folded back and in (the flap itself fades out: the clip weight follows this.flap)
     add(L.foldL, 0.9 * s.fold); add(L.foldR, 0.9 * s.fold);
@@ -212,6 +215,9 @@ export class Flyer {
       this.actions.flap.setEffectiveWeight(this.flap);
       this.actions.glide.setEffectiveWeight(1 - this.flap);
       this.actions.flap.timeScale = 0.8 + 0.8 * this.flap;
+      // undo last frame's layer offsets first: the mixer only rewrites the channels its clips animate, so on
+      // the others the offsets ACCUMULATED frame after frame (the bird jittered, owner 2026-11-04)
+      for (const [bone, q0] of this.layerSaved || []) bone.quaternion.copy(q0);
       this.mixer.update(dt);
       this.applyLayers(dt, { tuck, flapping });
     }
