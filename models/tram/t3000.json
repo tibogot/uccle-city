@@ -45,14 +45,22 @@
   }
  ],
  "tris": {
-  "Cab": 3451,
+  "Cab": 3475,
   "Susp": 1652,
   "Centre": 588,
   "Bellows": 974,
   "Bogie": 292,
-  "Panto": 316
+  "Panto": 316,
+  "Cab_mid": 2131,
+  "Susp_mid": 900,
+  "Centre_mid": 508,
+  "Bellows_mid": 370,
+  "Cab_far": 1177,
+  "Susp_far": 516,
+  "Centre_far": 312,
+  "Bellows_far": 86
  },
- "trisPerTram": 15882,
+ "trisPerTram": 15930,
  "measured": "length 31.85 m, width 2.30 m, floor 0.35 m, 5 sections, 3 bogies (STIB via techno-science.net; railjournal.com)",
  "estimated": "height 3.30 m, module lengths, door / window / bogie positions, livery colours (sampled from photos), wheels, pantograph"
 }

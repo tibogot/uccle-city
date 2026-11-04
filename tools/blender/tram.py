@@ -74,12 +74,14 @@ def lin(c): return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
 def srgb(r, g, b, metal=0.0): return (lin(r), lin(g), lin(b), metal)
 SILVER = srgb(0.66, 0.67, 0.69, 1.0)          # STIB silver-grey (photos: 3025 / 3097)
 ROOFC = srgb(0.64, 0.65, 0.67, 1.0)
-GOLD = srgb(0.74, 0.53, 0.31, 1.0)            # STIB "gold" (champagne bronze) nose panel and cantrail band
+GOLD = srgb(0.71, 0.56, 0.37, 1.0)            # STIB "gold" (champagne bronze) nose panel and cantrail band
 DARK = srgb(0.085, 0.095, 0.105, 0.0)         # the black window band and window surrounds
 BUMPER = srgb(0.42, 0.42, 0.43, 0.5)
 BELLOWS = srgb(0.50, 0.52, 0.55, 0.0)
 ENDWALL = srgb(0.20, 0.21, 0.22, 0.0)
 SKIRT = srgb(0.66, 0.67, 0.69, 1.0)
+DOORC = srgb(0.55, 0.56, 0.58, 1.0)          # far variant: a door drawn as a flat face
+DETAIL = 2                                    # 2 full, 1 mid, 0 far (see the build at the end)
 GLASS_SALOON, GLASS_CAB = (1.0, 0, 0, 1), (0.3, 0, 0, 1)
 TRIM_C = (0.012, 0.012, 0.013, 1)
 E_HEAD, E_TAIL, E_DISP = (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0)
@@ -162,7 +164,7 @@ def profile_rows(extra=()):
     rows = [(Z_BOT, HW - 0.10), (0.27, HW - 0.025)]
     flat = sorted(set([Z_DOOR0, Z_SILL, Z_WIN0, Z_WIN1, Z_BAND1, Z_GOLD1, SHOULDER_C] + [z for z in extra if Z_DOOR0 < z < SHOULDER_C]))
     rows += [(z, HW) for z in flat]
-    for a in (18, 36, 54, 72, 90):                                   # the roof shoulder arc
+    for a in ((18, 36, 54, 72, 90), (30, 60, 90), (45, 90))[2 - DETAIL]:   # the roof shoulder arc
         t = math.radians(a)
         rows.append((SHOULDER_C + SHOULDER_R * math.sin(t), HW - SHOULDER_R + SHOULDER_R * math.cos(t)))
     rows += [(ROOF - 0.02, 0.32), (ROOF, 0.0)]
@@ -187,9 +189,9 @@ NOSE_LEN = 0.90               # the nose region, from the tip back (beyond it th
 def nose_shape(z):
     """(setback of the front face from the tip, plan corner radius) at height z."""
     keys_s = [(Z_BOT, 0.07), (0.27, 0.015), (0.40, 0.0), (0.58, 0.0), (0.62, 0.02), (1.12, 0.06), (1.18, 0.07),
-              (2.34, 0.30), (2.40, 0.31), (2.68, 0.33), (2.80, 0.37), (2.95, 0.43), (3.08, 0.51), (3.18, 0.60),
-              (3.25, 0.66), (3.28, 0.70), (3.30, 0.74)]
-    keys_r = [(Z_BOT, 0.34), (0.58, 0.36), (0.62, 0.44), (1.12, 0.46), (1.18, 0.52), (2.34, 0.56), (2.68, 0.56), (3.30, 0.56)]
+              (2.34, 0.30), (2.40, 0.31), (2.68, 0.33), (2.80, 0.37), (2.95, 0.42), (3.08, 0.50), (3.18, 0.58),
+              (3.25, 0.64), (3.28, 0.66), (3.30, 0.68)]
+    keys_r = [(Z_BOT, 0.32), (0.58, 0.34), (0.62, 0.38), (1.12, 0.40), (1.18, 0.42), (2.34, 0.46), (2.68, 0.48), (3.30, 0.50)]
     def interp(keys):
         if z <= keys[0][0]: return keys[0][1]
         for (z0, a), (z1, b) in zip(keys, keys[1:]):
@@ -198,9 +200,13 @@ def nose_shape(z):
     return interp(keys_s), interp(keys_r)
 
 NOSE_BULGE = 0.07
-def nose_outline(z, w, xtip, n_side=2, n_arc=7, n_front=5):
+def nose_outline(z, w, xtip):
     """Plan outline of the nose at height z, half (y >= 0), from the start of the nose region on the side to the front
     centre: [(x, y, kind)], kind 0 side, 1 corner, 2 front."""
+    n_side, n_arc, n_front = ((2, 7, 5), (1, 4, 3), (1, 3, 2))[2 - DETAIL]
+    W_REF = 0.62
+    if w < W_REF:                       # the roof crown: the outline at W_REF squeezed sideways (a smooth cap, no spine)
+        return [(x, y * w / W_REF, k) for x, y, k in nose_outline(z, W_REF, xtip)]
     s, rc = nose_shape(z)
     rc = min(rc, w * 0.985)
     xf = xtip - s
@@ -260,8 +266,14 @@ def body(length, cab, doors, windows, bogies, side_display=None):
             fc = (fs[i] + fs[i + 1]) / 2
             for j in range(len(rows) - 1):
                 zc = (rows[j][0] + rows[j + 1][0]) / 2
-                if in_rect(fc, zc, doors, Z_DOOR0, Z_DOOR1) or in_rect(fc, zc, windows, Z_WIN0, Z_WIN1): continue   # inset below
-                mb.poly([grid[i][j], grid[i + 1][j], grid[i + 1][j + 1], grid[i][j + 1]], MP, side_colour(fc, zc, cab), out_of)
+                mat, colr = MP, side_colour(fc, zc, cab)
+                if in_rect(fc, zc, doors, Z_DOOR0, Z_DOOR1):
+                    if DETAIL: continue                                     # inset below
+                    colr = DOORC
+                if in_rect(fc, zc, windows, Z_WIN0, Z_WIN1):
+                    if DETAIL: continue
+                    mat, colr = MG, GLASS_SALOON
+                mb.poly([grid[i][j], grid[i + 1][j], grid[i + 1][j + 1], grid[i][j + 1]], mat, colr, out_of)
         if cab: zone_a(mb, xF, side, out_of)
     # underside
     fu = ([NOSE_LEN] if cab else []) + fs
@@ -278,9 +290,10 @@ def body(length, cab, doors, windows, bogies, side_display=None):
         sgn = -1 if f > length / 2 else 1
         for k in range(len(vv) - 1): mb.poly([c, vv[k], vv[k + 1]], MP, ENDWALL, (sgn, 0, 0))
         mb.poly([c, vv[-1], vv[0]], MP, ENDWALL, (sgn, 0, 0))
-    for a, b in windows: window(mb, X(a), X(b))
-    for a, b in doors: door(mb, X(a), X(b))
-    for x in bogies: skirt(mb, X(x))
+    if DETAIL:
+        for a, b in windows: window(mb, X(a), X(b))
+        for a, b in doors: door(mb, X(a), X(b))
+        for x in bogies: skirt(mb, X(x))
     if side_display: side_disp(mb, X(SIDE_DISPLAY[0]), X(SIDE_DISPLAY[1]))
     if cab: nose(mb, xF)
     return mb
@@ -288,7 +301,8 @@ def body(length, cab, doors, windows, bogies, side_display=None):
 def zone_a(mb, xtip, side, out_of):
     """The cab side between the nose and the door: three columns whose middle one IS the gold sweep (its edges follow
     sweep_x(z)), so the sweep is a smooth band with few triangles: driver's window ahead of it, window band behind."""
-    extra = [0.62, 1.05, 1.12] + [round(1.15 + 0.1 * k, 3) for k in range(14)]
+    step = (0.1, 0.2, 0.35)[2 - DETAIL]
+    extra = [0.62, 1.05, 1.12] + [round(1.15 + step * k, 3) for k in range(int(1.4 / step) + 1)]
     rows = profile_rows(extra)
     f_end = CAB_DOOR[0]
     def cols(z):
@@ -351,7 +365,7 @@ def door(mb, xa, xb):
             la, lb = xa - k * lw - 0.006, xa - (k + 1) * lw + 0.006     # leaf edges (a thin dark seam between)
             cx, cz = (la + lb) / 2, (Z_DOOR0 + Z_DOOR1) / 2 + 0.06
             gw, gh = abs(la - lb) * 0.50, 1.42
-            N = 24
+            N = 24 if DETAIL == 2 else 8
             inner = stadium(cx, cz, gw, gh, N)
             outer = []
             for (px, pz) in inner:                                   # project each inner point outward onto the leaf edge
@@ -419,7 +433,7 @@ def side_disp(mb, xa, xb):
 def nose(mb, xtip):
     """The nose: rows (heights) x the plan outline of the front at each height, both halves; colours by zone; then the
     lamps, the destination display, mirrors and the wiper."""
-    rows_side = profile_rows([0.45, 0.52, 0.58, 0.62, 0.85, 1.12, 1.18, 1.6, 2.0, 2.34, 2.40, 2.52, 2.64])
+    rows_side = profile_rows([0.45, 0.52, 0.58, 0.62, 0.85, 1.12, 1.18, 1.6, 2.0, 2.34, 2.40, 2.52, 2.64] if DETAIL else [0.58, 0.62, 1.12, 1.18, 2.34, 2.40, 2.64])
     zs = sorted(set([z for z, _ in rows_side] + [0.33]))
     wmap = dict(rows_side)
     def width(z):
@@ -463,10 +477,11 @@ def nose(mb, xtip):
     # lamps on the nose panel corners: (height, lateral, radius, code)
     for side in (1, -1):
         for z, y, r, code in [(0.86, 0.86, 0.062, E_HEAD), (0.72, 0.90, 0.045, E_HEAD), (1.00, 0.88, 0.04, E_TAIL),
-                              (0.86, 1.00, 0.035, E_TAIL), (0.30, 0.96, 0.035, E_TAIL)]:
-            lamp(mb, xtip, z, side * y, r, code)
+                              (0.86, 1.00, 0.035, E_TAIL), (0.30, 0.96, 0.035, E_TAIL)][:5 if DETAIL else 3]:
+            lamp(mb, xtip, z, side * y, r * (1 if DETAIL else 1.3), code, n=(10, 6, 4)[2 - DETAIL])
     display_front(mb, xtip)
     for side in (1, -1): mirror(mb, xtip, side)
+    if DETAIL < 2: return
     # wiper (one, on the driver's side, parked diagonally)
     a = Vector((front_x(1.25, 0.1, xtip) + 0.012, -0.05, 1.22)); b = Vector((front_x(1.95, 0.55, xtip) + 0.012, 0.55, 1.95))
     bar(mb, a, b, 0.018, TRIM_C, MT)
@@ -485,11 +500,13 @@ def lamp(mb, xtip, z, y, r, code, n=10):
     u = Vector((0, 0, 1)); v = nrm.cross(u).normalized()
     ring = [mb.vert(c + (u * math.cos(2 * math.pi * k / n) + v * math.sin(2 * math.pi * k / n)) * r) for k in range(n)]
     mb.poly(ring, ME, code, nrm)
+    if DETAIL == 0: return
     back = [mb.vert(c - nrm * 0.01 + (u * math.cos(2 * math.pi * k / n) + v * math.sin(2 * math.pi * k / n)) * (r + 0.012)) for k in range(n)]
     for k in range(n):
         mb.poly([ring[k], ring[(k + 1) % n], back[(k + 1) % n], back[k]], MT, TRIM_C, lambda cc, c=c: cc - c + nrm * 0.02)
 
-def display_front(mb, xtip, half=0.80, z0=2.40, z1=2.64, n=16):
+def display_front(mb, xtip, half=0.80, z0=2.40, z1=2.64):
+    n = (16, 8, 4)[2 - DETAIL]
     """The front destination display: a curved strip just in front of the nose surface; u 0..1 reading left to right
     (seen from the front, the reader's right is +Y)."""
     top, bot = [], []
@@ -519,6 +536,8 @@ def rbox(mb, cx, cy, cz, lx, ly, lz, r, col, mat, n=3, ends=True):
     """A box along x with its four long edges rounded (radius r), centred at (cx, cy, cz)."""
     sec = []
     for (qy, qz, a0) in [(ly / 2 - r, lz / 2 - r, 0), (-ly / 2 + r, lz / 2 - r, 90), (-ly / 2 + r, -lz / 2 + r, 180), (ly / 2 - r, -lz / 2 + r, 270)]:
+        if n == 0:                                   # plain box corner
+            t = math.radians(a0 + 45); sec.append((qy + r * math.sqrt(2) * math.cos(t), qz + r * math.sqrt(2) * math.sin(t))); continue
         for k in range(n + 1):
             t = math.radians(a0 + 90 * k / n)
             sec.append((qy + r * math.cos(t), qz + r * math.sin(t)))
@@ -532,11 +551,11 @@ def mirror(mb, xtip, side):
     """Exterior rear-view mirror: an arm from the cab's top corner and a black housing."""
     base = Vector((xtip - 0.55, side * (HW - 0.02), 2.45))
     elbow = Vector((xtip - 0.30, side * (HW + 0.20), 2.48))
-    bar(mb, base, elbow, 0.016, TRIM_C, MT)
-    rbox(mb, xtip - 0.28, side * (HW + 0.24), 2.18, 0.10, 0.20, 0.42, 0.04, TRIM_C, MT, n=2)
+    if DETAIL: bar(mb, base, elbow, 0.016, TRIM_C, MT)
+    rbox(mb, xtip - 0.28, side * (HW + 0.24), 2.18, 0.10, 0.20, 0.42, 0.04, TRIM_C, MT, n=(2, 1, 0)[2 - DETAIL])
 
 def roof_pod(mb, cx, length, width=1.5, height=0.26):
-    rbox(mb, cx, 0, ROOF - 0.03 + height / 2, length, width, height, 0.09, SILVER, MP, n=3)
+    rbox(mb, cx, 0, ROOF - 0.03 + height / 2, length, width, height, 0.09, SILVER, MP, n=(3, 1, 0)[2 - DETAIL])
 
 # ------------------------------------------------------------------------------------------------ the pieces
 def cab_piece():
@@ -565,7 +584,7 @@ def bellows_piece():
     prof = [(z, w - 0.07) for z, w in profile_rows() if Z_BOT + 0.07 < z]
     prof = [(0.30, HW - 0.09)] + [(z, w) for z, w in prof if z > 0.31 and w > 0.12][:-1] + [(ROOF - 0.08, 0.25)]
     ring = prof + [(z, -w) for z, w in reversed(prof)]
-    nf = 9
+    nf = (9, 4, 1)[2 - DETAIL]
     rings = []
     for k in range(nf * 2 + 1):
         x = -BELLOWS_HALF + 2 * BELLOWS_HALF * k / (nf * 2)
@@ -625,6 +644,16 @@ def panto_piece():
 
 PANTO_ON_SUSP = -L_SUSP / 2 + 1.25        # x of the pantograph base on the suspended module (section 2)
 
+# three detail levels, built from the same functions: 2 = LOD0 (full), 1 = "_mid" (doors with 8-sided glass, fewer
+# segments), 0 = "_far" (windows and doors as flat coloured faces, no openings, few segments). The viewer's LODs start
+# from these and meshoptimizer trims them to their budgets (viewer/tramModel.js).
+far_objs = {}
+for DETAIL, suf in ((1, "_mid"), (0, "_far")):
+    far_objs["Cab" + suf] = to_object("Cab" + suf, cab_piece())
+    far_objs["Susp" + suf] = to_object("Susp" + suf, susp_piece())
+    far_objs["Centre" + suf] = to_object("Centre" + suf, centre_piece())
+    far_objs["Bellows" + suf] = to_object("Bellows" + suf, bellows_piece(), sharp_deg=80)
+DETAIL = 2
 objs = {
     "Cab": to_object("Cab", cab_piece()),
     "Susp": to_object("Susp", susp_piece()),
@@ -634,7 +663,7 @@ objs = {
     "Panto": to_object("Panto", panto_piece(), sharp_deg=40, merge=False),
 }
 def tris(o): return sum(len(p.vertices) - 2 for p in o.data.polygons)
-counts = {k: tris(o) for k, o in objs.items()}
+counts = {k: tris(o) for k, o in list(objs.items()) + list(far_objs.items())}
 per_tram = 2 * counts["Cab"] + 2 * counts["Susp"] + counts["Centre"] + 4 * counts["Bellows"] + 3 * counts["Bogie"] + counts["Panto"]
 print("TRAM tris", counts, "per tram", per_tram, flush=True)
 
@@ -654,7 +683,7 @@ layout = {
 }
 with open(os.path.join(OUT, "t3000.json"), "w") as f: json.dump(layout, f, indent=1)
 
-for o in scn.objects: o.select_set(o.name in objs)
+for o in scn.objects: o.select_set(o.name in objs or o.name in far_objs)
 glb = os.path.join(OUT, "t3000.glb")
 bpy.ops.export_scene.gltf(filepath=glb, export_format="GLB", use_selection=True, export_yup=True, export_apply=True,
                           export_texcoords=True, export_normals=True, export_vertex_color="NAME", export_vertex_color_name="Col",
@@ -671,7 +700,7 @@ def place(name, x, flip=False):
     o = src.copy(); o.data = src.data; o.hide_render = False; scn.collection.objects.link(o)
     o.location = (x, 0, 0); o.rotation_euler = (0, 0, math.pi if flip else 0)
     return o
-for o in list(objs.values()): o.hide_render = True
+for o in list(objs.values()) + list(far_objs.values()): o.hide_render = True
 for m in layout["modules"]:
     cx = -(m["front"] + m["length"] / 2)
     place(m["piece"], cx, m["flip"])
