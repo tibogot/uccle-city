@@ -107,6 +107,7 @@ class Builder:
     def tris(self, pts, tri_idx, mat, sub=0, band=0):
         for t in tri_idx: self.face([pts[t[0]], pts[t[1]], pts[t[2]]], mat, sub, band)
 B = Builder()
+FAR = False                 # True while building the far LOD: the same plan, openings as flat dark shapes, no small details
 S = dict(mat=MASONRY, sub=BRICK, band=1)        # current style for convenience helpers
 
 def quad(a, b, c, d, mat, sub=0, band=0): B.face([a, b, c, d], mat, sub, band)
@@ -184,11 +185,13 @@ def box(O, U, V, N, u0, u1, v0, v1, w0, w1, mat, sub=0, band=0, skip=()):
         if k not in skip: B.face(pts, mat, sub, band)
 
 def fbox(fr, u0, u1, v0, v1, w0, w1, mat, sub=0, band=0, skip=()):
+    if FAR and v1 - v0 < 0.36 and w1 - w0 < 0.45: return          # ledges, string courses, corbels: not in the far LOD
     box(fr.O, fr.U, Z, fr.N, u0, u1, v0, v1, w0, w1, mat, sub, band, skip)
 
 def lathe(center, profile, segs, mat, sub=0, band=0, a0=0.0, cap_bottom=False):
     """Solid of revolution about the vertical through center; profile [(r, z)] bottom to top (r=0 closes)."""
     rings = []
+    if FAR: segs = max(4, segs // 2)
     for r, z in profile:
         rings.append([center + V3(r * math.cos(a0 + 2 * math.pi * k / segs), r * math.sin(a0 + 2 * math.pi * k / segs), z) for k in range(segs)])
     for i in range(len(rings) - 1):
@@ -312,6 +315,16 @@ class Clock:
             fill2d(fr, [pts], 0.075, METAL, GILT)
 
 def wall(fr, outline, openings=(), sub=BRICK, band=1, mat=MASONRY):
+    if FAR:                                  # far LOD: a plain wall, each opening a flat dark shape just in front of it
+        fill2d(fr, [outline], 0.0, mat, sub, band)
+        for o in openings:
+            if isinstance(o, Arch):
+                o2 = Arch(o.uc, o.sill, o.top, o.w + 0.1, seg=3)
+                fill2d(fr, [o2.inner()], 0.03, GLASS if o.kind == "glass" else MASONRY, 0 if o.kind == "glass" else DARK)
+            elif isinstance(o, Rose):
+                fill2d(fr, [circle2d(o.uc, o.vc, o.r + o.sur, 12)], 0.03, MASONRY, STONE)
+                fill2d(fr, [circle2d(o.uc, o.vc, o.r * 0.93, 10)], 0.06, GLASS, 0)
+        return
     holes = [o.hole() for o in openings if o.hole()]
     fill2d(fr, [outline] + holes, 0.0, mat, sub, band)
     for o in openings: o.build(fr)
@@ -417,6 +430,7 @@ def wing(k):
 
 def quoins(fr, ua, ub, w, z0, z1):
     """Stone quoins on the outer face of a pier, alternating long and short, slightly proud."""
+    if FAR: return
     z, i = z0, 0
     while z + 0.3 < z1:
         L = 0.55 if i % 2 == 0 else 0.32
@@ -427,6 +441,7 @@ def quoins(fr, ua, ub, w, z0, z1):
         z += 0.6; i += 1
 
 def tower_quoins(fr, half, z0, z1):
+    if FAR: return
     z, i = z0, 0
     while z + 0.3 < z1:
         L = 0.6 if i % 2 == 0 else 0.34
@@ -469,7 +484,7 @@ def chapel(k):
     def norm(a): return (a + math.pi) % (2 * math.pi) - math.pi
     d1 = norm(a1 - a0); dm = norm(am - a0)
     if (dm > 0) != (d1 > 0) or abs(dm) > abs(d1): d1 = d1 - math.copysign(2 * math.pi, d1)
-    nf = 5
+    nf = 3 if FAR else 5
     arc = [c + V3(rad * math.cos(a0 + d1 * i / nf), rad * math.sin(a0 + d1 * i / nf), 0) for i in range(nf + 1)]
     small = k == 5
     eave = CH_EAVE - (0.5 if small else 0.0)
@@ -522,7 +537,7 @@ def steps(fr):
     # cheek walls along the landing, two handrails down the flight
     for s in (-1, 1):
         fbox(fr, min(s * top_w / 2, s * (top_w / 2 + 0.4)), max(s * top_w / 2, s * (top_w / 2 + 0.4)), GROUND, 0.75, 0, land + 0.3, MASONRY, STONE, skip=("back",))
-        for x in (s * 1.2,):
+        for x in (() if FAR else (s * 1.2,)):
             p0 = fr.p(x, 0.95, land - 0.1); p1 = fr.p(x * (1 + n * 0.05), -n * rise + 0.9, land + n * run)
             beam(p0, p1, Z, 0.025, -0.025, 0.025, METAL, IRON)
             for t in (0.0, 0.5, 1.0):
@@ -560,7 +575,8 @@ def dome():
             prof.append(tuple(0.5 * ((2 * p1[q]) + (-p0[q] + p2[q]) * t + (2 * p0[q] - 5 * p1[q] + 4 * p2[q] - p3[q]) * t * t + (-p0[q] + 3 * p1[q] - 3 * p2[q] + p3[q]) * t ** 3) for q in (0, 1)))
     prof.append(DOME[-1])
     prof = [(DOME[0][0], DRUM_TOP)] + prof
-    NS = 4                                               # segments across each face
+    NS = 1 if FAR else 4                                 # segments across each face
+    if FAR: prof = prof[::2] + ([prof[-1]] if len(prof) % 2 == 0 else [])
     cosk = math.cos(math.pi / 8)
     def P(rho, z, k, s):                                 # face k (centred on axis k), s in [0, 1] across
         a0 = math.radians(45 * k - 22.5); a1 = math.radians(45 * k + 22.5)
@@ -574,6 +590,7 @@ def dome():
             for j in range(NS):
                 s0, s1 = j / NS, (j + 1) / NS
                 face_out([P(r0, z0, k, s0), P(r0, z0, k, s1), P(r1, z1, k, s1), P(r1, z1, k, s0)], Vector((0, 0, 0)), ROOF, DOME_SLATE)
+        if FAR: continue
         # rib at the corner between face k and k+1: a rounded lead roll
         a = math.radians(45 * k + 22.5); d = V3(math.sin(a), math.cos(a), 0); t = Z.cross(d)
         for i in range(len(prof) - 1):
@@ -595,7 +612,7 @@ def dome():
         fbox(fr, -e, e, lt, LANTERN_DECK - 0.25, -0.2, 0.0, MASONRY, BRICK, 1, skip=("back",))
         fbox(fr, -e - 0.1, e + 0.1, LANTERN_DECK - 0.25, LANTERN_DECK, -0.2, 0.22, MASONRY, STONE, skip=("back",))
     face_up([ang_dir(45 * k + 22.5) * (2.17 / cosk) + Z * LANTERN_DECK for k in range(8)], MASONRY, STONE)
-    railing(2.08, LANTERN_DECK, 1.0)
+    if not FAR: railing(2.08, LANTERN_DECK, 1.0)
     # the open lantern: eight piers, arches, entablature
     lantern()
 
@@ -700,7 +717,8 @@ def tower():
         gb = h - 0.95
         g = [(-gb, T_TOP - 0.06), (gb, T_TOP - 0.06), (gb, T_TOP + 0.45), (0, T_TOP + 4.45), (-gb, T_TOP + 0.45)]
         fill2d(fr, [g], 0.0, MASONRY, BRICK, 1)
-        Clock(0, T_TOP + 1.95, 0.88).build(fr)
+        if FAR: fill2d(fr, [circle2d(0, T_TOP + 1.95, 1.0, 10)], 0.05, METAL, DIAL)
+        else: Clock(0, T_TOP + 1.95, 0.88).build(fr)
         gable_coping(fr, gb, T_TOP + 0.45, T_TOP + 4.45, w_front=0.16, w_back=-0.3)
         apex_cross(fr.p(0, T_TOP + 4.6, 0), 0.6, MASONRY, STONE, facing=n)
         # the gable's roof, back into the spire
@@ -713,10 +731,10 @@ def tower():
             nest = fr.p(1.5, 20.95, -1.05)                   # on the chamber floor behind the right-hand belfry arch, outer face
     # belfry chamber (dark, seen through the louvres), its floor = the nest ledge
     hi = h - 0.62
-    for j, n in enumerate(faces):
+    for j, n in enumerate(faces if not FAR else []):
         fr = Frame(Tc + n * hi, n)
         fill2d(fr, [[(-hi, 20.9), (hi, 20.9), (hi, 28.2), (-hi, 28.2)]], 0.0, MASONRY, DARK, flip=True)
-    face_up([Tc + u * hi + v * hi + Z * 20.9, Tc + u * hi - v * hi + Z * 20.9, Tc - u * hi - v * hi + Z * 20.9, Tc - u * hi + v * hi + Z * 20.9], MASONRY, DARK)
+    if not FAR: face_up([Tc + u * hi + v * hi + Z * 20.9, Tc + u * hi - v * hi + Z * 20.9, Tc - u * hi - v * hi + Z * 20.9, Tc - u * hi + v * hi + Z * 20.9], MASONRY, DARK)
     # corner pinnacles
     for su in (-1, 1):
         for sv in (-1, 1):
@@ -760,7 +778,7 @@ def tower():
     box(tip, v, Z, u, -0.045, 0.045, 0.4, CROSS_TOP - SPIRE_TIP - 0.75, -0.045, 0.045, METAL, IRON)
     box(tip, v, Z, u, -0.55, 0.55, 2.9, 3.0, -0.04, 0.04, METAL, IRON)
     box(tip, v, Z, u, -0.04, 0.04, 2.9, 3.0, -0.55, 0.55, METAL, IRON)
-    cock(tip + Z * (CROSS_TOP - SPIRE_TIP - 0.8), u)
+    if not FAR: cock(tip + Z * (CROSS_TOP - SPIRE_TIP - 0.8), u)
     return Tc, nest
 
 def cock(base, facing):
@@ -777,7 +795,7 @@ def stair_turret():
     """The round stair turret on the tower's outer face [M footprint points 0-11, DSM top 85 m]."""
     pts = [Vector((FP[i][0], FP[i][1], 0)) for i in TURRET_PTS]
     c, r = circle3(pts[1], pts[6], pts[10])
-    n = 16
+    n = 8 if FAR else 16
     eave = CH_EAVE + 0.3
     for i in range(n):
         a0, a1 = 2 * math.pi * i / n, 2 * math.pi * (i + 1) / n
@@ -806,7 +824,7 @@ def house(fr_o, s0, s1, t0, t1, eave, ridge, along_s, sd, td, windows=True):
         gable = (i in (1, 3)) if along_s else (i in (0, 2))
         top = [(L / 2, eave), (0, ridge + 0.0), (-L / 2, eave)] if gable and ridge > eave else [(L / 2, eave), (-L / 2, eave)]
         ops = []
-        if windows and L > 4:
+        if windows and L > 4 and not FAR:
             nwin = int(L // 3.2)
             for q in range(nwin):
                 x = -L / 2 + (q + 0.5) * L / nwin
@@ -843,72 +861,90 @@ def annex():
     house(o, 19.1, 21.5, -3.0, 3.4, 1.6, 1.6, True, sd, td, windows=False)
 
 # ------------------------------------------------------------------------------------------------ build
-chapels_info = {}
-for k in range(8): wing(k)
-for k in range(8): chapels_info[k] = chapel(k)
-drum(); dome()
-Tc, nest = tower()
-turret = stair_turret()
-annex()
+def build_all():
+    info = {}
+    for k in range(8): wing(k)
+    for k in range(8): info[k] = chapel(k)
+    drum(); dome()
+    tc, ns = tower()
+    tur = stair_turret()
+    annex()
+    return info, tc, ns, tur
+
+chapels_info, Tc, nest, turret = build_all()
+B_MAIN = B
 print(f"built {len(B.f)} faces in {time.time() - T0:.1f}s")
+B = Builder(); FAR = True                       # the far LOD: same plan and functions, details off
+build_all()
+B_FAR = B
+FAR = False
+print(f"far: {len(B_FAR.f)} faces")
 
 # ------------------------------------------------------------------------------------------------ mesh
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scn = bpy.context.scene
-me = bpy.data.meshes.new("StJob")
-me.from_pydata([tuple(p) for p in B.v], [], B.f)
-me.update()
 mats = []
 for i, name in enumerate(MAT_NAMES):
-    m = bpy.data.materials.new(name); m.use_nodes = True; me.materials.append(m); mats.append(m)
-me.polygons.foreach_set("material_index", [a[0] for a in B.attr])
-col = me.color_attributes.new("Col", "FLOAT_COLOR", "CORNER")
-cdat = []
-for poly, (mt, sub, band) in zip(me.polygons, B.attr):
-    for _ in poly.loop_indices: cdat += [sub / 8 + 1 / 16, band / 4 + 1 / 8, mt / 4 + 1 / 8, 1.0]
-col.data.foreach_set("color", cdat)
-# UV0: world-scale planar projection per face
-uv0 = me.uv_layers.new(name="UVMap")
-uvd = [0.0] * (2 * len(me.loops))
-for poly in me.polygons:
-    n = poly.normal
-    if abs(n.z) < 0.75:
-        t = Z.cross(n); t = t.normalized() if t.length > 1e-6 else Vector((1, 0, 0)); b = Z
-    else:
-        t = Z.cross(n)
-        t = t.normalized() if t.length > 1e-4 else Vector((1, 0, 0))
-        b = n.cross(t).normalized()
-    for li in poly.loop_indices:
-        p = me.vertices[me.loops[li].vertex_index].co
-        uvd[2 * li] = p.dot(t); uvd[2 * li + 1] = p.dot(b)
-uv0.data.foreach_set("uv", uvd)
-obj = bpy.data.objects.new("StJob", me)
-scn.collection.objects.link(obj)
-bpy.context.view_layer.objects.active = obj
-obj.select_set(True)
-# merge coincident vertices, smooth by angle
-bm = bmesh.new(); bm.from_mesh(me)
-bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.0008)
-bmesh.ops.dissolve_degenerate(bm, edges=bm.edges, dist=0.0004)
-bm.to_mesh(me); bm.free()
-me.shade_smooth()
-me.set_sharp_from_angle(angle=math.radians(32))
-me.validate()
-ntri = sum(len(p.vertices) - 2 for p in me.polygons)
-print("faces", len(me.polygons), "triangles", ntri, "verts", len(me.vertices))
+    m = bpy.data.materials.new(name); m.use_nodes = True; mats.append(m)
 
-# lightmap UV
-uv1 = me.uv_layers.new(name="Lightmap")
-me.uv_layers.active = uv1
-bpy.ops.object.mode_set(mode="EDIT")
-bpy.ops.mesh.select_all(action="SELECT")
-bpy.ops.uv.smart_project(angle_limit=math.radians(50), island_margin=0.0015, area_weight=0.0, correct_aspect=True, scale_to_bounds=False)
-try:
-    bpy.ops.uv.pack_islands(rotate=True, margin=0.0012)
-except Exception as e:
-    print("pack_islands:", e)
-bpy.ops.object.mode_set(mode="OBJECT")
-me.uv_layers.active = uv0
+def make_object(name, bld, v0, v1):
+    """Mesh from a builder: material slots, the code colours, UV0 (world metres), merged vertices, smooth-by-angle
+    normals, and a lightmap UV1 packed into the strip v0..v1 of the shared AO image."""
+    me = bpy.data.meshes.new(name)
+    me.from_pydata([tuple(p) for p in bld.v], [], bld.f)
+    me.update()
+    for m in mats: me.materials.append(m)
+    me.polygons.foreach_set("material_index", [a[0] for a in bld.attr])
+    col = me.color_attributes.new("Col", "FLOAT_COLOR", "CORNER")
+    cdat = []
+    for poly, (mt, sub, band) in zip(me.polygons, bld.attr):
+        for _ in poly.loop_indices: cdat += [sub / 8 + 1 / 16, band / 4 + 1 / 8, mt / 4 + 1 / 8, 1.0]
+    col.data.foreach_set("color", cdat)
+    uv0 = me.uv_layers.new(name="UVMap")
+    uvd = [0.0] * (2 * len(me.loops))
+    for poly in me.polygons:
+        n = poly.normal
+        if abs(n.z) < 0.75:
+            t = Z.cross(n); t = t.normalized() if t.length > 1e-6 else Vector((1, 0, 0)); b = Z
+        else:
+            t = Z.cross(n)
+            t = t.normalized() if t.length > 1e-4 else Vector((1, 0, 0))
+            b = n.cross(t).normalized()
+        for li in poly.loop_indices:
+            p = me.vertices[me.loops[li].vertex_index].co
+            uvd[2 * li] = p.dot(t); uvd[2 * li + 1] = p.dot(b)
+    uv0.data.foreach_set("uv", uvd)
+    obj = bpy.data.objects.new(name, me)
+    scn.collection.objects.link(obj)
+    bm = bmesh.new(); bm.from_mesh(me)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.0008)
+    bmesh.ops.dissolve_degenerate(bm, edges=bm.edges, dist=0.0004)
+    bm.to_mesh(me); bm.free()
+    me.shade_smooth()
+    me.set_sharp_from_angle(angle=math.radians(32))
+    me.validate()
+    ntri = sum(len(p.vertices) - 2 for p in me.polygons)
+    print(name, "faces", len(me.polygons), "triangles", ntri, "verts", len(me.vertices))
+    uv1 = me.uv_layers.new(name="Lightmap")
+    me.uv_layers.active = uv1
+    for o in scn.objects: o.select_set(False)
+    obj.select_set(True); bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.uv.smart_project(angle_limit=math.radians(50), island_margin=0.0015, area_weight=0.0, correct_aspect=True, scale_to_bounds=False)
+    try: bpy.ops.uv.pack_islands(rotate=True, margin=0.0012)
+    except Exception as e: print("pack_islands:", e)
+    bpy.ops.object.mode_set(mode="OBJECT")
+    uv1 = me.uv_layers["Lightmap"]; uv0 = me.uv_layers["UVMap"]       # (edit mode re-allocated the layers)
+    d = [0.0] * (2 * len(me.loops)); uv1.data.foreach_get("uv", d)
+    for i in range(1, len(d), 2): d[i] = v0 + d[i] * (v1 - v0)
+    uv1.data.foreach_set("uv", d)
+    me.uv_layers.active = uv0
+    return obj, ntri
+
+AO_SPLIT = 0.875                                 # main model: v 0..0.875 of the AO image; far LOD: 0.88..1
+obj, ntri = make_object("StJob", B_MAIN, 0.0, AO_SPLIT)
+far, ntri_far = make_object("StJob_far", B_FAR, AO_SPLIT + 0.005, 1.0)
 print(f"uv done {time.time() - T0:.1f}s")
 
 # ------------------------------------------------------------------------------------------------ ground for the bake + previews
@@ -953,11 +989,14 @@ for m in mats:
     nt.nodes.active = n
 if BAKE:
     scn.cycles.samples = 96
-    scn.render.bake.margin = 6
-    for o in scn.objects: o.select_set(False)
-    obj.select_set(True); bpy.context.view_layer.objects.active = obj
+    scn.render.bake.margin = 4
     t = time.time()
-    bpy.ops.object.bake(type="AO", uv_layer="Lightmap", margin=6, use_clear=True)
+    for target, other, clear in ((obj, far, True), (far, obj, False)):
+        other.hide_render = True; target.hide_render = False
+        for o in scn.objects: o.select_set(False)
+        target.select_set(True); bpy.context.view_layer.objects.active = target
+        bpy.ops.object.bake(type="AO", uv_layer="Lightmap", margin=4, use_clear=clear)
+    obj.hide_render = far.hide_render = False
     print(f"AO bake {time.time() - t:.1f}s")
     ao_img.filepath_raw = os.path.join(OUT, "stjob_ao.png"); ao_img.file_format = "PNG"
     scn.render.image_settings.color_mode = "BW"
@@ -973,7 +1012,7 @@ nest_e = bpy.data.objects.new("nest", None); nest_e.location = nest; scn.collect
 nest_e.empty_display_type = "SPHERE"; nest_e.empty_display_size = 0.4
 tip_e = bpy.data.objects.new("spire_tip", None); tip_e.location = Tc + Z * SPIRE_TIP; scn.collection.objects.link(tip_e)
 for o in scn.objects: o.select_set(False)
-for o in (obj, nest_e, tip_e): o.select_set(True)
+for o in (obj, far, nest_e, tip_e): o.select_set(True)
 bpy.context.view_layer.objects.active = obj
 glb = os.path.join(OUT, "stjob.glb")
 bpy.ops.export_scene.gltf(filepath=glb, export_format="GLB", use_selection=True, export_yup=True, export_apply=True,
@@ -984,7 +1023,7 @@ print("exported", glb, os.path.getsize(glb) // 1024, "KB")
 # notes
 info = {
     "asset": "Église Saint-Job, Uccle (tools/blender/stjob.py)",
-    "triangles_lod0": ntri,
+    "triangles_lod0": ntri, "triangles_far": ntri_far,
     "materials": MAT_NAMES,
     "codes": {"Col.r": "subtype/8 + 1/16", "Col.g": "band pattern/4 + 1/8 (0 none, 1 stone bands every 1.10 m)", "Col.b": "material/4 + 1/8",
               "Masonry": ["brick", "white stone", "sandstone", "dark wood", "dark interior", "brick, no bands"],
@@ -1056,6 +1095,7 @@ if PREVIEWS:
         bsdf.inputs["Roughness"].default_value = {"Masonry": 0.85, "Roof": 0.6, "Glass": 0.12, "Metal": 0.4}[kind]
         bsdf.inputs["Metallic"].default_value = {"Masonry": 0, "Roof": 0, "Glass": 0, "Metal": 0.8}[kind]
     for m in mats: preview_material(m, m.name)
+    far.hide_render = True
     sun = bpy.data.lights.new("Sun", "SUN"); sun.energy = 4.0; sun.angle = math.radians(1.5)
     so = bpy.data.objects.new("Sun", sun); scn.collection.objects.link(so)
     so.rotation_euler = (math.radians(50), 0, math.radians(200))

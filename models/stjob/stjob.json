@@ -1,6 +1,7 @@
 {
  "asset": "\u00c9glise Saint-Job, Uccle (tools/blender/stjob.py)",
  "triangles_lod0": 38568,
+ "triangles_far": 5189,
  "materials": [
   "Masonry",
   "Roof",
