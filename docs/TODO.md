@@ -28,12 +28,32 @@ read-only (copy into `vendor/` with ORIGIN.md); measure GPU ms before / after (s
 - Volumetric fog is opt-in only (`?vfog=1`, dev panel) until it is tuned.
 - Tree impostors off (`?impostors=1`) until 16x16 views + depth atlas.
 
-## STIB tram model (branch claude/tram, waiting for the owner's OK in the Tram Lab)
+## STIB tram model (approved by the owner 2026-11-04, merged)
 - [x] T3000 (line 92's stock) scripted in Blender (`tools/blender/tram.py`), loader / LODs / placement `viewer/tramModel.js`,
       Tram Lab (`labs/tram-lab.html`), in the city behind `?tram=model` (tramline.js). Per tram: LOD0 15.9k, LOD1 5.7k, LOD2 1.35k triangles.
 - [ ] Owner: approve in the lab, then make the model the default in tramline.js (drop the boxes).
 - [ ] Interior (seats, poles) behind the glass; door opening at stops; pantograph height following the wire; the
       window AO / dirt pass; fleet numbers on the nose; T4000 (7 sections) if other lines come.
+## Saint-Job hero church (approved by the owner 2026-11-04, merged; city integration below still to do)
+Scripted model `tools/blender/stjob.py` -> `models/stjob/` (notes: `models/stjob/NOTES.md`), loader + LODs + materials
+`viewer/stjobModel.js`, lab `labs/church-lab.html`. LOD0 38.6k / LOD1 15.0k / LOD2 3.0k triangles, 4 draw calls per LOD,
+AO lightmap 5.3 MB (R8 2048² + mips), GLB 4.0 MB (uncompressed).
+**How it replaces the UrbIS solid in the city** (after approval):
+1. `main.js`: `const stjob = params.get("stjob") !== "0" ? await loadStJob() : null` next to `loadLampModel()`; pass
+   `STJOB_BU_ID` ("https://databrussels.be/id/building/1587133", solid buildingsolid/509924) to the tile builder.
+2. Hide that building: in `tileData.js` skip every `bDoc.buildings` entry whose `attrs.BU_ID === STJOB_BU_ID` in the
+   façade build (facadeGeom.js) and in the far-LOD solids (`buildLiteData`), i.e. filter before both loops; KEEP it in
+   `roofGrid` (fly-mode roof collision: the UrbIS envelope is close to the model's). Rebuild the worker bundle
+   (`node tools/build_worker.mjs`).
+3. Place the model once (it is not per tile, but only while its tile is loaded): `root.position.set(1216.19, 75.40, 561.44)`,
+   `root.rotation.y = 0.09225` (values in `models/stjob/stjob.json` "placement"); add `model.make(0..2)` groups and switch by
+   camera distance to the octagon (`STJOB_LODS`: LOD0 < 170 m, LOD1 < 520 m, LOD2 beyond); beyond the full-tile ring the
+   far tiles' flat solid still contains the church (fine at that distance) — or skip it there too and keep LOD2.
+4. The falcons: the glTF node `nest` (church frame (-16.98, 20.95, -14.86), world = rotate by rotation.y + position) is on
+   the belfry floor behind the right-hand louvred arch of the tower's outer (NW) face; `spire_tip` = fly-mode start.
+5. Materials already read `env` (night glow); check shadows (the shadow box) and the city's fog on them; GTAO is off on glass.
+Open: GLB compression (gltfpack -cc / meshopt), interior for the open lantern is just sky-through, the clock dials have
+no numerals, the sacristy annex is simplified (3 gabled blocks), windows have no tracery apart from the roses.
 
 ## Done 2026-11-04 (details: docs/RENDER_PLAN.md, docs/RESEARCH.md)
 Streaming freezes fixed (per-tile shader constants), boot warm-up, Vercel deploy, GPU timer, terrain simplified,
@@ -75,14 +95,14 @@ falcon, labs (Bird, Lamp), the dev panel.
 - [ ] Vehicles: STIB T3000/T4000 tram, 4–6 car body types, a STIB bus; LODs.
 - [ ] Street furniture: Brussels lamp post types, bins, bollards ("potelets"), benches, bike hoops,
       STIB shelter and pole, signs.
-- [ ] Hero landmarks: Saint-Job church (from photos), then other recognisable buildings.
+- [~] Hero landmarks: Saint-Job church done in the Church Lab (see "Saint-Job hero church" above), waiting for approval; then other recognisable buildings.
 - [ ] Export glTF + meshopt + KTX2; load once; place with InstancedMesh / BatchedMesh.
 
 ## 4. Buildings
 - [ ] Shop names on fascias (text atlas from OSM `name`).
 - [ ] Gable attic windows, dormers, balconies, bay windows (common in Uccle).
 - [ ] Garage doors on street faces of detached houses; garden walls and gates.
-- [ ] Church: compare materials with a photo; oculi on the dome drum; lantern detail.
+- [~] Church: superseded by the scripted Saint-Job model (drum oculi, lantern, materials from the photos) once approved.
 - [ ] Optional interiors: hand-made for a few buildings (church, a café, a shop); procedural
       rooms for others, generated only near the player.
 
