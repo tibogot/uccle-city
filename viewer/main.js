@@ -502,7 +502,7 @@ async function main() {
   // Render pipeline: AO + reflections + bloom + grade (?fx=0: plain render, for slow machines)
   const fx = params.get("fx") !== "0";
   await lighting.attach(camera);                      // Firmament's sky needs the camera (no-op for ?sky=old)
-  const pipe = fx ? createPipeline(renderer, scene, camera) : null;
+  const pipe = fx ? createPipeline(renderer, scene, camera, { aoOn: params.get("ao") !== "0", ssrOn: params.get("ssr") !== "0" }) : null;   // ?ao=0 ?ssr=0: A/B
   if (pipe) { pipe.setExposureScale(lighting.exposureScale); pipe.look(timeId); }
   else { renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = lighting.exposureScale; }
   const focus = new THREE.Vector3(), fwd = new THREE.Vector3();

@@ -24,3 +24,6 @@
    (the octagon cost more in vertex work than it saved in fragments; viewer/treesStylized.js).
 7. **Stable per-tree tint**: `treeTint(treeXf, tintVar)` (exported) instead of `hash(instanceIndex)`, so a
    tree keeps its tint when it moves between LOD meshes and to Uccle's impostors (viewer/impostors.js).
+   Computed in the vertex stage (`vertexStage`): first written in the fragment stage, where the hash
+   amplified the interpolated inputs' last-bit differences into stripes across the leaves (owner's
+   "jittering foliage", 2026-11-04).

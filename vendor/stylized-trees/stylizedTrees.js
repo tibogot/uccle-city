@@ -23,7 +23,7 @@ import {
   Fn, attribute, uniform, texture, vec2, vec3, float, mix, pow, saturate, dot, normalize, smoothstep,
   positionWorld, cameraPosition, instanceIndex, hash, transformNormalToView,
   positionLocal, positionGeometry, cameraViewMatrix, cross, select,
-  time, sin, cos, fract,
+  time, sin, cos, fract, vertexStage,
 } from "three/tsl";
 import { applyAlphaCutout } from "./alphaCutout.js";   // [uccle-city CHANGES.md #1]
 
@@ -223,9 +223,11 @@ function tubeGeometry(segs, sides) {
 }
 
 // ------------------------------------------------------------------ materials
-/** [uccle-city CHANGES.md #7] per-tree brightness from treeXf (cos, sin of the turn, scale): stable per tree */
+/** [uccle-city CHANGES.md #7] per-tree brightness from treeXf (cos, sin of the turn, scale): stable per tree.
+ *  Computed in the VERTEX stage: in the fragment stage the per-instance inputs arrive interpolated, and the
+ *  hash (x 43758) turns their last-bit differences into a different value per pixel: stripes on the leaves. */
 export function treeTint(xf, tintVar) {
-  return fract(sin(xf.x.mul(127.1).add(xf.y.mul(311.7)).add(xf.z.mul(74.7))).mul(43758.5453)).sub(0.5).mul(tintVar).add(1);
+  return vertexStage(fract(sin(xf.x.mul(127.1).add(xf.y.mul(311.7)).add(xf.z.mul(74.7))).mul(43758.5453))).sub(0.5).mul(tintVar).add(1);
 }
 
 function makeLeafMaterial(P, U) {
