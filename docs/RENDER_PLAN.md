@@ -81,6 +81,19 @@ diff the WGSL of two same-size modules.
 4. [ ] Leaf atlas built once in the worker on an OffscreenCanvas (`v3/render/objects/rtsAtlasWorker.js`).
 5. [ ] Target: no frame over 33 ms walking with `ring=2`.
 
+## Trees (2026-11-04)
+
+- `?trees=stylized` = game-engine-v1 fog-lab trees (`vendor/stylized-trees`, `viewer/treesStylized.js`).
+  GPU vs default slop trees: overview 7.6 vs 8.0 ms, close-up 10.4 vs 9.3, walk 9.3 vs 7.3.
+  Fog-lab LOD distances (150/450/1600 m) cost 14.8 ms in walk; street-level 40/120/900 m fixed most.
+- In walk the leaf cards cost ~4.9 ms (their shadows ~1.2 ms): big overlapping alpha-to-coverage
+  cards near the camera (MSAA, discard, no early-z).
+- Next: depth pre-pass for alpha-tested cards (game-engine-v1 PERF_RULES: cedars 19 -> 6 ms);
+  **octahedral impostors** for the far LOD (`v3/render/foliage/octahedralCore.js`,
+  `impostorBake.js`, `v3/render/trees/impostorFieldRenderer.js`); shadows from LOD 0 only;
+  colours tuned to the city's palette (top colour #7cc63c reads lime next to the muted streets).
+- Decision pending (owner): which look to keep.
+
 ## Phase 2: cheap look fixes
 
 - [ ] Glass speckle: box-filtered window grid that fades to its mean below a pixel
