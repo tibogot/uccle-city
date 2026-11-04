@@ -260,3 +260,35 @@ shadow lookup, 3 LODs). GDC pages are member-only: those items rest on abstracts
 12. **Grove / HLOD cluster impostors** past ~1 km.
 Smaller: broad low leaf specular, rim/back light, per-pad hue jitter + height gradient, seasonal
 palettes, leaf-litter decals.
+
+## E. Driving and collision in the slop cities (read 2026-11-04)
+
+Read in mrdoob/slop-newyork, slop-egara (Terrassa, real relief) and slop-newyork-desurfofficial (gameplay fork).
+None of them uses a physics library (no Rapier, cannon or BVH). Everything is hand-written 2D, fast and exact enough.
+
+- **Buildings** (`js/building-collision.js`, `buildings.js:364`): every building is a collider
+  `{minX,maxX,minZ,maxZ,minY,maxY, polygon:{outer,holes}}` made from its real footprint (courtyards included).
+  The car is an **oriented rectangle** (0.86 × 2.18 m half-size); people, bikes and the helicopter are circles.
+  Test order: height range, then the AABB, then the exact polygon (`polygonBoxOverlaps`). Escape = the smallest push
+  over the edge normals, box axes and corner pairs (no seams between triangles). Circles in a concave corner
+  resolve both walls.
+- **Spatial index** (`controllers.js nearColliders`): colliders hashed once into **48 m cells**, queried around the
+  car with a stamp to skip duplicates.
+- **Impact response** (`resolveHorizontalCollision`): push out, then by the approach speed: head-on (>0.72)
+  bounces at −0.25×, a glancing hit keeps speed with a yaw kick, plus pitch, roll and heave kicks, and sparks above 2.2 m/s.
+- **Car model** (`updateCar`): arcade bicycle model, **substeps at 120 Hz**, tyre grip budget shared by braking and
+  cornering (friction circle), handbrake slide, steering lock falls with speed, spring-damped pitch, roll and heave
+  on the chassis. Collision runs inside every substep.
+- **Car against car** (`vehicle-physics.js`): oriented-box SAT with clipped contact points (correct torque), impulse with
+  restitution 0.08 and friction 0.35, plus a **swept SAT** for fast cars that would tunnel between frames.
+- **Ground**: New York is flat (0, or the sidewalk height for people). **slop-egara** adds the relief:
+  `roadHeightAt(x,z,hint)` (the hint = the car's own height, so under a bridge you stay under it); the chassis pitch and roll
+  come from 4 samples ±sx around the car; each wheel sits on its own ground. **Cars never climb kerbs**: the kerb
+  islands are colliders, people walk on them.
+- **Not colliders**: trees and lamps are only used to keep clear of buildings at placement (`trees.js
+  createTreeClearance`). Small props were left out.
+
+What it means for Uccle: our footprints are already in the tile worker (the roof grid uses them), so the same
+polygon colliders plus a 48 m cell grid per tile fit our streaming. Add kerb islands from the road engine's
+sidewalk polygons, the relief from `hm.surface` (as in egara), and trunks and lamp posts as circles (cheap, we know their positions).
+game-engine-v1's raycast vehicle and road BVH stay an option for a "sim" car later.

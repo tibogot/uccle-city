@@ -16,9 +16,14 @@ DATA = Path(os.environ.get("UCCLE_DATA", ROOT / "data"))
 RAW = DATA / "raw"
 TILES = DATA / "tiles"
 
-# Study box (WGS84)
-LON_MIN, LON_MAX = 4.327, 4.372
-LAT_MIN, LAT_MAX = 50.7905, 50.8075
+# Study area: the commune of Uccle (OSM relation 58253, boundary in pipeline/uccle_boundary.geojson, ODbL,
+# fetched from Nominatim 2026-11-04) united with the first study box (lon 4.327-4.372 x lat 50.7905-50.8075,
+# about 4.5 ha of which lies just outside the commune line). The WGS84 box below is the commune's bbox
+# (used for the OSM fetch).
+LON_MIN, LON_MAX = 4.3117, 4.4127
+LAT_MIN, LAT_MAX = 50.7636, 50.8170
+FIRST_BOX = (4.327, 4.372, 50.7905, 50.8075)
+BOUNDARY = Path(__file__).resolve().parent / "uccle_boundary.geojson"
 
 # EPSG:31370 with the pinned BD72 -> WGS84 (3) Helmert (CONTRACT §2.1)
 L72_PROJ4 = (
@@ -32,9 +37,12 @@ _WGS_TO_L72 = Transformer.from_crs("EPSG:4326", L72, always_xy=True)
 ORIGIN_E, ORIGIN_N = 148643.0, 165394.0
 
 TILE = 500.0
-I_RANGE = (-4, 3)
-J_RANGE = (-2, 1)
-COLS = "ABCDEFGH"
+I_RANGE = (-6, 8)          # x -3000..4500
+J_RANGE = (-4, 7)          # z -2000..4000
+COLS = "ABCDEFGHIJKLMNO"
+# Names of the first 32-tile grid (A1..H4, i -4..3, j -2..1) before the grid grew to all of Uccle:
+# old name -> (i, j). Kept only to translate old notes and links (the old G4, Saint-Job, is now I6).
+OLD_NAMES = {f"{'ABCDEFGH'[i + 4]}{j + 3}": (i, j) for i in range(-4, 4) for j in range(-2, 2)}
 TERRAIN_STEP = 1.0
 ROAD_BUFFER = 150.0
 
@@ -68,31 +76,42 @@ def wgs_to_local(lon, lat):
 
 
 def study_box_local():
-    """Local x/z extent of the WGS84 study box (projected corners)."""
-    xs, zs = [], []
-    for lon in (LON_MIN, LON_MAX):
-        for lat in (LAT_MIN, LAT_MAX):
-            x, z = wgs_to_local(lon, lat)
-            xs.append(x)
-            zs.append(z)
-    return (min(xs), max(xs)), (min(zs), max(zs))
+    """Local x/z extent of the study area."""
+    x0, z0, x1, z1 = study_polygon_local().bounds
+    return (x0, x1), (z0, z1)
+
+
+_STUDY = None
+
+
+def _box_polygon(lon0, lon1, lat0, lat1):
+    """A WGS84 box as a local-metre polygon (edges densified, they are not straight lines in L72)."""
+    from shapely.geometry import Polygon
+
+    pts, n = [], 20
+    for k in range(n):
+        pts.append((lon0 + (lon1 - lon0) * k / n, lat1))
+    for k in range(n):
+        pts.append((lon1, lat1 - (lat1 - lat0) * k / n))
+    for k in range(n):
+        pts.append((lon1 - (lon1 - lon0) * k / n, lat0))
+    for k in range(n):
+        pts.append((lon0, lat0 + (lat1 - lat0) * k / n))
+    return Polygon([wgs_to_local(lo, la) for lo, la in pts])
 
 
 def study_polygon_local():
-    """Study box as a local-metre shapely polygon (edges densified, they are not straight lines in L72)."""
-    from shapely.geometry import Polygon
+    """The study area (Uccle + the first box) as a local-metre shapely polygon."""
+    global _STUDY
+    if _STUDY is None:
+        from shapely.geometry import Polygon
 
-    pts = []
-    n = 20
-    for k in range(n):
-        pts.append((LON_MIN + (LON_MAX - LON_MIN) * k / n, LAT_MAX))
-    for k in range(n):
-        pts.append((LON_MAX, LAT_MAX - (LAT_MAX - LAT_MIN) * k / n))
-    for k in range(n):
-        pts.append((LON_MAX - (LON_MAX - LON_MIN) * k / n, LAT_MIN))
-    for k in range(n):
-        pts.append((LON_MIN, LAT_MIN + (LAT_MAX - LAT_MIN) * k / n))
-    return Polygon([wgs_to_local(lo, la) for lo, la in pts])
+        geo = json.loads(BOUNDARY.read_text(encoding="utf-8"))
+        ring = geo["features"][0]["geometry"]["coordinates"][0]
+        uccle = Polygon([wgs_to_local(lo, la) for lo, la, *_ in ring]).buffer(0)
+        lon0, lon1, lat0, lat1 = FIRST_BOX
+        _STUDY = uccle.union(_box_polygon(lon0, lon1, lat0, lat1)).buffer(0)
+    return _STUDY
 
 
 # ---------------------------------------------------------------- tiles
@@ -124,9 +143,14 @@ def tile_of_point(x: float, z: float) -> str | None:
 
 
 def all_tiles():
+    """Every grid tile that touches the study area (120 for Uccle)."""
+    from shapely.geometry import box
+
+    study = study_polygon_local()
     for j in range(J_RANGE[0], J_RANGE[1] + 1):
         for i in range(I_RANGE[0], I_RANGE[1] + 1):
-            yield tile_name(i, j)
+            if study.intersects(box(i * TILE, j * TILE, (i + 1) * TILE, (j + 1) * TILE)):
+                yield tile_name(i, j)
 
 
 def tile_wgs_bbox(name: str, buffer: float = 0.0):
@@ -186,5 +210,5 @@ if __name__ == "__main__":
     print(f"study box local x {xa:.1f}..{xb:.1f}  z {za:.1f}..{zb:.1f}")
     x, z = wgs_to_local(4.36586, 50.79415)
     print(f"Saint-Job local ({x:.2f}, {z:.2f}) tile {tile_of_point(x, z)} bounds {tile_bounds(tile_of_point(x, z))}")
-    print("G4 wgs bbox+150m", tile_wgs_bbox("G4", ROAD_BUFFER))
+    print("I6 (old G4) wgs bbox+150m", tile_wgs_bbox("I6", ROAD_BUFFER))
     print("tiles", list(all_tiles()))

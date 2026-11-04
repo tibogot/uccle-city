@@ -11,43 +11,692 @@
  },
  "studyBox": {
   "lon": [
-   4.327,
-   4.372
+   4.3117,
+   4.4127
   ],
   "lat": [
-   50.7905,
-   50.8075
+   50.7636,
+   50.817
   ],
   "local": {
    "x": [
-    -1586.89,
-    1586.06
+    -2658.17,
+    4450.95
    ],
    "z": [
-    -945.75,
-    946.11
+    -1994.67,
+    3929.45
    ]
   }
  },
  "tileSize": 500.0,
- "cols": "ABCDEFGH",
+ "cols": "ABCDEFGHIJKLMNO",
  "rows": [
   1,
   2,
   3,
-  4
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12
  ],
  "iRange": [
-  -4,
-  3
+  -6,
+  8
  ],
  "jRange": [
-  -2,
-  1
+  -4,
+  7
  ],
  "tiles": [
   {
-   "name": "A1",
+   "name": "D1",
+   "i": -3,
+   "j": -4,
+   "bounds": {
+    "x": [
+     -1500.0,
+     -1000.0
+    ],
+    "z": [
+     -2000.0,
+     -1500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "D1/roads.json",
+    "buildings": "D1/buildings.json",
+    "buildingsBin": "D1/buildings.bin",
+    "terrain": "D1/terrain.u16",
+    "terrainHeader": "D1/terrain.json",
+    "features": "D1/features.json",
+    "ortho": "D1/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 82,
+    "nodes": 78,
+    "buildings": 2,
+    "trees": 2,
+    "areas": 0,
+    "points": 3,
+    "terrainMinMax": [
+     52.86,
+     99.33
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_147166_20261003/shp/UrbISBuildings3D_147166_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_147167_20261003/shp/UrbISBuildings3D_147167_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_147166_20211009_50/UrbDTM_2021_147166.tif",
+     "DTM_31370_TIFF_147167_20211009_50/UrbDTM_2021_147167.tif"
+    ]
+   }
+  },
+  {
+   "name": "E1",
+   "i": -2,
+   "j": -4,
+   "bounds": {
+    "x": [
+     -1000.0,
+     -500.0
+    ],
+    "z": [
+     -2000.0,
+     -1500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "E1/roads.json",
+    "buildings": "E1/buildings.json",
+    "buildingsBin": "E1/buildings.bin",
+    "terrain": "E1/terrain.u16",
+    "terrainHeader": "E1/terrain.json",
+    "features": "E1/features.json",
+    "ortho": "E1/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 103,
+    "nodes": 90,
+    "buildings": 443,
+    "trees": 76,
+    "areas": 4,
+    "points": 71,
+    "terrainMinMax": [
+     84.55,
+     102.32
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_147166_20261003/shp/UrbISBuildings3D_147166_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_147167_20261003/shp/UrbISBuildings3D_147167_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_148166_20261003/shp/UrbISBuildings3D_148166_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_148167_20261003/shp/UrbISBuildings3D_148167_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_147166_20211009_50/UrbDTM_2021_147166.tif",
+     "DTM_31370_TIFF_147167_20211009_50/UrbDTM_2021_147167.tif",
+     "DTM_31370_TIFF_148166_20211009_50/UrbDTM_2021_148166.tif",
+     "DTM_31370_TIFF_148167_20211009_50/UrbDTM_2021_148167.tif"
+    ]
+   }
+  },
+  {
+   "name": "F1",
+   "i": -1,
+   "j": -4,
+   "bounds": {
+    "x": [
+     -500.0,
+     0.0
+    ],
+    "z": [
+     -2000.0,
+     -1500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "F1/roads.json",
+    "buildings": "F1/buildings.json",
+    "buildingsBin": "F1/buildings.bin",
+    "terrain": "F1/terrain.u16",
+    "terrainHeader": "F1/terrain.json",
+    "features": "F1/features.json",
+    "ortho": "F1/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 117,
+    "nodes": 106,
+    "buildings": 351,
+    "trees": 90,
+    "areas": 2,
+    "points": 108,
+    "terrainMinMax": [
+     88.04,
+     106.88
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_148166_20261003/shp/UrbISBuildings3D_148166_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_148167_20261003/shp/UrbISBuildings3D_148167_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_148166_20211009_50/UrbDTM_2021_148166.tif",
+     "DTM_31370_TIFF_148167_20211009_50/UrbDTM_2021_148167.tif"
+    ]
+   }
+  },
+  {
+   "name": "G1",
+   "i": 0,
+   "j": -4,
+   "bounds": {
+    "x": [
+     0.0,
+     500.0
+    ],
+    "z": [
+     -2000.0,
+     -1500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "G1/roads.json",
+    "buildings": "G1/buildings.json",
+    "buildingsBin": "G1/buildings.bin",
+    "terrain": "G1/terrain.u16",
+    "terrainHeader": "G1/terrain.json",
+    "features": "G1/features.json",
+    "ortho": "G1/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 99,
+    "nodes": 84,
+    "buildings": 377,
+    "trees": 26,
+    "areas": 0,
+    "points": 56,
+    "terrainMinMax": [
+     86.77,
+     102.52
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_148166_20261003/shp/UrbISBuildings3D_148166_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_148167_20261003/shp/UrbISBuildings3D_148167_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_149166_20261003/shp/UrbISBuildings3D_149166_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_149167_20261003/shp/UrbISBuildings3D_149167_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_148166_20211009_50/UrbDTM_2021_148166.tif",
+     "DTM_31370_TIFF_148167_20211009_50/UrbDTM_2021_148167.tif",
+     "DTM_31370_TIFF_149166_20211009_50/UrbDTM_2021_149166.tif",
+     "DTM_31370_TIFF_149167_20211009_50/UrbDTM_2021_149167.tif"
+    ]
+   }
+  },
+  {
+   "name": "H1",
+   "i": 1,
+   "j": -4,
+   "bounds": {
+    "x": [
+     500.0,
+     1000.0
+    ],
+    "z": [
+     -2000.0,
+     -1500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "H1/roads.json",
+    "buildings": "H1/buildings.json",
+    "buildingsBin": "H1/buildings.bin",
+    "terrain": "H1/terrain.u16",
+    "terrainHeader": "H1/terrain.json",
+    "features": "H1/features.json",
+    "ortho": "H1/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 83,
+    "nodes": 69,
+    "buildings": 609,
+    "trees": 85,
+    "areas": 3,
+    "points": 106,
+    "terrainMinMax": [
+     84.1,
+     101.65
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_149166_20261003/shp/UrbISBuildings3D_149166_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_149167_20261003/shp/UrbISBuildings3D_149167_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_149166_20211009_50/UrbDTM_2021_149166.tif",
+     "DTM_31370_TIFF_149167_20211009_50/UrbDTM_2021_149167.tif"
+    ]
+   }
+  },
+  {
+   "name": "I1",
+   "i": 2,
+   "j": -4,
+   "bounds": {
+    "x": [
+     1000.0,
+     1500.0
+    ],
+    "z": [
+     -2000.0,
+     -1500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "I1/roads.json",
+    "buildings": "I1/buildings.json",
+    "buildingsBin": "I1/buildings.bin",
+    "terrain": "I1/terrain.u16",
+    "terrainHeader": "I1/terrain.json",
+    "features": "I1/features.json",
+    "ortho": "I1/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 104,
+    "nodes": 90,
+    "buildings": 351,
+    "trees": 1,
+    "areas": 2,
+    "points": 67,
+    "terrainMinMax": [
+     81.11,
+     101.07
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_149166_20261003/shp/UrbISBuildings3D_149166_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_149167_20261003/shp/UrbISBuildings3D_149167_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_150166_20261003/shp/UrbISBuildings3D_150166_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_150167_20261003/shp/UrbISBuildings3D_150167_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_149166_20211009_50/UrbDTM_2021_149166.tif",
+     "DTM_31370_TIFF_149167_20211009_50/UrbDTM_2021_149167.tif",
+     "DTM_31370_TIFF_150166_20211009_50/UrbDTM_2021_150166.tif",
+     "DTM_31370_TIFF_150167_20211009_50/UrbDTM_2021_150167.tif"
+    ]
+   }
+  },
+  {
+   "name": "D2",
+   "i": -3,
+   "j": -3,
+   "bounds": {
+    "x": [
+     -1500.0,
+     -1000.0
+    ],
+    "z": [
+     -1500.0,
+     -1000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "D2/roads.json",
+    "buildings": "D2/buildings.json",
+    "buildingsBin": "D2/buildings.bin",
+    "terrain": "D2/terrain.u16",
+    "terrainHeader": "D2/terrain.json",
+    "features": "D2/features.json",
+    "ortho": "D2/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 96,
+    "nodes": 91,
+    "buildings": 3,
+    "trees": 0,
+    "areas": 2,
+    "points": 0,
+    "terrainMinMax": [
+     63.69,
+     95.37
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_147166_20261003/shp/UrbISBuildings3D_147166_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_147166_20211009_50/UrbDTM_2021_147166.tif"
+    ]
+   }
+  },
+  {
+   "name": "E2",
+   "i": -2,
+   "j": -3,
+   "bounds": {
+    "x": [
+     -1000.0,
+     -500.0
+    ],
+    "z": [
+     -1500.0,
+     -1000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "E2/roads.json",
+    "buildings": "E2/buildings.json",
+    "buildingsBin": "E2/buildings.bin",
+    "terrain": "E2/terrain.u16",
+    "terrainHeader": "E2/terrain.json",
+    "features": "E2/features.json",
+    "ortho": "E2/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 93,
+    "nodes": 79,
+    "buildings": 774,
+    "trees": 81,
+    "areas": 2,
+    "points": 71,
+    "terrainMinMax": [
+     60.38,
+     101.83
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_147166_20261003/shp/UrbISBuildings3D_147166_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_148166_20261003/shp/UrbISBuildings3D_148166_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_147166_20211009_50/UrbDTM_2021_147166.tif",
+     "DTM_31370_TIFF_148166_20211009_50/UrbDTM_2021_148166.tif"
+    ]
+   }
+  },
+  {
+   "name": "F2",
+   "i": -1,
+   "j": -3,
+   "bounds": {
+    "x": [
+     -500.0,
+     0.0
+    ],
+    "z": [
+     -1500.0,
+     -1000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "F2/roads.json",
+    "buildings": "F2/buildings.json",
+    "buildingsBin": "F2/buildings.bin",
+    "terrain": "F2/terrain.u16",
+    "terrainHeader": "F2/terrain.json",
+    "features": "F2/features.json",
+    "ortho": "F2/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 108,
+    "nodes": 91,
+    "buildings": 519,
+    "trees": 89,
+    "areas": 17,
+    "points": 71,
+    "terrainMinMax": [
+     71.59,
+     103.58
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_148166_20261003/shp/UrbISBuildings3D_148166_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_148166_20211009_50/UrbDTM_2021_148166.tif"
+    ]
+   }
+  },
+  {
+   "name": "G2",
+   "i": 0,
+   "j": -3,
+   "bounds": {
+    "x": [
+     0.0,
+     500.0
+    ],
+    "z": [
+     -1500.0,
+     -1000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "G2/roads.json",
+    "buildings": "G2/buildings.json",
+    "buildingsBin": "G2/buildings.bin",
+    "terrain": "G2/terrain.u16",
+    "terrainHeader": "G2/terrain.json",
+    "features": "G2/features.json",
+    "ortho": "G2/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 78,
+    "nodes": 73,
+    "buildings": 223,
+    "trees": 104,
+    "areas": 5,
+    "points": 45,
+    "terrainMinMax": [
+     73.03,
+     101.45
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_148166_20261003/shp/UrbISBuildings3D_148166_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_149166_20261003/shp/UrbISBuildings3D_149166_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_148166_20211009_50/UrbDTM_2021_148166.tif",
+     "DTM_31370_TIFF_149166_20211009_50/UrbDTM_2021_149166.tif"
+    ]
+   }
+  },
+  {
+   "name": "H2",
+   "i": 1,
+   "j": -3,
+   "bounds": {
+    "x": [
+     500.0,
+     1000.0
+    ],
+    "z": [
+     -1500.0,
+     -1000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "H2/roads.json",
+    "buildings": "H2/buildings.json",
+    "buildingsBin": "H2/buildings.bin",
+    "terrain": "H2/terrain.u16",
+    "terrainHeader": "H2/terrain.json",
+    "features": "H2/features.json",
+    "ortho": "H2/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 73,
+    "nodes": 66,
+    "buildings": 354,
+    "trees": 100,
+    "areas": 7,
+    "points": 66,
+    "terrainMinMax": [
+     89.89,
+     115.51
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_149166_20261003/shp/UrbISBuildings3D_149166_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_149166_20211009_50/UrbDTM_2021_149166.tif"
+    ]
+   }
+  },
+  {
+   "name": "I2",
+   "i": 2,
+   "j": -3,
+   "bounds": {
+    "x": [
+     1000.0,
+     1500.0
+    ],
+    "z": [
+     -1500.0,
+     -1000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "I2/roads.json",
+    "buildings": "I2/buildings.json",
+    "buildingsBin": "I2/buildings.bin",
+    "terrain": "I2/terrain.u16",
+    "terrainHeader": "I2/terrain.json",
+    "features": "I2/features.json",
+    "ortho": "I2/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 65,
+    "nodes": 61,
+    "buildings": 410,
+    "trees": 83,
+    "areas": 4,
+    "points": 81,
+    "terrainMinMax": [
+     90.55,
+     114.36
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_149166_20261003/shp/UrbISBuildings3D_149166_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_150166_20261003/shp/UrbISBuildings3D_150166_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_149166_20211009_50/UrbDTM_2021_149166.tif",
+     "DTM_31370_TIFF_150166_20211009_50/UrbDTM_2021_150166.tif"
+    ]
+   }
+  },
+  {
+   "name": "J2",
+   "i": 3,
+   "j": -3,
+   "bounds": {
+    "x": [
+     1500.0,
+     2000.0
+    ],
+    "z": [
+     -1500.0,
+     -1000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "J2/roads.json",
+    "buildings": "J2/buildings.json",
+    "buildingsBin": "J2/buildings.bin",
+    "terrain": "J2/terrain.u16",
+    "terrainHeader": "J2/terrain.json",
+    "features": "J2/features.json",
+    "ortho": "J2/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 51,
+    "nodes": 52,
+    "buildings": 5,
+    "trees": 0,
+    "areas": 5,
+    "points": 0,
+    "terrainMinMax": [
+     82.22,
+     111.56
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_150166_20261003/shp/UrbISBuildings3D_150166_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_150166_20211009_50/UrbDTM_2021_150166.tif"
+    ]
+   }
+  },
+  {
+   "name": "C3",
    "i": -4,
    "j": -2,
    "bounds": {
@@ -62,29 +711,29 @@
    },
    "status": "built",
    "files": {
-    "roads": "A1/roads.json",
-    "buildings": "A1/buildings.json",
-    "buildingsBin": "A1/buildings.bin",
-    "terrain": "A1/terrain.u16",
-    "terrainHeader": "A1/terrain.json",
-    "features": "A1/features.json",
-    "ortho": "A1/ortho.jpg"
+    "roads": "C3/roads.json",
+    "buildings": "C3/buildings.json",
+    "buildingsBin": "C3/buildings.bin",
+    "terrain": "C3/terrain.u16",
+    "terrainHeader": "C3/terrain.json",
+    "features": "C3/features.json",
+    "ortho": "C3/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 57,
-    "nodes": 61,
-    "buildings": 32,
+    "roads": 116,
+    "nodes": 111,
+    "buildings": 116,
     "trees": 0,
     "areas": 1,
-    "points": 21,
+    "points": 22,
     "terrainMinMax": [
      31.37,
      82.19
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_146165_20261003/shp/UrbISBuildings3D_146165_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_146166_20261003/shp/UrbISBuildings3D_146166_BuildingSolids.shp",
@@ -100,7 +749,7 @@
    }
   },
   {
-   "name": "B1",
+   "name": "D3",
    "i": -3,
    "j": -2,
    "bounds": {
@@ -115,20 +764,20 @@
    },
    "status": "built",
    "files": {
-    "roads": "B1/roads.json",
-    "buildings": "B1/buildings.json",
-    "buildingsBin": "B1/buildings.bin",
-    "terrain": "B1/terrain.u16",
-    "terrainHeader": "B1/terrain.json",
-    "features": "B1/features.json",
-    "ortho": "B1/ortho.jpg"
+    "roads": "D3/roads.json",
+    "buildings": "D3/buildings.json",
+    "buildingsBin": "D3/buildings.bin",
+    "terrain": "D3/terrain.u16",
+    "terrainHeader": "D3/terrain.json",
+    "features": "D3/features.json",
+    "ortho": "D3/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 98,
-    "nodes": 93,
-    "buildings": 580,
-    "trees": 0,
+    "roads": 104,
+    "nodes": 101,
+    "buildings": 591,
+    "trees": 16,
     "areas": 4,
     "points": 60,
     "terrainMinMax": [
@@ -137,7 +786,7 @@
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_147165_20261003/shp/UrbISBuildings3D_147165_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_147166_20261003/shp/UrbISBuildings3D_147166_BuildingSolids.shp"
@@ -149,7 +798,7 @@
    }
   },
   {
-   "name": "C1",
+   "name": "E3",
    "i": -2,
    "j": -2,
    "bounds": {
@@ -164,29 +813,29 @@
    },
    "status": "built",
    "files": {
-    "roads": "C1/roads.json",
-    "buildings": "C1/buildings.json",
-    "buildingsBin": "C1/buildings.bin",
-    "terrain": "C1/terrain.u16",
-    "terrainHeader": "C1/terrain.json",
-    "features": "C1/features.json",
-    "ortho": "C1/ortho.jpg"
+    "roads": "E3/roads.json",
+    "buildings": "E3/buildings.json",
+    "buildingsBin": "E3/buildings.bin",
+    "terrain": "E3/terrain.u16",
+    "terrainHeader": "E3/terrain.json",
+    "features": "E3/features.json",
+    "ortho": "E3/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 95,
-    "nodes": 82,
-    "buildings": 534,
-    "trees": 20,
+    "roads": 102,
+    "nodes": 89,
+    "buildings": 616,
+    "trees": 23,
     "areas": 6,
-    "points": 101,
+    "points": 111,
     "terrainMinMax": [
      46.36,
      84.19
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_147165_20261003/shp/UrbISBuildings3D_147165_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_147166_20261003/shp/UrbISBuildings3D_147166_BuildingSolids.shp",
@@ -202,7 +851,7 @@
    }
   },
   {
-   "name": "D1",
+   "name": "F3",
    "i": -1,
    "j": -2,
    "bounds": {
@@ -217,29 +866,29 @@
    },
    "status": "built",
    "files": {
-    "roads": "D1/roads.json",
-    "buildings": "D1/buildings.json",
-    "buildingsBin": "D1/buildings.bin",
-    "terrain": "D1/terrain.u16",
-    "terrainHeader": "D1/terrain.json",
-    "features": "D1/features.json",
-    "ortho": "D1/ortho.jpg"
+    "roads": "F3/roads.json",
+    "buildings": "F3/buildings.json",
+    "buildingsBin": "F3/buildings.bin",
+    "terrain": "F3/terrain.u16",
+    "terrainHeader": "F3/terrain.json",
+    "features": "F3/features.json",
+    "ortho": "F3/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 86,
-    "nodes": 79,
-    "buildings": 197,
-    "trees": 26,
-    "areas": 6,
-    "points": 55,
+    "roads": 95,
+    "nodes": 87,
+    "buildings": 212,
+    "trees": 30,
+    "areas": 7,
+    "points": 66,
     "terrainMinMax": [
      47.52,
      83.33
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_148165_20261003/shp/UrbISBuildings3D_148165_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_148166_20261003/shp/UrbISBuildings3D_148166_BuildingSolids.shp"
@@ -251,7 +900,7 @@
    }
   },
   {
-   "name": "E1",
+   "name": "G3",
    "i": 0,
    "j": -2,
    "bounds": {
@@ -266,29 +915,29 @@
    },
    "status": "built",
    "files": {
-    "roads": "E1/roads.json",
-    "buildings": "E1/buildings.json",
-    "buildingsBin": "E1/buildings.bin",
-    "terrain": "E1/terrain.u16",
-    "terrainHeader": "E1/terrain.json",
-    "features": "E1/features.json",
-    "ortho": "E1/ortho.jpg"
+    "roads": "G3/roads.json",
+    "buildings": "G3/buildings.json",
+    "buildingsBin": "G3/buildings.bin",
+    "terrain": "G3/terrain.u16",
+    "terrainHeader": "G3/terrain.json",
+    "features": "G3/features.json",
+    "ortho": "G3/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 83,
-    "nodes": 86,
-    "buildings": 150,
-    "trees": 33,
-    "areas": 18,
-    "points": 9,
+    "roads": 102,
+    "nodes": 101,
+    "buildings": 172,
+    "trees": 45,
+    "areas": 19,
+    "points": 14,
     "terrainMinMax": [
      53.42,
      94.8
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_148165_20261003/shp/UrbISBuildings3D_148165_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_148166_20261003/shp/UrbISBuildings3D_148166_BuildingSolids.shp",
@@ -304,7 +953,7 @@
    }
   },
   {
-   "name": "F1",
+   "name": "H3",
    "i": 1,
    "j": -2,
    "bounds": {
@@ -319,29 +968,29 @@
    },
    "status": "built",
    "files": {
-    "roads": "F1/roads.json",
-    "buildings": "F1/buildings.json",
-    "buildingsBin": "F1/buildings.bin",
-    "terrain": "F1/terrain.u16",
-    "terrainHeader": "F1/terrain.json",
-    "features": "F1/features.json",
-    "ortho": "F1/ortho.jpg"
+    "roads": "H3/roads.json",
+    "buildings": "H3/buildings.json",
+    "buildingsBin": "H3/buildings.bin",
+    "terrain": "H3/terrain.u16",
+    "terrainHeader": "H3/terrain.json",
+    "features": "H3/features.json",
+    "ortho": "H3/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 72,
-    "nodes": 76,
-    "buildings": 345,
-    "trees": 21,
-    "areas": 2,
-    "points": 59,
+    "roads": 84,
+    "nodes": 88,
+    "buildings": 386,
+    "trees": 27,
+    "areas": 3,
+    "points": 68,
     "terrainMinMax": [
      69.68,
      109.99
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_149165_20261003/shp/UrbISBuildings3D_149165_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_149166_20261003/shp/UrbISBuildings3D_149166_BuildingSolids.shp"
@@ -353,7 +1002,7 @@
    }
   },
   {
-   "name": "G1",
+   "name": "I3",
    "i": 2,
    "j": -2,
    "bounds": {
@@ -368,19 +1017,19 @@
    },
    "status": "built",
    "files": {
-    "roads": "G1/roads.json",
-    "buildings": "G1/buildings.json",
-    "buildingsBin": "G1/buildings.bin",
-    "terrain": "G1/terrain.u16",
-    "terrainHeader": "G1/terrain.json",
-    "features": "G1/features.json",
-    "ortho": "G1/ortho.jpg"
+    "roads": "I3/roads.json",
+    "buildings": "I3/buildings.json",
+    "buildingsBin": "I3/buildings.bin",
+    "terrain": "I3/terrain.u16",
+    "terrainHeader": "I3/terrain.json",
+    "features": "I3/features.json",
+    "ortho": "I3/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 77,
-    "nodes": 72,
-    "buildings": 331,
+    "roads": 79,
+    "nodes": 73,
+    "buildings": 406,
     "trees": 21,
     "areas": 3,
     "points": 34,
@@ -390,7 +1039,7 @@
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_149165_20261003/shp/UrbISBuildings3D_149165_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_149166_20261003/shp/UrbISBuildings3D_149166_BuildingSolids.shp",
@@ -406,7 +1055,7 @@
    }
   },
   {
-   "name": "H1",
+   "name": "J3",
    "i": 3,
    "j": -2,
    "bounds": {
@@ -421,29 +1070,29 @@
    },
    "status": "built",
    "files": {
-    "roads": "H1/roads.json",
-    "buildings": "H1/buildings.json",
-    "buildingsBin": "H1/buildings.bin",
-    "terrain": "H1/terrain.u16",
-    "terrainHeader": "H1/terrain.json",
-    "features": "H1/features.json",
-    "ortho": "H1/ortho.jpg"
+    "roads": "J3/roads.json",
+    "buildings": "J3/buildings.json",
+    "buildingsBin": "J3/buildings.bin",
+    "terrain": "J3/terrain.u16",
+    "terrainHeader": "J3/terrain.json",
+    "features": "J3/features.json",
+    "ortho": "J3/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 46,
-    "nodes": 45,
-    "buildings": 34,
-    "trees": 1,
-    "areas": 2,
-    "points": 16,
+    "roads": 55,
+    "nodes": 55,
+    "buildings": 54,
+    "trees": 4,
+    "areas": 4,
+    "points": 28,
     "terrainMinMax": [
      94.07,
      118.51
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_150165_20261003/shp/UrbISBuildings3D_150165_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_150166_20261003/shp/UrbISBuildings3D_150166_BuildingSolids.shp"
@@ -455,7 +1104,54 @@
    }
   },
   {
-   "name": "A2",
+   "name": "B4",
+   "i": -5,
+   "j": -1,
+   "bounds": {
+    "x": [
+     -2500.0,
+     -2000.0
+    ],
+    "z": [
+     -500.0,
+     0.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "B4/roads.json",
+    "buildings": "B4/buildings.json",
+    "buildingsBin": "B4/buildings.bin",
+    "terrain": "B4/terrain.u16",
+    "terrainHeader": "B4/terrain.json",
+    "features": "B4/features.json",
+    "ortho": "B4/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 139,
+    "nodes": 130,
+    "buildings": 14,
+    "trees": 0,
+    "areas": 5,
+    "points": 6,
+    "terrainMinMax": [
+     21.37,
+     41.75
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_146165_20261003/shp/UrbISBuildings3D_146165_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_146165_20211009_50/UrbDTM_2021_146165.tif"
+    ]
+   }
+  },
+  {
+   "name": "C4",
    "i": -4,
    "j": -1,
    "bounds": {
@@ -470,29 +1166,29 @@
    },
    "status": "built",
    "files": {
-    "roads": "A2/roads.json",
-    "buildings": "A2/buildings.json",
-    "buildingsBin": "A2/buildings.bin",
-    "terrain": "A2/terrain.u16",
-    "terrainHeader": "A2/terrain.json",
-    "features": "A2/features.json",
-    "ortho": "A2/ortho.jpg"
+    "roads": "C4/roads.json",
+    "buildings": "C4/buildings.json",
+    "buildingsBin": "C4/buildings.bin",
+    "terrain": "C4/terrain.u16",
+    "terrainHeader": "C4/terrain.json",
+    "features": "C4/features.json",
+    "ortho": "C4/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 52,
-    "nodes": 56,
-    "buildings": 95,
-    "trees": 0,
-    "areas": 0,
-    "points": 16,
+    "roads": 111,
+    "nodes": 118,
+    "buildings": 326,
+    "trees": 2,
+    "areas": 8,
+    "points": 38,
     "terrainMinMax": [
      30.4,
      79.02
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_146165_20261003/shp/UrbISBuildings3D_146165_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_147165_20261003/shp/UrbISBuildings3D_147165_BuildingSolids.shp"
@@ -504,7 +1200,7 @@
    }
   },
   {
-   "name": "B2",
+   "name": "D4",
    "i": -3,
    "j": -1,
    "bounds": {
@@ -519,29 +1215,29 @@
    },
    "status": "built",
    "files": {
-    "roads": "B2/roads.json",
-    "buildings": "B2/buildings.json",
-    "buildingsBin": "B2/buildings.bin",
-    "terrain": "B2/terrain.u16",
-    "terrainHeader": "B2/terrain.json",
-    "features": "B2/features.json",
-    "ortho": "B2/ortho.jpg"
+    "roads": "D4/roads.json",
+    "buildings": "D4/buildings.json",
+    "buildingsBin": "D4/buildings.bin",
+    "terrain": "D4/terrain.u16",
+    "terrainHeader": "D4/terrain.json",
+    "features": "D4/features.json",
+    "ortho": "D4/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
     "roads": 123,
     "nodes": 111,
     "buildings": 432,
-    "trees": 18,
-    "areas": 12,
-    "points": 46,
+    "trees": 34,
+    "areas": 13,
+    "points": 47,
     "terrainMinMax": [
      35.04,
      77.4
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_147165_20261003/shp/UrbISBuildings3D_147165_BuildingSolids.shp"
     ],
@@ -551,7 +1247,7 @@
    }
   },
   {
-   "name": "C2",
+   "name": "E4",
    "i": -2,
    "j": -1,
    "bounds": {
@@ -566,13 +1262,13 @@
    },
    "status": "built",
    "files": {
-    "roads": "C2/roads.json",
-    "buildings": "C2/buildings.json",
-    "buildingsBin": "C2/buildings.bin",
-    "terrain": "C2/terrain.u16",
-    "terrainHeader": "C2/terrain.json",
-    "features": "C2/features.json",
-    "ortho": "C2/ortho.jpg"
+    "roads": "E4/roads.json",
+    "buildings": "E4/buildings.json",
+    "buildingsBin": "E4/buildings.bin",
+    "terrain": "E4/terrain.u16",
+    "terrainHeader": "E4/terrain.json",
+    "features": "E4/features.json",
+    "ortho": "E4/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -588,7 +1284,7 @@
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_147165_20261003/shp/UrbISBuildings3D_147165_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_148165_20261003/shp/UrbISBuildings3D_148165_BuildingSolids.shp"
@@ -600,7 +1296,7 @@
    }
   },
   {
-   "name": "D2",
+   "name": "F4",
    "i": -1,
    "j": -1,
    "bounds": {
@@ -615,29 +1311,29 @@
    },
    "status": "built",
    "files": {
-    "roads": "D2/roads.json",
-    "buildings": "D2/buildings.json",
-    "buildingsBin": "D2/buildings.bin",
-    "terrain": "D2/terrain.u16",
-    "terrainHeader": "D2/terrain.json",
-    "features": "D2/features.json",
-    "ortho": "D2/ortho.jpg"
+    "roads": "F4/roads.json",
+    "buildings": "F4/buildings.json",
+    "buildingsBin": "F4/buildings.bin",
+    "terrain": "F4/terrain.u16",
+    "terrainHeader": "F4/terrain.json",
+    "features": "F4/features.json",
+    "ortho": "F4/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 101,
-    "nodes": 93,
+    "roads": 100,
+    "nodes": 91,
     "buildings": 178,
     "trees": 19,
     "areas": 18,
-    "points": 34,
+    "points": 33,
     "terrainMinMax": [
      46.47,
      88.57
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_148165_20261003/shp/UrbISBuildings3D_148165_BuildingSolids.shp"
     ],
@@ -647,7 +1343,7 @@
    }
   },
   {
-   "name": "E2",
+   "name": "G4",
    "i": 0,
    "j": -1,
    "bounds": {
@@ -662,17 +1358,17 @@
    },
    "status": "built",
    "files": {
-    "roads": "E2/roads.json",
-    "buildings": "E2/buildings.json",
-    "buildingsBin": "E2/buildings.bin",
-    "terrain": "E2/terrain.u16",
-    "terrainHeader": "E2/terrain.json",
-    "features": "E2/features.json",
-    "ortho": "E2/ortho.jpg"
+    "roads": "G4/roads.json",
+    "buildings": "G4/buildings.json",
+    "buildingsBin": "G4/buildings.bin",
+    "terrain": "G4/terrain.u16",
+    "terrainHeader": "G4/terrain.json",
+    "features": "G4/features.json",
+    "ortho": "G4/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 106,
+    "roads": 109,
     "nodes": 105,
     "buildings": 224,
     "trees": 1,
@@ -684,7 +1380,7 @@
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_148165_20261003/shp/UrbISBuildings3D_148165_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_149165_20261003/shp/UrbISBuildings3D_149165_BuildingSolids.shp"
@@ -696,7 +1392,7 @@
    }
   },
   {
-   "name": "F2",
+   "name": "H4",
    "i": 1,
    "j": -1,
    "bounds": {
@@ -711,29 +1407,29 @@
    },
    "status": "built",
    "files": {
-    "roads": "F2/roads.json",
-    "buildings": "F2/buildings.json",
-    "buildingsBin": "F2/buildings.bin",
-    "terrain": "F2/terrain.u16",
-    "terrainHeader": "F2/terrain.json",
-    "features": "F2/features.json",
-    "ortho": "F2/ortho.jpg"
+    "roads": "H4/roads.json",
+    "buildings": "H4/buildings.json",
+    "buildingsBin": "H4/buildings.bin",
+    "terrain": "H4/terrain.u16",
+    "terrainHeader": "H4/terrain.json",
+    "features": "H4/features.json",
+    "ortho": "H4/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 90,
-    "nodes": 86,
+    "roads": 96,
+    "nodes": 91,
     "buildings": 259,
-    "trees": 2,
+    "trees": 74,
     "areas": 14,
-    "points": 29,
+    "points": 33,
     "terrainMinMax": [
      76.69,
      106.69
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_149165_20261003/shp/UrbISBuildings3D_149165_BuildingSolids.shp"
     ],
@@ -743,7 +1439,7 @@
    }
   },
   {
-   "name": "G2",
+   "name": "I4",
    "i": 2,
    "j": -1,
    "bounds": {
@@ -758,13 +1454,13 @@
    },
    "status": "built",
    "files": {
-    "roads": "G2/roads.json",
-    "buildings": "G2/buildings.json",
-    "buildingsBin": "G2/buildings.bin",
-    "terrain": "G2/terrain.u16",
-    "terrainHeader": "G2/terrain.json",
-    "features": "G2/features.json",
-    "ortho": "G2/ortho.jpg"
+    "roads": "I4/roads.json",
+    "buildings": "I4/buildings.json",
+    "buildingsBin": "I4/buildings.bin",
+    "terrain": "I4/terrain.u16",
+    "terrainHeader": "I4/terrain.json",
+    "features": "I4/features.json",
+    "ortho": "I4/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -780,7 +1476,7 @@
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_149165_20261003/shp/UrbISBuildings3D_149165_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_150165_20261003/shp/UrbISBuildings3D_150165_BuildingSolids.shp"
@@ -792,7 +1488,7 @@
    }
   },
   {
-   "name": "H2",
+   "name": "J4",
    "i": 3,
    "j": -1,
    "bounds": {
@@ -807,29 +1503,29 @@
    },
    "status": "built",
    "files": {
-    "roads": "H2/roads.json",
-    "buildings": "H2/buildings.json",
-    "buildingsBin": "H2/buildings.bin",
-    "terrain": "H2/terrain.u16",
-    "terrainHeader": "H2/terrain.json",
-    "features": "H2/features.json",
-    "ortho": "H2/ortho.jpg"
+    "roads": "J4/roads.json",
+    "buildings": "J4/buildings.json",
+    "buildingsBin": "J4/buildings.bin",
+    "terrain": "J4/terrain.u16",
+    "terrainHeader": "J4/terrain.json",
+    "features": "J4/features.json",
+    "ortho": "J4/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 61,
-    "nodes": 58,
-    "buildings": 53,
-    "trees": 0,
-    "areas": 5,
-    "points": 0,
+    "roads": 89,
+    "nodes": 78,
+    "buildings": 247,
+    "trees": 12,
+    "areas": 7,
+    "points": 38,
     "terrainMinMax": [
      95.11,
      117.85
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_150165_20261003/shp/UrbISBuildings3D_150165_BuildingSolids.shp"
     ],
@@ -839,7 +1535,156 @@
    }
   },
   {
-   "name": "A3",
+   "name": "K4",
+   "i": 4,
+   "j": -1,
+   "bounds": {
+    "x": [
+     2000.0,
+     2500.0
+    ],
+    "z": [
+     -500.0,
+     0.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "K4/roads.json",
+    "buildings": "K4/buildings.json",
+    "buildingsBin": "K4/buildings.bin",
+    "terrain": "K4/terrain.u16",
+    "terrainHeader": "K4/terrain.json",
+    "features": "K4/features.json",
+    "ortho": "K4/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 30,
+    "nodes": 31,
+    "buildings": 7,
+    "trees": 0,
+    "areas": 1,
+    "points": 5,
+    "terrainMinMax": [
+     89.77,
+     110.93
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_150165_20261003/shp/UrbISBuildings3D_150165_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_151165_20261003/shp/UrbISBuildings3D_151165_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_150165_20211009_50/UrbDTM_2021_150165.tif",
+     "DTM_31370_TIFF_151165_20211009_50/UrbDTM_2021_151165.tif"
+    ]
+   }
+  },
+  {
+   "name": "A5",
+   "i": -6,
+   "j": 0,
+   "bounds": {
+    "x": [
+     -3000.0,
+     -2500.0
+    ],
+    "z": [
+     0.0,
+     500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "A5/roads.json",
+    "buildings": "A5/buildings.json",
+    "buildingsBin": "A5/buildings.bin",
+    "terrain": "A5/terrain.u16",
+    "terrainHeader": "A5/terrain.json",
+    "features": "A5/features.json",
+    "ortho": "A5/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 101,
+    "nodes": 97,
+    "buildings": 3,
+    "trees": 0,
+    "areas": 5,
+    "points": 2,
+    "terrainMinMax": [
+     21.09,
+     27.16
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_145165_20261003/shp/UrbISBuildings3D_145165_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_146165_20261003/shp/UrbISBuildings3D_146165_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_145164_20211009_50/UrbDTM_2021_145164.tif",
+     "DTM_31370_TIFF_145165_20211009_50/UrbDTM_2021_145165.tif",
+     "DTM_31370_TIFF_146164_20211009_50/UrbDTM_2021_146164.tif",
+     "DTM_31370_TIFF_146165_20211009_50/UrbDTM_2021_146165.tif"
+    ]
+   }
+  },
+  {
+   "name": "B5",
+   "i": -5,
+   "j": 0,
+   "bounds": {
+    "x": [
+     -2500.0,
+     -2000.0
+    ],
+    "z": [
+     0.0,
+     500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "B5/roads.json",
+    "buildings": "B5/buildings.json",
+    "buildingsBin": "B5/buildings.bin",
+    "terrain": "B5/terrain.u16",
+    "terrainHeader": "B5/terrain.json",
+    "features": "B5/features.json",
+    "ortho": "B5/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 131,
+    "nodes": 130,
+    "buildings": 180,
+    "trees": 69,
+    "areas": 29,
+    "points": 63,
+    "terrainMinMax": [
+     21.58,
+     35.78
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_146164_20261003/shp/UrbISBuildings3D_146164_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_146165_20261003/shp/UrbISBuildings3D_146165_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_146164_20211009_50/UrbDTM_2021_146164.tif",
+     "DTM_31370_TIFF_146165_20211009_50/UrbDTM_2021_146165.tif"
+    ]
+   }
+  },
+  {
+   "name": "C5",
    "i": -4,
    "j": 0,
    "bounds": {
@@ -854,29 +1699,29 @@
    },
    "status": "built",
    "files": {
-    "roads": "A3/roads.json",
-    "buildings": "A3/buildings.json",
-    "buildingsBin": "A3/buildings.bin",
-    "terrain": "A3/terrain.u16",
-    "terrainHeader": "A3/terrain.json",
-    "features": "A3/features.json",
-    "ortho": "A3/ortho.jpg"
+    "roads": "C5/roads.json",
+    "buildings": "C5/buildings.json",
+    "buildingsBin": "C5/buildings.bin",
+    "terrain": "C5/terrain.u16",
+    "terrainHeader": "C5/terrain.json",
+    "features": "C5/features.json",
+    "ortho": "C5/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 81,
-    "nodes": 83,
-    "buildings": 124,
-    "trees": 5,
-    "areas": 4,
-    "points": 3,
+    "roads": 141,
+    "nodes": 136,
+    "buildings": 637,
+    "trees": 9,
+    "areas": 5,
+    "points": 65,
     "terrainMinMax": [
      27.93,
      53.66
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_146164_20261003/shp/UrbISBuildings3D_146164_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_146165_20261003/shp/UrbISBuildings3D_146165_BuildingSolids.shp",
@@ -892,7 +1737,7 @@
    }
   },
   {
-   "name": "B3",
+   "name": "D5",
    "i": -3,
    "j": 0,
    "bounds": {
@@ -907,13 +1752,13 @@
    },
    "status": "built",
    "files": {
-    "roads": "B3/roads.json",
-    "buildings": "B3/buildings.json",
-    "buildingsBin": "B3/buildings.bin",
-    "terrain": "B3/terrain.u16",
-    "terrainHeader": "B3/terrain.json",
-    "features": "B3/features.json",
-    "ortho": "B3/ortho.jpg"
+    "roads": "D5/roads.json",
+    "buildings": "D5/buildings.json",
+    "buildingsBin": "D5/buildings.bin",
+    "terrain": "D5/terrain.u16",
+    "terrainHeader": "D5/terrain.json",
+    "features": "D5/features.json",
+    "ortho": "D5/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -929,7 +1774,7 @@
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_147164_20261003/shp/UrbISBuildings3D_147164_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_147165_20261003/shp/UrbISBuildings3D_147165_BuildingSolids.shp"
@@ -941,7 +1786,7 @@
    }
   },
   {
-   "name": "C3",
+   "name": "E5",
    "i": -2,
    "j": 0,
    "bounds": {
@@ -956,13 +1801,13 @@
    },
    "status": "built",
    "files": {
-    "roads": "C3/roads.json",
-    "buildings": "C3/buildings.json",
-    "buildingsBin": "C3/buildings.bin",
-    "terrain": "C3/terrain.u16",
-    "terrainHeader": "C3/terrain.json",
-    "features": "C3/features.json",
-    "ortho": "C3/ortho.jpg"
+    "roads": "E5/roads.json",
+    "buildings": "E5/buildings.json",
+    "buildingsBin": "E5/buildings.bin",
+    "terrain": "E5/terrain.u16",
+    "terrainHeader": "E5/terrain.json",
+    "features": "E5/features.json",
+    "ortho": "E5/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -971,14 +1816,14 @@
     "buildings": 666,
     "trees": 15,
     "areas": 5,
-    "points": 43,
+    "points": 44,
     "terrainMinMax": [
      39.41,
      79.86
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_147164_20261003/shp/UrbISBuildings3D_147164_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_147165_20261003/shp/UrbISBuildings3D_147165_BuildingSolids.shp",
@@ -994,7 +1839,7 @@
    }
   },
   {
-   "name": "D3",
+   "name": "F5",
    "i": -1,
    "j": 0,
    "bounds": {
@@ -1009,20 +1854,20 @@
    },
    "status": "built",
    "files": {
-    "roads": "D3/roads.json",
-    "buildings": "D3/buildings.json",
-    "buildingsBin": "D3/buildings.bin",
-    "terrain": "D3/terrain.u16",
-    "terrainHeader": "D3/terrain.json",
-    "features": "D3/features.json",
-    "ortho": "D3/ortho.jpg"
+    "roads": "F5/roads.json",
+    "buildings": "F5/buildings.json",
+    "buildingsBin": "F5/buildings.bin",
+    "terrain": "F5/terrain.u16",
+    "terrainHeader": "F5/terrain.json",
+    "features": "F5/features.json",
+    "ortho": "F5/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 81,
-    "nodes": 81,
+    "roads": 80,
+    "nodes": 79,
     "buildings": 303,
-    "trees": 3,
+    "trees": 5,
     "areas": 14,
     "points": 61,
     "terrainMinMax": [
@@ -1031,7 +1876,7 @@
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_148164_20261003/shp/UrbISBuildings3D_148164_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_148165_20261003/shp/UrbISBuildings3D_148165_BuildingSolids.shp"
@@ -1043,7 +1888,7 @@
    }
   },
   {
-   "name": "E3",
+   "name": "G5",
    "i": 0,
    "j": 0,
    "bounds": {
@@ -1058,17 +1903,17 @@
    },
    "status": "built",
    "files": {
-    "roads": "E3/roads.json",
-    "buildings": "E3/buildings.json",
-    "buildingsBin": "E3/buildings.bin",
-    "terrain": "E3/terrain.u16",
-    "terrainHeader": "E3/terrain.json",
-    "features": "E3/features.json",
-    "ortho": "E3/ortho.jpg"
+    "roads": "G5/roads.json",
+    "buildings": "G5/buildings.json",
+    "buildingsBin": "G5/buildings.bin",
+    "terrain": "G5/terrain.u16",
+    "terrainHeader": "G5/terrain.json",
+    "features": "G5/features.json",
+    "ortho": "G5/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 113,
+    "roads": 115,
     "nodes": 112,
     "buildings": 246,
     "trees": 0,
@@ -1080,7 +1925,7 @@
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_148164_20261003/shp/UrbISBuildings3D_148164_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_148165_20261003/shp/UrbISBuildings3D_148165_BuildingSolids.shp",
@@ -1096,7 +1941,7 @@
    }
   },
   {
-   "name": "F3",
+   "name": "H5",
    "i": 1,
    "j": 0,
    "bounds": {
@@ -1111,29 +1956,29 @@
    },
    "status": "built",
    "files": {
-    "roads": "F3/roads.json",
-    "buildings": "F3/buildings.json",
-    "buildingsBin": "F3/buildings.bin",
-    "terrain": "F3/terrain.u16",
-    "terrainHeader": "F3/terrain.json",
-    "features": "F3/features.json",
-    "ortho": "F3/ortho.jpg"
+    "roads": "H5/roads.json",
+    "buildings": "H5/buildings.json",
+    "buildingsBin": "H5/buildings.bin",
+    "terrain": "H5/terrain.u16",
+    "terrainHeader": "H5/terrain.json",
+    "features": "H5/features.json",
+    "ortho": "H5/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 106,
-    "nodes": 92,
+    "roads": 111,
+    "nodes": 97,
     "buildings": 265,
-    "trees": 5,
-    "areas": 12,
-    "points": 16,
+    "trees": 22,
+    "areas": 13,
+    "points": 22,
     "terrainMinMax": [
      71.21,
      106.12
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_149164_20261003/shp/UrbISBuildings3D_149164_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_149165_20261003/shp/UrbISBuildings3D_149165_BuildingSolids.shp"
@@ -1145,7 +1990,7 @@
    }
   },
   {
-   "name": "G3",
+   "name": "I5",
    "i": 2,
    "j": 0,
    "bounds": {
@@ -1160,13 +2005,13 @@
    },
    "status": "built",
    "files": {
-    "roads": "G3/roads.json",
-    "buildings": "G3/buildings.json",
-    "buildingsBin": "G3/buildings.bin",
-    "terrain": "G3/terrain.u16",
-    "terrainHeader": "G3/terrain.json",
-    "features": "G3/features.json",
-    "ortho": "G3/ortho.jpg"
+    "roads": "I5/roads.json",
+    "buildings": "I5/buildings.json",
+    "buildingsBin": "I5/buildings.bin",
+    "terrain": "I5/terrain.u16",
+    "terrainHeader": "I5/terrain.json",
+    "features": "I5/features.json",
+    "ortho": "I5/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
@@ -1175,14 +2020,14 @@
     "buildings": 349,
     "trees": 0,
     "areas": 9,
-    "points": 32,
+    "points": 33,
     "terrainMinMax": [
      69.49,
      111.14
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_149164_20261003/shp/UrbISBuildings3D_149164_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_149165_20261003/shp/UrbISBuildings3D_149165_BuildingSolids.shp",
@@ -1198,7 +2043,7 @@
    }
   },
   {
-   "name": "H3",
+   "name": "J5",
    "i": 3,
    "j": 0,
    "bounds": {
@@ -1213,29 +2058,29 @@
    },
    "status": "built",
    "files": {
-    "roads": "H3/roads.json",
-    "buildings": "H3/buildings.json",
-    "buildingsBin": "H3/buildings.bin",
-    "terrain": "H3/terrain.u16",
-    "terrainHeader": "H3/terrain.json",
-    "features": "H3/features.json",
-    "ortho": "H3/ortho.jpg"
+    "roads": "J5/roads.json",
+    "buildings": "J5/buildings.json",
+    "buildingsBin": "J5/buildings.bin",
+    "terrain": "J5/terrain.u16",
+    "terrainHeader": "J5/terrain.json",
+    "features": "J5/features.json",
+    "ortho": "J5/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 61,
-    "nodes": 58,
-    "buildings": 63,
-    "trees": 0,
-    "areas": 5,
-    "points": 3,
+    "roads": 89,
+    "nodes": 82,
+    "buildings": 419,
+    "trees": 3,
+    "areas": 7,
+    "points": 70,
     "terrainMinMax": [
      73.81,
      111.44
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_150164_20261003/shp/UrbISBuildings3D_150164_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_150165_20261003/shp/UrbISBuildings3D_150165_BuildingSolids.shp"
@@ -1247,7 +2092,254 @@
    }
   },
   {
-   "name": "A4",
+   "name": "K5",
+   "i": 4,
+   "j": 0,
+   "bounds": {
+    "x": [
+     2000.0,
+     2500.0
+    ],
+    "z": [
+     0.0,
+     500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "K5/roads.json",
+    "buildings": "K5/buildings.json",
+    "buildingsBin": "K5/buildings.bin",
+    "terrain": "K5/terrain.u16",
+    "terrainHeader": "K5/terrain.json",
+    "features": "K5/features.json",
+    "ortho": "K5/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 29,
+    "nodes": 29,
+    "buildings": 65,
+    "trees": 107,
+    "areas": 4,
+    "points": 6,
+    "terrainMinMax": [
+     94.34,
+     116.72
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_150164_20261003/shp/UrbISBuildings3D_150164_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_150165_20261003/shp/UrbISBuildings3D_150165_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_150164_20211009_50/UrbDTM_2021_150164.tif",
+     "DTM_31370_TIFF_150165_20211009_50/UrbDTM_2021_150165.tif",
+     "DTM_31370_TIFF_151164_20211009_50/UrbDTM_2021_151164.tif",
+     "DTM_31370_TIFF_151165_20211009_50/UrbDTM_2021_151165.tif"
+    ]
+   }
+  },
+  {
+   "name": "L5",
+   "i": 5,
+   "j": 0,
+   "bounds": {
+    "x": [
+     2500.0,
+     3000.0
+    ],
+    "z": [
+     0.0,
+     500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "L5/roads.json",
+    "buildings": "L5/buildings.json",
+    "buildingsBin": "L5/buildings.bin",
+    "terrain": "L5/terrain.u16",
+    "terrainHeader": "L5/terrain.json",
+    "features": "L5/features.json",
+    "ortho": "L5/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 25,
+    "nodes": 29,
+    "buildings": 0,
+    "trees": 0,
+    "areas": 3,
+    "points": 4,
+    "terrainMinMax": [
+     80.73,
+     114.01
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_151165_20261003/shp/UrbISBuildings3D_151165_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_151164_20211009_50/UrbDTM_2021_151164.tif",
+     "DTM_31370_TIFF_151165_20211009_50/UrbDTM_2021_151165.tif"
+    ]
+   }
+  },
+  {
+   "name": "M5",
+   "i": 6,
+   "j": 0,
+   "bounds": {
+    "x": [
+     3000.0,
+     3500.0
+    ],
+    "z": [
+     0.0,
+     500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "M5/roads.json",
+    "buildings": "M5/buildings.json",
+    "buildingsBin": "M5/buildings.bin",
+    "terrain": "M5/terrain.u16",
+    "terrainHeader": "M5/terrain.json",
+    "features": "M5/features.json",
+    "ortho": "M5/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 58,
+    "nodes": 55,
+    "buildings": 28,
+    "trees": 37,
+    "areas": 10,
+    "points": 11,
+    "terrainMinMax": [
+     84.57,
+     105.75
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_151164_20261003/shp/UrbISBuildings3D_151164_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_151165_20261003/shp/UrbISBuildings3D_151165_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_152165_20261003/shp/UrbISBuildings3D_152165_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_151164_20211009_50/UrbDTM_2021_151164.tif",
+     "DTM_31370_TIFF_151165_20211009_50/UrbDTM_2021_151165.tif",
+     "DTM_31370_TIFF_152164_20211009_50/UrbDTM_2021_152164.tif",
+     "DTM_31370_TIFF_152165_20211009_50/UrbDTM_2021_152165.tif"
+    ]
+   }
+  },
+  {
+   "name": "N5",
+   "i": 7,
+   "j": 0,
+   "bounds": {
+    "x": [
+     3500.0,
+     4000.0
+    ],
+    "z": [
+     0.0,
+     500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "N5/roads.json",
+    "buildings": "N5/buildings.json",
+    "buildingsBin": "N5/buildings.bin",
+    "terrain": "N5/terrain.u16",
+    "terrainHeader": "N5/terrain.json",
+    "features": "N5/features.json",
+    "ortho": "N5/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 104,
+    "nodes": 93,
+    "buildings": 1,
+    "trees": 34,
+    "areas": 4,
+    "points": 5,
+    "terrainMinMax": [
+     84.8,
+     107.0
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_152164_20261003/shp/UrbISBuildings3D_152164_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_152165_20261003/shp/UrbISBuildings3D_152165_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_152164_20211009_50/UrbDTM_2021_152164.tif",
+     "DTM_31370_TIFF_152165_20211009_50/UrbDTM_2021_152165.tif"
+    ]
+   }
+  },
+  {
+   "name": "B6",
+   "i": -5,
+   "j": 1,
+   "bounds": {
+    "x": [
+     -2500.0,
+     -2000.0
+    ],
+    "z": [
+     500.0,
+     1000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "B6/roads.json",
+    "buildings": "B6/buildings.json",
+    "buildingsBin": "B6/buildings.bin",
+    "terrain": "B6/terrain.u16",
+    "terrainHeader": "B6/terrain.json",
+    "features": "B6/features.json",
+    "ortho": "B6/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 123,
+    "nodes": 119,
+    "buildings": 236,
+    "trees": 47,
+    "areas": 5,
+    "points": 19,
+    "terrainMinMax": [
+     24.37,
+     32.13
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_146164_20261003/shp/UrbISBuildings3D_146164_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_146164_20211009_50/UrbDTM_2021_146164.tif"
+    ]
+   }
+  },
+  {
+   "name": "C6",
    "i": -4,
    "j": 1,
    "bounds": {
@@ -1262,29 +2354,29 @@
    },
    "status": "built",
    "files": {
-    "roads": "A4/roads.json",
-    "buildings": "A4/buildings.json",
-    "buildingsBin": "A4/buildings.bin",
-    "terrain": "A4/terrain.u16",
-    "terrainHeader": "A4/terrain.json",
-    "features": "A4/features.json",
-    "ortho": "A4/ortho.jpg"
+    "roads": "C6/roads.json",
+    "buildings": "C6/buildings.json",
+    "buildingsBin": "C6/buildings.bin",
+    "terrain": "C6/terrain.u16",
+    "terrainHeader": "C6/terrain.json",
+    "features": "C6/features.json",
+    "ortho": "C6/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 56,
-    "nodes": 66,
-    "buildings": 42,
+    "roads": 108,
+    "nodes": 117,
+    "buildings": 451,
     "trees": 0,
-    "areas": 1,
-    "points": 2,
+    "areas": 6,
+    "points": 22,
     "terrainMinMax": [
      28.47,
      60.45
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_146164_20261003/shp/UrbISBuildings3D_146164_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_147164_20261003/shp/UrbISBuildings3D_147164_BuildingSolids.shp"
@@ -1296,7 +2388,7 @@
    }
   },
   {
-   "name": "B4",
+   "name": "D6",
    "i": -3,
    "j": 1,
    "bounds": {
@@ -1311,29 +2403,29 @@
    },
    "status": "built",
    "files": {
-    "roads": "B4/roads.json",
-    "buildings": "B4/buildings.json",
-    "buildingsBin": "B4/buildings.bin",
-    "terrain": "B4/terrain.u16",
-    "terrainHeader": "B4/terrain.json",
-    "features": "B4/features.json",
-    "ortho": "B4/ortho.jpg"
+    "roads": "D6/roads.json",
+    "buildings": "D6/buildings.json",
+    "buildingsBin": "D6/buildings.bin",
+    "terrain": "D6/terrain.u16",
+    "terrainHeader": "D6/terrain.json",
+    "features": "D6/features.json",
+    "ortho": "D6/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 110,
-    "nodes": 117,
-    "buildings": 346,
+    "roads": 123,
+    "nodes": 124,
+    "buildings": 371,
     "trees": 10,
-    "areas": 18,
-    "points": 89,
+    "areas": 19,
+    "points": 96,
     "terrainMinMax": [
      38.39,
      73.2
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_147164_20261003/shp/UrbISBuildings3D_147164_BuildingSolids.shp"
     ],
@@ -1343,7 +2435,7 @@
    }
   },
   {
-   "name": "C4",
+   "name": "E6",
    "i": -2,
    "j": 1,
    "bounds": {
@@ -1358,29 +2450,29 @@
    },
    "status": "built",
    "files": {
-    "roads": "C4/roads.json",
-    "buildings": "C4/buildings.json",
-    "buildingsBin": "C4/buildings.bin",
-    "terrain": "C4/terrain.u16",
-    "terrainHeader": "C4/terrain.json",
-    "features": "C4/features.json",
-    "ortho": "C4/ortho.jpg"
+    "roads": "E6/roads.json",
+    "buildings": "E6/buildings.json",
+    "buildingsBin": "E6/buildings.bin",
+    "terrain": "E6/terrain.u16",
+    "terrainHeader": "E6/terrain.json",
+    "features": "E6/features.json",
+    "ortho": "E6/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 103,
-    "nodes": 97,
-    "buildings": 424,
+    "roads": 115,
+    "nodes": 104,
+    "buildings": 481,
     "trees": 2,
     "areas": 3,
-    "points": 16,
+    "points": 24,
     "terrainMinMax": [
      44.56,
      79.9
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_147164_20261003/shp/UrbISBuildings3D_147164_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_148164_20261003/shp/UrbISBuildings3D_148164_BuildingSolids.shp"
@@ -1392,7 +2484,7 @@
    }
   },
   {
-   "name": "D4",
+   "name": "F6",
    "i": -1,
    "j": 1,
    "bounds": {
@@ -1407,29 +2499,29 @@
    },
    "status": "built",
    "files": {
-    "roads": "D4/roads.json",
-    "buildings": "D4/buildings.json",
-    "buildingsBin": "D4/buildings.bin",
-    "terrain": "D4/terrain.u16",
-    "terrainHeader": "D4/terrain.json",
-    "features": "D4/features.json",
-    "ortho": "D4/ortho.jpg"
+    "roads": "F6/roads.json",
+    "buildings": "F6/buildings.json",
+    "buildingsBin": "F6/buildings.bin",
+    "terrain": "F6/terrain.u16",
+    "terrainHeader": "F6/terrain.json",
+    "features": "F6/features.json",
+    "ortho": "F6/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 110,
+    "roads": 113,
     "nodes": 107,
-    "buildings": 461,
-    "trees": 17,
+    "buildings": 508,
+    "trees": 19,
     "areas": 13,
-    "points": 37,
+    "points": 38,
     "terrainMinMax": [
      46.14,
      80.34
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_148164_20261003/shp/UrbISBuildings3D_148164_BuildingSolids.shp"
     ],
@@ -1439,7 +2531,7 @@
    }
   },
   {
-   "name": "E4",
+   "name": "G6",
    "i": 0,
    "j": 1,
    "bounds": {
@@ -1454,21 +2546,21 @@
    },
    "status": "built",
    "files": {
-    "roads": "E4/roads.json",
-    "buildings": "E4/buildings.json",
-    "buildingsBin": "E4/buildings.bin",
-    "terrain": "E4/terrain.u16",
-    "terrainHeader": "E4/terrain.json",
-    "features": "E4/features.json",
-    "ortho": "E4/ortho.jpg"
+    "roads": "G6/roads.json",
+    "buildings": "G6/buildings.json",
+    "buildingsBin": "G6/buildings.bin",
+    "terrain": "G6/terrain.u16",
+    "terrainHeader": "G6/terrain.json",
+    "features": "G6/features.json",
+    "ortho": "G6/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
     "roads": 96,
     "nodes": 103,
-    "buildings": 415,
+    "buildings": 425,
     "trees": 0,
-    "areas": 10,
+    "areas": 13,
     "points": 33,
     "terrainMinMax": [
      56.23,
@@ -1476,7 +2568,7 @@
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_148164_20261003/shp/UrbISBuildings3D_148164_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_149164_20261003/shp/UrbISBuildings3D_149164_BuildingSolids.shp"
@@ -1488,7 +2580,7 @@
    }
   },
   {
-   "name": "F4",
+   "name": "H6",
    "i": 1,
    "j": 1,
    "bounds": {
@@ -1503,29 +2595,29 @@
    },
    "status": "built",
    "files": {
-    "roads": "F4/roads.json",
-    "buildings": "F4/buildings.json",
-    "buildingsBin": "F4/buildings.bin",
-    "terrain": "F4/terrain.u16",
-    "terrainHeader": "F4/terrain.json",
-    "features": "F4/features.json",
-    "ortho": "F4/ortho.jpg"
+    "roads": "H6/roads.json",
+    "buildings": "H6/buildings.json",
+    "buildingsBin": "H6/buildings.bin",
+    "terrain": "H6/terrain.u16",
+    "terrainHeader": "H6/terrain.json",
+    "features": "H6/features.json",
+    "ortho": "H6/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 75,
-    "nodes": 75,
-    "buildings": 479,
+    "roads": 78,
+    "nodes": 77,
+    "buildings": 535,
     "trees": 13,
-    "areas": 7,
-    "points": 40,
+    "areas": 8,
+    "points": 43,
     "terrainMinMax": [
      59.44,
      96.89
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_149164_20261003/shp/UrbISBuildings3D_149164_BuildingSolids.shp"
     ],
@@ -1535,7 +2627,7 @@
    }
   },
   {
-   "name": "G4",
+   "name": "I6",
    "i": 2,
    "j": 1,
    "bounds": {
@@ -1550,29 +2642,29 @@
    },
    "status": "built",
    "files": {
-    "roads": "G4/roads.json",
-    "buildings": "G4/buildings.json",
-    "buildingsBin": "G4/buildings.bin",
-    "terrain": "G4/terrain.u16",
-    "terrainHeader": "G4/terrain.json",
-    "features": "G4/features.json",
-    "ortho": "G4/ortho.jpg"
+    "roads": "I6/roads.json",
+    "buildings": "I6/buildings.json",
+    "buildingsBin": "I6/buildings.bin",
+    "terrain": "I6/terrain.u16",
+    "terrainHeader": "I6/terrain.json",
+    "features": "I6/features.json",
+    "ortho": "I6/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 69,
-    "nodes": 67,
-    "buildings": 598,
+    "roads": 74,
+    "nodes": 74,
+    "buildings": 729,
     "trees": 3,
     "areas": 4,
-    "points": 56,
+    "points": 59,
     "terrainMinMax": [
      65.29,
      96.97
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_149164_20261003/shp/UrbISBuildings3D_149164_BuildingSolids.shp",
      "UrbISBuildings3D_31370_SHP_150164_20261003/shp/UrbISBuildings3D_150164_BuildingSolids.shp"
@@ -1584,7 +2676,7 @@
    }
   },
   {
-   "name": "H4",
+   "name": "J6",
    "i": 3,
    "j": 1,
    "bounds": {
@@ -1599,34 +2691,3239 @@
    },
    "status": "built",
    "files": {
-    "roads": "H4/roads.json",
-    "buildings": "H4/buildings.json",
-    "buildingsBin": "H4/buildings.bin",
-    "terrain": "H4/terrain.u16",
-    "terrainHeader": "H4/terrain.json",
-    "features": "H4/features.json",
-    "ortho": "H4/ortho.jpg"
+    "roads": "J6/roads.json",
+    "buildings": "J6/buildings.json",
+    "buildingsBin": "J6/buildings.bin",
+    "terrain": "J6/terrain.u16",
+    "terrainHeader": "J6/terrain.json",
+    "features": "J6/features.json",
+    "ortho": "J6/ortho.jpg"
    },
    "missingLayers": [],
    "counts": {
-    "roads": 43,
-    "nodes": 49,
-    "buildings": 43,
-    "trees": 0,
-    "areas": 0,
-    "points": 0,
+    "roads": 77,
+    "nodes": 80,
+    "buildings": 306,
+    "trees": 20,
+    "areas": 4,
+    "points": 71,
     "terrainMinMax": [
      78.9,
      106.0
     ]
    },
    "sources": {
-    "osm": "2026-06-01T08:52:28Z",
+    "osm": "2026-11-04T16:46:22Z",
     "urbis3d": [
      "UrbISBuildings3D_31370_SHP_150164_20261003/shp/UrbISBuildings3D_150164_BuildingSolids.shp"
     ],
     "dtm": [
      "DTM_31370_TIFF_150164_20211009_50/UrbDTM_2021_150164.tif"
+    ]
+   }
+  },
+  {
+   "name": "K6",
+   "i": 4,
+   "j": 1,
+   "bounds": {
+    "x": [
+     2000.0,
+     2500.0
+    ],
+    "z": [
+     500.0,
+     1000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "K6/roads.json",
+    "buildings": "K6/buildings.json",
+    "buildingsBin": "K6/buildings.bin",
+    "terrain": "K6/terrain.u16",
+    "terrainHeader": "K6/terrain.json",
+    "features": "K6/features.json",
+    "ortho": "K6/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 30,
+    "nodes": 33,
+    "buildings": 96,
+    "trees": 165,
+    "areas": 16,
+    "points": 5,
+    "terrainMinMax": [
+     86.01,
+     120.16
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_150164_20261003/shp/UrbISBuildings3D_150164_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_151164_20261003/shp/UrbISBuildings3D_151164_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_150164_20211009_50/UrbDTM_2021_150164.tif",
+     "DTM_31370_TIFF_151164_20211009_50/UrbDTM_2021_151164.tif"
+    ]
+   }
+  },
+  {
+   "name": "L6",
+   "i": 5,
+   "j": 1,
+   "bounds": {
+    "x": [
+     2500.0,
+     3000.0
+    ],
+    "z": [
+     500.0,
+     1000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "L6/roads.json",
+    "buildings": "L6/buildings.json",
+    "buildingsBin": "L6/buildings.bin",
+    "terrain": "L6/terrain.u16",
+    "terrainHeader": "L6/terrain.json",
+    "features": "L6/features.json",
+    "ortho": "L6/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 12,
+    "nodes": 16,
+    "buildings": 15,
+    "trees": 29,
+    "areas": 10,
+    "points": 2,
+    "terrainMinMax": [
+     91.81,
+     120.76
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_151164_20261003/shp/UrbISBuildings3D_151164_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_151164_20211009_50/UrbDTM_2021_151164.tif"
+    ]
+   }
+  },
+  {
+   "name": "M6",
+   "i": 6,
+   "j": 1,
+   "bounds": {
+    "x": [
+     3000.0,
+     3500.0
+    ],
+    "z": [
+     500.0,
+     1000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "M6/roads.json",
+    "buildings": "M6/buildings.json",
+    "buildingsBin": "M6/buildings.bin",
+    "terrain": "M6/terrain.u16",
+    "terrainHeader": "M6/terrain.json",
+    "features": "M6/features.json",
+    "ortho": "M6/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 9,
+    "nodes": 12,
+    "buildings": 0,
+    "trees": 11,
+    "areas": 13,
+    "points": 2,
+    "terrainMinMax": [
+     79.53,
+     106.54
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [],
+    "dtm": [
+     "DTM_31370_TIFF_151164_20211009_50/UrbDTM_2021_151164.tif",
+     "DTM_31370_TIFF_152164_20211009_50/UrbDTM_2021_152164.tif"
+    ]
+   }
+  },
+  {
+   "name": "N6",
+   "i": 7,
+   "j": 1,
+   "bounds": {
+    "x": [
+     3500.0,
+     4000.0
+    ],
+    "z": [
+     500.0,
+     1000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "N6/roads.json",
+    "buildings": "N6/buildings.json",
+    "buildingsBin": "N6/buildings.bin",
+    "terrain": "N6/terrain.u16",
+    "terrainHeader": "N6/terrain.json",
+    "features": "N6/features.json",
+    "ortho": "N6/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 35,
+    "nodes": 38,
+    "buildings": 3,
+    "trees": 5,
+    "areas": 4,
+    "points": 1,
+    "terrainMinMax": [
+     72.99,
+     104.93
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_152164_20261003/shp/UrbISBuildings3D_152164_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_152164_20211009_50/UrbDTM_2021_152164.tif"
+    ]
+   }
+  },
+  {
+   "name": "B7",
+   "i": -5,
+   "j": 2,
+   "bounds": {
+    "x": [
+     -2500.0,
+     -2000.0
+    ],
+    "z": [
+     1000.0,
+     1500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "B7/roads.json",
+    "buildings": "B7/buildings.json",
+    "buildingsBin": "B7/buildings.bin",
+    "terrain": "B7/terrain.u16",
+    "terrainHeader": "B7/terrain.json",
+    "features": "B7/features.json",
+    "ortho": "B7/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 88,
+    "nodes": 88,
+    "buildings": 138,
+    "trees": 0,
+    "areas": 1,
+    "points": 2,
+    "terrainMinMax": [
+     29.18,
+     40.1
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_146163_20261003/shp/UrbISBuildings3D_146163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_146164_20261003/shp/UrbISBuildings3D_146164_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_146163_20211009_50/UrbDTM_2021_146163.tif",
+     "DTM_31370_TIFF_146164_20211009_50/UrbDTM_2021_146164.tif"
+    ]
+   }
+  },
+  {
+   "name": "C7",
+   "i": -4,
+   "j": 2,
+   "bounds": {
+    "x": [
+     -2000.0,
+     -1500.0
+    ],
+    "z": [
+     1000.0,
+     1500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "C7/roads.json",
+    "buildings": "C7/buildings.json",
+    "buildingsBin": "C7/buildings.bin",
+    "terrain": "C7/terrain.u16",
+    "terrainHeader": "C7/terrain.json",
+    "features": "C7/features.json",
+    "ortho": "C7/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 102,
+    "nodes": 106,
+    "buildings": 527,
+    "trees": 50,
+    "areas": 14,
+    "points": 33,
+    "terrainMinMax": [
+     30.57,
+     48.57
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_146163_20261003/shp/UrbISBuildings3D_146163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_146164_20261003/shp/UrbISBuildings3D_146164_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_147163_20261003/shp/UrbISBuildings3D_147163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_147164_20261003/shp/UrbISBuildings3D_147164_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_146163_20211009_50/UrbDTM_2021_146163.tif",
+     "DTM_31370_TIFF_146164_20211009_50/UrbDTM_2021_146164.tif",
+     "DTM_31370_TIFF_147163_20211009_50/UrbDTM_2021_147163.tif",
+     "DTM_31370_TIFF_147164_20211009_50/UrbDTM_2021_147164.tif"
+    ]
+   }
+  },
+  {
+   "name": "D7",
+   "i": -3,
+   "j": 2,
+   "bounds": {
+    "x": [
+     -1500.0,
+     -1000.0
+    ],
+    "z": [
+     1000.0,
+     1500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "D7/roads.json",
+    "buildings": "D7/buildings.json",
+    "buildingsBin": "D7/buildings.bin",
+    "terrain": "D7/terrain.u16",
+    "terrainHeader": "D7/terrain.json",
+    "features": "D7/features.json",
+    "ortho": "D7/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 102,
+    "nodes": 104,
+    "buildings": 373,
+    "trees": 12,
+    "areas": 22,
+    "points": 94,
+    "terrainMinMax": [
+     34.56,
+     59.52
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_147163_20261003/shp/UrbISBuildings3D_147163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_147164_20261003/shp/UrbISBuildings3D_147164_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_147163_20211009_50/UrbDTM_2021_147163.tif",
+     "DTM_31370_TIFF_147164_20211009_50/UrbDTM_2021_147164.tif"
+    ]
+   }
+  },
+  {
+   "name": "E7",
+   "i": -2,
+   "j": 2,
+   "bounds": {
+    "x": [
+     -1000.0,
+     -500.0
+    ],
+    "z": [
+     1000.0,
+     1500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "E7/roads.json",
+    "buildings": "E7/buildings.json",
+    "buildingsBin": "E7/buildings.bin",
+    "terrain": "E7/terrain.u16",
+    "terrainHeader": "E7/terrain.json",
+    "features": "E7/features.json",
+    "ortho": "E7/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 98,
+    "nodes": 96,
+    "buildings": 294,
+    "trees": 0,
+    "areas": 21,
+    "points": 20,
+    "terrainMinMax": [
+     39.44,
+     66.12
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_147163_20261003/shp/UrbISBuildings3D_147163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_147164_20261003/shp/UrbISBuildings3D_147164_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_148163_20261003/shp/UrbISBuildings3D_148163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_148164_20261003/shp/UrbISBuildings3D_148164_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_147163_20211009_50/UrbDTM_2021_147163.tif",
+     "DTM_31370_TIFF_147164_20211009_50/UrbDTM_2021_147164.tif",
+     "DTM_31370_TIFF_148163_20211009_50/UrbDTM_2021_148163.tif",
+     "DTM_31370_TIFF_148164_20211009_50/UrbDTM_2021_148164.tif"
+    ]
+   }
+  },
+  {
+   "name": "F7",
+   "i": -1,
+   "j": 2,
+   "bounds": {
+    "x": [
+     -500.0,
+     0.0
+    ],
+    "z": [
+     1000.0,
+     1500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "F7/roads.json",
+    "buildings": "F7/buildings.json",
+    "buildingsBin": "F7/buildings.bin",
+    "terrain": "F7/terrain.u16",
+    "terrainHeader": "F7/terrain.json",
+    "features": "F7/features.json",
+    "ortho": "F7/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 104,
+    "nodes": 105,
+    "buildings": 114,
+    "trees": 0,
+    "areas": 19,
+    "points": 15,
+    "terrainMinMax": [
+     51.18,
+     97.28
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_148163_20261003/shp/UrbISBuildings3D_148163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_148164_20261003/shp/UrbISBuildings3D_148164_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_148163_20211009_50/UrbDTM_2021_148163.tif",
+     "DTM_31370_TIFF_148164_20211009_50/UrbDTM_2021_148164.tif"
+    ]
+   }
+  },
+  {
+   "name": "G7",
+   "i": 0,
+   "j": 2,
+   "bounds": {
+    "x": [
+     0.0,
+     500.0
+    ],
+    "z": [
+     1000.0,
+     1500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "G7/roads.json",
+    "buildings": "G7/buildings.json",
+    "buildingsBin": "G7/buildings.bin",
+    "terrain": "G7/terrain.u16",
+    "terrainHeader": "G7/terrain.json",
+    "features": "G7/features.json",
+    "ortho": "G7/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 47,
+    "nodes": 54,
+    "buildings": 45,
+    "trees": 0,
+    "areas": 11,
+    "points": 1,
+    "terrainMinMax": [
+     68.57,
+     101.76
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_148163_20261003/shp/UrbISBuildings3D_148163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_148164_20261003/shp/UrbISBuildings3D_148164_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_149164_20261003/shp/UrbISBuildings3D_149164_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_148163_20211009_50/UrbDTM_2021_148163.tif",
+     "DTM_31370_TIFF_148164_20211009_50/UrbDTM_2021_148164.tif",
+     "DTM_31370_TIFF_149163_20211009_50/UrbDTM_2021_149163.tif",
+     "DTM_31370_TIFF_149164_20211009_50/UrbDTM_2021_149164.tif"
+    ]
+   }
+  },
+  {
+   "name": "H7",
+   "i": 1,
+   "j": 2,
+   "bounds": {
+    "x": [
+     500.0,
+     1000.0
+    ],
+    "z": [
+     1000.0,
+     1500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "H7/roads.json",
+    "buildings": "H7/buildings.json",
+    "buildingsBin": "H7/buildings.bin",
+    "terrain": "H7/terrain.u16",
+    "terrainHeader": "H7/terrain.json",
+    "features": "H7/features.json",
+    "ortho": "H7/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 34,
+    "nodes": 36,
+    "buildings": 333,
+    "trees": 0,
+    "areas": 10,
+    "points": 9,
+    "terrainMinMax": [
+     62.94,
+     102.04
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_149163_20261003/shp/UrbISBuildings3D_149163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_149164_20261003/shp/UrbISBuildings3D_149164_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_149163_20211009_50/UrbDTM_2021_149163.tif",
+     "DTM_31370_TIFF_149164_20211009_50/UrbDTM_2021_149164.tif"
+    ]
+   }
+  },
+  {
+   "name": "I7",
+   "i": 2,
+   "j": 2,
+   "bounds": {
+    "x": [
+     1000.0,
+     1500.0
+    ],
+    "z": [
+     1000.0,
+     1500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "I7/roads.json",
+    "buildings": "I7/buildings.json",
+    "buildingsBin": "I7/buildings.bin",
+    "terrain": "I7/terrain.u16",
+    "terrainHeader": "I7/terrain.json",
+    "features": "I7/features.json",
+    "ortho": "I7/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 68,
+    "nodes": 66,
+    "buildings": 262,
+    "trees": 0,
+    "areas": 9,
+    "points": 11,
+    "terrainMinMax": [
+     66.57,
+     98.9
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_149163_20261003/shp/UrbISBuildings3D_149163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_149164_20261003/shp/UrbISBuildings3D_149164_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_150163_20261003/shp/UrbISBuildings3D_150163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_150164_20261003/shp/UrbISBuildings3D_150164_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_149163_20211009_50/UrbDTM_2021_149163.tif",
+     "DTM_31370_TIFF_149164_20211009_50/UrbDTM_2021_149164.tif",
+     "DTM_31370_TIFF_150163_20211009_50/UrbDTM_2021_150163.tif",
+     "DTM_31370_TIFF_150164_20211009_50/UrbDTM_2021_150164.tif"
+    ]
+   }
+  },
+  {
+   "name": "J7",
+   "i": 3,
+   "j": 2,
+   "bounds": {
+    "x": [
+     1500.0,
+     2000.0
+    ],
+    "z": [
+     1000.0,
+     1500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "J7/roads.json",
+    "buildings": "J7/buildings.json",
+    "buildingsBin": "J7/buildings.bin",
+    "terrain": "J7/terrain.u16",
+    "terrainHeader": "J7/terrain.json",
+    "features": "J7/features.json",
+    "ortho": "J7/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 79,
+    "nodes": 78,
+    "buildings": 383,
+    "trees": 168,
+    "areas": 0,
+    "points": 102,
+    "terrainMinMax": [
+     77.95,
+     105.83
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_150163_20261003/shp/UrbISBuildings3D_150163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_150164_20261003/shp/UrbISBuildings3D_150164_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_150163_20211009_50/UrbDTM_2021_150163.tif",
+     "DTM_31370_TIFF_150164_20211009_50/UrbDTM_2021_150164.tif"
+    ]
+   }
+  },
+  {
+   "name": "K7",
+   "i": 4,
+   "j": 2,
+   "bounds": {
+    "x": [
+     2000.0,
+     2500.0
+    ],
+    "z": [
+     1000.0,
+     1500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "K7/roads.json",
+    "buildings": "K7/buildings.json",
+    "buildingsBin": "K7/buildings.bin",
+    "terrain": "K7/terrain.u16",
+    "terrainHeader": "K7/terrain.json",
+    "features": "K7/features.json",
+    "ortho": "K7/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 78,
+    "nodes": 75,
+    "buildings": 160,
+    "trees": 37,
+    "areas": 4,
+    "points": 0,
+    "terrainMinMax": [
+     94.75,
+     120.0
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_150163_20261003/shp/UrbISBuildings3D_150163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_150164_20261003/shp/UrbISBuildings3D_150164_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_151163_20261003/shp/UrbISBuildings3D_151163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_151164_20261003/shp/UrbISBuildings3D_151164_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_150163_20211009_50/UrbDTM_2021_150163.tif",
+     "DTM_31370_TIFF_150164_20211009_50/UrbDTM_2021_150164.tif",
+     "DTM_31370_TIFF_151163_20211009_50/UrbDTM_2021_151163.tif",
+     "DTM_31370_TIFF_151164_20211009_50/UrbDTM_2021_151164.tif"
+    ]
+   }
+  },
+  {
+   "name": "L7",
+   "i": 5,
+   "j": 2,
+   "bounds": {
+    "x": [
+     2500.0,
+     3000.0
+    ],
+    "z": [
+     1000.0,
+     1500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "L7/roads.json",
+    "buildings": "L7/buildings.json",
+    "buildingsBin": "L7/buildings.bin",
+    "terrain": "L7/terrain.u16",
+    "terrainHeader": "L7/terrain.json",
+    "features": "L7/features.json",
+    "ortho": "L7/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 35,
+    "nodes": 36,
+    "buildings": 5,
+    "trees": 90,
+    "areas": 4,
+    "points": 18,
+    "terrainMinMax": [
+     93.29,
+     121.7
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_151163_20261003/shp/UrbISBuildings3D_151163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_151164_20261003/shp/UrbISBuildings3D_151164_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_151163_20211009_50/UrbDTM_2021_151163.tif",
+     "DTM_31370_TIFF_151164_20211009_50/UrbDTM_2021_151164.tif"
+    ]
+   }
+  },
+  {
+   "name": "M7",
+   "i": 6,
+   "j": 2,
+   "bounds": {
+    "x": [
+     3000.0,
+     3500.0
+    ],
+    "z": [
+     1000.0,
+     1500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "M7/roads.json",
+    "buildings": "M7/buildings.json",
+    "buildingsBin": "M7/buildings.bin",
+    "terrain": "M7/terrain.u16",
+    "terrainHeader": "M7/terrain.json",
+    "features": "M7/features.json",
+    "ortho": "M7/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 0,
+    "nodes": 0,
+    "buildings": 0,
+    "trees": 32,
+    "areas": 1,
+    "points": 3,
+    "terrainMinMax": [
+     81.06,
+     111.89
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [],
+    "dtm": [
+     "DTM_31370_TIFF_151163_20211009_50/UrbDTM_2021_151163.tif",
+     "DTM_31370_TIFF_151164_20211009_50/UrbDTM_2021_151164.tif",
+     "DTM_31370_TIFF_152163_20211009_50/UrbDTM_2021_152163.tif",
+     "DTM_31370_TIFF_152164_20211009_50/UrbDTM_2021_152164.tif"
+    ]
+   }
+  },
+  {
+   "name": "N7",
+   "i": 7,
+   "j": 2,
+   "bounds": {
+    "x": [
+     3500.0,
+     4000.0
+    ],
+    "z": [
+     1000.0,
+     1500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "N7/roads.json",
+    "buildings": "N7/buildings.json",
+    "buildingsBin": "N7/buildings.bin",
+    "terrain": "N7/terrain.u16",
+    "terrainHeader": "N7/terrain.json",
+    "features": "N7/features.json",
+    "ortho": "N7/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 0,
+    "nodes": 0,
+    "buildings": 0,
+    "trees": 0,
+    "areas": 2,
+    "points": 0,
+    "terrainMinMax": [
+     79.5,
+     109.58
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [],
+    "dtm": [
+     "DTM_31370_TIFF_152163_20211009_50/UrbDTM_2021_152163.tif",
+     "DTM_31370_TIFF_152164_20211009_50/UrbDTM_2021_152164.tif"
+    ]
+   }
+  },
+  {
+   "name": "B8",
+   "i": -5,
+   "j": 3,
+   "bounds": {
+    "x": [
+     -2500.0,
+     -2000.0
+    ],
+    "z": [
+     1500.0,
+     2000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "B8/roads.json",
+    "buildings": "B8/buildings.json",
+    "buildingsBin": "B8/buildings.bin",
+    "terrain": "B8/terrain.u16",
+    "terrainHeader": "B8/terrain.json",
+    "features": "B8/features.json",
+    "ortho": "B8/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 89,
+    "nodes": 81,
+    "buildings": 0,
+    "trees": 0,
+    "areas": 0,
+    "points": 0,
+    "terrainMinMax": [
+     34.19,
+     41.12
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_146163_20261003/shp/UrbISBuildings3D_146163_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_146163_20211009_50/UrbDTM_2021_146163.tif"
+    ]
+   }
+  },
+  {
+   "name": "C8",
+   "i": -4,
+   "j": 3,
+   "bounds": {
+    "x": [
+     -2000.0,
+     -1500.0
+    ],
+    "z": [
+     1500.0,
+     2000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "C8/roads.json",
+    "buildings": "C8/buildings.json",
+    "buildingsBin": "C8/buildings.bin",
+    "terrain": "C8/terrain.u16",
+    "terrainHeader": "C8/terrain.json",
+    "features": "C8/features.json",
+    "ortho": "C8/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 128,
+    "nodes": 119,
+    "buildings": 410,
+    "trees": 78,
+    "areas": 30,
+    "points": 21,
+    "terrainMinMax": [
+     33.5,
+     62.28
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_146163_20261003/shp/UrbISBuildings3D_146163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_147163_20261003/shp/UrbISBuildings3D_147163_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_146163_20211009_50/UrbDTM_2021_146163.tif",
+     "DTM_31370_TIFF_147163_20211009_50/UrbDTM_2021_147163.tif"
+    ]
+   }
+  },
+  {
+   "name": "D8",
+   "i": -3,
+   "j": 3,
+   "bounds": {
+    "x": [
+     -1500.0,
+     -1000.0
+    ],
+    "z": [
+     1500.0,
+     2000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "D8/roads.json",
+    "buildings": "D8/buildings.json",
+    "buildingsBin": "D8/buildings.bin",
+    "terrain": "D8/terrain.u16",
+    "terrainHeader": "D8/terrain.json",
+    "features": "D8/features.json",
+    "ortho": "D8/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 83,
+    "nodes": 80,
+    "buildings": 455,
+    "trees": 0,
+    "areas": 13,
+    "points": 47,
+    "terrainMinMax": [
+     39.56,
+     80.57
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_147163_20261003/shp/UrbISBuildings3D_147163_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_147163_20211009_50/UrbDTM_2021_147163.tif"
+    ]
+   }
+  },
+  {
+   "name": "E8",
+   "i": -2,
+   "j": 3,
+   "bounds": {
+    "x": [
+     -1000.0,
+     -500.0
+    ],
+    "z": [
+     1500.0,
+     2000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "E8/roads.json",
+    "buildings": "E8/buildings.json",
+    "buildingsBin": "E8/buildings.bin",
+    "terrain": "E8/terrain.u16",
+    "terrainHeader": "E8/terrain.json",
+    "features": "E8/features.json",
+    "ortho": "E8/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 79,
+    "nodes": 79,
+    "buildings": 337,
+    "trees": 0,
+    "areas": 21,
+    "points": 22,
+    "terrainMinMax": [
+     46.43,
+     87.15
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_147163_20261003/shp/UrbISBuildings3D_147163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_148163_20261003/shp/UrbISBuildings3D_148163_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_147163_20211009_50/UrbDTM_2021_147163.tif",
+     "DTM_31370_TIFF_148163_20211009_50/UrbDTM_2021_148163.tif"
+    ]
+   }
+  },
+  {
+   "name": "F8",
+   "i": -1,
+   "j": 3,
+   "bounds": {
+    "x": [
+     -500.0,
+     0.0
+    ],
+    "z": [
+     1500.0,
+     2000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "F8/roads.json",
+    "buildings": "F8/buildings.json",
+    "buildingsBin": "F8/buildings.bin",
+    "terrain": "F8/terrain.u16",
+    "terrainHeader": "F8/terrain.json",
+    "features": "F8/features.json",
+    "ortho": "F8/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 135,
+    "nodes": 126,
+    "buildings": 197,
+    "trees": 53,
+    "areas": 10,
+    "points": 0,
+    "terrainMinMax": [
+     57.65,
+     101.13
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_148163_20261003/shp/UrbISBuildings3D_148163_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_148163_20211009_50/UrbDTM_2021_148163.tif"
+    ]
+   }
+  },
+  {
+   "name": "G8",
+   "i": 0,
+   "j": 3,
+   "bounds": {
+    "x": [
+     0.0,
+     500.0
+    ],
+    "z": [
+     1500.0,
+     2000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "G8/roads.json",
+    "buildings": "G8/buildings.json",
+    "buildingsBin": "G8/buildings.bin",
+    "terrain": "G8/terrain.u16",
+    "terrainHeader": "G8/terrain.json",
+    "features": "G8/features.json",
+    "ortho": "G8/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 92,
+    "nodes": 78,
+    "buildings": 80,
+    "trees": 1,
+    "areas": 11,
+    "points": 3,
+    "terrainMinMax": [
+     73.66,
+     102.2
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_148163_20261003/shp/UrbISBuildings3D_148163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_149163_20261003/shp/UrbISBuildings3D_149163_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_148163_20211009_50/UrbDTM_2021_148163.tif",
+     "DTM_31370_TIFF_149163_20211009_50/UrbDTM_2021_149163.tif"
+    ]
+   }
+  },
+  {
+   "name": "H8",
+   "i": 1,
+   "j": 3,
+   "bounds": {
+    "x": [
+     500.0,
+     1000.0
+    ],
+    "z": [
+     1500.0,
+     2000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "H8/roads.json",
+    "buildings": "H8/buildings.json",
+    "buildingsBin": "H8/buildings.bin",
+    "terrain": "H8/terrain.u16",
+    "terrainHeader": "H8/terrain.json",
+    "features": "H8/features.json",
+    "ortho": "H8/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 33,
+    "nodes": 35,
+    "buildings": 163,
+    "trees": 0,
+    "areas": 6,
+    "points": 9,
+    "terrainMinMax": [
+     84.73,
+     122.25
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_149163_20261003/shp/UrbISBuildings3D_149163_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_149163_20211009_50/UrbDTM_2021_149163.tif"
+    ]
+   }
+  },
+  {
+   "name": "I8",
+   "i": 2,
+   "j": 3,
+   "bounds": {
+    "x": [
+     1000.0,
+     1500.0
+    ],
+    "z": [
+     1500.0,
+     2000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "I8/roads.json",
+    "buildings": "I8/buildings.json",
+    "buildingsBin": "I8/buildings.bin",
+    "terrain": "I8/terrain.u16",
+    "terrainHeader": "I8/terrain.json",
+    "features": "I8/features.json",
+    "ortho": "I8/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 48,
+    "nodes": 46,
+    "buildings": 163,
+    "trees": 0,
+    "areas": 0,
+    "points": 0,
+    "terrainMinMax": [
+     80.77,
+     118.75
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_149163_20261003/shp/UrbISBuildings3D_149163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_149164_20261003/shp/UrbISBuildings3D_149164_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_150163_20261003/shp/UrbISBuildings3D_150163_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_149163_20211009_50/UrbDTM_2021_149163.tif",
+     "DTM_31370_TIFF_150163_20211009_50/UrbDTM_2021_150163.tif"
+    ]
+   }
+  },
+  {
+   "name": "J8",
+   "i": 3,
+   "j": 3,
+   "bounds": {
+    "x": [
+     1500.0,
+     2000.0
+    ],
+    "z": [
+     1500.0,
+     2000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "J8/roads.json",
+    "buildings": "J8/buildings.json",
+    "buildingsBin": "J8/buildings.bin",
+    "terrain": "J8/terrain.u16",
+    "terrainHeader": "J8/terrain.json",
+    "features": "J8/features.json",
+    "ortho": "J8/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 39,
+    "nodes": 41,
+    "buildings": 188,
+    "trees": 9,
+    "areas": 1,
+    "points": 14,
+    "terrainMinMax": [
+     83.71,
+     109.77
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_150163_20261003/shp/UrbISBuildings3D_150163_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_150163_20211009_50/UrbDTM_2021_150163.tif"
+    ]
+   }
+  },
+  {
+   "name": "K8",
+   "i": 4,
+   "j": 3,
+   "bounds": {
+    "x": [
+     2000.0,
+     2500.0
+    ],
+    "z": [
+     1500.0,
+     2000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "K8/roads.json",
+    "buildings": "K8/buildings.json",
+    "buildingsBin": "K8/buildings.bin",
+    "terrain": "K8/terrain.u16",
+    "terrainHeader": "K8/terrain.json",
+    "features": "K8/features.json",
+    "ortho": "K8/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 57,
+    "nodes": 54,
+    "buildings": 286,
+    "trees": 9,
+    "areas": 10,
+    "points": 34,
+    "terrainMinMax": [
+     97.37,
+     125.35
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_150163_20261003/shp/UrbISBuildings3D_150163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_151163_20261003/shp/UrbISBuildings3D_151163_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_150163_20211009_50/UrbDTM_2021_150163.tif",
+     "DTM_31370_TIFF_151163_20211009_50/UrbDTM_2021_151163.tif"
+    ]
+   }
+  },
+  {
+   "name": "L8",
+   "i": 5,
+   "j": 3,
+   "bounds": {
+    "x": [
+     2500.0,
+     3000.0
+    ],
+    "z": [
+     1500.0,
+     2000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "L8/roads.json",
+    "buildings": "L8/buildings.json",
+    "buildingsBin": "L8/buildings.bin",
+    "terrain": "L8/terrain.u16",
+    "terrainHeader": "L8/terrain.json",
+    "features": "L8/features.json",
+    "ortho": "L8/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 27,
+    "nodes": 26,
+    "buildings": 13,
+    "trees": 104,
+    "areas": 13,
+    "points": 5,
+    "terrainMinMax": [
+     105.03,
+     126.16
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_151163_20261003/shp/UrbISBuildings3D_151163_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_151163_20211009_50/UrbDTM_2021_151163.tif"
+    ]
+   }
+  },
+  {
+   "name": "M8",
+   "i": 6,
+   "j": 3,
+   "bounds": {
+    "x": [
+     3000.0,
+     3500.0
+    ],
+    "z": [
+     1500.0,
+     2000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "M8/roads.json",
+    "buildings": "M8/buildings.json",
+    "buildingsBin": "M8/buildings.bin",
+    "terrain": "M8/terrain.u16",
+    "terrainHeader": "M8/terrain.json",
+    "features": "M8/features.json",
+    "ortho": "M8/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 0,
+    "nodes": 0,
+    "buildings": 0,
+    "trees": 0,
+    "areas": 1,
+    "points": 0,
+    "terrainMinMax": [
+     91.12,
+     122.37
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [],
+    "dtm": [
+     "DTM_31370_TIFF_151163_20211009_50/UrbDTM_2021_151163.tif",
+     "DTM_31370_TIFF_152163_20211009_50/UrbDTM_2021_152163.tif"
+    ]
+   }
+  },
+  {
+   "name": "N8",
+   "i": 7,
+   "j": 3,
+   "bounds": {
+    "x": [
+     3500.0,
+     4000.0
+    ],
+    "z": [
+     1500.0,
+     2000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "N8/roads.json",
+    "buildings": "N8/buildings.json",
+    "buildingsBin": "N8/buildings.bin",
+    "terrain": "N8/terrain.u16",
+    "terrainHeader": "N8/terrain.json",
+    "features": "N8/features.json",
+    "ortho": "N8/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 0,
+    "nodes": 0,
+    "buildings": 0,
+    "trees": 0,
+    "areas": 1,
+    "points": 1,
+    "terrainMinMax": [
+     83.2,
+     110.85
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [],
+    "dtm": [
+     "DTM_31370_TIFF_152163_20211009_50/UrbDTM_2021_152163.tif"
+    ]
+   }
+  },
+  {
+   "name": "C9",
+   "i": -4,
+   "j": 4,
+   "bounds": {
+    "x": [
+     -2000.0,
+     -1500.0
+    ],
+    "z": [
+     2000.0,
+     2500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "C9/roads.json",
+    "buildings": "C9/buildings.json",
+    "buildingsBin": "C9/buildings.bin",
+    "terrain": "C9/terrain.u16",
+    "terrainHeader": "C9/terrain.json",
+    "features": "C9/features.json",
+    "ortho": "C9/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 80,
+    "nodes": 78,
+    "buildings": 81,
+    "trees": 0,
+    "areas": 7,
+    "points": 12,
+    "terrainMinMax": [
+     37.66,
+     64.35
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_146163_20261003/shp/UrbISBuildings3D_146163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_147163_20261003/shp/UrbISBuildings3D_147163_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_146162_20211009_50/UrbDTM_2021_146162.tif",
+     "DTM_31370_TIFF_146163_20211009_50/UrbDTM_2021_146163.tif",
+     "DTM_31370_TIFF_147162_20211009_50/UrbDTM_2021_147162.tif",
+     "DTM_31370_TIFF_147163_20211009_50/UrbDTM_2021_147163.tif"
+    ]
+   }
+  },
+  {
+   "name": "D9",
+   "i": -3,
+   "j": 4,
+   "bounds": {
+    "x": [
+     -1500.0,
+     -1000.0
+    ],
+    "z": [
+     2000.0,
+     2500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "D9/roads.json",
+    "buildings": "D9/buildings.json",
+    "buildingsBin": "D9/buildings.bin",
+    "terrain": "D9/terrain.u16",
+    "terrainHeader": "D9/terrain.json",
+    "features": "D9/features.json",
+    "ortho": "D9/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 59,
+    "nodes": 67,
+    "buildings": 171,
+    "trees": 13,
+    "areas": 17,
+    "points": 34,
+    "terrainMinMax": [
+     42.15,
+     81.06
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_147162_20261003/shp/UrbISBuildings3D_147162_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_147163_20261003/shp/UrbISBuildings3D_147163_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_147162_20211009_50/UrbDTM_2021_147162.tif",
+     "DTM_31370_TIFF_147163_20211009_50/UrbDTM_2021_147163.tif"
+    ]
+   }
+  },
+  {
+   "name": "E9",
+   "i": -2,
+   "j": 4,
+   "bounds": {
+    "x": [
+     -1000.0,
+     -500.0
+    ],
+    "z": [
+     2000.0,
+     2500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "E9/roads.json",
+    "buildings": "E9/buildings.json",
+    "buildingsBin": "E9/buildings.bin",
+    "terrain": "E9/terrain.u16",
+    "terrainHeader": "E9/terrain.json",
+    "features": "E9/features.json",
+    "ortho": "E9/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 107,
+    "nodes": 105,
+    "buildings": 422,
+    "trees": 0,
+    "areas": 8,
+    "points": 17,
+    "terrainMinMax": [
+     64.16,
+     96.73
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_147162_20261003/shp/UrbISBuildings3D_147162_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_147163_20261003/shp/UrbISBuildings3D_147163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_148162_20261003/shp/UrbISBuildings3D_148162_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_148163_20261003/shp/UrbISBuildings3D_148163_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_147162_20211009_50/UrbDTM_2021_147162.tif",
+     "DTM_31370_TIFF_147163_20211009_50/UrbDTM_2021_147163.tif",
+     "DTM_31370_TIFF_148162_20211009_50/UrbDTM_2021_148162.tif",
+     "DTM_31370_TIFF_148163_20211009_50/UrbDTM_2021_148163.tif"
+    ]
+   }
+  },
+  {
+   "name": "F9",
+   "i": -1,
+   "j": 4,
+   "bounds": {
+    "x": [
+     -500.0,
+     0.0
+    ],
+    "z": [
+     2000.0,
+     2500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "F9/roads.json",
+    "buildings": "F9/buildings.json",
+    "buildingsBin": "F9/buildings.bin",
+    "terrain": "F9/terrain.u16",
+    "terrainHeader": "F9/terrain.json",
+    "features": "F9/features.json",
+    "ortho": "F9/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 147,
+    "nodes": 127,
+    "buildings": 496,
+    "trees": 18,
+    "areas": 9,
+    "points": 17,
+    "terrainMinMax": [
+     80.7,
+     104.32
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_148162_20261003/shp/UrbISBuildings3D_148162_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_148163_20261003/shp/UrbISBuildings3D_148163_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_148162_20211009_50/UrbDTM_2021_148162.tif",
+     "DTM_31370_TIFF_148163_20211009_50/UrbDTM_2021_148163.tif"
+    ]
+   }
+  },
+  {
+   "name": "G9",
+   "i": 0,
+   "j": 4,
+   "bounds": {
+    "x": [
+     0.0,
+     500.0
+    ],
+    "z": [
+     2000.0,
+     2500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "G9/roads.json",
+    "buildings": "G9/buildings.json",
+    "buildingsBin": "G9/buildings.bin",
+    "terrain": "G9/terrain.u16",
+    "terrainHeader": "G9/terrain.json",
+    "features": "G9/features.json",
+    "ortho": "G9/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 86,
+    "nodes": 71,
+    "buildings": 164,
+    "trees": 0,
+    "areas": 11,
+    "points": 15,
+    "terrainMinMax": [
+     86.96,
+     110.78
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_148162_20261003/shp/UrbISBuildings3D_148162_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_148163_20261003/shp/UrbISBuildings3D_148163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_149162_20261003/shp/UrbISBuildings3D_149162_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_149163_20261003/shp/UrbISBuildings3D_149163_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_148162_20211009_50/UrbDTM_2021_148162.tif",
+     "DTM_31370_TIFF_148163_20211009_50/UrbDTM_2021_148163.tif",
+     "DTM_31370_TIFF_149162_20211009_50/UrbDTM_2021_149162.tif",
+     "DTM_31370_TIFF_149163_20211009_50/UrbDTM_2021_149163.tif"
+    ]
+   }
+  },
+  {
+   "name": "H9",
+   "i": 1,
+   "j": 4,
+   "bounds": {
+    "x": [
+     500.0,
+     1000.0
+    ],
+    "z": [
+     2000.0,
+     2500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "H9/roads.json",
+    "buildings": "H9/buildings.json",
+    "buildingsBin": "H9/buildings.bin",
+    "terrain": "H9/terrain.u16",
+    "terrainHeader": "H9/terrain.json",
+    "features": "H9/features.json",
+    "ortho": "H9/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 32,
+    "nodes": 36,
+    "buildings": 98,
+    "trees": 0,
+    "areas": 5,
+    "points": 2,
+    "terrainMinMax": [
+     84.85,
+     125.0
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_149162_20261003/shp/UrbISBuildings3D_149162_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_149163_20261003/shp/UrbISBuildings3D_149163_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_149162_20211009_50/UrbDTM_2021_149162.tif",
+     "DTM_31370_TIFF_149163_20211009_50/UrbDTM_2021_149163.tif"
+    ]
+   }
+  },
+  {
+   "name": "I9",
+   "i": 2,
+   "j": 4,
+   "bounds": {
+    "x": [
+     1000.0,
+     1500.0
+    ],
+    "z": [
+     2000.0,
+     2500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "I9/roads.json",
+    "buildings": "I9/buildings.json",
+    "buildingsBin": "I9/buildings.bin",
+    "terrain": "I9/terrain.u16",
+    "terrainHeader": "I9/terrain.json",
+    "features": "I9/features.json",
+    "ortho": "I9/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 34,
+    "nodes": 33,
+    "buildings": 173,
+    "trees": 0,
+    "areas": 6,
+    "points": 7,
+    "terrainMinMax": [
+     97.51,
+     124.27
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_149162_20261003/shp/UrbISBuildings3D_149162_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_149163_20261003/shp/UrbISBuildings3D_149163_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_150162_20261003/shp/UrbISBuildings3D_150162_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_150163_20261003/shp/UrbISBuildings3D_150163_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_149162_20211009_50/UrbDTM_2021_149162.tif",
+     "DTM_31370_TIFF_149163_20211009_50/UrbDTM_2021_149163.tif",
+     "DTM_31370_TIFF_150162_20211009_50/UrbDTM_2021_150162.tif",
+     "DTM_31370_TIFF_150163_20211009_50/UrbDTM_2021_150163.tif"
+    ]
+   }
+  },
+  {
+   "name": "J9",
+   "i": 3,
+   "j": 4,
+   "bounds": {
+    "x": [
+     1500.0,
+     2000.0
+    ],
+    "z": [
+     2000.0,
+     2500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "J9/roads.json",
+    "buildings": "J9/buildings.json",
+    "buildingsBin": "J9/buildings.bin",
+    "terrain": "J9/terrain.u16",
+    "terrainHeader": "J9/terrain.json",
+    "features": "J9/features.json",
+    "ortho": "J9/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 22,
+    "nodes": 25,
+    "buildings": 181,
+    "trees": 0,
+    "areas": 8,
+    "points": 7,
+    "terrainMinMax": [
+     95.94,
+     116.59
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_150162_20261003/shp/UrbISBuildings3D_150162_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_150163_20261003/shp/UrbISBuildings3D_150163_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_150162_20211009_50/UrbDTM_2021_150162.tif",
+     "DTM_31370_TIFF_150163_20211009_50/UrbDTM_2021_150163.tif"
+    ]
+   }
+  },
+  {
+   "name": "K9",
+   "i": 4,
+   "j": 4,
+   "bounds": {
+    "x": [
+     2000.0,
+     2500.0
+    ],
+    "z": [
+     2000.0,
+     2500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "K9/roads.json",
+    "buildings": "K9/buildings.json",
+    "buildingsBin": "K9/buildings.bin",
+    "terrain": "K9/terrain.u16",
+    "terrainHeader": "K9/terrain.json",
+    "features": "K9/features.json",
+    "ortho": "K9/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 21,
+    "nodes": 20,
+    "buildings": 166,
+    "trees": 7,
+    "areas": 2,
+    "points": 27,
+    "terrainMinMax": [
+     102.25,
+     126.65
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_150162_20261003/shp/UrbISBuildings3D_150162_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_150163_20261003/shp/UrbISBuildings3D_150163_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_150162_20211009_50/UrbDTM_2021_150162.tif",
+     "DTM_31370_TIFF_150163_20211009_50/UrbDTM_2021_150163.tif",
+     "DTM_31370_TIFF_151162_20211009_50/UrbDTM_2021_151162.tif",
+     "DTM_31370_TIFF_151163_20211009_50/UrbDTM_2021_151163.tif"
+    ]
+   }
+  },
+  {
+   "name": "L9",
+   "i": 5,
+   "j": 4,
+   "bounds": {
+    "x": [
+     2500.0,
+     3000.0
+    ],
+    "z": [
+     2000.0,
+     2500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "L9/roads.json",
+    "buildings": "L9/buildings.json",
+    "buildingsBin": "L9/buildings.bin",
+    "terrain": "L9/terrain.u16",
+    "terrainHeader": "L9/terrain.json",
+    "features": "L9/features.json",
+    "ortho": "L9/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 3,
+    "nodes": 4,
+    "buildings": 1,
+    "trees": 102,
+    "areas": 2,
+    "points": 3,
+    "terrainMinMax": [
+     107.36,
+     131.16
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_151162_20261003/shp/UrbISBuildings3D_151162_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_151163_20261003/shp/UrbISBuildings3D_151163_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_151162_20211009_50/UrbDTM_2021_151162.tif",
+     "DTM_31370_TIFF_151163_20211009_50/UrbDTM_2021_151163.tif"
+    ]
+   }
+  },
+  {
+   "name": "M9",
+   "i": 6,
+   "j": 4,
+   "bounds": {
+    "x": [
+     3000.0,
+     3500.0
+    ],
+    "z": [
+     2000.0,
+     2500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "M9/roads.json",
+    "buildings": "M9/buildings.json",
+    "buildingsBin": "M9/buildings.bin",
+    "terrain": "M9/terrain.u16",
+    "terrainHeader": "M9/terrain.json",
+    "features": "M9/features.json",
+    "ortho": "M9/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 3,
+    "nodes": 4,
+    "buildings": 1,
+    "trees": 0,
+    "areas": 1,
+    "points": 0,
+    "terrainMinMax": [
+     100.07,
+     127.9
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_151162_20261003/shp/UrbISBuildings3D_151162_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_151162_20211009_50/UrbDTM_2021_151162.tif",
+     "DTM_31370_TIFF_151163_20211009_50/UrbDTM_2021_151163.tif",
+     "DTM_31370_TIFF_152162_20211009_50/UrbDTM_2021_152162.tif",
+     "DTM_31370_TIFF_152163_20211009_50/UrbDTM_2021_152163.tif"
+    ]
+   }
+  },
+  {
+   "name": "N9",
+   "i": 7,
+   "j": 4,
+   "bounds": {
+    "x": [
+     3500.0,
+     4000.0
+    ],
+    "z": [
+     2000.0,
+     2500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "N9/roads.json",
+    "buildings": "N9/buildings.json",
+    "buildingsBin": "N9/buildings.bin",
+    "terrain": "N9/terrain.u16",
+    "terrainHeader": "N9/terrain.json",
+    "features": "N9/features.json",
+    "ortho": "N9/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 0,
+    "nodes": 0,
+    "buildings": 0,
+    "trees": 0,
+    "areas": 1,
+    "points": 1,
+    "terrainMinMax": [
+     90.78,
+     126.1
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [],
+    "dtm": [
+     "DTM_31370_TIFF_152162_20211009_50/UrbDTM_2021_152162.tif",
+     "DTM_31370_TIFF_152163_20211009_50/UrbDTM_2021_152163.tif"
+    ]
+   }
+  },
+  {
+   "name": "O9",
+   "i": 8,
+   "j": 4,
+   "bounds": {
+    "x": [
+     4000.0,
+     4500.0
+    ],
+    "z": [
+     2000.0,
+     2500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "O9/roads.json",
+    "buildings": "O9/buildings.json",
+    "buildingsBin": "O9/buildings.bin",
+    "terrain": "O9/terrain.u16",
+    "terrainHeader": "O9/terrain.json",
+    "features": "O9/features.json",
+    "ortho": "O9/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 0,
+    "nodes": 0,
+    "buildings": 0,
+    "trees": 0,
+    "areas": 1,
+    "points": 1,
+    "terrainMinMax": [
+     95.24,
+     126.44
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [],
+    "dtm": [
+     "DTM_31370_TIFF_152162_20211009_50/UrbDTM_2021_152162.tif",
+     "DTM_31370_TIFF_152163_20211009_50/UrbDTM_2021_152163.tif",
+     "DTM_31370_TIFF_153162_20211009_50/UrbDTM_2021_153162.tif",
+     "DTM_31370_TIFF_153163_20211009_50/UrbDTM_2021_153163.tif"
+    ]
+   }
+  },
+  {
+   "name": "D10",
+   "i": -3,
+   "j": 5,
+   "bounds": {
+    "x": [
+     -1500.0,
+     -1000.0
+    ],
+    "z": [
+     2500.0,
+     3000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "D10/roads.json",
+    "buildings": "D10/buildings.json",
+    "buildingsBin": "D10/buildings.bin",
+    "terrain": "D10/terrain.u16",
+    "terrainHeader": "D10/terrain.json",
+    "features": "D10/features.json",
+    "ortho": "D10/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 93,
+    "nodes": 89,
+    "buildings": 110,
+    "trees": 1,
+    "areas": 3,
+    "points": 10,
+    "terrainMinMax": [
+     43.79,
+     79.91
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_147162_20261003/shp/UrbISBuildings3D_147162_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_147162_20211009_50/UrbDTM_2021_147162.tif"
+    ]
+   }
+  },
+  {
+   "name": "E10",
+   "i": -2,
+   "j": 5,
+   "bounds": {
+    "x": [
+     -1000.0,
+     -500.0
+    ],
+    "z": [
+     2500.0,
+     3000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "E10/roads.json",
+    "buildings": "E10/buildings.json",
+    "buildingsBin": "E10/buildings.bin",
+    "terrain": "E10/terrain.u16",
+    "terrainHeader": "E10/terrain.json",
+    "features": "E10/features.json",
+    "ortho": "E10/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 92,
+    "nodes": 89,
+    "buildings": 186,
+    "trees": 4,
+    "areas": 4,
+    "points": 18,
+    "terrainMinMax": [
+     55.99,
+     93.83
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_147162_20261003/shp/UrbISBuildings3D_147162_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_148162_20261003/shp/UrbISBuildings3D_148162_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_147162_20211009_50/UrbDTM_2021_147162.tif",
+     "DTM_31370_TIFF_148162_20211009_50/UrbDTM_2021_148162.tif"
+    ]
+   }
+  },
+  {
+   "name": "F10",
+   "i": -1,
+   "j": 5,
+   "bounds": {
+    "x": [
+     -500.0,
+     0.0
+    ],
+    "z": [
+     2500.0,
+     3000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "F10/roads.json",
+    "buildings": "F10/buildings.json",
+    "buildingsBin": "F10/buildings.bin",
+    "terrain": "F10/terrain.u16",
+    "terrainHeader": "F10/terrain.json",
+    "features": "F10/features.json",
+    "ortho": "F10/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 53,
+    "nodes": 58,
+    "buildings": 37,
+    "trees": 0,
+    "areas": 3,
+    "points": 6,
+    "terrainMinMax": [
+     58.66,
+     91.75
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_148162_20261003/shp/UrbISBuildings3D_148162_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_148162_20211009_50/UrbDTM_2021_148162.tif"
+    ]
+   }
+  },
+  {
+   "name": "G10",
+   "i": 0,
+   "j": 5,
+   "bounds": {
+    "x": [
+     0.0,
+     500.0
+    ],
+    "z": [
+     2500.0,
+     3000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "G10/roads.json",
+    "buildings": "G10/buildings.json",
+    "buildingsBin": "G10/buildings.bin",
+    "terrain": "G10/terrain.u16",
+    "terrainHeader": "G10/terrain.json",
+    "features": "G10/features.json",
+    "ortho": "G10/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 39,
+    "nodes": 41,
+    "buildings": 161,
+    "trees": 0,
+    "areas": 4,
+    "points": 1,
+    "terrainMinMax": [
+     67.56,
+     105.34
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_148162_20261003/shp/UrbISBuildings3D_148162_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_149162_20261003/shp/UrbISBuildings3D_149162_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_148162_20211009_50/UrbDTM_2021_148162.tif",
+     "DTM_31370_TIFF_149162_20211009_50/UrbDTM_2021_149162.tif"
+    ]
+   }
+  },
+  {
+   "name": "H10",
+   "i": 1,
+   "j": 5,
+   "bounds": {
+    "x": [
+     500.0,
+     1000.0
+    ],
+    "z": [
+     2500.0,
+     3000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "H10/roads.json",
+    "buildings": "H10/buildings.json",
+    "buildingsBin": "H10/buildings.bin",
+    "terrain": "H10/terrain.u16",
+    "terrainHeader": "H10/terrain.json",
+    "features": "H10/features.json",
+    "ortho": "H10/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 40,
+    "nodes": 42,
+    "buildings": 85,
+    "trees": 1,
+    "areas": 6,
+    "points": 0,
+    "terrainMinMax": [
+     73.61,
+     112.45
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_149162_20261003/shp/UrbISBuildings3D_149162_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_149162_20211009_50/UrbDTM_2021_149162.tif"
+    ]
+   }
+  },
+  {
+   "name": "I10",
+   "i": 2,
+   "j": 5,
+   "bounds": {
+    "x": [
+     1000.0,
+     1500.0
+    ],
+    "z": [
+     2500.0,
+     3000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "I10/roads.json",
+    "buildings": "I10/buildings.json",
+    "buildingsBin": "I10/buildings.bin",
+    "terrain": "I10/terrain.u16",
+    "terrainHeader": "I10/terrain.json",
+    "features": "I10/features.json",
+    "ortho": "I10/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 33,
+    "nodes": 30,
+    "buildings": 208,
+    "trees": 8,
+    "areas": 3,
+    "points": 0,
+    "terrainMinMax": [
+     80.04,
+     115.21
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_149162_20261003/shp/UrbISBuildings3D_149162_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_150162_20261003/shp/UrbISBuildings3D_150162_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_149162_20211009_50/UrbDTM_2021_149162.tif",
+     "DTM_31370_TIFF_150162_20211009_50/UrbDTM_2021_150162.tif"
+    ]
+   }
+  },
+  {
+   "name": "J10",
+   "i": 3,
+   "j": 5,
+   "bounds": {
+    "x": [
+     1500.0,
+     2000.0
+    ],
+    "z": [
+     2500.0,
+     3000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "J10/roads.json",
+    "buildings": "J10/buildings.json",
+    "buildingsBin": "J10/buildings.bin",
+    "terrain": "J10/terrain.u16",
+    "terrainHeader": "J10/terrain.json",
+    "features": "J10/features.json",
+    "ortho": "J10/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 20,
+    "nodes": 22,
+    "buildings": 215,
+    "trees": 0,
+    "areas": 1,
+    "points": 0,
+    "terrainMinMax": [
+     89.61,
+     111.81
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_150162_20261003/shp/UrbISBuildings3D_150162_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_150162_20211009_50/UrbDTM_2021_150162.tif"
+    ]
+   }
+  },
+  {
+   "name": "K10",
+   "i": 4,
+   "j": 5,
+   "bounds": {
+    "x": [
+     2000.0,
+     2500.0
+    ],
+    "z": [
+     2500.0,
+     3000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "K10/roads.json",
+    "buildings": "K10/buildings.json",
+    "buildingsBin": "K10/buildings.bin",
+    "terrain": "K10/terrain.u16",
+    "terrainHeader": "K10/terrain.json",
+    "features": "K10/features.json",
+    "ortho": "K10/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 28,
+    "nodes": 27,
+    "buildings": 92,
+    "trees": 20,
+    "areas": 10,
+    "points": 11,
+    "terrainMinMax": [
+     98.8,
+     125.18
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_150162_20261003/shp/UrbISBuildings3D_150162_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_150162_20211009_50/UrbDTM_2021_150162.tif",
+     "DTM_31370_TIFF_151162_20211009_50/UrbDTM_2021_151162.tif"
+    ]
+   }
+  },
+  {
+   "name": "L10",
+   "i": 5,
+   "j": 5,
+   "bounds": {
+    "x": [
+     2500.0,
+     3000.0
+    ],
+    "z": [
+     2500.0,
+     3000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "L10/roads.json",
+    "buildings": "L10/buildings.json",
+    "buildingsBin": "L10/buildings.bin",
+    "terrain": "L10/terrain.u16",
+    "terrainHeader": "L10/terrain.json",
+    "features": "L10/features.json",
+    "ortho": "L10/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 5,
+    "nodes": 6,
+    "buildings": 1,
+    "trees": 0,
+    "areas": 1,
+    "points": 7,
+    "terrainMinMax": [
+     113.98,
+     128.76
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_151162_20261003/shp/UrbISBuildings3D_151162_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_151162_20211009_50/UrbDTM_2021_151162.tif"
+    ]
+   }
+  },
+  {
+   "name": "M10",
+   "i": 6,
+   "j": 5,
+   "bounds": {
+    "x": [
+     3000.0,
+     3500.0
+    ],
+    "z": [
+     2500.0,
+     3000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "M10/roads.json",
+    "buildings": "M10/buildings.json",
+    "buildingsBin": "M10/buildings.bin",
+    "terrain": "M10/terrain.u16",
+    "terrainHeader": "M10/terrain.json",
+    "features": "M10/features.json",
+    "ortho": "M10/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 6,
+    "nodes": 6,
+    "buildings": 0,
+    "trees": 0,
+    "areas": 1,
+    "points": 4,
+    "terrainMinMax": [
+     109.84,
+     127.43
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_151162_20261003/shp/UrbISBuildings3D_151162_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_151162_20211009_50/UrbDTM_2021_151162.tif",
+     "DTM_31370_TIFF_152162_20211009_50/UrbDTM_2021_152162.tif"
+    ]
+   }
+  },
+  {
+   "name": "N10",
+   "i": 7,
+   "j": 5,
+   "bounds": {
+    "x": [
+     3500.0,
+     4000.0
+    ],
+    "z": [
+     2500.0,
+     3000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "N10/roads.json",
+    "buildings": "N10/buildings.json",
+    "buildingsBin": "N10/buildings.bin",
+    "terrain": "N10/terrain.u16",
+    "terrainHeader": "N10/terrain.json",
+    "features": "N10/features.json",
+    "ortho": "N10/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 1,
+    "nodes": 2,
+    "buildings": 0,
+    "trees": 0,
+    "areas": 1,
+    "points": 0,
+    "terrainMinMax": [
+     97.5,
+     127.05
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [],
+    "dtm": [
+     "DTM_31370_TIFF_152162_20211009_50/UrbDTM_2021_152162.tif"
+    ]
+   }
+  },
+  {
+   "name": "O10",
+   "i": 8,
+   "j": 5,
+   "bounds": {
+    "x": [
+     4000.0,
+     4500.0
+    ],
+    "z": [
+     2500.0,
+     3000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "O10/roads.json",
+    "buildings": "O10/buildings.json",
+    "buildingsBin": "O10/buildings.bin",
+    "terrain": "O10/terrain.u16",
+    "terrainHeader": "O10/terrain.json",
+    "features": "O10/features.json",
+    "ortho": "O10/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 2,
+    "nodes": 4,
+    "buildings": 0,
+    "trees": 0,
+    "areas": 1,
+    "points": 0,
+    "terrainMinMax": [
+     100.56,
+     126.11
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [],
+    "dtm": [
+     "DTM_31370_TIFF_152162_20211009_50/UrbDTM_2021_152162.tif",
+     "DTM_31370_TIFF_153162_20211009_50/UrbDTM_2021_153162.tif"
+    ]
+   }
+  },
+  {
+   "name": "H11",
+   "i": 1,
+   "j": 6,
+   "bounds": {
+    "x": [
+     500.0,
+     1000.0
+    ],
+    "z": [
+     3000.0,
+     3500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "H11/roads.json",
+    "buildings": "H11/buildings.json",
+    "buildingsBin": "H11/buildings.bin",
+    "terrain": "H11/terrain.u16",
+    "terrainHeader": "H11/terrain.json",
+    "features": "H11/features.json",
+    "ortho": "H11/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 21,
+    "nodes": 24,
+    "buildings": 0,
+    "trees": 1,
+    "areas": 1,
+    "points": 0,
+    "terrainMinMax": [
+     83.76,
+     97.23
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_149162_20261003/shp/UrbISBuildings3D_149162_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_149162_20211009_50/UrbDTM_2021_149162.tif"
+    ]
+   }
+  },
+  {
+   "name": "I11",
+   "i": 2,
+   "j": 6,
+   "bounds": {
+    "x": [
+     1000.0,
+     1500.0
+    ],
+    "z": [
+     3000.0,
+     3500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "I11/roads.json",
+    "buildings": "I11/buildings.json",
+    "buildingsBin": "I11/buildings.bin",
+    "terrain": "I11/terrain.u16",
+    "terrainHeader": "I11/terrain.json",
+    "features": "I11/features.json",
+    "ortho": "I11/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 21,
+    "nodes": 19,
+    "buildings": 4,
+    "trees": 1,
+    "areas": 2,
+    "points": 0,
+    "terrainMinMax": [
+     83.14,
+     109.69
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_149162_20261003/shp/UrbISBuildings3D_149162_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_150162_20261003/shp/UrbISBuildings3D_150162_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_149162_20211009_50/UrbDTM_2021_149162.tif",
+     "DTM_31370_TIFF_150161_20211009_50/UrbDTM_2021_150161.tif",
+     "DTM_31370_TIFF_150162_20211009_50/UrbDTM_2021_150162.tif"
+    ]
+   }
+  },
+  {
+   "name": "J11",
+   "i": 3,
+   "j": 6,
+   "bounds": {
+    "x": [
+     1500.0,
+     2000.0
+    ],
+    "z": [
+     3000.0,
+     3500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "J11/roads.json",
+    "buildings": "J11/buildings.json",
+    "buildingsBin": "J11/buildings.bin",
+    "terrain": "J11/terrain.u16",
+    "terrainHeader": "J11/terrain.json",
+    "features": "J11/features.json",
+    "ortho": "J11/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 27,
+    "nodes": 27,
+    "buildings": 36,
+    "trees": 0,
+    "areas": 0,
+    "points": 0,
+    "terrainMinMax": [
+     101.76,
+     126.22
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_150162_20261003/shp/UrbISBuildings3D_150162_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_150161_20211009_50/UrbDTM_2021_150161.tif",
+     "DTM_31370_TIFF_150162_20211009_50/UrbDTM_2021_150162.tif"
+    ]
+   }
+  },
+  {
+   "name": "K11",
+   "i": 4,
+   "j": 6,
+   "bounds": {
+    "x": [
+     2000.0,
+     2500.0
+    ],
+    "z": [
+     3000.0,
+     3500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "K11/roads.json",
+    "buildings": "K11/buildings.json",
+    "buildingsBin": "K11/buildings.bin",
+    "terrain": "K11/terrain.u16",
+    "terrainHeader": "K11/terrain.json",
+    "features": "K11/features.json",
+    "ortho": "K11/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 43,
+    "nodes": 38,
+    "buildings": 83,
+    "trees": 0,
+    "areas": 10,
+    "points": 19,
+    "terrainMinMax": [
+     107.13,
+     128.56
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_150161_20261003/shp/UrbISBuildings3D_150161_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_150162_20261003/shp/UrbISBuildings3D_150162_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_151162_20261003/shp/UrbISBuildings3D_151162_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_150161_20211009_50/UrbDTM_2021_150161.tif",
+     "DTM_31370_TIFF_150162_20211009_50/UrbDTM_2021_150162.tif",
+     "DTM_31370_TIFF_151161_20211009_50/UrbDTM_2021_151161.tif",
+     "DTM_31370_TIFF_151162_20211009_50/UrbDTM_2021_151162.tif"
+    ]
+   }
+  },
+  {
+   "name": "L11",
+   "i": 5,
+   "j": 6,
+   "bounds": {
+    "x": [
+     2500.0,
+     3000.0
+    ],
+    "z": [
+     3000.0,
+     3500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "L11/roads.json",
+    "buildings": "L11/buildings.json",
+    "buildingsBin": "L11/buildings.bin",
+    "terrain": "L11/terrain.u16",
+    "terrainHeader": "L11/terrain.json",
+    "features": "L11/features.json",
+    "ortho": "L11/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 4,
+    "nodes": 6,
+    "buildings": 2,
+    "trees": 0,
+    "areas": 2,
+    "points": 0,
+    "terrainMinMax": [
+     104.55,
+     123.34
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_151162_20261003/shp/UrbISBuildings3D_151162_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_151161_20211009_50/UrbDTM_2021_151161.tif",
+     "DTM_31370_TIFF_151162_20211009_50/UrbDTM_2021_151162.tif"
+    ]
+   }
+  },
+  {
+   "name": "M11",
+   "i": 6,
+   "j": 6,
+   "bounds": {
+    "x": [
+     3000.0,
+     3500.0
+    ],
+    "z": [
+     3000.0,
+     3500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "M11/roads.json",
+    "buildings": "M11/buildings.json",
+    "buildingsBin": "M11/buildings.bin",
+    "terrain": "M11/terrain.u16",
+    "terrainHeader": "M11/terrain.json",
+    "features": "M11/features.json",
+    "ortho": "M11/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 4,
+    "nodes": 6,
+    "buildings": 0,
+    "trees": 0,
+    "areas": 3,
+    "points": 2,
+    "terrainMinMax": [
+     99.26,
+     114.36
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [],
+    "dtm": [
+     "DTM_31370_TIFF_151161_20211009_50/UrbDTM_2021_151161.tif",
+     "DTM_31370_TIFF_151162_20211009_50/UrbDTM_2021_151162.tif",
+     "DTM_31370_TIFF_152161_20211009_50/UrbDTM_2021_152161.tif",
+     "DTM_31370_TIFF_152162_20211009_50/UrbDTM_2021_152162.tif"
+    ]
+   }
+  },
+  {
+   "name": "N11",
+   "i": 7,
+   "j": 6,
+   "bounds": {
+    "x": [
+     3500.0,
+     4000.0
+    ],
+    "z": [
+     3000.0,
+     3500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "N11/roads.json",
+    "buildings": "N11/buildings.json",
+    "buildingsBin": "N11/buildings.bin",
+    "terrain": "N11/terrain.u16",
+    "terrainHeader": "N11/terrain.json",
+    "features": "N11/features.json",
+    "ortho": "N11/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 2,
+    "nodes": 3,
+    "buildings": 0,
+    "trees": 1,
+    "areas": 1,
+    "points": 0,
+    "terrainMinMax": [
+     95.03,
+     111.96
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [],
+    "dtm": [
+     "DTM_31370_TIFF_152161_20211009_50/UrbDTM_2021_152161.tif",
+     "DTM_31370_TIFF_152162_20211009_50/UrbDTM_2021_152162.tif"
+    ]
+   }
+  },
+  {
+   "name": "O11",
+   "i": 8,
+   "j": 6,
+   "bounds": {
+    "x": [
+     4000.0,
+     4500.0
+    ],
+    "z": [
+     3000.0,
+     3500.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "O11/roads.json",
+    "buildings": "O11/buildings.json",
+    "buildingsBin": "O11/buildings.bin",
+    "terrain": "O11/terrain.u16",
+    "terrainHeader": "O11/terrain.json",
+    "features": "O11/features.json",
+    "ortho": "O11/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 2,
+    "nodes": 3,
+    "buildings": 0,
+    "trees": 0,
+    "areas": 1,
+    "points": 0,
+    "terrainMinMax": [
+     91.72,
+     108.06
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [],
+    "dtm": [
+     "DTM_31370_TIFF_152161_20211009_50/UrbDTM_2021_152161.tif",
+     "DTM_31370_TIFF_152162_20211009_50/UrbDTM_2021_152162.tif",
+     "DTM_31370_TIFF_153162_20211009_50/UrbDTM_2021_153162.tif"
+    ]
+   }
+  },
+  {
+   "name": "K12",
+   "i": 4,
+   "j": 7,
+   "bounds": {
+    "x": [
+     2000.0,
+     2500.0
+    ],
+    "z": [
+     3500.0,
+     4000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "K12/roads.json",
+    "buildings": "K12/buildings.json",
+    "buildingsBin": "K12/buildings.bin",
+    "terrain": "K12/terrain.u16",
+    "terrainHeader": "K12/terrain.json",
+    "features": "K12/features.json",
+    "ortho": "K12/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 28,
+    "nodes": 28,
+    "buildings": 0,
+    "trees": 0,
+    "areas": 1,
+    "points": 6,
+    "terrainMinMax": [
+     115.57,
+     129.83
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [
+     "UrbISBuildings3D_31370_SHP_150161_20261003/shp/UrbISBuildings3D_150161_BuildingSolids.shp",
+     "UrbISBuildings3D_31370_SHP_151161_20261003/shp/UrbISBuildings3D_151161_BuildingSolids.shp"
+    ],
+    "dtm": [
+     "DTM_31370_TIFF_150161_20211009_50/UrbDTM_2021_150161.tif",
+     "DTM_31370_TIFF_151161_20211009_50/UrbDTM_2021_151161.tif"
+    ]
+   }
+  },
+  {
+   "name": "L12",
+   "i": 5,
+   "j": 7,
+   "bounds": {
+    "x": [
+     2500.0,
+     3000.0
+    ],
+    "z": [
+     3500.0,
+     4000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "L12/roads.json",
+    "buildings": "L12/buildings.json",
+    "buildingsBin": "L12/buildings.bin",
+    "terrain": "L12/terrain.u16",
+    "terrainHeader": "L12/terrain.json",
+    "features": "L12/features.json",
+    "ortho": "L12/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 3,
+    "nodes": 4,
+    "buildings": 0,
+    "trees": 0,
+    "areas": 1,
+    "points": 0,
+    "terrainMinMax": [
+     108.3,
+     127.37
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [],
+    "dtm": [
+     "DTM_31370_TIFF_151161_20211009_50/UrbDTM_2021_151161.tif"
+    ]
+   }
+  },
+  {
+   "name": "M12",
+   "i": 6,
+   "j": 7,
+   "bounds": {
+    "x": [
+     3000.0,
+     3500.0
+    ],
+    "z": [
+     3500.0,
+     4000.0
+    ]
+   },
+   "status": "built",
+   "files": {
+    "roads": "M12/roads.json",
+    "buildings": "M12/buildings.json",
+    "buildingsBin": "M12/buildings.bin",
+    "terrain": "M12/terrain.u16",
+    "terrainHeader": "M12/terrain.json",
+    "features": "M12/features.json",
+    "ortho": "M12/ortho.jpg"
+   },
+   "missingLayers": [],
+   "counts": {
+    "roads": 0,
+    "nodes": 0,
+    "buildings": 0,
+    "trees": 0,
+    "areas": 1,
+    "points": 0,
+    "terrainMinMax": [
+     102.43,
+     117.59
+    ]
+   },
+   "sources": {
+    "osm": "2026-11-04T16:46:22Z",
+    "urbis3d": [],
+    "dtm": [
+     "DTM_31370_TIFF_151161_20211009_50/UrbDTM_2021_151161.tif",
+     "DTM_31370_TIFF_152161_20211009_50/UrbDTM_2021_152161.tif"
     ]
    }
   }

@@ -1,7 +1,7 @@
 """Tag UrbIS buildings that are landmarks (churches, chapels, synagogues...) from OSM.
 
 Reads data/raw/osm/landmarks.json (Overpass: amenity=place_of_worship and building=church|chapel|
-cathedral ways and relations, with their nodes; see fetch_osm.py --landmarks) and sets, on every
+cathedral ways and relations, with their nodes; written by fetch_osm.py) and sets, on every
 building of the tile whose footprint lies at least 30 % inside such an outline (and every other solid
 with the same UrbIS BU_ID),
     attrs._landmark = { "kind": "church" | "chapel" | "synagogue" | "orthodox" | "worship",

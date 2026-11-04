@@ -96,8 +96,8 @@ def main():
     for t in [x.upper() for x in a.tile] if a.tile else all_tiles():
         doc = cut(net, t)
         if not doc["roads"]:
-            print(f"{t}: no roads", file=sys.stderr)
-            continue
+            # forest tiles (Sonian Forest edge): an empty but valid roads.json, so the tile still loads
+            print(f"{t}: no roads (empty roads.json)", file=sys.stderr)
         write_json(TILES / t / "roads.json", doc)
         print(f"{t}: {doc['meta']['stats']}", file=sys.stderr)
 

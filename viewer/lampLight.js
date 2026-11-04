@@ -11,13 +11,13 @@ import { texture, uniform, vec2, vec3, float, positionWorld, color, smoothstep }
 import { env } from "./lighting.js";
 
 export const lampPoolsOn = !/[?&]lamppools=0/.test(location.search);
-const X0 = -2000, Z0 = -1000, W = 4000, H = 2000, TEXEL = 2;     // the manifest's whole grid (A1..H4)
+const X0 = -3000, Z0 = -2000, W = 7500, H = 6000, TEXEL = 2;     // the manifest's whole grid (all of Uccle, A1..O12)
 const NX = W / TEXEL, NZ = H / TEXEL;
 const RANGE = 15;                                                  // m: the pool's reach
 const HEAD = 5.9;                                                  // m: lamp head above the ground (the Blender lamp's globe)
 
 const data = new Uint8Array(NX * NZ);
-const acc = new Float32Array(NX * NZ);                             // the sum (clamped into data)
+const acc = new Uint16Array(NX * NZ);                              // the sum in 1/64 steps of data (clamped into data)
 const tex = new THREE.DataTexture(data, NX, NZ, THREE.RedFormat, THREE.UnsignedByteType);
 tex.magFilter = tex.minFilter = THREE.LinearFilter;
 tex.generateMipmaps = false;
@@ -29,6 +29,7 @@ export function addLamps(name, heads) {
   if (!lampPoolsOn || painted.has(name)) return;
   painted.add(name);
   const r = Math.ceil(RANGE / TEXEL);
+  let i0 = NX, i1 = -1, j0 = NZ, j1 = -1;                          // the texels this tile touched
   for (const { x, z } of heads) {
     const cx = (x - X0) / TEXEL, cz = (z - Z0) / TEXEL;
     for (let j = Math.floor(cz - r); j <= Math.ceil(cz + r); j++) {
@@ -38,11 +39,17 @@ export function addLamps(name, heads) {
         const dx = (i + 0.5 - cx) * TEXEL, dz = (j + 0.5 - cz) * TEXEL, d2 = dx * dx + dz * dz + HEAD * HEAD, d = Math.sqrt(d2);
         // inverse square x Lambert on the ground, 1 under the head, a smooth cut-off at RANGE
         const cut = Math.max(0, Math.min(1, (RANGE - Math.sqrt(dx * dx + dz * dz)) / (RANGE * 0.55)));
-        acc[j * NX + i] += (HEAD / d) * (HEAD * HEAD / d2) * cut * cut * (3 - 2 * cut);
+        const v = (HEAD / d) * (HEAD * HEAD / d2) * cut * cut * (3 - 2 * cut);
+        if (v <= 0) continue;
+        const k = j * NX + i;
+        acc[k] = Math.min(65535, acc[k] + Math.round(v * 160 * 64));
+        if (i < i0) i0 = i; if (i > i1) i1 = i; if (j < j0) j0 = j; if (j > j1) j1 = j;
       }
     }
   }
-  for (let k = 0; k < acc.length; k++) if (acc[k]) data[k] = Math.min(255, Math.round(acc[k] * 160));   // 1.6 = full white
+  if (i1 < 0) return;
+  for (let j = j0; j <= j1; j++)                                   // only the touched rectangle (1.6 = full white)
+    for (let k = j * NX + i0, e = j * NX + i1; k <= e; k++) if (acc[k]) data[k] = Math.min(255, Math.round(acc[k] / 64));
   tex.needsUpdate = true;
 }
 

@@ -42,11 +42,13 @@ falcon, labs (Bird, Lamp), the dev panel.
 - [ ] Tram 92 timing against the real STIB app at a known stop (Place Saint-Job).
 
 ## 1. Coverage: more city
-- [ ] The built area is lon 4.327–4.372 × lat 50.7905–50.8075 (Uccle centre to Saint-Job,
-      ~6 km² inside a 4 × 2 km grid of 32 tiles): about a quarter of Uccle (~23 km²).
-      Extend the grid to all of Uccle, then the Brussels region (UrbIS covers all of it, CC0).
-      Needs: bigger OSM extract (split requests), more UrbIS sheets (`find_sheets.py`), a tile
-      naming scheme beyond A–H / 1–4, `run_tile.py --all --network`.
+- [x] **All of Uccle (2026-11-04):** the study area is the commune boundary (OSM rel. 58253) + the
+      first box; 120 tiles on a 15 × 12 grid (A1..O12, old G4 = I6, see CONTRACT §3), 25,458
+      buildings, 148 MB of tiles. Built in 11 min with 6 parallel `run_tile.py` groups, then
+      `build_trees.py` for all (trees need the neighbours' buildings). Road network: 4,531 roads,
+      135 refine errors left (was 17 on the small grid) to look at.
+- [ ] **The Brussels region** (~650 tiles, ~1.2 GB): a one-command parallel build
+      (`run_tile.py --jobs N`), cheaper far tiles, road quality at scale. Do it once Uccle holds 60 fps.
 - [ ] Road network: ~12 bad spots left (Alsemberg / Brugmann sharp Y, crowded rings in C4 / F2;
       `node tools/check_roads.mjs --all`).
 

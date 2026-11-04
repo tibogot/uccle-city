@@ -1,6 +1,6 @@
 // Build a tile's roads.json with the vendored road engine and print its checks.
 //
-//   node tools/check_roads.mjs [G4] [--flat] [--json]
+//   node tools/check_roads.mjs [I6] [--flat] [--json]
 //   node tools/check_roads.mjs --all          # every built tile + data/roads/network.json (flat), one line each
 //
 // ground(x, z) = bilinear lookup in the tile's terrain.u16 (CONTRACT §5.3). Points in the
@@ -13,7 +13,7 @@ import { buildRoadNetwork } from "../vendor/roads/roadNetwork.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
-const tile = (args.find((a) => !a.startsWith("--")) || "G4").toUpperCase();
+const tile = (args.find((a) => !a.startsWith("--")) || "I6").toUpperCase();
 const flat = args.includes("--flat");
 const tdir = join(ROOT, "data", "tiles", tile);
 

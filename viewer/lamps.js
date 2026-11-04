@@ -79,7 +79,7 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true } 
   const sites = lampSites(roads, bounds);
   const group = new THREE.Group();
   group.name = "street-lamps";
-  if (!sites.length) return { group, count: 0, update() {} };
+  if (!sites.length) return { group, count: 0, update() {}, heads: [] };
 
   const postMat = new THREE.MeshStandardNodeMaterial({ color: 0x1d2420, roughness: 0.45, metalness: 0.6 });
   const glassMat = new THREE.MeshStandardNodeMaterial({ roughness: 0.15 });

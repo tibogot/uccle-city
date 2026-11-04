@@ -1,0 +1,34 @@
+{
+ "contract": "0.7",
+ "tile": "J5",
+ "x0": 1500.0,
+ "z0": 0.0,
+ "size": 500.0,
+ "step": 1.0,
+ "cols": 501,
+ "rows": 501,
+ "encoding": "u16le-cm",
+ "nodata": 65535,
+ "min": 73.81,
+ "max": 111.44,
+ "nodataCount": 0,
+ "source": "urbis-dtm",
+ "inputs": [
+  {
+   "file": "DTM_31370_TIFF_150164_20211009_50/UrbDTM_2021_150164.tif",
+   "res": [
+    0.5,
+    0.5
+   ],
+   "crs": "EPSG:31370"
+  },
+  {
+   "file": "DTM_31370_TIFF_150165_20211009_50/UrbDTM_2021_150165.tif",
+   "res": [
+    0.5,
+    0.5
+   ],
+   "crs": "EPSG:31370"
+  }
+ ]
+}

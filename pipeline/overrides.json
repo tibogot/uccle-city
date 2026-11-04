@@ -16,12 +16,12 @@
         "n140341545",
         "n140341536"
       ],
-      "why": "Avenue du Prince de Ligne, east end of the island (H3, x 1673 z 362): three nodes within 12 m joined by 7-20 m one-way stubs; one junction."
+      "why": "Avenue du Prince de Ligne, east end of the island (J5, x 1673 z 362): three nodes within 12 m joined by 7-20 m one-way stubs; one junction."
     },
     {
       "op": "drop-road",
       "road": "r27861175_0",
-      "why": "Avenue du Prince de Ligne, west end of the island (H3, x 1595 z 362): a 40 m mini-island of two opposite one-ways; keep one as a two-way road."
+      "why": "Avenue du Prince de Ligne, west end of the island (J5, x 1595 z 362): a 40 m mini-island of two opposite one-ways; keep one as a two-way road."
     },
     {
       "op": "set-road",
@@ -34,7 +34,7 @@
     {
       "op": "drop-road",
       "road": "r306595481_0",
-      "why": "Brugmann/Wolvendael roundabout (C2, x -641 z -313): unnamed service alley through the ring's centre; blocks folding the Brugmann junction into the ring."
+      "why": "Brugmann/Wolvendael roundabout (E4, x -641 z -313): unnamed service alley through the ring's centre; blocks folding the Brugmann junction into the ring."
     },
     {
       "op": "drop-road",
@@ -44,7 +44,7 @@
     {
       "op": "drop-road",
       "road": "r23553061_0",
-      "why": "Brugmann/Wolvendael roundabout, south side (C2, x -600 z -260): unnamed one-way service loop next to the Wolvendael junction; makes the ring join cross roads."
+      "why": "Brugmann/Wolvendael roundabout, south side (E4, x -600 z -260): unnamed one-way service loop next to the Wolvendael junction; makes the ring join cross roads."
     },
     {
       "op": "drop-road",
@@ -62,7 +62,7 @@
         "n4716748642",
         "n3123562191"
       ],
-      "why": "Avenue Wolvendael (C2, x -578 z -150): the dual stretch splits and its two one-way halves meet again 20 m later; one node instead of a 20 m mini-island."
+      "why": "Avenue Wolvendael (E4, x -578 z -150): the dual stretch splits and its two one-way halves meet again 20 m later; one node instead of a 20 m mini-island."
     }
   ]
 }

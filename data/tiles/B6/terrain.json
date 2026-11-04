@@ -1,0 +1,26 @@
+{
+ "contract": "0.7",
+ "tile": "B6",
+ "x0": -2500.0,
+ "z0": 500.0,
+ "size": 500.0,
+ "step": 1.0,
+ "cols": 501,
+ "rows": 501,
+ "encoding": "u16le-cm",
+ "nodata": 65535,
+ "min": 24.37,
+ "max": 32.13,
+ "nodataCount": 44509,
+ "source": "urbis-dtm",
+ "inputs": [
+  {
+   "file": "DTM_31370_TIFF_146164_20211009_50/UrbDTM_2021_146164.tif",
+   "res": [
+    0.5,
+    0.5
+   ],
+   "crs": "EPSG:31370"
+  }
+ ]
+}

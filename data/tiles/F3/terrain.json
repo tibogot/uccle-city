@@ -1,21 +1,21 @@
 {
  "contract": "0.7",
  "tile": "F3",
- "x0": 500.0,
- "z0": 0.0,
+ "x0": -500.0,
+ "z0": -1000.0,
  "size": 500.0,
  "step": 1.0,
  "cols": 501,
  "rows": 501,
  "encoding": "u16le-cm",
  "nodata": 65535,
- "min": 71.21,
- "max": 106.12,
+ "min": 47.52,
+ "max": 83.33,
  "nodataCount": 0,
  "source": "urbis-dtm",
  "inputs": [
   {
-   "file": "DTM_31370_TIFF_149164_20211009_50/UrbDTM_2021_149164.tif",
+   "file": "DTM_31370_TIFF_148165_20211009_50/UrbDTM_2021_148165.tif",
    "res": [
     0.5,
     0.5
@@ -23,7 +23,7 @@
    "crs": "EPSG:31370"
   },
   {
-   "file": "DTM_31370_TIFF_149165_20211009_50/UrbDTM_2021_149165.tif",
+   "file": "DTM_31370_TIFF_148166_20211009_50/UrbDTM_2021_148166.tif",
    "res": [
     0.5,
     0.5

@@ -97,12 +97,18 @@ y =  H                 +y = up, absolute height in metres above TAW/DNG (not shi
 
 - Square **500 m** tiles aligned to the local origin: tile `(i, j)` covers
   `x ∈ [500·i, 500·(i+1))`, `z ∈ [500·j, 500·(j+1))`.
-- `i = −4 … 3` (8 columns), `j = −2 … 1` (4 rows). That is 32 tiles covering
-  x −2000…2000, z −1000…1000, which contains the whole study box.
+- **From 2026-11-04 (all of Uccle):** `i = −6 … 8` (15 columns), `j = −4 … 7` (12 rows),
+  x −3000…4500, z −2000…4000. Only the **120 tiles that touch the study area** exist (listed in
+  the manifest). The study area is the commune of Uccle (OSM relation 58253,
+  `pipeline/uccle_boundary.geojson`) united with the first study box. Seven forest tiles (Sonian
+  Forest) have no roads: their `roads.json` is empty but valid.
 - **Name** = column letter + row number, read like a map from the north-west:
-  column `A`…`H` for `i = −4…3` (west → east), row `1`…`4` for `j = −2…1`
-  (north → south). Example: `A1` is the north-west corner, `H4` the south-east.
-- **Sample tile: `G4`** (i = 2, j = 1, x 1000–1500, z 500–1000). It contains
+  column `A`…`O` for `i = −6…8` (west → east), row `1`…`12` for `j = −4…7`
+  (north → south).
+- **The first grid** (until 2026-11-04) was `i = −4…3`, `j = −2…1`, named `A1`…`H4`, so old notes
+  use old names: old name = letter index + 2 columns, number + 2 rows (old `G4` = new `I6`,
+  old `C2` = `E4`, old `H3` = `J5`). `common.OLD_NAMES` has the table.
+- **Sample tile: `I6`** (old `G4`; i = 2, j = 1, x 1000–1500, z 500–1000). It contains
   Place de Saint-Job at local (1153.1, 540.1). The square is only about 40 m
   from the tile's north edge, which is why tiles carry a buffer (below).
 - Tiles outside the study box hold only what falls inside it. Data is clipped
@@ -404,7 +410,7 @@ input files that contributed, relative to `data/raw/urbis/<key>/`. The first pat
 part is the release folder, which carries the sheet and date, e.g.
 `UrbISBuildings3D_31370_SHP_149164_20261003/shp/…`.
 
-All 32 tiles are listed. Tiles that haven't been built have
+Every tile of the grid that touches the study area is listed (120). Tiles that haven't been built have
 `status: "missing"` and no `files`.
 
 ## 6. Rules

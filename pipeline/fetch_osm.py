@@ -4,6 +4,8 @@ Output: data/raw/osm/area.json (Overpass JSON: nodes with lat/lon, ways with nod
 relations with members). Re-run only when you want fresher OSM.
 
     python pipeline/fetch_osm.py [--margin 250] [--endpoint URL]
+
+Also writes data/raw/osm/landmarks.json (the place-of-worship outlines, for tag_landmarks.py).
 """
 from __future__ import annotations
 
@@ -95,6 +97,32 @@ def main():
     for el in doc["elements"]:
         kinds[el["type"]] = kinds.get(el["type"], 0) + 1
     print(f"ok {len(data)/1e6:.1f} MB in {time.time()-t0:.0f}s, {kinds}, osm_base={doc.get('osm3s', {}).get('timestamp_osm_base')}", file=sys.stderr)
+    write_landmarks(doc)
+
+
+WORSHIP_BUILDINGS = {"church", "chapel", "cathedral"}
+
+
+def write_landmarks(doc):
+    """data/raw/osm/landmarks.json for tag_landmarks.py: the place-of-worship and church/chapel/cathedral outlines
+    (ways and relations) of the extract, with the ways and nodes they use. Same Overpass JSON shape."""
+    els = doc["elements"]
+    ways = {e["id"]: e for e in els if e["type"] == "way"}
+    nodes = {e["id"]: e for e in els if e["type"] == "node"}
+
+    def hit(e):
+        t = e.get("tags", {})
+        return t.get("amenity") == "place_of_worship" or t.get("building") in WORSHIP_BUILDINGS
+
+    keep = [e for e in els if e["type"] in ("way", "relation") and hit(e)]
+    used_ways = {m["ref"] for e in keep if e["type"] == "relation" for m in e.get("members", []) if m["type"] == "way"}
+    member_ways = [ways[w] for w in used_ways if w in ways and not hit(ways[w])]
+    used_nodes = {n for e in keep + member_ways if e["type"] == "way" for n in e["nodes"]}
+    # member ways go in untagged so tag_landmarks reads them only through their relation
+    out = [nodes[n] for n in sorted(used_nodes) if n in nodes] + [{**w, "tags": {}} for w in member_ways] + keep
+    path = RAW / "osm" / "landmarks.json"
+    path.write_text(json.dumps({"elements": out, "_query": doc.get("_query")}), encoding="utf-8")
+    print(f"landmarks: {len(keep)} outline(s) -> {path}", file=sys.stderr)
 
 
 if __name__ == "__main__":

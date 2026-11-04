@@ -7,3 +7,4 @@ data/raw/
 *.md
 !vendor/**/*.md
 !CREDITS.md
+.claude/

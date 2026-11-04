@@ -30,9 +30,9 @@ lab first, then go into the city.
 
 ```
 python3 -m http.server 8765        # from the repo root
-open http://localhost:8765/viewer/index.html?tile=G4
+open http://localhost:8765/viewer/index.html?tile=I6   # Saint-Job (was G4)
 ```
-Useful URL params: `far=0..6` (far-LOD ring), `clock=HH:MM`, `timescale=N`, `trams=0`, `worker=0`, `tile=A1..H4`, `ring=0|1|2` (neighbour tiles), `yaw=deg` (walk facing), `view=stjob|walk`, `at=x,z`, `cam=x,z,height`,
+Useful URL params: `far=0..6` (far-LOD ring), `clock=HH:MM`, `timescale=N`, `trams=0`, `worker=0`, `tile=A1..O12` (120 tiles of all Uccle; Saint-Job = I6, the old G4), `ring=0|1|2` (neighbour tiles), `yaw=deg` (walk facing), `view=stjob|walk`, `at=x,z`, `cam=x,z,height`,
 `time=golden|midday|overcast|twilight|night`, `fx=0` (no post effects), `trees=slop` (slop-newyork trees), `trees=simple`
 (old leaf-card trees), `sunlight=1` (cascaded shadows), `warmup=0` (no boot shader warm-up), `log=0` (dev log collapsed), `gpu=0` (no GPU timing). Use Chrome/Edge with WebGPU for real
 speed; headless screenshots use the slower WebGL2 fallback.
@@ -46,7 +46,8 @@ Pipeline (raw data must be fetched first, see README): `python pipeline/run_tile
 ## Done (all pushed)
 
 - Data: UrbIS 3D buildings, DTM, DSM, transport, orthophoto 2024 (all CC0) + OSM (ODbL).
-  32 tiles of 500 m (A1–H4) built.
+  All of Uccle: 120 tiles of 500 m (A1–O12, 15 × 12 grid, only tiles touching the commune) built
+  2026-11-04. Old tile names (A1–H4) shifted: old G4 = I6 (docs/CONTRACT.md §3).
 - Roads: full network through the road engine; 14 errors left inside tiles (23/32 tiles clean).
 - Viewer (`viewer/`): three.js r187 WebGPU + TSL. Terrain, roads with painted markings and
   real surfaces (setts, pavers), tram rails, procedural façades with interior-mapped windows,
@@ -85,7 +86,7 @@ Pipeline (raw data must be fetched first, see README): `python pipeline/run_tile
 
 1. Clone `tibogot/uccle-city`, branch `claude/foundation` (all work is there; nothing merged to main).
 2. Serve the repo root: `python3 -m http.server 8765`, open
-   `http://localhost:8765/viewer/index.html?tile=G4` in Chrome/Edge (WebGPU). Do the browser check
+   `http://localhost:8765/viewer/index.html?tile=I6` in Chrome/Edge (WebGPU). Do the browser check
    in `docs/TODO.md` section 0 first.
 3. Python pipeline: `python3 -m venv ../venv && ../venv/bin/pip install -r pipeline/requirements.txt`.
    Raw data (`data/raw/`, git-ignored) is NOT in the repo: re-fetch with `fetch_osm.py`,

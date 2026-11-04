@@ -1,5 +1,5 @@
-// Minimal 3D viewer for one tile (default G4): terrain, UrbIS buildings, road-engine roads.
-// Serve the repo root (python3 -m http.server 8000) and open /viewer/index.html?tile=G4.
+// Minimal 3D viewer for one tile (default I6): terrain, UrbIS buildings, road-engine roads.
+// Serve the repo root (python3 -m http.server 8000) and open /viewer/index.html?tile=I6.
 //
 // Scene units are CONTRACT local metres: +x east, +z south, +y up (absolute m TAW).
 // Everything is built on the main thread at load (about 1 s for G4).
@@ -32,7 +32,7 @@ import { addLamps } from "./lampLight.js";
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
 if (params.get("log") === "0") document.getElementById("logBox")?.removeAttribute("open");   // dev log: open by default, ?log=0 closes it
-const TILE = (params.get("tile") || "G4").toUpperCase();
+const TILE = (params.get("tile") || "I6").toUpperCase();    // I6 = Saint-Job (it was G4 before the grid grew to all of Uccle)
 const EYE = 1.7;            // walk-mode eye height (m)
 const CARVE = 0.12;         // terrain is pushed this far under any road surface
 
@@ -474,7 +474,7 @@ async function main() {
   const walker = new Walker(camera, renderer.domElement, world);
   const atP = params.get("at")?.split(",").map(Number);
   const start = atP?.length === 2 ? roadStart(roads, atP[0], atP[1], bounds)
-    : TILE === "G4" ? roadStart(roads, 1153.1, 540.1, bounds) : roadStart(roads, cx, cz, bounds);   // ?at=, else Place de Saint-Job on G4
+    : TILE === "I6" ? roadStart(roads, 1153.1, 540.1, bounds) : roadStart(roads, cx, cz, bounds);   // ?at=, else Place de Saint-Job on I6
   if (!start) $("btnWalk").disabled = true;
   const yawP = params.get("yaw");                                        // ?yaw=deg: walk facing (0 = -z / north-ish, 90 = -x)
   const walk = () => { if (!start) return; flyer.stop(); controls.enabled = false; walker.start(start.x, start.z, yawP != null ? +yawP * Math.PI / 180 : start.yaw); };
@@ -510,9 +510,9 @@ async function main() {
   flyer.onExit = () => setView("stjob");
   const views = {
     overview: () => { camera.position.set(cx - 330, cy + 300, cz + 400); controls.target.set(cx, cy, cz); },
-    stjob: () => {   // ?at=x,z, else Place de Saint-Job on G4, else the tile centre
+    stjob: () => {   // ?at=x,z, else Place de Saint-Job on I6, else the tile centre
       const at = params.get("at")?.split(",").map(Number);
-      const [x, z] = at?.length === 2 ? at : TILE === "G4" ? [1153, 540] : [cx, cz], y = hm.surface(x, z);
+      const [x, z] = at?.length === 2 ? at : TILE === "I6" ? [1153, 540] : [cx, cz], y = hm.surface(x, z);
       const cam = params.get("cam")?.split(",").map(Number);           // ?cam=x,z,height-above-ground
       if (cam?.length === 3) camera.position.set(cam[0], hm.surface(cam[0], cam[1]) + cam[2], cam[1]);
       else camera.position.set(x + 70, y + 45, z + 110);
