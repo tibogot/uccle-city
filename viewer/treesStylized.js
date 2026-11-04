@@ -268,6 +268,15 @@ export function buildStylizedTreeField(trees, ground, inTile) {
     const sphere = new THREE.Sphere(new THREE.Vector3((x0 + x1) / 2, (y0 + y1) / 2 + 8, (z0 + z1) / 2), Math.hypot(x1 - x0, y1 - y0 + 16, z1 - z0) / 2 + 12);
     holder.traverse((o) => { if (o.isInstancedMesh) { o.frustumCulled = true; o.boundingSphere = sphere; } });
   }
+  // STATIC usage for the per-instance buffers (the vendor marks them dynamic): three r187 re-uploads a
+  // DynamicDrawUsage attribute in EVERY render pass of every frame (scene, shadow, depth twin), changed
+  // or not; they only change on a LOD re-bucket (the camera moved 5 m), which sets needsUpdate and
+  // uploads anyway. Measured 2026-11-04: writeBuffer was 38 % of the main thread, ~14 ms CPU a frame.
+  holder.traverse((o) => {
+    if (!o.isInstancedMesh) return;
+    o.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+    o.geometry.attributes.treeXf?.setUsage(THREE.StaticDrawUsage);
+  });
   // shadows from LOD 0 only (the vendor casts from LOD 0 and 1): at 40-120 m a tree's own shadow is a few
   // pixels in the cascades, and foliage shadow passes cost as much as the colour pass (research D #4).
   // A mesh's LOD: its wrapper shares the index buffer of the shared built tree "<variant>:<lod>".

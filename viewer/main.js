@@ -506,7 +506,8 @@ async function main() {
   if (pipe) { pipe.setExposureScale(lighting.exposureScale); pipe.look(timeId); }
   else { renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = lighting.exposureScale; }
   const focus = new THREE.Vector3(), fwd = new THREE.Vector3();
-  const renderFrame = () => (pipe ? pipe.render() : renderer.render(scene, camera));
+  const hazeHook = lighting.firmament ? (rt, d, size) => lighting.hazeHook(rt, d, size) : null;   // ?haze=0: off
+  const renderFrame = () => (pipe ? pipe.render(params.get("haze") !== "0" ? hazeHook : null) : renderer.render(scene, camera));
   const tsel = $("timeSel");
   for (const k of Object.keys(PRESETS)) tsel.add(new Option(k, k, false, k === timeId));
   tsel.onchange = () => { lighting.apply(tsel.value); pipe?.look(tsel.value); };
@@ -522,7 +523,7 @@ async function main() {
     if (walker.on) walker.update(dt); else controls.update();
     for (const u of updaters) u(camera.position);
     renderFrame();
-    if (pipe && lighting.sky) pipe.setExposureFactor(lighting.adapt(pipe.sceneTarget, dt));
+    if (pipe && lighting.firmament) pipe.setExposureFactor(lighting.adapt(dt));
     sampleGpu();
     frames++;
     if (frames % 10 === 1) {

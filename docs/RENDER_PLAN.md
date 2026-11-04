@@ -138,8 +138,16 @@ Quick wins first, then the big one:
 - Gotchas found: (1) the fog must be set before any material compiles (set later, the far-LOD tiles'
   fog-less build lit them like daytime at night); (2) a PMREM lookup of the sky's environment never
   refreshes (re-rendered in place): the fog uses `sky.light().horizon` instead.
-- Next: the sky's haze + sun shafts pass (`sky.postProcess` on the linear HDR frame) inside our post
-  chain; the night look (nightEV, Purkinje); the tram clock driving the sun; then volumetric fog.
+- Haze + sun shafts done: post.js renders the scene itself into an MRT HDR target (what `pass()` did),
+  copies the colour to a single-target HDR frame, runs `lighting.hazeHook` on it (Firmament
+  `postProcess` with the sun's own ShadowNode for the shafts, seaLevel 40 m TAW, then `meter`), then the
+  chain (AO, SSR, bloom, grade). `?haze=0` off.
+- **CPU bottleneck found the same day:** the stylized trees' instance buffers were DynamicDrawUsage, which
+  three r187 re-uploads in EVERY render pass of every frame: writeBuffer was 38 % of the main thread,
+  ~14 ms CPU a frame (46-54 fps). Static usage (they only change on a LOD re-bucket, which uploads via
+  needsUpdate): 2.5 ms CPU, steady 60 fps; GPU close-up 7.5 ms, walk 6.6 ms with the haze.
+  Rule: never DynamicDrawUsage for per-instance data that is not rewritten every frame.
+- Next: the night look (nightEV, Purkinje); the tram clock driving the sun; then volumetric fog.
 
 ## Phase 2: cheap look fixes
 

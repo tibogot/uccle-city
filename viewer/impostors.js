@@ -247,10 +247,10 @@ export function impostorField(placements, variantOf, material) {
   geo.setAttribute("uv", new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1], 2));
   geo.setIndex([0, 1, 2, 0, 2, 3]);
   const data = new THREE.InstancedBufferAttribute(new Float32Array(cap * 4), 4);
-  data.setUsage(THREE.DynamicDrawUsage);
+  data.setUsage(THREE.StaticDrawUsage);     // static: dynamic usage re-uploads every pass of every frame
   geo.setAttribute("impData", data);
   const pos = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3);
-  pos.setUsage(THREE.DynamicDrawUsage);
+  pos.setUsage(THREE.StaticDrawUsage);
   geo.setAttribute("impPos", pos);
   const mesh = new THREE.InstancedMesh(geo, material, cap);
   mesh.count = 0;

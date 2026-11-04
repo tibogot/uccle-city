@@ -69,6 +69,11 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 - [ ] Weather: rain (wet roads, puddles, drops), fog, snow; clouds moving.
 - [ ] Seasons for trees and grass.
 
+## 7b. Winter (owner, 2026-11-04: "it's going to snow in a month")
+- [ ] A winter version: snow on roofs, ground and kerbs (slope- and exposure-aware), bare deciduous
+      trees (branch skeletons already exist), winter sun path (Firmament `?day=` ~350), low sun, frost /
+      wet roads, falling snow. Switchable by date or a preset.
+
 ## 8. Game / app
 - [ ] Driving: a car controller on the road engine's surfaces (the "car game" goal).
 - [ ] Modes: walk, bike, drive, drone / photo mode; minimap with real street names.

@@ -6,7 +6,7 @@
 // (+x east, +z south), heights are absolute metres TAW (40-130 m) so the haze layer starts at the
 // valley floor, and the shared uniforms (`env`) feed our own façade and road materials.
 import * as THREE from "three/webgpu";
-import { Fn, float, vec3, vec4, uniform, mix, fog, pmremTexture, positionWorld, cameraPosition, length, normalize, max, exp, abs, select } from "three/tsl";
+import { shadow, Fn, float, vec3, vec4, uniform, mix, fog, pmremTexture, positionWorld, cameraPosition, length, normalize, max, exp, abs, select } from "three/tsl";
 import { SkyMesh } from "three/addons/objects/SkyMesh.js";
 import { SunLight } from "three/addons/lights/SunLight.js";
 import { SunLightNode } from "three/addons/lights/SunLightNode.js";
@@ -144,6 +144,10 @@ export class Lighting {
     this.sun.shadow.bias = -0.0002;
     this.sun.castShadow = true;
     this.sun.shadow.normalBias = 0.05;
+    // our own ShadowNode, handed to the light before its first render: r187 keeps the shadow map inside
+    // the node (light.shadow.map stays null on WebGPU) and the sky's sun shafts march that map
+    this.shadowNode = shadow(this.sun);
+    this.sun.shadow.shadowNode = this.shadowNode;
     scene.add(this.sun.target, this.sun);
     this.sunDir = new THREE.Vector3(0, 1, 0);
     this.uKey = uniform(new THREE.Vector3(0, 0, 0));
@@ -182,12 +186,19 @@ export class Lighting {
     return sunDirection({ hours: h, dayOfYear: DAY, latitude: BRUSSELS_LAT }, this._sd);
   }
 
-  /** After the frame is drawn: meter the linear HDR scene and return this frame's exposure factor
-   *  (Firmament's eye adaptation, x0.6..x6, at most x2 at night). 1 for the old sky. */
-  adapt(sceneTarget, dt) {
-    if (!this.sky) return 1;
-    if (sceneTarget) this.sky.meter(sceneTarget);
-    return this.sky.exposureFactor(dt);
+  /** On the linear HDR frame, before the post chain (post.js render hook): the sky's air haze + sun
+   *  shafts (marched through the sun's shadow map), then the eye adaptation's meter, as
+   *  game-engine-v1's compositeOntoLinearHDR. seaLevel: the haze's low layer sits on Uccle's valley
+   *  floor (~40 m TAW), not the sea. */
+  hazeHook(rt, depthTex, size) {
+    if (!this.firmament || !this.sky) return;
+    this.sky.postProcess(rt, { depthTex, light: this.sun, shadowDepth: this.shadowNode?.shadowMap?.depthTexture ?? null, size, seaLevel: 40 });
+    this.sky.meter(rt);
+  }
+
+  /** This frame's exposure factor (Firmament's eye adaptation, x0.6..x6, at most x2 at night); 1 for the old sky. */
+  adapt(dt) {
+    return this.firmament && this.sky ? this.sky.exposureFactor(dt) : 1;
   }
 
   /** Per frame (Firmament): everything our materials read from the sky. */
