@@ -54,6 +54,8 @@ def region(name):
     if name.startswith("wing_tip") or name.startswith("wing_5") or name.startswith("wing_feather_4"): return "tip"
     if name.startswith("wing"): return "wing"
     if name.startswith("tail"): return "tail"
+    # yellow only below the "trousers": a peregrine's thighs are barred cream like the belly
+    if name.startswith("UpperLeg"): return "body"
     if "Leg" in name or name.startswith("Foot") or name.startswith("Toes"): return "leg"
     return "body"
 REG = ["body", "head", "beak", "wing", "tip", "tail", "leg"]

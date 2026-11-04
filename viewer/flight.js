@@ -10,6 +10,7 @@
 // animation clips play through an AnimationMixer, a "flap" clip while flapping or climbing, a "glide" clip
 // otherwise (names matched loosely: flap / fly / wing ... glide / soar / idle).
 import * as THREE from "three/webgpu";
+import { BirdRig } from "./birdRig.js";
 
 const MIN_SPEED = 7, CRUISE = 14, MAX_SPEED = 38;   // m/s
 const CLEAR = 3.0;                                   // metres kept above the ground / roofs
@@ -89,69 +90,17 @@ export class Flyer {
     return Object.fromEntries((gltf.animations || []).map((c) => [c.name, +c.duration.toFixed(2)]));
   }
 
-  // ---------------------------------------------------------------- procedural flight layers
-  // Added on the bones AFTER the clips each frame: wings folded by the dive, banking (inner wing low, tail and
-  // head into the turn), feet tucked in flight, braking (tail down, wings forward). The rig's local axes are
-  // unknown, so calibrate() finds, per bone, the axis and sign whose small rotation moves an end bone (wing
-  // tip, toe tip, tail tip, beak) the wanted way, in the bird's own frame (nose -z, up +y, left -x).
-  calibrate(root) {
-    const B = (n) => root.getObjectByName(n);
-    const v = new THREE.Vector3(), inv = new THREE.Matrix4();
-    const local = (o) => { root.updateMatrixWorld(true); inv.copy(root.matrixWorld).invert(); return o.getWorldPosition(v).applyMatrix4(inv).clone(); };
-    const AX = [new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1)];
-    const q = new THREE.Quaternion();
-    const find = (boneName, tipName, want) => {
-      const bone = B(boneName), tip = B(tipName);
-      if (!bone || !tip) return null;
-      const q0 = bone.quaternion.clone(), p0 = local(tip);
-      let best = null;
-      for (const ax of AX) {
-        bone.quaternion.copy(q0).multiply(q.setFromAxisAngle(ax, 0.4));
-        const d = local(tip).sub(p0).dot(want);
-        if (!best || Math.abs(d) > Math.abs(best.d)) best = { axis: ax.clone(), d };
-      }
-      bone.quaternion.copy(q0);
-      return best && Math.abs(best.d) > 1e-4 ? { bone, axis: best.axis.multiplyScalar(Math.sign(best.d)) } : null;
-    };
-    const V = (x, y, z) => new THREE.Vector3(x, y, z).normalize();
-    // (left wing toward -x, right toward +x; the nose is -z: "back" is +z)
-    this.layers = {
-      foldL: find("wing_1_L", "wing_tip_L", V(0.6, 0, 1)), foldR: find("wing_1_R", "wing_tip_R", V(-0.6, 0, 1)),
-      elbowL: find("wing_3_L", "wing_tip_L", V(0.5, 0, 1)), elbowR: find("wing_3_R", "wing_tip_R", V(-0.5, 0, 1)),
-      dipL: find("wing_1_L", "wing_tip_L", V(0, -1, 0)), dipR: find("wing_1_R", "wing_tip_R", V(0, -1, 0)),
-      fwdL: find("wing_1_L", "wing_tip_L", V(0, 0, -1)), fwdR: find("wing_1_R", "wing_tip_R", V(0, 0, -1)),
-      tailSide: find("tail_1", "tail_tip", V(1, 0, 0)), tailDown: find("tail_1", "tail_tip", V(0, -1, 0)),
-      headSide: find("head", "mouth_upper_tip", V(1, 0, 0)),
-      legL: find("UpperLeg_L", "Toes_tip_L", V(0, 0.5, 1)), legR: find("UpperLeg_R", "Toes_tip_R", V(0, 0.5, 1)),
-      kneeL: find("LowerLeg_L", "Toes_tip_L", V(0, 0.5, 1)), kneeR: find("LowerLeg_R", "Toes_tip_R", V(0, 0.5, 1)),
-    };
-    this.layerState = { fold: 0, brake: 0 };
-    window.__birdLayers = Object.fromEntries(Object.entries(this.layers).map(([k, l]) => [k, l ? `${l.bone.name} ${l.axis.toArray().join(",")}` : null]));
-  }
+  // procedural flight layers on the bones: viewer/birdRig.js (shared with the bird lab)
+  calibrate(root) { this.rig = new BirdRig(root); this.layerState = { fold: 0, brake: 0 }; window.__birdLayers = this.rig.found; }
 
   applyLayers(dt, { tuck, flapping }) {
-    const L = this.layers;
-    if (!L) return;
+    if (!this.rig) return;
     const s = this.layerState, ease = (c, t, r) => c + (t - c) * (1 - Math.exp(-r * dt));
-    s.fold = ease(s.fold, tuck ? 1 : Math.max(0, -this.pitch - 0.35) * 1.5, 5);             // 1. dives
-    s.brake = ease(s.brake, !flapping && this.pitch > 0.2 && this.speed < CRUISE ? 1 : 0, 4); // 4. braking
-    const q = new THREE.Quaternion();
-    // the pose each layered bone had after the mixer, kept to restore before the next mixer update
-    this.layerSaved ??= new Map();
-    for (const l of Object.values(L)) if (l) (this.layerSaved.get(l.bone) || this.layerSaved.set(l.bone, new THREE.Quaternion()).get(l.bone)).copy(l.bone.quaternion);
-    const add = (l, a) => { if (l && a) l.bone.quaternion.multiply(q.setFromAxisAngle(l.axis, a)); };
-    // 1. wings folded back and in (the flap itself fades out: the clip weight follows this.flap)
-    add(L.foldL, 0.9 * s.fold); add(L.foldR, 0.9 * s.fold);
-    add(L.elbowL, 0.7 * s.fold); add(L.elbowR, 0.7 * s.fold);
-    // 2. banking: bank > 0 = turning left (A): the left (inner) wing dips, tail and head into the turn
-    const b = this.bank;
-    add(L.dipL, Math.max(0, b) * 0.45); add(L.dipR, Math.max(0, -b) * 0.45);
-    add(L.tailSide, -b * 0.5); add(L.headSide, -b * 0.5);
-    // 3. feet tucked back under the tail, always in flight
-    add(L.legL, 0.9); add(L.legR, 0.9); add(L.kneeL, 0.6); add(L.kneeR, 0.6);
-    // 4. braking: tail down, wings reach forward
-    add(L.tailDown, 0.5 * s.brake); add(L.fwdL, 0.35 * s.brake); add(L.fwdR, 0.35 * s.brake);
+    s.fold = ease(s.fold, tuck ? 1 : Math.max(0, -this.pitch - 0.35) * 1.5, 5);             // dives
+    s.brake = ease(s.brake, !flapping && this.pitch > 0.2 && this.speed < CRUISE ? 1 : 0, 4); // braking
+    this.rig.apply({ fold: s.fold, bank: this.bank, legs: 1, brake: s.brake });
   }
+
 
   /** y: absolute height (m); default 35 m above the ground */
   start(x, z, yaw, y = null) {
@@ -217,7 +166,7 @@ export class Flyer {
       this.actions.flap.timeScale = 0.8 + 0.8 * this.flap;
       // undo last frame's layer offsets first: the mixer only rewrites the channels its clips animate, so on
       // the others the offsets ACCUMULATED frame after frame (the bird jittered, owner 2026-11-04)
-      for (const [bone, q0] of this.layerSaved || []) bone.quaternion.copy(q0);
+      this.rig?.restore();
       this.mixer.update(dt);
       this.applyLayers(dt, { tuck, flapping });
     }

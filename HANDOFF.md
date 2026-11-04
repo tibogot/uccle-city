@@ -13,6 +13,12 @@ Read this first when resuming (with Claude or by hand). Rendering and performanc
 - Never substitute mocked or made-up data: if a dataset can't be fetched, say so.
 - Work on branch `claude/foundation`.
 
+## Labs
+
+`labs/` (open `/labs/`): one page per asset or system, to look at it on its own before it goes into the city
+(the owner's game-engine-v1 practice). Bird Lab done; Lamp, Tree and Material labs planned. New assets get a
+lab first, then go into the city.
+
 ## How to run
 
 ```

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Uccle Labs</title>
+<link rel="icon" href="../viewer/favicon.svg" type="image/svg+xml">
+<style>
+  :root { --bg: #f4f2ee; --fg: #1d2228; --muted: #5d6670; --card: #ffffff; --line: #e2ded6; --link: #1f5fbf; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #15181c; --fg: #e6e9ee; --muted: #9aa3ad; --card: #1d2127; --line: #2b3038; --link: #8fb8ff; } }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p.lead { color: var(--muted); margin: 0 0 24px; }
+  .card { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin: 0 0 12px;
+          text-decoration: none; color: inherit; }
+  .card:hover { border-color: var(--link); }
+  .card b { color: var(--link); }
+  .card span { display: block; color: var(--muted); font-size: 14px; margin-top: 2px; }
+  .soon { opacity: .55; pointer-events: none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Uccle 3D — labs</h1>
+  <p class="lead">One page per asset or system, to look at it on its own before it goes into the city. <a href="../viewer/index.html">Back to the city</a>.</p>
+  <a class="card" href="bird-lab.html"><b>Bird Lab</b><span>The Saint-Job peregrine falcon: every clip, the flight blend, the procedural layers fly mode uses (dive, bank, feet, braking), lights and debug views.</span></a>
+  <div class="card soon"><b>Lamp Lab</b><span>The Brussels swan-neck lamp from Blender: LODs side by side, night glow, the city's light pool. Next.</span></div>
+  <div class="card soon"><b>Tree Lab</b><span>The stylized street trees: species, LODs, wind, impostors, GPU cost per tree.</span></div>
+  <div class="card soon"><b>Material Lab</b><span>Setts, bricks, render, asphalt: procedural vs CC0 scans side by side, at street distance.</span></div>
+</main>
+</body>
+</html>
