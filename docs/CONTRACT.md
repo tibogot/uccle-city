@@ -413,6 +413,37 @@ part is the release folder, which carries the sheet and date, e.g.
 Every tile of the grid that touches the study area is listed (120). Tiles that haven't been built have
 `status: "missing"` and no `files`.
 
+Optional files (listed in `files` when present, never counted in `status` / `missingLayers`):
+`surfaces` (5.6), with `counts.surfaces`, `counts.kerbLength` and `sources.urbisLandCover`.
+
+### 5.6 Measured street surfaces — `surfaces.json` (optional)
+
+Built by `pipeline/build_surfaces.py` from UrbIS Land cover `StreetSurfaces` (level 0 only), cut to the tile
+(no buffer: neighbours meet exactly at the tile edge). Drawn only with the viewer flag `?roads=surface`
+(`viewer/surfaces.js`). Local metres, 0.01 m, rings as everywhere else (outer positive, holes negative,
+no closing point).
+
+```jsonc
+{
+  "contract": "0.7", "tile": "I6",
+  "source": { "dataset": "UrbIS Land cover StreetSurfaces (Paradigm, CC0 1.0)", "file": "UrbISLandCover_04000.gpkg", "built": "<ISO time>" },
+  "classes": { "roadway": 0, "tramRoad": 1, "tramSite": 2, "parking": 3, "square": 4, "sidewalk": 5, "median": 6, "path": 7 },
+  "counts": { "surfaces": 152, "byType": { "SW": 98, "S": 27, .. }, "kerbs": 24, "edges": 35, "skippedLevels": {},
+              "unknownTypes": {}, "area": { "<class>": m² }, "kerbLength": m },
+  "kerbCheck": { "topoKerbLength": m, "derivedKerbLength": m, "topoWithin": { "0.1m": share, .. }, "medianDistance": m } | null,
+  "surfaces": [{ "c": <class>, "type": "S|SW|I|IC|SC|C|M|K|P|A|..", "name": "<STRNAMEFRE>", "hier": "DR|DC|IDR|..", "id": "<INSPIRE id tail>",
+                 "rings": [[[x, z], ..], ..] }],
+  "kerbs": [[[x, z], ..]],                 // raised (sidewalk / median) | low boundary, raised side on the LEFT:
+                                           // for a segment (dx, dz) the raised side is at +(-dz, dx)
+  "edges": [{ "raised": 0|1, "line": [[x, z], ..] }]   // outer boundary of all surfaces (minus the tile edge),
+                                                        // the surface on the LEFT; the viewer hangs skirts from them
+}
+```
+
+UrbIS TYPE -> class: S, I, A, B, IL, G roadway; SC, IC tramRoad; C, AC tramSite; K parking; P square; SW sidewalk;
+M median; T path. `kerbCheck` compares the derived kerbs with the surveyed UrbIS Topo kerb lines (`BR0101L`):
+the share of the surveyed kerb lying within 0.1 / 0.25 / 0.5 / 1 m of a derived one.
+
 ## 6. Rules
 
 - Raw downloads go in `data/raw/` and are never committed. Processed files are

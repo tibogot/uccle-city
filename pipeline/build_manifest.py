@@ -13,6 +13,8 @@ from common import (CONTRACT, COLS, I_RANGE, J_RANGE, L72_PROJ4, LAT_MAX, LAT_MI
 FILES = {"roads": "roads.json", "buildings": "buildings.json", "buildingsBin": "buildings.bin",
          "terrain": "terrain.u16", "terrainHeader": "terrain.json", "features": "features.json",
          "ortho": "ortho.jpg"}
+# listed when present, but a tile without them is still "built" (surfaces: build_surfaces.py, viewer ?roads=surface)
+OPTIONAL = {"surfaces": "surfaces.json"}
 
 
 def main():
@@ -31,6 +33,7 @@ def main():
             t["status"] = "missing"
         else:
             t["status"] = "built" if len(present) == len(FILES) else "partial"
+            present.update({k: f"{name}/{f}" for k, f in OPTIONAL.items() if (d / f).exists()})
             t["files"] = {k: f"{v}?v={stamp}" for k, v in present.items()}
             t["missingLayers"] = [k for k in FILES if k not in present]
             counts, sources = {}, {}
@@ -49,6 +52,10 @@ def main():
                 h = read_json(d / FILES["terrainHeader"])
                 sources["dtm"] = [x["file"] for x in h.get("inputs", [])]
                 counts["terrainMinMax"] = [h["min"], h["max"]]
+            if "surfaces" in present:
+                sc = read_json(d / OPTIONAL["surfaces"])
+                counts.update(surfaces=sc["counts"]["surfaces"], kerbLength=sc["counts"]["kerbLength"])
+                sources["urbisLandCover"] = sc["source"]["file"]
             t["counts"], t["sources"] = counts, sources
         tiles.append(t)
     doc = {

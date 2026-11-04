@@ -273,9 +273,11 @@ if (params.get("worker") !== "0") {
 }
 /** UrbIS solids replaced by a scripted model (the Saint-Job church): not drawn, kept in the roof grid. */
 const HIDE_BU_IDS = params.get("stjob") !== "0" ? [STJOB_BU_ID] : [];
+/** ?roads=surface: tiles that have surfaces.json draw the measured UrbIS street surfaces (viewer/surfaces.js) */
+const ROAD_SURFACES = params.get("roads") === "surface";
 /** CPU data for a tile: from the worker, or on the main thread (?worker=0, or if the worker fails). */
 function tileData(entry, lite = false) {
-  entry = { ...entry, hide: HIDE_BU_IDS };
+  entry = { ...entry, hide: HIDE_BU_IDS, surface: ROAD_SURFACES };
   const local = () => import("./tileData.js").then((m) => (lite ? m.buildLiteData : m.buildTileData)(entry, DATA.href));
   if (!tileWorker) return local();
   return new Promise((resolve, reject) => {
@@ -340,12 +342,15 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   say(`tile ${entry.name} built ${tileWorker ? "in the worker" : "on the main thread"}: ${Object.entries(d.times).map(([k, v]) => `${k} ${v} ms`).join(", ")}`);
   say(`road engine: ${ni.roads} roads, ${ni.nodes} nodes, ${ni.errors} errors ${JSON.stringify(ni.byCode)}, ${ni.warnings} warnings/info`);
   if (d.road.atlas) say(`marking atlas: ${d.road.atlas.width}x${d.road.atlas.height} at ${(d.road.atlas.texel * 100).toFixed(1)} cm, ${d.road.atlas.stats.regions} junctions`);
+  const ss = d.road.surfaceStats;      // ?roads=surface on a tile with surfaces.json (viewer/surfaces.js)
+  if (ss) say(`road surfaces: MEASURED (UrbIS Land cover): ${ss.surfaces} polygons -> ${ss.baseTris} triangles, ${ss.kerbLength} m of kerb; engine markings clipped to them: ${ss.overlayTris} triangles; ${ss.mappedPieces} engine roads/pads on measured ground, ${ss.unmappedPieces} kept as built (${ss.keptEngineTris} + ${ss.keptSideTris} triangles); ${ss.ms} ms`);
   const R = roadMeshes(d.road);
   own.roads.add(...R.meshes);
   await frame("roads");
   const terr = terrainMesh(d.terrain, contourOn, feats, bounds, d.cover);
   own.terrain.add(terr);
-  const plazas = buildPlazas(await loadOverrides(DATA), bounds, (x, z) => hm.ground(x, z));   // squares OSM leaves out (data/overrides.json)
+  // squares OSM leaves out (data/overrides.json); with measured surfaces the UrbIS squares replace them
+  const plazas = ss ? { count: 0 } : buildPlazas(await loadOverrides(DATA), bounds, (x, z) => hm.ground(x, z));
   if (plazas.count) own.roads.add(plazas.group);
   R.textures.push(...terr.userData.textures);
   await frame("terrain");
