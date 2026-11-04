@@ -49,6 +49,14 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 - [ ] Optional interiors: hand-made for a few buildings (church, a café, a shop); procedural
       rooms for others, generated only near the player.
 
+## 5a. Place de Saint-Job and other squares (owner photos 2026-11-04)
+- [x] Place de Saint-Job: setts plaza instead of grass, its streets setts (data/overrides.json, viewer/plazas.js).
+- [ ] Fold data/overrides.json into the pipeline on the next full rebuild (raw data not on this machine).
+- [ ] Other squares and pedestrian areas: fetch OSM `amenity=parking`, `area:highway`, `highway=pedestrian` areas,
+      `place=square` (Overpass was overloaded on 2026-11-04) so no square falls back to grass.
+- [ ] Setts look pass 2: rounder, less regular stones, slightly less blue; parking on the plaza itself.
+- [ ] Brussels swan-neck street lamp (dark green, white globe): Blender pilot.
+
 ## 5. Ground, vegetation, water
 - [ ] UrbIS Land cover (CC0) for gardens vs paving vs lawns; driveways, terraces.
 - [ ] Hedges along garden edges; flower beds; low walls.

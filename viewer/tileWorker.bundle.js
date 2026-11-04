@@ -5540,6 +5540,8 @@ function terrainArrays(hm) {
   }
   return { pos, nrm, idx };
 }
+var overridesP = null;
+var overrides = (base) => overridesP ??= fetch(new URL("../overrides.json", base)).then((r) => r.ok ? r.json() : {}).catch(() => ({}));
 async function buildTileData(entry, base) {
   const times = {};
   const step = async (k, f) => {
@@ -5564,6 +5566,11 @@ async function buildTileData(entry, base) {
     get(F.roads),
     get(F.features)
   ]));
+  const ov = await overrides(base);
+  for (const r of roads.roads) {
+    const s = ov.roadSurface?.[r.id];
+    if (s) (r.meta ??= {}).surface = s;
+  }
   const hm = new Heightmap(tHdr, tBuf);
   const net = await step("buildRoadNetwork", () => buildRoadNetwork(roads, { ground: hm.ground }));
   const errors = net.issues.filter((i) => i.level === "error");

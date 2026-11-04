@@ -73,9 +73,12 @@ export function asphaltMaterial(atlas) {
   const asphaltRough = float(0.9).sub(wheel.mul(0.12));
 
   // --- setts (pavés): courses across the road, granite tones, dark joints
-  const sett = courses(s, t, 0.15, 0.21, float(0.014), phase);
-  const settStone = mix(vec3(0.11, 0.11, 0.115), vec3(0.22, 0.205, 0.19), sett.tone).add(speck.mul(0.015));
-  const settCol = mix(settStone, vec3(0.03, 0.03, 0.028), sett.joint);
+  const sett = courses(s, t, 0.125, 0.15, float(0.018), phase);
+  // Brussels granite setts as on the owner's photos of Place de Saint-Job (2026-11-04): blue-grey to
+  // brown-grey per stone, LIGHT sandy joints (were near-black), as viewer/plazas.js settsLook
+  const settHue = sett.tone.mul(7.31).fract();
+  const settStone = mix(vec3(0.115, 0.125, 0.14), vec3(0.2, 0.185, 0.165), settHue).mul(sett.tone.mul(0.55).add(0.72)).add(speck.mul(0.012));
+  const settCol = mix(settStone, vec3(0.19, 0.18, 0.155), sett.joint);
   // --- paving stones: 20 x 10 cm concrete pavers
   const pav = courses(s, t, 0.1, 0.2, float(0.006), phase.add(5.0));
   const pavCol = mix(mix(vec3(0.2, 0.19, 0.18), vec3(0.28, 0.25, 0.22), pav.tone).add(grain.mul(0.01)), vec3(0.07, 0.065, 0.06), pav.joint);

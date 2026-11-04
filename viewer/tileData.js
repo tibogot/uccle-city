@@ -51,6 +51,10 @@ function terrainArrays(hm) {
   return { pos, nrm, idx };
 }
 
+let overridesP = null;
+/** data/overrides.json (hand corrections), fetched once per worker; {} if missing. */
+const overrides = (base) => (overridesP ??= fetch(new URL("../overrides.json", base)).then((r) => (r.ok ? r.json() : {})).catch(() => ({})));
+
 /** Build all CPU-side data for one manifest entry. `base` = URL of data/tiles/. */
 export async function buildTileData(entry, base) {
   const times = {};
@@ -62,6 +66,9 @@ export async function buildTileData(entry, base) {
   const [tHdr, tBuf, bDoc, bBuf, roads, feats] = await step("fetch", () => Promise.all([
     get(F.terrainHeader), get(F.terrain, true), get(F.buildings), get(F.buildingsBin, true), get(F.roads), get(F.features),
   ]));
+  // hand corrections (data/overrides.json): road surfaces OSM gets wrong (Place de Saint-Job is setts)
+  const ov = await overrides(base);
+  for (const r of roads.roads) { const s = ov.roadSurface?.[r.id]; if (s) (r.meta ??= {}).surface = s; }
   const hm = new Heightmap(tHdr, tBuf);
   const net = await step("buildRoadNetwork", () => buildRoadNetwork(roads, { ground: hm.ground }));
   const errors = net.issues.filter((i) => i.level === "error");

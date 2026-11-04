@@ -24,6 +24,7 @@ import { buildTrees } from "./trees.js";
 import { buildTreeField } from "./treesSlop.js";
 import { buildStylizedTreeField, setTreeLighting, setTreeRenderer } from "./treesStylized.js";
 import { openBootPipelines, warmBoot } from "./warmup.js";
+import { buildPlazas, loadOverrides } from "./plazas.js";
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -337,6 +338,8 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   await frame("roads");
   const terr = terrainMesh(d.terrain, contourOn, feats, bounds, d.cover);
   own.terrain.add(terr);
+  const plazas = buildPlazas(await loadOverrides(DATA), bounds, (x, z) => hm.ground(x, z));   // squares OSM leaves out (data/overrides.json)
+  if (plazas.count) own.roads.add(plazas.group);
   R.textures.push(...terr.userData.textures);
   await frame("terrain");
   const B = facadeMeshes(null, null, null, null, d.buildings);
