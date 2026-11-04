@@ -222,3 +222,41 @@ Paths are in slop-newyork unless noted.
 - GPU timing: `new WebGPURenderer({ trackTimestamp: true })`, `await renderer.resolveTimestampsAsync('render')`,
   `info.render.timestamp`. `renderer.inspector = new Inspector()` (r181+).
 - `BundleGroup` (r169) for static content. `renderer.highPrecision` (not with InstancedMesh).
+
+---------------------------------------------------------------------------------------------------
+
+## D. Tree and foliage techniques from other engines (web research, 2026-11-04)
+
+Ranked by value for Uccle (we already do: spherized pad/crown normals, alpha-to-coverage + MSAA,
+unlit depth pre-pass, clustered leaf cards, per-tree tint, baked card AO, translucency, lifted
+shadow lookup, 3 LODs). GDC pages are member-only: those items rest on abstracts.
+
+1. **Octahedral impostors** with albedo+alpha, normal and depth atlases, 3-frame blend, depth
+   parallax: the normal atlas lets impostors take the same sun/translucency/tint as near trees (no
+   pop). ~1 quad, 3-6 texture taps per pixel. shaderbits.com/blog/octahedral-impostors ;
+   three.js port discourse.threejs.org/t/octahedral-impostors-for-three-js/80318 ;
+   arycama.github.io/2024/10/05/Imposters.html. game-engine-v1: v3/render/foliage/octahedralCore.js.
+2. **Dithered LOD crossfade** over ~10 % of each band (A2C + MSAA smooths the dither). Unity
+   LODFadeMode.SpeedTree.
+3. **Tight cutout shapes** instead of quads (6-8 vertex hull fitted to the leaf mask): every
+   alpha-tested fragment costs in both the pre-pass and the colour pass; Humus measured ~30 % from the
+   bounding box alone. humus.name/index.php?ID=266
+4. **Cheaper shadow geometry per LOD**: shadows from LOD1/LOD2 or the impostor whatever the camera LOD,
+   no wind in the shadow pass far away, none beyond a cascade (foliage shadows often cost more than the
+   main pass). Horizon Zero Dawn GDC 2018; github.com/One1ee/FoliageShadowImposterDemo
+5. **Ground AO / shadow blob under each tree** (1 instanced quad or a terrain-shader term), anchors trees
+   beyond shadow range. Common practice.
+6. **Crown-level AO gradient** (depth inside the crown ellipsoid + bottom-to-top), multiplied into the
+   translucency: dark core, bright rim. GPU Gems 3 ch. 16 (Crysis vegetation).
+7. **3-tier wind** (trunk sway, per-limb bend with pivots/phase, per-card flutter) + world-space gust
+   noise so neighbours move as one wave (Ghost of Tsushima). GPU Gems 3 ch. 16; Unreal Pivot Painter 2.
+8. **Edge-on fade** of non-camera-facing cards (alpha cutoff or size by N·V).
+9. **Alpha mip coverage preservation** (or alpha × (1 + lod × 0.25)): distant crowns stay full.
+   bgolus.medium.com/anti-aliased-alpha-test-the-esoteric-alpha-to-coverage-8b177335ae4f.
+   game-engine-v1: v3/render/foliage/alphaCoverageMips.js.
+10. **Shadowed transmission**: translucency attenuated by the shadow lookup and crown thickness (inner
+    shadowed leaves must not glow). Unreal Two Sided Foliage model.
+11. **GPU culling + LOD in compute** with indirect draws (verify three r187 InstancedMesh indirect).
+12. **Grove / HLOD cluster impostors** past ~1 km.
+Smaller: broad low leaf specular, rim/back light, per-pad hue jitter + height gradient, seasonal
+palettes, leaf-litter decals.

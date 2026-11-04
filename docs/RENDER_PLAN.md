@@ -98,6 +98,17 @@ diff the WGSL of two same-size modules.
   the slop trees in every view (8.0 / 9.3 / 7.3). Olive palette (#8aa64e / #27441d, tint 0.3).
   `?prepass=0` for A/B.
 
+### Tree plan (from docs/RESEARCH.md section D, 2026-11-04)
+Quick wins first, then the big one:
+1. [ ] Tight card shape: an octagon fitted to the round leaf mask instead of a quad (fewer empty
+   alpha-tested fragments in both the pre-pass and the colour pass; Humus ~30 %).
+2. [ ] Shadows: only LOD 0 casts (LOD 1 at 40-120 m gets none), no wind in the shadow pass.
+3. [ ] Coverage-preserving mips for the leaf mask (distant crowns stay full; engine alphaCoverageMips.js).
+4. [ ] Octahedral impostors (engine octahedralCore.js / impostorBake.js) with normal + depth atlases
+   so they take the same light, + dithered crossfade between all LODs (no popping).
+5. [ ] Look: ground AO blob under each tree, crown-level AO gradient, translucency dimmed in shadow,
+   per-pad hue jitter, 3-tier wind with world gusts.
+
 ## Phase 2: cheap look fixes
 
 - [ ] Glass speckle: box-filtered window grid that fades to its mean below a pixel
