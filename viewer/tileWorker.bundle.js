@@ -5500,6 +5500,155 @@ var MeshoptSimplifier = (function() {
   };
 })();
 
+// viewer/drive/colliders.js
+var CELL = 48;
+var KIND2 = { building: 0, island: 1, tree: 2, lamp: 3, post: 4, wall: 5 };
+function buildColliders(polys, circles, bounds) {
+  let nv = 0, nr = 0;
+  for (const p of polys) for (const r2 of p.rings) {
+    nv += r2.length;
+    nr++;
+  }
+  const pts = new Float32Array(nv * 2), ringStart = new Uint32Array(nr + 1), polyRing = new Uint32Array(polys.length + 1);
+  const pbox = new Float32Array(polys.length * 4), pkind = new Uint8Array(polys.length), ptop = new Float32Array(polys.length);
+  let v = 0, r = 0;
+  polys.forEach((p, i) => {
+    polyRing[i] = r;
+    let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity;
+    for (const ring2 of p.rings) {
+      ringStart[r++] = v;
+      for (const [x, z] of ring2) {
+        pts[v * 2] = x;
+        pts[v * 2 + 1] = z;
+        v++;
+        if (x < a) a = x;
+        if (x > c) c = x;
+        if (z < b) b = z;
+        if (z > d) d = z;
+      }
+    }
+    pbox[i * 4] = a;
+    pbox[i * 4 + 1] = b;
+    pbox[i * 4 + 2] = c;
+    pbox[i * 4 + 3] = d;
+    pkind[i] = p.kind ?? KIND2.building;
+    ptop[i] = p.top ?? 1e4;
+  });
+  ringStart[nr] = v;
+  polyRing[polys.length] = r;
+  const circ = new Float32Array(circles.length * 3), ckind = new Uint8Array(circles.length);
+  circles.forEach((q, i) => {
+    circ[i * 3] = q.x;
+    circ[i * 3 + 1] = q.z;
+    circ[i * 3 + 2] = q.r;
+    ckind[i] = q.kind ?? KIND2.post;
+  });
+  const col = { cell: CELL, bounds, pts, ringStart, polyRing, pbox, pkind, ptop, circ, ckind };
+  indexCells(col);
+  return col;
+}
+function indexCells(col) {
+  const { bounds: b, pbox, circ } = col;
+  const nx = Math.max(1, Math.ceil((b.x1 - b.x0) / CELL)), nz = Math.max(1, Math.ceil((b.z1 - b.z0) / CELL));
+  const P = pbox.length / 4, C = circ.length / 3;
+  const ci = (x) => Math.min(nx - 1, Math.max(0, Math.floor((x - b.x0) / CELL)));
+  const cj = (z) => Math.min(nz - 1, Math.max(0, Math.floor((z - b.z0) / CELL)));
+  const span = (k) => k < P ? [pbox[k * 4], pbox[k * 4 + 1], pbox[k * 4 + 2], pbox[k * 4 + 3]] : [circ[(k - P) * 3] - circ[(k - P) * 3 + 2], circ[(k - P) * 3 + 1] - circ[(k - P) * 3 + 2], circ[(k - P) * 3] + circ[(k - P) * 3 + 2], circ[(k - P) * 3 + 1] + circ[(k - P) * 3 + 2]];
+  const count = new Uint32Array(nx * nz + 1);
+  const keep = (s) => s[2] >= b.x0 - CELL && s[0] <= b.x1 + CELL && s[3] >= b.z0 - CELL && s[1] <= b.z1 + CELL;
+  for (let k = 0; k < P + C; k++) {
+    const s = span(k);
+    if (!keep(s)) continue;
+    for (let j = cj(s[1]); j <= cj(s[3]); j++) for (let i = ci(s[0]); i <= ci(s[2]); i++) count[j * nx + i + 1]++;
+  }
+  for (let k = 1; k < count.length; k++) count[k] += count[k - 1];
+  const items = new Uint32Array(count[count.length - 1]), fill = count.slice(0, -1);
+  for (let k = 0; k < P + C; k++) {
+    const s = span(k);
+    if (!keep(s)) continue;
+    for (let j = cj(s[1]); j <= cj(s[3]); j++) for (let i = ci(s[0]); i <= ci(s[2]); i++) items[fill[j * nx + i]++] = k;
+  }
+  Object.assign(col, { nx, nz, cellStart: count, cellItems: items, P, C });
+  col.seen = new Uint32Array(P + C);
+  col.stamp = 0;
+  return col;
+}
+function cleanRing(ring2) {
+  const out = [];
+  for (const p of ring2) {
+    const q = out[out.length - 1];
+    if (!q || Math.abs(q[0] - p[0]) > 1e-3 || Math.abs(q[1] - p[1]) > 1e-3) out.push([p[0], p[1]]);
+  }
+  if (out.length > 2) {
+    const a = out[0], b = out[out.length - 1];
+    if (Math.abs(a[0] - b[0]) < 1e-3 && Math.abs(a[1] - b[1]) < 1e-3) out.pop();
+  }
+  return out;
+}
+function buildDriveData({ bDoc, net, feats, hm, parts, bounds }) {
+  const polys = [], circles = [];
+  for (const bd of bDoc.buildings) {
+    const rings = (bd.footprint || []).map(cleanRing).filter((r) => r.length >= 3);
+    if (rings.length) polys.push({ rings, kind: KIND2.building, top: +bd.top || 1e4 });
+  }
+  const inTile = (ring2) => ring2.some(([x, z]) => x >= bounds.x0 - 5 && x <= bounds.x1 + 5 && z >= bounds.z0 - 5 && z <= bounds.z1 + 5);
+  let islands = 0;
+  for (const node of net.nodes || []) for (const isl of node.islands || []) {
+    if (isl.kind !== "raised" && isl.kind !== "grass") continue;
+    const r = cleanRing(isl.poly || []);
+    if (r.length >= 3 && inTile(r)) {
+      polys.push({ rings: [r], kind: KIND2.island });
+      islands++;
+    }
+  }
+  for (const rr of net.roads || []) {
+    const ck = rr.stack?.center?.kind;
+    if (!rr.center?.poly || ck !== "raised" && ck !== "barrier") continue;
+    const r = cleanRing(rr.center.poly);
+    if (r.length >= 3 && inTile(r)) {
+      polys.push({ rings: [r], kind: KIND2.island });
+      islands++;
+    }
+  }
+  for (const t of feats.trees || []) {
+    if (t.x < bounds.x0 || t.x > bounds.x1 || t.z < bounds.z0 || t.z > bounds.z1) continue;
+    circles.push({ x: t.x, z: t.z, r: Math.min(0.5, Math.max(0.22, 0.16 + 0.012 * (t.height || 10))), kind: KIND2.tree });
+  }
+  const col = buildColliders(polys, circles, bounds);
+  return { col, ground: driveGround(hm, parts), counts: { buildings: bDoc.buildings.length, islands, trees: circles.length } };
+}
+function driveGround(hm, parts) {
+  const { x0, z0, cols, rows, step } = hm.h, Y = hm.y;
+  const top = new Float32Array(cols * rows).fill(-1e9);
+  for (const part of Object.values(parts)) {
+    if (!part?.index) continue;
+    const P = part.position, I = part.index;
+    for (let t = 0; t < I.length; t += 3) {
+      const a = I[t] * 3, b = I[t + 1] * 3, c = I[t + 2] * 3;
+      const ax = P[a], az = P[a + 2], bx = P[b], bz = P[b + 2], cx = P[c], cz = P[c + 2];
+      const det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+      if (Math.abs(det) < 1e-6) continue;
+      const c0 = Math.max(0, Math.ceil((Math.min(ax, bx, cx) - x0) / step)), c1 = Math.min(cols - 1, Math.floor((Math.max(ax, bx, cx) - x0) / step));
+      const r0 = Math.max(0, Math.ceil((Math.min(az, bz, cz) - z0) / step)), r1 = Math.min(rows - 1, Math.floor((Math.max(az, bz, cz) - z0) / step));
+      for (let r = r0; r <= r1; r++) {
+        const pz = z0 + r * step;
+        for (let k = c0; k <= c1; k++) {
+          const px = x0 + k * step;
+          const l1 = ((bz - cz) * (px - cx) + (cx - bx) * (pz - cz)) / det;
+          const l2 = ((cz - az) * (px - cx) + (ax - cx) * (pz - cz)) / det;
+          const l3 = 1 - l1 - l2;
+          if (l1 < -1e-6 || l2 < -1e-6 || l3 < -1e-6) continue;
+          const y = l1 * P[a + 1] + l2 * P[b + 1] + l3 * P[c + 1], q = r * cols + k;
+          if (y > top[q]) top[q] = y;
+        }
+      }
+    }
+  }
+  const delta = new Uint8Array(cols * rows);
+  for (let q = 0; q < delta.length; q++) if (top[q] > -1e8) delta[q] = Math.max(0, Math.min(255, Math.round((top[q] - Y[q]) * 100)));
+  return { delta };
+}
+
 // viewer/tileData.js
 var CARVE = 0.12;
 var TERRAIN_ERROR = 0.05;
@@ -5667,6 +5816,7 @@ async function buildTileData(entry, base) {
     terrain.idx = idx;
   });
   const roofs = await step("roof grid", () => roofGrid(bDoc, bounds));
+  const drive = await step("drive colliders", () => buildDriveData({ bDoc, net, feats, hm, parts: road.parts, bounds }));
   hideBuildings(bDoc, entry.hide);
   const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats));
   const cover = await step("land cover", () => landCoverData(feats, bounds));
@@ -5680,6 +5830,7 @@ async function buildTileData(entry, base) {
     feats,
     buildingCount: bDoc.count,
     roofs,
+    drive,
     netInfo,
     road,
     terrain,

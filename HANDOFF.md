@@ -5,6 +5,16 @@
 Read this first when resuming (with Claude or by hand). Rendering and performance plan: `docs/RENDER_PLAN.md`; what we learned from slop-newyork, game-engine-v1 and three r187: `docs/RESEARCH.md`. Details are in `docs/PLAN.md`
 (roadmap and history) and `docs/CONTRACT.md` (data format, v0.7).
 
+## Drive mode (branch claude/drive)
+
+"Drive" button / `?view=drive`. W/S throttle-brake-reverse, A/D steer, Space handbrake, R reset, C camera
+(chase / far / bumper / orbit, drag to look, wheel = distance), G colliders, Esc out. Code: `viewer/drive/`
+(`carPhysics.js` arcade model after slop-newyork, `colliders.js` polygon / circle colliders in 48 m cells, built per
+tile in the worker by `buildDriveData` from tileData.js, lamp posts added on the main thread, `driveMode.js` the mode).
+The ground is a drivable-surface grid (road deck + sidewalks over the carved terrain, cm per 1 m cell). Sidewalk kerbs
+are climbed (as the road engine intends); building footprints, raised kerb islands / medians / roundabout centres,
+tree trunks and lamp posts block. Not colliders yet: parked cars, trams, street furniture, garden walls / hedges.
+
 ## Rules that still hold
 
 - `github.com/tibogot/game-engine-v1` is a READ-ONLY reference: never modify or push to it.
@@ -23,8 +33,11 @@ Debug. "Copy link to this view" puts the state + camera in `?dev=`. H = photo mo
 ## Labs
 
 `labs/` (open `/labs/`): one page per asset or system, to look at it on its own before it goes into the city
-(the owner's game-engine-v1 practice). Bird Lab done; Lamp, Tree and Material labs planned. New assets get a
+(the owner's game-engine-v1 practice). Bird, Lamp, Tram, Church and Car labs done; Tree and Material labs planned. New assets get a
 lab first, then go into the city. Tram Lab: the STIB T3000 (`tools/blender/tram.py`, `viewer/tramModel.js`); in the city by default (`?tram=box` = the old boxes).
+Car Lab (`labs/car-lab.html`): the driving model drive mode uses on a test ground (walls, courtyards, kerb island,
+ramp, posts), handling / suspension / camera sliders, colliders drawn (G); the car model is swappable (`viewer/drive/carModel.js`,
+`?car=scripted|kenney|quaternius`), plus a car-pack comparison and a parked-street benchmark (`?mode=compare`, `?mode=street`).
 
 ## How to run
 
@@ -33,7 +46,7 @@ python3 -m http.server 8765        # from the repo root
 open http://localhost:8765/viewer/index.html?tile=I6   # Saint-Job (was G4)
 ```
 Useful URL params: `far=0..6` (far-LOD ring), `clock=HH:MM`, `timescale=N`, `trams=0`, `tram=box` (the old box trams instead of the Blender T3000), `worker=0`, `tile=A1..O12` (120 tiles of all Uccle; Saint-Job = I6, the old G4), `ring=0|1|2` (neighbour tiles), `yaw=deg` (walk facing), `view=stjob|walk`, `at=x,z`, `cam=x,z,height`,
-`time=golden|midday|overcast|twilight|night`, `fx=0` (no post effects), `trees=slop` (slop-newyork trees), `trees=simple`
+`view=drive` (drive mode: a car on a street near Saint-Job, or the road nearest `at=x,z`), `drivedebug=1` (draw the drive colliders), `car=scripted|kenney|quaternius` (the drive-mode car), `time=golden|midday|overcast|twilight|night`, `fx=0` (no post effects), `trees=slop` (slop-newyork trees), `trees=simple`
 (old leaf-card trees), `sunlight=1` (cascaded shadows), `warmup=0` (no boot shader warm-up), `log=0` (dev log collapsed), `gpu=0` (no GPU timing). Use Chrome/Edge with WebGPU for real
 speed; headless screenshots use the slower WebGL2 fallback.
 

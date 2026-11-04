@@ -142,7 +142,11 @@ falcon, labs (Bird, Lamp), the dev panel.
       wet roads, falling snow. Switchable by date or a preset.
 
 ## 8. Game / app
-- [ ] Driving: a car controller on the road engine's surfaces (the "car game" goal).
+- [x] Driving (branch claude/drive): Car Lab + drive mode, arcade car on the drivable-surface grid, footprint / island /
+      trunk / lamp colliders per tile (viewer/drive/, `?view=drive`). Next: parked cars and trams as colliders (oriented
+      boxes), car-vs-car (slop vehicle-physics.js SAT), per-wheel ground (one wheel on a kerb), engine / tyre sound,
+      headlight beams at night without adding scene lights (light count change = shader recompiles), the Blender car
+      replacing the parked boxes (instanced LOD1/2, colour per instance).
 - [ ] Modes: walk, bike, drive, drone / photo mode; minimap with real street names.
 - [ ] Missions or uses: deliveries, taxi, "find this place", time slider (historic maps).
 - [ ] Multiplayer (later).
