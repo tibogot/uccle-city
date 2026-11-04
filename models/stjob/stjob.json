@@ -1,0 +1,205 @@
+{
+ "asset": "\u00c9glise Saint-Job, Uccle (tools/blender/stjob.py)",
+ "triangles_lod0": 38568,
+ "materials": [
+  "Masonry",
+  "Roof",
+  "Glass",
+  "Metal"
+ ],
+ "codes": {
+  "Col.r": "subtype/8 + 1/16",
+  "Col.g": "band pattern/4 + 1/8 (0 none, 1 stone bands every 1.10 m)",
+  "Col.b": "material/4 + 1/8",
+  "Masonry": [
+   "brick",
+   "white stone",
+   "sandstone",
+   "dark wood",
+   "dark interior",
+   "brick, no bands"
+  ],
+  "Roof": [
+   "slate",
+   "dome slate",
+   "red paint",
+   "lead"
+  ],
+  "Glass": [
+   "leaded glass"
+  ],
+  "Metal": [
+   "iron",
+   "gilded",
+   "clock dial"
+  ]
+ },
+ "frame": "glTF Y up; +x = the church's east (axis E), -z = the front (north, portal); origin = octagon centre at FLOOR",
+ "placement": {
+  "city_local_position": [
+   1216.19,
+   75.4,
+   561.44
+  ],
+  "rotation_y_rad": 0.09225,
+  "hides": "the UrbIS solid(s) with attrs.BU_ID == https://databrussels.be/id/building/1587133 (buildingsolid/509924)"
+ },
+ "measured": {
+  "source": "UrbIS 3D BuildingSolids (buildingsolid/509924, CC0) + UrbIS DSM/DTM 2021 0.5 m (sheet 149164, CC0)",
+  "octagon_centre_city": [
+   1216.19,
+   561.44
+  ],
+  "wing_axes_rotation_deg": 5.29,
+  "octagon_face_to_centre": 10.33,
+  "wing_width": 8.56,
+  "wing_ends_from_centre": {
+   "N": 25.53,
+   "NE": 19.0,
+   "E": 18.45,
+   "SE": 19.1,
+   "S": 25.2,
+   "SW": 15.6,
+   "W": 15.3,
+   "NW": 14.495000000000001
+  },
+  "wing_eaves_taw": 86.5,
+  "wing_ridge_taw": 90.1,
+  "chapel_eaves_taw": 82.0,
+  "chapel_apex_taw": 85.0,
+  "drum_top_taw": 98.3,
+  "dome_profile_taw": [
+   [
+    10.05,
+    98.6
+   ],
+   [
+    9.6,
+    99.9
+   ],
+   [
+    9.0,
+    101.3
+   ],
+   [
+    8.0,
+    103.9
+   ],
+   [
+    7.0,
+    105.5
+   ],
+   [
+    6.0,
+    106.8
+   ],
+   [
+    5.0,
+    107.6
+   ],
+   [
+    4.0,
+    108.2
+   ],
+   [
+    3.0,
+    108.7
+   ],
+   [
+    2.2,
+    109.0
+   ]
+  ],
+  "lantern_taw": [
+   109.0,
+   110.6,
+   115.8,
+   118.5
+  ],
+  "tower_centre_from_octagon": 19.03,
+  "tower_side": 9.07,
+  "tower_walls_top_taw": 104.8,
+  "spire_tip_taw": 130.25,
+  "weathercock_taw": 135.45,
+  "chapels": {
+   "0": {
+    "center": [
+     5.69,
+     13.67
+    ],
+    "radius": 5.01
+   },
+   "1": {
+    "center": [
+     14.8,
+     5.8
+    ],
+    "radius": 4.01
+   },
+   "2": {
+    "center": [
+     13.0,
+     -5.96
+    ],
+    "radius": 5.71
+   },
+   "3": {
+    "center": [
+     6.17,
+     -14.33
+    ],
+    "radius": 4.26
+   },
+   "4": {
+    "center": [
+     -5.7,
+     -15.91
+    ],
+    "radius": 2.88
+   },
+   "5": {
+    "center": [
+     -14.92,
+     -6.51
+    ],
+    "radius": 1.99
+   },
+   "6": {
+    "center": [
+     -13.74,
+     7.48
+    ],
+    "radius": 3.75
+   },
+   "7": {
+    "center": [
+     -6.38,
+     14.99
+    ],
+    "radius": 3.61
+   }
+  },
+  "stair_turret": {
+   "center": [
+    -16.99,
+    17.13
+   ],
+   "radius": 2.69
+  },
+  "ground_taw": {
+   "front_steps_foot": 73.2,
+   "south": 74.4,
+   "north_west": 72.7
+  }
+ },
+ "estimated": {
+  "floor_taw": 75.4,
+  "plinth_top_above_floor": 0.9,
+  "from_photos": "window / rose / belfry / clock positions and sizes, band spacing, steps, dormers, lantern piers, railing"
+ },
+ "nest": [
+  -16.98,
+  20.95,
+  -14.86
+ ]
+}
