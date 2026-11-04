@@ -297,7 +297,7 @@ export function buildStylizedTreeField(trees, ground, inTile) {
   const update = (p) => {
     if (lighting) {
       sunDir.copy(lighting.sunDir);
-      const c = lighting.sun.color, k = lighting.sun.intensity * 0.18;
+      const c = lighting.keyColor, k = 0.18;          // the key light's colour x intensity, either sky
       sunCol[0] = c.r * k; sunCol[1] = c.g * k; sunCol[2] = c.b * k;
     }
     cam.position.copy(p);

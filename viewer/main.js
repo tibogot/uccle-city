@@ -501,8 +501,10 @@ async function main() {
   };
   // Render pipeline: AO + reflections + bloom + grade (?fx=0: plain render, for slow machines)
   const fx = params.get("fx") !== "0";
+  await lighting.attach(camera);                      // Firmament's sky needs the camera (no-op for ?sky=old)
   const pipe = fx ? createPipeline(renderer, scene, camera) : null;
-  if (pipe) pipe.look(timeId); else renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  if (pipe) { pipe.setExposureScale(lighting.exposureScale); pipe.look(timeId); }
+  else { renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = lighting.exposureScale; }
   const focus = new THREE.Vector3(), fwd = new THREE.Vector3();
   const renderFrame = () => (pipe ? pipe.render() : renderer.render(scene, camera));
   const tsel = $("timeSel");
@@ -520,6 +522,7 @@ async function main() {
     if (walker.on) walker.update(dt); else controls.update();
     for (const u of updaters) u(camera.position);
     renderFrame();
+    if (pipe && lighting.sky) pipe.setExposureFactor(lighting.adapt(pipe.sceneTarget, dt));
     sampleGpu();
     frames++;
     if (frames % 10 === 1) {

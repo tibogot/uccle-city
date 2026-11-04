@@ -126,6 +126,21 @@ Quick wins first, then the big one:
 5. [ ] Look: ground AO blob under each tree, crown-level AO gradient, translucency dimmed in shadow,
    per-pad hue jitter, 3-tier wind with world gusts.
 
+## Sky: Firmament (2026-11-04)
+
+- game-engine-v1's Firmament (`vendor/firmament`, unchanged; Tidewater MIT) is the default sky
+  (`?sky=old` = the previous Preetham SkyMesh). Wired like the engine's lab: a DirectionalLight at
+  intensity 1 whose colour is the key light x the cumulus shadow at the point, scene.environment =
+  the sky's environment, exposure 0.55 (Tidewater units) x the look x the sky's eye adaptation
+  (metered on our HDR scene target each frame). The presets are times of day on the real Brussels sun
+  path (lat 50.8, `?day=` default 200 = mid July, `?hour=` solar time).
+- GPU: overview 7.1 ms (= old sky), close-up 7.7 -> 8.8, walk 6.0 -> 7.3.
+- Gotchas found: (1) the fog must be set before any material compiles (set later, the far-LOD tiles'
+  fog-less build lit them like daytime at night); (2) a PMREM lookup of the sky's environment never
+  refreshes (re-rendered in place): the fog uses `sky.light().horizon` instead.
+- Next: the sky's haze + sun shafts pass (`sky.postProcess` on the linear HDR frame) inside our post
+  chain; the night look (nightEV, Purkinje); the tram clock driving the sun; then volumetric fog.
+
 ## Phase 2: cheap look fixes
 
 - [ ] Glass speckle: box-filtered window grid that fades to its mean below a pixel

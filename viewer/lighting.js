@@ -10,6 +10,29 @@ import { Fn, float, vec3, vec4, uniform, mix, fog, pmremTexture, positionWorld, 
 import { SkyMesh } from "three/addons/objects/SkyMesh.js";
 import { SunLight } from "three/addons/lights/SunLight.js";
 import { SunLightNode } from "three/addons/lights/SunLightNode.js";
+import { createFirmamentSky } from "../vendor/firmament/firmamentSky.js";
+import { sunDirection } from "../vendor/firmament/firmamentCelestial.js";
+
+// FIRMAMENT (default; ?sky=old = the Preetham SkyMesh below): the owner's engine sky (vendor/firmament):
+// physical atmosphere, cumulus + cirrus, the real sun (and moon) for Brussels, the sky's own
+// environment light, cloud shadows on the ground. Wired as the engine's lab does (firmament-lab/
+// lab.js + labScene.js): a DirectionalLight at intensity 1 whose colour is the sky's key light x the
+// cumulus shadow at the point, scene.environment = the sky's environment, exposure 0.55 (Tidewater's
+// units). The presets are TIMES OF DAY on a real sun path (FIRM_TIMES). Not yet: the sky's haze /
+// sun-shaft pass and its eye adaptation (they run on the linear HDR frame inside our post chain).
+export const useFirmament = !/[?&]sky=old/.test(location.search);
+export const FIRMAMENT_EXPOSURE = 0.55;
+const BRUSSELS_LAT = 50.8;
+const qp = new URLSearchParams(location.search);
+const DAY = +(qp.get("day") ?? 200);                 // day of the year (200 = mid July: long golden evenings)
+// local SOLAR time (12 = the sun due south); ?hour= overrides the preset
+const FIRM_TIMES = {
+  golden: { hours: 18.7, coverage: 0.42, cloudType: 0.5 },
+  midday: { hours: 13.0, coverage: 0.38, cloudType: 0.5 },
+  overcast: { hours: 13.0, coverage: 0.95, cloudType: 0.08 },
+  twilight: { hours: 20.45, coverage: 0.4, cloudType: 0.5 },
+  night: { hours: 23.4, coverage: 0.3, cloudType: 0.5 },
+};
 
 // Direction TO the sun. Brussels, late afternoon from the south-west: west = -x, south = +z.
 const dir = (x, y, z) => new THREE.Vector3(x, y, z).normalize();
@@ -47,7 +70,19 @@ export class Lighting {
    *  camera (verified in WebGPU and the WebGL2 fallback; SunLight cast no shadows in our WebGL2 tests). */
   constructor(scene, renderer, presetId = "golden", opts = {}) {
     this.scene = scene;
+    this.renderer = renderer;
+    this.firmament = useFirmament;
+    this.keyColor = new THREE.Color(1, 1, 1);        // the key light's colour x intensity (trees' translucency)
+    this.exposureScale = this.firmament ? FIRMAMENT_EXPOSURE : 1;
     SunLight.registerNode(SunLightNode);
+    if (this.firmament) {
+      this.initFirmamentLights(opts);
+      this.apply(presetId);
+      // the fog BEFORE any material compiles (it only reads uniforms): set later, in attach(), the
+      // materials built before it (the far-LOD tiles) kept a fog-less build that went wrong at night
+      scene.fogNode = this.fogNode();
+      return;
+    }
     scene.background = null;                       // the sky dome draws the background (and keeps cascades intact)
     this.sky = new SkyMesh();
     this.sky.scale.setScalar(200000);
@@ -99,12 +134,96 @@ export class Lighting {
     scene.fogNode = this.fogNode();
   }
 
+  initFirmamentLights() {
+    const scene = this.scene;
+    scene.background = null;
+    this.cascaded = false;
+    this.sun = new THREE.DirectionalLight(0xffffff, 1);
+    this.sun.shadow.mapSize.set(4096, 4096);
+    Object.assign(this.sun.shadow.camera, { left: -150, right: 150, top: 150, bottom: -150, near: 1, far: 2000 });
+    this.sun.shadow.bias = -0.0002;
+    this.sun.castShadow = true;
+    this.sun.shadow.normalBias = 0.05;
+    scene.add(this.sun.target, this.sun);
+    this.sunDir = new THREE.Vector3(0, 1, 0);
+    this.uKey = uniform(new THREE.Vector3(0, 0, 0));
+    // the hemisphere light stays (a constant light count: adding/removing lights recompiles every
+    // material) but at 0: the sky's environment is the ambient
+    this.hemi = new THREE.HemisphereLight(0x9abbe6, 0xb27a56, 0);
+    scene.add(this.hemi);
+    this.uFogDensity = uniform(0.00035);
+    this.uFogFloor = uniform(40.0);
+    this.uFogHeight = uniform(900.0);
+    this.uFogColor = uniform(new THREE.Vector3(0.5, 0.6, 0.7));
+    this.firm = { hours: FIRM_TIMES.golden.hours, coverage: 0.42, cloudType: 0.5, wetness: 0.15 };
+    this.lastT = performance.now();
+    this._sd = new THREE.Vector3();
+  }
+
+  /** Firmament needs the camera: build the sky (async: its cloud noise loads) before the first frame. */
+  async attach(camera) {
+    if (!this.firmament || this.sky) return;
+    this.camera = camera;
+    this.sky = createFirmamentSky({ renderer: this.renderer, camera, params: { latitude: BRUSSELS_LAT, dayOfYear: DAY, autoExposure: true } });
+    await this.sky.ready;
+    this.scene.add(this.sky.mesh);
+    // the key light x the cumulus shadow over the ground (labScene.js)
+    this.sun.colorNode = vec3(this.uKey).mul(this.sky.clouds.shadowAt(positionWorld.xz));
+    this.scene.environment = this.sky.environment;
+    this.scene.environmentIntensity = 1;
+    this.sky.params.coverage = this.firm.coverage;
+    this.sky.params.cloudType = this.firm.cloudType;
+    this.sky.update(0, { sunDir: this.firmSunDir() });
+    this.syncFirmament();
+  }
+
+  firmSunDir() {
+    const h = qp.get("hour") != null ? +qp.get("hour") : this.firm.hours;
+    return sunDirection({ hours: h, dayOfYear: DAY, latitude: BRUSSELS_LAT }, this._sd);
+  }
+
+  /** After the frame is drawn: meter the linear HDR scene and return this frame's exposure factor
+   *  (Firmament's eye adaptation, x0.6..x6, at most x2 at night). 1 for the old sky. */
+  adapt(sceneTarget, dt) {
+    if (!this.sky) return 1;
+    if (sceneTarget) this.sky.meter(sceneTarget);
+    return this.sky.exposureFactor(dt);
+  }
+
+  /** Per frame (Firmament): everything our materials read from the sky. */
+  syncFirmament() {
+    const L = this.sky.light();
+    // the sky's environment can be a NEW texture after a re-bake (the lab re-assigns it every frame);
+    // assigned once at start, materials kept the first sky's light (day-lit far tiles at night)
+    if (this.scene.environment !== this.sky.environment) this.scene.environment = this.sky.environment;
+    const hzr = L.horizon || [0, 0, 0];
+    this.uFogColor.value.set(hzr[0], hzr[1], hzr[2]);
+    const k = L.keyIsMoon ? L.moonColor : { x: L.sunColor[0], y: L.sunColor[1], z: L.sunColor[2] };
+    this.uKey.value.set(k.x, k.y, k.z);
+    this.keyColor.setRGB(k.x, k.y, k.z);
+    this.sunDir.copy(L.keyDir || L.sunDir);
+    // the uniforms our facade / road / lamp materials share
+    const m = Math.max(k.x, k.y, k.z, 1e-4);
+    env.uSunColor.value.setRGB(k.x / m, k.y / m, k.z / m);
+    env.uSunDir.value.copy(this.sunDir);
+    const hz = L.horizon || [0.5, 0.6, 0.7], si = L.skyIrradiance || [0.3, 0.4, 0.6];
+    const hm = Math.max(hz[0], hz[1], hz[2], 1e-4), sm = Math.max(si[0], si[1], si[2], 1e-4);
+    env.uSkyHorizon.value.setRGB(hz[0] / hm, hz[1] / hm, hz[2] / hm);
+    env.uSkyTop.value.setRGB(si[0] / sm, si[1] / sm, si[2] / sm);
+    env.uNight.value = L.night || 0;
+    env.uInteriorGlow.value = 0.3 + 1.3 * (L.night || 0);
+    env.uWetness.value = this.firm.wetness;
+  }
+
   fogNode() {
     const toFrag = positionWorld.sub(cameraPosition);
     const dist = length(toFrag);
     const d = toFrag.div(max(dist, 0.001));
     const horizon = normalize(vec3(d.x, max(d.y, 0.015), d.z));
-    const skyColor = pmremTexture(this.envTarget.texture, horizon, float(0)).rgb;
+    // Firmament: the fog takes the sky's own horizon radiance (sky.light().horizon, every frame). A PMREM
+    // lookup of its environment kept the FIRST sky's light (the texture is re-rendered in place and the
+    // PMREM never refreshed): far tiles were fogged with the golden-hour sky at midnight.
+    const skyColor = this.firmament ? vec3(this.uFogColor) : pmremTexture(this.envTarget.texture, horizon, float(0)).rgb;
     const H = this.uFogHeight;
     const ya = max(positionWorld.y.sub(this.uFogFloor), 0), yb = max(cameraPosition.y.sub(this.uFogFloor), 0);
     const dy = yb.sub(ya), ea = exp(ya.div(H).negate()), eb = exp(yb.div(H).negate());
@@ -125,6 +244,12 @@ export class Lighting {
   apply(id) {
     const p = PRESETS[id] || PRESETS.golden;
     this.preset = id;
+    if (this.firmament) {
+      const t = FIRM_TIMES[id] || FIRM_TIMES.golden;
+      Object.assign(this.firm, t, { wetness: p.wetness });
+      this.uFogDensity.value = p.fogDensity;
+      return;
+    }
     this.sun.color.setHex(p.sunColor);
     this.sun.intensity = p.sunIntensity;
     this.sunDir.copy(p.sunDir);
@@ -155,6 +280,16 @@ export class Lighting {
 
   /** Each frame. focus = what the camera looks at; half = shadow box half-size (m). */
   update(cameraY, groundY, focus, half) {
+    if (this.firmament && this.sky) {
+      const now = performance.now(), dt = Math.min(0.1, (now - this.lastT) / 1000);
+      this.lastT = now;
+      this.sky.params.coverage = this.firm.coverage;
+      this.sky.params.cloudType = this.firm.cloudType;
+      this.sky.update(dt, { sunDir: this.firmSunDir() });
+      this.syncFirmament();
+    } else if (!this.firmament) {
+      this.keyColor.copy(this.sun.color).multiplyScalar(this.sun.intensity);
+    }
     if (this.cascaded) {
       const alt = Math.max(0, cameraY - groundY);
       this.sun.shadow.camera.far = Math.max(300, Math.min(900, 260 + alt * 1.6));

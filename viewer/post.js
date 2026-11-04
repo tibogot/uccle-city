@@ -90,9 +90,16 @@ export function createPipeline(renderer, scene, camera, { aoOn = true, ssrOn = t
   return {
     pipeline,
     render: () => pipeline.render(),
+    /** k x every look's exposure (Firmament's light is in Tidewater's units: k = 0.55) */
+    setExposureScale(k) { this.exposureScale = k; this.look(this.lookId || "golden"); },
+    /** the sky's eye adaptation, each frame (x on top of the look and the scale) */
+    setExposureFactor(f) { this.exposureFactor = f; exposure.value = (LOOKS[this.lookId] || LOOKS.golden).exposure * (this.exposureScale || 1) * f; },
+    /** the linear HDR scene target (the sky meters it for its eye adaptation) */
+    sceneTarget: scenePass.renderTarget,
     look(id) {
       const l = LOOKS[id] || LOOKS.golden;
-      exposure.value = l.exposure; contrast.value = l.contrast; saturation.value = l.saturation;
+      this.lookId = id;
+      exposure.value = l.exposure * (this.exposureScale || 1) * (this.exposureFactor || 1); contrast.value = l.contrast; saturation.value = l.saturation;
       balance.value.set(...l.balance);
       bloomPass.strength.value = l.bloom; bloomPass.threshold.value = l.threshold;
     },
