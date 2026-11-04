@@ -72,6 +72,8 @@ export function createPipeline(renderer, scene, camera, { aoOn = true, ssrOn = t
     hook?.(hdrRT, depthTex, size);
   };
 
+  // live strengths (the dev panel): AO weight, reflection weight, an exposure bias in stops
+  const uAo = uniform(0.6), uSsr = uniform(1.0);
   let lit = color.rgb;
   let aoPass = null;
   if (aoOn) {
@@ -86,7 +88,7 @@ export function createPipeline(renderer, scene, camera, { aoOn = true, ssrOn = t
     // cost ~1.6 ms GPU)
     const aoClean = rtt(denoise(aoPass.getTextureNode(), depth, normal, camera));
     aoClean.setResolutionScale(0.5);
-    lit = lit.mul(mix(float(1), aoClean.r, mr.b.mul(0.6)));
+    lit = lit.mul(mix(float(1), aoClean.r, mr.b.mul(uAo)));
   }
   let refl = vec3(0);
   if (ssrOn) {
@@ -100,7 +102,7 @@ export function createPipeline(renderer, scene, camera, { aoOn = true, ssrOn = t
     ssrPass.intensity.value = 0.5;
     ssrPass.screenEdgeFadeBlack = true;
     const mask = mr.r.greaterThan(0).select(smoothstep(maxRough, 0.55, mr.g), 0);
-    refl = ssrPass.rgb.mul(mask);
+    refl = ssrPass.rgb.mul(mask).mul(uSsr);
   }
 
   const exposure = uniform(1.0), contrast = uniform(1.0), saturation = uniform(1.0), balance = uniform(new THREE.Vector3(1, 1, 1));
@@ -134,7 +136,10 @@ export function createPipeline(renderer, scene, camera, { aoOn = true, ssrOn = t
     /** k x every look's exposure (Firmament's light is in Tidewater's units: k = 0.55) */
     setExposureScale(k) { this.exposureScale = k; this.look(this.lookId || "golden"); },
     /** the sky's eye adaptation, each frame (x on top of the look and the scale) */
-    setExposureFactor(f) { this.exposureFactor = f; exposure.value = (LOOKS[this.lookId] || LOOKS.golden).exposure * (this.exposureScale || 1) * f; },
+    setExposureFactor(f) { this.exposureFactor = f; exposure.value = (LOOKS[this.lookId] || LOOKS.golden).exposure * (this.exposureScale || 1) * f * Math.pow(2, this.evBias || 0); },
+    /** dev panel handles: AO / SSR weights, bloom pass, exposure bias (stops, this.evBias) */
+    get uniforms() { return { ao: uAo, ssr: uSsr }; },
+    get bloomPass() { return bloomPass; },
     /** the linear HDR scene target (the sky meters it for its eye adaptation) */
     sceneTarget: hdrRT,
     look(id) {

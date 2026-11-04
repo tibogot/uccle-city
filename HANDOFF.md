@@ -13,6 +13,13 @@ Read this first when resuming (with Claude or by hand). Rendering and performanc
 - Never substitute mocked or made-up data: if a dataset can't be fetched, say so.
 - Work on branch `claude/foundation`.
 
+## Dev panel
+
+`viewer/devPanel.js` (top right, on by default; `?panel=0` = old HUD only), built on our own UI
+`viewer/panelUI.js` (no lil-gui or other GUI library: the owner's rule). Sections: Time & sun, Sky & clouds,
+Weather, Lighting & post, World (reload options), Camera & modes, Performance (live GPU ms, benchmark),
+Debug. "Copy link to this view" puts the state + camera in `?dev=`. H = photo mode.
+
 ## Labs
 
 `labs/` (open `/labs/`): one page per asset or system, to look at it on its own before it goes into the city

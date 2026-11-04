@@ -170,6 +170,9 @@ export class Lighting {
     this.uFogFloor = uniform(40.0);
     this.uFogHeight = uniform(900.0);
     this.uFogColor = uniform(new THREE.Vector3(0.5, 0.6, 0.7));
+    this.day = DAY;                    // day of the year (live: the dev panel)
+    this.hourOverride = null;          // solar hour set by the dev panel (null = the preset's)
+    this.vfogParams = { ...VFOG };     // the volumetric fog's settings (live)
     this.firm = { hours: FIRM_TIMES.golden.hours, coverage: 0.42, cloudType: 0.5, wetness: 0.15 };
     this.lastT = performance.now();
     this._sd = new THREE.Vector3();
@@ -194,9 +197,11 @@ export class Lighting {
     this.syncFirmament();
   }
 
+  /** The solar hour now: the dev panel's override, else ?hour=, else the preset's. */
+  get hour() { return this.hourOverride ?? (qp.get("hour") != null ? +qp.get("hour") : this.firm.hours); }
   firmSunDir() {
-    const h = qp.get("hour") != null ? +qp.get("hour") : this.firm.hours;
-    return sunDirection({ hours: h, dayOfYear: DAY, latitude: BRUSSELS_LAT }, this._sd);
+    if (this.sky) this.sky.params.dayOfYear = this.day;
+    return sunDirection({ hours: this.hour, dayOfYear: this.day, latitude: BRUSSELS_LAT }, this._sd);
   }
 
   /** On the linear HDR frame, before the post chain (post.js render hook): the sky's air haze + sun
@@ -209,7 +214,7 @@ export class Lighting {
     this.sky.postProcess(rt, { depthTex, light: this.sun, shadowDepth, size, seaLevel: 40 });
     // the volumetric fog over the haze, before the meter (game-engine-v1 worldEnvironment order)
     if (this.vfogOn) {
-      this.vfog ??= createVolumetricFog({ renderer: this.renderer, params: { ...VFOG } });
+      this.vfog ??= createVolumetricFog({ renderer: this.renderer, params: this.vfogParams });
       const L = this.sky.light(), now = performance.now();
       const k = L.keyIsMoon ? [L.moonColor.x, L.moonColor.y, L.moonColor.z] : L.sunColor;
       const sc = this.sun.shadow.camera;

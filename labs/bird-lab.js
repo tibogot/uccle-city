@@ -6,7 +6,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
-import GUI from "lil-gui";
+import { Panel as GUI } from "../viewer/panelUI.js";
 import { BirdRig } from "../viewer/birdRig.js";
 
 const $info = document.getElementById("info");

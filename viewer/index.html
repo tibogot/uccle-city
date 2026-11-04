@@ -24,6 +24,8 @@
   #cover { position: fixed; inset: 0; z-index: 1; display: grid; place-items: center; background: #b9c9d6;
            color: #2a3440; font-size: 15px; transition: opacity .4s; }
   #cover.gone { opacity: 0; pointer-events: none; }
+  /* with the dev panel the HUD keeps only the title, the stats and the log (the controls moved to the panel) */
+  body.devpanel #hud label, body.devpanel #hud button, body.devpanel #hud a, body.devpanel #help { display: none; }
 </style>
 <!-- three.js pinned to an exact version. "three/src/" is needed by vendor/roads/mesh/triangulate.js (earcut). -->
 <script type="importmap">

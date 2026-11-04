@@ -546,7 +546,8 @@ async function main() {
   else { renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = lighting.exposureScale; }
   const focus = new THREE.Vector3(), fwd = new THREE.Vector3();
   const hazeHook = lighting.firmament ? (rt, d, size) => lighting.hazeHook(rt, d, size) : null;   // ?haze=0: off
-  const renderFrame = () => (pipe ? pipe.render(params.get("haze") !== "0" ? hazeHook : null) : renderer.render(scene, camera));
+  const dev = { haze: params.get("haze") !== "0" };    // live switches (the dev panel)
+  const renderFrame = () => (pipe ? pipe.render(dev.haze ? hazeHook : null) : renderer.render(scene, camera));
   const tsel = $("timeSel");
   for (const k of Object.keys(PRESETS)) tsel.add(new Option(k, k, false, k === timeId));
   tsel.onchange = () => { lighting.apply(tsel.value); pipe?.look(tsel.value); };
@@ -656,6 +657,13 @@ async function main() {
     for (const [uid, ms] of t) { const k = uid.replace(/:f\d+$/, ""); agg[k] = (agg[k] || 0) + ms; }
     return Object.entries(agg).sort((a, b) => b[1] - a[1]).map(([k, ms]) => [k, +ms.toFixed(3)]);
   };
+  // the dev panel (viewer/devPanel.js; ?panel=0: the old HUD only)
+  if (params.get("panel") !== "0") {
+    try {
+      const { createDevPanel } = await import("./devPanel.js");
+      createDevPanel({ renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log });
+    } catch (e) { log(`dev panel: ${e.message}`); }
+  }
   window.viewer = { loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
     world, renderFrame: () => { for (const u of updaters) u(camera.position); renderFrame(); } };
 }

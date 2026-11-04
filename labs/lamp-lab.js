@@ -5,7 +5,7 @@
 import * as THREE from "three/webgpu";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
-import GUI from "lil-gui";
+import { Panel as GUI } from "../viewer/panelUI.js";
 import { loadLampModel, LAMP_LODS } from "../viewer/lampModel.js";
 import { env } from "../viewer/lighting.js";
 
