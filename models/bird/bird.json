@@ -1,0 +1,6 @@
+{
+  "_doc": "Fly-mode bird settings (viewer/main.js). forward: the model nose axis; scale: model units to metres (wingspan 6.4 units -> ~2.1 m); clips: which clip plays when (names in bird.glb).",
+  "forward": "+z",
+  "scale": 0.42,
+  "clips": { "flap": "Flap", "glide": "Glide" }
+}

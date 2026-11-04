@@ -63,7 +63,7 @@ export class Flyer {
   }
 
   /** Replace the placeholder with a glTF bird (gltf = GLTFLoader result). forward: the model's nose axis. */
-  setModel(gltf, { scale = 1, forward = "-z" } = {}) {
+  setModel(gltf, { scale = 1, forward = "-z", clips = null } = {}) {
     const root = new THREE.Group();
     const m = gltf.scene;
     if (forward === "+z") m.rotation.y = Math.PI;
@@ -78,8 +78,9 @@ export class Flyer {
     this.mixer = gltf.animations?.length ? new THREE.AnimationMixer(m) : null;
     if (this.mixer) {
       const find = (re) => gltf.animations.find((c) => re.test(c.name));
-      const flap = find(/flap|fly|wing/i) || gltf.animations[0];
-      const glide = find(/glide|soar|idle/i) || flap;
+      const byName = (n) => n && gltf.animations.find((c) => c.name === n);
+      const flap = byName(clips?.flap) || find(/flap|fly|wing/i) || gltf.animations[0];
+      const glide = byName(clips?.glide) || find(/glide|soar|idle/i) || flap;
       this.actions = { flap: this.mixer.clipAction(flap), glide: this.mixer.clipAction(glide) };
       for (const a of Object.values(this.actions)) { a.play(); a.setEffectiveWeight(0); }
     }
@@ -150,12 +151,13 @@ export class Flyer {
       this.mixer.update(dt);
     }
     // ---- chase camera: behind and above, leaning into the turn, plus the mouse-look offset
-    const camYaw = this.yaw + this.look.yaw, dist = 8 + this.speed * 0.12;
-    const elev = 0.28 + this.look.pitch * -1;
+    // close behind and a little above (the bird big in the lower third), farther when fast
+    const camYaw = this.yaw + this.look.yaw, dist = 3.0 + this.speed * 0.06;
+    const elev = 0.2 + this.look.pitch * -1;
     const want = this.pos.clone().add(new THREE.Vector3(Math.sin(camYaw) * Math.cos(elev) * dist, Math.sin(elev) * dist, Math.cos(camYaw) * Math.cos(elev) * dist));
     want.y = Math.max(want.y, this.floor(want.x, want.z) + 1.5);
     this.camPos.lerp(want, 1 - Math.exp(-6 * dt));
-    this.camLook.lerp(this.pos.clone().addScaledVector(fwd, 4), 1 - Math.exp(-10 * dt));
+    this.camLook.lerp(this.pos.clone().addScaledVector(fwd, 6).add(new THREE.Vector3(0, 0.9, 0)), 1 - Math.exp(-10 * dt));
     this.camUp.lerp(new THREE.Vector3(-Math.sin(this.bank) * 0.25 * Math.cos(this.yaw), 1, Math.sin(this.bank) * 0.25 * Math.sin(this.yaw)).normalize(), 1 - Math.exp(-4 * dt));
     this.camera.position.copy(this.camPos);
     this.camera.up.copy(this.camUp);

@@ -473,7 +473,9 @@ async function main() {
       const { MeshoptDecoder } = await import("three/addons/libs/meshopt_decoder.module.js");
       const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
       const gltf = await loader.loadAsync(url);
-      const clips = flyer.setModel(gltf, { scale: +(params.get("birdscale") ?? 1), forward: params.get("birdfwd") || "-z" });
+      // its settings beside it (models/bird/bird.json: nose axis, scale, clip names); the URL overrides them
+      const cfg = await fetch(url.replace(/\.glb$/, ".json")).then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
+      const clips = flyer.setModel(gltf, { scale: +(params.get("birdscale") ?? cfg.scale ?? 1), forward: params.get("birdfwd") || cfg.forward || "-z", clips: cfg.clips });
       log(`bird: ${url.split("/").pop()}, clips ${JSON.stringify(clips)}`);
     } catch (e) { log(`bird model: ${e.message}`); }
   })();
