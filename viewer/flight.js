@@ -91,7 +91,9 @@ export class Flyer {
   }
 
   // procedural flight layers on the bones: viewer/birdRig.js (shared with the bird lab)
-  calibrate(root) { this.rig = new BirdRig(root); this.layerState = { fold: 0, brake: 0 }; window.__birdLayers = this.rig.found; }
+  // Procedural layers OFF by default (owner, 2026-11-04: "go back to the pure original animation"): the bird
+  // plays only its own clips. ?birdlayers=1 turns them back on (tune them in labs/bird-lab.html first).
+  calibrate(root) { if (!/[?&]birdlayers=1/.test(location.search)) { this.rig = null; return; } this.rig = new BirdRig(root); this.layerState = { fold: 0, brake: 0 }; window.__birdLayers = this.rig.found; }
 
   applyLayers(dt, { tuck, flapping }) {
     if (!this.rig) return;
