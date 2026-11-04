@@ -1,13 +1,14 @@
-// DRIVE MODE: the Car Lab's hatchback and driving model in the city.
+// DRIVE MODE: the Car Lab's car and driving model in the city (?car=scripted | kenney:<id> | quaternius:<id>, or
+// __driver.setCar(spec); carModel.js loadCarModel is the one loader).
 //   W / S (↑ ↓) throttle, brake, reverse   A / D (← →) steer   Space handbrake
 //   R back to the start   C camera (chase / far / bumper / orbit)   G draw colliders   Esc back to orbit
 // Collisions: each loaded tile carries its drive data from the tile worker (colliders.js buildDriveData: building
 // footprints, kerb islands, tree trunks, in 48 m cells) plus its lamp posts (added here, from lamps.js lampSites).
 // The car only looks at the cells round it (carEnv.js). Ground = the drivable surface grid (road deck, sidewalks).
 import * as THREE from "three/webgpu";
-import { loadCarModel, createCar, carLights } from "./carModel.js";
+import { loadCarModel, createCar, carLights, fitBody } from "./carModel.js";
 import { HANDLING, createCarState, stepCar } from "./carPhysics.js";
-import { addCircles, driveHeight, gather, pointInBuilding, KIND } from "./colliders.js";
+import { addCircles, buildColliders, driveHeight, gather, pointInBuilding, KIND } from "./colliders.js";
 import { createCarEnv } from "./carEnv.js";
 import { ChaseCamera } from "./chaseCamera.js";
 import { ColliderDebug } from "./debugDraw.js";
@@ -46,8 +47,13 @@ export class Driver {
         const b = t.bounds;
         if (t.drive && x + r >= b.x0 && x - r <= b.x1 && z + r >= b.z0 && z - r <= b.z1) out.push(t.drive.col);
       }
+      for (const col of this.extra) {
+        const b = col.bounds;
+        if (x + r >= b.x0 && x - r <= b.x1 && z + r >= b.z0 && z - r <= b.z1) out.push(col);
+      }
       return out;
     };
+    this.extra = [];   // collider sets no tile carries (hero models: the Saint-Job front steps)
     this.env = createCarEnv({ sets: this.sets, ground: this.ground, handling: HANDLING });
     this.camNear = [];
     this.insideWall = (x, z) => pointInBuilding(this.camNear, x, z);
@@ -58,12 +64,28 @@ export class Driver {
     this.ms = 0;
   }
 
+  /** Extra polygons ({ rings, kind }) that no tile carries, e.g. a hero model's steps (stjobModel.js stjobColliders). */
+  addStatic(polys) {
+    if (!polys?.length) return;
+    let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+    for (const p of polys) for (const r of p.rings) for (const [x, z] of r) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+    this.extra.push(buildColliders(polys, [], { x0, x1, z0, z1 }));
+  }
+
+  /** Swap the car model (carModel.js loadCarModel spec: "scripted", "kenney:sedan", "quaternius:car_a" ...). */
+  async setCar(spec) {
+    const model = await loadCarModel(spec);
+    if (this.car) this.scene.remove(this.car.root);
+    this.spec = spec; this.model = model;
+    fitBody(model);
+    this.car = createCar(model);
+    this.car.root.visible = this.on;
+    this.scene.add(this.car.root);
+    if (this.state) this.car.update(this.state);
+  }
+
   async start(x, z, heading) {
-    if (!this.car) {
-      this.model = await loadCarModel();
-      this.car = createCar(this.model);
-      this.scene.add(this.car.root);
-    }
+    if (!this.car) await this.setCar(new URLSearchParams(location.search).get("car") || "scripted").catch(() => this.setCar("scripted"));
     this.startPose = { x, z, heading };
     this.on = true;
     this.car.root.visible = true;

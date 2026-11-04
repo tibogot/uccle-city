@@ -26,6 +26,7 @@ export function createCarEnv({ sets, ground, handling }) {
     },
     collide(c) {
       body.cos = Math.cos(c.heading); body.sin = Math.sin(c.heading);
+      body.hx = BODY.hx; body.hz = BODY.hz;                 // carModel.js fitBody may resize it to the model
       for (let pass = 0; pass < 2; pass++) {      // a second pass settles a push from one wall into another
         let any = false;
         for (let k = 0; k < near.length; k += 2) {

@@ -1,12 +1,19 @@
-// THE CAR MODEL (tools/blender/car.py -> models/car/hatchback.glb), shared by the Car Lab and drive mode.
-// Loaded once: the body as one geometry per material, the four wheels (origin = wheel centre, so they spin and steer),
-// and two more levels of detail made here by meshoptimizer (error budgets in metres, per material part, borders locked
-// so the paint / glass seams stay closed). Materials are ours, by the glTF material names: clear-coated paint (colour
-// per car), dark glass, black trim, head lights (lit at night) and tail lights (brighter when braking).
+// THE CAR MODELS behind one loader interface, shared by the Car Lab and drive mode:
+//   loadCarModel(spec)   spec = "scripted" (tools/blender/car.py -> models/car/hatchback.glb, the default)
+//                               | "kenney:<id>" | "quaternius:<id>" (CC0 packs, viewer/drive/carPacks.js)
+//   -> model = { spec, label, lods: [{ body: [{ geo, mat, name }], wheels: { FL: [{ geo, mat, name }], ... }, tris }],
+//                wheelPos: { FL: [x, y, z], ... }, size: [w, h, l], mats, lodDist: [m, ...], setPaint(hex | null) }
+//   createCar(model) poses any of them (body on springs + four wheel pivots); fitBody(model) sizes the physics box.
+// The scripted car: the body as one geometry per material, the four wheels (origin = wheel centre, so they spin and
+// steer), and two more levels of detail made here by meshoptimizer (error budgets in metres, per material part, borders
+// locked so the paint / glass seams stay closed). Materials are ours, by the glTF material names: clear-coated paint
+// (colour per car), dark glass, black trim, head lights (lit at night) and tail lights (brighter when braking).
 import * as THREE from "three/webgpu";
 import { color, uniform } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
+import { loadPack, packMaterial, PACK_LODS, PACK_SOURCES } from "./carPacks.js";
+import { BODY, HANDLING } from "./carPhysics.js";
 
 export const CAR_LODS = [
   { error: 0, until: 30 },        // LOD0: the Blender model
@@ -15,10 +22,51 @@ export const CAR_LODS = [
 ];
 export const PAINTS = { "metallic blue": 0x1d3f6e, "silver": 0x9ea4ab, "white": 0xe8e8e4, "black": 0x0d0e10, "red": 0x8a1414, "dark grey": 0x34383d, "green": 0x24483a };
 
-let promise = null;
-/** { lods: [{ body: [{ geo, mat }], wheels: { FL: geo, ... }, tris }], wheelPos: { FL: [x, y, z], ... }, mats } */
-export function loadCarModel(url = new URL("../../models/car/hatchback.glb", import.meta.url).href) {
-  return (promise ??= (async () => {
+const models = new Map();
+/** The one loader: see the header. Cached per spec (pack cars each get their own material, for their own paint). */
+export function loadCarModel(spec = "scripted") {
+  if (!models.has(spec)) models.set(spec, spec === "scripted" ? loadScripted() : loadPackCar(spec));
+  return models.get(spec);
+}
+/** Every spec loadCarModel takes, with labels (for menus). */
+export async function carChoices() {
+  const out = [{ spec: "scripted", label: "scripted hatchback (car.py)" }];
+  for (const src of Object.keys(PACK_SOURCES)) {
+    const p = await loadPack(src).catch(() => null);
+    if (p) for (const c of p.cars) out.push({ spec: `${src}:${c.id}`, label: `${src} · ${c.label}` });
+  }
+  return out;
+}
+/** Size the physics box (carPhysics BODY, wheelbase) to a model. */
+export function fitBody(model) {
+  const [w, h, l] = model.size;
+  BODY.hx = w / 2; BODY.hz = l / 2; BODY.height = h;
+  const wp = model.wheelPos;
+  if (wp.FL && wp.RL) HANDLING.wheelbase = Math.abs(wp.FL[2] - wp.RL[2]);
+}
+
+async function loadPackCar(spec) {
+  const [src, id] = spec.split(":");
+  const pack = await loadPack(src);
+  const car = pack.cars.find((c) => c.id === id) || pack.cars[0];
+  const paint = car.paint.clone();
+  const mat = packMaterial({ paint, lights: carLights });
+  const wheelPos = {};
+  for (const k of ["FL", "FR", "RL", "RR"]) wheelPos[k] = car.parts[`Wheel_${k}`]?.pos || [0, 0.3, 0];
+  const lods = car.lods.map((L) => ({
+    body: [{ geo: L.Body, mat, name: "Body" }],
+    wheels: Object.fromEntries(["FL", "FR", "RL", "RR"].map((k) => [k, L[`Wheel_${k}`] ? [{ geo: L[`Wheel_${k}`], mat, name: "Wheel" }] : []])),
+    tris: L.tris,
+  }));
+  return {
+    spec: `${src}:${car.id}`, label: `${pack.label} · ${car.label}`, credit: pack.credit, lods, wheelPos, size: car.size, mats: { Pack: mat },
+    lodDist: PACK_LODS.map((l) => l.until), keepPaint: car.keepPaint, defaultPaint: car.paint,
+    setPaint: (hex) => { if (car.keepPaint) return; if (hex == null) paint.copy(car.paint); else paint.setHex(hex); },
+  };
+}
+
+function loadScripted(url = new URL("../../models/car/hatchback.glb", import.meta.url).href) {
+  return (async () => {
     const gltf = await new GLTFLoader().loadAsync(url);
     await MeshoptSimplifier.ready;
     gltf.scene.updateMatrixWorld(true);
@@ -65,8 +113,9 @@ export function loadCarModel(url = new URL("../../models/car/hatchback.glb", imp
       for (const p of [...out.body, ...Object.values(out.wheels).flat()]) { p.geo.computeBoundingSphere(); p.geo.userData.shared = true; }
       return out;
     });
-    return { lods, wheelPos, mats };
-  })());
+    return { spec: "scripted", label: "scripted hatchback (tools/blender/car.py)", lods, wheelPos, mats, size: [1.8, 1.47, 4.3],   // car.py: 4.28 x 1.79 x 1.47 m (BODY's defaults)
+      lodDist: CAR_LODS.map((l) => l.until), setPaint: (hex) => mats.Paint.color.setHex(hex ?? PAINTS["metallic blue"]) };
+  })();
 }
 
 function mergeAll(list) {

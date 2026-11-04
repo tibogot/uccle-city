@@ -11,7 +11,7 @@ import {
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { buildLamps, setLampModel } from "./lamps.js";
 import { loadLampModel } from "./lampModel.js";
-import { loadStJob, STJOB_LODS, STJOB_BU_ID } from "./stjobModel.js";
+import { loadStJob, STJOB_LODS, STJOB_BU_ID, stjobColliders } from "./stjobModel.js";
 import { buildFurniture } from "./furniture.js";
 import { buildTram } from "./tram.js";
 import { buildCars } from "./cars.js";
@@ -537,6 +537,7 @@ async function main() {
   // drive mode (viewer/drive/): the hatchback on a street near Saint-Job church (the fly start), ?at=x,z elsewhere
   const driver = new Driver(camera, renderer.domElement, scene, world);
   window.__driver = driver;
+  if (HIDE_BU_IDS.length) loadStJob().then((m) => driver.addStatic(stjobColliders(m.placement))).catch(() => {});   // the church's front steps
   const drive = () => {
     const [px, pz] = atP?.length === 2 ? atP : [1201.6, 549.3];
     const s = roadStart(roads, px, pz, bounds) || start;
