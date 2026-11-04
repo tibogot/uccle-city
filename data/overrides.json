@@ -1,8 +1,12 @@
 {
   "_doc": "Hand corrections applied by the VIEWER to the built tiles (pipeline/overrides.json is the pipeline's own; fold these into the pipeline on the next full rebuild: docs/TODO.md). Local metres (x east, z south). Every entry needs a 'why' and a 'source'. roadSurface: road id -> OSM-style surface (viewer/roadData.js SURFACE). plazas: paved open areas drawn as their own draped mesh (viewer/plazas.js) instead of the grass default; 'courseDeg' = direction of the stone rows (degrees from +x toward +z).",
   "roadSurface": {
-    "r14387667_0": "sett", "r14387667_1": "sett", "r221589096_0": "sett",
-    "r29024530_0": "sett", "r29024530_1": "sett", "r40459752_0": "sett",
+    "r14387667_0": "sett",
+    "r14387667_1": "sett",
+    "r221589096_0": "sett",
+    "r29024530_0": "sett",
+    "r29024530_1": "sett",
+    "r40459752_0": "sett",
     "_why": "Place de Saint-Job: OSM tags these streets asphalt, they are old granite setts (owner's photos, 2026-11-04: parked cars and the through lane on setts). The tram's Chaussée de Saint-Job stays asphalt (same photos).",
     "_source": "owner photos 2026-11-04"
   },
@@ -11,7 +15,48 @@
       "id": "place-saint-job-north",
       "surface": "sett",
       "courseDeg": -13.8,
-      "ring": [[1086, 519], [1082, 509], [1086, 486], [1089, 479], [1126, 449], [1133, 445], [1147, 442], [1195, 433], [1210, 492], [1112, 516]],
+      "ring": [
+        [
+          1086,
+          519
+        ],
+        [
+          1082,
+          509
+        ],
+        [
+          1086,
+          486
+        ],
+        [
+          1089,
+          479
+        ],
+        [
+          1126,
+          449
+        ],
+        [
+          1133,
+          445
+        ],
+        [
+          1147,
+          442
+        ],
+        [
+          1195,
+          433
+        ],
+        [
+          1210,
+          492
+        ],
+        [
+          1112,
+          516
+        ]
+      ],
       "why": "Place de Saint-Job between the setts Chaussée (north) and Avenue du Prince de Ligne: one setts square with rows of plane trees and parking; OSM has no area for it, so it fell back to grass.",
       "source": "outline from the tile's roads.json (road centrelines); surface from the owner's photos 2026-11-04"
     },
@@ -19,9 +64,60 @@
       "id": "place-saint-job-south",
       "surface": "sett",
       "courseDeg": -13.8,
-      "ring": [[1086, 519], [1112, 516], [1210, 492], [1218, 521], [1184, 532], [1175, 540], [1169, 538], [1162, 539], [1124, 551], [1102, 542]],
+      "ring": [
+        [
+          1086,
+          519
+        ],
+        [
+          1112,
+          516
+        ],
+        [
+          1210,
+          492
+        ],
+        [
+          1218,
+          521
+        ],
+        [
+          1184,
+          532
+        ],
+        [
+          1175,
+          540
+        ],
+        [
+          1169,
+          538
+        ],
+        [
+          1162,
+          539
+        ],
+        [
+          1124,
+          551
+        ],
+        [
+          1102,
+          542
+        ]
+      ],
       "why": "Place de Saint-Job between Avenue du Prince de Ligne and the Place streets in front of the church (kiosk, terraces): setts.",
       "source": "outline from roads.json; surface from the owner's photos 2026-11-04"
     }
-  ]
+  ],
+  "flyStart": {
+    "x": 1201.6,
+    "y": 132.8,
+    "z": 549.3,
+    "toward": [
+      1150,
+      500
+    ],
+    "why": "Fly mode starts just above the tip of the Saint-Job church spire (its highest vertex in G4 buildings.bin: 1201.64, 130.25, 549.25), heading over Place de Saint-Job (owner, 2026-11-04)."
+  }
 }

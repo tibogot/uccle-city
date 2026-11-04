@@ -479,7 +479,13 @@ async function main() {
       log(`bird: ${url.split("/").pop()}, clips ${JSON.stringify(clips)}`);
     } catch (e) { log(`bird model: ${e.message}`); }
   })();
-  const fly = () => { walker.on = false; controls.enabled = false; const s = start || { x: cx, z: cz, yaw: 0 }; flyer.start(s.x, s.z, yawP != null ? +yawP * Math.PI / 180 : s.yaw); };
+  // from the tip of the Saint-Job spire (data/overrides.json flyStart), else above the walk start
+  const fly = async () => {
+    walker.on = false; controls.enabled = false;
+    const fs = (await loadOverrides(DATA)).flyStart;
+    if (fs) flyer.start(fs.x, fs.z, Math.atan2(-(fs.toward[0] - fs.x), -(fs.toward[1] - fs.z)), fs.y);
+    else { const s = start || { x: cx, z: cz, yaw: 0 }; flyer.start(s.x, s.z, yawP != null ? +yawP * Math.PI / 180 : s.yaw); }
+  };
   flyer.onExit = () => setView("stjob");
   const views = {
     overview: () => { camera.position.set(cx - 330, cy + 300, cz + 400); controls.target.set(cx, cy, cz); },
