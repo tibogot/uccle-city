@@ -143,6 +143,9 @@ export async function buildLiteData(entry, base) {
     const a = r * c2 + c, b = a + c2;
     idx[o++] = a; idx[o++] = b; idx[o++] = a + 1; idx[o++] = a + 1; idx[o++] = b; idx[o++] = b + 1;
   }
+  // seen from 500 m and more: 25 cm of error is far below a pixel (the grid already sits 30 cm low)
+  await MeshoptSimplifier.ready;
+  const [idxS] = MeshoptSimplifier.simplify(idx, pos, 3, 0, 0.25, ["LockBorder", "ErrorAbsolute"]);
   const dv = new DataView(bBuf), V = dv.getUint32(0, true), T = dv.getUint32(4, true);
   const P = new Float32Array(bBuf, 8, V * 3), I = new Uint32Array(bBuf, 8 + V * 12, T * 3);
   let n = 0;
@@ -169,7 +172,7 @@ export async function buildLiteData(entry, base) {
     for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) tri(t, wall);
     for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) tri(t, roof);
   }
-  return { name: entry.name, terrain: { pos, nrm, uv, idx }, buildings: { position: bp, normal: bn, color: bc }, buildingCount: bDoc.count };
+  return { name: entry.name, terrain: { pos, nrm, uv, idx: idxS }, buildings: { position: bp, normal: bn, color: bc }, buildingCount: bDoc.count };
 }
 
 /** Every ArrayBuffer inside a result, for a zero-copy postMessage. */

@@ -5681,6 +5681,8 @@ async function buildLiteData(entry, base) {
     idx[o++] = b;
     idx[o++] = b + 1;
   }
+  await MeshoptSimplifier.ready;
+  const [idxS] = MeshoptSimplifier.simplify(idx, pos, 3, 0, 0.25, ["LockBorder", "ErrorAbsolute"]);
   const dv = new DataView(bBuf), V = dv.getUint32(0, true), T2 = dv.getUint32(4, true);
   const P = new Float32Array(bBuf, 8, V * 3), I = new Uint32Array(bBuf, 8 + V * 12, T2 * 3);
   let n = 0;
@@ -5716,7 +5718,7 @@ async function buildLiteData(entry, base) {
     for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) tri(t, wall2);
     for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) tri(t, roof);
   }
-  return { name: entry.name, terrain: { pos, nrm, uv, idx }, buildings: { position: bp, normal: bn, color: bc }, buildingCount: bDoc.count };
+  return { name: entry.name, terrain: { pos, nrm, uv, idx: idxS }, buildings: { position: bp, normal: bn, color: bc }, buildingCount: bDoc.count };
 }
 function transferables(obj, out = /* @__PURE__ */ new Set()) {
   if (!obj || typeof obj !== "object") return out;

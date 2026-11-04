@@ -22,6 +22,12 @@ Cost per layer (frame-time drop when hidden, median): overview: features (trees,
 the first targets for optimisation (tree LOD/impostors; cheaper ground noise, e.g. fewer octaves
 far away). A mid-range GPU (2–3× slower) would be at or over 16.7 ms in the overview today.
 
+**Terrain fixed the same day:** the "terrain" cost was not the ground shader but the 1 m grid
+(500k triangles a tile, half the scene). meshoptimizer in the tile worker (5 cm error, borders
+locked; far tiles 25 cm): terrain 3.0 M -> 0.64 M, far LOD 630k -> 309k triangles. GPU now:
+overview 8.0 ms (was 11.1), close-up 9.3 (10.0), walk 7.3 (7.4). Next GPU targets: trees
+(~4–5 ms), parked cars (784k triangles: proper LODs with the Blender car kit).
+
 **Problem: 300–570 ms freezes while tiles stream in** (10 in the first 20 s of `ring=2`).
 CPU profile: ~394 ms in `NodeBuilder.build` / `getNodeBuilderState` / `createRenderPipeline` inside
 `renderer.render` (shader building on first render), ~170 ms in `createLeafAtlas` (trees.js, canvas 2D).
