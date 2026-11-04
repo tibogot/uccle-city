@@ -11,3 +11,11 @@
    attribute a disposed geometry references, the shared ones included.
 4. **Instance capacity >= 1025**: below 1024 instances three r187 writes the count into the WGSL, so
    tiles with different tree counts compiled different shaders (see docs/RENDER_PLAN.md).
+5. **r187 instancing order** (a bug, also in the engine's fog lab under r187): three r187 applies the
+   instance transform BEFORE `positionNode` (`NodeMaterial.setupPosition`), but the code assumed after.
+   The card corners were turned back by the tree's rotation a second time (trees turned near ±90°
+   showed their cards edge-on: vertical streaks), cards were not scaled with the tree, and the trunk's
+   `crownLift` test (`positionLocal.y > 0`, world heights) lifted the whole trunk. Now: leaf corner,
+   crown lift and sway turned to the world and scaled by the tree (`toWorld(...) * xf.z`); the trunk
+   tests the raw vertex (`positionGeometry.y`). Found 2026-11-04 by setting every rotation to 0 (no
+   streaks) and then only treeXf to identity (no streaks either).

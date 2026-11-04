@@ -22,7 +22,7 @@ import * as THREE from "three/webgpu";
 import {
   Fn, attribute, uniform, texture, vec2, vec3, float, mix, pow, saturate, dot, normalize, smoothstep,
   positionWorld, cameraPosition, instanceIndex, hash, transformNormalToView,
-  positionLocal, cameraViewMatrix, cross, select,
+  positionLocal, positionGeometry, cameraViewMatrix, cross, select,
   time, sin, cos,
 } from "three/tsl";
 import { applyAlphaCutout } from "./alphaCutout.js";   // [uccle-city CHANGES.md #1]
@@ -265,7 +265,12 @@ function makeLeafMaterial(P, U) {
     const small = vec3(sin(t.mul(3.1).add(cph)), sin(t.mul(2.3).add(cph.mul(1.7))).mul(0.5), cos(t.mul(2.7).add(cph)));
     return big.mul(0.7).add(small.mul(0.3)).mul(U.windAmp).mul(hA.mul(0.7).add(0.3));
   });
-  m.positionNode = positionLocal.add(cornerTree).add(vec3(0, U.crownLift, 0)).add(sway());
+  // [uccle-city CHANGES.md #5] three r187 applies the instance transform BEFORE positionNode
+  // (NodeMaterial.setupPosition: instancedMesh(object), then positionNode), so positionLocal is
+  // already in the mesh's (world) space here: the tree-space corner is turned back to the world and
+  // scaled by the tree, instead of being left for the instance matrix to turn (which turned it twice:
+  // trees near ±90° showed their cards edge-on, as vertical streaks)
+  m.positionNode = positionLocal.add(toWorld(cornerTree).add(vec3(0, U.crownLift, 0)).add(sway()).mul(xf.z));
   // one value per tree (instance), the same in the shadow pass and the colour pass
   const tint = hash(instanceIndex.add(17)).sub(0.5).mul(U.tintVar).add(1);
   const leafBase = Fn(() => {
@@ -307,7 +312,8 @@ function makeTrunkMaterial(U, P) {
   m.colorNode = vec3(...P.trunkColor);
   // crownLift: everything above the root ring rises with the crown — the trunk stretches, the
   // branches move up with their clumps
-  m.positionNode = positionLocal.add(vec3(0, select(positionLocal.y.greaterThan(0), U.crownLift, float(0)), 0));
+  // [uccle-city CHANGES.md #5] positionLocal is already instanced (world heights): test the raw vertex
+  m.positionNode = positionLocal.add(vec3(0, select(positionGeometry.y.greaterThan(0), U.crownLift, float(0)), 0));
   return m;
 }
 
