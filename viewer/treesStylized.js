@@ -75,6 +75,33 @@ function leafMask() {
   return maskTex;
 }
 
+// Depth pre-pass for the leaf cards (game-engine-v1 v3/render/foliage/foliageSystem.js, PERF_RULES #11):
+// a cut-out card `discard`s, which turns early-z off, so overlapping cards shade every layer. First an
+// UNLIT depth-only copy (same position and cut-out nodes, so the depths match exactly, and with
+// alpha-to-coverage it writes the covered samples only), then the lit material with depth EQUAL and no
+// discard: each pixel shaded once. The shadow pass keeps the cut-out (maskShadowNode).
+let prepass = null;
+function prepassMaterials(base) {
+  if (prepass) return prepass;
+  const depth = new THREE.MeshBasicNodeMaterial({ side: base.side });
+  depth.positionNode = base.positionNode;
+  depth.opacityNode = base.opacityNode;
+  depth.alphaTest = base.alphaTest;
+  depth.alphaToCoverage = base.alphaToCoverage;
+  depth.colorWrite = false;
+  depth.name = "stylized-leaves:depth";
+  const colour = base.clone();
+  colour.opacityNode = null;
+  colour.alphaTest = 0;
+  colour.alphaToCoverage = false;
+  colour.maskShadowNode = base.maskShadowNode;
+  colour.depthFunc = THREE.EqualDepth;
+  colour.depthWrite = false;
+  colour.name = "stylized-leaves:colour";
+  return (prepass = { depth, colour });
+}
+const usePrepass = !/[?&]prepass=0/.test(location.search);   // ?prepass=0: A/B
+
 const hash = (x, z, k) => { const s = Math.sin(x * 12.9898 + z * 78.233 + k * 37.719) * 43758.5453; return s - Math.floor(s); };
 
 /** trees: features.json trees; ground(x, z): surface y; inTile(x, z). Returns { group, update(cameraPos), count }. */
@@ -90,7 +117,10 @@ export function buildStylizedTreeField(trees, ground, inTile) {
   // LOD distances for a street-level city (the fog lab's 150 / 450 / 1600 m are for a valley forest):
   // measured 2026-11-04, walk 14.8 -> 9.5 ms GPU, overview 8.8 -> 7.5 ms.
   const f = createStylizedTrees({ scene: holder, trees: placements, shared,
-    params: { leafMask: leafMask(), lodDist: 40, farDist: 120, maxDist: 900 } });
+    params: { leafMask: leafMask(), lodDist: 40, farDist: 120, maxDist: 900,
+      // Brussels street trees (planes, limes, chestnuts): olive rather than the fog lab's lime, more
+      // spread between trees so a street doesn't read as one green band
+      topColor: "#8aa64e", bottomColor: "#27441d", translucencyColor: "#c6d07c", tintVar: 0.3 } });
   // per-tile culling: the vendor turns frustum culling off (its instances span a whole forest); here
   // every mesh of the tile gets the tile's trees' bounding sphere
   if (placements.length) {
@@ -99,6 +129,23 @@ export function buildStylizedTreeField(trees, ground, inTile) {
     const sphere = new THREE.Sphere(new THREE.Vector3((x0 + x1) / 2, (y0 + y1) / 2 + 8, (z0 + z1) / 2), Math.hypot(x1 - x0, y1 - y0 + 16, z1 - z0) / 2 + 12);
     holder.traverse((o) => { if (o.isInstancedMesh) { o.frustumCulled = true; o.boundingSphere = sphere; } });
   }
+  // leaf meshes -> lit EQUAL-depth material + an instanced depth twin drawn first (same geometry,
+  // instance matrices and per-instance treeXf; its count follows the leaf mesh's every update)
+  const twins = [];
+  if (usePrepass) holder.traverse((o) => {
+    if (!o.isInstancedMesh || o.material !== shared.leafMat) return;
+    const pm = prepassMaterials(shared.leafMat);
+    o.material = pm.colour;
+    const d = new THREE.InstancedMesh(o.geometry, pm.depth, o.instanceMatrix.count);
+    d.instanceMatrix = o.instanceMatrix;
+    d.count = 0;
+    d.castShadow = d.receiveShadow = false;
+    d.frustumCulled = o.frustumCulled; d.boundingSphere = o.boundingSphere;
+    d.renderOrder = -1;
+    d.userData.depthPrepass = true;
+    o.add(d);
+    twins.push([o, d]);
+  });
   (window.__stylizedTrees ??= []).push(f);   // live params / stats for tuning from the console
   const cam = { position: new THREE.Vector3() };
   const light = { sunDir, sunColor: sunCol };
@@ -110,6 +157,7 @@ export function buildStylizedTreeField(trees, ground, inTile) {
     }
     cam.position.copy(p);
     f.update(cam, light);
+    for (const [o, d] of twins) d.count = o.count;
   };
   return { group: holder, update, count: placements.length };
 }

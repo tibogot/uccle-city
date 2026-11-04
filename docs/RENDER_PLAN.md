@@ -92,7 +92,11 @@ diff the WGSL of two same-size modules.
   **octahedral impostors** for the far LOD (`v3/render/foliage/octahedralCore.js`,
   `impostorBake.js`, `v3/render/trees/impostorFieldRenderer.js`); shadows from LOD 0 only;
   colours tuned to the city's palette (top colour #7cc63c reads lime next to the muted streets).
-- Decision pending (owner): which look to keep.
+- **Owner chose the stylized trees (2026-11-04); now the default** (`?trees=slop` for the old ones).
+- Done: depth pre-pass (adapter only: an instanced depth twin per leaf mesh, lit pass EQUAL depth):
+  overview 7.6 -> 5.8 ms, close-up 10.4 -> 6.6, walk 9.3 -> 6.3, image unchanged; now cheaper than
+  the slop trees in every view (8.0 / 9.3 / 7.3). Olive palette (#8aa64e / #27441d, tint 0.3).
+  `?prepass=0` for A/B.
 
 ## Phase 2: cheap look fixes
 

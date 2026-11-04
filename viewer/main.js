@@ -186,12 +186,12 @@ function featureObjects(f, hm, bounds) {
   const off = { polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, side: THREE.DoubleSide };
   mk(steel, new THREE.MeshStandardMaterial({ color: 0x9a9da0, metalness: 0.3, roughness: 0.4, ...off }), "tram-rails");
   mk(groove, new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.9, ...off }), "tram-grooves");
-  // ?trees=simple: our own leaf-card crowns (viewer/trees.js); ?trees=stylized: game-engine-v1's fog-lab
-  // trees (viewer/treesStylized.js); default: slop-newyork's tree system
+  // default: game-engine-v1's fog-lab stylized trees (viewer/treesStylized.js); ?trees=slop:
+  // slop-newyork's tree system (viewer/treesSlop.js); ?trees=simple: our first leaf-card crowns
   const treeMode = params.get("trees");
   const T = treeMode === "simple" ? buildTrees(f.trees || [], (x, z) => hm.surface(x, z), inTile)
-    : treeMode === "stylized" ? buildStylizedTreeField(f.trees || [], (x, z) => hm.surface(x, z), inTile)
-    : buildTreeField(f.trees || [], (x, z) => hm.surface(x, z), inTile);
+    : treeMode === "slop" ? buildTreeField(f.trees || [], (x, z) => hm.surface(x, z), inTile)
+    : buildStylizedTreeField(f.trees || [], (x, z) => hm.surface(x, z), inTile);
   group.add(T.group);
   group.userData.update = T.update || null;
   log(`trees: ${T.count} (LiDAR canopy peaks + OSM)` + (T.sizes ? `, species heights ${T.sizes.map((z) => z.h.toFixed(1)).join("/")} m` : ""));
