@@ -284,7 +284,7 @@ export class Lighting {
     if (this.firmament) {
       const t = FIRM_TIMES[id] || FIRM_TIMES.golden;
       Object.assign(this.firm, t, { wetness: p.wetness });
-      this.vfogOn = !!t.vfog || /[?&]vfog=1/.test(location.search);
+      this.vfogOn = /[?&]vfog=1/.test(location.search);   // volumetric fog: opt-in only for now (owner, 2026-11-04)
       this.uFogDensity.value = p.fogDensity;
       return;
     }

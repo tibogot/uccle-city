@@ -123,11 +123,9 @@ def bezier(p0, p1, p2, p3, n):
 # ---------------------------------------------------------------- the lamp (LOD0)
 H = 6.4                     # top of the pole, m
 parts = []
-# base: a plinth ring, the fluted foot, a collar, then the slim tapered shaft
-parts.append(lathe("plinth", [(0.17, 0.0), (0.17, 0.05), (0.155, 0.08), (0.14, 0.09)], IRON))
-parts.append(fluted("foot", 0.09, 1.05, 0.135, 0.105, 12, 0.012, IRON))
-parts.append(lathe("collar", [(0.105, 1.05), (0.125, 1.08), (0.125, 1.12), (0.09, 1.16), (0.085, 1.22)], IRON))
-parts.append(lathe("shaft", [(0.08, 1.22), (0.058, H - 0.25), (0.07, H - 0.2), (0.07, H - 0.14), (0.05, H - 0.1)], IRON, segs=16))
+# a STRAIGHT pole, no rounded or fluted foot (owner, 2026-11-04: "the one in the screenshot is straight"):
+# a plain tube from the ground, tapering slightly, a thin ring where it meets the pavement and a collar near the top
+parts.append(lathe("shaft", [(0.0, 0.0), (0.085, 0.0), (0.085, 0.03), (0.08, 0.04), (0.06, H - 0.25), (0.07, H - 0.2), (0.07, H - 0.14), (0.05, H - 0.1)], IRON, segs=16))
 parts.append(lathe("finial", [(0.05, H - 0.1), (0.035, H - 0.05), (0.045, H), (0.03, H + 0.06), (0.012, H + 0.14), (0.0, H + 0.16)], IRON, segs=12))
 
 # swan-neck arm: from the shaft just under the top, up and out, then down to the lantern hanger (toward -Y)

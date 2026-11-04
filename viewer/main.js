@@ -25,6 +25,7 @@ import { buildTreeField } from "./treesSlop.js";
 import { buildStylizedTreeField, setTreeLighting, setTreeRenderer } from "./treesStylized.js";
 import { openBootPipelines, warmBoot } from "./warmup.js";
 import { buildPlazas, loadOverrides } from "./plazas.js";
+import { Flyer } from "./flight.js";
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -457,7 +458,27 @@ async function main() {
     : TILE === "G4" ? roadStart(roads, 1153.1, 540.1, bounds) : roadStart(roads, cx, cz, bounds);   // ?at=, else Place de Saint-Job on G4
   if (!start) $("btnWalk").disabled = true;
   const yawP = params.get("yaw");                                        // ?yaw=deg: walk facing (0 = -z / north-ish, 90 = -x)
-  const walk = () => { if (!start) return; controls.enabled = false; walker.start(start.x, start.z, yawP != null ? +yawP * Math.PI / 180 : start.yaw); };
+  const walk = () => { if (!start) return; flyer.stop(); controls.enabled = false; walker.start(start.x, start.z, yawP != null ? +yawP * Math.PI / 180 : start.yaw); };
+  // fly mode (viewer/flight.js): a bird from above Place de Saint-Job (or the walk start), heading the walk's way
+  const flyer = new Flyer(camera, renderer.domElement, scene, world);
+  window.__flyer = flyer;
+  // the bird model: models/bird/bird.glb (the owner's, with its animations), or ?bird=<url>; the placeholder
+  // stays when there is none. ?birdscale= if the model is not in metres, ?birdfwd=+z|-z|+x|-x for its nose axis.
+  (async () => {
+    const url = params.get("bird") || new URL("../models/bird/bird.glb", import.meta.url).href;
+    try {
+      const head = await fetch(url, { method: "HEAD" });
+      if (!head.ok) return;
+      const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
+      const { MeshoptDecoder } = await import("three/addons/libs/meshopt_decoder.module.js");
+      const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+      const gltf = await loader.loadAsync(url);
+      const clips = flyer.setModel(gltf, { scale: +(params.get("birdscale") ?? 1), forward: params.get("birdfwd") || "-z" });
+      log(`bird: ${url.split("/").pop()}, clips ${JSON.stringify(clips)}`);
+    } catch (e) { log(`bird model: ${e.message}`); }
+  })();
+  const fly = () => { walker.on = false; controls.enabled = false; const s = start || { x: cx, z: cz, yaw: 0 }; flyer.start(s.x, s.z, yawP != null ? +yawP * Math.PI / 180 : s.yaw); };
+  flyer.onExit = () => setView("stjob");
   const views = {
     overview: () => { camera.position.set(cx - 330, cy + 300, cz + 400); controls.target.set(cx, cy, cz); },
     stjob: () => {   // ?at=x,z, else Place de Saint-Job on G4, else the tile centre
@@ -469,13 +490,14 @@ async function main() {
       controls.target.set(x, y + (cam?.length === 3 ? 12 : 0), z);
     },
   };
-  const setView = (v) => { walker.on = false; controls.enabled = true; views[v](); controls.update(); };
+  const setView = (v) => { walker.on = false; flyer.stop(); controls.enabled = true; views[v](); controls.update(); };
   walker.onExit = () => setView("stjob");
   $("btnOrbit").onclick = () => setView("overview");
   $("btnStJob").onclick = () => setView("stjob");
   $("btnWalk").onclick = walk;
+  $("btnFly").onclick = fly;
   const v0 = params.get("view") || (params.get("at") ? "stjob" : null);   // ?at=x,z&view=walk stands on the nearest road
-  if (v0 === "walk") walk(); else setView(v0 === "stjob" ? "stjob" : "overview");
+  if (v0 === "walk") walk(); else if (v0 === "fly") { setView("overview"); fly(); } else setView(v0 === "stjob" ? "stjob" : "overview");
 
   addEventListener("resize", () => {
     camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight);
@@ -515,15 +537,16 @@ async function main() {
   for (const k of Object.keys(PRESETS)) tsel.add(new Option(k, k, false, k === timeId));
   tsel.onchange = () => { lighting.apply(tsel.value); pipe?.look(tsel.value); };
   renderer.setAnimationLoop(() => {
-    if (walker.on) focus.copy(camera.position).addScaledVector(camera.getWorldDirection(fwd).setY(0).normalize(), 45);
+    if (flyer.on) focus.set(flyer.x, flyer.pos.y, flyer.z).addScaledVector(camera.getWorldDirection(fwd).setY(0).normalize(), 60);
+    else if (walker.on) focus.copy(camera.position).addScaledVector(camera.getWorldDirection(fwd).setY(0).normalize(), 45);
     else focus.copy(controls.target);
-    const half = walker.on ? 80 : THREE.MathUtils.clamp(camera.position.distanceTo(controls.target) * 0.9, 60, 380);
+    const half = flyer.on ? THREE.MathUtils.clamp((flyer.pos.y - world.surface(flyer.x, flyer.z)) * 1.6 + 90, 90, 380) : walker.on ? 80 : THREE.MathUtils.clamp(camera.position.distanceTo(controls.target) * 0.9, 60, 380);
     lighting.update(camera.position.y, world.surface(camera.position.x, camera.position.z), focus, half);
     const now = performance.now(), dt = Math.min((now - last) / 1000, 0.1);
     last = now;
     fpsAcc += dt; fpsN++;
     if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
-    if (walker.on) walker.update(dt); else controls.update();
+    if (flyer.on) flyer.update(dt); else if (walker.on) walker.update(dt); else controls.update();
     for (const u of updaters) u(camera.position);
     renderFrame();
     if (pipe && lighting.firmament) pipe.setExposureFactor(lighting.adapt(dt));
@@ -553,7 +576,7 @@ async function main() {
   let busy = null;
   const stream = async (liteFirst = false) => {   // liteFirst: skip the full tiles this step (boot warm-up)
     // the manifest tile under (or nearest to) the player / orbit target, loaded or not
-    const px = walker.on ? walker.x : controls.target.x, pz = walker.on ? walker.z : controls.target.z;
+    const px = flyer.on ? flyer.x : walker.on ? walker.x : controls.target.x, pz = flyer.on ? flyer.z : walker.on ? walker.z : controls.target.z;
     const built = manifest.tiles.filter((t) => t.status !== "missing");
     const cell = built.map((t) => {
       const dx = Math.max(t.bounds.x[0] - px, 0, px - t.bounds.x[1]), dz = Math.max(t.bounds.z[0] - pz, 0, pz - t.bounds.z[1]);
