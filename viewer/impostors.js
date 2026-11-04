@@ -165,6 +165,8 @@ export function impostorMaterial(bake, U) {
   const block = vec2(variant.mod(bake.cols), floor(variant.div(bake.cols))).mul(BLOCK);
   const centreF = centreW;
   const pT = unturn(positionWorld.sub(centreF)).div(scl);
+  const camT = unturn(cameraPosition.sub(centreF)).div(scl);         // the camera, tree space
+  const rayT = normalize(pT.sub(camT));                               // camera -> this fragment
   const dT = unturn(normalize(cameraPosition.sub(centreF)));
   const d = vec3(dT.x, max(dT.y, 0.0), dT.z);
   const L1 = abs(d.x).add(abs(d.y)).add(abs(d.z));
@@ -179,26 +181,45 @@ export function impostorMaterial(bake, U) {
     const pt = smoothstep(0.9, 1.0, abs(dirF.y));
     const r = normalize(cross(vec3(0, float(1).sub(pt), pt), dirF));
     const u2 = cross(dirF, r);
-    const fuv = vec2(dot(pT, r), dot(pT, u2)).div(sph.w.mul(2)).add(0.5);
+    // the view ray met with THIS view's plane (through the centre, facing dirF), not the billboard point
+    // projected onto it: a projection is only right for the view that faces the camera and stretched
+    // the others into diagonal streaks (Ryan Brucks' octahedral impostors do the ray/plane hit)
+    const tHit = dot(camT, dirF).negate().div(min(dot(rayT, dirF), -1e-3));
+    const hit = camT.add(rayT.mul(tHit));
+    const fuv = vec2(dot(hit, r), dot(hit, u2)).div(sph.w.mul(2)).add(0.5);
     const inside = step(0.0, fuv.x).mul(step(fuv.x, 1.0)).mul(step(0.0, fuv.y)).mul(step(fuv.y, 1.0));
     // the bake's viewport counts rows from the TOP (WebGPU) and three samples render targets with v up:
     // a cell rendered at top-row y spans v in [1 - (y + s)/H, 1 - y/H], its image upright
     const s = CELL - 2 * PAD, px = block.add(cell.mul(CELL)).add(PAD);
     const at = vec2(px.x.add(fuv.x.mul(s)).div(ATL.x), px.y.add(float(1).sub(fuv.y).mul(s)).div(ATL.y));
     const a = albT.sample(at), n = nrmT.sample(at);
-    return { a, n, inside };
+    return { a, n, inside, at };
   };
   const F = [frame(0, 0), frame(1, 0), frame(0, 1), frame(1, 1)];
   const w = [float(1).sub(f.x).mul(float(1).sub(f.y)), f.x.mul(float(1).sub(f.y)), float(1).sub(f.x).mul(f.y), f.x.mul(f.y)];
-  let alpha = float(0), col = vec3(0), nrm = vec3(0), flag = float(0);
+  // Coverage that never goes hollow (2026-11-04, owner: "it should never have this hollow thing"):
+  //  - weights renormalised over the views that land inside their cell (a view off its cell used to
+  //    count as transparent and thinned the crown's edges);
+  //  - the views' silhouettes differ (no depth parallax), so averaging their coverage punched holes
+  //    where they disagree: the crown takes the UNION of the views that really contribute;
+  //  - mips average leaf texels into partial alpha that falls under the cut far away: alpha is raised
+  //    with the mip level (Ben Golus, "anti-aliased alpha test").
+  let alphaW = float(0), wsum = float(0), alphaU = float(0), col = vec3(0), nrm = vec3(0), flag = float(0);
   for (let i = 0; i < 4; i++) {
-    const k = w[i].mul(F[i].inside).mul(F[i].a.a);
-    alpha = alpha.add(k);
+    const wi = w[i].mul(F[i].inside);
+    wsum = wsum.add(wi);
+    const k = wi.mul(F[i].a.a);
+    alphaW = alphaW.add(k);
+    alphaU = max(alphaU, F[i].a.a.mul(smoothstep(0.02, 0.2, wi)));
     col = col.add(F[i].a.rgb.mul(k));
     nrm = nrm.add(F[i].n.rgb.mul(k));
     flag = flag.add(F[i].n.a.mul(k));
   }
-  const inv = float(1).div(max(alpha, 1e-4));
+  // (clamped: fwidth can be infinite where a view's uv jumps, and 0 x inf = NaN read as opaque)
+  const fw = F[0].at.mul(ATL).fwidth();
+  const mipLod = clamp(max(fw.x, fw.y).max(1e-6).log2(), 0.0, 6.0);
+  const alpha = saturate(max(alphaW.div(max(wsum, 1e-4)), alphaU).mul(mipLod.mul(0.3).add(1)));
+  const inv = float(1).div(max(alphaW, 1e-4));
   const albedo = col.mul(inv), nTree = normalize(nrm.mul(inv).mul(2).sub(1)), flg = flag.mul(inv);
   const leaf = step(0.4, flg), ao = mix(float(1), saturate(flg.sub(0.5).mul(2)), leaf);
   // the leaves' colour terms (vendor makeLeafMaterial): per-tree tint (from the tree's turn and scale,

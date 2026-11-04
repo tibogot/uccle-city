@@ -15,9 +15,12 @@ import { branchShape } from "../vendor/stylized-trees/branchTree.js";
 import { bumpNormal } from "./tslkit.js";
 import { bakeTreeImpostors, impostorMaterial, impostorField, IMPOSTOR_START } from "./impostors.js";
 
-// Far LOD: octahedral impostors past IMPOSTOR_START (viewer/impostors.js); ?impostors=0: the vendor's
-// own LOD 1 / LOD 2 out to 900 m instead (A/B)
-const useImpostors = !/[?&]impostors=0/.test(location.search);
+// Far LOD: octahedral impostors past IMPOSTOR_START (viewer/impostors.js) with ?impostors=1. OFF by
+// default since 2026-11-04: side by side from Saint-Job (zoomed on 150-400 m) the real LOD 1 / LOD 2
+// trees were sharper and lit with highlights, the impostors blurrier with some smeared crowns, for
+// the same GPU time in that view (6.43 vs 6.44 ms). Revisit with 16x16 views, a depth atlas
+// (parallax) and a 3-view blend when the whole of Uccle multiplies the far trees.
+const useImpostors = /[?&]impostors=1/.test(location.search);
 let renderer = null, impMat = null;
 /** main.js passes the renderer once (the impostor bake renders on it). */
 export function setTreeRenderer(r) { renderer = r; }

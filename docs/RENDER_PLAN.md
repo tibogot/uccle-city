@@ -115,7 +115,14 @@ Quick wins first, then the big one:
    GPU: overview 7.1 -> 6.7 ms, close-up 7.7 -> 7.4, walk 6.0 -> 5.5. Starting at 60 or 45 m is slower
    (impostor fragments: 8 texture taps + lighting). Gotcha: bake viewport rows count from the top, so
    the atlas lookup flips the image inside each cell (found by eye: upside-down trees).
-   Left: dithered crossfade at 90 m; a depth atlas for parallax (less smearing between views).
+   Then fixed against hollow crowns (owner's report): weights renormalised over views inside their cell,
+   coverage = union of contributing views, alpha raised with the mip level (clamped: fwidth can be
+   infinite -> NaN -> opaque black squares), each view sampled where the VIEW RAY meets its plane
+   (Brucks) instead of a projection of the billboard point.
+   **Then turned OFF by default (`?impostors=1`)**: side by side, zoomed on 150-400 m from Saint-Job,
+   the real trees were sharper and better lit, the impostors blurrier with some smeared crowns, at
+   the same GPU time in that view (6.43 vs 6.44 ms). Revisit for the whole of Uccle with 16x16 views,
+   a depth atlas (parallax), a 3-view triangle blend and a dithered crossfade.
 5. [ ] Look: ground AO blob under each tree, crown-level AO gradient, translucency dimmed in shadow,
    per-pad hue jitter, 3-tier wind with world gusts.
 
