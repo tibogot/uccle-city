@@ -187,7 +187,9 @@ lod2 = lod(lod0, "Lamp_LOD2", 0.1)
 print(f"LAMP tris LOD0 {tris(lod0)}  LOD1 {tris(lod1)}  LOD2 {tris(lod2)}", flush=True)
 
 # ---------------------------------------------------------------- export (glTF, Y up; materials as PBR)
-for o in scn.objects: o.select_set(o.name.startswith("Lamp_"))
+# only LOD0 ships: the far LODs are made by meshoptimizer in the viewer (viewer/lampModel.js); the Blender
+# decimate below is for the preview only (it wrecked the lantern)
+for o in scn.objects: o.select_set(o.name == "Lamp_LOD0")
 bpy.ops.export_scene.gltf(filepath=os.path.join(OUT, "brussels_lamp.glb"), export_format="GLB", use_selection=True,
                           export_apply=True, export_yup=True)
 

@@ -9,7 +9,8 @@ import {
   color, float, uniform, positionWorld, normalWorld, fract, min, fwidth, smoothstep, mix, abs,
 } from "three/tsl";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { buildLamps } from "./lamps.js";
+import { buildLamps, setLampModel } from "./lamps.js";
+import { loadLampModel } from "./lampModel.js";
 import { buildFurniture } from "./furniture.js";
 import { buildTram } from "./tram.js";
 import { buildCars } from "./cars.js";
@@ -432,6 +433,7 @@ async function main() {
       return { x0: Math.min(...b.map((q) => q.x0)), z0: Math.min(...b.map((q) => q.z0)), x1: Math.max(...b.map((q) => q.x1)), z1: Math.max(...b.map((q) => q.z1)) };
     },
   };
+  if (params.get("lampmodel") !== "0") setLampModel(await loadLampModel());   // the Blender lamp (?lampmodel=0: the old cylinders)
   const T0 = await loadTile(entry, { layers, contourOn, verbose: true });
   world.tiles.push(T0);
   const { hm, roads, net } = T0;

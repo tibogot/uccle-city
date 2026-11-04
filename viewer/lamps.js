@@ -10,6 +10,7 @@
 import * as THREE from "three/webgpu";
 import { float, vec3, uv, length, smoothstep, mix, color, uniform } from "three/tsl";
 import { lampPoolsOn } from "./lampLight.js";
+import { LAMP_LODS } from "./lampModel.js";
 import { ROAD_TYPES } from "../vendor/roads/roadCrossSection.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { env } from "./lighting.js";
@@ -70,6 +71,10 @@ function postGeometry() {
   return mergeGeometries(parts);
 }
 
+/** The Blender lamp (viewer/lampModel.js), when loaded: main.js sets it before the first tile. */
+let MODEL = null;
+export function setLampModel(m) { MODEL = m; }
+
 export function buildLamps(roads, ground, bounds, { lights: withLights = true } = {}) {
   const sites = lampSites(roads, bounds);
   const group = new THREE.Group();
@@ -104,6 +109,33 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true } 
   });
   for (const m of [post, glass, pool]) { m.instanceMatrix.needsUpdate = true; m.computeBoundingSphere(); group.add(m); }
   pool.renderOrder = 2;
+  // the Blender lamp: replaces the cylinders, one instanced iron + glass mesh per LOD, each lamp in its LOD
+  // by distance (re-bucketed when the camera has moved 5 m); capacity >= 1025 so every tile shares the shaders
+  let relod = null;
+  if (MODEL) {
+    post.visible = glass.visible = false;
+    const cap = Math.max(sites.length, 1025);
+    const mats = sites.map((s) => { q.setFromAxisAngle(up, s.yaw); return new THREE.Matrix4().compose(new THREE.Vector3(s.x, s.y, s.z), q, one); });
+    const lodMeshes = MODEL.lods.map((l, k) => {
+      const mk2 = (geo, mat, shadow) => { const m = new THREE.InstancedMesh(geo, mat, cap); m.count = 0; m.castShadow = shadow; m.receiveShadow = true; m.frustumCulled = false; group.add(m); return m; };
+      return { iron: mk2(l.iron, MODEL.iron, k === 0), glass: mk2(l.glass, MODEL.glass, false) };
+    });
+    const last = new THREE.Vector3(Infinity, 0, 0);
+    relod = (cam) => {
+      if (cam.distanceToSquared(last) < 25) return;
+      last.copy(cam);
+      for (const m of lodMeshes) m.iron.count = m.glass.count = 0;
+      for (let i = 0; i < sites.length; i++) {
+        const s = sites[i], d = Math.hypot(s.x - cam.x, s.y - cam.y, s.z - cam.z);
+        const k = LAMP_LODS.findIndex((l) => d < l.until);
+        if (k < 0) continue;
+        const m = lodMeshes[k], n = m.iron.count++;
+        m.glass.count++;
+        m.iron.setMatrixAt(n, mats[i]); m.glass.setMatrixAt(n, mats[i]);
+      }
+      for (const m of lodMeshes) { m.iron.instanceMatrix.needsUpdate = true; m.glass.instanceMatrix.needsUpdate = true; }
+    };
+  }
   if (lampPoolsOn) pool.visible = false;   // the lamp light map lights the ground itself (lampLight.js)
 
   // a few real lights on the nearest lamps at night
@@ -113,8 +145,11 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true } 
     const l = new THREE.PointLight(0xffc27a, 0, 18, 2);
     lights.push(l); group.add(l);
   }
-  const lamp = sites.map((s) => new THREE.Vector3(s.x - Math.sin(s.yaw) * 0.72, s.y + 4.55, s.z - Math.cos(s.yaw) * 0.72));
+  // the lantern: the Blender lamp's globe hangs 1.05 m out at ~6 m, the old one 0.72 m at 4.55 m
+  const REACH = MODEL ? 1.05 : 0.72, HEADY = MODEL ? 5.95 : 4.55;
+  const lamp = sites.map((s) => new THREE.Vector3(s.x - Math.sin(s.yaw) * REACH, s.y + HEADY, s.z - Math.cos(s.yaw) * REACH));
   const update = (camPos) => {
+    relod?.(camPos);
     if (!lights.length) return;
     const night = env.uNight.value;
     if (night < 0.05) { for (const l of lights) l.intensity = 0; return; }

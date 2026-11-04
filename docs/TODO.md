@@ -88,6 +88,23 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 - [ ] Missions or uses: deliveries, taxi, "find this place", time slider (historic maps).
 - [ ] Multiplayer (later).
 
+## 8b. Dev panel (owner, 2026-11-04: "a better dev panel, well organized")
+Replace the left HUD with a collapsible, tabbed panel (lil-gui folders, state in the URL so a view can be shared):
+- [ ] **Time & sun**: time of day slider (Firmament's real sun, Brussels), date / day of year, time speed, freeze;
+      presets (golden, midday, misty, twilight, night).
+- [ ] **Sky & clouds** (Firmament params): coverage, cloud type (stratus..cumulus..storm), base / thickness, wind,
+      cirrus, haze, aerosols, sun size; exposure (auto, EV bias, night EV).
+- [ ] **Weather**: volumetric fog (on, density, layer top, falloff), rain / wet roads (later), snow (winter, later).
+- [ ] **Lighting & post**: lamp pools on/power, near lamp lights, AO / SSR / bloom / haze toggles and strengths,
+      shadows (on, resolution, distance), colour grade.
+- [ ] **World**: tiles ring / far LOD, layers (terrain, buildings, roads, trees, props, tram, cars), tree mode
+      (stylized / slop), impostors, LOD distances.
+- [ ] **Camera & modes**: orbit / walk / fly, teleport (Saint-Job, Wolvendael, ...), fly speed / camera distance,
+      field of view, photo mode (hide UI, screenshot).
+- [ ] **Performance**: fps, GPU ms (avg, p95), per-pass GPU times, draw calls, triangles, GPU memory, shader count,
+      a 10-second benchmark that logs the three standard views.
+- [ ] **Debug**: wireframe, normals, LOD colours, light map / land cover overlays, the dev log.
+
 ## 9. Housekeeping
 - [ ] README: update for the worker build (`node tools/build_worker.mjs`) and new URL params.
 - [ ] CONTRACT: document `data/transit/*.json`, features `shop` points and `platform` lines.

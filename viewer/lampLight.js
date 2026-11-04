@@ -14,7 +14,7 @@ export const lampPoolsOn = !/[?&]lamppools=0/.test(location.search);
 const X0 = -2000, Z0 = -1000, W = 4000, H = 2000, TEXEL = 2;     // the manifest's whole grid (A1..H4)
 const NX = W / TEXEL, NZ = H / TEXEL;
 const RANGE = 15;                                                  // m: the pool's reach
-const HEAD = 4.6;                                                  // m: lamp head above the ground
+const HEAD = 5.9;                                                  // m: lamp head above the ground (the Blender lamp's globe)
 
 const data = new Uint8Array(NX * NZ);
 const acc = new Float32Array(NX * NZ);                             // the sum (clamped into data)
