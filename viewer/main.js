@@ -22,6 +22,7 @@ import { Lighting, PRESETS } from "./lighting.js";
 import { createPipeline } from "./post.js";
 import { buildTrees } from "./trees.js";
 import { buildTreeField } from "./treesSlop.js";
+import { openBootPipelines, warmBoot } from "./warmup.js";
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -398,6 +399,7 @@ async function main() {
   log(`renderer: ${backend}`);
 
   const scene = new THREE.Scene();
+  const bootPipes = params.get("warmup") !== "0" ? openBootPipelines(renderer, scene) : null;   // ?warmup=0: old boot, for A/B
   const timeId = PRESETS[params.get("time")] ? params.get("time") : "golden";
   const lighting = new Lighting(scene, renderer, timeId, { sunLight: params.get("sunlight") === "1" });
   const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
@@ -514,7 +516,7 @@ async function main() {
   const lite = new Map();                 // name -> lite tile
   const pending = new Set();
   let busy = null;
-  const stream = async () => {
+  const stream = async (liteFirst = false) => {   // liteFirst: skip the full tiles this step (boot warm-up)
     // the manifest tile under (or nearest to) the player / orbit target, loaded or not
     const px = walker.on ? walker.x : controls.target.x, pz = walker.on ? walker.z : controls.target.z;
     const built = manifest.tiles.filter((t) => t.status !== "missing");
@@ -531,7 +533,7 @@ async function main() {
     }
     for (const [n, l] of lite) if (dist(byName(n)) > far + 1.01 || world.tiles.some((w) => w.name === n)) { l.dispose(); lite.delete(n); }
     const want = built.filter((t) => dist(t) <= ring + 0.01 && !world.tiles.some((w) => w.name === t.name)).sort((a, b) => dist(a) - dist(b));
-    for (const t of want) {
+    if (!liteFirst) for (const t of want) {
       if (pending.has(t.name)) continue;
       pending.add(t.name);
       const t0 = performance.now();
@@ -544,7 +546,7 @@ async function main() {
       return true;                                // one full tile per step: re-check where the player is
     }
     // far LOD: tiles not loaded in full, within `far`, nearest first (two per step)
-    const wantLite = built.filter((t) => dist(t) <= far + 0.01 && !lite.has(t.name) && !world.tiles.some((w) => w.name === t.name) && !pending.has(t.name))
+    const wantLite = built.filter((t) => dist(t) <= far + 0.01 && (!liteFirst || dist(t) > ring + 0.01) && !lite.has(t.name) && !world.tiles.some((w) => w.name === t.name) && !pending.has(t.name))
       .sort((a, b) => dist(a) - dist(b)).slice(0, 2);
     await Promise.all(wantLite.map(async (t) => {
       pending.add(t.name);
@@ -555,6 +557,17 @@ async function main() {
       log(`far LOD: ${lite.size} tiles (out to ring ${far}), full: ${world.tiles.map((t) => t.name).join(" ")}`);
     return wantLite.length > 0;
   };
+  // every pipeline compiled under the cover before it lifts; streamed tiles then reuse them.
+  // One neighbour tile and the first far tiles load under the cover too: the first material built
+  // emits its shared TSL functions in a different order than all later ones (same code, other WGSL
+  // text, so one more compile), and far tiles have their own shaders.
+  if (bootPipes) {
+    if (ring > 0) await stream();
+    if (far > ring) await stream(true);
+    const w = await warmBoot(renderer, scene, bootPipes);
+    log(`warm-up: ${w.ms} ms, ${w.warmed} drawables, ${w.parallel} pipelines compiled in parallel, ${w.late} after`);
+  }
+  $("cover").classList.add("gone");
   const loading = (async () => { while (await stream()); })();   // initial fill around the start tile
   busy = loading.finally(() => { busy = null; });
   setInterval(() => { if (!busy) busy = stream().finally(() => { busy = null; }); }, 1000);

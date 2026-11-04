@@ -21,8 +21,12 @@ open http://localhost:8765/viewer/index.html?tile=G4
 ```
 Useful URL params: `far=0..6` (far-LOD ring), `clock=HH:MM`, `timescale=N`, `trams=0`, `worker=0`, `tile=A1..H4`, `ring=0|1|2` (neighbour tiles), `yaw=deg` (walk facing), `view=stjob|walk`, `at=x,z`, `cam=x,z,height`,
 `time=golden|midday|overcast|twilight|night`, `fx=0` (no post effects), `trees=simple`
-(old leaf-card trees), `sunlight=1` (cascaded shadows). Use Chrome/Edge with WebGPU for real
+(old leaf-card trees), `sunlight=1` (cascaded shadows), `warmup=0` (no boot shader warm-up). Use Chrome/Edge with WebGPU for real
 speed; headless screenshots use the slower WebGL2 fallback.
+
+Deploy (Vercel): static, no build step. `vercel.json` redirects `/` to `/viewer/index.html` and sets
+cache headers; `.vercelignore` leaves out the pipeline, tools and docs. Import the repo in Vercel
+(framework "Other") or run `vercel` from the repo root.
 
 Pipeline (raw data must be fetched first, see README): `python pipeline/run_tile.py --all --network`.
 

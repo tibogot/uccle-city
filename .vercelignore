@@ -1,0 +1,9 @@
+# Only viewer/, vendor/ and data/ are served. The rest is the data pipeline and docs.
+pipeline/
+tools/
+debug/
+docs/
+data/raw/
+*.md
+!vendor/**/*.md
+!CREDITS.md

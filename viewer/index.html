@@ -15,6 +15,11 @@
   #stats, #log { font: 12px/1.35 ui-monospace, monospace; white-space: pre; margin-top: 6px; color: #b8c2cc; }
   #log { color: #f0c27a; white-space: pre-wrap; }
   #help { color: #8f9aa6; font-size: 12px; margin-top: 6px; }
+  #hud { z-index: 2; }
+  /* covers the canvas while every shader is compiled (viewer/warmup.js), so the first seconds don't stutter */
+  #cover { position: fixed; inset: 0; z-index: 1; display: grid; place-items: center; background: #b9c9d6;
+           color: #2a3440; font-size: 15px; transition: opacity .4s; }
+  #cover.gone { opacity: 0; pointer-events: none; }
 </style>
 <!-- three.js pinned to an exact version. "three/src/" is needed by vendor/roads/mesh/triangulate.js (earcut). -->
 <script type="importmap">
@@ -30,6 +35,7 @@
 </script>
 </head>
 <body>
+<div id="cover">Loading Uccle…</div>
 <div id="hud">
   <h1>Uccle 3D — <select id="tileSel"></select></h1>
   <label><input type="checkbox" data-layer="terrain" checked> terrain</label>

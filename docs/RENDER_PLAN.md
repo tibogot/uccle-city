@@ -52,10 +52,15 @@ diff the WGSL of two same-size modules.
 ## Phase 1: no freezes (before the Vercel deploy)
 
 1. [x] Per-tile constants in ground / asphalt shaders -> uniforms (see above). The main fix.
-2. [ ] Boot: a ~3 s compile burst ~4.5 s in, then two ~500 ms freezes (first asphalt-with-atlas
-   shader). Warm up on the real canvas behind a loading screen, shadows included
-   (`games/shared-rts/pipelineWarmup.js`, `awaitPipelinesQuiet`), async/parallel pipelines
-   (`v3/render/parallelPipelines.js`); `keepPipelines.js` for unload/reload.
+2. [x] Boot warm-up (`viewer/warmup.js`, machinery copied to `vendor/engine/`): parallel async
+   pipelines while a cover hides the canvas; the main tile, one neighbour and the first far tiles
+   load under it (the first material built emits its shared TSL functions in another order than
+   later ones, so a neighbour is needed to get the "later" WGSL); 2 frames with every drawable
+   forced visible; wait for 12 quiet frames. Result: cover lifts at 2.1–2.7 s, **no shader compiled
+   after it, worst frame 50 ms** (default and `ring=2`, cold cache). `?warmup=0` = old boot.
+   Gotcha: warm only after the per-frame updaters ran a few frames (tree LOD state), or the
+   restore hides the trees.
+   Left: `keepPipelines.js` if unloading and returning to an area recompiles.
 3. [ ] Remaining 100–200 ms main-thread slices per tile (tree field build, features).
    Optional: share ground/asphalt material instances to cut the ~10–25 ms CPU node build per tile.
 4. [ ] Leaf atlas built once in the worker on an OffscreenCanvas (`v3/render/objects/rtsAtlasWorker.js`).

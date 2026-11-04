@@ -1,0 +1,149 @@
+// PIPELINE WARM-UP — build every GPU pipeline the game will need BEFORE the
+// loading screen goes, instead of in the middle of the first fight.
+// Shared by nam-rts and alg-rts (identical machinery; each game calls it at
+// the end of its own boot). Moved here from games/nam-rts on 2026-09-28.
+//
+// WHY. WebGPU builds a render pipeline the first time a (material, geometry
+// layout, pass) combination is drawn, and three builds the shader for it on
+// the main thread at that moment. Most of the game's effects start hidden or
+// empty — the fire mesh, the smoke, muzzle flashes, rockets, every unit type
+// that is not on the field yet — so their pipelines were built on the frame
+// the first flame, rocket or tank appeared: measured 2026-09-24, 26 pipelines
+// built mid-fight, frames of 140-240 ms and one of 987 ms at the first contact.
+//
+// HOW. Everything the ENGINE put in the scene is recorded when the level has
+// loaded (`snapshotEngineScene`); the ocean, the waterfalls, the editor's
+// gizmos are hidden there too and must NOT be warmed — they are never drawn
+// in the game, and warming them would only lengthen the boot. Everything else
+// — what the GAME added, and the level's shown content — is switched on for
+// two frames under
+// the loading screen: visible, one instance, never frustum-culled. Those two
+// frames draw the beauty pass and the shadow cascades, which is what builds
+// the pipelines; then everything is put back exactly as it was. Instances
+// that were empty draw at whatever matrix slot 0 holds — a degenerate or
+// off-screen triangle behind the loading screen, which is all a pipeline
+// needs.
+
+/**
+ * Everything in the scene right now: call once the level has loaded. The set
+ * also remembers which of them were SHOWN then (`shownAtLoad`): those are the
+ * level's real content (the river, the props), which the game draws — they
+ * get warmed; what the engine had hidden (ocean, gizmos) does not.
+ */
+export function snapshotEngineScene(scene) {
+  const seen = new Set();
+  const shown = new Set();
+  scene.traverse((o) => {
+    seen.add(o);
+    let vis = o.visible;
+    for (let p = o.parent; p && vis; p = p.parent) vis = p.visible;
+    if (vis) shown.add(o);
+  });
+  seen.shownAtLoad = shown;
+  return seen;
+}
+
+const drawable = (o) => o.isMesh || o.isPoints || o.isSprite;
+
+/**
+ * Warm the game's hidden/empty drawables for `frames` frames, then restore.
+ * @param {object} app  the engine app (scene, and its own render loop)
+ * @param {Set<object>} engineObjects  from snapshotEngineScene
+ * @returns {Promise<{ warmed: number, ms: number }>}
+ */
+export async function warmGamePipelines(app, engineObjects, { frames = 2 } = {}) {
+  const t0 = performance.now();
+  // EVERY drawable the game will draw, not only the hidden or empty ones:
+  // something visible but OFF-SCREEN is frustum-culled at boot and never
+  // drawn, so its pipeline was built on the frame the camera first reached
+  // it — the "camera-jump freeze", measured 2026-09-25: 158-234 ms once per
+  // new place (the river close up, the enemy HQ's props). The level's own
+  // objects count when they were shown at load (the river, whose chunk
+  // culling had it hidden from the base); what the engine hid stays out.
+  const shownAtLoad = engineObjects.shownAtLoad ?? new Set();
+  const targets = [];
+  app.scene.traverse((o) => {
+    if (!drawable(o)) return;
+    // (An engine object that is hidden at load but SHOWN IN PLAY says so: `userData.warmUp` — the plant
+    // fields' draw batches, hidden while the start view has none of their plants: 6 builds on a map tour.)
+    if (engineObjects.has(o) && !shownAtLoad.has(o) && o.userData?.warmUp !== true) return;
+    const emptyInstanced = o.isInstancedMesh && o.count === 0;
+    const emptyGeo = o.geometry?.isInstancedBufferGeometry && o.geometry.instanceCount === 0;
+    targets.push({ o, emptyInstanced, emptyGeo });
+  });
+
+  // First value seen for every (object, key) touched, to put back at the end.
+  const original = new Map();
+  const set = (o, key, value) => {
+    let m = original.get(o);
+    if (!m) original.set(o, (m = {}));
+    if (!(key in m)) m[key] = o[key];
+    o[key] = value;
+  };
+  // Applied at the start of EVERY render in the window, not once: the game's
+  // own per-frame updates (the unit renderer's count/visible, the effects'
+  // show/hide) run before the render and would switch these off again.
+  const apply = () => {
+    for (const { o, emptyInstanced, emptyGeo } of targets) {
+      set(o, "visible", true);
+      for (let p = o.parent; p; p = p.parent) set(p, "visible", true);
+      set(o, "frustumCulled", false);
+      if (emptyInstanced && o.count === 0) set(o, "count", 1);
+      if (emptyGeo && o.geometry.instanceCount === 0) set(o.geometry, "instanceCount", 1);
+    }
+  };
+  const scene = app.scene;
+  const prevHook = scene.onBeforeRender;
+  scene.onBeforeRender = function (...args) {
+    apply();
+    return prevHook.apply(this, args);
+  };
+  apply();
+  // The engine's loop renders these frames; wait for them to be drawn.
+  for (let i = 0; i < frames + 1; i++) await new Promise((r) => requestAnimationFrame(() => r()));
+  scene.onBeforeRender = prevHook;
+  // Put everything back (geometries are their own entries, for instanceCount).
+  for (const [o, m] of original) for (const [key, value] of Object.entries(m)) o[key] = value;
+  return { warmed: targets.length, ms: Math.round(performance.now() - t0) };
+}
+
+// ── THE QUIET WAIT (2026-10-16, the alg-rts coast) ──────────────────────────────────────────────
+// The warm-up above draws what EXISTS. Some systems build their meshes lazily, when the camera
+// first sees them — the foliage's tree batches are made on the boot's last frames, after the warm-up
+// — and their pipelines were compiled on the GPU process once the briefing was up: frames of 1.3 s
+// and 3.7 s, measured, 1-5 s after "À vos postes" turned on (the page's main thread idle meanwhile).
+// So: keep the loop rendering under the loading screen until NO new pipeline has been asked for
+// during `quietFrames` frames, then wait for the GPU to have finished its work (the compiles with it).
+
+/** Count the device's pipeline creations (once per device). */
+function countPipelines(device) {
+  if (!device || device.__pipeCount) return device?.__pipeCount ?? null;
+  const c = (device.__pipeCount = { n: 0 });
+  for (const k of ["createRenderPipeline", "createComputePipeline", "createRenderPipelineAsync", "createComputePipelineAsync"]) {
+    const f = device[k]?.bind(device);
+    if (f) device[k] = (desc) => { c.n++; return f(desc); };
+  }
+  return c;
+}
+
+/**
+ * Wait until the scene asks for no new pipeline for `quietFrames` frames (at most `maxMs`), then until
+ * the GPU's queue is done. Call it at the very end of a boot, under the loading screen.
+ * @returns {Promise<{ frames: number, pipelines: number, ms: number }>}
+ */
+export async function awaitPipelinesQuiet(app, { quietFrames = 12, maxMs = 20000 } = {}) {
+  const t0 = performance.now();
+  const device = app.renderer?.backend?.device;
+  const c = countPipelines(device);
+  if (!c) return { frames: 0, pipelines: 0, ms: 0 };
+  const start = c.n;
+  let quiet = 0, frames = 0, last = c.n;
+  while (quiet < quietFrames && performance.now() - t0 < maxMs) {
+    await new Promise((r) => requestAnimationFrame(() => r()));
+    frames++;
+    if (c.n === last) quiet++; else { quiet = 0; last = c.n; }
+  }
+  try { await device.queue.onSubmittedWorkDone(); } catch { /* lost device: nothing to wait for */ }
+  return { frames, pipelines: c.n - start, ms: Math.round(performance.now() - t0) };
+}
+
