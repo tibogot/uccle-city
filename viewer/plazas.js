@@ -7,7 +7,7 @@
 // setts ~12 x 15 cm in straight running rows (no arcs), each stone its own blue-grey to brown-grey,
 // light sandy joints, slightly domed and worn tops.
 import * as THREE from "three/webgpu";
-import { positionWorld, vec2, vec3, float, mix, smoothstep, uniform, attribute } from "three/tsl";
+import { positionWorld, vec2, vec3, float, mix, smoothstep, uniform, attribute, texture, transformNormalToView } from "three/tsl";
 import { courses, n3 } from "./roadPaint.js";
 import { bumpNormal } from "./tslkit.js";
 
@@ -28,6 +28,39 @@ export function settsLook(a, b, seed = float(0)) {
   return { color, rough, height };
 }
 
+// ?setts=tex: the CC0 scan (textures/polyhaven/cobblestone_floor_08, 2 x 2 m) instead of the procedural setts,
+// for an A/B. Rows aligned to the square; two samples at different offsets blended by a large noise and a
+// macro tint (wear, dirt) so the 2 m tile doesn't repeat visibly.
+const useScan = /[?&]setts=tex/.test(location.search);
+function scanMaterial(m) {
+  const base = new URL("../textures/polyhaven/cobblestone_floor_08/cobblestone_floor_08_", import.meta.url).href;
+  const L = new THREE.TextureLoader();
+  const tex = (name, srgb) => {
+    const t = L.load(`${base}${name}_1k.jpg`);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+    t.anisotropy = 8;
+    return t;
+  };
+  const diff = tex("diff", true), nor = tex("nor_gl", false), arm = tex("arm", false);
+  const dir = attribute("aCourse", "vec2");
+  const P = positionWorld;
+  const uvA = vec2(P.x.mul(dir.x).add(P.z.mul(dir.y)), P.z.mul(dir.x).sub(P.x.mul(dir.y))).div(2.0);   // 2 m tile
+  const uvB = uvA.mul(0.97).add(vec2(0.37, 0.61));
+  const k = smoothstep(0.35, 0.65, n3(P.x.mul(0.09), P.z.mul(0.09), 7.0).mul(0.5).add(0.5));
+  const macro = n3(P.x.mul(0.25), P.z.mul(0.25), 2.0).mul(0.09).add(1.0);
+  const col = mix(texture(diff, uvA).rgb, texture(diff, uvB).rgb, k).mul(macro);
+  const ar = mix(texture(arm, uvA).rgb, texture(arm, uvB).rgb, k);
+  m.colorNode = col.mul(ar.r);                                                // baked AO into the joints
+  m.roughnessNode = ar.g;
+  // the normal map in world space: the texture's u / v axes are the rows' rotated world axes, the plaza is ~flat
+  const nt = texture(nor, uvA).rgb.mul(2.0).sub(1.0);
+  const U = vec3(dir.x, 0, dir.y), V = vec3(dir.y.negate(), 0, dir.x);        // d(uv)/d(world): u along the rows
+  const nW = U.mul(nt.x).add(V.mul(nt.y)).add(vec3(0, 1, 0).mul(nt.z)).normalize();
+  m.normalNode = transformNormalToView(nW);
+  return m;
+}
+
 let MAT = null;
 function plazaMaterial() {
   if (MAT) return MAT;
@@ -40,6 +73,7 @@ function plazaMaterial() {
   m.colorNode = L.color;
   m.roughnessNode = L.rough;
   m.normalNode = bumpNormal(L.height);
+  if (useScan) scanMaterial(m);
   m.userData.shared = true;
   return (MAT = m);
 }
