@@ -149,6 +149,22 @@ Quick wins first, then the big one:
   Rule: never DynamicDrawUsage for per-instance data that is not rewritten every frame.
 - Next: the night look (nightEV, Purkinje); the tram clock driving the sun; then volumetric fog.
 
+## Windows (2026-11-04, owner: "every window has a z-index issue")
+
+Three separate causes, found by elimination (fx=0 / ao=0 / ssr=0 on one window close-up):
+1. **GTAO drew the wall's occlusion into the glass** (the glass is coplanar with the wall): the brick /
+   lattice "z-fighting" look. Glass now writes an AO weight of 0 (`metalRough.b` through the facade's
+   `mrtNode`; post.js multiplies the AO strength by it).
+2. **GTAO's raw output is per-pixel noise**: now through three's `denoise()` (depth/normal aware) into
+   its own half-res target; strength 0.85 -> 0.6, radius 1.2 -> 0.9. (+~0.5 ms GPU.)
+3. **Random white dots in the glass**: the per-building random `rnd` (interpolated vertex attribute)
+   was hashed (sin x 43758) in the room / curtain shader; its last-bit differences became a different
+   hash per pixel. Quantised to 1/4096. Same family as the trees' tint bug: **never hash an
+   interpolated value without quantising it or computing it in the vertex stage.**
+Also: glass has a flat normal (the wall's bump made the sun's highlight sparkle), roughness >= 0.2, and
+no metalness (no SSR on facade glass; its reflection is the analytic sky term).
+GPU after: overview 8.1 ms, close-up 9.1, walk 7.7.
+
 ## Phase 2: cheap look fixes
 
 - [ ] Glass speckle: box-filtered window grid that fades to its mean below a pixel

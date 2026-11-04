@@ -6,10 +6,11 @@
 import * as THREE from "three/webgpu";
 import {
   Fn, pass, mrt, output, normalView, positionView, metalness, roughness, uniform, float, vec2, vec3, vec4, dot, mix,
-  min, max, pow, smoothstep, length, screenUV, screenSize, texture, uv,
+  min, max, pow, smoothstep, length, screenUV, screenSize, texture, uv, rtt,
 } from "three/tsl";
 import { ssr } from "three/addons/tsl/display/SSRNode.js";
 import { ao } from "three/addons/tsl/display/GTAONode.js";
+import { denoise } from "three/addons/tsl/display/DenoiseNode.js";
 import { bloom } from "three/addons/tsl/display/BloomNode.js";
 
 const LOOKS = {
@@ -44,7 +45,8 @@ export function createPipeline(renderer, scene, camera, { aoOn = true, ssrOn = t
   const sceneMRT = mrt({
     output,
     normal: normalView,
-    metalRough: vec2(roughness.lessThan(maxRough).select(metalness.mul(ssrFade), 0), roughness),
+    // .b = how much screen-space AO this pixel takes (1; facade glass writes 0 through its mrtNode)
+    metalRough: vec3(roughness.lessThan(maxRough).select(metalness.mul(ssrFade), 0), roughness, 1),
   });
   sceneMRT.setBlendMode("normal", new THREE.BlendMode(THREE.MaterialBlending));
   sceneMRT.setBlendMode("metalRough", new THREE.BlendMode(THREE.MaterialBlending));
@@ -74,9 +76,16 @@ export function createPipeline(renderer, scene, camera, { aoOn = true, ssrOn = t
   if (aoOn) {
     aoPass = ao(depth, normal, camera);
     aoPass.resolutionScale = 0.5;
-    aoPass.radius.value = 1.2;
+    aoPass.radius.value = 0.9;
     aoPass.thickness.value = 1.0;
-    lit = lit.mul(mix(float(1), aoPass.getTextureNode().r, 0.85));
+    // GTAO's raw output is per-pixel noise (its magic-square sampling pattern): without the depth/normal-
+    // aware denoise it read as sandy grain on walls, frames and curtains (owner's window close-up,
+    // 2026-11-04), and at 0.85 it blackened surfaces near the camera
+    // (denoised into its own HALF-res target, like the AO itself: inline in the full-res composite it
+    // cost ~1.6 ms GPU)
+    const aoClean = rtt(denoise(aoPass.getTextureNode(), depth, normal, camera));
+    aoClean.setResolutionScale(0.5);
+    lit = lit.mul(mix(float(1), aoClean.r, mr.b.mul(0.6)));
   }
   let refl = vec3(0);
   if (ssrOn) {

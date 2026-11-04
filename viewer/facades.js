@@ -25,7 +25,7 @@
 import * as THREE from "three/webgpu";
 import {
   Fn, If, attribute, positionWorld, normalWorld, cameraPosition, color, float, vec2, vec3, vec4, mix, step, smoothstep, floor, fract,
-  abs, min, max, clamp, fwidth, sin, sign, dot, normalize, length, pow, atan,
+  abs, min, max, clamp, fwidth, sin, sign, dot, normalize, length, pow, atan, normalView, mrt, roughness,
 } from "three/tsl";
 import { hash2D, noise2D, bumpNormal, filteredPulse } from "./tslkit.js";
 import { env } from "./lighting.js";
@@ -120,7 +120,10 @@ export function wallMaterial() {
   const P = positionWorld;
   const wall = attribute("aWall", "vec4"), bld = attribute("aBld", "vec4");
   const u = wall.x, fw = wall.y, h = wall.z, eh = wall.w;
-  const style = bld.x, street = bld.z, rnd = bld.w;
+  // rnd quantised: it is a per-building constant, but as an interpolated vertex attribute it arrives with
+  // last-bit differences per pixel, and the room / curtain hashes (sin x 43758) turned those into random
+  // white dots in every window (2026-11-04; same bug as the trees' tint)
+  const style = bld.x, street = bld.z, rnd = floor(bld.w.mul(4096.0).add(0.5)).div(4096.0).toVar();
   const party = step(h, bld.y.add(0.3)).mul(step(0.001, bld.y)).toVar();      // below the neighbour's top (aBld.y, m above base)
   const camDist = length(P.sub(cameraPosition)).toVar();
   const near = float(1).sub(smoothstep(16.0, 150.0, camDist)).toVar();       // relief and fine detail fade with distance
@@ -369,12 +372,21 @@ export function wallMaterial() {
   height = mix(height, lmH, isLM);
 
   // ---- lighting terms
-  const relief = bumpNormal(height.mul(near));
+  // glass is FLAT: the wall's bump on low-roughness glass made the sun's highlight sparkle pixel by pixel
+  // (white speckle on every window, 2026-11-04)
+  const relief = mix(bumpNormal(height.mul(near)), normalView, clamp(glassPart.add(lmGlass).add(shopGlass), 0.0, 1.0));
   m.normalNode = relief;
   m.colorNode = col;
-  m.roughnessNode = mix(mix(mix(mix(float(0.85), float(0.93), isBrick), float(0.5), frame), mix(float(0.12), float(0.4), dirt.sub(0.4).mul(2.5)), glassPart),
+  m.roughnessNode = mix(mix(mix(mix(float(0.85), float(0.93), isBrick), float(0.5), frame), mix(float(0.2), float(0.4), dirt.sub(0.4).mul(2.5)), glassPart),   // glass >= 0.18 (game-engine-v1 facade rule: no aliasing over the room)
     mix(float(0.8), float(0.15), lmGlass), isLM);
-  m.metalnessNode = glassPart.add(lmGlass).add(shopGlass).mul(fres).mul(0.6);                               // lets SSR reflect the street in the glass
+  // no metalness on glass: it made SSR reflect the WALL the glass sits in (the glass is coplanar with it): a
+  // brick pattern in every window, like z-fighting (owner, 2026-11-04). The glass's reflection is the
+  // analytic sky term above (fres), as slop-newyork and game-engine-v1's facade do; SSR stays for cars,
+  // trams and wet ground.
+  m.metalnessNode = float(0);
+  // the post chain's AO weight (post.js metalRough.b): none on glass. GTAO saw the glass as part of the wall
+  // plane and drew the wall's occlusion pattern into every window: bricks / lattice "z-fighting" (owner)
+  m.mrtNode = mrt({ metalRough: vec3(0, roughness, float(1).sub(clamp(glassPart.add(lmGlass).add(shopGlass), 0.0, 1.0))) });
   m.emissiveNode = C(1.0, 0.8, 0.55).mul(shopInside.mul(3.5).add(0.1)).mul(shopGlass).mul(env.uInteriorGlow).mul(mix(float(0.25), float(1.1), env.uNight))   // lit shop interiors
     .add(room.rgb.mul(room.a).mul(float(1).sub(fres.mul(0.82))).mul(glassPart).mul(env.uInteriorGlow).mul(0.76)
     .add(sg.mul(lmGlass).mul(env.uInteriorGlow).mul(env.uNight).mul(2.2)));                    // stained glass lit from inside at night
