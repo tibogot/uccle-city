@@ -73,8 +73,9 @@ export function loadTramModel() {
         const target = L.target ? L.target[p] : 0;
         if (k && target === 0) { out[p] = null; continue; }
         out[p] = mergePrims(src, target);
+        if (k === 2) out[p] = flatShade(out[p]);       // far: face normals (the welded picks shade blotchy on 300 triangles)
       }
-      out.tris = PIECES.reduce((s, p) => s + (out[p] ? out[p].index.count / 3 * PER_TRAM[p] : 0), 0);
+      out.tris = PIECES.reduce((s, p) => s + (out[p] ? (out[p].index ? out[p].index.count : out[p].attributes.position.count) / 3 * PER_TRAM[p] : 0), 0);
       return out;
     });
     const sign = makeSignAtlas(["FORT-JACO", "SCHAERBEEK GARE"]);
@@ -124,13 +125,23 @@ function mergePrims(prims, target) {
   return geo;
 }
 
+/** Unindexed copy with face normals (small far meshes only). */
+function flatShade(g) {
+  const f = g.toNonIndexed();
+  f.deleteAttribute("normal"); f.computeVertexNormals();
+  f.computeBoundingSphere(); f.userData.shared = true;
+  return f;
+}
+
 /** meshoptimizer on a position-welded index (as viewer/stjobModel.js): the flat-shaded, colour-split mesh would
  *  otherwise be thousands of loose pieces. Borders locked: neighbouring primitives (paint / glass) stay sealed. */
 function simplifyWelded(g, want) {
-  const P = g.attributes.position.array, Nn = g.attributes.normal.array, I = g.index.array;
+  const P = g.attributes.position.array, Nn = g.attributes.normal.array, I = g.index.array, C4 = g.attributes.color;
   const n = P.length / 3, canon = new Uint32Array(n), map = new Map(), cpos = [], members = [];
   for (let i = 0; i < n; i++) {
-    const key = `${Math.round(P[i * 3] * 1000)},${Math.round(P[i * 3 + 1] * 1000)},${Math.round(P[i * 3 + 2] * 1000)}`;
+    // welded by position AND colour: livery edges (gold band, window band) become locked borders, so they survive
+    const ck = C4 ? `${Math.round(C4.getX(i) * 255)},${Math.round(C4.getY(i) * 255)},${Math.round(C4.getZ(i) * 255)}` : "";
+    const key = `${Math.round(P[i * 3] * 1000)},${Math.round(P[i * 3 + 1] * 1000)},${Math.round(P[i * 3 + 2] * 1000)},${ck}`;
     let c = map.get(key);
     if (c === undefined) { c = cpos.length / 3; map.set(key, c); cpos.push(P[i * 3], P[i * 3 + 1], P[i * 3 + 2]); members.push([]); }
     canon[i] = c; members[c].push(i);
@@ -222,7 +233,7 @@ function makeMaterial(sign) {
   const head = col.x.mul(inst.x).mul(mix(float(2.5), float(14.0), night)).mul(tramLook.headlights);
   const tail = col.y.mul(inst.x.oneMinus()).mul(mix(float(1.2), float(5.0), night)).mul(tramLook.headlights);
   const disp = col.z.mul(led).mul(mix(float(3.2), float(2.4), night)).mul(tramLook.display);
-  const saloon = col.x.mul(isGlass).mul(night).mul(tramLook.interior).mul(env.uInteriorGlow)
+  const saloon = smoothstep(0.6, 0.9, col.x).mul(isGlass).mul(night).mul(tramLook.interior).mul(env.uInteriorGlow).mul(0.14)   // the cab (0.3) stays dark
     .mul(mix(float(0.35), float(1.0), smoothstep(1.2, 2.25, yLocal)));                     // ceiling light strips: brighter at the top
   m.emissiveNode = color(1.0, 0.95, 0.86).mul(head).mul(isEmit)
     .add(color(1.0, 0.04, 0.02).mul(tail).mul(isEmit))
@@ -284,7 +295,7 @@ export function createTramFleet(model, parent, maxTrams = 40) {
       const cap = Math.max(1025, maxTrams * PER_TRAM[p]);
       const geo = new THREE.BufferGeometry();
       for (const [name, a] of Object.entries(geo0.attributes)) geo.setAttribute(name, a);
-      geo.setIndex(geo0.index);
+      if (geo0.index) geo.setIndex(geo0.index);
       geo.boundingSphere = geo0.boundingSphere;
       const inst = new THREE.InstancedBufferAttribute(new Float32Array(cap * 4), 4);
       inst.setUsage(THREE.DynamicDrawUsage);                        // rewritten every frame (positions of moving trams)
