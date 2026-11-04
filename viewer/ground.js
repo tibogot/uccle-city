@@ -10,6 +10,7 @@
 // and a fine bump. Steep ground turns to bare earth.
 import * as THREE from "three/webgpu";
 import { Fn, float, vec2, vec3, color, mix, smoothstep, positionWorld, normalWorld, texture, uv, clamp, max, uniform } from "three/tsl";
+import { addLampLight } from "./lampLight.js";
 import { noise2D, bumpNormal } from "./tslkit.js";
 
 import { landCoverData } from "./landcover.js";
@@ -66,5 +67,5 @@ export function groundMaterial(cover, bounds, contour) {
   m.normalNode = bumpNormal(relief);
   m.roughnessNode = mix(mix(float(0.92), float(0.85), mk.g), float(0.08), mk.a);
   m.metalnessNode = mk.a.mul(0.5);
-  return m;
+  return addLampLight(m);
 }

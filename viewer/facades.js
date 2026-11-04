@@ -27,6 +27,7 @@ import {
   Fn, If, attribute, positionWorld, normalWorld, cameraPosition, color, float, vec2, vec3, vec4, mix, step, smoothstep, floor, fract,
   abs, min, max, clamp, fwidth, sin, sign, dot, normalize, length, pow, atan, normalView, mrt, roughness,
 } from "three/tsl";
+import { lampLight } from "./lampLight.js";
 import { hash2D, noise2D, bumpNormal, filteredPulse } from "./tslkit.js";
 import { env } from "./lighting.js";
 import { n3, band, courses } from "./roadPaint.js";
@@ -391,6 +392,8 @@ export function wallMaterial() {
     .add(room.rgb.mul(room.a).mul(float(1).sub(fres.mul(0.82))).mul(glassPart).mul(env.uInteriorGlow).mul(0.76)
     .add(sg.mul(lmGlass).mul(env.uInteriorGlow).mul(env.uNight).mul(2.2)));                    // stained glass lit from inside at night
   // height AO: wall feet and narrow gaps between houses get less sky
+  // street lamps light the foot of the wall (fading up to ~7 m)
+  m.emissiveNode = m.emissiveNode.add(col.mul(lampLight(h)));
   m.aoNode = mix(float(0.62), float(1.0), smoothstep(0.0, 9.0, h)).mul(smoothstep(0.0, 1.2, h).mul(0.2).add(0.8));
   return m;
 }

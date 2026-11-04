@@ -9,6 +9,7 @@
 // PointLights follows the lamps nearest the camera (?lamplights=0 to disable).
 import * as THREE from "three/webgpu";
 import { float, vec3, uv, length, smoothstep, mix, color, uniform } from "three/tsl";
+import { lampPoolsOn } from "./lampLight.js";
 import { ROAD_TYPES } from "../vendor/roads/roadCrossSection.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { env } from "./lighting.js";
@@ -103,6 +104,7 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true } 
   });
   for (const m of [post, glass, pool]) { m.instanceMatrix.needsUpdate = true; m.computeBoundingSphere(); group.add(m); }
   pool.renderOrder = 2;
+  if (lampPoolsOn) pool.visible = false;   // the lamp light map lights the ground itself (lampLight.js)
 
   // a few real lights on the nearest lamps at night
   const lights = [];
@@ -117,7 +119,7 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true } 
     const night = env.uNight.value;
     if (night < 0.05) { for (const l of lights) l.intensity = 0; return; }
     const order = lamp.map((p, i) => [p.distanceToSquared(camPos), i]).sort((a, b) => a[0] - b[0]);
-    lights.forEach((l, k) => { const p = lamp[order[k]?.[1] ?? 0]; l.position.copy(p); l.intensity = 120 * night; });
+    lights.forEach((l, k) => { const p = lamp[order[k]?.[1] ?? 0]; l.position.copy(p); l.intensity = 55 * night; });   // (the lamp light map lights the ground: these add shape to cars, trees, walls)
   };
-  return { group, count: sites.length, update };
+  return { group, count: sites.length, update, heads: lamp.map((p) => ({ x: p.x, z: p.z })) };
 }

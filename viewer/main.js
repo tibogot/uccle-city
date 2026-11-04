@@ -26,6 +26,7 @@ import { buildStylizedTreeField, setTreeLighting, setTreeRenderer } from "./tree
 import { openBootPipelines, warmBoot } from "./warmup.js";
 import { buildPlazas, loadOverrides } from "./plazas.js";
 import { Flyer } from "./flight.js";
+import { addLamps } from "./lampLight.js";
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -354,6 +355,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const lamps = buildLamps(roads, (x, z) => hm.ground(x, z), bounds, { lights: verbose });   // point lights: main tile only
   own.features.add(lamps.group);
   ups.push(lamps.update);
+  addLamps(entry.name, lamps.heads);                 // every lamp lights the street (viewer/lampLight.js)
   const furn = buildFurniture(feats, roads, (x, z) => hm.ground(x, z), bounds);
   own.features.add(furn.group);
   const tram = buildTram(feats, (x, z) => hm.surface(x, z) + CARVE, bounds);

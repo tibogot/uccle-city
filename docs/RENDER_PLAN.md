@@ -149,6 +149,17 @@ Quick wins first, then the big one:
   Rule: never DynamicDrawUsage for per-instance data that is not rewritten every frame.
 - Next: the night look (nightEV, Purkinje); the tram clock driving the sun; then volumetric fog.
 
+## Night (2026-11-04)
+
+- Every lamp lights the street with no light objects: `viewer/lampLight.js`, one world-space R8 light map
+  (2 m/texel over the whole grid) where each tile's lamps paint their pools (inverse square x Lambert, smooth
+  cut-off at 15 m) when the tile loads; terrain, roads, sidewalks, verges, setts plazas and the foot of the
+  walls add albedo x pool x warm x night. One texture read, one shader for all tiles. The old additive pool
+  decals are off; the 6 PointLights near the camera stay (55, for shape on cars, trees). `?lamppools=0`.
+- Firmament night look on (+1.6 EV at full night, moonlit clouds, stars): a readable moonlit city.
+- Model: game-engine-v1 modularRoadCityStreets.js lampPool (painted instead of computed: our lamps follow
+  real roads, not a grid).
+
 ## Volumetric fog (2026-11-04)
 
 game-engine-v1's volumetricFog.js (`vendor/volumetric-fog`, 1 logged change: reversed depth buffer for the

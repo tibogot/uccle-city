@@ -179,7 +179,9 @@ export class Lighting {
   async attach(camera) {
     if (!this.firmament || this.sky) return;
     this.camera = camera;
-    this.sky = createFirmamentSky({ renderer: this.renderer, camera, params: { latitude: BRUSSELS_LAT, dayOfYear: DAY, autoExposure: true } });
+    this.sky = createFirmamentSky({ renderer: this.renderer, camera, params: { latitude: BRUSSELS_LAT, dayOfYear: DAY, autoExposure: true,
+      // Firmament's night look: +1.6 EV at full night (a readable moonlit city), moonlit clouds, stars
+      nightLook: true, nightEV: 1.6 } });
     await this.sky.ready;
     this.scene.add(this.sky.mesh);
     // the key light x the cumulus shadow over the ground (labScene.js)

@@ -20,6 +20,7 @@ import {
   attribute, uv, texture, positionWorld, float, vec2, vec3, mix, step, smoothstep, floor, fract, abs, min, max,
   fwidth, hash, mx_noise_float, uniform,
 } from "three/tsl";
+import { addLampLight } from "./lampLight.js";
 
 import { SURFACE, hashPhase, surfaceAttribute } from "./roadData.js";
 export { SURFACE, hashPhase, surfaceAttribute };
@@ -160,7 +161,7 @@ export function asphaltMaterial(atlas) {
 
   m.colorNode = mix(base, paintCol, paint);
   m.roughnessNode = mix(rough, float(0.62), paint);
-  return m;
+  return addLampLight(m);
 }
 
 // ---------------------------------------------------------------- sidewalks, kerbs, aprons
@@ -181,7 +182,7 @@ export function concreteMaterial() {
   const isKerb = band(kind, 1), isApron = band(kind, 2);
   m.colorNode = mix(mix(slab, kerb, isKerb), apron, isApron);
   m.roughnessNode = mix(mix(mix(float(0.88), float(0.95), tiles.joint), float(0.6), isKerb), float(0.8), isApron);
-  return m;
+  return addLampLight(m);
 }
 
 export function vergeMaterial() {
@@ -189,5 +190,5 @@ export function vergeMaterial() {
   const P = positionWorld;
   const a = n3(P.x.mul(0.35), P.z.mul(0.35), 1.0), b = n3(P.x.mul(4.0), P.z.mul(4.0), 2.0), c = n3(P.x.mul(23.0), P.z.mul(23.0), 5.0);
   m.colorNode = mix(vec3(0.05, 0.11, 0.025), vec3(0.1, 0.16, 0.04), a.mul(0.5).add(0.5)).add(b.mul(0.012)).add(c.mul(0.015));
-  return m;
+  return addLampLight(m);
 }

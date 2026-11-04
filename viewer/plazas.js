@@ -8,6 +8,7 @@
 // light sandy joints, slightly domed and worn tops.
 import * as THREE from "three/webgpu";
 import { positionWorld, vec2, vec3, float, mix, smoothstep, uniform, attribute, texture, transformNormalToView } from "three/tsl";
+import { addLampLight } from "./lampLight.js";
 import { courses, n3 } from "./roadPaint.js";
 import { bumpNormal } from "./tslkit.js";
 
@@ -74,6 +75,7 @@ function plazaMaterial() {
   m.roughnessNode = L.rough;
   m.normalNode = bumpNormal(L.height);
   if (useScan) scanMaterial(m);
+  addLampLight(m);
   m.userData.shared = true;
   return (MAT = m);
 }
