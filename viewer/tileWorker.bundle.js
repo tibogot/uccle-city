@@ -5571,6 +5571,11 @@ function roofGrid(bDoc, b) {
   }
   return { data: g, nx, nz, x0: b.x0, z0: b.z0, step: ROOF_STEP };
 }
+function hideBuildings(bDoc, hide) {
+  if (!hide?.length) return;
+  const h = new Set(hide);
+  bDoc.buildings = bDoc.buildings.filter((b) => !h.has(b.attrs?.BU_ID));
+}
 async function buildTileData(entry, base) {
   const times = {};
   const step = async (k, f) => {
@@ -5661,9 +5666,10 @@ async function buildTileData(entry, base) {
     const [idx] = MeshoptSimplifier.simplify(terrain.idx, terrain.pos, 3, 0, TERRAIN_ERROR, ["LockBorder", "ErrorAbsolute"]);
     terrain.idx = idx;
   });
+  const roofs = await step("roof grid", () => roofGrid(bDoc, bounds));
+  hideBuildings(bDoc, entry.hide);
   const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats));
   const cover = await step("land cover", () => landCoverData(feats, bounds));
-  const roofs = await step("roof grid", () => roofGrid(bDoc, bounds));
   return {
     name: entry.name,
     bounds,
@@ -5721,6 +5727,7 @@ async function buildLiteData(entry, base) {
   }
   await MeshoptSimplifier.ready;
   const [idxS] = MeshoptSimplifier.simplify(idx, pos, 3, 0, 0.25, ["LockBorder", "ErrorAbsolute"]);
+  hideBuildings(bDoc, entry.hide);
   const dv = new DataView(bBuf), V = dv.getUint32(0, true), T2 = dv.getUint32(4, true);
   const P = new Float32Array(bBuf, 8, V * 3), I = new Uint32Array(bBuf, 8 + V * 12, T2 * 3);
   let n = 0;

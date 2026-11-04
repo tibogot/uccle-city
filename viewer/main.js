@@ -11,6 +11,7 @@ import {
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { buildLamps, setLampModel } from "./lamps.js";
 import { loadLampModel } from "./lampModel.js";
+import { loadStJob, STJOB_LODS, STJOB_BU_ID } from "./stjobModel.js";
 import { buildFurniture } from "./furniture.js";
 import { buildTram } from "./tram.js";
 import { buildCars } from "./cars.js";
@@ -270,8 +271,11 @@ if (params.get("worker") !== "0") {
     tileWorker.onerror = (e) => { log(`tile worker failed (${e.message || "error"}): building tiles on the main thread`); tileWorker = null; for (const p of pendingReq.values()) p.retry(); pendingReq.clear(); };
   } catch (e) { tileWorker = null; }
 }
+/** UrbIS solids replaced by a scripted model (the Saint-Job church): not drawn, kept in the roof grid. */
+const HIDE_BU_IDS = params.get("stjob") !== "0" ? [STJOB_BU_ID] : [];
 /** CPU data for a tile: from the worker, or on the main thread (?worker=0, or if the worker fails). */
 function tileData(entry, lite = false) {
+  entry = { ...entry, hide: HIDE_BU_IDS };
   const local = () => import("./tileData.js").then((m) => (lite ? m.buildLiteData : m.buildTileData)(entry, DATA.href));
   if (!tileWorker) return local();
   return new Promise((resolve, reject) => {
@@ -449,6 +453,27 @@ async function main() {
     },
   };
   if (params.get("lampmodel") !== "0") setLampModel(await loadLampModel());   // the Blender lamp (?lampmodel=0: the old cylinders)
+  // The Saint-Job church (tools/blender/stjob.py, viewer/stjobModel.js) in place of its UrbIS solid (HIDE_BU_IDS);
+  // ?stjob=0: the UrbIS solid. One model, three LODs by distance to the octagon; shown while its tile is loaded
+  // (full or far LOD), since the tiles no longer draw the solid.
+  if (HIDE_BU_IDS.length) {
+    loadStJob().then((m) => {
+      const lod = new THREE.LOD();
+      lod.name = "stjob";
+      STJOB_LODS.forEach((l, k) => lod.addLevel(m.make(k), k ? STJOB_LODS[k - 1].until : 0));
+      lod.position.copy(m.placement.position);
+      lod.rotation.y = m.placement.rotationY;
+      scene.add(lod);
+      const p = m.placement.position;
+      const home = manifest.tiles.find((t) => p.x >= t.bounds.x[0] && p.x < t.bounds.x[1] && p.z >= t.bounds.z[0] && p.z < t.bounds.z[1])?.name;
+      let n = 0;
+      updaters.push(() => {
+        if (n++ % 30) return;
+        lod.visible = world.tiles.some((t) => t.name === home) || !!scene.getObjectByName(`${home}-lite`);
+      });
+      log(`Saint-Job church: scripted model, LODs ${m.lods.map((l) => l.tris).join(" / ")} triangles (?stjob=0: the UrbIS solid)`);
+    }).catch((e) => log(`Saint-Job model failed (${e.message}): the UrbIS solid is hidden, reload with ?stjob=0`));
+  }
   const T0 = await loadTile(entry, { layers, contourOn, verbose: true });
   world.tiles.push(T0);
   const { hm, roads, net } = T0;

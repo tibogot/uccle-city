@@ -8,9 +8,9 @@
 // tram whose modules follow the curve independently. The shapes are densified to 2 m and snapped onto
 // the OSM tram tracks of every loaded tile (GTFS shapes run ~0.6 m off them).
 //
-// ?tram=model: the scripted STIB T3000 (tools/blender/tram.py, viewer/tramModel.js: 5 sections + bellows, bogies,
-// pantograph, LODs, the trip's headsign on the LED displays) instead of the boxes; the boxes stay the default until the
-// owner approves the model in the Tram Lab (labs/tram-lab.html).
+// The trams are the scripted STIB T3000 (tools/blender/tram.py, viewer/tramModel.js: 5 sections + bellows, bogies,
+// pantograph, LODs, the trip's headsign on the LED displays; approved in the Tram Lab, labs/tram-lab.html).
+// ?tram=box: the old box trams (also the fallback when the model fails to load).
 //
 // Clock: Brussels local time now, or ?clock=HH:MM; ?timescale=N runs it N times faster. The day type
 // (weekday / Saturday / Sunday) comes from the date; the timetable is that of the feed's sample day.
@@ -121,7 +121,7 @@ export async function createTramLine(url, scene, ground) {
   mat.emissiveNode = col.mul(lit).mul(mix(float(0.6), float(2.5), env.uNight))
     .add(color(0xffe2b0).mul(isGlass).mul(env.uNight).mul(0.18));                   // lit saloon at night
   const params = new URLSearchParams(location.search);
-  const model = params.get("tram") === "model" ? await loadTramModel().catch((e) => { console.warn("tram model:", e.message); return null; }) : null;
+  const model = params.get("tram") !== "box" ? await loadTramModel().catch((e) => { console.warn("tram model:", e.message); return null; }) : null;
   let fleet = null, cabs = null, mids = null;
   if (model) {
     model.sign.setRows([...new Set(doc.trips.map((t) => t.head))], doc.line);

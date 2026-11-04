@@ -1,5 +1,5 @@
 // THE TRAM LAB: the scripted STIB T3000 (tools/blender/tram.py -> models/tram/, loaded by viewer/tramModel.js: the
-// loader, LODs, material and placement the city uses with ?tram=model) on a short track: a straight, a curve of the
+// loader, LODs, material and placement the city uses) on a short track: a straight, a curve of the
 // radius of the tightest Saint-Job curve (18 m: GTFS shape of line 92 at Place de Saint-Job, three-point circle fit),
 // and another straight. The tram drives back and forth so the modules articulate (lead cab: white headlights; the
 // other: red tail lights; the display shows the direction's real headsign). Under the city's own lighting

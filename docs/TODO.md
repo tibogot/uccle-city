@@ -30,11 +30,13 @@ read-only (copy into `vendor/` with ORIGIN.md); measure GPU ms before / after (s
 
 ## STIB tram model (approved by the owner 2026-11-04, merged)
 - [x] T3000 (line 92's stock) scripted in Blender (`tools/blender/tram.py`), loader / LODs / placement `viewer/tramModel.js`,
-      Tram Lab (`labs/tram-lab.html`), in the city behind `?tram=model` (tramline.js). Per tram: LOD0 15.9k, LOD1 5.7k, LOD2 1.35k triangles.
-- [ ] Owner: approve in the lab, then make the model the default in tramline.js (drop the boxes).
+      Tram Lab (`labs/tram-lab.html`), in the city by default (tramline.js; `?tram=box` = the old boxes). Per tram: LOD0 15.9k, LOD1 5.7k, LOD2 1.35k triangles.
+- [x] Owner approved; the model is the default in tramline.js (boxes kept behind `?tram=box` and as the load-failure fallback).
 - [ ] Interior (seats, poles) behind the glass; door opening at stops; pantograph height following the wire; the
       window AO / dirt pass; fleet numbers on the nose; T4000 (7 sections) if other lines come.
-## Saint-Job hero church (approved by the owner 2026-11-04, merged; city integration below still to do)
+## Saint-Job hero church (approved 2026-11-04; in the city by default, `?stjob=0` = the UrbIS solid; +0.3 ms GPU, +9 draws at Saint-Job)
+Done as planned below (hidden in façades + far LOD via `entry.hide`, kept in the roof grid; one THREE.LOD placed in main.js, shown while I6 is loaded).
+Still open: the falcons do not use the `nest` node yet.
 Scripted model `tools/blender/stjob.py` -> `models/stjob/` (notes: `models/stjob/NOTES.md`), loader + LODs + materials
 `viewer/stjobModel.js`, lab `labs/church-lab.html`. LOD0 38.6k / LOD1 15.0k / LOD2 3.0k triangles, 4 draw calls per LOD,
 AO lightmap 5.3 MB (R8 2048² + mips), GLB 4.0 MB (uncompressed).

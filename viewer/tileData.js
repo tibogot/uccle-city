@@ -85,7 +85,14 @@ function roofGrid(bDoc, b) {
   return { data: g, nx, nz, x0: b.x0, z0: b.z0, step: ROOF_STEP };
 }
 
-/** Build all CPU-side data for one manifest entry. `base` = URL of data/tiles/. */
+/** Drop the UrbIS solids a scripted model replaces (entry.hide = BU_IDs, e.g. the Saint-Job church). */
+function hideBuildings(bDoc, hide) {
+  if (!hide?.length) return;
+  const h = new Set(hide);
+  bDoc.buildings = bDoc.buildings.filter((b) => !h.has(b.attrs?.BU_ID));
+}
+
+/** Build all CPU-side data for one manifest entry (entry.hide: BU_IDs not to draw). `base` = URL of data/tiles/. */
 export async function buildTileData(entry, base) {
   const times = {};
   const step = async (k, f) => { const t0 = performance.now(); const r = await f(); times[k] = Math.round(performance.now() - t0); return r; };
@@ -145,9 +152,11 @@ export async function buildTileData(entry, base) {
     const [idx] = MeshoptSimplifier.simplify(terrain.idx, terrain.pos, 3, 0, TERRAIN_ERROR, ["LockBorder", "ErrorAbsolute"]);
     terrain.idx = idx;
   });
+  // the roof grid (fly-mode collision) keeps every solid, also the ones a model replaces (its envelope is close enough)
+  const roofs = await step("roof grid", () => roofGrid(bDoc, bounds));
+  hideBuildings(bDoc, entry.hide);
   const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats));
   const cover = await step("land cover", () => landCoverData(feats, bounds));
-  const roofs = await step("roof grid", () => roofGrid(bDoc, bounds));
   return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs,
     netInfo, road, terrain, buildings, cover, times };
 }
@@ -184,6 +193,7 @@ export async function buildLiteData(entry, base) {
   // seen from 500 m and more: 25 cm of error is far below a pixel (the grid already sits 30 cm low)
   await MeshoptSimplifier.ready;
   const [idxS] = MeshoptSimplifier.simplify(idx, pos, 3, 0, 0.25, ["LockBorder", "ErrorAbsolute"]);
+  hideBuildings(bDoc, entry.hide);
   const dv = new DataView(bBuf), V = dv.getUint32(0, true), T = dv.getUint32(4, true);
   const P = new Float32Array(bBuf, 8, V * 3), I = new Uint32Array(bBuf, 8 + V * 12, T * 3);
   let n = 0;

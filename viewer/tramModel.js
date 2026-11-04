@@ -1,5 +1,5 @@
 // THE STIB T3000 TRAM MODEL (tools/blender/tram.py -> models/tram/t3000.glb + t3000.json), shared by the Tram Lab and
-// the city (viewer/tramline.js with ?tram=model). Loaded once:
+// the city (viewer/tramline.js, the default; ?tram=box for the old boxes). Loaded once:
 //   - the pieces in their own frames (origin on the track at rail-top height, +x forward): Cab (sections 1 and 5),
 //     Susp (2 and 4), Centre (3), Bellows (x4), Bogie (x3), Panto (on section 2);
 //   - three LODs: LOD0 = the Blender model, LOD1 / LOD2 = the script's "_mid" / "_far" variants trimmed by meshoptimizer
