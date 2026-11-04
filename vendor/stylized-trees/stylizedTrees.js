@@ -103,7 +103,9 @@ export function roundCrown(r) {
 
 function buildTree(seed, lod, shape = roundCrown) {
   const r = rng(seed);
-  const { crown, rad, clumps, limbs, cards: cardsByLod, cardScale = 1, trunk: trunkOf } = shape(r, lod);
+  const { crown, rad, clumps, limbs, cards: cardsByLod, cardScale = 1, trunk: trunkOf, cardCorners } = shape(r, lod);
+  // [uccle-city CHANGES.md #6] a shape may give the card's outline (unit corners, convex, fan-triangulated)
+  const CORNERS = cardCorners ?? [[-1, -1], [1, -1], [1, 1], [-1, 1]];
 
   // Camera-facing cards (the arborist look: the branch mask on big billboards gives the soft,
   // full silhouette). Every vertex of a card sits at the card's CENTRE; the material pushes it
@@ -144,7 +146,7 @@ function buildTree(seed, lod, shape = roundCrown) {
       const s = cr * (0.8 + r() * 0.3) * sizeK; // half size
       const spin = r() * Math.PI * 2, cs = Math.cos(spin), sn = Math.sin(spin);
       const base = pos.length / 3;
-      for (const [ox, oy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+      for (const [ox, oy] of CORNERS) {
         pos.push(p.x, p.y, p.z);
         nrm.push(nn.x, nn.y, nn.z);
         corner.push(ox, oy);
@@ -152,7 +154,7 @@ function buildTree(seed, lod, shape = roundCrown) {
         ao.push(a);
         hgt.push(Math.min(1, Math.max(0, (p.y - yLo) / (yHi - yLo))));
       }
-      idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+      for (let q = 1; q < CORNERS.length - 1; q++) idx.push(base, base + q, base + q + 1);   // [#6] fan
     }
   }
   const leaves = new THREE.BufferGeometry();

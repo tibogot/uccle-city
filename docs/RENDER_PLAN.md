@@ -100,10 +100,12 @@ diff the WGSL of two same-size modules.
 
 ### Tree plan (from docs/RESEARCH.md section D, 2026-11-04)
 Quick wins first, then the big one:
-1. [ ] Tight card shape: an octagon fitted to the round leaf mask instead of a quad (fewer empty
-   alpha-tested fragments in both the pre-pass and the colour pass; Humus ~30 %).
-2. [ ] Shadows: only LOD 0 casts (LOD 1 at 40-120 m gets none), no wind in the shadow pass.
-3. [ ] Coverage-preserving mips for the leaf mask (distant crowns stay full; engine alphaCoverageMips.js).
+1. [x] Tight card shape: TRIED, REJECTED. An octagon fitted to the mask (54 % of the quad) cost more:
+   overview 7.1 -> 8.2 ms, close-up 7.7 -> 9.2, walk equal (vertex-bound: many small camera-facing
+   cards). Kept as `?cardoct=1`.
+2. [x] Shadows from LOD 0 only: walk 6.3 -> 6.0 ms.
+3. [x] Coverage-preserving mips (R8, rescaled per level): distant crowns stay full, ~+0.2 ms.
+   Result after 1-3: overview 7.1, close-up 7.7, walk 6.0 ms.
 4. [ ] Octahedral impostors (engine octahedralCore.js / impostorBake.js) with normal + depth atlases
    so they take the same light, + dithered crossfade between all LODs (no popping).
 5. [ ] Look: ground AO blob under each tree, crown-level AO gradient, translucency dimmed in shadow,

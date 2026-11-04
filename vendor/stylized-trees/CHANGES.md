@@ -19,3 +19,6 @@
    crown lift and sway turned to the world and scaled by the tree (`toWorld(...) * xf.z`); the trunk
    tests the raw vertex (`positionGeometry.y`). Found 2026-11-04 by setting every rotation to 0 (no
    streaks) and then only treeXf to identity (no streaks either).
+6. **Card outline from the shape**: `shape()` may return `cardCorners` (unit corners of a convex outline,
+   fan-triangulated); default the quad. Uccle tried an octagon fitted to its leaf mask and kept quads
+   (the octagon cost more in vertex work than it saved in fragments; viewer/treesStylized.js).

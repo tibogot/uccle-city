@@ -17,7 +17,12 @@ import { bumpNormal } from "./tslkit.js";
 // Street trees are pruned upright: the offroad game's "broad" (low fork, wide) and "tall" (long trunk,
 // high fork) styles, picked per variant from the variant's own random stream (the same for its 3 LODs).
 const SHAPES = [branchShape("broad"), branchShape("tall")];
-const streetShape = (r, lod) => SHAPES[r() < 0.45 ? 0 : 1](r, lod);
+// ?cardoct=1: cards cut to an octagon fitted to the leaf mask (54 % of the quad's area). Measured
+// 2026-11-04 it LOSES: overview 7.1 -> 8.2 ms, close-up 7.7 -> 9.2, walk equal. Our cards are small and
+// many and the camera-facing vertex work dominates, so 3x the triangles costs more than the empty
+// texels it saves (the trimming trick pays for big particles, not for these cards). Quads by default.
+const octCards = /[?&]cardoct=1/.test(location.search);
+const streetShape = (r, lod) => ({ ...SHAPES[r() < 0.45 ? 0 : 1](r, lod), cardCorners: octCards ? CARD_CORNERS : null });
 const VARIANTS = 6;
 let NATURAL_HEIGHT = 11;   // measured from the built trees on first use (calibrate())
 const shared = {};
@@ -76,11 +81,72 @@ function leafMask() {
     d.data[i] = d.data[i + 1] = d.data[i + 2] = d.data[i] * k;
   }
   g.putImageData(d, 0, 0);
-  maskTex = new THREE.CanvasTexture(cv);
+  CARD_CORNERS = fitOctagon(d.data, N);
+  // R only, and coverage-preserving mips: a plain box-filtered mip chain averages the leaves into grey
+  // below the 0.5 cut-off, so distant crowns thinned and turned see-through. Each level is rescaled so
+  // the same share of texels passes 0.5 as at full size (Castaño; game-engine-v1 alphaCoverageMips.js).
+  const level0 = new Uint8Array(N * N);
+  for (let i = 0; i < N * N; i++) level0[i] = d.data[i * 4];
+  maskTex = new THREE.DataTexture(level0, N, N, THREE.RedFormat, THREE.UnsignedByteType);
+  maskTex.mipmaps = coverageMips(level0, N);
+  maskTex.generateMipmaps = false;
   maskTex.colorSpace = THREE.NoColorSpace;
+  maskTex.magFilter = THREE.LinearFilter;
   maskTex.minFilter = THREE.LinearMipmapLinearFilter;
   maskTex.anisotropy = 4;
+  maskTex.flipY = false;   // DataTexture: row 0 = v 0 (the canvas's top row); the mask is symmetric enough
+  maskTex.needsUpdate = true;
+  window.__treeDebug = { corners: CARD_CORNERS, mask: maskTex, level0, coverageMips };
   return maskTex;
+}
+
+const coverage = (a, cut) => { let n = 0; for (let i = 0; i < a.length; i++) if (a[i] >= cut) n++; return n / a.length; };
+function coverageMips(level0, N) {
+  const target = coverage(level0, 128);
+  const out = [{ data: level0, width: N, height: N }];
+  let src = level0, w = N;
+  while (w > 1) {
+    const h = w >> 1, box = new Float32Array(h * h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < h; x++) {
+      const i = 2 * y * w + 2 * x;
+      box[y * h + x] = (src[i] + src[i + 1] + src[i + w] + src[i + w + 1]) / 4;
+    }
+    // the scale that keeps `target` of the texels at or above 0.5 (bisection on the scale)
+    let lo = 0.5, hi = 8;
+    for (let it = 0; it < 18; it++) {
+      const k = (lo + hi) / 2;
+      let n = 0;
+      for (let i = 0; i < box.length; i++) if (box[i] * k >= 128) n++;
+      if (n / box.length < target) lo = k; else hi = k;
+    }
+    const k = (lo + hi) / 2, mip = new Uint8Array(h * h);
+    for (let i = 0; i < box.length; i++) mip[i] = Math.min(255, Math.round(box[i] * k));
+    out.push({ data: mip, width: h, height: h });
+    src = mip; w = h;
+  }
+  return out;
+}
+
+/** The card outline: an octagon fitted to the opaque texels (8 supporting half-planes, 2 px margin),
+ *  in the card's unit corners. A quad wasted ~35-40 % of its area on empty texels, and every one is
+ *  paid twice (depth pre-pass + colour) in alpha-tested foliage (Humus, "particle trimming"). */
+let CARD_CORNERS = null;
+function fitOctagon(rgba, N) {
+  const dirs = Array.from({ length: 8 }, (_, k) => [Math.cos((k * Math.PI) / 4), Math.sin((k * Math.PI) / 4)]);
+  const h = dirs.map(() => -Infinity);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    if (rgba[(y * N + x) * 4] < 20) continue;                  // anything visible at all, not only >= 0.5
+    const ux = (x + 0.5 - N / 2) / (N / 2), uy = (y + 0.5 - N / 2) / (N / 2);
+    for (let k = 0; k < 8; k++) h[k] = Math.max(h[k], ux * dirs[k][0] + uy * dirs[k][1]);
+  }
+  const m = 4 / N;
+  const pts = [];
+  for (let k = 0; k < 8; k++) {
+    const [a1, b1] = dirs[k], [a2, b2] = dirs[(k + 1) % 8], c1 = h[k] + m, c2 = h[(k + 1) % 8] + m;
+    const det = a1 * b2 - a2 * b1;
+    pts.push([(c1 * b2 - c2 * b1) / det, (a1 * c2 - a2 * c1) / det]);
+  }
+  return pts;   // counter-clockwise in (u, v) like the quad's
 }
 
 // Depth pre-pass for the leaf cards (game-engine-v1 v3/render/foliage/foliageSystem.js, PERF_RULES #11):
@@ -179,6 +245,12 @@ export function buildStylizedTreeField(trees, ground, inTile) {
     const sphere = new THREE.Sphere(new THREE.Vector3((x0 + x1) / 2, (y0 + y1) / 2 + 8, (z0 + z1) / 2), Math.hypot(x1 - x0, y1 - y0 + 16, z1 - z0) / 2 + 12);
     holder.traverse((o) => { if (o.isInstancedMesh) { o.frustumCulled = true; o.boundingSphere = sphere; } });
   }
+  // shadows from LOD 0 only (the vendor casts from LOD 0 and 1): at 40-120 m a tree's own shadow is a few
+  // pixels in the cascades, and foliage shadow passes cost as much as the colour pass (research D #4).
+  // A mesh's LOD: its wrapper shares the index buffer of the shared built tree "<variant>:<lod>".
+  const lodOfIndex = new Map();
+  for (const [key, g] of shared.geoms) { const lod = +key.split(":")[1]; lodOfIndex.set(g.leaves.index, lod); lodOfIndex.set(g.trunk.index, lod); }
+  holder.traverse((o) => { if (o.isInstancedMesh && (lodOfIndex.get(o.geometry.index) ?? 0) > 0) o.castShadow = false; });
   // leaf meshes -> lit EQUAL-depth material + an instanced depth twin drawn first (same geometry,
   // instance matrices and per-instance treeXf; its count follows the leaf mesh's every update)
   const twins = [];
