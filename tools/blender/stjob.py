@@ -398,7 +398,7 @@ def wing(k):
     outline = [(-W2, GROUND), (W2, GROUND), (W2, EAVE + PAR), (0, RIDGE + PAR), (-W2, EAVE + PAR)]
     ops = []
     if kind == "front":
-        ops = [Arch(0, 0.0, 4.25, 2.1, depth=0.95, sur=0.42, kind="door", proud=0.12, seg=10, ledge=False), Rose(0, 9.75, 2.05)]
+        ops = [Arch(0, 0.0, 4.75, 2.4, depth=1.0, sur=0.5, kind="door", proud=0.12, seg=10, ledge=False), Rose(0, 9.55, 2.05)]
     elif kind == "rose":
         ops = [Rose(0, 9.75, 2.0)] + [Arch(x, 2.7, 5.3, 0.8, sur=0.16) for x in (-1.25, 0, 1.25)]
     elif kind == "lancets":
@@ -409,7 +409,7 @@ def wing(k):
     apex_cross(ax * (L + 0.0) + Z * (RIDGE + PAR + 0.2), 1.1 if kind == "front" else 0.8, MASONRY, STONE, facing=ax)
     # plinth ledge on the gable (around the portal on the front)
     if kind == "front":
-        for a0, a1 in ((-W2, -1.55), (1.55, W2)): fbox(fr, a0, a1, PLINTH - 0.18, PLINTH, 0, 0.1, MASONRY, STONE, skip=("back",))
+        for a0, a1 in ((-W2, -1.8), (1.8, W2)): fbox(fr, a0, a1, PLINTH - 0.18, PLINTH, 0, 0.1, MASONRY, STONE, skip=("back",))
         fbox(fr, -W2, W2, 5.55, 5.8, 0, 0.12, MASONRY, STONE, skip=("back",))     # string course over the portal
     else:
         fbox(fr, -W2, W2, PLINTH - 0.18, PLINTH, 0, 0.1, MASONRY, STONE, skip=("back",))
@@ -1121,7 +1121,7 @@ if PREVIEWS:
         t = time.time(); bpy.ops.render.render(write_still=True); print("render", name, f"{time.time() - t:.0f}s")
     look("b_front", (0, 62, 0.2), (0, 0, 16), 26)
     look("a_northwest", (-44, 44, -0.5), (-12, 12, 22), 24)
-    look("c_southwest", (-26, -56, 2.8), (0, 0, 14), 26, res=(960, 960))
+    look("c_southwest", (-30, -62, 7.5), (2, 0, 13), 28, res=(960, 960))
     look("e_aerial", (-14, 80, 58), (-3, 0, 6), 30, res=(900, 1100))
     look("f_south", (-5.4, -78.4, 0.7), (-3, 0, 20), 45)
 print(f"done {time.time() - T0:.1f}s")

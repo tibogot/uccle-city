@@ -69,6 +69,10 @@ const groundAt = (x, z) => {
   } else m.color.set(0x55575c);
   const ground = new THREE.Mesh(g, m); ground.receiveShadow = true;
   scene.add(ground);
+  // beyond the 140 m DTM patch: a plain far ground, a little below it (so the patch edge doesn't float)
+  const farG = new THREE.Mesh(new THREE.CircleGeometry(4000, 48).rotateX(-Math.PI / 2), new THREE.MeshStandardNodeMaterial({ color: 0x3b3d36, roughness: 1 }));
+  farG.position.set(P0.x, 69.5, P0.z); farG.receiveShadow = true;
+  scene.add(farG);
 }
 
 // ------------------------------------------------------------------------------------------------ the UrbIS solid the city draws today
@@ -105,12 +109,12 @@ scene.add(nestMark);
 // ------------------------------------------------------------------------------------------------ views (the photos)
 // camera positions in the Blender frame (x east, y front/north, z up from the floor), estimated from each photo
 const PHOTOS = {
-  "a north-west": { file: "a.jpg", pos: [-44, 44, -1.0], target: [-12, 12, 22], fov: 52, src: "Jean-Pol GRANDMONT, CC BY-SA 3.0 (Commons)" },
+  "a north-west": { file: "a.jpg", pos: [-54, 74, -1.0], target: [-10, 10, 24], fov: 50, src: "Jean-Pol GRANDMONT, CC BY-SA 3.0 (Commons)" },
   "b front": { file: "b.jpg", pos: [0, 58, -0.6], target: [0, 0, 16], fov: 56, src: "User:Tram Bruxelles, CC BY-SA 4.0 (Commons)" },
-  "c south-west": { file: "c_southwest.png", pos: [-30, -62, 1.2], target: [2, 0, 13], fov: 50, src: "owner's photo (reference only)" },
+  "c south-west": { file: "c_southeast.png", pos: [-30, -62, 1.2], target: [2, 0, 13], fov: 50, src: "owner's photo (reference only; named 'southeast' but taken from the south-west: tower left, south rose right)" },
   "d east (dome)": { file: "d_east_dome.png", pos: [80, -34, 1.5], target: [0, 0, 18], fov: 36, src: "owner's photo (reference only)" },
   "e aerial": { file: "e_aerial.png", pos: [-12, 78, 56], target: [-3, 0, 6], fov: 48, src: "owner's photo (reference only)" },
-  "f Rue du Ham": { file: "f_street_tram.png", pos: [-5.4, -78.4, 0.7], target: [-3, 0, 20], fov: 30, src: "owner's photo (reference only)" },
+  "f Rue du Ham": { file: "f_street_tram.png", pos: [-38, -226, 1.5], target: [-5, 0, 20.5], fov: 20, src: "owner's photo (reference only)" },
   "spire tip (fly start)": { pos: [-5, 5, 62], target: [-13.5, 13.5, 50], fov: 60 },
   "belfry / nest": { pos: [-22, 22, 24], target: [-15.5, 15.5, 22], fov: 50 },
 };
@@ -118,13 +122,29 @@ function goView(name) {
   const v = PHOTOS[name]; if (!v) return;
   const p = W(...v.pos); p.y = Math.max(p.y, groundAt(p.x, p.z) + 1.6);
   camera.position.copy(p); controls.target.copy(W(...v.target)); camera.fov = v.fov; camera.updateProjectionMatrix();
-  if (v.file) { $photo.src = `../data/raw/refs/stjob/${v.file}`; $photo.onerror = () => { $photo.removeAttribute("src"); }; } else $photo.removeAttribute("src");
+  if (v.file) {
+    $photo.onload = () => fitFrame(); $photo.onerror = () => { $photo.removeAttribute("src"); fitFrame(); };
+    $photo.src = `../data/raw/refs/stjob/${v.file}`;
+  } else { $photo.removeAttribute("src"); }
   S.view = name;
+  fitFrame();
+}
+/** "frame = photo": the canvas takes the photo's aspect and place (centred, contained), so the overlay lines up */
+function fitFrame() {
+  const v = PHOTOS[S.view], c = renderer.domElement;
+  let w = innerWidth, h = innerHeight;
+  if (S.frame && v?.file && $photo.naturalWidth) {
+    const a = $photo.naturalWidth / $photo.naturalHeight;
+    if (w / h > a) w = Math.round(h * a); else h = Math.round(w / a);
+  }
+  renderer.setSize(w, h);
+  Object.assign(c.style, { position: "fixed", left: `${(innerWidth - w) / 2}px`, top: `${(innerHeight - h) / 2}px` });
+  camera.aspect = w / h; camera.updateProjectionMatrix();
 }
 
 // ------------------------------------------------------------------------------------------------ panel
 const S = {
-  lod: "auto", show: "new model", wireframe: false, view: "b front", photo: 0, notes: true, nest: true,
+  lod: "auto", show: "new model", wireframe: false, view: "b front", photo: 0, frame: false, notes: true, nest: true,
   time: preset, hour: lighting.hour, day: lighting.day, post: true,
   brickTone: 1, bands: 1, moss: 1, ao: 1, dirt: 1,
   stats: "", lodInfo: "", bench: "—",
@@ -133,6 +153,7 @@ const ui = new Panel({ title: "Church Lab" });
 const fv = ui.addFolder("View");
 fv.add(S, "view", Object.keys(PHOTOS)).name("photo viewpoint").onChange(goView).listen();
 fv.add(S, "photo", 0, 1, 0.05).name("photo overlay").onChange((v) => { $photo.style.opacity = v; });
+fv.add(S, "frame").name("frame = photo").onChange(fitFrame);
 fv.add(S, "notes").name("notes & photo list").onChange((v) => { $notes.style.display = v ? "block" : "none"; });
 fv.add(S, "nest").name("show the nest node");
 const fm = ui.addFolder("Model");
@@ -211,7 +232,7 @@ async function bench() {
   console.log("[church lab] GPU ms median per frame:", res, "view", S.view);
   ui.controllersRecursive().forEach((c) => c.updateDisplay());
 }
-window.lab = { renderer, scene, camera, model, lighting, goView, bench, gpu, S };
+window.lab = { renderer, scene, camera, controls, model, lighting, goView, fitFrame, bench, gpu, S, W, PHOTOS };
 
 const nv = new THREE.Vector3();
 let last = performance.now(), frames = 0, fpsAcc = 0, fpsN = 0, fps = 0;
@@ -245,4 +266,4 @@ renderer.setAnimationLoop(() => {
       `\nbenchmark (median GPU ms, whole frame; + = the church): ${S.bench}`;
   }
 });
-addEventListener("resize", () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+addEventListener("resize", fitFrame);

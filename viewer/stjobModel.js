@@ -171,7 +171,7 @@ function makeMaterials(aoTex) {
     const sfw = max(fwidth(sv), fwidth(su));
     const stoneJ = mix(sj, float(0.95), smoothstep(0.3, 0.8, sfw));
     const sh = hash2(vec2(scell, srow));
-    const stone = mix(lin(0xc9c0ad), lin(0xb3ab9a), sh).mul(mix(float(0.86), float(1), stoneJ));
+    const stone = mix(lin(0xbdb7aa), lin(0xa9a397), sh).mul(mix(float(0.86), float(1), stoneJ));
     const sand = mix(lin(0x8d8c84), lin(0x7c7a70), sh).mul(mix(float(0.8), float(1), stoneJ));   // the plinth: grey sandstone
     // bands by height (pattern 1: 15 cm every 1.10 m from the plinth up; 2: every third only)
     const bpos = y.sub(0.9).div(1.1), bi = floor(bpos);
@@ -203,8 +203,8 @@ function makeMaterials(aoTex) {
     const fw = max(fwidth(rv), fwidth(ru));
     const jl = mix(smoothstep(0.0, 0.08, fract(rv)).mul(smoothstep(0.0, 0.04, fract(ru))), float(0.9), smoothstep(0.3, 0.8, fw));
     const h = hash2(vec2(cell, row)), h2 = hash2(vec2(row, cell.mul(1.7)));
-    const slate = mix(lin(0x3c4048), lin(0x2e3138), h);
-    const domeSlate = mix(lin(0x4f5a56), lin(0x434c4a), h);
+    const slate = mix(lin(0x4a4f58), lin(0x3a3e45), h);
+    const domeSlate = mix(lin(0x66716b), lin(0x58625d), h);
     let col = mix(slate, domeSlate, is(1)).mul(mix(float(0.72), float(1.0), jl)).mul(mix(float(0.9), float(1.08), h2));
     // moss: north-facing (city -z) and low on the slope; patchy by tile
     const north = clamp(normalWorld.z.negate().mul(0.7).add(0.3), 0, 1);
@@ -235,7 +235,7 @@ function makeMaterials(aoTex) {
     glass.colorNode = base.mul(lead);
     glass.roughnessNode = mix(float(0.55), float(0.12), lead);
     glass.metalnessNode = float(0);
-    glass.emissiveNode = tint.mul(lead).mul(env.uNight).mul(env.uInteriorGlow).mul(1.6);
+    glass.emissiveNode = mix(tint, lin(0xffc070), 0.35).mul(lead).mul(env.uNight).mul(env.uInteriorGlow).mul(1.1);
     glass.mrtNode = mrt({ metalRough: vec3(0, roughness, float(0)) });
   }
 
