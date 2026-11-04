@@ -22,6 +22,7 @@ import { Lighting, PRESETS } from "./lighting.js";
 import { createPipeline } from "./post.js";
 import { buildTrees } from "./trees.js";
 import { buildTreeField } from "./treesSlop.js";
+import { buildStylizedTreeField, setTreeLighting } from "./treesStylized.js";
 import { openBootPipelines, warmBoot } from "./warmup.js";
 
 const DATA = new URL("../data/tiles/", import.meta.url);
@@ -185,8 +186,11 @@ function featureObjects(f, hm, bounds) {
   const off = { polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, side: THREE.DoubleSide };
   mk(steel, new THREE.MeshStandardMaterial({ color: 0x9a9da0, metalness: 0.3, roughness: 0.4, ...off }), "tram-rails");
   mk(groove, new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.9, ...off }), "tram-grooves");
-  // ?trees=simple: our own leaf-card crowns (viewer/trees.js); default: slop-newyork's tree system
-  const T = params.get("trees") === "simple" ? buildTrees(f.trees || [], (x, z) => hm.surface(x, z), inTile)
+  // ?trees=simple: our own leaf-card crowns (viewer/trees.js); ?trees=stylized: game-engine-v1's fog-lab
+  // trees (viewer/treesStylized.js); default: slop-newyork's tree system
+  const treeMode = params.get("trees");
+  const T = treeMode === "simple" ? buildTrees(f.trees || [], (x, z) => hm.surface(x, z), inTile)
+    : treeMode === "stylized" ? buildStylizedTreeField(f.trees || [], (x, z) => hm.surface(x, z), inTile)
     : buildTreeField(f.trees || [], (x, z) => hm.surface(x, z), inTile);
   group.add(T.group);
   group.userData.update = T.update || null;
@@ -404,6 +408,7 @@ async function main() {
   const bootPipes = params.get("warmup") !== "0" ? openBootPipelines(renderer, scene) : null;   // ?warmup=0: old boot, for A/B
   const timeId = PRESETS[params.get("time")] ? params.get("time") : "golden";
   const lighting = new Lighting(scene, renderer, timeId, { sunLight: params.get("sunlight") === "1" });
+  setTreeLighting(lighting);
   const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
 
   const contourOn = uniform(0);
