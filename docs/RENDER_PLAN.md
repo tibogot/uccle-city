@@ -149,6 +149,14 @@ Quick wins first, then the big one:
   Rule: never DynamicDrawUsage for per-instance data that is not rewritten every frame.
 - Next: the night look (nightEV, Purkinje); the tram clock driving the sun; then volumetric fog.
 
+## Volumetric fog (2026-11-04)
+
+game-engine-v1's volumetricFog.js (`vendor/volumetric-fog`, 1 logged change: reversed depth buffer for the
+scene depth and the shadow test) runs in the HDR hook after Firmament's haze, before the meter, lit by
+Firmament's key light and sky irradiance, sun shafts through the sun's shadow map. On with the "misty"
+time preset (early morning, low sun) or `?vfog=1`. Fitted to Uccle: layer top 82 m TAW, falloff 18 m (the
+valley floor ~40 m, Saint-Job ~71 m, plateaus 100-130 m). Cost +1-1.5 ms.
+
 ## Windows (2026-11-04, owner: "every window has a z-index issue")
 
 Three separate causes, found by elimination (fx=0 / ao=0 / ssr=0 on one window close-up):

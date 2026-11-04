@@ -14,6 +14,7 @@ import { denoise } from "three/addons/tsl/display/DenoiseNode.js";
 import { bloom } from "three/addons/tsl/display/BloomNode.js";
 
 const LOOKS = {
+  misty: { exposure: 1.06, contrast: 1.04, saturation: 0.94, balance: [1.01, 1.0, 0.99], bloom: 0.2, threshold: 1.3 },
   golden: { exposure: 1.04, contrast: 1.12, saturation: 1.08, balance: [1.045, 1.0, 0.955], bloom: 0.24, threshold: 1.2 },
   midday: { exposure: 1.0, contrast: 1.1, saturation: 1.06, balance: [1.015, 1.0, 0.985], bloom: 0.18, threshold: 1.35 },
   overcast: { exposure: 1.08, contrast: 1.06, saturation: 0.96, balance: [0.99, 1.0, 1.02], bloom: 0.12, threshold: 1.5 },

@@ -12,6 +12,7 @@ import { SunLight } from "three/addons/lights/SunLight.js";
 import { SunLightNode } from "three/addons/lights/SunLightNode.js";
 import { createFirmamentSky } from "../vendor/firmament/firmamentSky.js";
 import { sunDirection } from "../vendor/firmament/firmamentCelestial.js";
+import { createVolumetricFog } from "../vendor/volumetric-fog/volumetricFog.js";
 
 // FIRMAMENT (default; ?sky=old = the Preetham SkyMesh below): the owner's engine sky (vendor/firmament):
 // physical atmosphere, cumulus + cirrus, the real sun (and moon) for Brussels, the sky's own
@@ -32,11 +33,21 @@ const FIRM_TIMES = {
   overcast: { hours: 13.0, coverage: 0.95, cloudType: 0.08 },
   twilight: { hours: 20.45, coverage: 0.4, cloudType: 0.5 },
   night: { hours: 23.4, coverage: 0.3, cloudType: 0.5 },
+  misty: { hours: 7.6, coverage: 0.55, cloudType: 0.15, vfog: true },
 };
+// volumetric valley fog (vendor/volumetric-fog): on with the "misty" preset or ?vfog=1. Fitted to Uccle: the
+// valley floor is ~40 m TAW, Place de Saint-Job ~70 m, the plateaus 100-130 m: the layer tops out at 72 m and
+// thins above, so it pools in the low streets and the hills stand out of it.
+// (tuned on screen 2026-11-04: top 72 m left Place Saint-Job, 70.8 m, at the very edge of the layer)
+const VFOG = { top: 82, falloff: 18, topBreakup: 9, density: 0.014, noiseFreq: 1 / 160, noiseAmount: 0.7, coverage: 0.7,
+  haze: 0.0006, maxDist: 1500, anisotropy: 0.6, windSpeed: 2 };
 
 // Direction TO the sun. Brussels, late afternoon from the south-west: west = -x, south = +z.
 const dir = (x, y, z) => new THREE.Vector3(x, y, z).normalize();
 export const PRESETS = {
+  misty: { sunDir: dir(0.6, 0.22, 0.75), sunColor: 0xffd9b0, sunIntensity: 3.0, hemiSky: 0xb8c4d0, hemiGround: 0x8a8070, hemiIntensity: 1.6,
+    skyTop: 0x7f93ab, skyHorizon: 0xd8d4cc, fogDensity: 0.0006, interiorGlow: 0.5, wetness: 0.45, envIntensity: 0.6,
+    turbidity: 10.0, rayleigh: 2.0, mie: 0.012, mieG: 0.85, clouds: 0.55, cloudDensity: 0.5, skyExposure: 0.13, night: 0 },
   golden: { sunDir: dir(-0.62, 0.42, 0.66), sunColor: 0xffc890, sunIntensity: 5.6, hemiSky: 0x9abbe6, hemiGround: 0xb27a56, hemiIntensity: 1.4,
     skyTop: 0x2c568c, skyHorizon: 0xebd1b5, fogDensity: 0.00035, interiorGlow: 0.45, wetness: 0.15, envIntensity: 0.55,
     turbidity: 8.0, rayleigh: 2.8, mie: 0.008, mieG: 0.88, clouds: 0.42, cloudDensity: 0.42, skyExposure: 0.148, night: 0 },
@@ -192,7 +203,22 @@ export class Lighting {
    *  floor (~40 m TAW), not the sea. */
   hazeHook(rt, depthTex, size) {
     if (!this.firmament || !this.sky) return;
-    this.sky.postProcess(rt, { depthTex, light: this.sun, shadowDepth: this.shadowNode?.shadowMap?.depthTexture ?? null, size, seaLevel: 40 });
+    const shadowDepth = this.shadowNode?.shadowMap?.depthTexture ?? null;
+    this.sky.postProcess(rt, { depthTex, light: this.sun, shadowDepth, size, seaLevel: 40 });
+    // the volumetric fog over the haze, before the meter (game-engine-v1 worldEnvironment order)
+    if (this.vfogOn) {
+      this.vfog ??= createVolumetricFog({ renderer: this.renderer, params: { ...VFOG } });
+      const L = this.sky.light(), now = performance.now();
+      const k = L.keyIsMoon ? [L.moonColor.x, L.moonColor.y, L.moonColor.z] : L.sunColor;
+      const sc = this.sun.shadow.camera;
+      this._shM ??= new THREE.Matrix4();
+      this._shM.multiplyMatrices(sc.projectionMatrix, sc.matrixWorldInverse);
+      const si = L.skyIrradiance || [0, 0, 0];
+      this.vfog.composite(rt, { depthTex, camera: this.camera, size, dt: Math.min(0.1, (now - (this._vfT ?? now)) / 1000),
+        sunDir: this.sunDir, sunColor: k, ambient: [si[0] / Math.PI, si[1] / Math.PI, si[2] / Math.PI],
+        cascades: shadowDepth ? [{ matrix: this._shM, depthTex: shadowDepth }] : [] });
+      this._vfT = now;
+    }
     this.sky.meter(rt);
   }
 
@@ -258,6 +284,7 @@ export class Lighting {
     if (this.firmament) {
       const t = FIRM_TIMES[id] || FIRM_TIMES.golden;
       Object.assign(this.firm, t, { wetness: p.wetness });
+      this.vfogOn = !!t.vfog || /[?&]vfog=1/.test(location.search);
       this.uFogDensity.value = p.fogDensity;
       return;
     }
