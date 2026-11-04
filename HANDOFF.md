@@ -14,6 +14,11 @@ tile in the worker by `buildDriveData` from tileData.js, lamp posts added on the
 The ground is a drivable-surface grid (road deck + sidewalks over the carved terrain, cm per 1 m cell). Sidewalk kerbs
 are climbed (as the road engine intends); building footprints, raised kerb islands / medians / roundabout centres,
 tree trunks and lamp posts block. Not colliders yet: parked cars, trams, street furniture, garden walls / hedges.
+Hero models: the drive colliders keep the UrbIS solids a model replaces (built before `hideBuildings`), and a model adds
+what its footprint lacks through `driver.addStatic(polys)` (Saint-Job's front steps: `stjobModel.js stjobColliders`).
+The car: one loader, `viewer/drive/carModel.js loadCarModel(spec)` (`scripted` = tools/blender/car.py, `kenney:<id>`,
+`quaternius:<id>` = CC0 packs via `viewer/drive/carPacks.js`); `?car=<spec>` or `__driver.setCar(spec)`; `fitBody`
+sizes the physics box to the model. Packs: `node tools/cars/convertPacks.mjs` (raw packs in data/raw/cars/, see CREDITS).
 
 ## Rules that still hold
 
@@ -37,7 +42,9 @@ Debug. "Copy link to this view" puts the state + camera in `?dev=`. H = photo mo
 lab first, then go into the city. Tram Lab: the STIB T3000 (`tools/blender/tram.py`, `viewer/tramModel.js`); in the city by default (`?tram=box` = the old boxes).
 Car Lab (`labs/car-lab.html`): the driving model drive mode uses on a test ground (walls, courtyards, kerb island,
 ramp, posts), handling / suspension / camera sliders, colliders drawn (G); the car model is swappable (`viewer/drive/carModel.js`,
-`?car=scripted|kenney|quaternius`), plus a car-pack comparison and a parked-street benchmark (`?mode=compare`, `?mode=street`).
+`?car=scripted|kenney:<id>|quaternius:<id>`), plus a car-pack comparison and a parked-street benchmark (`?mode=compare`,
+`?mode=street`, `labs/car-compare.js`; screenshots in `docs/cars/`). The city's parked cars are still the boxes of
+`viewer/cars.js` until the owner picks.
 
 ## How to run
 
@@ -46,7 +53,7 @@ python3 -m http.server 8765        # from the repo root
 open http://localhost:8765/viewer/index.html?tile=I6   # Saint-Job (was G4)
 ```
 Useful URL params: `far=0..6` (far-LOD ring), `clock=HH:MM`, `timescale=N`, `trams=0`, `tram=box` (the old box trams instead of the Blender T3000), `worker=0`, `tile=A1..O12` (120 tiles of all Uccle; Saint-Job = I6, the old G4), `ring=0|1|2` (neighbour tiles), `yaw=deg` (walk facing), `view=stjob|walk`, `at=x,z`, `cam=x,z,height`,
-`view=drive` (drive mode: a car on a street near Saint-Job, or the road nearest `at=x,z`), `drivedebug=1` (draw the drive colliders), `car=scripted|kenney|quaternius` (the drive-mode car), `time=golden|midday|overcast|twilight|night`, `fx=0` (no post effects), `trees=slop` (slop-newyork trees), `trees=simple`
+`view=drive` (drive mode: a car on a street near Saint-Job, or the road nearest `at=x,z`), `drivedebug=1` (draw the drive colliders), `car=scripted|kenney:<id>|quaternius:<id>` (the drive-mode car), `time=golden|midday|overcast|twilight|night`, `fx=0` (no post effects), `trees=slop` (slop-newyork trees), `trees=simple`
 (old leaf-card trees), `sunlight=1` (cascaded shadows), `warmup=0` (no boot shader warm-up), `log=0` (dev log collapsed), `gpu=0` (no GPU timing). Use Chrome/Edge with WebGPU for real
 speed; headless screenshots use the slower WebGL2 fallback.
 

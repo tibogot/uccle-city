@@ -113,6 +113,10 @@ function simplifyWelded(g, error) {
   return s;
 }
 
+/** Live look switches for every pack material: glass = multiplier on the glass colour (Kenney's windows are pale
+ *  blue-white swatches: 1 = as designed, ~0.12 = tinted dark like the city's real cars). */
+export const packLook = { glass: uniform(1) };
+
 /**
  * The pack material. paint: a THREE.Color (one car: a uniform) or "instance" (parked cars: geometry attribute "paint",
  * an InstancedBufferAttribute). lights: { head, tail, brake } uniforms (carModel.js carLights), optional.
@@ -123,7 +127,7 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
   const kind = attribute("_kind", "float").add(0.5).floor(), vc = attribute("color", "vec3");
   const isPaint = kind.equal(1), isGlass = kind.equal(4), isHead = kind.equal(2), isTail = kind.equal(3);
   const uPaint = paint === "instance" ? attribute("paint", "vec3") : uniform(paint);
-  m.colorNode = select(isPaint, vc.mul(uPaint), vc);
+  m.colorNode = select(isPaint, vc.mul(uPaint), select(isGlass, vc.mul(packLook.glass), vc));
   m.roughnessNode = select(isPaint, float(0.32), select(isGlass, float(0.06), float(0.62)));
   m.metalnessNode = select(isPaint, float(0.25), select(isGlass, float(0.1), float(0)));
   if (lights) {

@@ -10,8 +10,11 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 
 1. [x] **Roof collision for fly mode**: a 2 m roof-height grid per tile (tile worker), `world.heightAt` = max(ground, roofs).
    Driving will need real wall collision (BVH) later.
-2. **Parked cars from Blender**: 4-6 scripted body types, meshoptimizer LODs, a **Car Lab** first, owner approves,
-   then they replace the boxes (also a GPU saving: cars are ~784k triangles per view).
+2. **Parked cars**: the owner rejected the scripted car's look; **owner to pick** in the Car Lab comparison
+   (`labs/car-lab.html?mode=compare`, `?mode=street`, branch claude/cars): scripted vs Kenney Car Kit vs Quaternius Cars
+   Pack (CC0, `models/cars/`, one material per pack, meshoptimizer LODs at load). Then the pick replaces the boxes in
+   `viewer/cars.js` (instancing per model / LOD, as the street benchmark does; also a GPU saving: cars are ~784k
+   triangles per view).
 3. **All of Uccle**: re-fetch raw data on this machine, set up the Python pipeline, extend the grid (section 1).
 Then: road fixes (z-fighting, breaks in curves, grooved tram rails), rain / wet roads,
 winter (7b), dev panel teleports to named places.

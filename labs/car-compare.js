@@ -16,7 +16,7 @@ import { Panel } from "../viewer/panelUI.js";
 import { Lighting, PRESETS } from "../viewer/lighting.js";
 import { createPipeline } from "../viewer/post.js";
 import { loadCarModel, createCar, carLights, CAR_LODS, PAINTS } from "../viewer/drive/carModel.js";
-import { loadPack, packMaterial, PACK_LODS } from "../viewer/drive/carPacks.js";
+import { loadPack, packMaterial, packLook, PACK_LODS } from "../viewer/drive/carPacks.js";
 
 const qp = new URLSearchParams(location.search);
 const MODE = qp.get("mode") === "street" ? "street" : "compare";
@@ -165,7 +165,7 @@ class Fleet {
 // ------------------------------------------------------------------------------------------------ compare: three cars at the kerb
 const S = {
   option: qp.get("option") || "kenney", kenneyCar: "hatchback", quaterniusCar: "car_a", paint: "as designed", layout: "trio",
-  view: "across the street", time: preset, hour: lighting.hour, post: true, wire: false, night: false,
+  view: "across the street", time: preset, hour: lighting.hour, post: true, wire: false, night: false, darkGlass: qp.get("glass") === "dark",
   stats: "", bench: "—",
 };
 const labels = [];
@@ -233,6 +233,7 @@ if (MODE === "compare") {
   fc.add(S, "quaterniusCar", quaternius.cars.map((c) => c.id)).name("Quaternius car").onChange(placeCompare);
   fc.add(S, "paint", ["as designed", ...Object.keys(PAINTS)]).name("paint").onChange(applyPaint);
   fc.add(S, "wire").name("wireframe").onChange(applyWire);
+  fc.add(S, "darkGlass").name("packs: dark glass (city fit)").onChange((v) => { packLook.glass.value = v ? 0.12 : 1; });
   fc.add(S, "view", Object.keys(VIEWS)).name("view").onChange((v) => VIEWS[v]());
 } else {
   const fs = ui.addFolder("Street");
@@ -241,6 +242,7 @@ if (MODE === "compare") {
   fs.add(S, "lod", ["auto", "LOD0", "LOD1", "LOD2", "LOD3"]).name("LOD (LOD3: packs only)").onChange((v) => { for (const f of Object.values(fleets)) f.forceLod = v === "auto" ? -1 : Math.min(+v.slice(3), f.lodDist.length - 1); });
   S.view = "down the street";
   fs.add(S, "view", Object.keys(STREET_VIEWS)).name("view").onChange((v) => STREET_VIEWS[v]());
+  fs.add(S, "darkGlass").name("packs: dark glass (city fit)").onChange((v) => { packLook.glass.value = v ? 0.12 : 1; });
   fs.add({ go: () => bench() }, "go").name("benchmark (A/B, all options)");
   fs.add(S, "bench").name("result").listen();
 }
@@ -251,6 +253,7 @@ fl.add(S, "post").name("post effects (AO, SSR, bloom)");
 const fp = ui.addFolder("Performance");
 fp.add(S, "stats").name("frame").listen();
 
+packLook.glass.value = S.darkGlass ? 0.12 : 1;
 await lighting.attach(camera);
 const pipe = createPipeline(renderer, scene, camera);
 pipe.setExposureScale(lighting.exposureScale); pipe.look(preset);

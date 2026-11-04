@@ -58,6 +58,20 @@ the check dates are in `pipeline/sources.json`.
 | mrdoob/slop-newyork (techniques and adapted code in `viewer/lighting.js`, `post.js`, `tslkit.js`, `facades.js` interiors, `trees.js` approach) | MIT, © 2026 Mr.doob | Notice kept in `viewer/tslkit.js`; source credited in each file header. |
 | mrdoob/slop-newyork tree system (`vendor/slop-trees/`: `trees.js`, `building-collision.js`, tree material), commit `737b7691` | MIT, © Mr.doob | `vendor/slop-trees/LICENSE` and `ORIGIN.md`. Used by `viewer/treesSlop.js` |
 
+## 3D models (CC0 packs, Car Lab comparison)
+
+Raw downloads in `data/raw/cars/<source>/` (git-ignored, read as data only). Converted by `tools/cars/convertPacks.mjs`
+into `models/cars/kenney.glb` and `models/cars/quaternius.glb` (palette baked to vertex colours, rescaled, re-oriented);
+used by the Car Lab (`labs/car-lab.html?mode=compare`, `?mode=street`) and as optional drive-mode cars (`?car=`).
+Not in the city's parked cars (the owner picks first).
+
+| Asset | Author / source | Licence | Used | Verified |
+|---|---|---|---|---|
+| **Car Kit** 3.1 (2026-04-02), kenney.nl/assets/car-kit | Kenney (www.kenney.nl) | **CC0 1.0** (`License.txt` in the pack: "You can use this content for personal, educational, and commercial purposes. Support by crediting 'Kenney' or 'www.kenney.nl' (this is not a requirement)") | hatchback-sports, sedan, taxi, suv, van, delivery | 2026-11-05, the pack's License.txt and the asset page |
+| **Cars Pack** (Nov 2018), quaternius.com/packs/cars.html; GLBs from the poly.pizza "Cars Bundle" (poly.pizza/bundle/Cars-Bundle-FE5IWe6OMk; the Google Drive download was over quota) | Quaternius (quaternius.com) | **CC0 1.0** (asset page: "CC0 … free to use in personal and commercial projects"; poly.pizza lists each model "Public Domain (CC0)") | NormalCar1 (saloon), NormalCar2 (small hatchback), Taxi, SUV, Police car | 2026-11-05, quaternius.com/packs/cars.html and the poly.pizza bundle page |
+
+Credit shown voluntarily in the Car Lab: "Kenney (kenney.nl), CC0", "Quaternius (quaternius.com), CC0".
+
 ## Public transport
 
 | Data | Licence | Notes |
