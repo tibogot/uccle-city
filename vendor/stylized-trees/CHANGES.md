@@ -22,3 +22,5 @@
 6. **Card outline from the shape**: `shape()` may return `cardCorners` (unit corners of a convex outline,
    fan-triangulated); default the quad. Uccle tried an octagon fitted to its leaf mask and kept quads
    (the octagon cost more in vertex work than it saved in fragments; viewer/treesStylized.js).
+7. **Stable per-tree tint**: `treeTint(treeXf, tintVar)` (exported) instead of `hash(instanceIndex)`, so a
+   tree keeps its tint when it moves between LOD meshes and to Uccle's impostors (viewer/impostors.js).

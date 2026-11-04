@@ -23,7 +23,7 @@ import {
   Fn, attribute, uniform, texture, vec2, vec3, float, mix, pow, saturate, dot, normalize, smoothstep,
   positionWorld, cameraPosition, instanceIndex, hash, transformNormalToView,
   positionLocal, positionGeometry, cameraViewMatrix, cross, select,
-  time, sin, cos,
+  time, sin, cos, fract,
 } from "three/tsl";
 import { applyAlphaCutout } from "./alphaCutout.js";   // [uccle-city CHANGES.md #1]
 
@@ -223,6 +223,11 @@ function tubeGeometry(segs, sides) {
 }
 
 // ------------------------------------------------------------------ materials
+/** [uccle-city CHANGES.md #7] per-tree brightness from treeXf (cos, sin of the turn, scale): stable per tree */
+export function treeTint(xf, tintVar) {
+  return fract(sin(xf.x.mul(127.1).add(xf.y.mul(311.7)).add(xf.z.mul(74.7))).mul(43758.5453)).sub(0.5).mul(tintVar).add(1);
+}
+
 function makeLeafMaterial(P, U) {
   const leafTex = P.leafMask ?? loadLeafMask();   // [uccle-city CHANGES.md #2]
   const m = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, roughness: 0.9, metalness: 0 });
@@ -274,7 +279,9 @@ function makeLeafMaterial(P, U) {
   // trees near ±90° showed their cards edge-on, as vertical streaks)
   m.positionNode = positionLocal.add(toWorld(cornerTree).add(vec3(0, U.crownLift, 0)).add(sway()).mul(xf.z));
   // one value per tree (instance), the same in the shadow pass and the colour pass
-  const tint = hash(instanceIndex.add(17)).sub(0.5).mul(U.tintVar).add(1);
+  // [uccle-city CHANGES.md #7] the tint from the tree's own turn and scale (treeXf), not instanceIndex:
+  // the same tree keeps its tint in every LOD mesh and in Uccle's impostors
+  const tint = treeTint(xf, U.tintVar);
   const leafBase = Fn(() => {
     const base = mix(U.bottom, U.top, smoothstep(0.0, 1.0, hA));
     return base.mul(tint).mul(mix(float(1), aoA, U.aoColor));

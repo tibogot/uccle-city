@@ -106,8 +106,16 @@ Quick wins first, then the big one:
 2. [x] Shadows from LOD 0 only: walk 6.3 -> 6.0 ms.
 3. [x] Coverage-preserving mips (R8, rescaled per level): distant crowns stay full, ~+0.2 ms.
    Result after 1-3: overview 7.1, close-up 7.7, walk 6.0 ms.
-4. [ ] Octahedral impostors (engine octahedralCore.js / impostorBake.js) with normal + depth atlases
-   so they take the same light, + dithered crossfade between all LODs (no popping).
+4. [x] Octahedral impostors, our own (`viewer/impostors.js`; octahedral maths credited to game-engine-v1
+   octahedralCore.js). The bake stores the tree shader's INPUTS per view (albedo before tint + coverage;
+   pad-dome normal + occlusion + leaf/bark flag), GPU-only straight into one 2048x3072 atlas pair for all
+   6 variants (8x8 views, 128 px cells), 69 ms at boot; the impostor runs the leaves' lighting live (sun,
+   sky, shadows, translucency, fill, per-tree tint) so it follows the time of day. One instanced quad
+   mesh + one shader per tile; real trees stop at 90 m (`?impstart=`, `?impostors=0`).
+   GPU: overview 7.1 -> 6.7 ms, close-up 7.7 -> 7.4, walk 6.0 -> 5.5. Starting at 60 or 45 m is slower
+   (impostor fragments: 8 texture taps + lighting). Gotcha: bake viewport rows count from the top, so
+   the atlas lookup flips the image inside each cell (found by eye: upside-down trees).
+   Left: dithered crossfade at 90 m; a depth atlas for parallax (less smearing between views).
 5. [ ] Look: ground AO blob under each tree, crown-level AO gradient, translucency dimmed in shadow,
    per-pad hue jitter, 3-tier wind with world gusts.
 

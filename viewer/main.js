@@ -22,7 +22,7 @@ import { Lighting, PRESETS } from "./lighting.js";
 import { createPipeline } from "./post.js";
 import { buildTrees } from "./trees.js";
 import { buildTreeField } from "./treesSlop.js";
-import { buildStylizedTreeField, setTreeLighting } from "./treesStylized.js";
+import { buildStylizedTreeField, setTreeLighting, setTreeRenderer } from "./treesStylized.js";
 import { openBootPipelines, warmBoot } from "./warmup.js";
 
 const DATA = new URL("../data/tiles/", import.meta.url);
@@ -409,6 +409,7 @@ async function main() {
   const timeId = PRESETS[params.get("time")] ? params.get("time") : "golden";
   const lighting = new Lighting(scene, renderer, timeId, { sunLight: params.get("sunlight") === "1" });
   setTreeLighting(lighting);
+  setTreeRenderer(renderer);
   const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
 
   const contourOn = uniform(0);

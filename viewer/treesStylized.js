@@ -13,6 +13,17 @@ import { positionGeometry, vec3, float, mix, smoothstep, mx_noise_float, normalG
 import { createStylizedTrees } from "../vendor/stylized-trees/stylizedTrees.js";
 import { branchShape } from "../vendor/stylized-trees/branchTree.js";
 import { bumpNormal } from "./tslkit.js";
+import { bakeTreeImpostors, impostorMaterial, impostorField, IMPOSTOR_START } from "./impostors.js";
+
+// Far LOD: octahedral impostors past IMPOSTOR_START (viewer/impostors.js); ?impostors=0: the vendor's
+// own LOD 1 / LOD 2 out to 900 m instead (A/B)
+const useImpostors = !/[?&]impostors=0/.test(location.search);
+let renderer = null, impMat = null;
+/** main.js passes the renderer once (the impostor bake renders on it). */
+export function setTreeRenderer(r) { renderer = r; }
+// the vendor's variant per tree (stylizedTrees.js: rng(i * 7919 + 13) -> floor(x * variants)), the
+// impostor must draw the same variant
+const variantOfIndex = (i, variants) => { let s = (i * 7919 + 13) >>> 0; s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return Math.floor((s / 4294967296) * variants); };
 
 // Street trees are pruned upright: the offroad game's "broad" (low fork, wide) and "tall" (long trunk,
 // high fork) styles, picked per variant from the variant's own random stream (the same for its 3 LODs).
@@ -184,7 +195,7 @@ const params = () => PARAMS ??= {
   leafMask: leafMask(), shape: streetShape,
   // LOD distances for a street-level city (the fog lab's 150 / 450 / 1600 m are for a valley forest):
   // measured 2026-11-04, walk 14.8 -> 9.5 ms GPU, overview 8.8 -> 7.5 ms.
-  lodDist: 40, farDist: 120, maxDist: 900,
+  lodDist: 40, farDist: 120, maxDist: useImpostors ? IMPOSTOR_START : 900,
   // Brussels street trees (planes, limes, chestnuts): olive rather than the fog lab's lime, more
   // spread between trees so a street doesn't read as one green band
   topColor: "#8aa64e", bottomColor: "#27441d", translucencyColor: "#c6d07c", tintVar: 0.3,
@@ -206,6 +217,13 @@ function calibrate() {
   }
   if (n) NATURAL_HEIGHT = sum / n;
   barkMaterial(shared.trunkMat);
+  if (useImpostors && renderer) {
+    const t0 = performance.now();
+    const bake = bakeTreeImpostors(renderer, shared, VARIANTS, PARAMS.leafMask);
+    impMat = impostorMaterial(bake, shared.U);
+    window.__impostorBake = bake;
+    console.log(`tree impostors: ${VARIANTS} variants baked (${bake.size.join("x")} atlas x2) in ${(performance.now() - t0).toFixed(0)} ms`);
+  }
 }
 
 /** Bark: vertical ridges and furrows (3D noise stretched along the trunk), lichen-grey on the ridges,
@@ -237,6 +255,8 @@ export function buildStylizedTreeField(trees, ground, inTile) {
   const holder = new THREE.Group();
   holder.name = "StylizedTreesTile";
   const f = createStylizedTrees({ scene: holder, trees: placements, shared, variants: VARIANTS, params: params() });
+  const imp = impMat ? impostorField(placements, placements.map((_, i) => variantOfIndex(i, VARIANTS)), impMat) : null;
+  if (imp) holder.add(imp.mesh);
   // per-tile culling: the vendor turns frustum culling off (its instances span a whole forest); here
   // every mesh of the tile gets the tile's trees' bounding sphere
   if (placements.length) {
@@ -279,6 +299,7 @@ export function buildStylizedTreeField(trees, ground, inTile) {
     }
     cam.position.copy(p);
     f.update(cam, light);
+    imp?.update(p);
     for (const [o, d] of twins) d.count = o.count;
   };
   return { group: holder, update, count: placements.length };
