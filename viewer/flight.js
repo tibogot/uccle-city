@@ -98,7 +98,7 @@ export class Flyer {
     const s = this.layerState, ease = (c, t, r) => c + (t - c) * (1 - Math.exp(-r * dt));
     s.fold = ease(s.fold, tuck ? 1 : Math.max(0, -this.pitch - 0.35) * 1.5, 5);             // dives
     s.brake = ease(s.brake, !flapping && this.pitch > 0.2 && this.speed < CRUISE ? 1 : 0, 4); // braking
-    this.rig.apply({ fold: s.fold, bank: this.bank, legs: 1, brake: s.brake });
+    this.rig.apply({ fold: s.fold, bank: this.bank, legs: 0, brake: s.brake });   // legs 0: the tuck drove the feet through the belly (owner, 2026-11-04)
   }
 
 

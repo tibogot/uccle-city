@@ -55,7 +55,7 @@ const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 const P = {
   model: cfg.model || "bird.glb", light: "studio", height: 1.2,
   mode: "flight blend", clip: "Glide", flap: 0, speed: 1, paused: false, time: 0,
-  fold: 0, bank: 0, legs: 1, brake: 0, layers: true,
+  fold: 0, bank: 0, legs: 0, brake: 0, layers: true,
   pitch: 0, roll: 0, turntable: false,
   wireframe: false, skeleton: false, textureOnly: false,
 };
