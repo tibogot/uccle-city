@@ -47,7 +47,7 @@ export function loadCarModel(url = new URL("../../models/car/hatchback.glb", imp
     const merged = (list) => list.length === 1 ? list[0] : mergeAll(list);
     const simplify = (g, error) => {
       if (!error) return g;
-      const [idx] = MeshoptSimplifier.simplify(new Uint32Array(g.index.array), g.attributes.position.array, 3, 0, error, ["ErrorAbsolute", "LockBorder"]);
+      const [idx] = MeshoptSimplifier.simplify(new Uint32Array(g.index.array), g.attributes.position.array, 3, 0, error, error < 0.02 ? ["ErrorAbsolute", "LockBorder"] : ["ErrorAbsolute"]);   // far: seams are sub-pixel
       const s = new THREE.BufferGeometry();
       s.setAttribute("position", g.attributes.position); s.setAttribute("normal", g.attributes.normal);
       s.setIndex(new THREE.BufferAttribute(idx, 1));

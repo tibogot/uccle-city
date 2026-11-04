@@ -16,16 +16,17 @@ export class ColliderDebug {
     g.setAttribute("color", new THREE.BufferAttribute(this.col, 3).setUsage(THREE.DynamicDrawUsage));
     g.setDrawRange(0, 0);
     this.lines = new THREE.LineSegments(g, new THREE.LineBasicNodeMaterial({ vertexColors: true, depthTest: false, transparent: true }));
-    this.lines.frustumCulled = false; this.lines.renderOrder = 999; this.lines.visible = false;
-    scene.add(this.lines);
+    this.lines.frustumCulled = false; this.lines.renderOrder = 999; this.lines.visible = false; this.want = false;
+    this.scene = scene;                // added on first show (a boot warm-up would otherwise draw it empty)
     this.near = []; this.frame = 0;
   }
-  set visible(v) { this.lines.visible = v; }
-  get visible() { return this.lines.visible; }
+  set visible(v) { this.want = v; this.frame = 0; if (!v) this.lines.visible = false; }   // shown once filled (no empty draw)
+  get visible() { return !!this.want; }
 
   /** sets(x, z, r) -> collider sets; ground(x, z); c = car state; touching = contacts this frame */
   update(sets, ground, c, touching, radius = 40) {
-    if (!this.lines.visible) return;
+    if (!this.want) return;
+    if (!this.lines.parent) this.scene.add(this.lines);
     if (this.frame++ % 4) return;
     let n = 0;
     const P = this.pos, C = this.col;
@@ -72,6 +73,7 @@ export class ColliderDebug {
     const h = c.lastHit;
     if (h && performance.now() - h.t < 1500) seg(h.x, c.y + 0.8, h.z, h.x + h.nx * 3, c.y + 0.8, h.z + h.nz * 3, [1, 0.2, 0.2]);
     this.lines.geometry.setDrawRange(0, n);
+    this.lines.visible = n > 0;
     this.lines.geometry.attributes.position.needsUpdate = true;
     this.lines.geometry.attributes.color.needsUpdate = true;
     this.count = this.near.length / 2;

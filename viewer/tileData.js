@@ -10,6 +10,7 @@ import { surfaceAttribute } from "./roadData.js";
 import { analyseBuildings, hash01, wallStyle } from "./facadeGeom.js";
 import { landCoverData } from "./landcover.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
+import { buildDriveData } from "./drive/colliders.js";
 
 export const CARVE = 0.12;         // terrain is pushed this far under any road surface
 // The 1 m terrain grid is 500k triangles a tile (half the scene); seen from above, 1 m triangles cover
@@ -148,7 +149,8 @@ export async function buildTileData(entry, base) {
   const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats));
   const cover = await step("land cover", () => landCoverData(feats, bounds));
   const roofs = await step("roof grid", () => roofGrid(bDoc, bounds));
-  return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs,
+  const drive = await step("drive colliders", () => buildDriveData({ bDoc, net, feats, hm, parts: road.parts, bounds }));   // drive mode (viewer/drive/)
+  return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs, drive,
     netInfo, road, terrain, buildings, cover, times };
 }
 
