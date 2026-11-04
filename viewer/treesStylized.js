@@ -1,17 +1,25 @@
-// Our LiDAR trees drawn with game-engine-v1's fog-lab stylized trees (vendor/stylized-trees): crowns of
-// 9-12 clumps of camera-facing leaf cards, each clump lit as its own dome, baked occlusion, sun
-// shadows on the cards, light through the leaves, per-tree tint, 3 LODs (the far one casts no
-// shadow), smooth leaf edges with MSAA (alpha-to-coverage). ?trees=stylized (A/B with the default
-// slop-newyork trees).
+// Our LiDAR trees drawn with game-engine-v1's stylized trees (vendor/stylized-trees): BRANCH-FIRST
+// trees (the offroad game's branchTree.js: a curved, tapering trunk with a root flare, limbs and
+// sub-branches swept into one bark mesh, leaf pads at the branch tips) whose pads are clumps of
+// camera-facing leaf cards, each lit as its own dome, baked occlusion, sun shadows on the cards,
+// light through the leaves, per-tree tint, 3 LODs (the far one casts no shadow), smooth leaf edges
+// with MSAA (alpha-to-coverage). Default trees; ?trees=slop for slop-newyork's.
 //
-// This file: the leaf mask (drawn here: the engine's PNG has no recorded licence), placements from
-// features.json (height from the LiDAR, a stable turn per tree), one shared set of materials and
-// built trees for every tile, and the sun from viewer/lighting.js.
+// This file: the leaf mask (drawn here: the engine's PNG has no recorded licence), the bark shader,
+// placements from features.json (height from the LiDAR, a stable turn per tree), one shared set of
+// materials and built trees for every tile, and the sun from viewer/lighting.js.
 import * as THREE from "three/webgpu";
+import { positionGeometry, vec3, float, mix, smoothstep, mx_noise_float, normalGeometry, max } from "three/tsl";
 import { createStylizedTrees } from "../vendor/stylized-trees/stylizedTrees.js";
+import { branchShape } from "../vendor/stylized-trees/branchTree.js";
+import { bumpNormal } from "./tslkit.js";
 
-// A built tree (roundCrown, crownLift 1.5) is about this tall at scale 1, cards included.
-const NATURAL_HEIGHT = 11.5;
+// Street trees are pruned upright: the offroad game's "broad" (low fork, wide) and "tall" (long trunk,
+// high fork) styles, picked per variant from the variant's own random stream (the same for its 3 LODs).
+const SHAPES = [branchShape("broad"), branchShape("tall")];
+const streetShape = (r, lod) => SHAPES[r() < 0.45 ? 0 : 1](r, lod);
+const VARIANTS = 6;
+let NATURAL_HEIGHT = 11;   // measured from the built trees on first use (calibrate())
 const shared = {};
 let lighting = null;
 const sunDir = new THREE.Vector3(), sunCol = [1, 1, 1];
@@ -105,22 +113,64 @@ const usePrepass = !/[?&]prepass=0/.test(location.search);   // ?prepass=0: A/B
 const hash = (x, z, k) => { const s = Math.sin(x * 12.9898 + z * 78.233 + k * 37.719) * 43758.5453; return s - Math.floor(s); };
 
 /** trees: features.json trees; ground(x, z): surface y; inTile(x, z). Returns { group, update(cameraPos), count }. */
+let PARAMS = null;
+const params = () => PARAMS ??= {
+  leafMask: leafMask(), shape: streetShape,
+  // LOD distances for a street-level city (the fog lab's 150 / 450 / 1600 m are for a valley forest):
+  // measured 2026-11-04, walk 14.8 -> 9.5 ms GPU, overview 8.8 -> 7.5 ms.
+  lodDist: 40, farDist: 120, maxDist: 900,
+  // Brussels street trees (planes, limes, chestnuts): olive rather than the fog lab's lime, more
+  // spread between trees so a street doesn't read as one green band
+  topColor: "#8aa64e", bottomColor: "#27441d", translucencyColor: "#c6d07c", tintVar: 0.3,
+  // the branch trees' trunk already reaches the pads; the shade side a soft olive, not black
+  crownLift: 0, fill: 0.35, fillColor: "#8fae7c", aoColor: 0.35, trunkColor: [0.2, 0.15, 0.11],
+};
+
+/** First use: build the shared materials and trees once (no instances), measure how tall a built tree
+ *  is (for the LiDAR height -> scale), and give the shared trunk material its bark. */
+function calibrate() {
+  if (shared.U) return;
+  createStylizedTrees({ scene: new THREE.Group(), trees: [], shared, variants: VARIANTS, params: params() });
+  let sum = 0, n = 0;
+  for (const [key, g] of shared.geoms) {
+    if (!key.endsWith(":0")) continue;
+    g.leaves.computeBoundingBox();
+    sum += g.leaves.boundingBox.max.y + 1.0;          // card centres + about a card's half size
+    n++;
+  }
+  if (n) NATURAL_HEIGHT = sum / n;
+  barkMaterial(shared.trunkMat);
+}
+
+/** Bark: vertical ridges and furrows (3D noise stretched along the trunk), lichen-grey on the ridges,
+ *  a little moss low down, the ridges as bump. In the tree's own space (positionGeometry), so the
+ *  pattern stays on the bark whatever the instance's turn and scale. */
+function barkMaterial(m) {
+  const p = positionGeometry;
+  const ridge = mx_noise_float(vec3(p.x.mul(7.0), p.y.mul(0.9), p.z.mul(7.0))).mul(0.5).add(0.5);
+  const fine = mx_noise_float(vec3(p.x.mul(23.0), p.y.mul(3.0), p.z.mul(23.0))).mul(0.5).add(0.5);
+  const furrow = smoothstep(0.35, 0.7, ridge);
+  let col = mix(vec3(0.07, 0.055, 0.045), vec3(0.26, 0.22, 0.18), furrow);       // dark furrows, grey-brown ridges
+  col = col.mul(fine.mul(0.35).add(0.82));
+  const moss = smoothstep(1.6, 0.2, p.y).mul(smoothstep(0.2, 0.9, normalGeometry.y.add(normalGeometry.x.mul(0.5)).add(0.3)));
+  col = mix(col, vec3(0.16, 0.2, 0.09), moss.mul(0.55));
+  m.colorNode = col;
+  m.normalNode = bumpNormal(furrow.mul(0.02).add(fine.mul(0.006)));
+  m.roughnessNode = float(0.92);
+  m.needsUpdate = true;
+}
+
 export function buildStylizedTreeField(trees, ground, inTile) {
+  calibrate();
   const placements = [];
   for (const t of trees) {
     if (!inTile(t.x, t.z)) continue;
     const h = Math.max(3, t.height ?? 9);
-    placements.push([t.x, t.z, ground(t.x, t.z), hash(t.z, t.x, 2) * Math.PI * 2, Math.min(1.7, Math.max(0.3, h / NATURAL_HEIGHT))]);
+    placements.push([t.x, t.z, ground(t.x, t.z), hash(t.z, t.x, 2) * Math.PI * 2, Math.min(1.8, Math.max(0.3, h / NATURAL_HEIGHT))]);
   }
   const holder = new THREE.Group();
   holder.name = "StylizedTreesTile";
-  // LOD distances for a street-level city (the fog lab's 150 / 450 / 1600 m are for a valley forest):
-  // measured 2026-11-04, walk 14.8 -> 9.5 ms GPU, overview 8.8 -> 7.5 ms.
-  const f = createStylizedTrees({ scene: holder, trees: placements, shared,
-    params: { leafMask: leafMask(), lodDist: 40, farDist: 120, maxDist: 900,
-      // Brussels street trees (planes, limes, chestnuts): olive rather than the fog lab's lime, more
-      // spread between trees so a street doesn't read as one green band
-      topColor: "#8aa64e", bottomColor: "#27441d", translucencyColor: "#c6d07c", tintVar: 0.3 } });
+  const f = createStylizedTrees({ scene: holder, trees: placements, shared, variants: VARIANTS, params: params() });
   // per-tile culling: the vendor turns frustum culling off (its instances span a whole forest); here
   // every mesh of the tile gets the tile's trees' bounding sphere
   if (placements.length) {

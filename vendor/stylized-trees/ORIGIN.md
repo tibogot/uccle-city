@@ -6,6 +6,7 @@ From the owner's read-only engine **tibogot/game-engine-v1** (local checkout
 | File here | Source path | Source state |
 |---|---|---|
 | `stylizedTrees.js` | `v3/fog-lab/stylizedTrees.js` | last commit `2cd67b6ccd27db5165d9993443a1e568c7f66a71` **plus the owner's uncommitted working-tree changes of 2026-11-04** (wind sway, fill light, custom crown `shape`, trunk colour), then the local changes in `CHANGES.md` |
+| `branchTree.js` | `games/offroad/branchTree.js` | **untracked in the engine** (never committed) as of 2026-11-04, sha256 `177a42f760b3e15b…`; unchanged |
 | `alphaCutout.js` | `v3/render/materials/alphaCutout.js` | commit `3d6493423807428b905eded87c233c01b0527715`, unchanged |
 
 Engine HEAD when copied: `eeb5826bbccc42057946663ea5bc4c6e51ff1391` (2026-11-03).
