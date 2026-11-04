@@ -55,6 +55,36 @@ let overridesP = null;
 /** data/overrides.json (hand corrections), fetched once per worker; {} if missing. */
 const overrides = (base) => (overridesP ??= fetch(new URL("../overrides.json", base)).then((r) => (r.ok ? r.json() : {})).catch(() => ({})));
 
+/** ROOF HEIGHTS: every building's top (m TAW) rasterised into a 2 m grid over the tile (0 = no building), for fly
+ *  mode's collision (the bird's floor = max(ground, roof)). Scanline fill of each footprint's outer ring. */
+export const ROOF_STEP = 2;
+function roofGrid(bDoc, b) {
+  const nx = Math.ceil((b.x1 - b.x0) / ROOF_STEP), nz = Math.ceil((b.z1 - b.z0) / ROOF_STEP);
+  const g = new Float32Array(nx * nz);
+  for (const bd of bDoc.buildings) {
+    const ring = bd.footprint?.[0];
+    if (!ring || ring.length < 3) continue;
+    const top = +bd.top;
+    let zMin = Infinity, zMax = -Infinity;
+    for (const [, z] of ring) { zMin = Math.min(zMin, z); zMax = Math.max(zMax, z); }
+    const j0 = Math.max(0, Math.floor((zMin - b.z0) / ROOF_STEP)), j1 = Math.min(nz - 1, Math.floor((zMax - b.z0) / ROOF_STEP));
+    for (let j = j0; j <= j1; j++) {
+      const zc = b.z0 + (j + 0.5) * ROOF_STEP, xs = [];
+      for (let k = 0; k < ring.length; k++) {
+        const [ax, az] = ring[k], [bx, bz] = ring[(k + 1) % ring.length];
+        if ((az <= zc) !== (bz <= zc)) xs.push(ax + (zc - az) / (bz - az) * (bx - ax));
+      }
+      xs.sort((p, q) => p - q);
+      for (let k = 0; k + 1 < xs.length; k += 2) {
+        // cells the span touches at all (a little generous: the bird should clear eaves and narrow towers)
+        const i0 = Math.max(0, Math.floor((xs[k] - b.x0) / ROOF_STEP)), i1 = Math.min(nx - 1, Math.floor((xs[k + 1] - b.x0) / ROOF_STEP));
+        for (let i = i0; i <= i1; i++) if (g[j * nx + i] < top) g[j * nx + i] = top;
+      }
+    }
+  }
+  return { data: g, nx, nz, x0: b.x0, z0: b.z0, step: ROOF_STEP };
+}
+
 /** Build all CPU-side data for one manifest entry. `base` = URL of data/tiles/. */
 export async function buildTileData(entry, base) {
   const times = {};
@@ -117,7 +147,8 @@ export async function buildTileData(entry, base) {
   });
   const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats));
   const cover = await step("land cover", () => landCoverData(feats, bounds));
-  return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count,
+  const roofs = await step("roof grid", () => roofGrid(bDoc, bounds));
+  return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs,
     netInfo, road, terrain, buildings, cover, times };
 }
 

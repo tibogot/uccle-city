@@ -8,7 +8,8 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 
 ## NEXT SESSION (agreed order, 2026-11-04)
 
-1. **Roof / building collision for fly mode** (BVH of the buildings built in the tile worker; driving needs it too).
+1. [x] **Roof collision for fly mode**: a 2 m roof-height grid per tile (tile worker), `world.heightAt` = max(ground, roofs).
+   Driving will need real wall collision (BVH) later.
 2. **Parked cars from Blender**: 4-6 scripted body types, meshoptimizer LODs, a **Car Lab** first, owner approves,
    then they replace the boxes (also a GPU saving: cars are ~784k triangles per view).
 3. **All of Uccle**: re-fetch raw data on this machine, set up the Python pipeline, extend the grid (section 1).

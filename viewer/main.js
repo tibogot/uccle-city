@@ -381,7 +381,20 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   tramLine?.snapTile(entry.name, feats, bounds);
   frame("lamps, furniture, tram, cars");
   log(`tile ${entry.name}: main-thread work ${busy.toFixed(0)} ms, longest slice ${longest.toFixed(0)} ms (${worst}); ${tileWorker ? "CPU build in the worker" : "CPU build ALSO on the main thread"}`);
-  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose };
+  // roof heights (m TAW, 0 = none) for fly-mode collision: the max of the 2 m cells around the point, so the bird
+  // keeps clear of a roof edge it is about to cross
+  const rf = d.roofs;
+  const roofAt = (x, z) => {
+    if (!rf) return 0;
+    const fi = (x - rf.x0) / rf.step, fj = (z - rf.z0) / rf.step;
+    let h = 0;
+    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+      const i = Math.floor(fi + di * 0.5), j = Math.floor(fj + dj * 0.5);
+      if (i >= 0 && j >= 0 && i < rf.nx && j < rf.nz) h = Math.max(h, rf.data[j * rf.nx + i]);
+    }
+    return h;
+  };
+  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt };
 }
 
 // ------------------------------------------------------------------ main
@@ -428,6 +441,8 @@ async function main() {
     at(x, z) { return this.tiles.find((t) => x >= t.bounds.x0 && x <= t.bounds.x1 && z >= t.bounds.z0 && z <= t.bounds.z1) || this.tiles[0]; },
     surface(x, z) { return this.at(x, z).hm.surface(x, z); },
     ground(x, z) { return this.at(x, z).hm.ground(x, z); },
+    /** the highest solid here: ground or a roof (fly-mode collision) */
+    heightAt(x, z) { const t = this.at(x, z); return Math.max(t.hm.surface(x, z), t.roofAt ? t.roofAt(x, z) : 0); },
     get h() {
       const b = this.tiles.map((t) => t.bounds);
       return { x0: Math.min(...b.map((q) => q.x0)), z0: Math.min(...b.map((q) => q.z0)), x1: Math.max(...b.map((q) => q.x1)), z1: Math.max(...b.map((q) => q.z1)) };

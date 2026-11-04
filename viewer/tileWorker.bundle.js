@@ -5542,6 +5542,35 @@ function terrainArrays(hm) {
 }
 var overridesP = null;
 var overrides = (base) => overridesP ??= fetch(new URL("../overrides.json", base)).then((r) => r.ok ? r.json() : {}).catch(() => ({}));
+var ROOF_STEP = 2;
+function roofGrid(bDoc, b) {
+  const nx = Math.ceil((b.x1 - b.x0) / ROOF_STEP), nz = Math.ceil((b.z1 - b.z0) / ROOF_STEP);
+  const g = new Float32Array(nx * nz);
+  for (const bd of bDoc.buildings) {
+    const ring2 = bd.footprint?.[0];
+    if (!ring2 || ring2.length < 3) continue;
+    const top = +bd.top;
+    let zMin = Infinity, zMax = -Infinity;
+    for (const [, z] of ring2) {
+      zMin = Math.min(zMin, z);
+      zMax = Math.max(zMax, z);
+    }
+    const j0 = Math.max(0, Math.floor((zMin - b.z0) / ROOF_STEP)), j1 = Math.min(nz - 1, Math.floor((zMax - b.z0) / ROOF_STEP));
+    for (let j = j0; j <= j1; j++) {
+      const zc = b.z0 + (j + 0.5) * ROOF_STEP, xs = [];
+      for (let k = 0; k < ring2.length; k++) {
+        const [ax, az] = ring2[k], [bx, bz] = ring2[(k + 1) % ring2.length];
+        if (az <= zc !== bz <= zc) xs.push(ax + (zc - az) / (bz - az) * (bx - ax));
+      }
+      xs.sort((p, q) => p - q);
+      for (let k = 0; k + 1 < xs.length; k += 2) {
+        const i0 = Math.max(0, Math.floor((xs[k] - b.x0) / ROOF_STEP)), i1 = Math.min(nx - 1, Math.floor((xs[k + 1] - b.x0) / ROOF_STEP));
+        for (let i = i0; i <= i1; i++) if (g[j * nx + i] < top) g[j * nx + i] = top;
+      }
+    }
+  }
+  return { data: g, nx, nz, x0: b.x0, z0: b.z0, step: ROOF_STEP };
+}
 async function buildTileData(entry, base) {
   const times = {};
   const step = async (k, f) => {
@@ -5634,6 +5663,7 @@ async function buildTileData(entry, base) {
   });
   const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats));
   const cover = await step("land cover", () => landCoverData(feats, bounds));
+  const roofs = await step("roof grid", () => roofGrid(bDoc, bounds));
   return {
     name: entry.name,
     bounds,
@@ -5643,6 +5673,7 @@ async function buildTileData(entry, base) {
     roads,
     feats,
     buildingCount: bDoc.count,
+    roofs,
     netInfo,
     road,
     terrain,
