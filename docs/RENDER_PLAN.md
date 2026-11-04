@@ -13,6 +13,15 @@ three.js r187 source and release notes.
 | Saint-Job, night | 60 | 17 ms | 433 | 6.0 M | 401 MB |
 | Walk, `ring=2`, settled | 60 | 17 ms | 413 | 6.2 M | 387 MB |
 
+**GPU time per frame** (stats line, `viewer.gpuStats()` / `viewer.gpuPasses()`; RTX 40-series, 1562×823,
+pixel ratio 1, default `ring=1`), 2026-11-04: overview 11.1 ms, Saint-Job close-up 10.0 ms, walk 7.4 ms.
+Scene pass ≈ 75 % of it (8.8 ms overview); AO + SSR + bloom + grade ≈ 1.5–2 ms.
+Cost per layer (frame-time drop when hidden, median): overview: features (trees, cars, lamps, wires)
+−5.1 ms, terrain/ground shader −4.1 ms, buildings −1.4, far LOD −0.6, roads −0.1; walk: features
+−3.7, buildings −1.5, terrain −1.0, roads −0.8. **Trees + ground shader ≈ 80 % of the GPU budget:**
+the first targets for optimisation (tree LOD/impostors; cheaper ground noise, e.g. fewer octaves
+far away). A mid-range GPU (2–3× slower) would be at or over 16.7 ms in the overview today.
+
 **Problem: 300–570 ms freezes while tiles stream in** (10 in the first 20 s of `ring=2`).
 CPU profile: ~394 ms in `NodeBuilder.build` / `getNodeBuilderState` / `createRenderPipeline` inside
 `renderer.render` (shader building on first render), ~170 ms in `createLeafAtlas` (trees.js, canvas 2D).

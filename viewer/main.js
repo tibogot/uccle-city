@@ -390,7 +390,8 @@ async function main() {
   const [x0, x1] = entry.bounds.x, [z0, z1] = entry.bounds.z;
   const bounds = { x0, x1, z0, z1 };
 
-  const renderer = new THREE.WebGPURenderer({ antialias: true, powerPreference: "high-performance", reversedDepthBuffer: params.get("rdepth") !== "0" });
+  const gpuTiming = params.get("gpu") !== "0";      // GPU ms per frame in the stats (timestamp queries; ?gpu=0 off)
+  const renderer = new THREE.WebGPURenderer({ antialias: true, powerPreference: "high-performance", reversedDepthBuffer: params.get("rdepth") !== "0", trackTimestamp: gpuTiming });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = true;
@@ -473,6 +474,25 @@ async function main() {
 
   let last = performance.now(), fpsAcc = 0, fpsN = 0, fps = 0, frames = 0;
   const info = renderer.info;
+  // GPU time: r187's resolve returns the total of every pass (shadows, scene, post) of the LAST frame
+  // it has queries for (each query uid ends in ":f<frame>"), and keeps per-pass times in
+  // backend.timestampQueryPool.render.timestamps. fps is capped by vsync; this is the number to watch
+  // for headroom (16.7 ms = the 60 Hz budget).
+  const gpu = { avg: 0, worst: 0, worstWin: 0, winT: 0, samples: [], pending: false };
+  const sampleGpu = () => {
+    if (!gpuTiming || gpu.pending || !renderer.backend.trackTimestamp) return;
+    gpu.pending = true;
+    renderer.resolveTimestampsAsync("render").then((ms) => {
+      if (typeof ms === "number" && ms > 0) {
+        const per = ms;
+        gpu.avg = gpu.avg ? gpu.avg * 0.9 + per * 0.1 : per;
+        gpu.worstWin = Math.max(gpu.worstWin, per);
+        gpu.samples.push(per); if (gpu.samples.length > 600) gpu.samples.shift();
+        const now = performance.now();
+        if (now - gpu.winT > 1000) { gpu.worst = gpu.worstWin; gpu.worstWin = 0; gpu.winT = now; }
+      }
+    }).catch(() => {}).finally(() => { gpu.pending = false; });
+  };
   // Render pipeline: AO + reflections + bloom + grade (?fx=0: plain render, for slow machines)
   const fx = params.get("fx") !== "0";
   const pipe = fx ? createPipeline(renderer, scene, camera) : null;
@@ -494,11 +514,12 @@ async function main() {
     if (walker.on) walker.update(dt); else controls.update();
     for (const u of updaters) u(camera.position);
     renderFrame();
+    sampleGpu();
     frames++;
     if (frames % 10 === 1) {
       const r = info.render;
       $("stats").textContent =
-        `${backend}  ${fps.toFixed(0)} fps\n` +
+        `${backend}  ${fps.toFixed(0)} fps` + (gpu.avg ? `  GPU ${gpu.avg.toFixed(2)} ms (worst ${gpu.worst.toFixed(1)})` : "") + `\n` +
         `draw calls ${r.drawCalls ?? r.calls}  triangles ${(r.triangles / 1000).toFixed(0)}k\n` +
         `cam x ${camera.position.x.toFixed(0)} z ${camera.position.z.toFixed(0)} y ${camera.position.y.toFixed(1)} m TAW` +
         (tramLine ? `\n${tramLine.info().split(". Source")[0]}` : "");
@@ -572,7 +593,20 @@ async function main() {
   const loading = (async () => { while (await stream()); })();   // initial fill around the start tile
   busy = loading.finally(() => { busy = null; });
   setInterval(() => { if (!busy) busy = stream().finally(() => { busy = null; }); }, 1000);
-  window.viewer = { loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting,
+  // gpuStats(): GPU ms per frame over the last ≤600 samples (avg, p50, p95, max), for measurements
+  const gpuStats = () => {
+    const s = [...gpu.samples].sort((a, b) => a - b), q = (p) => s.length ? +s[Math.min(s.length - 1, Math.floor(p * s.length))].toFixed(2) : null;
+    return { n: s.length, avg: s.length ? +(s.reduce((a, b) => a + b, 0) / s.length).toFixed(2) : null, p50: q(0.5), p95: q(0.95), max: q(1) };
+  };
+  // gpuPasses(): ms per render pass of the last resolved frame, biggest first (uid minus the frame suffix)
+  const gpuPasses = () => {
+    const t = renderer.backend.timestampQueryPool?.render?.timestamps;
+    if (!t) return null;
+    const agg = {};
+    for (const [uid, ms] of t) { const k = uid.replace(/:f\d+$/, ""); agg[k] = (agg[k] || 0) + ms; }
+    return Object.entries(agg).sort((a, b) => b[1] - a[1]).map(([k, ms]) => [k, +ms.toFixed(3)]);
+  };
+  window.viewer = { loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
     world, renderFrame: () => { for (const u of updaters) u(camera.position); renderFrame(); } };
 }
 
