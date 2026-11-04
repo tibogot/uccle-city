@@ -1,1 +1,1 @@
-{ "private": true, "name": "uccle-city-worker-build", "devDependencies": { "esbuild": "0.25.10", "three": "0.187.0" } }
+{"private":true,"name":"uccle-city-worker-build","devDependencies":{"esbuild":"0.25.10","meshoptimizer":"1.2.0","three":"0.187.0"}}

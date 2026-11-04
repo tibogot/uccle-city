@@ -9,8 +9,15 @@ import { Heightmap } from "./heightmap.js";
 import { surfaceAttribute } from "./roadData.js";
 import { analyseBuildings, hash01, wallStyle } from "./facadeGeom.js";
 import { landCoverData } from "./landcover.js";
+import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 
 export const CARVE = 0.12;         // terrain is pushed this far under any road surface
+// The 1 m terrain grid is 500k triangles a tile (half the scene); seen from above, 1 m triangles cover
+// 2-3 pixels, which GPUs rasterise badly. meshoptimizer collapses the flat stretches while keeping the
+// surface within TERRAIN_ERROR metres of the grid (carved road beds, kerbs, banks stay); tile borders
+// are locked so neighbours still meet. Measured 2026-11-04: 3.0 M -> 0.63 M triangles for 6 tiles,
+// overview 10.7 -> 8.1 ms GPU, walk 7.4 -> 6.9 ms. The heightmap (walking, placement) is unchanged.
+export const TERRAIN_ERROR = 0.05;
 
 /** Keep only triangles whose centroid is inside the tile (the 150 m buffer is for complete junctions only). */
 function clipToTile(part, b) {
@@ -96,6 +103,11 @@ export async function buildTileData(entry, base) {
     return { parts, atlas, carvedCells, triangles };
   });
   const terrain = await step("terrain grid", () => terrainArrays(hm));
+  await step("terrain simplify", async () => {
+    await MeshoptSimplifier.ready;
+    const [idx] = MeshoptSimplifier.simplify(terrain.idx, terrain.pos, 3, 0, TERRAIN_ERROR, ["LockBorder", "ErrorAbsolute"]);
+    terrain.idx = idx;
+  });
   const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats));
   const cover = await step("land cover", () => landCoverData(feats, bounds));
   return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count,
