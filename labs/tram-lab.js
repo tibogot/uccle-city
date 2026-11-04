@@ -54,6 +54,7 @@ const offsets = Array.from({ length: MAX_TRAMS }, (_, i) => [-6 * i, 6 * i]);   
 const RAIL_TOP = 0.0;
 const ground = () => RAIL_TOP;
 
+const model = await loadTramModel().catch((e) => { $info.textContent = "models/tram/ not found: " + e.message; throw e; });
 // ground: asphalt with a setts band along the track, rails, the contact wire
 const asphalt = new THREE.MeshStandardNodeMaterial({ color: 0x3b3d40, roughness: 0.92 });
 const gnd = new THREE.Mesh(new THREE.PlaneGeometry(1400, 1400).rotateX(-Math.PI / 2), asphalt);
@@ -81,11 +82,10 @@ for (const [ox, oz] of offsets) {
   const cg = new THREE.Group(); trackGroup.add(cg); copies.push(cg);
   const add = (g, m) => { const o = new THREE.Mesh(g, m); o.position.set(ox, 0, oz); o.receiveShadow = true; cg.add(o); };
   add(settsG, setts); add(railG[0], steel); add(railG[1], steel);
-  const wire = new THREE.Mesh(ribbon(0, 0.025, 5.6, 2), wireM); wire.position.set(ox, 0, oz); cg.add(wire);
+  const wire = new THREE.Mesh(ribbon(0, 0.025, model.layout.wire, 2), wireM); wire.position.set(ox, 0, oz); cg.add(wire);
 }
 
 // ------------------------------------------------------------------------------------------------ the tram
-const model = await loadTramModel().catch((e) => { $info.textContent = "models/tram/ not found: " + e.message; throw e; });
 const L = model.layout.length;
 model.sign.setRows(["FORT-JACO", "SCHAERBEEK GARE", "LOUISE", "MARLOW", "HEROS", "POGGE", "ST-SERVAIS", "VERBOEKHOVEN"]);
 const fleet = createTramFleet(model, scene, MAX_TRAMS);
@@ -94,7 +94,7 @@ const fleet = createTramFleet(model, scene, MAX_TRAMS);
 // camera positions relative to the tram's nose on the first straight (x ahead, y up, z to the right), estimated
 const PHOTOS = {
   "orbit (free)": null,
-  "3097 Grand Sablon, 3/4 front": { file: "Brussels_tram_T3000_3097.jpg", park: 30, pos: [5.8, 1.55, 6.6], target: [-9, 1.75, 0.4], fov: 50, src: "Jacek Rużyczka, CC BY-SA 4.0 (2015)" },
+  "3097 Grand Sablon, 3/4 front": { file: "Brussels_tram_T3000_3097.jpg", park: 30, pos: [4.6, 1.5, -4.6], target: [-10, 1.9, 0.8], fov: 50, src: "Jacek Rużyczka, CC BY-SA 4.0 (2015)" },
   "3025 depot, front": { file: "Rame_T3000-T4000_Bruxelles_2022-STIB.jpg", park: 30, pos: [4.4, 1.75, 2.3], target: [-2.5, 1.55, 0.0], fov: 62, src: "STIB depot photo, Commons (2022)" },
   "3005 front 3/4": { file: "Cityrunner_3005_Brussel.jpg", park: 30, pos: [7.5, 1.0, 3.4], target: [-6, 1.9, -0.6], fov: 42, src: "Commons (Cityrunner 3005)" },
   "3007 Gare de Saint-Job, in the curve": { file: "Tram_92_gare_de_Saint-Job_14_juillet_2024.jpg", park: ARC1 + 6, abs: true, pos: [R + 3.5, 1.7, -R - 16], target: [R - 4, 2.0, -R + 2], fov: 55, src: "Stratoswift, CC BY-SA 4.0 (2024-07-14)" },

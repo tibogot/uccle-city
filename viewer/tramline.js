@@ -8,12 +8,17 @@
 // tram whose modules follow the curve independently. The shapes are densified to 2 m and snapped onto
 // the OSM tram tracks of every loaded tile (GTFS shapes run ~0.6 m off them).
 //
+// ?tram=model: the scripted STIB T3000 (tools/blender/tram.py, viewer/tramModel.js: 5 sections + bellows, bogies,
+// pantograph, LODs, the trip's headsign on the LED displays) instead of the boxes; the boxes stay the default until the
+// owner approves the model in the Tram Lab (labs/tram-lab.html).
+//
 // Clock: Brussels local time now, or ?clock=HH:MM; ?timescale=N runs it N times faster. The day type
 // (weekday / Saturday / Sunday) comes from the date; the timetable is that of the feed's sample day.
 import * as THREE from "three/webgpu";
 import { attribute, mix, float, vec3, color, uniform } from "three/tsl";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { env } from "./lighting.js";
+import { loadTramModel, createTramFleet, tramPose } from "./tramModel.js";
 
 const MOD_L = 6.4, GAP = 0.25, MODS = 5, WIDTH = 2.3, FLOOR = 0.35, H = 3.25, MAX_TRAMS = 40;
 
@@ -115,11 +120,18 @@ export async function createTramLine(url, scene, ground) {
   mat.metalnessNode = mix(float(0.3), float(0.6), isGlass);
   mat.emissiveNode = col.mul(lit).mul(mix(float(0.6), float(2.5), env.uNight))
     .add(color(0xffe2b0).mul(isGlass).mul(env.uNight).mul(0.18));                   // lit saloon at night
-  const cabs = new THREE.InstancedMesh(moduleGeometry(true, lc), mat, MAX_TRAMS * 2);
-  const mids = new THREE.InstancedMesh(moduleGeometry(false, lc), mat, MAX_TRAMS * (MODS - 2));
-  for (const m of [cabs, mids]) { m.castShadow = m.receiveShadow = true; m.frustumCulled = false; m.count = 0; scene.add(m); }
-
   const params = new URLSearchParams(location.search);
+  const model = params.get("tram") === "model" ? await loadTramModel().catch((e) => { console.warn("tram model:", e.message); return null; }) : null;
+  let fleet = null, cabs = null, mids = null;
+  if (model) {
+    model.sign.setRows([...new Set(doc.trips.map((t) => t.head))], doc.line);
+    fleet = createTramFleet(model, scene, MAX_TRAMS);
+  } else {
+    cabs = new THREE.InstancedMesh(moduleGeometry(true, lc), mat, MAX_TRAMS * 2);
+    mids = new THREE.InstancedMesh(moduleGeometry(false, lc), mat, MAX_TRAMS * (MODS - 2));
+    for (const m of [cabs, mids]) { m.castShadow = m.receiveShadow = true; m.frustumCulled = false; m.count = 0; scene.add(m); }
+  }
+  const pose = [], railTop = (x, z) => ground(x, z) + 0.02;
   const scale = +(params.get("timescale") || 1);
   const clockP = params.get("clock");
   const t0 = performance.now(), now0 = brusselsNow();
@@ -144,10 +156,11 @@ export async function createTramLine(url, scene, ground) {
       if (isCab) cabs.setMatrixAt(s.cab++, M); else mids.setMatrixAt(s.mid++, M);
     }
   };
-  const update = (camPos) => {
+  const update = (camPos, camera = null) => {
     const T = clock() % 86400, Tn = T + 86400;                          // trips can run past midnight
     near.x = camPos.x; near.z = camPos.z;
     const s = { cab: 0, mid: 0 };
+    fleet?.begin(camera, camPos);
     running = 0;
     for (const t of trips) {
       const st = t.stops, first = st[0][2], last = st[st.length - 1][1];
@@ -164,8 +177,14 @@ export async function createTramLine(url, scene, ground) {
       const [x, z] = at(shapes[t.shape], d);
       running++;
       if ((x - near.x) ** 2 + (z - near.z) ** 2 > near.r * near.r || s.cab >= MAX_TRAMS * 2) continue;
-      placeTrip(t, s, d);
+      if (fleet) {
+        const shape = shapes[t.shape];
+        tramPose(model.layout, (q) => at(shape, q), d, pose);
+        fleet.add(pose, railTop, { sign: model.sign.index[t.head] ?? 0 });
+        s.cab += 2;
+      } else placeTrip(t, s, d);
     }
+    if (fleet) { fleet.end(); return; }
     cabs.count = s.cab; mids.count = s.mid;
     cabs.instanceMatrix.needsUpdate = mids.instanceMatrix.needsUpdate = true;
   };
@@ -173,5 +192,5 @@ export async function createTramLine(url, scene, ground) {
     const T = clock() % 86400;
     return `tram ${doc.line} (${doc.route}): ${running} running at ${String(Math.floor(T / 3600)).padStart(2, "0")}:${String(Math.floor(T % 3600 / 60)).padStart(2, "0")} (${dayType} timetable). ${doc.source}`;
   };
-  return { update, snapTile, info, doc };
+  return { update, snapTile, info, doc, fleet, model };
 }

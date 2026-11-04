@@ -53,7 +53,7 @@ L_CAB, L_SUSP, L_CEN = 8.825, 5.6, 3.0        # pivot to pivot (cab: nose tip to
 GAP = 0.17                    # body end to articulation pivot (no overlap of the inner corners down to an 18 m curve)
 BOGIE_CAB = 2.05              # cab bogie centre, from the cab's rear pivot (estimated from photos)
 WHEEL_R, GAUGE, BOGIE_WB = 0.34, 1.435, 1.80
-WIRE = 5.6                    # contact wire above rail top (viewer/tram.js: 5.8 m above the road surface; tram origin +0.2)
+WIRE = 5.78                   # contact wire above rail top (viewer/tram.js: 5.8 m above the road surface; the rail top is +0.02)
 TOTAL = 2 * L_CAB + 2 * L_SUSP + L_CEN
 
 # heights of the livery / openings on the side

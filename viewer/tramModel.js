@@ -184,11 +184,11 @@ function makeSignAtlas(heads, line = "92") {
     cx.fillStyle = "#fff"; cx.textBaseline = "middle";
     list.forEach((h, i) => {
       const y = i * LED[1] + LED[1] / 2 + 1;
-      cx.font = "bold 15px Arial, sans-serif";
+      cx.font = "bold 17px Arial, sans-serif";
       cx.fillText(ln, 2, y);
       const x0 = 2 + cx.measureText(ln).width + 6;
       const txt = headsignText(h);
-      let size = 15;
+      let size = 17;
       cx.font = `bold ${size}px "Arial Narrow", Arial, sans-serif`;
       while (cx.measureText(txt).width > LED[0] - x0 - 2 && size > 9) { size--; cx.font = `bold ${size}px "Arial Narrow", Arial, sans-serif`; }
       cx.fillText(txt, x0, y);
@@ -311,15 +311,16 @@ export function createTramFleet(model, parent, maxTrams = 40) {
   }
   const M = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1), v = new THREE.Vector3();
   const frustum = new THREE.Frustum(), sphere = new THREE.Sphere(), pm = new THREE.Matrix4();
-  let cam = null, lodScale = 1, forced = -1;
+  let cam = null, eye = null, lodScale = 1, forced = -1;
   const stats = { trams: 0, perLod: [0, 0, 0], culled: 0 };
   return {
     meshes,
     stats,
     set lodScale(s) { lodScale = s; },
     set forceLod(k) { forced = k; },
-    begin(camera) {
-      cam = camera;
+    /** camera: frustum culling + LOD distance; or only camPos (a Vector3) for the LOD distance, no culling */
+    begin(camera, camPos = null) {
+      cam = camera; eye = camera ? camera.position : camPos;
       if (cam) { pm.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); frustum.setFromProjectionMatrix(pm); }
       for (const row of meshes) for (const r of Object.values(row)) r.n = 0;
       stats.trams = 0; stats.perLod = [0, 0, 0]; stats.culled = 0;
@@ -331,11 +332,11 @@ export function createTramFleet(model, parent, maxTrams = 40) {
       cx /= pose.length; cz /= pose.length;
       const cy = ground(cx, cz);
       let k = forced;
-      if (cam) {
-        sphere.center.set(cx, cy + 2, cz); sphere.radius = 19;
-        if (!frustum.intersectsSphere(sphere)) { stats.culled++; return -1; }
+      sphere.center.set(cx, cy + 2, cz); sphere.radius = 19;
+      if (cam && !frustum.intersectsSphere(sphere)) { stats.culled++; return -1; }
+      if (eye) {
         if (k < 0) {
-          const dist = cam.position.distanceTo(sphere.center) / lodScale;
+          const dist = eye.distanceTo(sphere.center) / lodScale;
           k = TRAM_LODS.findIndex((l) => dist < l.until);
           if (k < 0) { stats.culled++; return -1; }
         }

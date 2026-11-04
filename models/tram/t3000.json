@@ -5,7 +5,7 @@
  "floor": 0.35,
  "gap": 0.17,
  "bellowsHalf": 0.36,
- "wire": 5.6,
+ "wire": 5.78,
  "modules": [
   {
    "piece": "Cab",
