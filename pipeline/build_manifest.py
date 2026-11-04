@@ -1,10 +1,11 @@
-"""Write data/tiles/manifest.json listing all 32 tiles (CONTRACT §5.5).
+"""Write data/tiles/manifest.json listing every tile of the grid that touches the study area (CONTRACT §5.5).
 
     python pipeline/build_manifest.py
 """
 from __future__ import annotations
 
 import sys
+import time
 
 from common import (CONTRACT, COLS, I_RANGE, J_RANGE, L72_PROJ4, LAT_MAX, LAT_MIN, LON_MAX, LON_MIN, ORIGIN_E,
                     ORIGIN_N, TILE, TILES, all_tiles, read_json, round2, study_box_local, tile_bounds, tile_ij, write_json)
@@ -15,6 +16,9 @@ FILES = {"roads": "roads.json", "buildings": "buildings.json", "buildingsBin": "
 
 
 def main():
+    # Every file URL carries ?v=<build stamp>: tile names were reused when the grid grew (old G4 != new G4) and
+    # tile files are cached by the host (vercel.json), so a rebuild must never be served from an old cache.
+    stamp = time.strftime("%Y%m%d%H%M", time.gmtime())
     (xa, xb), (za, zb) = study_box_local()
     tiles = []
     for name in all_tiles():
@@ -27,7 +31,7 @@ def main():
             t["status"] = "missing"
         else:
             t["status"] = "built" if len(present) == len(FILES) else "partial"
-            t["files"] = present
+            t["files"] = {k: f"{v}?v={stamp}" for k, v in present.items()}
             t["missingLayers"] = [k for k in FILES if k not in present]
             counts, sources = {}, {}
             if "roads" in present:
@@ -54,7 +58,7 @@ def main():
         "studyBox": {"lon": [LON_MIN, LON_MAX], "lat": [LAT_MIN, LAT_MAX],
                      "local": {"x": [round2(xa), round2(xb)], "z": [round2(za), round2(zb)]}},
         "tileSize": TILE, "cols": COLS, "rows": list(range(1, J_RANGE[1] - J_RANGE[0] + 2)),
-        "iRange": list(I_RANGE), "jRange": list(J_RANGE), "tiles": tiles,
+        "iRange": list(I_RANGE), "jRange": list(J_RANGE), "build": stamp, "tiles": tiles,
     }
     write_json(TILES / "manifest.json", doc, indent=1)
     print(f"manifest: {sum(t['status'] != 'missing' for t in tiles)} tile(s) with data", file=sys.stderr)
