@@ -577,7 +577,7 @@ async function main() {
     fpsAcc += dt; fpsN++;
     if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
     if (flyer.on) flyer.update(dt); else if (walker.on) walker.update(dt); else controls.update();
-    for (const u of updaters) u(camera.position);
+    for (const u of updaters) u(camera.position, camera);
     renderFrame();
     if (pipe && lighting.firmament) pipe.setExposureFactor(lighting.adapt(dt));
     sampleGpu();
@@ -680,7 +680,7 @@ async function main() {
     } catch (e) { log(`dev panel: ${e.message}`); }
   }
   window.viewer = { loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
-    world, renderFrame: () => { for (const u of updaters) u(camera.position); renderFrame(); } };
+    world, renderFrame: () => { for (const u of updaters) u(camera.position, camera); renderFrame(); } };
 }
 
 main().catch((e) => { log(`ERROR: ${e.message}`); console.error(e); });

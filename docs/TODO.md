@@ -13,7 +13,7 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 2. **Parked cars from Blender**: 4-6 scripted body types, meshoptimizer LODs, a **Car Lab** first, owner approves,
    then they replace the boxes (also a GPU saving: cars are ~784k triangles per view).
 3. **All of Uccle**: re-fetch raw data on this machine, set up the Python pipeline, extend the grid (section 1).
-Then: road fixes (z-fighting, breaks in curves, grooved tram rails), STIB tram model (Tram Lab), rain / wet roads,
+Then: road fixes (z-fighting, breaks in curves, grooved tram rails), rain / wet roads,
 winter (7b), dev panel teleports to named places.
 
 **Rules agreed with the owner (keep):** every new asset gets a lab in `labs/` first and goes into the city only after
@@ -27,6 +27,13 @@ read-only (copy into `vendor/` with ORIGIN.md); measure GPU ms before / after (s
 - Setts: procedural is the default; the Poly Haven scan stays as `?setts=tex` for a later texture pass (KTX2).
 - Volumetric fog is opt-in only (`?vfog=1`, dev panel) until it is tuned.
 - Tree impostors off (`?impostors=1`) until 16x16 views + depth atlas.
+
+## STIB tram model (branch claude/tram, waiting for the owner's OK in the Tram Lab)
+- [x] T3000 (line 92's stock) scripted in Blender (`tools/blender/tram.py`), loader / LODs / placement `viewer/tramModel.js`,
+      Tram Lab (`labs/tram-lab.html`), in the city behind `?tram=model` (tramline.js). Per tram: LOD0 15.9k, LOD1 5.7k, LOD2 1.35k triangles.
+- [ ] Owner: approve in the lab, then make the model the default in tramline.js (drop the boxes).
+- [ ] Interior (seats, poles) behind the glass; door opening at stops; pantograph height following the wire; the
+      window AO / dirt pass; fleet numbers on the nose; T4000 (7 sections) if other lines come.
 
 ## Done 2026-11-04 (details: docs/RENDER_PLAN.md, docs/RESEARCH.md)
 Streaming freezes fixed (per-tile shader constants), boot warm-up, Vercel deploy, GPU timer, terrain simplified,

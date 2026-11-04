@@ -24,7 +24,7 @@ Debug. "Copy link to this view" puts the state + camera in `?dev=`. H = photo mo
 
 `labs/` (open `/labs/`): one page per asset or system, to look at it on its own before it goes into the city
 (the owner's game-engine-v1 practice). Bird Lab done; Lamp, Tree and Material labs planned. New assets get a
-lab first, then go into the city.
+lab first, then go into the city. Tram Lab: the STIB T3000 (`tools/blender/tram.py`, `viewer/tramModel.js`); in the city with `?tram=model` until approved.
 
 ## How to run
 
@@ -32,7 +32,7 @@ lab first, then go into the city.
 python3 -m http.server 8765        # from the repo root
 open http://localhost:8765/viewer/index.html?tile=I6   # Saint-Job (was G4)
 ```
-Useful URL params: `far=0..6` (far-LOD ring), `clock=HH:MM`, `timescale=N`, `trams=0`, `worker=0`, `tile=A1..O12` (120 tiles of all Uccle; Saint-Job = I6, the old G4), `ring=0|1|2` (neighbour tiles), `yaw=deg` (walk facing), `view=stjob|walk`, `at=x,z`, `cam=x,z,height`,
+Useful URL params: `far=0..6` (far-LOD ring), `clock=HH:MM`, `timescale=N`, `trams=0`, `tram=model` (the Blender T3000 instead of the box trams), `worker=0`, `tile=A1..O12` (120 tiles of all Uccle; Saint-Job = I6, the old G4), `ring=0|1|2` (neighbour tiles), `yaw=deg` (walk facing), `view=stjob|walk`, `at=x,z`, `cam=x,z,height`,
 `time=golden|midday|overcast|twilight|night`, `fx=0` (no post effects), `trees=slop` (slop-newyork trees), `trees=simple`
 (old leaf-card trees), `sunlight=1` (cascaded shadows), `warmup=0` (no boot shader warm-up), `log=0` (dev log collapsed), `gpu=0` (no GPU timing). Use Chrome/Edge with WebGPU for real
 speed; headless screenshots use the slower WebGL2 fallback.
