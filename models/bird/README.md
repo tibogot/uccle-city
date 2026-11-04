@@ -19,3 +19,12 @@ feathers L+R, tail_1-3, legs L+R). Nose along +z, wingspan 6.4 units: settings i
 Next (procedural, on the bones, layered over the clips): wings folded by the dive amount, inner wing low and
 tail twisted into a bank, tail fanned when braking, feet tucked in flight. Takeoff / landing / perching as real
 clips (scripted in Blender on this rig) if birds get to land.
+
+## The Saint-Job peregrine (2026-11-04)
+
+`peregrine.glb` = `bird.glb` repainted as an adult peregrine falcon by `tools/blender/peregrine.py` (Blender 5,
+`--factory-startup`): new unique UVs (the original's palette UVs shared swatches between body parts), the
+plumage painted per texel from the point's position, normal and bone weights (slate upperparts, black hood and
+moustache, white cheeks, finely barred cream underparts, barred tail, yellow cere and feet). Same rig and
+clips. bird.json "model" selects it. Story: a peregrine family nests in the Saint-Job church tower; fly mode
+starts from the spire. Next: proportions (slightly shorter wings, longer tail), the nest with the young.

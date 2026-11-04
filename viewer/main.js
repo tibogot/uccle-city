@@ -465,7 +465,9 @@ async function main() {
   // the bird model: models/bird/bird.glb (the owner's, with its animations), or ?bird=<url>; the placeholder
   // stays when there is none. ?birdscale= if the model is not in metres, ?birdfwd=+z|-z|+x|-x for its nose axis.
   (async () => {
-    const url = params.get("bird") || new URL("../models/bird/bird.glb", import.meta.url).href;
+    const dir = new URL("../models/bird/", import.meta.url).href;
+    const cfg0 = await fetch(dir + "bird.json").then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
+    const url = params.get("bird") || dir + (cfg0.model || "bird.glb");
     try {
       const head = await fetch(url, { method: "HEAD" });
       if (!head.ok) return;
@@ -474,7 +476,7 @@ async function main() {
       const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
       const gltf = await loader.loadAsync(url);
       // its settings beside it (models/bird/bird.json: nose axis, scale, clip names); the URL overrides them
-      const cfg = await fetch(url.replace(/\.glb$/, ".json")).then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
+      const cfg = params.get("bird") ? {} : cfg0;
       const clips = flyer.setModel(gltf, { scale: +(params.get("birdscale") ?? cfg.scale ?? 1), forward: params.get("birdfwd") || cfg.forward || "-z", clips: cfg.clips });
       log(`bird: ${url.split("/").pop()}, clips ${JSON.stringify(clips)}`);
     } catch (e) { log(`bird model: ${e.message}`); }
