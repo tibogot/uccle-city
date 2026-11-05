@@ -20,6 +20,7 @@ import { Lighting, PRESETS } from "../viewer/lighting.js";
 import { createPipeline } from "../viewer/post.js";
 import { ThirdPerson, CollisionWorld, Heightfield, TriBVH, PrismSet, CHARACTERS } from "../viewer/character/index.js";
 import { FOOT_IK } from "../viewer/character/footIK.js";
+import { MODELS as FURNITURE } from "../viewer/furniture.js";
 import { CONTROLLER_DEFAULTS } from "../viewer/character/controller.js";
 import { CAMERA_DEFAULTS } from "../viewer/character/camera.js";
 
@@ -121,6 +122,14 @@ box(-30, -0.05, -16, 6, 0.14, -12, M.stone);          // north sidewalk
 box(9, -0.05, -16, 30, 0.14, -12, M.stone);
 add(rampGeo(Math.atan(0.14 / 1.2) * 180 / Math.PI, 1.2, 3, 2.8).rotateY(Math.PI / 2), M.concrete, 7.5, Y0, -12 + 0.0);   // dropped kerb x 6..9
 label("A · kerbs 15 / 14 cm, dropped kerb", 0, 0.6, -9);
+// the city's bus shelter (viewer/furniture.js) on the north sidewalk, open side to the road: walk in under its roof
+{
+  const g = FURNITURE.shelter();
+  const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.4, metalness: 0.2 });
+  if (g.attributes.aCol) { const { attribute } = await import("three/tsl"); mat.colorNode = attribute("aCol", "vec3"); }
+  add(g, mat, 20, Y0 + 0.14, -14.0, Math.PI);
+  label("A · bus shelter (open front)", 20, 2.9, -14);
+}
 
 // B. stairs: up 10 x 17 cm (tread 29 cm), a 1.7 m landing, down 8 x 21.25 cm (tread 27 cm)
 add(stairsGeo(10, 0.17, 0.29, 2), M.concrete, 8, Y0, 3);
@@ -242,7 +251,7 @@ function meshPositions(meshes) {
 const tp = new ThirdPerson({ scene, camera, dom: renderer.domElement, world, hz: +(qp.get("hz") || 120) });
 // [x, z, facing (0 = +z, south), ray start above Y0 (default 1.6 m)]: the spawn height is found with a ray down
 const STATIONS = {
-  "0 start": [0, 1, Math.PI], "1 kerbs": [0, -1, Math.PI], "2 stairs": [5, 3, Math.PI / 2], "3 ramps": [5, 12.5, Math.PI / 2],
+  "0 start": [0, 1, Math.PI], "1 kerbs": [0, -1, Math.PI], "bus shelter": [21.2, -11.5, Math.PI], "2 stairs": [5, 3, Math.PI / 2], "3 ramps": [5, 12.5, Math.PI / 2],
   "4 corridor + door": [-14, 1, 0], "5 gaps": [-21.5, 11, Math.PI / 2], "6 low ceilings": [-33.3, 1, 0],
   "7 blocks + thin wall": [0, 19, 0], "8 house": [-18.95, 21.5, 0], "9 prisms": [10, 30, Math.PI / 2],
   "house stairs": [-21.4, 29.35, Math.PI / 2], "upstairs": [-17, 25.5, Math.PI / 2, 4.6], "hill": [-45, -30, -Math.PI / 2], "mound": [-44, 22, -Math.PI / 2],
@@ -373,6 +382,9 @@ tp.input.onKey = (code) => {
 function runTests() {
   const c = tp.ctl, dt = 1 / 120;
   const results = [];
+  // the scripted runs are timed for the capsule's speeds (a character in the slot sets its own, index.js)
+  const keep = [c.p.walkSpeed, c.p.runSpeed];
+  c.p.walkSpeed = CONTROLLER_DEFAULTS.walkSpeed; c.p.runSpeed = CONTROLLER_DEFAULTS.runSpeed;
   const run = (name, start, dir, secs, check, { run: running = false, jumpAt = -1 } = {}) => {
     c.teleport(start[0], start[1], start[2], 0);
     c.input.x = dir[0]; c.input.z = dir[1]; c.input.run = running;
@@ -392,6 +404,7 @@ function runTests() {
   run("stand still 2 s: no drift", [0, g0(0, 0) + 0.3, 0], [0, 0], 2, (r) => Math.abs(r.y) < 1e-6 && r.ys.slice(60).every((y) => Math.abs(y - r.ys[60]) < 1e-9));
   run("kerb up 15 cm (south sidewalk)", [0, Y0, -1], [0, -1], 1.5, (r) => r.z < -3.4 && r.z > -6 && Math.abs(r.y - 0.15) < 0.005);
   run("kerb down + across + up 14 cm", [0, Y0 + 0.2, -4], [0, -1], 5, (r) => r.z < -12.5 && Math.abs(r.y - 0.14) < 0.005);
+  run("bus shelter: walk in under the roof", [21.2, Y0 + 0.2, -12.4], [0, -1], 2.5, (r) => r.z < -14.3 && r.z > -14.7 && Math.abs(r.y - 0.14) < 0.005);
   run("dropped kerb (ramp)", [7.5, Y0 + 0.2, -4], [0, -1], 5, (r) => r.z < -12.5 && Math.abs(r.y - 0.14) < 0.01);
   run("stairs up 17 cm, walk", [7, Y0, 3], [1, 0], 3, (r) => r.x > 11 && Math.abs(r.y - 1.7) < 0.005);
   run("stairs up 17 cm, run", [7, Y0, 3], [1, 0], 1, (r) => r.x > 11 && Math.abs(r.y - 1.7) < 0.005, { run: true });
@@ -424,6 +437,7 @@ function runTests() {
   $notes.style.display = "block";
   $notes.textContent = `TEST SUITE (120 Hz, synchronous)  ${S.tests}\n\n` + results.join("\n");
   console.log("[capsule lab] tests\n" + results.join("\n"));
+  c.p.walkSpeed = keep[0]; c.p.runSpeed = keep[1];
   goStation(S.station);
   return { pass, total: results.length, results };
 }

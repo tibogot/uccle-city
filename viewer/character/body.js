@@ -156,10 +156,15 @@ export class CharacterBody {
     else if (st.speed < 0.15) state = "idle";
     else state = "move";
     if (state === "move") {
-      // blend walk -> run between the two authored speeds, playback rate = speed / authored speed (no skating)
-      const k = A.run && A.walk ? Math.min(1, Math.max(0, (st.speed - this.walkSpeed) / (this.runSpeed - this.walkSpeed))) : A.run ? 1 : 0;
+      // blend walk -> run between the controller's walk and run speeds (st.gaitWalk / gaitRun: at the walk speed the
+      // pure walk clip plays, at the run speed the pure run; a mix of the two strides would slide the planted foot),
+      // playback rate = speed / the blended authored speed (no skating)
+      const g0 = st.gaitWalk ?? this.walkSpeed, g1 = Math.max(g0 + 0.1, st.gaitRun ?? this.runSpeed);
+      const k = A.run && A.walk ? Math.min(1, Math.max(0, (st.speed - g0) / (g1 - g0))) : A.run ? 1 : 0;
       target.walk = A.walk ? 1 - k : 0; target.run = A.run ? k : 0;
-      const rate = A.walk && A.run ? st.speed / (this.walkSpeed + (this.runSpeed - this.walkSpeed) * k) : st.speed / (A.run ? this.runSpeed : this.walkSpeed);
+      // capped: past 1.35x a clip looks frantic; the controller's speeds are set so the cap is not reached (index.js)
+      const raw = A.walk && A.run ? st.speed / (this.walkSpeed + (this.runSpeed - this.walkSpeed) * k) : st.speed / (A.run ? this.runSpeed : this.walkSpeed);
+      const rate = Math.min(1.35, Math.max(0.5, raw));
       if (A.walk) A.walk.timeScale = rate;
       if (A.run) A.run.timeScale = rate;
       if (A.walk && A.run) {            // keep the two cycles in phase
