@@ -13,7 +13,7 @@ import { uniform, float, select, saturate, length, positionWorld } from "three/t
 import { lodEye, ditherNoise, SMOOTH } from "../lodFade.js";
 
 export const KIT = {
-  far: uniform(115), band: uniform(20),          // kit -> painted façade
+  far: uniform(115), band: uniform(30),          // kit -> painted façade (round 2: 20 -> 30 m, the glass now matches: a softer hand-over)
   lod1: uniform(28), lodBand: uniform(6),        // LOD0 -> LOD1 (40 m cost +0.5 ms GPU at street level for little: measured)
 };
 /** distances in JS (bucketing), with the margin the camera may move between two re-buckets */

@@ -230,8 +230,8 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
     if (dirty || fading || turned || eye.distanceToSquared(last) > MOVE * MOVE) {
       last.copy(eye); dirty = false;
       if (camera && dirTmp.lengthSq() > 0) fwd.copy(dirTmp);
-      // looking steeply down (aerial): no cone
-      if (camera && Math.abs(camera.getWorldDirection(dirTmp2).y) > 0.75) fwd.set(0, 0, 0);
+      // looking steeply down (aerial), or the LOD eye is not the camera (viewer.stateAt, the pop meter): no cone
+      if (camera && (Math.abs(camera.getWorldDirection(dirTmp2).y) > 0.75 || camera.position.distanceTo(eye) > 1)) fwd.set(0, 0, 0);
       rebucket(eye);
       // a tile whose kit is all out of reach: its kit walls draw with the plain wall material (a discard in the
       // shader costs early-z on the whole draw: +0.7 ms in an aerial view with no piece drawn, measured)
