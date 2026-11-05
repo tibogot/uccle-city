@@ -21,6 +21,6 @@ async () => {
     out[k] = { gpu: v.gpuStats(), draws: r.drawCalls ?? r.calls, tris: r.triangles, kit: window.__kit ? { ...window.__kit.stats } : null };
   }
   out.long = long.filter((x) => x > 50);
-  out.tileLog = document.getElementById("log").textContent.split("\n").filter((l) => /main-thread work/.test(l));
+  out.tileLog = document.getElementById("log").textContent.split(String.fromCharCode(10)).filter((l) => /main-thread work/.test(l)).map((l) => l.replace(/;.*/, "")).slice(0, 3);
   return out;
 }

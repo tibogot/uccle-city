@@ -27,6 +27,13 @@ The first interior cell: a terraced house near Place de Saint-Job (UrbIS 1786120
 bakes, per-corner light on pieces, ambient-cube probes, façade/terrain cut, portal, character hooks): `docs/INTERIOR.md`;
 status and re-run commands: `docs/interior/STATUS.md`.
 
+## Façade kit (branch claude/facade-kit, pilot, behind `?kit=1`)
+
+Premium Blender pieces (tools/blender/facadeKit.py: windows A/B, sill, hood, soupirail, doors A/B, steps, cornice +
+corner + modillions, plinth, balcony) placed in the tile worker exactly on the painted window grid, the walls cut their
+openings, dithered fades to the painted façade beyond ~115 m. Lab `labs/kit-lab.html`; method, numbers, weak points and
+next piece sets: `docs/facadekit/README.md`.
+
 ## Rules that still hold
 
 - `github.com/tibogot/game-engine-v1` is a READ-ONLY reference: never modify or push to it.
