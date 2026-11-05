@@ -266,6 +266,8 @@ def louvres(fr, op):
             t = Z * -0.025
             quad(p1 + t, p0 + t, q0 + t, q1 + t, MASONRY, WOOD)
             quad(p0 + t, p1 + t, p1, p0, MASONRY, WOOD)
+            if op.gap > 0:                                # the falcons' arch is open behind: the boards seen from inside too
+                quad(q0, q1, p1, p0, MASONRY, WOOD); quad(q1 + t, q0 + t, p0 + t, p1 + t, MASONRY, WOOD)
         y += 0.27
 
 class Rose:
@@ -751,7 +753,9 @@ def tower():
     hi = h - 0.62
     for j, n in enumerate(faces if not FAR else []):
         fr = Frame(Tc + n * hi, n)
-        fill2d(fr, [[(-hi, 20.9), (hi, 20.9), (hi, 28.2), (-hi, 28.2)]], 0.0, MASONRY, DARK, flip=True)
+        # the falcons' arch (outer face, right) is open right through: the eyrie looks out (and fly mode starts there)
+        holes = [Arch(1.5, 21.45, 26.35, 1.04, seg=8).inner()] if j == 0 else []
+        fill2d(fr, [[(-hi, 20.9), (hi, 20.9), (hi, 28.2), (-hi, 28.2)]] + holes, 0.0, MASONRY, DARK, flip=True)
     if not FAR: face_up([Tc + u * hi + v * hi + Z * 20.9, Tc + u * hi - v * hi + Z * 20.9, Tc - u * hi - v * hi + Z * 20.9, Tc - u * hi + v * hi + Z * 20.9], MASONRY, DARK)
     # corner pinnacles
     for su in (-1, 1):

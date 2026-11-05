@@ -147,9 +147,12 @@ function eyasScale(root) {
   S("tail_1", 0.3);
 }
 
-function bakePose(scene0, name, spec) {
+/** The perched pose for the fly-mode bird (viewer/flight.js nest start): its own model, no body rescale. */
+export function perchClipFor(scene) { return bakePose(scene, "Perch", POSES.perch, false); }
+
+function bakePose(scene0, name, spec, body = true) {
   const root = cloneSkinned(scene0);
-  applyBodyScale(root);
+  if (body) applyBodyScale(root);
   if (spec.eyas) eyasScale(root);
   root.updateMatrixWorld(true);
   const bones = {}; root.traverse((o) => { if (o.isBone) bones[o.name] = o; });
@@ -492,6 +495,15 @@ export class FalconFamily {
       if (F.state === "perch" && F.data.perch === "ledge") this.hopIn(F);
       else if (F.state === "perch") this.launch(F, "deliver");
       else if (F.state !== "nest" && F.state !== "hop") this.goLand(F, "ledge", "deliver");
+    }
+  }
+
+  /** the fly-mode nest start: the adults off the ledge and out of the scrape (the young one hops up there) */
+  makeRoom() {
+    for (const b of [this.female, this.male]) {
+      const busy = (b.state === "perch" && b.data.perch === "ledge") || b.state === "nest" || b.state === "hop" || (b.state === "final" && b.data.land === "ledge");
+      if (busy) { if (b.prey) { b.prey.removeFromParent(); b.prey = null; } this.perchAt(b, b === this.female ? "louvre" : "gable"); }
+      if (b.state === "approach" && b.data.land === "ledge") b.data.land = "louvre";
     }
   }
 

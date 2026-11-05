@@ -256,7 +256,8 @@ function addTrees(group, f, inTile, treeGround) {
 }
 
 let tramLine = null;       // real STIB line 92 on its timetable (tramline.js)
-const updaters = [];       // per-frame updates (tree LOD, lamp lights) of every loaded tile
+const updaters = [];
+let falconsReady = null, falconsOn = true;   // the Saint-Job peregrines (viewer/falcons.js), once loaded       // per-frame updates (tree LOD, lamp lights) of every loaded tile
 
 // ------------------------------------------------------------------ walk mode
 
@@ -591,6 +592,15 @@ async function main() {
         lod.visible = world.tiles.some((t) => t.name === home) || !!scene.getObjectByName(`${home}-lite`);
       });
       log(`Saint-Job church: scripted model, LODs ${m.lods.map((l) => l.tris).join(" / ")} triangles (?stjob=0: the UrbIS solid)`);
+      // the peregrine family at the church (viewer/falcons.js, Falcon Lab): ?falcons=0 = none
+      if (params.get("falcons") !== "0") {
+        import("./falcons.js").then(({ createFalcons }) => createFalcons({ church: m, heightAt: (x, z) => (world.tiles.length ? world.heightAt(x, z) : -1e9) })).then((fam) => {
+          scene.add(fam.group);
+          window.__falcons = fam; falconsReady = fam;
+          updaters.push((camPos, cam) => { fam.enabled = lod.visible && falconsOn; fam.update(cam); });
+          log(`falcons: the Saint-Job family (female, tiercel, 3 eyases; the eyrie ${fam.nestTris[0]} tris) - ?falcons=0 to leave them out`);
+        }).catch((e) => log(`falcons: ${e.message}`));
+      }
     }).catch((e) => log(`Saint-Job model failed (${e.message}): the UrbIS solid is hidden, reload with ?stjob=0`));
   }
   const T0 = await loadTile(entry, { layers, contourOn, verbose: true });
@@ -625,6 +635,7 @@ async function main() {
   // fly mode (viewer/flight.js): a bird from above Place de Saint-Job (or the walk start), heading the walk's way
   const flyer = new Flyer(camera, renderer.domElement, scene, world);
   window.__flyer = flyer;
+  let flyerGltf = null;
   // the bird model: models/bird/bird.glb (the owner's, with its animations), or ?bird=<url>; the placeholder
   // stays when there is none. ?birdscale= if the model is not in metres, ?birdfwd=+z|-z|+x|-x for its nose axis.
   (async () => {
@@ -642,11 +653,41 @@ async function main() {
       const cfg = params.get("bird") ? {} : cfg0;
       const clips = flyer.setModel(gltf, { scale: +(params.get("birdscale") ?? cfg.scale ?? 1), forward: params.get("birdfwd") || cfg.forward || "-z", clips: cfg.clips });
       log(`bird: ${url.split("/").pop()}, clips ${JSON.stringify(clips)}`);
+      flyerGltf = gltf;
+      // the player is the family's young of the year (the nest start): juvenile plumage (bird.json playerSkin,
+      // models/bird/juvenile.jpg on peregrine.glb's UVs; ?birdskin=adult = the adult's) and a perched pose
+      if (!params.get("bird")) {
+        const { perchClipFor } = await import("./falcons.js");
+        flyer.addPerchClip(perchClipFor(gltf.scene));
+        const skin = params.get("birdskin") === "adult" ? null : cfg0.playerSkin;
+        if (skin) {
+          const tex = await new THREE.TextureLoader().loadAsync(dir + skin);
+          tex.flipY = false; tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+          gltf.scene.traverse((o) => { if (o.isMesh && o.material?.map) { o.material.map = tex; o.material.needsUpdate = true; } });
+        }
+      }
     } catch (e) { log(`bird model: ${e.message}`); }
   })();
-  // from the tip of the Saint-Job spire (data/overrides.json flyStart), else above the walk start
+  // from the Saint-Job eyrie (the nest start: the young falcon's first flight, viewer/flight.js startFromNest), or
+  // ?flystart=spire: the tip of the spire (data/overrides.json flyStart), else above the walk start
   const fly = async () => {
     if (third?.on) third.stop(); walker.on = false; driver.stop(); controls.enabled = false;
+    // (at boot, ?view=fly: wait up to 15 s for the family and the bird to load)
+    for (let i = 0; i < 150 && (!falconsReady || !flyerGltf) && params.get("falcons") !== "0" && params.get("flystart") !== "spire"; i++) await new Promise((r) => setTimeout(r, 100));
+    // the intro plays in view: not under the boot cover
+    for (let i = 0; i < 600 && !document.getElementById("cover")?.classList.contains("gone"); i++) await new Promise((r) => setTimeout(r, 100));
+    const fam = falconsReady;
+    if (fam && params.get("flystart") !== "spire" && flyerGltf) {
+      const { FALCON_SIZES } = await import("./falcons.js");
+      const sp = fam.spots.hop, L = fam.perch.ledge;
+      const scrape = fam.toWorld(fam.nestPoint(sp.pos.x, sp.pos.y, sp.pos.z));
+      const ledge = fam.toWorld(L.pos.clone());
+      const out = L.facing.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), fam.group.rotation.y);
+      const span = 6.44 * +(params.get("birdscale") ?? 0.42);
+      fam.makeRoom();
+      flyer.startFromNest({ scrape, ledge, out, life: FALCON_SIZES.juvenile / span });
+      return;
+    }
     const fs = (await loadOverrides(DATA)).flyStart;
     if (fs) flyer.start(fs.x, fs.z, Math.atan2(-(fs.toward[0] - fs.x), -(fs.toward[1] - fs.z)), fs.y);
     else { const s = start || { x: cx, z: cz, yaw: 0 }; flyer.start(s.x, s.z, yawP != null ? +yawP * Math.PI / 180 : s.yaw); }

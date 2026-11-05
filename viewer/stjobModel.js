@@ -9,7 +9,7 @@
 import * as THREE from "three/webgpu";
 import {
   Fn, attribute, uv, texture, positionLocal, normalWorld, vec2, vec3, float, floor, fract, mix, step, smoothstep, clamp, abs, sin, dot,
-  fwidth, max, min, mod, select, mrt, roughness, uniform, color,
+  fwidth, max, min, mod, select, mrt, roughness, uniform, color, normalLocal,
 } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
@@ -39,6 +39,7 @@ export function stjobColliders(placement) {
 /** Live look controls (uniforms: no recompiles). */
 export const stjobLook = {
   brickTone: uniform(1.0), bandStrength: uniform(1.0), moss: uniform(1.0), aoStrength: uniform(1.0), dirt: uniform(1.0),
+  whitewash: uniform(1.0),     // the falcons' droppings below the eyrie's arch (0 = clean stone)
 };
 
 let promise = null;
@@ -204,6 +205,24 @@ function makeMaterials(aoTex) {
     // grime: darker near the ground (splash), soot under the stone (AO does the rest)
     const splash = smoothstep(1.6, -0.4, y).mul(0.22).mul(L.dirt);
     col = col.mul(float(1).sub(splash));
+    // whitewash: the peregrines' droppings, the sign of an eyrie seen from the street: chalky white on the sill and the
+    // string course under the falcons' arch (outer NW face of the tower, the right-hand belfry arch: stjob.py PERCH),
+    // running down the brick below in uneven streaks that thin out; on faces looking out or up only
+    {
+      const O = vec3(-16.663, 0, -16.663), N = vec3(-0.70711, 0, -0.70711), U = vec3(-0.70711, 0, 0.70711);
+      const d = positionLocal.sub(O), w = dot(d, N), u0 = dot(d, U).sub(1.5);
+      const u = u0.add(sin(y.mul(2.3).add(u0.mul(17.0))).mul(0.025));            // the runs wander a little
+      const facing = clamp(dot(normalLocal, N).mul(2).add(normalLocal.y.mul(2)), 0, 1);
+      const near = smoothstep(0.45, 0.25, abs(w)).mul(facing);
+      const col16 = floor(u.mul(9)), hs = hash2(vec2(col16, 7.0)), hs2 = hash2(vec2(col16, 3.0));
+      const len = hs.mul(hs).mul(7.5).add(0.3);                                   // each streak its own length (m)
+      const top = float(21.46), below = top.sub(y);
+      const across = smoothstep(0.75, 0.45, abs(u)).mul(smoothstep(0.5, 0.1, abs(fract(u.mul(9)).sub(0.5))).mul(0.75).add(0.25));
+      const streak = step(0.0, below).mul(smoothstep(len, len.mul(0.4), below)).mul(across).mul(step(0.35, hs2).mul(0.7).add(0.3));
+      const ledge = smoothstep(0.9, 0.6, abs(u)).mul(step(20.7, y)).mul(step(y, 21.5)).mul(clamp(normalLocal.y.mul(3), 0, 1));
+      const ww = clamp(streak.add(ledge), 0, 1).mul(near).mul(L.whitewash);
+      col = mix(col, lin(0xdedad0), ww.mul(0.78));
+    }
     masonry.colorNode = col.mul(mix(float(1), aoK, 0.45));
     masonry.aoNode = aoK;
     masonry.roughnessNode = mix(mix(float(0.9), float(0.8), is(1).add(bandK).min(1)), float(0.72), is(3));
