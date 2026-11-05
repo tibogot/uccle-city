@@ -37,7 +37,7 @@ import {
 import { bumpNormal, filteredPulse } from "../tslkit.js";
 import { env } from "../lighting.js";
 import { SCANS } from "./scans.js";
-import { n3, n01, H2, farK, bumpK, bond, cells, isoLine, seams, streakNoise, woodGrain } from "./patterns.js";
+import { n3, n01, n2, g3, H2, farK, bumpK, bond, cells, isoLine, seams, streakNoise, woodGrain } from "./patterns.js";
 
 // ------------------------------------------------------------------------------------------------ parameters
 // [default, min, max, step] for numbers; "#hex" (sRGB) for colours. COMMON is added to every material.
@@ -195,7 +195,7 @@ function stoneBlue(c) {
   // crinoid fossils: small pale discs; calcite veins: thin white lines
   const fos = smoothstep(0.78, 0.84, n01(P.x.mul(110.0), P.y.mul(110.0), P.z.mul(110.0))).mul(U.fossils);
   col = mix(col, U.color2, mix(fos, U.fossils.mul(0.02), farK(fw, 0.004)).mul(0.35));
-  const vf = n3(P.x.mul(2.3), P.y.mul(4.1), P.z.mul(2.3)).add(n3(P.x.mul(11.0), P.y.mul(11.0), P.z.mul(11.0)).mul(0.08));
+  const vf = g3(P.x.mul(2.3), P.y.mul(4.1), P.z.mul(2.3)).add(n3(P.x.mul(11.0), P.y.mul(11.0), P.z.mul(11.0)).mul(0.08));
   const vein = isoLine(vf, 0.003, fwidth(vf).add(0.001)).mul(float(1).sub(farK(fw, 0.01))).mul(n01(P.x.mul(0.8), P.y.mul(0.8), P.z.mul(0.8)));
   col = mix(col, U.color2, vein.mul(U.fossils).mul(0.3));
   col = col.mul(float(1).sub(margin.mul(0.12)));
@@ -214,7 +214,7 @@ function render(c, d) {
   const trowel = n3(c.a.mul(1.7), c.b.mul(1.2), 5.0);
   let col = U.color.mul(grain.mul(0.035).add(1.0)).mul(trowel.mul(0.03).add(1.0));
   // hairline cracks (iso-lines of a stretched noise), more with `cracks`
-  const cf = n3(c.a.mul(0.9), c.b.mul(0.7), 11.0).add(n3(c.a.mul(4.0), c.b.mul(4.0), 2.0).mul(0.15));
+  const cf = g3(c.a.mul(0.9), c.b.mul(0.7), 11.0).add(n3(c.a.mul(4.0), c.b.mul(4.0), 2.0).mul(0.15));
   const crack = isoLine(cf, U.cracks.mul(0.012), fwidth(cf).add(0.0005)).mul(smoothstep(0.0, 0.2, U.cracks)).mul(float(1).sub(farK(fw, 0.01)));
   col = col.mul(float(1).sub(crack.mul(0.45)));
   let height = grain.mul(0.0004).add(trowel.mul(0.0012)).sub(crack.mul(0.0008));
@@ -434,7 +434,7 @@ function asphalt(c) {
   const inset = smoothstep(0.25, 0.3, pk.fu).mul(smoothstep(0.85, 0.8, pk.fu)).mul(smoothstep(0.2, 0.25, pk.fv)).mul(smoothstep(0.9, 0.85, pk.fv)).mul(on);
   col = mix(col, U.color2, inset.mul(0.8));
   // sealed cracks: dark glossy tar lines
-  const cf = n3(c.a.mul(0.45), c.b.mul(0.45), 31.0).add(n3(c.a.mul(3.0), c.b.mul(3.0), 7.0).mul(0.1));
+  const cf = g3(c.a.mul(0.45), c.b.mul(0.45), 31.0).add(n3(c.a.mul(3.0), c.b.mul(3.0), 7.0).mul(0.1));
   const crack = isoLine(cf, U.cracks.mul(0.02), fwidth(cf).add(0.001)).mul(step(0.01, U.cracks)).mul(mid);
   col = mix(col, L("#0d0d0e"), crack.mul(0.8));
   const height = sp.mul(0.0006).add(chips.mul(0.0008)).sub(crack.mul(0.001)).mul(bumpK(fw, 0.006));
@@ -479,7 +479,7 @@ function scanSurface(name, c) {
   if (STOCHASTIC[name]) {
     // a second sample, rotated ~37 degrees and shifted, blended by a 3 m noise: no visible repeat
     const st2 = vec2(st.x.mul(0.8).sub(st.y.mul(0.6)), st.x.mul(0.6).add(st.y.mul(0.8))).mul(0.93).add(vec2(0.37, 0.61));
-    const kb = smoothstep(0.35, 0.65, n01(P.x.mul(0.3), P.y.mul(0.3), P.z.mul(0.3)));
+    const kb = smoothstep(0.35, 0.65, n2(c.a.mul(0.3), c.b.mul(0.3)));
     A = mix(A, texture(S.albedo, st2), kb); R = mix(R, texture(S.nra, st2), kb);
   }
   const mean = vec3(...S.meta.mean_albedo_linear);
@@ -552,7 +552,7 @@ function mixSurf(A, B, k) {
 
 // ------------------------------------------------------------------------------------------------ weathering
 function finish(def, s, ctx) {
-  const { U, P, N, h, v, aW } = ctx;
+  const { U, P, N, h, v, aW, bW } = ctx;
   let col = s.col, rough = s.rough.mul(U.roughness);
   const age = v.w.mul(2).mul(U.variation).add(float(1).sub(U.variation));                 // 0.5 -> 1
   const vert = float(1).sub(smoothstep(0.55, 0.85, abs(N.y)));
@@ -562,12 +562,12 @@ function finish(def, s, ctx) {
   col = col.mul(v.y.sub(0.5).mul(0.3).mul(U.variation).add(1.0));
   col = col.mul(mix(vec3(1), vec3(1.06, 1.0, 0.92), v.z.sub(0.5).mul(2.0).mul(U.variation)));
   // metre-scale variation (two octaves) - also the anti-tiling of the scans
-  const m1 = n3(P.x.mul(0.21), P.y.mul(0.21), P.z.mul(0.21)), m2 = n3(P.x.mul(0.9), P.y.mul(0.9), P.z.mul(0.9));
-  col = col.mul(m1.mul(0.12).add(m2.mul(0.06)).mul(U.macro).add(1.0));
+  const m1 = n2(aW.mul(0.21), bW.mul(0.21)), m2 = n2(aW.mul(0.9).add(7.3), bW.mul(0.9));
+  col = col.mul(m1.mul(0.24).add(m2.mul(0.12)).sub(0.18).mul(U.macro).add(1.0));
   if (def.kind === "glass") return { col, rough, emissive: s.emissive };
   const dirt = U.dirt.mul(age), damp = U.damp.mul(age), moss = U.moss.mul(age), streaks = U.streaks.mul(age);
   // grime: low-frequency soiling, splash zone at the base of walls, dirt settling in joints (ground) and low points
-  const soil = n01(P.x.mul(0.35), P.y.mul(0.5), P.z.mul(0.35));
+  const soil = mix(m1, m2, 0.4);
   const splash = float(1).sub(smoothstep(0.0, 0.7, h)).mul(vert);
   const grimeCol = col.mul(vec3(0.55, 0.52, 0.48));
   col = mix(col, grimeCol, dirt.mul(soil.mul(0.35).add(splash.mul(0.6)).add(s.joint.mul(def.kind === "ground" ? 0.5 : 0.15))).clamp(0, 0.9));
@@ -579,20 +579,20 @@ function finish(def, s, ctx) {
   }
   // rising damp: darker band at the base, wavy top; a white salt line at its top on masonry
   if (def.damp) {
-    const top = float(0.15).add(damp.mul(1.1)).add(n3(aW.mul(1.3), 0.0, 3.0).mul(0.12).mul(damp));
+    const top = float(0.15).add(damp.mul(1.1)).add(n2(aW.mul(1.3), 3.0).sub(0.5).mul(0.24).mul(damp));
     const dk = float(1).sub(smoothstep(top.sub(0.15), top.add(0.03), h)).mul(smoothstep(0.0, 0.08, damp)).mul(vert);
     col = col.mul(float(1).sub(dk.mul(0.3)));
     rough = rough.mul(float(1).sub(dk.mul(0.2)));
     if (def.salt) {
-      const salt = exp(h.sub(top).div(0.05).pow(2).negate()).mul(n01(aW.mul(4.0), h.mul(4.0), 9.0)).mul(damp).mul(vert);
+      const salt = exp(h.sub(top).div(0.05).pow(2).negate()).mul(n2(aW.mul(4.0), h.mul(4.0).add(9.0))).mul(damp).mul(vert);
       col = mix(col, vec3(0.75, 0.74, 0.7), salt.mul(0.45));
     }
   }
   // moss / algae: patches favouring up-facing, north-facing, joints and the damp base
-  const mN = n01(P.x.mul(1.4), P.y.mul(1.4), P.z.mul(1.4)).mul(0.6).add(n01(P.x.mul(6.0), P.y.mul(6.0), P.z.mul(6.0)).mul(0.4));
+  const mN = n2(aW.mul(1.4), bW.mul(1.4)).mul(0.6).add(n2(aW.mul(6.0), bW.mul(6.0).add(5.0)).mul(0.4));
   const favour = up.mul(0.35).add(north.mul(0.2)).add(s.joint.mul(0.35)).add(splash.mul(0.25));
   const mk = smoothstep(0.62, 0.8, mN.add(favour.mul(0.5)).add(moss.mul(0.45)).sub(0.3)).mul(smoothstep(0.0, 0.05, moss));
-  const mossCol = mix(vec3(0.045, 0.07, 0.022), vec3(0.09, 0.11, 0.035), n01(P.x.mul(9.0), P.y.mul(9.0), P.z.mul(9.0)));
+  const mossCol = mix(vec3(0.045, 0.07, 0.022), vec3(0.09, 0.11, 0.035), m2);
   col = mix(col, mossCol, mk.mul(0.85));
   rough = mix(rough, float(0.95), mk);
   return { col, rough: rough.clamp(0.02, 1), mk, emissive: s.emissive };
@@ -644,7 +644,8 @@ export function createMaterial(name, opts = {}) {
   const h = opts.heightNode ?? P.y.sub(U.baseY);
   // the horizontal coordinate along a wall for the weathering (independent of the mapping)
   const Th = cross(vec3(0, 1, 0), N), lt = length(Th);
-  const aW = dot(P, select(lt.greaterThan(0.15), Th.div(max(lt, 0.0001)), vec3(1, 0, 0)));
+  const Tw = select(lt.greaterThan(0.15), Th.div(max(lt, 0.0001)), vec3(1, 0, 0));
+  const aW = dot(P, Tw), bW = dot(P, cross(N, Tw));                                        // the weathering's 2D frame
   let drip = opts.drip;
   if (!drip && opts.dripAttr) {
     const d = attribute(opts.dripAttr, "vec4"), st = uv();
@@ -652,7 +653,7 @@ export function createMaterial(name, opts = {}) {
     drip = inX.mul(step(st.y, d.z)).mul(float(1).sub(smoothstep(0.0, 2.5, d.z.sub(st.y)))).mul(d.w).add(0.15);
   }
   drip = drip ?? float(0.25);
-  const ctx = { U, P, N, h, v, fw, k, aW, drip, opts };
+  const ctx = { U, P, N, h, v, fw, k, aW, bW, drip, opts };
   const projs = projections(mapping, N, P);
   const s = surfaceFor(name, variant, ctx, projs);
   const f = finish(def, s, ctx);

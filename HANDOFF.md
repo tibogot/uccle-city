@@ -52,7 +52,7 @@ Debug. "Copy link to this view" puts the state + camera in `?dev=`. H = photo mo
 ## Labs
 
 `labs/` (open `/labs/`): one page per asset or system, to look at it on its own before it goes into the city
-(the owner's game-engine-v1 practice). Bird, Lamp, Tram, Church, Car and Capsule labs done; Tree and Material labs planned. New assets get a
+(the owner's game-engine-v1 practice). Bird, Lamp, Tram, Church, Car, Capsule and Material labs done; Tree lab planned. Material Lab (`labs/material-lab.html`, branch claude/materials): the shared material library `viewer/materials/` (22 named TSL materials, procedural / CC0 scan KTX2 / hybrid), docs `docs/MATERIALS.md`; the city does not use it yet (owner picks, then the integration steps there). New assets get a
 lab first, then go into the city. Capsule Lab: the third-person character (`viewer/character/`: controller, camera, collision, CC0 Quaternius character with foot IK; the "Third person" button / `?view=third` in the city, `?char=capsule|hoodie|casual`). Tram Lab: the STIB T3000 (`tools/blender/tram.py`, `viewer/tramModel.js`); in the city by default (`?tram=box` = the old boxes).
 Car Lab (`labs/car-lab.html`): the driving model drive mode uses on a test ground (walls, courtyards, kerb island,
 ramp, posts), handling / suspension / camera sliders, colliders drawn (G); the car model is swappable (`viewer/drive/carModel.js`,

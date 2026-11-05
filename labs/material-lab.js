@@ -274,27 +274,31 @@ function sampleGpu() {
   }).catch(() => {}).finally(() => { gpu.pending = false; });
 }
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+// the bench draws ONLY the full-screen wall, REPS times per frame (no post, no gallery, no ground), so the material's
+// cost dominates the timestamp noise of a shared GPU; result = median ms per draw over ~2 s
+const REPS = 12;
 async function measure(material) {
   benchWall.material = material;
   await renderer.compileAsync(scene, camera).catch(() => {});
-  await wait(500); gpu.samples.length = 0; await wait(2000);
+  await wait(400); gpu.samples.length = 0; await wait(1800);
   const s = [...gpu.samples].sort((a, b) => a - b);
-  return s.length ? s[Math.floor(s.length / 2)] : NaN;
+  return s.length ? s[Math.floor(s.length / 2)] / REPS : NaN;
 }
 const plain = new THREE.MeshStandardNodeMaterial({ color: 0x777777, roughness: 0.8 });
 let benching = false;
 async function benchOne(name) {
-  const prevView = S.view; goView("bench"); S.post = false;
+  const prevView = S.view; goView("bench"); S.post = false; S.reps = REPS;
+  const vis = [gallery.visible, ground.visible]; gallery.visible = ground.visible = false; benchWall.castShadow = false;
   const res = { base: await measure(plain) };
   for (const v of hasScan(name) ? ["proc", "scan", "hybrid"] : ["proc"]) res[v] = await measure(mat(name, v, "world"));
   res.triplanar = await measure(mat(name, "proc", "triplanar"));
-  S.post = true; goView(prevView); applyMaterial();
+  S.post = true; S.reps = 1; goView(prevView); applyMaterial(); [gallery.visible, ground.visible] = vis;
   return res;
 }
 async function bench() {
   if (benching) return; benching = true;
   const r = await benchOne(S.material);
-  S.bench = Object.entries(r).filter(([k]) => k !== "base").map(([k, ms]) => `${k} +${(ms - r.base).toFixed(2)}`).join(" · ") + ` ms (plain ${r.base.toFixed(2)})`;
+  S.bench = Object.entries(r).filter(([k]) => k !== "base").map(([k, ms]) => `${k} ${ms.toFixed(2)}`).join(" · ") + ` ms per full-screen draw (plain ${r.base.toFixed(2)})`;
   console.log("[material lab] bench", S.material, r);
   benching = false;
 }
@@ -307,16 +311,16 @@ async function shaderSize(m = flatParts[0].material, mesh = flatParts[0]) {
     return { lines, ops, kb: fs.length / 1024 };
   } catch (e) { S.shader = "n/a: " + e.message; return null; }
 }
-async function benchAll() {
+async function benchAll(names = MATERIAL_NAMES) {
   if (benching) return; benching = true;
   const out = {};
-  for (const n of MATERIAL_NAMES) {
+  for (const n of names) {
     S.material = n; applyMaterial();
     const r = await benchOne(n);
     const sz = {};
     for (const v of hasScan(n) ? ["proc", "scan", "hybrid"] : ["proc"]) { benchWall.material = mat(n, v, "world"); benchWall.visible = true; sz[v] = await shaderSize(null, benchWall); }
     benchWall.visible = S.view === "bench";
-    out[n] = { gpu_ms_over_plain: Object.fromEntries(Object.entries(r).filter(([k]) => k !== "base").map(([k, v]) => [k, +(v - r.base).toFixed(3)])), plain_ms: +r.base.toFixed(3), shader: sz,
+    out[n] = { gpu_ms: Object.fromEntries(Object.entries(r).filter(([k]) => k !== "base").map(([k, v]) => [k, +v.toFixed(3)])), plain_ms: +r.base.toFixed(3), shader: sz,
       tex_gpu_mb: hasScan(n) ? +(SCANS[n].bytesGPU / 1048576).toFixed(2) : 0, tex_file_mb: hasScan(n) ? +(SCANS[n].bytesFile / 1048576).toFixed(2) : 0 };
     console.log("[material lab] bench", n, out[n]);
   }
@@ -342,7 +346,8 @@ renderer.setAnimationLoop(() => {
   controls.update();
   const dist = camera.position.distanceTo(controls.target);
   lighting.update(camera.position.y, 0, controls.target, THREE.MathUtils.clamp(dist * 1.2, 30, 400));
-  if (S.post) pipe.render(hazeHook); else renderer.render(scene, camera);
+  if (S.reps > 1) for (let i = 0; i < S.reps; i++) renderer.render(scene, camera);
+  else if (S.post) pipe.render(hazeHook); else renderer.render(scene, camera);
   pipe.setExposureFactor(lighting.adapt(dt));
   if (!S.post) renderer.toneMappingExposure = lighting.exposureScale * 0.85 * lighting.adapt(0);
   sampleGpu();

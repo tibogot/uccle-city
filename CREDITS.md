@@ -60,6 +60,28 @@ the check dates are in `pipeline/sources.json`.
 | mrdoob/slop-newyork (techniques and adapted code in `viewer/lighting.js`, `post.js`, `tslkit.js`, `facades.js` interiors, `trees.js` approach) | MIT, © 2026 Mr.doob | Notice kept in `viewer/tslkit.js`; source credited in each file header. |
 | mrdoob/slop-newyork tree system (`vendor/slop-trees/`: `trees.js`, `building-collision.js`, tree material), commit `737b7691` | MIT, © Mr.doob | `vendor/slop-trees/LICENSE` and `ORIGIN.md`. Used by `viewer/treesSlop.js` |
 
+## Material scans (CC0, Material Lab and viewer/materials/)
+
+Raw 2k JPG maps in `data/raw/textures/<source>/<id>/` (git-ignored, read as image data only; fetched by
+`tools/textures/fetch_textures.py`). Processed by `tools/textures/process_textures.py` (1024 px, albedo + packed
+normal / roughness / AO) and `tools/textures/encode_ktx2.mjs` (Basis UASTC + zstd KTX2 through the MIT `ktx2-encoder`
+npm package, build time only) into `viewer/materials/textures/` (`<mat>_albedo.ktx2`, `<mat>_nra.ktx2`, WebP fallback).
+All CC0 (public domain, no attribution required); credited anyway. Downloaded and checked 2026-11-05.
+
+| Library material | Asset | Source | Licence |
+|---|---|---|---|
+| brick_red_brussels | Red Brick (`red_brick`), Rob Tuytel | https://polyhaven.com/a/red_brick | CC0 |
+| stone_white | Sandstone Blocks 08 (`sandstone_blocks_08`) | https://polyhaven.com/a/sandstone_blocks_08 | CC0 |
+| stone_blue | Granite Tile 04 (`granite_tile_04`) | https://polyhaven.com/a/granite_tile_04 | CC0 |
+| slate | Roof Slates 02 (`roof_slates_02`) | https://polyhaven.com/a/roof_slates_02 | CC0 |
+| cobbles | Cobblestone Floor 08 (`cobblestone_floor_08`) | https://polyhaven.com/a/cobblestone_floor_08 | CC0 |
+| asphalt | Asphalt 02 (`asphalt_02`) | https://polyhaven.com/a/asphalt_02 | CC0 |
+| paving_concrete | Concrete Tiles (`concrete_tiles`) | https://polyhaven.com/a/concrete_tiles | CC0 |
+| copper_patina | Metal 058 C (`Metal058C`) | https://ambientcg.com/view?id=Metal058C | CC0 |
+
+Poly Haven licence: https://polyhaven.com/license (CC0). ambientCG licence: https://docs.ambientcg.com/license/ (CC0).
+No AI-generated maps, no web-search images.
+
 ## 3D models (CC0 packs, Car Lab comparison)
 
 Raw downloads in `data/raw/cars/<source>/` (git-ignored, read as data only). Converted by `tools/cars/convertPacks.mjs`

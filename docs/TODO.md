@@ -91,6 +91,11 @@ read-only (copy into `vendor/` with ORIGIN.md); measure GPU ms before / after (s
 - [ ] City: tram platforms, shelters, benches, bollards and parked cars are not colliders yet; build the roads BVH in
       the tile worker (25-60 ms on the main thread per tile today); a Third-person button in the UI.
 
+## Material library (branch claude/materials; waiting for the owner's choices)
+
+- [ ] Owner: pick variant + parameters per material in `labs/material-lab.html`, download `choices.json`, commit it as `viewer/materials/choices.json`.
+- [ ] Then the integration steps of `docs/MATERIALS.md` (hero assets first, then ground, façades, roofs).
+
 ## STIB tram model (approved by the owner 2026-11-04, merged)
 - [x] T3000 (line 92's stock) scripted in Blender (`tools/blender/tram.py`), loader / LODs / placement `viewer/tramModel.js`,
       Tram Lab (`labs/tram-lab.html`), in the city by default (tramline.js; `?tram=box` = the old boxes). Per tram: LOD0 15.9k, LOD1 5.7k, LOD2 1.35k triangles.

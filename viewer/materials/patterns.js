@@ -2,13 +2,27 @@
 // footprint `fw` (metres per pixel, from the world-space fwidth): every joint is a BOX-FILTERED coverage (tslkit
 // filteredPulse), every per-unit value fades to its mean over a long smoothstep of the footprint, every relief fades
 // out before its edges can alias. No hard LOD switch anywhere: the far look is the integral of the near one.
-import { float, vec2, vec3, floor, fract, mix, min, max, abs, smoothstep, clamp, sqrt, select, mx_noise_float, sin, dot } from "three/tsl";
-import { filteredPulse, hash2D } from "../tslkit.js";
+import { Fn, float, vec2, vec3, floor, fract, mix, min, max, abs, smoothstep, clamp, sqrt, select, mx_noise_float, sin, dot } from "three/tsl";
+import { filteredPulse, hash2D, noise2D } from "../tslkit.js";
 
-/** -1..1 gradient noise */
-export const n3 = (x, y, z) => mx_noise_float(vec3(x, y, z));
+// 3D VALUE noise on a sin hash: about half the ALU of mx_noise_float (MaterialX Perlin, integer hashing); the
+// material library calls it a dozen times per pixel, so it matters (lab bench, 2026-11-05)
+const h3 = (p) => fract(sin(dot(p, vec3(127.1, 311.7, 74.7))).mul(43758.5453));
+const vnoise3 = Fn(([p_]) => {
+  const p = vec3(p_).toVar(), i = floor(p).toVar(), f = fract(p).toVar();
+  const u = f.mul(f).mul(float(3).sub(f.mul(2))).toVar();
+  const c = (x, y, z) => h3(i.add(vec3(x, y, z)));
+  return mix(mix(mix(c(0, 0, 0), c(1, 0, 0), u.x), mix(c(0, 1, 0), c(1, 1, 0), u.x), u.y),
+    mix(mix(c(0, 0, 1), c(1, 0, 1), u.x), mix(c(0, 1, 1), c(1, 1, 1), u.x), u.y), u.z);
+});
+/** -1..1 noise (3D value noise) */
+export const n3 = (x, y, z) => vnoise3(vec3(x, y, z)).mul(2).sub(1);
 /** 0..1 noise */
-export const n01 = (x, y, z) => mx_noise_float(vec3(x, y, z)).mul(0.5).add(0.5);
+export const n01 = (x, y, z) => vnoise3(vec3(x, y, z));
+/** 0..1 2D value noise (cheapest: 4 hashes) */
+export const n2 = (x, y) => noise2D(vec2(x, y));
+/** -1..1 gradient (Perlin) noise where its isotropy matters (crack / vein iso-lines) */
+export const g3 = (x, y, z) => mx_noise_float(vec3(x, y, z));
 /** per-cell random in [0,1): the inputs are integer cell ids; taken modulo 1024 so far-away cells keep precision */
 export const H2 = (a, b) => hash2D(vec2(fract(float(a).div(1024)).mul(1024), fract(float(b).div(1024)).mul(1024)));
 
@@ -87,8 +101,8 @@ export function seams(a, P, W, h, fw) {
 
 /** Vertical rain streaks: thin, long noise (x across, y down), 0..1. */
 export function streakNoise(x, y, seed = 0) {
-  const s1 = n01(x.mul(9.0), y.mul(0.35), float(seed));
-  const s2 = n01(x.mul(23.0), y.mul(0.8), float(seed).add(4.0));
+  const s1 = n2(x.mul(9.0).add(seed * 17), y.mul(0.35));
+  const s2 = n2(x.mul(23.0), y.mul(0.8).add(seed * 7 + 4));
   return smoothstep(0.45, 0.85, s1.mul(0.65).add(s2.mul(0.35)));
 }
 
