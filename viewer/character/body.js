@@ -4,7 +4,7 @@
 //   body.setModel(gltf, { clips: { idle: "Idle", walk: "Walk", run: "Run", jump: "Jump", fall: "Fall" },
 //                         walkSpeed: 1.6, runSpeed: 5.0,   // m/s the walk / run clips were authored at (stride match)
 //                         scale: 1, forward: "+z", height?: 1.75 })   // height: rescale to this standing height
-//   body.update(dt, x, y, z, yaw, { speed, grounded, vy, opacity })
+//   body.update(dt, x, y, z, yaw, { speed, grounded, vy, opacity }, world)    world: foot IK (footIK.js)
 //
 // The state machine: idle / walk / run on the ground (walk and run cross-blend by speed, playback rate = speed /
 // authored speed so the feet don't skate), jump on take-off, fall when airborne and descending; cross-fades of
@@ -12,6 +12,7 @@
 // Fading (camera very close): the capsule swaps to a transparent twin material (both compiled at start: no hitch).
 import * as THREE from "three/webgpu";
 import { color, float, mix, positionLocal, normalView, uniform, smoothstep, abs, dot, vec3 } from "three/tsl";
+import { FootIK } from "./footIK.js";
 
 const ROLES = ["idle", "walk", "run", "jump", "fall"];
 const TARGET = { idle: 0, walk: 0, run: 0, jump: 0, fall: 0 };
@@ -61,14 +62,18 @@ export class CharacterBody {
 
   /**
    * Swap the capsule for a model. gltf: a loaded GLTF ({ scene, animations }). Returns the clip mapping it found.
-   * opts.forward: the model's nose axis ("+z" for glTF characters, "-z", "+x", "-x").
+   * opts.clips: role -> clip name, or { clip, at } to hold a clip at a fraction of its length (a pose: the pack has
+   * no jump clip, so a held run stride stands in). opts.forward: the model's nose axis ("+z", "-z", "+x", "-x").
+   * opts.walkSpeed / runSpeed: the ground speed the clips were authored at, in metres (or in the model's own units
+   * with opts.speedUnits = "model": they are then scaled with the model). opts.rig: leg bone names for foot IK.
    */
   setModel(gltf, opts = {}) {
     if (this.model) { this.root.remove(this.model); this.mixer?.stopAllAction(); }
     const model = gltf.scene;
     const fwd = { "+z": 0, "-z": Math.PI, "+x": -Math.PI / 2, "-x": Math.PI / 2 }[opts.forward || "+z"] ?? 0;
     const holder = new THREE.Group();
-    holder.add(model);
+    const inner = new THREE.Group();          // the pelvis drop of foot IK moves this one
+    holder.add(inner); inner.add(model);
     model.rotation.y = fwd;
     let s = opts.scale ?? 1;
     if (opts.height) {
@@ -81,8 +86,16 @@ export class CharacterBody {
     model.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(model);
     model.position.y -= box.min.y;
-    model.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false; } });
-    this.model = holder;
+    // materials: each gets a transparent twin for the camera fade (swapped, both compiled up front)
+    this.modelMats = [];
+    model.traverse((o) => {
+      if (!o.isMesh) return;
+      o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false;
+      const solid = o.material, fade = solid.clone();
+      fade.transparent = true; fade.depthWrite = false; fade.opacityNode = this.uOpacity;
+      this.modelMats.push({ mesh: o, solid, fade });
+    });
+    this.model = holder; this.modelInner = inner; this.modelScale = s;
     this.root.add(holder);
     this.capsuleGroup.visible = false;
     // clips
@@ -90,38 +103,51 @@ export class CharacterBody {
     const anims = gltf.animations || [];
     const want = { idle: "idle", walk: "walk", run: "run", jump: "jump", fall: "fall", ...(opts.clips || {}) };
     const found = {};
-    for (const [role, name] of Object.entries(want)) {
-      const n = String(name).toLowerCase();
-      const clip = anims.find((a) => a.name.toLowerCase() === n) || anims.find((a) => a.name.toLowerCase().includes(n));
+    this.actions = {}; this.hold = {};
+    const find = (name) => { const n = String(name).toLowerCase(); return anims.find((a) => a.name.toLowerCase() === n) || anims.find((a) => a.name.toLowerCase().includes(n)); };
+    for (const [role, spec] of Object.entries(want)) {
+      const held = typeof spec === "object" && spec;
+      let clip = find(held ? spec.clip : spec);
       if (!clip) continue;
+      if (held) { clip = clip.clone(); clip.name = `${clip.name}@${spec.at}`; }       // its own action
       const act = this.mixer.clipAction(clip);
-      if (role === "jump") { act.setLoop(THREE.LoopOnce, 1); act.clampWhenFinished = true; }
+      if (held) { act.timeScale = 0; act.time = spec.at * clip.duration; this.hold[role] = spec.at * clip.duration; }
+      else if (role === "jump") { act.setLoop(THREE.LoopOnce, 1); act.clampWhenFinished = true; }
       act.enabled = true; act.setEffectiveWeight(0); act.play();
-      this.actions[role] = act; found[role] = clip.name;
+      this.actions[role] = act; found[role] = held ? `${spec.clip} held at ${spec.at}` : clip.name;
     }
-    this.walkSpeed = opts.walkSpeed ?? 1.6; this.runSpeed = opts.runSpeed ?? 5.0;
+    const k = opts.speedUnits === "model" ? s : 1;
+    this.walkSpeed = (opts.walkSpeed || 1.4) * k; this.runSpeed = (opts.runSpeed || 4.5) * k;
     this.state = ""; this._w = { idle: 0, walk: 0, run: 0, jump: 0, fall: 0 };
+    this.footIK = opts.rig ? new FootIK(model, inner, opts.rig) : null;
     return found;
   }
 
   clearModel() {
     if (this.model) { this.root.remove(this.model); this.mixer?.stopAllAction(); }
-    this.model = null; this.mixer = null; this.actions = {}; this.capsuleGroup.visible = true;
+    this.model = null; this.mixer = null; this.actions = {}; this.footIK = null; this.capsuleGroup.visible = true;
   }
 
-  /** x, y, z: feet; yaw: facing (+z forward at 0); st: { speed (horizontal m/s), grounded, vy, opacity } */
-  update(dt, x, y, z, yaw, st) {
+  /** Objects + materials to render once so every variant is compiled up front. */
+  warmModel() { return (this.modelMats || []).map((m) => [m.mesh, m.fade, m.solid]); }
+
+  /**
+   * x, y, z: feet; yaw: facing (+z forward at 0); st: { speed (horizontal m/s), grounded, vy, opacity }.
+   * world (optional): the CollisionWorld, for foot IK.
+   */
+  update(dt, x, y, z, yaw, st, world = null) {
     this.root.position.set(x, y, z);
     this.root.rotation.y = yaw;
     const op = st.opacity ?? 1;
     this.root.visible = op > 0.02;
+    this.uOpacity.value = op;
+    const fade = op < 0.999;
     if (!this.model) {
-      this.uOpacity.value = op;
-      const fade = op < 0.999;
       this.capsule.material = fade ? this.matFade : this.matSolid;
       this.visor.material = this.visorMats[fade ? 1 : 0];
       return;
     }
+    for (let i = 0; i < this.modelMats.length; i++) { const m = this.modelMats[i]; m.mesh.material = fade ? m.fade : m.solid; }
     // the animation state machine (weights eased toward targets)
     const A = this.actions, w = this._w, target = TARGET;
     for (let i = 0; i < ROLES.length; i++) target[ROLES[i]] = 0;
@@ -130,7 +156,7 @@ export class CharacterBody {
     else if (st.speed < 0.15) state = "idle";
     else state = "move";
     if (state === "move") {
-      // blend walk -> run between the two authored speeds
+      // blend walk -> run between the two authored speeds, playback rate = speed / authored speed (no skating)
       const k = A.run && A.walk ? Math.min(1, Math.max(0, (st.speed - this.walkSpeed) / (this.runSpeed - this.walkSpeed))) : A.run ? 1 : 0;
       target.walk = A.walk ? 1 - k : 0; target.run = A.run ? k : 0;
       const rate = A.walk && A.run ? st.speed / (this.walkSpeed + (this.runSpeed - this.walkSpeed) * k) : st.speed / (A.run ? this.runSpeed : this.walkSpeed);
@@ -142,15 +168,24 @@ export class CharacterBody {
         else A.run.time = ph * A.run.getClip().duration;
       }
     } else target[state] = 1;
-    if (state === "jump" && this.state !== "jump" && A.jump) A.jump.reset().play();
+    if (state === "jump" && this.state !== "jump" && A.jump && this.hold.jump === undefined) A.jump.reset().play();
     this.state = state;
-    const fadeRate = 1 - Math.exp(-dt / 0.08);
+    const fadeRate = 1 - Math.exp(-dt / 0.1);
     for (let i = 0; i < ROLES.length; i++) {
       const role = ROLES[i];
       if (!A[role]) continue;
+      if (this.hold[role] !== undefined) A[role].time = this.hold[role];
       w[role] += (target[role] - w[role]) * fadeRate;
       A[role].setEffectiveWeight(w[role]);
     }
     this.mixer.update(dt);
+    if (this.footIK && world) {
+      const t0 = performance.now();
+      this.root.updateMatrixWorld(true);
+      // full on the ground when walking, softer at a run, off in the air
+      const want = st.grounded ? 1 - 0.6 * Math.min(1, Math.max(0, (st.speed - 2.5) / 2.5)) : 0;
+      this.footIK.update(dt, world, y, want, this.ikOn !== false);
+      this.ikMs = (this.ikMs || 0) * 0.95 + (performance.now() - t0) * 0.05;
+    }
   }
 }

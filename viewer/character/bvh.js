@@ -27,6 +27,16 @@ export class TriBVH {
     this.tag = 0;                                  // contact kind reported for this source
   }
 
+  /** The arrays, for a postMessage transfer (a worker builds, the main thread uses). */
+  toData() { return { count: this.count, nodes: this.nodes, tri: this.tri, nrm: this.nrm, box: this.box, first: this.first, cnt: this.cnt }; }
+  static transferList(d) { return [d.tri.buffer, d.nrm.buffer, d.box.buffer, d.first.buffer, d.cnt.buffer]; }
+  /** A TriBVH around arrays from toData() (no build). */
+  static fromData(d) {
+    const b = Object.create(TriBVH.prototype);
+    Object.assign(b, { count: d.count, nodes: d.nodes, tri: d.tri, nrm: d.nrm, box: d.box, first: d.first, cnt: d.cnt, enabled: true, tag: 0 });
+    return b;
+  }
+
   /** World bounds of the whole set. */
   get bounds() { const b = this.box; return { x0: b[0], y0: b[1], z0: b[2], x1: b[3], y1: b[4], z1: b[5] }; }
 

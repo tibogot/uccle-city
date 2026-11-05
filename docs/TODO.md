@@ -65,7 +65,21 @@ read-only (copy into `vendor/` with ORIGIN.md); measure GPU ms before / after (s
 - [x] `labs/capsule-lab.html`: test course + 30 scripted tests (T), benchmark, tunables, debug draw. Screens: `docs/capsule/`.
 - [x] City test hook `?view=third` (I6, Place de Saint-Job): roads BVH from the tile's road meshes, UrbIS footprints,
       trunks, lamp posts, terrain. `?chardebug=1` = debug draw.
-- [ ] An animated character (Quaternius / Mixamo, CC0) in the slot; check `setModel` speed matching on it.
+- [x] A real character in the slot: Quaternius "Hoodie" (Ultimate Modular Men, CC0; also "Casual"), `models/characters/`
+      (`tools/characters/convertCharacters.mjs`), merged at load to one skinned mesh + one vertex-colour material (6.2k
+      triangles); idle / walk / run with playback matched to the stride speed measured from the foot bones (walk 1.29,
+      run 2.93 m/s); the pack has no jump clip: a held run stride stands in for jump / fall.
+- [x] Foot IK (`viewer/character/footIK.js`): per-foot ray, two-bone leg IK with the animated knee as pole, foot tilt to
+      the ground normal (<= 28°), pelvis drop to the lower planted foot (<= 16 cm), all eased; off in the air, softer at
+      a run. ~0.03 ms per frame (whole character with animation ~0.16-0.19 ms). Screens `docs/capsule/ik-*.png`.
+- [x] City: tram platforms (in the roads BVH), parked cars + bus / tram shelters (oriented boxes, also stop the camera),
+      benches, stop poles, signals, bike racks, tram poles, trunks, lamp posts (body only, the camera ignores them),
+      bollards (any InstancedMesh named *bollard*, ready for the roads branch). "Third person" button + dev panel entry.
+      Roads BVH + buildings.json + prism hashing in `viewer/character/colliderWorker.js`; the main thread gathers in
+      slices of <= 4 ms.
+- [ ] A real jump / fall clip (Quaternius' Universal Animation Library retargets to this rig family); the controller's
+      run speed (5.5 m/s) is faster than the clip's authored jog (2.9 m/s): playback runs ~1.9x, tune one or the other.
+- [ ] Shelters are solid boxes (you can't step inside one yet); the open side needs its own shape.
 - [ ] Interiors: exclude the entered house's footprint prism (`PrismSet.exclude(BU_ID)`) and add its interior BVH;
       sun light leaks at wall seams indoors (shadow normalBias 5 cm vs 20 cm walls): interior lighting needs its own pass.
 - [ ] City: tram platforms, shelters, benches, bollards and parked cars are not colliders yet; build the roads BVH in

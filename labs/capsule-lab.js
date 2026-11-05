@@ -10,14 +10,16 @@
 // Every surface is real geometry (no coplanar overlaps: pieces abut, nothing rests exactly on the ground; things that
 // stand on it go 2 cm into it). A 1 m world grid on every material makes the motion easy to judge.
 //
-// URL: ?time=golden|midday|overcast|twilight|night  ?hz=120  ?debug=1  ?st=<station>  ?model=<glb url> (an animated
+// URL: ?time=golden|midday|overcast|twilight|night  ?hz=120  ?debug=1  ?st=<station>  ?char=hoodie|casual|capsule
+// (the character in the slot, models/characters/, with foot IK; ?ik=0 off)  ?model=<glb url> (any other animated
 // character in the slot; ?clips=idle:Idle,walk:Walk,run:Run,jump:Jump  ?mwalk=1.6&mrun=5 authored speeds)
 import * as THREE from "three/webgpu";
 import { color, float, mix, positionWorld, normalWorld, fract, fwidth, smoothstep, abs, max, min, vec3 } from "three/tsl";
 import { Panel } from "../viewer/panelUI.js";
 import { Lighting, PRESETS } from "../viewer/lighting.js";
 import { createPipeline } from "../viewer/post.js";
-import { ThirdPerson, CollisionWorld, Heightfield, TriBVH, PrismSet } from "../viewer/character/index.js";
+import { ThirdPerson, CollisionWorld, Heightfield, TriBVH, PrismSet, CHARACTERS } from "../viewer/character/index.js";
+import { FOOT_IK } from "../viewer/character/footIK.js";
 import { CONTROLLER_DEFAULTS } from "../viewer/character/controller.js";
 import { CAMERA_DEFAULTS } from "../viewer/character/camera.js";
 
@@ -275,12 +277,29 @@ const S = {
   debug: tp.debug.visible, dContacts: true, dRays: true, dCapsule: true,
   time: preset, hour: lighting.hour, post: qp.get("fx") !== "0",
   perf: "", ctlms: "", bench: "—", tests: "—", state: "", model: "capsule",
+  char: CHARACTERS[qp.get("char")] || qp.get("char") === "capsule" ? qp.get("char") : "hoodie", footIK: qp.get("ik") !== "0", ik: "",
 };
+async function setCharacter(name) {
+  S.model = "loading…";
+  try {
+    const info = await tp.useCharacter(name, renderer);
+    S.model = name === "capsule" ? "capsule" : `${info.label} · ${info.tris} tris · walk ${info.walk} / run ${info.run} m/s authored`;
+    console.log("[capsule lab] character", info);
+  } catch (e) { console.warn(e); S.model = "failed: " + e.message; }
+}
 const ui = new Panel({ title: "Capsule Lab" });
 const fs = ui.addFolder("Stations");
 fs.add(S, "station", Object.keys(STATIONS)).name("go to").onChange(goStation);
 fs.add({ go: () => goStation(S.station) }, "go").name("reset here (R)");
 fs.add(S, "state").name("state").listen();
+const fch = ui.addFolder("Character");
+fch.add(S, "char", ["capsule", ...Object.keys(CHARACTERS)]).name("in the slot").onChange(setCharacter);
+fch.add(S, "model").name("model").listen();
+fch.add(S, "footIK").name("foot IK").onChange((v) => { tp.body.ikOn = v; });
+fch.add(FOOT_IK, "reach", 0, 0.6, 0.01).name("IK reach (m)").onChange(() => { if (tp.body.footIK) tp.body.footIK.p.reach = FOOT_IK.reach; });
+fch.add(FOOT_IK, "smooth", 2, 40, 1).name("IK smoothing").onChange(() => { if (tp.body.footIK) tp.body.footIK.p.smooth = FOOT_IK.smooth; });
+fch.add(FOOT_IK, "maxTilt", 0, 45, 1).name("foot tilt max (°)").onChange(() => { if (tp.body.footIK) tp.body.footIK.p.maxTilt = FOOT_IK.maxTilt; });
+fch.add(S, "ik").name("IK").listen();
 const fm = ui.addFolder("Movement");
 fm.add(C, "walkSpeed", 0.5, 4, 0.05).name("walk (m/s)");
 fm.add(C, "runSpeed", 2, 10, 0.1).name("run (m/s)");
@@ -337,6 +356,8 @@ const pipe = createPipeline(renderer, scene, camera);
 pipe.setExposureScale(lighting.exposureScale); pipe.look(preset);
 const hazeHook = (rt, d, size) => lighting.hazeHook(rt, d, size);
 goStation(S.station);
+tp.body.ikOn = S.footIK;
+if (S.char !== "capsule" && !qp.get("model")) await setCharacter(S.char);
 // compile both capsule variants (solid / fading) now, not at the first fade
 for (const [mesh, ...mats] of tp.body.warmVariants()) for (const m of mats) { mesh.material = m; await renderer.compileAsync(scene, camera); }
 
@@ -460,13 +481,15 @@ renderer.setAnimationLoop(() => {
   }
   if (++frames % 10 === 1) {
     const c = tp.ctl, P = tp.perf, r = renderer.info.render;
-    S.ctlms = `${P.ms.toFixed(3)} ms (max ${P.maxMs.toFixed(3)}) · phys ${P.physMs.toFixed(3)} · cam ${P.camMs.toFixed(3)}`;
+    S.ctlms = `${P.ms.toFixed(3)} ms (max ${P.maxMs.toFixed(3)}) · phys ${P.physMs.toFixed(3)} · cam ${P.camMs.toFixed(3)} · anim+IK ${P.animMs.toFixed(3)}`;
+    const ik = tp.body.footIK;
+    S.ik = ik ? `w ${ik.weight.toFixed(2)} · pelvis ${(ik.pelvis * 100).toFixed(1)} cm · L ${(ik.legs[0].off * 100).toFixed(1)} R ${(ik.legs[1].off * 100).toFixed(1)} cm · ${(tp.body.ikMs || 0).toFixed(3)} ms` : "—";
     S.perf = `${fps.toFixed(0)} fps · GPU ${gpu.avg.toFixed(2)} ms · ${r.drawCalls ?? r.calls} draws`;
     const sp = Math.hypot(c.vel[0], c.vel[2]);
     S.state = `${c.grounded ? "ground" : "air"} · ${sp.toFixed(2)} m/s · y ${(c.pos[1] - Y0).toFixed(2)}`;
     $info.textContent = `${backend} · ${S.perf}\ncharacter CPU ${S.ctlms} (per frame, ${P.steps} steps @ ${S.hz} Hz)\n` +
       `${S.state} · contacts ${c.stats.contacts} · queries/step ${c.stats.queries} · substeps ${c.stats.substeps} · step-ups ${c.stats.steppedUp} · snaps ${c.stats.snapped}\n` +
-      `camera arm ${tp.cam.arm.toFixed(2)} / ${tp.cam.dist.toFixed(2)} m · capsule opacity ${tp.cam.opacity.toFixed(2)}\n` +
+      `camera arm ${tp.cam.arm.toFixed(2)} / ${tp.cam.dist.toFixed(2)} m · opacity ${tp.cam.opacity.toFixed(2)} · ${S.model}\nfoot IK: ${S.ik}\n` +
       `colliders: ${triBVH.count} triangles (BVH ${triBVH.nodes} nodes), ${prisms.P} footprints + ${prisms.C} trunks, heightfield; built in ${buildMs.toFixed(1)} ms`;
   }
 });

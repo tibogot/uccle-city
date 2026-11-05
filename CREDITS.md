@@ -79,6 +79,20 @@ car classes, no real brand's design, no logos; plate characters are random, no r
 (black, yellow chequer band, amber TAXI roof sign) follows photos of Brussels taxis on Wikimedia Commons (Category:Taxis
 in Brussels, e.g. "Taxi in Brussels 2026.jpg", "Skoda Taxis in Brussels.jpg"), used as reference only, not included.
 
+## 3D characters (third-person slot, Capsule Lab and `?view=third`)
+
+Raw downloads in `data/raw/characters/polypizza/` (git-ignored, read as data only). Converted by
+`tools/characters/convertCharacters.mjs` into `models/characters/hoodie.glb` and `casual.glb` (7 of 24 clips kept,
+buffer compacted); at load `viewer/character/characterModel.js` merges the four parts into one skinned mesh with the
+material colours baked to vertex colours.
+
+| Asset | Author / source | Licence | Used | Verified |
+|---|---|---|---|---|
+| **Hoodie Character** (poly.pizza/m/gKLBoRsyKe) and **Casual Character** (poly.pizza/m/kZ3DmIoGip), from the **Ultimate Modular Men Pack** (Feb 2022), quaternius.com/packs/ultimatemodularcharacters.html (the pack's Google Drive download was over quota) | Quaternius (quaternius.com) | **CC0 1.0** (pack page: "CC0", linked to creativecommons.org/publicdomain/zero/1.0; poly.pizza lists both "Public Domain (CC0)") | the meshes, skeleton and the Idle_Neutral / Walk / Run clips (Run also held as the jump / fall pose) | 2026-11-05, the pack page and both poly.pizza pages |
+
+Not used: Quaternius' newer packs under the "Quaternius Asset Licence" (only the CC0 pack above is used), and
+three.js's example Soldier.glb (Mixamo, not shippable; it was only loaded by URL in a test, never copied).
+
 ## Public transport
 
 | Data | Licence | Notes |
