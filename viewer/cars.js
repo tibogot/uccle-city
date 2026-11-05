@@ -1,9 +1,14 @@
 // Parked cars along the parking lanes of the road engine's cross-sections (ROAD_TYPES: a lane of
 // type "parking"). PLACED PROCEDURALLY (no data source for parked cars): slots of 5.6 m, about
 // 65 % occupied (deterministic hash), none within 12 m of a road end, 8 m of a crossing or 15 m of
-// a bus stop. One InstancedMesh, per-car paint colour from a Brussels-ish palette (lots of grey,
-// black, white, some blue / red). Visible within ~400 m only (the mesh is cheap, but it's clutter).
+// a bus stop; with ?roads=surface each one against the measured kerb (viewer/streetFit.js).
+// DRAWN (default) as the faceted family (tools/blender/carFaceted.py, models/cars/faceted.glb): one global fleet for
+// every loaded tile (viewer/carFleet.js: a realistic mix of types, per-instance Brussels paint, instanced per type per
+// LOD, dithered LOD / distance fades). Each tile keeps an invisible InstancedMesh "parked-cars" of boxes sized to each
+// car's type: the third-person colliders (viewer/character/cityHook.js) read it as before.
+// ?cars=box: the old box cars (one InstancedMesh per tile, palette per car).
 import * as THREE from "three/webgpu";
+import { carFleet, pickType } from "./carFleet.js";
 import { attribute, instancedBufferAttribute, mix, vec3, float } from "three/tsl";
 import { ROAD_TYPES, resolveStack, layoutAt } from "../vendor/roads/roadCrossSection.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
@@ -55,9 +60,10 @@ function carGeometry() {
   return mergeGeometries(parts);
 }
 
-/** `place(x, z, yaw)` (?roads=surface, viewer/streetFit.js): moves a parked car against the measured kerb, or drops
- *  it (null) when it would not stand wholly on the carriageway. */
-export function buildCars(roads, feats, ground, bounds, { place = null } = {}) {
+/** The parking slots: [{ x, z, yaw, c }] (yaw: local +x = the bonnet along the traffic). `place(x, z, yaw)`
+ *  (?roads=surface, viewer/streetFit.js): moves a parked car against the measured kerb, or drops it (null) when it would
+ *  not stand wholly on the carriageway. */
+function carSites(roads, feats, bounds, place) {
   const N = new Map(roads.nodes.map((n) => [n.id, n]));
   const avoid = (feats.points || []).filter((p) => p.kind === "crossing" || p.kind === "bus_stop" || p.kind === "traffic_signals")
     .map((p) => [p.x, p.z, p.kind === "bus_stop" ? 15 : 10]);
@@ -106,6 +112,11 @@ export function buildCars(roads, feats, ground, bounds, { place = null } = {}) {
       s += 5.6;
     }
   }
+  return sites;
+}
+
+/** The old box cars (?cars=box): one InstancedMesh per tile. */
+function buildBoxCars(sites, ground) {
   const group = new THREE.Group();
   group.name = "parked-cars";
   if (!sites.length) return { group, count: 0 };
@@ -131,3 +142,50 @@ export function buildCars(roads, feats, ground, bounds, { place = null } = {}) {
   group.add(m);
   return { group, count: sites.length };
 }
+
+const CARS_MODE = new URLSearchParams(location.search).get("cars");
+/** One tile's parked cars: { group, count }. The group holds the collider boxes; the fleet draws the cars. */
+export function buildCars(roads, feats, ground, bounds, { place = null } = {}) {
+  const sites = carSites(roads, feats, bounds, place);
+  if (CARS_MODE === "box") return buildBoxCars(sites, ground);
+  const group = new THREE.Group();
+  group.name = "parked-cars-tile";
+  if (!sites.length) return { group, count: 0 };
+  const cars = sites.map((s) => ({
+    x: s.x, y: ground(s.x, s.z) + 0.005, z: s.z,
+    heading: s.yaw + Math.PI / 2,                      // the model's +z (its bonnet) along the box car's +x
+    type: pickType(hash(s.x * 0.113, s.z * 0.071)), pv: hash(s.z * 0.31, s.x * 0.97),
+  }));
+  // collider boxes: a unit box (x, z in -0.5..0.5, y 0..1) scaled per car to its type's size, oriented like the car
+  const col = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0), new THREE.MeshBasicNodeMaterial(), cars.length);
+  col.name = "parked-cars";
+  col.visible = false;                                 // never drawn: the fleet draws the cars
+  const M = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), v = new THREE.Vector3(), sc = new THREE.Vector3();
+  cars.forEach((c, i) => {
+    const [w, h, l] = carFleet.sizeOf(c.type);
+    M.compose(v.set(c.x, c.y, c.z), q.setFromAxisAngle(up, c.heading), sc.set(w, h, l));
+    col.setMatrixAt(i, M);
+  });
+  col.computeBoundingSphere();
+  group.add(col);
+  carFleet.add(group, cars);
+  if (CARS_MODE === "ab") {                            // A/B timing: the box cars too, switched live (window.__cars.mode)
+    const b = buildBoxCars(sites, ground).group;
+    b.traverse((o) => { if (o.isInstancedMesh) { o.name = "parked-cars-box"; boxMeshes.add(o); o.visible = abMode === "box"; } });
+    group.add(b);
+  }
+  return { group, count: cars.length };
+}
+const boxMeshes = new Set();
+let abMode = "faceted";
+if (CARS_MODE === "ab") globalThis.__cars = {
+  fleet: carFleet,
+  /** "faceted" | "box" | "none" */
+  mode(m) {
+    abMode = m;
+    carFleet.group.visible = m === "faceted";
+    for (const o of boxMeshes) o.visible = m === "box";
+    return m;
+  },
+};
+globalThis.__carFleet = carFleet;

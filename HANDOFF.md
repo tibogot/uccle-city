@@ -43,8 +43,14 @@ lab first, then go into the city. Capsule Lab: the third-person character (`view
 Car Lab (`labs/car-lab.html`): the driving model drive mode uses on a test ground (walls, courtyards, kerb island,
 ramp, posts), handling / suspension / camera sliders, colliders drawn (G); the car model is swappable (`viewer/drive/carModel.js`,
 `?car=scripted|kenney:<id>|quaternius:<id>|faceted:<id>`), plus a car-pack comparison and a parked-street benchmark (`?mode=compare`,
-`?mode=street`, `labs/car-compare.js`; screenshots in `docs/cars/`). The city's parked cars are still the boxes of
-`viewer/cars.js` until the owner picks. Our own faceted family (`tools/blender/carFaceted.py` -> `models/cars/faceted.glb`,
+`?mode=street`, `labs/car-compare.js`; screenshots in `docs/cars/`). The city's parked cars are the faceted family
+(default; `?cars=box` = the old boxes, `?cars=ab` = both, switched live with `__cars.mode("faceted"|"box"|"none")` for
+A/B timing): `viewer/cars.js` places them as before (OSM parking lanes against the measured kerbs) and keeps per tile an
+invisible InstancedMesh "parked-cars" of boxes sized to each car's type (the third-person colliders);
+`viewer/carFleet.js` draws all loaded tiles' cars as ONE fleet (type mix, Brussels paints, instanced per type per LOD,
+LOD0-1 rich material with clear coat and see-through glass, LOD2-3 plain, LOD3 casts no shadow, dithered fades in
+separate small batches: LOD switches, the 380-420 m range end, tiles streaming in; `__carFleet.stats`, with a pop
+counter). Our own faceted family (`tools/blender/carFaceted.py` -> `models/cars/faceted.glb`,
 same contract as the packs: one material, COLOR_0 = palette x Cycles-baked AO, `_KIND` 0-8, per-instance paint; glass drawn
 see-through with alpha-to-coverage in the same opaque draw): hatch_s, hatch_c, estate, saloon, suv, van_c, van_p, taxi;
 `?mode=compare&layout=family`, `&faceted=<id>`; the street benchmark has it as an option. Polish pass: per-type
@@ -96,7 +102,7 @@ Pipeline (raw data must be fetched first, see README): `python pipeline/run_tile
 4. **Night and props**: (street lamps done, procedural placement: `viewer/lamps.js`; bus stops,
    signals, bike racks, benches done from OSM points: `viewer/furniture.js`; shopfronts done from
    OSM shops; tram platforms, shelters and overhead wires done: `viewer/tram.js`) parked cars done
-   (procedural, `viewer/cars.js`, simple model). Tram 92 runs on STIB's real timetable
+   (procedural, `viewer/cars.js`; drawn as the faceted family by `viewer/carFleet.js`). Tram 92 runs on STIB's real timetable
    (`viewer/tramline.js`, `pipeline/build_transit.py`). Left: shop name signs, bins, bollards,
    better car and tram models (Blender), live STIB vehicle positions, more lines.
 5. **Ground**: OSM land-cover mask + procedural grass done (`viewer/ground.js`). Left: UrbIS
