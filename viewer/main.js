@@ -614,10 +614,11 @@ async function main() {
   const v0 = params.get("view") || (params.get("at") ? "stjob" : null);   // ?at=x,z&view=walk stands on the nearest road
   if (v0 === "walk") walk(); else if (v0 === "drive") { setView("overview"); drive(); } else if (v0 === "fly") { setView("overview"); fly(); } else setView(v0 === "stjob" ? "stjob" : "overview");
   // third person: a character on foot (viewer/character/cityHook.js, Capsule Lab); the button, ?view=third, the dev panel
+  let thirdBoot = null;                   // one start only, however many callers (button, ?view=third, a shared link)
   const thirdPerson = async () => {
     walker.on = false; flyer.stop(); driver.stop(); controls.enabled = false;
     try {
-      if (!third) third = await (await import("./character/cityHook.js")).startThirdPerson({ scene, camera, renderer, controls, world, start, setView, log });
+      if (!third) third = await (thirdBoot ||= import("./character/cityHook.js").then((m) => m.startThirdPerson({ scene, camera, renderer, controls, world, start, setView, log })));
       else third.resume();
     } catch (e) { log(`third person: ${e.message}`); controls.enabled = true; }
   };
@@ -772,7 +773,7 @@ async function main() {
   if (params.get("panel") !== "0") {
     try {
       const { createDevPanel } = await import("./devPanel.js");
-      createDevPanel({ renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, thirdPerson, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log });
+      createDevPanel({ renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, drive, thirdPerson, driver, getThird: () => third, getTram: () => tramLine, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log });
     } catch (e) { log(`dev panel: ${e.message}`); }
   }
   window.viewer = { tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },

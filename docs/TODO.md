@@ -77,9 +77,13 @@ read-only (copy into `vendor/` with ORIGIN.md); measure GPU ms before / after (s
       bollards (any InstancedMesh named *bollard*, ready for the roads branch). "Third person" button + dev panel entry.
       Roads BVH + buildings.json + prism hashing in `viewer/character/colliderWorker.js`; the main thread gathers in
       slices of <= 4 ms.
-- [ ] A real jump / fall clip (Quaternius' Universal Animation Library retargets to this rig family); the controller's
-      run speed (5.5 m/s) is faster than the clip's authored jog (2.9 m/s): playback runs ~1.9x, tune one or the other.
-- [ ] Shelters are solid boxes (you can't step inside one yet); the open side needs its own shape.
+- [x] Cadence: with a character in the slot the controller walks at 1.59 and runs at 4.0 m/s (clip speeds calibrated in
+      the lab: 1.38 / 3.15 m/s), gaits blended between those two speeds, playback 1.15x / 1.27x (capped 0.5-1.35x);
+      the stance foot slides 0.17 m/s walking, 0.33 m/s running (was 0.5).
+- [ ] A jump / fall clip: none on this rig in a CC0 pack. Universal Animation Library 1 / 2 are CC0 (UAL2 License.txt
+      checked) but on a UE-style rig (pelvis / thigh_l ...) and UAL2 has only NinjaJump: retargeting needs per-bone
+      rest-pose correction. The held run stride stays for now.
+- [x] Shelters are their own triangles in the roads BVH (open front, roof at 2.41 m: you walk in); lab test passes.
 - [ ] Interiors: exclude the entered house's footprint prism (`PrismSet.exclude(BU_ID)`) and add its interior BVH;
       sun light leaks at wall seams indoors (shadow normalBias 5 cm vs 20 cm walls): interior lighting needs its own pass.
 - [ ] City: tram platforms, shelters, benches, bollards and parked cars are not colliders yet; build the roads BVH in

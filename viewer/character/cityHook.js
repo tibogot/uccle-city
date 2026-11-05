@@ -4,7 +4,9 @@
 //   roads       one TriBVH per tile: the tile's road meshes (`<tile>-roads`: carriageway, raised sidewalks with their
 //               kerb faces, verges, plazas) + the tram platforms (25 cm islands): the kerbs are real steps
 //   buildings   UrbIS footprints (buildings.json, courtyards as holes), base to top
-//   props       one oriented box per instance, ALSO for the camera: parked cars, bus / tram shelters
+//   shelters    bus / tram shelters as their own triangles (back glass, side panel, posts, roof, bench) in the BVH:
+//               the front is open, you walk in under the roof
+//   props       one oriented box per instance, ALSO for the camera: parked cars
 //   posts       blocking the body only (the camera's rays pass): LiDAR tree trunks, lamp posts, tram poles, stop
 //               poles, signals, benches, bike racks, and bollards (any InstancedMesh named *bollard*, e.g. the roads
 //               branch's UrbIS bollards, is picked up when it exists)
@@ -17,12 +19,14 @@ import { ThirdPerson, CollisionWorld, Heightfield, TriBVH, PrismSet } from "./in
 import { lampSites } from "../lamps.js";
 
 const DATA = new URL("../../data/tiles/", import.meta.url);
-// instanced props by mesh name: "prop" = a box for body + camera, "post" = body only (circle if thin), "pole" = a
-// circle at the instance origin (its geometry has an arm over the street)
+// instanced props by mesh name: "mesh" = its real triangles into the BVH (open shapes), "prop" = a box for body +
+// camera, "post" = body only (circle if thin), "pole" = a circle at the instance origin (its geometry has an arm over
+// the street)
 const KIND = (m) => {
   const n = m.name || "", parent = m.parent?.name || "";
   if (/bollard/i.test(n)) return "post";
-  if (n === "parked-cars" || n === "furniture-shelter" || (parent === "tram" && !n)) return "prop";
+  if (n === "furniture-shelter" || (parent === "tram" && !n)) return "mesh";
+  if (n === "parked-cars") return "prop";
   if (n === "tram-poles") return "pole";
   if (/^furniture-(bench|stopPole|signal|bikes)$/.test(n)) return "post";
   return null;
@@ -55,6 +59,9 @@ export async function startThirdPerson({ scene, camera, renderer, controls, worl
     roads?.updateMatrixWorld(true); feats?.updateMatrixWorld(true);
     roads?.traverse(take);
     feats?.traverse((o) => { if (/^tram-platform/.test(o.name)) take(o); });
+    // instanced open shapes (shelters): every instance's triangles
+    const meshInst = [];
+    feats?.traverse((o) => { if (o.isInstancedMesh && KIND(o) === "mesh") { meshInst.push(o); n += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) * o.count; } });
     const positions = new Float32Array(n * 3);
     let k = 0;
     for (const m of meshes) {
@@ -65,12 +72,27 @@ export async function startThirdPerson({ scene, camera, renderer, controls, worl
         positions[k++] = e[0] * x + e[4] * y + e[8] * z + e[12]; positions[k++] = e[1] * x + e[5] * y + e[9] * z + e[13]; positions[k++] = e[2] * x + e[6] * y + e[10] * z + e[14];
       }
     }
+    {
+      const IM = new THREE.Matrix4(), IW = new THREE.Matrix4();
+      for (const m of meshInst) {
+        await breathe();
+        const P = m.geometry.attributes.position.array, I = m.geometry.index?.array, cnt = I ? I.length : P.length / 3;
+        for (let j = 0; j < m.count; j++) {
+          m.getMatrixAt(j, IM); IW.multiplyMatrices(m.matrixWorld, IM);
+          const e = IW.elements;
+          for (let i = 0; i < cnt; i++) {
+            const v = (I ? I[i] : i) * 3, x = P[v], y = P[v + 1], z = P[v + 2];
+            positions[k++] = e[0] * x + e[4] * y + e[8] * z + e[12]; positions[k++] = e[1] * x + e[5] * y + e[9] * z + e[13]; positions[k++] = e[2] * x + e[6] * y + e[10] * z + e[14];
+          }
+        }
+      }
+    }
     // instances -> oriented boxes (the 4 bottom corners of the geometry's box, transformed) or circles
     const props = { polys: [], circles: [] }, posts = { polys: [], circles: [] };
     const M = new THREE.Matrix4(), W = new THREE.Matrix4(), v = new THREE.Vector3(), o = new THREE.Vector3();
     const inTile = (x, z) => x >= t.bounds.x0 && x <= t.bounds.x1 && z >= t.bounds.z0 && z <= t.bounds.z1;
     const inst = [];
-    feats?.traverse((m) => { if (m.isInstancedMesh && KIND(m)) inst.push(m); });
+    feats?.traverse((m) => { const kd = m.isInstancedMesh && KIND(m); if (kd && kd !== "mesh") inst.push(m); });
     for (const m of inst) {
       await breathe();
       const kind = KIND(m);
@@ -123,7 +145,7 @@ export async function startThirdPerson({ scene, camera, renderer, controls, worl
     const sets = [bvh, buildings, props, posts];
     for (const s of sets) cw.add(s);
     built.set(t.name, { sets, tile: t });
-    log(`third person: tile ${t.name} colliders: ${r.counts.tris} road + platform triangles, ${r.counts.buildings} footprints, ${r.counts.props} props (cars, shelters), ${r.counts.posts} posts; main thread ${mainMs.toFixed(1)} ms in slices of <= 4 ms, worker BVH ${r.ms.bvh} ms + prisms ${r.ms.prisms} ms`);
+    log(`third person: tile ${t.name} colliders: ${r.counts.tris} road + platform + shelter triangles, ${r.counts.buildings} footprints, ${r.counts.props} parked cars, ${r.counts.posts} posts; main thread ${mainMs.toFixed(1)} ms in slices of <= 4 ms, worker BVH ${r.ms.bvh} ms + prisms ${r.ms.prisms} ms`);
   }
   async function sync() {
     for (const t of tiles) if (!built.has(t.name)) await buildTile(t);

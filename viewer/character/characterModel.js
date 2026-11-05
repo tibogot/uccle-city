@@ -12,9 +12,13 @@ import * as THREE from "three/webgpu";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
+// stride: the clips' ground speed in the model's own units, calibrated in the Capsule Lab (the authored speed that
+// makes the planted foot slide least, foot IK off: walk 1.44, run 3.29 -> 1.38 / 3.15 m/s at 1.76 m); the stance
+// measurement below (strideSpeed) reads ~7 % low on the run (its touch-down / lift-off frames), it is the fallback
+const MODULAR_MEN_STRIDE = { walk: 1.44, run: 3.29 };
 export const CHARACTERS = {
-  hoodie: { file: "hoodie.glb", label: "Hoodie (Quaternius, CC0)" },
-  casual: { file: "casual.glb", label: "Casual (Quaternius, CC0)" },
+  hoodie: { file: "hoodie.glb", label: "Hoodie (Quaternius, CC0)", stride: MODULAR_MEN_STRIDE },
+  casual: { file: "casual.glb", label: "Casual (Quaternius, CC0)", stride: MODULAR_MEN_STRIDE },
 };
 // the clips: no jump / fall clip in this pack, so the run cycle is held at a stride (a leap) for both
 const CLIPS = { idle: "Idle_Neutral", walk: "Walk", run: "Run", jump: { clip: "Run", at: 0.18 }, fall: { clip: "Run", at: 0.62 } };
@@ -26,14 +30,24 @@ export async function loadCharacter(name = "hoodie", { height = 1.76 } = {}) {
   const gltf = await new GLTFLoader().loadAsync(new URL(`../../models/characters/${def.file}`, import.meta.url).href);
   const t0 = performance.now();
   const tris = mergeSkinned(gltf.scene);
-  const speeds = {
-    walk: strideSpeed(gltf, "Walk"), run: strideSpeed(gltf, "Run"),
-  };
+  const measured = { walk: strideSpeed(gltf, "Walk"), run: strideSpeed(gltf, "Run") };
+  const speeds = def.stride ? { ...def.stride } : measured;
+  poseRest(gltf);                 // setModel sizes the model from its skinned box: in a real pose, not the FBX bind pose
   return {
     gltf,
     opts: { clips: CLIPS, height, forward: "+z", walkSpeed: speeds.walk, runSpeed: speeds.run, speedUnits: "model", rig: { left: LEG("L"), right: LEG("R"), pelvis: "Body" } },
-    info: { name, label: def.label, tris, speeds, mergeMs: +(performance.now() - t0).toFixed(1) },
+    info: { name, label: def.label, tris, speeds, measured, mergeMs: +(performance.now() - t0).toFixed(1) },
   };
+}
+
+/** The idle clip's first frame on the skeleton (the bind pose of these FBX conversions is 100x scaled). */
+function poseRest(gltf) {
+  const clip = gltf.animations.find((a) => a.name === "Idle_Neutral") || gltf.animations[0];
+  if (!clip) return;
+  const mixer = new THREE.AnimationMixer(gltf.scene);
+  mixer.clipAction(clip).play(); mixer.setTime(0);
+  gltf.scene.updateMatrixWorld(true);
+  mixer.stopAllAction(); mixer.uncacheRoot(gltf.scene);
 }
 
 /** The skinned parts of `root` merged into one SkinnedMesh with vertex colours (they share one skeleton). */

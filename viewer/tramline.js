@@ -183,10 +183,11 @@ export async function createTramLine(url, scene, ground) {
     for (const m of [cabs, mids]) { m.castShadow = m.receiveShadow = true; m.frustumCulled = false; m.count = 0; scene.add(m); }
   }
   const pose = [], railTop = (x, z) => ground(x, z) + 0.02;
-  const scale = +(params.get("timescale") || 1);
+  let scale = +(params.get("timescale") || 1);
   const clockP = params.get("clock");
-  const t0 = performance.now(), now0 = brusselsNow();
-  const startSecs = clockP ? clockP.split(":").reduce((a, v, i) => a + +v * [3600, 60, 1][i], 0) : now0.secs;
+  let t0 = performance.now();
+  const now0 = brusselsNow();
+  let startSecs = clockP ? clockP.split(":").reduce((a, v, i) => a + +v * [3600, 60, 1][i], 0) : now0.secs;
   const dayType = { Sat: "saturday", Sun: "sunday" }[now0.dow] || "weekday";
   const trips = doc.trips.filter((t) => t.days.includes(dayType));
   const clock = () => startSecs + ((performance.now() - t0) / 1000) * scale;
@@ -278,5 +279,8 @@ export async function createTramLine(url, scene, ground) {
   };
   /** [x, z, heading] at distance d along the shape of trip `id` (checks) */
   const trackAt = (id, d) => { const t = trips.find((q) => (q.id ?? q.head) === id); return t ? at(shapes[t.shape], d) : null; };
-  return { update, snapTile, info, doc, fleet, model, positions, trackAt };
+  // live clock (the dev panel): set the time of day (seconds) or the speed; both re-anchor, so nothing jumps but the set
+  const setClock = (secs = null) => { startSecs = secs ?? brusselsNow().secs; t0 = performance.now(); };   // null: Brussels now
+  const setTimescale = (k) => { startSecs = clock(); t0 = performance.now(); scale = k; };
+  return { update, snapTile, info, doc, fleet, model, positions, trackAt, setClock, setTimescale, get clockSecs() { return clock() % 86400; }, get timescale() { return scale; } };
 }
