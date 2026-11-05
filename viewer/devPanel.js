@@ -159,15 +159,18 @@ export function createDevPanel(ctx) {
   fWo.add(R, "ring", 0, 2, 1).name("full-detail ring (reload)");
   fWo.add(R, "far", 0, 6, 1).name("far LOD ring (reload)");
   fWo.add(R, "fx").name("post effects (reload)");
-  fWo.add(R, "sunlight").name("cascaded sun (reload)");
+  // (no "cascaded sun" switch: ?sunlight=1 only acts with the old sky, ?sky=old; Firmament, the default, keeps the one
+  // shadow map its sun shafts and the fog read: the switch did nothing. The reload keeps a ?sunlight= already there.)
   fWo.add(R, "gpu").name("GPU timing (reload)");
   fWo.add({ f: () => {
     const q = new URLSearchParams(location.search);
     const put = (k, on, v) => (on ? q.set(k, v) : q.delete(k));
     put("roads", R.roads === "engine", "engine"); put("stjob", !R.stjob, "0"); put("lampmodel", !R.lamps, "0");
     put("trams", !R.trams, "0"); put("tram", R.tramModel === "boxes", "box"); put("trees", R.trees !== "stylized", R.trees);
-    put("impostors", !R.impostors, "0"); q.set("ring", R.ring); q.set("far", R.far); put("fx", !R.fx, "0"); put("sunlight", R.sunlight, "1"); put("gpu", !R.gpu, "0");
-    const m = mode(); put("view", m !== "orbit", m);
+    put("impostors", !R.impostors, "0"); q.set("ring", R.ring); q.set("far", R.far); put("fx", !R.fx, "0"); put("gpu", !R.gpu, "0");
+    // the mode; in orbit keep the view the URL has (overview / close-up: both "orbit"), a left mode's exit view is the close-up
+    const m = mode();
+    if (m !== "orbit") q.set("view", m); else if (q.get("view") && q.get("view") !== "stjob") q.set("view", "stjob");
     location.search = q.toString();
   } }, "f").name("↻ reload with these");
   fWo.close();
