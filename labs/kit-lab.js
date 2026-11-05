@@ -218,7 +218,7 @@ renderer.setAnimationLoop(() => {
   fpsAcc += dt; fpsN++; if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
   controls.update();
   lodEye.value.copy(camera.position);
-  field.update(camera.position, dt);
+  field.update(camera.position, camera, dt);
   lighting.update(camera.position.y, S.mode === "row" ? hm.surface(camera.position.x, camera.position.z) : GY, controls.target, 40, dt);
   if (S.post) pipe.render(hazeHook); else renderer.render(scene, camera);
   pipe.setExposureFactor(lighting.adapt(dt));

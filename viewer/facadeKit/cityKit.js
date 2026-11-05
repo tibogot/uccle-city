@@ -33,7 +33,7 @@ export const cityKit = {
       this.field = await loadKitField();
     } catch (e) { log(`façade kit: load failed (${e.message})`); this.on = false; return null; }
     scene.add(this.field.group);
-    updaters.push((eye) => this.field.update(eye));
+    updaters.push((eye, cam) => this.field.update(eye, cam));
     const k = this.field.json;
     log(`façade kit: ${Object.keys(k.pieces).length} pieces, ${(k.bytes / 1024).toFixed(0)} KB, ${this.field.meshes.size} instanced meshes (empty until a street is near), ${Math.round(performance.now() - t0)} ms`);
     window.__kit = this.field;

@@ -18,6 +18,9 @@ import { STRIDE, VARIANT } from "./placement.js";
 const REMAP = [[VARIANT.BLUE, "stone_white", "stone_blue"], [VARIANT.DARK, "wood_frame_white", "wood_frame_dark"], [VARIANT.YELLOW, "brick_red_brussels", "brick_yellow"]];
 const targetSlot = (slot, variant) => { for (const [bit, a, b] of REMAP) if (slot === a && variant & bit) return b; return slot; };
 const MOVE = 2, MARGIN = 3;
+const TURN = (8 * Math.PI) / 180, CONE_MARGIN = (25 * Math.PI) / 180;
+const fwd = new THREE.Vector3(), dirTmp = new THREE.Vector3(), dirTmp2 = new THREE.Vector3();
+let coneHalf = Math.PI;
 
 export async function loadKitField({ base = new URL("../../models/facadekit/", import.meta.url).href, lab = false } = {}) {
   const [json, bin] = await Promise.all([fetch(base + "kit.json").then((r) => r.json()), fetch(base + "kit.bin").then((r) => r.arrayBuffer()), loadKitMaterialSource()]);
@@ -144,12 +147,20 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
     const R = kitRanges();
     const near0 = R.lod1 + MARGIN, far1lo = R.lod1 - R.lodBand - MARGIN, far1hi = R.far + MARGIN;
     const cellR = CELL * 0.71 + 6;
+    // view cone (horizontal), widened by CONE_MARGIN: cells well behind / beside the view are skipped; turning more
+    // than TURN re-buckets, so a cell enters long before it reaches the screen's edge (no pop on turning)
+    const cosLim = Math.cos(Math.min(Math.PI, coneHalf + CONE_MARGIN));
     let total = 0;
     for (const tile of tiles.values()) {
       const code = tile.code;
       for (const c of tile.cells) {
         total += c.items.length;
-        if (Math.hypot(c.x - eye.x, c.z - eye.z) - cellR > far1hi) continue;
+        const cdx = c.x - eye.x, cdz = c.z - eye.z, cd = Math.hypot(cdx, cdz);
+        if (cd - cellR > far1hi) continue;
+        if (fwd.lengthSq() > 0 && cd > cellR) {
+          const ang = Math.acos(Math.max(-1, Math.min(1, (cdx * fwd.x + cdz * fwd.z) / cd))) - Math.asin(Math.min(1, cellR / cd));
+          if (Math.cos(Math.max(0, ang)) < cosLim) continue;
+        }
         for (const it of c.items) {
           const arr = it.arr, i = it.i;
           const x = arr[i], y = arr[i + 1], z = arr[i + 2];
@@ -197,7 +208,17 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
   }
 
   /** per frame: re-bucket when the eye moved / tiles changed / a tile fades */
-  function update(eye, dt = 1 / 60) {
+  function update(eye, camera = null, dt = 1 / 60) {
+    let turned = false;
+    if (camera) {
+      camera.getWorldDirection(dirTmp); dirTmp.y = 0;
+      if (dirTmp.lengthSq() > 1e-6) {
+        dirTmp.normalize();
+        // half the horizontal field of view (camera.fov is vertical) + the cone's own margin
+        coneHalf = Math.atan(Math.tan((camera.fov * Math.PI) / 360) * camera.aspect) * 1.15;
+        if (fwd.lengthSq() === 0 || fwd.dot(dirTmp) < Math.cos(TURN)) turned = true;
+      }
+    }
     let fading = false;
     for (const t of tiles.values()) {
       if (t.t < 1) {
@@ -208,8 +229,11 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
         fading = true;
       }
     }
-    if (dirty || fading || eye.distanceToSquared(last) > MOVE * MOVE) {
+    if (dirty || fading || turned || eye.distanceToSquared(last) > MOVE * MOVE) {
       last.copy(eye); dirty = false;
+      if (camera && dirTmp.lengthSq() > 0) fwd.copy(dirTmp);
+      // looking steeply down (aerial): no cone
+      if (camera && Math.abs(camera.getWorldDirection(dirTmp2).y) > 0.75) fwd.set(0, 0, 0);
       rebucket(eye);
       // a tile whose kit is all out of reach: its kit walls draw with the plain wall material (a discard in the
       // shader costs early-z on the whole draw: +0.7 ms in an aerial view with no piece drawn, measured)
