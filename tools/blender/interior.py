@@ -669,7 +669,7 @@ HAL = next(r for r in ROOMS if r[0] == "hall"); s0, s1, z0, z1 = HAL[2], HAL[3],
 put(K.coat_rack(0.8), s1 - 0.022, GF, z0 + 1.6, ry=-90, solid=True, box_pad=-0.1, label="hall coat rack")
 put(K.radiator(0.7, 0.62), s1 - 0.1, GF, z0 + 2.75, ry=-90)
 put(K.pendant(0.55, "lantern"), (STAIR_W + s1) / 2, GF_CEIL, z0 + 0.9, solid=False)
-light("hall_lantern", (STAIR_W + s1) / 2, GF_CEIL - 0.75, z0 + 0.9, 60)
+light("hall_lantern", (STAIR_W + s1) / 2, GF_CEIL - 0.75, z0 + 0.9, 40)
 put(K.rug(0.75, 2.2, fabric(0x6A3A2C, "rug2")), (STAIR_W + STRINGER + s1) / 2, GF, z0 + 2.9, solid=False)
 put(K.picture(0.5, 0.65, C["black_wood"], fabric(0x8A7A5E, "canvas")), s1 - 0.012, GF + 1.6, z0 + 3.4 - 0.0, ry=-90, solid=False) if False else None
 
@@ -776,11 +776,11 @@ PROBES.append(("study", s0, s1, z0, z1, FF, FF_CEIL))
 # landing + corridor
 LAN = next(r for r in ROOMS if r[0] == "landing"); s0, s1, z0, z1 = LAN[2], LAN[3], LAN[4], LAN[5]
 put(K.pendant(0.4, "lantern"), (s0 + s1) / 2, FF_CEIL, (z0 + z1) / 2 + 0.2, solid=False)
-light("landing", (s0 + s1) / 2, FF_CEIL - 0.6, (z0 + z1) / 2 + 0.2, 70)
+light("landing", (s0 + s1) / 2, FF_CEIL - 0.6, (z0 + z1) / 2 + 0.2, 45)
 # the stairwell: a long-drop lantern from the void's ceiling over the flight (lights both the flight and the landing)
 VZ = WELL[2] + (WELL[3] - WELL[2]) * 3 / NBARS          # under a glazing bar of the laylight
 put(K.pendant(1.55, "lantern"), STAIR_W / 2, FF_CEIL - 0.07, VZ, solid=False, label="stairwell lantern")      # hung from the laylight's bar
-light("stairwell", STAIR_W / 2, FF_CEIL - 0.07 - 1.55 - 0.17, VZ, 80, radius=0.07)
+light("stairwell", STAIR_W / 2, FF_CEIL - 0.07 - 1.55 - 0.17, VZ, 50, radius=0.07)
 put(K.picture(0.55, 0.7, C["black_wood"], fabric(0x3D4A5A, "canvas")), s0 + 0.012, FF + 1.55, (z0 + z1) / 2 + 0.3, ry=90, solid=False)
 put(K.radiator(0.6, 0.55), s0 + 0.1, FF, z1 - 0.55, ry=90)
 COR = next(r for r in ROOMS if r[0] == "corridor")
@@ -872,6 +872,9 @@ def bake_mat(name):
     if name == "Glass":
         bs.inputs["Transmission Weight"].default_value = 1.0
     if name == "Glow":
+        # lamp shades are translucent (fabric, opal glass): the lamp inside lights the room through them (a closed
+        # lantern box blocked its point light entirely: the dark stairwell at night)
+        bs.inputs["Transmission Weight"].default_value = 0.75; bs.inputs["Roughness"].default_value = 0.9
         nt.links.new(at.outputs["Color"], bs.inputs["Emission Color"])
         bs.inputs["Emission Strength"].default_value = 0.0
     mats[name] = m

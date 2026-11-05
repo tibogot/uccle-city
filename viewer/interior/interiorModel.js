@@ -136,8 +136,8 @@ function surface(name) {
     const wear = smoothstep(0.62, 0.8, noise2D(p.mul(14.0))).mul(0.35);
     const gold = mix(base, vec3(0.42, 0.13, 0.06), wear);
     const R = reflect(P.sub(cameraPosition).normalize(), normalWorld);
-    const giltSpec = gold.mul(pow(float(1).sub(ndv()), 2.0).mul(1.6).add(smoothstep(-0.1, 0.7, R.y).mul(0.55)).add(0.12)).mul(fine.mul(0.2).add(0.9));
-    col = mix(mix(mix(mix(painted, solid, max(max(is(1), is(2)), is(5))), parquet, is(3)), boards, is(4)), gold.mul(0.45), gIs);
+    const giltSpec = mix(gold, vec3(1.0, 0.82, 0.45), 0.3).mul(pow(float(1).sub(ndv()), 2.0).mul(1.9).add(smoothstep(-0.1, 0.7, R.y).mul(0.7)).add(0.18)).mul(fine.mul(0.2).add(0.9));
+    col = mix(mix(mix(mix(painted, solid, max(max(is(1), is(2)), is(5))), parquet, is(3)), boards, is(4)), gold.mul(0.55), gIs);
     spec = giltSpec.mul(gIs);
     rough = mix(mix(float(0.55), float(0.45), max(is(3), is(4))), float(0.3), gIs);
     metal = mix(mix(float(0), float(0.12), max(is(3), is(4))), float(0.8), gIs);       // varnished floors: SSR picks the windows
@@ -243,7 +243,8 @@ function glassMaterial() {
   const fres = pow(float(1).sub(view), 3.0).mul(0.7).add(0.06);
   const c = attribute("color", "vec4");
   const code = floor(c.a.mul(8.0));
-  const mirror = step(0.5, code);
+  const mirror = step(0.5, code).mul(step(code, 2.5));
+  const opal = step(2.5, code);
   const n = nightK();
   // env.uSkyHorizon is HDR under the Firmament sky: only its tint is used here
   const hz = vec3(env.uSkyHorizon), skyTint = hz.div(max(max(hz.x, hz.y), max(hz.z, 0.001)));
@@ -275,10 +276,15 @@ function glassMaterial() {
   const refl = bakedMix(rgbm(slot("rsky", auv)), rgbm(slot("rsun", auv)), rgbm(slot("rnight", auv))).mul(interiorLook.adapt);
   // aged silvering: ~85 % reflectance, a faint warm cast, soft cloudy patches and a few specks
   const age = noise2D(uv().mul(3.0)).mul(0.12).add(noise2D(uv().mul(40.0)).mul(0.05)).add(0.84);
-  const speck = smoothstep(0.93, 0.97, noise2D(uv().mul(90.0))).mul(0.4);
+  const speck = smoothstep(0.972, 0.995, noise2D(uv().mul(70.0))).mul(0.3);
   const mirrorCol = mix(refl.mul(vec3(1.0, 0.97, 0.92)).mul(age).mul(float(1).sub(speck)), flat, float(1).sub(interiorLook.mirrors));
-  m.colorNode = mix(sky, mirrorCol, mirror);
-  m.opacityNode = mix(fres, float(1.0), mirror);
+  // the stairwell laylight (code 3): frosted glass, lit from above through the light well (transmittance x the well's
+  // irradiance, in the bake's units: the sky / sun / night radiance a diffuser of albedo ~0.7 would show), with a faint
+  // cloudy texture and the leading of its panes; at night it catches the stairwell lantern's light from below
+  const opalCol = bakedMix(vec3(0.11, 0.115, 0.12), vec3(0.06), vec3(0.35, 0.3, 0.24)).mul(interiorLook.adapt)
+    .mul(noise2D(uv().mul(6.0)).mul(0.1).add(noise2D(uv().mul(55.0)).mul(0.06)).add(0.88)).mul(c.rgb.mul(1.1));
+  m.colorNode = mix(mix(sky, mirrorCol, mirror), opalCol, opal);
+  m.opacityNode = mix(mix(fres, float(1.0), mirror), float(1.0), opal);
   return m;
 }
 
@@ -308,7 +314,9 @@ const layoutKey = (g) => Object.keys(g.attributes).sort().map((k) => `${k},${g.a
 
 /** Dummy meshes carrying every interior material with the GLB's attribute layouts: add them to the scene for the
  *  boot warm-up (viewer/warmup.js warmBoot compiles every drawable, forced visible, never culled), then remove. */
+let warmedUp = false;
 export function interiorWarmup() {
+  warmedUp = true;
   const g = new THREE.Group(); g.name = "interior warm-up";
   for (const [name, lit, layout] of WARM) {
     const geo = new THREE.BufferGeometry();
@@ -424,9 +432,10 @@ export async function loadInterior(dir, { renderer = null, scene = null, camera 
       for (const t of Object.values(maps)) t?.dispose();
     },
   };
-  if (renderer && scene && camera) {
-    // one material per frame: building a node material's shader is main-thread work (the GPU pipeline is async); a
-    // material the boot warm-up compiled is found in three's cache and costs nothing here
+  if (renderer && scene && camera && !warmedUp) {
+    // one material per frame: building a node material's shader is main-thread work (the GPU pipeline is async).
+    // Skipped when the boot warm-up compiled the materials: compileAsync builds for the canvas target (no MRT), a
+    // different variant from the scene pass's, so it would build every shader again (the 50-115 ms long task)
     const was = root.parent; scene.add(root); root.visible = true;
     const done = new Set();
     for (const o of drawn) {
