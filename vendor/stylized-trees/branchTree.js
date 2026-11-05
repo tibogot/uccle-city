@@ -97,7 +97,10 @@ export function branchShape(styleName) {
     return {
       crown, rad, clumps: pads,
       cards: [20, 7, 3], cardScale: 0.62,
-      trunk: (lod) => barkMesh(branches.filter((b) => b.level <= [2, 1, 1][lod]), [9, 6, 4][lod]),
+      // [uccle-city CHANGES.md #9] LOD 1 keeps 9 sides (6 changed the trunk's outline at 40 m, a pop) and drops
+      // the sub-branches the material has shrunk onto their axis by then; LOD 2 (120 m+, a trunk of a few
+      // pixels) 6 sides
+      trunk: (lod) => barkMesh(branches.filter((b) => b.level <= [2, 1, 1][lod]), [9, 9, 6][lod]),
     };
   };
 }
@@ -105,7 +108,7 @@ export function branchShape(styleName) {
 /** One bark mesh: each branch swept along its curve (parallel-transported rings, tapering radius, a root flare),
  *  its first ring tucked a little inside its parent (no visible joint). */
 function barkMesh(branches, sides) {
-  const pos = [], nrm = [], idx = [];
+  const pos = [], nrm = [], idx = [], bark = [];   // [uccle-city CHANGES.md #9] bark = (ring centre xyz, level)
   for (const b of branches) {
     const { pts } = b;
     const n = pts.length;
@@ -130,6 +133,7 @@ function barkMesh(branches, sides) {
         const p = pts[i].clone().add(d.clone().multiplyScalar(rad * lump));
         pos.push(p.x, p.y, p.z);
         nrm.push(d.x, d.y, d.z);
+        bark.push(pts[i].x, pts[i].y, pts[i].z, b.level);
       }
     }
     for (let i = 0; i < n - 1; i++) {
@@ -143,6 +147,7 @@ function barkMesh(branches, sides) {
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
   g.setAttribute("normal", new THREE.Float32BufferAttribute(nrm, 3));
+  g.setAttribute("bark", new THREE.Float32BufferAttribute(bark, 4));
   g.setIndex(idx);
   return g;
 }

@@ -6,6 +6,7 @@
 // opening such a link restores it. H hides all the UI (photo mode). ?panel=0: the old HUD only.
 import { Panel as GUI } from "./panelUI.js";
 import { uLampPower } from "./lampLight.js";
+import { addSmoothnessFolder } from "./smoothPanel.js";
 
 const TIMES = ["golden", "midday", "overcast", "twilight", "night", "misty"];
 const CHARS = ["hoodie", "casual", "capsule"];
@@ -145,7 +146,7 @@ export function createDevPanel(ctx) {
   fWo.add(S, "parked").name("parked cars").onChange((v) => scene.traverse((o) => { if ((o.name === "parked-cars" || o.name === "parked-cars-fleet") && o.isGroup) o.visible = v; }));   // box cars (?cars=box) or the faceted fleet (carFleet.js)
   const R = {
     roads: params.get("roads") === "engine" ? "engine" : "measured (surface)", stjob: params.get("stjob") !== "0", lamps: params.get("lampmodel") !== "0",
-    trams: TR.on, tramModel: TR.model ? "model (T3000)" : "boxes", trees: params.get("trees") || "stylized", impostors: params.get("impostors") === "1",
+    trams: TR.on, tramModel: TR.model ? "model (T3000)" : "boxes", trees: params.get("trees") || "stylized", impostors: params.get("impostors") !== "0",
     ring: +(params.get("ring") ?? 1), far: +(params.get("far") ?? 3), fx: params.get("fx") !== "0", gpu: params.get("gpu") !== "0", sunlight: params.get("sunlight") === "1",
   };
   fWo.add(R, "roads", ["measured (surface)", "engine"]).name("roads (reload)");
@@ -165,11 +166,14 @@ export function createDevPanel(ctx) {
     const put = (k, on, v) => (on ? q.set(k, v) : q.delete(k));
     put("roads", R.roads === "engine", "engine"); put("stjob", !R.stjob, "0"); put("lampmodel", !R.lamps, "0");
     put("trams", !R.trams, "0"); put("tram", R.tramModel === "boxes", "box"); put("trees", R.trees !== "stylized", R.trees);
-    put("impostors", R.impostors, "1"); q.set("ring", R.ring); q.set("far", R.far); put("fx", !R.fx, "0"); put("sunlight", R.sunlight, "1"); put("gpu", !R.gpu, "0");
+    put("impostors", !R.impostors, "0"); q.set("ring", R.ring); q.set("far", R.far); put("fx", !R.fx, "0"); put("sunlight", R.sunlight, "1"); put("gpu", !R.gpu, "0");
     const m = mode(); put("view", m !== "orbit", m);
     location.search = q.toString();
   } }, "f").name("↻ reload with these");
   fWo.close();
+
+  // ---------------------------------------------------------------- Smoothness (viewer/smoothPanel.js)
+  addSmoothnessFolder(gui, ctx);
 
   // ---------------------------------------------------------------- Performance
   const fP = gui.addFolder("Performance");

@@ -8,7 +8,8 @@
 // additive light pool on the ground, so N lamps cost 3 draw calls. At night a small pool of
 // PointLights follows the lamps nearest the camera (?lamplights=0 to disable).
 import * as THREE from "three/webgpu";
-import { float, vec3, uv, length, smoothstep, mix, color, uniform } from "three/tsl";
+import { float, vec3, uv, length, smoothstep, mix, color, uniform, positionWorld } from "three/tsl";
+import { SMOOTH, lodEye, keepBand, rampTo } from "./lodFade.js";
 import { lampPoolsOn } from "./lampLight.js";
 import { LAMP_LODS } from "./lampModel.js";
 import { ROAD_TYPES } from "../vendor/roads/roadCrossSection.js";
@@ -72,8 +73,22 @@ function postGeometry() {
 }
 
 /** The Blender lamp (viewer/lampModel.js), when loaded: main.js sets it before the first tile. */
-let MODEL = null;
-export function setLampModel(m) { MODEL = m; }
+let MODEL = null, FAR = null;
+export function setLampModel(m) { MODEL = m; FAR = null; }
+const FAR_BAND = 60;
+/** The last LOD's materials: the model's, cut by a dither that fades the lamp out over [until - FAR_BAND, until]
+ *  (per pixel distance to the view camera, lodFade.js). Shared by every tile. */
+function farLampMats() {
+  if (FAR) return FAR;
+  const end = LAMP_LODS[LAMP_LODS.length - 1].until;
+  const fade = (m) => {
+    const c = m.clone();
+    c.maskNode = keepBand(float(0), float(1).sub(rampTo(positionWorld.sub(lodEye).length(), float(end), float(FAR_BAND))));
+    c.userData.shared = true;
+    return c;
+  };
+  return (FAR = { iron: fade(MODEL.iron), glass: fade(MODEL.glass) });
+}
 
 /** `place(site)` (?roads=surface, viewer/streetFit.js): moves a site onto the measured sidewalk or drops it (null);
  *  `lift(x, z)`: the measured surface height above the road there. */
@@ -123,9 +138,14 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true, p
     post.visible = glass.visible = false;
     const cap = Math.max(sites.length, 1025);
     const mats = sites.map((s) => { q.setFromAxisAngle(up, s.yaw); return new THREE.Matrix4().compose(new THREE.Vector3(s.x, s.y, s.z), q, one); });
+    // smooth LOD (docs/SMOOTH_LOD.md): the meshopt LODs are within 1-2 cm of each other at their switch, but the
+    // shadow came from LOD 0 only (a lamp's shadow switched on at 35 m): every LOD casts now, and the last one
+    // dithers out over its last FAR_BAND metres instead of vanishing at 450 m
+    const lastK = MODEL.lods.length - 1;
     const lodMeshes = MODEL.lods.map((l, k) => {
       const mk2 = (geo, mat, shadow) => { const m = new THREE.InstancedMesh(geo, mat, cap); m.count = 0; m.castShadow = shadow; m.receiveShadow = true; m.frustumCulled = false; group.add(m); return m; };
-      return { iron: mk2(l.iron, MODEL.iron, k === 0), glass: mk2(l.glass, MODEL.glass, false) };
+      const far = SMOOTH && k === lastK ? farLampMats() : MODEL;
+      return { iron: mk2(l.iron, far.iron, SMOOTH || k === 0), glass: mk2(l.glass, far.glass, false) };
     });
     const last = new THREE.Vector3(Infinity, 0, 0);
     relod = (cam) => {
@@ -134,7 +154,8 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true, p
       for (const m of lodMeshes) m.iron.count = m.glass.count = 0;
       for (let i = 0; i < sites.length; i++) {
         const s = sites[i], d = Math.hypot(s.x - cam.x, s.y - cam.y, s.z - cam.z);
-        const k = LAMP_LODS.findIndex((l) => d < l.until);
+        let k = LAMP_LODS.findIndex((l) => d < l.until);
+        if (k < 0 && SMOOTH && d < LAMP_LODS[lastK].until + 6) k = lastK;    // (the dither ends the fade)
         if (k < 0) continue;
         const m = lodMeshes[k], n = m.iron.count++;
         m.glass.count++;

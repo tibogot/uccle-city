@@ -23,7 +23,7 @@ import {
   Fn, attribute, uniform, texture, vec2, vec3, float, mix, pow, saturate, dot, normalize, smoothstep,
   positionWorld, cameraPosition, instanceIndex, hash, transformNormalToView,
   positionLocal, positionGeometry, cameraViewMatrix, cross, select,
-  time, sin, cos, fract, vertexStage,
+  time, sin, cos, fract, vertexStage, max,
 } from "three/tsl";
 import { applyAlphaCutout } from "./alphaCutout.js";   // [uccle-city CHANGES.md #1]
 
@@ -115,16 +115,23 @@ function buildTree(seed, lod, shape = roundCrown) {
   const tmp = new THREE.Vector3();
   // near: many cards; mid: a few large ones; far: two per clump (no shadow at that range)
   // (a shape may ask for more, smaller cards: smaller leaves on screen)
-  const cards = (cardsByLod ?? [11, 4, 2])[lod];
-  const sizeK = [1, 1.35, 1.7][lod] * cardScale;
+  // [uccle-city CHANGES.md #8] NESTED LODs: every LOD draws from the SAME card set (LOD 0's, from the same
+  // random stream whatever the LOD); LOD 1 keeps the first n1 cards of each clump, LOD 2 the first n2. A card's
+  // `rank` (0 = in every LOD, 1 = LOD 0 and 1, 2 = LOD 0 only) lets the material shrink it to nothing before
+  // the switch that drops it and grow the kept ones to the old LOD sizes (1.35x, 1.7x): at the switch both
+  // LODs draw the same pixels, and the tree keeps its shape (Uccle docs/SMOOTH_LOD.md).
+  const perLod = cardsByLod ?? [11, 4, 2];
+  const sizeK = cardScale;
   const yLo = crown.y - rad.y, yHi = crown.y + rad.y * 1.25;
 
   for (let ci = 0; ci < clumps.length; ci++) {
     const { c, r: cr } = clumps[ci];
     const core = ci === clumps.length - 1;
-    const n = core ? Math.ceil(cards * 0.5) : cards;
+    const cnt = (l) => (core ? Math.ceil(perLod[l] * 0.5) : perLod[l]);
+    const n = cnt(0), n1 = cnt(1), n2 = cnt(2);
     const outward = c.clone().sub(crown).normalize();
     for (let k = 0; k < n; k++) {
+      const rank = k < n2 ? 0 : k < n1 ? 1 : 2;
       // a point in the clump, leaning out of the crown (the inside is never seen)
       tmp.set(r() * 2 - 1, r() * 2 - 1, r() * 2 - 1).normalize();
       if (!core) tmp.addScaledVector(outward, 0.6).normalize();
@@ -145,12 +152,13 @@ function buildTree(seed, lod, shape = roundCrown) {
       a *= 0.92 + r() * 0.12; // a little value spread per card
       const s = cr * (0.8 + r() * 0.3) * sizeK; // half size
       const spin = r() * Math.PI * 2, cs = Math.cos(spin), sn = Math.sin(spin);
+      if (rank > 2 - lod) continue;   // [#8] not in this LOD (its random draws were taken all the same)
       const base = pos.length / 3;
       for (const [ox, oy] of CORNERS) {
         pos.push(p.x, p.y, p.z);
         nrm.push(nn.x, nn.y, nn.z);
         corner.push(ox, oy);
-        uvs.push(cs * s, sn * s, 1 / cr); // spin x half size, clump radius
+        uvs.push(cs * s, sn * s, 1 / cr, rank); // spin x half size, clump radius, [#8] rank
         ao.push(a);
         hgt.push(Math.min(1, Math.max(0, (p.y - yLo) / (yHi - yLo))));
       }
@@ -165,7 +173,7 @@ function buildTree(seed, lod, shape = roundCrown) {
   const card = new Float32Array(ao.length * 4);
   for (let i = 0; i < ao.length; i++) card.set([corner[i * 2], corner[i * 2 + 1], ao[i], hgt[i]], i * 4);
   leaves.setAttribute("card", new THREE.Float32BufferAttribute(card, 4)); // (unit corner xy, occlusion, height in crown)
-  leaves.setAttribute("cardSpin", new THREE.Float32BufferAttribute(uvs, 3)); // (cos, sin) x half size, 1 / clump radius
+  leaves.setAttribute("cardSpin", new THREE.Float32BufferAttribute(uvs, 4)); // (cos, sin) x half size, 1 / clump radius, [#8] rank
   leaves.setIndex(idx);
   // the cards reach past their centres: a generous bound (frustum culling is off anyway)
   leaves.boundingSphere = new THREE.Sphere(crown.clone(), Math.max(rad.x, rad.y, rad.z) + 4);
@@ -230,15 +238,31 @@ export function treeTint(xf, tintVar) {
   return vertexStage(fract(sin(xf.x.mul(127.1).add(xf.y.mul(311.7)).add(xf.z.mul(74.7))).mul(43758.5453))).sub(0.5).mul(tintVar).add(1);
 }
 
+/** [uccle-city CHANGES.md #8] The LOD morph of one tree: its distance to the VIEW camera (U.eye: the same in the
+ *  shadow pass, whose cameraPosition is the light's) from its per-instance foot `treePos`, and the morph
+ *  ramps t1 (0 -> 1 over [lodDist - morph1, lodDist]) and t2 (over [farDist - morph2, farDist]).
+ *  U.lodScale = 0 turns the morph off (the impostor bake draws LOD 0 as built). */
+export function lodMorph(U) {
+  const d = attribute("treePos", "vec3").sub(U.eye).length().mul(U.lodScale);
+  const ramp = (a, w) => saturate(d.sub(a.sub(w)).div(max(w, float(1e-3))));
+  return { d, t1: ramp(U.lod1, U.morph1), t2: ramp(U.lod2, U.morph2) };
+}
+
 function makeLeafMaterial(P, U) {
   const leafTex = P.leafMask ?? loadLeafMask();   // [uccle-city CHANGES.md #2]
   const m = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, roughness: 0.9, metalness: 0 });
   const card = attribute("card", "vec4");
-  const spin = attribute("cardSpin", "vec3");
+  const spin = attribute("cardSpin", "vec4");
   const unit = card.xy, aoA = card.z, hA = card.w, invR = spin.z;
   const tex = texture(leafTex, unit.mul(0.5).add(0.5));
+  // [uccle-city CHANGES.md #8] the card's size along the LOD morph: kept cards grow toward the old LOD sizes,
+  // cards the next LOD drops shrink to nothing before it (rank in cardSpin.w)
+  const { t1, t2 } = lodMorph(U);
+  const rank = spin.w;
+  const grow = mix(float(1), float(1.35), t1).mul(mix(float(1), float(1.7 / 1.35), t2));
+  const sizeF = grow.mul(select(rank.greaterThan(1.5), t1.oneMinus(), select(rank.greaterThan(0.5), t2.oneMinus(), float(1))));
   // the corner in the card's plane: the unit corner turned by the card's spin, x its half size
-  const cardO = vec2(unit.x.mul(spin.x).sub(unit.y.mul(spin.y)), unit.x.mul(spin.y).add(unit.y.mul(spin.x)));
+  const cardO = vec2(unit.x.mul(spin.x).sub(unit.y.mul(spin.y)), unit.x.mul(spin.y).add(unit.y.mul(spin.x))).mul(sizeF);
   const xf = attribute("treeXf", "vec3"); // per instance: cos, sin of the tree's Y turn, its scale
   // the card's corner along the VIEWING camera's axes (in the shadow pass: the light's), world
   // space and unscaled; the view matrix's rows are the camera's right and up
@@ -324,7 +348,16 @@ function makeTrunkMaterial(U, P) {
   // crownLift: everything above the root ring rises with the crown — the trunk stretches, the
   // branches move up with their clumps
   // [uccle-city CHANGES.md #5] positionLocal is already instanced (world heights): test the raw vertex
-  m.positionNode = positionLocal.add(vec3(0, select(positionGeometry.y.greaterThan(0), U.crownLift, float(0)), 0));
+  const lifted = positionLocal.add(vec3(0, select(positionGeometry.y.greaterThan(0), U.crownLift, float(0)), 0));
+  // [uccle-city CHANGES.md #9] the sub-branches (level 2, which LOD 1 drops) shrink onto their axis over the
+  // LOD 0 -> 1 band: (bark.xyz = the ring's centre in the tree's space, bark.w = the branch level)
+  if (P.barkMorph) {
+    const bark = attribute("bark", "vec4"), xf = attribute("treeXf", "vec3");
+    const toWorld = (l) => vec3(xf.x.mul(l.x).add(xf.y.mul(l.z)), l.y, xf.x.mul(l.z).sub(xf.y.mul(l.x)));
+    const axisW = attribute("treePos", "vec3").add(toWorld(bark.xyz).mul(xf.z));
+    const k = select(bark.w.greaterThan(1.5), lodMorph(U).t1.oneMinus(), float(1));
+    m.positionNode = mix(axisW, lifted, k);
+  } else m.positionNode = lifted;
   return m;
 }
 
@@ -350,17 +383,33 @@ export function createStylizedTrees({ scene, trees, variants = 3, params = {}, s
     windAmp: uniform(P.windAmp),
     windSpeed: uniform(P.windSpeed),
     fillColor: uniform(new THREE.Color(P.fillColor)),
+    // [uccle-city CHANGES.md #8] the LOD morph (lodMorph): the view camera, the switch distances and bands
+    eye: P.lodEye ?? uniform(new THREE.Vector3()),
+    lod1: uniform(P.lodDist), lod2: uniform(P.farDist),
+    morph1: uniform(P.morph1 ?? 0), morph2: uniform(P.morph2 ?? 0),
+    lodScale: uniform(1),
   };
   const leafMat = makeLeafMaterial(P, U);
   const trunkMat = makeTrunkMaterial(U, P);
-  if (shared) Object.assign(shared, { U, leafMat, trunkMat, geoms: new Map() });
-  return build(U, leafMat, trunkMat);
+  // [uccle-city CHANGES.md #10] the far LOD's own copies of both materials, cut by P.farMask(distance) (a
+  // dithered fade-out / cross-fade toward the impostors): the nearer LODs keep shaders without a discard
+  let leafFar = leafMat, trunkFar = trunkMat;
+  if (P.farMask) {
+    const { d } = lodMorph(U);
+    leafFar = leafMat.clone(); leafFar.name = "stylized-leaves:far";
+    leafFar.maskNode = P.farMask(d);
+    leafFar.maskShadowNode = leafMat.maskShadowNode.and(leafFar.maskNode);
+    trunkFar = trunkMat.clone(); trunkFar.name = "stylized-bark:far";
+    trunkFar.maskNode = P.farMask(d);
+  }
+  if (shared) Object.assign(shared, { U, leafMat, trunkMat, leafFar, trunkFar, geoms: new Map() });
+  return build(U, leafMat, trunkMat, leafFar, trunkFar);
 
   function createWithShared() {
-    return build(shared.U, shared.leafMat, shared.trunkMat);
+    return build(shared.U, shared.leafMat, shared.trunkMat, shared.leafFar, shared.trunkFar);
   }
 
-  function build(U, leafMat, trunkMat) {
+  function build(U, leafMat, trunkMat, leafFar = leafMat, trunkFar = trunkMat) {
   const group = new THREE.Group();
   group.name = "StylizedTrees";
   scene.add(group);
@@ -403,7 +452,14 @@ export function createStylizedTrees({ scene, trees, variants = 3, params = {}, s
       const xfAttr = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3);
       xfAttr.setUsage(THREE.DynamicDrawUsage);
       g.leaves.setAttribute("treeXf", xfAttr);
-      kinds.push({ v, lod, leaves: mk(g.leaves, leafMat), trunk: mk(g.trunk, trunkMat), xfAttr });
+      // [uccle-city CHANGES.md #8] the tree's foot (the instance's translation) for the LOD morph, and both
+      // per-instance attributes on the bark too (its morph; leaves and bark share the instance order)
+      const posAttr = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3);
+      posAttr.setUsage(THREE.DynamicDrawUsage);
+      g.leaves.setAttribute("treePos", posAttr);
+      g.trunk.setAttribute("treeXf", xfAttr);
+      g.trunk.setAttribute("treePos", posAttr);
+      kinds.push({ v, lod, leaves: mk(g.leaves, lod === 2 ? leafFar : leafMat), trunk: mk(g.trunk, lod === 2 ? trunkFar : trunkMat), xfAttr, posAttr });
     }
   }
   const variantOf = trees.map((_, i) => Math.floor(rng(i * 7919 + 13)() * variants));
@@ -418,13 +474,19 @@ export function createStylizedTrees({ scene, trees, variants = 3, params = {}, s
   let lastKey = "";
   function relod(camPos) {
     for (const k of kinds) { k.leaves.count = 0; k.trunk.count = 0; }
-    const near2 = P.lodDist * P.lodDist, far2 = P.farDist * P.farDist, max2 = P.maxDist * P.maxDist;
+    // [uccle-city CHANGES.md #8] with the morph, a tree changes mesh only once the material has finished the
+    // morph toward the next LOD: `slack` covers the camera's move since this re-bucketing (5 m) and more; the
+    // nearer LOD is drawn a little further than before, never the coarser one too near
+    const slack = P.lodSlack ?? 0;
+    const sq = (v) => v * v;
+    const near2 = sq(P.lodDist + slack), far2 = sq(P.farDist + slack), max2 = sq(P.maxDist + slack);
     for (let i = 0; i < n; i++) {
       const [x, z, y] = trees[i];
       const dx = x - camPos.x, dy = y - camPos.y, dz = z - camPos.z;
       const d2 = dx * dx + dy * dy + dz * dz;
       if (d2 > max2) continue;
       const k = kinds[variantOf[i] * 3 + (d2 < near2 ? 0 : d2 < far2 ? 1 : 2)];
+      k.posAttr.array.set([x, y - 0.25, z], k.leaves.count * 3);
       k.xfAttr.array.set([Math.cos(trees[i][3]), Math.sin(trees[i][3]), trees[i][4]], k.leaves.count * 3);
       k.leaves.setMatrixAt(k.leaves.count++, mats[i]);
       k.trunk.setMatrixAt(k.trunk.count++, mats[i]);
@@ -433,6 +495,7 @@ export function createStylizedTrees({ scene, trees, variants = 3, params = {}, s
       k.leaves.instanceMatrix.needsUpdate = true;
       k.trunk.instanceMatrix.needsUpdate = true;
       k.xfAttr.needsUpdate = true;
+      k.posAttr.needsUpdate = true;
     }
   }
 
@@ -452,8 +515,11 @@ export function createStylizedTrees({ scene, trees, variants = 3, params = {}, s
     U.windAmp.value = P.windAmp;
     U.windSpeed.value = P.windSpeed;
     U.fillColor.value.set(P.fillColor);
+    U.lod1.value = P.lodDist; U.lod2.value = P.farDist;               // [#8]
+    U.morph1.value = P.morph1 ?? 0; U.morph2.value = P.morph2 ?? 0;
+    if (!P.lodEye) U.eye.value.copy(camera.position);
     // LOD re-bucketing only when the camera has moved a few metres (or the distances changed)
-    const key = `${P.lodDist},${P.farDist},${P.maxDist}`;
+    const key = `${P.lodDist},${P.farDist},${P.maxDist},${P.lodSlack}`;
     if (camera.position.distanceToSquared(lastCam) > 25 || key !== lastKey) {
       lastCam.copy(camera.position);
       lastKey = key;

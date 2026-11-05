@@ -28,6 +28,13 @@ sizes the physics box to the model. Packs: `node tools/cars/convertPacks.mjs` (r
 - Never substitute mocked or made-up data: if a dataset can't be fetched, say so.
 - Work on branch `claude/foundation`.
 
+## Smooth LOD
+
+`docs/SMOOTH_LOD.md`: no LOD pops (nested tree LODs with a geomorph, impostors as the far LOD and on the far
+tiles, dithered cross-fades via `viewer/lodFade.js`), shadows that fade instead of stopping (light-space texel
+snap, fixed box sizes, `FadedShadowNode`), streamed tiles cross-fade. `?smooth=0` = the old hard switches; dev
+panel folder "Smoothness".
+
 ## Dev panel
 
 `viewer/devPanel.js` (top right, on by default; `?panel=0` = old HUD only), built on our own UI

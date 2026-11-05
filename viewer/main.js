@@ -33,6 +33,8 @@ import { buildPlazas, loadOverrides } from "./plazas.js";
 import { Flyer } from "./flight.js";
 import { Driver, tileDrive } from "./drive/driveMode.js";
 import { addLamps } from "./lampLight.js";
+import { SMOOTH, lodEye, Fader, withObjectFade } from "./lodFade.js";
+import { buildFarTreeField } from "./treesStylized.js";
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -40,6 +42,12 @@ if (params.get("log") === "0") document.getElementById("logBox")?.removeAttribut
 const TILE = (params.get("tile") || "I6").toUpperCase();    // I6 = Saint-Job (it was G4 before the grid grew to all of Uccle)
 const EYE = 1.7;            // walk-mode eye height (m)
 const CARVE = 0.12;         // terrain is pushed this far under any road surface
+// Smooth LOD (docs/SMOOTH_LOD.md): streamed tiles cross-fade (dithered, ~0.9 s) instead of popping: a full
+// tile fades in over the far tile it replaces, a full tile leaving the ring hands over to its far tile the
+// same way, far tiles fade in and out at the ring's edge. ?tilefade=0: instant swaps (and no fade term in the
+// tiles' shaders), ?smooth=0: every smooth-LOD change off.
+const TILE_FADE = SMOOTH && params.get("tilefade") !== "0";
+const fader = new Fader();
 
 const $ = (id) => document.getElementById(id);
 const logLines = [];
@@ -334,10 +342,23 @@ async function loadLiteTile(entry, group) {
   bg.setAttribute("normal", new THREE.BufferAttribute(d.buildings.normal, 3));
   bg.setAttribute("color", new THREE.BufferAttribute(d.buildings.color, 3));
   g.add(new THREE.Mesh(bg, sharedMat("lite-buildings", () => new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.85 }))));
+  // its trees, as the full tile's impostors (the same placements and variants: no change when it swaps), so a
+  // tile no longer brings a whole forest with it at ~500 m (smooth LOD; none with ?impostors=0)
+  let trees = null;
+  if (SMOOTH && entry.files.features) {
+    const f = await getJSON(entry.files.features).catch(() => null);
+    const b = { x0: entry.bounds.x[0], x1: entry.bounds.x[1], z0: entry.bounds.z[0], z1: entry.bounds.z[1] };
+    const ys = new Map((f?.trees || []).map((t) => [`${t.x},${t.z}`, t.y]));
+    trees = f?.trees?.length && ys.values().next().value != null
+      ? buildFarTreeField(f.trees, (x, z) => ys.get(`${x},${z}`), (x, z) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1) : null;
+    if (trees) { g.add(trees.mesh); updaters.push(trees.update); }
+  }
   group.add(g);
   return {
     name: entry.name,
+    group: g,
     dispose: () => {
+      if (trees) { const i = updaters.indexOf(trees.update); if (i >= 0) updaters.splice(i, 1); }
       g.traverse((o) => { o.geometry?.dispose(); if (o.material && !o.material.userData?.shared) o.material.dispose(); });
       for (const t of textures) t.dispose();
       g.removeFromParent();
@@ -354,6 +375,9 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // per-tile groups inside the shared layers, so the tile can be unloaded
   const own = {};
   for (const k of Object.keys(layers)) { own[k] = new THREE.Group(); own[k].name = `${entry.name}-${k}`; layers[k].add(own[k]); }
+  // a streamed tile is built over several frames: hidden until it is whole, then faded in (smooth LOD)
+  const fadeIn = TILE_FADE && !verbose;
+  if (fadeIn) for (const g of Object.values(own)) g.visible = false;
   const ups = [];
   const t0 = performance.now();
   const d = await tileData(entry);
@@ -414,6 +438,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   say(`buildings: ${d.buildingCount} (${B.triangles} triangles), roads: ${d.road.triangles} triangles in tile, terrain cells carved: ${d.road.carvedCells}; tile ready in ${(performance.now() - t0).toFixed(0)} ms`);
 
   for (const u of ups) updaters.push(u);
+  for (const g of Object.values(own)) if (fadeIn) { g.visible = true; fader.fade(g, +1); }
   const dispose = () => {
     for (const u of ups) { const i = updaters.indexOf(u); if (i >= 0) updaters.splice(i, 1); }
     for (const g of Object.values(own)) {
@@ -438,7 +463,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     }
     return h;
   };
-  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt, drive: tileDrive(d.drive, roads, bounds), lift: fit?.lift };
+  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt, drive: tileDrive(d.drive, roads, bounds), lift: fit?.lift, groups: Object.values(own) };
 }
 
 // ------------------------------------------------------------------ main
@@ -502,16 +527,28 @@ async function main() {
   // (full or far LOD), since the tiles no longer draw the solid.
   if (HIDE_BU_IDS.length) {
     loadStJob().then((m) => {
-      const lod = new THREE.LOD();
+      // smooth LOD: the levels cross-fade (dithered, lodFade.js objectFade) over a band around each switch
+      // distance instead of THREE.LOD's hard swap (?smooth=0: THREE.LOD)
+      const lod = SMOOTH ? new THREE.Group() : new THREE.LOD();
       lod.name = "stjob";
-      STJOB_LODS.forEach((l, k) => lod.addLevel(m.make(k), k ? STJOB_LODS[k - 1].until : 0));
+      const levels = STJOB_LODS.map((l, k) => m.make(k));
+      if (SMOOTH) { lod.add(...levels); for (const mat of m.materials) withObjectFade(mat); }
+      else levels.forEach((g, k) => lod.addLevel(g, k ? STJOB_LODS[k - 1].until : 0));
       lod.position.copy(m.placement.position);
       lod.rotation.y = m.placement.rotationY;
       scene.add(lod);
       const p = m.placement.position;
       const home = manifest.tiles.find((t) => p.x >= t.bounds.x[0] && p.x < t.bounds.x[1] && p.z >= t.bounds.z[0] && p.z < t.bounds.z[1])?.name;
       let n = 0;
-      updaters.push(() => {
+      const BANDS = [0.15, 0.12];     // half-width of each switch's band, a share of its distance (170 m: +-25 m, 520 m: +-62 m)
+      const ramp = (d, k) => { const s = STJOB_LODS[k].until, w = s * BANDS[k]; return THREE.MathUtils.smoothstep(d, s - w, s + w); };
+      updaters.push((camPos) => {
+        if (SMOOTH) {
+          const d = camPos.distanceTo(p), t1 = ramp(d, 0), t2 = ramp(d, 1);
+          const fades = [2 + t1, t1 < 1 ? t1 : 2 + t2, t2];       // outgoing keeps n >= t (2 + t), incoming n < t
+          const shown = [t1 < 1, t1 > 0 && t2 < 1, t2 > 0];
+          levels.forEach((g, k) => { g.visible = shown[k]; if (shown[k]) g.traverse((o) => { o.userData.fade = fades[k]; }); });
+        }
         if (n++ % 30) return;
         lod.visible = world.tiles.some((t) => t.name === home) || !!scene.getObjectByName(`${home}-lite`);
       });
@@ -603,7 +640,7 @@ async function main() {
     },
   };
   let third = null;                       // the third-person character (?view=third), see below
-  const setView = (v) => { if (third?.on) third.stop(); walker.on = false; flyer.stop(); driver.stop(); controls.enabled = true; views[v](); controls.update(); };
+  const setView = (v) => { if (third?.on) third.stop(); walker.on = false; flyer.stop(); driver.stop(); controls.enabled = true; views[v](); controls.update(); lighting.snapNext = true; };
   walker.onExit = () => setView("stjob");
   $("btnOrbit").onclick = () => setView("overview");
   $("btnStJob").onclick = () => setView("stjob");
@@ -629,6 +666,7 @@ async function main() {
   });
 
   let last = performance.now(), fpsAcc = 0, fpsN = 0, fps = 0, frames = 0;
+  let stateFreeze = false;       // the smoothness harness (viewer.stateAt): LOD and shadow state set by hand
   const info = renderer.info;
   // GPU time: r187's resolve returns the total of every pass (shadows, scene, post) of the LAST frame
   // it has queries for (each query uid ends in ":f<frame>"), and keeps per-pass times in
@@ -667,13 +705,14 @@ async function main() {
     else if (walker.on || driver.on) focus.copy(camera.position).addScaledVector(camera.getWorldDirection(fwd).setY(0).normalize(), 45);
     else focus.copy(controls.target);
     const half = flyer.on ? THREE.MathUtils.clamp((flyer.pos.y - world.surface(flyer.x, flyer.z)) * 1.6 + 90, 90, 380)   : walker.on || driver.on ? 80 : THREE.MathUtils.clamp(camera.position.distanceTo(controls.target) * 0.9, 60, 380);
-    lighting.update(camera.position.y, world.surface(camera.position.x, camera.position.z), focus, half);
     const now = performance.now(), dt = Math.min((now - last) / 1000, 0.1);
     last = now;
+    if (!stateFreeze) lighting.update(camera.position.y, world.surface(camera.position.x, camera.position.z), focus, half, dt);
     fpsAcc += dt; fpsN++;
     if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
     if (third?.on) third.update(dt); else if (flyer.on) flyer.update(dt); else if (driver.on) driver.update(dt); else if (walker.on) walker.update(dt); else controls.update();
-    for (const u of updaters) u(camera.position, camera);
+    fader.update(dt);
+    if (!stateFreeze) { lodEye.value.copy(camera.position); for (const u of updaters) u(camera.position, camera); }
     renderFrame();
     if (pipe && lighting.firmament) pipe.setExposureFactor(lighting.adapt(dt));
     sampleGpu();
@@ -699,7 +738,13 @@ async function main() {
   scene.add(liteGroup);
   const lite = new Map();                 // name -> lite tile
   const pending = new Set();
-  let busy = null;
+  let busy = null, firstLite = !!bootPipes;
+  /** Fade a tile's groups out, then dispose it (at once with ?tilefade=0). */
+  const retire = (groups, dispose) => {
+    if (!TILE_FADE) { dispose(); return; }
+    let n = groups.length;
+    for (const g of groups) fader.fade(g, -1, () => { if (--n === 0) dispose(); });
+  };
   const stream = async (liteFirst = false) => {   // liteFirst: skip the full tiles this step (boot warm-up)
     // the manifest tile under (or nearest to) the player / orbit target, loaded or not
     const px = flyer.on ? flyer.x : driver.on ? driver.x : walker.on ? walker.x : controls.target.x, pz = flyer.on ? flyer.z : driver.on ? driver.z : walker.on ? walker.z : controls.target.z;
@@ -713,17 +758,29 @@ async function main() {
     const dist = (t) => { const [tx, tz] = centre(t); return Math.max(Math.abs(tx - hx), Math.abs(tz - hz)) / T; };
     const byName = (n) => built.find((m) => m.name === n);
     for (const t of [...world.tiles]) {
-      if (t !== here && dist(byName(t.name)) > ring + 1.01 && world.tiles.length > 1) { t.dispose(); world.tiles.splice(world.tiles.indexOf(t), 1); log(`- tile ${t.name}`); }
+      if (t !== here && dist(byName(t.name)) > ring + 1.01 && world.tiles.length > 1) {
+        world.tiles.splice(world.tiles.indexOf(t), 1);
+        // smooth LOD: its far tile first, then the full one fades out over it (no hole, no pop)
+        if (TILE_FADE && far > ring && dist(byName(t.name)) <= far + 0.01 && !lite.has(t.name) && !pending.has(t.name)) {
+          pending.add(t.name);
+          try { const l = await loadLiteTile(byName(t.name), liteGroup); lite.set(t.name, l); fader.fade(l.group, +1); } catch (e) { log(`far tile ${t.name} failed: ${e.message}`); }
+          pending.delete(t.name);
+        }
+        retire(t.groups, t.dispose);
+        log(`- tile ${t.name}`);
+      }
     }
-    for (const [n, l] of lite) if (dist(byName(n)) > far + 1.01 || world.tiles.some((w) => w.name === n)) { l.dispose(); lite.delete(n); }
+    for (const [n, l] of lite) if (dist(byName(n)) > far + 1.01 || world.tiles.some((w) => w.name === n)) { lite.delete(n); retire([l.group], l.dispose); }
     const want = built.filter((t) => dist(t) <= ring + 0.01 && !world.tiles.some((w) => w.name === t.name)).sort((a, b) => dist(a) - dist(b));
     if (!liteFirst) for (const t of want) {
       if (pending.has(t.name)) continue;
       pending.add(t.name);
       const t0 = performance.now();
       try {
-        world.tiles.push(await loadTile(t, { layers, contourOn, verbose: false }));
-        lite.get(t.name)?.dispose(); lite.delete(t.name);
+        world.tiles.push(await loadTile(t, { layers, contourOn, verbose: false }));   // (fades in by itself)
+        const old = lite.get(t.name);
+        lite.delete(t.name);
+        if (old) retire([old.group], old.dispose);
         log(`+ tile ${t.name} (${(performance.now() - t0).toFixed(0)} ms)`);
       } catch (e) { log(`tile ${t.name} failed: ${e.message}`); }
       pending.delete(t.name);
@@ -734,7 +791,7 @@ async function main() {
       .sort((a, b) => dist(a) - dist(b)).slice(0, 2);
     await Promise.all(wantLite.map(async (t) => {
       pending.add(t.name);
-      try { lite.set(t.name, await loadLiteTile(t, liteGroup)); } catch (e) { log(`far tile ${t.name} failed: ${e.message}`); }
+      try { const l = await loadLiteTile(t, liteGroup); lite.set(t.name, l); if (firstLite) firstLite = false; else fader.fade(l.group, +1); } catch (e) { log(`far tile ${t.name} failed: ${e.message}`); }
       pending.delete(t.name);
     }));
     if (wantLite.length && !want.length && built.filter((t) => dist(t) <= far + 0.01 && !lite.has(t.name) && !world.tiles.some((w) => w.name === t.name)).length === 0)
@@ -746,9 +803,13 @@ async function main() {
   // emits its shared TSL functions in a different order than all later ones (same code, other WGSL
   // text, so one more compile), and far tiles have their own shaders.
   if (bootPipes) {
+    // the tiles streamed under the cover hold their fade (smooth LOD): the warm-up then compiles their fading
+    // copies too (lodFade.js fadeVariant); the first far tile does not fade, so its own materials compile
+    fader.hold = true;
     if (ring > 0) await stream();
     if (far > ring) await stream(true);
     const w = await warmBoot(renderer, scene, bootPipes);
+    fader.hold = false;
     log(`warm-up: ${w.ms} ms, ${w.warmed} drawables, ${w.parallel} pipelines compiled in parallel, ${w.late} after`);
   }
   $("cover").classList.add("gone");
@@ -772,11 +833,20 @@ async function main() {
   if (params.get("panel") !== "0") {
     try {
       const { createDevPanel } = await import("./devPanel.js");
-      createDevPanel({ renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, drive, thirdPerson, driver, getThird: () => third, getTram: () => tramLine, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log });
+      createDevPanel({ renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, drive, thirdPerson, driver, getThird: () => third, getTram: () => tramLine, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log, fader });
     } catch (e) { log(`dev panel: ${e.message}`); }
   }
+  // stateAt(pos, focus, half, dt): the smoothness harness (docs/SMOOTH_LOD.md): every LOD, fade and the shadow box
+  // as if the camera were at `pos` (looking at `focus`), while the view camera stays where it is; freeze(true)
+  // keeps the animation loop from resetting it. Frames rendered that way show only what the LOD state changes.
+  const stateAt = (pos, f = pos, h = 80, dtS = 1 / 60) => {
+    lodEye.value.copy(pos);
+    for (const u of updaters) u(pos, camera);
+    lighting.update(pos.y, world.surface(pos.x, pos.z), f, h, dtS);
+  };
   window.viewer = { tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
-    world, renderFrame: () => { for (const u of updaters) u(camera.position, camera); renderFrame(); } };
+    world, fader, stateAt, freeze: (on) => { stateFreeze = !!on; },
+    renderFrame: () => { if (!stateFreeze) { lodEye.value.copy(camera.position); for (const u of updaters) u(camera.position, camera); } renderFrame(); } };
 }
 
 main().catch((e) => { log(`ERROR: ${e.message}`); console.error(e); });
