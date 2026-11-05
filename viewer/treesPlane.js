@@ -399,6 +399,9 @@ export function planeBark(m) {
   // fine grain, lichen speckle, moss in the old bark
   const fine = mx_noise_float(vec3(q.x.mul(9.0), q.y.mul(2.5), q.z.mul(9.0))).mul(0.5).add(0.5);   // fibrous, along the trunk
   col = col.mul(fine.mul(0.22).mul(near).add(0.89));
+  // mottling inside each plate (weathering, lichen, dirt): two octaves of luminance and a warm / green shift
+  const mot = mx_noise_float(q.mul(2.6).add(13.0)).mul(0.6).add(mx_noise_float(q.mul(5.9).add(7.0)).mul(0.4));
+  col = col.mul(mot.mul(0.32).mul(near).add(1)).mul(mix(vec3(1, 1, 1), vec3(1.06, 1.02, 0.86), smoothstep(-0.2, 0.4, mot).mul(near)));
   const moss = smoothstep(0.25, 0.6, mx_noise_float(q.mul(1.3).add(31.0))).mul(a.oneMinus()).mul(b.oneMinus());
   col = mix(col, vec3(0.1, 0.14, 0.05), moss.mul(0.45));
   // the foot: older bark, brown-grey, vertical fissures, damp and darker toward the ground
