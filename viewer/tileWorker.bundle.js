@@ -6930,7 +6930,12 @@ function kitCollector(opts = {}) {
         pts[0][1] = 0.05;
         pts[1][1] = 0.05;
       }
-      for (let i = 0; i < pts.length; i++) if (depthAt(pts[i][0], pts[i][1]) === null) {
+      const onFace = pts.map(([u, h]) => depthAt(u, h) !== null);
+      if (!onFace.some(Boolean)) {
+        stats.offFace = (stats.offFace || 0) + 1;
+        continue;
+      }
+      for (let i = 0; i < pts.length; i++) if (!onFace[i]) {
         stats.skipped++;
         const w = `${o.kind}${o.floor} pt${i}`;
         stats.why[w] = (stats.why[w] || 0) + 1;

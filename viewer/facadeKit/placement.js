@@ -119,7 +119,11 @@ export function kitCollector(opts = {}) {
       const top = o.h1 + (o.kind === "window" ? rise : 0);
       const pts = [[o.u0 + 0.01, o.h0 + 0.01], [o.u1 - 0.01, o.h0 + 0.01], [o.u0 + 0.01, top - 0.01], [o.u1 - 0.01, top - 0.01], [(o.u0 + o.u1) / 2, (o.h0 + top) / 2]];
       if (o.kind === "door") { pts[0][1] = 0.05; pts[1][1] = 0.05; }
-      for (let i = 0; i < pts.length; i++) if (depthAt(pts[i][0], pts[i][1]) === null) {
+      // an opening wholly OFF the face's triangles (a stepped wall, an annex, a gable above) is painted nowhere: ignore
+      // it; one PARTLY on the face (the shader paints a part of it) keeps the whole face painted
+      const onFace = pts.map(([u, h]) => depthAt(u, h) !== null);
+      if (!onFace.some(Boolean)) { stats.offFace = (stats.offFace || 0) + 1; continue; }
+      for (let i = 0; i < pts.length; i++) if (!onFace[i]) {
         stats.skipped++;
         const w = `${o.kind}${o.floor} pt${i}`; stats.why[w] = (stats.why[w] || 0) + 1;
         if (opts.debug && !stats.sample) stats.sample = { key: f.key, pt: pts[i], o, width: f.width, T: T.map((t) => t.map((q) => q.map((v) => +v.toFixed(2)))) };
