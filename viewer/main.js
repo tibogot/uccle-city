@@ -15,6 +15,7 @@ import { loadStJob, STJOB_LODS, STJOB_BU_ID, stjobColliders } from "./stjobModel
 import { buildFurniture } from "./furniture.js";
 import { buildTram } from "./tram.js";
 import { buildCars } from "./cars.js";
+import { carFleet } from "./carFleet.js";
 import { streetFit, buildBollards } from "./streetFit.js";
 import { cobbleMaterial, pitMaterial } from "./cobbles.js";
 import { landCoverTexture, groundMaterial } from "./ground.js";
@@ -478,6 +479,8 @@ async function main() {
   const contourOn = uniform(0);
   const layers = { terrain: new THREE.Group(), buildings: new THREE.Group(), roads: new THREE.Group(), features: new THREE.Group() };
   for (const g of Object.values(layers)) scene.add(g);
+  // the parked cars of every tile, as one fleet (viewer/carFleet.js; ?cars=box: the old box cars per tile)
+  if (params.get("cars") !== "box") { scene.add(carFleet.group); updaters.push(carFleet.update); }
   // the world: the main tile now, its neighbours streamed in after the first frame (?ring=0|1|2)
   const world = {
     tiles: [],

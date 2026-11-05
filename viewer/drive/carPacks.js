@@ -194,9 +194,11 @@ export const packLook = { glass: uniform(1), glassOpacity: uniform(0.76), clearc
  * The pack material. paint: a THREE.Color (one car: a uniform) or "instance" (parked cars: geometry attribute "paint",
  * an InstancedBufferAttribute). lights: { head, tail, brake } uniforms (carModel.js carLights), optional.
  */
-export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = null, rich = false, crossFade = false } = {}) {
-  // rich (our faceted family): a physical material for a light clear coat on the paint mask only
-  const m = rich ? new THREE.MeshPhysicalNodeMaterial({ roughness: 0.6, metalness: 0 }) : new THREE.MeshStandardNodeMaterial({ roughness: 0.6, metalness: 0 });
+export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = null, rich = false, crossFade = false,
+  clearcoat = rich, seeThrough = rich } = {}) {
+  // rich (our faceted family): vertex-colour lamps; clearcoat: a physical material for a light clear coat on the paint
+  // mask only; seeThrough: alpha-to-coverage glass + a light glass shadow. The city's far LODs switch both off (cost).
+  const m = clearcoat ? new THREE.MeshPhysicalNodeMaterial({ roughness: 0.6, metalness: 0 }) : new THREE.MeshStandardNodeMaterial({ roughness: 0.6, metalness: 0 });
   // the interpolated varying is 0.99999 / 1.00001 across a face: round it before comparing (else per-pixel noise)
   const kind = attribute("_kind", "float").add(0.5).floor(), vc = attribute("color", "vec3");
   const isPaint = kind.equal(1), isGlass = kind.equal(4), isHead = kind.equal(2), isTail = kind.equal(3);
@@ -206,16 +208,20 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
   m.roughnessNode = select(isPaint, float(rich ? 0.34 : 0.32), select(isGlass, float(0.06), select(isChrome, float(0.22),
     select(isRubber, float(0.9), select(isPlate, float(0.45), select(isInterior, float(0.85), float(0.62)))))));
   m.metalnessNode = select(isPaint, float(0.25), select(isGlass, float(0.1), select(isChrome, float(1), float(0))));
-  if (rich) {
+  if (clearcoat) {
     // clear coat on the paint only: a second, sharp specular lobe (environment + sun) over the base paint
     m.clearcoatNode = select(isPaint, packLook.clearcoat, float(0));
     m.clearcoatRoughnessNode = float(0.05);
+  }
+  let glassShadow = null;
+  if (seeThrough) {
     // tinted glass the interior shows through, still ONE opaque draw: alpha-to-coverage on the MSAA target
     // (the lab / city render with antialias: true), no sorting, no transparent pass
     m.alphaToCoverage = true;
     m.opacityNode = select(isGlass, packLook.glassOpacity, float(1));
     // glass casts a light shadow: only one shadow-map texel in three under glass is written (PCF blends it)
-    m.maskShadowNode = isGlass.not().or(screenCoordinate.x.floor().add(screenCoordinate.y.floor()).mod(3).equal(0));
+    glassShadow = isGlass.not().or(screenCoordinate.x.floor().add(screenCoordinate.y.floor()).mod(3).equal(0));
+    m.maskShadowNode = glassShadow;
   }
   if (lights) {
     const head = select(isHead, lights.head.mul(5), float(0));
@@ -230,6 +236,8 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
     const v = attribute("lodFade", "float");
     const h = screenCoordinate.xy.floor().dot(vec2(0.06711056, 0.00583715)).fract().mul(52.9829189).fract();   // interleaved gradient noise
     m.maskNode = select(v.greaterThan(1), h.lessThan(v.sub(1)), h.greaterThanEqual(v));
+    // the shadow fades with it (in the shadow pass screenCoordinate is the shadow-map texel): no shadow pop either
+    m.maskShadowNode = glassShadow ? m.maskNode.and(glassShadow) : m.maskNode;
   }
   // no mrtNode: the post chain's MRT (viewer/post.js) reads this roughness / metalness itself (SSR on paint and glass),
   // and an mrtNode breaks the shader where no MRT is set (labs, ?fx=0: "structures must have at least one member")
