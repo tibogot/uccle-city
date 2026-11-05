@@ -83,7 +83,7 @@ export const DEFS = {
   render_white: { kind: "render", damp: true, salt: false, streaks: true, label: "Render, white", unit: 0.02,
     params: { color: "#e0dcd2", color2: "#b9b4aa", cracks: [0.2, 0, 1, 0.01] }, surface: render },
   render_painted: { kind: "render", damp: true, salt: false, streaks: true, label: "Render, painted", unit: 0.02, painted: true,
-    params: { color: "#d8c49b", color2: "#bdb8ad", cracks: [0.15, 0, 1, 0.01], peel: [0.15, 0, 1, 0.01] }, surface: render },
+    params: { color: "#d8c49b", color2: "#bdb8ad", cracks: [0.15, 0, 1, 0.01], peel: [0.06, 0, 1, 0.01] }, surface: render },
   slate: { kind: "roof", label: "Slate", scan: true, unit: 0.2,
     params: { color: "#3e434a", color2: "#4a4d45", course: [0.16, 0.1, 0.3, 0.005], length: [0.25, 0.15, 0.45, 0.005], joint: [0.004, 0.001, 0.01, 0.0005], lap: [0.012, 0, 0.02, 0.0005] },
     surface: slate },
@@ -249,8 +249,8 @@ function slate(c) {
   const worn = float(1).sub(smoothstep(float(0.0), float(0.006), k.fv.mul(U.course))).mul(U.wear).mul(fine);
   col = mix(col, col.mul(1.6), worn.mul(0.5));
   // lichen: small pale rosettes
-  const lich = smoothstep(0.82, 0.86, n01(P.x.mul(9.0), P.y.mul(9.0), P.z.mul(9.0))).mul(U.moss).mul(fine);
-  col = mix(col, L("#a9a58a"), lich.mul(0.7));
+  const lich = smoothstep(0.8, 0.86, n01(P.x.mul(26.0), P.y.mul(26.0), P.z.mul(26.0))).mul(U.moss).mul(fine);
+  col = mix(col, L("#a9a58a"), lich.mul(0.35));
   const joint = max(ju, lowEdge.mul(0.7));
   col = mix(col, col.mul(0.35), joint);
   col = col.mul(float(1).sub(smoothstep(0.78, 1.0, k.fv).mul(0.3).mul(fine)));               // shade under the next course's edge

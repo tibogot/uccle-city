@@ -188,7 +188,7 @@ const fm = ui.addFolder("Material");
 fm.add(S, "material", MATERIAL_NAMES).name("material").onChange(() => { loadChoice(); applyMaterial(); }).listen();
 fm.add(S, "variant", ["proc", "scan", "hybrid", "split"]).name("variant (A/B/C)").onChange(applyMaterial).listen();
 fm.add(S, "mapping", ["auto", "world", "uv", "triplanar"]).name("mapping").onChange(applyMaterial).listen();
-fm.add(S, "layout", ["screen thirds", "three galleries"]).name("split layout").onChange(() => { applyMaterial(); goView(S.view); });
+fm.add(S, "layout", ["screen thirds", "three galleries"]).name("split layout").onChange(() => { applyMaterial(); goView(S.view); }).listen();
 const fv = ui.addFolder("View");
 fv.add(S, "view", Object.keys(VIEWS)).name("camera preset").onChange(goView).listen();
 S.cityShow = "library";
@@ -274,25 +274,33 @@ function sampleGpu() {
   }).catch(() => {}).finally(() => { gpu.pending = false; });
 }
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-// the bench draws ONLY the full-screen wall, REPS times per frame (no post, no gallery, no ground), so the material's
-// cost dominates the timestamp noise of a shared GPU; result = median ms per draw over ~2 s
-const REPS = 12;
+// the bench draws ONLY the full-screen wall (no post, no gallery, no ground, shadow maps frozen), so the material's
+// cost dominates; result = the lowest of three 1.5 s medians (other tabs on the GPU only add time)
+const REPS = 1;                         // >1 piles timestamp queries up across frames (resolveTimestampsAsync then sums several frames)
 async function measure(material) {
   benchWall.material = material;
   await renderer.compileAsync(scene, camera).catch(() => {});
-  await wait(400); gpu.samples.length = 0; await wait(1800);
-  const s = [...gpu.samples].sort((a, b) => a - b);
-  return s.length ? s[Math.floor(s.length / 2)] / REPS : NaN;
+  // three windows, the lowest median: other tabs / agents on the same GPU only ever ADD time
+  await wait(400);
+  let best = Infinity;
+  for (let k = 0; k < 3; k++) {
+    gpu.samples.length = 0; await wait(1500);
+    const s = gpu.samples.slice(1).sort((a, b) => a - b);                                 // the first may straddle the swap
+    if (s.length >= 2) best = Math.min(best, s[Math.floor(s.length / 2)]);
+  }
+  return Number.isFinite(best) ? best / REPS : NaN;
 }
 const plain = new THREE.MeshStandardNodeMaterial({ color: 0x777777, roughness: 0.8 });
 let benching = false;
 async function benchOne(name) {
   const prevView = S.view; goView("bench"); S.post = false; S.reps = REPS;
   const vis = [gallery.visible, ground.visible]; gallery.visible = ground.visible = false; benchWall.castShadow = false;
+  const shadows = []; scene.traverse((o) => { if (o.isLight && o.shadow) { shadows.push([o.shadow, o.shadow.autoUpdate]); o.shadow.autoUpdate = false; } });   // no shadow passes in the reps
   const res = { base: await measure(plain) };
   for (const v of hasScan(name) ? ["proc", "scan", "hybrid"] : ["proc"]) res[v] = await measure(mat(name, v, "world"));
   res.triplanar = await measure(mat(name, "proc", "triplanar"));
   S.post = true; S.reps = 1; goView(prevView); applyMaterial(); [gallery.visible, ground.visible] = vis;
+  for (const [sh, a] of shadows) { sh.autoUpdate = a; sh.needsUpdate = true; }
   return res;
 }
 async function bench() {
@@ -337,7 +345,7 @@ pipe.setExposureScale(lighting.exposureScale); pipe.look(preset);
 const hazeHook = (rt, d, size) => lighting.hazeHook(rt, d, size);
 applyMaterial();
 goView(VIEWS[S.view] ? S.view : "5m");
-window.lab = { renderer, scene, camera, controls, lighting, S, goView, applyMaterial, bench, benchAll, shaderSize, looks, choices, mat, SCANS, gpu };
+window.lab = { renderer, scene, camera, controls, lighting, S, goView, applyMaterial, bench, benchAll, benchOne, shaderSize, looks, choices, mat, SCANS, gpu };
 
 let last = performance.now(), frames = 0, fpsAcc = 0, fpsN = 0, fps = 0;
 renderer.setAnimationLoop(() => {
@@ -354,7 +362,8 @@ renderer.setAnimationLoop(() => {
   if (++frames % 10 === 1) {
     const r = renderer.info.render;
     S.stats = `${fps.toFixed(0)} fps · GPU ${gpu.avg.toFixed(2)} ms · ${r.drawCalls ?? r.calls} draws`;
-    $info.textContent = `${backend} · ${S.stats} · camera ${dist.toFixed(1)} m\n${S.material} · ${hasScan(S.material) ? S.variant : "proc"} · mapping ${S.mapping} · textures ${S.tex}` +
+    const lay = S.variant === "split" ? (S.layout === "three galleries" ? " (left A proc · middle B scan · right C hybrid)" : " (screen thirds A | B | C)") : "";
+    $info.textContent = `${backend} · ${S.stats} · camera ${dist.toFixed(1)} m\n${S.material} · ${hasScan(S.material) ? S.variant : "proc"}${lay} · mapping ${S.mapping} · textures ${S.tex}` +
       `\nscans loaded in ${(scanMs / 1000).toFixed(1)} s · bench: ${S.bench}\nshader: ${S.shader}`;
   }
 });

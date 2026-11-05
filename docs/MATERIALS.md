@@ -84,7 +84,46 @@ GPU ms per frame over a plain `MeshStandardNodeMaterial` (WebGPU timestamp queri
 non-empty lines / KB of the generated WGSL fragment shader. Texture memory: KTX2 transcodes to BC7 / ASTC, 1 byte per
 texel, 2 maps x 1024² + mips = 2.7 MB per scan material on the GPU (the WebP fallback would be 11 MB as RGBA8).
 
-See the table in "Bench results" below (filled from the lab's `window.benchResult`).
+### Bench results (2026-11-05, the owner's machine, WebGPU, shared with other tabs)
+
+Whole-frame GPU ms with ONLY the 30 x 30 m wall on screen (1500 x 800 canvas at DPR 1.5 = 2.7 Mpx, post off,
+shadow maps frozen), lowest of three 1.5 s medians; "plain" = a `MeshStandardNodeMaterial` with a colour. Timestamps
+come in ~0.065 ms steps and the GPU may downclock at this load: read differences of less than ~0.15 ms as equal. The
+material's own cost per full screen = column - plain (at 1080p, x 0.75). Shader = non-empty lines / size of the WGSL
+fragment shader (lighting included). Textures: GPU MB (BC7 / ASTC) / download MB (KTX2) per scan material.
+
+| Material | plain | proc | scan | hybrid | proc triplanar | WGSL proc | WGSL scan | WGSL hybrid | textures |
+|---|---|---|---|---|---|---|---|---|---|
+| brick_red_brussels | 1.31 | 2.69 | 2.42 | 2.69 | 2.62 | 423 / 35 KB | 347 / 25 KB | 441 / 36 KB | 2.67 / 2.37 |
+| brick_yellow | 1.31 | 2.69 | — | — | 2.75 | 423 / 35 KB | — | — | 0 |
+| brick_dark | 1.31 | 2.56 | — | — | 2.69 | 423 / 35 KB | — | — | 0 |
+| mortar | 1.38 | 2.42 | — | — | 2.36 | 343 / 26 KB | — | — | 0 |
+| stone_white | 1.31 | 2.69 | 2.49 | 2.75 | 3.08 | 421 / 35 KB | 347 / 25 KB | 439 / 37 KB | 2.67 / 1.54 |
+| stone_blue | 1.31 | 2.82 | 2.16 | 2.82 | 3.54 | 579 / 40 KB | 339 / 24 KB | 597 / 42 KB | 2.67 / 2.23 |
+| render_white | 1.31 | 2.62 | — | — | 2.95 | 527 / 33 KB | — | — | 0 |
+| render_painted | 1.31 | 2.69 | — | — | 3.41 | 549 / 37 KB | — | — | 0 |
+| slate | 1.31 | 2.49 | 1.51 | 2.42 | 2.62 | 352 / 26 KB | 307 / 20 KB | 370 / 28 KB | 2.67 / 2.51 |
+| roof_tiles_red | 1.31 | 2.42 | — | — | 2.56 | 333 / 23 KB | — | — | 0 |
+| zinc_roof | 1.31 | 2.56 | — | — | 2.69 | 364 / 27 KB | — | — | 0 |
+| copper_patina | 1.31 | 2.62 | 2.49 | 2.69 | 2.82 | 367 / 29 KB | 344 / 24 KB | 403 / 32 KB | 2.67 / 2.18 |
+| painted_metal_white | 1.31 | 2.29 | — | — | 2.69 | 382 / 28 KB | — | — | 0 |
+| cast_iron_green | 1.31 | 2.56 | — | — | 2.29 | 315 / 24 KB | — | — | 0 |
+| wood_frame_white | 1.44 | 2.69 | — | — | 2.95 | 338 / 26 KB | — | — | 0 |
+| wood_frame_dark | 1.44 | 2.69 | — | — | 2.95 | 335 / 26 KB | — | — | 0 |
+| glass_window | 1.70 | 2.56 | — | — | 2.29 | 290 / 21 KB | — | — | 0 |
+| cobbles | 1.70 | 2.49 | 1.44 | 2.82 | 4.39 | 633 / 40 KB | 307 / 20 KB | 651 / 42 KB | 2.67 / 2.52 |
+| paving_concrete | 1.64 | 2.75 | 1.97 | 2.82 | 3.02 | 371 / 28 KB | 307 / 20 KB | 389 / 30 KB | 2.67 / 2.20 |
+| asphalt | 1.31 | 2.36 | 2.16 | 2.49 | 2.82 | 514 / 33 KB | 324 / 22 KB | 549 / 36 KB | 2.67 / 2.56 |
+| gravel_path | 1.25 | 2.42 | — | — | 3.15 | 492 / 34 KB | — | — | 0 |
+| lawn_edge | 1.31 | 2.29 | — | — | 2.88 | 344 / 27 KB | — | — | 0 |
+
+Reading: every procedural material costs about +1.0 to +1.5 ms per FULL screen of 2.7 Mpx over a flat colour (a
+city frame has each surface on a fraction of the screen, and the façades today already pay a similar shader); the scans
+are cheaper per pixel (2 texture fetches instead of the pattern maths: -0.3 to -1 ms per full screen) but cost
+2.7 MB GPU and ~2.3 MB download each; hybrid = proc + scan (both evaluated, blended by distance); triplanar adds
++0.1 to +1.9 ms (three pattern evaluations; cobbles worst). About half of each procedural material's cost is the shared
+weathering (`finish()`: macro tone, soiling, streaks, damp, salt, moss): it was 2x before it moved to 2D value noise in
+the world frame (the first measurement, 3.65 ms for brick, is why).
 
 ## City sample: today -> library
 
