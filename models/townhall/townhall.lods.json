@@ -1,0 +1,14 @@
+{
+ "TownHall_lod1": {
+  "from": "TownHall",
+  "sourceTris": 49002,
+  "tris": 21979
+ },
+ "TownHall_lod2": {
+  "from": "TownHall_far",
+  "sourceTris": 3368,
+  "tris": 3031
+ },
+ "glbBytes": 1696352,
+ "rawBytes": 5022040
+}
