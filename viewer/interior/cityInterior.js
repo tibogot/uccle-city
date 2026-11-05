@@ -24,7 +24,7 @@ export async function startCityInterior({ scene, renderer, camera, lighting, upd
   const spec = await fetch(DIR + "house.json").then((r) => r.json());
   setHouseCut(spec);
   const centre = new THREE.Vector3();
-  { const fp = spec.footprint[0]; for (const [x, z] of fp) centre.add(new THREE.Vector3(x, spec.base + 3, z)); centre.multiplyScalar(1 / fp.length); }
+  { const fp = spec.footprint; for (const [x, z] of fp) centre.add(new THREE.Vector3(x, spec.base + 3, z)); centre.multiplyScalar(1 / fp.length); }
   const state = { cell: null, loading: false, portal: null, probes: null, bvh: null, fade: 0, want: false, hooked: null, stats: {} };
   const longTasks = [];
   try { new PerformanceObserver((l) => { for (const e of l.getEntries()) if (state.loading) longTasks.push(Math.round(e.duration)); }).observe({ type: "longtask", buffered: false }); } catch { /* not supported */ }
@@ -39,7 +39,7 @@ export async function startCityInterior({ scene, renderer, camera, lighting, upd
       state.portal = new Portal(cell, { camera, sun: lighting.sun });
       log(`interior: ${spec.BU_ID.split("/").pop()} loaded in ${Math.round(performance.now() - t0)} ms (GLB + lightmaps ${cell.stats.loadMs} ms, compiled ${cell.stats.readyMs} ms), ${cell.stats.triangles} triangles, ${cell.stats.draws} draws; long tasks while loading: ${longTasks.length ? longTasks.join(", ") + " ms" : "none"}`);
       state.probes = await bakeProbes(cell, renderer);
-      log(`interior: ${state.probes.probes} probes baked in ${state.probes.ms} ms (${state.probes.slices} slices, worst ${state.probes.worstSliceMs} ms)`);
+      log(`interior: ${state.probes.probes} probes baked in ${state.probes.ms} ms (${state.probes.slices} slices: the first ${state.probes.firstSliceMs} ms incl. pipeline compile, then <= ${state.probes.worstSliceMs} ms)`);
     } catch (e) { log(`interior: load failed: ${e.message}`); }
     state.loading = false;
   }
@@ -90,7 +90,7 @@ export async function startCityInterior({ scene, renderer, camera, lighting, upd
     houseCut.uFade.value = state.fade;
     if (state.cell && !state.want && state.fade === 0) unload();
     if (!state.cell) return;
-    state.cell.update(dt, third?.on ? pos : camPos);
+    state.cell.update(dt, third?.on ? pos : camPos, camPos);
     state.portal.update();
     if (third?.on) {
       hook(third);

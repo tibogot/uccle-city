@@ -392,7 +392,11 @@ for r in ROOMS:
     else:
         rect_y(Bm, s0, s1, z0, z1, y1, "Plaster", ceil_c, up=False)
         rect_y(Cm, s0, s1, z0, z1, y1, "Plaster", ceil_c, up=False)
-# the stairwell's party-wall face from GF ceiling up (one tall face over the flight)
+# the stairwell's party-wall face on the first floor (no room covers the void there: the city's UrbIS wall would show)
+wall_face(Bm, "s", 0.0, 1, VOID[2], VOID[3], FF, FF_CEIL, [], "Plaster", plaster(pal["hall"]), also=Cm)
+# and the void's ceiling over the flight (the first floor's ceiling covers the rooms only)
+rect_y(Bm, VOID[0], VOID[1], VOID[2], VOID[3], FF_CEIL, "Plaster", ceil_c, up=False)
+
 # (the hall's GF party wall stops at GF_CEIL; the landing's FF wall starts at FF; the band between is the slab edge
 # drawn above on s = 0 over the void)
 # occluders: slabs between storeys, the attic
@@ -985,6 +989,7 @@ if PREVIEW:
         "salon_sofa": ((S[3] - 0.35, GF + 1.4, S[4] + 0.5), (S[2] + 0.4, GF + 0.7, S[5] - 2.0), 18),
         "kitchen": ((Kt[3] - 0.4, GF + 1.6, Kt[4] + 0.3), (Kt[2] + 0.8, GF + 0.9, Kt[5] - 1.2), 16),
         "dining": ((Kt[2] + 1.2, GF + 1.5, Kt[5] - 0.3), (Kt[3] - 1.2, GF + 0.8, Kt[4] + 1.0), 16),
+        "dining_table": ((dt_s - 1.6, GF + 1.35, dt_z - 1.9), (dt_s, GF + 0.6, dt_z), 32),
         "hall_stair": ((S1 - 0.3, GF + 1.6, ZF_IN + 0.25), (0.6, GF + 1.8, Z_TOP), 16),
         "bedroom": ((Bd[2] + 0.75, FF + 1.6, Bd[5] - 1.2), (Bd[3] - 0.8, FF + 0.6, Bd[4] + 1.2), 16),
         "bedroom_window": ((Bd[3] - 0.4, FF + 1.5, Bd[5] - 1.0), (Bd[2] - 1.0, FF + 1.0, Bd[4] + 0.2), 16),

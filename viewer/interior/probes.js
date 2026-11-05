@@ -13,7 +13,7 @@ import { env } from "../lighting.js";
 
 export const probeLook = { gain: uniform(0.32) };
 
-export async function bakeProbes(cell, renderer, { spacing = 0.75, perFrame = 32, onProgress } = {}) {
+export async function bakeProbes(cell, renderer, { spacing = 0.75, perFrame = 8, onProgress } = {}) {
   const t0 = performance.now();
   const inner = cell.info.inner, h = 6.4;
   const W = inner.width + 0.3, D = inner.zb - inner.zf + 0.3;
@@ -37,17 +37,18 @@ export async function bakeProbes(cell, renderer, { spacing = 0.75, perFrame = 32
   const grids = { day: make(), night: make() };
   const total = res[0] * res[1] * res[2];
   const was = interiorLook.dayOverride.value;
-  let slices = 0, worst = 0;
+  let slices = 0, worst = 0, first = 0;
   try {
     for (const mode of ["day", "night"]) {
       const g = grids[mode];
       for (let start = 0; start < total; start += perFrame) {
         const ts = performance.now();
         interiorLook.dayOverride.value = mode === "day" ? 1 : 0;
+        const ad = interiorLook.adapt.value; interiorLook.adapt.value = 1;     // the grids hold unadapted light
         if (mode === "day") uSky.value.setRGB(0.85, 0.92, 1.05).multiplyScalar(interiorLook.dayGain.value * 0.25); else uSky.value.setRGB(0.004, 0.005, 0.009);
         g.bake(renderer, scene, { cubemapSize: 8, near: 0.05, far: 40, start, count: Math.min(perFrame, total - start) });
-        worst = Math.max(worst, performance.now() - ts); slices++;
-        interiorLook.dayOverride.value = was;
+        const ms = performance.now() - ts; if (slices === 0) first = ms; else worst = Math.max(worst, ms); slices++;
+        interiorLook.dayOverride.value = was; interiorLook.adapt.value = ad;
         onProgress?.(((start + perFrame) / total + (mode === "night" ? 1 : 0)) / 2);
         await new Promise((r) => requestAnimationFrame(r));
       }
@@ -58,7 +59,7 @@ export async function bakeProbes(cell, renderer, { spacing = 0.75, perFrame = 32
     sky.geometry.dispose(); sky.material.dispose();
   }
   const uInv = uniform(new THREE.Matrix4().copy(cell.root.matrixWorld).invert());
-  return { grids, res, probes: total * 2, ms: Math.round(performance.now() - t0), slices, worstSliceMs: +worst.toFixed(1), uInv };
+  return { grids, res, probes: total * 2, ms: Math.round(performance.now() - t0), slices, firstSliceMs: +first.toFixed(1), worstSliceMs: +worst.toFixed(1), uInv };
 }
 
 /** The character's indoor material maker for body.setVariant(make): unlit, vertex colour x the probes' irradiance. */
@@ -71,7 +72,7 @@ export function probeVariant(probes, body) {
     const m = new THREE.MeshBasicNodeMaterial({ vertexColors: !!src.vertexColors });
     if (src.color) m.color.copy(src.color);
     const irr = mix(lightProbeGridIrradiance(grids.day, pl, nl), lightProbeGridIrradiance(grids.night, pl, nl), n);
-    m.colorNode = irr.mul(probeLook.gain).add(0.003);
+    m.colorNode = irr.mul(probeLook.gain).mul(interiorLook.adapt).add(0.003);
     if (fade) { m.transparent = true; m.depthWrite = false; m.opacityNode = body.uOpacity; }
     return m;
   };

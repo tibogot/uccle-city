@@ -22,7 +22,10 @@ import { hash2D, noise2D } from "../tslkit.js";
 
 /** Live look controls (uniforms: no recompiles). */
 export const interiorLook = {
-  dayGain: uniform(2.2), sunGain: uniform(2.5), nightGain: uniform(0.45), glow: uniform(2.0),
+  dayGain: uniform(0.9), sunGain: uniform(1.2), nightGain: uniform(0.3), glow: uniform(2.0),
+  // eye adaptation inside: the cell's light is multiplied by `adapt`, eased toward `adaptInside` while the camera is in
+  // the house and back to 1 outside (the city behind the windows keeps its exposure: it reads bright, as it should)
+  adapt: uniform(1), adaptInside: 12.0, adaptNight: 2.5,
   lightmaps: uniform(1),            // 0 = albedo only (debug)
   view: uniform(0),                 // debug: 0 final, 1 lighting only, 2 albedo only
   dayOverride: uniform(-1),         // >= 0: forces the day/night mix (the lab's toggle); < 0 follows env.uNight
@@ -152,7 +155,7 @@ function makeMaterial(name, lit, maps) {
   const L = sky.mul(interiorLook.dayGain.mul(day)).mul(mix(vec3(1), vec3(env.uSkyTop).normalize().mul(1.4).add(0.2), 0.15))
     .add(sun.mul(interiorLook.sunGain.mul(day).mul(sunUp)).mul(vec3(env.uSunColor)))
     .add(night.mul(interiorLook.nightGain.mul(n)));
-  const light = mix(vec3(1), L, interiorLook.lightmaps).toVar();
+  const light = mix(vec3(1), L.mul(interiorLook.adapt), interiorLook.lightmaps).toVar();
   let out = s.col.mul(light);
   if (name === "Glow") out = out.add(s.col.mul(interiorLook.glow).mul(n).mul(step(s.code, 0.5).mul(0.6).add(step(0.5, s.code).mul(3.0))));
   out = select(interiorLook.view.equal(1), light.mul(0.5), select(interiorLook.view.equal(2), s.col, out));
@@ -169,8 +172,10 @@ function glassMaterial() {
   const c = attribute("color", "vec4");
   const mirror = step(0.5, floor(c.a.mul(8.0)));
   const n = nightK();
-  const sky = mix(vec3(env.uSkyHorizon), vec3(0.02, 0.025, 0.035), n);
-  m.colorNode = mix(mix(sky.mul(0.8), vec3(0.04, 0.045, 0.05), 0.3), mix(vec3(env.uSkyHorizon).mul(0.035).add(0.012).add(fres.mul(0.1)), vec3(0.012, 0.011, 0.01), n), mirror);
+  // env.uSkyHorizon is HDR under the Firmament sky: only its tint is used here
+  const hz = vec3(env.uSkyHorizon), skyTint = hz.div(max(max(hz.x, hz.y), max(hz.z, 0.001)));
+  const sky = mix(skyTint.mul(0.02), vec3(0.0006, 0.0008, 0.0012), n);        // the scene's exposure: 0.02 reads mid-grey
+  m.colorNode = mix(sky, mix(skyTint.mul(0.0012).add(0.0009).add(fres.mul(0.003)).mul(interiorLook.adapt), vec3(0.0004, 0.00035, 0.0003), n), mirror);
   m.opacityNode = mix(fres, float(0.92), mirror);
   return m;
 }
@@ -245,7 +250,12 @@ export async function loadInterior(dir, { renderer = null, scene = null, camera 
       return l.x > cell.info.inner.zf * 0 - pad + 0.0 && l.x < cell.info.inner.width + 0.3 + pad && l.z > 0.05 - pad && l.z < cell.info.inner.zb + 0.25 + pad && l.y > -0.5 && l.y < 6.6;
     },
     /** Per frame: the front door swings open when someone is within 2.6 m of it (ease), closes when they are gone. */
-    update(dt, player) {
+    update(dt, player, cam = null) {
+      if (cam) {
+        const n = interiorLook.dayOverride.value >= 0 ? 1 - interiorLook.dayOverride.value : env.uNight.value;
+        const want = cell.contains(cam, -0.05) ? interiorLook.adaptInside * (1 - n) + interiorLook.adaptNight * n : 1;
+        interiorLook.adapt.value += (want - interiorLook.adapt.value) * Math.min(1, dt * 1.5);
+      }
       if (door) {
         let want = 0;
         if (player) { const l = cell.toLocal(player, _v); const h = doorInfo.hinge; if (Math.hypot(l.x - (h[0] + doorInfo.width / 2), l.z - h[2]) < 2.6) want = 1; }

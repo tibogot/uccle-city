@@ -179,6 +179,7 @@ fl.add(S, "time", Object.keys(PRESETS)).name("city preset").onChange((v) => { S.
 fl.add(S, "dayGain", 0, 12, 0.05).name("sky gain").onChange((v) => { interiorLook.dayGain.value = v; });
 fl.add(S, "sunGain", 0, 12, 0.05).name("sun gain").onChange((v) => { interiorLook.sunGain.value = v; });
 fl.add(S, "nightGain", 0, 3, 0.01).name("lamps gain").onChange((v) => { interiorLook.nightGain.value = v; });
+fl.add({ a: interiorLook.adaptInside }, "a", 1, 30, 0.1).name("eye adaptation inside").onChange((v) => { interiorLook.adaptInside = v; });
 fl.add(S, "probeGain", 0, 2, 0.01).name("character (probes)").onChange((v) => { probeLook.gain.value = v; });
 fl.add(S, "post").name("post effects");
 const fd = ui.addFolder("Debug");
@@ -213,7 +214,7 @@ renderer.setAnimationLoop(() => {
   fpsAcc += dt; fpsN++; if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
   if (S.mode === "walk") { tp.update(dt); cp.set(tp.x, tp.y + 1, tp.z); tp.body.useVariant(!!probes && cell.contains(cp, 0.1)); }
   else controls.update();
-  cell.update(dt, S.mode === "walk" ? cp : camera.position);
+  cell.update(dt, S.mode === "walk" ? cp : camera.position, camera.position);
   focus.copy(S.mode === "walk" ? cp : controls.target);
   lighting.update(camera.position.y, groundAt(camera.position.x, camera.position.z), focus, 50, dt);
   const sealed = portal.update();
@@ -225,7 +226,7 @@ renderer.setAnimationLoop(() => {
     const r = renderer.info.render, st = cell.stats;
     S.perf = `${fps.toFixed(0)} fps · GPU ${gpu.avg.toFixed(2)} ms · ${r.drawCalls ?? r.calls} draws · ${(r.triangles / 1000).toFixed(0)}k tris`;
     S.portal = portal.inside ? (sealed ? "inside, no opening in view: city skipped" : `inside, ${portal.visible} openings in view`) : "outside";
-    if (!/probes \d/.test(S.cellInfo) || probes) S.cellInfo = `${st.triangles} tris · ${st.draws} draws · load ${st.loadMs} ms · ready ${st.readyMs} ms` + (probes ? ` · probes ${probes.probes} in ${probes.ms} ms (worst slice ${probes.worstSliceMs} ms)` : "");
+    if (!/probes \d/.test(S.cellInfo) || probes) S.cellInfo = `${st.triangles} tris · ${st.draws} draws · load ${st.loadMs} ms · ready ${st.readyMs} ms` + (probes ? ` · probes ${probes.probes} in ${probes.ms} ms (first slice ${probes.firstSliceMs} ms incl. pipeline compile, then <= ${probes.worstSliceMs} ms)` : "");
     $info.textContent = `${backend} · ${S.perf}\ninterior cell: ${S.cellInfo}\nportal: ${S.portal} · door ${(cell.doorOpen * 100).toFixed(0)} %\n` +
       `colliders: ${bvh.count} triangles (BVH ${bvhMs.toFixed(1)} ms) + ${prisms.P} footprints (house excluded) · boot ${bootMs.toFixed(0)} ms` +
       (S.mode === "walk" ? `\ncharacter CPU ${tp.perf.ms.toFixed(3)} ms · ${tp.ctl.grounded ? "ground" : "air"} · y ${(tp.y - spec.base).toFixed(2)} m above base · indoor light ${tp.body.variantOn ? "probes" : "city"}` : "");
