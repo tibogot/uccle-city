@@ -50,8 +50,12 @@ read-only (copy into `vendor/` with ORIGIN.md); measure GPU ms before / after (s
 
 **Open owner decisions / inputs:**
 - The fly-mode bird: the current model (repainted peregrine, original clips only) is weak; the owner is looking for a
-  better rigged, animated peregrine falcon (CC0 / CC-BY) to drop into `models/bird/` (+ `bird.json`). Then: falcon
-  nest in the Saint-Job belfry, takeoff / landing clips. Procedural flight layers are off (`?birdlayers=1`).
+  better rigged, animated peregrine falcon (CC0 / CC-BY) to drop into `models/bird/` (+ `bird.json`). Then:
+  takeoff / landing clips. Procedural flight layers are off (`?birdlayers=1`).
+  [x] The falcon family at Saint-Job (branch claude/falcons, `docs/FALCONS.md`): eyrie, eyases, the adults' behaviours,
+  fly mode from the nest; on by default. **Owner to look** in `labs/falcon-lab.html`. Left: a better rig would lift the
+  perched / eyas shapes most (they are poses baked on the old rig), spatter round the eyrie, a pigeon flock to stoop at,
+  calls, preening / brooding idles.
 - Setts: procedural is the default; the Poly Haven scan stays as `?setts=tex` for a later texture pass (KTX2).
 - Volumetric fog is opt-in only (`?vfog=1`, dev panel) until it is tuned.
 - Tree impostors off (`?impostors=1`) until 16x16 views + depth atlas.
