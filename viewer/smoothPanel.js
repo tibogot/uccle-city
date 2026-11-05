@@ -3,6 +3,7 @@
 import { SMOOTH } from "./lodFade.js";
 import { IMP } from "./impostors.js";
 import { shadowFade } from "./lighting.js";
+import { TREE_SHADOW } from "./treesStylized.js";
 
 export function addSmoothnessFolder(gui, { lighting, fader }) {
   const f = gui.addFolder("Smoothness");
@@ -12,6 +13,7 @@ export function addSmoothnessFolder(gui, { lighting, fader }) {
   const S = {
     lodDist: P0.lodDist ?? 40, morph1: P0.morph1 ?? 14, farDist: P0.farDist ?? 120, morph2: P0.morph2 ?? 40,
     impStart: IMP.start.value, impBand: IMP.band.value, impEnd: IMP.end.value, impEndBand: IMP.endBand.value,
+    treeShEnd: TREE_SHADOW.end.value, treeShBand: TREE_SHADOW.band.value,
     shBand: shadowFade.uBand.value, shTau: shadowFade.tau, tileFade: fader?.seconds ?? 0.9,
     shadowBox: "", treeStats: "",
   };
@@ -24,6 +26,8 @@ export function addSmoothnessFolder(gui, { lighting, fader }) {
   f.add(S, "impBand", 0, 150, 1).name("  cross-fade band (m)").onChange((v) => { IMP.band.value = v; });
   f.add(S, "impEnd", 800, 3000, 10).name("impostors end (m)").onChange((v) => { IMP.end.value = v; });
   f.add(S, "impEndBand", 0, 800, 10).name("  fade-out band (m)").onChange((v) => { IMP.endBand.value = v; });
+  f.add(S, "treeShEnd", 40, 400, 5).name("tree shadows end (m)").onChange((v) => { TREE_SHADOW.end.value = v; });
+  f.add(S, "treeShBand", 0, 120, 1).name("  fade band (m)").onChange((v) => { TREE_SHADOW.band.value = v; });
   f.add(S, "shBand", 0, 0.6, 0.01).name("shadow edge fade (share)").onChange((v) => { shadowFade.uBand.value = v; });
   f.add(S, "shTau", 0, 2, 0.05).name("shadow range lag (s)").onChange((v) => { shadowFade.tau = v; });
   f.add(S, "tileFade", 0, 3, 0.05).name("tile cross-fade (s)").onChange((v) => { if (fader) fader.seconds = v; });
