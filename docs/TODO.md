@@ -12,7 +12,9 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
    Driving will need real wall collision (BVH) later.
 2. **Parked cars**: the owner rejected the scripted car's look; **owner to pick** in the Car Lab comparison
    (`labs/car-lab.html?mode=compare`, `?mode=street`, branch claude/cars): scripted vs Kenney Car Kit vs Quaternius Cars
-   Pack (CC0, `models/cars/`, one material per pack, meshoptimizer LODs at load). Then the pick replaces the boxes in
+   Pack (CC0, `models/cars/`, one material per pack, meshoptimizer LODs at load), and (branch claude/car-faceted) our own
+   faceted family `faceted:<id>` (tools/blender/carFaceted.py: 7 types + taxi, ~7.4k tris, baked AO, see-through glass;
+   previews docs/cars/faceted_*.png). Then the pick replaces the boxes in
    `viewer/cars.js` (instancing per model / LOD, as the street benchmark does; also a GPU saving: cars are ~784k
    triangles per view).
 3. **All of Uccle**: re-fetch raw data on this machine, set up the Python pipeline, extend the grid (section 1).

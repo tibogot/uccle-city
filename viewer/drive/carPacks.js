@@ -3,7 +3,8 @@
 // variants for parked streets (the Car Lab's comparison; later perhaps viewer/cars.js).
 //
 // One material draws every car of a source: the palette is baked into COLOR_0, _KIND says what a vertex is
-// (0 fixed colour, 1 body paint = COLOR_0 is a shade the paint colour multiplies, 2 head light, 3 tail light, 4 glass).
+// (0 fixed colour, 1 body paint = COLOR_0 is a shade the paint colour multiplies, 2 head light, 3 tail light, 4 glass;
+// the faceted family adds 5 chrome / gloss, 6 rubber, 7 plate, 8 interior).
 // Paint comes from a uniform (one car) or a per-instance attribute "paint" (parked cars). LODs are made here at load by
 // meshoptimizer (absolute error in metres; colour seams are open borders, so the simplifier keeps them as borders).
 import * as THREE from "three/webgpu";
@@ -14,6 +15,11 @@ import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 export const PACK_SOURCES = {
   kenney: { label: "Kenney Car Kit", url: new URL("../../models/cars/kenney.glb", import.meta.url).href, credit: "Kenney (kenney.nl), CC0" },
   quaternius: { label: "Quaternius Cars Pack", url: new URL("../../models/cars/quaternius.glb", import.meta.url).href, credit: "Quaternius (quaternius.com), CC0" },
+  // ours: tools/blender/carFaceted.py (faceted hard-surface family, baked AO, see-through tinted glass)
+  faceted: { label: "Faceted (carFaceted.py)", url: new URL("../../models/cars/faceted.glb", import.meta.url).href, credit: "uccle-city, scripted", seeThrough: true,
+    welded: true,      // flat faces split per normal everywhere: always simplify on the position + colour weld
+    prune: true, wheelError: 1.0,
+    lods: [{ error: 0, until: 22 }, { error: 0.006, until: 55 }, { error: 0.022, until: 130 }, { error: 0.08, until: 600 }] },
 };
 export const PACK_LODS = [
   { error: 0, until: 25 },         // LOD0: the pack's mesh
@@ -43,10 +49,10 @@ export function loadPack(source) {
         for (const k of Object.keys(geo.attributes)) if (!["position", "normal", "color", "_kind"].includes(k)) geo.deleteAttribute(k);
         parts[name.replace(/_\d+$/, "")] = { geo, pos: o.position.toArray() };   // GLTFLoader makes names unique: Body_3
       });
-      const lods = PACK_LODS.map(({ error }) => {
+      const lods = (S.lods || PACK_LODS).map(({ error }) => {
         const out = { tris: 0 };
         for (const [k, p] of Object.entries(parts)) {
-          const g = error ? simplify(p.geo, error * (k === "Body" ? 1 : 0.6)) : p.geo;
+          const g = error ? simplify(p.geo, error * (k === "Body" ? 1 : S.wheelError ?? 0.6), S.welded, S.prune) : p.geo;
           g.computeBoundingSphere(); g.userData.shared = true;
           out[k] = g; out.tris += g.index.count / 3;
         }
@@ -55,13 +61,14 @@ export function loadPack(source) {
       cars.push({ id: node.name, label: x.label || node.name, type: x.type, paint: new THREE.Color().setRGB(...(x.paint || [0.5, 0.5, 0.5])),
         keepPaint: !!x.keepPaint, size: x.size || [1.8, 1.45, 4.3], parts, lods });
     }
-    return { source, label: S.label, credit: S.credit, cars };
+    return { source, label: S.label, credit: S.credit, seeThrough: !!S.seeThrough, lods: S.lods || PACK_LODS, cars };
   })();
   cache.set(source, p);
   return p;
 }
 
-function simplify(g, error) {
+function simplify(g, error, weldedOnly = false, prune = false) {
+  if (weldedOnly) return simplifyWelded(g, error, prune);
   const src = new Uint32Array(g.index.array), P = g.attributes.position.array;
   const [idx] = MeshoptSimplifier.simplify(src, P, 3, 0, error, ["ErrorAbsolute"]);
   if (idx.length < src.length * 0.85) {
@@ -78,7 +85,7 @@ function simplify(g, error) {
  * the simplifier can hardly move. Simplify on an index WELDED by position + colour + kind instead (normals ignored):
  * colour seams stay borders (kept closed with LockBorder up close), flat faces merge; then flat face normals again.
  */
-function simplifyWelded(g, error) {
+function simplifyWelded(g, error, prune = false) {
   const P = g.attributes.position.array, C = g.attributes.color.array, K = g.attributes._kind.array, n = P.length / 3;
   const key = (i) => `${Math.round(P[i * 3] * 1e4)},${Math.round(P[i * 3 + 1] * 1e4)},${Math.round(P[i * 3 + 2] * 1e4)}|${K[i]}|` +
     `${Math.round(C[i * 3] * 500)},${Math.round(C[i * 3 + 1] * 500)},${Math.round(C[i * 3 + 2] * 500)}`;
@@ -92,7 +99,9 @@ function simplifyWelded(g, error) {
   const wpos = new Float32Array(rep.length * 3);
   rep.forEach((i, w) => wpos.set(P.subarray(i * 3, i * 3 + 3), w * 3));
   const widx = Uint32Array.from(g.index.array, (i) => weld[i]);
-  const [idx] = MeshoptSimplifier.simplify(widx, wpos, 3, 0, error, error < 0.02 ? ["ErrorAbsolute", "LockBorder"] : ["ErrorAbsolute"]);
+  const flags = error < 0.02 ? ["ErrorAbsolute", "LockBorder"] : ["ErrorAbsolute"];
+  if (prune) flags.push("Prune");     // drop islands smaller than the error (lug nuts, plate glyphs, wipers far away)
+  const [idx] = MeshoptSimplifier.simplify(widx, wpos, 3, 0, error, flags);
   const T = idx.length / 3, pos = new Float32Array(T * 9), nrm = new Float32Array(T * 9), col = new Float32Array(T * 9), kind = new Float32Array(T * 3);
   const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
   for (let t = 0; t < T; t++) {
@@ -115,21 +124,29 @@ function simplifyWelded(g, error) {
 
 /** Live look switches for every pack material: glass = multiplier on the glass colour (Kenney's windows are pale
  *  blue-white swatches: 1 = as designed, ~0.12 = tinted dark like the city's real cars). */
-export const packLook = { glass: uniform(1) };
+export const packLook = { glass: uniform(1), glassOpacity: uniform(0.76) };
 
 /**
  * The pack material. paint: a THREE.Color (one car: a uniform) or "instance" (parked cars: geometry attribute "paint",
  * an InstancedBufferAttribute). lights: { head, tail, brake } uniforms (carModel.js carLights), optional.
  */
-export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = null } = {}) {
+export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = null, seeThrough = false } = {}) {
   const m = new THREE.MeshStandardNodeMaterial({ roughness: 0.6, metalness: 0 });
   // the interpolated varying is 0.99999 / 1.00001 across a face: round it before comparing (else per-pixel noise)
   const kind = attribute("_kind", "float").add(0.5).floor(), vc = attribute("color", "vec3");
   const isPaint = kind.equal(1), isGlass = kind.equal(4), isHead = kind.equal(2), isTail = kind.equal(3);
   const uPaint = paint === "instance" ? attribute("paint", "vec3") : uniform(paint);
   m.colorNode = select(isPaint, vc.mul(uPaint), select(isGlass, vc.mul(packLook.glass), vc));
-  m.roughnessNode = select(isPaint, float(0.32), select(isGlass, float(0.06), float(0.62)));
-  m.metalnessNode = select(isPaint, float(0.25), select(isGlass, float(0.1), float(0)));
+  const isChrome = kind.equal(5), isRubber = kind.equal(6), isPlate = kind.equal(7), isInterior = kind.equal(8);
+  m.roughnessNode = select(isPaint, float(0.32), select(isGlass, float(0.06), select(isChrome, float(0.22),
+    select(isRubber, float(0.9), select(isPlate, float(0.45), select(isInterior, float(0.85), float(0.62)))))));
+  m.metalnessNode = select(isPaint, float(0.25), select(isGlass, float(0.1), select(isChrome, float(1), float(0))));
+  if (seeThrough) {
+    // tinted glass the interior shows through, still ONE opaque draw: alpha-to-coverage on the MSAA target
+    // (the lab / city render with antialias: true), no sorting, no transparent pass
+    m.alphaToCoverage = true;
+    m.opacityNode = select(isGlass, packLook.glassOpacity, float(1));
+  }
   if (lights) {
     const head = select(isHead, lights.head.mul(5), float(0));
     const tail = select(isTail, lights.tail.mul(1.2).add(lights.brake ? lights.brake.mul(5) : float(0)), float(0));

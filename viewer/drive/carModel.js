@@ -1,6 +1,7 @@
 // THE CAR MODELS behind one loader interface, shared by the Car Lab and drive mode:
 //   loadCarModel(spec)   spec = "scripted" (tools/blender/car.py -> models/car/hatchback.glb, the default)
 //                               | "kenney:<id>" | "quaternius:<id>" (CC0 packs, viewer/drive/carPacks.js)
+//                               | "faceted:<id>" (ours, tools/blender/carFaceted.py, same pack contract)
 //   -> model = { spec, label, lods: [{ body: [{ geo, mat, name }], wheels: { FL: [{ geo, mat, name }], ... }, tris }],
 //                wheelPos: { FL: [x, y, z], ... }, size: [w, h, l], mats, lodDist: [m, ...], setPaint(hex | null) }
 //   createCar(model) poses any of them (body on springs + four wheel pivots); fitBody(model) sizes the physics box.
@@ -50,7 +51,7 @@ async function loadPackCar(spec) {
   const pack = await loadPack(src);
   const car = pack.cars.find((c) => c.id === id) || pack.cars[0];
   const paint = car.paint.clone();
-  const mat = packMaterial({ paint, lights: carLights });
+  const mat = packMaterial({ paint, lights: carLights, seeThrough: pack.seeThrough });
   const wheelPos = {};
   for (const k of ["FL", "FR", "RL", "RR"]) wheelPos[k] = car.parts[`Wheel_${k}`]?.pos || [0, 0.3, 0];
   const lods = car.lods.map((L) => ({
@@ -60,7 +61,7 @@ async function loadPackCar(spec) {
   }));
   return {
     spec: `${src}:${car.id}`, label: `${pack.label} · ${car.label}`, credit: pack.credit, lods, wheelPos, size: car.size, mats: { Pack: mat },
-    lodDist: PACK_LODS.map((l) => l.until), keepPaint: car.keepPaint, defaultPaint: car.paint,
+    lodDist: pack.lods.map((l) => l.until), keepPaint: car.keepPaint, defaultPaint: car.paint,
     setPaint: (hex) => { if (car.keepPaint) return; if (hex == null) paint.copy(car.paint); else paint.setHex(hex); },
   };
 }

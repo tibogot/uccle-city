@@ -72,6 +72,9 @@ Not in the city's parked cars (the owner picks first).
 
 Credit shown voluntarily in the Car Lab: "Kenney (kenney.nl), CC0", "Quaternius (quaternius.com), CC0".
 
+`models/cars/faceted.glb` is ours: generated entirely by `tools/blender/carFaceted.py` (generic proportions of European
+car classes, no real brand's design, no logos; plate characters are random, no real registration).
+
 ## Public transport
 
 | Data | Licence | Notes |

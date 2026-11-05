@@ -42,9 +42,13 @@ Debug. "Copy link to this view" puts the state + camera in `?dev=`. H = photo mo
 lab first, then go into the city. Tram Lab: the STIB T3000 (`tools/blender/tram.py`, `viewer/tramModel.js`); in the city by default (`?tram=box` = the old boxes).
 Car Lab (`labs/car-lab.html`): the driving model drive mode uses on a test ground (walls, courtyards, kerb island,
 ramp, posts), handling / suspension / camera sliders, colliders drawn (G); the car model is swappable (`viewer/drive/carModel.js`,
-`?car=scripted|kenney:<id>|quaternius:<id>`), plus a car-pack comparison and a parked-street benchmark (`?mode=compare`,
+`?car=scripted|kenney:<id>|quaternius:<id>|faceted:<id>`), plus a car-pack comparison and a parked-street benchmark (`?mode=compare`,
 `?mode=street`, `labs/car-compare.js`; screenshots in `docs/cars/`). The city's parked cars are still the boxes of
-`viewer/cars.js` until the owner picks.
+`viewer/cars.js` until the owner picks. Our own faceted family (`tools/blender/carFaceted.py` -> `models/cars/faceted.glb`,
+same contract as the packs: one material, COLOR_0 = palette x Cycles-baked AO, `_KIND` 0-8, per-instance paint; glass drawn
+see-through with alpha-to-coverage in the same opaque draw): hatch_s, hatch_c, estate, saloon, suv, van_c, van_p, taxi;
+`?mode=compare&layout=family`, `&faceted=<id>`; the street benchmark has it as an option. Rebuild:
+`blender --factory-startup -b -P tools/blender/carFaceted.py -- models/cars [--preview docs/cars] [--only id,id]`.
 
 ## How to run
 

@@ -1,8 +1,9 @@
 // THE CAR LAB, comparison (car-lab.html?mode=compare | ?mode=street): which car model goes into the city?
-//   compare  three cars parked at a kerb side by side, under the city's own lighting (viewer/lighting.js) and post
+//   compare  four cars parked at a kerb side by side, under the city's own lighting (viewer/lighting.js) and post
 //            chain (viewer/post.js): our scripted hatchback (tools/blender/car.py), a Kenney Car Kit car and a
-//            Quaternius Cars Pack car (CC0, tools/cars/convertPacks.mjs -> models/cars/); or every car in a lineup.
-//   street   ~300 parked cars along two 420 m streets, per option (scripted / Kenney / Quaternius / none), with
+//            Quaternius Cars Pack car (CC0, tools/cars/convertPacks.mjs -> models/cars/) and one of our faceted
+//            family (tools/blender/carFaceted.py -> models/cars/faceted.glb); the faceted family alone; or every car.
+//   street   ~300 parked cars along two 420 m streets, per option (scripted / Kenney / Quaternius / faceted / none), with
 //            instancing per (model, LOD, material), LODs by distance (meshoptimizer, made at load), per-instance paint,
 //            per-instance frustum culling; triangles, draw calls and GPU ms per option, and an A/B benchmark.
 // Every model comes through the one loader (viewer/drive/carModel.js loadCarModel / viewer/drive/carPacks.js).
@@ -74,11 +75,12 @@ const ROAD_W = 8, WALK = 4, KERB = 0.15;
 // Brussels-ish paints (viewer/cars.js palette, sRGB-ish hex): lots of grey, black, white, some blue / red / green
 const STREET_PAINTS = [0x0d0e10, 0x0d0e10, 0x34383d, 0x34383d, 0x5a5e63, 0x9ea4ab, 0x9ea4ab, 0xe8e8e4, 0xe8e8e4, 0x1d3f6e, 0x8a1414, 0x24483a, 0x6b5a48];
 const hash = (a, b) => { const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return s - Math.floor(s); };
-const [kenney, quaternius, scripted] = await Promise.all([loadPack("kenney"), loadPack("quaternius"), loadCarModel("scripted")]);
+const [kenney, quaternius, faceted, scripted] = await Promise.all([loadPack("kenney"), loadPack("quaternius"), loadPack("faceted"), loadCarModel("scripted")]);
 const OPTIONS = {
   scripted: { label: "scripted (car.py)", lodDist: CAR_LODS.map((l) => l.until) },
   kenney: { label: "Kenney Car Kit", lodDist: PACK_LODS.map((l) => l.until), pack: kenney },
   quaternius: { label: "Quaternius Cars Pack", lodDist: PACK_LODS.map((l) => l.until), pack: quaternius },
+  faceted: { label: "Faceted (carFaceted.py)", lodDist: faceted.lods.map((l) => l.until), pack: faceted },
 };
 
 /** Instanced variants of an option: [{ id, lods: [[{ geo, mat }]], tris: [per LOD], keepPaint }] */
@@ -95,7 +97,7 @@ function variantsOf(name) {
     });
     return [{ id: "hatchback", lods, tris: m.lods.map((l) => l.tris), keepPaint: false }];
   }
-  const pack = OPTIONS[name].pack, mat = packMaterial({ paint: "instance", lights: { head: carLights.head, tail: carLights.tail } });
+  const pack = OPTIONS[name].pack, mat = packMaterial({ paint: "instance", lights: { head: carLights.head, tail: carLights.tail }, seeThrough: pack.seeThrough });
   return pack.cars.map((c) => ({
     id: c.id, type: c.type, keepPaint: c.keepPaint, defaultPaint: c.paint,
     lods: c.lods.map((L) => [{ geo: mergeGeometries(Object.entries(c.parts).map(([k, p]) => L[k].clone().translate(...p.pos))), mat }]),
@@ -164,7 +166,7 @@ class Fleet {
 
 // ------------------------------------------------------------------------------------------------ compare: three cars at the kerb
 const S = {
-  option: qp.get("option") || "kenney", kenneyCar: "hatchback", quaterniusCar: "car_a", paint: "as designed", layout: "trio",
+  option: qp.get("option") || "faceted", kenneyCar: "hatchback", quaterniusCar: "car_a", facetedCar: "hatch_c", paint: "as designed", layout: "trio",
   view: "across the street", time: preset, hour: lighting.hour, post: true, wire: false, night: false, darkGlass: qp.get("glass") === "dark",
   stats: "", bench: "—",
 };
@@ -176,8 +178,9 @@ async function placeCompare() {
   for (const c of compareCars) scene.remove(c.car.root);
   compareCars.length = 0; labels.splice(0).forEach((d) => d.remove());
   const list = S.layout === "trio"
-    ? ["scripted", `kenney:${S.kenneyCar}`, `quaternius:${S.quaterniusCar}`]
-    : ["scripted", ...kenney.cars.map((c) => `kenney:${c.id}`), ...quaternius.cars.map((c) => `quaternius:${c.id}`)];
+    ? ["scripted", `kenney:${S.kenneyCar}`, `quaternius:${S.quaterniusCar}`, `faceted:${S.facetedCar}`]
+    : S.layout === "faceted family" ? faceted.cars.map((c) => `faceted:${c.id}`)
+    : ["scripted", ...kenney.cars.map((c) => `kenney:${c.id}`), ...quaternius.cars.map((c) => `quaternius:${c.id}`), ...faceted.cars.map((c) => `faceted:${c.id}`)];
   const gap = S.layout === "trio" ? 8 : 6.4;
   let z = -((list.length - 1) * gap) / 2;
   for (const spec of list) {
@@ -186,7 +189,7 @@ async function placeCompare() {
     const len = model.size[2];
     car.update({ x: kerbX, y: 0, z, heading: Math.PI, slopePitch: 0, slopeRoll: 0, heave: 0, pitch: 0, roll: 0, wheelSpin: 0, steerAngle: 0 });
     scene.add(car.root);
-    const src = spec.split(":")[0], name = spec === "scripted" ? "scripted hatchback (car.py)" : `${src === "kenney" ? "Kenney" : "Quaternius"} · ${model.label.split(" · ")[1]}`;
+    const src = spec.split(":")[0], name = spec === "scripted" ? "scripted hatchback (car.py)" : `${{ kenney: "Kenney", quaternius: "Quaternius", faceted: "Faceted" }[src]} · ${model.label.split(" · ")[1]}`;
     compareCars.push({ spec, model, car, z, lbl: label(`${name}\n${Math.round(model.lods[0].tris).toLocaleString()} tris · ${model.size[2].toFixed(2)} m`) });
     z += Math.max(gap, len + 1.6);
   }
@@ -202,7 +205,8 @@ const close = (i) => () => { const c = compareCars[Math.min(i, compareCars.lengt
 const VIEWS = {
   "across the street": () => { camera.position.set(kerbX - 21, 1.7, 0); controls.target.set(kerbX, 1.2, 0); },
   "3/4 front": () => { const z = compareCars.length ? compareCars[0].z : 0; camera.position.set(kerbX - 6.5, 1.65, z - 9); controls.target.set(kerbX, 0.8, z + (S.layout === "trio" ? 6 : 14)); },
-  "close: scripted": close(0), "close: Kenney": close(1), "close: Quaternius": close(2),
+  "close: scripted": close(0), "close: Kenney": close(1), "close: Quaternius": close(2), "close: Faceted": close(3),
+  "rear 3/4: Faceted": () => { const c = compareCars[Math.min(3, compareCars.length - 1)]; if (!c) return; camera.position.set(kerbX - 4.4, 1.6, c.z + 5.6); controls.target.set(kerbX, 0.75, c.z); },
   "side (pedestrian)": () => { camera.position.set(kerbX - 9.5, 1.6, 0); controls.target.set(kerbX, 0.8, 0); },
   "from a window (8 m)": () => { camera.position.set(kerbX - 12, 8, -10); controls.target.set(kerbX, 0.5, 2); },
   "street, 40 m": () => { camera.position.set(STREETS[0] - 1.5, 1.7, -46); controls.target.set(kerbX, 0.8, 0); },
@@ -228,9 +232,12 @@ const showFleet = (name) => { for (const [n, f] of Object.entries(fleets)) f.gro
 const ui = new Panel({ title: MODE === "street" ? "Car Lab · street" : "Car Lab · compare" });
 if (MODE === "compare") {
   const fc = ui.addFolder("Cars");
-  fc.add(S, "layout", ["trio", "lineup (all)"]).name("layout").onChange(() => placeCompare().then(() => VIEWS[S.view]()));
+  fc.add(S, "layout", ["trio", "faceted family", "lineup (all)"]).name("layout (trio: + faceted)").onChange(() => placeCompare().then(() => VIEWS[S.view]()));
   fc.add(S, "kenneyCar", kenney.cars.map((c) => c.id)).name("Kenney car").onChange(placeCompare);
   fc.add(S, "quaterniusCar", quaternius.cars.map((c) => c.id)).name("Quaternius car").onChange(placeCompare);
+  fc.add(S, "facetedCar", faceted.cars.map((c) => c.id)).name("Faceted car").onChange(placeCompare);
+  S.glassOpacity = packLook.glassOpacity.value;
+  fc.add(S, "glassOpacity", 0.2, 1, 0.01).name("faceted: glass opacity").onChange((v) => { packLook.glassOpacity.value = v; });
   fc.add(S, "paint", ["as designed", ...Object.keys(PAINTS)]).name("paint").onChange(applyPaint);
   fc.add(S, "wire").name("wireframe").onChange(applyWire);
   fc.add(S, "darkGlass").name("packs: dark glass (city fit)").onChange((v) => { packLook.glass.value = v ? 0.12 : 1; });
@@ -262,6 +269,8 @@ if (MODE === "compare") {
   if (qp.get("layout") === "lineup") S.layout = "lineup (all)";
   if (qp.get("kenney")) S.kenneyCar = qp.get("kenney");
   if (qp.get("quaternius")) S.quaterniusCar = qp.get("quaternius");
+  if (qp.get("faceted")) S.facetedCar = qp.get("faceted");
+  if (qp.get("layout") === "family") S.layout = "faceted family";
   if (qp.get("paint")) S.paint = qp.get("paint");
   if (qp.get("view") && VIEWS[qp.get("view")]) S.view = qp.get("view");
   await placeCompare(); VIEWS[S.view]();
@@ -299,7 +308,7 @@ async function bench({ rounds = 2, settle = 800, measure = 2500 } = {}) {
   ui.controllersRecursive().forEach((c) => c.updateDisplay());
   return res;
 }
-window.lab = { renderer, scene, camera, controls, lighting, pipe, fleets, compareCars, S, bench, gpu, VIEWS, STREET_VIEWS, placeCompare, kenney, quaternius, scripted };
+window.lab = { renderer, scene, camera, controls, lighting, pipe, fleets, compareCars, S, bench, gpu, VIEWS, STREET_VIEWS, placeCompare, kenney, quaternius, faceted, scripted };
 
 // ------------------------------------------------------------------------------------------------ loop
 const v = new THREE.Vector3();
@@ -335,7 +344,7 @@ renderer.setAnimationLoop(() => {
         `\nbenchmark (median GPU ms, whole frame, A/B twice): ${S.bench}\nGPU is shared with other work on this machine: compare options back to back, not absolute numbers.`;
     } else {
       $info.textContent = `${backend} · ${S.stats}\n` + compareCars.map((c) => `${c.spec}: LOD${c.car.lod} ${Math.round(c.model.lods[c.car.lod].tris)} tris (LODs ${c.model.lods.map((l) => Math.round(l.tris)).join(" / ")}), ${c.model.size.map((x) => x.toFixed(2)).join(" x ")} m, ${Object.keys(c.model.mats).length} material(s)`).join("\n") +
-        `\nKenney: Car Kit 3.1 (kenney.nl) CC0 · Quaternius: Cars Pack (quaternius.com) CC0 · scripted: tools/blender/car.py`;
+        `\nKenney: Car Kit 3.1 (kenney.nl) CC0 · Quaternius: Cars Pack (quaternius.com) CC0 · scripted: tools/blender/car.py · faceted: tools/blender/carFaceted.py`;
     }
   }
 });
