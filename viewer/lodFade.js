@@ -14,7 +14,7 @@
 //    half, fading out). Read through a uniform updated per object (one material for every tile).
 //  - Fader: steps those time-based fades each frame.
 import * as THREE from "three/webgpu";
-import { uniform, float, fract, dot, vec2, vec3, screenCoordinate, select, smoothstep, saturate } from "three/tsl";
+import { uniform, float, fract, dot, vec2, screenCoordinate, select, saturate } from "three/tsl";
 
 const qs = new URLSearchParams(location.search);
 /** ?smooth=0: every fade of this file off (hard switches, the old behaviour) for A/B. */
@@ -85,5 +85,3 @@ function set(obj, v) { obj.traverse((o) => { o.userData.fade = v; }); }
 export function damp(cur, target, tau, dt) {
   return tau <= 0 ? target : cur + (target - cur) * (1 - Math.exp(-dt / tau));
 }
-
-export { smoothstep, vec3 };

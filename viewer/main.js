@@ -535,16 +535,28 @@ async function main() {
   // (full or far LOD), since the tiles no longer draw the solid.
   if (HIDE_BU_IDS.length) {
     loadStJob().then((m) => {
-      const lod = new THREE.LOD();
+      // smooth LOD: the levels cross-fade (dithered, lodFade.js objectFade) over a band around each switch
+      // distance instead of THREE.LOD's hard swap (?smooth=0: THREE.LOD)
+      const lod = SMOOTH ? new THREE.Group() : new THREE.LOD();
       lod.name = "stjob";
-      STJOB_LODS.forEach((l, k) => lod.addLevel(m.make(k), k ? STJOB_LODS[k - 1].until : 0));
+      const levels = STJOB_LODS.map((l, k) => m.make(k));
+      if (SMOOTH) { lod.add(...levels); for (const mat of m.materials) withObjectFade(mat); }
+      else levels.forEach((g, k) => lod.addLevel(g, k ? STJOB_LODS[k - 1].until : 0));
       lod.position.copy(m.placement.position);
       lod.rotation.y = m.placement.rotationY;
       scene.add(lod);
       const p = m.placement.position;
       const home = manifest.tiles.find((t) => p.x >= t.bounds.x[0] && p.x < t.bounds.x[1] && p.z >= t.bounds.z[0] && p.z < t.bounds.z[1])?.name;
       let n = 0;
-      updaters.push(() => {
+      const BANDS = [0.15, 0.12];     // half-width of each switch's band, a share of its distance (170 m: +-25 m, 520 m: +-62 m)
+      const ramp = (d, k) => { const s = STJOB_LODS[k].until, w = s * BANDS[k]; return THREE.MathUtils.smoothstep(d, s - w, s + w); };
+      updaters.push((camPos) => {
+        if (SMOOTH) {
+          const d = camPos.distanceTo(p), t1 = ramp(d, 0), t2 = ramp(d, 1);
+          const fades = [2 + t1, t1 < 1 ? t1 : 2 + t2, t2];       // outgoing keeps n >= t (2 + t), incoming n < t
+          const shown = [t1 < 1, t1 > 0 && t2 < 1, t2 > 0];
+          levels.forEach((g, k) => { g.visible = shown[k]; if (shown[k]) g.traverse((o) => { o.userData.fade = fades[k]; }); });
+        }
         if (n++ % 30) return;
         lod.visible = world.tiles.some((t) => t.name === home) || !!scene.getObjectByName(`${home}-lite`);
       });
@@ -636,7 +648,7 @@ async function main() {
     },
   };
   let third = null;                       // the third-person character (?view=third), see below
-  const setView = (v) => { if (third?.on) third.stop(); walker.on = false; flyer.stop(); driver.stop(); controls.enabled = true; views[v](); controls.update(); };
+  const setView = (v) => { if (third?.on) third.stop(); walker.on = false; flyer.stop(); driver.stop(); controls.enabled = true; views[v](); controls.update(); lighting.snapNext = true; };
   walker.onExit = () => setView("stjob");
   $("btnOrbit").onclick = () => setView("overview");
   $("btnStJob").onclick = () => setView("stjob");
@@ -662,6 +674,7 @@ async function main() {
   });
 
   let last = performance.now(), fpsAcc = 0, fpsN = 0, fps = 0, frames = 0;
+  let stateFreeze = false;       // the smoothness harness (viewer.stateAt): LOD and shadow state set by hand
   const info = renderer.info;
   // GPU time: r187's resolve returns the total of every pass (shadows, scene, post) of the LAST frame
   // it has queries for (each query uid ends in ":f<frame>"), and keeps per-pass times in
@@ -700,13 +713,14 @@ async function main() {
     else if (walker.on || driver.on) focus.copy(camera.position).addScaledVector(camera.getWorldDirection(fwd).setY(0).normalize(), 45);
     else focus.copy(controls.target);
     const half = flyer.on ? THREE.MathUtils.clamp((flyer.pos.y - world.surface(flyer.x, flyer.z)) * 1.6 + 90, 90, 380)   : walker.on || driver.on ? 80 : THREE.MathUtils.clamp(camera.position.distanceTo(controls.target) * 0.9, 60, 380);
-    lighting.update(camera.position.y, world.surface(camera.position.x, camera.position.z), focus, half);
     const now = performance.now(), dt = Math.min((now - last) / 1000, 0.1);
     last = now;
+    if (!stateFreeze) lighting.update(camera.position.y, world.surface(camera.position.x, camera.position.z), focus, half, dt);
     fpsAcc += dt; fpsN++;
     if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
     if (third?.on) third.update(dt); else if (flyer.on) flyer.update(dt); else if (driver.on) driver.update(dt); else if (walker.on) walker.update(dt); else controls.update();
-    for (const u of updaters) u(camera.position, camera);
+    fader.update(dt);
+    if (!stateFreeze) { lodEye.value.copy(camera.position); for (const u of updaters) u(camera.position, camera); }
     renderFrame();
     if (pipe && lighting.firmament) pipe.setExposureFactor(lighting.adapt(dt));
     sampleGpu();
@@ -733,6 +747,12 @@ async function main() {
   const lite = new Map();                 // name -> lite tile
   const pending = new Set();
   let busy = null;
+  /** Fade a tile's groups out, then dispose it (at once with ?tilefade=0). */
+  const retire = (groups, dispose) => {
+    if (!TILE_FADE) { dispose(); return; }
+    let n = groups.length;
+    for (const g of groups) fader.fade(g, -1, () => { if (--n === 0) dispose(); });
+  };
   const stream = async (liteFirst = false) => {   // liteFirst: skip the full tiles this step (boot warm-up)
     // the manifest tile under (or nearest to) the player / orbit target, loaded or not
     const px = flyer.on ? flyer.x : driver.on ? driver.x : walker.on ? walker.x : controls.target.x, pz = flyer.on ? flyer.z : driver.on ? driver.z : walker.on ? walker.z : controls.target.z;
@@ -746,17 +766,29 @@ async function main() {
     const dist = (t) => { const [tx, tz] = centre(t); return Math.max(Math.abs(tx - hx), Math.abs(tz - hz)) / T; };
     const byName = (n) => built.find((m) => m.name === n);
     for (const t of [...world.tiles]) {
-      if (t !== here && dist(byName(t.name)) > ring + 1.01 && world.tiles.length > 1) { t.dispose(); world.tiles.splice(world.tiles.indexOf(t), 1); log(`- tile ${t.name}`); }
+      if (t !== here && dist(byName(t.name)) > ring + 1.01 && world.tiles.length > 1) {
+        world.tiles.splice(world.tiles.indexOf(t), 1);
+        // smooth LOD: its far tile first, then the full one fades out over it (no hole, no pop)
+        if (TILE_FADE && far > ring && dist(byName(t.name)) <= far + 0.01 && !lite.has(t.name) && !pending.has(t.name)) {
+          pending.add(t.name);
+          try { const l = await loadLiteTile(byName(t.name), liteGroup); lite.set(t.name, l); fader.fade(l.group, +1); } catch (e) { log(`far tile ${t.name} failed: ${e.message}`); }
+          pending.delete(t.name);
+        }
+        retire(t.groups, t.dispose);
+        log(`- tile ${t.name}`);
+      }
     }
-    for (const [n, l] of lite) if (dist(byName(n)) > far + 1.01 || world.tiles.some((w) => w.name === n)) { l.dispose(); lite.delete(n); }
+    for (const [n, l] of lite) if (dist(byName(n)) > far + 1.01 || world.tiles.some((w) => w.name === n)) { lite.delete(n); retire([l.group], l.dispose); }
     const want = built.filter((t) => dist(t) <= ring + 0.01 && !world.tiles.some((w) => w.name === t.name)).sort((a, b) => dist(a) - dist(b));
     if (!liteFirst) for (const t of want) {
       if (pending.has(t.name)) continue;
       pending.add(t.name);
       const t0 = performance.now();
       try {
-        world.tiles.push(await loadTile(t, { layers, contourOn, verbose: false }));
-        lite.get(t.name)?.dispose(); lite.delete(t.name);
+        world.tiles.push(await loadTile(t, { layers, contourOn, verbose: false }));   // (fades in by itself)
+        const old = lite.get(t.name);
+        lite.delete(t.name);
+        if (old) retire([old.group], old.dispose);
         log(`+ tile ${t.name} (${(performance.now() - t0).toFixed(0)} ms)`);
       } catch (e) { log(`tile ${t.name} failed: ${e.message}`); }
       pending.delete(t.name);
@@ -767,7 +799,7 @@ async function main() {
       .sort((a, b) => dist(a) - dist(b)).slice(0, 2);
     await Promise.all(wantLite.map(async (t) => {
       pending.add(t.name);
-      try { lite.set(t.name, await loadLiteTile(t, liteGroup)); } catch (e) { log(`far tile ${t.name} failed: ${e.message}`); }
+      try { const l = await loadLiteTile(t, liteGroup); lite.set(t.name, l); fader.fade(l.group, +1); } catch (e) { log(`far tile ${t.name} failed: ${e.message}`); }
       pending.delete(t.name);
     }));
     if (wantLite.length && !want.length && built.filter((t) => dist(t) <= far + 0.01 && !lite.has(t.name) && !world.tiles.some((w) => w.name === t.name)).length === 0)
@@ -805,11 +837,20 @@ async function main() {
   if (params.get("panel") !== "0") {
     try {
       const { createDevPanel } = await import("./devPanel.js");
-      createDevPanel({ renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, drive, thirdPerson, driver, getThird: () => third, getTram: () => tramLine, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log });
+      createDevPanel({ renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, drive, thirdPerson, driver, getThird: () => third, getTram: () => tramLine, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log, fader });
     } catch (e) { log(`dev panel: ${e.message}`); }
   }
+  // stateAt(pos, focus, half, dt): the smoothness harness (docs/SMOOTH_LOD.md): every LOD, fade and the shadow box
+  // as if the camera were at `pos` (looking at `focus`), while the view camera stays where it is; freeze(true)
+  // keeps the animation loop from resetting it. Frames rendered that way show only what the LOD state changes.
+  const stateAt = (pos, f = pos, h = 80, dtS = 1 / 60) => {
+    lodEye.value.copy(pos);
+    for (const u of updaters) u(pos, camera);
+    lighting.update(pos.y, world.surface(pos.x, pos.z), f, h, dtS);
+  };
   window.viewer = { tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
-    world, renderFrame: () => { for (const u of updaters) u(camera.position, camera); renderFrame(); } };
+    world, fader, stateAt, freeze: (on) => { stateFreeze = !!on; },
+    renderFrame: () => { if (!stateFreeze) { lodEye.value.copy(camera.position); for (const u of updaters) u(camera.position, camera); } renderFrame(); } };
 }
 
 main().catch((e) => { log(`ERROR: ${e.message}`); console.error(e); });

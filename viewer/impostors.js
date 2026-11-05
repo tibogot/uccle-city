@@ -262,6 +262,10 @@ export function impostorMaterial(bake, U, { nearFade = true } = {}) {
   // its shadow (the impostor faces the light in the shadow pass, so the sun sees the crown from its side):
   // the hard cut-out and the same fade, so the far trees' shadows hand over with the trees
   m.maskShadowNode = alpha.greaterThanEqual(0.5).and(m.maskNode);
+  // ...but not on ITSELF: the quad faces the camera, its shadow-pass twin the sun, and the crown shadowed
+  // itself in diagonal stripes (acne). The lookup moves toward the sun by most of the crown's radius (the
+  // leaves' shadowLift, at the impostor's scale): other trees and buildings still shadow it.
+  m.receivedShadowPositionNode = positionWorld.add(U.sunDir.mul(sph.w.mul(scl).mul(0.85)));
   return withObjectFade(m);   // (and the streamed tiles' time fade)
 }
 

@@ -20,8 +20,11 @@ import {
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { env } from "./lighting.js";
+import { SMOOTH, ditherNoise } from "./lodFade.js";
 
 // LOD budgets (triangles per piece; per tram: LOD0 ~15.9k, LOD1 ~6k, LOD2 ~1.2k) and switch distances (m)
+/** smooth LOD: half-width of the cross-fade band at each switch (a share of its distance), the far fade-out (m) */
+const LOD_BANDS = [0.1, 0.08], FADE_END = 150;
 export const TRAM_LODS = [
   { until: 70 },
   { until: 260, src: "_mid", target: { Cab: 1500, Susp: 700, Centre: 320, Bellows: 160, Panto: 200, Bogie: 0 } },
@@ -242,6 +245,11 @@ function makeMaterial(sign) {
   // post chain: SSR on the paint (as post.js), no screen-space AO on glass and lamps (viewer/facades.js rule)
   const ssrFade = smoothstep(360.0, 180.0, positionView.z.negate());
   m.mrtNode = mrt({ metalRough: vec3(rough.lessThan(0.75).select(metal.mul(ssrFade), float(0)), rough, float(1).sub(isGlass).sub(isEmit)) });
+  // smooth LOD: the per-instance dither of the fleet's cross-fades (aInst.w; 0 = whole, as in the labs)
+  if (SMOOTH) {
+    const w = inst.w, n = ditherNoise();
+    m.maskNode = w.lessThan(0.001).or(w.lessThan(1.5).and(n.lessThan(w))).or(w.greaterThan(1.5).and(n.greaterThanEqual(w.sub(2))));
+  }
   m.userData.shared = true;
   return m;
 }
@@ -302,7 +310,7 @@ export function createTramFleet(model, parent, maxTrams = 40) {
       geo.setAttribute("aInst", inst);
       const mesh = new THREE.InstancedMesh(geo, model.material, cap);
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-      mesh.count = 0; mesh.frustumCulled = false; mesh.castShadow = k < 2; mesh.receiveShadow = true;
+      mesh.count = 0; mesh.frustumCulled = false; mesh.castShadow = SMOOTH || k < 2; mesh.receiveShadow = true;   // (smooth: the far LOD casts too, no shadow switching off at 260 m)
       mesh.name = `tram-${p}-lod${k}`;
       parent.add(mesh);
       row[p] = { mesh, inst, n: 0 };
@@ -334,24 +342,38 @@ export function createTramFleet(model, parent, maxTrams = 40) {
       let k = forced;
       sphere.center.set(cx, cy + 2, cz); sphere.radius = 19;
       if (cam && !frustum.intersectsSphere(sphere)) { stats.culled++; return -1; }
-      if (eye) {
-        if (k < 0) {
-          const dist = eye.distanceTo(sphere.center) / lodScale;
-          k = TRAM_LODS.findIndex((l) => dist < l.until);
-          if (k < 0) { stats.culled++; return -1; }
+      // smooth LOD (docs/SMOOTH_LOD.md): inside a band around a switch the tram is drawn in BOTH LODs, split by
+      // the dither (aInst.w: 2 + t = outgoing, keeps n >= t; t = incoming, keeps n < t; 0 = whole), and it
+      // fades out over the last FADE_END metres instead of vanishing
+      let fadeA = 0, kB = -1, fadeB = 0;
+      if (eye && k < 0) {
+        const dist = eye.distanceTo(sphere.center) / lodScale;
+        k = TRAM_LODS.findIndex((l) => dist < l.until);
+        if (SMOOTH) {
+          const last = TRAM_LODS.length - 1, end = TRAM_LODS[last].until;
+          for (let j = 0; j < last; j++) {
+            const s = TRAM_LODS[j].until, w = s * LOD_BANDS[j];
+            if (dist > s - w && dist < s + w) { const t = THREE.MathUtils.smoothstep(dist, s - w, s + w); k = j; fadeA = 2 + t; kB = j + 1; fadeB = t; }
+          }
+          if (k === last && dist > end - FADE_END) fadeA = 2 + THREE.MathUtils.smoothstep(dist, end - FADE_END, end);
         }
+        if (k < 0) { stats.culled++; return -1; }
       }
       if (k < 0) k = 0;
-      const row = meshes[k];
-      for (const p of pose) {
-        const r = row[p.piece];
-        if (!r || r.n >= r.mesh.instanceMatrix.count) continue;
-        q.setFromAxisAngle(up, p.yaw);
-        M.compose(v.set(p.x, ground(p.x, p.z), p.z), q, one);
-        r.mesh.setMatrixAt(r.n, M);
-        r.inst.array.set([p.lead ? 1 : 0, sign, p.angle || 0, 0], r.n * 4);
-        r.n++;
-      }
+      const put = (kk, fade) => {
+        const row = meshes[kk];
+        for (const p of pose) {
+          const r = row[p.piece];
+          if (!r || r.n >= r.mesh.instanceMatrix.count) continue;
+          q.setFromAxisAngle(up, p.yaw);
+          M.compose(v.set(p.x, ground(p.x, p.z), p.z), q, one);
+          r.mesh.setMatrixAt(r.n, M);
+          r.inst.array.set([p.lead ? 1 : 0, sign, p.angle || 0, fade], r.n * 4);
+          r.n++;
+        }
+      };
+      put(k, fadeA);
+      if (kB >= 0) put(kB, fadeB);
       stats.trams++; stats.perLod[k]++;
       return k;
     },

@@ -6,6 +6,7 @@
 // opening such a link restores it. H hides all the UI (photo mode). ?panel=0: the old HUD only.
 import { Panel as GUI } from "./panelUI.js";
 import { uLampPower } from "./lampLight.js";
+import { addSmoothnessFolder } from "./smoothPanel.js";
 
 const TIMES = ["golden", "midday", "overcast", "twilight", "night", "misty"];
 const CHARS = ["hoodie", "casual", "capsule"];
@@ -170,6 +171,9 @@ export function createDevPanel(ctx) {
     location.search = q.toString();
   } }, "f").name("↻ reload with these");
   fWo.close();
+
+  // ---------------------------------------------------------------- Smoothness (viewer/smoothPanel.js)
+  addSmoothnessFolder(gui, ctx);
 
   // ---------------------------------------------------------------- Performance
   const fP = gui.addFolder("Performance");
