@@ -4,7 +4,7 @@
 // out: viewer/interior/cut.js), the city's lighting and post chain. Walk in with the third-person character (front door
 // opens, stairs with foot IK, walls and furniture collide); day / night; debug views (lightmaps off, lighting only,
 // albedo only, colliders, probes); a perf readout.
-// URL: ?time=golden|midday|overcast|twilight|night  ?view=street|salon|kitchen|stair|bedroom|bathroom|study|walk
+// URL: ?time=golden|midday|overcast|twilight|night  ?view=street|salon|kitchen|stair|bedroom|bathroom|study|mirror|stringer|stairwell|plant|walk
 //      ?char=hoodie|casual|capsule  ?fx=0 (no post)  ?probes=0
 import * as THREE from "three/webgpu";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -148,6 +148,10 @@ const VIEWS = {   // house local: eye, target
   bathroom: [[2.8, 5.0, 7.3], [4.9, 4.0, 10.1]],
   study: [[2.0, 5.0, 8.3], [0.8, 4.2, 10.4]],
   landing: [[1.9, 5.0, 7.6], [0.5, 3.6, 3.0]],
+  mirror: [[2.6, 1.65, 1.6], [5.3, 1.75, 2.9]],
+  stringer: [[1.9, 1.5, 2.0], [0.9, 1.4, 3.4]],
+  stairwell: [[1.9, 4.9, 6.6], [0.6, 3.0, 2.6]],
+  plant: [[4.0, 1.0, -1.6], [4.9, 0.6, 0.1]],
 };
 function goView(v) {
   const V = VIEWS[v]; if (!V) return;
@@ -184,6 +188,9 @@ fl.add({ a: interiorLook.adaptInside }, "a", 1, 30, 0.1).name("eye adaptation in
 fl.add(S, "probeGain", 0, 2, 0.01).name("character (probes)").onChange((v) => { probeLook.gain.value = v; });
 fl.add(S, "post").name("post effects");
 const fd = ui.addFolder("Debug");
+fd.add({ v: true }, "v").name("fabric sheen").onChange((v) => { interiorLook.sheen.value = v ? 1 : 0; });
+fd.add({ v: true }, "v").name("fabric weave relief").onChange((v) => { interiorLook.weave.value = v ? 1 : 0; });
+fd.add({ v: true }, "v").name("mirror reflections").onChange((v) => { interiorLook.mirrors.value = v ? 1 : 0; });
 fd.add(S, "lightmaps").name("baked light").onChange((v) => { interiorLook.lightmaps.value = v ? 1 : 0; });
 fd.add(S, "debugView", ["final", "lighting only", "albedo only"]).name("view").onChange((v) => { interiorLook.view.value = ["final", "lighting only", "albedo only"].indexOf(v); });
 fd.add(S, "colliders").name("colliders").onChange((v) => { colMesh.visible = v; tp.debug.visible = v; });

@@ -851,7 +851,12 @@ async function main() {
     fader.hold = true;
     if (ring > 0) await stream();
     if (far > ring) await stream(true);
+    // ?interior=1: the interior cell's materials compile under the cover too (stand-in meshes with its exact
+    // attribute layouts; the cell streaming in later then builds no shader: viewer/interior/interiorModel.js)
+    const interiorWarm = params.get("interior") === "1" ? await import("./interior/interiorModel.js").then((m) => m.interiorWarmup()).catch(() => null) : null;
+    if (interiorWarm) scene.add(interiorWarm);
     const w = await warmBoot(renderer, scene, bootPipes);
+    interiorWarm?.removeFromParent();
     fader.hold = false;
     log(`warm-up: ${w.ms} ms, ${w.warmed} drawables, ${w.parallel} pipelines compiled in parallel, ${w.late} after`);
   }
