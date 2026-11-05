@@ -124,6 +124,7 @@ DOOR = K.Builder()       # the front door leaf (animated)
 GLASS = K.Builder()      # window panes (not lightmapped, not in the bake)
 OCC = K.Builder()        # bake-only occluders: outer shell, roof, surroundings (not exported)
 COL = K.Builder()        # colliders (exported, not drawn)
+PROBE_DATA = []          # baked ambient cubes (interior.json)
 LIGHTS = []              # night lamps: (name, plan position, watts, colour, radius)
 PROBES = []
 
@@ -950,6 +951,39 @@ if BAKE:
             smooth_corners(ob.data, "vl_" + mode)
         print(f"bake {mode}: {time.time() - t:.1f}s")
     ob_int.data.uv_layers.active = ob_int.data.uv_layers["UVMap"]
+    # irradiance probes for dynamic objects (the character): small 6-face cubes in every room at two heights, baked
+    # per corner like the props; each face's light = the irradiance from that axis direction (an "ambient cube")
+    pts = []
+    for (name, s0, s1, z0, z1, y0, y1) in PROBES:
+        for fy in (0.55, 1.55):
+            for fz in ((0.3, 0.7) if z1 - z0 > 3.5 else (0.5,)):
+                pts.append((name, (s0 + s1) / 2, y0 + fy, z0 + (z1 - z0) * fz))
+    PB = K.Builder()
+    for (_, ps, py, pz) in pts:
+        PB.emit(box(0.08, 0.08, 0.08), "Plaster", plaster(0xFFFFFF), T(ps, py - 0.04, pz))
+    ob_pb = mesh_from(PB, "ProbeCubes")
+    ob_pb.data.materials.clear(); m_pb = bpy.data.materials.new("probe"); m_pb.use_nodes = True
+    m_pb.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (1, 1, 1, 1); ob_pb.data.materials.append(m_pb)
+    for mode in ("sky", "sun", "night"): ob_pb.data.color_attributes.new("pb_" + mode, "FLOAT_COLOR", "CORNER")
+    probe_data = [{"room": n, "pos": list(to_local(ms((ps, py, pz)))), "sky": None, "sun": None, "night": None} for (n, ps, py, pz) in pts]
+    for mode in ("sky", "sun", "night"):
+        set_mode(mode)
+        for o in scn.objects: o.select_set(False)
+        ob_pb.select_set(True); bpy.context.view_layer.objects.active = ob_pb
+        ob_pb.data.color_attributes.active_color = ob_pb.data.color_attributes["pb_" + mode]
+        bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT", "INDIRECT"}, target="VERTEX_COLORS")
+        me = ob_pb.data; ca = me.color_attributes["pb_" + mode]
+        for k in range(len(pts)):
+            cube = {}
+            for f in me.polygons[k * 6:(k + 1) * 6]:
+                c = [sum(ca.data[li].color[j] for li in f.loop_indices) / f.loop_total for j in range(3)]
+                n = f.normal                                     # Blender frame -> house local (three): (x, z, -y)
+                key = max((("px", n.x), ("nx", -n.x), ("py", n.z), ("ny", -n.z), ("pz", -n.y), ("nz", n.y)), key=lambda q: q[1])[0]
+                cube[key] = [round(v, 5) for v in c]
+            probe_data[k][mode] = [cube.get(a, [0, 0, 0]) for a in ("px", "nx", "py", "ny", "pz", "nz")]
+    bpy.data.objects.remove(ob_pb)
+    PROBE_DATA[:] = probe_data
+    print(f"probes: {len(pts)} ambient cubes baked")
     # per-corner lighting -> custom float attributes (glTF _LMSKY / _LMSUN / _LMNIGHT; three.js: _lmsky ...)
     for ob in (ob_props, ob_door):
         me = ob.data
@@ -1027,6 +1061,7 @@ info = {
     "levels": {"gf": GF, "gf_ceiling": GF_CEIL, "ff": FF, "ff_ceiling": FF_CEIL, "stair": {"risers": NR, "rise": round(RISE, 4), "going": GOING}},
     "rooms": [{"name": r[0], "level": r[1], "rect": plan_to_local_rect(r[2], r[3], r[4], r[5]), "y": WALL_CEIL[r[1]]} for r in ROOMS],
     "probes": [{"name": p[0], "rect": plan_to_local_rect(p[1], p[2], p[3], p[4]), "y": [p[5], p[6]]} for p in PROBES],
+    "ambientCubes": {"order": "+x -x +y -y +z -z (house local)", "probes": PROBE_DATA},
     "frontDoor": {"hinge": list(hp), "width": DOOR_INFO["width"], "height": DOOR_INFO["height"], "opens": "about +y toward the inside (house local)",
                   "outside": [list(to_local(ms(((door["s0"] + door["s1"]) / 2, 0, -1.0))))]},
     "lights": [{"name": l[0], "pos": list(to_local(l[1])), "watts": l[2], "color": l[3]} for l in LIGHTS],

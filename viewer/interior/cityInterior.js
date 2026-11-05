@@ -1,19 +1,19 @@
 // THE INTERIOR CELL IN THE CITY (?interior=1, tile I6): the pilot house (models/interior/maison1) streams in when the
 // camera or the character comes within 40 m of it and out beyond 60 m (hysteresis), with no frame hitch:
 //   - the GLB's meshopt decode runs in MeshoptDecoder's workers, the lightmaps decode as images off the main thread,
-//     the materials compile with renderer.compileAsync before the cell is shown; the probe grids bake in ranged slices
+//     the materials compile with renderer.compileAsync, one per frame, before the cell is shown
 //   - the city's façade switches its painted windows for holes over 0.4 s (dithered, viewer/interior/cut.js), so the
 //     real windows, frames and door of the cell show; the terrain inside the house is cut too
 //   - the portal (viewer/interior/portal.js) skips the whole city while the camera is inside and no opening is in view
 //   - third person: the house's footprint prism is excluded in every tile's PrismSet (PrismSet.exclude(BU_ID)), the
 //     cell's collider triangles join the CollisionWorld as a TriBVH, the terrain heightfield is ignored inside the
-//     house, the front door opens as the character comes near, and the character is lit by the cell's probes inside.
+//     house, the front door opens as the character comes near, and the character is lit by the cell's baked ambient cubes inside.
 // The only main.js change is the import + one call (behind ?interior=1).
 import * as THREE from "three/webgpu";
 import { houseCut, setHouseCut } from "./cut.js";
 import { loadInterior } from "./interiorModel.js";
 import { Portal } from "./portal.js";
-import { bakeProbes, probeVariant } from "./probes.js";
+import { makeProbes } from "./probes.js";
 import { TriBVH, PrismSet, Heightfield } from "../character/index.js";
 
 const DIR = new URL("../../models/interior/maison1/", import.meta.url).href;
@@ -38,8 +38,7 @@ export async function startCityInterior({ scene, renderer, camera, lighting, upd
       state.cell = cell;
       state.portal = new Portal(cell, { camera, sun: lighting.sun });
       log(`interior: ${spec.BU_ID.split("/").pop()} loaded in ${Math.round(performance.now() - t0)} ms (GLB + lightmaps ${cell.stats.loadMs} ms, compiled ${cell.stats.readyMs} ms), ${cell.stats.triangles} triangles, ${cell.stats.draws} draws; long tasks while loading: ${longTasks.length ? longTasks.join(", ") + " ms" : "none"}`);
-      state.probes = await bakeProbes(cell, renderer);
-      log(`interior: ${state.probes.probes} probes baked in ${state.probes.ms} ms (${state.probes.slices} slices: the first ${state.probes.firstSliceMs} ms incl. pipeline compile, then <= ${state.probes.worstSliceMs} ms)`);
+      state.probes = makeProbes(cell);
     } catch (e) { log(`interior: load failed: ${e.message}`); }
     state.loading = false;
   }
@@ -61,7 +60,7 @@ export async function startCityInterior({ scene, renderer, camera, lighting, upd
     const orig = hf?.height;
     if (hf) { const p = new THREE.Vector3(); hf.height = (x, z) => (state.cell && state.cell.contains(p.set(x, spec.base + 1, z), 0.15) ? -1e4 : orig(x, z)); }
     if (state.probes) {
-      third.tp.body.setVariant(probeVariant(state.probes, third.tp.body));
+      third.tp.body.setVariant(state.probes.variant(third.tp.body));
       (async () => { for (const [mesh, ...mats] of third.tp.body.warmModel()) for (const m of mats) { mesh.material = m; await renderer.compileAsync(mesh, camera, scene); } })();
     }
     state.hooked = third; state.bvh = bvh; state.hf = hf; state.hfOrig = orig;
@@ -95,7 +94,7 @@ export async function startCityInterior({ scene, renderer, camera, lighting, upd
     if (third?.on) {
       hook(third);
       if (n++ % 60 === 0) for (const s of third.world.sources) if (s instanceof PrismSet) s.exclude(spec.BU_ID, true);   // streamed tiles too
-      third.tp.body.useVariant(!!state.probes && state.cell.contains(pos, 0.1));
+      const inside = !!state.probes && state.cell.contains(pos, 0.1); third.tp.body.useVariant(inside); if (inside) state.probes.update(pos);
     } else if (state.hooked) unhook();
   });
   window.__interior = state;

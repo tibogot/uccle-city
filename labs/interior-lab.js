@@ -16,7 +16,7 @@ import { houseCut, setHouseCut, cutOpacity } from "../viewer/interior/cut.js";
 import { buildingMeshes } from "../viewer/facades.js";
 import { Heightmap } from "../viewer/heightmap.js";
 import { loadInterior, interiorLook } from "../viewer/interior/interiorModel.js";
-import { bakeProbes, probeVariant, probeLook } from "../viewer/interior/probes.js";
+import { makeProbes, probeLook } from "../viewer/interior/probes.js";
 import { Portal, INTERIOR_LAYER } from "../viewer/interior/portal.js";
 import { ThirdPerson, CollisionWorld, Heightfield, TriBVH, PrismSet } from "../viewer/character/index.js";
 
@@ -109,12 +109,12 @@ const S = {
   dayGain: interiorLook.dayGain.value, sunGain: interiorLook.sunGain.value, nightGain: interiorLook.nightGain.value, probeGain: probeLook.gain.value,
   perf: "", cellInfo: "", portal: "",
 };
-async function makeProbes() {
-  probes = await bakeProbes(cell, renderer, { onProgress: (k) => { S.cellInfo = `probes ${(k * 100).toFixed(0)} %`; } });
-  tp.body.setVariant(probeVariant(probes, tp.body));
+async function setupProbes() {
+  probes = makeProbes(cell);
+  tp.body.setVariant(probes.variant(tp.body));
   for (const [mesh, ...mats] of tp.body.warmModel()) for (const m of mats) { mesh.material = m; await renderer.compileAsync(scene, camera); }
 }
-if (qp.get("probes") !== "0") await makeProbes();
+if (qp.get("probes") !== "0") await setupProbes();
 const portal = new Portal(cell, { camera, sun: lighting.sun, extra: [tp.body.root] });
 
 // debug: colliders as a wireframe, probes as small spheres
@@ -124,10 +124,9 @@ colMesh.visible = false; colMesh.renderOrder = 10; colMesh.layers.enable(INTERIO
 let probeDots = null;
 function showProbes(on) {
   if (on && !probeDots && probes) {
-    const g = probes.grids.day, res = g.resolution, pts = [], v = new THREE.Vector3();
-    for (let x = 0; x < res.x; x++) for (let y = 0; y < res.y; y++) for (let z = 0; z < res.z; z++) { g.getProbePosition(x, y, z, v); pts.push(cell.root.localToWorld(v.clone())); }
+    const pts = cell.info.ambientCubes.probes.map((p) => cell.root.localToWorld(new THREE.Vector3(...p.pos)));
     const sph = new THREE.InstancedMesh(new THREE.SphereGeometry(0.06, 10, 6), new THREE.MeshBasicNodeMaterial(), pts.length);
-    sph.material = probeVariant(probes, tp.body)({ vertexColors: false, color: new THREE.Color(1, 1, 1) }, false);
+    sph.material = probes.variant(tp.body)({ vertexColors: false, color: new THREE.Color(1, 1, 1) }, false);   // lit by the current blend (white albedo)
     pts.forEach((p, i) => sph.setMatrixAt(i, new THREE.Matrix4().makeTranslation(p.x, p.y, p.z)));
     sph.layers.enable(INTERIOR_LAYER); scene.add(sph); probeDots = sph;
   }
@@ -212,7 +211,7 @@ const focus = new THREE.Vector3(), cp = new THREE.Vector3();
 renderer.setAnimationLoop(() => {
   const now = performance.now(), dt = Math.min((now - last) / 1000, 0.1); last = now;
   fpsAcc += dt; fpsN++; if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
-  if (S.mode === "walk") { tp.update(dt); cp.set(tp.x, tp.y + 1, tp.z); tp.body.useVariant(!!probes && cell.contains(cp, 0.1)); }
+  if (S.mode === "walk") { tp.update(dt); cp.set(tp.x, tp.y + 1, tp.z); const inside = !!probes && cell.contains(cp, 0.1); tp.body.useVariant(inside); if (inside) probes.update(cp); }
   else controls.update();
   cell.update(dt, S.mode === "walk" ? cp : camera.position, camera.position);
   focus.copy(S.mode === "walk" ? cp : controls.target);
@@ -226,7 +225,7 @@ renderer.setAnimationLoop(() => {
     const r = renderer.info.render, st = cell.stats;
     S.perf = `${fps.toFixed(0)} fps · GPU ${gpu.avg.toFixed(2)} ms · ${r.drawCalls ?? r.calls} draws · ${(r.triangles / 1000).toFixed(0)}k tris`;
     S.portal = portal.inside ? (sealed ? "inside, no opening in view: city skipped" : `inside, ${portal.visible} openings in view`) : "outside";
-    if (!/probes \d/.test(S.cellInfo) || probes) S.cellInfo = `${st.triangles} tris · ${st.draws} draws · load ${st.loadMs} ms · ready ${st.readyMs} ms` + (probes ? ` · probes ${probes.probes} in ${probes.ms} ms (first slice ${probes.firstSliceMs} ms incl. pipeline compile, then <= ${probes.worstSliceMs} ms)` : "");
+    if (!/probes \d/.test(S.cellInfo) || probes) S.cellInfo = `${st.triangles} tris · ${st.draws} draws · load ${st.loadMs} ms · ready ${st.readyMs} ms` + (probes ? ` · ${probes.count} baked ambient-cube probes` : "");
     $info.textContent = `${backend} · ${S.perf}\ninterior cell: ${S.cellInfo}\nportal: ${S.portal} · door ${(cell.doorOpen * 100).toFixed(0)} %\n` +
       `colliders: ${bvh.count} triangles (BVH ${bvhMs.toFixed(1)} ms) + ${prisms.P} footprints (house excluded) · boot ${bootMs.toFixed(0)} ms` +
       (S.mode === "walk" ? `\ncharacter CPU ${tp.perf.ms.toFixed(3)} ms · ${tp.ctl.grounded ? "ground" : "air"} · y ${(tp.y - spec.base).toFixed(2)} m above base · indoor light ${tp.body.variantOn ? "probes" : "city"}` : "");

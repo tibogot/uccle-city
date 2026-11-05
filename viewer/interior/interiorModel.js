@@ -271,8 +271,15 @@ export async function loadInterior(dir, { renderer = null, scene = null, camera 
     },
   };
   if (renderer && scene && camera) {
+    // one material per frame: building a node material's shader is main-thread work (the GPU pipeline is async)
     const was = root.parent; scene.add(root); root.visible = true;
-    await renderer.compileAsync(root, camera, scene);
+    const done = new Set();
+    for (const o of drawn) {
+      if (done.has(o.material)) continue;
+      done.add(o.material);
+      await renderer.compileAsync(o, camera, scene);
+      await new Promise((r) => requestAnimationFrame(r));
+    }
     if (!was) scene.remove(root);
   }
   cell.stats.readyMs = Math.round(performance.now() - t0);

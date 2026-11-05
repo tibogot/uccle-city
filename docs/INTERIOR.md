@@ -51,9 +51,11 @@ then `node tools/interior/packGlb.mjs models/interior/maison1/interior.raw.glb m
   shadow camera an empty layer; otherwise the near interior is drawn first (front-to-back sort) and rejects the city
   by depth. (Do not give the interior a negative renderOrder: it would draw before the Firmament sky, which paints
   without a depth test.)
-- `probes.js`: two LightProbeGrids (day / night) baked in the browser from the lit cell, in slices; the character gets
-  an unlit variant (`body.setVariant`) evaluating them (`lightProbeGridIrradiance`): the grids are not scene lights
-  (that would recompile every city material).
+- `probes.js`: the character's light inside = **ambient cubes baked in Cycles** with the cell (6-face probe cubes in
+  every room at two heights, the per-face baked light = irradiance from ±x, ±y, ±z, for sky / sun / night, stored in
+  `interior.json`). The CPU blends the nearest probes each frame into six uniforms; the character's unlit variant
+  (`body.setVariant`) evaluates them. Zero GPU bake, zero hitch. (A first version baked three.js `LightProbeGrid`s in
+  the browser: ~38 ms of main thread per bake call whatever the slice size: 14 s of hitches in the city. Dropped.)
 - `cityInterior.js`: streaming (in < 40 m, out > 60 m), the façade fade, the portal, third person (house footprint
   excluded from every `PrismSet`, the cell's colliders as a `TriBVH`, heightfield off inside, door opens near).
 
