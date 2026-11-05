@@ -11,6 +11,7 @@ import * as THREE from "three/webgpu";
 import { attribute, color, float, select, uniform, screenCoordinate, vec2 } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
+import { lodMesh, lodOpts } from "./carLod.js";
 
 export const PACK_SOURCES = {
   kenney: { label: "Kenney Car Kit", url: new URL("../../models/cars/kenney.glb", import.meta.url).href, credit: "Kenney (kenney.nl), CC0" },
@@ -53,12 +54,11 @@ export function loadPack(source) {
         parts[name.replace(/_\d+$/, "")] = { geo, pos: o.position.toArray() };   // GLTFLoader makes names unique: Body_3
       });
       const done = new Map();       // the left / right wheels share a geometry: simplify it once
-      const lods = (S.lods || PACK_LODS).map(({ error, wheel, loose }) => {
+      const lods = (S.lods || PACK_LODS).map((L) => {
         const out = { tris: 0 };
         for (const [k, p] of Object.entries(parts)) {
-          const body = k === "Body", e = body ? error : wheel ?? error * 0.6;
-          const key = `${p.geo.uuid}|${e}`;
-          const g = done.get(key) || (e ? simplify(p.geo, e, S.welded, S.prune, !body && wheel != null, !!loose) : p.geo);
+          const o = lodOpts(S, L, k), key = `${p.geo.uuid}|${o.error}`;
+          const g = done.get(key) || (o.error ? lodGeometry(p.geo, o) : p.geo);
           done.set(key, g);
           g.computeBoundingSphere(); g.userData.shared = true;
           out[k] = g; out.tris += g.index.count / 3;
@@ -74,116 +74,15 @@ export function loadPack(source) {
   return p;
 }
 
-function simplify(g, error, weldedOnly = false, prune = false, free = false, loose = false) {
-  if (loose) return simplifyLoose(g, error, prune);
-  if (weldedOnly) return simplifyWelded(g, error, prune, free);
-  const src = new Uint32Array(g.index.array), P = g.attributes.position.array;
-  const [idx] = MeshoptSimplifier.simplify(src, P, 3, 0, error, ["ErrorAbsolute"]);
-  if (idx.length < src.length * 0.85) {
-    const s = new THREE.BufferGeometry();
-    for (const [k, a] of Object.entries(g.attributes)) s.setAttribute(k, a);
-    s.setIndex(new THREE.BufferAttribute(idx, 1));
-    return s;
-  }
-  return simplifyWelded(g, error);
-}
-
-/**
- * Flat-shaded packs (Quaternius, Kenney) split vertices per face (hard normals): nearly every edge is a border and
- * the simplifier can hardly move. Simplify on an index WELDED by position + colour + kind instead (normals ignored):
- * colour seams stay borders (kept closed with LockBorder up close), flat faces merge; then flat face normals again.
- */
-function simplifyWelded(g, error, prune = false, free = false) {
-  const P = g.attributes.position.array, C = g.attributes.color.array, K = g.attributes._kind.array, n = P.length / 3;
-  const key = (i) => `${Math.round(P[i * 3] * 1e4)},${Math.round(P[i * 3 + 1] * 1e4)},${Math.round(P[i * 3 + 2] * 1e4)}|${K[i]}|` +
-    `${Math.round(C[i * 3] * 500)},${Math.round(C[i * 3 + 1] * 500)},${Math.round(C[i * 3 + 2] * 500)}`;
-  const map = new Map(), weld = new Uint32Array(n), rep = [];
-  for (let i = 0; i < n; i++) {
-    const k = key(i);
-    let w = map.get(k);
-    if (w == null) { w = rep.length; map.set(k, w); rep.push(i); }
-    weld[i] = w;
-  }
-  const wpos = new Float32Array(rep.length * 3);
-  rep.forEach((i, w) => wpos.set(P.subarray(i * 3, i * 3 + 3), w * 3));
-  const widx = Uint32Array.from(g.index.array, (i) => weld[i]);
-  const flags = error < 0.02 && !free ? ["ErrorAbsolute", "LockBorder"] : ["ErrorAbsolute"];
-  if (prune && error >= 0.02) flags.push("Prune");   // far LODs: drop islands under the error (lug nuts, plate glyphs, wipers)
-  const [idx] = MeshoptSimplifier.simplify(widx, wpos, 3, 0, error, flags);
-  const T = idx.length / 3, pos = new Float32Array(T * 9), nrm = new Float32Array(T * 9), col = new Float32Array(T * 9), kind = new Float32Array(T * 3);
-  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
-  for (let t = 0; t < T; t++) {
-    const w = [idx[t * 3], idx[t * 3 + 1], idx[t * 3 + 2]];
-    a.fromArray(wpos, w[0] * 3); b.fromArray(wpos, w[1] * 3); c.fromArray(wpos, w[2] * 3);
-    const nn = b.clone().sub(a).cross(c.clone().sub(a)).normalize();
-    for (let k = 0; k < 3; k++) {
-      const o = t * 3 + k, src = rep[w[k]];
-      pos.set(wpos.subarray(w[k] * 3, w[k] * 3 + 3), o * 3);
-      nrm[o * 3] = nn.x; nrm[o * 3 + 1] = nn.y; nrm[o * 3 + 2] = nn.z;
-      col.set(C.subarray(src * 3, src * 3 + 3), o * 3); kind[o] = K[src];
-    }
-  }
+/** One LOD of a pack geometry (viewer/drive/carLod.js: the same code the city's LOD worker runs). */
+function lodGeometry(g, o) {
+  const A = g.attributes;
+  const r = lodMesh({ P: A.position.array, N: A.normal.array, C: A.color.array, K: A._kind.array, I: Uint32Array.from(g.index.array) }, o, MeshoptSimplifier);
   const s = new THREE.BufferGeometry();
-  s.setAttribute("position", new THREE.BufferAttribute(pos, 3)); s.setAttribute("normal", new THREE.BufferAttribute(nrm, 3));
-  s.setAttribute("color", new THREE.BufferAttribute(col, 3)); s.setAttribute("_kind", new THREE.BufferAttribute(kind, 1));
-  s.setIndex(new THREE.BufferAttribute(Uint32Array.from({ length: T * 3 }, (_, i) => i), 1));
+  s.setAttribute("position", new THREE.BufferAttribute(r.P, 3)); s.setAttribute("normal", new THREE.BufferAttribute(r.N, 3));
+  s.setAttribute("color", new THREE.BufferAttribute(r.C, 3)); s.setAttribute("_kind", new THREE.BufferAttribute(r.K, 1));
+  s.setIndex(new THREE.BufferAttribute(r.I, 1));
   return s;
-}
-
-/**
- * The FAR LOD of a many-coloured mesh (our faceted cars, >= 130 m: 15-25 px): weld on POSITION only, so colour seams
- * stop being borders, and let simplifyWithAttributes weigh the colour (and a paint flag) so regions keep their place.
- * Each output triangle gets one kind (paint wins when most of its corners are paint, else the commonest) and the mean
- * colour of its corners of that kind; flat normals again.
- */
-function simplifyLoose(g, error, prune = false) {
-  const P = g.attributes.position.array, C = g.attributes.color.array, K = g.attributes._kind.array, n = P.length / 3;
-  const map = new Map(), weld = new Uint32Array(n), reps = [];
-  for (let i = 0; i < n; i++) {
-    const k = `${Math.round(P[i * 3] * 1e4)},${Math.round(P[i * 3 + 1] * 1e4)},${Math.round(P[i * 3 + 2] * 1e4)}`;
-    let w = map.get(k);
-    if (w == null) { w = reps.length; map.set(k, w); reps.push([]); }
-    reps[w].push(i); weld[i] = w;
-  }
-  const N = reps.length, wpos = new Float32Array(N * 3), attr = new Float32Array(N * 4), vkind = new Uint8Array(N), vcol = new Float32Array(N * 3);
-  reps.forEach((list, w) => {
-    wpos.set(P.subarray(list[0] * 3, list[0] * 3 + 3), w * 3);
-    const cnt = new Map();
-    let r = 0, gg = 0, b = 0, paint = 0;
-    for (const i of list) { r += C[i * 3]; gg += C[i * 3 + 1]; b += C[i * 3 + 2]; if (K[i] === 1) paint++; cnt.set(K[i], (cnt.get(K[i]) || 0) + 1); }
-    const m = list.length;
-    attr.set([r / m, gg / m, b / m, paint / m], w * 4);
-    vkind[w] = [...cnt].sort((x, y) => y[1] - x[1])[0][0];
-    let cr = 0, cg = 0, cb = 0, cm = 0;
-    for (const i of list) if (K[i] === vkind[w]) { cr += C[i * 3]; cg += C[i * 3 + 1]; cb += C[i * 3 + 2]; cm++; }
-    vcol.set([cr / cm, cg / cm, cb / cm], w * 3);
-  });
-  const widx = Uint32Array.from(g.index.array, (i) => weld[i]);
-  const flags = ["ErrorAbsolute"];
-  if (prune) flags.push("Prune");
-  const [idx] = MeshoptSimplifier.simplifyWithAttributes(widx, wpos, 3, attr, 4, [0.05, 0.05, 0.05, 0.08], null, 0, error, flags);
-  const T = idx.length / 3, pos = new Float32Array(T * 9), nrm = new Float32Array(T * 9), col = new Float32Array(T * 9), kind = new Float32Array(T * 3);
-  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
-  for (let t = 0; t < T; t++) {
-    const w = [idx[t * 3], idx[t * 3 + 1], idx[t * 3 + 2]];
-    a.fromArray(wpos, w[0] * 3); b.fromArray(wpos, w[1] * 3); c.fromArray(wpos, w[2] * 3);
-    const nn = b.clone().sub(a).cross(c.clone().sub(a)).normalize();
-    const ks = w.map((x) => vkind[x]);
-    const kd = ks.filter((x) => x === 1).length >= 2 ? 1 : ks[0] === ks[1] || ks[0] === ks[2] ? ks[0] : ks[1] === ks[2] ? ks[1] : ks[0];
-    let cr = 0, cg = 0, cb = 0, cm = 0;
-    for (const x of w) if (vkind[x] === kd) { cr += vcol[x * 3]; cg += vcol[x * 3 + 1]; cb += vcol[x * 3 + 2]; cm++; }
-    for (let k = 0; k < 3; k++) {
-      const o = t * 3 + k;
-      pos.set(wpos.subarray(w[k] * 3, w[k] * 3 + 3), o * 3);
-      nrm[o * 3] = nn.x; nrm[o * 3 + 1] = nn.y; nrm[o * 3 + 2] = nn.z;
-      col[o * 3] = cr / cm; col[o * 3 + 1] = cg / cm; col[o * 3 + 2] = cb / cm; kind[o] = kd;
-    }
-  }
-  const out = new THREE.BufferGeometry();
-  out.setAttribute("position", new THREE.BufferAttribute(pos, 3)); out.setAttribute("normal", new THREE.BufferAttribute(nrm, 3));
-  out.setAttribute("color", new THREE.BufferAttribute(col, 3)); out.setAttribute("_kind", new THREE.BufferAttribute(kind, 1));
-  out.setIndex(new THREE.BufferAttribute(Uint32Array.from({ length: T * 3 }, (_, i) => i), 1));
-  return out;
 }
 
 /** Live look switches for every pack material: glass = multiplier on the glass colour (Kenney's windows are pale

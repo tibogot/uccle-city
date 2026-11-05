@@ -480,7 +480,7 @@ async function main() {
   const layers = { terrain: new THREE.Group(), buildings: new THREE.Group(), roads: new THREE.Group(), features: new THREE.Group() };
   for (const g of Object.values(layers)) scene.add(g);
   // the parked cars of every tile, as one fleet (viewer/carFleet.js; ?cars=box: the old box cars per tile)
-  if (params.get("cars") !== "box") { scene.add(carFleet.group); updaters.push(carFleet.update); }
+  if (params.get("cars") !== "box") { scene.add(carFleet.group); updaters.push(carFleet.update); carFleet.setRenderer(renderer, scene); }
   // the world: the main tile now, its neighbours streamed in after the first frame (?ring=0|1|2)
   const world = {
     tiles: [],

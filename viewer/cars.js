@@ -8,7 +8,7 @@
 // car's type: the third-person colliders (viewer/character/cityHook.js) read it as before.
 // ?cars=box: the old box cars (one InstancedMesh per tile, palette per car).
 import * as THREE from "three/webgpu";
-import { carFleet, pickType } from "./carFleet.js";
+import { carFleet, assignTypes } from "./carFleet.js";
 import { attribute, instancedBufferAttribute, mix, vec3, float } from "three/tsl";
 import { ROAD_TYPES, resolveStack, layoutAt } from "../vendor/roads/roadCrossSection.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
@@ -151,10 +151,22 @@ export function buildCars(roads, feats, ground, bounds, { place = null } = {}) {
   const group = new THREE.Group();
   group.name = "parked-cars-tile";
   if (!sites.length) return { group, count: 0 };
-  const cars = sites.map((s) => ({
+  // slot length: the distance to the nearest parked neighbour on the same kerb, ahead or behind (9 m when none)
+  const room = sites.map((s, i) => {
+    const ax = Math.cos(s.yaw), az = -Math.sin(s.yaw);      // along the car (box cars: local +x = the bonnet)
+    let r = 9;
+    for (let j = 0; j < sites.length; j++) {
+      if (j === i) continue;
+      const dx = sites[j].x - s.x, dz = sites[j].z - s.z, along = Math.abs(dx * ax + dz * az), across = Math.abs(dx * az - dz * ax);
+      if (across < 1.6 && along < r) r = along;
+    }
+    return r;
+  });
+  const types = assignTypes(room, sites.map((s) => hash(s.x * 0.113, s.z * 0.071)));
+  const cars = sites.map((s, i) => ({
     x: s.x, y: ground(s.x, s.z) + 0.005, z: s.z,
     heading: s.yaw + Math.PI / 2,                      // the model's +z (its bonnet) along the box car's +x
-    type: pickType(hash(s.x * 0.113, s.z * 0.071)), pv: hash(s.z * 0.31, s.x * 0.97),
+    type: types[i], pv: hash(s.z * 0.31, s.x * 0.97), room: room[i],
   }));
   // collider boxes: a unit box (x, z in -0.5..0.5, y 0..1) scaled per car to its type's size, oriented like the car
   const col = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0), new THREE.MeshBasicNodeMaterial(), cars.length);

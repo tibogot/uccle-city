@@ -50,7 +50,7 @@ invisible InstancedMesh "parked-cars" of boxes sized to each car's type (the thi
 `viewer/carFleet.js` draws all loaded tiles' cars as ONE fleet (type mix, Brussels paints, instanced per type per LOD,
 LOD0-1 rich material with clear coat and see-through glass, LOD2-3 plain, LOD3 casts no shadow, dithered fades in
 separate small batches: LOD switches, the 380-420 m range end, tiles streaming in; `__carFleet.stats`, with a pop
-counter). Our own faceted family (`tools/blender/carFaceted.py` -> `models/cars/faceted.glb`,
+counter; the LODs are built in viewer/carLodWorker.js (shared array code viewer/drive/carLod.js), the materials compiled async, the types go live one per frame: no main-thread hitch; each slot gets a type that fits its length, the mix kept: a panel van needs a 6 m slot). Our own faceted family (`tools/blender/carFaceted.py` -> `models/cars/faceted.glb`,
 same contract as the packs: one material, COLOR_0 = palette x Cycles-baked AO, `_KIND` 0-8, per-instance paint; glass drawn
 see-through with alpha-to-coverage in the same opaque draw): hatch_s, hatch_c, estate, saloon, suv, van_c, van_p, taxi;
 `?mode=compare&layout=family`, `&faceted=<id>`; the street benchmark has it as an option. Polish pass: per-type
