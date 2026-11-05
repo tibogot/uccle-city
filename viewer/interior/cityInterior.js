@@ -15,6 +15,7 @@ import { loadInterior } from "./interiorModel.js";
 import { Portal } from "./portal.js";
 import { makeProbes } from "./probes.js";
 import { TriBVH, PrismSet, Heightfield } from "../character/index.js";
+import { openParallelPipelines } from "../../vendor/engine/parallelPipelines.js";
 
 const DIR = new URL("../../models/interior/maison1/", import.meta.url).href;
 const NEAR = 40, FAR = 60, FADE_S = 0.4;
@@ -30,14 +31,22 @@ export async function startCityInterior({ scene, renderer, camera, lighting, upd
   try { new PerformanceObserver((l) => { for (const e of l.getEntries()) if (state.loading) longTasks.push(Math.round(e.duration)); }).observe({ type: "longtask", buffered: false }); } catch { /* not supported */ }
 
   async function load() {
-    state.loading = true;
+    state.loading = true; state.t = { start: performance.now() };
     const t0 = performance.now();
     try {
+      // the whole load inside a parallel-pipeline window (vendor/engine, as the city's boot warm-up): every pipeline
+      // the cell needs, also for the real passes (the post chain's MRT scene pass), is created async and three skips
+      // the draws until it is ready (the façade still shows its painted windows); node builds one material per frame
+      const win = openParallelPipelines(renderer, scene);
       const cell = await loadInterior(DIR, { renderer, scene, camera });
-      scene.add(cell.root);
-      state.cell = cell;
+      state.t.loaded = performance.now(); scene.add(cell.root);
+      for (let i = 0; i < 4; i++) await new Promise((r) => requestAnimationFrame(r));
+      const par = await win.end();
+      for (let i = 0; i < 2; i++) await new Promise((r) => requestAnimationFrame(r));
+      cell.stats.pipelines = par.created;
+      state.cell = cell; state.t.shown = performance.now();
       state.portal = new Portal(cell, { camera, sun: lighting.sun });
-      log(`interior: ${spec.BU_ID.split("/").pop()} loaded in ${Math.round(performance.now() - t0)} ms (GLB + lightmaps ${cell.stats.loadMs} ms, compiled ${cell.stats.readyMs} ms), ${cell.stats.triangles} triangles, ${cell.stats.draws} draws; long tasks while loading: ${longTasks.length ? longTasks.join(", ") + " ms" : "none"}`);
+      log(`interior: ${spec.BU_ID.split("/").pop()} loaded in ${Math.round(performance.now() - t0)} ms (GLB + lightmaps ${cell.stats.loadMs} ms, ${cell.stats.pipelines} pipelines compiled in parallel), ${cell.stats.triangles} triangles, ${cell.stats.draws} draws; long tasks while loading: ${longTasks.length ? longTasks.join(", ") + " ms" : "none"}`);
       state.probes = makeProbes(cell);
     } catch (e) { log(`interior: load failed: ${e.message}`); }
     state.loading = false;

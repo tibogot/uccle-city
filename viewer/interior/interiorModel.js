@@ -184,9 +184,13 @@ function glassMaterial() {
 export async function loadInterior(dir, { renderer = null, scene = null, camera = null } = {}) {
   const t0 = performance.now();
   const base = new URL(dir.endsWith("/") ? dir : dir + "/", location.href).href;
-  const texLoader = new THREE.TextureLoader();
-  const tex = (f) => texLoader.loadAsync(base + f).then((t) => {
+  // ImageBitmaps: the PNGs decode off the main thread (an <img> decodes on first upload, on the main thread); no
+  // premultiply / colour conversion: the alpha is the RGBM scale
+  const bmpLoader = new THREE.ImageBitmapLoader().setOptions({ imageOrientation: "none", premultiplyAlpha: "none", colorSpaceConversion: "none" });
+  const tex = (f) => bmpLoader.loadAsync(base + f).then((bmp) => {
+    const t = new THREE.Texture(bmp);
     t.flipY = false; t.colorSpace = THREE.NoColorSpace; t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; t.anisotropy = 4;
+    t.needsUpdate = true;
     return t;
   });
   const [gltf, spec, info, sky, sun, night] = await Promise.all([
