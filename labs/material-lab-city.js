@@ -88,7 +88,7 @@ function libHouse(h, i, add) {
     if (!o.door) fb.box(o.a + f, o.y, z0, o.b - f, o.y + f, z1, { skip: ["back", "left", "right"] });
     const mid = o.door ? null : o.y + o.h * 0.68;                                   // transom
     if (mid) fb.box(o.a + f, mid - 0.03, z0, o.b - f, mid + 0.03, z1, { bottom: true, skip: ["back", "left", "right"] });
-    if (o.door) fb.rect(V(o.a + f, o.y, -REV - 0.035), X, Y, o.b - o.a - 2 * f, o.h - f - 0.6, [o.a, o.y]);   // door leaf
+    if (o.door) { const db = new GeoBuilder(mv); db.rect(V(o.a + f, o.y, -REV - 0.035), X, Y, o.b - o.a - 2 * f, o.h - f - 0.6, [o.a, o.y]); add(db, "wood_frame_dark", "world"); }   // door leaf
     const gy0 = o.door ? t - f - 0.6 : o.y + f;
     gb.rect(V(o.a + f, gy0, -REV - 0.035), X, Y, o.b - o.a - 2 * f, t - f - gy0, [o.a, gy0]);
     if (!o.door) { const sb = new GeoBuilder(mv); sill(sb, o.a - 0.08, o.b + 0.08, o.y - 0.06, o.y, 0.06); add(sb, "stone_blue", "world"); }

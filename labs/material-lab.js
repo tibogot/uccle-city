@@ -11,7 +11,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { Panel } from "../viewer/panelUI.js";
 import { Lighting, PRESETS } from "../viewer/lighting.js";
 import { createPipeline } from "../viewer/post.js";
-import { DEFS, MATERIAL_NAMES, SCAN_MATERIALS, createMaterial, createLook, paramSpec, setParam, readParams } from "../viewer/materials/library.js";
+import { DEFS, MATERIAL_NAMES, SCAN_MATERIALS, createMaterial, createLook, paramSpec, readParams, splitAt } from "../viewer/materials/library.js";
 import { loadScans, SCANS } from "../viewer/materials/scans.js";
 import { GeoBuilder, wallWithWindow, sill } from "./material-lab-scene.js";
 import { buildCitySample, CITY_MAP } from "./material-lab-city.js";
@@ -59,6 +59,7 @@ const S = {
   material: MATERIAL_NAMES.includes(qp.get("mat")) ? qp.get("mat") : "brick_red_brussels",
   variant: qp.get("variant") || "proc", mapping: qp.get("mapping") || "auto", view: qp.get("view") || "5m",
   time: preset, hour: lighting.hour, post: true, ground: true,
+  layout: qp.get("layout") || "screen thirds",
   stats: "", bench: "—", shader: "—", tex: "—", saved: "",
 };
 if (choices[S.material] && !qp.get("variant")) { S.variant = choices[S.material].variant ?? S.variant; S.mapping = choices[S.material].mapping ?? S.mapping; }
@@ -105,6 +106,15 @@ part(new GeoBuilder([0.8, 0.5, 0.5, 0.5]).rect(new THREE.Vector3(-7, 0.01, 10.5)
 const pane = new THREE.Mesh(new THREE.PlaneGeometry(win.ox1 - win.ox0, win.top - win.sy), createMaterial("glass_window", { look: lookOf("glass_window") }));
 pane.position.set(0, (win.sy + win.top) / 2, -0.25); gallery.add(pane);
 
+// "three galleries": A (proc) left, B (scan) middle, C (hybrid) right, 45 m apart: the far views compare whole galleries
+const GAP = 45, copies = [];
+for (const [dx, variant] of [[-GAP, "proc"], [GAP, "hybrid"]]) {
+  const g = new THREE.Group(); g.position.x = dx; g.visible = false;
+  for (const m of [...flatParts, ...curvedParts]) { const c = m.clone(); c.userData.curved = curvedParts.includes(m); g.add(c); }
+  const p = pane.clone(); g.add(p);
+  scene.add(g); copies.push({ g, variant });
+}
+
 // the bench wall: 30 x 30 m, far in front of everything (camera 2.2 m away fills the screen with it)
 const benchWall = new THREE.Mesh(new GeoBuilder([0.1, 0.5, 0.5, 0.5]).rect(new THREE.Vector3(-15, 0, 60), new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0), 30, 30, [0, 0]).geometry(), null);
 benchWall.visible = false; scene.add(benchWall);
@@ -126,7 +136,14 @@ function applyMaterial() {
   for (const m of flatParts) m.material = mat(n, v, flatMap, { dripAttr: "aDrip" });
   for (const m of curvedParts) m.material = mat(n, v, curvedMap, { dripAttr: "aDrip" });
   benchWall.material = mat(n, v, "world");
-  $split.style.display = v === "split" && S.view !== "city" ? "block" : "none";
+  // three galleries: the middle one is B (scan), the copies A and C
+  const three = v === "split" && S.layout === "three galleries";
+  for (const c of copies) {
+    c.g.visible = three && gallery.visible;
+    if (three) c.g.children.forEach((m) => { if (m !== c.g.children[c.g.children.length - 1]) m.material = mat(n, c.variant, m.userData.curved ? curvedMap : flatMap, { dripAttr: "aDrip" }); });
+  }
+  if (three) { for (const m of flatParts) m.material = mat(n, "scan", flatMap, { dripAttr: "aDrip" }); for (const m of curvedParts) m.material = mat(n, "scan", curvedMap, { dripAttr: "aDrip" }); }
+  $split.style.display = v === "split" && S.view !== "city" && !three ? "block" : "none";
   S.tex = hasScan(n) && v !== "proc" ? `${(SCANS[n].bytesGPU / 1048576).toFixed(1)} MB GPU (${SCANS[n].format}), ${(SCANS[n].bytesFile / 1048576).toFixed(1)} MB download` : "0 (procedural)";
   S.shader = "—";
   buildParamFolder();
@@ -135,18 +152,22 @@ function applyMaterial() {
 
 // ------------------------------------------------------------------------------------------------ views
 const VIEWS = {
-  "1m": { pos: [0.35, 1.25, 1.0], target: [0, 1.0, 0] },
+  "1m": { pos: [1.15, 1.2, 1.0], target: [0.75, 0.9, 0] },
   "5m": { pos: [1.8, 1.9, 5.0], target: [0, 1.8, 0] },
   "20m": { pos: [6, 4.5, 19], target: [1, 2, 0] },
   "80m": { pos: [26, 20, 76], target: [2, 2, 0] },
   "300m": { pos: [95, 85, 283], target: [2, 2, 0] },
   bench: { pos: [0, 15, 62.2], target: [0, 15, 60], fov: 50 },
-  city: { pos: [-2, 1.7, 15.5], target: [-3, 3.5, 0] },
+  city: { pos: [-1, 2.2, 22], target: [-1.5, 4.2, 0] },
 };
 function goView(name) {
   const v = VIEWS[name] ?? VIEWS["5m"];
   S.view = name;
   camera.position.set(...v.pos); controls.target.set(...v.target); camera.fov = v.fov ?? 50; camera.updateProjectionMatrix();
+  if (S.variant === "split" && S.layout === "three galleries" && (name === "80m" || name === "300m")) {
+    camera.position.sub(controls.target).multiplyScalar(1.45).add(controls.target);       // all three in view, clear of the panel
+    camera.position.x += 14; controls.target.x += 14;
+  }
   benchWall.visible = name === "bench";
   if (benchWall.visible) benchWall.position.set(0, 0, 0);
   const isCity = name === "city";
@@ -155,21 +176,25 @@ function goView(name) {
     scene.add(city.group);
   }
   gallery.visible = !isCity;
+  for (const c of copies) c.g.visible = !isCity && S.variant === "split" && S.layout === "three galleries";
   if (city) { city.group.visible = isCity; city.show(S.cityShow); }
-  $split.style.display = S.variant === "split" && !isCity ? "block" : "none";
+  $split.style.display = S.variant === "split" && !isCity && S.layout !== "three galleries" ? "block" : "none";
   writeNotes();
 }
 
 // ------------------------------------------------------------------------------------------------ panel
 const ui = new Panel({ title: "Material Lab" });
 const fm = ui.addFolder("Material");
-fm.add(S, "material", MATERIAL_NAMES).name("material").onChange(() => { loadChoice(); applyMaterial(); });
+fm.add(S, "material", MATERIAL_NAMES).name("material").onChange(() => { loadChoice(); applyMaterial(); }).listen();
 fm.add(S, "variant", ["proc", "scan", "hybrid", "split"]).name("variant (A/B/C)").onChange(applyMaterial).listen();
 fm.add(S, "mapping", ["auto", "world", "uv", "triplanar"]).name("mapping").onChange(applyMaterial).listen();
+fm.add(S, "layout", ["screen thirds", "three galleries"]).name("split layout").onChange(() => { applyMaterial(); goView(S.view); });
 const fv = ui.addFolder("View");
 fv.add(S, "view", Object.keys(VIEWS)).name("camera preset").onChange(goView).listen();
 S.cityShow = "library";
-fv.add(S, "cityShow", ["library", "city today"]).name("city sample shows").onChange((v) => city?.show(v));
+fv.add(S, "cityShow", ["library", "city today"]).name("city sample shows").onChange((v) => city?.show(v)).listen();
+S.notes = qp.get("notes") !== "0";
+fv.add(S, "notes").name("notes (inputs, sources, mapping)").onChange((v) => { $notes.style.display = v ? "block" : "none"; });
 const fl = ui.addFolder("Light");
 fl.add(S, "time", Object.keys(PRESETS)).name("preset").onChange((v) => { lighting.apply(v); lighting.hourOverride = null; pipe?.look(v); S.hour = lighting.hour; });
 fl.add(S, "hour", 4, 23.9, 0.05).name("solar hour").onChange((v) => { lighting.hourOverride = v; }).listen();
@@ -237,7 +262,7 @@ function writeNotes() {
     <p>Per-instance: <code>aMatVar</code> (seed, brightness, warm/cool, age). Streaks: <code>aDrip</code> on the wall (under the sill).</p>`;
   }
 }
-$notes.style.display = "block";
+$notes.style.display = S.notes ? "block" : "none";
 
 // ------------------------------------------------------------------------------------------------ perf
 const gpu = { avg: 0, pending: false, samples: [] };
@@ -328,4 +353,12 @@ renderer.setAnimationLoop(() => {
       `\nscans loaded in ${(scanMs / 1000).toFixed(1)} s · bench: ${S.bench}\nshader: ${S.shader}`;
   }
 });
+// the split thirds share the canvas left of the panel; labels follow
+function layoutSplit() {
+  const w = Math.max(innerWidth - 340, innerWidth * 0.5), t = w / 3;
+  splitAt.value.set(t / innerWidth, (2 * t) / innerWidth);
+  [...$split.children].forEach((el, i) => { el.style.left = `${i * t}px`; el.style.width = `${t}px`; });
+}
+layoutSplit();
+addEventListener("resize", layoutSplit);
 addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); });

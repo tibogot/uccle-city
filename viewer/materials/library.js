@@ -56,7 +56,7 @@ const COMMON = {
   baseY: [0, -10, 200, 0.01],         // ground height (m) for damp / splash when heightNode isn't given
 };
 const SCANP = {
-  scanTint: [1, 0, 1, 0.01],          // 1: the scan's detail around OUR colour (its mean -> color); 0: the raw scan
+  scanTint: [0.7, 0, 1, 0.01],        // 1: the scan's detail around OUR colour (its mean -> color); 0: the raw scan
   scanScale: [1, 0.5, 2, 0.01],       // scan repeat size multiplier (on top of `scale`)
   hybridNear: [12, 2, 60, 0.5],       // hybrid: the scan up to this distance (m), procedural beyond (smooth 0.7x..1.4x)
 };
@@ -64,7 +64,7 @@ const SCANP = {
 const mason = { kind: "masonry", damp: true, salt: true, streaks: true };
 export const DEFS = {
   brick_red_brussels: { ...mason, label: "Red brick (Brussels)", scan: true, unit: 0.065,
-    params: { color: "#8a4532", color2: "#5f2a20", mortar: "#9e978b", course: [0.065, 0.04, 0.12, 0.001], length: [0.21, 0.12, 0.32, 0.001], joint: [0.01, 0.002, 0.025, 0.0005], recess: [0.004, 0, 0.015, 0.0005], burnt: [0.08, 0, 0.5, 0.01] },
+    params: { color: "#8c4b3a", color2: "#62301f", mortar: "#9e978b", course: [0.065, 0.04, 0.12, 0.001], length: [0.21, 0.12, 0.32, 0.001], joint: [0.01, 0.002, 0.025, 0.0005], recess: [0.004, 0, 0.015, 0.0005], burnt: [0.08, 0, 0.5, 0.01] },
     surface: brick },
   brick_yellow: { ...mason, label: "Yellow brick", unit: 0.065,
     params: { color: "#b8955e", color2: "#957444", mortar: "#a8a194", course: [0.065, 0.04, 0.12, 0.001], length: [0.21, 0.12, 0.32, 0.001], joint: [0.01, 0.002, 0.025, 0.0005], recess: [0.004, 0, 0.015, 0.0005], burnt: [0.03, 0, 0.5, 0.01] },
@@ -75,17 +75,17 @@ export const DEFS = {
   mortar: { kind: "masonry", damp: true, salt: true, streaks: true, label: "Lime mortar", unit: 0.01,
     params: { color: "#a39c8f", color2: "#8a8478" }, surface: mortar },
   stone_white: { ...mason, label: "White stone (limestone)", scan: true, unit: 0.3,
-    params: { color: "#d2c9b4", color2: "#bdb39c", mortar: "#d9d2c2", course: [0.32, 0.15, 0.6, 0.005], length: [0.62, 0.3, 1.2, 0.01], joint: [0.005, 0.001, 0.015, 0.0005], crust: [0.35, 0, 1, 0.01] },
+    params: { color: "#d6c8a8", color2: "#c2b392", mortar: "#d9d2c2", course: [0.32, 0.15, 0.6, 0.005], length: [0.62, 0.3, 1.2, 0.01], joint: [0.005, 0.001, 0.015, 0.0005], crust: [0.15, 0, 1, 0.01] },
     surface: stoneWhite },
   stone_blue: { ...mason, salt: false, label: "Blue stone (petit granit)", scan: true, unit: 0.25,
-    params: { color: "#4c5159", color2: "#8b9095", course: [0.25, 0.1, 1.0, 0.005], length: [1.0, 0.3, 2.5, 0.01], joint: [0.004, 0.0, 0.012, 0.0005], fossils: [0.5, 0, 1, 0.01], weathered: [0.35, 0, 1, 0.01] },
+    params: { color: "#41454b", color2: "#7d8287", course: [0.25, 0.1, 1.0, 0.005], length: [1.0, 0.3, 2.5, 0.01], joint: [0.004, 0.0, 0.012, 0.0005], fossils: [0.5, 0, 1, 0.01], weathered: [0.35, 0, 1, 0.01] },
     surface: stoneBlue },
   render_white: { kind: "render", damp: true, salt: false, streaks: true, label: "Render, white", unit: 0.02,
     params: { color: "#e0dcd2", color2: "#b9b4aa", cracks: [0.2, 0, 1, 0.01] }, surface: render },
   render_painted: { kind: "render", damp: true, salt: false, streaks: true, label: "Render, painted", unit: 0.02, painted: true,
     params: { color: "#d8c49b", color2: "#bdb8ad", cracks: [0.15, 0, 1, 0.01], peel: [0.15, 0, 1, 0.01] }, surface: render },
   slate: { kind: "roof", label: "Slate", scan: true, unit: 0.2,
-    params: { color: "#3e434a", color2: "#4a4d45", course: [0.2, 0.12, 0.3, 0.005], length: [0.3, 0.2, 0.45, 0.005], joint: [0.004, 0.001, 0.01, 0.0005], lap: [0.007, 0, 0.015, 0.0005] },
+    params: { color: "#3e434a", color2: "#4a4d45", course: [0.16, 0.1, 0.3, 0.005], length: [0.25, 0.15, 0.45, 0.005], joint: [0.004, 0.001, 0.01, 0.0005], lap: [0.012, 0, 0.02, 0.0005] },
     surface: slate },
   roof_tiles_red: { kind: "roof", label: "Roof tiles, red (Flemish pantiles)", unit: 0.22,
     params: { color: "#99492f", color2: "#6e3424", course: [0.3, 0.2, 0.4, 0.005], length: [0.22, 0.16, 0.3, 0.005], roll: [0.03, 0, 0.05, 0.001] },
@@ -108,7 +108,7 @@ export const DEFS = {
   glass_window: { kind: "glass", label: "Window glass", unit: 1,
     params: { color: "#121719", color2: "#ffc884", glow: [0.0, 0, 3, 0.01] }, surface: glass },
   cobbles: { kind: "ground", label: "Cobbles (Saint-Job setts)", scan: true, unit: 0.13,
-    params: { color: "#5c5953", color2: "#6e6152", mortar: "#4c4740", length: [0.16, 0.08, 0.3, 0.005], course: [0.13, 0.08, 0.25, 0.005], dome: [0.006, 0, 0.015, 0.0005] },
+    params: { color: "#575856", color2: "#665f55", mortar: "#4a463f", length: [0.16, 0.08, 0.3, 0.005], course: [0.13, 0.08, 0.25, 0.005], dome: [0.006, 0, 0.015, 0.0005] },
     surface: cobbles },
   paving_concrete: { kind: "ground", label: "Concrete paving (30 x 30)", scan: true, unit: 0.3,
     params: { color: "#7c7a74", color2: "#8f8b83", mortar: "#4f4d49", length: [0.3, 0.1, 0.6, 0.005], joint: [0.006, 0.001, 0.02, 0.0005], gum: [0.3, 0, 1, 0.01] },
@@ -193,14 +193,14 @@ function stoneBlue(c) {
   const margin = float(1).sub(smoothstep(float(0.018), float(0.024), k.edge)).mul(float(1).sub(k.far));
   let col = U.color.mul(k.tone.mul(0.12).add(0.94)).mul(g.mul(0.12).mul(fine).mul(float(1).sub(margin)).add(1.0));
   // crinoid fossils: small pale discs; calcite veins: thin white lines
-  const fos = smoothstep(0.74, 0.8, n01(P.x.mul(48.0), P.y.mul(48.0), P.z.mul(48.0))).mul(U.fossils);
-  col = mix(col, U.color2.mul(1.25), mix(fos, U.fossils.mul(0.03), farK(fw, 0.01)).mul(0.6));
-  const vf = n3(P.x.mul(1.4), P.y.mul(3.1), P.z.mul(1.4));
-  const vein = isoLine(vf, 0.012, fwidth(vf)).mul(float(1).sub(farK(fw, 0.02))).mul(0.5);
-  col = mix(col, U.color2.mul(1.3), vein.mul(U.fossils));
+  const fos = smoothstep(0.78, 0.84, n01(P.x.mul(110.0), P.y.mul(110.0), P.z.mul(110.0))).mul(U.fossils);
+  col = mix(col, U.color2, mix(fos, U.fossils.mul(0.02), farK(fw, 0.004)).mul(0.35));
+  const vf = n3(P.x.mul(2.3), P.y.mul(4.1), P.z.mul(2.3)).add(n3(P.x.mul(11.0), P.y.mul(11.0), P.z.mul(11.0)).mul(0.08));
+  const vein = isoLine(vf, 0.003, fwidth(vf).add(0.001)).mul(float(1).sub(farK(fw, 0.01))).mul(n01(P.x.mul(0.8), P.y.mul(0.8), P.z.mul(0.8)));
+  col = mix(col, U.color2, vein.mul(U.fossils).mul(0.3));
   col = col.mul(float(1).sub(margin.mul(0.12)));
   // weathering: blue stone goes pale grey where the rain washes it (up-facing faces most)
-  const wash = clamp(c.N.y.mul(0.5).add(0.5), 0, 1).mul(U.weathered).mul(n01(P.x.mul(0.9), P.y.mul(0.9), P.z.mul(0.9)).mul(0.5).add(0.6));
+  const wash = smoothstep(0.2, 0.9, c.N.y).add(0.15).mul(U.weathered).mul(n01(P.x.mul(0.9), P.y.mul(0.9), P.z.mul(0.9)).mul(0.5).add(0.6));
   col = mix(col, U.color2, wash.mul(0.7));
   col = mix(col, col.mul(0.4), k.joint);
   const height = g.mul(0.0004).mul(float(1).sub(margin)).mul(fine).add(smoothstep(0.0, 0.004, k.edge).mul(0.002)).mul(bumpK(fw, 0.02));
@@ -237,9 +237,9 @@ function lap(c, H, thick, fv) {
 
 function slate(c) {
   const { U, fw, P } = c;
-  const k = bond(c.a, c.b, fw, { H: U.course, L: U.length, J: U.joint, seed: c.v.x.mul(71.0) });
+  const k = bond(c.a, c.b, fw, { H: U.course, L: U.length, J: U.joint, vary: 0.35, seed: c.v.x.mul(71.0) });
   // only the vertical gaps are joints; the course edges are the lap step (relief + a thin shadow line)
-  const ju = filteredPulse(c.a.div(k.Lr).add(k.id.y.mul(0.5)).add(U.joint.div(k.Lr).mul(0.5)), float(0), U.joint.div(k.Lr), fw.div(k.Lr));
+  const ju = filteredPulse(k.fu.add(k.id.x).add(U.joint.div(k.Lr).mul(0.5)), float(0), U.joint.div(k.Lr), fw.div(k.Lr));
   const lowEdge = filteredPulse(c.b.div(U.course).add(0.002), float(0), float(0.01), fw.div(U.course));
   const fine = float(1).sub(k.far);
   let col = U.color.mul(k.tone.mul(0.3).add(0.85));
@@ -253,6 +253,7 @@ function slate(c) {
   col = mix(col, L("#a9a58a"), lich.mul(0.7));
   const joint = max(ju, lowEdge.mul(0.7));
   col = mix(col, col.mul(0.35), joint);
+  col = col.mul(float(1).sub(smoothstep(0.78, 1.0, k.fv).mul(0.3).mul(fine)));               // shade under the next course's edge
   const height = lap(c, U.course, U.lap, k.fv).mul(bumpK(fw, U.course));
   return { col, rough: mix(float(0.58), float(0.85), joint.max(lich)), height, ao: mix(float(1), float(0.55), joint), joint, metal: float(0) };
 }
@@ -296,9 +297,12 @@ function copper(c) {
   const pv = m1.mul(0.55).add(m2.mul(0.25).mul(fine)).add(U.patina.mul(1.1)).sub(0.55).sub(shelter.mul(0.5));
   const fwp = fwidth(pv).add(0.02);
   const pat = smoothstep(float(0.35).sub(fwp), float(0.45).add(fwp), pv);
-  const green = mix(U.color, U.color2, m2.mul(0.6).add(m1.mul(0.4)).mul(fine).add(float(0.5).mul(float(1).sub(fine))));
-  const streak = streakNoise(c.a, c.b, 7.0).mul(U.streaks);
-  const greenS = mix(green, green.mul(vec3(0.75, 1.05, 1.0)).add(0.03), streak.mul(0.6));
+  // verdigris: pale blue-green crust, darker green where it is thin, mottled at three scales; run-off streaks down the fall line
+  const m3 = n01(c.a.mul(22.0), c.b.mul(9.0), 3.0);
+  const mot = smoothstep(0.25, 0.75, m2.mul(0.5).add(m1.mul(0.3)).add(m3.mul(0.2).mul(fine)));
+  const green = mix(U.color, U.color2, mix(mot, float(0.5), float(1).sub(fine).mul(0.5)));
+  const streak = streakNoise(c.a, c.b, 7.0).mul(U.streaks.mul(1.5).add(0.2)).clamp(0, 1);
+  const greenS = mix(green, mix(U.color2.mul(0.55), U.color.mul(1.15), m1), streak.mul(0.55));
   const raw = mix(U.color3, U.color3.mul(0.35), U.patina.mul(0.8));                         // brown-black oxide under
   const col = mix(raw, greenS, pat);
   return { col, rough: mix(float(0.38), float(0.8), pat), height: s.height.add(m2.mul(0.0004).mul(pat).mul(fine)).mul(bumpK(fw, 0.02)),
@@ -367,7 +371,12 @@ function glass(c) {
   const { U, P } = c;
   const film = n01(P.x.mul(3.0), P.y.mul(3.0), P.z.mul(3.0)).mul(U.dirt);
   const smear = smoothstep(0.55, 0.85, n01(P.x.mul(1.2), P.y.mul(9.0), P.z.mul(1.2))).mul(U.dirt).mul(0.5);
-  const col = mix(U.color, L("#4a4a44"), film.mul(0.18).add(smear.mul(0.1)));
+  // the analytic sky reflection (as facades.js: SSR on coplanar glass reflects the wall it sits in) over a dark room
+  const view = normalize(cameraPosition.sub(P));
+  const fres = pow(float(1).sub(abs(dot(view, c.N))), 2.0).mul(0.55).add(0.1);
+  const sky = mix(vec3(env.uSkyHorizon), vec3(env.uSkyTop), clamp(view.y.negate().mul(2.0).add(0.4), 0.0, 1.0));
+  const room = U.color.mul(n01(P.x.mul(0.7), P.y.mul(0.9), P.z.mul(0.7)).mul(0.6).add(0.7));
+  const col = mix(mix(room, sky.mul(0.6), fres), L("#4a4a44"), film.mul(0.18).add(smear.mul(0.1)));
   return { col, rough: float(0.03).add(film.mul(0.12)).add(smear.mul(0.15)), height: float(0), ao: float(1), joint: float(0), metal: float(0),
     emissive: U.color2.mul(U.glow).mul(env.uNight).mul(float(1).sub(film.mul(0.3))) };
 }
@@ -376,22 +385,22 @@ function cobbles(c) {
   const { U, fw, P } = c;
   const k = cells(c.a, c.b, U.length, U.course, 0.8);
   const sid = H2(k.id.x.add(31.0), k.id.y), sid2 = H2(k.id.x, k.id.y.add(71.0));
-  const jw = float(0.008).add(n01(P.x.mul(3.0), P.y.mul(3.0), P.z.mul(3.0)).mul(0.014));
+  const jw = float(0.008).add(n01(c.a.mul(3.0), P.y.mul(3.0), c.b.mul(3.0)).mul(0.014));
   const R = U.course.mul(0.6).add(H2(k.id.x.add(91.0), k.id.y).mul(0.02));
   const roundJ = smoothstep(R.sub(fw).sub(0.004), R.add(fw).add(0.004), k.F1);
   const sharp = max(float(1).sub(smoothstep(jw.mul(0.5).sub(fw), jw.mul(0.5).add(fw), k.edge)), roundJ);
   const far = smoothstep(float(0.012), float(0.09), fw);
   const joint = mix(sharp, float(0.24), far);
   const tone = mix(sid, float(0.5), far), hue = mix(sid2, float(0.5), far);
-  let stone = mix(U.color, U.color2, hue).mul(tone.mul(0.6).add(0.7));
-  stone = stone.add(n3(P.x.mul(19.0), 0.0, P.z.mul(19.0)).mul(0.012).mul(float(1).sub(far)));
+  let stone = mix(U.color, U.color2, hue).mul(tone.mul(0.45).add(0.78));
+  stone = stone.add(n3(c.a.mul(19.0), 0.0, c.b.mul(19.0)).mul(0.012).mul(float(1).sub(far)));
   // worn polished tops (wear): lighter, smoother
   const top = float(1).sub(k.F1.div(R).pow(2)).max(0);
   stone = stone.mul(top.mul(U.wear).mul(0.15).mul(float(1).sub(far)).add(1.0));
   const col = mix(stone, U.mortar, joint);
   const tiltX = H2(k.id.x.add(13.0), k.id.y.add(5.0)).sub(0.5).mul(0.035), tiltZ = H2(k.id.x.add(3.0), k.id.y.add(17.0)).sub(0.5).mul(0.035);
   const bumpFade = float(1).sub(smoothstep(float(0.003), float(0.025), fw));
-  const height = top.mul(U.dome).add(smoothstep(0.0, 0.03, k.edge).mul(0.002)).add(k.rx.mul(tiltX).add(k.rz.mul(tiltZ))).mul(bumpFade);
+  const height = top.mul(U.dome).add(smoothstep(0.0, 0.03, k.edge).mul(0.002)).add(k.rx.mul(tiltX).add(k.rz.mul(tiltZ)).mul(smoothstep(0.0, 0.012, k.edge))).mul(bumpFade);   // tilt -> 0 at the joint: no height step
   return { col, rough: mix(mix(float(0.62), float(0.82), tone).sub(top.mul(U.wear).mul(0.15)), float(0.97), joint), height, ao: mix(float(1), float(0.55), joint), joint, metal: float(0) };
 }
 
@@ -399,12 +408,12 @@ function paving(c) {
   const { U, fw, P } = c;
   const k = bond(c.a, c.b, fw, { H: U.length, L: U.length, J: U.joint, stagger: 0, seed: c.v.x.mul(13.0) });
   const fine = float(1).sub(k.far);
-  const blot = n3(P.x.mul(0.6), 0.0, P.z.mul(0.6));
-  let col = mix(U.color, U.color2, k.tone).mul(blot.mul(0.07).add(1.0)).add(n3(P.x.mul(70.0), P.y.mul(70.0), P.z.mul(70.0)).mul(0.012).mul(fine));
+  const blot = n3(c.a.mul(0.6), 0.0, c.b.mul(0.6));
+  let col = mix(U.color, U.color2, k.tone).mul(blot.mul(0.07).add(1.0)).add(n3(c.a.mul(70.0), P.y.mul(70.0), c.b.mul(70.0)).mul(0.012).mul(fine));
   // chewing gum: small dark spots (Brussels pavements...)
-  const gum = smoothstep(0.86, 0.9, n01(P.x.mul(7.0), 1.0, P.z.mul(7.0))).mul(U.gum).mul(fine);
+  const gum = smoothstep(0.86, 0.9, n01(c.a.mul(7.0), 1.0, c.b.mul(7.0))).mul(U.gum).mul(fine);
   col = mix(col, col.mul(0.55), gum.mul(0.8));
-  const chip = float(1).sub(smoothstep(float(0.0), float(0.002).add(U.wear.mul(0.006)), k.edge)).mul(n01(P.x.mul(31.0), 2.0, P.z.mul(31.0)).mul(2.0).sub(0.7).clamp(0, 1)).mul(fine);
+  const chip = float(1).sub(smoothstep(float(0.0), float(0.002).add(U.wear.mul(0.006)), k.edge)).mul(n01(c.a.mul(31.0), 2.0, c.b.mul(31.0)).mul(2.0).sub(0.7).clamp(0, 1)).mul(fine);
   const joint = max(k.joint, chip.mul(0.5));
   col = mix(col, U.mortar, k.joint).mul(float(1).sub(chip.mul(0.2)));
   const height = smoothstep(0.0, 0.004, k.edge).mul(0.002).sub(chip.mul(0.001)).add(gum.mul(0.0006)).mul(bumpK(fw, 0.05));
@@ -414,10 +423,10 @@ function paving(c) {
 function asphalt(c) {
   const { U, fw, P } = c;
   const fine = float(1).sub(farK(fw, 0.004)), mid = float(1).sub(farK(fw, 0.04));
-  const sp = n3(P.x.mul(90.0), 0.0, P.z.mul(90.0)).mul(fine);
-  const chips = smoothstep(0.72, 0.8, n01(P.x.mul(55.0), 5.0, P.z.mul(55.0))).mul(U.aggregate).mul(fine);
-  let col = U.color.mul(sp.mul(0.12).add(1.0)).mul(n3(P.x.mul(0.15), 0.0, P.z.mul(0.15)).mul(0.1).add(1.0));
-  col = mix(col, col.mul(1.9), chips.mul(0.5));
+  const sp = n3(c.a.mul(90.0), 0.0, c.b.mul(90.0)).mul(fine);
+  const chips = smoothstep(0.6, 0.7, n01(c.a.mul(38.0), 5.0, c.b.mul(38.0))).mul(U.aggregate).mul(fine);
+  let col = U.color.mul(sp.mul(0.3).add(1.0)).mul(n3(c.a.mul(0.15), 0.0, c.b.mul(0.15)).mul(0.1).add(1.0));
+  col = mix(col, col.mul(2.4), chips.mul(0.6));
   col = col.add(U.color.mul(U.aggregate.mul(0.08)).mul(float(1).sub(fine)));                  // chips' share, far
   // repair patches: rectangles of newer, darker asphalt with a sealed seam
   const pk = bond(c.a, c.b, fw, { H: float(3.1), L: float(4.3), J: float(0.04), stagger: 0.37, seed: 11.0 });
@@ -449,13 +458,13 @@ function gravel(c) {
 function lawn(c) {
   const { U, fw, P, opts } = c;
   const fine = float(1).sub(farK(fw, 0.003));
-  const blades = n3(c.a.mul(160.0), c.b.mul(60.0), 1.0).mul(fine), clump = n01(P.x.mul(1.6), 0.0, P.z.mul(1.6)), dry = n01(P.x.mul(0.35), 4.0, P.z.mul(0.35));
+  const blades = n3(c.a.mul(160.0), c.b.mul(60.0), 1.0).mul(fine), clump = n01(c.a.mul(1.6), 0.0, c.b.mul(1.6)), dry = n01(c.a.mul(0.35), 4.0, c.b.mul(0.35));
   let col = U.color.mul(blades.mul(0.18).add(clump.mul(0.3)).add(0.8));
   col = mix(col, U.color2, smoothstep(0.55, 0.8, dry).mul(0.6));
   // the trodden edge: soil showing through, then bare soil in the last centimetres
   const e = opts.edgeNode ?? uv().y;
-  const bare = float(1).sub(smoothstep(U.edge.mul(0.3), U.edge, e.add(n3(P.x.mul(6.0), 0.0, P.z.mul(6.0)).mul(0.04))));
-  col = mix(col, U.soil.mul(n3(P.x.mul(40.0), 0.0, P.z.mul(40.0)).mul(0.2).mul(fine).add(1.0)), bare);
+  const bare = float(1).sub(smoothstep(U.edge.mul(0.3), U.edge, e.add(n3(c.a.mul(6.0), 0.0, c.b.mul(6.0)).mul(0.04))));
+  col = mix(col, U.soil.mul(n3(c.a.mul(40.0), 0.0, c.b.mul(40.0)).mul(0.2).mul(fine).add(1.0)), bare);
   return { col, rough: mix(float(0.85), float(0.95), bare), height: blades.mul(0.002).mul(float(1).sub(bare)).mul(bumpK(fw, 0.01)), ao: mix(float(0.85), float(1), clump), joint: bare, metal: float(0) };
 }
 
@@ -590,6 +599,8 @@ function finish(def, s, ctx) {
 }
 
 // ------------------------------------------------------------------------------------------------ the factory
+/** variant "split": the screen x (0..1) of the A|B and B|C borders (the lab moves them to leave room for its panel) */
+export const splitAt = uniform(new THREE.Vector2(1 / 3, 2 / 3));
 /** Uniforms for a material: { key: uniform } from paramSpec (colours as THREE.Color in the working (linear) space). */
 function makeLook(name) {
   const spec = paramSpec(name), U = {};
@@ -610,7 +621,7 @@ function surfaceFor(name, variant, ctx, projs) {
   if (variant === "hybrid") return mixSurf(scan(), proc(), near);
   // split: proc | scan | hybrid in screen thirds
   const A = proc(), B = scan(), C = mixSurf(B, A, near);
-  const x = screenUV.x, k1 = step(1 / 3, x), k2 = step(2 / 3, x);
+  const x = screenUV.x, k1 = step(splitAt.x, x), k2 = step(splitAt.y, x);
   return mixSurf(mixSurf(A, B, k1), C, k2);
 }
 

@@ -26,11 +26,11 @@ SCANS = {
     "brick_red_brussels": ("polyhaven", "red_brick", 1.4),
     "stone_white": ("polyhaven", "sandstone_blocks_08", 3.0),
     "stone_blue": ("polyhaven", "granite_tile_04", 2.0),
-    "slate": ("polyhaven", "roof_slates_03", 3.0),
+    "slate": ("polyhaven", "roof_slates_02", 3.0),
     "cobbles": ("polyhaven", "cobblestone_floor_08", 2.0),
     "asphalt": ("polyhaven", "asphalt_02", 3.0),
     "paving_concrete": ("polyhaven", "concrete_tiles", 1.9),
-    "copper_patina": ("ambientcg", "Metal058C", 1.0),
+    "copper_patina": ("ambientcg", "Metal058C", 2.0),
 }
 PH_MAPS = {"Diffuse": "albedo", "nor_gl": "normal", "Rough": "rough", "AO": "ao"}
 ACG_MAPS = {"_Color": "albedo", "_NormalGL": "normal", "_Roughness": "rough", "_AmbientOcclusion": "ao"}
