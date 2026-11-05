@@ -116,15 +116,15 @@ const POSES = {
   },
   // an eyas: sitting back on its tarsi (the "heel" on the gravel, Derby photo), the body up, stubby wings held down
   sit: {
-    pitch: 0.7, eyas: true,
+    pitch: 0.55, eyas: true,
     aims: [
-      ["wing_1", "wing_2", [0.45, -0.5, -0.6]], ["wing_2", "wing_3", [0.3, -0.6, -0.5]], ["wing_3", "wing_4", [0.15, -0.8, -0.4]],
-      ["wing_4", "wing_5", [0.1, -0.9, -0.3]], ["wing_5", "wing_tip", [0.05, -1, -0.2]],
-      ["wing_feather_1_1", "wing_feather_1_2", [-0.2, -0.6, -1]], ["wing_feather_2_1", "wing_feather_2_2", [-0.2, -0.6, -1]],
-      ["wing_feather_3_1", "wing_feather_3_2", [-0.2, -0.6, -1]], ["wing_feather_4_1", "wing_feather_4_2", [-0.2, -0.6, -1]],
-      ["UpperLeg", "LowerLeg", [0.3, -0.3, 0.9]], ["LowerLeg", "AnkleLeg", [0.1, -0.6, -0.8]], ["AnkleLeg", "Foot", [0.05, -0.15, 1]],
-      ["Foot", "Toes", [0.1, -0.1, 1]], ["Toes", "Toes_tip", [0.15, -0.1, 1]],
-      ["spine_3", "head", [0, 0.8, 0.6]], ["head", "mouth_upper", [0, -0.1, 1]],
+      ["wing_1", "wing_2", [0.25, -0.1, -1]], ["wing_2", "wing_3", [0.2, -0.6, 0.7]], ["wing_3", "wing_4", [0.05, 0.0, -1]],
+      ["wing_4", "wing_5", [-0.1, 0.0, -1]], ["wing_5", "wing_tip", [-0.2, -0.05, -1]],
+      ["wing_feather_1_1", "wing_feather_1_2", [-0.5, -0.6, -0.5]], ["wing_feather_2_1", "wing_feather_2_2", [-0.5, -0.55, -0.6]],
+      ["wing_feather_3_1", "wing_feather_3_2", [-0.45, -0.45, -0.75]], ["wing_feather_4_1", "wing_feather_4_2", [-0.4, -0.35, -0.85]],
+      ["UpperLeg", "LowerLeg", [0.3, -0.2, 0.95]], ["LowerLeg", "AnkleLeg", [0.05, -0.3, -1]], ["AnkleLeg", "Foot", [0.08, -0.08, 1]],
+      ["Foot", "Toes", [0.12, -0.05, 1]], ["Toes", "Toes_tip", [0.15, -0.05, 1]],
+      ["spine_3", "head", [0, 0.8, 0.6]], ["head", "mouth_upper", [0, -0.15, 1]],
     ],
     feet: true,
   },
@@ -139,10 +139,12 @@ function applyBodyScale(root) {
 /** the eyas (~3 weeks): the adult rig reshaped by bone scales: a big round head, a fat downy body, stubby wings, no tail
  *  yet, big feet (the clips no longer write scale, so these stay) */
 function eyasScale(root) {
-  const S = (n, x, y = x, z = x) => { const b = root.getObjectByName(n); if (b) b.scale.multiply(new THREE.Vector3(x, y, z)); };
-  S("head", 1.45); S("spine_1", 1.25, 1.1, 1.25); S("spine_0", 1.3, 1.15, 1.3);
-  for (const s of ["L", "R"]) { S(`wing_1_${s}`, 0.62); S(`UpperLeg_${s}`, 1.15); S(`Foot_${s}`, 1.25); }
-  S("tail_1", 0.25);
+  // uniform scales only (a parent's non-uniform scale shears its children); each grown bone's child gets it back
+  const S = (n, k) => { const b = root.getObjectByName(n); if (b) b.scale.multiplyScalar(k); };
+  S("spine_0", 1.25); S("spine_1", 1.15); S("spine_2", 1 / (1.25 * 1.15) * 0.85);   // a round body, a short neck
+  S("head", 1.55); S("mouth_upper", 0.55);                                          // a big head, a small beak
+  for (const s of ["L", "R"]) { S(`wing_1_${s}`, 0.36); S(`UpperLeg_${s}`, 0.95); S(`Foot_${s}`, 1.2); }
+  S("tail_1", 0.3);
 }
 
 function bakePose(scene0, name, spec) {
@@ -485,7 +487,12 @@ export class FalconFamily {
     else if (what === "food") { this.givePrey(M); this.launch(M, "carry"); }
     else if (what === "circle") { this.launch(F, "circle"); this.launch(M, "circle"); }
     else if (what === "perch") { for (const b of [F, M]) if (b.state !== "perch") this.goLand(b, b === F ? "louvre" : "cross"); }
-    else if (what === "feed") { this.givePrey(F); if (F.state === "perch") this.launch(F, "deliver"); else this.goLand(F, "ledge", "deliver"); }
+    else if (what === "feed") {
+      this.givePrey(F);
+      if (F.state === "perch" && F.data.perch === "ledge") this.hopIn(F);
+      else if (F.state === "perch") this.launch(F, "deliver");
+      else if (F.state !== "nest" && F.state !== "hop") this.goLand(F, "ledge", "deliver");
+    }
   }
 
   /** from a perch: the takeoff (a drop forward off the ledge, wings opening), then `goal` */
@@ -644,7 +651,9 @@ export class FalconFamily {
       const r = Math.random();
       this.launch(M, r < 0.45 ? "hunt" : "circle");
     } else {
-      // the female mostly stays near the eyrie: short circles, perch changes, now and then a hunt
+      // the female mostly stays near the eyrie: short circles, perch changes, now and then a hunt; she waits on her
+      // perch while the male is out with prey (he will call her off for the pass)
+      if (M.prey) { b.data.next = b.t + 8; return; }
       const r = Math.random();
       if (r < 0.45) this.launch(F, "circle");
       else if (r < 0.65) this.launch(F, "hunt");
@@ -659,6 +668,7 @@ export class FalconFamily {
     if (goal === "hop") {                 // a short flight round the tower to another perch
       this.goLand(b, this.pickPerch(b)); return;
     }
+    if (goal === "deliver") { this.goLand(b, "ledge", "deliver"); return; }
     if (goal === "circle" || goal === "hunt") {
       // soaring on a thermal: a wide circle that climbs; a few wingbeats now and then
       D.alt = Math.min(D.top, D.alt + dt * (goal === "hunt" ? 1.8 : 1.1));
@@ -705,9 +715,9 @@ export class FalconFamily {
       b.steer(dt, T, 10, { maxBank: 0.6 });
       b.setWeights(0, b.pitch > 0.1 ? 1 : 0.25, b.pitch > 0.1 ? 0 : 0.75);
       const F = this.female;
-      if (b === this.male && b.pos.distanceTo(R) < 30 && !D.called) {
+      if (b === this.male && b.pos.distanceTo(R) < 60 && !D.called) {
         D.called = true;
-        if (F.state === "perch" || F.state === "nest") { this.say(b, "calls: the food pass"); F.data.pass = b; this.launch(F, "pass"); }
+        if (F.state === "perch") { this.say(b, "calls: the food pass"); F.data.pass = b; this.launch(F, "pass"); }
         else D.solo = true;
       }
       if (b === this.male && (D.solo || b.t > 45) && b.prey) { D.called = false; D.solo = false; this.goLand(b, "ledge", "deliver"); }
@@ -718,13 +728,15 @@ export class FalconFamily {
     if (goal === "pass") {
       // the female comes up under the male, rolls over and takes the prey from his feet
       const M = D.pass;
-      const T = _w.copy(M.pos).addScaledVector(M.fwd, 2.5).add(new THREE.Vector3(0, -1.2, 0));
+      const T = _w.copy(M.pos).addScaledVector(M.fwd, 1.0).add(new THREE.Vector3(0, -1.0, 0));
       const dist = b.steer(dt, T, M.speed + 4, { maxBank: 0.8, maxClimb: 0.5, turn: 1.4 });
       b.setWeights(0, 1, 0); D.flapRate = 1.3;
-      if (dist < 3.2 && !D.rolling) { D.rolling = 0.001; this.say(b, "rolls over for the pass"); }
+      if (dist < 2.2 && !D.rolling) { D.rolling = 0.001; this.say(b, "rolls over for the pass"); }
       if (D.rolling) {
         D.rolling += dt;
         const s = D.rolling / 0.9;
+        // she closes in under his feet (talons to talons) while she turns over
+        b.pos.lerp(_v.copy(M.pos).addScaledVector(M.fwd, 0.15).add(_w.set(0, -0.55 * FALCON_SIZES.female, 0)), 1 - Math.exp(-6 * dt));
         b.roll = Math.sin(Math.PI * Math.min(1, s)) * 2.3;
         L.spread = 0;
         if (s > 0.5 && M.prey) this.takePrey(M, b);
@@ -785,7 +797,7 @@ export class FalconFamily {
   // --------------------------------------------------------------------------------------------- per frame
   update(camera, dtIn = null) {
     const now = performance.now();
-    const dt = Math.min(0.1, dtIn ?? (now - this.clock) / 1000);
+    const dt = this.paused ? 0 : Math.min(0.1, dtIn ?? (now - this.clock) / 1000);   // paused: a still frame (the lab)
     this.clock = now; this.time += dt; this.frameNo++;
     if (!this.enabled) { this.group.visible = false; return; }
     this.group.visible = true;
