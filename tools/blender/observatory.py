@@ -286,6 +286,17 @@ class Part:
         for p in pts:
             if not q or (p - q[-1]).length > 0.25: q.append(p)
         if (q[0] - q[-1]).length < 0.25: q.pop()
+        # footprint points on a tower's arc (UrbIS draws the tower into its wing) move just inside the tower wall: the
+        # wing's walls, cornice and roof then stop inside the tower instead of wrapping it
+        for i, p in enumerate(q):
+            for t in TW.values():
+                dv = Vector((p.x - t["c"].x, p.y - t["c"].y, 0))
+                if 0.01 < dv.length < t["r"] + 0.6: q[i] = Vector((t["c"].x, t["c"].y, 0)) + dv.normalized() * (t["r"] - 0.3)
+        q2 = []
+        for p in q:
+            if not q2 or (p - q2[-1]).length > 0.2: q2.append(p)
+        if len(q2) > 2 and (q2[0] - q2[-1]).length < 0.2: q2.pop()
+        q = q2
         # make CCW (seen from above)
         a = sum(q[i].x * q[(i + 1) % len(q)].y - q[(i + 1) % len(q)].x * q[i].y for i in range(len(q)))
         if a < 0: q.reverse()
@@ -296,7 +307,6 @@ class Part:
         self.hero = self.style == "hero"
         self.parapet = self.hero and self.roof == "flat"
 
-PARTS_L = [Part(d) for d in SITE["parts"]]
 
 def edges_of(part):
     n = len(part.pts)
@@ -315,6 +325,7 @@ def tower_geo():
         t[k] = dict(s, c=P(c[0], c[1]), ctr=c, base=hz(PARTS[s["base_part"]]["base"]), top_b=hz(s["top"]))
     return t
 TW = tower_geo()
+PARTS_L = [Part(d) for d in SITE["parts"]]
 
 def cover_intervals(part, a, d, N, L):
     """[(u0, u1, cover height)] along an edge: other parts' walls against it, towers around it"""
@@ -667,8 +678,9 @@ def barrel(part, b):
         pa1, pb1 = V3(x1 + ov, yc + ya, za), V3(x1 + ov, yc + yb, zb)
         face_dir([pa0, pa1, pb1, pb0], V3(0, (ya + yb) / 2, (za + zb) / 2 - zc), mat, C_DOME,
                  [(0, sl[i]), (x1 - x0 + 2 * ov, sl[i]), (x1 - x0 + 2 * ov, sl[i + 1]), (0, sl[i + 1])])
-        # underside (the overhang shows from below)
-        face_dir([pa0, pa1, pb1, pb0], -V3(0, (ya + yb) / 2, (za + zb) / 2 - zc), mat, C_INT)
+        # underside (the overhang shows from below), 6 cm in: a coincident face blotched the outer skin's AO bake
+        ins = lambda p_: p_ - V3(0, p_.y - yc, p_.z - zc).normalized() * 0.06
+        face_dir([ins(pa0), ins(pa1), ins(pb1), ins(pb0)], -V3(0, (ya + yb) / 2, (za + zb) / 2 - zc), mat, C_INT)
     # end walls: lunettes in brick with a stone arch band and a half-round window (LOD0)
     for xe, sgn in ((x0, -1), (x1, 1)):
         fr = Frame(V3(xe, yc, 0), V3(sgn, 0, 0))

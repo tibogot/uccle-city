@@ -81,9 +81,10 @@ export function loadObservatory() {
       return g;
     };
     /** swap the material of one slot everywhere (made groups too): the material is cloned and gets the AO (+ fade) */
-    const setSlotMaterial = (slot, mat, { fade = null } = {}) => {
-      const w = wrapAO(mat, aoTex, slot);
-      if (fade) fade(w);
+    const setSlotMaterial = (slot, mat, { fade = null, dryRun = false, raw = false } = {}) => {
+      const w = raw ? mat : wrapAO(mat, aoTex, slot);       // raw: already wrapped (a dry run's result)
+      if (fade && !raw) fade(w);
+      if (dryRun) return w;
       materials[slot] = w;
       for (const g of groups) g.traverse((o) => { if (o.isMesh && o.userData.slot === slot) o.material = w; });
       return w;
@@ -173,7 +174,7 @@ const TEMP = {
   brick_red_brussels() {
     const { row, cell, mask } = courses(0.205, 0.062, 0.011);
     const h = hash2(vec2(cell, row)), h2 = hash2(vec2(cell.add(17.0), row.mul(3.0)));
-    const brick = mix(lin(0x8c3a24), lin(0x6b2a1c), h).mul(mix(float(0.82), float(1.1), h2));
+    const brick = mix(lin(0x9d4429), lin(0x7a3220), h).mul(mix(float(0.84), float(1.1), h2));
     const burnt = step(0.94, h2);
     const col = mix(mix(brick, lin(0x3e2219), burnt.mul(0.65)), lin(0xa89f92), float(1).sub(mask));
     return std({ colorNode: col, roughnessNode: float(0.88), metalnessNode: float(0) });

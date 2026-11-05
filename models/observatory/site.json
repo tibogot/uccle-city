@@ -3383,7 +3383,7 @@
    "part": "east_wing",
    "mat": "painted_metal_white",
    "slit": true,
-   "slit_az": 200,
+   "slit_az": 235,
    "fit": {
     "centre": [
      707.13,

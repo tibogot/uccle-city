@@ -109,7 +109,9 @@ DOMES = [
     dict(id="great", at=(653.9, 158.3), tower=5.3, part="great_eq", mat="copper_patina", slit=False, slit_az=180),
     dict(id="medium", at=(669.6, 104.6), tower=None, part="eq_block", mat="copper_patina", slit=False, slit_az=180),
     dict(id="small", at=(638.4, 104.4), tower=4.3, part="west_wing", mat="zinc_roof", slit=False, slit_az=200),
-    dict(id="east_open", at=(707.0, 47.6), tower=3.6, part="east_wing", mat="painted_metal_white", slit=True, slit_az=200),
+    # the south one is open in the owner's two photos (slit towards the photographers: WSW and NW) and in the 2021
+    # DSM / orthophoto (a dark slit, a dip in the cap); the north one, under trees in the data, is shown closed
+    dict(id="east_open", at=(707.0, 47.6), tower=3.6, part="east_wing", mat="painted_metal_white", slit=True, slit_az=235),
     dict(id="east_n", at=(720.0, 30.0), tower=3.25, part="east_wing", mat="painted_metal_white", slit=False, slit_az=150, top_from="east_open"),
     dict(id="pav_w", at=(574.3, 115.6), tower=None, part="pav_w", mat="zinc_roof", slit=False, slit_az=180),
     dict(id="pav_sw", at=(592.7, 166.0), tower=None, part="pav_sw", mat="zinc_roof", slit=False, slit_az=170),

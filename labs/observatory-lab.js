@@ -12,9 +12,13 @@ import { Panel } from "../viewer/panelUI.js";
 import { Lighting, PRESETS } from "../viewer/lighting.js";
 import { createPipeline } from "../viewer/post.js";
 import { withObjectFade, SMOOTH } from "../viewer/lodFade.js";
+import { precompile } from "../viewer/warmup.js";
 import { loadObservatory, OBS_LODS, OBS_SLOTS, OBS_TEMP_MATERIALS, obsLook } from "../viewer/observatoryModel.js";
 
 const qp = new URLSearchParams(location.search);
+// main-thread long tasks (> 50 ms), with their time: the load must not hitch once the campus is on screen
+const longTasks = [];
+try { new PerformanceObserver((l) => { for (const e of l.getEntries()) longTasks.push([Math.round(e.startTime), Math.round(e.duration)]); }).observe({ type: "longtask", buffered: true }); } catch { /* no longtask API */ }
 const $info = document.getElementById("info"), $photo = document.getElementById("photo"), $notes = document.getElementById("notes");
 const renderer = new THREE.WebGPURenderer({ antialias: true, powerPreference: "high-performance", reversedDepthBuffer: true, trackTimestamp: qp.get("gpu") !== "0" });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
@@ -42,6 +46,7 @@ scene.add(root);
 const fadeOn = (m) => (SMOOTH ? withObjectFade(m) : m);
 for (const s of OBS_SLOTS) fadeOn(model.materials[s]);
 const levels = OBS_LODS.map((_, k) => { const g = model.make(k); root.add(g); return g; });
+root.visible = false;                   // shown once its shaders are built (precompile, below)
 const centre = model.boundsWorld.getCenter(new THREE.Vector3());
 
 // ------------------------------------------------------------------------------------------------ ground: DTM + orthophoto
@@ -70,7 +75,9 @@ const groundAt = (x, z) => {
     for (const o of [o4, o5]) { o.colorSpace = THREE.SRGBColorSpace; o.anisotropy = 8; }
     // tiles H4: x 500-1000, z -500..0; H5: z 0..500 (image row 0 = north = the smaller z)
     const u4 = positionWorld.xz.sub(vec3(500, 0, -500).xz).div(500), u5 = positionWorld.xz.sub(vec3(500, 0, 0).xz).div(500);
-    const col = select(positionWorld.z.lessThan(0), texture(o4, u4).rgb, texture(o5, u5).rgb);
+    // (flipY: uv.y = 1 is the image's top row = the tile's north edge = its smallest z)
+    const fy = (u) => u.mul(vec3(1, 0, -1).xz).add(vec3(0, 0, 1).xz);
+    const col = select(positionWorld.z.lessThan(0), texture(o4, fy(u4)).rgb, texture(o5, fy(u5)).rgb);
     const edge = smoothstep(130, 115, positionWorld.xz.sub(vec3(640, 0, 80).xz).length());
     m.colorNode = mix(vec3(0.12, 0.15, 0.09), col.mul(0.9), edge);
   } else m.color.set(0x55605a);
@@ -110,11 +117,11 @@ scene.add(urbis, urbisGhost);
 // camera (x, z, height m TAW) and target in CITY coordinates, estimated from each photo (overlay to check)
 const PHOTOS = {
   "aerial from the south-west": { file: "owner_aerial.png", pos: [616, 214, 172], target: [660, 62, 99], fov: 58, src: "owner's photo (reference only)" },
-  "white dome over the east wing": { file: "owner_dome_white_banded.png", pos: [661, 92, 103.5], target: [707, 47, 107.5], fov: 15, src: "owner's photo (reference only)" },
-  "east tower, slit open": { file: "owner_tower_slit_dome.png", pos: [672, 64, 102.2], target: [705, 45, 105], fov: 42, src: "owner's photo (reference only)" },
+  "white dome from the north court": { file: "owner_dome_white_banded.png", pos: [664, -58, 101.0], target: [707, 47, 106.0], fov: 13, src: "owner's photo (reference only)" },
+  "east tower, slit open": { file: "owner_tower_slit_dome.png", pos: [687, 62, 101.6], target: [709, 43, 105.6], fov: 44, src: "owner's photo (reference only)" },
   "great equatorial (south lawn)": { pos: [628, 196, 103], target: [654, 156, 108], fov: 45 },
   "main front (north court)": { pos: [654, -48, 101], target: [654, 30, 106], fov: 55 },
-  "medium equatorial + meridian hall": { pos: [700, 150, 104], target: [680, 104, 109], fov: 50 },
+  "medium equatorial + meridian hall": { pos: [716, 126, 104], target: [676, 104, 109.5], fov: 50 },
   "overview": { pos: [480, 330, 300], target: [650, 80, 100], fov: 40 },
   "far (900 m)": { pos: [-60, 700, 330], target: [650, 80, 100], fov: 30 },
 };
@@ -195,15 +202,22 @@ function applyShow() {
   urbis.visible = S.show === "UrbIS solids (city today)"; urbisGhost.visible = S.show === "new + UrbIS ghost";
 }
 let swapMs = 0;
-function doSwap() {
+/** swap a slot's material live: the new material's shaders are built first (precompile on a stand-in mesh), then
+ *  the slot switches in one frame */
+async function doSwap() {
   const t = performance.now();
   const make = SWAPS[S.swap];
-  for (const s of S.swapAll ? OBS_SLOTS : [S.slot]) {
-    const w = model.setSlotMaterial(s, make(s), { fade: fadeOn });
-    w.wireframe = S.wireframe;
-  }
+  const slots = S.swapAll ? OBS_SLOTS : [S.slot];
+  const made = slots.map((s) => [s, make(s)]);
+  const proxy = new THREE.Group();
+  const geo = model.lods[0].find((l) => l.slot === slots[0])?.geometry ?? model.lods[0][0].geometry;
+  const wrapped = made.map(([s, m]) => { const w = model.setSlotMaterial(s, m, { fade: fadeOn, dryRun: true }); w.wireframe = S.wireframe; proxy.add(new THREE.Mesh(geo, w)); return [s, w]; });
+  proxy.position.copy(root.position); scene.add(proxy); proxy.updateMatrixWorld(true);
+  await precompile(renderer, [proxy], camera, scene, { target: pipe?.passTarget ?? null, mrt: pipe?.passMRT ?? null });
+  scene.remove(proxy);
+  for (const [s, w] of wrapped) model.setSlotMaterial(s, w, { raw: true });
   swapMs = performance.now() - t;
-  console.log(`[observatory lab] slot ${S.swapAll ? "ALL" : S.slot} -> ${S.swap} (${swapMs.toFixed(1)} ms + shader build on next frame)`);
+  console.log(`[observatory lab] slot ${S.swapAll ? "ALL" : S.slot} -> ${S.swap} (${swapMs.toFixed(0)} ms, shaders built before the switch)`);
 }
 
 // notes
@@ -229,6 +243,11 @@ $notes.style.display = "block";
 await lighting.attach(camera);
 let pipe = createPipeline(renderer, scene, camera);
 pipe.setExposureScale(lighting.exposureScale); pipe.look(preset);
+const tc0 = performance.now();
+await precompile(renderer, [scene], camera, scene, { target: pipe.passTarget ?? null, mrt: pipe.passMRT ?? null });
+const compileMs = performance.now() - tc0;
+const shownAt = performance.now();
+root.visible = true;
 const hazeHook = (rt, d, size) => lighting.hazeHook(rt, d, size);
 goView(qp.get("view") && PHOTOS[qp.get("view")] ? qp.get("view") : "aerial from the south-west");
 
@@ -260,7 +279,7 @@ async function bench() {
 }
 // long frames (main-thread hitches) after load: the lab's own record
 const hitches = [];
-window.lab = { renderer, scene, camera, controls, model, lighting, goView, fitFrame, bench, gpu, S, PHOTOS, levels, hitches, doSwap, loadMs };
+window.lab = { renderer, scene, camera, controls, model, lighting, goView, fitFrame, bench, gpu, S, PHOTOS, levels, hitches, doSwap, loadMs, compileMs, shownAt, longTasks };
 
 const ramp = (d, k) => { const s = OBS_LODS[k].until, w = OBS_LODS[k].band; return THREE.MathUtils.smoothstep(d, s - w, s + w); };
 let last = performance.now(), frames = 0, fpsAcc = 0, fpsN = 0, fps = 0;
@@ -292,7 +311,7 @@ renderer.setAnimationLoop(() => {
     const r = renderer.info.render;
     S.stats = `${fps.toFixed(0)} fps · GPU ${gpu.avg.toFixed(2)} ms · ${r.drawCalls ?? r.calls} draws · ${(r.triangles / 1000).toFixed(0)}k tris`;
     $info.textContent = `${backend} · ${S.stats}\n${S.lodInfo}  (auto: LOD0 < ${OBS_LODS[0].until} m, LOD1 < ${OBS_LODS[1].until} m, to the campus box; dithered cross-fades)\n` +
-      `${model.tris.map((t, i) => `LOD${i} ${t.toLocaleString()} tris/${model.drawCalls[i]} draws`).join(" · ")} · AO ${(model.aoBytes / 1048576).toFixed(1)} MB · load ${loadMs.toFixed(0)} ms` +
+      `${model.tris.map((t, i) => `LOD${i} ${t.toLocaleString()} tris/${model.drawCalls[i]} draws`).join(" · ")} · AO ${(model.aoBytes / 1048576).toFixed(1)} MB · load ${loadMs.toFixed(0)} ms, shaders ${compileMs.toFixed(0)} ms (before it shows)` +
       `\nbenchmark (median GPU ms, whole frame; + = the campus): ${S.bench}`;
   }
 });
