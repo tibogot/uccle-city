@@ -503,7 +503,7 @@ async function main() {
     : TILE === "I6" ? roadStart(roads, 1153.1, 540.1, bounds) : roadStart(roads, cx, cz, bounds);   // ?at=, else Place de Saint-Job on I6
   if (!start) $("btnWalk").disabled = true;
   const yawP = params.get("yaw");                                        // ?yaw=deg: walk facing (0 = -z / north-ish, 90 = -x)
-  const walk = () => { if (!start) return; flyer.stop(); driver.stop(); controls.enabled = false; walker.start(start.x, start.z, yawP != null ? +yawP * Math.PI / 180 : start.yaw); };
+  const walk = () => { if (!start) return; if (third?.on) third.stop(); flyer.stop(); driver.stop(); controls.enabled = false; walker.start(start.x, start.z, yawP != null ? +yawP * Math.PI / 180 : start.yaw); };
   // fly mode (viewer/flight.js): a bird from above Place de Saint-Job (or the walk start), heading the walk's way
   const flyer = new Flyer(camera, renderer.domElement, scene, world);
   window.__flyer = flyer;
@@ -528,7 +528,7 @@ async function main() {
   })();
   // from the tip of the Saint-Job spire (data/overrides.json flyStart), else above the walk start
   const fly = async () => {
-    walker.on = false; driver.stop(); controls.enabled = false;
+    if (third?.on) third.stop(); walker.on = false; driver.stop(); controls.enabled = false;
     const fs = (await loadOverrides(DATA)).flyStart;
     if (fs) flyer.start(fs.x, fs.z, Math.atan2(-(fs.toward[0] - fs.x), -(fs.toward[1] - fs.z)), fs.y);
     else { const s = start || { x: cx, z: cz, yaw: 0 }; flyer.start(s.x, s.z, yawP != null ? +yawP * Math.PI / 180 : s.yaw); }
@@ -542,7 +542,7 @@ async function main() {
     const [px, pz] = atP?.length === 2 ? atP : [1201.6, 549.3];
     const s = roadStart(roads, px, pz, bounds) || start;
     if (!s) return;
-    walker.on = false; flyer.stop(); controls.enabled = false;
+    if (third?.on) third.stop(); walker.on = false; flyer.stop(); controls.enabled = false;
     let h = s.yaw + Math.PI;                                       // walk yaw -> car heading (forward = sin h, cos h)
     if (TILE === "I6" && !atP && Math.sin(h) * (1153 - s.x) + Math.cos(h) * (540 - s.z) < 0) h += Math.PI;   // face the church
     driver.start(s.x - Math.cos(h) * 1.6, s.z + Math.sin(h) * 1.6, h);   // keep right
@@ -559,7 +559,8 @@ async function main() {
       controls.target.set(x, y + (cam?.length === 3 ? 12 : 0), z);
     },
   };
-  const setView = (v) => { walker.on = false; flyer.stop(); driver.stop(); controls.enabled = true; views[v](); controls.update(); };
+  let third = null;                       // the third-person character (?view=third), see below
+  const setView = (v) => { if (third?.on) third.stop(); walker.on = false; flyer.stop(); driver.stop(); controls.enabled = true; views[v](); controls.update(); };
   walker.onExit = () => setView("stjob");
   $("btnOrbit").onclick = () => setView("overview");
   $("btnStJob").onclick = () => setView("stjob");
@@ -568,6 +569,9 @@ async function main() {
   $("btnDrive").onclick = drive;
   const v0 = params.get("view") || (params.get("at") ? "stjob" : null);   // ?at=x,z&view=walk stands on the nearest road
   if (v0 === "walk") walk(); else if (v0 === "drive") { setView("overview"); drive(); } else if (v0 === "fly") { setView("overview"); fly(); } else setView(v0 === "stjob" ? "stjob" : "overview");
+  // ?view=third: the third-person capsule character (test hook, viewer/character/cityHook.js; Capsule Lab)
+  if (v0 === "third") import("./character/cityHook.js").then(async (m) => { third = await m.startThirdPerson({ scene, camera, renderer, controls, world, start, setView, log }); })
+    .catch((e) => log(`third person: ${e.message}`));
 
   addEventListener("resize", () => {
     camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight);
@@ -617,7 +621,7 @@ async function main() {
     last = now;
     fpsAcc += dt; fpsN++;
     if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
-    if (flyer.on) flyer.update(dt); else if (driver.on) driver.update(dt); else if (walker.on) walker.update(dt); else controls.update();
+    if (third?.on) third.update(dt); else if (flyer.on) flyer.update(dt); else if (driver.on) driver.update(dt); else if (walker.on) walker.update(dt); else controls.update();
     for (const u of updaters) u(camera.position, camera);
     renderFrame();
     if (pipe && lighting.firmament) pipe.setExposureFactor(lighting.adapt(dt));

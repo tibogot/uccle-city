@@ -85,7 +85,7 @@ export class Driver {
   }
 
   async start(x, z, heading) {
-    if (!this.car) await this.setCar(new URLSearchParams(location.search).get("car") || "scripted").catch(() => this.setCar("scripted"));
+    if (!this.car) await this.setCar(new URLSearchParams(location.search).get("car") || "faceted:hatch_c").catch(() => this.setCar("scripted"));   // our faceted family is the default (owner, 2026-11-05)
     this.startPose = { x, z, heading };
     this.on = true;
     this.car.root.visible = true;

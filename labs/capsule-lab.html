@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capsule Lab</title>
+<link rel="icon" href="../viewer/favicon.svg" type="image/svg+xml">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #8e9aa6; font: 13px/1.4 system-ui, sans-serif; }
+  canvas { display: block; outline: none; }
+  #info { position: fixed; left: 10px; bottom: 10px; max-width: 620px; padding: 8px 10px; border-radius: 6px;
+          background: rgba(20, 24, 30, .78); color: #dfe4ea; font: 12px/1.35 ui-monospace, monospace; white-space: pre-wrap; z-index: 2; pointer-events: none; }
+  #title { position: fixed; left: 10px; top: 10px; padding: 6px 10px; border-radius: 6px; background: rgba(20, 24, 30, .78);
+           color: #e6e9ee; z-index: 2; }
+  #title a { color: #9cc4ff; }
+  #help { position: fixed; left: 10px; top: 46px; padding: 6px 10px; border-radius: 6px; background: rgba(20, 24, 30, .7);
+          color: #c9d1da; z-index: 2; font: 12px/1.45 system-ui, sans-serif; }
+  #help b { color: #fff; }
+  #notes { position: fixed; left: 10px; top: 150px; width: 420px; max-height: calc(100vh - 330px); overflow-y: auto; padding: 8px 10px;
+           border-radius: 6px; background: rgba(20, 24, 30, .82); color: #dfe4ea; font: 12px/1.4 ui-monospace, monospace; z-index: 2; display: none; white-space: pre-wrap; }
+  .tag { position: fixed; z-index: 1; transform: translate(-50%, -100%); padding: 2px 6px; border-radius: 4px; background: rgba(20, 24, 30, .7);
+         color: #e6e9ee; font: 11px/1.2 system-ui, sans-serif; pointer-events: none; white-space: nowrap; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.tsl.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/",
+    "three/src/": "https://cdn.jsdelivr.net/npm/three@0.187.0/src/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="title"><b>Capsule Lab</b> — third-person character controller + camera (viewer/character/) · <a href="./">all labs</a> · <a href="../viewer/index.html?tile=I6&view=third">in the city</a></div>
+<div id="help"><b>WASD</b> move · <b>Shift</b> run · <b>Space</b> jump · <b>drag</b> orbit (or pointer lock) · <b>wheel</b> zoom<br>
+<b>G</b> debug draw · <b>R</b> back to the start · <b>1-9</b> test stations · <b>T</b> run the test suite</div>
+<div id="notes"></div>
+<div id="info">loading…</div>
+<script type="module" src="./capsule-lab.js"></script>
+</body>
+</html>
