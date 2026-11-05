@@ -55,7 +55,7 @@ export function kitCollector(opts = {}) {
   const exclude = opts.exclude || new Set(), only = opts.only || null;
   const out = {};                               // piece -> number[]
   const runs = [];                              // cornice runs for the corner pass: { key, A, B, nx, nz, y }
-  const stats = { faces: 0, skipped: 0, openings: 0 };
+  const stats = { faces: 0, skipped: 0, openings: 0, why: {} };
   const widths = [];
   const put = (piece, x, y, z, nx, nz, w, h, variant, seed) => (out[piece] ??= []).push(x, y, z, nx, nz, w, h, variant, seed, 0);
   const styleOf = new Map();
@@ -100,7 +100,12 @@ export function kitCollector(opts = {}) {
       const top = o.h1 + (o.kind === "window" ? rise : 0);
       const pts = [[o.u0 + 0.01, o.h0 + 0.01], [o.u1 - 0.01, o.h0 + 0.01], [o.u0 + 0.01, top - 0.01], [o.u1 - 0.01, top - 0.01], [(o.u0 + o.u1) / 2, (o.h0 + top) / 2]];
       if (o.kind === "door") { pts[0][1] = 0.05; pts[1][1] = 0.05; }
-      for (const [u, h] of pts) if (depthAt(u, h) === null) { stats.skipped++; return off; }
+      for (let i = 0; i < pts.length; i++) if (depthAt(pts[i][0], pts[i][1]) === null) {
+        stats.skipped++;
+        const w = `${o.kind}${o.floor} pt${i}`; stats.why[w] = (stats.why[w] || 0) + 1;
+        if (opts.debug && !stats.sample) stats.sample = { key: f.key, pt: pts[i], o, width: f.width, T: T.map((t) => t.map((q) => q.map((v) => +v.toFixed(2)))) };
+        return off;
+      }
       placed.push({ o, d: depthAt((o.u0 + o.u1) / 2, (o.h0 + o.h1) / 2) });
     }
     stats.faces++;
@@ -140,7 +145,10 @@ export function kitCollector(opts = {}) {
         gaps.push([uc - 0.46, uc + 0.46]);
       }
     }
-    // horizontal edges of the face at its top (cornice) and at its foot (plinth): the box cornice's own test
+    // horizontal edges of the face at its top (cornice: the box cornice's own test) and at its foot (plinth: UrbIS
+    // walls run ~1 m under the base, the ground line the shader paints the plinth from; the band sits at the base)
+    let foot = Infinity;
+    for (const { p } of f.tris) for (const q of p) foot = Math.min(foot, q[1]);
     const seen = new Set();
     for (const { p } of f.tris) for (let e = 0; e < 3; e++) {
       const A = p[e], B = p[(e + 1) % 3];
@@ -149,7 +157,7 @@ export function kitCollector(opts = {}) {
       const k = [A[0], A[2], B[0], B[2]].map((v) => Math.round(v * 20)).sort().join() + "|" + Math.round(A[1] * 20);
       if (L < 0.6 || seen.has(k)) continue;
       seen.add(k);
-      const atTop = Math.abs(A[1] - f.top) < 0.08, atFoot = Math.abs(A[1] - f.base) < 0.08;
+      const atTop = Math.abs(A[1] - f.top) < 0.08, atFoot = Math.abs(A[1] - foot) < 0.08 && foot <= f.base + 0.05;
       if (!atTop && !atFoot) continue;
       // along u
       let ua = A[0] * f.tx + A[2] * f.tz - f.u0, ub = B[0] * f.tx + B[2] * f.tz - f.u0;
@@ -173,7 +181,7 @@ export function kitCollector(opts = {}) {
         for (const [g0, g1] of gaps) segs = segs.flatMap(([s0, s1]) => (g1 <= s0 || g0 >= s1 ? [[s0, s1]] : [[s0, g0], [g1, s1]].filter(([q0, q1]) => q1 - q0 > 0.15)));
         for (const [s0, s1] of segs) {
           const [x, z] = W((s0 + s1) / 2, d);
-          put("plinth", x, A[1], z, f.nx, f.nz, s1 - s0, 0.6, 0, seed);
+          put("plinth", x, f.base, z, f.nx, f.nz, s1 - s0, 0.6, 0, seed);
         }
       }
     }

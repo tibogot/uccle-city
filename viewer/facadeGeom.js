@@ -131,7 +131,11 @@ function beam(D, P0, P1, w, h, col) {
   quad(at(P0, -hw, lo), at(P1, -hw, lo), at(P1, -hw * 0.6, hi), at(P0, -hw * 0.6, hi), n2);
 }
 
-export function analyseBuildings(doc, buf, roads, feats) {
+/** opts.kit: a façade-kit collector (viewer/facadeKit/placement.js kitCollector): every wall face is offered to it;
+ *  the faces it takes go to walls.kit (a separate mesh: its material cuts the openings the kit's pieces fill, aKit =
+ *  (on, arch rise)) and the result gets kit = collector.finish(). */
+export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
+  const kit = opts.kit || null;
   const dv = new DataView(buf);
   const V = dv.getUint32(0, true), T = dv.getUint32(4, true);
   const P = new Float32Array(buf, 8, V * 3);
@@ -191,6 +195,7 @@ export function analyseBuildings(doc, buf, roads, feats) {
   };
 
   const W = { position: [], normal: [], aWall: [], aBld: [], aFN: [] };
+  const WK = { position: [], normal: [], aWall: [], aBld: [], aFN: [], aKit: [] };   // the kit's faces
   // OSM shops (features.json points kind "shop") -> a shopfront on the nearest street face
   const shops = new Grid(40);
   for (const p of feats?.points || []) if (p.kind === "shop") { p.used = false; shops.add(p.x, p.z, p.x, p.z, p); }
@@ -361,13 +366,18 @@ export function analyseBuildings(doc, buf, roads, feats) {
           stats.chimneys++;
         }
       }
+      // the façade kit takes this face? (street faces of eligible buildings, every opening on the wall)
+      const k = kit ? kit.face({ key, building: b, wallStyle: style, landmark: !!landmark, rnd, width, eaves: faceEaves, partyH, street,
+        shopU, shopW, base, top, nx: f.nx, nz: f.nz, tx, tz, u0, tris: f.tris }) : null;
+      const T = k?.on ? WK : W;
       for (const { p, n: nn, src } of f.tris) for (const q of p) {
-        W.position.push(q[0], q[1], q[2]);
+        T.position.push(q[0], q[1], q[2]);
         const sn = src ? smooth(src, q) : nn;
-        W.normal.push(sn[0], sn[1], sn[2]);
-        W.aWall.push(q[0] * tx + q[2] * tz - u0, width, q[1] - base, faceEaves);
-        W.aBld.push(style, partyH, street, rnd);
-        W.aFN.push(f.nx, f.nz, shopU, shopW);                                    // outward normal (xz), shopfront centre / width + 10 * paint
+        T.normal.push(sn[0], sn[1], sn[2]);
+        T.aWall.push(q[0] * tx + q[2] * tz - u0, width, q[1] - base, faceEaves);
+        T.aBld.push(style, partyH, street, rnd);
+        T.aFN.push(f.nx, f.nz, shopU, shopW);                                    // outward normal (xz), shopfront centre / width + 10 * paint
+        if (T === WK) WK.aKit.push(1, k.rise);
       }
     }
     // --- ridge tiles and hip ribs: convex roof edges shared by two roof faces that meet at > 12°
@@ -425,7 +435,9 @@ export function analyseBuildings(doc, buf, roads, feats) {
   });
   const f32 = (a) => new Float32Array(a);
   return {
-    walls: { position: f32(W.position), normal: f32(W.normal), aWall: f32(W.aWall), aBld: f32(W.aBld), aFN: f32(W.aFN) },
+    walls: { position: f32(W.position), normal: f32(W.normal), aWall: f32(W.aWall), aBld: f32(W.aBld), aFN: f32(W.aFN),
+      kit: kit ? { position: f32(WK.position), normal: f32(WK.normal), aWall: f32(WK.aWall), aBld: f32(WK.aBld), aFN: f32(WK.aFN), aKit: f32(WK.aKit) } : null },
+    kit: kit ? kit.finish() : null,
     details: { position: f32(D.position), normal: f32(D.normal), aCol: f32(D.color) },
     roofs: { position: f32(R.position), normal: f32(R.normal), aRoof: f32(R.aRoof), aRoofCol: f32(R.aRoofCol) },
     stats: { ...stats, triangles: T, vertices: V },

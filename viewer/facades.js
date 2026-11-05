@@ -34,6 +34,7 @@ import { n3, band, courses } from "./roadPaint.js";
 
 import { analyseBuildings } from "./facadeGeom.js";
 import { houseCut, cutOpacity } from "./interior/cut.js";
+import { kitShows, wallKitFade } from "./facadeKit/kitFade.js";
 export { analyseBuildings };
 
 const C = (r, g, b) => vec3(r, g, b);
@@ -117,7 +118,10 @@ const interiorRoom = Fn(([gx, gy, winUV, cellId, bayW, storeyH, seed, litProb, f
   return vec4(col.mul(warm).mul(mix(float(0.85), float(1.35), lit)), litRoom.mul(emit));
 });
 
-export function wallMaterial() {
+/** opts.kit: the material of the FAÇADE KIT's faces (viewer/facadeKit/): the same painted façade, with the openings the
+ *  kit's pieces fill (aKit = (on, arch rise): window B's segmental head reaches `rise` m over the painted head) cut
+ *  where the kit draws (kitFade.js: the same dithered split as the pieces, so a pixel shows one or the other). */
+export function wallMaterial(opts = {}) {
   const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, side: THREE.DoubleSide });   // some UrbIS faces are wound inward: never cull them
   const P = positionWorld;
   const wall = attribute("aWall", "vec4"), bld = attribute("aBld", "vec4");
@@ -399,6 +403,19 @@ export function wallMaterial() {
   // an interior cell is loaded (?interior=1): its house's openings are holes, its real windows and door show
   // (viewer/interior/cut.js; compiled in only then)
   if (houseCut.enabled) m.maskNode = cutOpacity(opening.mul(notShop)).greaterThan(0.5);
+  if (opts.kit) {
+    const kitA = attribute("aKit", "vec2");
+    // window B's segmental head over the painted opening: R = (hw^2 + rise^2) / (2 rise), y(x) = sqrt(R^2 - x^2) - (R - rise)
+    const rise = kitA.y, hwW = ww.mul(0.5);
+    const xm = fract(gx).sub(0.5).mul(bw);
+    const Rr = hwW.mul(hwW).add(rise.mul(rise)).div(rise.mul(2).max(1e-4));
+    const yArch = Rr.mul(Rr).sub(xm.mul(xm)).max(0).sqrt().sub(Rr.sub(rise));
+    const above = h.sub(winTopAbs);
+    const arch = step(0.0001, rise).mul(step(abs(xm), hwW)).mul(step(0.0, above)).mul(step(above, yArch)).mul(ok).mul(float(1).sub(isDoor));
+    const cut = max(step(0.5, opening.mul(notShop)), arch).mul(kitA.x);
+    const kitHole = cut.greaterThan(0.5).and(kitShows(wallKitFade));
+    m.maskNode = m.maskNode ? m.maskNode.and(kitHole.not()) : kitHole.not();
+  }
   return m;
 }
 
@@ -460,8 +477,16 @@ export function buildingMeshes(doc, buf, roads, feats, pre) {
   const meshes = [mk(a.walls, [["aWall", 4], ["aBld", 4], ["aFN", 4]], MATS.wall, "buildings-walls"),
     mk(a.roofs, [["aRoof", 4], ["aRoofCol", 3]], MATS.roof, "buildings-roofs")];
   if (a.details.position.length) meshes.push(mk(a.details, [["aCol", 3]], detailMat, "buildings-details"));
+  // the façade kit's faces (?kit=1): their own mesh, so only they pay for the cut (a discard costs early-z)
+  let kitWalls = null;
+  if (a.walls.kit?.position.length) {
+    MATS.wallKit ??= Object.assign(wallMaterial({ kit: true }), { name: "walls (kit)" });
+    MATS.wallKit.userData.shared = true;
+    kitWalls = mk(a.walls.kit, [["aWall", 4], ["aBld", 4], ["aFN", 4], ["aKit", 2]], MATS.wallKit, "buildings-walls-kit");
+    meshes.push(kitWalls);
+  }
   return {
-    meshes,
+    meshes, kitWalls, kit: a.kit,
     stats: a.stats, triangles: a.stats.triangles, vertices: a.stats.vertices,
   };
 }
