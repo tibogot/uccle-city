@@ -12,10 +12,12 @@ import { ThirdPersonCamera } from "./camera.js";
 import { CharacterBody } from "./body.js";
 import { CharacterInput } from "./input.js";
 import { CharacterDebug } from "./debugDraw.js";
+import { loadCharacter, CHARACTERS } from "./characterModel.js";
 
 export { CollisionWorld, Heightfield, Contacts } from "./world.js";
 export { TriBVH } from "./bvh.js";
 export { PrismSet } from "./prisms.js";
+export { CHARACTERS } from "./characterModel.js";
 
 export class ThirdPerson {
   constructor({ scene, camera, dom, world, controller = {}, cam = {}, hz = 120, pointerLock = false }) {
@@ -28,7 +30,7 @@ export class ThirdPerson {
     this.stepper = new FixedStepper(hz);
     this.ctl.dt = 1 / hz;
     this.S = new Float64Array(4);
-    this.perf = { ms: 0, physMs: 0, camMs: 0, maxMs: 0, steps: 0, _max: 0, _t: 0 };
+    this.perf = { ms: 0, physMs: 0, camMs: 0, animMs: 0, ikMs: 0, maxMs: 0, steps: 0, _max: 0, _t: 0 };
     this.bodyState = { speed: 0, grounded: true, vy: 0, opacity: 1 };
     this._step = () => this.ctl.step();          // no argument: the controller reads its own dt
     this.body.root.visible = false;
@@ -62,13 +64,31 @@ export class ThirdPerson {
     const t2 = performance.now();
     const st = this.bodyState;
     st.speed = Math.hypot(c.vel[0], c.vel[2]); st.grounded = c.grounded; st.vy = c.vel[1]; st.opacity = this.cam.opacity;
-    this.body.update(dt, S[0], S[1], S[2], S[3], st);
+    this.body.update(dt, S[0], S[1], S[2], S[3], st, this.world);
     this.debug.update(c, this.cam, S[0], S[1], S[2]);
     const t3 = performance.now(), P = this.perf, ms = t3 - t0;
     P.physMs = P.physMs * 0.95 + (t1 - t0) * 0.05; P.camMs = P.camMs * 0.95 + (t2 - t1) * 0.05; P.ms = P.ms * 0.95 + ms * 0.05;
+    P.animMs = P.animMs * 0.95 + (t3 - t2) * 0.05; P.ikMs = this.body.ikMs || 0;
     P.steps = this.stepper.steps;
     P._max = Math.max(P._max, ms);
     if (t3 - P._t > 1000) { P.maxMs = P._max; P._max = 0; P._t = t3; }
+  }
+  /**
+   * Put a character from models/characters/ in the slot ("capsule" = back to the capsule). Its materials are
+   * compiled before it shows (renderer: compileAsync), so the swap does not hitch. Resolves to its info.
+   */
+  async useCharacter(name, renderer = null) {
+    if (!name || name === "capsule") { this.body.clearModel(); return { name: "capsule" }; }
+    const ch = await loadCharacter(name);
+    const found = this.body.setModel(ch.gltf, ch.opts);
+    if (renderer) {
+      // compile both material variants with the model detached while the capsule still shows: no frame waits on it
+      const b = this.body, holder = b.model;
+      b.root.remove(holder); b.capsuleGroup.visible = true;
+      try { for (const [mesh, ...mats] of b.warmModel()) for (const m of mats) { mesh.material = m; await renderer.compileAsync(holder, this.camera, this.scene); } }
+      finally { b.capsuleGroup.visible = false; b.root.add(holder); }
+    }
+    return { ...ch.info, clips: found, walk: +this.body.walkSpeed.toFixed(2), run: +this.body.runSpeed.toFixed(2) };
   }
   /** Where the character is (feet, interpolated). */
   get x() { return this.S[0]; } get y() { return this.S[1]; } get z() { return this.S[2]; }

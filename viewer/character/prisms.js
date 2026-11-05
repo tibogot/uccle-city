@@ -51,6 +51,7 @@ export class PrismSet {
     });
     this.P = P; this.C = C;
     this.enabled = true; this.tag = 1;
+    this.ray = true;                          // false: blocks the body only (posts, trunks): the camera's rays pass
     this.pd = new Float64Array(3); this.gq = new Float64Array(4);          // _polyDist result: signed distance, nearest outline point x, z
     this.found = new Int32Array(4096); this.nFound = 0;
     this._index();
@@ -70,6 +71,21 @@ export class PrismSet {
     for (let k = 0; k < N; k++) for (let j = cj(B[k * 4 + 1]); j <= cj(B[k * 4 + 3]); j++) for (let i = ci(B[k * 4]); i <= ci(B[k * 4 + 2]); i++) items[fill[j * nx + i]++] = k;
     Object.assign(this, { gx0: x0, gz0: z0, gnx: nx, gnz: nz, cellStart: count, cellItems: items });
     this.seen = new Uint32Array(N); this.stamp = 0;
+  }
+
+  static FIELDS = ["pts", "ringStart", "polyRing", "ibox", "iy", "off", "circ", "cellStart", "cellItems", "seen"];
+  /** The arrays, for a postMessage transfer (a worker builds, the main thread uses). */
+  toData() {
+    const d = { ids: this.ids, P: this.P, C: this.C, gx0: this.gx0, gz0: this.gz0, gnx: this.gnx, gnz: this.gnz };
+    for (const k of PrismSet.FIELDS) d[k] = this[k];
+    return d;
+  }
+  static transferList(d) { return PrismSet.FIELDS.map((k) => d[k].buffer); }
+  static fromData(d) {
+    const s = Object.create(PrismSet.prototype);
+    Object.assign(s, d, { stamp: 0, enabled: true, tag: 1, ray: true, hitN: null });
+    s.pd = new Float64Array(3); s.gq = new Float64Array(4); s.found = new Int32Array(4096); s.nFound = 0;
+    return s;
   }
 
   /** Switch an item off / on by its id (e.g. the building whose interior you are in). */
@@ -163,7 +179,7 @@ export class PrismSet {
   }
 
   raycast(R, H) {
-    if (!this.enabled) return;
+    if (!this.enabled || !this.ray) return;
     const ox = R[0], oy = R[1], oz = R[2], dx = R[3], dy = R[4], dz = R[5], tmax = H[0];
     if (!(tmax < Infinity)) return;
     const ex = ox + dx * tmax, ez = oz + dz * tmax;

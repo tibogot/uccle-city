@@ -105,6 +105,7 @@ export function createDevPanel(ctx) {
   fC.add({ f: () => setView("stjob") }, "f").name("Saint-Job close-up");
   fC.add({ f: () => walk() }, "f").name("walk (WASD)");
   fC.add({ f: () => fly() }, "f").name("fly the falcon (from the spire)");
+  if (ctx.thirdPerson) fC.add({ f: () => ctx.thirdPerson() }, "f").name("third person (a character on foot)");
   fC.add(S, "fov", 25, 90, 1).name("field of view").onChange((v) => { camera.fov = v; camera.updateProjectionMatrix(); });
   fC.add({ f: () => photo(true) }, "f").name("photo mode (H to leave)");
   fC.close();

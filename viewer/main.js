@@ -569,9 +569,16 @@ async function main() {
   $("btnDrive").onclick = drive;
   const v0 = params.get("view") || (params.get("at") ? "stjob" : null);   // ?at=x,z&view=walk stands on the nearest road
   if (v0 === "walk") walk(); else if (v0 === "drive") { setView("overview"); drive(); } else if (v0 === "fly") { setView("overview"); fly(); } else setView(v0 === "stjob" ? "stjob" : "overview");
-  // ?view=third: the third-person capsule character (test hook, viewer/character/cityHook.js; Capsule Lab)
-  if (v0 === "third") import("./character/cityHook.js").then(async (m) => { third = await m.startThirdPerson({ scene, camera, renderer, controls, world, start, setView, log }); })
-    .catch((e) => log(`third person: ${e.message}`));
+  // third person: a character on foot (viewer/character/cityHook.js, Capsule Lab); the button, ?view=third, the dev panel
+  const thirdPerson = async () => {
+    walker.on = false; flyer.stop(); driver.stop(); controls.enabled = false;
+    try {
+      if (!third) third = await (await import("./character/cityHook.js")).startThirdPerson({ scene, camera, renderer, controls, world, start, setView, log });
+      else third.resume();
+    } catch (e) { log(`third person: ${e.message}`); controls.enabled = true; }
+  };
+  $("btnThird").onclick = thirdPerson;
+  if (v0 === "third") thirdPerson();
 
   addEventListener("resize", () => {
     camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight);
@@ -721,7 +728,7 @@ async function main() {
   if (params.get("panel") !== "0") {
     try {
       const { createDevPanel } = await import("./devPanel.js");
-      createDevPanel({ renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log });
+      createDevPanel({ renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, thirdPerson, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log });
     } catch (e) { log(`dev panel: ${e.message}`); }
   }
   window.viewer = { loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
