@@ -20,6 +20,13 @@ The car: one loader, `viewer/drive/carModel.js loadCarModel(spec)` (`scripted` =
 `quaternius:<id>` = CC0 packs via `viewer/drive/carPacks.js`); `?car=<spec>` or `__driver.setCar(spec)`; `fitBody`
 sizes the physics box to the model. Packs: `node tools/cars/convertPacks.mjs` (raw packs in data/raw/cars/, see CREDITS).
 
+## Interiors (branch claude/interior, pilot)
+
+The first interior cell: a terraced house near Place de Saint-Job (UrbIS 1786120). Lab `labs/interior-lab.html`, city
+`?interior=1` (tile I6; streams in within 40 m). Method (spec from the city's own façade analysis, Blender build + Cycles
+bakes, per-corner light on pieces, ambient-cube probes, façade/terrain cut, portal, character hooks): `docs/INTERIOR.md`;
+status and re-run commands: `docs/interior/STATUS.md`.
+
 ## Rules that still hold
 
 - `github.com/tibogot/game-engine-v1` is a READ-ONLY reference: never modify or push to it.

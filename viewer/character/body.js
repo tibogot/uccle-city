@@ -129,7 +129,15 @@ export class CharacterBody {
   }
 
   /** Objects + materials to render once so every variant is compiled up front. */
-  warmModel() { return (this.modelMats || []).map((m) => [m.mesh, m.fade, m.solid]); }
+  warmModel() { return (this.modelMats || []).map((m) => [m.mesh, m.fade, m.solid, ...(m.solidV ? [m.fadeV, m.solidV] : [])]); }
+
+  /**
+   * A second lighting for the model, e.g. inside an interior cell (viewer/interior/: lit by the cell's baked probes, not
+   * by the city's sun and sky). make(material, fade) -> the variant (made once per material); then useVariant(true/false)
+   * swaps every frame's choice. Compile them with warmModel() before the first swap (no hitch).
+   */
+  setVariant(make) { for (const m of this.modelMats || []) { m.solidV ??= make(m.solid, false); m.fadeV ??= make(m.fade, true); } }
+  useVariant(on) { this.variantOn = !!on; }
 
   /**
    * x, y, z: feet; yaw: facing (+z forward at 0); st: { speed (horizontal m/s), grounded, vy, opacity }.
@@ -147,7 +155,8 @@ export class CharacterBody {
       this.visor.material = this.visorMats[fade ? 1 : 0];
       return;
     }
-    for (let i = 0; i < this.modelMats.length; i++) { const m = this.modelMats[i]; m.mesh.material = fade ? m.fade : m.solid; }
+    const v = this.variantOn;
+    for (let i = 0; i < this.modelMats.length; i++) { const m = this.modelMats[i]; m.mesh.material = v && m.solidV ? (fade ? m.fadeV : m.solidV) : fade ? m.fade : m.solid; }
     // the animation state machine (weights eased toward targets)
     const A = this.actions, w = this._w, target = TARGET;
     for (let i = 0; i < ROLES.length; i++) target[ROLES[i]] = 0;

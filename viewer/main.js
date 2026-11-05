@@ -698,6 +698,8 @@ async function main() {
   };
   $("btnThird").onclick = thirdPerson;
   if (v0 === "third") thirdPerson();
+  // ?interior=1: the pilot interior cell (viewer/interior/cityInterior.js; Interior Lab first)
+  if (params.get("interior") === "1") import("./interior/cityInterior.js").then((m) => m.startCityInterior({ scene, renderer, camera, lighting, updaters, getThird: () => third, log })).catch((e) => log(`interior: ${e.message}`));
 
   addEventListener("resize", () => {
     camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight);

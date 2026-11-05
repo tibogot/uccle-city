@@ -84,8 +84,10 @@ read-only (copy into `vendor/` with ORIGIN.md); measure GPU ms before / after (s
       checked) but on a UE-style rig (pelvis / thigh_l ...) and UAL2 has only NinjaJump: retargeting needs per-bone
       rest-pose correction. The held run stride stays for now.
 - [x] Shelters are their own triangles in the roads BVH (open front, roof at 2.41 m: you walk in); lab test passes.
-- [ ] Interiors: exclude the entered house's footprint prism (`PrismSet.exclude(BU_ID)`) and add its interior BVH;
-      sun light leaks at wall seams indoors (shadow normalBias 5 cm vs 20 cm walls): interior lighting needs its own pass.
+- [x] Interiors: pilot house (branch claude/interior, `docs/INTERIOR.md`): footprint prism excluded, the cell's collider
+      BVH added, own baked lighting (no city shadow map inside: no seam leaks), the character lit by baked ambient cubes.
+- [ ] Interior pilot, open: stair / landing too dark, a mirror without reflection, the stringer slit, ~50 ms material
+      builds at load, the sun lightmap for one sun direction; then Saint-Job's nave with the same method.
 - [ ] City: tram platforms, shelters, benches, bollards and parked cars are not colliders yet; build the roads BVH in
       the tile worker (25-60 ms on the main thread per tile today); a Third-person button in the UI.
 
