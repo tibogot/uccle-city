@@ -6,7 +6,9 @@
 // (+x east, +z south), heights are absolute metres TAW (40-130 m) so the haze layer starts at the
 // valley floor, and the shared uniforms (`env`) feed our own façade and road materials.
 import * as THREE from "three/webgpu";
-import { shadow, Fn, float, vec3, vec4, uniform, mix, fog, pmremTexture, positionWorld, cameraPosition, length, normalize, max, exp, abs, select } from "three/tsl";
+import { shadow, Fn, float, vec3, vec4, uniform, mix, fog, pmremTexture, positionWorld, cameraPosition, length, normalize, max, exp, abs, select, smoothstep } from "three/tsl";
+import { ShadowNode } from "three/webgpu";
+import { damp } from "./lodFade.js";
 import { SkyMesh } from "three/addons/objects/SkyMesh.js";
 import { SunLight } from "three/addons/lights/SunLight.js";
 import { SunLightNode } from "three/addons/lights/SunLightNode.js";
@@ -41,6 +43,34 @@ const FIRM_TIMES = {
 // (tuned on screen 2026-11-04: top 72 m left Place Saint-Job, 70.8 m, at the very edge of the layer)
 const VFOG = { top: 82, falloff: 18, topBreakup: 9, density: 0.014, noiseFreq: 1 / 160, noiseAmount: 0.7, coverage: 0.7,
   haze: 0.0006, maxDist: 1500, anisotropy: 0.6, windSpeed: 2 };
+
+// ------------------------------------------------------------------ smooth shadows (docs/SMOOTH_LOD.md)
+// The sun's one shadow map follows the camera. Three things made shadows pop or crawl:
+//  1. the box was snapped to texels in WORLD x/y/z while the map's texels lie across the SUN's view: a
+//     sub-texel slide every frame, shadow edges crawled as the camera moved. Now snapped in the light's frame.
+//  2. the box size followed the view distance (resized when it drifted 10 %): every resize changed the texel
+//     size (all edges jumped) and moved the box's edge, where shadows stopped dead. Now the box takes a few
+//     fixed sizes (x1.5 apart, with hysteresis) and the shadows FADE OUT toward a radius that moves smoothly
+//     (damped) inside the box, so shadows never end at a hard line nor appear in a block.
+//  3. r187's ShadowNode returns "lit" just outside its frustum: FadedShadowNode blends to lit over a band
+//     before that edge (uFade: the fade radius as a share of the box's half size).
+const SMOOTH_SHADOWS = !/[?&]smooth=0/.test(location.search);
+export const shadowFade = {
+  uRadius: uniform(0.9),       // fade radius / box half size (light-space square distance from the box centre)
+  uBand: uniform(0.22),        // the fade's width, as a share of the radius
+  levels: [60, 90, 135, 200, 300, 450],   // box half sizes (m): 4096 px -> 2.9 .. 22 cm texels
+  tau: 0.35,                    // seconds: how fast the fade radius follows the view
+};
+class FadedShadowNode extends ShadowNode {
+  setupShadowFilter(builder, inputs) {
+    const lit = super.setupShadowFilter(builder, inputs);
+    const c = inputs.shadowCoord;
+    const e = max(abs(c.x.sub(0.5)), abs(c.y.sub(0.5))).mul(2);               // 0 at the centre, 1 at the edge
+    const r = shadowFade.uRadius;
+    const f = smoothstep(r.mul(float(1).sub(shadowFade.uBand)), r, e);
+    return mix(lit, float(1), f);
+  }
+}
 
 // Direction TO the sun. Brussels, late afternoon from the south-west: west = -x, south = +z.
 const dir = (x, y, z) => new THREE.Vector3(x, y, z).normalize();
@@ -128,6 +158,7 @@ export class Lighting {
       this.sun.shadow.mapSize.set(4096, 4096);
       Object.assign(this.sun.shadow.camera, { left: -150, right: 150, top: 150, bottom: -150, near: 1, far: 2000 });
       this.sun.shadow.bias = -0.0002;
+      if (SMOOTH_SHADOWS) this.sun.shadow.shadowNode = new FadedShadowNode(this.sun, this.sun.shadow);
       scene.add(this.sun.target);
     }
     this.sun.castShadow = true;
@@ -157,7 +188,7 @@ export class Lighting {
     this.sun.shadow.normalBias = 0.05;
     // our own ShadowNode, handed to the light before its first render: r187 keeps the shadow map inside
     // the node (light.shadow.map stays null on WebGPU) and the sky's sun shafts march that map
-    this.shadowNode = shadow(this.sun);
+    this.shadowNode = SMOOTH_SHADOWS ? new FadedShadowNode(this.sun, this.sun.shadow) : shadow(this.sun);
     this.sun.shadow.shadowNode = this.shadowNode;
     scene.add(this.sun.target, this.sun);
     this.sunDir = new THREE.Vector3(0, 1, 0);
@@ -324,7 +355,7 @@ export class Lighting {
   }
 
   /** Each frame. focus = what the camera looks at; half = shadow box half-size (m). */
-  update(cameraY, groundY, focus, half) {
+  update(cameraY, groundY, focus, half, dt = 1 / 60) {
     if (this.firmament && this.sky) {
       const now = performance.now(), dt = Math.min(0.1, (now - this.lastT) / 1000);
       this.lastT = now;
@@ -341,14 +372,46 @@ export class Lighting {
       return;
     }
     const sc = this.sun.shadow.camera;
-    if (Math.abs(sc.right - half) > half * 0.1) {
-      Object.assign(sc, { left: -half, right: half, top: half, bottom: -half });
+    if (!SMOOTH_SHADOWS) {          // the old box (?smooth=0, for A/B)
+      if (Math.abs(sc.right - half) > half * 0.1) {
+        Object.assign(sc, { left: -half, right: half, top: half, bottom: -half });
+        sc.updateProjectionMatrix();
+      }
+      const texel = (2 * half) / this.sun.shadow.mapSize.x;
+      const f = focus.clone().divideScalar(texel).round().multiplyScalar(texel);
+      this.sun.position.copy(f).addScaledVector(this.sunDir, 900);
+      this.sun.target.position.copy(f);
+      this.sun.target.updateMatrixWorld();
+      return;
+    }
+    // the fade radius follows the view smoothly; the box is the smallest fixed size that holds it
+    const F = shadowFade, L = F.levels;
+    this.fadeHalf = this.fadeHalf == null || this.snapNext ? half : damp(this.fadeHalf, half, F.tau, dt);
+    this.snapNext = false;
+    const want = this.fadeHalf / 0.92;
+    const fit = L.find((l) => l >= want) ?? L[L.length - 1];
+    let box = this.boxHalf ?? fit;
+    if (fit > box) box = fit;                                                   // grow at once
+    else if (fit < box && want < L[Math.max(0, L.indexOf(box) - 1)] * 0.8) box = fit;   // shrink with hysteresis
+    this.boxHalf = box;
+    F.uRadius.value = Math.min(0.97, this.fadeHalf / box);
+    if (sc.right !== box) {
+      Object.assign(sc, { left: -box, right: box, top: box, bottom: -box });
       sc.updateProjectionMatrix();
     }
-    // snap the box to shadow texels so edges don't crawl as the camera moves
-    const texel = (2 * half) / this.sun.shadow.mapSize.x;
-    const f = focus.clone().divideScalar(texel).round().multiplyScalar(texel);
-    this.sun.position.copy(f).addScaledVector(this.sunDir, 900);
+    // snap the box's centre to whole texels ACROSS THE SUN'S VIEW (the shadow camera's x / y axes): the map
+    // then samples the world at the same points from frame to frame, edges stand still as the camera moves
+    const z = this._lz ??= new THREE.Vector3(), x = this._lx ??= new THREE.Vector3(), y = this._ly ??= new THREE.Vector3();
+    z.copy(this.sunDir).normalize();
+    x.crossVectors(sc.up, z);
+    if (x.lengthSq() < 1e-8) x.set(1, 0, 0);
+    x.normalize();
+    y.crossVectors(z, x);
+    const texel = (2 * box) / this.sun.shadow.mapSize.x;
+    const px = focus.dot(x), py = focus.dot(y);
+    const f = this._lf ??= new THREE.Vector3();
+    f.copy(focus).addScaledVector(x, Math.round(px / texel) * texel - px).addScaledVector(y, Math.round(py / texel) * texel - py);
+    this.sun.position.copy(f).addScaledVector(z, 900);
     this.sun.target.position.copy(f);
     this.sun.target.updateMatrixWorld();
   }

@@ -22,8 +22,17 @@ import {
 import { applyAlphaCutout } from "../vendor/stylized-trees/alphaCutout.js";
 import { treeTint } from "../vendor/stylized-trees/stylizedTrees.js";
 
-export const IMPOSTOR_START = +(new URLSearchParams(location.search).get("impstart") ?? 90);   // metres: nearer trees are the real LODs (?impstart= to tune)
-export const IMPOSTOR_END = 1600;
+import { lodEye, keepBand, rampTo, withObjectFade } from "./lodFade.js";
+
+const qs = new URLSearchParams(location.search);
+export const IMPOSTOR_START = +(qs.get("impstart") ?? 400);   // metres: nearer trees are the real LODs (?impstart= to tune; was 90)
+export const IMPOSTOR_END = 2400;                            // past the far-LOD ring (3.5 tiles); fog and the fade-out end them
+/** Live distances (dev panel "Smoothness"): the LOD 2 -> impostor cross-fade ends at `start` over `band` metres,
+ *  the impostors fade out over [end - endBand, end]. Distances from the view camera (lodEye) in every pass. */
+export const IMP = {
+  start: uniform(IMPOSTOR_START), band: uniform(+(qs.get("impband") ?? 50)),
+  end: uniform(IMPOSTOR_END), endBand: uniform(400),
+};
 const GRID = 8, CELL = 128, PAD = 4, BLOCK = GRID * CELL;   // views per side, px per view, px per variant
 
 const gridToDirCPU = (gx, gy, out) => {   // octahedralCore.js hemiOctaGridToDir
@@ -92,11 +101,19 @@ export function bakeTreeImpostors(renderer, shared, variants, leafMask) {
     const leaves = new THREE.BufferGeometry();
     for (const a of Object.keys(g.leaves.attributes)) leaves.setAttribute(a, g.leaves.attributes[a]);
     leaves.setIndex(g.leaves.index);
-    leaves.setAttribute("treeXf", new THREE.InstancedBufferAttribute(new Float32Array([1, 0, 1]), 3));
+    const xf1 = new THREE.InstancedBufferAttribute(new Float32Array([1, 0, 1]), 3), pos1 = new THREE.InstancedBufferAttribute(new Float32Array(3), 3);
+    leaves.setAttribute("treeXf", xf1);
+    leaves.setAttribute("treePos", pos1);                 // (the LOD morph's inputs; the bake turns it off: lodScale 0)
     const leafMesh = new THREE.InstancedMesh(leaves, leafA, 1);
     leafMesh.setMatrixAt(0, new THREE.Matrix4());
     leafMesh.frustumCulled = false;
-    const barkMesh = new THREE.Mesh(g.trunk, barkA);
+    const bark = new THREE.BufferGeometry();              // the bark's material reads the same per-instance inputs
+    for (const a of Object.keys(g.trunk.attributes)) bark.setAttribute(a, g.trunk.attributes[a]);
+    bark.setIndex(g.trunk.index);
+    bark.setAttribute("treeXf", xf1);
+    bark.setAttribute("treePos", pos1);
+    const barkMesh = new THREE.InstancedMesh(bark, barkA, 1);
+    barkMesh.setMatrixAt(0, new THREE.Matrix4());
     barkMesh.frustumCulled = false;
     scene.add(leafMesh, barkMesh);
     // bounding sphere: bark + card centres grown by the biggest card
@@ -141,7 +158,7 @@ export function bakeTreeImpostors(renderer, shared, variants, leafMask) {
 }
 
 /** The impostor material (one for every tile): view-blended octahedral frames, relit live. */
-export function impostorMaterial(bake, U) {
+export function impostorMaterial(bake, U, { nearFade = true } = {}) {
   const m = new THREE.MeshStandardNodeMaterial({ roughness: 0.9, metalness: 0, side: THREE.FrontSide });
   const data = attribute("impData", "vec4");                  // per instance: yaw, scale, variant, -
   const origin = attribute("impPos", "vec3");                  // per instance: the tree's foot (world)
@@ -236,11 +253,20 @@ export function impostorMaterial(bake, U) {
     return glow.add(albedo.mul(U.fillColor).mul(U.fill).mul(ao.mul(0.5).add(0.5))).mul(leaf);
   })();
   applyAlphaCutout(m, alpha, { threshold: 0.5, coverage: true, shadow: false });
-  return m;
+  // Smooth LOD (docs/SMOOTH_LOD.md): the impostor takes over from the real LOD 2 by the dithered split of the
+  // pixels (lodFade.js: LOD 2 keeps n < 1 - t, the impostor n >= 1 - t, the same t from the same tree foot and
+  // the view camera), and fades out at the far end. nearFade false (far-LOD tiles): drawn from 0 m.
+  const dTree = origin.sub(lodEye).length();
+  const lo = nearFade ? float(1).sub(rampTo(dTree, IMP.start, IMP.band)) : float(0);
+  m.maskNode = keepBand(lo, float(1).sub(rampTo(dTree, IMP.end, IMP.endBand)));
+  // its shadow (the impostor faces the light in the shadow pass, so the sun sees the crown from its side):
+  // the hard cut-out and the same fade, so the far trees' shadows hand over with the trees
+  m.maskShadowNode = alpha.greaterThanEqual(0.5).and(m.maskNode);
+  return withObjectFade(m);   // (and the streamed tiles' time fade)
 }
 
 /** Per tile: one instanced quad mesh for every tree of the tile past IMPOSTOR_START. */
-export function impostorField(placements, variantOf, material) {
+export function impostorField(placements, variantOf, material, { near = null } = {}) {
   const n = placements.length, cap = Math.max(n, 1025);       // >= 1025: one shader for every tile
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.Float32BufferAttribute(new Float32Array(12), 3));   // all at the origin
@@ -254,14 +280,18 @@ export function impostorField(placements, variantOf, material) {
   geo.setAttribute("impPos", pos);
   const mesh = new THREE.InstancedMesh(geo, material, cap);
   mesh.count = 0;
-  mesh.castShadow = false;
+  mesh.castShadow = true;
   mesh.receiveShadow = true;
   mesh.name = "tree-impostors";
   const last = new THREE.Vector3(Infinity, 0, 0);
-  const start2 = IMPOSTOR_START * IMPOSTOR_START, end2 = IMPOSTOR_END * IMPOSTOR_END;
+  let key = "";
+  // the instances: every tree from the start of the cross-fade band (less the 5 m the camera may move before the
+  // next re-bucketing, and a metre) to the end; the material's dither decides the pixels
   const update = (cam) => {
-    if (cam.distanceToSquared(last) < 25) return;
-    last.copy(cam);
+    const k0 = `${IMP.start.value},${IMP.band.value},${IMP.end.value}`;
+    if (cam.distanceToSquared(last) < 25 && k0 === key) return;
+    last.copy(cam); key = k0;
+    const s = near ?? Math.max(0, IMP.start.value - IMP.band.value - 6), start2 = s * s, end2 = (IMP.end.value + 6) ** 2;
     let k = 0;
     for (let i = 0; i < n; i++) {
       const [x, z, y, rot, s] = placements[i];

@@ -29,6 +29,15 @@ import { openBootPipelines, warmBoot } from "./warmup.js";
 import { buildPlazas, loadOverrides } from "./plazas.js";
 import { Flyer } from "./flight.js";
 import { addLamps } from "./lampLight.js";
+import { SMOOTH, lodEye, Fader, withObjectFade } from "./lodFade.js";
+import { buildFarTreeField } from "./treesStylized.js";
+/** Give every material of a tile's objects the per-object time fade (once per material; lodFade.js). The
+ *  leaves' EQUAL-depth colour pass is skipped: it draws what its depth pre-pass (which fades) kept. */
+function fadeable(root) {
+  if (!TILE_FADE) return root;
+  root.traverse((o) => { for (const m of [].concat(o.material || [])) if (m.isNodeMaterial && !m.userData.objectFade) withObjectFade(m); });
+  return root;
+}
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -36,6 +45,12 @@ if (params.get("log") === "0") document.getElementById("logBox")?.removeAttribut
 const TILE = (params.get("tile") || "I6").toUpperCase();    // I6 = Saint-Job (it was G4 before the grid grew to all of Uccle)
 const EYE = 1.7;            // walk-mode eye height (m)
 const CARVE = 0.12;         // terrain is pushed this far under any road surface
+// Smooth LOD (docs/SMOOTH_LOD.md): streamed tiles cross-fade (dithered, ~0.9 s) instead of popping: a full
+// tile fades in over the far tile it replaces, a full tile leaving the ring hands over to its far tile the
+// same way, far tiles fade in and out at the ring's edge. ?tilefade=0: instant swaps (and no fade term in the
+// tiles' shaders), ?smooth=0: every smooth-LOD change off.
+const TILE_FADE = SMOOTH && params.get("tilefade") !== "0";
+const fader = new Fader();
 
 const $ = (id) => document.getElementById(id);
 const logLines = [];
@@ -309,10 +324,24 @@ async function loadLiteTile(entry, group) {
   bg.setAttribute("normal", new THREE.BufferAttribute(d.buildings.normal, 3));
   bg.setAttribute("color", new THREE.BufferAttribute(d.buildings.color, 3));
   g.add(new THREE.Mesh(bg, sharedMat("lite-buildings", () => new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.85 }))));
+  // its trees, as the full tile's impostors (the same placements and variants: no change when it swaps), so a
+  // tile no longer brings a whole forest with it at ~500 m (smooth LOD; none with ?impostors=0)
+  let trees = null;
+  if (SMOOTH && entry.files.features) {
+    const f = await getJSON(entry.files.features).catch(() => null);
+    const b = { x0: entry.bounds.x[0], x1: entry.bounds.x[1], z0: entry.bounds.z[0], z1: entry.bounds.z[1] };
+    const ys = new Map((f?.trees || []).map((t) => [`${t.x},${t.z}`, t.y]));
+    trees = f?.trees?.length && ys.values().next().value != null
+      ? buildFarTreeField(f.trees, (x, z) => ys.get(`${x},${z}`), (x, z) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1) : null;
+    if (trees) { g.add(trees.mesh); updaters.push(trees.update); }
+  }
+  fadeable(g);
   group.add(g);
   return {
     name: entry.name,
+    group: g,
     dispose: () => {
+      if (trees) { const i = updaters.indexOf(trees.update); if (i >= 0) updaters.splice(i, 1); }
       g.traverse((o) => { o.geometry?.dispose(); if (o.material && !o.material.userData?.shared) o.material.dispose(); });
       for (const t of textures) t.dispose();
       g.removeFromParent();
@@ -329,6 +358,9 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // per-tile groups inside the shared layers, so the tile can be unloaded
   const own = {};
   for (const k of Object.keys(layers)) { own[k] = new THREE.Group(); own[k].name = `${entry.name}-${k}`; layers[k].add(own[k]); }
+  // a streamed tile is built over several frames: hidden until it is whole, then faded in (smooth LOD)
+  const fadeIn = TILE_FADE && !verbose;
+  if (fadeIn) for (const g of Object.values(own)) g.visible = false;
   const ups = [];
   const t0 = performance.now();
   const d = await tileData(entry);
@@ -374,6 +406,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   say(`buildings: ${d.buildingCount} (${B.triangles} triangles), roads: ${d.road.triangles} triangles in tile, terrain cells carved: ${d.road.carvedCells}; tile ready in ${(performance.now() - t0).toFixed(0)} ms`);
 
   for (const u of ups) updaters.push(u);
+  for (const g of Object.values(own)) { fadeable(g); if (fadeIn) { g.visible = true; fader.fade(g, +1); } }
   const dispose = () => {
     for (const u of ups) { const i = updaters.indexOf(u); if (i >= 0) updaters.splice(i, 1); }
     for (const g of Object.values(own)) {
@@ -398,7 +431,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     }
     return h;
   };
-  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt };
+  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt, groups: Object.values(own) };
 }
 
 // ------------------------------------------------------------------ main

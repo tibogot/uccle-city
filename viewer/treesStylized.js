@@ -9,19 +9,24 @@
 // placements from features.json (height from the LiDAR, a stable turn per tree), one shared set of
 // materials and built trees for every tile, and the sun from viewer/lighting.js.
 import * as THREE from "three/webgpu";
-import { positionGeometry, vec3, float, mix, smoothstep, mx_noise_float, normalGeometry, max } from "three/tsl";
+import { positionGeometry, vec3, float, mix, smoothstep, mx_noise_float, normalGeometry, max, uniform } from "three/tsl";
 import { createStylizedTrees } from "../vendor/stylized-trees/stylizedTrees.js";
 import { branchShape } from "../vendor/stylized-trees/branchTree.js";
 import { bumpNormal } from "./tslkit.js";
-import { bakeTreeImpostors, impostorMaterial, impostorField, IMPOSTOR_START } from "./impostors.js";
+import { bakeTreeImpostors, impostorMaterial, impostorField, IMPOSTOR_START, IMP } from "./impostors.js";
+import { SMOOTH, lodEye, keepBand, rampTo, withObjectFade } from "./lodFade.js";
 
 // Far LOD: octahedral impostors past IMPOSTOR_START (viewer/impostors.js) with ?impostors=1. OFF by
 // default since 2026-11-04: side by side from Saint-Job (zoomed on 150-400 m) the real LOD 1 / LOD 2
 // trees were sharper and lit with highlights, the impostors blurrier with some smeared crowns, for
 // the same GPU time in that view (6.43 vs 6.44 ms). Revisit with 16x16 views, a depth atlas
 // (parallax) and a 3-view blend when the whole of Uccle multiplies the far trees.
-const useImpostors = /[?&]impostors=1/.test(location.search);
-let renderer = null, impMat = null;
+// 2026-11-05 (docs/SMOOTH_LOD.md): ON again as the FAR LOD only, past IMPOSTOR_START (400 m; the side-by-side
+// above was at 150-400 m, where the real trees stay), dither cross-faded from LOD 2, and on the far-LOD tiles
+// (which had no trees at all: a whole tile of trees popped in at ~500 m when it was streamed in full).
+// ?impostors=0: off (the real LOD 2 out to 900 m, no trees on far tiles).
+const useImpostors = SMOOTH ? !/[?&]impostors=0/.test(location.search) : /[?&]impostors=1/.test(location.search);
+let renderer = null, impMat = null, impMatFar = null, impBake = null;
 /** main.js passes the renderer once (the impostor bake renders on it). */
 export function setTreeRenderer(r) { renderer = r; }
 // the vendor's variant per tree (stylizedTrees.js: rng(i * 7919 + 13) -> floor(x * variants)), the
@@ -168,25 +173,35 @@ function fitOctagon(rgba, N) {
 // UNLIT depth-only copy (same position and cut-out nodes, so the depths match exactly, and with
 // alpha-to-coverage it writes the covered samples only), then the lit material with depth EQUAL and no
 // discard: each pixel shaded once. The shadow pass keeps the cut-out (maskShadowNode).
-let prepass = null;
+// (one pair per leaf material: the near LODs' and the far LOD's, whose dithered fade (maskNode) is in the
+// depth pass only: the EQUAL colour pass draws what the depth pass kept, without a discard of its own)
+const prepass = new Map();
 function prepassMaterials(base) {
-  if (prepass) return prepass;
+  if (prepass.has(base)) return prepass.get(base);
   const depth = new THREE.MeshBasicNodeMaterial({ side: base.side });
   depth.positionNode = base.positionNode;
   depth.opacityNode = base.opacityNode;
+  depth.maskNode = base.maskNode;
   depth.alphaTest = base.alphaTest;
   depth.alphaToCoverage = base.alphaToCoverage;
   depth.colorWrite = false;
   depth.name = "stylized-leaves:depth";
   const colour = base.clone();
   colour.opacityNode = null;
+  colour.maskNode = null;
   colour.alphaTest = 0;
   colour.alphaToCoverage = false;
   colour.maskShadowNode = base.maskShadowNode;
   colour.depthFunc = THREE.EqualDepth;
   colour.depthWrite = false;
-  colour.name = "stylized-leaves:colour";
-  return (prepass = { depth, colour });
+  colour.name = `${base.name || "stylized-leaves"}:colour`;
+  depth.name = `${base.name || "stylized-leaves"}:depth`;
+  // (shared by every tile; the colour pass needs no time fade of its own: EQUAL depth draws what the depth pass kept)
+  depth.userData.shared = colour.userData.shared = true;
+  colour.userData.objectFade = true;
+  const pair = { depth, colour };
+  prepass.set(base, pair);
+  return pair;
 }
 const usePrepass = !/[?&]prepass=0/.test(location.search);   // ?prepass=0: A/B
 
@@ -199,6 +214,13 @@ const params = () => PARAMS ??= {
   // LOD distances for a street-level city (the fog lab's 150 / 450 / 1600 m are for a valley forest):
   // measured 2026-11-04, walk 14.8 -> 9.5 ms GPU, overview 8.8 -> 7.5 ms.
   lodDist: 40, farDist: 120, maxDist: useImpostors ? IMPOSTOR_START : 900,
+  // smooth LOD (docs/SMOOTH_LOD.md; vendor CHANGES #8-#10): the LODs are nested card sets, the cards a LOD drops
+  // shrink away over `morph1` / `morph2` metres before its switch (and the kept ones grow), so the switch draws
+  // the same pixels; distances from the VIEW camera (lodEye) in every pass, shadows included. The far LOD is
+  // dither cross-faded into the impostors (or faded out at 900 m without them). ?smooth=0: hard switches.
+  morph1: SMOOTH ? 14 : 0, morph2: SMOOTH ? 40 : 0, lodSlack: SMOOTH ? 6 : 0,
+  lodEye: SMOOTH ? lodEye : undefined, barkMorph: SMOOTH,
+  farMask: SMOOTH ? (d) => keepBand(float(0), float(1).sub(rampTo(d, IMP.start, IMP.band))) : undefined,
   // Brussels street trees (planes, limes, chestnuts): olive rather than the fog lab's lime, more
   // spread between trees so a street doesn't read as one green band
   topColor: "#8aa64e", bottomColor: "#27441d", translucencyColor: "#c6d07c", tintVar: 0.3,
@@ -220,10 +242,22 @@ function calibrate() {
   }
   if (n) NATURAL_HEIGHT = sum / n;
   barkMaterial(shared.trunkMat);
+  if (shared.trunkFar !== shared.trunkMat) {           // the far copy was cloned before the bark was set
+    for (const k of ["colorNode", "normalNode", "roughnessNode"]) shared.trunkFar[k] = shared.trunkMat[k];
+    shared.trunkFar.needsUpdate = true;
+  }
+  // a streamed tile's trees fade in with the tile (lodFade.js objectFade), as the far tile they replace fades out
+  for (const m of new Set([shared.leafMat, shared.leafFar, shared.trunkMat, shared.trunkFar])) { withObjectFade(m); m.userData.shared = true; }
+  if (!useImpostors) IMP.start.value = 900;   // no impostors: LOD 2 fades out at 900 m (was a hard cut)
   if (useImpostors && renderer) {
     const t0 = performance.now();
+    shared.U.lodScale.value = 0;                // the bake draws LOD 0 as built (no morph toward the bake camera)
     const bake = bakeTreeImpostors(renderer, shared, VARIANTS, PARAMS.leafMask);
+    shared.U.lodScale.value = 1;
     impMat = impostorMaterial(bake, shared.U);
+    impMatFar = impostorMaterial(bake, shared.U, { nearFade: false });   // far-LOD tiles: no real trees to hand over from
+    impBake = bake;
+    impMat.userData.shared = impMatFar.userData.shared = true;   // one for every tile: never disposed with a tile
     window.__impostorBake = bake;
     console.log(`tree impostors: ${VARIANTS} variants baked (${bake.size.join("x")} atlas x2) in ${(performance.now() - t0).toFixed(0)} ms`);
   }
@@ -247,25 +281,55 @@ function barkMaterial(m) {
   m.needsUpdate = true;
 }
 
-export function buildStylizedTreeField(trees, ground, inTile) {
-  calibrate();
+/** A tile's trees as the stylized trees place them: [x, z, ground y, turn, scale] in the tile's own order
+ *  (the vendor's variant is picked from the index, so the far tile's impostors must use the same list). */
+function treePlacements(trees, ground, inTile) {
   const placements = [];
   for (const t of trees) {
     if (!inTile(t.x, t.z)) continue;
     const h = Math.max(3, t.height ?? 9);
     placements.push([t.x, t.z, ground(t.x, t.z), hash(t.z, t.x, 2) * Math.PI * 2, Math.min(1.8, Math.max(0.3, h / NATURAL_HEIGHT))]);
   }
+  return placements;
+}
+
+/** Trees for a FAR-LOD tile (main.js loadLiteTile): the same trees as its full version, as impostors at any
+ *  distance (null without impostors). Returns { mesh, update(cameraPos) }. */
+export function buildFarTreeField(trees, ground, inTile) {
+  calibrate();
+  if (!impMatFar) return null;
+  const placements = treePlacements(trees, ground, inTile);
+  if (!placements.length) return null;
+  const imp = impostorField(placements, placements.map((_, i) => variantOfIndex(i, VARIANTS)), impMatFar, { near: 0 });
+  imp.mesh.boundingSphere = fieldSphere(placements);
+  imp.mesh.frustumCulled = true;
+  return { ...imp, count: placements.length };
+}
+
+function fieldSphere(placements) {
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (const [x, z, y] of placements) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  return new THREE.Sphere(new THREE.Vector3((x0 + x1) / 2, (y0 + y1) / 2 + 8, (z0 + z1) / 2), Math.hypot(x1 - x0, y1 - y0 + 16, z1 - z0) / 2 + 12);
+}
+
+// the tree LODs that cast sun shadows: all three with the smooth LOD (the shadow then follows the same morph
+// as the tree: no shadow switching on at 40 m), LOD 0 only before (?treeshadow=0|1|2)
+const SHADOW_LODS = +(new URLSearchParams(location.search).get("treeshadow") ?? (SMOOTH ? 2 : 0));
+
+export function buildStylizedTreeField(trees, ground, inTile) {
+  calibrate();
+  const placements = treePlacements(trees, ground, inTile);
   const holder = new THREE.Group();
   holder.name = "StylizedTreesTile";
-  const f = createStylizedTrees({ scene: holder, trees: placements, shared, variants: VARIANTS, params: params() });
+  const P = params();
+  if (SMOOTH) P.maxDist = IMP.start.value;
+  const f = createStylizedTrees({ scene: holder, trees: placements, shared, variants: VARIANTS, params: P });
   const imp = impMat ? impostorField(placements, placements.map((_, i) => variantOfIndex(i, VARIANTS)), impMat) : null;
   if (imp) holder.add(imp.mesh);
   // per-tile culling: the vendor turns frustum culling off (its instances span a whole forest); here
   // every mesh of the tile gets the tile's trees' bounding sphere
   if (placements.length) {
-    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, z0 = Infinity, z1 = -Infinity;
-    for (const [x, z, y] of placements) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
-    const sphere = new THREE.Sphere(new THREE.Vector3((x0 + x1) / 2, (y0 + y1) / 2 + 8, (z0 + z1) / 2), Math.hypot(x1 - x0, y1 - y0 + 16, z1 - z0) / 2 + 12);
+    const sphere = fieldSphere(placements);
     holder.traverse((o) => { if (o.isInstancedMesh) { o.frustumCulled = true; o.boundingSphere = sphere; } });
   }
   // STATIC usage for the per-instance buffers (the vendor marks them dynamic): three r187 re-uploads a
@@ -276,19 +340,21 @@ export function buildStylizedTreeField(trees, ground, inTile) {
     if (!o.isInstancedMesh) return;
     o.instanceMatrix.setUsage(THREE.StaticDrawUsage);
     o.geometry.attributes.treeXf?.setUsage(THREE.StaticDrawUsage);
+    o.geometry.attributes.treePos?.setUsage(THREE.StaticDrawUsage);
   });
-  // shadows from LOD 0 only (the vendor casts from LOD 0 and 1): at 40-120 m a tree's own shadow is a few
-  // pixels in the cascades, and foliage shadow passes cost as much as the colour pass (research D #4).
-  // A mesh's LOD: its wrapper shares the index buffer of the shared built tree "<variant>:<lod>".
+  // Shadows: before the smooth LOD from LOD 0 only (a tree's shadow switched on at 40 m: the owner's "shadows
+  // appear abruptly"). Now from every LOD (SHADOW_LODS): the morphed cards are the same in the shadow pass
+  // (distances from lodEye), so the shadow follows the tree, and the shadow box's edge fade (lighting.js)
+  // ends them softly. A mesh's LOD: its wrapper shares the index buffer of the shared tree "<variant>:<lod>".
   const lodOfIndex = new Map();
   for (const [key, g] of shared.geoms) { const lod = +key.split(":")[1]; lodOfIndex.set(g.leaves.index, lod); lodOfIndex.set(g.trunk.index, lod); }
-  holder.traverse((o) => { if (o.isInstancedMesh && (lodOfIndex.get(o.geometry.index) ?? 0) > 0) o.castShadow = false; });
+  holder.traverse((o) => { if (o.isInstancedMesh && lodOfIndex.has(o.geometry.index)) o.castShadow = lodOfIndex.get(o.geometry.index) <= SHADOW_LODS; });
   // leaf meshes -> lit EQUAL-depth material + an instanced depth twin drawn first (same geometry,
   // instance matrices and per-instance treeXf; its count follows the leaf mesh's every update)
   const twins = [];
   if (usePrepass) holder.traverse((o) => {
-    if (!o.isInstancedMesh || o.material !== shared.leafMat) return;
-    const pm = prepassMaterials(shared.leafMat);
+    if (!o.isInstancedMesh || (o.material !== shared.leafMat && o.material !== shared.leafFar)) return;
+    const pm = prepassMaterials(o.material);
     o.material = pm.colour;
     const d = new THREE.InstancedMesh(o.geometry, pm.depth, o.instanceMatrix.count);
     d.instanceMatrix = o.instanceMatrix;
@@ -310,6 +376,7 @@ export function buildStylizedTreeField(trees, ground, inTile) {
       sunCol[0] = c.r * k; sunCol[1] = c.g * k; sunCol[2] = c.b * k;
     }
     cam.position.copy(p);
+    if (SMOOTH) f.params.maxDist = IMP.start.value;   // (live: the dev panel's impostor distance)
     f.update(cam, light);
     imp?.update(p);
     for (const [o, d] of twins) d.count = o.count;
