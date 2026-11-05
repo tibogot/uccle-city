@@ -203,6 +203,7 @@ export class Lighting {
     this.uFogColor = uniform(new THREE.Vector3(0.5, 0.6, 0.7));
     this.day = DAY;                    // day of the year (live: the dev panel)
     this.hourOverride = null;          // solar hour set by the dev panel (null = the preset's)
+    this.urlHour = qp.get("hour") != null ? +qp.get("hour") : null;   // ?hour= (the dev panel drops it on a preset change)
     this.vfogParams = { ...VFOG };     // the volumetric fog's settings (live)
     this.firm = { hours: FIRM_TIMES.golden.hours, coverage: 0.42, cloudType: 0.5, wetness: 0.15 };
     this.lastT = performance.now();
@@ -229,7 +230,7 @@ export class Lighting {
   }
 
   /** The solar hour now: the dev panel's override, else ?hour=, else the preset's. */
-  get hour() { return this.hourOverride ?? (qp.get("hour") != null ? +qp.get("hour") : this.firm.hours); }
+  get hour() { return this.hourOverride ?? this.urlHour ?? this.firm.hours; }
   firmSunDir() {
     if (this.sky) this.sky.params.dayOfYear = this.day;
     return sunDirection({ hours: this.hour, dayOfYear: this.day, latitude: BRUSSELS_LAT }, this._sd);

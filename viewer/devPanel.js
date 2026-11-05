@@ -74,14 +74,14 @@ export function createDevPanel(ctx) {
   const fT = gui.addFolder("Time & sun");
   fT.add(S, "preset", TIMES).name("preset").onChange((v) => {
     tsel.value = v; tsel.onchange();
-    lighting.hourOverride = null; S.hour = lighting.hour; S.coverage = lighting.firm.coverage; S.cloudType = lighting.firm.cloudType; S.vfog = !!lighting.vfogOn;
+    lighting.hourOverride = null; lighting.urlHour = null; S.hour = lighting.hour; S.coverage = lighting.firm.coverage; S.cloudType = lighting.firm.cloudType; S.vfog = !!lighting.vfogOn;
     setParam("time", v, "golden"); setParam("hour", null);
     refresh();
   });
   fT.add(S, "hour", 0, 24, 0.01).name("solar time (h)").onChange((v) => { lighting.hourOverride = v; setParam("hour", v.toFixed(2)); }).listen();
   fT.add(S, "day", 1, 365, 1).name("day of year").onChange((v) => { lighting.day = v; setParam("day", v, 200); });
   fT.add(S, "timeSpeed", 0, 2000, 1).name("sun speed (x real)");
-  fT.add({ f: () => { lighting.hourOverride = null; S.hour = lighting.hour; setParam("hour", null); refresh(); } }, "f").name("back to the preset's time");
+  fT.add({ f: () => { lighting.hourOverride = null; lighting.urlHour = null; S.hour = lighting.hour; setParam("hour", null); refresh(); } }, "f").name("back to the preset's time");
   fT.close();
 
   // ---------------------------------------------------------------- Trams (line 92 on STIB's timetable)

@@ -211,6 +211,8 @@ const hash = (x, z, k) => { const s = Math.sin(x * 12.9898 + z * 78.233 + k * 37
 
 /** trees: features.json trees; ground(x, z): surface y; inTile(x, z). Returns { group, update(cameraPos), count }. */
 let PARAMS = null;
+/** The parameters every NEW tile's tree field starts from (the dev panel writes its live LOD values here too). */
+export const treeParams = () => params();
 const params = () => PARAMS ??= {
   leafMask: leafMask(), shape: streetShape,
   // LOD distances for a street-level city (the fog lab's 150 / 450 / 1600 m are for a valley forest):
@@ -378,7 +380,11 @@ export function buildStylizedTreeField(trees, ground, inTile) {
     o.add(d);
     twins.push([o, d]);
   });
-  (window.__stylizedTrees ??= []).push(f);   // live params / stats for tuning from the console
+  // live params / stats for tuning (the dev panel's Smoothness folder, the console); fields of disposed tiles
+  // (no longer under a Scene) are dropped here, they were kept forever before
+  const inScene = (o) => { while (o.parent) o = o.parent; return o.isScene; };
+  window.__stylizedTrees = (window.__stylizedTrees || []).filter((t) => inScene(t.group));
+  window.__stylizedTrees.push(f);
   const cam = { position: new THREE.Vector3() };
   const light = { sunDir, sunColor: sunCol };
   const update = (p) => {
