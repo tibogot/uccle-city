@@ -9,7 +9,8 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 ## OWNER'S MASTER LIST (2026-11-06, newest decisions first; keep this up to date)
 
 **In progress (agents, own branches, lab first):**
-- [x] Façade kit pilot DONE (`claude/facade-kit`, `?kit=1`, Kit Lab), waiting for the owner. Next round: windows with rooms + net curtains (kit glass reads hollow at 30-60 m), fewer draws (65 → BatchedMesh / multi-draw), cleaner 95-115 m fade, steps on slopes, one door per corner house, French window behind balconies; then sets: dormers + gutters, bay windows, Art Deco / Nouveau, shopfronts, garage doors, corner pieces.
+- [x] Façade kit ROUND 2 DONE (rooms behind the kit glass, 65 → 37 meshes, 4 materials, 30 m fade, steps on slopes, one door per house, French windows + balconnets, window B far LOD, 741 kit faces on I6; +0.5-0.6 ms street, +1.1 ms close-up), waiting for the owner. Left: two-house UrbIS buildings can lose a door; doors partly below ground on slopes; per-slot multi-draw to halve the draws; re-check cost with library materials.
+- [x] Façade kit pilot DONE (`claude/facade-kit`, `?kit=1`, Kit Lab). Round-1 list was: windows with rooms + net curtains (kit glass reads hollow at 30-60 m), fewer draws (65 → BatchedMesh / multi-draw), cleaner 95-115 m fade, steps on slopes, one door per corner house, French window behind balconies; then sets: dormers + gutters, bay windows, Art Deco / Nouveau, shopfronts, garage doors, corner pieces.
 - [x] Tree Lab + London plane DONE (`claude/tree-lab`, lab only), waiting for the owner. Plane costs +1 ms per 50 trees (fine for avenues, NOT for forests). Next: beech (Sonian Forest, most common Uccle street tree), then lime and horse chestnut; real species per tree from the Bruxelles Mobilité CC0 tree inventory (regional roads only); plane bark relief, crown radius fitted to LiDAR, seasons, wind.
 
 **Waiting for the owner's eye:**
