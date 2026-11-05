@@ -1,5 +1,5 @@
 {
- "version": 1,
+ "version": 2,
  "slots": [
   "stone_white",
   "stone_blue",
@@ -20,6 +20,10 @@
   "door": [
    1.1,
    2.448
+  ],
+  "french": [
+   1.2,
+   2.3
   ]
  },
  "slice": {
@@ -29,65 +33,220 @@
  },
  "frame": 0.07,
  "lods": 2,
- "layout": "planar p3f n3f uv2f k4u8n",
+ "layout": "per piece x LOD x kind (opaque | glass): planar p3f n3f uv2f k4u8n, k.w = uv flags + 4 x slot index",
  "pieces": {
+  "step": {
+   "kind": "run",
+   "ref": [
+    1.5,
+    0.17
+   ],
+   "occ": "ground",
+   "rise": 0,
+   "slice": null,
+   "slots": [
+    "stone_blue"
+   ],
+   "lods": [
+    {
+     "opaque": {
+      "vOff": 0,
+      "vCount": 87,
+      "iOff": 3132,
+      "iCount": 114,
+      "i32": false
+     }
+    },
+    {
+     "opaque": {
+      "vOff": 3360,
+      "vCount": 23,
+      "iOff": 4188,
+      "iCount": 42,
+      "i32": false
+     }
+    }
+   ],
+   "tris": [
+    38,
+    14
+   ],
+   "bounds": [
+    [
+     -0.75,
+     -0.6000000238418579,
+     -0.30000001192092896
+    ],
+    [
+     0.75,
+     0,
+     0.31200000643730164
+    ]
+   ]
+  },
   "balcony": {
-   "kind": "window",
+   "kind": "french",
    "ref": [
     1.2,
-    1.6
+    2.3
    ],
    "occ": "wall",
    "rise": 0,
-   "slice": "window",
-   "slots": {
-    "stone_white": {
-     "vOff": 0,
-     "vCount": 1013,
-     "lods": [
-      {
-       "iOff": 36468,
-       "iCount": 1542,
-       "i32": false
-      },
-      {
-       "iOff": 39552,
-       "iCount": 210,
-       "i32": false
-      }
-     ]
+   "slice": "frenchX",
+   "slots": [
+    "stone_white",
+    "cast_iron_green"
+   ],
+   "lods": [
+    {
+     "opaque": {
+      "vOff": 4272,
+      "vCount": 7329,
+      "iOff": 268116,
+      "iCount": 14058,
+      "i32": false
+     }
     },
-    "cast_iron_green": {
-     "vOff": 39972,
-     "vCount": 6698,
-     "lods": [
-      {
-       "iOff": 281100,
-       "iCount": 12516,
-       "i32": false
-      },
-      {
-       "iOff": 306132,
-       "iCount": 1500,
-       "i32": false
-      }
-     ]
+    {
+     "opaque": {
+      "vOff": 296232,
+      "vCount": 947,
+      "iOff": 330324,
+      "iCount": 1698,
+      "i32": false
+     }
     }
-   },
+   ],
    "tris": [
     4686,
-    570
+    566
    ],
    "bounds": [
     [
      -0.9319999814033508,
-     -0.5799999833106995,
+     -0.5400000214576721,
      -0.009999999776482582
     ],
     [
      0.9319999814033508,
-     0.6649999618530273,
+     1.034999966621399,
      0.5119999647140503
+    ]
+   ]
+  },
+  "balconnet": {
+   "kind": "french",
+   "ref": [
+    1.2,
+    2.3
+   ],
+   "occ": "wall",
+   "rise": 0,
+   "slice": "frenchX",
+   "slots": [
+    "stone_white",
+    "cast_iron_green"
+   ],
+   "lods": [
+    {
+     "opaque": {
+      "vOff": 333720,
+      "vCount": 6217,
+      "iOff": 557532,
+      "iCount": 11466,
+      "i32": false
+     }
+    },
+    {
+     "opaque": {
+      "vOff": 580464,
+      "vCount": 745,
+      "iOff": 607284,
+      "iCount": 1362,
+      "i32": false
+     }
+    }
+   ],
+   "tris": [
+    3822,
+    454
+   ],
+   "bounds": [
+    [
+     -0.7520000338554382,
+     -0.36000001430511475,
+     -0.009999999776482582
+    ],
+    [
+     0.7520000338554382,
+     1.0550000667572021,
+     0.25200000405311584
+    ]
+   ]
+  },
+  "frenchWin": {
+   "kind": "french",
+   "ref": [
+    1.2,
+    2.3
+   ],
+   "occ": "opening",
+   "rise": 0,
+   "slice": null,
+   "slots": [
+    "stone_white",
+    "stone_blue",
+    "wood_frame_white",
+    "glass_window"
+   ],
+   "lods": [
+    {
+     "opaque": {
+      "vOff": 610008,
+      "vCount": 5050,
+      "iOff": 791808,
+      "iCount": 9522,
+      "i32": false
+     },
+     "glass": {
+      "vOff": 810852,
+      "vCount": 28,
+      "iOff": 811860,
+      "iCount": 42,
+      "i32": false
+     }
+    },
+    {
+     "opaque": {
+      "vOff": 811944,
+      "vCount": 651,
+      "iOff": 835380,
+      "iCount": 1182,
+      "i32": false
+     },
+     "glass": {
+      "vOff": 837744,
+      "vCount": 28,
+      "iOff": 838752,
+      "iCount": 42,
+      "i32": false
+     }
+    }
+   ],
+   "tris": [
+    3188,
+    408
+   ],
+   "bounds": [
+    [
+     -0.7630000114440918,
+     -0.05000000074505806,
+     -0.20000000298023224
+    ],
+    [
+     0.7630000114440918,
+     2.5899999141693115,
+     0.10000000149011612
     ]
    ]
   },
@@ -100,56 +259,45 @@
    "occ": "opening",
    "rise": 0,
    "slice": null,
-   "slots": {
-    "stone_white": {
-     "vOff": 309132,
-     "vCount": 758,
-     "lods": [
-      {
-       "iOff": 336420,
-       "iCount": 1152,
-       "i32": false
-      },
-      {
-       "iOff": 338724,
-       "iCount": 186,
-       "i32": false
-      }
-     ]
+   "slots": [
+    "stone_white",
+    "wood_frame_white",
+    "glass_window"
+   ],
+   "lods": [
+    {
+     "opaque": {
+      "vOff": 838836,
+      "vCount": 4601,
+      "iOff": 1004472,
+      "iCount": 8046,
+      "i32": false
+     },
+     "glass": {
+      "vOff": 1020564,
+      "vCount": 28,
+      "iOff": 1021572,
+      "iCount": 42,
+      "i32": false
+     }
     },
-    "wood_frame_white": {
-     "vOff": 339096,
-     "vCount": 3843,
-     "lods": [
-      {
-       "iOff": 477444,
-       "iCount": 6894,
-       "i32": false
-      },
-      {
-       "iOff": 491232,
-       "iCount": 825,
-       "i32": false
-      }
-     ]
-    },
-    "glass_window": {
-     "vOff": 492884,
-     "vCount": 28,
-     "lods": [
-      {
-       "iOff": 493892,
-       "iCount": 42,
-       "i32": false
-      },
-      {
-       "iOff": 493976,
-       "iCount": 42,
-       "i32": false
-      }
-     ]
+    {
+     "opaque": {
+      "vOff": 1021656,
+      "vCount": 533,
+      "iOff": 1040844,
+      "iCount": 1011,
+      "i32": false
+     },
+     "glass": {
+      "vOff": 1042868,
+      "vCount": 28,
+      "iOff": 1043876,
+      "iCount": 42,
+      "i32": false
+     }
     }
-   },
+   ],
    "tris": [
     2696,
     351
@@ -176,40 +324,30 @@
    "occ": "wall",
    "rise": 0,
    "slice": "window",
-   "slots": {
-    "stone_white": {
-     "vOff": 494060,
-     "vCount": 676,
-     "lods": [
-      {
-       "iOff": 518396,
-       "iCount": 1086,
-       "i32": false
-      },
-      {
-       "iOff": 520568,
-       "iCount": 180,
-       "i32": false
-      }
-     ]
+   "slots": [
+    "stone_white",
+    "zinc_roof"
+   ],
+   "lods": [
+    {
+     "opaque": {
+      "vOff": 1043960,
+      "vCount": 681,
+      "iOff": 1068476,
+      "iCount": 1092,
+      "i32": false
+     }
     },
-    "zinc_roof": {
-     "vOff": 520928,
-     "vCount": 5,
-     "lods": [
-      {
-       "iOff": 521108,
-       "iCount": 6,
-       "i32": false
-      },
-      {
-       "iOff": 521120,
-       "iCount": 0,
-       "i32": false
-      }
-     ]
+    {
+     "opaque": {
+      "vOff": 1070660,
+      "vCount": 98,
+      "iOff": 1074188,
+      "iCount": 180,
+      "i32": false
+     }
     }
-   },
+   ],
    "tris": [
     364,
     60
@@ -236,59 +374,48 @@
    "occ": "opening_arch",
    "rise": 0.13,
    "slice": null,
-   "slots": {
-    "brick_red_brussels": {
-     "vOff": 521120,
-     "vCount": 7954,
-     "lods": [
-      {
-       "iOff": 807464,
-       "iCount": 9318,
-       "i32": false
-      },
-      {
-       "iOff": 826100,
-       "iCount": 2448,
-       "i32": false
-      }
-     ]
+   "slots": [
+    "brick_red_brussels",
+    "wood_frame_white",
+    "glass_window"
+   ],
+   "lods": [
+    {
+     "opaque": {
+      "vOff": 1074548,
+      "vCount": 11149,
+      "iOff": 1475912,
+      "iCount": 15102,
+      "i32": false
+     },
+     "glass": {
+      "vOff": 1506116,
+      "vCount": 31,
+      "iOff": 1507232,
+      "iCount": 51,
+      "i32": false
+     }
     },
-    "wood_frame_white": {
-     "vOff": 830996,
-     "vCount": 3195,
-     "lods": [
-      {
-       "iOff": 946016,
-       "iCount": 5784,
-       "i32": false
-      },
-      {
-       "iOff": 957584,
-       "iCount": 690,
-       "i32": false
-      }
-     ]
-    },
-    "glass_window": {
-     "vOff": 958964,
-     "vCount": 31,
-     "lods": [
-      {
-       "iOff": 960080,
-       "iCount": 51,
-       "i32": false
-      },
-      {
-       "iOff": 960184,
-       "iCount": 24,
-       "i32": false
-      }
-     ]
+    {
+     "opaque": {
+      "vOff": 1507336,
+      "vCount": 479,
+      "iOff": 1524580,
+      "iCount": 921,
+      "i32": false
+     },
+     "glass": {
+      "vOff": 1526424,
+      "vCount": 16,
+      "iOff": 1527000,
+      "iCount": 30,
+      "i32": false
+     }
     }
-   },
+   ],
    "tris": [
     5051,
-    1054
+    317
    ],
    "bounds": [
     [
@@ -298,7 +425,7 @@
     ],
     [
      0.7649999856948853,
-     1.944593906402588,
+     1.9451360702514648,
      0.014999999664723873
     ]
    ]
@@ -312,24 +439,29 @@
    "occ": "wall",
    "rise": 0,
    "slice": "window",
-   "slots": {
-    "stone_blue": {
-     "vOff": 960232,
-     "vCount": 148,
-     "lods": [
-      {
-       "iOff": 965560,
-       "iCount": 186,
-       "i32": false
-      },
-      {
-       "iOff": 965932,
-       "iCount": 42,
-       "i32": false
-      }
-     ]
+   "slots": [
+    "stone_blue"
+   ],
+   "lods": [
+    {
+     "opaque": {
+      "vOff": 1527060,
+      "vCount": 148,
+      "iOff": 1532388,
+      "iCount": 186,
+      "i32": false
+     }
+    },
+    {
+     "opaque": {
+      "vOff": 1532760,
+      "vCount": 20,
+      "iOff": 1533480,
+      "iCount": 42,
+      "i32": false
+     }
     }
-   },
+   ],
    "tris": [
     62,
     14
@@ -356,56 +488,31 @@
    "occ": "plinth",
    "rise": 0,
    "slice": null,
-   "slots": {
-    "stone_blue": {
-     "vOff": 966016,
-     "vCount": 241,
-     "lods": [
-      {
-       "iOff": 974692,
-       "iCount": 372,
-       "i32": false
-      },
-      {
-       "iOff": 975436,
-       "iCount": 84,
-       "i32": false
-      }
-     ]
+   "slots": [
+    "stone_blue",
+    "glass_window",
+    "cast_iron_green"
+   ],
+   "lods": [
+    {
+     "opaque": {
+      "vOff": 1533564,
+      "vCount": 677,
+      "iOff": 1557936,
+      "iCount": 1290,
+      "i32": false
+     }
     },
-    "glass_window": {
-     "vOff": 975604,
-     "vCount": 4,
-     "lods": [
-      {
-       "iOff": 975748,
-       "iCount": 6,
-       "i32": false
-      },
-      {
-       "iOff": 975760,
-       "iCount": 6,
-       "i32": false
-      }
-     ]
-    },
-    "cast_iron_green": {
-     "vOff": 975772,
-     "vCount": 432,
-     "lods": [
-      {
-       "iOff": 991324,
-       "iCount": 912,
-       "i32": false
-      },
-      {
-       "iOff": 993148,
-       "iCount": 108,
-       "i32": false
-      }
-     ]
+    {
+     "opaque": {
+      "vOff": 1560516,
+      "vCount": 140,
+      "iOff": 1565556,
+      "iCount": 198,
+      "i32": false
+     }
     }
-   },
+   ],
    "tris": [
     430,
     66
@@ -432,104 +539,48 @@
    "occ": "opening",
    "rise": 0,
    "slice": null,
-   "slots": {
-    "stone_blue": {
-     "vOff": 993364,
-     "vCount": 2578,
-     "lods": [
-      {
-       "iOff": 1086172,
-       "iCount": 4488,
-       "i32": false
-      },
-      {
-       "iOff": 1095148,
-       "iCount": 576,
-       "i32": false
-      }
-     ]
+   "slots": [
+    "stone_blue",
+    "wood_frame_dark",
+    "glass_window",
+    "cast_iron_green",
+    "painted_metal_white",
+    "zinc_roof"
+   ],
+   "lods": [
+    {
+     "opaque": {
+      "vOff": 1565952,
+      "vCount": 7169,
+      "iOff": 1824036,
+      "iCount": 12780,
+      "i32": false
+     },
+     "glass": {
+      "vOff": 1849596,
+      "vCount": 4,
+      "iOff": 1849740,
+      "iCount": 6,
+      "i32": false
+     }
     },
-    "wood_frame_dark": {
-     "vOff": 1096300,
-     "vCount": 3400,
-     "lods": [
-      {
-       "iOff": 1218700,
-       "iCount": 6306,
-       "i32": false
-      },
-      {
-       "iOff": 1231312,
-       "iCount": 792,
-       "i32": false
-      }
-     ]
-    },
-    "glass_window": {
-     "vOff": 1232896,
-     "vCount": 4,
-     "lods": [
-      {
-       "iOff": 1233040,
-       "iCount": 6,
-       "i32": false
-      },
-      {
-       "iOff": 1233052,
-       "iCount": 6,
-       "i32": false
-      }
-     ]
-    },
-    "cast_iron_green": {
-     "vOff": 1233064,
-     "vCount": 689,
-     "lods": [
-      {
-       "iOff": 1257868,
-       "iCount": 1164,
-       "i32": false
-      },
-      {
-       "iOff": 1260196,
-       "iCount": 138,
-       "i32": false
-      }
-     ]
-    },
-    "painted_metal_white": {
-     "vOff": 1260472,
-     "vCount": 496,
-     "lods": [
-      {
-       "iOff": 1278328,
-       "iCount": 816,
-       "i32": false
-      },
-      {
-       "iOff": 1279960,
-       "iCount": 0,
-       "i32": false
-      }
-     ]
-    },
-    "zinc_roof": {
-     "vOff": 1279960,
-     "vCount": 6,
-     "lods": [
-      {
-       "iOff": 1280176,
-       "iCount": 6,
-       "i32": false
-      },
-      {
-       "iOff": 1280188,
-       "iCount": 0,
-       "i32": false
-      }
-     ]
+    {
+     "opaque": {
+      "vOff": 1849752,
+      "vCount": 866,
+      "iOff": 1880928,
+      "iCount": 1506,
+      "i32": false
+     },
+     "glass": {
+      "vOff": 1883940,
+      "vCount": 4,
+      "iOff": 1884084,
+      "iCount": 6,
+      "i32": false
+     }
     }
-   },
+   ],
    "tris": [
     4262,
     504
@@ -556,88 +607,47 @@
    "occ": "opening",
    "rise": 0,
    "slice": null,
-   "slots": {
-    "stone_white": {
-     "vOff": 1280188,
-     "vCount": 543,
-     "lods": [
-      {
-       "iOff": 1299736,
-       "iCount": 840,
-       "i32": false
-      },
-      {
-       "iOff": 1301416,
-       "iCount": 162,
-       "i32": false
-      }
-     ]
+   "slots": [
+    "stone_white",
+    "stone_blue",
+    "wood_frame_white",
+    "glass_window",
+    "painted_metal_white"
+   ],
+   "lods": [
+    {
+     "opaque": {
+      "vOff": 1884096,
+      "vCount": 4273,
+      "iOff": 2037924,
+      "iCount": 7416,
+      "i32": false
+     },
+     "glass": {
+      "vOff": 2052756,
+      "vCount": 20,
+      "iOff": 2053476,
+      "iCount": 30,
+      "i32": false
+     }
     },
-    "stone_blue": {
-     "vOff": 1301740,
-     "vCount": 211,
-     "lods": [
-      {
-       "iOff": 1309336,
-       "iCount": 324,
-       "i32": false
-      },
-      {
-       "iOff": 1309984,
-       "iCount": 36,
-       "i32": false
-      }
-     ]
-    },
-    "wood_frame_white": {
-     "vOff": 1310056,
-     "vCount": 3226,
-     "lods": [
-      {
-       "iOff": 1426192,
-       "iCount": 5760,
-       "i32": false
-      },
-      {
-       "iOff": 1437712,
-       "iCount": 690,
-       "i32": false
-      }
-     ]
-    },
-    "glass_window": {
-     "vOff": 1439092,
-     "vCount": 20,
-     "lods": [
-      {
-       "iOff": 1439812,
-       "iCount": 30,
-       "i32": false
-      },
-      {
-       "iOff": 1439872,
-       "iCount": 30,
-       "i32": false
-      }
-     ]
-    },
-    "painted_metal_white": {
-     "vOff": 1439932,
-     "vCount": 293,
-     "lods": [
-      {
-       "iOff": 1450480,
-       "iCount": 492,
-       "i32": false
-      },
-      {
-       "iOff": 1451464,
-       "iCount": 0,
-       "i32": false
-      }
-     ]
+    {
+     "opaque": {
+      "vOff": 2053536,
+      "vCount": 541,
+      "iOff": 2073012,
+      "iCount": 888,
+      "i32": false
+     },
+     "glass": {
+      "vOff": 2074788,
+      "vCount": 20,
+      "iOff": 2075508,
+      "iCount": 30,
+      "i32": false
+     }
     }
-   },
+   ],
    "tris": [
     2482,
     306
@@ -664,40 +674,30 @@
    "occ": "eaves",
    "rise": 0,
    "slice": null,
-   "slots": {
-    "stone_white": {
-     "vOff": 1451464,
-     "vCount": 291,
-     "lods": [
-      {
-       "iOff": 1461940,
-       "iCount": 414,
-       "i32": false
-      },
-      {
-       "iOff": 1462768,
-       "iCount": 78,
-       "i32": false
-      }
-     ]
+   "slots": [
+    "stone_white",
+    "zinc_roof"
+   ],
+   "lods": [
+    {
+     "opaque": {
+      "vOff": 2075568,
+      "vCount": 300,
+      "iOff": 2086368,
+      "iCount": 426,
+      "i32": false
+     }
     },
-    "zinc_roof": {
-     "vOff": 1462924,
-     "vCount": 9,
-     "lods": [
-      {
-       "iOff": 1463248,
-       "iCount": 12,
-       "i32": false
-      },
-      {
-       "iOff": 1463272,
-       "iCount": 12,
-       "i32": false
-      }
-     ]
+    {
+     "opaque": {
+      "vOff": 2087220,
+      "vCount": 49,
+      "iOff": 2088984,
+      "iCount": 90,
+      "i32": false
+     }
     }
-   },
+   ],
    "tris": [
     142,
     30
@@ -724,24 +724,29 @@
    "occ": "corner",
    "rise": 0,
    "slice": null,
-   "slots": {
-    "stone_white": {
-     "vOff": 1463296,
-     "vCount": 315,
-     "lods": [
-      {
-       "iOff": 1474636,
-       "iCount": 420,
-       "i32": false
-      },
-      {
-       "iOff": 1475476,
-       "iCount": 84,
-       "i32": false
-      }
-     ]
+   "slots": [
+    "stone_white"
+   ],
+   "lods": [
+    {
+     "opaque": {
+      "vOff": 2089164,
+      "vCount": 315,
+      "iOff": 2100504,
+      "iCount": 420,
+      "i32": false
+     }
+    },
+    {
+     "opaque": {
+      "vOff": 2101344,
+      "vCount": 46,
+      "iOff": 2103000,
+      "iCount": 84,
+      "i32": false
+     }
     }
-   },
+   ],
    "tris": [
     140,
     28
@@ -768,24 +773,29 @@
    "occ": "eaves",
    "rise": 0,
    "slice": null,
-   "slots": {
-    "stone_white": {
-     "vOff": 1475644,
-     "vCount": 446,
-     "lods": [
-      {
-       "iOff": 1491700,
-       "iCount": 960,
-       "i32": false
-      },
-      {
-       "iOff": 1493620,
-       "iCount": 114,
-       "i32": false
-      }
-     ]
+   "slots": [
+    "stone_white"
+   ],
+   "lods": [
+    {
+     "opaque": {
+      "vOff": 2103168,
+      "vCount": 446,
+      "iOff": 2119224,
+      "iCount": 960,
+      "i32": false
+     }
+    },
+    {
+     "opaque": {
+      "vOff": 2121144,
+      "vCount": 60,
+      "iOff": 2123304,
+      "iCount": 114,
+      "i32": false
+     }
     }
-   },
+   ],
    "tris": [
     320,
     38
@@ -812,24 +822,29 @@
    "occ": "ground",
    "rise": 0,
    "slice": null,
-   "slots": {
-    "stone_blue": {
-     "vOff": 1493848,
-     "vCount": 81,
-     "lods": [
-      {
-       "iOff": 1496764,
-       "iCount": 102,
-       "i32": false
-      },
-      {
-       "iOff": 1496968,
-       "iCount": 30,
-       "i32": false
-      }
-     ]
+   "slots": [
+    "stone_blue"
+   ],
+   "lods": [
+    {
+     "opaque": {
+      "vOff": 2123532,
+      "vCount": 81,
+      "iOff": 2126448,
+      "iCount": 102,
+      "i32": false
+     }
+    },
+    {
+     "opaque": {
+      "vOff": 2126652,
+      "vCount": 18,
+      "iOff": 2127300,
+      "iCount": 30,
+      "i32": false
+     }
     }
-   },
+   ],
    "tris": [
     34,
     10
@@ -846,51 +861,7 @@
      0.041999999433755875
     ]
    ]
-  },
-  "step": {
-   "kind": "run",
-   "ref": [
-    1.5,
-    0.17
-   ],
-   "occ": "ground",
-   "rise": 0,
-   "slice": null,
-   "slots": {
-    "stone_blue": {
-     "vOff": 1497028,
-     "vCount": 89,
-     "lods": [
-      {
-       "iOff": 1500232,
-       "iCount": 114,
-       "i32": false
-      },
-      {
-       "iOff": 1500460,
-       "iCount": 42,
-       "i32": false
-      }
-     ]
-    }
-   },
-   "tris": [
-    38,
-    14
-   ],
-   "bounds": [
-    [
-     -0.75,
-     -0.17000000178813934,
-     -0.30000001192092896
-    ],
-    [
-     0.75,
-     0,
-     0.31200000643730164
-    ]
-   ]
   }
  },
- "bytes": 1500544
+ "bytes": 2127360
 }

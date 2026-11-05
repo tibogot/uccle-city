@@ -1,87 +1,84 @@
 // THE KIT IN THE SCENE: every loaded tile's kit instances (viewer/facadeKit/placement.js, built in the tile worker)
-// drawn by ONE set of InstancedMeshes shared by all tiles: one per piece x LOD x (asset slot -> material slot). Only
-// the meshes with instances in range draw (a few dozen draw calls near a street, none from the far tiles).
-//   - bucketing: when the eye has moved 2 m (or a tile came / went / is fading), every instance within reach is
-//     written to the meshes of its LOD(s) (LOD0 up to KIT.lod1 + margin, LOD1 from KIT.lod1 - band - margin to
-//     KIT.far + margin); the dithered fades in the materials (kitFade.js) do the rest, per pixel, so nothing pops;
+// drawn by ONE set of InstancedMeshes shared by all tiles: per piece and LOD, one OPAQUE mesh (every named slot in
+// one draw: the slot travels per vertex, the building's variant per instance; kitMaterials.js) and one GLASS mesh
+// (the painted window's room). At most 15 pieces x 2 LODs x (1 + glass) meshes exist; only those with instances in
+// range draw (round 1: one mesh per piece x LOD x slot x variant, ~65 in a busy street).
+//   - bucketing: when the eye has moved 2 m / turned 8 degrees (or a tile came / went / is fading), every instance
+//     within reach and the widened view cone is written to the meshes of its LOD(s); the dithered fades in the
+//     materials (kitFade.js) do the rest, per pixel, so nothing pops;
 //   - per instance: instanceMatrix (position, rotation about y to the wall's normal), aKitI = the 9-slice stretch
-//     (sx, hsx, sy, dH) for the opening it fits, aKitJ = (nx, nz, seed, tile fade), aVar = the library's
-//     per-instance variation (seed, brightness, warm / cool, age);
-//   - LOD0 casts shadows (faded over the LOD band), LOD1 none.
+//     (sx, hsx, sy, dH), aKitJ = (nx, nz, variant + seed, tile fade), aKitF = the face it sits on (u0, width, base,
+//     rnd + 2 door street + 4 French code: the glass's room), aVar = the library's per-instance variation;
+//   - LOD0 opaque casts shadows (faded over the LOD band), LOD1 and the glass none.
 //   const kit = await loadKitField({ base });  scene.add(kit.group);  kit.addTile(name, data, wallsMesh);
-//   kit.update(eye, dt);  kit.removeTile(name);  kit.stats
+//   kit.update(eye, camera, dt);  kit.removeTile(name);  kit.stats
 import * as THREE from "three/webgpu";
-import { kitMaterial, KIT_SLOTS, loadKitMaterialSource } from "./kitMaterials.js";
+import { kitOpaqueMaterial, kitGlassMaterial, loadKitMaterialSource } from "./kitMaterials.js";
 import { kitRanges } from "./kitFade.js";
-import { STRIDE, VARIANT } from "./placement.js";
+import { STRIDE } from "./placement.js";
 
-const REMAP = [[VARIANT.BLUE, "stone_white", "stone_blue"], [VARIANT.DARK, "wood_frame_white", "wood_frame_dark"], [VARIANT.YELLOW, "brick_red_brussels", "brick_yellow"]];
-const targetSlot = (slot, variant) => { for (const [bit, a, b] of REMAP) if (slot === a && variant & bit) return b; return slot; };
 const MOVE = 2, MARGIN = 3;
 const TURN = (8 * Math.PI) / 180, CONE_MARGIN = (25 * Math.PI) / 180;
 const fwd = new THREE.Vector3(), dirTmp = new THREE.Vector3(), dirTmp2 = new THREE.Vector3();
 let coneHalf = Math.PI;
+const KINDS = ["opaque", "glass"];
 
 export async function loadKitField({ base = new URL("../../models/facadekit/", import.meta.url).href, lab = false } = {}) {
   const [json, bin] = await Promise.all([fetch(base + "kit.json").then((r) => r.json()), fetch(base + "kit.bin").then((r) => r.arrayBuffer()), loadKitMaterialSource()]);
   const SL = json.slice;
-  // geometry per piece / slot / lod (attributes shared across LODs and across meshes)
+  // geometry per piece / lod / kind (views straight over the fetched buffer)
   const geo = {};
   for (const [name, p] of Object.entries(json.pieces)) {
-    geo[name] = {};
-    for (const [slot, s] of Object.entries(p.slots)) {
+    geo[name] = p.lods.map((lod) => Object.fromEntries(Object.entries(lod).map(([kind, s]) => {
       const n = s.vCount;
       let o = s.vOff;
       const pos = new Float32Array(bin, o, n * 3); o += n * 12;
       const nrm = new Float32Array(bin, o, n * 3); o += n * 12;
       const uv = new Float32Array(bin, o, n * 2); o += n * 8;
       const kv = new Uint8Array(bin, o, n * 4);
-      const attrs = { position: new THREE.BufferAttribute(pos, 3), normal: new THREE.BufferAttribute(nrm, 3), uv: new THREE.BufferAttribute(uv, 2), aKitV: new THREE.BufferAttribute(kv, 4, true) };
-      geo[name][slot] = s.lods.map((l) => {
-        const idx = l.i32 ? new Uint32Array(bin, l.iOff, l.iCount) : new Uint16Array(bin, l.iOff, l.iCount);
-        return { attrs, index: new THREE.BufferAttribute(idx, 1), tris: l.iCount / 3 };
-      });
-    }
+      const idx = s.i32 ? new Uint32Array(bin, s.iOff, s.iCount) : new Uint16Array(bin, s.iOff, s.iCount);
+      return [kind, { attrs: { position: new THREE.BufferAttribute(pos, 3), normal: new THREE.BufferAttribute(nrm, 3), uv: new THREE.BufferAttribute(uv, 2), aKitV: new THREE.BufferAttribute(kv, 4, true) },
+        index: new THREE.BufferAttribute(idx, 1), tris: s.iCount / 3 }];
+    })));
   }
-  // materials per (slot, lod): 10 x 2, shared by every piece and tile
+  // materials: opaque + glass per LOD (4), shared by every piece and tile
   const mats = {};
-  const matFor = (slot, lod) => (mats[`${slot}|${lod}`] ??= kitMaterial(slot, lod, { lab }));
+  const matFor = (kind, lod) => (mats[`${kind}|${lod}`] ??= kind === "glass" ? kitGlassMaterial(lod, { lab }) : kitOpaqueMaterial(lod, { lab }));
   const group = new THREE.Group();
   group.name = "facade-kit";
-  const meshes = new Map();           // key -> { mesh, piece, lod, slot, target, n, cap, arrays }
-  function makeMesh(piece, lod, slot, target, cap) {
-    const g = geo[piece][slot][lod];
+  const meshes = new Map();           // key piece|lod|kind -> { mesh, piece, lod, kind, n, cap, arrays }
+  function makeMesh(piece, lod, kind, cap) {
+    const g = geo[piece][lod][kind];
     const geom = new THREE.BufferGeometry();
     for (const [k, a] of Object.entries(g.attrs)) geom.setAttribute(k, a);
     geom.setIndex(g.index);
-    const I = new Float32Array(cap * 4), J = new Float32Array(cap * 4), Vv = new Float32Array(cap * 4);
-    geom.setAttribute("aKitI", new THREE.InstancedBufferAttribute(I, 4).setUsage(THREE.DynamicDrawUsage));
-    geom.setAttribute("aKitJ", new THREE.InstancedBufferAttribute(J, 4).setUsage(THREE.DynamicDrawUsage));
-    geom.setAttribute("aVar", new THREE.InstancedBufferAttribute(Vv, 4).setUsage(THREE.DynamicDrawUsage));
+    const arrays = {};
+    for (const a of ["aKitI", "aKitJ", "aKitF", "aVar"]) {
+      arrays[a] = new Float32Array(cap * 4);
+      geom.setAttribute(a, new THREE.InstancedBufferAttribute(arrays[a], 4).setUsage(THREE.DynamicDrawUsage));
+    }
     geom.userData.shared = true;
-    const mesh = new THREE.InstancedMesh(geom, matFor(target, lod), cap);
+    const mesh = new THREE.InstancedMesh(geom, matFor(kind, lod), cap);
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     mesh.count = 0;
     mesh.frustumCulled = false;
-    mesh.castShadow = lod === 0 && target !== "glass_window";
+    mesh.castShadow = lod === 0 && kind === "opaque";
     mesh.receiveShadow = true;
-    mesh.name = `kit ${piece} lod${lod} ${target}`;
-    return { mesh, piece, lod, slot, target, n: 0, cap, I, J, V: Vv, M: mesh.instanceMatrix.array };
+    mesh.name = `kit ${piece} lod${lod} ${kind}`;
+    return { mesh, piece, lod, kind, n: 0, cap, I: arrays.aKitI, J: arrays.aKitJ, F: arrays.aKitF, V: arrays.aVar, M: mesh.instanceMatrix.array };
   }
-  // every combination that can occur, made now (empty): the boot warm-up compiles them all, nothing builds later
-  for (const [name, p] of Object.entries(json.pieces)) for (const slot of Object.keys(p.slots)) {
-    const targets = new Set([slot]);
-    for (const [, a, b] of REMAP) if (slot === a) targets.add(b);
-    for (let lod = 0; lod < json.lods; lod++) for (const t of targets) {
-      const e = makeMesh(name, lod, slot, t, 256);
-      meshes.set(`${name}|${lod}|${slot}|${t}`, e);
-      group.add(e.mesh);
-    }
+  // every mesh that can occur, made now (empty): the boot warm-up compiles them all, nothing builds later
+  for (const [name] of Object.entries(json.pieces)) for (let lod = 0; lod < json.lods; lod++) for (const kind of KINDS) {
+    if (!geo[name][lod][kind]) continue;
+    const e = makeMesh(name, lod, kind, 256);
+    meshes.set(`${name}|${lod}|${kind}`, e);
+    group.add(e.mesh);
   }
   function grow(e, need) {
     let cap = e.cap; while (cap < need) cap *= 2;
-    const ne = makeMesh(e.piece, e.lod, e.slot, e.target, cap);
-    ne.M.set(e.M.subarray(0, e.n * 16)); ne.I.set(e.I.subarray(0, e.n * 4)); ne.J.set(e.J.subarray(0, e.n * 4)); ne.V.set(e.V.subarray(0, e.n * 4));
+    const ne = makeMesh(e.piece, e.lod, e.kind, cap);
+    ne.M.set(e.M.subarray(0, e.n * 16));
+    for (const k of ["I", "J", "F", "V"]) ne[k].set(e[k].subarray(0, e.n * 4));
     ne.n = e.n;
     group.remove(e.mesh); e.mesh.dispose();
     group.add(ne.mesh);
@@ -92,14 +89,15 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
   const pieceInfo = {};
   for (const [name, p] of Object.entries(json.pieces)) {
     const mode = p.slice || p.kind;
-    const ref = mode === "window" || mode === "door" ? json.ref[mode] : p.ref;
-    pieceInfo[name] = { mode, ref, slots: Object.keys(p.slots), run: mode === "run" };
+    const refOf = { window: json.ref.window, door: json.ref.door, french: json.ref.french, frenchX: json.ref.french };
+    pieceInfo[name] = { mode, ref: refOf[mode] ?? p.ref, slots: p.slots, run: mode === "run" };
   }
   const stretch = (info, w, h, out) => {
-    if (info.mode === "window" || info.mode === "door") {
+    if (info.mode === "window" || info.mode === "door" || info.mode === "french" || info.mode === "frenchX") {
       const [Wr, Hr] = info.ref;
       out[0] = (w / 2 - SL.x) / (Wr / 2 - SL.x); out[1] = (w - Wr) / 2;
       out[2] = (h - SL.bottom - SL.top) / (Hr - SL.bottom - SL.top); out[3] = h - Hr;
+      if (info.mode === "frenchX") { out[2] = 1; out[3] = 0; }
     } else if (info.run) { out[0] = w / info.ref[0]; out[1] = 0; out[2] = 1; out[3] = 0; }
     else { out[0] = 1; out[1] = 0; out[2] = 1; out[3] = 0; }
   };
@@ -109,14 +107,13 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
   let dirty = true;
   const stats = { instances: 0, drawn: 0, meshes: 0, ms: 0, msMax: 0, rebuckets: 0, tris: 0 };
 
-  // the meshes an instance of (piece, variant) writes to, per LOD (slots with no triangles at that LOD skipped)
+  // the meshes an instance of a piece writes to, per LOD
   const targetCache = new Map();
-  const targetsOf = (piece, variant) => {
-    const k = `${piece}|${variant}`;
-    let t = targetCache.get(k);
+  const targetsOf = (piece) => {
+    let t = targetCache.get(piece);
     if (!t) {
-      t = [0, 1].map((lod) => pieceInfo[piece].slots.filter((s) => geo[piece][s][lod].tris > 0).map((s) => meshes.get(`${piece}|${lod}|${s}|${targetSlot(s, variant)}`)));
-      targetCache.set(k, t);
+      t = [0, 1].map((lod) => KINDS.map((k) => meshes.get(`${piece}|${lod}|${k}`)).filter(Boolean));
+      targetCache.set(piece, t);
     }
     return t;
   };
@@ -134,7 +131,7 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
         let c = cells.get(key);
         if (!c) { c = { x: (Math.floor(x / CELL) + 0.5) * CELL, z: (Math.floor(z / CELL) + 0.5) * CELL, items: [], y0: 1e9, y1: -1e9 }; cells.set(key, c); }
         const s = new Float32Array(4); stretch(info, arr[i + 5], arr[i + 6], s);
-        c.items.push({ arr, i, r: info.run ? arr[i + 5] / 2 : 1.5, s, t: targetsOf(piece, arr[i + 7]) });
+        c.items.push({ arr, i, r: info.run ? arr[i + 5] / 2 : 1.5, s, t: targetsOf(piece) });
         c.y0 = Math.min(c.y0, arr[i + 1] - 1); c.y1 = Math.max(c.y1, arr[i + 1] + 4);
       }
     }
@@ -169,7 +166,7 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
           if (dmin > far1hi) continue;
           const l0 = dmin < near0, l1 = dmax > far1lo;
           if (!l0 && !l1) continue;
-          const nx = arr[i + 3], nz = arr[i + 4], seed = arr[i + 8];
+          const nx = arr[i + 3], nz = arr[i + 4], seed = arr[i + 8], vs = arr[i + 7] + Math.min(seed, 0.999);
           const st = it.s;
           for (let lod = 0; lod < 2; lod++) {
             if (lod === 0 ? !l0 : !l1) continue;
@@ -183,7 +180,8 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
               M[m + 12] = x; M[m + 13] = y; M[m + 14] = z; M[m + 15] = 1;
               const q = k * 4;
               e.I[q] = st[0]; e.I[q + 1] = st[1]; e.I[q + 2] = st[2]; e.I[q + 3] = st[3];
-              e.J[q] = nx; e.J[q + 1] = nz; e.J[q + 2] = seed; e.J[q + 3] = code;
+              e.J[q] = nx; e.J[q + 1] = nz; e.J[q + 2] = vs; e.J[q + 3] = code;
+              e.F[q] = arr[i + 10]; e.F[q + 1] = arr[i + 11]; e.F[q + 2] = arr[i + 12]; e.F[q + 3] = arr[i + 13];
               e.V[q] = seed; e.V[q + 1] = 0.35 + 0.3 * ((seed * 7.13) % 1); e.V[q + 2] = 0.35 + 0.3 * ((seed * 3.71) % 1); e.V[q + 3] = 0.5;
             }
           }
@@ -197,10 +195,10 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
         e.mesh.count = e.n;
         if (e.n) {
           e.mesh.instanceMatrix.clearUpdateRanges(); e.mesh.instanceMatrix.addUpdateRange(0, e.n * 16); e.mesh.instanceMatrix.needsUpdate = true;
-          for (const a of ["aKitI", "aKitJ", "aVar"]) { const at = g.attributes[a]; at.clearUpdateRanges(); at.addUpdateRange(0, e.n * 4); at.needsUpdate = true; }
+          for (const a of ["aKitI", "aKitJ", "aKitF", "aVar"]) { const at = g.attributes[a]; at.clearUpdateRanges(); at.addUpdateRange(0, e.n * 4); at.needsUpdate = true; }
         }
       }
-      if (e.n) { used++; drawn += e.n; tris += e.n * geo[e.piece][e.slot][e.lod].tris; }
+      if (e.n) { used++; drawn += e.n; tris += e.n * geo[e.piece][e.lod][e.kind].tris; }
     }
     const ms = performance.now() - t0;
     Object.assign(stats, { instances: total, drawn, meshes: used, ms: +ms.toFixed(2), msMax: Math.max(stats.msMax, +ms.toFixed(2)), tris });

@@ -4695,16 +4695,17 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       }
     }
     const ownRing = b.footprint[0];
-    for (const f of fl.filter((q) => !q.dead)) {
+    const live = fl.filter((q) => !q.dead);
+    for (const f of live) {
       {
-        let mx = 0, mz = 0, k2 = 0;
+        let mx = 0, mz = 0, k = 0;
         for (const { p } of f.tris) for (const q of p) {
           mx += q[0];
           mz += q[2];
-          k2++;
+          k++;
         }
-        mx /= k2;
-        mz /= k2;
+        mx /= k;
+        mz /= k;
         if (pip(mx + f.nx * 0.5, mz + f.nz * 0.5, ownRing) && !pip(mx - f.nx * 0.5, mz - f.nz * 0.5, ownRing)) {
           f.nx = -f.nx;
           f.nz = -f.nz;
@@ -4721,15 +4722,21 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         n++;
         top = Math.max(top, q[1]);
       }
-      const faceEaves = landmark ? top - base : eaves;
       cx /= n;
       cz /= n;
       const width = u1 - u0;
       const ob = width > 0.3 ? otherAt(cx + f.nx * PARTY_PROBE, cz + f.nz * PARTY_PROBE, bi) : -1;
       const sameBld = ob >= 0 && b.attrs?.BU_ID && doc.buildings[ob].attrs?.BU_ID === b.attrs.BU_ID;
       const partyH = ob < 0 ? 0 : sameBld || landmark ? Math.max(0.01, roofAt(ob, cx + f.nx * PARTY_PROBE, cz + f.nz * PARTY_PROBE) - base) : 999;
-      const party = partyH > 0 ? 1 : 0;
       const street = partyH < 999 && facesStreet(cx, cz, f.nx, f.nz) ? 1 : 0;
+      f.pre = { tx, tz, u0, u1, cx, cz, top, width, partyH, street };
+    }
+    let doorFace = null;
+    for (const f of live) if (f.pre.street && f.pre.width >= 1.6 && (!doorFace || f.pre.width > doorFace.pre.width)) doorFace = f;
+    for (const f of live) {
+      const { tx, tz, u0, u1, cx, cz, top, width, partyH, street } = f.pre;
+      const faceEaves = landmark ? top - base : eaves;
+      const party = partyH > 0 ? 1 : 0;
       stats.faces++;
       stats.party += party;
       stats.street += street;
@@ -4817,6 +4824,7 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       const k = kit ? kit.face({
         key,
         building: b,
+        doorFace: f === doorFace,
         wallStyle: style,
         landmark: !!landmark,
         rnd,
@@ -4843,7 +4851,7 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         T3.aWall.push(q[0] * tx + q[2] * tz - u0, width, q[1] - base, faceEaves);
         T3.aBld.push(style, partyH, street, rnd);
         T3.aFN.push(f.nx, f.nz, shopU, shopW);
-        if (T3 === WK) WK.aKit.push(1, k.rise);
+        if (T3 === WK) WK.aKit.push(1, k.rise, k.doorless, k.french);
       }
     }
     {
@@ -6834,7 +6842,8 @@ function faceOpenings(f) {
 }
 
 // viewer/facadeKit/placement.js
-var STRIDE = 10;
+var STRIDE = 14;
+var FRENCH_SILL = 0.06;
 var VARIANT = { BLUE: 1, DARK: 2, YELLOW: 4 };
 var WINDOW_RISE = 0.13;
 var MAX_H = 16;
@@ -6858,7 +6867,8 @@ function kitCollector(opts = {}) {
   const runs = [];
   const stats = { faces: 0, skipped: 0, openings: 0, why: {} };
   const widths = [];
-  const put = (piece, x, y, z, nx, nz, w, h, variant, seed) => (out[piece] ??= []).push(x, y, z, nx, nz, w, h, variant, seed, 0);
+  let F = [0, 0, 0, 0];
+  const put = (piece, x, y, z, nx, nz, w, h, variant, seed) => (out[piece] ??= []).push(x, y, z, nx, nz, w, h, variant, seed, 0, F[0], F[1], F[2], F[3]);
   const styleOf = /* @__PURE__ */ new Map();
   function buildingStyle(key, wallStyle2, rq) {
     let s = styleOf.get(key);
@@ -6883,15 +6893,27 @@ function kitCollector(opts = {}) {
     return s;
   }
   function face(f) {
-    const off = { on: 0, rise: 0 };
+    const off = { on: 0, rise: 0, doorless: 0, french: 0 };
     if (!f.street || f.landmark || f.partyH >= 999 || f.wallStyle > 4.5 || f.building.height > MAX_H) return off;
     if (exclude.has(f.key) || only && !only.has(f.key)) return off;
     if (f.width < 2.2 || f.eaves < 2.8) return off;
     const fr = Math.fround;
     const rnd = fr(f.rnd);
-    const ops = faceOpenings({ width: fr(f.width), eaves: fr(f.eaves), partyH: fr(f.partyH), street: f.street, rnd, landmark: false, shop: fr(f.shopW), shopU: fr(f.shopU) });
+    const doorStreet = f.street && f.doorFace !== false ? 1 : 0;
+    const ops = faceOpenings({ width: fr(f.width), eaves: fr(f.eaves), partyH: fr(f.partyH), street: doorStreet, rnd, landmark: false, shop: fr(f.shopW), shopU: fr(f.shopU) });
     const S2 = buildingStyle(f.key, f.wallStyle, Math.floor(rnd * 4096 + 0.5) / 4096);
     const rise = S2.win === "winB" ? WINDOW_RISE : 0;
+    let frCode = 0;
+    if (S2.balcony) {
+      const f1 = ops.filter((o) => o.floor === 1 && o.kind === "window");
+      const nb0 = Math.max(...ops.map((o) => o.bay), 0) + 1;
+      if (f1.length) {
+        const o = f1.reduce((b, q) => Math.abs(q.bay - (nb0 - 1) / 2) < Math.abs(b.bay - (nb0 - 1) / 2) ? q : b);
+        o.kind = "french";
+        o.h0 = 3.4 + FRENCH_SILL;
+        frCode = o.bay + 1 + 16 * o.floor;
+      }
+    }
     const T2 = f.tris.map(({ p }) => p.map((q) => [q[0] * f.tx + q[2] * f.tz - f.u0, q[1] - f.base, q[0] * f.nx + q[2] * f.nz]));
     const depthAt = (u, h) => {
       for (const [a, b, c] of T2) {
@@ -6918,6 +6940,7 @@ function kitCollector(opts = {}) {
       placed.push({ o, d: depthAt((o.u0 + o.u1) / 2, (o.h0 + o.h1) / 2) });
     }
     stats.faces++;
+    F = [f.u0, fr(f.width), f.base, rnd + 2 * doorStreet + 4 * frCode];
     const W = (u, d) => [f.tx * (f.u0 + u) + f.nx * d, f.tz * (f.u0 + u) + f.nz * d];
     const seed = S2.seed;
     const gaps = [];
@@ -6926,9 +6949,7 @@ function kitCollector(opts = {}) {
       gaps.push([f.shopU - sw / 2 - 0.2, f.shopU + sw / 2 + 0.2]);
     }
     const nb = Math.max(...placed.map((q) => q.o.bay), 0) + 1;
-    let balconyDone = !S2.balcony;
-    const floor1 = placed.filter((q) => q.o.floor === 1 && q.o.kind === "window");
-    const balBay = floor1.length ? floor1.reduce((b, q) => Math.abs(q.o.bay - (nb - 1) / 2) < Math.abs(b.o.bay - (nb - 1) / 2) ? q : b).o.bay : -1;
+    let french = 0;
     for (const { o, d } of placed) {
       stats.openings++;
       const uc = (o.u0 + o.u1) / 2, w = o.u1 - o.u0, h = o.h1 - o.h0;
@@ -6940,17 +6961,28 @@ function kitCollector(opts = {}) {
         if (opts.ground) {
           const g = opts.ground(x + f.nx * 0.6, z + f.nz * 0.6);
           const n = Math.max(0, Math.min(3, Math.round((f.base - g) / 0.17)));
-          for (let k = 1; k <= n; k++) put("step", x + f.nx * 0.3 * k, f.base - 0.17 * (k - 1) - 0.06, z + f.nz * 0.3 * k, f.nx, f.nz, 1.5, 0.17, 0, seed);
+          for (let k = 1; k <= n; k++) {
+            const top = f.base - 0.17 * (k - 1) - 0.06;
+            const gk = Math.max(opts.ground(x + f.nx * (0.3 * k + 0.15) - f.nz * 0.5, z + f.nz * (0.3 * k + 0.15) + f.nx * 0.5), opts.ground(x + f.nx * (0.3 * k + 0.15) + f.nz * 0.5, z + f.nz * (0.3 * k + 0.15) - f.nx * 0.5));
+            if (top < gk + 0.04) {
+              stats.stepsDropped = (stats.stepsDropped || 0) + n - k + 1;
+              break;
+            }
+            put("step", x + f.nx * 0.3 * k, top, z + f.nz * 0.3 * k, f.nx, f.nz, 1.5, 0.17, 0, seed);
+          }
         }
         continue;
       }
       widths.push(Math.round(w * 100) / 100);
+      if (o.kind === "french") {
+        put("frenchWin", x, y, z, f.nx, f.nz, w, h, S2.variant & VARIANT.DARK, seed);
+        put(h01(f.key + "|balk") < 0.5 ? "balcony" : "balconnet", x, y, z, f.nx, f.nz, w, h, 0, seed);
+        french = o.bay + 1 + 16 * o.floor;
+        if (f.eaves - o.h1 > 1.12) put("hood", x, y, z, f.nx, f.nz, w, h, S2.variant & VARIANT.BLUE, seed);
+        continue;
+      }
       put(S2.win, x, y, z, f.nx, f.nz, w, h, S2.variant, seed);
-      const bal = !balconyDone && o.floor === 1 && o.bay === balBay;
-      if (bal) {
-        put("balcony", x, y, z, f.nx, f.nz, w, h, 0, seed);
-        balconyDone = true;
-      } else put("sill", x, y, z, f.nx, f.nz, w, h, 0, seed);
+      put("sill", x, y, z, f.nx, f.nz, w, h, 0, seed);
       if (S2.win === "winA" && f.eaves - o.h1 > 1.12) put("hood", x, y, z, f.nx, f.nz, w, h, S2.variant, seed);
       if (o.floor === 0 && S2.soup) {
         put("soup", x, f.base, z, f.nx, f.nz, 0.9, 0.55, 0, seed);
@@ -6993,7 +7025,7 @@ function kitCollector(opts = {}) {
         }
       }
     }
-    return { on: 1, rise };
+    return { on: 1, rise, doorless: f.street && !doorStreet ? 1 : 0, french };
   }
   function corners() {
     const byKey = /* @__PURE__ */ new Map();

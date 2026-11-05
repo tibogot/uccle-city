@@ -38,7 +38,7 @@ os.makedirs(OUT, exist_ok=True)
 SLOTS = ["stone_white", "stone_blue", "brick_red_brussels", "brick_yellow", "wood_frame_white", "wood_frame_dark",
          "glass_window", "cast_iron_green", "painted_metal_white", "zinc_roof"]
 # the reference openings (m) and the 9-slice bands (keep in sync with tools/facadekit/packKit.mjs and viewer/facadeKit/)
-REF = {"window": (1.2, 1.6), "door": (1.1, 2.448)}
+REF = {"window": (1.2, 1.6), "door": (1.1, 2.448), "french": (1.2, 2.3)}
 SLICE_X, SLICE_B, SLICE_T = 0.25, 0.30, 0.35
 FRAME = 0.07
 
@@ -355,7 +355,7 @@ def hood():
     return P, {"kind": "window", "ref": REF["window"], "occ": "wall", "slice": "window"}
 
 @piece
-def winB():
+def winB(far=False):
     """WINDOW B: a plain brick front's window: a segmental arch of bricks on edge (rowlock) over a segmental head, a
     brick reveal 22 cm deep (the city cuts the arched head into the wall: aKit.y = rise), a frame with two leaves and
     a transom light following the arch. The sill is the separate stone sill."""
@@ -371,7 +371,15 @@ def winB():
     arcl = 2 * a0 * R
     n = max(9, int(round(arcl / 0.075))) | 1
     L = 0.215
-    for k in range(n):
+    if far:
+        # FAR VARIANT (window B's LOD1, tools/facadekit/packKit.mjs): the arch as one moulded band, the quoins as two flat
+        # strips: the 63 separate bricks cannot be simplified below ~1000 triangles
+        archp = [V((R * math.sin(-a0 + 2 * a0 * q / 12), yc + R * math.cos(-a0 + 2 * a0 * q / 12), 0)) for q in range(13)]
+        sweep(P, [(0.0, -0.03), (L, -0.03), (L, 0.012), (0.0, 0.012)], archp, (0, 0, 1), slot="brick_red_brussels")
+        for sx in (-1, 1):
+            x0, x1 = (hw, hw + 0.135) if sx > 0 else (-hw - 0.135, -hw)
+            P.bm(bbox(x0, x1, 0.0, H, -0.03, 0.006, 0.0), "brick_red_brussels")
+    for k in range(0 if far else n):
         t0 = -a0 + 2 * a0 * (k + 0.06) / n
         t1 = -a0 + 2 * a0 * (k + 0.94) / n
         q = []
@@ -382,7 +390,7 @@ def winB():
         if (q[1][0] - q[0][0]) * (q[2][1] - q[0][1]) - (q[1][1] - q[0][1]) * (q[2][0] - q[0][0]) < 0: q.reverse()
         P.bm(wedge(q, -0.03, 0.012 + 0.003 * ((k * 7) % 3 - 1), r=0.005, seg=1), "brick_red_brussels")
     # skewbacks: the bricks the arch springs from (cut brick, flush), both sides
-    for sx in (-1, 1):
+    for sx in (-1, 1) if not far else ():
         t = sx * a0
         x_in, y_in = R * math.sin(t), yc + R * math.cos(t)
         x_out, y_out = (R + L) * math.sin(t), yc + (R + L) * math.cos(t)
@@ -391,7 +399,7 @@ def winB():
         if (q[1][0] - q[0][0]) * (q[2][1] - q[0][1]) - (q[1][1] - q[0][1]) * (q[2][0] - q[0][0]) < 0: q.reverse()
         P.bm(wedge(q, -0.03, 0.008, r=0.004), "brick_red_brussels")
     # the jambs' outer arris: a bullnose brick quoin column each side (courses of 6.5 cm, proud 6 mm)
-    for sx in (-1, 1):
+    for sx in (-1, 1) if not far else ():
         y = 0.0
         k = 0
         while y + 0.06 < H - 0.04:
@@ -427,6 +435,11 @@ def winB():
     for x in (-0.2, 0.2):
         P.bm(bbox(x - 0.011, x + 0.011, ty0 - 0.002, top(x) - FRAME + 0.004, zg - 0.01, zf - 0.006, 0.006), "wood_frame_white")
     return P, {"kind": "window", "ref": REF["window"], "occ": "opening_arch", "rise": rise}
+
+@piece
+def winBfar():
+    """window B's far variant: its LOD1 (packKit.mjs takes <name>far as <name>'s LOD1 source)"""
+    return winB(far=True)
 
 @piece
 def sill():
@@ -679,89 +692,142 @@ def step():
     P = Part()
     prof = [(-0.17, -0.3), (-0.17, 0.3), (-0.04, 0.3)]
     prof += [(-0.04 + 0.03 * math.sin(t), 0.3 - 0.0 + 0.015 * (1 - math.cos(t))) for t in [math.pi / 2 * k / 3 for k in range(1, 4)]][:0]
-    prof = [(-0.17, -0.3), (-0.17, 0.29), (-0.05, 0.29), (-0.045, 0.3)]
+    prof = [(-0.6, -0.3), (-0.6, 0.29), (-0.05, 0.29), (-0.045, 0.3)]          # the block runs 0.6 m down: never floats over a falling pavement
     prof += [(-0.02 - 0.02 * math.cos(t), 0.3 + 0.012 * math.sin(t)) for t in [math.pi * k / 6 for k in range(1, 6)]]
     prof += [(0.0, 0.3), (0.0, -0.3)]
     extrude_x(P, prof, -0.75, 0.75, "stone_blue")
     return P, {"kind": "run", "ref": (1.5, 0.17), "occ": "ground"}
 
-@piece
-def balcony():
-    """A SMALL BALCONY: a moulded stone slab 0.5 m deep on two scrolled consoles, a cast-iron railing (square bars,
-    a moulded handrail, corner posts with finials, a central panel of C-scrolls round a ring). Anchored on a window:
-    y = 0 = the opening line; the slab's top at the sill's foot (-0.1)."""
-    W = REF["window"][0]
-    P = Part()
-    hw = W / 2 + 0.3
-    y0 = -0.1
-    # slab: moulded edge swept in plan with returns (the slab's front at z = 0.5)
-    prof = [(0.0, -0.14), (0.012, -0.14), (0.012, -0.122), (0.02, -0.112), (0.02, -0.03)]
-    prof += [(0.02 + 0.012 * math.sin(t), -0.03 + 0.012 * (1 - math.cos(t))) for t in [math.pi / 2 * k / 4 for k in range(1, 5)]]
-    prof += [(0.03, -0.005), (0.0, 0.0)]
-    path = [V((hw, 0, -0.01)), V((hw, 0, 0.48)), V((-hw, 0, 0.48)), V((-hw, 0, -0.01))]
-    sweep(P, [(a, y0 + b) for a, b in prof], path, (0, 1, 0), slot="stone_white")
-    P.bm(bbox(-hw, hw, y0 - 0.14, y0, -0.01, 0.48, 0.0), "stone_white")
-    # consoles: scrolled side profile, 0.16 wide
-    for sx in (-1, 1):
-        x = sx * (hw - 0.2)
-        pts = [(0.0, y0 - 0.14), (0.42, y0 - 0.14), (0.42, y0 - 0.17)]
-        pts += [(0.42 - 0.035 * (1 - math.cos(t)), y0 - 0.17 - 0.035 * math.sin(t)) for t in [math.pi / 2 * k / 5 for k in range(1, 6)]]
-        pts += [(0.3, y0 - 0.25), (0.15, y0 - 0.32)]
-        pts += [(0.15 - 0.1 * math.sin(t), y0 - 0.32 - 0.1 * (1 - math.cos(t))) for t in [math.pi / 2 * k / 6 for k in range(1, 7)]]
-        pts += [(0.03, y0 - 0.48), (0.0, y0 - 0.48)]
-        bm = bmesh.new()
-        a = [bm.verts.new((x - 0.08, y, z)) for z, y in pts]
-        b = [bm.verts.new((x + 0.08, y, z)) for z, y in pts]
-        bm.faces.new(a); bm.faces.new(list(reversed(b)))
-        for i in range(len(pts)):
-            j = (i + 1) % len(pts)
-            bm.faces.new((a[i], b[i], b[j], a[j]))
-        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-        bmesh.ops.bevel(bm, geom=[e for e in bm.edges if abs(e.verts[0].co.x - e.verts[1].co.x) < 1e-6], offset=0.008, segments=2, profile=0.5, affect="EDGES", clamp_overlap=True)
-        P.bm(bm, "stone_white")
-    # railing: posts, bottom rail, handrail, bars, central ornament
-    rh = 0.62
-    zr = 0.43
+def railing(P, hw, y0, zr, rh, z0=0.02, returns=True, ornament=True):
+    """A CAST-IRON RAILING: corner posts with finials, a moulded handrail, a bottom rail and a top rail, square bars
+    every 11 cm, a middle panel (a ring between two C-scrolls). Front along x at z = zr, returns back to z0."""
     yb = y0 + 0.03
-    for x, z in ((-hw + 0.04, zr), (hw - 0.04, zr), (-hw + 0.04, 0.02), (hw - 0.04, 0.02)):
+    posts = [(-hw + 0.04, zr), (hw - 0.04, zr)] + ([(-hw + 0.04, z0), (hw - 0.04, z0)] if returns else [])
+    for x, z in posts:
         P.bm(bbox(x - 0.018, x + 0.018, y0, yb + rh, z - 0.018, z + 0.018, 0.004), "cast_iron_green")
         P.bm(lathe([(0.0, 0.0), (0.016, 0.0), (0.02, 0.012), (0.012, 0.025), (0.018, 0.05), (0.0, 0.085)], seg=8, x=x, z=z), "cast_iron_green", M=T(0, yb + rh + 0.03, 0))
-    # rails along the front and the two returns
-    runs = [((-hw + 0.04, zr), (hw - 0.04, zr)), ((-hw + 0.04, 0.02), (-hw + 0.04, zr)), ((hw - 0.04, 0.02), (hw - 0.04, zr))]
+    runs = [((-hw + 0.04, zr), (hw - 0.04, zr))] + ([((-hw + 0.04, z0), (-hw + 0.04, zr)), ((hw - 0.04, z0), (hw - 0.04, zr))] if returns else [])
     hand = [(0.0, -0.016), (0.024, -0.016), (0.026, 0.0), (0.02, 0.012), (0.0, 0.018), (-0.02, 0.012), (-0.026, 0.0), (-0.024, -0.016), (0.0, -0.016)]
     for (ax, az), (bx, bz) in runs:
         A, B = V((ax, 0, az)), V((bx, 0, bz))
         sweep(P, [(a, yb + rh + 0.016 + b) for a, b in hand], [A, B], (0, 1, 0), slot="cast_iron_green")
         L = (B - A).length; d = (B - A) / L
-        P.bm(bbox(0, L, yb, yb + 0.03, -0.012, 0.012, 0.003), "cast_iron_green", M=T(ax, 0, az) @ Matrix.Rotation(-math.atan2(d.z, d.x), 4, "Y"))
-        P.bm(bbox(0, L, yb + rh - 0.12, yb + rh - 0.095, -0.008, 0.008, 0.003), "cast_iron_green", M=T(ax, 0, az) @ Matrix.Rotation(-math.atan2(d.z, d.x), 4, "Y"))
+        R = T(ax, 0, az) @ Matrix.Rotation(-math.atan2(d.z, d.x), 4, "Y")
+        P.bm(bbox(0, L, yb, yb + 0.03, -0.012, 0.012, 0.003), "cast_iron_green", M=R)
+        P.bm(bbox(0, L, yb + rh - 0.12, yb + rh - 0.095, -0.008, 0.008, 0.003), "cast_iron_green", M=R)
         n = int(L / 0.11)
         for k in range(1, n):
             p = A + d * (L * k / n)
-            if (az == bz) and abs(p.x) < 0.24: continue        # the ornament panel in the middle
+            if ornament and az == bz and abs(p.x) < 0.24: continue        # the ornament panel in the middle
             P.bm(bbox(p.x - 0.008, p.x + 0.008, yb + 0.03, yb + rh - 0.1, p.z - 0.008, p.z + 0.008, 0.002), "cast_iron_green")
-    # ornament: a ring and four C-scrolls, flat bar section
+    if not ornament: return
     cy = yb + 0.03 + (rh - 0.15) / 2
     sec = [(-0.007, -0.005), (0.007, -0.005), (0.007, 0.005), (-0.007, 0.005), (-0.007, -0.005)]
     ring = [V((0.09 * math.cos(2 * math.pi * k / 18), cy + 0.09 * math.sin(2 * math.pi * k / 18), zr)) for k in range(18)]
     sweep(P, sec, ring, (0, 0, 1), closed=True, slot="cast_iron_green")
+    sy = (rh - 0.15) / 0.47                                   # the scrolls fill the panel's height
     for sx in (-1, 1):
-        # a C-scroll each side, open toward the ring, its two ends curled inward (mirror-symmetric)
         pts = []
         for k in range(23):
-            a = math.radians(-128 + 256 * k / 22)                     # round the far side of the C
-            r = 0.075
-            pts.append(V((sx * (0.165 + r * math.cos(a)), cy + r * math.sin(a) * 1.25, zr)))
+            a = math.radians(-128 + 256 * k / 22)
+            pts.append(V((sx * (0.165 + 0.075 * math.cos(a)), cy + 0.075 * math.sin(a) * 1.25 * sy, zr)))
         for end in (0, -1):
             p0 = pts[end]
-            curl = [V((p0.x - sx * 0.022 * (1 - math.cos(t)), p0.y + (1 if end == 0 else -1) * 0.022 * math.sin(t) * -1, zr)) for t in [math.pi * q / 6 for q in range(1, 7)]]
+            curl = [V((p0.x - sx * 0.022 * (1 - math.cos(t)), p0.y - (1 if end == 0 else -1) * 0.022 * math.sin(t), zr)) for t in [math.pi * q / 6 for q in range(1, 7)]]
             pts = (curl[::-1] + pts) if end == 0 else (pts + curl)
         sweep(P, sec, pts, (0, 0, 1), slot="cast_iron_green")
-        # collars tying the scroll to the ring
         P.bm(bbox(sx * 0.09 - 0.008, sx * 0.09 + 0.008, cy - 0.014, cy + 0.014, zr - 0.009, zr + 0.009, 0.002), "cast_iron_green")
     for x in (-0.235, 0.235):
         P.bm(bbox(x - 0.01, x + 0.01, yb + 0.03, yb + rh - 0.1, zr - 0.008, zr + 0.008, 0.002), "cast_iron_green")
-    return P, {"kind": "window", "ref": REF["window"], "occ": "wall", "slice": "window"}
+
+def console(P, x, y0, depth=0.42, h=0.34, w=0.16):
+    """a scrolled stone console under a slab (side profile extruded w wide, bevelled outline)"""
+    k = depth / 0.42
+    pts = [(0.0, y0), (0.42 * k, y0), (0.42 * k, y0 - 0.03)]
+    pts += [(0.42 * k - 0.035 * (1 - math.cos(t)), y0 - 0.03 - 0.035 * math.sin(t)) for t in [math.pi / 2 * q / 5 for q in range(1, 6)]]
+    pts += [(0.3 * k, y0 - 0.11 * h / 0.34), (0.15 * k, y0 - 0.18 * h / 0.34)]
+    pts += [(0.15 * k - 0.1 * k * math.sin(t), y0 - 0.18 * h / 0.34 - 0.1 * (h / 0.34) * (1 - math.cos(t))) for t in [math.pi / 2 * q / 6 for q in range(1, 7)]]
+    pts += [(0.03, y0 - h), (0.0, y0 - h)]
+    bm = bmesh.new()
+    a = [bm.verts.new((x - w / 2, y, z)) for z, y in pts]
+    b = [bm.verts.new((x + w / 2, y, z)) for z, y in pts]
+    bm.faces.new(a); bm.faces.new(list(reversed(b)))
+    for i in range(len(pts)):
+        j = (i + 1) % len(pts)
+        bm.faces.new((a[i], b[i], b[j], a[j]))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    bmesh.ops.bevel(bm, geom=[e for e in bm.edges if abs(e.verts[0].co.x - e.verts[1].co.x) < 1e-6], offset=0.008, segments=2, profile=0.5, affect="EDGES", clamp_overlap=True)
+    P.bm(bm, "stone_white")
+
+def slab(P, hw, y0, depth, t=0.14):
+    """a moulded stone slab, its edge swept in plan with returns, top at y0"""
+    s = t / 0.14
+    prof = [(0.0, -0.14 * s), (0.012, -0.14 * s), (0.012, -0.122 * s), (0.02, -0.112 * s), (0.02, -0.03 * s)]
+    prof += [(0.02 + 0.012 * math.sin(a), -0.03 * s + 0.012 * (1 - math.cos(a))) for a in [math.pi / 2 * q / 4 for q in range(1, 5)]]
+    prof += [(0.03, -0.005), (0.0, 0.0)]
+    path = [V((hw, 0, -0.01)), V((hw, 0, depth - 0.02)), V((-hw, 0, depth - 0.02)), V((-hw, 0, -0.01))]
+    sweep(P, [(a, y0 + b) for a, b in prof], path, (0, 1, 0), slot="stone_white")
+    P.bm(bbox(-hw, hw, y0 - t, y0, -0.01, depth - 0.02, 0.0), "stone_white")
+
+@piece
+def balcony():
+    """A BALCONY in front of a French window: a moulded stone slab 0.5 m deep on two scrolled consoles, a cast-iron
+    railing 0.95 m high (corner posts with finials, handrail, square bars, a ring between C-scrolls). y = 0 = the
+    French window's sill (floor) line; the slab's top 6 cm under it. Stretches along x only."""
+    W = REF["french"][0]
+    P = Part()
+    hw = W / 2 + 0.3
+    y0 = -0.06
+    slab(P, hw, y0, 0.5)
+    for sx in (-1, 1): console(P, sx * (hw - 0.2), y0 - 0.14)
+    railing(P, hw, y0, 0.43, 0.95)
+    return P, {"kind": "french", "ref": REF["french"], "occ": "wall", "slice": "frenchX"}
+
+@piece
+def balconnet():
+    """A BALCONNET (the Brussels French window's guard): a shallow moulded stone sill-slab 0.24 m deep on two small
+    consoles and a straight cast-iron railing 0.95 m high with its ornament panel, no returns but short side bars."""
+    W = REF["french"][0]
+    P = Part()
+    hw = W / 2 + 0.12
+    y0 = -0.04
+    slab(P, hw, y0, 0.24, t=0.1)
+    for sx in (-1, 1): console(P, sx * (hw - 0.1), y0 - 0.1, depth=0.2, h=0.22, w=0.12)
+    railing(P, hw, y0, 0.17, 0.95, z0=0.02, returns=True)
+    return P, {"kind": "french", "ref": REF["french"], "occ": "wall", "slice": "frenchX"}
+
+@piece
+def frenchWin():
+    """THE FRENCH WINDOW (porte-fenêtre) of a bel-étage: the opening runs from the storey's floor to the usual window
+    head; white-stone architrave + keystone like window A, a 20 cm reveal, a frame with two tall casement leaves (a
+    panelled kick rail at the bottom, a glazing bar), a transom light. The city cuts the taller opening (aKit.w)."""
+    W, H = REF["french"]; hw = W / 2
+    P = Part()
+    reveal(P, W, H, 0.2, "stone_white")
+    path = [V((-hw, -0.004, 0)), V((-hw, H, 0)), V((hw, H, 0)), V((hw, -0.004, 0))]
+    sweep(P, architrave_profile(), path, (0, 0, 1), slot="stone_white")
+    keystone(P, H - 0.03, 0.32, 0.15, 0.21, 0.092, "stone_white")
+    zf, d = -0.1, 0.065
+    tr = FRAME + 0.7 * (H - 2 * FRAME)
+    frame_rect(P, -hw, hw, 0.0, H, FRAME, zf - d, zf, "wood_frame_white", r=0.006, mids=[(tr, 0.075)])
+    extrude_x(P, [(tr - 0.045 + b, zf + a) for a, b in [(0, 0), (0.022, 0.0), (0.026, 0.006), (0.02, 0.02), (0, 0.03)]], -hw + FRAME, hw - FRAME, "wood_frame_white")
+    lx0, lx1, ly0, ly1 = -hw + FRAME, hw - FRAME, FRAME, tr - 0.0375
+    kick = 0.42
+    for a, b in ((lx0, -0.002), (0.002, lx1)):
+        leaf(P, a, b, ly0 + kick - 0.06, ly1, zf - 0.008, 0.05, "wood_frame_white", bars=[ly0 + kick + (ly1 - ly0 - kick) * 0.5])
+        # the kick panel under the glass: rails, a raised field
+        P.bm(bbox(a, b, ly0, ly0 + kick, zf - 0.058, zf - 0.008, 0.005), "wood_frame_white")
+        P.bm(wedge([(a + 0.06, ly0 + 0.07), (b - 0.06, ly0 + 0.07), (b - 0.06, ly0 + kick - 0.07), (a + 0.06, ly0 + kick - 0.07)], zf - 0.01, zf + 0.004, r=0.008, seg=2), "wood_frame_white")
+    P.bm(bbox(-0.018, 0.018, ly0 + 0.01, ly1 - 0.005, zf - 0.01, zf + 0.006, 0.008), "wood_frame_white")
+    ty0, ty1 = tr + 0.0375, H - FRAME
+    zg = zf - 0.035
+    for a, b in ((lx0, -0.21), (-0.19, 0.19), (0.21, lx1)):
+        pane(P, a, b, ty0, ty1, zg); glazing_bead(P, a, b, ty0, ty1, zg + 0.0005, "wood_frame_white", s=0.012)
+    for x in (-0.2, 0.2):
+        P.bm(bbox(x - 0.011, x + 0.011, ty0 - 0.002, ty1 + 0.002, zg - 0.01, zf - 0.006, 0.006), "wood_frame_white")
+    # the threshold stone in the reveal
+    P.bm(bbox(-hw, hw, -0.05, 0.0, -0.2, 0.02, 0.006), "stone_blue")
+    return P, {"kind": "french", "ref": REF["french"], "occ": "opening"}
 
 # ------------------------------------------------------------------------------------------------ objects, AO, export
 def make_object(name, P):
@@ -852,8 +918,8 @@ def preview(obj, meta, path):
     cam = bpy.data.cameras.new("cam"); co = bpy.data.objects.new("cam", cam); scn.collection.objects.link(co)
     cam.lens = 50
     k = meta["kind"]
-    tgt = V((0, H * 0.55, 0)) if k in ("window", "door") else V((0, -0.25, 0.1))
-    dist = {"window": 3.6, "door": 4.6, "run": 2.4, "corner": 2.0, "bracket": 1.2, "soup": 2.0}.get(k, 3)
+    tgt = V((0, H * 0.55, 0)) if k in ("window", "door", "french") else V((0, -0.25, 0.1))
+    dist = {"window": 3.6, "door": 4.6, "french": 4.8, "run": 2.4, "corner": 2.0, "bracket": 1.2, "soup": 2.0}.get(k, 3)
     eye = tgt + V((0.55, 0.12, 0.83)).normalized() * dist
     if k == "corner": eye = tgt + V((0.75, -0.25, 0.75)).normalized() * dist
     def look(o, frm, to):

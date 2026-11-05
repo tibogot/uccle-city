@@ -253,7 +253,10 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       }
     }
     const ownRing = b.footprint[0];
-    for (const f of fl.filter((q) => !q.dead)) {
+    const live = fl.filter((q) => !q.dead);
+    // first pass: orientation, extent, party wall, street (the second pass needs every face's: the kit gives a corner
+    // house ONE front door, on its widest street face)
+    for (const f of live) {
       // outward: a point 0.5 m along the normal must be outside the building's own footprint
       {
         let mx = 0, mz = 0, k = 0;
@@ -267,8 +270,6 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         const u = q[0] * tx + q[2] * tz;
         u0 = Math.min(u0, u); u1 = Math.max(u1, u); cx += q[0]; cz += q[2]; n++; top = Math.max(top, q[1]);
       }
-      // landmarks: windows sized to each wall's own top (a church's LoD2 walls stop low; drums and towers are separate faces)
-      const faceEaves = landmark ? top - base : eaves;
       cx /= n; cz /= n;
       const width = u1 - u0;
       // party wall: blank below this height above base. Separate houses: the whole wall (property line);
@@ -276,8 +277,17 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       const ob = width > 0.3 ? otherAt(cx + f.nx * PARTY_PROBE, cz + f.nz * PARTY_PROBE, bi) : -1;
       const sameBld = ob >= 0 && b.attrs?.BU_ID && doc.buildings[ob].attrs?.BU_ID === b.attrs.BU_ID;
       const partyH = ob < 0 ? 0 : (sameBld || landmark) ? Math.max(0.01, roofAt(ob, cx + f.nx * PARTY_PROBE, cz + f.nz * PARTY_PROBE) - base) : 999;
-      const party = partyH > 0 ? 1 : 0;
       const street = partyH < 999 && facesStreet(cx, cz, f.nx, f.nz) ? 1 : 0;
+      f.pre = { tx, tz, u0, u1, cx, cz, top, width, partyH, street };
+    }
+    // the widest street face carries the front door (the kit only: the painted façade keeps a door per street face)
+    let doorFace = null;
+    for (const f of live) if (f.pre.street && f.pre.width >= 1.6 && (!doorFace || f.pre.width > doorFace.pre.width)) doorFace = f;
+    for (const f of live) {
+      const { tx, tz, u0, u1, cx, cz, top, width, partyH, street } = f.pre;
+      // landmarks: windows sized to each wall's own top (a church's LoD2 walls stop low; drums and towers are separate faces)
+      const faceEaves = landmark ? top - base : eaves;
+      const party = partyH > 0 ? 1 : 0;
       stats.faces++; stats.party += party; stats.street += street;
       // shopfront: an unused shop point inside this building (or up to 6 m in front of the face), within the face's span
       let shopU = 0, shopW = 0;
@@ -367,7 +377,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         }
       }
       // the façade kit takes this face? (street faces of eligible buildings, every opening on the wall)
-      const k = kit ? kit.face({ key, building: b, wallStyle: style, landmark: !!landmark, rnd, width, eaves: faceEaves, partyH, street,
+      const k = kit ? kit.face({ key, building: b, doorFace: f === doorFace, wallStyle: style, landmark: !!landmark, rnd, width, eaves: faceEaves, partyH, street,
         shopU, shopW, base, top, nx: f.nx, nz: f.nz, tx, tz, u0, tris: f.tris }) : null;
       const T = k?.on ? WK : W;
       for (const { p, n: nn, src } of f.tris) for (const q of p) {
@@ -377,7 +387,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         T.aWall.push(q[0] * tx + q[2] * tz - u0, width, q[1] - base, faceEaves);
         T.aBld.push(style, partyH, street, rnd);
         T.aFN.push(f.nx, f.nz, shopU, shopW);                                    // outward normal (xz), shopfront centre / width + 10 * paint
-        if (T === WK) WK.aKit.push(1, k.rise);
+        if (T === WK) WK.aKit.push(1, k.rise, k.doorless, k.french);
       }
     }
     // --- ridge tiles and hip ribs: convex roof edges shared by two roof faces that meet at > 12°

@@ -24,7 +24,8 @@
 //   seed (per building, 0..1), spare
 import { faceOpenings } from "../interior/facadeWindows.js";
 
-export const STRIDE = 10;
+export const STRIDE = 14;
+export const FRENCH_SILL = 0.06;               // a French window's opening starts this far over its storey floor
 export const VARIANT = { BLUE: 1, DARK: 2, YELLOW: 4 };
 /** pieces' reference sizes (tools/blender/facadeKit.py REF): the instance's w, h are relative to these */
 export const WINDOW_RISE = 0.13;              // window B's segmental head above the painted opening (m)
@@ -57,7 +58,10 @@ export function kitCollector(opts = {}) {
   const runs = [];                              // cornice runs for the corner pass: { key, A, B, nx, nz, y }
   const stats = { faces: 0, skipped: 0, openings: 0, why: {} };
   const widths = [];
-  const put = (piece, x, y, z, nx, nz, w, h, variant, seed) => (out[piece] ??= []).push(x, y, z, nx, nz, w, h, variant, seed, 0);
+  // + the face the instance sits on (u0, width, base, rnd + 2 x door street + 4 x French window code): the kit glass recomputes the painted
+  // window grid from them, so its rooms are the painted windows' rooms (facades.js paintedGlass)
+  let F = [0, 0, 0, 0];
+  const put = (piece, x, y, z, nx, nz, w, h, variant, seed) => (out[piece] ??= []).push(x, y, z, nx, nz, w, h, variant, seed, 0, F[0], F[1], F[2], F[3]);
   const styleOf = new Map();
 
   function buildingStyle(key, wallStyle, rq) {
@@ -82,15 +86,30 @@ export function kitCollector(opts = {}) {
    * face's u = 0 along t), tris: [{ p: [[x, y, z] x 3] }] } -> { on: 0/1, rise }
    */
   function face(f) {
-    const off = { on: 0, rise: 0 };
+    const off = { on: 0, rise: 0, doorless: 0, french: 0 };
     if (!f.street || f.landmark || f.partyH >= 999 || f.wallStyle > 4.5 || f.building.height > MAX_H) return off;
     if (exclude.has(f.key) || (only && !only.has(f.key))) return off;
     if (f.width < 2.2 || f.eaves < 2.8) return off;
     const fr = Math.fround;
     const rnd = fr(f.rnd);
-    const ops = faceOpenings({ width: fr(f.width), eaves: fr(f.eaves), partyH: fr(f.partyH), street: f.street, rnd, landmark: false, shop: fr(f.shopW), shopU: fr(f.shopU) });
+    // one front door per house: on its widest street face; the others get a window in that bay (the kit walls paint
+    // a window there too: aKit.z)
+    const doorStreet = f.street && f.doorFace !== false ? 1 : 0;
+    const ops = faceOpenings({ width: fr(f.width), eaves: fr(f.eaves), partyH: fr(f.partyH), street: doorStreet, rnd, landmark: false, shop: fr(f.shopW), shopU: fr(f.shopU) });
     const S = buildingStyle(f.key, f.wallStyle, Math.floor(rnd * 4096 + 0.5) / 4096);
     const rise = S.win === "winB" ? WINDOW_RISE : 0;
+    // the French window: the first floor's middle window of a building with a balcony; its opening runs down to the
+    // storey's floor (+ FRENCH_SILL)
+    let frCode = 0;
+    if (S.balcony) {
+      const f1 = ops.filter((o) => o.floor === 1 && o.kind === "window");
+      const nb0 = Math.max(...ops.map((o) => o.bay), 0) + 1;
+      if (f1.length) {
+        const o = f1.reduce((b, q) => (Math.abs(q.bay - (nb0 - 1) / 2) < Math.abs(b.bay - (nb0 - 1) / 2) ? q : b));
+        o.kind = "french"; o.h0 = 3.4 + FRENCH_SILL;                 // facadeWindows.js G: storey 1 starts at 3.4 m
+        frCode = o.bay + 1 + 16 * o.floor;
+      }
+    }
     // face triangles in (u, h, depth along n)
     const T = f.tris.map(({ p }) => p.map((q) => [q[0] * f.tx + q[2] * f.tz - f.u0, q[1] - f.base, q[0] * f.nx + q[2] * f.nz]));
     const depthAt = (u, h) => { for (const [a, b, c] of T) { const d = inTri(u, h, a, b, c); if (d !== null) return d; } return null; };
@@ -109,14 +128,13 @@ export function kitCollector(opts = {}) {
       placed.push({ o, d: depthAt((o.u0 + o.u1) / 2, (o.h0 + o.h1) / 2) });
     }
     stats.faces++;
+    F = [f.u0, fr(f.width), f.base, rnd + 2 * doorStreet + 4 * frCode];
     const W = (u, d) => [f.tx * (f.u0 + u) + f.nx * d, f.tz * (f.u0 + u) + f.nz * d];
     const seed = S.seed;
     const gaps = [];                                                  // plinth gaps along u
     if (f.shopW > 0.5) { const sw = f.shopW - 10 * Math.floor(f.shopW / 10); gaps.push([f.shopU - sw / 2 - 0.2, f.shopU + sw / 2 + 0.2]); }
     const nb = Math.max(...placed.map((q) => q.o.bay), 0) + 1;
-    let balconyDone = !S.balcony;
-    const floor1 = placed.filter((q) => q.o.floor === 1 && q.o.kind === "window");
-    const balBay = floor1.length ? floor1.reduce((b, q) => (Math.abs(q.o.bay - (nb - 1) / 2) < Math.abs(b.o.bay - (nb - 1) / 2) ? q : b)).o.bay : -1;
+    let french = 0;
     for (const { o, d } of placed) {
       stats.openings++;
       const uc = (o.u0 + o.u1) / 2, w = o.u1 - o.u0, h = o.h1 - o.h0;
@@ -125,19 +143,32 @@ export function kitCollector(opts = {}) {
       if (o.kind === "door") {
         put(S.door, x, y, z, f.nx, f.nz, w, h, S.variant, seed);
         gaps.push([uc - w / 2 - (S.door === "doorA" ? 0.24 : 0.17), uc + w / 2 + (S.door === "doorA" ? 0.24 : 0.17)]);
-        // steps down to the pavement: the DTM 0.6 m in front of the door, 17 cm rises, at most 3
+        // steps down to the pavement, 17 cm rises, at most 3: the DTM under EACH tread (sloping streets); a step whose
+        // tread would be under the ground there is not placed (nor the ones after it); the blocks run 0.6 m down, so a
+        // step never floats over a falling pavement
         if (opts.ground) {
           const g = opts.ground(x + f.nx * 0.6, z + f.nz * 0.6);
           const n = Math.max(0, Math.min(3, Math.round((f.base - g) / 0.17)));
-          for (let k = 1; k <= n; k++) put("step", x + f.nx * 0.3 * k, f.base - 0.17 * (k - 1) - 0.06, z + f.nz * 0.3 * k, f.nx, f.nz, 1.5, 0.17, 0, seed);
+          for (let k = 1; k <= n; k++) {
+            const top = f.base - 0.17 * (k - 1) - 0.06;
+            const gk = Math.max(opts.ground(x + f.nx * (0.3 * k + 0.15) - f.nz * 0.5, z + f.nz * (0.3 * k + 0.15) + f.nx * 0.5), opts.ground(x + f.nx * (0.3 * k + 0.15) + f.nz * 0.5, z + f.nz * (0.3 * k + 0.15) - f.nx * 0.5));
+            if (top < gk + 0.04) { stats.stepsDropped = (stats.stepsDropped || 0) + n - k + 1; break; }
+            put("step", x + f.nx * 0.3 * k, top, z + f.nz * 0.3 * k, f.nx, f.nz, 1.5, 0.17, 0, seed);
+          }
         }
         continue;
       }
       widths.push(Math.round(w * 100) / 100);
+      if (o.kind === "french") {
+        // the French window (white stone like window A, the building's frame colour) and its balcony or balconnet
+        put("frenchWin", x, y, z, f.nx, f.nz, w, h, S.variant & VARIANT.DARK, seed);
+        put(h01(f.key + "|balk") < 0.5 ? "balcony" : "balconnet", x, y, z, f.nx, f.nz, w, h, 0, seed);
+        french = o.bay + 1 + 16 * o.floor;
+        if (f.eaves - o.h1 > 1.12) put("hood", x, y, z, f.nx, f.nz, w, h, S.variant & VARIANT.BLUE, seed);
+        continue;
+      }
       put(S.win, x, y, z, f.nx, f.nz, w, h, S.variant, seed);
-      const bal = !balconyDone && o.floor === 1 && o.bay === balBay;
-      if (bal) { put("balcony", x, y, z, f.nx, f.nz, w, h, 0, seed); balconyDone = true; }
-      else put("sill", x, y, z, f.nx, f.nz, w, h, 0, seed);
+      put("sill", x, y, z, f.nx, f.nz, w, h, 0, seed);
       // window A's hood: frieze + cornice reach 0.45 m over the head; not into the eaves cornice (0.6 m tall)
       if (S.win === "winA" && f.eaves - o.h1 > 1.12) put("hood", x, y, z, f.nx, f.nz, w, h, S.variant, seed);
       if (o.floor === 0 && S.soup) {
@@ -185,7 +216,7 @@ export function kitCollector(opts = {}) {
         }
       }
     }
-    return { on: 1, rise };
+    return { on: 1, rise, doorless: f.street && !doorStreet ? 1 : 0, french };
   }
 
   /** outside corners where two cornice runs of one building meet (convex, 70-110 degrees) */

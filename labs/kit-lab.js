@@ -20,7 +20,7 @@ import { lodEye } from "../viewer/lodFade.js";
 import { loadKitField } from "../viewer/facadeKit/kitField.js";
 import { kitCollector, STRIDE, VARIANT, WINDOW_RISE } from "../viewer/facadeKit/placement.js";
 import { KIT } from "../viewer/facadeKit/kitFade.js";
-import { kitLook, KIT_SLOTS, SLOT_TABLE } from "../viewer/facadeKit/kitMaterials.js";
+import { kitLook, KIT_SLOTS, SLOT_TABLE, kitOpaqueMaterial } from "../viewer/facadeKit/kitMaterials.js";
 
 const qp = new URLSearchParams(location.search);
 const $info = document.getElementById("info");
@@ -57,14 +57,15 @@ const SLOTS = [   // [label, pieces [name, dy, w, h, variant extra], hole {w, h,
   ["door A + 2 steps", [["doorA", 0.34]], { w: 1.1, h: 2.448, y: 0.34 }],
   ["door B", [["doorB", 0.0]], { w: 1.1, h: 2.448, y: 0.0 }],
   ["window A 0.9 m (9-slice)", [["winA", 1.0, 0.9, 1.5], ["sill", 1.0, 0.9, 1.5]], { w: 0.9, h: 1.5, y: 1.0 }],
-  ["balcony on window A", [["winA", 1.6], ["balcony", 1.6]], { w: 1.2, h: 1.6, y: 1.6 }],
+  ["French window + balcony", [["frenchWin", 0.6], ["balcony", 0.6], ["hood", 0.6, 1.2, 2.3]], { w: 1.2, h: 2.3, y: 0.6 }],
+  ["French window + balconnet", [["frenchWin", 0.6], ["balconnet", 0.6]], { w: 1.2, h: 2.3, y: 0.6 }],
   ["soupirail + plinth", [["soup", 0.0], ["plinth", 0.0, 0.9, 0.6, 0, -1.2], ["plinth", 0.0, 0.9, 0.6, 0, 1.2]], null],
   ["cornice + modillions + corner", [["cornice", 4.0, 2.4, 0.6, 0, -0.2], ["modillion", 4.0, 0.1, 0.2, 0, -1.0], ["modillion", 4.0, 0.1, 0.2, 0, -0.45], ["modillion", 4.0, 0.1, 0.2, 0, 0.1], ["modillion", 4.0, 0.1, 0.2, 0, 0.65], ["cornCorner", 4.0, 1, 0.6, 0, 1.0]], null],
 ];
 const S = {
   mode: qp.get("mode") === "row" ? "row" : "gallery", lod: ["0", "1"].includes(qp.get("lod")) ? qp.get("lod") : "auto", wire: false,
   ao: true, aoStrength: 1, aoDirect: kitLook.aoDirect.value, blue: false, dark: false, yellow: false, labels: true, post: qp.get("fx") !== "0",
-  time: preset, perf: "", far: KIT.far.value,
+  time: preset, perf: "", far: KIT.far.value, rooms: true,
 };
 const tags = [];
 function galleryData() {
@@ -74,9 +75,12 @@ function galleryData() {
     for (const [name, y, w, h, , dx = 0] of list) {
       const P = (pieces[name] ??= []);
       const ref = J.pieces[name];
-      const [W0, H0] = ref.kind === "door" ? J.ref.door : ref.kind === "window" || ref.slice === "window" ? J.ref.window : ref.ref;
-      P.push(i * GAP + dx, GY + y, 0, 0, 1, w ?? W0, h ?? H0, v, 0.37 + i * 0.07, 0);
-      if (name === "doorA") for (let k = 1; k <= 2; k++) (pieces.step ??= []).push(i * GAP, GY + y - 0.17 * (k - 1) - 0.06, 0.3 * k, 0, 1, 1.5, 0.17, 0, 0.5, 0);
+      const [W0, H0] = ref.kind === "door" ? J.ref.door : ref.kind === "french" || ref.slice === "frenchX" ? J.ref.french : ref.kind === "window" || ref.slice === "window" ? J.ref.window : ref.ref;
+      // a synthetic one-bay face (3.7 m: the painted grid puts its window in the middle) for the glass's room
+      const xc = i * GAP + dx, kind = ref.kind;
+      const F = kind === "door" ? [-xc - 1.85, 3.7, GY + y, 0.1 + 2] : kind === "french" ? [-xc - 1.85, 3.7, GY + y - 3.46, 0.1 + 4 * 17] : [-xc - 1.85, 3.7, GY + y - 0.918, 0.1];
+      P.push(xc, GY + y, 0, 0, 1, w ?? W0, h ?? H0, name === "hood" ? v : v, 0.37 + i * 0.07, 0, ...F);
+      if (name === "doorA") for (let k = 1; k <= 2; k++) (pieces.step ??= []).push(i * GAP, GY + y - 0.17 * (k - 1) - 0.06, 0.3 * k, 0, 1, 1.5, 0.17, 0, 0.5, 0, 0, 1, 0, 0);
     }
   });
   return { pieces: Object.fromEntries(Object.entries(pieces).map(([k, a]) => [k, new Float32Array(a)])) };
@@ -170,7 +174,12 @@ function setLod(v) {
 function setWire(on) { for (const m of Object.values(field.mats)) { m.wireframe = on; m.needsUpdate = true; } }
 const slotSel = Object.fromEntries(KIT_SLOTS.map((s) => [s, s]));
 function setSlot(slot, name) {
-  for (const e of field.meshes.values()) if (e.target === slot) e.mesh.material = field.matFor(name, e.lod);
+  SLOT_TABLE[slot] = name;
+  for (const L of [0, 1]) {
+    const m = kitOpaqueMaterial(L); m.wireframe = S.wire;
+    field.mats[`opaque|${L}`] = m;
+    for (const e of field.meshes.values()) if (e.kind === "opaque" && e.lod === L) e.mesh.material = m;
+  }
 }
 setGallery();
 setMode(S.mode);
@@ -189,6 +198,7 @@ fv.add(S, "far", 20, 300, 1).name("kit reach (m)").onChange((v) => { KIT.far.val
 const fa = ui.addFolder("AO (baked per vertex)");
 fa.add(S, "ao").name("AO on").onChange((v) => { kitLook.aoStrength.value = v ? S.aoStrength : 0; });
 fa.add(S, "aoStrength", 0, 1, 0.01).name("strength").onChange((v) => { if (S.ao) kitLook.aoStrength.value = v; });
+fa.add(S, "rooms").name("rooms behind the glass").onChange((v) => { kitLook.roomGlass.value = v ? 1 : 0; });
 fa.add(S, "aoDirect", 0, 1, 0.01).name("on direct light").onChange((v) => { kitLook.aoDirect.value = v; });
 const fvv = ui.addFolder("Variants (gallery)");
 fvv.add(S, "blue").name("blue-stone surrounds").onChange(setGallery);
