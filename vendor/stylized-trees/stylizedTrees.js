@@ -107,7 +107,7 @@ export function roundCrown(r) {
 
 function buildTree(seed, lod, shape = roundCrown) {
   const r = rng(seed);
-  const { crown, rad, clumps, limbs, cards: cardsByLod, cardScale = 1, trunk: trunkOf, cardCorners } = shape(r, lod, seed);   // [uccle-city CHANGES.md #13] + the seed (a species picks its form per variant)
+  const { crown, rad, clumps, limbs, cards: cardsByLod, cardScale = 1, trunk: trunkOf, cardCorners, aoOverhead = 0.8, aoFloor = 0, crownNormal = 0.3 } = shape(r, lod, seed);   // [uccle-city CHANGES.md #13] + the seed (a species picks its form per variant)
   // [uccle-city CHANGES.md #6] a shape may give the card's outline (unit corners, convex, fan-triangulated)
   const CORNERS = cardCorners ?? [[-1, -1], [1, -1], [1, 1], [-1, 1]];
 
@@ -143,16 +143,17 @@ function buildTree(seed, lod, shape = roundCrown) {
       // shading normal at the centre: the clump's sphere, a little of the crown's ellipsoid
       const nc = p.clone().sub(c).normalize();
       const ne = p.clone().sub(crown).divide(rad).normalize();
-      const nn = nc.multiplyScalar(0.7).addScaledVector(ne, 0.3).normalize();
+      const nn = nc.multiplyScalar(1 - crownNormal).addScaledVector(ne, crownNormal).normalize();   // [uccle-city CHANGES.md #15] crownNormal
       // occlusion: depth in the clump x height in the crown x clumps overhead
       const depth = Math.min(1, p.distanceTo(c) / cr);
       let a = (0.4 + 0.6 * smooth01((depth - 0.2) / 0.8)) * (0.5 + 0.5 * smooth01((p.y - yLo) / (yHi - yLo)));
       for (let j = 0; j < clumps.length - 1; j++) {
         if (j === ci) continue;
         const o = clumps[j];
-        if (o.c.y > p.y + 0.4 && Math.hypot(o.c.x - p.x, o.c.z - p.z) < o.r) a *= 0.8;
+        if (o.c.y > p.y + 0.4 && Math.hypot(o.c.x - p.x, o.c.z - p.z) < o.r) a *= aoOverhead;   // [#15] (0.8)
       }
       if (core) a *= 0.6;
+      a = Math.max(a, aoFloor);   // [uccle-city CHANGES.md #15]
       a *= 0.92 + r() * 0.12; // a little value spread per card
       const s = cr * (0.8 + r() * 0.3) * sizeK; // half size
       const spin = r() * Math.PI * 2, cs = Math.cos(spin), sn = Math.sin(spin);

@@ -161,66 +161,86 @@ const at = (pts, t) => { const f = t * (pts.length - 1), i = Math.min(pts.length
 const dirAt = (pts, t) => { const f = t * (pts.length - 1), i = Math.min(pts.length - 2, Math.floor(f)); return pts[i + 1].clone().sub(pts[i]).normalize(); };
 const outward = (d, k = 1) => { const h = V(d.x, 0, d.z); return h.lengthSq() < 1e-6 ? V(1, 0, 0) : h.normalize().multiplyScalar(k); };
 
+/** The natural (avenue / square) plane. The crown is grown INTO an envelope, a broad dome (the plane's crown is about
+ *  as wide as it is tall above the bole): each scaffold limb owns a sector of it; every secondary grows from its limb
+ *  toward a point of the envelope in that sector (lower on the limb = lower on the dome), its twigs toward points
+ *  near it, and the leaf pads sit at their tips just inside the envelope. So the pads cover the dome's top AND its
+ *  sides down to the bole, with gaps between them, instead of an umbrella of tips. */
 function naturalPlane(r, v) {
   const branches = [], pads = [];
   const rr = (a, b) => a + (b - a) * r();
   const square = v % 2 === 1;                  // the squares' planes: lower fork, broader; avenues: a taller bole
-  const bole = square ? rr(2.8, 3.6) : rr(4.2, 5.6);
-  const lean = V(r() - 0.5, 0, r() - 0.5).multiplyScalar(0.12);
-  const leaderLen = rr(15, 17.5);
-  const trunk = grow(r, V(0, -0.5, 0), V(lean.x, 1, lean.z), leaderLen, 14, { pull: V(0, 1, 0), pullK: 0.12, wiggle: 0.1 });
-  const R0 = 0.46;
-  const trunkR = taper(R0, 0.09);
+  const bole = square ? rr(3.0, 3.8) : rr(4.4, 5.6);
+  const top = rr(17, 19.5);                    // crown top (m above the foot)
+  const W = (square ? rr(8.8, 10) : rr(7.8, 9.0));   // crown half width
+  const yb = bole + 0.6, cy = yb + (top - yb) * 0.36;
+  const env = (az, el, k = 1) => {             // a point of the envelope (el: -90..90 deg around cy), k = share of it
+    const e = THREE.MathUtils.degToRad(el), up = e > 0 ? top - cy : cy - yb;
+    const wob = 1 + 0.08 * Math.sin(az * 3 + v) + 0.06 * Math.sin(az * 5 + 2 * v);   // not a perfect dome: lobes
+    return V(Math.cos(az) * Math.cos(e) * W * wob * k, cy + Math.sin(e) * up * k, Math.sin(az) * Math.cos(e) * W * wob * k);
+  };
+  const lean = V(r() - 0.5, 0, r() - 0.5).multiplyScalar(0.1);
+  const leaderLen = top - 2.5;
+  const trunk = grow(r, V(0, -0.5, 0), V(lean.x, 1, lean.z), leaderLen + 0.5, 14, { pull: V(0, 1, 0), pullK: 0.12, wiggle: 0.1 });
+  const trunkR = taper(0.46, 0.08);
   branches.push({ pts: trunk, rad: trunkR, level: 0, flare: true });
-  // scaffolds: golden-angle round the trunk, from the bole up, lower ones longer and flatter
-  const nS = 5 + Math.floor(r() * 3);
+  const nS = 5 + Math.floor(r() * 2);
   let az = r() * Math.PI * 2;
-  const tips = [];
+  const limbs = [];
   for (let i = 0; i < nS; i++) {
-    az += 2.4 + (r() - 0.5) * 0.5;
-    const h01 = i / (nS - 1);                                       // 0 = lowest
-    const tOn = THREE.MathUtils.clamp((bole + 0.5 + h01 * (square ? 4.5 : 5.5) + 0.5) / leaderLen, 0, 0.75);
+    az += (Math.PI * 2) / nS + (r() - 0.5) * 0.35;
+    const h01 = i / (nS - 1);
+    const tOn = THREE.MathUtils.clamp((bole + 0.3 + h01 * (square ? 3.5 : 4.5)) / (leaderLen + 0.5), 0, 0.7);
     const from = at(trunk, tOn);
-    const elev = THREE.MathUtils.degToRad(rr(28, 42) + h01 * 22 + (square ? -6 : 0));
-    const out = V(Math.cos(az), 0, Math.sin(az));
-    const d0 = out.clone().multiplyScalar(Math.cos(elev)).add(V(0, Math.sin(elev), 0));
-    const len = (square ? rr(10, 12) : rr(9, 11)) * (1 - h01 * 0.3);
-    const pts = grow(r, from, d0, len, 8, { pull: out.clone().multiplyScalar(0.8).add(V(0, 0.6, 0)).normalize(), pullK: 0.15, wiggle: 0.32, droop: 0.12 });
-    const rB = trunkR(tOn) * rr(0.6, 0.72);
-    branches.push({ pts, rad: taper(rB, 0.05), level: 1 });
-    tips.push({ pts, rB, len, out });
+    // the limb heads for ~65 % of the way to the envelope, rising (lower limbs flatter)
+    const goal = env(az, 18 + h01 * 30 + rr(-6, 6), 0.68);
+    const len = goal.distanceTo(from);
+    const pts = grow(r, from, goal.clone().sub(from).normalize().lerp(V(0, 1, 0), 0.25), len, 8, { pull: goal.clone().sub(from).normalize(), pullK: 0.22, wiggle: 0.3, droop: 0.06 });
+    const rB = trunkR(tOn) * rr(0.6, 0.7);
+    branches.push({ pts, rad: taper(rB, 0.06), level: 1 });
+    limbs.push({ pts, rB, az, sector: (Math.PI * 2) / nS });
   }
-  // the leader's own crown top
-  tips.push({ pts: trunk.slice(Math.floor(trunk.length * 0.55)), rB: trunkR(0.55), len: leaderLen * 0.45, out: outward(dirAt(trunk, 0.9)), leader: true });
-  // secondaries along each limb's outer part, twigs on those; pads at their tips
-  for (const L of tips) {
-    const nSec = L.leader ? 7 : 6 + Math.floor(r() * 2);
-    for (let k = 0; k < nSec; k++) {
-      const t = 0.28 + (k / nSec) * 0.66 + r() * 0.05;
-      const from = at(L.pts, t), d = dirAt(L.pts, t);
-      const sa = r() * Math.PI * 2;
-      const side = V(Math.cos(sa), 0, Math.sin(sa));
-      const sd = d.clone().multiplyScalar(0.55).add(side.multiplyScalar(0.75)).add(V(0, L.leader ? 0.5 : 0.15, 0)).normalize();
-      const sl = rr(2.6, 4.0) * (1 - t * 0.35) * (L.leader ? 0.9 : 1);
-      const sp = grow(r, from, sd, sl, 4, { pull: outward(sd).add(V(0, 0.4, 0)).normalize(), pullK: 0.2, wiggle: 0.35, droop: 0.25 });
-      const rS = taper(L.rB, 0.05)(t) * 0.5;
+  limbs.push({ pts: trunk.slice(Math.floor(trunk.length * 0.5)), rB: trunkR(0.5), az: 0, sector: Math.PI * 2, leader: true });
+  // the secondaries' goals: spread evenly over the dome (a Fibonacci spiral over its surface from 40 deg below the
+  // crown's centre to the top, jittered), each grown from the limb nearest to it in azimuth (the leader takes the cap),
+  // from lower on the limb for a lower goal: no bald patch whatever the side
+  const NG = 46, goals = [];
+  const s0 = Math.sin(THREE.MathUtils.degToRad(-32));
+  for (let k = 0; k < NG; k++) {
+    const sEl = s0 + (1 - s0) * ((k + 0.5) / NG);
+    goals.push({ el: THREE.MathUtils.radToDeg(Math.asin(sEl)) + rr(-5, 5), a: k * 2.39996 + rr(-0.15, 0.15) });
+  }
+  const angDist = (x, y) => Math.abs(((x - y) % (Math.PI * 2) + Math.PI * 3) % (Math.PI * 2) - Math.PI);
+  for (const G of goals) {
+    const L = G.el > 58 ? limbs[limbs.length - 1] : limbs.slice(0, -1).reduce((b, l) => (angDist(l.az, G.a) < angDist(b.az, G.a) ? l : b));
+    {
+      const t = L.leader ? rr(0.4, 0.95) : THREE.MathUtils.clamp(0.25 + (G.el + 40) / 100 * 0.7 + rr(-0.05, 0.05), 0.2, 0.98);
+      const from = at(L.pts, t);
+      const a = G.a, el = G.el;
+      const pr = rr(1.75, 2.25);
+      const goal = env(a, el, 1).addScaledVector(env(a, el, 1).sub(V(0, cy, 0)).normalize(), -pr * 0.55);
+      const sd = goal.clone().sub(from);
+      const sl = sd.length();
+      if (sl < 0.8) continue;
+      const sp = grow(r, from, sd.normalize().lerp(V(0, 1, 0), 0.15), sl, 4, { pull: sd, pullK: 0.3, wiggle: 0.3, droop: 0.1 });
+      const rS = taper(L.rB, 0.06)(t) * 0.5;
       branches.push({ pts: sp, rad: taper(Math.max(0.03, rS), 0.018), level: 2 });
-      const pr = rr(1.7, 2.2);
-      const tip = sp[sp.length - 1];
-      pads.push({ c: tip.clone().add(V(0, pr * 0.25, 0)), r: pr });
-      // one twig with its own pad (level 3: dropped with the level 2 at LOD 1)
+      pads.push({ c: sp[sp.length - 1].clone(), r: pr });
+      // twigs (level 3, dropped with the level 2 at LOD 1) to points of the envelope next to it
       for (let j = 0; j < 2; j++) {
-        if (r() > 0.85) continue;
-        const tw = grow(r, at(sp, 0.35 + j * 0.3), sd.clone().add(V(r() - 0.5, 0.45, r() - 0.5)).normalize(), rr(1.3, 2.0), 2, { wiggle: 0.3 });
-        branches.push({ pts: tw, rad: taper(0.028, 0.012), level: 3 });
-        const pr2 = rr(1.4, 1.8);
-        pads.push({ c: tw[tw.length - 1].clone().add(V(0, pr2 * 0.2, 0)), r: pr2 });
+        if (r() > 0.8) continue;
+        const pr2 = rr(1.35, 1.75);
+        const a2 = a + rr(-0.28, 0.28), el2 = el + rr(-16, 16);
+        const g2 = env(a2, el2, 1).addScaledVector(env(a2, el2, 1).sub(V(0, cy, 0)).normalize(), -pr2 * 0.6);
+        const f2 = at(sp, 0.45 + j * 0.25);
+        if (g2.distanceTo(f2) < 0.6) continue;
+        const tw = grow(r, f2, g2.clone().sub(f2).normalize(), g2.distanceTo(f2), 2, { wiggle: 0.25 });
+        branches.push({ pts: tw, rad: taper(0.026, 0.012), level: 3 });
+        pads.push({ c: tw[tw.length - 1].clone(), r: pr2 });
       }
     }
-    // a pad hugging the limb itself, mid-way (fills the crown's inside, seen from below)
-    if (!L.leader) { const c = at(L.pts, 0.6); pads.push({ c: c.add(V(0, 0.6, 0)), r: rr(1.3, 1.6) }); }
   }
-  return { branches, pads, fork: at(trunk, (bole + 1) / leaderLen) };
+  return { branches, pads, fork: at(trunk, yb / (leaderLen + 0.5)) };
 }
 
 function pollardPlane(r) {
@@ -323,6 +343,10 @@ export function planeShape(seedBase) {
       crown, rad, clumps: pads,
       // many pads, fewer cards each than the street trees (20/7/3): a plane's crown is clumpier, with gaps
       cards: pollard ? [12, 5, 2] : [9, 4, 2], cardScale: pollard ? 0.62 : 0.72,
+      // (vendor CHANGES #15) many small pads: a gentler occlusion per pad overhead and a floor (the shade side of a
+      // plane is a deep green, not black), and more of the crown's dome in the shading normal (the crown reads as one
+      // lit dome with lumps, as in the photos, not as 100 separate balls)
+      aoOverhead: 0.95, aoFloor: 0.45, crownNormal: 0.2,
       trunk: (l) => barkMesh(branches.filter((b) => b.level <= [3, 1, 1][l]), (lv) => SIDES[l][Math.min(lv, SIDES[l].length - 1)]),
     };
   };
@@ -335,46 +359,54 @@ export function planeShape(seedBase) {
  *  the pixel footprint (no shimmer far away), and the whole pattern fades to its mean colour with distance. */
 export function planeBark(m) {
   const p = positionGeometry, level = attribute("bark", "vec4").w;
-  const q0 = vec3(p.x, p.y.mul(0.62), p.z).mul(4.2);
-  const warp = vec3(mx_noise_float(q0.mul(0.45)), mx_noise_float(q0.mul(0.45).add(17.3)), mx_noise_float(q0.mul(0.45).add(41.1)));
-  const q = q0.add(warp.mul(0.9));
+  const q0 = vec3(p.x, p.y.mul(0.55), p.z).mul(4.0);
+  const warp = vec3(mx_noise_float(q0.mul(0.4)), mx_noise_float(q0.mul(0.4).add(17.3)), mx_noise_float(q0.mul(0.4).add(41.1)));
+  const q = q0.add(warp.mul(1.1));
   const fw = max(fwidth(q.x).add(fwidth(q.y)).add(fwidth(q.z)), 1e-4);       // footprint in pattern units
-  const far = smoothstep(0.25, 1.4, fw);
-  const n1 = mx_noise_float(q), n2 = mx_noise_float(q.mul(1.9).add(5.7)), n3 = mx_noise_float(q.mul(0.7).add(11.0));
-  const step = (n, t) => smoothstep(t.sub(fw.mul(0.35)), t.add(fw.mul(0.35)), n);
-  // colours (linear): old outer bark olive-grey, freshly exposed cream / pale yellow, grey-green, a warm tan
-  const olive = vec3(0.105, 0.105, 0.068), greyGreen = vec3(0.2, 0.205, 0.15), cream = vec3(0.42, 0.39, 0.27);
-  const paleYel = vec3(0.34, 0.33, 0.17), tan = vec3(0.24, 0.19, 0.13);
-  const a = step(n1, float(0.08)), b = step(n2, float(0.18)), c = step(n3, float(0.25));
-  let col = olive;
+  const far = smoothstep(0.25, 1.4, fw), near = float(1).sub(far);
+  // ragged plate outlines: each threshold field gets a finer noise on top (the flakes' torn edges)
+  const rag = mx_noise_float(q.mul(4.3).add(3.1)).mul(0.11).mul(near);
+  const n1 = mx_noise_float(q).add(rag), n2 = mx_noise_float(q.mul(1.7).add(5.7)).add(rag.mul(0.8)), n3 = mx_noise_float(q.mul(0.6).add(11.0));
+  const step = (n, t) => smoothstep(t.sub(fw.mul(0.3)), t.add(fw.mul(0.3)), n);
+  // colours (linear), from the reference photos: the old outer bark olive / grey-green with moss, the freshly
+  // exposed under-bark cream to pale yellow-green, a warm tan, a pinkish grey
+  const olive = vec3(0.15, 0.155, 0.095), greyGreen = vec3(0.27, 0.28, 0.2), cream = vec3(0.55, 0.52, 0.36);
+  const paleYel = vec3(0.45, 0.45, 0.26), tan = vec3(0.32, 0.26, 0.18), pinkGrey = vec3(0.33, 0.29, 0.26);
+  const a = step(n1, float(0.05)), b = step(n2, float(0.22)), c = step(n3, float(0.28));
+  let col = mix(olive, pinkGrey, smoothstep(-0.4, 0.2, n3).mul(0.35));
   col = mix(col, greyGreen, a);
-  col = mix(col, mix(cream, paleYel, smoothstep(-0.3, 0.3, n3)), b.mul(a.oneMinus().mul(0.6).add(0.4)));
-  col = mix(col, tan, c.mul(0.65));
-  // the flake edges: a dark lip just outside a plate, a pale rim just inside (where n crosses its threshold)
-  const lipW = fw.mul(0.6).add(0.025);
-  const edge = (n, t) => float(1).sub(smoothstep(float(0), lipW, abs(n.sub(t))));
-  const e1 = edge(n1, float(0.08)), e2 = edge(n2, float(0.18));
-  const lip = max(e1, e2).mul(float(1).sub(far));
-  col = mix(col, vec3(0.05, 0.045, 0.035), lip.mul(0.75));
-  // fine grain / lichen speckle
-  const fine = mx_noise_float(q.mul(6.0)).mul(0.5).add(0.5);
-  col = col.mul(fine.mul(0.25).mul(float(1).sub(far)).add(0.87));
+  col = mix(col, mix(cream, paleYel, smoothstep(-0.25, 0.35, n3)), b);
+  col = mix(col, tan, c.mul(0.5).mul(b.oneMinus()));
+  // the flake edges, ONE-sided: a thin shadowed groove just outside a newer plate (the old bark's broken edge stands
+  // over it) and a pale rim just inside it; thin, and gone with distance
+  const lipW = fw.mul(0.5).add(0.018);
+  const outside = (n, t) => smoothstep(t.sub(lipW.mul(2)), t.sub(lipW.mul(0.3)), n).mul(float(1).sub(step(n, t)));
+  const inside = (n, t) => step(n, t).mul(float(1).sub(smoothstep(t, t.add(lipW.mul(1.5)), n)));
+  const lip = max(outside(n1, float(0.05)), outside(n2, float(0.22))).mul(near);
+  const rim = max(inside(n1, float(0.05)), inside(n2, float(0.22))).mul(near);
+  col = mix(col, vec3(0.06, 0.055, 0.04), lip.mul(0.6));
+  col = mix(col, cream.mul(1.1), rim.mul(0.35));
+  // fine grain, lichen speckle, moss in the old bark
+  const fine = mx_noise_float(q.mul(7.0)).mul(0.5).add(0.5);
+  col = col.mul(fine.mul(0.22).mul(near).add(0.89));
+  const moss = smoothstep(0.25, 0.6, mx_noise_float(q.mul(1.3).add(31.0))).mul(a.oneMinus()).mul(b.oneMinus());
+  col = mix(col, vec3(0.1, 0.14, 0.05), moss.mul(0.45));
   // the foot: older bark, brown-grey, vertical fissures, damp and darker toward the ground
-  const foot = smoothstep(1.9, 0.3, p.y).mul(smoothstep(0.5, -0.5, level));
-  const fiss = smoothstep(0.55, 0.85, abs(mx_noise_float(vec3(p.x.mul(9.0), p.y.mul(1.4), p.z.mul(9.0)))).oneMinus());
-  const footCol = mix(vec3(0.13, 0.11, 0.085), vec3(0.03, 0.026, 0.02), fiss.mul(float(1).sub(far)));
-  col = mix(col, footCol, foot.mul(0.85));
-  col = col.mul(smoothstep(-0.5, 0.6, p.y).mul(0.35).add(0.65));             // earth-darkened at the very bottom
+  const foot = smoothstep(1.7, 0.2, p.y).mul(smoothstep(0.5, -0.5, level));
+  const fiss = smoothstep(0.6, 0.9, abs(mx_noise_float(vec3(p.x.mul(9.0), p.y.mul(1.4), p.z.mul(9.0)))).oneMinus());
+  const footCol = mix(vec3(0.19, 0.165, 0.13), vec3(0.05, 0.043, 0.034), fiss.mul(near));
+  col = mix(col, footCol, foot.mul(0.75));
+  col = col.mul(smoothstep(-0.5, 0.5, p.y).mul(0.3).add(0.7));             // earth-darkened at the very bottom
   // the limbs: paler, smaller plates, more cream (the young bark)
   const limb = smoothstep(0.5, 1.5, level);
-  col = mix(col, mix(col, cream.mul(0.9), 0.35), limb);
+  col = mix(col, mix(col, cream.mul(0.85), 0.4), limb);
   // the far mean (what the pattern averages to)
-  col = mix(col, mix(vec3(0.17, 0.165, 0.11), vec3(0.24, 0.22, 0.16), limb), far.mul(0.8));
+  col = mix(col, mix(vec3(0.25, 0.24, 0.165), vec3(0.33, 0.31, 0.22), limb), far.mul(0.8));
   m.colorNode = col;
-  // relief: each plate a hair proud of the one under it, the lip a groove; the foot's fissures deeper
-  const h = a.mul(0.004).add(b.mul(0.003)).sub(lip.mul(0.003)).sub(fiss.mul(foot).mul(0.012)).mul(float(1).sub(far));
+  // relief: the new plates a hair under the old bark, the groove at their edge; the foot's fissures deeper
+  const h = a.mul(0.002).sub(b.mul(0.003)).sub(lip.mul(0.002)).sub(fiss.mul(foot).mul(0.012)).mul(near);
   m.normalNode = bumpNormal(h);
-  m.roughnessNode = mix(float(0.78), float(0.95), max(foot, a.oneMinus().mul(0.5)));
+  m.roughnessNode = mix(float(0.72), float(0.95), max(foot, b.oneMinus().mul(0.6)));
   m.needsUpdate = true;
 }
 
@@ -385,8 +417,13 @@ export function planeDef(seedBase = 1000) {
     params: {
       seed: seedBase,
       // a fresh, slightly yellow mid green, lighter than the street trees' olive; a cool shade side
-      topColor: "#93b24c", bottomColor: "#2a4a1d", translucencyColor: "#cddc78", tintVar: 0.2,
-      crownLift: 0, fill: 0.32, fillColor: "#8fae7c", aoColor: 0.4, trunkColor: [0.2, 0.19, 0.13],
+      // (a near-flat bottom -> top ramp and a light albedo occlusion: with the street trees' dark bottom colour the lower
+      // half of this deep crown went black; the photos show lit clumps down to the crown's base)
+      topColor: "#8db04a", bottomColor: "#628a38", translucencyColor: "#cddc78", tintVar: 0.2,
+      crownLift: 0, fill: 0.4, fillColor: "#8fae7c", aoColor: 0.22, trunkColor: [0.2, 0.19, 0.13],
+      // the sun-shadow lookup moves 2.4 m toward the sun (street trees 1.4): a plane crown is ~3x as deep, and with 1.4 m
+      // the lower dome sat in the shadow of its own upper pads, black where the photos show a lit, lumpy green
+      shadowLift: 2.4,
       leafTone: 0.55,
       // hooks (lab, stubbed): season (0 summer .. 1 autumn) and wind are uniforms of the shared chain
     },

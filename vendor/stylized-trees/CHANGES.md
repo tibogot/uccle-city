@@ -56,3 +56,7 @@
 14. **Wind direction** (tree lab): `params.windDir` [x, z] (uniform `U.windDir`): the slow sway leans along it with a
    smaller sideways swing (before: a fixed x / z sway). The sway is added in the world (since #5). Only with
    `windAmp` > 0 (0 in the city: no change there).
+15. **Crown occlusion and normal per shape** (tree lab): a shape may return `aoOverhead` (the occlusion factor per clump
+   overhead, default 0.8), `aoFloor` (the lowest occlusion, default 0) and `crownNormal` (the crown ellipsoid's share in
+   a card's shading normal, default 0.3). With ~100 small pads (the plane) 0.8 per overlapping pad turned the lower
+   crown black (0.8^10); the defaults keep the street trees as they were.
