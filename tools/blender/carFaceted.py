@@ -15,11 +15,12 @@ Car types (metres, length x width x height; wheelbase; tyre radius) - generic pr
     suv        small SUV / crossover      4.40 x 1.82 x 1.60   WB 2.64  r 0.345
     van_c      compact van                4.50 x 1.84 x 1.82   WB 2.72  r 0.320   (Kangoo / Berlingo class)
     van_p      panel van                  5.05 x 2.02 x 2.30   WB 3.25  r 0.345   (Trafic / Vivaro class)
-    taxi       Brussels taxi (saloon, black, roof sign; keeps its livery)
+    taxi       Brussels taxi (estate, black, yellow chequer band, licence number, amber-lit roof sign; keeps its livery)
 
 How a body is built (car frame: x left, y up, z forward; the origin on the ground midway between the axles):
-  - the TUB (everything under the belt line) is a stack of six plan-view loops (underbody edge, sill / bumper bottom,
-    sill top / lower bumper crease, waist crease / bumper top, shoulder / lamp top, belt / bonnet edge), each loop the
+  - the TUB (everything under the belt line) is a stack of seven plan-view loops (underbody edge, sill / bumper bottom,
+    sill top / lower bumper crease, lower-door character line / bumper middle, waist crease / bumper top, shoulder /
+    lamp top, belt / bonnet edge), each loop the
     same points: the front fascia at fixed fractions of the half width (bowed and with rounded corners in plan), fixed
     side stations (axles, door seams), the rear fascia. Bands between loops are flat facets; the top is a crowned grid
     (bonnet, sill ledge, boot); door seams are real grooves (three stations, the middle one pushed in 5 mm).
@@ -29,12 +30,15 @@ How a body is built (car frame: x left, y up, z forward; the origin on the groun
     windscreen, side windows and backlight are the ring bands, the pillars their chamfers; every window is inset into
     a rubber frame and recessed 1 cm; dark tinted glass (the viewer draws it see-through with alpha-to-coverage, so the
     interior shows: seats, headrests, dashboard, steering wheel, headliner).
+  - each type has its own FASCIA and REAR (tables below the types): lamp span and height, grille width / height /
+    slats / chrome surround, lower intake, corner intakes, skid plates; tail clusters (wide, vertical, L-shaped),
+    garnish (gloss black or chrome), reflectors, diffuser with fins. A fuel flap on the right rear quarter.
   - lamps: recessed housings with inner reflector facets and projector cups (head), stepped red facets (tail);
     grilles with slats, Belgian-style plates (white, red characters, random, no real registration), mirrors, door
     handles, wipers, roof rails / fin, exhaust. Tyres: lathe with sidewall bulge, shoulder blocks and a tread groove;
     5-spoke faceted rims, brake disc and caliper behind.
-  - AMBIENT OCCLUSION baked with Cycles to a per-vertex attribute (ground plane and wheels as occluders), multiplied
-    into COLOR_0. Paint vertices keep COLOR_0 as a shade (AO), the viewer multiplies the per-instance paint colour.
+  - AMBIENT OCCLUSION baked with Cycles to per-vertex attributes (ground plane and wheels as occluders), twice: over
+    0.9 m (mass, ground, arches) and over 0.22 m (contact darkening in seams, sills, recesses), multiplied into COLOR_0. Paint vertices keep COLOR_0 as a shade (AO), the viewer multiplies the per-instance paint colour.
   - _KIND: 0 fixed colour, 1 paint, 2 head light, 3 tail light, 4 glass, 5 chrome / gloss, 6 rubber, 7 plate,
     8 interior (viewer/drive/carPacks.js packMaterial). No LODs here: the viewer makes them with meshoptimizer.
 """
@@ -86,7 +90,9 @@ PAL = [
     ("disc", 5, (0.22, 0.22, 0.22)),
     ("caliper", 0, (0.10, 0.10, 0.11)),
     ("white", 0, (0.78, 0.78, 0.76)),
-    ("sign", 2, (0.80, 0.62, 0.10)),
+    ("sign", 2, (0.95, 0.55, 0.06)),            # taxi sign letters: amber, lit at night (head-light kind)
+    ("skid", 0, (0.40, 0.41, 0.42)),            # SUV skid plates: brushed silver plastic
+    ("taxi_yellow", 0, (0.80, 0.52, 0.02)),     # Brussels taxi chequer band and licence number
 ]
 M = {n: i for i, (n, _, _) in enumerate(PAL)}
 MATS = []
@@ -282,8 +288,10 @@ def plate(mb, centre, tilt, facing, rng, w=0.52, h=0.11):
         A, B = pts(uu, vv, n0), pts(uu, vv, n1)
         cc = frame(0, 0, (n0 + n1) / 2)
         mb.face(B, mat, share=False, out=("from", cc))
+        # the slab's edges in black: a colour border all round the face, so the LOD simplifier (locked borders) can't
+        # fold the thin slab flat and lose the white plate
         for k in range(4):
-            mb.face([A[k], A[(k + 1) % 4], B[(k + 1) % 4], B[k]], mat, share=False, out=("from", cc))
+            mb.face([A[k], A[(k + 1) % 4], B[(k + 1) % 4], B[k]], M["trim"], share=False, out=("from", cc))
     slab(w / 2 + 0.012, h / 2 + 0.012, -0.03, 0.004, M["trim"])
     slab(w / 2, h / 2, 0.003, 0.003 + T, M["plate"])
     n = 0.003 + T + 0.0012
@@ -321,14 +329,43 @@ TYPES = {
     "van_p": T(label="panel van", type="van", L=5.05, W=2.02, WB=3.25, OF=0.95, RW=0.345, TW=0.215, RR=0.229,
                GC=0.18, HB=1.12, HN=0.98, lampH=0.22, rail=0.34, HT=1.15, HR=2.28, bonnet=0.70, ws=0.80, back="van", bl=(0.04, 0.08),
                doors="panel", clad=True, paint=(0.70, 0.70, 0.68), track=1.70),
-    "taxi": T(label="Brussels taxi", type="taxi", L=4.72, W=1.82, WB=2.80, OF=0.95, RW=0.325, TW=0.215, RR=0.229,
-              GC=0.14, HB=0.95, HN=0.74, HT=1.00, HR=1.445, bonnet=1.18, ws=0.86, back="saloon", bl=(0.52, 1.02),
-              doors=4, paint=(0.010, 0.010, 0.011), keepPaint=True, taxi=True, track=1.57),
+    "taxi": T(label="Brussels taxi", type="taxi", L=4.66, W=1.80, WB=2.70, OF=0.92, RW=0.317, TW=0.205, RR=0.216,
+              GC=0.14, HB=0.95, HN=0.75, lampH=0.12, HT=1.02, HR=1.47, bonnet=1.14, ws=0.84, back="estate", bl=(0.06, 0.22),
+              doors=5, quarter=True, rails=True, paint=(0.010, 0.010, 0.011), keepPaint=True, taxi=True, track=1.56),
 }
+# FASCIAS per type (generic designs). Fractions f of the half width (0 = centre, 1 = the corner); bands of the tub:
+# chin (L0-L1), lower (L1-L2), bumpA (L2-L2b), bumpB (L2b-L3), lamp (L3-L4), top (L4-L5).
+#   lamp (f0, f1, bands)   grille (f1, bands, slats, chrome surround)   lower intake f1 in 'lower'   corners (f0, f1) in
+#   'lower'   skid: silver skid plate in the chin   extra: more fractions for these edges
+FASCIA = {
+    "hatch_s": dict(lamp=(0.62, 0.965, ("lamp",)), grille=(0.35, ("lamp",), 1, False), lower=0.62, corners=None, skid=False, extra=(0.62, 0.35)),
+    "hatch_c": dict(lamp=(0.5, 1.0, ("lamp",)), grille=(0.5, ("lamp",), 2, False), lower=0.5, corners=(0.81, 0.93), skid=False, extra=()),
+    "estate": dict(lamp=(0.42, 1.0, ("lamp",)), grille=(0.42, ("lamp",), 1, True), lower=0.79, corners=None, skid=False, extra=(0.42,)),
+    "saloon": dict(lamp=(0.42, 0.965, ("lamp",)), grille=(0.42, ("lamp", "bumpB"), 3, True), lower=0.42, corners=(0.62, 0.93), skid=False, extra=(0.42, 0.62)),
+    "suv": dict(lamp=(0.5, 1.0, ("lamp",)), grille=(0.5, ("lamp", "bumpB"), 3, False), lower=0.62, corners=None, skid=True, extra=(0.62,)),
+    "van_c": dict(lamp=(0.55, 1.0, ("lamp",)), grille=(0.55, ("lamp",), 3, False), lower=0.55, corners=(0.81, 0.93), skid=False, extra=(0.55,)),
+    "van_p": dict(lamp=(0.62, 1.0, ("lamp",)), grille=(0.62, ("lamp", "bumpB"), 4, False), lower=0.79, corners=None, skid=False, extra=(0.62,)),
+}
+FASCIA["taxi"] = FASCIA["estate"]
+#   tail: [(f0, f1, bands)] red clusters   garnish (f1, band, material) between the lamps   refl (f0, f1) in 'lower'
+#   diffuser: dark centre of the chin with fins   skid: silver   extra fractions
+REAR = {
+    "hatch_s": dict(tail=[(0.81, 1.0, ("lamp", "top"))], garnish=None, refl=(0.81, 0.93), diffuser=False, skid=False, extra=()),
+    "hatch_c": dict(tail=[(0.5, 1.0, ("top",))], garnish=(0.5, "top", "housing"), refl=(0.79, 0.93), diffuser=True, skid=False, extra=()),
+    "estate": dict(tail=[(0.62, 1.0, ("top",)), (0.81, 1.0, ("lamp",))], garnish=(0.62, "top", "chrome"), refl=(0.81, 0.93), diffuser=False, skid=False, extra=(0.62,)),
+    "saloon": dict(tail=[(0.42, 1.0, ("top",))], garnish=(0.42, "top", "chrome"), refl=(0.62, 0.79), diffuser=True, skid=False, extra=(0.42, 0.62)),
+    "suv": dict(tail=[(0.62, 1.0, ("top",))], garnish=(0.62, "top", "housing"), refl=(0.81, 0.93), diffuser=False, skid=True, extra=(0.62,)),
+    "van_c": dict(tail=[(0.81, 1.0, ("lamp", "top"))], garnish=None, refl=(0.81, 0.93), diffuser=False, skid=False, extra=()),
+    "van_p": dict(tail=[(0.81, 1.0, ("bumpB", "lamp", "top"))], garnish=None, refl=(0.62, 0.79), diffuser=False, skid=False, extra=(0.62,)),
+}
+REAR["taxi"] = REAR["estate"]
+BANDS = ["chin", "lower", "bumpA", "bumpB", "lamp", "top"]
 
-# fractions of the half width at which the front / rear fascia points sit (and the rows of the top grid)
-FR = [0.965, 0.93, 0.81, 0.80, 0.79, 0.5, 0.0]
-FULL = [1.0] + FR + [-f for f in reversed(FR[:-1])] + [-1.0]       # 15 rows across, left edge to right edge
+# fractions of the half width at which the front / rear fascia points sit (and the rows of the top grid); each type
+# adds its own (FASCIA / REAR extra) so its lamp, grille and intake edges have points
+FR0 = [0.965, 0.93, 0.81, 0.80, 0.79, 0.5, 0.0]
+L0, L1, L2, L2B, L3, L4, TOP = range(7)
+NL = 7
 GROOVE_W, GROOVE_D = 0.0045, 0.0055
 
 def crown(f):
@@ -336,7 +373,10 @@ def crown(f):
 
 # ------------------------------------------------------------------------------------------------ build one car
 def build_car(cid, P):
-    rng = random.Random(hash(cid) & 0xffff)
+    rng = random.Random(sum(map(ord, cid)) * 7919)
+    FA, RE = FASCIA[cid], REAR[cid]
+    FR = sorted(set(FR0) | set(FA["extra"]) | set(RE["extra"]), reverse=True)
+    FULL = [1.0] + FR + [-f for f in reversed(FR[:-1])] + [-1.0]
     L, W, WB = P["L"], P["W"], P["WB"]
     hw = W / 2
     zf = WB / 2 + P["OF"]                       # front end
@@ -370,13 +410,19 @@ def build_car(cid, P):
         ("L0", GC + 0.05, GC, GC + 0.07, hw - 0.10, 0.94, 0.11, 0.10),
         ("L1", GC + 0.13, GC + 0.075, GC + 0.15, hw - 0.028, 0.965, 0.03, 0.02),
         ("L2", GC + 0.27, GC + 0.20, GC + 0.29, hw - 0.006, 0.975, 0.0, 0.0),
+        None,
         ("L3", HN - P.get("lampH", 0.17), HB - 0.33, HT - 0.37, hw, 0.975, 0.025, 0.012),
         ("L4", HN - 0.045, HB - 0.085, HT - 0.17, hw - 0.012, 0.97, 0.10, 0.05),
         ("L5", HN, HB, HT, hw - 0.055, 0.96, 0.16, 0.085),
     ]
     if van:   # boxier vans: steeper, taller fascia
-        Ls[4] = ("L4", HN - 0.05, HB - 0.09, HT - 0.20, hw - 0.012, 0.975, 0.08, 0.02)
-        Ls[5] = ("L5", HN, HB, HT, hw - 0.05, 0.965, 0.13, 0.03)
+        Ls[L4] = ("L4", HN - 0.05, HB - 0.09, HT - 0.20, hw - 0.012, 0.975, 0.08, 0.02)
+        Ls[TOP] = ("L5", HN, HB, HT, hw - 0.05, 0.965, 0.13, 0.03)
+    # L2b: the bumper's middle crease at the ends; on the sides a concave character line along the lower doors
+    # (1.6 cm in from the sill crease and the waist), so the big door panels break into two facets
+    a2, a3 = Ls[L2], Ls[L3]
+    Ls[L2B] = ("L2b", lerp(a2[1], a3[1], 0.5), lerp(a2[2], a3[2], 0.42), lerp(a2[3], a3[3], 0.5), hw - 0.017, 0.975,
+               lerp(a2[6], a3[6], 0.5) + 0.006, lerp(a2[7], a3[7], 0.5) + 0.004)
     bow, cr = (0.06, 0.20) if not van else (0.05, 0.17)
     rbow, rcr = (0.05, 0.16) if not van else (0.02, 0.10)
     z_fend = z_ws0 + 0.02                        # the fender reaches the side heights here
@@ -401,11 +447,11 @@ def build_car(cid, P):
     SZ = [(zfa + 0.38, 0), (zfa, 0), (zfa - 0.40, 0), (z_ws0 + 0.08, 0)]
     for s in seams: SZ += [(s + GROOVE_W, 0), (s, 1), (s - GROOVE_W, 0)]
     SZ += [((seams[0] + seams[1]) / 2, 0), ((seams[1] + seams[-1]) / 2, 0), (zra + 0.40, 0), (zra, 0), (zra - 0.40, 0),
-           (zrear(5, 1) + 0.16, 0)]
+           (zrear(TOP, 1) + 0.16, 0), ((z_b + seams[-1]) / 2 - 0.30, 0), ((seams[0] + z_b) / 2 - 0.30, 0)]
     if P["back"] == "saloon": SZ += [(z_bl0 + 0.05, 0), (z_bl0 - 0.05, 0)]
     if van: SZ += [(z_ws1 - 0.05, 0)]
-    zmin_ok = max(zrear(li, 1) for li in range(6)) + 0.05
-    zmax_ok = min(zfront(li, 1) for li in range(6)) - 0.05
+    zmin_ok = max(zrear(li, 1) for li in range(NL)) + 0.05
+    zmax_ok = min(zfront(li, 1) for li in range(NL)) - 0.05
     SZ = sorted({(round(z, 4), g) for z, g in SZ if zmin_ok < z < zmax_ok}, key=lambda t: -t[0])
     # keep only one entry per z (groove flag wins)
     dd = {}
@@ -413,16 +459,16 @@ def build_car(cid, P):
     SZ = sorted(dd.items(), key=lambda t: -t[0])
 
     def snap(li, f):   # the bonnet / boot groove rows (0.79 .. 0.81) exist only on the top loop
-        return math.copysign(0.80, f) if li < 5 and 0.785 < abs(f) < 0.815 else f
+        return math.copysign(0.80, f) if li < TOP and 0.785 < abs(f) < 0.815 else f
     def pF(li, f):
         f = snap(li, f)
         x = f * side_x(li, zfront(li, 1)) if abs(f) < 1 else math.copysign(side_x(li, zfront(li, 1)), f)
-        y = Ls[li][1] + (crown(f) if li == 5 else 0.0)
+        y = Ls[li][1] + (crown(f) if li == TOP else 0.0)
         return (x, y, zfront(li, f))
     def pR(li, f):
         f = snap(li, f)
         x = f * side_x(li, zrear(li, 1)) if abs(f) < 1 else math.copysign(side_x(li, zrear(li, 1)), f)
-        y = Ls[li][3] + (crown(f) if li == 5 else 0.0)
+        y = Ls[li][3] + (crown(f) if li == TOP else 0.0)
         return (x, y, zrear(li, f))
     def pS(li, z, s, groove):
         x = side_x(li, z) - (GROOVE_D if groove and li >= 1 else 0.0)
@@ -445,35 +491,43 @@ def build_car(cid, P):
         if f: tags.setdefault(name, []).append(f)
 
     # ---- tub bands
+    def inr(fa, fb, f0, f1):
+        return min(fa, fb) >= f0 - 1e-6 and max(fa, fb) <= f1 + 1e-6
     def band_mat(b, e0, e1):
+        bn = BANDS[b]
         typ = e0[0] if e0[0] == e1[0] else ("S" if "S" in (e0[0], e1[0]) else e0[0])
-        if b == 0: return M["trim"], None
         if typ == "S":
-            if b == 1: return (M["trim"] if clad else M["paint"]), None
+            if bn == "chin": return M["trim"], None
+            if bn == "lower": return (M["trim"] if clad else M["paint"]), None
             return M["paint"], None
         fa, fb = (abs(e0[1]), abs(e1[1])) if e0[0] == e1[0] else (1.0, 1.0)
-        fmax = max(fa, fb)
         sgn = "L" if (e0[1] + e1[1]) > 0 else "R"
         if typ == "F":
-            if b == 1:
-                if fmax <= 0.5 + 1e-6: return M["trim"], "lgrille"
-                if 0.81 - 1e-6 <= min(fa, fb) and fmax <= 0.93 + 1e-6: return M["trim"], "fog" + sgn   # corner intakes
+            l0, l1, lb = FA["lamp"]; g1, gb, _, _ = FA["grille"]
+            if bn in lb and inr(fa, fb, l0, l1): return M["housing"], "lamp" + sgn
+            if bn in gb and inr(fa, fb, 0, g1): return M["trim"], "grille"
+            if bn == "chin":
+                return (M["skid"], "skid") if FA["skid"] and inr(fa, fb, 0, 0.5) else (M["trim"], None)
+            if bn == "lower":
+                if inr(fa, fb, 0, FA["lower"]): return M["trim"], "lgrille"
+                if FA["corners"] and inr(fa, fb, *FA["corners"]): return M["trim"], "fog" + sgn
                 return (M["trim"] if clad else M["paint"]), None
-            if b == 2: return M["paint"], None
-            if b == 3: return (M["trim"], "grille") if fmax <= 0.5 + 1e-6 else (M["housing"], "lamp" + sgn)
             return M["paint"], None
         # rear
-        if b == 1: return (M["trim"] if clad else M["paint"]), ("refl" + sgn if 0.79 < fmax < 0.95 and min(fa, fb) >= 0.79 else None)
-        if b == 2: return M["paint"], None
-        if van:   # tall corner clusters in the D pillars
-            if b in (3, 4) and min(fa, fb) >= 0.81 - 1e-6: return M["tail"], "tail" + sgn
-            return M["paint"], None
-        if b == 4: return (M["tail"], "tail" + sgn) if min(fa, fb) >= 0.5 - 1e-6 else (M["housing"], "garnish")
+        for (t0, t1, tb) in RE["tail"]:
+            if bn in tb and inr(fa, fb, t0, t1): return M["tail"], "tail" + sgn
+        if RE["garnish"] and bn == RE["garnish"][1] and inr(fa, fb, 0, RE["garnish"][0]): return M[RE["garnish"][2]], "garnish"
+        if bn == "chin":
+            if RE["diffuser"] and inr(fa, fb, 0, 0.5): return M["housing"], "diffuser"
+            if RE["skid"] and inr(fa, fb, 0, 0.5): return M["skid"], None
+            return M["trim"], None
+        if bn == "lower":
+            return (M["trim"] if clad else M["paint"]), ("refl" + sgn if inr(fa, fb, *RE["refl"]) else None)
         return M["paint"], None
 
-    rows = [[pt(li, e) for e in loop] for li in range(6)]
+    rows = [[pt(li, e) for e in loop] for li in range(NL)]
     n = len(loop)
-    for b in range(5):
+    for b in range(NL - 1):
         for j in range(n):
             j1 = (j + 1) % n
             mat, tg = band_mat(b, loop[j], loop[j1])
@@ -485,14 +539,14 @@ def build_car(cid, P):
 
     # ---- top grid: front col, side cols, rear col; FULL rows across
     def cap_side(z, groove, f):
-        e = pS(5, z, 1 if f >= 0 else -1, groove)
+        e = pS(TOP, z, 1 if f >= 0 else -1, groove)
         if abs(f) >= 1: return e
-        x = f * side_x(5, z)
-        y = side_y(5, z) + crown(f)
+        x = f * side_x(TOP, z)
+        y = side_y(TOP, z) + crown(f)
         if groove and abs(f) >= 0.93: y -= GROOVE_D
         if abs(abs(f) - 0.80) < 1e-6 and (z > z_ws0 + 0.08 or (P["back"] == "saloon" and z < z_bl0 - 0.05)): y -= GROOVE_D
         return (x, y, z)
-    cols = [[pF(5, f) for f in FULL]] + [[cap_side(z, g, f) for f in FULL] for z, g in SZ] + [[pR(5, f) for f in FULL]]
+    cols = [[pF(TOP, f) for f in FULL]] + [[cap_side(z, g, f) for f in FULL] for z, g in SZ] + [[pR(TOP, f) for f in FULL]]
     colz = [zf + 1] + [z for z, _ in SZ] + [zr - 1]
     cab0 = z_ws0 if not van else z_ws0
     cab1 = z_bl0 if P["back"] == "saloon" else SZ[-1][0] - 1e-4
@@ -593,16 +647,16 @@ def build_car(cid, P):
     # ---- greenhouse
     gh = MB()
     def ledge_y(z, f):
-        return side_y(5, z) + crown(f * 0.93) - 0.016
-    xg0 = lambda z: 0.93 * side_x(5, z)
+        return side_y(TOP, z) + crown(f * 0.93) - 0.016
+    xg0 = lambda z: 0.93 * side_x(TOP, z)
     th = 0.15 if not van else 0.07
     if P["back"] == "van": th = 0.06
     # plan points of ring 0 (sill): front [0, .55, .94], side stations, rear [.94, .55, 0]
     wsb = 0.07
     gz_front0 = z_ws0
-    gz_rear0 = z_bl0 if P["back"] != "hatch" else zrear(5, 0) + 0.035
+    gz_rear0 = z_bl0 if P["back"] != "hatch" else zrear(TOP, 0) + 0.035
     if P["back"] == "hatch": z_bl0 = gz_rear0
-    if P["back"] in ("estate", "van"): gz_rear0 = zrear(5, 0) + 0.03; z_bl0 = gz_rear0
+    if P["back"] in ("estate", "van"): gz_rear0 = zrear(TOP, 0) + 0.03; z_bl0 = gz_rear0
     side0 = [("A", gz_front0 - wsb * 0.88 - 0.07)]
     if P["doors"] in (4, 5):
         side0 += [("B0", z_b + 0.045), ("B1", z_b - 0.045)]
@@ -726,23 +780,36 @@ def build_car(cid, P):
     # ---- details
     d = MB()
     # plates
-    def band_plane(li0, li1, front=True):
-        a = pF(li0, 0.0) if front else pR(li0, 0.0)
-        b = pF(li1, 0.0) if front else pR(li1, 0.0)
-        y = (a[1] + b[1]) / 2; z = (a[2] + b[2]) / 2
-        tilt = math.atan2((b[2] - a[2]) * (-1 if front else 1), b[1] - a[1]) * -1
-        return (0.0, y, z), tilt
-    c, tilt = band_plane(2, 3, True)
-    plate(d, (0, c[1] - 0.01, c[2] + 0.002), -tilt if False else math.atan2(abs(pF(2, 0)[2] - pF(3, 0)[2]), pF(3, 0)[1] - pF(2, 0)[1]), +1, rng)
-    a, b2 = pR(2, 0.0), pR(3, 0.0)
-    plate(d, (0, (a[1] + b2[1]) / 2 + 0.005, (a[2] + b2[2]) / 2 - 0.002), math.atan2(abs(b2[2] - a[2]), b2[1] - a[1]), -1, rng)
-    # grille slats (horizontal bars inside the grille recesses)
-    for (li0, li1, nbar, kx) in ((3, 4, 2, 0.46), (1, 2, 2, 0.46)):
-        a, b = pF(li0, 0.0), pF(li1, 0.0)
-        for i in range(nbar):
-            t = (i + 1) / (nbar + 1)
-            y = lerp(a[1], b[1], t); z = lerp(a[2], b[2], t) - 0.02
-            box(d, (0, y, z), (2 * kx * side_x(li0, zfront(li0, 1)), 0.012, 0.02), M["chrome"] if li0 == 3 and not van else M["trim"])
+    fa_, fb_ = pF(L2, 0.0), pF(L3, 0.0)
+    plate(d, (0, pF(L2B, 0.0)[1], pF(L2B, 0.0)[2] + 0.002), math.atan2(abs(fa_[2] - fb_[2]), fb_[1] - fa_[1]), +1, rng)
+    ra_, rb_ = pR(L2, 0.0), pR(L3, 0.0)
+    plate(d, (0, pR(L2B, 0.0)[1] + 0.01, pR(L2B, 0.0)[2] - 0.002), math.atan2(abs(rb_[2] - ra_[2]), rb_[1] - ra_[1]), -1, rng)
+    # grille slats: horizontal bars inside the grille recess (chrome on the chrome-surround grilles)
+    g1, gb, nslat, gchrome = FA["grille"]
+    lo_ = min(BANDS.index(x) for x in gb); hi_ = max(BANDS.index(x) for x in gb) + 1
+    a, b = pF(lo_, 0.0), pF(hi_, 0.0)
+    for i in range(nslat):
+        t = (i + 1) / (nslat + 1)
+        y = lerp(a[1], b[1], t); z = lerp(a[2], b[2], t) - 0.022
+        box(d, (0, y, z), (2 * (g1 - 0.04) * side_x(lo_, zfront(lo_, 1)), 0.011, 0.02), M["chrome"] if gchrome else M["trim"])
+    if gchrome:   # a chrome bar across the top of the grille
+        box(d, (0, b[1] - 0.012, b[2] - 0.004), (2 * (g1 - 0.03) * side_x(hi_, zfront(hi_, 1)), 0.008, 0.012), M["chrome"])
+    a, b = pF(L1, 0.0), pF(L2, 0.0)
+    for i in range(2):
+        t = (i + 1) / 3
+        box(d, (0, lerp(a[1], b[1], t), lerp(a[2], b[2], t) - 0.025), (2 * (FA["lower"] - 0.05) * side_x(L1, zfront(L1, 1)), 0.011, 0.02), M["trim"])
+    # rear diffuser fins
+    if RE["diffuser"]:
+        a, b = pR(L0, 0.0), pR(L1, 0.0)
+        for k in (-0.30, -0.10, 0.10, 0.30):
+            box(d, (k * side_x(L1, zrear(L1, 1)), (a[1] + b[1]) / 2, (a[2] + b[2]) / 2 + 0.005), (0.008, abs(b[1] - a[1]) * 0.8, 0.05), M["trim"])
+    # fuel flap (right rear quarter): a proud flap 2 mm off the panel in a 1 mm dark seam
+    zfl = zra + 0.36
+    yfl = lerp(side_y(L3, zfl), side_y(L4, zfl), 0.45)
+    xfl = -lerp(side_x(L3, zfl), side_x(L4, zfl), 0.45)
+    for (dx, sz, mt) in ((0.0010, (0.18, 0.125), M["paint_seam"]), (0.0021, (0.168, 0.113), M["paint"])):
+        w_, h_ = sz[0] / 2, sz[1] / 2
+        d.face([(xfl - dx, yfl - h_, zfl - w_), (xfl - dx, yfl - h_, zfl + w_), (xfl - dx, yfl + h_, zfl + w_), (xfl - dx, yfl + h_, zfl - w_)], mt, share=False, out=(-1, 0, 0))
     # projector cups in the head lamps: on the two largest reflector facets per side
     for s in (1, -1):
         spots = sorted([p for p in projector_spots if p[0].x * s > 0], key=lambda p: -p[2])[:2]
@@ -786,9 +853,9 @@ def build_car(cid, P):
     elif P["doors"] == "slide": hz = [z_b + 0.20, seams[-1] + 0.20]
     else: hz = [z_b + 0.20]
     for z in hz:
-        yh = side_y(4, z) - 0.035
-        t = (yh - side_y(3, z)) / (side_y(4, z) - side_y(3, z))
-        xs = lerp(side_x(3, z), side_x(4, z), t)
+        yh = side_y(L4, z) - 0.035
+        t = (yh - side_y(L3, z)) / (side_y(L4, z) - side_y(L3, z))
+        xs = lerp(side_x(L3, z), side_x(L4, z), t)
         for s in (1, -1):
             fs = box(d, (s * (xs + 0.002), yh, z), (0.022, 0.026, 0.135), M["paint_dark"])
             chamfer_faces(d, fs, 0.006)
@@ -802,8 +869,8 @@ def build_car(cid, P):
     # side repeaters (amber, on the front wings behind the arch)
     for s in (1, -1):
         zr_ = zfa - RW - 0.16
-        y_ = side_y(3, zr_) + 0.06
-        box(d, (s * (side_x(3, zr_) - 0.002), y_, zr_), (0.012, 0.022, 0.055), M["amber"])
+        y_ = side_y(L3, zr_) + 0.06
+        box(d, (s * (side_x(L3, zr_) - 0.002), y_, zr_), (0.012, 0.022, 0.055), M["amber"])
     # rear wiper on hatch / estate / van tailgates
     if P["back"] in ("hatch", "estate", "van"):
         B = Vector([p for p, nm in r0 if nm == "r"][-1]); Tp = Vector([p for p, nm in r1 if nm == "r"][-1])
@@ -833,14 +900,38 @@ def build_car(cid, P):
         zfin = z_rtop + 0.20
         fs = box(d, (0, roof_y + 0.028, zfin), (0.06, 0.05, 0.17), M["paint"], taper=(0.4, 0.35))
         chamfer_faces(d, fs, 0.006)
-    # taxi roof sign
+    # Brussels taxi (Wikimedia Commons, 2012-2026: Skoda Octavia / Toyota Corolla TS taxis): black, a two-row yellow
+    # and black chequer band along the doors under the windows, a yellow licence number on the rear door, a black
+    # roof sign with amber TAXI letters (lit)
     if P.get("taxi"):
         zs = (z_hdr + z_rtop) / 2 + 0.10
-        fs = box(d, (0, roof_y + 0.10, zs), (0.62, 0.16, 0.20), M["sign"], taper=(0.92, 0.86))
-        chamfer_faces(d, fs, 0.012)
-        box(d, (0, roof_y + 0.012, zs), (0.40, 0.04, 0.12), M["trim"])
+        fs = box(d, (0, roof_y + 0.09, zs), (0.56, 0.13, 0.17), M["housing"], taper=(0.92, 0.86))
+        chamfer_faces(d, fs, 0.010)
+        box(d, (0, roof_y + 0.012, zs), (0.36, 0.04, 0.10), M["trim"])
         for face_s in (1, -1):
-            text_quads(d, "TAXI", lambda u, v, fs_=face_s: (u * fs_, roof_y + 0.10 + v, zs + fs_ * 0.1035), 0.07, M["trim"], out=(0, 0, face_s))
+            zface = zs + face_s * 0.0865
+            text_quads(d, "TAXI", lambda u, v, fs_=face_s, zf_=zface: (u * fs_, roof_y + 0.092 + v, zf_), 0.062, M["sign"], out=(0, 0, face_s))
+        # chequer band: squares on the shoulder facet (between L4 and the belt), from the front to the rear door
+        sq = 0.034
+        za, zb = seams[0] - 0.05, seams[-1] + 0.03
+        nsq = int((za - zb) / sq)
+        def side_pt(sgn, z, t, off):
+            y = lerp(side_y(L4, z), side_y(TOP, z), t)
+            x = lerp(side_x(L4, z), side_x(TOP, z), t) + off
+            return (sgn * x, y, z)
+        for sgn in (1, -1):
+            for i in range(nsq):
+                for row in (0, 1):
+                    if (i + row) % 2: continue
+                    z0, z1 = za - i * sq, za - (i + 1) * sq
+                    t0, t1 = 0.12 + row * 0.38, 0.12 + (row + 1) * 0.38
+                    pts = [side_pt(sgn, z0, t0, 0.0016), side_pt(sgn, z1, t0, 0.0016), side_pt(sgn, z1, t1, 0.0016), side_pt(sgn, z0, t1, 0.0016)]
+                    d.face(pts, M["taxi_yellow"], share=False, out=(sgn, 0.35, 0))
+            # licence number on the rear door, under the band
+            zn = seams[-1] + 0.20
+            yn = side_y(L3, zn) + 0.13
+            xn = lerp(side_x(L3, zn), side_x(L4, zn), (yn - side_y(L3, zn)) / (side_y(L4, zn) - side_y(L3, zn))) + 0.0016
+            text_quads(d, "1403", lambda u, v, sg=sgn, z_=zn, y_=yn, x_=xn: (sg * x_, y_ + v, z_ - u * sg), 0.05, M["taxi_yellow"], out=(sgn, 0, 0))
     # exhaust
     zx = zrear(1, 0.6) + 0.06
     ex_c = (0.45 * hw, GC + 0.06, zx)
@@ -988,21 +1079,27 @@ def build_wheel(RW, TW, RR):
 
 # ------------------------------------------------------------------------------------------------ bake + export
 def bake_ao(objs, occluders_extra=()):
+    """Two Cycles AO bakes per vertex: 'ao' over 0.9 m (body mass, ground, arches) and 'ao_s' over 0.22 m (contact
+    darkening in seams, sills, lamp recesses, under the mirrors); ao_of multiplies them."""
     for o in scn.objects: o.select_set(False)
     for o in objs:
         me = o.data
         for a in list(me.color_attributes): me.color_attributes.remove(a)
-        ca = me.color_attributes.new("ao", "FLOAT_COLOR", "POINT")
-        me.color_attributes.active_color = ca
         o.select_set(True)
     bpy.context.view_layer.objects.active = objs[0]
-    if BAKE:
-        bpy.ops.object.bake(type="AO", target="VERTEX_COLORS")
+    for name, dist in (("ao", 0.9), ("ao_s", 0.22)):
+        for o in objs:
+            ca = o.data.color_attributes.new(name, "FLOAT_COLOR", "POINT")
+            o.data.color_attributes.active_color = ca
+        world.light_settings.distance = dist
+        if BAKE:
+            bpy.ops.object.bake(type="AO", target="VERTEX_COLORS")
 
 def ao_of(o):
-    a = o.data.color_attributes.get("ao")
+    a = o.data.color_attributes.get("ao"); b = o.data.color_attributes.get("ao_s")
     if not a or not BAKE: return [1.0] * len(o.data.vertices)
-    return [d.color[0] for d in a.data]
+    if not b: return [d.color[0] for d in a.data]
+    return [x.color[0] * lerp(1.0, y.color[0], 0.75) for x, y in zip(a.data, b.data)]
 
 def tri_soup(objs, mirror_x=False, origin=(0, 0, 0), ao_lift=0.0):
     """-> pos, nrm, col, kind arrays (per corner), in car coords relative to origin."""
@@ -1099,7 +1196,7 @@ scn.render.bake.target = "VERTEX_COLORS"
 world = bpy.data.worlds.new("w"); scn.world = world
 world.light_settings.distance = 0.9
 gmb = MB()
-gmb.face([(-40, 0, -40), (40, 0, -40), (40, 0, 40), (-40, 0, 40)], M["under"])
+gmb.face([(-400, 0, -400), (400, 0, -400), (400, 0, 400), (-400, 0, 400)], M["under"])
 ground = gmb.obj("ground")
 
 results = []
@@ -1188,6 +1285,10 @@ if PREVIEW:
     scn.render.resolution_x, scn.render.resolution_y = 1280, 720
     scn.cycles.samples = PV_SAMPLES; scn.cycles.use_denoising = True
     scn.view_settings.view_transform = "AgX"
+    for lk in ("AgX - Punchy", "Punchy"):
+        try: scn.view_settings.look = lk; break
+        except Exception: pass
+    scn.view_settings.exposure = -0.45
     def look_at(eye, target):
         co.location = C(eye)
         d_ = C(target) - C(eye)
@@ -1220,8 +1321,11 @@ if PREVIEW:
             keep += parts + wobjs
             x -= TYPES[cid]["W"] + 1.2
         hide_all_but(keep)
-        mid = x / 2
-        look_at((mid + 2.0, 1.6, 13.5), (mid + 0.6, 0.8, 0.0))
-        cam.lens = 40
-        scn.render.resolution_x, scn.render.resolution_y = 1920, 640
+        x_last = x + TYPES[ids[-1]]["W"] + 1.2           # centre of the last car
+        mid = x_last / 2
+        span = abs(x_last) + 2.6
+        cam.lens = 30                                     # 36 mm sensor: 62 degrees across
+        dist = (span / 2 + 1.0) / math.tan(math.atan(18 / 30))
+        look_at((mid + 0.22 * dist, 0.13 * dist, 1.6 + 0.95 * dist), (mid, 0.85, 0.6))
+        scn.render.resolution_x, scn.render.resolution_y = 1920, 480
         scn.render.filepath = os.path.join(PREVIEW, "faceted_lineup.png"); bpy.ops.render.render(write_still=True)

@@ -47,7 +47,12 @@ ramp, posts), handling / suspension / camera sliders, colliders drawn (G); the c
 `viewer/cars.js` until the owner picks. Our own faceted family (`tools/blender/carFaceted.py` -> `models/cars/faceted.glb`,
 same contract as the packs: one material, COLOR_0 = palette x Cycles-baked AO, `_KIND` 0-8, per-instance paint; glass drawn
 see-through with alpha-to-coverage in the same opaque draw): hatch_s, hatch_c, estate, saloon, suv, van_c, van_p, taxi;
-`?mode=compare&layout=family`, `&faceted=<id>`; the street benchmark has it as an option. Rebuild:
+`?mode=compare&layout=family`, `&faceted=<id>`; the street benchmark has it as an option. Polish pass: per-type
+fascias / rears, lower-door character line, fuel flap, two-distance AO, clear-coat paint (MeshPhysicalNodeMaterial,
+clearcoat on the paint mask, `packLook.clearcoat`), glass casts a light shadow (`maskShadowNode`), the Brussels taxi
+livery; LODs (`PACK_SOURCES.faceted.lods`): body / wheel errors per LOD, LOD3 welded on position only with colour as
+an attribute (`simplifyLoose`), Prune from LOD2; the street fleet cross-fades LODs with a dithered complementary mask
+(`packMaterial({ crossFade })`, per-instance `lodFade`, +-10 % around each switch distance). Rebuild:
 `blender --factory-startup -b -P tools/blender/carFaceted.py -- models/cars [--preview docs/cars] [--only id,id]`.
 
 ## How to run

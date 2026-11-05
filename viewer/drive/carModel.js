@@ -51,7 +51,7 @@ async function loadPackCar(spec) {
   const pack = await loadPack(src);
   const car = pack.cars.find((c) => c.id === id) || pack.cars[0];
   const paint = car.paint.clone();
-  const mat = packMaterial({ paint, lights: carLights, seeThrough: pack.seeThrough });
+  const mat = packMaterial({ paint, lights: carLights, rich: pack.rich });
   const wheelPos = {};
   for (const k of ["FL", "FR", "RL", "RR"]) wheelPos[k] = car.parts[`Wheel_${k}`]?.pos || [0, 0.3, 0];
   const lods = car.lods.map((L) => ({

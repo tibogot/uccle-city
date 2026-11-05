@@ -97,7 +97,7 @@ function variantsOf(name) {
     });
     return [{ id: "hatchback", lods, tris: m.lods.map((l) => l.tris), keepPaint: false }];
   }
-  const pack = OPTIONS[name].pack, mat = packMaterial({ paint: "instance", lights: { head: carLights.head, tail: carLights.tail }, seeThrough: pack.seeThrough });
+  const pack = OPTIONS[name].pack, mat = packMaterial({ paint: "instance", lights: { head: carLights.head, tail: carLights.tail }, rich: pack.rich, crossFade: pack.rich });
   return pack.cars.map((c) => ({
     id: c.id, type: c.type, keepPaint: c.keepPaint, defaultPaint: c.paint,
     lods: c.lods.map((L) => [{ geo: mergeGeometries(Object.entries(c.parts).map(([k, p]) => L[k].clone().translate(...p.pos))), mat }]),
@@ -127,12 +127,14 @@ class Fleet {
       for (const [n, a] of Object.entries(geo.attributes)) g.setAttribute(n, a);
       g.setIndex(geo.index);
       g.setAttribute("paint", new THREE.InstancedBufferAttribute(new Float32Array(Math.max(1, count[v]) * 3), 3));
+      g.setAttribute("lodFade", new THREE.InstancedBufferAttribute(new Float32Array(Math.max(1, count[v])), 1));
       const im = new THREE.InstancedMesh(g, mat, Math.max(1, count[v]));
       im.count = 0; im.frustumCulled = false; im.castShadow = k < 2; im.receiveShadow = true;
       this.group.add(im);
       return im;
     })));
     this.forceLod = -1;
+    this.crossFade = !!OPTIONS[name].pack?.rich;
     this.stats = { cars: 0, perLod: [0, 0, 0], culled: 0, draws: 0, tris: 0 };
     this.frustum = new THREE.Frustum(); this.pm = new THREE.Matrix4(); this.sphere = new THREE.Sphere(new THREE.Vector3(), 3.2);
     this.n = 0;
@@ -142,24 +144,34 @@ class Fleet {
     this.pm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     this.frustum.setFromProjectionMatrix(this.pm, THREE.WebGPUCoordinateSystem, camera.reversedDepth);
     for (const per of this.meshes) for (const l of per) for (const im of l) im.count = 0;
-    const st = this.stats; st.cars = 0; st.perLod = this.lodDist.map(() => 0); st.culled = 0; st.tris = 0;
+    const st = this.stats; st.cars = 0; st.perLod = this.lodDist.map(() => 0); st.culled = 0; st.tris = 0; st.fading = 0;
     for (const s of this.slots) {
       this.sphere.center.set(s.x, 0.8, s.z);
       if (!this.frustum.intersectsSphere(this.sphere)) { st.culled++; continue; }
       const d = camera.position.distanceTo(this.sphere.center);
       let k = this.forceLod >= 0 ? this.forceLod : this.lodDist.findIndex((u) => d < u);
       if (k < 0) k = this.lodDist.length - 1;
-      for (const im of this.meshes[s.v][k]) {
+      // cross-fade band of +-10 % around a switch distance (only where the material dithers: lodFade attribute)
+      let near = k, far = -1, t = 0;
+      if (this.crossFade && this.forceLod < 0) {
+        const L = this.lodDist;
+        if (k > 0 && d - L[k - 1] < 0.1 * L[k - 1]) { near = k - 1; far = k; t = (d - 0.9 * L[k - 1]) / (0.2 * L[k - 1]); }
+        else if (k < L.length - 1 && L[k] - d < 0.1 * L[k]) { near = k; far = k + 1; t = (d - 0.9 * L[k]) / (0.2 * L[k]); }
+      }
+      const put = (kk, fade) => { for (const im of this.meshes[s.v][kk]) {
         const i = im.count++;
         im.setMatrixAt(i, s.m);
         im.geometry.attributes.paint.setXYZ(i, s.color.r, s.color.g, s.color.b);
-      }
+        im.geometry.attributes.lodFade?.setX(i, fade);
+      } };
+      if (far < 0) put(k, 0); else { put(near, Math.min(1, Math.max(0, t))); put(far, 1 + Math.min(1, Math.max(0, t))); st.fading++; }
+      k = far < 0 ? k : t < 0.5 ? near : far;
       st.cars++; st.perLod[k]++; st.tris += this.variants[s.v].tris[k];
     }
     st.draws = 0;
     for (const per of this.meshes) for (const l of per) for (const im of l) {
       im.visible = im.count > 0;
-      if (im.visible) { st.draws++; im.instanceMatrix.needsUpdate = true; im.geometry.attributes.paint.needsUpdate = true; }
+      if (im.visible) { st.draws++; im.instanceMatrix.needsUpdate = true; im.geometry.attributes.paint.needsUpdate = true; if (im.geometry.attributes.lodFade) im.geometry.attributes.lodFade.needsUpdate = true; }
     }
   }
 }
@@ -238,8 +250,12 @@ if (MODE === "compare") {
   fc.add(S, "facetedCar", faceted.cars.map((c) => c.id)).name("Faceted car").onChange(placeCompare);
   S.glassOpacity = packLook.glassOpacity.value;
   fc.add(S, "glassOpacity", 0.2, 1, 0.01).name("faceted: glass opacity").onChange((v) => { packLook.glassOpacity.value = v; });
+  S.clearcoat = packLook.clearcoat.value;
+  fc.add(S, "clearcoat", 0, 1, 0.01).name("faceted: clear coat").onChange((v) => { packLook.clearcoat.value = v; });
   fc.add(S, "paint", ["as designed", ...Object.keys(PAINTS)]).name("paint").onChange(applyPaint);
   fc.add(S, "wire").name("wireframe").onChange(applyWire);
+  S.compareLod = "auto";
+  fc.add(S, "compareLod", ["auto", "LOD0", "LOD1", "LOD2", "LOD3"]).name("LOD (forced: popping check)");
   fc.add(S, "darkGlass").name("packs: dark glass (city fit)").onChange((v) => { packLook.glass.value = v ? 0.12 : 1; });
   fc.add(S, "view", Object.keys(VIEWS)).name("view").onChange((v) => VIEWS[v]());
 } else {
@@ -322,6 +338,7 @@ renderer.setAnimationLoop(() => {
   for (const c of compareCars) {
     const d = camera.position.distanceTo(c.car.root.position);
     let k = c.model.lodDist.findIndex((u) => d < u); if (k < 0) k = c.model.lodDist.length - 1;
+    if (S.compareLod !== "auto") k = +S.compareLod.slice(3);
     k = Math.min(k, c.model.lods.length - 1);
     c.car.setLod(k);
     v.set(kerbX, c.model.size[1] + 0.4 + (compareCars.indexOf(c) % 2) * 0.9, c.z).project(camera);

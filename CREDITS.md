@@ -73,7 +73,9 @@ Not in the city's parked cars (the owner picks first).
 Credit shown voluntarily in the Car Lab: "Kenney (kenney.nl), CC0", "Quaternius (quaternius.com), CC0".
 
 `models/cars/faceted.glb` is ours: generated entirely by `tools/blender/carFaceted.py` (generic proportions of European
-car classes, no real brand's design, no logos; plate characters are random, no real registration).
+car classes, no real brand's design, no logos; plate characters are random, no real registration). The taxi livery
+(black, yellow chequer band, amber TAXI roof sign) follows photos of Brussels taxis on Wikimedia Commons (Category:Taxis
+in Brussels, e.g. "Taxi in Brussels 2026.jpg", "Skoda Taxis in Brussels.jpg"), used as reference only, not included.
 
 ## Public transport
 
