@@ -28,6 +28,21 @@ read-only (copy into `vendor/` with ORIGIN.md); measure GPU ms before / after (s
 - Volumetric fog is opt-in only (`?vfog=1`, dev panel) until it is tuned.
 - Tree impostors off (`?impostors=1`) until 16x16 views + depth atlas.
 
+## Third-person character (Capsule Lab, branch claude/capsule; waiting for the owner)
+- [x] `viewer/character/`: kinematic capsule controller (120 Hz fixed step + interpolation, collide-and-slide, step-up
+      by rolling over walkable edges + an explicit up-forward-down step, ground snap, slope limit, coyote / jump buffer),
+      spring-arm camera with collision (shoulder ray + 5 probe rays, snap in / ease out, capsule fade), the character
+      slot (`body.setModel(gltf, { clips, walkSpeed, runSpeed })`), collision world: own triangle BVH + footprint prisms
+      (48 m cells, after claude/drive's colliders.js) + heightfield. Zero allocations per step (checked: 0 GCs in 200k steps).
+- [x] `labs/capsule-lab.html`: test course + 30 scripted tests (T), benchmark, tunables, debug draw. Screens: `docs/capsule/`.
+- [x] City test hook `?view=third` (I6, Place de Saint-Job): roads BVH from the tile's road meshes, UrbIS footprints,
+      trunks, lamp posts, terrain. `?chardebug=1` = debug draw.
+- [ ] An animated character (Quaternius / Mixamo, CC0) in the slot; check `setModel` speed matching on it.
+- [ ] Interiors: exclude the entered house's footprint prism (`PrismSet.exclude(BU_ID)`) and add its interior BVH;
+      sun light leaks at wall seams indoors (shadow normalBias 5 cm vs 20 cm walls): interior lighting needs its own pass.
+- [ ] City: tram platforms, shelters, benches, bollards and parked cars are not colliders yet; build the roads BVH in
+      the tile worker (25-60 ms on the main thread per tile today); a Third-person button in the UI.
+
 ## STIB tram model (approved by the owner 2026-11-04, merged)
 - [x] T3000 (line 92's stock) scripted in Blender (`tools/blender/tram.py`), loader / LODs / placement `viewer/tramModel.js`,
       Tram Lab (`labs/tram-lab.html`), in the city by default (tramline.js; `?tram=box` = the old boxes). Per tram: LOD0 15.9k, LOD1 5.7k, LOD2 1.35k triangles.

@@ -544,7 +544,8 @@ async function main() {
       controls.target.set(x, y + (cam?.length === 3 ? 12 : 0), z);
     },
   };
-  const setView = (v) => { walker.on = false; flyer.stop(); controls.enabled = true; views[v](); controls.update(); };
+  let third = null;                       // the third-person character (?view=third), see below
+  const setView = (v) => { if (third?.on) third.stop(); walker.on = false; flyer.stop(); controls.enabled = true; views[v](); controls.update(); };
   walker.onExit = () => setView("stjob");
   $("btnOrbit").onclick = () => setView("overview");
   $("btnStJob").onclick = () => setView("stjob");
@@ -552,6 +553,9 @@ async function main() {
   $("btnFly").onclick = fly;
   const v0 = params.get("view") || (params.get("at") ? "stjob" : null);   // ?at=x,z&view=walk stands on the nearest road
   if (v0 === "walk") walk(); else if (v0 === "fly") { setView("overview"); fly(); } else setView(v0 === "stjob" ? "stjob" : "overview");
+  // ?view=third: the third-person capsule character (test hook, viewer/character/cityHook.js; Capsule Lab)
+  if (v0 === "third") import("./character/cityHook.js").then(async (m) => { third = await m.startThirdPerson({ scene, camera, renderer, controls, world, start, setView, log }); })
+    .catch((e) => log(`third person: ${e.message}`));
 
   addEventListener("resize", () => {
     camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight);
@@ -601,7 +605,7 @@ async function main() {
     last = now;
     fpsAcc += dt; fpsN++;
     if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
-    if (flyer.on) flyer.update(dt); else if (walker.on) walker.update(dt); else controls.update();
+    if (third?.on) third.update(dt); else if (flyer.on) flyer.update(dt); else if (walker.on) walker.update(dt); else controls.update();
     for (const u of updaters) u(camera.position, camera);
     renderFrame();
     if (pipe && lighting.firmament) pipe.setExposureFactor(lighting.adapt(dt));

@@ -24,7 +24,7 @@ Debug. "Copy link to this view" puts the state + camera in `?dev=`. H = photo mo
 
 `labs/` (open `/labs/`): one page per asset or system, to look at it on its own before it goes into the city
 (the owner's game-engine-v1 practice). Bird Lab done; Lamp, Tree and Material labs planned. New assets get a
-lab first, then go into the city. Tram Lab: the STIB T3000 (`tools/blender/tram.py`, `viewer/tramModel.js`); in the city by default (`?tram=box` = the old boxes).
+lab first, then go into the city. Capsule Lab: the third-person character (`viewer/character/`, controller + camera + collision; `?view=third` in the city). Tram Lab: the STIB T3000 (`tools/blender/tram.py`, `viewer/tramModel.js`); in the city by default (`?tram=box` = the old boxes).
 
 ## How to run
 
