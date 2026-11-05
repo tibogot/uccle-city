@@ -166,13 +166,22 @@ export function asphaltMaterial(atlas) {
 
 // ---------------------------------------------------------------- sidewalks, kerbs, aprons
 
-export function concreteMaterial() {
+/** `framed` (viewer/surfaces.js, ?roads=surface): aKind 3 = a sidewalk slab whose uv is (station along the nearest
+ *  kerb, metres from it), so the tiles run along the street in one continuous pattern, and the first 15 cm from
+ *  the kerb is painted as the blue-stone kerb band. */
+export function concreteMaterial({ framed = false } = {}) {
   const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   const P = positionWorld, x = P.x, z = P.z;
-  const kind = attribute("aKind", "float");                 // 0 slab, 1 kerb stone, 2 apron setts
+  let kind = attribute("aKind", "float");                 // 0 slab, 1 kerb stone, 2 apron setts, 3 framed slab
   const grain = n3(x.mul(9.0), z.mul(9.0), P.y.mul(9.0));
   // 30 x 30 cm grey concrete tiles (the usual Brussels sidewalk)
-  const tiles = courses(x, z, 0.3, 0.3, float(0.006), float(2.0));
+  let ta = x, tb = z;
+  if (framed) {
+    const isF = band(kind, 3), f = uv();
+    ta = mix(x, f.x, isF); tb = mix(z, f.y, isF);
+    kind = mix(kind, step(f.y, float(0.15)), isF);         // framed: kerb band (1) within 15 cm of the kerb, else slab (0)
+  }
+  const tiles = courses(ta, tb, 0.3, 0.3, float(0.006), float(2.0));
   const slab = mix(mix(vec3(0.24, 0.235, 0.225), vec3(0.32, 0.31, 0.295), tiles.tone).add(grain.mul(0.012)), vec3(0.12, 0.115, 0.11), tiles.joint);
   // kerbs: Belgian blue stone (petit granit), dark blue-grey with fossil speckle
   const kerb = vec3(0.075, 0.082, 0.095).add(grain.mul(0.012)).add(n3(x.mul(37.0), P.y.mul(37.0), z.mul(37.0)).mul(0.01));

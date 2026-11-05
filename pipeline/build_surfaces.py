@@ -34,20 +34,24 @@ import numpy as np
 import pyogrio
 import shapely
 from shapely.geometry import LineString, MultiLineString, Point, Polygon, box
-from shapely.ops import linemerge, unary_union
+from shapely.ops import linemerge, split, unary_union
 
 from common import CONTRACT, RAW, TILES, l72_to_local, local_to_l72, polygon_out, read_json, round2, tile_bounds, write_json
 
 HERE = Path(__file__).resolve().parent
 LANDCOVER = RAW / "urbis" / "landcover"
-TOPO = RAW / "urbis" / "topo_roadline"
+TOPO = RAW / "urbis"          # <key>/<T>[.layer].geojson per sources.json WFS key (topo_roadline, topo_poles)
+BOLLARD_STEP = 1.5             # m between bollards along a UrbIS bollard line (CR57L)
 
 # class codes used by the viewer (viewer/surfaces.js SURF_CLASS mirrors this)
 CLASS = {"roadway": 0, "tramRoad": 1, "tramSite": 2, "parking": 3, "square": 4, "sidewalk": 5, "median": 6, "path": 7}
 TYPE_CLASS = {"S": "roadway", "I": "roadway", "A": "roadway", "B": "roadway", "IL": "roadway", "G": "roadway",
               "SC": "tramRoad", "IC": "tramRoad", "C": "tramSite", "AC": "tramSite", "K": "parking", "P": "square",
               "SW": "sidewalk", "M": "median", "T": "path"}
-RAISED = {"sidewalk", "median"}
+# raised on a kerb: sidewalks, medians and squares (Place de Saint-Job: the square stands at sidewalk height,
+# kerbed all round, verified on site by the owner 2026-11-05)
+RAISED = {"sidewalk", "median", "square"}
+MERGE = ("sidewalk", "median", "square")      # adjacent pieces of these classes become one polygon
 PRECISION = 0.01        # snap to 1 cm (the output precision) so neighbours share vertices exactly
 SLIVER = 0.2            # m², dropped
 KERB_TOL = 0.08         # m: a raised edge closer than this to a low surface is a kerb
@@ -99,23 +103,191 @@ def orient_left(line, region):
     return line if region.contains(left) else LineString(c[::-1])
 
 
-def fetch_topo(tile, e0, n0, e1, n1):
-    """UrbIS Topo road lines of the tile from the Brussels Mobility WFS (cached). None if it can't be fetched."""
-    TOPO.mkdir(parents=True, exist_ok=True)
-    f = TOPO / f"{tile}.geojson"
+def merge_same_class(rows):
+    """Adjacent polygons of the same RAISED class (the survey cuts one sidewalk into many pieces at every street
+    section) become one polygon, so the viewer triangulates and paves them as one continuous surface."""
+    out = [r for r in rows if r["cls"] not in MERGE]
+    for cls in MERGE:
+        group = [r for r in rows if r["cls"] == cls]
+        if not group:
+            continue
+        tree = shapely.STRtree([r["geom"] for r in group])
+        for p in polys_of(shapely.set_precision(unary_union([r["geom"] for r in group]), PRECISION)):
+            if p.area < SLIVER:
+                continue
+            # attributes of the largest piece inside (names only matter for squares)
+            parts = [group[i] for i in tree.query(p, predicate="intersects") if group[i]["geom"].representative_point().within(p)]
+            best = max(parts, key=lambda r: r["geom"].area) if parts else group[0]
+            out.append({**best, "geom": p, "merged": len(parts)})
+    return out
+
+
+def _turn(a, b, c):
+    """Turning angle (deg) at b of the polyline a-b-c."""
+    u, v = b - a, c - b
+    lu, lv = np.hypot(*u), np.hypot(*v)
+    if lu < 1e-9 or lv < 1e-9:
+        return 0.0
+    return float(np.degrees(np.arccos(np.clip(np.dot(u, v) / (lu * lv), -1, 1))))
+
+
+def _catmull(p0, p1, p2, p3, n):
+    """n points strictly between p1 and p2 on the centripetal Catmull-Rom spline (alpha 0.5)."""
+    def tj(ti, a, b):
+        return ti + max(np.hypot(*(b - a)), 1e-6) ** 0.5
+    t0 = 0.0; t1 = tj(t0, p0, p1); t2 = tj(t1, p1, p2); t3 = tj(t2, p2, p3)
+    out = []
+    for k in range(1, n + 1):
+        t = t1 + (t2 - t1) * k / (n + 1)
+        a1 = (t1 - t) / (t1 - t0) * p0 + (t - t0) / (t1 - t0) * p1
+        a2 = (t2 - t) / (t2 - t1) * p1 + (t - t1) / (t2 - t1) * p2
+        a3 = (t3 - t) / (t3 - t2) * p2 + (t - t2) / (t3 - t2) * p3
+        b1 = (t2 - t) / (t2 - t0) * a1 + (t - t0) / (t2 - t0) * a2
+        b2 = (t3 - t) / (t3 - t1) * a2 + (t - t1) / (t3 - t1) * a3
+        out.append((t2 - t) / (t2 - t1) * b1 + (t - t1) / (t2 - t1) * b2)
+    return out
+
+
+def smooth_line(coords):
+    """A survey line whose vertices sample a curve (gentle turns of 2-40 deg at each vertex, segments up to 12 m)
+    gets points on a centripetal Catmull-Rom spline through its vertices: about one per 4 deg of turn and at least
+    every 0.5 m in bends; straight runs and sharp corners (> 40 deg) are left as they are. Every original vertex
+    stays, so a line shared by two polygons is smoothed the same way for both."""
+    c = np.asarray(coords, dtype=float)
+    n = len(c)
+    if n < 3:
+        return c, 0
+    turn = np.zeros(n)
+    for k in range(1, n - 1):
+        turn[k] = _turn(c[k - 1], c[k], c[k + 1])
+    curvy = (turn > 2) & (turn < 40)
+    out, added = [c[0]], 0
+    for k in range(n - 1):
+        a, b = c[k], c[k + 1]
+        L = np.hypot(*(b - a))
+        # a segment is part of a curve when both its ends bend gently (an end of the line counts as its neighbour)
+        ca = curvy[k] if 0 < k else curvy[min(1, n - 1)]
+        cb = curvy[k + 1] if k + 1 < n - 1 else curvy[max(n - 2, 0)]
+        if ca and cb and 0.6 < L < 12:
+            p0 = c[k - 1] if k > 0 else 2 * a - b
+            p3 = c[k + 2] if k + 2 < n else 2 * b - a
+            tsum = (turn[k] + turn[k + 1]) / 2
+            m = int(np.clip(max(np.ceil(tsum / 4), np.ceil(L / 0.5) if tsum > 6 else 0) - 1, 0, 23))   # new points
+            if m:
+                out.extend(_catmull(p0, a, b, p3, m))
+                added += m
+        out.append(b)
+    return np.asarray(out), added
+
+
+def smooth_network(rows, tbox):
+    """Smooth every boundary of the surface partition ONCE (the shared edges between polygons, cut at their
+    junction nodes), then rebuild the polygons from the smoothed edges: neighbours stay watertight."""
+    if not rows:
+        return rows, {}
+    edges = lines_of(linemerge(lines_of(unary_union([r["geom"].boundary for r in rows]))))
+    new_edges, added = [], 0
+    for e in edges:
+        c, n = smooth_line(e.coords)
+        added += n
+        new_edges.append(LineString(c))
+    noded = unary_union(new_edges)
+    faces = [f for f in polys_of(shapely.GeometryCollection(list(shapely.polygonize(lines_of(noded)).geoms))) if f.area >= 0.05]
+    tree = shapely.STRtree([r["geom"] for r in rows])
+    groups = {}
+    for f in faces:
+        pt = f.representative_point()
+        hit = [i for i in tree.query(pt, predicate="intersects")]
+        if not hit:
+            continue                                     # a gap between surfaces, not a surface
+        i = min(hit, key=lambda i: rows[i]["geom"].area)
+        groups.setdefault(i, []).append(f)
+    out = []
+    for i, fs in groups.items():
+        g = shapely.set_precision(unary_union(fs), PRECISION)
+        for p in polys_of(g):
+            if p.area >= SLIVER:
+                out.append({**rows[i], "geom": p})
+    area0 = sum(r["geom"].area for r in rows)
+    area1 = sum(r["geom"].area for r in out)
+    return out, {"pointsAdded": added, "areaChange": round(area1 - area0, 2), "polygons": [len(rows), len(out)]}
+
+
+def split_holes(rows):
+    """Polygons with holes (a merged sidewalk round a block) are cut along a north-south line through each hole,
+    so the viewer only gets simple rings (clipped per grid cell cheaply). Same class, height and paving on both
+    sides of the cut, so it does not show."""
+    out = []
+    for r in rows:
+        todo = [r["geom"]]
+        while todo:
+            g = todo.pop()
+            if not g.interiors:
+                if g.area >= SLIVER:
+                    out.append({**r, "geom": g})
+                continue
+            hx = shapely.Polygon(g.interiors[0]).representative_point().x
+            x0, z0, x1, z1 = g.bounds
+            cut = LineString([(hx, z0 - 1), (hx, z1 + 1)])
+            pieces = polys_of(shapely.set_precision(shapely.GeometryCollection(list(split(g, cut).geoms)), PRECISION))
+            if len(pieces) < 2:                          # should not happen; keep it whole rather than lose it
+                out.append({**r, "geom": g})
+                continue
+            todo.extend(pieces)
+    return out
+
+
+def course_deg(p):
+    """Direction of the stone rows on a square: the long side of its minimum rotated rectangle, degrees from +x
+    toward +z (as data/overrides.json plazas courseDeg)."""
+    r = np.asarray(p.minimum_rotated_rectangle.exterior.coords)
+    s = [r[1] - r[0], r[2] - r[1]]
+    v = max(s, key=lambda d: np.hypot(*d))
+    return round(float(np.degrees(np.arctan2(v[1], v[0]))), 1)
+
+
+def fetch_topo(tile, e0, n0, e1, n1, key="topo_roadline", layer=None):
+    """UrbIS Topo features of the tile from the Brussels Mobility WFS (cached). None if it can't be fetched."""
+    d = TOPO / key
+    d.mkdir(parents=True, exist_ok=True)
+    f = d / f"{tile}{'.' + layer if layer else ''}.geojson"
     if not f.exists():
-        url = read_json(HERE / "sources.json")["sources"]["topo_roadline"]["wfs"].format(e0=e0, n0=n0, e1=e1, n1=n1)
+        url = read_json(HERE / "sources.json")["sources"][key]["wfs"].format(e0=e0, n0=n0, e1=e1, n1=n1, layer=layer)
         print(f"  GET {url}", file=sys.stderr)
         try:
             req = urllib.request.Request(url, headers={"User-Agent": "uccle-city-pipeline/0.1"})
             with urllib.request.urlopen(req, timeout=120) as r:
                 data = r.read()
             json.loads(data)
-        except Exception as e:          # the check is optional: report, never substitute
-            print(f"  topo road lines not fetched ({e}); kerb check skipped", file=sys.stderr)
+        except Exception as e:          # optional layers: report, never substitute
+            print(f"  {key} {layer or ''} not fetched ({e}); skipped", file=sys.stderr)
             return None
         f.write_bytes(data)
     return json.loads(f.read_text(encoding="utf-8"))
+
+
+def bollards_of(tile, e0, n0, e1, n1, tbox):
+    """Surveyed bollards (UrbIS Topo CR5702P fixed bollard points, and CR57L bollard lines sampled every
+    BOLLARD_STEP): [[x, z], ...] in the tile, or None if the WFS can't be reached."""
+    pts = []
+    pp = fetch_topo(tile, e0, n0, e1, n1, "topo_poles", "pole_point")
+    pl = fetch_topo(tile, e0, n0, e1, n1, "topo_poles", "pole_line")
+    if pp is None and pl is None:
+        return None
+    for f in (pp or {}).get("features", []):
+        if f["properties"].get("topo_type") == "CR5702P":
+            for p in shapely.get_parts(to_local(shapely.geometry.shape(f["geometry"]))):
+                pts.append(p)
+    for f in (pl or {}).get("features", []):
+        if f["properties"].get("topo_type") == "CR57L":
+            for l in lines_of(to_local(shapely.geometry.shape(f["geometry"]))):
+                n = max(1, int(round(l.length / BOLLARD_STEP)))
+                pts += [l.interpolate(k / n, normalized=True) for k in range(n + 1)]
+    out = []
+    for p in pts:
+        if tbox.contains(p) and not any(abs(p.x - q[0]) < 0.3 and abs(p.y - q[1]) < 0.3 for q in out):
+            out.append([round2(p.x), round2(p.y)])
+    return out
 
 
 def main():
@@ -153,7 +325,14 @@ def main():
                                  "id": str(F["INSPIRE_ID"][k]).rsplit(".", 1)[-1], "geom": q})
     if not rows:
         print(f"{tile}: no StreetSurfaces in the tile", file=sys.stderr)
-    raised = unary_union([r["geom"] for r in rows if r["cls"] in RAISED]) if rows else Polygon()
+    n_in = len(rows)
+    rows = merge_same_class(rows)
+    rows, smooth_stats = smooth_network(rows, tbox)
+    rows = split_holes(rows)
+    for r in rows:
+        if r["cls"] == "square":
+            r["course"] = course_deg(r["geom"])
+    raised =unary_union([r["geom"] for r in rows if r["cls"] in RAISED]) if rows else Polygon()
     low = unary_union([r["geom"] for r in rows if r["cls"] not in RAISED]) if rows else Polygon()
     border = tbox.exterior.buffer(0.02)
     shapely.prepare(raised)
@@ -183,6 +362,7 @@ def main():
                      "medianDistance": round(float(np.median(d)), 3)}
             print(f"  kerb check vs UrbIS Topo BR0101L: {check}", file=sys.stderr)
 
+    bollards = None if a.no_topo else bollards_of(tile, e0, n0, e1, n1, tbox)
     counts = {}
     for r in rows:
         counts[r["type"]] = counts.get(r["type"], 0) + 1
@@ -197,11 +377,12 @@ def main():
         "counts": {"surfaces": len(rows), "byType": counts, "kerbs": len(kerbs), "edges": len(edges),
                    "skippedLevels": other_lvl, "unknownTypes": unknown,
                    "area": {k: round(v, 1) for k, v in sorted(areas.items())},
-                   "kerbLength": round(sum(l.length for l in kerbs), 1)},
+                   "kerbLength": round(sum(l.length for l in kerbs), 1), "inputPolygons": n_in, "smoothing": smooth_stats},
         "kerbCheck": check,
         "surfaces": [{"c": CLASS[r["cls"]], "type": r["type"], "name": r["name"], "hier": r["hier"], "id": r["id"],
-                      "rings": polygon_out(r["geom"])} for r in rows],
+                      **({"course": r["course"]} if "course" in r else {}), "rings": polygon_out(r["geom"])} for r in rows],
         "kerbs": [line_out(l) for l in kerbs],
+        "bollards": bollards,
         "edges": edges,
     }
     out = TILES / tile / "surfaces.json"

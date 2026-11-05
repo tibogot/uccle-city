@@ -10,7 +10,7 @@ import { buildRoadNetwork } from "../vendor/roads/roadNetwork.js";
 import { buildLaneRoadMesh } from "../vendor/roads/mesh/laneRoadMesh.js";
 import { Heightmap } from "../viewer/heightmap.js";
 import { surfaceAttribute } from "../viewer/roadData.js";
-import { buildSurfaceRoads } from "../viewer/surfaces.js";
+import { prepareSurfaces, fitRoadWidths, buildSurfaceRoads } from "../viewer/surfaces.js";
 import { roofGrid, onRoof } from "../viewer/tileData.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -25,12 +25,15 @@ const roads = J("roads.json"), surf = J("surfaces.json");
 const ov = JSON.parse(readFileSync(join(ROOT, "data", "overrides.json"), "utf8"));
 for (const r of roads.roads) { const s = ov.roadSurface?.[r.id]; if (s) (r.meta ??= {}).surface = s; }
 const t0 = performance.now();
+const bounds = { x0: hdr.x0, z0: hdr.z0, x1: hdr.x0 + hdr.size, z1: hdr.z0 + hdr.size };
+const prep = prepareSurfaces(surf, hm.ground, bounds);
+const widthFit = process.argv.includes("--no-fit") ? null : fitRoadWidths(roads, prep);
 const net = buildRoadNetwork(roads, { ground: hm.ground });
 const built = buildLaneRoadMesh(net, { markings: true });
 const t1 = performance.now();
-const bounds = { x0: hdr.x0, z0: hdr.z0, x1: hdr.x0 + hdr.size, z1: hdr.z0 + hdr.size };
 const roofs = roofGrid(J("buildings.json"), bounds);
-const S = buildSurfaceRoads(surf, built, surfaceAttribute(net, built.asphalt), roads, hm.ground, bounds, (x, z) => onRoof(roofs, x, z));
+const S = buildSurfaceRoads(prep, built, surfaceAttribute(net, built.asphalt), roads, (x, z) => onRoof(roofs, x, z));
+S.stats.widthFit = widthFit;
 const t2 = performance.now();
 const tris = (p) => {
   const P = p.position, I = p.index, o = [];

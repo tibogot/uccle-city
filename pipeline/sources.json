@@ -407,6 +407,16 @@
       "licence": "CC0 1.0 (UrbIS Topo, Paradigm; served by Brussels Mobility)",
       "verified": "2026-11-04",
       "urls": []
+    },
+    "topo_poles": {
+      "title": "UrbIS - Topo bollards: fixed bollard points CR5702P (bm_urbis_topo:pole_point) and bollard lines CR57L (bm_urbis_topo:pole_line), Brussels Mobility WFS",
+      "page": "https://geobru-geonetwork.irisnet.be/geonetwork/srv/api/records/10ded91e-6a63-11ed-9d77-010101010000",
+      "techSpec": "https://urbisdownload.datastore.brussels/UrbIS/TechSpec/Topo_TechSpec_FR20230428.pdf",
+      "wfs": "https://data-mobility.irisnet.be/geoserver/ows?service=WFS&version=2.0.0&request=GetFeature&typeNames=bm_urbis_topo:{layer}&outputFormat=application/json&srsName=EPSG:31370&bbox={e0},{n0},{e1},{n1},EPSG:31370",
+      "expect": "GeoJSON per tile bbox and layer, fetched by build_surfaces.py into data/raw/urbis/topo_poles/<T>.<layer>.geojson -> surfaces.json 'bollards' (viewer ?roads=surface).",
+      "licence": "CC0 1.0 (UrbIS Topo, Paradigm; served by Brussels Mobility)",
+      "verified": "2026-11-05",
+      "urls": []
     }
   }
 }

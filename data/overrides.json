@@ -1,14 +1,8 @@
 {
   "_doc": "Hand corrections applied by the VIEWER to the built tiles (pipeline/overrides.json is the pipeline's own; fold these into the pipeline on the next full rebuild: docs/TODO.md). Local metres (x east, z south). Every entry needs a 'why' and a 'source'. roadSurface: road id -> OSM-style surface (viewer/roadData.js SURFACE). plazas: paved open areas drawn as their own draped mesh (viewer/plazas.js) instead of the grass default; 'courseDeg' = direction of the stone rows (degrees from +x toward +z).",
   "roadSurface": {
-    "r14387667_0": "sett",
-    "r14387667_1": "sett",
-    "r221589096_0": "sett",
-    "r29024530_0": "sett",
-    "r29024530_1": "sett",
-    "r40459752_0": "sett",
-    "_why": "Place de Saint-Job: OSM tags these streets asphalt, they are old granite setts (owner's photos, 2026-11-04: parked cars and the through lane on setts). The tram's Chaussée de Saint-Job stays asphalt (same photos).",
-    "_source": "owner photos 2026-11-04"
+    "_why": "Was: the six roads named Place de Saint-Job forced to setts (2026-11-04). Corrected 2026-11-05: the owner checked on site that the ROADS round the Place, tram included, are asphalt with the grooved rails flush in it, as OSM says; the setts are on the SQUARE itself, which stands at sidewalk height with kerbs all round (UrbIS Land cover type P, drawn raised by viewer/surfaces.js with ?roads=surface; the plazas entry below for the default view).",
+    "_source": "owner, on site, 2026-11-05"
   },
   "plazas": [
     {

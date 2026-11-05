@@ -75,8 +75,15 @@ function postGeometry() {
 let MODEL = null;
 export function setLampModel(m) { MODEL = m; }
 
-export function buildLamps(roads, ground, bounds, { lights: withLights = true } = {}) {
-  const sites = lampSites(roads, bounds);
+/** `place(site)` (?roads=surface, viewer/streetFit.js): moves a site onto the measured sidewalk or drops it (null);
+ *  `lift(x, z)`: the measured surface height above the road there. */
+export function buildLamps(roads, ground, bounds, { lights: withLights = true, place = null, lift = null } = {}) {
+  let sites = lampSites(roads, bounds);
+  if (place) {
+    const kept = [];
+    for (const s of sites.map(place)) if (s && !kept.some((q) => (q.x - s.x) ** 2 + (q.z - s.z) ** 2 < 36)) kept.push(s);
+    sites = kept;
+  }
   const group = new THREE.Group();
   group.name = "street-lamps";
   if (!sites.length) return { group, count: 0, update() {}, heads: [] };
@@ -102,7 +109,7 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true } 
   const post = mk(postGeometry(), postMat, true), glass = mk(glassGeo, glassMat, false), pool = mk(poolGeo, poolMat, false);
   const M = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1);
   sites.forEach((s, i) => {
-    s.y = ground(s.x, s.z) + 0.12;                                               // on the sidewalk, above the kerb line
+    s.y = ground(s.x, s.z) + (lift ? lift(s.x, s.z) : 0.12);                     // on the sidewalk, above the kerb line
     q.setFromAxisAngle(up, s.yaw);
     M.compose(new THREE.Vector3(s.x, s.y, s.z), q, one);
     post.setMatrixAt(i, M); glass.setMatrixAt(i, M); pool.setMatrixAt(i, M);

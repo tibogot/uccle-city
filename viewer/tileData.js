@@ -10,7 +10,8 @@ import { surfaceAttribute } from "./roadData.js";
 import { analyseBuildings, hash01, wallStyle } from "./facadeGeom.js";
 import { landCoverData } from "./landcover.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
-import { buildSurfaceRoads } from "./surfaces.js";
+import { prepareSurfaces, fitRoadWidths, buildSurfaceRoads } from "./surfaces.js";
+import { smoothPolyline } from "./track.js";
 
 export const CARVE = 0.12;         // terrain is pushed this far under any road surface
 // The 1 m terrain grid is 500k triangles a tile (half the scene); seen from above, 1 m triangles cover
@@ -110,12 +111,17 @@ export async function buildTileData(entry, base) {
   const [tHdr, tBuf, bDoc, bBuf, roads, feats] = await step("fetch", () => Promise.all([
     get(F.terrainHeader), get(F.terrain, true), get(F.buildings), get(F.buildingsBin, true), get(F.roads), get(F.features),
   ]));
+  // the OSM tram tracks as smooth curves (viewer/track.js): rails, wires, platforms and the trams all follow them
+  for (const l of feats.lines || []) if (l.kind === "tram") l.line = smoothPolyline(l.line);
   // ?roads=surface: the measured UrbIS street surfaces of this tile (surfaces.json), when the tile has them
   const surf = entry.surface && F.surfaces ? await step("fetch surfaces", () => get(F.surfaces)) : null;
   // hand corrections (data/overrides.json): road surfaces OSM gets wrong (Place de Saint-Job is setts)
   const ov = await overrides(base);
   for (const r of roads.roads) { const s = ov.roadSurface?.[r.id]; if (s) (r.meta ??= {}).surface = s; }
   const hm = new Heightmap(tHdr, tBuf);
+  // measured surfaces first, then the engine's lane stacks fitted into the measured kerb-to-kerb widths
+  const prep = surf ? await step("surfaces + width fit", () => prepareSurfaces(surf, hm.ground, bounds)) : null;
+  const widthFit = prep ? fitRoadWidths(roads, prep) : null;
   const net = await step("buildRoadNetwork", () => buildRoadNetwork(roads, { ground: hm.ground }));
   const errors = net.issues.filter((i) => i.level === "error");
   const byCode = {};
@@ -126,17 +132,17 @@ export async function buildTileData(entry, base) {
   const road = await step("road meshes + carve", () => {
     const built = buildLaneRoadMesh(net, { markings: true });
     const parts = {};
-    let carvedCells = 0, triangles = 0, surfaceStats = null;
+    let carvedCells = 0, triangles = 0, surfaceStats = null, surfaceData = null;
     if (surf) {
       // measured surfaces + the engine's markings clipped to them (viewer/surfaces.js)
-      const S = buildSurfaceRoads(surf, built, surfaceAttribute(net, built.asphalt), roads, hm.ground, bounds,
-        (x, z) => onRoof(roofs, x, z));
+      const S = buildSurfaceRoads(prep, built, surfaceAttribute(net, built.asphalt), roads, (x, z) => onRoof(roofs, x, z));
       for (const c of S.carve) carvedCells += hm.carve(c.position, c.index, CARVE);
       for (const [name, part] of Object.entries(S.parts)) {
         parts[name] = { position: part.position, normal: part.normal, uv: part.uv, attributes: part.attributes, index: part.index, aSurf: part.extra };
         triangles += part.index.length / 3;
       }
-      surfaceStats = S.stats;
+      surfaceStats = { ...S.stats, widthFit };
+      surfaceData = { grid: S.grid, kerbs: S.kerbs, bollards: S.bollards };
     }
     for (const name of surf ? [] : ["asphalt", "concrete", "grass"]) {
       const part = built[name];
@@ -166,7 +172,7 @@ export async function buildTileData(entry, base) {
       atlas = { data: d8, width: W2, height: H2, format: "R8", scale: at.scale, range: at.range, texel: at.texel * 2,
         stats: { regions: at.stats?.regions, bytes: d8.length, bytesBefore: at.data.length } };
     }
-    return { parts, atlas, carvedCells, triangles, surfaceStats };
+    return { parts, atlas, carvedCells, triangles, surfaceStats, surfaceData };
   });
   const terrain = await step("terrain grid", () => terrainArrays(hm));
   await step("terrain simplify", async () => {
