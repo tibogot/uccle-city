@@ -389,9 +389,9 @@ fl.add(S, "force", FORCE).name("force LOD").onChange(applyAll).listen();
 fl.add(S, "lodColours").name("LOD colours").onChange(applyAll);
 fl.add(S, "wireframe").onChange(applyAll);
 fl.add(S, "lod1", 10, 120, 1).name("LOD 0→1 (m)").onChange(applyAll);
-fl.add(S, "morph1", 0, 40, 1).name("  morph band (m)").onChange(applyAll);
+fl.add(S, "morph1", 0, 40, 1).name("  0→1 morph band (m)").onChange(applyAll);
 fl.add(S, "lod2", 40, 300, 1).name("LOD 1→2 (m)").onChange(applyAll);
-fl.add(S, "morph2", 0, 100, 1).name("  morph band (m)").onChange(applyAll);
+fl.add(S, "morph2", 0, 100, 1).name("  1→2 morph band (m)").onChange(applyAll);
 const fi = ui.addFolder("Impostors");
 fi.add(S, "impostors").name("impostors on").onChange(applyAll);
 fi.add(S, "impStart", 150, 900, 5).name("start (m)").onChange(applyAll);
@@ -450,7 +450,9 @@ function sampleGpu() {
   renderer.resolveTimestampsAsync("render").then((ms) => {
     if (typeof ms === "number" && ms > 0) { gpu.avg = gpu.avg ? gpu.avg * 0.9 + ms * 0.1 : ms; gpu.samples.push(ms); if (gpu.samples.length > 600) gpu.samples.shift(); }
     const t = renderer.backend.timestampQueryPool?.render?.timestamps;
-    if (t) { const agg = {}; for (const [uid, v] of t) { const k = uid.replace(/:f\d+$/, "").replace(/_\d+$/, "").replace(/\d+/g, "#"); agg[k] = (agg[k] || 0) + v; } gpu.passes = agg; }
+    // r187 names the render passes "r:<order in the frame>:<context>:f<frame>": measured here (trees and their shadows
+    // toggled), #1 is the scene (MRT) pass and #2 the sun's shadow map; the rest is the post chain + the sky
+    if (t) { const agg = { scene: 0, shadow: 0, post: 0 }; for (const [uid, v] of t) { const o = +uid.split(":")[1]; agg[o === 1 ? "scene" : o === 2 ? "shadow" : "post"] += v; } gpu.passes = agg; }
   }).catch(() => {}).finally(() => { gpu.pending = false; });
 }
 const median = (a) => { const s = [...a].sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : NaN; };
@@ -542,7 +544,7 @@ renderer.setAnimationLoop(() => {
   if (++frames % 10 === 1) {
     const r = renderer.info.render;
     S.perf = `${fps.toFixed(0)} fps · GPU ${gpu.avg.toFixed(2)} ms · ${r.drawCalls ?? r.calls} draws · ${(r.triangles / 1000).toFixed(0)}k tris`;
-    S.passes = gpu.passes ? Object.entries(gpu.passes).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, v]) => `${k.slice(0, 14)} ${v.toFixed(2)}`).join(" · ") : "-";
+    S.passes = gpu.passes ? Object.entries(gpu.passes).map(([k, v]) => `${k} ${v.toFixed(2)}`).join(" · ") : "-";
     S.cpu = `${cpuMs.toFixed(3)} ms / frame (LOD buckets + uniforms)`;
     S.mem = memText();
     if (frames % 30 === 1) updateInfo();

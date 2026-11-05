@@ -204,7 +204,7 @@ function naturalPlane(r, v) {
   // the secondaries' goals: spread evenly over the dome (a Fibonacci spiral over its surface from 40 deg below the
   // crown's centre to the top, jittered), each grown from the limb nearest to it in azimuth (the leader takes the cap),
   // from lower on the limb for a lower goal: no bald patch whatever the side
-  const NG = 34, goals = [];
+  const NG = Math.round(34 * (W / 8.4) ** 2), goals = [];   // (as many as the dome's area asks: the broad squares' planes more)
   const s0 = Math.sin(THREE.MathUtils.degToRad(-32));
   for (let k = 0; k < NG; k++) {
     const sEl = s0 + (1 - s0) * ((k + 0.5) / NG);
@@ -360,20 +360,25 @@ export function planeShape(seedBase) {
  *  the pixel footprint (no shimmer far away), and the whole pattern fades to its mean colour with distance. */
 export function planeBark(m) {
   const p = positionGeometry, level = attribute("bark", "vec4").w;
-  const q0 = vec3(p.x, p.y.mul(0.55), p.z).mul(4.0);
-  const warp = vec3(mx_noise_float(q0.mul(0.4)), mx_noise_float(q0.mul(0.4).add(17.3)), mx_noise_float(q0.mul(0.4).add(41.1)));
-  const q = q0.add(warp.mul(1.1));
+  // plates of ~5-20 cm (the reference photos), a little longer than wide
+  const q0 = vec3(p.x, p.y.mul(0.6), p.z).mul(7.5);
+  const warp = vec3(mx_noise_float(q0.mul(0.3)), mx_noise_float(q0.mul(0.3).add(17.3)), mx_noise_float(q0.mul(0.3).add(41.1)));
+  const q = q0.add(warp.mul(1.4));
   const fw = max(fwidth(q.x).add(fwidth(q.y)).add(fwidth(q.z)), 1e-4);       // footprint in pattern units
   const far = smoothstep(0.25, 1.4, fw), near = float(1).sub(far);
   // ragged plate outlines: each threshold field gets a finer noise on top (the flakes' torn edges)
-  const rag = mx_noise_float(q.mul(4.3).add(3.1)).mul(0.11).mul(near);
+  const rag = mx_noise_float(q.mul(3.2).add(3.1)).mul(0.14).mul(near);
   const n1 = mx_noise_float(q).add(rag), n2 = mx_noise_float(q.mul(1.7).add(5.7)).add(rag.mul(0.8)), n3 = mx_noise_float(q.mul(0.6).add(11.0));
   const step = (n, t) => smoothstep(t.sub(fw.mul(0.3)), t.add(fw.mul(0.3)), n);
   // colours (linear), from the reference photos: the old outer bark olive / grey-green with moss, the freshly
   // exposed under-bark cream to pale yellow-green, a warm tan, a pinkish grey
-  const olive = vec3(0.15, 0.155, 0.095), greyGreen = vec3(0.27, 0.28, 0.2), cream = vec3(0.55, 0.52, 0.36);
+  // (the photos: mostly a pale buff-grey under-bark, the old olive-brown plates still on it, more of them low down)
+  const olive = vec3(0.17, 0.165, 0.085), greyGreen = vec3(0.45, 0.42, 0.28), cream = vec3(0.58, 0.53, 0.33);
   const paleYel = vec3(0.45, 0.45, 0.26), tan = vec3(0.32, 0.26, 0.18), pinkGrey = vec3(0.33, 0.29, 0.26);
-  const a = step(n1, float(0.05)), b = step(n2, float(0.22)), c = step(n3, float(0.28));
+  // the pale share grows upward and onto the limbs, and varies in big zones (whole sides still in old bark)
+  const zone = mx_noise_float(q0.mul(0.12).add(77.0));
+  const tA = mix(float(0.15), float(-0.4), smoothstep(1.5, 10.0, p.y).max(smoothstep(0.5, 1.5, level))).add(zone.mul(0.28));
+  const a = step(n1, tA), b = step(n2, float(0.3)), c = step(n3, float(0.28));
   let col = mix(olive, pinkGrey, smoothstep(-0.4, 0.2, n3).mul(0.35));
   col = mix(col, greyGreen, a);
   col = mix(col, mix(cream, paleYel, smoothstep(-0.25, 0.35, n3)), b);
@@ -383,12 +388,16 @@ export function planeBark(m) {
   const lipW = fw.mul(0.5).add(0.018);
   const outside = (n, t) => smoothstep(t.sub(lipW.mul(2)), t.sub(lipW.mul(0.3)), n).mul(float(1).sub(step(n, t)));
   const inside = (n, t) => step(n, t).mul(float(1).sub(smoothstep(t, t.add(lipW.mul(1.5)), n)));
-  const lip = max(outside(n1, float(0.05)), outside(n2, float(0.22))).mul(near);
-  const rim = max(inside(n1, float(0.05)), inside(n2, float(0.22))).mul(near);
-  col = mix(col, vec3(0.06, 0.055, 0.04), lip.mul(0.6));
+  const lip = max(outside(n1, tA), outside(n2, float(0.3))).mul(near);
+  const rim = max(inside(n1, tA), inside(n2, float(0.3))).mul(near);
+  col = mix(col, vec3(0.08, 0.072, 0.055), lip.mul(0.55));
+  // the old plates crack in a fine network (dark hairlines), only in the old bark
+  const crack = float(1).sub(smoothstep(float(0), fw.mul(0.5).add(0.03), abs(mx_noise_float(q.mul(2.3).add(51.0))))).mul(a.oneMinus()).mul(near)
+    .mul(smoothstep(0.1, 0.45, mx_noise_float(q.mul(1.1).add(9.0))));   // broken: short cracks, not contour lines
+  col = mix(col, vec3(0.05, 0.045, 0.035), crack.mul(0.4));
   col = mix(col, cream.mul(1.1), rim.mul(0.35));
   // fine grain, lichen speckle, moss in the old bark
-  const fine = mx_noise_float(q.mul(7.0)).mul(0.5).add(0.5);
+  const fine = mx_noise_float(vec3(q.x.mul(9.0), q.y.mul(2.5), q.z.mul(9.0))).mul(0.5).add(0.5);   // fibrous, along the trunk
   col = col.mul(fine.mul(0.22).mul(near).add(0.89));
   const moss = smoothstep(0.25, 0.6, mx_noise_float(q.mul(1.3).add(31.0))).mul(a.oneMinus()).mul(b.oneMinus());
   col = mix(col, vec3(0.1, 0.14, 0.05), moss.mul(0.45));
@@ -402,10 +411,10 @@ export function planeBark(m) {
   const limb = smoothstep(0.5, 1.5, level);
   col = mix(col, mix(col, cream.mul(0.85), 0.4), limb);
   // the far mean (what the pattern averages to)
-  col = mix(col, mix(vec3(0.25, 0.24, 0.165), vec3(0.33, 0.31, 0.22), limb), far.mul(0.8));
+  col = mix(col, mix(vec3(0.3, 0.29, 0.21), vec3(0.4, 0.38, 0.28), limb), far.mul(0.8));
   m.colorNode = col;
   // relief: the new plates a hair under the old bark, the groove at their edge; the foot's fissures deeper
-  const h = a.mul(0.002).sub(b.mul(0.003)).sub(lip.mul(0.002)).sub(fiss.mul(foot).mul(0.012)).mul(near);
+  const h = a.mul(0.0015).sub(b.mul(0.002)).sub(lip.mul(0.0015)).sub(crack.mul(0.001)).add(fine.mul(0.0006)).sub(fiss.mul(foot).mul(0.012)).mul(near);
   m.normalNode = bumpNormal(h);
   m.roughnessNode = mix(float(0.72), float(0.95), max(foot, b.oneMinus().mul(0.6)));
   m.needsUpdate = true;
@@ -420,7 +429,7 @@ export function planeDef(seedBase = 1000) {
       // a fresh, slightly yellow mid green, lighter than the street trees' olive; a cool shade side
       // (a near-flat bottom -> top ramp and a light albedo occlusion: with the street trees' dark bottom colour the lower
       // half of this deep crown went black; the photos show lit clumps down to the crown's base)
-      topColor: "#8db04a", bottomColor: "#628a38", translucencyColor: "#cddc78", tintVar: 0.2,
+      topColor: "#7aa942", bottomColor: "#558533", translucencyColor: "#c2dc6c", tintVar: 0.2,
       crownLift: 0, fill: 0.4, fillColor: "#8fae7c", aoColor: 0.22, trunkColor: [0.2, 0.19, 0.13],
       // the sun-shadow lookup moves 2.4 m toward the sun (street trees 1.4): a plane crown is ~3x as deep, and with 1.4 m
       // the lower dome sat in the shadow of its own upper pads, black where the photos show a lit, lumpy green
