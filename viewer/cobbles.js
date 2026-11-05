@@ -1,0 +1,77 @@
+// Old irregular cobblestone setts (pavés) for the measured squares (?roads=surface, viewer/surfaces.js part
+// "square"): Place de Saint-Job, the owner's photos and site visit 2026-11-05: grey-brown worn granite, stones of
+// uneven size in loose rows along the square, slightly domed, joints irregular, some darker or mossy.
+//
+// Procedural, TSL: a jittered grid in metres (uv = the square's own frame, x along its main axis, from
+// surfaces.js), every other row shifted half a stone; the nearest and second-nearest jittered points (3 x 3 search,
+// F1 / F2) give the stone (cell id) and the joint (F2 - F1 small). Per stone: tone, hue, a worn (smoother) top.
+// Height = dome from the joint distance -> bump normal. EVERYTHING fades smoothly with the pixel footprint (world
+// fwidth): joints become their area share, tones their mean, the bump flattens, over a long smoothstep, so there is
+// no band and no popping when walking or flying across the square.
+import * as THREE from "three/webgpu";
+import { uv, positionWorld, float, vec2, vec3, floor, fract, mix, min, max, smoothstep, fwidth, hash, select, sqrt } from "three/tsl";
+import { addLampLight } from "./lampLight.js";
+import { bumpNormal, noise2D, hash2D } from "./tslkit.js";
+import { n3 } from "./roadPaint.js";
+
+const SL = 0.16, SW = 0.13;           // mean stone length along the rows, width across (m)
+// per-cell random in [0, 1): the sin hash on (cell, row) modulo 1024 (large cell numbers lose float precision)
+const H2 = (a, b) => hash2D(vec2(fract(float(a).div(1024)).mul(1024), fract(float(b).div(1024)).mul(1024)));
+
+export function cobbleMaterial() {
+  const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  const P = positionWorld, f = uv();
+  const fw = fwidth(P.x).add(fwidth(P.z)).mul(0.7).add(0.0003);        // pixel footprint (m), continuous
+  // rows across v (each row its own stone length, 0.75 - 1.3 x), stones along u, every row shifted by a random part of a
+  // stone; centres jittered a lot, so no two neighbours line up (old hand-laid setts, not a honeycomb)
+  const gy = f.y.div(SW), row0 = floor(gy);
+  let F1 = float(9), F2 = float(9), id = vec2(0, 0), rx = float(0), rz = float(0);
+  for (let dj = -1; dj <= 1; dj++) {
+    const r = row0.add(dj);
+    const len = H2(r, 3.0).mul(0.55).add(0.75).mul(SL);
+    const gx = f.x.div(len).add(H2(r, 9.0));
+    const c0 = floor(gx);
+    for (let di = -1; di <= 1; di++) {
+      const c = c0.add(di);
+      const h1 = H2(c, r), h2 = H2(c.add(57.0), r.add(113.0));
+      const px = c.add(0.5).add(h1.sub(0.5).mul(0.8)).sub(gx).mul(len);
+      const pz = r.add(0.5).add(h2.sub(0.5).mul(0.6)).sub(gy).mul(SW);
+      const d = sqrt(px.mul(px).add(pz.mul(pz)));
+      const closer = d.lessThan(F1);
+      F2 = select(closer, F1, min(F2, d));
+      id = select(closer, vec2(c, r), id);
+      rx = select(closer, px, rx); rz = select(closer, pz, rz);
+      F1 = min(F1, d);
+    }
+  }
+  const edge = F2.sub(F1).mul(0.5);                                      // ~ distance to the joint (m)
+  const sid = H2(id.x.add(31.0), id.y), sid2 = H2(id.x, id.y.add(71.0));
+  // irregular joints, 8 - 22 mm, filled with sand and dirt; AA over the footprint, then the area share far away
+  const jw = float(0.008).add(noise2D(vec2(P.x.mul(3.0), P.z.mul(3.0))).mul(0.014));
+  // stones are rounded: beyond ~8 cm from their centre (a little more for long ones) the corners are joint too
+  const R = float(SW * 0.6).add(H2(id.x.add(91.0), id.y).mul(0.02));
+  const roundJ = smoothstep(R.sub(fw).sub(0.004), R.add(fw).add(0.004), F1);
+  const sharpJoint = max(float(1).sub(smoothstep(jw.mul(0.5).sub(fw), jw.mul(0.5).add(fw), edge)), roundJ);
+  const far = smoothstep(float(0.012), float(0.09), fw);                 // ~1 cm .. 9 cm per pixel: a long, soft fade
+  const joint = mix(sharpJoint, float(0.24), far);
+  // stones: blue-grey granite to warm brown-grey, light and dark ones, mottled; worn and dirtier at the joints
+  const tone = mix(sid, float(0.5), far), hue = mix(sid2, float(0.5), far);
+  const mottle = n3(P.x.mul(19.0), P.z.mul(19.0), 2.0);
+  let stone = mix(vec3(0.092, 0.089, 0.086), vec3(0.14, 0.116, 0.088), hue);      // grey to brown-grey granite
+  stone = stone.mul(tone.mul(0.85).add(0.55)).add(mottle.mul(0.01));
+  const dirt = n3(P.x.mul(0.45), P.z.mul(0.45), 6.0);                    // big patches: wear, shade of the trees
+  stone = stone.mul(dirt.mul(0.12).add(1.0));
+  const moss = smoothstep(float(0.25), float(0.65), noise2D(vec2(P.x.mul(1.3), P.z.mul(1.3))));
+  const jointCol = mix(vec3(0.07, 0.064, 0.052), vec3(0.045, 0.062, 0.03), moss.mul(0.7));   // sandy-dark, mossy in places
+  m.colorNode = mix(stone, jointCol, joint);
+  // worn tops smoother, joints matte
+  m.roughnessNode = mix(mix(float(0.62), float(0.82), tone), float(0.97), joint);
+  // domed and each a little tilted (laid by hand, settled since): 5 mm dome + up to 1.7 % slope; the bump fades out
+  // with the footprint (no shimmer far away)
+  const tiltX = H2(id.x.add(13.0), id.y.add(5.0)).sub(0.5).mul(0.035), tiltZ = H2(id.x.add(3.0), id.y.add(17.0)).sub(0.5).mul(0.035);
+  const bumpFade = float(1).sub(smoothstep(float(0.003), float(0.025), fw));     // the bump goes first (its edges alias soonest)
+  const cap = float(1).sub(F1.div(R).pow(2)).max(0);                    // rounded top
+  const dome = cap.mul(0.006).add(smoothstep(float(0.0), float(0.03), edge).mul(0.002)).add(rx.mul(tiltX).add(rz.mul(tiltZ))).mul(bumpFade);
+  m.normalNode = bumpNormal(dome);
+  return addLampLight(m);
+}

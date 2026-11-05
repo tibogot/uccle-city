@@ -409,7 +409,7 @@
       "urls": []
     },
     "topo_poles": {
-      "title": "UrbIS - Topo bollards: fixed bollard points CR5702P (bm_urbis_topo:pole_point) and bollard lines CR57L (bm_urbis_topo:pole_line), Brussels Mobility WFS",
+      "title": "UrbIS - Topo bollards (CR5702P points, bm_urbis_topo:pole_point; CR57L lines, pole_line) and driveways (CR42L, street_furniture_line), Brussels Mobility WFS",
       "page": "https://geobru-geonetwork.irisnet.be/geonetwork/srv/api/records/10ded91e-6a63-11ed-9d77-010101010000",
       "techSpec": "https://urbisdownload.datastore.brussels/UrbIS/TechSpec/Topo_TechSpec_FR20230428.pdf",
       "wfs": "https://data-mobility.irisnet.be/geoserver/ows?service=WFS&version=2.0.0&request=GetFeature&typeNames=bm_urbis_topo:{layer}&outputFormat=application/json&srsName=EPSG:31370&bbox={e0},{n0},{e1},{n1},EPSG:31370",

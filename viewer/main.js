@@ -16,6 +16,7 @@ import { buildFurniture } from "./furniture.js";
 import { buildTram } from "./tram.js";
 import { buildCars } from "./cars.js";
 import { streetFit, buildBollards } from "./streetFit.js";
+import { cobbleMaterial } from "./cobbles.js";
 import { landCoverTexture, groundMaterial } from "./ground.js";
 import { Heightmap } from "./heightmap.js";
 import { createTramLine } from "./tramline.js";
@@ -117,7 +118,7 @@ function buildingMeshes(doc, buf) {
 
 /** GPU meshes for a tile's roads from the worker's data (tileData.js). */
 function roadMeshes(road) {
-  const mats = { asphalt: asphaltMaterial(road.atlas), grass: sharedMat("verge", vergeMaterial),
+  const mats = { asphalt: asphaltMaterial(road.atlas), grass: sharedMat("verge", vergeMaterial), square: sharedMat("cobbles", cobbleMaterial),
     concrete: road.surfaceStats ? sharedMat("concrete-framed", () => concreteMaterial({ framed: true })) : sharedMat("concrete", concreteMaterial) };
   const meshes = [];
   for (const [name, part] of Object.entries(road.parts)) {
@@ -291,8 +292,9 @@ if (params.get("worker") !== "0") {
 }
 /** UrbIS solids replaced by a scripted model (the Saint-Job church): not drawn, kept in the roof grid. */
 const HIDE_BU_IDS = params.get("stjob") !== "0" ? [STJOB_BU_ID] : [];
-/** ?roads=surface: tiles that have surfaces.json draw the measured UrbIS street surfaces (viewer/surfaces.js) */
-const ROAD_SURFACES = params.get("roads") === "surface";
+/** Tiles that have surfaces.json draw the measured UrbIS street surfaces (viewer/surfaces.js), the default since
+ *  2026-11-05; ?roads=engine: the road engine's own guessed carriageways, sidewalks and kerbs, as before. */
+const ROAD_SURFACES = params.get("roads") !== "engine";
 /** CPU data for a tile: from the worker, or on the main thread (?worker=0, or if the worker fails). */
 function tileData(entry, lite = false) {
   entry = { ...entry, hide: HIDE_BU_IDS, surface: ROAD_SURFACES };

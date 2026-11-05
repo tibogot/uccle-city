@@ -427,7 +427,7 @@ no closing point).
 {
   "contract": "0.7", "tile": "I6",
   "source": { "dataset": "UrbIS Land cover StreetSurfaces (Paradigm, CC0 1.0)", "file": "UrbISLandCover_04000.gpkg", "built": "<ISO time>" },
-  "classes": { "roadway": 0, "tramRoad": 1, "tramSite": 2, "parking": 3, "square": 4, "sidewalk": 5, "median": 6, "path": 7 },
+  "classes": { "roadway": 0, "tramRoad": 1, "tramSite": 2, "parking": 3, "square": 4, "sidewalk": 5, "median": 6, "path": 7, "ramp": 8 },
   "counts": { "surfaces": 152, "byType": { "SW": 98, "S": 27, .. }, "kerbs": 24, "edges": 35, "skippedLevels": {},
               "unknownTypes": {}, "area": { "<class>": m² }, "kerbLength": m },
   "kerbCheck": { "topoKerbLength": m, "derivedKerbLength": m, "topoWithin": { "0.1m": share, .. }, "medianDistance": m } | null,
@@ -437,7 +437,8 @@ no closing point).
                                            // for a segment (dx, dz) the raised side is at +(-dz, dx)
   "edges": [{ "raised": 0|1, "line": [[x, z], ..] }],  // outer boundary of all surfaces (minus the tile edge),
                                                         // the surface on the LEFT; the viewer hangs skirts from them
-  "bollards": [[x, z], ..] | null                       // UrbIS Topo fixed bollards CR5702P + CR57L lines every 1.5 m
+  "bollards": [[x, z], ..] | null,                      // UrbIS Topo fixed bollards CR5702P + CR57L lines every 1.5 m
+  "flanks": [[[x, z], ..]]                              // ramp | sidewalk boundaries, the ramp on the LEFT (side walls)
 }
 ```
 
@@ -446,7 +447,11 @@ the boundary network of all surfaces smoothed ONCE (shared edges cut at their ju
 through the vertices where they sample a curve: turns of 2-40 deg, about one point per 4 deg and at least every 0.5 m
 in bends, corners and straight runs untouched; every original vertex kept), the polygons rebuilt from the smoothed
 edges, holes split along a north-south cut. Raised classes (kerb lines between them and the low ones): sidewalk,
-median, square. `counts` also has `inputPolygons` and `smoothing` (`pointsAdded`, `areaChange` m², polygons in/out).
+median, square, ramp. `counts` also has `inputPolygons`, `smoothing` (`pointsAdded`, `areaChange` m², polygons in/out)
+and `droppedKerbs` (`driveways`, `crossings`, `rampPolygons`). Dropped kerbs ("ramp", type SW): cut out of the sidewalk
+1.0 m deep behind the kerb, along the driveway's width + 0.3 m each side (UrbIS Topo CR42L, drawn on the property line,
+projected onto the nearest kerb within 8 m) and 2 m each side of every OSM crossing point (features.json) on each
+kerb within 12 m; the viewer ramps them from 2 cm at the kerb to the full kerb height 1 m behind it.
 
 
 UrbIS TYPE -> class: S, I, A, B, IL, G roadway; SC, IC tramRoad; C, AC tramSite; K parking; P square; SW sidewalk;

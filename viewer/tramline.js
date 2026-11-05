@@ -95,15 +95,17 @@ export async function createTramLine(url, scene, ground) {
     finish(shapes[id]);
   }
   const snapped = new Set();
-  /** Snap shape points inside a tile onto that tile's OSM tram tracks (within 3 m). */
+  // the tracks of every loaded tile in ONE 4 m grid of segments (global line ids), so a shape is snapped across tile
+  // seams in one pass, with its track continuity carried over the seam (no kink where two tiles meet)
+  const grid = new Map(), gk = (i, j) => i * 100003 + j, boxes = [];
+  let lineCount = 0;
+  /** Snap the shape points inside every loaded tile onto the tram tracks (within 3 m). */
   const snapTile = (name, feats, b) => {
     if (snapped.has(name)) return;
     snapped.add(name);
     const tracks = (feats.lines || []).filter((l) => l.kind === "tram").map((l) => l.line);
-    if (!tracks.length) return;
-    // track segments in a 4 m grid (the smoothed tracks are dense in the bends)
-    const grid = new Map(), gk = (i, j) => i * 100003 + j;
-    tracks.forEach((l, li) => { for (let k = 1; k < l.length; k++) {
+    boxes.push(b);
+    tracks.forEach((l) => { const li = lineCount++; for (let k = 1; k < l.length; k++) {
       const [ax, az] = l[k - 1], [cx, cz] = l[k];
       for (let i = Math.floor((Math.min(ax, cx) - 3) / 4); i <= Math.floor((Math.max(ax, cx) + 3) / 4); i++)
         for (let j = Math.floor((Math.min(az, cz) - 3) / 4); j <= Math.floor((Math.max(az, cz) + 3) / 4); j++) {
@@ -112,13 +114,15 @@ export async function createTramLine(url, scene, ground) {
           grid.get(key).push([ax, az, cx, cz, li]);
         }
     } });
+    if (!tracks.length) return;
+    const loaded = (x, z) => boxes.some((q) => x >= q.x0 && x <= q.x1 && z >= q.z0 && z <= q.z1);
     // A GTFS shape runs between the two tracks of a street (~0.6-1.5 m off), so "nearest segment" flips from one
     // track to the other and the tram wiggles across the street. Stay on the track of the previous point until it
     // leaves its 3 m reach (a junction), and prefer a track running the shape's way.
     for (const s of Object.values(shapes)) {
-      let prevLine = -1;
+      let prevLine = -1, prevPt = null;
       s.orig.forEach(([x, z], i) => {
-        if (x < b.x0 || x > b.x1 || z < b.z0 || z > b.z1) { prevLine = -1; return; }
+        if (!loaded(x, z)) { prevLine = -1; prevPt = null; return; }
         const o = s.orig, a0 = o[Math.max(0, i - 1)], a1 = o[Math.min(o.length - 1, i + 1)];
         const sx = a1[0] - a0[0], sz = a1[1] - a0[1], sl = Math.hypot(sx, sz) || 1;
         let best = Infinity, bx = x, bz = z, bl = -1;
@@ -128,11 +132,13 @@ export async function createTramLine(url, scene, ground) {
           const d2 = (px - x) ** 2 + (pz - z) ** 2;
           if (d2 > 9) continue;
           const back = (dx * sx + dz * sz) / (Math.sqrt(L2) * sl) < 0 ? 1 : 0;
-          const cost = d2 + (prevLine >= 0 && li !== prevLine ? 100 : 0) + back;     // switch only when the track left the 3 m reach
+          // same line, or the next tile's piece of it (its point is within 1.5 m of the previous snapped point)
+          const cont = li === prevLine || (prevPt && (px - prevPt[0]) ** 2 + (pz - prevPt[1]) ** 2 < 2.25 && Math.abs(Math.hypot(px - prevPt[0], pz - prevPt[1]) - Math.hypot(x - o[Math.max(0, i - 1)][0], z - o[Math.max(0, i - 1)][1])) < 0.5);
+          const cost = d2 + (prevLine >= 0 && !cont ? 100 : 0) + back;     // switch only when the track left the 3 m reach
           if (cost < best) { best = cost; bx = px; bz = pz; bl = li; }
         }
         s.snap[i] = [bx, bz];
-        prevLine = bl;
+        prevLine = bl; prevPt = [bx, bz];
       });
     }
     // two passes of a [1 2 1]/4 filter along the snapped points: no kink where two tiles' tracks meet (on a 25 m

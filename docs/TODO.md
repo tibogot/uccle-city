@@ -32,7 +32,12 @@ lamps / parked cars / walker on the measured street; smooth shared tram track, s
 Still open: paving seams where a wide sidewalk meets two kerbs (pattern turns along a jagged triangle line, e.g. the
 church forecourt), dropped kerbs (CR42L, 303 lines in I6 are fetchable from bm_urbis_topo:street_furniture_line),
 one-sided roads skipped by the width fit, the tram path's small kink where two tiles' tracks meet, level +1 / -1.
-All tiles: `python pipeline/build_surfaces.py --all` (3 WFS queries per tile, cached) then `python pipeline/build_manifest.py`.
+All tiles: `python pipeline/build_surfaces.py --all` (4 WFS queries per tile, cached) then `python pipeline/build_manifest.py`.
+Finishing pass 2026-11-05: DONE for all 120 tiles and made the DEFAULT (`?roads=engine` = the old roads). Old setts on the
+squares (viewer/cobbles.js), filtered paving (no far band), darker sidewalks, kerb/straight frame cross-fade, dropped
+kerbs at driveways and crossings, tram path continuous across tile seams. All Uccle: buildings >= 1 m into the drawn
+road 1121 -> 45 (all on engine roads UrbIS does not map). Left: UrbIS forest drives (Sonian forest) drawn as asphalt,
+road meshes ~2.4x the engine's triangles (ramps, kerbs), the blend zone of the two paving frames reads slightly soft.
 
 **Rules agreed with the owner (keep):** every new asset gets a lab in `labs/` first and goes into the city only after
 the owner approves it there; panels and labs use our own `viewer/panelUI.js` (never lil-gui); game-engine-v1 is

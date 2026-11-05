@@ -34,7 +34,7 @@ import numpy as np
 import pyogrio
 import shapely
 from shapely.geometry import LineString, MultiLineString, Point, Polygon, box
-from shapely.ops import linemerge, split, unary_union
+from shapely.ops import linemerge, split, substring, unary_union
 
 from common import CONTRACT, RAW, TILES, all_tiles, l72_to_local, local_to_l72, polygon_out, read_json, round2, tile_bounds, write_json
 
@@ -44,13 +44,16 @@ TOPO = RAW / "urbis"          # <key>/<T>[.layer].geojson per sources.json WFS k
 BOLLARD_STEP = 1.5             # m between bollards along a UrbIS bollard line (CR57L)
 
 # class codes used by the viewer (viewer/surfaces.js SURF_CLASS mirrors this)
-CLASS = {"roadway": 0, "tramRoad": 1, "tramSite": 2, "parking": 3, "square": 4, "sidewalk": 5, "median": 6, "path": 7}
+CLASS = {"roadway": 0, "tramRoad": 1, "tramSite": 2, "parking": 3, "square": 4, "sidewalk": 5, "median": 6, "path": 7, "ramp": 8}
 TYPE_CLASS = {"S": "roadway", "I": "roadway", "A": "roadway", "B": "roadway", "IL": "roadway", "G": "roadway",
               "SC": "tramRoad", "IC": "tramRoad", "C": "tramSite", "AC": "tramSite", "K": "parking", "P": "square",
               "SW": "sidewalk", "M": "median", "T": "path"}
 # raised on a kerb: sidewalks, medians and squares (Place de Saint-Job: the square stands at sidewalk height,
 # kerbed all round, verified on site by the owner 2026-11-05)
-RAISED = {"sidewalk", "median", "square"}
+RAISED = {"sidewalk", "median", "square", "ramp"}
+# dropped kerbs (class "ramp", cut out of the sidewalk): RAMP_DEPTH m deep behind the kerb, the driveway's width
+# (UrbIS Topo CR42L, drawn on the property line) + RAMP_FLARE each side, or CROSS_HALF each side of an OSM crossing
+RAMP_DEPTH, RAMP_FLARE, CROSS_HALF = 1.0, 0.3, 2.0
 MERGE = ("sidewalk", "median", "square")      # adjacent pieces of these classes become one polygon
 PRECISION = 0.01        # snap to 1 cm (the output precision) so neighbours share vertices exactly
 SLIVER = 0.2            # m², dropped
@@ -185,13 +188,13 @@ def smooth_network(rows, tbox):
     junction nodes), then rebuild the polygons from the smoothed edges: neighbours stay watertight."""
     if not rows:
         return rows, {}
-    edges = lines_of(linemerge(lines_of(unary_union([r["geom"].boundary for r in rows]))))
+    edges = lines_of(linemerge(lines_of(shapely.union_all([r["geom"].boundary for r in rows], grid_size=PRECISION))))
     new_edges, added = [], 0
     for e in edges:
         c, n = smooth_line(e.coords)
         added += n
         new_edges.append(LineString(c))
-    noded = unary_union(new_edges)
+    noded = shapely.union_all(new_edges, grid_size=PRECISION)        # snapped noding: no non-noded crossings (F9)
     faces = [f for f in polys_of(shapely.GeometryCollection(list(shapely.polygonize(lines_of(noded)).geoms))) if f.area >= 0.05]
     tree = shapely.STRtree([r["geom"] for r in rows])
     groups = {}
@@ -322,6 +325,8 @@ def build_tile(tile, no_topo=False):
     geoms = shapely.from_wkb(wkb)
     other_lvl, unknown, rows = {}, {}, []
     for k, g in enumerate(geoms):
+        if g is None or g.is_empty:                                  # a few records have no geometry (forest tiles)
+            continue
         lvl, typ = int(F["LVL"][k]), str(F["TYPE"][k])
         if lvl != 0:
             other_lvl[lvl] = other_lvl.get(lvl, 0) + 1
@@ -345,21 +350,82 @@ def build_tile(tile, no_topo=False):
     rows = merge_same_class(rows)
     rows, smooth_stats = smooth_network(rows, tbox)
     rows = split_holes(rows)
+    # valid, snapped polygons only (a self-touching ring from the smoothing breaks GEOS buffers, F9)
+    rows = [{**r, "geom": q} for r in rows for q in polys_of(shapely.set_precision(shapely.make_valid(r["geom"]), PRECISION)) if q.area >= SLIVER]
     for r in rows:
         if r["cls"] == "square":
             r["course"] = course_deg(r["geom"])
     raised =unary_union([r["geom"] for r in rows if r["cls"] in RAISED]) if rows else Polygon()
     low = unary_union([r["geom"] for r in rows if r["cls"] not in RAISED]) if rows else Polygon()
     border = tbox.exterior.buffer(0.02)
+    if raised.is_empty:                  # forest tiles: no sidewalk at all
+        raised = Polygon()
+    if low.is_empty:
+        low = Polygon()
     shapely.prepare(raised)
     # kerbs: raised boundary lying on a low surface
-    kerb_geom = raised.boundary.intersection(low.buffer(KERB_TOL, join_style="mitre")).difference(border)
+    rbound = raised.boundary if not raised.is_empty else LineString()
+    lbound = low.boundary if not low.is_empty else LineString()
+    kerb_geom = rbound.intersection(low.buffer(KERB_TOL, join_style="mitre")).difference(border)
     kerbs = [orient_left(l, raised) for l in lines_of(linemerge(lines_of(kerb_geom))) if l.length >= MIN_LINE]
     lowb = low.buffer(KERB_TOL, join_style="mitre")
-    edges_r = [l for l in lines_of(linemerge(lines_of(raised.boundary.difference(lowb).difference(border)))) if l.length >= MIN_LINE]
-    edges_l = [l for l in lines_of(linemerge(lines_of(low.boundary.difference(raised.buffer(KERB_TOL, join_style="mitre")).difference(border)))) if l.length >= MIN_LINE]
+    edges_r = [l for l in lines_of(linemerge(lines_of(rbound.difference(lowb).difference(border)))) if l.length >= MIN_LINE]
+    edges_l = [l for l in lines_of(linemerge(lines_of(lbound.difference(raised.buffer(KERB_TOL, join_style="mitre")).difference(border)))) if l.length >= MIN_LINE]
     edges = [{"raised": 1, "line": line_out(orient_left(l, raised))} for l in edges_r] + \
             [{"raised": 0, "line": line_out(orient_left(l, low))} for l in edges_l]
+
+    # dropped kerbs: at driveways and pedestrian crossings the sidewalk ramps down to ~2 cm at the kerb (the viewer
+    # gives "ramp" polygons their height from the distance to the kerb, and walls up to the sidewalk at their sides)
+    drives = []
+    if not a.no_topo:
+        fl = fetch_topo(tile, e0, n0, e1, n1, "topo_poles", "street_furniture_line")
+        for f in (fl or {}).get("features", []):
+            if f["properties"].get("topo_type") == "CR42L":
+                drives += lines_of(to_local(shapely.geometry.shape(f["geometry"])))
+    feats_f = TILES / tile / "features.json"
+    crossings = [Point(p_["x"], p_["z"]) for p_ in (read_json(feats_f).get("points", []) if feats_f.exists() else []) if p_.get("kind") == "crossing"]
+    zones = []
+    for g in drives:
+        near = [k for k in kerbs if k.distance(g) < 8]
+        if not near:
+            continue
+        k = min(near, key=lambda k: k.distance(g))
+        s0, s1 = sorted((k.project(Point(g.coords[0])), k.project(Point(g.coords[-1]))))
+        if s1 - s0 < 1.0:                      # a line across the sidewalk, not along it: a standard 2.8 m drive
+            c = k.project(g.centroid); s0, s1 = c - 1.4, c + 1.4
+        zones.append(substring(k, max(0, s0 - RAMP_FLARE), min(k.length, s1 + RAMP_FLARE)))
+    for pt in crossings:
+        for k in kerbs:
+            if k.distance(pt) < 12:
+                c = k.project(pt)
+                zones.append(substring(k, max(0, c - CROSS_HALF), min(k.length, c + CROSS_HALF)))
+    def one_side(z):
+        for g in (z, z.simplify(0.02)):          # a kerb piece that doubles back on itself breaks GEOS (F9)
+            try:
+                return g.buffer(RAMP_DEPTH, single_sided=True)
+            except shapely.errors.GEOSException:
+                pass
+        return Polygon()
+    drop = unary_union([one_side(z) for z in zones if z.length > 0.5]) if zones else Polygon()
+    ramps_n = 0
+    flanks = []
+    if not drop.is_empty:
+        new_rows = []
+        for r in rows:
+            if r["cls"] != "sidewalk":
+                new_rows.append(r); continue
+            for p_ in polys_of(shapely.set_precision(r["geom"].intersection(drop), PRECISION)):
+                if p_.area >= 0.1:
+                    new_rows.append({**r, "cls": "ramp", "geom": p_}); ramps_n += 1
+            for p_ in polys_of(shapely.set_precision(r["geom"].difference(drop), PRECISION)):
+                if p_.area >= SLIVER:
+                    new_rows.append({**r, "geom": p_})
+        rows = split_holes(new_rows)
+        ramp_u = unary_union([r["geom"] for r in rows if r["cls"] == "ramp"])
+        side_u = unary_union([r["geom"] for r in rows if r["cls"] == "sidewalk"])
+        if not ramp_u.is_empty:
+            fl_ = ramp_u.boundary.intersection(side_u.buffer(KERB_TOL, join_style="mitre")).difference(MultiLineString(kerbs).buffer(0.05) if kerbs else Polygon())
+            flanks = [line_out(orient_left(l, ramp_u)) for l in lines_of(linemerge(lines_of(fl_))) if l.length >= 0.1]
 
     # optional check against the surveyed kerb lines (UrbIS Topo BR0101L)
     check = None
@@ -393,11 +459,13 @@ def build_tile(tile, no_topo=False):
         "counts": {"surfaces": len(rows), "byType": counts, "kerbs": len(kerbs), "edges": len(edges),
                    "skippedLevels": other_lvl, "unknownTypes": unknown,
                    "area": {k: round(v, 1) for k, v in sorted(areas.items())},
-                   "kerbLength": round(sum(l.length for l in kerbs), 1), "inputPolygons": n_in, "smoothing": smooth_stats},
+                   "kerbLength": round(sum(l.length for l in kerbs), 1), "inputPolygons": n_in, "smoothing": smooth_stats,
+                   "droppedKerbs": {"driveways": len(drives), "crossings": len(crossings), "rampPolygons": ramps_n}},
         "kerbCheck": check,
         "surfaces": [{"c": CLASS[r["cls"]], "type": r["type"], "name": r["name"], "hier": r["hier"], "id": r["id"],
                       **({"course": r["course"]} if "course" in r else {}), "rings": polygon_out(r["geom"])} for r in rows],
         "kerbs": [line_out(l) for l in kerbs],
+        "flanks": flanks,
         "bollards": bollards,
         "edges": edges,
     }
