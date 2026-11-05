@@ -164,7 +164,7 @@ function setMode(m) {
 }
 function setLod(v) {
   S.lod = v;
-  KIT.lod1.value = v === "0" ? 1e5 : v === "1" ? -1e3 : 40;
+  KIT.lod1.value = v === "0" ? 1e5 : v === "1" ? -1e3 : 28;
   field.forceRebucket();
 }
 function setWire(on) { for (const m of Object.values(field.mats)) { m.wireframe = on; m.needsUpdate = true; } }

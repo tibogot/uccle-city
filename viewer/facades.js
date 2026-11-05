@@ -483,6 +483,8 @@ export function buildingMeshes(doc, buf, roads, feats, pre) {
     MATS.wallKit ??= Object.assign(wallMaterial({ kit: true }), { name: "walls (kit)" });
     MATS.wallKit.userData.shared = true;
     kitWalls = mk(a.walls.kit, [["aWall", 4], ["aBld", 4], ["aFN", 4], ["aKit", 2]], MATS.wallKit, "buildings-walls-kit");
+    // out of the kit's reach the plain wall material draws them (no discard, early-z back): kitField.js swaps
+    kitWalls.userData.cutMat = MATS.wallKit; kitWalls.userData.plainMat = MATS.wall;
     meshes.push(kitWalls);
   }
   return {

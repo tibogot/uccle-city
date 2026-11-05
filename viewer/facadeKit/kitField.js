@@ -70,7 +70,7 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
     const targets = new Set([slot]);
     for (const [, a, b] of REMAP) if (slot === a) targets.add(b);
     for (let lod = 0; lod < json.lods; lod++) for (const t of targets) {
-      const e = makeMesh(name, lod, slot, t, 16);
+      const e = makeMesh(name, lod, slot, t, 256);
       meshes.set(`${name}|${lod}|${slot}|${t}`, e);
       group.add(e.mesh);
     }
@@ -105,34 +105,64 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
   const last = new THREE.Vector3(1e9, 1e9, 1e9);
   let dirty = true;
   const stats = { instances: 0, drawn: 0, meshes: 0, ms: 0, msMax: 0, rebuckets: 0, tris: 0 };
-  const st = [0, 0, 0, 0];
+
+  // the meshes an instance of (piece, variant) writes to, per LOD (slots with no triangles at that LOD skipped)
+  const targetCache = new Map();
+  const targetsOf = (piece, variant) => {
+    const k = `${piece}|${variant}`;
+    let t = targetCache.get(k);
+    if (!t) {
+      t = [0, 1].map((lod) => pieceInfo[piece].slots.filter((s) => geo[piece][s][lod].tris > 0).map((s) => meshes.get(`${piece}|${lod}|${s}|${targetSlot(s, variant)}`)));
+      targetCache.set(k, t);
+    }
+    return t;
+  };
+  /** a tile's instances in 24 m cells, each with its stretch and mesh targets precomputed (the per-frame loop only
+   *  reads numbers) */
+  const CELL = 24;
+  function prepare(data) {
+    const cells = new Map();
+    for (const [piece, arr] of Object.entries(data.pieces)) {
+      const info = pieceInfo[piece];
+      if (!info) continue;
+      for (let i = 0; i < arr.length; i += STRIDE) {
+        const x = arr[i], z = arr[i + 2];
+        const key = Math.floor(x / CELL) * 100003 + Math.floor(z / CELL);
+        let c = cells.get(key);
+        if (!c) { c = { x: (Math.floor(x / CELL) + 0.5) * CELL, z: (Math.floor(z / CELL) + 0.5) * CELL, items: [], y0: 1e9, y1: -1e9 }; cells.set(key, c); }
+        const s = new Float32Array(4); stretch(info, arr[i + 5], arr[i + 6], s);
+        c.items.push({ arr, i, r: info.run ? arr[i + 5] / 2 : 1.5, s, t: targetsOf(piece, arr[i + 7]) });
+        c.y0 = Math.min(c.y0, arr[i + 1] - 1); c.y1 = Math.max(c.y1, arr[i + 1] + 4);
+      }
+    }
+    return [...cells.values()];
+  }
 
   function rebucket(eye) {
     const t0 = performance.now();
     for (const e of meshes.values()) e.n = 0;
     const R = kitRanges();
     const near0 = R.lod1 + MARGIN, far1lo = R.lod1 - R.lodBand - MARGIN, far1hi = R.far + MARGIN;
+    const cellR = CELL * 0.71 + 6;
     let total = 0;
     for (const tile of tiles.values()) {
       const code = tile.code;
-      for (const [piece, arr] of Object.entries(tile.data.pieces)) {
-        const info = pieceInfo[piece];
-        if (!info) continue;
-        for (let i = 0; i < arr.length; i += STRIDE) {
-          total++;
+      for (const c of tile.cells) {
+        total += c.items.length;
+        if (Math.hypot(c.x - eye.x, c.z - eye.z) - cellR > far1hi) continue;
+        for (const it of c.items) {
+          const arr = it.arr, i = it.i;
           const x = arr[i], y = arr[i + 1], z = arr[i + 2];
-          const r = info.run ? arr[i + 5] / 2 : 1.5;
           const d = Math.hypot(x - eye.x, y - eye.y, z - eye.z);
-          const dmin = Math.max(0, d - r), dmax = d + r;
+          const dmin = Math.max(0, d - it.r), dmax = d + it.r;
           if (dmin > far1hi) continue;
           const l0 = dmin < near0, l1 = dmax > far1lo;
           if (!l0 && !l1) continue;
-          const nx = arr[i + 3], nz = arr[i + 4], variant = arr[i + 7], seed = arr[i + 8];
-          stretch(info, arr[i + 5], arr[i + 6], st);
+          const nx = arr[i + 3], nz = arr[i + 4], seed = arr[i + 8];
+          const st = it.s;
           for (let lod = 0; lod < 2; lod++) {
             if (lod === 0 ? !l0 : !l1) continue;
-            for (const slot of info.slots) {
-              const e = meshes.get(`${piece}|${lod}|${slot}|${targetSlot(slot, variant)}`);
+            for (const e of it.t[lod]) {
               if (e.n >= e.cap) grow(e, e.n + 1);
               const k = e.n++;
               const M = e.M, m = k * 16;
@@ -181,12 +211,33 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
     if (dirty || fading || eye.distanceToSquared(last) > MOVE * MOVE) {
       last.copy(eye); dirty = false;
       rebucket(eye);
+      // a tile whose kit is all out of reach: its kit walls draw with the plain wall material (a discard in the
+      // shader costs early-z on the whole draw: +0.7 ms in an aerial view with no piece drawn, measured)
+      const reach = kitRanges().far + MARGIN + 4;
+      for (const t of tiles.values()) {
+        const w = t.walls;
+        if (!w?.userData.plainMat || w.userData.fadeOrig) continue;            // (a tile fading: lodFade.js owns its material)
+        let inReach = false;
+        for (const c of t.cells) {
+          const dx = Math.max(Math.abs(c.x - eye.x) - CELL / 2, 0), dz = Math.max(Math.abs(c.z - eye.z) - CELL / 2, 0);
+          const dy = Math.max(c.y0 - eye.y, 0, eye.y - c.y1);
+          if (dx * dx + dy * dy + dz * dz < reach * reach) { inReach = true; break; }
+        }
+        const want = inReach ? w.userData.cutMat : w.userData.plainMat;
+        if (w.material !== want) w.material = want;
+      }
     }
   }
   /** a tile's kit (tileData kit result) and its kit-walls mesh (facades.js); fades in with the tile unless instant */
   function addTile(name, data, walls, { instant = false } = {}) {
     if (!data) return;
-    const t = { data, walls, t: instant ? 1 : 0, code: instant ? 1 : 0 };
+    const t0 = performance.now();
+    const t = { data, walls, cells: prepare(data), t: instant ? 1 : 0, code: instant ? 1 : 0, box: [1e9, 1e9, -1e9, -1e9, 1e9, -1e9] };
+    for (const arr of Object.values(data.pieces)) for (let i = 0; i < arr.length; i += STRIDE) {
+      const b = t.box; b[0] = Math.min(b[0], arr[i] - 6); b[1] = Math.min(b[1], arr[i + 2] - 6); b[2] = Math.max(b[2], arr[i] + 6); b[3] = Math.max(b[3], arr[i + 2] + 6);
+      b[4] = Math.min(b[4], arr[i + 1] - 2); b[5] = Math.max(b[5], arr[i + 1] + 2);
+    }
+    stats.prepareMs = Math.max(stats.prepareMs || 0, +(performance.now() - t0).toFixed(2));
     if (walls) walls.userData.kitFade = t.code;
     tiles.set(name, t);
     dirty = true;

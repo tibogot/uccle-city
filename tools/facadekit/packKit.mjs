@@ -20,7 +20,10 @@ const bin = fs.readFileSync(path.join(SRC, "kit_raw.bin"));
 const f32 = (off, n) => new Float32Array(bin.buffer.slice(bin.byteOffset + off, bin.byteOffset + off + n * 4));
 const SL = raw.slice;
 // LOD1: target share of LOD0's triangles and the absolute error cap (m): seen from 35 m and more, 6 mm is < 0.2 px
-const LOD = [{ ratio: 1 }, { ratio: 0.22, error: 0.006 }];
+const LOD = [{ ratio: 1 }, { ratio: 0.12, error: 0.015 }];
+// small hardware slots are not worth a draw call from 40 m on (letter plates, knobs, zinc flashings over hoods and
+// doors): LOD1 leaves them out (the LOD band dithers them away); the cornice keeps its zinc (a long visible strip)
+const dropAtLod1 = (piece, slot) => slot === "painted_metal_white" || (slot === "zinc_roof" && piece !== "cornice");
 await MeshoptSimplifier.ready;
 
 /** the 9-slice class of a vertex for a piece (kind / ref / slice) */
@@ -103,7 +106,8 @@ for (const [name, e] of Object.entries(raw.pieces)) {
     const lods = [];
     for (let L = 0; L < LOD.length; L++) {
       let idx = I;
-      if (LOD[L].ratio < 1) {
+      if (L > 0 && dropAtLod1(name, slot)) idx = new Uint32Array(0);
+      else if (LOD[L].ratio < 1) {
         const want = Math.max(3, Math.floor((I.length / 3) * LOD[L].ratio) * 3);
         [idx] = simplifyWelded(Pf, Nf, I, want, LOD[L].error);
         if (!idx.length) idx = new Uint32Array(0);

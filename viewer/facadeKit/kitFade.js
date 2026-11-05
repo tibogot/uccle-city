@@ -14,7 +14,7 @@ import { lodEye, ditherNoise, SMOOTH } from "../lodFade.js";
 
 export const KIT = {
   far: uniform(115), band: uniform(20),          // kit -> painted façade
-  lod1: uniform(40), lodBand: uniform(8),        // LOD0 -> LOD1
+  lod1: uniform(28), lodBand: uniform(6),        // LOD0 -> LOD1 (40 m cost +0.5 ms GPU at street level for little: measured)
 };
 /** distances in JS (bucketing), with the margin the camera may move between two re-buckets */
 export const kitRanges = () => ({ far: KIT.far.value, band: KIT.band.value, lod1: KIT.lod1.value, lodBand: KIT.lodBand.value });
