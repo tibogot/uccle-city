@@ -413,7 +413,7 @@ export function planeBark(m) {
 /** The species definition for makeSpecies (viewer/treesStylized.js). seedBase: the lab's seed (default 1000). */
 export function planeDef(seedBase = 1000) {
   return {
-    id: "plane", variants: 6, shape: planeShape(seedBase), leafMask: planeLeafMask, bark: planeBark,
+    id: "plane", variants: 6, shape: planeShape(seedBase), leafMask: planeLeafMask, bark: planeBark, perVariantHeight: true,
     params: {
       seed: seedBase,
       // a fresh, slightly yellow mid green, lighter than the street trees' olive; a cool shade side

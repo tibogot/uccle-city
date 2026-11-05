@@ -221,6 +221,9 @@ const SHADOW_LODS = +(new URLSearchParams(location.search).get("treeshadow") ?? 
 export function makeSpecies(def) {
   const VARIANTS = def.variants ?? 6;
   let NATURAL_HEIGHT = 11;   // measured from the built trees on first use (calibrate())
+  // def.perVariantHeight: each variant scaled by ITS own height (a species whose forms differ a lot: the plane's
+  // pollards are half as tall as its avenue trees); the street trees keep the mean (as in the city)
+  const VARIANT_HEIGHT = [];
   const shared = {};
   let PARAMS = null, impMat = null, impMatFar = null, impBake = null;
   // the vendor's variant per tree (stylizedTrees.js: rng(i * 7919 + 13) -> floor(x * variants)), the
@@ -252,6 +255,7 @@ export function makeSpecies(def) {
       if (!key.endsWith(":0")) continue;
       g.leaves.computeBoundingBox();
       sum += g.leaves.boundingBox.max.y + 1.0;          // card centres + about a card's half size
+      VARIANT_HEIGHT[+key.split(":")[0]] = g.leaves.boundingBox.max.y + 1.0;
       n++;
     }
     if (n) NATURAL_HEIGHT = sum / n;
@@ -289,12 +293,12 @@ export function makeSpecies(def) {
   /** A tile's trees as the stylized trees place them: [x, z, ground y, turn, scale] in the tile's own order
    *  (the vendor's variant is picked from the index, so the far tile's impostors must use the same list).
    *  (t.turn: the lab's turntable; the city leaves it out) */
-  function treePlacements(trees, ground, inTile) {
+  function treePlacements(trees, ground, inTile, variantOf = variantOfIndex) {
     const placements = [];
     for (const t of trees) {
       if (!inTile(t.x, t.z)) continue;
-      const h = Math.max(3, t.height ?? 9);
-      placements.push([t.x, t.z, ground(t.x, t.z), t.turn ?? hash(t.z, t.x, 2) * Math.PI * 2, Math.min(1.8, Math.max(0.3, h / NATURAL_HEIGHT))]);
+      const h = Math.max(3, t.height ?? 9), H = def.perVariantHeight ? VARIANT_HEIGHT[variantOf(placements.length)] : NATURAL_HEIGHT;
+      placements.push([t.x, t.z, ground(t.x, t.z), t.turn ?? hash(t.z, t.x, 2) * Math.PI * 2, Math.min(1.8, Math.max(0.3, h / H))]);
     }
     return placements;
   }
@@ -315,12 +319,12 @@ export function makeSpecies(def) {
   /** A tile's trees. opts.variantOf(i): the variant of tree i (the lab; default the vendor's hash of the index). */
   function buildField(trees, ground, inTile, opts = {}) {
     calibrate();
-    const placements = treePlacements(trees, ground, inTile);
+    const variantOf = opts.variantOf ?? variantOfIndex;
+    const placements = treePlacements(trees, ground, inTile, variantOf);
     const holder = new THREE.Group();
     holder.name = "StylizedTreesTile";
     const P = params();
     if (SMOOTH) P.maxDist = IMP.start.value;
-    const variantOf = opts.variantOf ?? variantOfIndex;
     const f = createStylizedTrees({ scene: holder, trees: placements, shared, variants: VARIANTS, params: opts.variantOf ? { ...P, variantOf } : P });
     const imp = impMat ? impostorField(placements, placements.map((_, i) => variantOf(i)), impMat) : null;
     if (imp) holder.add(imp.mesh);
@@ -405,7 +409,7 @@ export function makeSpecies(def) {
   const sp = {
     def, shared, variants: VARIANTS, calibrate, buildField, buildFarField, dispose, treePlacements, variantOfIndex, params,
     buildMs: 0, bakeMs: 0,
-    get naturalHeight() { return NATURAL_HEIGHT; }, get bake() { return impBake; }, get impMat() { return impMat; }, get impMatFar() { return impMatFar; },
+    get naturalHeight() { return NATURAL_HEIGHT; }, variantHeight: (v) => (def.perVariantHeight ? VARIANT_HEIGHT[v] : NATURAL_HEIGHT), get bake() { return impBake; }, get impMat() { return impMat; }, get impMatFar() { return impMatFar; },
   };
   return sp;
 }

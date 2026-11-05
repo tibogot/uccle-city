@@ -115,7 +115,7 @@ const S = {
   wind: 0, windSpeed: 1.1, windDir: 30, season: 0,
   time: preset, hour: lighting.hour, post: true,
   walkMode: "frozen view (LOD eye walks)", walkD: 2, walkSeconds: 40, walking: false,
-  perf: "", passes: "", cpu: "", mem: "", bench: "—", lodNow: "", crownFit: "",
+  perf: "", passes: "", cpu: "", mem: "", bench: "—", lodNow: "", crownFit: "", pop: "—",
 };
 const DEFS = {
   street: (seed) => ({ ...STREET.def, params: { ...STREET.def.params, seed } }),
@@ -199,7 +199,7 @@ function build(keys = [speciesKey()]) {
 function buildChain(sp) {
   const g = new THREE.Group(); holder.add(g);
   const v = variantFn(sp)?.(0) ?? 0;
-  const scale = Math.min(1.8, Math.max(0.3, S.height / sp.naturalHeight)), rot = 0.6;
+  const scale = Math.min(1.8, Math.max(0.3, S.height / sp.variantHeight(v))), rot = 0.6;
   const side = Math.sign(lighting.sunDir.z || 1), xs = [-24, -8, 8, 24].map((x) => x * side), virt = [10, 80, 250];   // LOD 0 on the left seen from the sunny side
   const items = [];
   const M = new THREE.Matrix4().makeRotationY(rot).scale(new THREE.Vector3(scale, scale, scale));
@@ -290,8 +290,8 @@ function applyAll() {
   if (sp && S.layout === "single tree") {
     const v = variantFn(sp)?.(0) ?? sp.variantOfIndex(0);
     const g = sp.shared.geoms.get(`${v}:0`).leaves; g.computeBoundingBox();
-    const bb = g.boundingBox, k = Math.min(1.8, Math.max(0.3, S.height / sp.naturalHeight));
-    S.crownFit = `variant ${v}: model crown r ${(((bb.max.x - bb.min.x + bb.max.z - bb.min.z) / 4 + 0.6) * k).toFixed(1)} m vs LiDAR ${S.crown} m · scale ${k.toFixed(2)} (h / ${sp.naturalHeight.toFixed(1)} m)`;
+    const bb = g.boundingBox, k = Math.min(1.8, Math.max(0.3, S.height / sp.variantHeight(v)));
+    S.crownFit = `variant ${v}: model crown r ${(((bb.max.x - bb.min.x + bb.max.z - bb.min.z) / 4 + 0.6) * k).toFixed(1)} m vs LiDAR ${S.crown} m · scale ${k.toFixed(2)} (h / ${sp.variantHeight(v).toFixed(1)} m)`;
   } else S.crownFit = "-";
 }
 /** Season hook (stub): 0 summer -> 1 autumn tints the near LODs' leaf colours; the impostor atlas keeps the summer
@@ -373,11 +373,11 @@ function lodStateText(d) {
 // ------------------------------------------------------------------------------------------------ panel
 const ui = new Panel({ title: "Tree Lab" });
 const fs = ui.addFolder("Scene & species");
-fs.add(S, "layout", LAYOUTS).onChange(() => { build(); resetView(); });
-fs.add(S, "species", ["street", "plane"]).name("species").onChange(() => build());
-fs.add(S, "variant", ["auto", "auto: natural only (plane 0-3)", "auto: pollards only (plane 4-5)", "0", "1", "2", "3", "4", "5"]).onChange(() => build());
+fs.add(S, "layout", LAYOUTS).onChange(() => { build(); resetView(); }).listen();
+fs.add(S, "species", ["street", "plane"]).name("species").onChange(() => build()).listen();
+fs.add(S, "variant", ["auto", "auto: natural only (plane 0-3)", "auto: pollards only (plane 4-5)", "0", "1", "2", "3", "4", "5"]).onChange(() => build()).listen();
 fs.add(S, "seed", 1, 99999, 1).onChange(() => { for (const k of Object.keys(species)) disposeSpecies(k); build(); });
-fs.add(S, "height", 4, 40, 0.5).name("LiDAR height (m)").onChange(() => { if (["single tree", "LOD chain side by side", "street of 50"].includes(S.layout)) build(); });
+fs.add(S, "height", 4, 40, 0.5).name("LiDAR height (m)").onChange(() => { if (["single tree", "LOD chain side by side", "street of 50"].includes(S.layout)) build(); }).listen();
 fs.add(S, "crown", 1, 14, 0.1).name("LiDAR crown r (m)").onChange(applyAll);
 fs.add(S, "crownFit").name("fit").listen();
 fs.add(S, "ring").name("show the LiDAR crown").onChange(applyAll);
@@ -385,7 +385,7 @@ fs.add(S, "turntable").onChange(applyAll);
 fs.add(S, "maskView").name("show the leaf mask").onChange(drawMask);
 fs.add({ f: resetView }, "f").name("reset the view");
 const fl = ui.addFolder("LOD");
-fl.add(S, "force", FORCE).name("force LOD").onChange(applyAll);
+fl.add(S, "force", FORCE).name("force LOD").onChange(applyAll).listen();
 fl.add(S, "lodColours").name("LOD colours").onChange(applyAll);
 fl.add(S, "wireframe").onChange(applyAll);
 fl.add(S, "lod1", 10, 120, 1).name("LOD 0→1 (m)").onChange(applyAll);
@@ -420,6 +420,8 @@ fwk.add(S, "walkMode", ["frozen view (LOD eye walks)", "dolly zoom (camera walks
 fwk.add({ f: () => (S.walking ? stopWalk() : startWalk()) }, "f").name("▶ play / stop the walk");
 fwk.add(S, "walkD", 2, 1200, 1).name("distance (m) (scrub)").onChange((d) => { if (!S.walking) startWalk(); walk.t0 = performance.now() - uOf(d) * S.walkSeconds * 1000; walk.paused = true; }).listen();
 fwk.add(S, "walkSeconds", 5, 120, 1).name("walk duration (s)");
+fwk.add({ f: async () => { S.pop = "running…"; const r = await popWalk(); S.pop = `worst jump ${r.worstJump[1]} % at ${r.worstJump[0]} m, ${r.over15} steps > 1.5 %`; console.log("[tree lab] pop meter", r); } }, "f").name("pop meter: frozen walk, 60 steps");
+fwk.add(S, "pop").name("pop result").listen();
 fwk.add(S, "lodNow").name("state").listen();
 const fp = ui.addFolder("Performance");
 fp.add(S, "perf").name("frame").listen();
@@ -547,9 +549,32 @@ renderer.setAnimationLoop(() => {
   }
 });
 addEventListener("resize", () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+/** The pop meter (docs/SMOOTH_LOD.md §5): a frozen-view LOD walk in `steps` log steps from d0 to d1; at each step the
+ *  frame is grabbed (480 x 270) and compared with the previous one: the share of pixels changing by > 40/255. A pop
+ *  is a step much larger than its neighbours ("jump" = the step minus the mean of its two neighbours). */
+async function popWalk({ steps = 60, d0 = 2, d1 = 1200, settle = 350 } = {}) {
+  const c = document.createElement("canvas"); c.width = 480; c.height = 270;
+  const g = c.getContext("2d", { willReadFrequently: true });
+  const grab = () => new Promise((r) => requestAnimationFrame(() => { g.drawImage(renderer.domElement, 0, 0, 480, 270); r(g.getImageData(0, 0, 480, 270).data); }));
+  const mode = S.walkMode; S.walkMode = "frozen view (LOD eye walks)";
+  startWalk(); walk.paused = true;
+  let prev = null; const out = [];
+  for (let i = 0; i <= steps; i++) {
+    const d = d0 * Math.pow(d1 / d0, i / steps);
+    S.walkD = d; walkAt(d);
+    await sleep(settle);
+    const px = await grab();
+    if (prev) { let n = 0; for (let k = 0; k < px.length; k += 4) if (Math.abs(px[k] - prev[k]) + Math.abs(px[k + 1] - prev[k + 1]) + Math.abs(px[k + 2] - prev[k + 2]) > 120) n++; out.push([+d.toFixed(1), +(100 * n / (480 * 270)).toFixed(3)]); }
+    prev = px;
+  }
+  stopWalk(); S.walkMode = mode;
+  const jumps = out.map(([d, v], i) => [d, +(v - ((out[i - 1]?.[1] ?? v) + (out[i + 1]?.[1] ?? v)) / 2).toFixed(3)]);
+  const worst = jumps.reduce((a, b) => (b[1] > a[1] ? b : a), [0, -1]);
+  return { steps: out, worstJump: worst, over15: jumps.filter((j) => j[1] > 1.5).length };
+}
 /** A camera on the sunny side of (x, z) at distance d, eye height h, looking at height ty (screenshots, photo matches). */
 function photoView(d = 36, h = 1.6, ty = 9, x = 0, z = 0, turn = 0) {
   const sd = new THREE.Vector3(lighting.sunDir.x, 0, lighting.sunDir.z).normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), turn);
   controls.target.set(x, Y0 + ty, z); camera.position.set(x + sd.x * d, Y0 + h, z + sd.z * d);
 }
-window.lab = { photoView, renderer, scene, camera, controls, lighting, S, species, get fields() { return fields; }, get chain() { return chain; }, build, applyAll, bench, alternate, results, startWalk, stopWalk, walkAt, walk, resetView, gpu, lodMorph, IMP, TREE_SHADOW, drawMask, planeLeafMask };
+window.lab = { popWalk, photoView, renderer, scene, camera, controls, lighting, S, species, get fields() { return fields; }, get chain() { return chain; }, build, applyAll, bench, alternate, results, startWalk, stopWalk, walkAt, walk, resetView, gpu, lodMorph, IMP, TREE_SHADOW, drawMask, planeLeafMask };
