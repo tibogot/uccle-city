@@ -4,6 +4,40 @@ Premium Blender pieces placed by rules on the UrbIS street façades, exactly whe
 (viewer/facades.js) paints its windows and doors; within ~115 m the pieces draw, beyond they dither back to the painted
 façade. Lab: `labs/kit-lab.html` (`?mode=row` for real I6 houses). City: `viewer/index.html?tile=I6&kit=1&view=stjob`.
 
+## Round 2 (2026-11-06)
+
+| Item | What changed | Result |
+|---|---|---|
+| 1. rooms behind the glass | the kit glass runs the painted window's own code (`facades.js paintedGlass`: same window grid, interior-mapped room, lace / drapes, lit rooms at night via env.uNight, dirt, analytic sky); per instance the face it sits on (aKitF = u0, width, base, rnd + door street + French code) | the kit windows show the same rooms as the painted ones: the hand-over at 85-115 m is no longer a hollow-to-room change (`round2_sbs_close_r1.jpg`) |
+| 2. draw calls | one OPAQUE draw per piece x LOD (the named slot per vertex in aKitV.w, the building's variant per instance: stone white -> blue, frames white -> dark, brick red -> yellow, switched in the shader) + one GLASS draw per piece x LOD with windows | kit meshes in a busy street 65 -> 37; total draws added by the kit (in-page A/B, kit walls included both ways) +50 at street level (37 meshes + LOD0 shadow casters); 4 kit materials instead of 20 |
+| 3. fade | band 20 -> 30 m (85-115 m); same IGN dither both sides; rooms matching makes the dither between similar pixels | pop meter (`tools/facadekit/popMeter.js`, the SMOOTH_LOD metric, frozen view, LOD eye walks 200 m in 50 steps): steps > 1.5 % = 2 with or without the kit (the same two steps: other systems); per-step change inside the kit band 0.34 % -> 0.23 % |
+| 4a. steps | the DTM under each tread (both sides of the door); a buried step and those after it are dropped; step blocks run 0.6 m down (never float) | I6: 70 steps -> 28 (42 were buried) |
+| 4b. one front door per house | a pre-pass per building: the widest street face carries the door; on its other street faces the door bay is a window (the kit walls paint a window there too: aKit.z, also in the far "no cut" wall material, so nothing changes at the hand-over) | I6: 511 doors -> 280 |
+| 4c. French window | new pieces `frenchWin` (storey floor to window head, panelled kick rail, tall casements, transom) + `balconnet` (shallow slab, 0.95 m railing) + `balcony` rebuilt for it (0.95 m railing, stretches along x only); the wall cut / painted window run down to the floor for that bay (aKit.w) | 53 French windows on I6 (24 balconies, 29 balconnets); no balcony in front of an ordinary window any more |
+| 5a. window B LOD1 | scripted far variant `winBfar` (the arch as one band, quoins as strips) used as LOD1 | 1233 -> 317 triangles |
+| 5b. skipped faces | an opening wholly off a face (stepped wall, annex, gable) no longer disqualifies it; a partly covered one still does | I6 kit faces 555 -> 741, skipped 262 -> 76 |
+
+GPU, kit toggled inside one page (3 alternations, p50 ms, another agent's tab possibly rendering):
+
+| View | kit off | kit on | delta | draws off -> on | kit triangles |
+|---|---|---|---|---|---|
+| street level, row east of Saint-Job | 6.88 / 7.14 / 6.82 | 7.60 / 7.73 / 7.27 | +0.59 (round 1 ~ +1.0) | 415 -> 465 | 341k |
+| down Chaussée de Saint-Job | 5.70 / 5.70 / 6.23 | 6.49 / 6.42 / 6.23 | +0.50 | 420 -> 470 | 320k |
+| close-up of the row (6 m) | 6.62 / 6.95 / 7.14 | 8.26 / 7.54 / 8.32 | +1.14 | 430 -> 480 | 403k |
+| aerial 230 m | 7.08 / 7.21 / 7.34 | 7.34 / 7.93 / 7.21 | +0.28 (in the spread; no kit drawn) | 401 -> 401 | 0 |
+
+Main thread: re-bucket 0.3-0.5 ms (max 1.9-2.7 ms), adding a tile's kit 3.7-3.9 ms once; moving camera (6 s dolly 170 -> 8 m,
+fresh load): p50 16.6 ms, 2 frames of ~30 ms, no long task, no buffer growth.
+
+Pieces now (LOD0 / LOD1 triangles): winA 2696 / 351, hood 364 / 60, winB 5051 / 317, frenchWin 3188 / 408, sill 62 / 14,
+soup 430 / 66, doorA 4262 / 504, doorB 2482 / 306, balcony 4686 / 566, balconnet 3822 / 454, cornice 142 / 30,
+cornCorner 140 / 28, modillion 320 / 38, plinth 34 / 10, step 38 / 14.
+
+Still weak after round 2: a few UrbIS solids hold two houses, so "one door per house" can leave one of them doorless;
+doors on sloping streets still start at the façade base (the door itself can be partly below the DTM); the opaque
+material evaluates every slot look in a branch per pixel (cheap with the stand-ins, to re-check with the library's heavy
+materials: switch per piece then); 37 kit meshes is "a few dozen" but a per-slot multi-draw would still halve it.
+
 ## Pipeline
 
 | Step | Where |
