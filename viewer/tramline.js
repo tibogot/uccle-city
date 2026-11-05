@@ -71,44 +71,95 @@ export async function createTramLine(url, scene, ground) {
   const doc = await r.json();
   const lineCol = new THREE.Color(doc.color);
   const lc = [lineCol.r, lineCol.g, lineCol.b].map((v) => Math.pow(v, 2.2));
-  // shapes densified to 2 m, with cumulative distance; snapped per loaded tile
+  // shapes densified to 1 m, snapped per loaded tile onto the tile's smoothed OSM tracks (viewer/track.js), with
+  // the arc length and a tangent per point, so position AND heading are interpolated along the track (a polyline's
+  // heading jumps at every vertex: the jerky trams of 2026-11-04)
   const shapes = {};
+  const finish = (s) => {
+    const { pts } = s, n = pts.length;
+    s.cum = new Float64Array(n);
+    for (let i = 1; i < n; i++) s.cum[i] = s.cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+    s.tan = new Float64Array(n * 2);
+    for (let i = 0; i < n; i++) {
+      const a = pts[Math.max(0, i - 2)], b = pts[Math.min(n - 1, i + 2)], dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz) || 1;
+      s.tan[i * 2] = dx / L; s.tan[i * 2 + 1] = dz / L;
+    }
+  };
   for (const [id, line] of Object.entries(doc.shapes)) {
     const pts = [];
     for (let i = 1; i < line.length; i++) {
-      const [ax, az] = line[i - 1], [bx, bz] = line[i], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 2));
+      const [ax, az] = line[i - 1], [bx, bz] = line[i], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az)));
       for (let k = i === 1 ? 0 : 1; k <= n; k++) pts.push([ax + (bx - ax) * k / n, az + (bz - az) * k / n]);
     }
-    const cum = new Float64Array(pts.length);
-    for (let i = 1; i < pts.length; i++) cum[i] = cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
-    shapes[id] = { orig: pts.map((p) => p.slice()), pts, cum };
+    shapes[id] = { orig: pts.map((p) => p.slice()), snap: pts.map((p) => p.slice()), pts };
+    finish(shapes[id]);
   }
   const snapped = new Set();
-  /** Snap shape points inside a tile onto that tile's OSM tram tracks (within 3 m). */
+  // the tracks of every loaded tile in ONE 4 m grid of segments (global line ids), so a shape is snapped across tile
+  // seams in one pass, with its track continuity carried over the seam (no kink where two tiles meet)
+  const grid = new Map(), gk = (i, j) => i * 100003 + j, boxes = [];
+  let lineCount = 0;
+  /** Snap the shape points inside every loaded tile onto the tram tracks (within 3 m). */
   const snapTile = (name, feats, b) => {
     if (snapped.has(name)) return;
     snapped.add(name);
     const tracks = (feats.lines || []).filter((l) => l.kind === "tram").map((l) => l.line);
+    boxes.push(b);
+    tracks.forEach((l) => { const li = lineCount++; for (let k = 1; k < l.length; k++) {
+      const [ax, az] = l[k - 1], [cx, cz] = l[k];
+      for (let i = Math.floor((Math.min(ax, cx) - 3) / 4); i <= Math.floor((Math.max(ax, cx) + 3) / 4); i++)
+        for (let j = Math.floor((Math.min(az, cz) - 3) / 4); j <= Math.floor((Math.max(az, cz) + 3) / 4); j++) {
+          const key = gk(i, j);
+          if (!grid.has(key)) grid.set(key, []);
+          grid.get(key).push([ax, az, cx, cz, li]);
+        }
+    } });
     if (!tracks.length) return;
-    for (const s of Object.values(shapes)) s.orig.forEach(([x, z], i) => {
-      if (x < b.x0 || x > b.x1 || z < b.z0 || z > b.z1) return;
-      let best = 9, bx = x, bz = z;
-      for (const l of tracks) for (let k = 1; k < l.length; k++) {
-        const [ax, az] = l[k - 1], [cx, cz] = l[k], dx = cx - ax, dz = cz - az, L2 = dx * dx + dz * dz || 1e-9;
-        const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)), px = ax + dx * t, pz = az + dz * t;
-        const d = (px - x) ** 2 + (pz - z) ** 2;
-        if (d < best) { best = d; bx = px; bz = pz; }
+    const loaded = (x, z) => boxes.some((q) => x >= q.x0 && x <= q.x1 && z >= q.z0 && z <= q.z1);
+    // A GTFS shape runs between the two tracks of a street (~0.6-1.5 m off), so "nearest segment" flips from one
+    // track to the other and the tram wiggles across the street. Stay on the track of the previous point until it
+    // leaves its 3 m reach (a junction), and prefer a track running the shape's way.
+    for (const s of Object.values(shapes)) {
+      let prevLine = -1, prevPt = null;
+      s.orig.forEach(([x, z], i) => {
+        if (!loaded(x, z)) { prevLine = -1; prevPt = null; return; }
+        const o = s.orig, a0 = o[Math.max(0, i - 1)], a1 = o[Math.min(o.length - 1, i + 1)];
+        const sx = a1[0] - a0[0], sz = a1[1] - a0[1], sl = Math.hypot(sx, sz) || 1;
+        let best = Infinity, bx = x, bz = z, bl = -1;
+        for (const [ax, az, cx, cz, li] of grid.get(gk(Math.floor(x / 4), Math.floor(z / 4))) || []) {
+          const dx = cx - ax, dz = cz - az, L2 = dx * dx + dz * dz || 1e-9;
+          const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)), px = ax + dx * t, pz = az + dz * t;
+          const d2 = (px - x) ** 2 + (pz - z) ** 2;
+          if (d2 > 9) continue;
+          const back = (dx * sx + dz * sz) / (Math.sqrt(L2) * sl) < 0 ? 1 : 0;
+          // same line, or the next tile's piece of it (its point is within 1.5 m of the previous snapped point)
+          const cont = li === prevLine || (prevPt && (px - prevPt[0]) ** 2 + (pz - prevPt[1]) ** 2 < 2.25 && Math.abs(Math.hypot(px - prevPt[0], pz - prevPt[1]) - Math.hypot(x - o[Math.max(0, i - 1)][0], z - o[Math.max(0, i - 1)][1])) < 0.5);
+          const cost = d2 + (prevLine >= 0 && !cont ? 100 : 0) + back;     // switch only when the track left the 3 m reach
+          if (cost < best) { best = cost; bx = px; bz = pz; bl = li; }
+        }
+        s.snap[i] = [bx, bz];
+        prevLine = bl; prevPt = [bx, bz];
+      });
+    }
+    // two passes of a [1 2 1]/4 filter along the snapped points: no kink where two tiles' tracks meet (on a 25 m
+    // curve it moves the line by under 1 cm)
+    for (const s of Object.values(shapes)) {
+      for (let pass = 0; pass < 2; pass++) {
+        const p = pass ? s.pts : s.snap, q = p.map((v) => v.slice());
+        for (let i = 1; i + 1 < p.length; i++) { q[i][0] = (p[i - 1][0] + 2 * p[i][0] + p[i + 1][0]) / 4; q[i][1] = (p[i - 1][1] + 2 * p[i][1] + p[i + 1][1]) / 4; }
+        s.pts = q;
       }
-      s.pts[i] = [bx, bz];
-    });
+      finish(s);
+    }
   };
-  const at = (s, d) => {            // point + heading at distance d along a shape
-    const { pts, cum } = s, n = pts.length;
+  const at = (s, d) => {            // point + heading at distance d along a shape (heading from the interpolated tangent)
+    const { pts, cum, tan } = s, n = pts.length;
     d = Math.max(0, Math.min(cum[n - 1], d));
     let lo = 0, hi = n - 1;
     while (hi - lo > 1) { const m = (lo + hi) >> 1; if (cum[m] <= d) lo = m; else hi = m; }
     const f = (d - cum[lo]) / ((cum[hi] - cum[lo]) || 1), a = pts[lo], b = pts[hi];
-    return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, Math.atan2(-(b[1] - a[1]), b[0] - a[0])];
+    const tx = tan[lo * 2] * (1 - f) + tan[hi * 2] * f, tz = tan[lo * 2 + 1] * (1 - f) + tan[hi * 2 + 1] * f;
+    return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, Math.atan2(-tz, tx)];
   };
 
   // meshes: cab modules (front and back of each tram) and middle modules
@@ -139,7 +190,20 @@ export async function createTramLine(url, scene, ground) {
   const dayType = { Sat: "saturday", Sun: "sunday" }[now0.dow] || "weekday";
   const trips = doc.trips.filter((t) => t.days.includes(dayType));
   const clock = () => startSecs + ((performance.now() - t0) / 1000) * scale;
-  const ease = (f) => f * f * (3 - 2 * f);
+  // between two stops: accelerate at ACC, cruise, brake at ACC (a T3000 does ~1.1 m/s²), so the speed never jumps;
+  // a hop too short for that profile falls back to a smoothstep (also continuous speed)
+  const ACC = 1.0;
+  const travel = (D, T, t) => {
+    const disc = T * T - 4 * D / ACC;
+    if (D <= 0 || T <= 0) return 0;
+    if (disc <= 0) { const f = Math.min(1, Math.max(0, t / T)); return D * f * f * (3 - 2 * f); }
+    const v = ACC * (T - Math.sqrt(disc)) / 2, ta = v / ACC;
+    if (t <= 0) return 0;
+    if (t < ta) return 0.5 * ACC * t * t;
+    if (t < T - ta) return 0.5 * ACC * ta * ta + v * (t - ta);
+    if (t < T) return D - 0.5 * ACC * (T - t) ** 2;
+    return D;
+  };
   const M = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1), v = new THREE.Vector3();
   const near = { x: 0, z: 0, r: 1800 };
   let running = 0;
@@ -171,7 +235,7 @@ export async function createTramLine(url, scene, ground) {
         const [d0, , dep0] = st[i], [d1, arr1] = st[i + 1];
         if (tt < st[i][1]) break;
         if (tt <= dep0) { d = d0; break; }                              // standing at stop i
-        if (tt <= arr1) { d = d0 + (d1 - d0) * ease((tt - dep0) / Math.max(1, arr1 - dep0)); break; }
+        if (tt <= arr1) { d = d0 + travel(d1 - d0, Math.max(1, arr1 - dep0), tt - dep0); break; }
         d = d1;
       }
       const [x, z] = at(shapes[t.shape], d);
@@ -192,5 +256,27 @@ export async function createTramLine(url, scene, ground) {
     const T = clock() % 86400;
     return `tram ${doc.line} (${doc.route}): ${running} running at ${String(Math.floor(T / 3600)).padStart(2, "0")}:${String(Math.floor(T % 3600 / 60)).padStart(2, "0")} (${dayType} timetable). ${doc.source}`;
   };
-  return { update, snapTile, info, doc, fleet, model };
+  /** the running trams near the last camera: [{ trip, d, x, z, yaw }] (for checks: a camera can follow one) */
+  const positions = () => {
+    const T = clock() % 86400, Tn = T + 86400, out = [];
+    for (const t of trips) {
+      const st = t.stops, first = st[0][2], last = st[st.length - 1][1];
+      const tt = T >= first && T <= last ? T : Tn >= first && Tn <= last ? Tn : -1;
+      if (tt < 0) continue;
+      let d = st[0][0];
+      for (let i = 0; i < st.length - 1; i++) {
+        const [d0, , dep0] = st[i], [d1, arr1] = st[i + 1];
+        if (tt < st[i][1]) break;
+        if (tt <= dep0) { d = d0; break; }
+        if (tt <= arr1) { d = d0 + travel(d1 - d0, Math.max(1, arr1 - dep0), tt - dep0); break; }
+        d = d1;
+      }
+      const [x, z, yaw] = at(shapes[t.shape], d);
+      out.push({ trip: t.id ?? t.head, d, x, z, yaw, T: tt });
+    }
+    return out;
+  };
+  /** [x, z, heading] at distance d along the shape of trip `id` (checks) */
+  const trackAt = (id, d) => { const t = trips.find((q) => (q.id ?? q.head) === id); return t ? at(shapes[t.shape], d) : null; };
+  return { update, snapTile, info, doc, fleet, model, positions, trackAt };
 }

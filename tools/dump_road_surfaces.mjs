@@ -1,7 +1,7 @@
 // Dump the road engine's drivable surfaces (each road's carriage polygon, kerb to kerb, and each junction's
 // outline) for every built tile, for tools/audit_overlap.py (buildings standing on the road).
 //
-//   node tools/dump_road_surfaces.mjs [OUT_DIR]       # default data/raw/audit (git-ignored)
+//   node tools/dump_road_surfaces.mjs [OUT_DIR] [--tile I6 ...]       # default data/raw/audit (git-ignored)
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -25,13 +25,15 @@ function loadGround(dir) {
 }
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const out = process.argv[2] || join(ROOT, "data", "raw", "audit");
+const argv = process.argv.slice(2), only = new Set();     // --tile I6 (repeatable): only these tiles
+for (let k = argv.indexOf("--tile"); k >= 0; k = argv.indexOf("--tile")) { only.add(argv[k + 1].toUpperCase()); argv.splice(k, 2); }
+const out = argv[0] || join(ROOT, "data", "raw", "audit");
 mkdirSync(out, { recursive: true });
 const man = JSON.parse(readFileSync(join(ROOT, "data", "tiles", "manifest.json"), "utf8"));
 const r2 = (p) => p.map(([x, z]) => [Math.round(x * 100) / 100, Math.round(z * 100) / 100]);
 for (const t of man.tiles) {
   const d = join(ROOT, "data", "tiles", t.name);
-  if (!existsSync(join(d, "roads.json"))) continue;
+  if (!existsSync(join(d, "roads.json")) || (only.size && !only.has(t.name))) continue;
   const net = buildRoadNetwork(JSON.parse(readFileSync(join(d, "roads.json"), "utf8")), { ground: loadGround(d) });
   const roads = net.roads.filter((r) => r.carriage?.length > 2).map((r) => ({ id: r.id, type: r.type?.label, name: r.src?.meta?.name, poly: r2(r.carriage) }));
   const nodes = net.nodes.filter((n) => n.outline?.length > 2).map((n) => ({ id: n.id, kind: n.kind, poly: r2(n.outline) }));

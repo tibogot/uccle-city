@@ -385,6 +385,38 @@
         "153162": "20211009",
         "153163": "20211009"
       }
+    },
+    "landcover": {
+      "title": "UrbIS - Land cover (Occupation du sol): StreetSurfaces, Blocks, Bridges, Tunnels",
+      "page": "https://datastore.brussels/web/data/dataset/b718705d-f70f-11ee-8282-00090ffe0001",
+      "atom": "https://urbisdownload.datastore.brussels/atomfeed/b718705d-f70f-11ee-8282-00090ffe0001-en.xml",
+      "techSpec": "https://urbisdownload.datastore.brussels/UrbIS/TechSpec/LandCover_TechSpec_FR20240401.pdf",
+      "expect": "GeoPackage, EPSG:31370, whole region (sheet code 04000, 38 MB zip). StreetSurfaces polygons (TYPE S roadway, SW sidewalk, I intersection, IC/SC tram-shared, C reserved site, M median, K parking, P square, A ramp...; LVL level) are cut per tile into data/tiles/<T>/surfaces.json by build_surfaces.py.",
+      "licence": "CC0 1.0",
+      "verified": "2026-11-04",
+      "urls": [
+        "https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Landcover/GPKG/UrbISLandCover_31370_GPKG_04000_20261002.zip"
+      ]
+    },
+    "topo_roadline": {
+      "title": "UrbIS - Topo road lines (kerb BR0101L, gutter BR0102L, sidewalk outer edge BR0103L...), layer bm_urbis_topo:road_line of the Brussels Mobility WFS",
+      "page": "https://geobru-geonetwork.irisnet.be/geonetwork/srv/api/records/10ded91e-6a63-11ed-9d77-010101010000",
+      "techSpec": "https://urbisdownload.datastore.brussels/UrbIS/TechSpec/Topo_TechSpec_FR20230428.pdf",
+      "wfs": "https://data-mobility.irisnet.be/geoserver/ows?service=WFS&version=2.0.0&request=GetFeature&typeNames=bm_urbis_topo:road_line&outputFormat=application/json&srsName=EPSG:31370&bbox={e0},{n0},{e1},{n1},EPSG:31370",
+      "expect": "GeoJSON lines per tile bbox, fetched by build_surfaces.py into data/raw/urbis/topo_roadline/<T>.geojson (a per-tile WFS query, so no fixed URL here; fetch_urbis.py skips it).",
+      "licence": "CC0 1.0 (UrbIS Topo, Paradigm; served by Brussels Mobility)",
+      "verified": "2026-11-04",
+      "urls": []
+    },
+    "topo_poles": {
+      "title": "UrbIS - Topo bollards (CR5702P points, bm_urbis_topo:pole_point; CR57L lines, pole_line) and driveways (CR42L, street_furniture_line), Brussels Mobility WFS",
+      "page": "https://geobru-geonetwork.irisnet.be/geonetwork/srv/api/records/10ded91e-6a63-11ed-9d77-010101010000",
+      "techSpec": "https://urbisdownload.datastore.brussels/UrbIS/TechSpec/Topo_TechSpec_FR20230428.pdf",
+      "wfs": "https://data-mobility.irisnet.be/geoserver/ows?service=WFS&version=2.0.0&request=GetFeature&typeNames=bm_urbis_topo:{layer}&outputFormat=application/json&srsName=EPSG:31370&bbox={e0},{n0},{e1},{n1},EPSG:31370",
+      "expect": "GeoJSON per tile bbox and layer, fetched by build_surfaces.py into data/raw/urbis/topo_poles/<T>.<layer>.geojson -> surfaces.json 'bollards' (viewer ?roads=surface).",
+      "licence": "CC0 1.0 (UrbIS Topo, Paradigm; served by Brussels Mobility)",
+      "verified": "2026-11-05",
+      "urls": []
     }
   }
 }

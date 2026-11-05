@@ -21,6 +21,7 @@ import {
   fwidth, hash, mx_noise_float, uniform,
 } from "three/tsl";
 import { addLampLight } from "./lampLight.js";
+import { filteredPulse } from "./tslkit.js";
 
 import { SURFACE, hashPhase, surfaceAttribute } from "./roadData.js";
 export { SURFACE, hashPhase, surfaceAttribute };
@@ -32,18 +33,23 @@ export const band = (d, k) => step(float(k - 0.5), d).mul(float(1).sub(step(floa
 
 /** Stone courses: rows along `a` (length la), stones along `b` (length lb), staggered half a stone.
  *  Returns { joint 0..1, tone 0..1 per stone }. jw = joint width (m). */
-export function courses(a, b, la, lb, jw, seed) {
-  const ra = a.div(la), row = floor(ra), fa = fract(ra);
-  const rb = b.div(lb).add(row.mul(0.5)), col = floor(rb), fb = fract(rb);
-  const d = min(min(fa, fa.oneMinus()).mul(la), min(fb, fb.oneMinus()).mul(lb));
-  const aa = fwidth(a).add(fwidth(b)).mul(0.7).add(0.0005);
-  const sharp = float(1).sub(smoothstep(jw.mul(0.5).sub(aa), jw.mul(0.5).add(aa), d));
+export function courses(a, b, la, lb, jw, seed, fw = null) {
+  const ra = a.div(la), row = floor(ra);
+  const rb = b.div(lb).add(row.mul(0.5)), col = floor(rb);
+  // pixel footprint in metres: `fw` (a world-space footprint, continuous across triangles whose uv frames differ),
+  // else from the pattern coordinates themselves
+  const w = (fw ?? fwidth(a).add(fwidth(b)).mul(0.7)).add(0.0003);
+  // joints BOX-FILTERED over the footprint (tslkit filteredPulse: exact coverage, no moire, no hard band): near, a
+  // crisp line; far, the joints' area share, reached smoothly as the footprint grows. The joint band is centred on
+  // each stone edge. (The b footprint comes from fwidth(b), not rb, whose half-stone row offset jumps.)
+  const ja = filteredPulse(ra.add(jw.div(la).mul(0.5)), float(0), jw.div(la), w.div(la));
+  const jb = filteredPulse(rb.add(jw.div(lb).mul(0.5)), float(0), jw.div(lb), w.div(lb));
+  const joint = float(1).sub(float(1).sub(ja).mul(float(1).sub(jb)));
+  // per-stone tone, fading to the mean over a long smooth range of footprints (0.15 .. 0.9 of a stone)
   const tone0 = hash(row.mul(37.13).add(col.mul(11.71)).add(seed));
-  // far away a stone covers a few pixels: fade to the average (joint coverage, mid tone) instead of moiré
-  const far = smoothstep(min(la, lb).mul(0.12), min(la, lb).mul(0.45), aa);
-  const joint = mix(sharp, jw.div(min(la, lb)).mul(2.0), far);
+  const far = smoothstep(min(la, lb).mul(0.15), min(la, lb).mul(0.9), w);
   const tone = mix(tone0, float(0.5), far);
-  return { joint, tone };
+  return { joint, tone, far };
 }
 
 // ---------------------------------------------------------------- asphalt + paint
@@ -166,22 +172,43 @@ export function asphaltMaterial(atlas) {
 
 // ---------------------------------------------------------------- sidewalks, kerbs, aprons
 
-export function concreteMaterial() {
+/** `framed` (viewer/surfaces.js, ?roads=surface): aKind 3 = a sidewalk slab whose uv is (station along the nearest
+ *  kerb, metres from it), so the tiles run along the street in one continuous pattern, and the first 15 cm from
+ *  the kerb is painted as the blue-stone kerb band. */
+export function concreteMaterial({ framed = false } = {}) {
   const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   const P = positionWorld, x = P.x, z = P.z;
-  const kind = attribute("aKind", "float");                 // 0 slab, 1 kerb stone, 2 apron setts
+  let kind = attribute("aKind", "float");                 // 0 slab, 1 kerb stone, 2 apron setts, 3 framed slab
   const grain = n3(x.mul(9.0), z.mul(9.0), P.y.mul(9.0));
   // 30 x 30 cm grey concrete tiles (the usual Brussels sidewalk)
-  const tiles = courses(x, z, 0.3, 0.3, float(0.006), float(2.0));
-  const slab = mix(mix(vec3(0.24, 0.235, 0.225), vec3(0.32, 0.31, 0.295), tiles.tone).add(grain.mul(0.012)), vec3(0.12, 0.115, 0.11), tiles.joint);
+  let ta = x, tb = z;
+  const fw = fwidth(x).add(fwidth(z)).mul(0.7);           // world footprint: the same on both sides of a frame seam
+  let blend = float(0);
+  if (framed) {
+    const isF = band(kind, 3), f = uv(), g = attribute("aUv2", "vec2"), wB = attribute("aFrameW", "float");
+    // kerb frame (station, distance) near the kerb; the polygon's own straight frame where the sidewalk is wide or the
+    // kerb bends tightly (aFrameW 1): two patterns cross-faded over the vertices, no hard seam (viewer/surfaces.js)
+    blend = wB.mul(isF);
+    ta = mix(x, f.x, isF); tb = mix(z, f.y, isF);
+    const band15 = float(1).sub(smoothstep(float(0.15).sub(fw), float(0.15).add(fw), f.y));   // kerb band, AA edge
+    kind = mix(kind, band15, isF);                            // framed: kerb band (1) within 15 cm of the kerb, else slab (0)
+    var tilesB = courses(g.x, g.y, 0.3, 0.3, float(0.006), float(2.0), fw);
+  }
+  const tilesA = courses(ta, tb, 0.3, 0.3, float(0.006), float(2.0), fw);
+  const tiles = framed ? { joint: mix(tilesA.joint, tilesB.joint, blend), tone: mix(tilesA.tone, tilesB.tone, blend) } : tilesA;
+  // framed slabs a touch darker and greyer (they read washed out in a low sun next to the asphalt and the houses)
+  const sA = framed ? vec3(0.175, 0.172, 0.165) : vec3(0.24, 0.235, 0.225), sB = framed ? vec3(0.235, 0.228, 0.215) : vec3(0.32, 0.31, 0.295);
+  const blot = n3(x.mul(0.6), z.mul(0.6), 8.0);               // low-frequency wear: keeps far sidewalks from going flat
+  const slab = mix(mix(sA, sB, tiles.tone).mul(blot.mul(0.07).add(1.0)).add(grain.mul(0.012)), vec3(0.1, 0.097, 0.092), tiles.joint);
   // kerbs: Belgian blue stone (petit granit), dark blue-grey with fossil speckle
   const kerb = vec3(0.075, 0.082, 0.095).add(grain.mul(0.012)).add(n3(x.mul(37.0), P.y.mul(37.0), z.mul(37.0)).mul(0.01));
   // roundabout apron: red-brown setts
-  const ap = courses(x, z, 0.12, 0.12, float(0.012), float(4.0));
+  const ap = courses(x, z, 0.12, 0.12, float(0.012), float(4.0), fw);
   const apron = mix(mix(vec3(0.16, 0.07, 0.045), vec3(0.24, 0.11, 0.07), ap.tone), vec3(0.05, 0.03, 0.02), ap.joint);
   const isKerb = band(kind, 1), isApron = band(kind, 2);
   m.colorNode = mix(mix(slab, kerb, isKerb), apron, isApron);
-  m.roughnessNode = mix(mix(mix(float(0.88), float(0.95), tiles.joint), float(0.6), isKerb), float(0.8), isApron);
+  // framed (?roads=surface): honed blue stone, rougher, so a kerb face toward a low sun does not flare white
+  m.roughnessNode = mix(mix(mix(float(framed ? 0.92 : 0.88), float(0.95), tiles.joint), float(framed ? 0.82 : 0.6), isKerb), float(0.8), isApron);
   return addLampLight(m);
 }
 

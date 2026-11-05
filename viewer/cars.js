@@ -55,7 +55,9 @@ function carGeometry() {
   return mergeGeometries(parts);
 }
 
-export function buildCars(roads, feats, ground, bounds) {
+/** `place(x, z, yaw)` (?roads=surface, viewer/streetFit.js): moves a parked car against the measured kerb, or drops
+ *  it (null) when it would not stand wholly on the carriageway. */
+export function buildCars(roads, feats, ground, bounds, { place = null } = {}) {
   const N = new Map(roads.nodes.map((n) => [n.id, n]));
   const avoid = (feats.points || []).filter((p) => p.kind === "crossing" || p.kind === "bus_stop" || p.kind === "traffic_signals")
     .map((p) => [p.x, p.z, p.kind === "bus_stop" ? 15 : 10]);
@@ -86,13 +88,19 @@ export function buildCars(roads, feats, ground, bounds) {
         const lane = lay[side].find((l) => l.type === "parking" && l.w > 1.6);
         if (!lane) continue;
         const off = (lane.tIn + lane.tOut) / 2;                                     // signed, left positive
-        const x = a.x + (b.x - a.x) * tt + lx * off, z = a.z + (b.z - a.z) * tt + lz * off;
+        let x = a.x + (b.x - a.x) * tt + lx * off, z = a.z + (b.z - a.z) * tt + lz * off;
         const hv = hash(x * 0.37, z * 0.53 + k);
+        // right-hand traffic: cars face the direction of their side's traffic
+        let fwd = side === "right" ? Math.atan2(-dz, dx) : Math.atan2(dz, -dx);
+        if (place) {
+          const p = place(x, z, fwd);
+          if (!p || sites.some((q) => (q.x - p.x) ** 2 + (q.z - p.z) ** 2 < 25)) { k++; continue; }
+          x = p.x; z = p.z; fwd = p.yaw;
+        }
         const ok = hv < 0.65 && x >= bounds.x0 && x <= bounds.x1 && z >= bounds.z0 && z <= bounds.z1
           && !avoid.some(([ax, az, rr]) => (ax - x) ** 2 + (az - z) ** 2 < rr * rr) && !onRails(x, z);
-        // right-hand traffic: cars face the direction of their side's traffic
-        const fwd = side === "right" ? Math.atan2(-dz, dx) : Math.atan2(dz, -dx);
-        if (ok) sites.push({ x: x + dx * (hv - 0.3) * 0.6, z: z + dz * (hv - 0.3) * 0.6, yaw: fwd + (hv - 0.3) * 0.04, c: Math.floor(hash(z, x) * PALETTE.length) });
+        if (ok) sites.push(place ? { x, z, yaw: fwd + (hv - 0.3) * 0.02, c: Math.floor(hash(z, x) * PALETTE.length) }
+          : { x: x + dx * (hv - 0.3) * 0.6, z: z + dz * (hv - 0.3) * 0.6, yaw: fwd + (hv - 0.3) * 0.04, c: Math.floor(hash(z, x) * PALETTE.length) });
         k++;
       }
       s += 5.6;
