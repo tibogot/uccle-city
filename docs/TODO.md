@@ -10,8 +10,13 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 
 1. [x] **Roof collision for fly mode**: a 2 m roof-height grid per tile (tile worker), `world.heightAt` = max(ground, roofs).
    Driving will need real wall collision (BVH) later.
-2. **Parked cars from Blender**: 4-6 scripted body types, meshoptimizer LODs, a **Car Lab** first, owner approves,
-   then they replace the boxes (also a GPU saving: cars are ~784k triangles per view).
+2. **Parked cars**: the owner rejected the scripted car's look; **owner to pick** in the Car Lab comparison
+   (`labs/car-lab.html?mode=compare`, `?mode=street`, branch claude/cars): scripted vs Kenney Car Kit vs Quaternius Cars
+   Pack (CC0, `models/cars/`, one material per pack, meshoptimizer LODs at load), and (branch claude/car-faceted) our own
+   faceted family `faceted:<id>` (tools/blender/carFaceted.py: 7 types + taxi, ~7.4k tris, baked AO, see-through glass;
+   previews docs/cars/faceted_*.png). Then the pick replaces the boxes in
+   `viewer/cars.js` (instancing per model / LOD, as the street benchmark does; also a GPU saving: cars are ~784k
+   triangles per view).
 3. **All of Uccle**: re-fetch raw data on this machine, set up the Python pipeline, extend the grid (section 1).
 Then: road fixes (z-fighting, breaks in curves, grooved tram rails), rain / wet roads,
 winter (7b), dev panel teleports to named places.
@@ -142,7 +147,11 @@ falcon, labs (Bird, Lamp), the dev panel.
       wet roads, falling snow. Switchable by date or a preset.
 
 ## 8. Game / app
-- [ ] Driving: a car controller on the road engine's surfaces (the "car game" goal).
+- [x] Driving (branch claude/drive): Car Lab + drive mode, arcade car on the drivable-surface grid, footprint / island /
+      trunk / lamp colliders per tile (viewer/drive/, `?view=drive`). Next: parked cars and trams as colliders (oriented
+      boxes), car-vs-car (slop vehicle-physics.js SAT), per-wheel ground (one wheel on a kerb), engine / tyre sound,
+      headlight beams at night without adding scene lights (light count change = shader recompiles), the Blender car
+      replacing the parked boxes (instanced LOD1/2, colour per instance).
 - [ ] Modes: walk, bike, drive, drone / photo mode; minimap with real street names.
 - [ ] Missions or uses: deliveries, taxi, "find this place", time slider (historic maps).
 - [ ] Multiplayer (later).

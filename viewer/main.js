@@ -11,7 +11,7 @@ import {
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { buildLamps, setLampModel } from "./lamps.js";
 import { loadLampModel } from "./lampModel.js";
-import { loadStJob, STJOB_LODS, STJOB_BU_ID } from "./stjobModel.js";
+import { loadStJob, STJOB_LODS, STJOB_BU_ID, stjobColliders } from "./stjobModel.js";
 import { buildFurniture } from "./furniture.js";
 import { buildTram } from "./tram.js";
 import { buildCars } from "./cars.js";
@@ -28,6 +28,7 @@ import { buildStylizedTreeField, setTreeLighting, setTreeRenderer } from "./tree
 import { openBootPipelines, warmBoot } from "./warmup.js";
 import { buildPlazas, loadOverrides } from "./plazas.js";
 import { Flyer } from "./flight.js";
+import { Driver, tileDrive } from "./drive/driveMode.js";
 import { addLamps } from "./lampLight.js";
 
 const DATA = new URL("../data/tiles/", import.meta.url);
@@ -398,7 +399,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     }
     return h;
   };
-  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt };
+  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt, drive: tileDrive(d.drive, roads, bounds) };
 }
 
 // ------------------------------------------------------------------ main
@@ -502,7 +503,7 @@ async function main() {
     : TILE === "I6" ? roadStart(roads, 1153.1, 540.1, bounds) : roadStart(roads, cx, cz, bounds);   // ?at=, else Place de Saint-Job on I6
   if (!start) $("btnWalk").disabled = true;
   const yawP = params.get("yaw");                                        // ?yaw=deg: walk facing (0 = -z / north-ish, 90 = -x)
-  const walk = () => { if (!start) return; flyer.stop(); controls.enabled = false; walker.start(start.x, start.z, yawP != null ? +yawP * Math.PI / 180 : start.yaw); };
+  const walk = () => { if (!start) return; flyer.stop(); driver.stop(); controls.enabled = false; walker.start(start.x, start.z, yawP != null ? +yawP * Math.PI / 180 : start.yaw); };
   // fly mode (viewer/flight.js): a bird from above Place de Saint-Job (or the walk start), heading the walk's way
   const flyer = new Flyer(camera, renderer.domElement, scene, world);
   window.__flyer = flyer;
@@ -527,12 +528,26 @@ async function main() {
   })();
   // from the tip of the Saint-Job spire (data/overrides.json flyStart), else above the walk start
   const fly = async () => {
-    walker.on = false; controls.enabled = false;
+    walker.on = false; driver.stop(); controls.enabled = false;
     const fs = (await loadOverrides(DATA)).flyStart;
     if (fs) flyer.start(fs.x, fs.z, Math.atan2(-(fs.toward[0] - fs.x), -(fs.toward[1] - fs.z)), fs.y);
     else { const s = start || { x: cx, z: cz, yaw: 0 }; flyer.start(s.x, s.z, yawP != null ? +yawP * Math.PI / 180 : s.yaw); }
   };
   flyer.onExit = () => setView("stjob");
+  // drive mode (viewer/drive/): the hatchback on a street near Saint-Job church (the fly start), ?at=x,z elsewhere
+  const driver = new Driver(camera, renderer.domElement, scene, world);
+  window.__driver = driver;
+  if (HIDE_BU_IDS.length) loadStJob().then((m) => driver.addStatic(stjobColliders(m.placement))).catch(() => {});   // the church's front steps
+  const drive = () => {
+    const [px, pz] = atP?.length === 2 ? atP : [1201.6, 549.3];
+    const s = roadStart(roads, px, pz, bounds) || start;
+    if (!s) return;
+    walker.on = false; flyer.stop(); controls.enabled = false;
+    let h = s.yaw + Math.PI;                                       // walk yaw -> car heading (forward = sin h, cos h)
+    if (TILE === "I6" && !atP && Math.sin(h) * (1153 - s.x) + Math.cos(h) * (540 - s.z) < 0) h += Math.PI;   // face the church
+    driver.start(s.x - Math.cos(h) * 1.6, s.z + Math.sin(h) * 1.6, h);   // keep right
+  };
+  driver.onExit = () => setView("stjob");
   const views = {
     overview: () => { camera.position.set(cx - 330, cy + 300, cz + 400); controls.target.set(cx, cy, cz); },
     stjob: () => {   // ?at=x,z, else Place de Saint-Job on I6, else the tile centre
@@ -544,14 +559,15 @@ async function main() {
       controls.target.set(x, y + (cam?.length === 3 ? 12 : 0), z);
     },
   };
-  const setView = (v) => { walker.on = false; flyer.stop(); controls.enabled = true; views[v](); controls.update(); };
+  const setView = (v) => { walker.on = false; flyer.stop(); driver.stop(); controls.enabled = true; views[v](); controls.update(); };
   walker.onExit = () => setView("stjob");
   $("btnOrbit").onclick = () => setView("overview");
   $("btnStJob").onclick = () => setView("stjob");
   $("btnWalk").onclick = walk;
   $("btnFly").onclick = fly;
+  $("btnDrive").onclick = drive;
   const v0 = params.get("view") || (params.get("at") ? "stjob" : null);   // ?at=x,z&view=walk stands on the nearest road
-  if (v0 === "walk") walk(); else if (v0 === "fly") { setView("overview"); fly(); } else setView(v0 === "stjob" ? "stjob" : "overview");
+  if (v0 === "walk") walk(); else if (v0 === "drive") { setView("overview"); drive(); } else if (v0 === "fly") { setView("overview"); fly(); } else setView(v0 === "stjob" ? "stjob" : "overview");
 
   addEventListener("resize", () => {
     camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight);
@@ -593,15 +609,15 @@ async function main() {
   tsel.onchange = () => { lighting.apply(tsel.value); pipe?.look(tsel.value); };
   renderer.setAnimationLoop(() => {
     if (flyer.on) focus.set(flyer.x, flyer.pos.y, flyer.z).addScaledVector(camera.getWorldDirection(fwd).setY(0).normalize(), 60);
-    else if (walker.on) focus.copy(camera.position).addScaledVector(camera.getWorldDirection(fwd).setY(0).normalize(), 45);
+    else if (walker.on || driver.on) focus.copy(camera.position).addScaledVector(camera.getWorldDirection(fwd).setY(0).normalize(), 45);
     else focus.copy(controls.target);
-    const half = flyer.on ? THREE.MathUtils.clamp((flyer.pos.y - world.surface(flyer.x, flyer.z)) * 1.6 + 90, 90, 380) : walker.on ? 80 : THREE.MathUtils.clamp(camera.position.distanceTo(controls.target) * 0.9, 60, 380);
+    const half = flyer.on ? THREE.MathUtils.clamp((flyer.pos.y - world.surface(flyer.x, flyer.z)) * 1.6 + 90, 90, 380)   : walker.on || driver.on ? 80 : THREE.MathUtils.clamp(camera.position.distanceTo(controls.target) * 0.9, 60, 380);
     lighting.update(camera.position.y, world.surface(camera.position.x, camera.position.z), focus, half);
     const now = performance.now(), dt = Math.min((now - last) / 1000, 0.1);
     last = now;
     fpsAcc += dt; fpsN++;
     if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
-    if (flyer.on) flyer.update(dt); else if (walker.on) walker.update(dt); else controls.update();
+    if (flyer.on) flyer.update(dt); else if (driver.on) driver.update(dt); else if (walker.on) walker.update(dt); else controls.update();
     for (const u of updaters) u(camera.position, camera);
     renderFrame();
     if (pipe && lighting.firmament) pipe.setExposureFactor(lighting.adapt(dt));
@@ -631,7 +647,7 @@ async function main() {
   let busy = null;
   const stream = async (liteFirst = false) => {   // liteFirst: skip the full tiles this step (boot warm-up)
     // the manifest tile under (or nearest to) the player / orbit target, loaded or not
-    const px = flyer.on ? flyer.x : walker.on ? walker.x : controls.target.x, pz = flyer.on ? flyer.z : walker.on ? walker.z : controls.target.z;
+    const px = flyer.on ? flyer.x : driver.on ? driver.x : walker.on ? walker.x : controls.target.x, pz = flyer.on ? flyer.z : driver.on ? driver.z : walker.on ? walker.z : controls.target.z;
     const built = manifest.tiles.filter((t) => t.status !== "missing");
     const cell = built.map((t) => {
       const dx = Math.max(t.bounds.x[0] - px, 0, px - t.bounds.x[1]), dz = Math.max(t.bounds.z[0] - pz, 0, pz - t.bounds.z[1]);
