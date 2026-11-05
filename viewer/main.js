@@ -597,6 +597,7 @@ async function main() {
         import("./falcons.js").then(({ createFalcons }) => createFalcons({ church: m, heightAt: (x, z) => (world.tiles.length ? world.heightAt(x, z) : -1e9) })).then((fam) => {
           scene.add(fam.group);
           window.__falcons = fam; falconsReady = fam;
+          window.__falconsOn = (v) => { falconsOn = v; };   // A/B timing (debug/gpuAB.js alternate)
           updaters.push((camPos, cam) => { fam.enabled = lod.visible && falconsOn; fam.update(cam); });
           log(`falcons: the Saint-Job family (female, tiercel, 3 eyases; the eyrie ${fam.nestTris[0]} tris) - ?falcons=0 to leave them out`);
         }).catch((e) => log(`falcons: ${e.message}`));

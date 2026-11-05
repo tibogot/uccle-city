@@ -4,7 +4,8 @@
 // two more levels of detail made here by meshoptimizer, the baked ambient occlusion (UV1) as a one-channel texture,
 // and the four materials: procedural TSL, driven by world-scale UVs (1 unit = 1 m) and the per-face codes in COLOR_0
 // (r = subtype, g = band pattern: see stjob.py).
-//   const m = await loadStJob();   m.lods[k] = { meshes: [geometry x4], tris };   m.materials[4];   m.nest, m.spireTip
+//   const m = await loadStJob();   m.lods[k] = { meshes: [geometry x4], tris };   m.materials[4];   m.nest, m.spireTip,
+//   m.perches = { perch_ledge, perch_louvre, perch_gable, perch_cross: { pos, facing } } (the falcons, viewer/falcons.js)
 //   m.placement = { position: Vector3 (city local, m TAW), rotationY }   m.make(k) -> a Group of 4 meshes (shared geometry)
 import * as THREE from "three/webgpu";
 import {

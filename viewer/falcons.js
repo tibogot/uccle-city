@@ -141,7 +141,7 @@ function applyBodyScale(root) {
 function eyasScale(root) {
   // uniform scales only (a parent's non-uniform scale shears its children); each grown bone's child gets it back
   const S = (n, k) => { const b = root.getObjectByName(n); if (b) b.scale.multiplyScalar(k); };
-  S("spine_0", 1.25); S("spine_1", 1.15); S("spine_2", 1 / (1.25 * 1.15) * 0.85);   // a round body, a short neck
+  S("spine_0", 1.45); S("spine_1", 1.25); S("spine_2", 1 / (1.45 * 1.25) * 0.8);    // a round body, a short neck
   S("head", 1.55); S("mouth_upper", 0.55);                                          // a big head, a small beak
   for (const s of ["L", "R"]) { S(`wing_1_${s}`, 0.36); S(`UpperLeg_${s}`, 0.95); S(`Foot_${s}`, 1.2); }
   S("tail_1", 0.3);
@@ -425,11 +425,12 @@ export class FalconFamily {
     }
     const props = scene.getObjectByName("nest_props"), prey = scene.getObjectByName("prey_carry");
     props.receiveShadow = true; props.castShadow = false;
-    // LOD: meshopt to ~4k triangles beyond NEST_LOD m (the gravel's relief goes first)
+    // LOD: meshopt to ~4k triangles beyond NEST_LOD m
     const g1 = new THREE.BufferGeometry();
     for (const k of Object.keys(props.geometry.attributes)) g1.setAttribute(k, props.geometry.attributes[k]);
     const I = props.geometry.index.array, P = props.geometry.attributes.position.array;
-    const [ix] = MeshoptSimplifier.simplify(new Uint32Array(I), new Float32Array(P), 3, 12000, 0.02, ["LockBorder"]);
+    // (Prune: the loose pebbles, feathers and splashes go; the bed and the tray stay)
+    const [ix] = MeshoptSimplifier.simplify(new Uint32Array(I), new Float32Array(P), 3, 15000, 0.03, ["Prune", "ErrorAbsolute"]);
     g1.setIndex(new THREE.BufferAttribute(ix, 1));
     const props1 = new THREE.Mesh(g1, mat); props1.receiveShadow = true;
     this.nestMeshes = [props, props1];
@@ -785,7 +786,7 @@ export class FalconFamily {
     if (adultNear) { const d = adultNear.pos.clone().sub(c.pos); yawWant = Math.atan2(-d.x, -d.z); }
     c.yaw = wrap(c.yaw + wrap(yawWant - c.yaw) * (1 - Math.exp(-2.5 * dt)));
     c.pitch = ease(c.pitch, D.beg * -0.15, 3, dt);
-    L.neckUp = ease(L.neckUp, D.beg * 0.45, 5, dt);
+    L.neckUp = ease(L.neckUp, D.beg * 0.25, 5, dt);
     L.headDown = ease(L.headDown, D.beg * -0.35 + (1 - D.beg) * 0.15 + Math.sin(D.phase * 1.3) * 0.05, 5, dt);
     L.headTurn = ease(L.headTurn, D.beg ? Math.sin(D.phase * 7) * 0.15 : D.look, 6, dt);
     L.beak = ease(L.beak, D.beg * (0.45 + 0.25 * Math.sin(D.phase * 11)), 10, dt);
