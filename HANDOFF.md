@@ -20,6 +20,15 @@ The car: one loader, `viewer/drive/carModel.js loadCarModel(spec)` (`scripted` =
 `quaternius:<id>` = CC0 packs via `viewer/drive/carPacks.js`); `?car=<spec>` or `__driver.setCar(spec)`; `fitBody`
 sizes the physics box to the model. Packs: `node tools/cars/convertPacks.mjs` (raw packs in data/raw/cars/, see CREDITS).
 
+## The Saint-Job falcons (branch claude/falcons)
+
+A peregrine family at the church, on by default (`?falcons=0` = none): the eyrie behind the falcons' louvred arch
+(`tools/blender/falconNest.py` -> `models/falcons/nest.glb`), three eyases, the female and the tiercel with behaviour
+state machines (perches from the church's `perch_*` nodes, thermals, stoops, the aerial food pass, feeding), all on the
+fly-mode rig (`viewer/falcons.js`, baked Perch / Sit poses). Fly mode now starts at the nest (the young falcon's first
+flight; `?flystart=spire` = the old start, `?birdskin=adult` = the old plumage). Lab `labs/falcon-lab.html`; method,
+cost (GPU within noise, ~0.1-0.17 ms CPU), reference comparisons and weak points: `docs/FALCONS.md`.
+
 ## Interiors (branch claude/interior, pilot)
 
 The first interior cell: a terraced house near Place de Saint-Job (UrbIS 1786120). Lab `labs/interior-lab.html`, city

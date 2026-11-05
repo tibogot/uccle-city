@@ -104,9 +104,94 @@ export class Flyer {
   }
 
 
+  /** A perched pose for the nest start (viewer/falcons.js perchClip: the rig has none of its own). */
+  addPerchClip(clip) {
+    if (!this.mixer || !clip) return;
+    this.actions.perch = this.mixer.clipAction(clip);
+    this.actions.perch.play(); this.actions.perch.setEffectiveWeight(0);
+  }
+
+  /** THE NEST START (the owner's story: the player is the young falcon leaving the Saint-Job eyrie). A short scripted
+   *  intro before the controls: in the scrape, a hop up onto the arch's ledge, a look out over the Place, the launch
+   *  (a drop with hard wingbeats) and the hand-over to free flight at the launch's speed and heading. Life size in the
+   *  belfry, growing to the fly-mode size (and the chase distance with it) over the first seconds of flight; the roof
+   *  collision waits until the bird is clear of the tower. Space skips to the launch.
+   *  nest: { scrape, ledge: Vector3 (world), out: Vector3 (horizontal, world), life: life-size scale (< 1) } */
+  startFromNest(nest) {
+    this.on = true;
+    const out = nest.out.clone().setY(0).normalize();
+    this.intro = { t: 0, ...nest, out, phase: "scrape" };
+    this.yaw = Math.atan2(-out.x, -out.z); this.pitch = 0; this.bank = 0; this.speed = 0; this.flap = 0;
+    this.pos.copy(nest.scrape);
+    this.look.yaw = 0; this.look.pitch = 0;
+    this.size = nest.life;
+    this.bird.visible = true;
+    this.camPos.copy(this.introCam(0)); this.camLook.copy(this.pos).addScaledVector(out, 2).add(new THREE.Vector3(0, 0.25, 0));
+  }
+
+  /** the intro camera: low behind the bird in the chamber, rising to look out over its shoulder */
+  introCam(k) {
+    const I = this.intro, s = I.life / 0.4;           // ~1 at life size
+    const back = (1.25 - 0.35 * k) * s, up = (0.55 + 0.25 * k) * s;
+    return this.pos.clone().addScaledVector(I.out, -back).add(new THREE.Vector3(0, up, 0)).addScaledVector(new THREE.Vector3(-I.out.z, 0, I.out.x), 0.25 * s);
+  }
+
+  updateIntro(dt) {
+    const I = this.intro, ease = (c, t, r) => c + (t - c) * (1 - Math.exp(-r * dt));
+    I.t += dt;
+    if (this.keys.has("Space") && I.t < 3.6) I.t = 3.6;                      // skip to the launch
+    const T_HOP = 1.6, T_LEDGE = 2.4, T_GO = 3.8, T_FREE = 5.0;
+    let flapW = 0, perchW = 1;
+    if (I.t < T_HOP) {                                                         // in the scrape: look round, the head bobs
+      this.pos.copy(I.scrape);
+    } else if (I.t < T_LEDGE) {                                                // the hop up onto the ledge
+      const s = (I.t - T_HOP) / (T_LEDGE - T_HOP), e = s * s * (3 - 2 * s);
+      this.pos.lerpVectors(I.scrape, I.ledge, e); this.pos.y += Math.sin(Math.PI * s) * 0.3;
+      flapW = Math.sin(Math.PI * s); perchW = 1 - flapW;
+    } else if (I.t < T_GO) {                                                   // on the ledge: the view out over the Place
+      this.pos.copy(I.ledge);
+    } else {                                                                   // the launch: off the ledge, wings open, a drop
+      const s = Math.min(1, (I.t - T_GO) / (T_FREE - T_GO));
+      const p0 = I.ledge, v0 = I.out.clone().multiplyScalar(1.5).add(new THREE.Vector3(0, 0.8, 0));
+      const p1 = I.ledge.clone().addScaledVector(I.out, 9).add(new THREE.Vector3(0, -3.5, 0)), v1 = I.out.clone().multiplyScalar(13).add(new THREE.Vector3(0, -2.5, 0));
+      const T = T_FREE - T_GO, s2 = s * s, s3 = s2 * s;
+      const h = [2 * s3 - 3 * s2 + 1, s3 - 2 * s2 + s, -2 * s3 + 3 * s2, s3 - s2];
+      this.pos.set(0, 0, 0).addScaledVector(p0, h[0]).addScaledVector(v0, h[1] * T).addScaledVector(p1, h[2]).addScaledVector(v1, h[3] * T);
+      const dv = [6 * s2 - 6 * s, 3 * s2 - 4 * s + 1, -6 * s2 + 6 * s, 3 * s2 - 2 * s];
+      const vel = new THREE.Vector3().addScaledVector(p0, dv[0] / T).addScaledVector(v0, dv[1]).addScaledVector(p1, dv[2] / T).addScaledVector(v1, dv[3]);
+      this.pitch = ease(this.pitch, Math.atan2(vel.y, Math.hypot(vel.x, vel.z)), 6);
+      this.speed = vel.length();
+      flapW = 1; perchW = Math.max(0, 1 - s * 4);
+      if (s >= 1) {                                                            // free flight from here, at the launch's speed
+        this.intro = null; this.grace = 6; this.speed = Math.max(this.speed, 12); this.flap = 1;
+        return;
+      }
+    }
+    this.bird.position.copy(this.pos);
+    this.bird.rotation.set(this.pitch, this.yaw, 0, "YXZ");
+    this.bird.scale.setScalar(this.size);
+    if (this.mixer) {
+      const a = this.actions;
+      I.w ??= { perch: 1, flap: 0 };
+      I.w.perch = ease(I.w.perch, perchW, 8); I.w.flap = ease(I.w.flap, flapW, 8);
+      a.perch?.setEffectiveWeight(I.w.perch); a.flap.setEffectiveWeight(I.w.flap); a.glide.setEffectiveWeight(Math.max(0, 1 - I.w.perch - I.w.flap));
+      a.flap.timeScale = 1.6;
+      this.mixer.update(dt);
+    }
+    // camera: behind in the chamber; on the ledge it comes up over the shoulder; at the launch it follows out
+    const k = THREE.MathUtils.smoothstep(I.t, T_HOP, T_GO);
+    const want = this.introCam(k);
+    if (I.t > T_GO) want.copy(this.pos).addScaledVector(I.out, -1.6 * I.life / 0.4).add(new THREE.Vector3(0, 0.5 * I.life / 0.4, 0));
+    this.camPos.lerp(want, 1 - Math.exp(-(I.t > T_GO ? 5 : 3) * dt));
+    this.camLook.lerp(this.pos.clone().addScaledVector(I.out, 3).add(new THREE.Vector3(0, 0.15 - 0.6 * k, 0)), 1 - Math.exp(-4 * dt));
+    this.camera.position.copy(this.camPos);
+    this.camera.up.set(0, 1, 0);
+    this.camera.lookAt(this.camLook);
+  }
+
   /** y: absolute height (m); default 35 m above the ground */
   start(x, z, yaw, y = null) {
-    this.on = true;
+    this.on = true; this.intro = null; this.size = 1; this.grace = 0; this.bird.scale.setScalar(1);
     this.yaw = yaw; this.pitch = 0; this.bank = 0; this.speed = CRUISE;
     this.pos.set(x, y ?? this.floor(x, z) + 35, z);
     this.look.yaw = 0; this.look.pitch = 0;
@@ -114,14 +199,22 @@ export class Flyer {
     this.camPos.copy(this.pos).add(new THREE.Vector3(Math.sin(yaw) * 9, 3, Math.cos(yaw) * 9));
     this.camLook.copy(this.pos);
   }
-  stop() { this.on = false; this.bird.visible = false; }
+  stop() { this.on = false; this.intro = null; this.bird.visible = false; }
   get x() { return this.pos.x; }
   get z() { return this.pos.z; }
 
-  floor(x, z) { return this.world.heightAt ? this.world.heightAt(x, z) : this.world.surface(x, z); }
+  floor(x, z) {
+    // just out of the nest: the ground only (the roof grid holds the tower the bird is leaving) until clear of it
+    if (this.grace > 0) return this.world.surface(x, z);
+    return this.world.heightAt ? this.world.heightAt(x, z) : this.world.surface(x, z);
+  }
 
   update(dt) {
     if (!this.on) return;
+    if (this.intro) { const t = this.intro.t; this.updateIntro(dt); if (this.introHold && this.intro) this.intro.t = t; return; }   // introHold: a still (screenshots)
+    if (this.grace > 0) this.grace -= dt;
+    if (this.size < 1) { this.size = Math.min(1, this.size + dt / 3.5); this.bird.scale.setScalar(this.size); }
+    if (this.actions?.perch) this.actions.perch.setEffectiveWeight(Math.max(0, this.actions.perch.getEffectiveWeight() - dt * 3));
     const k = this.keys, has = (...c) => c.some((x) => k.has(x));
     // ---- input -> target attitude
     const pitchIn = (has("KeyW", "ArrowUp") ? -1 : 0) + (has("KeyS", "ArrowDown") ? 1 : 0);   // W = nose down
@@ -174,7 +267,7 @@ export class Flyer {
     }
     // ---- chase camera: behind and above, leaning into the turn, plus the mouse-look offset
     // close behind and a little above (the bird big in the lower third), farther when fast
-    const camYaw = this.yaw + this.look.yaw, dist = 1.9 + this.speed * 0.035;   // close: the bird fills the lower third
+    const camYaw = this.yaw + this.look.yaw, dist = (1.9 + this.speed * 0.035) * (this.size ?? 1);   // close: the bird fills the lower third (life size just out of the nest: closer)
     const elev = 0.17 + this.look.pitch * -1;
     const want = this.pos.clone().add(new THREE.Vector3(Math.sin(camYaw) * Math.cos(elev) * dist, Math.sin(elev) * dist, Math.cos(camYaw) * Math.cos(elev) * dist));
     want.y = Math.max(want.y, this.floor(want.x, want.z) + 1.5);

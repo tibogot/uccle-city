@@ -1,0 +1,43 @@
+{
+ "asset": "Saint-Job peregrine eyrie (tools/blender/falconNest.py)",
+ "triangles": {
+  "nest_props": 28890,
+  "prey_carry": 287
+ },
+ "pebbles": 150,
+ "frame": "origin = stjob.glb node 'nest'; glTF x = right seen from outside, y up, z = outward (tower face normal)",
+ "gravel_top": 0.36,
+ "reveal_floor": 0.5,
+ "empties": {
+  "chick_0": [
+   -0.17,
+   0.353,
+   -0.02
+  ],
+  "chick_1": [
+   0.14,
+   0.332,
+   0.05
+  ],
+  "chick_2": [
+   0.0,
+   0.335,
+   -0.15
+  ],
+  "feed": [
+   0.05,
+   0.36,
+   0.27
+  ],
+  "scrape": [
+   0.02,
+   0.316,
+   -0.02
+  ],
+  "hop": [
+   0.0,
+   0.363,
+   0.3
+  ]
+ }
+}
