@@ -663,11 +663,11 @@
   "zb": 10.603
  },
  "triangles": {
-  "interior": 542,
+  "interior": 546,
   "props": 138103,
   "door": 1380,
   "glass": 44,
-  "colliders": 1322
+  "colliders": 1324
  },
- "build_s": 283.8
+ "build_s": 182.9
 }
