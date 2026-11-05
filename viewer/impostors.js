@@ -67,9 +67,11 @@ export function bakeTreeImpostors(renderer, shared, variants, leafMask) {
   // are the shading inputs, not the lit colour
   const U = shared.U;
   const card = attribute("card", "vec4"), spin = attribute("cardSpin", "vec3");
-  const mask = texture(leafMask, card.xy.mul(0.5).add(0.5)).r;
+  const maskT = texture(leafMask, card.xy.mul(0.5).add(0.5)), mask = maskT.r;
   const hA = card.w, aoA = card.z;
-  const leafAlbedo = mix(U.bottom, U.top, smoothstep(0.0, 1.0, hA)).mul(mix(float(1), aoA, U.aoColor));
+  // (the leaf's own tone from the mask's .g, as the leaves: vendor CHANGES #12; 0 for the street trees)
+  const tone = float(1).add(maskT.g.sub(0.5).mul(2).mul(U.leafTone ?? float(0)));
+  const leafAlbedo = mix(U.bottom, U.top, smoothstep(0.0, 1.0, hA)).mul(mix(float(1), aoA, U.aoColor)).mul(tone);
   // the pad-dome normal (the leaves' normalNode, in tree space): the card's centre normal leaned out by
   // the corner (corner = world position - card centre, the bake instance being the identity)
   const leafN = normalize(normalGeometry.add(positionWorld.sub(positionGeometry).mul(spin.z).mul(0.7)));

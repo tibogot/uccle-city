@@ -47,3 +47,12 @@
    nothing. Before, every re-bucket (each 5 m of camera motion) uploaded every buffer of every loaded tile whole
    (capacity >= 1025, #4): ~30 MB and 15-25 ms of `writeBuffer` in one frame while walking (measured with
    `debug/moveTest.js`). Same draws, same data.
+12. **Leaf tone channel** (Uccle tree lab, 2026-11-06): `params.leafTone` (uniform `U.leafTone`, default 0 = off): the
+   leaf albedo is multiplied by `1 + (mask.g - 0.5) x 2 x leafTone`, so a species' leaf mask can carry each leaf's
+   own tone and its veins in .g (a RedFormat mask reads 0 there; with leafTone 0 nothing changes). The impostor
+   bake (viewer/impostors.js) applies the same term.
+13. **Variant per tree, seed** (tree lab): `params.variantOf(i)` picks tree i's variant (default: the hash of its index,
+   as before); `params.seed` replaces the built trees' base seed 1000.
+14. **Wind direction** (tree lab): `params.windDir` [x, z] (uniform `U.windDir`): the slow sway leans along it with a
+   smaller sideways swing (before: a fixed x / z sway). The sway is added in the world (since #5). Only with
+   `windAmp` > 0 (0 in the city: no change there).

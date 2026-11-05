@@ -60,6 +60,10 @@ export const STYLIZED_TREE_DEFAULTS = {
   windSpeed: 1.1,
   /** the bark (linear RGB) */
   trunkColor: [0.16, 0.1, 0.06],
+  /** [uccle-city CHANGES.md #12] per-leaf tone from the leaf mask's .g (0.5 = neutral): albedo x (1 + (g - 0.5) x 2 x leafTone) */
+  leafTone: 0,
+  /** [uccle-city CHANGES.md #14] the wind's direction (x, z in the world; the slow sway leans along it) */
+  windDir: [1, 0],
 };
 
 // ------------------------------------------------------------------ seeded random
@@ -293,7 +297,10 @@ function makeLeafMaterial(P, U) {
   const sway = Fn(() => {
     const ph = hash(instanceIndex.add(5)).mul(6.283);
     const t = time.mul(U.windSpeed);
-    const big = vec3(sin(t.add(ph)), 0, cos(t.mul(0.7).add(ph)).mul(0.6));
+    // [uccle-city CHANGES.md #14] the slow sway leans along the wind (world x, z: since #5 the sway is added in the
+    // world, after toWorld), with a smaller sideways swing
+    const wd = vec3(U.windDir.x, 0, U.windDir.y);
+    const big = wd.mul(sin(t.add(ph)).mul(0.5).add(0.6)).add(vec3(wd.z.negate(), 0, wd.x).mul(cos(t.mul(0.7).add(ph)).mul(0.35)));
     const cph = positionLocal.x.mul(0.9).add(positionLocal.z.mul(1.3)).add(positionLocal.y.mul(0.7));
     const small = vec3(sin(t.mul(3.1).add(cph)), sin(t.mul(2.3).add(cph.mul(1.7))).mul(0.5), cos(t.mul(2.7).add(cph)));
     return big.mul(0.7).add(small.mul(0.3)).mul(U.windAmp).mul(hA.mul(0.7).add(0.3));
@@ -308,9 +315,11 @@ function makeLeafMaterial(P, U) {
   // [uccle-city CHANGES.md #7] the tint from the tree's own turn and scale (treeXf), not instanceIndex:
   // the same tree keeps its tint in every LOD mesh and in Uccle's impostors
   const tint = treeTint(xf, U.tintVar);
+  // [uccle-city CHANGES.md #12] the leaf's own tone (mask .g; a RedFormat mask reads 0 there: leafTone 0 = off)
+  const tone = float(1).add(tex.g.sub(0.5).mul(2).mul(U.leafTone));
   const leafBase = Fn(() => {
     const base = mix(U.bottom, U.top, smoothstep(0.0, 1.0, hA));
-    return base.mul(tint).mul(mix(float(1), aoA, U.aoColor));
+    return base.mul(tint).mul(mix(float(1), aoA, U.aoColor)).mul(tone);
   });
   m.colorNode = leafBase();
   // the leaf shape: smooth edges with MSAA, the hard cut in the shadow map (without the shadow
@@ -388,6 +397,8 @@ export function createStylizedTrees({ scene, trees, variants = 3, params = {}, s
     lod1: uniform(P.lodDist), lod2: uniform(P.farDist),
     morph1: uniform(P.morph1 ?? 0), morph2: uniform(P.morph2 ?? 0),
     lodScale: uniform(1),
+    leafTone: uniform(P.leafTone ?? 0),                              // [#12]
+    windDir: uniform(new THREE.Vector2(...(P.windDir ?? [1, 0]))),   // [#14]
   };
   const leafMat = makeLeafMaterial(P, U);
   const trunkMat = makeTrunkMaterial(U, P);
@@ -427,7 +438,7 @@ export function createStylizedTrees({ scene, trees, variants = 3, params = {}, s
       let g;
       if (shared) {
         const key = `${v}:${lod}`;
-        if (!shared.geoms.has(key)) shared.geoms.set(key, buildTree(1000 + v * 97, lod, P.shape ?? roundCrown));
+        if (!shared.geoms.has(key)) shared.geoms.set(key, buildTree((P.seed ?? 1000) + v * 97, lod, P.shape ?? roundCrown));
         const base = shared.geoms.get(key), wrap = (src) => {
           const w = new THREE.BufferGeometry();
           for (const a of Object.keys(src.attributes)) w.setAttribute(a, src.attributes[a]);
@@ -437,7 +448,7 @@ export function createStylizedTrees({ scene, trees, variants = 3, params = {}, s
           return w;
         };
         g = { leaves: wrap(base.leaves), trunk: wrap(base.trunk) };
-      } else g = buildTree(1000 + v * 97, lod, P.shape ?? roundCrown);
+      } else g = buildTree((P.seed ?? 1000) + v * 97, lod, P.shape ?? roundCrown);
       const mk = (geo, mat) => {
         const im = new THREE.InstancedMesh(geo, mat, cap);
         im.count = 0;
@@ -462,7 +473,8 @@ export function createStylizedTrees({ scene, trees, variants = 3, params = {}, s
       kinds.push({ v, lod, leaves: mk(g.leaves, lod === 2 ? leafFar : leafMat), trunk: mk(g.trunk, lod === 2 ? trunkFar : trunkMat), xfAttr, posAttr });
     }
   }
-  const variantOf = trees.map((_, i) => Math.floor(rng(i * 7919 + 13)() * variants));
+  // [uccle-city CHANGES.md #13] params.variantOf(i) may pick a tree's variant (default: the hash of its index)
+  const variantOf = trees.map((_, i) => P.variantOf ? P.variantOf(i) : Math.floor(rng(i * 7919 + 13)() * variants));
   const mats = trees.map(([x, z, y, rot, s]) => {
     const m = new THREE.Matrix4().makeRotationY(rot);
     m.scale(new THREE.Vector3(s, s, s));
@@ -518,6 +530,8 @@ export function createStylizedTrees({ scene, trees, variants = 3, params = {}, s
     U.fill.value = P.fill;
     U.windAmp.value = P.windAmp;
     U.windSpeed.value = P.windSpeed;
+    U.leafTone.value = P.leafTone ?? 0;                                // [#12]
+    if (P.windDir) U.windDir.value.set(P.windDir[0], P.windDir[1]);   // [#14]
     U.fillColor.value.set(P.fillColor);
     U.lod1.value = P.lodDist; U.lod2.value = P.farDist;               // [#8]
     U.morph1.value = P.morph1 ?? 0; U.morph2.value = P.morph2 ?? 0;
