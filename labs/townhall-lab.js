@@ -122,11 +122,11 @@ const INV_SY = 0.75;
 const PHOTOS = {
   "east facade (Commons 3557)": { file: "c_3557.jpg", pos: [72.4, -0.6, 62.6], target: [12.4, 0.0, 70.1], fov: 30.7,
     credit: "Photo: David Edgar, 2008, CC BY-SA 3.0 (Wikimedia Commons, 3557uccleTownHall.jpg)" },
-  "east facade, frontal (inventory)": { file: "heritage_P01.jpg", sy: INV_SY, pos: [40.0, 0.8, 62.4], target: [12.4, 0.3, 71.6], fov: 42,
+  "east facade, frontal (inventory)": { file: "heritage_P01.jpg", sy: INV_SY, pos: [36.4, 0.8, 62.3], target: [12.4, 0.3, 70.4], fov: 44,
     credit: "Reference only: Inventaire du patrimoine architectural, urban.brussels (no free licence)" },
   "east facade from the south-east (inventory)": { file: "heritage_P02.jpg", sy: INV_SY, pos: [36.0, 11.0, 62.7], target: [12.4, -1.5, 70.0], fov: 53,
     credit: "Reference only: Inventaire du patrimoine architectural, urban.brussels (no free licence)" },
-  "south-east corner (inventory)": { file: "heritage_P03.jpg", sy: INV_SY, pos: [19.5, 21.5, 62.4], target: [5.0, 6.5, 72.5], fov: 72,
+  "south-east corner (inventory)": { file: "heritage_P03.jpg", sy: INV_SY, pos: [21.5, 25.0, 61.9], target: [4.5, 7.0, 70.5], fov: 56,
     credit: "Reference only: Inventaire du patrimoine architectural, urban.brussels (no free licence)" },
   "portico and perron": { pos: [24.0, 6.0, 62.9], target: [12.6, 0.0, 66.2], fov: 50 },
   "west facade (no photo: estimated)": { pos: [-48.0, -8.0, 64.0], target: [-12.0, 0.0, 70.0], fov: 45 },

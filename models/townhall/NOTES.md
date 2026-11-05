@@ -17,8 +17,8 @@ Viewer: `viewer/townhallModel.js` (loader, slot adapter table), `viewer/townhall
 ## Files
 | file | what |
 |---|---|
-| `townhall.glb` | 1.62 MB (EXT_meshopt_compression + KHR_mesh_quantization; 4.8 MB raw). Nodes `TownHall` (LOD0, 49.0k tris), `TownHall_lod1` (22.0k, meshopt of LOD0, shares its vertex buffers), `TownHall_far` (3.4k, the script's far variant), `TownHall_lod2` (3.0k, far trimmed). One primitive per slot: 9 / 9 / 7 draw calls per LOD (+ shadow pass) |
-| `townhall_ao.png` | Cycles AO (4 m, 96 samples) in TEXCOORD_1, 2048 px: LOD0 in v 0..0.885 (16 px/m mean, walls more: roofs and decks shrunk), far above; u > 0.994 a reserved column of AO 1.0 for the THIN faces, whose AO is baked per vertex instead (COLOR_0.g: 15k faces, 58k corners: glazing bars, sills' edges, quoin joints, balusters, railings) |
+| `townhall.glb` | 1.64 MB (EXT_meshopt_compression + KHR_mesh_quantization; 4.8 MB raw). Nodes `TownHall` (LOD0, 49.6k tris), `TownHall_lod1` (22.2k, meshopt of LOD0, shares its vertex buffers), `TownHall_far` (3.2k, the script's far variant), `TownHall_lod2` (3.0k, far trimmed). One primitive per slot: 9 / 9 / 7 draw calls per LOD (+ shadow pass) |
+| `townhall_ao.png` | Cycles AO (4 m, 96 samples) in TEXCOORD_1, 2048 px: LOD0 in v 0..0.885 (16 px/m mean, walls more: roofs and decks shrunk), far above; u > 0.994 a reserved column of AO 1.0 for the THIN faces, whose AO is baked per vertex instead (COLOR_0.g: 15k faces, 59k corners: glazing bars, sills' edges, quoin joints, balusters, railings) |
 | `townhall.json` | slots, codes, placement, the measurements used, triangles per slot, lightmap density |
 | `townhall.lods.json` | LOD triangle counts, GLB sizes |
 | `site.json`, `site_dtm.*` | the measurements (input of the Blender script), the DTM patch (lab ground, AO bake) |
@@ -56,7 +56,8 @@ Viewer: `viewer/townhallModel.js` (loader, slot adapter table), `viewer/townhall
   (segmental) and two oculi; main mansard: a triangular-pediment dormer over each outer bay; south wing: an oculus,
   north wing: a flat-topped dormer.
 - Scale and storeys: the photo's facade (22.70 m UrbIS) spans 1395 px -> 61.5 px/m; cornice 74.60, first-floor sill
-  68.70, string course 66.95, ground-floor windows 63.80-66.20, wings' cornice 0.85 m lower (73.75). The overlay in the
+  68.70, string course 66.95, ground-floor window heads 66.20; their sills (hidden by shrubs in 3557) at 63.25 and the
+  plinth top at 63.00 from the inventory views (ground-floor windows nearly as tall as the first-floor ones), wings' cornice 0.85 m lower (73.75). The overlay in the
   lab (view "east facade (Commons 3557)") lands on the photo at the same time as the DSM's roof levels.
 - SOUTH (the inventory's corner view only): main block's return 1 bay; wing south face 3 bays, the middle one a wide
   three-light window; one dormer on the wing's south slope, an oculus on the main roof above the return; south-west
@@ -70,13 +71,19 @@ Viewer: `viewer/townhallModel.js` (loader, slot adapter table), `viewer/townhall
   full-size Commons photo): the lab shows them squeezed back (INV_SY) and uses them for counts, not for alignment.
 
 ## Numbers (2026-11-05, this machine, other tabs and agents running)
-- Triangles: LOD0 49,002 · LOD1 21,980 · LOD2 3,031. Draw calls 9 / 9 / 7 (+ shadow pass).
+- Triangles: LOD0 49,570 · LOD1 22,201 · LOD2 3,017. Draw calls 9 / 9 / 7 (+ shadow pass).
 - LOD switch by distance to the building's box: LOD0 < 110 m (+-18 m fade), LOD1 < 420 m (+-50 m); dithered
   cross-fades (lodFade.js objectFade, the shadow pass follows).
 - GPU (lab benchmark, median whole frame, + = the building): portico close-up (fills the screen) L0 +0.92 ms; the 3557
   view (60 m) L0 +0.46 ms, L1 +0.33; south-east corner L0 +0.20; 900 m L2 +0.2 (noise level).
-- Load: GLB + AO 86-210 ms (decode in workers); shaders 1.3-3.1 s through the precompile queue before it shows (city:
-  in the background). City flight 900 m -> 45 m -> orbit (24 s, LOD states 100/110/010/011/001 crossed): median
+- Load: GLB + AO 86-210 ms (decode in workers); shaders 1.3-3.3 s through the precompile queue before it shows (city:
+  in the background, no long task from the moment the model is added). The lab records one 52 ms task on its first frame. City flight 900 m -> 45 m -> orbit (24 s, LOD states 100/110/010/011/001 crossed): median
   16.6 ms, worst frame 26.7 ms, none > 34 ms.
 - Lab: a live slot swap (precompiled) costs one or two frames of 80-100 ms (node builds of the new material on the
   main thread): fine for a tool, not for gameplay.
+
+## Screenshots (docs/townhall/)
+- `preview_*.png`: Cycles previews (Blender, `--previews`).
+- `lab_east_3557.png` (the model alone at the photo's viewpoint), `lab_swap_*.png` (live slot swap), `city_*.png`.
+- Side-by-sides `side_*.jpg` are git-ignored (they hold the photos): `side_east_3557.jpg` (Commons, CC BY-SA 3.0),
+  `side_east_frontal_inventory.jpg`, `side_southeast_inventory.jpg` (inventory thumbnails, reference only).

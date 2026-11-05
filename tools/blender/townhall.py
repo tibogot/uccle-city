@@ -243,8 +243,8 @@ CONTOUR = [(UE, -WM), (UE, WM), (UW1, WM), (UW1, WW), (UW0, WW), (UW0, WM), (UB1
 # ORDERS: the main block, the two pavilions (cornice 74.6) / the wings and the west blocks (cornice 0.85 m lower:
 # the photo 3557). Heights m TAW: cornice tops from the DSM eaves + the photo's proportions (see NOTES.md)
 FLOOR_GF = 62.95          # ground floor (the perron's landing): east ground 61.05 (DTM) + 11 risers of 0.17
-PLINTH_TOP = 63.55
-GF_SILL, GF_HEAD = 63.80, 66.20
+PLINTH_TOP = 63.00          # the inventory views: ground-floor windows nearly as tall as the first floor ones, a low plinth
+GF_SILL, GF_HEAD = 63.25, 66.20
 BAND1 = 66.95             # string course at the first floor (= the balcony's floor level 67.0, DSM balustrade 67.9)
 SILLC = 68.46             # first-floor sill course (68.46-68.68), sills at 68.70
 F1_SILL = 68.70
