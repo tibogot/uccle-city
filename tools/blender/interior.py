@@ -415,18 +415,64 @@ for r in ROOMS:
         rect_y(Cm, s0, s1, z0, z1, y1, "Plaster", ceil_c, up=False)
 # the stairwell's party-wall face on the first floor (no room covers the void there: the city's UrbIS wall would show)
 wall_face(Bm, "s", 0.0, 1, VOID[2], VOID[3], FF, FF_CEIL, [], "Plaster", plaster(pal["hall"]), also=Cm)
-# and the void's ceiling over the flight (the first floor's ceiling covers the rooms only)
-rect_y(Bm, VOID[0], VOID[1], VOID[2], VOID[3], FF_CEIL, "Plaster", ceil_c, up=False)
+# the void's ceiling over the flight: a LAYLIGHT (plafond lumineux: frosted glass in a painted frame, glazing bars) under a
+# light well up through the second floor and the attic to a roof light (the well and the roof glazing are bake occluders /
+# holes only: the frosted glass hides them). The only daylight the stair and the landing can get in a row house.
+WELL = (VOID[0] + 0.02, VOID[1] - 0.02, VOID[2] + 0.02, VOID[3] - 0.02)
+LAY_BAR = 0.05
+for (a0, a1, b0, b1) in ((VOID[0], VOID[1], VOID[2], WELL[2]), (VOID[0], VOID[1], WELL[3], VOID[3]), (VOID[0], WELL[0], WELL[2], WELL[3]), (WELL[1], VOID[1], WELL[2], WELL[3])):
+    rect_y(Bm, a0, a1, b0, b1, FF_CEIL, "Plaster", ceil_c, up=False)
+for (a0, a1, b0, b1, ax) in ((WELL[0], WELL[1], WELL[2], WELL[2] + LAY_BAR, "z"), (WELL[0], WELL[1], WELL[3] - LAY_BAR, WELL[3], "z"),
+                             (WELL[0], WELL[0] + LAY_BAR, WELL[2], WELL[3], "s"), (WELL[1] - LAY_BAR, WELL[1], WELL[2], WELL[3], "s")):
+    Bm.emit(box(a1 - a0, 0.07, b1 - b0, bevel=0.006, seg=1), "Wood", C["white_paint"], T((a0 + a1) / 2, FF_CEIL - 0.07, (b0 + b1) / 2))
+NBARS = 5
+for k in range(1, NBARS):
+    zb = WELL[2] + (WELL[3] - WELL[2]) * k / NBARS
+    Bm.emit(box(WELL[1] - WELL[0] - 2 * LAY_BAR, 0.045, 0.03, bevel=0.005, seg=1), "Wood", C["white_paint"], T((WELL[0] + WELL[1]) / 2, FF_CEIL - 0.05, zb))
+Bm.emit(box(0.03, 0.045, WELL[3] - WELL[2] - 2 * LAY_BAR, bevel=0.005, seg=1), "Wood", C["white_paint"], T((WELL[0] + WELL[1]) / 2, FF_CEIL - 0.05, (WELL[2] + WELL[3]) / 2))
+Gm.quad((WELL[0], FF_CEIL - 0.03, WELL[2]), (WELL[1], FF_CEIL - 0.03, WELL[2]), (WELL[1], FF_CEIL - 0.03, WELL[3]), (WELL[0], FF_CEIL - 0.03, WELL[3]), "Glass", K.col(0xF2F0EA, "Glass", "opal"))
+# the well (occluder): white plaster walls from the laylight up past the roof
+for (axis, at, a0, a1, ns) in (("s", WELL[0], WELL[2], WELL[3], 1), ("s", WELL[1], WELL[2], WELL[3], -1), ("z", WELL[2], WELL[0], WELL[1], 1), ("z", WELL[3], WELL[0], WELL[1], -1)):
+    wall_face(Om, axis, at, ns, a0, a1, FF_CEIL, spec["top"] - spec["base"] + 0.5, [], "Plaster", plaster(0xEEEBE4))
 
 # (the hall's GF party wall stops at GF_CEIL; the landing's FF wall starts at FF; the band between is the slab edge
 # drawn above on s = 0 over the void)
 # occluders: slabs between storeys, the attic
+def rects_minus(R, H):
+    """Rectangle R = (s0, s1, z0, z1) minus the hole H: up to four rectangles."""
+    s0, s1, z0, z1 = R; h0, h1, g0, g1 = H
+    out = [(s0, s1, z0, g0), (s0, s1, g1, z1), (s0, h0, g0, g1), (h1, s1, g0, g1)]
+    return [r for r in out if r[1] - r[0] > 1e-4 and r[3] - r[2] > 1e-4]
 for (ya, yb) in ((GF_CEIL, FF), (FF_CEIL, FF_CEIL + 0.3)):
-    rect_y(Om, -TH_PARTY, WI + TH_PARTY, 0, ZB_OUT, yb, "Plaster", ceil_c)
-    rect_y(Om, -TH_PARTY, WI + TH_PARTY, 0, ZB_OUT, ya, "Plaster", ceil_c, up=False) if ya > FF_CEIL - 0.01 else None
+    for (a0, a1, b0, b1) in (rects_minus((-TH_PARTY, WI + TH_PARTY, 0, ZB_OUT), WELL) if ya > FF_CEIL - 0.01 else [(-TH_PARTY, WI + TH_PARTY, 0, ZB_OUT)]):
+        rect_y(Om, a0, a1, b0, b1, yb, "Plaster", ceil_c)
+        rect_y(Om, a0, a1, b0, b1, ya, "Plaster", ceil_c, up=False) if ya > FF_CEIL - 0.01 else None
+def clip_poly(pts, axis, at, keep_lo):
+    """Sutherland-Hodgman: the part of a convex polygon [(s, y, z)] with p[axis] <= at (keep_lo) or >= at."""
+    k = 0 if axis == "s" else 2
+    inside = (lambda p: p[k] <= at + 1e-9) if keep_lo else (lambda p: p[k] >= at - 1e-9)
+    out = []
+    for i in range(len(pts)):
+        a, b_ = pts[i], pts[(i + 1) % len(pts)]
+        if inside(a): out.append(a)
+        if inside(a) != inside(b_):
+            t = (at - a[k]) / (b_[k] - a[k]); out.append(tuple(a[j] + (b_[j] - a[j]) * t for j in range(3)))
+    return out
+def minus_well(pts):
+    """A roof polygon minus the light well's column: the pieces outside it (the roof light's opening)."""
+    pieces, rest = [], pts
+    for (axis, at, lo) in (("s", WELL[0], True), ("s", WELL[1], False), ("z", WELL[2], True), ("z", WELL[3], False)):
+        if len(rest) < 3: break
+        outside = clip_poly(rest, axis, at, lo)
+        if len(outside) >= 3: pieces.append(outside)
+        rest = clip_poly(rest, axis, at, not lo)
+    return pieces
 for tri in [spec["roof"][i:i + 3] for i in range(0, len(spec["roof"]), 3)]:
     pts = [(s_of(p[0], p[2]), p[1], p[2]) for p in tri]
-    Om.b.poly([to_plan_p for to_plan_p in pts], "Plaster", C["brick"]) if not MIRROR else Om.b.poly([ms(p) for p in pts][::-1], "Plaster", C["brick"])
+    if MIRROR: pts = [(WI - p[0], p[1], p[2]) for p in pts][::-1]      # into the door-left plan of the well
+    for piece in minus_well(pts):
+        if MIRROR: Om.b.poly([ms(p) for p in piece][::-1], "Plaster", C["brick"])
+        else: Om.b.poly(piece, "Plaster", C["brick"])
 
 # ------------------------------------------------------------------------------------------------ the stair
 OAK = C["stair_oak"]; RISER_C = C["white_paint"]
@@ -623,7 +669,7 @@ HAL = next(r for r in ROOMS if r[0] == "hall"); s0, s1, z0, z1 = HAL[2], HAL[3],
 put(K.coat_rack(0.8), s1 - 0.022, GF, z0 + 1.6, ry=-90, solid=True, box_pad=-0.1, label="hall coat rack")
 put(K.radiator(0.7, 0.62), s1 - 0.1, GF, z0 + 2.75, ry=-90)
 put(K.pendant(0.55, "lantern"), (STAIR_W + s1) / 2, GF_CEIL, z0 + 0.9, solid=False)
-light("hall_lantern", (STAIR_W + s1) / 2, GF_CEIL - 0.75, z0 + 0.9, 40)
+light("hall_lantern", (STAIR_W + s1) / 2, GF_CEIL - 0.75, z0 + 0.9, 60)
 put(K.rug(0.75, 2.2, fabric(0x6A3A2C, "rug2")), (STAIR_W + STRINGER + s1) / 2, GF, z0 + 2.9, solid=False)
 put(K.picture(0.5, 0.65, C["black_wood"], fabric(0x8A7A5E, "canvas")), s1 - 0.012, GF + 1.6, z0 + 3.4 - 0.0, ry=-90, solid=False) if False else None
 
@@ -691,7 +737,7 @@ PROBES.append(("alcove", ALC[2], ALC[3], ALC[4], ALC[5], FF, FF_CEIL))
 BAT = next(r for r in ROOMS if r[0] == "bathroom"); s0, s1, z0, z1 = BAT[2], BAT[3], BAT[4], BAT[5]
 put(K.bathtub(1.7, 0.76), s1 - 0.95, FF, z1 - 0.55)
 put(K.washbasin(0.8, 0.48), s1 - 0.25, FF, z0 + 1.1, ry=-90)
-put(K.mirror(0.7, 0.8, C["steel"], glass="mirror2", crest=False), s1 - 0.003, FF + 1.05, z0 + 1.1, ry=-90, solid=False, label="bath mirror")
+put(K.mirror(0.7, 0.8, C["steel"], glass="mirror2", crest=False, frame_mat="Hard"), s1 - 0.003, FF + 1.05, z0 + 1.1, ry=-90, solid=False, label="bath mirror")
 MIRRORS.append(dict(name="bathroom", c=(s1 - 0.003 - 0.0125, FF + 1.05 + 0.065 + (0.8 - 0.13) / 2, z0 + 1.1), n=(-1, 0, 0), room=BAT))
 put(K.toilet(), s0 + 0.40, FF, z1 - 1.5, ry=90, label="toilet")
 put(K.towel_rail(0.5, 0.9), s0 + 0.04, FF, z0 + 1.45, ry=90, solid=False)
@@ -730,12 +776,11 @@ PROBES.append(("study", s0, s1, z0, z1, FF, FF_CEIL))
 # landing + corridor
 LAN = next(r for r in ROOMS if r[0] == "landing"); s0, s1, z0, z1 = LAN[2], LAN[3], LAN[4], LAN[5]
 put(K.pendant(0.4, "lantern"), (s0 + s1) / 2, FF_CEIL, (z0 + z1) / 2 + 0.2, solid=False)
-light("landing", (s0 + s1) / 2, FF_CEIL - 0.6, (z0 + z1) / 2 + 0.2, 40)
+light("landing", (s0 + s1) / 2, FF_CEIL - 0.6, (z0 + z1) / 2 + 0.2, 70)
 # the stairwell: a long-drop lantern from the void's ceiling over the flight (lights both the flight and the landing)
-VZ = (VOID[2] + VOID[3]) / 2 + 0.25
-put(K.ceiling_rose(0.22), STAIR_W / 2, FF_CEIL, VZ, solid=False, label="stairwell rose")
-put(K.pendant(1.55, "lantern"), STAIR_W / 2, FF_CEIL, VZ, solid=False, label="stairwell lantern")
-light("stairwell", STAIR_W / 2, FF_CEIL - 1.55 - 0.17, VZ, 55, radius=0.07)
+VZ = WELL[2] + (WELL[3] - WELL[2]) * 3 / NBARS          # under a glazing bar of the laylight
+put(K.pendant(1.55, "lantern"), STAIR_W / 2, FF_CEIL - 0.07, VZ, solid=False, label="stairwell lantern")      # hung from the laylight's bar
+light("stairwell", STAIR_W / 2, FF_CEIL - 0.07 - 1.55 - 0.17, VZ, 80, radius=0.07)
 put(K.picture(0.55, 0.7, C["black_wood"], fabric(0x3D4A5A, "canvas")), s0 + 0.012, FF + 1.55, (z0 + z1) / 2 + 0.3, ry=90, solid=False)
 put(K.radiator(0.6, 0.55), s0 + 0.1, FF, z1 - 0.55, ry=90)
 COR = next(r for r in ROOMS if r[0] == "corridor")
@@ -1208,9 +1253,9 @@ if PREVIEW:
         "bathroom": ((Bt[2] + 0.3, FF + 1.6, Bt[4] + 0.3), (Bt[3] - 0.6, FF + 0.8, Bt[5] - 0.6), 14),
         "study": ((St[3] - 0.3, FF + 1.6, St[4] + 0.3), (St[2] + 0.8, FF + 0.8, St[5] - 0.4), 15),
         "landing": ((Ln[3] - 0.25, FF + 1.6, Ln[5] - 0.25), (0.6, FF + 0.2, VOID_Z0 + 0.4), 18),
-        "mirror": ((S[2] + 0.5, GF + 1.6, fz - 1.5), (S[3], GF + 1.8, fz), 22),
+        "mirror": ((S[2] + 0.9, GF + 1.6, fz + 0.7), (S[3], GF + 1.85, fz), 22),
         "stringer": ((S1 - 0.25, GF + 1.45, Z_STAIR + 0.4), (STAIR_W, GF + 1.2, Z_STAIR + 2.2), 18),
-        "stairwell": ((S1 - 0.3, GF + 1.5, ZF_IN + 0.5), (0.5, FF + 1.2, VOID[3] - 0.5), 14),
+        "stairwell": ((S1 - 0.3, FF + 1.6, Z_TOP + 0.8), (0.5, FF_CEIL, (VOID[2] + VOID[3]) / 2), 14),
     }
     only = arg("--only")
     for name, (eye, at, lens) in VIEWS.items():

@@ -20,7 +20,7 @@ CODE = {
     "Fabric": {"weave": 0, "velvet": 1, "rug": 2, "canvas": 3, "linen": 4, "knit": 5, "rug2": 6},
     "Hard": {"enamel": 0, "steel": 1, "marble": 2, "tiles": 3, "cement": 4, "ceramic": 5, "bluestone": 6, "leaf": 7, "paper": 8 - 1e-3},
     "Glow": {"shade": 0, "bulb": 1},
-    "Glass": {"clear": 0, "mirror": 1, "mirror2": 2},          # mirror / mirror2: the reflection cubes 0 / 1 (interior.json mirrors)
+    "Glass": {"clear": 0, "mirror": 1, "mirror2": 2, "opal": 3},     # opal: the stairwell laylight's frosted glass          # mirror / mirror2: the reflection cubes 0 / 1 (interior.json mirrors)
 }
 
 def col(hexrgb, mat, code, k=1.0):
@@ -513,7 +513,7 @@ def fireplace(w=1.42, h=1.12, d=0.3, marble=None, seed=0):
         P.append((xform(lathe([(0.011, 0.21), (0.011, 0.31), (0.0, 0.315)], seg=10), T(sx * 0.5, h, 0.04)), "Hard", C["enamel_white"]))
     return P
 
-def mirror(w=1.0, h=1.3, frame_c=None, glass="mirror", crest=True):
+def mirror(w=1.0, h=1.3, frame_c=None, glass="mirror", crest=True, frame_mat="Wood"):
     """An overmantel mirror, its back at z = 0 against the wall, bottom at y = 0: a gilt moulded frame (bead, cove,
     ogee, a raised sight-edge lip), rosettes on the corners, a shell crest on top (crest=True); the glass (code `glass`:
     the viewer's reflection cube) a few mm behind the lip."""
@@ -532,23 +532,23 @@ def mirror(w=1.0, h=1.3, frame_c=None, glass="mirror", crest=True):
         A, B_ = rings[i], rings[(i + 1) % 4]
         for k in range(len(prof) - 1): bm.faces.new((A[k], B_[k], B_[k + 1], A[k + 1]))
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-    P.append((bm, "Wood", fc))
+    P.append((bm, frame_mat, fc))
     # the back board behind the glass
-    P.append((xform(box(w - 0.1, h - 0.1, 0.008), T(0, 0.05, 0.0055)), "Wood", fc))
+    P.append((xform(box(w - 0.1, h - 0.1, 0.008), T(0, 0.05, 0.0055)), frame_mat, fc))
     # corner rosettes: small turned bosses on the ogee
     for (px, py) in corners:
         ix, iy = -math.copysign(1, px), -math.copysign(1, py - h / 2)
         ros = lathe([(0.0, 0.0), (0.03, 0.0), (0.032, 0.006), (0.026, 0.012), (0.018, 0.016), (0.008, 0.02), (0.0, 0.021)], seg=16)
-        P.append((xform(ros, T(px + ix * 0.04, py + iy * 0.04, 0.05, rx=90)), "Wood", fc))
+        P.append((xform(ros, T(px + ix * 0.04, py + iy * 0.04, 0.05, rx=90)), frame_mat, fc))
     if crest:      # a shell crest over the top rail: a fan of lobes, a scroll and a boss each side
         for k in range(7):
             a = -60 + k * 20
             lobe = lathe([(0.0, 0.0), (0.016, 0.01), (0.02, 0.05), (0.014, 0.09), (0.0, 0.1)], seg=10, sz=0.45)
-            P.append((xform(lobe, T(0, h - 0.01, 0.03, rz=-a)), "Wood", fc))
+            P.append((xform(lobe, T(0, h - 0.01, 0.03, rz=-a)), frame_mat, fc))
         for sx in (-1, 1):
             sc = lathe([(0.0, 0.0), (0.022, 0.005), (0.024, 0.02), (0.016, 0.034), (0.0, 0.038)], seg=12, sz=0.5)
-            P.append((xform(sc, T(sx * 0.13, h + 0.005, 0.03, rz=-90 * sx)), "Wood", fc))
-            P.append((xform(lathe([(0.0, 0.0), (0.016, 0.0), (0.018, 0.01), (0.0, 0.016)], seg=12), T(sx * 0.17, h + 0.015, 0.034, rx=90)), "Wood", fc))
+            P.append((xform(sc, T(sx * 0.13, h + 0.005, 0.03, rz=-90 * sx)), frame_mat, fc))
+            P.append((xform(lathe([(0.0, 0.0), (0.016, 0.0), (0.018, 0.01), (0.0, 0.016)], seg=12), T(sx * 0.17, h + 0.015, 0.034, rx=90)), frame_mat, fc))
     code = (CODE["Glass"][glass] + 0.5) / 8
     P.append((xform(box(w - 0.13, h - 0.13, 0.004), T(0, 0.065, 0.0125)), "Glass", (0.8, 0.82, 0.82, code)))
     return P
