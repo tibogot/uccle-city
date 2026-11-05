@@ -54,6 +54,7 @@ export function loadStJob() {
     gltf.scene.updateMatrixWorld(true);
     const prims = [null, null, null, null], farPrims = [null, null, null, null];
     let nest = null, spireTip = null;
+    const perches = {};                                 // falcon perches (stjob.py PERCH): position + facing (local -z)
     const isFar = (o) => { for (let p = o; p; p = p.parent) if (/StJob_far/.test(p.name)) return true; return false; };
     gltf.scene.traverse((o) => {
       if (o.isMesh) {
@@ -62,6 +63,7 @@ export function loadStJob() {
       }
       if (o.name === "nest") nest = o.position.clone();
       if (o.name === "spire_tip") spireTip = o.position.clone();
+      if (o.name.startsWith("perch_")) perches[o.name] = { pos: o.position.clone(), facing: new THREE.Vector3(0, 0, -1).applyQuaternion(o.quaternion) };
     });
     const tris0 = prims.reduce((s, g) => s + g.index.count / 3, 0);
     const lods = STJOB_LODS.map(({ target, far }) => {
@@ -90,7 +92,7 @@ export function loadStJob() {
       lods[k].meshes.forEach((geo, i) => { const m = new THREE.Mesh(geo, materials[i]); m.castShadow = i !== 2; m.receiveShadow = true; g.add(m); });
       return g;
     };
-    return { lods, materials, nest, spireTip, notes, placement, make, aoTex, aoBytes: aoTex.userData.bytes };
+    return { lods, materials, nest, spireTip, perches, notes, placement, make, aoTex, aoBytes: aoTex.userData.bytes };
   })());
 }
 
