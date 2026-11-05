@@ -254,6 +254,10 @@ export function createDevPanel(ctx) {
       if (st.cam && st.tgt && (!st.mode || st.mode === "orbit")) { setView("stjob"); camera.position.fromArray(st.cam); controls.target.fromArray(st.tgt); controls.update(); }
       else if (st.mode === "drive") drive(); else if (st.mode === "third") thirdPerson(); else if (st.mode === "fly") fly(); else if (st.mode === "walk") walk();
       refresh();
+      // the link has done its job: drop it from the address bar, or a reload would put the shared state back over
+      // everything changed since (the live settings are mirrored into their own parameters)
+      const q = new URLSearchParams(location.search); q.delete("dev");
+      history.replaceState(null, "", `${location.pathname}?${q}`);
     } catch (e) { log(`dev link: ${e.message}`); }
   }
   window.__devPanel = { gui, S, R, TR, M, pipe, mode };
