@@ -280,8 +280,9 @@ export function makeSpecies(def) {
       shared.U.lodScale.value = 0;                // the bake draws LOD 0 as built (no morph toward the bake camera)
       const bake = bakeTreeImpostors(renderer, shared, VARIANTS, PARAMS.leafMask);
       shared.U.lodScale.value = 1;
-      impMat = impostorMaterial(bake, shared.U);
-      impMatFar = impostorMaterial(bake, shared.U, { nearFade: false });   // far-LOD tiles: no real trees to hand over from
+      const ib = { alphaBoost: def.impostorAlphaBoost ?? 0.3 };
+      impMat = impostorMaterial(bake, shared.U, ib);
+      impMatFar = impostorMaterial(bake, shared.U, { ...ib, nearFade: false });   // far-LOD tiles: no real trees to hand over from
       impBake = bake;
       impMat.userData.shared = impMatFar.userData.shared = true;   // one for every tile: never disposed with a tile
       sp.bakeMs = performance.now() - t1;

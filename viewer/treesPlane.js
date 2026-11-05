@@ -424,6 +424,8 @@ export function planeBark(m) {
 export function planeDef(seedBase = 1000) {
   return {
     id: "plane", variants: 6, shape: planeShape(seedBase), leafMask: planeLeafMask, bark: planeBark, perVariantHeight: true,
+    // (viewer/impostors.js: the far mips' alpha boost; 0.3 (the street trees') turned whole quads opaque over a forest, 0.1 still did; its dense crowns do not thin far away without it)
+    impostorAlphaBoost: 0,
     params: {
       seed: seedBase,
       // a fresh, slightly yellow mid green, lighter than the street trees' olive; a cool shade side

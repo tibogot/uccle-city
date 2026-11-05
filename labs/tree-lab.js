@@ -226,13 +226,13 @@ function buildChain(sp) {
   imp.mesh.userData.treeLod = 3; imp.mesh.frustumCulled = false;
   g.add(imp.mesh);
   const P = sp.params();
-  const range = [`< ${P.lodDist} m (cards of the next LOD shrink over ${P.lodDist - P.morph1}-${P.lodDist} m)`, `${P.lodDist}-${P.farDist} m (shrink over ${P.farDist - P.morph2}-${P.farDist})`,
-    `${P.farDist}-${IMP.start.value} m (dither cross-fade ${IMP.start.value - IMP.band.value}-${IMP.start.value})`, `${IMP.start.value}-${IMP.end.value} m (dissolve ${IMP.end.value - IMP.endBand.value}-${IMP.end.value})`];
+  const range = [`0-${P.lodDist} m\nmorph ${P.lodDist - P.morph1}-${P.lodDist} m`, `${P.lodDist}-${P.farDist} m\nmorph ${P.farDist - P.morph2}-${P.farDist} m`,
+    `${P.farDist}-${IMP.start.value} m\ndither ${IMP.start.value - IMP.band.value}-${IMP.start.value} m`, `${IMP.start.value}-${IMP.end.value} m\ndissolve ${IMP.end.value - IMP.endBand.value}-${IMP.end.value} m`];
   const bk = sp.bake;
   const atlasMB = bk ? (bk.size[0] * bk.size[1] * 4 * 2 * 4 / 3) / 1048576 : 0;
   const txt = [
-    ...items.map((it) => `<b>LOD ${it.lod}</b>  ${(it.tris.leaves + it.tris.bark).toLocaleString()} tris\n${it.tris.cards} cards ${it.tris.leaves} + bark ${it.tris.bark}\n${range[it.lod]}\n${it.lod < 2 ? "casts a shadow" : "no shadow"}`),
-    `<b>impostor</b>  2 tris\nbaked from LOD 0 (8x8 views)\n${range[3]}\natlas ${bk ? bk.size.join("x") : "-"} x2, ${atlasMB.toFixed(1)} MB`,
+    ...items.map((it) => `<b>LOD ${it.lod}</b> ${(it.tris.leaves + it.tris.bark).toLocaleString()} tris\n${it.tris.cards} cards (${it.tris.leaves})\nbark ${it.tris.bark}\n${range[it.lod]}\n${it.lod < 2 ? "casts shadow" : "no shadow"}`),
+    `<b>impostor</b> 2 tris\nfrom LOD 0, 8x8 views\n${range[3]}\natlas ${bk ? bk.size.join("x") : "-"} x2\n${atlasMB.toFixed(0)} MB, no shadow`,
   ];
   for (let k = 0; k < 4; k++) {
     const el = document.createElement("div"); el.className = "tlabel"; el.innerHTML = txt[k]; document.body.append(el);
@@ -314,7 +314,7 @@ const VIEWS = {
 /** the preset view of a layout, turned round its target so the sun is behind the camera (front-lit) */
 function resetView() {
   VIEWS[S.layout]?.();
-  if (S.layout === "LOD chain side by side") camera.position.set(-6, Y0 + 9, Math.sign(lighting.sunDir.z || 1) * 74);   // the row's sunny side
+  if (S.layout === "LOD chain side by side") camera.position.set(0, Y0 + 8, Math.sign(lighting.sunDir.z || 1) * 58);   // the row's sunny side
   else if (S.layout !== "street of 50") {
     const off = camera.position.clone().sub(controls.target), h = Math.hypot(off.x, off.z);
     const sd = new THREE.Vector3(lighting.sunDir.x, 0, lighting.sunDir.z).normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), 0.5);
