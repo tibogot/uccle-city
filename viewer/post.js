@@ -142,6 +142,8 @@ export function createPipeline(renderer, scene, camera, { aoOn = true, ssrOn = t
     get bloomPass() { return bloomPass; },
     /** the linear HDR scene target (the sky meters it for its eye adaptation) */
     sceneTarget: hdrRT,
+    /** the scene pass's MRT target and outputs (warmup.js precompile builds streamed tiles' shaders for them) */
+    passTarget: sceneRT, passMRT: sceneMRT,
     look(id) {
       const l = LOOKS[id] || LOOKS.golden;
       this.lookId = id;

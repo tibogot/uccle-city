@@ -103,6 +103,31 @@ export class Fader {
   }
   get busy() { return this.list.length > 0; }
 }
+/** Stand-ins drawn with the fading copies of obj's materials that have none yet (made now, cached for fade()):
+ *  compile them (warmup.js precompile) before fade(obj), and the fade builds no shader in a frame. The group
+ *  shares the geometries; drop it after the compile (no dispose). Null when there is nothing new. */
+export function fadeProxies(obj) {
+  if (!SMOOTH) return null;
+  const g = new THREE.Group();
+  obj.traverse((o) => {
+    const m = o.userData.fadeOrig || o.material;
+    if (!o.isMesh || Array.isArray(m) || !swappable(m) || variants.has(m)) return;
+    const v = fadeVariant(m);
+    const p = o.isInstancedMesh ? new THREE.InstancedMesh(o.geometry, v, 1) : new THREE.Mesh(o.geometry, v);
+    if (o.isInstancedMesh && o.instanceColor) p.instanceColor = o.instanceColor;
+    p.castShadow = o.castShadow; p.receiveShadow = o.receiveShadow;
+    p.matrixWorld.copy(o.matrixWorld);
+    g.add(p);
+  });
+  return g.children.length ? g : null;
+}
+/** Free the fading copy of a tile's own material (its tile is disposed). The copy is kept between a tile's
+ *  fade-in and its fade-out: a new copy is a new shader build on the main thread. */
+export function dropFadeVariant(m) {
+  const v = variants.get(m);
+  if (!v || v.userData.shared) return;
+  variants.delete(m); v.dispose();
+}
 function set(obj, v) { obj.traverse((o) => { o.userData.fade = v; }); }
 function swapIn(obj) {
   obj.traverse((o) => {
@@ -115,10 +140,8 @@ function restore(obj) {
   obj.traverse((o) => {
     const m = o.userData.fadeOrig;
     if (!m) return;
-    const v = o.material;
     o.material = m;
-    delete o.userData.fadeOrig;
-    if (!v.userData.shared && v.userData.fadeOf) { variants.delete(m); v.dispose(); }   // a tile's own: done with it
+    delete o.userData.fadeOrig;     // (a tile's own copy stays cached for its fade-out: dropFadeVariant on dispose)
   });
 }
 

@@ -28,12 +28,12 @@ import { createPipeline } from "./post.js";
 import { buildTrees } from "./trees.js";
 import { buildTreeField } from "./treesSlop.js";
 import { buildStylizedTreeField, setTreeLighting, setTreeRenderer } from "./treesStylized.js";
-import { openBootPipelines, warmBoot } from "./warmup.js";
+import { openBootPipelines, warmBoot, precompile } from "./warmup.js";
 import { buildPlazas, loadOverrides } from "./plazas.js";
 import { Flyer } from "./flight.js";
 import { Driver, tileDrive } from "./drive/driveMode.js";
 import { addLamps } from "./lampLight.js";
-import { SMOOTH, lodEye, Fader, withObjectFade } from "./lodFade.js";
+import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, dropFadeVariant } from "./lodFade.js";
 import { buildFarTreeField } from "./treesStylized.js";
 
 const DATA = new URL("../data/tiles/", import.meta.url);
@@ -48,6 +48,15 @@ const CARVE = 0.12;         // terrain is pushed this far under any road surface
 // tiles' shaders), ?smooth=0: every smooth-LOD change off.
 const TILE_FADE = SMOOTH && params.get("tilefade") !== "0";
 const fader = new Fader();
+/** compileFor(roots): build the shaders of streamed objects before they show (warmup.js precompile; set once the
+ *  render pipeline exists). Not under the boot cover: the warm-up draws those itself. */
+let compileFor = null;
+const preCompile = async (roots, fading) => {
+  if (!compileFor || fader.hold) return;
+  await compileFor(roots);
+  if (fading) await compileFor([].concat(roots).map(fadeProxies));
+};
+const dropMat = (m) => { if (!m.userData?.shared) { dropFadeVariant(m); m.dispose?.(); } };
 
 const $ = (id) => document.getElementById(id);
 const logLines = [];
@@ -353,13 +362,14 @@ async function loadLiteTile(entry, group) {
       ? buildFarTreeField(f.trees, (x, z) => ys.get(`${x},${z}`), (x, z) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1) : null;
     if (trees) { g.add(trees.mesh); updaters.push(trees.update); }
   }
+  await preCompile(g, TILE_FADE);       // its shaders (and its fading copies') before its first frame
   group.add(g);
   return {
     name: entry.name,
     group: g,
     dispose: () => {
       if (trees) { const i = updaters.indexOf(trees.update); if (i >= 0) updaters.splice(i, 1); }
-      g.traverse((o) => { o.geometry?.dispose(); if (o.material && !o.material.userData?.shared) o.material.dispose(); });
+      g.traverse((o) => { o.geometry?.dispose(); if (o.material) dropMat(o.material); });
       for (const t of textures) t.dispose();
       g.removeFromParent();
     },
@@ -382,7 +392,10 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const t0 = performance.now();
   const d = await tileData(entry);
   let busy = 0, longest = 0, mark = performance.now(), worst = "";
-  const frame = (label = "") => { const dt = performance.now() - mark; busy += dt; if (dt > longest) { longest = dt; worst = label; } return new Promise((r) => requestAnimationFrame(() => { mark = performance.now(); r(); })); };   // spread GPU-side work over frames
+  const slices = [];
+  const frame = (label = "") => { const dt = performance.now() - mark; busy += dt; if (dt > 4) slices.push(`${label} ${dt.toFixed(0)}`); if (dt > longest) { longest = dt; worst = label; }
+    if (verbose || fader.hold) { mark = performance.now(); return Promise.resolve(); }   // under the boot cover: no frame to keep smooth
+    return new Promise((r) => requestAnimationFrame(() => { mark = performance.now(); r(); })); };   // spread GPU-side work over frames
   const { roads, feats } = d;
   const hm = Heightmap.from(d.hdr, d.y, d.orig);
   const ni = d.netInfo;
@@ -418,15 +431,20 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const lamps = buildLamps(roads, (x, z) => hm.ground(x, z), bounds, { lights: verbose, place: fit?.placeLamp, lift: fit?.lift });   // point lights: main tile only
   own.features.add(lamps.group);
   ups.push(lamps.update);
+  await frame("lamps");
   addLamps(entry.name, lamps.heads);                 // every lamp lights the street (viewer/lampLight.js)
+  await frame("lamp light map");
   const furn = buildFurniture(feats, roads, (x, z) => hm.ground(x, z), bounds);
   own.features.add(furn.group);
+  await frame("furniture");
   const tram = buildTram(feats, (x, z) => hm.surface(x, z) + CARVE, bounds);
   own.features.add(tram.group);
+  await frame("tram");
   // parked cars from the parking lanes as OSM / the type default has them (before the width fit, which drops lanes the
   // measured street is too narrow for), then each one against the measured kerb if it fits there wholly
   const carRoads = fit ? { ...roads, roads: roads.roads.map((r) => (r.meta?.widthFit ? { ...r, lanes: r.meta.unfitLanes ?? undefined } : r)) } : roads;
   const cars = buildCars(carRoads, feats, (x, z) => hm.surface(x, z) + CARVE, bounds, { place: fit?.placeCar });
+  await frame("parked cars");
   const bollards = fit ? buildBollards(d.road.surfaceData.bollards) : null;
   if (bollards) own.features.add(bollards);
   if (fit) say(`street on the measured surfaces: ${lamps.count} lamps on the sidewalks, ${cars.count} parked cars against the kerbs, ${bollards?.count ?? 0} bollards (UrbIS Topo CR5702P / CR57L)`);
@@ -437,19 +455,24 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   say(`street lamps: ${lamps.count} (placed along the kerbs, ROAD_TYPES lampSpacing; OSM has none here)`);
   say(`buildings: ${d.buildingCount} (${B.triangles} triangles), roads: ${d.road.triangles} triangles in tile, terrain cells carved: ${d.road.carvedCells}; tile ready in ${(performance.now() - t0).toFixed(0)} ms`);
 
+  await frame("bollards");
+  if (fadeIn) { const tc = performance.now(); await preCompile(Object.values(own), true); mark += performance.now() - tc; }   // shaders + fading copies built before it shows (not counted as a slice)
   for (const u of ups) updaters.push(u);
   for (const g of Object.values(own)) if (fadeIn) { g.visible = true; fader.fade(g, +1); }
   const dispose = () => {
     for (const u of ups) { const i = updaters.indexOf(u); if (i >= 0) updaters.splice(i, 1); }
     for (const g of Object.values(own)) {
-      g.traverse((o) => { if (!o.geometry?.userData?.shared) o.geometry?.dispose(); for (const m of [].concat(o.material || [])) if (!m.userData?.shared) m.dispose?.(); o.dispose?.(); });
+      g.traverse((o) => { if (!o.geometry?.userData?.shared) o.geometry?.dispose(); for (const m of [].concat(o.material || [])) dropMat(m); o.dispose?.(); });
       g.removeFromParent();
     }
     for (const t of R.textures) t.dispose();
   };
+  await frame("show");
   tramLine?.snapTile(entry.name, feats, bounds);
-  frame("lamps, furniture, tram, cars");
-  log(`tile ${entry.name}: main-thread work ${busy.toFixed(0)} ms, longest slice ${longest.toFixed(0)} ms (${worst}); ${tileWorker ? "CPU build in the worker" : "CPU build ALSO on the main thread"}`);
+  await frame("tram line snap");
+  const drive = tileDrive(d.drive, roads, bounds);
+  frame("drive colliders");
+  log(`tile ${entry.name}: main-thread work ${busy.toFixed(0)} ms, longest slice ${longest.toFixed(0)} ms (${worst}); slices over 4 ms: ${slices.join(", ") || "none"}; ${tileWorker ? "CPU build in the worker" : "CPU build ALSO on the main thread"}`);
   // roof heights (m TAW, 0 = none) for fly-mode collision: the max of the 2 m cells around the point, so the bird
   // keeps clear of a roof edge it is about to cross
   const rf = d.roofs;
@@ -463,7 +486,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     }
     return h;
   };
-  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt, drive: tileDrive(d.drive, roads, bounds), lift: fit?.lift, groups: Object.values(own) };
+  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt, drive, lift: fit?.lift, groups: Object.values(own) };
 }
 
 // ------------------------------------------------------------------ main
@@ -692,6 +715,7 @@ async function main() {
   await lighting.attach(camera);                      // Firmament's sky needs the camera (no-op for ?sky=old)
   const pipe = fx ? createPipeline(renderer, scene, camera, { aoOn: params.get("ao") !== "0", ssrOn: params.get("ssr") !== "0" }) : null;   // ?ao=0 ?ssr=0: A/B
   if (pipe) { pipe.setExposureScale(lighting.exposureScale); pipe.look(timeId); }
+  if (params.get("precompile") !== "0") compileFor = (roots) => precompile(renderer, roots, camera, scene, { target: pipe?.passTarget ?? null, mrt: pipe?.passMRT ?? null });   // ?precompile=0: A/B
   else { renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = lighting.exposureScale; }
   const focus = new THREE.Vector3(), fwd = new THREE.Vector3();
   const hazeHook = lighting.firmament ? (rt, d, size) => lighting.hazeHook(rt, d, size) : null;   // ?haze=0: off
@@ -740,8 +764,10 @@ async function main() {
   const pending = new Set();
   let busy = null, firstLite = !!bootPipes;
   /** Fade a tile's groups out, then dispose it (at once with ?tilefade=0). */
-  const retire = (groups, dispose) => {
+  const retire = async (groups, dispose) => {
     if (!TILE_FADE) { dispose(); return; }
+    const px = groups.map(fadeProxies).filter(Boolean);     // fading copies it has none of yet: built first
+    if (px.length && compileFor) await compileFor(px);
     let n = groups.length;
     for (const g of groups) fader.fade(g, -1, () => { if (--n === 0) dispose(); });
   };
