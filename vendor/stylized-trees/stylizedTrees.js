@@ -491,11 +491,15 @@ export function createStylizedTrees({ scene, trees, variants = 3, params = {}, s
       k.leaves.setMatrixAt(k.leaves.count++, mats[i]);
       k.trunk.setMatrixAt(k.trunk.count++, mats[i]);
     }
+    // [uccle-city CHANGES.md #11] upload only the instances in use (the buffers hold >= 1025), and nothing for a
+    // mesh that draws none: a re-bucket uploaded every buffer of every loaded tile whole (~30 MB in one frame,
+    // 15-25 ms of writeBuffer, every 5 m of camera motion)
     for (const k of kinds) {
-      k.leaves.instanceMatrix.needsUpdate = true;
-      k.trunk.instanceMatrix.needsUpdate = true;
-      k.xfAttr.needsUpdate = true;
-      k.posAttr.needsUpdate = true;
+      const c = k.leaves.count;
+      if (c === 0) continue;
+      for (const [a, size] of [[k.leaves.instanceMatrix, 16], [k.trunk.instanceMatrix, 16], [k.xfAttr, 3], [k.posAttr, 3]]) {
+        a.clearUpdateRanges(); a.addUpdateRange(0, c * size); a.needsUpdate = true;
+      }
     }
   }
 

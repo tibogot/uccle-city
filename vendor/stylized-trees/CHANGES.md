@@ -42,3 +42,8 @@
 10. **Far LOD fade materials** (`params.farMask(distance) -> bool node`): LOD 2 draws with its own copies of the
    leaf and bark materials whose `maskNode` (and the leaves' shadow mask) is the caller's dither; Uccle
    cross-fades LOD 2 into its impostors (or fades it out at 900 m). The nearer LODs keep shaders without discard.
+11. **Partial re-bucket uploads** (2026-11-05, `relod`): after a re-bucket only the instances in use are uploaded
+   (`addUpdateRange(0, count * itemSize)` on the matrices, `treeXf`, `treePos`), and a mesh drawing none uploads
+   nothing. Before, every re-bucket (each 5 m of camera motion) uploaded every buffer of every loaded tile whole
+   (capacity >= 1025, #4): ~30 MB and 15-25 ms of `writeBuffer` in one frame while walking (measured with
+   `debug/moveTest.js`). Same draws, same data.

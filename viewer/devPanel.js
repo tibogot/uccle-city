@@ -74,14 +74,14 @@ export function createDevPanel(ctx) {
   const fT = gui.addFolder("Time & sun");
   fT.add(S, "preset", TIMES).name("preset").onChange((v) => {
     tsel.value = v; tsel.onchange();
-    lighting.hourOverride = null; S.hour = lighting.hour; S.coverage = lighting.firm.coverage; S.cloudType = lighting.firm.cloudType; S.vfog = !!lighting.vfogOn;
+    lighting.hourOverride = null; lighting.urlHour = null; S.hour = lighting.hour; S.coverage = lighting.firm.coverage; S.cloudType = lighting.firm.cloudType; S.vfog = !!lighting.vfogOn;
     setParam("time", v, "golden"); setParam("hour", null);
     refresh();
   });
   fT.add(S, "hour", 0, 24, 0.01).name("solar time (h)").onChange((v) => { lighting.hourOverride = v; setParam("hour", v.toFixed(2)); }).listen();
   fT.add(S, "day", 1, 365, 1).name("day of year").onChange((v) => { lighting.day = v; setParam("day", v, 200); });
   fT.add(S, "timeSpeed", 0, 2000, 1).name("sun speed (x real)");
-  fT.add({ f: () => { lighting.hourOverride = null; S.hour = lighting.hour; setParam("hour", null); refresh(); } }, "f").name("back to the preset's time");
+  fT.add({ f: () => { lighting.hourOverride = null; lighting.urlHour = null; S.hour = lighting.hour; setParam("hour", null); refresh(); } }, "f").name("back to the preset's time");
   fT.close();
 
   // ---------------------------------------------------------------- Trams (line 92 on STIB's timetable)
@@ -159,21 +159,24 @@ export function createDevPanel(ctx) {
   fWo.add(R, "ring", 0, 2, 1).name("full-detail ring (reload)");
   fWo.add(R, "far", 0, 6, 1).name("far LOD ring (reload)");
   fWo.add(R, "fx").name("post effects (reload)");
-  fWo.add(R, "sunlight").name("cascaded sun (reload)");
+  // (no "cascaded sun" switch: ?sunlight=1 only acts with the old sky, ?sky=old; Firmament, the default, keeps the one
+  // shadow map its sun shafts and the fog read: the switch did nothing. The reload keeps a ?sunlight= already there.)
   fWo.add(R, "gpu").name("GPU timing (reload)");
   fWo.add({ f: () => {
     const q = new URLSearchParams(location.search);
     const put = (k, on, v) => (on ? q.set(k, v) : q.delete(k));
     put("roads", R.roads === "engine", "engine"); put("stjob", !R.stjob, "0"); put("lampmodel", !R.lamps, "0");
     put("trams", !R.trams, "0"); put("tram", R.tramModel === "boxes", "box"); put("trees", R.trees !== "stylized", R.trees);
-    put("impostors", !R.impostors, "0"); q.set("ring", R.ring); q.set("far", R.far); put("fx", !R.fx, "0"); put("sunlight", R.sunlight, "1"); put("gpu", !R.gpu, "0");
-    const m = mode(); put("view", m !== "orbit", m);
+    put("impostors", !R.impostors, "0"); q.set("ring", R.ring); q.set("far", R.far); put("fx", !R.fx, "0"); put("gpu", !R.gpu, "0");
+    // the mode; in orbit keep the view the URL has (overview / close-up: both "orbit"), a left mode's exit view is the close-up
+    const m = mode();
+    if (m !== "orbit") q.set("view", m); else if (q.get("view") && q.get("view") !== "stjob") q.set("view", "stjob");
     location.search = q.toString();
   } }, "f").name("↻ reload with these");
   fWo.close();
 
   // ---------------------------------------------------------------- Smoothness (viewer/smoothPanel.js)
-  addSmoothnessFolder(gui, ctx);
+  const SM = addSmoothnessFolder(gui, ctx).state || null;
 
   // ---------------------------------------------------------------- Performance
   const fP = gui.addFolder("Performance");
@@ -233,7 +236,8 @@ export function createDevPanel(ctx) {
   }
   addEventListener("keydown", (e) => { if (e.code === "KeyH" && !e.repeat && document.activeElement?.tagName !== "INPUT") photo(gui.domElement.style.display !== "none"); });
   function share() {
-    const st = { ...S, mode: mode(), cam: camera.position.toArray().map((n) => +n.toFixed(2)), tgt: controls.target.toArray().map((n) => +n.toFixed(2)) };
+    const smooth = SM ? Object.fromEntries(Object.entries(SM).filter(([, v]) => typeof v === "number")) : undefined;
+    const st = { ...S, smooth, mode: mode(), cam: camera.position.toArray().map((n) => +n.toFixed(2)), tgt: controls.target.toArray().map((n) => +n.toFixed(2)) };
     const q = new URLSearchParams(location.search);
     q.set("dev", btoa(JSON.stringify(st)));
     const url = `${location.origin}${location.pathname}?${q}`;
@@ -249,9 +253,14 @@ export function createDevPanel(ctx) {
       for (const c of gui.controllersRecursive()) if (c.object === S && c.property in st && !skip.has(c.property)) { c.setValue(st[c.property]); }
       if (st.preset && st.preset !== S.preset) gui.controllersRecursive().find((c) => c.property === "preset")?.setValue(st.preset);
       if (st.hour != null) { lighting.hourOverride = st.hour; S.hour = st.hour; }
+      if (SM && st.smooth) for (const c of gui.controllersRecursive()) if (c.object === SM && c.property in st.smooth) c.setValue(st.smooth[c.property]);
       if (st.cam && st.tgt && (!st.mode || st.mode === "orbit")) { setView("stjob"); camera.position.fromArray(st.cam); controls.target.fromArray(st.tgt); controls.update(); }
       else if (st.mode === "drive") drive(); else if (st.mode === "third") thirdPerson(); else if (st.mode === "fly") fly(); else if (st.mode === "walk") walk();
       refresh();
+      // the link has done its job: drop it from the address bar, or a reload would put the shared state back over
+      // everything changed since (the live settings are mirrored into their own parameters)
+      const q = new URLSearchParams(location.search); q.delete("dev");
+      history.replaceState(null, "", `${location.pathname}?${q}`);
     } catch (e) { log(`dev link: ${e.message}`); }
   }
   window.__devPanel = { gui, S, R, TR, M, pipe, mode };

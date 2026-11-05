@@ -159,7 +159,8 @@ class CarFleet {
     if (b.fade) b.geo.setAttribute("lodFade", new THREE.InstancedBufferAttribute(new Float32Array(cap), 1));
     const m = new THREE.InstancedMesh(b.geo, b.mat, cap);
     m.count = 0; m.frustumCulled = false; m.castShadow = b.cast; m.receiveShadow = true; m.visible = false;
-    m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    // (static usage: written on change with needsUpdate + the used range; DynamicDrawUsage is re-uploaded whole in
+    // every render pass of every frame by three r187)
     m.name = "parked-car-batch";
     this.group.add(m);
     b.mesh = m;

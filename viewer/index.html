@@ -22,7 +22,9 @@
   #logBox summary { cursor: pointer; color: #8f9aa6; font-size: 12px; }
   /* covers the canvas while every shader is compiled (viewer/warmup.js), so the first seconds don't stutter */
   #cover { position: fixed; inset: 0; z-index: 1; display: grid; place-items: center; background: #b9c9d6;
-           color: #2a3440; font-size: 15px; transition: opacity .4s; }
+           color: #2a3440; font-size: 15px; transition: opacity .4s; opacity: .99; }
+  /* .99, not 1: a fully opaque layer over the WebGPU canvas lets Chrome stop compositing it, and taking it away
+     cost a 200-500 ms frame right after the reveal (Windows, measured 2026-11-06; .99 -> 0: no stall) */
   #cover.gone { opacity: 0; pointer-events: none; }
   /* with the dev panel the HUD keeps only the title, the stats and the log (the controls moved to the panel) */
   body.devpanel #hud label, body.devpanel #hud button, body.devpanel #hud a, body.devpanel #help { display: none; }

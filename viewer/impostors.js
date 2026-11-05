@@ -29,6 +29,7 @@ export const IMPOSTOR_START = +(qs.get("impstart") ?? 400);   // metres: nearer 
 // the far end: the impostors dissolve over [END - 300, END]; past it the far tiles' orthophoto carries the trees. Measured
 // 2026-11-05 in the overview: impostors out to 2400 m cost 3.1 ms of GPU, to 1100 m ~0.9 ms (alpha-tested quads
 // overlap many deep over the far tiles: the cost is overdraw)
+const IMP_LATE = qs.get("implate") !== "0";
 export const IMPOSTOR_END = +(qs.get("impend") ?? 1100);
 /** Live distances (dev panel "Smoothness"): the LOD 2 -> impostor cross-fade ends at `start` over `band` metres,
  *  the impostors fade out over [end - endBand, end]. Distances from the view camera (lodEye) in every pass. */
@@ -318,11 +319,15 @@ export function impostorField(placements, variantOf, material, { near = null } =
   if (pp) {
     twin = new THREE.InstancedMesh(geo, pp.depth, cap);
     twin.instanceMatrix = mesh.instanceMatrix;
-    twin.count = 0; twin.castShadow = twin.receiveShadow = false; twin.renderOrder = -1;
+    // drawn AFTER the opaque city (renderOrder 1, the lit pass 2): the far trees are mostly behind houses at street
+    // level, and drawn last both passes are rejected by the depth test there instead of being rasterised first
+    // (before: renderOrder -1, the twin ran over every impostor pixel, hidden or not). ?implate=0: before (A/B)
+    twin.count = 0; twin.castShadow = twin.receiveShadow = false; twin.renderOrder = IMP_LATE ? 1 : -1;
     twin.frustumCulled = false; twin.userData.depthPrepass = true;
     mesh.add(twin);
   }
   mesh.count = 0;
+  if (IMP_LATE) mesh.renderOrder = 2;
   mesh.castShadow = /[?&]impshadow=1/.test(location.search);   // (beyond the trees' shadow range: off; ?impshadow=1 to see)
   mesh.receiveShadow = true;
   mesh.name = "tree-impostors";
@@ -346,7 +351,8 @@ export function impostorField(placements, variantOf, material, { near = null } =
     }
     mesh.count = k;
     if (twin) { twin.count = k; twin.frustumCulled = mesh.frustumCulled; twin.boundingSphere = mesh.boundingSphere; }
-    data.needsUpdate = true; pos.needsUpdate = true;
+    // only the instances in use (the buffers hold >= 1025; 37 far tiles re-bucket together)
+    if (k) for (const [a, size] of [[data, 4], [pos, 3]]) { a.clearUpdateRanges(); a.addUpdateRange(0, k * size); a.needsUpdate = true; }
   };
   return { mesh, update };
 }

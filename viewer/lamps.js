@@ -161,7 +161,10 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true, p
         m.glass.count++;
         m.iron.setMatrixAt(n, mats[i]); m.glass.setMatrixAt(n, mats[i]);
       }
-      for (const m of lodMeshes) { m.iron.instanceMatrix.needsUpdate = true; m.glass.instanceMatrix.needsUpdate = true; }
+      for (const m of lodMeshes) for (const im of [m.iron, m.glass]) {      // only the instances in use
+        if (!im.count) continue;
+        im.instanceMatrix.clearUpdateRanges(); im.instanceMatrix.addUpdateRange(0, im.count * 16); im.instanceMatrix.needsUpdate = true;
+      }
     };
   }
   if (lampPoolsOn) pool.visible = false;   // the lamp light map lights the ground itself (lampLight.js)

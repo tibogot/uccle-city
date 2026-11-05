@@ -99,10 +99,24 @@ export async function createTramLine(url, scene, ground) {
   // seams in one pass, with its track continuity carried over the seam (no kink where two tiles meet)
   const grid = new Map(), gk = (i, j) => i * 100003 + j, boxes = [];
   let lineCount = 0;
-  /** Snap the shape points inside every loaded tile onto the tram tracks (within 3 m). */
+  /** Snap the shape points inside every loaded tile onto the tram tracks (within 3 m). Re-snaps the whole line
+   *  (~30-45 ms when a tile with tracks streams in): done in slices of <= 3 ms between frames, one tile at a time;
+   *  each shape's points are swapped in whole, so the trams never read a half-snapped line. */
+  let snapQueue = Promise.resolve();
   const snapTile = (name, feats, b) => {
-    if (snapped.has(name)) return;
+    if (snapped.has(name)) return snapQueue;
     snapped.add(name);
+    snapQueue = snapQueue.then(() => snapTileNow(feats, b)).catch((e) => console.warn("tram snap:", e));
+    return snapQueue;
+  };
+  let sliceT = 0;
+  const slice = async () => {       // yield to the next frame once 3 ms of this task are used
+    if (performance.now() - sliceT < 3) return;
+    await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
+    sliceT = performance.now();
+  };
+  const snapTileNow = async (feats, b) => {
+    sliceT = performance.now();
     const tracks = (feats.lines || []).filter((l) => l.kind === "tram").map((l) => l.line);
     boxes.push(b);
     tracks.forEach((l) => { const li = lineCount++; for (let k = 1; k < l.length; k++) {
@@ -121,8 +135,11 @@ export async function createTramLine(url, scene, ground) {
     // leaves its 3 m reach (a junction), and prefer a track running the shape's way.
     for (const s of Object.values(shapes)) {
       let prevLine = -1, prevPt = null;
-      s.orig.forEach(([x, z], i) => {
-        if (!loaded(x, z)) { prevLine = -1; prevPt = null; return; }
+      const snap = s.snap.slice();
+      for (let i = 0; i < s.orig.length; i++) {
+        if ((i & 255) === 0) await slice();
+        const [x, z] = s.orig[i];
+        if (!loaded(x, z)) { prevLine = -1; prevPt = null; continue; }
         const o = s.orig, a0 = o[Math.max(0, i - 1)], a1 = o[Math.min(o.length - 1, i + 1)];
         const sx = a1[0] - a0[0], sz = a1[1] - a0[1], sl = Math.hypot(sx, sz) || 1;
         let best = Infinity, bx = x, bz = z, bl = -1;
@@ -137,19 +154,26 @@ export async function createTramLine(url, scene, ground) {
           const cost = d2 + (prevLine >= 0 && !cont ? 100 : 0) + back;     // switch only when the track left the 3 m reach
           if (cost < best) { best = cost; bx = px; bz = pz; bl = li; }
         }
-        s.snap[i] = [bx, bz];
+        snap[i] = [bx, bz];
         prevLine = bl; prevPt = [bx, bz];
-      });
+      }
+      s.snapNext = snap;
     }
     // two passes of a [1 2 1]/4 filter along the snapped points: no kink where two tiles' tracks meet (on a 25 m
     // curve it moves the line by under 1 cm)
     for (const s of Object.values(shapes)) {
+      await slice();
+      let p = s.snapNext;
       for (let pass = 0; pass < 2; pass++) {
-        const p = pass ? s.pts : s.snap, q = p.map((v) => v.slice());
+        const q = p.map((v) => v.slice());
         for (let i = 1; i + 1 < p.length; i++) { q[i][0] = (p[i - 1][0] + 2 * p[i][0] + p[i + 1][0]) / 4; q[i][1] = (p[i - 1][1] + 2 * p[i][1] + p[i + 1][1]) / 4; }
-        s.pts = q;
+        p = q;
       }
-      finish(s);
+      // swapped in together (pts, its arc length and tangents), in one task
+      const t = { pts: p };
+      finish(t);
+      s.snap = s.snapNext; delete s.snapNext;
+      s.pts = t.pts; s.cum = t.cum; s.tan = t.tan;
     }
   };
   const at = (s, d) => {            // point + heading at distance d along a shape (heading from the interpolated tangent)
