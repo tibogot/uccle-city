@@ -480,7 +480,7 @@ async function main() {
   const layers = { terrain: new THREE.Group(), buildings: new THREE.Group(), roads: new THREE.Group(), features: new THREE.Group() };
   for (const g of Object.values(layers)) scene.add(g);
   // the parked cars of every tile, as one fleet (viewer/carFleet.js; ?cars=box: the old box cars per tile)
-  if (params.get("cars") !== "box") { scene.add(carFleet.group); updaters.push(carFleet.update); }
+  if (params.get("cars") !== "box") { scene.add(carFleet.group); updaters.push(carFleet.update); carFleet.setRenderer(renderer, scene); }
   // the world: the main tile now, its neighbours streamed in after the first frame (?ring=0|1|2)
   const world = {
     tiles: [],
@@ -537,7 +537,6 @@ async function main() {
   $("contours").addEventListener("change", (e) => { contourOn.value = e.target.checked ? 1 : 0; });
 
   const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.3, 6000);
-  carFleet.setRenderer(renderer, scene, camera);     // the fleet compiles its materials off the frame
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.maxPolarAngle = Math.PI * 0.495;

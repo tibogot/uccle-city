@@ -87,7 +87,7 @@ class CarFleet {
     if (!this.loading) this.load();
   }
   /** The renderer and scene (main.js): the fleet's materials are compiled asynchronously before the first draw. */
-  setRenderer(renderer, scene, camera) { this.renderer = renderer; this.scene = scene; this.camera = camera; }
+  setRenderer(renderer, scene) { this.renderer = renderer; this.scene = scene; }
   async load() {
     this.loading = true;
     const frame = () => new Promise((r) => requestAnimationFrame(r));
@@ -126,7 +126,7 @@ class CarFleet {
       }
       this.types = types;
       // pipelines: compile the four materials (and their shadow variants) off the frame, one batch of each
-      for (let i = 0; i < 300 && !this.renderer; i++) await frame();   // main.js hands the renderer over after the first tile
+      for (let i = 0; i < 300 && !(this.renderer && this.camera); i++) await frame();   // the camera comes with the first update
       if (this.renderer?.compileAsync) {
         const probes = [];
         const T = Object.values(types)[0];
@@ -137,7 +137,9 @@ class CarFleet {
         for (const m of probes) { m.count = 0; m.visible = false; }
       }
       const now = performance.now();
-      for (const r of this.regs) r.t0 = now;   // the cars registered while loading fade in now, not pop in
+      // the types go live one per frame (their geometry uploads spread over frames), each fading its cars in
+      this.pendingTypes = Object.keys(types);
+      for (const T of Object.values(types)) T.t0 = Infinity;
       this.ready = true; this.dirty = true;
       console.log(`[cars] faceted fleet ready in ${(now - t).toFixed(0)} ms (LODs in a worker: ${data.ms.toFixed(0)} ms; main thread: longest slice ${slice.toFixed(1)} ms; materials compiled async): ${data.cars.length} types x ${this.lodDist.length} LODs`);
     } catch (e) { this.failed = e; console.warn("[cars] faceted fleet failed:", e); }
@@ -163,14 +165,16 @@ class CarFleet {
     b.mesh = m;
   }
   update(camPos, camera) {
+    if (camera) this.camera ||= camera;
     if (!this.ready || !camera) return;
+    if (this.pendingTypes?.length) { this.types[this.pendingTypes.shift()].t0 = performance.now(); this.dirty = true; }
     // tiles that left the scene
     const attached = (g) => { let o = g; while (o.parent) o = o.parent; return o.isScene; };
     const before = this.regs.length;
     this.regs = this.regs.filter((r) => attached(r.group));
     if (this.regs.length !== before) this.dirty = true;
     const now = performance.now();
-    const fadingIn = this.regs.some((r) => now - r.t0 < FADE_IN_MS);
+    const fadingIn = this.regs.some((r) => now - r.t0 < FADE_IN_MS) || Object.values(this.types).some((T) => !(now - T.t0 >= FADE_IN_MS));
     camera.updateMatrixWorld();
     const moved = !this.lastCam.equals(camera.matrixWorld);
     if (!moved && !fadingIn && !this.dirty) return;     // a still camera: nothing to redo
@@ -189,14 +193,14 @@ class CarFleet {
       const alpha = Math.min(1, (now - r.t0) / FADE_IN_MS);
       for (const c of r.cars) {
         st.cars++;
-        const T = this.types[c.type]; if (!T) continue;
+        const T = this.types[c.type]; if (!T || T.t0 > now) continue;
         this.sphere.center.set(c.x, c.y + 0.9, c.z);
         if (!this.frustum.intersectsSphere(this.sphere)) { st.culled++; continue; }
         const d = camPos.distanceTo(this.sphere.center);
         if (d >= FADE_TO) { st.far++; c.farAt = this.frameNo; continue; }
         let k = L.findIndex((u) => d < u); if (k < 0) k = last;
         // fraction kept by the distance fade and the streaming fade-in
-        const keep = (d > FADE_FROM ? 1 - (d - FADE_FROM) / (FADE_TO - FADE_FROM) : 1) * alpha;
+        const keep = (d > FADE_FROM ? 1 - (d - FADE_FROM) / (FADE_TO - FADE_FROM) : 1) * Math.min(alpha, (now - T.t0) / FADE_IN_MS, 1);
         let near = k, far = -1, t = 0;
         const bl = BANDS[k - 1] ?? 0, bk = BANDS[k] ?? 0;
         if (k > 0 && d - L[k - 1] < bl * L[k - 1]) { near = k - 1; far = k; t = (d - (1 - bl) * L[k - 1]) / (2 * bl * L[k - 1]); }
