@@ -46,7 +46,16 @@ tile's first draw, and tile textures created on show: precompile does not upload
 slice 5-12 ms and parked cars 4-10 ms per tile (move to worker or slice); fly + glide tests; cold-cache run;
 a back-to-back A/B vs claude/foundation (serve `git archive 90d2758` on another port).
 
-## Task 1: dev panel re-audit: NOT STARTED
+## Task 1: dev panel re-audit: STARTED
+
+| control | state |
+|---|---|
+| World > parked cars | working (hides / shows `parked-cars-fleet`, checked live) |
+| World > tree impostors (reload) | working default (on; reads ?impostors=0); reload itself not yet clicked |
+| Smoothness > impostors end, tree shadows end | working live (IMP.end, TREE_SHADOW.end change) |
+| Smoothness > LOD 2 -> impostors, cross-fade band, impostors end, tree shadows end, tile cross-fade | FIXED: now mirrored into the URL (impstart, impband, impend, treeshadowend, tilefade) |
+| Modes & camera > field of view | working live |
+| every other control (93 rows) | not yet tested in the merged version |
 
 Read so far (devPanel.js / smoothPanel.js), suspicions to check in the browser:
 - Smoothness folder: no control mirrors into the URL or the share link (?impend=, ?impstart=, ?treeshadow*
