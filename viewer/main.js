@@ -537,6 +537,7 @@ async function main() {
   $("contours").addEventListener("change", (e) => { contourOn.value = e.target.checked ? 1 : 0; });
 
   const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.3, 6000);
+  carFleet.setRenderer(renderer, scene, camera);     // the fleet compiles its materials off the frame
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.maxPolarAngle = Math.PI * 0.495;

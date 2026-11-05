@@ -11,9 +11,11 @@
 //       streaming      a tile's cars fade in over 1.2 s when it loads
 //   - shadows: LOD0-2 cast, LOD3 (>= 130 m) does not; the LOD2 -> 3 fade fades the shadow out with it
 //   - per-instance frustum culling; rebuilt every frame while something fades, else when the camera moves
+//   - NO MAIN-THREAD HITCH: the GLB parse, the meshoptimizer LODs and the merges run in viewer/carLodWorker.js; the main
+//     thread only wraps the arrays (one car type per frame) and precompiles the four materials with compileAsync
+//     (setRenderer) before the first car is drawn, so no pipeline is built in a frame either
 import * as THREE from "three/webgpu";
-import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
-import { loadPack, packMaterial } from "./drive/carPacks.js";
+import { PACK_SOURCES, packMaterial } from "./drive/carPacks.js";
 
 // the mix (a residential Brussels street): mostly hatchbacks, estates and saloons, some SUVs and compact vans, a few
 // panel vans, an occasional taxi
@@ -28,6 +30,34 @@ const FADE_FROM = 380, FADE_TO = 420;                  // m: the distance fade-o
 const BANDS = [0.1, 0.08, 0.05];                       // LOD cross-fade per switch: +-10 % at 22 m, 8 % at 55, 5 % at 130
 const FADE_IN_MS = 1200;
 
+/** The slot length a type needs (m): its length + 0.5 m of gaps; a panel van needs a 6 m slot. */
+export const slotNeed = (t) => (t === "van_p" ? 6.0 : SIZES[t][2] + 0.5);
+/**
+ * Types for one tile's slots, fitted to the room each slot has: room[i] = the slot length (m), i.e. the distance to
+ * the nearest parked neighbour on the same kerb (9 when none). Long types go first to the roomiest slots that take
+ * them, each up to its share of the mix; the rest are filled with the types that fit, by the mix. order[i]: a hash
+ * per slot (a deterministic shuffle). -> [type] per slot.
+ */
+export function assignTypes(room, order) {
+  const n = room.length, out = new Array(n).fill(null);
+  const total = TYPE_MIX.reduce((a, [, w]) => a + w, 0);
+  const byLen = [...TYPE_MIX].sort((a, b) => slotNeed(b[0]) - slotNeed(a[0]));
+  const idx = [...Array(n).keys()].sort((a, b) => order[a] - order[b]);
+  for (const [t, w] of byLen) {
+    let want = Math.round(n * w / total);
+    for (const i of idx) { if (!want) break; if (out[i] == null && room[i] >= slotNeed(t)) { out[i] = t; want--; } }
+  }
+  for (const i of idx) if (out[i] == null) {
+    const fit = TYPE_MIX.filter(([t]) => slotNeed(t) <= room[i]);
+    out[i] = fit.length ? pickFrom(fit, order[i]) : "hatch_s";
+  }
+  return out;
+}
+function pickFrom(list, h) {
+  let r = ((h * 7.31) % 1) * list.reduce((a, [, w]) => a + w, 0);
+  for (const [t, w] of list) { if (r < w) return t; r -= w; }
+  return list[0][0];
+}
 export function pickType(h) {
   let r = h * TYPE_MIX.reduce((a, [, w]) => a + w, 0);
   for (const [t, w] of TYPE_MIX) { if (r < w) return t; r -= w; }
@@ -56,28 +86,60 @@ class CarFleet {
     this.dirty = true;
     if (!this.loading) this.load();
   }
+  /** The renderer and scene (main.js): the fleet's materials are compiled asynchronously before the first draw. */
+  setRenderer(renderer, scene, camera) { this.renderer = renderer; this.scene = scene; this.camera = camera; }
   async load() {
     this.loading = true;
+    const frame = () => new Promise((r) => requestAnimationFrame(r));
     try {
       const t = performance.now();
-      const pack = await loadPack("faceted");
-      this.lodDist = pack.lods.map((l) => l.until);
+      const S = PACK_SOURCES.faceted;
+      const worker = new Worker(new URL("./carLodWorker.js", import.meta.url), { type: "module" });
+      const data = await new Promise((resolve, reject) => {
+        worker.onmessage = (e) => (e.data.error ? reject(new Error(e.data.error)) : resolve(e.data));
+        worker.onerror = (e) => reject(new Error(e.message || "car LOD worker failed"));
+        worker.postMessage({ id: 1, url: S.url, S: { welded: S.welded, prune: S.prune, lods: S.lods } });
+      });
+      worker.terminate();
+      this.lodDist = S.lods.map((l) => l.until);
       const near = packMaterial({ paint: "instance", rich: true });
       const far = packMaterial({ paint: "instance", rich: true, clearcoat: false, seeThrough: false });
       const nearFade = packMaterial({ paint: "instance", rich: true, crossFade: true });
       const farFade = packMaterial({ paint: "instance", rich: true, clearcoat: false, seeThrough: false, crossFade: true });
-      this.types = {};
-      for (const c of pack.cars) {
-        const lods = c.lods.map((L, k) => {
-          const geo = mergeGeometries(Object.entries(c.parts).map(([n, p]) => L[n].clone().translate(...p.pos)));
-          for (const a of Object.keys(geo.attributes)) if (!["position", "normal", "color", "_kind"].includes(a)) geo.deleteAttribute(a);
+      const types = {};
+      let slice = 0;
+      for (const c of data.cars) {            // a few hundred microseconds per type: one type per frame anyway
+        await frame();
+        const s0 = performance.now();
+        const lods = c.lods.map((m, k) => {
+          const geo = new THREE.BufferGeometry();
+          geo.setAttribute("position", new THREE.BufferAttribute(m.P, 3)); geo.setAttribute("normal", new THREE.BufferAttribute(m.N, 3));
+          geo.setAttribute("color", new THREE.BufferAttribute(m.C, 3)); geo.setAttribute("_kind", new THREE.BufferAttribute(m.K, 1));
+          geo.setIndex(new THREE.BufferAttribute(m.I, 1));
+          geo.computeBoundingSphere();
           const isNear = k <= 1;
-          return { tris: L.tris, plain: this.batch(geo, isNear ? near : far, k < 3, false), fade: this.batch(geo, isNear ? nearFade : farFade, k < 3, true) };
+          return { tris: m.I.length / 3, plain: this.batch(geo, isNear ? near : far, k < 3, false), fade: this.batch(geo, isNear ? nearFade : farFade, k < 3, true) };
         });
-        this.types[c.id] = { lods, keepPaint: c.keepPaint, paint: c.paint };
+        const x = c.extras || {};
+        types[c.id] = { lods, keepPaint: !!x.keepPaint, paint: new THREE.Color().setRGB(...(x.paint || [0.5, 0.5, 0.5])) };
+        slice = Math.max(slice, performance.now() - s0);
       }
+      this.types = types;
+      // pipelines: compile the four materials (and their shadow variants) off the frame, one batch of each
+      for (let i = 0; i < 300 && !this.renderer; i++) await frame();   // main.js hands the renderer over after the first tile
+      if (this.renderer?.compileAsync) {
+        const probes = [];
+        const T = Object.values(types)[0];
+        for (const b of [T.lods[0].plain, T.lods[0].fade, T.lods[2].plain, T.lods[2].fade]) { b.mesh.count = 1; b.mesh.visible = true; probes.push(b.mesh); }
+        const keep = this.group.children.filter((o) => !probes.includes(o) && o.visible);
+        for (const o of keep) o.visible = false;
+        try { await this.renderer.compileAsync(this.group, this.camera, this.scene); } catch (e) { console.warn("[cars] compileAsync:", e); }
+        for (const m of probes) { m.count = 0; m.visible = false; }
+      }
+      const now = performance.now();
+      for (const r of this.regs) r.t0 = now;   // the cars registered while loading fade in now, not pop in
       this.ready = true; this.dirty = true;
-      console.log(`[cars] faceted fleet ready in ${(performance.now() - t).toFixed(0)} ms: ${pack.cars.length} types x ${this.lodDist.length} LODs`);
+      console.log(`[cars] faceted fleet ready in ${(now - t).toFixed(0)} ms (LODs in a worker: ${data.ms.toFixed(0)} ms; main thread: longest slice ${slice.toFixed(1)} ms; materials compiled async): ${data.cars.length} types x ${this.lodDist.length} LODs`);
     } catch (e) { this.failed = e; console.warn("[cars] faceted fleet failed:", e); }
   }
   batch(geo, mat, cast, fade, cap = 64) {
