@@ -631,12 +631,12 @@ def brisis_faces(m):
             B.new_group()
             for r in range(len(rows) - 1):
                 face_dir([rows[r][0], rows[r][1], rows[r + 1][1], rows[r + 1][0]], out + Z * 0.2, SLATE, C_PLAIN)
-                if not FAR: roll(rows[r][0], rows[r + 1][0], 0.055, ZINC)
+                if not FAR: roll(rows[r][0], rows[r + 1][0], 0.085, ZINC)
         if not FAR:
             # zinc hip rolls on the two hips of this face (each hip drawn once: the face's left end)
-            if m.ins[sides[k - 1]] is not None and m.bell <= 0: roll(a, d, 0.055, ZINC)
+            if m.ins[sides[k - 1]] is not None and m.bell <= 0: roll(a, d, 0.085, ZINC)
             # curb moulding (zinc) along the top of the face
-            roll(d, c, 0.07, ZINC)
+            roll(d, c, 0.1, ZINC)
     # deck / terrasson
     if m.top is None:
         B.new_group()
@@ -823,7 +823,7 @@ def portico(e):
     zgf = hz(FLOOR_GF); dc = dpt - 0.3              # column axis depth
     # landing (blue stone), under the portico and one step beyond
     land_d = dpt + 0.35
-    fbox(fr, s - 2.15, s + 2.15, hz(g) - 0.3, zgf, 0.0, land_d, BLUE, C_PLINTH, skip=("back",))
+    fbox(fr, s - 1.8, s + 1.8, hz(g) - 0.3, zgf, 0.0, land_d, BLUE, C_PLINTH, skip=("back", "left", "right"))
     # the steps down to the square (11 risers in the photos' count, DTM ground)
     n = 11; rise = (FLOOR_GF - g) / n; tread = 0.31
     for i in range(n):
@@ -839,8 +839,9 @@ def portico(e):
         for (c0, c1) in prof:
             pts = [(0.0, hz(g) - 0.3), (run_end, hz(g) - 0.3), (run_end, t1), (land_d, t0), (0.0, t0)]
             for x in (c0, c1):
-                poly = [fr.p(x, z, d) for d, z in pts]
-                face_dir(poly, fr.U * (1 if x == c1 else -1), BLUE, C_PLINTH)
+                bz = hz(g) - 0.3
+                for poly in ([(0.0, bz), (land_d, bz), (land_d, t0), (0.0, t0)], [(land_d, bz), (run_end, bz), (run_end, t1), (land_d, t0)]):
+                    face_dir([fr.p(x, z, d) for d, z in poly], fr.U * (1 if x == c1 else -1), BLUE, C_PLINTH)
             top = [(run_end, t1), (land_d, t0), (0.0, t0)]
             for j in range(len(top) - 1):
                 (da, za), (db, zb) = top[j], top[j + 1]

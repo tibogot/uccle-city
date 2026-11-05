@@ -116,14 +116,17 @@ scene.add(urbis, urbisGhost);
 // ------------------------------------------------------------------------------------------------ views (the photos)
 // camera and target in the BUILDING frame (u east, w south, height m TAW), estimated from each photo (overlay to check):
 // 3557: the facade's 22.7 m (UrbIS) span 1395 px of 2844 -> f = 3690 px at 60 m; the principal point sits at 70 m TAW
+// The inventory's 755 x 500 thumbnails are stretched vertically: their windows are 1.33x taller for their width than in
+// the full-size Commons photo (GF window 2.2 vs 1.65): shown squeezed back by INV_SY (frame = photo)
+const INV_SY = 0.75;
 const PHOTOS = {
   "east facade (Commons 3557)": { file: "c_3557.jpg", pos: [72.4, -0.6, 62.6], target: [12.4, 0.0, 70.1], fov: 30.7,
     credit: "Photo: David Edgar, 2008, CC BY-SA 3.0 (Wikimedia Commons, 3557uccleTownHall.jpg)" },
-  "east facade, frontal (inventory)": { file: "heritage_P01.jpg", pos: [36.0, 0.6, 62.7], target: [12.4, 0.0, 70.2], fov: 53,
+  "east facade, frontal (inventory)": { file: "heritage_P01.jpg", sy: INV_SY, pos: [40.0, 0.8, 62.4], target: [12.4, 0.3, 71.6], fov: 42,
     credit: "Reference only: Inventaire du patrimoine architectural, urban.brussels (no free licence)" },
-  "east facade from the south-east (inventory)": { file: "heritage_P02.jpg", pos: [36.0, 11.0, 62.7], target: [12.4, -1.5, 70.0], fov: 53,
+  "east facade from the south-east (inventory)": { file: "heritage_P02.jpg", sy: INV_SY, pos: [36.0, 11.0, 62.7], target: [12.4, -1.5, 70.0], fov: 53,
     credit: "Reference only: Inventaire du patrimoine architectural, urban.brussels (no free licence)" },
-  "south-east corner (inventory)": { file: "heritage_P03.jpg", pos: [33.0, 31.0, 62.6], target: [6.0, 7.0, 70.5], fov: 62,
+  "south-east corner (inventory)": { file: "heritage_P03.jpg", sy: INV_SY, pos: [19.5, 21.5, 62.4], target: [5.0, 6.5, 72.5], fov: 72,
     credit: "Reference only: Inventaire du patrimoine architectural, urban.brussels (no free licence)" },
   "portico and perron": { pos: [24.0, 6.0, 62.9], target: [12.6, 0.0, 66.2], fov: 50 },
   "west facade (no photo: estimated)": { pos: [-48.0, -8.0, 64.0], target: [-12.0, 0.0, 70.0], fov: 45 },
@@ -148,11 +151,13 @@ function fitFrame() {
   const v = PHOTOS[S.view], c = renderer.domElement;
   let w = innerWidth, h = innerHeight;
   if (S.frame && v?.file && $photo.naturalWidth) {
-    const a = $photo.naturalWidth / $photo.naturalHeight;
+    const a = $photo.naturalWidth / ($photo.naturalHeight * (v.sy ?? 1));
     if (w / h > a) w = Math.round(h * a); else h = Math.round(w / a);
   }
   renderer.setSize(w, h);
   Object.assign(c.style, { position: "fixed", left: `${(innerWidth - w) / 2}px`, top: `${(innerHeight - h) / 2}px` });
+  if (S.frame) Object.assign($photo.style, { objectFit: "fill", inset: "auto", left: c.style.left, top: c.style.top, width: `${w}px`, height: `${h}px` });
+  else Object.assign($photo.style, { objectFit: "contain", inset: "0", left: "", top: "", width: "100%", height: "100%" });
   camera.aspect = w / h; camera.updateProjectionMatrix();
 }
 

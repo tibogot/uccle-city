@@ -214,7 +214,7 @@ const TEMP = {
   slate() {
     const { row, cell, mask } = courses(0.3, 0.2, 0.02);
     const h = hash2(vec2(cell, row));
-    return std({ colorNode: mix(lin(0x4a4f58), lin(0x3a3e47), h).mul(mix(float(0.74), float(1), mask)), roughnessNode: float(0.5), metalnessNode: float(0) });
+    return std({ colorNode: mix(lin(0x646a73), lin(0x535861), h).mul(mix(float(0.74), float(1), mask)), roughnessNode: float(0.5), metalnessNode: float(0) });
   },
   zinc_roof() {
     const wuv = uv(0);
