@@ -4,7 +4,8 @@
  "lightmap": {
   "size": 1024,
   "encoding": "RGBM gamma 2: lin = (rgb * a * 4)^2",
-  "day": "lm_day.png",
+  "sky": "lm_sky.png",
+  "sun": "lm_sun.png",
   "night": [
    "salon_floor_lamp",
    "salon_pendant",
@@ -16,6 +17,11 @@
    "study_lamp",
    "landing",
    "street_lamp"
+  ],
+  "sun_dir_local": [
+   -0.6422973871231079,
+   0.7071067690849304,
+   0.29571810364723206
   ],
   "samples": 384,
   "day_sky": "zenith 0.55/0.68/0.95, horizon 1.05 (relative)"
@@ -657,10 +663,10 @@
   "zb": 10.603
  },
  "triangles": {
-  "interior": 107463,
+  "interior": 105829,
   "door": 928,
   "glass": 44,
   "colliders": 1298
  },
- "build_s": 77.3
+ "build_s": 171.4
 }

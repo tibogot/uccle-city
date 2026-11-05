@@ -8,7 +8,7 @@
 #
 # Output (in the house dir): interior.glb (house-local frame, see interior_kit.py; meshes: Interior = all lightmapped
 # surfaces in 5 materials, Glass, FrontDoor (its origin on the hinge), Colliders (simplified, not drawn)),
-# lm_day.png / lm_night.png (RGBM, gamma 2: lin = (rgb * a * 4)^2), interior.json (rooms, openings, lights, probes,
+# lm_sky.png / lm_sun.png / lm_night.png (RGBM, gamma 2: lin = (rgb * a * 4)^2), interior.json (rooms, openings, lights, probes,
 # stats). The layout and furniture are INVENTED (a plausible plan for the real footprint, varied by --seed): no real
 # family's home is copied.
 import bpy, bmesh, sys, os, json, math, time, random
@@ -582,7 +582,6 @@ put(K.dresser(1.3, 1.95, 0.45), s1 - 0.23, GF, z0 + 1.0, ry=-90)
 for o in B_OPEN:
     if o["floor"] != 0: continue
     put(K.radiator(o["s1"] - o["s0"] - 0.1, 0.6), (o["s0"] + o["s1"]) / 2, GF, ZB_IN - 0.1, ry=180)
-    put(K.sheer(o["s1"] - o["s0"] - 0.14, 0.75), (o["s0"] + o["s1"]) / 2, o["h0"] + 0.85, ZB_IN - 0.21, ry=180, solid=False)
     put(K.plant(0.28, 0.07, seed=SEED + 5 + int(o["s0"] * 10)), (o["s0"] + o["s1"]) / 2 + 0.3, o["h0"] + 0.025, ZB_IN - 0.24, solid=False)
 put(K.picture(0.7, 0.5, C["oak"], fabric(0xA8603A, "canvas")), s1 - 0.012, GF + 1.75, z0 + 2.6, ry=-90, solid=False)
 PROBES.append(("kitchen", s0, s1, z0, z1, GF, GF_CEIL))
@@ -614,7 +613,7 @@ PROBES.append(("alcove", ALC[2], ALC[3], ALC[4], ALC[5], FF, FF_CEIL))
 
 # bathroom
 BAT = next(r for r in ROOMS if r[0] == "bathroom"); s0, s1, z0, z1 = BAT[2], BAT[3], BAT[4], BAT[5]
-put(K.bathtub(1.7, 0.75), s1 - 0.85, FF, z1 - 0.38)
+put(K.bathtub(1.7, 0.76), s1 - 0.95, FF, z1 - 0.55)
 put(K.washbasin(0.8, 0.48), s1 - 0.25, FF, z0 + 1.1, ry=-90)
 put(K.mirror(0.7, 0.8, C["steel"]), s1 - 0.005, FF + 1.05, z0 + 1.1, ry=-90, solid=False)
 put(K.toilet(), s0 + 0.35, FF, z1 - 1.5, ry=90)
@@ -780,14 +779,25 @@ for (name, p, watts, colour, radius) in LIGHTS:
     x, y, z = to_local(p); lo.location = (x, -z, y)
     scn.collection.objects.link(lo); lamp_objs.append(lo)
 
+# the sun for the SUN lightmap: an afternoon sun from the south-west (35 deg up). The back of this house faces south, so
+# the sun comes in through the back windows; the viewer scales this map with the city's sun (0 when overcast / night)
+SUN_EL, SUN_AZ = math.radians(45), math.radians(200)         # azimuth from north, clockwise (215 = SSW)
+to_sun_city = Vector((math.sin(SUN_AZ) * math.cos(SUN_EL), math.sin(SUN_EL), -math.cos(SUN_AZ) * math.cos(SUN_EL)))   # city: x east, z south
+ex_, ez_ = spec["frame"]["ex"], spec["frame"]["ez"]
+to_sun_local = Vector((to_sun_city.x * ex_[0] + to_sun_city.z * ex_[1], to_sun_city.y, to_sun_city.x * ez_[0] + to_sun_city.z * ez_[1]))
+sun_d = bpy.data.lights.new("sun", "SUN"); sun_d.energy = 8.0; sun_d.angle = math.radians(0.6); sun_d.color = (1.0, 0.93, 0.82)
+sun_o = bpy.data.objects.new("sun", sun_d); scn.collection.objects.link(sun_o)
+sun_o.rotation_euler = (-Vector((to_sun_local.x, -to_sun_local.z, to_sun_local.y))).to_track_quat("-Z", "Y").to_euler()
+SKY = 1.0
 def set_mode(mode):
-    """DAY: a bright sky (overcast-ish, a bit bluer at the top), no lamps. NIGHT: a dark blue sky, the lamps on, shades
-    glowing."""
+    """sky: the sky only (a bright overcast-ish dome, bluer at the top). sun: the sun only (black sky). day: both (the
+    previews). night: a dark blue sky, the lamps on, shades glowing."""
     for lo in lamp_objs: lo.hide_render = mode != "night" or lo.data.energy <= 0
+    sun_o.hide_render = mode not in ("sun", "day")
     nt = scn.world.node_tree
     for n in list(nt.nodes):
         if n.type in ("TEX_SKY", "TEX_GRADIENT", "MAPPING", "TEX_COORD", "VALTORGB", "MIX_RGB", "SEPXYZ", "SEPARATE_XYZ", "MAP_RANGE"): nt.nodes.remove(n)
-    if mode == "day":
+    if mode in ("day", "sky"):
         # sky radiance: zenith 0.8 blue-white, horizon 1.1 (relative units; the viewer scales it to the city sky)
         tc = nt.nodes.new("ShaderNodeTexCoord"); sep = nt.nodes.new("ShaderNodeSeparateXYZ"); mr = nt.nodes.new("ShaderNodeMapRange")
         ramp = nt.nodes.new("ShaderNodeValToRGB")
@@ -796,7 +806,11 @@ def set_mode(mode):
         mr.inputs["From Min"].default_value = -0.1; mr.inputs["From Max"].default_value = 1.0
         nt.links.new(sep.outputs["Z"], mr.inputs["Value"]); nt.links.new(mr.outputs["Result"], ramp.inputs["Fac"])
         ramp.color_ramp.elements[0].color = (1.05, 1.04, 1.0, 1); ramp.color_ramp.elements[1].color = (0.55, 0.68, 0.95, 1)
-        nt.links.new(ramp.outputs["Color"], wbg.inputs["Color"]); wbg.inputs["Strength"].default_value = 1.0
+        nt.links.new(ramp.outputs["Color"], wbg.inputs["Color"]); wbg.inputs["Strength"].default_value = SKY
+    elif mode == "sun":
+        for l in list(nt.links):
+            if l.to_node == wbg: nt.links.remove(l)
+        wbg.inputs["Color"].default_value = (0, 0, 0, 1)
     else:
         for l in list(nt.links):
             if l.to_node == wbg: nt.links.remove(l)
@@ -843,7 +857,7 @@ if BAKE:
     scn.cycles.samples = SAMPLES
     scn.cycles.max_bounces = 6; scn.cycles.diffuse_bounces = 5
     scn.render.bake.margin = 6; scn.render.bake.margin_type = "EXTEND"
-    for mode in ("day", "night"):
+    for mode in ("sky", "sun", "night"):
         set_mode(mode)
         t = time.time()
         for o in scn.objects: o.select_set(False)
@@ -860,7 +874,7 @@ if BAKE:
 if PREVIEW:
     os.makedirs(PREVIEW, exist_ok=True)
     cam_d = bpy.data.cameras.new("cam"); cam = bpy.data.objects.new("cam", cam_d); scn.collection.objects.link(cam); scn.camera = cam
-    scn.render.resolution_x, scn.render.resolution_y = 1280, 720
+    scn.render.resolution_x, scn.render.resolution_y = 960, 540
     scn.cycles.samples = PV_SAMPLES; scn.cycles.use_denoising = True
     scn.render.image_settings.file_format = "PNG"
     scn.view_settings.view_transform = "AgX"; scn.view_settings.look = "AgX - Medium High Contrast"
@@ -870,21 +884,30 @@ if PREVIEW:
         cam.location = (e[0], -e[2], e[1])
         d = Vector((a[0], -a[2], a[1])) - cam.location
         cam.rotation_euler = d.to_track_quat("-Z", "Y").to_euler()
-        cam_d.lens = lens
+        cam_d.lens = lens + 4
         scn.view_settings.exposure = exposure
         scn.render.filepath = os.path.join(PREVIEW, f"blender_{name}.png")
         bpy.ops.render.render(write_still=True)
         print("preview", name)
-    S = next(r for r in ROOMS if r[0] == "salon")
-    shot("salon", (S[2] + 0.3, GF + 1.5, S[5] - 0.3), (S[3] - 0.6, GF + 1.0, S[4] + 1.6), 16, "day", 1.0)
-    shot("salon_night", (S[2] + 0.3, GF + 1.5, S[5] - 0.3), (S[3] - 0.6, GF + 1.0, S[4] + 1.6), 16, "night", 2.0)
-    Kt = next(r for r in ROOMS if r[0] == "kitchen")
-    shot("kitchen", (Kt[3] - 0.4, GF + 1.6, Kt[4] + 0.3), (Kt[2] + 0.8, GF + 0.9, Kt[5] - 1.2), 16, "day", 1.0)
-    shot("hall_stair", (S1 - 0.3, GF + 1.6, ZF_IN + 0.25), (0.6, GF + 1.8, Z_TOP), 16, "day", 1.2)
-    Bd = next(r for r in ROOMS if r[0] == "bedroom")
-    shot("bedroom", (Bd[2] + 0.3, FF + 1.6, Bd[5] - 0.3), (Bd[3] - 0.8, FF + 0.6, Bd[4] + 1.8), 16, "day", 1.0)
-    Bt = next(r for r in ROOMS if r[0] == "bathroom")
-    shot("bathroom", (Bt[2] + 0.3, FF + 1.6, Bt[4] + 0.3), (Bt[3] - 0.6, FF + 0.8, Bt[5] - 0.6), 14, "day", 1.0)
+    R_ = {r[0]: r for r in ROOMS}
+    S, Kt, Bd, Bt, St, Ln = R_["salon"], R_["kitchen"], R_["bedroom"], R_["bathroom"], R_["study"], R_["landing"]
+    VIEWS = {
+        "salon": ((S[2] + 0.3, GF + 1.5, S[5] - 0.3), (S[3] - 0.6, GF + 1.0, S[4] + 1.6), 16),
+        "salon_sofa": ((S[3] - 0.35, GF + 1.4, S[4] + 0.5), (S[2] + 0.4, GF + 0.7, S[5] - 2.0), 18),
+        "kitchen": ((Kt[3] - 0.4, GF + 1.6, Kt[4] + 0.3), (Kt[2] + 0.8, GF + 0.9, Kt[5] - 1.2), 16),
+        "dining": ((Kt[2] + 1.2, GF + 1.5, Kt[5] - 0.3), (Kt[3] - 1.2, GF + 0.8, Kt[4] + 1.0), 16),
+        "hall_stair": ((S1 - 0.3, GF + 1.6, ZF_IN + 0.25), (0.6, GF + 1.8, Z_TOP), 16),
+        "bedroom": ((Bd[2] + 0.75, FF + 1.6, Bd[5] - 1.2), (Bd[3] - 0.8, FF + 0.6, Bd[4] + 1.2), 16),
+        "bedroom_window": ((Bd[3] - 0.4, FF + 1.5, Bd[5] - 1.0), (Bd[2] - 1.0, FF + 1.0, Bd[4] + 0.2), 16),
+        "bathroom": ((Bt[2] + 0.3, FF + 1.6, Bt[4] + 0.3), (Bt[3] - 0.6, FF + 0.8, Bt[5] - 0.6), 14),
+        "study": ((St[3] - 0.3, FF + 1.6, St[4] + 0.3), (St[2] + 0.8, FF + 0.8, St[5] - 0.4), 15),
+        "landing": ((Ln[3] - 0.25, FF + 1.6, Ln[5] - 0.25), (0.6, FF + 0.2, VOID_Z0 + 0.4), 18),
+    }
+    only = arg("--only")
+    for name, (eye, at, lens) in VIEWS.items():
+        if only and name not in only.split(","): continue
+        shot(name, eye, at, lens, "day", float(arg("--ev-day", "4.0")))
+        if "--no-night" not in argv: shot(name + "_night", eye, at, lens, "night", float(arg("--ev-night", "2.5")))
 
 # ------------------------------------------------------------------------------------------------ export
 for o in scn.objects: o.select_set(False)
@@ -905,7 +928,7 @@ print("exported", glb, os.path.getsize(glb) // 1024, "KB")
 def plan_to_local_rect(s0, s1, z0, z1):
     return [list(to_local(ms((s, 0, z))))[0::2] for (s, z) in ((s0, z0), (s1, z0), (s1, z1), (s0, z1))]
 info = {
-    "house": spec["BU_ID"], "seed": SEED, "lightmap": {"size": LM, "encoding": "RGBM gamma 2: lin = (rgb * a * 4)^2", "day": "lm_day.png", "night": "lm_night.png",
+    "house": spec["BU_ID"], "seed": SEED, "lightmap": {"size": LM, "encoding": "RGBM gamma 2: lin = (rgb * a * 4)^2", "sky": "lm_sky.png", "sun": "lm_sun.png", "night": "lm_night.png", "sun_dir_local": list(to_sun_local),
                                                        "samples": SAMPLES, "day_sky": "zenith 0.55/0.68/0.95, horizon 1.05 (relative)", "night": [l[0] for l in LIGHTS if l[2] > 0]},
     "levels": {"gf": GF, "gf_ceiling": GF_CEIL, "ff": FF, "ff_ceiling": FF_CEIL, "stair": {"risers": NR, "rise": round(RISE, 4), "going": GOING}},
     "rooms": [{"name": r[0], "level": r[1], "rect": plan_to_local_rect(r[2], r[3], r[4], r[5]), "y": WALL_CEIL[r[1]]} for r in ROOMS],

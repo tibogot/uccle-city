@@ -542,12 +542,12 @@ def plant(h=1.4, pot_r=0.2, seed=0, kind="ficus"):
                 lf = leaf(rnd.uniform(0.09, 0.14), rnd.uniform(0.04, 0.06), bend=rnd.uniform(0.15, 0.45))
                 P.append((xform(lf, T(p.x, p.y, p.z, ry=rnd.uniform(0, 360), rx=rnd.uniform(-40, 25))), "Hard", C["leaf"] if rnd.random() < 0.6 else C["leaf_dark"]))
     else:                      # a big-leaf plant (monstera / philodendron)
-        for k in range(11):
-            a = rnd.uniform(0, 360); el = rnd.uniform(15, 65); L = h * rnd.uniform(0.4, 0.75)
+        for k in range(19):
+            a = rnd.uniform(0, 360); el = rnd.uniform(20, 72); L = h * rnd.uniform(0.45, 0.8)
             stem = xform(lathe([(0.006, 0), (0.004, L)], seg=5), T(0, top, 0, ry=a, rx=90 - el))
             P.append((stem, "Hard", C["leaf_dark"]))
             tip = Vector((0, top, 0)) + Vector((math.sin(math.radians(a)) * math.cos(math.radians(el)) * L, math.sin(math.radians(el)) * L, math.cos(math.radians(a)) * math.cos(math.radians(el)) * L))
-            lf = leaf(rnd.uniform(0.28, 0.4), rnd.uniform(0.22, 0.3), bend=rnd.uniform(0.2, 0.5), seg=7, fold=0.15)
+            lf = leaf(rnd.uniform(0.3, 0.42), rnd.uniform(0.26, 0.34), bend=rnd.uniform(0.2, 0.5), seg=7, fold=0.15)
             P.append((xform(lf, T(tip.x, tip.y, tip.z, ry=a, rx=rnd.uniform(-20, 10))), "Hard", C["leaf"]))
     return P
 
@@ -641,14 +641,19 @@ def fridge(w=0.6, h=1.85, d=0.62):
         P.append((xform(lathe([(0.011, y0), (0.011, y1)], seg=8), T(w / 2 - 0.05, 0, d / 2 + 0.02)), "Hard", C["steel"]))
     return P
 
-def bathtub(l=1.7, w=0.75, h=0.56):
-    outer = soft(l, h, w, r=0.06, n=(10, 5, 6), oy=0.0)
-    inner = soft(l - 0.12, h, w - 0.12, r=0.15, n=(10, 5, 6), oy=0.12)
-    for v in inner.verts: v.co.y = min(v.co.y, h - 0.005)
-    bmesh.ops.reverse_faces(inner, faces=inner.faces)
-    P = [(outer, "Hard", C["enamel_white"]), (inner, "Hard", C["enamel_white"])]
-    P.append((xform(lathe([(0.02, 0), (0.02, 0.12), (0.026, 0.13)], seg=10), T(l / 2 - 0.12, h, -w / 2 + 0.06)), "Hard", C["steel"]))
-    P.append((xform(sweep([(0.011 * math.cos(a), 0.011 * math.sin(a)) for a in [k * math.pi / 4 for k in range(9)]], [(0, 0.12, 0), (0, 0.2, 0.06), (0, 0.17, 0.13)]), T(l / 2 - 0.12, h, -w / 2 + 0.06)), "Hard", C["steel"]))
+def bathtub(l=1.7, w=0.76, h=0.6):
+    """A freestanding roll-top tub on claw feet (old Brussels bathrooms): an oval lathe, hollow, rolled rim."""
+    R = w / 2
+    sx = (l / 2) / R
+    prof = [(0.0, 0.1), (R * 0.55, 0.1), (R * 0.82, 0.13), (R * 0.95, 0.22), (R * 1.0, 0.4), (R * 1.0, h - 0.03), (R * 1.04, h - 0.01),
+            (R * 1.03, h + 0.015), (R * 0.97, h + 0.02), (R * 0.93, h), (R * 0.9, h - 0.08), (R * 0.85, 0.3), (R * 0.72, 0.2), (R * 0.4, 0.165), (0.0, 0.16)]
+    tub = lathe(prof, seg=40, cap_top=False, sx=sx, sz=1.0)
+    P = [(tub, "Hard", C["enamel_white"])]
+    for (fx, fz) in ((-1, -1), (-1, 1), (1, -1), (1, 1)):
+        foot = lathe([(0.03, 0.0), (0.045, 0.01), (0.035, 0.04), (0.022, 0.08), (0.03, 0.12), (0.0, 0.13)], seg=12)
+        P.append((xform(foot, T(fx * (l / 2 - 0.22), 0, fz * (R - 0.12))), "Hard", C["brass"]))
+    P.append((xform(lathe([(0.02, 0), (0.02, 0.12), (0.026, 0.13)], seg=10), T(l / 2 - 0.1, h - 0.03, 0)), "Hard", C["brass"]))
+    P.append((xform(sweep([(0.011 * math.cos(a), 0.011 * math.sin(a)) for a in [k * math.pi / 4 for k in range(9)]], [(0, 0.12, 0), (0, 0.2, 0), (-0.07, 0.17, 0)]), T(l / 2 - 0.1, h - 0.03, 0)), "Hard", C["brass"]))
     return P
 
 def washbasin(w=0.8, d=0.48, wood=None):
