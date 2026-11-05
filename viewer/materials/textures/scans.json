@@ -1,0 +1,146 @@
+{
+ "brick_red_brussels": {
+  "source": "polyhaven",
+  "id": "red_brick",
+  "licence": "CC0",
+  "size_m": 1.4,
+  "px": 1024,
+  "mean_albedo_linear": [
+   0.2745,
+   0.1364,
+   0.0831
+  ],
+  "mean_roughness": 0.923,
+  "url": "https://polyhaven.com/a/red_brick",
+  "albedo_webp_bytes": 168578,
+  "nra_webp_bytes": 1017322,
+  "albedo_ktx2_bytes": 1184317,
+  "nra_ktx2_bytes": 1295968
+ },
+ "stone_white": {
+  "source": "polyhaven",
+  "id": "sandstone_blocks_08",
+  "licence": "CC0",
+  "size_m": 3,
+  "px": 1024,
+  "mean_albedo_linear": [
+   0.3774,
+   0.2892,
+   0.1764
+  ],
+  "mean_roughness": 0.506,
+  "url": "https://polyhaven.com/a/sandstone_blocks_08",
+  "albedo_webp_bytes": 46290,
+  "nra_webp_bytes": 357798,
+  "albedo_ktx2_bytes": 737692,
+  "nra_ktx2_bytes": 878248
+ },
+ "stone_blue": {
+  "source": "polyhaven",
+  "id": "granite_tile_04",
+  "licence": "CC0",
+  "size_m": 2,
+  "px": 1024,
+  "mean_albedo_linear": [
+   0.1649,
+   0.1294,
+   0.0935
+  ],
+  "mean_roughness": 0.77,
+  "url": "https://polyhaven.com/a/granite_tile_04",
+  "albedo_webp_bytes": 336502,
+  "nra_webp_bytes": 419354,
+  "albedo_ktx2_bytes": 1254359,
+  "nra_ktx2_bytes": 1082620
+ },
+ "slate": {
+  "source": "polyhaven",
+  "id": "roof_slates_03",
+  "licence": "CC0",
+  "size_m": 3,
+  "px": 1024,
+  "mean_albedo_linear": [
+   0.1666,
+   0.1599,
+   0.1404
+  ],
+  "mean_roughness": 1,
+  "url": "https://polyhaven.com/a/roof_slates_03",
+  "albedo_webp_bytes": 160192,
+  "nra_webp_bytes": 782510,
+  "albedo_ktx2_bytes": 1028257,
+  "nra_ktx2_bytes": 1180970
+ },
+ "cobbles": {
+  "source": "polyhaven",
+  "id": "cobblestone_floor_08",
+  "licence": "CC0",
+  "size_m": 2,
+  "px": 1024,
+  "mean_albedo_linear": [
+   0.2956,
+   0.2689,
+   0.2249
+  ],
+  "mean_roughness": 0.578,
+  "url": "https://polyhaven.com/a/cobblestone_floor_08",
+  "albedo_webp_bytes": 300226,
+  "nra_webp_bytes": 813980,
+  "albedo_ktx2_bytes": 1308778,
+  "nra_ktx2_bytes": 1338400
+ },
+ "asphalt": {
+  "source": "polyhaven",
+  "id": "asphalt_02",
+  "licence": "CC0",
+  "size_m": 3,
+  "px": 1024,
+  "mean_albedo_linear": [
+   0.1041,
+   0.1025,
+   0.0905
+  ],
+  "mean_roughness": 0.771,
+  "url": "https://polyhaven.com/a/asphalt_02",
+  "albedo_webp_bytes": 453394,
+  "nra_webp_bytes": 1241048,
+  "albedo_ktx2_bytes": 1331544,
+  "nra_ktx2_bytes": 1357067
+ },
+ "paving_concrete": {
+  "source": "polyhaven",
+  "id": "concrete_tiles",
+  "licence": "CC0",
+  "size_m": 1.9,
+  "px": 1024,
+  "mean_albedo_linear": [
+   0.1432,
+   0.1014,
+   0.0631
+  ],
+  "mean_roughness": 0.808,
+  "url": "https://polyhaven.com/a/concrete_tiles",
+  "albedo_webp_bytes": 292998,
+  "nra_webp_bytes": 959572,
+  "albedo_ktx2_bytes": 1223070,
+  "nra_ktx2_bytes": 1081997
+ },
+ "copper_patina": {
+  "source": "ambientcg",
+  "id": "Metal058C",
+  "licence": "CC0",
+  "size_m": 1,
+  "px": 1024,
+  "mean_albedo_linear": [
+   0.278,
+   0.4764,
+   0.4056
+  ],
+  "mean_roughness": 0.454,
+  "url": "https://ambientcg.com/view?id=Metal058C",
+  "albedo_webp_bytes": 256270,
+  "nra_webp_bytes": 30942,
+  "albedo_ktx2_bytes": 1337815,
+  "nra_ktx2_bytes": 950870
+ }
+}
