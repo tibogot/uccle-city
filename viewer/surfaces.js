@@ -29,24 +29,26 @@ import { hashPhase, SURFACE } from "./roadData.js";
 import { ROAD_TYPES, LANE_TYPES } from "../vendor/roads/roadCrossSection.js";
 
 /** pipeline/build_surfaces.py CLASS */
-export const SURF_CLASS = { roadway: 0, tramRoad: 1, tramSite: 2, parking: 3, square: 4, sidewalk: 5, median: 6, path: 7, ramp: 8 };
+export const SURF_CLASS = { roadway: 0, tramRoad: 1, tramSite: 2, parking: 3, square: 4, sidewalk: 5, median: 6, path: 7, ramp: 8, pit: 9 };
 export const KERB = 0.13;          // sidewalk / square kerb face (m)
 export const MEDIAN_KERB = 0.15;   // islands a touch taller
 // ramp (a dropped kerb, build_surfaces.py): its height comes from the distance to the kerb (rampRise); RAISE is its
 // mean, for the walker and the lamps
-export const RAISE = [0, 0, 0, 0, KERB, KERB, MEDIAN_KERB, 0, 0.07];
+// pit: the soil of a tree pit (raster only: the walker and the tree stand on it), PIT_SINK under the paving
+export const PIT_SINK = 0.04;
+export const RAISE = [0, 0, 0, 0, KERB, KERB, MEDIAN_KERB, 0, 0.07, KERB - PIT_SINK];
 export const RAMP_LOW = 0.02, RAMP_DEPTH = 1.0;   // a dropped kerb: 2 cm at the kerb, the full KERB 1 m behind it
 // squares: their own part and material (viewer/cobbles.js: old irregular setts), one more draw where there is a square
-const PART = ["asphalt", "asphalt", "asphalt", "asphalt", "square", "concrete", "grass", "concrete", "concrete"];
+const PART = ["asphalt", "asphalt", "asphalt", "asphalt", "square", "concrete", "grass", "concrete", "concrete", "pits"];
 /** low classes the engine's markings may lie on (not tram sites or paths) */
-const OVERLAY = [1, 1, 0, 1, 0, 0, 0, 0, 0];
+const OVERLAY = [1, 1, 0, 1, 0, 0, 0, 0, 0, 0];
 /** where the engine's asphalt may stay: markable low ground, or anything raised (it is hidden under it) */
 const COVER = OVERLAY.map((o, c) => o || RAISE[c] > 0 ? 1 : 0);
 /** the carriageway between kerbs, for the width fit */
-const CARRIAGE = [1, 1, 1, 1, 0, 0, 0, 0, 0];
+const CARRIAGE = [1, 1, 1, 1, 0, 0, 0, 0, 0, 0];
 /** base surface code (roadData SURFACE): tram sites and squares setts (Place de Saint-Job, owner photos
  *  2026-11-05: the raised square is old setts, the roads round it asphalt), parking pavers */
-const BASE_SURF = [0, 0, 1, 2, 1, 0, 0, 0, 0];
+const BASE_SURF = [0, 0, 1, 2, 1, 0, 0, 0, 0, 0];
 export const CELL = 6;             // m: height-field grid
 // corner smoothing passes: 0. Tried 1-3 (plane-preserving, 4-neighbour): the street moves away from the DTM
 // (I6 median |H - DTM| 3.6 -> 6-10 cm), so folds are handled by the wide-stencil normals instead
@@ -196,7 +198,57 @@ class Part {
  * @param {(x:number, z:number) => number} ground  the un-carved DTM
  * @param {{x0,x1,z0,z1}} bounds  the tile
  */
-export function prepareSurfaces(surf, ground, bounds) {
+/** classes a tree pit is cut into (paved, walked on): parking, square, sidewalk, median */
+const PIT_HOST = new Set([3, 4, 5, 6]);
+
+/**
+ * TREE PITS. Every tree (LiDAR canopy peak or OSM) whose trunk stands on paved measured ground gets a square pit:
+ * four big stone slabs (pinwheel, flush with the paving) framing sunk soil, the trunk in the middle. The pit is
+ * centred on the trunk and only nudged (<= 0.25 m) if it would not fit on the paving; aligned to the nearest kerb,
+ * or to the square's rows. Returns [{ x, z, tx, tz, o (half size), w (slab width), host, raise, tree }].
+ * No cast-iron grate: the owner's Place de Saint-Job pits are open soil, and no Uccle photo source was checked yet.
+ */
+function placePits(trees, classAt, nearKerb, surf, bounds) {
+  const out = [];
+  for (const t of trees || []) {
+    if (t.x < bounds.x0 || t.x >= bounds.x1 || t.z < bounds.z0 || t.z >= bounds.z1) continue;
+    const host = classAt(t.x, t.z);
+    if (!PIT_HOST.has(host)) continue;
+    if (out.some((q) => (q.x - t.x) ** 2 + (q.z - t.z) ** 2 < (q.o * 2) ** 2)) continue;   // a neighbour's pit is here
+    const big = host === SURF_CLASS.square || host === SURF_CLASS.median;
+    // the pit grows with the tree (old plane trees have trunks ~1 m across): half size 0.7 .. 1.1 m
+    const want = Math.min(1.1, Math.max(big ? 0.8 : 0.7, 0.45 + 0.03 * (t.height ?? 9))), w = big ? 0.22 : 0.2;
+    let o = want;
+    // axis: the square's rows, else the nearest kerb, else north
+    let tx = 1, tz = 0;
+    const k = nearKerb(t.x, t.z);
+    if (host === SURF_CLASS.square) {
+      const sq = surf.surfaces.find((q) => q.c === SURF_CLASS.square && q.course != null);
+      if (sq) { tx = Math.cos(sq.course * Math.PI / 180); tz = Math.sin(sq.course * Math.PI / 180); }
+    } else if (k) { tx = k.tx; tz = k.tz; }
+    const fits = (cx, cz) => {
+      for (const a of [-1, -0.5, 0, 0.5, 1]) for (const b of [-1, -0.5, 0, 0.5, 1]) {
+        const x = cx + (tx * a - tz * b) * o, z = cz + (tz * a + tx * b) * o;
+        if (classAt(x, z) !== host) return false;
+      }
+      return true;
+    };
+    // nudge only: the trunk stays inside the soil square (half o - w >= 0.5 m)
+    const nx = -tz, nz = tx, away = k && k.d < 0 ? -1 : 1;     // away from the kerb = toward the raised side
+    let c = null;
+    for (const size of [want, 0.7]) {           // the full size, else the standard 1.4 m pit
+      o = size;
+      for (const [du, dv] of [[0, 0], [0, 0.25 * away], [0.25, 0], [-0.25, 0], [0.25, 0.25 * away], [-0.25, 0.25 * away], [0, -0.25 * away]])
+        if (fits(t.x + tx * du + nx * dv, t.z + tz * du + nz * dv)) { c = [t.x + tx * du + nx * dv, t.z + tz * du + nz * dv]; break; }
+      if (c) break;
+    }
+    if (!c) continue;
+    out.push({ x: c[0], z: c[1], tx, tz, o, w, host, raise: RAISE[host], tree: [t.x, t.z] });
+  }
+  return out;
+}
+
+export function prepareSurfaces(surf, ground, bounds, trees = null) {
   const t0 = (globalThis.performance ?? Date).now();
   const G = ground;
   const base = [];                       // { cls, si, a, b, c, hk }
@@ -380,7 +432,53 @@ export function prepareSurfaces(surf, ground, bounds) {
   const rampRise = (x, z) => { const k = nearKerb(x, z); const d = k ? Math.max(0, k.d) : RAMP_DEPTH; return RAMP_LOW + (KERB - RAMP_LOW) * Math.min(1, d / RAMP_DEPTH); };
   /** height above H of the surface class c at (x, z) */
   const riseAt = (c, x, z) => (c === SURF_CLASS.ramp ? rampRise(x, z) : RAISE[c]);
-  return { surf, G, H, nrmAt, rampRise, riseAt, base, halves, coverArea, convexCover, baseAt, classAt, grid: { data: grid, nx, nz, x0: bounds.x0, z0: bounds.z0, step: GRID },
+  // ---- tree pits: cut their outer squares out of the paving, mark their soil in the raster
+  const pits = trees ? placePits(trees, classAt, nearKerb, surf, bounds) : [];
+  if (pits.length) {
+    const keep = [];
+    for (const b of base) {
+      let cut = false, pieces = [[b.a, b.b, b.c]];
+      for (const P of pits) {
+        if (!PIT_HOST.has(b.cls)) break;
+        const r = P.o * 1.5;
+        if (Math.max(b.a[0], b.b[0], b.c[0]) < P.x - r || Math.min(b.a[0], b.b[0], b.c[0]) > P.x + r ||
+            Math.max(b.a[1], b.b[1], b.c[1]) < P.z - r || Math.min(b.a[1], b.b[1], b.c[1]) > P.z + r) continue;
+        const C = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, c2]) => [P.x + (P.tx * a - P.tz * c2) * P.o, P.z + (P.tz * a + P.tx * c2) * P.o]);
+        const ccw = ringArea(C) > 0 ? 1 : -1;
+        const next = [];
+        for (const poly of pieces) {
+          // poly minus the square = the sum over edges e of poly ∩ outside(edge e) ∩ inside(edges before e)
+          let inside = poly;
+          const outs = [];
+          for (let e = 0; e < 4 && inside.length >= 3; e++) {
+            const [ax, az] = C[e], [bx, bz] = C[(e + 1) % 4];
+            const outside = clipHalf(inside, ax, az, bx, bz, -ccw);
+            if (outside.length >= 3 && Math.abs(ringArea(outside)) > 1e-6) outs.push(outside);
+            inside = clipHalf(inside, ax, az, bx, bz, ccw);
+          }
+          if (inside.length >= 3 && Math.abs(ringArea(inside)) > 1e-6) { cut = true; next.push(...outs); }
+          else next.push(poly);                   // not touched by this pit: as it was
+        }
+        pieces = next;
+      }
+      if (!cut) { keep.push(b); continue; }
+      for (const p of pieces) for (let k2 = 1; k2 + 1 < p.length; k2++) if (Math.abs(area2(p[0], p[k2], p[k2 + 1])) > 1e-7) keep.push({ ...b, a: p[0], b: p[k2], c: p[k2 + 1] });
+    }
+    base.length = 0;
+    base.push(...keep);
+    halves.clear();
+    base.forEach((b, i) => push(halves, b.hk, i));
+    // the soil in the raster (the walker, the tree's foot)
+    for (const P of pits) {
+      const ins = P.o - P.w, R2 = Math.ceil(P.o / GRID) + 1, ci = Math.floor((P.x - bounds.x0) / GRID), cj = Math.floor((P.z - bounds.z0) / GRID);
+      for (let j = cj - R2; j <= cj + R2; j++) for (let i = ci - R2; i <= ci + R2; i++) {
+        if (i < 0 || j < 0 || i >= nx || j >= nz) continue;
+        const x = bounds.x0 + (i + 0.5) * GRID - P.x, z = bounds.z0 + (j + 0.5) * GRID - P.z;
+        if (Math.abs(x * P.tx + z * P.tz) < ins && Math.abs(-x * P.tz + z * P.tx) < ins) grid[j * nx + i] = SURF_CLASS.pit + 1;
+      }
+    }
+  }
+  return { pits, surf, G, H, nrmAt, rampRise, riseAt, base, halves, coverArea, convexCover, baseAt, classAt, grid: { data: grid, nx, nz, x0: bounds.x0, z0: bounds.z0, step: GRID },
     nearKerb, bounds, inside, fallbacks, streetCorners: street.size, ms: Math.round((globalThis.performance ?? Date).now() - t0) };
 }
 
@@ -495,6 +593,7 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
     concrete: new Part({ aKind: 1, aUv2: 2, aFrameW: 1 }),
     grass: new Part({}),
     square: new Part({}),
+    pits: new Part({ aKind: 1 }),          // tree pits: 0 soil (uv = metres from the centre), 1 edging slab (uv = s, L - s)
   };
 
   // ---- the engine's asphalt: kept over the measured street, or as built where UrbIS maps nothing
@@ -780,6 +879,53 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
     }
   }
 
+  // ---- tree pits: four stone slabs in a pinwheel (each one long side, butt joints that turn round the square), flush
+  // with the paving, framing soil sunk PIT_SINK; one part for all of the tile's pits (one draw)
+  const T = out.pits;
+  for (const P of prep.pits || []) {
+    const { o, w } = P, iw = o - w;
+    const X = (u, v) => [P.x + P.tx * u - P.tz * v, P.z + P.tz * u + P.tx * v];
+    const top = (u, v) => { const [x, z] = X(u, v); return H(x, z) + P.raise; };
+    const dirW = (du, dv) => [P.tx * du - P.tz * dv, 0, P.tz * du + P.tx * dv];
+    const slab = (u0, u1, v0, v1, alongU) => {
+      // top: uv.x = metres along the slab, uv.y = metres to its far end (the shader draws the joints at both ends)
+      const L = alongU ? u1 - u0 : v1 - v0, ex = (s2) => ({ aKind: 1 });
+      const q = [[u0, v0], [u1, v0], [u1, v1], [u0, v1]].map(([u, v]) => {
+        const s2 = alongU ? u - u0 : v - v0, [x, z] = X(u, v);
+        return T.vert(x, top(u, v), z, nrmAt(x, z), s2, L - s2, ex(s2));
+      });
+      T.tri(q[0], q[1], q[2], UP); T.tri(q[0], q[2], q[3], UP);
+    };
+    slab(-o, o - w, -o, -o + w, true);        // pinwheel: each slab runs from one corner to the next slab's side
+    slab(o - w, o, -o, o - w, false);
+    slab(-o + w, o, o - w, o, true);
+    slab(-o, -o + w, -o + w, o, false);
+    // the frame's inner faces down to the soil, and a short skirt on its outer edge (hides the paving cut)
+    const ring = (h, down, outward) => {
+      const c = [[-h, -h], [h, -h], [h, h], [-h, h]];
+      for (let k = 0; k < 4; k++) {
+        const [u0, v0] = c[k], [u1, v1] = c[(k + 1) % 4], [x0, z0] = X(u0, v0), [x1, z1] = X(u1, v1);
+        const nu = (v1 - v0) / (2 * h) * (outward ? 1 : -1), nv = -(u1 - u0) / (2 * h) * (outward ? 1 : -1), n = dirW(nu, nv);
+        const L = Math.hypot(x1 - x0, z1 - z0);
+        const a = T.vert(x0, top(u0, v0), z0, n, 0, L, { aKind: 1 }), b = T.vert(x1, top(u1, v1), z1, n, L, 0, { aKind: 1 });
+        const a2 = T.vert(x0, top(u0, v0) - down, z0, n, 0, L, { aKind: 1 }), b2 = T.vert(x1, top(u1, v1) - down, z1, n, L, 0, { aKind: 1 });
+        T.tri(a, a2, b2, n); T.tri(a, b2, b, n);
+      }
+    };
+    ring(iw, PIT_SINK + 0.005, false);
+    ring(o, 0.04, true);
+    // soil: a 2 x 2 grid over the inner square, sunk PIT_SINK (uv: metres from the pit centre)
+    const N = 2, id = [];
+    for (let j = 0; j <= N; j++) for (let i = 0; i <= N; i++) {
+      const u = -iw + 2 * iw * i / N, v = -iw + 2 * iw * j / N, [x, z] = X(u, v);
+      id.push(T.vert(x, top(u, v) - PIT_SINK, z, nrmAt(x, z), u, v, { aKind: 0 }));
+    }
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+      const a = id[j * (N + 1) + i], b = a + 1, c = a + N + 1, d = c + 1;
+      T.tri(a, b, d, UP); T.tri(a, d, c, UP);
+    }
+  }
+
   // ---- dropped kerbs: the sidewalk's side face along each ramp ("flanks", the ramp on the left), every 0.25 m
   for (const line of surf.flanks || []) {
     const pts = [line[0]];
@@ -828,7 +974,7 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
   const stats = {
     surfaces: surf.surfaces.length, baseTris: base.length, overlayTris, overlayWhole, overlayCutAtCreases: devFail, overlayCutAtStreetEdge: cutAtEdge, keptEngineTris: keptTris, droppedEngineTris: droppedTris,
     keptSideTris: keptSide, kerbLength: Math.round(kerbLen), mappedPieces: mapped.size, unmappedPieces: tally.size - mapped.size,
-    unframedSidewalkTris: unframed, cutFallbacks: prep.fallbacks, bollards: bollards.length,
+    unframedSidewalkTris: unframed, cutFallbacks: prep.fallbacks, bollards: bollards.length, treePits: (prep.pits || []).length,
     heightError: (() => {      // |H - DTM| at the triangle centroids (m)
       const d = base.map((b) => { const x = (b.a[0] + b.b[0] + b.c[0]) / 3, z = (b.a[1] + b.b[1] + b.c[1]) / 3; return Math.abs(H(x, z) - prep.G(x, z)); }).sort((p, q) => p - q);
       const q = (f) => Math.round((d[Math.floor(f * (d.length - 1))] || 0) * 1000) / 1000;

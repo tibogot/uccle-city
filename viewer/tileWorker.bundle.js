@@ -5650,17 +5650,18 @@ function driveGround(hm, parts) {
 }
 
 // viewer/surfaces.js
-var SURF_CLASS = { roadway: 0, tramRoad: 1, tramSite: 2, parking: 3, square: 4, sidewalk: 5, median: 6, path: 7, ramp: 8 };
+var SURF_CLASS = { roadway: 0, tramRoad: 1, tramSite: 2, parking: 3, square: 4, sidewalk: 5, median: 6, path: 7, ramp: 8, pit: 9 };
 var KERB = 0.13;
 var MEDIAN_KERB = 0.15;
-var RAISE = [0, 0, 0, 0, KERB, KERB, MEDIAN_KERB, 0, 0.07];
+var PIT_SINK = 0.04;
+var RAISE = [0, 0, 0, 0, KERB, KERB, MEDIAN_KERB, 0, 0.07, KERB - PIT_SINK];
 var RAMP_LOW = 0.02;
 var RAMP_DEPTH = 1;
-var PART = ["asphalt", "asphalt", "asphalt", "asphalt", "square", "concrete", "grass", "concrete", "concrete"];
-var OVERLAY = [1, 1, 0, 1, 0, 0, 0, 0, 0];
+var PART = ["asphalt", "asphalt", "asphalt", "asphalt", "square", "concrete", "grass", "concrete", "concrete", "pits"];
+var OVERLAY = [1, 1, 0, 1, 0, 0, 0, 0, 0, 0];
 var COVER = OVERLAY.map((o, c) => o || RAISE[c] > 0 ? 1 : 0);
-var CARRIAGE = [1, 1, 1, 1, 0, 0, 0, 0, 0];
-var BASE_SURF = [0, 0, 1, 2, 1, 0, 0, 0, 0];
+var CARRIAGE = [1, 1, 1, 1, 0, 0, 0, 0, 0, 0];
+var BASE_SURF = [0, 0, 1, 2, 1, 0, 0, 0, 0, 0];
 var CELL2 = 6;
 var SMOOTH_PASSES = 0;
 var LIFT = 6e-3;
@@ -5823,7 +5824,53 @@ var Part2 = class {
     };
   }
 };
-function prepareSurfaces(surf, ground, bounds) {
+var PIT_HOST = /* @__PURE__ */ new Set([3, 4, 5, 6]);
+function placePits(trees, classAt, nearKerb, surf, bounds) {
+  const out = [];
+  for (const t of trees || []) {
+    if (t.x < bounds.x0 || t.x >= bounds.x1 || t.z < bounds.z0 || t.z >= bounds.z1) continue;
+    const host = classAt(t.x, t.z);
+    if (!PIT_HOST.has(host)) continue;
+    if (out.some((q) => (q.x - t.x) ** 2 + (q.z - t.z) ** 2 < (q.o * 2) ** 2)) continue;
+    const big = host === SURF_CLASS.square || host === SURF_CLASS.median;
+    const want = Math.min(1.1, Math.max(big ? 0.8 : 0.7, 0.45 + 0.03 * (t.height ?? 9))), w = big ? 0.22 : 0.2;
+    let o = want;
+    let tx = 1, tz = 0;
+    const k = nearKerb(t.x, t.z);
+    if (host === SURF_CLASS.square) {
+      const sq = surf.surfaces.find((q) => q.c === SURF_CLASS.square && q.course != null);
+      if (sq) {
+        tx = Math.cos(sq.course * Math.PI / 180);
+        tz = Math.sin(sq.course * Math.PI / 180);
+      }
+    } else if (k) {
+      tx = k.tx;
+      tz = k.tz;
+    }
+    const fits = (cx, cz) => {
+      for (const a of [-1, -0.5, 0, 0.5, 1]) for (const b of [-1, -0.5, 0, 0.5, 1]) {
+        const x = cx + (tx * a - tz * b) * o, z = cz + (tz * a + tx * b) * o;
+        if (classAt(x, z) !== host) return false;
+      }
+      return true;
+    };
+    const nx = -tz, nz = tx, away = k && k.d < 0 ? -1 : 1;
+    let c = null;
+    for (const size of [want, 0.7]) {
+      o = size;
+      for (const [du, dv] of [[0, 0], [0, 0.25 * away], [0.25, 0], [-0.25, 0], [0.25, 0.25 * away], [-0.25, 0.25 * away], [0, -0.25 * away]])
+        if (fits(t.x + tx * du + nx * dv, t.z + tz * du + nz * dv)) {
+          c = [t.x + tx * du + nx * dv, t.z + tz * du + nz * dv];
+          break;
+        }
+      if (c) break;
+    }
+    if (!c) continue;
+    out.push({ x: c[0], z: c[1], tx, tz, o, w, host, raise: RAISE[host], tree: [t.x, t.z] });
+  }
+  return out;
+}
+function prepareSurfaces(surf, ground, bounds, trees = null) {
   const t0 = (globalThis.performance ?? Date).now();
   const G = ground;
   const base = [];
@@ -6026,7 +6073,55 @@ function prepareSurfaces(surf, ground, bounds) {
     return RAMP_LOW + (KERB - RAMP_LOW) * Math.min(1, d / RAMP_DEPTH);
   };
   const riseAt = (c, x, z) => c === SURF_CLASS.ramp ? rampRise(x, z) : RAISE[c];
+  const pits = trees ? placePits(trees, classAt, nearKerb, surf, bounds) : [];
+  if (pits.length) {
+    const keep = [];
+    for (const b of base) {
+      let cut = false, pieces = [[b.a, b.b, b.c]];
+      for (const P of pits) {
+        if (!PIT_HOST.has(b.cls)) break;
+        const r = P.o * 1.5;
+        if (Math.max(b.a[0], b.b[0], b.c[0]) < P.x - r || Math.min(b.a[0], b.b[0], b.c[0]) > P.x + r || Math.max(b.a[1], b.b[1], b.c[1]) < P.z - r || Math.min(b.a[1], b.b[1], b.c[1]) > P.z + r) continue;
+        const C = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, c2]) => [P.x + (P.tx * a - P.tz * c2) * P.o, P.z + (P.tz * a + P.tx * c2) * P.o]);
+        const ccw = ringArea(C) > 0 ? 1 : -1;
+        const next = [];
+        for (const poly of pieces) {
+          let inside2 = poly;
+          const outs = [];
+          for (let e = 0; e < 4 && inside2.length >= 3; e++) {
+            const [ax, az] = C[e], [bx, bz] = C[(e + 1) % 4];
+            const outside = clipHalf(inside2, ax, az, bx, bz, -ccw);
+            if (outside.length >= 3 && Math.abs(ringArea(outside)) > 1e-6) outs.push(outside);
+            inside2 = clipHalf(inside2, ax, az, bx, bz, ccw);
+          }
+          if (inside2.length >= 3 && Math.abs(ringArea(inside2)) > 1e-6) {
+            cut = true;
+            next.push(...outs);
+          } else next.push(poly);
+        }
+        pieces = next;
+      }
+      if (!cut) {
+        keep.push(b);
+        continue;
+      }
+      for (const p of pieces) for (let k2 = 1; k2 + 1 < p.length; k2++) if (Math.abs(area2(p[0], p[k2], p[k2 + 1])) > 1e-7) keep.push({ ...b, a: p[0], b: p[k2], c: p[k2 + 1] });
+    }
+    base.length = 0;
+    base.push(...keep);
+    halves.clear();
+    base.forEach((b, i) => push(halves, b.hk, i));
+    for (const P of pits) {
+      const ins = P.o - P.w, R2 = Math.ceil(P.o / GRID) + 1, ci = Math.floor((P.x - bounds.x0) / GRID), cj = Math.floor((P.z - bounds.z0) / GRID);
+      for (let j = cj - R2; j <= cj + R2; j++) for (let i = ci - R2; i <= ci + R2; i++) {
+        if (i < 0 || j < 0 || i >= nx || j >= nz) continue;
+        const x = bounds.x0 + (i + 0.5) * GRID - P.x, z = bounds.z0 + (j + 0.5) * GRID - P.z;
+        if (Math.abs(x * P.tx + z * P.tz) < ins && Math.abs(-x * P.tz + z * P.tx) < ins) grid[j * nx + i] = SURF_CLASS.pit + 1;
+      }
+    }
+  }
   return {
+    pits,
     surf,
     G,
     H,
@@ -6161,7 +6256,9 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     asphalt: new Part2({ aLateral: 1, aPiece: 2, aEdges: 4, aMark: 4, aSurf: 1 }),
     concrete: new Part2({ aKind: 1, aUv2: 2, aFrameW: 1 }),
     grass: new Part2({}),
-    square: new Part2({})
+    square: new Part2({}),
+    pits: new Part2({ aKind: 1 })
+    // tree pits: 0 soil (uv = metres from the centre), 1 edging slab (uv = s, L - s)
   };
   const E = built.asphalt, EP = E.position, EI = E.index, EA = E.attributes;
   const phaseOf = (v) => Math.round(EA.aPiece.array[v * 2] * 100) / 100;
@@ -6214,9 +6311,9 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     for (let i = Math.floor(Math.min(ax, bx) / 8); i <= Math.floor(Math.max(ax, bx) / 8); i++)
       for (let j = Math.floor(Math.min(az, bz) / 8); j <= Math.floor(Math.max(az, bz) / 8); j++) push(eseg, cellKey(i, j), [ax, az, bx, bz]);
   }
-  const segHitsTri = ([ax, az, bx, bz], T2) => {
+  const segHitsTri = ([ax, az, bx, bz], T3) => {
     const inT = (x, z) => {
-      const w = bary([x, z], T2[0], T2[1], T2[2]);
+      const w = bary([x, z], T3[0], T3[1], T3[2]);
       return w && w[0] >= 0 && w[1] >= 0 && w[2] >= 0;
     };
     if (inT(ax, az) || inT(bx, bz)) return true;
@@ -6226,17 +6323,17 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       const t = ((r[0] - p[0]) * (s2[1] - r[1]) - (r[1] - p[1]) * (s2[0] - r[0])) / d, u = ((r[0] - p[0]) * (q[1] - p[1]) - (r[1] - p[1]) * (q[0] - p[0])) / d;
       return t >= 0 && t <= 1 && u >= 0 && u <= 1;
     };
-    for (let k = 0; k < 3; k++) if (cross([ax, az], [bx, bz], T2[k], T2[(k + 1) % 3])) return true;
+    for (let k = 0; k < 3; k++) if (cross([ax, az], [bx, bz], T3[k], T3[(k + 1) % 3])) return true;
     return false;
   };
-  const edgesAcross = (T2) => {
-    const xs = T2.map((p) => p[0]), zs = T2.map((p) => p[1]), out2 = [], seen = /* @__PURE__ */ new Set();
+  const edgesAcross = (T3) => {
+    const xs = T3.map((p) => p[0]), zs = T3.map((p) => p[1]), out2 = [], seen = /* @__PURE__ */ new Set();
     for (let i = Math.floor(Math.min(...xs) / 8); i <= Math.floor(Math.max(...xs) / 8); i++)
       for (let j = Math.floor(Math.min(...zs) / 8); j <= Math.floor(Math.max(...zs) / 8); j++)
         for (const sg of eseg.get(cellKey(i, j)) || []) {
           if (seen.has(sg)) continue;
           seen.add(sg);
-          if (segHitsTri(sg, T2)) out2.push(sg);
+          if (segHitsTri(sg, T3)) out2.push(sg);
         }
     return out2;
   };
@@ -6491,6 +6588,53 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       prev = cur;
     }
   }
+  const T2 = out.pits;
+  for (const P of prep.pits || []) {
+    const { o, w } = P, iw = o - w;
+    const X = (u, v) => [P.x + P.tx * u - P.tz * v, P.z + P.tz * u + P.tx * v];
+    const top = (u, v) => {
+      const [x, z] = X(u, v);
+      return H(x, z) + P.raise;
+    };
+    const dirW = (du, dv) => [P.tx * du - P.tz * dv, 0, P.tz * du + P.tx * dv];
+    const slab = (u0, u1, v0, v1, alongU) => {
+      const L2 = alongU ? u1 - u0 : v1 - v0, ex = (s2) => ({ aKind: 1 });
+      const q = [[u0, v0], [u1, v0], [u1, v1], [u0, v1]].map(([u, v]) => {
+        const s2 = alongU ? u - u0 : v - v0, [x, z] = X(u, v);
+        return T2.vert(x, top(u, v), z, nrmAt(x, z), s2, L2 - s2, ex(s2));
+      });
+      T2.tri(q[0], q[1], q[2], UP2);
+      T2.tri(q[0], q[2], q[3], UP2);
+    };
+    slab(-o, o - w, -o, -o + w, true);
+    slab(o - w, o, -o, o - w, false);
+    slab(-o + w, o, o - w, o, true);
+    slab(-o, -o + w, -o + w, o, false);
+    const ring2 = (h, down, outward) => {
+      const c = [[-h, -h], [h, -h], [h, h], [-h, h]];
+      for (let k = 0; k < 4; k++) {
+        const [u0, v0] = c[k], [u1, v1] = c[(k + 1) % 4], [x0, z0] = X(u0, v0), [x1, z1] = X(u1, v1);
+        const nu = (v1 - v0) / (2 * h) * (outward ? 1 : -1), nv = -(u1 - u0) / (2 * h) * (outward ? 1 : -1), n = dirW(nu, nv);
+        const L2 = Math.hypot(x1 - x0, z1 - z0);
+        const a = T2.vert(x0, top(u0, v0), z0, n, 0, L2, { aKind: 1 }), b = T2.vert(x1, top(u1, v1), z1, n, L2, 0, { aKind: 1 });
+        const a2 = T2.vert(x0, top(u0, v0) - down, z0, n, 0, L2, { aKind: 1 }), b2 = T2.vert(x1, top(u1, v1) - down, z1, n, L2, 0, { aKind: 1 });
+        T2.tri(a, a2, b2, n);
+        T2.tri(a, b2, b, n);
+      }
+    };
+    ring2(iw, PIT_SINK + 5e-3, false);
+    ring2(o, 0.04, true);
+    const N = 2, id = [];
+    for (let j = 0; j <= N; j++) for (let i = 0; i <= N; i++) {
+      const u = -iw + 2 * iw * i / N, v = -iw + 2 * iw * j / N, [x, z] = X(u, v);
+      id.push(T2.vert(x, top(u, v) - PIT_SINK, z, nrmAt(x, z), u, v, { aKind: 0 }));
+    }
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+      const a = id[j * (N + 1) + i], b = a + 1, c = a + N + 1, d = c + 1;
+      T2.tri(a, b, d, UP2);
+      T2.tri(a, d, c, UP2);
+    }
+  }
   for (const line of surf.flanks || []) {
     const pts = [line[0]];
     for (let k = 1; k < line.length; k++) {
@@ -6559,6 +6703,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     unframedSidewalkTris: unframed,
     cutFallbacks: prep.fallbacks,
     bollards: bollards.length,
+    treePits: (prep.pits || []).length,
     heightError: (() => {
       const d = base.map((b) => {
         const x = (b.a[0] + b.b[0] + b.c[0]) / 3, z = (b.a[1] + b.b[1] + b.c[1]) / 3;
@@ -6717,7 +6862,7 @@ async function buildTileData(entry, base) {
     if (s) (r.meta ??= {}).surface = s;
   }
   const hm = new Heightmap(tHdr, tBuf);
-  const prep = surf ? await step("surfaces + width fit", () => prepareSurfaces(surf, hm.ground, bounds)) : null;
+  const prep = surf ? await step("surfaces + width fit", () => prepareSurfaces(surf, hm.ground, bounds, entry.pits === false ? null : feats.trees)) : null;
   const widthFit = prep ? fitRoadWidths(roads, prep) : null;
   const net = await step("buildRoadNetwork", () => buildRoadNetwork(roads, { ground: hm.ground }));
   const errors = net.issues.filter((i) => i.level === "error");

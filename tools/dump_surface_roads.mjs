@@ -26,7 +26,7 @@ const ov = JSON.parse(readFileSync(join(ROOT, "data", "overrides.json"), "utf8")
 for (const r of roads.roads) { const s = ov.roadSurface?.[r.id]; if (s) (r.meta ??= {}).surface = s; }
 const t0 = performance.now();
 const bounds = { x0: hdr.x0, z0: hdr.z0, x1: hdr.x0 + hdr.size, z1: hdr.z0 + hdr.size };
-const prep = prepareSurfaces(surf, hm.ground, bounds);
+const prep = prepareSurfaces(surf, hm.ground, bounds, J("features.json").trees);
 const widthFit = process.argv.includes("--no-fit") ? null : fitRoadWidths(roads, prep);
 const net = buildRoadNetwork(roads, { ground: hm.ground });
 const built = buildLaneRoadMesh(net, { markings: true });
@@ -48,7 +48,7 @@ const tris = (p) => {
 const count = (p) => (p ? p.index.length / 3 : 0);
 const engineTris = ["asphalt", "concrete", "grass"].reduce((n, k) => n + built[k].index.length / 3, 0);
 const doc = { tile, stats: S.stats, engineMs: Math.round(t1 - t0), adapterMs: Math.round(t2 - t1),
-  triangles: { asphalt: count(S.parts.asphalt), concrete: count(S.parts.concrete), grass: count(S.parts.grass), engineAllWithBuffer: engineTris },
+  triangles: { asphalt: count(S.parts.asphalt), concrete: count(S.parts.concrete), grass: count(S.parts.grass), square: count(S.parts.square), pits: count(S.parts.pits), engineAllWithBuffer: engineTris },
   vertices: { asphalt: S.parts.asphalt?.vertexCount, concrete: S.parts.concrete?.vertexCount, engineAsphaltWithBuffer: built.asphalt.vertexCount },
   asphalt: tris(S.parts.asphalt) };
 writeFileSync(join(out, `${tile}.surface-drawn.json`), JSON.stringify(doc));
