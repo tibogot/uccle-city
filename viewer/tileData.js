@@ -10,6 +10,9 @@ import { surfaceAttribute } from "./roadData.js";
 import { analyseBuildings, hash01, wallStyle } from "./facadeGeom.js";
 import { landCoverData } from "./landcover.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
+import { buildDriveData } from "./drive/colliders.js";
+import { prepareSurfaces, fitRoadWidths, buildSurfaceRoads } from "./surfaces.js";
+import { smoothPolyline } from "./track.js";
 
 export const CARVE = 0.12;         // terrain is pushed this far under any road surface
 // The 1 m terrain grid is 500k triangles a tile (half the scene); seen from above, 1 m triangles cover
@@ -58,7 +61,7 @@ const overrides = (base) => (overridesP ??= fetch(new URL("../overrides.json", b
 /** ROOF HEIGHTS: every building's top (m TAW) rasterised into a 2 m grid over the tile (0 = no building), for fly
  *  mode's collision (the bird's floor = max(ground, roof)). Scanline fill of each footprint's outer ring. */
 export const ROOF_STEP = 2;
-function roofGrid(bDoc, b) {
+export function roofGrid(bDoc, b) {
   const nx = Math.ceil((b.x1 - b.x0) / ROOF_STEP), nz = Math.ceil((b.z1 - b.z0) / ROOF_STEP);
   const g = new Float32Array(nx * nz);
   for (const bd of bDoc.buildings) {
@@ -85,6 +88,12 @@ function roofGrid(bDoc, b) {
   return { data: g, nx, nz, x0: b.x0, z0: b.z0, step: ROOF_STEP };
 }
 
+/** Is (x, z) under a building (roof grid cell > 0)? */
+export const onRoof = (g, x, z) => {
+  const i = Math.floor((x - g.x0) / g.step), j = Math.floor((z - g.z0) / g.step);
+  return i >= 0 && j >= 0 && i < g.nx && j < g.nz && g.data[j * g.nx + i] > 0;
+};
+
 /** Drop the UrbIS solids a scripted model replaces (entry.hide = BU_IDs, e.g. the Saint-Job church). */
 function hideBuildings(bDoc, hide) {
   if (!hide?.length) return;
@@ -103,20 +112,40 @@ export async function buildTileData(entry, base) {
   const [tHdr, tBuf, bDoc, bBuf, roads, feats] = await step("fetch", () => Promise.all([
     get(F.terrainHeader), get(F.terrain, true), get(F.buildings), get(F.buildingsBin, true), get(F.roads), get(F.features),
   ]));
+  // the OSM tram tracks as smooth curves (viewer/track.js): rails, wires, platforms and the trams all follow them
+  for (const l of feats.lines || []) if (l.kind === "tram") l.line = smoothPolyline(l.line);
+  // ?roads=surface: the measured UrbIS street surfaces of this tile (surfaces.json), when the tile has them
+  const surf = entry.surface && F.surfaces ? await step("fetch surfaces", () => get(F.surfaces)) : null;
   // hand corrections (data/overrides.json): road surfaces OSM gets wrong (Place de Saint-Job is setts)
   const ov = await overrides(base);
   for (const r of roads.roads) { const s = ov.roadSurface?.[r.id]; if (s) (r.meta ??= {}).surface = s; }
   const hm = new Heightmap(tHdr, tBuf);
+  // measured surfaces first, then the engine's lane stacks fitted into the measured kerb-to-kerb widths
+  const prep = surf ? await step("surfaces + width fit", () => prepareSurfaces(surf, hm.ground, bounds, entry.pits === false ? null : feats.trees)) : null;   // trees: their pits
+  const widthFit = prep ? fitRoadWidths(roads, prep) : null;
   const net = await step("buildRoadNetwork", () => buildRoadNetwork(roads, { ground: hm.ground }));
   const errors = net.issues.filter((i) => i.level === "error");
   const byCode = {};
   for (const i of errors) byCode[i.code] = (byCode[i.code] || 0) + 1;
   const netInfo = { roads: net.roads.length, nodes: net.nodes.length, errors: errors.length, byCode, warnings: net.issues.length - errors.length };
+  // the roof grid (fly-mode collision) keeps every solid, also the ones a model replaces (its envelope is close enough)
+  const roofs = await step("roof grid", () => roofGrid(bDoc, bounds));
   const road = await step("road meshes + carve", () => {
     const built = buildLaneRoadMesh(net, { markings: true });
     const parts = {};
-    let carvedCells = 0, triangles = 0;
-    for (const name of ["asphalt", "concrete", "grass"]) {
+    let carvedCells = 0, triangles = 0, surfaceStats = null, surfaceData = null;
+    if (surf) {
+      // measured surfaces + the engine's markings clipped to them (viewer/surfaces.js)
+      const S = buildSurfaceRoads(prep, built, surfaceAttribute(net, built.asphalt), roads, (x, z) => onRoof(roofs, x, z));
+      for (const c of S.carve) carvedCells += hm.carve(c.position, c.index, CARVE);
+      for (const [name, part] of Object.entries(S.parts)) {
+        parts[name] = { position: part.position, normal: part.normal, uv: part.uv, attributes: part.attributes, index: part.index, aSurf: part.extra };
+        triangles += part.index.length / 3;
+      }
+      surfaceStats = { ...S.stats, widthFit };
+      surfaceData = { grid: S.grid, kerbs: S.kerbs, bollards: S.bollards };
+    }
+    for (const name of surf ? [] : ["asphalt", "concrete", "grass"]) {
       const part = built[name];
       if (!part.vertexCount) continue;
       const index = clipToTile(part, bounds);
@@ -144,7 +173,7 @@ export async function buildTileData(entry, base) {
       atlas = { data: d8, width: W2, height: H2, format: "R8", scale: at.scale, range: at.range, texel: at.texel * 2,
         stats: { regions: at.stats?.regions, bytes: d8.length, bytesBefore: at.data.length } };
     }
-    return { parts, atlas, carvedCells, triangles };
+    return { parts, atlas, carvedCells, triangles, surfaceStats, surfaceData };
   });
   const terrain = await step("terrain grid", () => terrainArrays(hm));
   await step("terrain simplify", async () => {
@@ -152,12 +181,12 @@ export async function buildTileData(entry, base) {
     const [idx] = MeshoptSimplifier.simplify(terrain.idx, terrain.pos, 3, 0, TERRAIN_ERROR, ["LockBorder", "ErrorAbsolute"]);
     terrain.idx = idx;
   });
-  // the roof grid (fly-mode collision) keeps every solid, also the ones a model replaces (its envelope is close enough)
-  const roofs = await step("roof grid", () => roofGrid(bDoc, bounds));
+  // drive colliders too: a replaced solid's footprint is the hero model's footprint (Saint-Job church)
+  const drive = await step("drive colliders", () => buildDriveData({ bDoc, net, feats, hm, parts: road.parts, bounds }));   // drive mode (viewer/drive/)
   hideBuildings(bDoc, entry.hide);
   const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats));
   const cover = await step("land cover", () => landCoverData(feats, bounds));
-  return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs,
+  return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs, drive,
     netInfo, road, terrain, buildings, cover, times };
 }
 

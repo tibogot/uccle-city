@@ -15,6 +15,8 @@
 | **Digital terrain model** (DTM 2021, from the LiDAR flight of 2021-10-09, 0.5 m GeoTIFF), Paradigm, dataset `1d7bd49d-fe83-4388-af85-6f5dc8ec7909`. Note: it is listed as "Digital terrain model", not as an UrbIS product. | terrain heightmap | **CC0 1.0** (same wording as above). Access: "No limitations to public access". | Not required. Voluntary: "Digital terrain model 2021 – © Paradigm (paradigm.brussels), CC0". | 2026-11-02, https://datastore.brussels/web/data/dataset/1d7bd49d-fe83-4388-af85-6f5dc8ec7909. The metadata does **not** state the height datum or embed a CRS in the GeoTIFFs (see CONTRACT 2.1). |
 | **Orthophoto 2024 (North-South axis)**, Paradigm, dataset `791c9293-e20e-4189-8bdc-e73f8b2fa54c`, read through the raster WMS `geoservices-grid.irisnet.be/geoserver/urbisgrid/wms` (layer `Ortho2024NS`, 25 cm/px) | real roof colours (`roofColor`); the image itself is not published | **CC0 1.0** (same wording as the other Paradigm datasets) | Not required. Voluntary: "Orthophoto 2024 – © Paradigm (paradigm.brussels), CC0". | 2026-11-03, https://datastore.brussels/web/data/dataset/791c9293-e20e-4189-8bdc-e73f8b2fa54c |
 | **UrbIS - Digital surface model** (DSM 2021, 0.5 m, same LiDAR flight as the DTM), Paradigm, dataset `8c2d921e-6a53-11ed-bfb5-010101010000` | trees: canopy height model (DSM − DTM) → tree positions, heights, crowns | **CC0 1.0** (same wording as the other Paradigm datasets) | Not required. Voluntary: "UrbIS Digital surface model 2021 – © Paradigm (paradigm.brussels), CC0". | 2026-11-03, https://datastore.brussels/web/data/dataset/8c2d921e-6a53-11ed-bfb5-010101010000 |
+| **UrbIS - Land cover** (*Occupation du sol*), Paradigm, dataset `b718705d-f70f-11ee-8282-00090ffe0001`. Release used: `20261002` (GPKG, whole region, sheet code 04000), https://urbisdownload.datastore.brussels/UrbIS/Vector/M8/UrbIS-Landcover/GPKG/UrbISLandCover_31370_GPKG_04000_20261002.zip | measured street surfaces (`StreetSurfaces`: roadway, sidewalk, junction, median, tram, parking, square) -> `data/tiles/<T>/surfaces.json`, drawn with `?roads=surface` | **CC0 1.0** (dataset page; Atom rights "No limitations to public access") | Not required. Voluntary: "UrbIS Land cover – © Paradigm (paradigm.brussels), CC0". | 2026-11-04, https://datastore.brussels/web/data/dataset/b718705d-f70f-11ee-8282-00090ffe0001 |
+| **UrbIS - Topo** road lines (kerb `BR0101L`), Paradigm, served by Brussels Mobility as WFS layer `bm_urbis_topo:road_line` (https://data-mobility.irisnet.be/geoserver/ows) | the kerbs derived from Land cover are checked against the surveyed kerb lines (`surfaces.json` `kerbCheck`); the bollards drawn with `?roads=surface` are the surveyed fixed bollards (`CR5702P`, layer `bm_urbis_topo:pole_point`) and bollard lines (`CR57L`, `pole_line`) | **CC0 1.0** (UrbIS Topo; record https://geobru-geonetwork.irisnet.be/geonetwork/srv/api/records/10ded91e-6a63-11ed-9d77-010101010000) | Not required. Voluntary, as above. | 2026-11-04 |
 | **UrbIS - Transport networks**, Paradigm, dataset `af847c40-848b-11ee-9a1f-00090ffe0001`. Release used: `20261002` (GPKG). | checking the OSM road graph and street names (not in any output file yet) | **CC0 1.0** (same wording). Access: "No limitations to public access". | Not required. Voluntary, as above. | 2026-11-02, https://datastore.brussels/web/data/dataset/af847c40-848b-11ee-9a1f-00090ffe0001 |
 
 The exact download URLs, the Atom feeds that list every sheet and release, and
@@ -57,6 +59,39 @@ the check dates are in `pipeline/sources.json`.
 | scipy | BSD-3 | pipeline (tree peaks in the canopy height model) |
 | mrdoob/slop-newyork (techniques and adapted code in `viewer/lighting.js`, `post.js`, `tslkit.js`, `facades.js` interiors, `trees.js` approach) | MIT, © 2026 Mr.doob | Notice kept in `viewer/tslkit.js`; source credited in each file header. |
 | mrdoob/slop-newyork tree system (`vendor/slop-trees/`: `trees.js`, `building-collision.js`, tree material), commit `737b7691` | MIT, © Mr.doob | `vendor/slop-trees/LICENSE` and `ORIGIN.md`. Used by `viewer/treesSlop.js` |
+
+## 3D models (CC0 packs, Car Lab comparison)
+
+Raw downloads in `data/raw/cars/<source>/` (git-ignored, read as data only). Converted by `tools/cars/convertPacks.mjs`
+into `models/cars/kenney.glb` and `models/cars/quaternius.glb` (palette baked to vertex colours, rescaled, re-oriented);
+used by the Car Lab (`labs/car-lab.html?mode=compare`, `?mode=street`) and as optional drive-mode cars (`?car=`).
+Not in the city's parked cars (the owner picks first).
+
+| Asset | Author / source | Licence | Used | Verified |
+|---|---|---|---|---|
+| **Car Kit** 3.1 (2026-04-02), kenney.nl/assets/car-kit | Kenney (www.kenney.nl) | **CC0 1.0** (`License.txt` in the pack: "You can use this content for personal, educational, and commercial purposes. Support by crediting 'Kenney' or 'www.kenney.nl' (this is not a requirement)") | hatchback-sports, sedan, taxi, suv, van, delivery | 2026-11-05, the pack's License.txt and the asset page |
+| **Cars Pack** (Nov 2018), quaternius.com/packs/cars.html; GLBs from the poly.pizza "Cars Bundle" (poly.pizza/bundle/Cars-Bundle-FE5IWe6OMk; the Google Drive download was over quota) | Quaternius (quaternius.com) | **CC0 1.0** (asset page: "CC0 … free to use in personal and commercial projects"; poly.pizza lists each model "Public Domain (CC0)") | NormalCar1 (saloon), NormalCar2 (small hatchback), Taxi, SUV, Police car | 2026-11-05, quaternius.com/packs/cars.html and the poly.pizza bundle page |
+
+Credit shown voluntarily in the Car Lab: "Kenney (kenney.nl), CC0", "Quaternius (quaternius.com), CC0".
+
+`models/cars/faceted.glb` is ours: generated entirely by `tools/blender/carFaceted.py` (generic proportions of European
+car classes, no real brand's design, no logos; plate characters are random, no real registration). The taxi livery
+(black, yellow chequer band, amber TAXI roof sign) follows photos of Brussels taxis on Wikimedia Commons (Category:Taxis
+in Brussels, e.g. "Taxi in Brussels 2026.jpg", "Skoda Taxis in Brussels.jpg"), used as reference only, not included.
+
+## 3D characters (third-person slot, Capsule Lab and `?view=third`)
+
+Raw downloads in `data/raw/characters/polypizza/` (git-ignored, read as data only). Converted by
+`tools/characters/convertCharacters.mjs` into `models/characters/hoodie.glb` and `casual.glb` (7 of 24 clips kept,
+buffer compacted); at load `viewer/character/characterModel.js` merges the four parts into one skinned mesh with the
+material colours baked to vertex colours.
+
+| Asset | Author / source | Licence | Used | Verified |
+|---|---|---|---|---|
+| **Hoodie Character** (poly.pizza/m/gKLBoRsyKe) and **Casual Character** (poly.pizza/m/kZ3DmIoGip), from the **Ultimate Modular Men Pack** (Feb 2022), quaternius.com/packs/ultimatemodularcharacters.html (the pack's Google Drive download was over quota) | Quaternius (quaternius.com) | **CC0 1.0** (pack page: "CC0", linked to creativecommons.org/publicdomain/zero/1.0; poly.pizza lists both "Public Domain (CC0)") | the meshes, skeleton and the Idle_Neutral / Walk / Run clips (Run also held as the jump / fall pose) | 2026-11-05, the pack page and both poly.pizza pages |
+
+Not used: Quaternius' newer packs under the "Quaternius Asset Licence" (only the CC0 pack above is used), and
+three.js's example Soldier.glb (Mixamo, not shippable; it was only loaded by URL in a test, never copied).
 
 ## Public transport
 

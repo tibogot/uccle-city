@@ -23,6 +23,19 @@ export const STJOB_LODS = [
 ];
 export const STJOB_BU_ID = "https://databrussels.be/id/building/1587133";
 
+/**
+ * Drive-mode colliders the UrbIS footprint does not have: the front flight of steps (stjob.py steps(): the front face
+ * 25.53 m out on -z, cheek walls at +-3.0 m, a 1.25 m landing and 13 runs of 0.34 m fanning out to 10.4 m), as a
+ * city-local polygon ({ rings, kind: 5 = wall } for viewer/drive/colliders.js).
+ */
+export function stjobColliders(placement) {
+  const face = 25.53, foot = face + 1.25 + 13 * 0.34;
+  const local = [[-3.0, -face + 0.3], [3.0, -face + 0.3], [5.2, -foot], [-5.2, -foot]];
+  const c = Math.cos(placement.rotationY), s = Math.sin(placement.rotationY), p = placement.position;
+  const ring = local.map(([x, z]) => [p.x + x * c + z * s, p.z - x * s + z * c]);   // three.js rotation.y
+  return [{ rings: [ring], kind: 5 }];
+}
+
 /** Live look controls (uniforms: no recompiles). */
 export const stjobLook = {
   brickTone: uniform(1.0), bandStrength: uniform(1.0), moss: uniform(1.0), aoStrength: uniform(1.0), dirt: uniform(1.0),

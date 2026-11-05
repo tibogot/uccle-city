@@ -56,6 +56,9 @@ def main():
             failed.append(f"{t}:roads")
         if step(["build_features.py", "--tile", t]):
             failed.append(f"{t}:features")
+        # measured street surfaces (optional layer, viewer ?roads=surface): needs fetch_urbis.py landcover
+        if any((RAW / "urbis" / "landcover").rglob("*.gpkg")) and step(["build_surfaces.py", "--tile", t]):
+            failed.append(f"{t}:surfaces")
         if not a.skip_terrain and step(["build_terrain.py", "--tile", t]):
             failed.append(f"{t}:terrain")
         if not a.skip_buildings:

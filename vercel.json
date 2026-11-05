@@ -12,7 +12,7 @@
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" }]
     },
     {
-      "source": "/data/tiles/manifest.json",
+      "source": "/data/(tiles/manifest|overrides)\\.json",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
     },
     {

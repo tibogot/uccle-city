@@ -10,11 +10,39 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 
 1. [x] **Roof collision for fly mode**: a 2 m roof-height grid per tile (tile worker), `world.heightAt` = max(ground, roofs).
    Driving will need real wall collision (BVH) later.
-2. **Parked cars from Blender**: 4-6 scripted body types, meshoptimizer LODs, a **Car Lab** first, owner approves,
-   then they replace the boxes (also a GPU saving: cars are ~784k triangles per view).
+2. **Parked cars**: the owner rejected the scripted car's look; **owner to pick** in the Car Lab comparison
+   (`labs/car-lab.html?mode=compare`, `?mode=street`, branch claude/cars): scripted vs Kenney Car Kit vs Quaternius Cars
+   Pack (CC0, `models/cars/`, one material per pack, meshoptimizer LODs at load), and (branch claude/car-faceted) our own
+   faceted family `faceted:<id>` (tools/blender/carFaceted.py: 7 types + taxi, ~7.4k tris, baked AO, see-through glass;
+   previews docs/cars/faceted_*.png). Then the pick replaces the boxes in
+   `viewer/cars.js` (instancing per model / LOD, as the street benchmark does; also a GPU saving: cars are ~784k
+   triangles per view).
 3. **All of Uccle**: re-fetch raw data on this machine, set up the Python pipeline, extend the grid (section 1).
 Then: road fixes (z-fighting, breaks in curves, grooved tram rails), rain / wet roads,
 winter (7b), dev panel teleports to named places.
+
+**Roads, surface first (`?roads=surface`, branch claude/roads-surface, 2026-11-05):** UrbIS Land cover street surfaces
+cut per tile (`pipeline/build_surfaces.py` -> `surfaces.json`, built for I6 + its 8 neighbours), drawn by
+`viewer/surfaces.js` in the tile worker: measured roadway / sidewalks (+13 cm) / kerbs / medians / squares, the engine's
+markings clipped to the measured roadway. Audit (`tools/audit_surfaces.py`): buildings >= 1 m into the road on the
+9 tiles 148 -> 3. Left: (a) lane fitting into the measured width (engine edge lines sit at the engine's kerbs, so on
+streets the engine made too narrow they float inside the asphalt; too wide: clipped away), (b) dropped kerbs at
+crossings / driveways (Topo `CR42L`), (c) lamps, parked cars and the walker still follow the engine's kerbs / ground,
+(d) levels +1 / -1 (bridges, tunnels) skipped, (e) all 120 tiles: `python pipeline/run_tile.py --all` now runs
+build_surfaces.py when the Land cover GPKG is in data/raw (or loop build_surfaces.py --tile), then build_manifest.py;
+then make it the default after an owner look.
+Fix pass 2026-11-05 (same branch): Place de Saint-Job square raised + setts, roads round it asphalt; UrbIS bollards;
+merged + smoothed surfaces, kerb-aligned paving; width fit (lane stacks into the measured kerb-to-kerb width);
+lamps / parked cars / walker on the measured street; smooth shared tram track, sticky snapping, trapezoid speed.
+Still open: paving seams where a wide sidewalk meets two kerbs (pattern turns along a jagged triangle line, e.g. the
+church forecourt), dropped kerbs (CR42L, 303 lines in I6 are fetchable from bm_urbis_topo:street_furniture_line),
+one-sided roads skipped by the width fit, the tram path's small kink where two tiles' tracks meet, level +1 / -1.
+All tiles: `python pipeline/build_surfaces.py --all` (4 WFS queries per tile, cached) then `python pipeline/build_manifest.py`.
+Finishing pass 2026-11-05: DONE for all 120 tiles and made the DEFAULT (`?roads=engine` = the old roads). Old setts on the
+squares (viewer/cobbles.js), filtered paving (no far band), darker sidewalks, kerb/straight frame cross-fade, dropped
+kerbs at driveways and crossings, tram path continuous across tile seams. All Uccle: buildings >= 1 m into the drawn
+road 1121 -> 45 (all on engine roads UrbIS does not map). Left: UrbIS forest drives (Sonian forest) drawn as asphalt,
+road meshes ~2.4x the engine's triangles (ramps, kerbs), the blend zone of the two paving frames reads slightly soft.
 
 **Rules agreed with the owner (keep):** every new asset gets a lab in `labs/` first and goes into the city only after
 the owner approves it there; panels and labs use our own `viewer/panelUI.js` (never lil-gui); game-engine-v1 is
@@ -27,6 +55,39 @@ read-only (copy into `vendor/` with ORIGIN.md); measure GPU ms before / after (s
 - Setts: procedural is the default; the Poly Haven scan stays as `?setts=tex` for a later texture pass (KTX2).
 - Volumetric fog is opt-in only (`?vfog=1`, dev panel) until it is tuned.
 - Tree impostors off (`?impostors=1`) until 16x16 views + depth atlas.
+
+## Third-person character (Capsule Lab, branch claude/capsule; waiting for the owner)
+- [x] `viewer/character/`: kinematic capsule controller (120 Hz fixed step + interpolation, collide-and-slide, step-up
+      by rolling over walkable edges + an explicit up-forward-down step, ground snap, slope limit, coyote / jump buffer),
+      spring-arm camera with collision (shoulder ray + 5 probe rays, snap in / ease out, capsule fade), the character
+      slot (`body.setModel(gltf, { clips, walkSpeed, runSpeed })`), collision world: own triangle BVH + footprint prisms
+      (48 m cells, after claude/drive's colliders.js) + heightfield. Zero allocations per step (checked: 0 GCs in 200k steps).
+- [x] `labs/capsule-lab.html`: test course + 30 scripted tests (T), benchmark, tunables, debug draw. Screens: `docs/capsule/`.
+- [x] City test hook `?view=third` (I6, Place de Saint-Job): roads BVH from the tile's road meshes, UrbIS footprints,
+      trunks, lamp posts, terrain. `?chardebug=1` = debug draw.
+- [x] A real character in the slot: Quaternius "Hoodie" (Ultimate Modular Men, CC0; also "Casual"), `models/characters/`
+      (`tools/characters/convertCharacters.mjs`), merged at load to one skinned mesh + one vertex-colour material (6.2k
+      triangles); idle / walk / run with playback matched to the stride speed measured from the foot bones (walk 1.29,
+      run 2.93 m/s); the pack has no jump clip: a held run stride stands in for jump / fall.
+- [x] Foot IK (`viewer/character/footIK.js`): per-foot ray, two-bone leg IK with the animated knee as pole, foot tilt to
+      the ground normal (<= 28°), pelvis drop to the lower planted foot (<= 16 cm), all eased; off in the air, softer at
+      a run. ~0.03 ms per frame (whole character with animation ~0.16-0.19 ms). Screens `docs/capsule/ik-*.png`.
+- [x] City: tram platforms (in the roads BVH), parked cars + bus / tram shelters (oriented boxes, also stop the camera),
+      benches, stop poles, signals, bike racks, tram poles, trunks, lamp posts (body only, the camera ignores them),
+      bollards (any InstancedMesh named *bollard*, ready for the roads branch). "Third person" button + dev panel entry.
+      Roads BVH + buildings.json + prism hashing in `viewer/character/colliderWorker.js`; the main thread gathers in
+      slices of <= 4 ms.
+- [x] Cadence: with a character in the slot the controller walks at 1.59 and runs at 4.0 m/s (clip speeds calibrated in
+      the lab: 1.38 / 3.15 m/s), gaits blended between those two speeds, playback 1.15x / 1.27x (capped 0.5-1.35x);
+      the stance foot slides 0.17 m/s walking, 0.33 m/s running (was 0.5).
+- [ ] A jump / fall clip: none on this rig in a CC0 pack. Universal Animation Library 1 / 2 are CC0 (UAL2 License.txt
+      checked) but on a UE-style rig (pelvis / thigh_l ...) and UAL2 has only NinjaJump: retargeting needs per-bone
+      rest-pose correction. The held run stride stays for now.
+- [x] Shelters are their own triangles in the roads BVH (open front, roof at 2.41 m: you walk in); lab test passes.
+- [ ] Interiors: exclude the entered house's footprint prism (`PrismSet.exclude(BU_ID)`) and add its interior BVH;
+      sun light leaks at wall seams indoors (shadow normalBias 5 cm vs 20 cm walls): interior lighting needs its own pass.
+- [ ] City: tram platforms, shelters, benches, bollards and parked cars are not colliders yet; build the roads BVH in
+      the tile worker (25-60 ms on the main thread per tile today); a Third-person button in the UI.
 
 ## STIB tram model (approved by the owner 2026-11-04, merged)
 - [x] T3000 (line 92's stock) scripted in Blender (`tools/blender/tram.py`), loader / LODs / placement `viewer/tramModel.js`,
@@ -142,7 +203,11 @@ falcon, labs (Bird, Lamp), the dev panel.
       wet roads, falling snow. Switchable by date or a preset.
 
 ## 8. Game / app
-- [ ] Driving: a car controller on the road engine's surfaces (the "car game" goal).
+- [x] Driving (branch claude/drive): Car Lab + drive mode, arcade car on the drivable-surface grid, footprint / island /
+      trunk / lamp colliders per tile (viewer/drive/, `?view=drive`). Next: parked cars and trams as colliders (oriented
+      boxes), car-vs-car (slop vehicle-physics.js SAT), per-wheel ground (one wheel on a kerb), engine / tyre sound,
+      headlight beams at night without adding scene lights (light count change = shader recompiles), the Blender car
+      replacing the parked boxes (instanced LOD1/2, colour per instance).
 - [ ] Modes: walk, bike, drive, drone / photo mode; minimap with real street names.
 - [ ] Missions or uses: deliveries, taxi, "find this place", time slider (historic maps).
 - [ ] Multiplayer (later).

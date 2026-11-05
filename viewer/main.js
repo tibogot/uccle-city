@@ -6,15 +6,18 @@
 
 import * as THREE from "three/webgpu";
 import {
-  color, float, uniform, positionWorld, normalWorld, fract, min, fwidth, smoothstep, mix, abs,
+  color, float, uniform, positionWorld, normalWorld, fract, min, fwidth, smoothstep, mix, abs, uv, vec3,
 } from "three/tsl";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { buildLamps, setLampModel } from "./lamps.js";
 import { loadLampModel } from "./lampModel.js";
-import { loadStJob, STJOB_LODS, STJOB_BU_ID } from "./stjobModel.js";
+import { loadStJob, STJOB_LODS, STJOB_BU_ID, stjobColliders } from "./stjobModel.js";
 import { buildFurniture } from "./furniture.js";
 import { buildTram } from "./tram.js";
 import { buildCars } from "./cars.js";
+import { carFleet } from "./carFleet.js";
+import { streetFit, buildBollards } from "./streetFit.js";
+import { cobbleMaterial, pitMaterial } from "./cobbles.js";
 import { landCoverTexture, groundMaterial } from "./ground.js";
 import { Heightmap } from "./heightmap.js";
 import { createTramLine } from "./tramline.js";
@@ -28,6 +31,7 @@ import { buildStylizedTreeField, setTreeLighting, setTreeRenderer } from "./tree
 import { openBootPipelines, warmBoot } from "./warmup.js";
 import { buildPlazas, loadOverrides } from "./plazas.js";
 import { Flyer } from "./flight.js";
+import { Driver, tileDrive } from "./drive/driveMode.js";
 import { addLamps } from "./lampLight.js";
 import { SMOOTH, lodEye, Fader, withObjectFade } from "./lodFade.js";
 import { buildFarTreeField } from "./treesStylized.js";
@@ -131,7 +135,8 @@ function buildingMeshes(doc, buf) {
 
 /** GPU meshes for a tile's roads from the worker's data (tileData.js). */
 function roadMeshes(road) {
-  const mats = { asphalt: asphaltMaterial(road.atlas), concrete: sharedMat("concrete", concreteMaterial), grass: sharedMat("verge", vergeMaterial) };
+  const mats = { asphalt: asphaltMaterial(road.atlas), grass: sharedMat("verge", vergeMaterial), square: sharedMat("cobbles", cobbleMaterial), pits: sharedMat("tree-pits", pitMaterial),
+    concrete: road.surfaceStats ? sharedMat("concrete-framed", () => concreteMaterial({ framed: true })) : sharedMat("concrete", concreteMaterial) };
   const meshes = [];
   for (const [name, part] of Object.entries(road.parts)) {
     const g = new THREE.BufferGeometry();
@@ -158,21 +163,44 @@ function sharedMat(key, make) {
 
 // ------------------------------------------------------------------ features (tram lines, trees)
 
-function featureObjects(f, hm, bounds) {
+// grooved rail cross-section (m, from the gauge side): check lip, groove, running head, then an asphalt seam
+const RAIL_LIP = 0.015, RAIL_GROOVE = 0.035, RAIL_HEAD = 0.065, RAIL_SEAM = 0.02, RAIL_W = RAIL_LIP + RAIL_GROOVE + RAIL_HEAD + RAIL_SEAM;
+function railMaterial() {
+  const m = new THREE.MeshStandardNodeMaterial({ polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, side: THREE.DoubleSide });
+  const v = uv().y.mul(RAIL_W), aa = fwidth(v).add(0.0015);
+  const edge = (e) => smoothstep(float(e).sub(aa), float(e).add(aa), v);      // 0 before e, 1 after
+  const lip = float(1).sub(edge(RAIL_LIP)), groove = edge(RAIL_LIP).sub(edge(RAIL_LIP + RAIL_GROOVE));
+  const head = edge(RAIL_LIP + RAIL_GROOVE).sub(edge(RAIL_LIP + RAIL_GROOVE + RAIL_HEAD)), seam = edge(RAIL_LIP + RAIL_GROOVE + RAIL_HEAD);
+  // polished running head, duller lip, dirty groove (dark but not black), the bitumen seam beside the rail
+  let col = vec3(0.32, 0.31, 0.3).mul(lip).add(vec3(0.035, 0.03, 0.026).mul(groove)).add(vec3(0.55, 0.55, 0.56).mul(head)).add(vec3(0.04, 0.04, 0.042).mul(seam));
+  // far away a pixel covers the whole rail: the average, not aliasing stripes
+  const far = smoothstep(float(0.02), float(0.07), aa);
+  col = mix(col, vec3(0.22, 0.215, 0.21), far);
+  m.colorNode = col;
+  m.metalnessNode = mix(head.mul(0.85).add(lip.mul(0.5)), float(0.3), far);
+  m.roughnessNode = mix(float(0.9).sub(head.mul(0.62)).sub(lip.mul(0.3)), float(0.6), far);
+  return m;
+}
+
+/** `treeGround(x, z)`: where a trunk stands (?roads=surface: on the measured paving / in its pit's soil) */
+function featureObjects(f, hm, bounds, railLift = 0.012, treeGround = (x, z) => hm.surface(x, z)) {
   const group = new THREE.Group();
   group.name = "features";
   const inTile = (x, z) => x >= bounds.x0 && x <= bounds.x1 && z >= bounds.z0 && z <= bounds.z1;
-  // Tram rails: two grooved steel rails at standard gauge (1.435 m) along each OSM tram line, laid on
-  // the road surface. (Footpaths etc. in features.lines are not drawn here: the 2D debug page has them.)
-  const GAUGE = 1.435, RAIL = 0.07, GROOVE = 0.035;
-  const steel = [], groove = [];
-  const ribbon = (out, pts, off, w) => {
+  // Tram rails: two grooved rails (Ri60-type: check lip, groove, running head) at standard gauge (1.435 m) along
+  // each OSM tram line (smoothed in the tile worker, viewer/track.js), embedded flush in the road: one ribbon per
+  // rail, 13.5 cm wide, whose cross-section is painted by railMaterial() (lip | groove | head | asphalt seam), so it
+  // is one mesh and one draw for every rail of the tile and stays clean at a distance (no thin black lines).
+  const GAUGE = 1.435, W = RAIL_W;
+  const pos = [], uvs = [], nrm = [];
+  const ribbon = (pts, side) => {
+    // side -1 / +1: the strip runs from the gauge side (lip) outward
+    const o0 = side * (GAUGE / 2 - RAIL_LIP - RAIL_GROOVE), o1 = o0 + side * W;
     for (let k = 0; k + 1 < pts.length; k++) {
-      const q = [pts[k], pts[k + 1]].map(([x, z, nx, nz]) => [[x + nx * (off - w / 2), z + nz * (off - w / 2)], [x + nx * (off + w / 2), z + nz * (off + w / 2)]]);
-      const y = (p) => hm.surface(p[0], p[1]) + CARVE + 0.012;
+      const q = [pts[k], pts[k + 1]].map(([x, z, nx, nz]) => [[x + nx * o0, z + nz * o0], [x + nx * o1, z + nz * o1]]);
+      const y = (p) => hm.surface(p[0], p[1]) + CARVE + railLift;
       const [a0, a1] = q[0], [b0, b1] = q[1];
-      out.push(a0[0], y(a0), a0[1], b0[0], y(b0), b0[1], a1[0], y(a1), a1[1]);
-      out.push(a1[0], y(a1), a1[1], b0[0], y(b0), b0[1], b1[0], y(b1), b1[1]);
+      for (const [p, v] of [[a0, 0], [b0, 0], [a1, 1], [a1, 1], [b0, 0], [b1, 1]]) { pos.push(p[0], y(p), p[1]); uvs.push(0, v); nrm.push(0, 1, 0); }
     }
   };
   for (const l of f.lines || []) {
@@ -180,7 +208,7 @@ function featureObjects(f, hm, bounds) {
     const dense = [];
     for (let k = 1; k < l.line.length; k++) {
       const [ax, az] = l.line[k - 1], [bx, bz] = l.line[k];
-      const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az)));      // every metre, so rails follow the ground
+      const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az)));      // every metre at most, so rails follow the ground
       for (let s2 = k === 1 ? 0 : 1; s2 <= n; s2++) dense.push([ax + (bx - ax) * s2 / n, az + (bz - az) * s2 / n]);
     }
     const pts = dense.filter(([x, z]) => inTile(x, z)).map(([x, z], i, arr) => {
@@ -189,29 +217,23 @@ function featureObjects(f, hm, bounds) {
       return [x, z, -dz / L, dx / L];
     });
     if (pts.length < 2) continue;
-    for (const side of [-1, 1]) {
-      ribbon(steel, pts, side * (GAUGE / 2 + RAIL / 2), RAIL);
-      ribbon(groove, pts, side * (GAUGE / 2 - GROOVE / 2), GROOVE);   // the groove on the gauge side
-    }
+    for (const side of [-1, 1]) ribbon(pts, side);
   }
-  const mk = (arr, mat, name) => {
-    if (!arr.length) return;
+  if (pos.length) {
     const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.Float32BufferAttribute(arr, 3));
-    g.computeVertexNormals();
-    const mesh = new THREE.Mesh(g, mat);
-    mesh.name = name; mesh.receiveShadow = true;
+    g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute("normal", new THREE.Float32BufferAttribute(nrm, 3));
+    g.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+    const mesh = new THREE.Mesh(g, sharedMat("rails", railMaterial));
+    mesh.name = "tram-rails"; mesh.receiveShadow = true;
     group.add(mesh);
-  };
-  const off = { polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, side: THREE.DoubleSide };
-  mk(steel, new THREE.MeshStandardMaterial({ color: 0x9a9da0, metalness: 0.3, roughness: 0.4, ...off }), "tram-rails");
-  mk(groove, new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.9, ...off }), "tram-grooves");
+  }
   // default: game-engine-v1's fog-lab stylized trees (viewer/treesStylized.js); ?trees=slop:
   // slop-newyork's tree system (viewer/treesSlop.js); ?trees=simple: our first leaf-card crowns
   const treeMode = params.get("trees");
-  const T = treeMode === "simple" ? buildTrees(f.trees || [], (x, z) => hm.surface(x, z), inTile)
-    : treeMode === "slop" ? buildTreeField(f.trees || [], (x, z) => hm.surface(x, z), inTile)
-    : buildStylizedTreeField(f.trees || [], (x, z) => hm.surface(x, z), inTile);
+  const T = treeMode === "simple" ? buildTrees(f.trees || [], treeGround, inTile)
+    : treeMode === "slop" ? buildTreeField(f.trees || [], treeGround, inTile)
+    : buildStylizedTreeField(f.trees || [], treeGround, inTile);
   group.add(T.group);
   group.userData.update = T.update || null;
   log(`trees: ${T.count} (LiDAR canopy peaks + OSM)` + (T.sizes ? `, species heights ${T.sizes.map((z) => z.h.toFixed(1)).join("/")} m` : ""));
@@ -252,7 +274,7 @@ class Walker {
     if (l) { this.x += mx / l * sp; this.z += mz / l * sp; }
     const { x0, z0, x1, z1 } = this.hm.h;
     this.x = Math.min(Math.max(this.x, x0), x1); this.z = Math.min(Math.max(this.z, z0), z1);
-    this.camera.position.set(this.x, this.hm.surface(this.x, this.z) + CARVE + EYE, this.z);
+    this.camera.position.set(this.x, (this.hm.walkY ? this.hm.walkY(this.x, this.z) : this.hm.surface(this.x, this.z) + CARVE) + EYE, this.z);
     this.camera.rotation.set(this.pitch, this.yaw, 0, "YXZ");
   }
 }
@@ -288,9 +310,12 @@ if (params.get("worker") !== "0") {
 }
 /** UrbIS solids replaced by a scripted model (the Saint-Job church): not drawn, kept in the roof grid. */
 const HIDE_BU_IDS = params.get("stjob") !== "0" ? [STJOB_BU_ID] : [];
+/** Tiles that have surfaces.json draw the measured UrbIS street surfaces (viewer/surfaces.js), the default since
+ *  2026-11-05; ?roads=engine: the road engine's own guessed carriageways, sidewalks and kerbs, as before. */
+const ROAD_SURFACES = params.get("roads") !== "engine";
 /** CPU data for a tile: from the worker, or on the main thread (?worker=0, or if the worker fails). */
 function tileData(entry, lite = false) {
-  entry = { ...entry, hide: HIDE_BU_IDS };
+  entry = { ...entry, hide: HIDE_BU_IDS, surface: ROAD_SURFACES, pits: params.get("pits") !== "0" };   // ?pits=0: no tree pits (A/B)
   const local = () => import("./tileData.js").then((m) => (lite ? m.buildLiteData : m.buildTileData)(entry, DATA.href));
   if (!tileWorker) return local();
   return new Promise((resolve, reject) => {
@@ -372,12 +397,15 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   say(`tile ${entry.name} built ${tileWorker ? "in the worker" : "on the main thread"}: ${Object.entries(d.times).map(([k, v]) => `${k} ${v} ms`).join(", ")}`);
   say(`road engine: ${ni.roads} roads, ${ni.nodes} nodes, ${ni.errors} errors ${JSON.stringify(ni.byCode)}, ${ni.warnings} warnings/info`);
   if (d.road.atlas) say(`marking atlas: ${d.road.atlas.width}x${d.road.atlas.height} at ${(d.road.atlas.texel * 100).toFixed(1)} cm, ${d.road.atlas.stats.regions} junctions`);
+  const ss = d.road.surfaceStats;      // ?roads=surface on a tile with surfaces.json (viewer/surfaces.js)
+  if (ss) say(`road surfaces: MEASURED (UrbIS Land cover): ${ss.surfaces} polygons -> ${ss.baseTris} triangles, ${ss.kerbLength} m of kerb; engine markings clipped to them: ${ss.overlayTris} triangles; ${ss.mappedPieces} engine roads/pads on measured ground, ${ss.unmappedPieces} kept as built (${ss.keptEngineTris} + ${ss.keptSideTris} triangles); ${ss.ms} ms`);
   const R = roadMeshes(d.road);
   own.roads.add(...R.meshes);
   await frame("roads");
   const terr = terrainMesh(d.terrain, contourOn, feats, bounds, d.cover);
   own.terrain.add(terr);
-  const plazas = buildPlazas(await loadOverrides(DATA), bounds, (x, z) => hm.ground(x, z));   // squares OSM leaves out (data/overrides.json)
+  // squares OSM leaves out (data/overrides.json); with measured surfaces the UrbIS squares replace them
+  const plazas = ss ? { count: 0 } : buildPlazas(await loadOverrides(DATA), bounds, (x, z) => hm.ground(x, z));
   if (plazas.count) own.roads.add(plazas.group);
   R.textures.push(...terr.userData.textures);
   await frame("terrain");
@@ -385,11 +413,17 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   say(`façades: ${B.stats.faces} wall faces, ${B.stats.party} party walls, ${B.stats.street} facing a street; details: ${B.stats.cornices} cornices, ${B.stats.buttresses} buttresses, ${B.stats.ridges} ridge/hip caps, ${B.stats.chimneys} chimneys, ${B.stats.eaves || 0} eaves, ${B.stats.shops} shopfronts (OSM shops)`);
   own.buildings.add(...B.meshes);
   await frame("buildings");
-  const fo = featureObjects(feats, hm, bounds);
+  // rails 1.2 cm above the road; with ?roads=surface 2 cm above H (the engine's markings layer sits up to 1.8 cm above it)
+  // ?roads=surface: lamps, parked cars, the walker, the trees and the bollards on the measured street (viewer/streetFit.js)
+  const fit = d.road.surfaceData ? streetFit(d.road.surfaceData) : null;
+  // a tree on measured ground stands on it (in its pit, viewer/surfaces.js), not on the terrain carved under it
+  const treeGround = fit ? (x, z) => (fit.classAt(x, z) >= 0 ? hm.surface(x, z) + CARVE + fit.lift(x, z) : hm.surface(x, z)) : undefined;
+  const fo = featureObjects(feats, hm, bounds, d.road.surfaceStats ? 0.02 : 0.012, treeGround);
   own.features.add(fo);
   if (fo.userData.update) ups.push(fo.userData.update);
   await frame("features+trees");
-  const lamps = buildLamps(roads, (x, z) => hm.ground(x, z), bounds, { lights: verbose });   // point lights: main tile only
+  // ?roads=surface: lamps, parked cars, the walker and the bollards on the measured street (viewer/streetFit.js)
+  const lamps = buildLamps(roads, (x, z) => hm.ground(x, z), bounds, { lights: verbose, place: fit?.placeLamp, lift: fit?.lift });   // point lights: main tile only
   own.features.add(lamps.group);
   ups.push(lamps.update);
   addLamps(entry.name, lamps.heads);                 // every lamp lights the street (viewer/lampLight.js)
@@ -397,7 +431,13 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   own.features.add(furn.group);
   const tram = buildTram(feats, (x, z) => hm.surface(x, z) + CARVE, bounds);
   own.features.add(tram.group);
-  const cars = buildCars(roads, feats, (x, z) => hm.surface(x, z) + CARVE, bounds);
+  // parked cars from the parking lanes as OSM / the type default has them (before the width fit, which drops lanes the
+  // measured street is too narrow for), then each one against the measured kerb if it fits there wholly
+  const carRoads = fit ? { ...roads, roads: roads.roads.map((r) => (r.meta?.widthFit ? { ...r, lanes: r.meta.unfitLanes ?? undefined } : r)) } : roads;
+  const cars = buildCars(carRoads, feats, (x, z) => hm.surface(x, z) + CARVE, bounds, { place: fit?.placeCar });
+  const bollards = fit ? buildBollards(d.road.surfaceData.bollards) : null;
+  if (bollards) own.features.add(bollards);
+  if (fit) say(`street on the measured surfaces: ${lamps.count} lamps on the sidewalks, ${cars.count} parked cars against the kerbs, ${bollards?.count ?? 0} bollards (UrbIS Topo CR5702P / CR57L)`);
   own.features.add(cars.group);
   say(`parked cars: ${cars.count} (placed procedurally in the parking lanes)`);
   say(`tram (OSM): ${tram.counts.wireSegments} wire segments, ${tram.counts.poles} poles, ${tram.counts.platforms} platforms, ${tram.counts.shelters} shelters`);
@@ -431,7 +471,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     }
     return h;
   };
-  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt, groups: Object.values(own) };
+  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt, drive: tileDrive(d.drive, roads, bounds), lift: fit?.lift, groups: Object.values(own) };
 }
 
 // ------------------------------------------------------------------ main
@@ -472,12 +512,16 @@ async function main() {
   const contourOn = uniform(0);
   const layers = { terrain: new THREE.Group(), buildings: new THREE.Group(), roads: new THREE.Group(), features: new THREE.Group() };
   for (const g of Object.values(layers)) scene.add(g);
+  // the parked cars of every tile, as one fleet (viewer/carFleet.js; ?cars=box: the old box cars per tile)
+  if (params.get("cars") !== "box") { scene.add(carFleet.group); updaters.push(carFleet.update); }
   // the world: the main tile now, its neighbours streamed in after the first frame (?ring=0|1|2)
   const world = {
     tiles: [],
     at(x, z) { return this.tiles.find((t) => x >= t.bounds.x0 && x <= t.bounds.x1 && z >= t.bounds.z0 && z <= t.bounds.z1) || this.tiles[0]; },
     surface(x, z) { return this.at(x, z).hm.surface(x, z); },
     ground(x, z) { return this.at(x, z).hm.ground(x, z); },
+    /** where feet stand: the road level, plus the kerb height on measured sidewalks / squares (?roads=surface) */
+    walkY(x, z) { const t = this.at(x, z); return t.hm.surface(x, z) + CARVE + (t.lift ? t.lift(x, z) : 0); },
     /** the highest solid here: ground or a roof (fly-mode collision) */
     heightAt(x, z) { const t = this.at(x, z); return Math.max(t.hm.surface(x, z), t.roofAt ? t.roofAt(x, z) : 0); },
     get h() {
@@ -535,7 +579,7 @@ async function main() {
     : TILE === "I6" ? roadStart(roads, 1153.1, 540.1, bounds) : roadStart(roads, cx, cz, bounds);   // ?at=, else Place de Saint-Job on I6
   if (!start) $("btnWalk").disabled = true;
   const yawP = params.get("yaw");                                        // ?yaw=deg: walk facing (0 = -z / north-ish, 90 = -x)
-  const walk = () => { if (!start) return; flyer.stop(); controls.enabled = false; walker.start(start.x, start.z, yawP != null ? +yawP * Math.PI / 180 : start.yaw); };
+  const walk = () => { if (!start) return; if (third?.on) third.stop(); flyer.stop(); driver.stop(); controls.enabled = false; walker.start(start.x, start.z, yawP != null ? +yawP * Math.PI / 180 : start.yaw); };
   // fly mode (viewer/flight.js): a bird from above Place de Saint-Job (or the walk start), heading the walk's way
   const flyer = new Flyer(camera, renderer.domElement, scene, world);
   window.__flyer = flyer;
@@ -560,12 +604,26 @@ async function main() {
   })();
   // from the tip of the Saint-Job spire (data/overrides.json flyStart), else above the walk start
   const fly = async () => {
-    walker.on = false; controls.enabled = false;
+    if (third?.on) third.stop(); walker.on = false; driver.stop(); controls.enabled = false;
     const fs = (await loadOverrides(DATA)).flyStart;
     if (fs) flyer.start(fs.x, fs.z, Math.atan2(-(fs.toward[0] - fs.x), -(fs.toward[1] - fs.z)), fs.y);
     else { const s = start || { x: cx, z: cz, yaw: 0 }; flyer.start(s.x, s.z, yawP != null ? +yawP * Math.PI / 180 : s.yaw); }
   };
   flyer.onExit = () => setView("stjob");
+  // drive mode (viewer/drive/): the hatchback on a street near Saint-Job church (the fly start), ?at=x,z elsewhere
+  const driver = new Driver(camera, renderer.domElement, scene, world);
+  window.__driver = driver;
+  if (HIDE_BU_IDS.length) loadStJob().then((m) => driver.addStatic(stjobColliders(m.placement))).catch(() => {});   // the church's front steps
+  const drive = () => {
+    const [px, pz] = atP?.length === 2 ? atP : [1201.6, 549.3];
+    const s = roadStart(roads, px, pz, bounds) || start;
+    if (!s) return;
+    if (third?.on) third.stop(); walker.on = false; flyer.stop(); controls.enabled = false;
+    let h = s.yaw + Math.PI;                                       // walk yaw -> car heading (forward = sin h, cos h)
+    if (TILE === "I6" && !atP && Math.sin(h) * (1153 - s.x) + Math.cos(h) * (540 - s.z) < 0) h += Math.PI;   // face the church
+    driver.start(s.x - Math.cos(h) * 1.6, s.z + Math.sin(h) * 1.6, h);   // keep right
+  };
+  driver.onExit = () => setView("stjob");
   const views = {
     overview: () => { camera.position.set(cx - 330, cy + 300, cz + 400); controls.target.set(cx, cy, cz); },
     stjob: () => {   // ?at=x,z, else Place de Saint-Job on I6, else the tile centre
@@ -577,14 +635,27 @@ async function main() {
       controls.target.set(x, y + (cam?.length === 3 ? 12 : 0), z);
     },
   };
-  const setView = (v) => { walker.on = false; flyer.stop(); controls.enabled = true; views[v](); controls.update(); };
+  let third = null;                       // the third-person character (?view=third), see below
+  const setView = (v) => { if (third?.on) third.stop(); walker.on = false; flyer.stop(); driver.stop(); controls.enabled = true; views[v](); controls.update(); };
   walker.onExit = () => setView("stjob");
   $("btnOrbit").onclick = () => setView("overview");
   $("btnStJob").onclick = () => setView("stjob");
   $("btnWalk").onclick = walk;
   $("btnFly").onclick = fly;
+  $("btnDrive").onclick = drive;
   const v0 = params.get("view") || (params.get("at") ? "stjob" : null);   // ?at=x,z&view=walk stands on the nearest road
-  if (v0 === "walk") walk(); else if (v0 === "fly") { setView("overview"); fly(); } else setView(v0 === "stjob" ? "stjob" : "overview");
+  if (v0 === "walk") walk(); else if (v0 === "drive") { setView("overview"); drive(); } else if (v0 === "fly") { setView("overview"); fly(); } else setView(v0 === "stjob" ? "stjob" : "overview");
+  // third person: a character on foot (viewer/character/cityHook.js, Capsule Lab); the button, ?view=third, the dev panel
+  let thirdBoot = null;                   // one start only, however many callers (button, ?view=third, a shared link)
+  const thirdPerson = async () => {
+    walker.on = false; flyer.stop(); driver.stop(); controls.enabled = false;
+    try {
+      if (!third) third = await (thirdBoot ||= import("./character/cityHook.js").then((m) => m.startThirdPerson({ scene, camera, renderer, controls, world, start, setView, log })));
+      else third.resume();
+    } catch (e) { log(`third person: ${e.message}`); controls.enabled = true; }
+  };
+  $("btnThird").onclick = thirdPerson;
+  if (v0 === "third") thirdPerson();
 
   addEventListener("resize", () => {
     camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight);
@@ -626,15 +697,15 @@ async function main() {
   tsel.onchange = () => { lighting.apply(tsel.value); pipe?.look(tsel.value); };
   renderer.setAnimationLoop(() => {
     if (flyer.on) focus.set(flyer.x, flyer.pos.y, flyer.z).addScaledVector(camera.getWorldDirection(fwd).setY(0).normalize(), 60);
-    else if (walker.on) focus.copy(camera.position).addScaledVector(camera.getWorldDirection(fwd).setY(0).normalize(), 45);
+    else if (walker.on || driver.on) focus.copy(camera.position).addScaledVector(camera.getWorldDirection(fwd).setY(0).normalize(), 45);
     else focus.copy(controls.target);
-    const half = flyer.on ? THREE.MathUtils.clamp((flyer.pos.y - world.surface(flyer.x, flyer.z)) * 1.6 + 90, 90, 380) : walker.on ? 80 : THREE.MathUtils.clamp(camera.position.distanceTo(controls.target) * 0.9, 60, 380);
+    const half = flyer.on ? THREE.MathUtils.clamp((flyer.pos.y - world.surface(flyer.x, flyer.z)) * 1.6 + 90, 90, 380)   : walker.on || driver.on ? 80 : THREE.MathUtils.clamp(camera.position.distanceTo(controls.target) * 0.9, 60, 380);
     lighting.update(camera.position.y, world.surface(camera.position.x, camera.position.z), focus, half);
     const now = performance.now(), dt = Math.min((now - last) / 1000, 0.1);
     last = now;
     fpsAcc += dt; fpsN++;
     if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
-    if (flyer.on) flyer.update(dt); else if (walker.on) walker.update(dt); else controls.update();
+    if (third?.on) third.update(dt); else if (flyer.on) flyer.update(dt); else if (driver.on) driver.update(dt); else if (walker.on) walker.update(dt); else controls.update();
     for (const u of updaters) u(camera.position, camera);
     renderFrame();
     if (pipe && lighting.firmament) pipe.setExposureFactor(lighting.adapt(dt));
@@ -664,7 +735,7 @@ async function main() {
   let busy = null;
   const stream = async (liteFirst = false) => {   // liteFirst: skip the full tiles this step (boot warm-up)
     // the manifest tile under (or nearest to) the player / orbit target, loaded or not
-    const px = flyer.on ? flyer.x : walker.on ? walker.x : controls.target.x, pz = flyer.on ? flyer.z : walker.on ? walker.z : controls.target.z;
+    const px = flyer.on ? flyer.x : driver.on ? driver.x : walker.on ? walker.x : controls.target.x, pz = flyer.on ? flyer.z : driver.on ? driver.z : walker.on ? walker.z : controls.target.z;
     const built = manifest.tiles.filter((t) => t.status !== "missing");
     const cell = built.map((t) => {
       const dx = Math.max(t.bounds.x[0] - px, 0, px - t.bounds.x[1]), dz = Math.max(t.bounds.z[0] - pz, 0, pz - t.bounds.z[1]);
@@ -734,10 +805,10 @@ async function main() {
   if (params.get("panel") !== "0") {
     try {
       const { createDevPanel } = await import("./devPanel.js");
-      createDevPanel({ renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log });
+      createDevPanel({ renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, drive, thirdPerson, driver, getThird: () => third, getTram: () => tramLine, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log });
     } catch (e) { log(`dev panel: ${e.message}`); }
   }
-  window.viewer = { loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
+  window.viewer = { tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
     world, renderFrame: () => { for (const u of updaters) u(camera.position, camera); renderFrame(); } };
 }
 

@@ -1,6 +1,6 @@
 // Bundles viewer/tileWorker.js (+ tileData.js, vendor/roads, three's earcut) into
 // viewer/tileWorker.bundle.js, which is committed so the viewer still needs no build step.
-// Run after changing tileData.js, heightmap.js, facadeGeom.js, landcover.js, roadData.js or vendor/roads:
+// Run after changing tileData.js, surfaces.js, heightmap.js, facadeGeom.js, landcover.js, roadData.js or vendor/roads:
 //   cd tools/worker && npm install && cd ../.. && node tools/build_worker.mjs
 import { build } from "./worker/node_modules/esbuild/lib/main.js";
 await build({
