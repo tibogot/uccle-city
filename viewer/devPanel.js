@@ -142,7 +142,7 @@ export function createDevPanel(ctx) {
   const fWo = gui.addFolder("World");
   for (const k of Object.keys(layers)) fWo.add(layers[k], "visible").name(`layer: ${k}`);
   fWo.add({ c: false }, "c").name("contour lines (1 m)").onChange((v) => { contourOn.value = v ? 1 : 0; });
-  fWo.add(S, "parked").name("parked cars").onChange((v) => scene.traverse((o) => { if (o.name === "parked-cars" && o.isGroup) o.visible = v; }));
+  fWo.add(S, "parked").name("parked cars").onChange((v) => scene.traverse((o) => { if ((o.name === "parked-cars" || o.name === "parked-cars-fleet") && o.isGroup) o.visible = v; }));   // box cars (?cars=box) or the faceted fleet (carFleet.js)
   const R = {
     roads: params.get("roads") === "engine" ? "engine" : "measured (surface)", stjob: params.get("stjob") !== "0", lamps: params.get("lampmodel") !== "0",
     trams: TR.on, tramModel: TR.model ? "model (T3000)" : "boxes", trees: params.get("trees") || "stylized", impostors: params.get("impostors") === "1",
