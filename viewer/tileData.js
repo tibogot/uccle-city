@@ -94,11 +94,12 @@ export const onRoof = (g, x, z) => {
   return i >= 0 && j >= 0 && i < g.nx && j < g.nz && g.data[j * g.nx + i] > 0;
 };
 
-/** Drop the UrbIS solids a scripted model replaces (entry.hide = BU_IDs, e.g. the Saint-Job church). */
+/** Drop the UrbIS solids a scripted model replaces (entry.hide = BU_IDs, e.g. the Saint-Job church, or solid ids,
+ *  e.g. the Observatory's: some of its solids share a BU_ID with others, one has none). */
 function hideBuildings(bDoc, hide) {
   if (!hide?.length) return;
   const h = new Set(hide);
-  bDoc.buildings = bDoc.buildings.filter((b) => !h.has(b.attrs?.BU_ID));
+  bDoc.buildings = bDoc.buildings.filter((b) => !h.has(b.attrs?.BU_ID) && !h.has(b.id));
 }
 
 /** Build all CPU-side data for one manifest entry (entry.hide: BU_IDs not to draw). `base` = URL of data/tiles/. */

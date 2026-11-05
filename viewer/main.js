@@ -12,6 +12,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { buildLamps, setLampModel } from "./lamps.js";
 import { loadLampModel } from "./lampModel.js";
 import { loadStJob, STJOB_LODS, STJOB_BU_ID, stjobColliders } from "./stjobModel.js";
+import { addObservatory } from "./observatoryCity.js";
 import { buildFurniture } from "./furniture.js";
 import { buildTram } from "./tram.js";
 import { buildCars } from "./cars.js";
@@ -593,6 +594,9 @@ async function main() {
       log(`Saint-Job church: scripted model, LODs ${m.lods.map((l) => l.tris).join(" / ")} triangles (?stjob=0: the UrbIS solid)`);
     }).catch((e) => log(`Saint-Job model failed (${e.message}): the UrbIS solid is hidden, reload with ?stjob=0`));
   }
+  // The Royal Observatory (tools/blender/observatory.py, viewer/observatoryCity.js) in place of its UrbIS solids,
+  // behind ?observatory=1 for now (its solids join HIDE_BU_IDS before the first tile is built)
+  if (params.get("observatory") === "1") await addObservatory({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
   const T0 = await loadTile(entry, { layers, contourOn, verbose: true });
   world.tiles.push(T0);
   const { hm, roads, net } = T0;
