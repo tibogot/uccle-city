@@ -154,6 +154,8 @@ function goView(v) {
   S.view = v; setMode("orbit");
   camera.position.copy(local(...V[0])); controls.target.copy(local(...V[1])); controls.update();
 }
+/** Any house-local view (eye, target): screenshots / checks from the console (lab.lookAt([x,y,z],[x,y,z])). */
+function lookAt(eye, at) { setMode("orbit"); camera.position.copy(local(...eye)); controls.target.copy(local(...at)); controls.update(); }
 function setMode(m) {
   S.mode = m;
   if (m === "walk") { controls.enabled = false; spawn(); tp.body.root.visible = true; }
@@ -204,7 +206,7 @@ function sampleGpu() {
   renderer.resolveTimestampsAsync("render").then((ms) => { if (typeof ms === "number" && ms > 0) gpu.avg = gpu.avg ? gpu.avg * 0.9 + ms * 0.1 : ms; }).catch(() => {}).finally(() => { gpu.pending = false; });
 }
 const bootMs = performance.now() - T0;
-window.lab = { renderer, scene, camera, cell, tp, world, portal, lighting, interiorLook, houseCut, goView, setMode, setLight, S, gpu, probes: () => probes, pipe };
+window.lab = { renderer, scene, camera, cell, tp, world, portal, lighting, interiorLook, houseCut, goView, lookAt, controls, setMode, setLight, S, gpu, probes: () => probes, pipe };
 if (qp.get("view") === "walk") setMode("walk"); else goView(S.view in VIEWS ? S.view : "street");
 let last = performance.now(), frames = 0, fpsAcc = 0, fpsN = 0, fps = 0;
 const focus = new THREE.Vector3(), cp = new THREE.Vector3();

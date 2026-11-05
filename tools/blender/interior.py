@@ -4,7 +4,9 @@
 # sky through the windows; NIGHT: the house's lamps + a street lamp) on a second UV set, plus Blender previews.
 #
 #   blender --factory-startup -b -P tools/blender/interior.py -- models/interior/maison1 [--seed 7] [--lm 1024]
-#           [--samples 384] [--no-bake] [--preview docs/interior] [--pv-samples 64]
+#           [--samples 384] [--no-bake] [--preview docs/interior] [--pv-samples 64] [--check-only] [--allow-clip] [--refl 256]
+#   --check-only: build the geometry, run the prop clearance check (every placed piece inside its room: no vertex through
+#   a wall, the floor or the ceiling), print the report and stop. The full build fails on a clip unless --allow-clip.
 #
 # Output (in the house dir): interior.glb (house-local frame, see interior_kit.py; meshes: Interior = all lightmapped
 # surfaces in 5 materials, Glass, FrontDoor (its origin on the hinge), Colliders (simplified, not drawn)),
@@ -23,7 +25,8 @@ HOUSE = os.path.abspath(argv[0] if argv and not argv[0].startswith("--") else "m
 def arg(name, default=None):
     return argv[argv.index(name) + 1] if name in argv else default
 SEED = int(arg("--seed", "7")); LM = int(arg("--lm", "1024")); SAMPLES = int(arg("--samples", "384"))
-BAKE = "--no-bake" not in argv; PREVIEW = arg("--preview"); PREVIEW = os.path.abspath(PREVIEW) if PREVIEW else None; PV_SAMPLES = int(arg("--pv-samples", "64"))
+BAKE = "--no-bake" not in argv; CHECK_ONLY = "--check-only" in argv; ALLOW_CLIP = "--allow-clip" in argv; REFL = int(arg("--refl", "256"))
+BAKE = BAKE and not CHECK_ONLY; PREVIEW = arg("--preview"); PREVIEW = os.path.abspath(PREVIEW) if PREVIEW else None; PV_SAMPLES = int(arg("--pv-samples", "64"))
 T0 = time.time()
 rnd = random.Random(SEED)
 spec = json.load(open(os.path.join(HOUSE, "house.json")))
@@ -107,6 +110,8 @@ ROOMS = [
 # partitions: (level, axis, at, from, to, [openings (a, b, height, leaf)])  axis "s": a wall at s = at (thickness +PT),
 # spanning z; axis "z": at z = at, spanning s. Door openings: (a, b) along the wall, height above the floor.
 DOOR_H = 2.08
+FANH = 0.44              # a glazed fanlight over every panelled interior door (imposte vitrée: it lights the stair hall)
+TRANSOM = 0.06
 PARTS = [
     (0, "s", S1, ZF_IN, Z_CROSS, [(3.90, 4.75, DOOR_H, ("hinge_hi", "into+"))]),
     (0, "z", Z_CROSS, 0.0, WI, [(1.28, 2.12, DOOR_H, ("hinge_hi", "into+")), (S2 + 0.75, min(WI - 0.5, S2 + 2.35), 2.45, None)]),
@@ -125,6 +130,7 @@ GLASS = K.Builder()      # window panes (not lightmapped, not in the bake)
 OCC = K.Builder()        # bake-only occluders: outer shell, roof, surroundings (not exported)
 COL = K.Builder()        # colliders (exported, not drawn)
 PROBE_DATA = []          # baked ambient cubes (interior.json)
+MIRROR_INFO = []         # the mirrors' reflection cubes (interior.json)
 LIGHTS = []              # night lamps: (name, plan position, watts, colour, radius)
 PROBES = []
 
@@ -317,7 +323,7 @@ for side_s, nsign in ((0.0, 1), (WI, -1)):
 # ------------------------------------------------------------------------------------------------ partitions
 for (lev, axis, at, a0, a1, opens) in PARTS:
     y0, y1 = WALL_CEIL[lev]
-    holes = [(a, b_, y0, y0 + h) for (a, b_, h, _) in opens]
+    holes = [(a, b_, y0, y0 + h + (FANH if lf else 0.0)) for (a, b_, h, lf) in opens]
     # each side: coloured by the room it faces
     for side in (0, 1):
         plane = at + (PT if side else 0.0)
@@ -334,12 +340,26 @@ for (lev, axis, at, a0, a1, opens) in PARTS:
         for (lo, hi, r) in segs:
             wall_face(Bm, axis, plane, nsign, lo, hi, y0, y1, [h for h in holes if h[1] > lo and h[0] < hi], "Plaster", plaster(r[7]), also=Cm)
     for (a, b_, h, leaf) in opens:
-        if leaf:             # door lining (painted wood) + architraves on both sides
-            jamb(Bm, axis, at, at + PT, a, b_, y0, y0 + h, "Wood", C["white_paint"], sides="lrt")
+        if leaf:             # door lining (painted wood) up to the fanlight's head + architraves on both sides
+            hf = h + FANH
+            jamb(Bm, axis, at, at + PT, a, b_, y0, y0 + hf, "Wood", C["white_paint"], sides="lrt")
+            # the transom bar between the door and the fanlight, the fanlight's glazing beads and its glass
+            def wbox(u0, u1, ya, yb, w0, w1, cl=C["white_paint"]):
+                if axis == "z": Bm.emit(box(u1 - u0, yb - ya, w1 - w0, bevel=0.004, seg=1), "Wood", cl, T((u0 + u1) / 2, ya, (w0 + w1) / 2))
+                else: Bm.emit(box(w1 - w0, yb - ya, u1 - u0, bevel=0.004, seg=1), "Wood", cl, T((w0 + w1) / 2, ya, (u0 + u1) / 2))
+            wbox(a, b_, y0 + h, y0 + h + TRANSOM, at, at + PT)
+            gy0, gy1, bead = y0 + h + TRANSOM, y0 + hf, 0.025
+            for (w0, w1) in ((at + PT / 2 - 0.03, at + PT / 2 - 0.006), (at + PT / 2 + 0.006, at + PT / 2 + 0.03)):
+                wbox(a, b_, gy0, gy0 + bead, w0, w1); wbox(a, b_, gy1 - bead, gy1, w0, w1)
+                wbox(a, a + bead, gy0, gy1, w0, w1); wbox(b_ - bead, b_, gy0, gy1, w0, w1)
+                wbox((a + b_) / 2 - 0.012, (a + b_) / 2 + 0.012, gy0, gy1, w0, w1)          # a glazing bar
+            q = [(a, gy0), (b_, gy0), (b_, gy1), (a, gy1)]
+            Pq = (lambda u, y: (at + PT / 2, y, u)) if axis == "s" else (lambda u, y: (u, y, at + PT / 2))
+            Gm.quad(*[Pq(u, y) for (u, y) in q], "Glass", (0.9, 0.92, 0.92, 0.0625))
             for side in (0, 1):
                 plane = at + (PT if side else 0.0); nsign = 1 if side else -1
                 arch = 0.07
-                for (cx, cy, sx, sy) in (((a + b_) / 2, y0 + h, b_ - a + 2 * arch, arch), (a - arch / 2, y0, arch, h), (b_ + arch / 2, y0, arch, h)):
+                for (cx, cy, sx, sy) in (((a + b_) / 2, y0 + hf, b_ - a + 2 * arch, arch), (a - arch / 2, y0, arch, hf), (b_ + arch / 2, y0, arch, hf)):
                     bm = box(sx, sy, 0.018, bevel=0.006, seg=2)
                     if axis == "s": Bm.emit(bm, "Wood", C["white_paint"], T(plane + nsign * 0.009, cy, cx, ry=90))
                     else: Bm.emit(bm, "Wood", C["white_paint"], T(cx, cy, plane + nsign * 0.009))
@@ -410,32 +430,61 @@ for tri in [spec["roof"][i:i + 3] for i in range(0, len(spec["roof"]), 3)]:
 
 # ------------------------------------------------------------------------------------------------ the stair
 OAK = C["stair_oak"]; RISER_C = C["white_paint"]
+HOUSED = 0.018            # treads and risers run this far into the strings (housed): no gap, no light slit at the joint
+WALL_STR = 0.022          # the wall string's thickness (against the party wall)
+def nose_y(z): return GF + RISE * (1 + (z + 0.03 - Z_STAIR) / GOING)       # the line through the treads' nosings
+def str_top(z): return nose_y(z) + 0.055
+def str_bot(z): return nose_y(z) - 0.26
+TW0, TW1 = WALL_STR - HOUSED, STAIR_W + HOUSED                              # treads / risers across (s)
 for i in range(1, NR):
     y = GF + i * RISE; z0 = Z_STAIR + (i - 1) * GOING
-    Bm.emit(box(STAIR_W, 0.032, GOING + 0.03, bevel=0.008, seg=2), "Wood", OAK, T(STAIR_W / 2, y - 0.032, z0 + GOING / 2 - 0.015))
-    Bm.quad((0.0, y - RISE, z0), (STAIR_W, y - RISE, z0), (STAIR_W, y - 0.032, z0), (0.0, y - 0.032, z0), "Wood", RISER_C)
+    Bm.emit(box(TW1 - TW0, 0.032, GOING + 0.03, bevel=0.008, seg=2), "Wood", OAK, T((TW0 + TW1) / 2, y - 0.032, z0 + GOING / 2 - 0.015))
+    Bm.quad((TW0, y - RISE, z0), (TW1, y - RISE, z0), (TW1, y - 0.032, z0), (TW0, y - 0.032, z0), "Wood", RISER_C)
 # the last riser up to the first floor
-Bm.quad((0.0, FF - RISE, Z_TOP), (STAIR_W, FF - RISE, Z_TOP), (STAIR_W, FF, Z_TOP), (0.0, FF, Z_TOP), "Wood", RISER_C)
-Bm.emit(box(STAIR_W, 0.03, 0.06, bevel=0.008, seg=2), "Wood", OAK, T(STAIR_W / 2, FF - 0.03, Z_TOP + 0.0))
-# stringer + spandrel (closed side under the flight, panelled) on the hall side
-def stair_y(z): return GF + max(0, min(NR, (z - Z_STAIR) / GOING + 1)) * RISE
-spand = bmesh.new()
-pts_top = [(STAIR_W, GF, Z_STAIR - 0.03)] + [(STAIR_W, GF + (i + 1) * RISE + 0.06, Z_STAIR + i * GOING) for i in range(NR - 1)]
-# a sloped stringer board (wood) along the flight, the spandrel below it (plaster panel) down to the floor
-L = math.hypot(Z_TOP - Z_STAIR, FF - GF - RISE); ang = math.degrees(math.atan2(FF - GF - RISE, Z_TOP - Z_STAIR))
-Bm.emit(box(STRINGER, 0.28, L + 0.2, bevel=0.01, seg=2), "Wood", RISER_C, T(STAIR_W + STRINGER / 2, GF + RISE - 0.12, Z_STAIR + (Z_TOP - Z_STAIR) / 2, rx=-ang) @ T(0, -0.14 + 0.14, 0) @ T(0, 0, 0))
-for side_s in (STAIR_W + STRINGER, ):
-    # spandrel: vertical panel s = STAIR_W + STRINGER from the floor to under the stringer
-    n = 12
+Bm.quad((TW0, FF - RISE, Z_TOP), (TW1, FF - RISE, Z_TOP), (TW1, FF, Z_TOP), (TW0, FF, Z_TOP), "Wood", RISER_C)
+Bm.emit(box(TW1 - TW0, 0.03, 0.06, bevel=0.008, seg=2), "Wood", OAK, T((TW0 + TW1) / 2, FF - 0.03, Z_TOP + 0.0))
+ang = math.degrees(math.atan2(RISE, GOING))
+def string_board(sa, sb, cl, z_end=Z_TOP + 0.03, n=28):
+    """A closed string: a board between the planes s = sa..sb, its top edge 5.5 cm over the nosing line, its bottom 26 cm
+    under it, cut level on the hall floor at the foot and plumb at the top; a ribbon of n columns (the per-corner bake
+    needs vertices along its 5 m)."""
+    z_a = Z_STAIR - 0.09
+    z_b = Z_STAIR - 0.03 + (GF - GF + 0.26 - RISE) / RISE * GOING          # where the bottom edge meets the floor
+    zs = sorted(set([z_a + (z_end - z_a) * k / n for k in range(n + 1)] + [z_b]))
+    top = [(z, str_top(z)) for z in zs]; bot = [(z, max(GF, str_bot(z))) for z in zs]
+    bm = bmesh.new()
+    vt = [[bm.verts.new((sv, y, z)) for (z, y) in top] for sv in (sa, sb)]
+    vb = [[bm.verts.new((sv, y, z)) for (z, y) in bot] for sv in (sa, sb)]
+    m = len(zs)
+    for k in range(m - 1):
+        for side in (0, 1):
+            bm.faces.new((vb[side][k], vb[side][k + 1], vt[side][k + 1], vt[side][k]))          # the two faces
+        bm.faces.new((vt[0][k], vt[0][k + 1], vt[1][k + 1], vt[1][k]))                        # top edge
+        bm.faces.new((vb[0][k + 1], vb[0][k], vb[1][k], vb[1][k + 1]))                        # bottom edge / floor
+    bm.faces.new((vb[0][0], vt[0][0], vt[1][0], vb[1][0])); bm.faces.new((vb[1][-1], vt[1][-1], vt[0][-1], vb[0][-1]))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    Bm.emit(bm, "Wood", cl)
+string_board(STAIR_W, STAIR_W + STRINGER, RISER_C)            # the open (hall) side
+string_board(0.0, WALL_STR, RISER_C)                           # the wall side
+# an oak capping on the hall string (the balusters stand in it)
+cap_l = math.hypot(Z_TOP - Z_STAIR + 0.12, str_top(Z_TOP) - str_top(Z_STAIR - 0.09))
+Bm.emit(box(STRINGER + 0.016, 0.022, cap_l, bevel=0.006, seg=2), "Wood", OAK,
+        T(STAIR_W + STRINGER / 2, str_top((Z_STAIR - 0.09 + Z_TOP + 0.03) / 2) - 0.004, (Z_STAIR - 0.09 + Z_TOP + 0.03) / 2, rx=-ang))
+SPAN_S = STAIR_W + STRINGER - 0.012       # the spandrel panelling, 12 mm behind the string's face (a shadow line, not a slit)
+for side_s in (SPAN_S, ):
+    # spandrel: vertical panel s = SPAN_S from the floor up behind the string (facing the hall, +s)
+    n = 16
     for k in range(n):
         za = Z_STAIR + (Z_TOP - Z_STAIR) * k / n; zb = Z_STAIR + (Z_TOP - Z_STAIR) * (k + 1) / n
-        ya = min(GF_CEIL, GF + RISE + (za - Z_STAIR) * math.tan(math.radians(ang)) - 0.14); yb = min(GF_CEIL, GF + RISE + (zb - Z_STAIR) * math.tan(math.radians(ang)) - 0.14)
-        Bm.quad((side_s, GF, za), (side_s, GF, zb), (side_s, yb, zb), (side_s, ya, za), "Wood", C["white_paint"])
-        Cm.quad((side_s, GF, za), (side_s, GF, zb), (side_s, yb, zb), (side_s, ya, za), "Plaster", ceil_c)
+        ya = min(GF_CEIL, str_bot(za) + 0.03); yb = min(GF_CEIL, str_bot(zb) + 0.03)
+        if ya <= GF + 0.01 and yb <= GF + 0.01: continue
+        ya, yb = max(ya, GF), max(yb, GF)
+        Bm.quad((side_s, GF, zb), (side_s, GF, za), (side_s, ya, za), (side_s, yb, zb), "Wood", C["white_paint"])
+        Cm.quad((side_s, GF, zb), (side_s, GF, za), (side_s, ya, za), (side_s, yb, zb), "Plaster", ceil_c)
     # panel mouldings on the spandrel
     for k in range(4):
         za = Z_STAIR + 0.5 + k * 0.95; zb = za + 0.75
-        top = GF + RISE + (za - Z_STAIR) * math.tan(math.radians(ang)) - 0.35
+        top = min(GF_CEIL - 0.1, str_bot(za) - 0.1)
         if top - GF < 0.5: continue
         for (a, b_, y0_, y1_) in ((za, zb, GF + 0.18, GF + 0.2), (za, zb, top - 0.02, top), (za, za + 0.02, GF + 0.18, top), (zb - 0.02, zb, GF + 0.18, top)):
             Bm.emit(box(0.012, y1_ - y0_, b_ - a, bevel=0.004, seg=1), "Wood", C["white_paint"], T(side_s + 0.006, y0_, (a + b_) / 2))
@@ -508,28 +557,47 @@ for r in ROOMS:
         Bm.emit(K.sweep([(a, b_) for (a, b_) in CORNICE], path[::-1], closed=True), "Plaster", ceil_c)
 
 # ------------------------------------------------------------------------------------------------ furniture
-def put(parts, s, y, z, ry=0, solid=True, box_pad=0.0):
+PLACED = []              # (label, plan vertices (n, 3)) of every put() piece: the clearance check
+CLEAR = 0.03             # fit=True: the gap kept between a piece's bounding box (foliage included) and the walls
+def room_at(s, z, lev):
+    return next((r for r in ROOMS if r[1] == lev and r[2] - 1e-3 <= s <= r[3] + 1e-3 and r[4] - 1e-3 <= z <= r[5] + 1e-3), None)
+def put(parts, s, y, z, ry=0, solid=True, box_pad=0.0, fit=False, label=None):
     """Place a furniture piece (its frame: x right, z forward) at plan (s, y, z) turned ry degrees; register its box
-    as a collider."""
+    as a collider. fit=True: slide it (in s, z) so its whole bounding box keeps CLEAR from the room's walls."""
+    import numpy as _np
     M = T(s, y, z, ry=ry)
-    lo = Vector((1e9, 1e9, 1e9)); hi = Vector((-1e9, -1e9, -1e9))
+    pts = _np.array([tuple(M @ v.co) for bm, _, _ in parts for v in bm.verts])
+    if fit:
+        lo_, hi_ = pts.min(0), pts.max(0)
+        r = room_at(s, z, 0 if y < FF - 0.2 else 1)
+        ds = max(0.0, r[2] + CLEAR - lo_[0]) - max(0.0, hi_[0] - (r[3] - CLEAR))
+        dz = max(0.0, r[4] + CLEAR - lo_[2]) - max(0.0, hi_[2] - (r[5] - CLEAR))
+        if ds or dz:
+            print(f"  fit {label}: moved {ds:+.2f} m in s, {dz:+.2f} m in z")
+            s += ds; z += dz; M = T(s, y, z, ry=ry); pts = pts + _np.array([ds, 0.0, dz])
+    lo = Vector(pts.min(0)); hi = Vector(pts.max(0))
+    PLACED.append((label or f"piece@{s:.2f},{y:.2f},{z:.2f}", pts, (s, y, z)))
     for bm, mat, cl in parts:
-        for v in bm.verts:
-            p = M @ v.co
-            lo = Vector(map(min, lo, p)); hi = Vector(map(max, hi, p))
         Bm.emit(bm, mat, cl, M, skip_down=True)
     if solid:
         c = (lo + hi) / 2; d = hi - lo
         Cm.emit(box(d.x + box_pad, d.y, d.z + box_pad), "Plaster", ceil_c, T(c.x, lo.y, c.z))
     return lo, hi
+def rod_ext(o, lev):
+    """How far a curtain rod may run past a front window on each side: 25 cm, less where a wall comes closer (the
+    finial and its clearance included)."""
+    r = room_at((o["s0"] + o["s1"]) / 2, ZF_IN + 0.2, lev)
+    return max(0.06, min(0.25, o["s0"] - r[2] - 0.09, r[3] - o["s1"] - 0.09))
 def light(name, s, y, z, watts, colour=(1.0, 0.78, 0.52), radius=0.05):
     LIGHTS.append((name, ms((s, y, z)), watts, colour, radius))
 
 # salon
+MIRRORS = []             # the mirrors' reflection cubes (baked from in front of each glass, box-projected in the viewer)
 SAL = next(r for r in ROOMS if r[0] == "salon"); s0, s1, z0, z1 = SAL[2], SAL[3], SAL[4], SAL[5]
 fz = rnd.uniform(2.6, 3.1)
-put(K.fireplace(seed=SEED), s1 - 0.15, GF, fz, ry=-90)
-put(K.mirror(1.05, 1.25), s1 - 0.005, GF + 1.2 + 0.02, fz, ry=-90, solid=False)
+put(K.fireplace(seed=SEED), s1 - 0.15 - 0.03, GF, fz, ry=-90, label="salon fireplace")
+put(K.mirror(1.05, 1.25), s1 - 0.003, GF + 1.2 + 0.02, fz, ry=-90, solid=False, label="salon mirror")
+MIRRORS.append(dict(name="salon", c=(s1 - 0.003 - 0.0125, GF + 1.22 + 0.065 + (1.25 - 0.13) / 2, fz), n=(-1, 0, 0), room=SAL))
 sofa_c = rnd.choice([fabric(0x55644F, "velvet"), fabric(0x7B6A55, "weave"), fabric(0x3E4E5E, "velvet"), fabric(0x8C8274, "linen")])
 put(K.sofa(2.05, 0.9, sofa_c, seats=3, seed=SEED), s0 + 0.48, GF, fz, ry=90)
 put(K.coffee_table(1.0, 0.55), (s0 + s1) / 2 + 0.05, GF, fz, ry=90)
@@ -540,8 +608,8 @@ light("salon_floor_lamp", s0 + 0.32, GF + 1.5, fz - 1.3, 45, radius=0.06)
 put(K.bookcase(1.15, 2.1, 0.32, seed=SEED + 1), s1 - 0.17, GF, z1 - 0.75, ry=-90)
 F_SALON = next(o for o in F_OPEN if o["kind"] == "window" and o["floor"] == 0)
 put(K.radiator(F_SALON["s1"] - F_SALON["s0"] - 0.1, 0.6), (F_SALON["s0"] + F_SALON["s1"]) / 2, GF, ZF_IN + 0.1, solid=True)
-put(K.plant(1.35, 0.19, seed=SEED + 2, kind="monstera"), s1 - 0.32, GF, z0 + 0.4 + 0.0)
-put(K.curtain_pair(F_SALON["s1"] - F_SALON["s0"], F_SALON["h1"] + 0.12 - GF - 0.02, fabric(rnd.choice([0xB79C7A, 0x7E8B6E, 0xA35A4A]), "linen"), seed=SEED), (F_SALON["s0"] + F_SALON["s1"]) / 2, F_SALON["h1"] + 0.14, ZF_IN + 0.1, solid=False)
+put(K.plant(1.35, 0.19, seed=SEED + 2, kind="monstera", spread=0.55), s1 - 0.62, GF, z0 + 0.62, fit=True, label="salon monstera")
+put(K.curtain_pair(F_SALON["s1"] - F_SALON["s0"], F_SALON["h1"] + 0.12 - GF - 0.02, fabric(rnd.choice([0xB79C7A, 0x7E8B6E, 0xA35A4A]), "linen"), seed=SEED, ext=rod_ext(F_SALON, 0)), (F_SALON["s0"] + F_SALON["s1"]) / 2, F_SALON["h1"] + 0.14, ZF_IN + 0.1, solid=False, label="salon curtains")
 put(K.picture(0.9, 0.65, C["brass"], fabric(0x5B6E6A, "canvas")), s0 + 0.012, GF + 1.75, fz, ry=90, solid=False)
 put(K.picture(0.42, 0.55, C["black_wood"], fabric(0x9A7A4E, "canvas")), s1 - 0.012, GF + 1.6, z1 - 1.6 - 0.0, ry=-90, solid=False) if False else None
 put(K.table_lamp(), s1 - 0.17, GF + 2.1, z1 - 1.05, solid=False)
@@ -552,10 +620,10 @@ PROBES.append(("salon", s0, s1, z0, z1, GF, GF_CEIL))
 
 # hall
 HAL = next(r for r in ROOMS if r[0] == "hall"); s0, s1, z0, z1 = HAL[2], HAL[3], HAL[4], HAL[5]
-put(K.coat_rack(0.8), s1 - 0.01, GF, z0 + 1.6, ry=-90, solid=True, box_pad=-0.1)
+put(K.coat_rack(0.8), s1 - 0.022, GF, z0 + 1.6, ry=-90, solid=True, box_pad=-0.1, label="hall coat rack")
 put(K.radiator(0.7, 0.62), s1 - 0.1, GF, z0 + 2.75, ry=-90)
 put(K.pendant(0.55, "lantern"), (STAIR_W + s1) / 2, GF_CEIL, z0 + 0.9, solid=False)
-light("hall_lantern", (STAIR_W + s1) / 2, GF_CEIL - 0.75, z0 + 0.9, 30)
+light("hall_lantern", (STAIR_W + s1) / 2, GF_CEIL - 0.75, z0 + 0.9, 40)
 put(K.rug(0.75, 2.2, fabric(0x6A3A2C, "rug2")), (STAIR_W + STRINGER + s1) / 2, GF, z0 + 2.9, solid=False)
 put(K.picture(0.5, 0.65, C["black_wood"], fabric(0x8A7A5E, "canvas")), s1 - 0.012, GF + 1.6, z0 + 3.4 - 0.0, ry=-90, solid=False) if False else None
 
@@ -568,10 +636,10 @@ put(K.fridge(0.6, 1.85), s0 + 0.31, GF, z0 + 0.34, ry=90)
 runs = [(z0 + 0.66, 1.2, dict(drawers=True)), (z0 + 1.86, 0.6, dict(oven=True, hob=True)), (z0 + 2.46, 0.6, dict()), (z0 + 3.06, 1.2, dict(sink=True))]
 zc = z0 + 0.66
 for (za, w, kw) in runs:
-    put(K.kitchen_base(w, kwood, ktop, **kw), s0 + 0.3, GF, za + w / 2, ry=90)
+    put(K.kitchen_base(w, kwood, ktop, **kw), s0 + 0.312, GF, za + w / 2, ry=90, label="kitchen base")
 z_end = z0 + 3.06 + 1.2
-put(K.kitchen_wall(1.2, kwood), s0 + 0.17, GF + 1.45, z0 + 1.26, ry=90, solid=False)
-put(K.kitchen_wall(1.2, kwood), s0 + 0.17, GF + 1.45, z0 + 3.66, ry=90, solid=False)
+put(K.kitchen_wall(1.2, kwood), s0 + 0.187, GF + 1.45, z0 + 1.26, ry=90, solid=False, label="kitchen wall unit")
+put(K.kitchen_wall(1.2, kwood), s0 + 0.187, GF + 1.45, z0 + 3.66, ry=90, solid=False, label="kitchen wall unit")
 put(K.hood(0.6), s0 + 0.3, GF + 1.6, z0 + 2.16, ry=90, solid=False)
 # splashback tiles behind the worktop
 for (za, zb) in ((z0 + 0.66, z_end),):
@@ -585,11 +653,12 @@ put(K.pendant(0.95, "dome"), dt_s, GF_CEIL, dt_z, solid=False)
 light("dining_pendant", dt_s, GF_CEIL - 1.12, dt_z, 55, radius=0.04)
 light("kitchen_spot", s0 + 0.9, GF_CEIL - 0.1, z0 + 2.3, 30, radius=0.1)
 put(K.ceiling_rose(0.28), dt_s, GF_CEIL, dt_z, solid=False)
-put(K.dresser(1.3, 1.95, 0.45), s1 - 0.23, GF, z0 + 1.0, ry=-90)
+put(K.dresser(1.3, 1.95, 0.45), s1 - 0.247, GF, z0 + 1.0, ry=-90, label="kitchen dresser")
 for o in B_OPEN:
     if o["floor"] != 0: continue
     put(K.radiator(o["s1"] - o["s0"] - 0.1, 0.6), (o["s0"] + o["s1"]) / 2, GF, ZB_IN - 0.1, ry=180)
-    put(K.plant(0.28, 0.07, seed=SEED + 5 + int(o["s0"] * 10)), (o["s0"] + o["s1"]) / 2 + 0.3, o["h0"] + 0.025, ZB_IN - 0.24, solid=False)
+    # a small pot on the inner sill board (in the reveal, clear of the frame): the board's top is h0 + 0.028
+    put(K.plant(0.28, 0.06, seed=SEED + 5 + int(o["s0"] * 10), spread=0.07), (o["s0"] + o["s1"]) / 2 + 0.3, o["h0"] + 0.028, ZB_IN + 0.035, solid=False, label="kitchen sill plant")
 put(K.picture(0.7, 0.5, C["oak"], fabric(0xA8603A, "canvas")), s1 - 0.012, GF + 1.75, z0 + 2.6, ry=-90, solid=False)
 PROBES.append(("kitchen", s0, s1, z0, z1, GF, GF_CEIL))
 PROBES.append(("hall", HAL[2], HAL[3], HAL[4], HAL[5], GF, GF_CEIL))
@@ -597,7 +666,7 @@ PROBES.append(("hall", HAL[2], HAL[3], HAL[4], HAL[5], GF, GF_CEIL))
 # bedroom (+ the alcove over the hall)
 BED = next(r for r in ROOMS if r[0] == "bedroom"); s0, s1, z0, z1 = BED[2], BED[3], BED[4], BED[5]
 bz = rnd.uniform(3.2, 3.6)
-put(K.bed(1.6, 2.05, seed=SEED), s1 - 1.06, FF, bz, ry=-90)
+put(K.bed(1.6, 2.05, seed=SEED), s1 - 1.11, FF, bz, ry=-90, label="bed")
 for dz in (-1.08, 1.08):
     put(K.bedside(), s1 - 0.24, FF, bz + dz, ry=-90)
     put(K.table_lamp(h=0.42), s1 - 0.24, FF + 0.56, bz + dz, solid=False)
@@ -607,14 +676,14 @@ put(K.rug(1.4, 2.0, fabric(rnd.choice([0xC8B9A0, 0x6E7F8A]), "rug2")), s1 - 2.5,
 F_BED = [o for o in F_OPEN if o["floor"] == 1]
 for o in F_BED:
     put(K.radiator(o["s1"] - o["s0"] - 0.1, 0.6), (o["s0"] + o["s1"]) / 2, FF, ZF_IN + 0.1)
-    put(K.curtain_pair(o["s1"] - o["s0"], o["h1"] + 0.12 - FF - 0.02, fabric(rnd.choice([0x8E9AA3, 0xC9B79A, 0x6D5A6E]), "linen"), seed=SEED + 3), (o["s0"] + o["s1"]) / 2, o["h1"] + 0.14, ZF_IN + 0.1, solid=False)
+    put(K.curtain_pair(o["s1"] - o["s0"], o["h1"] + 0.12 - FF - 0.02, fabric(rnd.choice([0x8E9AA3, 0xC9B79A, 0x6D5A6E]), "linen"), seed=SEED + 3, ext=rod_ext(o, 1)), (o["s0"] + o["s1"]) / 2, o["h1"] + 0.14, ZF_IN + 0.1, solid=False, label="bedroom curtains")
 put(K.picture(0.8, 0.55, C["oak_light"], fabric(0x8BA0A8, "canvas")), s1 - 0.012, FF + 1.55, bz, ry=-90, solid=False)
 put(K.ceiling_rose(0.3), (s0 + s1) / 2, FF_CEIL, (z0 + z1) / 2, solid=False)
 put(K.pendant(0.6, "drum"), (s0 + s1) / 2, FF_CEIL, (z0 + z1) / 2, solid=False)
 ALC = next(r for r in ROOMS if r[0] == "alcove")
 put(K.desk(1.05, 0.5, C["walnut"]), (F_BED[0]["s0"] + F_BED[0]["s1"]) / 2 if F_BED else 1.2, FF, ZF_IN + 0.27, ry=180)
 put(K.chair(), (F_BED[0]["s0"] + F_BED[0]["s1"]) / 2 + 0.1 if F_BED else 1.2, FF, ZF_IN + 0.85, ry=180 + rnd.uniform(-15, 15))
-put(K.plant(1.1, 0.16, seed=SEED + 9), ALC[2] + 0.3, FF, ALC[5] - 0.35)
+put(K.plant(1.1, 0.16, seed=SEED + 9, spread=0.4), ALC[2] + 0.45, FF, ALC[5] - 0.45, fit=True, label="alcove ficus")
 PROBES.append(("bedroom", s0, s1, z0, z1, FF, FF_CEIL))
 PROBES.append(("alcove", ALC[2], ALC[3], ALC[4], ALC[5], FF, FF_CEIL))
 
@@ -622,8 +691,9 @@ PROBES.append(("alcove", ALC[2], ALC[3], ALC[4], ALC[5], FF, FF_CEIL))
 BAT = next(r for r in ROOMS if r[0] == "bathroom"); s0, s1, z0, z1 = BAT[2], BAT[3], BAT[4], BAT[5]
 put(K.bathtub(1.7, 0.76), s1 - 0.95, FF, z1 - 0.55)
 put(K.washbasin(0.8, 0.48), s1 - 0.25, FF, z0 + 1.1, ry=-90)
-put(K.mirror(0.7, 0.8, C["steel"]), s1 - 0.005, FF + 1.05, z0 + 1.1, ry=-90, solid=False)
-put(K.toilet(), s0 + 0.35, FF, z1 - 1.5, ry=90)
+put(K.mirror(0.7, 0.8, C["steel"], glass="mirror2", crest=False), s1 - 0.003, FF + 1.05, z0 + 1.1, ry=-90, solid=False, label="bath mirror")
+MIRRORS.append(dict(name="bathroom", c=(s1 - 0.003 - 0.0125, FF + 1.05 + 0.065 + (0.8 - 0.13) / 2, z0 + 1.1), n=(-1, 0, 0), room=BAT))
+put(K.toilet(), s0 + 0.40, FF, z1 - 1.5, ry=90, label="toilet")
 put(K.towel_rail(0.5, 0.9), s0 + 0.04, FF, z0 + 1.45, ry=90, solid=False)
 # wall tiles to 1.5 m on the four walls (a 7 mm layer)
 tc = rnd.choice([C["tiles_white"], C["tiles_green"]])
@@ -638,7 +708,9 @@ for (axis, at, a, b_, nrm) in (("z", z0, s0, s1, 1), ("s", s1, z0, z1, -1), ("z"
         wall_face(Bm, axis, o_, nrm, u0, u1, FF, FF + 1.5, [], "Hard", tc)
         if axis == "z": Bm.quad((u0, FF + 1.5, at), (u1, FF + 1.5, at), (u1, FF + 1.5, o_), (u0, FF + 1.5, o_), "Hard", tc) if nrm > 0 else Bm.quad((u0, FF + 1.5, o_), (u1, FF + 1.5, o_), (u1, FF + 1.5, at), (u0, FF + 1.5, at), "Hard", tc)
         else: Bm.quad((at, FF + 1.5, u0), (o_, FF + 1.5, u0), (o_, FF + 1.5, u1), (at, FF + 1.5, u1), "Hard", tc) if nrm > 0 else Bm.quad((o_, FF + 1.5, u0), (at, FF + 1.5, u0), (at, FF + 1.5, u1), (o_, FF + 1.5, u1), "Hard", tc)
-light("bath_ceiling", (s0 + s1) / 2, FF_CEIL - 0.05, (z0 + z1) / 2, 0, radius=0.12)        # off at night
+light("bath_ceiling", (s0 + s1) / 2, FF_CEIL - 0.35, (z0 + z1) / 2, 32, colour=(1.0, 0.86, 0.68), radius=0.08)   # on at night
+put(K.bar_light(0.42), s1 - 0.003, FF + 1.05 + 0.8 + 0.12, z0 + 1.1, ry=-90, solid=False, label="bath mirror light")
+light("bath_mirror", s1 - 0.08, FF + 1.05 + 0.8 + 0.12, z0 + 1.1, 9, colour=(1.0, 0.9, 0.76), radius=0.03)
 put(K.pendant(0.25, "bowl"), (s0 + s1) / 2, FF_CEIL, (z0 + z1) / 2, solid=False)
 PROBES.append(("bathroom", s0, s1, z0, z1, FF, FF_CEIL))
 
@@ -658,7 +730,12 @@ PROBES.append(("study", s0, s1, z0, z1, FF, FF_CEIL))
 # landing + corridor
 LAN = next(r for r in ROOMS if r[0] == "landing"); s0, s1, z0, z1 = LAN[2], LAN[3], LAN[4], LAN[5]
 put(K.pendant(0.4, "lantern"), (s0 + s1) / 2, FF_CEIL, (z0 + z1) / 2 + 0.2, solid=False)
-light("landing", (s0 + s1) / 2, FF_CEIL - 0.6, (z0 + z1) / 2 + 0.2, 22)
+light("landing", (s0 + s1) / 2, FF_CEIL - 0.6, (z0 + z1) / 2 + 0.2, 40)
+# the stairwell: a long-drop lantern from the void's ceiling over the flight (lights both the flight and the landing)
+VZ = (VOID[2] + VOID[3]) / 2 + 0.25
+put(K.ceiling_rose(0.22), STAIR_W / 2, FF_CEIL, VZ, solid=False, label="stairwell rose")
+put(K.pendant(1.55, "lantern"), STAIR_W / 2, FF_CEIL, VZ, solid=False, label="stairwell lantern")
+light("stairwell", STAIR_W / 2, FF_CEIL - 1.55 - 0.17, VZ, 55, radius=0.07)
 put(K.picture(0.55, 0.7, C["black_wood"], fabric(0x3D4A5A, "canvas")), s0 + 0.012, FF + 1.55, (z0 + z1) / 2 + 0.3, ry=90, solid=False)
 put(K.radiator(0.6, 0.55), s0 + 0.1, FF, z1 - 0.55, ry=90)
 COR = next(r for r in ROOMS if r[0] == "corridor")
@@ -667,6 +744,50 @@ PROBES.append(("landing", s0, s1, VOID[2], z1, FF, FF_CEIL))
 
 # a street lamp outside the front at night (through the front windows), a moon/sky ambient
 light("street_lamp", WI * 0.55, 5.5, -5.0, 220, colour=(1.0, 0.62, 0.32), radius=0.15)
+
+# ------------------------------------------------------------------------------------------------ the clearance check
+def clearance_report(tol=0.002):
+    """Every put() piece must stay inside the house's rooms: each vertex inside a room rectangle of its storey (or a
+    doorway through a partition, or a window reveal short of the frame, or the stairwell void), above the floor and
+    under the ceiling, and out of the stair's flight. Returns [(label, n_bad, worst depth m, where)]."""
+    import numpy as np
+    bad = []
+    zones = {0: [], 1: []}
+    for r in ROOMS: zones[r[1]].append((r[2], r[3], r[4], r[5]))
+    zones[1].append((VOID[0], VOID[1], VOID[2], VOID[3]))                          # over the flight (the lantern)
+    for (lev, axis, at, a0, a1, opens) in PARTS:                                   # doorways through the partitions
+        for (a, b_, h, lf) in opens:
+            zones[lev].append((at, at + PT, a, b_) if axis == "s" else (a, b_, at, at + PT))
+    reveals = {0: [], 1: []}
+    for o in F_OPEN + B_OPEN:                                                      # window reveals, up to 2 cm from the frame
+        lev = 0 if o["h0"] < FF else 1
+        if o in F_OPEN: reveals[lev].append((o["s0"], o["s1"], 0.17 + 0.02, ZF_IN, o["h0"], o["h1"]))
+        else: reveals[lev].append((o["s0"], o["s1"], ZB_IN, ZB_OUT - 0.17 - 0.02, o["h0"], o["h1"]))
+    for (label, P, at) in PLACED:
+        lev = 0 if at[1] < FF - 0.2 else 1
+        y0, y1 = WALL_CEIL[lev]
+        S, Y, Z = P[:, 0], P[:, 1], P[:, 2]
+        ok = np.zeros(len(P), bool)
+        for (s0, s1, z0, z1) in zones[lev]:
+            ok |= (S >= s0 - tol) & (S <= s1 + tol) & (Z >= z0 - tol) & (Z <= z1 + tol)
+        for (s0, s1, z0, z1, h0, h1) in reveals[lev]:
+            ok |= (S >= s0 - tol) & (S <= s1 + tol) & (Z >= z0 - tol) & (Z <= z1 + tol) & (Y >= h0 - tol) & (Y <= h1 + tol)
+        ok &= (Y >= y0 - tol) & (Y <= y1 + tol)
+        if lev == 0:      # the flight (strings included) under the hall's ceiling
+            in_flight = (S < STAIR_W + STRINGER + tol) & (Z > Z_STAIR - 0.09) & (Z < Z_TOP) & (Y < np.array([str_top(z) for z in Z]))
+            ok &= ~in_flight
+        n = int((~ok).sum())
+        if n:
+            q = P[~ok]
+            r = room_at(at[0], at[2], lev) or ROOMS[0]
+            depth = float(max(0, (r[2] - q[:, 0]).max(), (q[:, 0] - r[3]).max(), (r[4] - q[:, 2]).max(), (q[:, 2] - r[5]).max(), (y0 - q[:, 1]).max(), (q[:, 1] - y1).max()))
+            bad.append((label, n, depth, tuple(round(float(v), 2) for v in q[0])))
+    return bad
+CLIPS = clearance_report()
+print(f"clearance check: {len(PLACED)} pieces, {len(CLIPS)} crossing a wall / floor / ceiling")
+for (label, n, depth, where) in CLIPS: print(f"  CLIP {label}: {n} vertices outside, {depth * 100:.1f} cm deep, e.g. at plan {where}")
+if CHECK_ONLY: sys.exit(0)
+if CLIPS and not ALLOW_CLIP: raise SystemExit("clearance check failed (see CLIP lines above); --allow-clip to build anyway")
 
 # ------------------------------------------------------------------------------------------------ the surroundings (bake only)
 for c in spec.get("context", []):
@@ -891,6 +1012,17 @@ def encode_rgbm(img, path, rng=4.0):
     im.save()
     print("wrote", path, os.path.getsize(path) // 1024, "KB; max", float(lin.max()), "mean", float(lin[mask[..., 0] > 0].mean()) if mask.any() else 0)
 
+def write_rgbm(lin, path, rng=4.0):
+    """(h, w, 3) linear float, bottom row first -> RGBM PNG, gamma 2 (as encode_rgbm, without its chart denoise)."""
+    h, w = lin.shape[:2]
+    v = np.sqrt(np.clip(lin, 0, None)) / rng
+    m = np.clip(np.ceil(v.max(axis=2, keepdims=True) * 255) / 255, 1 / 255, 1)
+    px = np.concatenate([np.clip(v / m, 0, 1), m], axis=2).astype(np.float32)
+    im = bpy.data.images.new(os.path.basename(path), w, h, alpha=True, float_buffer=False)
+    im.colorspace_settings.name = "Non-Color"; im.alpha_mode = "STRAIGHT"
+    im.pixels.foreach_set(px.ravel()); im.filepath_raw = path; im.file_format = "PNG"; im.save()
+    print("wrote", path, os.path.getsize(path) // 1024, "KB; max", float(lin.max()))
+
 def smooth_corners(me, name):
     """The bake samples every corner on its own: neighbouring faces of a smooth surface got different noise (a patchwork).
     Average the corners that share a vertex and face roughly the same way (normal binned to ~25 degrees)."""
@@ -984,6 +1116,52 @@ if BAKE:
     bpy.data.objects.remove(ob_pb)
     PROBE_DATA[:] = probe_data
     print(f"probes: {len(pts)} ambient cubes baked")
+    # mirror reflections: a cube of radiance (5 faces: the one into the wall stays black) rendered from just in front of
+    # each mirror, per light mode, packed in one atlas per mode (6 faces across, one row per mirror) as RGBM gamma 2.
+    # The viewer box-projects them onto the mirror's room (parallax-correct for a planar mirror, no runtime render).
+    t = time.time()
+    FACES = [((1, 0, 0), (0, 1, 0)), ((-1, 0, 0), (0, 1, 0)), ((0, 1, 0), (0, 0, 1)), ((0, -1, 0), (0, 0, -1)), ((0, 0, 1), (0, 1, 0)), ((0, 0, -1), (0, 1, 0))]
+    rc_d = bpy.data.cameras.new("refl"); rc_d.angle = math.pi / 2; rc_d.sensor_fit = "HORIZONTAL"; rc_d.clip_start = 0.01
+    rc = bpy.data.objects.new("refl", rc_d); scn.collection.objects.link(rc); scn.camera = rc
+    scn.render.resolution_x = scn.render.resolution_y = REFL; scn.render.resolution_percentage = 100
+    scn.render.film_transparent = False
+    scn.view_settings.view_transform = "Standard"; scn.view_settings.look = "None"; scn.view_settings.exposure = 0.0
+    scn.render.image_settings.file_format = "OPEN_EXR"; scn.render.image_settings.color_depth = "32"
+    scn.cycles.samples = max(64, SAMPLES // 4); scn.cycles.use_denoising = True
+    tmp = os.path.join(HOUSE, "_refl_tmp.exr")
+    MIRROR_INFO.clear()
+    for m in MIRRORS:
+        c = Vector(to_local(ms(m["c"]))); nloc = Vector((-m["n"][0] if MIRROR else m["n"][0], m["n"][1], m["n"][2]))
+        eye = c + nloc * 0.04
+        r = m["room"]; y0_, y1_ = WALL_CEIL[r[1]]
+        corners = [Vector(to_local(ms((ss, yy, zz)))) for ss in (r[2], r[3]) for yy in (y0_, y1_) for zz in (r[4], r[5])]
+        MIRROR_INFO.append({"name": m["name"], "center": list(c), "eye": list(eye), "normal": list(nloc),
+                            "box": [[min(v[k] for v in corners) for k in range(3)], [max(v[k] for v in corners) for k in range(3)]]})
+    atlas = {mode: np.zeros((len(MIRRORS) * REFL, 6 * REFL, 3), np.float32) for mode in ("sky", "sun", "night")}
+    for mode in ("sky", "sun", "night"):
+        set_mode(mode)
+        for mi, mm in enumerate(MIRROR_INFO):
+            eye = Vector(mm["eye"]); nloc = Vector(mm["normal"])
+            for fi, (F, U) in enumerate(FACES):
+                F, U = Vector(F), Vector(U)
+                if F.dot(nloc) < -0.5: continue                     # the face looking into the mirror / wall
+                R = F.cross(U)
+                to_b = lambda v: Vector((v.x, -v.z, v.y))
+                rot = Matrix((to_b(R), to_b(U), -to_b(F))).transposed()
+                rc.matrix_world = Matrix.Translation(to_b(eye)) @ rot.to_4x4()
+                scn.render.filepath = tmp
+                bpy.ops.render.render(write_still=True)
+                im = bpy.data.images.load(tmp, check_existing=False)
+                px = np.array(im.pixels[:], np.float32).reshape(REFL, REFL, 4)[::-1, :, :3]      # top row first
+                bpy.data.images.remove(im)
+                atlas[mode][mi * REFL:(mi + 1) * REFL, fi * REFL:(fi + 1) * REFL] = px
+        print(f"reflections {mode}: {len(MIRROR_INFO)} mirrors")
+    os.remove(tmp)
+    for mode in ("sky", "sun", "night"):
+        write_rgbm(atlas[mode][::-1].copy(), os.path.join(HOUSE, f"refl_{mode}.png"))      # bpy images are bottom row first
+    scn.camera = None; bpy.data.objects.remove(rc)
+    scn.render.image_settings.file_format = "PNG"; scn.render.image_settings.color_depth = "8"
+    print(f"mirror reflections: {len(MIRRORS)} cubes x 3 modes ({time.time() - t:.1f}s)")
     # per-corner lighting -> custom float attributes (glTF _LMSKY / _LMSUN / _LMNIGHT; three.js: _lmsky ...)
     for ob in (ob_props, ob_door):
         me = ob.data
@@ -1030,6 +1208,9 @@ if PREVIEW:
         "bathroom": ((Bt[2] + 0.3, FF + 1.6, Bt[4] + 0.3), (Bt[3] - 0.6, FF + 0.8, Bt[5] - 0.6), 14),
         "study": ((St[3] - 0.3, FF + 1.6, St[4] + 0.3), (St[2] + 0.8, FF + 0.8, St[5] - 0.4), 15),
         "landing": ((Ln[3] - 0.25, FF + 1.6, Ln[5] - 0.25), (0.6, FF + 0.2, VOID_Z0 + 0.4), 18),
+        "mirror": ((S[2] + 0.5, GF + 1.6, fz - 1.5), (S[3], GF + 1.8, fz), 22),
+        "stringer": ((S1 - 0.25, GF + 1.45, Z_STAIR + 0.4), (STAIR_W, GF + 1.2, Z_STAIR + 2.2), 18),
+        "stairwell": ((S1 - 0.3, GF + 1.5, ZF_IN + 0.5), (0.5, FF + 1.2, VOID[3] - 0.5), 14),
     }
     only = arg("--only")
     for name, (eye, at, lens) in VIEWS.items():
@@ -1065,6 +1246,9 @@ info = {
     "frontDoor": {"hinge": list(hp), "width": DOOR_INFO["width"], "height": DOOR_INFO["height"], "opens": "about +y toward the inside (house local)",
                   "outside": [list(to_local(ms(((door["s0"] + door["s1"]) / 2, 0, -1.0))))]},
     "lights": [{"name": l[0], "pos": list(to_local(l[1])), "watts": l[2], "color": l[3]} for l in LIGHTS],
+    "mirrors": {"faces": "+x -x +y -y +z -z (house local), face f at u = f/6 .. (f+1)/6; up: +y (+z for +y, -z for -y); right = forward x up",
+                "size": REFL, "rows": [m["name"] for m in MIRROR_INFO], "files": {"sky": "refl_sky.png", "sun": "refl_sun.png", "night": "refl_night.png"},
+                "list": MIRROR_INFO},
     "mirror": MIRROR, "spawn": {"outside": list(to_local(ms(((door["s0"] + door["s1"]) / 2, 0.0, -2.5)))), "yaw_into": 0.0},
     "inner": {"width": WI, "zf": ZF_IN, "zb": ZB_IN},
     "triangles": {"interior": tri(ob_int), "props": tri(ob_props), "door": tri(ob_door), "glass": tri(ob_glass), "colliders": tri(ob_col)},

@@ -16,11 +16,11 @@ MATS = ["Plaster", "Wood", "Fabric", "Hard", "Glow", "Glass"]
 # pattern codes (COLOR_0.a = code / 8): decoded in viewer/interior/interiorMaterials.js
 CODE = {
     "Plaster": {"paint": 0, "brick": 1, "ceiling": 2},
-    "Wood": {"painted": 0, "oak": 1, "walnut": 2, "herringbone": 3, "boards": 4, "pine": 5},
+    "Wood": {"painted": 0, "oak": 1, "walnut": 2, "herringbone": 3, "boards": 4, "pine": 5, "gilt": 6},
     "Fabric": {"weave": 0, "velvet": 1, "rug": 2, "canvas": 3, "linen": 4, "knit": 5, "rug2": 6},
     "Hard": {"enamel": 0, "steel": 1, "marble": 2, "tiles": 3, "cement": 4, "ceramic": 5, "bluestone": 6, "leaf": 7, "paper": 8 - 1e-3},
     "Glow": {"shade": 0, "bulb": 1},
-    "Glass": {"clear": 0, "mirror": 1},
+    "Glass": {"clear": 0, "mirror": 1, "mirror2": 2},          # mirror / mirror2: the reflection cubes 0 / 1 (interior.json mirrors)
 }
 
 def col(hexrgb, mat, code, k=1.0):
@@ -183,24 +183,42 @@ def xform(bm, M):
     if M.determinant() < 0: bmesh.ops.reverse_faces(bm, faces=bm.faces)
     return bm
 
-def cloth(width, height, folds=7, depth=0.05, seg_x=None, seg_y=8, gather_top=1.0, gather_bot=1.0, hem=0.0, seed=0):
+def cloth(width, height, folds=7, depth=0.05, seg_x=None, seg_y=8, gather_top=1.0, gather_bot=1.0, hem=0.0, seed=0, heading=0.0):
     """A hanging curtain: a sheet in the xy plane (its top at y = 0, hanging down), pleated along x with `folds` folds
-    of `depth`, gathered toward its top / bottom (gather < 1 narrows), a little irregular. Two-sided by thickness."""
+    of `depth`, gathered toward its top / bottom (gather < 1 narrows), a little irregular. Two-sided by thickness.
+    The fold profile is a drape's, not a sine: rounded crests and tighter troughs (a skewed wave), each fold its own
+    width and depth, the depth growing from the heading down to the hem (the cloth opens as it falls); `heading` > 0:
+    a stiff pinch-pleated band at the top (small regular pleats over `heading` metres, easing into the free folds)."""
     rnd = random.Random(seed)
-    nx = seg_x or folds * 6
+    nx = seg_x or folds * 9
     bm = bmesh.new()
     rows = []
-    ph = [rnd.uniform(-0.4, 0.4) for _ in range(folds + 2)]
+    wts = [rnd.uniform(0.75, 1.3) for _ in range(folds)]; amp = [rnd.uniform(0.7, 1.15) for _ in range(folds)]
+    tw = sum(wts)
+    def phase(s):          # s in 0..1 -> (fold index, phase 0..1): folds of unequal width
+        acc = 0.0
+        for k, w in enumerate(wts):
+            if s * tw <= acc + w or k == folds - 1: return k, min(1.0, max(0.0, (s * tw - acc) / w))
+            acc += w
+    drift = [rnd.uniform(-0.25, 0.25) for _ in range(folds + 2)]
     for j in range(seg_y + 1):
-        t = j / seg_y
+        t = (j / seg_y) ** 1.15                          # rows a little denser at the top (the heading)
         y = -t * height
         g = gather_top + (gather_bot - gather_top) * t
+        open_ = 0.55 + 0.6 * t ** 0.7                    # folds deepen toward the hem
+        hd = 1.0 - smooth01(-y / heading) if heading > 0 else 0.0   # 1 in the heading band
         row = []
         for i in range(nx + 1):
             s = i / nx
+            k, f = phase(s)
+            ph = 2 * math.pi * (f + drift[k] * t * 0.3)
+            wave = math.sin(ph + 0.45 * math.sin(ph))      # skewed: broad rounded crest, tighter trough
+            fold = wave * depth * amp[k] * open_
+            pleat = math.sin(s * folds * 3 * 2 * math.pi) * depth * 0.18     # the heading's small pinch pleats
+            z = fold * (1 - hd) + pleat * hd
             x = (s - 0.5) * width * g
-            fold = math.sin(s * folds * 2 * math.pi + ph[int(s * folds)] * t) * depth * (0.75 + 0.5 * t)
-            row.append(bm.verts.new((x, y + (hem * math.sin(s * math.pi) if j == seg_y else 0), fold)))
+            yy = y + (hem * math.sin(s * math.pi) if j == seg_y else 0)
+            row.append(bm.verts.new((x, yy, z)))
         rows.append(row)
     for j in range(seg_y):
         for i in range(nx):
@@ -208,6 +226,9 @@ def cloth(width, height, folds=7, depth=0.05, seg_x=None, seg_y=8, gather_top=1.
     bmesh.ops.solidify(bm, geom=list(bm.faces), thickness=0.008)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     return bm
+
+def smooth01(x):
+    x = max(0.0, min(1.0, x)); return x * x * (3 - 2 * x)
 
 def leaf(length, width, bend=0.3, seg=5, fold=0.25):
     """One leaf: a pointed blade along +z from the origin, bent down by `bend`, folded along its rib."""
@@ -241,7 +262,7 @@ C = {
     "tiles_green": col(0x6F8C7E, "Hard", "tiles"), "cement": col(0xB9AE9C, "Hard", "cement"), "leaf": col(0x2E5A2A, "Hard", "leaf"),
     "leaf_dark": col(0x23461F, "Hard", "leaf"), "terracotta": col(0xA4553A, "Hard", "enamel"), "soil": col(0x2C2118, "Hard", "enamel"),
     "radiator": col(0xE9E6DD, "Hard", "enamel"), "appliance": col(0x2E3032, "Hard", "enamel"), "fridge": col(0xDEDCD6, "Hard", "enamel"),
-    "paper": col(0xEDE6D6, "Hard", "paper"),
+    "paper": col(0xEDE6D6, "Hard", "paper"), "gilt": col(0xC9A04A, "Wood", "gilt"),
     "brick": col(0x8E3B26, "Plaster", "brick"),
 }
 
@@ -361,7 +382,8 @@ def bed(w=1.6, l=2.05, frame=None, duvet=None, sheet=None, seed=0):
     for v in dv.verts:
         x, y, z = v.co
         if abs(x) > w / 2 - 0.02: v.co.y -= min(0.22, (abs(x) - (w / 2 - 0.02)) * 4.0)   # hangs over the sides
-        v.co.y += 0.008 * math.sin(z * 9 + seed) * math.cos(x * 7)
+        # soft, broad rumples (no fine ripple): two low-frequency waves and a diagonal fold
+        v.co.y += 0.009 * math.sin(z * 3.3 + seed) * math.cos(x * 2.6) + 0.004 * math.sin((z + x) * 5.2 + seed * 0.7) * (1 - min(1, abs(x) / (w / 2)))
     P.append((xform(dv, T(0, 0.5, 0.2)), "Fabric", duvet))
     fold = soft(w + 0.06, 0.05, 0.3, r=0.025, n=(12, 2, 4), puff=0.02)
     P.append((xform(fold, T(0, 0.56, -l / 2 + 0.62)), "Fabric", duvet))
@@ -491,26 +513,53 @@ def fireplace(w=1.42, h=1.12, d=0.3, marble=None, seed=0):
         P.append((xform(lathe([(0.011, 0.21), (0.011, 0.31), (0.0, 0.315)], seg=10), T(sx * 0.5, h, 0.04)), "Hard", C["enamel_white"]))
     return P
 
-def mirror(w=1.0, h=1.3, frame_c=None):
-    """An overmantel mirror (gilded), its back at z = 0 against the wall, bottom at y = 0."""
-    fc = frame_c or C["brass"]
+def mirror(w=1.0, h=1.3, frame_c=None, glass="mirror", crest=True):
+    """An overmantel mirror, its back at z = 0 against the wall, bottom at y = 0: a gilt moulded frame (bead, cove,
+    ogee, a raised sight-edge lip), rosettes on the corners, a shell crest on top (crest=True); the glass (code `glass`:
+    the viewer's reflection cube) a few mm behind the lip."""
+    fc = frame_c or C["gilt"]
     P = []
-    prof = [(0.0, 0.0), (0.035, 0.0), (0.04, 0.012), (0.03, 0.03), (0.012, 0.045), (0.0, 0.05)]
-    # frame as four mitred mouldings (sweep round the rectangle, the profile's 'a' = inward)
-    path = [(-w / 2, 0, 0), (w / 2, 0, 0), (w / 2, h, 0), (-w / 2, h, 0)]
+    # the moulding profile (a = inward from the outer edge, b = out from the wall)
+    prof = [(0.0, 0.0), (0.0, 0.018), (0.006, 0.026), (0.013, 0.026), (0.017, 0.032), (0.022, 0.042), (0.03, 0.05), (0.04, 0.054),
+            (0.05, 0.052), (0.058, 0.045), (0.064, 0.036), (0.068, 0.03), (0.072, 0.03), (0.075, 0.022), (0.075, 0.012)]
+    corners = [(-w / 2, 0.0), (w / 2, 0.0), (w / 2, h), (-w / 2, h)]
     bm = bmesh.new()
-    pts = [Vector(p) for p in path]
     rings = []
-    for i in range(4):
-        p = pts[i]; inward = (Vector((0, h / 2, 0)) - Vector((p.x, p.y - 0, 0)))
-        inward = Vector((-math.copysign(1, p.x), -math.copysign(1, p.y - h / 2), 0))
-        rings.append([bm.verts.new(p + inward * a + Vector((0, 0, b))) for (a, b) in prof])
+    for (px, py) in corners:
+        ix, iy = -math.copysign(1, px), -math.copysign(1, py - h / 2)
+        rings.append([bm.verts.new((px + ix * a, py + iy * a, b)) for (a, b) in prof])
     for i in range(4):
         A, B_ = rings[i], rings[(i + 1) % 4]
         for k in range(len(prof) - 1): bm.faces.new((A[k], B_[k], B_[k + 1], A[k + 1]))
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-    P.append((bm, "Hard", fc))
-    P.append((xform(box(w - 0.06, h - 0.06, 0.006), T(0, 0.03, 0.006)), "Glass", (0.8, 0.82, 0.82, (CODE["Glass"]["mirror"] + 0.5) / 8)))
+    P.append((bm, "Wood", fc))
+    # the back board behind the glass
+    P.append((xform(box(w - 0.1, h - 0.1, 0.008), T(0, 0.05, 0.0055)), "Wood", fc))
+    # corner rosettes: small turned bosses on the ogee
+    for (px, py) in corners:
+        ix, iy = -math.copysign(1, px), -math.copysign(1, py - h / 2)
+        ros = lathe([(0.0, 0.0), (0.03, 0.0), (0.032, 0.006), (0.026, 0.012), (0.018, 0.016), (0.008, 0.02), (0.0, 0.021)], seg=16)
+        P.append((xform(ros, T(px + ix * 0.04, py + iy * 0.04, 0.05, rx=90)), "Wood", fc))
+    if crest:      # a shell crest over the top rail: a fan of lobes, a scroll and a boss each side
+        for k in range(7):
+            a = -60 + k * 20
+            lobe = lathe([(0.0, 0.0), (0.016, 0.01), (0.02, 0.05), (0.014, 0.09), (0.0, 0.1)], seg=10, sz=0.45)
+            P.append((xform(lobe, T(0, h - 0.01, 0.03, rz=-a)), "Wood", fc))
+        for sx in (-1, 1):
+            sc = lathe([(0.0, 0.0), (0.022, 0.005), (0.024, 0.02), (0.016, 0.034), (0.0, 0.038)], seg=12, sz=0.5)
+            P.append((xform(sc, T(sx * 0.13, h + 0.005, 0.03, rz=-90 * sx)), "Wood", fc))
+            P.append((xform(lathe([(0.0, 0.0), (0.016, 0.0), (0.018, 0.01), (0.0, 0.016)], seg=12), T(sx * 0.17, h + 0.015, 0.034, rx=90)), "Wood", fc))
+    code = (CODE["Glass"][glass] + 0.5) / 8
+    P.append((xform(box(w - 0.13, h - 0.13, 0.004), T(0, 0.065, 0.0125)), "Glass", (0.8, 0.82, 0.82, code)))
+    return P
+
+def bar_light(w=0.42):
+    """A bathroom mirror light: an opal glass tube between two chrome end caps on an arm and a wall plate, back at z = 0."""
+    P = [(xform(box(0.07, 0.07, 0.012, bevel=0.004, seg=1, oy=-0.035), T(0, 0, 0.006)), "Hard", C["steel"]),
+         (xform(lathe([(0.008, 0), (0.008, 0.06)], seg=8), T(0, 0, 0.012, rx=90)), "Hard", C["steel"]),
+         (xform(lathe([(0.022, -w / 2), (0.022, w / 2)], seg=16, cap_top=True, cap_bottom=True), T(0, 0, 0.075, rz=90)), "Glow", col(0xF6F1E6, "Glow", "bulb"))]
+    for sx in (-1, 1):
+        P.append((xform(lathe([(0.026, 0), (0.026, 0.02), (0.02, 0.026)], seg=16), T(sx * w / 2, 0, 0.075, rz=-90 * sx)), "Hard", C["steel"]))
     return P
 
 def picture(w=0.6, h=0.45, frame_c=None, canvas_c=None):
@@ -526,29 +575,38 @@ def rug(w, l, c=None, thick=0.012):
     c = c or fabric(0x7A3B32, "rug")
     return [(soft(w, thick, l, r=0.005, n=(6, 1, 6)), "Fabric", c)]
 
-def plant(h=1.4, pot_r=0.2, seed=0, kind="ficus"):
+def plant(h=1.4, pot_r=0.2, seed=0, kind="ficus", spread=None):
+    """A potted plant. `spread`: the foliage's horizontal reach from the pot's axis (default ~0.42 h): stems are raised
+    until the leaf tips stay inside it, so a plant placed with a clearance never pokes into a wall."""
     rnd = random.Random(seed)
+    spread = spread or max(pot_r * 1.2, 0.42 * h)
     P = [(lathe([(0.0, 0.0), (pot_r * 0.72, 0.0), (pot_r * 0.8, 0.02), (pot_r, pot_r * 1.55), (pot_r * 1.06, pot_r * 1.6), (pot_r * 1.04, pot_r * 1.66), (pot_r * 0.94, pot_r * 1.62)], seg=28, cap_top=False), "Hard", C["terracotta"]),
          (lathe([(pot_r * 0.95, pot_r * 1.5), (0.0, pot_r * 1.52)], seg=24, cap_top=False), "Hard", C["soil"])]
     top = pot_r * 1.5
     if kind == "ficus":       # stems with clusters of leaves
         for s in range(5):
             a = rnd.uniform(0, 360); lean = rnd.uniform(3, 14); sh = h * rnd.uniform(0.6, 1.0)
+            lean = min(lean, math.degrees(math.asin(max(0.0, min(1.0, (spread * 0.6) / sh)))))
             st = xform(lathe([(0.012, 0), (0.006, sh)], seg=6), T(0, top, 0, ry=a, rx=lean))
             P.append((st, "Wood", C["walnut"]))
             dirv = Matrix.Rotation(math.radians(a), 4, "Y") @ Matrix.Rotation(math.radians(lean), 4, "X")
             for k in range(14):
                 t = rnd.uniform(0.35, 1.0)
                 p = Vector((0, top, 0)) + (dirv.to_3x3() @ Vector((0, sh * t, 0)))
-                lf = leaf(rnd.uniform(0.09, 0.14), rnd.uniform(0.04, 0.06), bend=rnd.uniform(0.15, 0.45))
+                ll = rnd.uniform(0.09, 0.14) * min(1.0, spread / 0.3)
+                lf = leaf(ll, ll * 0.42, bend=rnd.uniform(0.15, 0.45))
                 P.append((xform(lf, T(p.x, p.y, p.z, ry=rnd.uniform(0, 360), rx=rnd.uniform(-40, 25))), "Hard", C["leaf"] if rnd.random() < 0.6 else C["leaf_dark"]))
     else:                      # a big-leaf plant (monstera / philodendron)
         for k in range(19):
-            a = rnd.uniform(0, 360); el = rnd.uniform(20, 72); L = h * rnd.uniform(0.45, 0.8)
+            a = rnd.uniform(0, 360); el = rnd.uniform(28, 76); L = h * rnd.uniform(0.45, 0.8)
+            ll = rnd.uniform(0.3, 0.42) * min(1.0, spread / 0.55)
+            # the leaf hangs outward from the stem's tip: keep tip + leaf inside the spread
+            reach = spread - ll * 0.9
+            if L * math.cos(math.radians(el)) > reach: el = math.degrees(math.acos(max(0.05, reach / L)))
             stem = xform(lathe([(0.006, 0), (0.004, L)], seg=5), T(0, top, 0, ry=a, rx=90 - el))
             P.append((stem, "Hard", C["leaf_dark"]))
             tip = Vector((0, top, 0)) + Vector((math.sin(math.radians(a)) * math.cos(math.radians(el)) * L, math.sin(math.radians(el)) * L, math.cos(math.radians(a)) * math.cos(math.radians(el)) * L))
-            lf = leaf(rnd.uniform(0.3, 0.42), rnd.uniform(0.26, 0.34), bend=rnd.uniform(0.2, 0.5), seg=7, fold=0.15)
+            lf = leaf(ll, ll * 0.8, bend=rnd.uniform(0.2, 0.5), seg=7, fold=0.15)
             P.append((xform(lf, T(tip.x, tip.y, tip.z, ry=a, rx=rnd.uniform(-20, 10))), "Hard", C["leaf"]))
     return P
 
@@ -733,15 +791,18 @@ def dresser(w=1.3, h=1.95, d=0.45, wood=None):
             P.append((xform(lathe([(0.0, 0), (0.1, 0.0), (0.11, 0.012), (0.0, 0.006)], seg=24), T(-w / 2 + 0.17 + k * 0.24, y + 0.11, -d / 2 + 0.08, rx=80)), "Hard", C["enamel_white"]))
     return P
 
-def curtain_pair(width, drop, fab, rod_c=None, seed=0):
-    """Two drapes and a rod over a window `width` wide; the rod at y = 0, the drapes hang down from it at z = 0."""
+def curtain_pair(width, drop, fab, rod_c=None, seed=0, ext=0.25):
+    """Two drapes and a rod over a window `width` wide; the rod at y = 0 runs `ext` past the window each side (a finial
+    beyond), the drapes hang down from it at z = 0, stacked back mostly beside the window."""
     rod_c = rod_c or C["brass"]
-    P = [(xform(lathe([(0.012, -width / 2 - 0.25), (0.012, width / 2 + 0.25)], seg=10, cap_top=True, cap_bottom=True), T(0, 0, 0, rz=90)), "Hard", rod_c)]
+    P = [(xform(lathe([(0.012, -width / 2 - ext), (0.012, width / 2 + ext)], seg=10, cap_top=True, cap_bottom=True), T(0, 0, 0, rz=90)), "Hard", rod_c)]
     for sx in (-1, 1):
-        P.append((xform(lathe([(0.0, 0), (0.025, 0.005), (0.026, 0.03), (0.0, 0.05)], seg=12), T(sx * (width / 2 + 0.28), 0, 0, rz=-90 * sx)), "Hard", rod_c))
+        P.append((xform(lathe([(0.0, 0), (0.025, 0.005), (0.026, 0.03), (0.0, 0.05)], seg=12), T(sx * (width / 2 + ext + 0.03), 0, 0, rz=-90 * sx)), "Hard", rod_c))
         cw = 0.55
-        c = cloth(cw, drop, folds=6, depth=0.035, seg_y=10, gather_top=1.0, gather_bot=0.9 + 0.1 * random.Random(seed + sx).random(), seed=seed + sx)
-        P.append((xform(c, T(sx * (width / 2 + 0.25 - cw / 2), -0.03, 0.0)), "Fabric", fab))
+        c = cloth(cw, drop, folds=7, depth=0.042, seg_y=14, gather_top=1.0, gather_bot=0.86 + 0.1 * random.Random(seed + sx).random(), hem=0.012, seed=seed + sx, heading=0.09)
+        P.append((xform(c, T(sx * (width / 2 + ext - cw / 2), -0.03, 0.0)), "Fabric", fab))
+        for k in range(8):       # curtain rings on the rod
+            P.append((xform(lathe([(0.017, -0.005), (0.019, 0.0), (0.017, 0.005)], seg=10, cap_top=False), T(sx * (width / 2 + ext - cw / 2) + (k - 3.5) * cw / 8, 0.0, 0.0, rx=90)), "Hard", rod_c))
     return P
 
 def sheer(width, drop, seed=0):
