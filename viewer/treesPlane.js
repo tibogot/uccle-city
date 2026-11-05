@@ -54,9 +54,9 @@ export function planeLeafMask() {
     return pts;
   };
   const twigs = [];
-  // 6 twigs from near the centre outwards (a shoot seen through the cluster), leaves alternate along them
-  for (let i = 0; i < 6; i++) {
-    const a = (i / 6) * Math.PI * 2 + rnd() * 0.7, L = N * (0.28 + rnd() * 0.14);
+  // 7 twigs from near the centre outwards (a shoot seen through the cluster), leaves alternate along them
+  for (let i = 0; i < 7; i++) {
+    const a = (i / 7) * Math.PI * 2 + rnd() * 0.7, L = N * (0.28 + rnd() * 0.14);
     const sx = N / 2 + Math.cos(a + 2) * N * 0.04, sy = N / 2 + Math.sin(a + 2) * N * 0.04;
     const ex = N / 2 + Math.cos(a) * L, ey = N / 2 + Math.sin(a) * L;
     const mx = (sx + ex) / 2 + Math.cos(a + 1.57) * L * 0.12, my = (sy + ey) / 2 + Math.sin(a + 1.57) * L * 0.12;
@@ -64,17 +64,17 @@ export function planeLeafMask() {
   }
   const leaves = [];
   for (const t of twigs) {
-    const n = 7 + Math.floor(rnd() * 3);
+    const n = 9 + Math.floor(rnd() * 3);
     for (let k = 0; k < n; k++) {
       const u = 0.18 + (k / n) * 0.9, w = 1 - u;
       const x = w * w * t.sx + 2 * w * u * t.mx + u * u * t.ex, y = w * w * t.sy + 2 * w * u * t.my + u * u * t.ey;
       const side = k % 2 ? 1 : -1;
-      leaves.push({ x, y, ang: t.a + side * (0.7 + rnd() * 0.6), len: N * (0.085 + rnd() * 0.04), squash: 0.55 + rnd() * 0.45, tone: 0.32 + rnd() * 0.4, wob: rnd() * 6 });
+      leaves.push({ x, y, ang: t.a + side * (0.7 + rnd() * 0.6), len: N * (0.1 + rnd() * 0.045), squash: 0.55 + rnd() * 0.45, tone: 0.32 + rnd() * 0.4, wob: rnd() * 6 });
     }
   }
-  for (let i = 0; i < 16; i++) {          // loose leaves filling the cluster (other shoots behind)
+  for (let i = 0; i < 34; i++) {          // loose leaves filling the cluster (other shoots behind)
     const r = Math.sqrt(rnd()) * N * 0.3, a = rnd() * Math.PI * 2;
-    leaves.push({ x: N / 2 + Math.cos(a) * r, y: N / 2 + Math.sin(a) * r, ang: rnd() * Math.PI * 2, len: N * (0.07 + rnd() * 0.035), squash: 0.5 + rnd() * 0.5, tone: 0.25 + rnd() * 0.3, wob: rnd() * 6 });
+    leaves.push({ x: N / 2 + Math.cos(a) * r, y: N / 2 + Math.sin(a) * r, ang: rnd() * Math.PI * 2, len: N * (0.085 + rnd() * 0.04), squash: 0.5 + rnd() * 0.5, tone: 0.25 + rnd() * 0.3, wob: rnd() * 6 });
   }
   // back to front: the outer leaves (drawn last) over the inner ones
   leaves.sort((p, q) => Math.hypot(p.x - N / 2, p.y - N / 2) - Math.hypot(q.x - N / 2, q.y - N / 2));
@@ -204,7 +204,7 @@ function naturalPlane(r, v) {
   // the secondaries' goals: spread evenly over the dome (a Fibonacci spiral over its surface from 40 deg below the
   // crown's centre to the top, jittered), each grown from the limb nearest to it in azimuth (the leader takes the cap),
   // from lower on the limb for a lower goal: no bald patch whatever the side
-  const NG = 46, goals = [];
+  const NG = 34, goals = [];
   const s0 = Math.sin(THREE.MathUtils.degToRad(-32));
   for (let k = 0; k < NG; k++) {
     const sEl = s0 + (1 - s0) * ((k + 0.5) / NG);
@@ -217,7 +217,7 @@ function naturalPlane(r, v) {
       const t = L.leader ? rr(0.4, 0.95) : THREE.MathUtils.clamp(0.25 + (G.el + 40) / 100 * 0.7 + rr(-0.05, 0.05), 0.2, 0.98);
       const from = at(L.pts, t);
       const a = G.a, el = G.el;
-      const pr = rr(1.75, 2.25);
+      const pr = rr(2.2, 2.7);
       const goal = env(a, el, 1).addScaledVector(env(a, el, 1).sub(V(0, cy, 0)).normalize(), -pr * 0.55);
       const sd = goal.clone().sub(from);
       const sl = sd.length();
@@ -227,9 +227,9 @@ function naturalPlane(r, v) {
       branches.push({ pts: sp, rad: taper(Math.max(0.03, rS), 0.018), level: 2 });
       pads.push({ c: sp[sp.length - 1].clone(), r: pr });
       // twigs (level 3, dropped with the level 2 at LOD 1) to points of the envelope next to it
-      for (let j = 0; j < 2; j++) {
-        if (r() > 0.8) continue;
-        const pr2 = rr(1.35, 1.75);
+      for (let j = 0; j < 1; j++) {
+        if (r() > 0.9) continue;
+        const pr2 = rr(1.8, 2.2);
         const a2 = a + rr(-0.28, 0.28), el2 = el + rr(-16, 16);
         const g2 = env(a2, el2, 1).addScaledVector(env(a2, el2, 1).sub(V(0, cy, 0)).normalize(), -pr2 * 0.6);
         const f2 = at(sp, 0.45 + j * 0.25);
@@ -285,10 +285,11 @@ function pollardPlane(r) {
 /** The bark mesh: each branch swept along its points (parallel-transported rings, its radius profile, lumps; a root
  *  flare with buttresses on the trunk; knuckles lumpier). bark = (ring centre, level) for the vendor's bark morph
  *  (CHANGES #9: level > 1.5 shrinks onto its axis before LOD 1). */
-function barkMesh(branches, sidesOf) {
+function barkMesh(branches, sidesOf, stride = 1) {
   const pos = [], nrm = [], idx = [], bark = [];
   for (const b of branches) {
-    const { pts } = b, n = pts.length, sides = sidesOf(b.level);
+    // (stride 2: every other ring, the ends kept: LOD 2, a trunk of a few pixels)
+    const pts = stride > 1 ? b.pts.filter((_, i) => i % stride === 0 || i === b.pts.length - 1) : b.pts, n = pts.length, sides = sidesOf(b.level);
     let u = null;
     const base = pos.length / 3;
     for (let i = 0; i < n; i++) {
@@ -327,7 +328,7 @@ function barkMesh(branches, sidesOf) {
 
 // sides per branch level, per LOD: LOD 0 and LOD 1 keep the same sides on what they share (trunk, limbs), so the
 // 40 m switch changes no outline; LOD 1 drops levels 2-3 (shrunk away by the morph before it); LOD 2 (120 m+) fewer
-const SIDES = [[14, 9, 5, 4], [14, 9], [8, 5]];
+const SIDES = [[14, 9, 5, 4], [14, 9], [6, 4]];
 
 /** The vendor's shape contract (stylizedTrees.js buildTree): shape(r, lod, seed). Variants 0-3 natural, 4-5 pollard. */
 export function planeShape(seedBase) {
@@ -342,12 +343,12 @@ export function planeShape(seedBase) {
     return {
       crown, rad, clumps: pads,
       // many pads, fewer cards each than the street trees (20/7/3): a plane's crown is clumpier, with gaps
-      cards: pollard ? [12, 5, 2] : [9, 4, 2], cardScale: pollard ? 0.62 : 0.72,
+      cards: pollard ? [8, 4, 2] : [10, 4, 2], cardScale: pollard ? 0.62 : 0.58,
       // (vendor CHANGES #15) many small pads: a gentler occlusion per pad overhead and a floor (the shade side of a
       // plane is a deep green, not black), and more of the crown's dome in the shading normal (the crown reads as one
       // lit dome with lumps, as in the photos, not as 100 separate balls)
       aoOverhead: 0.95, aoFloor: 0.45, crownNormal: 0.2,
-      trunk: (l) => barkMesh(branches.filter((b) => b.level <= [3, 1, 1][l]), (lv) => SIDES[l][Math.min(lv, SIDES[l].length - 1)]),
+      trunk: (l) => barkMesh(branches.filter((b) => b.level <= [3, 1, 1][l]), (lv) => SIDES[l][Math.min(lv, SIDES[l].length - 1)], l === 2 ? 2 : 1),
     };
   };
 }

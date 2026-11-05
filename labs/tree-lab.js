@@ -54,7 +54,7 @@ function quad(x0, z0, x1, z1, y, mat, uvMetres = true) {
 const setts = cobbleMaterial();
 quad(-24, -18, 24, 18, Y0 + 0.02, setts);                                   // the square
 const STREET_Z = 70;
-quad(-170, STREET_Z - 6, 170, STREET_Z + 6, Y0 + 0.01, new THREE.MeshStandardNodeMaterial({ color: 0x2b2c2e, roughness: 0.92 }), false);
+quad(-170, STREET_Z - 6, 170, STREET_Z + 6, Y0 + 0.04, new THREE.MeshStandardNodeMaterial({ color: 0x2b2c2e, roughness: 0.92, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }), false);
 quad(-170, STREET_Z + 6, 170, STREET_Z + 10.5, Y0 + 0.14, setts);           // pavements (setts), a 13 cm kerb
 quad(-170, STREET_Z - 10.5, 170, STREET_Z - 6, Y0 + 0.14, setts);
 /** tree pits (viewer/cobbles.js pitMaterial: aKind 0 soil with uv = metres from the centre, 1 the four edging slabs
@@ -577,4 +577,4 @@ function photoView(d = 36, h = 1.6, ty = 9, x = 0, z = 0, turn = 0) {
   const sd = new THREE.Vector3(lighting.sunDir.x, 0, lighting.sunDir.z).normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), turn);
   controls.target.set(x, Y0 + ty, z); camera.position.set(x + sd.x * d, Y0 + h, z + sd.z * d);
 }
-window.lab = { popWalk, photoView, renderer, scene, camera, controls, lighting, S, species, get fields() { return fields; }, get chain() { return chain; }, build, applyAll, bench, alternate, results, startWalk, stopWalk, walkAt, walk, resetView, gpu, lodMorph, IMP, TREE_SHADOW, drawMask, planeLeafMask };
+window.lab = { ui, popWalk, photoView, renderer, scene, camera, controls, lighting, S, species, get fields() { return fields; }, get chain() { return chain; }, build, applyAll, bench, alternate, results, startWalk, stopWalk, walkAt, walk, resetView, gpu, lodMorph, IMP, TREE_SHADOW, drawMask, planeLeafMask };
