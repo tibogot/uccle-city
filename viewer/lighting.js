@@ -58,7 +58,7 @@ const SMOOTH_SHADOWS = !/[?&]smooth=0/.test(location.search);
 export const shadowFade = {
   uRadius: uniform(0.9),       // fade radius / box half size (light-space square distance from the box centre)
   uBand: uniform(0.22),        // the fade's width, as a share of the radius
-  levels: [60, 90, 135, 200, 300, 450],   // box half sizes (m): 4096 px -> 2.9 .. 22 cm texels
+  levels: [60, 90, 135, 200, 300, 400],   // box half sizes (m): 4096 px -> 2.9 .. 19.5 cm texels (the old box went to 380)
   tau: 0.35,                    // seconds: how fast the fade radius follows the view
 };
 class FadedShadowNode extends ShadowNode {
@@ -388,7 +388,7 @@ export class Lighting {
     const F = shadowFade, L = F.levels;
     this.fadeHalf = this.fadeHalf == null || this.snapNext ? half : damp(this.fadeHalf, half, F.tau, dt);
     this.snapNext = false;
-    const want = this.fadeHalf / 0.92;
+    const want = this.fadeHalf / 0.95;
     const fit = L.find((l) => l >= want) ?? L[L.length - 1];
     let box = this.boxHalf ?? fit;
     if (fit > box) box = fit;                                                   // grow at once

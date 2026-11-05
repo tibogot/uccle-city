@@ -10,11 +10,11 @@
 // materials and built trees for every tile, and the sun from viewer/lighting.js.
 import * as THREE from "three/webgpu";
 import { positionGeometry, vec3, float, mix, smoothstep, mx_noise_float, normalGeometry, max, uniform } from "three/tsl";
-import { createStylizedTrees } from "../vendor/stylized-trees/stylizedTrees.js";
+import { createStylizedTrees, lodMorph } from "../vendor/stylized-trees/stylizedTrees.js";
 import { branchShape } from "../vendor/stylized-trees/branchTree.js";
 import { bumpNormal } from "./tslkit.js";
 import { bakeTreeImpostors, impostorMaterial, impostorField, IMPOSTOR_START, IMP } from "./impostors.js";
-import { SMOOTH, lodEye, keepBand, rampTo, withObjectFade } from "./lodFade.js";
+import { SMOOTH, lodEye, keepBand, rampTo } from "./lodFade.js";
 
 // Far LOD: octahedral impostors past IMPOSTOR_START (viewer/impostors.js) with ?impostors=1. OFF by
 // default since 2026-11-04: side by side from Saint-Job (zoomed on 150-400 m) the real LOD 1 / LOD 2
@@ -27,6 +27,8 @@ import { SMOOTH, lodEye, keepBand, rampTo, withObjectFade } from "./lodFade.js";
 // ?impostors=0: off (the real LOD 2 out to 900 m, no trees on far tiles).
 const useImpostors = SMOOTH ? !/[?&]impostors=0/.test(location.search) : /[?&]impostors=1/.test(location.search);
 let renderer = null, impMat = null, impMatFar = null, impBake = null;
+/** The trees' shadow range (live: dev panel "Smoothness"): shadows fade out over [end - band, end] (m, view camera). */
+export const TREE_SHADOW = { end: uniform(+(new URLSearchParams(location.search).get("treeshadowend") ?? 120)), band: uniform(40) };
 /** main.js passes the renderer once (the impostor bake renders on it). */
 export function setTreeRenderer(r) { renderer = r; }
 // the vendor's variant per tree (stylizedTrees.js: rng(i * 7919 + 13) -> floor(x * variants)), the
@@ -246,8 +248,15 @@ function calibrate() {
     for (const k of ["colorNode", "normalNode", "roughnessNode"]) shared.trunkFar[k] = shared.trunkMat[k];
     shared.trunkFar.needsUpdate = true;
   }
-  // a streamed tile's trees fade in with the tile (lodFade.js objectFade), as the far tile they replace fades out
-  for (const m of new Set([shared.leafMat, shared.leafFar, shared.trunkMat, shared.trunkFar])) { withObjectFade(m); m.userData.shared = true; }
+  // (a streamed tile's trees fade in with the tile: lodFade.js gives them fading copies of these while it fades)
+  for (const m of new Set([shared.leafMat, shared.leafFar, shared.trunkMat, shared.trunkFar])) m.userData.shared = true;
+  // the trees' shadow distance fade (shadow pass only: the masks the shadow pass reads)
+  if (SMOOTH) {
+    const { d } = lodMorph(shared.U);
+    const keepSh = () => keepBand(float(0), float(1).sub(rampTo(d, TREE_SHADOW.end, TREE_SHADOW.band)));
+    for (const m of new Set([shared.leafMat, shared.leafFar])) m.maskShadowNode = m.maskShadowNode.and(keepSh());
+    for (const m of new Set([shared.trunkMat, shared.trunkFar])) m.maskShadowNode = m.maskNode ? m.maskNode.and(keepSh()) : keepSh();
+  }
   if (!useImpostors) IMP.start.value = 900;   // no impostors: LOD 2 fades out at 900 m (was a hard cut)
   if (useImpostors && renderer) {
     const t0 = performance.now();
@@ -314,7 +323,10 @@ function fieldSphere(placements) {
 
 // the tree LODs that cast sun shadows: all three with the smooth LOD (the shadow then follows the same morph
 // as the tree: no shadow switching on at 40 m), LOD 0 only before (?treeshadow=0|1|2)
-const SHADOW_LODS = +(new URLSearchParams(location.search).get("treeshadow") ?? (SMOOTH ? 2 : 0));
+// Measured 2026-11-05: every LOD casting (LOD 2 out to 400 m inside the orbit view's 380 m shadow box) more than
+// doubled the shadow pass. Default now: LOD 0 and 1 cast, and the trees' shadows FADE OUT (dithered, shadow pass
+// only) over TREE_SHADOW.band metres before TREE_SHADOW.end = the LOD 1 -> 2 switch, so no shadow switches.
+const SHADOW_LODS = +(new URLSearchParams(location.search).get("treeshadow") ?? (SMOOTH ? 1 : 0));
 
 export function buildStylizedTreeField(trees, ground, inTile) {
   calibrate();

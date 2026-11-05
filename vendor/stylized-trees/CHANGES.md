@@ -27,3 +27,18 @@
    Computed in the vertex stage (`vertexStage`): first written in the fragment stage, where the hash
    amplified the interpolated inputs' last-bit differences into stripes across the leaves (owner's
    "jittering foliage", 2026-11-04).
+8. **Nested LODs + LOD morph** (Uccle smooth LOD, `docs/SMOOTH_LOD.md`, 2026-11-05): every LOD takes its cards
+   from LOD 0's set (the same random stream whatever the LOD; LOD 1 keeps the first `cards[1]` of each clump,
+   LOD 2 the first `cards[2]`); each card carries a `rank` in `cardSpin.w`. `lodMorph(U)` gives the tree's
+   distance to `U.eye` (the VIEW camera, so the shadow pass morphs the same) from a new per-instance `treePos`
+   (the instance's translation), and ramps t1 / t2 toward `lodDist` / `farDist` over `morph1` / `morph2` metres.
+   Cards the next LOD drops shrink to nothing over the ramp, kept cards grow to the old LOD sizes (1.35x, 1.7x),
+   so at the switch both meshes draw the same pixels; `lodSlack` (m) delays the CPU re-bucketing past the ramp.
+   New params `lodEye, morph1, morph2, lodSlack`; new uniforms `eye, lod1, lod2, morph1, morph2, lodScale`
+   (0 = no morph: the impostor bake). `treeXf` and `treePos` are set on the bark too (same instance order).
+9. **Bark morph** (`branchTree.js` + the trunk material, with `params.barkMorph`): `barkMesh` stores per vertex
+   `bark` = (ring centre, branch level); the level-2 sub-branches (which LOD 1 drops) shrink onto their axis over
+   the LOD 0 -> 1 ramp. LOD 1's bark keeps 9 sides (6 changed the outline at 40 m), LOD 2 has 6 (was 4).
+10. **Far LOD fade materials** (`params.farMask(distance) -> bool node`): LOD 2 draws with its own copies of the
+   leaf and bark materials whose `maskNode` (and the leaves' shadow mask) is the caller's dither; Uccle
+   cross-fades LOD 2 into its impostors (or fades it out at 900 m). The nearer LODs keep shaders without discard.

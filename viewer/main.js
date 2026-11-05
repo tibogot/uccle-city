@@ -35,13 +35,6 @@ import { Driver, tileDrive } from "./drive/driveMode.js";
 import { addLamps } from "./lampLight.js";
 import { SMOOTH, lodEye, Fader, withObjectFade } from "./lodFade.js";
 import { buildFarTreeField } from "./treesStylized.js";
-/** Give every material of a tile's objects the per-object time fade (once per material; lodFade.js). The
- *  leaves' EQUAL-depth colour pass is skipped: it draws what its depth pre-pass (which fades) kept. */
-function fadeable(root) {
-  if (!TILE_FADE) return root;
-  root.traverse((o) => { for (const m of [].concat(o.material || [])) if (m.isNodeMaterial && !m.userData.objectFade) withObjectFade(m); });
-  return root;
-}
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -360,7 +353,6 @@ async function loadLiteTile(entry, group) {
       ? buildFarTreeField(f.trees, (x, z) => ys.get(`${x},${z}`), (x, z) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1) : null;
     if (trees) { g.add(trees.mesh); updaters.push(trees.update); }
   }
-  fadeable(g);
   group.add(g);
   return {
     name: entry.name,
@@ -446,7 +438,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   say(`buildings: ${d.buildingCount} (${B.triangles} triangles), roads: ${d.road.triangles} triangles in tile, terrain cells carved: ${d.road.carvedCells}; tile ready in ${(performance.now() - t0).toFixed(0)} ms`);
 
   for (const u of ups) updaters.push(u);
-  for (const g of Object.values(own)) { fadeable(g); if (fadeIn) { g.visible = true; fader.fade(g, +1); } }
+  for (const g of Object.values(own)) if (fadeIn) { g.visible = true; fader.fade(g, +1); }
   const dispose = () => {
     for (const u of ups) { const i = updaters.indexOf(u); if (i >= 0) updaters.splice(i, 1); }
     for (const g of Object.values(own)) {
@@ -746,7 +738,7 @@ async function main() {
   scene.add(liteGroup);
   const lite = new Map();                 // name -> lite tile
   const pending = new Set();
-  let busy = null;
+  let busy = null, firstLite = !!bootPipes;
   /** Fade a tile's groups out, then dispose it (at once with ?tilefade=0). */
   const retire = (groups, dispose) => {
     if (!TILE_FADE) { dispose(); return; }
@@ -799,7 +791,7 @@ async function main() {
       .sort((a, b) => dist(a) - dist(b)).slice(0, 2);
     await Promise.all(wantLite.map(async (t) => {
       pending.add(t.name);
-      try { const l = await loadLiteTile(t, liteGroup); lite.set(t.name, l); fader.fade(l.group, +1); } catch (e) { log(`far tile ${t.name} failed: ${e.message}`); }
+      try { const l = await loadLiteTile(t, liteGroup); lite.set(t.name, l); if (firstLite) firstLite = false; else fader.fade(l.group, +1); } catch (e) { log(`far tile ${t.name} failed: ${e.message}`); }
       pending.delete(t.name);
     }));
     if (wantLite.length && !want.length && built.filter((t) => dist(t) <= far + 0.01 && !lite.has(t.name) && !world.tiles.some((w) => w.name === t.name)).length === 0)
@@ -811,9 +803,13 @@ async function main() {
   // emits its shared TSL functions in a different order than all later ones (same code, other WGSL
   // text, so one more compile), and far tiles have their own shaders.
   if (bootPipes) {
+    // the tiles streamed under the cover hold their fade (smooth LOD): the warm-up then compiles their fading
+    // copies too (lodFade.js fadeVariant); the first far tile does not fade, so its own materials compile
+    fader.hold = true;
     if (ring > 0) await stream();
     if (far > ring) await stream(true);
     const w = await warmBoot(renderer, scene, bootPipes);
+    fader.hold = false;
     log(`warm-up: ${w.ms} ms, ${w.warmed} drawables, ${w.parallel} pipelines compiled in parallel, ${w.late} after`);
   }
   $("cover").classList.add("gone");
