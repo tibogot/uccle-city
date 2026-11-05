@@ -23,7 +23,7 @@
    0.7071067690849304,
    0.29571810364723206
   ],
-  "samples": 384,
+  "samples": 1024,
   "day_sky": "zenith 0.55/0.68/0.95, horizon 1.05 (relative)"
  },
  "levels": {
@@ -663,10 +663,11 @@
   "zb": 10.603
  },
  "triangles": {
-  "interior": 105829,
-  "door": 928,
+  "interior": 542,
+  "props": 138103,
+  "door": 1380,
   "glass": 44,
-  "colliders": 1298
+  "colliders": 1322
  },
- "build_s": 171.4
+ "build_s": 283.8
 }

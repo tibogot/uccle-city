@@ -14,6 +14,7 @@ import { addLampLight } from "./lampLight.js";
 import { noise2D, bumpNormal } from "./tslkit.js";
 
 import { landCoverData } from "./landcover.js";
+import { houseCut, cutOpacity } from "./interior/cut.js";
 
 /** The mask as a texture; `pre` = landCoverData() already computed (e.g. by the tile worker). */
 export function landCoverTexture(feats, bounds, pre) {
@@ -67,5 +68,7 @@ export function groundMaterial(cover, bounds, contour) {
   m.normalNode = bumpNormal(relief);
   m.roughnessNode = mix(mix(float(0.92), float(0.85), mk.g), float(0.08), mk.a);
   m.metalnessNode = mk.a.mul(0.5);
+  // an interior cell is loaded (?interior=1): no terrain inside its house (viewer/interior/cut.js)
+  if (houseCut.enabled) { m.opacityNode = cutOpacity(float(1), -0.08); m.alphaTest = 0.5; }
   return addLampLight(m);
 }

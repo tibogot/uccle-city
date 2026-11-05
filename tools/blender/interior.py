@@ -269,6 +269,8 @@ def front_door(o, z_out, za, zb):
     # step (outside) + threshold
     Bm.emit(box(s1 - s0 + 0.3, GF + 0.0, 0.32, bevel=0.01, seg=2), "Hard", C["bluestone"], T((s0 + s1) / 2, 0.0, z_out - 0.16 + 0.005))
     Bm.emit(box(s1 - s0, GF + 0.0, abs(ZF_IN - z_out), bevel=0.004, seg=1), "Hard", C["bluestone"], T((s0 + s1) / 2, 0.0, (z_out + ZF_IN) / 2))
+    Cm.emit(box(s1 - s0 + 0.3, GF, 0.32), "Plaster", ceil_c, T((s0 + s1) / 2, 0.0, z_out - 0.16 + 0.005))
+    Cm.emit(box(s1 - s0, GF, abs(ZF_IN - z_out)), "Plaster", ceil_c, T((s0 + s1) / 2, 0.0, (z_out + ZF_IN) / 2))
     for (cx, sx) in ((s0 + fw / 2, fw), (s1 - fw / 2, fw)):
         Bm.emit(box(sx, h1 - GF, dz + 0.02, bevel=0.006, seg=1), "Wood", DOOR_C, T(cx, GF, zc))
     Bm.emit(box(s1 - s0, fw, dz + 0.02, bevel=0.006, seg=1), "Wood", DOOR_C, T((s0 + s1) / 2, h1 - fw, zc))
@@ -568,7 +570,7 @@ put(K.kitchen_wall(1.2, kwood), s0 + 0.17, GF + 1.45, z0 + 3.66, ry=90, solid=Fa
 put(K.hood(0.6), s0 + 0.3, GF + 1.6, z0 + 2.16, ry=90, solid=False)
 # splashback tiles behind the worktop
 for (za, zb) in ((z0 + 0.66, z_end),):
-    Bm.emit(box(0.008, 0.55, zb - za, bevel=0.0), "Hard", rnd.choice([C["tiles_white"], C["tiles_green"]]), T(s0 + 0.004, GF + 0.9, (za + zb) / 2))
+    wall_face(Bm, "s", s0 + 0.008, 1, za, zb, GF + 0.9, GF + 1.45, [], "Hard", rnd.choice([C["tiles_white"], C["tiles_green"]]))
 dt_s = s0 + rnd.uniform(3.35, 3.6) + (WI - 5.36) * 0.5
 dt_z = (z0 + z1) / 2 + 0.25
 put(K.dining_table(1.6, 0.9), dt_s, GF, dt_z, ry=90)
@@ -627,8 +629,10 @@ for (axis, at, a, b_, nrm) in (("z", z0, s0, s1, 1), ("s", s1, z0, z1, -1), ("z"
         if g0 > cur: runs_.append((cur, g0)); cur = g1
     runs_.append((cur, b_))
     for (u0, u1) in runs_:
-        if axis == "z": Bm.emit(box(u1 - u0, 1.5, 0.007), "Hard", tc, T((u0 + u1) / 2, FF, at + nrm * 0.0035))
-        else: Bm.emit(box(0.007, 1.5, u1 - u0), "Hard", tc, T(at + nrm * 0.0035, FF, (u0 + u1) / 2))
+        o_ = at + nrm * 0.007
+        wall_face(Bm, axis, o_, nrm, u0, u1, FF, FF + 1.5, [], "Hard", tc)
+        if axis == "z": Bm.quad((u0, FF + 1.5, at), (u1, FF + 1.5, at), (u1, FF + 1.5, o_), (u0, FF + 1.5, o_), "Hard", tc) if nrm > 0 else Bm.quad((u0, FF + 1.5, o_), (u1, FF + 1.5, o_), (u1, FF + 1.5, at), (u0, FF + 1.5, at), "Hard", tc)
+        else: Bm.quad((at, FF + 1.5, u0), (o_, FF + 1.5, u0), (o_, FF + 1.5, u1), (at, FF + 1.5, u1), "Hard", tc) if nrm > 0 else Bm.quad((o_, FF + 1.5, u0), (at, FF + 1.5, u0), (at, FF + 1.5, u1), (o_, FF + 1.5, u1), "Hard", tc)
 light("bath_ceiling", (s0 + s1) / 2, FF_CEIL - 0.05, (z0 + z1) / 2, 0, radius=0.12)        # off at night
 put(K.pendant(0.25, "bowl"), (s0 + s1) / 2, FF_CEIL, (z0 + z1) / 2, solid=False)
 PROBES.append(("bathroom", s0, s1, z0, z1, FF, FF_CEIL))
@@ -701,6 +705,14 @@ def bake_mat(name):
     return m
 for n in K.MATS + ["Collider"]: bake_mat(n)
 
+def subset(bl, lm):
+    """The faces of a builder that are (lm=True) / are not (False) lightmapped."""
+    o = K.Builder()
+    for i, f in enumerate(bl.f):
+        if bl.flm[i] != lm: continue
+        o.face([bl.v[k] for k in f], K.MATS[bl.fm[i]], bl.fc[i], bl.fuv[i], lm=lm)
+    return o
+
 def mesh_from(bl, name, link=True):
     """Builder -> mesh object (Blender frame), Col (corner colours), UVMap (UV0), materials."""
     verts = [to_local(p) for p in bl.v]
@@ -734,7 +746,8 @@ def mesh_from(bl, name, link=True):
     me.validate()
     return ob
 
-ob_int = mesh_from(B, "Interior")
+ob_int = mesh_from(subset(B, True), "Interior")       # flat architecture: walls, floors, ceilings, reveals, tiles (lightmap)
+ob_props = mesh_from(subset(B, False), "Props")       # every piece (furniture, frames, stair, mouldings): baked per corner
 ob_door = mesh_from(DOOR, "FrontDoor")
 ob_glass = mesh_from(GLASS, "Glass")
 ob_occ = mesh_from(OCC, "Occluders")
@@ -742,22 +755,29 @@ ob_col = mesh_from(COL, "Colliders")
 for o in (ob_col,): o.data.materials.clear(); o.data.materials.append(mats["Collider"])
 ob_col.hide_render = True
 tri = lambda o: sum(len(p.vertices) - 2 for p in o.data.polygons)
-print(f"objects: Interior {tri(ob_int)} tris, FrontDoor {tri(ob_door)}, Glass {tri(ob_glass)}, Colliders {tri(ob_col)}  ({time.time() - T0:.1f}s)")
+# the props get a denser mesh for the per-corner bake: long edges split (twice), quads grid-filled
+for ob in (ob_props, ob_door):
+    bm = bmesh.new(); bm.from_mesh(ob.data)
+    for _ in range(2):
+        long = [e for e in bm.edges if e.calc_length() > 0.32]
+        if long: bmesh.ops.subdivide_edges(bm, edges=long, cuts=1, use_grid_fill=True)
+    bm.to_mesh(ob.data); bm.free()
+print(f"objects: Interior {tri(ob_int)} tris, Props {tri(ob_props)}, FrontDoor {tri(ob_door)}, Glass {tri(ob_glass)}, Colliders {tri(ob_col)}  ({time.time() - T0:.1f}s)")
 
-# lightmap UVs: Interior + FrontDoor share one atlas (multi-object edit mode)
-for o in (ob_int, ob_door):
+# lightmap UVs for the architecture only (large coplanar islands)
+for o in (ob_int,):
     lm = o.data.uv_layers.new(name="Lightmap"); o.data.uv_layers.active = lm
 for o in scn.objects: o.select_set(False)
-ob_int.select_set(True); ob_door.select_set(True); bpy.context.view_layer.objects.active = ob_int
+ob_int.select_set(True); bpy.context.view_layer.objects.active = ob_int
 bpy.ops.object.mode_set(mode="EDIT")
 bpy.ops.mesh.select_all(action="SELECT")
-bpy.ops.uv.smart_project(angle_limit=math.radians(52), island_margin=0.0, area_weight=0.0, correct_aspect=True, scale_to_bounds=False)
+bpy.ops.uv.smart_project(angle_limit=math.radians(30), island_margin=0.0, area_weight=0.0, correct_aspect=True, scale_to_bounds=False)
 bpy.ops.uv.average_islands_scale()
 try: bpy.ops.uv.pack_islands(rotate=True, margin=0.0028, shape_method="AABB")
 except Exception as e:
     print("pack_islands:", e); bpy.ops.uv.pack_islands(rotate=True, margin=0.0028)
 bpy.ops.object.mode_set(mode="OBJECT")
-for o in (ob_int, ob_door): o.data.uv_layers.active = o.data.uv_layers["UVMap"]
+for o in (ob_int,): o.data.uv_layers.active = o.data.uv_layers["UVMap"]
 print(f"lightmap UVs packed ({time.time() - T0:.1f}s)")
 
 # ------------------------------------------------------------------------------------------------ bake
@@ -857,16 +877,33 @@ if BAKE:
     scn.cycles.samples = SAMPLES
     scn.cycles.max_bounces = 6; scn.cycles.diffuse_bounces = 5
     scn.render.bake.margin = 6; scn.render.bake.margin_type = "EXTEND"
+    for ob in (ob_props, ob_door):
+        for mode in ("sky", "sun", "night"): ob.data.color_attributes.new("vl_" + mode, "FLOAT_COLOR", "CORNER")
     for mode in ("sky", "sun", "night"):
         set_mode(mode)
         t = time.time()
         for o in scn.objects: o.select_set(False)
-        ob_int.select_set(True); ob_door.select_set(True); bpy.context.view_layer.objects.active = ob_int
-        for o in (ob_int, ob_door): o.data.uv_layers.active = o.data.uv_layers["Lightmap"]
+        ob_int.select_set(True); bpy.context.view_layer.objects.active = ob_int
+        ob_int.data.uv_layers.active = ob_int.data.uv_layers["Lightmap"]
         bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT", "INDIRECT"}, uv_layer="Lightmap", margin=6, use_clear=True, target="IMAGE_TEXTURES")
-        print(f"bake {mode}: {time.time() - t:.1f}s")
         encode_rgbm(img, os.path.join(HOUSE, f"lm_{mode}.png"))
-    for o in (ob_int, ob_door): o.data.uv_layers.active = o.data.uv_layers["UVMap"]
+        for ob in (ob_props, ob_door):
+            for o in scn.objects: o.select_set(False)
+            ob.select_set(True); bpy.context.view_layer.objects.active = ob
+            ob.data.color_attributes.active_color = ob.data.color_attributes["vl_" + mode]
+            bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT", "INDIRECT"}, target="VERTEX_COLORS")
+        print(f"bake {mode}: {time.time() - t:.1f}s")
+    ob_int.data.uv_layers.active = ob_int.data.uv_layers["UVMap"]
+    # per-corner lighting -> custom float attributes (glTF _LMSKY / _LMSUN / _LMNIGHT; three.js: _lmsky ...)
+    for ob in (ob_props, ob_door):
+        me = ob.data
+        for mode in ("sky", "sun", "night"):
+            ca = me.color_attributes["vl_" + mode]
+            d = np.zeros(len(me.loops) * 4, dtype=np.float32); ca.data.foreach_get("color", d)
+            at = me.attributes.new("_LM" + mode.upper(), "FLOAT_VECTOR", "CORNER")
+            at.data.foreach_set("vector", d.reshape(-1, 4)[:, :3].ravel())
+            me.color_attributes.remove(me.color_attributes["vl_" + mode])
+        me.color_attributes.active_color = me.color_attributes["Col"]
     for n in K.MATS: mats[n].node_tree.nodes.remove(mats[n].node_tree.nodes["LM"])
     ob_glass.hide_render = False
 
@@ -912,16 +949,16 @@ if PREVIEW:
 # ------------------------------------------------------------------------------------------------ export
 for o in scn.objects: o.select_set(False)
 ob_occ.hide_render = True
-for o in (ob_int, ob_door, ob_glass, ob_col): o.select_set(True)
+for o in (ob_int, ob_props, ob_door, ob_glass, ob_col): o.select_set(True)
 bpy.context.view_layer.objects.active = ob_int
 # the front door's origin on its hinge (so the viewer turns it about y)
 hp = to_local(ms(DOOR_INFO["hinge_plan"]))
 hb = Vector((hp[0], -hp[2], hp[1]))
 ob_door.data.transform(Matrix.Translation(-hb)); ob_door.location = hb
-glb = os.path.join(HOUSE, "interior.glb")
+glb = os.path.join(HOUSE, "interior.raw.glb")      # tools/interior/packGlb.mjs -> interior.glb
 bpy.ops.export_scene.gltf(filepath=glb, export_format="GLB", use_selection=True, export_yup=True, export_apply=True,
                           export_texcoords=True, export_normals=True, export_vertex_color="NAME", export_vertex_color_name="Col",
-                          export_all_vertex_colors=False, export_materials="EXPORT", export_image_format="NONE", export_extras=False)
+                          export_all_vertex_colors=False, export_attributes=True, export_materials="EXPORT", export_image_format="NONE", export_extras=False)
 print("exported", glb, os.path.getsize(glb) // 1024, "KB")
 
 # notes for the viewer
@@ -938,7 +975,7 @@ info = {
     "lights": [{"name": l[0], "pos": list(to_local(l[1])), "watts": l[2], "color": l[3]} for l in LIGHTS],
     "mirror": MIRROR, "spawn": {"outside": list(to_local(ms(((door["s0"] + door["s1"]) / 2, 0.0, -2.5)))), "yaw_into": 0.0},
     "inner": {"width": WI, "zf": ZF_IN, "zb": ZB_IN},
-    "triangles": {"interior": tri(ob_int), "door": tri(ob_door), "glass": tri(ob_glass), "colliders": tri(ob_col)},
+    "triangles": {"interior": tri(ob_int), "props": tri(ob_props), "door": tri(ob_door), "glass": tri(ob_glass), "colliders": tri(ob_col)},
     "build_s": round(time.time() - T0, 1),
 }
 json.dump(info, open(os.path.join(HOUSE, "interior.json"), "w"), indent=1)

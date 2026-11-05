@@ -33,6 +33,7 @@ import { env } from "./lighting.js";
 import { n3, band, courses } from "./roadPaint.js";
 
 import { analyseBuildings } from "./facadeGeom.js";
+import { houseCut, cutOpacity } from "./interior/cut.js";
 export { analyseBuildings };
 
 const C = (r, g, b) => vec3(r, g, b);
@@ -395,6 +396,9 @@ export function wallMaterial() {
   // street lamps light the foot of the wall (fading up to ~7 m)
   m.emissiveNode = m.emissiveNode.add(col.mul(lampLight(h)));
   m.aoNode = mix(float(0.62), float(1.0), smoothstep(0.0, 9.0, h)).mul(smoothstep(0.0, 1.2, h).mul(0.2).add(0.8));
+  // an interior cell is loaded (?interior=1): its house's openings are holes, its real windows and door show
+  // (viewer/interior/cut.js; compiled in only then)
+  if (houseCut.enabled) { m.opacityNode = cutOpacity(opening.mul(notShop)); m.alphaTest = 0.5; }
   return m;
 }
 

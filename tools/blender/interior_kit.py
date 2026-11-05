@@ -33,14 +33,15 @@ def col(hexrgb, mat, code, k=1.0):
 class Builder:
     """Triangles per material, with per-corner colour + UV0, in house-local coordinates."""
     def __init__(self):
-        self.v = []; self.f = []; self.fm = []; self.fc = []; self.fuv = []
+        self.v = []; self.f = []; self.fm = []; self.fc = []; self.fuv = []; self.flm = []
         self.tris = 0
+        self.lm = True           # the faces added by quad / poly: lightmapped architecture; emit(): vertex-lit pieces
 
-    def face(self, pts, mat, c, uvs):
+    def face(self, pts, mat, c, uvs, lm=None):
         base = len(self.v)
         self.v.extend(pts)
         self.f.append(tuple(range(base, base + len(pts))))
-        self.fm.append(MATS.index(mat)); self.fc.append(c); self.fuv.append(uvs)
+        self.fm.append(MATS.index(mat)); self.fc.append(c); self.fuv.append(uvs); self.flm.append(self.lm if lm is None else lm)
         self.tris += len(pts) - 2
 
     def quad(self, a, b, c_, d, mat, c, uvmode="auto"):
@@ -62,7 +63,7 @@ class Builder:
             if skip_down and n.y < -0.98 and all(abs(l.vert.co.y - zmin) < 1e-4 for l in fa.loops): continue
             pts = [tuple(M @ l.vert.co) for l in fa.loops]
             uvs = [box_uv(l.vert.co, n, uv_scale) for l in fa.loops]
-            self.face(pts, mat if isinstance(mat, str) else mat(fa), c if not callable(c) else c(fa), uvs)
+            self.face(pts, mat if isinstance(mat, str) else mat(fa), c if not callable(c) else c(fa), uvs, lm=False)
         bm.free()
 
 
