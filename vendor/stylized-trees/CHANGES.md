@@ -52,7 +52,7 @@
    own tone and its veins in .g (a RedFormat mask reads 0 there; with leafTone 0 nothing changes). The impostor
    bake (viewer/impostors.js) applies the same term.
 13. **Variant per tree, seed** (tree lab): `params.variantOf(i)` picks tree i's variant (default: the hash of its index,
-   as before); `params.seed` replaces the built trees' base seed 1000.
+   as before); `params.seed` replaces the built trees' base seed 1000, and `shape(r, lod, seed)` gets the seed (a species picks a form per variant).
 14. **Wind direction** (tree lab): `params.windDir` [x, z] (uniform `U.windDir`): the slow sway leans along it with a
    smaller sideways swing (before: a fixed x / z sway). The sway is added in the world (since #5). Only with
    `windAmp` > 0 (0 in the city: no change there).

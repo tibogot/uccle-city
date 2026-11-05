@@ -107,7 +107,7 @@ export function roundCrown(r) {
 
 function buildTree(seed, lod, shape = roundCrown) {
   const r = rng(seed);
-  const { crown, rad, clumps, limbs, cards: cardsByLod, cardScale = 1, trunk: trunkOf, cardCorners } = shape(r, lod);
+  const { crown, rad, clumps, limbs, cards: cardsByLod, cardScale = 1, trunk: trunkOf, cardCorners } = shape(r, lod, seed);   // [uccle-city CHANGES.md #13] + the seed (a species picks its form per variant)
   // [uccle-city CHANGES.md #6] a shape may give the card's outline (unit corners, convex, fan-triangulated)
   const CORNERS = cardCorners ?? [[-1, -1], [1, -1], [1, 1], [-1, 1]];
 
