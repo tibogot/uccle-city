@@ -79,7 +79,7 @@ PARTS = [
                                              [680.6, 114.2], [678.2, 114.2], [678.2, 112.2], [677.0, 112.2]], roof="flat", style="std",
          barrel=dict(x0=678.6, x1=699.6, zc=103.75, span=9.4, slits=[684.5, 693.5])),
     dict(id="great_eq", solid="646426", poly=[[650.0, 155.2], [650.0, 142.9], [650.8, 142.9], [650.8, 141.2], [656.9, 141.2], [656.9, 142.9],
-                                             [657.7, 142.9], [657.6, 154.8], [653.9, 158.2]], roof="flat", style="hero"),
+                                             [657.7, 142.9], [657.6, 154.8]], roof="flat", style="hero"),
     dict(id="gallery_w", solid="729717", poly=None, roof="flat", style="gallery"),
     dict(id="gallery_e", solid="528775", poly=None, roof="flat", style="gallery"),
     dict(id="pav_e", solid="541130", poly=None, roof="flat", style="std"),
