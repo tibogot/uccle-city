@@ -173,7 +173,7 @@ export function createDevPanel(ctx) {
   fWo.close();
 
   // ---------------------------------------------------------------- Smoothness (viewer/smoothPanel.js)
-  addSmoothnessFolder(gui, ctx);
+  const SM = addSmoothnessFolder(gui, ctx).state || null;
 
   // ---------------------------------------------------------------- Performance
   const fP = gui.addFolder("Performance");
@@ -233,7 +233,8 @@ export function createDevPanel(ctx) {
   }
   addEventListener("keydown", (e) => { if (e.code === "KeyH" && !e.repeat && document.activeElement?.tagName !== "INPUT") photo(gui.domElement.style.display !== "none"); });
   function share() {
-    const st = { ...S, mode: mode(), cam: camera.position.toArray().map((n) => +n.toFixed(2)), tgt: controls.target.toArray().map((n) => +n.toFixed(2)) };
+    const smooth = SM ? Object.fromEntries(Object.entries(SM).filter(([, v]) => typeof v === "number")) : undefined;
+    const st = { ...S, smooth, mode: mode(), cam: camera.position.toArray().map((n) => +n.toFixed(2)), tgt: controls.target.toArray().map((n) => +n.toFixed(2)) };
     const q = new URLSearchParams(location.search);
     q.set("dev", btoa(JSON.stringify(st)));
     const url = `${location.origin}${location.pathname}?${q}`;
@@ -249,6 +250,7 @@ export function createDevPanel(ctx) {
       for (const c of gui.controllersRecursive()) if (c.object === S && c.property in st && !skip.has(c.property)) { c.setValue(st[c.property]); }
       if (st.preset && st.preset !== S.preset) gui.controllersRecursive().find((c) => c.property === "preset")?.setValue(st.preset);
       if (st.hour != null) { lighting.hourOverride = st.hour; S.hour = st.hour; }
+      if (SM && st.smooth) for (const c of gui.controllersRecursive()) if (c.object === SM && c.property in st.smooth) c.setValue(st.smooth[c.property]);
       if (st.cam && st.tgt && (!st.mode || st.mode === "orbit")) { setView("stjob"); camera.position.fromArray(st.cam); controls.target.fromArray(st.tgt); controls.update(); }
       else if (st.mode === "drive") drive(); else if (st.mode === "third") thirdPerson(); else if (st.mode === "fly") fly(); else if (st.mode === "walk") walk();
       refresh();

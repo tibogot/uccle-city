@@ -48,5 +48,6 @@ export function addSmoothnessFolder(gui, { lighting, fader }) {
     S.treeStats = `${(tris / 1000).toFixed(0)}k triangles (${n} trees loaded)`;
   }, 500);
   f.close();
+  f.state = S;          // (the dev panel's "copy link" carries the numeric ones)
   return f;
 }
