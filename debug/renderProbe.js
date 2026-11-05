@@ -12,16 +12,20 @@ export function install(renderer) {
     const f = obj[key];
     if (!f) return;
     obj[key] = function (...a) {
+      if (slot === "attr" && a[0] && !a[0].__owner) tagOwners();
       const t = performance.now();
       const r = f.apply(this, a);
       const dt = performance.now() - t;
       const c = R.cur;
       c[slot] += dt; c[slot + "N"]++;
       if (slot === "attr") { const at = a[0]; c.attrBytes += at?.array?.byteLength ?? 0; }
-      if (dt > 2) c.names.push(`${slot}:${name(a)}:${dt.toFixed(1)}`);
+      const big = slot === "attr" && (a[0]?.array?.byteLength ?? 0) > 1e6;
+      if (dt > 2 || big || slot === "tex") c.names.push(`${slot}:${name(a)}${big ? `(${(a[0].array.byteLength / 1e6).toFixed(1)}MB,${key}${a[0].__owner ? "," + a[0].__owner : ""})` : ""}:${dt.toFixed(1)}`);
       return r;
     };
   };
+  // which mesh an attribute belongs to (walks the scene once per unknown attribute: debug only)
+  const tagOwners = () => { if (R._tagT && performance.now() - R._tagT < 200) return; R._tagT = performance.now(); window.viewer.scene.traverse((o) => { if (!o.geometry) return; const own = `${o.name || o.type}<${o.parent?.name || ""}<${o.parent?.parent?.name || ""}`; for (const [n, at] of Object.entries(o.geometry.attributes)) at.__owner ||= `${n}@${own}`; if (o.geometry.index) o.geometry.index.__owner ||= `index@${own}`; if (o.instanceMatrix) o.instanceMatrix.__owner ||= `instanceMatrix@${own}`; }); };
   const nodes = renderer._nodes;
   const gfr = nodes.getForRender;
   nodes.getForRender = function (ro, y) {

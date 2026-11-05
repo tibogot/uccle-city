@@ -230,6 +230,11 @@ function featureObjects(f, hm, bounds, railLift = 0.012, treeGround = (x, z) => 
     mesh.name = "tram-rails"; mesh.receiveShadow = true;
     group.add(mesh);
   }
+  /** the trees, added later (their own frame slice): group.userData.addTrees() */
+  group.userData.addTrees = () => addTrees(group, f, inTile, treeGround);
+  return group;
+}
+function addTrees(group, f, inTile, treeGround) {
   // default: game-engine-v1's fog-lab stylized trees (viewer/treesStylized.js); ?trees=slop:
   // slop-newyork's tree system (viewer/treesSlop.js); ?trees=simple: our first leaf-card crowns
   const treeMode = params.get("trees");
@@ -239,7 +244,6 @@ function featureObjects(f, hm, bounds, railLift = 0.012, treeGround = (x, z) => 
   group.add(T.group);
   group.userData.update = T.update || null;
   log(`trees: ${T.count} (LiDAR canopy peaks + OSM)` + (T.sizes ? `, species heights ${T.sizes.map((z) => z.h.toFixed(1)).join("/")} m` : ""));
-  return group;
 }
 
 let tramLine = null;       // real STIB line 92 on its timetable (tramline.js)
@@ -425,8 +429,10 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const treeGround = fit ? (x, z) => (fit.classAt(x, z) >= 0 ? hm.surface(x, z) + CARVE + fit.lift(x, z) : hm.surface(x, z)) : undefined;
   const fo = featureObjects(feats, hm, bounds, d.road.surfaceStats ? 0.02 : 0.012, treeGround);
   own.features.add(fo);
+  await frame("rails");
+  fo.userData.addTrees();
   if (fo.userData.update) ups.push(fo.userData.update);
-  await frame("features+trees");
+  await frame("trees");
   // ?roads=surface: lamps, parked cars, the walker and the bollards on the measured street (viewer/streetFit.js)
   const lamps = buildLamps(roads, (x, z) => hm.ground(x, z), bounds, { lights: verbose, place: fit?.placeLamp, lift: fit?.lift });   // point lights: main tile only
   own.features.add(lamps.group);
