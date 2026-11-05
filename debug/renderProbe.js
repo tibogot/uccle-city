@@ -32,7 +32,7 @@ export function install(renderer) {
     const had = this.get(ro).nodeBuilderState !== undefined;
     const t = performance.now();
     const r = gfr.call(this, ro, y);
-    if (!had) { const dt = performance.now() - t; R.cur.node += dt; R.cur.nodeN++; if (dt > 1) R.cur.names.push(`node:${ro.material.name || ro.material.type}#${ro.material.id}@${ro.object.name || ro.object.type}<${ro.object.parent?.name || ""}<${ro.object.parent?.parent?.name || ""}:${dt.toFixed(1)}`); }
+    if (!had) { const dt = performance.now() - t; R.cur.node += dt; R.cur.nodeN++; if (dt > 1) R.cur.names.push(`node${renderer._precompilationState ? "(pre)" : ""}:${ro.material.name || ro.material.type}#${ro.material.id}@${ro.object.name || ro.object.type}<${ro.object.parent?.name || ""}<${ro.object.parent?.parent?.name || ""}:${dt.toFixed(1)}`); }
     return r;
   };
   const be = renderer.backend;

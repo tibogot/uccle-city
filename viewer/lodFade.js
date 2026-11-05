@@ -98,6 +98,9 @@ export class Fader {
       f.t = Math.min(1, f.t + dt / f.seconds);
       const e = f.t * f.t * (3 - 2 * f.t);
       set(f.obj, f.dir > 0 ? e : 2 + e);
+      // (a fade-in whose own materials are still being compiled (obj.userData.compiling, main.js preCompile) keeps
+      // drawing its fading copies, whole, until they are: swapping them in earlier built them in that frame)
+      if (f.t >= 1 && f.dir > 0 && f.obj.userData.compiling) continue;
       if (f.t >= 1) { this.list.splice(this.list.indexOf(f), 1); restore(f.obj); set(f.obj, 1); f.done?.(); }
     }
   }

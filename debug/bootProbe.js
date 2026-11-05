@@ -29,4 +29,6 @@
     pipesAfterList: P.pipes.filter((x) => x[0] >= from).slice(0, 40),
     loafAfter: P.loaf.filter((x) => x[0] >= from).sort((a, b) => b[1] - a[1]).slice(0, 8),
   });
+  // the render probe (debug/renderProbe.js) as soon as the viewer exists (main.js sets window.viewer after the cover)
+  const iv = setInterval(() => { if (!window.viewer?.renderer) return; clearInterval(iv); import("/debug/renderProbe.js").then((m) => m.install(window.viewer.renderer)); }, 20);
 })();

@@ -52,7 +52,16 @@ const fader = new Fader();
  *  render pipeline exists). Not under the boot cover: the warm-up draws those itself. */
 let compileFor = null;
 const preCompile = async (roots, fading) => {
-  if (!compileFor || fader.hold) return;
+  if (!compileFor) return;
+  // under the boot cover the warm-up draws the tile with its fading copies (it holds its fade): its OWN materials
+  // were then built on the frame its fade ended, after the cover lifted (28 ms, measured). Compiled in the
+  // background here, not awaited: the boot does not wait for them.
+  if (fader.hold) {
+    const list = [].concat(roots), p = compileFor(list);
+    for (const r of list) r.userData.compiling = p;
+    p.finally(() => { for (const r of list) delete r.userData.compiling; });
+    return;
+  }
   await compileFor(roots);
   if (fading) await compileFor([].concat(roots).map(fadeProxies));
 };
