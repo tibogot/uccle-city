@@ -28,6 +28,18 @@ then `node tools/interior/packGlb.mjs models/interior/maison1/interior.raw.glb m
   albedo (linear) + a pattern code in alpha; UV0 in metres; the patterns (parquet, grain, weave, rugs, paintings,
   marble, cement tiles, wall tiles, brick) are TSL in `viewer/interior/interiorModel.js`.
 
+- **Prop clearance check** (`clearance_report()` in `interior.py`): every `put()` piece is recorded with its placed
+  vertices; each vertex must lie inside a room rectangle of its storey (or a partition doorway, a window reveal short
+  of the frame, the stairwell void), above the floor, under the ceiling and out of the stair's flight (2 mm tolerance).
+  The build **fails** on a clip (`--allow-clip` to override); `--check-only` builds the geometry, prints the report and
+  stops (seconds). `put(..., fit=True)` slides a piece so its whole box (foliage included) keeps 3 cm from the walls;
+  plants take a `spread` (leaf tips stay inside it), curtain rods a `rod_ext` limited by the nearest wall.
+- Stair: treads and risers housed 18 mm into a closed string on the hall side and a wall string (no light slit at the
+  joint), an oak capping, the spandrel panelling 12 mm behind the string's face.
+- Stairwell: a frosted **laylight** (plafond lumineux) in the void's ceiling under a light well and a roof light (in the
+  bake: holes in the attic slab and roof occluders, the well's white walls; in the viewer: opal glass, `Glass` code 3);
+  glazed fanlights (impostes) over every panelled door. Lamps: hall 60 W, landing 70 W, a stairwell lantern 80 W.
+
 ## 3. Light it in Cycles (all baked, no city lights inside)
 - Three bakes (OptiX): **sky** (a gradient dome), **sun** (an afternoon sun, scaled in the viewer by the city's sun),
   **night** (the lamps on, a street lamp outside). Surroundings from `house.json` occlude the sky.
@@ -42,11 +54,23 @@ then `node tools/interior/packGlb.mjs models/interior/maison1/interior.raw.glb m
   nothing to leak at wall seams. Eye adaptation: the cell's light is eased up (`interiorLook.adaptInside`) while the
   camera is inside; from outside the rooms read darker than the street, as in daylight.
 
+- **Mirror reflections**: per mirror (`MIRRORS` in `interior.py`), a cube of radiance rendered in Cycles from 4 cm in front
+  of the glass (5 faces, 256², per light mode), packed into `refl_sky/sun/night.png` (6 faces across, a row per mirror,
+  RGBM gamma 2). The viewer box-projects it: the reflected ray is intersected with the mirror's room box and the cube is
+  read toward the hit point from the render point (parallax-correct on a planar mirror, no runtime render); aged
+  silvering on top. Face layout and boxes in `interior.json` `mirrors`.
+
 ## 4. In the viewer
 - `viewer/interior/cut.js`: with `?interior=1` the shared façade material and the terrain get a `maskNode` that
   discards the house's openings / the terrain inside it (a box in the house frame, dithered fade). Compiled in only
   then. (alphaTest broke the shadow pass in r187: an empty fragment output struct; maskNode does not.)
-- `interiorModel.js`: GLB (meshopt, decoded in workers) + three PNGs, materials compiled with `compileAsync`.
+- `interiorModel.js`: GLB (meshopt, decoded in workers) + the PNGs. The materials are module singletons whose textures
+  are TextureNodes re-pointed at the cell's maps on load; with `?interior=1` the city's boot warm-up compiles them
+  under the loading cover (`interiorWarmup()`: one stand-in mesh per material with the GLB's exact attribute layout, so
+  three's node-builder cache key matches), and the cell streaming in builds no shader (it was a 50-115 ms long task).
+  Fabric: a bumped weave / slub / rib relief lit by a fixed soft key, a grazing-angle sheen (strong on velvet), a gentle
+  top light; gilt (`Wood` code 6): a dark body plus a curvature / reflection highlight. A/B: `interiorLook.sheen`,
+  `.weave`, `.mirrors` (lab Debug panel).
 - `portal.js`: inside the house with no opening in view → the camera renders only the interior layer and the sun's
   shadow camera an empty layer; otherwise the near interior is drawn first (front-to-back sort) and rejects the city
   by depth. (Do not give the interior a negative renderOrder: it would draw before the Firmament sky, which paints
