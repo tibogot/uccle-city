@@ -1,7 +1,7 @@
 """UrbIS Land cover StreetSurfaces (measured roadway / sidewalk / junction / median / parking / tram site polygons)
 -> data/tiles/<T>/surfaces.json (CONTRACT §5.6), plus the kerb lines derived from them.
 
-    python pipeline/build_surfaces.py --tile I6 [--no-topo]
+    python pipeline/build_surfaces.py --tile I6 [--tile I5 ...] | --all  [--no-topo]
 
 Input: the region GeoPackage of UrbIS Land cover (sources.json "landcover", fetch_urbis.py landcover) and,
 for a check only, the UrbIS Topo kerb lines (topo_type BR0101L) of the tile from the Brussels Mobility WFS
@@ -36,7 +36,7 @@ import shapely
 from shapely.geometry import LineString, MultiLineString, Point, Polygon, box
 from shapely.ops import linemerge, split, unary_union
 
-from common import CONTRACT, RAW, TILES, l72_to_local, local_to_l72, polygon_out, read_json, round2, tile_bounds, write_json
+from common import CONTRACT, RAW, TILES, all_tiles, l72_to_local, local_to_l72, polygon_out, read_json, round2, tile_bounds, write_json
 
 HERE = Path(__file__).resolve().parent
 LANDCOVER = RAW / "urbis" / "landcover"
@@ -292,10 +292,26 @@ def bollards_of(tile, e0, n0, e1, n1, tbox):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--tile", required=True)
-    ap.add_argument("--no-topo", action="store_true", help="skip the UrbIS Topo kerb check (no WFS query)")
+    ap.add_argument("--tile", action="append", help="tile name (repeatable)")
+    ap.add_argument("--all", action="store_true", help="every tile of the grid that touches the study area (120)")
+    ap.add_argument("--no-topo", action="store_true", help="skip the UrbIS Topo layers (kerb check, bollards: no WFS query)")
     a = ap.parse_args()
-    tile = a.tile.upper()
+    tiles = list(all_tiles()) if a.all else [t.upper() for t in (a.tile or [])]
+    if not tiles:
+        ap.error("give --tile T (repeatable) or --all")
+    failed = []
+    for t in tiles:
+        try:
+            build_tile(t, a.no_topo)
+        except Exception as e:          # report and go on: one bad tile must not stop the batch
+            print(f"{t}: FAILED {e!r}", file=sys.stderr)
+            failed.append(t)
+    if failed:
+        sys.exit(f"failed: {failed}")
+
+
+def build_tile(tile, no_topo=False):
+    a = argparse.Namespace(no_topo=no_topo)
     x0, z0, x1, z1 = tile_bounds(tile)
     tbox = box(x0, z0, x1, z1)
     e0, n1 = local_to_l72(x0, z0)

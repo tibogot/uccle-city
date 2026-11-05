@@ -433,6 +433,7 @@ export function fitRoadWidths(roads, prep) {
       sides[side] = [...carriage, ...rest];
     }
     if (!ok) { st.oneSided++; continue; }
+    (r.meta ??= {}).unfitLanes = r.lanes ?? null;      // the parked cars still come from the OSM parking (streetFit puts them on the kerb)
     r.lanes = { center, left: sides.left, right: sides.right };
     (r.meta ??= {}).widthFit = { left: Math.round(med(wl) * 100) / 100, right: Math.round(med(wr) * 100) / 100, samples: wl.length };
     st.fitted++;
@@ -610,16 +611,35 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
 
   // ---- the measured base (after the markings layer, so it sits behind it in the index buffer)
   let unframed = 0;
+  // each sidewalk polygon's kerb: the line nearest to most of its triangles (area-weighted vote)
+  const votes2 = new Map();
+  for (const b of base) {
+    if (b.cls !== SURF_CLASS.sidewalk) continue;
+    const k = prep.nearKerb((b.a[0] + b.b[0] + b.c[0]) / 3, (b.a[1] + b.b[1] + b.c[1]) / 3);
+    if (!k) continue;
+    const m = votes2.get(b.si) || new Map();
+    m.set(k.li, (m.get(k.li) || 0) + Math.abs(area2(b.a, b.b, b.c)));
+    votes2.set(b.si, m);
+  }
+  const sidewalkKerb = new Map([...votes2].map(([si, m]) => [si, [...m].sort((p, q) => q[1] - p[1])[0][0]]));
   for (const b of base) {
     const s = surf.surfaces[b.si], cls = b.cls, part = out[PART[cls]], r = RAISE[cls];
     const pts = [b.a, b.b, b.c];
     let uvs = pts.map((p) => [p[0], p[1]]), frame = -1;
     if (cls === SURF_CLASS.sidewalk) {
-      // one continuous paving per street: station along the nearest kerb, distance from it (the kerb of the
-      // triangle's centroid, so a triangle is never split between two frames)
-      const k0 = prep.nearKerb((b.a[0] + b.b[0] + b.c[0]) / 3, (b.a[1] + b.b[1] + b.c[1]) / 3);
-      const ks = k0 && pts.map((p) => prep.nearKerb(p[0], p[1], k0.li));
-      if (ks && ks.every(Boolean) && Math.max(...ks.map((k) => k.s)) - Math.min(...ks.map((k) => k.s)) < 3 * CELL) { uvs = ks.map((k) => [k.s, k.d]); frame = k0.li; }
+      // one continuous paving per sidewalk: station along ITS kerb (the kerb line most of the sidewalk lies
+      // against), distance from it; the kerb is smooth, so the pattern turns with it and never changes direction
+      // inside a sidewalk
+      // (a sidewalk round a block faces several streets: where its own kerb is out of reach, the nearest kerb)
+      const ok = (ks) => ks && ks.every(Boolean) && Math.max(...ks.map((k) => k.s)) - Math.min(...ks.map((k) => k.s)) < 3 * CELL;
+      let li = sidewalkKerb.get(b.si) ?? -1;
+      let ks = li >= 0 ? pts.map((p) => prep.nearKerb(p[0], p[1], li)) : null;
+      if (!ok(ks)) {
+        const k0 = prep.nearKerb((b.a[0] + b.b[0] + b.c[0]) / 3, (b.a[1] + b.b[1] + b.c[1]) / 3);
+        li = k0 ? k0.li : -1;
+        ks = k0 ? pts.map((p) => prep.nearKerb(p[0], p[1], li)) : null;
+      }
+      if (ok(ks)) { uvs = ks.map((k) => [k.s, k.d]); frame = li; }
       else unframed++;
     } else if (cls === SURF_CLASS.square) {
       const th = ((s.course ?? 0) * Math.PI) / 180, c = Math.cos(th), sn = Math.sin(th);

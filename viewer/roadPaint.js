@@ -190,7 +190,8 @@ export function concreteMaterial({ framed = false } = {}) {
   const apron = mix(mix(vec3(0.16, 0.07, 0.045), vec3(0.24, 0.11, 0.07), ap.tone), vec3(0.05, 0.03, 0.02), ap.joint);
   const isKerb = band(kind, 1), isApron = band(kind, 2);
   m.colorNode = mix(mix(slab, kerb, isKerb), apron, isApron);
-  m.roughnessNode = mix(mix(mix(float(0.88), float(0.95), tiles.joint), float(0.6), isKerb), float(0.8), isApron);
+  // framed (?roads=surface): honed blue stone, rougher, so a kerb face toward a low sun does not flare white
+  m.roughnessNode = mix(mix(mix(float(0.88), float(0.95), tiles.joint), float(framed ? 0.82 : 0.6), isKerb), float(0.8), isApron);
   return addLampLight(m);
 }
 

@@ -391,7 +391,10 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   own.features.add(furn.group);
   const tram = buildTram(feats, (x, z) => hm.surface(x, z) + CARVE, bounds);
   own.features.add(tram.group);
-  const cars = buildCars(roads, feats, (x, z) => hm.surface(x, z) + CARVE, bounds, { place: fit?.placeCar });
+  // parked cars from the parking lanes as OSM / the type default has them (before the width fit, which drops lanes the
+  // measured street is too narrow for), then each one against the measured kerb if it fits there wholly
+  const carRoads = fit ? { ...roads, roads: roads.roads.map((r) => (r.meta?.widthFit ? { ...r, lanes: r.meta.unfitLanes ?? undefined } : r)) } : roads;
+  const cars = buildCars(carRoads, feats, (x, z) => hm.surface(x, z) + CARVE, bounds, { place: fit?.placeCar });
   const bollards = fit ? buildBollards(d.road.surfaceData.bollards) : null;
   if (bollards) own.features.add(bollards);
   if (fit) say(`street on the measured surfaces: ${lamps.count} lamps on the sidewalks, ${cars.count} parked cars against the kerbs, ${bollards?.count ?? 0} bollards (UrbIS Topo CR5702P / CR57L)`);

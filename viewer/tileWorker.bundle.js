@@ -5969,6 +5969,7 @@ function fitRoadWidths(roads, prep) {
       st.oneSided++;
       continue;
     }
+    (r.meta ??= {}).unfitLanes = r.lanes ?? null;
     r.lanes = { center, left: sides.left, right: sides.right };
     (r.meta ??= {}).widthFit = { left: Math.round(med(wl) * 100) / 100, right: Math.round(med(wr) * 100) / 100, samples: wl.length };
     st.fitted++;
@@ -6158,16 +6159,32 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     for (const q of pieces) emit(q, vs, P2);
   }
   let unframed = 0;
+  const votes2 = /* @__PURE__ */ new Map();
+  for (const b of base) {
+    if (b.cls !== SURF_CLASS.sidewalk) continue;
+    const k = prep.nearKerb((b.a[0] + b.b[0] + b.c[0]) / 3, (b.a[1] + b.b[1] + b.c[1]) / 3);
+    if (!k) continue;
+    const m = votes2.get(b.si) || /* @__PURE__ */ new Map();
+    m.set(k.li, (m.get(k.li) || 0) + Math.abs(area2(b.a, b.b, b.c)));
+    votes2.set(b.si, m);
+  }
+  const sidewalkKerb = new Map([...votes2].map(([si2, m]) => [si2, [...m].sort((p, q) => q[1] - p[1])[0][0]]));
   for (const b of base) {
     const s = surf.surfaces[b.si], cls = b.cls, part = out[PART[cls]], r = RAISE[cls];
     const pts = [b.a, b.b, b.c];
     let uvs = pts.map((p) => [p[0], p[1]]), frame = -1;
     if (cls === SURF_CLASS.sidewalk) {
-      const k0 = prep.nearKerb((b.a[0] + b.b[0] + b.c[0]) / 3, (b.a[1] + b.b[1] + b.c[1]) / 3);
-      const ks = k0 && pts.map((p) => prep.nearKerb(p[0], p[1], k0.li));
-      if (ks && ks.every(Boolean) && Math.max(...ks.map((k) => k.s)) - Math.min(...ks.map((k) => k.s)) < 3 * CELL) {
+      const ok = (ks2) => ks2 && ks2.every(Boolean) && Math.max(...ks2.map((k) => k.s)) - Math.min(...ks2.map((k) => k.s)) < 3 * CELL;
+      let li = sidewalkKerb.get(b.si) ?? -1;
+      let ks = li >= 0 ? pts.map((p) => prep.nearKerb(p[0], p[1], li)) : null;
+      if (!ok(ks)) {
+        const k0 = prep.nearKerb((b.a[0] + b.b[0] + b.c[0]) / 3, (b.a[1] + b.b[1] + b.c[1]) / 3);
+        li = k0 ? k0.li : -1;
+        ks = k0 ? pts.map((p) => prep.nearKerb(p[0], p[1], li)) : null;
+      }
+      if (ok(ks)) {
         uvs = ks.map((k) => [k.s, k.d]);
-        frame = k0.li;
+        frame = li;
       } else unframed++;
     } else if (cls === SURF_CLASS.square) {
       const th = (s.course ?? 0) * Math.PI / 180, c = Math.cos(th), sn = Math.sin(th);

@@ -432,13 +432,22 @@ no closing point).
               "unknownTypes": {}, "area": { "<class>": m² }, "kerbLength": m },
   "kerbCheck": { "topoKerbLength": m, "derivedKerbLength": m, "topoWithin": { "0.1m": share, .. }, "medianDistance": m } | null,
   "surfaces": [{ "c": <class>, "type": "S|SW|I|IC|SC|C|M|K|P|A|..", "name": "<STRNAMEFRE>", "hier": "DR|DC|IDR|..", "id": "<INSPIRE id tail>",
-                 "rings": [[[x, z], ..], ..] }],
+                 "course"?: <deg, squares: direction of the stone rows>, "rings": [[[x, z], ..]] }],   // simple rings (holes split)
   "kerbs": [[[x, z], ..]],                 // raised (sidewalk / median) | low boundary, raised side on the LEFT:
                                            // for a segment (dx, dz) the raised side is at +(-dz, dx)
-  "edges": [{ "raised": 0|1, "line": [[x, z], ..] }]   // outer boundary of all surfaces (minus the tile edge),
+  "edges": [{ "raised": 0|1, "line": [[x, z], ..] }],  // outer boundary of all surfaces (minus the tile edge),
                                                         // the surface on the LEFT; the viewer hangs skirts from them
+  "bollards": [[x, z], ..] | null                       // UrbIS Topo fixed bollards CR5702P + CR57L lines every 1.5 m
 }
 ```
+
+Processing (build_surfaces.py): level 0 only; adjacent SIDEWALK / MEDIAN / SQUARE pieces merged into one polygon each;
+the boundary network of all surfaces smoothed ONCE (shared edges cut at their junction nodes; centripetal Catmull-Rom
+through the vertices where they sample a curve: turns of 2-40 deg, about one point per 4 deg and at least every 0.5 m
+in bends, corners and straight runs untouched; every original vertex kept), the polygons rebuilt from the smoothed
+edges, holes split along a north-south cut. Raised classes (kerb lines between them and the low ones): sidewalk,
+median, square. `counts` also has `inputPolygons` and `smoothing` (`pointsAdded`, `areaChange` m², polygons in/out).
+
 
 UrbIS TYPE -> class: S, I, A, B, IL, G roadway; SC, IC tramRoad; C, AC tramSite; K parking; P square; SW sidewalk;
 M median; T path. `kerbCheck` compares the derived kerbs with the surveyed UrbIS Topo kerb lines (`BR0101L`):
