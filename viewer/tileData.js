@@ -121,7 +121,7 @@ export async function buildTileData(entry, base) {
   for (const r of roads.roads) { const s = ov.roadSurface?.[r.id]; if (s) (r.meta ??= {}).surface = s; }
   const hm = new Heightmap(tHdr, tBuf);
   // measured surfaces first, then the engine's lane stacks fitted into the measured kerb-to-kerb widths
-  const prep = surf ? await step("surfaces + width fit", () => prepareSurfaces(surf, hm.ground, bounds)) : null;
+  const prep = surf ? await step("surfaces + width fit", () => prepareSurfaces(surf, hm.ground, bounds, entry.pits === false ? null : feats.trees)) : null;   // trees: their pits
   const widthFit = prep ? fitRoadWidths(roads, prep) : null;
   const net = await step("buildRoadNetwork", () => buildRoadNetwork(roads, { ground: hm.ground }));
   const errors = net.issues.filter((i) => i.level === "error");

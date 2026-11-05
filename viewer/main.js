@@ -16,7 +16,7 @@ import { buildFurniture } from "./furniture.js";
 import { buildTram } from "./tram.js";
 import { buildCars } from "./cars.js";
 import { streetFit, buildBollards } from "./streetFit.js";
-import { cobbleMaterial } from "./cobbles.js";
+import { cobbleMaterial, pitMaterial } from "./cobbles.js";
 import { landCoverTexture, groundMaterial } from "./ground.js";
 import { Heightmap } from "./heightmap.js";
 import { createTramLine } from "./tramline.js";
@@ -119,7 +119,7 @@ function buildingMeshes(doc, buf) {
 
 /** GPU meshes for a tile's roads from the worker's data (tileData.js). */
 function roadMeshes(road) {
-  const mats = { asphalt: asphaltMaterial(road.atlas), grass: sharedMat("verge", vergeMaterial), square: sharedMat("cobbles", cobbleMaterial),
+  const mats = { asphalt: asphaltMaterial(road.atlas), grass: sharedMat("verge", vergeMaterial), square: sharedMat("cobbles", cobbleMaterial), pits: sharedMat("tree-pits", pitMaterial),
     concrete: road.surfaceStats ? sharedMat("concrete-framed", () => concreteMaterial({ framed: true })) : sharedMat("concrete", concreteMaterial) };
   const meshes = [];
   for (const [name, part] of Object.entries(road.parts)) {
@@ -166,7 +166,8 @@ function railMaterial() {
   return m;
 }
 
-function featureObjects(f, hm, bounds, railLift = 0.012) {
+/** `treeGround(x, z)`: where a trunk stands (?roads=surface: on the measured paving / in its pit's soil) */
+function featureObjects(f, hm, bounds, railLift = 0.012, treeGround = (x, z) => hm.surface(x, z)) {
   const group = new THREE.Group();
   group.name = "features";
   const inTile = (x, z) => x >= bounds.x0 && x <= bounds.x1 && z >= bounds.z0 && z <= bounds.z1;
@@ -214,9 +215,9 @@ function featureObjects(f, hm, bounds, railLift = 0.012) {
   // default: game-engine-v1's fog-lab stylized trees (viewer/treesStylized.js); ?trees=slop:
   // slop-newyork's tree system (viewer/treesSlop.js); ?trees=simple: our first leaf-card crowns
   const treeMode = params.get("trees");
-  const T = treeMode === "simple" ? buildTrees(f.trees || [], (x, z) => hm.surface(x, z), inTile)
-    : treeMode === "slop" ? buildTreeField(f.trees || [], (x, z) => hm.surface(x, z), inTile)
-    : buildStylizedTreeField(f.trees || [], (x, z) => hm.surface(x, z), inTile);
+  const T = treeMode === "simple" ? buildTrees(f.trees || [], treeGround, inTile)
+    : treeMode === "slop" ? buildTreeField(f.trees || [], treeGround, inTile)
+    : buildStylizedTreeField(f.trees || [], treeGround, inTile);
   group.add(T.group);
   group.userData.update = T.update || null;
   log(`trees: ${T.count} (LiDAR canopy peaks + OSM)` + (T.sizes ? `, species heights ${T.sizes.map((z) => z.h.toFixed(1)).join("/")} m` : ""));
@@ -298,7 +299,7 @@ const HIDE_BU_IDS = params.get("stjob") !== "0" ? [STJOB_BU_ID] : [];
 const ROAD_SURFACES = params.get("roads") !== "engine";
 /** CPU data for a tile: from the worker, or on the main thread (?worker=0, or if the worker fails). */
 function tileData(entry, lite = false) {
-  entry = { ...entry, hide: HIDE_BU_IDS, surface: ROAD_SURFACES };
+  entry = { ...entry, hide: HIDE_BU_IDS, surface: ROAD_SURFACES, pits: params.get("pits") !== "0" };   // ?pits=0: no tree pits (A/B)
   const local = () => import("./tileData.js").then((m) => (lite ? m.buildLiteData : m.buildTileData)(entry, DATA.href));
   if (!tileWorker) return local();
   return new Promise((resolve, reject) => {
@@ -380,12 +381,15 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   own.buildings.add(...B.meshes);
   await frame("buildings");
   // rails 1.2 cm above the road; with ?roads=surface 2 cm above H (the engine's markings layer sits up to 1.8 cm above it)
-  const fo = featureObjects(feats, hm, bounds, d.road.surfaceStats ? 0.02 : 0.012);
+  // ?roads=surface: lamps, parked cars, the walker, the trees and the bollards on the measured street (viewer/streetFit.js)
+  const fit = d.road.surfaceData ? streetFit(d.road.surfaceData) : null;
+  // a tree on measured ground stands on it (in its pit, viewer/surfaces.js), not on the terrain carved under it
+  const treeGround = fit ? (x, z) => (fit.classAt(x, z) >= 0 ? hm.surface(x, z) + CARVE + fit.lift(x, z) : hm.surface(x, z)) : undefined;
+  const fo = featureObjects(feats, hm, bounds, d.road.surfaceStats ? 0.02 : 0.012, treeGround);
   own.features.add(fo);
   if (fo.userData.update) ups.push(fo.userData.update);
   await frame("features+trees");
   // ?roads=surface: lamps, parked cars, the walker and the bollards on the measured street (viewer/streetFit.js)
-  const fit = d.road.surfaceData ? streetFit(d.road.surfaceData) : null;
   const lamps = buildLamps(roads, (x, z) => hm.ground(x, z), bounds, { lights: verbose, place: fit?.placeLamp, lift: fit?.lift });   // point lights: main tile only
   own.features.add(lamps.group);
   ups.push(lamps.update);

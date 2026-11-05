@@ -9,7 +9,7 @@
 // fwidth): joints become their area share, tones their mean, the bump flattens, over a long smoothstep, so there is
 // no band and no popping when walking or flying across the square.
 import * as THREE from "three/webgpu";
-import { uv, positionWorld, float, vec2, vec3, floor, fract, mix, min, max, smoothstep, fwidth, hash, select, sqrt } from "three/tsl";
+import { uv, positionWorld, attribute, float, vec2, vec3, floor, fract, mix, min, max, smoothstep, fwidth, hash, select, sqrt } from "three/tsl";
 import { addLampLight } from "./lampLight.js";
 import { bumpNormal, noise2D, hash2D } from "./tslkit.js";
 import { n3 } from "./roadPaint.js";
@@ -73,5 +73,35 @@ export function cobbleMaterial() {
   const cap = float(1).sub(F1.div(R).pow(2)).max(0);                    // rounded top
   const dome = cap.mul(0.006).add(smoothstep(float(0.0), float(0.03), edge).mul(0.002)).add(rx.mul(tiltX).add(rz.mul(tiltZ))).mul(bumpFade);
   m.normalNode = bumpNormal(dome);
+  return addLampLight(m);
+}
+
+/**
+ * Tree pits (viewer/surfaces.js part "pits"): aKind 1 = the four edging slabs, Belgian blue stone like the kerbs,
+ * honed, with the butt joints at both ends of each slab (uv: metres along it, metres to its far end), AA with the
+ * world footprint; aKind 0 = the soil, dark earth with clods and a few leaves, darker and damper toward the stones
+ * (uv: metres from the pit centre). Everything fades to its mean with the footprint.
+ */
+export function pitMaterial() {
+  const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  const P = positionWorld, f = uv(), kind = attribute("aKind", "float");
+  const fw = fwidth(P.x).add(fwidth(P.z)).mul(0.7).add(0.0003);
+  const far = smoothstep(float(0.01), float(0.08), fw);
+  // stone: blue-grey with fossil speckle, slightly lighter on the worn top
+  const grain = n3(P.x.mul(37.0), P.y.mul(37.0), P.z.mul(37.0));
+  const stone = vec3(0.082, 0.088, 0.1).add(grain.mul(0.012).mul(float(1).sub(far))).add(n3(P.x.mul(3.0), P.z.mul(3.0), 4.0).mul(0.008));
+  const jd = min(f.x, f.y);                                           // metres to the nearer slab end
+  const joint = float(1).sub(smoothstep(float(0.005).sub(fw), float(0.005).add(fw), jd)).mul(float(1).sub(far.mul(0.8)));
+  const stoneCol = mix(stone, vec3(0.02, 0.02, 0.022), joint);
+  // soil: clods, specks of leaf litter, darker near the frame
+  const e = max(f.x.abs(), f.y.abs());                                // 0 at the centre .. ~0.5-0.58 at the stones
+  const clod = noise2D(vec2(P.x.mul(23.0), P.z.mul(23.0))), clod2 = noise2D(vec2(P.x.mul(6.0), P.z.mul(6.0)));
+  const leaf = smoothstep(float(0.82), float(0.9), noise2D(vec2(P.x.mul(41.0), P.z.mul(41.0)))).mul(float(1).sub(far));
+  let soil = mix(vec3(0.085, 0.064, 0.044), vec3(0.14, 0.105, 0.07), mix(clod.mul(0.6).add(clod2.mul(0.4)), float(0.5), far));
+  soil = mix(soil, vec3(0.16, 0.1, 0.035), leaf.mul(0.6));
+  soil = soil.mul(float(1).sub(smoothstep(float(0.3), float(0.56), e).mul(0.35)));     // damp, shaded edge
+  const isStone = kind.greaterThan(0.5);
+  m.colorNode = select(isStone, stoneCol, soil);
+  m.roughnessNode = select(isStone, mix(float(0.8), float(0.95), joint), float(0.97));
   return addLampLight(m);
 }
