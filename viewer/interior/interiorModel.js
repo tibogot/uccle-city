@@ -179,11 +179,13 @@ function surface(name) {
     col = mix(col, rug2, is(6)).mul(shade).mul(form);
     // sheen: cloth brightens at grazing angles (the fibres catch the light along their length): strong on velvet
     // (its nap), present on woven upholstery, linen and knit, little on rugs, none on the paintings
-    const sheenK = mix(mix(mix(mix(float(0.32), float(0.85), is(1)), float(0.12), max(is(2), is(6))), float(0.0), is(3)), float(0.3), max(is(4), is(5)));
+    const sheenK = mix(mix(mix(mix(float(0.38), float(0.95), is(1)), float(0.12), max(is(2), is(6))), float(0.0), is(3)), float(0.3), max(is(4), is(5)));
     const g = float(1).sub(ndv());
-    spec = mix(base, vec3(1), 0.35).mul(pow(g, 3.0).mul(sheenK)).mul(interiorLook.sheen);
-    // velvet's crushed-pile darkening face-on
-    col = col.mul(mix(float(1), mix(float(0.82), float(1.0), g), is(1)));
+    // (velvet: the pile is crushed in soft patches, which catch the sheen unevenly)
+    const crush = mix(float(1), noise2D(p.mul(4.0)).mul(0.7).add(0.65), is(1));
+    spec = mix(base, vec3(1), 0.25).mul(pow(g, mix(float(3.0), float(2.4), is(1))).mul(sheenK).mul(crush)).mul(interiorLook.sheen);
+    // velvet's pile darkening face-on (looking into the nap)
+    col = col.mul(mix(float(1), mix(float(1), mix(float(0.7), float(1.0), g), interiorLook.sheen), is(1)));
     rough = float(0.95);
   } else if (name === "Hard") {
     // enamel (0) / steel (1) / marble (2) / wall tiles (3) / cement tiles (4) / ceramic (5) / blue stone (6) / leaf (7) / paper (8)
@@ -273,7 +275,9 @@ function glassMaterial() {
   const h = float(0.5 / 256);
   const fu = uc.mul(0.5).add(0.5).clamp(h, float(1).sub(h)), fv = float(0.5).sub(vc.mul(0.5)).clamp(h, float(1).sub(h));
   const auv = vec2(face.add(fu).div(6.0), mi.add(fv).div(MIR.rows));
-  const refl = bakedMix(rgbm(slot("rsky", auv)), rgbm(slot("rsun", auv)), rgbm(slot("rnight", auv))).mul(interiorLook.adapt);
+  // (highlights soft-compressed: an old plate is a little hazy, and a sunlit window in it should not bloom like a lamp)
+  const refl0 = bakedMix(rgbm(slot("rsky", auv)), rgbm(slot("rsun", auv)), rgbm(slot("rnight", auv))).mul(interiorLook.adapt);
+  const refl = refl0.div(refl0.mul(0.12).add(1.0));
   // aged silvering: ~85 % reflectance, a faint warm cast, soft cloudy patches and a few specks
   const age = noise2D(uv().mul(3.0)).mul(0.12).add(noise2D(uv().mul(40.0)).mul(0.05)).add(0.84);
   const speck = smoothstep(0.972, 0.995, noise2D(uv().mul(70.0))).mul(0.3);
