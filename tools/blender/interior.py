@@ -681,7 +681,9 @@ for j in range(gg["n"] - 1):
     for i in range(gg["n"] - 1):
         def gp(ii, jj):
             x = gg["x0"] + ii * gg["step"]; z = gg["z0"] + jj * gg["step"]
-            s = s_of(x, z); return ((WI - s) if MIRROR else s, gg["y"][jj * gg["n"] + ii] - 0.02, z)
+            s = s_of(x, z); y = gg["y"][jj * gg["n"] + ii] - 0.02
+            if -0.6 < s < WI + 0.6 and -0.3 < z < ZB_OUT + 0.3: y = min(y, -0.1)      # the DTM is above the floor at the back
+            return ((WI - s) if MIRROR else s, y, z)
         a, b_, c_, d = gp(i, j), gp(i + 1, j), gp(i + 1, j + 1), gp(i, j + 1)
         OCC.quad(a, d, c_, b_, "Hard", col(0x4A4845, "Hard", "enamel")) if not MIRROR else OCC.quad(a, b_, c_, d, "Hard", col(0x4A4845, "Hard", "enamel"))
 print(f"geometry: interior {B.tris} tris, door {DOOR.tris}, glass {GLASS.tris}, colliders {COL.tris}, occluders {OCC.tris}  ({time.time() - T0:.1f}s)")
@@ -844,19 +846,35 @@ def encode_rgbm(img, path, rng=4.0):
     w, h = img.size
     a = np.array(img.pixels[:], dtype=np.float32).reshape(h, w, 4)
     lin = np.clip(a[..., :3], 0, None)
-    # a light 3x3 cross-bilateral denoise inside charts (alpha > 0): range weight on luminance
-    mask = a[..., 3:4] > 0.5
+    # edge-aware a-trous denoise inside the charts (alpha > 0): 4 passes (steps 1, 2, 4, 8 texels), B3-spline kernel,
+    # weights stopped by the relative luminance difference and the chart mask (no bleeding between islands)
+    mask = (a[..., 3:4] > 0.5).astype(np.float32)
     v = np.sqrt(lin) / rng
     out = v.copy()
-    lum = v.mean(axis=2, keepdims=True)
-    acc = v * 1.0; wsum = np.ones_like(lum)
-    for dy in (-1, 0, 1):
-        for dx in (-1, 0, 1):
-            if dx == 0 and dy == 0: continue
-            sv = np.roll(np.roll(v, dy, 0), dx, 1); sl = np.roll(np.roll(lum, dy, 0), dx, 1); sm = np.roll(np.roll(mask, dy, 0), dx, 1)
-            wgt = np.exp(-((sl - lum) ** 2) / (2 * 0.012 ** 2)) * sm * 0.6
-            acc += sv * wgt; wsum += wgt
-    out = np.where(mask, acc / wsum, v)
+    k1 = [(-2, 1 / 16), (-1, 1 / 4), (0, 3 / 8), (1, 1 / 4), (2, 1 / 16)]
+    # 3x3 median (in the charts) first: the edge-stopping below would otherwise keep the fireflies / black specks
+    stack = np.stack([np.roll(np.roll(out, dy, 0), dx, 1) for dy in (-1, 0, 1) for dx in (-1, 0, 1)])
+    mstack = np.stack([np.roll(np.roll(mask, dy, 0), dx, 1) for dy in (-1, 0, 1) for dx in (-1, 0, 1)])
+    lumst = np.where(mstack > 0, stack.mean(axis=3, keepdims=True), np.nan)
+    med = np.nanmedian(lumst, axis=0)
+    pick = np.nanargmin(np.abs(np.where(np.isnan(lumst), np.inf, lumst - med[None])), axis=0)
+    out = np.where(mask > 0, np.take_along_axis(stack, pick[None].repeat(3, axis=3), 0)[0], out)
+    for it, sig in ((1, 0.3), (2, 0.22), (4, 0.16), (8, 0.12)):
+        lum = out.mean(axis=2, keepdims=True)
+        g = lum.copy()                                  # guide: a 3x3 blur of the luminance
+        for dy in (-1, 1):
+            g += np.roll(lum, dy * it, 0)
+        for dx in (-1, 1):
+            g += np.roll(lum, dx * it, 1)
+        lum = g / 5
+        acc = np.zeros_like(out); wsum = np.zeros_like(lum)
+        for dy, ky in k1:
+            for dx, kx in k1:
+                sv = np.roll(np.roll(out, dy * it, 0), dx * it, 1); sl = np.roll(np.roll(lum, dy * it, 0), dx * it, 1)
+                sm = np.roll(np.roll(mask, dy * it, 0), dx * it, 1)
+                wgt = ky * kx * sm * np.exp(-np.abs(sl - lum) / (sig * (lum + 0.02)))
+                acc += sv * wgt; wsum += wgt
+        out = np.where(mask > 0, acc / np.maximum(wsum, 1e-6), out)
     m = np.clip(np.ceil(out.max(axis=2, keepdims=True) * 255) / 255, 1 / 255, 1)
     rgb = np.clip(out / m, 0, 1)
     px = np.concatenate([rgb, m], axis=2).astype(np.float32)
@@ -866,7 +884,40 @@ def encode_rgbm(img, path, rng=4.0):
     im.filepath_raw = path; im.file_format = "PNG"
     scn.render.image_settings.color_mode = "RGBA"; scn.render.image_settings.color_depth = "8"
     im.save()
-    print("wrote", path, os.path.getsize(path) // 1024, "KB; max", float(lin.max()), "mean", float(lin[mask[..., 0]].mean()) if mask.any() else 0)
+    print("wrote", path, os.path.getsize(path) // 1024, "KB; max", float(lin.max()), "mean", float(lin[mask[..., 0] > 0].mean()) if mask.any() else 0)
+
+def smooth_corners(me, name):
+    """The bake samples every corner on its own: neighbouring faces of a smooth surface got different noise (a patchwork).
+    Average the corners that share a vertex and face roughly the same way (normal binned to ~25 degrees)."""
+    n = len(me.loops)
+    ca = me.color_attributes[name]
+    col = np.zeros(n * 4, dtype=np.float32); ca.data.foreach_get("color", col); col = col.reshape(n, 4)
+    vi = np.zeros(n, dtype=np.int64); me.loops.foreach_get("vertex_index", vi)
+    nr = np.zeros(n * 3, dtype=np.float32); me.corner_normals.foreach_get("vector", nr); nr = nr.reshape(n, 3)
+    q = np.clip(np.round(nr * 2.0).astype(np.int64) + 2, 0, 4)
+    key = vi * 125 + q[:, 0] * 25 + q[:, 1] * 5 + q[:, 2]
+    uk, inv = np.unique(key, return_inverse=True)
+    acc = np.zeros((len(uk), 4), dtype=np.float64); np.add.at(acc, inv, col)
+    val = acc / np.bincount(inv).astype(np.float64)[:, None]
+    # then a few Laplacian passes over the mesh: each (vertex, normal bin) averaged with the same bin at its neighbours
+    ev = np.zeros(len(me.edges) * 2, dtype=np.int64); me.edges.foreach_get("vertices", ev); ev = ev.reshape(-1, 2)
+    src = np.concatenate([ev[:, 0], ev[:, 1]]); dst = np.concatenate([ev[:, 1], ev[:, 0]])
+    kv, kq = uk // 125, uk % 125
+    order = np.argsort(kv, kind="stable"); kv_s = kv[order]
+    start = np.searchsorted(kv_s, src, "left"); end = np.searchsorted(kv_s, src, "right")
+    rep = end - start
+    e_idx = np.repeat(np.arange(len(src)), rep)
+    pos = np.concatenate([np.arange(a, b) for a, b in zip(start[rep > 0], end[rep > 0])]) if rep.sum() else np.zeros(0, np.int64)
+    ka = order[pos]                                    # the key at the edge's source vertex
+    want = dst[e_idx] * 125 + kq[ka]                   # the same bin at the other vertex
+    j = np.searchsorted(uk, want); j = np.clip(j, 0, len(uk) - 1)
+    ok = uk[j] == want
+    ka, kb = ka[ok], j[ok]
+    for _ in range(3):
+        nb = np.zeros_like(val); np.add.at(nb, ka, val[kb])
+        c = np.bincount(ka, minlength=len(uk)).astype(np.float64)[:, None]
+        val = np.where(c > 0, 0.5 * val + 0.5 * nb / np.maximum(c, 1), val)
+    ca.data.foreach_set("color", val[inv].astype(np.float32).ravel())
 
 if BAKE:
     img = bpy.data.images.new("lm", LM, LM, alpha=True, float_buffer=True)
@@ -892,6 +943,7 @@ if BAKE:
             ob.select_set(True); bpy.context.view_layer.objects.active = ob
             ob.data.color_attributes.active_color = ob.data.color_attributes["vl_" + mode]
             bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT", "INDIRECT"}, target="VERTEX_COLORS")
+            smooth_corners(ob.data, "vl_" + mode)
         print(f"bake {mode}: {time.time() - t:.1f}s")
     ob_int.data.uv_layers.active = ob_int.data.uv_layers["UVMap"]
     # per-corner lighting -> custom float attributes (glTF _LMSKY / _LMSUN / _LMNIGHT; three.js: _lmsky ...)

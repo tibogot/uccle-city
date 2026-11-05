@@ -170,7 +170,7 @@ function glassMaterial() {
   const mirror = step(0.5, floor(c.a.mul(8.0)));
   const n = nightK();
   const sky = mix(vec3(env.uSkyHorizon), vec3(0.02, 0.025, 0.035), n);
-  m.colorNode = mix(mix(sky.mul(0.8), vec3(0.04, 0.045, 0.05), 0.3), mix(vec3(0.5, 0.52, 0.53), vec3(0.08, 0.07, 0.06), n), mirror);
+  m.colorNode = mix(mix(sky.mul(0.8), vec3(0.04, 0.045, 0.05), 0.3), mix(vec3(env.uSkyHorizon).mul(0.035).add(0.012).add(fres.mul(0.1)), vec3(0.012, 0.011, 0.01), n), mirror);
   m.opacityNode = mix(fres, float(0.92), mirror);
   return m;
 }
@@ -211,7 +211,9 @@ export async function loadInterior(dir, { renderer = null, scene = null, camera 
     const lit = owner === "lm" ? "lightmap" : "vertex";
     o.material = matFor(o.material.name || "Plaster", lit);
     o.castShadow = false; o.receiveShadow = false;
-    o.renderOrder = -10;                 // drawn before the city: the walls reject the city's fragments early (depth)
+    // no renderOrder: three sorts opaque objects front to back, so the (near) interior is drawn before the city and its
+    // walls reject the city's fragments early; a negative renderOrder would draw it before the Firmament sky, which
+    // paints without a depth test
     tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; draws++;
     drawn.push(o);
   });

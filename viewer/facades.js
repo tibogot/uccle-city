@@ -398,7 +398,7 @@ export function wallMaterial() {
   m.aoNode = mix(float(0.62), float(1.0), smoothstep(0.0, 9.0, h)).mul(smoothstep(0.0, 1.2, h).mul(0.2).add(0.8));
   // an interior cell is loaded (?interior=1): its house's openings are holes, its real windows and door show
   // (viewer/interior/cut.js; compiled in only then)
-  if (houseCut.enabled) { m.opacityNode = cutOpacity(opening.mul(notShop)); m.alphaTest = 0.5; }
+  if (houseCut.enabled) m.maskNode = cutOpacity(opening.mul(notShop)).greaterThan(0.5);
   return m;
 }
 

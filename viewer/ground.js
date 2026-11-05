@@ -69,6 +69,6 @@ export function groundMaterial(cover, bounds, contour) {
   m.roughnessNode = mix(mix(float(0.92), float(0.85), mk.g), float(0.08), mk.a);
   m.metalnessNode = mk.a.mul(0.5);
   // an interior cell is loaded (?interior=1): no terrain inside its house (viewer/interior/cut.js)
-  if (houseCut.enabled) { m.opacityNode = cutOpacity(float(1), -0.08); m.alphaTest = 0.5; }
+  if (houseCut.enabled) m.maskNode = cutOpacity(float(1), -0.08).greaterThan(0.5);
   return addLampLight(m);
 }

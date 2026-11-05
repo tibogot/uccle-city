@@ -1,6 +1,6 @@
 // THE PORTAL: what the city must draw while the camera is inside the house.
 // Cheapest correct approach (no scissor / stencil passes, no recompiles):
-//   1. the interior is drawn FIRST (renderOrder -10, opaque): its walls fill the depth buffer, so the city's fragments
+//   1. the interior is drawn early (opaque, front-to-back sort: it is nearest): its walls fill the depth buffer, so the city's fragments
 //      behind them fail the depth test before shading (early-Z); only what is seen through a window or the open door
 //      is shaded.
 //   2. when the camera is inside AND no opening (window / door rectangle of house.json, the same rectangles the façade
