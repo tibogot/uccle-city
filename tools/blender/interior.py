@@ -23,7 +23,7 @@ HOUSE = os.path.abspath(argv[0] if argv and not argv[0].startswith("--") else "m
 def arg(name, default=None):
     return argv[argv.index(name) + 1] if name in argv else default
 SEED = int(arg("--seed", "7")); LM = int(arg("--lm", "1024")); SAMPLES = int(arg("--samples", "384"))
-BAKE = "--no-bake" not in argv; PREVIEW = arg("--preview"); PV_SAMPLES = int(arg("--pv-samples", "64"))
+BAKE = "--no-bake" not in argv; PREVIEW = arg("--preview"); PREVIEW = os.path.abspath(PREVIEW) if PREVIEW else None; PV_SAMPLES = int(arg("--pv-samples", "64"))
 T0 = time.time()
 rnd = random.Random(SEED)
 spec = json.load(open(os.path.join(HOUSE, "house.json")))

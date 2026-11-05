@@ -35,6 +35,13 @@
   ceilings, stair 18 x 18.2 cm with balustrade, skirting, cornices, furniture placement, night lights, bake,
   RGBM encode, previews, GLB export, interior.json). Written, NOT yet run (expect a round of Python fixes).
 
+## Update (second WIP)
+- `interior.py --no-bake` RUNS: 107k triangles Interior, 0.9k FrontDoor, 1.3k Colliders, GLB 7.5 MB (uncompressed;
+  compress with meshopt later), build 5 s. Openings land where expected (front door s 0.99..2.09 etc.).
+- Previews (`docs/interior/blender_*.png`, 24 spp, no bake) render but are VERY dark: sky-only day light through one
+  window at exposure +1. Next: raise preview exposure (+3..+4) or sky strength, check the window view (red = the
+  opposite houses from `context`, expected), then judge furniture quality room by room.
+
 ## Next steps
 1. Run: `& "C:/Program Files/Blender Foundation/Blender 5.0/blender.exe" --factory-startup -b -P tools/blender/interior.py -- models/interior/maison1 --no-bake --preview docs/interior --pv-samples 32`
    (use PowerShell `&`; the Bash tool refuses the quoted exe path). Fix errors, look at previews, then bake
