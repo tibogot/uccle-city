@@ -346,7 +346,8 @@ export function impostorField(placements, variantOf, material, { near = null } =
     }
     mesh.count = k;
     if (twin) { twin.count = k; twin.frustumCulled = mesh.frustumCulled; twin.boundingSphere = mesh.boundingSphere; }
-    data.needsUpdate = true; pos.needsUpdate = true;
+    // only the instances in use (the buffers hold >= 1025; 37 far tiles re-bucket together)
+    if (k) for (const [a, size] of [[data, 4], [pos, 3]]) { a.clearUpdateRanges(); a.addUpdateRange(0, k * size); a.needsUpdate = true; }
   };
   return { mesh, update };
 }

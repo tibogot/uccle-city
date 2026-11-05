@@ -306,10 +306,11 @@ export function createTramFleet(model, parent, maxTrams = 40) {
       if (geo0.index) geo.setIndex(geo0.index);
       geo.boundingSphere = geo0.boundingSphere;
       const inst = new THREE.InstancedBufferAttribute(new Float32Array(cap * 4), 4);
-      inst.setUsage(THREE.DynamicDrawUsage);                        // rewritten every frame (positions of moving trams)
+      // rewritten every frame (moving trams), uploaded once per frame through needsUpdate + the used range (end()):
+      // NOT DynamicDrawUsage, which three r187 re-uploads whole (1025 instances) in every render pass of every frame
+      // (measured 2026-11-05: ~15 full uploads a frame, ~1.2 MB, for the tram meshes alone)
       geo.setAttribute("aInst", inst);
       const mesh = new THREE.InstancedMesh(geo, model.material, cap);
-      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       mesh.count = 0; mesh.frustumCulled = false; mesh.castShadow = SMOOTH || k < 2; mesh.receiveShadow = true;   // (smooth: the far LOD casts too, no shadow switching off at 260 m)
       mesh.name = `tram-${p}-lod${k}`;
       parent.add(mesh);
