@@ -30,6 +30,11 @@ export class Portal {
     cell.root.traverse((o) => o.layers.enable(INTERIOR_LAYER));
     this.extra = extra;
     for (const o of extra) o.traverse((q) => q.layers.enable(INTERIOR_LAYER));
+    // the scene's lights on the interior layer too: three takes the lights a camera sees into every render object's
+    // cache key, so switching the camera to the interior layer alone dropped them and rebuilt every interior shader
+    // (a ~50 ms main-thread burst on the stair, measured 2026-11-05), although the interior materials are unlit
+    this.lightsOn = () => cell.root.parent?.traverse((o) => { if (o.isLight) o.layers.enable(INTERIOR_LAYER); });
+    this.lightsOn();
   }
   /** Per frame, before rendering. Returns true when the city is skipped this frame. */
   update() {
@@ -47,7 +52,7 @@ export class Portal {
     } else this.visible = -1;
     if (sealed !== this.sealed) {
       this.sealed = sealed;
-      if (sealed) { cam.layers.set(INTERIOR_LAYER); this.sun?.shadow.camera.layers.set(EMPTY_LAYER); }
+      if (sealed) { this.lightsOn(); cam.layers.set(INTERIOR_LAYER); this.sun?.shadow.camera.layers.set(EMPTY_LAYER); }
       else { cam.layers.set(0); cam.layers.enable(INTERIOR_LAYER); this.sun?.shadow.camera.layers.set(0); }
     }
     return sealed;

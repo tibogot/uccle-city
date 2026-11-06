@@ -47,21 +47,33 @@ export class BirdRig {
       legL: find("UpperLeg_L", "Toes_tip_L", V(0, 0.5, 1)), legR: find("UpperLeg_R", "Toes_tip_R", V(0, 0.5, 1)),
       kneeL: find("LowerLeg_L", "Toes_tip_L", V(0, 0.5, 1)), kneeR: find("LowerLeg_R", "Toes_tip_R", V(0, 0.5, 1)),
     };
+    this._find = find;
     this.found = Object.fromEntries(Object.entries(this.layers).map(([k, l]) => [k, l ? `${l.bone.name} ${l.axis.toArray().join(",")}` : null]));
+  }
+
+  /** One more layer (the falcon family, viewer/falcons.js: head down, beak open...): rotating `boneName` moves the end
+   *  bone `tipName` along `want` [x, y, z] (the bird's frame: nose -z, up +y, left -x). Call before any mixer update. */
+  addLayer(key, boneName, tipName, want) {
+    this.layers[key] = this._find(boneName, tipName, new THREE.Vector3(want[0], want[1], want[2]).normalize());
+    this._list = null;
+    return !!this.layers[key];
   }
 
   /** Before mixer.update: put every layered bone back to its pose before last frame's offsets. */
   restore() { for (const [bone, q0] of this.saved) bone.quaternion.copy(q0); }
 
-  /** After mixer.update: the layers. */
-  apply({ fold = 0, bank = 0, legs = 1, brake = 0 } = {}) {
-    const L = this.layers, q = new THREE.Quaternion();
-    for (const l of Object.values(L)) if (l) (this.saved.get(l.bone) || this.saved.set(l.bone, new THREE.Quaternion()).get(l.bone)).copy(l.bone.quaternion);
+  /** After mixer.update: the layers; extra = { layerKey: angle } for the added layers. */
+  apply({ fold = 0, bank = 0, legs = 1, brake = 0, extra = null } = {}) {
+    const L = this.layers, q = _q;
+    this._list ??= Object.values(L).filter(Boolean);
+    for (const l of this._list) (this.saved.get(l.bone) || this.saved.set(l.bone, new THREE.Quaternion()).get(l.bone)).copy(l.bone.quaternion);
     const add = (l, a) => { if (l && a) l.bone.quaternion.multiply(q.setFromAxisAngle(l.axis, a)); };
     add(L.foldL, 0.9 * fold); add(L.foldR, 0.9 * fold); add(L.elbowL, 0.7 * fold); add(L.elbowR, 0.7 * fold);
     add(L.dipL, Math.max(0, bank) * 0.45); add(L.dipR, Math.max(0, -bank) * 0.45);
     add(L.tailSide, -bank * 0.5); add(L.headSide, -bank * 0.5);
     add(L.legL, 0.9 * legs); add(L.legR, 0.9 * legs); add(L.kneeL, 0.6 * legs); add(L.kneeR, 0.6 * legs);
     add(L.tailDown, 0.5 * brake); add(L.fwdL, 0.35 * brake); add(L.fwdR, 0.35 * brake);
+    if (extra) for (const k in extra) add(L[k], extra[k]);
   }
 }
+const _q = new THREE.Quaternion();

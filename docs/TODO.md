@@ -6,6 +6,33 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 `docs/PLAN.md` has the history and details of what is done. Rule of thumb for every item:
 **look better without costing frame time** (instancing, shared materials, LOD, compressed assets).
 
+## OWNER'S MASTER LIST (2026-11-06, newest decisions first; keep this up to date)
+
+**In progress (agents, own branches, lab first):**
+- [x] Façade kit ROUND 2 DONE (rooms behind the kit glass, 65 → 37 meshes, 4 materials, 30 m fade, steps on slopes, one door per house, French windows + balconnets, window B far LOD, 741 kit faces on I6; +0.5-0.6 ms street, +1.1 ms close-up), waiting for the owner. Left: two-house UrbIS buildings can lose a door; doors partly below ground on slopes; per-slot multi-draw to halve the draws; re-check cost with library materials.
+- [x] Façade kit pilot DONE (`claude/facade-kit`, `?kit=1`, Kit Lab). Round-1 list was: windows with rooms + net curtains (kit glass reads hollow at 30-60 m), fewer draws (65 → BatchedMesh / multi-draw), cleaner 95-115 m fade, steps on slopes, one door per corner house, French window behind balconies; then sets: dormers + gutters, bay windows, Art Deco / Nouveau, shopfronts, garage doors, corner pieces.
+- [x] Tree Lab + London plane DONE (`claude/tree-lab`, lab only), waiting for the owner. Plane costs +1 ms per 50 trees (fine for avenues, NOT for forests). Next: beech (Sonian Forest, most common Uccle street tree), then lime and horse chestnut; real species per tree from the Bruxelles Mobilité CC0 tree inventory (regional roads only); plane bark relief, crown radius fitted to LiDAR, seasons, wind.
+
+**Waiting for the owner's eye:**
+- [ ] Material Lab (`claude/materials`): pick per material; commit `viewer/materials/choices.json`; then switch heroes, ground and façades to the library.
+- [ ] Royal Observatory (`claude/observatory`, `?observatory=1`): fix the main building's window counts (rule-based, too many).
+- [ ] Uccle town hall (`claude/townhall`, `?townhall=1`): west façade invented (no photo), south from one photo, plinth too dark, missing flags / carved panel, front steps end on grass.
+- [ ] Push to Vercel: falcons + interior fixes are merged but not live.
+
+**Megascans (free on Fab from 2026-11-05; Fab Standard License, NOT CC0):**
+- [ ] The owner claims on fab.com: decals (Leakage, Moss, Wall/Concrete/Road/Asphalt Crack, Chewing Gums, Fallen/Dead Leaves, Manhole Cover, Worn Road Marking, Mud Stain) and surfaces (Brick Facade, Brick Wall Worn, Cobblestone Road, Slate Roof, Red Roof Tiles, Plaster Wall, Stone/Concrete Pavement, Asphalt Road, Oxidized Copper Sheet). Some still priced until ~2026-11-12: claim them later.
+- [ ] Megascans surfaces as a 4th option in the Material Lab; decals on the façade kit and the ground.
+- [ ] Licence question before shipping on the public site (files are downloadable by visitors): read the Fab EULA / ask Epic. CC0 stays the default on the live site until then.
+
+**Nature labs (after the Tree Lab):** ground and gardens (lawns, verges, flowerbeds, hedges, shrubs, ivy); weather and seasons (rain, wet streets, puddles, snow, fog; one season for trees, grass, ground); water (Wolvendael and Kinsendael ponds, streams, reeds).
+**Live weather:** drive the sky and weather from a real-time API (e.g. Open-Meteo, free and no key, or the Belgian RMI/KMI open data): clouds, rain, wind, fog, temperature for snow. Needs the weather lab's rain / wet / snow rendering first.
+
+**City realism, next:** shopfronts on OSM shops (Chaussée d'Alsemberg, Saint-Job); garden walls, hedges, railings on plot edges; moving traffic on the lane graph with the traffic lights; pedestrians; sound (street, tram, birds, car); road details from Brussels Mobility (lanes, crossings, signs); forest drives (paved or not?); more heroes (Saint-Pierre, Van Buuren, Wolvendael); church interior (needs owner photos); more interiors.
+
+**Fine-tuning:** cars (fronts per type, the van is the reference; police, ambulance); street furniture 2nd pass (quality, lab z-fighting, UrbIS positions of bins / bollards / signs); character jump clip; interior reflections with real textures, taller trumeau mirror, brick-red strip at the stairwell; falcons (better chicks: round down, a proper peregrine model); street-level GPU cost (~1 ms from the smoothness work).
+
+**Bigger steps:** phones and tablets; all of Brussels (pipeline at scale, GPU culling); the first game (suggested: the Saint-Job falcons; also driving, tram 92, exploration).
+
 ## NEXT SESSION (agreed order, 2026-11-04)
 
 1. [x] **Roof collision for fly mode**: a 2 m roof-height grid per tile (tile worker), `world.heightAt` = max(ground, roofs).
@@ -50,8 +77,12 @@ read-only (copy into `vendor/` with ORIGIN.md); measure GPU ms before / after (s
 
 **Open owner decisions / inputs:**
 - The fly-mode bird: the current model (repainted peregrine, original clips only) is weak; the owner is looking for a
-  better rigged, animated peregrine falcon (CC0 / CC-BY) to drop into `models/bird/` (+ `bird.json`). Then: falcon
-  nest in the Saint-Job belfry, takeoff / landing clips. Procedural flight layers are off (`?birdlayers=1`).
+  better rigged, animated peregrine falcon (CC0 / CC-BY) to drop into `models/bird/` (+ `bird.json`). Then:
+  takeoff / landing clips. Procedural flight layers are off (`?birdlayers=1`).
+  [x] The falcon family at Saint-Job (branch claude/falcons, `docs/FALCONS.md`): eyrie, eyases, the adults' behaviours,
+  fly mode from the nest; on by default. **Owner to look** in `labs/falcon-lab.html`. Left: a better rig would lift the
+  perched / eyas shapes most (they are poses baked on the old rig), spatter round the eyrie, a pigeon flock to stoop at,
+  calls, preening / brooding idles.
 - Setts: procedural is the default; the Poly Haven scan stays as `?setts=tex` for a later texture pass (KTX2).
 - Volumetric fog is opt-in only (`?vfog=1`, dev panel) until it is tuned.
 - Tree impostors off (`?impostors=1`) until 16x16 views + depth atlas.
