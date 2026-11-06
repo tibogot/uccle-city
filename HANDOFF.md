@@ -28,7 +28,7 @@ terrain carved under the ballast), the hero bridges over Chaussee de Saint-Job a
 (`tools/blender/railBridge.py`, `viewer/rail/bridgeModel.js`, named material slots), the AM08 Desiro (`tools/blender/am08.py`,
 `viewer/rail/trainModel.js`), 334 trains a weekday on the real SNCB GTFS (`pipeline/build_trains.py` ->
 `data/transit/sncb-uccle.json`, `viewer/rail/trains.js`; live feed hook `setSource`). Lab `labs/train-lab.html`; details,
-cost and weak points `docs/TRAINS.md`; research and sources `docs/trains/RESEARCH.md`. Rebuild: `python pipeline/build_rail.py`,
+cost and weak points `docs/TRAINS.md` (round 2 section: worker carve + rail meshes, Calevoet 5 arches, AM08 front / bogies, perf, frame sequences); research and sources `docs/trains/RESEARCH.md`. Rebuild: `python pipeline/build_rail.py`,
 `python pipeline/build_trains.py` (GTFS: the curl in its header), Blender `--factory-startup -b -P tools/blender/railBridge.py -- stjob|calevoet models/rail [--preview <dir>]`
 and `... am08.py -- models/rail [--preview <dir>]`.
 
