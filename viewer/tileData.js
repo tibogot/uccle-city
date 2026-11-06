@@ -129,8 +129,6 @@ export async function buildTileData(entry, base) {
   const byCode = {};
   for (const i of errors) byCode[i.code] = (byCode[i.code] || 0) + 1;
   const netInfo = { roads: net.roads.length, nodes: net.nodes.length, errors: errors.length, byCode, warnings: net.issues.length - errors.length };
-  // the lane graph for the moving traffic (viewer/traffic/: lanes, connectors, junction control from OSM, conflicts)
-  const traffic = await step("traffic graph", () => buildTrafficGraph(net, roads, feats, bounds));
   // the roof grid (fly-mode collision) keeps every solid, also the ones a model replaces (its envelope is close enough)
   const roofs = await step("roof grid", () => roofGrid(bDoc, bounds));
   const road = await step("road meshes + carve", () => {
@@ -178,6 +176,9 @@ export async function buildTileData(entry, base) {
     }
     return { parts, atlas, carvedCells, triangles, surfaceStats, surfaceData };
   });
+  // the lane graph for the moving traffic (viewer/traffic/: lanes on the measured carriageway, connectors, junction
+  // control from OSM, conflicts)
+  const traffic = await step("traffic graph", () => buildTrafficGraph(net, roads, feats, bounds, road.surfaceData?.grid));
   const terrain = await step("terrain grid", () => terrainArrays(hm));
   await step("terrain simplify", async () => {
     await MeshoptSimplifier.ready;

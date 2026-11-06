@@ -318,6 +318,20 @@ export class TrafficSim {
     return false;
   }
 
+  /** v0 capped by the curvature limits (graph pv) of path pi from `from` to `to` m along it, braking 1.4 m/s2 over
+   *  the distance (`base` = how far its start is ahead of the car's nose). */
+  curveLimit(g, pi, from, base, to, v0) {
+    const a = g.off[pi], b = g.off[pi + 1], cum = g.cum, pv = g.pv;
+    let lo = a, hi = b - 1;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (cum[m] <= from) lo = m; else hi = m; }
+    for (let k = lo; k < b && cum[k] <= to; k++) {
+      const ahead = Math.max(0, base + cum[k] - from), vp = pv[k] * this.params.speed;
+      const allowed = Math.sqrt(vp * vp + 2 * 1.4 * ahead);
+      if (allowed < v0) v0 = allowed;
+    }
+    return v0;
+  }
+
   // ------------------------------------------------------------------ the step
   accel(i) {
     const W = this.W, R = this.route, o = i * ROUTE, half = this.half[i];
@@ -331,6 +345,7 @@ export class TrafficSim {
     if (j >= 0) { gap = this.posOn(j) - d - this.half[j] - half; vL = this.v[j]; lead = 1; }
     if (this.obsAhead(p, d + half, tmp) < gap) { gap = tmp[0]; vL = tmp[1]; lead = 2; }
     // along the route: speed limits ahead (braked for), the last car / obstacle on each next path
+    v0 = this.curveLimit(g, pi, d + half, 0, d + half + 45, v0);
     let dist = g.len[pi] - d;                  // car centre -> end of this path
     let hold = 0;
     // hold point on this path
@@ -354,6 +369,7 @@ export class TrafficSim {
       const vq = gq.speed[qi] * this.params.speed, room = Math.max(0, dist - half);
       const allowed = Math.sqrt(vq * vq + 2 * 1.4 * room);
       if (allowed < v0) v0 = allowed;
+      if (!gq.kind[qi] && room < 45) v0 = this.curveLimit(gq, qi, 0, room, 45 - room, v0);
       if (gap === Infinity) {
         const h = gq.head[qi];
         if (h >= 0 && h !== i) { gap = dist + this.posOn(h) - this.half[h] - half; vL = this.v[h]; lead = 1; }
@@ -377,7 +393,8 @@ export class TrafficSim {
     let acc = a * (1 - Math.pow(v / v0, 4));
     if (gap < Infinity) {
       const sStar = IDM.s0 + Math.max(0, v * this.Tg[i] + (v * (v - vL)) / (2 * Math.sqrt(a * b)));
-      const gg = Math.max(0.1, gap - 0.3);
+      // a stop line is not a car: stop ~0.8 m before it, not s0 (2.2 m) before it
+      const gg = Math.max(0.1, gap - 0.3 + (this.lead[i] === 3 ? IDM.s0 - 0.8 : 0));
       acc -= a * (sStar / gg) * (sStar / gg);
     }
     this.acc[i] = Math.max(-8, acc);

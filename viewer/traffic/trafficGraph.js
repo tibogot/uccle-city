@@ -67,14 +67,16 @@ function crossing(A, cA, B, cB) {
  * net: buildRoadNetwork result; roads: roads.json (OSM meta); feats: features.json (signal / stop / give_way points);
  * bounds: the tile's core square.
  */
-export function buildTrafficGraph(net, roads, feats, bounds) {
+export function buildTrafficGraph(net, roads, feats, bounds, grid = null) {
   const t0 = performance.now();
-  const src = net.graph.paths.filter((p) => p.len > 0.2 && p.pts.length >= 2);
+  const raw = net.graph.paths.filter((p) => p.len > 0.2 && p.pts.length >= 2);
+  const fitStats = { points: 0, moved: 0, maxShift: 0 };
+  const src = grid ? fitToSurface(raw, grid, fitStats) : raw;
   const idx = new Map(src.map((p, i) => [p.id, i]));
   const P = src.length;
   let nPts = 0;
   for (const p of src) nPts += p.pts.length;
-  const xy = new Float32Array(nPts * 2), cum = new Float32Array(nPts), off = new Uint32Array(P + 1);
+  const xy = new Float32Array(nPts * 2), cum = new Float32Array(nPts), off = new Uint32Array(P + 1), pv = new Float32Array(nPts);
   const len = new Float32Array(P), speed = new Float32Array(P), kind = new Uint8Array(P), turn = new Uint8Array(P);
   const rank = new Uint8Array(P), tram = new Uint8Array(P), core = new Uint8Array(P);
   const holdAt = new Float32Array(P).fill(-1), ctrl = new Uint8Array(P), phase = new Uint8Array(P), jnode = new Int32Array(P).fill(-1);
@@ -109,8 +111,13 @@ export function buildTrafficGraph(net, roads, feats, bounds) {
     speed[i] = kmh(rr) / 3.6;
     rank[i] = rr?.type?.rank ?? 1;
     tram[i] = rr?.src?.meta?.tram ? 1 : 0;
-    const R = minRadius(p.pts);
-    if (R < 60) speed[i] = Math.min(speed[i], Math.max(4, Math.sqrt(ALAT * R)));
+    // per point: the curvature limit (radius over +-5 m of arc), braked for ahead by the sim (pv)
+    const c = p.cum || cumulative(p.pts);
+    for (let k = 0; k < p.pts.length; k++) {
+      const a = pointAt(p.pts, c, Math.max(0, c[k] - 5)), b = pointAt(p.pts, c, Math.min(p.len, c[k] + 5));
+      const R = minRadius([a, p.pts[k], b]);
+      pv[off[i] + k] = Math.min(speed[i], Math.max(4, Math.sqrt(ALAT * R)));
+    }
   });
   src.forEach((p, i) => {
     if (!kind[i]) return;
@@ -120,6 +127,7 @@ export function buildTrafficGraph(net, roads, feats, bounds) {
     const R = minRadius(p.pts);
     speed[i] = Math.max(2.5, Math.min(v, Math.sqrt(ALAT * R)));
     rank[i] = rk; tram[i] = tr;
+    for (let k = off[i]; k < off[i + 1]; k++) pv[k] = speed[i];
   });
 
   // ---- junctions: control per approach from data, conflicts between connectors
@@ -127,7 +135,7 @@ export function buildTrafficGraph(net, roads, feats, bounds) {
   const pts = (feats.points || []);
   const sigPts = pts.filter((q) => q.kind === "traffic_signals").map((q) => {
     const nr = nearestRoad(roads, N, q.x, q.z);
-    return { x: q.x, z: q.z, phase: nr ? phaseOfDir(nr.ux, nr.uz) : 0 };
+    return { x: q.x, z: q.z, phase: nr ? phaseOfDir(nr.ux, nr.uz) : 0, road: nr?.road?.id };
   });
   const signPts = pts.filter((q) => q.kind === "stop" || q.kind === "give_way");
   const jnodes = [];
@@ -175,7 +183,7 @@ export function buildTrafficGraph(net, roads, feats, bounds) {
         c = CTRL.signal;
         // the phase of the OSM post this approach passes (the signal point nearest the last 30 m of the lane);
         // an approach with no post drawn takes the same rule from its own direction
-        const s = nearestOnLane(sigPts, lp, 30, 12);
+        const s = nearestOnLane(sigPts.filter((q) => q.road === lp.roadId), lp, 30, 14);   // a post of THIS road (its drawn head faces this approach)
         ph = s ? s.phase : phaseOfDir(...dirAtEnd(lp, 20));
       } else if (signOf.has(li)) c = signOf.get(li).kind === "stop" ? CTRL.stop : CTRL.yield;
       // where to wait: the engine's stop line on this lane when it drew one, else the junction mouth
@@ -225,10 +233,10 @@ export function buildTrafficGraph(net, roads, feats, bounds) {
   const cfOther = Int32Array.from(list, (c) => c[0]), cfAt = Float32Array.from(list, (c) => c[1]), cfOtherAt = Float32Array.from(list, (c) => c[2]);
   const cfYield = Int8Array.from(list, (c) => c[3]);
   return {
-    paths: P, xy, cum, off, len, speed, kind, turn, rank, tram, core, nextOff, nextIdx, prevOff, prevIdx,
+    paths: P, xy, cum, off, pv, len, speed, kind, turn, rank, tram, core, nextOff, nextIdx, prevOff, prevIdx,
     holdAt, ctrl, phase, jnode, nodeOf, cfOff, cfOther, cfAt, cfOtherAt, cfYield,
     jnodes: jnodes.map((j) => ({ id: j.id, x: j.x, z: j.z, kind: j.kind, signal: !!j.signal })),
-    bounds, stats: { ...stats, paths: P, ms: Math.round(performance.now() - t0) },
+    bounds, stats: { ...stats, paths: P, fit: fitStats, ms: Math.round(performance.now() - t0) },
   };
 }
 
@@ -269,4 +277,69 @@ function nearestOnLane(list, p, back, r) {
     }
   }
   return best;
+}
+
+// ---------------------------------------------------------------- lanes onto the MEASURED carriageway
+// The engine's lane stacks are fitted into the measured kerb-to-kerb widths (surfaces.js fitRoadWidths), but where
+// that fit is off (one-sided streets, a measured road the engine centres differently) a lane can run over a
+// sidewalk. Each lane point whose car footprint (+-1 m) is not on roadway / tram roadway / parking is moved sideways
+// to the nearest place where it is (at most 5 m), the shifts smoothed along the lane; connectors take the shift of
+// their entry lane at their start and of their exit lane at their end, blended along their length. The graph's
+// geometry only: the drawn markings stay the engine's.
+const CARRIAGE = [true, true, false, true, false, false, false, false, false, false];
+function fitToSurface(paths, G, st) {
+  const ok = (x, z) => {
+    const i = Math.floor((x - G.x0) / G.step), j = Math.floor((z - G.z0) / G.step);
+    if (i < 0 || j < 0 || i >= G.nx || j >= G.nz) return true;          // off the raster: leave it
+    const c = G.data[j * G.nx + i] - 1;
+    return c >= 0 && CARRIAGE[c];
+  };
+  const fits = (x, z, nx, nz, s) => ok(x + nx * s, z + nz * s) && ok(x + nx * (s + 1), z + nz * (s + 1)) && ok(x + nx * (s - 1), z + nz * (s - 1));
+  const shift = new Map();
+  const out = new Map();
+  const tangent = (q, k) => {
+    const n = q.length, a = q[Math.max(0, k - 1)], b = q[Math.min(n - 1, k + 1)];
+    const tx = b[0] - a[0], tz = b[1] - a[1], L = Math.hypot(tx, tz) || 1;
+    return [tx / L, tz / L];
+  };
+  for (const p of paths) {
+    if (p.kind === "connector") continue;
+    const q = p.pts, n = q.length, off = new Float32Array(n);
+    for (let k = 0; k < n; k++) {
+      const [tx, tz] = tangent(q, k), nx = -tz, nz = tx, x = q[k][0], z = q[k][1];
+      st.points++;
+      if (fits(x, z, nx, nz, 0)) continue;
+      for (let s = 0.25; s <= 9; s += 0.25) {
+        if (fits(x, z, nx, nz, s)) { off[k] = s; break; }
+        if (fits(x, z, nx, nz, -s)) { off[k] = -s; break; }
+      }
+    }
+    // smooth: a wide moving average (points are ~1-2 m apart), so a lane bends gently around a misfit
+    const sm = new Float32Array(n);
+    for (let k = 0; k < n; k++) { let a = 0, w = 0; for (let m = Math.max(0, k - 6); m <= Math.min(n - 1, k + 6); m++) { const ww = 7 - Math.abs(m - k); a += off[m] * ww; w += ww; } sm[k] = a / w; }
+    // never less than the point itself needs (the average pulled lane ends back onto the sidewalk), then a light pass
+    for (let k = 0; k < n; k++) if (Math.abs(off[k]) > Math.abs(sm[k])) sm[k] = off[k];
+    const sm2 = Float32Array.from(sm);
+    for (let k = 1; k < n - 1; k++) sm[k] = (sm2[k - 1] + 2 * sm2[k] + sm2[k + 1]) / 4;
+    const pts = q.map((pt, k) => {
+      const [tx, tz] = tangent(q, k);
+      if (Math.abs(sm[k]) > 0.05) st.moved++;
+      st.maxShift = Math.max(st.maxShift, Math.abs(sm[k]));
+      return [pt[0] - tz * sm[k], pt[1] + tx * sm[k]];
+    });
+    shift.set(p.id, [pts[0][0] - q[0][0], pts[0][1] - q[0][1], pts[n - 1][0] - q[n - 1][0], pts[n - 1][1] - q[n - 1][1]]);
+    out.set(p.id, pts);
+  }
+  for (const p of paths) {
+    if (p.kind !== "connector") continue;
+    const a = shift.get(p.prev[0]), b = shift.get(p.next[0]);
+    const s0 = a ? [a[2], a[3]] : [0, 0], s1 = b ? [b[0], b[1]] : [0, 0];
+    const c = p.cum || cumulative(p.pts), L = c[c.length - 1] || 1;
+    out.set(p.id, p.pts.map((pt, k) => { const f = c[k] / L; return [pt[0] + s0[0] * (1 - f) + s1[0] * f, pt[1] + s0[1] * (1 - f) + s1[1] * f]; }));
+  }
+  return paths.map((p) => {
+    const pts = out.get(p.id) || p.pts, cum = cumulative(pts), len = cum[cum.length - 1];
+    const stop = p.stop ? { ...p.stop, at: Math.max(0, len - (p.len - p.stop.at)) } : undefined;
+    return { ...p, pts, cum, len, stop };
+  });
 }

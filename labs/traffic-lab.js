@@ -240,6 +240,48 @@ window.__lab = {
     frame(sec);
   },
   follow(i) { follow = i; },
+  /** The canvas right after a render (same task), with a caption, JPEG-posted to the lab server (?dir, ?name). */
+  shot(dir, name, caption = "", scale = 0.5) {
+    const src = renderer.domElement, c = this._cv ||= document.createElement("canvas");
+    c.width = Math.round(src.width * scale); c.height = Math.round(src.height * scale);
+    const x = c.getContext("2d");
+    x.drawImage(src, 0, 0, c.width, c.height);
+    if (caption) { x.font = "bold 15px ui-monospace, monospace"; const w = x.measureText(caption).width; x.fillStyle = "rgba(0,0,0,.65)"; x.fillRect(6, 6, w + 12, 24); x.fillStyle = "#fff"; x.fillText(caption, 12, 23); }
+    return new Promise((res) => c.toBlob((b) => fetch(`/__frame?dir=${dir}&name=${name}`, { method: "POST", body: b }).then(() => res(b.size)), "image/jpeg", 0.85));
+  },
+  /** n frames dt apart (paused world): caption(k) -> text; each frame advanced then shot */
+  async seq(dir, n, dt = 0.1, caption = () => "", pre = null) {
+    this.pause();
+    for (let k = 0; k < n; k++) { pre?.(k); this.advance(dt); await this.shot(dir, `f${String(k).padStart(3, "0")}.jpg`, caption(k)); }
+  },
+  /** chase camera on car i: back m behind, up m above, looking ahead m in front */
+  chase(i, back = 14, up = 6, ahead = 12) {
+    const fx = Math.sin(sim.yaw[i]), fz = Math.cos(sim.yaw[i]), x = sim.x[i], z = sim.z[i], y = sim.y[i];
+    this.look(x - fx * back, y + up, z - fz * back, x + fx * ahead, y + 0.5, z + fz * ahead);
+  },
+  /** Clear the area round (x, z) of moving cars. */
+  clearAround(x, z, r) { for (let i = 0; i < sim.cap; i++) if (sim.alive[i] && Math.hypot(sim.x[i] - x, sim.z[i] - z) < r) sim.kill(i); sim.buildLists(); },
+  /** Set the signal clock so phase `ph` is `s` seconds into its cycle (0 = the start of green). */
+  setPhaseTime(ph, s) { const t = signalClock.now(), cur = (((t + (ph ? 27 : 0)) % 54) + 54) % 54; signalClock.offset += s - cur; },
+  lightName(ph) { return ["green", "amber", "red"][signalState(ph, signalClock.now())]; },
+  /** THE RED-LIGHT CHECK: two cars on signalled lane `lane` (gid), 20 m apart; the light turns amber after `amberIn` s;
+   *  10 fps frames of the stop (dir/red_stop), then the light jumps to 1.5 s before green: the start (dir/green_go). */
+  async redLight(lane = 90, amberIn = 2.5, d0 = 62, n1 = 130, n2 = 100) {
+    const g = sim.W.slots[lane >>> 16], li = lane & 0xffff, ph = g.phase[li], o = new Float64Array(4);
+    this.pause();
+    sim.W.point(lane, g.holdAt[li], o);
+    this.clearAround(o[0], o[1], 110);
+    this.setPhaseTime(ph, 22 - amberIn);
+    const car = sim.spawnAt(lane, d0, 8); sim.insertInList(car);
+    const car2 = sim.spawnAt(lane, d0 - 22, 8); sim.insertInList(car2);
+    let k = 0;
+    const cap = () => { const dS = g.holdAt[li] - (sim.d[car] + sim.half[car]); return `t=${(k += 0.1).toFixed(1)}s  light ${this.lightName(ph)}  lead ${(sim.v[car] * 3.6).toFixed(1)} km/h ${sim.path[car] === lane ? dS.toFixed(1) + " m to line" : "through"}  follower ${(sim.v[car2] * 3.6).toFixed(1)} km/h`; };
+    await this.seq("red_stop", n1, 0.1, cap, () => this.chase(car2, 13, 5.5, 14));
+    const r1 = { v: sim.v[car], toLine: g.holdAt[li] - (sim.d[car] + sim.half[car]), v2: sim.v[car2], gap: sim.d[car] - sim.d[car2] - sim.half[car] - sim.half[car2] };
+    this.setPhaseTime(ph, -1.5); k = 0;
+    await this.seq("green_go", n2, 0.1, cap, () => this.chase(car2, 13, 5.5, 14));
+    return { car, car2, phase: ph, r1, after: { v: sim.v[car], path: sim.path[car], v2: sim.v[car2] } };
+  },
   look(px, py, pz, tx, ty, tz) { camera.position.set(px, py, pz); controls.target.set(tx, ty, tz); controls.update(); },
   near(x, z, r = 30) { const o = []; for (let i = 0; i < sim.cap; i++) if (sim.alive[i] && (sim.x[i] - x) ** 2 + (sim.z[i] - z) ** 2 < r * r) o.push({ i, v: +sim.v[i].toFixed(2), hold: sim.hold[i], st: sim.state[i], x: +sim.x[i].toFixed(1), z: +sim.z[i].toFixed(1) }); return o; },
 };
