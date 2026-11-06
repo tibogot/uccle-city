@@ -20,7 +20,7 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 
 **Queue (owner, 2026-11-07), in order:**
 1. Trains: SNCB lines and stations of Uccle (verify the list: Uccle-Stalle, Uccle-Calevoet, …), tracks with embankments and cuttings, stations with platforms and shelters, SNCB trains (double-deck + suburban types) in Blender at a HIGHER quality than our tram, on the real timetable (SNCB GTFS open data). The RAILWAY BRIDGES are important: the bridge over Chaussée de Saint-Job ("nice shape"), the bridge near Uccle-Calevoet / rue des Roses next to the station, and the others: model them as heroes. References: UrbIS (bridge solids / Land cover levels +1), OSM bridge=yes ways, Wikimedia Commons, heritage inventory, Mapillary; NOT Google Street View/Maps imagery (terms forbid deriving models; the owner suggested Google: explain).
-2. A better tram: the T3000 "still looks somehow": a quality pass to the trains' level, same performance budget.
+2. [x] A better tram: DONE on `claude/tram2` (not merged), waiting for the owner: `tools/blender/tram2.py`, `viewer/tram2Model.js`, the city's default (`?tram=v1` = old, `?tram=box`); research, before/after with photos, perf, frame checks: `docs/tram2/RESEARCH.md`. The old one WAS too low (3.30 m; photos say ~3.6 m). Left: nose still a bit boxy vs the photos (overlay-fit the outline), gold panel blotchy in strong light, fleet number / STIB logo decals, people inside, line 97's PCC 7900 (+ stib-97 transit data), T4000 if module lengths are found, LOD0 costs ~2.5x v1 per tram (fine in the city, 1-2 trams within 90 m).
 3. Next hero: Saint-Pierre church (Uccle-Centre), then Van Buuren museum, Wolvendael.
 4. Later: real-time APIs to make the city realistic (live weather: Open-Meteo / RMI; live STIB and SNCB positions and delays; time of day already real); and the MONETIZATION ideas (docs/MARKET.md: sun and shadow studies for architects, participation tools for communes, freelance showcase; revisit with what the city can do now).
 
@@ -134,6 +134,18 @@ read-only (copy into `vendor/` with ORIGIN.md); measure GPU ms before / after (s
       builds at load, the sun lightmap for one sun direction; then Saint-Job's nave with the same method.
 - [ ] City: tram platforms, shelters, benches, bollards and parked cars are not colliders yet; build the roads BVH in
       the tile worker (25-60 ms on the main thread per tile today); a Third-person button in the UI.
+
+## STIB tram model v2 (`claude/tram2`, 2026-11-06, waiting for the owner)
+- [x] Re-measured (taller: hood 3.58 m), named material slots, baked AO (UV1), interior through see-through glass, plug doors
+      opening at the stops on the platform side, bellows bent in the vertex stage, pitch on slopes, pantograph on the wire,
+      mid / far LODs from Blender variants trimmed by meshoptimizer (welds keep AO seams), dwell + brake lights in tramline.js.
+- [ ] Nose outline fitted on the 3041 / 3001 fronts (taller windscreen, rounder plan corners, thicker hood visor).
+- [ ] Gold panel: brownish blotches in strong light (reflection); grime streaks under windows, roof dirt.
+- [ ] Decals: fleet number on the nose, "www.stib.be", STIB logo on the sides, door push buttons.
+- [ ] Passengers (a few shared low-poly figures by the windows), a better driver's cab.
+- [ ] Line 97: PCC 7900 model + `pipeline/build_transit.py --line 97`; T4000 if its module lengths are published.
+- [ ] Module lengths are v1's estimates (cab 8.825 / susp 5.6 / centre 3.0): confirm on a side-on photo.
+- [ ] Re-measure GPU when no other agent shares the GPU (round 1 only was clean: within noise of v1 and of no trams).
 
 ## STIB tram model (approved by the owner 2026-11-04, merged)
 - [x] T3000 (line 92's stock) scripted in Blender (`tools/blender/tram.py`), loader / LODs / placement `viewer/tramModel.js`,

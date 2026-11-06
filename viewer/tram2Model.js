@@ -50,7 +50,7 @@ export const SLOT_LOOK = {
   Bumper: { c: SRGB(0.70, 0.71, 0.72), r: 0.45, m: 0.2, ao: 1 },
   BumperDark: { c: SRGB(0.36, 0.37, 0.38), r: 0.6, m: 0.0, ao: 1 },
   Glass: { c: SRGB(0.10, 0.12, 0.12), r: 0.04, m: 0.0, ao: 0.4 },
-  GlassCab: { c: SRGB(0.05, 0.06, 0.065), r: 0.03, m: 0.0, ao: 0.4 },
+  GlassCab: { c: SRGB(0.13, 0.15, 0.17), r: 0.04, m: 0.25, ao: 0.4 },
   Rubber: { c: SRGB(0.035, 0.035, 0.04), r: 0.75, m: 0.0, ao: 1 },
   Metal: { c: SRGB(0.16, 0.16, 0.17), r: 0.55, m: 0.6, ao: 1 },
   Bellows: { c: SRGB(0.55, 0.56, 0.57), r: 0.8, m: 0.0, ao: 1 },      // light grey folds (photos: the joints read pale)

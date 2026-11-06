@@ -1,4 +1,5 @@
-// THE TRAM LAB: the scripted STIB T3000 (tools/blender/tram.py -> models/tram/, loaded by viewer/tramModel.js: the
+// THE TRAM LAB: the scripted STIB T3000, second pass (tools/blender/tram2.py -> models/tram2/, viewer/tram2Model.js; ?tram=v1
+// = the first model, tools/blender/tram.py -> models/tram/, viewer/tramModel.js: the
 // loader, LODs, material and placement the city uses) on a short track: a straight, a curve of the
 // radius of the tightest Saint-Job curve (18 m: GTFS shape of line 92 at Place de Saint-Job, three-point circle fit),
 // and another straight. The tram drives back and forth so the modules articulate (lead cab: white headlights; the
@@ -192,7 +193,7 @@ if (S.view !== "orbit (free)") goView(S.view); else fitFrame();
 // notes
 const lods = model.lods.map((l, k) => `LOD${k}: ${Math.round(l.tris).toLocaleString()} triangles per tram, up to ${TRAM_LODS[k].until} m`).join("<br>");
 $notes.innerHTML = `<h3>Rolling stock</h3><p>Tram 92 is run by STIB's <b>T3000</b> (Bombardier Flexity Outlook Cityrunner, 5 sections, 3 bogies);
-photos of cars 3007, 3036, 3128, 3131 on line 92 in 2024-2026. The TNG trams (Alstom, 2023+) run on lines 9, 19, 51, 82.</p>
+photos of cars 3007, 3036, 3128, 3131 on line 92 in 2024-2026. The TNG trams (Alstom, 2023+) run on lines 9, 19, 51, 82. Line 97 (also through Uccle) runs the old PCC 7900 (photo 2025-02-25): not modelled. Research: docs/tram2/RESEARCH.md.</p>
 <h3>Measured (published)</h3><p>${model.layout.measured}</p><h3>Estimated (from photos)</h3><p>${model.layout.estimated}</p>
 <h3>Levels of detail</h3><p>${lods}<br>one draw call per piece type and LOD (6 types), one node material</p>
 <h3>Reference photos (not shipped; overlay works where data/raw/refs/tram/ is on disk)</h3>

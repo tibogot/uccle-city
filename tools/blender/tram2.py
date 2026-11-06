@@ -344,7 +344,7 @@ def zone_a(mb, xtip, side, out_of):
                 elif zc < NG1: slot = S["Gold"]
                 elif zc < NW0: slot = S["Black"]
                 elif zc < Z_BAND1: slot = GLASS(True)
-                elif zc < Z_SH + 0.15: slot = S["Black"]
+                elif zc < Z_SH + 0.15: slot = S["Silver"]
                 else: slot = S["Silver"]
             elif i == 1:
                 if NG0 <= zc < Z_GOLD1: slot = S["Gold"]
@@ -671,16 +671,19 @@ def nose(mb, xtip):
             return Y_FAIR - 0.03
         t = (z - NH0) / (NTOP - NH0)                       # the hood crown: a rounded cap above the display band
         return max(0.28, (Y_FAIR - 0.03) * math.sqrt(max(0.0, 1 - t * t)))
-    def slot_at(zc, kind):
+    def slot_at(zc, kind, ycorner=0.0):
         if zc < NBD0: return S["Bumper"]
         if zc < NBD1: return S["BumperDark"]
         if zc < NB1: return S["Bumper"]
         if zc < NG0: return S["Rubber"]
         if zc < NG1: return S["Gold"]
         if zc < NW0: return S["Black"]
-        if zc < NW1: return GLASS(True)
-        if zc < ND0: return S["Black"]
-        if zc < NH0: return GLASS(True) if kind >= 1 else S["Black"]
+        # the glass is a rounded black field framed by the silver hood: the hood comes down round the corners of the
+        # display band and the top of the windscreen (photos 3041 / 3097 / 3001)
+        if zc < NW1 - 0.25: return GLASS(True)
+        if zc < NW1: return S["Silver"] if kind == 1 and ycorner > 0.55 else GLASS(True)
+        if zc < ND0: return S["Silver"] if kind == 1 and ycorner > 0.3 else S["Black"]
+        if zc < NH0: return S["Silver"] if kind == 1 and ycorner > 0.3 else (GLASS(True) if kind == 2 else S["Silver"])
         return S["Silver"]
     for side in (1, -1):
         grid = []
@@ -693,10 +696,12 @@ def nose(mb, xtip):
                 a, b = grid[j][i], grid[j][i + 1]
                 c, d = grid[j + 1][i + 1], grid[j + 1][i]
                 kind = max(a[3], b[3])
-                slot = slot_at(zc, kind)
+                s_, rc_ = nose_shape(zc)
+                fw_ = max(width(zc) - TAPER - rc_, 0.0)
+                ycorner = min(max(((a[2] + b[2]) / 2 - fw_) / max(rc_, 1e-3), 0.0), 1.0)      # 0 front edge of the corner arc .. 1 the side
+                slot = slot_at(zc, kind, ycorner)
                 if kind == 0 and NBD0 <= zc < NBD1: slot = S["Bumper"]
-                if kind == 0 and Z_GOLD0 <= zc < Z_GOLD1: slot = S["Black"]
-                if kind == 0 and zc >= Z_GOLD1 and zc < Z_SH + 0.15: slot = S["Black"]
+                if kind == 0 and Z_GOLD0 <= zc < Z_SH + 0.15: slot = S["Silver"]
                 mb.poly([a[0], b[0], c[0], d[0]], slot, lambda cc: cc - Vector((xtip - 2.0, 0, min(max(cc.z, 0.8), 2.4))))
         bot = grid[0]
         cen = mb.vert((xtip - 0.6, 0, 0.20))
