@@ -42,14 +42,34 @@ WIRE = 5.50
 NOSE_L = 1.62                        # the nose's reach beyond the straight body (bottom)
 # half profile (y >= 0) from the underside centre round to the roof centre: (y, z)
 PROFILE = [(0.0, 0.80), (0.70, 0.80), (1.18, 0.80), (1.32, 0.83), (1.385, 0.90), (1.41, 1.0), (1.418, 1.05), (1.425, 1.20),
-           (1.428, 1.36), (1.43, 1.55), (1.43, 1.72), (1.43, 1.86), (1.43, 2.05), (1.425, 2.55), (1.41, 2.95), (1.40, 3.05),
-           (1.385, 3.15), (1.36, 3.33), (1.31, 3.52), (1.20, 3.76), (1.10, 3.86), (1.02, 3.95), (0.78, 4.07), (0.45, 4.13), (0.0, 4.15)]
+           (1.428, 1.36), (1.43, 1.55), (1.43, 1.72), (1.43, 1.86), (1.43, 2.05), (1.429, 2.30), (1.425, 2.55), (1.418, 2.75),
+           (1.41, 2.95), (1.40, 3.05), (1.385, 3.15), (1.373, 3.24), (1.36, 3.33), (1.338, 3.43), (1.31, 3.52), (1.26, 3.64),
+           (1.20, 3.76), (1.10, 3.86), (1.02, 3.95), (0.92, 4.01), (0.78, 4.07), (0.62, 4.10), (0.45, 4.13), (0.24, 4.145), (0.0, 4.15)]
+# (round 3: denser 2-4 m rows, so the black field's yellow frame follows the curves instead of stepping)
 WIN_Z = (1.55, 2.55)
 DOOR_Z = (SILL, 2.95)
 # nose reach (x beyond the straight body) by height: lower front protrudes, the windscreen rakes back, the roof rounds in
-LF = [(0.62, 1.50), (0.80, 1.60), (1.10, 1.62), (1.40, 1.58), (1.78, 1.46), (2.55, 1.10), (3.25, 0.66), (3.52, 0.46),
-      (3.76, 0.30), (3.95, 0.17), (4.07, 0.08), (4.15, 0.0)]
-SUPER = 3.2                          # superellipse exponent of the nose in plan (2 = ellipse, higher = blunter)
+# (round 3, photos am08_stjob_2025 / am08_calevoet_2025: the windscreen rakes ~33 deg, the black visor rounds over to the roof)
+LF = [(0.62, 1.50), (0.80, 1.60), (1.10, 1.62), (1.50, 1.60), (1.95, 1.50), (2.55, 1.13), (3.10, 0.78), (3.45, 0.55),
+      (3.76, 0.33), (3.95, 0.18), (4.07, 0.08), (4.15, 0.0)]
+SUPER_LO, SUPER_HI = 3.4, 2.2         # superellipse exponent of the nose in plan: blunt crash front low, round glazed top
+
+
+def half_width(z):
+    """the body's half width at height z (upper half of PROFILE)"""
+    up = PROFILE[1:]
+    if z <= up[0][1]: return up[0][0]
+    for (y0, z0), (y1, z1) in zip(up, up[1:]):
+        if z <= z1: return y0 + (y1 - y0) * (z - z0) / max(z1 - z0, 1e-9)
+    return 0.0
+
+
+def super_at(z):
+    """plan superellipse exponent by height (2 = ellipse, higher = blunter): the lower front is nearly flat with tight
+    corners, the windscreen / visor curve round into the sides (top view of the photos)."""
+    t = min(max((z - 1.7) / 1.0, 0.0), 1.0)
+    t = t * t * (3 - 2 * t)
+    return SUPER_LO + (SUPER_HI - SUPER_LO) * t
 
 
 def lerp_tab(tab, z):
@@ -135,8 +155,8 @@ def body(length, front_kind, rear_kind, doors, windows, detail=2):
         for k in range(1, K + 1):
             th = (math.pi / 2) * k / K
             s, c = math.sin(th), math.cos(th)
-            sp, cp = max(0.0, s) ** (2 / SUPER), max(0.0, c) ** (2 / SUPER)
-            rows.append([bm.verts.new((x_body_front + lerp_tab(LF, z) * sp, y * cp, z)) for y, z in ring])
+            rows.append([bm.verts.new((x_body_front + lerp_tab(LF, z) * max(0.0, s) ** (2 / super_at(z)), y * max(0.0, c) ** (2 / super_at(z)), z))
+                         for y, z in ring])
     n = len(ring)
     for r0, r1 in zip(rows, rows[1:]):
         for i in range(n):
@@ -164,20 +184,28 @@ def body(length, front_kind, rear_kind, doors, windows, detail=2):
         if front_kind == "nose":
             inn = c.x > x_body_front - 0.02
             cab_zone = a < 2.95 - max(0.0, c.z - 1.6) * 0.30 + 0.35       # the yellow wraps back to the first window, slanted
-            if cab_zone and not inn:                                        # cab sides: yellow above 1.55 m, silver below
-                if c.z > 1.55: mat = S["paint_cab"]
+            if cab_zone and not inn:      # cab sides: yellow above the headlights line (1.40 m), grey below
+                if c.z > 1.40: mat = S["paint_cab"]      # (level: a slanted line steps across the 0.6 m rows)
                 elif c.z > 0.92: mat = S["paint_grey"]
             if inn:
+                # round 3 (photos): ONE black glazed field (windscreen, display, top light) from the windscreen's foot up and
+                # over to the roof, framed by the yellow wrap: yellow pillars round the plan corners (by the face's plan
+                # angle, so the frame follows the curvature), the yellow front panel, the grey crash front below.
                 ay = abs(c.y)
+                ang = math.degrees(math.atan2(abs(nx.y), max(nx.x, 1e-6))) if nx.x > 0 else 90.0   # 0 = facing ahead
+                # the plan sweep parameter of the face (90 = the nose's centre line, 0 = the side): constant along the mesh's
+                # own rows, so the field's edges follow the edges instead of stepping across them
+                wz = half_width(c.z)
+                th = math.degrees(math.acos(min(1.0, (ay / max(wz, 1e-3)) ** (super_at(c.z) / 2)))) if wz > 1e-3 else 90.0
                 if c.z < 0.80: mat = S["metal_dark"]
-                elif c.z < 1.05: mat = S["metal_dark"] if ay < 0.72 and nx.x > 0.5 else S["paint_grey"]
-                elif c.z < 1.55: mat = S["paint_cab"] if ay < 0.74 and nx.x > 0.5 else S["paint_grey"]
-                elif c.z < 1.72: mat = S["paint_cab"]
-                elif c.z < 3.95 and ay < 0.98 - max(0.0, c.z - 3.4) * 0.75 and nx.x > 0.25:   # the visor's top corners rounded
-                    if 1.86 <= c.z < 3.05 and ay < 0.88: mat = S["glass"]
-                    elif 3.15 <= c.z < 3.33 and ay < 0.6: mat = S["display"]
+                elif c.z < 1.16 + 0.24 * (ang / 90.0) ** 2: mat = S["paint_grey"]
+                elif c.z < 1.94: mat = S["paint_cab"]
+                elif c.z >= 3.86 and nx.x > 0.06: mat = S["rubber"]                         # the visor rounding over
+                elif c.z >= 3.86: mat = S["paint_roof"]
+                elif th > 30:                                                              # the field, between the yellow pillars
+                    if 1.99 <= c.z < 3.12 and th > 37: mat = S["glass"]
+                    elif 3.20 <= c.z < 3.40 and ay < 0.58: mat = S["display"]
                     else: mat = S["rubber"]
-                elif c.z >= 3.95: mat = S["paint_roof"]
                 else: mat = S["paint_cab"]
         if detail == 0 and abs(nx.y) > 0.6:      # far variant: the openings painted on (no recesses)
             if any(a0 - 0.02 < a < a1 + 0.02 for a0, a1 in doors) and DOOR_Z[0] - 0.1 < c.z < DOOR_Z[1]: mat = S["paint_door"]
@@ -281,10 +309,10 @@ def car_details(bm, length, front_kind, detail):
         s = 1 if xe > 0 else -1
         box(bm, (xe + s * 0.03, 0, 2.05), (0.08, 1.30, 2.30), S["rubber"], 0.03)
     if front_kind == "nose":
-        xn = lambda y, z: xf - NOSE_L + lerp_tab(LF, z) * max(0.0, 1 - abs(y / HW) ** SUPER) ** (1 / SUPER)   # the nose surface
+        xn = lambda y, z: xf - NOSE_L + lerp_tab(LF, z) * max(0.0, 1 - abs(y / HW) ** super_at(z)) ** (1 / super_at(z))   # the nose surface
         # headlight pods (photo: a black recess at each lower corner, a big round LED headlight + a small marker / tail light)
         for sgn in (1, -1):
-            y0, z0 = sgn * 0.95, 1.30
+            y0, z0 = sgn * 0.95, 1.25
             x0 = xn(y0, z0)
             box(bm, (x0 - 0.05, y0, z0), (0.14, 0.36, 0.24), S["rubber"], 0.02)
             cyl(bm, (x0 + 0.02, y0 + sgn * 0.07, z0 + 0.01), 0.075, 0.03, "x", S["lamp_white"], 16)
@@ -314,7 +342,7 @@ def car_details(bm, length, front_kind, detail):
             for v in vs: v.co = R_ @ (v.co - cxy) + cxy
         # wipers
         for y in (0.42, -0.30):                                     # wipers, parked along the bottom of the windscreen
-            box(bm, (xn(y, 1.92) + 0.02, y, 1.92), (0.025, 0.62, 0.025), S["rubber"])
+            box(bm, (xn(y, 2.03) + 0.02, y, 2.03), (0.025, 0.62, 0.025), S["rubber"])
         # mirrors / cameras on the cab sides
         for y in (HW + 0.06, -HW - 0.06):
             box(bm, (xf - 2.0, y, 2.6), (0.18, 0.06, 0.24), S["paint_grey"], 0.02)

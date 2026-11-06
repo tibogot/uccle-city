@@ -20,7 +20,7 @@ import { env } from "../lighting.js";
 import { SMOOTH, ditherNoise } from "../lodFade.js";
 
 export const TRAIN_LODS = [
-  { until: 90 },
+  { until: 60 },          // round 3: 90 -> 60 m (Saint-Job bridge street view cost; the dithered hand-over still shows no jump)
   { until: 450, src: "_far" },
   { until: 2400, src: "_far", ratio: 0.35 },
 ];

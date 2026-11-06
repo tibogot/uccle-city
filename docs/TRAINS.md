@@ -27,7 +27,7 @@ Research (lines, stations, every road crossing, sources, licences): `docs/trains
 | `tools/blender/railBridge.py` -> `models/rail/{stjob,calevoet}.glb + _ao.png + .json` | The hero bridges (see RESEARCH): parametric masonry: face walls with the openings, skewed ruled vaults, arch rings with stone voussoirs, the hood moulding and its scrolls, quoined capped pilasters, the corbel table, cornice, parapet, coping, end quoins; Calevoet: three round arches, dentil archivolts, imposts, railing. Bevels (Bevel modifier, 2.5 cm / 1.2 cm), UV0 in metres, AO baked in UV1 (2048) with the DTM site as occluder. NAMED slots `brick_red_brussels`, `stone_blue`, `concrete`, `painted_metal_white` (the Material Lab's names); no colour baked. St-Job 49.4k triangles, Calevoet 26.5k. |
 | `viewer/rail/bridgeModel.js` | Loads a bridge; LOD1 / LOD2 by meshoptimizer (welded, 30 % / 6 % + prune), dithered cross-fades at 140 / 420 m; `materialFor(slot)` uses `viewer/materials/library.js` when that branch is merged, else procedural stand-ins (running-bond brick with recessed joints, weathered petit granit) on the same UV0 contract. |
 | `tools/blender/am08.py` -> `models/rail/am08.glb + .json` | The AM08 Desiro: lofted body with a superelliptic nose, real window / door recesses (inset + extruded), plug doors with their windows and the seam, a saloon behind see-through glass (seats, floor, ceiling), bogies (wheels, flanges, discs, axle boxes, springs, air springs, dampers), obstacle deflector, lamps, wipers, mirrors, roof fairings, gangways, single-arm pantograph raised to the wire; a "_far" variant per body (openings painted on). AO baked into COLOR_0. 13 named slots (paint_body, paint_cab, paint_door, paint_skirt, paint_grey, paint_roof, rubber, glass, metal_dark, lamp_white, lamp_red, display, interior). |
-| `viewer/rail/trainModel.js` | One node material for the whole fleet: slot index per vertex -> a palette of uniforms (`trainLook.setLivery("sncb" / "grey" / {...})`: a livery is a palette, never baked), AO, lights (the leading cab's white headlights, red tails behind, the LED display, saloon light at night), see-through glass (alpha-to-coverage, opaque on the far bodies). `trainPose()`: each car carried by its two bogies (height AND pitch from the bogie points), bogies tangent, gangways, the pantograph on the mid car; a coupled pair is the second unit reversed. `createTrainFleet()`: InstancedMeshes per piece and LOD (storage-buffer path, no recompiles), LOD decided per CAR (an 80 m unit spans bands), dithered cross-fades +-12 % / +-10 % at 90 / 450 m, far fade 2150-2400 m. LOD0 / LOD1 / LOD2 = 69.6k / 15.3k / 4.8k triangles per unit (bridges: St-Job 49.4k / 14.8k / 2.9k, Calevoet 26.5k / 7.9k / 1.6k). |
+| `viewer/rail/trainModel.js` | One node material for the whole fleet: slot index per vertex -> a palette of uniforms (`trainLook.setLivery("sncb" / "grey" / {...})`: a livery is a palette, never baked), AO, lights (the leading cab's white headlights, red tails behind, the LED display, saloon light at night), see-through glass (alpha-to-coverage, opaque on the far bodies). `trainPose()`: each car carried by its two bogies (height AND pitch from the bogie points), bogies tangent, gangways, the pantograph on the mid car; a coupled pair is the second unit reversed. `createTrainFleet()`: InstancedMeshes per piece and LOD (storage-buffer path, no recompiles), LOD decided per CAR (an 80 m unit spans bands), dithered cross-fades +-8 % / +-10 % at 60 / 450 m (90 m until round 3), far fade 2150-2400 m. LOD0 / LOD1 / LOD2 = 69.6k / 15.3k / 4.8k triangles per unit (bridges: St-Job 49.4k / 14.8k / 2.9k, Calevoet 26.5k / 7.9k / 1.6k). |
 | `viewer/rail/trains.js` | The timetable runner: per trip, the nose's distance along its route by interpolating between timetable points (accelerate / cruise / brake at 0.75 m/s², standing at platforms), poses, the fleet, pop counters (`stats.appearInView / vanishInView`), `positions()` (for traffic later), clock = the city clock. **Live feed hook**: `setSource({ delay(trip, T), cancelled(trip) })` - a GTFS-RT TripUpdates adapter (SNCB publishes one on the same NAP) plugs in there; nothing else changes. |
 | `labs/train-lab.html/.js` | The lab (see above), our own `viewer/panelUI.js`. |
 | `viewer/main.js` | `?trains=1`: carve + rail meshes per tile (inside the tile's own groups: they stream and fade with it), trees dropped, the bridges placed (shown while their tile or its far LOD is loaded), the trains. |
@@ -94,7 +94,35 @@ Research (lines, stations, every road crossing, sources, licences): `docs/trains
 - Side by side with photos: `docs/trains/compare/` (St-Job bridge x3 in the city, Calevoet viaduct and the two AM08 views in
   the lab).
 
+## Round 3 (2026-11-07): the AM08 nose, the LOD0 band
+
+- **Nose as photographed** (`tools/blender/am08.py`; photos am08_stjob_2025 / am08_calevoet_2025): profile re-raked
+  (windscreen foot 1.95 m at 1.50 m reach, top 3.10 m at 0.78: ~33 deg), the plan's superellipse exponent now by height
+  (3.4 blunt at the crash front -> 2.2 round over the glazing, `super_at`), denser rows 2-4 m. Materials: ONE black
+  glazed field (windscreen 1.99-3.12, display 3.20-3.40, top light) from the windscreen's foot up and over to the roof,
+  framed by yellow pillars chosen by the face's plan sweep parameter (so the frame follows the mesh rows and the
+  curvature, no steps), the yellow front panel 1.16-1.94 with the headlights at its foot, the grey crash front below
+  (coupler, ribbed crash boxes, plough), the cab sides yellow above 1.40 m. Named slots unchanged, AO re-baked.
+  EndCar 28.3k / MidCar 23.6k triangles (LOD0 per unit ~112k, was 104k); LODs re-derived by meshoptimizer at load.
+- Side by sides (`docs/trains/compare/`): `am08_stjob_2025.jpg` (photo | before | after, front 3/4 from the platform),
+  `am08_calevoet_2025.jpg` (photo | before | after, the front), `am08_side_round3.jpg` (before | after, profile). Same
+  camera for before / after (S19 4006 frozen at Saint-Job station, 07:10:30, camera offsets from its head).
+- **LOD0 band 90 -> 60 m** (`TRAIN_LODS[0].until`). Motion checks: `frames/train_lod0_lod1_fade_60m.jpg` (camera
+  receding 33 -> 65 m from the nose along the track, zoom holding the size: the end car crosses the hand-over, no jump,
+  frame differences even 7-9), `frames/pass_stjob_bridge_60m.jpg` (S5 3357 over the bridge, 1 s steps, the cars going
+  LOD1 -> LOD0 one by one): **0 appeared / 0 vanished** in view.
+- **GPU, bridge street view** (photo viewpoint "along the road", S5 3357 frozen on the bridge, 1 car LOD0 + 2 LOD1 at
+  60 m vs 2 + 1 at 90 m), debug/gpuAB.js, 8 alternating rounds each, in one page: LOD band 90 vs 60 m: **-0.20 ms
+  medians** (-0.25 mean); railway on / off with the 60 m band **+0.29 ms medians** (+0.74 mean), with the 90 m band +0.84
+  medians (+0.55 mean). Frame times were 9-13 ms (round 2: ~6) because another session's browser shared the GPU:
+  the spreads are large; the band A/B is the cleanest number. To re-measure on an idle GPU.
+
 ## What still looks weak (honest list)
+
+- **AM08 nose (round 3)**: the windscreen is flat glass (no curved reflection); the pillars' yellow should taper
+  inwards at the roof (they run straight up); the plough reads as a pale block; no "B" logo, fleet number or wipers'
+  arms on the glass; the cab sides' yellow / grey line is level (the photos show it rising backwards: a slanted line
+  stepped across the 0.6 m rows, so it was dropped).
 
 - **The AM08 at LOD0** is now 104k triangles a unit: right at close range (round 2), but the street view at the
   Saint-Job bridge costs +0.44 ms (medians) with it, at the budget's edge. The windscreen is flat (no curved glass
