@@ -125,6 +125,13 @@ export class CharacterBody {
     return found;
   }
 
+  /** Back to standing (a teleport): the clips from their start, idle in full. */
+  resetPose() {
+    if (!this.mixer) return;
+    for (const role of ROLES) { const a = this.actions[role]; if (!a) continue; a.time = this.hold[role] ?? 0; this._w[role] = role === "idle" ? 1 : 0; a.setEffectiveWeight(this._w[role]); }
+    this._wasGrounded = true; this._airTime = 0;
+  }
+
   clearModel() {
     if (this.model) { this.root.remove(this.model); this.mixer?.stopAllAction(); }
     this.model = null; this.mixer = null; this.actions = {}; this.footIK = null; this.capsuleGroup.visible = true;
@@ -159,6 +166,7 @@ export class CharacterBody {
     }
     const v = this.variantOn;
     for (let i = 0; i < this.modelMats.length; i++) { const m = this.modelMats[i]; m.mesh.material = v && m.solidV ? (fade ? m.fadeV : m.solidV) : fade ? m.fade : m.solid; }
+    if (dt <= 0) return;                       // (paused: keep the last pose, IK included)
     // the animation state machine (weights eased toward targets)
     const A = this.actions, w = this._w, target = TARGET;
     for (let i = 0; i < ROLES.length; i++) target[ROLES[i]] = 0;
@@ -175,7 +183,10 @@ export class CharacterBody {
       target.walk = A.walk ? 1 - k : 0; target.run = A.run ? k : 0;
       // capped: past 1.35x a clip looks frantic; the controller's speeds are set so the cap is not reached (index.js)
       const raw = A.walk && A.run ? st.speed / (this.walkSpeed + (this.runSpeed - this.walkSpeed) * k) : st.speed / (A.run ? this.runSpeed : this.walkSpeed);
-      const rate = Math.min(1.35, Math.max(0.5, raw));
+      // on stairs and steep ramps: shorter, quicker steps (up to 1.45x the cadence: a step about a tread or two, not
+      // a flat-ground stride straddling three nosings); the foot lock holds the planted foot, so the stride shortens
+      const g = st.grade || 0, gk = g > 0.2 ? Math.min(1, (g - 0.2) / 0.35) : 0, steep = 1 + 0.45 * gk * gk * (3 - 2 * gk);
+      const rate = Math.min(1.35 * steep, Math.max(0.5, raw * steep));
       if (A.walk) A.walk.timeScale = rate;
       if (A.run) A.run.timeScale = rate;
       if (A.walk && A.run) {            // keep the two cycles in phase

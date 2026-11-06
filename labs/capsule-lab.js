@@ -547,6 +547,7 @@ renderer.setAnimationLoop(() => {
   focus.set(tp.x, tp.y, tp.z);
   lighting.update(camera.position.y, Y0, focus, 40);
   if (S.post) pipe.render(hazeHook); else renderer.render(scene, camera);
+  if (window.__afterRender) { const f = window.__afterRender; window.__afterRender = null; f(renderer.domElement); }   // (frame grabs for the foot audit)
   pipe.setExposureFactor(lighting.adapt(dt));
   if (!S.post) renderer.toneMappingExposure = lighting.exposureScale * 0.85 * lighting.adapt(0);
   sampleGpu();

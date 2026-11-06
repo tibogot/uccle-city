@@ -62,7 +62,8 @@ export class FootProbe {
     this.hipRest = hips ? hips.getWorldPosition(_v).y - body.root.position.y : 0;
     body.preIK = (rootY) => {
       body.root.updateMatrixWorld(true);
-      for (const f of this.feet) { f.L.foot.getWorldPosition(_v); f.animY = _v.y - rootY - f.restY; body.root.worldToLocal(_v); f.animZ = _v.z; }
+      const pel = body.modelInner.position.y * body.modelScale;     // (the last frame's pelvis offset is still on the model)
+      for (const f of this.feet) { f.L.foot.getWorldPosition(_v); f.animY = _v.y - pel - rootY - f.restY; body.root.worldToLocal(_v); f.animZ = _v.z; }
     };
     return true;
   }
@@ -83,7 +84,7 @@ export class FootProbe {
     let d = yaw - this.camYaw; d = Math.atan2(Math.sin(d), Math.cos(d));
     this.camYaw += d * (1 - Math.exp(-3 * dt));
     const fx = Math.sin(this.camYaw), fz = Math.cos(this.camYaw), rx = fz, rz = -fx;    // forward, right (of the character)
-    if (m === "feet side") { camera.position.set(x - rx * 2.6, y + 0.22, z - rz * 2.6); camera.lookAt(x, y + 0.3, z); }
+    if (m === "feet side") { camera.position.set(x - rx * 3.3, y + 0.25, z - rz * 3.3); camera.lookAt(x, y + 0.33, z); }
     else if (m === "feet front") { camera.position.set(x + fx * 2.4, y + 0.25, z + fz * 2.4); camera.lookAt(x, y + 0.3, z); }
     else if (m === "feet top") { camera.position.set(x - fx * 0.05, y + 3.4, z - fz * 0.05); camera.up.set(fx, 0, fz); camera.lookAt(x, y, z); camera.up.set(0, 1, 0); }
     else if (m === "feet 3/4") { camera.position.set(x - rx * 1.7 + fx * 1.5, y + 0.6, z - rz * 1.7 + fz * 1.5); camera.lookAt(x, y + 0.3, z); }
