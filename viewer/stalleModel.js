@@ -119,14 +119,14 @@ export function loadStalle() {
 }
 
 /** a named material from the library when SOURCE points at one (and has it), else the temporary version of that name */
-export function sourceMaterial(name, lib) {
+export function sourceMaterial(name, lib, opts = {}) {
   let m = null;
   if (lib && !NEW_NAMES.includes(name)) {
     try { m = lib.createMaterial?.(name, { mapping: "uv" }) ?? lib.getMaterial?.(name) ?? lib.materials?.[name] ?? lib.default?.[name] ?? null; }
     catch (e) { console.warn(`[stalle] library failed on "${name}":`, e.message); }
     if (!m) console.warn(`[stalle] library has no "${name}": temporary material`);
   }
-  return m ?? (TEMP[name] ?? TEMP.stone_white)();
+  return m ?? (TEMP[name] ?? TEMP.stone_white)(opts);
 }
 
 /** The baked AO (lighting only) on any slot material: aoNode = lightmap AO x the thin parts' vertex AO (indirect
@@ -227,7 +227,7 @@ const TEMP = {
     const c = weather(col).mul(mix(float(1), float(0.93), isCode(C.plinth)));
     return std({ colorNode: c, roughnessNode: float(0.9), metalnessNode: float(0), normalNode: bumpNormal(bulge) });
   },
-  stone_white() {
+  stone_white(o = {}) {
     // dressed stone (copings, surrounds, tracery, quoins, statue): tooled ashlar, faint coursing, weathered tops
     const w = uv(0);
     const g = vnoise(w.mul(7.0)).mul(0.08).add(vnoise(w.mul(29.0)).mul(0.05));
@@ -236,14 +236,14 @@ const TEMP = {
     col = mix(col, lin(0xc9c3b6), isCode(C.sculpture).mul(0.4));
     const up = clamp(normalWorld.y, 0, 1);
     col = col.mul(mix(float(1), float(0.82), up.mul(isCode(C.coping).add(isCode(C.sill)).add(isCode(C.band)).min(1)).mul(stLook.weather)));
-    return std({ colorNode: weather(col, 0.7), roughnessNode: float(0.82), metalnessNode: float(0), normalNode: bumpNormal(g.mul(0.004)) });
+    return std({ colorNode: o.indoor ? col : weather(col, 0.7), roughnessNode: float(0.82), metalnessNode: float(0), normalNode: bumpNormal(g.mul(0.004)) });
   },
   stone_blue() {
     const p = uv(0).mul(40), h = hash2(floor(p)), h2 = hash2(floor(p.mul(0.25)).add(7.0));
     const col = mix(lin(0x6b7075), lin(0x575c62), h.mul(0.5).add(h2.mul(0.5)));
     return std({ colorNode: col, roughnessNode: float(0.72), metalnessNode: float(0) });
   },
-  brick_red_brussels() {
+  brick_red_brussels(o = {}) {
     // the 1711 house: hand-made orange-red bricks, irregular tones, lime joints
     const w = uv(0);
     const cv = w.y.div(0.062), row = floor(cv);
@@ -256,7 +256,7 @@ const TEMP = {
     let b = mix(lin(0xa4472c), lin(0xb86240), h).mul(mix(float(0.78), float(1.08), h2));
     b = mix(b, lin(0x6a2e22), step(0.93, h2).mul(0.6));
     const col = mix(b, lin(0xc2b8a6), float(1).sub(mask));
-    return std({ colorNode: weather(col, 0.5), roughnessNode: float(0.88), metalnessNode: float(0), normalNode: bumpNormal(mask.mul(0.004)) });
+    return std({ colorNode: o.indoor ? col : weather(col, 0.5), roughnessNode: float(0.88), metalnessNode: float(0), normalNode: bumpNormal(mask.mul(0.004)) });
   },
   slate() {
     const w = uv(0);

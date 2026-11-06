@@ -76,12 +76,12 @@
    0.86,
    0.94
   ],
-  "lod0_px_per_m": 36.8,
-  "far_px_per_m": 12.8,
+  "lod0_px_per_m": 38.0,
+  "far_px_per_m": 13.2,
   "thin_faces_vertex_ao": [
-   5334,
-   466,
-   87
+   4547,
+   232,
+   68
   ]
  },
  "frame": "glTF Y up; three.js local (u, m TAW - OY, w); node at the city position of the frame origin, height OY, rotation.y = -rotation",
@@ -285,30 +285,30 @@
   "u_aisle_s": 10.55,
   "u_apse": 14.75,
   "u_east": 16.88,
-  "bell_u": 6.8,
+  "bell_u": 6.5,
   "clerestory_oculi_u": [
-   2.05,
-   4.5,
-   6.9
+   2.8,
+   5.3,
+   7.75
   ],
   "north_aisle": {
    "leper": 1.0,
    "oculi": [
-    1.75,
-    6.75,
-    9.35
+    1.72,
+    6.74,
+    9.14
    ],
    "door": [
     3.95,
     4.9
    ],
-   "anchor": 2.15
+   "anchor": 2.38
   },
   "south_aisle": {
    "oculi": [
-    1.75,
-    6.75,
-    9.35
+    1.72,
+    6.74,
+    9.14
    ]
   }
  },

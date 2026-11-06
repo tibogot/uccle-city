@@ -58,7 +58,7 @@ FLOOR = 34.32           # nave floor: the west door's threshold, two steps above
 CHOIR_FLOOR = 34.49     # one step up (the DTM rises to 34.3 at the east end)
 PLINTH_TOP = 34.95
 # the bell-cote: the DSM's ridge bump (45.3 at u 6.5-7.0)
-BELL_U = 6.8
+BELL_U = 6.5
 # the west front (photo c00, 242 px/m at the front, ground y 3150 = 33.85)
 DOOR_W, DOOR_TOP = 1.40, 36.42
 WWIN_W, WWIN_SILL, WWIN_SPRING, WWIN_APEX = 1.70, 37.35, 39.0, 40.25
@@ -66,10 +66,12 @@ GABLE_APEX = 44.05      # coping top at the apex (0.7 m above the ridge: a raise
 KNEEL = 40.75           # nave kneelers
 OCULUS_W_H = 41.97      # the west gable's oculus centre
 # sides (P01 heritage + c05 Commons, projective fits along the north aisle; south = estimated mirror)
-CLER_OCULI = [2.05, 4.5, 6.9]
-N_AISLE = dict(leper=1.0, oculi=[1.75, 6.75, 9.35], door=(3.95, 4.9), anchor=2.15)
-S_AISLE = dict(oculi=[1.75, 6.75, 9.35])
-COLS_U = [3.3, 5.7, 8.1]          # arcade piers (interior photo: 4 bays per side)
+CLER_OCULI = [2.8, 5.3, 7.75]          # photo poses c05 + P01 agree within 0.1 m
+N_AISLE = dict(leper=1.0, oculi=[1.72, 6.74, 9.14], door=(3.95, 4.9), anchor=2.38)
+AISLE_OCULUS_H = 36.55            # the aisles' oculi centres (pose probes: just under the north door's head)
+S_AISLE = dict(oculi=[1.72, 6.74, 9.14])
+COLS_U = [4.05, 6.5, 9.0]         # arcade piers: arches under the clerestory oculi (interior photo: 3 + a short bay)
+RESP_W = 1.55                     # the west respond (a pier against the west wall)
 ARC_RESP_W, ARC_RESP_E = T_WEST, 10.45
 CHOIR_ARCH_U = (10.45, 11.2)
 CHOIR_WIN_N = 12.95               # the choir's north window (P01), two lights + quatrefoil
@@ -322,6 +324,40 @@ def cusped_lancet(s0, s1, spring, apex, bottom, n=10):
             out.append((x + dx / L * pull, y + dy / L * pull))
         else: out.append((x, y))
     return out
+
+def inside(p, poly):
+    x, y = p; c = False; n = len(poly)
+    for i in range(n):
+        (x0, y0), (x1, y1) = poly[i], poly[(i + 1) % n]
+        if (y0 > y) != (y1 > y) and x < x0 + (y - y0) * (x1 - x0) / (y1 - y0): c = not c
+    return c
+
+def window_lights(s, sill, spring, apex, w, n_lights, foils=()):
+    """a pointed window's outline + its lights (cusped lancets + foils fitted in the head), wall-frame (s, Blender z).
+    Shared by the exterior (tracery front) and the interior cell (tracery back), so both see the same stone."""
+    s0, s1 = s - w / 2, s + w / 2
+    outline = pointed(s0, s1, hz(spring), hz(apex), n=10, bottom=hz(sill))
+    mull, edge = 0.1, 0.06
+    lw = (w - 2 * edge - mull * (n_lights - 1)) / n_lights
+    lights = []
+    l_spring = hz(spring) + (0.15 if n_lights > 2 else -0.1)
+    l_apex = l_spring + lw * 0.95
+    for k in range(n_lights):
+        a = s0 + edge + k * (lw + mull)
+        lights.append(cusped_lancet(a, a + lw, l_spring, l_apex, hz(sill) + 0.05))
+    inner = offset_loop(outline, -0.07)
+    for (ds, h, r, lobes) in foils:
+        while r > 0.08:
+            f = foil(s + ds, hz(h), r, lobes, rot=math.pi / 2 if lobes == 3 else math.pi / 4)
+            if all(inside(p, inner) for p in f) and min(p[1] for p in f) > l_apex + 0.04: break
+            r *= 0.94
+        lights.append(f)
+    mullions = [s0 + edge + k * (lw + mull) - mull / 2 for k in range(1, n_lights)]
+    return outline, lights, l_spring, mullions
+
+# the windows (shared): (name, u or None, wall, s-centre, sill, spring, apex, width, lights, foils)
+WEST_WINDOW = dict(sill=WWIN_SILL, spring=WWIN_SPRING, apex=WWIN_APEX, w=WWIN_W, n=3, foils=[(-0.42, 39.93, 0.3, 3), (0.42, 39.93, 0.3, 3)])
+CHOIR_WINDOW = dict(sill=37.4, spring=38.85, apex=39.75, w=1.1, n=2, foils=[(0.0, 39.42, 0.2, 4)])
 
 # ------------------------------------------------------------------------------------------------ mesh + lightmap UV
 def make_object(scn, mats, slots, name, bld, v0, v1, ao_px, smart=True, thin_limit=0.06):

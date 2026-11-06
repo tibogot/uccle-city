@@ -116,27 +116,11 @@ def gothic_window(fr, s, sill, spring, apex, w, n_lights, depth=0.32, foils=(), 
         fill2d(fr, [outline], -0.12, GLASS, C_LEAD); strip2d(fr, outline, 0.0, -0.12, STONE, C_SUR)
         return outline
     opening_reveal(fr, outline, depth * 0.55, chamfer=0.06)
-    mull, edge = 0.1, 0.06
-    lw = (w - 2 * edge - mull * (n_lights - 1)) / n_lights
-    lights = []
-    l_spring = hz(spring) + (0.15 if n_lights > 2 else -0.1)
-    l_apex = l_spring + lw * 0.95
-    for k in range(n_lights):
-        a = s0 + edge + k * (lw + mull)
-        lights.append(cusped_lancet(a, a + lw, l_spring, l_apex, hz(sill) + 0.05))
-    inner = offset_loop(outline, -0.07)
-    for (ds, h, r, lobes) in foils:
-        # the largest foil that stays inside the arch (7 cm of stone) and above the lancets' heads
-        while r > 0.08:
-            f = foil(s + ds, hz(h), r, lobes, rot=math.pi / 2 if lobes == 3 else math.pi / 4)
-            if all(inside(p, inner) for p in f) and min(p[1] for p in f) > l_apex + 0.04: break
-            r *= 0.94
-        lights.append(f)
+    outline, lights, l_spring, mullions = SC.window_lights(s, sill, spring, apex, w, n_lights, foils)
     tracery(fr, outline, lights, -0.08, -0.2)
     for L in lights: leaded_glass(fr, L, -0.17)
     # mullions' front fillets (rounded look): thin bars
-    for k in range(1, n_lights):
-        x = s0 + edge + k * (lw + mull) - mull / 2
+    for x in mullions:
         fbox(fr, x - 0.025, x + 0.025, hz(sill) + 0.05, l_spring, -0.08, -0.055, STONE, C_TRAC)
     # sill: weathered stone ledge
     fbox(fr, s0 - 0.12, s1 + 0.12, hz(sill) - 0.16, hz(sill), -0.02, 0.09, STONE, C_SILL, skip=())
@@ -327,13 +311,13 @@ def north_aisle():
         lep = [(s - 0.15, hz(35.0)), (s + 0.15, hz(35.0)), (s + 0.15, hz(35.6)), (s, hz(35.88)), (s - 0.15, hz(35.6))]
         acc["leper"] = lep; L.append(lep)
         for u in SC.N_AISLE["oculi"]:
-            c = circle(fr.s_of(u, w), hz(35.95), 0.2, 20); L.append(c)
+            c = circle(fr.s_of(u, w), hz(SC.AISLE_OCULUS_H), 0.2, 20); L.append(c)
         u0, u1 = SC.N_AISLE["door"]
         a, b = sorted((fr.s_of(u0, w), fr.s_of(u1, w)))
         dr = rect(a, hz(34.62), b, hz(36.78)); acc["door"] = dr; L.append(dr)
         return L
     fr, s0, s1 = side_wall(0.0, SC.U_AISLE_N, w, -1, HB, SC.AISLE_EAVE - 0.02, holes)
-    for u in SC.N_AISLE["oculi"]: oculus(fr, fr.s_of(u, w), 35.95, 0.2, 0.33)
+    for u in SC.N_AISLE["oculi"]: oculus(fr, fr.s_of(u, w), SC.AISLE_OCULUS_H, 0.2, 0.33)
     lep = acc["leper"]
     opening_reveal(fr, lep, 0.3, chamfer=0.04)
     fill2d(fr, [lep], -0.2, GLASS, C_LEAD)
@@ -352,7 +336,7 @@ def north_aisle():
         for x in (a, b): quoins(fr, x, hz(34.62), hz(36.78), -1 if x == a else 1, alt=(0.24, 0.16), course=0.27, proud=0.012)
         # T-anchor
         s = fr.s_of(SC.N_AISLE["anchor"], w)
-        bar(fr, (s, hz(36.6)), (s, hz(37.05)), 0.0, 0.04, 0.025, IRON); bar(fr, (s - 0.17, hz(37.05)), (s + 0.17, hz(37.05)), 0.0, 0.04, 0.025, IRON)
+        bar(fr, (s, hz(36.55)), (s, hz(37.1)), 0.0, 0.04, 0.025, IRON); bar(fr, (s - 0.17, hz(37.1)), (s + 0.17, hz(37.1)), 0.0, 0.04, 0.025, IRON)
     plinth_run(fr, s0 - 0.07, dr[0][0] - 0.3, 34.75); plinth_run(fr, dr[1][0] + 0.3, s1 + 0.07, 34.75)
     quoins(fr, s1, hz(HB + 0.8), hz(SC.AISLE_EAVE - 0.05), -1)
     quoins(fr, s0, hz(HB + 0.8), hz(SC.AISLE_EAVE - 0.05), 1)
@@ -392,9 +376,9 @@ def west_door_leaves():
 def south_aisle():
     w = WC + A_OUT
     def holes(fr):
-        return [circle(fr.s_of(u, w), hz(35.95), 0.2, 20) for u in SC.S_AISLE["oculi"]]
+        return [circle(fr.s_of(u, w), hz(SC.AISLE_OCULUS_H), 0.2, 20) for u in SC.S_AISLE["oculi"]]
     fr, s0, s1 = side_wall(0.0, SC.U_AISLE_S, w, 1, HB, SC.AISLE_EAVE - 0.02, holes)
-    for u in SC.S_AISLE["oculi"]: oculus(fr, fr.s_of(u, w), 35.95, 0.2, 0.33)
+    for u in SC.S_AISLE["oculi"]: oculus(fr, fr.s_of(u, w), SC.AISLE_OCULUS_H, 0.2, 0.33)
     plinth_run(fr, s0 - 0.07, s1, 34.75)
     quoins(fr, s0 if fr.s_of(0.0, w) == s0 else s1, hz(HB + 0.8), hz(SC.AISLE_EAVE - 0.05), 1 if fr.s_of(0.0, w) == s0 else -1)
 
