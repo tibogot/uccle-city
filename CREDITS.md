@@ -89,8 +89,14 @@ material colours baked to vertex colours.
 | Asset | Author / source | Licence | Used | Verified |
 |---|---|---|---|---|
 | **Hoodie Character** (poly.pizza/m/gKLBoRsyKe) and **Casual Character** (poly.pizza/m/kZ3DmIoGip), from the **Ultimate Modular Men Pack** (Feb 2022), quaternius.com/packs/ultimatemodularcharacters.html (the pack's Google Drive download was over quota) | Quaternius (quaternius.com) | **CC0 1.0** (pack page: "CC0", linked to creativecommons.org/publicdomain/zero/1.0; poly.pizza lists both "Public Domain (CC0)") | the meshes, skeleton and the Idle_Neutral / Walk / Run clips (Run also held as the jump / fall pose) | 2026-11-05, the pack page and both poly.pizza pages |
+| **Universal Animation Library 2 [Standard]** (`data/raw/characters/ual2/universal_animation_library_2standard.zip`, quaternius.com) | Quaternius (quaternius.com) | **CC0 1.0** (the zip's `License.txt`: "CC0 1.0 Universal (CC0 1.0) Public Domain Dedication") | NinjaJump_Start / _Idle_Loop / _Land and Idle_No_Loop, retargeted onto the modular men rig by `tools/characters/retarget.mjs` into `models/characters/clips.glb` (Jump_Start, Jump_Loop, Jump_Land, UAL_Idle) | 2026-11-07, the zip's License.txt |
 
-Not used: Quaternius' newer packs under the "Quaternius Asset Licence" (only the CC0 pack above is used), and
+**Mixamo** animations (Adobe, mixamo.com): Adobe's terms let them be used inside a project (a game, an app) but not
+redistributed as standalone animation files. Raw FBX downloads go to `data/raw/animations/mixamo/` (git-ignored);
+`tools/characters/retarget.mjs` writes the clips made from them to `models/characters/clips_mixamo.glb`, which is
+git-ignored too (the owner decides whether the built site ships it). None are in the repository.
+
+Not used: Quaternius' newer packs under the "Quaternius Asset Licence" (only the CC0 packs above are used), and
 three.js's example Soldier.glb (Mixamo, not shippable; it was only loaded by URL in a test, never copied).
 
 ## Public transport

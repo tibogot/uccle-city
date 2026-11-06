@@ -34,9 +34,12 @@ const LEG = (s) => ({ upper: `UpperLeg${s}`, lower: `LowerLeg${s}`, end: `LowerL
 async function loadClips() {
   try {
     const base = new URL("../../models/characters/", import.meta.url).href;
-    const [meta, gltf] = await Promise.all([fetch(base + "clips.json").then((r) => (r.ok ? r.json() : null)), new GLTFLoader().loadAsync(base + "clips.glb")]);
+    const meta = await fetch(base + "clips.json").then((r) => (r.ok ? r.json() : null));
     if (!meta) return null;
-    return { meta: meta.clips, animations: gltf.animations };
+    // the clips' files (clips.glb: CC0 sources, in the repo; clips_mixamo.glb: Mixamo, local only, may be missing)
+    const files = [...new Set(Object.values(meta.clips).map((m) => m.file || "clips.glb"))];
+    const loaded = await Promise.all(files.map((f) => new GLTFLoader().loadAsync(base + f).then((g) => g.animations).catch(() => [])));
+    return { meta: meta.clips, animations: loaded.flat() };
   } catch (e) { console.warn("character clips:", e.message); return null; }
 }
 
@@ -47,7 +50,9 @@ export async function loadCharacter(name = "hoodie", { height = 1.76 } = {}) {
   const clips = { ...CLIPS }, clipMeta = {};
   if (extra) {
     for (const a of extra.animations) if (!gltf.animations.some((b) => b.name === a.name)) gltf.animations.push(a);
-    const role = (r) => Object.entries(extra.meta).find(([, m]) => m.role === r)?.[0];
+    // (a role filled by several clips: the last listed wins, so a Mixamo clip replaces a UAL one; only clips that loaded)
+    const have = new Set(extra.animations.map((a) => a.name));
+    const role = (r) => Object.entries(extra.meta).filter(([k, m]) => m.role === r && have.has(k)).pop()?.[0];
     if (role("jumpStart")) clips.jump = role("jumpStart");
     if (role("fall")) clips.fall = role("fall");
     for (const r of ["land", "stairsUp", "stairsDown", "stairsUpRun", "stairsDownRun", "turnL", "turnR", "walkStart", "walkStop"]) if (role(r)) clips[r] = role(r);

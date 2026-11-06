@@ -218,7 +218,14 @@ if (process.argv.includes("--compare-src")) {
   console.log(`${c.from}: GLB vs ${path.basename(arg("--compare-src"))}: ${n} frames, max rotation difference ${maxA.toFixed(2)} deg, max hips / feet ${(maxP * 1000).toFixed(1)} mm`);
   process.exit(0);
 }
-const anims = [], meta = {};
+const anims = [], animsMX = [], meta = {};
+// Mixamo FBX not yet converted: say how
+{
+  const dir = path.join(RAW, "animations/mixamo");
+  const fbx = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => /\.fbx$/i.test(f)) : [];
+  const todo = fbx.filter((f) => !fs.existsSync(path.join(dir, "glb", f.replace(/\.fbx$/i, ".glb"))));
+  if (todo.length) console.warn(`${todo.length} Mixamo FBX not converted yet: "C:/Program Files/Blender Foundation/Blender 5.0/blender.exe" -b --factory-startup -P tools/blender/fbx2glb.py -- "${dir}" "${path.join(dir, "glb")}"`);
+}
 for (const job of JOBS) {
   const file = path.join(RAW, job.src);
   if (!fs.existsSync(file)) { if (!job.optional) console.warn(`missing ${file}`); continue; }
@@ -229,14 +236,14 @@ for (const job of JOBS) {
     const anim = typeof c.from === "number" ? src.anims[c.from] : src.anims.find((a) => a.name === c.from || a.name.endsWith("|" + c.from));
     if (!anim) { console.warn(`${job.src}: no clip ${c.from}`); continue; }
     const clip = retargetClip(S, T, anim), root = extractRoot(T, clip, !!c.loop);
-    anims.push({ name: c.to, times: clip.times, tracks: buildTracks(T, clip, root) });
+    (job.rig === "mixamo" ? animsMX : anims).push({ name: c.to, times: clip.times, tracks: buildTracks(T, clip, root) });
     // the feet's contacts, read from the clip (sole height above the target's standing ankle height < 3 % of the leg):
     // planted / airborne phases, the take-off and the touch-down (the body starts a jump clip at its take-off, a
     // landing clip at its touch-down)
     const lim = T.ankleY + 0.03 * T.leg, contact = [0, 1].map((s) => clip.frames.map((f) => (f.feet[s][1] < lim ? 1 : 0)));
     const both = contact[0].map((x, k) => x || contact[1][k]);
     const takeoff = both.findIndex((x, k) => k > 0 && !x && both[k - 1]), touchdown = both.findIndex((x, k) => k > 0 && x && !both[k - 1]);
-    meta[c.to] = { role: c.role,
+    meta[c.to] = { file: job.rig === "mixamo" ? "clips_mixamo.glb" : "clips.glb", role: c.role,
       contact: contact.map((a) => a.join("")), takeoff: takeoff > 0 ? +clip.times[takeoff].toFixed(3) : null, touchdown: touchdown > 0 ? +clip.times[touchdown].toFixed(3) : null, loop: !!c.loop, duration: +clip.times[clip.times.length - 1].toFixed(3), source: `${path.basename(job.src)}:${anim.name}`, rig: job.rig, scale: +clip.scale.toFixed(3),
       ...(root ? { rootSpeed: +root.speed.toFixed(3), rootVelocity: root.vel } : {}) };
     console.log(`${c.to} <- ${job.rig}:${anim.name}  ${clip.times.length} frames, scale ${clip.scale.toFixed(3)}${root ? `, root motion ${root.speed.toFixed(2)} m/s taken out` : ""}`);
@@ -244,5 +251,9 @@ for (const job of JOBS) {
 }
 const OUT = path.join(ROOT, "models/characters/clips.glb");
 const bytes = writeClipsGLB(OUT, target.nodes.map((n) => ({ name: n.name, parent: n.parent, children: n.children, t: n.t, r: n.r, s: n.s })), anims, { note: "retargeted clips for the Quaternius modular men rig (tools/characters/retarget.mjs)" });
+if (animsMX.length) {     // (Adobe's terms: used inside the project, not redistributed as files: git-ignored, CREDITS.md)
+  const b2 = writeClipsGLB(path.join(ROOT, "models/characters/clips_mixamo.glb"), target.nodes.map((n) => ({ name: n.name, parent: n.parent, children: n.children, t: n.t, r: n.r, s: n.s })), animsMX, { note: "Mixamo clips retargeted for this project only (not for redistribution)" });
+  console.log(`wrote models/characters/clips_mixamo.glb (${(b2 / 1024).toFixed(0)} KB, ${animsMX.length} clips)`);
+}
 fs.writeFileSync(path.join(ROOT, "models/characters/clips.json"), JSON.stringify({ target: path.basename(TARGET), fps: FPS, clips: meta }, null, 1));
 console.log(`wrote ${path.relative(ROOT, OUT)} (${(bytes / 1024).toFixed(0)} KB, ${anims.length} clips) + clips.json`);
