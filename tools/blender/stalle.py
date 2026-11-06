@@ -280,7 +280,7 @@ def statue(fr):
     K.B.new_group()
     for i in range(len(rings) - 1):
         for k in range(segs):
-            quad(rings[i][k], rings[i][(k + 1) % segs], rings[i + 1][(k + 1) % segs], rings[i + 1][k], STONE, C_SCULPT)
+            quad(rings[i][k], rings[i + 1][k], rings[i + 1][(k + 1) % segs], rings[i][(k + 1) % segs], STONE, C_SCULPT)   # outward
     face_dir(rings[0], -Z, STONE, C_SCULPT)
     # head + veil + crown
     hc = c + Z * 1.05 + N * 0.01

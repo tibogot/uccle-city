@@ -411,7 +411,7 @@ def figure(c, fwd, side, height, prof, mat_code=C_ROBE, segs=14, head=True, crow
     for i in range(len(rings) - 1):
         (r0, c0), (r1, _) = rings[i], rings[i + 1]
         for k in range(segs):
-            quad(r0[k], r0[(k + 1) % segs], r1[(k + 1) % segs], r1[k], POLY, c0)
+            quad(r0[k], r1[k], r1[(k + 1) % segs], r0[(k + 1) % segs], POLY, c0)   # outward (was inward: the statues read dark)
     face_dir(rings[0][0], -Z, POLY, prof[0][4])
     if head:
         hc = c + Z * (height * 0.9) + fwd * 0.01 * height

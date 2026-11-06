@@ -85,8 +85,8 @@ let groundMesh;
     // the 1 m orthophoto alone reads as a flat blue-green blob under trees: lawn tone where it is green, the photo's
     // detail on top (the streets and the forecourt are real geometry above it)
     const green = col.g.sub(col.r.add(col.b).mul(0.5)).max(0).mul(6.0).min(1);
-    const lawn = mix(vec3(0.16, 0.2, 0.08), vec3(0.24, 0.27, 0.12), col.g.mul(2.0).min(1));
-    m.colorNode = mix(vec3(0.12, 0.14, 0.1), mix(col.mul(0.75), lawn, green.mul(0.7).add(0.2)), edge);
+    const lawn = mix(vec3(0.12, 0.16, 0.05), vec3(0.2, 0.24, 0.09), col.g.mul(2.0).min(1));
+    m.colorNode = mix(vec3(0.12, 0.14, 0.1), mix(col.mul(0.7), lawn, green.mul(0.5).add(0.45)), edge);
   } else m.color.set(0x55605a);
   groundMesh = new THREE.Mesh(g, m); groundMesh.receiveShadow = true; groundMesh.name = "ground";
   scene.add(groundMesh);

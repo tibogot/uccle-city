@@ -42,9 +42,13 @@ so build the exterior first. Viewer: `viewer/stalleModel.js` (exterior loader, a
   `cast_iron_green`, `polychrome` (NEW: the statues' robe / mantle / skin, the hatchments, by code). Unlit: colour = the
   slot material's colour node x the baked light (sky / sun / night mixed by the city's light; eye adaptation inside).
 - NEW names (not in the shared library, branch claude/materials; resolved to the temporary TSL in the loaders whatever
-  SOURCE says, until the library has them): `sandstone_rubble` = rough-squared white Brussels sandstone in irregular courses
-  (rows 0.2 m, blocks 0.22-0.54 m, lime joints, cream / ochre / grey tones, bump); `painted_wood_red` = oxblood paint on
-  boards; `marble_chequer` = black and white marble squares on the diagonal; `polychrome` = painted figures.
+  SOURCE says, until the library has them): `sandstone_rubble` = rough-squared Brussels sandstone in IRREGULAR courses,
+  non-repeating (every stone from world-space hashes: 0.62 m bands split into 2-3 courses of 0.15-0.4 m, stones 0.24-0.62 m
+  with wandering joints, recessed lime joints of varying width, per-stone tone cream / ochre / grey / brownish, spalls,
+  rounded arrises + a per-stone tilt in the bump, the lower walls browner and darker on the north);
+  `marble_chequer` = black and white marble squares on the diagonal; `polychrome` = painted figures.
+- The doors and shutters: GLB slot `painted_wood_red`, mapped by the adapter table to the library's `wood_frame_dark`
+  (polish 2: the photo's door is varnished brown wood); the door face code gives the varnish. Swap it back in the lab.
 - ONE line switches every slot to the library: `const SOURCE = "temp"` -> `"./materials/library.js"` in
   `viewer/stalleModel.js` (the interior takes its colours through the same `sourceMaterial`). Live swap: the lab's
   "Material slots (adapter table)" panel builds the new shaders first, then switches.
@@ -85,7 +89,26 @@ Baroque retable (predella, twisted columns, the Virgin in a niche before a gilt 
 the altar, two candle stands, two diamond hatchments; 52 oak chairs with rush seats (a central aisle), a side altar, two
 statues on corbels, a wrought-iron chandelier; the west door's leaves open as the player comes near.
 
-## Numbers (2026-11-06, this machine: RTX 4050 laptop, other agents' tabs running)
+## Polish round 2 (after the coordinator's review of the side-by-sides)
+Irregular non-repeating rubble with bevelled stones and damp lower walls; weathered (not white) dressed stone and barely
+proud quoins; no quoins on the choir / apse; varnished brown doors (adapter); charcoal slate; the west window's lancets
+lower with cusped heads and two trefoils in the head; the statues' faces turned outward (they rendered inside-out, which
+made them read dark) and pale stone outside; interior: 40-segment piers lit per corner (no lightmap facets), pointed
+equilateral arcades (springing 36.8, the aisle ceilings meet the arcade at 39.08), real rush-seat chairs (turned legs,
+stretchers, woven seat, curved ladder back, book rail), a gilt vine on the twisted columns, a 25-ray sunburst, the
+choir spots on in the day bake, light ~15 % dimmer and warmer; lab: UrbIS street surfaces + a lawn-toned ground.
+Numbers after polish 2 (the trains agent's lab rendering on the same GPU):
+- Exterior LOD0 12,157 · LOD1 6,117 · LOD2 1,200 triangles, 13 / 13 / 9 draws, GLB 0.47 MB. Lab GPU (median of 3 rounds,
+  + = the chapel): c00 L0 +0.26 / L1 +0.33 / L2 +0.20 ms; c05 +0.07 / +0.07 / 0.00; overview +0.20 / +0.13 / +0.13.
+- Interior: 71.7k triangles (Props 64k after densifying for the per-corner bake: piers + 52 chairs), 16 draws,
+  interior.glb 2.44 MB; full-screen in the nave the cell costs +1.2 ms GPU (3.3-3.5 vs 2.2-2.3 ms, 3 rounds).
+- City flights (650 m -> 32 m -> orbit, twice): LOD sequence 001 -> 011 -> 010 -> 110 -> 100 (fades at 359 / 279 m and
+  93 / 65 m), median 16.6-17.5 ms, p99 33-34 ms, 13 frames > 34 ms per run (worst 51-99 ms; the GPU is shared with the
+  trains lab); the interior streamed with no long task.
+- Walk-in (third person, city): forecourt 33.8 -> steps -> threshold 34.32 at u 0 -> inside at u 1.1 -> nave to u 10,
+  door 64 -> 100 % then closing behind; frame median 16.7 ms, worst 31 ms, 0 frames > 34 ms; probes on inside.
+
+## Numbers before polish 2 (2026-11-06, this machine: RTX 4050 laptop, other agents' tabs running)
 - Exterior triangles: LOD0 11,821 · LOD1 6,102 (meshopt of LOD0) · LOD2 1,200 (far variant trimmed) + the west door
   192. Draw calls 13 / 13 / 9 (one per slot, + shadow pass). LOD switch to the building's box: LOD0 < 80 m (±14 m
   dithered fade), LOD1 < 320 m (±40 m).
