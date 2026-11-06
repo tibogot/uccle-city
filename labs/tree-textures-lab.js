@@ -13,7 +13,7 @@
 // meter over the LOD walk (2 -> 1200 m) per side. docs/TREES.md "Textures A/B". Panel: viewer/panelUI.js.
 import * as THREE from "three/webgpu";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { vec3, mix, positionWorld, mx_noise_float, smoothstep } from "three/tsl";
+import { vec3, mix, positionWorld, mx_noise_float, smoothstep, uniform, texture, screenUV, floor, select, sRGBTransferEOTF } from "three/tsl";
 import { Panel } from "../viewer/panelUI.js";
 import { Lighting, PRESETS } from "../viewer/lighting.js";
 import { createPipeline } from "../viewer/post.js";
@@ -87,8 +87,8 @@ const BARK_TARGET = { plane: [0.27, 0.26, 0.19], beech: [0.175, 0.168, 0.148] };
 const MEGA = "megascans";
 /** per species: option label -> source (null = today's procedural; MEGA = the empty Megascans slot) */
 const BARK_OPTS = {
-  plane: { "A procedural": null, "B CC0 scan": ["Bark009"], "B2 CC0 scan + old foot": ["Bark009", "bark_platanus"], "B3 CC0 scan (alt)": ["bark_platanus"], "C Megascans (slot)": MEGA },
-  beech: { "A procedural": null, "B CC0 scan": ["chinese_hackberry_bark"], "B2 CC0 scan + old foot": ["chinese_hackberry_bark"], "B3 CC0 scan (alt)": ["Bark005"], "C Megascans (slot)": MEGA },
+  plane: { "A procedural": null, "B CC0 scan": ["Bark009"], "B2 CC0 scan + foot scan": ["Bark009", "bark_platanus"], "B3 CC0 scan (alt)": ["bark_platanus"], "C Megascans (slot)": MEGA },
+  beech: { "A procedural": null, "B CC0 scan": ["chinese_hackberry_bark"], "B2 CC0 scan + foot scan": ["chinese_hackberry_bark", "Bark005"], "B3 CC0 scan (alt)": ["Bark005"], "C Megascans (slot)": MEGA },
   street: { "A procedural": null },
 };
 const LEAF_OPTS = {
@@ -106,7 +106,7 @@ const S = {
   sides: [
     { bark: "A procedural", leaves: "A procedural mask" },
     { bark: "B CC0 scan", leaves: "B Blender (modelled)" },
-    { bark: "B2 CC0 scan + old foot", leaves: "C CC0 (scanned leaves)" },
+    { bark: "B2 CC0 scan + foot scan", leaves: "C CC0 (scanned leaves)" },
   ],
   turntable: false, time: qp.get("time") ?? "golden", post: true, preset: "15 m",
   show: 0, pair: "A vs B", bench: "—", perf: "", pop: "—", costs: ["", "", ""],
@@ -129,8 +129,8 @@ async function getSpecies(side) {
     const notes = [];
     if (Array.isArray(b)) {
       const scans = await Promise.all(b.map((id) => loadBarkScan(renderer, id)));
-      // "+ old foot" for the beech: the same scan, darker toward the foot (the beech has no second bark)
-      def.bark = scanBark({ scans: S.species === "plane" ? scans : [scans[0]], target: BARK_TARGET[S.species], species: S.species });
+      // (the beech's scans are warmer than a beech: graded closer to its grey)
+      def.bark = scanBark({ scans, target: BARK_TARGET[S.species], species: S.species, hueK: S.species === "beech" ? 0.85 : 0.5 });
       for (const s of scans) { texGpu += s.gpuBytes; texFile += s.fileBytes; }
     } else if (b === MEGA) notes.push("bark: " + MEGA_NOTE);
     if (l && l !== MEGA) {
@@ -206,8 +206,12 @@ function setPreset(name) {
     const ty = S.height * 0.5;
     controls.target.set(0, Y0 + ty, 0);
     camera.position.set(sd.x * d, Y0 + Math.min(1.7 + d * 0.05, 30), sd.z * d);
-    const span = S.mode.startsWith("row") ? (S.nSides * 26) / (camera.aspect * (S.mode.startsWith("row") ? 1 : 1)) : S.height;
-    camera.fov = THREE.MathUtils.clamp(2 * THREE.MathUtils.radToDeg(Math.atan((Math.max(span * 0.62, S.height * 0.62)) / d)), 1, 50);
+    // the frame's half height: the tree's (0.6 x its height), or the crown's half width (~0.65 x the height; a row:
+    // the three trees) over the slot's aspect
+    const aspect = S.mode.startsWith("row") ? innerWidth / innerHeight : innerWidth / S.nSides / innerHeight;
+    const halfW = S.mode.startsWith("row") ? (S.nSides * 26) / 2 + S.height * 0.3 : S.height * 0.65;
+    const halfH = Math.max(S.height * 0.6, halfW / aspect);
+    camera.fov = THREE.MathUtils.clamp(2 * THREE.MathUtils.radToDeg(Math.atan(halfH / d)), 1, 50);
   }
   camera.updateProjectionMatrix();
 }
@@ -345,8 +349,22 @@ pipe.setExposureScale(lighting.exposureScale); pipe.look(TIMES[S.time] ?? "golde
 const hazeHook = (rt, d, size) => lighting.hazeHook(rt, d, size);
 await build("one");
 setPreset(qp.get("preset") ?? S.preset);
+if (qp.get("ui") === "0") { ui.domElement.style.display = "none"; $info.style.display = "none"; }   // (screenshots)
 
 const walk = { on: false, eye: new THREE.Vector3(), solo: -1 };
+// the split screen's per-slot targets (the post chain's output: tone-mapped, display-encoded) and the quad that shows them
+const dbs = new THREE.Vector2();
+const slotRT = [0, 1, 2].map(() => { const rt = new THREE.RenderTarget(1, 1, { type: THREE.HalfFloatType }); return rt; });
+const slotN = uniform(3);
+const blitMat = new THREE.MeshBasicNodeMaterial();
+{
+  const k = floor(screenUV.x.mul(slotN));
+  const t0 = texture(slotRT[0].texture, screenUV), t1 = texture(slotRT[1].texture, screenUV), t2 = texture(slotRT[2].texture, screenUV);
+  // (the post chain wrote display-encoded colour into the target; the canvas output encodes again: decode first)
+  blitMat.colorNode = sRGBTransferEOTF(select(k.lessThan(0.5), t0, select(k.lessThan(1.5), t1, t2)).rgb);
+  blitMat.toneMapped = false; blitMat.depthTest = false; blitMat.depthWrite = false;
+}
+const blit = new THREE.QuadMesh(blitMat);
 let last = performance.now(), frames = 0, fpsAcc = 0, fpsN = 0, fps = 0;
 const frame = (dt) => {
   if (S.post) pipe.render(hazeHook); else renderer.render(scene, camera);
@@ -362,15 +380,21 @@ renderer.setAnimationLoop(() => {
   lighting.update(eye.y, Y0, controls.target, THREE.MathUtils.clamp(camera.position.distanceTo(controls.target) * 0.9, 60, 380), dt);
   const split = layout === "one" && S.mode.startsWith("split") && !walk.on && sideFields.length > 1;
   if (split) {
-    // one full render per slot (the same camera, offset so its centre sits in the slot), only that side's tree
+    // one full render (scene + post) per slot into its own target (the same camera, offset so its centre sits in the
+    // slot), only that side's tree; then one quad puts slot k of target k on the screen (a clear of the canvas would
+    // wipe the other slots: no scissor)
     const W = innerWidth, H = innerHeight, n = sideFields.length, w = W / n;
+    renderer.getDrawingBufferSize(dbs);
     for (let k = 0; k < n; k++) {
+      if (slotRT[k].width !== dbs.x || slotRT[k].height !== dbs.y) slotRT[k].setSize(dbs.x, dbs.y);
       sideFields.forEach(({ f }, j) => { f.group.visible = j === k; });
       camera.setViewOffset(w, H, -k * w, 0, W, H);
-      renderer.setScissor(Math.round(k * w), 0, Math.round(w), H); renderer.setScissorTest(true);
+      renderer.setRenderTarget(slotRT[k]);
       frame(k === 0 ? dt : 0);
     }
-    renderer.setScissorTest(false);
+    renderer.setRenderTarget(null);
+    slotN.value = n;
+    blit.render(renderer);
     camera.clearViewOffset(); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
   } else frame(dt);
   sampleGpu();

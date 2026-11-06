@@ -15,7 +15,7 @@ import * as THREE from "three/webgpu";
 import { KTX2Loader } from "three/addons/loaders/KTX2Loader.js";
 import {
   texture, attribute, positionGeometry, normalGeometry, vec2, vec3, float, mix, smoothstep, abs, pow, max, normalize,
-  mx_noise_float, transformNormalToView,
+  mx_noise_float, transformNormalToView, dot,
 } from "three/tsl";
 
 const BASE = new URL("./trees/textures/", import.meta.url).href;
@@ -110,16 +110,24 @@ export function scanBark({ scans, target, hueK = 0.5, species, normalK = 1 }) {
     const q = p.mul(0.6), z1 = mx_noise_float(q.add(3.0)), z2 = mx_noise_float(p.mul(2.2).add(7.0));
     col = col.mul(z1.mul(0.16).add(z2.mul(0.1)).add(1)).mul(mix(vec3(0.94, 1.0, 1.08), vec3(1.06, 1.0, 0.9), smoothstep(-0.4, 0.4, mx_noise_float(q.mul(0.7).add(19.0)))));
     if (species === "plane") {
-      // the old bark: olive-grey plates still on in big zones, more of them low down (as the procedural plane bark)
-      const old = smoothstep(0.05, 0.3, mx_noise_float(p.mul(vec3(1.6, 0.9, 1.6)).add(41.0)).add(smoothstep(6.0, 1.0, p.y).mul(0.35))).mul(smoothstep(1.5, 0.5, level));
-      col = mix(col, col.mul(vec3(0.42, 0.42, 0.3)), old.mul(0.75));
-      if (scans[1]) {
-        // a second scan for the foot: the old, dark, flaking bark of old planes, with a ragged boundary
-        const B = triplanar(scans[1], p, n, scans[1].meta.size_m);
-        const foot = smoothstep(2.4, 1.0, p.y.add(mx_noise_float(p.mul(vec3(3.0, 1.2, 3.0))).mul(0.6))).mul(smoothstep(0.5, -0.5, level));
-        col = mix(col, B.col.mul(grade(scans[1])).mul(0.8), foot);
-        rough = mix(rough, B.rough, foot); ao = mix(ao, B.ao, foot); nrm = normalize(mix(nrm, B.nrm, foot));
-      }
+      // the old bark: olive-brown plates still on in big zones, more of them low down (as the procedural plane bark);
+      // the plates follow the SCAN's own darker flakes (its luminance under its mean), so their edges are the scan's
+      const sm = scans[0].meta.mean_albedo_linear, lumN = dot(A.col, vec3(0.2126, 0.7152, 0.0722)).div(lum(sm));
+      col = col.mul(pow(max(lumN, 0.05), 0.7));                               // more of the scan's own contrast
+      const zone = smoothstep(-0.25, 0.2, mx_noise_float(p.mul(vec3(1.3, 0.7, 1.3)).add(41.0)).add(smoothstep(6.0, 1.0, p.y).mul(0.4))).mul(smoothstep(1.5, 0.5, level));
+      const flake = smoothstep(1.04, 0.9, lumN.add(mx_noise_float(p.mul(9.0)).mul(0.06)));
+      col = mix(col, col.mul(vec3(0.42, 0.44, 0.26)), zone.mul(flake).mul(0.85));
+    }
+    if (scans[1]) {
+      // a second scan for the foot (the plane: the old, dark, flaking bark of old trees; the beech: a mossy, algae-green
+      // scan), with a ragged boundary
+      const B = triplanar(scans[1], p, n, scans[1].meta.size_m);
+      const top = species === "plane" ? 2.4 : 1.6;
+      const foot = smoothstep(top, top - 1.4, p.y.add(mx_noise_float(p.mul(vec3(3.0, 1.2, 3.0))).mul(0.6))).mul(smoothstep(0.5, -0.5, level).mul(2).min(1));
+      col = mix(col, B.col.mul(grade(scans[1])).mul(species === "plane" ? 0.5 : 0.8), foot);
+      rough = mix(rough, B.rough, foot); ao = mix(ao, B.ao, foot); nrm = normalize(mix(nrm, B.nrm, foot));
+    }
+    if (species === "plane") {
       col = mix(col, col.mul(1.25), smoothstep(0.5, 1.5, level));          // the limbs: paler, younger bark
       col = col.mul(smoothstep(-0.5, 0.5, p.y).mul(0.3).add(0.7));           // earth-darkened at the very bottom
     } else {
