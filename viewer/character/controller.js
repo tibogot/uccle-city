@@ -205,7 +205,8 @@ export class CharacterController {
             pos[0] += nx * depth; pos[1] += ny * depth; pos[2] += nz * depth; moved += depth;
             if (clip && v[1] > 0) v[1] = 0;
             kind = 2;
-          } else if ((grounded || ny < 0) && hl > 1e-3) {
+          } else if ((grounded || ny < 0 || (D[o + 7] >= cosSlope && cyl - gy > p.airEdge)) && hl > 1e-3) {
+            // (in the air, the edge of a ledge above the feet blocks like a wall: the round bottom would ride up it)
             // wall while grounded (or an overhang edge): horizontal only, so steep ground is not climbed
             const hx = nx / hl, hz = nz / hl, amt = Math.min(depth / hl, depth * 4);
             pos[0] += hx * amt; pos[2] += hz * amt; moved += amt;

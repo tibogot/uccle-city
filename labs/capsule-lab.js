@@ -177,6 +177,7 @@ box(-4, -0.02, 22, -2.5, 0.35, 23.5, M.wood); label("F · 35 cm", -3.25, 0.7, 22
 box(-1, -0.02, 22, 0.5, 0.6, 23.5, M.wood); label("F · 60 cm", -0.25, 0.95, 22.75);
 box(2, -0.02, 22, 3.5, 1.2, 23.5, M.wood); label("F · 1.2 m", 2.75, 1.55, 22.75);
 box(-3, -0.02, 27, 3, 2.4, 27.05, M.accent); label("F · 5 cm wall", 0, 2.7, 27);
+box(5, -0.02, 22, 6.5, 1.0, 23.5, M.wood); label("F · 1.0 m (jump fails)", 5.75, 1.35, 22.75);
 
 // G. a small two-room house: 8 x 6 m outside, 20 cm walls, a 12 cm floor (a threshold step), a 0.9 m door, an inner
 // wall with a door, a window, stairs (15 x 18 cm) up to the upper floor (a slab with the stair hole), a parapet
@@ -501,6 +502,26 @@ function runTests() {
   run("hill (17°) climbs", [-40, g0(-40, -30) + 0.3, -30], [-1, 0], 8, (r) => r.x < -54 && r.g);
   run("mound (55°) not climbed", [-44, g0(-44, 22) + 0.3, 22], [-1, 0], 6, (r) => r.y < 4.5);
   run("fall 20 m: lands", [0, Y0 + 20, 0], [0, 0], 3, (r) => Math.abs(r.y) < 1e-6 && r.g);
+  // the rounded bottom must not roll up onto a ledge mid-jump (0.9 m jump: a 1.0 m block stays out of reach)
+  run("1.0 m block: jump fails (no edge roll)", [5.75, Y0, 21.2], [0, 1], 2, (r) => r.z < 22 && r.y < 0.01, { jumpAt: 1 });
+  run("1.0 m block: running jump fails", [5.75, Y0, 18], [0, 1], 2, (r) => r.z < 22 && r.y < 0.01, { run: true, jumpAt: 50 });
+  c.p.walkSpeed = keep[0]; c.p.runSpeed = keep[1];
+  // the feet (a character with foot IK in the slot): scripted walks measured at 60 fps (labs/footProbe.js)
+  if (tp.body.footIK && (probe.feet || (goStation("0 start"), (() => { for (let i = 0; i < 40; i++) tp.update(1 / 60); return probe.setup(); })()))) {
+    const foot = (name, sc, check, fmt) => {
+      const m = probe.simulate(SCEN[sc], 60), ok = check(m);
+      results.push(`${ok ? "PASS" : "FAIL"}  ${name.padEnd(34)} ${fmt(m)}`);
+    };
+    const sl = (m) => `slide ${m.slideMean.toFixed(3)} m/s, gap p95 ${m.gapP95Cm.toFixed(1)} cm`;
+    foot("feet: flat walk, planted, no slide", "flat walk", (m) => m.slideMean < 0.05 && m.gapP95Cm < 4, sl);
+    foot("feet: flat run, planted, no slide", "flat run", (m) => m.slideMean < 0.05 && m.gapP95Cm < 4, sl);
+    foot("feet: kerb up, no toe in the kerb", "kerb up 15 cm", (m) => m.penCm < 4 && m.slideMean < 0.05, (m) => `pen ${m.penCm.toFixed(1)} cm, ${sl(m)}`);
+    foot("feet: kerb down + up", "kerb down 15 + up 14", (m) => m.penCm < 5 && m.gapP95Cm < 4, (m) => `pen ${m.penCm.toFixed(1)} cm, ${sl(m)}`);
+    foot("feet: stairs up at a run", "stairs up 17 run", (m) => m.gapP95Cm < 4 && m.slideMean < 0.1, sl);
+    foot("feet: turn on the spot (steps)", "turn on the spot", (m) => m.slideMean < 0.2, sl);
+    foot("feet: landing absorbs (hips dip)", "fall 1.5 m", (m) => m.dipCm > 4, (m) => `hip dip ${m.dipCm.toFixed(1)} cm`);
+    goStation(S.station);
+  }
   const pass = results.filter((l) => l.startsWith("PASS")).length;
   S.tests = `${pass} / ${results.length} pass`;
   $notes.style.display = "block";

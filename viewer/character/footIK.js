@@ -24,7 +24,7 @@ export const FOOT_IK = {
   raise: 0.75,          // m: the rays start this high above the feet plane
   reach: 0.55,          // m: how far up / down a foot may be moved from the clip's flat ground
   maxTilt: 30,          // degrees: the foot's tilt to a slope
-  maxDrop: 0.25, maxRise: 0.12,   // m: the pelvis
+  maxDrop: 0.25, maxRise: 0.06,   // m: the pelvis
   lowFollow: 0.6,       // how much of the lower planted foot's drop the pelvis follows (the reach is always kept)
   pelvisOmega: 16,      // 1/s: the pelvis spring (critically damped)
   swingSmooth: 22,      // 1/s: a swinging foot's height to the ground under / ahead of it
@@ -249,14 +249,14 @@ export class FootIK {
       const ext = L.ext = _A.distanceTo(_C) / L.reachLen;
       const ddx = fx - L.ox - _A.x, ddz = fz - L.oz - _A.z, h2 = ddx * ddx + ddz * ddz, rm = L.reachLen * Math.max(p.soft, Math.min(0.995, ext));
       // (the ankle sits L.sole above the heel's sole: the leg reaches the ankle, about where the bone is)
-      if (h2 < rm * rm) { const needY = (_A.y - (ty - L.oy) - Math.sqrt(rm * rm - h2)) * (0.35 + 0.65 * contact); if (needY > need) need = needY; }
+      if (h2 < rm * rm) { const needY = (_A.y - (ty - L.oy) - Math.sqrt(rm * rm - h2)) * (0.5 + 0.5 * contact); if (needY > need) need = needY; }
     }
     if (!any) target = 0;
     target = Math.min(p.maxRise, Math.max(-p.maxDrop, target * w));
     if (need > 0 && -need < target) target = Math.max(-p.maxDrop, -need * w);
     this.need = need; this.target = target;
     // the spring (exact for any dt), a landing kicks it down
-    if (st.landing > 0) this.pelvisV -= Math.min(2.6, st.landing * p.absorb) * w;
+    if (st.landing > 0) this.pelvisV -= Math.min(2.6, st.landing * p.absorb);
     {
       const om = p.pelvisOmega, e = this.pelvis - target, ex = Math.exp(-om * dt), tmp = (this.pelvisV + om * e) * dt;
       this.pelvisV = (this.pelvisV - om * tmp) * ex;
