@@ -23,152 +23,28 @@ import {
 import { hash2D, noise2D, filteredPulse } from "../tslkit.js";
 import { SMOOTH, ditherNoise, lodEye } from "../lodFade.js";
 
-export const GAUGE = 1.435, RAIL_C = GAUGE / 2 + 0.036;      // rail centre lines (head 72 mm)
-export const CREST = -0.19, BED = -0.55;                      // ballast crest / shoulder foot below the rail top (m)
-const CREST_HW = 1.65, FOOT_HW = 2.25, CORRIDOR = 2.5;
-const SLEEPER_STEP = 0.6, SLEEPER_FAR = 140;
-const WIRE_H = 5.5, MESSENGER_H = 6.9, MAST_STEP = 60, MAST_OFF = 2.6;
+import { prepRail, carveGrid, railTileData, SLEEPER_STEP, SLEEPER_FAR, RAIL_C, WIRE_H, MESSENGER_H, MAST_OFF } from "./railData.js";
+export { GAUGE, RAIL_C, CREST, BED } from "./railData.js";
 
 let docP = null;
-/** rail.json, fetched once; tracks get Float32 arrays and their arc length. */
+/** rail.json, fetched once (arc lengths, boxes, decks: railData.js prepRail). */
 export function loadRail(url = new URL("../../data/rail/rail.json", import.meta.url)) {
-  return (docP ??= fetch(url).then((r) => { if (!r.ok) throw new Error(`rail.json: HTTP ${r.status}`); return r.json(); }).then((doc) => {
-    for (const t of doc.tracks) {
-      const n = t.pts.length, P = new Float32Array(n * 3), S = new Float32Array(n);
-      t.pts.forEach((p, i) => { P.set(p, i * 3); if (i) S[i] = S[i - 1] + Math.hypot(p[0] - t.pts[i - 1][0], p[2] - t.pts[i - 1][2]); });
-      t.P = P; t.S = S; t.len = S[n - 1];
-      let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
-      for (const p of t.pts) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[2]); z1 = Math.max(z1, p[2]); }
-      t.box = { x0, x1, z0, z1 };
-      t.hash = (parseInt(t.id.slice(1), 10) % 7) * 0.0012;      // ribbons of tracks meeting at a switch: a few mm apart, no z-fight
-    }
-    // decks over the line: UrbIS road / foot bridges crossing a track
-    doc.decks = doc.bridges.filter((b) => b.type !== "RAB" && b.lines.length);
-    return doc;
-  }));
+  return (docP ??= fetch(url).then((r) => { if (!r.ok) throw new Error(`rail.json: HTTP ${r.status}`); return r.json(); }).then(prepRail));
+}
+let heroP = null;
+/** the hero bridges' notes (models/rail/<name>.json): footprints and openings for the carve and the trees */
+export function loadHeroes(names = ["stjob", "calevoet"]) {
+  return (heroP ??= Promise.all(names.map((n) => fetch(new URL(`../../models/rail/${n}.json`, import.meta.url)).then((r) => (r.ok ? r.json() : null)).catch(() => null))).then((a) => a.filter(Boolean)));
 }
 
-const tracksIn = (doc, b, m = 0) => doc.tracks.filter((t) => t.box.x1 >= b.x0 - m && t.box.x0 <= b.x1 + m && t.box.z1 >= b.z0 - m && t.box.z0 <= b.z1 + m);
-const inside = (b, x, z) => x >= b.x0 && x < b.x1 && z >= b.z0 && z < b.z1;
-
-/** frames along a track: per point the position, the horizontal tangent and left normal */
-function frames(t) {
-  const n = t.pts.length, F = [];
-  for (let i = 0; i < n; i++) {
-    const a = t.pts[Math.max(0, i - 1)], b = t.pts[Math.min(n - 1, i + 1)];
-    let tx = b[0] - a[0], tz = b[2] - a[2]; const L = Math.hypot(tx, tz) || 1; tx /= L; tz /= L;
-    F.push({ x: t.pts[i][0], y: t.pts[i][1], z: t.pts[i][2], tx, tz, nx: -tz, nz: tx, s: t.S[i] });
-  }
-  return F;
-}
-
-// ------------------------------------------------------------------------------------------------ terrain carving
-/** Lower the tile's terrain under the ballast (positions of the 1 m grid, in place). Returns the number of vertices
- *  moved. The terrain mesh shares this array: call before its first upload (or set needsUpdate). */
-export function carveTerrain(doc, geo, hdr, bounds) {
-  const pos = geo.attributes.position.array;
-  const { x0, z0, cols, rows, step } = hdr;
-  let moved = 0;
-  const mask = new Uint8Array(cols * rows), dirtyList = [];
-  const dirty = { add(k) { if (!mask[k]) { mask[k] = 1; dirtyList.push(k); } }, get size() { return dirtyList.length; } };
-  const bx0 = x0 - CORRIDOR, bx1 = x0 + (cols - 1) * step + CORRIDOR, bz0 = z0 - CORRIDOR, bz1 = z0 + (rows - 1) * step + CORRIDOR;
-  for (const t of tracksIn(doc, bounds, CORRIDOR + 1)) {
-    const P = t.pts;
-    for (let i = 1; i < P.length; i++) {
-      const a = P[i - 1], b = P[i];
-      if ((a[0] < bx0 && b[0] < bx0) || (a[0] > bx1 && b[0] > bx1) || (a[2] < bz0 && b[2] < bz0) || (a[2] > bz1 && b[2] > bz1)) continue;
-      const c0 = Math.max(0, Math.floor((Math.min(a[0], b[0]) - CORRIDOR - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(a[0], b[0]) + CORRIDOR - x0) / step));
-      const r0 = Math.max(0, Math.floor((Math.min(a[2], b[2]) - CORRIDOR - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(a[2], b[2]) + CORRIDOR - z0) / step));
-      const dx = b[0] - a[0], dz = b[2] - a[2], L2 = dx * dx + dz * dz || 1e-9;
-      for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
-        const px = x0 + c * step, pz = z0 + r * step;
-        const u = Math.max(0, Math.min(1, ((px - a[0]) * dx + (pz - a[2]) * dz) / L2));
-        const ex = px - a[0] - dx * u, ez = pz - a[2] - dz * u, d2 = ex * ex + ez * ez;
-        if (d2 > CORRIDOR * CORRIDOR) continue;
-        const d = Math.sqrt(d2);
-        const rt = a[1] + (b[1] - a[1]) * u;
-        // the ballast surface at d, minus 6 cm (and a 30 cm cess beyond the foot)
-        const surf = d < CREST_HW ? rt + CREST : d < FOOT_HW ? rt + CREST + (BED - CREST) * (d - CREST_HW) / (FOOT_HW - CREST_HW) : rt + BED;
-        const k = (r * cols + c) * 3 + 1;
-        const lim = surf - 0.06;
-        if (pos[k] > lim) { pos[k] = lim; moved++; dirty.add(r * cols + c); }
-      }
-    }
-  }
-  // platforms: the ground inside them under their top (a cutting's bank, the 1 m DTM's slope, stays out)
-  for (const pf of doc.platforms) {
-    const xs = pf.ring.map((q) => q[0]), zs = pf.ring.map((q) => q[1]);
-    if (Math.max(...xs) < x0 || Math.min(...xs) > x0 + (cols - 1) * step || Math.max(...zs) < z0 || Math.min(...zs) > z0 + (rows - 1) * step) continue;
-    const c0 = Math.max(0, Math.floor((Math.min(...xs) - 1 - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(...xs) + 1 - x0) / step));
-    const r0 = Math.max(0, Math.floor((Math.min(...zs) - 1 - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(...zs) + 1 - z0) / step));
-    const r = pf.ring;
-    for (let rr = r0; rr <= r1; rr++) {             // scanline: the ring's crossings of this grid row, filled in pairs
-      const pz = z0 + rr * step, xs2 = [];
-      for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > pz) !== (zj > pz)) xs2.push((xj - xi) * (pz - zi) / (zj - zi) + xi); }
-      xs2.sort((a, b) => a - b);
-      for (let q = 0; q + 1 < xs2.length; q += 2) {
-        const ca = Math.max(c0, Math.ceil((xs2[q] - x0) / step)), cb = Math.min(c1, Math.floor((xs2[q + 1] - x0) / step));
-        for (let c = ca; c <= cb; c++) {
-          const k = (rr * cols + c) * 3 + 1;
-          if (pos[k] > pf.top - 0.1) { pos[k] = pf.top - 0.1; moved++; dirty.add(rr * cols + c); }
-        }
-      }
-    }
-  }
-
-  // embankment fill: where the track runs above the ground off a bridge (the 1 m DTM's slope at the end of a viaduct,
-  // under the masonry it cannot see), the ground is raised to a 1:1.5 fill from the ballast foot, at most FILL_MAX out
-  const FILL_MAX = 18;
-  const rabs = doc.bridges.filter((b) => b.type === "RAB").map((b) => {
-    const xs = b.ring.map((q) => q[0]), zs = b.ring.map((q) => q[1]);
-    return { ring: b.ring, x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) };
-  }).filter((b) => b.x1 > x0 - FILL_MAX && b.x0 < x0 + cols * step + FILL_MAX && b.z1 > z0 - FILL_MAX && b.z0 < z0 + rows * step + FILL_MAX);
-  const inRing = (r, x, z) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c; } return c; };
-  let near = rabs;
-  const onBridge = (x, z) => { for (const b of near) if (x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && inRing(b.ring, x, z)) return true; return false; };
-  const gridY = (x, z) => { const c = Math.round((x - x0) / step), r = Math.round((z - z0) / step); return c >= 0 && r >= 0 && c < cols && r < rows ? pos[(r * cols + c) * 3 + 1] : null; };
-  let filled = 0;
-  for (const t of tracksIn(doc, bounds, FILL_MAX + 1)) {
-    const P = t.pts;
-    for (let i = 1; i < P.length; i++) {
-      const a = P[i - 1], b = P[i];
-      const mx = (a[0] + b[0]) / 2, mz = (a[2] + b[2]) / 2, g = gridY(mx, mz);
-      if (g == null) continue;
-      near = rabs;
-      if (g == null || a[1] + BED - g < 0.4 || onBridge(mx, mz)) continue;     // on its bed, or on a bridge
-      const W = Math.min(FILL_MAX, FOOT_HW + 1.5 * (a[1] + BED - g) + 1);
-      near = rabs.filter((b) => b.x1 > mx - W - 2 && b.x0 < mx + W + 2 && b.z1 > mz - W - 2 && b.z0 < mz + W + 2);
-      const c0 = Math.max(0, Math.floor((Math.min(a[0], b[0]) - W - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(a[0], b[0]) + W - x0) / step));
-      const r0 = Math.max(0, Math.floor((Math.min(a[2], b[2]) - W - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(a[2], b[2]) + W - z0) / step));
-      const dx = b[0] - a[0], dz = b[2] - a[2], L2 = dx * dx + dz * dz || 1e-9;
-      for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
-        const px = x0 + c * step, pz = z0 + r * step;
-        const u = (((px - a[0]) * dx + (pz - a[2]) * dz) / L2);
-        if (u < -0.01 || u > 1.01) continue;                 // across this segment only (no fans at its ends)
-        const d = Math.hypot(px - a[0] - dx * u, pz - a[2] - dz * u);
-        if (d > W || onBridge(px, pz)) continue;
-        const rt = a[1] + (b[1] - a[1]) * u;
-        const target = rt + BED - 0.07 - Math.max(0, d - FOOT_HW) / 1.5;
-        const k = (r * cols + c) * 3 + 1;
-        if (pos[k] < target) { pos[k] = target; filled++; dirty.add(r * cols + c); }
-      }
-    }
-  }
-  moved += filled;
-  // normals of the moved vertices and their neighbours (central differences on the grid, as the tile worker does)
-  const nrm = geo.attributes.normal?.array;
-  if (nrm && dirty.size) {
-    const Y = (r, c) => pos[(Math.min(rows - 1, Math.max(0, r)) * cols + Math.min(cols - 1, Math.max(0, c))) * 3 + 1];
-    const todo = [];
-    for (const k of dirtyList) { const r = Math.floor(k / cols), c = k % cols; for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) { const rr = r + dr, cc = c + dc; if (rr >= 0 && cc >= 0 && rr < rows && cc < cols && mask[rr * cols + cc] !== 2) { if (!mask[rr * cols + cc]) todo.push(rr * cols + cc); mask[rr * cols + cc] = mask[rr * cols + cc] || 3; } } }
-    for (const k of dirtyList.concat(todo)) {
-      const r = Math.floor(k / cols), c = k % cols;
-      const hx = (Y(r, c + 1) - Y(r, c - 1)) / (2 * step), hz = (Y(r + 1, c) - Y(r - 1, c)) / (2 * step), L = Math.hypot(hx, 1, hz);
-      nrm[k * 3] = -hx / L; nrm[k * 3 + 1] = 1 / L; nrm[k * 3 + 2] = -hz / L;
-    }
-    geo.attributes.normal.needsUpdate = true;
-  }
-  if (moved) geo.attributes.position.needsUpdate = true;      // (the bounding sphere hardly changes: not recomputed, 250k points)
+/** Main-thread carve for the Train Lab (the city does it in the tile worker): on a position attribute laid out as the
+ *  tile grid (x, y, z per cell, row-major). */
+export function carveTerrain(doc, geo, hdr, bounds, heroes = []) {
+  const pos = geo.attributes.position.array, n = hdr.cols * hdr.rows, Y = new Float32Array(n);
+  for (let k = 0; k < n; k++) Y[k] = pos[k * 3 + 1];
+  const { moved, dirty } = carveGrid(doc, Y, hdr, bounds, heroes);
+  for (const k of dirty) pos[k * 3 + 1] = Y[k];
+  if (moved) geo.attributes.position.needsUpdate = true;
   return moved;
 }
 
@@ -237,7 +113,7 @@ export function railMaterials() {
     wire.alphaToCoverage = true;
     wire.transparent = false;
   }
-  const concrete = new THREE.MeshStandardNodeMaterial({ roughness: 0.92, metalness: 0 });
+  const concrete = new THREE.MeshStandardNodeMaterial({ roughness: 0.92, metalness: 0, side: THREE.DoubleSide });
   {
     const p = positionWorld;
     const n = noise2D(p.xz.mul(0.8).add(p.y)), n2 = hash2D(floor(p.xz.mul(3.33)));
@@ -260,186 +136,58 @@ export function railMaterials() {
   return mats;
 }
 
-// ------------------------------------------------------------------------------------------------ per-tile geometry
-const PROFILE = [[-FOOT_HW, BED], [-CREST_HW, CREST], [-0.8, CREST + 0.01], [0, CREST + 0.012], [0.8, CREST + 0.01], [CREST_HW, CREST], [FOOT_HW, BED]];
-const RAILP = [[-0.075, -0.165], [-0.036, -0.05], [-0.036, -0.008], [-0.03, 0], [0.03, 0], [0.036, -0.008], [0.036, -0.05], [0.075, -0.165]];
-
-/** Build the railway of one tile: returns { group, stats, dispose }. */
-export function railTile(doc, bounds) {
+// ------------------------------------------------------------------------------------------------ per-tile meshes
+/** The railway of one tile from railTileData() arrays (made in the tile worker): returns { group, stats, dispose }. */
+export function railTileMeshes(data) {
   const M = railMaterials();
   const group = new THREE.Group(); group.name = "railway";
-  const ts = tracksIn(doc, bounds, 1);
-  const bal = { p: [], n: [], u: [], s: [], i: [] }, rl = { p: [], i: [] };
-  const sleepers = [], masts = [], wires = { p: [], t: [], side: [], r: [], i: [] };
-  let km = 0;
-  const pRings = doc.platforms.filter((p) => p.ring.some(([x, z]) => x > bounds.x0 - 20 && x < bounds.x1 + 20 && z > bounds.z0 - 20 && z < bounds.z1 + 20)).map((p) => p.ring);
-  const onPlatform = (x, z) => pRings.some((r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c; } return c; });
-  for (const t of ts) {
-    const F = frames(t);
-    // the tile's run of this track: points whose segment midpoint is in the tile (+ the neighbours)
-    let i0 = -1, i1 = -1;
-    for (let i = 0; i < F.length - 1; i++) {
-      if (inside(bounds, (F[i].x + F[i + 1].x) / 2, (F[i].z + F[i + 1].z) / 2)) { if (i0 < 0) i0 = i; i1 = i + 1; }
-      else if (i0 >= 0) { addRun(t, F.slice(i0, i1 + 1)); i0 = -1; }
-    }
-    if (i0 >= 0) addRun(t, F.slice(i0, i1 + 1));
-  }
-  function addRun(t, F) {
-    if (F.length < 2) return;
-    km += F[F.length - 1].s - F[0].s;
-    const lift = t.hash;
-    // ballast ribbon
-    let v0 = bal.p.length / 3;
-    for (const f of F) {
-      for (const [d, h] of PROFILE) {
-        bal.p.push(f.x + f.nx * d, f.y + h + lift, f.z + f.nz * d);
-        bal.u.push(d); bal.s.push(f.s);
-      }
-    }
-    const K = PROFILE.length;
-    for (let i = 0; i < F.length - 1; i++) for (let k = 0; k < K - 1; k++) {
-      const a = v0 + i * K + k, b = a + 1, c = a + K, d = c + 1;
-      bal.i.push(a, b, c, b, d, c);
-    }
-    // rails
-    for (const side of [-1, 1]) {
-      v0 = rl.p.length / 3;
-      for (const f of F) for (const [d, h] of RAILP) {
-        const o = side * RAIL_C + d;
-        rl.p.push(f.x + f.nx * o, f.y + h, f.z + f.nz * o);
-      }
-      const R = RAILP.length;
-      for (let i = 0; i < F.length - 1; i++) for (let k = 0; k < R - 1; k++) {
-        const a = v0 + i * R + k, b = a + 1, c = a + R, d = c + 1;
-        rl.i.push(a, b, c, b, d, c);
-      }
-    }
-    // sleepers on the run's arc length grid (global: the same sleepers whichever tile draws them)
-    const sA = F[0].s, sB = F[F.length - 1].s;
-    for (let s = Math.ceil(sA / SLEEPER_STEP) * SLEEPER_STEP; s < sB; s += SLEEPER_STEP) {
-      const f = sample(F, s);
-      sleepers.push(f);
-    }
-    // masts every MAST_STEP of the track's own arc length, on the side away from the nearest parallel track
-    if (t.electrified) {
-      for (let s = Math.ceil(sA / MAST_STEP) * MAST_STEP; s < sB; s += MAST_STEP) {
-        const f = sample(F, s);
-        const side = outerSide(doc, t, f);
-        // not on a platform: step out until the foot is off it (the cantilever stretches back to the wire)
-        let off = MAST_OFF;
-        while (off < 9 && onPlatform(f.x + f.nx * off * side, f.z + f.nz * off * side)) off += 0.5;
-        if (off > MAST_OFF) off += 0.4;
-        masts.push({ ...f, side, off });
-      }
-      // wires: contact (zigzag +-0.2 m between masts) and catenary (sagging between masts) + droppers every 6 m
-      const contact = [], mess = [];
-      for (let s = sA; s <= sB + 0.01; s += 3) {
-        const f = sample(F, Math.min(s, sB));
-        const ph = (f.s / MAST_STEP) % 2, zig = (ph < 1 ? ph : 2 - ph) * 0.4 - 0.2;
-        const m = (f.s / MAST_STEP) % 1, sag = 4 * m * (1 - m) * 0.75;
-        contact.push([f.x + f.nx * zig, f.y + WIRE_H, f.z + f.nz * zig]);
-        mess.push([f.x, f.y + MESSENGER_H - sag, f.z]);
-        if (Math.round(f.s) % 6 === 0) addWire(wires, [[f.x + f.nx * zig, f.y + WIRE_H, f.z + f.nz * zig], [f.x, f.y + MESSENGER_H - sag, f.z]], 0.004);
-      }
-      addWire(wires, contact, 0.0065);
-      addWire(wires, mess, 0.0055);
-    }
-  }
-  const mk = (p, i, extra = {}) => {
+  const geo = (attrs, index) => {
     const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(p), 3));
-    for (const [k, [a, n]] of Object.entries(extra)) g.setAttribute(k, new THREE.BufferAttribute(new Float32Array(a), n));
-    g.setIndex(i.length > 65535 ? new THREE.Uint32BufferAttribute(i, 1) : new THREE.Uint16BufferAttribute(i, 1));
-    g.computeVertexNormals(); g.computeBoundingSphere();
+    for (const [k, [a, n]] of Object.entries(attrs)) g.setAttribute(k, new THREE.BufferAttribute(a, n));
+    if (index) g.setIndex(new THREE.BufferAttribute(index, 1));
+    g.computeBoundingSphere();
     return g;
   };
-  const stats = { km: +(km / 1000).toFixed(2), sleepers: sleepers.length, masts: masts.length, tris: 0 };
-  if (bal.p.length) {
-    const m = new THREE.Mesh(mk(bal.p, bal.i, { aU: [bal.u, 1], aS: [bal.s, 1] }), M.ballast);
+  const inst = (g, mat, matrices, name, cast) => {
+    const n = matrices.length / 16, im = new THREE.InstancedMesh(g, mat, n);
+    im.instanceMatrix.array.set(matrices); im.instanceMatrix.needsUpdate = true;
+    im.castShadow = cast; im.receiveShadow = true; im.name = name; im.computeBoundingSphere(); group.add(im);
+  };
+  if (data.ballast) {
+    const b = data.ballast, r = data.rails;
+    const m = new THREE.Mesh(geo({ position: [b.position, 3], normal: [b.normal, 3], aU: [b.aU, 1], aS: [b.aS, 1] }, b.index), M.ballast);
     m.receiveShadow = true; m.name = "rail-ballast"; group.add(m);
-    const r = new THREE.Mesh(mk(rl.p, rl.i), M.rails);
-    r.receiveShadow = true; r.castShadow = false; r.name = "rail-rails"; group.add(r);
-    stats.tris += (bal.i.length + rl.i.length) / 3;
+    const rr = new THREE.Mesh(geo({ position: [r.position, 3], normal: [r.normal, 3] }, r.index), M.rails);
+    rr.receiveShadow = true; rr.name = "rail-rails"; group.add(rr);
   }
-  if (sleepers.length) {
-    const g = sleeperGeometry();
-    const im = new THREE.InstancedMesh(g, M.sleepers, sleepers.length);
-    const Mx = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1), v = new THREE.Vector3();
-    sleepers.forEach((f, k) => { q.setFromAxisAngle(up, Math.atan2(-f.tz, f.tx)); Mx.compose(v.set(f.x, f.y, f.z), q, one); im.setMatrixAt(k, Mx); });
-    im.receiveShadow = true; im.castShadow = false; im.name = "rail-sleepers";
-    im.computeBoundingSphere(); group.add(im);
-    stats.tris += sleepers.length * g.index.count / 3;
+  if (data.sleepers) inst(sleeperGeometry(), M.sleepers, data.sleepers, "rail-sleepers", false);
+  if (data.masts) inst(mastGeometry(), M.steel, data.masts, "rail-masts", true);
+  if (data.wires) {
+    const w = data.wires;
+    const nrm = new Float32Array(w.position.length); for (let k = 1; k < nrm.length; k += 3) nrm[k] = 1;
+    const mesh = new THREE.Mesh(geo({ position: [w.position, 3], normal: [nrm, 3], aTan: [w.aTan, 3], aSide: [w.aSide, 1], aR: [w.aR, 1] }, w.index), M.wire);
+    mesh.name = "rail-wires"; mesh.frustumCulled = false;     // the expansion moves vertices outside the bounding sphere
+    group.add(mesh);
   }
-  if (masts.length) {
-    const g = mastGeometry();
-    const im = new THREE.InstancedMesh(g, M.steel, masts.length);
-    const Mx = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), v = new THREE.Vector3(), sc = new THREE.Vector3();
-    masts.forEach((f, k) => {
-      q.setFromAxisAngle(up, Math.atan2(-f.tz, f.tx));
-      Mx.compose(v.set(f.x + f.nx * f.off * f.side, f.y - 0.6, f.z + f.nz * f.off * f.side), q, sc.set(1, 1, f.side * f.off / MAST_OFF));
-      im.setMatrixAt(k, Mx);
-    });
-    im.castShadow = true; im.receiveShadow = true; im.name = "rail-masts"; im.computeBoundingSphere(); group.add(im);
-    stats.tris += masts.length * g.index.count / 3;
+  if (data.platforms) {
+    const p = data.platforms;
+    const m = new THREE.Mesh(geo({ position: [p.position, 3], normal: [p.normal, 3], aEdge: [p.aEdge, 1] }), M.platform);
+    m.castShadow = m.receiveShadow = true; m.name = "rail-platforms"; group.add(m);
   }
-  if (wires.p.length) {
-    const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(wires.p), 3));
-    g.setAttribute("aTan", new THREE.BufferAttribute(new Float32Array(wires.t), 3));
-    g.setAttribute("aSide", new THREE.BufferAttribute(new Float32Array(wires.side), 1));
-    g.setAttribute("aR", new THREE.BufferAttribute(new Float32Array(wires.r), 1));
-    g.setAttribute("normal", new THREE.BufferAttribute(new Float32Array(wires.p.length).fill(0).map((_, i) => (i % 3 === 1 ? 1 : 0)), 3));
-    g.setIndex(new THREE.Uint32BufferAttribute(wires.i, 1));
-    g.computeBoundingSphere();
-    const w = new THREE.Mesh(g, M.wire); w.name = "rail-wires"; w.castShadow = false; w.receiveShadow = false;
-    w.frustumCulled = false;            // the expansion moves vertices outside the bounding sphere's notion
-    group.add(w);
-    stats.tris += wires.i.length / 3;
+  if (data.shelters) inst(shelterGeometry(), M.steel, data.shelters, "rail-shelters", true);
+  if (data.decks) {
+    const d = data.decks;
+    const m = new THREE.Mesh(geo({ position: [d.position, 3], normal: [d.normal, 3] }), M.concrete);
+    m.castShadow = m.receiveShadow = true; m.name = "rail-decks"; group.add(m);
   }
-  // platforms + shelters
-  const plat = platformsIn(doc, bounds);
-  if (plat) { group.add(plat.mesh); if (plat.shelters) group.add(plat.shelters); stats.platforms = plat.count; stats.tris += plat.tris; }
-  // decks over the line (roads, footbridges)
-  const decks = decksIn(doc, bounds);
-  if (decks) { group.add(decks.mesh); stats.decks = decks.count; stats.tris += decks.tris; }
-  stats.tris = Math.round(stats.tris);
+  const stats = { ...data.stats };
   return {
     group, stats,
     dispose() { group.traverse((o) => { if (o.geometry && !o.geometry.userData.shared) o.geometry.dispose(); }); group.removeFromParent(); },
   };
 }
-
-function sample(F, s) {
-  let lo = 0, hi = F.length - 1;
-  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (F[m].s <= s) lo = m; else hi = m; }
-  const a = F[lo], b = F[hi], f = Math.max(0, Math.min(1, (s - a.s) / ((b.s - a.s) || 1)));
-  const tx = a.tx + (b.tx - a.tx) * f, tz = a.tz + (b.tz - a.tz) * f, L = Math.hypot(tx, tz) || 1;
-  return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f, z: a.z + (b.z - a.z) * f, tx: tx / L, tz: tz / L, nx: -tz / L, nz: tx / L, s };
-}
-
-/** +1 (left) or -1: the side of the track with no other track within 6 m (the masts stand outside the pair) */
-function outerSide(doc, t, f) {
-  const near = (side) => {
-    const px = f.x + f.nx * side * 4, pz = f.z + f.nz * side * 4;
-    let dmin = Infinity;
-    for (const o of doc.tracks) {
-      if (o === t || px < o.box.x0 - 8 || px > o.box.x1 + 8 || pz < o.box.z0 - 8 || pz > o.box.z1 + 8) continue;
-      for (let i = 0; i < o.pts.length; i += 2) { const p = o.pts[i]; const d = (p[0] - px) ** 2 + (p[2] - pz) ** 2; if (d < dmin) dmin = d; }
-    }
-    return dmin;
-  };
-  return near(1) >= near(-1) ? 1 : -1;
-}
-
-function addWire(W, pts, r) {
-  for (let k = 0; k < pts.length - 1; k++) {
-    const a = pts[k], b = pts[k + 1];
-    const tx = b[0] - a[0], ty = b[1] - a[1], tz = b[2] - a[2], L = Math.hypot(tx, ty, tz) || 1;
-    const v0 = W.p.length / 3;
-    for (const p of [a, b]) for (const sd of [-1, 1]) { W.p.push(p[0], p[1], p[2]); W.t.push(tx / L, ty / L, tz / L); W.side.push(sd); W.r.push(r); }
-    W.i.push(v0, v0 + 2, v0 + 1, v0 + 1, v0 + 2, v0 + 3);
-  }
-}
+/** Data + meshes on the main thread (the Train Lab). */
+export function railTile(doc, bounds) { return railTileMeshes(railTileData(doc, bounds)); }
 
 let sleeperGeo = null, mastGeo = null;
 /** B70-type concrete monoblock: 2.6 m, 0.30 m at the foot, 0.17 at the top, 0.21 high; origin = track centre at the
@@ -504,64 +252,6 @@ function mergeAll(list) {
   return out;
 }
 
-// ------------------------------------------------------------------------------------------------ platforms, decks
-function ringArea(r) { let a = 0; for (let i = 0; i < r.length; i++) { const p = r[i], q = r[(i + 1) % r.length]; a += p[0] * q[1] - q[0] * p[1]; } return a / 2; }
-
-function platformsIn(doc, bounds) {
-  const list = doc.platforms.filter((p) => { const c = p.ring.reduce((s, q) => [s[0] + q[0] / p.ring.length, s[1] + q[1] / p.ring.length], [0, 0]); return inside(bounds, c[0], c[1]); });
-  if (!list.length) return null;
-  const P = [], E = [], I = [];
-  const shelters = [];
-  for (const pf of list) {
-    let ring = pf.ring.slice(0, pf.ring[0][0] === pf.ring.at(-1)[0] && pf.ring[0][1] === pf.ring.at(-1)[1] ? -1 : undefined);
-    if (ringArea(ring) < 0) ring = ring.reverse();          // counter-clockwise in (x, z)
-    // distance of each vertex to the nearest track (the edge side gets the coping / yellow line)
-    const edgeD = (x, z) => {
-      let best = Infinity;
-      for (const t of doc.tracks) {
-        if (x < t.box.x0 - 6 || x > t.box.x1 + 6 || z < t.box.z0 - 6 || z > t.box.z1 + 6) continue;
-        for (const p of t.pts) { const d = Math.hypot(p[0] - x, p[2] - z); if (d < best) best = d; }
-      }
-      return Math.max(0, best - 1.65);                        // the edge stands 1.65 m from the track centre
-    };
-    const top = pf.top;
-    const v0 = P.length / 3;
-    const pts2 = ring.map(([x, z]) => new THREE.Vector2(x, z));
-    const tri = THREE.ShapeUtils.triangulateShape(pts2, []);
-    for (const [x, z] of ring) { P.push(x, top, z); E.push(edgeD(x, z)); }
-    for (const [a, b, c] of tri) I.push(v0 + a, v0 + c, v0 + b);
-    // sides down to 1.2 m below the top (the ballast hides the rest)
-    const v1 = P.length / 3;
-    for (const [x, z] of ring) { P.push(x, top, z, x, top - 1.3, z); E.push(9, 9); }
-    for (let k = 0; k < ring.length; k++) {
-      const a = v1 + k * 2, b = v1 + ((k + 1) % ring.length) * 2;
-      I.push(a, b, a + 1, b, b + 1, a + 1);
-    }
-    if (pf.shelter) {
-      // a shelter at the platform's middle, along its long axis
-      let cx = 0, cz = 0; for (const [x, z] of ring) { cx += x / ring.length; cz += z / ring.length; }
-      let best = 0, ang = 0;
-      for (let k = 0; k < ring.length; k++) { const a = ring[k], b = ring[(k + 1) % ring.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L > best) { best = L; ang = Math.atan2(b[1] - a[1], b[0] - a[0]); } }
-      shelters.push({ x: cx, y: top, z: cz, yaw: -ang });
-    }
-  }
-  const g = new THREE.BufferGeometry();
-  g.setAttribute("position", new THREE.Float32BufferAttribute(P, 3));
-  g.setAttribute("aEdge", new THREE.Float32BufferAttribute(E, 1));
-  g.setIndex(I);
-  const ng = g.toNonIndexed(); ng.computeVertexNormals(); ng.computeBoundingSphere();
-  const mesh = new THREE.Mesh(ng, railMaterials().platform);
-  mesh.receiveShadow = true; mesh.castShadow = true; mesh.name = "rail-platforms";
-  let sh = null;
-  if (shelters.length) {
-    const geo = shelterGeometry();
-    sh = new THREE.InstancedMesh(geo, railMaterials().steel, shelters.length);
-    const Mx = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1), v = new THREE.Vector3();
-    shelters.forEach((s, k) => { q.setFromAxisAngle(up, s.yaw); Mx.compose(v.set(s.x, s.y, s.z), q, one); sh.setMatrixAt(k, Mx); });
-    sh.castShadow = sh.receiveShadow = true; sh.name = "rail-shelters"; sh.computeBoundingSphere();
-  }
-  return { mesh, shelters: sh, count: list.length, tris: I.length / 3 + (sh ? shelters.length * shelterGeometry().index.count / 3 : 0) };
-}
 let shelterGeo = null;
 /** SNCB standard platform shelter: steel posts, a sloping roof, a glass back (drawn as steel-grey here; Blender later) */
 function shelterGeometry() {
@@ -574,23 +264,4 @@ function shelterGeometry() {
   box(3.0, 0.08, 0.4, 0, 0.45, 0.35);                         // bench
   shelterGeo = mergeAll(parts); shelterGeo.userData.shared = true;
   return shelterGeo;
-}
-
-function decksIn(doc, bounds) {
-  const list = doc.decks.filter((b) => inside(bounds, b.centre[0], b.centre[1]));
-  if (!list.length) return null;
-  const parts = [];
-  for (const b of list) {
-    let ring = b.ring.slice(0, -1);
-    if (ringArea(ring) < 0) ring = ring.reverse();
-    const top = b.ground, th = 0.9;
-    const shape = new THREE.Shape(ring.map(([x, z]) => new THREE.Vector2(x, -z)));
-    const g = new THREE.ExtrudeGeometry(shape, { depth: th, bevelEnabled: false });
-    g.rotateX(-Math.PI / 2).translate(0, top - th - 0.02, 0);   // shape (x, -z) extruded up: top at the DTM (the road on it)
-    parts.push(g);
-  }
-  const g = mergeAll(parts);
-  const mesh = new THREE.Mesh(g, railMaterials().concrete);
-  mesh.castShadow = mesh.receiveShadow = true; mesh.name = "rail-decks";
-  return { mesh, count: list.length, tris: g.index.count / 3 };
 }

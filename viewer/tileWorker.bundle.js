@@ -69,12 +69,12 @@ function polygonCentroid(pts) {
   return [cx / (3 * a), cz / (3 * a)];
 }
 function pointInPolygon(x, z, pts) {
-  let inside = false;
+  let inside2 = false;
   for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
     const xi = pts[i][0], zi = pts[i][1], xj = pts[j][0], zj = pts[j][1];
-    if (zi > z !== zj > z && x < (xj - xi) * (z - zi) / (zj - zi) + xi) inside = !inside;
+    if (zi > z !== zj > z && x < (xj - xi) * (z - zi) / (zj - zi) + xi) inside2 = !inside2;
   }
-  return inside;
+  return inside2;
 }
 function polylineLength(pts) {
   let L2 = 0;
@@ -2895,12 +2895,12 @@ function locate(result, grid, x, z) {
   };
 }
 function pointInPoly(x, z, pts) {
-  let inside = false;
+  let inside2 = false;
   for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
     const xi = pts[i][0], zi = pts[i][1], xj = pts[j][0], zj = pts[j][1];
-    if (zi > z !== zj > z && x < (xj - xi) * (z - zi) / (zj - zi) + xi) inside = !inside;
+    if (zi > z !== zj > z && x < (xj - xi) * (z - zi) / (zj - zi) + xi) inside2 = !inside2;
   }
-  return inside;
+  return inside2;
 }
 
 // tools/worker/node_modules/three/src/extras/lib/earcut.js
@@ -3255,15 +3255,15 @@ function locallyInside(a, b) {
 }
 function middleInside(a, b) {
   let p = a;
-  let inside = false;
+  let inside2 = false;
   const px = (a.x + b.x) / 2;
   const py = (a.y + b.y) / 2;
   do {
     if (p.y > py !== p.next.y > py && p.next.y !== p.y && px < (p.next.x - p.x) * (py - p.y) / (p.next.y - p.y) + p.x)
-      inside = !inside;
+      inside2 = !inside2;
     p = p.next;
   } while (p !== a);
-  return inside;
+  return inside2;
 }
 function splitPolygon(a, b) {
   const a2 = createNode(a.i, a.x, a.y), b2 = createNode(b.i, b.x, b.y), an = a.next, bp = b.prev;
@@ -3844,7 +3844,7 @@ function wall(part, P, { closed = false, out, seg, crease = () => false, inset, 
   }
 }
 function boundaryWall(part, pts, poly, { closed = false, yb, yt, bevel = 0, ex }) {
-  const inside = insideSide(closed ? [...pts, pts[0]] : pts, poly);
+  const inside2 = insideSide(closed ? [...pts, pts[0]] : pts, poly);
   const { m, segN, creased } = miters(pts, closed);
   let acc = 0;
   const P = pts.map((p, i) => {
@@ -3853,15 +3853,15 @@ function boundaryWall(part, pts, poly, { closed = false, yb, yt, bevel = 0, ex }
   });
   wall(part, P, {
     closed,
-    out: (i) => norm2(-inside * m[i][0], -inside * m[i][1]),
-    seg: (k) => [-inside * segN[k][0], -inside * segN[k][1]],
+    out: (i) => norm2(-inside2 * m[i][0], -inside2 * m[i][1]),
+    seg: (k) => [-inside2 * segN[k][0], -inside2 * segN[k][1]],
     crease: (i) => creased[i],
-    inset: (i) => [inside * m[i][0], inside * m[i][1]],
+    inset: (i) => [inside2 * m[i][0], inside2 * m[i][1]],
     bevel,
     ex
   });
   if (bevel <= 0) return pts.slice();
-  return pts.map((p, i) => [p[0] + inside * m[i][0] * bevel, p[1] + inside * m[i][1] * bevel]);
+  return pts.map((p, i) => [p[0] + inside2 * m[i][0] * bevel, p[1] + inside2 * m[i][1] * bevel]);
 }
 function cap(part, outer, holes, yAt, ex, n = UP) {
   const o = ring(outer);
@@ -3896,8 +3896,8 @@ function island(parts, poly, o, { yAt, height, base = 0, grass = false, kind = C
   const yTop = (p) => yAt(p) + height;
   const holes = hole ? [hole] : [];
   if (grass && o.curbBand > 0) {
-    const inside = insideSide([...r, r[0]], r);
-    const band = offsetLeft(top, true, inside * o.curbBand);
+    const inside2 = insideSide([...r, r[0]], r);
+    const band = offsetLeft(top, true, inside2 * o.curbBand);
     const bandRing = ring(band, 0.5);
     if (bandRing && sameSense(top, band)) {
       cap(parts.concrete, top, [bandRing], yTop, { aKind: CONCRETE_KIND.curb }, n);
@@ -3969,16 +3969,16 @@ function buildRoad(rr, parts, o, ctx) {
   const lays = rr.lays;
   const y = new Float64Array(N), g = new Float64Array(N);
   const lx = new Float64Array(N), lz = new Float64Array(N);
-  const frames = new Array(N);
+  const frames2 = new Array(N);
   for (let i = 0; i < N; i++) {
     const p = profileAt(rr.prof, S.s[i]);
     y[i] = p.y;
     g[i] = p.g;
     lx[i] = Math.sin(S.th[i]);
     lz[i] = -Math.cos(S.th[i]);
-    frames[i] = surfaceFrame(rr, S.s[i], S.th[i], S.k[i], lays[i]);
+    frames2[i] = surfaceFrame(rr, S.s[i], S.th[i], S.k[i], lays[i]);
   }
-  const Y = (i, t) => y[i] + surfaceOffset(frames[i], t);
+  const Y = (i, t) => y[i] + surfaceOffset(frames2[i], t);
   const upAcross = (i, ta, tb) => {
     const w = tb - ta;
     return slopeNormal(g[i], S.th[i], Math.abs(w) > 0.01 ? (Y(i, tb) - Y(i, ta)) / w : 0);
@@ -4045,11 +4045,11 @@ function buildRoad(rr, parts, o, ctx) {
         const [lo, hi] = carriagewayOf(r.f, (a + b) / 2);
         return (lo + hi) / 2;
       };
-      const inside = (r, ri) => {
+      const inside2 = (r, ri) => {
         const a = Math.min(tA(ri), tB(ri)), b = Math.max(tA(ri), tB(ri)), c = crownOf(r, ri);
         return c > a + 0.02 && c < b - 0.02;
       };
-      const split = (r0.f.crown > 0 || r0.f.e !== 0) && (inside(r0, k) || inside(r1, k + 1));
+      const split = (r0.f.crown > 0 || r0.f.e !== 0) && (inside2(r0, k) || inside2(r1, k + 1));
       const cols = split ? 4 : 2;
       const ids = [[], []];
       [[r0, k, e0], [r1, k + 1, e1]].forEach(([r, ri, e], side) => {
@@ -4447,12 +4447,12 @@ function wallStyle(r, height) {
   return 0;
 }
 function pip(x, z, ring2) {
-  let inside = false;
+  let inside2 = false;
   for (let i = 0, j = ring2.length - 1; i < ring2.length; j = i++) {
     const [xi, zi] = ring2[i], [xj, zj] = ring2[j];
-    if (zi > z !== zj > z && x < (xj - xi) * (z - zi) / (zj - zi) + xi) inside = !inside;
+    if (zi > z !== zj > z && x < (xj - xi) * (z - zi) / (zj - zi) + xi) inside2 = !inside2;
   }
-  return inside;
+  return inside2;
 }
 var Grid = class {
   constructor(cell) {
@@ -4906,6 +4906,16 @@ function landCoverData(feats, bounds) {
     }
     g.fill("evenodd");
     areas++;
+  }
+  if (feats.railVerges?.length) {
+    g.strokeStyle = "rgba(150,0,0,1)";
+    g.lineCap = g.lineJoin = "round";
+    g.lineWidth = 30;
+    for (const l of feats.railVerges) {
+      g.beginPath();
+      l.forEach(([x, z], i) => i ? g.lineTo(px(x), pz(z)) : g.moveTo(px(x), pz(z)));
+      g.stroke();
+    }
   }
   g.strokeStyle = "rgba(0,255,0,1)";
   g.lineCap = g.lineJoin = "round";
@@ -5986,7 +5996,7 @@ function prepareSurfaces(surf, ground, bounds, trees = null) {
     if (Math.abs(D) < 1e-9) return sy / sw;
     return det3(sy, sx, sz, sxy, sxx, sxz, szy, sxz, szz) / D;
   };
-  const inside = (x, z) => x >= bounds.x0 && x < bounds.x1 && z >= bounds.z0 && z < bounds.z1;
+  const inside2 = (x, z) => x >= bounds.x0 && x < bounds.x1 && z >= bounds.z0 && z < bounds.z1;
   const corner = /* @__PURE__ */ new Map();
   const street = /* @__PURE__ */ new Set();
   for (const b of base) {
@@ -6086,15 +6096,15 @@ function prepareSurfaces(surf, ground, bounds, trees = null) {
         const ccw = ringArea(C) > 0 ? 1 : -1;
         const next = [];
         for (const poly of pieces) {
-          let inside2 = poly;
+          let inside3 = poly;
           const outs = [];
-          for (let e = 0; e < 4 && inside2.length >= 3; e++) {
+          for (let e = 0; e < 4 && inside3.length >= 3; e++) {
             const [ax, az] = C[e], [bx, bz] = C[(e + 1) % 4];
-            const outside = clipHalf(inside2, ax, az, bx, bz, -ccw);
+            const outside = clipHalf(inside3, ax, az, bx, bz, -ccw);
             if (outside.length >= 3 && Math.abs(ringArea(outside)) > 1e-6) outs.push(outside);
-            inside2 = clipHalf(inside2, ax, az, bx, bz, ccw);
+            inside3 = clipHalf(inside3, ax, az, bx, bz, ccw);
           }
-          if (inside2.length >= 3 && Math.abs(ringArea(inside2)) > 1e-6) {
+          if (inside3.length >= 3 && Math.abs(ringArea(inside3)) > 1e-6) {
             cut = true;
             next.push(...outs);
           } else next.push(poly);
@@ -6137,7 +6147,7 @@ function prepareSurfaces(surf, ground, bounds, trees = null) {
     grid: { data: grid, nx, nz, x0: bounds.x0, z0: bounds.z0, step: GRID },
     nearKerb,
     bounds,
-    inside,
+    inside: inside2,
     fallbacks,
     streetCorners: street.size,
     ms: Math.round((globalThis.performance ?? Date).now() - t0)
@@ -6750,7 +6760,532 @@ function smoothPolyline(line, { bend = 0.5, straight = 4, corner = 50 } = {}) {
   return out;
 }
 
+// viewer/rail/railData.js
+var GAUGE = 1.435;
+var RAIL_C = GAUGE / 2 + 0.036;
+var CREST = -0.19;
+var BED = -0.55;
+var CREST_HW = 1.65;
+var FOOT_HW = 2.25;
+var CORRIDOR = 2.5;
+var SLEEPER_STEP = 0.6;
+var WIRE_H = 5.5;
+var MESSENGER_H = 6.9;
+var MAST_STEP = 60;
+var MAST_OFF = 2.6;
+function prepRail(doc) {
+  if (doc.prepared) return doc;
+  for (const t of doc.tracks) {
+    const n = t.pts.length, S = new Float32Array(n);
+    for (let i = 1; i < n; i++) S[i] = S[i - 1] + Math.hypot(t.pts[i][0] - t.pts[i - 1][0], t.pts[i][2] - t.pts[i - 1][2]);
+    t.S = S;
+    t.len = S[n - 1];
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (const p of t.pts) {
+      x0 = Math.min(x0, p[0]);
+      x1 = Math.max(x1, p[0]);
+      z0 = Math.min(z0, p[2]);
+      z1 = Math.max(z1, p[2]);
+    }
+    t.box = { x0, x1, z0, z1 };
+    t.hash = parseInt(t.id.slice(1), 10) % 7 * 12e-4;
+  }
+  doc.decks = doc.bridges.filter((b) => b.type !== "RAB" && b.lines.length);
+  doc.prepared = true;
+  return doc;
+}
+var tracksIn = (doc, b, m = 0) => doc.tracks.filter((t) => t.box.x1 >= b.x0 - m && t.box.x0 <= b.x1 + m && t.box.z1 >= b.z0 - m && t.box.z0 <= b.z1 + m);
+var inside = (b, x, z) => x >= b.x0 && x < b.x1 && z >= b.z0 && z < b.z1;
+var inRing = (r, x, z) => {
+  let c = false;
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+    const xi = r[i][0], zi = r[i][1], xj = r[j][0], zj = r[j][1];
+    if (zi > z !== zj > z && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c;
+  }
+  return c;
+};
+var ringBox = (ring2) => {
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (const [x, z] of ring2) {
+    x0 = Math.min(x0, x);
+    x1 = Math.max(x1, x);
+    z0 = Math.min(z0, z);
+    z1 = Math.max(z1, z);
+  }
+  return { ring: ring2, x0, x1, z0, z1 };
+};
+function heroFrame(h) {
+  const th = -h.placement.rotation_y_rad, c = Math.cos(th), s = Math.sin(th);
+  const [px, py, pz] = h.placement.city_local_position;
+  const toLocal = (x, z) => {
+    const dx = x - px, dz = z - pz;
+    const mx = dx * c + dz * s, mz = -dx * s + dz * c;
+    return [mx, -mz];
+  };
+  const toWorld = (X, Y) => {
+    const mz = -Y;
+    return [px + X * c - mz * s, pz + X * s + mz * c];
+  };
+  const L2 = h.deck.length / 2 + 0.5, W = h.deck.width / 2 + 0.5;
+  const ring2 = [[-L2, -W], [L2, -W], [L2, W], [-L2, W]].map(([X, Y]) => toWorld(X, Y));
+  return { ...h, toLocal, toWorld, ring: ring2, road: py };
+}
+function bridgeRings(doc, heroes) {
+  const hs = (heroes || []).map(heroFrame);
+  const rings = hs.map((h) => h.ring);
+  for (const b of doc.bridges) {
+    if (b.type !== "RAB") continue;
+    const [cx, cz] = b.centre;
+    if (hs.some((h) => inRing(h.ring, cx, cz))) continue;
+    rings.push(b.ring);
+  }
+  return rings.map(ringBox);
+}
+function carveGrid(doc, Y, hdr, bounds, heroes = []) {
+  const { x0, z0, cols, rows, step } = hdr;
+  let moved = 0;
+  const mask = new Uint8Array(cols * rows), dirty = [];
+  const set = (k, v) => {
+    Y[k] = v;
+    moved++;
+    if (!mask[k]) {
+      mask[k] = 1;
+      dirty.push(k);
+    }
+  };
+  const gx1 = x0 + (cols - 1) * step, gz1 = z0 + (rows - 1) * step;
+  for (const t of tracksIn(doc, bounds, CORRIDOR + 1)) {
+    const P = t.pts;
+    for (let i = 1; i < P.length; i++) {
+      const a = P[i - 1], b = P[i];
+      if (a[0] < x0 - CORRIDOR && b[0] < x0 - CORRIDOR || a[0] > gx1 + CORRIDOR && b[0] > gx1 + CORRIDOR || a[2] < z0 - CORRIDOR && b[2] < z0 - CORRIDOR || a[2] > gz1 + CORRIDOR && b[2] > gz1 + CORRIDOR) continue;
+      const c0 = Math.max(0, Math.floor((Math.min(a[0], b[0]) - CORRIDOR - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(a[0], b[0]) + CORRIDOR - x0) / step));
+      const r0 = Math.max(0, Math.floor((Math.min(a[2], b[2]) - CORRIDOR - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(a[2], b[2]) + CORRIDOR - z0) / step));
+      const dx = b[0] - a[0], dz = b[2] - a[2], L2 = dx * dx + dz * dz || 1e-9;
+      for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+        const px = x0 + c * step, pz = z0 + r * step;
+        const u = Math.max(0, Math.min(1, ((px - a[0]) * dx + (pz - a[2]) * dz) / L2));
+        const ex = px - a[0] - dx * u, ez = pz - a[2] - dz * u, d2 = ex * ex + ez * ez;
+        if (d2 > CORRIDOR * CORRIDOR) continue;
+        const d = Math.sqrt(d2), rt = a[1] + (b[1] - a[1]) * u;
+        const surf = d < CREST_HW ? rt + CREST : d < FOOT_HW ? rt + CREST + (BED - CREST) * (d - CREST_HW) / (FOOT_HW - CREST_HW) : rt + BED;
+        const k = r * cols + c;
+        if (Y[k] > surf - 0.06) set(k, surf - 0.06);
+      }
+    }
+  }
+  for (const pf of doc.platforms) {
+    const bx = ringBox(pf.ring);
+    if (bx.x1 < x0 || bx.x0 > gx1 || bx.z1 < z0 || bx.z0 > gz1) continue;
+    const c0 = Math.max(0, Math.floor((bx.x0 - 1 - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((bx.x1 + 1 - x0) / step));
+    const r0 = Math.max(0, Math.floor((bx.z0 - 1 - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((bx.z1 + 1 - z0) / step));
+    const r = pf.ring;
+    for (let rr = r0; rr <= r1; rr++) {
+      const pz = z0 + rr * step, xs = [];
+      for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+        const [xi, zi] = r[i], [xj, zj] = r[j];
+        if (zi > pz !== zj > pz) xs.push((xj - xi) * (pz - zi) / (zj - zi) + xi);
+      }
+      xs.sort((p, q) => p - q);
+      for (let q = 0; q + 1 < xs.length; q += 2) {
+        const ca = Math.max(c0, Math.ceil((xs[q] - x0) / step)), cb = Math.min(c1, Math.floor((xs[q + 1] - x0) / step));
+        for (let c = ca; c <= cb; c++) {
+          const k = rr * cols + c;
+          if (Y[k] > pf.top - 0.1) set(k, pf.top - 0.1);
+        }
+      }
+    }
+  }
+  for (const h of (heroes || []).map(heroFrame)) {
+    const bx = ringBox(h.ring);
+    if (bx.x1 < x0 - 8 || bx.x0 > gx1 + 8 || bx.z1 < z0 - 8 || bx.z0 > gz1 + 8) continue;
+    const c0 = Math.max(0, Math.floor((bx.x0 - 8 - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((bx.x1 + 8 - x0) / step));
+    const r0 = Math.max(0, Math.floor((bx.z0 - 8 - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((bx.z1 + 8 - z0) / step));
+    const Wh = h.deck.width / 2;
+    for (let rr = r0; rr <= r1; rr++) for (let c = c0; c <= c1; c++) {
+      const [X, Yb] = h.toLocal(x0 + c * step, z0 + rr * step);
+      const out = Math.max(0, Math.abs(Yb) - Wh);
+      if (out > 5) continue;
+      for (const o of h.openings) {
+        if (o.floor == null) continue;
+        const xs = X - h.skew_dx_per_dy * Yb;
+        const half = (o.x1 - o.x0) / 2 - 0.25, mid = (o.x0 + o.x1) / 2;
+        if (Math.abs(xs - mid) > half) continue;
+        const floor = h.road + o.floor - 0.05 + out * 0.6;
+        const k = rr * cols + c;
+        if (Y[k] > floor) set(k, floor);
+      }
+    }
+  }
+  const FILL_MAX = 18;
+  const rings = bridgeRings(doc, heroes).filter((b) => b.x1 > x0 - FILL_MAX && b.x0 < gx1 + FILL_MAX && b.z1 > z0 - FILL_MAX && b.z0 < gz1 + FILL_MAX);
+  let near = rings;
+  const onBridge = (x, z) => {
+    for (const b of near) if (x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && inRing(b.ring, x, z)) return true;
+    return false;
+  };
+  const gridY = (x, z) => {
+    const c = Math.round((x - x0) / step), r = Math.round((z - z0) / step);
+    return c >= 0 && r >= 0 && c < cols && r < rows ? Y[r * cols + c] : null;
+  };
+  for (const t of tracksIn(doc, bounds, FILL_MAX + 1)) {
+    const P = t.pts;
+    for (let i = 1; i < P.length; i++) {
+      const a = P[i - 1], b = P[i];
+      const mx = (a[0] + b[0]) / 2, mz = (a[2] + b[2]) / 2, g = gridY(mx, mz);
+      if (g == null) continue;
+      near = rings;
+      if (a[1] + BED - g < 0.4 || onBridge(mx, mz)) continue;
+      const W = Math.min(FILL_MAX, FOOT_HW + 1.5 * (a[1] + BED - g) + 1);
+      near = rings.filter((q) => q.x1 > mx - W - 2 && q.x0 < mx + W + 2 && q.z1 > mz - W - 2 && q.z0 < mz + W + 2);
+      const c0 = Math.max(0, Math.floor((Math.min(a[0], b[0]) - W - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(a[0], b[0]) + W - x0) / step));
+      const r0 = Math.max(0, Math.floor((Math.min(a[2], b[2]) - W - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(a[2], b[2]) + W - z0) / step));
+      const dx = b[0] - a[0], dz = b[2] - a[2], L2 = dx * dx + dz * dz || 1e-9;
+      for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+        const px = x0 + c * step, pz = z0 + r * step;
+        const u = ((px - a[0]) * dx + (pz - a[2]) * dz) / L2;
+        if (u < -0.01 || u > 1.01) continue;
+        const d = Math.hypot(px - a[0] - dx * u, pz - a[2] - dz * u);
+        if (d > W || onBridge(px, pz)) continue;
+        const target = a[1] + (b[1] - a[1]) * u + BED - 0.07 - Math.max(0, d - FOOT_HW) / 1.5;
+        const k = r * cols + c;
+        if (Y[k] < target) set(k, target);
+      }
+    }
+  }
+  return { moved, dirty: Int32Array.from(dirty) };
+}
+function railKeepClear(doc, bounds, heroes = []) {
+  const m = 6;
+  const near = (b) => b.x1 > bounds.x0 - m && b.x0 < bounds.x1 + m && b.z1 > bounds.z0 - m && b.z0 < bounds.z1 + m;
+  const rings = bridgeRings(doc, heroes).concat(doc.platforms.map((p) => ringBox(p.ring))).filter(near);
+  const cell = /* @__PURE__ */ new Map(), key = (i, j) => i * 100003 + j;
+  for (const t of tracksIn(doc, bounds, m)) {
+    for (let i = 1; i < t.pts.length; i++) {
+      const s = [t.pts[i - 1][0], t.pts[i - 1][2], t.pts[i][0], t.pts[i][2]];
+      for (let a = Math.floor((Math.min(s[0], s[2]) - 4) / 8); a <= Math.floor((Math.max(s[0], s[2]) + 4) / 8); a++)
+        for (let b = Math.floor((Math.min(s[1], s[3]) - 4) / 8); b <= Math.floor((Math.max(s[1], s[3]) + 4) / 8); b++) {
+          const k = key(a, b);
+          if (!cell.has(k)) cell.set(k, []);
+          cell.get(k).push(s);
+        }
+    }
+  }
+  return (x, z) => {
+    for (const b of rings) if (x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && inRing(b.ring, x, z)) return true;
+    for (const [ax, az, bx, bz] of cell.get(key(Math.floor(x / 8), Math.floor(z / 8))) || []) {
+      const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1e-9, u = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2));
+      if ((x - ax - dx * u) ** 2 + (z - az - dz * u) ** 2 < 3.2 * 3.2) return true;
+    }
+    return false;
+  };
+}
+function railVerges(doc, bounds) {
+  const out = [];
+  for (const t of tracksIn(doc, bounds, 20)) out.push(t.pts.filter((p, i) => i % 2 === 0 || i === t.pts.length - 1).map((p) => [p[0], p[2]]));
+  return out;
+}
+var PROFILE = [[-FOOT_HW, BED], [-CREST_HW, CREST], [-0.8, CREST + 0.01], [0, CREST + 0.012], [0.8, CREST + 0.01], [CREST_HW, CREST], [FOOT_HW, BED]];
+var RAILP = [[-0.075, -0.165], [-0.036, -0.05], [-0.036, -8e-3], [-0.03, 0], [0.03, 0], [0.036, -8e-3], [0.036, -0.05], [0.075, -0.165]];
+function frames(t) {
+  const n = t.pts.length, F = [];
+  for (let i = 0; i < n; i++) {
+    const a = t.pts[Math.max(0, i - 1)], b = t.pts[Math.min(n - 1, i + 1)];
+    let tx = b[0] - a[0], tz = b[2] - a[2];
+    const L2 = Math.hypot(tx, tz) || 1;
+    tx /= L2;
+    tz /= L2;
+    F.push({ x: t.pts[i][0], y: t.pts[i][1], z: t.pts[i][2], tx, tz, nx: -tz, nz: tx, s: t.S[i] });
+  }
+  return F;
+}
+function sample(F, s) {
+  let lo = 0, hi = F.length - 1;
+  while (hi - lo > 1) {
+    const m = lo + hi >> 1;
+    if (F[m].s <= s) lo = m;
+    else hi = m;
+  }
+  const a = F[lo], b = F[hi], f = Math.max(0, Math.min(1, (s - a.s) / (b.s - a.s || 1)));
+  const tx = a.tx + (b.tx - a.tx) * f, tz = a.tz + (b.tz - a.tz) * f, L2 = Math.hypot(tx, tz) || 1;
+  return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f, z: a.z + (b.z - a.z) * f, tx: tx / L2, tz: tz / L2, nx: -tz / L2, nz: tx / L2, s };
+}
+function outerSide(near, t, f) {
+  const d = (side) => {
+    const px = f.x + f.nx * side * 4, pz = f.z + f.nz * side * 4;
+    let dmin = Infinity;
+    for (const o of near) {
+      if (o === t || px < o.box.x0 - 8 || px > o.box.x1 + 8 || pz < o.box.z0 - 8 || pz > o.box.z1 + 8) continue;
+      for (let i = 0; i < o.pts.length; i += 2) {
+        const p = o.pts[i];
+        const q = (p[0] - px) ** 2 + (p[2] - pz) ** 2;
+        if (q < dmin) dmin = q;
+      }
+    }
+    return dmin;
+  };
+  return d(1) >= d(-1) ? 1 : -1;
+}
+function yawMatrix(out, o, yaw, x, y, z, sz = 1) {
+  const c = Math.cos(yaw), s = Math.sin(yaw);
+  out.set([c, 0, -s, 0, 0, 1, 0, 0, s * sz, 0, c * sz, 0, x, y, z, 1], o * 16);
+}
+function normals(P, I) {
+  const N = new Float32Array(P.length);
+  for (let t = 0; t < I.length; t += 3) {
+    const a = I[t] * 3, b = I[t + 1] * 3, c = I[t + 2] * 3;
+    const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2], vx = P[c] - P[a], vy = P[c + 1] - P[a + 1], vz = P[c + 2] - P[a + 2];
+    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    for (const k of [a, b, c]) {
+      N[k] += nx;
+      N[k + 1] += ny;
+      N[k + 2] += nz;
+    }
+  }
+  for (let k = 0; k < N.length; k += 3) {
+    const L2 = Math.hypot(N[k], N[k + 1], N[k + 2]) || 1;
+    N[k] /= L2;
+    N[k + 1] /= L2;
+    N[k + 2] /= L2;
+  }
+  return N;
+}
+var idxArray = (I, nV) => nV > 65535 ? Uint32Array.from(I) : Uint16Array.from(I);
+function ringArea2(r) {
+  let a = 0;
+  for (let i = 0; i < r.length; i++) {
+    const p = r[i], q = r[(i + 1) % r.length];
+    a += p[0] * q[1] - q[0] * p[1];
+  }
+  return a / 2;
+}
+function railTileData(doc, bounds) {
+  const ts = tracksIn(doc, bounds, 1);
+  const nearTracks = tracksIn(doc, bounds, 30);
+  const bal = { p: [], u: [], s: [], i: [] }, rl = { p: [], i: [] };
+  const sleepers = [], masts = [], wires = { p: [], t: [], side: [], r: [], i: [] };
+  let km = 0;
+  const pRings = doc.platforms.map((p) => ringBox(p.ring)).filter((b) => b.x1 > bounds.x0 - 20 && b.x0 < bounds.x1 + 20 && b.z1 > bounds.z0 - 20 && b.z0 < bounds.z1 + 20);
+  const onPlatform = (x, z) => pRings.some((b) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && inRing(b.ring, x, z));
+  const addWire = (pts, r) => {
+    for (let k = 0; k < pts.length - 1; k++) {
+      const a = pts[k], b = pts[k + 1];
+      const tx = b[0] - a[0], ty = b[1] - a[1], tz = b[2] - a[2], L2 = Math.hypot(tx, ty, tz) || 1;
+      const v0 = wires.p.length / 3;
+      for (const p of [a, b]) for (const sd of [-1, 1]) {
+        wires.p.push(p[0], p[1], p[2]);
+        wires.t.push(tx / L2, ty / L2, tz / L2);
+        wires.side.push(sd);
+        wires.r.push(r);
+      }
+      wires.i.push(v0, v0 + 2, v0 + 1, v0 + 1, v0 + 2, v0 + 3);
+    }
+  };
+  const addRun = (t, F) => {
+    if (F.length < 2) return;
+    km += F[F.length - 1].s - F[0].s;
+    let v0 = bal.p.length / 3;
+    for (const f of F) for (const [d, h] of PROFILE) {
+      bal.p.push(f.x + f.nx * d, f.y + h + t.hash, f.z + f.nz * d);
+      bal.u.push(d);
+      bal.s.push(f.s);
+    }
+    const K = PROFILE.length;
+    for (let i = 0; i < F.length - 1; i++) for (let k = 0; k < K - 1; k++) {
+      const a = v0 + i * K + k, b = a + 1, c = a + K, d = c + 1;
+      bal.i.push(a, b, c, b, d, c);
+    }
+    for (const side of [-1, 1]) {
+      v0 = rl.p.length / 3;
+      for (const f of F) for (const [d, h] of RAILP) {
+        const o = side * RAIL_C + d;
+        rl.p.push(f.x + f.nx * o, f.y + h, f.z + f.nz * o);
+      }
+      const R = RAILP.length;
+      for (let i = 0; i < F.length - 1; i++) for (let k = 0; k < R - 1; k++) {
+        const a = v0 + i * R + k, b = a + 1, c = a + R, d = c + 1;
+        rl.i.push(a, b, c, b, d, c);
+      }
+    }
+    const sA = F[0].s, sB = F[F.length - 1].s;
+    for (let s = Math.ceil(sA / SLEEPER_STEP) * SLEEPER_STEP; s < sB; s += SLEEPER_STEP) sleepers.push(sample(F, s));
+    if (t.electrified) {
+      for (let s = Math.ceil(sA / MAST_STEP) * MAST_STEP; s < sB; s += MAST_STEP) {
+        const f = sample(F, s), side = outerSide(nearTracks, t, f);
+        let off = MAST_OFF;
+        while (off < 9 && onPlatform(f.x + f.nx * off * side, f.z + f.nz * off * side)) off += 0.5;
+        if (off > MAST_OFF) off += 0.4;
+        masts.push({ ...f, side, off });
+      }
+      const contact = [], mess = [];
+      for (let s = sA; s <= sB + 0.01; s += 3) {
+        const f = sample(F, Math.min(s, sB));
+        const ph = f.s / MAST_STEP % 2, zig = (ph < 1 ? ph : 2 - ph) * 0.4 - 0.2;
+        const m = f.s / MAST_STEP % 1, sag = 4 * m * (1 - m) * 0.75;
+        contact.push([f.x + f.nx * zig, f.y + WIRE_H, f.z + f.nz * zig]);
+        mess.push([f.x, f.y + MESSENGER_H - sag, f.z]);
+        if (Math.round(f.s) % 6 === 0) addWire([[f.x + f.nx * zig, f.y + WIRE_H, f.z + f.nz * zig], [f.x, f.y + MESSENGER_H - sag, f.z]], 4e-3);
+      }
+      addWire(contact, 65e-4);
+      addWire(mess, 55e-4);
+    }
+  };
+  for (const t of ts) {
+    const F = frames(t);
+    let i0 = -1, i1 = -1;
+    for (let i = 0; i < F.length - 1; i++) {
+      if (inside(bounds, (F[i].x + F[i + 1].x) / 2, (F[i].z + F[i + 1].z) / 2)) {
+        if (i0 < 0) i0 = i;
+        i1 = i + 1;
+      } else if (i0 >= 0) {
+        addRun(t, F.slice(i0, i1 + 1));
+        i0 = -1;
+      }
+    }
+    if (i0 >= 0) addRun(t, F.slice(i0, i1 + 1));
+  }
+  const out = { stats: { km: +(km / 1e3).toFixed(2), sleepers: sleepers.length, masts: masts.length, tris: 0 } };
+  if (bal.p.length) {
+    const P = Float32Array.from(bal.p), RP = Float32Array.from(rl.p);
+    out.ballast = { position: P, normal: normals(P, bal.i), aU: Float32Array.from(bal.u), aS: Float32Array.from(bal.s), index: idxArray(bal.i, P.length / 3) };
+    out.rails = { position: RP, normal: normals(RP, rl.i), index: idxArray(rl.i, RP.length / 3) };
+    out.stats.tris += (bal.i.length + rl.i.length) / 3;
+  }
+  if (sleepers.length) {
+    const M = new Float32Array(sleepers.length * 16);
+    sleepers.forEach((f, k) => yawMatrix(M, k, Math.atan2(-f.tz, f.tx), f.x, f.y, f.z));
+    out.sleepers = M;
+  }
+  if (masts.length) {
+    const M = new Float32Array(masts.length * 16);
+    masts.forEach((f, k) => yawMatrix(M, k, Math.atan2(-f.tz, f.tx), f.x + f.nx * f.off * f.side, f.y - 0.6, f.z + f.nz * f.off * f.side, f.side * f.off / MAST_OFF));
+    out.masts = M;
+  }
+  if (wires.p.length) {
+    const nV = wires.p.length / 3;
+    out.wires = { position: Float32Array.from(wires.p), aTan: Float32Array.from(wires.t), aSide: Float32Array.from(wires.side), aR: Float32Array.from(wires.r), index: Uint32Array.from(wires.i) };
+    out.stats.tris += wires.i.length / 3;
+    void nV;
+  }
+  const plat = doc.platforms.filter((p) => {
+    let cx = 0, cz = 0;
+    for (const q of p.ring) {
+      cx += q[0] / p.ring.length;
+      cz += q[1] / p.ring.length;
+    }
+    return inside(bounds, cx, cz);
+  });
+  if (plat.length) {
+    const P = [], E = [], shelters = [];
+    const tri = (a, b, c) => {
+      P.push(...a.p, ...b.p, ...c.p);
+      E.push(a.e, b.e, c.e);
+    };
+    for (const pf of plat) {
+      let ring2 = pf.ring.slice(0, pf.ring[0][0] === pf.ring.at(-1)[0] && pf.ring[0][1] === pf.ring.at(-1)[1] ? -1 : void 0);
+      if (ringArea2(ring2) < 0) ring2 = ring2.reverse();
+      const edgeD = (x, z) => {
+        let best = Infinity;
+        for (const t of nearTracks) {
+          if (x < t.box.x0 - 6 || x > t.box.x1 + 6 || z < t.box.z0 - 6 || z > t.box.z1 + 6) continue;
+          for (const p of t.pts) {
+            const d = Math.hypot(p[0] - x, p[2] - z);
+            if (d < best) best = d;
+          }
+        }
+        return Math.max(0, best - 1.65);
+      };
+      const top = pf.top;
+      const V = ring2.map(([x, z]) => ({ p: [x, top, z], e: edgeD(x, z) }));
+      const T2 = earcut(ring2.flat(), null, 2);
+      for (let k = 0; k < T2.length; k += 3) tri(V[T2[k]], V[T2[k + 2]], V[T2[k + 1]]);
+      for (let k = 0; k < ring2.length; k++) {
+        const [ax, az] = ring2[k], [bx, bz] = ring2[(k + 1) % ring2.length];
+        const A = { p: [ax, top, az], e: 9 }, B = { p: [bx, top, bz], e: 9 }, A2 = { p: [ax, top - 1.3, az], e: 9 }, B2 = { p: [bx, top - 1.3, bz], e: 9 };
+        tri(A, B, A2);
+        tri(B, B2, A2);
+      }
+      if (pf.shelter) {
+        let cx = 0, cz = 0;
+        for (const [x, z] of ring2) {
+          cx += x / ring2.length;
+          cz += z / ring2.length;
+        }
+        let best = 0, ang = 0;
+        for (let k = 0; k < ring2.length; k++) {
+          const a = ring2[k], b = ring2[(k + 1) % ring2.length], L2 = Math.hypot(b[0] - a[0], b[1] - a[1]);
+          if (L2 > best) {
+            best = L2;
+            ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
+          }
+        }
+        shelters.push([cx, top, cz, -ang]);
+      }
+    }
+    const pos = Float32Array.from(P), nrm = new Float32Array(pos.length);
+    for (let k = 0; k < pos.length; k += 9) {
+      const ux = pos[k + 3] - pos[k], uy = pos[k + 4] - pos[k + 1], uz = pos[k + 5] - pos[k + 2], vx = pos[k + 6] - pos[k], vy = pos[k + 7] - pos[k + 1], vz = pos[k + 8] - pos[k + 2];
+      let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+      const L2 = Math.hypot(nx, ny, nz) || 1;
+      nx /= L2;
+      ny /= L2;
+      nz /= L2;
+      for (let j = 0; j < 3; j++) nrm.set([nx, ny, nz], k + j * 3);
+    }
+    out.platforms = { position: pos, normal: nrm, aEdge: Float32Array.from(E), count: plat.length };
+    out.stats.platforms = plat.length;
+    out.stats.tris += pos.length / 9;
+    if (shelters.length) {
+      const M = new Float32Array(shelters.length * 16);
+      shelters.forEach(([x, y, z, a], k) => yawMatrix(M, k, a, x, y, z));
+      out.shelters = M;
+    }
+  }
+  const decks = doc.decks.filter((b) => inside(bounds, b.centre[0], b.centre[1]));
+  if (decks.length) {
+    const P = [];
+    for (const b of decks) {
+      let ring2 = b.ring.slice(0, -1);
+      if (ringArea2(ring2) < 0) ring2 = ring2.reverse();
+      const top = b.ground - 0.02, bot = top - 0.9;
+      const T2 = earcut(ring2.flat(), null, 2);
+      for (let k = 0; k < T2.length; k += 3) for (const j of [0, 2, 1]) {
+        const [x, z] = ring2[T2[k + j]];
+        P.push(x, top, z);
+      }
+      for (let k = 0; k < T2.length; k += 3) for (const j of [0, 1, 2]) {
+        const [x, z] = ring2[T2[k + j]];
+        P.push(x, bot, z);
+      }
+      for (let k = 0; k < ring2.length; k++) {
+        const [ax, az] = ring2[k], [bx, bz] = ring2[(k + 1) % ring2.length];
+        P.push(ax, top, az, bx, top, bz, ax, bot, az, bx, top, bz, bx, bot, bz, ax, bot, az);
+      }
+    }
+    const pos = Float32Array.from(P), nrm = new Float32Array(pos.length);
+    for (let k = 0; k < pos.length; k += 9) {
+      const ux = pos[k + 3] - pos[k], uy = pos[k + 4] - pos[k + 1], uz = pos[k + 5] - pos[k + 2], vx = pos[k + 6] - pos[k], vy = pos[k + 7] - pos[k + 1], vz = pos[k + 8] - pos[k + 2];
+      let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+      const L2 = Math.hypot(nx, ny, nz) || 1;
+      nx /= L2;
+      ny /= L2;
+      nz /= L2;
+      for (let j = 0; j < 3; j++) nrm.set([nx, ny, nz], k + j * 3);
+    }
+    out.decks = { position: pos, normal: nrm, count: decks.length };
+    out.stats.decks = decks.length;
+    out.stats.tris += pos.length / 9;
+  }
+  out.stats.tris = Math.round(out.stats.tris);
+  return out;
+}
+
 // viewer/tileData.js
+var railP = null;
+var railDocs = (base) => railP ??= Promise.all([
+  fetch(new URL("../rail/rail.json", base)).then((r) => r.json()).then(prepRail),
+  Promise.all(["stjob", "calevoet"].map((n) => fetch(new URL(`../../models/rail/${n}.json`, base)).then((r) => r.ok ? r.json() : null).catch(() => null))).then((a) => a.filter(Boolean))
+]).then(([doc, heroes]) => ({ doc, heroes }));
 var CARVE = 0.12;
 var TERRAIN_ERROR = 0.05;
 function clipToTile(part, b) {
@@ -6855,6 +7390,14 @@ async function buildTileData(entry, base) {
     get(F.features)
   ]));
   for (const l of feats.lines || []) if (l.kind === "tram") l.line = smoothPolyline(l.line);
+  const rail = entry.rail ? await step("rail fetch", () => railDocs(base)) : null;
+  let railDropped = 0;
+  if (rail) {
+    const clear = railKeepClear(rail.doc, bounds, rail.heroes), n = feats.trees?.length || 0;
+    if (n) feats.trees = feats.trees.filter((t) => !clear(t.x, t.z));
+    railDropped = n - (feats.trees?.length || 0);
+    feats.railVerges = railVerges(rail.doc, bounds);
+  }
   const surf = entry.surface && F.surfaces ? await step("fetch surfaces", () => get(F.surfaces)) : null;
   const ov = await overrides(base);
   for (const r of roads.roads) {
@@ -6929,6 +7472,13 @@ async function buildTileData(entry, base) {
     }
     return { parts, atlas, carvedCells, triangles, surfaceStats, surfaceData };
   });
+  let railOut = null;
+  if (rail) {
+    const c = await step("rail carve", () => carveGrid(rail.doc, hm.y, tHdr, bounds, rail.heroes));
+    railOut = await step("rail meshes", () => railTileData(rail.doc, bounds));
+    railOut.stats.carved = c.moved;
+    railOut.stats.treesDropped = railDropped;
+  }
   const terrain = await step("terrain grid", () => terrainArrays(hm));
   await step("terrain simplify", async () => {
     await MeshoptSimplifier.ready;
@@ -6955,7 +7505,8 @@ async function buildTileData(entry, base) {
     terrain,
     buildings,
     cover,
-    times
+    times,
+    rail: railOut
   };
 }
 var WALL = [[0.29, 0.085, 0.05], [0.17, 0.075, 0.045], [0.4, 0.27, 0.14], [0.62, 0.6, 0.55], [0.56, 0.47, 0.32], [0.3, 0.29, 0.27]];

@@ -334,7 +334,7 @@ const HIDE_BU_IDS = params.get("stjob") !== "0" ? [STJOB_BU_ID] : [];
 const ROAD_SURFACES = params.get("roads") !== "engine";
 /** CPU data for a tile: from the worker, or on the main thread (?worker=0, or if the worker fails). */
 function tileData(entry, lite = false) {
-  entry = { ...entry, hide: HIDE_BU_IDS, surface: ROAD_SURFACES, pits: params.get("pits") !== "0" };   // ?pits=0: no tree pits (A/B)
+  entry = { ...entry, hide: HIDE_BU_IDS, surface: ROAD_SURFACES, pits: params.get("pits") !== "0", rail: TRAINS };   // ?pits=0: no tree pits (A/B)
   const local = () => import("./tileData.js").then((m) => (lite ? m.buildLiteData : m.buildTileData)(entry, DATA.href));
   if (!tileWorker) return local();
   return new Promise((resolve, reject) => {
@@ -414,15 +414,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     if (verbose || fader.hold) { mark = performance.now(); return Promise.resolve(); }   // under the boot cover: no frame to keep smooth
     return new Promise((r) => requestAnimationFrame(() => { mark = performance.now(); r(); })); };   // spread GPU-side work over frames
   const { roads, feats } = d;
-  if (railP && feats.trees?.length) {      // ?trains=1: no LiDAR "trees" on rail bridges or the ballast (rail/keepClear.js)
-    const rail = await railP;
-    if (rail) {
-      const { railKeepClear } = await import("./rail/keepClear.js");
-      const clear = railKeepClear(rail.doc, { x0, x1, z0, z1 }), n = feats.trees.length;
-      feats.trees = feats.trees.filter((t) => !clear(t.x, t.z));
-      if (n !== feats.trees.length) say(`railway: ${n - feats.trees.length} LiDAR trees dropped on rail bridges / the ballast`);
-    }
-  }
+
   const hm = Heightmap.from(d.hdr, d.y, d.orig);
   const ni = d.netInfo;
   say(`tile ${entry.name} built ${tileWorker ? "in the worker" : "on the main thread"}: ${Object.entries(d.times).map(([k, v]) => `${k} ${v} ms`).join(", ")}`);
@@ -435,13 +427,14 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   await frame("roads");
   const terr = terrainMesh(d.terrain, contourOn, feats, bounds, d.cover);
   own.terrain.add(terr);
-  const rail = railP ? await railP : null;
-  if (rail) {
-    const carved = rail.m.carveTerrain(rail.doc, terr.geometry, d.hdr, bounds);
-    await frame("railway: terrain carve");     // two slices of ~10-20 ms each (TODO: build both in the tile worker)
-    const rt = rail.m.railTile(rail.doc, bounds);
+  if (d.rail && railP) {       // ?trains=1: carved + built in the tile worker (viewer/rail/railData.js), wrapped here
+    await frame("terrain mesh");
+    const rail = await railP;
+    const rt = rail.m.railTileMeshes(d.rail);
     if (rt.group.children.length) own.features.add(rt.group);
-    if (rt.stats.km) say(`railway: ${rt.stats.km} km of track, ${rt.stats.sleepers} sleepers, ${rt.stats.masts} masts, ${rt.stats.platforms || 0} platforms, ${rt.stats.decks || 0} decks over the line, ${rt.stats.tris} triangles; ${carved} terrain vertices under the ballast`);
+    const st = rt.stats;
+    await frame("railway");
+    if (st.km || st.treesDropped) say(`railway (worker): ${st.km} km of track, ${st.sleepers} sleepers, ${st.masts} masts, ${st.platforms || 0} platforms, ${st.decks || 0} decks, ${st.tris} triangles; ${st.carved} terrain cells carved / filled, ${st.treesDropped} LiDAR trees dropped`);
   }
   // squares OSM leaves out (data/overrides.json); with measured surfaces the UrbIS squares replace them
   const plazas = ss ? { count: 0 } : buildPlazas(await loadOverrides(DATA), bounds, (x, z) => hm.ground(x, z));

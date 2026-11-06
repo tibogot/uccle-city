@@ -14,7 +14,7 @@ import { Panel } from "../viewer/panelUI.js";
 import { Lighting, PRESETS } from "../viewer/lighting.js";
 import { createPipeline } from "../viewer/post.js";
 import { lodEye, withObjectFade } from "../viewer/lodFade.js";
-import { loadRail, railTile, carveTerrain, railMaterials } from "../viewer/rail/railway.js";
+import { loadRail, loadHeroes, railTile, carveTerrain, railMaterials } from "../viewer/rail/railway.js";
 import { loadBridge, placeBridge, BRIDGES, BRIDGE_LODS } from "../viewer/rail/bridgeModel.js";
 
 const qp = new URLSearchParams(location.search);
@@ -90,7 +90,7 @@ async function loadSite(name) {
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.BufferAttribute(uvs, 2)); g.setIndex(new THREE.BufferAttribute(idx, 1));
     const lh = { x0: hdr.x0 + c0, z0: hdr.z0 + r0, cols, rows, step: 1 };
-    if (S.carve) carved += carveTerrain(rail, g, lh, { x0: lh.x0, x1: lh.x0 + cols - 1, z0: lh.z0, z1: lh.z0 + rows - 1 });
+    if (S.carve) carved += carveTerrain(rail, g, lh, { x0: lh.x0, x1: lh.x0 + cols - 1, z0: lh.z0, z1: lh.z0 + rows - 1 }, await loadHeroes());
     g.computeVertexNormals();
     const tex = await new THREE.TextureLoader().loadAsync(`../data/tiles/${t.name}/ortho.jpg`).catch(() => null);
     const m = new THREE.MeshStandardNodeMaterial({ roughness: 0.95 });

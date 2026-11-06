@@ -13,6 +13,14 @@ import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { buildDriveData } from "./drive/colliders.js";
 import { prepareSurfaces, fitRoadWidths, buildSurfaceRoads } from "./surfaces.js";
 import { smoothPolyline } from "./track.js";
+import { prepRail, carveGrid, railTileData, railKeepClear, railVerges } from "./rail/railData.js";
+
+let railP = null;
+/** ?trains=1: rail.json + the hero bridges' notes, fetched once per worker */
+const railDocs = (base) => (railP ??= Promise.all([
+  fetch(new URL("../rail/rail.json", base)).then((r) => r.json()).then(prepRail),
+  Promise.all(["stjob", "calevoet"].map((n) => fetch(new URL(`../../models/rail/${n}.json`, base)).then((r) => (r.ok ? r.json() : null)).catch(() => null))).then((a) => a.filter(Boolean)),
+]).then(([doc, heroes]) => ({ doc, heroes })));
 
 export const CARVE = 0.12;         // terrain is pushed this far under any road surface
 // The 1 m terrain grid is 500k triangles a tile (half the scene); seen from above, 1 m triangles cover
@@ -114,6 +122,16 @@ export async function buildTileData(entry, base) {
   ]));
   // the OSM tram tracks as smooth curves (viewer/track.js): rails, wires, platforms and the trams all follow them
   for (const l of feats.lines || []) if (l.kind === "tram") l.line = smoothPolyline(l.line);
+  // ?trains=1 (viewer/rail/): no LiDAR "trees" on rail bridge decks, platforms or the ballast; the line's verges as
+  // undergrowth in the land cover
+  const rail = entry.rail ? await step("rail fetch", () => railDocs(base)) : null;
+  let railDropped = 0;
+  if (rail) {
+    const clear = railKeepClear(rail.doc, bounds, rail.heroes), n = feats.trees?.length || 0;
+    if (n) feats.trees = feats.trees.filter((t) => !clear(t.x, t.z));
+    railDropped = n - (feats.trees?.length || 0);
+    feats.railVerges = railVerges(rail.doc, bounds);
+  }
   // ?roads=surface: the measured UrbIS street surfaces of this tile (surfaces.json), when the tile has them
   const surf = entry.surface && F.surfaces ? await step("fetch surfaces", () => get(F.surfaces)) : null;
   // hand corrections (data/overrides.json): road surfaces OSM gets wrong (Place de Saint-Job is setts)
@@ -175,6 +193,14 @@ export async function buildTileData(entry, base) {
     }
     return { parts, atlas, carvedCells, triangles, surfaceStats, surfaceData };
   });
+  // ?trains=1: the terrain under the ballast / platforms / hero arches, the fills at viaduct ends; then the tile's rail
+  // geometry as typed arrays (viewer/rail/railData.js; the main thread only wraps them in buffers)
+  let railOut = null;
+  if (rail) {
+    const c = await step("rail carve", () => carveGrid(rail.doc, hm.y, tHdr, bounds, rail.heroes));
+    railOut = await step("rail meshes", () => railTileData(rail.doc, bounds));
+    railOut.stats.carved = c.moved; railOut.stats.treesDropped = railDropped;
+  }
   const terrain = await step("terrain grid", () => terrainArrays(hm));
   await step("terrain simplify", async () => {
     await MeshoptSimplifier.ready;
@@ -187,7 +213,7 @@ export async function buildTileData(entry, base) {
   const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats));
   const cover = await step("land cover", () => landCoverData(feats, bounds));
   return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs, drive,
-    netInfo, road, terrain, buildings, cover, times };
+    netInfo, road, terrain, buildings, cover, times, rail: railOut };
 }
 
 // ---------------------------------------------------------------- far level of detail
