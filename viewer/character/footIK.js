@@ -25,13 +25,14 @@ export const FOOT_IK = {
   reach: 0.55,          // m: how far up / down a foot may be moved from the clip's flat ground
   maxTilt: 30,          // degrees: the foot's tilt to a slope
   maxDrop: 0.25, maxRise: 0.06,   // m: the pelvis
-  lowFollow: 0.6,       // how much of the lower planted foot's drop the pelvis follows (the reach is always kept)
+  lowFollow: 0.35,       // how much of the lower planted foot's drop the pelvis follows (the reach is always kept)
   pelvisOmega: 16,      // 1/s: the pelvis spring (critically damped)
   swingSmooth: 22,      // 1/s: a swinging foot's height to the ground under / ahead of it
   normalSmooth: 14,     // 1/s: a swinging foot's tilt
   lockFade: 9,          // 1/s: the lock's correction fades through a swing
-  maxLock: 0.5,        // m: a planted foot dragged further than this slides (the leg can't stay)
-  idleStep: 0.11, idleYaw: 28, stepTime: 0.28, stepLift: 0.07,   // a step on the spot: when, how long, how high
+  maxLock: 0.25,        // m: a planted foot dragged further than this slides (the leg can't stay)
+  maxTwist: 0.45,       // rad: a planted foot holds its heading against the body's turn this far, then pivots
+  idleStep: 0.11, idleYaw: 22, stepTime: 0.28, stepLift: 0.07,   // a step on the spot: when, how long, how high
   look: 0.07, lookSpeed: 0.08,    // m + s * speed: how far ahead of the toe a swinging foot looks
   strideCut: 0.4,       // the stride is this much shorter on stairs / steep ramps (grade >= 0.6)
   maxShift: 0.1,       // m: how far a landing foot may be moved forward off a nosing / kerb edge
@@ -175,7 +176,7 @@ export class FootIK {
         L.dx -= L.dx * Math.min(1, f); L.dz -= L.dz * Math.min(1, f); L.dyaw -= L.dyaw * Math.min(1, f);
         const dl = Math.sqrt(L.dx * L.dx + L.dz * L.dz);
         if (dl > p.maxLock) { L.dx *= p.maxLock / dl; L.dz *= p.maxLock / dl; }
-        if (L.dyaw > 1.2) L.dyaw = 1.2; else if (L.dyaw < -1.2) L.dyaw = -1.2;
+        if (L.dyaw > p.maxTwist) L.dyaw = p.maxTwist; else if (L.dyaw < -p.maxTwist) L.dyaw = -p.maxTwist;   // (beyond: the foot pivots with the body)
       }
       L.px = _H.x; L.pz = _H.z; L.qx = _T.x; L.qz = _T.z; L.pyaw = yawA; L.has = true;
       // standing and twisted / dragged too far: a step on the spot (one foot at a time)

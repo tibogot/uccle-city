@@ -98,7 +98,7 @@ export class ThirdPerson {
   get model() { return this.body.model; }
   /**
    * The animated body's feet plane: on the ground, the GROUND LINE under it (the mean of the ground at the feet and
-   * 0.28 m behind / ahead along the motion: on stairs the line through the nosings, on a kerb a ramp across it, exact
+   * 0.22 m behind / ahead along the motion: on stairs the line through the nosings, on a kerb a ramp across it, exact
    * on flat ground and slopes), followed by a critically damped spring; so the hips travel smoothly up and down
    * stairs instead of jumping a riser per step (the capsule's own step lag reads as a jolt per step and lags a step
    * behind going down: the front foot then had to reach two treads). The feet are placed by the foot IK in the world.
@@ -115,7 +115,7 @@ export class ThirdPerson {
       let sum = 0, n = 0;
       for (let k = -1; k <= 1; k++) {
         const W = this.world, R = W.r, H = W.hit;
-        R[0] = px + dx * 0.28 * k; R[1] = py + 0.55; R[2] = pz + dz * 0.28 * k; R[3] = 0; R[4] = -1; R[5] = 0; H[0] = 1.1; H[4] = -1;
+        R[0] = px + dx * 0.22 * k; R[1] = py + 0.55; R[2] = pz + dz * 0.22 * k; R[3] = 0; R[4] = -1; R[5] = 0; H[0] = 1.1; H[4] = -1;
         W.raycast();
         if (H[4] >= 0 && H[2] > 0.5) { const gy = py + 0.55 - H[0]; if (Math.abs(gy - py) < 0.5) { sum += gy; n++; } }
       }
