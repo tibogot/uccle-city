@@ -110,8 +110,13 @@ export function railMaterials() {
   const ballast = new THREE.MeshStandardNodeMaterial({ roughness: 0.95, metalness: 0 });
   {
     const p = positionWorld.xz;
-    const g1 = hash2D(floor(p.mul(22.0))), g2 = noise2D(p.mul(1.7)), g3 = noise2D(p.mul(0.23));
-    const base = mix(color(0x6b6660), color(0x8a8378), g1).mul(mix(0.82, 1.1, g2)).mul(mix(0.9, 1.06, g3));
+    // stones: two hashed grids at odd angles and scales (no visible grid), averaged away with the pixel footprint
+    const r1 = vec2(p.x.mul(0.799).sub(p.y.mul(0.602)), p.x.mul(0.602).add(p.y.mul(0.799))).mul(26.0);
+    const r2 = vec2(p.x.mul(0.276).add(p.y.mul(0.961)), p.y.mul(0.276).sub(p.x.mul(0.961))).mul(33.0);
+    const fwp = fwidth(p.x).max(0.0005);
+    const stones = hash2D(floor(r1)).add(hash2D(floor(r2))).mul(0.5).add(noise2D(p.mul(9.0)).sub(0.5).mul(0.5));
+    const g1 = mix(stones, float(0.5), smoothstep(0.015, 0.05, fwp)), g2 = noise2D(p.mul(1.7)), g3 = noise2D(p.mul(0.23));
+    const base = mix(color(0x5d5a55), color(0x948d82), g1).mul(mix(0.85, 1.08, g2)).mul(mix(0.9, 1.06, g3));
     const rust = color(0x5a4334);
     const between = smoothstep(0.9, 0.4, abs(u));
     let col = mix(base, rust, between.mul(0.35).add(smoothstep(1.4, 2.2, abs(u)).mul(0.15)));
@@ -129,7 +134,7 @@ export function railMaterials() {
   const rails = new THREE.MeshStandardNodeMaterial({ roughness: 0.4, metalness: 0.85 });
   {
     const top = smoothstep(0.6, 0.9, normalWorld.y);
-    rails.colorNode = mix(color(0x4a3426), color(0xb9b9bc), top);
+    rails.colorNode = mix(color(0x6e4b36), color(0xb9b9bc), top);
     rails.roughnessNode = mix(float(0.85), float(0.28), top);
     rails.metalnessNode = mix(float(0.15), float(0.95), top);
   }
@@ -264,7 +269,7 @@ export function railTile(doc, bounds) {
     g.computeVertexNormals(); g.computeBoundingSphere();
     return g;
   };
-  const stats = { km: +km.toFixed(2), sleepers: sleepers.length, masts: masts.length, tris: 0 };
+  const stats = { km: +(km / 1000).toFixed(2), sleepers: sleepers.length, masts: masts.length, tris: 0 };
   if (bal.p.length) {
     const m = new THREE.Mesh(mk(bal.p, bal.i, { aU: [bal.u, 1], aS: [bal.s, 1] }), M.ballast);
     m.receiveShadow = true; m.name = "rail-ballast"; group.add(m);

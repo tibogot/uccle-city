@@ -240,7 +240,8 @@ def box(bm, c, size, mat, bev=0.0):
     for f in fs: f.material_index = mat
     if bev:
         es = list({e for v in vs for e in v.link_edges})
-        bmesh.ops.bevel(bm, geom=es, offset=bev, segments=2, affect="EDGES", profile=0.5)
+        r2 = bmesh.ops.bevel(bm, geom=es, offset=bev, segments=2, affect="EDGES", profile=0.5)
+        for f in r2["faces"]: f.material_index = mat
     return vs
 
 
@@ -443,7 +444,7 @@ gmat = bpy.data.materials.new("gmat"); gmat.node_tree.nodes["Principled BSDF"].i
 gm.materials.append(gmat)
 scn.render.engine = "CYCLES"; scn.cycles.device = "CPU"
 if scn.world is None: scn.world = bpy.data.worlds.new("World")
-scn.world.light_settings.distance = 1.5
+scn.world.light_settings.distance = 0.9
 for o in list(pieces.values()) + list(far.values()):
     ca = o.data.color_attributes.new("Col", "BYTE_COLOR", "CORNER")
     o.data.color_attributes.active_color = ca

@@ -257,6 +257,9 @@ function addTrees(group, f, inTile, treeGround) {
 
 let tramLine = null;       // real STIB line 92 on its timetable (tramline.js)
 const updaters = [];
+// The railway (?trains=1, Train Lab first): tracks per tile, hero bridges, SNCB trains on the real timetable (viewer/rail/)
+const TRAINS = params.get("trains") === "1";
+const railP = TRAINS ? import("./rail/railway.js").then(async (m) => ({ m, doc: await m.loadRail() })).catch((e) => { log(`railway: ${e.message}`); return null; }) : null;
 let falconsReady = null, falconsOn = true;   // the Saint-Job peregrines (viewer/falcons.js), once loaded       // per-frame updates (tree LOD, lamp lights) of every loaded tile
 
 // ------------------------------------------------------------------ walk mode
@@ -411,6 +414,15 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     if (verbose || fader.hold) { mark = performance.now(); return Promise.resolve(); }   // under the boot cover: no frame to keep smooth
     return new Promise((r) => requestAnimationFrame(() => { mark = performance.now(); r(); })); };   // spread GPU-side work over frames
   const { roads, feats } = d;
+  if (railP && feats.trees?.length) {      // ?trains=1: no LiDAR "trees" on rail bridges or the ballast (rail/keepClear.js)
+    const rail = await railP;
+    if (rail) {
+      const { railKeepClear } = await import("./rail/keepClear.js");
+      const clear = railKeepClear(rail.doc, { x0, x1, z0, z1 }), n = feats.trees.length;
+      feats.trees = feats.trees.filter((t) => !clear(t.x, t.z));
+      if (n !== feats.trees.length) say(`railway: ${n - feats.trees.length} LiDAR trees dropped on rail bridges / the ballast`);
+    }
+  }
   const hm = Heightmap.from(d.hdr, d.y, d.orig);
   const ni = d.netInfo;
   say(`tile ${entry.name} built ${tileWorker ? "in the worker" : "on the main thread"}: ${Object.entries(d.times).map(([k, v]) => `${k} ${v} ms`).join(", ")}`);
@@ -423,6 +435,13 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   await frame("roads");
   const terr = terrainMesh(d.terrain, contourOn, feats, bounds, d.cover);
   own.terrain.add(terr);
+  const rail = railP ? await railP : null;
+  if (rail) {
+    const carved = rail.m.carveTerrain(rail.doc, terr.geometry, d.hdr, bounds);
+    const rt = rail.m.railTile(rail.doc, bounds);
+    if (rt.group.children.length) own.features.add(rt.group);
+    if (rt.stats.km) say(`railway: ${rt.stats.km} km of track, ${rt.stats.sleepers} sleepers, ${rt.stats.masts} masts, ${rt.stats.platforms || 0} platforms, ${rt.stats.decks || 0} decks over the line, ${rt.stats.tris} triangles; ${carved} terrain vertices under the ballast`);
+  }
   // squares OSM leaves out (data/overrides.json); with measured surfaces the UrbIS squares replace them
   const plazas = ss ? { count: 0 } : buildPlazas(await loadOverrides(DATA), bounds, (x, z) => hm.ground(x, z));
   if (plazas.count) own.roads.add(plazas.group);
@@ -615,6 +634,35 @@ async function main() {
       tramLine.update(new THREE.Vector3(cx, 0, cz));
       log(tramLine.info());
     } catch (e) { log(`tram line: ${e.message}`); }
+  }
+  if (TRAINS) {
+    const rail = await railP;
+    if (rail) {
+      const { loadBridge, placeBridge, BRIDGES } = await import("./rail/bridgeModel.js");
+      for (const name of BRIDGES) {
+        loadBridge(name).then((b) => {
+          const pb = placeBridge(b, { smooth: SMOOTH, objectFade: withObjectFade });
+          scene.add(pb.group);
+          const p = b.placement.position;
+          const home = manifest.tiles.find((t) => p.x >= t.bounds.x[0] && p.x < t.bounds.x[1] && p.z >= t.bounds.z[0] && p.z < t.bounds.z[1])?.name;
+          let n = 0;
+          updaters.push((camPos) => {
+            pb.update(camPos);
+            if (n++ % 30) return;
+            pb.group.visible = world.tiles.some((t) => t.name === home) || !!scene.getObjectByName(`${home}-lite`);
+          });
+          log(`railway bridge ${name} (${b.info.urbis}, ${b.info.line} over ${b.info.road}): LODs ${b.lods.map((l) => Math.round(l.tris)).join(" / ")} triangles`);
+        }).catch((e) => log(`bridge ${name}: ${e.message}`));
+      }
+      try {
+        const { createTrains } = await import("./rail/trains.js");
+        const trains = await createTrains({ rail: rail.doc, parent: scene, clock: tramLine ? () => tramLine.clockSecs : null });
+        updaters.push((camPos, cam) => trains.update(camPos, cam));
+        trains.update(new THREE.Vector3(cx, 0, cz));
+        window.__trains = trains;
+        log(trains.info());
+      } catch (e) { log(`trains: ${e.message}`); }
+    }
   }
   const cy = hm.ground(cx, cz);
 

@@ -30,7 +30,7 @@ const PER_UNIT = { EndCar: 2, MidCar: 1, Bogie: 6, Gangway: 2, Panto: 1 };
 
 /** SNCB current livery (sRGB): white body, yellow cab, red doors, navy skirt band (photos 2019-2025) */
 export const LIVERIES = {
-  sncb: { paint_body: "#e8eae7", paint_cab: "#f6c600", paint_door: "#d0202a", paint_skirt: "#1b2a5c", paint_grey: "#8a9095",
+  sncb: { paint_body: "#e8eae7", paint_cab: "#f3cf0a", paint_door: "#d0202a", paint_skirt: "#1b2a5c", paint_grey: "#8a9095",
     paint_roof: "#b9bdbf", rubber: "#141516", glass: "#0d1114", metal_dark: "#26272a", lamp_white: "#d8d8d2", lamp_red: "#6b0d0d",
     display: "#050505", interior: "#2b3a5a" },
   // the pre-2010s grey-blue / the red local livery are other palettes over the same slots (an example of swapping)
@@ -123,7 +123,7 @@ function makeMaterial() {
   const y = positionLocal.y;
   const grime = mix(float(0.8), float(1.0), smoothstep(0.5, 1.6, y)).mul(trainLook.dirt).add(float(1).sub(trainLook.dirt));
   m.colorNode = base.mul(grime);
-  m.aoNode = mix(float(1), ao, 0.9);
+  m.aoNode = mix(float(1), ao, mix(float(0.55), float(0.85), is(S("metal_dark")).add(is(S("interior")))));
   const rough = mix(mix(float(0.62), float(0.32), paint), float(0.04), glass);
   const metal = mix(float(0.05), float(0.15), paint).add(is(S("metal_dark")).mul(0.4));
   m.roughnessNode = rough; m.metalnessNode = metal;
