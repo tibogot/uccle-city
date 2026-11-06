@@ -28,3 +28,11 @@ plumage painted per texel from the point's position, normal and bone weights (sl
 moustache, white cheeks, finely barred cream underparts, barred tail, yellow cere and feet). Same rig and
 clips. bird.json "model" selects it. Story: a peregrine family nests in the Saint-Job church tower; fly mode
 starts from the spire. Next: proportions (slightly shorter wings, longer tail), the nest with the young.
+
+## The falcon family (2026-11-05, viewer/falcons.js, docs/FALCONS.md)
+
+`eyas.jpg` and `juvenile.jpg`: the same painter (`tools/blender/peregrine.py --variant eyas|juvenile`) on
+peregrine.glb's own UVs, swapped onto the same mesh: the downy eyases in the Saint-Job eyrie, and the PLAYER's bird
+(the young of the year leaving the nest: bird.json `playerSkin`; `?birdskin=adult` = the adult plumage). Fly mode now
+starts in the eyrie (`?flystart=spire` = the spire). The rig has no perched pose: falcons.js bakes Perch and Sit at
+load by aiming bones (and gives fly mode the Perch for its nest start).
