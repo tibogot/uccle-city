@@ -97,6 +97,8 @@ export class FootProbe {
     if (m === "feet side") { camera.position.set(x - rx * 3.3, y + 0.25, z - rz * 3.3); camera.lookAt(x, y + 0.33, z); }
     else if (m === "feet front") { camera.position.set(x + fx * 2.4, y + 0.25, z + fz * 2.4); camera.lookAt(x, y + 0.3, z); }
     else if (m === "feet top") { camera.position.set(x - fx * 0.05, y + 3.4, z - fz * 0.05); camera.up.set(fx, 0, fz); camera.lookAt(x, y, z); camera.up.set(0, 1, 0); }
+    else if (m === "body side") { camera.position.set(x - rx * 4.2, y + 0.9, z - rz * 4.2); camera.lookAt(x, y + 0.85, z); }
+    else if (m === "body 3/4") { camera.position.set(x - rx * 2.9 + fx * 2.9, y + 1.1, z - rz * 2.9 + fz * 2.9); camera.lookAt(x, y + 0.85, z); }
     else if (m === "feet 3/4") { camera.position.set(x - rx * 1.7 + fx * 1.5, y + 0.6, z - rz * 1.7 + fz * 1.5); camera.lookAt(x, y + 0.3, z); }
     if (camera.fov !== 28) { camera.fov = 28; camera.updateProjectionMatrix(); }
   }

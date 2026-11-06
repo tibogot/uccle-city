@@ -286,6 +286,7 @@ const probe = new FootProbe(tp, world);
 const at = (x, z, yaw = 0, from = 3) => { const t = world.ray(x, Y0 + from, z, 0, -1, 0, from + 20); return [x, Math.max(t < Infinity ? Y0 + from - t : -Infinity, groundH(x, z)) + 0.02, z, yaw]; };
 const E = Math.PI / 2, W = -Math.PI / 2, N = Math.PI;      // facing +x, -x, -z
 const SCEN = {
+  "stand": { start: at(-3, 1), dir: [0, 0], secs: 6 },
   "flat walk": { start: at(-3, 1), dir: [0, 1], secs: 5 },
   "flat run": { start: at(-3, 1), dir: [0, 1], secs: 4, run: true },
   "kerb up 15 cm": { start: at(0, -1, N), dir: [0, -1], secs: 2.5 },
@@ -370,10 +371,10 @@ fch.add(FOOT_IK, "absorb", 0, 0.8, 0.01).name("landing absorb").onChange(ikp("ab
 fch.add(FOOT_IK, "maxTilt", 0, 45, 1).name("foot tilt max (°)").onChange(ikp("maxTilt"));
 fch.add(S, "ik").name("IK").listen();
 const fa = ui.addFolder("Foot audit");
-S.cam = qp.get("cam") && ["follow", "feet side", "feet front", "feet top", "feet 3/4"].includes(qp.get("cam")) ? qp.get("cam") : "follow";
+S.cam = qp.get("cam") && ["follow", "feet side", "feet front", "feet top", "feet 3/4", "body side", "body 3/4"].includes(qp.get("cam")) ? qp.get("cam") : "follow";
 S.scen = SCEN[qp.get("play")] ? qp.get("play") : "stairs up 17 walk"; S.loop = true;
 probe.camMode = S.cam;
-fa.add(S, "cam", ["follow", "feet side", "feet front", "feet top", "feet 3/4"]).name("camera").onChange((v) => { probe.camMode = v; if (v === "follow") { camera.fov = 0; } });
+fa.add(S, "cam", ["follow", "feet side", "feet front", "feet top", "feet 3/4", "body side", "body 3/4"]).name("camera").onChange((v) => { probe.camMode = v; if (v === "follow") { camera.fov = 0; } });
 fa.add(S, "scen", Object.keys(SCEN)).name("scripted walk");
 fa.add(S, "loop").name("loop it");
 fa.add({ go: () => { if (!probe.feet) probe.setup(); probe.play(SCEN[S.scen], S.loop); } }, "go").name("play (autopilot)");
@@ -437,6 +438,15 @@ const hazeHook = (rt, d, size) => lighting.hazeHook(rt, d, size);
 goStation(S.station);
 tp.body.ikOn = S.footIK;
 if (S.char !== "capsule" && !qp.get("model")) await setCharacter(S.char);
+// a retargeted clip alone, in place, foot IK off (tools/characters/retarget.mjs output): ?preview=Jump_Land
+if (tp.body._allClips) {
+  S.preview = qp.get("preview") || "(state machine)";
+  const fpv = ui.addFolder("Clip preview");
+  fpv.add(S, "preview", ["(state machine)", ...tp.body._allClips.map((a) => a.name)]).name("play alone").onChange((v) => {
+    const on = !v.startsWith("("); tp.body.setPreview(on ? v : null); tp.body.ikOn = on ? false : S.footIK;
+  });
+  if (S.preview !== "(state machine)") { tp.body.setPreview(S.preview); tp.body.ikOn = false; }
+}
 // compile both capsule variants (solid / fading) now, not at the first fade
 for (const [mesh, ...mats] of tp.body.warmVariants()) for (const m of mats) { mesh.material = m; await renderer.compileAsync(scene, camera); }
 

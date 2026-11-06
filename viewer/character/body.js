@@ -14,8 +14,8 @@ import * as THREE from "three/webgpu";
 import { color, float, mix, positionLocal, normalView, uniform, smoothstep, abs, dot, vec3 } from "three/tsl";
 import { FootIK } from "./footIK.js";
 
-const ROLES = ["idle", "walk", "run", "jump", "fall"];
-const TARGET = { idle: 0, walk: 0, run: 0, jump: 0, fall: 0 };
+const ROLES = ["idle", "walk", "run", "jump", "fall", "land"];
+const TARGET = { idle: 0, walk: 0, run: 0, jump: 0, fall: 0, land: 0 };
 
 export class CharacterBody {
   constructor(scene, { radius = 0.3, height = 1.75 } = {}) {
@@ -103,6 +103,7 @@ export class CharacterBody {
     // clips
     this.mixer = new THREE.AnimationMixer(model);
     const anims = gltf.animations || [];
+    this._allClips = anims;
     const want = { idle: "idle", walk: "walk", run: "run", jump: "jump", fall: "fall", ...(opts.clips || {}) };
     const found = {};
     this.actions = {}; this.hold = {};
@@ -114,13 +115,14 @@ export class CharacterBody {
       if (held) { clip = clip.clone(); clip.name = `${clip.name}@${spec.at}`; }       // its own action
       const act = this.mixer.clipAction(clip);
       if (held) { act.timeScale = 0; act.time = spec.at * clip.duration; this.hold[role] = spec.at * clip.duration; }
-      else if (role === "jump") { act.setLoop(THREE.LoopOnce, 1); act.clampWhenFinished = true; }
+      else if (role === "jump" || role === "land") { act.setLoop(THREE.LoopOnce, 1); act.clampWhenFinished = true; }
       act.enabled = true; act.setEffectiveWeight(0); act.play();
       this.actions[role] = act; found[role] = held ? `${spec.clip} held at ${spec.at}` : clip.name;
     }
     const k = opts.speedUnits === "model" ? s : 1;
     this.walkSpeed = (opts.walkSpeed || 1.4) * k; this.runSpeed = (opts.runSpeed || 4.5) * k;
-    this.state = ""; this._w = { idle: 0, walk: 0, run: 0, jump: 0, fall: 0 };
+    this.state = ""; this._w = { idle: 0, walk: 0, run: 0, jump: 0, fall: 0, land: 0 }; this._landT = 0;
+    this.clipMeta = opts.clipMeta || {}; this.previewAct = null;
     this.footIK = opts.rig ? new FootIK(model, inner, opts.rig) : null;
     return found;
   }
@@ -130,6 +132,16 @@ export class CharacterBody {
     if (!this.mixer) return;
     for (const role of ROLES) { const a = this.actions[role]; if (!a) continue; a.time = this.hold[role] ?? 0; this._w[role] = role === "idle" ? 1 : 0; a.setEffectiveWeight(this._w[role]); }
     this._wasGrounded = true; this._airTime = 0;
+  }
+
+  /** Play one clip alone, looped, in place (lab: check a retargeted clip); null = back to the state machine. */
+  setPreview(name) {
+    if (this.previewAct) { this.previewAct.stop(); this.previewAct = null; }
+    const clip = name && this.mixer && this.mixer.getRoot().animations?.find?.((a) => a.name === name) || (name && this._allClips?.find((a) => a.name === name));
+    if (!clip) return false;
+    for (const role of ROLES) if (this.actions[role]) { this._w[role] = 0; this.actions[role].setEffectiveWeight(0); }
+    this.previewAct = this.mixer.clipAction(clip); this.previewAct.reset().setLoop(THREE.LoopRepeat).play();
+    return true;
   }
 
   clearModel() {
@@ -170,8 +182,21 @@ export class CharacterBody {
     // the animation state machine (weights eased toward targets)
     const A = this.actions, w = this._w, target = TARGET;
     for (let i = 0; i < ROLES.length; i++) target[ROLES[i]] = 0;
+    // touch-down after a real fall: the landing clip (from its touch-down frame), held while it absorbs, shorter
+    // when the body keeps moving
+    const landing = st.grounded && !this._wasGrounded && this._airTime > 0.12 ? Math.max(0, -this._fallV) : 0;
+    if (st.grounded) this._airTime = 0; else { this._airTime += dt; this._fallV = st.vy; }
+    this._wasGrounded = st.grounded;
+    if (landing > 2 && A.land) {
+      const m = this.clipMeta[A.land.getClip().name], t0 = m?.touchdown ?? 0;
+      A.land.reset().play(); A.land.time = t0;
+      this._landT = Math.min(0.7, A.land.getClip().duration - t0) * Math.min(1, landing / 5);
+    }
+    if (this._landT > 0) this._landT -= dt * (st.speed > 1 ? 2.5 : 1);
     let state;
-    if (!st.grounded) state = st.vy > 0.5 && A.jump ? "jump" : A.fall ? "fall" : A.jump ? "jump" : "idle";
+    if (this.previewAct) state = "preview";
+    else if (!st.grounded) state = st.vy > 0.5 && A.jump ? "jump" : A.fall ? "fall" : A.jump ? "jump" : "idle";
+    else if (this._landT > 0) state = "land";
     else if (st.speed < 0.15) state = "idle";
     else state = "move";
     if (state === "move") {
@@ -194,8 +219,9 @@ export class CharacterBody {
         if (k > 0.5) A.walk.time = (A.run.time / A.run.getClip().duration) * A.walk.getClip().duration;
         else A.run.time = ph * A.run.getClip().duration;
       }
-    } else target[state] = 1;
-    if (state === "jump" && this.state !== "jump" && A.jump && this.hold.jump === undefined) A.jump.reset().play();
+    } else if (state !== "preview") target[state] = 1;
+    // a jump clip starts at its take-off frame (the body is already in the air)
+    if (state === "jump" && this.state !== "jump" && A.jump && this.hold.jump === undefined) { A.jump.reset().play(); A.jump.time = this.clipMeta[A.jump.getClip().name]?.takeoff ?? 0; }
     this.state = state;
     const fadeRate = 1 - Math.exp(-dt / 0.1);
     for (let i = 0; i < ROLES.length; i++) {
@@ -205,6 +231,7 @@ export class CharacterBody {
       w[role] += (target[role] - w[role]) * fadeRate;
       A[role].setEffectiveWeight(w[role]);
     }
+    if (this.previewAct) this.previewAct.setEffectiveWeight(1);
     this.mixer.update(dt);
     if (this.preIK) this.preIK(y);              // (lab hook: the foot audit reads the animated pose here)
     if (this.footIK && world) {
@@ -213,9 +240,7 @@ export class CharacterBody {
       // on the ground (walking and running), off in the air; a touch-down passes its fall speed (the landing absorb)
       const ik = this._ik;
       ik.grounded = st.grounded; ik.speed = st.speed; ik.vx = st.vx ?? 0; ik.vz = st.vz ?? 0; ik.grade = st.grade || 0;
-      ik.landing = st.grounded && !this._wasGrounded && this._airTime > 0.12 ? Math.max(0, -this._fallV) : 0;
-      if (st.grounded) this._airTime = 0; else { this._airTime += dt; this._fallV = st.vy; }
-      this._wasGrounded = st.grounded;
+      ik.landing = landing;
       this.footIK.update(dt, world, y, ik, this.ikOn !== false);
       this.ikMs = (this.ikMs || 0) * 0.95 + (performance.now() - t0) * 0.05;
     }

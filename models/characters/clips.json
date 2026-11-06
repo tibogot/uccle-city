@@ -1,0 +1,62 @@
+{
+ "target": "hoodie.glb",
+ "fps": 30,
+ "clips": {
+  "Jump_Start": {
+   "role": "jumpStart",
+   "contact": [
+    "110000000000000000000000000000",
+    "111000000000000000000000000000"
+   ],
+   "takeoff": 0.1,
+   "touchdown": null,
+   "loop": false,
+   "duration": 0.967,
+   "source": "UAL2_Standard.glb:NinjaJump_Start",
+   "rig": "ual",
+   "scale": 1.138
+  },
+  "Jump_Loop": {
+   "role": "fall",
+   "contact": [
+    "0000000000000000000000000000000000000000000000000000000000000",
+    "0000000000000000000000000000000000000000000000000000000000000"
+   ],
+   "takeoff": null,
+   "touchdown": null,
+   "loop": true,
+   "duration": 2,
+   "source": "UAL2_Standard.glb:NinjaJump_Idle_Loop",
+   "rig": "ual",
+   "scale": 1.138
+  },
+  "Jump_Land": {
+   "role": "land",
+   "contact": [
+    "000111111111111111111111111111111111111",
+    "000111111111111111111111111111111111111"
+   ],
+   "takeoff": null,
+   "touchdown": 0.1,
+   "loop": false,
+   "duration": 1.267,
+   "source": "UAL2_Standard.glb:NinjaJump_Land",
+   "rig": "ual",
+   "scale": 1.138
+  },
+  "UAL_Idle": {
+   "role": "idleAlt",
+   "contact": [
+    "1111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "1111111111111111111111111111111111111111111111111111111111111111111111111111"
+   ],
+   "takeoff": null,
+   "touchdown": null,
+   "loop": true,
+   "duration": 2.5,
+   "source": "UAL2_Standard.glb:Idle_No_Loop",
+   "rig": "ual",
+   "scale": 1.138
+  }
+ }
+}

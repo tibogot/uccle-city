@@ -25,9 +25,34 @@ const CLIPS = { idle: "Idle_Neutral", walk: "Walk", run: "Run", jump: { clip: "R
 // (node names as GLTFLoader leaves them: PropertyBinding.sanitizeNodeName drops the dots, "UpperLeg.L" -> "UpperLegL")
 const LEG = (s) => ({ upper: `UpperLeg${s}`, lower: `LowerLeg${s}`, end: `LowerLeg${s}_end`, foot: `Foot${s}` });
 
+/**
+ * The retargeted clips (tools/characters/retarget.mjs: models/characters/clips.glb + clips.json): any source rig's
+ * clips on this rig, bound by bone name, in place (root motion as a velocity in clips.json). Roles from clips.json
+ * (jumpStart, fall, land, stairsUp, stairsDown, turnL / turnR, ...), with each clip's foot contacts and its take-off /
+ * touch-down times. Missing files: none (the held run poses stay).
+ */
+async function loadClips() {
+  try {
+    const base = new URL("../../models/characters/", import.meta.url).href;
+    const [meta, gltf] = await Promise.all([fetch(base + "clips.json").then((r) => (r.ok ? r.json() : null)), new GLTFLoader().loadAsync(base + "clips.glb")]);
+    if (!meta) return null;
+    return { meta: meta.clips, animations: gltf.animations };
+  } catch (e) { console.warn("character clips:", e.message); return null; }
+}
+
 export async function loadCharacter(name = "hoodie", { height = 1.76 } = {}) {
   const def = CHARACTERS[name] || CHARACTERS.hoodie;
-  const gltf = await new GLTFLoader().loadAsync(new URL(`../../models/characters/${def.file}`, import.meta.url).href);
+  const [gltf, extra] = await Promise.all([new GLTFLoader().loadAsync(new URL(`../../models/characters/${def.file}`, import.meta.url).href), loadClips()]);
+  // the retargeted clips join the character's own; a role a clip fills replaces the held-pose stand-in
+  const clips = { ...CLIPS }, clipMeta = {};
+  if (extra) {
+    for (const a of extra.animations) if (!gltf.animations.some((b) => b.name === a.name)) gltf.animations.push(a);
+    const role = (r) => Object.entries(extra.meta).find(([, m]) => m.role === r)?.[0];
+    if (role("jumpStart")) clips.jump = role("jumpStart");
+    if (role("fall")) clips.fall = role("fall");
+    for (const r of ["land", "stairsUp", "stairsDown", "stairsUpRun", "stairsDownRun", "turnL", "turnR", "walkStart", "walkStop"]) if (role(r)) clips[r] = role(r);
+    for (const [k, m] of Object.entries(extra.meta)) clipMeta[k] = m;
+  }
   const t0 = performance.now();
   const tris = mergeSkinned(gltf.scene);
   const measured = { walk: strideSpeed(gltf, "Walk"), run: strideSpeed(gltf, "Run") };
@@ -35,7 +60,7 @@ export async function loadCharacter(name = "hoodie", { height = 1.76 } = {}) {
   poseRest(gltf);                 // setModel sizes the model from its skinned box: in a real pose, not the FBX bind pose
   return {
     gltf,
-    opts: { clips: CLIPS, height, forward: "+z", walkSpeed: speeds.walk, runSpeed: speeds.run, speedUnits: "model", rig: { left: LEG("L"), right: LEG("R"), pelvis: "Body" } },
+    opts: { clips, clipMeta, height, forward: "+z", walkSpeed: speeds.walk, runSpeed: speeds.run, speedUnits: "model", rig: { left: LEG("L"), right: LEG("R"), pelvis: "Body" } },
     info: { name, label: def.label, tris, speeds, measured, mergeMs: +(performance.now() - t0).toFixed(1) },
   };
 }
