@@ -82,13 +82,48 @@ let groundMesh;
     const u5 = positionWorld.xz.sub(vec2(-1500, 0)).div(500), u4 = positionWorld.xz.sub(vec2(-1500, -500)).div(500);
     const col = select(positionWorld.z.lessThan(0), texture(o4, fy(u4)).rgb, texture(o5, fy(u5)).rgb);
     const edge = smoothstep(98, 85, positionWorld.xz.sub(vec2(centre.x, centre.z)).length());
-    m.colorNode = mix(vec3(0.12, 0.14, 0.1), col.mul(0.9), edge);
+    // the 1 m orthophoto alone reads as a flat blue-green blob under trees: lawn tone where it is green, the photo's
+    // detail on top (the streets and the forecourt are real geometry above it)
+    const green = col.g.sub(col.r.add(col.b).mul(0.5)).max(0).mul(6.0).min(1);
+    const lawn = mix(vec3(0.16, 0.2, 0.08), vec3(0.24, 0.27, 0.12), col.g.mul(2.0).min(1));
+    m.colorNode = mix(vec3(0.12, 0.14, 0.1), mix(col.mul(0.75), lawn, green.mul(0.7).add(0.2)), edge);
   } else m.color.set(0x55605a);
   groundMesh = new THREE.Mesh(g, m); groundMesh.receiveShadow = true; groundMesh.name = "ground";
   scene.add(groundMesh);
   const farG = new THREE.Mesh(new THREE.CircleGeometry(5000, 48).rotateX(-Math.PI / 2), new THREE.MeshStandardNodeMaterial({ color: 0x343a2f, roughness: 1 }));
   farG.position.set(centre.x, 28, centre.z); farG.receiveShadow = true;
   scene.add(farG);
+}
+
+// the measured street surfaces (UrbIS, the tiles' surfaces.json) near the chapel: rue de Stalle's setts, the pavements,
+// draped on the DTM, so the photo sheets compare on a real street, not the orthophoto blob
+{
+  const doc = await fetch("../data/tiles/D5/surfaces.json").then((r) => r.json()).catch(() => null);
+  if (doc) {
+    const cls = doc.classes;
+    const byMat = { cobbles: [], paving_concrete: [] };
+    for (const sf of doc.surfaces) {
+      const ring = sf.rings[0];
+      if (!ring.some(([x, z]) => Math.hypot(x - centre.x, z - centre.z) < 95)) continue;
+      const type = cls[sf.c] ?? "";
+      const mat = /sidewalk|path|ramp|median/.test(type) ? "paving_concrete" : "cobbles";
+      const lift = mat === "paving_concrete" ? 0.1 : 0.04;
+      const pts = ring.map(([x, z]) => new THREE.Vector2(x, z)), holes = sf.rings.slice(1).map((h) => h.map(([x, z]) => new THREE.Vector2(x, z)));
+      const tris = THREE.ShapeUtils.triangulateShape(pts, holes);
+      const all = [...pts, ...holes.flat()];
+      for (const t of tris) for (const i of t) { const p = all[i]; byMat[mat].push(p.x, groundAt(p.x, p.y) + lift, p.y); }
+    }
+    for (const [name, arr] of Object.entries(byMat)) {
+      if (!arr.length) continue;
+      const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(arr, 3));
+      const uvs = new Float32Array(arr.length / 3 * 2); for (let i = 0; i < arr.length / 3; i++) { uvs[i * 2] = arr[i * 3]; uvs[i * 2 + 1] = arr[i * 3 + 2]; }
+      g.setAttribute("uv", new THREE.BufferAttribute(uvs, 2)); g.computeVertexNormals();
+      for (let i = 0; i < g.attributes.normal.count; i++) if (g.attributes.normal.getY(i) < 0) g.attributes.normal.setXYZ(i, 0, 1, 0);
+      const m = model.libraryMaterial(name); m.side = THREE.DoubleSide;
+      const mesh = new THREE.Mesh(g, m); mesh.receiveShadow = true; mesh.name = `street-${name}`;
+      scene.add(mesh);
+    }
+  }
 }
 
 // ------------------------------------------------------------------------------------------------ the UrbIS solids the city draws today

@@ -32,7 +32,7 @@ const C = Object.fromEntries(CODES.map((n, i) => [n, i]));
 
 /** Live look (uniforms): gains of the three bakes, the eye adaptation inside, A/B switches */
 export const stalleInLook = {
-  dayGain: uniform(1.0), sunGain: uniform(0.9), nightGain: uniform(0.55), adapt: uniform(1), adaptInside: 5.0, adaptNight: 2.2,
+  dayGain: uniform(0.85), sunGain: uniform(0.75), nightGain: uniform(0.5), adapt: uniform(1), adaptInside: 4.2, adaptNight: 2.0, warm: uniform(new THREE.Color(1.06, 0.97, 0.86)),
   dayOverride: uniform(-1), lightmaps: uniform(1), view: uniform(0),     // view: 0 final, 1 light only, 2 albedo only
 };
 
@@ -78,9 +78,15 @@ function albedoOf(slot, lib) {
   const src = NEW[name] ? NEW[name]() : sourceMaterial(name, lib, { indoor: true });
   let col = src.colorNode ?? vec3(src.color?.r ?? 0.7, src.color?.g ?? 0.7, src.color?.b ?? 0.7);
   if (slot === "wood_frame_white") col = mix(col, lin(0xb8913a), isCode(C.gilt));                    // the retable's gilding
-  if (slot === "wood_frame_dark") col = mix(mix(col, lin(0x8a6238), isCode(C.oak)), lin(0xa58d55), isCode(C.rush));   // oak chairs, rush seats
+  if (slot === "wood_frame_dark") {
+    // oak chairs; rush seats: twisted strands woven in four triangles toward the centre
+    const w = uv(0), q = fract(w.mul(vec2(1, 1)).x.add(w.y).mul(55.0)), r = fract(w.x.sub(w.y).mul(55.0));
+    const weave = mix(lin(0x9c8450), lin(0x6e5a32), smoothstep(0.3, 0.5, min(q, r)).mul(0.6));
+    col = mix(mix(col, lin(0x7a5532), isCode(C.oak)), weave, isCode(C.rush));
+  }
   if (slot === "wood_frame_white") col = mix(col, lin(0xf3e9cf), isCode(C.candle));
-  if (slot === "brick_red_brussels") col = col.mul(0.85);                                            // inner brick: older, sooted
+  if (slot === "brick_red_brussels") col = col.mul(0.85);
+  if (slot === "painted_wood_red") col = lin(0x6a3a24).mul(0.9);                                  // the doors' varnished boards                                            // inner brick: older, sooted
   return col;
 }
 
@@ -91,7 +97,7 @@ function bakedMaterial(slot, kind, maps, lib) {
   let light;
   if (kind === "arch") light = bakedMix(rgbm(texture(maps.sky, uv(1))), rgbm(texture(maps.sun, uv(1))), rgbm(texture(maps.night, uv(1))));
   else light = bakedMix(rgbm(attribute("_lsky", "vec4")), rgbm(attribute("_lsun", "vec4")), rgbm(attribute("_lnight", "vec4")));
-  light = mix(vec3(0.5), light.mul(stalleInLook.adapt), stalleInLook.lightmaps);
+  light = mix(vec3(0.5), light.mul(stalleInLook.adapt).mul(vec3(stalleInLook.warm)), stalleInLook.lightmaps);   // warmer, like the photos
   const alb = albedoOf(slot, lib);
   let col = alb.mul(light);
   // gilding catches the light: a view-dependent highlight on the gilt code

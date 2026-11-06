@@ -57,7 +57,7 @@ def frame_uw(u, w, nu, nw):
 def gnd(u, w): return G(u, w)
 
 # ------------------------------------------------------------------------------------------------ dressings
-def quoins(fr, s, v0, v1, side, d=0.0, alt=(0.28, 0.18), course=0.3, proud=0.02, mat=None):
+def quoins(fr, s, v0, v1, side, d=0.0, alt=(0.28, 0.18), course=0.3, proud=0.008, mat=None):
     """long-and-short dressed quoins on an edge at s (side +1: the stones extend to +s)"""
     if FAR(): return
     mat = STONE if mat is None else mat
@@ -182,7 +182,7 @@ def west_front():
     # the wall's sides (the aisles' outer faces start at u = 0: their west ends are these faces' edges) and top under the copings
     # the window
     gothic_window(fr, 0.0, SC.WWIN_SILL, SC.WWIN_SPRING, SC.WWIN_APEX, SC.WWIN_W, 3,
-                  foils=[(-0.42, 39.93, 0.3, 3), (0.42, 39.93, 0.3, 3)])
+                  foils=SC.WEST_WINDOW["foils"])
     oculus(fr, 0.0, SC.OCULUS_W_H, 0.2, 0.34)
     # the door: chamfered dressed jambs, a lintel, a relieving arch of voussoirs, two boarded leaves (separate node)
     opening_reveal(fr, door, SC.T_WEST, chamfer=0.07)

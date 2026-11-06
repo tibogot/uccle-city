@@ -310,7 +310,7 @@ def foil(cx, cy, r, lobes, rot=math.pi / 2, n=7):
             t = t0 + (t1 - t0) * j / n
             pts.append((C[0] + lr * math.cos(t), C[1] + lr * math.sin(t)))
     return ccw(pts)
-def cusped_lancet(s0, s1, spring, apex, bottom, n=10):
+def cusped_lancet(s0, s1, spring, apex, bottom, n=16):
     """a lancet light with a cusped (trefoiled) head: two sharp cusps project into the arch"""
     w = s1 - s0; sm = (s0 + s1) / 2
     base = pointed(s0, s1, spring, apex, n=n, bottom=bottom)
@@ -319,7 +319,7 @@ def cusped_lancet(s0, s1, spring, apex, bottom, n=10):
     for (x, y) in base:
         if y > spring + 1e-6:
             t = (y - spring) / (apex - spring)
-            pull = 0.2 * w * max(0.0, 1 - abs(t - 0.55) / 0.42) ** 2.2
+            pull = 0.3 * w * max(0.0, 1 - abs(t - 0.5) / 0.4) ** 2.6
             dx = tgt[0] - x; dy = tgt[1] - y; L = math.hypot(dx, dy) or 1
             out.append((x + dx / L * pull, y + dy / L * pull))
         else: out.append((x, y))
@@ -340,23 +340,23 @@ def window_lights(s, sill, spring, apex, w, n_lights, foils=()):
     mull, edge = 0.1, 0.06
     lw = (w - 2 * edge - mull * (n_lights - 1)) / n_lights
     lights = []
-    l_spring = hz(spring) + (0.15 if n_lights > 2 else -0.1)
+    l_spring = hz(spring) - (0.45 if n_lights > 2 else 0.1)          # c00: the lancets' heads at mid-window, big foils above
     l_apex = l_spring + lw * 0.95
     for k in range(n_lights):
         a = s0 + edge + k * (lw + mull)
         lights.append(cusped_lancet(a, a + lw, l_spring, l_apex, hz(sill) + 0.05))
-    inner = offset_loop(outline, -0.07)
+    inner = offset_loop(outline, -0.055)
     for (ds, h, r, lobes) in foils:
         while r > 0.08:
             f = foil(s + ds, hz(h), r, lobes, rot=math.pi / 2 if lobes == 3 else math.pi / 4)
-            if all(inside(p, inner) for p in f) and min(p[1] for p in f) > l_apex + 0.04: break
+            if all(inside(p, inner) for p in f) and min(p[1] for p in f) > l_apex + 0.02: break
             r *= 0.94
         lights.append(f)
     mullions = [s0 + edge + k * (lw + mull) - mull / 2 for k in range(1, n_lights)]
     return outline, lights, l_spring, mullions
 
 # the windows (shared): (name, u or None, wall, s-centre, sill, spring, apex, width, lights, foils)
-WEST_WINDOW = dict(sill=WWIN_SILL, spring=WWIN_SPRING, apex=WWIN_APEX, w=WWIN_W, n=3, foils=[(-0.42, 39.93, 0.3, 3), (0.42, 39.93, 0.3, 3)])
+WEST_WINDOW = dict(sill=WWIN_SILL, spring=WWIN_SPRING, apex=WWIN_APEX, w=WWIN_W, n=3, foils=[(-0.4, 39.62, 0.36, 3), (0.4, 39.62, 0.36, 3)])
 CHOIR_WINDOW = dict(sill=37.4, spring=38.85, apex=39.75, w=1.1, n=2, foils=[(0.0, 39.42, 0.2, 4)])
 
 # ------------------------------------------------------------------------------------------------ mesh + lightmap UV

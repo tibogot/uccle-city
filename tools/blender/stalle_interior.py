@@ -56,8 +56,8 @@ U_W = SC.T_WEST                    # west wall inner face
 U_CA0, U_CA1 = SC.CHOIR_ARCH_U     # choir arch wall
 U_AE = {-1: 10.6, 1: 10.45}        # aisles' east end inner faces
 WALL_TOP, CEIL = 40.3, 40.85       # nave / choir: walls up to the cove, the stucco ceiling's flat (1693)
-AISLE_HI, AISLE_LO = 38.85, 37.0   # the aisles' sloping ceilings (under their lean-to roofs)
-SPRING = 37.0                      # arcade capitals' top
+AISLE_HI, AISLE_LO = 39.08, 37.0   # the aisles' sloping ceilings (under their lean-to roofs, which meet the clerestory at 39.2)
+SPRING = 36.8                      # arcade capitals' top (abaci)
 PIER_R = 0.26
 BAYS = [(SC.RESP_W, SC.COLS_U[0]), (SC.COLS_U[0], SC.COLS_U[1]), (SC.COLS_U[1], SC.COLS_U[2]), (SC.COLS_U[2], U_CA0)]
 CHOIR_ARCH = dict(hw=1.45, spring=37.55, apex=39.85)
@@ -256,7 +256,7 @@ def arcade(side):
         for (a, b) in BAYS:
             ua = a + (0.0 if a == SC.RESP_W else 0.02); ub = b - 0.02
             span = b - a
-            apex = min(38.68, SPRING + 0.66 * span)
+            apex = min(38.98, SPRING + 0.86 * span)          # equilateral pointed arches (interior photo)
             s0, s1 = sorted((S(fr, ua, wn if fr is frN else wa), S(fr, ub, wn if fr is frN else wa)))
             out.append(pointed(s0, s1, hz(SPRING), hz(apex), n=10, bottom=hz(F0 - 0.05)))
         return out
@@ -279,18 +279,21 @@ def arcade(side):
             xs = [p[0] for p in L]; cs = (min(xs) + max(xs)) / 2
             voussoirs(fr, L, cs, sv, 0.2, 0.015, 9 if b - a > 2 else 6)
     # piers: base, round shaft, moulded capital, octagonal abacus
+    KB, K.B = K.B, BP
     for u in SC.COLS_U:
         c = P(u, WC + side * (ARC_N + ARC_A) / 2, OY)
         wbox(c, Vector((1, 0, 0)), Vector((0, 1, 0)), 0.34, 0.34, hz(F0), hz(F0 + 0.18), STONE, C_BASE)
-        lathe(c + Z * hz(F0 + 0.18), [(0.33, 0.0), (0.33, 0.04), (0.31, 0.08), (0.28, 0.12), (PIER_R, 0.16)], 8, STONE, C_BASE, a0=math.pi / 8)
-        lathe(c + Z * hz(F0 + 0.34), [(PIER_R, 0.0), (PIER_R, 36.55 - F0 - 0.34)], 16, STONE, C_PLAIN)
-        lathe(c + Z * hz(36.55), [(PIER_R, 0.0), (PIER_R + 0.03, 0.04), (PIER_R + 0.03, 0.08), (PIER_R + 0.01, 0.1), (0.31, 0.2), (0.34, 0.3)], 16, STONE, C_CAP)
-        lathe(c + Z * hz(36.85), [(0.4, 0.0), (0.42, 0.03), (0.42, 0.15), (0.0, 0.15)], 8, STONE, C_CAP, a0=math.pi / 8)
+        lathe(c + Z * hz(F0 + 0.18), [(0.33, 0.0), (0.335, 0.02), (0.33, 0.045), (0.3, 0.07), (0.29, 0.09), (0.3, 0.11), (0.28, 0.14), (PIER_R, 0.16)], 40, STONE, C_BASE)
+        lathe(c + Z * hz(F0 + 0.34), [(PIER_R, 0.0), (PIER_R, 0.6), (PIER_R, 1.2), (PIER_R * 0.985, 36.4 - F0 - 0.34)], 40, STONE, C_PLAIN)
+        lathe(c + Z * hz(36.4), [(PIER_R * 0.985, 0.0), (PIER_R + 0.03, 0.025), (PIER_R + 0.035, 0.05), (PIER_R + 0.02, 0.07), (PIER_R + 0.01, 0.09),
+                                 (0.29, 0.15), (0.32, 0.21), (0.345, 0.25), (0.355, 0.28)], 40, STONE, C_CAP)
+        lathe(c + Z * hz(36.68), [(0.4, 0.0), (0.42, 0.02), (0.42, 0.1), (0.44, 0.12), (0.0, 0.12)], 8, STONE, C_CAP, a0=math.pi / 8)
+    K.B = KB
     # responds: impost mouldings where the end arches spring from the walls
     for uu, sg in ((SC.RESP_W, 1), (U_CA0, -1)):
         for fr, ww in ((frN, wn), (frA, wa)):
             s = S(fr, uu, ww)
-            fbox(fr, min(s, s + sg * 0.32 * (1 if S(fr, uu + 1, ww) > s else -1)), max(s, s + sg * 0.32 * (1 if S(fr, uu + 1, ww) > s else -1)), hz(36.85), hz(37.0), 0.0, 0.08, STONE, C_CAP)
+            fbox(fr, min(s, s + sg * 0.32 * (1 if S(fr, uu + 1, ww) > s else -1)), max(s, s + sg * 0.32 * (1 if S(fr, uu + 1, ww) > s else -1)), hz(36.68), hz(36.8), 0.0, 0.08, STONE, C_CAP)
 
 def aisle(side):
     w_out = WC + side * AI
@@ -462,11 +465,12 @@ def retable():
             [(0.0, 0.0), (0.04, 0.0), (0.05, 0.02), (0.05, 0.07), (0.0, 0.08)], WHITE, C_GILT, d0=0.05)
     # the sunburst behind the Virgin (gilt rays)
     cR = fr.p(0.0, m0 + 1.1, -0.17)
-    for k in range(17):
-        a = math.pi * (0.1 + 0.8 * k / 16)
+    for k in range(25):
+        a = math.pi * (-0.15 + 1.3 * k / 24)
         d_ = fr.U * math.cos(a) + Z * math.sin(a)
-        L = 0.3 + 0.08 * (k % 2)
-        box(cR + d_ * 0.18, d_, fr.N.cross(d_), fr.N, 0, L, -0.012, 0.012, 0, 0.01, WHITE, C_GILT)
+        L = 0.24 + 0.1 * (k % 2)
+        tri_ = [cR + d_ * 0.2 + fr.N.cross(d_) * 0.025, cR + d_ * 0.2 - fr.N.cross(d_) * 0.025, cR + d_ * (0.2 + L)]
+        face_dir([p_ + fr.N * 0.012 for p_ in tri_], fr.N, WHITE, C_GILT)
     # the Virgin (polychrome) on a gilt cloud base
     lathe(fr.p(0.0, m0 + 0.25, -0.05), [(0.0, 0.0), (0.18, 0.0), (0.2, 0.06), (0.16, 0.12), (0.0, 0.13)], 12, WHITE, C_GILT)
     figure(fr.p(0.0, m0 + 0.38, -0.05), fr.N, fr.U, 1.05, VIRGIN, crown=True)
@@ -475,7 +479,9 @@ def retable():
     for sg in (-1, 1):
         s = sg * 0.66
         fbox(fr, s - 0.13, s + 0.13, m0, m0 + 0.32, 0.05, 0.36, WHITE, C_PLAIN, skip=("back",))
-        twisted_column(fr.p(s, 0.0, 0.2), m0 + 0.32 + OY, m0 + 1.82 + OY, 0.085)
+        twisted_column(fr.p(s, 0.0, 0.2), m0 + 0.32 + OY, m0 + 1.82 + OY, 0.09, turns=4.0, segs=12, rings=40)
+        vine = [fr.p(s, 0.0, 0.2) + Vector((math.cos(t) * 0.115, math.sin(t) * 0.115, m0 + 0.36 + 1.42 * t / (8 * math.pi))) for t in [8 * math.pi * k / 80 for k in range(81)]]
+        sweep3d(vine, [(-0.012, -0.012), (0.012, -0.012), (0.012, 0.012), (-0.012, 0.012), (-0.012, -0.012)], Z, WHITE, C_GILT, caps=False)
         lathe(fr.p(s, m0 + 1.82, 0.2), [(0.09, 0.0), (0.13, 0.08), (0.15, 0.13), (0.15, 0.17), (0.0, 0.17)], 10, WHITE, C_GILT)
         # carved side scrolls (ailerons)
         for k in range(6):
@@ -530,17 +536,36 @@ def hatchments():
         strip2d(fr, offset_loop(dia, 0.04), 0.065, 0.0, POLY, C_JOINT, inward=False)
 
 def chair(c, fwd):
-    """a church chair: oak, rush seat, ladder back"""
+    """a Flemish church chair: four turned legs (the back ones run up as uprights with finials), stretchers, a rush seat
+    on a rail frame, a ladder back of three curved slats, a book shelf rail behind"""
     side = fwd.cross(Z).normalized()
+    up = Z
+    def leg(p, h, r=0.016):
+        lathe_axis(p, up, side, [(r, 0.0), (r * 1.15, 0.03), (r * 0.9, 0.08), (r, h * 0.5), (r * 1.2, h * 0.52), (r, h * 0.56), (r * 0.9, h)], 6, WOOD, C_OAK)
     for sx in (-1, 1):
-        for sf in (-1, 1):
-            p = c + side * (sx * 0.19) + fwd * (sf * 0.17)
-            top = 0.86 if sf < 0 else 0.44
-            box(p, side, fwd, Z, -0.018, 0.018, -0.018, 0.018, 0.0, top, WOOD, C_OAK, skip=("bottom",))
-    box(c + Z * 0.44, side, fwd, Z, -0.21, 0.21, -0.2, 0.2, 0.0, 0.035, WOOD, C_RUSH, skip=("bottom",))
-    for h in (0.62, 0.78):
-        box(c - fwd * 0.17 + Z * h, side, fwd, Z, -0.18, 0.18, -0.012, 0.012, 0.0, 0.05, WOOD, C_OAK)
-    box(c + fwd * 0.17 + Z * 0.15, side, fwd, Z, -0.18, 0.18, -0.01, 0.01, 0.0, 0.025, WOOD, C_OAK)
+        leg(c + side * (sx * 0.19) + fwd * 0.17, 0.44)
+        p = c + side * (sx * 0.19) - fwd * 0.17
+        leg(p, 0.9)
+        lathe_axis(p + up * 0.9, up, side, [(0.0, 0.0), (0.02, 0.0), (0.024, 0.02), (0.0, 0.05)], 6, WOOD, C_OAK)
+        rod(p + up * 0.18, p + up * 0.18 + fwd * 0.34, 0.009, WOOD, C_OAK, 5)
+    for f in (-0.17, 0.17):
+        rod(c + fwd * f + up * 0.2 - side * 0.19, c + fwd * f + up * 0.2 + side * 0.19, 0.009, WOOD, C_OAK, 5)
+    # seat: rail frame + woven rush (domed slightly)
+    for sx in (-1, 1):
+        box(c + side * (sx * 0.19) + up * 0.42, fwd, side, up, -0.19, 0.19, -0.014, 0.014, 0.0, 0.03, WOOD, C_OAK)
+    for f in (-0.17, 0.17):
+        box(c + fwd * f + up * 0.42, side, fwd, up, -0.19, 0.19, -0.014, 0.014, 0.0, 0.03, WOOD, C_OAK)
+    K.B.new_group()
+    g = [[c + side * (x * 0.18) + fwd * (y * 0.16) + up * (0.445 + 0.012 * (1 - x * x) * (1 - y * y)) for x in (-1, -0.5, 0, 0.5, 1)] for y in (-1, -0.5, 0, 0.5, 1)]
+    for j in range(4):
+        for i in range(4):
+            face_dir([g[j][i], g[j][i + 1], g[j + 1][i + 1], g[j + 1][i]], up, WOOD, C_RUSH)
+    # ladder back: three slats curved backwards
+    for h in (0.58, 0.7, 0.82):
+        pts = [c - fwd * (0.17 + 0.025 * (1 - (x / 0.19) ** 2)) + side * x + up * h for x in (-0.19, -0.1, 0.0, 0.1, 0.19)]
+        sweep3d(pts, [(-0.008, 0.0), (0.008, 0.0), (0.008, 0.055), (-0.008, 0.055), (-0.008, 0.0)], up, WOOD, C_OAK, caps=True)
+    # the shelf rail behind (for the next row's books)
+    box(c - fwd * 0.2 + up * 0.62, side, fwd, up, -0.19, 0.19, -0.03, 0.0, 0.0, 0.02, WOOD, C_OAK)
 
 def furniture():
     fwd = Vector((1, 0, 0))                       # chairs face the altar (east = +u)
@@ -777,7 +802,9 @@ if BAKE:
     sun_o = bpy.data.objects.new("sun", sun_d); scn.collection.objects.link(sun_o)
     sun_o.rotation_euler = (-Vector((su, -sw, to_sun_city.y))).to_track_quat("-Z", "Y").to_euler()
     def set_mode(mode):
-        for lo in lamps: lo.hide_render = mode != "night"
+        for lo in lamps:
+            lo.hide_render = not (mode == "night" or (mode == "sky" and lo.name.startswith("spot")))
+            if lo.name.startswith("spot"): lo.data.energy = 45.0 if mode == "sky" else 90.0
         sun_o.hide_render = mode not in ("sun", "day")
         nt = scn.world.node_tree
         for n in list(nt.nodes):
