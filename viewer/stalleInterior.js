@@ -67,7 +67,7 @@ const NEW = {
     return { colorNode: mix(mix(white, dark, step(0.5, black)), lin(0x8f8a80), joint.mul(0.6)) };
   },
   polychrome() {
-    const col = lin(0x6e2b20).mul(isCode(C.robe)).add(lin(0x2a3552).mul(isCode(C.mantle))).add(lin(0xd8b49c).mul(isCode(C.skin)))
+    const col = lin(0xd9cdb6).mul(isCode(C.robe)).add(lin(0x7a2f22).mul(isCode(C.mantle))).add(lin(0xd8b49c).mul(isCode(C.skin)))
       .add(lin(0x121212).mul(isCode(C.hatch))).add(lin(0xb08a3a).mul(isCode(C.joint)))
       .add(lin(0x8a8378).mul(isCode(C.plain)));
     return { colorNode: col };
@@ -90,7 +90,7 @@ function bakedMaterial(slot, kind, maps, lib) {
   m.name = `stalle interior ${slot} (${kind})`;
   let light;
   if (kind === "arch") light = bakedMix(rgbm(texture(maps.sky, uv(1))), rgbm(texture(maps.sun, uv(1))), rgbm(texture(maps.night, uv(1))));
-  else light = bakedMix(attribute("_lsky", "vec3"), attribute("_lsun", "vec3"), attribute("_lnight", "vec3"));
+  else light = bakedMix(rgbm(attribute("_lsky", "vec4")), rgbm(attribute("_lsun", "vec4")), rgbm(attribute("_lnight", "vec4")));
   light = mix(vec3(0.5), light.mul(stalleInLook.adapt), stalleInLook.lightmaps);
   const alb = albedoOf(slot, lib);
   let col = alb.mul(light);

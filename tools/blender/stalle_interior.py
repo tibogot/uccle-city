@@ -361,7 +361,9 @@ def nave_ceiling():
         pa, pb = P(a[0], a[1], CEIL - 0.005), P(b[0], b[1], CEIL - 0.005)
         sweep3d([pa, pb], [(-0.05, 0.0), (-0.04, -0.03), (0.0, -0.045), (0.04, -0.03), (0.05, 0.0)], Z, RENDER, C_COVE, caps=False)
     # a rose in the middle (for the chandelier's hook)
-    lathe(P(SC.CHAND["u"], WC, CEIL - 0.0), [(0.32, 0.0), (0.3, -0.03), (0.22, -0.05), (0.12, -0.08), (0.04, -0.1), (0.0, -0.1)], 16, RENDER, C_COVE)
+    KB, K.B = K.B, BP                         # small and round: per-corner light
+    lathe(P(SC.CHAND["u"], WC, CEIL - 0.1), [(0.0, 0.0), (0.04, 0.0), (0.12, 0.02), (0.22, 0.05), (0.3, 0.07), (0.32, 0.1)], 16, RENDER, C_COVE)
+    K.B = KB
 
 def choir():
     # the choir arch wall: nave face (u = U_CA0) and choir face (u = U_CA1), the pointed arch between
@@ -678,10 +680,27 @@ for name in SLOTS:
     bsdf.inputs["Roughness"].default_value = 0.85
 ob_arch, ntri_arch, per_arch, _ = SC.make_object(scn, mats, SLOTS, "Arch", BA, 0.0, 1.0, LM, thin_limit=0.0)
 ob_props, ntri_props, per_props, _ = SC.make_object(scn, mats, SLOTS, "Props", BP, 0, 1, LM, smart=False)
+
+def densify(o, maxlen=0.3):
+    """per-corner light needs corners: split the props' long edges (the retable's panels, the altar) to <= maxlen"""
+    me = o.data
+    for _ in range(4):
+        bm = bmesh.new(); bm.from_mesh(me)
+        long = [e for e in bm.edges if e.calc_length() > maxlen]
+        if not long: bm.free(); break
+        bmesh.ops.subdivide_edges(bm, edges=long, cuts=1, use_grid_fill=True)
+        bmesh.ops.triangulate(bm, faces=bm.faces[:])
+        bm.to_mesh(me); bm.free(); me.validate()
+    me.update()
+    n = sum(len(p.vertices) - 2 for p in me.polygons)
+    print(f"  {o.name}: densified to {n} triangles (edges <= {maxlen} m)")
+    return n
+ntri_props = densify(ob_props, 0.4)
 ob_glass, ntri_glass, _, _ = SC.make_object(scn, mats, SLOTS, "Glass", BG, 0, 1, LM, smart=False)
 door_objs = {}
 for name, (b, hinge) in DOORS.items():
     o, n_, _, _ = SC.make_object(scn, mats, SLOTS, name, b, 0, 1, LM, smart=False)
+    densify(o, 0.35)
     o.data.transform(Matrix.Translation(-hinge)); o.location = hinge
     door_objs[name] = o
 # collider: plain triangles, its own material
@@ -855,9 +874,37 @@ if BAKE:
         print(f"bake {mode}: {time.time() - t:.1f}s")
     for k, (u, w, h) in enumerate(PROBES):
         probe_data.append({"pos": [u, h - OY, WC + w], "sky": probe_vals["sky"][k], "sun": probe_vals["sun"][k], "night": probe_vals["night"][k]})
+    def smooth_corners(me, name, iters=3):
+        """per-corner bake noise -> one value per (vertex, normal group), then a few Laplacian passes over the faces'
+        corners (each face's corners share its normal: light does not bleed round sharp edges)"""
+        ca = me.color_attributes[name]
+        n = len(me.loops)
+        d = np.zeros(n * 4, dtype=np.float32); ca.data.foreach_get("color", d); val = d.reshape(-1, 4).astype(np.float64)
+        keys = np.zeros(n, dtype=np.int64)
+        kmap = {}
+        for f in me.polygons:
+            nq = (round(f.normal.x * 3), round(f.normal.y * 3), round(f.normal.z * 3))
+            for li in f.loop_indices:
+                keys[li] = kmap.setdefault((me.loops[li].vertex_index, nq), len(kmap))
+        K_ = len(kmap)
+        acc = np.zeros((K_, 4)); cnt = np.bincount(keys, minlength=K_).astype(np.float64)[:, None]
+        np.add.at(acc, keys, val); kv = acc / np.maximum(cnt, 1)
+        pa, pb = [], []
+        for f in me.polygons:
+            ks = [keys[li] for li in f.loop_indices]
+            for i in range(len(ks)):
+                pa.append(ks[i]); pb.append(ks[(i + 1) % len(ks)]); pa.append(ks[(i + 1) % len(ks)]); pb.append(ks[i])
+        pa = np.array(pa); pb = np.array(pb)
+        deg = np.bincount(pa, minlength=K_).astype(np.float64)[:, None]
+        for _ in range(iters):
+            nb = np.zeros_like(kv); np.add.at(nb, pa, kv[pb])
+            kv = np.where(deg > 0, 0.5 * kv + 0.5 * nb / np.maximum(deg, 1), kv)
+        ca.data.foreach_set("color", kv[keys].astype(np.float32).ravel())
+
     for ob in vl_objs:
         me = ob.data
         for mode in ("sky", "sun", "night"):
+            smooth_corners(me, "vl_" + mode)
             ca = me.color_attributes["vl_" + mode]
             d = np.zeros(len(me.loops) * 4, dtype=np.float32); ca.data.foreach_get("color", d)
             at = me.attributes.new("_L" + mode.upper(), "FLOAT_VECTOR", "CORNER")

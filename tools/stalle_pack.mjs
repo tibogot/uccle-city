@@ -1,4 +1,4 @@
-﻿// PACK THE CHAPELLE DE STALLE GLBs (exterior: tools/blender/stalle.py; the interior cell: tools/blender/stalle_interior.py): Blender writes float everywhere. Here:
+// PACK THE CHAPELLE DE STALLE GLBs (exterior: tools/blender/stalle.py; the interior cell: tools/blender/stalle_interior.py): Blender writes float everywhere. Here:
 //   COLOR_0     float vec4 -> uint8 vec4 normalized (the per-face code in .r)
 //   TEXCOORD_1  float vec2 -> uint16 vec2 normalized (the AO lightmap UV, 0..1; KHR_mesh_quantization)
 // then every buffer view is meshopt-encoded (EXT_meshopt_compression; three's MeshoptDecoder decodes it in workers).
@@ -113,6 +113,16 @@ for (const mesh of json.meshes) for (const prim of mesh.primitives) {
       if (name === "COLOR_0" && acc.componentType === 5126) {
         const n = SIZE[acc.type], f = floatsOf(acc), out = new Uint8Array(acc.count * 4);
         for (let i = 0; i < acc.count; i++) for (let k = 0; k < 4; k++) out[i * 4 + k] = Math.round(Math.min(1, Math.max(0, k < n ? f[i * n + k] : 1)) * 255);
+        viewData[acc.bufferView] = out; Object.assign(acc, { componentType: 5121, normalized: true, type: "VEC4", byteOffset: 0 }); delete acc.min; delete acc.max;
+      } else if (/^_L(SKY|SUN|NIGHT)$/.test(name) && acc.componentType === 5126) {
+        // the interior's per-corner baked light: float vec3 -> uint8 vec4 normalized RGBM, gamma 2 (lin = (rgb * a * 4)^2)
+        const f = floatsOf(acc), out = new Uint8Array(acc.count * 4);
+        for (let i = 0; i < acc.count; i++) {
+          const v = [0, 1, 2].map((k) => Math.sqrt(Math.max(0, f[i * 3 + k])) / 4);
+          const m = Math.min(1, Math.max(1 / 255, Math.ceil(Math.max(...v) * 255) / 255));
+          for (let k = 0; k < 3; k++) out[i * 4 + k] = Math.round(Math.min(1, v[k] / m) * 255);
+          out[i * 4 + 3] = Math.round(m * 255);
+        }
         viewData[acc.bufferView] = out; Object.assign(acc, { componentType: 5121, normalized: true, type: "VEC4", byteOffset: 0 }); delete acc.min; delete acc.max;
       } else if (name === "POSITION" || name === "TEXCOORD_0") {
         // meshopt EXPONENTIAL filter: float kept, mantissa trimmed (positions 4 mm at 130 m; world-metre UVs 1 mm at 130 m)

@@ -34,7 +34,9 @@ VIEWS = {
         ((1981, 3438), (1.0, WC - 4.35, 35.88)),
     ], probes=[((1799, 3304), (WC - 4.35, 36.55, "north aisle oculus west of the door")), ((1950, 2490), (WC - 2.25, 39.72, "clerestory oculus 1")),
                ((1484, 2575), (WC - 2.25, 39.72, "clerestory oculus 2")), ((1127, 2629), (WC - 2.25, 39.72, "clerestory oculus 3")),
-               ((1661, 3260), (WC - 4.35, 36.9, "T anchor"))]),
+               ((1661, 3260), (WC - 4.35, 36.9, "T anchor"))],
+         hprobes=[((1480, 2330), (5.3, WC - 2.25, "nave eave line above clerestory oculus 2")), ((1480, 2700), (5.3, WC - 2.25, "aisle roof top at the clerestory (oculus 2)")),
+                  ((1950, 2380), (2.8, WC - 2.25, "nave eave above oculus 1")), ((1950, 2650), (2.8, WC - 2.25, "aisle roof top at oculus 1"))]),
     "heritage_P01.jpg": dict(name="north side + chevet (inventory)", credit="Reference only: Inventaire du patrimoine architectural, urban.brussels (no free licence)", pts=[
         ((1278, 232), (0.0, WC, 44.05)), ((1545, 627), (0.0, WC - 4.35, 37.35)), ((865, 642), (11.2, WC - 4.35, 37.35)),
         ((1353, 677), (3.95, WC - 4.35, 36.78)), ((1301, 677), (4.9, WC - 4.35, 36.78)), ((1301, 846), (4.9, WC - 4.35, 34.62)),
@@ -50,7 +52,7 @@ VIEWS = {
 }
 
 
-def solve(img_wh, pts_all, shift=True, frange=(0.5, 6.0), probes=()):
+def solve(img_wh, pts_all, shift=True, frange=(0.5, 6.0), probes=(), hprobes=()):
     W, H = img_wh
     pts = pts_all
     obj = np.array([[u, -w, h - 30.0] for _, (u, w, h) in pts], np.float64)
@@ -83,6 +85,12 @@ def solve(img_wh, pts_all, shift=True, frange=(0.5, 6.0), probes=()):
         pr, _ = cv2.projectPoints(o, rv, tv, Kc, None)
         d = np.sqrt(((pr.reshape(-1, 2) - np.array(px_)) ** 2).sum(1))
         print(f"   probe {label}: u = {us[d.argmin()]:.2f} (miss {d.min():.0f} px)")
+    for (px_, (u, w, label)) in hprobes:
+        hs = np.arange(33.0, 48.0, 0.01)
+        o = np.array([[u, -w, h - 30.0] for h in hs])
+        pr, _ = cv2.projectPoints(o, rv, tv, Kc, None)
+        d = np.sqrt(((pr.reshape(-1, 2) - np.array(px_)) ** 2).sum(1))
+        print(f"   h-probe {label}: h = {hs[d.argmin()]:.2f} (miss {d.min():.0f} px)")
     to_uwh = lambda p: [round(float(p[0]), 2), round(float(-p[1]), 2), round(float(p[2] + 30.0), 2)]
     return dict(pos=to_uwh(cam), target=to_uwh(tgt), fov=round(fov, 2), cy=round(float(cy / H), 4), f_px=round(float(f), 1), err_px=[round(float(x), 1) for x in err], mean_err=round(float(e), 1))
 
@@ -95,7 +103,7 @@ def main():
         p = REFS / fn
         if not p.exists(): print("missing", p); continue
         im = cv2.imread(str(p)); H, W = im.shape[:2]
-        r = solve((W, H), v["pts"], v.get("shift", True), v.get("frange", (0.5, 6.0)), v.get("probes", ()))
+        r = solve((W, H), v["pts"], v.get("shift", True), v.get("frange", (0.5, 6.0)), v.get("probes", ()), v.get("hprobes", ()))
         out[v["name"]] = dict(file=fn, credit=v["credit"], size=[W, H], **r)
         print(fn, r)
     json.dump(out, open(old, "w"), indent=1)

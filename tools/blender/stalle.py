@@ -471,7 +471,7 @@ def downpipe(top, bottom_h, r=0.045):
     lathe_axis(b, Z, Vector((1, 0, 0)), [(r * 1.5, 0.0), (r * 1.5, 0.12), (r, 0.18)], 8, ZINC, C_GUTTER)
 
 def roofs():
-    th = 0.12; ov = 0.28
+    th = 0.12; ov = 0.16                                    # c05's pose: the nave's eaves at 40.0-40.7 over the clerestory
     ridge = SC.RIDGE; pit = SC.PITCH
     ew = NW + ov; eh = ridge - ew * pit                     # nave eave line (overhang)
     ua = 14.55                                              # the ridge's east end: the apse hip's apex

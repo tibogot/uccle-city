@@ -99,6 +99,7 @@ export async function addStalle({ scene, updaters, hide, world, manifest, log, c
       const p = new THREE.Vector3(), floorY = st.cell.info.levels_taw.floor + 1;
       if (hf) hf.height = (x, z) => (st.cell && st.shown && st.cell.contains(p.set(x, floorY, z), -0.3) ? -1e4 : orig(x, z));
       third.tp.body.setVariant(st.cell.probes.variant(third.tp.body));
+      third.tp.body.root.traverse((o) => o.layers.enable(mod.INTERIOR_LAYER));      // drawn when the portal seals the city
       st.hooked = third; st.bvh = bvh; st.hf = hf; st.hfOrig = orig;
     }
     function unhook() {
