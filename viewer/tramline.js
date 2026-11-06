@@ -253,8 +253,9 @@ export async function createTramLine(url, scene, ground) {
       if (tt < st[i][1]) break;
       if (tt <= dep0) { st8.d = d0; break; }                         // standing at stop i (GTFS: never, arr = dep)
       if (tt <= arr1) {
-        const hop = Math.max(1, arr1 - dep0), dw = dwellOf(hop), te = tt - dep0;
-        if (te < dw) { st8.d = d0; st8.doors = doorAt(te, dw); st8.stop = i; }
+        // the dwell never squeezes the run below what ACC allows (2 * sqrt(D / ACC)): no smoothstep fallback, no > ACC
+        const hop = Math.max(1, arr1 - dep0), dw = Math.max(0, Math.min(dwellOf(hop), hop - 2 * Math.sqrt(Math.max(0, d1 - d0) / ACC) - 2)), te = tt - dep0;
+        if (te < dw) { st8.d = d0; st8.doors = dw >= 6 ? doorAt(te, dw) : 0; st8.stop = i; }
         else { st8.d = d0 + travel(d1 - d0, hop - dw, te - dw); st8.brake = mo.brake; }
         break;
       }

@@ -482,7 +482,7 @@ def side_disp(mb, xa, xb):
     """Side destination display at the top of the suspended module's window, behind the glass; UV 0..1."""
     z0, z1 = 2.27, 2.47
     for side in (1, -1):
-        y = side * (HW - 0.036)
+        y = side * (HW - 0.027)                       # (just in front of the glass: the far LODs' glass is opaque)
         uv = [(0, 0), (1, 0), (1, 1), (0, 1)] if side > 0 else [(1, 0), (0, 0), (0, 1), (1, 1)]
         idx = [mb.vert((xa, y, z0)), mb.vert((xb, y, z0)), mb.vert((xb, y, z1)), mb.vert((xa, y, z1))]
         pts = [Vector(mb.v[i]) for i in idx]

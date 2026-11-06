@@ -32,7 +32,7 @@ export { tramPose, headsignText };
 /** smooth LOD: half-width of the cross-fade band at each switch (a share of its distance), the far fade-out (m) */
 const LOD_BANDS = [0.12, 0.08], FADE_END = 150;
 export const TRAM_LODS = [
-  { until: 60 },
+  { until: 90 },
   { until: 240, src: "_mid", target: { Cab: 3200, Susp: 1500, Centre: 700, Bellows: 300, Panto: 300, Bogie: 0 } },
   { until: 1800, src: "_far", target: { Cab: 520, Susp: 130, Centre: 180, Bellows: 60, Panto: 0, Bogie: 0 } },
 ];
@@ -250,7 +250,10 @@ function makeMaterial(sign, aoTex, layout) {
   const grime = mix(float(0.80), float(1.0), smoothstep(0.25, 1.15, yLocal)).mul(tramLook.dirt).add(float(1).sub(tramLook.dirt));
   const base = uCol.element(slot);
   const lit = mix(float(1), ao, aoK.mul(0.3));                             // a little of the AO on the direct light too
-  m.colorNode = base.mul(select(exterior, grime, float(1))).mul(lit);
+  // LOD1-2 glass: opaque, so it fakes what LOD0's see-through glass shows at that range (seats and lining low, the
+  // far windows' daylight high), else the windows go black at the LOD switch (checked at 68 m, 2026-11-06)
+  const farGlass = mix(vec3(0.11, 0.10, 0.10), vec3(0.42, 0.46, 0.50), smoothstep(1.55, 2.35, yLocal));
+  m.colorNode = select(is("GlassFar"), farGlass, base.mul(select(exterior, grime, float(1))).mul(lit));
   m.roughnessNode = rmae.x.add(select(exterior, float(1).sub(grime).mul(0.6), float(0)));
   m.metalnessNode = rmae.y;
   m.aoNode = mix(float(1), ao, aoK);
