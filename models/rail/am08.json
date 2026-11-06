@@ -43,13 +43,13 @@
   52.61
  ],
  "tris": {
-  "EndCar": 24839,
-  "MidCar": 20890,
+  "EndCar": 24836,
+  "MidCar": 20892,
   "Bogie": 5316,
   "Gangway": 396,
   "Panto": 476,
-  "EndCar_far": 4778,
-  "MidCar_far": 2244,
+  "EndCar_far": 6288,
+  "MidCar_far": 3476,
   "Bogie_far": 1340
  },
  "measured": "length over couplers 79.91 m, 3 cars B-B + 2-2 + B-B, standard gauge (loco-info.com; SNCB)",

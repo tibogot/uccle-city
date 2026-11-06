@@ -13,7 +13,7 @@
 // a grade change), bogies tangent to the track, gangways on the bisector. createTrainFleet() draws any number of units
 // with InstancedMeshes per piece and LOD, dithered LOD cross-fades and a far fade-out (per-instance, aInst.w).
 import * as THREE from "three/webgpu";
-import { attribute, float, vec3, vec4, mix, smoothstep, clamp, step, uniform, uniformArray, color, positionLocal, mrt, positionView } from "three/tsl";
+import { attribute, fract, float, vec3, vec4, mix, smoothstep, clamp, step, uniform, uniformArray, color, positionLocal, mrt, positionView } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { env } from "../lighting.js";
@@ -24,7 +24,7 @@ export const TRAIN_LODS = [
   { until: 450, src: "_far" },
   { until: 2400, src: "_far", ratio: 0.35 },
 ];
-const LOD_BANDS = [0.12, 0.1], FADE_END = 250;
+const LOD_BANDS = [0.08, 0.1], FADE_END = 250;
 export const PIECES = ["EndCar", "MidCar", "Bogie", "Gangway", "Panto"];
 const PER_UNIT = { EndCar: 2, MidCar: 1, Bogie: 6, Gangway: 2, Panto: 1 };
 
@@ -133,7 +133,7 @@ function makeMaterial() {
   const head = lampW.mul(lead).mul(mix(float(2.0), float(12.0), night));
   const tail = lampR.mul(float(1).sub(lead)).mul(mix(float(1.5), float(6.0), night));
   const saloon = glass.mul(night).mul(trainLook.interior).mul(0.2).mul(smoothstep(1.4, 2.9, y));   // ceiling LEDs: brighter toward the top of the glass
-  const led = disp.mul(lead).mul(mix(float(0.6), float(1.4), night));
+  const led = disp.mul(lead).mul(mix(float(0.35), float(0.9), night)).mul(step(0.45, fract(positionLocal.z.mul(9.0))).mul(0.6).add(0.4));   // LED rows, dim by day
   m.emissiveNode = vec3(head.mul(trainLook.headlights)).mul(color(1.0, 0.96, 0.88))
     .add(color(1.0, 0.05, 0.03).mul(tail.mul(trainLook.headlights)))
     .add(color(1.0, 0.85, 0.65).mul(saloon))

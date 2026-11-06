@@ -125,8 +125,7 @@ def body(length, front_kind, rear_kind, doors, windows, detail=2):
         dense += [a + (b - a) * k / n for k in range(n)]
     dense.append(xs[-1])
     ring = ring_full()
-    if detail == 0:
-        ring = [p for i, p in enumerate(ring) if i % 2 == 0 or abs(p[1] - WIN_Z[0]) < 1e-3 or abs(p[1] - WIN_Z[1]) < 1e-3]
+    # (the far body keeps the full profile: the same shading as LOD0, so the dithered hand-over does not show on the paint)
     rows = []
     for x in dense:
         rows.append([bm.verts.new((x, y, z)) for y, z in ring])
@@ -174,7 +173,7 @@ def body(length, front_kind, rear_kind, doors, windows, detail=2):
                 elif c.z < 1.05: mat = S["metal_dark"] if ay < 0.72 and nx.x > 0.5 else S["paint_grey"]
                 elif c.z < 1.55: mat = S["paint_cab"] if ay < 0.74 and nx.x > 0.5 else S["paint_grey"]
                 elif c.z < 1.72: mat = S["paint_cab"]
-                elif c.z < 3.95 and ay < 0.98 and nx.x > 0.25:
+                elif c.z < 3.95 and ay < 0.98 - max(0.0, c.z - 3.4) * 0.75 and nx.x > 0.25:   # the visor's top corners rounded
                     if 1.86 <= c.z < 3.05 and ay < 0.88: mat = S["glass"]
                     elif 3.15 <= c.z < 3.33 and ay < 0.6: mat = S["display"]
                     else: mat = S["rubber"]
@@ -335,7 +334,7 @@ def interior(bm, length, front_kind):
             box(bm, (x + (0.2 if k % 2 else -0.2), y, 1.75), (0.08, 0.44, 0.60), S["interior"])
         x += 0.9; k += 1
     if front_kind == "nose":
-        box(bm, (xf + 0.05, 0, 2.2), (0.06, 2.7, 2.2), S["paint_grey"])   # the cab back wall
+        box(bm, (xf + 0.05, 0, 2.2), (0.06, 2.7, 2.2), S["rubber"])        # the cab back wall (dark: the windscreen reads as dark glass)
 
 
 def helix(bm, c, r, wire, turns, h, mat, n=28, sides=5):
