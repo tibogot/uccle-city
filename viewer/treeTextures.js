@@ -113,10 +113,10 @@ export function scanBark({ scans, target, hueK = 0.5, species, normalK = 1 }) {
       // the old bark: olive-brown plates still on in big zones, more of them low down (as the procedural plane bark);
       // the plates follow the SCAN's own darker flakes (its luminance under its mean), so their edges are the scan's
       const sm = scans[0].meta.mean_albedo_linear, lumN = dot(A.col, vec3(0.2126, 0.7152, 0.0722)).div(lum(sm));
-      col = col.mul(pow(max(lumN, 0.05), 0.7));                               // more of the scan's own contrast
+      col = col.mul(pow(max(lumN, 0.05), 0.5));                               // more of the scan's own contrast
       const zone = smoothstep(-0.25, 0.2, mx_noise_float(p.mul(vec3(1.3, 0.7, 1.3)).add(41.0)).add(smoothstep(6.0, 1.0, p.y).mul(0.4))).mul(smoothstep(1.5, 0.5, level));
       const flake = smoothstep(1.04, 0.9, lumN.add(mx_noise_float(p.mul(9.0)).mul(0.06)));
-      col = mix(col, col.mul(vec3(0.42, 0.44, 0.26)), zone.mul(flake).mul(0.85));
+      col = mix(col, col.mul(vec3(0.6, 0.64, 0.4)), zone.mul(flake).mul(0.75));
     }
     if (scans[1]) {
       // a second scan for the foot (the plane: the old, dark, flaking bark of old trees; the beech: a mossy, algae-green
@@ -124,7 +124,7 @@ export function scanBark({ scans, target, hueK = 0.5, species, normalK = 1 }) {
       const B = triplanar(scans[1], p, n, scans[1].meta.size_m);
       const top = species === "plane" ? 2.4 : 1.6;
       const foot = smoothstep(top, top - 1.4, p.y.add(mx_noise_float(p.mul(vec3(3.0, 1.2, 3.0))).mul(0.6))).mul(smoothstep(0.5, -0.5, level).mul(2).min(1));
-      col = mix(col, B.col.mul(grade(scans[1])).mul(species === "plane" ? 0.5 : 0.8), foot);
+      col = mix(col, B.col.mul(grade(scans[1])).mul(species === "plane" ? 0.75 : 0.85), foot);
       rough = mix(rough, B.rough, foot); ao = mix(ao, B.ao, foot); nrm = normalize(mix(nrm, B.nrm, foot));
     }
     if (species === "plane") {

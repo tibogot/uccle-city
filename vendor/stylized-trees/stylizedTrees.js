@@ -375,12 +375,13 @@ function makeLeafMaterial(P, U) {
   })();
   // light through the leaves: looking toward the sun, outer leaves glow, the core does not
   // ([#16] with a spray texture, thin blades let more through than veins, petioles and twigs; the mean is kept)
-  const through = atlas ? mix(float(1), float(1).sub(atlas.thick).div(float(1).sub(atlas.meanThick)), float(P.leafAtlas.transK ?? 1)) : float(1);
+  const through = atlas ? mix(float(1), float(1).sub(atlas.thick).div(float(1).sub(atlas.meanThick)), float(P.leafAtlas.transK ?? 1)) : null;
   m.emissiveNode = Fn(() => {
     const V = normalize(positionWorld.sub(cameraPosition));
     const back = pow(saturate(dot(V, U.sunDir)), 4.0);
-    const glow = U.transColor.mul(U.sunColor).mul(back).mul(aoA.mul(aoA)).mul(U.translucency).mul(through);
-    return glow.add(leafBase().mul(U.fillColor).mul(U.fill).mul(aoA.mul(0.5).add(0.5)));
+    const glow = U.transColor.mul(U.sunColor).mul(back).mul(aoA.mul(aoA)).mul(U.translucency);
+    const glowT = through ? glow.mul(through) : glow;   // [#16]
+    return glowT.add(leafBase().mul(U.fillColor).mul(U.fill).mul(aoA.mul(0.5).add(0.5)));
   })();
   return m;
 }

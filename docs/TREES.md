@@ -291,7 +291,183 @@ plane trees take 2.9 MB for 6 variants x 3 LODs, the leaf mask 0.67 MB.
 - At 3 ms more for a dense forest, the plane is an avenue and square tree, not a forest tree. The Sonian Forest
   should be beech (§6).
 
+## 4b. Textures A/B: would other textures look better, and what do they cost?
+
+Branch `claude/tree-textures` (2026-11-06). A separate page, `labs/tree-textures-lab.html` (the Tree Lab is
+untouched), e.g. `http://127.0.0.1:8786/labs/tree-textures-lab.html`. URL parameters: `species=plane|beech|street`,
+`preset=2 m (bark)|15 m|40 m|120 m|400 m (impostor)`, `time=day|golden|night`, `sides=2|3`, `bark0..2=`, `leaves0..2=`,
+`seed=`, `ui=0` (screenshots).
+
+**The page.** The same species, seed, variant and light (`lighting.js` + `post.js`) on 2 or 3 sides, A | B | C. The
+default is a split screen: each slot is a full render (scene + post) of one tree with the same camera, offset so the
+tree sits in its slot (`setViewOffset`), into its own target, then composited by one quad. "Row" puts the three trees
+side by side in one render. Camera presets at 2 m (the bark), 15 m, 40 m, 120 m and 400 m (the impostor; past 15 m a
+longer lens keeps the tree in the frame, the distance is what the LODs see), a turntable, day / golden / night. The
+panel (`viewer/panelUI.js`) chooses the species and each side's bark and leaf source. Each slot shows its cost: texture
+memory on the GPU, download size, the impostor atlas and its bake time. GPU A/B buttons (5 alternating rounds) on a
+row of 50, the 4,552-tree forest patch, one tree's bark at 2 m and one crown at 15 m (full frame), and a pop meter over
+the LOD walk per side.
+
+**Every option goes through the whole chain**: `makeSpecies` with the option's `def.bark` and `params.leafAtlas`, so
+the LODs, morph, depth pre-pass, shadows and the **impostors are re-baked from the textured tree** (the bake reads the
+spray's alpha, colour and normals: vendor CHANGES #16, `viewer/impostors.js`).
+
+### The options
+
+| | A (today) | B | C |
+|---|---|---|---|
+| **Plane bark** | procedural TSL (`planeBark`) | CC0 scan **ambientCG Bark009** (the camouflage: pale under-bark, peeling plates) | Bark009 + **Poly Haven `bark_platanus`** at the foot (the old dark flaking bark), ragged boundary; B3: `bark_platanus` alone |
+| **Beech bark** | procedural (`beechBark`: eyes, lichen, algae) | CC0 scan **Poly Haven `chinese_hackberry_bark`** (smooth, pale lichen spots), graded to beech grey | + **ambientCG Bark005** at the foot (mossy, algae green); B3: Bark005 alone |
+| **Leaves** (both) | procedural canvas mask (512 px RG) | spray **baked in Blender from modelled leaves** (`tools/blender/leafAtlas.py`) | the same spray of **CC0 scanned leaves** (ambientCG LeafSet010 for the plane: green maple, palmate; LeafSet024 for the beech) |
+| Megascans | | | **slot only** (bark C / leaves D): not available locally. The owner is claiming them on Fab (Beech Bark, European Beech leaves, Norway Maple, ...). Fab Standard License, NOT CC0: lab only, never committed raw. Drop the exports in `data/raw/textures/trees/megascans/<asset>/` and add them to `tools/textures/process_tree_textures.py` |
+
+No AI-generated textures; no image search. Sources and licences: `CREDITS.md` ("Tree textures");
+`viewer/trees/textures/tree_textures.json`.
+
+**How the bark scans are mapped** (`viewer/treeTextures.js scanBark`). The bark mesh has no uv, so the mapping is
+**triplanar in the tree's own space** (the trunk, the limbs and the root flare take it without seams, and it turns
+with the tree), with normals blended UDN-style. The scan is graded to the species' mean bark colour (its luminance,
+plus half the hue; the beech 85 % of the hue, the hackberry being warmer than a beech). Then the species' **macro
+variation** goes on top, so the 1-1.8 m repeat never shows: noise zones of value and warmth at 1.7 m and 0.45 m; the
+plane's old olive plates in big zones, more of them low down, **following the scan's own darker flakes** so their
+edges are the scan's; the darker foot, the paler limbs; the beech's algae side. A second scan can take the foot.
+
+**How the leaf sprays are made** (`tools/blender/leafAtlas.py`, Blender 5.0 headless, Cycles, ~10 s per species). One
+card = one spray, as the procedural masks, in the same layout: the plane's 7 twigs with 9-11 alternate leaves and 34
+loose leaves behind; the beech's 10 flat zigzag sprays with two-ranked leaves and 34 behind. Leaves are modelled:
+- **plane**: palmate, 5 pointed lobes cut to about a third (the mask's star lobes read as flowers when modelled),
+  teeth, a truncate base, 5 main veins radiating from the petiole;
+- **beech**: ovate, pointed, with a wavy margin, a midrib and 7 parallel vein pairs;
+- every leaf is cupped, folded along its midrib, arched, rolled and pitched (foreshortened), with petioles and twigs.
+
+The passes are emission-only data (no lighting):
+- albedo: each leaf's colour, lighter veins, darker toward the petiole, x a Cycles AO between the leaves;
+- normal: camera space, veins as bump;
+- thickness: blade 0.25 .. twig 1.
+
+`--scan` builds the same sprays from the CC0 scanned leaves (each leaf a bent grid quad showing one leaf of the atlas,
+with its own normal map). `tools/textures/process_tree_textures.py` then:
+- rounds the cluster off;
+- bleeds the colour under alpha 0;
+- builds **coverage-preserving alpha mips** (each level keeps the share of texels >= 0.5: far leaves do not thin out,
+  and the per-species impostor alpha boost and alpha-to-coverage work as before);
+- encodes KTX2 UASTC + zstd with those mips (`ktx create --levels`).
+
+In the shader (vendor CHANGES #16), the species keeps its palette (top / bottom colours, tint, occlusion). The spray
+multiplies it by its own colour around its mean, bends the clump's dome normal by the spray's normals, and lets the
+light through by 1 - thickness.
+
+### Look (side-by-sides with Wikimedia Commons photos, `docs/trees/textures/`)
+
+| File | What |
+|---|---|
+| `sbs_plane_bark.jpg` | photo (Adrian Tync, CC BY-SA 4.0) / lab at 2 m, midday, crown shade: A, B, C |
+| `sbs_plane_leaves.jpg` | photo (Fanghong, CC BY 2.5) / lab at 15 m: leaves A, B, C |
+| `sbs_beech_bark.jpg` | photo (Fraxinus Croat, CC BY-SA 3.0) / lab at 2 m: A, B, C |
+| `sbs_beech_leaves.jpg` | photo (T. Kebert, CC BY-SA 4.0) / lab at 15 m: leaves A, B, C |
+| `sbs_beech_tree.jpg` | photo (T. Kebert, CC BY-SA 4.0) / the open-grown beech at 40 m |
+| `lab_*_40m.jpeg`, `lab_*_400m_impostor.jpeg` | the three sides at 40 m and as impostors at 400 m |
+
+The composites with a CC BY-SA photo are shared under the same licence.
+
+- **Plane bark.** B is the clear win at 2-15 m: real flake edges, relief and the pale / olive camouflage of the photo.
+  A reads as flat vector blobs with outlines. C adds the dark scaly foot of old planes. It is right for the big old
+  trees of Saint-Job, wrong for young avenue trees.
+- **Beech bark.** B (hackberry, graded to grey) has the photo's smooth skin with pale lichen spots and fine horizontal
+  wrinkles. A is cleaner and more regular (its eyes are good; B has none). B is better close up; at 40 m and beyond
+  they are the same.
+- **Leaves.** At 15 m B and C show individual leaves with real outlines, veins and their own normals. The crown's
+  underside, which A leaves almost black in high sun (§6), gets lit leaf by leaf. C (scans) has the most natural colour
+  variation; B the right leaf shapes for each species (the CC0 leaf for the plane is a maple; the beech's LeafSet024 is
+  round-ish, close). From 40 m the three are nearly the same. The impostors at 400 m look the same as each other, and
+  each matches its own near tree (no colour or shape jump).
+
+### Cost
+
+GPU ms per frame (r187 timestamps, 1500 x 800, pixel ratio 1), A/B alternated in one page, 5 rounds, B minus A.
+**The GPU was shared**: the owner's Tree Lab tab (port 8785, the 4,552-tree beech forest) was rendering the whole time
+and was not touched. The medians carry its load, so the table gives the **10th / 2nd percentile per round** (the frames
+it did not slow down), with the spread over the rounds. "control" is A against an identical A, the noise floor.
+
+| Test (one option changed against A) | Plane: B - A, ms | Beech: B - A, ms |
+|---|---|---|
+| one tree, bark at 2 m, full frame: control | +0.18 (-0.07 .. +0.46) | -0.07 (-0.46 .. +0.13) |
+| ... bark B (CC0 scan) | **-0.18** (-0.33 .. -0.07) | **-0.45** (-0.66 .. -0.33) |
+| ... bark B2 (two scans) | -0.14 (-0.33 .. 0) | -0.43 (-1.18 .. +0.46) |
+| one tree, crown at 15 m, full frame: control | -0.01 (-0.2 .. +0.13) | +0.05 (-0.07 .. +0.13) |
+| ... leaves B (Blender) | **-0.20** (-0.26 .. -0.13) | **-0.08** (-0.13 .. -0.07) |
+| ... leaves C (scans) | -0.17 (-0.33 .. 0) | -0.10 (-0.13 .. -0.07) |
+| row of 50, bark B | -0.39 (-0.66 .. -0.26) | -0.26 |
+| row of 50, leaves B | -0.39 | +0.22 |
+| row of 50, leaves C | -0.12 | -0.23 |
+| **row of 50, all B (bark + leaves)** | **-0.45** (-0.66 .. -0.33); 3.41 -> 2.95 ms at p2 | **-0.21** (-0.26 .. -0.07) |
+| forest patch (4,552), any option | inconclusive: control ±2-5 ms | inconclusive |
+
+The textured options are **not more expensive; they are slightly cheaper**:
+- the plane's procedural bark is ~15 noise evaluations per pixel against 6 compressed texture fetches and 4 noises;
+- the scan sprays are BC7 (1 byte per texel), where the procedural mask is an uncompressed RG8 (2 bytes).
+
+In the forest patch most trees are LOD 2 and impostors. The impostor material is unchanged and the leaf shader changes
+by one fetch, so no difference is expected there. On a shared GPU the patch is bimodal (frames at ~7.5 or ~14 ms),
+and its runs could not separate anything from the control. **Re-run the two forest buttons on a free GPU** before
+committing to the forest.
+
+**Memory and download** (1024 px, KTX2 UASTC + zstd; on the GPU BC7 / ASTC, 1 byte per texel with mips):
+
+| Option | GPU | Download |
+|---|---|---|
+| procedural bark | 0 | 0 |
+| procedural leaf mask (built at load) | 0.67 MB (512 px RG8 + mips) | 0 |
+| bark scan (albedo + normal / roughness / AO) | 2.7 MB | 2.3-2.5 MB (Bark009 2.4, bark_platanus 2.5, hackberry 2.2, Bark005 2.4) |
+| two bark scans (B2) | 5.3 MB | 4.7 MB |
+| leaf spray (albedo + alpha, normal + thickness) | 2.7 MB | 1.0 MB (Blender), 1.1-1.2 MB (scans) |
+| impostor atlas (any option, re-baked) | 64 MB, as before | 0 |
+
+So a species with both B textures costs **5.3 MB of GPU memory and ~3.4 MB of download**, once for every tile. That
+is ~8 % of its own impostor atlas.
+
+**LOD walk** (pop meter, frozen view, 60 steps 2 -> 1,200 m, the tree from 45 m with a 40° lens, golden hour; the
+largest step / the worst jump over its neighbours, %):
+
+| Band | Plane A | Plane B | Plane C | Beech A | Beech B | Beech C |
+|---|---|---|---|---|---|---|
+| morph 1, 20-50 m | 0.86 / 0.41 | 0.79 / 0.39 | 0.95 / 0.43 | 1.24 / 0.66 | 1.10 / 0.58 | 0.84 / 0.42 |
+| morph 2, 70-135 m | 0.98 / 0.33 | 0.89 / 0.33 | 1.04 / 0.36 | 1.35 / 0.51 | 1.21 / 0.46 | 0.96 / 0.28 |
+| impostor, 330-420 m | 1.40 / 0.93 | 1.48 / 0.98 | 1.53 / 1.02 | 3.23 / 2.06 | 3.22 / 2.05 | 3.26 / 2.06 |
+| dissolve, 760-1,120 m | 2.52 / 1.14 | 2.50 / 1.14 | 2.71 / 1.24 | 1.49 / 0.67 | 1.49 / 0.67 | 1.44 / 0.64 |
+
+The textured sides walk exactly like A (within ±0.15 %): the re-baked impostors keep each option's shape and colour,
+and the coverage-preserving alpha mips keep the far crowns as full as the procedural mask's. The numbers are larger
+than §2's because the tree fills more of this frame. The beech's 2 % impostor step is the same with every option: it
+is the chain's own, a thing to look at separately.
+
+### Recommendation
+
+- **Plane: take B for the bark** (Bark009 with the macro variation), and B2 (the `bark_platanus` foot) for old trees
+  only (Saint-Job, Av. Churchill), as a per-variant choice. **Leaves: B** (the Blender spray): the plane's own leaf
+  shape, lit undersides, and no extra cost. If the owner's Megascans "Norway Maple" or a real plane leaf set arrives,
+  re-run `leafAtlas.py --scan` with it (option C) and compare. The CC0 maple scan (C) has the best colour but is a
+  maple.
+- **Beech: take B for the leaves** (modelled sprays: the right leaf, cheaper or equal). **The bark: B (hackberry
+  graded to grey) close up**. Better still, keep the procedural eyes on top: a scan with no branch scars is not quite
+  a beech. That is the next step, as is the Megascans "Beech Bark", which is the obvious C when it lands.
+- **Street trees: keep A** (the baseline; their mask is drawn for a generic broadleaf).
+- **Memory budget**: 5.3 MB per species, a fraction of each species' 64 MB impostor atlas. Download ~3.4 MB per species.
+- **Before the city**: re-run the forest benchmarks on a free GPU, check night (no texture-specific issue seen), and
+  fix the pre-existing issues below.
+
+**Found on the way (pre-existing, every option, A included):**
+- the open-grown beech's impostors at 400 m in high sun show diagonal stripes (self-shadow acne at a long lens,
+  `lab_beech_400m_impostor.jpeg`); golden hour is clean;
+- the procedural plane bark shows dotted dark outlines on its plate edges at 2 m in low sun;
+- the split screen's clouds look blocky (the sky's low-resolution clouds do not follow `setViewOffset`): the lab only.
+
 ## 5. Changes outside the lab (all leave the city's picture as it was)
+
+- (tree textures, §4b) **Vendor #16** `params.leafAtlas`: absent by default, so no leaf shader changes. In
+  **`viewer/impostors.js`** the bake reads `shared.leafAtlas` only when it is set. **New, lab only**:
+  `viewer/treeTextures.js` and `viewer/trees/textures/`. The Tree Lab and the city were checked after the change
+  (both boot with no errors; the city at Saint-Job is as before).
 
 - **`viewer/treesStylized.js`: `makeSpecies(def)`.**
   - The per-module state (shared materials, built trees, bake, NATURAL_HEIGHT) moved into a factory. `STREET` is the
@@ -317,8 +493,8 @@ plane trees take 2.9 MB for 6 variants x 3 LODs, the leaf mask 0.67 MB.
 ## 6. What still looks weak
 
 - **Bark, close up (< 3 m).** It reads as a plane, but the plates are smooth vector-like shapes. It lacks the flaky
-  relief, the fine moss and lichen and the warm colour of the photo (`sbs_bark.jpg`). Next: a baked bark texture
-  (Blender, or a CC0 scan) mapped on the trunk with a seam-free projection, plus parallax relief.
+  relief, the fine moss and lichen and the warm colour of the photo (`sbs_bark.jpg`). Answered in §4b: a CC0 scan,
+  triplanar, with the plane's macro variation, looks better and costs less.
 - **Inside the crown, looking up.** The crown is a shell of pads; the secondaries show as long straight spokes
   (`sbs_canopy.jpg`). Real planes zigzag and twig densely inside.
 - **The lower crown in high sun** is still darker than in the photos. There is no light through the crown except
