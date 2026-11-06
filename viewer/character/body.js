@@ -212,7 +212,7 @@ export class CharacterBody {
       this.root.updateMatrixWorld(true);
       // on the ground (walking and running), off in the air; a touch-down passes its fall speed (the landing absorb)
       const ik = this._ik;
-      ik.grounded = st.grounded; ik.speed = st.speed; ik.vx = st.vx ?? 0; ik.vz = st.vz ?? 0;
+      ik.grounded = st.grounded; ik.speed = st.speed; ik.vx = st.vx ?? 0; ik.vz = st.vz ?? 0; ik.grade = st.grade || 0;
       ik.landing = st.grounded && !this._wasGrounded && this._airTime > 0.12 ? Math.max(0, -this._fallV) : 0;
       if (st.grounded) this._airTime = 0; else { this._airTime += dt; this._fallV = st.vy; }
       this._wasGrounded = st.grounded;

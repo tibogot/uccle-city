@@ -127,7 +127,7 @@ export class FootProbe {
       if (sc.jumpAt !== undefined && cmd[2] === false && t >= sc.jumpAt) { inp.jump = true; cmd[2] = true; }
     };
     const A = { frames: 0, stance: [0, 0], slideSum: [0, 0], slideMax: 0, slides: [], gapStanceMin: Infinity, gapStanceMax: -Infinity, floatSum: 0, floatN: 0,
-      pen: 0, heelFloat: 0, toeFloat: 0, kneeMin: 180, kneeMax: 0, kneeLocked: 0, pelvis: [], dip: 0, hipV: 0, ikJump: 0, landed: false, airFrames: 0 };
+      pen: 0, heelFloat: 0, toeFloat: 0, kneeMin: 180, kneeMax: 0, kneeLocked: 0, pelvis: [], gaps: [], dip: 0, hipV: 0, ikJump: 0, landed: false, airFrames: 0 };
     const prevMid = [null, null], prevOff = [0, 0], prevZ = [null, null], prevSt = [false, false];
     let prevHip = null;
     const hips = tp.body.model?.getObjectByName("Hips");
@@ -158,7 +158,7 @@ export class FootProbe {
             const sp = Math.hypot(mx, mz) / dt;
             A.stance[i]++; A.slideSum[i] += sp; A.slides.push(sp);
             A.gapStanceMin = Math.min(A.gapStanceMin, low); A.gapStanceMax = Math.max(A.gapStanceMax, low);
-            A.floatSum += Math.abs(low); A.floatN++;
+            A.floatSum += Math.abs(low); A.floatN++; A.gaps.push(Math.abs(low));
             if (hg > A.heelFloat) A.heelFloat = hg;
             if (tg > A.toeFloat) A.toeFloat = tg;
           }
@@ -180,12 +180,13 @@ export class FootProbe {
       }
     } finally { tp.autopilot = null; }
     const s = A.slides.slice().sort((a, b) => a - b), pct = (q) => (s.length ? s[Math.min(s.length - 1, Math.floor(q * s.length))] : 0);
+    const gs = A.gaps.sort((a, b) => a - b), gapP95 = gs.length ? gs[Math.floor(0.95 * (gs.length - 1))] : 0, badPct = gs.length ? gs.filter((g) => g > 0.03).length / gs.length * 100 : 0;
     const pm = A.pelvis.reduce((a, b) => a + b, 0) / Math.max(1, A.pelvis.length);
     const pstd = Math.sqrt(A.pelvis.reduce((a, b) => a + (b - pm) ** 2, 0) / Math.max(1, A.pelvis.length));
     return {
       slideMean: (A.slideSum[0] + A.slideSum[1]) / Math.max(1, A.stance[0] + A.stance[1]), slideP95: pct(0.95), slideMax: s.length ? s[s.length - 1] : 0,
       stanceFrac: (A.stance[0] + A.stance[1]) / Math.max(1, 2 * A.frames),
-      sinkCm: Math.max(0, -A.gapStanceMin) * 100, floatCm: Math.max(0, A.gapStanceMax) * 100, gapMeanCm: A.floatSum / Math.max(1, A.floatN) * 100,
+      sinkCm: Math.max(0, -A.gapStanceMin) * 100, floatCm: Math.max(0, A.gapStanceMax) * 100, gapMeanCm: A.floatSum / Math.max(1, A.floatN) * 100, gapP95Cm: gapP95 * 100, badPct,
       heelFloatCm: A.heelFloat * 100, toeFloatCm: A.toeFloat * 100, penCm: A.pen * 100,
       kneeMin: A.kneeMin, kneeMax: A.kneeMax, kneeLockedPct: A.kneeLocked / Math.max(1, 2 * A.frames) * 100,
       pelvisStdCm: pstd * 100, dipCm: A.dip * 100, hipVmax: A.hipV, ikJump: A.ikJump, endX: c.pos[0], endY: c.pos[1], endZ: c.pos[2], air: A.airFrames,

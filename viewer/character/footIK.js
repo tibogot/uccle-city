@@ -33,7 +33,8 @@ export const FOOT_IK = {
   maxLock: 0.5,        // m: a planted foot dragged further than this slides (the leg can't stay)
   idleStep: 0.11, idleYaw: 28, stepTime: 0.28, stepLift: 0.07,   // a step on the spot: when, how long, how high
   look: 0.07, lookSpeed: 0.08,    // m + s * speed: how far ahead of the toe a swinging foot looks
-  maxShift: 0.18,       // m: how far a landing foot may be moved forward off a nosing / kerb edge
+  strideCut: 0.4,       // the stride is this much shorter on stairs / steep ramps (grade >= 0.6)
+  maxShift: 0.1,       // m: how far a landing foot may be moved forward off a nosing / kerb edge
   soft: 0.96,           // fraction of the leg's length where the soft reach starts
   absorb: 0.32,         // pelvis kick on landing: m/s per m/s of fall speed (capped at 2.6 m/s)
   weightUp: 18, weightDown: 9,    // 1/s: the IK weight easing in (landing) / out (take-off)
@@ -55,11 +56,11 @@ export class FootIK {
       contact: 0, plant: 0, lift: 0, off: 0, offS: 0, n: new THREE.Vector3(0, 1, 0),
       dx: 0, dz: 0, dyaw: 0, px: 0, pz: 0, qx: 0, qz: 0, pyaw: 0, has: false,                         // the lock: correction, last contact point
       step: -1, sx: 0, sz: 0, syaw: 0,                                                  // a step on the spot (progress, start correction)
-      gH: 0, gT: 0, hit: 0, reachLen: 1, fx: 0, fz: 0, shift: 0, shiftT: 0, planted: false, ploc: 0, vloc: 0, ext: 0.9, stepLift: 0, ox: 0, oy: 0, oz: 0,   // ox..: the clip's foot bone from the shin's end
+      gH: 0, gT: 0, hit: 0, reachLen: 1, fx: 0, fz: 0, shift: 0, shiftT: 0, planted: false, ploc: 0, vloc: 0, warp: 0, ext: 0.9, stepLift: 0, ox: 0, oy: 0, oz: 0,   // ox..: the clip's foot bone from the shin's end
     }));
     this.ok = this.legs.every((l) => l.upper && l.lower && l.end && l.foot);
     this.p = { ...FOOT_IK };
-    this.weight = 0; this.pelvis = 0; this.pelvisV = 0;
+    this.weight = 0; this.pelvis = 0; this.pelvisV = 0; this.stride = 1;
     this.stats = { rays: 0 };
     if (this.ok) this._soles(model);
   }
@@ -131,12 +132,23 @@ export class FootIK {
     const vl = Math.sqrt((st.vx || 0) ** 2 + (st.vz || 0) ** 2), hx = vl > 0.05 ? st.vx / vl : 0, hz = vl > 0.05 ? st.vz / vl : 0;
     const kSwing = 1 - Math.exp(-p.swingSmooth * dt), kN = 1 - Math.exp(-p.normalSmooth * dt), kFade = 1 - Math.exp(-p.lockFade * dt);
     const rootYaw = this._rootYaw();
+    // the stride on steep ground (st.grade: |rise| / run under the body)
+    { const g = st.grade || 0, gk = g > 0.25 ? Math.min(1, (g - 0.25) / 0.35) : 0; this.stride += ((1 - p.strideCut * gk * gk * (3 - 2 * gk)) - this.stride) * (1 - Math.exp(-4 * dt)); }
+    const stride = this.stride;
     let target = 0, any = false, need = -Infinity;
     let stepping = legs[0].step >= 0 || legs[1].step >= 0;
     for (let i = 0; i < 2; i++) {
       const L = legs[i], fw = L.foot.matrixWorld;
       // 1. the clip's foot: heel / toe in the world, its contact with the clip's flat ground
       _H.copy(L.heel).applyMatrix4(fw); _T.copy(L.toe).applyMatrix4(fw); _F.setFromMatrixPosition(fw);
+      // stairs / steep ramps: the stride warped shorter along the heading (the clip's feet reach k times as far in front
+      // of and behind the body), with the quicker cadence (body.js): a step about a tread, not a flat-ground stride
+      if (stride < 0.999) {
+        const ie0 = inner.matrixWorld.elements, rx = ie0[12], rz = ie0[14], k1 = stride - 1;
+        let d = (_H.x - rx) * hx + (_H.z - rz) * hz; _H.x += hx * d * k1; _H.z += hz * d * k1;
+        d = (_T.x - rx) * hx + (_T.z - rz) * hz; _T.x += hx * d * k1; _T.z += hz * d * k1;
+        d = (_F.x - rx) * hx + (_F.z - rz) * hz; L.warp = d * k1; _F.x += hx * L.warp; _F.z += hz * L.warp;
+      } else L.warp = 0;
       const hH = _H.y - rootY, hT = _T.y - rootY, low = Math.min(hH, hT);
       L.lift = low;
       // the contact point (heel, toe, or between: continuous) of the clip, in the world

@@ -315,7 +315,7 @@ const SCEN = {
   "slide along wall": { start: at(-17, 8, E), dir: [0.9, 0.45], secs: 3 },
   "past a trunk": { start: at(PX + 14.2, PZ + 14), dir: [0, 1], secs: 3 },
 };
-const METRICS = [["slideMean", "slide m/s", 2], ["slideP95", "slide p95", 2], ["sinkCm", "sink cm", 1], ["floatCm", "float cm", 1], ["penCm", "pen cm", 1],
+const METRICS = [["slideMean", "slide m/s", 2], ["slideP95", "slide p95", 2], ["gapMeanCm", "|gap| cm", 1], ["gapP95Cm", "gap p95", 1], ["badPct", "gap>3cm %", 0], ["sinkCm", "sink cm", 1], ["floatCm", "float cm", 1], ["penCm", "pen cm", 1],
   ["kneeMin", "knee min°", 0], ["kneeLockedPct", "knee straight %", 0], ["pelvisStdCm", "pelvis σ cm", 1], ["dipCm", "hip dip cm", 1], ["hipVmax", "hip v m/s", 2], ["ikJump", "IK jump m/s", 2]];
 /** Measure every scenario (or the named ones) at each simulated fps; returns rows, prints a table. */
 function audit(names = Object.keys(SCEN), fpsList = [30, 60, 144]) {
