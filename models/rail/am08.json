@@ -43,14 +43,14 @@
   52.61
  ],
  "tris": {
-  "EndCar": 19306,
-  "MidCar": 17814,
-  "Bogie": 1992,
+  "EndCar": 24839,
+  "MidCar": 20890,
+  "Bogie": 5316,
   "Gangway": 396,
   "Panto": 476,
-  "EndCar_far": 2826,
-  "MidCar_far": 1640,
-  "Bogie_far": 1116
+  "EndCar_far": 4778,
+  "MidCar_far": 2244,
+  "Bogie_far": 1340
  },
  "measured": "length over couplers 79.91 m, 3 cars B-B + 2-2 + B-B, standard gauge (loco-info.com; SNCB)",
  "estimated": "car lengths 27.30 / 25.31 / 27.30 m, width 2.86 m, roof 4.15 m, door sill 0.96 m, window / door positions, bogie centres, nose shape, livery colours (from Wikimedia Commons photos 2019-2025), wheel 0.85 m, wheelbase 2.60 m",

@@ -30,7 +30,7 @@ const PER_UNIT = { EndCar: 2, MidCar: 1, Bogie: 6, Gangway: 2, Panto: 1 };
 
 /** SNCB current livery (sRGB): white body, yellow cab, red doors, navy skirt band (photos 2019-2025) */
 export const LIVERIES = {
-  sncb: { paint_body: "#e8eae7", paint_cab: "#ecd20f", paint_door: "#d0202a", paint_skirt: "#1b2a5c", paint_grey: "#aeb3b6",
+  sncb: { paint_body: "#e8eae7", paint_cab: "#f4d52b", paint_door: "#d0202a", paint_skirt: "#1b2a5c", paint_grey: "#aeb3b6",
     paint_roof: "#b9bdbf", rubber: "#141516", glass: "#0d1114", metal_dark: "#26272a", lamp_white: "#d8d8d2", lamp_red: "#6b0d0d",
     display: "#050505", interior: "#2b3a5a" },
   // the pre-2010s grey-blue / the red local livery are other palettes over the same slots (an example of swapping)

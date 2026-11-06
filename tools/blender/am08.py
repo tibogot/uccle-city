@@ -33,7 +33,7 @@ L_END, L_MID = 27.30, 25.31          # coupler / gangway plane to gangway plane;
 GAP = 0.36                           # body end to the gangway plane
 HW = 1.43                            # body half width (2.86)
 ROOF = 4.15
-SILL = 0.96
+SILL = 1.0
 BOGIE_END_FROM_NOSE = 5.60           # end car: front bogie centre from the coupler face (estimated from photos)
 BOGIE_SPACING_END = 17.4             # end car bogie centres
 BOGIE_SPACING_MID = 17.6
@@ -41,9 +41,9 @@ WHEEL_R, WB, GAUGE = 0.425, 2.60, 1.435
 WIRE = 5.50
 NOSE_L = 1.62                        # the nose's reach beyond the straight body (bottom)
 # half profile (y >= 0) from the underside centre round to the roof centre: (y, z)
-PROFILE = [(0.0, 0.62), (0.70, 0.62), (1.18, 0.62), (1.32, 0.66), (1.385, 0.80), (1.41, 0.96), (1.425, 1.20), (1.43, 1.55),
-           (1.43, 2.05), (1.425, 2.55), (1.41, 2.95), (1.375, 3.25), (1.31, 3.52), (1.20, 3.76), (1.02, 3.95), (0.78, 4.07),
-           (0.45, 4.13), (0.0, 4.15)]
+PROFILE = [(0.0, 0.80), (0.70, 0.80), (1.18, 0.80), (1.32, 0.83), (1.385, 0.90), (1.41, 1.0), (1.418, 1.05), (1.425, 1.20),
+           (1.428, 1.36), (1.43, 1.55), (1.43, 1.72), (1.43, 1.86), (1.43, 2.05), (1.425, 2.55), (1.41, 2.95), (1.40, 3.05),
+           (1.385, 3.15), (1.36, 3.33), (1.31, 3.52), (1.20, 3.76), (1.10, 3.86), (1.02, 3.95), (0.78, 4.07), (0.45, 4.13), (0.0, 4.15)]
 WIN_Z = (1.55, 2.55)
 DOOR_Z = (SILL, 2.95)
 # nose reach (x beyond the straight body) by height: lower front protrudes, the windscreen rakes back, the roof rounds in
@@ -132,11 +132,11 @@ def body(length, front_kind, rear_kind, doors, windows, detail=2):
         rows.append([bm.verts.new((x, y, z)) for y, z in ring])
     # the nose: rings swept round a superellipse in plan, the reach by height (LF)
     if front_kind == "nose":
-        K = 16 if detail >= 1 else 6
+        K = 26 if detail >= 1 else 8
         for k in range(1, K + 1):
             th = (math.pi / 2) * k / K
             s, c = math.sin(th), math.cos(th)
-            sp, cp = s ** (2 / SUPER), c ** (2 / SUPER)
+            sp, cp = max(0.0, s) ** (2 / SUPER), max(0.0, c) ** (2 / SUPER)
             rows.append([bm.verts.new((x_body_front + lerp_tab(LF, z) * sp, y * cp, z)) for y, z in ring])
     n = len(ring)
     for r0, r1 in zip(rows, rows[1:]):
@@ -157,21 +157,29 @@ def body(length, front_kind, rear_kind, doors, windows, detail=2):
         a = length / 2 - c.x                                      # from the front plane
         side = abs(nx.y) > 0.5 and abs(nx.z) < 0.7
         if f in caps: f.material_index = S["rubber"]; continue
-        if c.z < 0.64 and nx.z < -0.5: f.material_index = S["metal_dark"]; continue
+        if c.z < 0.82 and nx.z < -0.5: f.material_index = S["metal_dark"]; continue
         if c.z > 3.45 and nx.z > 0.35 and not (front_kind == "nose" and c.x > x_body_front - 0.9):
             f.material_index = S["paint_roof"]; continue
         mat = S["paint_body"]
-        if c.z < 0.92: mat = S["paint_skirt"]
+        if c.z < 1.02: mat = S["paint_skirt"]
         if front_kind == "nose":
             inn = c.x > x_body_front - 0.02
-            cab_zone = a < 2.95 - max(0.0, c.z - 1.2) * 0.35 + 0.35       # the yellow wraps back to the first window, slanted
-            if c.z > 0.9 and (inn or cab_zone): mat = S["paint_cab"]
-            if inn and nx.x > 0.45:
+            cab_zone = a < 2.95 - max(0.0, c.z - 1.6) * 0.30 + 0.35       # the yellow wraps back to the first window, slanted
+            if cab_zone and not inn:                                        # cab sides: yellow above 1.55 m, silver below
+                if c.z > 1.55: mat = S["paint_cab"]
+                elif c.z > 0.92: mat = S["paint_grey"]
+            if inn:
+                ay = abs(c.y)
                 if c.z < 0.80: mat = S["metal_dark"]
-                elif c.z < 1.70: mat = S["paint_grey"]
-                elif 1.86 < c.z < 3.18 and abs(c.y) < 0.92: mat = S["glass"]
-                elif 3.18 <= c.z < 3.36 and abs(c.y) < 0.62: mat = S["display"]
-                elif 1.70 <= c.z < 3.42 and abs(c.y) < 1.02: mat = S["rubber"]
+                elif c.z < 1.05: mat = S["metal_dark"] if ay < 0.72 and nx.x > 0.5 else S["paint_grey"]
+                elif c.z < 1.55: mat = S["paint_cab"] if ay < 0.74 and nx.x > 0.5 else S["paint_grey"]
+                elif c.z < 1.72: mat = S["paint_cab"]
+                elif c.z < 3.95 and ay < 0.98 and nx.x > 0.25:
+                    if 1.86 <= c.z < 3.05 and ay < 0.88: mat = S["glass"]
+                    elif 3.15 <= c.z < 3.33 and ay < 0.6: mat = S["display"]
+                    else: mat = S["rubber"]
+                elif c.z >= 3.95: mat = S["paint_roof"]
+                else: mat = S["paint_cab"]
         if detail == 0 and abs(nx.y) > 0.6:      # far variant: the openings painted on (no recesses)
             if any(a0 - 0.02 < a < a1 + 0.02 for a0, a1 in doors) and DOOR_Z[0] - 0.1 < c.z < DOOR_Z[1]: mat = S["paint_door"]
             elif any(a0 < a < a1 for a0, a1 in windows) and WIN_Z[0] - 0.05 < c.z < WIN_Z[1] + 0.05: mat = S["glass"]
@@ -274,20 +282,40 @@ def car_details(bm, length, front_kind, detail):
         s = 1 if xe > 0 else -1
         box(bm, (xe + s * 0.03, 0, 2.05), (0.08, 1.30, 2.30), S["rubber"], 0.03)
     if front_kind == "nose":
-        # the obstacle deflector (skirt) under the nose; the coupler sits behind the nose cover (not drawn)
-        xn = xf - NOSE_L + lerp_tab(LF, 0.62)
-        box(bm, (xn - 0.35, 0, 0.45), (0.5, 2.25, 0.34), S["metal_dark"], 0.03)
-        box(bm, (xn - 0.05, 0, 0.66), (0.22, 0.5, 0.12), S["paint_grey"], 0.02)
-        # head + tail lamps: two clusters each side on the grey lower front (photo: round LED headlights + tail)
-        for y in (0.88, -0.88):
-            z = 1.42
-            xs = xf - NOSE_L + lerp_tab(LF, z) * (1 - abs(y / HW) ** SUPER) ** (1 / SUPER) + 0.01
-            vs = cyl(bm, (xs, y + (0.12 if y > 0 else -0.12), z), 0.085, 0.06, "x", S["lamp_white"], 14)
-            vs = cyl(bm, (xs - 0.01, y - (0.10 if y > 0 else -0.10), z), 0.06, 0.06, "x", S["lamp_red"], 12)
-            cyl(bm, (xs + 0.0, y + 0.03 * (1 if y > 0 else -1), z - 0.16), 0.03, 0.05, "x", S["lamp_white"], 8)
+        xn = lambda y, z: xf - NOSE_L + lerp_tab(LF, z) * max(0.0, 1 - abs(y / HW) ** SUPER) ** (1 / SUPER)   # the nose surface
+        # headlight pods (photo: a black recess at each lower corner, a big round LED headlight + a small marker / tail light)
+        for sgn in (1, -1):
+            y0, z0 = sgn * 0.95, 1.30
+            x0 = xn(y0, z0)
+            box(bm, (x0 - 0.05, y0, z0), (0.14, 0.36, 0.24), S["rubber"], 0.02)
+            cyl(bm, (x0 + 0.02, y0 + sgn * 0.07, z0 + 0.01), 0.075, 0.03, "x", S["lamp_white"], 16)
+            cyl(bm, (x0 + 0.02, y0 - sgn * 0.09, z0 + 0.01), 0.045, 0.03, "x", S["lamp_red"], 12)
+        cyl(bm, (xn(0, 3.72) - 0.03, 0, 3.72), 0.06, 0.04, "x", S["lamp_white"], 14)          # the top headlight in the visor
+        # Scharfenberg coupler in the recess: drawbar, head, the cable box
+        x9 = xn(0, 0.9)
+        cyl(bm, (x9 - 0.25, 0, 0.88), 0.07, 0.75, "x", S["metal_dark"], 10)
+        box(bm, (x9 + 0.15, 0, 0.88), (0.24, 0.30, 0.28), S["paint_grey"], 0.03)
+        box(bm, (x9 + 0.12, 0.2, 0.84), (0.18, 0.14, 0.16), S["metal_dark"], 0.02)
+        cyl(bm, (x9 + 0.28, -0.07, 0.95), 0.04, 0.04, "x", S["metal_dark"], 8)
+        # crash boxes either side (grey, ribbed: the photos' stacked plates)
+        for sgn in (1, -1):
+            y0 = sgn * 0.98
+            x0 = xn(y0, 0.9) - 0.05
+            for k in range(6):
+                box(bm, (x0 + 0.02, y0, 0.70 + k * 0.06), (0.30, 0.34, 0.035), S["paint_grey"])
+            box(bm, (x0 - 0.05, y0, 0.86), (0.22, 0.30, 0.38), S["metal_dark"])
+        # the plough: a light-grey swept plate, its plan a shallow V from the corners to the centre
+        x6 = xn(0, 0.62)
+        pts = [(x6 - 0.75, 1.26), (x6 - 0.25, 0.95), (x6 + 0.18, 0.0), (x6 - 0.25, -0.95), (x6 - 0.75, -1.26)]
+        for (ax, ay), (bx_, by) in zip(pts, pts[1:]):
+            L_ = math.hypot(bx_ - ax, by - ay); ang = math.atan2(by - ay, bx_ - ax)
+            vs = box(bm, ((ax + bx_) / 2, (ay + by) / 2, 0.44), (L_ + 0.06, 0.05, 0.34), S["paint_grey"])
+            from mathutils import Matrix
+            R_ = Matrix.Rotation(ang, 3, "Z"); cxy = Vector(((ax + bx_) / 2, (ay + by) / 2, 0.44))
+            for v in vs: v.co = R_ @ (v.co - cxy) + cxy
         # wipers
-        for y in (0.35, -0.35):
-            box(bm, (xf - NOSE_L + lerp_tab(LF, 1.86) + 0.0, y, 1.86), (0.03, 0.03, 0.75), S["rubber"])
+        for y in (0.42, -0.30):                                     # wipers, parked along the bottom of the windscreen
+            box(bm, (xn(y, 1.92) + 0.02, y, 1.92), (0.025, 0.62, 0.025), S["rubber"])
         # mirrors / cameras on the cab sides
         for y in (HW + 0.06, -HW - 0.06):
             box(bm, (xf - 2.0, y, 2.6), (0.18, 0.06, 0.24), S["paint_grey"], 0.02)
@@ -310,27 +338,70 @@ def interior(bm, length, front_kind):
         box(bm, (xf + 0.05, 0, 2.2), (0.06, 2.7, 2.2), S["paint_grey"])   # the cab back wall
 
 
+def helix(bm, c, r, wire, turns, h, mat, n=28, sides=5):
+    """a coil spring: a tube along a helix (primary suspension)"""
+    pts = [Vector((c[0] + r * math.cos(2 * math.pi * turns * k / n), c[1] + r * math.sin(2 * math.pi * turns * k / n), c[2] + h * k / n)) for k in range(n + 1)]
+    rings = []
+    for k, p in enumerate(pts):
+        t = (pts[min(k + 1, n)] - pts[max(k - 1, 0)]).normalized()
+        u = t.cross(Vector((0, 0, 1))).normalized(); w = t.cross(u)
+        rings.append([bm.verts.new(p + (u * math.cos(2 * math.pi * j / sides) + w * math.sin(2 * math.pi * j / sides)) * wire) for j in range(sides)])
+    for r0, r1 in zip(rings, rings[1:]):
+        for j in range(sides):
+            f = bm.faces.new((r0[j], r0[(j + 1) % sides], r1[(j + 1) % sides], r1[j])); f.material_index = mat
+
+
+def frame_prism(bm, outline, y0, depth, mat):
+    """a side frame: an outline in (x, z) extruded across y"""
+    A = [bm.verts.new((x, y0 - depth / 2, z)) for x, z in outline]
+    B = [bm.verts.new((x, y0 + depth / 2, z)) for x, z in outline]
+    n = len(outline)
+    for i in range(n):
+        j = (i + 1) % n
+        f = bm.faces.new((A[i], A[j], B[j], B[i])); f.material_index = mat
+    f = bm.faces.new(list(reversed(A))); f.material_index = mat
+    f = bm.faces.new(B); f.material_index = mat
+
+
 def bogie_mesh(detail=2):
+    """Siemens SF-type bogie (estimated from the photos): wheelsets with flanged wheels and brake discs, axleboxes with
+    their covers, coil primary springs and vertical dampers, a swan-necked side frame low in the middle, the transom with
+    the motor / gearbox, air springs (secondary), yaw dampers, brake units."""
     bm = bmesh.new()
-    seg = 18 if detail >= 2 else 10
+    seg = 20 if detail >= 2 else 10
+    yb = GAUGE / 2 + 0.25                                     # the side frames' plane
     for x in (WB / 2, -WB / 2):
-        cyl(bm, (x, 0, WHEEL_R), 0.075, GAUGE + 0.30, "y", S["metal_dark"], 10)               # axle
-        for s in (1, -1):
-            cyl(bm, (x, s * (GAUGE / 2 + 0.035), WHEEL_R), WHEEL_R, 0.13, "y", S["metal_dark"], seg)   # wheel
-            cyl(bm, (x, s * (GAUGE / 2 + 0.035), WHEEL_R), WHEEL_R + 0.015, 0.03, "y", S["metal_dark"], seg)   # flange
+        cyl(bm, (x, 0, WHEEL_R), 0.075, GAUGE + 0.42, "y", S["metal_dark"], 10)               # axle
+        for sd in (1, -1):
+            cyl(bm, (x, sd * (GAUGE / 2 + 0.035), WHEEL_R), WHEEL_R, 0.13, "y", S["metal_dark"], seg)          # tread + web
+            cyl(bm, (x, sd * (GAUGE / 2 - 0.02), WHEEL_R), WHEEL_R + 0.016, 0.028, "y", S["metal_dark"], seg)   # flange
+            cyl(bm, (x, sd * (GAUGE / 2 + 0.11), WHEEL_R), WHEEL_R * 0.55, 0.03, "y", S["paint_grey"], 14)     # wheel centre (lighter)
             if detail >= 2:
-                cyl(bm, (x, s * (GAUGE / 2 - 0.25), WHEEL_R), 0.30, 0.05, "y", S["paint_grey"], 14)   # brake disc
-            box(bm, (x, s * (GAUGE / 2 + 0.24), WHEEL_R), (0.36, 0.22, 0.30), S["metal_dark"], 0.03)   # axle box
+                cyl(bm, (x, sd * (GAUGE / 2 - 0.26), WHEEL_R), 0.31, 0.06, "y", S["paint_grey"], 16)            # brake disc
+                box(bm, (x + 0.33, sd * (GAUGE / 2 - 0.26), WHEEL_R + 0.18), (0.22, 0.16, 0.26), S["metal_dark"], 0.02)   # brake caliper unit
+            box(bm, (x, sd * yb, WHEEL_R), (0.38, 0.24, 0.30), S["metal_dark"], 0.03)                         # axlebox
+            cyl(bm, (x, sd * (yb + 0.14), WHEEL_R), 0.13, 0.06, "y", S["paint_grey"], 14)                       # its cover
             if detail >= 2:
-                cyl(bm, (x, s * (GAUGE / 2 + 0.24), WHEEL_R + 0.30), 0.10, 0.26, "z", S["paint_grey"], 10)   # primary spring
-    for s in (1, -1):
-        box(bm, (0, s * (GAUGE / 2 + 0.24), WHEEL_R + 0.48), (WB + 0.55, 0.22, 0.26), S["metal_dark"], 0.04)   # side frame
+                for dxs in (-0.14, 0.14):
+                    helix(bm, (x + dxs, sd * yb, WHEEL_R + 0.16), 0.075, 0.018, 4.5, 0.24, S["metal_dark"])   # coil springs
+                cyl(bm, (x + sd * 0.0 + 0.27, sd * (yb + 0.13), WHEEL_R + 0.30), 0.035, 0.36, "z", S["paint_grey"], 8)   # vertical damper
+    for sd in (1, -1):
+        # side frame: raised over the axleboxes, a swan neck down to the middle (the air springs sit on it)
+        h0, h1 = WHEEL_R + 0.40, WHEEL_R + 0.62
+        l0, l1 = WHEEL_R + 0.12, WHEEL_R + 0.40
+        X = WB / 2 + 0.38
+        outline = [(-X, h0), (-WB / 2 - 0.2, h0), (-WB / 2 + 0.25, l0), (WB / 2 - 0.25, l0), (WB / 2 + 0.2, h0), (X, h0),
+                   (X, h1), (WB / 2 + 0.15, h1), (WB / 2 - 0.35, l1 + 0.06), (-WB / 2 + 0.35, l1 + 0.06), (-WB / 2 - 0.15, h1), (-X, h1)]
+        frame_prism(bm, outline if detail >= 2 else [(-X, l0), (X, l0), (X, h1), (-X, h1)], sd * yb, 0.20, S["metal_dark"])
         if detail >= 2:
-            cyl(bm, (0.35, s * (GAUGE / 2 + 0.24), WHEEL_R + 0.75), 0.17, 0.22, "z", S["rubber"], 14)   # air spring
-            cyl(bm, (-0.75, s * (GAUGE / 2 + 0.40), WHEEL_R + 0.50), 0.045, 0.55, "x", S["paint_grey"], 8)   # yaw damper
-    box(bm, (0, 0, WHEEL_R + 0.45), (0.45, GAUGE + 0.25, 0.24), S["metal_dark"], 0.03)            # transom
+            cyl(bm, (0, sd * yb, l1 + 0.18), 0.19, 0.20, "z", S["rubber"], 18)                     # air spring (bellows)
+            cyl(bm, (0, sd * yb, l1 + 0.30), 0.17, 0.04, "z", S["metal_dark"], 18)
+            cyl(bm, (-0.6, sd * (yb + 0.20), WHEEL_R + 0.55), 0.045, 0.62, "x", S["paint_grey"], 8)   # yaw damper
+            box(bm, (0.7, sd * (yb + 0.02), WHEEL_R + 0.62), (0.3, 0.3, 0.08), S["paint_grey"])       # sandbox / bracket
+    box(bm, (0, 0, WHEEL_R + 0.30), (0.42, GAUGE + 0.40, 0.22), S["metal_dark"], 0.03)            # transom
     if detail >= 2:
-        box(bm, (0, 0, WHEEL_R + 0.35), (0.9, 0.5, 0.35), S["metal_dark"], 0.03)                   # traction motor / gearbox hint
+        box(bm, (0.42, 0, WHEEL_R + 0.12), (0.55, 0.62, 0.42), S["metal_dark"], 0.03)            # traction motor
+        box(bm, (0.95, 0.0, WHEEL_R + 0.02), (0.32, 0.42, 0.36), S["metal_dark"], 0.03)          # gearbox
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.0003)
     return bm
 
