@@ -253,7 +253,7 @@ export function beechBark(m) {
   const far = smoothstep(0.3, 1.6, fw), near = float(1).sub(far);
   // base: silver-grey, cool to warm in big soft zones
   const zone = mx_noise_float(q.mul(0.35).add(3.0));
-  let col = mix(vec3(0.27, 0.275, 0.27), vec3(0.33, 0.32, 0.295), smoothstep(-0.4, 0.4, zone));
+  let col = mix(vec3(0.19, 0.195, 0.19), vec3(0.25, 0.24, 0.215), smoothstep(-0.4, 0.4, zone));   // (photos: mid-grey, warmer in places)
   const mott = mx_noise_float(q.mul(1.4).add(11.0)).mul(0.45).add(mx_noise_float(q.mul(4.0).add(5.0)).mul(0.3)).add(mx_noise_float(q.mul(11.0).add(2.0)).mul(0.25));
   col = col.mul(mott.mul(0.3).mul(near).add(1));
   col = mix(col, col.mul(vec3(0.95, 1.0, 0.86)), smoothstep(0.1, 0.6, mx_noise_float(q.mul(0.6).add(33.0))).mul(0.6));   // greenish-brown zones
@@ -270,10 +270,10 @@ export function beechBark(m) {
   // each eye its own size and a wobbly, almond outline (pointed ends: |x|^1.4), its edge soft (healed bark)
   const esz = eh.mul(0.6).add(0.7);
   const wob = mx_noise_float(vec3(eg.x.mul(6.0), eg.y.mul(6.0), ec.x.add(ec.y.mul(7.0)))).mul(0.05);
-  const ef = vec3(ef0.x.div(esz), ef0.y.div(esz), 0);
+  const ef = vec3(ef0.x.sub(eh.sub(0.5).mul(0.3)).div(esz), ef0.y.sub(fract(eh.mul(7.0)).sub(0.5).mul(0.35)).div(esz), 0);   // jittered in its cell
   const taperY = float(1).sub(smoothstep(0.0, 0.2, abs(ef.x)).mul(0.65));                 // the almond: thinner toward the ends
   const ed = length(vec3(ef.x, ef.y.add(wob).mul(4.2).div(taperY), 0));
-  const eyeOn = smoothstep(0.3, 0.36, eh).mul(smoothstep(0.5, 1.5, level).oneMinus());
+  const eyeOn = smoothstep(0.62, 0.68, eh).mul(smoothstep(0.5, 1.5, level).oneMinus());   // (a third of the cells: no visible grid)
   const eyeW = fw.mul(0.4).add(0.05);
   const eye = float(1).sub(smoothstep(float(0.2).sub(eyeW), float(0.2).add(eyeW), ed)).mul(eyeOn);
   const rim = float(1).sub(smoothstep(float(0), eyeW.mul(1.5), abs(ed.sub(0.28)))).mul(eyeOn);
@@ -296,7 +296,7 @@ export function beechBark(m) {
   col = col.mul(smoothstep(-0.5, 0.6, p.y).mul(0.4).add(0.6));
   // limbs a little lighter and cleaner
   col = mix(col, col.mul(1.08), smoothstep(0.5, 1.5, level));
-  col = mix(col, vec3(0.27, 0.275, 0.25), far.mul(0.7));
+  col = mix(col, vec3(0.2, 0.2, 0.185), far.mul(0.7));
   m.colorNode = col;
   const h = wrinkle.mul(0.0015).negate().sub(eye.mul(0.0004)).add(lichen.mul(0.0006)).mul(near);
   m.normalNode = bumpNormal(h);

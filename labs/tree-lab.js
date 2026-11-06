@@ -9,7 +9,7 @@
 // lab only), both through the same chain. Panel: viewer/panelUI.js. window.lab for scripts.
 import * as THREE from "three/webgpu";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { uniform, vec3, float, mix, select } from "three/tsl";
+import { uniform, vec3, float, mix, select, positionWorld, mx_noise_float, smoothstep } from "three/tsl";
 import { Panel } from "../viewer/panelUI.js";
 import { Lighting, PRESETS } from "../viewer/lighting.js";
 import { createPipeline } from "../viewer/post.js";
@@ -52,6 +52,15 @@ function quad(x0, z0, x1, z1, y, mat, uvMetres = true) {
   if (uvMetres) { const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * (x1 - x0), uv.getY(i) * (z1 - z0)); }
   const m = new THREE.Mesh(g, mat); m.position.set((x0 + x1) / 2, y, (z0 + z1) / 2); m.receiveShadow = true; scene.add(m); return m;
 }
+// the forest patch's floor: beech leaf litter (brown, patchy, a few green patches of moss and bramble), as in the
+// Sonian Forest photos; a plain procedural material (the lab only)
+const litter = new THREE.MeshStandardNodeMaterial({ roughness: 1, metalness: 0, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
+{
+  const P = positionWorld, n1 = mx_noise_float(P.mul(0.08)), n2 = mx_noise_float(P.mul(0.9).add(3.0)), n3 = mx_noise_float(P.mul(7.0).add(9.0));
+  const brown = mix(vec3(0.075, 0.04, 0.02), vec3(0.16, 0.085, 0.035), n2.mul(0.5).add(0.5)).mul(n3.mul(0.25).add(1));
+  litter.colorNode = mix(brown, vec3(0.05, 0.08, 0.025), smoothstep(0.35, 0.6, n1).mul(0.7));
+}
+quad(-260, -680, 260, -160, Y0 + 0.015, litter, false);
 const setts = cobbleMaterial();
 quad(-24, -18, 24, 18, Y0 + 0.02, setts);                                   // the square
 const STREET_Z = 70;
