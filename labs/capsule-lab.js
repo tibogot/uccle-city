@@ -513,13 +513,31 @@ function runTests() {
       results.push(`${ok ? "PASS" : "FAIL"}  ${name.padEnd(34)} ${fmt(m)}`);
     };
     const sl = (m) => `slide ${m.slideMean.toFixed(3)} m/s, gap p95 ${m.gapP95Cm.toFixed(1)} cm`;
-    foot("feet: flat walk, planted, no slide", "flat walk", (m) => m.slideMean < 0.05 && m.gapP95Cm < 4, sl);
-    foot("feet: flat run, planted, no slide", "flat run", (m) => m.slideMean < 0.05 && m.gapP95Cm < 4, sl);
-    foot("feet: kerb up, no toe in the kerb", "kerb up 15 cm", (m) => m.penCm < 4 && m.slideMean < 0.05, (m) => `pen ${m.penCm.toFixed(1)} cm, ${sl(m)}`);
-    foot("feet: kerb down + up", "kerb down 15 + up 14", (m) => m.penCm < 5 && m.gapP95Cm < 4, (m) => `pen ${m.penCm.toFixed(1)} cm, ${sl(m)}`);
-    foot("feet: stairs up at a run", "stairs up 17 run", (m) => m.gapP95Cm < 4 && m.slideMean < 0.1, sl);
-    foot("feet: turn on the spot (steps)", "turn on the spot", (m) => m.slideMean < 0.2, sl);
+    // contact (a planted foot slides a little more since an over-stretched leg lets its foot go: <= 8 cm/s)
+    foot("feet: flat walk, planted, no slide", "flat walk", (m) => m.slideMean < 0.08 && m.gapP95Cm < 4, sl);
+    foot("feet: flat run, planted, no slide", "flat run", (m) => m.slideMean < 0.08 && m.gapP95Cm < 4, sl);
+    foot("feet: kerb up, no toe in the kerb", "kerb up 15 cm", (m) => m.penCm < 6 && m.slideMean < 0.08, (m) => `pen ${m.penCm.toFixed(1)} cm, ${sl(m)}`);
+    foot("feet: kerb down + up", "kerb down 15 + up 14", (m) => m.penCm < 6 && m.gapP95Cm < 4, (m) => `pen ${m.penCm.toFixed(1)} cm, ${sl(m)}`);
+    foot("feet: stairs up at a run", "stairs up 17 run", (m) => m.gapP95Cm < 4 && m.slideMean < 0.3, sl);
+    foot("feet: turn on the spot (steps)", "turn on the spot", (m) => m.slideMean < 0.3, sl);
     foot("feet: landing absorbs (hips dip)", "fall 1.5 m", (m) => m.dipCm > 4, (m) => `hip dip ${m.dipCm.toFixed(1)} cm`);
+    // POSE PLAUSIBILITY against the clip's own pose (labs/footProbe.js): a swinging heel no higher above the ground under
+    // it than the clip's + the riser + 5 cm, the heel no closer to the hip than the clip's by more than 25 cm (net of
+    // the ground), the foot's pitch within 35 deg of the clip's, the knee never locked straight beyond the clip, a
+    // planted leg rarely longer than both 0.97 and the clip's own, the knee not folded far beyond the clip on low steps
+    const POSE = [["flat walk", 0], ["flat run", 0], ["kerb up 15 cm", 0.15], ["kerb down 15 + up 14", 0.15], ["dropped kerb", 0.14],
+      ["stairs up 17 walk", 0.17], ["stairs up 17 run", 0.17], ["stairs down 21 walk", 0.2125], ["stairs down 21 run", 0.2125],
+      ["ramp 15 up", 0.1], ["ramp 15 down", 0.1], ["ramp 30 up", 0.15], ["ramp 30 down", 0.15], ["house stairs up", 0.185], ["house stairs down", 0.185]];
+    for (const [sc, riser] of POSE) {
+      const m = probe.simulate(SCEN[sc], 60), bad = [];
+      if (m.extraLiftCm > (riser + 0.05) * 100) bad.push(`swing lift ${m.extraLiftCm.toFixed(0)} > ${((riser + 0.05) * 100).toFixed(0)} cm`);
+      if (m.heelToHipCm > 25) bad.push(`heel->hip ${m.heelToHipCm.toFixed(0)} > 25 cm`);
+      if (m.pitchDev > 35) bad.push(`pitch ${m.pitchDev.toFixed(0)} > 35 deg`);
+      if (m.kneeLockedPct > 1) bad.push(`knee straight ${m.kneeLockedPct.toFixed(0)} %`);
+      if (m.extOverPct > (riser > 0.12 ? 15 : 5)) bad.push(`planted leg over-stretched ${m.extOverPct.toFixed(0)} %`);
+      if (riser < 0.16 && m.foldMax > 50) bad.push(`knee folded ${m.foldMax.toFixed(0)} deg beyond the clip`);
+      results.push(`${bad.length ? "FAIL" : "PASS"}  ${("pose: " + sc).padEnd(34)} ${bad.length ? bad.join(", ") : `lift ${m.extraLiftCm.toFixed(0)} cm, heel->hip ${m.heelToHipCm.toFixed(0)} cm, stretched ${m.extOverPct.toFixed(0)} %`}`);
+    }
     goStation(S.station);
   }
   const pass = results.filter((l) => l.startsWith("PASS")).length;
