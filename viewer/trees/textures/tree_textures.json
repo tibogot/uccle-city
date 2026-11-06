@@ -1,0 +1,138 @@
+{
+ "leaves": {
+  "leaf_plane": {
+   "what": "London plane spray, leaves modelled in Blender (tools/blender/leafAtlas.py)",
+   "licence": "own work (repo licence)",
+   "source": "tools/blender/leafAtlas.py",
+   "px": 1024,
+   "coverage": 0.3978,
+   "mean_albedo_linear": [
+    0.0988,
+    0.1676,
+    0.0286
+   ],
+   "mean_thickness": 0.3,
+   "a_ktx2_bytes": 477800,
+   "n_ktx2_bytes": 547071
+  },
+  "leaf_plane_scan": {
+   "what": "the plane's spray of CC0 scanned maple leaves (ambientCG LeafSet010)",
+   "licence": "CC0",
+   "source": "https://ambientcg.com/view?id=LeafSet010",
+   "px": 1024,
+   "coverage": 0.3588,
+   "mean_albedo_linear": [
+    0.15,
+    0.282,
+    0.015
+   ],
+   "mean_thickness": 0.3,
+   "a_ktx2_bytes": 567460,
+   "n_ktx2_bytes": 538354
+  },
+  "leaf_beech": {
+   "what": "beech spray, leaves modelled in Blender (tools/blender/leafAtlas.py)",
+   "licence": "own work (repo licence)",
+   "source": "tools/blender/leafAtlas.py",
+   "px": 1024,
+   "coverage": 0.3716,
+   "mean_albedo_linear": [
+    0.075,
+    0.1779,
+    0.0242
+   ],
+   "mean_thickness": 0.3,
+   "a_ktx2_bytes": 458750,
+   "n_ktx2_bytes": 534247
+  },
+  "leaf_beech_scan": {
+   "what": "the beech's spray of CC0 scanned leaves (ambientCG LeafSet024)",
+   "licence": "CC0",
+   "source": "https://ambientcg.com/view?id=LeafSet024",
+   "px": 1024,
+   "coverage": 0.4297,
+   "mean_albedo_linear": [
+    0.1529,
+    0.2666,
+    0.0509
+   ],
+   "mean_thickness": 0.3,
+   "a_ktx2_bytes": 606459,
+   "n_ktx2_bytes": 604951
+  }
+ },
+ "bark": {
+  "Bark009": {
+   "what": "plane: the camouflage (pale under-bark, peeling plates)",
+   "licence": "CC0",
+   "source": "https://ambientcg.com/view?id=Bark009",
+   "size_m": 1.0,
+   "px": 1024,
+   "mean_albedo_linear": [
+    0.6167,
+    0.6042,
+    0.4245
+   ],
+   "mean_roughness": 0.509,
+   "albedo_ktx2_bytes": 1223395,
+   "nra_ktx2_bytes": 1299187
+  },
+  "bark_platanus": {
+   "what": "plane: old, dark flaking bark (the foot of old planes)",
+   "licence": "CC0",
+   "source": "https://polyhaven.com/a/bark_platanus",
+   "size_m": 1.5,
+   "px": 1024,
+   "mean_albedo_linear": [
+    0.0989,
+    0.0682,
+    0.0486
+   ],
+   "mean_roughness": 0.876,
+   "albedo_ktx2_bytes": 1237945,
+   "nra_ktx2_bytes": 1321818
+  },
+  "chinese_hackberry_bark": {
+   "what": "beech: smooth grey-brown bark with pale lichen spots",
+   "licence": "CC0",
+   "source": "https://polyhaven.com/a/chinese_hackberry_bark",
+   "size_m": 1.8,
+   "px": 1024,
+   "mean_albedo_linear": [
+    0.0908,
+    0.0647,
+    0.0348
+   ],
+   "mean_roughness": 0.925,
+   "albedo_ktx2_bytes": 1178429,
+   "nra_ktx2_bytes": 1090823
+  },
+  "Bark005": {
+   "what": "beech: smooth olive-grey bark with branch scars and algae",
+   "licence": "CC0",
+   "source": "https://ambientcg.com/view?id=Bark005",
+   "size_m": 1.0,
+   "px": 1024,
+   "mean_albedo_linear": [
+    0.0911,
+    0.0962,
+    0.0584
+   ],
+   "mean_roughness": 0.513,
+   "albedo_ktx2_bytes": 1183468,
+   "nra_ktx2_bytes": 1273117
+  }
+ },
+ "megascans": {
+  "status": "not available locally (2026-11-06): slot C in the lab is empty",
+  "licence": "Fab Standard License (NOT CC0): lab only, never committed raw, never redistributed",
+  "wanted": [
+   "Beech Bark",
+   "European Beech (leaf set)",
+   "Norway Maple (palmate leaves, for the plane)",
+   "Maple Leaves",
+   "Silver Birch Bark"
+  ],
+  "how": "drop the exported maps into data/raw/textures/trees/megascans/<asset>/ (albedo, normal, roughness, opacity) and add them to BARKS / LEAVES above (leaves: tools/blender/leafAtlas.py --scan-root)"
+ }
+}

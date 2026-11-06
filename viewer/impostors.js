@@ -20,7 +20,7 @@ import {
   cameraPosition, uv, transformNormalToView, normalGeometry, positionGeometry,
 } from "three/tsl";
 import { applyAlphaCutout } from "../vendor/stylized-trees/alphaCutout.js";
-import { treeTint } from "../vendor/stylized-trees/stylizedTrees.js";
+import { treeTint, leafAtlasNodes, leafAtlasNormal } from "../vendor/stylized-trees/stylizedTrees.js";
 
 import { lodEye, keepBand, rampTo } from "./lodFade.js";
 
@@ -67,14 +67,19 @@ export function bakeTreeImpostors(renderer, shared, variants, leafMask) {
   // are the shading inputs, not the lit colour
   const U = shared.U;
   const card = attribute("card", "vec4"), spin = attribute("cardSpin", "vec3");
-  const maskT = texture(leafMask, card.xy.mul(0.5).add(0.5)), mask = maskT.r;
+  const maskT = texture(leafMask, card.xy.mul(0.5).add(0.5));
+  // (vendor CHANGES #16: a species with a leaf-spray texture bakes ITS shapes, colour variation and normals, as its
+  // leaves draw them; without one (the street trees, the procedural masks) nothing here changes)
+  const atlas = shared.leafAtlas ? leafAtlasNodes(shared.leafAtlas, card.xy.mul(0.5).add(0.5)) : null;
+  const mask = atlas ? atlas.alpha : maskT.r;
   const hA = card.w, aoA = card.z;
   // (the leaf's own tone from the mask's .g, as the leaves: vendor CHANGES #12; 0 for the street trees)
-  const tone = float(1).add(maskT.g.sub(0.5).mul(2).mul(U.leafTone ?? float(0)));
+  const tone = atlas ? atlas.variation : float(1).add(maskT.g.sub(0.5).mul(2).mul(U.leafTone ?? float(0)));
   const leafAlbedo = mix(U.bottom, U.top, smoothstep(0.0, 1.0, hA)).mul(mix(float(1), aoA, U.aoColor)).mul(tone);
   // the pad-dome normal (the leaves' normalNode, in tree space): the card's centre normal leaned out by
   // the corner (corner = world position - card centre, the bake instance being the identity)
-  const leafN = normalize(normalGeometry.add(positionWorld.sub(positionGeometry).mul(spin.z).mul(0.7)));
+  const leafDome = normalize(normalGeometry.add(positionWorld.sub(positionGeometry).mul(spin.z).mul(0.7)));
+  const leafN = atlas ? leafAtlasNormal(leafDome, atlas.nCard, shared.leafAtlas.normalK ?? 1) : leafDome;
   const basic = (outputNode, positionNode) => {
     const m = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide });
     m.positionNode = positionNode;
