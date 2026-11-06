@@ -331,6 +331,32 @@ window.__lab = {
     await this.seq("park_in", n, 0.1, () => { if (!sim.alive[i] && done < 0) done = k; return `t=${(k += 0.1).toFixed(1)}s  ${sim.alive[i] ? ST[sim.state[i]] + "  " + (sim.v[i] * 3.6).toFixed(1) + " km/h" : "parked (handed to the parked fleet)"}`; });
     return { parked: !best.hidden, at: done, parkIns: sim.stats.parkIns };
   },
+  /** THE GIVE-WAY CHECK: at an unsigned junction (priorité de droite / give way), two cars on crossing moves timed to
+   *  arrive together; the one without priority waits, then turns (dir/give_way). pick = which suitable pair. */
+  async giveWay(pick = 0, n = 110) {
+    this.pause();
+    const g = sim.W.slots[0], pairs = [];
+    for (let c = 0; c < g.paths; c++) {
+      if (!g.kind[c] || !g.core[c]) continue;
+      const j = g.nodeOf[c]; if (j < 0 || g.jnodes[j].signal) continue;
+      for (let k = g.cfOff[c]; k < g.cfOff[c + 1]; k++) {
+        if (g.cfYield[k] !== 1) continue;
+        const o = g.cfOther[k], la = g.prevIdx[g.prevOff[c]], lb = g.prevIdx[g.prevOff[o]];
+        if (g.len[la] > 32 && g.len[lb] > 32 && g.turn[c] !== 3 && g.turn[o] !== 3) pairs.push([c, o, la, lb, j]);
+      }
+    }
+    if (!pairs.length) return "no pair";
+    const [c, o, la, lb, j] = pairs[pick % pairs.length], J2 = g.jnodes[j];
+    this.clearAround(J2.x, J2.z, 90);
+    const a = sim.spawnAt(la, g.len[la] - 30, 7); sim.insertInList(a); sim.route[a * 4] = c; sim.route[a * 4 + 1] = -1; sim.fillRoute(a);
+    const b = sim.spawnAt(lb, g.len[lb] - 30, 7); sim.insertInList(b); sim.route[b * 4] = o; sim.route[b * 4 + 1] = -1; sim.fillRoute(b);
+    const y = ground(J2.x, J2.z);
+    this.look(J2.x + 6, y + 42, J2.z + 30, J2.x, y, J2.z);
+    const H = ["", "signal", "stop sign", "give way", "junction busy", "exit full"], T = ["straight", "left", "right", "u-turn", "ring"];
+    let k = 0;
+    await this.seq("give_way", n, 0.1, () => `t=${(k += 0.1).toFixed(1)}s  yielding car (${T[g.turn[c]]}): ${(sim.v[a] * 3.6).toFixed(1)} km/h ${H[sim.hold[a]] || ""}  ·  priority car (${T[g.turn[o]]}): ${(sim.v[b] * 3.6).toFixed(1)} km/h`);
+    return { pairs: pairs.length, node: J2.id, kind: J2.kind, ctrlA: g.ctrl[la], turnA: g.turn[c], turnB: g.turn[o] };
+  },
   look(px, py, pz, tx, ty, tz) { camera.position.set(px, py, pz); controls.target.set(tx, ty, tz); controls.update(); },
   near(x, z, r = 30) { const o = []; for (let i = 0; i < sim.cap; i++) if (sim.alive[i] && (sim.x[i] - x) ** 2 + (sim.z[i] - z) ** 2 < r * r) o.push({ i, v: +sim.v[i].toFixed(2), hold: sim.hold[i], st: sim.state[i], x: +sim.x[i].toFixed(1), z: +sim.z[i].toFixed(1) }); return o; },
 };
