@@ -18,7 +18,7 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 
 **Waiting for the owner's eye:**
 - [ ] Material Lab (`claude/materials`): pick per material; commit `viewer/materials/choices.json`; then switch heroes, ground and façades to the library.
-- [ ] Royal Observatory (`claude/observatory`, `?observatory=1`): fix the main building's window counts (rule-based, too many).
+- [ ] Royal Observatory (`claude/observatory`, `?observatory=1`): window counts FIXED from photos (main front: triplets, pedimented portal, attic with pediment + oculus; wings, galleries, pavilions, residences; floors follow the sloping ground; two-leaf SE shutter; per-vertex AO on thin parts). Coordinator review: main front now close to the photo; still: the glass reads as black voids (photo: white frames, pale glass; give it the kit's rooms-behind-glass), the entrance steps are missing, residences' windows too small, SE tower too slim, many unphotographed façades still rule-based.
 - [ ] Uccle town hall (`claude/townhall`, `?townhall=1`): west façade invented (no photo), south from one photo, plinth too dark, missing flags / carved panel, front steps end on grass.
 - [ ] Push to Vercel: falcons + interior fixes are merged but not live.
 
