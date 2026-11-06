@@ -3,7 +3,7 @@
  "urbis": "bridge/692",
  "line": "L26",
  "road": "Chauss\u00e9e de Saint-Job",
- "triangles": 55061,
+ "triangles": 49373,
  "materials": [
   "brick_red_brussels",
   "stone_blue",
@@ -32,7 +32,7 @@
    "x0": -13.22,
    "x1": 6.839,
    "kind": "segment",
-   "rise": 5.0,
+   "rise": 5.3,
    "spring": 2.3,
    "ring": 0.72,
    "main": true

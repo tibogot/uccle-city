@@ -50,7 +50,7 @@ BRIDGES = {
         "main": {"kind": "segment", "rise": 5.3, "spring": 2.3, "ring": 0.72, "pier": 0.6},   # [E] photos
         "pilaster": {"w": 1.70, "proj": 0.30, "cap": 0.55},                               # [E]
         "side": [{"span": 5.0, "gap": 1.2, "spring": 1.4}],                               # [E] one each side, both faces
-        "arcade": {"z0": 8.45, "z1": 9.25, "pitch": 0.88, "proj": 0.13},                  # [E] counted 24 bays between the pilasters
+        "arcade": {"z0": 8.15, "z1": 9.25, "pitch": 1.18, "proj": 0.13},                  # [E] counted 17-19 bays between the pilasters (photos 2023)
         "cornice": 9.25, "parapet": 10.55, "coping": 0.16, "parapet_t": 0.42,
         "ends": "quoin",
         "views": {    # camera (bridge frame, m) -> look-at, lens (35 mm equivalent), for the side-by-side sheets
