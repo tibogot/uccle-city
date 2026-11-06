@@ -29,7 +29,8 @@ export const CONTROLLER_DEFAULTS = {
   jumpHeight: 0.9, gravity: 22, maxFall: 40, coyoteTime: 0.1, jumpBuffer: 0.12,
   stepHeight: 0.25, snapDistance: 0.3, maxSlope: 50,      // degrees
   turnRate: 12,                       // facing follows the motion (1/s)
-  stepSmooth: 18,                     // visual lag of step-ups and snaps (1/s)
+  stepSmooth: 30,                     // visual lag of step-ups and snaps: a critically damped spring (1/s)
+  airEdge: 0.06,                      // m: in the air the rounded bottom rolls onto an edge only this far above the feet
   iterations: 4, maxSubsteps: 16,
 };
 
@@ -41,7 +42,7 @@ export class CharacterController {
     this.p = { ...CONTROLLER_DEFAULTS, ...params };
     this.pos = new Float64Array(3); this.vel = new Float64Array(3);
     this.prev = new Float64Array(5); this.curr = new Float64Array(5);     // x, y, z, yaw, stepOffset (for interpolation)
-    this.yaw = 0; this.stepOffset = 0;
+    this.yaw = 0; this.stepOffset = 0; this.stepVel = 0;
     this.grounded = false; this.groundN = new Float64Array([0, 1, 0]);
     this.coyote = 0; this.jumpBuf = 0; this.jumped = false;
     this.contacts = new Contacts(64);
@@ -61,7 +62,7 @@ export class CharacterController {
 
   teleport(x, y, z, yaw = this.yaw) {
     this.pos[0] = x; this.pos[1] = y; this.pos[2] = z;
-    this.vel.fill(0); this.yaw = yaw; this.stepOffset = 0;
+    this.vel.fill(0); this.yaw = yaw; this.stepOffset = 0; this.stepVel = 0;
     this.grounded = false; this.coyote = 0; this.jumpBuf = 0;
     this._snapState(); this.prev.set(this.curr);
   }
@@ -127,9 +128,14 @@ export class CharacterController {
       if (this.yaw > Math.PI) { this.yaw -= 2 * Math.PI; this.prev[3] -= 2 * Math.PI; }
       else if (this.yaw < -Math.PI) { this.yaw += 2 * Math.PI; this.prev[3] += 2 * Math.PI; }
     }
-    // 6. visual step lag
-    this.stepOffset *= Math.exp(-p.stepSmooth * dt);
-    if (Math.abs(this.stepOffset) < 1e-4) this.stepOffset = 0;
+    // 6. visual step lag: a critically damped spring (exact for any dt; no velocity jump when a step adds to it, so
+    // stairs read as a steady climb, not a jolt per step)
+    {
+      const om = p.stepSmooth, e = this.stepOffset, ex = Math.exp(-om * dt), tmp = (this.stepVel + om * e) * dt;
+      this.stepVel = (this.stepVel - om * tmp) * ex;
+      this.stepOffset = (e + tmp) * ex;
+      if (Math.abs(this.stepOffset) < 1e-4 && Math.abs(this.stepVel) < 1e-3) this.stepOffset = this.stepVel = 0;
+    }
     this.stats.queries = this.world.queries - q0;
     this._snapState();
   }
@@ -170,7 +176,8 @@ export class CharacterController {
         const cyl = D[o + 5];                                  // the contact's height
         // ground: under the bottom sphere's centre, and a walkable contact, or the edge of a walkable face (a tread's
         // nosing, a kerb's top edge) no higher than a step: the sphere rolls up onto it
-        const isGround = cyl < ay + 1e-4 && (ny >= cosSlope || (D[o + 7] >= cosSlope && cyl - gy <= p.stepHeight + 0.01));
+        // (in the air only an edge at the feet: a jump must not roll the capsule up onto a ledge a step higher)
+        const isGround = cyl < ay + 1e-4 && (ny >= cosSlope || (D[o + 7] >= cosSlope && cyl - gy <= (grounded ? p.stepHeight + 0.01 : p.airEdge)));
         if (isGround !== k < n) continue;
         // re-project: the depth left after the pushes so far
         // (planar), and no more than the exact distance from the capsule's axis to the stored contact point (a

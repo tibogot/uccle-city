@@ -38,6 +38,7 @@ export class ThirdPerson {
   start(x, y, z, yaw = 0) {
     this.on = true;
     this.ctl.teleport(x, y, z, yaw);
+    this.body.footIK?.reset?.();
     this.cam.reset(yaw + Math.PI);          // behind the character, looking where it faces
     this.stepper.acc = 0;
     this.body.root.visible = true;
@@ -56,14 +57,15 @@ export class ThirdPerson {
   update(dt) {
     if (!this.on) return;
     const t0 = performance.now();
-    this.input.apply(this.cam, this.ctl);
+    // autopilot(input, dt): scripted motion (the lab's foot audit) instead of the keyboard
+    if (this.autopilot) this.autopilot(this.ctl.input, dt); else this.input.apply(this.cam, this.ctl);
     const alpha = this.stepper.advance(dt, this._step);
     const t1 = performance.now();
     const S = this.ctl.sample(alpha, this.S), c = this.ctl;
     this.cam.update(dt, S[0], S[1], S[2], c.radius, c.height, this.world);
     const t2 = performance.now();
     const st = this.bodyState;
-    st.speed = Math.sqrt(c.vel[0] * c.vel[0] + c.vel[2] * c.vel[2]); st.grounded = c.grounded; st.vy = c.vel[1]; st.opacity = this.cam.opacity;
+    st.speed = Math.sqrt(c.vel[0] * c.vel[0] + c.vel[2] * c.vel[2]); st.grounded = c.grounded; st.vy = c.vel[1]; st.vx = c.vel[0]; st.vz = c.vel[2]; st.opacity = this.cam.opacity;
     st.gaitWalk = c.p.walkSpeed; st.gaitRun = c.p.runSpeed;
     this.body.update(dt, S[0], S[1], S[2], S[3], st, this.world);
     this.debug.update(c, this.cam, S[0], S[1], S[2]);

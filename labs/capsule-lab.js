@@ -23,6 +23,7 @@ import { FOOT_IK } from "../viewer/character/footIK.js";
 import { MODELS as FURNITURE } from "../viewer/furniture.js";
 import { CONTROLLER_DEFAULTS } from "../viewer/character/controller.js";
 import { CAMERA_DEFAULTS } from "../viewer/character/camera.js";
+import { FootProbe } from "./footProbe.js";
 
 const qp = new URLSearchParams(location.search);
 const $info = document.getElementById("info"), $notes = document.getElementById("notes");
@@ -277,11 +278,65 @@ if (qp.get("model")) {
   })();
 }
 
+// ------------------------------------------------------------------------------------------------ the foot audit
+// scripted walks over each surface (labs/footProbe.js): [x, z, yaw] start (height found with a ray), direction,
+// seconds, run. Measured at simulated 30 / 60 / 144 fps, or played live with the foot cameras.
+const probe = new FootProbe(tp, world);
+const at = (x, z, yaw = 0, from = 3) => { const t = world.ray(x, Y0 + from, z, 0, -1, 0, from + 20); return [x, Math.max(t < Infinity ? Y0 + from - t : -Infinity, groundH(x, z)) + 0.02, z, yaw]; };
+const E = Math.PI / 2, W = -Math.PI / 2, N = Math.PI;      // facing +x, -x, -z
+const SCEN = {
+  "flat walk": { start: at(-3, 1), dir: [0, 1], secs: 5 },
+  "flat run": { start: at(-3, 1), dir: [0, 1], secs: 4, run: true },
+  "kerb up 15 cm": { start: at(0, -1, N), dir: [0, -1], secs: 2.5 },
+  "kerb down 15 + up 14": { start: at(0, -4.2, N), dir: [0, -1], secs: 6 },
+  "kerbs at run": { start: at(0, -1, N), dir: [0, -1], secs: 3.5, run: true },
+  "dropped kerb": { start: at(7.5, -4, N), dir: [0, -1], secs: 6 },
+  "stairs up 17 walk": { start: at(6.5, 3, E), dir: [1, 0], secs: 4 },
+  "stairs up 17 run": { start: at(6.5, 3, E), dir: [1, 0], secs: 2.2, run: true },
+  "stairs down 21 walk": { start: at(12.5, 3, E), dir: [1, 0], secs: 4.5 },
+  "stairs down 21 run": { start: at(12.5, 3, E), dir: [1, 0], secs: 2.4, run: true },
+  "ramp 15 up": { start: at(6, 8, E), dir: [1, 0], secs: 4.5 },
+  "ramp 15 down": { start: at(13.5, 8, W), dir: [-1, 0], secs: 4.5 },
+  "ramp 30 up": { start: at(6, 11, E), dir: [1, 0], secs: 4.5 },
+  "ramp 30 down": { start: at(13.5, 11, W), dir: [-1, 0], secs: 4.5 },
+  "ramp 45 up": { start: at(6, 14, E), dir: [1, 0], secs: 3.5 },
+  "ramp 45 down": { start: at(11.5, 14, W), dir: [-1, 0], secs: 3.5 },
+  "slope 55 (blocked)": { start: at(6, 17, E), dir: [1, 0], secs: 3 },
+  "house stairs up": { start: at(-21.4, 29.35, E), dir: [1, 0], secs: 6 },
+  "house stairs down": { start: at(-16.5, 29.35, W, 4.6), dir: [-1, 0], secs: 6 },
+  "turn on the spot": { start: at(-3, 1), dir: (t) => (t < 1.2 ? [0, -1] : [0, 0]), secs: 2 },
+  "turn 90 walking": { start: at(-3, 1), dir: (t) => (t < 1.5 ? [0, 1] : [1, 0]), secs: 3 },
+  "start / stop walk": { start: at(-3, 1), dir: (t) => (t < 1.5 ? [0, 1] : [0, 0]), secs: 3 },
+  "start / stop run": { start: at(-3, 1), dir: (t) => (t < 1.5 ? [0, 1, true] : [0, 0]), secs: 3 },
+  "jump in place": { start: at(-3, 1), dir: [0, 0], secs: 2, jumpAt: 0.2 },
+  "running jump": { start: at(-3, 1), dir: [0, 1], secs: 3, run: true, jumpAt: 1 },
+  "fall 1.5 m": { start: (() => { const s = at(-3, 1); s[1] += 1.5; return s; })(), dir: [0, 0], secs: 2, pre: 0 },
+  "walk into wall": { start: at(-17, 8, E), dir: [1, 0], secs: 3 },
+  "slide along wall": { start: at(-17, 8, E), dir: [0.9, 0.45], secs: 3 },
+  "past a trunk": { start: at(PX + 14.2, PZ + 14), dir: [0, 1], secs: 3 },
+};
+const METRICS = [["slideMean", "slide m/s", 2], ["slideP95", "slide p95", 2], ["sinkCm", "sink cm", 1], ["floatCm", "float cm", 1], ["penCm", "pen cm", 1],
+  ["kneeMin", "knee min°", 0], ["kneeLockedPct", "knee straight %", 0], ["pelvisStdCm", "pelvis σ cm", 1], ["dipCm", "hip dip cm", 1], ["hipVmax", "hip v m/s", 2], ["ikJump", "IK jump m/s", 2]];
+/** Measure every scenario (or the named ones) at each simulated fps; returns rows, prints a table. */
+function audit(names = Object.keys(SCEN), fpsList = [30, 60, 144]) {
+  if (!probe.feet) {                       // the sole points from the idle pose on flat ground
+    goStation("0 start"); for (let i = 0; i < 40; i++) tp.update(1 / 60);
+    if (!probe.setup()) return "no character with foot IK in the slot";
+  }
+  const rows = [];
+  for (const name of names) for (const fps of fpsList) rows.push({ name, fps, ...probe.simulate(SCEN[name], fps) });
+  goStation(S.station);
+  const head = "surface".padEnd(22) + "fps " + METRICS.map((m) => m[1].padStart(10)).join("");
+  const lines = rows.map((r) => r.name.padEnd(22) + String(r.fps).padStart(3) + " " + METRICS.map(([k, , d]) => r[k].toFixed(d).padStart(10)).join(""));
+  $notes.style.display = "block"; $notes.textContent = "FOOT AUDIT\n" + head + "\n" + lines.join("\n");
+  return { head, lines, rows };
+}
+
 // ------------------------------------------------------------------------------------------------ panel
 const C = tp.ctl.p, K = tp.cam.p;
 const S = {
   station: qp.get("st") && STATIONS[qp.get("st")] ? qp.get("st") : "0 start",
-  hz: +(qp.get("hz") || 120), slowmo: 1, pointerLock: false,
+  hz: +(qp.get("hz") || 120), slowmo: +(qp.get("slow") || 1), pointerLock: false,
   radius: C.radius, height: C.height,
   debug: tp.debug.visible, dContacts: true, dRays: true, dCapsule: true,
   time: preset, hour: lighting.hour, post: qp.get("fx") !== "0",
@@ -305,10 +360,24 @@ const fch = ui.addFolder("Character");
 fch.add(S, "char", ["capsule", ...Object.keys(CHARACTERS)]).name("in the slot").onChange(setCharacter);
 fch.add(S, "model").name("model").listen();
 fch.add(S, "footIK").name("foot IK").onChange((v) => { tp.body.ikOn = v; });
-fch.add(FOOT_IK, "reach", 0, 0.6, 0.01).name("IK reach (m)").onChange(() => { if (tp.body.footIK) tp.body.footIK.p.reach = FOOT_IK.reach; });
-fch.add(FOOT_IK, "smooth", 2, 40, 1).name("IK smoothing").onChange(() => { if (tp.body.footIK) tp.body.footIK.p.smooth = FOOT_IK.smooth; });
-fch.add(FOOT_IK, "maxTilt", 0, 45, 1).name("foot tilt max (°)").onChange(() => { if (tp.body.footIK) tp.body.footIK.p.maxTilt = FOOT_IK.maxTilt; });
+const ikp = (k) => () => { if (tp.body.footIK) tp.body.footIK.p[k] = FOOT_IK[k]; };
+fch.add(FOOT_IK, "lock").name("foot lock (planted feet)").onChange(ikp("lock"));
+fch.add(FOOT_IK, "reach", 0, 0.6, 0.01).name("IK reach (m)").onChange(ikp("reach"));
+fch.add(FOOT_IK, "swingSmooth", 2, 60, 1).name("swing foot easing").onChange(ikp("swingSmooth"));
+fch.add(FOOT_IK, "pelvisOmega", 4, 40, 1).name("pelvis spring").onChange(ikp("pelvisOmega"));
+fch.add(FOOT_IK, "absorb", 0, 0.8, 0.01).name("landing absorb").onChange(ikp("absorb"));
+fch.add(FOOT_IK, "maxTilt", 0, 45, 1).name("foot tilt max (°)").onChange(ikp("maxTilt"));
 fch.add(S, "ik").name("IK").listen();
+const fa = ui.addFolder("Foot audit");
+S.cam = qp.get("cam") && ["follow", "feet side", "feet front", "feet top", "feet 3/4"].includes(qp.get("cam")) ? qp.get("cam") : "follow";
+S.scen = SCEN[qp.get("play")] ? qp.get("play") : "stairs up 17 walk"; S.loop = true;
+probe.camMode = S.cam;
+fa.add(S, "cam", ["follow", "feet side", "feet front", "feet top", "feet 3/4"]).name("camera").onChange((v) => { probe.camMode = v; if (v === "follow") { camera.fov = 0; } });
+fa.add(S, "scen", Object.keys(SCEN)).name("scripted walk");
+fa.add(S, "loop").name("loop it");
+fa.add({ go: () => { if (!probe.feet) probe.setup(); probe.play(SCEN[S.scen], S.loop); } }, "go").name("play (autopilot)");
+fa.add({ go: () => { probe.stop(); goStation(S.station); } }, "go").name("stop");
+fa.add({ go: () => audit() }, "go").name("measure all (30/60/144 fps)");
 const fm = ui.addFolder("Movement");
 fm.add(C, "walkSpeed", 0.5, 4, 0.05).name("walk (m/s)");
 fm.add(C, "runSpeed", 2, 10, 0.1).name("run (m/s)");
@@ -464,7 +533,8 @@ function sampleGpu() {
   renderer.resolveTimestampsAsync("render").then((ms) => { if (typeof ms === "number" && ms > 0) gpu.avg = gpu.avg ? gpu.avg * 0.9 + ms * 0.1 : ms; })
     .catch(() => {}).finally(() => { gpu.pending = false; });
 }
-window.lab = { renderer, scene, camera, tp, world, triBVH, prisms, terrain, lighting, S, STATIONS, goStation, runTests, bench, groundH, Y0, gpu };
+window.lab = { renderer, scene, camera, tp, world, triBVH, prisms, terrain, lighting, S, STATIONS, goStation, runTests, bench, groundH, Y0, gpu, probe, SCEN, audit };
+if (qp.get("play") && SCEN[qp.get("play")]) { probe.setup(); probe.play(SCEN[qp.get("play")], true); }
 
 // ------------------------------------------------------------------------------------------------ loop
 let last = performance.now(), frames = 0, fpsAcc = 0, fpsN = 0, fps = 0;
@@ -473,6 +543,7 @@ renderer.setAnimationLoop(() => {
   const now = performance.now(), dt = Math.min((now - last) / 1000, 0.1); last = now;
   fpsAcc += dt; fpsN++; if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
   tp.update(dt * S.slowmo);
+  probe.camera(camera, dt);
   focus.set(tp.x, tp.y, tp.z);
   lighting.update(camera.position.y, Y0, focus, 40);
   if (S.post) pipe.render(hazeHook); else renderer.render(scene, camera);

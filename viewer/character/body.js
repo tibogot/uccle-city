@@ -25,6 +25,8 @@ export class CharacterBody {
     this.uOpacity = uniform(1);
     this._buildCapsule();
     this.model = null; this.mixer = null; this.actions = {}; this.state = "";
+    this._ik = { grounded: true, speed: 0, vx: 0, vz: 0, landing: 0 };
+    this._wasGrounded = true; this._airTime = 0; this._fallV = 0;
   }
 
   _buildCapsule() {
@@ -193,12 +195,17 @@ export class CharacterBody {
       A[role].setEffectiveWeight(w[role]);
     }
     this.mixer.update(dt);
+    if (this.preIK) this.preIK(y);              // (lab hook: the foot audit reads the animated pose here)
     if (this.footIK && world) {
       const t0 = performance.now();
       this.root.updateMatrixWorld(true);
-      // full on the ground when walking, softer at a run, off in the air
-      const want = st.grounded ? 1 - 0.6 * Math.min(1, Math.max(0, (st.speed - 2.5) / 2.5)) : 0;
-      this.footIK.update(dt, world, y, want, this.ikOn !== false);
+      // on the ground (walking and running), off in the air; a touch-down passes its fall speed (the landing absorb)
+      const ik = this._ik;
+      ik.grounded = st.grounded; ik.speed = st.speed; ik.vx = st.vx ?? 0; ik.vz = st.vz ?? 0;
+      ik.landing = st.grounded && !this._wasGrounded && this._airTime > 0.12 ? Math.max(0, -this._fallV) : 0;
+      if (st.grounded) this._airTime = 0; else { this._airTime += dt; this._fallV = st.vy; }
+      this._wasGrounded = st.grounded;
+      this.footIK.update(dt, world, y, ik, this.ikOn !== false);
       this.ikMs = (this.ikMs || 0) * 0.95 + (performance.now() - t0) * 0.05;
     }
   }
