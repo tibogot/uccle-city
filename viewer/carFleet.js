@@ -21,13 +21,13 @@ import { PACK_SOURCES, packMaterial } from "./drive/carPacks.js";
 // panel vans, an occasional taxi
 export const TYPE_MIX = [["hatch_s", 0.20], ["hatch_c", 0.22], ["estate", 0.16], ["saloon", 0.13], ["suv", 0.13], ["van_c", 0.09], ["van_p", 0.035], ["taxi", 0.015]];
 // body sizes [w, h, l] (m), as tools/blender/carFaceted.py prints them (the colliders need them before the pack loads)
-const SIZES = { hatch_s: [1.74, 1.50, 4.01], hatch_c: [1.80, 1.50, 4.31], estate: [1.80, 1.51, 4.63], saloon: [1.82, 1.49, 4.73],
+export const SIZES = { hatch_s: [1.74, 1.50, 4.01], hatch_c: [1.80, 1.50, 4.31], estate: [1.80, 1.51, 4.63], saloon: [1.82, 1.49, 4.73],
   suv: [1.82, 1.64, 4.41], van_c: [1.84, 1.82, 4.50], van_p: [2.02, 2.28, 5.05], taxi: [1.80, 1.61, 4.67] };
 // paints (sRGB): Brussels car parks are mostly black, greys, silver and white
-const PAINTS = [0x0d0e10, 0x0d0e10, 0x0d0e10, 0x1a1c1f, 0x34383d, 0x34383d, 0x4a4e53, 0x5a5e63, 0x8f959c, 0x9ea4ab, 0x9ea4ab, 0xb8bcc0,
+export const PAINTS = [0x0d0e10, 0x0d0e10, 0x0d0e10, 0x1a1c1f, 0x34383d, 0x34383d, 0x4a4e53, 0x5a5e63, 0x8f959c, 0x9ea4ab, 0x9ea4ab, 0xb8bcc0,
   0xe8e8e4, 0xe8e8e4, 0xdcdcd6, 0x1d3f6e, 0x1d2c4a, 0x2e5a8a, 0x8a1414, 0x5a1010, 0x24483a, 0x6b5a48, 0x3a3226];
-const FADE_FROM = 380, FADE_TO = 420;                  // m: the distance fade-out
-const BANDS = [0.1, 0.08, 0.05];                       // LOD cross-fade per switch: +-10 % at 22 m, 8 % at 55, 5 % at 130
+export const FADE_FROM = 380, FADE_TO = 420;           // m: the distance fade-out
+export const BANDS = [0.1, 0.08, 0.05];                // LOD cross-fade per switch: +-10 % at 22 m, 8 % at 55, 5 % at 130
 const FADE_IN_MS = 1200;
 
 /** The slot length a type needs (m): its length + 0.5 m of gaps; a panel van needs a 6 m slot. */
@@ -75,6 +75,8 @@ class CarFleet {
     this.update = this.update.bind(this);
   }
   sizeOf(type) { return SIZES[type] || SIZES.hatch_c; }
+  /** Something about a car changed (hidden, type, paint, matrix): redo the batches next update. */
+  touch() { this.dirty = true; }
   /** A tile's cars: [{ x, y, z, heading, type, pv }]; `group` = the tile's car group (dropped when it leaves the scene). */
   add(group, cars) {
     const M = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1), v = new THREE.Vector3();
@@ -118,7 +120,8 @@ class CarFleet {
           geo.setIndex(new THREE.BufferAttribute(m.I, 1));
           geo.computeBoundingSphere();
           const isNear = k <= 1;
-          return { tris: m.I.length / 3, plain: this.batch(geo, isNear ? near : far, k < 3, false), fade: this.batch(geo, isNear ? nearFade : farFade, k < 3, true) };
+          // geo + W (wheel centres) kept for the moving traffic's own batches (viewer/traffic/trafficFleet.js)
+          return { tris: m.I.length / 3, geo, W: m.W, plain: this.batch(geo, isNear ? near : far, k < 3, false), fade: this.batch(geo, isNear ? nearFade : farFade, k < 3, true) };
         });
         const x = c.extras || {};
         types[c.id] = { lods, keepPaint: !!x.keepPaint, paint: new THREE.Color().setRGB(...(x.paint || [0.5, 0.5, 0.5])) };
@@ -194,6 +197,7 @@ class CarFleet {
       const alpha = Math.min(1, (now - r.t0) / FADE_IN_MS);
       for (const c of r.cars) {
         st.cars++;
+        if (c.hidden) continue;                          // pulled out into the traffic (viewer/traffic/): drawn there
         const T = this.types[c.type]; if (!T || T.t0 > now) continue;
         this.sphere.center.set(c.x, c.y + 0.9, c.z);
         if (!this.frustum.intersectsSphere(this.sphere)) { st.culled++; continue; }

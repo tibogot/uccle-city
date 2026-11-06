@@ -13,6 +13,7 @@ import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { buildDriveData } from "./drive/colliders.js";
 import { prepareSurfaces, fitRoadWidths, buildSurfaceRoads } from "./surfaces.js";
 import { smoothPolyline } from "./track.js";
+import { buildTrafficGraph } from "./traffic/trafficGraph.js";
 
 export const CARVE = 0.12;         // terrain is pushed this far under any road surface
 // The 1 m terrain grid is 500k triangles a tile (half the scene); seen from above, 1 m triangles cover
@@ -128,6 +129,8 @@ export async function buildTileData(entry, base) {
   const byCode = {};
   for (const i of errors) byCode[i.code] = (byCode[i.code] || 0) + 1;
   const netInfo = { roads: net.roads.length, nodes: net.nodes.length, errors: errors.length, byCode, warnings: net.issues.length - errors.length };
+  // the lane graph for the moving traffic (viewer/traffic/: lanes, connectors, junction control from OSM, conflicts)
+  const traffic = await step("traffic graph", () => buildTrafficGraph(net, roads, feats, bounds));
   // the roof grid (fly-mode collision) keeps every solid, also the ones a model replaces (its envelope is close enough)
   const roofs = await step("roof grid", () => roofGrid(bDoc, bounds));
   const road = await step("road meshes + carve", () => {
@@ -187,7 +190,7 @@ export async function buildTileData(entry, base) {
   const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats));
   const cover = await step("land cover", () => landCoverData(feats, bounds));
   return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs, drive,
-    netInfo, road, terrain, buildings, cover, times };
+    netInfo, road, terrain, buildings, cover, traffic, times };
 }
 
 // ---------------------------------------------------------------- far level of detail

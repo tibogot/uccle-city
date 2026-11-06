@@ -6750,6 +6750,327 @@ function smoothPolyline(line, { bend = 0.5, straight = 4, corner = 50 } = {}) {
   return out;
 }
 
+// viewer/traffic/signals.js
+var CYCLE = { green: 22, amber: 3, allRed: 2 };
+var CYCLE_T = (CYCLE.green + CYCLE.amber + CYCLE.allRed) * 2;
+var phaseOfDir = (ux, uz) => Math.abs(uz) > Math.abs(ux) ? 1 : 0;
+function nearestRoad(roads, N, x, z) {
+  let best = null;
+  for (const r of roads.roads) {
+    if (r.meta?.highway === "footway" || r.meta?.highway === "service") continue;
+    const pts = [N.get(r.a), ...r.pts, N.get(r.b)].filter(Boolean);
+    for (let k = 1; k < pts.length; k++) {
+      const a = pts[k - 1], b = pts[k], dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz;
+      if (L2 < 1e-6) continue;
+      const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / L2));
+      const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(x - px, z - pz);
+      if (!best || d < best.d) {
+        const L3 = Math.sqrt(L2), ux = dx / L3, uz = dz / L3;
+        best = { d, px, pz, ux, uz, side: -uz * (x - px) + ux * (z - pz) >= 0 ? 1 : -1, road: r };
+      }
+    }
+  }
+  return best;
+}
+
+// viewer/traffic/trafficGraph.js
+var TURN = { straight: 0, left: 1, right: 2, uturn: 3, ring: 4 };
+var CTRL = { none: 0, signal: 1, stop: 2, yield: 3, priority: 4 };
+var ALAT = 2.2;
+function minRadius(pts) {
+  let R = Infinity;
+  for (let i = 1; i + 1 < pts.length; i++) {
+    const [ax, az] = pts[i - 1], [bx, bz] = pts[i], [cx, cz] = pts[i + 1];
+    const a = Math.hypot(bx - ax, bz - az), b = Math.hypot(cx - bx, cz - bz), c = Math.hypot(cx - ax, cz - az);
+    const cross = Math.abs((bx - ax) * (cz - az) - (bz - az) * (cx - ax));
+    if (cross < 1e-6 || a < 0.05 || b < 0.05) continue;
+    R = Math.min(R, a * b * c / (2 * cross));
+  }
+  return R;
+}
+function pointAt(pts, cum, d) {
+  let i = 1;
+  while (i < pts.length - 1 && cum[i] < d) i++;
+  const s = cum[i] - cum[i - 1], f = s > 1e-9 ? (d - cum[i - 1]) / s : 0;
+  return [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * f, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * f];
+}
+function crossing(A, cA, B, cB) {
+  for (let i = 1; i < A.length; i++) {
+    const ax = A[i - 1][0], az = A[i - 1][1], bx = A[i][0], bz = A[i][1];
+    for (let j = 1; j < B.length; j++) {
+      const cx = B[j - 1][0], cz = B[j - 1][1], dx = B[j][0], dz = B[j][1];
+      const rx = bx - ax, rz = bz - az, sx = dx - cx, sz = dz - cz, den = rx * sz - rz * sx;
+      if (Math.abs(den) < 1e-9) continue;
+      const t = ((cx - ax) * sz - (cz - az) * sx) / den, u = ((cx - ax) * rz - (cz - az) * rx) / den;
+      if (t >= 0 && t <= 1 && u >= 0 && u <= 1) return [cA[i - 1] + t * (cA[i] - cA[i - 1]), cB[j - 1] + u * (cB[j] - cB[j - 1])];
+    }
+  }
+  return null;
+}
+function buildTrafficGraph(net, roads, feats, bounds) {
+  const t0 = performance.now();
+  const src = net.graph.paths.filter((p) => p.len > 0.2 && p.pts.length >= 2);
+  const idx = new Map(src.map((p, i) => [p.id, i]));
+  const P = src.length;
+  let nPts = 0;
+  for (const p of src) nPts += p.pts.length;
+  const xy = new Float32Array(nPts * 2), cum = new Float32Array(nPts), off = new Uint32Array(P + 1);
+  const len = new Float32Array(P), speed = new Float32Array(P), kind = new Uint8Array(P), turn = new Uint8Array(P);
+  const rank = new Uint8Array(P), tram = new Uint8Array(P), core = new Uint8Array(P);
+  const holdAt = new Float32Array(P).fill(-1), ctrl = new Uint8Array(P), phase = new Uint8Array(P), jnode = new Int32Array(P).fill(-1);
+  const nodeOf = new Int32Array(P).fill(-1);
+  const roadOf = (p) => net.roadsById.get(p.roadId);
+  const kmh = (rr) => {
+    const v = parseFloat(rr?.src?.meta?.maxspeed);
+    return v > 4 && v < 130 ? v : 30;
+  };
+  let o = 0;
+  src.forEach((p, i) => {
+    off[i] = o;
+    const c = p.cum || cumulative(p.pts);
+    for (let k = 0; k < p.pts.length; k++) {
+      xy[(o + k) * 2] = p.pts[k][0];
+      xy[(o + k) * 2 + 1] = p.pts[k][1];
+      cum[o + k] = c[k];
+    }
+    o += p.pts.length;
+    len[i] = p.len;
+    kind[i] = p.kind === "connector" ? 1 : 0;
+    turn[i] = TURN[p.turn] ?? 0;
+    const [mx, mz] = pointAt(p.pts, c, p.len / 2);
+    core[i] = mx >= bounds.x0 && mx < bounds.x1 && mz >= bounds.z0 && mz < bounds.z1 ? 1 : 0;
+  });
+  off[P] = o;
+  const csr = (key) => {
+    const o2 = new Uint32Array(P + 1), list2 = [];
+    src.forEach((p, i) => {
+      o2[i] = list2.length;
+      for (const id of p[key]) {
+        const j = idx.get(id);
+        if (j != null) list2.push(j);
+      }
+    });
+    o2[P] = list2.length;
+    return [o2, Int32Array.from(list2)];
+  };
+  const [nextOff, nextIdx] = csr("next"), [prevOff, prevIdx] = csr("prev");
+  src.forEach((p, i) => {
+    if (kind[i]) return;
+    const rr = roadOf(p);
+    speed[i] = kmh(rr) / 3.6;
+    rank[i] = rr?.type?.rank ?? 1;
+    tram[i] = rr?.src?.meta?.tram ? 1 : 0;
+    const R = minRadius(p.pts);
+    if (R < 60) speed[i] = Math.min(speed[i], Math.max(4, Math.sqrt(ALAT * R)));
+  });
+  src.forEach((p, i) => {
+    if (!kind[i]) return;
+    let v = 50 / 3.6, rk = 0, tr = 0;
+    for (let k = prevOff[i]; k < prevOff[i + 1]; k++) {
+      v = Math.min(v, speed[prevIdx[k]] || v);
+    }
+    for (let k = nextOff[i]; k < nextOff[i + 1]; k++) {
+      const j = nextIdx[k];
+      v = Math.min(v, speed[j] || v);
+      rk = Math.max(rk, rank[j]);
+      tr |= tram[j];
+    }
+    const R = minRadius(p.pts);
+    speed[i] = Math.max(2.5, Math.min(v, Math.sqrt(ALAT * R)));
+    rank[i] = rk;
+    tram[i] = tr;
+  });
+  const N = new Map(roads.nodes.map((n) => [n.id, n]));
+  const pts = feats.points || [];
+  const sigPts = pts.filter((q) => q.kind === "traffic_signals").map((q) => {
+    const nr = nearestRoad(roads, N, q.x, q.z);
+    return { x: q.x, z: q.z, phase: nr ? phaseOfDir(nr.ux, nr.uz) : 0 };
+  });
+  const signPts = pts.filter((q) => q.kind === "stop" || q.kind === "give_way");
+  const jnodes = [];
+  const stats = { junctions: 0, signal: 0, stop: 0, yield: 0, priority: 0, conflicts: 0, pedSignals: 0 };
+  const cf = [];
+  for (const node of net.nodes) {
+    const cons = (node.connectors || []).map((c) => idx.get(c.id)).filter((i) => i != null);
+    const osmSignal = node.src?.control === "signal";
+    if (!cons.length && osmSignal && node.arms?.length === 2) {
+      for (const a of node.arms) for (const lane of a.approach) {
+        const pid = a.road.laneEnds?.[a.end]?.in[lane.laneId], i = idx.get(pid);
+        if (i == null) continue;
+        const s = nearestSig(sigPts, node.x, node.z, 30);
+        holdAt[i] = Math.max(0, len[i] - 4.5);
+        ctrl[i] = CTRL.signal;
+        jnode[i] = jnodes.length;
+        phase[i] = s ? s.phase : phaseOfDir(Math.cos(a.th), Math.sin(a.th));
+        stats.pedSignals++;
+      }
+      jnodes.push({ id: node.id, x: node.x, z: node.z, kind: "crossing", signal: true, cons: [] });
+      continue;
+    }
+    if (!cons.length || node.kind === "continuation" || node.kind === "split" || node.kind === "end") continue;
+    const J = jnodes.length;
+    jnodes.push({ id: node.id, x: node.x, z: node.z, kind: node.kind, signal: osmSignal, cons });
+    stats.junctions++;
+    for (const ci of cons) nodeOf[ci] = J;
+    const entries = /* @__PURE__ */ new Map();
+    const lanes = [];
+    for (const ci of cons) for (const id of src[ci].prev) {
+      const li = idx.get(id);
+      if (li != null && !lanes.includes(li)) lanes.push(li);
+    }
+    const signOf = /* @__PURE__ */ new Map();
+    if (!osmSignal && node.kind !== "roundabout") for (const q of signPts) {
+      if ((q.x - node.x) ** 2 + (q.z - node.z) ** 2 > 625) continue;
+      let best = -1, bd = 14 * 14;
+      for (const li of lanes) {
+        const d = distToLaneEnd(src[li], q, 30);
+        if (d < bd) {
+          bd = d;
+          best = li;
+        }
+      }
+      if (best >= 0) signOf.set(best, q);
+    }
+    for (const li of lanes) {
+      const lp = src[li];
+      const arm = node.arms.find((a) => a.road.id === lp.roadId) || null;
+      let c = CTRL.priority, ph = 0;
+      if (node.kind === "roundabout") c = CTRL.yield;
+      else if (osmSignal) {
+        c = CTRL.signal;
+        const s = nearestOnLane(sigPts, lp, 30, 12);
+        ph = s ? s.phase : phaseOfDir(...dirAtEnd(lp, 20));
+      } else if (signOf.has(li)) c = signOf.get(li).kind === "stop" ? CTRL.stop : CTRL.yield;
+      const at = lp.stop ? lp.stop.at : Math.max(0, lp.len - 0.6);
+      entries.set(li, { arm, c, ph });
+      holdAt[li] = at;
+      ctrl[li] = c;
+      phase[li] = ph;
+      jnode[li] = J;
+      stats[c === CTRL.signal ? "signal" : c === CTRL.stop ? "stop" : c === CTRL.yield ? "yield" : "priority"]++;
+    }
+    const cIn = (ci) => idx.get(src[ci].prev[0]);
+    const head = (ci) => {
+      const q = src[ci].pts;
+      return [q[1][0] - q[0][0], q[1][1] - q[0][1]];
+    };
+    for (let a = 0; a < cons.length; a++) for (let b = a + 1; b < cons.length; b++) {
+      const ia = cons[a], ib = cons[b];
+      const la = cIn(ia), lb = cIn(ib);
+      if (la === lb) continue;
+      const pa = src[ia], pb = src[ib];
+      let at = null;
+      if (pa.next[0] && pa.next[0] === pb.next[0]) at = [len[ia], len[ib]];
+      else at = crossing(pa.pts, pa.cum, pb.pts, pb.cum);
+      if (!at) continue;
+      const ea = entries.get(la), eb = entries.get(lb);
+      let y = 0;
+      const [hax, haz] = norm(head(ia)), [hbx, hbz] = norm(head(ib));
+      const opp = hax * hbx + haz * hbz < -0.6;
+      const bFromRight = hbx * -haz + hbz * hax < -0.35, aFromRight = hax * -hbz + haz * hbx < -0.35;
+      const ta = turn[ia], tb = turn[ib];
+      const rankOf = (e) => e && (e.c === CTRL.stop || e.c === CTRL.yield) ? 0 : 1;
+      if (ta === TURN.ring && tb !== TURN.ring) y = -1;
+      else if (tb === TURN.ring && ta !== TURN.ring) y = 1;
+      else if (ea?.c === CTRL.signal && eb?.c === CTRL.signal) {
+        if (ea.ph !== eb.ph) y = 0;
+        else if (opp) y = ta === TURN.left && tb !== TURN.left ? 1 : tb === TURN.left && ta !== TURN.left ? -1 : 0;
+        else y = bFromRight ? 1 : aFromRight ? -1 : 0;
+      } else if (rankOf(ea) !== rankOf(eb)) y = rankOf(ea) < rankOf(eb) ? 1 : -1;
+      else if (opp) y = ta === TURN.left && tb !== TURN.left ? 1 : tb === TURN.left && ta !== TURN.left ? -1 : 0;
+      else y = bFromRight ? 1 : aFromRight ? -1 : 0;
+      (cf[ia] ||= []).push([ib, at[0], at[1], y]);
+      (cf[ib] ||= []).push([ia, at[1], at[0], -y]);
+      stats.conflicts++;
+    }
+  }
+  const cfOff = new Uint32Array(P + 1), list = [];
+  for (let i = 0; i < P; i++) {
+    cfOff[i] = list.length;
+    for (const c of cf[i] || []) list.push(c);
+  }
+  cfOff[P] = list.length;
+  const cfOther = Int32Array.from(list, (c) => c[0]), cfAt = Float32Array.from(list, (c) => c[1]), cfOtherAt = Float32Array.from(list, (c) => c[2]);
+  const cfYield = Int8Array.from(list, (c) => c[3]);
+  return {
+    paths: P,
+    xy,
+    cum,
+    off,
+    len,
+    speed,
+    kind,
+    turn,
+    rank,
+    tram,
+    core,
+    nextOff,
+    nextIdx,
+    prevOff,
+    prevIdx,
+    holdAt,
+    ctrl,
+    phase,
+    jnode,
+    nodeOf,
+    cfOff,
+    cfOther,
+    cfAt,
+    cfOtherAt,
+    cfYield,
+    jnodes: jnodes.map((j) => ({ id: j.id, x: j.x, z: j.z, kind: j.kind, signal: !!j.signal })),
+    bounds,
+    stats: { ...stats, paths: P, ms: Math.round(performance.now() - t0) }
+  };
+}
+var norm = ([x, z]) => {
+  const L2 = Math.hypot(x, z) || 1;
+  return [x / L2, z / L2];
+};
+function dirAtEnd(p, back = 1) {
+  const q = p.pts, n = q.length, [ax, az] = pointAt(q, p.cum, Math.max(0, p.len - back));
+  return norm([q[n - 1][0] - ax, q[n - 1][1] - az]);
+}
+function nearestSig(list, x, z, r) {
+  let best = null, bd = r * r;
+  for (const s of list) {
+    const d = (s.x - x) ** 2 + (s.z - z) ** 2;
+    if (d < bd) {
+      bd = d;
+      best = s;
+    }
+  }
+  return best;
+}
+function distToLaneEnd(p, q, back) {
+  let bd = Infinity;
+  const pts = p.pts, c = p.cum, n = pts.length;
+  const seg = (ax, az, bx, bz) => {
+    const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1e-9, t = Math.max(0, Math.min(1, ((q.x - ax) * dx + (q.z - az) * dz) / L2));
+    bd = Math.min(bd, (ax + dx * t - q.x) ** 2 + (az + dz * t - q.z) ** 2);
+  };
+  for (let i = n - 1; i > 0 && c[i] > p.len - back - 10; i--) seg(pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1]);
+  const [ux, uz] = dirAtEnd(p, 5);
+  seg(pts[n - 1][0], pts[n - 1][1], pts[n - 1][0] + ux * 15, pts[n - 1][1] + uz * 15);
+  return bd;
+}
+function nearestOnLane(list, p, back, r) {
+  let best = null, bd = r * r;
+  const q = p.pts, c = p.cum;
+  for (const s of list) {
+    for (let i = q.length - 1; i > 0 && c[i] > p.len - back - 10; i--) {
+      const ax = q[i - 1][0], az = q[i - 1][1], bx = q[i][0], bz = q[i][1], dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1e-9;
+      const t = Math.max(0, Math.min(1, ((s.x - ax) * dx + (s.z - az) * dz) / L2));
+      const d = (ax + dx * t - s.x) ** 2 + (az + dz * t - s.z) ** 2;
+      if (d < bd) {
+        bd = d;
+        best = s;
+      }
+    }
+  }
+  return best;
+}
+
 // viewer/tileData.js
 var CARVE = 0.12;
 var TERRAIN_ERROR = 0.05;
@@ -6869,6 +7190,7 @@ async function buildTileData(entry, base) {
   const byCode = {};
   for (const i of errors) byCode[i.code] = (byCode[i.code] || 0) + 1;
   const netInfo = { roads: net.roads.length, nodes: net.nodes.length, errors: errors.length, byCode, warnings: net.issues.length - errors.length };
+  const traffic = await step("traffic graph", () => buildTrafficGraph(net, roads, feats, bounds));
   const roofs = await step("roof grid", () => roofGrid(bDoc, bounds));
   const road = await step("road meshes + carve", () => {
     const built = buildLaneRoadMesh(net, { markings: true });
@@ -6955,6 +7277,7 @@ async function buildTileData(entry, base) {
     terrain,
     buildings,
     cover,
+    traffic,
     times
   };
 }

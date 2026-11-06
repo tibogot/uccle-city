@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Traffic Lab</title>
+<link rel="icon" href="../viewer/favicon.svg" type="image/svg+xml">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #8e9aa6; font: 13px/1.4 system-ui, sans-serif; }
+  canvas { display: block; }
+  #info { position: fixed; left: 10px; bottom: 10px; max-width: 620px; padding: 8px 10px; border-radius: 6px;
+          background: rgba(20, 24, 30, .78); color: #dfe4ea; font: 12px/1.35 ui-monospace, monospace; white-space: pre-wrap; z-index: 2; }
+  #title { position: fixed; left: 10px; top: 10px; padding: 6px 10px; border-radius: 6px; background: rgba(20, 24, 30, .78);
+           color: #e6e9ee; z-index: 2; max-width: calc(100vw - 360px); }
+  #title a { color: #9cc4ff; }
+  #legend { position: fixed; left: 10px; top: 48px; padding: 6px 10px; border-radius: 6px; background: rgba(20, 24, 30, .7);
+            color: #dfe4ea; font: 11px/1.45 ui-monospace, monospace; z-index: 2; white-space: pre; }
+  .sw { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 6px; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.tsl.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/",
+    "three/src/": "https://cdn.jsdelivr.net/npm/three@0.187.0/src/",
+    "meshoptimizer/simplifier": "https://cdn.jsdelivr.net/npm/meshoptimizer@1.2.0/meshopt_simplifier.js"
+  }
+}
+</script>
+</head>
+<body>
+<div id="title"><b>Traffic Lab</b> — moving traffic on the road engine's lane graph, tile I6 (Place de Saint-Job) · <a href="./">all labs</a> · <a href="../viewer/index.html?tile=I6&traffic=1">in the city</a></div>
+<div id="legend"><span class="sw" style="background:#4073ff"></span>lane (tile)   <span class="sw" style="background:#737380"></span>lane (buffer copy)   <span class="sw" style="background:#33d9f2"></span>junction connector
+hold bars: <span style="color:#3f5">green</span>/<span style="color:#fa0">amber</span>/<span style="color:#f33">red</span> signal · <span style="color:#f0f">stop</span> · <span style="color:#f90">give way</span> · white priorité de droite
+targets: <span style="color:#3f5">following a car</span> · <span style="color:#f90">obstacle</span> · <span style="color:#f33">waiting at a hold point</span></div>
+<div id="info">loading…</div>
+<script type="module" src="./traffic-lab.js"></script>
+</body>
+</html>

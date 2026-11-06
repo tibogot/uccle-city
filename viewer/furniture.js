@@ -6,9 +6,12 @@
 // Points with no reliable placement (tram stop_positions on the rails, crossings: their markings
 // are already drawn by the road engine) are skipped. Orientation and kerb offset come from the
 // nearest road of roads.json and the road engine's ROAD_TYPES cross-section.
-// One InstancedMesh per kind, one shared material (per-vertex colour + emissive mask).
+// One InstancedMesh per kind, one shared material (per-vertex colour + emissive mask). The signal heads run the
+// Belgian cycle of viewer/traffic/signals.js (phase A / B per post, two uniforms): the moving traffic stops on the
+// same red (?traffic=1).
 import * as THREE from "three/webgpu";
-import { attribute, vec3, mix, float } from "three/tsl";
+import { attribute, vec3, mix, float, select, uniform } from "three/tsl";
+import { nearestRoad, phaseOfDir, signalClock, signalState } from "./traffic/signals.js";
 import { ROAD_TYPES } from "../vendor/roads/roadCrossSection.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { env } from "./lighting.js";
@@ -50,9 +53,10 @@ export const MODELS = {
   signal: () => mergeGeometries([
     part(cyl(0.06, 3.2), C.iron, 0, 0, 1.6, 0),
     part(box(0.3, 0.85, 0.22), C.iron, 0, 0, 2.85, -0.12),                       // head facing the road
-    part(cyl(0.085, 0.04, 12), C.red, 1.0, 0, 3.12, -0.24, Math.PI / 2),          // red lit
-    part(cyl(0.085, 0.04, 12), [0.06, 0.04, 0.0], 0, 0, 2.86, -0.24, Math.PI / 2),
-    part(cyl(0.085, 0.04, 12), [0.0, 0.05, 0.02], 0, 0, 2.6, -0.24, Math.PI / 2),
+    // lenses: aEm < 0 = lens id (-1 red, -2 amber, -3 green), lit by the cycle (SIGNAL_MAT)
+    part(cyl(0.085, 0.04, 12), [0.08, 0.01, 0.01], -1, 0, 3.12, -0.24, Math.PI / 2),
+    part(cyl(0.085, 0.04, 12), [0.06, 0.04, 0.0], -2, 0, 2.86, -0.24, Math.PI / 2),
+    part(cyl(0.085, 0.04, 12), [0.0, 0.05, 0.02], -3, 0, 2.6, -0.24, Math.PI / 2),
     part(box(0.5, 0.12, 0.12), C.white, 0, 0, 0.9, 0),                           // white band (Belgian posts)
   ]),
   bikes: () => mergeGeometries([-2, -1, 0, 1, 2].flatMap((k) => [
@@ -70,26 +74,6 @@ function kerb(type, side) {
   let w = (t.center?.width || 0) / 2;
   for (const l of side > 0 ? t.left : t.right) { if (l.type === "sidewalk") break; w += l.width; }
   return w;
-}
-
-/** Nearest road segment: point, unit direction, side of the query point (+1 left), road. */
-function nearestRoad(roads, N, x, z) {
-  let best = null;
-  for (const r of roads.roads) {
-    if (r.meta?.highway === "footway" || r.meta?.highway === "service") continue;
-    const pts = [N.get(r.a), ...r.pts, N.get(r.b)].filter(Boolean);
-    for (let k = 1; k < pts.length; k++) {
-      const a = pts[k - 1], b = pts[k], dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz;
-      if (L2 < 1e-6) continue;
-      const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / L2));
-      const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(x - px, z - pz);
-      if (!best || d < best.d) {
-        const L = Math.sqrt(L2), ux = dx / L, uz = dz / L;
-        best = { d, px, pz, ux, uz, side: (-uz * (x - px) + ux * (z - pz)) >= 0 ? 1 : -1, road: r };
-      }
-    }
-  }
-  return best;
 }
 
 export function buildFurniture(feats, roads, ground, bounds) {
@@ -111,7 +95,9 @@ export function buildFurniture(feats, roads, ground, bounds) {
       inst.stopPole.push(s);
       if (t.shelter === "yes") inst.shelter.push(atKerb(nr, nr.side, 3.0, 1.6));
     } else if (p.kind === "traffic_signals") {
-      for (const sd of [1, -1]) inst.signal.push(atKerb(nr, sd, sd * 4, 0.4));   // one post each side, before the stop line
+      // one post each side, before the stop line; phase B on roads running more north-south (signals.js phaseOfDir)
+      const phase = phaseOfDir(nr.ux, nr.uz);
+      for (const sd of [1, -1]) inst.signal.push({ ...atKerb(nr, sd, sd * 4, 0.4), phase });
     } else if (p.kind === "bicycle_parking") {
       inst.bikes.push(atKerb(nr, nr.side, 0, 0.9));
     } else if (p.kind === "bench") {
@@ -128,7 +114,9 @@ export function buildFurniture(feats, roads, ground, bounds) {
     const inB = list.filter((s) => s.x >= bounds.x0 && s.x <= bounds.x1 && s.z >= bounds.z0 && s.z <= bounds.z1);
     counts[kind] = inB.length;
     if (!inB.length) continue;
-    const m = new THREE.InstancedMesh(MODELS[kind](), mat, inB.length);
+    const geo = MODELS[kind]();
+    if (kind === "signal") geo.setAttribute("aPhase", new THREE.InstancedBufferAttribute(Float32Array.from(inB, (s) => s.phase), 1));
+    const m = new THREE.InstancedMesh(geo, kind === "signal" ? signalMaterial() : mat, inB.length);
     inB.forEach((s, i) => {
       q.setFromAxisAngle(up, s.yaw);                                              // local -z faces the road
       M.compose(new THREE.Vector3(s.x, ground(s.x, s.z) + 0.12, s.z), q, one);
@@ -140,4 +128,27 @@ export function buildFurniture(feats, roads, ground, bounds) {
     group.add(m);
   }
   return { group, counts };
+}
+
+// ---------------------------------------------------------------- the signal heads' cycle (uniforms, no lights)
+/** Phase A / B states (GREEN 0, AMBER 1, RED 2), set once per frame by updateSignals(). */
+export const SIGNAL_STATE = { A: uniform(2), B: uniform(2) };
+/** Main loop: the lens uniforms from the shared clock (viewer/traffic/signals.js). */
+export function updateSignals() {
+  const t = signalClock.now();
+  SIGNAL_STATE.A.value = signalState(0, t); SIGNAL_STATE.B.value = signalState(1, t);
+}
+let SIGNAL_MAT = null;
+function signalMaterial() {
+  if (SIGNAL_MAT) return SIGNAL_MAT;
+  const m = new THREE.MeshStandardNodeMaterial({ roughness: 0.55, metalness: 0.2 });
+  const col = attribute("aCol", "vec3"), em = attribute("aEm", "float"), ph = attribute("aPhase", "float");
+  const st = mix(SIGNAL_STATE.A, SIGNAL_STATE.B, ph), lens = em.negate().add(0.5).floor();     // 1 red, 2 amber, 3 green
+  const on = lens.equal(1).and(st.equal(2)).or(lens.equal(2).and(st.equal(1))).or(lens.equal(3).and(st.equal(0)));
+  const lit = select(lens.equal(1), vec3(1, 0.06, 0.02), select(lens.equal(2), vec3(1, 0.5, 0.04), vec3(0.08, 1, 0.42)));
+  m.colorNode = select(on, lit.mul(0.5), col);
+  m.emissiveNode = select(on, lit.mul(mix(float(1.6), float(5.0), env.uNight)), col.mul(em.max(0)).mul(mix(float(0.6), float(4.0), env.uNight)));
+  m.userData.shared = true;
+  SIGNAL_MAT = m;
+  return m;
 }
