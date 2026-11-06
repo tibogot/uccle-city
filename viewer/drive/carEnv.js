@@ -12,7 +12,13 @@ export function createCarEnv({ sets, ground, handling }) {
   const near = [];
   const contact = { nx: 0, nz: 0, depth: 0, kind: 0 };
   const body = { hx: BODY.hx, hz: BODY.hz, cos: 1, sin: 0 };
+  const push = (c, nx, nz, depth, kind) => {
+    c.x += nx * depth; c.z += nz * depth;
+    hit(c, nx, nz, kind, handling);
+    env.contacts++;
+  };
   const env = {
+    dynamic: null,
     ground,
     near,
     contacts: 0,          // contacts resolved in the last frame
@@ -37,6 +43,8 @@ export function createCarEnv({ sets, ground, handling }) {
         }
         if (!any) break;
       }
+      // moving things (the traffic, viewer/traffic/cityTraffic.js): env.dynamic(c, body, push) calls push per contact
+      env.dynamic?.(c, body, push);
     },
   };
   return env;
