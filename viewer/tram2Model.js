@@ -44,11 +44,11 @@ const HALF = { Cab: 4.4125, Susp: 2.8, Centre: 1.5, Bellows: 1.2, Bogie: 0.9, Pa
 // (emission kinds: 0 none, 1 head lamp, 2 tail lamp, 3 marker, 4 LED display, 5 ceiling light, 6 interior glow)
 const SRGB = (r, g, b) => new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace);
 export const SLOT_LOOK = {
-  Silver: { c: SRGB(0.70, 0.71, 0.73), r: 0.32, m: 0.55, ao: 1 },        // STIB silver-grey (3097 / 3041, sunlit side)
-  Gold: { c: SRGB(0.74, 0.58, 0.36), r: 0.34, m: 0.55, ao: 1 },          // champagne gold of the nose panel and band
+  Silver: { c: SRGB(0.76, 0.77, 0.79), r: 0.36, m: 0.35, ao: 1 },        // STIB silver-grey (3097 / 3041, sunlit side)
+  Gold: { c: SRGB(0.80, 0.63, 0.40), r: 0.40, m: 0.15, ao: 1 },          // champagne gold of the nose panel and band
   Black: { c: SRGB(0.05, 0.055, 0.06), r: 0.18, m: 0.0, ao: 1 },        // the gloss-black window band, frames
-  Bumper: { c: SRGB(0.62, 0.63, 0.64), r: 0.45, m: 0.25, ao: 1 },
-  BumperDark: { c: SRGB(0.22, 0.23, 0.24), r: 0.6, m: 0.0, ao: 1 },
+  Bumper: { c: SRGB(0.70, 0.71, 0.72), r: 0.45, m: 0.2, ao: 1 },
+  BumperDark: { c: SRGB(0.36, 0.37, 0.38), r: 0.6, m: 0.0, ao: 1 },
   Glass: { c: SRGB(0.10, 0.12, 0.12), r: 0.04, m: 0.0, ao: 0.4 },
   GlassCab: { c: SRGB(0.05, 0.06, 0.065), r: 0.03, m: 0.0, ao: 0.4 },
   Rubber: { c: SRGB(0.035, 0.035, 0.04), r: 0.75, m: 0.0, ao: 1 },
@@ -126,8 +126,20 @@ function mergePrims(prims, target) {
   const parts = prims.map((q) => {
     let idx = q.g.index.array;
     if (target && total > target) {
-      const want = Math.max(6, Math.floor((q.g.index.count / 3) * (target / total))) * 3;
-      if (want < q.g.index.count) idx = simplifyWelded(q.g, want);
+      // each door leaf is simplified on its own (else the simplifier welds leaf and body vertices, and an open door
+      // drags body triangles with it): split the triangles by the leaf code of their first vertex
+      const C = q.g.attributes.color, groups = new Map();
+      for (let t = 0; t < idx.length; t += 3) {
+        const v = idx[t], key = C ? `${C.getX(v).toFixed(2)},${C.getY(v).toFixed(2)},${C.getZ(v).toFixed(2)}` : "";
+        let a = groups.get(key); if (!a) groups.set(key, (a = []));
+        a.push(idx[t], idx[t + 1], idx[t + 2]);
+      }
+      const out = [];
+      for (const tri of groups.values()) {
+        const sub = new Uint32Array(tri), want = Math.max(6, Math.floor((sub.length / 3) * (target / total))) * 3;
+        out.push(...(want < sub.length ? simplifyWelded(q.g, want, sub) : sub));
+      }
+      idx = new Uint32Array(out);
     }
     return { ...q, idx };
   });
@@ -162,8 +174,8 @@ function mergePrims(prims, target) {
 
 /** meshoptimizer on a position-welded index (as tramModel.js): the flat-shaded export is many loose pieces
  *  otherwise. Welded by position AND door code (a door leaf stays its own piece); borders locked. */
-function simplifyWelded(g, want) {
-  const P = g.attributes.position.array, Nn = g.attributes.normal.array, I = g.index.array, C = g.attributes.color;
+function simplifyWelded(g, want, I = g.index.array) {
+  const P = g.attributes.position.array, Nn = g.attributes.normal.array, C = g.attributes.color;
   const n = P.length / 3, canon = new Uint32Array(n), map = new Map(), cpos = [], members = [];
   for (let i = 0; i < n; i++) {
     const dk = C ? Math.round(C.getY(i) * 100) : 0;
@@ -209,7 +221,10 @@ function makeMaterial(sign, aoTex, layout) {
   const isGlass = is("Glass").or(is("GlassCab"));
 
   // ---- vertex stage: doors (plug: out 5.5 cm, then slide one leaf width) and the bellows' bend
-  const p0 = positionLocal;
+  // (three r187 applies material.positionNode AFTER the instance transform: positionLocal is already placed. So the
+  // door / bellows offsets are worked out on the raw vertex, then turned by the instance's yaw, aInst2.w; the pitch
+  // of a module on a slope (a few %) is left out of these few-cm offsets)
+  const p0 = attribute("position", "vec3");
   const leaf = door.y.greaterThan(0.01);
   const right = door.z.greaterThan(0.5);
   const openI = select(right, inst2.x, inst2.y);
@@ -218,15 +233,15 @@ function makeMaterial(sign, aoTex, layout) {
   const slide = smoothstep(0.18, 1.0, open).mul(door.y).mul(select(door.x.greaterThan(0.5), float(1), float(-1)));
   const theta = inst.z.mul(p0.x).div(layout.bellowsHalf * -2);       // 0 for every piece but the bellows
   const ct = cos(theta), st = sin(theta);
-  const bx = p0.x.mul(ct).add(p0.z.mul(st)), bz = p0.z.mul(ct).sub(p0.x.mul(st));
-  m.positionNode = select(leaf,
-    vec3(p0.x.add(slide), p0.y, p0.z.add(outM.mul(select(right, float(1), float(-1))))),
-    vec3(bx, p0.y, bz));
+  const bend = vec3(p0.x.mul(ct).add(p0.z.mul(st)).sub(p0.x), 0, p0.z.mul(ct).sub(p0.x.mul(st)).sub(p0.z));
+  const local = select(leaf, vec3(slide, 0, outM.mul(select(right, float(1), float(-1)))), bend);
+  const cy = cos(inst2.w), sy = sin(inst2.w);
+  m.positionNode = positionLocal.add(vec3(local.x.mul(cy).add(local.z.mul(sy)), local.y, local.z.mul(cy).sub(local.x.mul(sy))));
 
   // ---- surface
   const ao = texture(aoTex, uv(1)).r;
   const aoK = rmae.z.mul(tramLook.ao);
-  const yLocal = p0.y;
+  const yLocal = p0.y;                                                // (raw local height)
   const exterior = rmae.z.greaterThan(0.85);
   // grime: duller low on the body, a little in the roof well
   const grime = mix(float(0.80), float(1.0), smoothstep(0.25, 1.15, yLocal)).mul(tramLook.dirt).add(float(1).sub(tramLook.dirt));
@@ -365,7 +380,7 @@ export function createTramFleet(model, parent, maxTrams = 40) {
           M.compose(v.set(p.x, placed[i * 2], p.z), q, one);
           r.mesh.setMatrixAt(r.n, M);
           r.inst.array.set([p.lead ? 1 : 0, sign, p.angle || 0, fade], r.n * 4);
-          r.inst2.array.set(p.flip ? [dL, dR, brake, 0] : [dR, dL, brake, 0], r.n * 4);
+          r.inst2.array.set(p.flip ? [dL, dR, brake, p.yaw] : [dR, dL, brake, p.yaw], r.n * 4);
           r.n++;
         }
       };

@@ -146,14 +146,14 @@ export function createDevPanel(ctx) {
   fWo.add(S, "parked").name("parked cars").onChange((v) => scene.traverse((o) => { if ((o.name === "parked-cars" || o.name === "parked-cars-fleet") && o.isGroup) o.visible = v; }));   // box cars (?cars=box) or the faceted fleet (carFleet.js)
   const R = {
     roads: params.get("roads") === "engine" ? "engine" : "measured (surface)", stjob: params.get("stjob") !== "0", lamps: params.get("lampmodel") !== "0",
-    trams: TR.on, tramModel: TR.model ? "model (T3000)" : "boxes", trees: params.get("trees") || "stylized", impostors: params.get("impostors") !== "0",
+    trams: TR.on, tramModel: { box: "boxes", v1: "T3000 v1" }[params.get("tram")] || "T3000 v2", trees: params.get("trees") || "stylized", impostors: params.get("impostors") !== "0",
     ring: +(params.get("ring") ?? 1), far: +(params.get("far") ?? 3), fx: params.get("fx") !== "0", gpu: params.get("gpu") !== "0", sunlight: params.get("sunlight") === "1",
   };
   fWo.add(R, "roads", ["measured (surface)", "engine"]).name("roads (reload)");
   fWo.add(R, "stjob").name("Saint-Job model (reload)");
   fWo.add(R, "lamps").name("Blender lamps (reload)");
   fWo.add(R, "trams").name("trams (reload)");
-  fWo.add(R, "tramModel", ["model (T3000)", "boxes"]).name("tram look (reload)");
+  fWo.add(R, "tramModel", ["T3000 v2", "T3000 v1", "boxes"]).name("tram look (reload)");
   fWo.add(R, "trees", ["stylized", "slop", "simple"]).name("trees (reload)");
   fWo.add(R, "impostors").name("tree impostors (reload)");
   fWo.add(R, "ring", 0, 2, 1).name("full-detail ring (reload)");
@@ -166,7 +166,7 @@ export function createDevPanel(ctx) {
     const q = new URLSearchParams(location.search);
     const put = (k, on, v) => (on ? q.set(k, v) : q.delete(k));
     put("roads", R.roads === "engine", "engine"); put("stjob", !R.stjob, "0"); put("lampmodel", !R.lamps, "0");
-    put("trams", !R.trams, "0"); put("tram", R.tramModel === "boxes", "box"); put("trees", R.trees !== "stylized", R.trees);
+    put("trams", !R.trams, "0"); put("tram", R.tramModel !== "T3000 v2", R.tramModel === "boxes" ? "box" : "v1"); put("trees", R.trees !== "stylized", R.trees);
     put("impostors", !R.impostors, "0"); q.set("ring", R.ring); q.set("far", R.far); put("fx", !R.fx, "0"); put("gpu", !R.gpu, "0");
     // the mode; in orbit keep the view the URL has (overview / close-up: both "orbit"), a left mode's exit view is the close-up
     const m = mode();
