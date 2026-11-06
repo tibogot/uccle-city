@@ -34,6 +34,7 @@ export class ThirdPerson {
     this.bodyState = { speed: 0, grounded: true, vy: 0, opacity: 1, gaitWalk: 2, gaitRun: 5.5 };
     this._gp = new Float64Array(3); this._rise = 0; this._run = 0;
     this._by = { y: 0, v: 0, init: false }; this._ga = 0; this._gb = 0;
+    this._stairs = { dir: 0, riser: 0, tread: 0, k: 0 }; this._sh = new Float64Array(26); this._sr = new Float64Array(26); this._st = new Float64Array(26); this._scanN = 0;
     this.stairSlow = 0.3;             // speed taken off on stairs / steep ramps with a character in the slot
     this._step = () => this.ctl.step();          // no argument: the controller reads its own dt
     this.body.root.visible = false;
@@ -63,9 +64,17 @@ export class ThirdPerson {
     const t0 = performance.now();
     // autopilot(input, dt): scripted motion (the lab's foot audit) instead of the keyboard
     if (this.autopilot) this.autopilot(this.ctl.input, dt); else this.input.apply(this.cam, this.ctl);
+    // STAIRS with a stair clip in the slot: the body walks them at the clip's own cadence, one tread per step: the
+    // controller's speed is capped at tread x the clip's steps per second (the stairs as last scanned)
+    const sc = this._stairs, cad = this.body.model && sc.k > 0.01 ? this.body.stairCadence(sc.dir, this.ctl.input.run) : 0;
+    if (cad > 0) {
+      const want = this.ctl.input.run ? this.ctl.p.runSpeed : this.ctl.p.walkSpeed, il = Math.hypot(this.ctl.input.x, this.ctl.input.z);
+      const cap = sc.tread * cad, f = il > 1e-3 && want * il > cap ? 1 + (cap / (want * il) - 1) * sc.k : 1;
+      this.ctl.input.x *= f; this.ctl.input.z *= f;
+    }
     // steep ground (stairs, a steep ramp) slows a walking body a little: one tread per step, not a flat stride
-    // straddling three nosings (the grade is last frame's; the capsule alone keeps its speed)
-    if (this.body.model && this.stairSlow > 0) {
+    // straddling three nosings (the grade is last frame's; the capsule alone keeps its speed); not with a stair clip
+    else if (this.body.model && this.stairSlow > 0) {
       const g = this.bodyState.grade || 0, gk = g > 0.25 ? Math.min(1, (g - 0.25) / 0.35) : 0, f = 1 - this.stairSlow * gk * gk * (3 - 2 * gk);
       this.ctl.input.x *= f; this.ctl.input.z *= f;
     }
@@ -87,6 +96,8 @@ export class ThirdPerson {
       // (and the grade AHEAD, from the ground line's samples: the first steps onto stairs are already short)
       st.grade = Math.max(this._ga, this._run > 0.02 ? Math.min(2, this._rise / this._run) : 0);
     }
+    if (this.model && (++this._scanN % 3 === 0 || !c.grounded)) this._scanStairs(dt * 3);
+    st.stairs = this._stairs;
     this.body.update(dt, S[0], this.model ? this._bodyY(dt, alpha) : S[1], S[2], S[3], st, this.world);
     this.debug.update(c, this.cam, S[0], S[1], S[2]);
     const t3 = performance.now(), P = this.perf, ms = t3 - t0;
@@ -97,6 +108,54 @@ export class ThirdPerson {
     if (t3 - P._t > 1000) { P.maxMs = P._max; P._max = 0; P._t = t3; }
   }
   get model() { return this.body.model; }
+  /**
+   * STAIRS AHEAD, from the step pattern: 26 rays down along the motion, from 0.25 m behind the feet to 1 m ahead (5 cm
+   * apart); the jumps between neighbours are the risers. Two or more risers the same way, 8-26 cm high and 18-45 cm
+   * apart, are a flight: dir +1 up / -1 down, riser and tread (medians), k = how sure (eased in / out). Every 3rd frame.
+   */
+  _scanStairs(dt) {
+    const c = this.ctl, W = this.world, R = W.r, H = W.hit, S = this._stairs, h = this._sh;
+    let dx = Math.sin(c.yaw), dz = Math.cos(c.yaw);
+    const vl = Math.hypot(c.vel[0], c.vel[2]);
+    if (vl > 0.2) { dx = c.vel[0] / vl; dz = c.vel[2] / vl; }
+    const x0 = c.pos[0], y0 = c.pos[1], z0 = c.pos[2];
+    for (let i = 0; i < 26; i++) {
+      const s = -0.25 + 0.05 * i;
+      R[0] = x0 + dx * s; R[1] = y0 + 0.9; R[2] = z0 + dz * s; R[3] = 0; R[4] = -1; R[5] = 0; H[0] = 2; H[4] = -1;
+      W.raycast();
+      h[i] = H[4] >= 0 && H[2] > 0.7 ? y0 + 0.9 - H[0] : NaN;
+    }
+    let n = 0, sgn = 0, last = -1e9, rs = this._sr, ts = this._st, nr = 0, nt = 0;
+    for (let i = 0; i < 25; i++) {
+      const d = h[i + 1] - h[i];
+      if (!(Math.abs(d) > 0.06)) continue;                         // (NaN: no ground there)
+      const g = d > 0 ? 1 : -1;
+      if (sgn && g !== sgn) { n = 0; nr = 0; nt = 0; last = -1e9; }
+      sgn = g; n++; rs[nr++] = Math.abs(d);
+      // the riser's place between the two samples: bisected (3 more rays: ~6 mm)
+      let a = -0.25 + 0.05 * i, b = a + 0.05;
+      for (let it = 0; it < 3; it++) {
+        const m = (a + b) * 0.5;
+        R[0] = x0 + dx * m; R[1] = y0 + 0.9; R[2] = z0 + dz * m; R[3] = 0; R[4] = -1; R[5] = 0; H[0] = 2; H[4] = -1;
+        W.raycast();
+        const hm = H[4] >= 0 ? y0 + 0.9 - H[0] : h[i];
+        if (Math.abs(hm - h[i]) < Math.abs(hm - h[i + 1])) a = m; else b = m;
+      }
+      const at = (a + b) * 0.5;
+      if (last > -1e8) ts[nt++] = at - last;
+      last = at;
+    }
+    const med = (a, m) => {                                         // (in place: no allocation)
+      if (!m) return 0;
+      for (let i = 1; i < m; i++) { const x = a[i]; let j = i - 1; while (j >= 0 && a[j] > x) { a[j + 1] = a[j]; j--; } a[j + 1] = x; }
+      return a[m >> 1];
+    };
+    const riser = med(rs, nr), tread = med(ts, nt);
+    const ok = c.grounded && n >= 2 && riser >= 0.08 && riser <= 0.26 && tread >= 0.18 && tread <= 0.45;
+    if (ok) { S.dir = sgn; S.riser = riser; S.tread = tread; }
+    S.k += ((ok ? 1 : 0) - S.k) * (1 - Math.exp(-(ok ? 8 : 4) * dt));
+    if (S.k < 0.01 && !ok) S.dir = 0;
+  }
   /**
    * The animated body's feet plane: on the ground, the GROUND LINE under it (the mean of the ground at the feet and
    * 0.22 m behind / ahead along the motion: on stairs the line through the nosings, on a kerb a ramp across it, exact

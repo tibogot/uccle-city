@@ -14,8 +14,8 @@ import * as THREE from "three/webgpu";
 import { color, float, mix, positionLocal, normalView, uniform, smoothstep, abs, dot, vec3 } from "three/tsl";
 import { FootIK } from "./footIK.js";
 
-const ROLES = ["idle", "walk", "run", "jump", "fall", "land"];
-const TARGET = { idle: 0, walk: 0, run: 0, jump: 0, fall: 0, land: 0 };
+const ROLES = ["idle", "walk", "run", "jump", "fall", "land", "stairsUp", "stairsDown", "stairsUpRun", "stairsDownRun"];
+const TARGET = { idle: 0, walk: 0, run: 0, jump: 0, fall: 0, land: 0, stairsUp: 0, stairsDown: 0, stairsUpRun: 0, stairsDownRun: 0 };
 
 export class CharacterBody {
   constructor(scene, { radius = 0.3, height = 1.75 } = {}) {
@@ -121,7 +121,7 @@ export class CharacterBody {
     }
     const k = opts.speedUnits === "model" ? s : 1;
     this.walkSpeed = (opts.walkSpeed || 1.4) * k; this.runSpeed = (opts.runSpeed || 4.5) * k;
-    this.state = ""; this._w = { idle: 0, walk: 0, run: 0, jump: 0, fall: 0, land: 0 }; this._landT = 0;
+    this.state = ""; this._w = { idle: 0, walk: 0, run: 0, jump: 0, fall: 0, land: 0, stairsUp: 0, stairsDown: 0, stairsUpRun: 0, stairsDownRun: 0 }; this._landT = 0;
     this.clipMeta = opts.clipMeta || {}; this.previewAct = null;
     this.footIK = opts.rig ? new FootIK(model, inner, opts.rig) : null;
     return found;
@@ -133,6 +133,15 @@ export class CharacterBody {
     for (const role of ROLES) { const a = this.actions[role]; if (!a) continue; a.time = this.hold[role] ?? 0; this._w[role] = role === "idle" ? 1 : 0; a.setEffectiveWeight(this._w[role]); }
     this._wasGrounded = true; this._airTime = 0;
   }
+
+  /** The stair clip for a flight (dir +1 up / -1 down) at a walk or a run (the walk one when there is no run one). */
+  stairRole(dir, run) {
+    const A = this.actions, up = dir > 0;
+    if (run && A[up ? "stairsUpRun" : "stairsDownRun"]) return up ? "stairsUpRun" : "stairsDownRun";
+    return A[up ? "stairsUp" : "stairsDown"] ? (up ? "stairsUp" : "stairsDown") : null;
+  }
+  /** Steps per second of that stair clip at its own speed (a loop = two steps), 0 without one. */
+  stairCadence(dir, run) { const r = this.stairRole(dir, run); return r ? 2 / this.actions[r].getClip().duration : 0; }
 
   /** Play one clip alone, looped, in place (lab: check a retargeted clip); null = back to the state machine. */
   setPreview(name) {
@@ -210,7 +219,9 @@ export class CharacterBody {
       const raw = A.walk && A.run ? st.speed / (this.walkSpeed + (this.runSpeed - this.walkSpeed) * k) : st.speed / (A.run ? this.runSpeed : this.walkSpeed);
       // on stairs and steep ramps: shorter, quicker steps (up to 1.45x the cadence: a step about a tread or two, not
       // a flat-ground stride straddling three nosings); the foot lock holds the planted foot, so the stride shortens
-      const g = st.grade || 0, gk = g > 0.2 ? Math.min(1, (g - 0.2) / 0.35) : 0, steep = 1 + 0.45 * gk * gk * (3 - 2 * gk);
+      // (not with a stair clip: it steps tread by tread itself)
+      const sck = st.stairs && st.stairs.dir && this.stairRole(st.stairs.dir, false) ? st.stairs.k : 0; this._stairClipK = sck;
+      const g = st.grade || 0, gk = (g > 0.2 ? Math.min(1, (g - 0.2) / 0.35) : 0) * (1 - sck), steep = 1 + 0.45 * gk * gk * (3 - 2 * gk);
       const rate = Math.min(1.35 * steep, Math.max(0.5, raw * steep));
       if (A.walk) A.walk.timeScale = rate;
       if (A.run) A.run.timeScale = rate;
@@ -218,6 +229,15 @@ export class CharacterBody {
         const ph = A.walk.time / A.walk.getClip().duration;
         if (k > 0.5) A.walk.time = (A.run.time / A.run.getClip().duration) * A.walk.getClip().duration;
         else A.run.time = ph * A.run.getClip().duration;
+      }
+      // STAIRS (a stair clip in the slot): blended in by the scan's confidence, played so that one step = one tread
+      // (the controller's speed is capped to the clip's own cadence: index.js), in phase with the walk / run it replaces
+      const sc = st.stairs, sr = sc && sc.k > 0.01 && sc.dir ? this.stairRole(sc.dir, k > 0.5) : null;
+      if (sr) {
+        const a = A[sr], kk = sc.k;
+        if (w[sr] < 0.01 && A.walk) a.time = (A.walk.time / A.walk.getClip().duration) * a.getClip().duration;
+        a.timeScale = Math.min(1.6, Math.max(0.5, st.speed / Math.max(0.15, sc.tread) / (2 / a.getClip().duration)));
+        target.walk *= 1 - kk; target.run *= 1 - kk; target[sr] = kk;
       }
     } else if (state !== "preview") target[state] = 1;
     // a jump clip starts at its take-off frame (the body is already in the air)
@@ -239,7 +259,7 @@ export class CharacterBody {
       this.root.updateMatrixWorld(true);
       // on the ground (walking and running), off in the air; a touch-down passes its fall speed (the landing absorb)
       const ik = this._ik;
-      ik.grounded = st.grounded; ik.speed = st.speed; ik.vx = st.vx ?? 0; ik.vz = st.vz ?? 0; ik.grade = st.grade || 0;
+      ik.grounded = st.grounded; ik.speed = st.speed; ik.vx = st.vx ?? 0; ik.vz = st.vz ?? 0; ik.grade = (st.grade || 0) * (1 - (this._stairClipK || 0));
       ik.landing = landing;
       this.footIK.update(dt, world, y, ik, this.ikOn !== false);
       this.ikMs = (this.ikMs || 0) * 0.95 + (performance.now() - t0) * 0.05;
