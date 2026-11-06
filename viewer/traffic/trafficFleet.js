@@ -26,6 +26,9 @@ export class TrafficFleet {
     const J = maxCars * 2;
     this.jb = new Int32Array(J); this.jc = new Int32Array(J); this.jf = new Float32Array(J);
     this.shown = new Int8Array(maxCars).fill(-1); this.seenF = new Int32Array(maxCars); this.frameNo = 0;
+    // pop checks: a car drawn whole last frame that is gone (or re-spawned) now without a parking hand-over = vanished
+    // in sight; a car drawn whole in its first 0.3 s of life (not pulled out of a parking slot) = appeared in sight
+    this.drawnLast = new Uint8Array(maxCars); this.genLast = new Uint32Array(maxCars);
     this.lastPos = new THREE.Vector3(); this.hasLast = false;
     this.all = [];
   }
@@ -99,6 +102,11 @@ export class TrafficFleet {
     this.frustum.setFromProjectionMatrix(this.pm, THREE.WebGPUCoordinateSystem, camera.reversedDepth);
     const L = this.lodDist, last = L.length - 1, st = this.stats;
     st.drawn = 0; st.fading = 0; st.culled = 0; st.far = 0; st.tris = 0;
+    st.vanished ??= 0; st.appeared ??= 0;
+    for (let i = 0; i < sim.cap; i++) {
+      if (this.drawnLast[i] && (!sim.alive[i] || sim.gen[i] !== this.genLast[i]) && !sim.handoff[i]) st.vanished++;
+      if (!sim.alive[i]) this.drawnLast[i] = 0;
+    }
     for (let k = 0; k < 4; k++) st.perLod[k] = 0;
     this.frameNo++;
     const jumped = !this.hasLast || camPos.distanceTo(this.lastPos) > 5;
@@ -108,6 +116,8 @@ export class TrafficFleet {
     const P = sim;
     for (let i = 0; i < sim.cap; i++) {
       if (!P.alive[i]) { this.shown[i] = -1; continue; }
+      const fresh = P.gen[i] !== this.genLast[i];
+      this.genLast[i] = P.gen[i]; this.drawnLast[i] = 0;
       const x = P.px[i] * b1 + P.x[i] * a, y = P.py[i] * b1 + P.y[i] * a, z = P.pz[i] * b1 + P.z[i] * a;
       this.sphere.center.set(x, y + 0.9, z);
       if (!this.frustum.intersectsSphere(this.sphere)) { st.culled++; this.shown[i] = -1; continue; }
@@ -128,6 +138,7 @@ export class TrafficFleet {
       else if (keep < 1) { this.jb[nj] = base + k * 2 + 1; this.jc[nj] = i; this.jf[nj++] = 1 - keep; st.fading++; }
       else { this.jb[nj] = base + k * 2; this.jc[nj] = i; this.jf[nj++] = 0; }
       st.drawn++; st.perLod[k]++; st.tris += this.types[P.type[i]].lods[k].tris;
+      if (keep >= 1) { this.drawnLast[i] = 1; if (fresh && !P.handoff[i] && !jumped) st.appeared++; }
     }
     const all = this.all;
     for (let q = 0; q < all.length; q++) all[q].n = 0;

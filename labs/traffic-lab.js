@@ -218,7 +218,7 @@ function frame(dt) {
     $info.textContent = `${backend}  ${fps.toFixed(0)} fps  GPU ${gpu.avg.toFixed(2)} ms  draw calls ${r.drawCalls ?? r.calls}  triangles ${(r.triangles / 1000).toFixed(0)}k\n` +
       `traffic: ${st.cars} cars (target ${st.target} for ${st.laneKm} km of lane, hour factor ${hourFactor(sim.params.hour).toFixed(2)}), ${held} waiting · ` +
       `CPU sim ${c.sim.toFixed(3)} ms + draw ${c.draw.toFixed(3)} ms per frame (step ${st.stepMs.toFixed(3)} ms, worst frame ${c.max.toFixed(2)})\n` +
-      `fleet: ${fs.drawn} drawn (LOD ${fs.perLod.join("/")}), ${fs.fading} fading, ${fs.culled} culled, ${fs.draws} draws, ${(fs.tris / 1000).toFixed(0)}k tris, pops ${fs.pops} · ` +
+      `fleet: ${fs.drawn} drawn (LOD ${fs.perLod.join("/")}), ${fs.fading} fading, ${fs.culled} culled, ${fs.draws} draws, ${(fs.tris / 1000).toFixed(0)}k tris, LOD pops ${fs.pops}, appeared in view ${fs.appeared ?? 0}, vanished in view ${fs.vanished ?? 0} · ` +
       `spawned ${st.spawned}, removed ${st.removed}, pull-outs ${st.pullOuts}, park-ins ${st.parkIns}\n` +
       `signals: ${S.signal} · graph ${d.traffic.stats.paths} paths, ${d.traffic.stats.junctions} junctions (${d.traffic.stats.signal} signalled approaches), ${d.traffic.stats.conflicts} conflicts`;
   }
@@ -281,6 +281,55 @@ window.__lab = {
     this.setPhaseTime(ph, -1.5); k = 0;
     await this.seq("green_go", n2, 0.1, cap, () => this.chase(car2, 13, 5.5, 14));
     return { car, car2, phase: ph, r1, after: { v: sim.v[car], path: sim.path[car], v2: sim.v[car2] } };
+  },
+  /** THE PULL-OUT CHECK: the parked car nearest (x, z) pulls out (indicator, gap, S-curve); 10 fps frames (dir/pull_out)
+   *  from a fixed camera across the street, then the car is followed. */
+  async pullOut(x = J.x - 60, z = J.z, n = 120) {
+    this.pause();
+    let best = null, bd = Infinity;
+    for (const r of carFleet.regs) for (const c of r.cars) {
+      if (c.hidden) continue;
+      const hx = Math.sin(c.heading), hz = Math.cos(c.heading), lane = sim.laneAt(c.x, c.z, hx, hz);
+      if (!lane || lane.along < 6 || lane.along + 14 > sim.plen(lane.gid)) continue;
+      const dd = (c.x - x) ** 2 + (c.z - z) ** 2; if (dd < bd) { bd = dd; best = c; }
+    }
+    if (!best) return "no slot";
+    this.clearAround(best.x, best.z, 60);
+    const before = sim.stats.pullOuts;
+    sim.pullOut(best);
+    if (sim.stats.pullOuts === before) return "pull-out refused";
+    let i = -1; for (let k = 0; k < sim.cap; k++) if (sim.alive[k] && sim.slot[k] === best) i = k;
+    const hx = Math.sin(best.heading), hz = Math.cos(best.heading), y = ground(best.x, best.z);
+    // across the street (the car's left), a little ahead, looking at the slot
+    this.look(best.x + hz * 14 + hx * 6, y + 6, best.z - hx * 14 + hz * 6, best.x + hx * 4, y + 0.6, best.z + hz * 4);
+    let k = 0;
+    const ST = ["drive", "waiting for a gap (indicator)", "pulling out", "stopping past a slot", "reversing in"];
+    await this.seq("pull_out", n, 0.1, () => `t=${(k += 0.1).toFixed(1)}s  ${ST[sim.state[i]] ?? "?"}  ${(sim.v[i] * 3.6).toFixed(1)} km/h  parked copy hidden: ${best.hidden}`);
+    return { i, slot: [best.x, best.z], state: sim.state[i], v: sim.v[i], pops: traffic.fleet.stats };
+  },
+  /** THE PARK-IN CHECK: a free slot (a parked car taken away) and a car 45 m before it: it stops past the slot,
+   *  indicates, reverses in and is handed to the parked fleet (dir/park_in). */
+  async parkIn(x = J.x + 40, z = J.z - 10, n = 200) {
+    this.pause();
+    let best = null, bd = Infinity, lane = null;
+    for (const r of carFleet.regs) for (const c of r.cars) {
+      if (c.hidden) continue;
+      const l = sim.laneAt(c.x, c.z, Math.sin(c.heading), Math.cos(c.heading));
+      if (!l || l.along < 50 || l.along + 11 > sim.plen(l.gid)) continue;
+      const dd = (c.x - x) ** 2 + (c.z - z) ** 2; if (dd < bd) { bd = dd; best = c; lane = l; }
+    }
+    if (!best) return "no slot";
+    this.clearAround(best.x, best.z, 80);
+    best.hidden = true; carFleet.touch();                 // the slot is free (its car "left")
+    const ti = traffic.types.findIndex((t) => t.len + 0.5 <= (best.room ?? 6));
+    const i = sim.spawnAt(lane.gid, lane.along - 45, 6, Math.max(0, ti)); sim.insertInList(i);
+    sim.state[i] = 3; sim.slot[i] = best; sim.onD[i] = lane.along + 9; sim.parkPath[i] = lane.gid;
+    const hx = Math.sin(best.heading), hz = Math.cos(best.heading), y = ground(best.x, best.z);
+    this.look(best.x + hz * 9 + hx * 4, y + 16, best.z - hx * 9 + hz * 4, best.x + hx * 4, y, best.z + hz * 4);
+    let k = 0, done = -1;
+    const ST = ["drive", "waiting", "pulling out", "stopping past the slot (indicator)", "reversing in"];
+    await this.seq("park_in", n, 0.1, () => { if (!sim.alive[i] && done < 0) done = k; return `t=${(k += 0.1).toFixed(1)}s  ${sim.alive[i] ? ST[sim.state[i]] + "  " + (sim.v[i] * 3.6).toFixed(1) + " km/h" : "parked (handed to the parked fleet)"}`; });
+    return { parked: !best.hidden, at: done, parkIns: sim.stats.parkIns };
   },
   look(px, py, pz, tx, ty, tz) { camera.position.set(px, py, pz); controls.target.set(tx, ty, tz); controls.update(); },
   near(x, z, r = 30) { const o = []; for (let i = 0; i < sim.cap; i++) if (sim.alive[i] && (sim.x[i] - x) ** 2 + (sim.z[i] - z) ** 2 < r * r) o.push({ i, v: +sim.v[i].toFixed(2), hold: sim.hold[i], st: sim.state[i], x: +sim.x[i].toFixed(1), z: +sim.z[i].toFixed(1) }); return o; },

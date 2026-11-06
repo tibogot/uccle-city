@@ -56,9 +56,10 @@ export class TrafficSim {
       spin: F(), pspin: F(), steer: F(), offX: F(), offZ: F(), age: F(), seen: U(),
       manPts: F(MAN * 2), manCum: F(MAN), manLen: F(), manT: F(), manDir: new Int8Array(cap), slot: new Array(cap).fill(null),
       onPath: I(1, -1), onD: new Float64Array(cap),
+      gen: new Uint32Array(cap), handoff: U(), parkPath: I(1, -1),         // pop checks: a spawn counter per slot; 1 = came from / went to a parked car
       gap: F(), lead: U(),                            // debug: the gap IDM used and what it was to (1 car, 2 obstacle, 3 hold)   // where a maneuvering car sits on its lane (for followers)
     });
-    this.free = [];
+    this.free = []; this.freeLater = [];
     for (let i = cap - 1; i >= 0; i--) this.free.push(i);
     this.count = 0;
     // obstacles: points with a radius and a velocity; entries = obstacle projected on a path
@@ -133,14 +134,15 @@ export class TrafficSim {
     this.aMax[i] = IDM.a * (0.8 + this.rand() * 0.4); this.Tg[i] = IDM.T * (0.8 + this.rand() * 0.5); this.v0f[i] = 0.9 + this.rand() * 0.18;
     this.state[i] = ST.drive; this.hold[i] = 0; this.holdT[i] = 0; this.stopDone[i] = -1; this.committed[i] = -1; this.waitT[i] = 0; this.bits[i] = 0;
     this.spin[i] = this.rand() * 6.28; this.steer[i] = 0; this.offX[i] = 0; this.offZ[i] = 0; this.age[i] = 0; this.seen[i] = 0;
-    this.slot[i] = null; this.onPath[i] = -1;
+    this.slot[i] = null; this.onPath[i] = -1; this.gen[i]++; this.handoff[i] = 0;
     this.pose(i); this.copyPrev(i);
     this.count++;
     return i;
   }
   kill(i) {
     if (!this.alive[i]) return;
-    this.alive[i] = 0; this.path[i] = -1; this.count--; this.free.push(i); this.slot[i] = null;
+    // not reusable until the next step: it is still linked in this step's per-path lists (a reuse now could close a loop)
+    this.alive[i] = 0; this.path[i] = -1; this.count--; this.freeLater.push(i); this.slot[i] = null;
   }
   copyPrev(i) { this.px[i] = this.x[i]; this.pz[i] = this.z[i]; this.py[i] = this.y[i]; this.pyaw[i] = this.yaw[i]; this.ppitch[i] = this.pitch[i]; this.pspin[i] = this.spin[i]; }
 
@@ -404,6 +406,7 @@ export class TrafficSim {
   step(ctx) {
     const t0 = performance.now();
     this.t = signalClock.now();
+    while (this.freeLater.length) this.free.push(this.freeLater.pop());
     this.buildLists();
     this.projectObstacles();
     for (let i = 0; i < this.cap; i++) {
@@ -604,23 +607,28 @@ export class TrafficSim {
       const lane = this.laneAt(slot.x, slot.z, Math.sin(slot.heading), Math.cos(slot.heading));
       if (!lane) return;
       const { gid, along } = lane, g = this.W.slots[gid >>> 16];
-      // a driving car on this lane 25-70 m before the slot, its type fits the room
-      for (let j = g.head[gid & 0xffff]; j >= 0; j = this.nxt[j]) {
-        if (this.state[j] !== ST.drive || this.hold[j]) continue;
-        const ahead = along - this.d[j];
-        if (ahead < 25 || ahead > 70) continue;
-        if (this.types[this.type[j]].len + 0.5 > (slot.room ?? 6)) continue;
-        if (along + 7.5 > g.len[gid & 0xffff]) continue;
-        this.state[j] = ST.inStop; this.slot[j] = slot; this.onD[j] = along + 7.5;
-        this.freeSlots.splice(k, 1);
-        break;
+      // a driving car 25-80 m before the slot, on its lane or on a lane leading into it (heading for it), its type fits
+      if (along + 9 > g.len[gid & 0xffff]) return;
+      const pi = gid & 0xffff;
+      for (let e = -1; e < g.prevOff[pi + 1] - g.prevOff[pi]; e++) {
+        const lane2 = e < 0 ? pi : g.prevIdx[g.prevOff[pi] + e], base = e < 0 ? 0 : g.len[lane2];
+        for (let j = g.head[lane2]; j >= 0; j = this.nxt[j]) {
+          if (this.state[j] !== ST.drive || this.hold[j]) continue;
+          if (e >= 0 && this.route[j * ROUTE] !== gid) continue;
+          const ahead = along + base - this.d[j];
+          if (ahead < 25 || ahead > 80) continue;
+          if (this.types[this.type[j]].len + 0.5 > (slot.room ?? 6)) continue;
+          this.state[j] = ST.inStop; this.slot[j] = slot; this.onD[j] = along + 9; this.parkPath[j] = gid;
+          this.freeSlots.splice(k, 1);
+          return;
+        }
       }
     }
   }
   /** The lane piece (drive direction ~ (hx, hz)) nearest (x, z) within 4.5 m: { gid, along } or null. */
-  laneAt(x, z, hx, hz) {
-    let best = null, bl = 4.5;
-    this.W.project(x, z, 4.5, (gid, along, lat, tx, tz) => {
+  laneAt(x, z, hx, hz, maxLat = 3.6) {   // a parallel slot sits ~2.5 m beside its lane; farther = a lane across a wide street
+    let best = null, bl = maxLat;
+    this.W.project(x, z, maxLat, (gid, along, lat, tx, tz) => {
       const g = this.W.slots[gid >>> 16];
       if (g.kind[gid & 0xffff] || !g.core[gid & 0xffff] || tx * hx + tz * hz < 0.8 || lat >= bl) return;
       bl = lat; best = { gid, along };
@@ -647,7 +655,7 @@ export class TrafficSim {
     // the parked car is now this traffic car (same pose, type, paint): hide it in the parked fleet, same frame
     c.hidden = true; c.busy = true;
     this.onPark?.(c, true);
-    this.stats.pullOuts++;
+    this.stats.pullOuts++; this.handoff[i] = 1;
   }
   bezier(i, x0, z0, h0x, h0z, x3, z3, h3x, h3z, k0, k3) {
     const P = this.manPts, C = this.manCum, o = i * MAN;
@@ -699,7 +707,7 @@ export class TrafficSim {
           c.hidden = false; c.busy = false;
           this.onPark?.(c, false);
         }
-        this.stats.parkIns++;
+        this.stats.parkIns++; this.handoff[i] = 1;
         this.kill(i);
       } else if (this.manT[i] > this.manLen[i] * 0.6) this.onPath[i] = -1;
     }
@@ -713,16 +721,21 @@ TrafficSim.prototype.move = function (i) {
     // a virtual stop 7.5 m past the slot (onD), on this car's path
     const target = this.onD[i];
     const p = this.path[i];
+    if (p !== this.parkPath[i] && this.route[i * ROUTE] !== this.parkPath[i]) {      // went elsewhere: give the slot back
+      if (this.slot[i]) this.freeSlots.push(this.slot[i]);
+      this.slot[i] = null; this.state[i] = ST.drive;
+      return baseMove.call(this, i);
+    }
     if (p >= 0) {
-      const ds = target - (this.d[i] + this.half[i] * 0) ;
-      if (ds < 0.4 && this.v[i] < 0.15) {
+      const ds = p === this.parkPath[i] ? target - this.d[i] : this.plen(p) - this.d[i] + target;
+      if (p === this.parkPath[i] && ds < 1.8 && this.v[i] < 0.15) {
         // stopped: reverse into the slot
         const c = this.slot[i];
         if (!c) { this.state[i] = ST.drive; return baseMove.call(this, i); }
         const hx = Math.sin(this.yaw[i]), hz = Math.cos(this.yaw[i]);
         const shx = Math.sin(c.heading), shz = Math.cos(c.heading);
         // reverse: the polyline runs from the car's position backwards (tangent -heading) into the slot (tangent -slot heading)
-        this.bezier(i, this.x[i], this.z[i], -hx, -hz, c.x, c.z, -shx, -shz, 3.0, 3.2);
+        this.bezier(i, this.x[i], this.z[i], -hx, -hz, c.x, c.z, -shx, -shz, 3.4, 3.4);
         this.state[i] = ST.inRev; this.manT[i] = 0; this.manDir[i] = -1; this.v[i] = 0;
         this.onPath[i] = p; this.onD[i] = this.d[i];
         this.offX[i] = this.offZ[i] = 0;
