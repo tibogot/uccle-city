@@ -15,7 +15,7 @@
 //  - LEAVES: oval, pointed, wavy-edged, 7-9 straight parallel vein pairs, glossy (lower roughness), two-ranked along
 //    zigzag twigs: flat fans (the sprays) drawn on the cards.
 import * as THREE from "three/webgpu";
-import { positionGeometry, normalGeometry, attribute, vec3, float, mix, smoothstep, mx_noise_float, mx_worley_noise_float, abs, max, fwidth, floor, fract, sin, dot, length } from "three/tsl";
+import { positionGeometry, normalGeometry, attribute, vec3, float, mix, smoothstep, mx_noise_float, mx_worley_noise_float, abs, max, fwidth, floor, fract, sin, dot, length, atan } from "three/tsl";
 import { bumpNormal } from "./tslkit.js";
 import { coverageMips } from "./treesStylized.js";
 import { grow, taper, at, dirAt, barkMesh } from "./treesPlane.js";
@@ -214,8 +214,8 @@ function openBeech(r, v) {
     limbs.push({ pts, rB, az });
   }
   limbs.push({ pts: trunk.slice(Math.floor(trunk.length * 0.5)), rB: trunkR(0.5), az: 0, leader: true });
-  const NG = Math.round(34 * (W / 8.4) ** 2);
-  const pads = crownInto(r, { limbs, branches, env, cy, NG, elMin: -35, tiers: 0, padR: [2.1, 2.6], twigP: 0.85, twigR: [1.7, 2.1] });
+  const NG = Math.round(40 * (W / 8.4) ** 2);
+  const pads = crownInto(r, { limbs, branches, env, cy, NG, elMin: -55, tiers: 0, padR: [2.1, 2.6], twigP: 0.85, twigR: [1.7, 2.1] });
   return { branches, pads, fork: at(trunk, (yb + 1) / (top - 3)) };
 }
 
@@ -234,7 +234,9 @@ export function beechShape(seedBase) {
       crown, rad, clumps: pads,
       // the forest form is built for 4,500-tree tiles: ~30 pads of 9 / 4 / 2 cards, LOD 2 ~70 cards
       cards: open ? [10, 4, 2] : [8, 3, 2], cardScale: open ? 0.6 : 0.68,
-      aoOverhead: 0.95, aoFloor: 0.45, crownNormal: 0.25,
+      // more of the crown's dome in the shading than the plane (0.2): a beech crown reads as one smooth mass, and with
+      // glossy leaves each pad's own dome made "broccoli" balls
+      aoOverhead: 0.95, aoFloor: 0.45, crownNormal: 0.5,
       trunk: (l) => barkMesh(branches.filter((b) => b.level <= [3, 1, 1][l]), (lv) => SIDES[l][Math.min(lv, SIDES[l].length - 1)], l === 2 ? 2 : 1),
     };
   };
@@ -252,27 +254,39 @@ export function beechBark(m) {
   // base: silver-grey, cool to warm in big soft zones
   const zone = mx_noise_float(q.mul(0.35).add(3.0));
   let col = mix(vec3(0.27, 0.275, 0.27), vec3(0.33, 0.32, 0.295), smoothstep(-0.4, 0.4, zone));
-  const mott = mx_noise_float(q.mul(1.4).add(11.0)).mul(0.6).add(mx_noise_float(q.mul(4.0).add(5.0)).mul(0.4));
-  col = col.mul(mott.mul(0.16).mul(near).add(1));
+  const mott = mx_noise_float(q.mul(1.4).add(11.0)).mul(0.45).add(mx_noise_float(q.mul(4.0).add(5.0)).mul(0.3)).add(mx_noise_float(q.mul(11.0).add(2.0)).mul(0.25));
+  col = col.mul(mott.mul(0.3).mul(near).add(1));
+  col = mix(col, col.mul(vec3(0.95, 1.0, 0.86)), smoothstep(0.1, 0.6, mx_noise_float(q.mul(0.6).add(33.0))).mul(0.6));   // greenish-brown zones
   // faint horizontal wrinkles (the bark stretching as the trunk grows)
   const wr = mx_noise_float(vec3(p.x.mul(6.0), p.y.mul(38.0), p.z.mul(6.0)));
-  const wrinkle = smoothstep(0.35, 0.7, wr).mul(near).mul(smoothstep(0.0, 0.5, mx_noise_float(q.mul(0.8).add(21.0))));
+  const wrinkle = smoothstep(0.45, 0.85, wr).mul(0.6).mul(near).mul(smoothstep(0.0, 0.5, mx_noise_float(q.mul(0.8).add(21.0))));
   col = col.mul(float(1).sub(wrinkle.mul(0.12)));
   // the eyes: one per cell of a stretched grid (some cells only), a flat horizontal almond, its upper rim a chevron
-  const eg = vec3(p.x.mul(2.2), p.y.mul(1.1), p.z.mul(2.2)), ec = floor(eg), ef = fract(eg).sub(0.5);
+  // (on the trunk's own cylinder: the angle round the ring centre (bark.xyz) x the height; 7 cells round, a whole number so
+  // the atan2 seam falls on a cell edge)
+  const ax = attribute("bark", "vec4").xyz, th = atan(p.z.sub(ax.z), p.x.sub(ax.x));
+  const eg = vec3(th.div(Math.PI * 2).mul(7.0), p.y.mul(1.3), 0), ec = floor(eg), ef0 = fract(eg).sub(0.5);
   const eh = fract(sin(dot(ec, vec3(12.9898, 78.233, 37.719))).mul(43758.5453));
-  const ed = length(vec3(ef.x.mul(1.0), ef.y.mul(3.4), ef.z.mul(1.0)));
-  const eyeOn = smoothstep(0.55, 0.62, eh).mul(smoothstep(0.5, 1.5, level).oneMinus());
-  const eyeW = fw.mul(0.4).add(0.02);
-  const eye = float(1).sub(smoothstep(float(0.18).sub(eyeW), float(0.18).add(eyeW), ed)).mul(eyeOn);
-  const rim = float(1).sub(smoothstep(float(0), eyeW.mul(1.5), abs(ed.sub(0.24)))).mul(eyeOn);
-  const chev = float(1).sub(smoothstep(float(0), eyeW.mul(1.2), abs(ef.y.sub(0.11).sub(abs(ef.x).add(abs(ef.z)).mul(0.25))))).mul(smoothstep(0.35, 0.05, length(vec3(ef.x, 0, ef.z)))).mul(eyeOn);
-  col = mix(col, vec3(0.07, 0.065, 0.06), eye.mul(0.85).mul(near));
-  col = mix(col, vec3(0.4, 0.39, 0.36), rim.mul(0.35).mul(near));
-  col = mix(col, vec3(0.1, 0.095, 0.085), chev.mul(0.6).mul(near));
-  // lichen: pale, round spots (Worley), clustered
-  const lw = mx_worley_noise_float(q.mul(4.5).add(7.0));
-  const lichen = smoothstep(0.32, 0.22, lw).mul(smoothstep(0.1, 0.5, mx_noise_float(q.mul(0.9).add(41.0)))).mul(near);
+  // each eye its own size and a wobbly, almond outline (pointed ends: |x|^1.4), its edge soft (healed bark)
+  const esz = eh.mul(0.6).add(0.7);
+  const wob = mx_noise_float(vec3(eg.x.mul(6.0), eg.y.mul(6.0), ec.x.add(ec.y.mul(7.0)))).mul(0.05);
+  const ef = vec3(ef0.x.div(esz), ef0.y.div(esz), 0);
+  const taperY = float(1).sub(smoothstep(0.0, 0.2, abs(ef.x)).mul(0.65));                 // the almond: thinner toward the ends
+  const ed = length(vec3(ef.x, ef.y.add(wob).mul(4.2).div(taperY), 0));
+  const eyeOn = smoothstep(0.3, 0.36, eh).mul(smoothstep(0.5, 1.5, level).oneMinus());
+  const eyeW = fw.mul(0.4).add(0.05);
+  const eye = float(1).sub(smoothstep(float(0.2).sub(eyeW), float(0.2).add(eyeW), ed)).mul(eyeOn);
+  const rim = float(1).sub(smoothstep(float(0), eyeW.mul(1.5), abs(ed.sub(0.28)))).mul(eyeOn);
+  // the "moustache" over it: a wide, soft chevron, broken by noise
+  const chevY = ef.y.sub(0.12).sub(abs(ef.x).mul(0.34)).add(wob);
+  const chev = float(1).sub(smoothstep(float(0), eyeW.mul(2.2), abs(chevY))).mul(smoothstep(0.46, 0.15, abs(ef.x)))
+    .mul(smoothstep(-0.2, 0.3, mx_noise_float(vec3(eg.x.mul(9.0), eg.y.mul(3.0), 1.0)))).mul(eyeOn);
+  col = mix(col, vec3(0.1, 0.095, 0.085), eye.mul(0.65).mul(near));
+  col = mix(col, vec3(0.38, 0.37, 0.35), rim.mul(0.06).mul(near));
+  col = mix(col, vec3(0.12, 0.115, 0.1), chev.mul(0.5).mul(near));
+  // lichen: pale spots (warped Worley, ragged edges), clustered
+  const lw = mx_worley_noise_float(q.mul(3.2).add(vec3(mx_noise_float(q.mul(2.0)), 0, mx_noise_float(q.mul(2.0).add(5.0))).mul(0.35)).add(7.0));
+  const lichen = smoothstep(0.3, 0.18, lw.add(mx_noise_float(q.mul(9.0)).mul(0.08))).mul(smoothstep(0.1, 0.5, mx_noise_float(q.mul(0.9).add(41.0)))).mul(near);
   col = mix(col, vec3(0.5, 0.52, 0.47), lichen.mul(0.7));
   // green algae: toward the foot and on one side of the trunk (the damp side), patchy
   const side = smoothstep(-0.2, 0.8, normalGeometry.x.mul(0.6).add(normalGeometry.z.mul(-0.8)));
@@ -284,9 +298,9 @@ export function beechBark(m) {
   col = mix(col, col.mul(1.08), smoothstep(0.5, 1.5, level));
   col = mix(col, vec3(0.27, 0.275, 0.25), far.mul(0.7));
   m.colorNode = col;
-  const h = wrinkle.mul(0.0015).negate().sub(eye.mul(0.003)).add(rim.mul(0.0015)).add(lichen.mul(0.0006)).mul(near);
+  const h = wrinkle.mul(0.0015).negate().sub(eye.mul(0.0004)).add(lichen.mul(0.0006)).mul(near);
   m.normalNode = bumpNormal(h);
-  m.roughnessNode = mix(float(0.6), float(0.9), max(lichen, algae.mul(0.8)));   // smooth bark has a soft sheen
+  m.roughnessNode = mix(float(0.78), float(0.95), max(lichen, algae.mul(0.8)));   // smooth bark has a soft sheen
   m.needsUpdate = true;
 }
 
@@ -299,7 +313,7 @@ export function beechDef(seedBase = 1000) {
     params: {
       seed: seedBase,
       // summer beech: a clean mid green with a cool cast, lime where the light comes through
-      topColor: "#6f9c3c", bottomColor: "#4f7d2c", translucencyColor: "#bce064", tintVar: 0.18,
+      topColor: "#6f9c3c", bottomColor: "#5c8b35", translucencyColor: "#bce064", tintVar: 0.18,
       crownLift: 0, fill: 0.4, fillColor: "#8fae7c", aoColor: 0.22, trunkColor: [0.27, 0.27, 0.26],
       leafTone: 0.5, shadowLift: 2.2,
     },
