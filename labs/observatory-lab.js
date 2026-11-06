@@ -37,7 +37,7 @@ const lighting = new Lighting(scene, renderer, preset);
 
 // ------------------------------------------------------------------------------------------------ the campus
 const t0 = performance.now();
-const model = await loadObservatory().catch((e) => { $info.textContent = "models/observatory/ not found: " + e.message; throw e; });
+const model = await loadObservatory(qp.get("set") || "observatory").catch((e) => { $info.textContent = "models/observatory/ not found: " + e.message; throw e; });
 const loadMs = performance.now() - t0;
 const P0 = model.placement.position;
 const root = new THREE.Group();
@@ -119,6 +119,12 @@ const PHOTOS = {
   "aerial from the south-west": { file: "owner_aerial.png", pos: [616, 214, 172], target: [660, 62, 99], fov: 58, src: "owner's photo (reference only)" },
   "white dome from the north court": { file: "owner_dome_white_banded.png", pos: [664, -58, 101.0], target: [707, 47, 106.0], fov: 13, src: "owner's photo (reference only)" },
   "east tower, slit open": { file: "owner_tower_slit_dome.png", pos: [687, 62, 101.6], target: [709, 43, 105.6], fov: 44, src: "owner's photo (reference only)" },
+  // the Brussels heritage inventory's photos (monument.heritage.brussels/fr/buildings/27031; reference only, git-ignored)
+  "inventory: main front (0003_P01)": { file: "inventory/11801069_0003_P01.JPG", pos: [654, -26, 100.9], target: [654, 22, 105.0], fov: 29, src: "Brussels heritage inventory (reference only)" },
+  "inventory: SW pavilion (0003_P08)": { file: "inventory/11801069_0003_P08.JPG", pos: [626, 172, 102.4], target: [600, 166, 106.2], fov: 40, src: "Brussels heritage inventory (reference only)" },
+  "inventory: great equatorial (0003_P04)": { file: "inventory/11801069_0003_P04.JPG", pos: [696, 160, 102.0], target: [656, 152, 108.0], fov: 34, src: "Brussels heritage inventory (reference only)" },
+  "inventory: residence (0001_P01)": { file: "inventory/11801069_0001_P01.jpg", pos: [579.8, -78, 100.0], target: [579.8, -36, 107.8], fov: 36, src: "Brussels heritage inventory (reference only)" },
+  "inventory: NE tower, cone (0003_P05)": { file: "inventory/11801069_0003_P05.JPG", pos: [706, 44, 101.5], target: [719, 30, 105.5], fov: 48, src: "Brussels heritage inventory (reference only)" },
   "great equatorial (south lawn)": { pos: [628, 196, 103], target: [654, 156, 108], fov: 45 },
   "main front (north court)": { pos: [654, -48, 101], target: [654, 30, 106], fov: 55 },
   "medium equatorial + meridian hall": { pos: [716, 126, 104], target: [676, 104, 109.5], fov: 50 },

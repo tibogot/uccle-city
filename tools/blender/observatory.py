@@ -202,17 +202,34 @@ class Win:
     def __init__(self, uc, sill, head, w, hero=False, kind="win", sur=0.17, depth=0.26):
         self.__dict__.update(uc=uc, sill=sill, head=head, w=w, hero=hero, kind=kind, sur=sur, depth=depth)
     def outer(self):
-        b = self.sill - (0.06 if self.kind == "win" else 0.0)
+        b = self.sill - (0.06 if self.kind in ("win", "arch") else 0.0)
+        if self.kind == "arch":           # the hole: the round-headed surround, as a polygon
+            r, sp = self.w / 2 + self.sur, self.head - self.w / 2
+            return [(self.uc - r, b), (self.uc + r, b)] + [(self.uc + r * math.cos(math.pi * i / 8), sp + r * math.sin(math.pi * i / 8)) for i in range(9)]
         return rect(self.uc - self.w / 2 - self.sur, b, self.uc + self.w / 2 + self.sur, self.head + self.sur)
     def span(self): return (self.uc - self.w / 2 - self.sur - 0.15, self.uc + self.w / 2 + self.sur + 0.15)
     def build(self, fr):
         uc, w, s0, s1, sur = self.uc, self.w, self.sill, self.head, self.sur
         if FAR:
-            fill2d(fr, [rect(uc - w / 2, s0, uc + w / 2, s1)], 0.03, GLASS if self.kind == "win" else WOOD, C_DOOR if self.kind == "door" else 0)
+            fill2d(fr, [rect(uc - w / 2, s0, uc + w / 2, s1 - (w / 2 if self.kind == "arch" else 0))], 0.03, WOOD if self.kind == "door" else GLASS, C_DOOR if self.kind == "door" else 0)
             return
         inner = rect(uc - w / 2, s0, uc + w / 2, s1)
         out = self.outer()
         pr = 0.06
+        if self.kind == "arch":
+            sp = s1 - w / 2
+            arc = lambda r, b: [(uc - r, b), (uc + r, b)] + [(uc + r * math.cos(math.pi * i / 8), sp + r * math.sin(math.pi * i / 8)) for i in range(9)]
+            inner_a = arc(w / 2, s0); out_a = arc(w / 2 + sur, s0 - 0.06)
+            fill2d(fr, [out_a, inner_a], pr, STONE, C_SUR)
+            strip2d(fr, out_a, pr, 0.0, STONE, C_SUR, inward=False)
+            strip2d(fr, inner_a, pr, -self.depth, STONE, C_SUR)
+            d = -self.depth + 0.04
+            lights(fr, uc - w / 2, uc + w / 2, s0, sp, d, False)
+            fill2d(fr, [[(uc + w / 2 * math.cos(math.pi * i / 8), sp + w / 2 * math.sin(math.pi * i / 8)) for i in range(9)]], d - 0.035, GLASS)
+            fbox(fr, uc - w / 2 - sur - 0.06, uc + w / 2 + sur + 0.06, s0 - 0.16, s0 - 0.04, 0.0, 0.13, STONE, C_SILL)
+            k = [(uc - 0.14, s1 + sur), (uc + 0.14, s1 + sur), (uc + 0.1, s1 - 0.1), (uc - 0.1, s1 - 0.1)]
+            fill2d(fr, [k], pr + 0.05, STONE, C_KEY); strip2d(fr, k, pr + 0.05, pr, STONE, C_KEY, inward=False)
+            return
         fill2d(fr, [out, inner], pr, STONE, C_SUR)
         strip2d(fr, out, pr, 0.0, STONE, C_SUR, inward=False)
         strip2d(fr, inner, pr, -self.depth, STONE, C_SUR)
@@ -227,8 +244,22 @@ class Win:
             fbox(fr, uc - w / 2, uc + w / 2, lt - 0.06, lt + 0.04, d, d + 0.08, WOOD, C_DOOR)
             fill2d(fr, [rect(uc - w / 2, lt, uc + w / 2, s1)], d - 0.02, GLASS)
             fbox(fr, uc - 0.03, uc + 0.03, lt, s1, d - 0.02, d + 0.03, WOOD, C_DOOR)
-            # the step in front (blue stone)
-            fbox(fr, uc - w / 2 - sur - 0.25, uc + w / 2 + sur + 0.25, s0 - 1.6, s0, 0.0, 0.55, BLUE, C_PLINTH)
+            # the step(s) in front (blue stone): a flight up to a raised floor
+            base = getattr(self, "base", s0 - 0.12)
+            nst = max(1, round((s0 - base) / 0.17))
+            rise = (s0 - base) / nst
+            for i in range(nst):
+                ww = w / 2 + sur + 0.25 + (0.08 * i if nst > 1 else 0)
+                fbox(fr, uc - ww, uc + ww, base - 0.6, s0 - i * rise, 0.0, 0.55 + 0.32 * i, BLUE, C_PLINTH)
+            if getattr(self, "portal", False):
+                # stone pilasters + a triangular pediment over the portal (inventory 0003_P01)
+                for sx in (-1, 1):
+                    x0 = uc + sx * (w / 2 + sur)
+                    fbox(fr, min(x0, x0 + sx * 0.32), max(x0, x0 + sx * 0.32), s0, s1 + sur, 0.0, 0.12, STONE, C_PIL)
+                pz = s1 + sur + 0.05
+                fbox(fr, uc - w / 2 - sur - 0.45, uc + w / 2 + sur + 0.45, pz, pz + 0.22, 0.0, 0.25, STONE, C_CORN)
+                tri = [(uc - w / 2 - sur - 0.45, pz + 0.22), (uc + w / 2 + sur + 0.45, pz + 0.22), (uc, pz + 1.0)]
+                fill2d(fr, [tri], 0.2, STONE, C_CORN); strip2d(fr, tri, 0.2, 0.0, STONE, C_CORN, inward=False)
         else:
             cols = 2 if w > 0.95 else 1
             tr = s0 + (s1 - s0) * 0.7
@@ -258,15 +289,198 @@ class Win:
             fbox(fr, uc - w / 2 - sur - 0.12, uc + w / 2 + sur + 0.12, h0, h0 + 0.1, 0, 0.12, STONE, C_CORN)
             fbox(fr, uc - w / 2 - sur - 0.18, uc + w / 2 + sur + 0.18, h0 + 0.1, h0 + 0.22, 0, 0.2, STONE, C_CORN)
 
+def lights(fr, x0, x1, s0, s1, d, diamond, cols=None):
+    """the white frame (mullion + transom) and the glass of one light [x0, x1] x [s0, s1] at depth d; diamond glazing
+    bars (a lozenge in every pane, an X in the upper ones) where the photos show them"""
+    w = x1 - x0
+    cols = cols or (2 if w > 0.95 else 1)
+    tr = s0 + (s1 - s0) * 0.7
+    fw = 0.065
+    panes = []
+    for j in range(cols):
+        a = x0 + fw + j * (w - fw) / cols; b = x0 + (j + 1) * (w - fw) / cols
+        panes.append((a, s0 + fw, b, tr - fw / 2)); panes.append((a, tr + fw / 2, b, s1 - fw))
+    inner = rect(x0, s0, x1, s1)
+    fill2d(fr, [inner] + [rect(*q) for q in panes], d, WOOD)
+    for q in panes: strip2d(fr, rect(*q), d, d - 0.035, WOOD)
+    fill2d(fr, [inner], d - 0.035, GLASS)
+    if diamond:
+        for (a, y0, b, y1) in panes:
+            mx, my = (a + b) / 2, (y0 + y1) / 2
+            lz = [(mx, y0), (b, my), (mx, y1), (a, my)]
+            for i in range(4): bar(fr, lz[i], lz[(i + 1) % 4], d - 0.03, 0.022, 0.025, WOOD)
+            if y0 > tr - 0.01:
+                bar(fr, (a, y0), (b, y1), d - 0.03, 0.02, 0.02, WOOD); bar(fr, (a, y1), (b, y0), d - 0.03, 0.02, 0.02, WOOD)
+
+class WinGroup:
+    """n lights in ONE stone surround, separated by stone mullion-piers (the main building's triplets, the wings' pairs,
+    the galleries' triplets: inventory photos 0003_P01 / P03 / P10, owner photo 1)"""
+    kind = "group"
+    def __init__(self, uc, sill, head, n, wl, mull=0.24, glazing="plain", hero=False, sur=0.17, depth=0.28, cols=None):
+        self.__dict__.update(uc=uc, sill=sill, head=head, n=n, wl=wl, mull=mull, glazing=glazing, hero=hero, sur=sur, depth=depth, cols=cols)
+        self.w = n * wl + (n - 1) * mull
+    def outer(self): return rect(self.uc - self.w / 2 - self.sur, self.sill - 0.06, self.uc + self.w / 2 + self.sur, self.head + self.sur)
+    def span(self): return (self.uc - self.w / 2 - self.sur - 0.15, self.uc + self.w / 2 + self.sur + 0.15)
+    def xs(self):
+        x = self.uc - self.w / 2
+        return [(x + i * (self.wl + self.mull), x + i * (self.wl + self.mull) + self.wl) for i in range(self.n)]
+    def build(self, fr):
+        s0, s1, sur, pr = self.sill, self.head, self.sur, 0.06
+        if FAR:
+            for (x0, x1) in self.xs(): fill2d(fr, [rect(x0, s0, x1, s1)], 0.03, GLASS)
+            return
+        inner = rect(self.uc - self.w / 2, s0, self.uc + self.w / 2, s1)
+        out = self.outer()
+        fill2d(fr, [out, inner], pr, STONE, C_SUR)
+        strip2d(fr, out, pr, 0.0, STONE, C_SUR, inward=False)
+        strip2d(fr, inner, pr, -self.depth, STONE, C_SUR)
+        d = -self.depth + 0.04
+        xs = self.xs()
+        for i, (x0, x1) in enumerate(xs):
+            lights(fr, x0, x1, s0, s1, d, self.glazing == "diamond", self.cols)
+            if i: fbox(fr, xs[i - 1][1], x0, s0, s1, -self.depth, pr, STONE, C_PIL, skip=("back",))      # stone mullion-pier
+        fbox(fr, self.uc - self.w / 2 - sur - 0.06, self.uc + self.w / 2 + sur + 0.06, s0 - 0.16, s0 - 0.04, 0.0, 0.13, STONE, C_SILL)
+        if self.hero:
+            h0 = s1 + sur
+            fbox(fr, self.uc - self.w / 2 - sur - 0.12, self.uc + self.w / 2 + sur + 0.12, h0, h0 + 0.1, 0, 0.12, STONE, C_CORN)
+            fbox(fr, self.uc - self.w / 2 - sur - 0.18, self.uc + self.w / 2 + sur + 0.18, h0 + 0.1, h0 + 0.22, 0, 0.2, STONE, C_CORN)
+
+class Blind:
+    """a blind panel: recessed brick in a proud stone frame (the wings' ground floor, owner photo 1)"""
+    kind = "blind"
+    def __init__(self, uc, sill, head, w, sur=0.17):
+        self.__dict__.update(uc=uc, sill=sill, head=head, w=w, sur=sur)
+    def outer(self): return rect(self.uc - self.w / 2 - self.sur, self.sill - self.sur, self.uc + self.w / 2 + self.sur, self.head + self.sur)
+    def span(self): return (self.uc - self.w / 2 - self.sur - 0.15, self.uc + self.w / 2 + self.sur + 0.15)
+    def build(self, fr):
+        inner = rect(self.uc - self.w / 2, self.sill, self.uc + self.w / 2, self.head)
+        if FAR:
+            fill2d(fr, [self.outer(), inner], 0.02, STONE, C_SUR); fill2d(fr, [inner], 0.0, BRICK, C_PLAIN); return
+        out = self.outer(); pr = 0.06
+        fill2d(fr, [out, inner], pr, STONE, C_SUR)
+        strip2d(fr, out, pr, 0.0, STONE, C_SUR, inward=False)
+        strip2d(fr, inner, pr, -0.1, STONE, C_SUR)
+        fill2d(fr, [inner], -0.1, BRICK, C_PLAIN)
+
+# FAÇADES COUNTED ON PHOTOS: (part, side) -> storeys bottom to top, each a list of items spread evenly along the face
+# ("g", n lights, light width, glazing) | ("d", width) door | ("b", width) blind panel | ("a", width) arched window
+# Sources: inventory = monument.heritage.brussels/fr/buildings/27031 photos (reference only); owner = the owner's photos.
+G = lambda n, wl, gl="plain": ("g", n, wl, gl)
+FACADES = {
+    # main building, north front (inventory 0003_P01, P10): 2 storeys; triplets of tall narrow lights between banded
+    # brick piers with stone blocks; ground floor triplet | portal | triplet, upper floor three triplets
+    # measured on the photo at its scale (the face is 17.1 m wide = 610 px: 35.6 px/m): ground floor raised (steps),
+    # heads 5.0 m up, sills 1.6; upper sills 7.7, heads 10.5; the groups 4.8 m apart about the axis; a pedimented portal
+    ("main_front", "N"): dict(rows=[[G(3, 0.82), ("p", 1.5), G(3, 0.82)], [G(3, 0.82), G(3, 0.82), G(3, 0.82)]],
+                              sill=[1.6, 7.7], head=[5.0, 10.5], c=[[-4.8, 0, 4.8], [-4.8, 0, 4.8]], floor=1.0),
+    # its long sides (inventory 0003_P10, oblique): pairs, four bays a storey
+    ("main_front", "E"): dict(rows=[[G(2, 0.9)] * 4, [G(2, 0.9)] * 4], sill=[1.6, 7.7], head=[5.0, 10.5]),
+    ("main_front", "W"): dict(rows=[[G(2, 0.9)] * 4, [G(2, 0.9)] * 4], sill=[1.6, 7.7], head=[5.0, 10.5]),
+    # the two court wings (owner photo 1: end bays, ground floor blind panels in stone frames, upper floor PAIRS of tall
+    # diamond-glazed lights between broad banded piers; bay 3.9 m from the photo, so 9 bays on the 34 m court side)
+    ("wing_e", "W"): [[("b", 1.9)] + [G(2, 1.0)] * 7 + [("b", 1.9)], [G(2, 1.0, "diamond")] * 9],
+    ("wing_w", "E"): [[("b", 1.9)] + [G(2, 1.0)] * 7 + [("b", 1.9)], [G(2, 1.0, "diamond")] * 9],
+    ("wing_e", "N"): [[("b", 1.9)] * 3, [G(2, 1.0, "diamond")] * 3],
+    ("wing_e", "S"): [[("b", 1.9), ("d", 1.4)], [G(2, 1.0, "diamond")] * 2],
+    ("wing_w", "S"): [[("b", 1.9)] * 3, [G(2, 1.0, "diamond")] * 3],
+    ("wing_w", "N"): [[("b", 1.9), ("b", 1.9)], [G(2, 1.0, "diamond")] * 2],
+    # the low galleries (owner photo 1 right, inventory 0003_P03): triplets and pairs between stone piers, doors
+    ("gallery_e", "N"): [[G(2, 0.75), G(3, 0.75), ("d", 1.1), G(3, 0.75), G(2, 0.75)]],
+    ("gallery_w", "N"): [[G(2, 0.75), G(3, 0.75), ("d", 1.1), G(3, 0.75), G(2, 0.75)]],
+    ("gallery_e", "S"): [[G(3, 0.75), G(3, 0.75), G(3, 0.75)]],
+    ("gallery_w", "S"): [[G(3, 0.75), G(3, 0.75), G(3, 0.75)]],
+    # great equatorial block (inventory 0003_P04): two storeys of two-light windows with transoms
+    ("great_eq", "E"): [[G(1, 1.25), G(1, 1.25)], [G(1, 1.25), G(1, 1.25)]],
+    ("great_eq", "W"): [[G(1, 1.25), G(1, 1.25)], [G(1, 1.25), G(1, 1.25)]],
+    ("great_eq", "N"): [[("d", 1.4)], [G(1, 1.25)]],
+    # domed pavilions (inventory 0003_P08): one storey on a tall plinth, two wide windows (two lights, transom, many
+    # panes) either side of a glazed double door
+    ("pav_sw", "E"): [[G(1, 1.6), ("d", 1.15), G(1, 1.6)]],
+    ("pav_sw", "W"): [[G(1, 1.6), G(1, 1.6)]], ("pav_sw", "N"): [[G(1, 1.6), G(1, 1.6)]], ("pav_sw", "S"): [[G(1, 1.6), G(1, 1.6)]],
+    ("pav_w", "S"): [[G(1, 1.6), ("d", 1.15), G(1, 1.6)]],
+    ("pav_w", "N"): [[G(1, 1.6), G(1, 1.6), G(1, 1.6)]], ("pav_w", "E"): [[G(1, 1.6), G(1, 1.6)]], ("pav_w", "W"): [[G(1, 1.6), G(1, 1.6)]],
+    # the residences (inventory 0001_P01 / P02, 0007_P01 / P02): stone front onto the avenue, 3 bays x 3 storeys
+    # (arched ground floor + arched door, tall first-floor windows under hoods, small square top windows); brick sides,
+    # 4 bays (arched ground floor)
+    ("house_w", "N"): [[("a", 1.1), ("d", 1.3), ("a", 1.1)], [G(1, 1.15), G(1, 1.15), G(1, 1.15)], [G(1, 0.85), G(1, 0.85), G(1, 0.85)]],
+    ("house_e", "N"): [[("a", 1.1), ("d", 1.3), ("a", 1.1)], [G(1, 1.15), G(1, 1.15), G(1, 1.15)], [G(1, 0.85), G(1, 0.85), G(1, 0.85)]],
+    ("house_w", "E"): [[("a", 1.0)] * 4, [G(1, 1.0)] * 4, [G(1, 0.85)] * 4], ("house_w", "W"): [[("a", 1.0)] * 4, [G(1, 1.0)] * 4, [G(1, 0.85)] * 4],
+    ("house_e", "E"): [[("a", 1.0)] * 4, [G(1, 1.0)] * 4, [G(1, 0.85)] * 4], ("house_e", "W"): [[("a", 1.0)] * 4, [G(1, 1.0)] * 4, [G(1, 0.85)] * 4],
+    ("house_w", "S"): [[("a", 1.0)] * 3, [G(1, 1.0)] * 3, [G(1, 0.85)] * 3], ("house_e", "S"): [[("a", 1.0)] * 3, [G(1, 1.0)] * 3, [G(1, 0.85)] * 3],
+}
+# wall finish per (part, side) where the photos show other than banded brick: (wall slot, band slot or None)
+WALLS = {("house_w", "N"): (STONE, None), ("house_e", "N"): (STONE, None),            # inventory 0001_P01, 0007_P01: stone front
+         ("eq_block", "*"): (STONE, BLUE), ("eq_n", "*"): (STONE, BLUE), ("eq_s", "*"): (STONE, BLUE)}   # 0003_P03: white / grey stone
+# plinth heights where the photos show a tall one (pavilions on a raised floor: 0003_P08)
+PLINTH_H = {"pav_sw": 1.35, "pav_w": 1.35}
+
+def side_of(N):
+    return ("E" if N.x > 0 else "W") if abs(N.x) > abs(N.y) else ("N" if N.y > 0 else "S")
+
+def wall_finish(part, side):
+    return WALLS.get((part.id, side)) or WALLS.get((part.id, "*")) or (BRICK, STONE)
+
+def spec_openings(part, side, L, hero, corn_lim):
+    """the openings of a façade counted on a photo: storeys share the wall height above the plinth"""
+    spec = FACADES[(part.id, side)]
+    if isinstance(spec, dict):
+        return spec_metric(part, spec, L, hero)
+    rows = spec
+    ph = PLINTH_H.get(part.id, 0.82)
+    z0 = part.fb + ph + 0.13
+    sh = (corn_lim - 0.2 - z0) / len(rows)
+    out = []
+    for k, row in enumerate(rows):
+        zf = z0 + k * sh
+        top = len(rows) > 1 and k == len(rows) - 1 and len(rows) >= 3          # the residences' low top storey
+        sill = zf + (0.15 if part.style == "gallery" or len(rows) == 1 and ph > 1 else 0.7)
+        head = zf + sh - (0.7 if hero else 0.55)
+        if top: sill = zf + 0.55; head = min(head, sill + 1.1)
+        n = len(row)
+        for i, it in enumerate(row):
+            uc = (i + 0.5) * L / n
+            if it[0] == "g":
+                _, nl, wl, gl = it
+                h = min(head, sill + max(2.0, 3.0 * wl) if nl > 1 else sill + 2.6 * wl + 0.4)
+                out.append(WinGroup(uc, sill, h, nl, wl, glazing=gl, hero=hero and k > 0 and not top))
+            elif it[0] == "d":
+                h = min(head, part.fb + ph + (3.4 if hero else 2.6))
+                out.append(Win(uc, part.fb + ph - 0.05 if ph > 1 else part.fb + 0.12, h, it[1], hero, "door"))
+            elif it[0] == "b":
+                out.append(Blind(uc, sill, head, it[1]))
+            elif it[0] == "a":
+                out.append(Win(uc, sill, min(head, sill + 2.4 * it[1]), it[1], hero, "arch"))
+    return out
+
+def spec_metric(part, spec, L, hero):
+    """a façade measured on a photo: per storey the sill and head heights (m above the base) and the items' centres
+    (m from the face's middle), a raised floor reached by steps at the portal"""
+    out = []
+    for k, row in enumerate(spec["rows"]):
+        sill, head = part.fb + spec["sill"][k], part.fb + spec["head"][k]
+        cs = (spec.get("c") or [None] * 9)[k] or [(i + 0.5) * L / len(row) - L / 2 for i in range(len(row))]
+        for it, cx in zip(row, cs):
+            uc = L / 2 + cx
+            if it[0] == "g":
+                out.append(WinGroup(uc, sill, head, it[1], it[2], glazing=it[3], hero=hero and k > 0))
+            elif it[0] in ("d", "p"):
+                fl = part.fb + spec.get("floor", 0.12)
+                w_ = Win(uc, fl, head + 0.3, it[1], hero, "door")
+                w_.base = part.fb; w_.portal = it[0] == "p"
+                out.append(w_)
+            elif it[0] == "b":
+                out.append(Blind(uc, sill, head, it[1]))
+    return out
+
 # ------------------------------------------------------------------------------------------------ the plan
 PARTS = {p["id"]: p for p in SITE["parts"]}
 DOMES = SITE["domes"]
 # wall tops [M]: the DSM roof level of each part (site.json p50 / p10), overridden where the part holds a lower or a
 # higher piece (read on the DSM cross sections, see NOTES.md)
-HW = {"main_front": 112.56, "main_rear": 107.88, "west_wing": 108.70, "links": 101.81, "eq_n": 109.6, "eq_block": 109.8, "eq_w": 106.29,
+HW = {"main_front": 113.9, "main_rear": 107.88, "west_wing": 108.70, "links": 101.81, "eq_n": 109.6, "eq_block": 109.8, "eq_w": 106.29,
       "eq_s": 107.43, "meridian": 105.9, "great_eq": 110.48, "gallery_w": 102.44, "gallery_e": 101.9, "pav_e": 108.63, "east_wing": 104.43,
       "block_e": 108.73, "annex_s": 103.29, "glazed": 102.7, "hall_s": 107.95, "front_w": 104.91, "wing_w_n": 105.0, "wing_w": 109.8,
-      "wing_e_n": 104.16, "wing_e": 110.8, "wing_e_s": 105.88, "house_w": 109.8, "house_e": 110.0, "tall_w": 116.97, "block_w": 106.25,
+      "wing_e_n": 104.16, "wing_e": 110.8, "wing_e_s": 105.88, "house_w": 112.6, "house_e": 112.6, "tall_w": 116.97, "block_w": 106.25,
       "wing_ww": 113.37, "pav_w": 107.03, "pav_sw": 107.47, "octagon": 105.96}
 CROWN = {"main_front": 113.9, "eq_n": 110.9, "house_w": 118.2, "house_e": 118.3, "octagon": 108.5, "glazed": 104.5}
 DOOR_DIR = {"main_front": "N", "great_eq": "N", "wing_w": "E", "wing_e": "W", "tall_w": "E", "pav_sw": "E", "pav_w": "S", "eq_n": "N",
@@ -305,7 +519,7 @@ class Part:
         self.crown = hz(CROWN[self.id]) if self.id in CROWN else None
         self.style = d["style"]; self.roof = d["roof"]
         self.hero = self.style == "hero"
-        self.parapet = self.hero and self.roof == "flat"
+        self.parapet = self.hero and self.roof == "flat" or self.id == "main_front"      # main front: attic (0003_P01)
 
 
 def edges_of(part):
@@ -364,7 +578,7 @@ GROUND_OFF = 0.6                     # walls go this far below the part's base (
 BAND_PITCH, BAND_H, BAND_D = 0.66, 0.19, 0.025
 
 def storeys(part):
-    H = part.top - part.base
+    H = part.top - getattr(part, "fb", part.base)
     ent = 1.6 if part.hero else 0.8
     use = H - 0.9 - ent
     if part.style == "gallery" or use < 3.2: return 1, use
@@ -373,31 +587,34 @@ def storeys(part):
 
 def bands_z(part, z_lo, z_hi):
     out = []
-    z = part.base + 0.82 + 0.45
+    z = part.base + PLINTH_H.get(part.id, 0.82) + 0.45
     while z + BAND_H < z_hi:
         if z > z_lo: out.append((z, z + BAND_H))
         z += BAND_PITCH
     return out
 
-def wall_segment(fr, u0, u1, vb, vt, wins, part, bands=True, ext0=0.0, ext1=0.0):
-    """Brick wall [u0, u1] x [vb, vt] with window holes, the windows, the stone bands (proud, cut at the openings)."""
+def wall_segment(fr, u0, u1, vb, vt, wins, part, bands=True, ext0=0.0, ext1=0.0, finish=None):
+    """Wall [u0, u1] x [vb, vt] (banded brick, or the finish the photos show) with window holes, the windows, the bands
+    (proud, cut at the openings)."""
+    wmat, bmat = finish or (BRICK, STONE)
+    if bmat is None: bands = False
     if FAR:
-        # in-plane strips: brick / stone bands (no relief), the openings are flat shapes in front
-        zs = [vb] + [z for b in bands_z(part, vb, vt) for z in b] + [vt]
+        # in-plane strips: wall / band (no relief), the openings are flat shapes in front
+        zs = [vb] + ([z for b in bands_z(part, vb, vt) for z in b] if bands else []) + [vt]
         for i in range(len(zs) - 1):
             if zs[i + 1] - zs[i] < 1e-3: continue
-            B.face([fr.p(u0, zs[i]), fr.p(u1, zs[i]), fr.p(u1, zs[i + 1]), fr.p(u0, zs[i + 1])], STONE if i % 2 else BRICK, C_BAND if i % 2 else C_PLAIN)
+            B.face([fr.p(u0, zs[i]), fr.p(u1, zs[i]), fr.p(u1, zs[i + 1]), fr.p(u0, zs[i + 1])], bmat if i % 2 else wmat, C_BAND if i % 2 else C_PLAIN)
         for w_ in wins: w_.build(fr)
         return
     holes = [w_.outer() for w_ in wins]
-    fill2d(fr, [rect(u0, vb, u1, vt)] + holes, 0.0, BRICK, C_PLAIN)
+    fill2d(fr, [rect(u0, vb, u1, vt)] + holes, 0.0, wmat, C_PLAIN)
     for w_ in wins: w_.build(fr)
     if not bands: return
     for (z0, z1) in bands_z(part, vb, vt):
         # the u intervals not crossed by an opening
         segs = [(u0 - ext0, u1 + ext1)]
         for w_ in wins:
-            o = w_.outer(); a, b = o[0][0], o[1][0]; c0, c1 = o[0][1], o[2][1]
+            o = w_.outer(); a, b = min(q[0] for q in o), max(q[0] for q in o); c0, c1 = min(q[1] for q in o), max(q[1] for q in o)
             if z1 <= c0 or z0 >= c1: continue
             ns = []
             for (s0, s1) in segs:
@@ -407,11 +624,28 @@ def wall_segment(fr, u0, u1, vb, vt, wins, part, bands=True, ext0=0.0, ext1=0.0)
             segs = ns
         for (s0, s1) in segs:
             if s1 - s0 < 0.05: continue
-            fbox(fr, s0, s1, z0, z1, 0.0, BAND_D, STONE, C_BAND, skip=("back", "bottom"))
+            fbox(fr, s0, s1, z0, z1, 0.0, BAND_D, bmat, C_BAND, skip=("back", "bottom"))
+
+def floor_base(part, E):
+    """the ground floor's level: the footprint's lowest DTM point (part.base) is the downhill corner; the floor sits above
+    the HIGHEST ground along the exposed walls (the north court is 2.4 m above the main building's south end): the
+    plinth grows downhill, openings and string courses follow the floor"""
+    g = []
+    for (a, b, d, N, L) in E:
+        iv = cover_intervals(part, a, d, N, L)
+        for k in range(int(L / 2.0) + 1):
+            u = min(L, k * 2.0 + 0.5)
+            if any(u0 <= u <= u1 and cv < -1e8 for (u0, u1, cv) in iv):
+                q = a + d * u + N * 1.2
+                g.append(ground_b(q))
+    if not g: return part.base
+    g.sort()
+    return min(part.base + 3.0, max(part.base, g[int(0.85 * (len(g) - 1))] - 0.05))
 
 def build_part(part):
     E = edges_of(part)
     n = len(E)
+    part.fb = floor_base(part, E)
     ns_, sh = storeys(part)
     hero = part.hero
     corn = CORNICE_FAR if FAR else (CORNICE_HERO if hero else CORNICE_STD)
@@ -426,54 +660,81 @@ def build_part(part):
         cands = [i for i in range(n) if E[i][3].dot(want) > 0.9 and E[i][4] > 2.5]
         if cands: door_e = max(cands, key=lambda i: E[i][4])
     exposed_ends = []
+    # floor lines: from the photo-measured façades of this part, else the rule's storeys
+    strings = []
+    for (pid, sd), sp in FACADES.items():
+        if pid == part.id and isinstance(sp, dict) and len(sp["rows"]) > 1:
+            strings = [part.fb + (sp["head"][k] + sp["sill"][k + 1]) / 2 + 0.17 for k in range(len(sp["rows"]) - 1)]; break
+    else:
+        lst = [sp for (pid, sd), sp in FACADES.items() if pid == part.id and not isinstance(sp, dict)]
+        if lst and len(lst[0]) > 1:                       # same storey split as spec_openings
+            z0 = part.fb + PLINTH_H.get(part.id, 0.82) + 0.13; shh = (corn_top - corn_h - 0.2 - z0) / len(lst[0])
+            strings = [z0 + k * shh + 0.12 for k in range(1, len(lst[0]))]
+        elif part.style != "gallery" and ns_ > 1:
+            strings = [part.fb + 0.95 + k * sh + 0.1 for k in range(1, ns_)]
+    if FAR: strings = []
     for i, (a, b, d, N, L) in enumerate(E):
         fr = Frame(a, N)
         iv = cover_intervals(part, a, d, N, L)
         exposed_ends.append((iv[0][2] < part.base + 0.5, iv[-1][2] < part.base + 0.5))
-        # windows by bays along the whole edge, each storey
+        # the openings: counted on a photo (FACADES) for the main face of each side, else the rule (bays, storeys)
+        side = side_of(N)
+        main_face = L >= max([e[4] for e in E if side_of(e[3]) == side]) - 1e-6
         wins_all = []
-        nb = int((L - 0.6) // bay) if L >= 2.6 else 0
+        if (part.id, side) in FACADES and main_face:
+            wins_all = spec_openings(part, side, L, hero, corn_top - corn_h)
+            spec_used.add((part.id, side))
+        nb = int((L - 0.6) // bay) if L >= 2.6 and not wins_all and (part.id, side) not in FACADES else 0
         for j in range(nb):
             uc = (j + 0.5) * L / nb
             for k in range(ns_):
-                zf = part.base + 0.95 + k * sh
+                zf = part.fb + 0.95 + k * sh
                 sill = zf + (0.45 if part.style == "gallery" else 0.75)
                 head = min(zf + sh - (0.75 if hero else 0.55), sill + 2.45 * win_w)
                 if part.style == "gallery": head = min(head, corn_top - corn_h - 0.25)
                 if head - sill < 1.0: continue
                 is_door = (i == door_e and k == 0 and j == nb // 2)
                 if is_door:
-                    wins_all.append(Win(uc, part.base + 0.12, min(head, part.base + 3.4 + (0.6 if hero else 0)), 1.6 if hero else 1.3, hero, "door"))
+                    wins_all.append(Win(uc, part.fb + 0.12, min(head, part.fb + 3.4 + (0.6 if hero else 0)), 1.6 if hero else 1.3, hero, "door"))
                 else:
                     wins_all.append(Win(uc, sill, head, win_w, hero))
         if i == door_e and nb == 0 and L > 2.0:
-            wins_all.append(Win(L / 2, part.base + 0.12, part.base + 2.7, 1.1, hero, "door"))
+            wins_all.append(Win(L / 2, part.fb + 0.12, part.fb + 2.7, 1.1, hero, "door"))
         for (u0, u1, cv) in iv:
             vb = part.base - GROUND_OFF if cv < -1e8 else cv
             if vb >= part.top - 0.02: continue
-            wins = [w_ for w_ in wins_all if w_.span()[0] >= u0 and w_.span()[1] <= u1 and w_.outer()[0][1] > vb + 0.25 and w_.outer()[2][1] < corn_top - corn_h - 0.05]
+            wins = [w_ for w_ in wins_all if w_.span()[0] >= u0 and w_.span()[1] <= u1 and min(q[1] for q in w_.outer()) > vb + 0.25
+                    and max(q[1] for q in w_.outer()) < corn_top - corn_h - 0.05]
             ext0 = BAND_D if u0 < 1e-3 else 0.0; ext1 = BAND_D if u1 > L - 1e-3 else 0.0
-            wall_segment(fr, u0, u1, vb, part.top, wins, part, ext0=ext0, ext1=ext1)
+            wall_segment(fr, u0, u1, vb, part.top, wins, part, ext0=ext0, ext1=ext1, finish=wall_finish(part, side))
             # plinth, cornice: sweeps with miters at the polygon corners
             ma = miter(E[i - 1][3], N) if u0 < 1e-3 else N
             mb = miter(N, E[(i + 1) % n][3]) if u1 > L - 1e-3 else N
             pa, pb = a + d * u0, a + d * u1
             if vb < part.base + 0.6:
-                plinth_run(a, d, N, u0, u1, L, ma, mb, part.base, wins)
+                plinth_run(a, d, N, u0, u1, L, ma, mb, part.base, wins, PLINTH_H.get(part.id, 0.82) + part.fb - part.base)
             if vb < corn_top - corn_h:
                 sweep(pa, pb, ma, mb, N, corn_top, corn, STONE, C_CORN, cap_a=u0 > 1e-3, cap_b=u1 < L - 1e-3)
                 if hero and not FAR: modillions(fr, u0, u1, corn_top)
+            # stone string courses between the storeys (the photos: a heavy band at each floor line)
+            for zs_ in strings:
+                if vb < zs_ - 0.4 and zs_ < corn_top - corn_h - 0.3:
+                    sweep(pa, pb, ma, mb, N, zs_, [(0.0, -0.34), (0.07, -0.34), (0.07, -0.06), (0.1, -0.03), (0.1, 0.0), (0.0, 0.0)],
+                          STONE, C_CORN, cap_a=u0 > 1e-3, cap_b=u1 < L - 1e-3)
             if part.parapet and vb < part.top - 0.1:
                 # parapet: inner face, coping
                 fill2d(fr, [rect(u0, part.top - 0.75, u1, part.top - 0.12)], -0.3, BRICK, C_PLAIN, flip=True)
                 sweep(pa, pb, ma, mb, N, part.top, COPING, STONE, C_COPING, cap_a=u0 > 1e-3, cap_b=u1 < L - 1e-3)
+    if part.id == "main_front":
+        i = max([k for k in range(n) if side_of(E[k][3]) == "N"], key=lambda k: E[k][4])
+        pediment(Frame(E[i][0], E[i][3]), E[i][4] / 2, part.top)
     if not FAR and part.style != "gallery":
         pilasters(part, E, exposed_ends)
     roof(part, E)
 
-def plinth_run(a, d, N, u0, u1, L, ma, mb, base, wins):
-    """the blue-stone plinth along [u0, u1], interrupted at the doors"""
-    prof = PLINTH_PROF if not FAR else [(0, -0.6), (0.06, -0.6), (0.06, 0.82), (0, 0.82)]
+def plinth_run(a, d, N, u0, u1, L, ma, mb, base, wins, ph=0.82):
+    """the blue-stone plinth along [u0, u1] (ph high: taller under the raised pavilions), interrupted at the doors"""
+    prof = [(0.0, -0.6), (0.07, -0.6), (0.07, ph - 0.1), (0.03, ph), (0.0, ph)] if not FAR else [(0, -0.6), (0.06, -0.6), (0.06, ph), (0, ph)]
     cuts = sorted((w_.uc - w_.w / 2 - w_.sur, w_.uc + w_.w / 2 + w_.sur) for w_ in wins if w_.kind == "door")
     runs, s0 = [], u0
     for c0, c1 in cuts:
@@ -484,6 +745,20 @@ def plinth_run(a, d, N, u0, u1, L, ma, mb, base, wins):
         if r1 - r0 < 0.02: continue
         sweep(a + d * r0, a + d * r1, ma if r0 < 1e-3 else N, mb if r1 > L - 1e-3 else N, N, base, prof, BLUE, C_PLINTH,
               cap_a=r0 > 1e-3, cap_b=r1 < L - 1e-3)
+
+def pediment(fr, uc, z0, w=4.2, h=1.15):
+    """a stone pediment rising from the attic, with a round oculus (the main front's clock: inventory 0003_P01)"""
+    tri = [(uc - w / 2, z0), (uc + w / 2, z0), (uc, z0 + h)]
+    fill2d(fr, [tri], 0.02, STONE, C_CORN); fill2d(fr, [tri], -0.3, STONE, C_CORN, flip=True)
+    for a, b in ((tri[0], tri[2]), (tri[2], tri[1])):
+        pa, pb = fr.p(a[0], a[1], 0.0), fr.p(b[0], b[1], 0.0)
+        beam(pa + Z * 0.06, pb + Z * 0.06, 0.25, 0.14, STONE, C_COPING)
+    if FAR: return
+    oc = (uc, z0 + h * 0.4); r = 0.32
+    ring = [(oc[0] + (r + 0.09) * math.cos(2 * math.pi * k / 20), oc[1] + (r + 0.09) * math.sin(2 * math.pi * k / 20)) for k in range(20)]
+    disc = [(oc[0] + r * math.cos(2 * math.pi * k / 20), oc[1] + r * math.sin(2 * math.pi * k / 20)) for k in range(20)]
+    fill2d(fr, [ring, disc], 0.07, STONE, C_SUR); strip2d(fr, ring, 0.07, 0.02, STONE, C_SUR, inward=False)
+    fill2d(fr, [disc], 0.04, BLUE, C_PLAIN)
 
 def modillions(fr, u0, u1, top):
     """small stone brackets under the hero cornice's corona"""
@@ -503,8 +778,8 @@ def pilasters(part, E, ex):
         if not (ex[i][0] and ex[i - 1][1]): continue
         w = 0.55 if part.hero else 0.42
         if L < 2 * w + 0.5 or pL < 2 * w + 0.5: continue
-        f1 = Frame(a, N); fbox(f1, -0.04, w, part.base + 0.82, top, 0.0, 0.05, STONE, C_PIL, skip=("back", "left"))
-        f0 = Frame(pa, pN); fbox(f0, pL - w, pL + 0.04, part.base + 0.82, top, 0.0, 0.05, STONE, C_PIL, skip=("back", "right"))
+        f1 = Frame(a, N); fbox(f1, -0.04, w, part.fb + 0.82, top, 0.0, 0.05, STONE, C_PIL, skip=("back", "left"))
+        f0 = Frame(pa, pN); fbox(f0, pL - w, pL + 0.04, part.fb + 0.82, top, 0.0, 0.05, STONE, C_PIL, skip=("back", "right"))
 
 def poly_tris(pts, z, mat, code=0):
     B.new_group()
@@ -522,7 +797,7 @@ def roof(part, E):
         xs = [p.x for p in pts]; ys = [p.y for p in pts]
         ov = 0.5 if part.roof == "hip" else 0.0
         x0, x1, y0, y1 = min(xs) - ov, max(xs) + ov, min(ys) - ov, max(ys) + ov
-        ez = part.top
+        ez = part.top - (0.62 if part.parapet else 0.0)
         rz = part.crown
         mat = SLATE if part.roof == "hip" else ZINC
         if x1 - x0 >= y1 - y0:
@@ -798,6 +1073,35 @@ def tower(k):
     # roof ring between the wall and the dome's drum
     return c, r, top
 
+def cone_roof(k):
+    """the north-east tower's pointed slate roof (inventory 0003_P05: a banded round tower with a conical slate roof
+    beside a low banded wing): from the cornice to an apex estimated from the photo (cone height 1.25 x the tower's
+    diameter), a small zinc finial"""
+    t = TW[k]; c, r, top = t["c"], t["r"], t["top_b"]
+    hgt = 1.25 * 2 * r * 0.62
+    n = 12 if FAR else 32
+    lathe(c + Z * (top - 0.05), [(r + 0.3, 0.0), (r + 0.3, 0.12), (0.0, hgt)], n, SLATE, C_PLAIN)
+    if not FAR:
+        lathe(c + Z * (top + hgt - 0.25), [(0.09, 0), (0.12, 0.25), (0.05, 0.55), (0.02, 1.0), (0.0, 1.1)], 10, ZINC, C_RIB)
+
+def balcony(k):
+    """the great equatorial tower's balcony under its upper window (inventory 0003_P04): a stone slab on two
+    consoles, a cast-iron railing"""
+    t = TW[k]; c, r = t["c"], t["r"]
+    az = math.radians(90 - t["door"]); N = V3(math.cos(az), math.sin(az), 0)
+    fr = Frame(c + N * r, N)
+    z = t["base"] + 3.55
+    fbox(fr, -1.0, 1.0, z - 0.2, z, -0.1, 0.75, STONE, C_SILL, skip=())
+    if FAR: return
+    for u in (-0.7, 0.7):
+        fbox(fr, u - 0.09, u + 0.09, z - 0.75, z - 0.2, 0.0, 0.5, STONE, C_CONSOLE, skip=("back",))
+    rail = [fr.p(-0.95, z + 1.0, 0.0), fr.p(-0.95, z + 1.0, 0.7), fr.p(0.95, z + 1.0, 0.7), fr.p(0.95, z + 1.0, 0.0)]
+    for a_, b_ in zip(rail, rail[1:]): beam(a_, b_, 0.025, 0.05, IRON, C_PLAIN)
+    for a_, b_ in zip(rail, rail[1:]):
+        L = (b_ - a_).length; m = max(2, int(L / 0.12))
+        for i in range(1, m):
+            q = a_.lerp(b_, i / m); beam(q - Z * 1.0, q, 0.008, 0.008, IRON, C_RIB)
+
 def dome(k, on_roof_z=None):
     """An observatory dome [M: sphere fitted to the DSM cap: radius, springing, top]: a cylindrical skirt from the tower
     (or the block's roof) up to the springing, a hemisphere with meridian ribs, a base ring, the slit (shutters closed,
@@ -866,22 +1170,21 @@ def dome(k, on_roof_z=None):
                 if b0 >= b_end - 1e-6: continue
                 face_dir([S(sgn * a_s, b0), S(sgn * a_s, b1), S(sgn * a_s, b1, R - 0.06), S(sgn * a_s, b0, R - 0.06)], -X * sgn, mat, C_INT)
         # the skirt's opening is part of the slit too: a dark recess (the slit reaches the base ring)
-        # the upper shutter, run back over the top (beyond the slit end), riding on the rails
-        for j in range(len(be) - 1):
-            b0, b1 = be[j], be[j + 1]
-            if b0 < b_end - math.radians(4) or b1 > b_end + math.radians(62): continue
-            pts = [S(-a_s - 0.02, b0, R + 0.22), S(a_s + 0.02, b0, R + 0.22), S(a_s + 0.02, b1, R + 0.22), S(-a_s - 0.02, b1, R + 0.22)]
-            face_dir(pts, sum(pts, Vector()) / 4 - (c + Z * zs), mat, C_SHUT)
+        # the shutter: two leaves hinged on the slit's edges, swung open and standing up on either side of the slit
         for sgn in (-1, 1):
-            js = [j for j in range(len(be) - 1) if be[j] >= b_end - math.radians(4) - 1e-6 and be[j + 1] <= b_end + math.radians(62) + 1e-6]
-            for j in js:
-                b0, b1 = be[j], be[j + 1]
-                face_dir([S(sgn * (a_s + 0.02), b0, R + 0.22), S(sgn * (a_s + 0.02), b1, R + 0.22), S(sgn * (a_s + 0.02), b1, R), S(sgn * (a_s + 0.02), b0, R)],
-                         X * sgn, mat, C_SHUT)
-            # the front end of the shutter
-            j = js[0]
-            face_dir([S(-a_s - 0.02, be[j], R), S(a_s + 0.02, be[j], R), S(a_s + 0.02, be[j], R + 0.22), S(-a_s - 0.02, be[j], R + 0.22)],
-                     -(Y * math.cos(be[j] + math.pi / 2) + Z * math.sin(be[j] + math.pi / 2)), mat, C_SHUT)
+            js = [j for j in range(len(be) - 1) if be[j] >= math.radians(18) - 1e-6 and be[j + 1] <= b_end + 1e-6]
+            prev = None
+            for j in js + [None]:
+                b_ = be[j] if j is not None else be[js[-1] + 1]
+                hinge = S(sgn * (a_s + 0.03), b_, R + 0.12)
+                nrm = (hinge - (c + Z * zs)).normalized()
+                lat = X * sgn
+                free = hinge + nrm * (ws * 1.4) + lat * (ws * 0.75)             # each leaf as wide as the slit half x 1.6, opened ~60 degrees
+                cur = (hinge, free)
+                if prev:
+                    face_dir([prev[0], cur[0], cur[1], prev[1]], lat, mat, C_SHUT)
+                    face_dir([prev[0], cur[0], cur[1], prev[1]], -lat, mat, C_SHUT)
+                prev = cur
         lathe(c + Z * zb, [(sk - 0.05, zs - zb), (sk - 0.05, 0.0), (0.0, 0.0)], seg, WHITE_METAL, C_INT, uvs=False)
         if not FAR: telescope(c, zb, zs, R, Y)
     if FAR: return
@@ -989,11 +1292,14 @@ def apron(part):
                 prev = cur
 
 # ------------------------------------------------------------------------------------------------ build
+spec_used = set()
 def build_all():
     for p in PARTS_L: build_part(p)
     for k in TW: tower(k)
+    balcony("great")
     for k in DOMES:
-        if k in TW: dome(k)
+        if DOMES[k].get("cone"): cone_roof(k)
+        elif k in TW: dome(k)
         else: dome(k, on_roof_z=PARTS_L[[q.id for q in PARTS_L].index(DOMES[k]["part"])].top)
     if not FAR:
         for p in PARTS_L: apron(p)
@@ -1066,7 +1372,7 @@ def make_object(name, bld, v0, v1):
     col = me.color_attributes.new("Col", "FLOAT_COLOR", "CORNER")
     cdat = []
     for poly, code in zip(me.polygons, bld.c):
-        for _ in poly.loop_indices: cdat += [code / 16 + 1 / 32, 0.0, 0.0, 1.0]
+        for _ in poly.loop_indices: cdat += [code / 16 + 1 / 32, 1.0, 0.0, 1.0]       # g: vertex AO (thin faces), 1 elsewhere
     col.data.foreach_set("color", cdat)
     uv0 = me.uv_layers.new(name="UVMap")
     uvd = [0.0] * (2 * len(me.loops))
@@ -1136,7 +1442,8 @@ def make_object(name, bld, v0, v1):
         for li in p_.loop_indices:
             if thin[p_.index]: lmd[li].uv = (AO_PARK_U, 0.5)
             else: u = lmd[li].uv; lmd[li].uv = (u.x * 0.994, u.y)
-    print(f"  lightmap: {sum(thin)} thin faces parked")
+    print(f"  lightmap: {sum(thin)} thin faces parked (their AO per vertex)")
+    THIN[name] = thin
     lm = me.uv_layers["Lightmap"].data
     cov = 0.0
     for poly in me.polygons:
@@ -1155,7 +1462,8 @@ def make_object(name, bld, v0, v1):
     return obj, ntri, {SLOTS[m]: sum(len(p.vertices) - 2 for p in me.polygons if p.material_index == remap[m]) for m in used}
 
 AO_SPLIT = 0.895
-AO_PARK_U, AO_PARK_VALUE = 0.997, 0.82            # the reserved column (u > 0.994) and its constant AO
+AO_PARK_U, AO_PARK_VALUE = 0.997, 1.0             # the reserved column (u > 0.994): AO 1, the thin faces' AO is per vertex
+THIN = {}
 obj, ntri, per_slot = make_object("Observatory", B_MAIN, 0.0, AO_SPLIT)
 far, ntri_far, per_slot_far = make_object("Observatory_far", B_FAR, AO_SPLIT + 0.005, 1.0)
 print(f"uv done {time.time() - T0:.1f}s")
@@ -1191,6 +1499,29 @@ ao_img.colorspace_settings.name = "Non-Color"
 for m in mats:
     nt = m.node_tree
     n = nt.nodes.new("ShaderNodeTexImage"); n.image = ao_img; n.name = "AO"; nt.nodes.active = n
+def vertex_ao(o, thin):
+    """Cycles AO baked to a corner colour attribute; copied into Col.g for the THIN faces (1 elsewhere), whose lightmap
+    texels are a constant reserved column: band tops, glazing bars, ribs, seams, railings keep their own occlusion"""
+    me = o.data
+    aov = me.color_attributes.new("AOv", "FLOAT_COLOR", "CORNER")
+    me.color_attributes.active_color = aov
+    for x in scn.objects: x.select_set(False)
+    o.select_set(True); bpy.context.view_layer.objects.active = o
+    try:
+        bpy.ops.object.bake(type="AO", target="VERTEX_COLORS")
+    except Exception as e:
+        print("vertex AO bake failed:", e); me.color_attributes.remove(aov); return
+    a = [0.0] * (4 * len(me.loops)); aov.data.foreach_get("color", a)
+    col = me.color_attributes["Col"]; cc = [0.0] * (4 * len(me.loops)); col.data.foreach_get("color", cc)
+    n_set = 0
+    for p_ in me.polygons:
+        if not thin[p_.index]: continue
+        for li in p_.loop_indices: cc[4 * li + 1] = max(0.2, min(1.0, a[4 * li])); n_set += 1
+    col.data.foreach_set("color", cc)
+    me.color_attributes.active_color = col
+    me.color_attributes.remove(me.color_attributes["AOv"])
+    print(f"  vertex AO: {n_set} corners of thin faces")
+
 if BAKE:
     scn.cycles.samples = 64
     t = time.time()
@@ -1201,6 +1532,11 @@ if BAKE:
         bpy.ops.object.bake(type="AO", uv_layer="Lightmap", margin=3, use_clear=clear)
     obj.hide_render = far.hide_render = False
     print(f"AO bake {time.time() - t:.1f}s")
+    t = time.time()
+    far.hide_render = True; obj.hide_render = False; vertex_ao(obj, THIN["Observatory"])
+    far.hide_render = False; obj.hide_render = True; vertex_ao(far, THIN["Observatory_far"])
+    obj.hide_render = far.hide_render = False
+    print(f"vertex AO {time.time() - t:.1f}s")
     import numpy as np
     px = np.empty(AO_PX * AO_PX * 4, np.float32); ao_img.pixels.foreach_get(px)
     px = px.reshape(AO_PX, AO_PX, 4); px[:, int(0.9945 * AO_PX):, :3] = AO_PARK_VALUE
@@ -1227,7 +1563,8 @@ print("exported", glb, os.path.getsize(glb) // 1024, "KB")
 info = {
     "asset": "Royal Observatory of Belgium, Uccle (tools/blender/observatory.py)",
     "triangles_lod0": ntri, "triangles_far": ntri_far, "triangles_per_slot_lod0": per_slot, "triangles_per_slot_far": per_slot_far,
-    "slots": SLOTS, "codes": {"COLOR_0.r": "code / 16 + 1/32", "names": CODES},
+    "slots": SLOTS, "codes": {"COLOR_0.r": "code / 16 + 1/32", "COLOR_0.g": "per-vertex AO of the thin faces (1 elsewhere)", "names": CODES},
+    "facades_from_photos": sorted(f"{a} {b}" for a, b in spec_used),
     "uv": {"TEXCOORD_0": "world metres, per face (walls u along / v up; domes, towers, vaults arc length)", "TEXCOORD_1": "AO lightmap"},
     "frame": "glTF Y up; three.js (x, y, z) = (city x - OX, m TAW - OY, city z - OZ)",
     "placement": {"city_local_position": [OX, OY, OZ], "rotation_y_rad": 0.0,

@@ -1,14 +1,14 @@
 {
  "Observatory_lod1": {
   "from": "Observatory",
-  "sourceTris": 184384,
-  "tris": 66254
+  "sourceTris": 172444,
+  "tris": 66009
  },
  "Observatory_lod2": {
   "from": "Observatory_far",
-  "sourceTris": 24044,
-  "tris": 14423
+  "sourceTris": 23856,
+  "tris": 14412
  },
- "glbBytes": 6063192,
- "rawBytes": 20000616
+ "glbBytes": 6062320,
+ "rawBytes": 18882816
 }

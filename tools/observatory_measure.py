@@ -65,7 +65,7 @@ SOLIDS = {   # UrbIS buildingsolid id -> role (what it is on the campus)
 R = lambda x0, x1, z0, z1: [[x0, z0], [x1, z0], [x1, z1], [x0, z1]]
 PARTS = [
     # main building: the tall front pavilion (DSM 112.6 at the walls, 114.0 crown) and the lower rear block (108.1)
-    dict(id="main_front", solid="543656", poly=R(645.4, 662.5, 21.9, 45.6), roof="low", style="hero"),
+    dict(id="main_front", solid="543656", poly=R(645.4, 662.5, 21.9, 45.6), roof="flat", style="hero"),   # attic to 113.9-114.5 (DSM at the front; 0003_P01)
     dict(id="main_rear", solid="543656", poly=[[645.4, 45.6], [662.5, 45.6], [662.4, 60.7], [665.4, 60.8], [665.3, 68.2], [660.4, 68.1],
                                                [660.4, 75.5], [647.4, 75.5], [647.4, 68.2], [642.6, 68.2], [642.6, 60.8], [645.6, 60.8]], roof="flat", style="hero"),
     dict(id="west_wing", solid="515276", poly=[[634.0, 74.9], [647.4, 74.9], [647.4, 75.5], [655.6, 75.5], [655.7, 106.2], [644.4, 106.3],
@@ -112,9 +112,10 @@ DOMES = [
     # the south one is open in the owner's two photos (slit towards the photographers: WSW and NW) and in the 2021
     # DSM / orthophoto (a dark slit, a dip in the cap); the north one, under trees in the data, is shown closed
     dict(id="east_open", at=(707.0, 47.6), tower=3.6, part="east_wing", mat="painted_metal_white", slit=True, slit_az=235),
-    dict(id="east_n", at=(720.0, 30.0), tower=3.25, part="east_wing", mat="painted_metal_white", slit=False, slit_az=150, top_from="east_open"),
-    dict(id="pav_w", at=(574.3, 115.6), tower=None, part="pav_w", mat="zinc_roof", slit=False, slit_az=180),
-    dict(id="pav_sw", at=(592.7, 166.0), tower=None, part="pav_sw", mat="zinc_roof", slit=False, slit_az=170),
+    dict(id="east_n", at=(720.0, 30.0), tower=3.25, part="east_wing", mat="painted_metal_white", slit=False, slit_az=150, top_from="east_open", cone=True),   # 0003_P05: a pointed slate roof
+    # the pavilions' domes are copper (inventory 0003_P06, P08: verdigris with rust streaks; the orthophoto's grey was glare)
+    dict(id="pav_w", at=(574.3, 115.6), tower=None, part="pav_w", mat="copper_patina", slit=False, slit_az=180),
+    dict(id="pav_sw", at=(592.7, 166.0), tower=None, part="pav_sw", mat="copper_patina", slit=False, slit_az=170),
 ]
 
 

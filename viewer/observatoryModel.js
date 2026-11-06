@@ -3,7 +3,8 @@
 //
 // The GLB carries geometry only: one primitive per NAMED material slot (OBS_SLOTS) per level of detail, a per-face
 // code in COLOR_0.r (OBS_CODES), world-metre UVs in TEXCOORD_0 and the baked ambient occlusion's UVs in TEXCOORD_1.
-// Colour and pattern come at run time from the material of that slot's NAME:
+// COLOR_0.g carries the per-vertex AO of the thin faces (lighting only). Colour and pattern come at run time from the
+// material of that slot's NAME:
 //   - SOURCE below is the ONE line that picks where the materials come from: the temporary TSL versions in this file,
 //     or the shared library (viewer/materials/, the Material Lab) once it lands;
 //   - every slot material is wrapped (cloned) with the model's baked AO (lighting only) and, in the city, the
@@ -37,10 +38,11 @@ const SOURCE = "temp";
 /** Live look controls (uniforms: no recompiles) */
 export const obsLook = { aoStrength: uniform(1.0), aoDirect: uniform(0.5), weather: uniform(1.0) };
 
-let promise = null;
-export function loadObservatory() {
-  return (promise ??= (async () => {
-    const base = new URL("../models/observatory/", import.meta.url).href;
+const promises = {};
+/** set: the models/ folder ("observatory"; the lab's ?set=observatory_before shows an older build for A/B) */
+export function loadObservatory(set = "observatory") {
+  return (promises[set] ??= (async () => {
+    const base = new URL(`../models/${set}/`, import.meta.url).href;
     MeshoptDecoder.useWorkers?.(2);
     const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
     const [gltf, notes, aoTex, lib] = await Promise.all([
@@ -62,8 +64,10 @@ export function loadObservatory() {
     });
     const tris = lods.map((l) => l.reduce((s, m) => s + (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3, 0));
     // one material per slot (the source's, wrapped with the AO)
+    const vtx = !!notes.codes?.["COLOR_0.g"];          // builds before 2026-11-06 had no vertex AO
+    const wrap = (m, s) => wrapAO(m, aoTex, s, vtx);
     const materials = {};
-    for (const s of OBS_SLOTS) materials[s] = wrapAO(sourceMaterial(s, lib), aoTex, s);
+    for (const s of OBS_SLOTS) materials[s] = wrap(sourceMaterial(s, lib), s);
     const pl = notes.placement;
     const placement = { position: new THREE.Vector3(...pl.city_local_position), rotationY: pl.rotation_y_rad };
     const b = notes.bounds_city;
@@ -82,7 +86,7 @@ export function loadObservatory() {
     };
     /** swap the material of one slot everywhere (made groups too): the material is cloned and gets the AO (+ fade) */
     const setSlotMaterial = (slot, mat, { fade = null, dryRun = false, raw = false } = {}) => {
-      const w = raw ? mat : wrapAO(mat, aoTex, slot);       // raw: already wrapped (a dry run's result)
+      const w = raw ? mat : wrap(mat, slot);       // raw: already wrapped (a dry run's result)
       if (fade && !raw) fade(w);
       if (dryRun) return w;
       materials[slot] = w;
@@ -93,7 +97,7 @@ export function loadObservatory() {
     const distance = (p) => boundsWorld.distanceToPoint(tmp.copy(p));
     return {
       lods, tris, materials, notes, placement, boundsWorld, make, setSlotMaterial, distance, aoTex,
-      aoBytes: aoTex.userData.bytes, glbBytes: notes.glbBytes, tempMaterial: (s) => wrapAO(TEMP[s](), aoTex, s),
+      aoBytes: aoTex.userData.bytes, glbBytes: notes.glbBytes, tempMaterial: (s) => wrap(TEMP[s](), s),
       drawCalls: lods.map((l) => l.length),
     };
   })());
@@ -108,10 +112,11 @@ function sourceMaterial(slot, lib) {
 
 /** The baked AO (lighting only) on top of any slot material: a clone with aoNode = AO (indirect light) and the colour
  *  darkened by a share of it (the direct light: sun-lit crevices). Glass gets none in its colour. */
-function wrapAO(src, aoTex, slot) {
+function wrapAO(src, aoTex, slot, vtx = true) {
   const m = src.clone();
   m.name = `observatory ${slot}`;
-  const ao = texture(aoTex, uv(1)).r;
+  // the lightmap times the per-vertex AO of the thin faces (COLOR_0.g: band tops, glazing bars, ribs; 1 elsewhere)
+  const ao = vtx ? texture(aoTex, uv(1)).r.mul(attribute("color", "vec4").g) : texture(aoTex, uv(1)).r;
   const aoK = mix(float(1), ao, obsLook.aoStrength);
   m.aoNode = src.aoNode ? src.aoNode.mul(aoK) : aoK;
   if (slot !== "glass_window") {
