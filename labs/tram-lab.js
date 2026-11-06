@@ -10,9 +10,10 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { Panel } from "../viewer/panelUI.js";
 import { Lighting, PRESETS } from "../viewer/lighting.js";
 import { createPipeline } from "../viewer/post.js";
-import { loadTramModel, createTramFleet, tramPose, TRAM_LODS, tramLook } from "../viewer/tramModel.js";
-
 const qp = new URLSearchParams(location.search);
+// ?tram=v1: the first model (viewer/tramModel.js, tools/blender/tram.py); default: the second pass (viewer/tram2Model.js)
+const V1 = qp.get("tram") === "v1";
+const { loadTramModel, createTramFleet, tramPose, TRAM_LODS, tramLook } = V1 ? await import("../viewer/tramModel.js") : await import("../viewer/tram2Model.js");
 const $info = document.getElementById("info"), $photo = document.getElementById("photo"), $notes = document.getElementById("notes");
 const renderer = new THREE.WebGPURenderer({ antialias: true, powerPreference: "high-performance", reversedDepthBuffer: true, trackTimestamp: qp.get("gpu") !== "0" });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
@@ -94,17 +95,21 @@ const fleet = createTramFleet(model, scene, MAX_TRAMS);
 // camera positions relative to the tram's nose on the first straight (x ahead, y up, z to the right), estimated
 const PHOTOS = {
   "orbit (free)": null,
-  "3097 Grand Sablon, 3/4 front": { file: "Brussels_tram_T3000_3097.jpg", park: 30, pos: [4.6, 1.5, -4.6], target: [-10, 1.9, 0.8], fov: 50, src: "Jacek Rużyczka, CC BY-SA 4.0 (2015)" },
-  "3025 depot, front": { file: "Rame_T3000-T4000_Bruxelles_2022-STIB.jpg", park: 30, pos: [4.4, 1.75, 2.3], target: [-2.5, 1.55, 0.0], fov: 62, src: "STIB depot photo, Commons (2022)" },
-  "3005 front 3/4": { file: "Cityrunner_3005_Brussel.jpg", park: 30, pos: [7.5, 1.0, 3.4], target: [-6, 1.9, -0.6], fov: 42, src: "Commons (Cityrunner 3005)" },
+  "3097 Grand Sablon, 3/4 front (left side)": { file: "Brussels_tram_T3000_3097.jpg", park: 30, cam: [13.94, 1.92, -9.03, 1.982, 0.0152, 21.0], src: "Jacek Rużyczka, CC BY-SA 4.0 (2015)" },
+  "3041 front (telephoto)": { file: "MIVB_3041.jpg", park: 30, pos: [26, 1.9, -1.2], target: [-3, 1.6, 0.3], fov: 13, src: "Willem_90, public domain (2010)" },
+  "3028 front 3/4 (left side)": { file: "Tram_de_la_STIB_le_21_juillet_2016.jpg", park: 30, pos: [7.2, 1.75, -4.6], target: [-8, 1.7, 1.2], fov: 46, src: "Commons, CC0 (2016)" },
+  "3017 front 3/4 (right side)": { file: "3017_stib_-_Flickr_-_antoniovera1.jpg", park: 30, pos: [7.6, 1.8, 6.4], target: [-8, 1.6, -1.6], fov: 50, src: "Antonio Vera, CC BY-SA 2.0 (2015)" },
+  "3095 side 3/4 (left side)": { file: "Tram_de_la_STIB_le_21_juillet_2016_2.jpg", park: 30, pos: [3.6, 1.75, -5.6], target: [-12, 1.6, 0.6], fov: 52, src: "Commons, CC0 (2016)" },
   "3007 Gare de Saint-Job, in the curve": { file: "Tram_92_gare_de_Saint-Job_14_juillet_2024.jpg", park: ARC1 + 6, abs: true, pos: [R + 3.5, 1.7, -R - 16], target: [R - 4, 2.0, -R + 2], fov: 55, src: "Stratoswift, CC BY-SA 4.0 (2024-07-14)" },
+  "side (orthographic-ish)": { file: "", park: 30, pos: [-16, 1.8, -60], target: [-16, 1.8, 0], fov: 30, src: "" },
+  "rear 3/4 (cab 5)": { file: "", park: 40, pos: [-37, 1.6, -6.5], target: [-26, 1.8, 0], fov: 50, src: "" },
 };
 const S = {
   view: qp.get("view") && PHOTOS[qp.get("view")] !== undefined ? qp.get("view") : "orbit (free)", photo: 0, frame: false, notes: false,
-  drive: true, speed: 4, pos: 40, dir: 1, follow: true, trams: 1,
+  drive: true, speed: 8, pos: 40, dir: 1, follow: true, trams: 1, v: 0, dwell: 12, doorsLab: -1,
   lod: "auto", wireframe: false,
   time: preset, hour: lighting.hour, post: true,
-  interior: 1, headlights: 1, display: 1, dirt: 1,
+  interior: 1, headlights: 1, display: 1, dirt: 1, glass: 0.62, ao: 1,
   stats: "", joint: "", bench: "—",
 };
 function goView(name) {
@@ -113,13 +118,18 @@ function goView(name) {
   if (!v) { $photo.removeAttribute("src"); fitFrame(); return; }
   S.drive = false; S.pos = v.park; S.dir = 1; S.follow = false;
   if (v.abs) { camera.position.set(...v.pos); controls.target.set(...v.target); }
-  else {
+  else if (v.cam) {                                         // fitted to the photo (data/raw/tram2tools/camfit.js): nose-relative position, yaw, pitch, vertical fov
+    const [nx, nz] = atTrack(v.park), [cx, cy, cz, yaw, pitch, fov] = v.cam;
+    camera.position.set(nx + cx, cy, nz + cz);
+    controls.target.set(nx + cx - Math.sin(yaw) * Math.cos(pitch) * 10, cy + Math.sin(pitch) * 10, nz + cz - Math.cos(yaw) * Math.cos(pitch) * 10);
+    v.fov = fov;
+  } else {
     const [nx, nz] = atTrack(v.park);                       // the nose (on the first straight, heading +x)
     camera.position.set(nx + v.pos[0], v.pos[1], nz + v.pos[2]); controls.target.set(nx + v.target[0], v.target[1], nz + v.target[2]);
   }
   camera.fov = v.fov; camera.updateProjectionMatrix();
   $photo.onload = () => fitFrame(); $photo.onerror = () => { $photo.removeAttribute("src"); fitFrame(); };
-  $photo.src = `../data/raw/refs/tram/${v.file}`;
+  if (v.file) $photo.src = `../data/raw/refs/tram/${v.file}`; else $photo.removeAttribute("src");
   fitFrame();
   ui?.controllersRecursive().forEach((c) => c.updateDisplay());
 }
@@ -145,8 +155,10 @@ fv.add(S, "frame").name("frame = photo").onChange(fitFrame);
 fv.add(S, "follow").name("camera follows the tram");
 fv.add(S, "notes").name("notes & numbers").onChange((v) => { $notes.style.display = v ? "block" : "none"; });
 const fd = ui.addFolder("Drive");
-fd.add(S, "drive").name("drive (back and forth)").listen();
-fd.add(S, "speed", 0.5, 15, 0.5).name("speed (m/s)");
+fd.add(S, "drive").name("drive (stop, doors, back)").listen();
+fd.add(S, "speed", 0.5, 15, 0.5).name("top speed (m/s)");
+fd.add(S, "dwell", 0, 30, 1).name("dwell at the ends (s)");
+if (!V1) fd.add(S, "doorsLab", -1, 1, 0.01).name("doors (-1 = auto)").onChange((v) => { tramLook.doors.value = v; });
 fd.add(S, "pos", L + 0.5, TRACK_LEN - 0.5, 0.1).name("nose position (m)").listen();
 fd.add(S, "trams", 1, MAX_TRAMS, 1).name("trams (GPU test)");
 fd.add(S, "joint").name("joints");
@@ -157,6 +169,10 @@ fm.add(S, "interior", 0, 2, 0.01).name("saloon light").onChange((v) => { tramLoo
 fm.add(S, "headlights", 0, 2, 0.01).onChange((v) => { tramLook.headlights.value = v; });
 fm.add(S, "display", 0, 2, 0.01).name("LED display").onChange((v) => { tramLook.display.value = v; });
 fm.add(S, "dirt", 0, 1, 0.01).name("grime low on the body").onChange((v) => { tramLook.dirt.value = v; });
+if (!V1) {
+  fm.add(S, "glass", 0.2, 1, 0.01).name("glass opacity").onChange((v) => { tramLook.glassOpacity.value = v; });
+  fm.add(S, "ao", 0, 1.5, 0.01).name("baked AO").onChange((v) => { tramLook.ao.value = v; });
+}
 const fl = ui.addFolder("Light");
 fl.add(S, "time", Object.keys(PRESETS)).name("preset").onChange((v) => { lighting.apply(v); lighting.hourOverride = null; pipe?.look(v); S.hour = lighting.hour; });
 fl.add(S, "hour", 4, 23.9, 0.05).name("solar hour").onChange((v) => { lighting.hourOverride = v; }).listen();
@@ -217,16 +233,30 @@ window.lab = { renderer, scene, camera, controls, model, fleet, lighting, goView
 
 // ------------------------------------------------------------------------------------------------ loop
 const pose = [];
+let dwellT = 0, doorOpen = 0, braking = 0;
 const phases = offsets.map((_, i) => (i * 37.3) % (TRACK_LEN - L));
 let last = performance.now(), frames = 0, fpsAcc = 0, fpsN = 0, fps = 0;
 const GAPB = model.layout.gap, HWB = model.layout.width / 2 - 0.035;
 renderer.setAnimationLoop(() => {
   const now = performance.now(), dt = Math.min((now - last) / 1000, 0.1); last = now;
   fpsAcc += dt; fpsN++; if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
+  // drive: accelerate (1.0 m/s²), cruise, brake (1.1 m/s²) to a stop at each end, open the right-hand doors,
+  // dwell, close, then go back the other way (cab 5 leads)
   if (S.drive) {
-    S.pos += S.dir * S.speed * dt;
-    if (S.pos > TRACK_LEN - 0.5) { S.pos = TRACK_LEN - 0.5; S.dir = -1; }
-    if (S.pos < L + 0.5) { S.pos = L + 0.5; S.dir = 1; }
+    const end = S.dir > 0 ? TRACK_LEN - 0.5 : L + 0.5;
+    if (dwellT > 0) {
+      dwellT -= dt; S.v = 0; braking = 0;
+      const t = S.dwell - dwellT;
+      doorOpen = Math.max(0, Math.min(1, (t - 1) / 3, (dwellT - 0.5) / 3));
+      if (dwellT <= 0) { S.dir *= -1; doorOpen = 0; }
+    } else {
+      const dist = Math.abs(end - S.pos);
+      const vT = Math.min(S.speed, Math.sqrt(2 * 1.1 * Math.max(0, dist - 0.02)));
+      braking = S.v > vT + 0.01 ? 1 : 0;
+      S.v = S.v < vT ? Math.min(vT, S.v + 1.0 * dt) : Math.max(vT, S.v - 1.6 * dt);
+      S.pos += S.dir * S.v * dt;
+      if (dist < 0.05 || (S.dir > 0 ? S.pos >= end : S.pos <= end)) { S.pos = end; S.v = 0; dwellT = S.dwell; if (!S.dwell) S.dir *= -1; }
+    }
   }
   // the nose is cab 1's tip; driving back, cab 5 leads (its headlights, the other direction's headsign)
   fleet.begin(camera);
@@ -238,7 +268,7 @@ renderer.setAnimationLoop(() => {
     if (i > 0) { const span = TRACK_LEN - L - 1, t = (phases[i] + now / 1000 * S.speed) % (2 * span); d = L + 0.5 + (t < span ? t : 2 * span - t); dir = t < span ? 1 : -1; }
     tramPose(model.layout, (s) => atTrack(s, ox, oz), d, pose, dir < 0);
     if (i === 0) for (const p of pose) if (p.piece === "Bellows") maxA = Math.max(maxA, Math.abs(p.angle));
-    fleet.add(pose, ground, { sign: dir > 0 ? 0 : 1 });
+    fleet.add(pose, ground, { sign: dir > 0 ? 0 : 1, doors: i === 0 ? [doorOpen, 0] : null, brake: i === 0 ? braking : 0 });
   }
   fleet.end();
   const clear = 2 * (GAPB - HWB * Math.sin(maxA / 2)), cover = GAPB + HWB * Math.sin(maxA / 2);
