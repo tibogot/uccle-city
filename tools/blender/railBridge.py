@@ -64,11 +64,13 @@ BRIDGES = {
     # parapet with a stone coping and a painted steel railing on top (photo "Calevoet Viaduc - Soir").
     "calevoet": {
         "urbis": "bridge/687", "line": "L124", "road": "Chaussée de Saint-Job / Rue du Château d'Or",
-        "centre": (-1124.72, 1123.19), "theta": 81.2, "length": 47.4, "width": 9.5,
+        "centre": (-1124.72, 1123.19), "theta": 81.2, "length": 82.2, "width": 9.5,      # [M] UrbIS polygon 47.4 x 9.5 covers the
+        # roads only; the DTM keeps dropping under the structure to |s| = 40 m (an embankment would keep it at the rail):
+        # the viaduct runs on over the outer slopes - 5 arches, the photo shows the 4th (left, behind trees)
         "road_level": 39.64, "rail_top": 54.59,
         "road_dir": 171.2, "road_cross": (-1124.72, 1123.19), "road_clear": None,
-        "arches": {"n": 3, "span": 10.6, "pier": 2.4, "spring": 7.2},                     # [E] photo: 3 arches + abutments
-        "cornice": 13.7, "parapet": 14.95, "coping": 0.18, "parapet_t": 0.45,
+        "arches": {"n": 5, "span": 13.0, "pier": 3.2, "spring": 6.55, "ring": 0.72},       # [E] photo: span ~ ground-to-cornice height, piers span / 4.1
+        "cornice": 14.15, "parapet": 15.25, "coping": 0.18, "parapet_t": 0.45,
         "railing": 1.05,
         "ends": "quoin",
         "views": {"calevoet_viaduct": ((0.0, 42.0, 1.4), (0.0, 0.0, 8.0), 24.0)},
@@ -97,8 +99,8 @@ SKEW = dirB.x / dirB.y if abs(dirB.y) > 1e-3 else 0.0      # dX / dY along the r
 X_ROAD = to_local(*B["road_cross"])[0] - SKEW * to_local(*B["road_cross"])[1]   # road axis at Y = 0
 print(f"{NAME}: L {L} W {W} rail {H_RAIL:.2f} m over the road; skew dX/dY {SKEW:.3f} ({math.degrees(math.atan(abs(SKEW))):.1f} deg); road at X {X_ROAD:.2f}")
 
-MAT_NAMES = ["brick_red_brussels", "stone_blue", "concrete", "painted_metal_white"]
-BR, ST, CO, PM = 0, 1, 2, 3
+MAT_NAMES = ["brick_red_brussels", "stone_blue", "concrete", "painted_metal_white", "brick_yellow"]
+BR, ST, CO, PM, BY = 0, 1, 2, 3, 4
 
 
 # ------------------------------------------------------------------------------------------------ geometry builder
@@ -211,19 +213,19 @@ def openings():
         m = B["main"]
         span_axis = B["road_clear"] / abs(math.sin(rel)) if B["road_clear"] else 20.0   # [M] clear width across the road -> along the face
         x0, x1 = X_ROAD - span_axis / 2, X_ROAD + span_axis / 2
-        ops.append({"x0": x0, "x1": x1, "kind": "segment", "rise": m["rise"], "spring": m["spring"], "ring": m["ring"], "main": True})
+        ops.append({"x0": x0, "x1": x1, "kind": "segment", "rise": m["rise"], "spring": m["spring"], "ring": m["ring"], "main": True, "floor": 0.0})
         p = B["pilaster"]
         for sgn in (-1, 1):
             for sd in B.get("side", []):
                 edge = (x0 if sgn < 0 else x1) + sgn * (0.4 + p["w"] + sd["gap"])
                 a, b = (edge - sd["span"], edge) if sgn < 0 else (edge, edge + sd["span"])
-                ops.append({"x0": a, "x1": b, "kind": "round", "spring": sd["spring"], "ring": 0.5, "main": False})
+                ops.append({"x0": a, "x1": b, "kind": "round", "spring": sd["spring"], "ring": 0.5, "main": False, "floor": 0.35})
     if "arches" in B:
         a = B["arches"]; n = a["n"]
         total = n * a["span"] + (n - 1) * a["pier"]
         for k in range(n):
             x0 = X_ROAD - total / 2 + k * (a["span"] + a["pier"])
-            ops.append({"x0": x0, "x1": x0 + a["span"], "kind": "round", "spring": a["spring"], "ring": 0.62, "main": True})
+            ops.append({"x0": x0, "x1": x0 + a["span"], "kind": "round", "spring": a["spring"], "ring": a.get("ring", 0.62), "main": True, "floor": None})
     return ops
 
 
@@ -364,13 +366,57 @@ def scroll(sgn, x, z, r0=0.33, turns=1.25, side=1, d=0.10):
     DET.sphere(on_face(sgn, pts[-1][0], d + 0.03, pts[-1][1]), 0.13, ST, seg=12, ring=8)
 
 
+def calevoet_arch(sgn, o, info, dx):
+    """The Calevoet arch ring (photo "Calevoet Viaduc - Soir"): a lighter brick ring several rowlock courses deep, proud
+    of the face by 12 cm, its extrados STEPPED (the bricks of the spandrel step round it), the intrados plain."""
+    cx, cz, R, a = info
+    ring = o["ring"]
+    n = 44
+    inner = [(cx - R * math.cos(math.pi * k / n), cz + R * math.sin(math.pi * k / n)) for k in range(n + 1)]
+    # stepped extrados: the outer arc sampled, each step a horizontal then a vertical run (0.15-0.3 m treads)
+    m = 22
+    arc = [(cx - (R + ring) * math.cos(math.pi * k / m), cz + (R + ring) * math.sin(math.pi * k / m)) for k in range(m + 1)]
+    steps = [arc[0]]
+    for k in range(1, m + 1):
+        (x0, z0), (x1, z1) = steps[-1], arc[k]
+        if k <= m // 2: steps += [(x0, z1), (x1, z1)]        # rising half: up, then across
+        else: steps += [(x1, z0), (x1, z1)]                  # falling half: across, then down
+    outline = inner + list(reversed(steps))
+    base = (0, sgn * W / 2 - 0.02 * sgn, 0)
+    DET.prism(outline, base, Vector((1, 0, 0)), Vector((0, 0, 1)), Vector((0, sgn, 0)), 0.14, BY)
+    # a thin brick course framing the intrados edge (the ring's soffit lip)
+    lip = inner + [(cx - (R + 0.11) * math.cos(math.pi * k / n), cz + (R + 0.11) * math.sin(math.pi * k / n)) for k in range(n, -1, -1)]
+    DET.prism(lip, base, Vector((1, 0, 0)), Vector((0, 0, 1)), Vector((0, sgn, 0)), 0.17, BY)
+
+
+def calevoet_piers(sgn, dx):
+    """Piers: a stone impost band where each arch springs (wrapping the pier face), a brick pilaster strip up each pier
+    centre to under the string course ending in a stepped corbel; a stone string course under the parapet."""
+    arches = sorted(OPS, key=lambda o: o["x0"])
+    zs = arches[0]["spring"]
+    for o in arches:
+        for xx, side in ((o["x0"] + dx, -1), (o["x1"] + dx, 1)):
+            # impost: a stone band from the arch edge across the pier (0.35 high, 10 cm proud), with a chamfered nose
+            w = B["arches"]["pier"] / 2 + 0.05
+            DET.box(on_face(sgn, xx + side * w / 2, 0.06, zs - 0.18), (w + 0.04, 0.12, 0.36), ST)
+    for k in range(len(arches) - 1):
+        xm = (arches[k]["x1"] + arches[k + 1]["x0"]) / 2 + dx
+        top = CORN - 0.75
+        DET.box(on_face(sgn, xm, 0.09, (FOUND + zs - 0.4) / 2), (1.15, 0.18, zs - 0.4 - FOUND), BR)        # strip under the impost
+        DET.box(on_face(sgn, xm, 0.09, (zs + top) / 2), (1.15, 0.18, top - zs), BR)                       # above it
+        for j, w in enumerate((0.95, 0.72, 0.5, 0.28)):
+            DET.box(on_face(sgn, xm, 0.09 - 0.015 * j, top + 0.09 + j * 0.17), (w, 0.18 - 0.03 * j, 0.17), BR)
+    # stone string course along the face under the parapet + a plinth course at the pier feet
+    DET.box(on_face(sgn, 0, 0.05, CORN + 0.1), (L, 0.12, 0.28), ST)
+
+
 ops_sorted = sorted(OPS, key=lambda o: o["x0"])
 for sgn in (1, -1):
     dx = SKEW * sgn * W / 2
     for o in OPS:
         pts, info = curve_of(o, dx)
         ring = o["ring"]
-        outer = voussoirs(sgn, o, info, ring, 11 if o["main"] and o["kind"] == "segment" else (9 if o["main"] else 7))
+        outer = voussoirs(sgn, o, info, ring, 11 if o["main"] and o["kind"] == "segment" else (9 if o["main"] else 7)) if NAME != "calevoet" else None
         if o["main"] and o["kind"] == "segment":
             # hood moulding along the extrados, down the pilasters' sides, into the scrolls
             hood = [(p.x, p.z + 0.0) for p in outer]
@@ -390,19 +436,8 @@ for sgn in (1, -1):
                 zb = zs - 0.15
                 roll_mould(sgn, [(hx, zt), (hx, (zt + zb) / 2), (hx, zb)])
                 scroll(sgn, hx, zb, side=-side)
-        if o["main"] and o["kind"] == "round":
-            # Calevoet: stepped brick archivolt edge (dentils) round the stone ring, imposts on the piers
-            cx, cz, R, a = info
-            for k in range(41):
-                ang = math.pi * k / 40
-                nrm = Vector((-math.cos(ang), 0, math.sin(ang)))
-                tang = Vector((math.sin(ang), 0, math.cos(ang)))
-                base = Vector((cx, 0, cz)) + nrm * (R + ring)
-                q = [base - tang * 0.11, base + tang * 0.11, base + tang * 0.11 + nrm * 0.12, base - tang * 0.11 + nrm * 0.12]
-                DET.prism([(p.x, p.z) for p in q], (0, sgn * W / 2, 0), Vector((1, 0, 0)), Vector((0, 0, 1)), Vector((0, sgn, 0)), 0.04, BR)
-            for xx in (o["x0"] + dx, o["x1"] + dx):
-                DET.box(on_face(sgn, xx, 0.03, o["spring"] - 0.17), (0.9, 0.16, 0.34), ST)
-
+        if NAME == "calevoet":
+            calevoet_arch(sgn, o, info, dx)
     # pilasters (St-Job): quoined, a stone base, a stone capital block at the arcade, a cap above the parapet
     if "pilaster" in B:
         p = B["pilaster"]
@@ -485,8 +520,8 @@ for sgn in (1, -1):
                 DET.box(on_face(sgn, sx * (L / 2 - qw / 2), 0.025, z + 0.17), (qw, 0.07, 0.32), ST)
                 z += 0.34; k += 1
 
-    # impost / springing string course for Calevoet piers + a stone plinth course at road level
-    DET.box(on_face(sgn, 0, 0.03, 0.25), (L, 0.08, 0.5), ST) if NAME == "calevoet" else None
+    if NAME == "calevoet":
+        calevoet_piers(sgn, dx)
 
 # railing (Calevoet): painted steel posts + two rails on the coping, both sides
 if B.get("railing"):
@@ -506,7 +541,7 @@ bpy.ops.wm.read_factory_settings(use_empty=True)
 scn = bpy.context.scene
 mats = []
 PREVIEW_COL = {"brick_red_brussels": (0.33, 0.12, 0.075), "stone_blue": (0.42, 0.43, 0.44), "concrete": (0.35, 0.34, 0.32),
-               "painted_metal_white": (0.75, 0.75, 0.73)}
+               "painted_metal_white": (0.75, 0.75, 0.73), "brick_yellow": (0.55, 0.40, 0.24)}
 for nm in MAT_NAMES:
     m = bpy.data.materials.new(nm); m.use_nodes = True
     m.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (*PREVIEW_COL[nm], 1)

@@ -8,7 +8,8 @@
   "brick_red_brussels",
   "stone_blue",
   "concrete",
-  "painted_metal_white"
+  "painted_metal_white",
+  "brick_yellow"
  ],
  "frame": "glTF Y up; +x = along the track (city direction theta), -z = Blender +Y; origin = UrbIS polygon centre at road level",
  "placement": {
@@ -35,7 +36,8 @@
    "rise": 5.3,
    "spring": 2.3,
    "ring": 0.72,
-   "main": true
+   "main": true,
+   "floor": 0.0
   },
   {
    "x0": -21.52,
@@ -43,7 +45,8 @@
    "kind": "round",
    "spring": 1.4,
    "ring": 0.5,
-   "main": false
+   "main": false,
+   "floor": 0.35
   },
   {
    "x0": 10.139,
@@ -51,7 +54,8 @@
    "kind": "round",
    "spring": 1.4,
    "ring": 0.5,
-   "main": false
+   "main": false,
+   "floor": 0.35
   }
  ],
  "skew_dx_per_dy": -1.4292,

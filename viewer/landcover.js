@@ -27,7 +27,7 @@ export function landCoverData(feats, bounds) {
   }
   // the railway's verges (?trains=1): cuttings and embankments are scrub / young woodland in Uccle, not lawn
   if (feats.railVerges?.length) {
-    g.strokeStyle = "rgba(150,0,0,1)";
+    g.strokeStyle = "rgba(225,0,0,1)";
     g.lineCap = g.lineJoin = "round";
     g.lineWidth = 30;
     for (const l of feats.railVerges) {

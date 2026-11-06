@@ -111,13 +111,14 @@ export async function materialFor(slot, aoTex) {
   const m = new THREE.MeshStandardNodeMaterial({ roughness: 0.9, metalness: 0 });
   const p = uv();                              // metres: x along the face, y up it
   const fw = max(fwidth(p.x), fwidth(p.y)).max(0.0005);
-  if (slot === "brick_red_brussels") {
+  if (slot === "brick_red_brussels" || slot === "brick_yellow") {
+    const yel = slot === "brick_yellow";       // the Calevoet arch rings: a paler, sandier brick (photo)
     // Brussels red brick, running bond: 21 x 6.5 cm bricks, 1 cm lime joints (course 7.5 cm, pitch 22 cm)
     const row = floor(p.y.div(0.075));
     const off = fract(row.mul(0.5)).mul(0.22);
     const col = floor(p.x.add(off).div(0.22));
     const h = hash2D(vec2(col, row)), h2 = hash2D(vec2(row, col.add(17)));
-    const brick = mix(color(0x8c4b3a), color(0x62301f), h.mul(h)).mul(mix(0.85, 1.12, h2));
+    const brick = (yel ? mix(color(0xb08d62), color(0x8d6e4a), h.mul(h)) : mix(color(0x8c4b3a), color(0x62301f), h.mul(h))).mul(mix(0.85, 1.12, h2));
     const burnt = step(0.93, hash2D(vec2(col.add(5), row.add(3))));
     const tone = mix(brick, color(0x3e2420), burnt.mul(0.6)).mul(mix(0.9, 1.08, noise2D(p.mul(0.35))));
     const jv = filteredPulse(p.y.div(0.075), float(0), float(0.01 / 0.075), fw.div(0.075));

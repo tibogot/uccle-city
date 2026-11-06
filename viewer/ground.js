@@ -58,7 +58,7 @@ export function groundMaterial(cover, bounds, contour) {
   col = mix(col, gravel, mk.g);
   // steep banks: bare earth
   const slope = smoothstep(float(0.9), float(0.72), normalWorld.y);
-  col = mix(col, mix(color(0x6d5a40), color(0x7d6a4f), n2), slope.mul(float(1).sub(mk.g)).mul(float(1).sub(mk.r.mul(0.85))));   // (wooded banks stay green-brown)
+  col = mix(col, mix(color(0x6d5a40), color(0x7d6a4f), n2), slope.mul(float(1).sub(mk.g)).mul(float(1).sub(mk.r.mul(0.95))));   // (wooded banks stay green-brown)
   col = mix(col, water, mk.a);
   col = contour ? contour(col) : col;
   const m = new THREE.MeshStandardNodeMaterial({ metalness: 0 });
