@@ -69,19 +69,23 @@ export function carveTerrain(doc, geo, hdr, bounds) {
   const pos = geo.attributes.position.array;
   const { x0, z0, cols, rows, step } = hdr;
   let moved = 0;
-  const dirty = new Set();
+  const mask = new Uint8Array(cols * rows), dirtyList = [];
+  const dirty = { add(k) { if (!mask[k]) { mask[k] = 1; dirtyList.push(k); } }, get size() { return dirtyList.length; } };
+  const bx0 = x0 - CORRIDOR, bx1 = x0 + (cols - 1) * step + CORRIDOR, bz0 = z0 - CORRIDOR, bz1 = z0 + (rows - 1) * step + CORRIDOR;
   for (const t of tracksIn(doc, bounds, CORRIDOR + 1)) {
     const P = t.pts;
     for (let i = 1; i < P.length; i++) {
       const a = P[i - 1], b = P[i];
+      if ((a[0] < bx0 && b[0] < bx0) || (a[0] > bx1 && b[0] > bx1) || (a[2] < bz0 && b[2] < bz0) || (a[2] > bz1 && b[2] > bz1)) continue;
       const c0 = Math.max(0, Math.floor((Math.min(a[0], b[0]) - CORRIDOR - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(a[0], b[0]) + CORRIDOR - x0) / step));
       const r0 = Math.max(0, Math.floor((Math.min(a[2], b[2]) - CORRIDOR - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(a[2], b[2]) + CORRIDOR - z0) / step));
       const dx = b[0] - a[0], dz = b[2] - a[2], L2 = dx * dx + dz * dz || 1e-9;
       for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
         const px = x0 + c * step, pz = z0 + r * step;
         const u = Math.max(0, Math.min(1, ((px - a[0]) * dx + (pz - a[2]) * dz) / L2));
-        const d = Math.hypot(px - a[0] - dx * u, pz - a[2] - dz * u);
-        if (d > CORRIDOR) continue;
+        const ex = px - a[0] - dx * u, ez = pz - a[2] - dz * u, d2 = ex * ex + ez * ez;
+        if (d2 > CORRIDOR * CORRIDOR) continue;
+        const d = Math.sqrt(d2);
         const rt = a[1] + (b[1] - a[1]) * u;
         // the ballast surface at d, minus 6 cm (and a 30 cm cess beyond the foot)
         const surf = d < CREST_HW ? rt + CREST : d < FOOT_HW ? rt + CREST + (BED - CREST) * (d - CREST_HW) / (FOOT_HW - CREST_HW) : rt + BED;
@@ -111,9 +115,13 @@ export function carveTerrain(doc, geo, hdr, bounds) {
   // embankment fill: where the track runs above the ground off a bridge (the 1 m DTM's slope at the end of a viaduct,
   // under the masonry it cannot see), the ground is raised to a 1:1.5 fill from the ballast foot, at most FILL_MAX out
   const FILL_MAX = 18;
-  const rabs = doc.bridges.filter((b) => b.type === "RAB").map((b) => b.ring);
+  const rabs = doc.bridges.filter((b) => b.type === "RAB").map((b) => {
+    const xs = b.ring.map((q) => q[0]), zs = b.ring.map((q) => q[1]);
+    return { ring: b.ring, x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) };
+  }).filter((b) => b.x1 > x0 - FILL_MAX && b.x0 < x0 + cols * step + FILL_MAX && b.z1 > z0 - FILL_MAX && b.z0 < z0 + rows * step + FILL_MAX);
   const inRing = (r, x, z) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c; } return c; };
-  const onBridge = (x, z) => rabs.some((r) => inRing(r, x, z));
+  let near = rabs;
+  const onBridge = (x, z) => { for (const b of near) if (x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && inRing(b.ring, x, z)) return true; return false; };
   const gridY = (x, z) => { const c = Math.round((x - x0) / step), r = Math.round((z - z0) / step); return c >= 0 && r >= 0 && c < cols && r < rows ? pos[(r * cols + c) * 3 + 1] : null; };
   let filled = 0;
   for (const t of tracksIn(doc, bounds, FILL_MAX + 1)) {
@@ -121,8 +129,11 @@ export function carveTerrain(doc, geo, hdr, bounds) {
     for (let i = 1; i < P.length; i++) {
       const a = P[i - 1], b = P[i];
       const mx = (a[0] + b[0]) / 2, mz = (a[2] + b[2]) / 2, g = gridY(mx, mz);
+      if (g == null) continue;
+      near = rabs;
       if (g == null || a[1] + BED - g < 0.4 || onBridge(mx, mz)) continue;     // on its bed, or on a bridge
       const W = Math.min(FILL_MAX, FOOT_HW + 1.5 * (a[1] + BED - g) + 1);
+      near = rabs.filter((b) => b.x1 > mx - W - 2 && b.x0 < mx + W + 2 && b.z1 > mz - W - 2 && b.z0 < mz + W + 2);
       const c0 = Math.max(0, Math.floor((Math.min(a[0], b[0]) - W - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(a[0], b[0]) + W - x0) / step));
       const r0 = Math.max(0, Math.floor((Math.min(a[2], b[2]) - W - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(a[2], b[2]) + W - z0) / step));
       const dx = b[0] - a[0], dz = b[2] - a[2], L2 = dx * dx + dz * dz || 1e-9;
@@ -144,16 +155,16 @@ export function carveTerrain(doc, geo, hdr, bounds) {
   const nrm = geo.attributes.normal?.array;
   if (nrm && dirty.size) {
     const Y = (r, c) => pos[(Math.min(rows - 1, Math.max(0, r)) * cols + Math.min(cols - 1, Math.max(0, c))) * 3 + 1];
-    const todo = new Set();
-    for (const k of dirty) { const r = Math.floor(k / cols), c = k % cols; for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) { const rr = r + dr, cc = c + dc; if (rr >= 0 && cc >= 0 && rr < rows && cc < cols) todo.add(rr * cols + cc); } }
-    for (const k of todo) {
+    const todo = [];
+    for (const k of dirtyList) { const r = Math.floor(k / cols), c = k % cols; for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) { const rr = r + dr, cc = c + dc; if (rr >= 0 && cc >= 0 && rr < rows && cc < cols && mask[rr * cols + cc] !== 2) { if (!mask[rr * cols + cc]) todo.push(rr * cols + cc); mask[rr * cols + cc] = mask[rr * cols + cc] || 3; } } }
+    for (const k of dirtyList.concat(todo)) {
       const r = Math.floor(k / cols), c = k % cols;
       const hx = (Y(r, c + 1) - Y(r, c - 1)) / (2 * step), hz = (Y(r + 1, c) - Y(r - 1, c)) / (2 * step), L = Math.hypot(hx, 1, hz);
       nrm[k * 3] = -hx / L; nrm[k * 3 + 1] = 1 / L; nrm[k * 3 + 2] = -hz / L;
     }
     geo.attributes.normal.needsUpdate = true;
   }
-  if (moved) { geo.attributes.position.needsUpdate = true; geo.computeBoundingSphere(); }
+  if (moved) geo.attributes.position.needsUpdate = true;      // (the bounding sphere hardly changes: not recomputed, 250k points)
   return moved;
 }
 

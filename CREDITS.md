@@ -99,6 +99,17 @@ three.js's example Soldier.glb (Mixamo, not shippable; it was only loaded by URL
 |---|---|---|
 | STIB-MIVB GTFS static feed (line 92 shapes, stops, timetable), via the Belgian Mobility open-data platform, data.belgianmobility.io | CC BY 4.0 | **Source: STIB-MIVB – Open Data – 20261026** (GTFS 2_24_20261026_010708). Raw feed in `data/raw/gtfs/` (not committed); derived `data/transit/stib-92.json` by `pipeline/build_transit.py`. Shown in the viewer's log. |
 
+| NMBS/SNCB GTFS static feed (feed_version 2026-11-05), via the Belgian National Access Point transportdata.be | SNCB standard licence for timetable re-use (free; agreement to be accepted with gtfs@sncb.be before publishing, see docs/trains/RESEARCH.md) | Raw feed `data/raw/gtfs/sncb.zip` (not committed); derived `data/transit/sncb-uccle.json` by `pipeline/build_trains.py`, credited in the viewer log. Track geometry: OpenStreetMap (ODbL); bridges / tunnels / DTM: UrbIS (CC0). |
+
+## Railway reference photos (docs/trains/compare/*.jpg only, never shipped with the viewer)
+
+Wikimedia Commons photos beside our renders (credited in each image); originals in `data/raw/refs/trains/` (not committed,
+SOURCES.json has the pages): Stratoswift (CC BY-SA 4.0; one CC BY 4.0): "Chaussée de Saint-Job, viaduc ferroviaire ..." (x4),
+"Calevoet Viaduc - Soir", "AM 08049 - S1 1966 - Uccle-Calevoet - 27 mars 2025", "AM 08579 - S19 - Saint-Job - 24-07-2025",
+"AM 08573 / 08558 ... Uccle-Calevoet", "Gare de Calevoet et train 4 mars 2024", "Gare de Saint-Job (nouveau pont) 11 novembre 2024",
+"AM 08176 + 08206 - IC 4011 - Saint-Job"; Sjenghai (CC BY-SA 4.0): "Uccle-Ukkel - Infrabel ligne-lijn 26 + AM-MS86 ...",
+"Infrabel ligne-lijn 124 - ... Gare d'Uccle Stalle ..."; Japplemedia (CC BY 4.0): "Station Sint-Job 2025".
+
 ## Build tools
 
 | Tool | Licence | Use |

@@ -20,6 +20,18 @@ The car: one loader, `viewer/drive/carModel.js loadCarModel(spec)` (`scripted` =
 `quaternius:<id>` = CC0 packs via `viewer/drive/carPacks.js`); `?car=<spec>` or `__driver.setCar(spec)`; `fitBody`
 sizes the physics box to the model. Packs: `node tools/cars/convertPacks.mjs` (raw packs in data/raw/cars/, see CREDITS).
 
+## Trains (branch claude/trains, `?trains=1`)
+
+The SNCB railway of Uccle: L124, L26 and the L26/5 chord from OSM fitted to the LiDAR DTM (`pipeline/build_rail.py` ->
+`data/rail/rail.json`), drawn per tile (`viewer/rail/railway.js`: ballast, rails, sleepers, catenary, platforms, decks; the
+terrain carved under the ballast), the hero bridges over Chaussee de Saint-Job and the Viaduc de Calevoet
+(`tools/blender/railBridge.py`, `viewer/rail/bridgeModel.js`, named material slots), the AM08 Desiro (`tools/blender/am08.py`,
+`viewer/rail/trainModel.js`), 334 trains a weekday on the real SNCB GTFS (`pipeline/build_trains.py` ->
+`data/transit/sncb-uccle.json`, `viewer/rail/trains.js`; live feed hook `setSource`). Lab `labs/train-lab.html`; details,
+cost and weak points `docs/TRAINS.md`; research and sources `docs/trains/RESEARCH.md`. Rebuild: `python pipeline/build_rail.py`,
+`python pipeline/build_trains.py` (GTFS: the curl in its header), Blender `--factory-startup -b -P tools/blender/railBridge.py -- stjob|calevoet models/rail [--preview <dir>]`
+and `... am08.py -- models/rail [--preview <dir>]`.
+
 ## The Saint-Job falcons (branch claude/falcons)
 
 A peregrine family at the church, on by default (`?falcons=0` = none): the eyrie behind the falcons' louvred arch

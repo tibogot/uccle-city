@@ -132,7 +132,7 @@ function makeMaterial() {
   const lead = inst.x, night = env.uNight;
   const head = lampW.mul(lead).mul(mix(float(2.0), float(12.0), night));
   const tail = lampR.mul(float(1).sub(lead)).mul(mix(float(1.5), float(6.0), night));
-  const saloon = glass.mul(night).mul(trainLook.interior).mul(0.35).mul(smoothstep(1.4, 2.6, y));
+  const saloon = glass.mul(night).mul(trainLook.interior).mul(0.2).mul(smoothstep(1.4, 2.9, y));   // ceiling LEDs: brighter toward the top of the glass
   const led = disp.mul(lead).mul(mix(float(0.6), float(1.4), night));
   m.emissiveNode = vec3(head.mul(trainLook.headlights)).mul(color(1.0, 0.96, 0.88))
     .add(color(1.0, 0.05, 0.03).mul(tail.mul(trainLook.headlights)))

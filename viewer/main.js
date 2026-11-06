@@ -438,6 +438,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const rail = railP ? await railP : null;
   if (rail) {
     const carved = rail.m.carveTerrain(rail.doc, terr.geometry, d.hdr, bounds);
+    await frame("railway: terrain carve");     // two slices of ~10-20 ms each (TODO: build both in the tile worker)
     const rt = rail.m.railTile(rail.doc, bounds);
     if (rt.group.children.length) own.features.add(rt.group);
     if (rt.stats.km) say(`railway: ${rt.stats.km} km of track, ${rt.stats.sleepers} sleepers, ${rt.stats.masts} masts, ${rt.stats.platforms || 0} platforms, ${rt.stats.decks || 0} decks over the line, ${rt.stats.tris} triangles; ${carved} terrain vertices under the ballast`);
