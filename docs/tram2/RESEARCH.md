@@ -137,9 +137,9 @@ documentation, share-alike, not shipped (docs/ is in .vercelignore).
 
 ## Weak points (honest)
 
-- The nose is closer but still reads boxier than the photos: the real windscreen is taller relative to the display
-  band, its plan corners rounder, and the hood a thicker, rounder silver visor. The display band shows as a separate
-  black block. Next: fit the nose outline on the 3041 / 3001 fronts with the camera fit (an overlay-driven pass).
+- (Round 3, 2026-11-07: the nose re-shaped, see below.) Still: the visor is a smooth cap (the real one has a seam
+  line and a slight overhang lip shadow); the glass field shows the cab partition as a faint light line at the
+  windscreen top; the bumper's two tiers are still a little too white and even vs the photos' grey.
 - The gold panel shows brownish blotches in strong light (environment reflection of a metallic-ish gold; metalness
   now 0.15). Grime is a height ramp only (no streaks under the windows, no roof dirt).
 - Heights rest on photo ratios (no drawing); module lengths are v1's estimates.
@@ -150,6 +150,26 @@ documentation, share-alike, not shipped (docs/ is in .vercelignore).
 - Pantograph is rigid (fixed at the nominal wire height); fine as the wire is at a constant 5.8 m.
 - 20-tram LOD0 cost 2.5x v1 (see above). LOD1 12k triangles (v1 5.7k).
 - Line 97 (PCC 7900) and the T4000 not modelled.
+
+## Round 3: the nose (2026-11-07)
+
+Against 3097 / 3041 / 3017 (same fitted cameras, `docs/tram2/compare/*`: photo | before (round 2) | after):
+
+- **Windscreen taller**: gold panel top 1.38 -> 1.32, glass 1.36-3.00 (was 1.42-2.96); the display (3.07-3.34) sits in
+  the SAME glass right above it behind a 2 cm frame bar; its housing behind is full cab width and reaches into the visor,
+  and the LED field's background emission dropped (0.012 -> 0.002): the band no longer reads as a separate brown box.
+- **Plan corners rounder**: corner radius 0.40 -> 0.47-0.60 over the glass, and the glass now wraps round the corners
+  (the silver side columns are gone) back to the gold sweep, up to the visor, as on 3097.
+- **Visor**: a thicker, rounder silver cap 3.38-3.60 m: front lip 3 cm proud of the glass, then a quarter-ellipse
+  (7 rows) rounding 0.40 m back; in elevation it keeps nearly the full width with 0.36 m corners (the nose's front
+  part flares out from the roof-shoulder profile, `nose_front_w`), the glass field's top corners round into it.
+- Cost unchanged: 30.7k triangles per tram at LOD0 (was 30.5k); LODs re-derived by meshoptimizer at load.
+- Motion: `frames/lod_switch_74_to_106m_round3.jpg`, the camera backing off 74 -> 106 m with the zoom holding the size;
+  mean frame-to-frame difference 2.3 / 2.2 / 2.2 across the 90 m hand-over (no spike: no jump), LOD0 -> LOD1 at 90 m.
+- GPU, city `?tile=I6&clock=14:02`, frozen, two trams at ~12 m (stop view), tram meshes on / off, 8 alternating
+  rounds (debug/gpuAB.js): medians 12.75 / 12.75 ms (+0.00), mean of the round differences +0.57 with a spread of
+  -1.6 .. +3.1 ms: the GPU was shared with another session's browser (frame time 11-14 ms instead of ~5): noise, not
+  a regression (same triangle count as round 2).
 
 ## Re-run
 

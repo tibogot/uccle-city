@@ -270,7 +270,7 @@ function makeMaterial(sign, aoTex, layout) {
   const ledOn = smoothstep(0.35, 0.6, texture(sign.tex, vec2(cell.x.add(0.5).div(LED[0]), tv)).r);
   const dotM = smoothstep(0.5, 0.28, length(fract(g).sub(0.5)));
   const blur = clamp(fwidth(g.x).mul(1.2), 0, 1);
-  const led = ledOn.mul(mix(dotM, float(0.55), blur)).add(float(0.012));
+  const led = ledOn.mul(mix(dotM, float(0.55), blur)).add(float(0.002));   // dark LED field: reads as glass, not a box
   const night = env.uNight;
   const lead = inst.x, brake = inst2.z;
   const eHead = lead.mul(mix(float(2.5), float(14.0), night)).mul(tramLook.headlights);

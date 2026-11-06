@@ -2,7 +2,7 @@
  "version": 2,
  "length": 31.849999999999998,
  "width": 2.3,
- "height": 3.58,
+ "height": 3.6,
  "floor": 0.35,
  "gap": 0.17,
  "bellowsHalf": 0.36,
@@ -72,21 +72,21 @@
   "GlassFar"
  ],
  "tris": {
-  "Cab": 6698,
+  "Cab": 6806,
   "Susp": 3272,
   "Centre": 1348,
   "Bellows": 1442,
   "Bogie": 884,
   "Panto": 760,
-  "Cab_mid": 3894,
+  "Cab_mid": 3954,
   "Susp_mid": 1622,
   "Centre_mid": 986,
-  "Cab_far": 968,
+  "Cab_far": 1016,
   "Susp_far": 130,
   "Centre_far": 186,
   "Bellows_far": 178
  },
- "trisPerTram": 30468,
+ "trisPerTram": 30684,
  "measured": "length 31.85 m, width 2.30 m, floor 0.35 m, 5 sections, 3 bogies (STIB via techno-science.net; railjournal.com); 6 doors per side (2 single, 4 double: photos)",
  "estimated": "heights from the photos of 3041 / 3001 / 3097 (width 2.30 m, people, floor 0.35 m: hood 3.62 m, fairings 3.50 m, gold panel 0.79-1.38 m, windscreen 1.42-2.96 m, window band 1.14-2.74 m), module lengths, openings, roof equipment, colours, interior layout"
 }

@@ -64,7 +64,11 @@ Y_FAIR = HW - SH_R                                     # 0.73
 CEIL = 2.98                                            # saloon ceiling crown
 # the nose, bottom to top (3041 / 3001 front photos): bumper, its dark band, gold panel, windscreen, frame bar,
 # display band (under the same glass), hood
-NB0, NBD0, NBD1, NB1, NG0, NG1, NW0, NW1, ND0, NH0, NTOP = 0.22, 0.44, 0.58, 0.76, 0.79, 1.38, 1.42, 2.96, 3.00, 3.47, 3.58
+# round 3 (overlay of 3097 / 3041): the windscreen is taller (1.36-3.00), the display sits in the same glass right above
+# it (3.02-3.38, no box), the silver hood is a thicker, rounder visor (3.38-3.60) that wraps down round the corners
+NB0, NBD0, NBD1, NB1, NG0, NG1, NW0, NW1, ND0, NH0, NTOP = 0.22, 0.44, 0.58, 0.76, 0.79, 1.32, 1.36, 3.00, 3.02, 3.38, 3.60
+HOOD_ROWS = 7                                          # the visor's rounded front (quarter ellipse in side view)
+HOOD_LIP, HOOD_RUN = 0.42, 0.40                        # its front edge's setback (proud of the glass under it), its run back
 TAPER = 0.06                                           # the nose narrows by this much a side toward the tip (aerial photo)
 WALL = 0.08                                            # body wall thickness at the openings
 
@@ -343,8 +347,7 @@ def zone_a(mb, xtip, side, out_of):
                 elif zc < NG0: slot = S["Rubber"]
                 elif zc < NG1: slot = S["Gold"]
                 elif zc < NW0: slot = S["Black"]
-                elif zc < Z_BAND1: slot = GLASS(True)
-                elif zc < Z_SH + 0.15: slot = S["Silver"]
+                elif zc < Z_SH + 0.15: slot = GLASS(True)     # the glass wraps back to the gold sweep, up to the visor
                 else: slot = S["Silver"]
             elif i == 1:
                 if NG0 <= zc < Z_GOLD1: slot = S["Gold"]
@@ -586,7 +589,8 @@ def drivers_cab(mb, X):
     quad(mb, (xp, yi, 3.00), (xt - 0.65, yi * 0.8, 3.00), (xt - 0.65, -yi * 0.8, 3.00), (xp, -yi, 3.00), S["Console"], (0, 0, -1))      # cab ceiling
     quad(mb, (xp, yi, FLOOR + 0.6), (xt - 0.5, yi, FLOOR + 0.6), (xt - 0.5, -yi, FLOOR + 0.6), (xp, -yi, FLOOR + 0.6), S["Floor"], (0, 0, 1))
     # the destination display's housing behind the display band, so the band never shows the sky through the hood
-    box(mb, xt - 0.90, 0, (ND0 + NH0) / 2, 0.50, 2 * yi * 0.80, NH0 - ND0, S["Console"], ("+x", "-z", "+y", "-y"))
+    # (full cab width and up into the visor: the band then reads as one black glass field, not a box behind the glass)
+    box(mb, xt - 0.90, 0, (ND0 - 0.02 + NH0 + 0.12) / 2, 0.50, 2 * yi, NH0 + 0.14 - ND0, S["Console"], ("+x", "-z"))
     # console under the windscreen: a sloped desk
     rbox(mb, xt - 0.55, 0, 1.18, 0.50, 2 * yi * 0.86, 0.36, 0.08, S["Console"], 2)
     # the driver's seat (on the left of the cab when seen from inside, offset to +Y)
@@ -598,8 +602,16 @@ def nose_keys():
     # z: (setback of the front face from the tip, plan corner radius)
     return [(0.20, 0.09, 0.30), (NB0 + 0.04, 0.035, 0.31), (0.32, 0.0, 0.32), (NBD0, 0.0, 0.33), (NBD0 + 0.005, 0.025, 0.33), (NBD1 - 0.005, 0.025, 0.34),
             (NBD1, 0.0, 0.34), (NB1, 0.006, 0.35), (NB1 + 0.005, 0.02, 0.35), (NG0 - 0.005, 0.02, 0.36), (NG0, 0.03, 0.36), (1.15, 0.045, 0.38),
-            (NG1, 0.06, 0.40), (NG1 + 0.02, 0.075, 0.40), (NW0, 0.085, 0.40), (2.20, 0.20, 0.42), (NW1, 0.36, 0.44), (ND0, 0.37, 0.44),
-            (NH0, 0.47, 0.45), (NH0 + 0.04, 0.52, 0.45), (NTOP - 0.03, 0.60, 0.44), (NTOP, 0.72, 0.42)]
+            (NG1, 0.06, 0.40), (NG1 + 0.02, 0.075, 0.43), (NW0, 0.085, 0.47), (2.20, 0.21, 0.56), (NW1, 0.36, 0.60), (ND0, 0.365, 0.60),
+            (NH0 - 0.005, 0.445, 0.60)] + hood_keys()
+
+def hood_keys():
+    # the visor: its lip a little proud of the glass, then rounding over and back (plan corners stay round: 0.60 -> 0.50)
+    out = []
+    for k in range(HOOD_ROWS + 1):
+        t = (math.pi / 2) * k / HOOD_ROWS
+        out.append((NH0 + (NTOP - NH0) * math.sin(t), HOOD_LIP + HOOD_RUN * (1 - math.cos(t)), 0.60 - 0.10 * k / HOOD_ROWS))
+    return out
 
 def nose_shape(z):
     keys = nose_keys()
@@ -614,18 +626,27 @@ def nose_bulge(z):
     """The front face bows forward in plan; the gold panel's middle a little more (its raised centre)."""
     return 0.06 + (0.02 if NG0 <= z <= 1.15 else 0.0)
 
-def nose_outline(z, w, xtip):
+def nose_front_w(z, w):
+    """Half-width of the nose's front part: the full width up to 3.24 m, then the visor's elevation corners (radius
+    0.36 m, photo 3041: the hood is nearly full width, not the roof shoulder's narrower arc). The side flares from the
+    body profile w at the nose's root to this toward the front."""
+    R, ZC = 0.36, 3.24
+    if z <= ZC: return max(w, HW) if z > Z_SH - 0.3 else w
+    return max(w, HW - R + math.sqrt(max(0.0, R * R - (z - ZC) ** 2)))
+
+def nose_outline(z, w, xtip, wf=None):
     n_side, n_arc, n_front = ((2, 8, 6), (1, 4, 3), (1, 3, 2))[2 - DETAIL]
     W_REF = 0.66
-    if w < W_REF:
-        return [(x, y * w / W_REF, k) for x, y, k in nose_outline(z, W_REF, xtip)]
+    if wf is None: wf = w
+    if wf < W_REF:
+        return [(x, y * wf / W_REF, k) for x, y, k in nose_outline(z, W_REF, xtip)]
     s, rc = nose_shape(z)
     rc = min(rc, w * 0.985)
     xf = xtip - s
     x0 = xtip - NOSE_LEN
     pts = []
     xa = max(xf - rc, x0 + 0.01)
-    wt = w - TAPER * min(w / HW, 1.0)                 # the nose narrows toward the tip
+    wt = wf - TAPER * min(wf / HW, 1.0)               # the nose narrows toward the tip
     for k in range(n_side): pts.append((x0 + (xa - x0) * k / n_side, w + (wt - w) * k / n_side, 0))
     fw = max(wt - rc, 0.0)
     for k in range(n_arc + 1):
@@ -655,8 +676,8 @@ def front_point(z, y, xtip):
 
 def nose(mb, xtip):
     zs_k = [k[0] for k in nose_keys()]
-    extra = zs_k + ([1.7, 2.1, 2.5, 2.8, 3.2, 3.35, NH0 + 0.03, NH0 + 0.055, NH0 + 0.075, NH0 + 0.095] if DETAIL else [NH0 + 0.06])
-    if not DETAIL: zs_k = [0.20, 0.32, NBD0, NBD1, NB1, NG0, NG1, NW0, NW1, ND0, NH0, NTOP - 0.03, NTOP]; extra = zs_k
+    extra = zs_k + ([1.7, 2.1, 2.5, 2.8, 3.2, 3.25, 3.30] if DETAIL else [])
+    if not DETAIL: zs_k = [0.20, 0.32, NBD0, NBD1, NB1, NG0, NG1, NW0, NW1, ND0, NH0 - 0.005] + [k[0] for k in hood_keys()[::2]]; extra = zs_k
     side_rows = dict(profile_rows([z for z in extra if Z_DOOR0 < z < Z_SH], roof=False))
     zs = sorted(set([z for z in extra] + [z for z in side_rows if z <= Z_SH]))
     zs = [z for z in zs if z >= 0.20]
@@ -680,15 +701,16 @@ def nose(mb, xtip):
         if zc < NW0: return S["Black"]
         # the glass is a rounded black field framed by the silver hood: the hood comes down round the corners of the
         # display band and the top of the windscreen (photos 3041 / 3097 / 3001)
-        if zc < NW1 - 0.25: return GLASS(True)
-        if zc < NW1: return S["Silver"] if kind == 1 and ycorner > 0.55 else GLASS(True)
-        if zc < ND0: return S["Silver"] if kind == 1 and ycorner > 0.3 else S["Black"]
-        if zc < NH0: return S["Silver"] if kind == 1 and ycorner > 0.3 else (GLASS(True) if kind == 2 else S["Silver"])
+        if zc < NW1: return GLASS(True)
+        if zc < ND0: return S["Black"]                    # the thin frame bar between windscreen and display
+        if zc < NH0:                                      # the glass field's top corners round into the hood
+            u = (zc - (NH0 - 0.22)) / 0.22
+            return S["Silver"] if kind == 1 and u > 0 and ycorner > 1.0 - 0.75 * u * u else GLASS(True)
         return S["Silver"]
     for side in (1, -1):
         grid = []
         for z in zs:
-            pts = nose_outline(z, width(z), xtip)
+            pts = nose_outline(z, width(z), xtip, nose_front_w(z, width(z)))
             grid.append([(mb.vert((x, side * y, z)), x, y, kind) for x, y, kind in pts])
         for j in range(len(zs) - 1):
             zc = (zs[j] + zs[j + 1]) / 2
@@ -697,17 +719,17 @@ def nose(mb, xtip):
                 c, d = grid[j + 1][i + 1], grid[j + 1][i]
                 kind = max(a[3], b[3])
                 s_, rc_ = nose_shape(zc)
-                fw_ = max(width(zc) - TAPER - rc_, 0.0)
+                fw_ = max(nose_front_w(zc, width(zc)) - TAPER - rc_, 0.0)
                 ycorner = min(max(((a[2] + b[2]) / 2 - fw_) / max(rc_, 1e-3), 0.0), 1.0)      # 0 front edge of the corner arc .. 1 the side
                 slot = slot_at(zc, kind, ycorner)
                 if kind == 0 and NBD0 <= zc < NBD1: slot = S["Bumper"]
-                if kind == 0 and Z_GOLD0 <= zc < Z_SH + 0.15: slot = S["Silver"]
+                if kind == 0 and Z_SH + 0.15 <= zc < NH0: slot = S["Silver"]
                 mb.poly([a[0], b[0], c[0], d[0]], slot, lambda cc: cc - Vector((xtip - 2.0, 0, min(max(cc.z, 0.8), 2.4))))
         bot = grid[0]
         cen = mb.vert((xtip - 0.6, 0, 0.20))
         for i in range(len(bot) - 1): mb.poly([cen, bot[i][0], bot[i + 1][0]], S["Rubber"], (0, 0, -1))
         top = grid[-1]
-        cen2 = mb.vert((xtip - 0.75, 0, NTOP + 0.005))
+        cen2 = mb.vert((xtip - NOSE_LEN + 0.06, 0, NTOP + 0.005))
         for i in range(len(top) - 1): mb.poly([cen2, top[i][0], top[i + 1][0]], S["Silver"], (0, 0, 1))
         # the back of the hood crown, above the roof well's front wall (a step down to the fairings)
         back = [grid[j][0][0] for j in range(len(zs)) if zs[j] >= Z_FAIR - 0.031] + [top[0][0]]
@@ -725,9 +747,9 @@ def nose(mb, xtip):
             p0, n0 = front_point(NG0 + 0.02, ys, xtip); p1, n1 = front_point(NG1 - 0.02, ys, xtip)
             quad(mb, p0 + n0 * 0.002 + Vector((0, 0.003, 0)), p0 + n0 * 0.002 - Vector((0, 0.003, 0)), p1 + n1 * 0.002 - Vector((0, 0.003, 0)), p1 + n1 * 0.002 + Vector((0, 0.003, 0)), S["BumperDark"], n0)
         # marker lamps on the hood corners
-        p, nrm = front_point(NH0 + 0.04, side * 0.78, xtip)
+        p, nrm = front_point(NH0 + 0.05, side * 0.30, xtip)
         lamp_disc(mb, p + nrm * 0.006 + Vector((0, 0, 0.0)), (nrm + ZUP * 0.6), 0.03, S["LampMarker"], 8, None)
-    display_front(mb, xtip)
+    display_front(mb, xtip, width)
     for side in (1, -1): mirror(mb, xtip, side)
     if DETAIL:
         # wiper: one, parked diagonally
@@ -736,13 +758,21 @@ def nose(mb, xtip):
         # antenna / horn on the hood
         rbox(mb, xtip - 0.95, 0, NTOP + 0.02, 0.22, 0.10, 0.08, 0.02, S["Rubber"], 1)
 
-def display_front(mb, xtip, half=0.80, z0=3.07, z1=3.43):
+def outline_x(z, y, w, xtip):
+    """x of the real nose outline (its true width at z) at lateral |y|."""
+    pts = nose_outline(z, w, xtip, nose_front_w(z, w)); y = abs(y)
+    for (xa, ya, _), (xb, yb, _) in zip(pts, pts[1:]):
+        if min(ya, yb) <= y <= max(ya, yb) and abs(yb - ya) > 1e-9:
+            return xa + (xb - xa) * (y - ya) / (yb - ya)
+    return pts[-1][0]
+
+def display_front(mb, xtip, width, half=0.66, z0=3.07, z1=3.34):
     n = (16, 8, 4)[2 - DETAIL]
     top, bot = [], []
     for k in range(n + 1):
         y = -half + 2 * half * k / n
-        bot.append(mb.vert((front_x(z0, y, xtip) + 0.005, y, z0)))
-        top.append(mb.vert((front_x(z1, y, xtip) + 0.005, y, z1)))
+        bot.append(mb.vert((outline_x(z0, y, width(z0), xtip) + 0.004, y, z0)))
+        top.append(mb.vert((outline_x(z1, y, width(z1), xtip) + 0.004, y, z1)))
     for k in range(n):
         u0, u1 = k / n, (k + 1) / n
         mb.f.append(([bot[k], bot[k + 1], top[k + 1], top[k]], S["Display"], [(u0, 0), (u1, 0), (u1, 1), (u0, 1)], NODOOR))
