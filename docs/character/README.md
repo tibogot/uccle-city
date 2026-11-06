@@ -123,3 +123,38 @@ controller bench 3.7 us per 120 Hz step.
   UE-style rig (needs retargeting).
 - The turn on the spot is a pivot + a corrective step, not a turn clip.
 - The pelvis drops a lot going down steep stairs (to 21-25 cm): legible as a careful descent, but a little deep.
+
+## Clips: one skeleton, retargeted (2026-11-07)
+
+- **Standard:** the Mixamo bone names are the interchange (`tools/characters/rigs.mjs`). Every rig maps its bones onto
+  them: Quaternius modular men (our Hoodie / Casual), Quaternius UAL 1/2, Mixamo (prefix `mixamorig:` stripped).
+  Future mocap goes through Mixamo's layout.
+- **Retarget:** `node tools/characters/retarget.mjs [--raw <data/raw>]` (Node, explicit math, no three.js; Mixamo FBX
+  first go through `tools/blender/fbx2glb.py`). Per bone, a semantic frame built from each rig's own reference pose
+  (towards its child + a body axis), so A-pose / T-pose / 100x binds cancel out; hips height and foot lift scaled by
+  the leg-length ratio above each rig's own standing height; our rig's IK-style feet get the source's ankle
+  positions; travelling clips are made in place with a root-velocity track (`clips.json`).
+  - Hoodie -> Hoodie (`--roundtrip`): 0.0000 deg, 0.000 mm (lossless). UAL2 FBX route = GLB route exactly
+    (`--compare-src`).
+- **Output:** `models/characters/clips.glb` (CC0 sources) and, git-ignored, `clips_mixamo.glb` (Adobe's terms),
+  `clips.json`: per clip its role, loop flag, duration, foot contacts (per frame), take-off / touch-down times, root
+  speed / velocity. The viewer loads them with the character (`characterModel.js`): a role a clip fills replaces the
+  stand-in (jump: the held run pose).
+
+### How to plug a new clip in
+1. Put the source file in `data/raw/` (Mixamo: `animations/mixamo/`, FBX Binary, Without Skin, 30 fps; run the
+   Blender command `retarget.mjs` prints). A new rig: add its bone map to `RIGS` in `rigs.mjs` (canonical name ->
+   its bone; `ends`: the middle finger, the ankle, the toe).
+2. Add a job to `JOBS` in `retarget.mjs`: `{ from, to, role, loop }`. Roles the body knows: `jumpStart`, `fall`, `land`,
+   `stairsUp`, `stairsDown`, `stairsUpRun`, `stairsDownRun` (and, wired next, `turnL` / `turnR`, `walkStart` / `walkStop`).
+3. Run `node tools/characters/retarget.mjs`, open the lab with `?preview=<clip name>` (the clip alone, IK off, body
+   cameras in the Foot audit folder), then T (tests) and "measure all".
+4. Phases come from the clip (foot contacts in clips.json, the IK's own planted / swing test), limits are in leg and
+   foot lengths: a better clip means the IK corrects less, nothing to retune.
+
+### Stairs with a stair clip (wired, waiting for the clips)
+- `ThirdPerson._scanStairs`: 26 rays along the motion (-0.25 .. +1 m) + bisection at each riser: riser and tread
+  (lab: 0.170 / 0.288, 0.2125 / 0.269, house 0.185 / 0.262 m measured), direction, confidence k.
+- With a stair clip for that direction the controller's speed is capped to tread x the clip's steps per second (one
+  tread per step), the clip blends in by k in phase with the walk / run, and the flat-clip stair stand-ins (stride
+  warp, quicker cadence, slowdown) switch off.
