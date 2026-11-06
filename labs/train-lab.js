@@ -128,9 +128,9 @@ function bridgeToWorld(b, X, Y, Z) {
 }
 const PHOTOS = {
   "orbit (free)": null,
-  "St-Job bridge, from the rain garden (Stratoswift 2023)": { bridge: "stjob", file: "stjob_bridge_2.jpg", cam: [0.0, 30.0, 1.6], look: [0.0, 0.0, 5.2], fov: 62 },
-  "St-Job bridge, from the Kauwberg side (Stratoswift 2023)": { bridge: "stjob", file: "stjob_bridge_kauwberg.jpg", cam: [-6.0, -24.0, 0.8], look: [-6.0, 0.0, 5.0], fov: 64 },
-  "St-Job bridge, along the road (Stratoswift 2021)": { bridge: "stjob", file: "stjob_bridge_1.jpg", cam: [30.0, 18.0, 1.5], look: [-2.0, 0.0, 5.0], fov: 56 },
+  "St-Job bridge, from the rain garden (Stratoswift 2023)": { bridge: "stjob", file: "stjob_bridge_2.jpg", cam: [-8.5, 31.0, 1.5], look: [-11.0, 0.0, 5.0], fov: 60 },
+  "St-Job bridge, from the Kauwberg side (Stratoswift 2023)": { bridge: "stjob", file: "stjob_bridge_kauwberg.jpg", cam: [3.5, -23.0, 1.4], look: [3.0, 0.0, 5.6], fov: 62 },
+  "St-Job bridge, along the road (Stratoswift 2021)": { bridge: "stjob", file: "stjob_bridge_1.jpg", cam: [-29.0, 29.0, 1.6], look: [-3.2, 0.0, 4.0], fov: 50 },
   "St-Job bridge, the scroll (detail)": { bridge: "stjob", file: "stjob_bridge_detail.jpg", cam: [8.5, 9.5, 1.6], look: [8.5, 4.35, 2.6], fov: 50 },
   "Calevoet viaduct, evening (Stratoswift 2017)": { bridge: "calevoet", file: "calevoet_viaduct.jpg", cam: [0.0, 42.0, 1.4], look: [0.0, 0.0, 8.0], fov: 55 },
 };

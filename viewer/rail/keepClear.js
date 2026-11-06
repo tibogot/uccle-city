@@ -4,7 +4,8 @@
 export function railKeepClear(doc, bounds) {
   const m = 6;
   const near = (x, z) => x > bounds.x0 - m && x < bounds.x1 + m && z > bounds.z0 - m && z < bounds.z1 + m;
-  const rings = doc.bridges.filter((b) => b.type === "RAB" && b.ring.some(([x, z]) => near(x, z))).map((b) => b.ring);
+  const rings = doc.bridges.filter((b) => b.type === "RAB" && b.ring.some(([x, z]) => near(x, z))).map((b) => b.ring)
+    .concat(doc.platforms.filter((p) => p.ring.some(([x, z]) => near(x, z))).map((p) => p.ring));
   const cell = new Map(), key = (i, j) => `${i},${j}`;
   for (const t of doc.tracks) {
     if (t.box.x1 < bounds.x0 - m || t.box.x0 > bounds.x1 + m || t.box.z1 < bounds.z0 - m || t.box.z0 > bounds.z1 + m) continue;

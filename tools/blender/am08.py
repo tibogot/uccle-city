@@ -167,11 +167,15 @@ def body(length, front_kind, rear_kind, doors, windows, detail=2):
             cab_zone = a < 2.95 - max(0.0, c.z - 1.2) * 0.35 + 0.35       # the yellow wraps back to the first window, slanted
             if c.z > 0.9 and (inn or cab_zone): mat = S["paint_cab"]
             if inn and nx.x > 0.45:
-                if c.z < 0.95: mat = S["metal_dark"]
-                elif c.z < 1.52: mat = S["paint_grey"]
-                elif 1.80 < c.z < 3.20 and abs(c.y) < 0.98: mat = S["glass"]
-                elif 3.20 <= c.z < 3.38 and abs(c.y) < 0.62: mat = S["display"]
-                elif 1.66 < c.z < 3.40 and abs(c.y) < 1.12: mat = S["rubber"]
+                if c.z < 0.80: mat = S["metal_dark"]
+                elif c.z < 1.70: mat = S["paint_grey"]
+                elif 1.86 < c.z < 3.18 and abs(c.y) < 0.92: mat = S["glass"]
+                elif 3.18 <= c.z < 3.36 and abs(c.y) < 0.62: mat = S["display"]
+                elif 1.70 <= c.z < 3.42 and abs(c.y) < 1.02: mat = S["rubber"]
+        if detail == 0 and abs(nx.y) > 0.6:      # far variant: the openings painted on (no recesses)
+            if any(a0 - 0.02 < a < a1 + 0.02 for a0, a1 in doors) and DOOR_Z[0] - 0.1 < c.z < DOOR_Z[1]: mat = S["paint_door"]
+            elif any(a0 < a < a1 for a0, a1 in windows) and WIN_Z[0] - 0.05 < c.z < WIN_Z[1] + 0.05: mat = S["glass"]
+            elif front_kind == "nose" and CAB_SIDE_WIN[0] < a < CAB_SIDE_WIN[1] and 1.9 < c.z < 2.95: mat = S["glass"]
         f.material_index = mat
     if detail >= 1:
         recesses(bm, length, doors, windows, front_kind, detail)
@@ -276,8 +280,8 @@ def car_details(bm, length, front_kind, detail):
         box(bm, (xn - 0.05, 0, 0.66), (0.22, 0.5, 0.12), S["paint_grey"], 0.02)
         # head + tail lamps: two clusters each side on the grey lower front (photo: round LED headlights + tail)
         for y in (0.88, -0.88):
-            z = 1.36
-            xs = xf - NOSE_L + lerp_tab(LF, z) * (1 - abs(y / HW) ** SUPER) ** (1 / SUPER) - 0.02
+            z = 1.42
+            xs = xf - NOSE_L + lerp_tab(LF, z) * (1 - abs(y / HW) ** SUPER) ** (1 / SUPER) + 0.01
             vs = cyl(bm, (xs, y + (0.12 if y > 0 else -0.12), z), 0.085, 0.06, "x", S["lamp_white"], 14)
             vs = cyl(bm, (xs - 0.01, y - (0.10 if y > 0 else -0.10), z), 0.06, 0.06, "x", S["lamp_red"], 12)
             cyl(bm, (xs + 0.0, y + 0.03 * (1 if y > 0 else -1), z - 0.16), 0.03, 0.05, "x", S["lamp_white"], 8)

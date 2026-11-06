@@ -69,6 +69,7 @@ export function carveTerrain(doc, geo, hdr, bounds) {
   const pos = geo.attributes.position.array;
   const { x0, z0, cols, rows, step } = hdr;
   let moved = 0;
+  const dirty = new Set();
   for (const t of tracksIn(doc, bounds, CORRIDOR + 1)) {
     const P = t.pts;
     for (let i = 1; i < P.length; i++) {
@@ -86,9 +87,71 @@ export function carveTerrain(doc, geo, hdr, bounds) {
         const surf = d < CREST_HW ? rt + CREST : d < FOOT_HW ? rt + CREST + (BED - CREST) * (d - CREST_HW) / (FOOT_HW - CREST_HW) : rt + BED;
         const k = (r * cols + c) * 3 + 1;
         const lim = surf - 0.06;
-        if (pos[k] > lim) { pos[k] = lim; moved++; }
+        if (pos[k] > lim) { pos[k] = lim; moved++; dirty.add(r * cols + c); }
       }
     }
+  }
+  // platforms: the ground inside them under their top (a cutting's bank, the 1 m DTM's slope, stays out)
+  for (const pf of doc.platforms) {
+    const xs = pf.ring.map((q) => q[0]), zs = pf.ring.map((q) => q[1]);
+    if (Math.max(...xs) < x0 || Math.min(...xs) > x0 + (cols - 1) * step || Math.max(...zs) < z0 || Math.min(...zs) > z0 + (rows - 1) * step) continue;
+    const c0 = Math.max(0, Math.floor((Math.min(...xs) - 1 - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(...xs) + 1 - x0) / step));
+    const r0 = Math.max(0, Math.floor((Math.min(...zs) - 1 - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(...zs) + 1 - z0) / step));
+    const r = pf.ring;
+    for (let rr = r0; rr <= r1; rr++) for (let c = c0; c <= c1; c++) {
+      const px = x0 + c * step, pz = z0 + rr * step;
+      let inside = false;
+      for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > pz) !== (zj > pz) && px < (xj - xi) * (pz - zi) / (zj - zi) + xi) inside = !inside; }
+      if (!inside) continue;
+      const k = (rr * cols + c) * 3 + 1;
+      if (pos[k] > pf.top - 0.1) { pos[k] = pf.top - 0.1; moved++; dirty.add(rr * cols + c); }
+    }
+  }
+
+  // embankment fill: where the track runs above the ground off a bridge (the 1 m DTM's slope at the end of a viaduct,
+  // under the masonry it cannot see), the ground is raised to a 1:1.5 fill from the ballast foot, at most FILL_MAX out
+  const FILL_MAX = 18;
+  const rabs = doc.bridges.filter((b) => b.type === "RAB").map((b) => b.ring);
+  const inRing = (r, x, z) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c; } return c; };
+  const onBridge = (x, z) => rabs.some((r) => inRing(r, x, z));
+  const gridY = (x, z) => { const c = Math.round((x - x0) / step), r = Math.round((z - z0) / step); return c >= 0 && r >= 0 && c < cols && r < rows ? pos[(r * cols + c) * 3 + 1] : null; };
+  let filled = 0;
+  for (const t of tracksIn(doc, bounds, FILL_MAX + 1)) {
+    const P = t.pts;
+    for (let i = 1; i < P.length; i++) {
+      const a = P[i - 1], b = P[i];
+      const mx = (a[0] + b[0]) / 2, mz = (a[2] + b[2]) / 2, g = gridY(mx, mz);
+      if (g == null || a[1] + BED - g < 0.4 || onBridge(mx, mz)) continue;     // on its bed, or on a bridge
+      const W = Math.min(FILL_MAX, FOOT_HW + 1.5 * (a[1] + BED - g) + 1);
+      const c0 = Math.max(0, Math.floor((Math.min(a[0], b[0]) - W - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(a[0], b[0]) + W - x0) / step));
+      const r0 = Math.max(0, Math.floor((Math.min(a[2], b[2]) - W - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(a[2], b[2]) + W - z0) / step));
+      const dx = b[0] - a[0], dz = b[2] - a[2], L2 = dx * dx + dz * dz || 1e-9;
+      for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+        const px = x0 + c * step, pz = z0 + r * step;
+        const u = (((px - a[0]) * dx + (pz - a[2]) * dz) / L2);
+        if (u < -0.01 || u > 1.01) continue;                 // across this segment only (no fans at its ends)
+        const d = Math.hypot(px - a[0] - dx * u, pz - a[2] - dz * u);
+        if (d > W || onBridge(px, pz)) continue;
+        const rt = a[1] + (b[1] - a[1]) * u;
+        const target = rt + BED - 0.07 - Math.max(0, d - FOOT_HW) / 1.5;
+        const k = (r * cols + c) * 3 + 1;
+        if (pos[k] < target) { pos[k] = target; filled++; dirty.add(r * cols + c); }
+      }
+    }
+  }
+  moved += filled;
+  // normals of the moved vertices and their neighbours (central differences on the grid, as the tile worker does)
+  const nrm = geo.attributes.normal?.array;
+  if (nrm && dirty.size) {
+    const Y = (r, c) => pos[(Math.min(rows - 1, Math.max(0, r)) * cols + Math.min(cols - 1, Math.max(0, c))) * 3 + 1];
+    const todo = new Set();
+    for (const k of dirty) { const r = Math.floor(k / cols), c = k % cols; for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) { const rr = r + dr, cc = c + dc; if (rr >= 0 && cc >= 0 && rr < rows && cc < cols) todo.add(rr * cols + cc); } }
+    for (const k of todo) {
+      const r = Math.floor(k / cols), c = k % cols;
+      const hx = (Y(r, c + 1) - Y(r, c - 1)) / (2 * step), hz = (Y(r + 1, c) - Y(r - 1, c)) / (2 * step), L = Math.hypot(hx, 1, hz);
+      nrm[k * 3] = -hx / L; nrm[k * 3 + 1] = 1 / L; nrm[k * 3 + 2] = -hz / L;
+    }
+    geo.attributes.normal.needsUpdate = true;
   }
   if (moved) { geo.attributes.position.needsUpdate = true; geo.computeBoundingSphere(); }
   return moved;
@@ -134,7 +197,7 @@ export function railMaterials() {
   const rails = new THREE.MeshStandardNodeMaterial({ roughness: 0.4, metalness: 0.85 });
   {
     const top = smoothstep(0.6, 0.9, normalWorld.y);
-    rails.colorNode = mix(color(0x6e4b36), color(0xb9b9bc), top);
+    rails.colorNode = mix(color(0x55463c), color(0xb9b9bc), top);
     rails.roughnessNode = mix(float(0.85), float(0.28), top);
     rails.metalnessNode = mix(float(0.15), float(0.95), top);
   }
@@ -144,7 +207,7 @@ export function railMaterials() {
     sleepers.colorNode = mix(color(0x7f7c76), color(0x9a958c), n);
     if (SMOOTH) sleepers.maskNode = nearKeep(SLEEPER_FAR, 30);
   }
-  const steel = new THREE.MeshStandardNodeMaterial({ color: 0x5b6266, roughness: 0.55, metalness: 0.6 });
+  const steel = new THREE.MeshStandardNodeMaterial({ color: 0x8b9194, roughness: 0.5, metalness: 0.55, side: THREE.DoubleSide });   // (masts are mirrored per side)
   // AA wires: see the header
   const wire = new THREE.MeshStandardNodeMaterial({ color: 0x2a2c2e, roughness: 0.5, metalness: 0.6 });
   {
@@ -194,6 +257,8 @@ export function railTile(doc, bounds) {
   const bal = { p: [], n: [], u: [], s: [], i: [] }, rl = { p: [], i: [] };
   const sleepers = [], masts = [], wires = { p: [], t: [], side: [], r: [], i: [] };
   let km = 0;
+  const pRings = doc.platforms.filter((p) => p.ring.some(([x, z]) => x > bounds.x0 - 20 && x < bounds.x1 + 20 && z > bounds.z0 - 20 && z < bounds.z1 + 20)).map((p) => p.ring);
+  const onPlatform = (x, z) => pRings.some((r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c; } return c; });
   for (const t of ts) {
     const F = frames(t);
     // the tile's run of this track: points whose segment midpoint is in the tile (+ the neighbours)
@@ -245,7 +310,11 @@ export function railTile(doc, bounds) {
       for (let s = Math.ceil(sA / MAST_STEP) * MAST_STEP; s < sB; s += MAST_STEP) {
         const f = sample(F, s);
         const side = outerSide(doc, t, f);
-        masts.push({ ...f, side });
+        // not on a platform: step out until the foot is off it (the cantilever stretches back to the wire)
+        let off = MAST_OFF;
+        while (off < 9 && onPlatform(f.x + f.nx * off * side, f.z + f.nz * off * side)) off += 0.5;
+        if (off > MAST_OFF) off += 0.4;
+        masts.push({ ...f, side, off });
       }
       // wires: contact (zigzag +-0.2 m between masts) and catenary (sagging between masts) + droppers every 6 m
       const contact = [], mess = [];
@@ -292,7 +361,7 @@ export function railTile(doc, bounds) {
     const Mx = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), v = new THREE.Vector3(), sc = new THREE.Vector3();
     masts.forEach((f, k) => {
       q.setFromAxisAngle(up, Math.atan2(-f.tz, f.tx));
-      Mx.compose(v.set(f.x + f.nx * MAST_OFF * f.side, f.y - 0.6, f.z + f.nz * MAST_OFF * f.side), q, sc.set(1, 1, f.side));
+      Mx.compose(v.set(f.x + f.nx * f.off * f.side, f.y - 0.6, f.z + f.nz * f.off * f.side), q, sc.set(1, 1, f.side * f.off / MAST_OFF));
       im.setMatrixAt(k, Mx);
     });
     im.castShadow = true; im.receiveShadow = true; im.name = "rail-masts"; im.computeBoundingSphere(); group.add(im);
@@ -384,8 +453,8 @@ function mastGeometry() {
   const parts = [];
   const box = (w, h, d, x, y, z) => parts.push(new THREE.BoxGeometry(w, h, d).translate(x, y, z));
   const H = 8.1;
-  box(0.24, H, 0.03, 0, H / 2, 0);                         // web
-  box(0.03, H, 0.24, -0.12, H / 2, 0); box(0.03, H, 0.24, 0.12, H / 2, 0);   // flanges
+  box(0.18, H, 0.02, 0, H / 2, 0);                         // web (HEB 180-ish)
+  box(0.02, H, 0.18, -0.09, H / 2, 0); box(0.02, H, 0.18, 0.09, H / 2, 0);   // flanges
   box(0.5, 0.6, 0.5, 0, 0.3, 0);                           // concrete foundation block (above ground)
   const tube = (a, b, r) => {
     const A = new THREE.Vector3(...a), B = new THREE.Vector3(...b), d = B.clone().sub(A), L = d.length();
@@ -393,12 +462,15 @@ function mastGeometry() {
     g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize())).translate(A.x, A.y, A.z);
     parts.push(g);
   };
-  // cantilever toward -z (the track): the bracket at 6.3 m, the stay from 7.6 m, the registration arm to the wire
-  tube([0, 6.4, -0.15], [0, 6.1, -MAST_OFF - 0.4], 0.03);
-  tube([0, 7.6, -0.15], [0, 6.25, -MAST_OFF - 0.2], 0.022);
-  tube([0, 6.15, -MAST_OFF + 0.3], [0, 6.1 - 0.5, -MAST_OFF], 0.018);
-  box(0.06, 0.25, 0.06, 0, 7.55 + 0.6, -MAST_OFF + 0.05);   // messenger clamp
-  for (let k = 0; k < 3; k++) box(0.12, 0.05, 0.12, 0, 6.3 - k * 0.06, -0.4);   // insulator discs (hint)
+  // cantilever toward -z (the track), heights local (the mast foot is 0.6 m under the rail top): the top tube carries
+  // the catenary wire, the strut under it, the registration arm holds the contact wire, a dropper links them
+  const yM = MESSENGER_H + 0.6, yC = WIRE_H + 0.6;
+  tube([0, yM + 0.25, -0.12], [0, yM + 0.02, -MAST_OFF - 0.25], 0.028);
+  tube([0, yC + 0.2, -0.12], [0, yM - 0.05, -MAST_OFF + 0.25], 0.026);
+  tube([0, yC + 0.42, -MAST_OFF + 0.7], [0, yC + 0.02, -MAST_OFF], 0.016);
+  tube([0, yM - 0.05, -MAST_OFF + 0.7], [0, yC + 0.42, -MAST_OFF + 0.7], 0.012);
+  box(0.05, 0.12, 0.05, 0, yM - 0.02, -MAST_OFF);                    // catenary clamp
+  for (let k = 0; k < 3; k++) box(0.09, 0.035, 0.09, 0, yC + 0.2, -0.32 - k * 0.07);   // insulator discs (hint)
   let g = mergeAll(parts);
   g.userData.shared = true;
   mastGeo = g;

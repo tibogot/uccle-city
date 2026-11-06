@@ -30,7 +30,7 @@ const PER_UNIT = { EndCar: 2, MidCar: 1, Bogie: 6, Gangway: 2, Panto: 1 };
 
 /** SNCB current livery (sRGB): white body, yellow cab, red doors, navy skirt band (photos 2019-2025) */
 export const LIVERIES = {
-  sncb: { paint_body: "#e8eae7", paint_cab: "#f3cf0a", paint_door: "#d0202a", paint_skirt: "#1b2a5c", paint_grey: "#8a9095",
+  sncb: { paint_body: "#e8eae7", paint_cab: "#ecd20f", paint_door: "#d0202a", paint_skirt: "#1b2a5c", paint_grey: "#aeb3b6",
     paint_roof: "#b9bdbf", rubber: "#141516", glass: "#0d1114", metal_dark: "#26272a", lamp_white: "#d8d8d2", lamp_red: "#6b0d0d",
     display: "#050505", interior: "#2b3a5a" },
   // the pre-2010s grey-blue / the red local livery are other palettes over the same slots (an example of swapping)
@@ -71,7 +71,7 @@ export function loadTrainModel() {
       for (const p of PIECES) {
         if (k === 2 && (p === "Bogie" || p === "Gangway")) { out[p] = null; continue; }
         const src = objects[p + (L.src || "")] || objects[p];
-        out[p] = merge(src, L.ratio || 1);
+        out[p] = merge(src, L.ratio || 1, !!L.src && !!objects[p + L.src]);
       }
       out.tris = PIECES.reduce((s, p) => s + (out[p] ? out[p].index.count / 3 * PER_UNIT[p] : 0), 0);
       return out;
@@ -80,7 +80,7 @@ export function loadTrainModel() {
   })());
 }
 
-function merge(prims, ratio) {
+function merge(prims, ratio, far = false) {
   const total = prims.reduce((s, q) => s + q.g.index.count / 3, 0);
   const nV = prims.reduce((s, q) => s + q.g.attributes.position.count, 0);
   const pos = new Float32Array(nV * 3), nrm = new Float32Array(nV * 3), ao = new Float32Array(nV), slot = new Float32Array(nV);
@@ -104,6 +104,7 @@ function merge(prims, ratio) {
   geo.setAttribute("normal", new THREE.BufferAttribute(nrm, 3));
   geo.setAttribute("aAO", new THREE.BufferAttribute(ao, 1));
   geo.setAttribute("aSlot", new THREE.BufferAttribute(slot, 1));
+  geo.setAttribute("aFar", new THREE.BufferAttribute(new Float32Array(nV).fill(far ? 1 : 0), 1));   // far bodies: glass painted on the hull, opaque
   geo.setIndex(new THREE.Uint32BufferAttribute(idx, 1));
   geo.computeBoundingSphere();
   geo.userData.shared = true; geo.userData.tris = idx.length / 3; geo.userData.srcTris = total;
@@ -138,7 +139,7 @@ function makeMaterial() {
     .add(color(1.0, 0.85, 0.65).mul(saloon))
     .add(color(1.0, 0.45, 0.05).mul(led));
   // see-through glass (alpha-to-coverage, the same opaque draw), the saloon behind it
-  m.opacityNode = mix(float(1), float(1).sub(trainLook.seeThrough), glass);
+  m.opacityNode = mix(float(1), float(1).sub(trainLook.seeThrough), glass.mul(float(1).sub(attribute("aFar", "float"))));
   m.alphaToCoverage = true;
   const ssrFade = smoothstep(360.0, 180.0, positionView.z.negate());
   m.mrtNode = mrt({ metalRough: vec3(rough.lessThan(0.75).select(metal.mul(ssrFade), float(0)), rough, float(1).sub(glass)) });
