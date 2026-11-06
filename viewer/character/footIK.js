@@ -146,9 +146,10 @@ export class FootIK {
       // of and behind the body), with the quicker cadence (body.js): a step about a tread, not a flat-ground stride
       if (stride < 0.999) {
         const ie0 = inner.matrixWorld.elements, rx = ie0[12], rz = ie0[14], k1 = stride - 1;
-        let d = (_H.x - rx) * hx + (_H.z - rz) * hz; _H.x += hx * d * k1; _H.z += hz * d * k1;
-        d = (_T.x - rx) * hx + (_T.z - rz) * hz; _T.x += hx * d * k1; _T.z += hz * d * k1;
-        d = (_F.x - rx) * hx + (_F.z - rz) * hz; L.warp = d * k1; _F.x += hx * L.warp; _F.z += hz * L.warp;
+        // (the whole foot moved by its heel's warp: warping each point would shorten the foot itself)
+        L.warp = ((_F.x - rx) * hx + (_F.z - rz) * hz) * k1;
+        const wx = hx * L.warp, wz = hz * L.warp;
+        _H.x += wx; _H.z += wz; _T.x += wx; _T.z += wz; _F.x += wx; _F.z += wz;
       } else L.warp = 0;
       const hH = _H.y - rootY, hT = _T.y - rootY, low = Math.min(hH, hT);
       L.lift = low;

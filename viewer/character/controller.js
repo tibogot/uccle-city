@@ -18,7 +18,8 @@
 //      it lands on walkable ground no higher than stepHeight and gets further than the blocked move
 //   5. GROUND SNAP when it was grounded and nothing holds it: down in small chunks up to snapDistance (stairs and
 //      ramps on the way down, kerbs off the sidewalk), else it falls
-//   6. the visual height lags step-ups / snaps by a short exponential (stepOffset) so stairs look smooth
+//   6. the visual height lags step-ups / snaps by a critically damped spring (stepOffset) so stairs look smooth
+//      (an animated body in the slot stands on the ground line instead: index.js)
 // No allocations in step().
 import { Contacts, STRIDE } from "./world.js";
 

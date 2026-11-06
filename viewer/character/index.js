@@ -33,7 +33,7 @@ export class ThirdPerson {
     this.perf = { ms: 0, physMs: 0, camMs: 0, animMs: 0, ikMs: 0, maxMs: 0, steps: 0, _max: 0, _t: 0 };
     this.bodyState = { speed: 0, grounded: true, vy: 0, opacity: 1, gaitWalk: 2, gaitRun: 5.5 };
     this._gp = new Float64Array(3); this._rise = 0; this._run = 0;
-    this._by = { y: 0, v: 0, init: false };
+    this._by = { y: 0, v: 0, init: false }; this._ga = 0; this._gb = 0;
     this.stairSlow = 0.3;             // speed taken off on stairs / steep ramps with a character in the slot
     this._step = () => this.ctl.step();          // no argument: the controller reads its own dt
     this.body.root.visible = false;
@@ -84,7 +84,8 @@ export class ThirdPerson {
       this._gp[0] = c.pos[0]; this._gp[1] = c.pos[1]; this._gp[2] = c.pos[2];
       if (c.grounded && run > 1e-4 && run < 1) { this._rise += Math.abs(dy); this._run += run; }
       const k = Math.exp(-dt / 0.35); this._rise *= k; this._run *= k;
-      st.grade = this._run > 0.02 ? Math.min(2, this._rise / this._run) : 0;
+      // (and the grade AHEAD, from the ground line's samples: the first steps onto stairs are already short)
+      st.grade = Math.max(this._ga, this._run > 0.02 ? Math.min(2, this._rise / this._run) : 0);
     }
     this.body.update(dt, S[0], this.model ? this._bodyY(dt, alpha) : S[1], S[2], S[3], st, this.world);
     this.debug.update(c, this.cam, S[0], S[1], S[2]);
@@ -117,7 +118,9 @@ export class ThirdPerson {
         const W = this.world, R = W.r, H = W.hit;
         R[0] = px + dx * 0.22 * k; R[1] = py + 0.55; R[2] = pz + dz * 0.22 * k; R[3] = 0; R[4] = -1; R[5] = 0; H[0] = 1.1; H[4] = -1;
         W.raycast();
-        if (H[4] >= 0 && H[2] > 0.5) { const gy = py + 0.55 - H[0]; if (Math.abs(gy - py) < 0.5) { sum += gy; n++; } }
+        const ok = H[4] >= 0 && H[2] > 0.5, gy = py + 0.55 - H[0];
+        if (ok && Math.abs(gy - py) < 0.5) { sum += gy; n++; }
+        if (k === -1) this._gb = ok ? gy : NaN; else if (k === 1) this._ga = ok && this._gb === this._gb && vl > 0.2 ? Math.min(2, Math.abs(gy - this._gb) / 0.44) : 0;
       }
       if (n) target = sum / n;
       // never more than a step from the capsule's own feet

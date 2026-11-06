@@ -83,6 +83,12 @@ read-only (copy into `vendor/` with ORIGIN.md); measure GPU ms before / after (s
 - [ ] A jump / fall clip: none on this rig in a CC0 pack. Universal Animation Library 1 / 2 are CC0 (UAL2 License.txt
       checked) but on a UE-style rig (pelvis / thigh_l ...) and UAL2 has only NinjaJump: retargeting needs per-bone
       rest-pose correction. The held run stride stays for now.
+- [x] Feet audit + foot IK v2 (branch claude/character-audit, `docs/character/README.md`): foot lock (planted slide
+      0.2-0.9 → 0.02-0.16 m/s), heel + toe rays with slope / edge, swing look-ahead + landing shift, ground-line body
+      root + pelvis spring with reach, stride warp + cadence + slowdown on stairs, landing absorb, steps on the spot,
+      no capsule roll-up onto ledges mid-jump; lab foot cameras + `labs/footProbe.js` measurements, 40/40 tests.
+- [ ] Feet: walking UP steep stairs still straddles nosings for a few frames (15-20 cm worst); a procedural air pose
+      (tuck, reach before touch-down); a turn-in-place clip.
 - [x] Shelters are their own triangles in the roads BVH (open front, roof at 2.41 m: you walk in); lab test passes.
 - [x] Interiors: pilot house (branch claude/interior, `docs/INTERIOR.md`): footprint prism excluded, the cell's collider
       BVH added, own baked lighting (no city shadow map inside: no seam leaks), the character lit by baked ambient cubes.
