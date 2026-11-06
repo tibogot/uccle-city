@@ -60,3 +60,12 @@
    overhead, default 0.8), `aoFloor` (the lowest occlusion, default 0) and `crownNormal` (the crown ellipsoid's share in
    a card's shading normal, default 0.3). With ~100 small pads (the plane) 0.8 per overlapping pad turned the lower
    crown black (0.8^10); the defaults keep the street trees as they were.
+16. **Leaf-spray texture** (tree textures lab, 2026-11-06): `params.leafAtlas` (default none: the leaf-mask path is
+   unchanged, the street trees, the plane and the beech of the tree lab and the city draw exactly as before) =
+   `{ albedo (RGB + coverage A), normal (RG = the normal in the card's frame, B = thickness), mean, meanThick,
+   variation, normalK, transK }`. With it the cards cut on its alpha (coverage-preserving mips made offline), the
+   species' palette is multiplied by the spray's colour around its mean (`variation`; no leaf tone), the clump's dome
+   normal is bent by the spray's normal (`leafAtlasNormal`: the card's u / v axes are the camera-facing corner axes
+   turned by its spin), and the light through the leaves follows 1 - thickness (mean kept). Exported helpers
+   `leafAtlasNodes(atlas, uv)` and `leafAtlasNormal(nTree, nCard, k)` are used by Uccle's impostor bake
+   (viewer/impostors.js) so the impostors are baked from the textured leaves; `shared.leafAtlas` is set when present.

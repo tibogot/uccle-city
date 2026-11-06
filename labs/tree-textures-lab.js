@@ -280,11 +280,19 @@ function sampleGpu() {
 }
 const median = (a) => { const s = [...a].sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : NaN; };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+/** A / B alternated `rounds` times (settle, then sample). Per round both the median and the 10th percentile of the
+ *  frame's GPU ms: on a GPU shared with another WebGPU page the median carries its load, the low percentile much less
+ *  (the frames that were not slowed); the diff is reported for both. */
 async function alternate(a, b, { rounds = 5, settle = 1.0, seconds = 2.5 } = {}) {
-  const A = [], B = [];
-  for (let i = 0; i < rounds; i++) for (const [f, out] of [[a, A], [b, B]]) { f(); await sleep(settle * 1000); gpu.samples.length = 0; await sleep(seconds * 1000); out.push(median(gpu.samples)); }
-  const mean = (x) => x.reduce((s, v) => s + v, 0) / x.length, d = B.map((v, i) => v - A[i]);
-  return { A: A.map((v) => +v.toFixed(2)), B: B.map((v) => +v.toFixed(2)), meanA: +mean(A).toFixed(2), meanB: +mean(B).toFixed(2), diff: +mean(d).toFixed(2), min: +Math.min(...d).toFixed(2), max: +Math.max(...d).toFixed(2) };
+  const A = [], B = [], A10 = [], B10 = [];
+  const pct = (x, p) => { const s = [...x].sort((u, v) => u - v); return s.length ? s[Math.floor(s.length * p)] : NaN; };
+  // (a warm-up of both sides first: the first frames of a freshly built field compile its shaders)
+  a(); await sleep(1500); b(); await sleep(1500);
+  for (let i = 0; i < rounds; i++) for (const [f, out, out10] of [[a, A, A10], [b, B, B10]]) { f(); await sleep(settle * 1000); gpu.samples.length = 0; await sleep(seconds * 1000); out.push(median(gpu.samples)); out10.push(pct(gpu.samples, 0.1)); }
+  const mean = (x) => x.reduce((s, v) => s + v, 0) / x.length, d = B.map((v, i) => v - A[i]), d10 = B10.map((v, i) => v - A10[i]);
+  const f2 = (v) => +v.toFixed(2);
+  return { A: A.map(f2), B: B.map(f2), meanA: f2(mean(A)), meanB: f2(mean(B)), diff: f2(mean(d)), min: f2(Math.min(...d)), max: f2(Math.max(...d)),
+    A10: A10.map(f2), B10: B10.map(f2), diff10: f2(mean(d10)), min10: f2(Math.min(...d10)), max10: f2(Math.max(...d10)) };
 }
 const results = [];
 /** GPU A/B: the pair's two sides built on the layout (row of 50 / forest), shown in turn, full frame. */
@@ -299,7 +307,7 @@ async function benchAB(lay, pair = S.pair) {
   const tris = renderer.info.render.triangles;
   const rec = { layout: lay, species: S.species, pair, a: { ...S.sides[i] }, b: { ...S.sides[j] }, ...r, tris, texA: sideFields[i].e.texGpu, texB: sideFields[j].e.texGpu };
   results.push(rec); console.log("[tree textures] bench", rec);
-  S.bench = `${lay} ${pair}: ${r.diff >= 0 ? "+" : ""}${r.diff} ms (spread ${r.min}..${r.max}; ${r.meanA} vs ${r.meanB})`;
+  S.bench = `${lay} ${pair}: ${r.diff >= 0 ? "+" : ""}${r.diff} ms median (spread ${r.min}..${r.max}; ${r.meanA} vs ${r.meanB}) · ${r.diff10 >= 0 ? "+" : ""}${r.diff10} ms p10 (${r.min10}..${r.max10})`;
   S.show = 0; S.mode = prevMode; S.nSides = prevN;
   return rec;
 }
