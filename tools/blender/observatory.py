@@ -795,7 +795,12 @@ def roof(part, E):
             roof_lights(part)
     elif part.roof in ("low", "hip"):
         xs = [p.x for p in pts]; ys = [p.y for p in pts]
-        ov = 0.5 if part.roof == "hip" else 0.0
+        ov = 0.0
+        if part.roof == "hip":
+            # the residences: a flat deck behind the cornice and a hip set back from the façades (the street photos,
+            # inventory 0001_P01 / 0007_P01, show no roof above the cornice; the DSM's 118 m peak is this hip)
+            poly_tris(pts, part.top - 0.02, ZINC, C_PLAIN)
+            ov = -0.27 * min(max(p_.x for p_ in pts) - min(p_.x for p_ in pts), max(p_.y for p_ in pts) - min(p_.y for p_ in pts))
         x0, x1, y0, y1 = min(xs) - ov, max(xs) + ov, min(ys) - ov, max(ys) + ov
         ez = part.top - (0.62 if part.parapet else 0.0)
         rz = part.crown
@@ -1172,14 +1177,14 @@ def dome(k, on_roof_z=None):
         # the skirt's opening is part of the slit too: a dark recess (the slit reaches the base ring)
         # the shutter: two leaves hinged on the slit's edges, swung open and standing up on either side of the slit
         for sgn in (-1, 1):
-            js = [j for j in range(len(be) - 1) if be[j] >= math.radians(18) - 1e-6 and be[j + 1] <= b_end + 1e-6]
+            js = [j for j in range(len(be) - 1) if be[j] >= math.radians(8) - 1e-6 and be[j + 1] <= b_end + 1e-6]
             prev = None
             for j in js + [None]:
                 b_ = be[j] if j is not None else be[js[-1] + 1]
                 hinge = S(sgn * (a_s + 0.03), b_, R + 0.12)
                 nrm = (hinge - (c + Z * zs)).normalized()
                 lat = X * sgn
-                free = hinge + nrm * (ws * 1.4) + lat * (ws * 0.75)             # each leaf as wide as the slit half x 1.6, opened ~60 degrees
+                free = hinge + nrm * (ws * 1.5) + lat * (ws * 1.5)              # broad leaves (owner photo 2), opened ~45 degrees
                 cur = (hinge, free)
                 if prev:
                     face_dir([prev[0], cur[0], cur[1], prev[1]], lat, mat, C_SHUT)
