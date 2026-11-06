@@ -15,6 +15,7 @@ import { Lighting, PRESETS } from "../viewer/lighting.js";
 import { createPipeline } from "../viewer/post.js";
 import { makeSpecies, STREET, TREE_SHADOW, setTreeRenderer, setTreeLighting } from "../viewer/treesStylized.js";
 import { planeDef, planeLeafMask } from "../viewer/treesPlane.js";
+import { beechDef } from "../viewer/treesBeech.js";
 import { IMP, impostorField } from "../viewer/impostors.js";
 import { lodEye } from "../viewer/lodFade.js";
 import { lodMorph } from "../vendor/stylized-trees/stylizedTrees.js";
@@ -106,7 +107,7 @@ const forestTrees = (() => {
 
 // ------------------------------------------------------------------------------------------------ species
 const S = {
-  layout: qp.get("layout") ?? "single tree", species: qp.get("species") ?? "plane", variant: qp.get("variant") ?? "auto", seed: +(qp.get("seed") ?? 1000),
+  layout: qp.get("layout") ?? "single tree", species: qp.get("species") ?? "plane", forestMix: qp.get("mix") ?? "the selected species", variant: qp.get("variant") ?? "auto", seed: +(qp.get("seed") ?? 1000),
   height: +(qp.get("h") ?? 18), crown: +(qp.get("crown") ?? 7), turntable: false, ring: false, maskView: false,
   force: "auto", lodColours: false, wireframe: false,
   lod1: 40, morph1: 14, lod2: 120, morph2: 40,
@@ -120,7 +121,10 @@ const S = {
 const DEFS = {
   street: (seed) => ({ ...STREET.def, params: { ...STREET.def.params, seed } }),
   plane: (seed) => planeDef(seed),
+  beech: (seed) => beechDef(seed),
 };
+// the forest patch (tile M8: mostly beech in the Sonian Forest edge) as a mix of species, shares of the LiDAR trees
+const FOREST_MIX = { "all beech": { beech: 1 }, "beech 80 % + street trees 20 %": { beech: 0.8, street: 0.2 } };
 const SPECIES_NAMES = { "street (city today)": "street", "plane (Platanus x acerifolia)": "plane" };
 const speciesKey = () => (S.species in DEFS ? S.species : SPECIES_NAMES[S.species]);
 const species = {};
@@ -154,8 +158,11 @@ scene.add(ring);
 const variantFn = (sp) => {
   const v = S.variant;
   if (v === "auto") return null;
-  if (v.startsWith("auto: natural")) return sp.def.id === "plane" ? (i) => sp.variantOfIndex(i) % 4 : null;
-  if (v.startsWith("auto: pollard")) return sp.def.id === "plane" ? (i) => 4 + (sp.variantOfIndex(i) % 2) : null;
+  // the plane and the beech have two forms: variants 0-3 (plane natural, beech forest) and 4-5 (plane pollard,
+  // beech open-grown); the street trees have one
+  const forms = sp.def.id === "plane" || sp.def.id === "beech";
+  if (v.startsWith("auto: 0-3")) return forms ? (i) => sp.variantOfIndex(i) % 4 : null;
+  if (v.startsWith("auto: 4-5")) return forms ? (i) => 4 + (sp.variantOfIndex(i) % 2) : null;
   return () => Math.min(sp.variants - 1, +v);
 };
 function placementsFor(layout) {
@@ -174,7 +181,25 @@ function build(keys = [speciesKey()]) {
   chain?.dispose(); chain = null;
   for (const l of labels) l.el.remove();
   labels = [];
-  const T = placementsFor(S.layout);
+  let T = placementsFor(S.layout);
+  // the forest patch's species mix (one field per species, each its own share of the LiDAR trees): M8 is mostly beech
+  const mix = S.layout.startsWith("forest") && keys.length === 1 && S.forestMix !== "the selected species" ? FOREST_MIX[S.forestMix] : null;
+  if (mix) {
+    const h = (t) => { const x = Math.sin(t.x * 12.9898 + t.z * 78.233) * 43758.5453; return x - Math.floor(x); };
+    let acc = 0;
+    for (const [key, share] of Object.entries(mix)) {
+      const lo = acc; acc += share;
+      const sp = getSpecies(key);
+      const mine = T.filter((t) => { const u = h(t); return u >= lo && u < acc; });
+      const vf = key === "street" ? null : (i) => sp.variantOfIndex(i) % 4;            // the forest forms
+      const f = sp.buildField(mine, ground, everywhere, vf ? { variantOf: vf } : {});
+      holder.add(f.group);
+      f.group.traverse((o) => { if (o.isInstancedMesh) o.userData.castsByDefault = o.castShadow; });
+      if (f.imp) f.imp.mesh.userData.treeLod = 3;
+      fields.push({ key, sp, f, mixed: true });
+    }
+    keys = [];
+  }
   for (const key of keys) {
     const sp = getSpecies(key);
     if (S.layout === "LOD chain side by side") { if (key === keys[0]) chain = buildChain(sp); continue; }
@@ -374,8 +399,9 @@ function lodStateText(d) {
 const ui = new Panel({ title: "Tree Lab" });
 const fs = ui.addFolder("Scene & species");
 fs.add(S, "layout", LAYOUTS).onChange(() => { build(); resetView(); }).listen();
-fs.add(S, "species", ["street", "plane"]).name("species").onChange(() => build()).listen();
-fs.add(S, "variant", ["auto", "auto: natural only (plane 0-3)", "auto: pollards only (plane 4-5)", "0", "1", "2", "3", "4", "5"]).onChange(() => build()).listen();
+fs.add(S, "species", ["street", "plane", "beech"]).name("species").onChange(() => build()).listen();
+fs.add(S, "variant", ["auto", "auto: 0-3 (plane natural, beech forest)", "auto: 4-5 (plane pollards, beech open-grown)", "0", "1", "2", "3", "4", "5"]).onChange(() => build()).listen();
+fs.add(S, "forestMix", Object.keys(FOREST_MIX).concat(["the selected species"])).name("forest patch species").onChange(() => { if (S.layout.startsWith("forest")) build(); }).listen();
 fs.add(S, "seed", 1, 99999, 1).onChange(() => { for (const k of Object.keys(species)) disposeSpecies(k); build(); });
 fs.add(S, "height", 4, 40, 0.5).name("LiDAR height (m)").onChange(() => { if (["single tree", "LOD chain side by side", "street of 50"].includes(S.layout)) build(); }).listen();
 fs.add(S, "crown", 1, 14, 0.1).name("LiDAR crown r (m)").onChange(applyAll);
@@ -429,7 +455,8 @@ fp.add(S, "passes").name("GPU per pass").listen();
 fp.add(S, "cpu").name("CPU tree update").listen();
 fp.add(S, "mem").name("memory").listen();
 fp.add({ f: () => bench("onoff") }, "f").name("benchmark: trees on / off");
-fp.add({ f: () => bench("species") }, "f").name("benchmark: street vs plane (A/B)");
+fp.add({ f: () => bench("species", { pair: ["street", "plane"] }) }, "f").name("benchmark: street vs plane (A/B)");
+fp.add({ f: () => bench("species", { pair: ["street", "beech"] }) }, "f").name("benchmark: street vs beech (A/B)");
 fp.add(S, "bench").name("result").listen();
 
 function drawMask() {
@@ -473,13 +500,15 @@ async function bench(kind, opts = {}) {
     S.bench = `trees: +${r.diff} ms (spread ${r.min}..${r.max}; off ${r.meanA}, on ${r.meanB})`;
   } else {
     const prev = S.species;
-    build(["street", "plane"]);
+    const pair = opts.pair ?? ["street", "plane"];
+    build(pair);
     const show = (k) => () => { for (const x of fields) x.f.group.visible = x.key === k; };
-    r = await alternate(show("street"), show("plane"), opts);
+    r = await alternate(show(pair[0]), show(pair[1]), opts);
     S.species = prev; build();
-    S.bench = `plane - street: ${r.diff >= 0 ? "+" : ""}${r.diff} ms (spread ${r.min}..${r.max}; street ${r.meanA}, plane ${r.meanB})`;
+    S.bench = `${pair[1]} - ${pair[0]}: ${r.diff >= 0 ? "+" : ""}${r.diff} ms (spread ${r.min}..${r.max}; ${pair[0]} ${r.meanA}, ${pair[1]} ${r.meanB})`;
+    r.pair = pair;
   }
-  const rec = { kind, layout: S.layout, view: camera.position.toArray().map((v) => +v.toFixed(1)), ...r, tris: renderer.info.render.triangles, draws: renderer.info.render.drawCalls };
+  const rec = { kind, layout: S.layout, variant: S.variant, species: S.species, view: camera.position.toArray().map((v) => +v.toFixed(1)), ...r, tris: renderer.info.render.triangles, draws: renderer.info.render.drawCalls };
   results.push(rec); console.log("[tree lab] bench", rec);
   return rec;
 }

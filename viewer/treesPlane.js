@@ -142,7 +142,7 @@ export function planeLeafMask() {
 // ------------------------------------------------------------------------------------------------ skeleton
 /** A limb grown in steps: from `start` along `dir`, bending toward `pull` (a direction it turns to, e.g. outward
  *  and up), with a wobble ("elbows"), and drooping at its end. Returns the points. */
-function grow(r, start, dir, len, n, { pull = null, pullK = 0.25, wiggle = 0.18, droop = 0 } = {}) {
+export function grow(r, start, dir, len, n, { pull = null, pullK = 0.25, wiggle = 0.18, droop = 0 } = {}) {
   const pts = [start.clone()];
   const d = dir.clone().normalize(), step = len / n, p = start.clone();
   for (let i = 1; i <= n; i++) {
@@ -156,10 +156,10 @@ function grow(r, start, dir, len, n, { pull = null, pullK = 0.25, wiggle = 0.18,
   return pts;
 }
 /** radius along a branch (t 0..1) */
-const taper = (r0, r1) => (t) => r0 + (r1 - r0) * Math.pow(t, 0.8);
-const at = (pts, t) => { const f = t * (pts.length - 1), i = Math.min(pts.length - 2, Math.floor(f)), u = f - i; return pts[i].clone().lerp(pts[i + 1], u); };
-const dirAt = (pts, t) => { const f = t * (pts.length - 1), i = Math.min(pts.length - 2, Math.floor(f)); return pts[i + 1].clone().sub(pts[i]).normalize(); };
-const outward = (d, k = 1) => { const h = V(d.x, 0, d.z); return h.lengthSq() < 1e-6 ? V(1, 0, 0) : h.normalize().multiplyScalar(k); };
+export const taper = (r0, r1) => (t) => r0 + (r1 - r0) * Math.pow(t, 0.8);
+export const at = (pts, t) => { const f = t * (pts.length - 1), i = Math.min(pts.length - 2, Math.floor(f)), u = f - i; return pts[i].clone().lerp(pts[i + 1], u); };
+export const dirAt = (pts, t) => { const f = t * (pts.length - 1), i = Math.min(pts.length - 2, Math.floor(f)); return pts[i + 1].clone().sub(pts[i]).normalize(); };
+export const outward = (d, k = 1) => { const h = V(d.x, 0, d.z); return h.lengthSq() < 1e-6 ? V(1, 0, 0) : h.normalize().multiplyScalar(k); };
 
 /** The natural (avenue / square) plane. The crown is grown INTO an envelope, a broad dome (the plane's crown is about
  *  as wide as it is tall above the bole): each scaffold limb owns a sector of it; every secondary grows from its limb
@@ -285,7 +285,7 @@ function pollardPlane(r) {
 /** The bark mesh: each branch swept along its points (parallel-transported rings, its radius profile, lumps; a root
  *  flare with buttresses on the trunk; knuckles lumpier). bark = (ring centre, level) for the vendor's bark morph
  *  (CHANGES #9: level > 1.5 shrinks onto its axis before LOD 1). */
-function barkMesh(branches, sidesOf, stride = 1) {
+export function barkMesh(branches, sidesOf, stride = 1) {
   const pos = [], nrm = [], idx = [], bark = [];
   for (const b of branches) {
     // (stride 2: every other ring, the ends kept: LOD 2, a trunk of a few pixels)
@@ -303,8 +303,8 @@ function barkMesh(branches, sidesOf, stride = 1) {
         const a = (k / sides) * Math.PI * 2;
         let rad = rad0;
         if (b.flare) {
-          const f = Math.max(0, 1 - (pts[i].y + 0.5) / 1.6);
-          rad *= 1 + f * f * (0.55 + 0.35 * Math.cos(5 * a + 0.7));        // root flare with five buttresses
+          const f = Math.max(0, 1 - (pts[i].y + 0.5) / (b.flareH ?? 1.6));
+          rad *= 1 + f * f * ((b.flareAmp ?? 0.55) + (b.flareLobe ?? 0.35) * Math.cos((b.flareN ?? 5) * a + 0.7));   // root flare with buttresses
         }
         const lump = 1 + (b.knuckle ? 0.16 : 0.05) * Math.sin(3 * a + i * 1.3) + (b.knuckle ? 0.1 : 0.03) * Math.sin(7 * a + i * 2.1);
         const d = u.clone().multiplyScalar(Math.cos(a)).add(w.clone().multiplyScalar(Math.sin(a)));

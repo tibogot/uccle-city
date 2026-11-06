@@ -261,6 +261,7 @@ export function makeSpecies(def) {
     if (n) NATURAL_HEIGHT = sum / n;
     sp.buildMs = performance.now() - t0;
     def.bark(shared.trunkMat);
+    if (def.leafRoughness != null) for (const m of new Set([shared.leafMat, shared.leafFar])) m.roughness = def.leafRoughness;   // (the beech: glossy)
     if (shared.trunkFar !== shared.trunkMat) {           // the far copy was cloned before the bark was set
       for (const k of ["colorNode", "normalNode", "roughnessNode"]) shared.trunkFar[k] = shared.trunkMat[k];
       shared.trunkFar.needsUpdate = true;
