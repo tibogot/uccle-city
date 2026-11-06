@@ -265,12 +265,12 @@ const TEMP = {
     const h = hash2(vec2(cell, row));
     const fw = max(fwidth(cv), fwidth(cu));
     const lap = mix(smoothstep(0.0, 0.12, fract(cv)).mul(smoothstep(0.0, 0.05, fract(cu))).mul(smoothstep(1.0, 0.95, fract(cu))), float(0.85), smoothstep(0.2, 0.6, fw));
-    let col = mix(lin(0x4d535c), lin(0x3d424a), h).mul(mix(float(0.7), float(1), lap));
+    let col = mix(lin(0x555a5e), lin(0x474c50), h).mul(mix(float(0.78), float(1), lap));
     // lichen / moss spots (photos: mossy slates on the house and the aisles)
     const m = smoothstep(0.72, 0.9, vnoise(w.mul(2.3))).mul(smoothstep(0.4, 0.8, vnoise(w.mul(13.0)))).mul(stLook.moss);
     col = mix(col, lin(0x596040), m.mul(0.55));
     col = mix(col, lin(0x5d6064), isCode(C.ridge).mul(0.4));
-    return std({ colorNode: col, roughnessNode: float(0.55), metalnessNode: float(0), normalNode: bumpNormal(lap.mul(0.006)) });
+    return std({ colorNode: col, roughnessNode: float(0.78), metalnessNode: float(0) });
   },
   zinc_roof() {
     const h = vnoise(uv(0).mul(vec2(0.6, 4.0)));

@@ -10,7 +10,7 @@ export async function attachInterior({ renderer, scene, camera, controls, lighti
   const qp = new URLSearchParams(location.search);
   const cell = await loadStalleInterior({ placement: model.placement, lib: model.lib });
   scene.add(cell.root);
-  model.setDoor(false);                                   // the cell's own leaves (they open)
+  cell.onDoorClosed = (closed) => model.setDoor(closed);  // the exterior's leaves while closed, the cell's (they open) otherwise
   const local = (u, h, w) => cell.root.localToWorld(new THREE.Vector3(u, h - 30, w));
   // collision: the ground (not inside the chapel), the cell's colliders, the neighbours' UrbIS prisms (the chapel's
   // own solid excluded: its walls are the cell's)

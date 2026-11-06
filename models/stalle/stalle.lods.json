@@ -1,14 +1,14 @@
 {
  "Stalle_lod1": {
   "from": "Stalle",
-  "sourceTris": 12661,
-  "tris": 6140
+  "sourceTris": 11821,
+  "tris": 6102
  },
  "Stalle_lod2": {
   "from": "Stalle_far",
   "sourceTris": 1827,
   "tris": 1200
  },
- "glbBytes": 511204,
- "rawBytes": 1425544
+ "glbBytes": 481228,
+ "rawBytes": 1341724
 }

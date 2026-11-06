@@ -401,7 +401,6 @@ def clerestory(side):
         # string course at the sill level along the choir (P01)
         if not FAR():
             sweep2d(fr, [(a, hz(37.25)), (b + 0.07, hz(37.25))], [(0.0, -0.1), (0.07, -0.06), (0.07, 0.03), (0.0, 0.06)], STONE, C_BAND)
-        quoins(fr, S(SC.U_APSE), hz(HB + 0.8), hz(eave - 0.05), 1)
     else:
         out = poly_s(fr, [(0.0, w, SC.AISLE_TOP - 0.25), (SC.U_APSE, w, SC.AISLE_TOP - 0.25), (SC.U_APSE, w, eave), (0.0, w, eave)])
         fill2d(fr, [out] + oc, 0.0, RUB, C_PLAIN)
@@ -434,7 +433,6 @@ def apse():
         plinth_run(fr, sa, sb, 34.85)
         if not FAR() and i != 2:
             sweep2d(fr, [(sa, hz(37.25)), (sb, hz(37.25))], [(0.0, -0.1), (0.07, -0.06), (0.07, 0.03), (0.0, 0.06)], STONE, C_BAND)
-        quoins(fr, sb, hz(HB + 0.8), hz(SC.NAVE_EAVE - 0.05), -1)
 
 # ------------------------------------------------------------------------------------------------ roofs
 def slab(top, th, mat, code=C_PLAIN, edges=(True, True, True, True), uvs=None):

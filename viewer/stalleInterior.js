@@ -214,6 +214,9 @@ export function loadStalleInterior({ placement, lib = null }) {
         const a = THREE.MathUtils.degToRad(info.door_open_angle_deg) * THREE.MathUtils.smoothstep(this.doorOpen, 0, 1);
         if (doors.DoorL) doors.DoorL.rotation.y = doors.DoorL.userData.closedY + a;
         if (doors.DoorR) doors.DoorR.rotation.y = doors.DoorR.userData.closedY - a;
+        // seen from outside, a closed door is the exterior model's (lit by the city); open, or from inside, the cell's
+        const closed = this.doorOpen < 0.02 && !(eye && contains(eye, 0.02));
+        if (closed !== this._closed) { this._closed = closed; for (const d of Object.values(doors)) d.visible = !closed; this.onDoorClosed?.(closed); }
         const n = stalleInLook.dayOverride.value >= 0 ? 1 - stalleInLook.dayOverride.value : env.uNight.value;
         const target = eye && contains(eye, -0.05) ? stalleInLook.adaptInside * (1 - n) + stalleInLook.adaptNight * n : 1;
         stalleInLook.adapt.value += (target - stalleInLook.adapt.value) * Math.min(1, dt * 1.5);

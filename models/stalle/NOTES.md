@@ -85,5 +85,26 @@ Baroque retable (predella, twisted columns, the Virgin in a niche before a gilt 
 the altar, two candle stands, two diamond hatchments; 52 oak chairs with rush seats (a central aisle), a side altar, two
 statues on corbels, a wrought-iron chandelier; the west door's leaves open as the player comes near.
 
-## Numbers
-(see the final report / the lab: filled after the measurements)
+## Numbers (2026-11-06, this machine: RTX 4050 laptop, other agents' tabs running)
+- Exterior triangles: LOD0 11,821 · LOD1 6,102 (meshopt of LOD0) · LOD2 1,200 (far variant trimmed) + the west door
+  192. Draw calls 13 / 13 / 9 (one per slot, + shadow pass). LOD switch to the building's box: LOD0 < 80 m (±14 m
+  dithered fade), LOD1 < 320 m (±40 m).
+- GLB 0.46 MB (meshopt; 1.28 MB raw), AO 2048² PNG 2.5 MB file / 5.3 MB GPU (R8 + mips).
+- GPU (lab benchmark, median of 3 rounds, whole frame; + = the chapel, the interior cell present in all): the c00 west
+  front L0 +0.26 ms; the c05 north-west view L0 +0.59, L1 +0.13, L2 +0.26; overview (300 m) +0.00..0.07 (noise).
+- City flight 650 m -> 32 m -> orbit (26 s, LOD states 001 / 011 / 010 / 110 / 100 crossed): median 16.7 ms, p99 26.8,
+  2 frames > 34 ms (worst 53 ms, while tiles were streaming). Exterior shaders 1.4-4.7 s in the background queue.
+- Interior cell: 7.4k (Arch) + 22.4k (Props, densified for the per-corner bake) + 0.4k glass + 1.6k doors = ~31.7k
+  triangles, 16 draws; interior.glb 1.07 MB (meshopt, per-corner light as RGBM uint8), lightmaps 3 x 1024² RGBM PNG
+  ~4.5 MB on disk. City: fetched + decoded 133 ms, shaders 281 ms in the background, **no long task while streaming**.
+- Portal (city, inside the choir looking at the south wall: no opening in view): 2.4 ms GPU / 36-38 draws sealed vs
+  6.4 ms / 467 draws with the city drawn (3 rounds).
+- Third person in the city: walked from the forecourt up the two steps, through the opening door, down the central
+  aisle; floor 34.32 m, the choir one step up; lit by the probes inside.
+
+## Screenshots (docs/stalle/)
+- `preview_*.png`, `blender_*.png`: Cycles previews (exterior / interior day + night).
+- `lab_*`: the lab at the photos' solved viewpoints and inside; `city_*`: the city (street, LOD cross-fade at 70 m,
+  the interior from the nave, third person in the nave).
+- Side-by-sides `side_*.jpg` are git-ignored (they hold the photos): west c00 (Commons CC BY-SA 3.0), north-west c05
+  (Commons CC BY 4.0), north P01 (inventory, reference only), interior nave + choir (reflexcity, reference only).

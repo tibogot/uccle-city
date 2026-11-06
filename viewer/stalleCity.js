@@ -85,7 +85,9 @@ export async function addStalle({ scene, updaters, hide, world, manifest, log, c
     }
     function show(v) {
       if (!st.cell || st.shown === v) return;
-      st.shown = v; st.cell.root.visible = v; m.setDoor(!v);
+      st.shown = v; st.cell.root.visible = v;
+      st.cell.onDoorClosed = (closed) => m.setDoor(closed || !st.shown);
+      if (!v) m.setDoor(true);
       if (!v) { st.portal?.dispose(); unhook(); }
     }
     function hook(third) {
