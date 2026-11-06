@@ -39,9 +39,10 @@ Research (lines, stations, every road crossing, sources, licences): `docs/trains
 - **Overview** over L26 (two tiles of track, the bridge LOD1, a train at LOD2): on 7.96 / off 7.61 mean (**+0.35 ms**;
   medians +0.17), **+44 draw calls** (per tile: ballast, rails, sleepers, masts, wires, platforms, shelters, decks, each with
   its shadow pass where it casts).
-- **CPU**: `trains.update` 0.013 ms per frame (334 trips scanned, 1-2 units drawn). Per streamed tile, on the main thread:
-  the terrain carve 7-13 ms (D9, the busiest tile: 11-13 ms warm) and the rail meshes 6-20 ms, in two separate slices; that
-  is longer than the 4-9 ms slices of the rest of a tile's build: **moving both into the tile worker is the first to-do**.
+- **CPU**: `trains.update` 0.013 ms per frame (334 trips scanned, 1-2 units drawn). Per streamed tile, on the main thread,
+  in two separate slices: the terrain carve 1-5 ms (min of 5 runs; up to 15 ms with GC, D9 / D6 the busiest) and the rail
+  meshes 3-12 ms (up to 20-30 ms in D9 / C4 when the GC hits). Still longer than the 4-9 ms slices of the rest of a tile's
+  build: **moving both into the tile worker is the first to-do**.
 - **Pops**: 2 x 30 s real time at x20 (20 simulated minutes, 4-6 trains running; the bridge street view and an overview):
   **0 trains appeared and 0 vanished in view** (counters in trains.js), 1569 + 899 frames. Trains only start / end at
   the routes' ends, all outside the tiles; LOD changes are dithered cross-fades per car (`docs/trains/frames/train_lod0_lod1_fade.jpg`:

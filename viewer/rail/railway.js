@@ -102,13 +102,17 @@ export function carveTerrain(doc, geo, hdr, bounds) {
     const c0 = Math.max(0, Math.floor((Math.min(...xs) - 1 - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(...xs) + 1 - x0) / step));
     const r0 = Math.max(0, Math.floor((Math.min(...zs) - 1 - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(...zs) + 1 - z0) / step));
     const r = pf.ring;
-    for (let rr = r0; rr <= r1; rr++) for (let c = c0; c <= c1; c++) {
-      const px = x0 + c * step, pz = z0 + rr * step;
-      let inside = false;
-      for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > pz) !== (zj > pz) && px < (xj - xi) * (pz - zi) / (zj - zi) + xi) inside = !inside; }
-      if (!inside) continue;
-      const k = (rr * cols + c) * 3 + 1;
-      if (pos[k] > pf.top - 0.1) { pos[k] = pf.top - 0.1; moved++; dirty.add(rr * cols + c); }
+    for (let rr = r0; rr <= r1; rr++) {             // scanline: the ring's crossings of this grid row, filled in pairs
+      const pz = z0 + rr * step, xs2 = [];
+      for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > pz) !== (zj > pz)) xs2.push((xj - xi) * (pz - zi) / (zj - zi) + xi); }
+      xs2.sort((a, b) => a - b);
+      for (let q = 0; q + 1 < xs2.length; q += 2) {
+        const ca = Math.max(c0, Math.ceil((xs2[q] - x0) / step)), cb = Math.min(c1, Math.floor((xs2[q + 1] - x0) / step));
+        for (let c = ca; c <= cb; c++) {
+          const k = (rr * cols + c) * 3 + 1;
+          if (pos[k] > pf.top - 0.1) { pos[k] = pf.top - 0.1; moved++; dirty.add(rr * cols + c); }
+        }
+      }
     }
   }
 
