@@ -8,3 +8,5 @@ node_modules/
 .claude/worktrees/
 models/interior/*/interior.raw.glb
 models/interior/*/interior.pack.glb
+models/stalle/*.raw.glb
+docs/stalle/side_*

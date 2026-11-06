@@ -1,0 +1,39 @@
+{
+ "west front (Commons, EmDee 2011)": {
+  "file": "c00.jpg",
+  "credit": "Photo: EmDee, 2011, CC BY-SA 3.0 (Wikimedia Commons, Chapelle de Stalle 08.JPG)",
+  "size": [
+   2592,
+   3872
+  ],
+  "pos": [
+   -17.96,
+   6.39,
+   35.88
+  ],
+  "target": [
+   1.92,
+   -0.16,
+   36.96
+  ],
+  "fov": 46.08,
+  "cy": 0.625,
+  "f_px": 4552.6,
+  "err_px": [
+   1.9,
+   17.8,
+   6.0,
+   16.1,
+   10.6,
+   34.8,
+   23.3,
+   21.6,
+   57.9,
+   54.7,
+   28.3,
+   28.5,
+   17.3
+  ],
+  "mean_err": 24.5
+ }
+}
