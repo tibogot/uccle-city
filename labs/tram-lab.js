@@ -95,10 +95,10 @@ const fleet = createTramFleet(model, scene, MAX_TRAMS);
 // camera positions relative to the tram's nose on the first straight (x ahead, y up, z to the right), estimated
 const PHOTOS = {
   "orbit (free)": null,
-  "3097 Grand Sablon, 3/4 front (left side)": { file: "Brussels_tram_T3000_3097.jpg", park: 30, cam: [13.94, 1.92, -9.03, 1.982, 0.0152, 21.0], src: "Jacek Rużyczka, CC BY-SA 4.0 (2015)" },
-  "3041 front (telephoto)": { file: "MIVB_3041.jpg", park: 30, pos: [26, 1.9, -1.2], target: [-3, 1.6, 0.3], fov: 13, src: "Willem_90, public domain (2010)" },
+  "3097 Grand Sablon, 3/4 front (left side)": { file: "Brussels_tram_T3000_3097.jpg", park: 30, cam: [21.55, 2.12, -10.24, 1.9041, 0.0002, 14.26], src: "Jacek Rużyczka, CC BY-SA 4.0 (2015)" },
+  "3041 front (telephoto)": { file: "MIVB_3041.jpg", park: 30, cam: [20.03, 2.90, -2.10, 1.5804, -0.0033, 22.21], src: "Willem_90, public domain (2010)" },
   "3028 front 3/4 (left side)": { file: "Tram_de_la_STIB_le_21_juillet_2016.jpg", park: 30, pos: [7.2, 1.75, -4.6], target: [-8, 1.7, 1.2], fov: 46, src: "Commons, CC0 (2016)" },
-  "3017 front 3/4 (right side)": { file: "3017_stib_-_Flickr_-_antoniovera1.jpg", park: 30, pos: [7.6, 1.8, 6.4], target: [-8, 1.6, -1.6], fov: 50, src: "Antonio Vera, CC BY-SA 2.0 (2015)" },
+  "3017 front 3/4 (right side)": { file: "3017_stib_-_Flickr_-_antoniovera1.jpg", park: 30, cam: [14.97, 1.79, 5.07, 1.3151, 0.0003, 19.61], src: "Antonio Vera, CC BY-SA 2.0 (2015)" },
   "3095 side 3/4 (left side)": { file: "Tram_de_la_STIB_le_21_juillet_2016_2.jpg", park: 30, pos: [3.6, 1.75, -5.6], target: [-12, 1.6, 0.6], fov: 52, src: "Commons, CC0 (2016)" },
   "3007 Gare de Saint-Job, in the curve": { file: "Tram_92_gare_de_Saint-Job_14_juillet_2024.jpg", park: ARC1 + 6, abs: true, pos: [R + 3.5, 1.7, -R - 16], target: [R - 4, 2.0, -R + 2], fov: 55, src: "Stratoswift, CC BY-SA 4.0 (2024-07-14)" },
   "side (orthographic-ish)": { file: "", park: 30, pos: [-16, 1.8, -60], target: [-16, 1.8, 0], fov: 30, src: "" },

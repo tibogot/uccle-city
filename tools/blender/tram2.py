@@ -64,7 +64,7 @@ Y_FAIR = HW - SH_R                                     # 0.73
 CEIL = 2.98                                            # saloon ceiling crown
 # the nose, bottom to top (3041 / 3001 front photos): bumper, its dark band, gold panel, windscreen, frame bar,
 # display band (under the same glass), hood
-NB0, NBD0, NBD1, NB1, NG0, NG1, NW0, NW1, ND0, NH0, NTOP = 0.22, 0.44, 0.58, 0.76, 0.79, 1.38, 1.42, 2.96, 3.00, 3.50, 3.62
+NB0, NBD0, NBD1, NB1, NG0, NG1, NW0, NW1, ND0, NH0, NTOP = 0.22, 0.44, 0.58, 0.76, 0.79, 1.38, 1.42, 2.96, 3.00, 3.47, 3.58
 TAPER = 0.06                                           # the nose narrows by this much a side toward the tip (aerial photo)
 WALL = 0.08                                            # body wall thickness at the openings
 
@@ -78,8 +78,9 @@ SUSP_DOORS = [(0.32, 1.62), (4.00, 5.30)]             # double doors
 SUSP_WINDOWS = [(1.82, 3.80)]
 CEN_WINDOWS = [(0.30, 2.70)]
 SIDE_DISPLAY = (2.05, 3.55)
-NOSE_LEN = 0.90
-DETAIL = 2                                             # 2 full (LOD0 source), 0 far
+NOSE_LEN = 1.00
+DETAIL = 2                                             # 2 full (LOD0 source), 1 mid (LOD1: no interior, opaque glass), 0 far
+GLASS = lambda cab=False: S["GlassCab" if cab else "Glass"] if DETAIL == 2 else S["GlassFar"]
 
 # ------------------------------------------------------------------------------------------------ material slots
 # names read by viewer/tram2Model.js (colours / roughness live there, never in this file); preview colours only
@@ -91,6 +92,7 @@ SLOTS = [
     ("LampMarker", (0.7, 0.7, 0.7), 0.2, 0.0), ("Display", (0.01, 0.01, 0.01), 0.3, 0.0), ("Seat", (0.07, 0.025, 0.012), 0.45, 0.0),
     ("Lining", (0.45, 0.46, 0.46), 0.5, 0.0), ("Floor", (0.06, 0.06, 0.065), 0.7, 0.0), ("CeilingLight", (0.9, 0.88, 0.8), 0.3, 0.0),
     ("Pole", (0.55, 0.56, 0.57), 0.3, 0.6), ("Wood", (0.42, 0.26, 0.13), 0.55, 0.0), ("Console", (0.03, 0.03, 0.035), 0.6, 0.0),
+    ("GlassFar", (0.02, 0.025, 0.03), 0.06, 0.0),          # the mid / far variants' glass: opaque, no interior behind
 ]
 S = {name: i for i, (name, *_r) in enumerate(SLOTS)}
 MATS = []
@@ -229,7 +231,7 @@ def profile_rows(extra=(), roof=True):
     for z in sorted(flat):
         w = HW - (0.004 if DETAIL and 0.957 < z < 0.967 else 0)        # the groove under the window band
         rows.append((z, w))
-    rows += arc_rows(5 if DETAIL else 2)
+    rows += arc_rows((2, 3, 5)[DETAIL])
     if roof:
         rows += [(Z_FAIR, Y_FAIR - 0.03), (Z_FAIR - 0.02, Y_FAIR - 0.07), (Z_DECK, Y_FAIR - 0.10), (Z_DECK, 0.0)]
     return rows
@@ -286,8 +288,8 @@ def body(length, cab, doors, windows, bogies, side_display=None):
                     if in_rect(fc, zc, doors, Z_DOOR0, Z_DOOR1): continue
                     if in_rect(fc, zc, windows, Z_GL0, Z_GL1): continue
                 else:
-                    if in_rect(fc, zc, doors, Z_DOOR0, Z_DOOR1): slot = S["Silver"] if not (Z_GL0 + 0.1 < zc < Z_GL1) else S["Glass"]
-                    if in_rect(fc, zc, windows, Z_GL0, Z_GL1): slot = S["Glass"]
+                    if in_rect(fc, zc, doors, Z_DOOR0, Z_DOOR1): slot = S["Silver"] if not (Z_GL0 + 0.1 < zc < Z_GL1) else S["GlassFar"]
+                    if in_rect(fc, zc, windows, Z_GL0, Z_GL1): slot = S["GlassFar"]
                 mb.poly([grid[i][j], grid[i + 1][j], grid[i + 1][j + 1], grid[i][j + 1]], slot, out_of)
         if cab: zone_a(mb, xF, side, out_of)
     # underside
@@ -306,7 +308,7 @@ def body(length, cab, doors, windows, bogies, side_display=None):
         for side in (1, -1):
             for a, b in on(all_windows, side): window(mb, X(a), X(b), (side,))
             for a, b in on(all_doors, side): door(mb, X(a), X(b), (side,))
-        interior(mb, length, cab, all_doors, all_windows, X)
+        if DETAIL == 2: interior(mb, length, cab, all_doors, all_windows, X)
         if side_display: side_disp(mb, X(side_display[0]), X(side_display[1]))
     for x in bogies: skirt(mb, X(x))
     if cab: nose(mb, xF)
@@ -316,7 +318,7 @@ def sweep_x(z):
     """The cab's gold sweep: distance from the nose tip of its front edge at height z (from the gold nose panel's
     side up and back to the cantrail band)."""
     t = min(max((z - NG1) / (Z_GOLD0 - NG1), 0.0), 1.0)
-    return 0.92 + 0.66 * (1 - (1 - t) ** 1.7)
+    return 1.04 + 0.60 * (1 - (1 - t) ** 1.7)
 SWEEP_W = 0.12
 
 def zone_a(mb, xtip, side, out_of):
@@ -341,7 +343,7 @@ def zone_a(mb, xtip, side, out_of):
                 elif zc < NG0: slot = S["Rubber"]
                 elif zc < NG1: slot = S["Gold"]
                 elif zc < NW0: slot = S["Black"]
-                elif zc < Z_BAND1: slot = S["GlassCab"]
+                elif zc < Z_BAND1: slot = GLASS(True)
                 elif zc < Z_SH + 0.15: slot = S["Black"]
                 else: slot = S["Silver"]
             elif i == 1:
@@ -366,11 +368,11 @@ def reveal(mb, xa, xb, z0, z1, d0, d1, slot, sides=(1, -1)):
 def window(mb, xa, xb, sides=(1, -1)):
     """Glass 3 cm in (black seal ahead of it), a 2nd glass face looking in, the lining reveal behind, transom bar."""
     reveal(mb, xa, xb, Z_GL0, Z_GL1, 0.0, 0.03, S["Rubber"], sides)
-    reveal(mb, xa, xb, Z_GL0, Z_GL1, 0.035, WALL, S["Lining"], sides)
+    if DETAIL == 2: reveal(mb, xa, xb, Z_GL0, Z_GL1, 0.035, WALL, S["Lining"], sides)
     for side in sides:
-        for d, o in ((0.03, side), (0.035, -side)):
+        for d, o in (((0.03, side), (0.035, -side)) if DETAIL == 2 else ((0.03, side),)):
             y = side * (HW - d)
-            quad(mb, (xa, y, Z_GL0), (xb, y, Z_GL0), (xb, y, Z_GL1), (xa, y, Z_GL1), S["Glass"], (0, o, 0))
+            quad(mb, (xa, y, Z_GL0), (xb, y, Z_GL0), (xb, y, Z_GL1), (xa, y, Z_GL1), GLASS(), (0, o, 0))
         # transom (the hopper's bottom bar) and a vertical bar on the long windows, just proud of the glass
         y = side * (HW - 0.026)
         quad(mb, (xa, y, Z_TRANSOM), (xb, y, Z_TRANSOM), (xb, y, Z_TRANSOM + 0.035), (xa, y, Z_TRANSOM + 0.035), S["Black"], (0, side, 0))
@@ -394,7 +396,7 @@ def door(mb, xa, xb, sides=(1, -1)):
     reveal(mb, xa, xb, Z_DOOR0, Z_DOOR1, 0.0, WALL, S["Black"], sides)
     n_leaf = 1 if abs(xa - xb) < 1.0 else 2
     lw = (xa - xb) / n_leaf
-    N = 20
+    N = 20 if DETAIL == 2 else 8
     for side in sides:
         quad(mb, (xa, side * (HW + 0.004), Z_DOOR0 - 0.03), (xb, side * (HW + 0.004), Z_DOOR0 - 0.03),
              (xb, side * (HW - WALL), Z_DOOR0), (xa, side * (HW - WALL), Z_DOOR0), S["Metal"], (0, 0, 1))      # step plate
@@ -417,7 +419,7 @@ def door(mb, xa, xb, sides=(1, -1)):
             for (qx, qz) in [(la, Z_DOOR1 - 0.004), (lb, Z_DOOR1 - 0.004), (lb, Z_DOOR0 + 0.004), (la, Z_DOOR0 + 0.004)]:
                 kk = min(range(N), key=lambda i: (outer[i][0] - qx) ** 2 + (outer[i][1] - qz) ** 2)
                 outer[kk] = (qx, qz)
-            for y, o, slot in ((yo, side, S["Silver"]), (yi, -side, S["Lining"])):
+            for y, o, slot in (((yo, side, S["Silver"]), (yi, -side, S["Lining"])) if DETAIL == 2 else ((yo, side, S["Silver"]),)):
                 vi = [mb.vert((px, y, pz)) for px, pz in inner]
                 vo = [mb.vert((px, y, pz)) for px, pz in outer]
                 for i in range(N): mb.poly([vo[i], vo[(i + 1) % N], vi[(i + 1) % N], vi[i]], slot, (0, o, 0), None, code)
@@ -428,8 +430,8 @@ def door(mb, xa, xb, sides=(1, -1)):
             for i in range(N):
                 mb.poly([go[i], go[(i + 1) % N], gi[(i + 1) % N], gi[i]], S["Rubber"], lambda c, cx=cx, cz=cz: Vector((cx - c.x, 0, cz - c.z)), None, code)
                 mb.poly([gi[i], gi[(i + 1) % N], gb[(i + 1) % N], gb[i]], S["Rubber"], lambda c, cx=cx, cz=cz: Vector((cx - c.x, 0, cz - c.z)), None, code)
-            mb.poly([mb.vert((px, side * (HW - 0.014), pz)) for px, pz in inner], S["Glass"], (0, side, 0), None, code)
-            mb.poly([mb.vert((px, side * (HW - 0.018), pz)) for px, pz in inner], S["Glass"], (0, -side, 0), None, code)
+            mb.poly([mb.vert((px, side * (HW - 0.014), pz)) for px, pz in inner], GLASS(), (0, side, 0), None, code)
+            if DETAIL == 2: mb.poly([mb.vert((px, side * (HW - 0.018), pz)) for px, pz in inner], S["Glass"], (0, -side, 0), None, code)
             # leaf edges (black rubber)
             for (p0, p1) in [((la, Z_DOOR0 + 0.004), (lb, Z_DOOR0 + 0.004)), ((lb, Z_DOOR0 + 0.004), (lb, Z_DOOR1 - 0.004)),
                              ((lb, Z_DOOR1 - 0.004), (la, Z_DOOR1 - 0.004)), ((la, Z_DOOR1 - 0.004), (la, Z_DOOR0 + 0.004))]:
@@ -581,8 +583,10 @@ def drivers_cab(mb, X):
     quad(mb, (xp, yi, FLOOR), (xp, -yi, FLOOR), (xp, -yi, 2.80), (xp, yi, 2.80), S["Console"], (1, 0, 0))
     for side in (1, -1):                                 # cab side walls (dark), from the partition to the nose corner
         quad(mb, (xp, side * yi, FLOOR), (xt - 0.75, side * yi, FLOOR), (xt - 0.75, side * yi, 3.2), (xp, side * yi, 3.2), S["Console"], (0, -side, 0))
-    quad(mb, (xp, yi, 3.30), (xt - 0.30, yi * 0.8, 3.30), (xt - 0.30, -yi * 0.8, 3.30), (xp, -yi, 3.30), S["Console"], (0, 0, -1))      # cab ceiling
+    quad(mb, (xp, yi, 3.00), (xt - 0.65, yi * 0.8, 3.00), (xt - 0.65, -yi * 0.8, 3.00), (xp, -yi, 3.00), S["Console"], (0, 0, -1))      # cab ceiling
     quad(mb, (xp, yi, FLOOR + 0.6), (xt - 0.5, yi, FLOOR + 0.6), (xt - 0.5, -yi, FLOOR + 0.6), (xp, -yi, FLOOR + 0.6), S["Floor"], (0, 0, 1))
+    # the destination display's housing behind the display band, so the band never shows the sky through the hood
+    box(mb, xt - 0.90, 0, (ND0 + NH0) / 2, 0.50, 2 * yi * 0.80, NH0 - ND0, S["Console"], ("+x", "-z", "+y", "-y"))
     # console under the windscreen: a sloped desk
     rbox(mb, xt - 0.55, 0, 1.18, 0.50, 2 * yi * 0.86, 0.36, 0.08, S["Console"], 2)
     # the driver's seat (on the left of the cab when seen from inside, offset to +Y)
@@ -594,8 +598,8 @@ def nose_keys():
     # z: (setback of the front face from the tip, plan corner radius)
     return [(0.20, 0.09, 0.30), (NB0 + 0.04, 0.035, 0.31), (0.32, 0.0, 0.32), (NBD0, 0.0, 0.33), (NBD0 + 0.005, 0.025, 0.33), (NBD1 - 0.005, 0.025, 0.34),
             (NBD1, 0.0, 0.34), (NB1, 0.006, 0.35), (NB1 + 0.005, 0.02, 0.35), (NG0 - 0.005, 0.02, 0.36), (NG0, 0.03, 0.36), (1.15, 0.045, 0.38),
-            (NG1, 0.06, 0.40), (NG1 + 0.02, 0.075, 0.40), (NW0, 0.08, 0.40), (2.20, 0.17, 0.43), (NW1, 0.25, 0.46), (ND0, 0.255, 0.46),
-            (NH0, 0.31, 0.48), (NH0 + 0.06, 0.36, 0.50), (NTOP - 0.03, 0.45, 0.52), (NTOP, 0.60, 0.55)]
+            (NG1, 0.06, 0.40), (NG1 + 0.02, 0.075, 0.40), (NW0, 0.085, 0.40), (2.20, 0.20, 0.42), (NW1, 0.36, 0.44), (ND0, 0.37, 0.44),
+            (NH0, 0.47, 0.45), (NH0 + 0.04, 0.52, 0.45), (NTOP - 0.03, 0.60, 0.44), (NTOP, 0.72, 0.42)]
 
 def nose_shape(z):
     keys = nose_keys()
@@ -651,7 +655,7 @@ def front_point(z, y, xtip):
 
 def nose(mb, xtip):
     zs_k = [k[0] for k in nose_keys()]
-    extra = zs_k + ([1.7, 2.1, 2.5, 2.8, 3.2, 3.35] if DETAIL else [])
+    extra = zs_k + ([1.7, 2.1, 2.5, 2.8, 3.2, 3.35, NH0 + 0.03, NH0 + 0.055, NH0 + 0.075, NH0 + 0.095] if DETAIL else [NH0 + 0.06])
     if not DETAIL: zs_k = [0.20, 0.32, NBD0, NBD1, NB1, NG0, NG1, NW0, NW1, ND0, NH0, NTOP - 0.03, NTOP]; extra = zs_k
     side_rows = dict(profile_rows([z for z in extra if Z_DOOR0 < z < Z_SH], roof=False))
     zs = sorted(set([z for z in extra] + [z for z in side_rows if z <= Z_SH]))
@@ -661,9 +665,12 @@ def nose(mb, xtip):
         if z < 0.27: return HW - 0.07 + 0.04 * (z - 0.20) / 0.07
         if z < 0.31: return HW - 0.03 + 0.022 * (z - 0.27) / 0.04
         if z <= Z_SH: return HW
-        for zz, ww in arc_rows(8):
-            if z <= zz: return ww
-        return Y_FAIR - 0.03 if z < NTOP - 0.005 else 0.3
+        if z <= NH0:
+            for zz, ww in arc_rows(8):
+                if z <= zz: return ww
+            return Y_FAIR - 0.03
+        t = (z - NH0) / (NTOP - NH0)                       # the hood crown: a rounded cap above the display band
+        return max(0.28, (Y_FAIR - 0.03) * math.sqrt(max(0.0, 1 - t * t)))
     def slot_at(zc, kind):
         if zc < NBD0: return S["Bumper"]
         if zc < NBD1: return S["BumperDark"]
@@ -671,9 +678,9 @@ def nose(mb, xtip):
         if zc < NG0: return S["Rubber"]
         if zc < NG1: return S["Gold"]
         if zc < NW0: return S["Black"]
-        if zc < NW1: return S["GlassCab"]
+        if zc < NW1: return GLASS(True)
         if zc < ND0: return S["Black"]
-        if zc < NH0: return S["GlassCab"] if kind >= 1 else S["Black"]
+        if zc < NH0: return GLASS(True) if kind >= 1 else S["Black"]
         return S["Silver"]
     for side in (1, -1):
         grid = []
@@ -697,6 +704,10 @@ def nose(mb, xtip):
         top = grid[-1]
         cen2 = mb.vert((xtip - 0.75, 0, NTOP + 0.005))
         for i in range(len(top) - 1): mb.poly([cen2, top[i][0], top[i + 1][0]], S["Silver"], (0, 0, 1))
+        # the back of the hood crown, above the roof well's front wall (a step down to the fairings)
+        back = [grid[j][0][0] for j in range(len(zs)) if zs[j] >= Z_FAIR - 0.031] + [top[0][0]]
+        cb = mb.vert((xtip - NOSE_LEN, 0, Z_FAIR - 0.03))
+        for i in range(len(back) - 1): mb.poly([cb, back[i], back[i + 1]], S["Silver"], (-1, 0, 0))
     # lamp pods: (z, y, radius, slot) on the gold panel's corners (photos 3041 / 3097)
     lamps = [(1.28, 0.80, 0.034, "LampTail"), (1.27, 0.93, 0.050, "LampTail"), (1.10, 0.925, 0.064, "LampHead"), (0.94, 0.915, 0.054, "LampHead"),
              (0.32, 0.94, 0.022, "LampTail")]
@@ -707,7 +718,7 @@ def nose(mb, xtip):
         if DETAIL:   # the vertical seam between the lamp pod and the centre of the gold panel
             ys = side * 0.72
             p0, n0 = front_point(NG0 + 0.02, ys, xtip); p1, n1 = front_point(NG1 - 0.02, ys, xtip)
-            quad(mb, p0 + n0 * 0.002 + Vector((0, 0.006, 0)), p0 + n0 * 0.002 - Vector((0, 0.006, 0)), p1 + n1 * 0.002 - Vector((0, 0.006, 0)), p1 + n1 * 0.002 + Vector((0, 0.006, 0)), S["Rubber"], n0)
+            quad(mb, p0 + n0 * 0.002 + Vector((0, 0.003, 0)), p0 + n0 * 0.002 - Vector((0, 0.003, 0)), p1 + n1 * 0.002 - Vector((0, 0.003, 0)), p1 + n1 * 0.002 + Vector((0, 0.003, 0)), S["BumperDark"], n0)
         # marker lamps on the hood corners
         p, nrm = front_point(NH0 + 0.04, side * 0.78, xtip)
         lamp_disc(mb, p + nrm * 0.006 + Vector((0, 0, 0.0)), (nrm + ZUP * 0.6), 0.03, S["LampMarker"], 8, None)
@@ -718,7 +729,7 @@ def nose(mb, xtip):
         a, _ = front_point(1.40, 0.15, xtip); b, _ = front_point(2.30, 0.62, xtip)
         bar(mb, a + Vector((0.015, 0, 0)), b + Vector((0.015, 0, 0)), 0.012, S["Rubber"], 4)
         # antenna / horn on the hood
-        rbox(mb, xtip - 0.85, 0, NTOP + 0.03, 0.22, 0.10, 0.08, 0.02, S["Rubber"], 1)
+        rbox(mb, xtip - 0.95, 0, NTOP + 0.02, 0.22, 0.10, 0.08, 0.02, S["Rubber"], 1)
 
 def display_front(mb, xtip, half=0.80, z0=3.07, z1=3.43):
     n = (16, 8, 4)[2 - DETAIL]
@@ -739,16 +750,16 @@ def display_front(mb, xtip, half=0.80, z0=3.07, z1=3.43):
 
 def mirror(mb, xtip, side):
     """Rear-view mirror on an arm from the hood corner: a black housing with the small kerb mirror under it."""
-    base = Vector((xtip - 0.52, side * (HW - 0.06), 3.30))
-    elbow = Vector((xtip - 0.33, side * (HW + 0.24), 3.27))
+    base = Vector((xtip - 0.70, side * (HW - 0.06), 3.30))
+    elbow = Vector((xtip - 0.45, side * (HW + 0.24), 3.27))
     if DETAIL:
         bar(mb, base, elbow, 0.018, S["Rubber"], 5)
         bar(mb, elbow, elbow + Vector((0, 0, -0.10)), 0.016, S["Rubber"], 5)
-    rbox(mb, xtip - 0.33, side * (HW + 0.25), 2.96, 0.11, 0.24, 0.44, 0.04, S["Rubber"], (2 if DETAIL else 0))
-    rbox(mb, xtip - 0.33, side * (HW + 0.25), 2.66, 0.10, 0.20, 0.10, 0.03, S["Rubber"], (1 if DETAIL else 0))
+    rbox(mb, xtip - 0.45, side * (HW + 0.25), 2.96, 0.11, 0.24, 0.44, 0.04, S["Rubber"], (2 if DETAIL else 0))
+    rbox(mb, xtip - 0.45, side * (HW + 0.25), 2.66, 0.10, 0.20, 0.10, 0.03, S["Rubber"], (1 if DETAIL else 0))
     if DETAIL:     # the mirror glass faces back (-x)
-        quad(mb, (xtip - 0.39, side * (HW + 0.15), 2.77), (xtip - 0.39, side * (HW + 0.35), 2.77), (xtip - 0.39, side * (HW + 0.35), 3.15),
-             (xtip - 0.39, side * (HW + 0.15), 3.15), S["Glass"], (-1, 0, 0))
+        quad(mb, (xtip - 0.51, side * (HW + 0.15), 2.77), (xtip - 0.51, side * (HW + 0.35), 2.77), (xtip - 0.51, side * (HW + 0.35), 3.15),
+             (xtip - 0.51, side * (HW + 0.15), 3.15), S["GlassFar"], (-1, 0, 0))
 
 # ------------------------------------------------------------------------------------------------ roof equipment
 def roof_unit(mb, cx, length, width=1.10, height=0.20, grille=True):
@@ -855,6 +866,10 @@ PANTO_ON_SUSP = L_SUSP / 2 - 1.4
 
 # ------------------------------------------------------------------------------------------------ build
 far_objs = {}
+DETAIL = 1
+far_objs["Cab_mid"] = to_object("Cab_mid", cab_piece())
+far_objs["Susp_mid"] = to_object("Susp_mid", susp_piece())
+far_objs["Centre_mid"] = to_object("Centre_mid", centre_piece())
 DETAIL = 0
 far_objs["Cab_far"] = to_object("Cab_far", cab_piece())
 far_objs["Susp_far"] = to_object("Susp_far", susp_piece())
@@ -931,7 +946,17 @@ gmat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.
 gmat.node_tree.nodes["Principled BSDF"].inputs["Roughness"].default_value = 0.85
 gm.materials.append(gmat)
 
-AO_PX = 1024
+AO_PX = 2048
+def write_grey_png(img, path):
+    """The baked AO as an 8-bit greyscale PNG (half the size of Blender's RGB save; values untouched)."""
+    import numpy as np, zlib, struct
+    w, h = img.size
+    px = np.empty(w * h * 4, dtype=np.float32); img.pixels.foreach_get(px)
+    g = (np.clip(px.reshape(h, w, 4)[::-1, :, 0], 0, 1) * 255 + 0.5).astype(np.uint8)      # Blender rows are bottom-up
+    raw = b"".join(b"\x00" + g[r].tobytes() for r in range(h))
+    chunk = lambda t, d: struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xffffffff)
+    with open(path, "wb") as f:
+        f.write(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 0, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b""))
 scn.render.engine = "CYCLES"; scn.cycles.device = "CPU"
 if scn.world is None: scn.world = bpy.data.worlds.new("World")
 scn.world.light_settings.distance = 1.2                 # AO reach (m): panel-scale occlusion, not the whole body
@@ -940,16 +965,17 @@ ao_img.colorspace_settings.name = "Non-Color"
 for m in MATS:
     n = m.node_tree.nodes.new("ShaderNodeTexImage"); n.image = ao_img; n.name = "AO"; m.node_tree.nodes.active = n
 if BAKE:
-    scn.cycles.samples = 64
+    scn.cycles.samples = 384
     t = time.time()
     # the near pieces in place, in one tram (the far variants are baked alone with the same layout)
     for o in ALL.values(): o.hide_render = True
     first = True
-    for group in (objs, {"Cab": far_objs["Cab_far"], "Susp": far_objs["Susp_far"], "Centre": far_objs["Centre_far"], "Bellows": far_objs["Bellows_far"], "Bogie": objs["Bogie"], "Panto": objs["Panto"]}):
+    for group in (objs, {"Cab": far_objs["Cab_mid"], "Susp": far_objs["Susp_mid"], "Centre": far_objs["Centre_mid"], "Bellows": objs["Bellows"], "Bogie": objs["Bogie"], "Panto": objs["Panto"]},
+                  {"Cab": far_objs["Cab_far"], "Susp": far_objs["Susp_far"], "Centre": far_objs["Centre_far"], "Bellows": far_objs["Bellows_far"], "Bogie": objs["Bogie"], "Panto": objs["Panto"]}):
         for o in placed: bpy.data.objects.remove(o)
         placed.clear()
         for src, x, flip in assemble(group): place(src, x, flip).hide_render = False
-        targets = [o for k, o in group.items() if (group is objs or k not in ("Bogie", "Panto"))]
+        targets = [o for k, o in group.items() if (group is objs or (k not in ("Bogie", "Panto") and o not in objs.values()))]
         for target in targets:
             # bake the source object: put it where one of its copies is (the first) so it sees its neighbours
             copy = next(p for p in placed if p.data == target.data)
@@ -962,8 +988,7 @@ if BAKE:
             target.hide_render = True; copy.hide_render = False
             target.location = (0, 0, 0); target.rotation_euler = (0, 0, 0)
     print(f"AO bake {time.time() - t:.1f}s", flush=True)
-    ao_img.filepath_raw = os.path.join(OUT, "t3000_ao.png"); ao_img.file_format = "PNG"
-    ao_img.save()
+    write_grey_png(ao_img, os.path.join(OUT, "t3000_ao.png"))
 for m in MATS: m.node_tree.nodes.remove(m.node_tree.nodes["AO"])
 for o in placed: bpy.data.objects.remove(o)
 placed.clear()

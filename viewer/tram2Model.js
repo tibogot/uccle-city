@@ -33,7 +33,7 @@ export { tramPose, headsignText };
 const LOD_BANDS = [0.12, 0.08], FADE_END = 150;
 export const TRAM_LODS = [
   { until: 60 },
-  { until: 240, drop: ["Seat", "Pole", "Console"], target: { Cab: 2400, Susp: 1300, Centre: 620, Bellows: 300, Panto: 300, Bogie: 0 } },
+  { until: 240, src: "_mid", target: { Cab: 3200, Susp: 1500, Centre: 700, Bellows: 300, Panto: 300, Bogie: 0 } },
   { until: 1800, src: "_far", target: { Cab: 520, Susp: 130, Centre: 180, Bellows: 60, Panto: 0, Bogie: 0 } },
 ];
 export const PIECES = ["Cab", "Susp", "Centre", "Bellows", "Bogie", "Panto"];
@@ -45,7 +45,7 @@ const HALF = { Cab: 4.4125, Susp: 2.8, Centre: 1.5, Bellows: 1.2, Bogie: 0.9, Pa
 const SRGB = (r, g, b) => new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace);
 export const SLOT_LOOK = {
   Silver: { c: SRGB(0.76, 0.77, 0.79), r: 0.36, m: 0.35, ao: 1 },        // STIB silver-grey (3097 / 3041, sunlit side)
-  Gold: { c: SRGB(0.80, 0.63, 0.40), r: 0.40, m: 0.15, ao: 1 },          // champagne gold of the nose panel and band
+  Gold: { c: SRGB(0.86, 0.66, 0.38), r: 0.38, m: 0.15, ao: 1 },          // champagne gold of the nose panel and band
   Black: { c: SRGB(0.05, 0.055, 0.06), r: 0.18, m: 0.0, ao: 1 },        // the gloss-black window band, frames
   Bumper: { c: SRGB(0.70, 0.71, 0.72), r: 0.45, m: 0.2, ao: 1 },
   BumperDark: { c: SRGB(0.36, 0.37, 0.38), r: 0.6, m: 0.0, ao: 1 },
@@ -65,6 +65,7 @@ export const SLOT_LOOK = {
   Pole: { c: SRGB(0.78, 0.79, 0.80), r: 0.3, m: 0.4, ao: 0.6, e: 6 },
   Wood: { c: SRGB(0.66, 0.48, 0.32), r: 0.55, m: 0.0, ao: 0.7, e: 6 },
   Console: { c: SRGB(0.07, 0.07, 0.08), r: 0.6, m: 0.0, ao: 0.6 },
+  GlassFar: { c: SRGB(0.07, 0.08, 0.085), r: 0.06, m: 0.0, ao: 0.3, e: 7 },   // LOD1-2 glass: opaque, lit at night
 };
 
 /** Live look controls (uniforms: no recompiles). */
@@ -94,7 +95,7 @@ export function loadTramModel() {
     const objects = {};
     gltf.scene.traverse((o) => {
       if (!o.isMesh) return;
-      const RE = /^(Cab|Susp|Centre|Bellows|Bogie|Panto)(_far)?$/;
+      const RE = /^(Cab|Susp|Centre|Bellows|Bogie|Panto)(_mid|_far)?$/;
       let node = o; while (node && !RE.test(node.name)) node = node.parent;
       if (!node) return;
       const slot = slotOf[o.material.name.replace(/\.\d+$/, "")];
@@ -173,13 +174,15 @@ function mergePrims(prims, target) {
 }
 
 /** meshoptimizer on a position-welded index (as tramModel.js): the flat-shaded export is many loose pieces
- *  otherwise. Welded by position AND door code (a door leaf stays its own piece); borders locked. */
+ *  otherwise. Welded by position, door code and lightmap UV (see below); borders locked. */
 function simplifyWelded(g, want, I = g.index.array) {
-  const P = g.attributes.position.array, Nn = g.attributes.normal.array, C = g.attributes.color;
+  const P = g.attributes.position.array, Nn = g.attributes.normal.array, C = g.attributes.color, U = g.attributes.uv1;
   const n = P.length / 3, canon = new Uint32Array(n), map = new Map(), cpos = [], members = [];
   for (let i = 0; i < n; i++) {
-    const dk = C ? Math.round(C.getY(i) * 100) : 0;
-    const key = `${Math.round(P[i * 3] * 1000)},${Math.round(P[i * 3 + 1] * 1000)},${Math.round(P[i * 3 + 2] * 1000)},${dk}`;
+    // welded by position, door code AND lightmap UV: an AO seam stays a (locked) border, so no triangle samples the
+    // AO of the island across the seam (the dark streaks of the first LOD1)
+    const dk = C ? Math.round(C.getY(i) * 100) : 0, uk = U ? `${Math.round(U.getX(i) * 4096)},${Math.round(U.getY(i) * 4096)}` : "";
+    const key = `${Math.round(P[i * 3] * 1000)},${Math.round(P[i * 3 + 1] * 1000)},${Math.round(P[i * 3 + 2] * 1000)},${dk},${uk}`;
     let c = map.get(key);
     if (c === undefined) { c = cpos.length / 3; map.set(key, c); cpos.push(P[i * 3], P[i * 3 + 1], P[i * 3 + 2]); members.push([]); }
     canon[i] = c; members[c].push(i);
@@ -246,7 +249,7 @@ function makeMaterial(sign, aoTex, layout) {
   // grime: duller low on the body, a little in the roof well
   const grime = mix(float(0.80), float(1.0), smoothstep(0.25, 1.15, yLocal)).mul(tramLook.dirt).add(float(1).sub(tramLook.dirt));
   const base = uCol.element(slot);
-  const lit = mix(float(1), ao, aoK.mul(0.55));                            // a little of the AO on the direct light too
+  const lit = mix(float(1), ao, aoK.mul(0.3));                             // a little of the AO on the direct light too
   m.colorNode = base.mul(select(exterior, grime, float(1))).mul(lit);
   m.roughnessNode = rmae.x.add(select(exterior, float(1).sub(grime).mul(0.6), float(0)));
   m.metalnessNode = rmae.y;
@@ -279,7 +282,8 @@ function makeMaterial(sign, aoTex, layout) {
       select(emitKind.equal(3), select(lead.greaterThan(0.5), color(1.0, 0.95, 0.86), color(1.0, 0.25, 0.05)).mul(eMarker),
         select(emitKind.equal(4), color(1.0, 0.5, 0.06).mul(eDisp),
           select(emitKind.equal(5), color(1.0, 0.95, 0.85).mul(eCeil),
-            select(emitKind.equal(6), base.mul(color(1.0, 0.9, 0.75)).mul(eIn), vec3(0))))))).add(
+            select(emitKind.equal(6), base.mul(color(1.0, 0.9, 0.75)).mul(eIn),
+              select(emitKind.equal(7), color(1.0, 0.9, 0.74).mul(glow).mul(0.35), vec3(0)))))))).add(
     isGlass.and(is("Glass")).select(color(1.0, 0.9, 0.74).mul(glow).mul(0.05), vec3(0)));
 
   // ---- smooth LOD: the per-instance dither of the fleet's cross-fades (aInst.w; 0 = whole)
