@@ -253,7 +253,7 @@ export function beechBark(m) {
   const far = smoothstep(0.3, 1.6, fw), near = float(1).sub(far);
   // base: silver-grey, cool to warm in big soft zones
   const zone = mx_noise_float(q.mul(0.35).add(3.0));
-  let col = mix(vec3(0.19, 0.195, 0.19), vec3(0.25, 0.24, 0.215), smoothstep(-0.4, 0.4, zone));   // (photos: mid-grey, warmer in places)
+  let col = mix(vec3(0.155, 0.15, 0.135), vec3(0.215, 0.2, 0.17), smoothstep(-0.4, 0.4, zone));   // (photos: mid-grey, warmer in places)
   const mott = mx_noise_float(q.mul(1.4).add(11.0)).mul(0.45).add(mx_noise_float(q.mul(4.0).add(5.0)).mul(0.3)).add(mx_noise_float(q.mul(11.0).add(2.0)).mul(0.25));
   col = col.mul(mott.mul(0.3).mul(near).add(1));
   col = mix(col, col.mul(vec3(0.95, 1.0, 0.86)), smoothstep(0.1, 0.6, mx_noise_float(q.mul(0.6).add(33.0))).mul(0.6));   // greenish-brown zones
@@ -296,7 +296,7 @@ export function beechBark(m) {
   col = col.mul(smoothstep(-0.5, 0.6, p.y).mul(0.4).add(0.6));
   // limbs a little lighter and cleaner
   col = mix(col, col.mul(1.08), smoothstep(0.5, 1.5, level));
-  col = mix(col, vec3(0.2, 0.2, 0.185), far.mul(0.7));
+  col = mix(col, vec3(0.175, 0.168, 0.148), far.mul(0.7));
   m.colorNode = col;
   const h = wrinkle.mul(0.0015).negate().sub(eye.mul(0.0004)).add(lichen.mul(0.0006)).mul(near);
   m.normalNode = bumpNormal(h);
