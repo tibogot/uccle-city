@@ -8,9 +8,11 @@
 //             place), one foot at a time.
 //   ground    two rays, under the HEEL and the TOE (the sole's own points, from the skinned mesh): a slope tilts the foot
 //             (<= maxTilt), an edge (a stair nosing, a kerb) holds it level on the HIGHER side (no toe in the riser, the
-//             heel hangs over a step down). A swinging foot also looks AHEAD of its toe and is carried over higher ground
-//             before it gets there (stairs up read as steps, no toes through the risers). Planted: the ground height is
-//             exact (no lag: an eased planted foot sinks or floats); swinging: eased.
+//             heel hangs over a step down). A swinging foot keeps the clip's own swing over the ground under it; only
+//             while it swings FORWARD does a floor rise as its toe nears higher ground (5-15 cm ahead), the clip's lift
+//             counted, so the sole just clears a riser (never a lift added on top of a lift, never while the foot is
+//             behind the body). A planted foot the body has left behind (leg past 95 % / the clip's stretch) is let go.
+//             Planted: the ground height is exact (no lag: an eased planted foot sinks or floats); swinging: eased.
 //   pelvis    a critically damped spring to the lower planted foot's ground (down, or up when both feet stand higher),
 //             and always low enough that each leg reaches its foot; a landing kicks it down by the fall speed (absorb)
 //   legs      two-bone IK, the knee in the plane of the animated knee (the pole), a SOFT reach (no knee pop) and the
@@ -21,21 +23,27 @@ import * as THREE from "three/webgpu";
 
 export const FOOT_IK = {
   lock: true,           // planted feet locked in the world (false: the clip's feet as they are, only lifted / lowered)
-  raise: 0.75,          // m: the rays start this high above the feet plane
-  reach: 0.55,          // m: how far up / down a foot may be moved from the clip's flat ground
+  // (lengths in BODY PROPORTIONS, so another rig / clip needs no retuning: x leg = hip-to-ankle length, measured each
+  // frame; x foot = heel-to-toe length, from the mesh)
+  raise: 0.87,          // x leg: the rays start this high above the feet plane
+  reach: 0.64,          // x leg: how far up / down a foot may be moved from the clip's flat ground
   maxTilt: 30,          // degrees: the foot's tilt to a slope
-  maxDrop: 0.25, maxRise: 0.06,   // m: the pelvis
+  maxDrop: 0.29, maxRise: 0.07,   // x leg: the pelvis
   lowFollow: 0.35,       // how much of the lower planted foot's drop the pelvis follows (the reach is always kept)
   pelvisOmega: 16,      // 1/s: the pelvis spring (critically damped)
   swingSmooth: 22,      // 1/s: a swinging foot's height to the ground under / ahead of it
   normalSmooth: 14,     // 1/s: a swinging foot's tilt
   lockFade: 9,          // 1/s: the lock's correction fades through a swing
-  maxLock: 0.25,        // m: a planted foot dragged further than this slides (the leg can't stay)
+  maxLock: 0.29,        // x leg: a planted foot dragged further than this slides (the leg can't stay)
   maxTwist: 0.45,       // rad: a planted foot holds its heading against the body's turn this far, then pivots
-  idleStep: 0.11, idleYaw: 22, stepTime: 0.28, stepLift: 0.07,   // a step on the spot: when, how long, how high
-  look: 0.07, lookSpeed: 0.08,    // m + s * speed: how far ahead of the toe a swinging foot looks
+  idleStep: 0.13, idleYaw: 22, stepTime: 0.28, stepLift: 0.08,   // a step on the spot: when (x leg, deg), how long (s), how high (x leg)
+  plantLow: 0.1, plantHigh: 0.32,  // x foot: a foot is planted with its sole below the first, swinging from the second
+  look: 1.0,            // x foot: how far ahead of a forward-swinging toe higher ground is looked for
+  clear: 0.13,          // x foot: the sole's clearance over it
   strideCut: 0.4,       // the stride is this much shorter on stairs / steep ramps (grade >= 0.6)
-  maxShift: 0.1,       // m: how far a landing foot may be moved forward off a nosing / kerb edge
+  release: 0.95,        // a planted leg stretched past this (of its length; or past the clip's own stretch) lets its foot go
+  maxStep: 0.29,        // x leg: the most a swinging foot is raised for higher ground ahead (a riser: <= the step height)
+  maxShift: 0.65,       // x foot: how far a landing foot may be moved forward off a nosing / kerb edge
   soft: 0.96,           // fraction of the leg's length where the soft reach starts
   absorb: 0.32,         // pelvis kick on landing: m/s per m/s of fall speed (capped at 2.6 m/s)
   weightUp: 18, weightDown: 9,    // 1/s: the IK weight easing in (landing) / out (take-off)
@@ -57,7 +65,7 @@ export class FootIK {
       contact: 0, plant: 0, lift: 0, off: 0, offS: 0, n: new THREE.Vector3(0, 1, 0),
       dx: 0, dz: 0, dyaw: 0, px: 0, pz: 0, qx: 0, qz: 0, pyaw: 0, has: false,                         // the lock: correction, last contact point
       step: -1, sx: 0, sz: 0, syaw: 0,                                                  // a step on the spot (progress, start correction)
-      gH: 0, gT: 0, hit: 0, reachLen: 1, fx: 0, fz: 0, shift: 0, shiftT: 0, planted: false, ploc: 0, vloc: 0, warp: 0, ext: 0.9, stepLift: 0, ox: 0, oy: 0, oz: 0,   // ox..: the clip's foot bone from the shin's end
+      gH: 0, gT: 0, hit: 0, reachLen: 0, fx: 0, fz: 0, u: -1, stretch: 0, shift: 0, shiftT: 0, planted: false, ploc: 0, vloc: 0, warp: 0, ext: 0.9, stepLift: 0, ox: 0, oy: 0, oz: 0,   // ox..: the clip's foot bone from the shin's end
     }));
     this.ok = this.legs.every((l) => l.upper && l.lower && l.end && l.foot);
     this.p = { ...FOOT_IK };
@@ -71,6 +79,7 @@ export class FootIK {
     let mesh = null;
     model.traverse((o) => { if (o.isSkinnedMesh && !mesh) mesh = o; });
     const root = this.inner;
+    root.parent?.updateMatrixWorld(true);                    // (the holder carries the model's scale)
     root.updateMatrixWorld(true);
     const inv = new THREE.Matrix4().copy(root.matrixWorld).invert();
     const sx = new THREE.Vector3().setFromMatrixScale(root.matrixWorld).x || 1;
@@ -125,6 +134,9 @@ export class FootIK {
       return;
     }
     const sc = inner.parent.matrixWorld.elements[5] || 1;          // the holder's scale (inner is in its units)
+    // body proportions: the legs as measured last frame (hip to ankle), the feet from the mesh
+    const LL = (legs[0].reachLen + legs[1].reachLen) * 0.5 || 0.86, FL = (legs[0].len + legs[1].len) * 0.5 || 0.2;
+    this._raise = p.raise * LL; this._reach = p.reach * LL;
     // the animated pose, pelvis at 0
     inner.position.y = 0;
     inner.updateMatrixWorld(true);
@@ -162,7 +174,11 @@ export class FootIK {
       const loc = (((_H.x + _T.x) * 0.5 - ie[12]) * ie[8] + ((_H.z + _T.z) * 0.5 - ie[14]) * ie[10]) / il;
       if (L.has) L.vloc += ((loc - L.ploc) / dt - L.vloc) * (1 - Math.exp(-40 * dt));
       L.ploc = loc;
-      let contact = (1 - smooth01((low - 0.015) / 0.035)) * (1 - smooth01((L.vloc - 0.05) / (0.3 * speed + 0.15)));
+      let contact = (1 - smooth01((low - FL * p.plantLow) / (FL * (p.plantHigh - p.plantLow)))) * (1 - smooth01((L.vloc - 0.05) / (0.3 * speed + 0.15)));
+      // a planted foot the body has moved away from (the leg near full length: the hip has passed it, up a stair) is let
+      // go early: it lifts and swings instead of being held with the leg stretched straight (and the pelvis does not
+      // drop for it)
+      contact *= 1 - L.stretch;
       // 2. the lock: while planted, the correction cancels the clip's contact point's drift in the world
       let yawA = rootYaw;
       if (L.has && L.step < 0 && p.lock) {
@@ -176,12 +192,12 @@ export class FootIK {
         const f = (1 - contact) * kFade + (1 - w) * kFade;
         L.dx -= L.dx * Math.min(1, f); L.dz -= L.dz * Math.min(1, f); L.dyaw -= L.dyaw * Math.min(1, f);
         const dl = Math.sqrt(L.dx * L.dx + L.dz * L.dz);
-        if (dl > p.maxLock) { L.dx *= p.maxLock / dl; L.dz *= p.maxLock / dl; }
+        if (dl > p.maxLock * LL) { L.dx *= p.maxLock * LL / dl; L.dz *= p.maxLock * LL / dl; }
         if (L.dyaw > p.maxTwist) L.dyaw = p.maxTwist; else if (L.dyaw < -p.maxTwist) L.dyaw = -p.maxTwist;   // (beyond: the foot pivots with the body)
       }
       L.px = _H.x; L.pz = _H.z; L.qx = _T.x; L.qz = _T.z; L.pyaw = yawA; L.has = true;
       // standing and twisted / dragged too far: a step on the spot (one foot at a time)
-      if (L.step < 0 && p.lock && idle && !stepping && w > 0.9 && (L.dx * L.dx + L.dz * L.dz > p.idleStep * p.idleStep || Math.abs(L.dyaw) > p.idleYaw * DEG)) {
+      if (L.step < 0 && p.lock && idle && !stepping && w > 0.9 && (L.dx * L.dx + L.dz * L.dz > (p.idleStep * LL) ** 2 || Math.abs(L.dyaw) > p.idleYaw * DEG)) {
         L.step = 0; L.sx = L.dx; L.sz = L.dz; L.syaw = L.dyaw; stepping = true;
       }
       let stepLift = 0;
@@ -189,7 +205,7 @@ export class FootIK {
         L.step += dt / p.stepTime;
         const u = Math.min(1, L.step), e = 1 - smooth01(u);
         L.dx = L.sx * e; L.dz = L.sz * e; L.dyaw = L.syaw * e;
-        stepLift = p.stepLift * Math.sin(Math.PI * u);
+        stepLift = p.stepLift * LL * Math.sin(Math.PI * u);
         contact *= 1 - Math.sin(Math.PI * u);
         if (L.step >= 1) { L.step = -1; L.dx = L.dz = L.dyaw = 0; }
       }
@@ -205,13 +221,13 @@ export class FootIK {
       const kx = cx + (_H.x - cx) * cy + (_H.z - cz) * sy + shx, kz = cz - (_H.x - cx) * sy + (_H.z - cz) * cy + shz;
       L.fx = fx; L.fz = fz; L.tx = tx; L.tz = tz;
       // 3. the ground under the heel and the toe
-      const oy = rootY + p.raise;
+      const oy = rootY + this._raise;
       let gH = this._ray(world, kx, oy, kz, rootY), nHx = Hh[1], nHy = Hh[2], nHz = Hh[3], okH = L.hit = Hh[4] >= 0 ? 1 : 0;
       let gT = this._ray(world, tx, oy, tz, rootY), nTx = Hh[1], nTy = Hh[2], nTz = Hh[3];
       const okT = Hh[4] >= 0;
       if (!okH) { gH = gT; nHx = nTx; nHy = nTy; nHz = nTz; }
       if (!okT) { gT = gH; nTx = nHx; nTy = nHy; nTz = nHz; }
-      if (!okH && !okT) { gH = gT = this._air ? rootY : rootY - p.reach; nHx = nHz = nTx = nTz = 0; nHy = nTy = 1; }
+      if (!okH && !okT) { gH = gT = this._air ? rootY : rootY - this._reach; nHx = nHz = nTx = nTz = 0; nHy = nTy = 1; }
       L.gH = gH; L.gT = gT;
       // a slope (heel and toe on one plane) tilts the foot; an edge holds it level on the higher side
       let g, nx = 0, ny = 1, nz = 0;
@@ -224,16 +240,26 @@ export class FootIK {
       else g = Math.max(gH, gT);
       // straddling an edge down (a nosing, a kerb: heel above, toe below) while coming down to land: the landing is moved
       // forward, the whole foot onto the lower tread (up, the foot stands on the upper edge: forward would be a step higher)
-      if (!slope && contact < 0.95 && vl > 0.3 && gH - gT > 0.05 && okH && okT) L.shiftT = Math.min(p.maxShift, L.shiftT + 0.04);
-      // a swinging foot: also the ground ahead of its toe (it is carried over a step before it gets there)
-      if (contact < 0.99 && vl > 0.3) {
-        const la = p.look + p.lookSpeed * vl, ax = tx + hx * la, az = tz + hz * la;
-        const gA = this._ray(world, ax, oy, az, rootY);
-        if (Hh[4] >= 0 && gA > g + 0.03 && Hh[2] > 0.5) { const s = 1 - contact; g = g + (gA - g) * s; }
+      if (!slope && contact < 0.95 && vl > 0.3 && gH - gT > 0.05 && okH && okT) L.shiftT = Math.min(p.maxShift * FL, L.shiftT + 0.25 * FL);
+      const off = Math.min(this._reach, Math.max(-this._reach, g - rootY));
+      // SWINGING: the clip's own swing over the ground under the foot (behind the body: nothing added, no kick from the
+      // ground ahead), and, while the foot swings FORWARD, a floor that rises as the toe nears higher ground ahead (a
+      // riser, a kerb): the sole clears it by 2 cm, the clip's own lift counted (no lift on top of a lift that clears)
+      let offSw = off;
+      L.u = -1;
+      if (contact < 0.99 && !this._air && vl > 0.2 && L.vloc > 0.1) {
+        for (let k = 1; k <= 3; k++) {
+          const sA = p.look * FL * k / 3, gA = this._ray(world, tx + hx * sA, oy, tz + hz * sA, rootY);
+          if (Hh[4] < 0 || Hh[2] < 0.5 || gA < g + 0.02) continue;
+          const rise = Math.min(p.maxStep * LL, gA - g), wA = 1 - (k - 1) / 3;          // 1 near the toe, 1/3 a foot ahead
+          const fl = g + rise * wA + p.clear * FL - rootY - low;
+          if (fl > offSw) { offSw = fl; L.u = wA; }
+        }
       }
-      const off = Math.min(p.reach, Math.max(-p.reach, g - rootY));
-      // planted: exact; swinging: eased
-      L.offS += (off - L.offS) * kSwing;
+      // (never more than a riser + 5 cm above the clip's own foot over the ground under it)
+      if (offSw > off + p.maxStep * LL + 0.3 * FL) offSw = off + p.maxStep * LL + 0.3 * FL;
+      // planted: exact; swinging: eased (from the planted value, continuous at lift-off)
+      L.offS += (offSw - L.offS) * kSwing;
       L.off = L.offS + (off - L.offS) * contact;
       if (contact > 0.99) L.offS = off;
       L.n.x += (nx - L.n.x) * kN; L.n.y += (ny - L.n.y) * kN; L.n.z += (nz - L.n.z) * kN;
@@ -251,11 +277,13 @@ export class FootIK {
       const ext = L.ext = _A.distanceTo(_C) / L.reachLen;
       const ddx = fx - L.ox - _A.x, ddz = fz - L.oz - _A.z, h2 = ddx * ddx + ddz * ddz, rm = L.reachLen * Math.max(p.soft, Math.min(0.995, ext));
       // (the ankle sits L.sole above the heel's sole: the leg reaches the ankle, about where the bone is)
+      { const tdx = fx - L.ox - _A.x, tdy = ty - L.oy - _A.y, tdz = fz - L.oz - _A.z, rr = Math.sqrt(tdx * tdx + tdy * tdy + tdz * tdz) / L.reachLen;
+        L.stretch = vl > 0.2 ? smooth01((rr - Math.max(p.release, Math.min(0.985, ext + 0.02))) / 0.04) * Math.min(1, contact + L.stretch) : 0; }
       if (h2 < rm * rm) { const needY = (_A.y - (ty - L.oy) - Math.sqrt(rm * rm - h2)) * (0.5 + 0.5 * contact); if (needY > need) need = needY; }
     }
     if (!any) target = 0;
-    target = Math.min(p.maxRise, Math.max(-p.maxDrop, target * w));
-    if (need > 0 && -need < target) target = Math.max(-p.maxDrop, -need * w);
+    target = Math.min(p.maxRise * LL, Math.max(-p.maxDrop * LL, target * w));
+    if (need > 0 && -need < target) target = Math.max(-p.maxDrop * LL, -need * w);
     this.need = need; this.target = target;
     // the spring (exact for any dt), a landing kicks it down
     if (st.landing > 0) this.pelvisV -= Math.min(2.6, st.landing * p.absorb);
@@ -263,7 +291,7 @@ export class FootIK {
       const om = p.pelvisOmega, e = this.pelvis - target, ex = Math.exp(-om * dt), tmp = (this.pelvisV + om * e) * dt;
       this.pelvisV = (this.pelvisV - om * tmp) * ex;
       this.pelvis = target + (e + tmp) * ex;
-      if (this.pelvis < -p.maxDrop - 0.05) { this.pelvis = -p.maxDrop - 0.05; if (this.pelvisV < 0) this.pelvisV = 0; }
+      if (this.pelvis < -p.maxDrop * LL - 0.05) { this.pelvis = -p.maxDrop * LL - 0.05; if (this.pelvisV < 0) this.pelvisV = 0; }
     }
     inner.position.y = this.pelvis / sc;
     inner.updateMatrixWorld(true);
@@ -302,10 +330,10 @@ export class FootIK {
     const R = world.r, H = world.hit, p = this.p;
     if (this._air) { H[4] = -1; return rootY; }             // (in the air: no ground under the feet)
     R[0] = x; R[1] = y0; R[2] = z; R[3] = 0; R[4] = -1; R[5] = 0;
-    H[0] = p.raise + p.reach + 0.1; H[4] = -1;
+    H[0] = this._raise + this._reach + 0.1; H[4] = -1;
     world.raycast();
     this.stats.rays++;
-    if (H[4] < 0) return rootY - p.reach;                  // (nothing within reach: as low as it goes, not level)
+    if (H[4] < 0) return rootY - this._reach;                  // (nothing within reach: as low as it goes, not level)
     if (H[2] < 0.5 && false) return rootY;
     if (H[2] < 0.5) { H[1] = 0; H[2] = 1; H[3] = 0; }      // a wall's face: no tilt
     return y0 - H[0];

@@ -55,7 +55,7 @@ export class FootProbe {
       const toLocal = (p) => p.clone().applyMatrix4(body.root.matrixWorld).applyMatrix4(footInv);
       _v.setFromMatrixPosition(L.foot.matrixWorld);
       return { L, heel: toLocal(heel), toe: toLocal(toe), len: toe.z - heel.z, restY: _v.y - body.root.position.y, n: pts.length,
-        hw: new THREE.Vector3(), tw: new THREE.Vector3(), animY: 0 };
+        hw: new THREE.Vector3(), tw: new THREE.Vector3(), animY: 0, cH: new THREE.Vector3(), cT: new THREE.Vector3(), cKnee: 180, cHipY: 0 };
     });
     if (this.feet.some((f) => !f)) { this.feet = null; return false; }
     const hips = body.model.getObjectByName("Hips");
@@ -63,7 +63,17 @@ export class FootProbe {
     body.preIK = (rootY) => {
       body.root.updateMatrixWorld(true);
       const pel = body.modelInner.position.y * body.modelScale;     // (the last frame's pelvis offset is still on the model)
-      for (const f of this.feet) { f.L.foot.getWorldPosition(_v); f.animY = _v.y - pel - rootY - f.restY; body.root.worldToLocal(_v); f.animZ = _v.z; }
+      const r = body.root.position;
+      for (const f of this.feet) {
+        const L = f.L;
+        L.foot.getWorldPosition(_v); f.animY = _v.y - pel - rootY - f.restY; body.root.worldToLocal(_v); f.animZ = _v.z;
+        // the clip's own pose (pelvis taken out), to judge the IK's against: heel, toe (relative to the root), knee, hip
+        f.cH.copy(f.heel).applyMatrix4(L.foot.matrixWorld); f.cH.x -= r.x; f.cH.y -= r.y + pel; f.cH.z -= r.z;
+        f.cT.copy(f.toe).applyMatrix4(L.foot.matrixWorld); f.cT.x -= r.x; f.cT.y -= r.y + pel; f.cT.z -= r.z;
+        L.upper.getWorldPosition(_a); L.lower.getWorldPosition(_b); L.end.getWorldPosition(_c);
+        f.cKnee = _w.subVectors(_a, _b).angleTo(_v.subVectors(_c, _b)) * 180 / Math.PI;
+        f.cHipY = _a.y - pel - r.y; f.cExt = _a.distanceTo(_c) / (_a.distanceTo(_b) + _b.distanceTo(_c));
+      }
     };
     return true;
   }
@@ -127,7 +137,7 @@ export class FootProbe {
       if (sc.jumpAt !== undefined && cmd[2] === false && t >= sc.jumpAt) { inp.jump = true; cmd[2] = true; }
     };
     const A = { frames: 0, stance: [0, 0], slideSum: [0, 0], slideMax: 0, slides: [], gapStanceMin: Infinity, gapStanceMax: -Infinity, floatSum: 0, floatN: 0,
-      pen: 0, heelFloat: 0, toeFloat: 0, kneeMin: 180, kneeMax: 0, kneeLocked: 0, pelvis: [], gaps: [], dip: 0, hipV: 0, ikJump: 0, landed: false, airFrames: 0 };
+      pen: 0, heelFloat: 0, toeFloat: 0, kneeMin: 180, kneeMax: 0, kneeLocked: 0, pelvis: [], gaps: [], dip: 0, foldMax: -180, extN: 0, extMax: -1, extOver: 0, pitchDev: 0, pitchMin: 90, pitchMax: -90, offY: 0, offXZ: 0, extraLift: -1, heelToHip: -1, hipHeelMin: 9, hipV: 0, ikJump: 0, landed: false, airFrames: 0 };
     const prevMid = [null, null], prevOff = [0, 0], prevZ = [null, null], prevSt = [false, false];
     let prevHip = null;
     const hips = tp.body.model?.getObjectByName("Hips");
@@ -166,6 +176,26 @@ export class FootProbe {
           L.upper.getWorldPosition(_a); L.lower.getWorldPosition(_b); L.end.getWorldPosition(_c);
           const knee = _w.subVectors(_a, _b).angleTo(_v.subVectors(_c, _b)) * 180 / Math.PI;
           A.kneeMin = Math.min(A.kneeMin, knee); A.kneeMax = Math.max(A.kneeMax, knee); if (knee > 179) A.kneeLocked++;
+          // POSE PLAUSIBILITY (against the clip's own pose this frame)
+          const len = _a.distanceTo(_b) + _b.distanceTo(_c), ext = _a.distanceTo(_c) / len;
+          const fold = f.cKnee - knee;                                   // > 0: folded more than the clip
+          if (fold > A.foldMax) A.foldMax = fold;
+          if (stance) { A.extN++; if (ext - f.cExt > A.extMax) A.extMax = ext - f.cExt; if (ext > Math.max(0.97, f.cExt + 0.01)) A.extOver++; }
+          const r0 = tp.body.root.position;
+          const pitch = Math.atan2(f.tw.y - f.hw.y, Math.hypot(f.tw.x - f.hw.x, f.tw.z - f.hw.z)) * 180 / Math.PI;
+          const cPitch = Math.atan2(f.cT.y - f.cH.y, Math.hypot(f.cT.x - f.cH.x, f.cT.z - f.cH.z)) * 180 / Math.PI;
+          if (Math.abs(pitch - cPitch) > A.pitchDev) A.pitchDev = Math.abs(pitch - cPitch);
+          if (pitch < A.pitchMin) A.pitchMin = pitch; if (pitch > A.pitchMax) A.pitchMax = pitch;
+          const dy = (f.hw.y - r0.y) - f.cH.y, dxz = Math.hypot((f.hw.x - r0.x) - f.cH.x, (f.hw.z - r0.z) - f.cH.z);
+          if (Math.abs(dy) > A.offY) A.offY = Math.abs(dy); if (dxz > A.offXZ) A.offXZ = dxz;
+          if (!stance && c.grounded) {
+            const extra = hg - f.cH.y;                                   // swing heel above the ground under it, beyond the clip's
+            if (extra > A.extraLift) A.extraLift = extra;
+            // hip above the heel, net of the ground under the heel (a foot on a higher tread is legitimately closer): IK vs clip
+            const hh = (_a.y - r0.y) - hg, chh = f.cHipY - f.cH.y;
+            if (chh - hh > A.heelToHip) A.heelToHip = chh - hh;
+            if (hh < A.hipHeelMin) A.hipHeelMin = hh;
+          }
           const off = (L.off ?? 0);
           if (A.frames > 1) A.ikJump = Math.max(A.ikJump, Math.abs(off - prevOff[i]) / dt);
           prevOff[i] = off;
@@ -189,6 +219,8 @@ export class FootProbe {
       sinkCm: Math.max(0, -A.gapStanceMin) * 100, floatCm: Math.max(0, A.gapStanceMax) * 100, gapMeanCm: A.floatSum / Math.max(1, A.floatN) * 100, gapP95Cm: gapP95 * 100, badPct,
       heelFloatCm: A.heelFloat * 100, toeFloatCm: A.toeFloat * 100, penCm: A.pen * 100,
       kneeMin: A.kneeMin, kneeMax: A.kneeMax, kneeLockedPct: A.kneeLocked / Math.max(1, 2 * A.frames) * 100,
+      foldMax: A.foldMax, extMax: A.extMax, extOverPct: A.extOver / Math.max(1, A.extN) * 100, pitchDev: A.pitchDev, pitchMin: A.pitchMin, pitchMax: A.pitchMax,
+      offYCm: A.offY * 100, offXZCm: A.offXZ * 100, extraLiftCm: A.extraLift * 100, heelToHipCm: A.heelToHip * 100, hipHeelMin: A.hipHeelMin,
       pelvisStdCm: pstd * 100, dipCm: A.dip * 100, hipVmax: A.hipV, ikJump: A.ikJump, endX: c.pos[0], endY: c.pos[1], endZ: c.pos[2], air: A.airFrames,
     };
   }

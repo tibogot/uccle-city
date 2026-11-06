@@ -303,7 +303,7 @@ const SCEN = {
   "ramp 45 up": { start: at(6, 14, E), dir: [1, 0], secs: 3.5 },
   "ramp 45 down": { start: at(11.5, 14, W), dir: [-1, 0], secs: 3.5 },
   "slope 55 (blocked)": { start: at(6, 17, E), dir: [1, 0], secs: 3 },
-  "house stairs up": { start: at(-21.4, 29.35, E), dir: [1, 0], secs: 6 },
+  "house stairs up": { start: at(-21.4, 29.35, E, 0.6), dir: [1, 0], secs: 6 },      // (the ray from below the upper floor)
   "house stairs down": { start: at(-16.5, 29.35, W, 4.6), dir: [-1, 0], secs: 6 },
   "turn on the spot": { start: at(-3, 1), dir: (t) => (t < 1.2 ? [0, -1] : [0, 0]), secs: 2 },
   "turn 90 walking": { start: at(-3, 1), dir: (t) => (t < 1.5 ? [0, 1] : [1, 0]), secs: 3 },
@@ -317,7 +317,7 @@ const SCEN = {
   "past a trunk": { start: at(PX + 14.2, PZ + 14), dir: [0, 1], secs: 3 },
 };
 const METRICS = [["slideMean", "slide m/s", 2], ["slideP95", "slide p95", 2], ["gapMeanCm", "|gap| cm", 1], ["gapP95Cm", "gap p95", 1], ["badPct", "gap>3cm %", 0], ["sinkCm", "sink cm", 1], ["floatCm", "float cm", 1], ["penCm", "pen cm", 1],
-  ["kneeMin", "knee min°", 0], ["kneeLockedPct", "knee straight %", 0], ["pelvisStdCm", "pelvis σ cm", 1], ["dipCm", "hip dip cm", 1], ["hipVmax", "hip v m/s", 2], ["ikJump", "IK jump m/s", 2]];
+  ["kneeMin", "knee min°", 0], ["foldMax", "fold>clip°", 0], ["extMax", "ext max", 3], ["extOverPct", "ext>.97 %", 0], ["pitchDev", "pitch dev°", 0], ["extraLiftCm", "swing+lift", 1], ["heelToHipCm", "heel>hip cm", 1], ["offYCm", "off y cm", 1], ["kneeLockedPct", "knee straight %", 0], ["pelvisStdCm", "pelvis σ cm", 1], ["dipCm", "hip dip cm", 1], ["hipVmax", "hip v m/s", 2], ["ikJump", "IK jump m/s", 2]];
 /** Measure every scenario (or the named ones) at each simulated fps; returns rows, prints a table. */
 function audit(names = Object.keys(SCEN), fpsList = [30, 60, 144]) {
   if (!probe.feet) {                       // the sole points from the idle pose on flat ground
