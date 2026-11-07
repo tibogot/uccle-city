@@ -209,12 +209,12 @@ function crossBond() {
   const mask = smoothstep(jw, jw.add(max(fw.mul(1.2), 0.002)), e);
   const far = smoothstep(0.006, 0.02, fw);
   const h = hash2(vec2(cell, row)), h2 = hash2(vec2(cell.add(17.0), row.mul(3.0))), h3 = hash2(vec2(cell.mul(0.37), row.add(9.0)));
-  let b = mix(lin(0x86402a), lin(0x9e5034), h).mul(mix(float(0.82), float(1.06), h2));
+  let b = mix(lin(0x763322), lin(0x8c412c), h).mul(mix(float(0.82), float(1.06), h2));
   b = mix(b, lin(0x6b3328), step(0.82, h3).mul(header).mul(0.75));      // burnt headers (purple-brown)
   b = mix(b, lin(0xa8694a), step(0.93, h2).mul(0.5));                   // pale ones
   b = b.mul(vnoise(w.mul(40.0)).mul(0.12).add(0.94));
   const mortar = lin(0xa39a89);
-  const mean = mix(lin(0x8f4a31), mortar, 0.18);
+  const mean = mix(lin(0x7e3d29), mortar, 0.16);
   const col = mix(mix(mortar, b, mask), mean, far);
   return { col, bump: mask.mul(0.0035).mul(float(1).sub(far)), mask };
 }

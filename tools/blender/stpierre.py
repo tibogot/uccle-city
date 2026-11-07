@@ -632,7 +632,7 @@ def side_elevation(side):
     # bays: (u0, u1, window?)
     bays = [(BAY1[0], BAY1[1] if side > 0 else 5.9)]
     if side > 0:
-        bays += [(NAVE_U0 + k * NAVE_BAY + 0.38, NAVE_U0 + (k + 1) * NAVE_BAY - 0.38) for k in range(NAVE_N)]
+        bays += [(NAVE_U0 + k * NAVE_BAY + 0.78, NAVE_U0 + (k + 1) * NAVE_BAY - 0.78) for k in range(NAVE_N)]     # P01: brick panels ~3 m, wide stone piers
     panels, holes = [], []
     for k, (a, b) in enumerate(bays):
         m = (a + b) / 2
@@ -663,7 +663,7 @@ def side_elevation(side):
         # flat pilasters between the nave bays
         for k in range(1, NAVE_N):
             u = NAVE_U0 + k * NAVE_BAY
-            a, b = sorted((S(u - 0.38), S(u + 0.38)))
+            a, b = sorted((S(u - 0.5), S(u + 0.5)))
             pilaster(fr, a, b, PLINTH_TOP, ARCHI, 0.0, 0.07, STONE, C_QUOIN)
         a, b = sorted((S(32.3), S(33.3)))
         fbox(fr, a, b, hb, ht, 0.0, 0.16, STONE, C_PLAIN, skip=("back",))
@@ -697,7 +697,7 @@ def parapet(fr, s0, s1, t=0.65):
     fbox(fr, s0, s1, hz(EAVE_H - 0.6), hz(CORN_B), -t, 0.0, STONE, C_COPING, skip=("front", "bottom"))
 
 def porch_panel(fr, S):
-    a, b = sorted((S(NAVE_U0 + 3 * NAVE_BAY + 0.53), S(NAVE_U0 + 4 * NAVE_BAY - 0.53)))
+    a, b = sorted((S(NAVE_U0 + 3 * NAVE_BAY + 0.93), S(NAVE_U0 + 4 * NAVE_BAY - 0.93)))
     return rect(a, hz(PORCH["corn"] + 0.6), b, hz(PANEL_TOP))
 
 def porch_bay(fr, S):

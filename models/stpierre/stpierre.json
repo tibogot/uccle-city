@@ -1,10 +1,10 @@
 {
  "asset": "Eglise Saint-Pierre d'Uccle, Parvis Saint-Pierre (tools/blender/stpierre.py)",
- "triangles_lod0": 30913,
- "triangles_far": 4092,
+ "triangles_lod0": 30910,
+ "triangles_far": 4089,
  "triangles_per_slot_lod0": {
-  "brick_red_brussels": 725,
-  "stone_white": 17495,
+  "brick_red_brussels": 723,
+  "stone_white": 17494,
   "stone_blue": 1694,
   "slate": 50,
   "copper_brown": 1932,
@@ -15,8 +15,8 @@
   "cast_iron_green": 4422
  },
  "triangles_per_slot_far": {
-  "brick_red_brussels": 715,
-  "stone_white": 2314,
+  "brick_red_brussels": 713,
+  "stone_white": 2313,
   "stone_blue": 146,
   "slate": 50,
   "copper_brown": 168,

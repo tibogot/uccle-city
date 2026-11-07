@@ -29,6 +29,16 @@ fly-mode rig (`viewer/falcons.js`, baked Perch / Sit poses). Fly mode now starts
 flight; `?flystart=spire` = the old start, `?birdskin=adult` = the old plumage). Lab `labs/falcon-lab.html`; method,
 cost (GPU within noise, ~0.1-0.17 ms CPU), reference comparisons and weak points: `docs/FALCONS.md`.
 
+## Église Saint-Pierre (branch claude/saint-pierre)
+
+The Uccle-Centre church as a scripted hero (exterior): `tools/stpierre_measure.py` (UrbIS solid 546128 + DSM/DTM, two
+sheets mosaicked) → `tools/blender/stpierre.py` (+ `stpierre_common.py`, the generic Stalle kit) → `tools/hero_pack.mjs`
+(meshopt LODs; the Stalle packer with `--name`) → `models/stpierre/`. Viewer `viewer/stpierreModel.js` (named slots,
+adapter table, ONE-line `SOURCE` switch to the library; new slot `copper_brown`), city `viewer/stpierreCity.js` behind
+`?stpierre=1` (hides BU_ID 1594643), lab `labs/saint-pierre-lab.html` (photo viewpoints from `tools/stpierre_photopose.py`
+with overlays, LOD switch, slot swap, day/night, benchmark, a scripted LOD flight). Method, numbers, what is estimated:
+`models/stpierre/NOTES.md`; history, sources: `docs/saint-pierre/RESEARCH.md`. Interior: not enough references yet.
+
 ## Interiors (branch claude/interior, pilot)
 
 The first interior cell: a terraced house near Place de Saint-Job (UrbIS 1786120). Lab `labs/interior-lab.html`, city
