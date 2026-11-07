@@ -29,7 +29,7 @@ ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 OUT = os.path.abspath(ARGS[0] if ARGS and not ARGS[0].startswith("--") else "models/stpierre")
 BAKE = "--no-bake" not in ARGS
 PREVIEWS = "--previews" in ARGS
-AO_PX = 2048
+AO_PX = 3072                    # polish 2: 2048 gave 15 px/m on LOD0
 PREV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "docs", "saint-pierre")
 T0 = time.time()
 SITE, _g, _gd = SC.load_site(OUT)
@@ -69,7 +69,7 @@ TW_U = 3.25; TW_H = 3.05; TW_C = 0.85                            # centre, half 
 TW_STRING = (73.58, 73.88); TW_TOP = (75.06, 75.46)
 BELFRY = (0.93, 69.86, 73.22)     # louvred openings: half-width, sill, head
 DIAL_H, DIAL_R = 75.08, 1.08    # the west clock (the others smaller: wiki "the west clock is larger, with a drip mould")
-DOME_TOP = 78.9                 # DSM: 79.4 at 0.75 m from the axis, the bulb's peak 81.7; UrbIS top 82.38
+DOME_TOP = 79.6                 # DSM: 79.4 at 0.75 m from the axis, the bulb's peak 81.7; UrbIS top 82.38; polish 2: the P02 overlay (level camera) shows the dome rising well above the cornice: 78.9 hid it
 # the sides (P01 south, P03 north-west; footprint jogs): pilasters with urns at u 6.25-7.53 (south) / 5.9-6.4 (north)
 WALL_S, WALL_N = 9.53, -9.8
 BAY1 = (1.34, 6.25)
@@ -348,7 +348,7 @@ def small_window(fr, c, d):
         lathe_axis(fr.p(x, hz(SWIN_SILL) - 0.32, d + 0.08), Z * -1, fr.U, [(0.0, 0.0), (0.03, 0.0), (0.024, 0.06), (0.0, 0.06)], 6, STONE, C_SUR)
     for k in (1, 2):            # leaded glazing bars
         x = c - w2 + SWIN_W * k / 3
-        bar(fr, (x, hz(SWIN_SILL)), (x, hz(SWIN_TOP)), d - 0.21, 0.03, 0.02, IRON, C_PLAIN)
+        bar(fr, (x, hz(SWIN_SILL)), (x, hz(SWIN_TOP)), d - 0.21, 0.03, 0.02, IRON, C_SUR)
 
 def front_upper():
     """above the cornice: the urn pedestals on the corner piers, the upper register (central bay) with its window and
@@ -384,10 +384,10 @@ def front_upper():
         fbox(fr, -UWIN[0] - 0.3, UWIN[0] + 0.3, hz(UWIN[1]) - 0.14, hz(UWIN[1]), d - 0.05, d + 0.12, BLUE, C_SILL, skip=())
         for k in range(1, 4):
             x = -UWIN[0] + 2 * UWIN[0] * k / 4
-            bar(fr, (x, hz(UWIN[1])), (x, hz(UWIN[2])), d - 0.28, 0.035, 0.03, IRON, C_PLAIN)
+            bar(fr, (x, hz(UWIN[1])), (x, hz(UWIN[2])), d - 0.28, 0.035, 0.03, IRON, C_SUR)
         for k in range(1, 3):
             y = hz(UWIN[1]) + (UWIN[2] - UWIN[1]) * k / 3
-            bar(fr, (-UWIN[0], y), (UWIN[0], y), d - 0.28, 0.035, 0.03, IRON, C_PLAIN)
+            bar(fr, (-UWIN[0], y), (UWIN[0], y), d - 0.28, 0.035, 0.03, IRON, C_SUR)
         # the cartouche (an escutcheon on a scrolled shield; P02, c11)
         fbox(fr, -0.36, 0.36, hz(64.78), hz(65.73), d, d + 0.08, STONE, C_SCULPT)
         lathe_axis(fr.p(0.0, hz(65.25), d + 0.08), fr.N, fr.U, [(0.26, 0.0), (0.26, 0.04), (0.2, 0.08), (0.0, 0.1)], 12, STONE, C_SCULPT)
@@ -521,11 +521,10 @@ def dial(fr, r, west):
     h = DIAL_H if west else DIAL_H - 0.05
     if FAR():
         fill2d(fr, [circle(0.0, hz(h), r, 12)], 0.06, IRON, C_DIAL); return
-    # the stone ground behind the dial, rising above the cornice in a segmental hood
-    top = h + r + 0.32
-    pts = ccw([(-r - 0.3, hz(TW_STRING[1]))] + [(-r - 0.3, hz(TW_TOP[0]))] + [((r + 0.3) * math.cos(math.pi - math.pi * k / 12), hz(h) + (r + 0.3) * math.sin(math.pi - math.pi * k / 12)) for k in range(13)] + [(r + 0.3, hz(TW_TOP[0])), (r + 0.3, hz(TW_STRING[1]))])
-    slab2d(fr, pts, 0.03, -0.4, STONE, C_PLAIN)
-    sweep2d(fr, arch_path(0.0, hz(h), r + 0.3, 14), [(0.0, 0.0), (0.12, 0.0), (0.16, 0.06), (0.16, 0.14), (0.24, 0.2), (0.26, 0.28), (0.0, 0.3)][::1], STONE, C_CORN, d0=0.03)
+    # the dial's stone ground: a thin disc a little larger than the dial (its top half stands against the dome's foot),
+    # and a SUBTLE moulding following the dial's upper half where it breaks the cornice (c11: not a big hood)
+    slab2d(fr, ccw(circle(0.0, hz(h), r + 0.12, 28)), 0.02, -0.6, STONE, C_PLAIN)
+    sweep2d(fr, arch_path(0.0, hz(h), r + 0.12, 16), [(0.0, 0.0), (0.05, 0.0), (0.07, 0.03), (0.07, 0.07), (0.0, 0.09)], STONE, C_CORN, d0=0.02)
     # dial + rings + hour marks + hands
     lathe_axis(fr.p(0.0, hz(h), 0.03), fr.N, Z, [(r, 0.0), (r, 0.05), (r * 0.92, 0.06), (r * 0.9, 0.05), (r * 0.62, 0.05), (r * 0.6, 0.06), (0.0, 0.06)], 32, IRON, C_DIAL)
     lathe_axis(fr.p(0.0, hz(h), 0.08), fr.N, Z, [(r * 0.99, 0.0), (r * 0.99, 0.02), (r * 0.93, 0.02), (r * 0.93, 0.0)], 32, IRON, C_GILT)
@@ -612,11 +611,11 @@ def side_window(fr, s, d, sill=SWIN[1], spring=SWIN[2], r=SWIN[0], bars=True):
     if bars:
         for k in range(1, 3):
             x = s - r + 2 * r * k / 3
-            bar(fr, (x, hz(sill)), (x, hz(spring) + math.sqrt(max(r * r - (x - s) ** 2, 0)) - 0.02), d - 0.43, 0.025, 0.025, IRON, C_PLAIN)
+            bar(fr, (x, hz(sill)), (x, hz(spring) + math.sqrt(max(r * r - (x - s) ** 2, 0)) - 0.02), d - 0.43, 0.025, 0.025, IRON, C_SUR)
         y = hz(sill) + 0.62
         while y < hz(spring) + r * 0.8:
             half = math.sqrt(max(r * r - max(0.0, y - hz(spring)) ** 2, 0.0)) if y > hz(spring) else r
-            bar(fr, (s - half, y), (s + half, y), d - 0.43, 0.02, 0.02, IRON, C_PLAIN)
+            bar(fr, (s - half, y), (s + half, y), d - 0.43, 0.02, 0.02, IRON, C_SUR)
             y += 0.62
     return hole
 

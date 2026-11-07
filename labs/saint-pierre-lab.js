@@ -13,9 +13,9 @@ import { texture, vec3, float, mix, smoothstep, positionWorld, select, uv, attri
 import { Panel } from "../viewer/panelUI.js";
 import { Lighting, PRESETS } from "../viewer/lighting.js";
 import { createPipeline } from "../viewer/post.js";
-import { withObjectFade, SMOOTH } from "../viewer/lodFade.js";
+import { SMOOTH, fadeProxies, fadeVariant } from "../viewer/lodFade.js";
 import { precompile } from "../viewer/warmup.js";
-import { loadStPierre, SP_LODS, SP_SLOTS, LIBRARY_NAMES, SLOT_TABLE, spLook } from "../viewer/stpierreModel.js";
+import { loadStPierre, SP_LODS, SP_SLOTS, LIBRARY_NAMES, SLOT_TABLE, spLook, setLodFades } from "../viewer/stpierreModel.js";
 
 const qp = new URLSearchParams(location.search);
 const longTasks = [];
@@ -44,8 +44,6 @@ const loadMs = performance.now() - t0;
 const root = new THREE.Group(); root.name = "stpierre";
 root.position.copy(model.placement.position); root.rotation.y = model.placement.rotationY;
 scene.add(root);
-const fadeOn = (m) => (SMOOTH ? withObjectFade(m) : m);
-for (const s of SP_SLOTS) fadeOn(model.materials[s]);
 const levels = SP_LODS.map((_, k) => { const g = model.make(k); root.add(g); return g; });
 root.visible = false;                   // shown once its shaders are built (precompile, below)
 root.updateMatrixWorld(true);
@@ -291,9 +289,9 @@ async function doSwap() {
   const slots = S.swapAll ? SP_SLOTS : [S.slot];
   const proxy = new THREE.Group();
   const wrapped = slots.map((s) => {
-    const w = model.setSlotMaterial(s, make(s), { fade: fadeOn, dryRun: true }); w.wireframe = S.wireframe;
+    const w = model.setSlotMaterial(s, make(s), { dryRun: true }); w.wireframe = S.wireframe;
     const geo = model.lods[0].find((l) => l.slot === s)?.geometry ?? model.lods[0][0].geometry;
-    proxy.add(new THREE.Mesh(geo, w)); return [s, w];
+    proxy.add(new THREE.Mesh(geo, w)); if (SMOOTH) proxy.add(new THREE.Mesh(geo, fadeVariant(w))); return [s, w];
   });
   proxy.position.copy(root.position); proxy.rotation.copy(root.rotation); scene.add(proxy); proxy.updateMatrixWorld(true);
   await precompile(renderer, [proxy], camera, scene, { target: pipe?.passTarget ?? null, mrt: pipe?.passMRT ?? null });
@@ -329,7 +327,9 @@ await lighting.attach(camera);
 let pipe = createPipeline(renderer, scene, camera);
 pipe.setExposureScale(lighting.exposureScale); pipe.look(preset);
 const tc0 = performance.now();
-await precompile(renderer, [scene], camera, scene, { target: pipe.passTarget ?? null, mrt: pipe.passMRT ?? null });
+const fadeP = fadeProxies(root); if (fadeP) scene.add(fadeP);
+await precompile(renderer, [scene], camera, scene, { target: pipe.passTarget ?? null, mrt: pipe.passMRT ?? null });         // (+ the fading copies)
+if (fadeP) scene.remove(fadeP);
 const compileMs = performance.now() - tc0;
 const shownAt = performance.now();
 root.visible = true;
@@ -432,13 +432,13 @@ renderer.setAnimationLoop(() => {
     const t1 = ramp(dist, 0), t2 = ramp(dist, 1);
     const fades = [2 + t1, t1 < 1 ? t1 : 2 + t2, t2];
     const shown = [t1 < 1, t1 > 0 && t2 < 1, t2 > 0];
-    levels.forEach((g, k) => { g.visible = shown[k]; if (shown[k]) for (const o of g.children) o.userData.fade = fades[k]; });
+    setLodFades(levels, shown, fades);
     shownNow = shown; fadeNow = fades;
     S.lodInfo = `${shown.map((v, k) => (v ? `L${k}` : "")).filter(Boolean).join("+")} · ${dist.toFixed(0)} m`;
   } else {
     let k = S.lod === "auto" ? SP_LODS.findIndex((l) => dist < l.until) : +S.lod.slice(3);
     if (forced !== null) k = forced === "off" ? -1 : forced;
-    levels.forEach((g, i) => { g.visible = i === k; if (g.visible) for (const o of g.children) o.userData.fade = 1; });
+    setLodFades(levels, levels.map((_, i) => i === k), [1, 1, 1]);
     shownNow = levels.map((g) => g.visible);
     S.lodInfo = k >= 0 ? `LOD${k} · ${model.tris[k].toLocaleString()} tris · ${dist.toFixed(0)} m` : "off";
   }

@@ -2,11 +2,11 @@
 // The UrbIS solid it replaces (by BU_ID: placement.hides_bu_ids) joins the hide list: the tiles draw it neither in the
 // facades nor in the far LOD; it stays in the roof grid and the drive colliders (as the Saint-Job church and Stalle).
 // The model loads in the background (meshopt decode and the AO map in workers), its shaders are built through the page's
-// precompile queue (warmup.js) BEFORE it shows, three levels cross-fade by distance (dithered, lodFade.js objectFade; the
+// precompile queue (warmup.js) BEFORE it shows, three levels cross-fade by distance (dithered, lodFade.js objectFade through the materials' fading copies, used only inside the bands; the
 // shadow pass follows). Shown while one of its tiles (E3 / E4) is loaded, full or far.
 import * as THREE from "three/webgpu";
-import { loadStPierre, SP_LODS, SP_SLOTS } from "./stpierreModel.js";
-import { withObjectFade, SMOOTH } from "./lodFade.js";
+import { loadStPierre, SP_LODS, setLodFades } from "./stpierreModel.js";
+import { SMOOTH, fadeProxies } from "./lodFade.js";
 
 export async function addStPierre({ scene, updaters, hide, world, manifest, log, compiler }) {
   const t0 = performance.now();
@@ -19,7 +19,6 @@ export async function addStPierre({ scene, updaters, hide, world, manifest, log,
   try { new PerformanceObserver((l) => { for (const e of l.getEntries()) if (loading) longTasks.push(Math.round(e.duration)); }).observe({ type: "longtask" }); } catch { /* no longtask API */ }
   loadStPierre().then(async (m) => {
     const tLoad = performance.now() - t0;
-    for (const s of SP_SLOTS) if (SMOOTH) withObjectFade(m.materials[s]);
     const root = new THREE.Group(); root.name = "stpierre";
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;
     const levels = SP_LODS.map((_, k) => m.make(k));
@@ -28,7 +27,8 @@ export async function addStPierre({ scene, updaters, hide, world, manifest, log,
     scene.add(root);
     root.updateMatrixWorld(true);
     const tc = performance.now();
-    await (await waitCompiler())([root]);
+    const fp = fadeProxies(root);                      // the fading copies (drawn only inside the LOD bands) too
+    await (await waitCompiler())(fp ? [root, fp] : [root]);
     const tComp = performance.now() - tc;
     loading = false;
     const homes = manifest.tiles.filter((t) => t.bounds.x[0] < m.boundsWorld.max.x && t.bounds.x[1] > m.boundsWorld.min.x &&
@@ -45,7 +45,7 @@ export async function addStPierre({ scene, updaters, hide, world, manifest, log,
         const t1 = ramp(d, 0), t2 = ramp(d, 1);
         const fades = [2 + t1, t1 < 1 ? t1 : 2 + t2, t2];
         const shown = [t1 < 1, t1 > 0 && t2 < 1, t2 > 0];
-        levels.forEach((g, k) => { g.visible = shown[k]; if (shown[k]) for (const o of g.children) o.userData.fade = fades[k]; });
+        setLodFades(levels, shown, fades);
         state.shown = shown; state.fades = fades;
       } else {
         const k = SP_LODS.findIndex((l) => d < l.until);

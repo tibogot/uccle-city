@@ -88,6 +88,35 @@ phase-2 reports), then the Stalle approach (portal, baked lightmaps, probes, doo
   (24 s): 1440 frames, median 16.7, p99 17.9, 0 > 34 ms, 0 pops, coverage 1.00. Frame sequence while moving (canvas
   grabbed every ~0.4 s through both bands): `docs/saint-pierre/city_lod_sequence_moving.jpg`.
 
+## Polish round 2 (coordinator's review of the c10 / P01 sheets)
+- **Close-up cost found and cut**: on the P01 full-screen view the church cost +1.38 ms vs the UrbIS solid. Measured by
+  swapping materials in place: (a) the dithered LOD fade's `discard` sat on every material ALL the time (no early-z):
+  now `setLodFades` (viewer/stpierreModel.js) draws a level with lodFade's fading copies only while it is inside a band
+  (the copies are precompiled with the model, lab + city); (b) the screen-space reflections traced the small metal
+  parts (gutters, bars, dome, finial) → `noSSR` MRT on those materials (the glass gets a cheap fresnel x sky term
+  instead); (c) the TSL materials are one `Fn` each with `.toVar()` intermediates, a sin-free hash, one value noise at
+  most (no shared sub-expression re-emitted per use). Now **+0.65 ms vs the UrbIS solid, the same as a plain grey
+  material on the same geometry (+0.59)**: the rest is the geometry and the post chain over its depth detail. City,
+  parvis view: **+0.04 ms** (was +0.24; 6 rounds, range 0.00-0.13); LOD1 / LOD2: 0.00 / +0.03 (noise).
+- Brick: dark red-brown per brick (world-space hash on UV0 metres = non-repeating), burnt headers, a few orange ones,
+  pale lime joints kept as a coursing tone in the far field. Stone: pale cream / sand (the 2014 cleaning), lighter
+  joints, light weathering (less grime at the foot). Blue stone stays dark grey-blue.
+- Windows: leaded clear glass (0.22 x 0.3 quarries, pale lead lines, view-angle fresnel x sky colour, no extra draw),
+  the iron glazing grids painted pale grey (photos); belfry louvres dark.
+- Clock dials: the big pale hoods replaced by a thin disc + a small moulding following the dial's upper half.
+- Dome: the reliable P02 pose (level camera) showed the round-1 dome (top 78.9) HIDDEN behind the cornice while the
+  photo's dome rises clearly above it: raised to **79.6** (the DSM's 79.4 at 0.75 m from the axis). So the photos and
+  the DSM agree here; it does not read squatter once posed.
+- AO: 3072² (was 2048²): LOD0 **23.9 px/m** (was 15); GPU 12.6 MB (R8 + mips; was 5.3).
+- Poses: P01 and P03 now solved as level cameras with a yaw (rectified inventory photos, EXIF focal, eye 1.5 m):
+  18 / 17 px; their overlays are still approximate (the rectification is not a pure pinhole; the P01 overlay drifts
+  ~7 % vertically at the base). P02 (10 px) and c10 (21 px) unchanged.
+- Re-checked: city flights 700 m → 25 m → 700 m (30 s, twice): 1800 frames, median 16.7, p99 16.8, 0 > 34 ms, 8
+  switches, **0 pops** (worst share 0.2 %; the first run's 3 events at t = 0.02 s are the teleport to the start, not
+  motion). Lab flight: 1433 frames, p99 17.9, 1 frame > 34 ms, 0 pops. Lab GPU vs nothing: P02 L0 +0.39 / L1 +0.33 /
+  L2 +0.20; P01 L0 +1.11 / L1 +1.05 / L2 +0.72; overview 0.00. Streaming in the running city: 156 ms + shaders
+  (with the fading copies) 942 ms in the background, no long task.
+
 ## Screenshots (docs/saint-pierre/)
 `preview_*.png` (Cycles, no AO), `lab_*_view.jpg` (the lab at the solved photo viewpoints), `city_parvis_southwest.png`,
 `city_lod_sequence_moving.jpg`. Side-by-sides `side_*.jpg` are git-ignored (they hold the photos): west P02 (+50 %

@@ -1,10 +1,10 @@
 {
  "asset": "Eglise Saint-Pierre d'Uccle, Parvis Saint-Pierre (tools/blender/stpierre.py)",
- "triangles_lod0": 30910,
+ "triangles_lod0": 30922,
  "triangles_far": 4089,
  "triangles_per_slot_lod0": {
   "brick_red_brussels": 723,
-  "stone_white": 17494,
+  "stone_white": 17506,
   "stone_blue": 1694,
   "slate": 50,
   "copper_brown": 1932,
@@ -68,15 +68,15 @@
   "TEXCOORD_1": "AO lightmap (thin faces: u > 0.994, AO 1)"
  },
  "lightmap": {
-  "px": 2048,
+  "px": 3072,
   "split_v": [
    0.86,
    1.0
   ],
-  "lod0_px_per_m": 15.1,
-  "far_px_per_m": 7.0,
+  "lod0_px_per_m": 23.9,
+  "far_px_per_m": 10.5,
   "thin_faces_vertex_ao": [
-   8550,
+   8758,
    115
   ]
  },
@@ -107,7 +107,7 @@
   ],
   "y": [
    48.4,
-   83.3
+   84.0
   ]
  },
  "measured": {
@@ -379,7 +379,7 @@
    75.06,
    75.46
   ],
-  "dome_top": 78.9,
+  "dome_top": 79.6,
   "ridge": 67.7,
   "eave": 59.3,
   "portal": [
