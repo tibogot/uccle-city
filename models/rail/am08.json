@@ -43,12 +43,12 @@
   52.61
  ],
  "tris": {
-  "EndCar": 28300,
-  "MidCar": 23575,
+  "EndCar": 28148,
+  "MidCar": 23568,
   "Bogie": 5316,
   "Gangway": 396,
   "Panto": 476,
-  "EndCar_far": 7616,
+  "EndCar_far": 7532,
   "MidCar_far": 4564,
   "Bogie_far": 1340
  },

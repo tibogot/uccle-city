@@ -117,8 +117,39 @@ Research (lines, stations, every road crossing, sources, licences): `docs/trains
   medians (+0.55 mean). Frame times were 9-13 ms (round 2: ~6) because another session's browser shared the GPU:
   the spreads are large; the band A/B is the cleanest number. To re-measure on an idle GPU.
 
+## Round 4 (2026-11-07): the AM08 nose by outline fitting
+
+- **Method** (`tools/fit/am08/`, README there): two photos solved jointly, `am08_stjob_2025` (front 3/4) and
+  `am08_calevoet_2025` (near front; no usable side-on photo exists in refs): both cameras (pose + focal) and the nose's
+  centre-line features (B logo, headlights, windscreen foot, yellow panel foot, display, glass top) as unknowns, the red door
+  leaves (semi-automatic mask) and the far cab-side outline (y = 1.43) as metric: **rms 3.25 px**; cameras 2.2 / 2.4 m above
+  rail (platform eye height, a check, not imposed hard). Measured: yellow panel foot 1.53 m, headlights 1.61 m (1.44 m apart),
+  windscreen foot 2.31 m, display 3.33 m **1.53 m behind the tip**. Round 3 had the features ~0.4 m too low and a 1.6 m
+  nose with a 33 deg windscreen: the real one rakes ~48 deg and the visor meets the roof ~2.8 m behind the tip (the boxy read).
+- **Rebuild** (`am08.py`): NOSE_L 1.62 -> 2.90, the reach table now a setback S(z) from the measurements; rings
+  parametrised by the x fraction (even rows along the long sides, dense at the tip); feature heights / slot boundaries from the
+  fit (grey crash front < 1.50, yellow panel to 2.30, glass 2.34-3.24, display 3.30-3.50, top light 3.80, wipers 2.38,
+  headlights 1.62 at +-0.76, crash boxes to 1.40, coupler 0.98); the yellow pillar on the cab side sweeps back and up
+  (rear edge 0.75 m at the windscreen foot -> 3 m at the roof), white behind it. The upper setback (x0.95) and the plan
+  exponents (4.0 -> 4.8 between 2.2 and 3.6 m: the top's roundness is the section's, the plan keeps tight corners) were then
+  optimised against hand-traced outlines in both photos. The long glass looks into the nose: dark cab desk, ceiling and side
+  linings close it. EndCar 28.1k triangles (was 28.3k), same draws, AO re-baked; LODs still by meshoptimizer at load.
+- **Outline deviation** (traced outline -> rendered silhouette from the solved camera, mean / max px at 1920 px):
+  Saint-Job 12.9 / 29.8 -> **2.0 / 6.0**; Calevoet 8.6 / 13.9 -> **5.8 / 13.0** (the residual there is the camera, rms 3 px,
+  and the top-left of the visor). Sheets: `compare/am08_fit_stjob.jpg`, `compare/am08_fit_cal25.jpg` (photo | before |
+  after | 50 % overlay with both outlines and the traced points).
+- **Motion**: Saint-Job station, camera receding 40 -> 60 m along the track (zoom holding the size), 1 m steps: the end car
+  goes LOD0 -> LOD1 at 51 -> 52 m, frame differences 5.0 / 5.1 / 4.7 (no spike), in-view pops counter unchanged
+  (`frames/am08_round4_lod0_lod1.jpg`).
+- **GPU**: same view as the St-Job photo (2 cars LOD0), old vs new glb alternated (reload each): medians 3.34 (old) vs
+  3.37 ms (new, 6 samples 2.8-3.5): unchanged within noise (the GPU is shared; triangles -0.06 %).
+
 ## What still looks weak (honest list)
 
+- **AM08 nose (round 4)**: the yellow pillar's rear edge on the cab side steps across the ring rows (a diagonal on a
+  row grid; needs a seam row along it); the lower front (plough, crash boxes) was not refitted: in the overlays the plough sits
+  ~0.2 m too low / too long; a sliver of sky still shows through the top corner of the glass from some angles; the near
+  side's cab door window is the old recess.
 - **AM08 nose (round 3)**: the windscreen is flat glass (no curved reflection); the pillars' yellow should taper
   inwards at the roof (they run straight up); the plough reads as a pale block; no "B" logo, fleet number or wipers'
   arms on the glass; the cab sides' yellow / grey line is level (the photos show it rising backwards: a slanted line
