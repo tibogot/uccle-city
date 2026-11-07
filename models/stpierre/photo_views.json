@@ -1,0 +1,143 @@
+{
+ "west front, frontal (inventory P02)": {
+  "file": "heritage_P02.jpg",
+  "credit": "Reference only: Inventaire du patrimoine architectural, urban.brussels (no free licence)",
+  "size": [
+   1077,
+   1626
+  ],
+  "pos": [
+   -32.75,
+   -0.54,
+   51.4
+  ],
+  "target": [
+   -2.75,
+   -0.54,
+   51.4
+  ],
+  "fov": 71.51,
+  "cy": 0.657,
+  "f_px": 1129.2,
+  "err_px": [
+   3.9,
+   4.3,
+   3.6,
+   9.0,
+   4.4,
+   22.7,
+   22.7,
+   6.6,
+   7.8,
+   21.6,
+   7.7,
+   6.4
+  ],
+  "mean_err": 10.0,
+  "model": "level (rectified)"
+ },
+ "west front (Commons, EmDee 2011)": {
+  "file": "c10.jpg",
+  "credit": "Photo: EmDee, 2011, CC BY-SA 3.0 (Wikimedia Commons, Eglise Saint-Pierre d'Uccle 10.JPG)",
+  "size": [
+   2592,
+   3872
+  ],
+  "pos": [
+   -24.3,
+   -17.81,
+   55.71
+  ],
+  "target": [
+   0.96,
+   0.55,
+   58.33
+  ],
+  "fov": 69.97,
+  "cy": 0.6,
+  "f_px": 2766.6,
+  "err_px": [
+   4.4,
+   5.5,
+   14.2,
+   13.5,
+   19.1,
+   39.8,
+   22.4,
+   30.0,
+   21.8,
+   22.3,
+   34.3
+  ],
+  "mean_err": 20.7
+ },
+ "south-west, the long side (inventory P01)": {
+  "file": "heritage_P01.jpg",
+  "credit": "Reference only: Inventaire du patrimoine architectural, urban.brussels (no free licence)",
+  "size": [
+   1626,
+   1077
+  ],
+  "pos": [
+   -21.54,
+   27.61,
+   49.96
+  ],
+  "target": [
+   5.22,
+   5.05,
+   52.33
+  ],
+  "fov": 46.13,
+  "cy": 0.875,
+  "f_px": 1264.7,
+  "err_px": [
+   16.4,
+   23.6,
+   7.3,
+   3.1,
+   18.9,
+   32.4,
+   14.7,
+   10.4,
+   17.0,
+   21.8,
+   14.8
+  ],
+  "mean_err": 16.4
+ },
+ "north-west, the fourth nave (inventory P03)": {
+  "file": "heritage_P03.jpg",
+  "credit": "Reference only: Inventaire du patrimoine architectural, urban.brussels (no free licence)",
+  "size": [
+   1626,
+   1077
+  ],
+  "pos": [
+   -25.82,
+   -14.58,
+   58.35
+  ],
+  "target": [
+   2.78,
+   -8.33,
+   64.15
+  ],
+  "fov": 56.91,
+  "cy": 0.475,
+  "f_px": 993.7,
+  "err_px": [
+   22.1,
+   7.8,
+   12.3,
+   9.7,
+   7.0,
+   10.9,
+   10.1,
+   4.5,
+   31.3,
+   15.6
+  ],
+  "mean_err": 13.1
+ }
+}
