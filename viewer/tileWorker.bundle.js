@@ -6810,7 +6810,8 @@ var PAINT_LIFT = 0.02;
 var MARKABLE = /* @__PURE__ */ new Set([0, 1, 3]);
 var CARRIAGE2 = /* @__PURE__ */ new Set([0, 1, 2, 3]);
 var RESIDENTIAL = /* @__PURE__ */ new Set(["local", "oneWay", "alley"]);
-var OSM_ALONG = 4;
+var OSM_ALONG = 3.5;
+var OSM_MAX_ACROSS = 14;
 var STRIPE = 0.5;
 var STRIPE_PERIOD = 1;
 var TOOTH = { base: 0.5, gap: 0.25, tall: 0.7 };
@@ -7010,6 +7011,7 @@ function afterNetworkV2(net, ctx, surf) {
     return null;
   };
   const xArms = [];
+  const measuredPolys = (markings?.crossings || []).filter((c) => c.poly && near(c.c[0], c.c[1])).map((c) => hull(c.poly));
   for (const c of markings?.crossings || []) {
     if (!near(c.c[0], c.c[1])) continue;
     let poly = c.poly, along = c.along, axis = c.axis;
@@ -7018,12 +7020,26 @@ function afterNetworkV2(net, ctx, surf) {
       const [x, z] = c.c;
       if (!CARRIAGE2.has(cls(x, z))) continue;
       const kp2 = ray(x, z, bx, bz), km2 = ray(x, z, -bx, -bz);
-      if (kp2 == null || km2 == null) continue;
+      if (kp2 == null || km2 == null || kp2 + km2 > OSM_MAX_ACROSS) continue;
       along = OSM_ALONG;
-      const h = along / 2;
-      poly = [[x - ax * h - bx * km2, z - az * h - bz * km2], [x + ax * h - bx * km2, z + az * h - bz * km2], [x + ax * h + bx * kp2, z + az * h + bz * kp2], [x - ax * h + bx * kp2, z - az * h + bz * kp2]];
+      let ulo = -along / 2, uhi = along / 2;
+      for (const st of markings?.stops || []) {
+        const m = st.line[Math.floor(st.line.length / 2)], mu = (m[0] - x) * ax + (m[1] - z) * az, mv = (m[0] - x) * bx + (m[1] - z) * bz;
+        if (Math.abs(mv) > Math.max(kp2, km2) + 1 || Math.abs(mu) > along / 2 + 0.6) continue;
+        if (mu > 0) uhi = Math.min(uhi, mu - 0.6);
+        else ulo = Math.max(ulo, mu + 0.6);
+      }
+      if (uhi - ulo < 2) {
+        ulo = -along / 2;
+        uhi = along / 2;
+      }
+      poly = [[x + ax * ulo - bx * km2, z + az * ulo - bz * km2], [x + ax * uhi - bx * km2, z + az * uhi - bz * km2], [x + ax * uhi + bx * kp2, z + az * uhi + bz * kp2], [x + ax * ulo + bx * kp2, z + az * ulo + bz * kp2]];
     }
     poly = hull(poly);
+    if (!c.poly && measuredPolys.some((m) => {
+      const o = clipConvex(poly, m);
+      return o.length >= 3 && Math.abs(area22(o)) > 1;
+    })) continue;
     const [cx, cz] = c.c;
     let u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity;
     for (const p of poly) {
@@ -7133,7 +7149,14 @@ function afterNetworkV2(net, ctx, surf) {
       const [tIn0, tOut0] = approachSpan(a);
       const tMid = (tIn0 + tOut0) / 2;
       let sg = null;
-      for (const { am, rec } of xArms) if (am.arm === a) sg = Math.max(sg ?? -Infinity, am.sigma + rec.along / 2 + 1.5);
+      const polys = inv.crossings.map((c) => c.poly);
+      for (const c of inv.crossings) {
+        const oc = [c.c[0] - a.ox, c.c[1] - a.oz], sc = oc[0] * a.dx + oc[1] * a.dz, tc = oc[0] * a.nx + oc[1] * a.nz;
+        if (sc < 0 || sc > a.trim + 30 || tc < a.edges.curbR - 1 || tc > a.edges.curbL + 1) continue;
+        let outer = -Infinity;
+        for (const p2 of c.poly) outer = Math.max(outer, (p2[0] - a.ox) * a.dx + (p2[1] - a.oz) * a.dz);
+        sg = Math.max(sg ?? -Infinity, outer + 1);
+      }
       if (sg == null) {
         let exit = null;
         for (let s = 0; s <= a.trim + 15; s += 0.25) {
@@ -7153,6 +7176,13 @@ function afterNetworkV2(net, ctx, surf) {
       const t1 = (twoWay ? tIn0 + 0.3 : tMid) + kL - 0.3;
       let t0 = twoWay ? tIn0 + 0.1 : tMid - ((ray(cx, cz, -a.nx, -a.nz, 20) ?? 0.3) - 0.3);
       if (t1 - t0 < 1.5) continue;
+      const hits = (s0) => {
+        const band = [armPoint(a, s0, t0), armPoint(a, s0, t1), armPoint(a, s0 + w, t1), armPoint(a, s0 + w, t0)];
+        return polys.some((P) => clipConvex(band, P).length >= 3 && Math.abs(area22(clipConvex(band, P))) > 0.01);
+      };
+      let tries = 0;
+      while (hits(sg) && tries++ < 40) sg += 0.25;
+      if (tries > 40) continue;
       const p = armPoint(a, sg, t0), q = armPoint(a, sg, t1);
       items.push(lineItem(kind, p, q, a.dx, a.dz, w));
       inv.stops.push({

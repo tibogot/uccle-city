@@ -332,7 +332,7 @@ for (let round = 0; round < MAX_ROUNDS; round++) {
       // meeting at a two-arm junction node, which the engine draws as a corner with kerb fillets; the point stays
       const cor = cornerSplit(road, A, B, e);
       if (cor) {
-        data.nodes.push(cor.node);
+        data.nodes.push(cor.node); N.set(cor.node.id, cor.node); deg.set(cor.node.id, 2);
         data.roads = data.roads.filter((r) => r !== road).concat(cor.roads);
         log.push({ round, action: "split-corner", road: road.id, node: cor.node.id, at: [cor.node.x, cor.node.z] });
         touched.add(road.id); touched.add(cor.node.id); for (const r of cor.roads) touched.add(r.id); changed++;

@@ -229,13 +229,26 @@ function auditTile(T, ortho) {
     }
   };
   for (const c of xIn) if (c.poly && c.drawn !== "decal") c4(c, c.poly, true, `crossing ${c.id}`);
-  // the decal mesh (paint v2): every drawn triangle's centroid must be on the markable carriageway
+  // the decal mesh (paint v2): every drawn triangle's centroid must lie in a measured markable base triangle (exact
+  // polygons, not the 0.5 m class raster, whose cells blur the kerb line)
+  const mgrid = new Map();
+  if (rd.parts.paint && prep) prep.base.forEach((b, i) => {
+    if (!MARKABLE.has(b.cls)) return;
+    const xs = [b.a[0], b.b[0], b.c[0]], zs = [b.a[1], b.b[1], b.c[1]];
+    for (let gi = Math.floor(Math.min(...xs) / 4); gi <= Math.floor(Math.max(...xs) / 4); gi++)
+      for (let gj = Math.floor(Math.min(...zs) / 4); gj <= Math.floor(Math.max(...zs) / 4); gj++) { const k = gi * 65536 + gj; let l = mgrid.get(k); if (!l) mgrid.set(k, (l = [])); l.push(b); }
+  });
+  const onMarkable = (x, z) => (mgrid.get(Math.floor(x / 4) * 65536 + Math.floor(z / 4)) || []).some((b) => {
+    const d = (b.b[1] - b.c[1]) * (b.a[0] - b.c[0]) + (b.c[0] - b.b[0]) * (b.a[1] - b.c[1]);
+    const w0 = ((b.b[1] - b.c[1]) * (x - b.c[0]) + (b.c[0] - b.b[0]) * (z - b.c[1])) / d, w1 = ((b.c[1] - b.a[1]) * (x - b.c[0]) + (b.a[0] - b.c[0]) * (z - b.c[1])) / d;
+    return w0 >= -1e-6 && w1 >= -1e-6 && 1 - w0 - w1 >= -1e-6;
+  });
   if (rd.parts.paint && prep) {
     const P = rd.parts.paint.position, I = rd.parts.paint.index;
     let bad = 0, n = 0, at = null;
     for (let t = 0; t < I.length; t += 3) {
       const x = (P[I[t] * 3] + P[I[t + 1] * 3] + P[I[t + 2] * 3]) / 3, z = (P[I[t] * 3 + 2] + P[I[t + 1] * 3 + 2] + P[I[t + 2] * 3 + 2]) / 3;
-      n++; if (!MARKABLE.has(cls(x, z))) { bad++; at ??= [x, z]; }
+      n++; if (!onMarkable(x, z)) { bad++; at ??= [x, z]; }
     }
     if (bad) add("C4", bad / n > 0.01 ? "error" : "warn", at[0], at[1], `${bad} of ${n} paint decal triangles not on the markable carriageway`, { id: "paint-decal" });
   }
