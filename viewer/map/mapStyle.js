@@ -83,7 +83,7 @@ export function drawGround(ctx, v, L, opt = {}) {
 
   // 6. other tram tracks, then tram 92 (STIB red) and its stops
   if (s >= 0.12) { ctx.strokeStyle = PAL.tramTrack; ctx.lineWidth = px(1.2); L.geo.tram.each(v, (p) => ctx.stroke(p)); }
-  ctx.strokeStyle = PAL.tram; ctx.lineWidth = px(opt.mini ? 2.6 : 2.2);
+  ctx.strokeStyle = PAL.tram; ctx.lineWidth = px(opt.mini ? 2 : 2.2);
   ctx.stroke(L.tramPath);
   const r = opt.mini ? 3.2 : s > 0.5 ? 4 : 2.8;
   for (const st of L.stops) {

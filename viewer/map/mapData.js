@@ -5,7 +5,9 @@
 import { TiledLayer, addLine, addRing, roadLabelAnchors, boundsOf } from '../../vendor/slop-map/mapCore.js';
 
 export const LANGS = ['fr', 'nl'];
-const CELL = 40;                 // spatial grid cell (m) for the road segments
+const CELL = 40;
+// abbreviations people type: st job -> saint job / sint job, av -> avenue, ch -> chaussee
+const SYN = { st: ['saint', 'sint', 'st'], ste: ['sainte', 'ste'], av: ['avenue', 'av'], ch: ['chaussee', 'ch'], bd: ['boulevard', 'bd'], pl: ['place', 'plein', 'pl'] };                 // spatial grid cell (m) for the road segments
 
 const norm = (t) => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’'`\-–.,()]/g, ' ').replace(/\s+/g, ' ').trim();
 
@@ -296,9 +298,13 @@ export class MapData {
     for (const it of this.searchItems) {
       let score = 0;
       for (const tk of toks) {
-        const i = it.terms.indexOf(tk);
-        if (i < 0) { score = 0; break; }
-        score += i === 0 ? 3 : it.terms[i - 1] === ' ' ? 2 : 0.6;
+        let best = -1;
+        for (const alt of SYN[tk] || [tk]) {
+          const i = it.terms.indexOf(alt);
+          if (i >= 0) best = Math.max(best, i === 0 ? 3 : it.terms[i - 1] === ' ' ? 2 : 0.6);
+        }
+        if (best < 0) { score = 0; break; }
+        score += best;
       }
       if (score > 0) res.push({ it, score: score * it.w });
     }

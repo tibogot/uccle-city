@@ -54,7 +54,9 @@ body.umap-on #hud { max-height: calc(100vh - 340px); }   /* the city's HUD stops
   .umap-toggle { display: block; }
   .umap-btns button { height: 34px; min-width: 34px; padding: 0 8px; }
   .umap-me { top: auto; bottom: 46px; left: 10px; }
-  .umap-info { bottom: 72px; }
+  .umap-info { bottom: 72px; white-space: normal; text-align: center; font-size: 11.5px; }
+  .umap-credit { bottom: auto; top: 112px; right: 8px; left: 8px; text-align: right; font-size: 9.5px; }
+  .umap-compass { bottom: 40px; }
 }
 `;
 let done = false;
