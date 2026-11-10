@@ -143,7 +143,8 @@ def gothic_window(fr, s, sill, spring, apex, w, n_lights, depth=0.32, foils=(), 
         fbox(fr, x - 0.025, x + 0.025, hz(sill) + 0.05, l_spring, -0.08, -0.055, STONE, C_TRAC)
     # sill: weathered stone ledge (sits on the wall face: no back face)
     fbox(fr, s0 - 0.12 - GW_CH, s1 + 0.12 + GW_CH, hz(sill) - GW_CH - 0.16, hz(sill) - GW_CH + 0.002, 0.0, 0.09, STONE, C_SILL)
-    # hood mould: the arch's extrados offset
+    # hood mould: the arch's extrados offset (none on the west window, photo c00)
+    if hood_off is None: return outline
     big = pointed(s0 - hood_off, s1 + hood_off, hz(spring), hz(apex) + hood_off * 1.05, n=16)
     top = [p for p in big if p[1] >= hz(spring) - 1e-6]
     top = sorted(top, key=lambda p: p[0])
@@ -225,7 +226,7 @@ def west_front():
     win = window_hole(0.0, SC.WWIN_SILL, SC.WWIN_SPRING, SC.WWIN_APEX, SC.WWIN_W)
     ocu = circle(0.0, hz(SC.OCULUS_W_H), 0.2, OCU_N)
     fill2d(fr, [out, door_hole, win, ocu], 0.0, RUB, C_PLAIN)
-    gothic_window(fr, 0.0, SC.WWIN_SILL, SC.WWIN_SPRING, SC.WWIN_APEX, SC.WWIN_W, 3, foils=SC.WEST_WINDOW["foils"])
+    gothic_window(fr, 0.0, SC.WWIN_SILL, SC.WWIN_SPRING, SC.WWIN_APEX, SC.WWIN_W, 3, foils=SC.WEST_WINDOW["foils"], hood_off=None)   # c00: no hood mould
     oculus(fr, 0.0, SC.OCULUS_W_H, 0.2, 0.34)
     west_door_opening(fr, dch)
     # steps (blue stone): two; the upper one runs into the opening under the leaves = the threshold (sealed bottom)
@@ -294,36 +295,21 @@ def west_door_opening(fr, dch):
         A1, B1 = fr.p(*lp[i], -dch), fr.p(*lp[i + 1], -dch)
         mid = Vector(((lp[i][0] + lp[i + 1][0]) / 2, (lp[i][1] + lp[i + 1][1]) / 2))
         inward = fr.U * (-mid.x) + Z * (-(mid.y - (F + Tp) / 2) if i == 1 else 0.0)
-        face_dir([A0, B0, B1, A1], inward.normalized() + fr.N, STONE, C_SUR)
+        face_dir([A0, B0, B1, A1], inward.normalized() + fr.N, RUB, C_PLAIN)        # round 3b: the wall's own stone (c00)
     # the reveal (jambs + soffit) from the chamfer back into the frame's front
     for (a, b, nrm) in (((-W2, F), (-W2, Tp), fr.U), ((-W2, Tp), (W2, Tp), -Z), ((W2, Tp), (W2, F), -fr.U)):
-        face_dir([fr.p(*a, -dch), fr.p(*b, -dch), fr.p(*b, -DF["u0"] - 0.005), fr.p(*a, -DF["u0"] - 0.005)], nrm, STONE, C_SUR)
+        face_dir([fr.p(*a, -dch), fr.p(*b, -dch), fr.p(*b, -DF["u0"] - 0.005), fr.p(*a, -DF["u0"] - 0.005)], nrm, RUB, C_PLAIN)
+    # the white notice board right of the door (photo c00), 2 cm off the wall on two screws' worth of depth
+    if not FAR(): fbox(fr, W2 + 0.33, W2 + 0.63, hz(35.4), hz(36.0), 0.0, 0.02, STONE, C_SCULPT)
     # the oak frame: jambs stop under the head (no overlapping fronts), the back faces stay (seen from inside)
     f = DF["face"]
     for sg in (-1, 1):
         a, b = sorted((sg * W2, sg * (W2 - f)))
         fbox(fr, a, b, F, Tp - DF["head"], -DF["u1"], -DF["u0"], WOOD, C_DOOR, skip=("right" if sg > 0 else "left", "bottom", "top", "back"))
     fbox(fr, -W2, W2, Tp - DF["head"], Tp, -DF["u1"], -DF["u0"], WOOD, C_DOOR, skip=("top", "left", "right", "back"))
-    # quoined jambs: dressed stones beside the chamfer, proud 12 mm (they start at the chamfer's edge: closed boxes)
-    for sg in (-1, 1):
-        x = sg * (W2 + dch)
-        v = F; k = 0
-        while v < Tp - 0.05:
-            h = min(0.32, Tp - v); L = (0.3, 0.2)[k % 2]
-            a, b = sorted((x, x + sg * L))
-            fbox(fr, a, b, v + 0.006, v + h - 0.006, 0.0, 0.012, STONE, C_SUR)
-            v += h; k += 1
-    lt = Tp + dch                                          # the lintel over the chamfered head
-    fbox(fr, -W2 - 0.37, W2 + 0.37, lt, lt + 0.2, 0.0, 0.02, STONE, C_SUR)
-    # relieving arch: a flat segmental band of 11 voussoirs, its ends resting on the lintel (photo: under the sill)
-    R = 4.6; n = 11; half = 0.95
-    a0 = math.asin(half / R)
-    cy = lt + 0.2 + 0.006 - R * math.cos(a0)
-    for k in range(n):
-        t0 = -a0 + 2 * a0 * k / n + 0.0025; t1 = -a0 + 2 * a0 * (k + 1) / n - 0.0025
-        pts = [(R * math.sin(t0), cy + R * math.cos(t0)), (R * math.sin(t1), cy + R * math.cos(t1)),
-               ((R + 0.3) * math.sin(t1), cy + (R + 0.3) * math.cos(t1)), ((R + 0.3) * math.sin(t0), cy + (R + 0.3) * math.cos(t0))]
-        fill2d(fr, [pts], 0.012, STONE, C_SUR); strip2d(fr, pts, 0.012, 0.0, STONE, C_SUR, inward=False)
+    # round 3b (photo c00, coordinator): NO quoined surround, no lintel slab, no white voussoirs: a plain opening in the
+    # rubble with chamfered jambs (above), the brown double door. (The photo shows a flat soldier course of rubble
+    # stones under the sill ledge, flush with the wall: not modelled, the rubble shader runs through it.)
 
 def cross(fr, s, h0, d):
     """the gable's stone cross (botonnée: trefoil ends, photo c04) as ONE solid: the outline of shaft + arms extruded
@@ -470,8 +456,9 @@ def west_door_leaves():
             fbox(fr, a + k * wb + 0.002, a + (k + 1) * wb - 0.002, F, vt, d1 + 0.006, d0, DOOR, C_DOOR, skip=("back", "bottom"))
         fill2d(fr, [rect(a, F, b, vt)], d1 + 0.008, DOOR, C_DOOR)                       # the backing: closes the V-joints
         fill2d(fr, [rect(a, F, b, vt)], d1, DOOR, C_DOOR, flip=True)                    # the leaf's inner face
-        for v in (34.75, 36.0):                                                        # strap hinges
-            bar(fr, (sg * (xo - 0.03), hz(v)), (sg * 0.25, hz(v)), d0, 0.05, 0.01, IRON)
+        # (no strap hinges outside: c00 shows plain painted boards)
+    # the small brown plaque with gilt letters on the left leaf (photo c00), on the leaf's face
+    fbox(fr, -xo + 0.14, -xo + 0.49, hz(35.62), hz(35.8), d0, d0 + 0.012, DOOR, C_BELL)
     # cover strip (astragal): from 3 mm INTO the threshold stone (it stopped 4 mm above it: a 3 x 4 mm hole into the nave
     # between the meeting stiles, the audit's threshold leak)
     fbox(fr, -0.025, 0.025, F - 0.003, vt - 0.01, d0, d0 + 0.014, DOOR, C_DOOR, skip=("back",))

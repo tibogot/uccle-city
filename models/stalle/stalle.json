@@ -1,19 +1,19 @@
 {
  "asset": "Chapelle de Stalle (Notre-Dame de Bon-Secours), rue de Stalle 50, Uccle + the sacristan's house (tools/blender/stalle.py)",
- "triangles_lod0": 33015,
+ "triangles_lod0": 32501,
  "triangles_far": 6417,
- "triangles_door": 218,
+ "triangles_door": 188,
  "triangles_slates": 39507,
  "triangles_per_slot_lod0": {
-  "sandstone_rubble": 3477,
-  "stone_white": 22830,
+  "sandstone_rubble": 3489,
+  "stone_white": 22290,
   "stone_blue": 32,
   "brick_red_brussels": 1437,
   "slate": 612,
   "zinc_roof": 1908,
   "wood_frame_dark": 536,
   "painted_wood_red": 425,
-  "glass_window": 730,
+  "glass_window": 744,
   "cast_iron_green": 748,
   "cobbles": 280
  },
@@ -78,12 +78,12 @@
    0.86,
    0.94
   ],
-  "lod0_px_per_m": 35.4,
+  "lod0_px_per_m": 35.6,
   "far_px_per_m": 13.0,
   "thin_faces_vertex_ao": [
-   17658,
+   17548,
    0,
-   78
+   62
   ]
  },
  "frame": "glTF Y up; three.js local (u, m TAW - OY, w); node at the city position of the frame origin, height OY, rotation.y = -rotation",

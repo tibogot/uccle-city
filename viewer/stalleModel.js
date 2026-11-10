@@ -35,7 +35,7 @@ export const LIBRARY_NAMES = ["brick_red_brussels", "brick_yellow", "brick_dark"
   "cobbles", "paving_concrete", "gravel_path", "lawn_edge", "sandstone_rubble", "painted_wood_red"];
 export const NEW_NAMES = ["sandstone_rubble", "painted_wood_red"];
 /** THE ADAPTER TABLE: GLB slot -> library material name */
-export const SLOT_TABLE = { ...Object.fromEntries(ST_SLOTS.map((s) => [s, s])), painted_wood_red: "wood_frame_dark" };   // the doors: varnished brown (c00), by face code
+export const SLOT_TABLE = { ...Object.fromEntries(ST_SLOTS.map((s) => [s, s])) };   // round 3b: the doors' own painted red-brown (c00)
 export const ST_CODES = ["plain", "coping", "surround", "tracery", "plinth", "band", "sill", "sculpture", "ridge", "louvre", "gutter",
   "interior", "door", "bell", "quoin", "lead"];
 /** LOD switch distances (m, camera to the building's box) and the half-width of each cross-fade band */
@@ -222,17 +222,20 @@ function weather(col, k = 1) {
 function rubble() {
   const w = uv(0);
   const fw = max(fwidth(w.x), fwidth(w.y)).max(0.00002);
-  // courses: 0.52 m bands split into three courses at jittered heights
+  // courses: 0.52 m bands split into three courses at strongly jittered heights (round 3b, photo c00: irregular
+  // courses, from thin 7-9 cm "slab" courses to 25 cm ones; were near-equal thirds = a neat ashlar)
   const bandH = 0.52;
   const bv = w.y.div(bandH), band = floor(bv), fb = fract(bv);
-  const s1 = hash2(vec2(band, 13.1)).mul(0.12).add(0.27), s2 = hash2(vec2(band, 41.7)).mul(0.12).add(0.61);
+  const s1 = hash2(vec2(band, 13.1)).mul(0.32).add(0.15), s2 = s1.add(hash2(vec2(band, 41.7)).mul(0.4).add(0.17)).min(0.85);
   const c = step(s1, fb).add(step(s2, fb));
   const lo = select(c.lessThan(0.5), float(0), select(c.lessThan(1.5), s1, s2));
   const hi = select(c.lessThan(0.5), s1, select(c.lessThan(1.5), s2, float(1)));
   const y0 = band.add(lo).mul(bandH), y1 = band.add(hi).mul(bandH);
   const row = band.mul(3).add(c);
   // stones: a jittered cell per course; the stone's own joints from its own index (continuous within the stone)
-  const Lc = hash2(vec2(row, 7.0)).mul(0.12).add(0.22);
+  // stone length per course: 0.18-0.5 m, and the thin courses carry long thin stones (x1.7)
+  const cH = hi.sub(lo).mul(bandH);
+  const Lc = hash2(vec2(row, 7.0)).mul(0.3).add(0.18).mul(mix(float(1.7), float(1), smoothstep(0.09, 0.16, cH)));
   const xs = w.x.add(hash2(vec2(row, 1.0)).mul(5.0));
   const cu = xs.div(Lc), cell = floor(cu), fx = fract(cu);
   const J = (k) => k.add(hash2(vec2(k, row)).sub(0.5).mul(0.56));
@@ -250,7 +253,7 @@ function rubble() {
   const ax = ex.negate().div(k).exp(), ay = ey.negate().div(k).exp();
   const e = ax.add(ay).log().mul(k).negate();
   const wx = ax.div(ax.add(ay)), wy = float(1).sub(wx);
-  const jw = hs3.mul(0.004).add(0.0065);                        // half joint: joints 1.3-2.1 cm
+  const jw = hs3.mul(0.0035).add(0.005);                        // half joint: joints 1.0-1.7 cm
   const e2 = e.sub(jw);
   // pillow: rounded arrises + a gentle dome over the face, per stone. Round 3 (owner: "bevelled bathroom tiles"): the
   // arris radius 0.9-1.7 cm (was 2.2-4), its drop 2.5-4.5 mm (was 5-8); each stone TILTED a little (rough-squared stones
@@ -275,15 +278,17 @@ function rubble() {
   const mask = smoothstep(0.0, max(fw.mul(1.2), 0.0015), e2);
   const far = smoothstep(0.006, 0.03, fw);
   // stone: pale Brussels sandstone, low contrast (cream / pale grey; a few warmer or greyer), pitted surface
-  let tone = mix(lin(0xd8d2c1), lin(0xccc2a8), hs);
-  tone = mix(tone, lin(0xbdbab0), step(0.8, hs2).mul(0.7));
-  tone = mix(tone, lin(0xcdb990), step(0.9, hs3).mul(0.55));
+  // round 3b: the photo's cream-grey (lighter, warmer), a few grey and ochre stones
+  let tone = mix(lin(0xe3dccb), lin(0xd5cbb0), hs);
+  tone = mix(tone, lin(0xc8c5bb), step(0.78, hs2).mul(0.7));
+  tone = mix(tone, lin(0xd8c69e), step(0.9, hs3).mul(0.55));
   const grain = vnoise(w.mul(13.0).add(hs.mul(17.0))).mul(0.07).add(vnoise(w.mul(41.0)).mul(0.05)).sub(0.06);
   const pits = smoothstep(0.78, 0.92, vnoise(w.mul(70.0).add(hs2.mul(5.0)))).mul(0.1);
   let col = tone.mul(float(1).add(grain).sub(pits)).mul(mix(float(0.94), float(1.04), hs2));
   col = col.mul(mix(float(0.86), float(1), t));                    // the arrises catch dirt: a soft rim
   // mortar: pale lime, a little lighter than the stones, shaded in the recess under each stone
-  const mortar = lin(0xd3cdbd).mul(mix(float(0.74), float(0.95), smoothstep(float(0), jw, e2.negate())));
+  // softer joints (round 3b): mortar close to the stones' tone, barely shaded in the recess
+  const mortar = lin(0xd9d2c0).mul(mix(float(0.86), float(0.97), smoothstep(float(0), jw, e2.negate())));
   const avg = mix(lin(0xd2cbb6), lin(0xcfc8b6), 0.4).mul(0.95);
   col = mix(mix(mortar, col, mask), avg, far.mul(0.6));
   return { col, nT, mask, far };
@@ -328,11 +333,11 @@ function slateLook() {
   const film = vnoise(w.mul(0.9)).mul(0.6).add(vnoise(w.mul(3.1)).mul(0.4));
   const grime = smoothstep(0.45, 0.85, film).mul(north.mul(0.7).add(0.3)).mul(0.22).mul(stLook.moss);
   col = mix(col, lin(0x5d6257), grime);
-  // crustose lichen: small soft rosettes (two octaves, a soft threshold: one octave of value noise read as pale
-  // rectangles, "paint splatter"), more on some slates than others, mostly on the north slopes
-  const cn = vnoise(w.mul(19.0).add(id.mul(3.0))).mul(0.65).add(vnoise(w.mul(53.0).add(id.mul(7.0))).mul(0.35));
-  const crust = smoothstep(0.7, 0.86, cn).mul(smoothstep(0.4, 0.75, vnoise(w.mul(1.7)))).mul(north.mul(0.8).add(0.2)).mul(id.mul(0.6).add(0.4));
-  col = mix(col, lin(0x80867b), crust.mul(0.38).mul(stLook.moss));
+  // lichen (round 3b, coordinator: the small flecks read as sparkle): only RARE soft grey-green patches, metre-scale,
+  // mostly on the north slopes; no texel-scale detail left to shimmer
+  const patch = smoothstep(0.72, 0.92, vnoise(w.mul(1.3).add(vec2(3.1, 7.7))).mul(0.7).add(vnoise(w.mul(3.7)).mul(0.3)));
+  const crust = patch.mul(north.mul(0.85).add(0.15));
+  col = mix(col, lin(0x6f7568), crust.mul(0.28).mul(stLook.moss));
   col = mix(col, lin(0x4a4c4e), isCode(C.ridge).mul(0.35));
   // the deck's relief: each course tilts up-slope by one slate thickness over one gauge (the slates rest on the course
   // below), the butt step as a short steep band
@@ -346,8 +351,9 @@ const TEMP = {
   sandstone_rubble() {
     const { col, nT } = rubble();
     // the lower walls (north side most) browner and darker: rising damp, splash, algae (photos P01, c05)
-    const low = smoothstep(36.4, 34.4, positionWorld.y), north = clamp(normalWorld.z.negate().mul(0.8).add(0.3), 0, 1);
-    const damp = mix(col, col.mul(vec3(0.74, 0.66, 0.52)), low.mul(north).mul(0.75).mul(stLook.weather));
+    // round 3b (photo c00): the base reads darker grey-green on every side (splash, algae), most on the north
+    const low = smoothstep(35.6, 34.2, positionWorld.y), north = clamp(normalWorld.z.negate().mul(0.6).add(0.55), 0, 1);
+    const damp = mix(col, col.mul(vec3(0.7, 0.7, 0.62)), low.mul(north).mul(0.7).mul(stLook.weather));
     const c = weather(damp).mul(mix(float(1), float(0.93), isCode(C.plinth)));
     return std({ colorNode: c, roughnessNode: float(0.9), metalnessNode: float(0), normalNode: tangentNormal(nT) });
   },
@@ -403,7 +409,7 @@ const TEMP = {
     const w = uv(0);
     const grain = vnoise(w.mul(vec2(3, 45))).mul(0.12).add(0.94);
     const wear = smoothstep(0.7, 0.92, vnoise(w.mul(6.0))).mul(0.35);
-    const col = mix(lin(0x5e2318), lin(0x3a2219), wear).mul(grain);
+    const col = mix(lin(0x7c3f27), lin(0x4a2a1c), wear).mul(grain);     // round 3b: c00's matte red-brown (was oxblood)
     return std({ colorNode: col, roughnessNode: float(0.55), metalnessNode: float(0) });
   },
   glass_window() {

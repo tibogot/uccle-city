@@ -352,7 +352,9 @@ def arcade(side):
     for uu, sg in ((SC.RESP_W, 1), (U_CA0, -1)):
         for fr, ww in ((frN, wn), (frA, wa)):
             s = S(fr, uu, ww)
-            fbox(fr, min(s, s + sg * 0.32 * (1 if S(fr, uu + 1, ww) > s else -1)), max(s, s + sg * 0.32 * (1 if S(fr, uu + 1, ww) > s else -1)), hz(36.68), hz(36.8), 0.0, 0.08, STONE, C_CAP)
+            # round 3b: a moulded impost (ogee profile, like the abaci's chamfer) instead of a plain box
+            e_ = s + sg * 0.32 * (1 if S(fr, uu + 1, ww) > s else -1)
+            sweep2d(fr, [(min(s, e_), hz(36.8)), (max(s, e_), hz(36.8))], [(0.0, -0.12), (0.025, -0.105), (0.05, -0.06), (0.075, -0.02), (0.08, 0.0), (0.0, 0.0)], STONE, C_CAP)
 
 def aisle(side):
     w_out = WC + side * AI
@@ -653,11 +655,14 @@ def furniture():
     # statues on corbels against the last piers (both sides), facing the nave
     for side in (-1, 1):
         u = SC.COLS_U[2]
-        c = P(u, WC + side * (ARC_N - 0.05), OY)
-        nrm = Vector((0, side, 0)) * 1.0           # Blender: +y = north (w negative)
         fwd2 = Vector((0, 1 if side > 0 else -1, 0))  # toward the axis
-        wbox(c + fwd2 * 0.1, Vector((1, 0, 0)), fwd2, 0.18, 0.14, hz(F0 + 2.25), hz(F0 + 2.4), STONE, C_CAP)
-        figure(c + fwd2 * 0.12 + Z * hz(F0 + 2.4), fwd2, Vector((1, 0, 0)), 0.85, VIRGIN if side < 0 else
+        # round 3b: the corbel was a box at the capital's height, sunk into the bell and the abacus (the jagged block on
+        # the springing); now a round moulded corbel on the SHAFT under the astragal, the figure clear of the capital
+        ax = P(u, WC + side * (ARC_N + ARC_A) / 2, OY)
+        c = ax + fwd2 * (PIER_R + 0.02)
+        ct = hz(F0 + 1.22)
+        lathe(c + Z * (ct - 0.26), [(0.0, 0.0), (0.03, 0.01), (0.06, 0.06), (0.1, 0.13), (0.15, 0.19), (0.17, 0.22), (0.17, 0.26), (0.0, 0.26)], 32, STONE, C_CAP)
+        figure(c + fwd2 * 0.1 + Z * ct, fwd2, Vector((1, 0, 0)), 0.85, VIRGIN if side < 0 else
                [(0.0, 0.17, 0.13, 0.06, C_MANTLE), (0.4, 0.15, 0.12, 0.06, C_MANTLE), (0.75, 0.15, 0.11, 0.03, C_ROBE), (0.86, 0.14, 0.09, 0.0, C_ROBE),
                 (0.9, 0.05, 0.05, 0.0, C_SKIN), (0.91, 0.04, 0.04, 0.0, C_SKIN)])
     # the chandelier (wrought iron: ring, six arms, candle bulbs) hung from the ceiling rose
@@ -988,10 +993,14 @@ if BAKE:
         d = np.zeros(n * 4, dtype=np.float32); ca.data.foreach_get("color", d); val = d.reshape(-1, 4).astype(np.float64)
         keys = np.zeros(n, dtype=np.int64)
         kmap = {}
+        # key = (vertex, its SHADING normal at that corner): corners of a smooth surface share one value. (Round 3 keyed
+        # on the face normal rounded to thirds: on the 64-sided capitals every bin edge cut the smoothing, and the light
+        # came out in stepped blocks, the "faceted capital")
+        cnor = me.corner_normals
         for f in me.polygons:
-            nq = (round(f.normal.x * 3), round(f.normal.y * 3), round(f.normal.z * 3))
             for li in f.loop_indices:
-                keys[li] = kmap.setdefault((me.loops[li].vertex_index, nq), len(kmap))
+                v_ = cnor[li].vector
+                keys[li] = kmap.setdefault((me.loops[li].vertex_index, round(v_.x * 20), round(v_.y * 20), round(v_.z * 20)), len(kmap))
         K_ = len(kmap)
         acc = np.zeros((K_, 4)); cnt = np.bincount(keys, minlength=K_).astype(np.float64)[:, None]
         np.add.at(acc, keys, val); kv = acc / np.maximum(cnt, 1)

@@ -409,7 +409,9 @@ def window_lights(s, sill, spring, apex, w, n_lights, foils=()):
     mull, edge = 0.1, 0.06
     lw = (w - 2 * edge - mull * (n_lights - 1)) / n_lights
     lights = []
-    l_spring = hz(spring) - (0.45 if n_lights > 2 else 0.1)          # c00: the lancets' heads at mid-window, big foils above
+    # c00 (round 3b, measured on the photo): the three lancets rise to 61 % of the window, their cusped heads near the
+    # arch's springing, two quatrefoils above (round 3: heads at 41 %, a tall blank plate over them)
+    l_spring = hz(spring) + (0.12 if n_lights > 2 else -0.1)
     l_apex = l_spring + lw * 0.95
     for k in range(n_lights):
         a = s0 + edge + k * (lw + mull)
@@ -425,7 +427,7 @@ def window_lights(s, sill, spring, apex, w, n_lights, foils=()):
     return outline, lights, l_spring, mullions
 
 # the windows (shared): (name, u or None, wall, s-centre, sill, spring, apex, width, lights, foils)
-WEST_WINDOW = dict(sill=WWIN_SILL, spring=WWIN_SPRING, apex=WWIN_APEX, w=WWIN_W, n=3, foils=[(-0.4, 39.62, 0.36, 3), (0.4, 39.62, 0.36, 3)])
+WEST_WINDOW = dict(sill=WWIN_SILL, spring=WWIN_SPRING, apex=WWIN_APEX, w=WWIN_W, n=3, foils=[(-0.34, 39.84, 0.21, 4), (0.34, 39.84, 0.21, 4)])
 CHOIR_WINDOW = dict(sill=37.4, spring=38.85, apex=39.75, w=1.1, n=2, foils=[(0.0, 39.42, 0.2, 4)])
 
 # ------------------------------------------------------------------------------------------------ mesh + lightmap UV

@@ -1,19 +1,19 @@
 # Mesh audit (packed): stalle.lod0
 
-72,740 triangles, 75,540 welded vertices, 60,294 open edges, 2,048,012 rays, 33016 ms.
+72,196 triangles, 75,162 welded vertices, 60,140 open edges, 2,041,444 rays, 24789 ms.
 
-**4 blocking**, 2190 warnings. NOT CLEAN.
+**4 blocking**, 2181 warnings. NOT CLEAN.
 
 | check | severity | count |
 |---|---|---|
 | flipped | block | 4 |
 | near | warn | 226 |
-| sliver | warn | 1662 |
+| sliver | warn | 1654 |
 | winding | warn | 42 |
 | nonmanifold | warn | 148 |
-| tjunction | warn | 109 |
+| tjunction | warn | 108 |
 | degenerate | warn | 3 |
-| seam | info | 27777 |
+| seam | info | 27725 |
 | opening | info | 159 |
 | backtoback | info | 381 |
 
@@ -75,7 +75,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (186 more in the JSON)
 
-## sliver (warn, 1662)
+## sliver (warn, 1654)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -120,7 +120,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 3.56, 39.95, 2.35 | Stalle/sandstone_rubble | 126 | 2.183 |
 | 1.76, 40.01, 2.35 | Stalle/sandstone_rubble | 58 | 2.806 |
 
-(1622 more in the JSON)
+(1614 more in the JSON)
 
 ## winding (warn, 42)
 
@@ -216,7 +216,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (108 more in the JSON)
 
-## tjunction (warn, 109)
+## tjunction (warn, 108)
 
 | at | part | edge_m |
 |---|---|---|
@@ -224,6 +224,8 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.00, 40.14, -2.15 | Stalle/sandstone_rubble | 1.28 |
 | 0.00, 40.14, 2.35 | Stalle/sandstone_rubble | 1.28 |
 | 0.00, 34.76, 4.45 | Stalle/sandstone_rubble | 4.22 |
+| 0.26, 34.32, -0.60 | Stalle/sandstone_rubble | 0.195 |
+| 0.26, 34.32, 0.80 | Stalle/sandstone_rubble | 0.195 |
 | 11.20, 34.75, -4.25 | Stalle/sandstone_rubble | 4.13 |
 | 0.00, 34.76, -4.25 | Stalle/sandstone_rubble | 4.13 |
 | 10.58, 37.33, -4.25 | Stalle/sandstone_rubble | 11.2 |
@@ -241,9 +243,6 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 10.50, 34.75, 7.34 | Stalle/sandstone_rubble | 4.78 |
 | -6.67, 34.95, 4.15 | Stalle/sandstone_rubble | 7.32 |
 | -6.67, 34.95, 9.97 | Stalle/sandstone_rubble | 7.32 |
-| 0.26, 34.32, -0.60 | Stalle/stone_white | 0.195 |
-| 0.26, 34.32, 0.80 | Stalle/stone_white | 0.195 |
-| 0.00, 36.49, -0.67 | Stalle/stone_white | 2.14 |
 | 0.00, 35.04, -4.25 | Stalle/stone_white | 0.288 |
 | 0.00, 35.34, -4.25 | Stalle/stone_white | 0.288 |
 | 0.00, 35.64, -4.25 | Stalle/stone_white | 0.288 |
@@ -260,8 +259,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.00, 36.54, 4.45 | Stalle/stone_white | 0.288 |
 | 0.00, 36.84, 4.45 | Stalle/stone_white | 0.288 |
 | 0.00, 37.14, 4.45 | Stalle/stone_white | 0.288 |
+| 0.32, 44.73, 0.04 | Stalle/stone_white | 0.58 |
 
-(69 more in the JSON)
+(68 more in the JSON)
 
 ## degenerate (warn, 3)
 
@@ -271,18 +271,17 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 2.32, 39.88, 2.54 | Stalle_slates/slate | 0.251 |
 | 0.84, 37.11, -4.54 | Stalle_slates/slate | 0.2244 |
 
-## seam (info, 27777)
+## seam (info, 27725)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
-| 0.00, 39.10, -0.98 | Stalle/sandstone_rubble + Stalle/stone_white | 8.2 | 203 | 66.7 |
 | 13.60, 38.87, -2.15 | Stalle/sandstone_rubble + Stalle/stone_white | 6.21 | 195 | 66.6 |
 | 16.88, 38.87, 0.75 | Stalle/sandstone_rubble + Stalle/stone_white | 6.21 | 192 | 66.7 |
 | 12.85, 39.80, -2.31 | Stalle/slate + Stalle/zinc_roof | 160.28 | 164 | 58.5 |
 | 12.40, 38.24, -2.07 | Stalle/stone_white + Stalle/stone_white | 6.22 | 160 | 90 |
 | 16.80, 38.25, -0.45 | Stalle/stone_white + Stalle/stone_white | 6.22 | 160 | 90 |
 | 14.75, 40.13, -2.15 | Stalle/sandstone_rubble + Stalle/slate | 43.06 | 158 | 33.8 |
-| 0.08, 38.28, 0.95 | Stalle/stone_white + Stalle/stone_white | 8.21 | 140 | 90 |
+| 0.08, 38.18, 0.95 | Stalle/stone_white + Stalle/stone_white | 8.21 | 144 | 90 |
 | 7.60, 39.67, 2.35 | Stalle/sandstone_rubble + Stalle/stone_white | 2.7 | 129 | 90 |
 | 8.01, 39.79, -2.15 | Stalle/sandstone_rubble + Stalle/stone_white | 2.7 | 128 | 90 |
 | 5.57, 39.71, -2.15 | Stalle/sandstone_rubble + Stalle/stone_white | 2.7 | 127 | 90 |
@@ -303,9 +302,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.83, 37.02, -4.50 | Stalle/zinc_roof + Stalle/zinc_roof | 0.45 | 76 | 63.6 |
 | 0.82, 37.08, 4.75 | Stalle/zinc_roof + Stalle/zinc_roof | 0.45 | 76 | 63.6 |
 | -6.55, 37.55, 10.28 | Stalle/zinc_roof + Stalle/zinc_roof | 0.46 | 76 | 63.3 |
-| 0.17, 38.41, -0.23 | Stalle/stone_white + Stalle/glass_window | 4.01 | 70 | 90 |
-| 0.17, 38.41, 0.33 | Stalle/stone_white + Stalle/glass_window | 4.01 | 70 | 90 |
-| 0.17, 38.41, 0.89 | Stalle/stone_white + Stalle/glass_window | 4.01 | 70 | 90 |
+| 0.17, 38.91, -0.23 | Stalle/stone_white + Stalle/glass_window | 5.15 | 70 | 90 |
+| 0.17, 38.91, 0.33 | Stalle/stone_white + Stalle/glass_window | 5.15 | 70 | 90 |
+| 0.17, 38.91, 0.89 | Stalle/stone_white + Stalle/glass_window | 5.15 | 70 | 90 |
 | 13.00, 38.59, -1.98 | Stalle/stone_white + Stalle/glass_window | 4.24 | 70 | 90 |
 | 12.46, 38.59, -1.98 | Stalle/stone_white + Stalle/glass_window | 4.24 | 70 | 90 |
 | 16.71, 38.59, 0.15 | Stalle/stone_white + Stalle/glass_window | 4.24 | 70 | 90 |
@@ -315,8 +314,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.12, 42.01, 0.30 | Stalle/stone_white + Stalle/glass_window | 1.25 | 64 | 90 |
 | 1.52, 36.59, -4.13 | Stalle/stone_white + Stalle/glass_window | 1.25 | 64 | 90 |
 | 6.54, 36.59, -4.13 | Stalle/stone_white + Stalle/glass_window | 1.25 | 64 | 90 |
+| 8.94, 36.59, -4.13 | Stalle/stone_white + Stalle/glass_window | 1.25 | 64 | 90 |
 
-(27737 more in the JSON)
+(27685 more in the JSON)
 
 ## opening (info, 159)
 

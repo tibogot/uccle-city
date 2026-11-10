@@ -1,6 +1,6 @@
 # Mesh audit (packed): stalle.lod1
 
-6,417 triangles, 3,850 welded vertices, 1,178 open edges, 143,834 rays, 842 ms.
+6,417 triangles, 3,850 welded vertices, 1,178 open edges, 143,834 rays, 680 ms.
 
 **0 blocking**, 132 warnings. Clean (no blocking item).
 

@@ -1,6 +1,6 @@
 # Mesh audit (before pack): stalle.far
 
-6,417 triangles, 3,850 welded vertices, 1,178 open edges, 143,918 rays, 893 ms.
+6,417 triangles, 3,850 welded vertices, 1,178 open edges, 143,918 rays, 820 ms.
 
 **0 blocking**, 134 warnings. Clean (no blocking item).
 
