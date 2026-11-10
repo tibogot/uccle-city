@@ -30,7 +30,9 @@ Stairs paused until the owner's Mixamo clips are in `data/raw/animations/mixamo/
 - [ ] Chapelle de Stalle rounds 3-5 (`claude/stalle`, port 8802: http://localhost:8802/labs/stalle-lab.html, city ?tile=D5&stalle=1): checker 0, front matches c00, interior moulded; open: north-aisle blotches, statue (decision), slates +0.3 ms (decision). Merge behind ?stalle=1 when OK (brings tools/mesh_audit to main).
 - [ ] Villa van Buuren (`claude/vanbuuren`, port 8818: http://localhost:8818/labs/vanbuuren-lab.html, city ?vanbuuren=1&tile=G2&at=302.6,-1229.6): shape matches the photos; look round (brick orange, white concrete, frames, glass, NW roof) next.
 - [ ] Roads v2 phases 0+1 (`claude/roads2`, port 8815: http://localhost:8815/labs/road-lab.html?j=1&view=plan, &paint=v1 = before); send docs/roads/brussels_mobility_request.md.
-- [ ] Flag Lab (`claude/flags`, port 8817: http://localhost:8817/labs/flag-lab.html).
+- [ ] Flag Lab (`claude/flags`, port 8817: http://localhost:8817/labs/flag-lab.html; city http://localhost:8817/viewer/index.html?townhall=1&flags=1&tile=D3&at=-1134,-506).
+- [ ] Minimap + full map (`claude/minimap`, port 8819: http://localhost:8819/labs/map-lab.html, city http://localhost:8819/viewer/index.html?map=1&view=walk&tile=E4&at=-916,-195; M = full map, click to teleport). Weak: few names at walking zoom, Avenue Brugmann unnamed sometimes.
+- [ ] City mesh audit report (docs/CITY_MESH_AUDIT.md): facade details coplanar with walls = likely the building flicker.
 - [ ] Small fixes (`claude/smallfixes`): lamps + ?sunlight=1.
 - [ ] Hero prep notes (`claude/hero-prep`, docs/heroes/): Van Buuren + Wolvendael.
 - Decisions: statues / carved ornament (scripted vs museum scans); chapel close-up slates +0.3 ms.
