@@ -11,7 +11,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { Panel as GUI } from "../viewer/panelUI.js";
 import { FABRIC } from "../viewer/flags/flagCloth.js";
-import { BakedFlags, LiveFlag } from "../viewer/flags/flagField.js";
+import { BakedFlags, LiveFlag, wallPlanesFrom } from "../viewer/flags/flagField.js";
 import { FLAG_DESIGNS, flagTexture } from "../viewer/flags/flagDesigns.js";
 
 const $info = document.getElementById("info");
@@ -99,28 +99,7 @@ function definePoles() {
 let curYaw = THREE.MathUtils.degToRad(P.windDir);
 const targetYaw = () => THREE.MathUtils.degToRad(P.windDir);
 const windYaw = () => curYaw;
-/** the wall nearest to an angled pole's hoist: 16 horizontal rays from the hoist top against the town hall model,
- *  the nearest hit on a face that faces the ray; the plane (sim frame = relative to the top) keeps the cloth 4 cm in
- *  front of it */
-const ray = new THREE.Raycaster();
-function wallPlanes(top, axis) {
-  if (!hall) return [];
-  let best = null;
-  for (let k = 0; k < 16; k++) {
-    const a = (k / 16) * Math.PI * 2, dir = new THREE.Vector3(Math.cos(a), 0, Math.sin(a));
-    ray.set(top, dir); ray.far = 6;
-    for (const hit of ray.intersectObject(hall, true)) {
-      if (!hit.face) continue;
-      const nrm = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
-      if (nrm.dot(dir) > -0.5) continue;                         // not a wall facing the hoist
-      if (!best || hit.distance < best.distance) best = { distance: hit.distance, point: hit.point.clone(), nrm };
-      break;
-    }
-  }
-  if (!best) return [];
-  const nrm = best.nrm.setY(0).normalize();
-  return [[nrm.x, nrm.y, nrm.z, nrm.dot(best.point.clone().sub(top)) + 0.04]];
-}                                             // the flag's +x (fly) turned to the wind
+function wallPlanes(top) { return hall ? wallPlanesFrom(hall, top) : []; }
 const windVec = (a = curYaw) => [Math.cos(a), 0, -Math.sin(a)];
 let bakeMs = 0;
 

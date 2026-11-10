@@ -1,6 +1,10 @@
 # Flags (`viewer/flags/`, lab `labs/flag-lab.html`)
 
-Status: lab only (branch `claude/flags`), not in the city yet. Built 2026-11-10 while the owner was away.
+Status: branch `claude/flags`, not merged. Lab + the city behind `?townhall=1&flags=1` (`viewer/flagsCity.js`: the
+town hall's three balcony poles, EU / Belgium / Uccle; `?wind=m/s,deg`; `window.flags.setWind()`). City check
+2026-11-10: walls found by raycast like the lab (2.6-3.1 m behind), live within 45 m, baked beyond, hidden past
+700 m; fly-out 20 -> 750 -> 30 m: hand-overs both ways, no console errors; all shaders (baked + each flag's live
+material) precompiled before the flags show.
 
 ## How it works
 
@@ -32,8 +36,8 @@ turns; the wall behind is found with a fan of 16 rays and kept 4 cm away.
 
 1. GPU A/B on a quiet machine (0 / 120 / 600 baked flags), and the live CPU cost at 60 fps.
 2. Live sims in a worker (to free the main thread) if the budget needs it.
-3. The city: attach to the town hall poles (`?townhall=1`), the city wind (weather), the boot warm-up for the
-   shaders, LOD: below ~8 px per flag, hide (or a 2-triangle card).
+3. The city: DONE for the town hall (`?flags=1`). Still: one shared city wind (weather) for flags + trees; the
+   GPU / CPU numbers on a quiet machine; more flag poles (other municipal buildings, embassies, shops).
 4. Rope / halyard and a snap hook on masts; flag size per real flag (the town hall photos look ~1.5 x 1 m).
 5. More designs: Brussels-Capital Region (the iris; needs care with its official drawing), Flanders, Wallonia,
    other municipalities, shop banners.

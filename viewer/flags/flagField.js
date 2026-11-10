@@ -249,3 +249,26 @@ export class LiveFlag {
    *  update() until it returns false, then show the baked flag and drop this one */
   handBack(get, yaw, dur = 0.6) { this.blend = { get, yaw, t: 0, dur }; }
 }
+
+/** the wall nearest to a hoist top: 16 horizontal rays against `object` (e.g. a building model), the nearest hit on
+ *  a face that faces the ray; returns [[nx, ny, nz, d]] in the sim frame (relative to `top`) keeping the cloth
+ *  `gap` m in front of it, or [] */
+const _ray = new THREE.Raycaster();
+export function wallPlanesFrom(object, top, { reach = 6, gap = 0.04 } = {}) {
+  if (!object) return [];
+  let best = null;
+  for (let k = 0; k < 16; k++) {
+    const a = (k / 16) * Math.PI * 2, dir = new THREE.Vector3(Math.cos(a), 0, Math.sin(a));
+    _ray.set(top, dir); _ray.far = reach;
+    for (const hit of _ray.intersectObject(object, true)) {
+      if (!hit.face) continue;
+      const nrm = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
+      if (nrm.dot(dir) > -0.5) continue;
+      if (!best || hit.distance < best.distance) best = { distance: hit.distance, point: hit.point.clone(), nrm };
+      break;
+    }
+  }
+  if (!best) return [];
+  const n = best.nrm.setY(0).normalize();
+  return [[n.x, n.y, n.z, n.dot(best.point.clone().sub(top)) + gap]];
+}
