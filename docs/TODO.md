@@ -26,6 +26,20 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 
 Stairs paused until the owner's Mixamo clips are in `data/raw/animations/mixamo/` (and the owner decides: Mixamo clips committed for the live site, or local only).
 
+**City test bugs the owner saw (2026-11-10, flying with the birds; re-test on a combined build, some may be fixed by unmerged branches):**
+- [ ] trees jittering (LOD / shadows while moving?)
+- [ ] z-fighting (flicker) on shader buildings (facades / roof edges?)
+- [ ] some curved roads completely broken (road geometry at sharp curves?)
+- [ ] some trees standing in the middle of the road (LiDAR tree points not filtered against the road surface?)
+
+**Plan agreed 2026-11-10 (owner), in order:**
+1. [ ] Combined preview build of everything waiting for review; the owner tests the city and lists problems; I reproduce each with frame sequences before fixing.
+2. [ ] Fresh read-only gap audit vs mrdoob/slop-newyork (latest commit; Mr.doob = three.js lead, anything he has that we lack matters): feature list + what each costs. Our earlier notes: docs/RESEARCH.md sections A and E.
+3. [ ] Minimap (round, turns with heading, current + upcoming street names, landmarks, tram/rail) + full map on a key with click-to-teleport. Pre-rendered from our own data, a 2D canvas updated a few times per second. OSM credit on the map.
+4. [ ] Wayfinding / realism layer: bilingual FR/NL street name plates at corners (UrbIS street names); OSM POIs in their real places (shops with their names on the fronts, fuel stations with canopies + pumps, pharmacies with green crosses, cafés with terraces, supermarkets, schools); STIB tram/bus stop names (GTFS). Real brand names as text only, no trademark logos. Perf: one text atlas, instanced signs, built per tile in the worker, text only within ~80 m, lit at night.
+5. [ ] Street character from real data so streets differ: hedges/fences, front gardens, real tree species, parking, bins, lamp types (avenues vs villa streets vs centre).
+- Flag system (below) slots in right after the town hall round 2.
+
 **HIGH PRIORITY after the town hall round 2 (owner, 2026-11-10): the flag system** (the town hall flies flags; more flags across the city later). Verlet cloth (same idea as game-engine-v1/v3/props/flagFactory.js, read only, write our own). Near flags (< ~60-80 m, on screen): live sim, ~12x8 grid, fixed step, city wind, < 0.05 ms each. All others: the same sim baked offline into a small looping vertex-animation texture played by the GPU (3 wind strengths, random phase per flag), zero CPU, hundreds for the price of one; smooth fade loop -> live when approaching (no popping). Procedural flag designs: Belgium, EU, Brussels region, Uccle. Flag Lab page (wind, fabric, size, live vs baked side by side, cost). Then attach to the town hall poles (positions in models/townhall/NOTES.md after round 2).
 
 **Queue (owner, 2026-11-07), in order:**
