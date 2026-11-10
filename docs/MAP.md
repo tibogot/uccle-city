@@ -91,7 +91,7 @@ Circulaire by the Observatory (H4), third person: 4.1 s (colliders included); Av
 `docs/map/minimap_city_strip.jpg` (the minimap in the city while moving: Chaussée d'Alsemberg ×2, Avenue Brugmann,
 Place de Saint-Job walking; Alsemberg and Rue Engeland driving; third person; flying), `docs/map/full_zoom1_uccle.png`,
 `full_zoom2_search_brugmann.png`, `full_zoom3_saintjob.png` (the full map at 3 zooms), `phone_minimap_night.png`,
-`phone_fullmap.jpeg` (390 px wide).
+`phone_fullmap.jpeg` (390 px wide), `lab_dusk_brugmann.jpeg` (the Map Lab on a dusk sky).
 
 ## Weak points / next
 
