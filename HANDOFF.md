@@ -43,6 +43,12 @@ status and re-run commands: `docs/interior/STATUS.md`.
   If you must, log it in that folder's `CHANGES.md` with the reason.
 - Never substitute mocked or made-up data: if a dataset can't be fetched, say so.
 - Work on branch `claude/foundation`.
+- Asset quality (Blender AND procedural JS), owner's rules: no z-fighting (no coplanar or near-coincident
+  overlapping faces, sealed gaps, no light leaks) and no bad shading from topology / normals (no triangle fans
+  around circles and openings, no streaks across flat walls, no faceted round parts): flat faces keep flat
+  normals, support loops round openings, quality triangulation without slivers, enough segments + area-weighted
+  normals on round parts, no shared vertices across hard edges. Check with the mesh checker (`tools/mesh_audit/`,
+  on `claude/stalle` until merged) and grazing-light close-ups before claiming; no hero merges without a clean run.
 
 ## Smooth LOD
 
