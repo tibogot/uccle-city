@@ -41,6 +41,17 @@ Stairs paused until the owner's Mixamo clips are in `data/raw/animations/mixamo/
 6. [ ] Planting system (owner, 2026-11-10; later, with item 5): flower beds, shrubs, hedges, window boxes, grass tufts, ivy. Scripted Blender plants (premium) + meshopt LODs, instanced per tile in the worker, alpha-to-coverage cards only near (< ~60 m), fade to a coloured ground decal / nothing beyond, dithered fades, no shadow casting for small plants, seasonal colour. Placement from real data (UrbIS/OSM green areas, garden zones, the town hall beds on the photos). Budget ~0.2-0.5 ms in a dense street; benchmark in a Planting Lab before the city.
 - Flag system (below) slots in right after the town hall round 2.
 
+**Owner review 2026-11-10: Chapelle de Stalle (`claude/stalle`), NOT approved yet; round 3 "AAA, it's ~1000 years old":**
+- [ ] z-fighting at the gable corner (coping / roof / wall meet), and the door flickers (thin bright line between leaf and frame).
+- [ ] black dashes in the stone joints; a diagonal stretched streak between the oculus and the lancet (bad topology / normals); stones read like bevelled bathroom tiles, check against the photos.
+- [ ] roof slates read flat (relief, overlap, edge shadows; reusable for every roof, so it belongs in the materials library too); yellow-green lichen blobs look fake.
+- [ ] statue over the door looks cheap.
+- [ ] interior: flicker at the door while it opens (shadow and/or z-fight); with the door closed the exterior shows at the edges (light leaks).
+- [ ] later, once all is clean: fake god rays through the windows.
+- [ ] RULE GAP: we have no automatic check against z-fighting / bad topology for heroes (scripted or procedural). Build a shared hero mesh audit (coplanar overlaps, near-coincident faces < few mm, light-leak gaps, slivers / stretched triangles, flipped or inconsistent normals, non-manifold) + a flicker test (consecutive frames at several distances), run before every pack; no hero merges without a clean audit. Then run it on all heroes (Saint-Job, Observatory, town hall, Saint-Pierre, trains/bridges, facade kit, furniture).
+
+**Later (owner, 2026-11-10): seasons as well as weather** (leaves colour and fall, bare winter trees, snow, flowers in spring, low winter sun).
+
 **HIGH PRIORITY after the town hall round 2 (owner, 2026-11-10): the flag system** (the town hall flies flags; more flags across the city later). Verlet cloth (same idea as game-engine-v1/v3/props/flagFactory.js, read only, write our own). Near flags (< ~60-80 m, on screen): live sim, ~12x8 grid, fixed step, city wind, < 0.05 ms each. All others: the same sim baked offline into a small looping vertex-animation texture played by the GPU (3 wind strengths, random phase per flag), zero CPU, hundreds for the price of one; smooth fade loop -> live when approaching (no popping). Procedural flag designs: Belgium, EU, Brussels region, Uccle. Flag Lab page (wind, fabric, size, live vs baked side by side, cost). Then attach to the town hall poles (positions in models/townhall/NOTES.md after round 2).
 
 **Queue (owner, 2026-11-07), in order:**
