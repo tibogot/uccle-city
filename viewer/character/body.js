@@ -147,7 +147,7 @@ export class CharacterBody {
 
   /** The stair clip for a flight (dir +1 up / -1 down) at a walk or a run (the walk one when there is no run one). */
   stairRole(dir, run) {
-    if (this.loco) { const R = this.loco.role; return dir > 0 ? (run && R.stairsUpRun ? "stairsUpRun" : R.stairsUp ? "stairsUp" : null) : (run && R.stairsDownRun ? "stairsDownRun" : R.stairsDown ? "stairsDown" : null); }
+    if (this.loco) { if (!this.loco.p.stairClips) return null; const R = this.loco.role; return dir > 0 ? (run && R.stairsUpRun ? "stairsUpRun" : R.stairsUp ? "stairsUp" : null) : (run && R.stairsDownRun ? "stairsDownRun" : R.stairsDown ? "stairsDown" : null); }
     const A = this.actions, up = dir > 0;
     if (run && A[up ? "stairsUpRun" : "stairsDownRun"]) return up ? "stairsUpRun" : "stairsDownRun";
     return A[up ? "stairsUp" : "stairsDown"] ? (up ? "stairsUp" : "stairsDown") : null;

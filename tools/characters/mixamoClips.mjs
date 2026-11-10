@@ -53,6 +53,7 @@ const KNEE = [B("LeftLeg"), B("RightLeg")];
 
 // the rest (bind) pose: standing heights
 const W0 = worldPose(g, sampleAnim(g, null, 0));
+const PW0 = W0[g.nodes[B("Hips")].parent];
 const REST = { hipY: W0[HIPS].p[1], ankleY: (W0[FOOT[0]].p[1] + W0[FOOT[1]].p[1]) / 2, ballY: (W0[BALL[0]].p[1] + W0[BALL[1]].p[1]) / 2,
   leg: v.len(v.sub(W0[LUL].p, W0[KNEE[0]].p)) + v.len(v.sub(W0[KNEE[0]].p, W0[FOOT[0]].p)) };
 
@@ -154,7 +155,12 @@ function solveLeg(f, s, T) {
   let dv = v.sub(T, A), d = v.len(dv);
   const dir = v.mul(dv, 1 / d);
   d = Math.min(l1 + l2 - 1e-4, Math.max(Math.abs(l1 - l2) + 1e-4, d));
+  // (the bend plane: the clip's knee, plus a forward bias so a nearly straight leg never bends backwards; forward =
+  // the body's +z, made perpendicular to the leg)
   let perp = v.sub(v.sub(B, A), v.mul(dir, v.dot(v.sub(B, A), dir)));
+  const fw = v.sub([0, 0, 1], v.mul(dir, dir[2]));
+  perp = v.add(perp, v.mul(v.norm(fw), 0.03));
+  if (v.dot(perp, fw) < 0) perp = v.sub(perp, v.mul(v.norm(fw), v.dot(perp, v.norm(fw)) * 1.2));
   if (v.len(perp) < 1e-6) perp = [0, 0, 1];
   perp = v.norm(perp);
   const a = (l1 * l1 - l2 * l2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, l1 * l1 - a * a));
@@ -237,6 +243,48 @@ for (const anim of g.anims) {
 }
 console.log(`rest: hips ${REST.hipY.toFixed(3)} ankle ${REST.ankleY.toFixed(3)} ball ${REST.ballY.toFixed(3)} leg ${REST.leg.toFixed(3)} m`);
 if (report) process.exit(0);
+
+/**
+ * STAIR VARIANTS, baked: the Mixamo stair clips are made for ~24 cm risers. Each is re-made for a grid of real stairs
+ * (risers 12 / 15 / 18 / 21 cm x treads 26 / 31 cm): in the root's frame every foot's forward position scaled by
+ * tread / clip tread and its height above the floor line by riser / clip riser, the hips kept where they are above the
+ * root, the legs re-solved (two-bone, the clip's knee plane, the foot's rotation kept). The body then plays the variant
+ * nearest the scanned stairs (blending the 4 around it): the clip fits the step, no leg is bent at runtime.
+ */
+const RISERS = [0.12, 0.15, 0.18, 0.21], TREADS = [0.26, 0.31];
+for (const e of out.slice()) {
+  const m0 = meta[e.def.name];
+  if (!m0.stairs) continue;
+  for (const R of RISERS) for (const T of TREADS) {
+    const sR = R / m0.stairs.riser, sT = T / m0.stairs.tread, F0 = e.F, n = F0.length, r0 = e.root;
+    const z0 = r0[0][2];
+    // the variant's root: the rise and the forward travel scaled
+    const root = r0.map((r) => [r[0], r[1] * sR, z0 + (r[2] - z0) * sT, r[3]]);
+    const F = F0.map((f) => ({ ...f, L: f.L.map((l) => ({ t: l.t.slice(), r: l.r.slice(), s: l.s.slice() })) }));
+    for (let k = 0; k < n; k++) {
+      const f = F[k], a = r0[k], b = root[k];
+      // hips: the same place above the root
+      const hw = [f0x(F0[k].hips[0]), F0[k].hips[1] - a[1] + b[1], F0[k].hips[2] - a[2] + b[2]];
+      f.L[HIPS].t = v.mul(q.rot(q.inv(PW0.q), v.sub(hw, PW0.p)), 1 / PW0.s);
+      for (let s2 = 0; s2 < 2; s2++) {
+        const an = F0[k].ankle[s2];
+        const T3 = [an[0], (an[1] - REST.ankleY - a[1]) * sR + REST.ankleY + b[1], (an[2] - a[2]) * sT + b[2]];
+        solveLeg(f, s2, T3);
+      }
+      const W = worldPose(g, f.L); f.W = W; f.hips = W[HIPS].p;
+      f.ankle = FOOT.map((i) => W[i].p); f.ball = BALL.map((i) => W[i].p); f.tip = TIP.map((i) => W[i].p);
+    }
+    const name = `${e.def.name}_${Math.round(R * 100)}_${Math.round(T * 100)}`;
+    const stepPos = m0.stepPos.map((arr, s2) => arr.map(([u]) => {
+      const k = Math.round(u * (n - 1)), f = F[k], r = root[k];
+      return [u, +(((f.ankle[s2][0] + f.ball[s2][0]) / 2) - r[0]).toFixed(3), +(((f.ankle[s2][2] + f.ball[s2][2]) / 2) - r[2]).toFixed(3), +(f.ankle[s2][1] - REST.ankleY - r[1]).toFixed(3)];
+    }));
+    meta[name] = { ...m0, stepPos, stairs: { ...m0.stairs, riser: R, tread: T, variantOf: e.def.name }, speed: m0.speed !== undefined ? +(m0.speed * sT).toFixed(3) : undefined };
+    out.push({ def: { ...e.def, name }, anim: e.anim, F, root });
+  }
+  console.log(`  ${e.def.name}: ${RISERS.length * TREADS.length} stair variants baked`);
+}
+function f0x(x) { return x; }
 
 // ---- write the in-place clips: hips translation (root taken off) + every bone's rotation (hips: the turn taken off)
 const parentHips = g.nodes[HIPS].parent, PW = W0[parentHips];          // (the Armature node: static)

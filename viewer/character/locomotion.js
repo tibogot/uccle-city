@@ -29,10 +29,14 @@ export const LOCO = {
   stairsMaxRate: 1.3,   // stair clips: at most this x their own cadence (index.js caps the speed to it)
   jumpLead: 0.04,       // s before the jump clip's take-off frame
   fade: 0.12,           // s: default cross-fade
-  ik: true,
+  // The BVHEcctrl / ecctrl way (owner, 2026-11-10): NO foot IK and no stair clips: the clips play as authored, the body
+  // glides over steps and ramps on a spring (index.js glide). legIK.js and the stair-clip machinery stay, switched off.
+  footIK: false,
+  stairClips: true,     // the stair clips, BAKED for the stairs' riser / tread (tools/characters/mixamoClips.mjs): no leg IK
+  bodyFit: true,        // the whole body's height from the planted foot's ground (one smooth vertical offset, no leg bent)
 };
 
-const _v = new THREE.Vector3();
+const _v = new THREE.Vector3(), _w = new THREE.Vector3();
 const wrapPi = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const smooth01 = (x) => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
 
@@ -97,7 +101,10 @@ export class Locomotion {
     for (const c of clips) if (meta[c.name]) this.C[c.name] = new Clip(this.mixer, c, meta[c.name]);
     this.list = Object.values(this.C);
     this.role = {};
-    for (const c of this.list) this.role[c.meta.role] = c;
+    for (const c of this.list) if (!c.meta.stairs?.variantOf) this.role[c.meta.role] = c;
+    // baked stair variants by role (riser x tread grid)
+    this.stairSets = {};
+    for (const c of this.list) if (c.meta.stairs?.variantOf) (this.stairSets[c.meta.role] ||= []).push(c);
     this.walkSpeed = this.role.walk?.meta.speed || 1.7; this.runSpeed = this.role.run?.meta.speed || 4.5;
     this.stride = { walk: this.walkSpeed * (this.role.walk?.dur || 1), run: this.runSpeed * (this.role.run?.dur || 0.7) };
     this.mode = "idle"; this.modeT = 0; this.phase = 0; this.fadeTau = this.p.fade;
@@ -159,7 +166,7 @@ export class Locomotion {
     if (this.body.preIK) { this.body.root.updateMatrixWorld(true); this.body.preIK(y); }     // (lab hook: the clip's own pose)
     const t1 = performance.now();
     // ---- the leg IK
-    if (this.ikOn && !this.preview && world) {
+    if (this.p.footIK && this.ikOn && !this.preview && world) {
       this.body.root.updateMatrixWorld(true);
       const ctx = this.ikCtx;
       ctx.weight = st.grounded && this.mode !== "jump" && this.mode !== "fall" ? 1 : 0;
@@ -172,6 +179,13 @@ export class Locomotion {
       ctx.warp.slope = Math.max(-0.45, Math.min(0.45, st.slope || 0)) * (1 - s.k) * ctx.weight; ctx.warp.sdx = st.slopeDx ?? 0; ctx.warp.sdz = st.slopeDz ?? 1;
       ctx.lock = 1;
       this.ik.update(dt, world, y, ctx);
+    }
+    else if (!this.preview) {          // (no leg IK: the body fit, and the clip's contacts published for the lab's checks)
+      this._contacts(this.ikCtx);
+      if (this.p.bodyFit && world) this._bodyFit(dt, world, y, st);
+      else for (let i = 0; i < 2; i++) { const L = this.ik.legs[i]; L.contact = st.grounded ? this.ikCtx.contact[i] : 0; L.planted = L.contact > 0.6; }
+    }
+    if (!this.preview) {
       // (stairs: where each touch-down really landed on its tread feeds back into the phase target: the clip's own
       // landing offsets, the warp and the lock are then irrelevant; aims at the middle of the tread)
       const sc = st.stairs;
@@ -190,7 +204,7 @@ export class Locomotion {
         }
         L._wasP = L.planted;
       }
-    }
+        }
     const t2 = performance.now();
     this.ms = this.ms * 0.95 + (t2 - t0) * 0.05; this.ikMs = this.ikMs * 0.95 + (t2 - t1) * 0.05;
   }
@@ -330,10 +344,16 @@ export class Locomotion {
     // ---- stairs
     const sc = st.stairs, S = this.stairs;
     let sClip = null;
-    if (sc && sc.k > 0.01 && sc.dir) sClip = sc.dir > 0 ? (st.run && C.stairsUpRun ? C.stairsUpRun : C.stairsUp) : (st.run && C.stairsDownRun ? C.stairsDownRun : C.stairsDown);
+    let sMix = null;
+    if (this.p.stairClips && sc && sc.k > 0.01 && sc.dir) {
+      const role = sc.dir > 0 ? (st.run && C.stairsUpRun ? "stairsUpRun" : "stairsUp") : (st.run && C.stairsDownRun ? "stairsDownRun" : "stairsDown");
+      sMix = this._stairMix(role, sc.riser, sc.tread);
+      sClip = sMix ? sMix[0][0] : C[role];
+    }
     if (sClip && sClip.meta.stairs) {
       const m = sClip.meta.stairs, cycLen = 2 * sc.tread;
-      S.sT = sc.tread / m.tread; S.sR = sc.riser / m.riser; S.fx = sc.dx; S.fz = sc.dz; S.clip = sClip;
+      // (a baked variant already fits the stair: no warp left; the original clip: warped by the IK, when it is on)
+      S.sT = m.variantOf ? 1 : sc.tread / m.tread; S.sR = m.variantOf ? 1 : sc.riser / m.riser; S.fx = sc.dx; S.fz = sc.dz; S.clip = sClip;
       // distance matching: the clip's phase from where the body is between the nosings (each touch-down mid-tread)
       const s = x * sc.dx + z * sc.dz - sc.ref;
       // (foot f touches down at u_f, sp = its offset ahead of the root then: the landing s(u_f) + sp sT is mid-tread
@@ -368,6 +388,7 @@ export class Locomotion {
       sClip.t = sClip.uOf(this.phase) * sClip.dur;
       S.k = sc.k;
       sClip.target = sc.k;
+      if (sMix) for (const [c, w] of sMix) { c.t = sClip.t; c.target = sc.k * w; }
     } else {
       S.k += (0 - S.k) * (1 - Math.exp(-dt / 0.1));
       this.phase += rate * dt; this.phase -= Math.floor(this.phase);
@@ -381,8 +402,53 @@ export class Locomotion {
     const wi = sClip ? 0 : 1 - smooth01((speed - 0.1) / (0.45 * this.walkSpeed));
     if (wi > 0 && C.idle) {
       C.idle.t = (C.idle.t + dt) % C.idle.dur; C.idle.target = wi;
-      if (walk) walk.target *= 1 - wi; if (run) run.target *= 1 - wi; if (sClip) sClip.target *= 1 - wi;
+      if (walk) walk.target *= 1 - wi; if (run) run.target *= 1 - wi;
     }
+  }
+
+  /** The baked stair variants around (riser, tread): [[clip, weight], ...] (bilinear on the grid), best first. */
+  _stairMix(role, riser, tread) {
+    const set = this.stairSets[role];
+    if (!set || !set.length) return null;
+    const Rs = [...new Set(set.map((c) => c.meta.stairs.riser))].sort((a, b) => a - b), Ts = [...new Set(set.map((c) => c.meta.stairs.tread))].sort((a, b) => a - b);
+    const pick = (arr, x) => { if (x <= arr[0]) return [0, 0, 0]; if (x >= arr[arr.length - 1]) return [arr.length - 1, arr.length - 1, 0]; let i = 0; while (arr[i + 1] < x) i++; return [i, i + 1, (x - arr[i]) / (arr[i + 1] - arr[i])]; };
+    const [r0, r1, ur] = pick(Rs, riser), [t0, t1, ut] = pick(Ts, tread);
+    const get = (ri, ti) => set.find((c) => c.meta.stairs.riser === Rs[ri] && c.meta.stairs.tread === Ts[ti]);
+    const m = new Map();
+    const add = (c, w) => { if (c && w > 1e-3) m.set(c, (m.get(c) || 0) + w); };
+    add(get(r0, t0), (1 - ur) * (1 - ut)); add(get(r1, t0), ur * (1 - ut)); add(get(r0, t1), (1 - ur) * ut); add(get(r1, t1), ur * ut);
+    return [...m.entries()].sort((a, b) => b[1] - a[1]);
+  }
+
+  /**
+   * BODY FIT (no leg IK): the whole body moved up / down so that the planted foot's sole stands on the ground under it
+   * (read once when the foot plants: no per-frame hopping between treads), through a critically damped spring; the legs
+   * keep the clip's pose. In the air, and with nothing planted, it eases back to 0.
+   */
+  _bodyFit(dt, world, y, st) {
+    const ik = this.ik, inner = ik.inner, ctx = this.ikCtx;
+    inner.position.y = 0; inner.updateMatrixWorld(true);
+    let sum = 0, wsum = 0;
+    for (let i = 0; i < 2; i++) {
+      const L = ik.legs[i], c = st.grounded ? ctx.contact[i] : 0;
+      L.contact = c;
+      const was = L.planted;
+      L.planted = was ? c > 0.3 : c > 0.6;
+      if (!L.planted) continue;
+      L.foot.getWorldPosition(_v); const ax = _v.x, ay = _v.y, az = _v.z; L.toe.getWorldPosition(_w);
+      const sole = Math.min(ay - L.ankleH, _w.y - L.ballH);
+      if (!was) L.gPlant = ik._sole(world, ax, az, _w.x, _w.z, y, null);       // (latched at the touch-down)
+      if (Math.abs(L.gPlant - y) > 0.6) continue;
+      const e = L.gPlant - sole;
+      sum += e * c; wsum += c;
+    }
+    const target = st.grounded && wsum > 0 ? Math.max(-0.25, Math.min(0.25, sum / wsum)) : st.grounded ? this._fitT || 0 : 0;
+    this._fitT = target;
+    const om = 14, e = (this.fit || 0) - target, ex = Math.exp(-om * dt), tmp = ((this.fitV || 0) + om * e) * dt;
+    this.fitV = ((this.fitV || 0) - om * tmp) * ex; this.fit = target + (e + tmp) * ex;
+    const sc = inner.parent.matrixWorld.elements[5] || 1;
+    inner.position.y = this.fit / sc; inner.updateMatrixWorld(true);
+    ik.pelvis = this.fit;
   }
 
   /** Weights eased to their targets and normalised; clip times written; the mixer applies them. */

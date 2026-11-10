@@ -35,7 +35,8 @@ export class ThirdPerson {
     this._gp = new Float64Array(3); this._rise = 0; this._run = 0;
     this._by = { y: 0, v: 0, init: false }; this._ga = 0; this._gb = 0; this._slope = 0; this._sdx = 0; this._sdz = 1;
     this._stairs = { dir: 0, riser: 0, tread: 0, k: 0, nx: 0, nz: 0, dx: 0, dz: 1, ref: NaN }; this._sh = new Float64Array(26); this._sr = new Float64Array(26); this._st = new Float64Array(26); this._scanN = 0;
-    this.stairSlow = 0.3;             // speed taken off on stairs / steep ramps with a character in the slot
+    this.stairSlow = 0.3;
+    this.glide = false;               // the body's height glides on a softer spring, never below the ground under it (no foot IK)             // speed taken off on stairs / steep ramps with a character in the slot
     this._jumped = false;
     this._step = () => { this.ctl.step(); if (this.ctl.jumped) this._jumped = true; };     // (a jump in any of the frame's steps)
     this.body.root.visible = false;
@@ -215,6 +216,7 @@ export class ThirdPerson {
         W.raycast();
         const ok = H[4] >= 0 && H[2] > 0.5, gy = py + 0.55 - H[0];
         if (ok && Math.abs(gy - py) < 0.5) { sum += gy; n++; }
+        if (k === 0) this._g0 = ok && Math.abs(gy - py) < 0.5 ? gy : NaN;
         if (k === -1) this._gb = ok ? gy : NaN; else if (k === 1) {
           this._ga = ok && this._gb === this._gb && vl > 0.2 ? Math.min(2, Math.abs(gy - this._gb) / 0.44) : 0;
           // the SIGNED grade along the motion (slope warping, locomotion.js / legIK.js), smoothed
@@ -223,12 +225,15 @@ export class ThirdPerson {
         }
       }
       if (n) target = sum / n;
+      // the FLOAT (BVHEcctrl / ecctrl way, a body without foot IK): never below the ground right under the feet, so the
+      // feet hover over a step edge rather than sink into a tread; glides on the spring below
+      if (this.glide && this._g0 === this._g0 && target < this._g0) target = this._g0;
       // never more than a step from the capsule's own feet
       target = Math.min(py + 0.3, Math.max(py - 0.3, target));
     }
     if (!B.init) { B.y = target; B.v = 0; B.init = true; }
     else if (dt > 0) {
-      const om = c.grounded ? 20 : 45, e = B.y - target, ex = Math.exp(-om * dt), tmp = (B.v + om * e) * dt;
+      const om = c.grounded ? (this.glide ? 12 : 20) : 45, e = B.y - target, ex = Math.exp(-om * dt), tmp = (B.v + om * e) * dt;
       B.v = (B.v - om * tmp) * ex; B.y = target + (e + tmp) * ex;
     }
     return B.y;
@@ -248,6 +253,7 @@ export class ThirdPerson {
     // the body's speeds follow its clips, so the cadence looks right: a brisk walk a little above the walk clip's
     // stride, a run up to 30 % above the (jog) clip, at most 4 m/s; playback = speed / authored, capped (body.js)
     this._capsuleSpeeds ||= [this.ctl.p.walkSpeed, this.ctl.p.runSpeed, this.ctl.p.groundAccel, this.ctl.p.groundDecel];
+    this.glide = !!(this.body.loco && !this.body.loco.p.footIK);
     if (this.body.loco) {
       // the clips' own speeds (the walk / run play at 1x), a softer acceleration (starts and stops are the clips' job;
       // a run builds up over ~0.4 s)

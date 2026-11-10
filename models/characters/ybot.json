@@ -748,6 +748,1086 @@
     ]
    ],
    "speed": 1.725
+  },
+  "StairsDown_12_26": {
+   "file": "ybot_clips.glb",
+   "role": "stairsDown",
+   "loop": true,
+   "duration": 0.9333,
+   "source": "Descending Stairs",
+   "contact": [
+    "00000111111111111111111100000",
+    "11111111111000000001111111111"
+   ],
+   "steps": [
+    [
+     0.179
+    ],
+    [
+     0.679
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.179,
+      0.119,
+      0.149,
+      -0.014
+     ]
+    ],
+    [
+     [
+      0.679,
+      -0.125,
+      0.12,
+      -0.016
+     ]
+    ]
+   ],
+   "speed": 0.557,
+   "stairs": {
+    "riser": 0.12,
+    "tread": 0.26,
+    "dir": -1,
+    "steps": 2,
+    "variantOf": "StairsDown"
+   }
+  },
+  "StairsDown_12_31": {
+   "file": "ybot_clips.glb",
+   "role": "stairsDown",
+   "loop": true,
+   "duration": 0.9333,
+   "source": "Descending Stairs",
+   "contact": [
+    "00000111111111111111111100000",
+    "11111111111000000001111111111"
+   ],
+   "steps": [
+    [
+     0.179
+    ],
+    [
+     0.679
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.179,
+      0.119,
+      0.165,
+      -0.014
+     ]
+    ],
+    [
+     [
+      0.679,
+      -0.125,
+      0.132,
+      -0.016
+     ]
+    ]
+   ],
+   "speed": 0.664,
+   "stairs": {
+    "riser": 0.12,
+    "tread": 0.31,
+    "dir": -1,
+    "steps": 2,
+    "variantOf": "StairsDown"
+   }
+  },
+  "StairsDown_15_26": {
+   "file": "ybot_clips.glb",
+   "role": "stairsDown",
+   "loop": true,
+   "duration": 0.9333,
+   "source": "Descending Stairs",
+   "contact": [
+    "00000111111111111111111100000",
+    "11111111111000000001111111111"
+   ],
+   "steps": [
+    [
+     0.179
+    ],
+    [
+     0.679
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.179,
+      0.119,
+      0.149,
+      -0.018
+     ]
+    ],
+    [
+     [
+      0.679,
+      -0.125,
+      0.12,
+      -0.02
+     ]
+    ]
+   ],
+   "speed": 0.557,
+   "stairs": {
+    "riser": 0.15,
+    "tread": 0.26,
+    "dir": -1,
+    "steps": 2,
+    "variantOf": "StairsDown"
+   }
+  },
+  "StairsDown_15_31": {
+   "file": "ybot_clips.glb",
+   "role": "stairsDown",
+   "loop": true,
+   "duration": 0.9333,
+   "source": "Descending Stairs",
+   "contact": [
+    "00000111111111111111111100000",
+    "11111111111000000001111111111"
+   ],
+   "steps": [
+    [
+     0.179
+    ],
+    [
+     0.679
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.179,
+      0.119,
+      0.165,
+      -0.018
+     ]
+    ],
+    [
+     [
+      0.679,
+      -0.125,
+      0.132,
+      -0.02
+     ]
+    ]
+   ],
+   "speed": 0.664,
+   "stairs": {
+    "riser": 0.15,
+    "tread": 0.31,
+    "dir": -1,
+    "steps": 2,
+    "variantOf": "StairsDown"
+   }
+  },
+  "StairsDown_18_26": {
+   "file": "ybot_clips.glb",
+   "role": "stairsDown",
+   "loop": true,
+   "duration": 0.9333,
+   "source": "Descending Stairs",
+   "contact": [
+    "00000111111111111111111100000",
+    "11111111111000000001111111111"
+   ],
+   "steps": [
+    [
+     0.179
+    ],
+    [
+     0.679
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.179,
+      0.119,
+      0.149,
+      -0.021
+     ]
+    ],
+    [
+     [
+      0.679,
+      -0.125,
+      0.12,
+      -0.024
+     ]
+    ]
+   ],
+   "speed": 0.557,
+   "stairs": {
+    "riser": 0.18,
+    "tread": 0.26,
+    "dir": -1,
+    "steps": 2,
+    "variantOf": "StairsDown"
+   }
+  },
+  "StairsDown_18_31": {
+   "file": "ybot_clips.glb",
+   "role": "stairsDown",
+   "loop": true,
+   "duration": 0.9333,
+   "source": "Descending Stairs",
+   "contact": [
+    "00000111111111111111111100000",
+    "11111111111000000001111111111"
+   ],
+   "steps": [
+    [
+     0.179
+    ],
+    [
+     0.679
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.179,
+      0.119,
+      0.165,
+      -0.021
+     ]
+    ],
+    [
+     [
+      0.679,
+      -0.125,
+      0.132,
+      -0.024
+     ]
+    ]
+   ],
+   "speed": 0.664,
+   "stairs": {
+    "riser": 0.18,
+    "tread": 0.31,
+    "dir": -1,
+    "steps": 2,
+    "variantOf": "StairsDown"
+   }
+  },
+  "StairsDown_21_26": {
+   "file": "ybot_clips.glb",
+   "role": "stairsDown",
+   "loop": true,
+   "duration": 0.9333,
+   "source": "Descending Stairs",
+   "contact": [
+    "00000111111111111111111100000",
+    "11111111111000000001111111111"
+   ],
+   "steps": [
+    [
+     0.179
+    ],
+    [
+     0.679
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.179,
+      0.119,
+      0.149,
+      -0.025
+     ]
+    ],
+    [
+     [
+      0.679,
+      -0.125,
+      0.12,
+      -0.028
+     ]
+    ]
+   ],
+   "speed": 0.557,
+   "stairs": {
+    "riser": 0.21,
+    "tread": 0.26,
+    "dir": -1,
+    "steps": 2,
+    "variantOf": "StairsDown"
+   }
+  },
+  "StairsDown_21_31": {
+   "file": "ybot_clips.glb",
+   "role": "stairsDown",
+   "loop": true,
+   "duration": 0.9333,
+   "source": "Descending Stairs",
+   "contact": [
+    "00000111111111111111111100000",
+    "11111111111000000001111111111"
+   ],
+   "steps": [
+    [
+     0.179
+    ],
+    [
+     0.679
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.179,
+      0.119,
+      0.165,
+      -0.025
+     ]
+    ],
+    [
+     [
+      0.679,
+      -0.125,
+      0.132,
+      -0.028
+     ]
+    ]
+   ],
+   "speed": 0.664,
+   "stairs": {
+    "riser": 0.21,
+    "tread": 0.31,
+    "dir": -1,
+    "steps": 2,
+    "variantOf": "StairsDown"
+   }
+  },
+  "StairsUpRun_12_26": {
+   "file": "ybot_clips.glb",
+   "role": "stairsUpRun",
+   "loop": true,
+   "duration": 0.6,
+   "source": "Running Up Stairs",
+   "contact": [
+    "0000001111110000000",
+    "1110000000000011111"
+   ],
+   "steps": [
+    [
+     0.333
+    ],
+    [
+     0.778
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.333,
+      0.092,
+      0.185,
+      0.046
+     ]
+    ],
+    [
+     [
+      0.778,
+      -0.071,
+      0.276,
+      0.055
+     ]
+    ]
+   ],
+   "speed": 0.868,
+   "stairs": {
+    "riser": 0.12,
+    "tread": 0.26,
+    "dir": 1,
+    "steps": 2,
+    "variantOf": "StairsUpRun"
+   }
+  },
+  "StairsUpRun_12_31": {
+   "file": "ybot_clips.glb",
+   "role": "stairsUpRun",
+   "loop": true,
+   "duration": 0.6,
+   "source": "Running Up Stairs",
+   "contact": [
+    "0000001111110000000",
+    "1110000000000011111"
+   ],
+   "steps": [
+    [
+     0.333
+    ],
+    [
+     0.778
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.333,
+      0.092,
+      0.207,
+      0.046
+     ]
+    ],
+    [
+     [
+      0.778,
+      -0.071,
+      0.317,
+      0.055
+     ]
+    ]
+   ],
+   "speed": 1.035,
+   "stairs": {
+    "riser": 0.12,
+    "tread": 0.31,
+    "dir": 1,
+    "steps": 2,
+    "variantOf": "StairsUpRun"
+   }
+  },
+  "StairsUpRun_15_26": {
+   "file": "ybot_clips.glb",
+   "role": "stairsUpRun",
+   "loop": true,
+   "duration": 0.6,
+   "source": "Running Up Stairs",
+   "contact": [
+    "0000001111110000000",
+    "1110000000000011111"
+   ],
+   "steps": [
+    [
+     0.333
+    ],
+    [
+     0.778
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.333,
+      0.092,
+      0.185,
+      0.057
+     ]
+    ],
+    [
+     [
+      0.778,
+      -0.071,
+      0.276,
+      0.069
+     ]
+    ]
+   ],
+   "speed": 0.868,
+   "stairs": {
+    "riser": 0.15,
+    "tread": 0.26,
+    "dir": 1,
+    "steps": 2,
+    "variantOf": "StairsUpRun"
+   }
+  },
+  "StairsUpRun_15_31": {
+   "file": "ybot_clips.glb",
+   "role": "stairsUpRun",
+   "loop": true,
+   "duration": 0.6,
+   "source": "Running Up Stairs",
+   "contact": [
+    "0000001111110000000",
+    "1110000000000011111"
+   ],
+   "steps": [
+    [
+     0.333
+    ],
+    [
+     0.778
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.333,
+      0.092,
+      0.207,
+      0.057
+     ]
+    ],
+    [
+     [
+      0.778,
+      -0.071,
+      0.317,
+      0.069
+     ]
+    ]
+   ],
+   "speed": 1.035,
+   "stairs": {
+    "riser": 0.15,
+    "tread": 0.31,
+    "dir": 1,
+    "steps": 2,
+    "variantOf": "StairsUpRun"
+   }
+  },
+  "StairsUpRun_18_26": {
+   "file": "ybot_clips.glb",
+   "role": "stairsUpRun",
+   "loop": true,
+   "duration": 0.6,
+   "source": "Running Up Stairs",
+   "contact": [
+    "0000001111110000000",
+    "1110000000000011111"
+   ],
+   "steps": [
+    [
+     0.333
+    ],
+    [
+     0.778
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.333,
+      0.092,
+      0.185,
+      0.069
+     ]
+    ],
+    [
+     [
+      0.778,
+      -0.071,
+      0.276,
+      0.083
+     ]
+    ]
+   ],
+   "speed": 0.868,
+   "stairs": {
+    "riser": 0.18,
+    "tread": 0.26,
+    "dir": 1,
+    "steps": 2,
+    "variantOf": "StairsUpRun"
+   }
+  },
+  "StairsUpRun_18_31": {
+   "file": "ybot_clips.glb",
+   "role": "stairsUpRun",
+   "loop": true,
+   "duration": 0.6,
+   "source": "Running Up Stairs",
+   "contact": [
+    "0000001111110000000",
+    "1110000000000011111"
+   ],
+   "steps": [
+    [
+     0.333
+    ],
+    [
+     0.778
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.333,
+      0.092,
+      0.207,
+      0.069
+     ]
+    ],
+    [
+     [
+      0.778,
+      -0.071,
+      0.317,
+      0.083
+     ]
+    ]
+   ],
+   "speed": 1.035,
+   "stairs": {
+    "riser": 0.18,
+    "tread": 0.31,
+    "dir": 1,
+    "steps": 2,
+    "variantOf": "StairsUpRun"
+   }
+  },
+  "StairsUpRun_21_26": {
+   "file": "ybot_clips.glb",
+   "role": "stairsUpRun",
+   "loop": true,
+   "duration": 0.6,
+   "source": "Running Up Stairs",
+   "contact": [
+    "0000001111110000000",
+    "1110000000000011111"
+   ],
+   "steps": [
+    [
+     0.333
+    ],
+    [
+     0.778
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.333,
+      0.092,
+      0.185,
+      0.08
+     ]
+    ],
+    [
+     [
+      0.778,
+      -0.071,
+      0.276,
+      0.096
+     ]
+    ]
+   ],
+   "speed": 0.868,
+   "stairs": {
+    "riser": 0.21,
+    "tread": 0.26,
+    "dir": 1,
+    "steps": 2,
+    "variantOf": "StairsUpRun"
+   }
+  },
+  "StairsUpRun_21_31": {
+   "file": "ybot_clips.glb",
+   "role": "stairsUpRun",
+   "loop": true,
+   "duration": 0.6,
+   "source": "Running Up Stairs",
+   "contact": [
+    "0000001111110000000",
+    "1110000000000011111"
+   ],
+   "steps": [
+    [
+     0.333
+    ],
+    [
+     0.778
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.333,
+      0.092,
+      0.207,
+      0.08
+     ]
+    ],
+    [
+     [
+      0.778,
+      -0.071,
+      0.317,
+      0.096
+     ]
+    ]
+   ],
+   "speed": 1.035,
+   "stairs": {
+    "riser": 0.21,
+    "tread": 0.31,
+    "dir": 1,
+    "steps": 2,
+    "variantOf": "StairsUpRun"
+   }
+  },
+  "StairsUp_12_26": {
+   "file": "ybot_clips.glb",
+   "role": "stairsUp",
+   "loop": true,
+   "duration": 1.2,
+   "source": "Walking Up The Stairs",
+   "contact": [
+    "1111111111100000000000001111111111111",
+    "0000001111111111111111111111100000000"
+   ],
+   "steps": [
+    [
+     0.667
+    ],
+    [
+     0.167
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.667,
+      0.078,
+      0.262,
+      0.081
+     ]
+    ],
+    [
+     [
+      0.167,
+      -0.066,
+      0.257,
+      0.087
+     ]
+    ]
+   ],
+   "speed": 0.433,
+   "stairs": {
+    "riser": 0.12,
+    "tread": 0.26,
+    "dir": 1,
+    "steps": 2,
+    "variantOf": "StairsUp"
+   }
+  },
+  "StairsUp_12_31": {
+   "file": "ybot_clips.glb",
+   "role": "stairsUp",
+   "loop": true,
+   "duration": 1.2,
+   "source": "Walking Up The Stairs",
+   "contact": [
+    "1111111111100000000000001111111111111",
+    "0000001111111111111111111111100000000"
+   ],
+   "steps": [
+    [
+     0.667
+    ],
+    [
+     0.167
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.667,
+      0.078,
+      0.298,
+      0.081
+     ]
+    ],
+    [
+     [
+      0.167,
+      -0.066,
+      0.292,
+      0.087
+     ]
+    ]
+   ],
+   "speed": 0.516,
+   "stairs": {
+    "riser": 0.12,
+    "tread": 0.31,
+    "dir": 1,
+    "steps": 2,
+    "variantOf": "StairsUp"
+   }
+  },
+  "StairsUp_15_26": {
+   "file": "ybot_clips.glb",
+   "role": "stairsUp",
+   "loop": true,
+   "duration": 1.2,
+   "source": "Walking Up The Stairs",
+   "contact": [
+    "1111111111100000000000001111111111111",
+    "0000001111111111111111111111100000000"
+   ],
+   "steps": [
+    [
+     0.667
+    ],
+    [
+     0.167
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.667,
+      0.078,
+      0.262,
+      0.101
+     ]
+    ],
+    [
+     [
+      0.167,
+      -0.066,
+      0.257,
+      0.108
+     ]
+    ]
+   ],
+   "speed": 0.433,
+   "stairs": {
+    "riser": 0.15,
+    "tread": 0.26,
+    "dir": 1,
+    "steps": 2,
+    "variantOf": "StairsUp"
+   }
+  },
+  "StairsUp_15_31": {
+   "file": "ybot_clips.glb",
+   "role": "stairsUp",
+   "loop": true,
+   "duration": 1.2,
+   "source": "Walking Up The Stairs",
+   "contact": [
+    "1111111111100000000000001111111111111",
+    "0000001111111111111111111111100000000"
+   ],
+   "steps": [
+    [
+     0.667
+    ],
+    [
+     0.167
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.667,
+      0.078,
+      0.298,
+      0.101
+     ]
+    ],
+    [
+     [
+      0.167,
+      -0.066,
+      0.292,
+      0.108
+     ]
+    ]
+   ],
+   "speed": 0.516,
+   "stairs": {
+    "riser": 0.15,
+    "tread": 0.31,
+    "dir": 1,
+    "steps": 2,
+    "variantOf": "StairsUp"
+   }
+  },
+  "StairsUp_18_26": {
+   "file": "ybot_clips.glb",
+   "role": "stairsUp",
+   "loop": true,
+   "duration": 1.2,
+   "source": "Walking Up The Stairs",
+   "contact": [
+    "1111111111100000000000001111111111111",
+    "0000001111111111111111111111100000000"
+   ],
+   "steps": [
+    [
+     0.667
+    ],
+    [
+     0.167
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.667,
+      0.078,
+      0.262,
+      0.121
+     ]
+    ],
+    [
+     [
+      0.167,
+      -0.066,
+      0.257,
+      0.13
+     ]
+    ]
+   ],
+   "speed": 0.433,
+   "stairs": {
+    "riser": 0.18,
+    "tread": 0.26,
+    "dir": 1,
+    "steps": 2,
+    "variantOf": "StairsUp"
+   }
+  },
+  "StairsUp_18_31": {
+   "file": "ybot_clips.glb",
+   "role": "stairsUp",
+   "loop": true,
+   "duration": 1.2,
+   "source": "Walking Up The Stairs",
+   "contact": [
+    "1111111111100000000000001111111111111",
+    "0000001111111111111111111111100000000"
+   ],
+   "steps": [
+    [
+     0.667
+    ],
+    [
+     0.167
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.667,
+      0.078,
+      0.298,
+      0.121
+     ]
+    ],
+    [
+     [
+      0.167,
+      -0.066,
+      0.292,
+      0.13
+     ]
+    ]
+   ],
+   "speed": 0.516,
+   "stairs": {
+    "riser": 0.18,
+    "tread": 0.31,
+    "dir": 1,
+    "steps": 2,
+    "variantOf": "StairsUp"
+   }
+  },
+  "StairsUp_21_26": {
+   "file": "ybot_clips.glb",
+   "role": "stairsUp",
+   "loop": true,
+   "duration": 1.2,
+   "source": "Walking Up The Stairs",
+   "contact": [
+    "1111111111100000000000001111111111111",
+    "0000001111111111111111111111100000000"
+   ],
+   "steps": [
+    [
+     0.667
+    ],
+    [
+     0.167
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.667,
+      0.078,
+      0.262,
+      0.141
+     ]
+    ],
+    [
+     [
+      0.167,
+      -0.066,
+      0.257,
+      0.152
+     ]
+    ]
+   ],
+   "speed": 0.433,
+   "stairs": {
+    "riser": 0.21,
+    "tread": 0.26,
+    "dir": 1,
+    "steps": 2,
+    "variantOf": "StairsUp"
+   }
+  },
+  "StairsUp_21_31": {
+   "file": "ybot_clips.glb",
+   "role": "stairsUp",
+   "loop": true,
+   "duration": 1.2,
+   "source": "Walking Up The Stairs",
+   "contact": [
+    "1111111111100000000000001111111111111",
+    "0000001111111111111111111111100000000"
+   ],
+   "steps": [
+    [
+     0.667
+    ],
+    [
+     0.167
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.667,
+      0.078,
+      0.298,
+      0.141
+     ]
+    ],
+    [
+     [
+      0.167,
+      -0.066,
+      0.292,
+      0.152
+     ]
+    ]
+   ],
+   "speed": 0.516,
+   "stairs": {
+    "riser": 0.21,
+    "tread": 0.31,
+    "dir": 1,
+    "steps": 2,
+    "variantOf": "StairsUp"
+   }
   }
  }
 }
