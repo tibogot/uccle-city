@@ -89,7 +89,7 @@ function miniLabels(m) {
     const width = tw.textWidth(meas, l.text);
     const need = (width + 12) / s;
     for (const a0 of l.anchors) {
-      if (a0.len < need * 0.6) continue;
+      if (a0.len < need * 0.45) continue;
       // slide the label along its straight run towards the player (the run spans a0 ± len/2 along ang)
       const ux = Math.cos(a0.ang), uz = Math.sin(a0.ang), lim = Math.max(0, a0.len / 2 - need * 0.3);
       const t0 = Math.max(-lim, Math.min(lim, (px - a0.x) * ux + (pz - a0.z) * uz));
@@ -186,14 +186,18 @@ function full(m) {
     if (lm.kind !== 'hero' && s < (lm.kind === 'station' ? 0.12 : 0.35)) continue;
     const lx = v.toX(lm.x), ly = v.toY(lm.z);
     if (Math.abs(lx) > m.w * 0.49 || Math.abs(ly) > m.h * 0.49) continue;
-    const text = lang === 'nl' ? lm.nl : lm.fr;
     const r = lm.kind === 'hero' ? 7.5 : 6;
-    const lw = tw.textWidth(ctx, text) + 6;
-    const box = [lx + r + 2, ly - 8, lx + r + 4 + lw, ly + 7];
-    const showLabel = (lm.kind === 'hero' || s > 0.5 || lm.kind === 'station') && !overlaps(placed, box);
-    placed.push([lx - r - 2, ly - r - 2, lx + r + 2, ly + r + 2]);
-    if (showLabel) placed.push(box);
-    pins.push({ lm, lx, ly, r, text, showLabel });
+    pins.push({ lm, lx, ly, r, text: lang === 'nl' ? lm.nl : lm.fr, side: 0 });
+  }
+  for (const p of pins) placed.push([p.lx - p.r - 2, p.ly - p.r - 2, p.lx + p.r + 2, p.ly + p.r + 2]);   // every pin first
+  for (const p of pins) {        // then its name, right of the pin, else left
+    if (!(p.lm.kind === 'hero' || p.lm.kind === 'station' || s > 0.5)) continue;
+    const lw = tw.textWidth(ctx, p.text) + 6;
+    for (const side of [1, -1]) {
+      const box = side > 0 ? [p.lx + p.r + 2, p.ly - 8, p.lx + p.r + 4 + lw, p.ly + 7] : [p.lx - p.r - 4 - lw, p.ly - 8, p.lx - p.r - 2, p.ly + 7];
+      if (overlaps(placed, box)) continue;
+      placed.push(box); p.side = side; break;
+    }
   }
   // area names (parks, woods, cemeteries, ponds), italic, where they fit
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -232,9 +236,11 @@ function full(m) {
   ctx.font = `700 11px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   for (const p of pins) {
     ctx.save(); ctx.translate(p.lx, p.ly); drawGlyph(ctx, p.lm.kind, p.r); ctx.restore();
-    if (p.showLabel) {
-      ctx.lineWidth = 3; ctx.strokeStyle = PAL.label.halo; ctx.strokeText(p.text, p.lx + p.r + 4, p.ly);
-      ctx.fillStyle = p.lm.kind === 'hero' ? PAL.hero : '#ffffff'; ctx.fillText(p.text, p.lx + p.r + 4, p.ly);
+    if (p.side) {
+      ctx.textAlign = p.side > 0 ? 'left' : 'right';
+      const tx = p.lx + p.side * (p.r + 4);
+      ctx.lineWidth = 3; ctx.strokeStyle = PAL.label.halo; ctx.strokeText(p.text, tx, p.ly);
+      ctx.fillStyle = p.lm.kind === 'hero' ? PAL.hero : '#ffffff'; ctx.fillText(p.text, tx, p.ly);
     }
   }
   const bitmap = fullCanvas.transferToImageBitmap();

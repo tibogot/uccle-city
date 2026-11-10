@@ -1,5 +1,6 @@
 // The map's own CSS (minimap, full map), in the style of viewer/panelUI.js. Injected once.
 const CSS = `
+body.umap-on #hud { max-height: calc(100vh - 340px); }   /* the city's HUD stops above the minimap */
 .umap-mini { position: fixed; left: 14px; bottom: 14px; z-index: 3; width: 240px; display: flex; flex-direction: column; align-items: center;
   gap: 6px; font: 12px/1.3 system-ui, -apple-system, "Segoe UI", sans-serif; user-select: none; pointer-events: none; }
 .umap-disc { width: 220px; height: 220px; flex: none; border-radius: 50%; overflow: hidden; cursor: pointer; pointer-events: auto;
@@ -63,4 +64,5 @@ export function injectMapCSS() {
   const st = document.createElement('style');
   st.textContent = CSS;
   document.head.append(st);
+  document.body.classList.add('umap-on');
 }

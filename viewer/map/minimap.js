@@ -47,6 +47,7 @@ export class Minimap {
     this.whereState = { at: 0, inflight: false, key: null, text: '', next: '' };
     this.scale = 0;             // CSS px per metre (smoothed)
     this.paused = false;
+    this.profile = new URLSearchParams(location.search).get('mapprof') === '1';
     this.stats = { frames: 0, total: 0, max: 0, recent: [], rebuilds: 0, rebuildMs: [], labelMs: [], whereMs: [], skipped: 0 };
     this.last = null;
     this.landmarks = client.landmarks || [];
@@ -79,6 +80,7 @@ export class Minimap {
    *       mode: 'walk' | 'third' | 'drive' | 'fly' | 'orbit', fov (horizontal, radians), travel (bearing of motion or null) }
    */
   update(p, dt = 1 / 60) {
+    if (this.profile) performance.mark('map:start');
     const t0 = performance.now();
     if (!this.visible) { this.stats.skipped++; return; }
     const css = this.css;
@@ -105,10 +107,12 @@ export class Minimap {
         this.want = { cx: p.x + Math.sin(tb) * lead, cz: p.z - Math.cos(tb) * lead, s: sReq, side: Math.ceil(side * Math.max(1, s / sReq)), dpr, t: now };
         this.client.request({ type: 'mini', ...this.want }).then((r) => {
           if (r.error) { this.want = null; return; }
+          if (this.profile) performance.mark('map:recv-start');
           this.cache?.bitmap.close?.();
           this.cache = { bitmap: r.bitmap, cx: r.cx, cz: r.cz, s: r.s, side: r.side };
           this.stats.rebuilds++; this.stats.rebuildMs.push(r.ms); if (this.stats.rebuildMs.length > 200) this.stats.rebuildMs.shift();
           this.want = null; this.last = null;
+          if (this.profile) performance.mark('map:recv-end');
         });
       }
     }
@@ -148,9 +152,10 @@ export class Minimap {
       });
     }
 
-    // 4. draw (skipped when nothing moved)
+    // 4. draw, skipped while the change stays under a quarter pixel / 0.15° (a canvas touched at all costs ~0.07 ms,
+    //    measured; walking or driving straight moves the map < 0.1 px a frame, so it redraws ~15 times a second)
     const key = this.last;
-    if (key && Math.abs(key.x - p.x) * s < 0.05 && Math.abs(key.z - p.z) * s < 0.05 && Math.abs(wrap(key.bear - p.bear)) < 0.002 && Math.abs(wrap(key.heading - p.heading)) < 0.002 && Math.abs(key.s - s) / s < 0.001) {
+    if (key && Math.hypot(key.x - p.x, key.z - p.z) * s < 0.25 && Math.abs(wrap(key.bear - p.bear)) < 0.0025 && Math.abs(wrap(key.heading - p.heading)) < 0.004 && Math.abs(key.s - s) / s < 0.002) {
       this.account(performance.now() - t0, false);
       return;
     }
@@ -161,6 +166,7 @@ export class Minimap {
 
   account(ms, drawn) {
     const S = this.stats;
+    if (this.profile) performance.mark(drawn ? 'map:end-draw' : 'map:end-skip');   // ?mapprof=1: marks for a trace (their trace timestamps are exact)
     S.frames++; S.total += ms; if (ms > S.max) S.max = ms;
     S.recent.push(ms); if (S.recent.length > 600) S.recent.shift();
     if (drawn) S.drawn = (S.drawn || 0) + 1;
