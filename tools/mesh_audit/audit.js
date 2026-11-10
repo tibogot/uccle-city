@@ -24,6 +24,7 @@
 //                    closed (a narrow slit = a thin bright / dark line that shimmers); wide openings are info
 //  sliver        (d) stretched triangles (longest edge / height > sliverAspect, longest edge > sliverMinEdge)
 //  streak        (d) triangles whose corner normals disagree with each other or with the face (the shading streaks)
+//  bentflat      (d) corner normals bent > 3 deg on a planar region (>= 2 coplanar neighbours): smooth normals bled into a flat wall
 //  flipped       (e) the winding's face normal opposes the corner normals (culled from the side it shades for)
 //  winding       (e) two triangles share an edge in the same direction on a smooth surface (inconsistent orientation)
 //  nonmanifold   (e) edges used by more than two triangles
@@ -44,6 +45,8 @@ export const DEFAULTS = {
   sliverAspect: 40, sliverMinEdge: 0.25,
   streakSpreadDeg: 30,        // corner normals of one triangle more than this apart ...
   streakAspect: 6,            // ... on a triangle stretched more than this = a shading streak
+  bentFlatDeg: 3,             // a corner normal this far off its face on a flat wall: bentflat
+  bentFlatArea: 0.3,          // m2: a planar region (coplanar edge-neighbours) at least this large is a flat wall
   normalBlockDeg: 85,         // a corner normal more than this from its face: blocking
   flipDot: -0.25,             // mean corner normal . face normal below this = flipped
   flipMinArea: 1e-6,          // m2: smaller triangles are not checked for flipped winding (quantization noise)
@@ -63,7 +66,7 @@ export const DEFAULTS = {
   debugTris: 0,
   traceAt: null,              // [x, y, z] (scene coords): log the leak rays of the open edges there               // 1: coplanar / depth items carry both triangles (debugging a model)
 };
-const SEV = { coplanar: "block", depth: "block", crossing: "block", leak: "block", flipped: "block", streak: "block",
+const SEV = { coplanar: "block", depth: "block", crossing: "block", leak: "block", flipped: "block", streak: "block", bentflat: "block",
   near: "warn", sliver: "warn", winding: "warn", nonmanifold: "warn", tjunction: "warn", degenerate: "warn", seam: "info", opening: "info", backtoback: "info" };
 
 /** a part from a three.js BufferGeometry (+ optional world matrix as a 16-array, column-major like Matrix4.elements) */
@@ -247,7 +250,7 @@ export function auditParts(parts, options = {}) {
     if (id === undefined) { id = nv++; wmap.set(k, id); wpos.push(T.v[b], T.v[b + 1], T.v[b + 2]); }
     T.vid[i * 3 + c] = id;
   }
-  // ---- edges
+  // ---- edges (+ planar regions for bentflat: coplanar edge-neighbours, union-find, summed area)
   const edges = new Map();           // "a,b" (a<b) -> [tri, dir(+1 if a->b), ...]
   for (let i = 0; i < count; i++) {
     if (T.area[i] < O.degenerateArea) continue;
@@ -274,6 +277,12 @@ export function auditParts(parts, options = {}) {
   };
 
   // ---- per triangle: degenerate, sliver, normals
+  const upar = new Int32Array(count).map((_, i) => i);
+  const ufind = (i) => { while (upar[i] !== i) { upar[i] = upar[upar[i]]; i = upar[i]; } return i; };
+  for (const e of edges.values()) if (e.length === 4 && dot(Nf(e[0]), Nf(e[2])) > Math.cos(1 * DEG)) { const a = ufind(e[0]), b = ufind(e[2]); if (a !== b) upar[a] = b; }
+  const regionArea = new Map();
+  for (let i = 0; i < count; i++) { const r = ufind(i); regionArea.set(r, (regionArea.get(r) ?? 0) + T.area[i]); }
+  const planeArea = (i) => regionArea.get(ufind(i));
   for (let i = 0; i < count; i++) {
     const A = V(i, 0), B = V(i, 1), C = V(i, 2);
     const el = [len(sub(B, A)), len(sub(C, B)), len(sub(A, C))], L = Math.max(...el);
@@ -293,6 +302,13 @@ export function auditParts(parts, options = {}) {
     }
     if (worstFace > O.normalBlockDeg && T.area[i] > 1e-4) add("streak", cen(i), { part: partName(i), why: "corner normal faces away", deg: Math.round(worstFace), area: +T.area[i].toFixed(4) });
     else if (spread > O.streakSpreadDeg && aspect > O.streakAspect && L > 0.15) add("streak", cen(i), { part: partName(i), why: "stretched triangle with diverging corner normals", spread: Math.round(spread), aspect: Math.round(aspect), longest: +L.toFixed(2) });
+    else if (worstFace > O.bentFlatDeg && T.area[i] > O.flipMinArea && planeArea(i) > O.bentFlatArea) {
+      // BENT NORMALS ON A FLAT WALL (owner's rule): the triangle belongs to a planar region (coplanar edge-neighbours,
+      // flood-filled) larger than bentFlatArea; its corner normals must be its face normal. A smooth normal bled in from a
+      // reveal / chamfer / sill / plinth shades the wall in fans and rays round the openings. (Swept curved profiles:
+      // gutters, pipes, rolls: their straight strips are planar but narrow, well under the area.)
+      add("bentflat", cen(i), { part: partName(i), deg: +worstFace.toFixed(1), area: +T.area[i].toFixed(4), region_m2: +planeArea(i).toFixed(2) });
+    }
   }
 
   // ---- edges: non-manifold, winding, open edges
@@ -518,7 +534,7 @@ export function toMarkdown(report, { title = "Mesh audit", transform = null, max
   const fmt = (p) => (transform ? transform(p) : p).map((v) => v.toFixed(2)).join(", ");
   const L = [`# ${title}`, "", `${S.triangles.toLocaleString()} triangles, ${S.vertices_welded.toLocaleString()} welded vertices, ${S.open_edges.toLocaleString()} open edges, ${S.rays.toLocaleString()} rays, ${S.ms} ms.`, "",
     `**${S.blocking} blocking**, ${S.warnings} warnings. ${S.blocking ? "NOT CLEAN." : "Clean (no blocking item)."}`, "", "| check | severity | count |", "|---|---|---|"];
-  const order = ["coplanar", "depth", "crossing", "leak", "flipped", "streak", "near", "sliver", "winding", "nonmanifold", "tjunction", "degenerate", "seam", "opening", "backtoback"];
+  const order = ["coplanar", "depth", "crossing", "leak", "flipped", "streak", "bentflat", "near", "sliver", "winding", "nonmanifold", "tjunction", "degenerate", "seam", "opening", "backtoback"];
   for (const k of order) if (S.counts[k]) L.push(`| ${k} | ${SEV[k]} | ${S.counts[k]} |`);
   L.push("", `Positions: ${transform ? "transformed (see the caller)" : "the file's scene coordinates (glTF, Y up, node transforms applied)"}.`, "");
   for (const k of order) {

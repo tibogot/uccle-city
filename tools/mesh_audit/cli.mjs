@@ -29,7 +29,7 @@ export async function auditGlb(file, { nodes = null, range = {}, allow = [], ski
     });
     if (skip.includes(k)) report.summary.counts[k] = 0;
   }
-  const SEVB = ["coplanar", "depth", "crossing", "leak", "flipped", "streak"];
+  const SEVB = ["coplanar", "depth", "crossing", "leak", "flipped", "streak", "bentflat"];
   report.summary.blocking = SEVB.reduce((s, k) => s + (report.summary.counts[k] ?? 0), 0);
   for (const list of Object.values(report.items)) for (const x of list) x.at = x.at.map((v, i) => +(v + offset[i]).toFixed(3));
   report.file = path.basename(file);

@@ -164,6 +164,18 @@ def cdt_tris(loops, step=CDT_STEP):
                 extra.append(q)
             x += step
         y += step * 0.866; row += 1
+    # a SUPPORT RING round every opening (8 and 22 cm out, one point per opening vertex, thinned to >= 6 cm apart): the
+    # triangles at the opening are short and square, no long fans from the oculus / lancets out to the grid (owner's rule)
+    for h in loops[1:]:
+        for off, keep in ((0.08, 0.06), (0.22, 0.12)):
+            ring = []
+            for q in offset_loop(h, off):
+                if not inside(q, loops[0]) or any(inside(q, hh) for hh in loops[1:]): continue
+                if min(_seg_dist(q, a, b) for a, b in segs) < off * 0.8: continue
+                if ring and math.hypot(q[0] - ring[-1][0], q[1] - ring[-1][1]) < keep: continue
+                if any(math.hypot(q[0] - e[0], q[1] - e[1]) < keep for e in extra): continue
+                ring.append(q)
+            extra += ring
     allp = pts + extra
     vs, _, fs, _, _, _ = delaunay_2d_cdt([Vector(p) for p in allp], edges, [], 0, 1e-7, False)
     out = []
@@ -476,6 +488,28 @@ def make_object(scn, mats, slots, name, bld, v0, v1, ao_px, smart=True, thin_lim
     print(name, "faces", len(me.polygons), "triangles", ntri, "verts", len(me.vertices))
     thin = [False] * len(me.polygons)
     vflag = [0] * len(me.polygons); me.attributes["vao"].data.foreach_get("value", vflag); me.attributes.remove(me.attributes["vao"])
+    # FLAT walls keep FLAT normals (owner's rule): a planar fill's (fill2d) edge is sharp against any face not coplanar with
+    # it (> 1 deg), so no smooth normal bleeds into a wall from a reveal, a chamfer or a sill
+    # ... and so does any face of a PLANAR REGION (coplanar edge-neighbours, flood-filled) of >= 0.3 m2: copings' sides
+    # next to their drip chamfers, roof decks, wall panels from other helpers (the mesh audit's bentflat check: the same rule)
+    bm = bmesh.new(); bm.from_mesh(me); bm.faces.ensure_lookup_table()
+    par = list(range(len(bm.faces)))
+    def fnd(i):
+        while par[i] != i: par[i] = par[par[i]]; i = par[i]
+        return i
+    cos1 = math.cos(math.radians(1.0))
+    for e in bm.edges:
+        if len(e.link_faces) == 2 and e.link_faces[0].normal.dot(e.link_faces[1].normal) > cos1:
+            a_, b_ = fnd(e.link_faces[0].index), fnd(e.link_faces[1].index)
+            if a_ != b_: par[a_] = b_
+    rarea = {}
+    for f_ in bm.faces: r_ = fnd(f_.index); rarea[r_] = rarea.get(r_, 0.0) + f_.calc_area()
+    flatf = [vflag[f_.index] == 2 or rarea[fnd(f_.index)] >= 0.3 for f_ in bm.faces]
+    for e in bm.edges:
+        if len(e.link_faces) != 2: continue
+        f0, f1 = e.link_faces
+        if (flatf[f0.index] or flatf[f1.index]) and f0.normal.dot(f1.normal) <= cos1: e.smooth = False
+    bm.to_mesh(me); bm.free()
     for p_ in me.polygons:
         co = [me.vertices[v].co for v in p_.vertices]
         mx = max((co[i] - co[(i + 1) % len(co)]).length for i in range(len(co)))

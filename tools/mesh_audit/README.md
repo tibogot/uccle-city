@@ -23,6 +23,7 @@ This folder enforces it for every hero (and later the procedural city: the tile 
 | `opening` | info | the same but still open 30 mm out: a real opening (window without glass, the belfry) | |
 | `sliver` | warn | triangles longer than 40 x their height and > 25 cm | lightmap / per-corner light interpolate badly along them |
 | `streak` | block | a corner normal > 85 deg off its face, or corner normals diverging > 30 deg on a triangle stretched > 6:1 | the shading streaks (e.g. a smooth group across a long sliver) |
+| `bentflat` | block | a corner normal > 3 deg off its face on a PLANAR region (the triangle has >= 2 coplanar edge-neighbours): smooth normals bled into a flat wall from a reveal / chamfer / sill (fans and rays round openings) | per triangle, edge adjacency on the welded mesh |
 | `flipped` | block | the winding's normal opposes the mean corner normal | culled from the side it is shaded for |
 | `winding` | warn | two triangles of one part share an edge in the same direction with opposite normals | inconsistent orientation |
 | `nonmanifold` | warn | an edge used by > 2 triangles | |

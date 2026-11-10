@@ -1,21 +1,21 @@
 # Mesh audit (before pack): stalle.far
 
-5,085 triangles, 3,184 welded vertices, 1,178 open edges, 143,642 rays, 1011 ms.
+6,417 triangles, 3,850 welded vertices, 1,178 open edges, 143,918 rays, 893 ms.
 
-**0 blocking**, 215 warnings. Clean (no blocking item).
+**0 blocking**, 134 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| sliver | warn | 190 |
+| sliver | warn | 109 |
 | nonmanifold | warn | 1 |
 | tjunction | warn | 24 |
-| seam | info | 115 |
-| opening | info | 52 |
+| seam | info | 116 |
+| opening | info | 51 |
 | backtoback | info | 43 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## sliver (warn, 190)
+## sliver (warn, 109)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -25,42 +25,42 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.02, 34.93, 2.26 | Stalle_far/sandstone_rubble | 47 | 3.291 |
 | 0.75, 40.00, -2.15 | Stalle_far/sandstone_rubble | 1749 | 1.354 |
 | 0.75, 40.00, 2.35 | Stalle_far/sandstone_rubble | 1749 | 1.354 |
-| 9.29, 36.77, -4.25 | Stalle_far/sandstone_rubble | 44 | 0.414 |
-| 6.96, 36.77, -4.25 | Stalle_far/sandstone_rubble | 81 | 0.613 |
-| 8.87, 36.76, -4.25 | Stalle_far/sandstone_rubble | 44 | 0.654 |
-| 8.90, 36.77, -4.25 | Stalle_far/sandstone_rubble | 97 | 0.693 |
-| 8.82, 36.98, -4.25 | Stalle_far/sandstone_rubble | 53 | 3.885 |
-| 4.67, 36.79, -4.25 | Stalle_far/sandstone_rubble | 52 | 1.2 |
-| 4.20, 36.80, -4.25 | Stalle_far/sandstone_rubble | 57 | 1.65 |
-| 1.57, 36.77, -4.25 | Stalle_far/sandstone_rubble | 46 | 0.424 |
-| 1.99, 36.76, -4.25 | Stalle_far/sandstone_rubble | 43 | 0.644 |
-| 1.96, 36.77, -4.25 | Stalle_far/sandstone_rubble | 95 | 0.683 |
-| 2.15, 36.98, -4.25 | Stalle_far/sandstone_rubble | 44 | 3.539 |
-| 3.62, 36.98, -4.25 | Stalle_far/sandstone_rubble | 114 | 5.724 |
-| 6.56, 36.77, -4.25 | Stalle_far/sandstone_rubble | 58 | 0.494 |
-| 8.27, 36.98, -4.25 | Stalle_far/sandstone_rubble | 43 | 4.977 |
-| 7.72, 36.98, -4.25 | Stalle_far/sandstone_rubble | 107 | 5.525 |
+| 7.54, 36.95, -4.25 | Stalle_far/sandstone_rubble | 75 | 2.239 |
+| 8.29, 36.96, -4.25 | Stalle_far/sandstone_rubble | 75 | 2.4 |
+| 2.44, 36.97, -4.25 | Stalle_far/sandstone_rubble | 58 | 2.01 |
+| 2.95, 37.11, -4.25 | Stalle_far/sandstone_rubble | 57 | 5.131 |
+| 6.15, 36.97, -4.25 | Stalle_far/sandstone_rubble | 46 | 1.62 |
+| 7.69, 37.10, -4.25 | Stalle_far/sandstone_rubble | 52 | 6.089 |
 | 7.22, 34.68, -4.30 | Stalle_far/sandstone_rubble | 87 | 6.07 |
 | 9.25, 34.68, -4.27 | Stalle_far/sandstone_rubble | 87 | 6.07 |
 | 1.17, 34.68, -4.30 | Stalle_far/sandstone_rubble | 53 | 3.721 |
 | 2.41, 34.68, -4.27 | Stalle_far/sandstone_rubble | 53 | 3.721 |
-| 1.50, 36.77, 4.45 | Stalle_far/sandstone_rubble | 83 | 0.623 |
-| 1.89, 36.77, 4.45 | Stalle_far/sandstone_rubble | 56 | 0.484 |
-| 2.38, 36.98, 4.45 | Stalle_far/sandstone_rubble | 53 | 3.885 |
+| 2.30, 36.91, 4.45 | Stalle_far/sandstone_rubble | 103 | 1.588 |
+| 2.96, 36.86, 4.45 | Stalle_far/sandstone_rubble | 51 | 2.136 |
 | 2.75, 36.98, 4.45 | Stalle_far/sandstone_rubble | 69 | 4.431 |
-| 3.12, 36.98, 4.45 | Stalle_far/sandstone_rubble | 86 | 4.977 |
-| 3.48, 36.98, 4.45 | Stalle_far/sandstone_rubble | 107 | 5.525 |
-| 6.89, 36.77, 4.45 | Stalle_far/sandstone_rubble | 44 | 0.414 |
-| 8.80, 36.76, 4.45 | Stalle_far/sandstone_rubble | 60 | 0.853 |
-| 8.83, 36.77, 4.45 | Stalle_far/sandstone_rubble | 139 | 0.892 |
-| 9.43, 36.76, 4.45 | Stalle_far/sandstone_rubble | 50 | 0.724 |
-| 9.62, 36.94, 4.45 | Stalle_far/sandstone_rubble | 83 | 1.525 |
-| 8.47, 36.98, 4.45 | Stalle_far/sandstone_rubble | 41 | 3.44 |
-| 6.47, 36.76, 4.45 | Stalle_far/sandstone_rubble | 44 | 0.654 |
-| 6.50, 36.77, 4.45 | Stalle_far/sandstone_rubble | 97 | 0.693 |
-| 7.37, 36.98, 4.45 | Stalle_far/sandstone_rubble | 90 | 5.077 |
+| 8.31, 36.96, 4.45 | Stalle_far/sandstone_rubble | 74 | 2.318 |
+| 8.01, 37.09, 4.45 | Stalle_far/sandstone_rubble | 253 | 3.909 |
+| 5.34, 36.86, 4.45 | Stalle_far/sandstone_rubble | 61 | 2.263 |
+| 7.01, 34.68, 4.50 | Stalle_far/sandstone_rubble | 152 | 10.62 |
+| 3.47, 34.68, 4.47 | Stalle_far/sandstone_rubble | 152 | 10.62 |
+| 14.57, 37.92, -2.15 | Stalle_far/sandstone_rubble | 56 | 3.814 |
+| 11.32, 39.73, -2.15 | Stalle_far/sandstone_rubble | 53 | 2.363 |
+| 11.30, 39.90, -2.15 | Stalle_far/sandstone_rubble | 105 | 5.057 |
+| 6.86, 39.37, -2.15 | Stalle_far/sandstone_rubble | 40 | 2.301 |
+| 6.14, 39.38, -2.15 | Stalle_far/sandstone_rubble | 41 | 2.165 |
+| 7.01, 39.95, -2.15 | Stalle_far/sandstone_rubble | 125 | 2.133 |
+| 6.22, 39.95, -2.15 | Stalle_far/sandstone_rubble | 85 | 2.45 |
+| 1.84, 40.01, -2.15 | Stalle_far/sandstone_rubble | 117 | 2.806 |
+| 3.66, 39.38, -2.15 | Stalle_far/sandstone_rubble | 42 | 2.215 |
+| 3.63, 39.94, -2.15 | Stalle_far/sandstone_rubble | 89 | 2.183 |
+| 4.40, 39.37, -2.15 | Stalle_far/sandstone_rubble | 41 | 2.351 |
+| 4.36, 39.95, -2.15 | Stalle_far/sandstone_rubble | 87 | 2.5 |
+| 2.70, 40.02, -2.15 | Stalle_far/sandstone_rubble | 64 | 5.303 |
+| 4.35, 40.02, -2.15 | Stalle_far/sandstone_rubble | 139 | 7.752 |
+| 10.19, 40.01, -2.15 | Stalle_far/sandstone_rubble | 191 | 7.002 |
+| 7.50, 40.08, -2.15 | Stalle_far/sandstone_rubble | 84 | 14.75 |
 
-(150 more in the JSON)
+(69 more in the JSON)
 
 ## nonmanifold (warn, 1)
 
@@ -97,23 +97,25 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.58, 37.90, 9.97 | Stalle_far/brick_red_brussels | 4.77 |
 | 0.58, 37.90, 4.15 | Stalle_far/brick_red_brussels | 4.77 |
 
-## seam (info, 115)
+## seam (info, 116)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
-| 14.75, 40.13, -2.15 | Stalle_far/sandstone_rubble + Stalle_far/slate | 71.04 | 168 | 33.8 |
-| -0.02, 34.06, 4.15 | Stalle_far/brick_red_brussels + Stalle_far/cobbles | 6.62 | 54 | 82.5 |
-| 0.00, 34.38, -3.98 | Stalle_far/sandstone_rubble + Stalle_far/cobbles | 8.48 | 45 | 76.8 |
-| 0.00, 36.57, 4.15 | Stalle_far/sandstone_rubble + Stalle_far/brick_red_brussels | 4.48 | 41 | 90 |
+| 14.75, 40.13, -2.15 | Stalle_far/sandstone_rubble + Stalle_far/slate | 71.04 | 162 | 33.8 |
+| -0.00, 34.07, 4.15 | Stalle_far/brick_red_brussels + Stalle_far/cobbles | 6.62 | 58 | 82.4 |
+| 0.00, 34.38, -3.98 | Stalle_far/sandstone_rubble + Stalle_far/cobbles | 8.48 | 50 | 76.8 |
 | 0.23, 34.68, 4.45 | Stalle_far/sandstone_rubble + Stalle_far/sandstone_rubble | 10.55 | 41 | 90 |
 | 10.97, 34.68, -4.25 | Stalle_far/sandstone_rubble + Stalle_far/sandstone_rubble | 13.48 | 32 | 90 |
 | 11.05, 38.46, 2.35 | Stalle_far/sandstone_rubble + Stalle_far/slate | 7.48 | 32 | 65.7 |
-| 0.82, 39.24, 2.35 | Stalle_far/sandstone_rubble + Stalle_far/slate | 19.84 | 30 | 48.1 |
-| 0.80, 39.24, -2.15 | Stalle_far/sandstone_rubble + Stalle_far/slate | 19.9 | 26 | 48.1 |
+| 1.20, 39.24, 2.35 | Stalle_far/sandstone_rubble + Stalle_far/slate | 19.84 | 30 | 48.1 |
+| 3.23, 34.68, -4.25 | Stalle_far/sandstone_rubble + Stalle_far/sandstone_rubble | 8.78 | 29 | 90 |
+| 0.00, 34.93, -4.00 | Stalle_far/sandstone_rubble + Stalle_far/sandstone_rubble | 5.02 | 27 | 90 |
+| 0.00, 34.09, -0.85 | Stalle_far/sandstone_rubble + Stalle_far/stone_blue | 6.04 | 27 | 90 |
+| 0.00, 34.93, 1.80 | Stalle_far/sandstone_rubble + Stalle_far/sandstone_rubble | 5.02 | 26 | 90 |
 | -2.53, 34.00, 4.31 | Stalle_far/stone_white + Stalle_far/painted_wood_red | 5.93 | 26 | 90 |
-| -6.67, 41.00, 6.66 | Stalle_far/stone_white + Stalle_far/brick_red_brussels | 9.24 | 26 | 90 |
+| -6.67, 41.01, 6.67 | Stalle_far/stone_white + Stalle_far/brick_red_brussels | 9.24 | 26 | 90 |
 | 0.58, 41.00, 7.46 | Stalle_far/stone_white + Stalle_far/brick_red_brussels | 9.24 | 26 | 90 |
-| 0.00, 34.93, -4.00 | Stalle_far/sandstone_rubble + Stalle_far/sandstone_rubble | 5.02 | 25 | 90 |
+| 1.20, 39.24, -2.15 | Stalle_far/sandstone_rubble + Stalle_far/slate | 19.9 | 24 | 48.1 |
 | 6.02, 42.72, -0.34 | Stalle_far/slate + Stalle_far/slate | 7.44 | 24 | 44.8 |
 | 0.00, 40.64, -2.04 | Stalle_far/sandstone_rubble + Stalle_far/stone_white | 7.56 | 22 | 90 |
 | -6.61, 41.38, 6.97 | Stalle_far/stone_white + Stalle_far/brick_red_brussels | 3.95 | 20 | 38.7 |
@@ -123,28 +125,26 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.77, 37.38, -4.22 | Stalle_far/stone_white + Stalle_far/slate | 1.34 | 18 | 41.9 |
 | 0.13, 37.70, 4.10 | Stalle_far/stone_white + Stalle_far/stone_white | 3.83 | 17 | 40.4 |
 | -0.08, 37.25, 4.15 | Stalle_far/stone_white + Stalle_far/brick_red_brussels | 1.75 | 17 | 90 |
-| -0.07, 33.95, -1.22 | Stalle_far/sandstone_rubble + Stalle_far/cobbles | 3.47 | 16 | 76.8 |
-| 0.01, 37.22, 4.45 | Stalle_far/sandstone_rubble + Stalle_far/stone_white | 0.88 | 15 | 90 |
-| 0.78, 37.25, 4.45 | Stalle_far/sandstone_rubble + Stalle_far/slate | 9.88 | 15 | 48.1 |
 | 10.76, 39.23, -2.15 | Stalle_far/sandstone_rubble + Stalle_far/stone_white | 2.6 | 15 | 40.7 |
 | 0.73, 37.65, -3.96 | Stalle_far/stone_white + Stalle_far/stone_white | 2.48 | 15 | 40.4 |
-| -0.32, 33.95, 0.54 | Stalle_far/stone_blue + Stalle_far/cobbles | 2.54 | 15 | 82 |
-| -0.68, 33.90, 1.00 | Stalle_far/stone_blue + Stalle_far/cobbles | 2.92 | 15 | 85 |
-| 0.24, 39.19, -2.15 | Stalle_far/sandstone_rubble + Stalle_far/stone_white | 1.82 | 14 | 49.6 |
+| -0.07, 34.00, -1.83 | Stalle_far/sandstone_rubble + Stalle_far/cobbles | 3.47 | 14 | 76.8 |
 | 0.00, 37.22, -4.24 | Stalle_far/sandstone_rubble + Stalle_far/stone_white | 0.89 | 13 | 90 |
-| 10.50, 35.22, 4.45 | Stalle_far/sandstone_rubble + Stalle_far/brick_red_brussels | 3.75 | 13 | 90 |
-| 0.09, 39.19, 2.35 | Stalle_far/sandstone_rubble + Stalle_far/stone_white | 1.82 | 13 | 49.6 |
+| 10.43, 37.25, -4.25 | Stalle_far/sandstone_rubble + Stalle_far/slate | 10 | 13 | 48.1 |
+| 0.01, 37.22, 4.45 | Stalle_far/sandstone_rubble + Stalle_far/stone_white | 0.88 | 13 | 90 |
 | 0.76, 40.77, -1.94 | Stalle_far/stone_white + Stalle_far/stone_white | 2.29 | 13 | 55.1 |
 | 0.04, 37.65, 4.16 | Stalle_far/stone_white + Stalle_far/stone_white | 2.48 | 13 | 40.4 |
 | 0.36, 37.66, 4.15 | Stalle_far/stone_white + Stalle_far/brick_red_brussels | 0.87 | 13 | 49.6 |
 | -6.22, 37.68, 4.15 | Stalle_far/stone_white + Stalle_far/brick_red_brussels | 0.7 | 13 | 90 |
+| -6.67, 38.10, 4.35 | Stalle_far/stone_white + Stalle_far/brick_red_brussels | 0.75 | 13 | 90 |
 | -6.22, 37.67, 9.97 | Stalle_far/stone_white + Stalle_far/brick_red_brussels | 0.7 | 13 | 90 |
 | 0.13, 37.68, 9.97 | Stalle_far/stone_white + Stalle_far/brick_red_brussels | 0.7 | 13 | 90 |
 | 0.13, 37.67, 4.15 | Stalle_far/stone_white + Stalle_far/brick_red_brussels | 0.7 | 13 | 90 |
+| -0.32, 33.95, 0.55 | Stalle_far/stone_blue + Stalle_far/cobbles | 2.55 | 13 | 82 |
+| -0.68, 33.90, 0.98 | Stalle_far/stone_blue + Stalle_far/cobbles | 2.92 | 13 | 85 |
 
-(75 more in the JSON)
+(76 more in the JSON)
 
-## opening (info, 52)
+## opening (info, 51)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -164,7 +164,6 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.32, 44.73, 0.33 | Stalle_far/stone_white | 0 + -1 + 0 | 0.235 |
 | 0.43, 44.73, -0.13 | Stalle_far/stone_white | 0 + -1 + 0 | 0.235 |
 | 0.32, 44.73, -0.13 | Stalle_far/stone_white | 0 + -1 + 0 | 0.235 |
-| -6.67, 37.65, 4.15 | Stalle_far/brick_red_brussels | 0 + 0 + -1 | 4.7 |
 | 0.58, 37.65, 9.97 | Stalle_far/brick_red_brussels | 0 + 0 + 1 | 4.7 |
 | 5.88, 42.60, -0.21 | Stalle_far/slate | -1 + 0 + 0 | 0.72 |
 | 7.12, 42.60, -0.21 | Stalle_far/slate | 1 + 0 + 0 | 0.72 |
@@ -180,16 +179,17 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 6.48, 48.00, 0.11 | Stalle_far/cast_iron_green | -0.87 + 0 + 0.5 | 0.03 |
 | 6.50, 48.00, 0.13 | Stalle_far/cast_iron_green | 0 + 0 + 1 | 0.03 |
 | 6.52, 48.00, 0.11 | Stalle_far/cast_iron_green | 0.87 + 0 + 0.5 | 0.03 |
-| -6.15, 34.58, -4.60 | Stalle_far/cobbles | -0.02 + 1 + -0.03 | 0.5 |
-| -6.60, 34.60, -3.67 | Stalle_far/cobbles | 0.01 + 1 + -0.03 | 0.878 |
-| -6.60, 34.61, -2.79 | Stalle_far/cobbles | 0.08 + 0.98 + 0.17 | 0.891 |
-| -6.60, 34.45, -1.92 | Stalle_far/cobbles | 0.26 + 0.93 + 0.27 | 0.915 |
-| -6.60, 34.20, -1.04 | Stalle_far/cobbles | 0.19 + 0.96 + 0.21 | 0.898 |
-| -6.60, 34.01, -0.16 | Stalle_far/cobbles | 0.17 + 0.97 + 0.19 | 0.895 |
+| -6.15, 34.58, -4.60 | Stalle_far/cobbles | -0.02 + 1 + -0.02 | 0.5 |
+| -6.60, 34.57, -4.55 | Stalle_far/cobbles | 0.01 + 1 + -0.03 | 0.878 |
+| -6.60, 34.60, -3.67 | Stalle_far/cobbles | 0.08 + 1 + -0.03 | 0.878 |
+| -6.60, 34.61, -2.79 | Stalle_far/cobbles | 0.26 + 0.95 + 0.16 | 0.891 |
+| -6.60, 34.45, -1.92 | Stalle_far/cobbles | 0.19 + 0.94 + 0.28 | 0.915 |
+| -6.60, 34.20, -1.04 | Stalle_far/cobbles | 0.17 + 0.96 + 0.21 | 0.898 |
+| -6.60, 34.01, -0.16 | Stalle_far/cobbles | 0.02 + 0.98 + 0.2 | 0.895 |
 | -6.05, 34.58, -4.60 | Stalle_far/cobbles | -0.01 + 1 + -0.02 | 0.5 |
-| -5.55, 34.58, -4.60 | Stalle_far/cobbles | -0.02 + 1 + -0.02 | 0.5 |
+| -5.55, 34.58, -4.60 | Stalle_far/cobbles | -0.02 + 1 + -0.01 | 0.5 |
 
-(12 more in the JSON)
+(11 more in the JSON)
 
 ## backtoback (info, 43)
 

@@ -926,7 +926,8 @@ def forecourt():
     for i in range(len(us) - 1):
         for j in range(len(ws) - 1):
             pts = [(us[i], ws[j]), (us[i + 1], ws[j]), (us[i + 1], ws[j + 1]), (us[i], ws[j + 1])]
-            face_up([P(u, w, gnd(u, w) + 0.035) for u, w in pts], COBB, C_PLAIN)
+            q = [P(u, w, gnd(u, w) + 0.035) for u, w in pts]      # two triangles: the draped cell is not planar
+            face_up([q[0], q[1], q[2]], COBB, C_PLAIN); face_up([q[0], q[2], q[3]], COBB, C_PLAIN)
 
 # ------------------------------------------------------------------------------------------------ build
 def build_all():
