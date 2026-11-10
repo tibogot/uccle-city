@@ -148,11 +148,11 @@ export class Lighting {
     this.cascaded = !!opts.sunLight;
     if (this.cascaded) {
       this.sun = new SunLight(0xffc890, 5.6);
-      const maxTex = renderer.backend?.device?.limits?.maxTextureDimension2D || 4096;
-      const tile = maxTex >= 6144 ? 3072 : 2048;
-      this.sun.shadow.mapSize.set(tile, tile);
+      // Mr.doob's GPU-time pass (slop-newyork c8a904d): 2048 px shadow tiles everywhere (was 3072 on big GPUs) and
+      // the shadow distance 300 -> 220 m
+      this.sun.shadow.mapSize.set(2048, 2048);
       this.sun.shadow.camera.near = 0.5;
-      this.sun.shadow.camera.far = 300;
+      this.sun.shadow.camera.far = 220;
     } else {
       this.sun = new THREE.DirectionalLight(0xffc890, 5.6);
       this.sun.shadow.mapSize.set(4096, 4096);
