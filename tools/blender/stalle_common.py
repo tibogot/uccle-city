@@ -5,7 +5,7 @@ Frame (tools/stalle_measure.py -> models/stalle/site.json): u along the chapel's
 south side, heights m TAW. Blender: x = u, y = -w, z = TAW - OY. glTF (Y up) -> three.js local (u, TAW - OY, w): the
 node goes at the city position of the frame origin, height OY, rotation.y = -rotation.
 """
-import bpy, bmesh, math, os, json, time
+import bpy, bmesh, math, os, sys, json, time
 from mathutils import Vector
 from mathutils.geometry import tessellate_polygon, delaunay_2d_cdt
 
@@ -467,7 +467,8 @@ def make_object(scn, mats, slots, name, bld, v0, v1, ao_px, smart=True, thin_lim
         me.attributes.remove(me.attributes["grp"])
         return obj, ntri, {slots[m]: sum(len(p.vertices) - 2 for p in me.polygons if p.material_index == remap[m]) for m in used}, thin
     uv1 = me.uv_layers.new(name="Lightmap")
-    if all(thin):                       # every face takes per-vertex AO (slates): the lightmap UV parks at AO 1.0
+    if all(thin) or "--audit-only" in sys.argv:   # every face takes per-vertex AO (slates): the lightmap UV parks at AO 1.0
+        # (--audit-only: a geometry-only build for the mesh audit, no lightmap UV; never packed)
         uv1.data.foreach_set("uv", [0.997, v0 + 0.5 * (v1 - v0)] * len(me.loops))
         me.uv_layers.active = me.uv_layers["UVMap"]; me.attributes.remove(me.attributes["grp"])
         obj["thin"] = len(thin); obj["px_per_m"] = 0.0

@@ -1,17 +1,18 @@
 // THE STATUE'S LEVEL OF DETAIL (meshoptimizer, JavaScript: the project's rule, never Blender's decimate):
 // models/stalle/statue_raw.json (tools/blender/stalle_statue.py: one watertight voxel-remeshed surface, ~200k tris)
 //   -> models/stalle/statue_mesh.json (the target count, error-bounded), placed on the pedestal by tools/blender/stalle.py.
-//   node tools/stalle_statue_pack.mjs [models/stalle] [target tris = 14000]
+//   node tools/stalle_statue_pack.mjs [models/stalle] [target tris = 14000] [max error m = 0.004]
 import fs from "fs";
 import path from "path";
 import { MeshoptSimplifier } from "./worker/node_modules/meshoptimizer/meshopt_simplifier.js";
 
-const dir = process.argv[2] || "models/stalle", want = +(process.argv[3] || 14000);
+const dir = process.argv[2] || "models/stalle", want = +(process.argv[3] || 14000), maxErr = +(process.argv[4] || 0.004);
 const raw = JSON.parse(fs.readFileSync(path.join(dir, "statue_raw.json")));
 await MeshoptSimplifier.ready;
 const P = new Float32Array(raw.verts.flat()), I = new Uint32Array(raw.faces.flat());
-// error 0.6 mm relative to the statue's ~1.1 m: the folds, the face, the fingers survive; flat robe areas thin out
-const [out, err] = MeshoptSimplifier.simplify(I, P, 3, want * 3, 0.0006 / 1.1, ["LockBorder"]);
+// error bound (default 4 mm on the ~1 m figure, seen from >= 3 m below): the target count is reached before it on the
+// voxel-remeshed surface (0.6 mm stopped at ~108k tris); the folds, the face, the fingers survive, flat robe areas thin out
+const [out, err] = MeshoptSimplifier.simplify(I, P, 3, want * 3, maxErr / 1.1, ["LockBorder"]);
 // compact the vertices
 const map = new Map(), verts = [], faces = [];
 for (let t = 0; t < out.length; t += 3) {

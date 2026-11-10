@@ -29,7 +29,7 @@ from stalle_common import (K, P, hz, Z, Frame, fill2d, strip2d, rect, box, fbox,
 
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 OUT = os.path.abspath(ARGS[0] if ARGS and not ARGS[0].startswith("--") else "models/stalle")
-BAKE = "--no-bake" not in ARGS
+BAKE = "--no-bake" not in ARGS and "--audit-only" not in ARGS     # --audit-only: geometry for the mesh audit (no lightmap UV, no bake; writes stalle.audit.raw.glb)
 PREVIEWS = "--previews" in ARGS
 AO_PX = 2048
 PREV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "docs", "stalle")
@@ -116,7 +116,9 @@ def leaded_glass(fr, loop, d, code=C_LEAD):
 
 def tracery(fr, outline, lights, d0, d1, mat=STONE):
     """a stone tracery plate: the opening's outline minus the lights, from depth d0 (face) back to d1, the lights' sides"""
-    fill2d(fr, [outline] + lights, d0, mat, C_TRAC)
+    # the plate's outer edge runs 1.2 cm INTO the reveal (it ended on the reveal's surface: 1-4 mm cracks to the wall's
+    # inside next to the cusps, the audit's tracery leaks)
+    fill2d(fr, [SC.offset_loop(outline, 0.012)] + lights, d0, mat, C_TRAC)
     for L in lights: strip2d(fr, L, d0, d1, mat, C_TRAC)
 
 def hood(fr, loop_top, prof=((0.0, -0.06), (0.05, -0.06), (0.07, -0.03), (0.07, 0.04), (0.0, 0.07))):
@@ -234,7 +236,7 @@ def west_front():
     plinth_run(fr, -A, -SC.DOOR_W / 2 - 0.36, 35.0)
     plinth_run(fr, SC.DOOR_W / 2 + 0.36, A, 35.0)
     for sg in (-1, 1):
-        quoins(fr, sg * A, hz(gnd(0.0, WC + sg * A) + 0.04), hz(SC.AISLE_EAVE + R - cap), -sg)
+        quoins(fr, sg * A, hz(35.0), hz(SC.AISLE_EAVE + R - cap), -sg)                  # from the plinth's top
     # anchors (photo c00: two in the gable, two lower)
     anchor(fr, -1.39, 40.6); anchor(fr, 1.2, 40.6); anchor(fr, -1.92, 37.4); anchor(fr, 2.0, 37.4)
     # copings: the gable's rake (one mitred piece), the aisles' shoulders (raised above the aisle roofs), kneelers, the
@@ -412,11 +414,11 @@ def north_aisle():
         for x in (a - 0.05, b + 0.05): quoins(fr, x, hz(34.62), hz(36.83), -1 if x < a else 1, alt=(0.24, 0.16), course=0.27, proud=0.012)
         # T-anchor
         s = fr.s_of(SC.N_AISLE["anchor"], w)
-        bar(fr, (s, hz(36.55)), (s, hz(37.1)), 0.0, 0.04, 0.025, IRON); bar(fr, (s - 0.17, hz(37.1)), (s + 0.17, hz(37.1)), 0.0, 0.04, 0.025, IRON)
+        bar(fr, (s, hz(36.55)), (s, hz(37.1)), 0.0, 0.04, 0.025, IRON); bar(fr, (s - 0.17, hz(37.1)), (s + 0.17, hz(37.1)), 0.0, 0.04, 0.03, IRON)
     plinth_run(fr, s0 - 0.07, dr[0][0] - 0.3, 34.75); plinth_run(fr, dr[1][0] + 0.3, s1 + 0.07, 34.75)
     for (ss, sg, uu) in ((s1, -1, SC.U_AISLE_N), (s0, 1, 0.0)):
         if abs(fr.s_of(uu, w) - ss) > 0.01: uu = SC.U_AISLE_N if uu == 0.0 else 0.0
-        quoins(fr, ss, hz(gnd(uu, w) + 0.04), hz(SC.AISLE_EAVE - 0.05), sg)
+        quoins(fr, ss, hz(34.75), hz(SC.AISLE_EAVE - 0.05), sg)                         # from the plinth's top
     # east end wall of the aisle (u = U_AISLE_N), sloped top under its (raised) coping, its inner face above the roof
     R = SC.RAISE
     fe = frame_uw(SC.U_AISLE_N, w, 1, 0)
@@ -469,7 +471,7 @@ def west_door_leaves():
         for v in (34.75, 36.0):                                                        # strap hinges
             bar(fr, (sg * (xo - 0.03), hz(v)), (sg * 0.25, hz(v)), d0, 0.05, 0.01, IRON)
     fbox(fr, -0.025, 0.025, F + 0.004, vt - 0.01, d0, d0 + 0.014, DOOR, C_DOOR, skip=("back",))   # cover strip (astragal)
-    lathe_axis(fr.p(0.1, hz(35.45), d0 + 0.014), fr.N, Z, [(0.045, 0.0), (0.045, 0.015), (0.03, 0.015), (0.03, 0.0)], 12, IRON)
+    lathe_axis(fr.p(0.1, hz(35.45), d0 - 0.002), fr.N, Z, [(0.045, 0.0), (0.045, 0.031), (0.03, 0.031), (0.03, 0.0)], 16, IRON)   # the ring plate ON the leaf (it floated 14 mm in front)
 
 def south_aisle():
     w = WC + A_OUT
@@ -478,7 +480,7 @@ def south_aisle():
     fr, s0, s1 = side_wall(0.0, SC.U_AISLE_S, w, 1, HB, SC.AISLE_EAVE - 0.02, holes)
     for u in SC.S_AISLE["oculi"]: oculus(fr, fr.s_of(u, w), SC.AISLE_OCULUS_H, 0.2, 0.33)
     plinth_run(fr, s0 - 0.07, s1, 34.75)
-    quoins(fr, s0 if fr.s_of(0.0, w) == s0 else s1, hz(gnd(0.0, w) + 0.04), hz(SC.AISLE_EAVE - 0.05), 1 if fr.s_of(0.0, w) == s0 else -1)
+    quoins(fr, s0 if fr.s_of(0.0, w) == s0 else s1, hz(34.75), hz(SC.AISLE_EAVE - 0.05), 1 if fr.s_of(0.0, w) == s0 else -1)
 
 def clerestory(side):
     """the nave + choir side walls: above the aisle roof along the nave (3 oculi), full height along the choir (north: the
@@ -500,12 +502,13 @@ def clerestory(side):
         if not FAR():
             sweep2d(fr, [(a, hz(37.25)), (b + 0.07, hz(37.25))], [(0.0, -0.1), (0.07, -0.06), (0.07, 0.03), (0.0, 0.06)], STONE, C_BAND)
     else:
-        out = poly_s(fr, [(0.0, w, SC.AISLE_TOP - 0.25), (SC.U_APSE, w, SC.AISLE_TOP - 0.25), (SC.U_APSE, w, eave), (0.0, w, eave)])
+        # full height behind the sacristy (its hipped roof left the wall's lower edge open above the hips)
+        out = poly_s(fr, [(0.0, w, SC.AISLE_TOP - 0.25), (ua, w, SC.AISLE_TOP - 0.25), (ua, w, HB), (SC.U_APSE, w, HB), (SC.U_APSE, w, eave), (0.0, w, eave)])
         fill2d(fr, [out] + oc, 0.0, RUB, C_PLAIN)
     for u in SC.CLER_OCULI: oculus(fr, S(u), 39.72, 0.16, 0.27, depth=0.26)
     # flashing ledge where the aisle roof meets the clerestory (photo P01: a light stone line)
     if not FAR():
-        a, b = sorted((S(0.0), S(ua)))
+        a, b = sorted((S(SC.T_WEST / 2), S(ua - (SC.T_AISLE / 2 if side < 0 else 0.0))))
         sweep2d(fr, [(a, hz(SC.AISLE_TOP + 0.1)), (b, hz(SC.AISLE_TOP + 0.1))], [(0.0, -0.06), (0.09, -0.04), (0.09, 0.03), (0.0, 0.07)], STONE, C_BAND)
     return fr
 
@@ -528,9 +531,9 @@ def apse():
             holes.append(window_hole(sm, 37.4, 38.85, 39.75, 1.1))
         fill2d(fr, [out] + holes, 0.0, RUB, C_PLAIN)
         if i == 1: gothic_window(fr, (sa + sb) / 2, 37.4, 38.85, 39.75, 1.1, 2, foils=[(0.0, 39.42, 0.2, 4)])
-        plinth_run(fr, sa, sb, 34.85)
+        plinth_run(fr, sa - 0.03, sb + 0.03, 34.85)        # past the corners by out * tan(22.5 deg): the runs meet in a mitre
         if not FAR() and i != 2:
-            sweep2d(fr, [(sa, hz(37.25)), (sb, hz(37.25))], [(0.0, -0.1), (0.07, -0.06), (0.07, 0.03), (0.0, 0.06)], STONE, C_BAND)
+            sweep2d(fr, [(sa - 0.03, hz(37.25)), (sb + 0.03, hz(37.25))], [(0.0, -0.1), (0.07, -0.06), (0.07, 0.03), (0.0, 0.06)], STONE, C_BAND)
 
 # ------------------------------------------------------------------------------------------------ roofs
 def slab(top, th, mat, code=C_PLAIN, edges=(True, True, True, True), uvs=None):
@@ -566,18 +569,21 @@ def ridge_cap(a, b, pitch, half=0.17):
     """a ridge capping that lies on both slopes (an inverted V 2 cm thick + a roll): the slates' heads end inside it,
     no slit between ridge and slates"""
     if FAR(): return
-    prof = [(-half, -half * pitch + 0.006), (0.0, 0.006), (half, -half * pitch + 0.006), (half, -half * pitch + 0.028), (0.034, -0.034 * pitch + 0.028)]
+    # flanks 5 cm above the deck (vertical; 2.9 cm square to the slope at 55 deg): the slates stand up to 1.7 cm, so
+    # their tops never come near the flank's face (round 3: 2.8 cm left the slates' tops 0.1-0.7 mm under it)
+    T = 0.05
+    prof = [(-half, -half * pitch + 0.006), (0.0, 0.006), (half, -half * pitch + 0.006), (half, -half * pitch + T), (0.034, -0.034 * pitch + T)]
     for k in range(1, 8):
         t = k / 8 * math.pi
-        prof.append((0.034 * math.cos(t), 0.028 + 0.036 * math.sin(t) * 0.9))
-    prof += [(-0.034, -0.034 * pitch + 0.028), (-half, -half * pitch + 0.028)]
+        prof.append((0.034 * math.cos(t), T + 0.036 * math.sin(t) * 0.9))
+    prof += [(-0.034, -0.034 * pitch + T), (-half, -half * pitch + T)]
     prof.append(prof[0])
     sweep3d([a, b], list(reversed(prof)), Z, SLATE, C_RIDGE)
 
 def hip_roll(a, b, r=0.055, lift=0.03):
     """a round hip roll along a hip line (the slates' clipped edges end inside it)"""
     if FAR(): return
-    prof = [(r * math.cos(2 * math.pi * k / 12), lift + r * math.sin(2 * math.pi * k / 12)) for k in range(12)]
+    prof = [(r * math.cos(2 * math.pi * k / 16), lift + r * math.sin(2 * math.pi * k / 16)) for k in range(16)]   # 16 sides: smooth without streaks
     prof.append(prof[0])
     sweep3d([a, b], prof, Z, SLATE, C_RIDGE)
 
@@ -592,11 +598,21 @@ def gutter(a, b, r=0.065):
     c = Vector((0, 0, -0.02))
     sweep3d([a + c, b + c], loop, Z, ZINC, C_GUTTER)
 
+def gutter_path(pts, r=0.065):
+    """gutter() along a polyline (mitred corners)"""
+    if FAR(): return
+    prof = [(math.cos(math.pi * k / 10) * r, -math.sin(math.pi * k / 10) * r) for k in range(11)]
+    inner = [(x * 0.9, y * 0.9) for x, y in reversed(prof)]
+    loop = prof + [(-r * 0.95, 0.006)] + inner + [(r * 0.95, 0.006)]
+    loop.append(loop[0])
+    c = Vector((0, 0, -0.02))
+    sweep3d([p + c for p in pts], loop, Z, ZINC, C_GUTTER)
+
 def downpipe(top, bottom_h, r=0.045):
     if FAR(): return
     b = Vector((top.x, top.y, hz(bottom_h)))
-    lathe_axis(b, Z, Vector((1, 0, 0)), [(r, 0.0), (r, top.z - b.z - 0.02), (r * 0.6, top.z - b.z)], 12, ZINC, C_GUTTER)
-    lathe_axis(b + Z * 0.004, Z, Vector((1, 0, 0)), [(0.0, -0.004), (r * 1.5, -0.004), (r * 1.5, 0.12), (r * 1.02, 0.18)], 12, ZINC, C_GUTTER)
+    lathe_axis(b, Z, Vector((1, 0, 0)), [(r, 0.0), (r, top.z - b.z - 0.02), (r * 0.6, top.z - b.z)], 16, ZINC, C_GUTTER)
+    lathe_axis(b + Z * 0.004, Z, Vector((1, 0, 0)), [(0.0, -0.004), (r * 1.5, -0.004), (r * 1.5, 0.12), (r * 1.02, 0.18)], 16, ZINC, C_GUTTER)
 
 def roofs():
     th = 0.12; ov = 0.16                                    # c05's pose: the nave's eaves at 40.0-40.7 over the clerestory
@@ -609,7 +625,6 @@ def roofs():
         e0, e1 = P(u_w, WC + side * ew, eh), P(SC.U_APSE, WC + side * ew, eh)
         slab([e0, e1, r1, r0], th, SLATE, C_PLAIN, edges=(True, False, False, True), uvs=RK.facet_uv(e0, e1, r1, r0, [e0, e1, r1, r0]))
         slates(e0, e1, r1, r0)
-        gutter(P(u_w, WC + side * (ew - 0.02), eh - 0.03), P(SC.U_APSE, WC + side * (ew - 0.02), eh - 0.03))
     # the apse hip: facets from the apex to the apse's eave polygon (offset by ov)
     pa = [(SC.U_APSE, WC - ew), (SC.U_EAST + ov * 0.8, WC - SC.APSE_HW - ov * 0.45), (SC.U_EAST + ov * 0.8, WC + SC.APSE_HW + ov * 0.45), (SC.U_APSE, WC + ew)]
     apex = P(ua, WC, ridge)
@@ -622,7 +637,10 @@ def roofs():
         if out.dot(a - apex) < 0: out = -out
         face_dir([a, b, b - Z * th, a - Z * th], out, SLATE, C_PLAIN)
         slates(a, b, apex, apex)
-        gutter(a, b)
+    # ONE gutter from the west gable along the north eave, round the apse, back along the south eave (mitred corners; 2 cm
+    # inside the eave edge and 3 cm under it like before: no crossing with the deck's edge)
+    gp = [(u_w, WC - (ew - 0.02))] + [(pa[0][0], pa[0][1] + 0.02), (pa[1][0] - 0.02, pa[1][1] + 0.02), (pa[2][0] - 0.02, pa[2][1] - 0.02), (pa[3][0], pa[3][1] - 0.02)] + [(u_w, WC + (ew - 0.02))]
+    gutter_path([P(u, w_, eh - 0.03) for u, w_ in gp])
     # the ridge capping along the ridge and the rolls down the apse's hips (and the nave facets' hip ends)
     if not FAR():
         ridge_cap(P(u_w - 0.02, WC, ridge), P(ua + 0.04, WC, ridge), pit)
@@ -735,7 +753,8 @@ def sacristy():
     for a_, b_ in ((E[0], E[1]), (P(u0 - ov, w0, eh), E[0]), (E[1], P(u1 + ov, w0 + 0.3, eh))):
         e = b_ - a_; out = e.cross(Z).normalized()
         face_dir([a_, b_, b_ - Z * 0.1, a_ - Z * 0.1], -out if out.dot(Vector((0, -1, 0))) < -0.5 else out, SLATE, C_PLAIN)
-    gutter(E[0], E[1])
+    ge = (E[1] - E[0]).normalized() * 0.02
+    gutter(E[0] - ge, E[1] + ge)
     slates(E[0], E[1], Rr[1], Rr[0])
     slates(P(u0 - ov, w0, eh), E[0], Rr[0], Rr[0])
     slates(E[1], P(u1 + ov, w0 + 0.3, eh), Rr[1], Rr[1])
@@ -757,7 +776,7 @@ def house_window(fr, r, shutters=True, bars=False, surround=0.1):
     mid = (a + b) / 2
     fbox(fr, mid - 0.022, mid + 0.022, v0 + fw, v1 - fw, d - 0.03, d, WOOD, C_PLAIN)
     tv = v0 + (v1 - v0) * 0.7
-    fbox(fr, a + fw, b - fw, tv - 0.022, tv + 0.022, d - 0.03, d, WOOD, C_PLAIN)
+    fbox(fr, a + fw, b - fw, tv - 0.022, tv + 0.022, d - 0.03, d + 0.004, WOOD, C_PLAIN)
     if bars:
         n = max(2, int((b - a) / 0.12))
         for k in range(1, n): x = a + (b - a) * k / n; bar(fr, (x, v0), (x, v1), -0.05, 0.018, 0.018, IRON)
@@ -780,7 +799,7 @@ def house():
     eave, ridge = H["eave"], H["ridge"]
     wm = (w0 + w1) / 2
     bands = [(36.85, 36.97), (37.72, 37.9)]
-    def deco(fr, s0, s1, v_top, long=True):
+    def deco(fr, s0, s1, v_top, long=True, no_quoin=()):
         """plinth, bands, quoins; the long faces' courses run past the corners by their projection, the gables' stop
         at the corners (no coincident end faces)"""
         if FAR(): return
@@ -790,7 +809,8 @@ def house():
         for (h0, h1) in bands:
             if h1 <= v_top + 0.01: fbox(fr, s0 - e2, s1 + e2, hz(h0), hz(h1), 0.0, 0.03, STONE, C_BAND, skip=sk)
         for s, side in ((s0, 1), (s1, -1)):
-            quoins(fr, s, hz(34.95), hz(min(v_top, eave)), side, alt=(0.3, 0.2), course=0.24, proud=0.02)
+            if s in no_quoin: continue                     # a corner buried in the chapel's wall
+            quoins(fr, s, hz(34.95), hz(min(v_top, eave) - 0.25), side, alt=(0.3, 0.2), course=0.24, proud=0.02)   # up to the kneelers
     # north face (P04): small barred window, the arched door, the shuttered window (east -> west)
     fn = frame_uw(u1, w0, 0, -1)
     s0, s1 = sorted((fn.s_of(u0, w0), fn.s_of(u1, w0)))
@@ -827,19 +847,20 @@ def house():
         fg = frame_uw(uu, wm, nu, 0)
         sA, sB = sorted((fg.s_of(uu, w0), fg.s_of(uu, w1)))
         smid = fg.s_of(uu, wm)
-        out = [(sA, hz(HB)), (sB, hz(HB)), (sB, hz(eave - 0.05)), (smid, hz(ridge + 0.25)), (sA, hz(eave - 0.05))]
+        # the gable's top edge runs 1-2 cm INTO the coping (it stopped 3-4 cm under the coping's underside: a slit)
+        out = [(sA, hz(HB)), (sB, hz(HB)), (sB, hz(eave + 0.07)), (smid, hz(ridge + 0.31)), (sA, hz(eave + 0.07))]
         holes = []
         if nu < 0: holes = [rect(smid + k * 0.95 - 0.27, hz(38.15), smid + k * 0.95 + 0.27, hz(39.1)) for k in (-1, 1)]
         else: holes = [rect(smid - 0.27, hz(38.15), smid + 0.27, hz(39.1))]
         fill2d(fg, [out] + holes, 0.0, BRICK, C_PLAIN)
         for hr in holes: house_window(fg, hr, shutters=False)
-        deco(fg, sA, sB, eave, long=False)
+        # the east gable's north corner (w0) stands inside the chapel's south aisle wall: no quoins there
+        deco(fg, sA, sB, eave, long=False, no_quoin=(fg.s_of(uu, w0),) if nu > 0 else ())
         # stone copings + kneelers on the gable
         a = fg.p(sA - 0.06, hz(eave + 0.14), -0.2); m = fg.p(smid, hz(ridge + 0.45), -0.2); b = fg.p(sB + 0.06, hz(eave + 0.14), -0.2)
-        for p, q in ((a, m), (m, b)):
-            coping(p, q, 0.24, 0.28, 0.16) if not FAR() else sweep3d([p, q], [(-0.25, -0.16), (0.28, -0.16), (0.28, 0.0), (-0.25, 0.0), (-0.25, -0.16)], Z, STONE, C_COPING)
+        coping_rake(a, m, b, 0.24, 0.28, 0.16)          # one mitred piece (two halves overlapped at the apex)
         for s in (sA, sB):
-            fbox(fg, s - 0.2, s + 0.2, hz(eave - 0.25), hz(eave + 0.2), -0.45, 0.08, STONE, C_COPING, skip=())
+            fbox(fg, s - 0.2, s + 0.2, hz(eave - 0.25), hz(eave + 0.2), -0.45, 0.11, STONE, C_COPING, skip=())   # 3 cm prouder than the coping
         # the gable's inner face above the roof, under the coping (the roof stops against it)
         if not FAR():
             fb = frame_uw(uu - nu * 0.4, wm, -nu, 0)
@@ -1019,7 +1040,7 @@ for m in mats:
 for o in scn.objects: o.select_set(False)
 for o in (obj, far, door, slat): o.select_set(True)
 bpy.context.view_layer.objects.active = obj
-glb = os.path.join(OUT, "stalle.raw.glb")
+glb = os.path.join(OUT, "stalle.audit.raw.glb" if "--audit-only" in ARGS else "stalle.raw.glb")
 bpy.ops.export_scene.gltf(filepath=glb, export_format="GLB", use_selection=True, export_yup=True, export_apply=True,
                           export_texcoords=True, export_normals=True, export_vertex_color="NAME", export_vertex_color_name="Col",
                           export_all_vertex_colors=False, export_materials="EXPORT", export_image_format="NONE", export_extras=False)
@@ -1052,7 +1073,7 @@ info = {
     "estimated": "the south side of the nave (mirror of the north: oculi, no door), the sacristy's openings, the house's south and east faces; "
                  "wall thicknesses; the bell-cote's spire / cross heights (DSM under-samples thin parts); the statue is a stylised figure",
 }
-json.dump(info, open(os.path.join(OUT, "stalle.json"), "w"), indent=1)
+if "--audit-only" not in ARGS: json.dump(info, open(os.path.join(OUT, "stalle.json"), "w"), indent=1)
 
 # ------------------------------------------------------------------------------------------------ previews
 if PREVIEWS:

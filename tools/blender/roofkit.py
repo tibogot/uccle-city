@@ -22,7 +22,8 @@ from stalle_common import K
 
 # natural Belgian / Ardennes slate as seen on the chapel (photos P01, c05): small rectangular slates ~ 0.22 wide,
 # ~0.14 exposed, 6-7 mm thick, dark blue-grey
-NATURAL = dict(width=0.22, gauge=0.135, head=0.035, thick=0.0065, joint=0.004, w_jit=0.07, rot_jit=0.014, butt_jit=0.004,
+# (round 3: 0.24 x 0.145, was 0.22 x 0.135, within the photo estimate's error: -15 % slates for the LOD0 budget, ~40k tris)
+NATURAL = dict(width=0.24, gauge=0.145, head=0.035, thick=0.0065, joint=0.004, w_jit=0.07, rot_jit=0.014, butt_jit=0.004,
                lift_jit=0.0015, chip=0.06, eave_over=0.04)
 # a regular modern fibre-cement / machine-cut slate (for later: the city's 19th-20th c. roofs)
 REGULAR = dict(width=0.30, gauge=0.20, head=0.04, thick=0.005, joint=0.003, w_jit=0.0, rot_jit=0.002, butt_jit=0.001,
@@ -64,11 +65,29 @@ def facet_uv(e0, e1, r1, r0, pts):
     if X.cross(Y).dot(N) < 0: X = -X; e0 = e1
     return [((p - e0).dot(X), (p - e0).dot(Y)) for p in pts]
 
+def _inset(P, d, keep):
+    """a convex ccw polygon with every edge moved inward by d except the edges i in `keep`"""
+    L = []
+    for i in range(len(P)):
+        a, b = P[i], P[(i + 1) % len(P)]
+        ex, ey = b[0] - a[0], b[1] - a[1]; l = math.hypot(ex, ey) or 1e-12
+        nx, ny = -ey / l, ex / l                      # inward for ccw
+        o = 0.0 if i in keep else d
+        L.append(((a[0] + nx * o, a[1] + ny * o), (ex, ey)))
+    out = []
+    for i in range(len(L)):
+        (p1, d1), (p2, d2) = L[i - 1], L[i]
+        den = d1[0] * d2[1] - d1[1] * d2[0]
+        if abs(den) < 1e-12: out.append(p2); continue
+        t = ((p2[0] - p1[0]) * d2[1] - (p2[1] - p1[1]) * d2[0]) / den
+        out.append((p1[0] + d1[0] * t, p1[1] + d1[1] * t))
+    return out
+
 def _ccw(l):
     a = sum(l[i][0] * l[(i + 1) % len(l)][1] - l[(i + 1) % len(l)][0] * l[i][1] for i in range(len(l)))
     return l if a > 0 else list(reversed(l))
 
-def slate_poly(origin, X, Y, poly, mat, code=0, spec=NATURAL, seed=1, lift=0.0):
+def slate_poly(origin, X, Y, poly, mat, code=0, spec=NATURAL, seed=1, lift=0.0, inset=0.01):
     """slates over a convex facet: origin + x X + y Y (+ z N, N = X x Y, out of the roof), poly [(x, y)] the area to
     cover (y = 0 at the eave line, up the slope). Returns the number of slates."""
     rnd = random.Random(seed)
@@ -79,6 +98,11 @@ def slate_poly(origin, X, Y, poly, mat, code=0, spec=NATURAL, seed=1, lift=0.0):
     y = min(ys) - spec["eave_over"]
     # the facet's area grows by the eave overhang: extend the polygon's lowest edge downward
     ext = [(p[0], p[1] - spec["eave_over"] if p[1] < min(ys) + 1e-6 else p[1]) for p in poly]
+    # every border but the eave stops `inset` short (1 cm): the slates' cut side faces never lie in the plane of the wall,
+    # parapet, coping, hip or the next facet's slates they meet (round 3: coplanar with the parapet backs, the shoulder
+    # copings' undersides, each other along the apse hips); the hip rolls / ridge cap / copings cover the strip
+    eave_edges = {i for i in range(len(ext)) if ext[i][1] < min(ys) - spec["eave_over"] + 1e-6 and ext[(i + 1) % len(ext)][1] < min(ys) - spec["eave_over"] + 1e-6}
+    if inset: ext = _inset(ext, inset, eave_edges)
     n = 0; row = 0
     sv_seed, sv_vao = K.SEED, K.VAO
     K.VAO = True
@@ -111,6 +135,10 @@ def slate_poly(origin, X, Y, poly, mat, code=0, spec=NATURAL, seed=1, lift=0.0):
             K.SEED = 0.02 + 0.98 * rnd.random()
             K.B.new_group()
             K.B.face(top, mat, code)
+            # the EAVE course (and slates cut by a verge / hip) overhang the deck: their underside is seen from below
+            # (single-sided, it would be culled = see-through), so they get one
+            if row == 0 or any(_on_border(((P[i][0] + P[(i + 1) % len(P)][0]) / 2, (P[i][1] + P[(i + 1) % len(P)][1]) / 2), ext) and abs(P[(i + 1) % len(P)][1] - P[i][1]) > 0.01 for i in range(len(P))):
+                K.B.face([q - N * th for q in reversed(top)], mat, code)
             # edges: the butt (and a chipped corner) drops one thickness = the course's shadow line; so do the edges cut
             # by the facet's border (verges, hips: seen side-on); the side joints (4 mm, only seen at grazing angles: the
             # slate beneath shows through them) take no faces
@@ -120,13 +148,17 @@ def slate_poly(origin, X, Y, poly, mat, code=0, spec=NATURAL, seed=1, lift=0.0):
                 dx, dy = q[0] - p[0], q[1] - p[1]
                 if abs(dy) > 3 * abs(dx) and not _on_border(((p[0] + q[0]) / 2, (p[1] + q[1]) / 2), ext): continue
                 a_, b_ = top[i], top[(i + 1) % len(P)]
-                K.B.face([b_, a_, a_ - N * th, b_ - N * th], mat, code)
+                # the drop: inner butts go down INTO the deck (0.5 mm below its top), so the space under the slates is
+                # closed (no slit under a butt to see the sky through at grazing angles); the eave course and border cuts
+                # drop one thickness and close on their own underside
+                dz = th if (row == 0 or _on_border(((p[0] + q[0]) / 2, (p[1] + q[1]) / 2), ext)) else hgt(yb) + 0.0005
+                K.B.face([b_, a_, a_ - N * dz, b_ - N * dz], mat, code)
             n += 1
         y += G; row += 1
     K.SEED, K.VAO = sv_seed, sv_vao
     return n
 
-def slate_quad(e0, e1, r1, r0, mat, code=0, spec=NATURAL, seed=1, lift=0.0):
+def slate_quad(e0, e1, r1, r0, mat, code=0, spec=NATURAL, seed=1, lift=0.0, inset=0.01):
     """slates on a planar facet given by its eave corners e0 -> e1 and its top corners r0 (above e0), r1 (above e1);
     r0 == r1 for a triangle (a hip end). Blender points ON the roof deck."""
     X = (e1 - e0).normalized()
@@ -140,4 +172,4 @@ def slate_quad(e0, e1, r1, r0, mat, code=0, spec=NATURAL, seed=1, lift=0.0):
     pr = lambda p: ((p - e0).dot(X), (p - e0).dot(Y))
     pts = [pr(e0), pr(e1), pr(r1), pr(r0)]
     poly = [p for i, p in enumerate(pts) if i == 0 or (Vector(p) - Vector(pts[i - 1])).length > 1e-6]
-    return slate_poly(e0, X, Y, poly, mat, code, spec, seed, lift)
+    return slate_poly(e0, X, Y, poly, mat, code, spec, seed, lift, inset)

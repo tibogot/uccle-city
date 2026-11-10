@@ -13,20 +13,36 @@ import { auditGlb } from "./cli.mjs";
 
 const FORCE = process.argv.includes("--force-audit");
 
-export async function auditBeforePack(file, { name, nodes = null, range = {}, ignoreBelow, offset = [0, 0, 0], allow = [], allowFile = null, reportDir = "docs/audit", skip = [] } = {}) {
+/** LOD GROUPS: only nodes that are drawn TOGETHER can fight. `groups: [{ name: "lod0", nodes: [...] }, ...]` audits each
+ *  group on its own (reports <name>.<group>.audit.*); LODs that are never shown together (a dithered cross-fade draws
+ *  complementary pixels) are not compared. Exits once after all groups when any has blocking items. */
+export async function auditGroups(file, opts, after = false) {
+  let blocking = 0; const out = {};
+  for (const g of opts.groups) {
+    const r = await (after ? auditAfterPack : auditBeforePack)(file, { ...opts, groups: undefined, name: `${opts.name}.${g.name}`, nodes: g.nodes, noExit: true });
+    blocking += r.summary.blocking; out[g.name] = r.summary;
+  }
+  if (!after && blocking && !FORCE) {
+    console.error(`[mesh audit] ${opts.name}: ${blocking} blocking item(s) over ${opts.groups.length} LOD groups: pack STOPPED (--force-audit to pack anyway)`);
+    process.exit(1);
+  }
+  return out;
+}
+
+export async function auditBeforePack(file, { name, nodes = null, noExit = false, range = {}, ignoreBelow, offset = [0, 0, 0], allow = [], allowFile = null, reportDir = "docs/audit", skip = [] } = {}) {
   if (allowFile && fs.existsSync(allowFile)) allow = [...allow, ...JSON.parse(fs.readFileSync(allowFile))];
   const set = ignoreBelow != null ? { ignoreBelow } : {};
   const r = await auditGlb(file, { nodes, range, allow, skip, offset, set, out: reportDir, title: `Mesh audit (before pack): ${name}` });
   rename(reportDir, file, `${name}.audit`);
-  if (r.summary.blocking && !FORCE) {
+  if (r.summary.blocking && !FORCE && !noExit) {
     console.error(`[mesh audit] ${name}: ${r.summary.blocking} blocking item(s): pack STOPPED (see ${reportDir}/${name}.audit.md; --force-audit to pack anyway)`);
     process.exit(1);
   }
-  if (r.summary.blocking) console.warn(`[mesh audit] ${name}: ${r.summary.blocking} blocking item(s) IGNORED (--force-audit)`);
+  if (r.summary.blocking && !noExit) console.warn(`[mesh audit] ${name}: ${r.summary.blocking} blocking item(s) IGNORED (--force-audit)`);
   return r;
 }
 
-export async function auditAfterPack(file, { name, nodes = null, range = {}, ignoreBelow, offset = [0, 0, 0], allow = [], allowFile = null, reportDir = "docs/audit", skip = [] } = {}) {
+export async function auditAfterPack(file, { name, nodes = null, noExit = false, range = {}, ignoreBelow, offset = [0, 0, 0], allow = [], allowFile = null, reportDir = "docs/audit", skip = [] } = {}) {
   if (allowFile && fs.existsSync(allowFile)) allow = [...allow, ...JSON.parse(fs.readFileSync(allowFile))];
   const set = ignoreBelow != null ? { ignoreBelow } : {};
   const r = await auditGlb(file, { nodes, range, allow, skip, offset, set, out: reportDir, title: `Mesh audit (packed): ${name}` });

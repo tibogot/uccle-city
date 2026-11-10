@@ -50,10 +50,13 @@ export const DEFAULTS = {
   leakStep: 0.1,              // m between samples along open edges
   leakOffsets: [0.0015, 0.004, 0.012, 0.03],   // m beyond the edge
   leakNarrow: 0.03,           // a gap still open at this offset is an opening, not a slit
+  leakDeep: 0.1,              // m: a front face closer than this behind the gap closes it (the slate's deck, a wall)
   frontClear: 0.25,           // m of free space in front needed for a camera to look at the gap
   insideVotes: 3,             // a viewpoint whose rays (6 axes) hit >= this many back faces first is inside the model
   ignoreBelow: -Infinity,     // drop items below this height (Y): under the ground
   maxItemsPerCheck: 400,
+  vertexSeparation: 0,        // 1: the pre-2026-11-10 separation (min vertex distance) instead of over the overlap
+  debugTris: 0,               // 1: coplanar / depth items carry both triangles (debugging a model)
 };
 const SEV = { coplanar: "block", depth: "block", crossing: "block", leak: "block", flipped: "block", streak: "block",
   near: "warn", sliver: "warn", winding: "warn", nonmanifold: "warn", tjunction: "warn", degenerate: "warn", seam: "info", opening: "info", backtoback: "info" };
@@ -128,7 +131,7 @@ function buildBVH(T) {
   return { nodes, idx };
 }
 /** first hit along a ray: { t, tri } or null (both faces hit: the caller tests the facing) */
-function rayCast(T, bvh, o, d, tmax = 1e9, skip = -1) {
+function rayCast(T, bvh, o, d, tmax = 1e9, skip = -1, cull = null) {
   let best = tmax, bt = -1;
   const inv = [1 / d[0], 1 / d[1], 1 / d[2]];
   const stack = [0];
@@ -153,7 +156,11 @@ function rayCast(T, bvh, o, d, tmax = 1e9, skip = -1) {
         const u = f * dot(s, p); if (u < 0 || u > 1) continue;
         const q = cross(s, e1), w = f * dot(d, q); if (w < 0 || u + w > 1) continue;
         const tt = f * dot(e2, q);
-        if (tt > 1e-6 && tt < best) { best = tt; bt = t; }
+        if (tt > 1e-6 && tt < best) {
+          // cull: skip faces seen from behind (what the renderer does with back-face culling): the ray goes on
+          if (cull) { const nx = e1[1] * e2[2] - e1[2] * e2[1], ny = e1[2] * e2[0] - e1[0] * e2[2], nz = e1[0] * e2[1] - e1[1] * e2[0]; if (nx * d[0] + ny * d[1] + nz * d[2] > 0) continue; }
+          best = tt; bt = t;
+        }
       }
     } else { stack.push(nd.l, nd.r); }
   }
@@ -345,8 +352,8 @@ export function auditParts(parts, options = {}) {
           const offA = A.map((p) => dot(nB, sub(p, Bt[0])));
           const sMin = Math.min(...off.map(Math.abs)), sMax = Math.max(...off.map(Math.abs));
           const crosses = Math.min(...off) < 0 && Math.max(...off) > 0;
-          const sep = crosses ? 0 : Math.min(sMin, Math.min(...offA.map(Math.abs)));
-          if (sep > O.nearDist && !crosses) continue;
+          let sep = crosses ? 0 : Math.min(sMin, Math.min(...offA.map(Math.abs)));
+          if (sep > O.nearDist && !crosses) continue;            // a quick reject (vertex distances <= the overlap's)
           if (crosses && sMax > O.nearDist * 4 && d > 0) { /* tilted but crossing: handled below as a crossing */ }
           // project onto A's plane
           const ux = sub(A[1], A[0]); const ul = len(ux); const U = ux.map((v) => v / ul), W = cross(nA, U);
@@ -357,10 +364,22 @@ export function auditParts(parts, options = {}) {
           if (ar < O.minOverlapArea) continue;
           const pc = poly.reduce((s, p) => [s[0] + p[0] / poly.length, s[1] + p[1] / poly.length], [0, 0]);
           const at = [A[0][0] + U[0] * pc[0] + W[0] * pc[1], A[0][1] + U[1] * pc[0] + W[1] * pc[1], A[0][2] + U[2] * pc[0] + W[2] * pc[1]];
+          // the separation OVER THE OVERLAP (where they can fight), not at the triangles' vertices: a 14 m roof deck and a
+          // slate tilted 2.5 deg on it have deck vertices close to the slate's (extended) plane far from the slate, although
+          // the slate stands 5-17 mm above the deck everywhere it covers it (round 3: thousands of such false items)
+          if (!O.vertexSeparation) {
+            const nBd = dot(nB, nA);
+            const hs = poly.map((p2) => { const p3 = [A[0][0] + U[0] * p2[0] + W[0] * p2[1], A[0][1] + U[1] * p2[0] + W[1] * p2[1], A[0][2] + U[2] * p2[0] + W[2] * p2[1]]; return dot(nB, sub(p3, Bt[0])) / nBd; });
+            const cr = Math.min(...hs) < 0 && Math.max(...hs) > 0;
+            const s2 = cr ? 0 : Math.min(...hs.map(Math.abs));
+            if (s2 > O.nearDist) continue;
+            sep = s2;
+          }
           if (d < 0) { if (sep < O.coincident) add("backtoback", at, { parts: [partName(i), partName(j)], area: +ar.toFixed(5) }); continue; }
           const D = Math.max(maxD(i), maxD(j));
           const need = D * O.depthEps * O.depthSafety + O.quantum;
-          const data = { parts: [partName(i), partName(j)], separation_mm: +(sep * 1000).toFixed(2), overlap_cm2: +(ar * 1e4).toFixed(1), angle_deg: +(Math.acos(Math.min(1, d)) / DEG).toFixed(1), maxDistance: D, need_mm: +(need * 1000).toFixed(2), sameComponent: comp[i] === comp[j] };
+          const data = { parts: [partName(i), partName(j)], separation_mm: +(sep * 1000).toFixed(2), overlap_cm2: +(ar * 1e4).toFixed(1), angle_deg: +(Math.acos(Math.min(1, d)) / DEG).toFixed(1), maxDistance: D, need_mm: +(need * 1000).toFixed(2), sameComponent: comp[i] === comp[j], normal: nA.map((v) => +v.toFixed(2)),
+            ...(O.debugTris ? { tris: [A, Bt].map((t) => t.map((p) => p.map((v) => +v.toFixed(4)))) } : {}) };
           if (sep < O.coincident) add("coplanar", at, data);
           else if (sep < need) add("depth", at, data);
           else add("near", at, data);
@@ -439,11 +458,14 @@ export function auditParts(parts, options = {}) {
         const fr = rayCast(T, bvh, [q[0] + n[0] * 1e-4, q[1] + n[1] * 1e-4, q[2] + n[2] * 1e-4], n, O.frontClear);
         if (fr) return "covered";                                   // something right in front: no camera sees this gap
         if (inside([q[0] + n[0] * 0.05, q[1] + n[1] * 0.05, q[2] + n[2] * 0.05])) return "covered";   // the viewpoint is inside a wall / the shell
-        const bk = rayCast(T, bvh, [q[0] - n[0] * 1e-4, q[1] - n[1] * 1e-4, q[2] - n[2] * 1e-4], n.map((v) => -v), 1e9);
+        // what the renderer shows through the gap: the first FRONT face along the ray (back faces are culled, so the ray
+        // goes on through them). Through = nothing, or a surface farther than leakDeep behind the edge (the sky, the
+        // interior, the void inside a wall). A surface right behind (a slate's joint shows the slate / deck 1-2 cm below)
+        // is closed. (Before 2026-11-10 the first hit being a BACK face counted as see-through: every slate joint whose ray
+        // grazed under the next slate's single-sided plate was reported although the deck is right there.)
+        const bk = rayCast(T, bvh, [q[0] - n[0] * 1e-4, q[1] - n[1] * 1e-4, q[2] - n[2] * 1e-4], n.map((v) => -v), 1e9, -1, true);
         if (!bk) return "through";
-        if (bk.t < 2e-4) return "closed";
-        const hn = Nf(bk.tri);
-        return dot(hn, n) > 0.05 ? "through" : "closed";              // a back face (seen from the ray) = see-through
+        return bk.t > O.leakDeep ? "through" : "closed";
       });
       if (res[0] !== "through") continue;
       const narrowAt = O.leakOffsets.findIndex((o, k) => k > 0 && res[k] !== "through" && o <= O.leakNarrow);

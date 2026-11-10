@@ -90,13 +90,13 @@ def fix_lengths(J, bones):
 def skin_body(name, J, edges, fingers=None):
     """a skin-modifier body in the REST pose (+ fingers on the hands), subdivided: returns the object"""
     verts, rad, idx = [], [], {}
-    for k, (rest, _, r) in J.items():
-        idx[k] = len(verts); verts.append(rest); rad.append(r)
+    for k, (_, posed, r) in J.items():
+        idx[k] = len(verts); verts.append(posed); rad.append(r)
     E = [(idx[a], idx[b]) for a, b in edges]
     for (hand, wrist, side, scale) in (fingers or []):
         # 4 fingers + a thumb: short chains from the hand node, curled
-        hp, wp = J[hand][0], J[wrist][0]
-        ax = (hp - wp).normalized(); sideax = Vector((1, 0, 0)) * side
+        hp, wp = J[hand][1], J[wrist][1]
+        ax = (hp - wp).normalized(); sx = ax.cross(Vector((0, 0, 1))); sideax = (sx.normalized() if sx.length > 1e-3 else Vector((1, 0, 0))) * side
         for f in range(5):
             if f < 4:
                 base = hp + sideax * ((f - 1.5) * 0.008 * scale) + ax * 0.004 * scale
@@ -122,6 +122,25 @@ def skin_body(name, J, edges, fingers=None):
     sub = o.modifiers.new("sub", "SUBSURF"); sub.levels = 2; sub.render_levels = 2
     apply_all(o)
     return o
+
+def meta_body(name, J, edges, res=0.0035):
+    """a body of metaball capsules along the posed skeleton (+ a ball per joint): always one closed smooth surface"""
+    mb = bpy.data.metaballs.new(name); mb.resolution = res; mb.render_resolution = res; mb.threshold = 0.6
+    o = link(bpy.data.objects.new(name + "_mb", mb))
+    rad = lambda k: (J[k][2][0] + J[k][2][1]) * 0.5
+    for a, b in edges:
+        pa, pb = J[a][1], J[b][1]; d = pb - pa; L = d.length
+        if L < 1e-4: continue
+        for t in (0.25, 0.5, 0.75):                  # tapering: three short capsules per bone
+            r = rad(a) + (rad(b) - rad(a)) * t
+            e = mb.elements.new(type="CAPSULE"); e.co = pa.lerp(pb, t); e.radius = r * 1.25; e.size_x = L / 6
+            e.rotation = Vector((1, 0, 0)).rotation_difference(d.normalized())
+    for k in J:
+        e = mb.elements.new(type="BALL"); e.co = J[k][1]; e.radius = rad(k) * 1.25
+    bpy.context.view_layer.update()
+    activate(o); bpy.ops.object.convert(target="MESH")
+    m = bpy.context.view_layer.objects.active; m.name = name
+    return m
 
 def armature_pose(body, J, bones, name):
     """bind the rest-pose body to an armature (envelope weights) and pose it: each bone tracks its posed tail joint"""
@@ -173,23 +192,23 @@ def sculpt_head(name, k=1.0, child=False):
         fy = q.y
         F = 0.0
         for e in (-1, 1):
-            F -= 0.007 * s * g3(q, (e * 0.02 * s, fy, ez + 0.002 * s), (0.012 * s, 1, 0.009 * s))          # eye sockets
-            F += 0.0032 * s * g3(q, (e * 0.02 * s, fy, ez), (0.0075 * s, 1, 0.0042 * s))                  # the lids (downcast)
+            F -= 0.011 * s * g3(q, (e * 0.02 * s, fy, ez + 0.002 * s), (0.012 * s, 1, 0.009 * s))          # eye sockets
+            F += 0.0045 * s * g3(q, (e * 0.02 * s, fy, ez - 0.0005 * s), (0.0075 * s, 1, 0.0042 * s))                  # the lids (downcast)
             F -= 0.0012 * s * g3(q, (e * 0.02 * s, fy, ez - 0.0012 * s), (0.007 * s, 1, 0.0009 * s))      # the lid line
-            if not child: F += 0.0032 * g3(q, (e * 0.024, fy, ez + 0.015), (0.017, 1, 0.0045))             # brow ridge
+            if not child: F += 0.0045 * g3(q, (e * 0.022, fy, ez + 0.014), (0.016, 1, 0.005))             # brow ridge
             F += 0.004 * s * g3(q, (e * 0.026 * s, fy, ez - 0.02 * s), (0.014 * s, 1, 0.013 * s))         # cheeks
             if child: F += 0.006 * s * g3(q, (e * 0.024 * s, fy, ez - 0.022 * s), (0.016 * s, 1, 0.014 * s))
         nz = ez - 0.006 * s
-        F += (0.013 if not child else 0.007) * s * g3(q, (0.0, fy, nz - 0.011 * s), (0.0052 * s, 1, (0.016 if not child else 0.009) * s))   # nose
+        F += (0.017 if not child else 0.008) * s * g3(q, (0.0, fy, nz - 0.012 * s), (0.0045 * s, 1, (0.014 if not child else 0.008) * s))   # nose
         F += (0.005 if not child else 0.004) * s * g3(q, (0.0, fy, nz - 0.025 * s), (0.0085 * s, 1, 0.0055 * s))                           # tip + wings
         F -= 0.0018 * s * sum(g3(q, (e * 0.0055 * s, fy, nz - 0.029 * s), (0.0025 * s, 1, 0.002 * s)) for e in (-1, 1))                  # nostrils
         mz = nz - (0.041 if not child else 0.034) * s
         F += 0.0016 * s * g3(q, (0.0, fy, mz + 0.0075 * s), (0.004 * s, 1, 0.0035 * s))      # philtrum
         F += 0.003 * s * g3(q, (0.0, fy, mz + 0.0035 * s), (0.011 * s, 1, 0.003 * s))        # upper lip
-        F -= 0.0026 * s * g3(q, (0.0, fy, mz), (0.012 * s, 1, 0.0011 * s))                   # the mouth line
+        F -= 0.0035 * s * g3(q, (0.0, fy, mz), (0.011 * s, 1, 0.0016 * s))                   # the mouth line
         F += 0.0027 * s * g3(q, (0.0, fy, mz - 0.004 * s), (0.009 * s, 1, 0.0028 * s))       # lower lip
         F -= 0.0026 * s * g3(q, (0.0, fy, mz - 0.011 * s), (0.01 * s, 1, 0.003 * s))         # under the lip
-        F += 0.0045 * s * g3(q, (0.0, fy, mz - 0.022 * s), (0.012 * s, 1, 0.008 * s))        # chin
+        F += 0.0065 * s * g3(q, (0.0, fy, mz - 0.021 * s), (0.011 * s, 1, 0.008 * s))        # chin
         face = max(0.0, min(1.0, (p.y - 0.15) * 3.0))                                          # features only on the face
         n = q.normalized()
         v.co = q + n * F * face
@@ -206,17 +225,18 @@ def hair_mass(name, k=1.0, child=False):
         if child:
             q = Vector((p.x * 0.05, p.y * 0.052, p.z * 0.054)) * k
             r = 0.002 + (noise.noise(p * 7.0) * 0.5 + 0.5) * 0.0045
-            face = p.y > 0.25 and p.z < 0.45
-            v.co = q * (0.9 if face else 1.0) + q.normalized() * (0.0 if face else r)
+            face = max(0.0, min(1.0, (p.y - 0.0) * 4.0)) * max(0.0, min(1.0, (0.6 - p.z) * 4.0))
+            v.co = q * (1.0 - 0.3 * face) + q.normalized() * r * (1.0 - face)
             continue
         q = Vector((p.x * 0.05, p.y * 0.06, p.z * 0.068))
-        face = max(0.0, min(1.0, (p.y - 0.05) * 3.0)) * max(0.0, min(1.0, (0.62 - p.z) * 3.0))
+        # the face, the forehead and the ears' fronts stay bare (photo c03: hair drawn back from a high forehead)
+        face = max(0.0, min(1.0, (p.y + 0.05) * 4.0)) * max(0.0, min(1.0, (0.78 - p.z) * 5.0))
         temple = math.exp(-((abs(p.x) - 0.75) ** 2) / 0.05) * max(0.0, p.y + 0.2)
         wave = 0.0022 * math.sin(p.z * 18 + abs(p.x) * 26) + 0.0015 * math.sin(math.atan2(p.z, abs(p.x) + 0.05) * 30)
         lift = (0.0045 + wave + 0.004 * temple) * (1 - face)
         if p.z > 0.55 and abs(p.x) < 0.07: lift -= 0.0018                                 # the parting
         knot = 0.02 * math.exp(-((p.y + 0.85) ** 2 + (p.z - 0.35) ** 2 + p.x ** 2 * 0.6) / 0.06)
-        sink = 1.0 - 0.18 * face                                                          # inside the face
+        sink = 1.0 - 0.3 * face                                                          # inside the face
         v.co = q * sink + q.normalized() * (lift + knot)
     me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free()
     return link(bpy.data.objects.new(name, me))
@@ -239,7 +259,7 @@ def grid_surface(name, nu, nv, fn, wrap=False):
     return link(bpy.data.objects.new(name, me))
 
 def thicken(o, th):
-    s = o.modifiers.new("solid", "SOLIDIFY"); s.thickness = th; s.offset = -1.0; s.use_rim = True; s.use_even_offset = True
+    s = o.modifiers.new("solid", "SOLIDIFY"); s.thickness = th; s.offset = -1.0; s.use_rim = True; s.use_even_offset = False
     apply_all(o); return o
 
 def sstep(a, b, x):
@@ -255,8 +275,8 @@ def lerp_table(T, z):
 # ------------------------------------------------------------------------------------------------ build Mary
 fix_lengths(MARY, MARY_BONES)
 body = skin_body("Mary", MARY, MARY_EDGES, fingers=[("handL", "wriL", 1, 1.0), ("handR", "wriR", -1, 1.0)])
-body = armature_pose(body, MARY, MARY_BONES, "Mary"); tick("Mary posed")
-HEAD_ROT = (math.radians(-18), math.radians(9), math.radians(17))      # bowed, inclined and turned toward the Child
+tick("Mary posed")
+HEAD_ROT = (math.radians(-22), math.radians(15), math.radians(-8))      # bowed, inclined and turned toward the Child
 hp = MARY["headb"][1] + Vector((0.004, 0.012, 0.052))
 head = sculpt_head("MaryHead"); place(head, hp, HEAD_ROT)
 hair = hair_mass("MaryHair"); place(hair, hp, HEAD_ROT)
@@ -288,8 +308,8 @@ CH_BONES = [("spine", "root", "chest", None), ("neck", "chest", "neck", "spine")
 CH_EDGES = [("root", "chest"), ("chest", "neck"), ("root", "hipL"), ("hipL", "kneeL"), ("kneeL", "ankL"), ("root", "hipR"), ("hipR", "kneeR"), ("kneeR", "ankR"),
             ("chest", "shL"), ("shL", "elbL"), ("elbL", "wriL"), ("chest", "shR"), ("shR", "elbR"), ("elbR", "wriR")]
 fix_lengths(CH, CH_BONES)
-child = skin_body("Child", CH, CH_EDGES)
-child = armature_pose(child, CH, CH_BONES, "Child"); tick("Child posed")
+child = meta_body("Child", CH, CH_EDGES)
+tick("Child posed")
 chp = CH["neck"][1] + Vector((-0.004, 0.008, 0.036))
 CH_ROT = (math.radians(-6), math.radians(-6), math.radians(-22))         # he turns toward the viewer and his mother
 chead = sculpt_head("ChildHead", k=0.7, child=True); place(chead, chp, CH_ROT)
@@ -349,11 +369,11 @@ slL = sleeve("SleeveL", MARY["shL"][1], MARY["elbL"][1], MARY["wriL"][1], 0.04, 
 slR = sleeve("SleeveR", MARY["shR"][1], MARY["elbR"][1], MARY["wriR"][1], 0.04, 0.032, 0.04)
 
 MANT = [  # z, rx, ry (the mantle's base surface outside the robe + sleeves)
-    (0.86, 0.06, 0.052), (0.83, 0.115, 0.07), (0.8, 0.168, 0.085), (0.74, 0.178, 0.1), (0.62, 0.17, 0.1), (0.5, 0.17, 0.105),
-    (0.3, 0.178, 0.118), (0.12, 0.195, 0.135)]
+    (0.86, 0.06, 0.052), (0.83, 0.115, 0.07), (0.8, 0.172, 0.09), (0.74, 0.195, 0.105), (0.62, 0.2, 0.108), (0.5, 0.19, 0.11),
+    (0.3, 0.19, 0.125), (0.12, 0.205, 0.14)]
 def mantle_fn(u, v):
     # u: from the front-right edge (th = -125 deg) around the BACK to the front-left edge (+125 deg); v: top -> hem
-    th = math.radians(-125 + 250 * u)
+    th = math.radians(-150 + 300 * u)
     sideU = abs(u - 0.5) * 2                                # 0 at the back, 1 at the front edges
     hem = 0.13 + 0.2 * sideU ** 2.2                         # the hem rises toward the front edges
     z = 0.865 - (0.865 - hem) * v
@@ -380,15 +400,17 @@ def apron_fn(u, v):
     top = swag_top(u)
     bot = Vector((-0.16 + 0.32 * u, 0.06 + 0.07 * math.sin(math.pi * u) + 0.04 * u, 0.36 + 0.18 * u * u))
     p = top.lerp(bot, v)
-    th = math.atan2(p.x, p.y - 0.01)
+    # the apron HUGS the robe (no slot of air behind it, seen from the side): the robe's front + 1.4 cm, standing off a
+    # little more only up toward the swag
     rx, ry, cx, cy = lerp_table(ROBE, p.z)
-    base = Vector((cx + (rx + 0.02) * math.sin(th), cy + (ry + 0.02) * math.cos(th), p.z))
-    p = Vector((p.x, max(p.y, base.y), p.z)) if abs(th) < 1.4 else p
+    xx = max(-0.97, min(0.97, (p.x - cx) / (rx + 0.03)))
+    front = cy + (ry + 0.03) * math.sqrt(1 - xx * xx)
+    p = Vector((p.x, front - 0.016 + (top.y - front + 0.016) * (1 - v) ** 3 if top.y > front else front - 0.016, p.z))
     # diagonal folds radiating from the right hip, deepening toward the hem
     fold = math.sin(u * 22 + v * 3.0 + 0.6 * math.sin(v * 5)) * (0.004 + 0.012 * v) + math.sin(u * 9 - v * 2) * 0.005 * v
     return p + Vector((0, fold + 0.02 * math.sin(math.pi * u) * (1 - v) ** 2, 0))
 apron = thicken(grid_surface("Apron", 120, 60, apron_fn), 0.01)
-roll = grid_surface("SwagRoll", 140, 20, lambda u, v: swag_top(u) + Vector((0, math.cos(2 * math.pi * v), math.sin(2 * math.pi * v))) * (0.016 + 0.004 * math.sin(u * 30)), wrap=False)
+roll = grid_surface("SwagRoll", 140, 20, lambda u, v: swag_top(u) + Vector((0, math.cos(2 * math.pi * v), math.sin(2 * math.pi * v))) * (0.026 + 0.006 * math.sin(u * 30)) * (0.5 + 0.5 * math.sin(math.pi * u)), wrap=False)
 roll = thicken(roll, 0.003)
 # the mantle's fall over her left forearm beside the Child (it hangs from the arm in folds)
 def armfall_fn(u, v):
@@ -419,12 +441,16 @@ print(f"remeshed: {len(statue.data.polygons)} faces {time.time() - T0:.1f}s")
 sm = statue.modifiers.new("smooth", "CORRECTIVE_SMOOTH"); sm.iterations = 2; sm.smooth_type = "LENGTH_WEIGHTED"; sm.use_only_smooth = True
 apply_all(statue)
 rnd = random.Random(7)
-me = statue.data; me.calc_loop_triangles() if hasattr(me, "calc_loop_triangles") else None
-for v in me.vertices:
-    p = v.co
+me = statue.data
+# read every normal FIRST: writing a vertex's co dirties the normals, and reading v.normal afterwards recomputes them
+# for the whole mesh (O(n^2) on 250k vertices: the v2 run that never finished)
+NRM = [v.normal.copy() for v in me.vertices]
+CO = [v.co.copy() for v in me.vertices]
+tick("weathering")
+for v, p, n in zip(me.vertices, CO, NRM):
     e = noise.noise(p * 90) * 0.0007 + noise.noise(p * 260) * 0.00035 - max(0.0, noise.noise(p * 40 + Vector((3, 1, 2))) - 0.45) * 0.004
-    v.co = p + v.normal * e
-me.update()
+    v.co = p + n * e
+me.update(); tick("weathered")
 # keep only what stands on the plinth (the robe's hem never goes below 0)
 # the design frame is mirrored for the wall: the figure faces +y with z up, so a right-handed frame puts HER left at -x;
 # the design above put the Child at +x: mirror x (and reverse the winding) so that x = the viewer's LEFT... and the
@@ -450,9 +476,10 @@ if PREV:
     sun = link(bpy.data.objects.new("sun", bpy.data.lights.new("sun", "SUN"))); sun.data.energy = 4.0; sun.rotation_euler = (math.radians(45), math.radians(-25), math.radians(-30))
     cam = link(bpy.data.objects.new("cam", bpy.data.cameras.new("cam"))); scn.camera = cam; cam.data.lens = 85
     os.makedirs(PREV, exist_ok=True)
-    for nm, pos in (("front", (0.05, 2.6, 0.62)), ("threequarter", (1.0, 2.3, 0.4)), ("face", (0.22, 0.75, 0.93))):
+    for nm, pos in (("front", (0.05, 2.6, 0.62)), ("threequarter", (1.0, 2.3, 0.4)), ("face", (0.22, 0.75, 0.93)), ("below", (0.4, 4.0, -2.6)), ("side", (2.6, 0.6, 0.6))):
         cam.location = pos; tgt = Vector((0.02, 0.05, 0.6 if nm != "face" else 0.93))
         cam.rotation_euler = (tgt - cam.location).to_track_quat("-Z", "Y").to_euler()
         scn.render.resolution_x, scn.render.resolution_y = (700, 1000) if nm != "face" else (700, 700)
+        cam.data.lens = 85 if nm not in ("below",) else 60
         scn.render.filepath = os.path.join(PREV, f"statue_{nm}.png"); bpy.ops.render.render(write_still=True)
 print(f"done {time.time() - T0:.1f}s")
