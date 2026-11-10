@@ -88,6 +88,23 @@ Stairs paused until the owner's Mixamo clips are in `data/raw/animations/mixamo/
 
 **Bigger steps:** phones and tablets; all of Brussels (pipeline at scale, GPU culling); the first game (suggested: the Saint-Job falcons; also driving, tram 92, exploration).
 
+## Villa van Buuren (branch claude/vanbuuren, 2026-11-10; models/vanbuuren/NOTES.md; city `?vanbuuren=1`, lab labs/vanbuuren-lab.html)
+- [ ] Owner's review (lab side-by-sides docs/vanbuuren/side_*.jpg, git-ignored; city moving strips docs/vanbuuren/city_*).
+- [ ] The v00 (south) pose is the weakest (23 px mean, focal 12 % off the EXIF prior): more off-plane correspondences
+      (the oriel's corners, the B roof's south eave, the basin) or the south face from another photo.
+- [ ] The NW wing (roof, first-floor windows, veranda position) is ESTIMATED from far photos under trees: a closer photo
+      (Mapillary token / a visit) would fix its roof form (v06 suggests a hip / lean-to more than a gable).
+- [ ] The east gable's ground-floor bay (behind the topiary) and the south-east ground floor: not seen, plain brick.
+- [ ] The heritage inventory has no record for Avenue Leo Errera 41 (2026-11-10): check again / the museum's plans.
+- [ ] Packed-audit leftovers after quantization (raw GLB 0 blocking): a few 4 mm slits at the ridge caps / NW roof
+      course ends, one 2 cm2 union sliver at roof C's split (u -2.0); look again with a coarser quantization guard.
+- [ ] LOD2 was dropped (meshopt of the 3.8k far variant gave collapsed slabs, 71 blocking after packing): if far tiles
+      need fewer than 3.8k tris, script a "far2" (no joinery) instead of simplifying.
+- [ ] Materials: brick_orange_amsterdam, roof_tiles_flat_dark, concrete_white (+ brick_pattern, wood_varnished,
+      glass_leaded, oak_door, metal_green_veranda, zinc_gutter) proposed for the library (claude/materials); the slot
+      adapter table in viewer/vanbuurenModel.js points them at the library with one line.
+- [ ] Gardens: the box hedges, topiary, the front path's brick paving, the lawn steps are the city's (not modelled).
+
 ## NEXT SESSION (agreed order, 2026-11-04)
 
 1. [x] **Roof collision for fly mode**: a 2 m roof-height grid per tile (tile worker), `world.heightAt` = max(ground, roofs).

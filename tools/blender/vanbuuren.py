@@ -440,6 +440,46 @@ def build_parts(FD, tops):
         fbox(frn, c - 0.45, c + 0.45, 99.35, 100.45, -0.02, 0.03, WOODV, C_FRAME, skip=("back",))
         fbox(frn, c - 0.38, c + 0.38, 99.42, 100.38, 0.03, 0.035, GLASS, C_PANE, skip=("back",))
     veranda(frn, Ln)
+    # ---------------- the garden (ESTIMATED from the DTM's breaks + v06 / v00 / v01): the west terrace's brick retaining
+    # wall with a brick-on-edge coping and steps down to the lawn, the low wall along the south lawn, the round basin
+    terrace()
+
+def terrace():
+    TU, TW0, TW1, TTOP = -11.60, -3.00, 9.80, 95.32
+    frt, Lt = Frame.of(TU, TW0, TU, TW1)
+    st0, st1 = (P(TU, 6.55, OY) - frt.O).dot(frt.U), (P(TU, 8.25, OY) - frt.O).dot(frt.U)
+    hb_t = ground_min(TU - 0.5, TW0, TU - 0.5, TW1) - 0.35
+    wall_field(frt, 0.0, Lt, hb_t, lambda s: TTOP, [Opening(st0, st1, 80.0, TTOP + 1, depth=0.0, jambs="free", head=None, sill=None, snap=False)], ("convex", "convex"))
+    # the wall's two returns (30 cm into the terrace): convex corners, no open end
+    for (a_, b_) in (((TU + 0.30, TW0), (TU, TW0)), ((TU, TW1), (TU + 0.30, TW1))):
+        frr, Lr = Frame.of(a_[0], a_[1], b_[0], b_[1])
+        wall_field(frr, 0.0, Lr, hb_t, lambda s: TTOP, (), ("free", "convex") if a_[0] > b_[0] else ("convex", "free"))
+    for (w0, w1) in ((TW0 - 0.02, 6.55 + 0.02), (8.25 - 0.02, TW1 + 0.02)):
+        hbox(TU - 0.04, TU + 0.24, w0, w1, TTOP - 0.004, TTOP + 0.105, BRICK, C_COPING, skip=("bottom",))
+    # the steps: five brick steps west down to the lawn (the treads blue stone)
+    g = ground(TU - 1.4, 7.4); n = 5; rise = (TTOP - g) / n
+    for k in range(n):
+        # each step only its own strip (no stacked boxes: their sides would be coplanar), 3 cm clear of the wall's ends
+        top = TTOP - rise * (k + 1) + 0.002
+        u0, u1 = TU - 0.28 * (k + 1), (TU + 0.20 if k == 0 else TU - 0.28 * k)
+        hbox(u0, u1, 6.58, 8.22, g - 0.3, top - 0.03, BRICK, C_PLAIN, skip=("bottom", "right"))
+        hbox(u0 - 0.02, u1, 6.58, 8.22, top - 0.03, top + 0.004, BLUE, C_COPING, skip=("bottom", "right"))
+    # the low wall along the south lawn (v00: a brick wall with lavender behind it)
+    SW, SU0, SU1, STOP = 10.60, -10.40, 4.00, 95.58
+    frs, Ls = Frame.of(SU0, SW, SU1, SW)
+    hb_s = ground_min(SU0, SW + 0.5, SU1, SW + 0.5) - 0.35
+    wall_field(frs, 0.0, Ls, hb_s, lambda s: STOP, (), ("convex", "convex"))
+    for (a_, b_) in (((SU0, SW - 0.24), (SU0, SW)), ((SU1, SW), (SU1, SW - 0.24))):
+        frr, Lr = Frame.of(a_[0], a_[1], b_[0], b_[1])
+        wall_field(frr, 0.0, Lr, hb_s, lambda s: STOP, (), ("free", "convex") if a_[1] < b_[1] else ("convex", "free"))
+    hbox(SU0 - 0.03, SU1 + 0.03, SW - 0.27, SW + 0.04, STOP - 0.004, STOP + 0.105, BRICK, C_COPING, skip=("bottom",))
+    # the round basin (v06): a shallow white concrete bowl on a drum of green glazed tiles
+    bc = P(-12.95, 10.85, OY); g0 = ground(-12.95, 10.85)          # (ortho: the circle at -12.15, 10.8; 0.8 m west so it clears the terrace wall)
+    sv = K.B.smooth
+    lathe(Vector((bc.x, bc.y, hz(g0 - 0.3))), [(1.12, 0.0), (1.12, 1.05)], 32, GREEN, C_PLAIN)
+    z0 = hz(g0 + 0.72)
+    lathe(Vector((bc.x, bc.y, z0)), [(0.95, 0.0), (1.10, 0.05), (1.38, 0.24), (1.50, 0.38), (1.50, 0.44), (1.42, 0.44), (1.30, 0.32), (0.65, 0.30), (0.0, 0.30)], 40, CONC, C_PLAIN)
+    K.B.smooth = sv
 
 def build_all(bvh, roof_bm):
     """the walls (traversed with the outside on the right seen from above with w down: east walls run north, west
@@ -605,7 +645,7 @@ def is_course(bld, i):
     lp = bld.lp[i]
     if lp is None: return False
     if len(lp) == 4: return bld.c[i] in (C_COURSE, C_JOINT)
-    return bld.m[i] == TILES and bld.c[i] == C_PLAIN
+    return bld.m[i] == TILES and bld.c[i] == C_COURSE
 
 def region_width(me, override):
     """COLOR_0.b = sqrt(width / 4 m) of the face's region (edge-connected faces turning < 50 deg face to face: its
@@ -700,8 +740,7 @@ def make_mesh(name, bld):
     sm = [0] * len(me.polygons); me.attributes["smoothf"].data.foreach_get("value", sm)
     # (only the round zinc parts can be smooth; set_sharp_from_angle FIRST: in Blender 5 it marks every face smooth)
     me.set_sharp_from_angle(angle=math.radians(35))
-    zi = [i for i, m in enumerate(me.materials) if m.name == "zinc_gutter"]
-    me.polygons.foreach_set("use_smooth", [bool(x) and p.material_index in zi for x, p in zip(sm, me.polygons)])
+    me.polygons.foreach_set("use_smooth", [bool(x) for x in sm])
     me.validate()
     rw = [0.0] * len(me.polygons); me.attributes["rw"].data.foreach_get("value", rw)
     region_width(me, [None if r < 0 else r for r in rw])

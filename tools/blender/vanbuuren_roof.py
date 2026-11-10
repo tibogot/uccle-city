@@ -15,7 +15,7 @@ Valleys get a zinc flashing over the course ends, ridges a ridge-tile roll.
 import bpy, bmesh, math
 from mathutils import Vector
 from mathutils.geometry import tessellate_polygon
-from vanbuuren_kit import K, Z, P, OY, hz, face_dir, TILES, ZINC, WOODV, C_PLAIN, C_RIDGE, C_COPING, C_SOFFIT
+from vanbuuren_kit import K, Z, P, OY, hz, face_dir, TILES, ZINC, WOODV, C_PLAIN, C_COURSE, C_RIDGE, C_COPING, C_SOFFIT
 
 T_SLAB = 0.18
 TILE_GAUGE = 0.11
@@ -150,12 +150,12 @@ def lay_courses(n, polys, mat=TILES, far=None, flat_slot=None):
             if len(cp) < 3: continue
             area = abs(sum(cp[i][0] * cp[(i + 1) % len(cp)][1] - cp[(i + 1) % len(cp)][0] * cp[i][1] for i in range(len(cp)))) / 2
             if area < 1e-6: continue
-            face_dir([o + X * x + Y * y + n * hgt(y) for x, y in cp], n, mat, C_PLAIN, [(x, y) for x, y in cp])
+            face_dir([o + X * x + Y * y + n * hgt(y) for x, y in cp], n, mat, C_COURSE, [(x, y) for x, y in cp])
             for i in range(len(cp)):
                 p_, q_ = cp[i], cp[(i + 1) % len(cp)]
                 if abs(p_[1] - y0) < 1e-6 and abs(q_[1] - y0) < 1e-6 and abs(p_[0] - q_[0]) > 1e-5:
                     a_, b_ = o + X * p_[0] + Y * y0, o + X * q_[0] + Y * y0
-                    face_dir([a_, b_, b_ + n * T, a_ + n * T], -Y, mat, C_PLAIN,
+                    face_dir([a_, b_, b_ + n * T, a_ + n * T], -Y, mat, C_COURSE,
                              [(p_[0], y0 - 0.01), (q_[0], y0 - 0.01), (q_[0], y0), (p_[0], y0)])
         k += 1
     B.lp_cur = sv; B.rw_cur = sv_rw
@@ -238,7 +238,7 @@ def trims(bm, far=None):
                 p0, p1 = a + nn * lo - side * 0.03, b + nn * lo - side * 0.03
                 q0, q1 = a + nn * lo + side * 0.13, b + nn * lo + side * 0.13
                 face_dir([p0, p1, q1, q0], nn, TILES, C_RIDGE)
-                face_dir([q0, q1, q1 - nn * (lo + 0.004), q0 - nn * (lo + 0.004)], side, TILES, C_RIDGE)
+                face_dir([q0, q1, q1 - nn * (lo + 0.012), q0 - nn * (lo + 0.012)], side, TILES, C_RIDGE)
         else:
             if far: continue
             # a zinc valley flashing over the course ends: a strip on each plane, 16 mm over it, with a lip into the tiles;
@@ -262,7 +262,7 @@ def trims(bm, far=None):
                 cen = ff.calc_center_median()
                 side = nn.cross(ax)
                 if side.dot(cen - a) < 0: side = -side
-                lo, hi = 0.016, -0.004
+                lo, hi = 0.016, -0.012
                 p0, p1 = a2 + nn * lo, b2 + nn * lo
                 q0, q1 = p0 + side * 0.13, p1 + side * 0.13
                 face_dir([p0, p1, q1, q0], nn, ZINC, C_PLAIN)
