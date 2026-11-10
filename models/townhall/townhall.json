@@ -1,27 +1,125 @@
 {
  "asset": "Uccle town hall, Place Jean Vander Elst 29 (tools/blender/townhall.py)",
- "triangles_lod0": 49570,
- "triangles_far": 3240,
+ "triangles_lod0": 54734,
+ "triangles_far": 3359,
  "triangles_per_slot_lod0": {
   "brick_red_brussels": 519,
-  "stone_white": 34080,
-  "stone_blue": 869,
+  "stone_white": 37864,
+  "stone_blue": 1057,
   "slate": 84,
   "zinc_roof": 3454,
   "wood_frame_white": 8616,
   "wood_frame_dark": 132,
   "glass_window": 264,
-  "cast_iron_green": 1552
+  "cast_iron_green": 2504,
+  "cobbles": 240
  },
  "triangles_per_slot_far": {
   "brick_red_brussels": 407,
-  "stone_white": 1980,
-  "stone_blue": 447,
+  "stone_white": 1970,
+  "stone_blue": 507,
   "slate": 68,
   "zinc_roof": 168,
   "wood_frame_dark": 2,
-  "glass_window": 168
+  "glass_window": 168,
+  "cast_iron_green": 45,
+  "cobbles": 24
  },
+ "flag_poles": [
+  {
+   "name": "south",
+   "base_building_uwh": [
+    14.16,
+    1.71,
+    68.54
+   ],
+   "tip_building_uwh": [
+    15.601,
+    3.631,
+    71.613
+   ],
+   "axis_building_uwh": [
+    0.3694,
+    0.4925,
+    0.788
+   ],
+   "length_m": 3.9,
+   "radius_m": 0.03,
+   "base_city_xyz": [
+    -1133.88,
+    68.54,
+    -504.06
+   ],
+   "tip_city_xyz": [
+    -1132.51,
+    71.61,
+    -502.09
+   ],
+   "flag_in_photos": "EU (P01) / Belgium (3557, 2008)"
+  },
+  {
+   "name": "centre",
+   "base_building_uwh": [
+    14.16,
+    -0.0,
+    68.41
+   ],
+   "tip_building_uwh": [
+    15.125,
+    -0.0,
+    71.774
+   ],
+   "axis_building_uwh": [
+    0.2756,
+    -0.0,
+    0.9613
+   ],
+   "length_m": 3.5,
+   "radius_m": 0.03,
+   "base_city_xyz": [
+    -1133.82,
+    68.41,
+    -505.76
+   ],
+   "tip_city_xyz": [
+    -1132.86,
+    71.77,
+    -505.73
+   ],
+   "flag_in_photos": "Belgium (P01)"
+  },
+  {
+   "name": "north",
+   "base_building_uwh": [
+    14.16,
+    -1.71,
+    68.54
+   ],
+   "tip_building_uwh": [
+    15.601,
+    -3.631,
+    71.613
+   ],
+   "axis_building_uwh": [
+    0.3694,
+    -0.4925,
+    0.788
+   ],
+   "length_m": 3.9,
+   "radius_m": 0.03,
+   "base_city_xyz": [
+    -1133.77,
+    68.54,
+    -507.47
+   ],
+   "tip_city_xyz": [
+    -1132.26,
+    71.61,
+    -509.35
+   ],
+   "flag_in_photos": "Uccle (P01 and 3557)"
+  }
+ ],
  "slots": [
   "brick_red_brussels",
   "stone_white",
@@ -31,11 +129,13 @@
   "wood_frame_white",
   "wood_frame_dark",
   "glass_window",
-  "cast_iron_green"
+  "cast_iron_green",
+  "cobbles"
  ],
  "codes": {
   "COLOR_0.r": "code / 16 + 1/32",
   "COLOR_0.g": "per-vertex AO of the thin faces (1 elsewhere)",
+  "COLOR_0.b": "sqrt(width of the flat region / 4 m)",
   "names": [
    "plain",
    "band",
@@ -62,11 +162,11 @@
  "lightmap": {
   "px": 2048,
   "split_v": 0.885,
-  "lod0_px_per_m": 15.8,
-  "far_px_per_m": 7.7,
+  "lod0_px_per_m": 15.9,
+  "far_px_per_m": 7.6,
   "thin_faces_vertex_ao": [
-   15376,
-   228
+   18121,
+   270
   ]
  },
  "frame": "glTF Y up; three.js local (u, m TAW - OY, w); node at the city position of the frame origin, rotation.y = -rotation",
@@ -170,6 +270,9 @@
    66.2
   ],
   "string_course": 66.95,
+  "door_head": 66.22,
+  "portico_soffit": 66.78,
+  "balcony_floor": 67.55,
   "f1_sill": 68.7,
   "orders": {
    "main": {
