@@ -1,20 +1,27 @@
 # Mesh audit (packed): interior.cell
 
-102,513 triangles, 59,405 welded vertices, 13,311 open edges, 358,298 rays, 11181 ms.
+117,705 triangles, 67,243 welded vertices, 15,171 open edges, 401,294 rays, 13042 ms.
 
-**0 blocking**, 1813 warnings. Clean (no blocking item).
+**1 blocking**, 3593 warnings. NOT CLEAN.
 
 | check | severity | count |
 |---|---|---|
+| leak | block | 1 |
 | near | warn | 720 |
-| sliver | warn | 782 |
-| nonmanifold | warn | 30 |
-| tjunction | warn | 281 |
-| seam | info | 3337 |
-| opening | info | 422 |
-| backtoback | info | 2911 |
+| sliver | warn | 1022 |
+| nonmanifold | warn | 1220 |
+| tjunction | warn | 631 |
+| seam | info | 3427 |
+| opening | info | 592 |
+| backtoback | info | 3071 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
+
+## leak (block, 1)
+
+| at | part | slit_mm | facing | edge_m |
+|---|---|---|---|---|
+| 10.45, 8.78, -1.03 | Arch/stone_white | 4 | 0 + -0.49 + 0.87 | 0.07 |
 
 ## near (warn, 720)
 
@@ -63,7 +70,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (680 more in the JSON)
 
-## sliver (warn, 782)
+## sliver (warn, 1022)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -108,44 +115,56 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 10.43, 7.79, -2.15 | Arch/brick_red_brussels | 147 | 1.999 |
 | 10.42, 7.83, -2.15 | Arch/brick_red_brussels | 115 | 1.94 |
 
-(742 more in the JSON)
+(982 more in the JSON)
 
-## nonmanifold (warn, 30)
+## nonmanifold (warn, 1220)
 
 | at | part | uses |
 |---|---|---|
-| 5.67, 7.00, -3.65 | Arch/brick_red_brussels | 3 |
-| 5.60, 7.00, 3.85 | Arch/brick_red_brussels | 3 |
-| 10.45, 4.27, 0.10 | Arch/brick_red_brussels | 3 |
-| 10.45, 4.49, 0.10 | Arch/stone_white | 3 |
-| 16.16, 7.46, -0.33 | Props/wood_frame_white | 3 |
-| 16.16, 7.71, -0.06 | Props/wood_frame_white | 3 |
-| 16.16, 7.78, -0.10 | Props/wood_frame_white | 3 |
-| 16.16, 7.64, -0.15 | Props/wood_frame_white | 3 |
-| 16.16, 7.70, -0.21 | Props/wood_frame_white | 3 |
-| 16.16, 7.45, -0.25 | Props/wood_frame_white | 3 |
-| 16.16, 7.55, -0.22 | Props/wood_frame_white | 3 |
-| 16.16, 7.59, -0.29 | Props/wood_frame_white | 3 |
-| 16.16, 7.71, 0.26 | Props/wood_frame_white | 3 |
-| 16.16, 7.74, 0.16 | Props/wood_frame_white | 3 |
-| 16.16, 7.64, 0.35 | Props/wood_frame_white | 3 |
-| 16.16, 7.70, 0.41 | Props/wood_frame_white | 3 |
-| 16.16, 7.78, 0.30 | Props/wood_frame_white | 3 |
-| 16.16, 7.46, 0.53 | Props/wood_frame_white | 3 |
-| 16.16, 7.45, 0.45 | Props/wood_frame_white | 3 |
-| 16.16, 7.55, 0.42 | Props/wood_frame_white | 3 |
-| 16.16, 7.59, 0.49 | Props/wood_frame_white | 3 |
-| 16.16, 7.74, 0.04 | Props/wood_frame_white | 3 |
-| 16.16, 6.90, 0.46 | Props/wood_frame_white | 3 |
-| 16.16, 6.58, -0.26 | Props/wood_frame_white | 3 |
-| 16.16, 6.90, -0.26 | Props/wood_frame_white | 3 |
-| 16.16, 6.58, 0.46 | Props/wood_frame_white | 3 |
-| 16.16, 7.23, 0.46 | Props/wood_frame_white | 3 |
-| 16.16, 6.25, -0.26 | Props/wood_frame_white | 3 |
-| 16.16, 7.23, -0.26 | Props/wood_frame_white | 3 |
-| 16.16, 6.25, 0.46 | Props/wood_frame_white | 3 |
+| 1.58, 7.17, -1.65 | Arch/brick_red_brussels | 3 |
+| 1.59, 7.28, -1.65 | Arch/brick_red_brussels | 3 |
+| 1.62, 7.38, -1.65 | Arch/brick_red_brussels | 3 |
+| 1.64, 7.48, -1.65 | Arch/brick_red_brussels | 3 |
+| 1.67, 7.58, -1.65 | Arch/brick_red_brussels | 3 |
+| 1.71, 7.68, -1.65 | Arch/brick_red_brussels | 3 |
+| 1.75, 7.78, -1.65 | Arch/brick_red_brussels | 3 |
+| 1.79, 7.88, -1.65 | Arch/brick_red_brussels | 3 |
+| 2.42, 8.72, -1.65 | Arch/brick_red_brussels | 3 |
+| 1.84, 7.97, -1.65 | Arch/brick_red_brussels | 3 |
+| 1.89, 8.07, -1.65 | Arch/brick_red_brussels | 3 |
+| 1.94, 8.16, -1.65 | Arch/brick_red_brussels | 3 |
+| 2.00, 8.25, -1.65 | Arch/brick_red_brussels | 3 |
+| 2.06, 8.34, -1.65 | Arch/brick_red_brussels | 3 |
+| 2.13, 8.42, -1.65 | Arch/brick_red_brussels | 3 |
+| 2.19, 8.50, -1.65 | Arch/brick_red_brussels | 3 |
+| 2.27, 8.58, -1.65 | Arch/brick_red_brussels | 3 |
+| 2.34, 8.65, -1.65 | Arch/brick_red_brussels | 3 |
+| 2.58, 8.86, -1.65 | Arch/brick_red_brussels | 3 |
+| 2.76, 8.92, -1.65 | Arch/brick_red_brussels | 3 |
+| 2.67, 8.92, -1.65 | Arch/brick_red_brussels | 3 |
+| 2.93, 8.79, -1.65 | Arch/brick_red_brussels | 3 |
+| 2.85, 8.86, -1.65 | Arch/brick_red_brussels | 3 |
+| 2.50, 8.79, -1.65 | Arch/brick_red_brussels | 3 |
+| 3.30, 8.42, -1.65 | Arch/brick_red_brussels | 3 |
+| 3.24, 8.50, -1.65 | Arch/brick_red_brussels | 3 |
+| 3.59, 7.97, -1.65 | Arch/brick_red_brussels | 3 |
+| 3.54, 8.07, -1.65 | Arch/brick_red_brussels | 3 |
+| 3.49, 8.16, -1.65 | Arch/brick_red_brussels | 3 |
+| 3.43, 8.25, -1.65 | Arch/brick_red_brussels | 3 |
+| 3.37, 8.34, -1.65 | Arch/brick_red_brussels | 3 |
+| 4.33, 7.55, -1.65 | Arch/brick_red_brussels | 3 |
+| 4.36, 7.65, -1.65 | Arch/brick_red_brussels | 3 |
+| 4.74, 8.37, -1.65 | Arch/brick_red_brussels | 3 |
+| 4.80, 8.45, -1.65 | Arch/brick_red_brussels | 3 |
+| 4.40, 7.75, -1.65 | Arch/brick_red_brussels | 3 |
+| 4.43, 7.84, -1.65 | Arch/brick_red_brussels | 3 |
+| 4.48, 7.93, -1.65 | Arch/brick_red_brussels | 3 |
+| 4.52, 8.02, -1.65 | Arch/brick_red_brussels | 3 |
+| 4.57, 8.11, -1.65 | Arch/brick_red_brussels | 3 |
 
-## tjunction (warn, 281)
+(1180 more in the JSON)
+
+## tjunction (warn, 631)
 
 | at | part | edge_m |
 |---|---|---|
@@ -173,73 +192,73 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 11.20, 4.49, 1.70 | Arch/brick_red_brussels | 5.86 |
 | 10.45, 4.45, 1.55 | Arch/stone_white | 0.22 |
 | 10.45, 4.45, -1.35 | Arch/stone_white | 0.22 |
-| 0.37, 4.32, -0.53 | Arch/stone_white | 1.4 |
+| 0.15, 4.32, -0.53 | Arch/stone_white | 1.4 |
 | 0.75, 6.42, -0.60 | Arch/stone_white | 1.5 |
-| 1.86, 8.02, -1.65 | Arch/stone_white | 0.108 |
-| 2.54, 8.83, -1.65 | Arch/stone_white | 0.108 |
-| 2.63, 8.89, -1.65 | Arch/stone_white | 0.108 |
-| 2.80, 8.89, -1.65 | Arch/stone_white | 0.108 |
-| 2.89, 8.83, -1.65 | Arch/stone_white | 0.108 |
-| 3.57, 8.02, -1.65 | Arch/stone_white | 0.108 |
-| 3.62, 7.93, -1.65 | Arch/stone_white | 0.109 |
-| 3.88, 6.91, -1.65 | Arch/stone_white | 0.112 |
-| 4.05, 6.87, -1.65 | Arch/stone_white | 0.225 |
-| 3.88, 6.91, -2.15 | Arch/stone_white | 0.112 |
-| 4.05, 6.87, -2.15 | Arch/stone_white | 0.225 |
-| 3.62, 7.93, -2.15 | Arch/stone_white | 0.109 |
-| 3.57, 8.02, -2.15 | Arch/stone_white | 0.108 |
-| 2.89, 8.83, -2.15 | Arch/stone_white | 0.108 |
+| 1.56, 7.02, -1.65 | Arch/stone_white | 0.005 |
+| 1.56, 7.02, -1.65 | Arch/stone_white | 0.237 |
+| 1.69, 7.63, -1.65 | Arch/stone_white | 0.075 |
+| 1.91, 8.12, -1.65 | Arch/stone_white | 0.075 |
+| 1.74, 8.22, -1.65 | Arch/stone_white | 0.079 |
+| 1.63, 8.02, -1.65 | Arch/stone_white | 0.081 |
+| 1.94, 8.50, -1.65 | Arch/stone_white | 0.08 |
+| 2.30, 8.62, -1.65 | Arch/stone_white | 0.075 |
+| 2.46, 8.76, -1.65 | Arch/stone_white | 0.075 |
+| 2.33, 8.91, -1.65 | Arch/stone_white | 0.08 |
+| 2.97, 8.76, -1.65 | Arch/stone_white | 0.075 |
+| 3.13, 8.62, -1.65 | Arch/stone_white | 0.075 |
+| 3.10, 8.91, -1.65 | Arch/stone_white | 0.08 |
+| 3.50, 8.50, -1.65 | Arch/stone_white | 0.08 |
 
-(241 more in the JSON)
+(591 more in the JSON)
 
-## seam (info, 3337)
+## seam (info, 3427)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
 | 16.06, 6.25, -0.65 | Props/wood_frame_white + Props/wood_frame_white | 3.89 | 480 | 10.2 |
 | 16.06, 6.25, 0.67 | Props/wood_frame_white + Props/wood_frame_white | 3.9 | 480 | 10.2 |
+| 16.25, 7.29, 0.16 | Props/polychrome + Props/polychrome | 0.74 | 168 | 48.4 |
 | 16.23, 6.56, -0.07 | Arch/brick_red_brussels + Props/polychrome | 2.49 | 127 | 54.1 |
+| 8.54, 8.41, 1.85 | Arch/brick_red_brussels + Arch/stone_white | 5.57 | 126 | 90 |
+| 8.54, 8.41, -2.15 | Arch/brick_red_brussels + Arch/stone_white | 5.52 | 124 | 90 |
+| 6.50, 6.83, -1.65 | Arch/brick_red_brussels + Arch/stone_white | 5.57 | 122 | 90 |
+| 6.50, 6.83, 2.35 | Arch/brick_red_brussels + Arch/stone_white | 5.52 | 122 | 90 |
+| 4.17, 7.71, -1.65 | Arch/brick_red_brussels + Arch/stone_white | 5.47 | 120 | 90 |
+| 6.50, 6.83, -2.15 | Arch/brick_red_brussels + Arch/stone_white | 5.47 | 120 | 90 |
+| 4.05, 6.83, 2.35 | Arch/brick_red_brussels + Arch/stone_white | 5.47 | 120 | 90 |
+| 6.39, 7.68, 1.85 | Arch/brick_red_brussels + Arch/stone_white | 5.47 | 118 | 90 |
+| 4.05, 6.83, 1.85 | Arch/brick_red_brussels + Arch/stone_white | 5.44 | 106 | 90 |
+| 4.05, 6.83, -2.15 | Arch/brick_red_brussels + Arch/stone_white | 5.34 | 105 | 90 |
+| 1.70, 8.15, 2.35 | Arch/brick_red_brussels + Arch/stone_white | 5.34 | 105 | 90 |
+| 1.56, 7.07, -1.65 | Arch/brick_red_brussels + Arch/stone_white | 5.44 | 104 | 90 |
 | 9.02, 5.29, -1.64 | Props/stone_white + Props/stone_white | 0.96 | 104 | 58.4 |
 | 8.98, 5.29, 1.84 | Props/stone_white + Props/stone_white | 0.96 | 102 | 58 |
 | 16.18, 6.84, -0.03 | Props/polychrome + Props/polychrome | 0.68 | 98 | 42.9 |
-| 4.42, 6.68, -2.04 | Props/stone_white + Props/stone_white | 2.36 | 80 | 43 |
-| 6.89, 6.68, -1.92 | Props/stone_white + Props/stone_white | 2.39 | 80 | 41.7 |
-| 9.39, 6.68, -1.92 | Props/stone_white + Props/stone_white | 2.32 | 80 | 39.9 |
-| 4.44, 6.68, 2.04 | Props/stone_white + Props/stone_white | 2.37 | 80 | 42.9 |
-| 6.81, 6.68, 1.87 | Props/stone_white + Props/stone_white | 2.4 | 80 | 42.3 |
-| 9.39, 6.68, 2.04 | Props/stone_white + Props/stone_white | 2.33 | 80 | 40.2 |
+| 9.36, 6.68, -2.06 | Props/stone_white + Props/stone_white | 1.44 | 96 | 57.4 |
+| 9.36, 6.68, 1.94 | Props/stone_white + Props/stone_white | 1.44 | 96 | 57.4 |
+| 6.86, 6.68, -2.05 | Props/stone_white + Props/stone_white | 1.44 | 94 | 57.4 |
+| 10.44, 7.03, -2.15 | Arch/brick_red_brussels + Arch/stone_white | 3.29 | 92 | 90 |
+| 10.44, 7.05, 1.85 | Arch/brick_red_brussels + Arch/stone_white | 3.29 | 92 | 90 |
+| 4.41, 6.68, -2.06 | Props/stone_white + Props/stone_white | 1.44 | 92 | 57.4 |
+| 6.86, 6.68, 1.94 | Props/stone_white + Props/stone_white | 1.44 | 92 | 57.4 |
+| 9.16, 7.59, -1.65 | Arch/brick_red_brussels + Arch/stone_white | 3.29 | 90 | 90 |
+| 9.00, 6.82, 2.35 | Arch/brick_red_brussels + Arch/stone_white | 3.29 | 90 | 90 |
+| 4.41, 6.68, 1.94 | Props/stone_white + Props/stone_white | 1.44 | 90 | 57.4 |
+| 10.45, 7.55, -1.43 | Arch/brick_red_brussels + Arch/stone_white | 6.77 | 87 | 90 |
 | 6.83, 4.50, -1.91 | Props/stone_white + Props/stone_white | 2.07 | 76 | 75.6 |
 | 9.33, 4.50, -1.91 | Props/stone_white + Props/stone_white | 2.07 | 76 | 75.3 |
 | 4.38, 4.50, 2.10 | Props/stone_white + Props/stone_white | 2.07 | 76 | 75.6 |
 | 6.83, 4.50, 2.10 | Props/stone_white + Props/stone_white | 2.07 | 76 | 75.6 |
 | 9.33, 4.50, 2.10 | Props/stone_white + Props/stone_white | 2.07 | 76 | 75.4 |
 | 4.38, 4.50, -1.91 | Props/stone_white + Props/stone_white | 2.07 | 75 | 75.6 |
-| 0.20, 8.83, 0.43 | Arch/stone_white + Glass/glass_window | 5.15 | 70 | 90 |
-| 0.20, 8.83, -0.13 | Arch/stone_white + Glass/glass_window | 5.15 | 70 | 90 |
-| 0.20, 8.83, -0.69 | Arch/stone_white + Glass/glass_window | 5.15 | 70 | 90 |
-| 12.90, 8.53, -1.95 | Arch/stone_white + Glass/glass_window | 4.24 | 70 | 90 |
-| 13.44, 8.53, -1.95 | Arch/stone_white + Glass/glass_window | 4.24 | 70 | 90 |
-| 0.41, 5.34, 0.21 | DoorR/painted_wood_red + DoorR/cast_iron_green | 0.44 | 70 | 90 |
-| 16.23, 8.37, 0.01 | Arch/brick_red_brussels + Props/polychrome | 1.33 | 69 | 65.9 |
-| 16.23, 6.25, -0.26 | Arch/brick_red_brussels + Props/wood_frame_white | 4.45 | 60 | 90 |
-| 16.25, 7.29, 0.16 | Props/polychrome + Props/polychrome | 0.73 | 60 | 47 |
-| 0.75, 6.82, 3.83 | Arch/brick_red_brussels + Arch/wood_frame_dark | 9.17 | 58 | 90 |
-| 0.83, 6.82, -3.65 | Arch/brick_red_brussels + Arch/wood_frame_dark | 9.02 | 57 | 90 |
-| 11.23, 4.49, -1.50 | Arch/brick_red_brussels + Arch/marble_chequer | 12.13 | 57 | 90 |
-| 0.20, 9.86, 0.35 | Arch/stone_white + Glass/glass_window | 0.61 | 56 | 90 |
-| 0.20, 9.86, -0.33 | Arch/stone_white + Glass/glass_window | 0.61 | 56 | 90 |
-| 13.12, 9.45, -1.95 | Arch/stone_white + Glass/glass_window | 1.22 | 56 | 90 |
-| 0.39, 6.37, -0.06 | DoorL/painted_wood_red + DoorL/painted_wood_red | 4.34 | 52 | 90 |
-| 0.39, 6.37, -0.19 | DoorL/painted_wood_red + DoorL/painted_wood_red | 4.34 | 52 | 90 |
-| 0.39, 6.37, -0.32 | DoorL/painted_wood_red + DoorL/painted_wood_red | 4.34 | 52 | 90 |
-| 0.39, 6.37, 0.58 | DoorR/painted_wood_red + DoorR/painted_wood_red | 4.34 | 52 | 90 |
-| 0.39, 6.37, 0.46 | DoorR/painted_wood_red + DoorR/painted_wood_red | 4.34 | 52 | 90 |
-| 0.39, 6.37, 0.33 | DoorR/painted_wood_red + DoorR/painted_wood_red | 4.34 | 52 | 90 |
-| 8.95, 5.59, -1.65 | Props/stone_white + Props/polychrome | 0.58 | 51 | 9.2 |
+| 11.20, 7.55, 1.67 | Arch/brick_red_brussels + Arch/stone_white | 5.21 | 72 | 90 |
+| 0.20, 8.69, 0.43 | Arch/stone_white + Glass/glass_window | 4.81 | 70 | 90 |
+| 0.20, 8.69, -0.13 | Arch/stone_white + Glass/glass_window | 4.81 | 70 | 90 |
+| 0.20, 8.69, -0.69 | Arch/stone_white + Glass/glass_window | 4.81 | 70 | 90 |
 
-(3297 more in the JSON)
+(3387 more in the JSON)
 
-## opening (info, 422)
+## opening (info, 592)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -275,18 +294,18 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 16.23, 4.44, -0.81 | Arch/brick_red_brussels | -1 + 0 + 0 | 1.919 |
 | 16.18, 4.44, 1.08 | Arch/brick_red_brussels | -0.37 + 0 + -0.93 | 1.728 |
 | 14.57, 4.44, 1.70 | Arch/brick_red_brussels | 0 + 0 + -1 | 3.425 |
-| 1.83, 7.97, -1.65 | Arch/stone_white | 0.89 + -0.45 + 0 | 0.108 |
-| 2.67, 9.12, -2.15 | Arch/stone_white | -0.53 + 0.84 + 0 | 0.114 |
-| 2.76, 9.12, -2.15 | Arch/stone_white | 0.53 + 0.85 + 0 | 0.114 |
-| 1.83, 7.97, -2.15 | Arch/stone_white | 0.89 + -0.45 + 0 | 0.108 |
-| 4.39, 7.73, -1.65 | Arch/stone_white | 0.93 + -0.35 + 0 | 0.104 |
-| 5.23, 9.07, -2.15 | Arch/stone_white | -0.59 + 0.81 + 0 | 0.109 |
-| 5.32, 9.07, -2.15 | Arch/stone_white | 0.59 + 0.81 + 0 | 0.109 |
-| 4.39, 7.73, -2.15 | Arch/stone_white | 0.93 + -0.35 + 0 | 0.104 |
+| 1.56, 7.07, -1.65 | Arch/stone_white | 0.99 + -0.1 + 0 | 0.094 |
+| 1.56, 7.07, -1.65 | Arch/stone_white | 0.99 + -0.1 + 0 | 0.076 |
+| 1.62, 7.38, -1.65 | Arch/stone_white | 0.97 + -0.23 + 0 | 0.075 |
+| 1.68, 7.59, -1.65 | Arch/stone_white | 0.95 + -0.3 + 0 | 0.075 |
+| 1.79, 7.89, -1.65 | Arch/stone_white | 0.91 + -0.42 + 0 | 0.075 |
+| 1.94, 8.16, -1.65 | Arch/stone_white | 0.85 + -0.53 + 0 | 0.074 |
+| 2.07, 8.35, -1.65 | Arch/stone_white | 0.8 + -0.6 + 0 | 0.074 |
+| 2.27, 8.58, -1.65 | Arch/stone_white | 0.72 + -0.69 + 0 | 0.075 |
 
-(382 more in the JSON)
+(552 more in the JSON)
 
-## backtoback (info, 2911)
+## backtoback (info, 3071)
 
 | at | parts | area |
 |---|---|---|
@@ -331,7 +350,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 10.45, 6.72, 1.84 | Arch/brick_red_brussels + Arch/stone_white | 0.0015 |
 | 10.45, 6.76, 1.83 | Arch/brick_red_brussels + Arch/stone_white | 0.00187 |
 
-(2871 more in the JSON)
+(3031 more in the JSON)
 
 
 Nodes: Arch, Props, Glass, DoorL, DoorR. Distances: {"*":40}. Quantum 0.128 mm. Offset 0,0,0.

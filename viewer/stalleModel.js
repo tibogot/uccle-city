@@ -220,8 +220,10 @@ function weather(col, k = 1) {
  *  Blender script used for UV0 (u along the wall = cross(up, n), v up). Returns colour, the tangent-space normal and
  *  the joint mask; far away the joints and relief fade to the wall's average (no shimmer). */
 function rubble() {
-  const w = uv(0);
-  const fw = max(fwidth(w.x), fwidth(w.y)).max(0.00002);
+  const w0 = uv(0);
+  const fw = max(fwidth(w0.x), fwidth(w0.y)).max(0.00002);
+  // round 4 (c00): the courses WANDER (+-4 cm over 1-2 m along the wall) instead of running dead level
+  const w = vec2(w0.x, w0.y.add(vnoise(vec2(w0.x.mul(0.65), 5.3)).sub(0.5).mul(0.08)).add(vnoise(vec2(w0.x.mul(2.1), 9.1)).sub(0.5).mul(0.02)));
   // courses: 0.52 m bands split into three courses at strongly jittered heights (round 3b, photo c00: irregular
   // courses, from thin 7-9 cm "slab" courses to 25 cm ones; were near-equal thirds = a neat ashlar)
   const bandH = 0.52;
@@ -243,8 +245,11 @@ function rubble() {
   const xl = J(sid).mul(Lc), xr = J(sid.add(1)).mul(Lc);
   const hs = hash2(vec2(sid, row)), hs2 = hash2(vec2(sid.add(31.0), row.mul(1.7))), hs3 = hash2(vec2(sid.mul(0.37), row.add(9.0)));
   // the joint lines wander a little (rough-squared stones, not sawn)
-  const wigX = vnoise(vec2(w.y.mul(16.0), sid.mul(3.1))).sub(0.5).mul(0.011);
-  const wigY = vnoise(vec2(w.x.mul(11.0), row.mul(2.3))).sub(0.5).mul(0.009);
+  // round 4 (c00: irregular rubble): the vertical joints lean and wander (a per-stone slant +-25 %, wiggles 3 cm),
+  // the bed joints wander 2 cm: stones no longer read as rectangles
+  const slant = hash2(vec2(sid.add(2.7), row.add(1.3))).sub(0.5).mul(0.5);
+  const wigX = vnoise(vec2(w.y.mul(9.0), sid.mul(3.1))).sub(0.5).mul(0.03).add(w.y.sub(y0).sub(y1.sub(y0).mul(0.5)).mul(slant));
+  const wigY = vnoise(vec2(w.x.mul(6.0), row.mul(2.3))).sub(0.5).mul(0.02);
   const dl = xs.sub(xl).add(wigX), dr = xr.sub(xs).sub(wigX), db = w.y.sub(y0).add(wigY), dt = y1.sub(w.y).sub(wigY);
   const ex = min(dl, dr), ey = min(db, dt);
   const sx = select(dl.lessThan(dr), float(1), float(-1)), sy = select(db.lessThan(dt), float(1), float(-1));
@@ -253,7 +258,7 @@ function rubble() {
   const ax = ex.negate().div(k).exp(), ay = ey.negate().div(k).exp();
   const e = ax.add(ay).log().mul(k).negate();
   const wx = ax.div(ax.add(ay)), wy = float(1).sub(wx);
-  const jw = hs3.mul(0.0035).add(0.005);                        // half joint: joints 1.0-1.7 cm
+  const jw = hs3.mul(0.005).add(0.006);                         // half joint: joints 1.2-2.2 cm (round 4: deeper, wider)
   const e2 = e.sub(jw);
   // pillow: rounded arrises + a gentle dome over the face, per stone. Round 3 (owner: "bevelled bathroom tiles"): the
   // arris radius 0.9-1.7 cm (was 2.2-4), its drop 2.5-4.5 mm (was 5-8); each stone TILTED a little (rough-squared stones
@@ -275,7 +280,7 @@ function rubble() {
   const gy = dhde.mul(sy).mul(wy).add(ddy).add(tiltY.add(rgy).mul(onStone)).mul(near);
   const nT = vec3(gx.negate(), gy.negate(), 1).normalize();
   // joint coverage over the pixel footprint (AA), and far away the average
-  const mask = smoothstep(0.0, max(fw.mul(1.2), 0.0015), e2);
+  const mask = smoothstep(-0.001, max(fw.mul(1.2), 0.004), e2);       // soft joint edges (round 4)
   const far = smoothstep(0.006, 0.03, fw);
   // stone: pale Brussels sandstone, low contrast (cream / pale grey; a few warmer or greyer), pitted surface
   // round 3b: the photo's cream-grey (lighter, warmer), a few grey and ochre stones
@@ -288,7 +293,8 @@ function rubble() {
   col = col.mul(mix(float(0.86), float(1), t));                    // the arrises catch dirt: a soft rim
   // mortar: pale lime, a little lighter than the stones, shaded in the recess under each stone
   // softer joints (round 3b): mortar close to the stones' tone, barely shaded in the recess
-  const mortar = lin(0xd9d2c0).mul(mix(float(0.86), float(0.97), smoothstep(float(0), jw, e2.negate())));
+  // round 4: the mortar recessed: shaded toward the stones' edges, a little greyer than them, soft edged
+  const mortar = lin(0xcfc8b5).mul(mix(float(0.7), float(0.93), smoothstep(float(0), jw.mul(1.2), e2.negate())));
   const avg = mix(lin(0xd2cbb6), lin(0xcfc8b6), 0.4).mul(0.95);
   col = mix(mix(mortar, col, mask), avg, far.mul(0.6));
   return { col, nT, mask, far };
@@ -349,20 +355,32 @@ function slateLook() {
 }
 const TEMP = {
   sandstone_rubble() {
-    const { col, nT } = rubble();
+    const r_ = rubble();
+    // round 4: a piece with its own seed (COLOR_0.b > 0: the voussoirs round the west window, the soldier course over the
+    // door) is ONE stone: its tone from the seed, a rough face, no courses drawn across it
+    const seed = attribute("color", "vec4").b, single = step(0.01, seed);
+    const wS = uv(0);
+    const toneS = mix(mix(lin(0xe0d8c4), lin(0xd2c7ab), seed), lin(0xc6c2b6), step(0.8, fract(seed.mul(7.3))).mul(0.6))
+      .mul(vnoise(wS.mul(13.0).add(seed.mul(31.0))).mul(0.08).add(vnoise(wS.mul(41.0)).mul(0.05)).add(0.94));
+    const col = mix(r_.col, toneS, single), nT = mix(r_.nT, vec3(0, 0, 1), single);
+    // weathering streaks: faint vertical runs (rain under sills and openings), stronger low on the wall
+    const wv = uv(0), streak = smoothstep(0.62, 0.9, vnoise(vec2(wv.x.mul(2.6), wv.y.mul(0.22).add(1.7)))).mul(0.1).mul(smoothstep(41.0, 35.5, positionWorld.y).mul(0.6).add(0.4));
     // the lower walls (north side most) browner and darker: rising damp, splash, algae (photos P01, c05)
     // round 3b (photo c00): the base reads darker grey-green on every side (splash, algae), most on the north
     const low = smoothstep(35.6, 34.2, positionWorld.y), north = clamp(normalWorld.z.negate().mul(0.6).add(0.55), 0, 1);
-    const damp = mix(col, col.mul(vec3(0.7, 0.7, 0.62)), low.mul(north).mul(0.7).mul(stLook.weather));
+    const damp = mix(col, col.mul(vec3(0.7, 0.7, 0.62)), low.mul(north).mul(0.7).mul(stLook.weather)).mul(float(1).sub(streak.mul(stLook.weather)));
     const c = weather(damp).mul(mix(float(1), float(0.93), isCode(C.plinth)));
     return std({ colorNode: c, roughnessNode: float(0.9), metalnessNode: float(0), normalNode: tangentNormal(nT) });
   },
   stone_white(o = {}) {
     // dressed stone (copings, surrounds, tracery, quoins, statue): tooled ashlar, faint coursing, weathered tops
-    const w = uv(0);
+    // round 4: indoors (the piers, capitals, arches: curved, each face with its own planar UV0) the pattern comes from
+    // WORLD position: per-face UV cells drew a stair-stepped line across the capitals' bells (seen in the albedo-only view)
+    const pw = positionWorld;
+    const w = o.indoor ? vec2(pw.x.add(pw.z.mul(0.7)), pw.y) : uv(0);
     const g = vnoise(w.mul(7.0)).mul(0.08).add(vnoise(w.mul(29.0)).mul(0.05));
-    const h = hash2(floor(w.mul(vec2(2.2, 3.4))));
-    let col = mix(lin(0xcfc6b0), lin(0xbcb196), h.mul(0.7)).mul(float(0.92).add(g));
+    const h = o.indoor ? hash2(vec2(floor(pw.x.mul(2.2)).add(floor(pw.z.mul(2.2)).mul(17.0)), floor(pw.y.mul(3.4)))) : hash2(floor(w.mul(vec2(2.2, 3.4))));
+    let col = mix(lin(0xcfc6b0), lin(0xbcb196), h.mul(o.indoor ? 0.25 : 0.7)).mul(float(0.92).add(g));
     col = mix(col, lin(0xe4dfd2), isCode(C.sculpture).mul(0.85));               // the Virgin and Child: pale limestone
     col = mix(col, col.mul(0.9), isCode(C.quoin).add(isCode(C.coping)).min(1).mul(stLook.weather));
     const up = clamp(normalWorld.y, 0, 1);

@@ -18,7 +18,7 @@ of the nave and the house's south / east faces have no photo: estimated (stalle.
 SWAPPABLE MATERIALS: no colour, no texture in the GLB. COLOR_0.r = per-face code / 16 + 1/32, COLOR_0.g = per-vertex AO
 of the thin parts; TEXCOORD_0 = world metres per face; TEXCOORD_1 = the baked AO's lightmap UV (lighting only).
 """
-import bpy, math, os, sys, json, time
+import bpy, math, os, sys, json, time, random
 from mathutils import Vector
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import stalle_common as SC
@@ -126,6 +126,59 @@ def hood(fr, loop_top, prof=((0.0, -0.06), (0.05, -0.06), (0.07, -0.03), (0.07, 
     if FAR(): return
     sweep2d(fr, loop_top, list(prof), STONE, C_SUR)
 
+def _clip_x(loop, lo=None, hi=None):
+    """clip a polygon (s, v) to lo <= s <= hi"""
+    out = loop
+    for x0, ge in ((lo, True), (hi, False)):
+        if x0 is None or not out: continue
+        inp, out = out, []
+        for k in range(len(inp)):
+            p, q = inp[k], inp[(k + 1) % len(inp)]
+            ip, iq = (p[0] >= x0) == ge, (q[0] >= x0) == ge
+            if ip: out.append(p)
+            if ip != iq:
+                t = (x0 - p[0]) / (q[0] - p[0]); out.append((x0, p[1] + (q[1] - p[1]) * t))
+    return out
+
+def rubble_stones(fr, pieces, d=0.004, seed0=1):
+    """separate stones of the wall's own rubble (photo c00: voussoirs, a soldier course), 4 mm proud, 8 mm joints: each
+    piece takes its own tone from COLOR_0.b (the rubble shader draws no courses on a piece with a seed)"""
+    if FAR(): return
+    rnd = random.Random(seed0)
+    sv = K.SEED
+    for loop in pieces:
+        if len(loop) < 3: continue
+        K.SEED = 0.05 + 0.95 * rnd.random()
+        fill2d(fr, [loop], d, RUB, C_PLAIN); strip2d(fr, loop, d, 0.0, RUB, C_PLAIN, inward=False)
+    K.SEED = sv
+
+def arch_ring_w(s0, s1, spring, apex):
+    """the west window's ring (c00): 7 stones a side, 30 cm deep, outside the reveal's chamfer"""
+    w = s1 - s0; h = hz(apex) - hz(spring); R = (w * w / 4 + h * h) / w
+    return arch_ring(s0, s1, hz(spring), hz(apex), R + GW_CH + 0.01, 0.3, 7)
+
+def arch_ring(s0, s1, spring, apex, r_in, width, n_side, gap=0.008):
+    """radial voussoirs round a pointed head (wall frame: s, Blender z): each arc's stones radial to its own centre,
+    from r_in (past the opening's chamfer) to r_in + width, the two sides meeting on the apex's vertical"""
+    w = s1 - s0; h = apex - spring; R = (w * w / 4 + h * h) / w
+    sm = (s0 + s1) / 2
+    aL = math.atan2(math.sqrt(max(R * R - (sm - (s0 + R)) ** 2, 0.0)), sm - (s0 + R))   # the apex angle on the left arc
+    pieces = []
+    for side in (-1, 1):
+        cxs = s0 + R                                   # the left arc; the right side is its mirror
+        for k in range(n_side):
+            a0 = math.pi + (aL - math.pi) * k / n_side; a1 = math.pi + (aL - math.pi) * (k + 1) / n_side
+            g = gap / 2 / (r_in + width / 2)
+            a0 -= g if k else 0.0; a1 += g if k < n_side - 1 else 0.0          # (angles decrease from pi to the apex)
+            ang = [a0 + (a1 - a0) * j / 4 for j in range(5)]
+            inner = [(cxs + r_in * math.cos(a), spring + r_in * math.sin(a)) for a in ang]
+            outer = [(cxs + (r_in + width) * math.cos(a), spring + (r_in + width) * math.sin(a)) for a in reversed(ang)]
+            loop = inner + outer
+            if side > 0: loop = [(s0 + s1 - x, y) for x, y in loop][::-1]
+            loop = _clip_x(loop, hi=sm - gap / 2) if side < 0 else _clip_x(loop, lo=sm + gap / 2)
+            pieces.append(ccw(loop))
+    return pieces
+
 def gothic_window(fr, s, sill, spring, apex, w, n_lights, depth=0.32, foils=(), hood_off=0.16, statue=False):
     """a pointed window: chamfered reveal, stone tracery (cusped lancets + foils in the head), leaded glass, hood mould,
     a weathered sill. foils: [(ds, h, r, lobes)]. The wall's hole: hole(pointed(...), GW_CH)."""
@@ -148,8 +201,10 @@ def gothic_window(fr, s, sill, spring, apex, w, n_lights, depth=0.32, foils=(), 
         fbox(fr, x - 0.025, x + 0.025, hz(sill) + 0.05, l_spring, -0.08, -0.055, STONE, C_TRAC)
     # sill: weathered stone ledge (sits on the wall face: no back face)
     fbox(fr, s0 - 0.12 - GW_CH, s1 + 0.12 + GW_CH, hz(sill) - GW_CH - 0.16, hz(sill) - GW_CH + 0.002, 0.0, 0.09, STONE, C_SILL)
-    # hood mould: the arch's extrados offset (none on the west window, photo c00)
-    if hood_off is None: return outline
+    # hood mould: the arch's extrados offset (none on the west window, photo c00: a ring of radial rubble voussoirs)
+    if hood_off is None:
+        rubble_stones(fr, arch_ring_w(s0, s1, spring, apex), seed0=7)
+        return outline
     big = pointed(s0 - hood_off, s1 + hood_off, hz(spring), hz(apex) + hood_off * 1.05, n=16)
     top = [p for p in big if p[1] >= hz(spring) - 1e-6]
     top = sorted(top, key=lambda p: p[0])
@@ -178,7 +233,7 @@ def anchor(fr, s, h, L=1.0):
     for e in (-1, 1):            # curled ends (stand off the bar's face: no coplanar faces)
         fbox(fr, s - 0.05, s + 0.05, hz(h + e * L / 2) - 0.02 + e * 0.02, hz(h + e * L / 2) + 0.02 + e * 0.02, 0.0, 0.032, IRON, C_PLAIN)
 
-def plinth_run(fr, s0, s1, h_top=SC.PLINTH_TOP, out=0.07, caps=True):
+def plinth_run(fr, s0, s1, h_top=SC.PLINTH_TOP, out=0.035, caps=True):     # round 4: 3.5 cm (c00 / c05; was 7)
     """the chamfered plinth course along a wall"""
     v = hz(h_top)
     if FAR():
@@ -312,6 +367,15 @@ def west_door_opening(fr, dch):
         a, b = sorted((sg * W2, sg * (W2 - f)))
         fbox(fr, a, b, F, Tp - DF["head"], -DF["u1"], -DF["u0"], WOOD, C_DOOR, skip=("right" if sg > 0 else "left", "bottom", "top", "back"))
     fbox(fr, -W2, W2, Tp - DF["head"], Tp, -DF["u1"], -DF["u0"], WOOD, C_DOOR, skip=("top", "left", "right", "back"))
+    # round 4 (c00): the flush relieving course over the door: 13 upright rubble stones on a flat segment
+    if not FAR():
+        Rc, half = 4.6, 1.05; a0 = math.asin(half / Rc); cy = Tp + dch + 0.22 - Rc * math.cos(a0) + 0.02
+        pcs = []
+        for k in range(13):
+            t0 = -a0 + 2 * a0 * k / 13 + 0.0009; t1 = -a0 + 2 * a0 * (k + 1) / 13 - 0.0009
+            pcs.append(ccw([(Rc * math.sin(t0), cy + Rc * math.cos(t0)), (Rc * math.sin(t1), cy + Rc * math.cos(t1)),
+                            ((Rc + 0.3) * math.sin(t1), cy + (Rc + 0.3) * math.cos(t1)), ((Rc + 0.3) * math.sin(t0), cy + (Rc + 0.3) * math.cos(t0))]))
+        rubble_stones(fr, pcs, seed0=11)
     # round 3b (photo c00, coordinator): NO quoined surround, no lintel slab, no white voussoirs: a plain opening in the
     # rubble with chamfered jambs (above), the brown double door. (The photo shows a flat soldier course of rubble
     # stones under the sill ledge, flush with the wall: not modelled, the rubble shader runs through it.)
@@ -410,7 +474,7 @@ def north_aisle():
         # T-anchor
         s = fr.s_of(SC.N_AISLE["anchor"], w)
         bar(fr, (s, hz(36.55)), (s, hz(37.1)), 0.0, 0.04, 0.025, IRON); bar(fr, (s - 0.17, hz(37.1)), (s + 0.17, hz(37.1)), 0.0, 0.04, 0.03, IRON)
-    plinth_run(fr, s0 - 0.07, dr[0][0] - 0.3, 34.75); plinth_run(fr, dr[1][0] + 0.3, s1 + 0.07, 34.75)
+    plinth_run(fr, s0 - 0.035, dr[0][0] - 0.3, 34.75); plinth_run(fr, dr[1][0] + 0.3, s1 + 0.035, 34.75)
     for (ss, sg, uu) in ((s1, -1, SC.U_AISLE_N), (s0, 1, 0.0)):
         if abs(fr.s_of(uu, w) - ss) > 0.01: uu = SC.U_AISLE_N if uu == 0.0 else 0.0
         quoins(fr, ss, hz(34.75), hz(SC.AISLE_EAVE - 0.05), sg)                         # from the plinth's top
@@ -477,7 +541,7 @@ def south_aisle():
         return [circle(fr.s_of(u, w), hz(SC.AISLE_OCULUS_H), 0.2, OCU_N) for u in SC.S_AISLE["oculi"]]
     fr, s0, s1 = side_wall(0.0, SC.U_AISLE_S, w, 1, HB, SC.AISLE_EAVE - 0.02, holes)
     for u in SC.S_AISLE["oculi"]: oculus(fr, fr.s_of(u, w), SC.AISLE_OCULUS_H, 0.2, 0.33)
-    plinth_run(fr, s0 - 0.07, s1, 34.75)
+    plinth_run(fr, s0 - 0.035, s1, 34.75)
     quoins(fr, s0 if fr.s_of(0.0, w) == s0 else s1, hz(34.75), hz(SC.AISLE_EAVE - 0.05), 1 if fr.s_of(0.0, w) == s0 else -1)
 
 def clerestory(side):
@@ -495,7 +559,7 @@ def clerestory(side):
         fill2d(fr, [out, cw] + oc, 0.0, RUB, C_PLAIN)
         gothic_window(fr, S(SC.CHOIR_WIN_N), 37.4, 38.85, 39.75, 1.1, 2, foils=[(0.0, 39.42, 0.2, 4)])
         a, b = sorted((S(ua), S(SC.U_APSE)))
-        plinth_run(fr, a, b + (0.07 if not FAR() else 0.0), 34.85)       # (far: boxes, no overlap at the apse)
+        plinth_run(fr, a, b + (0.035 if not FAR() else 0.0), 34.85)       # (far: boxes, no overlap at the apse)
         # string course at the sill level along the choir (P01)
         if not FAR():
             sweep2d(fr, [(a, hz(37.25)), (b + 0.07, hz(37.25))], [(0.0, -0.1), (0.07, -0.06), (0.07, 0.03), (0.0, 0.06)], STONE, C_BAND)
@@ -529,7 +593,7 @@ def apse():
             holes.append(window_hole(sm, 37.4, 38.85, 39.75, 1.1))
         fill2d(fr, [out] + holes, 0.0, RUB, C_PLAIN)
         if i == 1: gothic_window(fr, (sa + sb) / 2, 37.4, 38.85, 39.75, 1.1, 2, foils=[(0.0, 39.42, 0.2, 4)])
-        ex = 0.0 if FAR() else 0.03
+        ex = 0.0 if FAR() else 0.0145         # out * tan(22.5 deg)
         plinth_run(fr, sa - ex, sb + ex, 34.85)        # past the corners by out * tan(22.5 deg): the runs meet in a mitre
         if not FAR() and i != 2:
             sweep2d(fr, [(sa - 0.03, hz(37.25)), (sb + 0.03, hz(37.25))], [(0.0, -0.1), (0.07, -0.06), (0.07, 0.03), (0.0, 0.06)], STONE, C_BAND)

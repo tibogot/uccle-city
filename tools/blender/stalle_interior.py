@@ -216,17 +216,34 @@ def voussoirs(fr, head, cs, spring_v, width=0.2, d=0.015, n=11, mat=STONE, s_lo=
                 f = (x - acc[i - 1]) / max(acc[i] - acc[i - 1], 1e-9)
                 return (pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * f, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * f)
         return pts[-1]
-    cx, cy = cs, spring_v
-    for k in range(n):
-        t0, t1 = k / n + (0.003 if k else 0.0), (k + 1) / n - (0.003 if k < n - 1 else 0.0)
-        q = [at(t0 + (t1 - t0) * j / 4) for j in range(5)]
+    # round 4: the extrados is the intrados offset along its own NORMAL (it was pushed radially from a point under the
+    # springing and clamped flat there: blocky springers); the first stone (the springer) keeps a horizontal bed on the
+    # abacus; a recessed BACKING band behind the ring, so the joints show stone 1 cm deep, not the brick wall (dark gaps)
+    eps = 1e-4
+    def nrm_at(t):
+        # the side's own tangent (one-sided near the apex: a pointed arch has a kink there), normal pointing away from a
+        # point under the springing line (the arch's inside)
+        if t < 0.5: a_, b_ = at(max(0.0, t - 0.004)), at(min(0.4999, t + 0.004))
+        else: a_, b_ = at(max(0.5001, t - 0.004)), at(min(1.0, t + 0.004))
+        tx, ty = b_[0] - a_[0], b_[1] - a_[1]; L = math.hypot(tx, ty) or 1
+        nx, ny = -ty / L, tx / L
+        p_ = at(t)
+        if nx * (p_[0] - cs) + ny * (p_[1] - (spring_v - 0.3)) < 0: nx, ny = -nx, -ny
+        return nx, ny
+    def ring_pts(t0, t1, m):
+        inner = [at(t0 + (t1 - t0) * j / m) for j in range(m + 1)]
         outer = []
-        for (x, y) in reversed(q):
-            dx, dy = x - cx, y - cy + 0.4; L = math.hypot(dx, dy) or 1
-            outer.append((x + dx / L * width, max(spring_v, y + dy / L * width)))
-        loop = _clip_s(q + outer, s_lo, s_hi)
+        for j in range(m, -1, -1):
+            t = t0 + (t1 - t0) * j / m; x, y = at(t); nx, ny = nrm_at(t)
+            outer.append((x + nx * width, max(spring_v, y + ny * width)))
+        return inner + outer
+    back = _clip_s(ring_pts(0.0, 1.0, 48), s_lo, s_hi)
+    if len(back) >= 3: fill2d(fr, [back], d * 0.3, mat, C_ARCH); strip2d(fr, back, d * 0.3, 0.0, mat, C_ARCH, inward=False)
+    for k in range(n):
+        t0, t1 = k / n + (0.0015 if k else 0.0), (k + 1) / n - (0.0015 if k < n - 1 else 0.0)
+        loop = _clip_s(ring_pts(t0, t1, 6), s_lo, s_hi)
         if len(loop) < 3: continue
-        fill2d(fr, [loop], d, mat, C_ARCH); strip2d(fr, loop, d, 0.0, mat, C_ARCH, inward=False)
+        fill2d(fr, [loop], d, mat, C_ARCH); strip2d(fr, loop, d, d * 0.3, mat, C_ARCH, inward=False)
 
 # ------------------------------------------------------------------------------------------------ architecture
 def floors():
@@ -345,8 +362,13 @@ def arcade(side):
             bell.append((r, 0.048 + 0.30 * t))
         lathe(c + Z * hz(36.33), ring + bell + [(0.392, 0.35)], 64, STONE, C_CAP)
         # abacus: octagonal slab, chamfered under (the ribs' springer lands on it)
-        oct_ = [(0.0, 0.0), (0.424, 0.0), (0.47, 0.04), (0.47, 0.12), (0.0, 0.12)]    # the bell's rim is the octagon's incircle
+        # round 4: a moulded octagonal abacus (soffit chamfer, fillet, a small top chamfer: no plain slab) over a
+        # 64-sided bead where the bell meets it
+        oct_ = [(0.0, 0.0), (0.415, 0.0), (0.435, 0.012), (0.47, 0.045), (0.47, 0.098), (0.462, 0.106), (0.462, 0.112), (0.452, 0.12), (0.0, 0.12)]
         lathe(c + Z * hz(36.68), oct_, 8, STONE, C_CAP, a0=math.pi / 8)
+        K.B.flat.add(K.B.grp)                     # the octagon's facets and chamfers flat-shaded (no smoothing across them)
+        bead = [(0.392, -0.02)] + [(0.392 + 0.012 * math.sin(math.pi * k / 8), -0.02 + 0.02 * k / 8) for k in range(1, 9)]
+        lathe(c + Z * hz(36.68), bead + [(0.392, 0.002)], 64, STONE, C_CAP)
     K.B = KB
     # responds: impost mouldings where the end arches spring from the walls
     for uu, sg in ((SC.RESP_W, 1), (U_CA0, -1)):
@@ -440,7 +462,9 @@ def choir():
         fill2d(fr, [rect(a, hz(F0 - 0.1), b, hz(WALL_TOP)), hole], 0.0, BRICK, C_PLAIN)
         voussoirs(fr, hole, sc, hz(ca["spring"]), 0.24, 0.015, 13)
         for sg in (-1, 1):       # imposts
-            fbox(fr, sc + sg * ca["hw"] - (0.3 if sg > 0 else 0.0), sc + sg * ca["hw"] + (0.3 if sg < 0 else 0.0), hz(ca["spring"] - 0.15), hz(ca["spring"]), 0.0, 0.08, STONE, C_CAP)
+            # round 4: moulded (ogee) imposts like the arcade's, not boxes
+            a_, b_ = sc + sg * ca["hw"] - (0.3 if sg > 0 else 0.0), sc + sg * ca["hw"] + (0.3 if sg < 0 else 0.0)
+            sweep2d(fr, [(a_, hz(ca["spring"])), (b_, hz(ca["spring"]))], [(0.0, -0.15), (0.025, -0.13), (0.05, -0.075), (0.075, -0.025), (0.08, 0.0), (0.0, 0.0)], STONE, C_CAP)
         if nu < 0:
             strip2d(fr, hole, 0.0, -(U_CA1 - U_CA0), STONE, C_ARCH)
     # choir walls + apse (inner faces), the north window, the cove ceiling
@@ -486,9 +510,9 @@ def figure(c, fwd, side, height, prof, mat_code=C_ROBE, segs=20, head=True, crow
     face_dir(rings[0][0], -Z, POLY, prof[0][4])
     if head:
         hc = c + Z * (height * 0.9) + fwd * 0.01 * height
-        lathe_axis(hc, Z, side, [(0.0, 0.0), (0.05, 0.015), (0.075, 0.07), (0.065, 0.12), (0.04, 0.15), (0.0, 0.16)], 10, POLY, C_SKIN)
+        lathe_axis(hc, Z, side, [(0.0, 0.0), (0.05, 0.015), (0.068, 0.04), (0.075, 0.07), (0.072, 0.095), (0.065, 0.12), (0.04, 0.15), (0.0, 0.16)], 24, POLY, C_SKIN)   # 24 sides (10 read as a faceted ball)
         if crown:
-            lathe_axis(hc + Z * 0.12, Z, side, [(0.06, 0.0), (0.07, 0.02), (0.075, 0.07), (0.065, 0.07), (0.06, 0.03), (0.055, 0.0)], 10, POLY, C_HATCH)
+            lathe_axis(hc + Z * 0.12, Z, side, [(0.06, 0.0), (0.07, 0.02), (0.075, 0.07), (0.065, 0.07), (0.06, 0.03), (0.055, 0.0)], 24, POLY, C_HATCH)
 VIRGIN = [(0.0, 0.2, 0.15, 0.06, C_ROBE), (0.06, 0.21, 0.16, 0.07, C_ROBE), (0.35, 0.16, 0.13, 0.08, C_MANTLE), (0.6, 0.15, 0.12, 0.06, C_MANTLE),
           (0.75, 0.16, 0.12, 0.03, C_MANTLE), (0.85, 0.15, 0.1, 0.01, C_ROBE), (0.9, 0.06, 0.06, 0.0, C_SKIN), (0.91, 0.04, 0.04, 0.0, C_SKIN)]
 
@@ -912,6 +936,17 @@ if BAKE:
         v = np.sqrt(np.clip(lin, 0, None)) / rng
         if mask is not None:
             mk = mask[..., None]
+            # round 4: texels whose bake rays started inside the next surface (a chart running under a wall or a ceiling
+            # it meets) come out near black: the dark "hairy" fringes along the arches' extrados in the light-only tour.
+            # Any texel darker than 30 % of its 7x7 neighbourhood's median (inside the chart) takes that median's level.
+            L0 = v.mean(axis=2)
+            nb = np.stack([np.where(np.roll(np.roll(mask, dy, 0), dx, 1) > 0, np.roll(np.roll(L0, dy, 0), dx, 1), np.nan)
+                           for dy in range(-3, 4) for dx in range(-3, 4)]).astype(np.float32)
+            medL = np.nanmedian(nb, axis=0); del nb
+            dark = (mask > 0) & np.isfinite(medL) & (L0 < 0.3 * medL)
+            fixk = np.where(dark, medL / np.maximum(L0, 1e-4), 1.0)[..., None]
+            v = np.where(dark[..., None], np.where(L0[..., None] > 1e-4, v * fixk, medL[..., None]), v)
+            print(f"  lightmap: {int(dark.sum())} occluded (dark) texels lifted to their neighbourhood")
             st = np.stack([np.roll(np.roll(v, dy, 0), dx, 1) for dy in (-1, 0, 1) for dx in (-1, 0, 1)])
             ms = np.stack([np.roll(np.roll(mk, dy, 0), dx, 1) for dy in (-1, 0, 1) for dx in (-1, 0, 1)])
             lum = np.where(ms > 0, st.mean(axis=3, keepdims=True), np.nan)
@@ -1019,7 +1054,9 @@ if BAKE:
     for ob in vl_objs:
         me = ob.data
         for mode in ("sky", "sun", "night"):
-            smooth_corners(me, "vl_" + mode)
+            # round 4: the SUN bake's shadow edge, sampled per corner, drew a stair-stepped line across the capitals'
+            # bells (one step per quad): 24 passes turn it into a soft penumbra; sky / night 8
+            smooth_corners(me, "vl_" + mode, iters=24 if mode == "sun" else 8)
             ca = me.color_attributes["vl_" + mode]
             d = np.zeros(len(me.loops) * 4, dtype=np.float32); ca.data.foreach_get("color", d)
             at = me.attributes.new("_L" + mode.upper(), "FLOAT_VECTOR", "CORNER")

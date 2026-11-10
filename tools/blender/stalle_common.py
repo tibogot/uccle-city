@@ -63,8 +63,9 @@ BELL_U = 6.5
 DOOR_W, DOOR_TOP = 1.40, 36.42
 # the west door's oak frame (dormant) set in the stone opening, its rebate and the leaves (shared by the exterior, which
 # shows the closed leaves, and the interior cell, whose leaves open): depths = u from the west face (m)
-DOOR_FRAME = dict(u0=0.26, u1=0.37, face=0.075, head=0.075)   # the frame's jambs + head: 7.5 cm faces, u 0.26..0.37
-DOOR_LEAF = dict(u0=0.37, u1=0.415, lap=0.022, gap=0.0)         # the leaves lie BEHIND the frame (inside), against its back
+# round 4 (c00: the leaves sit nearly flush with the wall): the frame 5-15 cm in (was 26-37), the leaves behind it
+DOOR_FRAME = dict(u0=0.05, u1=0.15, face=0.075, head=0.075)   # the frame's jambs + head: 7.5 cm faces, u 0.05..0.15
+DOOR_LEAF = dict(u0=0.15, u1=0.195, lap=0.022, gap=0.0)         # the leaves lie BEHIND the frame (inside), against its back
                                                                 # face, overlapping its inner edge by `lap` (the rebate / stop),
                                                                 # their bottom ON the threshold: no slit to see through
 DOOR_OPEN_DEG = 92                                              # the interior leaves' swing (hinges on their inner corners:
@@ -411,7 +412,7 @@ def window_lights(s, sill, spring, apex, w, n_lights, foils=()):
     lights = []
     # c00 (round 3b, measured on the photo): the three lancets rise to 61 % of the window, their cusped heads near the
     # arch's springing, two quatrefoils above (round 3: heads at 41 %, a tall blank plate over them)
-    l_spring = hz(spring) + (0.12 if n_lights > 2 else -0.1)
+    l_spring = hz(spring) + (-0.05 if n_lights > 2 else -0.1)     # round 4: a little lower, room for the quatrefoils
     l_apex = l_spring + lw * 0.95
     for k in range(n_lights):
         a = s0 + edge + k * (lw + mull)
@@ -427,7 +428,7 @@ def window_lights(s, sill, spring, apex, w, n_lights, foils=()):
     return outline, lights, l_spring, mullions
 
 # the windows (shared): (name, u or None, wall, s-centre, sill, spring, apex, width, lights, foils)
-WEST_WINDOW = dict(sill=WWIN_SILL, spring=WWIN_SPRING, apex=WWIN_APEX, w=WWIN_W, n=3, foils=[(-0.34, 39.84, 0.21, 4), (0.34, 39.84, 0.21, 4)])
+WEST_WINDOW = dict(sill=WWIN_SILL, spring=WWIN_SPRING, apex=WWIN_APEX, w=WWIN_W, n=3, foils=[(-0.32, 39.78, 0.18, 4), (0.32, 39.78, 0.18, 4)])
 CHOIR_WINDOW = dict(sill=37.4, spring=38.85, apex=39.75, w=1.1, n=2, foils=[(0.0, 39.42, 0.2, 4)])
 
 # ------------------------------------------------------------------------------------------------ mesh + lightmap UV
