@@ -20,7 +20,7 @@
 import * as THREE from "three/webgpu";
 import {
   attribute, uv, texture, normalWorld, normalView, positionWorld, length, vec2, vec3, float, floor, fract, mix, step, smoothstep, clamp, abs, dot,
-  fwidth, max, min, mod, mrt, roughness, uniform, Fn, vec4,
+  fwidth, max, min, mod, mrt, roughness, uniform, Fn, vec4, cameraPosition, normalize, pow, reflect,
 } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
@@ -54,7 +54,8 @@ export const VB_LOD_AO = [1, 1];
 const SOURCE = "temp";
 
 /** Live look controls (uniforms: no recompiles) */
-export const vbLook = { aoStrength: uniform(1.0), aoDirect: uniform(0.55), weather: uniform(1.0), thinFar: uniform(1.0) };
+export const vbLook = { aoStrength: uniform(1.0), aoDirect: uniform(0.55), weather: uniform(1.0), thinFar: uniform(1.0),
+  glassRefl: uniform(1.0) };
 
 let promise = null;
 export function loadVanBuuren() {
@@ -158,7 +159,11 @@ const lodAo = uniform(1).onObjectUpdate(({ object }) => object.userData.aoScale 
 function wrapAO(src, aoTex, slot) {
   const m = src.clone();
   m.name = `vanbuuren ${slot}`;
-  const ao = texture(aoTex, uv(1)).r.mul(attribute("color", "vec4").g);
+  // the raked joints (code "joint": 12.5 mm grooves, their back / top / bottom faces) once they are sub-pixel (~25 m):
+  // their dark vertex AO lifted toward the wall's (with the colour, brickCol): no 1-pixel dark / lit lines crawling
+  // over the courses while strafing (the flicker test's 135-186 ppm at 25-30 m)
+  const jointFar = isC(codeV(), C.joint).mul(smoothstep(0.006, 0.022, length(fwidth(positionWorld)))).mul(vbLook.thinFar);
+  const ao = mix(texture(aoTex, uv(1)).r.mul(attribute("color", "vec4").g), float(0.9), jointFar.mul(0.8));
   const aoK = mix(float(1), ao, vbLook.aoStrength.mul(lodAo));
   m.aoNode = src.aoNode ? src.aoNode.mul(aoK) : aoK;
   // (polish 2b) SMALL PARTS FAR AWAY: COLOR_0.b holds the width of the flat region a face belongs to (a quoin course's
@@ -261,8 +266,10 @@ function brickCol(c1, c2, burnt, light, pattern) {
       const edgeK = mix(edge, float(0.12), smoothstep(0.15, 0.5, pfw)).mul(float(1).sub(isC(cd, C.lattice)));
       col = col.mul(mix(float(1), float(1.07), mod(pc.add(pr), 2))).mul(float(1).sub(edgeK.mul(0.35)));
     }
-    // the raked joints' own faces: grey mortar in shadow
-    return mix(col, lin(0x5f574f), isC(cd, C.joint));
+    // the raked joints' own faces: grey mortar in shadow; once sub-pixel, the wall's mean (the joints' share included)
+    const mean = mix(mix(lin(c1), lin(c2), 0.5), lin(0x3b2d26), float(JOINT_F * 0.6));
+    const jointCol = mix(lin(0x5f574f), mean, smoothstep(0.006, 0.022, length(fwidth(positionWorld))).mul(vbLook.thinFar));
+    return mix(col, jointCol, isC(cd, C.joint));
   })();
 }
 const brick = (c1, c2, burnt, light, pattern = false) => () => std({ colorNode: brickCol(c1, c2, burnt, light, pattern), roughnessNode: float(0.86), metalnessNode: float(0) });
@@ -276,6 +283,21 @@ function courses(w, h, joint) {
   const jv = smoothstep(0.0, joint / h, fv).mul(smoothstep(1.0, 1.0 - joint * 0.3 / h, fv));
   const ju = smoothstep(0.0, joint / w, fract(cu));
   return { row, cell, mask: mix(jv.mul(ju), float(0.85), smoothstep(0.2, 0.6, fw)).toVar() };
+}
+/** what clear glass reflects, as light (emissive): the sky gradient (env's horizon / zenith colours) above the horizon,
+ *  a dark band of trees / houses just under it, the street below; Fresnel-weighted (strong at grazing angles, ~20 %
+ *  head-on: the photos look up at windows reflecting a bright sky). k scales it (0 = a came). */
+function glassReflection(k) {
+  const v = normalize(cameraPosition.sub(positionWorld)).toVar();
+  const n = normalWorld.toVar();
+  const r = reflect(v.negate(), n).toVar();
+  const ndv = clamp(abs(dot(v, n)), 0.0, 1.0);
+  const fres = pow(float(1).sub(ndv), 3.0).mul(0.75).add(0.2);
+  const sky = mix(vec3(env.uSkyHorizon), vec3(env.uSkyTop), smoothstep(0.0, 0.7, r.y));
+  const skyline = hash2(floor(vec2(r.x, r.z).mul(9.0))).mul(0.12).add(0.06);           // the opposite trees / roofs' height
+  const below = mix(lin(0x2f332c), lin(0x23241f), smoothstep(-0.05, -0.4, r.y));
+  const col = mix(below, sky, smoothstep(skyline.sub(0.03), skyline.add(0.03), r.y));
+  return col.mul(fres).mul(k).mul(vbLook.glassRefl).mul(float(1).sub(env.uNight.mul(0.85)));
 }
 const TEMP = {
   brick_orange_amsterdam: brick(0xb24c2b, 0x9c3d22, 0x5e2414, 0xc86a43),
@@ -315,36 +337,74 @@ const TEMP = {
       const w = uv(0).toVar();
       const g = hash2(vec2(floor(w.x.mul(140.0)), floor(w.y.mul(3.0)))).mul(0.5).add(hash2(vec2(floor(w.y.mul(140.0)), 7.0)).mul(0.5));
       const cd = codeV();
-      // the bargeboards / soffits are darker, older timber than the window joinery
-      return mix(lin(0x8e4b21), lin(0x7a3f1b), g).mul(mix(float(1), float(0.55), isC(cd, C.soffit).add(isC(cd, C.plain)).min(1).mul(0.6)));
+      // varnished pine / oak, orange-brown (v04: the frames read as bright as the brick, a shade browner); the
+      // bargeboards / roof soffits a little darker (weathered)
+      return mix(lin(0xb27445), lin(0x9f6236), g).mul(mix(float(1), float(0.8), isC(cd, C.soffit).add(isC(cd, C.plain)).min(1)));
     })();
     return std({ colorNode: col, roughnessNode: float(0.42), metalnessNode: float(0) });
   },
   wood_frame_white() { return std({ colorNode: lin(0xebe9e2), roughnessNode: float(0.45), metalnessNode: float(0) }); },
   glass_window() {
-    const m = std({ colorNode: lin(0x141a20), roughnessNode: float(0.05), metalnessNode: float(0) });
+    // clear glass: the sky (and the street's dark band under the horizon) reflected with a Fresnel weight, emissive so it
+    // reads in shade as in the photos (v04: the windows are as bright as the brick, blue); behind it a dim room, a tone
+    // per window
+    const m = std({ roughnessNode: float(0.08), metalnessNode: float(0) });
+    m.colorNode = Fn(() => {
+      const h = hash2(floor(positionWorld.xz.mul(0.8)).add(floor(positionWorld.y.div(2.6)))).toVar();
+      return mix(lin(0x1b1a18), lin(0x2c2924), h).mul(mix(float(0.8), float(1.15), hash2(vec2(h.mul(91.0), 3.0))));
+    })();
     m.emissiveNode = Fn(() => {
+      const r = glassReflection(float(1)).toVar();
       const h = hash2(floor(positionWorld.xz.div(3.3)).add(floor(positionWorld.y.div(4.2))));
-      return lin(0xffc27a).mul(step(0.4, h)).mul(env.uNight).mul(env.uInteriorGlow).mul(0.9);
+      return r.add(lin(0xffc27a).mul(step(0.4, h)).mul(env.uNight).mul(env.uInteriorGlow).mul(0.9));
     })();
     m.mrtNode = mrt({ metalRough: vec3(0, roughness, float(0)) });
     return m;
   },
   glass_leaded() {
-    // leaded and stained glass (the stair window, the porch's two windows, the door's panels): small rectangles of tinted
-    // glass (amber, pale green, smoke, a few clear) in dark lead cames; the cames fade to the average once sub-pixel
+    // leaded glass, per window (UV0 = each pane's own 0..1 square): code "lead" = the stair window's mosaic (v04: each pane
+    // a patchwork of small blue-grey / clear rectangles of slightly different tilt, thin cames); code "panel" = the porch
+    // windows' and the door's symmetric panels (a tall clear centre, columns of small cream squares, dark cames); far
+    // (code "pane", the whole opening): the average. The cames fade to the average once sub-pixel.
     const m = std({ roughnessNode: float(0.12), metalnessNode: float(0) });
-    m.colorNode = Fn(() => {
+    const parts = Fn(() => {
       const w = uv(0).toVar();
-      const g = w.div(vec2(0.11, 0.085)).toVar();
-      const cell = floor(g).toVar(), f = fract(g).toVar();
-      const fw = max(fwidth(g.x), fwidth(g.y));
-      const came = float(1).sub(smoothstep(0.0, 0.08, f.x).mul(smoothstep(0.0, 0.1, f.y))).toVar();
-      const h = hash2(cell).toVar();
-      const tint = mix(mix(lin(0x3a3222), lin(0x24301f), step(0.45, h)), mix(lin(0x2a2a2a), lin(0x4a3b20), step(0.8, h)), step(0.65, h));
-      return mix(tint, lin(0x101010), mix(came, float(0.3), smoothstep(0.2, 0.6, fw)));
+      const cd = codeV().toVar();
+      // --- the mosaic: 3 bands of jittered height per pane, each cut into 4-7 cells of jittered width
+      const by = w.y.mul(3.0).toVar(), band = floor(by).toVar();
+      const nb = floor(hash2(vec2(band, 5.0)).mul(4.0)).add(4.0);
+      const bx = w.x.mul(nb).add(hash2(vec2(band, 11.0)).mul(0.7)).toVar();
+      const cellM = vec2(floor(bx), band).toVar();
+      const fM = vec2(fract(bx), fract(by)).toVar();
+      const fwM = max(fwidth(bx), fwidth(by)).toVar();
+      const cameM = float(1).sub(smoothstep(0.0, max(fwM, 0.035), min(fM.x, float(1).sub(fM.x))).mul(smoothstep(0.0, max(fwM, 0.045), min(fM.y, float(1).sub(fM.y)))));
+      const hM = hash2(cellM.add(vec2(3.0, 7.0))).toVar();
+      const tintM = mix(mix(lin(0x2a3644), lin(0x3a4250), step(0.5, hM)), lin(0x5c5544), step(0.88, hM));
+      // --- the panel: mirrored about the pane's centre line
+      const x = abs(w.x.sub(0.5)).mul(2.0).toVar(), y = w.y.toVar();
+      const fwP = max(fwidth(x), fwidth(y)).toVar();
+      const line = (v, at, wd) => float(1).sub(smoothstep(wd, wd.add(fwP), abs(v.sub(at))));
+      const lw = float(0.022);
+      const inC = step(x, 0.36).mul(step(0.16, y)).mul(step(y, 0.84));
+      const side = step(0.46, x).mul(step(x, 0.9));
+      const sq = fract(y.mul(4.0)).toVar();
+      const cameP = max(max(max(line(x, float(0.36), lw).mul(step(0.16, y)).mul(step(y, 0.84)), line(x, float(0.46), lw)), max(line(x, float(0.9), lw), line(y, float(0.16), lw).mul(step(x, 0.36)))),
+        max(line(y, float(0.84), lw).mul(step(x, 0.36)), float(1).sub(smoothstep(0.0, max(fwP.mul(4.0), 0.06), min(sq, float(1).sub(sq)))).mul(side)));
+      const hP = hash2(vec2(floor(y.mul(4.0)), step(0.46, x).add(step(0.9, x)))).toVar();
+      const tintP = mix(mix(lin(0x2b2c2c), lin(0xb8a77f), side.mul(step(0.35, hP))), lin(0x8a6e3e), side.mul(step(0.85, hP)));
+      // pick by code; far = the average
+      const isLead = isC(cd, C.lead), isPanel = isC(cd, C.panel);
+      const came = mix(mix(cameM, cameP, isPanel), float(0.3), smoothstep(0.25, 0.7, mix(fwM, fwP.mul(5.0), isPanel))).toVar();
+      const tint = mix(mix(lin(0x333a42), tintM, isLead), tintP, isPanel).toVar();
+      const col = mix(tint, lin(0x121212), came.mul(isLead.add(isPanel).max(0.3)));
+      // reflection: per cell a slightly different tilt (the mosaic glints); none on the cames; the panel's cream glass is
+      // opalescent (less mirror)
+      const tilt = mix(float(1), mix(float(0.6), float(1.35), hash2(cellM.add(vec2(9.0, 1.0)))), isLead);
+      const refl = tilt.mul(float(1).sub(came)).mul(mix(float(1), float(0.45), side.mul(isPanel))).mul(mix(float(0.75), float(1), isLead));
+      return vec4(col, refl);
     })();
-    m.emissiveNode = Fn(() => lin(0xffb867).mul(env.uNight).mul(env.uInteriorGlow).mul(0.35))();
+    m.colorNode = parts.rgb;
+    m.emissiveNode = Fn(() => glassReflection(parts.a).add(lin(0xffb867).mul(env.uNight).mul(env.uInteriorGlow).mul(0.35)))();
     m.mrtNode = mrt({ metalRough: vec3(0, roughness, float(0)) });
     return m;
   },

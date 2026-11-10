@@ -1,27 +1,20 @@
 # Mesh audit (packed): vanbuuren.lod1
 
-3,828 triangles, 3,255 welded vertices, 2,772 open edges, 636,160 rays, 2389 ms.
+3,815 triangles, 3,237 welded vertices, 2,743 open edges, 643,046 rays, 1690 ms.
 
-**2 blocking**, 606 warnings. NOT CLEAN.
+**1 blocking**, 588 warnings. NOT CLEAN.
 
 | check | severity | count |
 |---|---|---|
-| leak | block | 1 |
 | streak | block | 1 |
-| sliver | warn | 381 |
+| sliver | warn | 364 |
 | nonmanifold | warn | 16 |
-| tjunction | warn | 209 |
-| seam | info | 562 |
-| opening | info | 493 |
-| backtoback | info | 16 |
+| tjunction | warn | 208 |
+| seam | info | 553 |
+| opening | info | 466 |
+| backtoback | info | 15 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
-
-## leak (block, 1)
-
-| at | part | slit_mm | facing | edge_m |
-|---|---|---|---|---|
-| -9.76, 100.66, -7.29 | Villa_far/wood_varnished | 4 | -0.83 + 0 + 0.56 | 0.193 |
 
 ## streak (block, 1)
 
@@ -29,7 +22,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 |---|---|---|---|---|
 | -2.00, 102.10, -3.49 | Villa_far/wood_varnished | corner normal faces away | 90 | 0.0002 |
 
-## sliver (warn, 381)
+## sliver (warn, 364)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -58,12 +51,12 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 5.74, 103.85, 3.12 | Villa_far/brick_pattern | 86 | 3.435 |
 | 5.76, 103.85, 4.27 | Villa_far/brick_pattern | 86 | 3.435 |
 | 0.53, 106.67, 5.42 | Villa_far/roof_tiles_flat_dark | 86 | 4.794 |
-| -0.87, 104.42, -0.53 | Villa_far/roof_tiles_flat_dark | 61 | 4.263 |
 | -2.80, 101.33, 3.33 | Villa_far/roof_tiles_flat_dark | 338 | 5.471 |
 | 0.29, 106.27, 1.99 | Villa_far/roof_tiles_flat_dark | 80 | 4.977 |
+| -0.87, 104.42, -0.53 | Villa_far/roof_tiles_flat_dark | 61 | 4.263 |
 | 0.73, 106.80, 5.36 | Villa_far/roof_tiles_flat_dark | 56 | 4.901 |
-| 0.73, 106.80, 1.91 | Villa_far/roof_tiles_flat_dark | 61 | 5.301 |
 | 0.68, 106.83, 3.57 | Villa_far/roof_tiles_flat_dark | 108 | 10.2 |
+| 0.73, 106.80, 1.91 | Villa_far/roof_tiles_flat_dark | 61 | 5.301 |
 | 0.77, 106.67, 5.42 | Villa_far/roof_tiles_flat_dark | 86 | 4.794 |
 | 1.01, 106.27, 1.99 | Villa_far/roof_tiles_flat_dark | 80 | 4.977 |
 | 2.17, 104.42, -0.53 | Villa_far/roof_tiles_flat_dark | 61 | 4.264 |
@@ -74,7 +67,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -1.59, 106.72, 3.83 | Villa_far/roof_tiles_flat_dark | 66 | 6.329 |
 | 2.49, 106.72, 3.83 | Villa_far/roof_tiles_flat_dark | 54 | 5.129 |
 
-(341 more in the JSON)
+(324 more in the JSON)
 
 ## nonmanifold (warn, 16)
 
@@ -97,7 +90,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -7.10, 99.40, -0.08 | Villa_far/concrete_white | 3 |
 | -7.10, 99.40, -3.54 | Villa_far/concrete_white | 3 |
 
-## tjunction (warn, 209)
+## tjunction (warn, 208)
 
 | at | part | edge_m |
 |---|---|---|
@@ -142,16 +135,15 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 5.30, 99.00, -3.85 | Villa_far/brick_orange_amsterdam | 2.388 |
 | 5.30, 101.01, -3.51 | Villa_far/brick_orange_amsterdam | 1.394 |
 
-(169 more in the JSON)
+(168 more in the JSON)
 
-## seam (info, 562)
+## seam (info, 553)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
 | 5.35, 100.26, -4.57 | Villa_far/brick_orange_amsterdam + Villa_far/wood_varnished | 6.5 | 42 | 90 |
 | -0.55, 97.34, 8.95 | Villa_far/brick_orange_amsterdam + Villa_far/wood_frame_white | 9.2 | 40 | 90 |
-| -5.70, 101.28, 1.35 | Villa_far/wood_varnished + Villa_far/zinc_gutter | 0.34 | 38 | 35.6 |
-| -7.15, 101.47, 1.43 | Villa_far/roof_tiles_flat_dark + Villa_far/wood_varnished | 48.05 | 36 | 32.5 |
+| -5.78, 101.25, 1.38 | Villa_far/wood_varnished + Villa_far/zinc_gutter | 0.34 | 38 | 35.6 |
 | -5.95, 100.77, 7.24 | Villa_far/brick_orange_amsterdam + Villa_far/wood_varnished | 5.95 | 34 | 90 |
 | -7.55, 97.23, -2.55 | Villa_far/brick_orange_amsterdam + Villa_far/wood_frame_white | 8.95 | 34 | 90 |
 | 6.55, 100.99, 0.74 | Villa_far/concrete_white + Villa_far/zinc_gutter | 0.28 | 32 | 90 |
@@ -162,7 +154,6 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.38, 103.90, 8.39 | Villa_far/brick_orange_amsterdam + Villa_far/wood_varnished | 4.73 | 28 | 90 |
 | -5.59, 103.74, 2.89 | Villa_far/brick_orange_amsterdam + Villa_far/wood_varnished | 4.78 | 28 | 90 |
 | 6.21, 97.16, -5.57 | Villa_far/brick_orange_amsterdam + Villa_far/wood_varnished | 3.97 | 27 | 90 |
-| -7.00, 100.71, -4.27 | Villa_far/brick_orange_amsterdam + Villa_far/wood_varnished | 7.05 | 26 | 63.7 |
 | -6.04, 100.77, 6.40 | Villa_far/brick_orange_amsterdam + Villa_far/wood_varnished | 4.55 | 26 | 90 |
 | -5.70, 101.60, 1.35 | Villa_far/roof_tiles_flat_dark + Villa_far/zinc_gutter | 0.32 | 26 | 35.6 |
 | 1.99, 97.34, 8.95 | Villa_far/brick_orange_amsterdam + Villa_far/wood_frame_white | 5.4 | 25 | 90 |
@@ -179,6 +170,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -6.15, 97.18, 6.81 | Villa_far/concrete_white + Villa_far/wood_frame_white | 5.11 | 24 | 90 |
 | 5.70, 97.11, 6.67 | Villa_far/brick_orange_amsterdam + Villa_far/wood_frame_white | 5.15 | 23 | 90 |
 | -6.21, 97.18, 1.56 | Villa_far/concrete_white + Villa_far/wood_frame_white | 5.75 | 23 | 90 |
+| -5.80, 104.61, 2.30 | Villa_far/roof_tiles_flat_dark + Villa_far/wood_varnished | 30.44 | 23 | 90 |
 | 7.60, 96.03, -2.83 | Villa_far/brick_orange_amsterdam + Villa_far/concrete_white | 1.66 | 22 | 90 |
 | 7.60, 97.49, 1.04 | Villa_far/brick_orange_amsterdam + Villa_far/concrete_white | 1.64 | 22 | 90 |
 | -4.90, 97.26, 6.80 | Villa_far/brick_orange_amsterdam + Villa_far/wood_frame_white | 6.12 | 22 | 90 |
@@ -188,10 +180,11 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 5.75, 97.96, 6.80 | Villa_far/brick_orange_amsterdam + Villa_far/concrete_white | 3.02 | 20 | 90 |
 | 5.69, 103.29, 3.25 | Villa_far/brick_orange_amsterdam + Villa_far/wood_varnished | 2.83 | 20 | 90 |
 | 7.60, 95.91, 1.06 | Villa_far/brick_orange_amsterdam + Villa_far/concrete_white | 1.64 | 20 | 90 |
+| 7.60, 97.62, -2.83 | Villa_far/brick_orange_amsterdam + Villa_far/concrete_white | 1.66 | 20 | 90 |
 
-(522 more in the JSON)
+(513 more in the JSON)
 
-## opening (info, 493)
+## opening (info, 466)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -236,16 +229,15 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 5.30, 101.01, -3.79 | Villa_far/brick_orange_amsterdam | 1 + 0 + 0 | 0.337 |
 | 5.30, 102.31, -3.68 | Villa_far/brick_orange_amsterdam | 1 + 0 + 0 | 0.337 |
 
-(453 more in the JSON)
+(426 more in the JSON)
 
-## backtoback (info, 16)
+## backtoback (info, 15)
 
 | at | parts | area |
 |---|---|---|
 | 6.65, 97.73, -4.45 | Villa_far/concrete_white + Villa_far/concrete_white | 0.0073 |
 | 6.43, 97.74, -4.45 | Villa_far/concrete_white + Villa_far/concrete_white | 0.02821 |
 | -2.00, 100.81, -4.36 | Villa_far/wood_varnished + Villa_far/wood_varnished | 0.00006 |
-| -8.61, 103.28, -5.57 | Villa_far/wood_varnished + Villa_far/wood_varnished | 0.0002 |
 | -11.42, 95.40, -5.83 | Villa_far/metal_green_veranda + Villa_far/metal_green_veranda | 0.01479 |
 | -11.40, 95.57, -5.84 | Villa_far/metal_green_veranda + Villa_far/metal_green_veranda | 0.01501 |
 | -11.43, 95.64, -5.83 | Villa_far/metal_green_veranda + Villa_far/metal_green_veranda | 0.00028 |

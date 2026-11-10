@@ -1,35 +1,35 @@
 {
  "asset": "Villa van Buuren, Avenue Leo Errera 41 (tools/blender/vanbuuren.py)",
- "triangles_lod0": 105453,
- "triangles_lod0_main": 16002,
- "triangles_lod0_courses": 89451,
- "triangles_far": 3828,
+ "triangles_lod0": 108816,
+ "triangles_lod0_main": 16392,
+ "triangles_lod0_courses": 92424,
+ "triangles_far": 3815,
  "triangles_per_slot_lod0": {
-  "metal_green_veranda": 140,
-  "stone_blue": 56,
-  "wood_varnished": 3102,
-  "glass_window": 104,
-  "brick_pattern": 3072,
+  "glass_leaded": 112,
   "concrete_white": 1628,
-  "roof_tiles_flat_dark": 12258,
-  "glass_leaded": 46,
-  "brick_orange_amsterdam": 82533,
-  "zinc_gutter": 514,
   "oak_door": 20,
-  "wood_frame_white": 1980
+  "brick_orange_amsterdam": 85642,
+  "zinc_gutter": 478,
+  "glass_window": 476,
+  "wood_varnished": 3098,
+  "wood_frame_white": 1980,
+  "roof_tiles_flat_dark": 12112,
+  "stone_blue": 56,
+  "brick_pattern": 3074,
+  "metal_green_veranda": 140
  },
  "triangles_per_slot_far": {
-  "brick_orange_amsterdam": 922,
-  "brick_pattern": 38,
+  "brick_orange_amsterdam": 924,
+  "brick_pattern": 39,
   "concrete_white": 1000,
-  "roof_tiles_flat_dark": 237,
-  "wood_varnished": 851,
+  "roof_tiles_flat_dark": 222,
+  "wood_varnished": 846,
   "wood_frame_white": 304,
   "glass_window": 96,
   "glass_leaded": 6,
   "oak_door": 10,
   "metal_green_veranda": 140,
-  "zinc_gutter": 168,
+  "zinc_gutter": 172,
   "stone_blue": 56
  },
  "slots": [
@@ -86,11 +86,14 @@
  "lightmap": {
   "px": 2048,
   "split_v": 0.86,
-  "lod0_px_per_m": 29.3,
-  "far_px_per_m": 11.9,
+  "lod0_px_per_m": [
+   25.7,
+   34.9
+  ],
+  "far_px_per_m": 11.8,
   "thin_faces_vertex_ao": [
-   28734,
-   239
+   29711,
+   236
   ]
  },
  "frame": "glTF Y up; three.js local (u, m TAW - OY, w); node at the city position of the frame origin, rotation.y = -rotation",
@@ -114,7 +117,7 @@
    313.1
   ],
   "z": [
-   -1242.2,
+   -1242.1,
    -1215.3
   ],
   "y": [

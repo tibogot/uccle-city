@@ -611,7 +611,7 @@ async function main() {
   if (params.get("townhall") === "1") await addTownHall({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
   // The Villa van Buuren (tools/blender/vanbuuren.py, viewer/vanbuurenCity.js) in place of UrbIS solid 550409 only,
   // behind ?vanbuuren=1 for now
-  if (params.get("vanbuuren") === "1") await addVanBuuren({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
+  if (params.get("vanbuuren") === "1") await addVanBuuren({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer });
   const T0 = await loadTile(entry, { layers, contourOn, verbose: true });
   world.tiles.push(T0);
   const { hm, roads, net } = T0;

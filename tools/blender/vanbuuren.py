@@ -88,6 +88,7 @@ W_C_N = -4.70            # the north-west gable wall's north end (footprint)
 # north: against 509389 (the line of the footprint), the north wing
 NORTH = [(6.282, -7.566), (-1.56, -8.096)]
 # the NW wing (the footprint's rotated rectangle, 7.14 x 3.6-3.9 m): ESTIMATED except its plan
+NW_FLAT = 4.6        # along the NW wing (from its SW end): the DSM's lean-to gives way to a flat roof at 104.85
 NWW = [(-7.563, -4.218), (-9.495, -7.234), (-3.66, -11.347), (-1.56, -8.096)]
 
 H_SPLIT = snap_course(101.06, "j0")     # the bay's top under the middle hood (a course line over the windows' heads)
@@ -135,12 +136,13 @@ def build_roof_solids():
     ax = ((b1 - a1) + (b0 - a0)) / 2; L = ax.length; ax = ax / L
     cr = Vector((-ax.y, ax.x))
     mid0 = (a0 + a1) / 2; half = (a0 - a1).length / 2
-    e_out = half + 0.3; hr, tt = 103.45, 1.30
-    he_ = hr - e_out * tt
-    s0, s1 = -0.15, L - 0.05
+    s0, s1, sf = -0.15, L - 0.05, NW_FLAT
     q = lambda along, side, h: (*(mid0 + ax * along + cr * side), h)
-    S.append(RF.plane_slab([q(s0, e_out, he_), q(s1, e_out, he_), q(s1, 0.0, hr), q(s0, 0.0, hr)]))
-    S.append(RF.plane_slab([q(s0, 0.0, hr), q(s1, 0.0, hr), q(s1, -e_out, he_), q(s0, -e_out, he_)]))
+    lo_side, hi_side = -(half + 0.30), half + 0.25
+    h_lo = 101.57; h_hi = h_lo + (hi_side - lo_side) * 0.75
+    S.append(RF.plane_slab([q(s0, lo_side, h_lo), q(sf + 0.03, lo_side, h_lo), q(sf + 0.3, hi_side, h_hi), q(s0, hi_side, h_hi)]))
+    # the flat part: a block 0.55 deep (its fascia), so the lean-to's end runs into it (no slit under the flat roof)
+    S.append(RF.block([q(x, y, h) for h in (104.85, 104.30) for (x, y) in ((sf, lo_side), (s1, lo_side), (s1, hi_side + 0.12), (sf, hi_side + 0.12))]))
     return S
 
 # windows / openings: facade by facade (models/vanbuuren/NOTES.md; positions from the photos scaled on the measured
@@ -208,7 +210,8 @@ def build_facade(f, bvh):
         kind = kw.get("kind", "window")
         if kind == "window":
             PT.window(f.fr, o.s0, o.s1, o.h0, o.h1, kw.get("family", "wood"), kw.get("lights", 2), kw.get("rows", 4),
-                      d=kw.get("d", -0.06), glass=kw.get("glass", GLASS), transom=kw.get("transom"), sill=kw.get("sill_block", True))
+                      d=kw.get("d", -0.06), glass=kw.get("glass", GLASS), transom=kw.get("transom"), sill=kw.get("sill_block", True),
+                      gcode=kw.get("gcode"))
         elif kind == "none":
             pass
     return top
@@ -321,7 +324,9 @@ def build_parts(FD, tops):
         sc = (s0 + s1) / 2
         for j in range(4):
             y0 = GF + 0.95 + j * 0.30
-            fbox(fr, sc - 0.10, sc + 0.10, y0, y0 + 0.24, dl + 0.005, dl + 0.02, LEAD, C_LEAD, skip=("back",))
+            fbox(fr, sc - 0.10, sc + 0.10, y0, y0 + 0.24, dl + 0.005, dl + 0.02, LEAD, C_PANEL, skip=("back", "front"))
+            face_dir([fr.p(sc - 0.10, y0, dl + 0.02), fr.p(sc + 0.10, y0, dl + 0.02), fr.p(sc + 0.10, y0 + 0.24, dl + 0.02),
+                      fr.p(sc - 0.10, y0 + 0.24, dl + 0.02)], fr.N, LEAD, C_PANEL, [(0, 0), (1, 0), (1, 1), (0, 1)])
         fbox(fr, sc - 0.33, sc - 0.29, GF + 1.0, GF + 1.08, dl + 0.005, dl + 0.05, ZINC, C_PLAIN, skip=("back",))   # the knob
         # vertical brick ribs on the porch wall both sides of the recess (v04 / v05)
         for side in (-1, 1):
@@ -514,9 +519,9 @@ def build_all(bvh, roof_bm):
     # the porch box (ground floor, under the canopy): front wall with the door recess and two leaded windows, sides
     porch_top = lambda s: 97.87
     ep = Facade("porch_front", (U_PORCH, W_PORCH_S), (U_PORCH, W_NG), ends=("convex", "convex"), top=porch_top)
-    ep.win(0.30, 0.66, 96.20, 97.50, family="white", lights=1, rows=6, glass=LEAD, depth=0.16, tag="lead_l")
+    ep.win(0.30, 0.66, 96.20, 97.50, family="white", lights=1, rows=6, glass=LEAD, depth=0.16, gcode=C_PANEL, tag="lead_l")
     ep.door = ep.win(-1.35, 1.48, GF, 97.62, kind="none", depth=0.11, tag="door")
-    ep.win(-3.00, 0.66, 96.20, 97.50, family="white", lights=1, rows=6, glass=LEAD, depth=0.16, tag="lead_r")
+    ep.win(-3.00, 0.66, 96.20, 97.50, family="white", lights=1, rows=6, glass=LEAD, depth=0.16, gcode=C_PANEL, tag="lead_r")
     F.append(ep)
     F.append(Facade("porch_s", (U_BAY, W_PORCH_S), (U_PORCH, W_PORCH_S), ends=("concave2", "convex"), top=porch_top))
     F.append(Facade("porch_n", (U_PORCH, W_NG), (U_NWING, W_NG), ends=("convex", "concave2"), top=porch_top))
@@ -560,6 +565,15 @@ def build_all(bvh, roof_bm):
     F.append(Facade("nw_nw", b1, a1, ends=("free", "convex")))
     F.append(Facade("nw_sw", a1, a0, ends=("convex", "convex")))
     F.append(Facade("nw_link", a0, (U_C_W, W_C_N), ends=("convex", "concave")))
+    # the step between the lean-to and the flat north-east part (NW_FLAT along the wing): brick from under the lean-to
+    A0, A1, B1, B0 = [Vector(x) for x in NWW]
+    axv = ((B1 - A1) + (B0 - A0)) / 2; axv = axv / axv.length
+    def cut(pa, pb, along, base):
+        ta, tb = (pa - base).dot(axv), (pb - base).dot(axv)
+        return pa + (pb - pa) * ((along - ta) / (tb - ta))
+    mid0 = (A0 + A1) / 2
+    pl, ph = cut(A1, B1, NW_FLAT + 0.03, mid0), cut(A0, B0, NW_FLAT + 0.03, mid0)
+    F.append(Facade("nw_step", tuple(pl), tuple(ph), ends=("convex", "free"), h_bot=101.30))
     tops = {}
     for f in F:
         tops[f.name] = build_facade(f, bvh)
@@ -725,7 +739,7 @@ def make_mesh(name, bld):
     ga = me.attributes.new("grp", "INT", "FACE"); ga.data.foreach_set("value", bld.g)
     pa = me.attributes.new("planar", "INT", "FACE"); pa.data.foreach_set("value", [int(x) for x in planar])
     sa = me.attributes.new("smoothf", "INT", "FACE"); sa.data.foreach_set("value", [int(x) for x in bld.sm])
-    ja = me.attributes.new("jointf", "INT", "FACE"); ja.data.foreach_set("value", [int(c == C_JOINT) for c in bld.c])
+    ja = me.attributes.new("jointf", "INT", "FACE"); ja.data.foreach_set("value", [int(c == C_JOINT or (c == C_SOFFIT and m == WOODV)) for c, m in zip(bld.c, bld.m)])
     rwa = me.attributes.new("rw", "FLOAT", "FACE"); rwa.data.foreach_set("value", [(-1.0 if r is None else r) for r in bld.rw])
     obj = bpy.data.objects.new(name, me); scn.collection.objects.link(obj)
     bm = bmesh.new(); bm.from_mesh(me)
@@ -749,7 +763,7 @@ def make_mesh(name, bld):
     print(name, "faces", len(me.polygons), "triangles", ntri, "verts", len(me.vertices))
     return obj, ntri, {SLOTS[mats.index(me.materials[i])]: sum(len(p.vertices) - 2 for p in me.polygons if p.material_index == i) for i in range(len(me.materials))}
 
-def lightmap(objs, v0, v1):
+def lightmap(objs, v0, v1, planar_ok=True):
     """one lightmap region (v0..v1) for these objects: planar course fields keep their projection (one island each),
     the rest smart-projected; THIN faces (< 6 cm across, not planar fields) take no texels (parked at AO 1.0, their AO
     goes per vertex); islands averaged and packed together"""
@@ -757,7 +771,12 @@ def lightmap(objs, v0, v1):
     thin_all = {}
     for obj in objs:
         me = obj.data
-        planar = [0] * len(me.polygons); me.attributes["planar"].data.foreach_get("value", planar); planar = [bool(x) for x in planar]
+        # n-gons (concave frame / hood outlines) come out of smart_project collapsed to a point: triangulate them first
+        bm = bmesh.new(); bm.from_mesh(me)
+        ng = [f_ for f_ in bm.faces if len(f_.verts) > 4]
+        if ng: bmesh.ops.triangulate(bm, faces=ng, quad_method="BEAUTY", ngon_method="BEAUTY")
+        bm.to_mesh(me); bm.free(); me.update()
+        planar = [0] * len(me.polygons); me.attributes["planar"].data.foreach_get("value", planar); planar = [bool(x) and planar_ok for x in planar]
         jf = [0] * len(me.polygons); me.attributes["jointf"].data.foreach_get("value", jf)
         # the raked joints' faces take no texels (per-vertex AO): baked into the brick faces' rows (a texel ~3.5 cm, a
         # joint 1.25 cm) their dark AO bled into the bricks as blotchy bands under grazing light
@@ -777,6 +796,18 @@ def lightmap(objs, v0, v1):
         bm.select_flush_mode(); bmesh.update_edit_mesh(me)
         bpy.ops.uv.smart_project(angle_limit=math.radians(50), island_margin=0.0, area_weight=0.0, correct_aspect=True, scale_to_bounds=False)
         bpy.ops.object.mode_set(mode="OBJECT")
+        # smart_project leaves some faces untouched (UV all zero: they baked black, the hoods / frames read black in
+        # shade): those get a planar projection of their own (metres, on their own plane), packed with the rest
+        lmd = me.uv_layers["Lightmap"].data; nz = 0
+        for p_ in me.polygons:
+            if thin[p_.index] or planar[p_.index]: continue
+            us = [lmd[li].uv for li in p_.loop_indices]
+            if abs(sum(us[i].x * us[(i + 1) % len(us)].y - us[(i + 1) % len(us)].x * us[i].y for i in range(len(us)))) > 1e-12: continue
+            n_ = p_.normal; t_ = (Vector((0, 0, 1)) if abs(n_.z) < 0.9 else Vector((1, 0, 0))).cross(n_).normalized(); b_ = n_.cross(t_)
+            for li in p_.loop_indices:
+                c_ = me.vertices[me.loops[li].vertex_index].co; lmd[li].uv = (c_.dot(t_), c_.dot(b_))
+            nz += 1
+        print(f"  {obj.name}: {nz} faces projected on their own plane (smart_project left them empty)")
         # split islands by construction group (no island bridging two parts that only touch)
         lmd = me.uv_layers["Lightmap"].data
         grp = [0] * len(me.polygons); me.attributes["grp"].data.foreach_get("value", grp)
@@ -823,7 +854,11 @@ B_REST = split_builder(B_MAIN, lambda i: not is_course(B_MAIN, i))
 obj, ntri0, per_slot0 = make_mesh("Villa", B_REST)
 crs, ntri_c, per_slot_c = make_mesh("Villa_courses", B_COURSES)
 far, ntri_far, per_slot_far = make_mesh("Villa_far", B_FAR)
-thin0, dens0 = lightmap([obj, crs], 0.0, AO_SPLIT)
+# (each its own region: packed together, the planar course fields (in metres) and the smart-projected parts did not
+# share one texel density: the small parts ended up as slivers in a strip the bake missed = black hoods / frames)
+thin0a, dens0a = lightmap([obj], 0.0, 0.34, planar_ok=False)
+thin0b, dens0b = lightmap([crs], 0.345, AO_SPLIT)
+thin0 = {**thin0a, **thin0b}; dens0 = (dens0a, dens0b)
 thin1, dens1 = lightmap([far], AO_SPLIT + 0.005, 1.0)
 print(f"meshes + lightmaps {time.time() - T0:.1f}s")
 
@@ -934,7 +969,7 @@ info = {
            "TEXCOORD_1": "AO lightmap (thin faces: u > 0.994, AO 1)"},
     "brick": {"course_m": COURSE, "bed_joint_m": JOINT, "groove_m": KT.GROOVE, "course_base_taw": KT.COURSE_BASE},
     "tiles": {"gauge_m": RF.TILE_GAUGE, "thick_m": RF.TILE_T},
-    "lightmap": {"px": AO_PX, "split_v": AO_SPLIT, "lod0_px_per_m": round(dens0, 1), "far_px_per_m": round(dens1, 1),
+    "lightmap": {"px": AO_PX, "split_v": AO_SPLIT, "lod0_px_per_m": [round(dens0[0], 1), round(dens0[1], 1)], "far_px_per_m": round(dens1, 1),
                  "thin_faces_vertex_ao": [sum(thin0[obj.name]) + sum(thin0[crs.name]), sum(thin1[far.name])]},
     "frame": "glTF Y up; three.js local (u, m TAW - OY, w); node at the city position of the frame origin, rotation.y = -rotation",
     "placement": {"city_local_position": [OXC, OY, OZC], "rotation_y_rad": -ROT,

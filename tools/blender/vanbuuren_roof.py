@@ -150,11 +150,13 @@ def lay_courses(n, polys, mat=TILES, far=None, flat_slot=None):
             if len(cp) < 3: continue
             area = abs(sum(cp[i][0] * cp[(i + 1) % len(cp)][1] - cp[(i + 1) % len(cp)][0] * cp[i][1] for i in range(len(cp)))) / 2
             if area < 1e-6: continue
+            B.rw_cur = min(max(max(xs) - min(xs), 0.5), 8.0)
             face_dir([o + X * x + Y * y + n * hgt(y) for x, y in cp], n, mat, C_COURSE, [(x, y) for x, y in cp])
             for i in range(len(cp)):
                 p_, q_ = cp[i], cp[(i + 1) % len(cp)]
                 if abs(p_[1] - y0) < 1e-6 and abs(q_[1] - y0) < 1e-6 and abs(p_[0] - q_[0]) > 1e-5:
                     a_, b_ = o + X * p_[0] + Y * y0, o + X * q_[0] + Y * y0
+                    B.rw_cur = 0.02          # the butts are 12 mm: sub-pixel far away (the anti-sparkle bends them)
                     face_dir([a_, b_, b_ + n * T, a_ + n * T], -Y, mat, C_COURSE,
                              [(p_[0], y0 - 0.01), (q_[0], y0 - 0.01), (q_[0], y0), (p_[0], y0)])
         k += 1

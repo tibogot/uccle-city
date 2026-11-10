@@ -13,7 +13,7 @@ from vanbuuren_kit import (K, Z, P, OY, hz, face_dir, quad, Frame, box, fbox, hb
 
 # ------------------------------------------------------------------------------------------------ windows
 def window(fr, s0, s1, h0, h1, family="wood", lights=2, rows=4, d=-0.06, glass=GLASS, transom=None, sill=True,
-           frame_w=0.065, bar_w=0.028, lead_rows=0, deep=0.05, mullion_w=None):
+           frame_w=0.065, bar_w=0.028, lead_rows=0, deep=0.05, mullion_w=None, gcode=None):
     """a window filling the opening (s0..s1, h0..h1) of a wall on frame fr: the frame + sashes + glazing bars as ONE
     planar grid (cells between the bars' edges: no fans) at depth d, every pane's reveal back to the glass at d - deep,
     one glass face behind. The grid reaches 1 cm into the reveal on every side (crosses the jambs, head, sill).
@@ -63,8 +63,11 @@ def window(fr, s0, s1, h0, h1, family="wood", lights=2, rows=4, d=-0.06, glass=G
     for (a, y0, b, y1) in holes:
         for (pa, pb, want) in (((a, y0), (b, y0), Z), ((b, y1), (a, y1), -Z), ((a, y1), (a, y0), fr.U), ((b, y0), (b, y1), -fr.U)):
             face_dir([fr.p(pa[0], pa[1], d), fr.p(pb[0], pb[1], d), fr.p(pb[0], pb[1], g0), fr.p(pa[0], pa[1], g0)], want, mat, C_BAR)
-    face_dir([fr.p(s0, h0, g0), fr.p(s1, h0, g0), fr.p(s1, h1, g0), fr.p(s0, h1, g0)], fr.N, glass, C_LEAD if glass == LEAD else C_PANE,
-             [(s0, h0), (s1, h0), (s1, h1), (s0, h1)])
+    # the glass: one face per pane, closing its reveal (no glass behind the bars), UV0 = the pane's own 0..1 square (the
+    # leaded patterns are drawn per pane: the stair window's mosaic, the porch's symmetric panels)
+    gc = gcode if gcode is not None else (C_LEAD if glass == LEAD else C_PANE)
+    for (a, y0, b, y1) in holes:
+        face_dir([fr.p(a, y0, g0), fr.p(b, y0, g0), fr.p(b, y1, g0), fr.p(a, y1, g0)], fr.N, glass, gc, [(0, 0), (1, 0), (1, 1), (0, 1)])
     if sill:
         # a sloped brick-on-edge sill under the opening: proud 4 cm, wider than the opening (its ends cross the wall)
         sill_block(fr, s0 - 0.04, s1 + 0.04, h0, d)

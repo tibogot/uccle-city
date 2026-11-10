@@ -1,33 +1,30 @@
 # Mesh audit (packed): vanbuuren.lod0
 
-105,453 triangles, 60,356 welded vertices, 22,262 open edges, 1,245,494 rays, 20935 ms.
+108,816 triangles, 61,780 welded vertices, 21,399 open edges, 1,080,616 rays, 13206 ms.
 
-**6 blocking**, 30926 warnings. NOT CLEAN.
+**4 blocking**, 32015 warnings. NOT CLEAN.
 
 | check | severity | count |
 |---|---|---|
-| leak | block | 5 |
+| leak | block | 3 |
 | streak | block | 1 |
-| near | warn | 1 |
-| sliver | warn | 28957 |
+| sliver | warn | 30115 |
 | nonmanifold | warn | 1690 |
-| tjunction | warn | 277 |
+| tjunction | warn | 209 |
 | degenerate | warn | 1 |
-| seam | info | 1038 |
-| opening | info | 3360 |
-| backtoback | info | 32 |
+| seam | info | 946 |
+| opening | info | 3859 |
+| backtoback | info | 147 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## leak (block, 5)
+## leak (block, 3)
 
 | at | part | slit_mm | facing | edge_m |
 |---|---|---|---|---|
+| -6.89, 101.75, -9.07 | Villa_courses/brick_orange_amsterdam | 4 | -0.58 + 0 + -0.82 | 4.54 |
 | 0.36, 106.64, 3.81 | Villa_courses/roof_tiles_flat_dark | 4 | 0 + 0.64 + 0.77 | 6.314 |
 | 5.15, 106.64, 3.81 | Villa_courses/roof_tiles_flat_dark | 4 | 0 + 0.64 + 0.77 | 5.114 |
-| -9.64, 101.17, -7.10 | Villa_courses/roof_tiles_flat_dark | 30 | -0.35 + -0.78 + -0.52 | 0.012 |
-| -9.15, 102.31, -6.38 | Villa_courses/roof_tiles_flat_dark | 30 | -0.35 + -0.78 + -0.52 | 0.012 |
-| -8.89, 102.92, -5.99 | Villa_courses/roof_tiles_flat_dark | 30 | -0.35 + -0.78 + -0.52 | 0.012 |
 
 ## streak (block, 1)
 
@@ -35,13 +32,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 |---|---|---|---|---|
 | -2.00, 102.10, -3.49 | Villa/wood_varnished | corner normal faces away | 90 | 0.0002 |
 
-## near (warn, 1)
-
-| at | parts | separation_mm | overlap_cm2 | angle_deg | maxDistance | need_mm | sameComponent | normal |
-|---|---|---|---|---|---|---|---|---|
-| -4.01, 103.13, -8.47 | Villa_courses/roof_tiles_flat_dark + Villa_courses/roof_tiles_flat_dark | 1.95 | 2.2 | 0.1 | 70 | 0.67 | false | 0.4 + 0.69 + 0.6 |
-
-## sliver (warn, 28957)
+## sliver (warn, 30115)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -86,7 +77,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 6.18, 101.01, 5.85 | Villa/concrete_white | 178 | 1.825 |
 | 6.18, 101.01, 6.46 | Villa/concrete_white | 178 | 1.825 |
 
-(28917 more in the JSON)
+(30075 more in the JSON)
 
 ## nonmanifold (warn, 1690)
 
@@ -135,52 +126,52 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (1650 more in the JSON)
 
-## tjunction (warn, 277)
+## tjunction (warn, 209)
 
 | at | part | edge_m |
 |---|---|---|
-| 5.65, 95.50, 6.67 | Villa/brick_orange_amsterdam | 0.12 |
-| 5.65, 95.50, 5.67 | Villa/brick_orange_amsterdam | 0.12 |
-| 5.64, 99.31, 6.63 | Villa/brick_orange_amsterdam | 0.12 |
-| 5.64, 99.31, 5.46 | Villa/brick_orange_amsterdam | 0.12 |
-| 5.64, 102.81, 5.64 | Villa/brick_orange_amsterdam | 0.12 |
-| 5.64, 102.81, 4.81 | Villa/brick_orange_amsterdam | 0.12 |
-| 5.64, 102.56, 3.25 | Villa/brick_orange_amsterdam | 0.12 |
-| 5.64, 102.56, 2.45 | Villa/brick_orange_amsterdam | 0.12 |
-| 6.39, 99.19, 2.72 | Villa/brick_orange_amsterdam | 0.12 |
-| 6.39, 99.19, 1.31 | Villa/brick_orange_amsterdam | 0.12 |
-| 5.19, 102.31, -0.55 | Villa/brick_orange_amsterdam | 0.12 |
-| 5.19, 102.31, -1.90 | Villa/brick_orange_amsterdam | 0.12 |
-| 5.19, 98.63, -0.19 | Villa/brick_orange_amsterdam | 0.12 |
-| 5.19, 98.63, -2.46 | Villa/brick_orange_amsterdam | 0.12 |
-| 7.49, 96.00, 1.04 | Villa/brick_orange_amsterdam | 0.16 |
-| 7.49, 96.00, 0.31 | Villa/brick_orange_amsterdam | 0.16 |
 | 7.49, 97.64, -1.97 | Villa/brick_orange_amsterdam | 1.48 |
-| 7.49, 96.13, -2.87 | Villa/brick_orange_amsterdam | 0.16 |
-| 7.49, 96.13, -3.63 | Villa/brick_orange_amsterdam | 0.16 |
-| 6.17, 95.44, -4.72 | Villa/brick_orange_amsterdam | 0.12 |
-| 6.17, 95.44, -5.34 | Villa/brick_orange_amsterdam | 0.12 |
-| 6.16, 96.25, -5.57 | Villa/brick_orange_amsterdam | 0.12 |
-| 6.16, 96.25, -7.01 | Villa/brick_orange_amsterdam | 0.12 |
-| -4.90, 95.50, 6.75 | Villa/brick_orange_amsterdam | 0.12 |
-| -3.30, 95.50, 6.75 | Villa/brick_orange_amsterdam | 0.12 |
-| -0.38, 102.94, 8.34 | Villa/brick_orange_amsterdam | 0.12 |
 | -0.38, 103.62, 8.45 | Villa/brick_orange_amsterdam | 0.05 |
-| 1.70, 102.94, 8.34 | Villa/brick_orange_amsterdam | 0.12 |
 | 1.70, 103.62, 8.45 | Villa/brick_orange_amsterdam | 0.05 |
-| 4.28, 98.88, 6.99 | Villa/brick_orange_amsterdam | 0.12 |
-| 5.24, 98.88, 6.99 | Villa/brick_orange_amsterdam | 0.12 |
-| -6.89, 102.31, -2.37 | Villa/brick_orange_amsterdam | 0.12 |
-| -6.89, 102.31, -0.98 | Villa/brick_orange_amsterdam | 0.12 |
-| -5.54, 99.31, 1.39 | Villa/brick_orange_amsterdam | 0.12 |
-| -5.54, 99.31, 2.02 | Villa/brick_orange_amsterdam | 0.12 |
-| -5.54, 99.38, 3.07 | Villa/brick_orange_amsterdam | 0.12 |
-| -5.54, 99.38, 4.47 | Villa/brick_orange_amsterdam | 0.12 |
-| -5.54, 102.69, 2.89 | Villa/brick_orange_amsterdam | 0.12 |
-| -5.54, 102.69, 4.77 | Villa/brick_orange_amsterdam | 0.12 |
 | 7.38, 95.15, -0.73 | Villa/brick_orange_amsterdam | 0.05 |
+| 7.49, 95.15, -0.73 | Villa/brick_orange_amsterdam | 0.05 |
+| 7.49, 95.15, -1.97 | Villa/brick_orange_amsterdam | 0.05 |
+| 7.38, 95.15, -1.97 | Villa/brick_orange_amsterdam | 0.05 |
+| 7.38, 97.64, -1.85 | Villa/brick_orange_amsterdam | 1.24 |
+| 7.38, 95.15, -0.85 | Villa/brick_orange_amsterdam | 0.05 |
+| 7.38, 95.15, -1.85 | Villa/brick_orange_amsterdam | 0.05 |
+| 5.72, 101.23, 3.46 | Villa/brick_orange_amsterdam | 1.34 |
+| 2.90, 95.80, 9.00 | Villa/brick_orange_amsterdam | 1.154 |
+| -1.60, 95.80, 9.00 | Villa/brick_orange_amsterdam | 1.154 |
+| -7.60, 95.80, -4.25 | Villa/brick_orange_amsterdam | 1.038 |
+| -7.60, 95.80, 0.95 | Villa/brick_orange_amsterdam | 1.038 |
+| -6.25, 95.80, 1.35 | Villa/brick_orange_amsterdam | 1.162 |
+| -6.25, 95.80, 6.90 | Villa/brick_orange_amsterdam | 1.162 |
+| 6.18, 101.01, 5.20 | Villa/concrete_white | 0.51 |
+| 6.23, 101.01, 5.23 | Villa/concrete_white | 1.87 |
+| 6.23, 101.01, 7.50 | Villa/concrete_white | 0.48 |
+| 6.18, 101.01, 7.55 | Villa/concrete_white | 0.51 |
+| 3.98, 101.01, 7.55 | Villa/concrete_white | 1.77 |
+| 3.95, 101.01, 7.50 | Villa/concrete_white | 0.48 |
+| 6.96, 100.99, 3.63 | Villa/concrete_white | 1.28 |
+| 7.00, 100.99, 3.58 | Villa/concrete_white | 2.775 |
+| 5.75, 100.99, 0.85 | Villa/concrete_white | 1.235 |
+| 5.75, 100.99, 0.42 | Villa/concrete_white | 1.28 |
+| 7.00, 100.99, 0.45 | Villa/concrete_white | 0.435 |
+| 5.72, 100.99, 0.45 | Villa/concrete_white | 0.435 |
+| 6.11, 97.80, 5.50 | Villa/concrete_white | 0.43 |
+| 6.11, 97.80, 6.85 | Villa/concrete_white | 0.43 |
+| 6.15, 97.80, 5.53 | Villa/concrete_white | 1.35 |
+| 6.67, 97.60, -7.45 | Villa/concrete_white | 0.48 |
+| 6.67, 97.60, -4.45 | Villa/concrete_white | 0.48 |
+| 6.24, 97.71, -4.45 | Villa/concrete_white | 0.18 |
+| 6.72, 97.60, -7.42 | Villa/concrete_white | 3 |
+| 8.88, 97.71, 1.75 | Villa/concrete_white | 2.68 |
+| 8.92, 97.71, 1.71 | Villa/concrete_white | 5.6 |
+| 6.24, 97.71, -3.82 | Villa/concrete_white | 5.555 |
+| 8.88, 97.71, -4.45 | Villa/concrete_white | 2.68 |
 
-(237 more in the JSON)
+(169 more in the JSON)
 
 ## degenerate (warn, 1)
 
@@ -188,12 +179,12 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 |---|---|---|
 | 5.75, 103.64, 5.65 | Villa_courses/brick_orange_amsterdam | 0.0239 |
 
-## seam (info, 1038)
+## seam (info, 946)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
-| -2.65, 101.24, 6.85 | Villa/wood_varnished + Villa_courses/brick_orange_amsterdam | 51.8 | 2569 | 32.1 |
-| 4.29, 101.44, -3.98 | Villa/wood_varnished + Villa_courses/roof_tiles_flat_dark | 14.58 | 611 | 45.6 |
+| -2.65, 101.24, 6.85 | Villa/wood_varnished + Villa_courses/brick_orange_amsterdam | 31.22 | 1926 | 32.1 |
+| -5.75, 101.30, -9.88 | Villa_courses/brick_orange_amsterdam + Villa_courses/brick_orange_amsterdam | 6.42 | 920 | 88.2 |
 | -5.65, 106.30, 3.59 | Villa/wood_varnished + Villa_courses/brick_pattern | 7.32 | 594 | 57.5 |
 | 7.60, 95.53, -0.48 | Villa/brick_orange_amsterdam + Villa_courses/brick_orange_amsterdam | 6.34 | 592 | 90 |
 | 7.60, 95.53, -0.29 | Villa/brick_orange_amsterdam + Villa_courses/brick_orange_amsterdam | 6.34 | 592 | 90 |
@@ -202,87 +193,87 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 7.60, 95.53, -2.44 | Villa/brick_orange_amsterdam + Villa_courses/brick_orange_amsterdam | 6.34 | 588 | 90 |
 | 7.60, 95.53, -2.63 | Villa/brick_orange_amsterdam + Villa_courses/brick_orange_amsterdam | 6.34 | 588 | 90 |
 | 0.25, 105.88, 8.44 | Villa/wood_varnished + Villa_courses/brick_pattern | 7.06 | 574 | 58 |
-| 5.30, 104.87, -1.08 | Villa/wood_varnished + Villa_courses/brick_pattern | 6.6 | 531 | 56 |
+| -7.00, 100.66, -4.69 | Villa_courses/brick_orange_amsterdam + Villa_courses/roof_tiles_flat_dark | 5.84 | 567 | 32.4 |
+| 5.29, 104.75, -1.70 | Villa/wood_varnished + Villa_courses/brick_pattern | 6.6 | 531 | 56 |
+| -5.74, 101.74, -9.87 | Villa_courses/brick_orange_amsterdam + Villa_courses/roof_tiles_flat_dark | 5.85 | 504 | 30.5 |
+| 2.75, 103.83, -1.96 | Villa/wood_varnished + Villa_courses/roof_tiles_flat_dark | 9.37 | 439 | 73.3 |
 | 2.85, 94.67, 8.45 | Villa_courses/brick_orange_amsterdam + Villa_courses/brick_orange_amsterdam | 8.1 | 427 | 90 |
 | -7.00, 94.77, -4.20 | Villa_courses/brick_orange_amsterdam + Villa_courses/brick_orange_amsterdam | 7.9 | 419 | 90 |
-| -7.00, 103.72, -0.30 | Villa/wood_varnished + Villa_courses/brick_pattern | 5.1 | 406 | 56 |
 | 5.24, 98.64, -0.19 | Villa/brick_orange_amsterdam + Villa/wood_varnished | 7.04 | 388 | 90 |
 | 5.40, 99.69, -4.46 | Villa_courses/brick_orange_amsterdam + Villa_courses/roof_tiles_flat_dark | 4.25 | 386 | 31.8 |
 | 5.36, 105.84, 3.30 | Villa/wood_varnished + Villa_courses/brick_orange_amsterdam | 5.88 | 381 | 32.5 |
 | -3.90, 98.81, 6.85 | Villa_courses/brick_orange_amsterdam + Villa_courses/brick_orange_amsterdam | 7.08 | 377 | 90 |
 | -2.47, 101.51, 7.19 | Villa/wood_varnished + Villa_courses/brick_orange_amsterdam | 7.25 | 376 | 32 |
+| -9.42, 101.58, -7.27 | Villa/wood_varnished + Villa_courses/brick_orange_amsterdam | 12.44 | 372 | 36.9 |
 | 5.38, 99.36, -4.45 | Villa/wood_varnished + Villa_courses/brick_orange_amsterdam | 6.78 | 366 | 32.5 |
 | -4.90, 95.51, 6.80 | Villa/brick_orange_amsterdam + Villa/wood_frame_white | 6.12 | 350 | 90 |
-| -2.62, 101.28, 7.22 | Villa/wood_varnished + Villa_courses/roof_tiles_flat_dark | 15.21 | 341 | 44.2 |
+| -3.73, 104.19, -6.91 | Villa/wood_varnished + Villa_courses/brick_orange_amsterdam | 5.61 | 350 | 36.8 |
+| -2.62, 101.28, 7.22 | Villa/wood_varnished + Villa_courses/roof_tiles_flat_dark | 15.21 | 340 | 44.2 |
+| 3.94, 101.58, -3.85 | Villa/wood_varnished + Villa_courses/brick_orange_amsterdam | 7.53 | 337 | 32.5 |
+| -4.68, 101.90, -8.30 | Villa/wood_varnished + Villa_courses/brick_orange_amsterdam | 8.43 | 334 | 42.2 |
 | 1.99, 95.64, 8.95 | Villa/brick_orange_amsterdam + Villa/wood_frame_white | 5.4 | 329 | 90 |
 | -1.19, 95.64, 8.95 | Villa/brick_orange_amsterdam + Villa/wood_frame_white | 5.4 | 328 | 90 |
 | -0.55, 95.64, 8.95 | Villa/brick_orange_amsterdam + Villa/wood_frame_white | 9.2 | 328 | 90 |
 | -7.55, 95.64, -3.60 | Villa/brick_orange_amsterdam + Villa/wood_frame_white | 5.15 | 327 | 90 |
 | -7.55, 95.64, 0.40 | Villa/brick_orange_amsterdam + Villa/wood_frame_white | 4.95 | 327 | 90 |
 | 5.70, 95.51, 6.67 | Villa/brick_orange_amsterdam + Villa/wood_frame_white | 5.15 | 325 | 90 |
-| 1.04, 106.23, 3.55 | Villa/wood_varnished + Villa_courses/roof_tiles_flat_dark | 13.65 | 325 | 58.6 |
-| -2.24, 102.24, 1.01 | Villa/wood_varnished + Villa_courses/roof_tiles_flat_dark | 13.69 | 325 | 58.4 |
+| 1.04, 106.23, 3.55 | Villa/wood_varnished + Villa_courses/roof_tiles_flat_dark | 13.65 | 324 | 58.6 |
+| -2.24, 102.24, 1.01 | Villa/wood_varnished + Villa_courses/roof_tiles_flat_dark | 13.69 | 324 | 58.4 |
+| -4.66, 102.34, -8.28 | Villa_courses/brick_orange_amsterdam + Villa_courses/roof_tiles_flat_dark | 4.45 | 323 | 26.6 |
 | -7.55, 95.64, -2.55 | Villa/brick_orange_amsterdam + Villa/wood_frame_white | 8.95 | 322 | 90 |
 | -9.42, 95.70, -7.15 | Villa/glass_window + Villa_courses/brick_orange_amsterdam | 3.46 | 317 | 90 |
 | -9.44, 95.70, -7.17 | Villa/glass_window + Villa_courses/brick_orange_amsterdam | 3.46 | 317 | 90 |
-| -7.61, 95.70, -4.30 | Villa/glass_window + Villa_courses/brick_orange_amsterdam | 3.47 | 316 | 90 |
-| -7.62, 95.70, -4.32 | Villa/glass_window + Villa_courses/brick_orange_amsterdam | 3.47 | 316 | 90 |
-| 6.22, 95.45, -4.72 | Villa/brick_orange_amsterdam + Villa/wood_varnished | 5.27 | 315 | 90 |
-| -7.92, 100.45, -4.80 | Villa/wood_varnished + Villa_courses/brick_orange_amsterdam | 5.83 | 314 | 90 |
-| 5.30, 99.83, -3.42 | Villa_courses/brick_orange_amsterdam + Villa_courses/roof_tiles_flat_dark | 4.45 | 314 | 31.8 |
-| -8.70, 100.45, -6.01 | Villa/wood_varnished + Villa_courses/brick_orange_amsterdam | 5.82 | 312 | 89.8 |
-| 5.19, 98.63, -0.19 | Villa/brick_orange_amsterdam + Villa/glass_leaded | 7.04 | 310 | 90 |
 
-(998 more in the JSON)
+(906 more in the JSON)
 
-## opening (info, 3360)
+## opening (info, 3859)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
+| 5.63, 103.89, 4.86 | Villa/brick_orange_amsterdam | 0 + -1 + 0 | 0.698 |
+| 5.63, 102.57, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.013 |
+| 5.63, 102.60, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.05 |
+| 5.63, 102.63, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.013 |
+| 5.63, 102.66, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.05 |
+| 5.63, 102.69, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.013 |
+| 5.63, 102.72, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.05 |
+| 5.63, 102.76, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.013 |
+| 5.63, 102.79, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.05 |
+| 5.63, 102.82, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.013 |
+| 5.63, 102.85, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.05 |
+| 5.63, 102.88, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.013 |
+| 5.63, 102.91, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.05 |
+| 5.63, 102.94, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.013 |
+| 5.63, 102.97, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.05 |
+| 5.63, 103.01, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.013 |
+| 5.63, 103.04, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.05 |
+| 5.63, 103.07, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.013 |
+| 5.63, 103.10, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.05 |
+| 5.63, 103.13, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.013 |
+| 5.63, 103.16, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.05 |
+| 5.63, 103.19, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.013 |
+| 5.63, 103.22, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.05 |
+| 5.63, 103.26, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.013 |
+| 5.63, 103.29, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.05 |
+| 5.63, 103.32, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.013 |
+| 5.63, 103.35, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.05 |
+| 5.63, 103.38, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.013 |
+| 5.63, 103.41, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.05 |
+| 5.63, 103.44, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.013 |
+| 5.63, 103.47, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.05 |
+| 5.63, 103.51, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.013 |
+| 5.63, 103.54, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.05 |
+| 5.63, 103.57, 2.45 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.013 |
+| 5.63, 103.58, 3.20 | Villa/brick_orange_amsterdam | 0 + -1 + 0 | 0.8 |
 | 5.71, 102.53, 2.41 | Villa/brick_orange_amsterdam | 0 + 0 + -1 | 0.086 |
-| -0.42, 102.90, 8.40 | Villa/brick_orange_amsterdam | -1 + 0 + 0 | 0.085 |
-| 1.74, 102.90, 8.40 | Villa/brick_orange_amsterdam | 1 + 0 + 0 | 0.085 |
-| -6.96, 102.28, -2.41 | Villa/brick_orange_amsterdam | 0 + 0 + -1 | 0.086 |
-| -6.96, 102.28, -0.94 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.086 |
-| -5.61, 102.65, 2.85 | Villa/brick_orange_amsterdam | 0 + 0 + -1 | 0.086 |
-| -5.61, 102.65, 4.81 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.086 |
-| 6.23, 94.14, -7.51 | Villa/brick_orange_amsterdam | 0.07 + 0 + -1 | 7.86 |
-| 2.26, 104.77, -7.78 | Villa/brick_orange_amsterdam | 0.07 + 0 + -1 | 7.86 |
-| 8.50, 94.93, 0.25 | Villa/brick_orange_amsterdam | 0 + 0 + -1 | 0.97 |
-| 7.63, 95.71, 0.25 | Villa/brick_orange_amsterdam | 0 + 0 + -1 | 0.97 |
-| 7.63, 94.93, 1.35 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.97 |
-| 8.50, 95.71, 1.35 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.97 |
-| 8.55, 94.93, 0.30 | Villa/brick_orange_amsterdam | 1 + 0 + 0 | 1.1 |
-| 8.55, 95.71, 0.30 | Villa/brick_orange_amsterdam | 1 + 0 + 0 | 1.1 |
-| 7.65, 95.61, 1.35 | Villa/brick_orange_amsterdam | 0 + 1 + 0 | 0.93 |
-| 8.48, 95.61, 0.25 | Villa/brick_orange_amsterdam | 0 + 1 + 0 | 0.93 |
-| 8.50, 94.93, -4.05 | Villa/brick_orange_amsterdam | 0 + 0 + -1 | 0.97 |
-| 7.63, 95.71, -4.05 | Villa/brick_orange_amsterdam | 0 + 0 + -1 | 0.97 |
-| 7.63, 94.93, -2.95 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.97 |
-| 8.50, 95.71, -2.95 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.97 |
-| 8.55, 94.93, -4.00 | Villa/brick_orange_amsterdam | 1 + 0 + 0 | 1.1 |
-| 8.55, 95.71, -4.00 | Villa/brick_orange_amsterdam | 1 + 0 + 0 | 1.1 |
-| 7.65, 95.61, -2.95 | Villa/brick_orange_amsterdam | 0 + 1 + 0 | 0.93 |
-| 8.48, 95.61, -4.05 | Villa/brick_orange_amsterdam | 0 + 1 + 0 | 0.93 |
-| -1.55, 94.75, 9.55 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 4.5 |
-| 2.85, 95.90, 9.55 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 4.5 |
-| 2.90, 94.75, 9.49 | Villa/brick_orange_amsterdam | 1 + 0 + 0 | 0.55 |
-| 2.90, 95.90, 9.49 | Villa/brick_orange_amsterdam | 1 + 0 + 0 | 0.55 |
-| -1.60, 94.75, 9.49 | Villa/brick_orange_amsterdam | -1 + 0 + 0 | 0.55 |
-| -1.60, 95.90, 9.49 | Villa/brick_orange_amsterdam | -1 + 0 + 0 | 0.55 |
-| -1.55, 95.80, 9.55 | Villa/brick_orange_amsterdam | 0 + 1 + 0 | 4.5 |
-| 2.85, 95.80, 9.00 | Villa/brick_orange_amsterdam | 0 + 1 + 0 | 4.5 |
-| -7.76, 94.86, -4.25 | Villa/brick_orange_amsterdam | 0 + 0 + -1 | 0.55 |
-| -7.66, 95.90, 0.95 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.55 |
-| -8.15, 94.86, -4.20 | Villa/brick_orange_amsterdam | -1 + 0 + 0 | 5.2 |
-| -8.15, 95.90, -3.70 | Villa/brick_orange_amsterdam | -1 + 0 + 0 | 5.2 |
-| -8.10, 95.80, 0.95 | Villa/brick_orange_amsterdam | 0 + 1 + 0 | 0.55 |
-| -7.76, 95.80, -4.25 | Villa/brick_orange_amsterdam | 0 + 1 + 0 | 0.55 |
-| -6.30, 95.90, 6.90 | Villa/brick_orange_amsterdam | 0 + 0 + 1 | 0.55 |
+| 5.18, 102.32, -0.55 | Villa/brick_orange_amsterdam | 0 + 0 + -1 | 0.013 |
+| 5.18, 102.35, -0.55 | Villa/brick_orange_amsterdam | 0 + 0 + -1 | 0.05 |
+| 5.18, 102.38, -0.55 | Villa/brick_orange_amsterdam | 0 + 0 + -1 | 0.013 |
+| 5.18, 102.41, -0.55 | Villa/brick_orange_amsterdam | 0 + 0 + -1 | 0.05 |
 
-(3320 more in the JSON)
+(3819 more in the JSON)
 
-## backtoback (info, 32)
+## backtoback (info, 147)
 
 | at | parts | area |
 |---|---|---|
@@ -300,8 +291,11 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -7.99, 100.45, -4.88 | Villa/wood_varnished + Villa_courses/brick_orange_amsterdam | 0.00091 |
 | -8.19, 100.45, -5.22 | Villa/wood_varnished + Villa_courses/brick_orange_amsterdam | 0.00595 |
 | -8.23, 100.45, -5.26 | Villa/wood_varnished + Villa_courses/brick_orange_amsterdam | 0.00251 |
+| -5.71, 101.57, -9.84 | Villa/wood_varnished + Villa_courses/brick_orange_amsterdam | 0.00094 |
+| -5.68, 101.63, -9.81 | Villa/wood_varnished + Villa_courses/brick_orange_amsterdam | 0.00195 |
+| -5.64, 101.69, -9.75 | Villa/wood_varnished + Villa_courses/brick_orange_amsterdam | 0.00009 |
+| -5.66, 101.69, -9.78 | Villa/wood_varnished + Villa_courses/brick_orange_amsterdam | 0.00294 |
 | -2.00, 100.81, -4.36 | Villa/wood_varnished + Villa/wood_varnished | 0.00006 |
-| -8.61, 103.29, -5.57 | Villa/wood_varnished + Villa/wood_varnished | 0.00038 |
 | -11.42, 95.40, -5.83 | Villa/metal_green_veranda + Villa/metal_green_veranda | 0.01479 |
 | -11.40, 95.57, -5.84 | Villa/metal_green_veranda + Villa/metal_green_veranda | 0.01501 |
 | -11.43, 95.64, -5.83 | Villa/metal_green_veranda + Villa/metal_green_veranda | 0.00028 |
@@ -318,6 +312,13 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 7.60, 95.45, -0.40 | Villa/stone_blue + Villa_courses/brick_orange_amsterdam | 0.00033 |
 | 7.59, 95.45, -2.30 | Villa/stone_blue + Villa_courses/brick_orange_amsterdam | 0.00034 |
 | 7.59, 95.45, -2.25 | Villa/stone_blue + Villa_courses/brick_orange_amsterdam | 0.00358 |
+| -5.73, 101.31, -9.87 | Villa_courses/brick_orange_amsterdam + Villa_courses/brick_orange_amsterdam | 0.00005 |
+| -5.73, 101.32, -9.87 | Villa_courses/brick_orange_amsterdam + Villa_courses/brick_orange_amsterdam | 0.00007 |
+| -5.73, 101.38, -9.87 | Villa_courses/brick_orange_amsterdam + Villa_courses/brick_orange_amsterdam | 0.00005 |
+| -5.73, 101.38, -9.87 | Villa_courses/brick_orange_amsterdam + Villa_courses/brick_orange_amsterdam | 0.00007 |
+| -5.73, 101.44, -9.87 | Villa_courses/brick_orange_amsterdam + Villa_courses/brick_orange_amsterdam | 0.00005 |
+
+(107 more in the JSON)
 
 
 Nodes: Villa, Villa_courses. Distances: {"Villa":70,"Villa_courses":70,"Villa_far":2000,"Villa_lod2":2000}. Quantum 0.133 mm. Offset 0,90,0.
