@@ -54,7 +54,7 @@ if (isMain) {
   const file = a.find((x) => x.endsWith(".glb"));
   if (!file) { console.log(fs.readFileSync(new URL(import.meta.url)).toString().split("\n").slice(1, 12).join("\n")); process.exit(2); }
   const range = Object.fromEntries((opt("--range") || "").split(",").filter(Boolean).map((s) => { const [k, v] = s.split("="); return [k, +v]; }));
-  const set0 = Object.fromEntries(a.flatMap((x, i) => (x === "--set" ? [a[i + 1].split("=")] : [])).map(([k, v]) => [k, k in DEFAULTS ? +v : v]));
+  const set0 = Object.fromEntries(a.flatMap((x, i) => (x === "--set" ? [a[i + 1].split("=")] : [])).map(([k, v]) => [k, v.startsWith("[") ? JSON.parse(v) : k in DEFAULTS ? +v : v]));
   const set = { ...set0, ...(opt("--ignore-below") ? { ignoreBelow: +opt("--ignore-below") } : {}) };
   const report = await auditGlb(file, {
     nodes: opt("--nodes")?.split(","), range, set,

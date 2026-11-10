@@ -50,13 +50,16 @@ export const DEFAULTS = {
   leakStep: 0.1,              // m between samples along open edges
   leakOffsets: [0.0015, 0.004, 0.012, 0.03],   // m beyond the edge
   leakNarrow: 0.03,           // a gap still open at this offset is an opening, not a slit
-  leakDeep: 0.1,              // m: a front face closer than this behind the gap closes it (the slate's deck, a wall)
+  leakDeep: 0.5,              // m: a front face closer than this behind the gap closes it: what shows through the slit is
+                              // the same building's shadowed masonry / slate (a slate joint shows the next course's butt one
+                              // gauge, 14.5 cm, up the slope), not the sky, the void or the interior (which escape)
   frontClear: 0.25,           // m of free space in front needed for a camera to look at the gap
   insideVotes: 3,             // a viewpoint whose rays (6 axes) hit >= this many back faces first is inside the model
   ignoreBelow: -Infinity,     // drop items below this height (Y): under the ground
   maxItemsPerCheck: 400,
   vertexSeparation: 0,        // 1: the pre-2026-11-10 separation (min vertex distance) instead of over the overlap
-  debugTris: 0,               // 1: coplanar / depth items carry both triangles (debugging a model)
+  debugTris: 0,
+  traceAt: null,              // [x, y, z] (scene coords): log the leak rays of the open edges there               // 1: coplanar / depth items carry both triangles (debugging a model)
 };
 const SEV = { coplanar: "block", depth: "block", crossing: "block", leak: "block", flipped: "block", streak: "block",
   near: "warn", sliver: "warn", winding: "warn", nonmanifold: "warn", tjunction: "warn", degenerate: "warn", seam: "info", opening: "info", backtoback: "info" };
@@ -434,10 +437,16 @@ export function auditParts(parts, options = {}) {
   let rays = 0;
   const AX = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
   /** a point is inside the model when most axis rays first hit a back face (the model's shell seen from within) */
+  // ... or it is ENCLOSED: every ray but the downward one hits something (the ground is not part of a hero) and at least
+  // two of them hit back faces (the sacristy's roof void: the roof's underside and the walls from within, the choir
+  // wall's outer face across it; round 3 found ~500 "leaks" seen from there)
   const inside = (p) => {
-    let back = 0;
-    for (const d of AX) { rays++; const h = rayCast(T, bvh, p, d, 1e9); if (h && dot(Nf(h.tri), d) > 0) back++; }
-    return back >= O.insideVotes;
+    let back = 0, hit = 0;
+    for (const d of AX) {
+      rays++; const h = rayCast(T, bvh, p, d, 1e9);
+      if (h) { if (d[1] >= 0) hit++; if (dot(Nf(h.tri), d) > 0) back++; }
+    }
+    return back >= O.insideVotes || (hit === 5 && back >= 2);
   };
   for (const [a, b, tri] of openEdges) {
     if (onOpen.has(`${Math.min(a, b)},${Math.max(a, b)}`)) continue;     // a T-junction: the neighbour continues the surface
@@ -456,19 +465,23 @@ export function auditParts(parts, options = {}) {
         const q = [P[0] + out[0] * o, P[1] + out[1] * o, P[2] + out[2] * o];
         rays += 2;
         const fr = rayCast(T, bvh, [q[0] + n[0] * 1e-4, q[1] + n[1] * 1e-4, q[2] + n[2] * 1e-4], n, O.frontClear);
+        if (O.traceAt) (O._tr ??= []).push(`q=${q.map((v) => v.toFixed(4))} fr=${fr ? fr.t.toFixed(3) + "/" + partName(fr.tri) : "-"}`);
         if (fr) return "covered";                                   // something right in front: no camera sees this gap
-        if (inside([q[0] + n[0] * 0.05, q[1] + n[1] * 0.05, q[2] + n[2] * 0.05])) return "covered";   // the viewpoint is inside a wall / the shell
+        if (inside([q[0] + n[0] * 0.05, q[1] + n[1] * 0.05, q[2] + n[2] * 0.05])) return "inside";   // the viewpoint is inside a wall / the shell
         // what the renderer shows through the gap: the first FRONT face along the ray (back faces are culled, so the ray
         // goes on through them). Through = nothing, or a surface farther than leakDeep behind the edge (the sky, the
         // interior, the void inside a wall). A surface right behind (a slate's joint shows the slate / deck 1-2 cm below)
         // is closed. (Before 2026-11-10 the first hit being a BACK face counted as see-through: every slate joint whose ray
         // grazed under the next slate's single-sided plate was reported although the deck is right there.)
         const bk = rayCast(T, bvh, [q[0] - n[0] * 1e-4, q[1] - n[1] * 1e-4, q[2] - n[2] * 1e-4], n.map((v) => -v), 1e9, -1, true);
+        if (O.traceAt) O._tr.push(`bk=${bk ? bk.t.toFixed(3) + "/" + partName(bk.tri) : "-"}`);
         if (!bk) return "through";
-        return bk.t > O.leakDeep ? "through" : "closed";
+        return bk.t > O.leakDeep ? "through" : "closed@" + bk.t.toFixed(3);
       });
+      if (O.traceAt && Math.hypot(P[0] - O.traceAt[0], P[1] - O.traceAt[1], P[2] - O.traceAt[2]) < 0.01) console.log("[trace leak]", P.map((v) => v.toFixed(4)).join(","), "n", n.map((v) => v.toFixed(2)).join(","), "out", out.map((v) => v.toFixed(2)).join(","), res.join(" "), (O._tr || []).join(" ; "));
+      if (O.traceAt) O._tr = [];
       if (res[0] !== "through") continue;
-      const narrowAt = O.leakOffsets.findIndex((o, k) => k > 0 && res[k] !== "through" && o <= O.leakNarrow);
+      const narrowAt = O.leakOffsets.findIndex((o, k) => k > 0 && res[k] !== "through" && o <= O.leakNarrow);   // closed / covered / inside
       const key = `${tri}`;
       if (leakAt.has(key)) continue;
       leakAt.set(key, 1);

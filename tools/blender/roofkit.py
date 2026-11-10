@@ -102,12 +102,32 @@ def slate_poly(origin, X, Y, poly, mat, code=0, spec=NATURAL, seed=1, lift=0.0, 
     # parapet, coping, hip or the next facet's slates they meet (round 3: coplanar with the parapet backs, the shoulder
     # copings' undersides, each other along the apse hips); the hip rolls / ridge cap / copings cover the strip
     eave_edges = {i for i in range(len(ext)) if ext[i][1] < min(ys) - spec["eave_over"] + 1e-6 and ext[(i + 1) % len(ext)][1] < min(ys) - spec["eave_over"] + 1e-6}
-    if inset: ext = _inset(ext, inset, eave_edges)
+    ext0 = ext
+    if inset: ext = _inset(ext0, inset, eave_edges)
+    # odd courses stop 3.5 mm shorter at the borders: the border faces of two courses (which overlap by the head) are
+    # never in one plane
+    ext_odd = _inset(ext0, (inset or 0.0) + 0.0035, eave_edges)
     n = 0; row = 0
     sv_seed, sv_vao = K.SEED, K.VAO
     K.VAO = True
+    # the UNDER-EAVE strip (a real eave is doubled): a 6 mm plate under the eave course's overhang, from the deck's edge
+    # just past the slates' butts: looking up at the eave one sees it through the eave course's joints, not the sky
+    ye = min(ys); yo = ye - spec["eave_over"] - spec["butt_jit"] - 0.008      # 8-16 mm past the butts: no coplanar fronts
+    ext_s = [(p[0], yo if p[1] < min(ys) + 1e-6 else p[1]) for p in poly]           # the facet grown to the strip's front
+    if inset: ext_s = _inset(ext_s, inset + 0.0055, {i for i in range(len(ext_s)) if ext_s[i][1] <= yo + 1e-6 and ext_s[(i + 1) % len(ext_s)][1] <= yo + 1e-6})
+    strip = _clip_poly(_ccw([(min(xs) - 1, yo), (max(xs) + 1, yo), (max(xs) + 1, ye), (min(xs) - 1, ye)]), ext_s)
+    if len(strip) >= 3:
+        K.SEED = 0.0; K.B.new_group()
+        top_s = [origin + X * px + Y * py - N * 0.002 for px, py in strip]          # 2 mm under the deck's plane
+        bot_s = [p - N * 0.006 for p in top_s]
+        K.B.face(top_s, mat, code); K.B.face(list(reversed(bot_s)), mat, code)
+        for i in range(len(strip)):
+            a_, b_ = top_s[i], top_s[(i + 1) % len(strip)]
+            if abs(strip[i][1] - ye) < 1e-6 and abs(strip[(i + 1) % len(strip)][1] - ye) < 1e-6: continue   # against the deck's edge
+            K.B.face([b_, a_, bot_s[i], bot_s[(i + 1) % len(strip)]], mat, code)
     while y < max(ys) - 0.02:
         off = (0.5 * W if row % 2 else 0.0) + rnd.uniform(-0.03, 0.03)
+        ext_r = ext_odd if row % 2 else ext
         x = min(xs) - W + off
         while x < max(xs):
             w = W * (1 + rnd.uniform(-spec["w_jit"], spec["w_jit"]))
@@ -122,7 +142,7 @@ def slate_poly(origin, X, Y, poly, mat, code=0, spec=NATURAL, seed=1, lift=0.0, 
                 c = rnd.uniform(0.012, 0.035)
                 rect = [(x0, yb + c), (x0 + c, yb), (x1, yb), (x1, yt), (x0, yt)] if rnd.random() < 0.5 else [(x0, yb), (x1 - c, yb), (x1, yb + c), (x1, yt), (x0, yt)]
             rect = [(cx + (px - cx) * ca - (py - cy) * sa, cy + (px - cx) * sa + (py - cy) * ca) for px, py in rect]
-            P = _clip_poly(_ccw(rect), ext)
+            P = _clip_poly(_ccw(rect), ext_r)
             x += w
             if len(P) < 3: continue
             area = abs(sum(P[i][0] * P[(i + 1) % len(P)][1] - P[(i + 1) % len(P)][0] * P[i][1] for i in range(len(P)))) / 2
@@ -135,10 +155,6 @@ def slate_poly(origin, X, Y, poly, mat, code=0, spec=NATURAL, seed=1, lift=0.0, 
             K.SEED = 0.02 + 0.98 * rnd.random()
             K.B.new_group()
             K.B.face(top, mat, code)
-            # the EAVE course (and slates cut by a verge / hip) overhang the deck: their underside is seen from below
-            # (single-sided, it would be culled = see-through), so they get one
-            if row == 0 or any(_on_border(((P[i][0] + P[(i + 1) % len(P)][0]) / 2, (P[i][1] + P[(i + 1) % len(P)][1]) / 2), ext) and abs(P[(i + 1) % len(P)][1] - P[i][1]) > 0.01 for i in range(len(P))):
-                K.B.face([q - N * th for q in reversed(top)], mat, code)
             # edges: the butt (and a chipped corner) drops one thickness = the course's shadow line; so do the edges cut
             # by the facet's border (verges, hips: seen side-on); the side joints (4 mm, only seen at grazing angles: the
             # slate beneath shows through them) take no faces
@@ -146,13 +162,13 @@ def slate_poly(origin, X, Y, poly, mat, code=0, spec=NATURAL, seed=1, lift=0.0, 
                 p, q = P[i], P[(i + 1) % len(P)]
                 if min(p[1], q[1]) > yb + G + 0.004: continue                  # under the next course: hidden
                 dx, dy = q[0] - p[0], q[1] - p[1]
-                if abs(dy) > 3 * abs(dx) and not _on_border(((p[0] + q[0]) / 2, (p[1] + q[1]) / 2), ext): continue
+                if abs(dy) > 3 * abs(dx) and not _on_border(((p[0] + q[0]) / 2, (p[1] + q[1]) / 2), ext_r): continue
                 a_, b_ = top[i], top[(i + 1) % len(P)]
-                # the drop: inner butts go down INTO the deck (0.5 mm below its top), so the space under the slates is
-                # closed (no slit under a butt to see the sky through at grazing angles); the eave course and border cuts
-                # drop one thickness and close on their own underside
-                dz = th if (row == 0 or _on_border(((p[0] + q[0]) / 2, (p[1] + q[1]) / 2), ext)) else hgt(yb) + 0.0005
-                K.B.face([b_, a_, a_ - N * dz, b_ - N * dz], mat, code)
+                # the drop goes down INTO the deck (3 mm below its plane; over the eave overhang into the under-eave
+                # strip): the space under the slates is closed, no slit under a butt to see the sky through at grazing
+                # angles, no single-sided underside needed
+                da, db = origin + X * p[0] + Y * p[1] - N * 0.003, origin + X * q[0] + Y * q[1] - N * 0.003
+                K.B.face([b_, a_, da, db], mat, code)
             n += 1
         y += G; row += 1
     K.SEED, K.VAO = sv_seed, sv_vao

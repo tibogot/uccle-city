@@ -16,4 +16,5 @@ models/townhall/townhall_lod1_bake.bin
 models/stalle/_before/
 models/stalle/statue_raw.json
 models/stalle/audit/*.json
+!models/stalle/audit/*.allow.json
 models/stalle/stalle.audit.raw.glb
