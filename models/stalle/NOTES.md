@@ -163,6 +163,22 @@ justified, audit/stalle.allow.json), far 73 -> 0, packed LOD1 1,506 -> 0 (LOD1 i
   stepped capitals); the far variant (LOD1/2) keeps the statue (900 tris, faceted) and the west window's tracery: no
   dark hole in the 66-94 m hand-over. City (`?stalle=1`, D5): approaches checked while moving (trees hide the chapel
   from most directions; with trees off the 112-75 m cross-fade shows no pop). Images: docs/stalle/round3/*3b*.
+- Round 4 (coordinator review vs springer_AFTER_3b / side_round3b_west_c00): interior: the stair-stepped line on the
+  capital bells was the albedo's per-face UV cells (it stayed in the light-only view after 24-pass smoothing: not the
+  shadow), stone_white indoors now tones from world position; abacus = moulded octagon (fillet, cove, cavetto, flat
+  group, sharp facets), bead under it lathed at 64, figure heads 24; voussoir rings = the intrados offset along its
+  normal (one-sided tangents at the pointed apex), 11 stones, 1.5 mm joints, flush backing on the extrados polyline and
+  the arcade wall cut at it (the dark "hairs" were wall lightmap texels under the ring); chancel imposts swept ogee;
+  lightmap: texels darker than 30 % of their 7x7 median lifted. Exterior: rubble courses wander (+-4 cm), vertical
+  joints lean, deeper softer mortar, rain streaks; window head ring of 2 x 7 radial rubble voussoirs and a 13-stone
+  flush segmental relieving course over the door (single stones, COLOR_0.b seed, 4 mm proud); door leaves 15-19.5 cm
+  back (was 37); plinth 3.5 cm (was 7). Flicker west front 5 m 291 ppm (statue edges only), 40 m 31 ppm.
+- Triangles round 4: LOD0 33,073 + slates 39,507 + door 188; far 8,197; interior 115,259. stalle.glb 2.47 MB,
+  interior.glb 3.24 MB. Audits: exterior 0 blocking (LOD0 + far; packed LOD0 4 gutter slivers, report-only), interior 0
+  before the pack (packed 4, quantization, report-only).
+- GPU round 3 -> round 4 (lab bench, median of 3, + = the chapel): c00 L0 +0.39 -> +0.00, L1 +0.26 -> +0.07, L2 -0.13
+  -> +0.07; c05 L0 +0.72 -> +0.13, L1 +0.46 -> -0.20, L2 +0.46 -> -0.52; overview +0.07 -> +0.33 / +0.66 (timer steps
+  0.065 ms, noise +-0.3 ms: no measurable change). Images: docs/stalle/round3/*_r4*.
 - Images: docs/stalle/round3/ (flicker heat maps, frame strips, grazing before / after); side-by-sides
   docs/stalle/side_round3_*.jpg (git-ignored: they hold the photos).
 

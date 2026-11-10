@@ -25,6 +25,8 @@ Round-2 assets for A/B: models/stalle/_before/ (git-ignored) and a detached work
 
 ## Round 3b done (coordinator review): west front vs c00, slate lichen, interior corbels / imposts / capitals light, city check, far statue + tracery. See NOTES.md.
 
+## Round 4 done (coordinator review): capital stepped line (albedo UV cells), moulded abacus, flush voussoir rings, interior grazing tour, rubble wander, window ring + door relieving course, door leaves near flush, plinth 3.5 cm. See NOTES.md.
+
 ## Open (for the owner / next round)
 - Statue (owner to choose: better scripted approach or a CC0 / CC-BY museum scan): clearly better than round 2's lathe figure, still not AAA: soft face, blobby Child, hair waves read as curls,
   the Child's legs stand off in side view.
@@ -37,3 +39,5 @@ Round-2 assets for A/B: models/stalle/_before/ (git-ignored) and a detached work
 - Lab GPU numbers are noisy on this laptop (+-0.3 ms); another agent's tabs came and went during the runs.
 - West front: the photo's door leaves sit nearly flush with the wall (model: a 37 cm reveal); the window's ring of radial rubble voussoirs and the soldier course over the door are not modelled; the projecting plinth is stronger than in c00.
 - LOD1 (far variant): the house's windows turn into dark holes; the chapel's oculi too (window tracery fixed).
+- Round 4 leftovers: aisle-wall lightmap still slightly mottled near the lepers' window (light-only view); a thin bright
+  edge on one arch extrados in one view; statue edges flicker at 5 m (291 ppm, statue untouched by decision).
