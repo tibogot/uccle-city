@@ -17,6 +17,10 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 // measurement below (strideSpeed) reads ~7 % low on the run (its touch-down / lift-off frames), it is the fallback
 const MODULAR_MEN_STRIDE = { walk: 1.44, run: 3.29 };
 export const CHARACTERS = {
+  // Mixamo Y Bot with its own Mixamo clips (ONE skeleton: no retargeting), the locomotion system (locomotion.js) and the
+  // light leg IK (legIK.js). Adobe's terms: models/characters/ybot*.glb are local only (git-ignored, CREDITS.md):
+  // without them the loader falls back to the Hoodie.
+  ybot: { file: "ybot.glb", clips: "ybot_clips.glb", meta: "ybot.json", label: "Y Bot (Mixamo)", system: "loco", fallback: "hoodie" },
   hoodie: { file: "hoodie.glb", label: "Hoodie (Quaternius, CC0)", stride: MODULAR_MEN_STRIDE },
   casual: { file: "casual.glb", label: "Casual (Quaternius, CC0)", stride: MODULAR_MEN_STRIDE },
 };
@@ -43,8 +47,29 @@ async function loadClips() {
   } catch (e) { console.warn("character clips:", e.message); return null; }
 }
 
+/** The Mixamo set: the model, its in-place clips and their metadata (tools/characters/mixamoClips.mjs). */
+async function loadLoco(name, def) {
+  const base = new URL("../../models/characters/", import.meta.url).href;
+  const [gltf, clips, meta] = await Promise.all([new GLTFLoader().loadAsync(base + def.file), new GLTFLoader().loadAsync(base + def.clips), fetch(base + def.meta).then((r) => { if (!r.ok) throw new Error(def.meta + " " + r.status); return r.json(); })]);
+  gltf.animations = clips.animations;
+  const t0 = performance.now();
+  const tris = mergeSkinned(gltf.scene);
+  const M = (n) => `mixamorig${n}`;           // (GLTFLoader drops the ":" of "mixamorig:Hips")
+  const leg = (s) => ({ upper: M(s + "UpLeg"), lower: M(s + "Leg"), foot: M(s + "Foot"), toe: M(s + "ToeBase"), tip: M(s + "Toe_End") });
+  const walk = meta.clips.Walk?.speed || 1.7, run = meta.clips.Run?.speed || 4.5;
+  return {
+    gltf,
+    opts: { system: "loco", meta, forward: "+z", walkSpeed: walk, runSpeed: run, rig: { left: leg("Left"), right: leg("Right"), hips: M("Hips"), spine: [M("Spine"), M("Spine1"), M("Spine2")] } },
+    info: { name, label: def.label, tris, speeds: { walk, run }, mergeMs: +(performance.now() - t0).toFixed(1), clips: Object.keys(meta.clips) },
+  };
+}
+
 export async function loadCharacter(name = "hoodie", { height = 1.76 } = {}) {
-  const def = CHARACTERS[name] || CHARACTERS.hoodie;
+  let def = CHARACTERS[name] || CHARACTERS.hoodie;
+  if (def.system === "loco") {
+    try { return await loadLoco(name, def); }
+    catch (e) { console.warn(`character ${name}: ${e.message}; falling back to ${def.fallback}`); name = def.fallback; def = CHARACTERS[name]; }
+  }
   const [gltf, extra] = await Promise.all([new GLTFLoader().loadAsync(new URL(`../../models/characters/${def.file}`, import.meta.url).href), loadClips()]);
   // the retargeted clips join the character's own; a role a clip fills replaces the held-pose stand-in
   const clips = { ...CLIPS }, clipMeta = {};

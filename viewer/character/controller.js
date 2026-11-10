@@ -55,7 +55,7 @@ export class CharacterController {
     // arguments of calls it does not inline: the hot path must not allocate)
     this.F = new Float64Array(12);           // 0 dt, 1 snap distance, 2-9 step-up: sx sy sz svx svz wantX wantZ got
     this.dt = 1 / 120;
-    this.input = { x: 0, z: 0, run: false, jump: false };        // world-space wanted direction (|x,z| <= 1)
+    this.input = { x: 0, z: 0, run: false, jump: false, drive: false, dvx: 0, dvz: 0 };        // world-space wanted direction (|x,z| <= 1)
   }
 
   get radius() { return this.p.radius; }
@@ -85,8 +85,10 @@ export class CharacterController {
     let ix = inp.x, iz = inp.z;
     const il = Math.sqrt(ix * ix + iz * iz);
     if (il > 1) { ix /= il; iz /= il; }
-    const speed = inp.run ? p.runSpeed : p.walkSpeed, tx = ix * speed, tz = iz * speed;
-    const rate = wasGrounded ? (il > 0.01 ? p.groundAccel : p.groundDecel) : p.airAccel;
+    // ROOT MOTION (the body's start / stop / turn clips, locomotion.js): the wanted ground velocity comes from the
+    // clip (inp.drive, inp.dvx / dvz in m/s), followed closely; the input direction still turns the facing
+    const speed = inp.run ? p.runSpeed : p.walkSpeed, tx = inp.drive ? inp.dvx : ix * speed, tz = inp.drive ? inp.dvz : iz * speed;
+    const rate = wasGrounded ? (inp.drive ? 60 : il > 0.01 ? p.groundAccel : p.groundDecel) : p.airAccel;
     const ddx = tx - v[0], ddz = tz - v[2], dl = Math.sqrt(ddx * ddx + ddz * ddz), maxd = rate * dt;
     if (dl <= maxd) { v[0] = tx; v[2] = tz; } else { v[0] += ddx / dl * maxd; v[2] += ddz / dl * maxd; }
     // 2. jump, gravity

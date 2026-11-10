@@ -24,6 +24,7 @@ import { MODELS as FURNITURE } from "../viewer/furniture.js";
 import { CONTROLLER_DEFAULTS } from "../viewer/character/controller.js";
 import { CAMERA_DEFAULTS } from "../viewer/character/camera.js";
 import { FootProbe } from "./footProbe.js";
+import { stripSession, FootTraces, poseRun } from "./frameStrip.js";
 
 const qp = new URLSearchParams(location.search);
 const $info = document.getElementById("info"), $notes = document.getElementById("notes");
@@ -144,6 +145,17 @@ label("B · stairs 17 / 21 cm", 12.9, 2.4, 3);
   add(rampGeo(deg, deg > 40 ? 2 : 4, 2, 2), deg > 50 ? M.warn : M.accent, 8, Y0, z);
   label(`C · ramp ${deg}°`, 9, 0.5, z);
 });
+
+// I. stair flights of three riser heights, each UP then a 2 m landing then DOWN (the same flight): 12 cm (tread 32),
+// 15 cm (tread 30), 19 cm (tread 27); 6 steps each way, 1.6 m wide, along +x from x = 22
+const FLIGHTS = [[0.12, 0.32, 4], [0.15, 0.30, 8], [0.19, 0.27, 12]];
+for (const [r, t, z] of FLIGHTS) {
+  const n = 6, X0 = 22, top = n * r;
+  add(stairsGeo(n, r, t, 1.6), M.concrete, X0, Y0, z);
+  box(X0 + n * t, -0.02, z - 0.8, X0 + n * t + 2, top, z + 0.8, M.stone);
+  add(stairsGeo(n, r, t, 1.6), M.concrete, X0 + 2 * n * t + 2, Y0, z, Math.PI);
+  label(`I · stairs ${Math.round(r * 100)} cm / ${Math.round(t * 100)} cm, up + down`, X0 + n * t + 1, top + 0.7, z);
+}
 
 // D. walls: a 1.2 m corridor with a 0.9 m door in a cross wall; a wall with a 0.5 m (blocked) and a 0.65 m gap; an acute corner
 box(-14.8, -0.02, 4, -14.6, 2.5, 16, M.plaster);       // corridor west wall
@@ -283,6 +295,7 @@ if (qp.get("model")) {
 // scripted walks over each surface (labs/footProbe.js): [x, z, yaw] start (height found with a ray), direction,
 // seconds, run. Measured at simulated 30 / 60 / 144 fps, or played live with the foot cameras.
 const probe = new FootProbe(tp, world);
+const traces = new FootTraces(scene);
 const at = (x, z, yaw = 0, from = 3) => { const t = world.ray(x, Y0 + from, z, 0, -1, 0, from + 20); return [x, Math.max(t < Infinity ? Y0 + from - t : -Infinity, groundH(x, z)) + 0.02, z, yaw]; };
 const E = Math.PI / 2, W = -Math.PI / 2, N = Math.PI;      // facing +x, -x, -z
 const SCEN = {
@@ -297,6 +310,12 @@ const SCEN = {
   "stairs up 17 run": { start: at(6.5, 3, E), dir: [1, 0], secs: 2.2, run: true },
   "stairs down 21 walk": { start: at(12.5, 3, E), dir: [1, 0], secs: 4.5 },
   "stairs down 21 run": { start: at(12.5, 3, E), dir: [1, 0], secs: 2.4, run: true },
+  ...Object.fromEntries(FLIGHTS.flatMap(([r, t, z]) => {
+    const cm = Math.round(r * 100), n = 6, X0 = 22, len = 2 * n * t + 2;
+    return [[`stairs ${cm} up+down walk`, { start: at(X0 - 1.6, z, E), dir: [1, 0], secs: 11, riser: r }],
+      [`stairs ${cm} up+down run`, { start: at(X0 - 2.5, z, E), dir: [1, 0], secs: 4.2, run: true, riser: r }],
+      [`stairs ${cm} down walk`, { start: at(X0 + n * t + 1.2, z, E, 2), dir: [1, 0], secs: 6.5, riser: r }]];
+  })),
   "ramp 15 up": { start: at(6, 8, E), dir: [1, 0], secs: 4.5 },
   "ramp 15 down": { start: at(13.5, 8, W), dir: [-1, 0], secs: 4.5 },
   "ramp 30 up": { start: at(6, 11, E), dir: [1, 0], secs: 4.5 },
@@ -343,7 +362,7 @@ const S = {
   debug: tp.debug.visible, dContacts: true, dRays: true, dCapsule: true,
   time: preset, hour: lighting.hour, post: qp.get("fx") !== "0",
   perf: "", ctlms: "", bench: "—", tests: "—", state: "", model: "capsule",
-  char: CHARACTERS[qp.get("char")] || qp.get("char") === "capsule" ? qp.get("char") : "hoodie", footIK: qp.get("ik") !== "0", ik: "",
+  char: CHARACTERS[qp.get("char")] || qp.get("char") === "capsule" ? qp.get("char") : "ybot", footIK: qp.get("ik") !== "0", ik: "",
 };
 async function setCharacter(name) {
   S.model = "loading…";
@@ -353,7 +372,7 @@ async function setCharacter(name) {
     console.log("[capsule lab] character", info);
   } catch (e) { console.warn(e); S.model = "failed: " + e.message; }
 }
-const ui = new Panel({ title: "Capsule Lab" });
+const ui = new Panel({ title: "Character Lab" });
 const fs = ui.addFolder("Stations");
 fs.add(S, "station", Object.keys(STATIONS)).name("go to").onChange(goStation);
 fs.add({ go: () => goStation(S.station) }, "go").name("reset here (R)");
@@ -380,6 +399,29 @@ fa.add(S, "loop").name("loop it");
 fa.add({ go: () => { if (!probe.feet) probe.setup(); probe.play(SCEN[S.scen], S.loop); } }, "go").name("play (autopilot)");
 fa.add({ go: () => { probe.stop(); goStation(S.station); } }, "go").name("stop");
 fa.add({ go: () => audit() }, "go").name("measure all (30/60/144 fps)");
+S.traces = qp.get("traces") === "1"; traces.visible = S.traces;
+fa.add(S, "traces").name("foot traces (heel, toe)").onChange((v) => { if (!probe.feet) probe.setup(); traces.visible = v; });
+const fst = ui.addFolder("Frame strip");
+S.stripFps = "60"; S.stripFrames = 36; S.stripFrom = 1; S.stripCams = "feet side + body side";
+fst.add(S, "stripFps", ["60", "120", "240"]).name("simulated fps (240 = 4x slow)");
+fst.add(S, "stripFrom", 0, 8, 0.05).name("from (s)");
+fst.add(S, "stripFrames", 8, 96, 1).name("frames");
+fst.add(S, "stripCams", ["feet side", "feet 3/4", "body side", "feet side + body side", "feet 3/4 + body 3/4"]).name("cameras");
+fst.add({ go: async () => {
+  // (in the page the presented canvas is copied: best effort; the screenshot driver tools/characters/strip.mjs is exact)
+  const s = lab.stripSession({ scen: S.scen, fps: +S.stripFps, from: S.stripFrom, frames: S.stripFrames, cams: S.stripCams.split(" + ") });
+  while (s.next()) for (let ci = 0; ci < s.cams.length; ci++) {
+    s.view(ci);
+    const R = s.region(), dpr = renderer.domElement.width / renderer.domElement.getBoundingClientRect().width, c = document.createElement("canvas");
+    c.width = s.W; c.height = s.H;
+    c.getContext("2d").drawImage(renderer.domElement, R.x * dpr, R.y * dpr, R.width * dpr, R.height * dpr, 0, 0, s.W, s.H);
+    await s.add(ci, c.toDataURL());
+  }
+  const r = s.finish(); goStation(S.station);
+  let el = document.getElementById("strip");
+  if (!el) { el = document.createElement("div"); el.id = "strip"; el.style.cssText = "position:fixed;inset:20px;z-index:5;overflow:auto;background:#111;border-radius:8px"; el.onclick = () => el.remove(); document.body.append(el); }
+  el.innerHTML = `<img src="${r.url}" style="max-width:none"><pre style="color:#ddd;padding:8px">${r.flagged.length} flagged frames\n${r.flagged.join("\n")}</pre>`;
+} }, "go").name("record (scripted walk above)");
 const fm = ui.addFolder("Movement");
 fm.add(C, "walkSpeed", 0.5, 4, 0.05).name("walk (m/s)");
 fm.add(C, "runSpeed", 2, 10, 0.1).name("run (m/s)");
@@ -517,7 +559,7 @@ function runTests() {
   run("1.0 m block: running jump fails", [5.75, Y0, 18], [0, 1], 2, (r) => r.z < 22 && r.y < 0.01, { run: true, jumpAt: 50 });
   c.p.walkSpeed = keep[0]; c.p.runSpeed = keep[1];
   // the feet (a character with foot IK in the slot): scripted walks measured at 60 fps (labs/footProbe.js)
-  if (tp.body.footIK && (probe.feet || (goStation("0 start"), (() => { for (let i = 0; i < 40; i++) tp.update(1 / 60); return probe.setup(); })()))) {
+  if ((tp.body.footIK || tp.body.legIK) && (probe.feet || (goStation("0 start"), (() => { for (let i = 0; i < 40; i++) tp.update(1 / 60); return probe.setup(); })()))) {
     const foot = (name, sc, check, fmt) => {
       const m = probe.simulate(SCEN[sc], 60), ok = check(m);
       results.push(`${ok ? "PASS" : "FAIL"}  ${name.padEnd(34)} ${fmt(m)}`);
@@ -582,17 +624,29 @@ function sampleGpu() {
   renderer.resolveTimestampsAsync("render").then((ms) => { if (typeof ms === "number" && ms > 0) gpu.avg = gpu.avg ? gpu.avg * 0.9 + ms * 0.1 : ms; })
     .catch(() => {}).finally(() => { gpu.pending = false; });
 }
-window.lab = { renderer, scene, camera, tp, world, triBVH, prisms, terrain, lighting, S, STATIONS, goStation, runTests, bench, groundH, Y0, gpu, probe, SCEN, audit };
+const lab = window.lab = { renderer, scene, camera, tp, world, triBVH, prisms, terrain, lighting, S, STATIONS, goStation, runTests, bench, groundH, Y0, gpu, probe, SCEN, audit, traces, pause: false };
+/** A frame-strip session (labs/frameStrip.js), stepped by the screenshot driver tools/characters/strip.mjs. */
+lab.stripSession = (o) => (lab._strip = stripSession(lab, o));
+/** Pose checks over whole scripted walks (every frame): { name: { counts, worst, frames, flagged } }. */
+lab.poseRun = (names = Object.keys(SCEN), fps = 60) => { const out = {}; for (const n of names) out[n] = poseRun(lab, n, fps); goStation(S.station); return out; };
 if (qp.get("play") && SCEN[qp.get("play")]) { probe.setup(); probe.play(SCEN[qp.get("play")], true); }
 
 // ------------------------------------------------------------------------------------------------ loop
 let last = performance.now(), frames = 0, fpsAcc = 0, fpsN = 0, fps = 0;
 const focus = new THREE.Vector3(), v3 = new THREE.Vector3(), v4 = new THREE.Vector3(), fwdV = new THREE.Vector3();
+function renderFrame() {
+  focus.set(tp.x, tp.y, tp.z);
+  lighting.update(camera.position.y, Y0, focus, 40);
+  if (S.post) pipe.render(hazeHook); else renderer.render(scene, camera);
+}
+lab.render = renderFrame;
 renderer.setAnimationLoop(() => {
   const now = performance.now(), dt = Math.min((now - last) / 1000, 0.1); last = now;
+  if (lab.pause) return;                   // (a frame strip is stepping the frames itself)
   fpsAcc += dt; fpsN++; if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
   tp.update(dt * S.slowmo);
   probe.camera(camera, dt);
+  traces.update(probe, tp.body.legIK || tp.body.footIK);
   focus.set(tp.x, tp.y, tp.z);
   lighting.update(camera.position.y, Y0, focus, 40);
   if (S.post) pipe.render(hazeHook); else renderer.render(scene, camera);
@@ -617,8 +671,8 @@ renderer.setAnimationLoop(() => {
   if (++frames % 10 === 1) {
     const c = tp.ctl, P = tp.perf, r = renderer.info.render;
     S.ctlms = `${P.ms.toFixed(3)} ms (max ${P.maxMs.toFixed(3)}) · phys ${P.physMs.toFixed(3)} · cam ${P.camMs.toFixed(3)} · anim+IK ${P.animMs.toFixed(3)}`;
-    const ik = tp.body.footIK;
-    S.ik = ik ? `w ${ik.weight.toFixed(2)} · pelvis ${(ik.pelvis * 100).toFixed(1)} cm · L ${(ik.legs[0].off * 100).toFixed(1)} R ${(ik.legs[1].off * 100).toFixed(1)} cm · ${(tp.body.ikMs || 0).toFixed(3)} ms` : "—";
+    const ik = tp.body.footIK || tp.body.legIK, lo = tp.body.loco;
+    S.ik = lo ? `${lo.mode} · w ${ik.weight.toFixed(2)} · pelvis ${(ik.pelvis * 100).toFixed(1)} cm · L ${(ik.legs[0].off * 100).toFixed(1)}${ik.legs[0].planted ? "▼" : "△"} R ${(ik.legs[1].off * 100).toFixed(1)}${ik.legs[1].planted ? "▼" : "△"} cm · stairs ${tp._stairs.k.toFixed(2)} · ${lo.ms.toFixed(3)} ms (IK ${lo.ikMs.toFixed(3)})` : ik ? `w ${ik.weight.toFixed(2)} · pelvis ${(ik.pelvis * 100).toFixed(1)} cm · L ${(ik.legs[0].off * 100).toFixed(1)} R ${(ik.legs[1].off * 100).toFixed(1)} cm · ${(tp.body.ikMs || 0).toFixed(3)} ms` : "—";
     S.perf = `${fps.toFixed(0)} fps · GPU ${gpu.avg.toFixed(2)} ms · ${r.drawCalls ?? r.calls} draws`;
     const sp = Math.hypot(c.vel[0], c.vel[2]);
     S.state = `${c.grounded ? "ground" : "air"} · ${sp.toFixed(2)} m/s · y ${(c.pos[1] - Y0).toFixed(2)}`;

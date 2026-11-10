@@ -13,6 +13,7 @@
 import * as THREE from "three/webgpu";
 import { color, float, mix, positionLocal, normalView, uniform, smoothstep, abs, dot, vec3 } from "three/tsl";
 import { FootIK } from "./footIK.js";
+import { Locomotion } from "./locomotion.js";
 
 const ROLES = ["idle", "walk", "run", "jump", "fall", "land", "stairsUp", "stairsDown", "stairsUpRun", "stairsDownRun"];
 const TARGET = { idle: 0, walk: 0, run: 0, jump: 0, fall: 0, land: 0, stairsUp: 0, stairsDown: 0, stairsUpRun: 0, stairsDownRun: 0 };
@@ -100,6 +101,15 @@ export class CharacterBody {
     this.model = holder; this.modelInner = inner; this.modelScale = s;
     this.root.add(holder);
     this.capsuleGroup.visible = false;
+    // a character with its own clip set (Mixamo Y Bot): the locomotion graph + light leg IK (locomotion.js)
+    if (opts.system === "loco") {
+      this.loco = new Locomotion(this, model, inner, gltf.animations || [], opts);
+      this.mixer = this.loco.mixer; this.actions = {}; this.hold = {}; this._allClips = gltf.animations || [];
+      this.walkSpeed = this.loco.walkSpeed; this.runSpeed = this.loco.runSpeed;
+      this.footIK = null; this.legIK = this.loco.ik; this.clipMeta = opts.meta?.clips || {}; this.previewAct = null;
+      return Object.fromEntries(Object.entries(this.loco.role).map(([r, c]) => [r, c.name]));
+    }
+    this.loco = null; this.legIK = null;
     // clips
     this.mixer = new THREE.AnimationMixer(model);
     const anims = gltf.animations || [];
@@ -129,6 +139,7 @@ export class CharacterBody {
 
   /** Back to standing (a teleport): the clips from their start, idle in full. */
   resetPose() {
+    if (this.loco) { this.loco.reset(); return; }
     if (!this.mixer) return;
     for (const role of ROLES) { const a = this.actions[role]; if (!a) continue; a.time = this.hold[role] ?? 0; this._w[role] = role === "idle" ? 1 : 0; a.setEffectiveWeight(this._w[role]); }
     this._wasGrounded = true; this._airTime = 0;
@@ -136,15 +147,21 @@ export class CharacterBody {
 
   /** The stair clip for a flight (dir +1 up / -1 down) at a walk or a run (the walk one when there is no run one). */
   stairRole(dir, run) {
+    if (this.loco) { const R = this.loco.role; return dir > 0 ? (run && R.stairsUpRun ? "stairsUpRun" : R.stairsUp ? "stairsUp" : null) : (run && R.stairsDownRun ? "stairsDownRun" : R.stairsDown ? "stairsDown" : null); }
     const A = this.actions, up = dir > 0;
     if (run && A[up ? "stairsUpRun" : "stairsDownRun"]) return up ? "stairsUpRun" : "stairsDownRun";
     return A[up ? "stairsUp" : "stairsDown"] ? (up ? "stairsUp" : "stairsDown") : null;
   }
   /** Steps per second of that stair clip at its own speed (a loop = two steps), 0 without one. */
-  stairCadence(dir, run) { const r = this.stairRole(dir, run); return r ? 2 / this.actions[r].getClip().duration : 0; }
+  stairCadence(dir, run) {
+    const r = this.stairRole(dir, run);
+    if (this.loco) return r ? 2 / this.loco.role[r].dur : 0;
+    return r ? 2 / this.actions[r].getClip().duration : 0;
+  }
 
   /** Play one clip alone, looped, in place (lab: check a retargeted clip); null = back to the state machine. */
   setPreview(name) {
+    if (this.loco) return this.loco.setPreview(name);
     if (this.previewAct) { this.previewAct.stop(); this.previewAct = null; }
     const clip = name && this.mixer && this.mixer.getRoot().animations?.find?.((a) => a.name === name) || (name && this._allClips?.find((a) => a.name === name));
     if (!clip) return false;
@@ -155,7 +172,7 @@ export class CharacterBody {
 
   clearModel() {
     if (this.model) { this.root.remove(this.model); this.mixer?.stopAllAction(); }
-    this.model = null; this.mixer = null; this.actions = {}; this.footIK = null; this.capsuleGroup.visible = true;
+    this.model = null; this.mixer = null; this.actions = {}; this.footIK = null; this.loco = null; this.legIK = null; this.capsuleGroup.visible = true;
   }
 
   /** Objects + materials to render once so every variant is compiled up front. */
@@ -188,6 +205,12 @@ export class CharacterBody {
     const v = this.variantOn;
     for (let i = 0; i < this.modelMats.length; i++) { const m = this.modelMats[i]; m.mesh.material = v && m.solidV ? (fade ? m.fadeV : m.solidV) : fade ? m.fade : m.solid; }
     if (dt <= 0) return;                       // (paused: keep the last pose, IK included)
+    if (this.loco) {
+      this.loco.ikOn = this.ikOn !== false;
+      this.loco.update(dt, x, y, z, yaw, st, world);       // (calls body.preIK between the clips and the IK)
+      this.ikMs = this.loco.ikMs;
+      return;
+    }
     // the animation state machine (weights eased toward targets)
     const A = this.actions, w = this._w, target = TARGET;
     for (let i = 0; i < ROLES.length; i++) target[ROLES[i]] = 0;

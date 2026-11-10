@@ -28,38 +28,44 @@ export class FootProbe {
   /** Heel / toe sole points of each foot, in the foot bone's frame (from the skinned mesh in its current pose). */
   setup() {
     const body = this.tp.body;
-    if (!body.model || !body.footIK) { this.feet = null; return false; }
+    const IK = body.footIK || body.legIK;
+    if (!body.model || !IK) { this.feet = null; return false; }
     let mesh = null;
     body.model.traverse((o) => { if (o.isSkinnedMesh) mesh = o; });
     if (!mesh) return false;
     body.root.updateMatrixWorld(true);
     const sk = mesh.skeleton, P = mesh.geometry.attributes.position, SI = mesh.geometry.attributes.skinIndex, SW = mesh.geometry.attributes.skinWeight;
     const rootInv = new THREE.Matrix4().copy(body.root.matrixWorld).invert();
-    this.feet = body.footIK.legs.map((L) => {
-      const bi = sk.bones.indexOf(L.foot);
+    // (sole points from the foot bone's vertices and, on a rig with a toe bone (Mixamo), the toe's: each kept in its own
+    // bone's frame)
+    this.feet = IK.legs.map((L) => {
+      const bones = [L.foot, ...(L.toe ? [L.toe] : [])];
       const pts = [];
-      for (let i = 0; i < P.count; i++) {
-        let w = 0;
-        for (let k = 0; k < 4; k++) if (SI.getComponent(i, k) === bi) w += SW.getComponent(i, k);
-        if (w < 0.6) continue;
-        _v.fromBufferAttribute(P, i).applyMatrix4(mesh.bindMatrix);
-        _m.multiplyMatrices(L.foot.matrixWorld, sk.boneInverses[bi]);
-        _v.applyMatrix4(_m);                                  // world (rigid on the foot bone)
-        pts.push(_v.clone().applyMatrix4(rootInv));          // in the character's frame (+z forward)
+      for (const bone of bones) {
+        const bi = sk.bones.indexOf(bone);
+        if (bi < 0) continue;
+        _m.multiplyMatrices(bone.matrixWorld, sk.boneInverses[bi]);
+        for (let i = 0; i < P.count; i++) {
+          let w = 0;
+          for (let k = 0; k < 4; k++) if (SI.getComponent(i, k) === bi) w += SW.getComponent(i, k);
+          if (w < 0.6) continue;
+          _v.fromBufferAttribute(P, i).applyMatrix4(mesh.bindMatrix).applyMatrix4(_m);     // world (rigid on its bone)
+          pts.push({ p: _v.clone().applyMatrix4(rootInv), bone });                           // in the character's frame (+z forward)
+        }
       }
       if (!pts.length) return null;
-      const minY = Math.min(...pts.map((p) => p.y));
-      const sole = pts.filter((p) => p.y < minY + 0.015);
-      const heel = sole.reduce((a, p) => (p.z < a.z ? p : a)), toe = sole.reduce((a, p) => (p.z > a.z ? p : a));
-      const footInv = new THREE.Matrix4().copy(L.foot.matrixWorld).invert();
-      const toLocal = (p) => p.clone().applyMatrix4(body.root.matrixWorld).applyMatrix4(footInv);
+      const minY = Math.min(...pts.map((q) => q.p.y));
+      const sole = pts.filter((q) => q.p.y < minY + 0.015);
+      const heel = sole.reduce((a, q) => (q.p.z < a.p.z ? q : a)), toe = sole.reduce((a, q) => (q.p.z > a.p.z ? q : a));
+      const toLocal = (q) => q.p.clone().applyMatrix4(body.root.matrixWorld).applyMatrix4(new THREE.Matrix4().copy(q.bone.matrixWorld).invert());
       _v.setFromMatrixPosition(L.foot.matrixWorld);
-      return { L, heel: toLocal(heel), toe: toLocal(toe), len: toe.z - heel.z, restY: _v.y - body.root.position.y, n: pts.length,
+      return { L, heel: toLocal(heel), toe: toLocal(toe), toeBone: toe.bone, len: toe.p.z - heel.p.z, restY: _v.y - body.root.position.y, n: pts.length,
         hw: new THREE.Vector3(), tw: new THREE.Vector3(), animY: 0, cH: new THREE.Vector3(), cT: new THREE.Vector3(), cKnee: 180, cHipY: 0 };
     });
     if (this.feet.some((f) => !f)) { this.feet = null; return false; }
-    const hips = body.model.getObjectByName("Hips");
+    const hips = body.model.getObjectByName("Hips") || body.model.getObjectByName("mixamorigHips");
     this.hipRest = hips ? hips.getWorldPosition(_v).y - body.root.position.y : 0;
+    this.hipsBone = hips;
     body.preIK = (rootY) => {
       body.root.updateMatrixWorld(true);
       const pel = body.modelInner.position.y * body.modelScale;     // (the last frame's pelvis offset is still on the model)
@@ -69,7 +75,7 @@ export class FootProbe {
         L.foot.getWorldPosition(_v); f.animY = _v.y - pel - rootY - f.restY; body.root.worldToLocal(_v); f.animZ = _v.z;
         // the clip's own pose (pelvis taken out), to judge the IK's against: heel, toe (relative to the root), knee, hip
         f.cH.copy(f.heel).applyMatrix4(L.foot.matrixWorld); f.cH.x -= r.x; f.cH.y -= r.y + pel; f.cH.z -= r.z;
-        f.cT.copy(f.toe).applyMatrix4(L.foot.matrixWorld); f.cT.x -= r.x; f.cT.y -= r.y + pel; f.cT.z -= r.z;
+        f.cT.copy(f.toe).applyMatrix4(f.toeBone.matrixWorld); f.cT.x -= r.x; f.cT.y -= r.y + pel; f.cT.z -= r.z;
         L.upper.getWorldPosition(_a); L.lower.getWorldPosition(_b); L.end.getWorldPosition(_c);
         f.cKnee = _w.subVectors(_a, _b).angleTo(_v.subVectors(_c, _b)) * 180 / Math.PI;
         f.cHipY = _a.y - pel - r.y; f.cExt = _a.distanceTo(_c) / (_a.distanceTo(_b) + _b.distanceTo(_c));
@@ -125,7 +131,7 @@ export class FootProbe {
    * fps: the simulated frame rate. Returns the metrics.
    */
   simulate(sc, fps) {
-    const tp = this.tp, c = tp.ctl, ik = tp.body.footIK, dt = 1 / fps;
+    const tp = this.tp, c = tp.ctl, ik = tp.body.footIK || tp.body.legIK, dt = 1 / fps;
     if (!this.feet) this.setup();
     const feet = this.feet;
     tp.start(sc.start[0], sc.start[1], sc.start[2], sc.start[3] ?? 0);
@@ -142,7 +148,7 @@ export class FootProbe {
       pen: 0, heelFloat: 0, toeFloat: 0, kneeMin: 180, kneeMax: 0, kneeLocked: 0, pelvis: [], gaps: [], dip: 0, foldMax: -180, extN: 0, extMax: -1, extOver: 0, pitchDev: 0, pitchMin: 90, pitchMax: -90, offY: 0, offXZ: 0, extraLift: -1, heelToHip: -1, hipHeelMin: 9, hipV: 0, ikJump: 0, landed: false, airFrames: 0 };
     const prevMid = [null, null], prevOff = [0, 0], prevZ = [null, null], prevSt = [false, false];
     let prevHip = null;
-    const hips = tp.body.model?.getObjectByName("Hips");
+    const hips = tp.body.model?.getObjectByName("Hips") || tp.body.model?.getObjectByName("mixamorigHips");
     try {
       for (; t < sc.secs; t += dt) {
         tp.update(dt);
@@ -152,7 +158,7 @@ export class FootProbe {
         tp.body.root.updateMatrixWorld(true);
         for (let i = 0; i < 2; i++) {
           const f = feet[i], L = f.L;
-          f.hw.copy(f.heel).applyMatrix4(L.foot.matrixWorld); f.tw.copy(f.toe).applyMatrix4(L.foot.matrixWorld);
+          f.hw.copy(f.heel).applyMatrix4(L.foot.matrixWorld); f.tw.copy(f.toe).applyMatrix4(f.toeBone.matrixWorld);
           const gh = this.ground(f.hw.x, f.hw.y, f.hw.z), gt = this.ground(f.tw.x, f.tw.y, f.tw.z);
           const hg = gh === null ? 0 : f.hw.y - gh, tg = gt === null ? 0 : f.tw.y - gt, low = Math.min(hg, tg);
           if (low < -A.pen) A.pen = -low;

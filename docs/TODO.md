@@ -56,6 +56,38 @@ read-only (copy into `vendor/` with ORIGIN.md); measure GPU ms before / after (s
 - Volumetric fog is opt-in only (`?vfog=1`, dev panel) until it is tuned.
 - Tree impostors off (`?impostors=1`) until 16x16 views + depth atlas.
 
+## Character 2 (branch claude/character2, 2026-11-10, NOT finished; method + numbers: docs/character/LOCOMOTION.md)
+- [x] One skeleton: Mixamo Y Bot + 13 Mixamo clips, no retargeting (rest poses checked in Blender); pipeline
+      `tools/blender/mixamoPack.py` + `tools/characters/mixamoClips.mjs` (in-place clips, contacts, landing positions,
+      speeds, stair riser / tread, turn / air metadata). Quaternius Hoodie kept as the fallback (old system untouched).
+- [x] Mixamo "Descending Stairs" repaired offline (its feet never left the flat floor). "Descending Stairs (1)" is the
+      same clip in place: not needed. **No running-down-stairs clip**: the walk-down clip plays faster for now.
+- [x] Locomotion graph (sync-marker phase, idle/turn/start/walk-run/stop/stairs/jump/fall/land, root-motion starts /
+      stops / turns, distance-matched stairs + stride warp, slope warp) + light leg IK (latched plant, hysteresis,
+      landing look-ahead, edge slide, anti-pop, pelvis spring, lock only while planted). ~0.09 ms / frame (lab).
+- [x] Character Lab: frame strips (real screenshots, `tools/characters/strip.mjs`), per-frame pose checks, whole-run
+      pose audit (`lab.poseRun()`), foot traces, 12/15/19 cm up+down flights.
+- [x] City `?view=third` defaults to the Y Bot (falls back to the Hoodie); fixed: feet latched mid-air at spawn.
+- [ ] Stairs at a RUN: 80-95 flagged frames per run (gaps, pops). Ask the owner for a "Running Down Stairs" clip
+      (Mixamo has one; same skeleton, FBX Without Skin, 30 fps) and re-check the up-run clip's phase lock.
+- [ ] Stairs walking: the first 2-3 steps down land short (the landing correction is still learning: give it a better
+      start value per clip, or compute the per-foot offset from the clip instead of learning it); ~50 ankle-pop frames
+      per flight left (mostly entering / leaving a flight and at plant time); the trailing foot floats 3-8 cm at full
+      leg extension going down (should roll onto its toes, toe on the tread).
+- [ ] Standing still ON a flight: both feet 4-5 cm off (the idle has level feet; needs a per-foot stance on two treads).
+- [ ] Ramps / creases: where a ramp meets the flat (bottom, top), neither the slope rule nor the edge rule fits;
+      30-45 deg ramps still poor (city streets are <= ~15 %: lower priority). Kerb up: the toe tip catches the kerb edge
+      (34 frames); house stairs (37 deg) poor.
+- [ ] Jump: the Mixamo jump is a standing jump with raised arms (OK in place, odd at a run: a running-jump clip would
+      help); take-off / touch-down cross-fades still pop the ankles (16-30 cm 2nd difference); landing from a fall
+      crouches with feet 10-15 cm off for a few frames.
+- [ ] Starts: the Mixamo start clip only reaches ~1.1 m/s (the walk loop is 1.73): a speed step at the hand-over.
+- [ ] Look: the Y Bot is a mannequin (2.1 MB, 55k triangles: compress / decimate; measure its GPU skinning cost);
+      lean into turns, head look-at, arm swing scaling with speed.
+- [ ] Licence: the live site does not ship the Mixamo files (git-ignored): the owner decides whether the deployed site
+      serves ybot*.glb (Adobe allows use inside a game, not redistribution as files; a served GLB is fetchable).
+- [ ] The old Capsule Lab tests (T) and "measure all" still run but were tuned for the Hoodie: re-baseline for the Y Bot.
+
 ## Third-person character (Capsule Lab, branch claude/capsule; waiting for the owner)
 - [x] `viewer/character/`: kinematic capsule controller (120 Hz fixed step + interpolation, collide-and-slide, step-up
       by rolling over walkable edges + an explicit up-forward-down step, ground snap, slope limit, coyote / jump buffer),

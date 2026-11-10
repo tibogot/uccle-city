@@ -95,6 +95,9 @@ material colours baked to vertex colours.
 redistributed as standalone animation files. Raw FBX downloads go to `data/raw/animations/mixamo/` (git-ignored);
 `tools/characters/retarget.mjs` writes the clips made from them to `models/characters/clips_mixamo.glb`, which is
 git-ignored too (the owner decides whether the built site ships it). None are in the repository.
+The **Y Bot** character (Mixamo) and its clips (branch claude/character2): `tools/blender/mixamoPack.py` and
+`tools/characters/mixamoClips.mjs` write `models/characters/ybot.glb` and `ybot_clips.glb`, both git-ignored under the
+same terms; only the derived metadata `ybot.json` (contact timings, speeds) is committed.
 
 Not used: Quaternius' newer packs under the "Quaternius Asset Licence" (only the CC0 packs above are used), and
 three.js's example Soldier.glb (Mixamo, not shippable; it was only loaded by URL in a test, never copied).

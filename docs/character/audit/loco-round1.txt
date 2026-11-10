@@ -1,0 +1,187 @@
+stand                       445fr  kneeBack 0 locked 0 gap>3cm 0 ankleJump 0 pelvisJump 0 | worst gap 2.588cm ankle 0.179cm pelvis 0.115cm knee 161-176 | 0.151 ms/fr
+flat walk                   385fr  kneeBack 0 locked 0 gap>3cm 0 ankleJump 3 pelvisJump 0 | worst gap 2.757cm ankle 5.32cm pelvis 0.556cm knee 103-176 | 0.132 ms/fr
+     t=5.017 stop: R ankle jump 5.3 cm
+     t=5.033 stop: R ankle jump 2.7 cm
+     t=5.433 stop: L ankle jump 3.3 cm
+flat run                    325fr  kneeBack 47 locked 0 gap>3cm 0 ankleJump 29 pelvisJump 1 | worst gap 2.588cm ankle 6.657cm pelvis 1.25cm knee 69-176 | 0.122 ms/fr
+     t=0.067 move: R ankle jump 6.7 cm
+     t=0.083 move: L ankle jump 3.0 cm
+     t=0.200 move: L ankle jump 2.9 cm
+     t=0.433 move: L ankle jump 2.6 cm
+kerb up 15 cm               235fr  kneeBack 0 locked 0 gap>3cm 30 ankleJump 4 pelvisJump 0 | worst gap 13.924cm ankle 21.903cm pelvis 0.403cm knee 92-178 | 0.111 ms/fr
+     t=2.183 start: R planted gap -12.9 cm
+     t=2.200 start: R planted gap -13.3 cm
+     t=2.217 start: R planted gap -13.5 cm
+     t=2.233 move: R planted gap -13.7 cm
+kerb down 15 + up 14        445fr  kneeBack 0 locked 0 gap>3cm 7 ankleJump 5 pelvisJump 0 | worst gap 4.666cm ankle 5.448cm pelvis 0.599cm knee 87-178 | 0.104 ms/fr
+     t=2.183 start: R planted gap 4.7 cm
+     t=2.200 start: R planted gap 3.3 cm
+     t=2.233 move: L ankle jump 2.6 cm
+     t=2.250 move: L ankle jump 2.9 cm
+kerbs at run                295fr  kneeBack 40 locked 0 gap>3cm 3 ankleJump 35 pelvisJump 0 | worst gap 3.498cm ankle 25.702cm pelvis 1.143cm knee 54-178 | 0.104 ms/fr
+     t=0.067 move: R ankle jump 6.7 cm
+     t=0.083 move: L ankle jump 3.0 cm
+     t=0.200 move: L ankle jump 2.9 cm
+     t=0.433 move: L ankle jump 2.5 cm
+dropped kerb                445fr  kneeBack 0 locked 0 gap>3cm 15 ankleJump 7 pelvisJump 0 | worst gap 14.257cm ankle 18.611cm pelvis 0.516cm knee 90-178 | 0.111 ms/fr
+     t=2.183 start: R ankle jump 4.2 cm
+     t=2.200 start: R ankle jump 3.8 cm
+     t=2.400 move: L ankle jump 2.8 cm
+     t=2.450 move: R planted gap 3.1 cm
+stairs up 17 walk           325fr  kneeBack 0 locked 0 gap>3cm 42 ankleJump 12 pelvisJump 1 | worst gap 15.522cm ankle 6.057cm pelvis 1.366cm knee 74-178 | 0.101 ms/fr
+     t=1.633 move: R ankle jump 2.6 cm
+     t=1.700 move: R ankle jump 4.9 cm
+     t=1.733 move: R ankle jump 3.1 cm
+     t=1.917 move: R ankle jump 2.7 cm
+stairs up 17 run            217fr  kneeBack 0 locked 0 gap>3cm 78 ankleJump 25 pelvisJump 8 | worst gap 15.6cm ankle 7.837cm pelvis 2.228cm knee 44-178 | 0.140 ms/fr
+     t=0.050 move: R ankle jump 2.8 cm
+     t=0.067 move: R ankle jump 6.0 cm
+     t=0.183 move: L ankle jump 3.8 cm
+     t=0.200 move: L ankle jump 3.1 cm
+stairs down 21 walk         355fr  kneeBack 25 locked 0 gap>3cm 35 ankleJump 31 pelvisJump 2 | worst gap 16.18cm ankle 20.499cm pelvis 1.494cm knee 65-178 | 0.107 ms/fr
+     t=2.250 move: L ankle jump 3.2 cm
+     t=2.550 move: L ankle jump 2.7 cm
+     t=2.633 move: L ankle jump 5.1 cm; R ankle jump 5.2 cm; pelvis jump 1.5 cm
+     t=2.650 move: R ankle jump 3.8 cm
+stairs down 21 run          229fr  kneeBack 8 locked 0 gap>3cm 46 ankleJump 41 pelvisJump 6 | worst gap 19.836cm ankle 21.818cm pelvis 1.936cm knee 61-178 | 0.107 ms/fr
+     t=0.050 move: R ankle jump 2.8 cm
+     t=0.067 move: R ankle jump 6.0 cm
+     t=0.200 move: L ankle jump 2.9 cm
+     t=0.433 move: L ankle jump 2.6 cm
+stairs 12 up+down walk      744fr  kneeBack 0 locked 0 gap>3cm 19 ankleJump 48 pelvisJump 1 | worst gap 10.696cm ankle 14.381cm pelvis 1.23cm knee 92-178 | 0.112 ms/fr
+     t=1.717 move: R ankle jump 5.4 cm
+     t=1.800 move: R ankle jump 3.1 cm
+     t=2.150 move: L ankle jump 3.2 cm
+     t=2.533 move: L ankle jump 2.6 cm
+stairs 12 up+down run       337fr  kneeBack 8 locked 0 gap>3cm 89 ankleJump 69 pelvisJump 8 | worst gap 18.04cm ankle 15.146cm pelvis 2.367cm knee 34-178 | 0.107 ms/fr
+     t=0.067 move: R ankle jump 6.7 cm
+     t=0.083 move: L ankle jump 3.0 cm
+     t=0.200 move: L ankle jump 2.9 cm
+     t=0.400 move: R ankle jump 3.5 cm
+stairs 12 down walk         475fr  kneeBack 0 locked 0 gap>3cm 22 ankleJump 47 pelvisJump 3 | worst gap 13.669cm ankle 16.204cm pelvis 1.703cm knee 92-178 | 0.106 ms/fr
+     t=1.250 move: L ankle jump 4.2 cm
+     t=1.267 move: L ankle jump 7.9 cm; R ankle jump 2.9 cm
+     t=1.283 move: L ankle jump 3.3 cm
+     t=1.450 move: L ankle jump 2.6 cm
+stairs 15 up+down walk      744fr  kneeBack 0 locked 0 gap>3cm 19 ankleJump 47 pelvisJump 0 | worst gap 12.855cm ankle 17.22cm pelvis 1.006cm knee 82-178 | 0.103 ms/fr
+     t=1.683 move: R ankle jump 4.9 cm
+     t=1.700 move: R ankle jump 3.5 cm
+     t=2.200 move: L ankle jump 3.4 cm
+     t=3.900 move: L ankle jump 2.5 cm
+stairs 15 up+down run       337fr  kneeBack 9 locked 0 gap>3cm 75 ankleJump 64 pelvisJump 5 | worst gap 14.146cm ankle 16.89cm pelvis 1.739cm knee 53-178 | 0.095 ms/fr
+     t=0.067 move: R ankle jump 6.7 cm
+     t=0.083 move: L ankle jump 3.0 cm
+     t=0.200 move: L ankle jump 2.9 cm
+     t=0.433 move: L ankle jump 2.6 cm
+stairs 15 down walk         475fr  kneeBack 2 locked 0 gap>3cm 30 ankleJump 37 pelvisJump 0 | worst gap 14.886cm ankle 17.943cm pelvis 1.182cm knee 84-178 | 0.089 ms/fr
+     t=1.283 move: L ankle jump 3.6 cm
+     t=1.367 move: L ankle jump 2.8 cm
+     t=1.433 move: L planted gap 3.8 cm
+     t=1.450 move: L planted gap 3.6 cm
+stairs 19 up+down walk      744fr  kneeBack 0 locked 0 gap>3cm 29 ankleJump 51 pelvisJump 0 | worst gap 15.438cm ankle 19.263cm pelvis 1.097cm knee 67-178 | 0.096 ms/fr
+     t=1.700 move: R ankle jump 4.6 cm
+     t=1.783 move: R ankle jump 3.2 cm
+     t=2.217 move: L ankle jump 3.2 cm
+     t=2.717 move: L ankle jump 2.7 cm
+stairs 19 up+down run       337fr  kneeBack 37 locked 0 gap>3cm 86 ankleJump 70 pelvisJump 11 | worst gap 19.5cm ankle 20.336cm pelvis 1.859cm knee 50-178 | 0.104 ms/fr
+     t=0.067 move: R ankle jump 6.7 cm
+     t=0.083 move: L ankle jump 3.0 cm
+     t=0.200 move: L ankle jump 2.9 cm
+     t=0.433 move: L ankle jump 2.6 cm
+stairs 19 down walk         475fr  kneeBack 0 locked 0 gap>3cm 25 ankleJump 28 pelvisJump 0 | worst gap 15.342cm ankle 19.251cm pelvis 1.008cm knee 70-178 | 0.092 ms/fr
+     t=1.283 move: L ankle jump 3.4 cm
+     t=1.767 move: R ankle jump 2.7 cm
+     t=1.800 move: R planted gap 15.3 cm; R ankle jump 3.5 cm
+     t=1.817 move: R planted gap -4.1 cm; R ankle jump 5.1 cm
+ramp 15 up                  355fr  kneeBack 0 locked 0 gap>3cm 56 ankleJump 8 pelvisJump 0 | worst gap 8.719cm ankle 23.481cm pelvis 0.562cm knee 73-178 | 0.085 ms/fr
+     t=2.183 start: R ankle jump 10.2 cm
+     t=2.200 start: R ankle jump 9.8 cm
+     t=2.883 move: L planted gap 3.1 cm
+     t=2.900 move: L planted gap 3.9 cm
+ramp 15 down                355fr  kneeBack 0 locked 0 gap>3cm 1 ankleJump 10 pelvisJump 0 | worst gap 3.895cm ankle 7.835cm pelvis 0.469cm knee 90-178 | 0.083 ms/fr
+     t=2.250 move: L ankle jump 2.8 cm
+     t=3.683 move: R ankle jump 2.9 cm
+     t=3.967 move: R ankle jump 2.5 cm
+     t=4.517 stop: R planted gap 3.9 cm; L ankle jump 5.6 cm; R ankle jump 2.9 cm
+ramp 30 up                  355fr  kneeBack 43 locked 0 gap>3cm 33 ankleJump 9 pelvisJump 0 | worst gap 8.438cm ankle 46.576cm pelvis 0.526cm knee 54-178 | 0.086 ms/fr
+     t=2.183 start: R ankle jump 12.2 cm
+     t=2.200 start: R ankle jump 11.8 cm
+     t=2.317 move: L ankle jump 2.6 cm
+     t=2.450 move: R planted gap 3.2 cm
+ramp 30 down                355fr  kneeBack 0 locked 0 gap>3cm 87 ankleJump 10 pelvisJump 0 | worst gap 6.298cm ankle 16.921cm pelvis 0.536cm knee 65-178 | 0.086 ms/fr
+     t=2.200 start: R planted gap -3.9 cm
+     t=2.217 start: R planted gap -4.4 cm
+     t=2.233 move: R planted gap -4.5 cm
+     t=2.250 move: R planted gap -4.7 cm
+ramp 45 up                  295fr  kneeBack 27 locked 0 gap>3cm 57 ankleJump 12 pelvisJump 0 | worst gap 17.452cm ankle 39.106cm pelvis 0.703cm knee 32-178 | 0.092 ms/fr
+     t=2.183 start: R ankle jump 12.2 cm
+     t=2.200 start: R ankle jump 11.8 cm
+     t=2.400 move: L ankle jump 2.9 cm
+     t=2.417 move: R planted gap 3.4 cm
+ramp 45 down                295fr  kneeBack 0 locked 0 gap>3cm 46 ankleJump 10 pelvisJump 0 | worst gap 14.666cm ankle 17.685cm pelvis 0.459cm knee 49-178 | 0.088 ms/fr
+     t=2.200 start: R planted gap -3.5 cm
+     t=2.217 start: R planted gap -5.6 cm
+     t=2.233 move: R planted gap -7.5 cm
+     t=2.250 move: R planted gap -9.3 cm
+slope 55 (blocked)          265fr  kneeBack 0 locked 0 gap>3cm 0 ankleJump 7 pelvisJump 0 | worst gap 2.63cm ankle 14.189cm pelvis 0.266cm knee 107-178 | 0.091 ms/fr
+     t=2.183 start: R ankle jump 14.2 cm
+     t=2.200 start: R ankle jump 13.8 cm
+     t=2.333 move: L ankle jump 3.0 cm
+     t=2.400 move: L ankle jump 4.6 cm
+house stairs up             445fr  kneeBack 34 locked 0 gap>3cm 43 ankleJump 9 pelvisJump 2 | worst gap 15.902cm ankle 4.262cm pelvis 2.392cm knee 62-178 | 0.135 ms/fr
+     t=0.033 move: pelvis jump 1.9 cm
+     t=0.067 move: R ankle jump 3.5 cm
+     t=0.583 move: R ankle jump 3.3 cm
+     t=1.067 move: R planted gap 3.1 cm
+house stairs down           445fr  kneeBack 0 locked 0 gap>3cm 68 ankleJump 36 pelvisJump 1 | worst gap 19.757cm ankle 19.936cm pelvis 1.981cm knee 71-178 | 0.119 ms/fr
+     t=1.083 move: L ankle jump 7.7 cm
+     t=1.167 move: L ankle jump 7.2 cm
+     t=1.183 move: L ankle jump 9.3 cm
+     t=1.550 move: R ankle jump 3.4 cm
+turn on the spot            205fr  kneeBack 0 locked 0 gap>3cm 0 ankleJump 10 pelvisJump 0 | worst gap 2.546cm ankle 8.147cm pelvis 0.345cm knee 120-178 | 0.100 ms/fr
+     t=0.017 turn: L ankle jump 5.5 cm; R ankle jump 7.7 cm
+     t=0.033 turn: L ankle jump 8.1 cm; R ankle jump 4.6 cm
+     t=0.050 turn: L ankle jump 3.4 cm; R ankle jump 3.4 cm
+     t=0.067 turn: L ankle jump 3.1 cm
+turn 90 walking             265fr  kneeBack 0 locked 0 gap>3cm 3 ankleJump 8 pelvisJump 0 | worst gap 4.069cm ankle 7.38cm pelvis 0.689cm knee 104-178 | 0.095 ms/fr
+     t=1.533 move: L ankle jump 2.6 cm
+     t=1.550 move: L ankle jump 6.1 cm
+     t=1.633 move: L ankle jump 7.4 cm; R ankle jump 3.9 cm
+     t=1.683 move: L ankle jump 2.9 cm
+start / stop walk           265fr  kneeBack 0 locked 0 gap>3cm 0 ankleJump 1 pelvisJump 0 | worst gap 2.588cm ankle 2.952cm pelvis 0.534cm knee 105-176 | 0.090 ms/fr
+     t=1.617 stop: R ankle jump 3.0 cm
+start / stop run            265fr  kneeBack 16 locked 0 gap>3cm 0 ankleJump 15 pelvisJump 0 | worst gap 2.588cm ankle 6.657cm pelvis 0.931cm knee 69-176 | 0.112 ms/fr
+     t=0.067 move: R ankle jump 6.7 cm
+     t=0.083 move: L ankle jump 3.0 cm
+     t=0.200 move: L ankle jump 2.9 cm
+     t=0.433 move: L ankle jump 2.6 cm
+jump in place               205fr  kneeBack 0 locked 0 gap>3cm 25 ankleJump 13 pelvisJump 9 | worst gap 22.477cm ankle 10.083cm pelvis 4.832cm knee 45-176 | 0.136 ms/fr
+     t=0.200 jump: L ankle jump 6.5 cm
+     t=0.217 jump: L ankle jump 10.1 cm; R ankle jump 8.6 cm; pelvis jump 3.4 cm
+     t=0.233 jump: L ankle jump 4.7 cm; R ankle jump 4.3 cm; pelvis jump 1.9 cm
+     t=0.250 jump: L ankle jump 3.0 cm; R ankle jump 3.4 cm
+running jump                265fr  kneeBack 25 locked 0 gap>3cm 28 ankleJump 46 pelvisJump 11 | worst gap 22.562cm ankle 26.271cm pelvis 5.884cm knee 45-178 | 0.111 ms/fr
+     t=0.067 move: R ankle jump 6.7 cm
+     t=0.083 move: L ankle jump 3.0 cm
+     t=0.200 move: L ankle jump 2.9 cm
+     t=0.433 move: L ankle jump 2.6 cm
+fall 1.5 m                  169fr  kneeBack 0 locked 0 gap>3cm 18 ankleJump 11 pelvisJump 7 | worst gap 15.41cm ankle 25.614cm pelvis 3.779cm knee 42-178 | 0.096 ms/fr
+     t=0.150 fall: L ankle jump 5.2 cm; R ankle jump 3.0 cm; pelvis jump 1.9 cm
+     t=0.367 land: L ankle jump 25.6 cm; R ankle jump 25.4 cm; pelvis jump 3.8 cm
+     t=0.383 land: L planted gap 15.4 cm; R planted gap 11.1 cm; L ankle jump 20.2 cm; R ankle jump 18.1 cm; pelvis jump 1.4 cm
+     t=0.400 land: L planted gap 6.1 cm; R planted gap 4.2 cm; L ankle jump 5.3 cm; R ankle jump 9.8 cm; pelvis jump 2.2 cm
+walk into wall              265fr  kneeBack 0 locked 0 gap>3cm 0 ankleJump 4 pelvisJump 0 | worst gap 2.588cm ankle 10.661cm pelvis 0.266cm knee 108-176 | 0.105 ms/fr
+     t=2.367 move: L ankle jump 2.7 cm
+     t=3.017 idle: R ankle jump 5.3 cm
+     t=3.033 idle: R ankle jump 10.7 cm
+     t=3.050 idle: R ankle jump 5.3 cm
+slide along wall            265fr  kneeBack 0 locked 0 gap>3cm 0 ankleJump 5 pelvisJump 0 | worst gap 2.588cm ankle 5.732cm pelvis 0.53cm knee 105-176 | 0.095 ms/fr
+     t=1.067 start: L ankle jump 2.5 cm
+     t=2.483 move: L ankle jump 5.7 cm; R ankle jump 2.5 cm
+     t=2.500 move: L ankle jump 2.6 cm
+     t=2.750 move: R ankle jump 2.7 cm
+past a trunk                265fr  kneeBack 0 locked 0 gap>3cm 0 ankleJump 10 pelvisJump 0 | worst gap 2.546cm ankle 10.569cm pelvis 0.506cm knee 104-176 | 0.093 ms/fr
+     t=2.700 move: L ankle jump 7.4 cm; R ankle jump 7.5 cm
+     t=2.717 move: L ankle jump 9.5 cm; R ankle jump 3.0 cm
+     t=2.750 move: L ankle jump 2.7 cm
+     t=3.017 stop: L ankle jump 4.7 cm; R ankle jump 3.9 cm
