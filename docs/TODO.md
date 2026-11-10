@@ -47,8 +47,9 @@ Stairs paused until the owner's Mixamo clips are in `data/raw/animations/mixamo/
 - [ ] roof slates read flat (relief, overlap, edge shadows; reusable for every roof, so it belongs in the materials library too); yellow-green lichen blobs look fake.
 - [ ] statue over the door looks cheap.
 - [ ] interior: flicker at the door while it opens (shadow and/or z-fight); with the door closed the exterior shows at the edges (light leaks).
+- [ ] interior: vault ribs landing on a column capital intersect jaggedly, leave a black hole and flicker; the capital is faceted.
 - [ ] later, once all is clean: fake god rays through the windows.
-- [ ] RULE GAP: we have no automatic check against z-fighting / bad topology for heroes (scripted or procedural). Build a shared hero mesh audit (coplanar overlaps, near-coincident faces < few mm, light-leak gaps, slivers / stretched triangles, flipped or inconsistent normals, non-manifold) + a flicker test (consecutive frames at several distances), run before every pack; no hero merges without a clean audit. Then run it on all heroes (Saint-Job, Observatory, town hall, Saint-Pierre, trains/bridges, facade kit, furniture).
+- [ ] RULE GAP: we have no automatic check against z-fighting / bad topology for heroes (scripted or procedural). Build a shared hero mesh audit (coplanar overlaps, near-coincident faces < few mm, light-leak gaps, slivers / stretched triangles, flipped or inconsistent normals, non-manifold) + a flicker test (consecutive frames at several distances), run before every pack; no hero merges without a clean audit. Then run it on all heroes (Saint-Job, Observatory, town hall, Saint-Pierre, trains/bridges, facade kit, furniture). ALSO the non-hero procedural city (facades, roofs, roads, kerbs, plazas, furniture, tile worker output): same checker on generated geometry, all 120 tiles, as a build check (owner asked 2026-11-10). Round 3 started 2026-11-10 (checker + chapel fixes).
 
 **Later (owner, 2026-11-10): seasons as well as weather** (leaves colour and fall, bare winter trees, snow, flowers in spring, low winter sun).
 
