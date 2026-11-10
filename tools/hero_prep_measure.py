@@ -1,6 +1,8 @@
-"""VILLA VAN BUUREN (Avenue Leo Errera 41, 1928, Uccle): the measurements a scripted model would be built from.
+"""HERO PREPARATION MEASUREMENTS (any building: UrbIS solids + DSM/DTM), first written for the Villa van Buuren.
 
-    python tools/vanbuuren_measure.py [--dump]          (numpy, tifffile; reads data/tiles + data/raw/urbis)
+    python tools/vanbuuren_measure.py [--dump]                     (Villa van Buuren, the defaults)
+    python tools/vanbuuren_measure.py --name wolvendael_chateau --tile F4 --sheet 148165 --solids 537523,538880 --title "..."
+    (numpy, tifffile; reads data/tiles + data/raw/urbis)
 
 PREPARATION ONLY (2026-11-10): nothing is modelled yet. Writes models/vanbuuren/site.json:
   - the UrbIS 3D building solids of the villa (tile G2, CC0): 550409 (main body) and 509389 (the taller part), with
@@ -20,9 +22,15 @@ ROOT = Path(__file__).resolve().parent.parent
 RAW = Path(os.environ.get("UCCLE_RAW", ROOT / "data" / "raw"))
 if not (RAW / "urbis").exists():
     RAW = ROOT.parent.parent.parent / "data" / "raw"
-OUT = ROOT / "models" / "vanbuuren"
+import argparse
+_ap = argparse.ArgumentParser()
+_ap.add_argument("--name", default="vanbuuren"); _ap.add_argument("--tile", default="G2"); _ap.add_argument("--sheet", default="148166")
+_ap.add_argument("--solids", default="550409,509389"); _ap.add_argument("--title", default="Villa van Buuren (Musee David et Alice van Buuren), Avenue Leo Errera 41, Uccle")
+_ap.add_argument("--dump", action="store_true")
+ARGS = _ap.parse_args()
+SHEET, TILE, SOLIDS = ARGS.sheet, ARGS.tile, ARGS.solids.split(",")
+OUT = ROOT / "models" / ARGS.name
 OUT.mkdir(parents=True, exist_ok=True)
-SHEET, TILE, SOLIDS = "148166", "G2", ["550409", "509389"]
 ORIGIN_E, ORIGIN_N = 148643.0, 165394.0
 
 
@@ -102,15 +110,15 @@ def main():
                     px, pz = x + sgn * nx * 1.2, z + sgn * nz * 1.2
                     if not any(inside((px, pz), o["footprint"]) for o in solids): ring.append(float(dtm(px, pz))); break
         s["ground_around"] = dict(min=round(min(ring), 2), p50=round(float(np.median(ring)), 2), max=round(max(ring), 2))
-    site = dict(name="Villa van Buuren (Musee David et Alice van Buuren), Avenue Leo Errera 41, Uccle", built=1928,
-                sources="UrbIS 3D BuildingSolids + DSM/DTM 2021 0.5 m (CC0); photos: data/raw/refs/vanbuuren/SOURCES.md",
+    site = dict(name=ARGS.title,
+                sources=f"UrbIS 3D BuildingSolids + DSM/DTM 2021 0.5 m (CC0); photos: data/raw/refs/{ARGS.name}/SOURCES.md",
                 frame=dict(origin_city=[round(origin[0], 3), round(origin[1], 3)], rotation_rad=round(rot, 6),
                            note="u along rotation, w perpendicular (city x/z rotated)"),
                 solids=solids)
     json.dump(site, open(OUT / "site.json", "w", encoding="utf-8"), indent=1)
     for s in solids: print(s["solid"], "base", s["base"], "eaves", s["eaves"], "top", s["top"], "DSM", s["dsm"], "ground", s["ground_around"])
     print("rotation deg", round(math.degrees(rot), 2), "origin", origin.round(2).tolist())
-    if "--dump" in sys.argv:
+    if ARGS.dump:
         us = np.arange(-16, 16.01, 0.5); ws = np.arange(-16, 16.01, 0.5)
         g = solids[0]["base"]
         print("DSM - base (m), rows w (top = -w), cols u; '.' outside both footprints")

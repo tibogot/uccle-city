@@ -10,7 +10,7 @@ photo camera poses, premium Blender, mesh checker clean before any merge).
 - Photos: `data/raw/refs/vanbuuren/` (git-ignored, list + licences in `SOURCES.md`): 7 usable photos of the villa from
   Wikimedia Commons, CC BY-SA 3.0 / 4.0 (Donarreiskoffer 2019, Alberto Fernandez Fernandez 2011). They are
   references only (never shipped). `v07.jpg` shows a DIFFERENT house (a mansard building on the avenue): not used.
-- Measured: `tools/vanbuuren_measure.py` -> `models/vanbuuren/site.json` (UrbIS 3D BuildingSolids, DSM / DTM 2021
+- Measured: `tools/hero_prep_measure.py` (defaults = this villa) -> `models/vanbuuren/site.json` (UrbIS 3D BuildingSolids, DSM / DTM 2021
   0.5 m, CC0). `--dump` prints the DSM on a building-frame grid.
 - Allowed visual checks (owner, 2026-11-10): Google Street View / Maps to check colours, materials and the street
   side; never traced, stored or shipped.

@@ -1,6 +1,5 @@
 {
  "name": "Villa van Buuren (Musee David et Alice van Buuren), Avenue Leo Errera 41, Uccle",
- "built": 1928,
  "sources": "UrbIS 3D BuildingSolids + DSM/DTM 2021 0.5 m (CC0); photos: data/raw/refs/vanbuuren/SOURCES.md",
  "frame": {
   "origin_city": [

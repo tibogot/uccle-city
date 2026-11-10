@@ -1,0 +1,71 @@
+{
+ "name": "Pavillon Louis XV, Parc de Wolvendael, Uccle",
+ "sources": "UrbIS 3D BuildingSolids + DSM/DTM 2021 0.5 m (CC0); photos: data/raw/refs/wolvendael_pavilion/SOURCES.md",
+ "frame": {
+  "origin_city": [
+   -506.113,
+   -47.393
+  ],
+  "rotation_rad": 0.466897,
+  "note": "u along rotation, w perpendicular (city x/z rotated)"
+ },
+ "solids": [
+  {
+   "id": "https://databrussels.be/id/buildingsolid/537211",
+   "solid": "537211",
+   "bu": "https://databrussels.be/id/building/1679150",
+   "footprint": [
+    [
+     -511.16,
+     -52.91
+    ],
+    [
+     -508.13,
+     -51.63
+    ],
+    [
+     -506.03,
+     -52.74
+    ],
+    [
+     -503.08,
+     -51.29
+    ],
+    [
+     -502.71,
+     -48.92
+    ],
+    [
+     -499.84,
+     -47.51
+    ],
+    [
+     -502.6,
+     -42.18
+    ],
+    [
+     -505.26,
+     -36.69
+    ],
+    [
+     -516.21,
+     -42.67
+    ]
+   ],
+   "base": 61.02,
+   "eaves": 64.32,
+   "top": 69.93,
+   "dsm": {
+    "p50": 65.93,
+    "p90": 68.4,
+    "max": 72.57,
+    "n": 2108
+   },
+   "ground_around": {
+    "min": 60.92,
+    "p50": 61.92,
+    "max": 64.48
+   }
+  }
+ ]
+}
