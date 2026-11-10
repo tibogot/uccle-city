@@ -9,6 +9,15 @@ const CELL = 40;
 // abbreviations people type: st job -> saint job / sint job, av -> avenue, ch -> chaussee
 const SYN = { st: ['saint', 'sint', 'st'], ste: ['sainte', 'ste'], av: ['avenue', 'av'], ch: ['chaussee', 'ch'], bd: ['boulevard', 'bd'], pl: ['place', 'plein', 'pl'] };                 // spatial grid cell (m) for the road segments
 
+function distToLine(p, pts) {
+  let best = Infinity;
+  for (let k = 1; k < pts.length; k++) {
+    const a = pts[k - 1], b = pts[k], dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1;
+    const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.z - a.z) * dz) / L2));
+    best = Math.min(best, Math.hypot(p.x - a.x - dx * t, p.z - a.z - dz * t));
+  }
+  return best;
+}
 const norm = (t) => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’'`\-–.,()]/g, ' ').replace(/\s+/g, ' ').trim();
 
 export async function loadMap(base, { paths = true } = {}) {
@@ -227,6 +236,23 @@ export class MapData {
   /** Street labels for a language: the same-name road segments chained through the nodes where only they meet. */
   labels(lang) {
     if (this.labelsByLang[lang]) return this.labelsByLang[lang];
+    if (!this.chains) this.buildChains();
+    const out = this.chains.map((c) => {
+      const text = this.nameOf(c.nid, lang);
+      return { id: c.id, text, key: c.key, lower: norm(text), raw: c.key, major: c.cls <= 2, highway: c.cls === 0, anchors: c.anchors, pts: c.pts, cum: c.cum, len: c.len,
+        minX: c.minX, maxX: c.maxX, minZ: c.minZ, maxZ: c.maxZ };
+    });
+    this.labelsByLang[lang] = out;
+    return out;
+  }
+
+  /**
+   * Street polylines for labels: same-name segments chained through every node, taking the straightest same-name road
+   * on (a dual carriageway or a junction with a side branch of the same name no longer cuts the chain), then chains
+   * running beside a longer chain of the same name (the other carriageway, ≤ 35 m away over ≥ 70 % of their length)
+   * dropped, so the street is named once along its middle-most long chain.
+   */
+  buildChains() {
     const byKey = new Map();
     for (const r of this.roads) {
       if (r.nid < 0 || r.cls === 5 && r.len < 60) continue;
@@ -234,38 +260,71 @@ export class MapData {
       if (!byKey.has(k)) byKey.set(k, []);
       byKey.get(k).push(r);
     }
-    const out = [];
+    const chains = [];
+    const dirAt = (r, node) => { const p = r.a === node ? [r.pts[0], r.pts[1]] : [r.pts[r.pts.length - 1], r.pts[r.pts.length - 2]]; return Math.atan2(p[1].z - p[0].z, p[1].x - p[0].x); };
     for (const [key, list] of byKey) {
-      const text = this.nameOf(list[0].nid, lang);
       const at = new Map();
       for (const r of list) for (const n of [r.a, r.b]) { if (!at.has(n)) at.set(n, []); at.get(n).push(r); }
       const used = new Set();
-      for (const r0 of list) {
+      const mine = [];
+      for (const r0 of [...list].sort((x, y) => y.len - x.len)) {
         if (used.has(r0.i)) continue;
         used.add(r0.i);
         let pts = r0.pts.slice();
         const grow = (endNode, atEnd) => {
           let node = endNode;
-          for (;;) {
-            const nx = (at.get(node) || []).filter((r) => !used.has(r.i));
-            if (nx.length !== 1 || (at.get(node) || []).length !== 2) return;
-            const r = nx[0];
-            used.add(r.i);
-            const seg = r.a === node ? r.pts : r.pts.slice().reverse();
+          for (let hop = 0; hop < 500; hop++) {
+            const end = atEnd ? [pts[pts.length - 2], pts[pts.length - 1]] : [pts[1], pts[0]];
+            const din = Math.atan2(end[1].z - end[0].z, end[1].x - end[0].x);
+            let best = null, bt = 0.8;           // at most ~45° off straight on
+            for (const r of at.get(node) || []) {
+              if (used.has(r.i)) continue;
+              const t = Math.abs(Math.atan2(Math.sin(dirAt(r, node) - din), Math.cos(dirAt(r, node) - din)));
+              if (t < bt) { bt = t; best = r; }
+            }
+            if (!best) return;
+            used.add(best.i);
+            const seg = best.a === node ? best.pts : best.pts.slice().reverse();
             if (atEnd) pts = pts.concat(seg.slice(1)); else pts = seg.slice(0, -1).concat(pts);
-            node = r.a === node ? r.b : r.a;
+            node = best.a === node ? best.b : best.a;
           }
         };
         grow(r0.b, true);
         grow(r0.a, false);
-        const anchors = roadLabelAnchors(pts, 200);
-        if (!anchors.length) continue;
-        const major = list[0].cls <= 2;
-        out.push({ text, key, lower: norm(text), raw: key, major, highway: list[0].cls === 0, anchors, ...boundsOf(pts) });
+        const cum = [0];
+        for (let k = 1; k < pts.length; k++) cum.push(cum[k - 1] + Math.hypot(pts[k].x - pts[k - 1].x, pts[k].z - pts[k - 1].z));
+        mine.push({ key, nid: r0.nid, cls: Math.min(...list.map((r) => r.cls)), pts, cum, len: cum[cum.length - 1], ...boundsOf(pts) });
       }
+      // drop a chain that runs beside a longer one of the same street (the other carriageway)
+      mine.sort((x, y) => y.len - x.len);
+      const kept = [];
+      for (const c of mine) {
+        let near = 0, n = 0;
+        for (let d = 0; d <= c.len; d += 15) {
+          const p = this.pointAt(c, d);
+          n++;
+          if (kept.some((k) => p.x >= k.minX - 35 && p.x <= k.maxX + 35 && p.z >= k.minZ - 35 && p.z <= k.maxZ + 35 && distToLine(p, k.pts) < 35)) near++;
+        }
+        if (n && near / n >= 0.7) continue;
+        kept.push(c);
+      }
+      for (const c of kept) { c.id = chains.length; c.anchors = roadLabelAnchors(c.pts, 200); chains.push(c); }
     }
-    this.labelsByLang[lang] = out;
-    return out;
+    this.chains = chains;
+  }
+
+  /** The point and the direction (radians, smoothed over ±3 m) at arc length d along a chain. */
+  pointAt(c, d) {
+    const cum = c.cum, pts = c.pts;
+    d = Math.max(0, Math.min(c.len, d));
+    let lo = 0, hi = cum.length - 1;
+    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (cum[mid] <= d) lo = mid; else hi = mid; }
+    const L = cum[hi] - cum[lo] || 1, t = (d - cum[lo]) / L;
+    return { x: pts[lo].x + (pts[hi].x - pts[lo].x) * t, z: pts[lo].z + (pts[hi].z - pts[lo].z) * t };
+  }
+  dirAt(c, d) {
+    const a = this.pointAt(c, d - 3), b = this.pointAt(c, d + 3);
+    return Math.atan2(b.z - a.z, b.x - a.x);
   }
 
   // ---------------------------------------------------------------- search (bilingual, accent-free)

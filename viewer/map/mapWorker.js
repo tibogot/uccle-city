@@ -8,7 +8,7 @@
 //   search { q, lang }                             -> search { results }
 //   snap { x, z, lang }                            -> snap { x, z, yaw, name, cross, d }
 import { loadMap } from './mapData.js';
-import { MapView, TextWidths, drawRoadLabels, overlaps, addLine } from '../../vendor/slop-map/mapCore.js';
+import { MapView, TextWidths, overlaps, addLine } from '../../vendor/slop-map/mapCore.js';
 import { PAL, FONT, drawGround, drawGlyph } from './mapStyle.js';
 
 let M = null;
@@ -34,7 +34,7 @@ self.onmessage = async (e) => {
     else if (m.type === 'full') full(m);
     else if (m.type === 'search') post({ type: 'search', id: m.id, results: M.search(m.q).map((it) => ({ ...it, roads: undefined, label: m.lang === 'nl' ? it.nl : it.fr, sub: m.lang === 'nl' ? it.fr : it.nl })) });
     else if (m.type === 'snap') snap(m);
-    else if (m.type === 'spritesReset') sent.clear();
+    else if (m.type === 'spritesReset') { sent.clear(); spriteMeta.clear(); }
   } catch (err) {
     post({ type: m.type, id: m.id, error: String(err?.stack || err) });
   }
@@ -56,81 +56,206 @@ function miniCache(m) {
   post({ type: 'mini', id: m.id, bitmap, cx: m.cx, cz: m.cz, s: m.s, side: m.side, dpr: m.dpr, ms: +(performance.now() - t0).toFixed(2) }, [bitmap]);
 }
 
-// ------------------------------------------------------------------ minimap: upright street names (a separate pass)
-const upright = (a) => { a = Math.atan2(Math.sin(a), Math.cos(a)); if (a > Math.PI / 2 + 0.01) a -= Math.PI; else if (a < -Math.PI / 2 - 0.01) a += Math.PI; return a; };
+// ------------------------------------------------------------------ minimap: street names along the streets (a separate pass)
+// Curved labels: each glyph sits on the street's polyline at its own arc length (advances from the text-width cache, so
+// kerning is kept), turned with the street. The label reads left to right on screen (the reading direction is chosen
+// for the current heading). A label is drawn ONCE into a north-up sprite (world orientation, at a zoom bucket of 8 %);
+// the main thread turns the sprite with the map, so curved text costs one drawImage per label, like straight text.
+// Candidate places are fixed arc lengths along each street (per zoom bucket), so the same sprite is reused from pass
+// to pass. The abbreviation (Av., Ch., Bd, Pl., Sq.) competes with a lower score: it wins where the full name does not fit.
+const FONT_PX = 10.5;
+const ABBR = [[/^Avenue /, 'Av. '], [/^Chaussée /, 'Ch. '], [/^Boulevard /, 'Bd '], [/^Place /, 'Pl. '], [/^Square /, 'Sq. ']];
+const abbrev = (t) => { for (const [re, a] of ABBR) if (re.test(t)) return t.replace(re, a); return null; };
+const prefixes = new Map();      // text -> cumulative advance widths (px at FONT_PX), kerning included
+function advances(ctx, text) {
+  const pk = ctx.font + '|' + text;
+  let a = prefixes.get(pk);
+  if (!a) {
+    a = [0];
+    for (let i = 1; i <= text.length; i++) a.push(tw.textWidth(ctx, text.slice(0, i)));
+    prefixes.set(pk, a);
+  }
+  return a;
+}
+const wrapA = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+const spriteMeta = new Map();    // sprite key -> its centre in the world
 
-function sprite(text, fontPx, color, dpr) {
-  const font = `600 ${fontPx}px ${FONT}`;
+/** Glyph centres (world) and angles for `text` centred at arc length c of chain l, reading with dir = ±1. */
+function layoutCurved(l, text, c, adv, s0, dir) {
+  const W = adv[adv.length - 1] / s0;           // metres
+  const g = [];
+  let maxTurn = 0, prev = null;
+  for (let i = 0; i < adv.length - 1; i++) {
+    const mid = (adv[i] + adv[i + 1]) / 2 / s0;
+    const d = c + dir * (mid - W / 2);
+    const p = M.pointAt(l, d), ang = M.dirAt(l, d) + (dir < 0 ? Math.PI : 0);
+    if (prev != null) maxTurn = Math.max(maxTurn, Math.abs(wrapA(ang - prev)));
+    prev = ang;
+    g.push({ x: p.x, z: p.z, ang, ch: text[i] });
+  }
+  return { g, maxTurn };
+}
+
+function curvedSprite(glyphs, s0, dpr, color, fpx) {
+  let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+  for (const q of glyphs) { x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); z0 = Math.min(z0, q.z); z1 = Math.max(z1, q.z); }
+  const pad = fpx + 4;
+  const w = Math.ceil((x1 - x0) * s0 + 2 * pad), h = Math.ceil((z1 - z0) * s0 + 2 * pad);
   if (!spriteCanvas) spriteCanvas = new OffscreenCanvas(8, 8);
-  let ctx = spriteCanvas.getContext('2d');
-  ctx.font = font;
-  const w = Math.ceil(tw.textWidth(ctx, text) + 8), h = Math.ceil(fontPx + 8);
   spriteCanvas.width = Math.ceil(w * dpr); spriteCanvas.height = Math.ceil(h * dpr);
-  ctx = spriteCanvas.getContext('2d');
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.font = font; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
-  ctx.lineWidth = 3.2; ctx.strokeStyle = PAL.label.halo; ctx.strokeText(text, w / 2, h / 2 + 0.5);
-  ctx.fillStyle = color; ctx.fillText(text, w / 2, h / 2 + 0.5);
-  return { bitmap: spriteCanvas.transferToImageBitmap(), w, h };
+  const ctx = spriteCanvas.getContext('2d');
+  ctx.font = `600 ${fpx}px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+  for (const pass of [0, 1]) {
+    for (const q of glyphs) {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.translate((q.x - x0) * s0 + pad, (q.z - z0) * s0 + pad);
+      ctx.rotate(q.ang);
+      if (pass === 0) { ctx.lineWidth = 3.2; ctx.strokeStyle = PAL.label.halo; ctx.strokeText(q.ch, 0, 0.5); }
+      else { ctx.fillStyle = color; ctx.fillText(q.ch, 0, 0.5); }
+    }
+  }
+  return { bitmap: spriteCanvas.transferToImageBitmap(), w, h, cx: x0 + (w / 2 - pad) / s0, cz: z0 + (h / 2 - pad) / s0 };
 }
 
 function miniLabels(m) {
   const t0 = performance.now();
   const { px, pz, bear, s, r, dpr } = m;
-  const fontPx = 10.5;
+  const bucket = Math.round(Math.log(s) / Math.log(1.08)), s0 = Math.pow(1.08, bucket);
   const labels = M.labels(m.lang);
   const reach = r / s;
   const cb = Math.cos(-bear), sb = Math.sin(-bear);
+  const toS = (x, z) => { const dx = (x - px) * s, dz = (z - pz) * s; return [dx * cb - dz * sb, dx * sb + dz * cb]; };
   const meas = spriteCanvas?.getContext('2d') || (spriteCanvas = new OffscreenCanvas(8, 8)).getContext('2d');
-  meas.font = `600 ${fontPx}px ${FONT}`;
+  meas.font = `600 ${FONT_PX}px ${FONT}`;
   const cands = [];
   for (const l of labels) {
     if (l.maxX < px - reach || l.minX > px + reach || l.maxZ < pz - reach || l.minZ > pz + reach) continue;
-    const width = tw.textWidth(meas, l.text);
-    const need = (width + 12) / s;
-    for (const a0 of l.anchors) {
-      if (a0.len < need * 0.45) continue;
-      // slide the label along its straight run towards the player (the run spans a0 ± len/2 along ang)
-      const ux = Math.cos(a0.ang), uz = Math.sin(a0.ang), lim = Math.max(0, a0.len / 2 - need * 0.3);
-      const t0 = Math.max(-lim, Math.min(lim, (px - a0.x) * ux + (pz - a0.z) * uz));
-      for (const dt of [0, need * 0.5 + 16 / s, -need * 0.5 - 16 / s, need + 24 / s, -need - 24 / s]) {
-        const t = Math.max(-lim, Math.min(lim, t0 + dt));
-        const a = { x: a0.x + ux * t, z: a0.z + uz * t, ang: a0.ang };
-        const dx = (a.x - px) * s, dz = (a.z - pz) * s;
-        const X = dx * cb - dz * sb, Y = dx * sb + dz * cb;
+    const fpx = l.major ? FONT_PX : FONT_PX - 1;                   // side streets a point smaller: more of them fit
+    meas.font = `600 ${fpx}px ${FONT}`;
+    for (const [variant, text] of [[0, l.text], [1, abbrev(l.text)]]) {
+      if (!text) continue;
+      const adv = advances(meas, text), need = (adv[adv.length - 1] + 6) / s0;
+      if (l.len < need) continue;
+      const step = Math.max(need * 0.3, 12 / s0);
+      for (let c = need / 2; c <= l.len - need / 2 + 0.01; c += step) {
+        const p = M.pointAt(l, c);
+        const [X, Y] = toS(p.x, p.z);
         const d = Math.hypot(X, Y);
-        if (d > r - 12) continue;
-        cands.push({ l, a, X, Y, width, score: (l.key === m.cur ? 2500 : 0) + (l.major ? 1500 : 0) + Math.min(a0.len * s, 300) - d * 1.2 - (dt ? 40 : 0) });
+        if (d > r - 10) continue;
+        cands.push({ l, text, variant, c, adv, fpx, X, Y, score: (l.key === m.cur ? 2500 : 0) + (l.major ? 1500 : 0) - d * 1.2 - variant * 400 });
       }
     }
   }
   cands.sort((a, b) => b.score - a.score);
-  const placed = [[-10, -11, 10, 9]];       // the player's arrow
+  const placed = [[-8, -10, 8, 8]];       // the player's arrow
   const byName = new Map(), list = [], sprites = {}, transfer = [];
+  const lim2 = (r - 3) * (r - 3);
+  let tried = 0;
   for (const c of cands) {
-    if (list.length >= 14) break;
-    const same = byName.get(c.l.text);
-    if (same && same.some(([x, y]) => Math.hypot(x - c.X, y - c.Y) < 150)) continue;
-    const ang = upright(c.a.ang - bear);
-    const hw = c.width * 0.5 + 3, hh = fontPx * 0.5 + 2;
-    const ca = Math.abs(Math.cos(ang)), sa = Math.abs(Math.sin(ang));
-    const bx = hw * ca + hh * sa, by = hw * sa + hh * ca;
-    const box = [c.X - bx, c.Y - by, c.X + bx, c.Y + by];
-    // the label's four corners inside the disc
-    const ux = Math.cos(ang) * hw, uy = Math.sin(ang) * hw, vx = -Math.sin(ang) * hh, vy = Math.cos(ang) * hh, lim2 = (r - 3) * (r - 3);
-    if ([[1, 1], [1, -1], [-1, 1], [-1, -1]].some(([i, j]) => (c.X + i * ux + j * vx) ** 2 + (c.Y + i * uy + j * vy) ** 2 > lim2)) continue;
-    if (overlaps(placed, box)) continue;
-    placed.push(box);
-    if (same) same.push([c.X, c.Y]); else byName.set(c.l.text, [[c.X, c.Y]]);
-    const color = c.l.major ? PAL.label.major : PAL.label.minor;
-    const key = `${c.l.text}|${color}|${dpr}`;
-    if (!sent.has(key)) {
-      const sp = sprite(c.l.text, fontPx, color, dpr);
-      sprites[key] = sp; transfer.push(sp.bitmap); sent.add(key);
+    if (list.length >= 16 || tried > 400) break;
+    const same = byName.get(c.l.key);
+    if (same && same.some(([x, y]) => Math.hypot(x - c.X, y - c.Y) < 120)) continue;
+    tried++;
+    // reading direction: left to right on screen for the current heading
+    const e0 = M.pointAt(c.l, c.c - 5), e1 = M.pointAt(c.l, c.c + 5);
+    const dir = toS(e1.x, e1.z)[0] - toS(e0.x, e0.z)[0] >= 0 ? 1 : -1;
+    const { g, maxTurn } = layoutCurved(c.l, c.text, c.c, c.adv, s0, dir);
+    if (maxTurn > 0.55) continue;                                   // too sharp a bend for text
+    const boxes = [], hh = c.fpx * 0.5 + 1.5;
+    let ok = true;
+    for (const q of g) {
+      const [X, Y] = toS(q.x, q.z);
+      if (X * X + Y * Y > lim2) { ok = false; break; }
+      boxes.push([X - hh, Y - hh, X + hh, Y + hh]);
     }
-    list.push({ key, x: c.a.x, z: c.a.z, ang: c.a.ang });
+    if (!ok || boxes.some((b) => overlaps(placed, b))) continue;
+    placed.push(...boxes);
+    if (same) same.push([c.X, c.Y]); else byName.set(c.l.key, [[c.X, c.Y]]);
+    const color = c.l.major ? PAL.label.major : PAL.label.minor;
+    const key = `${c.text}|${c.l.id}|${c.c.toFixed(1)}|${dir}|${bucket}|${dpr}`;
+    let sp = spriteMeta.get(key);
+    if (!sent.has(key) || !sp) {
+      const made = curvedSprite(g, s0, dpr, color, c.fpx);
+      sp = { cx: made.cx, cz: made.cz };
+      spriteMeta.set(key, sp);
+      sprites[key] = { bitmap: made.bitmap, w: made.w, h: made.h };
+      transfer.push(made.bitmap); sent.add(key);
+    }
+    list.push({ key, x: sp.cx, z: sp.cz, world: true, s0 });
   }
+  if (spriteMeta.size > 3000) spriteMeta.clear();
   post({ type: 'labels', id: m.id, list, sprites, cands: cands.length, ms: +(performance.now() - t0).toFixed(2) }, transfer);
+}
+
+/**
+ * Full map street names: the same curved layout, north up, drawn straight into the frame (after the vendor
+ * drawRoadLabels' rules: the best place of each street, one per street per sameNameGap px, no overlaps, search hits
+ * first, main roads only when zoomed out). Curved text along the merged chains names long streets at every zoom.
+ */
+/** Placed label boxes in a 32 px grid (the full map places thousands of glyph boxes: a flat list made it O(n²)). */
+class BoxGrid {
+  constructor(boxes = []) { this.cells = new Map(); for (const b of boxes) this.add(b); }
+  *keys(b) { for (let i = Math.floor(b[0] / 32); i <= Math.floor(b[2] / 32); i++) for (let j = Math.floor(b[1] / 32); j <= Math.floor(b[3] / 32); j++) yield i * 65536 + j; }
+  add(b) { for (const k of this.keys(b)) { let c = this.cells.get(k); if (!c) this.cells.set(k, (c = [])); c.push(b); } }
+  hits(b) { for (const k of this.keys(b)) { const c = this.cells.get(k); if (c && overlaps(c, b)) return true; } return false; }
+}
+
+function fullCurvedLabels(ctx, v, labels, placedList, { fontPx, maxLabels, sameNameGap, majorOnly, q }) {
+  const s = v.s, cands = [];
+  const placed = new BoxGrid(placedList);
+  const T0 = performance.now(); let tLayout = 0, tDraw = 0, nCand = 0;
+  const inset = (fontPx * 2) / s;
+  for (const l of labels) {
+    if (l.maxX < v.minX + inset || l.minX > v.maxX - inset || l.maxZ < v.minZ + inset || l.minZ > v.maxZ - inset) continue;
+    const hit = !!q && l.raw === q;
+    if (majorOnly && !l.major && !hit) continue;
+    ctx.font = `600 ${fontPx}px ${FONT}`;
+    const adv = advances(ctx, l.text), need = (adv[adv.length - 1] + 10) / s;
+    if (l.len < need) continue;
+    const step = Math.max(need * 0.75, 30 / s);
+    for (let c = need / 2; c <= l.len - need / 2 + 0.01; c += step) {
+      const p = M.pointAt(l, c);
+      if (p.x < v.minX + inset || p.x > v.maxX - inset || p.z < v.minZ + inset || p.z > v.maxZ - inset) continue;
+      const d = Math.hypot(p.x - v.cx, p.z - v.cz) * s;
+      cands.push({ l, c, adv, X: v.toX(p.x), Y: v.toY(p.z), hit, score: (hit ? 1e6 : 0) + (l.highway ? 3000 : 0) + (l.major ? 2000 : 0) + Math.min(l.len * s, 400) - d * 0.5 });
+    }
+  }
+  cands.sort((a, b) => b.score - a.score);
+  const T1 = performance.now(); nCand = cands.length;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+  const byName = new Map(), fails = new Map(), hh = fontPx * 0.5 + 1.5;
+  let n = 0;
+  for (const c of cands) {
+    if (n >= maxLabels) break;
+    const same = byName.get(c.l.key);
+    if (same && same.some(([x, y]) => Math.hypot(x - c.X, y - c.Y) < sameNameGap)) continue;
+    if ((fails.get(c.l.id) || 0) >= 3) continue;                       // a street that fits nowhere: stop trying
+    if (placed.hits([c.X - hh, c.Y - hh, c.X + hh, c.Y + hh])) { fails.set(c.l.id, (fails.get(c.l.id) || 0) + 1); continue; }
+    // the two ends first (cheap), then the whole layout
+    const half = c.adv[c.adv.length - 1] / 2 / s;
+    const e0 = M.pointAt(c.l, c.c - half), e1 = M.pointAt(c.l, c.c + half);
+    if (placed.hits([v.toX(e0.x) - hh, v.toY(e0.z) - hh, v.toX(e0.x) + hh, v.toY(e0.z) + hh]) || placed.hits([v.toX(e1.x) - hh, v.toY(e1.z) - hh, v.toX(e1.x) + hh, v.toY(e1.z) + hh])) { fails.set(c.l.id, (fails.get(c.l.id) || 0) + 1); continue; }
+    const dir = e1.x - e0.x >= 0 ? 1 : -1;
+    const { g, maxTurn } = layoutCurved(c.l, c.l.text, c.c, c.adv, s, dir);
+    if (maxTurn > 0.55) { fails.set(c.l.id, (fails.get(c.l.id) || 0) + 1); continue; }
+    const boxes = g.map((q2) => { const X = v.toX(q2.x), Y = v.toY(q2.z); return [X - hh, Y - hh, X + hh, Y + hh]; });
+    const hw = v.w / 2 - 3, hhv = v.h / 2 - 3;
+    if (boxes.some((b) => b[0] < -hw || b[2] > hw || b[1] < -hhv || b[3] > hhv)) continue;     // whole label in view
+    if (boxes.some((b) => placed.hits(b))) { fails.set(c.l.id, (fails.get(c.l.id) || 0) + 1); continue; }
+    for (const b of boxes) placed.add(b);
+    if (same) same.push([c.X, c.Y]); else byName.set(c.l.key, [[c.X, c.Y]]);
+    const color = c.hit ? PAL.label.search : c.l.highway ? PAL.label.highway : c.l.major ? PAL.label.major : PAL.label.minor;
+    ctx.lineWidth = 3; ctx.strokeStyle = PAL.label.halo; ctx.fillStyle = color;
+    for (const pass of [0, 1]) for (const q2 of g) {
+      const cs = Math.cos(q2.ang) * v.dpr, sn = Math.sin(q2.ang) * v.dpr;
+      ctx.setTransform(cs, sn, -sn, cs, v.dpr * (v.w / 2 + v.toX(q2.x)), v.dpr * (v.h / 2 + v.toY(q2.z)));
+      if (pass === 0) ctx.strokeText(q2.ch, 0, 0.5); else ctx.fillText(q2.ch, 0, 0.5);
+    }
+    n++;
+  }
+  v.screen(ctx);
+  fullCurvedLabels.last = { cands: nCand, candMs: +(T1 - T0).toFixed(1), placeMs: +(performance.now() - T1).toFixed(1) };
+  return n;
 }
 
 // ------------------------------------------------------------------ where am I
@@ -231,7 +356,7 @@ function full(m) {
   }
   // street names (vendor placement, north up)
   const fontPx = Math.max(9.5, Math.min(12.5, Math.round(10 * Math.sqrt(Math.max(s, 0.4)) * 2) / 2));
-  drawRoadLabels(ctx, v, M.labels(lang), tw, PAL.label, FONT, { fontPx, maxLabels: 420, sameNameGap: 280, placed, majorOnly: s < 0.32, q: m.hl || '' });
+  const streetNames = fullCurvedLabels(ctx, v, M.labels(lang), placed, { fontPx, maxLabels: 420, sameNameGap: 280, majorOnly: s < 0.32, q: m.hl || '' });
   // pins on top
   ctx.font = `700 11px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   for (const p of pins) {
@@ -244,5 +369,5 @@ function full(m) {
     }
   }
   const bitmap = fullCanvas.transferToImageBitmap();
-  post({ type: 'full', id: m.id, bitmap, view: { cx: m.cx, cz: m.cz, s: m.s, w: m.w, h: m.h, dpr: m.dpr }, ms: +(performance.now() - t0).toFixed(1) }, [bitmap]);
+  post({ type: 'full', id: m.id, bitmap, streetNames, labelTiming: fullCurvedLabels.last, view: { cx: m.cx, cz: m.cz, s: m.s, w: m.w, h: m.h, dpr: m.dpr }, ms: +(performance.now() - t0).toFixed(1) }, [bitmap]);
 }

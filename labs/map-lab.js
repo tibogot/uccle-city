@@ -147,4 +147,4 @@ function loop() {
   }
 }
 loop();
-window.__lab = { step: (sec, n = Math.round(sec * 60)) => { for (let i = 0; i < n; i++) step(sec / n); }, setRoute, setMode: (m) => { P.mode = m; }, player: P, map, M, stats: () => map.stats(), runBench };
+window.__lab = { at: (x, z, mode = 'walk') => { const h = M.near(x, z, 60)[0]; if (!h) return null; P.key = M.keyOf(h.r.nid); placeOn(h.r, h.k, h.t, true); P.bear = P.heading; P.mode = mode; P.paused = true; return M.nameOf(h.r.nid, 'fr'); }, step: (sec, n = Math.round(sec * 60)) => { for (let i = 0; i < n; i++) step(sec / n); }, setRoute, setMode: (m) => { P.mode = m; }, player: P, map, M, stats: () => map.stats(), runBench };

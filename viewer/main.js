@@ -703,12 +703,15 @@ async function main() {
   window.__driver = driver;
   if (HIDE_BU_IDS.length) loadStJob().then((m) => driver.addStatic(stjobColliders(m.placement))).catch(() => {});   // the church's front steps
   const drive = () => {
-    const [px, pz] = atP?.length === 2 ? atP : [1201.6, 549.3];
-    const s = roadStart(roads, px, pz, bounds) || start;
+    // from where the player is (walk / third person / fly): the nearest road of the tile there; else ?at=x,z or Saint-Job
+    const here = third?.on ? [third.tp.x, third.tp.z] : walker.on ? [walker.x, walker.z] : flyer.on ? [flyer.x, flyer.z] : null;
+    const T = here && world.tiles.find((t) => here[0] >= t.bounds.x0 && here[0] <= t.bounds.x1 && here[1] >= t.bounds.z0 && here[1] <= t.bounds.z1);
+    const [px, pz] = T ? here : atP?.length === 2 ? atP : [1201.6, 549.3];
+    const s = (T ? roadStart(T.roads, px, pz, T.bounds) : roadStart(roads, px, pz, bounds)) || start;
     if (!s) return;
     if (third?.on) third.stop(); walker.on = false; flyer.stop(); controls.enabled = false;
     let h = s.yaw + Math.PI;                                       // walk yaw -> car heading (forward = sin h, cos h)
-    if (TILE === "I6" && !atP && Math.sin(h) * (1153 - s.x) + Math.cos(h) * (540 - s.z) < 0) h += Math.PI;   // face the church
+    if (TILE === "I6" && !atP && !T && Math.sin(h) * (1153 - s.x) + Math.cos(h) * (540 - s.z) < 0) h += Math.PI;   // face the church
     driver.start(s.x - Math.cos(h) * 1.6, s.z + Math.sin(h) * 1.6, h);   // keep right
   };
   driver.onExit = () => setView("stjob");
@@ -990,7 +993,7 @@ async function main() {
       lighting.snapNext = true;
       return { ms: performance.now() - t0, tileMs: +tTile.toFixed(0), tile: entry.name, loaded: !loaded, mode: m };
     };
-    import("./map/cityMap.js").then((mm) => mm.startCityMap({ getPlayer, teleport, log })).then((h) => { mapHook = h; window.__map = h; })
+    import("./map/cityMap.js").then((mm) => mm.startCityMap({ getPlayer, teleport, getTrams: () => tramLine?.positions() ?? null, log })).then((h) => { mapHook = h; window.__map = h; })
       .catch((e) => log(`map: ${e.message}`));
   }
   // stateAt(pos, focus, half, dt): the smoothness harness (docs/SMOOTH_LOD.md): every LOD, fade and the shadow box

@@ -175,7 +175,7 @@ export class FullMap {
       if (r.error) { console.warn(r.error); return; }
       this.frame?.bitmap.close?.();
       this.frame = { bitmap: r.bitmap, view: r.view, ms: r.ms, ...ask };
-      this.lastMs = r.ms;
+      this.lastMs = r.ms; this.lastNames = r.streetNames; this.lastTiming = r.labelTiming;
       this.dirty = true;
     });
   }
@@ -199,6 +199,14 @@ export class FullMap {
       ctx.beginPath(); ctx.arc(X, Y - 14, 7, Math.PI * 0.85, Math.PI * 0.15); ctx.lineTo(X, Y); ctx.closePath();
       ctx.fillStyle = '#5fd0ff'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = PAL.label.halo; ctx.stroke();
       ctx.beginPath(); ctx.arc(X, Y - 14, 2.6, 0, Math.PI * 2); ctx.fillStyle = PAL.label.halo; ctx.fill();
+    }
+    // live trams 92
+    const tr = this.opts.getTrams?.();
+    if (tr) for (let i = 0; i < tr.length; i += 2) {
+      const X = v.toX(tr[i]), Y = v.toY(tr[i + 1]);
+      if (Math.abs(X) > w / 2 + 8 || Math.abs(Y) > h / 2 + 8) continue;
+      const rr = Math.max(4, Math.min(7, 30 * v.s));
+      ctx.beginPath(); ctx.arc(X, Y, rr, 0, Math.PI * 2); ctx.fillStyle = PAL.tram; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#ffffff'; ctx.stroke();
     }
     // the player, with a slow pulse to find it at a glance
     const p = this.opts.getPlayer();

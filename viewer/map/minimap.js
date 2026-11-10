@@ -8,7 +8,6 @@ import { injectMapCSS } from './mapCSS.js';
 
 const TAU = Math.PI * 2;
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
-const upright = (a) => { a = wrap(a); if (a > Math.PI / 2 + 0.01) a -= Math.PI; else if (a < -Math.PI / 2 - 0.01) a += Math.PI; return a; };
 
 /** Metres from the centre to the rim by mode and speed (walking ~110 m, a car ~250-400 m, flying out to ~1.1 km). */
 export function radiusMetres(p) {
@@ -52,6 +51,7 @@ export class Minimap {
     this.last = null;
     this.landmarks = client.landmarks || [];
     this.cone = null;
+    this.trams = { prev: new Map(), cur: [], now: [], drawn: new Map(), t0: 0, t1: 0 };
     this.north = this.makeNorth();
     // the disc's CSS size, read on resize only (reading layout every frame would force a style / layout pass)
     this.css = 220;
@@ -68,6 +68,20 @@ export class Minimap {
     x.lineWidth = 1.5; x.strokeStyle = 'rgba(255,255,255,.95)'; x.stroke();
     x.font = `800 10px ${FONT}`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = '#fff'; x.fillText('N', 9, 9.6);
     return c;
+  }
+
+  /** Live tram positions [{ trip, x, z }] (the host's own simulation, viewer/tramline.js positions()). */
+  setTrams(list, now = performance.now()) {
+    const T = this.trams;
+    T.prev = new Map(T.cur.map((c) => [c.trip, c]));
+    T.cur = list; T.t0 = T.t1 || now; T.t1 = now;
+  }
+  /** Tram positions now: [x0, z0, x1, z1, ...] (one sample late, interpolated; the full map uses it too). */
+  interpTrams(now = performance.now()) {
+    const T = this.trams, k = Math.min(1, (now - T.t1) / Math.max(1, T.t1 - T.t0));
+    T.now.length = 0;
+    for (const c of T.cur) { const q = T.prev.get(c.trip) || c; T.now.push(q.x + (c.x - q.x) * k, q.z + (c.z - q.z) * k); }
+    return T.now;
   }
 
   setLang(l) { if (l !== this.lang) { this.lang = l; this.labels.at = 0; this.labels.list = []; this.whereState.text = '#'; } }
@@ -154,6 +168,18 @@ export class Minimap {
 
     // 4. draw, skipped while the change stays under a quarter pixel / 0.15° (a canvas touched at all costs ~0.07 ms,
     //    measured; walking or driving straight moves the map < 0.1 px a frame, so it redraws ~15 times a second)
+    // live trams (sampled a few times a second by the host, drawn one sample late, interpolated between the two)
+    const T = this.trams;
+    if (T.cur.length) {
+      this.interpTrams(t0);
+      let moved = false;
+      for (let i = 0; i < T.cur.length; i++) {
+        const c = T.cur[i], x = T.now[2 * i], z = T.now[2 * i + 1];
+        const o = T.drawn.get(c.trip);
+        if (!o || Math.hypot(o[0] - x, o[1] - z) * s > 0.4) moved = moved || Math.hypot(x - p.x, z - p.z) * s < R + 8;
+      }
+      if (moved) this.last = null;
+    }
     const key = this.last;
     if (key && Math.hypot(key.x - p.x, key.z - p.z) * s < 0.25 && Math.abs(wrap(key.bear - p.bear)) < 0.0025 && Math.abs(wrap(key.heading - p.heading)) < 0.004 && Math.abs(key.s - s) / s < 0.002) {
       this.account(performance.now() - t0, false);
@@ -191,17 +217,30 @@ export class Minimap {
     }
     const cb = Math.cos(-p.bear), sb = Math.sin(-p.bear);
     const toScreen = (x, z) => { const dx = (x - p.x) * s, dz = (z - p.z) * s; return [dx * cb - dz * sb, dx * sb + dz * cb]; };
-    // street names, upright, at their world anchors
+    // street names: curved sprites drawn north-up in the worker, turned with the map (one drawImage each)
+    const ca = Math.cos(-p.bear), sa = Math.sin(-p.bear);
     for (const l of this.labels.list) {
       const sp = this.sprites.get(l.key);
       if (!sp) continue;
       const [X, Y] = toScreen(l.x, l.z);
-      if (X * X + Y * Y > (R - 6) * (R - 6)) continue;
-      const a = upright(l.ang - p.bear);
-      ctx.setTransform(dpr * Math.cos(a), dpr * Math.sin(a), -dpr * Math.sin(a), dpr * Math.cos(a), dpr * (R + X), dpr * (R + Y));
+      if (X * X + Y * Y > R * R) continue;
+      const k = dpr * s / l.s0;
+      ctx.setTransform(k * ca, k * sa, -k * sa, k * ca, dpr * (R + X), dpr * (R + Y));
       ctx.drawImage(sp.bitmap, -sp.w / 2, -sp.h / 2, sp.w, sp.h);
     }
     ctx.setTransform(dpr, 0, 0, dpr, dpr * R, dpr * R);
+    // live trams 92 (STIB red dots)
+    const T = this.trams;
+    if (T.now.length) {
+      T.drawn.clear();
+      for (let i = 0; i < T.now.length; i += 2) {
+        const [X, Y] = toScreen(T.now[i], T.now[i + 1]);
+        if (X * X + Y * Y > (R - 4) * (R - 4)) continue;
+        ctx.beginPath(); ctx.arc(X, Y, 4.6, 0, TAU); ctx.fillStyle = PAL.tram; ctx.fill();
+        ctx.lineWidth = 1.8; ctx.strokeStyle = '#ffffff'; ctx.stroke();
+      }
+      T.cur.forEach((c, i) => T.drawn.set(c.trip, [T.now[2 * i], T.now[2 * i + 1]]));
+    }
     // landmarks
     const reach2 = (R - 9) * (R - 9);
     for (const lm of this.landmarks) {
