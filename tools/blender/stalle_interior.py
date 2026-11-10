@@ -980,7 +980,7 @@ if BAKE:
         print(f"bake {mode}: {time.time() - t:.1f}s")
     for k, (u, w, h) in enumerate(PROBES):
         probe_data.append({"pos": [u, h - OY, WC + w], "sky": probe_vals["sky"][k], "sun": probe_vals["sun"][k], "night": probe_vals["night"][k]})
-    def smooth_corners(me, name, iters=3):
+    def smooth_corners(me, name, iters=8):          # round 3: 8 passes (3 left the capitals blotchy: "faceted")
         """per-corner bake noise -> one value per (vertex, normal group), then a few Laplacian passes over the faces'
         corners (each face's corners share its normal: light does not bleed round sharp edges)"""
         ca = me.color_attributes[name]

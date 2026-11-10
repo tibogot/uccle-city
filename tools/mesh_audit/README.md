@@ -8,7 +8,7 @@ This folder enforces it for every hero (and later the procedural city: the tile 
 | `audit.js` | the checks, pure JS, no imports: Node, the browser and the tile worker. `auditParts(parts, options)`, `partFromBufferGeometry(geometry, { name, slot, matrixWorld, maxDistance })`, `toMarkdown(report)` |
 | `glb.mjs` | reads any GLB into parts (one per primitive, world space, node + material names), EXT_meshopt_compression and KHR_mesh_quantization included (meshoptimizer's decoder from `tools/worker/node_modules`) |
 | `cli.mjs` | `node tools/mesh_audit/cli.mjs <file.glb> [--nodes A,B] [--range Node=metres,...] [--ignore-below y] [--offset x,y,z] [--allow allow.json] [--skip-checks a,b] [--set key=value] [--out dir] [--no-fail]`: writes `<name>.audit.json` + `<name>.audit.md`, exit 1 while blocking items remain |
-| `hook.mjs` | the pre-pack hook: `auditBeforePack(rawGlb, opts)` stops the pack on blocking items (`--force-audit` overrides), `auditAfterPack(packedGlb, opts)` re-checks the quantized file |
+| `hook.mjs` | the pre-pack hook: `auditGroups(rawGlb, { ...opts, groups: [{ name, nodes }] })` audits each LOD group (nodes drawn together) and stops the pack on blocking items (`--force-audit` overrides); `auditGroups(packed, opts, true)` re-checks the quantized file (report only). `auditBeforePack` / `auditAfterPack` = one group |
 | `../../labs/flickerTest.js` | the runtime half: N frames from a fixed / slowly moving camera, blinking pixels, heat map (any lab) |
 
 ## Checks (severity: block / warn / info)
@@ -33,32 +33,49 @@ This folder enforces it for every hero (and later the procedural city: the tile 
 Welding is global (0.1 mm, across parts and slots), so a wall and a surround in another slot that share an edge are one
 surface. Positions in the report: the file's scene coordinates (glTF, Y up, node transforms applied) + `--offset`.
 
-## Calibration (2026-11-10, on the chapel, the town hall and Saint-Job)
-- `coincident` 0.6 mm: below the chapel's meshopt position step (~0.3 mm at 20 m) times two; every hit checked by hand
-  on the chapel was a real overlap (hidden flush rings 0.5 mm behind the wall around every chamfered reveal, the aisle
-  roofs passing through the shoulder copings = the owner's gable-corner z-fight, the gable cross's crossing arms,
-  bands and plinths whose end faces lie on the next face's front at the house corners, chair rails overlapping at the
-  corners).
-- `depthSafety` 64: a 1 mm separation is resolvable to ~110 m; the town hall's sub-millimetre bands at 334 m
-  (LOD1's range) are the kind it flags.
-- The leak test needed the inside test: without it, gaps behind proud boxes glued on single-sided walls (inside the
-  wall) were reported. With it, every chapel hit was real: door-jamb quoins overhanging the chamfered opening with open
-  backs, gutter ends without stop ends, the statue's head-veil gaps, the interior oculi (glass 5 mm behind the splay's
-  end; wall holes with 32 sides vs splays with 20).
-- `opening`, `seam`, `backtoback` are listed for the record; they never block.
+## Calibration (what was really done, 2026-11-10)
+Calibrated on the Chapelle de Stalle only (exterior LOD0 / far / packed LODs, the interior cell), by tracing items one by
+one (`--set debugTris=1` puts both triangles in coplanar / depth items, `--set traceAt=[x,y,z]` logs the leak rays of the
+open edges there) and fixing the model or the check. The other heroes were run AFTER calibration, report only
+(HEROES_REPORT.md); their items were not traced one by one.
+- `coincident` 0.6 mm: below twice the chapel's meshopt position step (~0.3 mm at 20 m). Real hits on the chapel: hidden
+  flush rings behind chamfered reveals, the aisle roofs through the shoulder copings (the owner's gable-corner z-fight),
+  the clerestory flashing ledge's end caps flush with the west front, quoins' sides on plinth ends and on the chapel wall
+  (the house's east corner), the house's two rake halves at the apex, kneelers flush with copings, window crosses,
+  sunburst rays, the far cross / door / plinths, slates' border faces of two courses, the eave strip vs the butts.
+- The SEPARATION is measured over the OVERLAP (where the faces can fight), not at the vertices: a 14 m roof deck and a
+  slate tilted 2.5 deg on it had deck vertices near the slate's extended plane far from the slate (thousands of false
+  items; `vertexSeparation=1` = the old way).
+- `depthSafety` 64: a 1 mm separation is resolvable to ~110 m (reversed float depth). Not checked against a GPU capture.
+- LOD GROUPS: only nodes drawn together can fight (`auditGroups` in hook.mjs). Auditing all nodes of a GLB together
+  compares LOD0 with the far variant: ~5000 false items on the chapel.
+- LEAK: the ray through the gap is cast with back faces CULLED (what the renderer shows); "through" = it escapes or its
+  first front face is farther than `leakDeep` 0.5 m (a slate joint shows the next course's butt 14.5 cm up the slope:
+  closed). A slit needs a REAL far-side hit at a larger offset (an offset whose viewpoint is covered or inside a solid
+  proves nothing: convex plinth corners were reported). The viewpoint is inside (skipped) when >= 3 axis rays hit back
+  faces, or every ray but the downward one hits and >= 2 are back faces (an enclosed roof void), or its nearest surface
+  is a back face closer than `insideSkin` 3 cm (under a floor or a deck). Real hits kept: the gap under the west door's
+  astragal (3 x 4 mm into the nave), the choir window's wall hole 2-5 cm larger than its splay, tracery plates ending on
+  the reveal, a gable's top 3-4 cm under its coping, a floating ring plate, the sacristy hip ending outside the apse wall.
+- `streak` (> 30 deg on a > 6:1 triangle) is real on 12-sided pipes / rolls (30 deg), on mitred gutters and coves whose
+  corner normals are averaged across the corner, and on figures whose folds turn between tall rings.
+- `flipped` skips triangles under 1 mm2 (`flipMinArea`): quantized slivers' winding is noise.
+- `opening`, `seam`, `backtoback` are listed for the record; they never block. The packed-file audit (after
+  quantization) is informational: it does not stop the pack.
 - Accepting an item on purpose: `<name>.allow.json` next to the reports: `[{ "check": "near", "at": [x, y, z],
   "radius": 0.1, "why": "..." }]` (positions as reported, after `--offset`).
 
 ## How every hero pack calls it
 ```js
-import { auditBeforePack, auditAfterPack } from "./mesh_audit/hook.mjs";
-const AUDIT = { name: "townhall", nodes: ["TownHall", "TownHall_door", "TownHall_far"],
-  range: { TownHall: 128, TownHall_far: 2000, TownHall_lod1: 380, TownHall_lod2: 2000 },     // each LOD band's END
+import { auditGroups } from "./mesh_audit/hook.mjs";
+const AUDIT = { name: "townhall",
+  groups: [{ name: "lod0", nodes: ["TownHall", "TownHall_door"] }, { name: "far", nodes: ["TownHall_far"] }],   // drawn together
+  range: { TownHall: 128, TownHall_door: 128, TownHall_far: 2000, TownHall_lod1: 470, TownHall_lod2: 2000 },     // each LOD band's END
   ignoreBelow: <lowest ground in scene Y>, offset: [0, OY, 0], reportDir: "models/townhall/audit",
   allowFile: "models/townhall/audit/townhall.allow.json" };
-await auditBeforePack(rawGlb, AUDIT);            // stops the pack on blocking items (--force-audit: warn only)
+await auditGroups(rawGlb, AUDIT);                // stops the pack on blocking items (--force-audit: warn only)
 ...pack...
-await auditAfterPack(packedGlb, { ...AUDIT, nodes: [...with the generated LOD nodes] });
+await auditGroups(packedGlb, { ...AUDIT, groups: [...the packed LOD nodes per level] }, true);   // report only
 ```
 The Chapelle de Stalle does this in `tools/stalle_pack.mjs`. For generated geometry (the tile worker, later):
 `auditParts(meshes.map((m) => partFromBufferGeometry(m.geometry, { name, slot, matrixWorld: m.matrixWorld.elements, maxDistance })))`.

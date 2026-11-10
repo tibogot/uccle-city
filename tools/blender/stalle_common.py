@@ -92,7 +92,7 @@ HOUSE = dict(u0=-6.67, u1=0.58, w0=4.15, w1=9.97, eave=37.9, ridge=41.3)
 class Builder:
     """faces + per-face slot, code, optional UV0, construction group (lightmap islands are split by group), the per-piece
     seed (COLOR_0.b: 0 = none; slates, statue...) and a forced per-vertex AO flag (small repeated pieces: slates)"""
-    def __init__(self): self.v = []; self.f = []; self.m = []; self.c = []; self.uv = []; self.g = []; self.b = []; self.vao = []; self.grp = 0; self.crease = set()
+    def __init__(self): self.v = []; self.f = []; self.m = []; self.c = []; self.uv = []; self.g = []; self.b = []; self.vao = []; self.grp = 0; self.crease = set(); self.smooth = set()
     def face(self, pts, mat, code=0, uv=None):
         if len(pts) < 3: return
         i0 = len(self.v); self.v.extend(Vector(p) for p in pts)
@@ -184,7 +184,9 @@ def fill2d(fr, loops, d, mat, code=0, flip=False):
         cr = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
         if abs(cr) < 1e-9: continue
         if (cr < 0) != flip: b, c = c, b
+        sv = K.VAO; K.VAO = sv or 2                     # 2: lightmapped even where the triangle is a sliver
         K.B.face([fr.p(a[0], a[1], d), fr.p(b[0], b[1], d), fr.p(c[0], c[1], d)], mat, code)
+        K.VAO = sv
 def strip2d(fr, loop, d0, d1, mat, code=0, inward=True):
     """side walls of a loop between depths d0 and d1 (inward: facing the loop's inside, e.g. a reveal)"""
     loop = ccw(loop); n = len(loop)
@@ -444,7 +446,7 @@ def make_object(scn, mats, slots, name, bld, v0, v1, ao_px, smart=True, thin_lim
             uvd[2 * li] = p.dot(t); uvd[2 * li + 1] = p.dot(b)
     uv0.data.foreach_set("uv", uvd)
     ga = me.attributes.new("grp", "INT", "FACE"); ga.data.foreach_set("value", bld.g)
-    va = me.attributes.new("vao", "INT", "FACE"); va.data.foreach_set("value", [1 if x else 0 for x in bld.vao])
+    va = me.attributes.new("vao", "INT", "FACE"); va.data.foreach_set("value", [2 if x == 2 else 1 if x else 0 for x in bld.vao])
     obj = bpy.data.objects.new(name, me)
     scn.collection.objects.link(obj)
     bm = bmesh.new(); bm.from_mesh(me)
@@ -453,6 +455,14 @@ def make_object(scn, mats, slots, name, bld, v0, v1, ao_px, smart=True, thin_lim
     bm.to_mesh(me); bm.free()
     me.shade_smooth()
     me.set_sharp_from_angle(angle=math.radians(32))
+    if bld.smooth:
+        # smooth groups (the statue: a sculpted surface simplified to 14k triangles): smooth up to 60 deg inside them
+        bm = bmesh.new(); bm.from_mesh(me); gl = bm.faces.layers.int.get("grp")
+        for e in bm.edges:
+            # smooth up to 45 deg (the 32 deg rule faceted it; all-smooth bent corner normals > 85 deg at the cloth's thin
+            # edges and the fingers: the audit's streaks / flipped)
+            if len(e.link_faces) == 2 and e.link_faces[0][gl] in bld.smooth and e.link_faces[1][gl] in bld.smooth and e.link_faces[0].normal.angle(e.link_faces[1].normal, 0.0) < math.radians(45): e.smooth = True
+        bm.to_mesh(me); bm.free()
     if bld.crease:
         # creased groups (e.g. the cove's sides): their edges against any other group are sharp when the faces turn > 8 deg
         bm = bmesh.new(); bm.from_mesh(me); gl = bm.faces.layers.int.get("grp")
@@ -470,7 +480,9 @@ def make_object(scn, mats, slots, name, bld, v0, v1, ao_px, smart=True, thin_lim
         co = [me.vertices[v].co for v in p_.vertices]
         mx = max((co[i] - co[(i + 1) % len(co)]).length for i in range(len(co)))
         # small AND narrow (glazing bars, band tops, louvres): long slivers of a tessellated wall keep their lightmap texels
-        thin[p_.index] = bool(vflag[p_.index]) or (0 < mx < 0.9 and p_.area / mx < (thin_limit if len(co) == 4 else thin_limit / 2))
+        # (vao 2 = a planar fill's triangle, fill2d: never thin. Its slivers next to the openings took per-vertex AO, dark
+        # at the reveal's corners, and drew dark rays round the oculus and over the window heads: the owner's streak)
+        thin[p_.index] = vflag[p_.index] == 1 or (vflag[p_.index] != 2 and 0 < mx < 0.9 and p_.area / mx < (thin_limit if len(co) == 4 else thin_limit / 2))
     if not smart:
         me.attributes.remove(me.attributes["grp"])
         return obj, ntri, {slots[m]: sum(len(p.vertices) - 2 for p in me.polygons if p.material_index == remap[m]) for m in used}, thin

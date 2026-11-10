@@ -78,11 +78,11 @@
    0.86,
    0.94
   ],
-  "lod0_px_per_m": 34.8,
-  "far_px_per_m": 13.0,
+  "lod0_px_per_m": 35.4,
+  "far_px_per_m": 13.1,
   "thin_faces_vertex_ao": [
-   19905,
-   827,
+   17658,
+   0,
    78
   ]
  },

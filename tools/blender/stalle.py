@@ -361,7 +361,7 @@ def statue(fr):
     S_ = json.load(open(STATUE_FILE))
     sv_vao, sv_seed = K.VAO, K.SEED
     K.VAO = True; K.SEED = 0.5
-    K.B.new_group()
+    K.B.new_group(); K.B.smooth.add(K.B.grp)                 # smooth shaded all over (stalle_common.make_object)
     X, Y = -fr.U, fr.N                                    # statue frame (right-handed): x = the viewer's left, y = out of the wall, z up
     V = [foot + X * x + Y * y + Z * z for x, y, z in S_["verts"]]
     for f in S_["faces"]:

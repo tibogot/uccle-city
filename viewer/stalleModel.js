@@ -246,14 +246,16 @@ function rubble() {
   const ex = min(dl, dr), ey = min(db, dt);
   const sx = select(dl.lessThan(dr), float(1), float(-1)), sy = select(db.lessThan(dt), float(1), float(-1));
   // smooth min of the two distances (rounded corners) and its gradient
-  const k = float(0.012);
+  const k = float(0.007);                                       // round 3: crisper corners (0.012 read as tiles)
   const ax = ex.negate().div(k).exp(), ay = ey.negate().div(k).exp();
   const e = ax.add(ay).log().mul(k).negate();
   const wx = ax.div(ax.add(ay)), wy = float(1).sub(wx);
   const jw = hs3.mul(0.004).add(0.0065);                        // half joint: joints 1.3-2.1 cm
   const e2 = e.sub(jw);
-  // pillow: rounded arrises (radius 2.2-4 cm) + a gentle dome over the face, per stone
-  const r = hs2.mul(0.018).add(0.022), A = hs.mul(0.003).add(0.005);
+  // pillow: rounded arrises + a gentle dome over the face, per stone. Round 3 (owner: "bevelled bathroom tiles"): the
+  // arris radius 0.9-1.7 cm (was 2.2-4), its drop 2.5-4.5 mm (was 5-8); each stone TILTED a little (rough-squared stones
+  // never lie in one plane) and its face ROUGH (two noise octaves, gradient by finite differences: no derivatives)
+  const r = hs2.mul(0.008).add(0.009), A = hs.mul(0.002).add(0.0025);
   const t = clamp(e2.div(r), 0, 1);
   const dhde = float(2).mul(A).div(r).mul(float(1).sub(t)).mul(step(0.0, e2));
   const W = xr.sub(xl).max(0.05), H = y1.sub(y0).max(0.05);
@@ -262,7 +264,12 @@ function rubble() {
   const ddx = B.mul(16).mul(float(1).sub(fxs.mul(2))).div(W).mul(fys.mul(float(1).sub(fys)));
   const ddy = B.mul(16).mul(float(1).sub(fys.mul(2))).div(H).mul(fxs.mul(float(1).sub(fxs)));
   const near = float(1).sub(smoothstep(0.003, 0.016, fw));
-  const gx = dhde.mul(sx).mul(wx).add(ddx).mul(near), gy = dhde.mul(sy).mul(wy).add(ddy).mul(near);
+  const onStone = step(0.0, e2);
+  const tiltX = hash2(vec2(sid.add(5.3), row)).sub(0.5).mul(0.08), tiltY = hash2(vec2(sid, row.add(3.3))).sub(0.5).mul(0.06);
+  const rh = (q) => vnoise(q.mul(9.0).add(hs.mul(13.0))).mul(0.0035).add(vnoise(q.mul(27.0).add(hs2.mul(7.0))).mul(0.0012));
+  const eps = 0.004, h0 = rh(w), rgx = rh(w.add(vec2(eps, 0))).sub(h0).div(eps), rgy = rh(w.add(vec2(0, eps))).sub(h0).div(eps);
+  const gx = dhde.mul(sx).mul(wx).add(ddx).add(tiltX.add(rgx).mul(onStone)).mul(near);
+  const gy = dhde.mul(sy).mul(wy).add(ddy).add(tiltY.add(rgy).mul(onStone)).mul(near);
   const nT = vec3(gx.negate(), gy.negate(), 1).normalize();
   // joint coverage over the pixel footprint (AA), and far away the average
   const mask = smoothstep(0.0, max(fw.mul(1.2), 0.0015), e2);
@@ -321,8 +328,11 @@ function slateLook() {
   const film = vnoise(w.mul(0.9)).mul(0.6).add(vnoise(w.mul(3.1)).mul(0.4));
   const grime = smoothstep(0.45, 0.85, film).mul(north.mul(0.7).add(0.3)).mul(0.22).mul(stLook.moss);
   col = mix(col, lin(0x5d6257), grime);
-  const crust = smoothstep(0.83, 0.93, vnoise(w.mul(26.0).add(id.mul(3.0)))).mul(smoothstep(0.35, 0.7, vnoise(w.mul(1.7)))).mul(north.mul(0.8).add(0.2));
-  col = mix(col, lin(0x8d908a), crust.mul(0.55).mul(stLook.moss));
+  // crustose lichen: small soft rosettes (two octaves, a soft threshold: one octave of value noise read as pale
+  // rectangles, "paint splatter"), more on some slates than others, mostly on the north slopes
+  const cn = vnoise(w.mul(19.0).add(id.mul(3.0))).mul(0.65).add(vnoise(w.mul(53.0).add(id.mul(7.0))).mul(0.35));
+  const crust = smoothstep(0.7, 0.86, cn).mul(smoothstep(0.4, 0.75, vnoise(w.mul(1.7)))).mul(north.mul(0.8).add(0.2)).mul(id.mul(0.6).add(0.4));
+  col = mix(col, lin(0x80867b), crust.mul(0.38).mul(stLook.moss));
   col = mix(col, lin(0x4a4c4e), isCode(C.ridge).mul(0.35));
   // the deck's relief: each course tilts up-slope by one slate thickness over one gauge (the slates rest on the course
   // below), the butt step as a short steep band
