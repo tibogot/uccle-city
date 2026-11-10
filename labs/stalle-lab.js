@@ -15,7 +15,7 @@ import { Lighting, PRESETS } from "../viewer/lighting.js";
 import { createPipeline } from "../viewer/post.js";
 import { withObjectFade, SMOOTH } from "../viewer/lodFade.js";
 import { precompile } from "../viewer/warmup.js";
-import { loadStalle, ST_LODS, ST_SLOTS, LIBRARY_NAMES, SLOT_TABLE, stLook } from "../viewer/stalleModel.js";
+import { loadStalle, ST_LODS, ST_SLATES, slateFade, ST_SLOTS, LIBRARY_NAMES, SLOT_TABLE, stLook } from "../viewer/stalleModel.js";
 
 const qp = new URLSearchParams(location.search);
 const longTasks = [];
@@ -229,7 +229,7 @@ const firstView = qp.get("view") && PHOTOS[qp.get("view")] ? qp.get("view") : (O
 const S = {
   mode: "orbit", lod: "auto", show: "new model", wireframe: false, view: firstView, photo: 0, frame: true, notes: true,
   time: preset, hour: lighting.hour, day: lighting.day, post: qp.get("fx") !== "0", ao: 1, aoDirect: 0.6, weather: 1, moss: 1, glow: 0.35,
-  slot: "sandstone_rubble", swap: "table default", swapAll: false,
+  slot: "sandstone_rubble", swap: "table default", swapAll: false, slates: true,
   stats: "", lodInfo: "", bench: "—", swapInfo: "—",
 };
 const ui = new Panel({ title: "Stalle Lab" });
@@ -242,6 +242,7 @@ const fm = ui.addFolder("Model");
 fm.add(S, "lod", ["auto", "LOD0", "LOD1", "LOD2"]).name("LOD");
 fm.add(S, "show", ["new model", "UrbIS solids (city today)", "new + UrbIS ghost"]).onChange(applyShow);
 fm.add(S, "wireframe").onChange((v) => { for (const s of ST_SLOTS) model.materials[s].wireframe = v; });
+fm.add(S, "slates").name("real slates (forced LODs)");
 fm.add(S, "lodInfo").name("LOD now").listen();
 const fs = ui.addFolder("Material slots (adapter table)");
 fs.add(S, "slot", ST_SLOTS).name("GLB slot");
@@ -262,6 +263,9 @@ const fp = ui.addFolder("Performance");
 fp.add(S, "stats").name("frame").listen();
 fp.add({ go: () => bench() }, "go").name("benchmark: GPU ms per LOD at this view");
 fp.add(S, "bench").name("result").listen();
+S.flicker = "—";
+fp.add({ go: async () => { const out = []; for (const move of ["fixed", "strafe", "dolly"]) { const r = await lab.flicker({ move, show: move === "dolly" }); out.push(`${move} ${r.ppm} ppm`); } S.flicker = out.join(" · "); } }, "go").name("flicker test (fixed, strafe, dolly)");
+fp.add(S, "flicker").name("blinking pixels").listen();
 
 function applyShow() {
   root.visible = S.show !== "UrbIS solids (city today)";
@@ -363,12 +367,13 @@ async function bench(rounds = 1) {
   return all;
 }
 const hitches = [];
-window.lab = { renderer, scene, camera, controls, model, lighting, goView, fitFrame, bench, gpu, S, PHOTOS, levels, hitches, doSwap, loadMs, compileMs, shownAt, longTasks, toCity, groundAt, root, inner: () => inner, setMode, urbis, pipe: () => pipe };
+const lab = window.lab = { renderer, scene, camera, controls, model, lighting, goView, fitFrame, bench, gpu, S, PHOTOS, levels, hitches, doSwap, loadMs, compileMs, shownAt, longTasks, toCity, groundAt, root, inner: () => inner, setMode, urbis, pipe: () => pipe };
 
 const ramp = (d, k) => { const s = ST_LODS[k].until, w = ST_LODS[k].band; return THREE.MathUtils.smoothstep(d, s - w, s + w); };
 let last = performance.now(), frames = 0, fpsAcc = 0, fpsN = 0, fps = 0;
-renderer.setAnimationLoop(() => {
-  const now = performance.now(), dtMs = now - last, dt = Math.min(dtMs / 1000, 0.1); last = now;
+const frame = (dtFixed = null) => {
+  const now = performance.now(), dtMs = now - last; last = now;
+  const dt = dtFixed ?? Math.min(dtMs / 1000, 0.1);
   if (frames > 30 && dtMs > 34) { hitches.push(Math.round(dtMs)); if (hitches.length > 50) hitches.shift(); }
   fpsAcc += dt; fpsN++; if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
   if (S.mode === "orbit") controls.update();
@@ -379,12 +384,15 @@ renderer.setAnimationLoop(() => {
     const t1 = ramp(dist, 0), t2 = ramp(dist, 1);
     const fades = [2 + t1, t1 < 1 ? t1 : 2 + t2, t2];
     const shown = [t1 < 1, t1 > 0 && t2 < 1, t2 > 0];
-    levels.forEach((g, k) => { g.visible = shown[k]; if (shown[k]) for (const o of g.children) o.userData.fade = fades[k]; });
+    levels.forEach((g, k) => { g.visible = shown[k]; if (shown[k]) for (const o of g.children) {
+          if (o.userData.slates) { const f = slateFade(dist, fades[k]); o.visible = f !== null; if (f !== null) o.userData.fade = f; }
+          else o.userData.fade = fades[k];
+        } });
     S.lodInfo = `${shown.map((v, k) => (v ? `L${k}` : "")).filter(Boolean).join("+")} · ${dist.toFixed(0)} m`;
   } else {
     let k = S.lod === "auto" ? ST_LODS.findIndex((l) => dist < l.until) : +S.lod.slice(3);
     if (forced !== null) k = forced === "off" ? -1 : forced;
-    levels.forEach((g, i) => { g.visible = i === k; if (g.visible) for (const o of g.children) o.userData.fade = 1; });
+    levels.forEach((g, i) => { g.visible = i === k; if (g.visible) for (const o of g.children) { o.userData.fade = 1; if (o.userData.slates) o.visible = S.slates; } });
     S.lodInfo = k >= 0 ? `LOD${k} · ${model.tris[k].toLocaleString()} tris · ${dist.toFixed(0)} m` : "off";
   }
   if (forced === "off") root.visible = false; else if (forced !== null) root.visible = true; else applyShow();
@@ -403,5 +411,20 @@ renderer.setAnimationLoop(() => {
       `\nlong tasks: ${longTasks.filter(([t]) => t > shownAt).length} after show · benchmark (median GPU ms, whole frame; + = the chapel): ${S.bench}` +
       (inner?.info ? `\n${inner.info()}` : "");
   }
-});
+};
+renderer.setAnimationLoop(() => frame());
+// THE FLICKER TEST (labs/flickerTest.js): frozen time, N frames from a fixed / slowly moving camera, blinking pixels
+lab.renderFrame = () => frame(0);
+lab.pause = () => renderer.setAnimationLoop(null);
+lab.resume = () => { last = performance.now(); renderer.setAnimationLoop(() => frame()); };
+lab.flicker = async (opts = {}) => {
+  const { flickerTest, showHeat } = await import("./flickerTest.js");
+  lab.pause();
+  try {
+    const r = await flickerTest({ renderFrame: lab.renderFrame, canvas: renderer.domElement, camera, controls, ...opts });
+    if (opts.show !== false) showHeat(r);
+    console.log("[stalle lab] flicker", JSON.stringify({ ...r, heatURL: undefined }));
+    return r;
+  } finally { lab.resume(); }
+};
 addEventListener("resize", fitFrame);

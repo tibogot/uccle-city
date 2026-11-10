@@ -127,10 +127,10 @@ def scale_loop(loop, cs, v0, ks, kv, sill_drop=0.0):
 
 def oculus_inside(fr, s, h, r_glass, depth, r_in=None):
     r_in = r_in or r_glass + 0.14
-    big = circle(s, hz(h), r_in, 20); small = circle(s, hz(h), r_glass, 20)
+    big = circle(s, hz(h), r_in, 32); small = circle(s, hz(h), r_glass, 32)     # = the wall's hole (32): no slit
     splay(fr, big, small, -depth)
     KB, K.B = K.B, BG
-    fill2d(fr, [small], -depth - 0.005, GLASS, C_LEAD)
+    fill2d(fr, [small], -depth, GLASS, C_LEAD)                                    # the glass closes the splay's end
     K.B = KB
     return big
 
@@ -184,11 +184,25 @@ def wall_plan(a, b, h0, h1, into, mat=BRICK, holes_fn=None, top=None):
     fill2d(fr, [out] + holes, 0.0, mat, C_PLAIN)
     return fr
 
-def voussoirs(fr, head, cs, spring_v, width=0.2, d=0.015, n=11, mat=STONE):
-    """a ring of separate voussoirs (real joints) along an arch head (points above the spring line, left to right)"""
+def _clip_s(loop, lo, hi):
+    """clip a polygon (s, v) to lo <= s <= hi (Sutherland-Hodgman on two vertical lines)"""
+    out = loop
+    for x0, keep_ge in ((lo, True), (hi, False)):
+        if x0 is None or not out: continue
+        inp, out = out, []
+        for i in range(len(inp)):
+            p, q = inp[i], inp[(i + 1) % len(inp)]
+            ip = p[0] >= x0 if keep_ge else p[0] <= x0
+            iq = q[0] >= x0 if keep_ge else q[0] <= x0
+            if ip: out.append(p)
+            if ip != iq:
+                t = (x0 - p[0]) / (q[0] - p[0]); out.append((x0, p[1] + (q[1] - p[1]) * t))
+    return out
+def voussoirs(fr, head, cs, spring_v, width=0.2, d=0.015, n=11, mat=STONE, s_lo=None, s_hi=None):
+    """a ring of separate voussoirs (real joints) along an arch head (points above the spring line, left to right);
+    s_lo / s_hi clip the ring (two neighbouring rings meet on the pier's axis: one springer, no overlapping fronts)"""
     pts = [p for p in head if p[1] >= spring_v - 1e-6]
     pts = sorted(pts, key=lambda p: p[0])
-    # resample by arc length
     acc = [0.0]
     for i in range(1, len(pts)): acc.append(acc[-1] + math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]))
     tot = acc[-1]
@@ -199,17 +213,16 @@ def voussoirs(fr, head, cs, spring_v, width=0.2, d=0.015, n=11, mat=STONE):
                 f = (x - acc[i - 1]) / max(acc[i] - acc[i - 1], 1e-9)
                 return (pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * f, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * f)
         return pts[-1]
-    cx = cs; cy = spring_v
+    cx, cy = cs, spring_v
     for k in range(n):
-        t0, t1 = k / n + 0.003, (k + 1) / n - 0.003
-        q = []
-        for t in (t0, (t0 + t1) / 2, t1):
-            q.append(at(t))
+        t0, t1 = k / n + (0.003 if k else 0.0), (k + 1) / n - (0.003 if k < n - 1 else 0.0)
+        q = [at(t0 + (t1 - t0) * j / 4) for j in range(5)]
         outer = []
         for (x, y) in reversed(q):
             dx, dy = x - cx, y - cy + 0.4; L = math.hypot(dx, dy) or 1
-            outer.append((x + dx / L * width, y + dy / L * width))
-        loop = q + outer
+            outer.append((x + dx / L * width, max(spring_v, y + dy / L * width)))
+        loop = _clip_s(q + outer, s_lo, s_hi)
+        if len(loop) < 3: continue
         fill2d(fr, [loop], d, mat, C_ARCH); strip2d(fr, loop, d, 0.0, mat, C_ARCH, inward=False)
 
 # ------------------------------------------------------------------------------------------------ architecture
@@ -238,56 +251,90 @@ def west_wall():
     fr = wall_plan((U_W, WC - AI), (U_W, WC + AI), F0 - 0.05, None, (5.0, WC), holes_fn=holes, top=top)
     sc = S(fr, U_W, WC)
     window_inside(fr, sc, SC.WEST_WINDOW, SC.T_WEST - 0.2)
-    # the door's reveal (plastered splay) back to the leaves' plane
-    door = rect(sc - SC.DOOR_W / 2, hz(F0), sc + SC.DOOR_W / 2, hz(SC.DOOR_TOP))
-    strip2d(fr, door, 0.0, -(SC.T_WEST - 0.33), STONE, C_PLAIN)
+    # the door's reveal (stone) back to the oak frame (jambs + head) and the threshold under the leaves; the frame's
+    # back face (the exterior model draws its front and inner sides: no face is drawn twice)
+    W2, Tp, DF, DL = SC.DOOR_W / 2, hz(SC.DOOR_TOP), SC.DOOR_FRAME, SC.DOOR_LEAF
+    dj = -(SC.T_WEST - DF["u1"])
+    for (p0, p1, nrm) in (((sc - W2, hz(F0)), (sc - W2, Tp), fr.U), ((sc - W2, Tp), (sc + W2, Tp), -Z), ((sc + W2, Tp), (sc + W2, hz(F0)), -fr.U)):
+        face_dir([fr.p(*p0, 0.0), fr.p(*p1, 0.0), fr.p(*p1, dj), fr.p(*p0, dj)], nrm, STONE, C_PLAIN)
+    face_dir([fr.p(sc - W2, hz(F0), 0.0), fr.p(sc + W2, hz(F0), 0.0), fr.p(sc + W2, hz(F0), dj), fr.p(sc - W2, hz(F0), dj)], Z, STONE, C_STEP)
+    f = DF["face"]
+    fill2d(fr, [rect(sc - W2, hz(F0), sc + W2, Tp), rect(sc - W2 + f, hz(F0), sc + W2 - f, Tp - DF["head"])], dj, WOOD, C_PLAIN)
     fbox(fr, sc - SC.DOOR_W / 2 - 0.05, sc + SC.DOOR_W / 2 + 0.05, hz(SC.DOOR_TOP), hz(SC.DOOR_TOP) + 0.22, 0.0, 0.02, STONE, C_ARCH)
     # holy-water stoup north of the door (stone shell on a corbel)
     c = fr.p(sc - 1.25, hz(F0 + 0.95), 0.18)
     lathe(c, [(0.0, -0.2), (0.07, -0.17), (0.1, -0.08), (0.2, 0.0), (0.21, 0.04), (0.16, 0.05), (0.0, 0.0)], 12, STONE, C_PLAIN)
 
 def arcade(side):
-    """one arcade: the wall between the nave and an aisle on round piers, pointed arches with voussoir rings, the
-    clerestory oculi above (nave face), the aisle face up to the aisle ceiling"""
+    """one arcade: the wall between the nave and an aisle, carried by round piers: pointed arches SPRING FROM THE ABACI
+    (their intrados' feet on the abacus, S0 from the pier's axis), the wall above the springing only (below it: the
+    piers and the open bays), the arches' soffits, voussoir rings on both faces meeting on each pier's axis in one
+    springer joint; the clerestory oculi above (nave face), the aisle face up to the aisle ceiling"""
     wn, wa = WC + side * ARC_N, WC + side * ARC_A
-    heads = []
-    def bay_loops(fr):
-        out = []
-        for (a, b) in BAYS:
-            ua = a + (0.0 if a == SC.RESP_W else 0.02); ub = b - 0.02
-            span = b - a
-            apex = min(38.98, SPRING + 0.86 * span)          # equilateral pointed arches (interior photo)
-            s0, s1 = sorted((S(fr, ua, wn if fr is frN else wa), S(fr, ub, wn if fr is frN else wa)))
-            out.append(pointed(s0, s1, hz(SPRING), hz(apex), n=10, bottom=hz(F0 - 0.05)))
-        return out
+    S0 = 0.17                                                  # the arch's foot from the pier's axis (abacus 0.43 inradius)
+    feet = [(a + (0.0 if a == SC.RESP_W else S0), b - (0.0 if b == U_CA0 else S0)) for (a, b) in BAYS]
+    def head(fr, ww, a, b):
+        s0, s1 = sorted((S(fr, a, ww), S(fr, b, ww)))
+        apex = min(38.98, SPRING + 0.86 * (BAYS[[f for f in feet].index((a, b))][1] - BAYS[[f for f in feet].index((a, b))][0]))
+        return pointed(s0, s1, hz(SPRING), hz(apex), n=24)
+    def outline(fr, ww, top):
+        """the wall: from the west respond's foot, up its face, over every arch and springer, down the east end"""
+        o = [(S(fr, U_W, ww), hz(F0 - 0.1)), (S(fr, SC.RESP_W, ww), hz(F0 - 0.1))]
+        for (a, b) in feet:
+            hd = head(fr, ww, a, b)
+            pts = sorted([p for p in hd if p[1] >= hz(SPRING) - 1e-6], key=lambda p: p[0] * (1 if S(fr, b, ww) > S(fr, a, ww) else -1))
+            o += pts
+        o += [(S(fr, U_CA0, ww), hz(top)), (S(fr, U_W, ww), hz(top))]
+        return o
     frN = fr_in(U_W, wn, 0, -side)          # nave face, N toward the axis
     frA = fr_in(U_W, wa, 0, side)           # aisle face, N toward the aisle
-    a_n = [(S(frN, U_W, wn), hz(F0 - 0.1)), (S(frN, U_CA0, wn), hz(F0 - 0.1)), (S(frN, U_CA0, wn), hz(WALL_TOP)), (S(frN, U_W, wn), hz(WALL_TOP))]
-    loopsN = bay_loops(frN)
-    ocN = [circle(S(frN, u, wn), hz(39.72), 0.3, 20) for u in SC.CLER_OCULI]
-    fill2d(frN, [a_n] + loopsN + ocN, 0.0, BRICK, C_PLAIN)
+    ocN = [circle(S(frN, u, wn), hz(39.72), 0.3, 32) for u in SC.CLER_OCULI]
+    fill2d(frN, [outline(frN, wn, WALL_TOP)] + ocN, 0.0, BRICK, C_PLAIN)
     for u in SC.CLER_OCULI: oculus_inside(frN, S(frN, u, wn), 39.72, 0.16, SC.T_CLER - 0.13, r_in=0.3)
-    u_end = U_AE[side]
-    a_a = [(S(frA, U_W, wa), hz(F0 - 0.1)), (S(frA, u_end, wa), hz(F0 - 0.1)), (S(frA, u_end, wa), hz(AISLE_HI + 0.02)), (S(frA, U_W, wa), hz(AISLE_HI + 0.02))]
-    loopsA = bay_loops(frA)
-    fill2d(frA, [a_a] + loopsA, 0.0, BRICK, C_PLAIN)
-    # soffits (the arches' undersides, stone) between the two faces + voussoir rings on both faces
-    for (a, b), LN, LA in zip(BAYS, loopsN, loopsA):
-        strip2d(frN, LN, 0.0, -(ARC_A - ARC_N), STONE, C_ARCH)
-        sv = hz(SPRING)
-        for fr, L in ((frN, LN), (frA, LA)):
-            xs = [p[0] for p in L]; cs = (min(xs) + max(xs)) / 2
-            voussoirs(fr, L, cs, sv, 0.2, 0.015, 9 if b - a > 2 else 6)
-    # piers: base, round shaft, moulded capital, octagonal abacus
+    fill2d(frA, [outline(frA, wa, AISLE_HI + 0.02)], 0.0, BRICK, C_PLAIN)
+    # the soffits (stone) under each arch between the two faces, the responds' faces below the springing
+    for (a, b) in feet:
+        L = head(frN, wn, a, b)
+        arc = sorted([p for p in L if p[1] >= hz(SPRING) - 1e-6], key=lambda p: p[0])
+        K.B.new_group()
+        for i in range(len(arc) - 1):
+            p0, p1 = arc[i], arc[i + 1]
+            A0, B0 = frN.p(p0[0], p0[1], 0.0), frN.p(p1[0], p1[1], 0.0)
+            A1, B1 = frN.p(p0[0], p0[1], -(ARC_A - ARC_N)), frN.p(p1[0], p1[1], -(ARC_A - ARC_N))
+            mid = Vector(((p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2)); cxs = (arc[0][0] + arc[-1][0]) / 2
+            inward = frN.U * (cxs - mid.x) + Z * (hz(SPRING) - mid.y)
+            face_dir([A0, B0, B1, A1], inward, STONE, C_ARCH)
+        for fr, ww in ((frN, wn), (frA, wa)):
+            hd = head(fr, ww, a, b)
+            xs = [p[0] for p in hd]; cs = (min(xs) + max(xs)) / 2
+            sa, sb = S(fr, a, ww), S(fr, b, ww)
+            # clip at the piers' axes (S0 beyond the feet), not at the responds
+            pa = S(fr, a - (S0 if a != SC.RESP_W else 0.0), ww); pb = S(fr, b + (S0 if b != U_CA0 else 0.0), ww)
+            lo, hi = sorted((pa, pb))
+            voussoirs(fr, hd, cs, hz(SPRING), 0.2, 0.015, 11 if b - a > 2 else 7, s_lo=lo, s_hi=hi)
+    for uu, into in ((SC.RESP_W, 1), (U_CA0, -1)):
+        a_, b_ = sorted((wn, wa))
+        fr = Frame(P(uu, (wn + wa) / 2, OY), Vector((into, 0, 0)))
+        sa, sb = sorted((fr.s_of(uu, a_), fr.s_of(uu, b_)))
+        fill2d(fr, [rect(sa, hz(F0 - 0.1), sb, hz(SPRING))], 0.0, BRICK, C_PLAIN)
+    # piers: base, round shaft, astragal, a moulded bell capital, a chamfered octagonal abacus (fine segments, smooth)
     KB, K.B = K.B, BP
     for u in SC.COLS_U:
         c = P(u, WC + side * (ARC_N + ARC_A) / 2, OY)
         wbox(c, Vector((1, 0, 0)), Vector((0, 1, 0)), 0.34, 0.34, hz(F0), hz(F0 + 0.18), STONE, C_BASE)
-        lathe(c + Z * hz(F0 + 0.18), [(0.33, 0.0), (0.335, 0.02), (0.33, 0.045), (0.3, 0.07), (0.29, 0.09), (0.3, 0.11), (0.28, 0.14), (PIER_R, 0.16)], 40, STONE, C_BASE)
-        lathe(c + Z * hz(F0 + 0.34), [(PIER_R, 0.0), (PIER_R, 0.6), (PIER_R, 1.2), (PIER_R * 0.985, 36.4 - F0 - 0.34)], 40, STONE, C_PLAIN)
-        lathe(c + Z * hz(36.4), [(PIER_R * 0.985, 0.0), (PIER_R + 0.03, 0.025), (PIER_R + 0.035, 0.05), (PIER_R + 0.02, 0.07), (PIER_R + 0.01, 0.09),
-                                 (0.29, 0.15), (0.32, 0.21), (0.345, 0.25), (0.355, 0.28)], 40, STONE, C_CAP)
-        lathe(c + Z * hz(36.68), [(0.4, 0.0), (0.42, 0.02), (0.42, 0.1), (0.44, 0.12), (0.0, 0.12)], 8, STONE, C_CAP, a0=math.pi / 8)
+        lathe(c + Z * hz(F0 + 0.18), [(0.33, 0.0), (0.335, 0.02), (0.33, 0.045), (0.3, 0.07), (0.29, 0.09), (0.3, 0.11), (0.28, 0.14), (PIER_R, 0.16)], 64, STONE, C_BASE)
+        lathe(c + Z * hz(F0 + 0.34), [(PIER_R, 0.0), (PIER_R, 0.6), (PIER_R, 1.2), (PIER_R * 0.985, 36.33 - F0 - 0.34)], 64, STONE, C_PLAIN)
+        # astragal (a torus ring) + the bell: a smooth ogee from the shaft to the abacus
+        ring = [(PIER_R * 0.985 + 0.024 * math.sin(math.pi * k / 10), 0.048 * k / 10) for k in range(11)]
+        bell = []
+        for k in range(1, 17):
+            t = k / 16
+            r = PIER_R * 0.985 + (0.39 - PIER_R * 0.985) * (3 * t * t - 2 * t * t * t) ** 1.15 + 0.012 * math.sin(math.pi * t)
+            bell.append((r, 0.048 + 0.30 * t))
+        lathe(c + Z * hz(36.33), ring + bell + [(0.392, 0.35)], 64, STONE, C_CAP)
+        # abacus: octagonal slab, chamfered under (the ribs' springer lands on it)
+        oct_ = [(0.0, 0.0), (0.424, 0.0), (0.47, 0.04), (0.47, 0.12), (0.0, 0.12)]    # the bell's rim is the octagon's incircle
+        lathe(c + Z * hz(36.68), oct_, 8, STONE, C_CAP, a0=math.pi / 8)
     K.B = KB
     # responds: impost mouldings where the end arches spring from the walls
     for uu, sg in ((SC.RESP_W, 1), (U_CA0, -1)):
@@ -301,7 +348,7 @@ def aisle(side):
     def holes(fr):
         L = []
         oc = SC.N_AISLE["oculi"] if side < 0 else SC.S_AISLE["oculi"]
-        for u in oc: L.append(circle(S(fr, u, w_out), hz(SC.AISLE_OCULUS_H), 0.33, 20))
+        for u in oc: L.append(circle(S(fr, u, w_out), hz(SC.AISLE_OCULUS_H), 0.33, 32))
         if side < 0:
             u0, u1 = SC.N_AISLE["door"]; a, b = sorted((S(fr, u0, w_out), S(fr, u1, w_out)))
             L.append(rect(a, hz(F0), b, hz(36.78)))
@@ -554,7 +601,7 @@ def chair(c, fwd):
     for sx in (-1, 1):
         box(c + side * (sx * 0.19) + up * 0.42, fwd, side, up, -0.19, 0.19, -0.014, 0.014, 0.0, 0.03, WOOD, C_OAK)
     for f in (-0.17, 0.17):
-        box(c + fwd * f + up * 0.42, side, fwd, up, -0.19, 0.19, -0.014, 0.014, 0.0, 0.03, WOOD, C_OAK)
+        box(c + fwd * f + up * 0.42, side, fwd, up, -0.176, 0.176, -0.014, 0.014, 0.0, 0.026, WOOD, C_OAK, skip=("left", "right"))
     K.B.new_group()
     g = [[c + side * (x * 0.18) + fwd * (y * 0.16) + up * (0.445 + 0.012 * (1 - x * x) * (1 - y * y)) for x in (-1, -0.5, 0, 0.5, 1)] for y in (-1, -0.5, 0, 0.5, 1)]
     for j in range(4):
@@ -610,20 +657,30 @@ def furniture():
 def west_door_leaves():
     """the west door's two leaves seen from inside (ledged boards), origins on their hinges (the viewer swings them)"""
     out = {}
-    u_d = 0.33
+    DF, DL = SC.DOOR_FRAME, SC.DOOR_LEAF
+    u_d = DL["u1"]                                                # the leaves' inner face; their outer face on the frame's back
+    th = DL["u1"] - DL["u0"]
+    hw = SC.DOOR_W / 2 - DF["face"] + DL["lap"]                   # the leaves' outer edges, behind the jambs (the rebate)
+    vt = SC.DOOR_TOP - DF["head"] + DL["lap"]
     for side, name in ((-1, "DoorL"), (1, "DoorR")):
         b = SC.Builder(); KB, K.B = K.B, b
-        hw = SC.DOOR_W / 2 - 0.07
-        hinge = (u_d, WC + side * hw)
+        hinge = (u_d, WC + side * hw)                             # the axis on the leaf's inner outer corner
         fr = Frame(P(u_d, WC, OY), Vector((1, 0, 0)))          # facing in (east), s = -(w - WC)
         sh = S(fr, *hinge); sm = S(fr, u_d, WC)
         a, c = sorted((sh, sm))
+        c_ = c - 0.0015 if c > a and abs(c - sm) < 1e-6 else c
+        a_ = a + 0.0015 if abs(a - sm) < 1e-6 else a
+        a, c = a_, c_
         n = 5
         for k in range(n):
-            fbox(fr, a + (c - a) * k / n + 0.003, a + (c - a) * (k + 1) / n - 0.003, hz(F0 + 0.01), hz(SC.DOOR_TOP - 0.08), -0.04, 0.0, DOOR, C_PLAIN, skip=())
+            fbox(fr, a + (c - a) * k / n + (0.0 if k == 0 else 0.002), a + (c - a) * (k + 1) / n - (0.0 if k == n - 1 else 0.002), hz(F0), hz(vt), -th, 0.0, DOOR, C_PLAIN, skip=())
+        fill2d(fr, [rect(a, hz(F0), c, hz(vt))], -th / 2, DOOR, C_PLAIN)              # a backing inside the leaf: the
+        fill2d(fr, [rect(a, hz(F0), c, hz(vt))], -th / 2, DOOR, C_PLAIN, flip=True)   # joints between boards are not slits
         for v in (F0 + 0.35, F0 + 1.1, SC.DOOR_TOP - 0.45):
             fbox(fr, a + 0.04, c - 0.04, hz(v), hz(v + 0.13), 0.0, 0.03, DOOR, C_PLAIN, skip=("back",))
-        fbox(fr, a + 0.06, c - 0.06, hz(F0 + 0.5), hz(SC.DOOR_TOP - 0.6), 0.0, 0.03, DOOR, C_PLAIN, skip=("back",)) if False else None
+
+        if side > 0:            # the cover strip over the meeting stiles (inner face of the right leaf): no slit between them
+            fbox(fr, sm - 0.028, sm + 0.028, hz(F0 + 0.004), hz(vt) - 0.01, 0.0, 0.012, DOOR, C_PLAIN, skip=("back",))
         # iron bolt + ring
         if side > 0: lathe_axis(fr.p(sm + 0.08 * (1 if c > sm else -1), hz(F0 + 1.0), 0.03), fr.N, Z, [(0.04, 0.0), (0.04, 0.012), (0.03, 0.012), (0.03, 0.0)], 10, IRON)
         K.B = KB
@@ -994,7 +1051,7 @@ info = {
     "openings": openings,
     "room": {"plan_local_uw": room, "y": [F0 - 0.3 - OY, CEIL + 0.1 - OY]},
     "doors": {name: {"hinge": loc(*(lambda v: (v.x, -v.y, v.z + OY))(h)), "opens": "about +y, the free edge swinging into the nave (+u)"} for name, (b, h) in DOORS.items()},
-    "door_open_angle_deg": 100,
+    "door_open_angle_deg": SC.DOOR_OPEN_DEG,
     "spawn": {"outside": loc(-3.2, WC, G(-3.2, WC)), "inside": loc(3.0, WC, F0)},
     "levels_taw": {"floor": F0, "choir": F1, "wall_top": WALL_TOP, "ceiling": CEIL, "aisle_ceiling": [AISLE_HI, AISLE_LO]},
     "estimated": "the furniture layout (chairs, side altar, statues on the piers, the chandelier, the night lamps), the north aisle and west wall "

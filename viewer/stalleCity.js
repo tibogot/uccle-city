@@ -10,7 +10,7 @@
 //    the city when no opening is in view from inside, and in third person the chapel's UrbIS prism stops blocking, the
 //    cell's colliders take over, the terrain is ignored inside and the character is lit by the baked probes.
 import * as THREE from "three/webgpu";
-import { loadStalle, ST_LODS, ST_SLOTS } from "./stalleModel.js";
+import { loadStalle, ST_LODS, ST_SLATES, slateFade, ST_SLOTS } from "./stalleModel.js";
 import { withObjectFade, SMOOTH } from "./lodFade.js";
 
 const FETCH_AT = 120, SHOW_AT = 40, HIDE_AT = 60;
@@ -48,7 +48,10 @@ export async function addStalle({ scene, updaters, hide, world, manifest, log, c
         const t1 = ramp(d, 0), t2 = ramp(d, 1);
         const fades = [2 + t1, t1 < 1 ? t1 : 2 + t2, t2];
         const shown = [t1 < 1, t1 > 0 && t2 < 1, t2 > 0];
-        levels.forEach((g, k) => { g.visible = shown[k]; if (shown[k]) for (const o of g.children) o.userData.fade = fades[k]; });
+        levels.forEach((g, k) => { g.visible = shown[k]; if (shown[k]) for (const o of g.children) {
+          if (o.userData.slates) { const f = slateFade(d, fades[k]); o.visible = f !== null; if (f !== null) o.userData.fade = f; }
+          else o.userData.fade = fades[k];
+        } });
       } else {
         const k = ST_LODS.findIndex((l) => d < l.until);
         levels.forEach((g, i) => { g.visible = i === k; });

@@ -7,7 +7,7 @@ node goes at the city position of the frame origin, height OY, rotation.y = -rot
 """
 import bpy, bmesh, math, os, json, time
 from mathutils import Vector
-from mathutils.geometry import tessellate_polygon
+from mathutils.geometry import tessellate_polygon, delaunay_2d_cdt
 
 OY = 30.0
 Z = Vector((0, 0, 1))
@@ -61,6 +61,15 @@ PLINTH_TOP = 34.95
 BELL_U = 6.5
 # the west front (photo c00, 242 px/m at the front, ground y 3150 = 33.85)
 DOOR_W, DOOR_TOP = 1.40, 36.42
+# the west door's oak frame (dormant) set in the stone opening, its rebate and the leaves (shared by the exterior, which
+# shows the closed leaves, and the interior cell, whose leaves open): depths = u from the west face (m)
+DOOR_FRAME = dict(u0=0.26, u1=0.37, face=0.075, head=0.075)   # the frame's jambs + head: 7.5 cm faces, u 0.26..0.37
+DOOR_LEAF = dict(u0=0.37, u1=0.415, lap=0.022, gap=0.0)         # the leaves lie BEHIND the frame (inside), against its back
+                                                                # face, overlapping its inner edge by `lap` (the rebate / stop),
+                                                                # their bottom ON the threshold: no slit to see through
+DOOR_OPEN_DEG = 92                                              # the interior leaves' swing (hinges on their inner corners:
+                                                                # at 92 deg they clear the inner reveal by 4 cm)
+RAISE = 0.27            # the west gable's shoulder copings stand this much above the aisle roofs' line (roof + 3 cm + coping)
 WWIN_W, WWIN_SILL, WWIN_SPRING, WWIN_APEX = 1.70, 37.35, 39.0, 40.25
 GABLE_APEX = 44.05      # coping top at the apex (0.7 m above the ridge: a raised stone gable)
 KNEEL = 40.75           # nave kneelers
@@ -81,18 +90,23 @@ HOUSE = dict(u0=-6.67, u1=0.58, w0=4.15, w1=9.97, eave=37.9, ridge=41.3)
 
 # ------------------------------------------------------------------------------------------------ builder
 class Builder:
-    """faces + per-face slot, code, optional UV0, construction group (lightmap islands are split by group)"""
-    def __init__(self): self.v = []; self.f = []; self.m = []; self.c = []; self.uv = []; self.g = []; self.grp = 0
+    """faces + per-face slot, code, optional UV0, construction group (lightmap islands are split by group), the per-piece
+    seed (COLOR_0.b: 0 = none; slates, statue...) and a forced per-vertex AO flag (small repeated pieces: slates)"""
+    def __init__(self): self.v = []; self.f = []; self.m = []; self.c = []; self.uv = []; self.g = []; self.b = []; self.vao = []; self.grp = 0
     def face(self, pts, mat, code=0, uv=None):
         if len(pts) < 3: return
         i0 = len(self.v); self.v.extend(Vector(p) for p in pts)
         self.f.append(tuple(range(i0, i0 + len(pts)))); self.m.append(mat); self.c.append(code); self.uv.append(uv); self.g.append(self.grp)
+        self.b.append(K.SEED); self.vao.append(K.VAO)
     def new_group(self): self.grp += 1
 
 class K:
     """the active builder + level of detail flag (module-level state shared by the helpers)"""
-    B = Builder()
+    B = None
     FAR = False
+    SEED = 0.0          # COLOR_0.b of the faces being added (a per-piece random 0..1; 0 = none)
+    VAO = False         # the faces being added take per-vertex AO (no lightmap texels)
+K.B = Builder()
 
 def quad(a, b, c, d, mat, code=0, uv=None): K.B.face([a, b, c, d], mat, code, uv)
 def newell(pts):
@@ -119,13 +133,54 @@ class Frame:
 def ccw(l):
     a = sum(l[i][0] * l[(i + 1) % len(l)][1] - l[(i + 1) % len(l)][0] * l[i][1] for i in range(len(l)))
     return l if a > 0 else list(reversed(l))
+def inside(p, poly):
+    x, y = p; c = False; n = len(poly)
+    for i in range(n):
+        (x0, y0), (x1, y1) = poly[i], poly[(i + 1) % n]
+        if (y0 > y) != (y1 > y) and x < x0 + (y - y0) * (x1 - x0) / (y1 - y0): c = not c
+    return c
+CDT_STEP = 0.55        # m: interior points of large fills (walls): no long slivers between far-apart openings
+def _seg_dist(p, a, b):
+    ax, ay = b[0] - a[0], b[1] - a[1]; L2 = ax * ax + ay * ay
+    t = 0.0 if L2 < 1e-12 else max(0.0, min(1.0, ((p[0] - a[0]) * ax + (p[1] - a[1]) * ay) / L2))
+    return math.hypot(p[0] - a[0] - ax * t, p[1] - a[1] - ay * t)
+def cdt_tris(loops, step=CDT_STEP):
+    """constrained Delaunay triangulation of a polygon with holes (loops[0] = outer), with a hex grid of interior points
+    when the polygon is large: well-shaped triangles everywhere (no slivers = no lightmap / normal streaks)"""
+    xs = [p[0] for p in loops[0]]; ys = [p[1] for p in loops[0]]
+    if min(max(xs) - min(xs), max(ys) - min(ys)) < 2.2 * step: return None
+    pts = [p for l in loops for p in l]
+    segs = [(l[i], l[(i + 1) % len(l)]) for l in loops for i in range(len(l))]
+    edges = []; k = 0
+    for l in loops:
+        n = len(l); edges += [(k + i, k + (i + 1) % n) for i in range(n)]; k += n
+    extra = []
+    y = min(ys) + step * 0.5; row = 0
+    while y < max(ys):
+        x = min(xs) + step * (0.5 + 0.5 * (row % 2))
+        while x < max(xs):
+            q = (x, y)
+            if inside(q, loops[0]) and not any(inside(q, h) for h in loops[1:]) and min(_seg_dist(q, a, b) for a, b in segs) > step * 0.45:
+                extra.append(q)
+            x += step
+        y += step * 0.866; row += 1
+    allp = pts + extra
+    vs, _, fs, _, _, _ = delaunay_2d_cdt([Vector(p) for p in allp], edges, [], 0, 1e-7, False)
+    out = []
+    for f in fs:
+        a, b, c = vs[f[0]], vs[f[1]], vs[f[2]]
+        m = ((a.x + b.x + c.x) / 3, (a.y + b.y + c.y) / 3)
+        if inside(m, loops[0]) and not any(inside(m, h) for h in loops[1:]): out.append(((a.x, a.y), (b.x, b.y), (c.x, c.y)))
+    return out
 def fill2d(fr, loops, d, mat, code=0, flip=False):
     """a planar polygon with holes in the wall plane at depth d, facing out (+N) (flip: facing in)"""
     K.B.new_group()
     loops = [ccw(l) for l in loops]
     flat = [p for l in loops for p in l]
-    for t in tessellate_polygon([[Vector((p[0], p[1], 0)) for p in l] for l in loops]):
-        a, b, c = flat[t[0]], flat[t[1]], flat[t[2]]
+    tris = cdt_tris(loops)
+    if tris is None:
+        tris = [(flat[t[0]], flat[t[1]], flat[t[2]]) for t in tessellate_polygon([[Vector((p[0], p[1], 0)) for p in l] for l in loops])]
+    for a, b, c in tris:
         cr = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
         if abs(cr) < 1e-9: continue
         if (cr < 0) != flip: b, c = c, b
@@ -370,8 +425,8 @@ def make_object(scn, mats, slots, name, bld, v0, v1, ao_px, smart=True, thin_lim
     me.polygons.foreach_set("material_index", [remap[m] for m in bld.m])
     col = me.color_attributes.new("Col", "FLOAT_COLOR", "CORNER")
     cdat = []
-    for poly, code in zip(me.polygons, bld.c):
-        for _ in poly.loop_indices: cdat += [code / 16 + 1 / 32, 1.0, 0.0, 1.0]
+    for poly, code, sb in zip(me.polygons, bld.c, bld.b):
+        for _ in poly.loop_indices: cdat += [code / 16 + 1 / 32, 1.0, sb, 1.0]
     col.data.foreach_set("color", cdat)
     uv0 = me.uv_layers.new(name="UVMap")
     uvd = [0.0] * (2 * len(me.loops))
@@ -389,6 +444,7 @@ def make_object(scn, mats, slots, name, bld, v0, v1, ao_px, smart=True, thin_lim
             uvd[2 * li] = p.dot(t); uvd[2 * li + 1] = p.dot(b)
     uv0.data.foreach_set("uv", uvd)
     ga = me.attributes.new("grp", "INT", "FACE"); ga.data.foreach_set("value", bld.g)
+    va = me.attributes.new("vao", "INT", "FACE"); va.data.foreach_set("value", [1 if x else 0 for x in bld.vao])
     obj = bpy.data.objects.new(name, me)
     scn.collection.objects.link(obj)
     bm = bmesh.new(); bm.from_mesh(me)
@@ -401,15 +457,21 @@ def make_object(scn, mats, slots, name, bld, v0, v1, ao_px, smart=True, thin_lim
     ntri = sum(len(p.vertices) - 2 for p in me.polygons)
     print(name, "faces", len(me.polygons), "triangles", ntri, "verts", len(me.vertices))
     thin = [False] * len(me.polygons)
+    vflag = [0] * len(me.polygons); me.attributes["vao"].data.foreach_get("value", vflag); me.attributes.remove(me.attributes["vao"])
     for p_ in me.polygons:
         co = [me.vertices[v].co for v in p_.vertices]
         mx = max((co[i] - co[(i + 1) % len(co)]).length for i in range(len(co)))
         # small AND narrow (glazing bars, band tops, louvres): long slivers of a tessellated wall keep their lightmap texels
-        thin[p_.index] = 0 < mx < 0.9 and p_.area / mx < (thin_limit if len(co) == 4 else thin_limit / 2)
+        thin[p_.index] = bool(vflag[p_.index]) or (0 < mx < 0.9 and p_.area / mx < (thin_limit if len(co) == 4 else thin_limit / 2))
     if not smart:
         me.attributes.remove(me.attributes["grp"])
         return obj, ntri, {slots[m]: sum(len(p.vertices) - 2 for p in me.polygons if p.material_index == remap[m]) for m in used}, thin
     uv1 = me.uv_layers.new(name="Lightmap")
+    if all(thin):                       # every face takes per-vertex AO (slates): the lightmap UV parks at AO 1.0
+        uv1.data.foreach_set("uv", [0.997, v0 + 0.5 * (v1 - v0)] * len(me.loops))
+        me.uv_layers.active = me.uv_layers["UVMap"]; me.attributes.remove(me.attributes["grp"])
+        obj["thin"] = len(thin); obj["px_per_m"] = 0.0
+        return obj, ntri, {slots[m]: sum(len(p.vertices) - 2 for p in me.polygons if p.material_index == remap[m]) for m in used}, thin
     me.uv_layers.active = uv1
     for o in scn.objects: o.select_set(False)
     obj.select_set(True); bpy.context.view_layer.objects.active = obj

@@ -10,7 +10,11 @@
 //   node tools/stalle_pack.mjs models/stalle/stalle.raw.glb models/stalle/stalle.glb [lod1 tris] [lod2 tris]
 //   node tools/stalle_pack.mjs models/stalle/interior.raw.glb models/stalle/interior.glb --nolod   (COLOR_0 kept: baked light in .rgb? see the interior notes)
 // meshoptimizer from tools/worker/node_modules (npm ci there).
+// MESH AUDIT (tools/mesh_audit/, the owner's rule: no z-fighting, no light leaks, no bad topology): the raw GLB is
+// audited BEFORE packing and the pack stops on any blocking item (--force-audit packs anyway); the packed GLB is
+// audited again (quantized positions). Reports: models/stalle/audit/<name>.audit.md / <name>.packed.audit.md.
 import fs from "fs";
+import { auditBeforePack, auditAfterPack } from "./mesh_audit/hook.mjs";
 import { MeshoptEncoder } from "./worker/node_modules/meshoptimizer/meshopt_encoder.js";
 import { MeshoptSimplifier } from "./worker/node_modules/meshoptimizer/meshopt_simplifier.js";
 const NOLOD = process.argv.includes("--nolod");
@@ -18,6 +22,12 @@ const LOD1_TRIS = +(process.argv[4] || 6000), LOD2_TRIS = +(process.argv[5] || 1
 const LOD1_ERR = 0.05, LOD2_ERR = 0.35;          // metres (ErrorAbsolute): the simplifier stops there even short of the target
 
 const src = process.argv[2], dst = process.argv[3];
+// the audit's view ranges: each node's farthest camera distance (the LOD band's end, ST_LODS in viewer/stalleModel.js)
+const AUDIT = NOLOD
+  ? { name: "interior", nodes: ["Arch", "Props", "Glass", "DoorL", "DoorR"], range: { "*": 40 }, reportDir: "models/stalle/audit", allowFile: "models/stalle/audit/interior.allow.json" }
+  : { name: "stalle", nodes: ["Stalle", "Stalle_door", "Stalle_slates", "Stalle_far"], range: { Stalle: 94, Stalle_door: 334, Stalle_slates: 52, Stalle_far: 2000, Stalle_lod1: 334, Stalle_lod2: 2000 },
+      ignoreBelow: 3.85, offset: [0, 30, 0], reportDir: "models/stalle/audit", allowFile: "models/stalle/audit/stalle.allow.json" };
+if (!process.argv.includes("--no-audit")) await auditBeforePack(src, AUDIT);
 const glb = fs.readFileSync(src);
 const jl = glb.readUInt32LE(12);
 const json = JSON.parse(glb.subarray(20, 20 + jl).toString());
@@ -183,4 +193,5 @@ const c2 = Buffer.alloc(8); c2.writeUInt32LE(binOut.length, 0); c2.writeUInt32LE
 fs.writeFileSync(dst, Buffer.concat([head, c1, js, c2, binOut]));
 console.log(`${src} ${(glb.length / 1048576).toFixed(2)} MB -> ${dst} ${(total / 1048576).toFixed(2)} MB`);
 fs.writeFileSync(dst.replace(/\.glb$/, ".lods.json"), JSON.stringify({ ...lodReport, glbBytes: total, rawBytes: glb.length }, null, 1));
+if (!process.argv.includes("--no-audit")) await auditAfterPack(dst, { ...AUDIT, nodes: NOLOD ? AUDIT.nodes : ["Stalle", "Stalle_lod1", "Stalle_lod2", "Stalle_door", "Stalle_slates"] });
 

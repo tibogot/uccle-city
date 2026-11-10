@@ -19,7 +19,7 @@
 import * as THREE from "three/webgpu";
 import {
   attribute, uv, texture, normalWorld, positionWorld, vec2, vec3, float, floor, fract, mix, step, smoothstep, clamp, abs, sin, dot, select,
-  fwidth, max, min, mod, mrt, roughness, uniform, length,
+  fwidth, max, min, mod, mrt, roughness, uniform, length, transformNormalToView,
 } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
@@ -40,6 +40,14 @@ export const ST_CODES = ["plain", "coping", "surround", "tracery", "plinth", "ba
   "interior", "door", "bell", "quoin", "lead"];
 /** LOD switch distances (m, camera to the building's box) and the half-width of each cross-fade band */
 export const ST_LODS = [{ until: 80, band: 14 }, { until: 320, band: 40 }, { until: Infinity }];
+/** the real slates (node Stalle_slates, LOD0 only) give way to the deck's painted courses (aligned with them) here */
+export const ST_SLATES = { until: 42, band: 10 };
+/** the fade value (lodFade objectFade: 2 + t = fading out) of the slates at a distance, given LOD0's own fade value */
+export function slateFade(dist, lod0Fade) {
+  const t = THREE.MathUtils.smoothstep(dist, ST_SLATES.until - ST_SLATES.band, ST_SLATES.until + ST_SLATES.band);
+  if (t >= 1) return null;                                  // hidden
+  return t > 0 ? 2 + t : lod0Fade;
+}
 
 // ------------------------------------------------------------------------------------------------ material source
 // THE ONE LINE: "temp" = the temporary TSL materials below; "./materials/library.js" = the shared library
@@ -63,17 +71,19 @@ export function loadStalle() {
       SOURCE === "temp" ? null : import(SOURCE).catch((e) => { console.warn("[stalle] material library not loaded:", e.message); return null; }),
     ]);
     const names = ["Stalle", "Stalle_lod1", "Stalle_lod2"];
-    const lods = names.map(() => []), door = [];
+    const lods = names.map(() => []), door = [], slates = [];
     gltf.scene.traverse((o) => {
       if (!o.isMesh) return;
-      let k = -1, isDoor = false;
-      for (let p = o; p && k < 0 && !isDoor; p = p.parent) { k = names.indexOf(p.name); isDoor = p.name === "Stalle_door"; }
+      let k = -1, isDoor = false, isSlates = false;
+      for (let p = o; p && k < 0 && !isDoor && !isSlates; p = p.parent) { k = names.indexOf(p.name); isDoor = p.name === "Stalle_door"; isSlates = p.name === "Stalle_slates"; }
       o.geometry.computeBoundingSphere();
       o.geometry.userData.shared = true;
       if (isDoor) door.push({ slot: o.material.name, geometry: o.geometry });
+      else if (isSlates) slates.push({ slot: o.material.name, geometry: o.geometry });
       else if (k >= 0) lods[k].push({ slot: o.material.name, geometry: o.geometry });
     });
     const tris = lods.map((l) => l.reduce((s, m) => s + (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3, 0));
+    const slateTris = slates.reduce((s, m) => s + m.geometry.index.count / 3, 0);
     const doorTris = door.reduce((s, m) => s + m.geometry.index.count / 3, 0);
     const materials = {};
     for (const s of ST_SLOTS) materials[s] = wrapAO(sourceMaterial(SLOT_TABLE[s], lib), aoTex, s);
@@ -85,11 +95,12 @@ export function loadStalle() {
     let doorShown = true;
     const make = (k) => {
       const g = new THREE.Group(); g.name = `stalle_lod${k}`;
-      const parts = k < 2 ? [...lods[k], ...door.map((d) => ({ ...d, door: true }))] : lods[k];
-      for (const { slot, geometry, door: isDoor } of parts) {
+      const parts = k < 2 ? [...lods[k], ...door.map((d) => ({ ...d, door: true })), ...(k === 0 ? slates.map((d) => ({ ...d, slates: true })) : [])] : lods[k];
+      for (const { slot, geometry, door: isDoor, slates: isSlates } of parts) {
         const m = new THREE.Mesh(geometry, materials[slot]);
-        m.name = isDoor ? `door ${slot}` : slot; m.userData.slot = slot; m.userData.door = !!isDoor;
-        m.castShadow = slot !== "glass_window"; m.receiveShadow = true;
+        m.name = isDoor ? `door ${slot}` : isSlates ? "slates" : slot; m.userData.slot = slot; m.userData.door = !!isDoor; m.userData.slates = !!isSlates;
+        // the slates cast no shadow (the deck under them casts the roof's; a 7 mm step is far below a shadow texel)
+        m.castShadow = slot !== "glass_window" && !isSlates; m.receiveShadow = true;
         if (isDoor) m.visible = doorShown;
         g.add(m);
       }
@@ -109,7 +120,7 @@ export function loadStalle() {
     const tmp = new THREE.Vector3();
     const distance = (p) => boundsWorld.distanceToPoint(tmp.copy(p));
     return {
-      lods, door, tris, doorTris, materials, notes, placement, boundsWorld, make, setDoor, setSlotMaterial, distance, aoTex, lib,
+      lods, door, slates, slateTris, tris, doorTris, materials, notes, placement, boundsWorld, make, setDoor, setSlotMaterial, distance, aoTex, lib,
       aoBytes: aoTex.userData.bytes, glbBytes: lods_json.glbBytes, lodsJson: lods_json,
       tempMaterial: (s) => wrapAO(TEMP[s](), aoTex, s),
       libraryMaterial: (name) => sourceMaterial(name, lib),
@@ -194,65 +205,139 @@ function weather(col, k = 1) {
   const north = clamp(normalWorld.z.negate().mul(0.8).add(normalWorld.x.mul(0.25)), 0, 1);           // city z = south
   const low = smoothstep(36.2, 34.2, P.y);
   const n1 = vnoise(P.xz.add(P.y).mul(0.9)), n2 = vnoise(vec2(P.x.add(P.z).mul(3.1), P.y.mul(0.35)));
-  const algae = clamp(north.mul(0.6).add(low.mul(0.5)).mul(n1.mul(1.3)).mul(stLook.moss).mul(k), 0, 0.85);
-  let c = mix(col, col.mul(vec3(0.62, 0.68, 0.5)), algae.mul(0.75));
+  const algae = clamp(north.mul(0.6).add(low.mul(0.5)).mul(smoothstep(0.35, 0.9, n1)).mul(stLook.moss).mul(k), 0, 0.85);
+  let c = mix(col, col.mul(vec3(0.8, 0.83, 0.74)), algae.mul(0.6));
   const streak = smoothstep(0.55, 0.85, n2).mul(float(1).sub(up)).mul(0.22);
   c = c.mul(float(1).sub(streak.mul(stLook.weather)).sub(low.mul(0.12).mul(stLook.weather)));
   return c.mul(mix(float(1), float(0.86), up.mul(0.6).mul(stLook.weather)));
 }
-/** IRREGULAR COURSED RUBBLE, non-repeating (every stone from world-space hashes, no tiled image): the wall is cut into
- *  0.62 m bands, each split into 2 or 3 courses of uneven height (0.15-0.4 m); a course into stones of 0.24-0.62 m whose
- *  joints wander (+-15 %); recessed lime joints of varying width; per-stone tone (cream, ochre, grey, brownish), a tilt
- *  and spalls; the arrises rounded (bump) so the stones read up close. Returns colour, bump height (m), joint mask. */
+/** COURSED RUBBLE as on the chapel (photos c00, P01: rough-squared Brussels sandstone, low courses of 11-22 cm, stones
+ *  16-50 cm long, PILLOWED faces with rounded arrises, pale lime joints 1-2 cm, nearly flush; non-repeating: every
+ *  course and stone from world-space hashes). Relief from an ANALYTIC height field (no derivative bump: continuous
+ *  inside each stone and across the joints, so no black dashes at cell wraps), mapped with the same tangent frame the
+ *  Blender script used for UV0 (u along the wall = cross(up, n), v up). Returns colour, the tangent-space normal and
+ *  the joint mask; far away the joints and relief fade to the wall's average (no shimmer). */
 function rubble() {
   const w = uv(0);
-  const bandH = 0.62;
+  const fw = max(fwidth(w.x), fwidth(w.y)).max(0.00002);
+  // courses: 0.52 m bands split into three courses at jittered heights
+  const bandH = 0.52;
   const bv = w.y.div(bandH), band = floor(bv), fb = fract(bv);
-  const hb = hash2(vec2(band, 13.1)), hb2 = hash2(vec2(band, 41.7)), hb3 = hash2(vec2(band, 5.3));
-  const three = step(0.42, hb);
-  const s1 = mix(hb2.mul(0.24).add(0.38), hb2.mul(0.14).add(0.26), three);
-  const s2 = mix(float(1.01), hb3.mul(0.18).add(0.6), three);
+  const s1 = hash2(vec2(band, 13.1)).mul(0.12).add(0.27), s2 = hash2(vec2(band, 41.7)).mul(0.12).add(0.61);
   const c = step(s1, fb).add(step(s2, fb));
   const lo = select(c.lessThan(0.5), float(0), select(c.lessThan(1.5), s1, s2));
-  const hi = select(c.lessThan(0.5), s1, select(c.lessThan(1.5), min(s2, float(1)), float(1)));
-  const ch = hi.sub(lo).mul(bandH);
-  const ry = fb.sub(lo).div(hi.sub(lo));
+  const hi = select(c.lessThan(0.5), s1, select(c.lessThan(1.5), s2, float(1)));
+  const y0 = band.add(lo).mul(bandH), y1 = band.add(hi).mul(bandH);
   const row = band.mul(3).add(c);
-  const L = hash2(vec2(row, 7.0)).mul(0.38).add(0.24);
-  const cu = w.x.add(hash2(vec2(row, 1.0)).mul(3.0)).div(L);
-  const cell = floor(cu), fx = fract(cu);
-  const jl = hash2(vec2(cell, row)).sub(0.5).mul(0.3), jr = hash2(vec2(cell.add(1), row)).sub(0.5).mul(0.3);
-  const sid = cell.sub(step(fx, jl)).add(step(jr.add(1), fx));
-  const ex = min(fx.sub(jl), jr.add(1).sub(fx)).abs().mul(L);
-  const ey = min(ry, float(1).sub(ry)).mul(ch);
-  const e = min(ex, ey);                                       // metres to the nearest joint
+  // stones: a jittered cell per course; the stone's own joints from its own index (continuous within the stone)
+  const Lc = hash2(vec2(row, 7.0)).mul(0.12).add(0.22);
+  const xs = w.x.add(hash2(vec2(row, 1.0)).mul(5.0));
+  const cu = xs.div(Lc), cell = floor(cu), fx = fract(cu);
+  const J = (k) => k.add(hash2(vec2(k, row)).sub(0.5).mul(0.56));
+  const sid = cell.sub(select(fx.lessThan(J(cell).sub(cell)), float(1), float(0))).add(select(fx.greaterThan(J(cell.add(1)).sub(cell)), float(1), float(0)));
+  const xl = J(sid).mul(Lc), xr = J(sid.add(1)).mul(Lc);
   const hs = hash2(vec2(sid, row)), hs2 = hash2(vec2(sid.add(31.0), row.mul(1.7))), hs3 = hash2(vec2(sid.mul(0.37), row.add(9.0)));
-  const jw = hs3.mul(0.008).add(0.007);
-  const fw = max(fwidth(w.x), fwidth(w.y)).max(0.00005);
-  const mask = smoothstep(jw, jw.add(max(fw.mul(1.5), 0.004)), e);
-  const far = smoothstep(0.012, 0.04, fw);
-  // stone: Brussels sandstone tones
-  let tone = mix(lin(0xcdc6b2), lin(0xbcae92), hs);
-  tone = mix(tone, lin(0xaaa597), step(0.8, hs2).mul(0.75));            // grey stones
-  tone = mix(tone, lin(0xa98f6c), step(0.9, hs3).mul(0.6));             // brownish ones
-  const grain = vnoise(w.mul(11.0).add(hs.mul(17.0))).mul(0.1).add(vnoise(w.mul(37.0)).mul(0.07));
-  const spall = smoothstep(0.7, 0.85, vnoise(w.mul(4.0).add(hs2.mul(9.0)))).mul(0.12);
-  let col = tone.mul(float(0.88).add(grain)).mul(mix(float(0.9), float(1.06), hs2)).mul(float(1).sub(spall));
-  const mortar = lin(0xa9a291).mul(mix(float(0.62), float(0.85), smoothstep(0.0, jw, e)));
-  col = mix(mix(mortar, col, mask), mix(col, mortar, 0.12), far);
-  // relief: rounded arrises, a per-stone tilt, a little roughness; recessed joints
-  const tilt = fx.sub(0.5).mul(hs.sub(0.5)).mul(0.012).add(ry.sub(0.5).mul(hs2.sub(0.5)).mul(0.01));
-  const bulge = smoothstep(jw, jw.add(0.04), e).mul(0.009).add(tilt).add(grain.mul(0.003)).mul(float(1).sub(far));
-  return { col, bulge, mask };
+  // the joint lines wander a little (rough-squared stones, not sawn)
+  const wigX = vnoise(vec2(w.y.mul(16.0), sid.mul(3.1))).sub(0.5).mul(0.011);
+  const wigY = vnoise(vec2(w.x.mul(11.0), row.mul(2.3))).sub(0.5).mul(0.009);
+  const dl = xs.sub(xl).add(wigX), dr = xr.sub(xs).sub(wigX), db = w.y.sub(y0).add(wigY), dt = y1.sub(w.y).sub(wigY);
+  const ex = min(dl, dr), ey = min(db, dt);
+  const sx = select(dl.lessThan(dr), float(1), float(-1)), sy = select(db.lessThan(dt), float(1), float(-1));
+  // smooth min of the two distances (rounded corners) and its gradient
+  const k = float(0.012);
+  const ax = ex.negate().div(k).exp(), ay = ey.negate().div(k).exp();
+  const e = ax.add(ay).log().mul(k).negate();
+  const wx = ax.div(ax.add(ay)), wy = float(1).sub(wx);
+  const jw = hs3.mul(0.004).add(0.0065);                        // half joint: joints 1.3-2.1 cm
+  const e2 = e.sub(jw);
+  // pillow: rounded arrises (radius 2.2-4 cm) + a gentle dome over the face, per stone
+  const r = hs2.mul(0.018).add(0.022), A = hs.mul(0.003).add(0.005);
+  const t = clamp(e2.div(r), 0, 1);
+  const dhde = float(2).mul(A).div(r).mul(float(1).sub(t)).mul(step(0.0, e2));
+  const W = xr.sub(xl).max(0.05), H = y1.sub(y0).max(0.05);
+  const fxs = clamp(xs.sub(xl).div(W), 0, 1), fys = clamp(w.y.sub(y0).div(H), 0, 1);
+  const B = hs.mul(0.0035).add(0.0015);
+  const ddx = B.mul(16).mul(float(1).sub(fxs.mul(2))).div(W).mul(fys.mul(float(1).sub(fys)));
+  const ddy = B.mul(16).mul(float(1).sub(fys.mul(2))).div(H).mul(fxs.mul(float(1).sub(fxs)));
+  const near = float(1).sub(smoothstep(0.003, 0.016, fw));
+  const gx = dhde.mul(sx).mul(wx).add(ddx).mul(near), gy = dhde.mul(sy).mul(wy).add(ddy).mul(near);
+  const nT = vec3(gx.negate(), gy.negate(), 1).normalize();
+  // joint coverage over the pixel footprint (AA), and far away the average
+  const mask = smoothstep(0.0, max(fw.mul(1.2), 0.0015), e2);
+  const far = smoothstep(0.006, 0.03, fw);
+  // stone: pale Brussels sandstone, low contrast (cream / pale grey; a few warmer or greyer), pitted surface
+  let tone = mix(lin(0xd8d2c1), lin(0xccc2a8), hs);
+  tone = mix(tone, lin(0xbdbab0), step(0.8, hs2).mul(0.7));
+  tone = mix(tone, lin(0xcdb990), step(0.9, hs3).mul(0.55));
+  const grain = vnoise(w.mul(13.0).add(hs.mul(17.0))).mul(0.07).add(vnoise(w.mul(41.0)).mul(0.05)).sub(0.06);
+  const pits = smoothstep(0.78, 0.92, vnoise(w.mul(70.0).add(hs2.mul(5.0)))).mul(0.1);
+  let col = tone.mul(float(1).add(grain).sub(pits)).mul(mix(float(0.94), float(1.04), hs2));
+  col = col.mul(mix(float(0.86), float(1), t));                    // the arrises catch dirt: a soft rim
+  // mortar: pale lime, a little lighter than the stones, shaded in the recess under each stone
+  const mortar = lin(0xd3cdbd).mul(mix(float(0.74), float(0.95), smoothstep(float(0), jw, e2.negate())));
+  const avg = mix(lin(0xd2cbb6), lin(0xcfc8b6), 0.4).mul(0.95);
+  col = mix(mix(mortar, col, mask), avg, far.mul(0.6));
+  return { col, nT, mask, far };
+}
+/** a tangent-space normal (u = cross(up, n), v = cross(n, u): the frame of the Blender script's UV0) to view space */
+function tangentNormal(nT) {
+  const n = normalWorld;
+  const tu = select(abs(n.y).greaterThan(0.98), vec3(1, 0, 0), vec3(0, 1, 0).cross(n).normalize());
+  const tv = n.cross(tu);
+  return transformNormalToView(tu.mul(nT.x).add(tv.mul(nT.y)).add(n.mul(nT.z)).normalize());
+}
+/** SLATE (natural Ardennes slate, photos P01 / c05): the real slates (COLOR_0.b = the slate's seed > 0) get a per-slate
+ *  tone and a fine cleft grain; the deck (COLOR_0.b = 0: the far roof, and what shows between slates) paints the SAME
+ *  course grid (tools/blender/roofkit.py NATURAL: 0.22 x 0.135, broken bond, from the eave line: its UV0 is the facet
+ *  frame), with each course's butt shadow and the slates' tilt in the normal: depth without geometry. Lichen: pale grey
+ *  crustose patches and a faint grey-green film, mostly on north slopes and near the eaves / ridges, never blobs. */
+const SL = { width: 0.22, gauge: 0.135, eaveOver: 0.04 };
+function slateLook() {
+  const w = uv(0);
+  const seed = attribute("color", "vec4").b;
+  const real = step(0.01, seed);
+  const fw = max(fwidth(w.x), fwidth(w.y)).max(0.00002);
+  // the deck's painted courses (aligned with the geometry's)
+  const cv = w.y.add(SL.eaveOver).div(SL.gauge), crs = floor(cv), fv = fract(cv);
+  const cu = w.x.div(SL.width).add(mod(crs, 2).mul(0.5)), cell = floor(cu), fu = fract(cu);
+  const hc = hash2(vec2(cell, crs));
+  const id = mix(hc, seed, real);
+  // per-slate tone: dark blue-grey, a few warmer / lighter, a few blacker
+  let col = mix(lin(0x3b3f45), lin(0x2f3337), id);
+  col = mix(col, lin(0x4a4846), step(0.86, fract(id.mul(7.3))).mul(0.6));
+  col = mix(col, lin(0x26292c), step(0.9, fract(id.mul(13.1))).mul(0.6));
+  const cleft = vnoise(vec2(w.x.mul(9.0).add(id.mul(40.0)), w.y.mul(55.0))).mul(0.08).add(vnoise(w.mul(30.0)).mul(0.05));
+  col = col.mul(float(0.95).add(cleft));
+  // deck only: the butt shadow line under each course, the joints, the tilt (fading with distance)
+  const aaV = fw.div(SL.gauge).mul(1.5).max(0.02), aaU = fw.div(SL.width).mul(1.5).max(0.02);
+  const butt = float(1).sub(smoothstep(0.0, aaV.add(0.06), fv)).mul(0.45);
+  const joint = float(1).sub(smoothstep(0.0, aaU.add(0.012), min(fu, float(1).sub(fu)))).mul(0.35).mul(float(1).sub(smoothstep(0.55, 0.75, fv)));
+  const deckK = float(1).sub(real);
+  col = col.mul(float(1).sub(butt.add(joint).mul(deckK).mul(float(1).sub(smoothstep(0.02, 0.09, fw)).mul(0.6).add(0.4))));
+  // lichen and patina: north slopes (city z < 0 is north), eaves and ridge
+  const north = clamp(normalWorld.z.negate().mul(1.4).add(0.25), 0, 1);
+  const film = vnoise(w.mul(0.9)).mul(0.6).add(vnoise(w.mul(3.1)).mul(0.4));
+  const grime = smoothstep(0.45, 0.85, film).mul(north.mul(0.7).add(0.3)).mul(0.22).mul(stLook.moss);
+  col = mix(col, lin(0x5d6257), grime);
+  const crust = smoothstep(0.83, 0.93, vnoise(w.mul(26.0).add(id.mul(3.0)))).mul(smoothstep(0.35, 0.7, vnoise(w.mul(1.7)))).mul(north.mul(0.8).add(0.2));
+  col = mix(col, lin(0x8d908a), crust.mul(0.55).mul(stLook.moss));
+  col = mix(col, lin(0x4a4c4e), isCode(C.ridge).mul(0.35));
+  // the deck's relief: each course tilts up-slope by one slate thickness over one gauge (the slates rest on the course
+  // below), the butt step as a short steep band
+  const tilt = float(0.048).mul(deckK).mul(float(1).sub(smoothstep(0.01, 0.05, fw)));
+  const step_ = float(1).sub(smoothstep(0.0, 0.05, fv)).mul(-0.6).mul(deckK).mul(float(1).sub(smoothstep(0.004, 0.02, fw)));
+  const nT = vec3(0, tilt.add(step_), 1).normalize();
+  const rough = mix(float(0.72), float(0.6), id).add(crust.mul(0.25));
+  return { col, nT, rough };
 }
 const TEMP = {
   sandstone_rubble() {
-    const { col, bulge } = rubble();
+    const { col, nT } = rubble();
     // the lower walls (north side most) browner and darker: rising damp, splash, algae (photos P01, c05)
     const low = smoothstep(36.4, 34.4, positionWorld.y), north = clamp(normalWorld.z.negate().mul(0.8).add(0.3), 0, 1);
     const damp = mix(col, col.mul(vec3(0.74, 0.66, 0.52)), low.mul(north).mul(0.75).mul(stLook.weather));
     const c = weather(damp).mul(mix(float(1), float(0.93), isCode(C.plinth)));
-    return std({ colorNode: c, roughnessNode: float(0.9), metalnessNode: float(0), normalNode: bumpNormal(bulge) });
+    return std({ colorNode: c, roughnessNode: float(0.9), metalnessNode: float(0), normalNode: tangentNormal(nT) });
   },
   stone_white(o = {}) {
     // dressed stone (copings, surrounds, tracery, quoins, statue): tooled ashlar, faint coursing, weathered tops
@@ -287,18 +372,8 @@ const TEMP = {
     return std({ colorNode: o.indoor ? col : weather(col, 0.5), roughnessNode: float(0.88), metalnessNode: float(0), normalNode: bumpNormal(mask.mul(0.004)) });
   },
   slate() {
-    const w = uv(0);
-    const cv = w.y.div(0.17), row = floor(cv);
-    const cu = w.x.div(0.24).add(mod(row, 2).mul(0.5)), cell = floor(cu);
-    const h = hash2(vec2(cell, row));
-    const fw = max(fwidth(cv), fwidth(cu));
-    const lap = mix(smoothstep(0.0, 0.12, fract(cv)).mul(smoothstep(0.0, 0.05, fract(cu))).mul(smoothstep(1.0, 0.95, fract(cu))), float(0.85), smoothstep(0.2, 0.6, fw));
-    let col = mix(lin(0x3c3e40), lin(0x323436), h).mul(mix(float(0.78), float(1), lap));
-    // lichen / moss spots (photos: mossy slates on the house and the aisles)
-    const m = smoothstep(0.72, 0.9, vnoise(w.mul(2.3))).mul(smoothstep(0.4, 0.8, vnoise(w.mul(13.0)))).mul(stLook.moss);
-    col = mix(col, lin(0x596040), m.mul(0.55));
-    col = mix(col, lin(0x4a4c4e), isCode(C.ridge).mul(0.4));
-    return std({ colorNode: col, roughnessNode: float(0.84), metalnessNode: float(0) });
+    const { col, nT, rough } = slateLook();
+    return std({ colorNode: col, roughnessNode: rough, metalnessNode: float(0), normalNode: tangentNormal(nT) });
   },
   zinc_roof() {
     const h = vnoise(uv(0).mul(vec2(0.6, 4.0)));
