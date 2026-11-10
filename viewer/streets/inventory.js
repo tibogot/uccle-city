@@ -24,7 +24,8 @@ export function approachSpan(arm) {
 export function enginePaint(net, nodeIds = null) {
   const crossings = [], stops = [];
   for (const n of net.nodes) {
-    if (nodeIds && !nodeIds.has(n.id)) continue;
+    // paint v2 keeps the engine's ring-entry teeth everywhere (the ring is the controller): list them all
+    if (nodeIds && !nodeIds.has(n.id) && n.kind !== "roundabout") continue;
     for (const a of n.arms || []) {
       const e = a.edges;
       if (a.crosswalk && a.walkStation != null) {

@@ -20,7 +20,7 @@ export { CARVE };                  // terrain is pushed this far under any road 
 export const TERRAIN_ERROR = 0.05;
 // road marking rules (viewer/roadBuild.js): "v2" = measured paint, no invented lines (docs/ROADS_V2_RESEARCH.md phase 1);
 // "v1" = the road engine's own (?paint=v1 in the city, the before/after toggle in the Road Lab)
-export const PAINT = "v1";
+export const PAINT = "v2";
 
 function terrainArrays(hm) {
   const { x0, z0, cols, rows, step } = hm.h, Y = hm.y;

@@ -21,7 +21,7 @@ import {
   fwidth, hash, mx_noise_float, uniform,
 } from "three/tsl";
 import { addLampLight } from "./lampLight.js";
-import { filteredPulse } from "./tslkit.js";
+import { filteredPulse, boxCoverage } from "./tslkit.js";
 
 import { SURFACE, hashPhase, surfaceAttribute } from "./roadData.js";
 export { SURFACE, hashPhase, surfaceAttribute };
@@ -167,6 +167,37 @@ export function asphaltMaterial(atlas) {
 
   m.colorNode = mix(base, paintCol, paint);
   m.roughnessNode = mix(rough, float(0.62), paint);
+  return addLampLight(m);
+}
+
+// ---------------------------------------------------------------- measured paint (decal mesh)
+
+/** The measured paint of paint v2 (viewer/streets/measuredPaint.js paintMeshV2): crossings, stop and give-way lines,
+ *  sharrows, as one decal mesh PAINT_LIFT above the street. No texture: each mark's (u, v) metres give box-filtered
+ *  edges and stripes (tslkit filteredPulse / boxCoverage), so a zebra fades to its 50 % average far away instead of
+ *  shimmering. Same paint colour and wear as the lines in the asphalt shader above. */
+export function paintMaterial() {
+  const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, transparent: true, depthWrite: false,
+    polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+  const P = positionWorld, x = P.x, z = P.z;
+  const a = attribute("aPaint", "vec4"), e = attribute("aPaint2", "vec4");
+  const u = a.x, v = a.y, kind = a.z, n = a.w;
+  const fu = fwidth(u).mul(0.7).add(0.003), fv = fwidth(v).mul(0.7).add(0.003);
+  const inU = boxCoverage(u, float(0), e.x, fu);
+  const solid = inU.mul(boxCoverage(v, float(0), e.y, fv));
+  // zebra: n bands 0.5 m wide every 1.0 m across the road (v), each running the band's width along the road (u)
+  const zebra = inU.mul(filteredPulse(v, float(0), float(0.5), fv)).mul(boxCoverage(v, float(0), n.sub(0.5), fv));
+  // give-way teeth: base 0.5 m on the line (u = 0), apex 0.7 m upstream, every 0.75 m
+  const per = float(0.75), w = fract(v.div(per)).mul(per).sub(per.mul(0.5));
+  const hw = float(0.25).mul(float(1).sub(u.div(0.7)));
+  const teeth = smoothstep(fv.negate(), fv, hw.sub(abs(w))).mul(inU).mul(boxCoverage(v, float(0), e.y, fv));
+  let cov = solid.mul(band(kind, 0)).add(zebra.mul(band(kind, 1))).add(teeth.mul(band(kind, 2)));
+  const speck = n3(x.mul(41.0), z.mul(41.0), 3.0);
+  const wear = smoothstep(float(-0.65), float(-0.25), n3(x.mul(1.7), z.mul(1.7), 11.0)).mul(smoothstep(float(-0.8), float(-0.45), speck));
+  cov = cov.mul(wear).mul(0.92);
+  m.colorNode = vec3(0.62, 0.62, 0.6);
+  m.opacityNode = cov;
+  m.roughnessNode = float(0.62);
   return addLampLight(m);
 }
 

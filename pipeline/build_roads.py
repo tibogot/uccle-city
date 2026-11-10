@@ -123,6 +123,20 @@ def parking_flags(tags, reverse):
     return left, right
 
 
+def sharrow_flags(tags, reverse):
+    """(left, right): OSM cycleway=shared_lane on that side (painted bike symbols in the traffic lane)."""
+    def sh(v):
+        return v == "shared_lane"
+    left = right = sh(tags.get("cycleway")) or sh(tags.get("cycleway:both"))
+    if "cycleway:left" in tags:
+        left = sh(tags["cycleway:left"])
+    if "cycleway:right" in tags:
+        right = sh(tags["cycleway:right"])
+    if reverse:
+        left, right = right, left
+    return left, right
+
+
 def lane_stack(rtype, tags, ow, reverse):
     """Custom `lanes` stack when OSM says more than the type default; else None."""
     keys = ("lanes", "lanes:forward", "lanes:backward", "cycleway", "cycleway:both", "cycleway:left", "cycleway:right",
@@ -149,24 +163,32 @@ def lane_stack(rtype, tags, ow, reverse):
             bwd = max(0 if ow else 1, (n or fwd + 1) - fwd)
     bike_yes = {"lane", "track", "opposite_lane", "shared_lane"}
     bl, br = side_flags(tags, "cycleway", bike_yes, reverse)
+    shl, shr = sharrow_flags(tags, reverse)
     pl, pr = parking_flags(tags, reverse)
     sl, sr = side_flags(tags, "sidewalk", {"yes", "separate"}, reverse)
 
-    def side(drive_n, bike, parking, sidewalk):
+    # Lanes the tags do not state are marked "guess": true (type defaults), and an OSM shared_lane bike lane
+    # "sharrow": true (bike symbols in the traffic lane, not a lane of its own). The road engine reads the stack as
+    # it is (paint v1, the parked cars); the tile worker's paint v2 (viewer/streets/measuredPaint.js) paints no guess
+    # and turns sharrow lanes back into symbols (docs/ROADS_V2_RESEARCH.md phase 1, "no evidence, no paint").
+    def side(drive_n, bike, bike_guess, sharrow, parking, park_guess, sidewalk):
         out = [{"type": "driving", "width": d["drive"]} for _ in range(drive_n)]
         if bike:
-            out.append({"type": "bike", "width": d["bike"] or 1.5})
+            out.append({"type": "bike", "width": d["bike"] or 1.5, **({"guess": True} if bike_guess else {}), **({"sharrow": True} if sharrow else {})})
         if parking:
-            out.append({"type": "parking", "width": d["parking"] or 2.2})
+            out.append({"type": "parking", "width": d["parking"] or 2.2, **({"guess": True} if park_guess else {})})
         if sidewalk is not False:
             out.append({"type": "sidewalk", "width": d["sidewalk"]})
         return out
 
     default_bike = d["bike"] is not None
     default_park = d["parking"] is not None
-    right = side(fwd, br if br is not None else (default_bike and not ow), pr if pr is not None else default_park, sr)
-    left = side(bwd, bl if bl is not None else (default_bike and not ow), pl if pl is not None else default_park, sl)
-    return {"center": dict(d["center"]), "left": left, "right": right}
+    right = side(fwd, br if br is not None else (default_bike and not ow), br is None, shr, pr if pr is not None else default_park, pr is None, sr)
+    left = side(bwd, bl if bl is not None else (default_bike and not ow), bl is None, shl, pl if pl is not None else default_park, pl is None, sl)
+    center = dict(d["center"])
+    if center.get("kind") == "line":
+        center["guess"] = True          # no OSM tag says there is a centre line (the measured lines decide, v2)
+    return {"center": center, "left": left, "right": right}
 
 
 # ---------------------------------------------------------------- geometry helpers

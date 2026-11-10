@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Road Lab</title>
+<link rel="icon" href="../viewer/favicon.svg" type="image/svg+xml">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #8e9aa6; font: 13px/1.4 system-ui, sans-serif; }
+  canvas { display: block; }
+  #title { position: fixed; left: 10px; top: 10px; padding: 6px 10px; border-radius: 6px; background: rgba(20, 24, 30, .8);
+           color: #e6e9ee; z-index: 2; max-width: calc(100vw - 360px); }
+  #title a { color: #9cc4ff; }
+  #note { position: fixed; left: 10px; top: 46px; width: 380px; padding: 8px 10px; border-radius: 6px; background: rgba(20, 24, 30, .8);
+          color: #dfe4ea; font: 12px/1.4 system-ui, sans-serif; z-index: 2; }
+  #note b { color: #9cc4ff; }
+  #legend { margin-top: 6px; font: 11px/1.5 ui-monospace, monospace; }
+  #legend span { display: inline-block; width: 10px; height: 10px; margin: 0 4px 0 8px; vertical-align: -1px; }
+  #info { position: fixed; left: 10px; bottom: 10px; max-width: 640px; padding: 8px 10px; border-radius: 6px;
+          background: rgba(20, 24, 30, .8); color: #dfe4ea; font: 12px/1.35 ui-monospace, monospace; white-space: pre-wrap; z-index: 2; }
+  #credit { position: fixed; right: 10px; bottom: 10px; padding: 4px 8px; border-radius: 4px; background: rgba(20, 24, 30, .7);
+            color: #dfe4ea; font: 11px system-ui, sans-serif; z-index: 2; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.tsl.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/",
+    "three/src/": "https://cdn.jsdelivr.net/npm/three@0.187.0/src/",
+    "meshoptimizer/simplifier": "https://cdn.jsdelivr.net/npm/meshoptimizer@1.2.0/meshopt_simplifier.js"
+  }
+}
+</script>
+</head>
+<body>
+<div id="title"><b>Road Lab</b> — 10 real Uccle junctions over the 2024 UrbIS orthophoto: measured paint vs ours, the Road Checker's findings · <a href="./">all labs</a> · <a id="city" href="../viewer/index.html">in the city</a></div>
+<div id="note"></div>
+<div id="info">loading…</div>
+<div id="credit">Orthophoto 2024, UrbIS (CC0) · markings: UrbIS Topo (CC0), Brussels Mobility · © OpenStreetMap contributors (ODbL)</div>
+<script type="module" src="./road-lab.js"></script>
+</body>
+</html>

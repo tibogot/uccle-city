@@ -54,6 +54,10 @@ export const CELL = 6;             // m: height-field grid
 // (I6 median |H - DTM| 3.6 -> 6-10 cm), so folds are handled by the wide-stencil normals instead
 const SMOOTH_PASSES = 0;
 const LIFT = 0.006;                // engine marking layer above the measured base (reversed-z: far above precision)
+// Lift tier between engine pieces that overlap in plan (paint v2). Reversed-z float depth resolves about
+// d * 2^-23 * a few: ~0.2 mm at 500 m, so 1.5 mm keeps overlapping pieces apart at any distance the tile is drawn
+// (the far tiles carry no roads); 3 tiers + DEV stay under the paint decal (viewer/streets/measuredPaint.js PAINT_LIFT).
+const TIER = 0.0015, MAX_TIER = 3;
 const BASE_DROP = 0.01;            // the measured roadway base sits this far under H, the engine layer LIFT above it
 const DEV = [-0.014, 0.012];       // so an uncut engine triangle may sit this far below / above H and stay on top
 const BAND = 0.15;                 // kerb-stone band on top of the kerb
@@ -561,6 +565,74 @@ export function fitRoadWidths(roads, prep) {
 
 // ---------------------------------------------------------------- 3. meshes
 
+/** Index offsets of the engine triangles whose uv-frame orientation is the minority of their piece (folded strips). */
+function foldedTriangles(E, phaseOf) {
+  const P = E.position, U = E.uv, I = E.index;
+  const sign = new Int8Array(I.length / 3), per = new Map();
+  for (let t = 0; t < I.length; t += 3) {
+    const a = I[t], b = I[t + 1], c = I[t + 2];
+    const ap = (P[b * 3] - P[a * 3]) * (P[c * 3 + 2] - P[a * 3 + 2]) - (P[b * 3 + 2] - P[a * 3 + 2]) * (P[c * 3] - P[a * 3]);
+    const au = (U[b * 2] - U[a * 2]) * (U[c * 2 + 1] - U[a * 2 + 1]) - (U[b * 2 + 1] - U[a * 2 + 1]) * (U[c * 2] - U[a * 2]);
+    if (Math.abs(ap) < 1e-6 || Math.abs(au) < 1e-6) continue;
+    const sg = ap * au > 0 ? 1 : -1;
+    sign[t / 3] = sg;
+    const ph = phaseOf(a), m = per.get(ph) || [0, 0];
+    m[sg > 0 ? 0 : 1]++;
+    per.set(ph, m);
+  }
+  const out = new Set();
+  for (let t = 0; t < I.length; t += 3) {
+    const sg = sign[t / 3];
+    if (!sg) continue;
+    const m = per.get(phaseOf(I[t]));
+    const major = m[0] >= m[1] ? 1 : -1;
+    if (sg !== major && Math.min(m[0], m[1]) < 0.25 * (m[0] + m[1])) out.add(t);
+  }
+  return out;
+}
+
+/** Engine pieces (aPiece phase) whose triangles overlap in plan -> a lift tier each: a greedy colouring in rising
+ *  priority, so of two overlapping pieces the higher priority is drawn higher. Overlap = a 0.5 m sample point inside
+ *  triangles of two different pieces. Pieces that overlap nothing stay at tier 0. */
+function liftTiers(E, inTile, phaseOf, priority) {
+  const P = E.position, I = E.index, S = 0.25;
+  const cells = new Map();
+  for (let t = 0; t < I.length; t += 3) {
+    const a = I[t], b = I[t + 1], c = I[t + 2];
+    const ax = P[a * 3], az = P[a * 3 + 2], bx = P[b * 3], bz = P[b * 3 + 2], cx = P[c * 3], cz = P[c * 3 + 2];
+    const mx = (ax + bx + cx) / 3, mz = (az + bz + cz) / 3;
+    if (!inTile(mx, mz)) continue;
+    const ph = phaseOf(a);
+    const d = (bx - ax) * (cz - az) - (bz - az) * (cx - ax);
+    if (Math.abs(d) < 1e-9) continue;
+    for (let i = Math.ceil(Math.min(ax, bx, cx) / S); i <= Math.floor(Math.max(ax, bx, cx) / S); i++)
+      for (let j = Math.ceil(Math.min(az, bz, cz) / S); j <= Math.floor(Math.max(az, bz, cz) / S); j++) {
+        const x = i * S, z = j * S;
+        const w1 = ((x - ax) * (cz - az) - (z - az) * (cx - ax)) / d, w2 = ((bx - ax) * (z - az) - (bz - az) * (x - ax)) / d;
+        if (w1 < 0.02 || w2 < 0.02 || w1 + w2 > 0.98) continue;          // strictly inside: shared edges are no overlap
+        const k = i * 1048576 + j;
+        let set = cells.get(k);
+        if (!set) cells.set(k, (set = new Set()));
+        set.add(ph);
+      }
+  }
+  const nb = new Map();
+  for (const set of cells.values()) {
+    if (set.size < 2) continue;
+    for (const p of set) for (const q of set) if (p !== q) { let m = nb.get(p); if (!m) nb.set(p, (m = new Map())); m.set(q, (m.get(q) || 0) + 1); }
+  }
+  const tier = new Map();
+  const order = [...nb.keys()].sort((p, q) => priority(p) - priority(q) || p - q);
+  for (const p of order) {
+    const used = new Set();
+    for (const [q] of nb.get(p)) if (tier.has(q)) used.add(tier.get(q));
+    let t = 0;
+    while (used.has(t) && t < MAX_TIER) t++;
+    tier.set(p, t);
+  }
+  return tier;
+}
+
 /**
  * @param {object} prep    prepareSurfaces()
  * @param {object} built   buildLaneRoadMesh() output (asphalt / concrete / grass parts)
@@ -568,9 +640,12 @@ export function fitRoadWidths(roads, prep) {
  * @param {object} roads   roads.json (street name -> OSM surface map, names of mapped roads)
  * @param {(x:number, z:number) => boolean} [onBuilding]  under a UrbIS building? (engine roads UrbIS does not map
  *        are kept as built, except where the engine put them on a house)
+ * @param {object} [opts]  { priority(phase) }: give engine pieces that OVERLAP in plan distinct lift tiers (the higher
+ *        priority on top, TIER apart), so two coplanar pieces can never z-fight (paint v2; without it every engine
+ *        triangle sits exactly LIFT above H, research §1.7)
  * @returns {{ parts: {asphalt, concrete, grass}, carve: {position, index}[], grid, kerbs, bollards, stats }}
  */
-export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => false) {
+export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => false, opts = {}) {
   const t0 = (globalThis.performance ?? Date).now();
   const { surf, H, nrmAt, base, halves, coverArea, convexCover, baseAt, bounds, riseAt } = prep;
   const UP = [0, 1, 0];
@@ -626,6 +701,13 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
     return ex;
   };
   let overlayTris = 0, overlayWhole = 0, keptTris = 0, droppedTris = 0, devFail = 0, cutAtEdge = 0;
+  const lift = opts.priority ? liftTiers(E, inTile, phaseOf, opts.priority) : null;
+  // folds: where a bend is tighter than the road is wide, the engine's outer strips turn inside out and lie over
+  // the road itself (a z-fight with no tier possible). Such a triangle's orientation in its own (station, lateral)
+  // uv frame disagrees with the rest of its piece: drop it (the measured base and the unfolded strip cover the spot)
+  const folded = opts.dropFolds ? foldedTriangles(E, phaseOf) : null;
+  let foldDropped = 0;
+  const liftOf = (v) => (lift ? LIFT + (lift.get(phaseOf(v)) || 0) * TIER : LIFT);
   const keptEngine = [];
   const emit = (poly, vs, P2) => {     // a convex piece of engine triangle vs, LIFT above H
     const idx = [];
@@ -636,7 +718,7 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
       const v = we[0] * E.uv[vs[0] * 2 + 1] + we[1] * E.uv[vs[1] * 2 + 1] + we[2] * E.uv[vs[2] * 2 + 1];
       const ex = exOf(vs, we);
       const key = `o${Math.round(q[0] * 1000)},${Math.round(q[1] * 1000)},${Math.round(u * 1000)},${Math.round(v * 1000)},${ex.aPiece[0].toFixed(2)},${ex.aEdges.map((e) => e.toFixed(3)).join()},${ex.aMark.map((e) => e.toFixed(4)).join()},${ex.aLateral.toFixed(3)}`;
-      idx.push(A.keyed(key, () => A.vert(q[0], H(q[0], q[1]) + LIFT, q[1], nrmAt(q[0], q[1]), u, v, ex)));
+      idx.push(A.keyed(key, () => A.vert(q[0], H(q[0], q[1]) + liftOf(vs[0]), q[1], nrmAt(q[0], q[1]), u, v, ex)));
     }
     for (let k = 1; k + 1 < idx.length; k++) if (A.tri(idx[0], idx[k], idx[k + 1], UP, true)) overlayTris++;
   };
@@ -672,18 +754,20 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
       if (!we) return;
       const u = we[0] * E.uv[vs[0] * 2] + we[1] * E.uv[vs[1] * 2] + we[2] * E.uv[vs[2] * 2];
       const v = we[0] * E.uv[vs[0] * 2 + 1] + we[1] * E.uv[vs[1] * 2 + 1] + we[2] * E.uv[vs[2] * 2 + 1];
-      idx.push(A.vert(q[0], we[0] * hv[0] + we[1] * hv[1] + we[2] * hv[2] + LIFT, q[1], nrmAt(q[0], q[1]), u, v, exOf(vs, we)));
+      idx.push(A.vert(q[0], we[0] * hv[0] + we[1] * hv[1] + we[2] * hv[2] + liftOf(vs[0]), q[1], nrmAt(q[0], q[1]), u, v, exOf(vs, we)));
     }
     for (let k = 1; k + 1 < idx.length; k++) if (A.tri(idx[0], idx[k], idx[k + 1], UP, true)) overlayTris++;
   };
   for (let t = 0; t < EI.length; t += 3) {
+    if (folded?.has(t)) { foldDropped++; droppedTris++; continue; }
     const vs = [EI[t], EI[t + 1], EI[t + 2]];
     const P2 = vs.map((v) => [EP[v * 3], EP[v * 3 + 2]]);
     const cx = (P2[0][0] + P2[1][0] + P2[2][0]) / 3, cz = (P2[0][1] + P2[1][1] + P2[2][1]) / 3;
     if (!mapped.has(phaseOf(vs[0]))) {
       if (!inTile(cx, cz) || baseAt(cx, cz) || onBuilding(cx, cz)) { droppedTris++; continue; }
       const w3 = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
-      const idx = vs.map((v, q) => A.vert(EP[v * 3], EP[v * 3 + 1], EP[v * 3 + 2], [E.normal[v * 3], E.normal[v * 3 + 1], E.normal[v * 3 + 2]], E.uv[v * 2], E.uv[v * 2 + 1], exOf(vs, w3[q])));
+      const up = lift ? liftOf(vs[0]) - LIFT : 0;     // unmapped engine road: as built, + its tier where it overlaps
+      const idx = vs.map((v, q) => A.vert(EP[v * 3], EP[v * 3 + 1] + up, EP[v * 3 + 2], [E.normal[v * 3], E.normal[v * 3 + 1], E.normal[v * 3 + 2]], E.uv[v * 2], E.uv[v * 2 + 1], exOf(vs, w3[q])));
       A.idxFirst.push(idx[0], idx[1], idx[2]);
       for (const v of vs) keptEngine.push(EP[v * 3], EP[v * 3 + 1], EP[v * 3 + 2]);
       keptTris++;
@@ -973,6 +1057,8 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
   const bollards = (surf.bollards || []).filter(([x, z]) => inTile(x, z)).map(([x, z]) => { const c = prep.classAt(x, z); return [x, H(x, z) + (c >= 0 ? riseAt(c, x, z) : 0), z]; });
   const stats = {
     surfaces: surf.surfaces.length, baseTris: base.length, overlayTris, overlayWhole, overlayCutAtCreases: devFail, overlayCutAtStreetEdge: cutAtEdge, keptEngineTris: keptTris, droppedEngineTris: droppedTris,
+    foldDropped,
+    liftTiers: lift ? { pieces: lift.size, overlapping: [...lift.values()].filter((t) => t > 0).length, max: Math.max(0, ...lift.values()) } : null,
     keptSideTris: keptSide, kerbLength: Math.round(kerbLen), mappedPieces: mapped.size, unmappedPieces: tally.size - mapped.size,
     unframedSidewalkTris: unframed, cutFallbacks: prep.fallbacks, bollards: bollards.length, treePits: (prep.pits || []).length,
     heightError: (() => {      // |H - DTM| at the triangle centroids (m)

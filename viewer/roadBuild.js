@@ -11,8 +11,9 @@
 // bike / parking lines), "v2" = docs/ROADS_V2_RESEARCH.md phase 1, "stop inventing" (viewer/streets/measuredPaint.js).
 import { buildRoadNetwork } from "../vendor/roads/roadNetwork.js";
 import { buildLaneRoadMesh } from "../vendor/roads/mesh/laneRoadMesh.js";
-import { surfaceAttribute } from "./roadData.js";
+import { surfaceAttribute, hashPhase } from "./roadData.js";
 import { prepareSurfaces, fitRoadWidths, buildSurfaceRoads } from "./surfaces.js";
+import { preparePaintV2, afterNetworkV2, unpaintParking, paintMeshV2 } from "./streets/measuredPaint.js";
 
 export const CARVE = 0.12;         // terrain is pushed this far under any road surface
 
@@ -60,21 +61,35 @@ export function buildRoadData(o) {
   const lap = (k) => { const t = now(); times[k] = Math.round(t - t0); t0 = t; };
   // measured surfaces first, then the engine's lane stacks fitted into the measured kerb-to-kerb widths
   const prep = surf ? prepareSurfaces(surf, hm.ground, bounds, o.trees ?? null) : null;
+  // paint v2 needs the measured street; a tile without surfaces keeps the engine's rules
+  const v2 = o.paint === "v2" && !!prep;
+  const ctx = v2 ? preparePaintV2(roads, prep, o.markings ?? null, bounds) : null;     // edits the engine's inputs
   const widthFit = prep ? fitRoadWidths(roads, prep) : null;
   lap("surfaces + width fit");
   const net = buildRoadNetwork(roads, { ground: hm.ground });
   lap("buildRoadNetwork");
+  const pv = v2 ? afterNetworkV2(net, ctx, surf) : null;
+  if (v2) lap("measured paint");
   const errors = net.issues.filter((i) => i.level === "error");
   const byCode = {};
   for (const i of errors) byCode[i.code] = (byCode[i.code] || 0) + 1;
   const netInfo = { roads: net.roads.length, nodes: net.nodes.length, errors: errors.length, byCode, warnings: net.issues.length - errors.length };
 
   const built = buildLaneRoadMesh(net, { markings: true });
+  if (v2) pv.inventory.stats.parkingVerticesUnpainted = unpaintParking(built, ctx);
+  // paint v2: engine pieces that overlap get lift tiers (junction pads on top, then the higher road rank)
+  let priority = null;
+  if (v2) {
+    const pr = new Map();
+    for (const rr of net.roads) pr.set(hashPhase(rr.id), rr.type.rank ?? 1);
+    for (const n of net.nodes) pr.set(hashPhase(n.id), 10);
+    priority = (ph) => pr.get(ph) ?? 0;
+  }
   const parts = {};
   let carvedCells = 0, triangles = 0, surfaceStats = null, surfaceData = null;
   if (surf) {
     // measured surfaces + the engine's markings clipped to them (viewer/surfaces.js)
-    const S = buildSurfaceRoads(prep, built, surfaceAttribute(net, built.asphalt), roads, onBuilding);
+    const S = buildSurfaceRoads(prep, built, surfaceAttribute(net, built.asphalt), roads, onBuilding, priority ? { priority, dropFolds: true } : {});
     for (const c of S.carve) carvedCells += hm.carve(c.position, c.index, CARVE);
     for (const [name, part] of Object.entries(S.parts)) {
       parts[name] = { position: part.position, normal: part.normal, uv: part.uv, attributes: part.attributes, index: part.index, aSurf: part.extra };
@@ -96,7 +111,13 @@ export function buildRoadData(o) {
   }
   const atlas = compactAtlas(built.atlas);
   lap("road meshes + carve");
-  const out = { parts, atlas, carvedCells, triangles, surfaceStats, surfaceData, netInfo, times, net };
+  if (v2) {
+    // the measured paint as its own decal mesh (one draw, viewer/roadPaint.js paintMaterial)
+    const paintPart = paintMeshV2(pv.items, prep, bounds);
+    if (paintPart) { parts.paint = paintPart; triangles += paintPart.index.length / 3; }
+    lap("paint decal");
+  }
+  const out = { parts, atlas, carvedCells, triangles, surfaceStats, surfaceData, netInfo, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1" };
   if (o.keep) Object.assign(out, { prep, built });
   return out;
 }

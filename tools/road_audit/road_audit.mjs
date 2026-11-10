@@ -3,7 +3,7 @@
 // against the measured street (UrbIS surfaces, markings.json, the orthophoto, OSM tags).
 //
 //   node --import ./tools/road_audit/register.mjs tools/road_audit/road_audit.mjs [--paint v1|v2] [--label NAME]
-//        [--out DIR] [--no-ortho] [--quiet] T [T ...] | --all
+//        [--out DIR] [--roads-from DIR] [--no-ortho] [--quiet] T [T ...] | --all
 //
 // Writes DIR/NAME/<T>.json (every finding with its world position x, z, the element id and source, a one-line
 // reason) and DIR/NAME/summary.{json,md}. Exit code 1 when any BLOCKING finding exists (level "error" in a blocking
@@ -24,6 +24,7 @@ const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv.splice(i, 2)[1] : d; };
 const flag = (k) => { const i = argv.indexOf(k); if (i >= 0) argv.splice(i, 1); return i >= 0; };
 const PAINT = opt("--paint", "v2"), LABEL = opt("--label", PAINT), OUT = opt("--out", join(ROOT, "docs/roads/audit"));
+const ROADS_FROM = opt("--roads-from", null);     // another set of roads.json (<DIR>/<T>.json): the "before" network
 const NO_ORTHO = flag("--no-ortho"), QUIET = flag("--quiet"), ALL = flag("--all");
 const TILES = ALL ? allTiles() : argv.map((t) => t.toUpperCase());
 if (!TILES.length) { console.error("usage: road_audit.mjs [--paint v1|v2] [--label L] T... | --all"); process.exit(2); }
@@ -69,7 +70,7 @@ function kerbRay(prep, x, z, dx, dz, max = 30) {
 
 // ---------------------------------------------------------------- one tile
 function auditTile(T, ortho) {
-  const tile = loadTile(T, { paint: PAINT });
+  const tile = loadTile(T, { paint: PAINT, roadsFile: ROADS_FROM ? join(ROADS_FROM, `${T}.json`) : undefined });
   const { rd, bounds, surf, markings, roads } = tile;
   const { net, prep } = rd;
   const inTile = (x, z) => x >= bounds.x0 && x < bounds.x1 && z >= bounds.z0 && z < bounds.z1;
@@ -130,6 +131,7 @@ function auditTile(T, ortho) {
       const bx = -Math.sin(c.axis), bz = Math.cos(c.axis);
       let lo = Infinity, hi = -Infinity;
       for (const p of c.poly) { const v = (p[0] - x) * bx + (p[1] - z) * bz; lo = Math.min(lo, v); hi = Math.max(hi, v); }
+      if (c.vSpan) [lo, hi] = c.vSpan;              // decal zebras: the stripes as drawn (cut at the measured kerb)
       const kp = kerbRay(prep, x, z, bx, bz), km = kerbRay(prep, x, z, -bx, -bz);
       if (CARRIAGE.has(cls(x, z)) && kp != null && km != null) {
         const short = Math.max(kp - hi, km + lo), over = Math.max(hi - kp, -lo - km);
@@ -163,7 +165,7 @@ function auditTile(T, ortho) {
     if (s.ring) continue;                         // roundabout entry teeth: the ring is the controller
     if (s.src === "rule" && String(s.controller).startsWith("guess")) add("C3", "error", x, z, `${s.kind} line with a guessed controller (${s.controller}): no signal, sign or OSM control`, tag);
     const depth = coreOf(x, z);
-    if (depth > 3) add("C3", "error", x, z, `${s.kind} line ${depth.toFixed(1)} m deep inside the measured junction`, tag);
+    if (depth > 3) add("C3", s.src === "topo" ? "warn" : "error", x, z, `${s.kind} line ${depth.toFixed(1)} m deep inside the measured junction`, tag);
     const am = armOf(x, z, 30);
     if (am) {
       const a = am.arm, th = Math.atan2(q[1] - p[1], q[0] - p[0]);
@@ -171,7 +173,7 @@ function auditTile(T, ortho) {
       if (dP > 10) add("C3", "warn", x, z, `${s.kind} line ${dP.toFixed(0)}° off square to its lanes`, tag);
       const ts = [p, q].map((P) => (P[0] - a.ox) * a.nx + (P[1] - a.oz) * a.nz);
       const twoWay = (a.lanesR || []).some((l) => l.drive && l.w > 0.3) && (a.lanesL || []).some((l) => l.drive && l.w > 0.3);
-      if (twoWay && Math.min(...ts) < -0.5) add("C3", "error", x, z, `${s.kind} line runs ${(-Math.min(...ts)).toFixed(1)} m over the departing lanes`, tag);
+      if (twoWay && Math.min(...ts) < -0.5) add("C3", s.src === "topo" ? "warn" : "error", x, z, `${s.kind} line runs ${(-Math.min(...ts)).toFixed(1)} m over the departing lanes`, tag);
       const key = `${am.node.id}|${a.road.id}|${a.end}`;
       perApproach.set(key, (perApproach.get(key) || 0) + 1);
       if (perApproach.get(key) === 2) add("C3", "warn", x, z, "two stop / give-way lines on one approach", tag);
@@ -180,8 +182,9 @@ function auditTile(T, ortho) {
         const ca = xArm.get(c.id);
         if (!ca || ca.arm !== a) continue;
         const half = (c.along ?? 3) / 2;
-        if (am.sigma < ca.sigma - half - 0.2) add("C3", "error", x, z, `${s.kind} line on the junction side of crossing ${c.id}`, tag);
-        else if (am.sigma <= ca.sigma + half + 0.3) add("C3", "error", x, z, `${s.kind} line on crossing ${c.id}`, tag);
+        const lv = s.src === "topo" ? "warn" : "error";     // a surveyed line is the truth: report, don't fail
+        if (am.sigma < ca.sigma - half - 0.2) add("C3", lv, x, z, `${s.kind} line on the junction side of crossing ${c.id}`, tag);
+        else if (am.sigma <= ca.sigma + half + 0.3) add("C3", lv, x, z, `${s.kind} line on crossing ${c.id}`, tag);
       }
     } else add("C3", "warn", x, z, `${s.kind} line on no junction approach`, tag);
   }
@@ -225,7 +228,17 @@ function auditTile(T, ortho) {
       add("C4", raised || off ? "error" : "warn", first[0], first[1], `${label}: ${Math.round(100 * f)}% of it not on the carriageway (${desc})`, { id: item.id ?? item.road, src: item.src ?? "rule" });
     }
   };
-  for (const c of xIn) if (c.poly) c4(c, c.poly, true, `crossing ${c.id}`);
+  for (const c of xIn) if (c.poly && c.drawn !== "decal") c4(c, c.poly, true, `crossing ${c.id}`);
+  // the decal mesh (paint v2): every drawn triangle's centroid must be on the markable carriageway
+  if (rd.parts.paint && prep) {
+    const P = rd.parts.paint.position, I = rd.parts.paint.index;
+    let bad = 0, n = 0, at = null;
+    for (let t = 0; t < I.length; t += 3) {
+      const x = (P[I[t] * 3] + P[I[t + 1] * 3] + P[I[t + 2] * 3]) / 3, z = (P[I[t] * 3 + 2] + P[I[t + 1] * 3 + 2] + P[I[t + 2] * 3 + 2]) / 3;
+      n++; if (!MARKABLE.has(cls(x, z))) { bad++; at ??= [x, z]; }
+    }
+    if (bad) add("C4", bad / n > 0.01 ? "error" : "warn", at[0], at[1], `${bad} of ${n} paint decal triangles not on the markable carriageway`, { id: "paint-decal" });
+  }
   for (const s of sIn) c4(s, s.line, false, `${s.kind} line`);
   const laneIn = inv.lanes.filter((l) => l.pts.some(([x, z]) => inTile(x, z)));
   // lane paint per road and kind (a parking lane's ticks are one item)
@@ -354,8 +367,16 @@ function auditTile(T, ortho) {
     if (inside && inside < xs.length) seam[r.id] = JSON.stringify(r.lanes ?? null);
   }
 
+  // Roads UrbIS does not map (Flemish side, private lanes) keep the engine's rules (owner decision 3): a finding with
+  // no measured surface within 3 m is reported as "outside UrbIS" (level info), in both runs alike.
+  if (prep) for (const f of F) {
+    if (f.level !== "error" && f.level !== "warn") continue;
+    if (!["C1", "C2", "C3", "C4", "C5", "C8"].includes(f.check)) continue;
+    const any = [[0, 0], [3, 0], [-3, 0], [0, 3], [0, -3]].some(([dx, dz]) => cls(f.x + dx, f.z + dz) >= 0);
+    if (!any) { f.level = "info"; f.msg = `outside UrbIS: ${f.msg}`; }
+  }
   const counts = {};
-  for (const c of CHECKS) counts[c] = { error: 0, warn: 0, review: 0 };
+  for (const c of CHECKS) counts[c] = { error: 0, warn: 0, review: 0, info: 0 };
   for (const f of F) counts[f.check][f.level] = (counts[f.check][f.level] || 0) + 1;
   return {
     tile: T, paint: PAINT, findings: F, counts, inventory, seam,
@@ -463,8 +484,8 @@ for (const [id, l] of seamBy) {
   if (new Set(l.map((x) => x[1])).size > 1) { seamDiff++; if (seamList.length < 200) seamList.push({ road: id, tiles: l.map((x) => x[0]) }); }
 }
 const tot = {};
-for (const c of CHECKS) tot[c] = { error: 0, warn: 0, review: 0 };
-for (const r of results) for (const c of CHECKS) for (const k of ["error", "warn", "review"]) tot[c][k] += r.counts[c][k] || 0;
+for (const c of CHECKS) tot[c] = { error: 0, warn: 0, review: 0, info: 0 };
+for (const r of results) for (const c of CHECKS) for (const k of ["error", "warn", "review", "info"]) tot[c][k] += r.counts[c][k] || 0;
 tot.C10.warn = seamDiff;
 const inventory = {};
 for (const r of results) for (const [k, v] of Object.entries(r.inventory)) {
@@ -478,8 +499,8 @@ const summary = { label: LABEL, paint: PAINT, tiles: results.map((r) => r.tile),
 writeFileSync(join(dir, "summary.json"), JSON.stringify(summary, null, 1));
 const md = [`# Road Checker v0: ${LABEL} (paint ${PAINT})`, "", `${results.length} tile(s): ${summary.tiles.join(" ")}. Generated ${summary.generated}.`,
   `Blocking errors (C1 C2 C3 C4 C5 C8 C9): **${blocking}**. Positions are local metres (x east, z south); per-tile findings in \`<T>.json\`.`, "",
-  "| Check | | errors | warnings | review |", "|---|---|---|---|---|",
-  ...CHECKS.map((c) => `| ${c} | ${TITLE[c]}${BLOCKING.has(c) ? " (blocking)" : ""} | ${tot[c].error} | ${tot[c].warn} | ${tot[c].review} |`), "",
+  "| Check | | errors | warnings | review | outside UrbIS (info) |", "|---|---|---|---|---|---|",
+  ...CHECKS.map((c) => `| ${c} | ${TITLE[c]}${BLOCKING.has(c) ? " (blocking)" : ""} | ${tot[c].error} | ${tot[c].warn} | ${tot[c].review} | ${tot[c].info} |`), "",
   `C10: ${seamPairs} roads cross a tile seam; ${seamDiff} have different lane data in their two tiles.`, "",
   "Inventory (C13): " + "`" + JSON.stringify(inventory) + "`", "",
   "| Tile | " + CHECKS.join(" | ") + " | lane pts off | roads off street | coplanar pairs | build ms |", "|" + "---|".repeat(CHECKS.length + 5),
