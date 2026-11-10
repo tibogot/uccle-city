@@ -68,6 +68,12 @@ read-only (copy into `vendor/` with ORIGIN.md); measure GPU ms before / after (s
 - [x] Character Lab: frame strips (real screenshots, `tools/characters/strip.mjs`), per-frame pose checks, whole-run
       pose audit (`lab.poseRun()`), foot traces, 12/15/19 cm up+down flights.
 - [x] City `?view=third` defaults to the Y Bot (falls back to the Hoodie); fixed: feet latched mid-air at spawn.
+- [x] 2026-11-10 (owner: "do it the BVHEcctrl way"): runtime leg IK OFF; stair clips baked per riser x tread
+      offline; whole-body vertical fit from the planted foot. No knee backwards / locked anywhere, few pops.
+- [ ] Next, small and targeted: tilt the planted foot to a slope (foot bone only: the toe goes ~8 cm into a 15 deg
+      ramp today); lift the swing foot over a kerb face (toe clips it); stair hover / dips of a few cm left.
+- [ ] Better-looking character on the same skeleton: a dressed Mixamo human (drop-in, owner downloads FBX with skin),
+      or Quaternius Universal Base Characters + UAL1 (check licence and clip list first).
 - [ ] Stairs at a RUN: 80-95 flagged frames per run (gaps, pops). Ask the owner for a "Running Down Stairs" clip
       (Mixamo has one; same skeleton, FBX Without Skin, 30 fps) and re-check the up-run clip's phase lock.
 - [ ] Stairs walking: the first 2-3 steps down land short (the landing correction is still learning: give it a better
