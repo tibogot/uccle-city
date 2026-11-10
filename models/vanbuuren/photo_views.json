@@ -1,0 +1,608 @@
+{
+ "entrance front, east (v03)": {
+  "file": "v03.jpg",
+  "credit": "Photo: Donarreiskoffer, 2019, CC BY-SA 4.0 (Wikimedia Commons, Museum Van Buuren 24.jpg)",
+  "size": [
+   3264,
+   2448
+  ],
+  "pos": [
+   18.431,
+   -0.519,
+   96.561
+  ],
+  "target": [
+   5.991,
+   0.107,
+   98.638
+  ],
+  "measured": {
+   "east_N.attic.tl": [
+    5.3,
+    -0.537,
+    103.033
+   ],
+   "east_N.attic.tr": [
+    5.3,
+    -1.891,
+    103.052
+   ],
+   "east_N.attic.br": [
+    5.3,
+    -1.897,
+    102.35
+   ],
+   "east_N.attic.bl": [
+    5.3,
+    -0.554,
+    102.328
+   ],
+   "east_N.stair.tl": [
+    5.3,
+    -0.145,
+    100.978
+   ],
+   "east_N.stair.tr": [
+    5.3,
+    -2.44,
+    101.025
+   ],
+   "east_N.stair.br": [
+    5.3,
+    -2.446,
+    98.669
+   ],
+   "east_N.stair.bl": [
+    5.3,
+    -0.217,
+    98.607
+   ],
+   "east_S_hi.attic_l.tl": [
+    5.75,
+    5.709,
+    103.885
+   ],
+   "east_S_hi.attic_l.tr": [
+    5.75,
+    4.868,
+    103.888
+   ],
+   "east_S_hi.attic_l.br": [
+    5.75,
+    4.767,
+    102.827
+   ],
+   "east_S_hi.attic_l.bl": [
+    5.75,
+    5.596,
+    102.82
+   ],
+   "east_S.ff.tl": [
+    5.75,
+    6.765,
+    101.018
+   ],
+   "east_S.ff.tr": [
+    5.75,
+    5.572,
+    101.037
+   ],
+   "east_S.ff.br": [
+    5.75,
+    5.397,
+    99.351
+   ],
+   "east_S.ff.bl": [
+    5.75,
+    6.562,
+    99.323
+   ],
+   "east_bay.ff.tl": [
+    6.5,
+    2.792,
+    100.867
+   ],
+   "east_bay.ff.tr": [
+    6.5,
+    1.358,
+    100.893
+   ],
+   "east_bay.ff.br": [
+    6.5,
+    1.274,
+    99.248
+   ],
+   "east_bay.ff.bl": [
+    6.5,
+    2.676,
+    99.214
+   ],
+   "porch_front.lead_l.tl": [
+    7.6,
+    1.09,
+    97.501
+   ],
+   "porch_front.lead_l.tr": [
+    7.6,
+    0.343,
+    97.524
+   ],
+   "porch_front.lead_l.br": [
+    7.6,
+    0.284,
+    96.046
+   ],
+   "porch_front.lead_l.bl": [
+    7.6,
+    1.013,
+    96.019
+   ],
+   "porch_front.lead_r.tl": [
+    7.6,
+    -2.875,
+    97.623
+   ],
+   "porch_front.lead_r.tr": [
+    7.6,
+    -3.637,
+    97.646
+   ],
+   "porch_front.lead_r.br": [
+    7.6,
+    -3.608,
+    96.134
+   ],
+   "porch_front.lead_r.bl": [
+    7.6,
+    -2.863,
+    96.107
+   ],
+   "east_wing.gf.tl": [
+    6.27,
+    -5.563,
+    97.459
+   ],
+   "east_wing.gf.tr": [
+    6.27,
+    -6.996,
+    97.501
+   ],
+   "east_wing.gf.br": [
+    6.27,
+    -6.927,
+    96.256
+   ],
+   "east_wing.gf.bl": [
+    6.27,
+    -5.514,
+    96.212
+   ]
+  },
+  "up": [
+   0.1659,
+   0.0271,
+   0.9858
+  ],
+  "fov": 70.629,
+  "f_px": 1727.8,
+  "k1": -0.00734,
+  "k2": -0.02779,
+  "err_px": [
+   30.7,
+   5.2,
+   2.9,
+   4.5,
+   1.9,
+   7.5,
+   2.6,
+   5.9,
+   3.8,
+   8.3,
+   7.4,
+   5.2,
+   5.5,
+   16.0,
+   14.3,
+   9.4,
+   9.2,
+   10.0,
+   6.7,
+   9.8,
+   7.4,
+   7.6,
+   5.9,
+   8.6,
+   5.8,
+   2.5,
+   2.0,
+   3.6,
+   3.3,
+   7.8,
+   2.2,
+   12.1,
+   9.1
+  ],
+  "mean_err": 7.42,
+  "names": [
+   "ridgeC.east",
+   "east_N.attic.tl",
+   "east_N.attic.tr",
+   "east_N.attic.br",
+   "east_N.attic.bl",
+   "east_N.stair.tl",
+   "east_N.stair.tr",
+   "east_N.stair.br",
+   "east_N.stair.bl",
+   "east_S_hi.attic_l.tl",
+   "east_S_hi.attic_l.tr",
+   "east_S_hi.attic_l.br",
+   "east_S_hi.attic_l.bl",
+   "east_S.ff.tl",
+   "east_S.ff.tr",
+   "east_S.ff.br",
+   "east_S.ff.bl",
+   "east_bay.ff.tl",
+   "east_bay.ff.tr",
+   "east_bay.ff.br",
+   "east_bay.ff.bl",
+   "porch_front.lead_l.tl",
+   "porch_front.lead_l.tr",
+   "porch_front.lead_l.br",
+   "porch_front.lead_l.bl",
+   "porch_front.lead_r.tl",
+   "porch_front.lead_r.tr",
+   "porch_front.lead_r.br",
+   "porch_front.lead_r.bl",
+   "east_wing.gf.tl",
+   "east_wing.gf.tr",
+   "east_wing.gf.br",
+   "east_wing.gf.bl"
+  ],
+  "line_err_px": [
+   -8.6,
+   18.0,
+   39.6,
+   37.2
+  ]
+ },
+ "garden front, west (v06)": {
+  "file": "v06.jpg",
+  "credit": "Photo: Alberto Fernandez Fernandez, 2011, CC BY-SA 3.0 (Wikimedia Commons, Museum van Buuren Brussels Belgium.jpg)",
+  "size": [
+   3888,
+   2592
+  ],
+  "pos": [
+   -25.989,
+   14.483,
+   98.395
+  ],
+  "target": [
+   -4.592,
+   3.709,
+   100.771
+  ],
+  "measured": {
+   "west_C.attic.tl": [
+    -7.0,
+    -2.446,
+    103.267
+   ],
+   "west_C.attic.tr": [
+    -7.0,
+    -1.033,
+    103.169
+   ],
+   "west_C.attic.br": [
+    -7.0,
+    -0.98,
+    102.272
+   ],
+   "west_C.attic.bl": [
+    -7.0,
+    -2.385,
+    102.345
+   ],
+   "west_C.box.tl": [
+    -7.0,
+    -3.665,
+    101.498
+   ],
+   "west_C.box.tr": [
+    -7.0,
+    -0.169,
+    101.371
+   ],
+   "west_C.box.br": [
+    -7.0,
+    -0.054,
+    99.253
+   ],
+   "west_C.box.bl": [
+    -7.0,
+    -3.501,
+    99.239
+   ],
+   "west_B.attic.tl": [
+    -5.65,
+    2.887,
+    104.242
+   ],
+   "west_B.attic.tr": [
+    -5.65,
+    4.791,
+    104.071
+   ],
+   "west_B.attic.br": [
+    -5.65,
+    4.826,
+    102.682
+   ],
+   "west_B.attic.bl": [
+    -5.65,
+    2.936,
+    102.799
+   ],
+   "west_B.ff.tl": [
+    -5.65,
+    3.063,
+    101.194
+   ],
+   "west_B.ff.tr": [
+    -5.65,
+    4.489,
+    101.148
+   ],
+   "west_B.ff.br": [
+    -5.65,
+    4.537,
+    99.398
+   ],
+   "west_B.ff.bl": [
+    -5.65,
+    3.124,
+    99.393
+   ],
+   "west_B.small.tl": [
+    -5.65,
+    1.383,
+    100.138
+   ],
+   "west_B.small.tr": [
+    -5.65,
+    2.017,
+    100.131
+   ],
+   "west_B.small.br": [
+    -5.65,
+    2.048,
+    99.328
+   ],
+   "west_B.small.bl": [
+    -5.65,
+    1.418,
+    99.325
+   ]
+  },
+  "up": [
+   -0.0996,
+   0.0216,
+   0.9948
+  ],
+  "fov": 46.409,
+  "f_px": 3023.2,
+  "k1": -0.00066,
+  "k2": 0.0,
+  "err_px": [
+   18.1,
+   29.2,
+   10.1,
+   6.8,
+   5.0,
+   4.2,
+   14.3,
+   12.8,
+   4.9,
+   1.8,
+   12.9,
+   8.8,
+   7.1,
+   15.4,
+   7.1,
+   2.5,
+   8.4,
+   6.8,
+   1.2,
+   1.0,
+   3.7,
+   3.0
+  ],
+  "mean_err": 8.41,
+  "names": [
+   "ridgeC.west",
+   "ridgeB.west",
+   "west_C.attic.tl",
+   "west_C.attic.tr",
+   "west_C.attic.br",
+   "west_C.attic.bl",
+   "west_C.box.tl",
+   "west_C.box.tr",
+   "west_C.box.br",
+   "west_C.box.bl",
+   "west_B.attic.tl",
+   "west_B.attic.tr",
+   "west_B.attic.br",
+   "west_B.attic.bl",
+   "west_B.ff.tl",
+   "west_B.ff.tr",
+   "west_B.ff.br",
+   "west_B.ff.bl",
+   "west_B.small.tl",
+   "west_B.small.tr",
+   "west_B.small.br",
+   "west_B.small.bl"
+  ],
+  "line_err_px": [
+   6.4,
+   21.0,
+   -20.6,
+   -7.8,
+   -17.3,
+   -4.4
+  ]
+ },
+ "south gable (v00)": {
+  "file": "v00.jpg",
+  "credit": "Photo: Donarreiskoffer, 2019, CC BY-SA 4.0 (Wikimedia Commons, Museum Van Buuren 20.jpg)",
+  "size": [
+   3464,
+   4618
+  ],
+  "pos": [
+   0.343,
+   34.991,
+   94.458
+  ],
+  "target": [
+   -3.527,
+   7.801,
+   92.541
+  ],
+  "measured": {
+   "south_A.attic.tl": [
+    -0.409,
+    8.45,
+    104.332
+   ],
+   "south_A.attic.tr": [
+    1.691,
+    8.45,
+    104.273
+   ],
+   "south_A.attic.br": [
+    1.743,
+    8.45,
+    102.943
+   ],
+   "south_A.attic.bl": [
+    -0.364,
+    8.45,
+    102.986
+   ],
+   "south_A.box.tl": [
+    -0.974,
+    8.45,
+    101.415
+   ],
+   "south_A.box.tr": [
+    2.165,
+    8.45,
+    101.377
+   ],
+   "south_A.box.br": [
+    2.254,
+    8.45,
+    99.136
+   ],
+   "south_A.box.bl": [
+    -0.9,
+    8.45,
+    99.136
+   ],
+   "south_A.gf.tl": [
+    -1.275,
+    8.45,
+    97.746
+   ],
+   "south_A.gf.tr": [
+    2.511,
+    8.45,
+    97.775
+   ],
+   "south_A.gf.br": [
+    2.604,
+    8.45,
+    95.488
+   ],
+   "south_A.gf.bl": [
+    -1.202,
+    8.45,
+    95.412
+   ],
+   "south_E.ff.tl": [
+    4.276,
+    7.1,
+    100.166
+   ],
+   "south_E.ff.tr": [
+    5.243,
+    7.1,
+    100.162
+   ],
+   "south_E.ff.br": [
+    5.304,
+    7.1,
+    98.852
+   ],
+   "south_E.ff.bl": [
+    4.335,
+    7.1,
+    98.849
+   ]
+  },
+  "up": [
+   -0.0348,
+   -0.0654,
+   0.9973
+  ],
+  "fov": 65.234,
+  "f_px": 3608.1,
+  "k1": -0.00017,
+  "k2": 0.0,
+  "err_px": [
+   3.9,
+   10.6,
+   2.0,
+   6.1,
+   7.4,
+   7.9,
+   3.7,
+   9.9,
+   3.5,
+   8.1,
+   3.1,
+   10.8,
+   12.3,
+   4.8,
+   5.3,
+   8.8,
+   7.9
+  ],
+  "mean_err": 6.83,
+  "names": [
+   "ridgeA.south",
+   "south_A.attic.tl",
+   "south_A.attic.tr",
+   "south_A.attic.br",
+   "south_A.attic.bl",
+   "south_A.box.tl",
+   "south_A.box.tr",
+   "south_A.box.br",
+   "south_A.box.bl",
+   "south_A.gf.tl",
+   "south_A.gf.tr",
+   "south_A.gf.br",
+   "south_A.gf.bl",
+   "south_E.ff.tl",
+   "south_E.ff.tr",
+   "south_E.ff.br",
+   "south_E.ff.bl"
+  ],
+  "line_err_px": [
+   13.3,
+   19.6,
+   -32.9,
+   -19.8
+  ]
+ }
+}
