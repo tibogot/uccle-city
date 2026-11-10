@@ -1,0 +1,196 @@
+{
+ "asset": "Uccle town hall, Place Jean Vander Elst 29 (tools/blender/townhall.py)",
+ "triangles_lod0": 49570,
+ "triangles_far": 3240,
+ "triangles_per_slot_lod0": {
+  "brick_red_brussels": 519,
+  "stone_white": 34080,
+  "stone_blue": 869,
+  "slate": 84,
+  "zinc_roof": 3454,
+  "wood_frame_white": 8616,
+  "wood_frame_dark": 132,
+  "glass_window": 264,
+  "cast_iron_green": 1552
+ },
+ "triangles_per_slot_far": {
+  "brick_red_brussels": 407,
+  "stone_white": 1980,
+  "stone_blue": 447,
+  "slate": 68,
+  "zinc_roof": 168,
+  "wood_frame_dark": 2,
+  "glass_window": 168
+ },
+ "slots": [
+  "brick_red_brussels",
+  "stone_white",
+  "stone_blue",
+  "slate",
+  "zinc_roof",
+  "wood_frame_white",
+  "wood_frame_dark",
+  "glass_window",
+  "cast_iron_green"
+ ],
+ "codes": {
+  "COLOR_0.r": "code / 16 + 1/32",
+  "COLOR_0.g": "per-vertex AO of the thin faces (1 elsewhere)",
+  "names": [
+   "plain",
+   "band",
+   "surround",
+   "cornice",
+   "plinth",
+   "pilaster",
+   "sill",
+   "keystone",
+   "pediment",
+   "baluster",
+   "column",
+   "interior",
+   "seam",
+   "coping",
+   "console",
+   "door"
+  ]
+ },
+ "uv": {
+  "TEXCOORD_0": "world metres, per face (walls u along / v up; lathed parts arc length)",
+  "TEXCOORD_1": "AO lightmap (thin faces: u > 0.994, AO 1)"
+ },
+ "lightmap": {
+  "px": 2048,
+  "split_v": 0.885,
+  "lod0_px_per_m": 15.8,
+  "far_px_per_m": 7.7,
+  "thin_faces_vertex_ao": [
+   15376,
+   228
+  ]
+ },
+ "frame": "glTF Y up; three.js local (u, m TAW - OY, w); node at the city position of the frame origin, rotation.y = -rotation",
+ "placement": {
+  "city_local_position": [
+   -1147.977,
+   60.0,
+   -506.24
+  ],
+  "rotation_y_rad": -0.033562,
+  "hides_solids": [
+   "https://databrussels.be/id/buildingsolid/547183"
+  ],
+  "hides_bu_ids": [
+   "https://databrussels.be/id/building/1596445"
+  ]
+ },
+ "bounds_city": {
+  "x": [
+   -1163.2,
+   -1129.5
+  ],
+  "z": [
+   -522.9,
+   -489.5
+  ],
+  "y": [
+   22.7,
+   83.4
+  ]
+ },
+ "measured": {
+  "plan_m": {
+   "u_east": 12.39,
+   "u_portico": 14.15,
+   "w_portico": 1.71,
+   "w_main": 11.35,
+   "u_wing": [
+    -2.82,
+    7.91
+   ],
+   "w_wing": 15.68,
+   "u_block": [
+    -12.36,
+    -6.08
+   ],
+   "w_block": 13.7,
+   "u_west": -12.36,
+   "u_west_pavilion": -14.15,
+   "w_west_pavilion": 5.71
+  },
+  "roof_taw": {
+   "core_terrasson": 81.07,
+   "east_pavilion_top": 82.15,
+   "west_pavilion": 79.41,
+   "wing_n": 78.37,
+   "wing_s": 78.45,
+   "block_nw": 77.92,
+   "block_sw": 77.91,
+   "portico": 67.92
+  },
+  "core_curb_taw": 79.85,
+  "ground_taw": {
+   "east": {
+    "min": 60.89,
+    "max": 61.13,
+    "mean": 61.05
+   },
+   "west": {
+    "min": 62.3,
+    "max": 62.41,
+    "mean": 62.37
+   },
+   "north": {
+    "min": 61.32,
+    "max": 62.33,
+    "mean": 61.8
+   },
+   "south": {
+    "min": 61.29,
+    "max": 62.3,
+    "mean": 61.81
+   }
+  },
+  "frame": {
+   "city": "city local: x = L72 E - 148643, z = 165394 - N; heights m TAW",
+   "origin_city": [
+    -1147.977,
+    -506.24
+   ],
+   "rotation_rad": 0.033562,
+   "rotation_deg": 1.923,
+   "axes": "u = (cos r, sin r) in city (x, z): east along the wings; w = (-sin r, cos r): south; symmetric about w = 0"
+  }
+ },
+ "levels_taw": {
+  "ground_floor": 62.95,
+  "plinth_top": 63.0,
+  "gf_windows": [
+   63.25,
+   66.2
+  ],
+  "string_course": 66.95,
+  "f1_sill": 68.7,
+  "orders": {
+   "main": {
+    "ct": 74.6,
+    "f1_head": 72.15,
+    "arch": 73.0,
+    "frieze": 73.3,
+    "corn": 74.05,
+    "sur": 0.2,
+    "win": 1.45
+   },
+   "wing": {
+    "ct": 73.75,
+    "f1_head": 71.6,
+    "arch": 72.38,
+    "frieze": 72.66,
+    "corn": 73.28,
+    "sur": 0.17,
+    "win": 1.3
+   }
+  }
+ },
+ "estimated": "storey heights and window sizes from the photo 3557 scaled on the UrbIS facade width (61.5 px/m) and the DSM roof levels; mouldings, consoles, modillions, quoin courses; the WEST facade (no photo); the north facade = mirror of the south"
+}
