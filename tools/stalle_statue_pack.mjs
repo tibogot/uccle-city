@@ -32,6 +32,14 @@ for (let t = 0; t < out.length; t += 3) {
   }
   faces.push(f);
 }
+// the far variant's statue (LOD1/2, 80 m and beyond): ~900 triangles, 2 cm error
+{
+  const [o2, e2] = MeshoptSimplifier.simplify(I, P, 3, 900 * 3, 0.03 / 1.1, ["LockBorder"]);
+  const m2 = new Map(), v2 = [], f2 = [];
+  for (let t = 0; t < o2.length; t += 3) { const f = []; for (let k = 0; k < 3; k++) { const v = o2[t + k]; if (!m2.has(v)) { m2.set(v, v2.length); v2.push([+P[v * 3].toFixed(4), +P[v * 3 + 1].toFixed(4), +P[v * 3 + 2].toFixed(4)]); } f.push(m2.get(v)); } f2.push(f); }
+  fs.writeFileSync(path.join(dir, "statue_far.json"), JSON.stringify({ verts: v2, faces: f2, height: raw.height, error_m: +(e2 * 1.1).toFixed(4), note: "far variant (tools/stalle_statue_pack.mjs)" }));
+  console.log(`statue far: ${f2.length} triangles, error ${(e2 * 1100).toFixed(1)} mm`);
+}
 fs.writeFileSync(path.join(dir, "statue_mesh.json"), JSON.stringify({ verts, faces, height: raw.height, source_tris: I.length / 3, error_m: +(err * 1.1).toFixed(5),
   note: "tools/blender/stalle_statue.py -> tools/stalle_statue_pack.mjs (meshoptimizer simplify)" }));
 console.log(`statue: ${raw.faces.length} (${size.size} pieces, largest ${I.length / 3}) -> ${faces.length} triangles, ${verts.length} vertices, error ${(err * 1100).toFixed(2)} mm`);

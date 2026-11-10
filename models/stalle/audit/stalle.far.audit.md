@@ -1,21 +1,22 @@
 # Mesh audit (before pack): stalle.far
 
-6,417 triangles, 3,850 welded vertices, 1,178 open edges, 143,918 rays, 820 ms.
+8,145 triangles, 5,120 welded vertices, 2,083 open edges, 171,498 rays, 901 ms.
 
-**0 blocking**, 134 warnings. Clean (no blocking item).
+**0 blocking**, 189 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| sliver | warn | 109 |
-| nonmanifold | warn | 1 |
+| sliver | warn | 135 |
+| winding | warn | 2 |
+| nonmanifold | warn | 28 |
 | tjunction | warn | 24 |
-| seam | info | 116 |
-| opening | info | 51 |
-| backtoback | info | 43 |
+| seam | info | 121 |
+| opening | info | 54 |
+| backtoback | info | 83 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## sliver (warn, 109)
+## sliver (warn, 135)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -60,13 +61,47 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 10.19, 40.01, -2.15 | Stalle_far/sandstone_rubble | 191 | 7.002 |
 | 7.50, 40.08, -2.15 | Stalle_far/sandstone_rubble | 84 | 14.75 |
 
-(69 more in the JSON)
+(95 more in the JSON)
 
-## nonmanifold (warn, 1)
+## winding (warn, 2)
+
+| at | part |
+|---|---|
+| -0.05, 38.38, 0.03 | Stalle_far/stone_white |
+| -0.04, 38.31, 0.05 | Stalle_far/stone_white |
+
+## nonmanifold (warn, 28)
 
 | at | part | uses |
 |---|---|---|
 | 11.27, 33.94, -4.25 | Stalle_far/sandstone_rubble | 3 |
+| -0.21, 38.42, 0.29 | Stalle_far/stone_white | 3 |
+| -0.24, 38.48, 0.12 | Stalle_far/stone_white | 3 |
+| -0.15, 38.40, -0.01 | Stalle_far/stone_white | 3 |
+| -0.07, 38.51, 0.07 | Stalle_far/stone_white | 3 |
+| -0.09, 38.47, 0.02 | Stalle_far/stone_white | 3 |
+| -0.09, 38.47, 0.03 | Stalle_far/stone_white | 3 |
+| -0.10, 38.43, 0.01 | Stalle_far/stone_white | 3 |
+| -0.03, 38.47, 0.07 | Stalle_far/stone_white | 4 |
+| -0.12, 38.38, -0.06 | Stalle_far/stone_white | 3 |
+| -0.17, 38.35, 0.22 | Stalle_far/stone_white | 3 |
+| -0.20, 38.24, 0.28 | Stalle_far/stone_white | 3 |
+| -0.13, 38.27, 0.30 | Stalle_far/stone_white | 3 |
+| -0.26, 38.35, 0.17 | Stalle_far/stone_white | 3 |
+| -0.23, 38.32, 0.18 | Stalle_far/stone_white | 4 |
+| -0.19, 38.36, 0.19 | Stalle_far/stone_white | 3 |
+| -0.13, 38.18, 0.30 | Stalle_far/stone_white | 3 |
+| -0.13, 38.17, 0.29 | Stalle_far/stone_white | 3 |
+| -0.19, 38.22, 0.30 | Stalle_far/stone_white | 3 |
+| -0.17, 38.14, 0.19 | Stalle_far/stone_white | 4 |
+| -0.17, 38.18, 0.18 | Stalle_far/stone_white | 4 |
+| -0.05, 38.26, 0.19 | Stalle_far/stone_white | 4 |
+| -0.11, 38.18, 0.23 | Stalle_far/stone_white | 4 |
+| -0.06, 38.26, 0.02 | Stalle_far/stone_white | 3 |
+| -0.04, 38.25, 0.05 | Stalle_far/stone_white | 3 |
+| -0.10, 37.91, 0.28 | Stalle_far/stone_white | 4 |
+| -0.18, 38.04, 0.08 | Stalle_far/stone_white | 3 |
+| -0.12, 38.03, -0.05 | Stalle_far/stone_white | 4 |
 
 ## tjunction (warn, 24)
 
@@ -97,7 +132,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.58, 37.90, 9.97 | Stalle_far/brick_red_brussels | 4.77 |
 | 0.58, 37.90, 4.15 | Stalle_far/brick_red_brussels | 4.77 |
 
-## seam (info, 116)
+## seam (info, 121)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -142,9 +177,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.32, 33.95, 0.55 | Stalle_far/stone_blue + Stalle_far/cobbles | 2.55 | 13 | 82 |
 | -0.68, 33.90, 0.98 | Stalle_far/stone_blue + Stalle_far/cobbles | 2.92 | 13 | 85 |
 
-(76 more in the JSON)
+(81 more in the JSON)
 
-## opening (info, 51)
+## opening (info, 54)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -164,6 +199,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.32, 44.73, 0.33 | Stalle_far/stone_white | 0 + -1 + 0 | 0.235 |
 | 0.43, 44.73, -0.13 | Stalle_far/stone_white | 0 + -1 + 0 | 0.235 |
 | 0.32, 44.73, -0.13 | Stalle_far/stone_white | 0 + -1 + 0 | 0.235 |
+| -0.16, 37.29, 0.27 | Stalle_far/stone_white | 0 + 0 + 1 | 0.26 |
+| -0.16, 37.29, -0.07 | Stalle_far/stone_white | 0 + 0 + -1 | 0.26 |
+| -0.26, 38.51, 0.11 | Stalle_far/stone_white | -0.4 + 0.08 + 0.91 | 0.061 |
 | 0.58, 37.65, 9.97 | Stalle_far/brick_red_brussels | 0 + 0 + 1 | 4.7 |
 | 5.88, 42.60, -0.21 | Stalle_far/slate | -1 + 0 + 0 | 0.72 |
 | 7.12, 42.60, -0.21 | Stalle_far/slate | 1 + 0 + 0 | 0.72 |
@@ -185,13 +223,10 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -6.60, 34.61, -2.79 | Stalle_far/cobbles | 0.26 + 0.95 + 0.16 | 0.891 |
 | -6.60, 34.45, -1.92 | Stalle_far/cobbles | 0.19 + 0.94 + 0.28 | 0.915 |
 | -6.60, 34.20, -1.04 | Stalle_far/cobbles | 0.17 + 0.96 + 0.21 | 0.898 |
-| -6.60, 34.01, -0.16 | Stalle_far/cobbles | 0.02 + 0.98 + 0.2 | 0.895 |
-| -6.05, 34.58, -4.60 | Stalle_far/cobbles | -0.01 + 1 + -0.02 | 0.5 |
-| -5.55, 34.58, -4.60 | Stalle_far/cobbles | -0.02 + 1 + -0.01 | 0.5 |
 
-(11 more in the JSON)
+(14 more in the JSON)
 
-## backtoback (info, 43)
+## backtoback (info, 83)
 
 | at | parts | area |
 |---|---|---|
@@ -225,18 +260,18 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.34, 44.23, 0.10 | Stalle_far/stone_white + Stalle_far/stone_white | 0.00303 |
 | 0.42, 44.23, 0.11 | Stalle_far/stone_white + Stalle_far/stone_white | 0.00303 |
 | 0.36, 44.23, 0.06 | Stalle_far/stone_white + Stalle_far/stone_white | 0.00303 |
-| 10.57, 38.52, -2.97 | Stalle_far/stone_white + Stalle_far/slate | 0.16018 |
-| -6.25, 39.72, 5.64 | Stalle_far/stone_white + Stalle_far/slate | 0.16843 |
-| -6.25, 39.97, 8.28 | Stalle_far/stone_white + Stalle_far/slate | 0.17378 |
-| -6.30, 42.22, 7.31 | Stalle_far/stone_white + Stalle_far/brick_red_brussels | 0.08991 |
-| -6.55, 42.22, 7.06 | Stalle_far/stone_white + Stalle_far/brick_red_brussels | 0.08829 |
-| -6.19, 42.22, 7.06 | Stalle_far/stone_white + Stalle_far/brick_red_brussels | 0.08829 |
-| -6.44, 42.22, 6.81 | Stalle_far/stone_white + Stalle_far/brick_red_brussels | 0.08991 |
-| 0.16, 39.72, 8.48 | Stalle_far/stone_white + Stalle_far/slate | 0.16844 |
-| 0.16, 39.97, 5.84 | Stalle_far/stone_white + Stalle_far/slate | 0.17379 |
-| 0.21, 42.22, 6.81 | Stalle_far/stone_white + Stalle_far/brick_red_brussels | 0.08991 |
+| -0.21, 37.66, 0.18 | Stalle_far/stone_white + Stalle_far/stone_white | 0.00005 |
+| -0.07, 37.66, 0.23 | Stalle_far/stone_white + Stalle_far/stone_white | 0.00035 |
+| -0.01, 37.66, 0.21 | Stalle_far/stone_white + Stalle_far/stone_white | 0.00107 |
+| -0.10, 38.44, 0.17 | Stalle_far/stone_white + Stalle_far/stone_white | 0.001 |
+| -0.24, 38.34, 0.24 | Stalle_far/stone_white + Stalle_far/stone_white | 0.00123 |
+| -0.21, 38.20, 0.28 | Stalle_far/stone_white + Stalle_far/stone_white | 0.0015 |
+| -0.23, 38.33, 0.24 | Stalle_far/stone_white + Stalle_far/stone_white | 0.00034 |
+| -0.20, 38.27, 0.28 | Stalle_far/stone_white + Stalle_far/stone_white | 0.00171 |
+| -0.21, 38.34, 0.27 | Stalle_far/stone_white + Stalle_far/stone_white | 0.00038 |
+| -0.23, 38.33, 0.17 | Stalle_far/stone_white + Stalle_far/stone_white | 0.00055 |
 
-(3 more in the JSON)
+(43 more in the JSON)
 
 
 Nodes: Stalle_far. Distances: {"Stalle":94,"Stalle_door":334,"Stalle_slates":52,"Stalle_far":2000,"Stalle_lod1":334,"Stalle_lod2":2000}. Quantum 0.000 mm. Offset 0,30,0.

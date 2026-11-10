@@ -154,6 +154,15 @@ justified, audit/stalle.allow.json), far 73 -> 0, packed LOD1 1,506 -> 0 (LOD1 i
 - GPU (lab bench, median of 3 rounds, + = the chapel, round 2 -> round 3, same tab back to back): c00 L0 +0.52 -> +0.39,
   L1 +0.52 -> +0.26, L2 +0.33 -> -0.13; c05 L0 +0.13 -> +0.72, L1 -0.07 -> +0.46, L2 +0.07 -> +0.46; overview +0.07 ->
   +0.07. Noise +-0.3 ms (other agents' tabs on the same GPU).
+- Round 3b (coordinator review): west door as c00 (plain chamfered opening in the rubble, red-brown painted leaves,
+  no strap hinges, plaque, notice board; the photo's flush soldier course of rubble over it is not modelled), west
+  window without hood mould, lancets to 61 % of its height, two quatrefoils; rubble irregular (thin and tall courses,
+  long thin stones), cream-grey, soft joints, darker base on all sides; slate lichen = rare soft metre-scale patches
+  (flicker strafe at 7 / 20 / 40 m: 48 / 20 / 56 ppm, no clusters on the roofs); interior: round moulded corbels on the
+  shafts (the box corbels sat in the capitals), moulded imposts, per-corner light smoothed along shading normals (the
+  stepped capitals); the far variant (LOD1/2) keeps the statue (900 tris, faceted) and the west window's tracery: no
+  dark hole in the 66-94 m hand-over. City (`?stalle=1`, D5): approaches checked while moving (trees hide the chapel
+  from most directions; with trees off the 112-75 m cross-fade shows no pop). Images: docs/stalle/round3/*3b*.
 - Images: docs/stalle/round3/ (flicker heat maps, frame strips, grazing before / after); side-by-sides
   docs/stalle/side_round3_*.jpg (git-ignored: they hold the photos).
 

@@ -23,8 +23,10 @@ Round-2 assets for A/B: models/stalle/_before/ (git-ignored) and a detached work
 - Browser: flicker heat maps, frame strips (labs/frameStrip.js, `lab.strip`), GPU before/after, grazing-light
   before/after; images in docs/stalle/round3/.
 
+## Round 3b done (coordinator review): west front vs c00, slate lichen, interior corbels / imposts / capitals light, city check, far statue + tracery. See NOTES.md.
+
 ## Open (for the owner / next round)
-- Statue: clearly better than round 2's lathe figure, still not AAA: soft face, blobby Child, hair waves read as curls,
+- Statue (owner to choose: better scripted approach or a CC0 / CC-BY museum scan): clearly better than round 2's lathe figure, still not AAA: soft face, blobby Child, hair waves read as curls,
   the Child's legs stand off in side view.
 - Rubble: less tile-like (tilt, rough faces, smaller arrises) but still neat courses with a light joint rim; the photo's
   stones are flatter and creamier.
@@ -33,3 +35,5 @@ Round-2 assets for A/B: models/stalle/_before/ (git-ignored) and a detached work
   (8 passes) but not re-checked from close.
 - Gutter stop-end caps are fans (4 slivers flip after quantization).
 - Lab GPU numbers are noisy on this laptop (+-0.3 ms); another agent's tabs came and went during the runs.
+- West front: the photo's door leaves sit nearly flush with the wall (model: a 37 cm reveal); the window's ring of radial rubble voussoirs and the soldier course over the door are not modelled; the projecting plinth is stronger than in c00.
+- LOD1 (far variant): the house's windows turn into dark holes; the chapel's oculi too (window tracery fixed).

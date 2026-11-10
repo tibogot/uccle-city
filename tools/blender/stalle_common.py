@@ -92,7 +92,7 @@ HOUSE = dict(u0=-6.67, u1=0.58, w0=4.15, w1=9.97, eave=37.9, ridge=41.3)
 class Builder:
     """faces + per-face slot, code, optional UV0, construction group (lightmap islands are split by group), the per-piece
     seed (COLOR_0.b: 0 = none; slates, statue...) and a forced per-vertex AO flag (small repeated pieces: slates)"""
-    def __init__(self): self.v = []; self.f = []; self.m = []; self.c = []; self.uv = []; self.g = []; self.b = []; self.vao = []; self.grp = 0; self.crease = set(); self.smooth = set()
+    def __init__(self): self.v = []; self.f = []; self.m = []; self.c = []; self.uv = []; self.g = []; self.b = []; self.vao = []; self.grp = 0; self.crease = set(); self.smooth = set(); self.flat = set()
     def face(self, pts, mat, code=0, uv=None):
         if len(pts) < 3: return
         i0 = len(self.v); self.v.extend(Vector(p) for p in pts)
@@ -476,6 +476,12 @@ def make_object(scn, mats, slots, name, bld, v0, v1, ao_px, smart=True, thin_lim
             # smooth up to 45 deg (the 32 deg rule faceted it; all-smooth bent corner normals > 85 deg at the cloth's thin
             # edges and the fingers: the audit's streaks / flipped)
             if len(e.link_faces) == 2 and e.link_faces[0][gl] in bld.smooth and e.link_faces[1][gl] in bld.smooth and e.link_faces[0].normal.angle(e.link_faces[1].normal, 0.0) < math.radians(45): e.smooth = True
+        bm.to_mesh(me); bm.free()
+    if bld.flat:
+        # flat groups (the far statue's 900 triangles): every edge sharp, faceted shading, no streaks over coarse faces
+        bm = bmesh.new(); bm.from_mesh(me); gl = bm.faces.layers.int.get("grp")
+        for e in bm.edges:
+            if any(f_[gl] in bld.flat for f_ in e.link_faces): e.smooth = False
         bm.to_mesh(me); bm.free()
     if bld.crease:
         # creased groups (e.g. the cove's sides): their edges against any other group are sharp when the faces turn > 8 deg

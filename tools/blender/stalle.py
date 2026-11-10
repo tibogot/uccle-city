@@ -132,7 +132,12 @@ def gothic_window(fr, s, sill, spring, apex, w, n_lights, depth=0.32, foils=(), 
     s0, s1 = s - w / 2, s + w / 2
     outline = pointed(s0, s1, hz(spring), hz(apex), n=16, bottom=hz(sill))
     if FAR():
-        fill2d(fr, [outline], -0.12, GLASS, C_LEAD); strip2d(fr, outline, 0.0, -0.12, STONE, C_SUR)
+        # round 3b: the far variant keeps the tracery plate (lights cut out, glass behind): the window no longer turns into
+        # a dark hole in the 66-94 m hand-over
+        strip2d(fr, outline, 0.0, -0.08, STONE, C_SUR)
+        o2, lights2, _, _ = SC.window_lights(s, sill, spring, apex, w, n_lights, foils)
+        fill2d(fr, [o2] + lights2, -0.08, STONE, C_TRAC)
+        for L in lights2: fill2d(fr, [L], -0.12, GLASS, C_LEAD)
         return outline
     opening_reveal(fr, outline, depth * 0.55, chamfer=GW_CH)
     outline, lights, l_spring, mullions = SC.window_lights(s, sill, spring, apex, w, n_lights, foils)
@@ -259,7 +264,7 @@ def west_front():
     # apex block + the stone cross (botonnée: trefoil ends; photo c04)
     fbox(fr, -0.2, 0.2, hz(SC.GABLE_APEX) - 0.25, hz(SC.GABLE_APEX) + 0.18, -ti / 2 - 0.2, -ti / 2 + 0.2, STONE, C_COPING, skip=("bottom",))
     cross(fr, 0.0, SC.GABLE_APEX + 0.18, -ti / 2)
-    if not FAR(): statue(fr)
+    statue(fr)                     # also on the far variant (LOD1/2: a 900-triangle version, no pop in the 66-94 m band)
 
 def parapet_backs():
     """the gable wall's inner face where it stands above the roofs (u = T_WEST, facing east): from under the slates up
@@ -342,12 +347,14 @@ def statue(fr):
     top = c + Z * 0.105
     fbox(fr, s - 0.14, s + 0.14, top.z, top.z + 0.05, d0 - 0.05, d0 + 0.21, STONE, C_SCULPT, skip=("bottom",))
     foot = top + Z * 0.05
-    if not os.path.exists(STATUE_FILE):
+    sf = STATUE_FILE.replace("statue_mesh.json", "statue_far.json") if FAR() else STATUE_FILE
+    if not os.path.exists(sf):
         print("WARNING: no", STATUE_FILE, "(run tools/blender/stalle_statue.py): the statue is left out"); return
-    S_ = json.load(open(STATUE_FILE))
+    S_ = json.load(open(sf))
     sv_vao, sv_seed = K.VAO, K.SEED
     K.VAO = True; K.SEED = 0.5
-    K.B.new_group(); K.B.smooth.add(K.B.grp)                 # smooth shaded all over (stalle_common.make_object)
+    K.B.new_group()
+    (K.B.smooth if not FAR() else K.B.flat).add(K.B.grp)    # smooth shaded to 45 deg; the far one faceted (no streaks)
     X, Y = -fr.U, fr.N                                    # statue frame (right-handed): x = the viewer's left, y = out of the wall, z up
     V = [foot + X * x + Y * y + Z * z for x, y, z in S_["verts"]]
     for f in S_["faces"]:
