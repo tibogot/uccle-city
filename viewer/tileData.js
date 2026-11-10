@@ -3,35 +3,24 @@
 // the façade analysis and the land-cover raster. Runs in the tile worker (viewer/tileWorker.js,
 // bundled to tileWorker.bundle.js) so loading a tile doesn't freeze the frame; main.js falls back to
 // running it on the main thread if the worker can't start. The result is plain data (typed arrays).
-import { buildRoadNetwork } from "../vendor/roads/roadNetwork.js";
-import { buildLaneRoadMesh } from "../vendor/roads/mesh/laneRoadMesh.js";
 import { Heightmap } from "./heightmap.js";
-import { surfaceAttribute } from "./roadData.js";
 import { analyseBuildings, hash01, wallStyle } from "./facadeGeom.js";
 import { landCoverData } from "./landcover.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { buildDriveData } from "./drive/colliders.js";
-import { prepareSurfaces, fitRoadWidths, buildSurfaceRoads } from "./surfaces.js";
+import { buildRoadData, CARVE } from "./roadBuild.js";
 import { smoothPolyline } from "./track.js";
 
-export const CARVE = 0.12;         // terrain is pushed this far under any road surface
+export { CARVE };                  // terrain is pushed this far under any road surface (viewer/roadBuild.js)
 // The 1 m terrain grid is 500k triangles a tile (half the scene); seen from above, 1 m triangles cover
 // 2-3 pixels, which GPUs rasterise badly. meshoptimizer collapses the flat stretches while keeping the
 // surface within TERRAIN_ERROR metres of the grid (carved road beds, kerbs, banks stay); tile borders
 // are locked so neighbours still meet. Measured 2026-11-04: 3.0 M -> 0.63 M triangles for 6 tiles,
 // overview 10.7 -> 8.1 ms GPU, walk 7.4 -> 6.9 ms. The heightmap (walking, placement) is unchanged.
 export const TERRAIN_ERROR = 0.05;
-
-/** Keep only triangles whose centroid is inside the tile (the 150 m buffer is for complete junctions only). */
-function clipToTile(part, b) {
-  const p = part.position, src = part.index, keep = [];
-  for (let t = 0; t < src.length; t += 3) {
-    const a = src[t] * 3, bb = src[t + 1] * 3, c = src[t + 2] * 3;
-    const x = (p[a] + p[bb] + p[c]) / 3, z = (p[a + 2] + p[bb + 2] + p[c + 2]) / 3;
-    if (x >= b.x0 && x < b.x1 && z >= b.z0 && z < b.z1) keep.push(src[t], src[t + 1], src[t + 2]);
-  }
-  return Uint32Array.from(keep);
-}
+// road marking rules (viewer/roadBuild.js): "v2" = measured paint, no invented lines (docs/ROADS_V2_RESEARCH.md phase 1);
+// "v1" = the road engine's own (?paint=v1 in the city, the before/after toggle in the Road Lab)
+export const PAINT = "v1";
 
 function terrainArrays(hm) {
   const { x0, z0, cols, rows, step } = hm.h, Y = hm.y;
@@ -120,61 +109,19 @@ export async function buildTileData(entry, base) {
   const ov = await overrides(base);
   for (const r of roads.roads) { const s = ov.roadSurface?.[r.id]; if (s) (r.meta ??= {}).surface = s; }
   const hm = new Heightmap(tHdr, tBuf);
-  // measured surfaces first, then the engine's lane stacks fitted into the measured kerb-to-kerb widths
-  const prep = surf ? await step("surfaces + width fit", () => prepareSurfaces(surf, hm.ground, bounds, entry.pits === false ? null : feats.trees)) : null;   // trees: their pits
-  const widthFit = prep ? fitRoadWidths(roads, prep) : null;
-  const net = await step("buildRoadNetwork", () => buildRoadNetwork(roads, { ground: hm.ground }));
-  const errors = net.issues.filter((i) => i.level === "error");
-  const byCode = {};
-  for (const i of errors) byCode[i.code] = (byCode[i.code] || 0) + 1;
-  const netInfo = { roads: net.roads.length, nodes: net.nodes.length, errors: errors.length, byCode, warnings: net.issues.length - errors.length };
+  // measured markings (pipeline/build_markings.py): crossings, stop lines, lines, OSM crossing / control nodes
+  const paint = entry.paint || PAINT;
+  const markings = F.markings && paint === "v2" ? await step("fetch markings", () => get(F.markings).catch(() => null)) : null;
   // the roof grid (fly-mode collision) keeps every solid, also the ones a model replaces (its envelope is close enough)
   const roofs = await step("roof grid", () => roofGrid(bDoc, bounds));
-  const road = await step("road meshes + carve", () => {
-    const built = buildLaneRoadMesh(net, { markings: true });
-    const parts = {};
-    let carvedCells = 0, triangles = 0, surfaceStats = null, surfaceData = null;
-    if (surf) {
-      // measured surfaces + the engine's markings clipped to them (viewer/surfaces.js)
-      const S = buildSurfaceRoads(prep, built, surfaceAttribute(net, built.asphalt), roads, (x, z) => onRoof(roofs, x, z));
-      for (const c of S.carve) carvedCells += hm.carve(c.position, c.index, CARVE);
-      for (const [name, part] of Object.entries(S.parts)) {
-        parts[name] = { position: part.position, normal: part.normal, uv: part.uv, attributes: part.attributes, index: part.index, aSurf: part.extra };
-        triangles += part.index.length / 3;
-      }
-      surfaceStats = { ...S.stats, widthFit };
-      surfaceData = { grid: S.grid, kerbs: S.kerbs, bollards: S.bollards };
-    }
-    for (const name of surf ? [] : ["asphalt", "concrete", "grass"]) {
-      const part = built[name];
-      if (!part.vertexCount) continue;
-      const index = clipToTile(part, bounds);
-      carvedCells += hm.carve(part.position, index, CARVE);
-      const attributes = {};
-      for (const [k, a] of Object.entries(part.attributes)) attributes[k] = { array: a.array, itemSize: a.itemSize };
-      parts[name] = { position: part.position, normal: part.normal, uv: part.uv, attributes, index,
-        aSurf: name === "asphalt" ? surfaceAttribute(net, part) : null };
-      triangles += index.length / 3;
-    }
-    const at = built.atlas;
-    // The atlas is RG8 at ~6 cm; the shader only reads R (signed distance). Keep R at half resolution
-    // (2x2 average, ~12 cm): 8x less memory (e.g. 25.6 MB -> 3.2 MB per tile), markings unchanged.
-    let atlas = null;
-    if (at) {
-      const W2 = Math.ceil(at.width / 2), H2 = Math.ceil(at.height / 2), src = at.data, d8 = new Uint8Array(W2 * H2);
-      for (let y = 0; y < H2; y++) for (let x = 0; x < W2; x++) {
-        let sum = 0, n = 0;
-        for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) {
-          const xx = 2 * x + dx, yy = 2 * y + dy;
-          if (xx < at.width && yy < at.height) { sum += src[(yy * at.width + xx) * 2]; n++; }
-        }
-        d8[y * W2 + x] = Math.round(sum / n);
-      }
-      atlas = { data: d8, width: W2, height: H2, format: "R8", scale: at.scale, range: at.range, texel: at.texel * 2,
-        stats: { regions: at.stats?.regions, bytes: d8.length, bytesBefore: at.data.length } };
-    }
-    return { parts, atlas, carvedCells, triangles, surfaceStats, surfaceData };
-  });
+  // the road stage (viewer/roadBuild.js, shared with the Road Checker and the Road Lab)
+  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint,
+    trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z) }));
+  Object.assign(times, rd.times);
+  const { netInfo } = rd;
+  const road = { parts: rd.parts, atlas: rd.atlas, carvedCells: rd.carvedCells, triangles: rd.triangles, surfaceStats: rd.surfaceStats,
+    surfaceData: rd.surfaceData, inventory: rd.inventory ?? null };
+  const net = rd.net;              // the live engine network (stays in the worker: drive colliders)
   const terrain = await step("terrain grid", () => terrainArrays(hm));
   await step("terrain simplify", async () => {
     await MeshoptSimplifier.ready;

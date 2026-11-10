@@ -1,0 +1,1570 @@
+{
+ "N": 80,
+ "seed": 7,
+ "len": 40,
+ "picks": [
+  {
+   "i": 0,
+   "sheet": 1,
+   "row": 1,
+   "tile": "K10",
+   "road": "r15804228_0",
+   "name": "Avenue de la Petite Espinette - Kleine Hutlaan",
+   "highway": "residential",
+   "x": 2127,
+   "z": 2843,
+   "width": 6.7,
+   "ridge": {
+    "d": 0,
+    "v": -0.2
+   },
+   "visual": "O"
+  },
+  {
+   "i": 1,
+   "sheet": 1,
+   "row": 2,
+   "tile": "K10",
+   "road": "r491212153_0",
+   "name": "Avenue d'Hougoumont - Hougoumontlaan",
+   "highway": "residential",
+   "x": 2198,
+   "z": 2730,
+   "width": 6.2,
+   "ridge": {
+    "d": 0.031,
+    "v": 0.1
+   },
+   "visual": "O"
+  },
+  {
+   "i": 2,
+   "sheet": 1,
+   "row": 3,
+   "tile": "K10",
+   "road": "r227130977_0",
+   "name": "Avenue des Paysages - Landschappenlaan",
+   "highway": "residential",
+   "x": 2098,
+   "z": 2974,
+   "width": 5.1,
+   "ridge": {
+    "d": 0.026,
+    "v": -0.1
+   },
+   "visual": "O"
+  },
+  {
+   "i": 3,
+   "sheet": 1,
+   "row": 4,
+   "tile": "J4",
+   "road": "r417638273_0",
+   "name": "Avenue Casalta - Casaltalaan",
+   "highway": "residential",
+   "x": 1912,
+   "z": -142,
+   "width": 6.2,
+   "ridge": {
+    "d": -0.001,
+    "v": -0.1
+   },
+   "visual": "N"
+  },
+  {
+   "i": 4,
+   "sheet": 1,
+   "row": 5,
+   "tile": "J4",
+   "road": "r1503569487_1",
+   "name": "Champ du Vert Chasseur - Groenejagersveld",
+   "highway": "residential",
+   "x": 1862,
+   "z": -374,
+   "width": 7.2,
+   "ridge": {
+    "d": 0.042,
+    "v": -0.4
+   },
+   "visual": "N"
+  },
+  {
+   "i": 5,
+   "sheet": 1,
+   "row": 6,
+   "tile": "J4",
+   "road": "r47247395_0",
+   "name": "Rue Joseph Vanderlinden - Joseph Vanderlindenstraat",
+   "highway": "residential",
+   "x": 1583,
+   "z": -465,
+   "width": 7.3,
+   "ridge": {
+    "d": 0.001,
+    "v": 0.55
+   },
+   "visual": "N"
+  },
+  {
+   "i": 6,
+   "sheet": 1,
+   "row": 7,
+   "tile": "E3",
+   "road": "r30232575_0",
+   "name": "Avenue Coghen - Coghenlaan",
+   "highway": "residential",
+   "x": -596,
+   "z": -758,
+   "width": 10.2,
+   "ridge": {
+    "d": 0.019,
+    "v": -0.5
+   },
+   "visual": "N"
+  },
+  {
+   "i": 7,
+   "sheet": 1,
+   "row": 8,
+   "tile": "C3",
+   "road": "r548871426_2",
+   "name": "Avenue Fontaine Vanderstraeten - Fontaine Vanderstraetenlaan",
+   "highway": "residential",
+   "x": -1710,
+   "z": -910,
+   "width": 7.7,
+   "ridge": {
+    "d": 0.004,
+    "v": -0.05
+   },
+   "visual": "O"
+  },
+  {
+   "i": 8,
+   "sheet": 1,
+   "row": 9,
+   "tile": "C3",
+   "road": "r249891577_0",
+   "name": "Drève de la Grappe - Trosdreef",
+   "highway": "residential",
+   "x": -1812,
+   "z": -924,
+   "width": 5.7,
+   "ridge": {
+    "d": 0.013,
+    "v": -0.1
+   },
+   "visual": "N"
+  },
+  {
+   "i": 9,
+   "sheet": 1,
+   "row": 10,
+   "tile": "C3",
+   "road": "r408246991_0",
+   "name": "Rue Roosendael - Roosendaelstraat",
+   "highway": "residential",
+   "x": -1526,
+   "z": -951,
+   "width": 9.1,
+   "ridge": {
+    "d": 0.007,
+    "v": -0.7
+   },
+   "visual": "N"
+  },
+  {
+   "i": 10,
+   "sheet": 2,
+   "row": 1,
+   "tile": "B4",
+   "road": "r1243512997_0",
+   "name": "Avenue Kersbeek - Kersbeeklaan",
+   "highway": "residential",
+   "x": -2158,
+   "z": -431,
+   "width": 6.8,
+   "ridge": {
+    "d": 0,
+    "v": -0.75
+   },
+   "visual": "N"
+  },
+  {
+   "i": 11,
+   "sheet": 2,
+   "row": 2,
+   "tile": "B4",
+   "road": "r249409254_1",
+   "name": "Rue Jean d'Osta - Jean d'Ostastraat",
+   "highway": "residential",
+   "x": -2120,
+   "z": -125,
+   "width": 5.8,
+   "ridge": {
+    "d": 0.02,
+    "v": -0.9
+   },
+   "visual": "O"
+  },
+  {
+   "i": 12,
+   "sheet": 2,
+   "row": 3,
+   "tile": "G4",
+   "road": "r31669544_1",
+   "name": "Avenue des Statuaires - Beeldhouwerslaan",
+   "highway": "residential",
+   "x": 107,
+   "z": -274,
+   "width": 7.3,
+   "ridge": {
+    "d": 0.02,
+    "v": 0.85
+   },
+   "visual": "O"
+  },
+  {
+   "i": 13,
+   "sheet": 2,
+   "row": 4,
+   "tile": "G4",
+   "road": "r14385571_0",
+   "name": "Avenue ten Horen - ten Horenlaan",
+   "highway": "residential",
+   "x": 31,
+   "z": -232,
+   "width": 7,
+   "ridge": {
+    "d": -0.003,
+    "v": 0.7
+   },
+   "visual": "O"
+  },
+  {
+   "i": 14,
+   "sheet": 2,
+   "row": 5,
+   "tile": "F3",
+   "road": "r16310152_0",
+   "name": "Avenue Jean Burgers - Jean Burgerslaan",
+   "highway": "residential",
+   "x": -249,
+   "z": -870,
+   "width": 8.9,
+   "ridge": {
+    "d": 0.003,
+    "v": -0.15
+   },
+   "visual": "N"
+  },
+  {
+   "i": 15,
+   "sheet": 2,
+   "row": 6,
+   "tile": "F3",
+   "road": "r31652038_0",
+   "name": "Avenue Bourgmestre Jean Herinckx - Burgemeester Jean Herinckxlaan",
+   "highway": "residential",
+   "x": -270,
+   "z": -751,
+   "width": 11.4,
+   "ridge": {
+    "d": -0.013,
+    "v": -0.9
+   },
+   "visual": "O"
+  },
+  {
+   "i": 16,
+   "sheet": 2,
+   "row": 7,
+   "tile": "F3",
+   "road": "r16310153_0",
+   "name": "Avenue Château de Walzin - Kasteel de Walzinlaan",
+   "highway": "residential",
+   "x": -215,
+   "z": -955,
+   "width": 9,
+   "ridge": {
+    "d": 0.003,
+    "v": -0.4
+   },
+   "visual": "N"
+  },
+  {
+   "i": 17,
+   "sheet": 2,
+   "row": 8,
+   "tile": "F2",
+   "road": "r1111565436_1",
+   "name": "Avenue de Floréal - Floréallaan",
+   "highway": "residential",
+   "x": -382,
+   "z": -1132,
+   "width": 8.3,
+   "ridge": {
+    "d": 0.001,
+    "v": 0.7
+   },
+   "visual": "N"
+  },
+  {
+   "i": 18,
+   "sheet": 2,
+   "row": 9,
+   "tile": "F2",
+   "road": "r14372805_5",
+   "name": "Rue des Cottages - Landhuisjesstraat",
+   "highway": "residential",
+   "x": -260,
+   "z": -1388,
+   "width": 9.1,
+   "ridge": {
+    "d": 0.032,
+    "v": -0.6
+   },
+   "visual": "N"
+  },
+  {
+   "i": 19,
+   "sheet": 2,
+   "row": 10,
+   "tile": "F2",
+   "road": "r231470013_1",
+   "name": "Avenue de Messidor - Messidorlaan",
+   "highway": "residential",
+   "x": -388,
+   "z": -1245,
+   "width": 10.7,
+   "ridge": {
+    "d": 0.007,
+    "v": -0.1
+   },
+   "visual": "O"
+  },
+  {
+   "i": 20,
+   "sheet": 3,
+   "row": 1,
+   "tile": "I7",
+   "road": "r32649035_0",
+   "name": "Avenue Jacques Pastur - Jacques Pasturlaan",
+   "highway": "residential",
+   "x": 1373,
+   "z": 1384,
+   "width": 6.1,
+   "ridge": {
+    "d": 0.012,
+    "v": -0.1
+   },
+   "visual": "O"
+  },
+  {
+   "i": 21,
+   "sheet": 3,
+   "row": 2,
+   "tile": "C7",
+   "road": "r30237079_0",
+   "name": "Rue François Vervloet - François Vervloetstraat",
+   "highway": "residential",
+   "x": -1887,
+   "z": 1256,
+   "width": 9.2,
+   "ridge": {
+    "d": 0.023,
+    "v": -0.75
+   },
+   "visual": "N"
+  },
+  {
+   "i": 22,
+   "sheet": 3,
+   "row": 3,
+   "tile": "C7",
+   "road": "r15221333_0",
+   "name": "Rue Georges Ugeux - Georges Ugeuxstraat",
+   "highway": "residential",
+   "x": -1858,
+   "z": 1158,
+   "width": 6.3,
+   "ridge": {
+    "d": 0.013,
+    "v": 0.35
+   },
+   "visual": "N"
+  },
+  {
+   "i": 23,
+   "sheet": 3,
+   "row": 4,
+   "tile": "C7",
+   "road": "r15221331_1",
+   "name": "Rue du Lama - Lamastraat",
+   "highway": "residential",
+   "x": -1923,
+   "z": 1059,
+   "width": 11.2,
+   "ridge": {
+    "d": 0.002,
+    "v": -0.3
+   },
+   "visual": "N"
+  },
+  {
+   "i": 24,
+   "sheet": 3,
+   "row": 5,
+   "tile": "I4",
+   "road": "r23647168_0",
+   "name": "Avenue de l'Observatoire - Sterrewachtlaan",
+   "highway": "residential",
+   "x": 1302,
+   "z": -263,
+   "width": 7,
+   "ridge": {
+    "d": 0.014,
+    "v": -0.9
+   },
+   "visual": "N"
+  },
+  {
+   "i": 25,
+   "sheet": 3,
+   "row": 6,
+   "tile": "H5",
+   "road": "r221662749_1",
+   "name": "Avenue Albert Lancaster - Albert Lancasterlaan",
+   "highway": "residential",
+   "x": 944,
+   "z": 336,
+   "width": 6.8,
+   "ridge": {
+    "d": 0.004,
+    "v": 0.85
+   },
+   "visual": "N"
+  },
+  {
+   "i": 26,
+   "sheet": 3,
+   "row": 7,
+   "tile": "J8",
+   "road": "r16293860_1",
+   "name": "Avenue Napoléon - Napoléonlaan",
+   "highway": "residential",
+   "x": 1610,
+   "z": 1891,
+   "width": 6.4,
+   "ridge": {
+    "d": 0.018,
+    "v": -0.25
+   },
+   "visual": "N"
+  },
+  {
+   "i": 27,
+   "sheet": 3,
+   "row": 8,
+   "tile": "J8",
+   "road": "r24466072_0",
+   "name": "Avenue des Églantiers - Wilderozelaarslaan",
+   "highway": "residential",
+   "x": 1660,
+   "z": 1772,
+   "width": 6.3,
+   "ridge": {
+    "d": 0.004,
+    "v": 0.85
+   },
+   "visual": "N"
+  },
+  {
+   "i": 28,
+   "sheet": 3,
+   "row": 9,
+   "tile": "J8",
+   "road": "r34870972_0",
+   "name": "Avenue Wellington - Wellingtonlaan",
+   "highway": "residential",
+   "x": 1650,
+   "z": 1603,
+   "width": 6.7,
+   "ridge": {
+    "d": 0.009,
+    "v": -0.9
+   },
+   "visual": "N"
+  },
+  {
+   "i": 29,
+   "sheet": 3,
+   "row": 10,
+   "tile": "I2",
+   "road": "r13854432_0",
+   "name": "Avenue Montjoie - Montjoielaan",
+   "highway": "residential",
+   "x": 1235,
+   "z": -1267,
+   "width": 10.9,
+   "ridge": {
+    "d": -0.009,
+    "v": 0.45
+   },
+   "visual": "O"
+  },
+  {
+   "i": 30,
+   "sheet": 4,
+   "row": 1,
+   "tile": "I2",
+   "road": "r14375115_0",
+   "name": "Avenue de la Floride - Floridalaan",
+   "highway": "residential",
+   "x": 1120,
+   "z": -1138,
+   "width": 8.3,
+   "ridge": {
+    "d": -0.005,
+    "v": 0.3
+   },
+   "visual": "N"
+  },
+  {
+   "i": 31,
+   "sheet": 4,
+   "row": 2,
+   "tile": "C6",
+   "road": "r23781968_3",
+   "name": "Avenue Achille Reisdorff - Achille Reisdorfflaan",
+   "highway": "residential",
+   "x": -1806,
+   "z": 687,
+   "width": 7.4,
+   "ridge": {
+    "d": 0.006,
+    "v": -0.9
+   },
+   "visual": "N"
+  },
+  {
+   "i": 32,
+   "sheet": 4,
+   "row": 3,
+   "tile": "C6",
+   "road": "r23781963_0",
+   "name": "Avenue Nekkersgat - Nekkersgatlaan",
+   "highway": "residential",
+   "x": -1655,
+   "z": 649,
+   "width": 7.2,
+   "ridge": {
+    "d": 0.027,
+    "v": -0.7
+   },
+   "visual": "N"
+  },
+  {
+   "i": 33,
+   "sheet": 4,
+   "row": 4,
+   "tile": "C6",
+   "road": "r23489247_1",
+   "name": "Rue Edouard Michiels - Edouard Michielsstraat",
+   "highway": "residential",
+   "x": -1846,
+   "z": 602,
+   "width": 7.1,
+   "ridge": {
+    "d": 0.043,
+    "v": 0.8
+   },
+   "visual": "O"
+  },
+  {
+   "i": 34,
+   "sheet": 4,
+   "row": 5,
+   "tile": "K7",
+   "road": "r15804083_4",
+   "name": "Drève du Caporal - Korporaaldreef",
+   "highway": "residential",
+   "x": 2173,
+   "z": 1264,
+   "width": 6.9,
+   "ridge": {
+    "d": 0.007,
+    "v": -0.15
+   },
+   "visual": "N"
+  },
+  {
+   "i": 35,
+   "sheet": 4,
+   "row": 6,
+   "tile": "K7",
+   "road": "r24451432_1",
+   "name": "Avenue du Feuillage - Gebladertelaan",
+   "highway": "residential",
+   "x": 2028,
+   "z": 1280,
+   "width": 6.3,
+   "ridge": {
+    "d": 0.023,
+    "v": 0.15
+   },
+   "visual": "O"
+  },
+  {
+   "i": 36,
+   "sheet": 4,
+   "row": 7,
+   "tile": "E4",
+   "road": "r14384954_0",
+   "name": "Rue de la Fauvette - Grasmusstraat",
+   "highway": "residential",
+   "x": -592,
+   "z": -84,
+   "width": 7.4,
+   "ridge": {
+    "d": 0.003,
+    "v": 0.8
+   },
+   "visual": "N"
+  },
+  {
+   "i": 37,
+   "sheet": 4,
+   "row": 8,
+   "tile": "E4",
+   "road": "r46770204_0",
+   "name": "Rue du Doyenné - Dekenijstraat",
+   "highway": "residential",
+   "x": -621,
+   "z": -450,
+   "width": 9,
+   "ridge": {
+    "d": 0.009,
+    "v": 0.2
+   },
+   "visual": "N"
+  },
+  {
+   "i": 38,
+   "sheet": 4,
+   "row": 9,
+   "tile": "E4",
+   "road": "r14384896_0",
+   "name": "Rue Robert Scott - Robert Scottstraat",
+   "highway": "residential",
+   "x": -784,
+   "z": -60,
+   "width": 8.9,
+   "ridge": {
+    "d": 0.008,
+    "v": 0.6
+   },
+   "visual": "N"
+  },
+  {
+   "i": 39,
+   "sheet": 4,
+   "row": 10,
+   "tile": "H2",
+   "road": "r23647120_0",
+   "name": "Rue Ernest Gossart - Ernest Gossartstraat",
+   "highway": "residential",
+   "x": 925,
+   "z": -1283,
+   "width": 10.1,
+   "ridge": {
+    "d": 0.007,
+    "v": 0.85
+   },
+   "visual": "N"
+  },
+  {
+   "i": 40,
+   "sheet": 5,
+   "row": 1,
+   "tile": "H2",
+   "road": "r13764877_0",
+   "name": "Rue Gabrielle - Gabriellestraat",
+   "highway": "residential",
+   "x": 762,
+   "z": -1439,
+   "width": 9.3,
+   "ridge": {
+    "d": 0.002,
+    "v": 0.45
+   },
+   "visual": "N"
+  },
+  {
+   "i": 41,
+   "sheet": 5,
+   "row": 2,
+   "tile": "H2",
+   "road": "r23647123_0",
+   "name": "Avenue Moscicki - Moscickilaan",
+   "highway": "residential",
+   "x": 965,
+   "z": -1085,
+   "width": 7.2,
+   "ridge": {
+    "d": -0.002,
+    "v": -0.45
+   },
+   "visual": "N"
+  },
+  {
+   "i": 42,
+   "sheet": 5,
+   "row": 3,
+   "tile": "G10",
+   "road": "r23114179_0",
+   "name": "Avenue Chantemerle - Chantemerlelaan",
+   "highway": "residential",
+   "x": 319,
+   "z": 2691,
+   "width": 7.3,
+   "ridge": {
+    "d": 0.02,
+    "v": 0.85
+   },
+   "visual": "N"
+  },
+  {
+   "i": 43,
+   "sheet": 5,
+   "row": 4,
+   "tile": "I8",
+   "road": "r16294165_8",
+   "name": "Avenue Blücher - Blücherlaan",
+   "highway": "residential",
+   "x": 1151,
+   "z": 1589,
+   "width": 6.2,
+   "ridge": {
+    "d": 0.012,
+    "v": 0.5
+   },
+   "visual": "N"
+  },
+  {
+   "i": 44,
+   "sheet": 5,
+   "row": 5,
+   "tile": "I8",
+   "road": "r91727922_0",
+   "name": "Avenue des Hespérides - Hesperidenlaan",
+   "highway": "residential",
+   "x": 1280,
+   "z": 1852,
+   "width": 6.1,
+   "ridge": {
+    "d": 0.003,
+    "v": 0.55
+   },
+   "visual": "N"
+  },
+  {
+   "i": 45,
+   "sheet": 5,
+   "row": 6,
+   "tile": "I8",
+   "road": "r24451431_1",
+   "name": "Avenue de Foestraets - de Foestraetslaan",
+   "highway": "residential",
+   "x": 1403,
+   "z": 1557,
+   "width": 6.3,
+   "ridge": {
+    "d": 0.038,
+    "v": 0.85
+   },
+   "visual": "O"
+  },
+  {
+   "i": 46,
+   "sheet": 5,
+   "row": 7,
+   "tile": "B7",
+   "road": "r15221329_1",
+   "name": "Chemin de la Truite - Forelweg",
+   "highway": "residential",
+   "x": -2053,
+   "z": 1053,
+   "width": 8.5,
+   "ridge": {
+    "d": 0.017,
+    "v": 0.85
+   },
+   "visual": "N"
+  },
+  {
+   "i": 47,
+   "sheet": 5,
+   "row": 8,
+   "tile": "D8",
+   "road": "r16397583_0",
+   "name": "Square des Mirabelles - Mirabellensquare",
+   "highway": "residential",
+   "x": -1030,
+   "z": 1851,
+   "width": 9.6,
+   "ridge": {
+    "d": 0.005,
+    "v": 0.85
+   },
+   "visual": "N"
+  },
+  {
+   "i": 48,
+   "sheet": 5,
+   "row": 9,
+   "tile": "D8",
+   "road": "r31302811_0",
+   "name": "Rue du Bourdon - Horzelstraat",
+   "highway": "residential",
+   "x": -1155,
+   "z": 1782,
+   "width": 7.3,
+   "ridge": {
+    "d": 0.05,
+    "v": 0.1
+   },
+   "visual": "O"
+  },
+  {
+   "i": 49,
+   "sheet": 5,
+   "row": 10,
+   "tile": "D8",
+   "road": "r16397321_0",
+   "name": "Rue de Calevoet - Calevoetstraat",
+   "highway": "residential",
+   "x": -1367,
+   "z": 1581,
+   "width": 7.5,
+   "ridge": {
+    "d": 0.006,
+    "v": 0.65
+   },
+   "visual": "N"
+  },
+  {
+   "i": 50,
+   "sheet": 6,
+   "row": 1,
+   "tile": "G9",
+   "road": "r28026901_0",
+   "name": "Rue Engeland - Engelandstraat",
+   "highway": "residential",
+   "x": 246,
+   "z": 2290,
+   "width": 7.9,
+   "ridge": {
+    "d": 0.025,
+    "v": 0.3
+   },
+   "visual": "N"
+  },
+  {
+   "i": 51,
+   "sheet": 6,
+   "row": 2,
+   "tile": "J9",
+   "road": "r27808465_1",
+   "name": "Avenue du Prince d'Orange - Prins van Oranjelaan",
+   "highway": "residential",
+   "x": 1749,
+   "z": 2256,
+   "width": 7.2,
+   "ridge": {
+    "d": 0.001,
+    "v": -0.2
+   },
+   "visual": "O"
+  },
+  {
+   "i": 52,
+   "sheet": 6,
+   "row": 3,
+   "tile": "H9",
+   "road": "r585177744_0",
+   "name": "Avenue Maréchal Ney - Maarschalk Neylaan",
+   "highway": "residential",
+   "x": 853,
+   "z": 2222,
+   "width": 6.2,
+   "ridge": {
+    "d": 0.038,
+    "v": 0.8
+   },
+   "visual": "N"
+  },
+  {
+   "i": 53,
+   "sheet": 6,
+   "row": 4,
+   "tile": "H9",
+   "road": "r45826948_0",
+   "name": "Avenue des Muses - Muzenlaan",
+   "highway": "residential",
+   "x": 862,
+   "z": 2461,
+   "width": 6.3,
+   "ridge": {
+    "d": 0.004,
+    "v": 0.6
+   },
+   "visual": "N"
+  },
+  {
+   "i": 54,
+   "sheet": 6,
+   "row": 5,
+   "tile": "H9",
+   "road": "r19878052_1",
+   "name": "Avenue du Gui - Maretaklaan",
+   "highway": "residential",
+   "x": 816,
+   "z": 2338,
+   "width": 5.9,
+   "ridge": {
+    "d": 0.012,
+    "v": -0.05
+   },
+   "visual": "O"
+  },
+  {
+   "i": 55,
+   "sheet": 6,
+   "row": 6,
+   "tile": "G7",
+   "road": "r16293785_0",
+   "name": "Avenue de la Chênaie - Eikenboslaan",
+   "highway": "residential",
+   "x": 193,
+   "z": 1389,
+   "width": 10.9,
+   "ridge": {
+    "d": 0.076,
+    "v": -0.85
+   },
+   "visual": "N"
+  },
+  {
+   "i": 56,
+   "sheet": 6,
+   "row": 7,
+   "tile": "G6",
+   "road": "r29994840_0",
+   "name": "Clos du Drossart - Drossaardgaarde",
+   "highway": "residential",
+   "x": 341,
+   "z": 582,
+   "width": 7.1,
+   "ridge": {
+    "d": 0.024,
+    "v": -0.9
+   },
+   "visual": "N"
+  },
+  {
+   "i": 57,
+   "sheet": 6,
+   "row": 8,
+   "tile": "G6",
+   "road": "r806451626_0",
+   "name": "Rue Basse - Diepestraat",
+   "highway": "residential",
+   "x": 134,
+   "z": 709,
+   "width": 8.2,
+   "ridge": {
+    "d": 0.128,
+    "v": -0.05
+   },
+   "visual": "L"
+  },
+  {
+   "i": 58,
+   "sheet": 6,
+   "row": 9,
+   "tile": "G6",
+   "road": "r47247121_0",
+   "name": "Kauwberg",
+   "highway": "residential",
+   "x": 260,
+   "z": 847,
+   "width": 4.5,
+   "ridge": {
+    "d": 0.17,
+    "v": -0.9
+   },
+   "visual": "O"
+  },
+  {
+   "i": 59,
+   "sheet": 6,
+   "row": 10,
+   "tile": "E1",
+   "road": "r827588290d1088286505_0",
+   "name": "Avenue des Sept Bonniers - Zeven Bunderslaan",
+   "highway": "residential",
+   "x": -945,
+   "z": -1599,
+   "width": 11.7,
+   "ridge": {
+    "d": 0.03,
+    "v": -0.6
+   },
+   "visual": "O"
+  },
+  {
+   "i": 60,
+   "sheet": 7,
+   "row": 1,
+   "tile": "E1",
+   "road": "r1493482848_0",
+   "name": "Rue Meyerbeer - Meyerbeerstraat",
+   "highway": "residential",
+   "x": -532,
+   "z": -1702,
+   "width": 9.1,
+   "ridge": {
+    "d": 0.014,
+    "v": 0.1
+   },
+   "visual": "N"
+  },
+  {
+   "i": 61,
+   "sheet": 7,
+   "row": 2,
+   "tile": "E1",
+   "road": "r30232573_0",
+   "name": "Avenue Oscar Van Goidtsnoven - Oscar Van Goidtsnovenlaan",
+   "highway": "residential",
+   "x": -771,
+   "z": -1663,
+   "width": 10.3,
+   "ridge": {
+    "d": 0.009,
+    "v": 0.15
+   },
+   "visual": "N"
+  },
+  {
+   "i": 62,
+   "sheet": 7,
+   "row": 3,
+   "tile": "M5",
+   "road": "r14459722_1",
+   "name": "Avenue du Pérou - Perulaan",
+   "highway": "residential",
+   "x": 3401,
+   "z": 115,
+   "width": 7.6,
+   "ridge": {
+    "d": 0.002,
+    "v": 0.65
+   },
+   "visual": "N"
+  },
+  {
+   "i": 63,
+   "sheet": 7,
+   "row": 4,
+   "tile": "G5",
+   "road": "r14386587_0",
+   "name": "Avenue Louis Thévenet - Louis Thévenetlaan",
+   "highway": "residential",
+   "x": 180,
+   "z": 415,
+   "width": 7,
+   "ridge": {
+    "d": 0.021,
+    "v": -0.9
+   },
+   "visual": "N"
+  },
+  {
+   "i": 64,
+   "sheet": 7,
+   "row": 5,
+   "tile": "G5",
+   "road": "r14386586_1",
+   "name": "Avenue Georges Lecointe - Georges Lecointelaan",
+   "highway": "residential",
+   "x": 207,
+   "z": 345,
+   "width": 7.3,
+   "ridge": {
+    "d": 0.009,
+    "v": -0.9
+   },
+   "visual": "O"
+  },
+  {
+   "i": 65,
+   "sheet": 7,
+   "row": 6,
+   "tile": "J6",
+   "road": "r14387805_0",
+   "name": "Avenue Alphonse XIII - Alphonse XIII laan",
+   "highway": "residential",
+   "x": 1595,
+   "z": 687,
+   "width": 7.2,
+   "ridge": {
+    "d": 0.037,
+    "v": 0.8
+   },
+   "visual": "O"
+  },
+  {
+   "i": 66,
+   "sheet": 7,
+   "row": 7,
+   "tile": "J6",
+   "road": "r23109093_1",
+   "name": "Avenue André Ryckmans - André Ryckmanslaan",
+   "highway": "residential",
+   "x": 1868,
+   "z": 528,
+   "width": 7.2,
+   "ridge": {
+    "d": 0.004,
+    "v": 0.7
+   },
+   "visual": "N"
+  },
+  {
+   "i": 67,
+   "sheet": 7,
+   "row": 8,
+   "tile": "J6",
+   "road": "r15804081_0",
+   "name": "Avenue du Maréchal - Maarschalklaan",
+   "highway": "residential",
+   "x": 1952,
+   "z": 718,
+   "width": 6.2,
+   "ridge": {
+    "d": 0.042,
+    "v": 0.7
+   },
+   "visual": "O"
+  },
+  {
+   "i": 68,
+   "sheet": 7,
+   "row": 9,
+   "tile": "J10",
+   "road": "r19878050_0",
+   "name": "Avenue des Aubépines - Hagedoornlaan",
+   "highway": "residential",
+   "x": 1648,
+   "z": 2726,
+   "width": 6,
+   "ridge": {
+    "d": 0.019,
+    "v": -0.5
+   },
+   "visual": "O"
+  },
+  {
+   "i": 69,
+   "sheet": 7,
+   "row": 10,
+   "tile": "J10",
+   "road": "r23104759_0",
+   "name": "Avenue des Sorbiers - Lijsterbessenbomenlaan",
+   "highway": "residential",
+   "x": 1810,
+   "z": 2834,
+   "width": 5.1,
+   "ridge": {
+    "d": 0.02,
+    "v": -0.45
+   },
+   "visual": "O"
+  },
+  {
+   "i": 70,
+   "sheet": 8,
+   "row": 1,
+   "tile": "E9",
+   "road": "r16396716_0",
+   "name": "Rue du Kriekenput - Kriekenputstraat",
+   "highway": "residential",
+   "x": -863,
+   "z": 2163,
+   "width": 5.3,
+   "ridge": {
+    "d": 0.048,
+    "v": 0.5
+   },
+   "visual": "O"
+  },
+  {
+   "i": 71,
+   "sheet": 8,
+   "row": 2,
+   "tile": "J5",
+   "road": "r27808428_0",
+   "name": "Avenue Latérale - Zijlaan",
+   "highway": "residential",
+   "x": 1543,
+   "z": 302,
+   "width": 7.2,
+   "ridge": {
+    "d": -0.002,
+    "v": 0.05
+   },
+   "visual": "N"
+  },
+  {
+   "i": 72,
+   "sheet": 8,
+   "row": 3,
+   "tile": "J5",
+   "road": "r419672519_1",
+   "name": "Drève du Sénéchal - Landvoogddreef",
+   "highway": "residential",
+   "x": 1927,
+   "z": 474,
+   "width": 7.1,
+   "ridge": {
+    "d": 0.029,
+    "v": -0.35
+   },
+   "visual": "O"
+  },
+  {
+   "i": 73,
+   "sheet": 8,
+   "row": 4,
+   "tile": "J5",
+   "road": "r32649037_0",
+   "name": "Avenue de Belœil - Belœillaan",
+   "highway": "residential",
+   "x": 1531,
+   "z": 440,
+   "width": 7.1,
+   "ridge": {
+    "d": 0.013,
+    "v": -0.1
+   },
+   "visual": "N"
+  },
+  {
+   "i": 74,
+   "sheet": 8,
+   "row": 5,
+   "tile": "D3",
+   "road": "r243609002_0",
+   "name": "Rue Joseph Bens - Joseph Bensstraat",
+   "highway": "residential",
+   "x": -1190,
+   "z": -871,
+   "width": 7,
+   "ridge": {
+    "d": 0.004,
+    "v": 0.05
+   },
+   "visual": "O"
+  },
+  {
+   "i": 75,
+   "sheet": 8,
+   "row": 6,
+   "tile": "D3",
+   "road": "r36857269_0",
+   "name": "Avenue Docteur Decroly - Dokter Decrolylaan",
+   "highway": "residential",
+   "x": -1424,
+   "z": -549,
+   "width": 7.3,
+   "ridge": {
+    "d": 0.081,
+    "v": 0.7
+   },
+   "visual": "O"
+  },
+  {
+   "i": 76,
+   "sheet": 8,
+   "row": 7,
+   "tile": "D3",
+   "road": "r14383964_0",
+   "name": "Avenue de l'Aulne - Elzeboomlaan",
+   "highway": "residential",
+   "x": -1319,
+   "z": -657,
+   "width": 6.6,
+   "ridge": {
+    "d": 0.025,
+    "v": 0.8
+   },
+   "visual": "N"
+  },
+  {
+   "i": 77,
+   "sheet": 8,
+   "row": 8,
+   "tile": "F8",
+   "road": "r443070946_0",
+   "name": "Avenue Jacqueline Harpman - Jacqueline Harpmanlaan",
+   "highway": "residential",
+   "x": -170,
+   "z": 1953,
+   "width": 9.6,
+   "ridge": {
+    "d": 0.038,
+    "v": -0.65
+   },
+   "visual": "N"
+  },
+  {
+   "i": 78,
+   "sheet": 8,
+   "row": 9,
+   "tile": "F8",
+   "road": "r443070951_0",
+   "name": "Avenue de l'Hélianthe - Zonnebloemlaan",
+   "highway": "residential",
+   "x": -395,
+   "z": 1654,
+   "width": 7.9,
+   "ridge": {
+    "d": 0.002,
+    "v": -0.4
+   },
+   "visual": "N"
+  },
+  {
+   "i": 79,
+   "sheet": 8,
+   "row": 10,
+   "tile": "F8",
+   "road": "r30527758_0",
+   "name": "Chemin du Puits - Borreweg",
+   "highway": "residential",
+   "x": -437,
+   "z": 1717,
+   "width": 5.2,
+   "ridge": {
+    "d": 0.008,
+    "v": -0.9
+   },
+   "visual": "N"
+  }
+ ],
+ "calibration": [
+  {
+   "i": 0,
+   "sheet": 1,
+   "row": 1,
+   "tile": "L8",
+   "road": "r244422542_0",
+   "name": "Drève de Lorraine - Lorrainedreef",
+   "highway": "secondary",
+   "x": 2707,
+   "z": 1903,
+   "width": 6.8,
+   "ridge": {
+    "d": 0.011,
+    "v": 0.45
+   }
+  },
+  {
+   "i": 1,
+   "sheet": 1,
+   "row": 2,
+   "tile": "K10",
+   "road": "r477054049_0",
+   "name": "Chaussée de Waterloo - Waterloosesteenweg",
+   "highway": "primary",
+   "x": 2339,
+   "z": 2868,
+   "width": 12.1,
+   "ridge": {
+    "d": 0.213,
+    "v": 0.2
+   }
+  },
+  {
+   "i": 2,
+   "sheet": 1,
+   "row": 3,
+   "tile": "J4",
+   "road": "r31669611_4",
+   "name": "Chaussée de Waterloo - Waterloosesteenweg",
+   "highway": "primary",
+   "x": 1658,
+   "z": -368,
+   "width": 11,
+   "ridge": {
+    "d": 0.113,
+    "v": 0.1
+   }
+  },
+  {
+   "i": 3,
+   "sheet": 1,
+   "row": 4,
+   "tile": "J4",
+   "road": "r13868560_0",
+   "name": "Chaussée de La Hulpe - Terhulpsesteenweg / Chaussée de La Hulpe - Terhulpensesteenweg",
+   "highway": "primary",
+   "x": 1855,
+   "z": -76,
+   "width": 7.3,
+   "ridge": {
+    "d": 0.023,
+    "v": -0.9
+   }
+  },
+  {
+   "i": 4,
+   "sheet": 1,
+   "row": 5,
+   "tile": "J4",
+   "road": "r31669616_0",
+   "name": "Chaussée de Waterloo - Waterloosesteenweg",
+   "highway": "primary",
+   "x": 1832,
+   "z": -28,
+   "width": 11.8,
+   "ridge": {
+    "d": 0.072,
+    "v": -0.05
+   }
+  },
+  {
+   "i": 5,
+   "sheet": 1,
+   "row": 6,
+   "tile": "J4",
+   "road": "r248811407_0",
+   "name": "Chaussée de Waterloo - Waterloosesteenweg",
+   "highway": "primary",
+   "x": 1764,
+   "z": -170,
+   "width": 10.6,
+   "ridge": {
+    "d": 0.136,
+    "v": 0.25
+   }
+  },
+  {
+   "i": 6,
+   "sheet": 2,
+   "row": 1,
+   "tile": "L9",
+   "road": "r244422542_0",
+   "name": "Drève de Lorraine - Lorrainedreef",
+   "highway": "secondary",
+   "x": 2775,
+   "z": 2222,
+   "width": 7.2,
+   "ridge": {
+    "d": 0.011,
+    "v": -0.7
+   }
+  },
+  {
+   "i": 7,
+   "sheet": 2,
+   "row": 2,
+   "tile": "F3",
+   "road": "r31669526_0",
+   "name": "Avenue De Fré - De Frélaan",
+   "highway": "secondary",
+   "x": -128,
+   "z": -527,
+   "width": 10.3,
+   "ridge": {
+    "d": 0.081,
+    "v": -0.9
+   }
+  },
+  {
+   "i": 8,
+   "sheet": 2,
+   "row": 3,
+   "tile": "M10",
+   "road": "r303318797_0",
+   "name": "Drève du Haras - Harasdreef",
+   "highway": "tertiary",
+   "x": 3027,
+   "z": 2682,
+   "width": 5.9,
+   "ridge": {
+    "d": 0.056,
+    "v": 0.15
+   }
+  },
+  {
+   "i": 9,
+   "sheet": 2,
+   "row": 4,
+   "tile": "M10",
+   "road": "r150232849_0",
+   "name": "Drève du Haras - Harasdreef",
+   "highway": "tertiary",
+   "x": 3420,
+   "z": 2894,
+   "width": 5.8,
+   "ridge": {
+    "d": 0.006,
+    "v": 0
+   }
+  },
+  {
+   "i": 10,
+   "sheet": 2,
+   "row": 5,
+   "tile": "L7",
+   "road": "r244422542_5",
+   "name": "Drève de Lorraine - Lorrainedreef",
+   "highway": "secondary",
+   "x": 2599,
+   "z": 1369,
+   "width": 6.7,
+   "ridge": {
+    "d": 0.096,
+    "v": 0.1
+   }
+  },
+  {
+   "i": 11,
+   "sheet": 2,
+   "row": 6,
+   "tile": "L7",
+   "road": "r244422542_6",
+   "name": "Drève de Lorraine - Lorrainedreef",
+   "highway": "secondary",
+   "x": 2564,
+   "z": 1196,
+   "width": 6.8,
+   "ridge": {
+    "d": 0.147,
+    "v": -0.35
+   }
+  }
+ ],
+ "visualSummary": {
+  "L_centre_line": 1,
+  "N_no_line": 51,
+  "O_occluded": 28,
+  "by": "looked at row by row on sheet_*.jpg (2026-11-10); O = trees, shadow or cars hide over half the stretch",
+  "auto_ridge_over_0.056": 4,
+  "calibration_over_0.056": 8,
+  "calibration_n": 12
+ }
+}
