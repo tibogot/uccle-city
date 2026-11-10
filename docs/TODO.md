@@ -26,6 +26,15 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 
 Stairs paused until the owner's Mixamo clips are in `data/raw/animations/mixamo/` (and the owner decides: Mixamo clips committed for the live site, or local only).
 
+**OWNER REVIEW LIST, added 2026-11-10 (on top of the 11 earlier pages):**
+- [ ] Chapelle de Stalle rounds 3-5 (`claude/stalle`, port 8802: http://localhost:8802/labs/stalle-lab.html, city ?tile=D5&stalle=1): checker 0, front matches c00, interior moulded; open: north-aisle blotches, statue (decision), slates +0.3 ms (decision). Merge behind ?stalle=1 when OK (brings tools/mesh_audit to main).
+- [ ] Villa van Buuren (`claude/vanbuuren`, port 8818: http://localhost:8818/labs/vanbuuren-lab.html, city ?vanbuuren=1&tile=G2&at=302.6,-1229.6): shape matches the photos; look round (brick orange, white concrete, frames, glass, NW roof) next.
+- [ ] Roads v2 phases 0+1 (`claude/roads2`, port 8815: http://localhost:8815/labs/road-lab.html?j=1&view=plan, &paint=v1 = before); send docs/roads/brussels_mobility_request.md.
+- [ ] Flag Lab (`claude/flags`, port 8817: http://localhost:8817/labs/flag-lab.html).
+- [ ] Small fixes (`claude/smallfixes`): lamps + ?sunlight=1.
+- [ ] Hero prep notes (`claude/hero-prep`, docs/heroes/): Van Buuren + Wolvendael.
+- Decisions: statues / carved ornament (scripted vs museum scans); chapel close-up slates +0.3 ms.
+
 **Done 2026-11-10 while the owner was away (own branches, not merged; waiting for the owner's eye):**
 - [ ] `claude/smallfixes` (d61221e): night lamps pick the 6 nearest without a per-frame allocation or full sort (same lamps, 2000 random checks); `?sunlight=1` uses Mr.doob's newer shadow settings (2048 px, 220 m). GPU A/B still to measure on a quiet machine.
 - [ ] `claude/flags` (d22d6da, labs/flag-lab.html, docs/FLAGS.md): flag system v1, lab only. Verlet cloth near, baked loop far (GPU, zero CPU), no pops at the hand-overs (measured), wind changes re-recorded in a worker and cross-faded, town hall balcony poles with wall collision, Belgium / EU / Uccle designs. Live cloth ~0.08 ms per flag (Node), more in the busy browser: budget 4 live flags. Next: GPU A/B, the city (town hall), the city wind.
