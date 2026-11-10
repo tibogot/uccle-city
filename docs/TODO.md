@@ -42,7 +42,7 @@ Stairs paused until the owner's Mixamo clips are in `data/raw/animations/mixamo/
 
 **City test bugs the owner saw (2026-11-10, flying with the birds; re-test on a combined build, some may be fixed by unmerged branches):**
 - [ ] distant trees flickering / shimmering, even with a still or slow camera (owner, 2026-11-10: this IS the "tree jitter" seen flying with the birds; seen again in the town hall city view). Check far-tree LOD, alpha-cutout aliasing (alpha-to-coverage / mip alpha), impostors.
-- [ ] z-fighting (flicker) on shader buildings (facades / roof edges?)
+- [ ] z-fighting (flicker) on shader buildings: mesh checker on tile I6 (docs/CITY_MESH_AUDIT.md) finds ~13.6k coplanar + 410 depth + 482 crossing items between the generated facade DETAILS (sills, cornices, bands, frames) and the walls: very likely the cause. Fix in the facade generator, re-run.
 - [ ] some curved roads completely broken (road geometry at sharp curves?)
 - [ ] some trees standing in the middle of the road (LiDAR tree points not filtered against the road surface?)
 
