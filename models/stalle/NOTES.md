@@ -125,6 +125,38 @@ Numbers after polish 2 (the trains agent's lab rendering on the same GPU):
 - Third person in the city: walked from the forecourt up the two steps, through the opening door, down the central
   aisle; floor 34.32 m, the choir one step up; lit by the probes inside.
 
+## Round 3 (2026-11-10, the owner's review "~1000 years old, make it AAA"; status: models/stalle/ROUND3_RESUME.md)
+The shared mesh audit (tools/mesh_audit, README) now runs before every pack (tools/stalle_pack.mjs, per LOD group) and
+stops it on blocking items. Checker counts, raw files, same checker (round 2 -> round 3): exterior LOD0 582 -> 0 (1
+justified, audit/stalle.allow.json), far 73 -> 0, packed LOD1 1,506 -> 0 (LOD1 is now the far variant), packed LOD2 106
+-> 0, interior 1,478 -> 0 (2 justified); bentflat (bent normals on flat walls) 188 -> 0.
+- Gable corner z-fight: the clerestory's flashing ledge had end caps flush with the west front and the aisle's east face
+  (now from inside the gable mass); the aisle roofs stop at the gable's inner face; the slates' borders 1 cm short of
+  walls / copings / hips (odd courses 3.5 mm more: no two border faces in one plane).
+- West door: the bright line was the astragal stopping 4 mm above the threshold (a 3 x 4 mm hole into the nave): it now
+  goes into the threshold; the ring plate sits on the leaf. Flicker test (strafe, door close-up): no blink at the
+  leaf / frame, only edge aliasing on the 12 mm quoin sides.
+- Oculus -> lancet streak, black dashes: planar fills never take per-vertex AO (their slivers did: dark rays), flat walls
+  keep flat normals (planar regions >= 0.3 m2 sharp against any non-coplanar face), a support ring of points 8 and 22 cm
+  round every opening in the CDT fills; tracery plates run 1.2 cm into their reveals. Rubble: no derivative bump.
+- "Bathroom tiles": crisper stone corners, arris radius 0.9-1.7 cm (was 2.2-4), each stone tilted, rough faces.
+- Slates: real geometry (tools/blender/roofkit.py, 0.24 x 0.145 m, was 0.22 x 0.135), butts down into the deck, an
+  under-eave strip, ridge cap 5 cm; 39.5k triangles, LOD0 only, faded out at 42 +- 10 m to the deck's painted courses,
+  no shadow; GPU +0.26 ms (north side, 7.5 m) / +0.33 ms (c05, 4 m), interleaved A/B, 8 rounds. Lichen: soft rosettes.
+- Statue: tools/blender/stalle_statue.py v2 (posed metaball / skin bodies, script-sculpted heads and drapery, voxel
+  remesh, weathering) -> meshopt 14k triangles, largest piece only, smooth-shaded to 45 deg. Better than round 2's lathe
+  figure, not yet the photo's quality (see ROUND3_RESUME.md "Open").
+- Interior: choir window hole = its splay (it was 2-5 cm larger: light leak), voussoirs stop short of the responds and
+  the soffits' feet run into them (the coplanar strip at the east responds), creased cove sides, finer figure rings,
+  64-segment capitals with per-corner light smoothed 8 passes, door ring on the boards.
+- Triangles: LOD0 33,015 + slates 39,507 + door 218; LOD1 = LOD2 = the far variant 6,417; interior 101,707. GLB 2.29 MB,
+  interior.glb 3.08 MB.
+- GPU (lab bench, median of 3 rounds, + = the chapel, round 2 -> round 3, same tab back to back): c00 L0 +0.52 -> +0.39,
+  L1 +0.52 -> +0.26, L2 +0.33 -> -0.13; c05 L0 +0.13 -> +0.72, L1 -0.07 -> +0.46, L2 +0.07 -> +0.46; overview +0.07 ->
+  +0.07. Noise +-0.3 ms (other agents' tabs on the same GPU).
+- Images: docs/stalle/round3/ (flicker heat maps, frame strips, grazing before / after); side-by-sides
+  docs/stalle/side_round3_*.jpg (git-ignored: they hold the photos).
+
 ## Screenshots (docs/stalle/)
 - `preview_*.png`, `blender_*.png`: Cycles previews (exterior / interior day + night).
 - `lab_*`: the lab at the photos' solved viewpoints and inside; `city_*`: the city (street, LOD cross-fade at 70 m,
