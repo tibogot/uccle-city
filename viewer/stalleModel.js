@@ -237,10 +237,10 @@ function rubble() {
   // stones: a jittered cell per course; the stone's own joints from its own index (continuous within the stone)
   // stone length per course: 0.18-0.5 m, and the thin courses carry long thin stones (x1.7)
   const cH = hi.sub(lo).mul(bandH);
-  const Lc = hash2(vec2(row, 7.0)).mul(0.3).add(0.18).mul(mix(float(1.7), float(1), smoothstep(0.09, 0.16, cH)));
+  const Lc = hash2(vec2(row, 7.0)).mul(0.42).add(0.14).mul(mix(float(1.7), float(1), smoothstep(0.09, 0.16, cH)));
   const xs = w.x.add(hash2(vec2(row, 1.0)).mul(5.0));
   const cu = xs.div(Lc), cell = floor(cu), fx = fract(cu);
-  const J = (k) => k.add(hash2(vec2(k, row)).sub(0.5).mul(0.56));
+  const J = (k) => k.add(hash2(vec2(k, row)).sub(0.5).mul(0.8));   // round 5: more size variety (stones 0.2-1.8 x the course's length)
   const sid = cell.sub(select(fx.lessThan(J(cell).sub(cell)), float(1), float(0))).add(select(fx.greaterThan(J(cell.add(1)).sub(cell)), float(1), float(0)));
   const xl = J(sid).mul(Lc), xr = J(sid.add(1)).mul(Lc);
   const hs = hash2(vec2(sid, row)), hs2 = hash2(vec2(sid.add(31.0), row.mul(1.7))), hs3 = hash2(vec2(sid.mul(0.37), row.add(9.0)));
@@ -284,9 +284,11 @@ function rubble() {
   const far = smoothstep(0.006, 0.03, fw);
   // stone: pale Brussels sandstone, low contrast (cream / pale grey; a few warmer or greyer), pitted surface
   // round 3b: the photo's cream-grey (lighter, warmer), a few grey and ochre stones
-  let tone = mix(lin(0xe3dccb), lin(0xd5cbb0), hs);
-  tone = mix(tone, lin(0xc8c5bb), step(0.78, hs2).mul(0.7));
-  tone = mix(tone, lin(0xd8c69e), step(0.9, hs3).mul(0.55));
+  // round 5 (pixel samples, c00's lit wall vs the model's: c00 r/g 1.09, b/g 0.83; the model's 1.03 / 0.92 = grey):
+  // cream-beige, fewer grey stones (and warm greys), more ochre ones
+  let tone = mix(lin(0xf0e1c2), lin(0xe3cfa6), hs);
+  tone = mix(tone, lin(0xd6cbb3), step(0.86, hs2).mul(0.55));
+  tone = mix(tone, lin(0xe2c796), step(0.84, hs3).mul(0.55));
   const grain = vnoise(w.mul(13.0).add(hs.mul(17.0))).mul(0.07).add(vnoise(w.mul(41.0)).mul(0.05)).sub(0.06);
   const pits = smoothstep(0.78, 0.92, vnoise(w.mul(70.0).add(hs2.mul(5.0)))).mul(0.1);
   let col = tone.mul(float(1).add(grain).sub(pits)).mul(mix(float(0.94), float(1.04), hs2));
@@ -294,8 +296,8 @@ function rubble() {
   // mortar: pale lime, a little lighter than the stones, shaded in the recess under each stone
   // softer joints (round 3b): mortar close to the stones' tone, barely shaded in the recess
   // round 4: the mortar recessed: shaded toward the stones' edges, a little greyer than them, soft edged
-  const mortar = lin(0xcfc8b5).mul(mix(float(0.7), float(0.93), smoothstep(float(0), jw.mul(1.2), e2.negate())));
-  const avg = mix(lin(0xd2cbb6), lin(0xcfc8b6), 0.4).mul(0.95);
+  const mortar = lin(0xe0d2b2).mul(mix(float(0.7), float(0.93), smoothstep(float(0), jw.mul(1.2), e2.negate())));
+  const avg = mix(lin(0xe6d6b4), lin(0xdfcdaa), 0.4).mul(0.95);
   col = mix(mix(mortar, col, mask), avg, far.mul(0.6));
   return { col, nT, mask, far };
 }
@@ -360,7 +362,7 @@ const TEMP = {
     // door) is ONE stone: its tone from the seed, a rough face, no courses drawn across it
     const seed = attribute("color", "vec4").b, single = step(0.01, seed);
     const wS = uv(0);
-    const toneS = mix(mix(lin(0xe0d8c4), lin(0xd2c7ab), seed), lin(0xc6c2b6), step(0.8, fract(seed.mul(7.3))).mul(0.6))
+    const toneS = mix(mix(lin(0xeedfbf), lin(0xe0cca4), seed), lin(0xd4c9b1), step(0.8, fract(seed.mul(7.3))).mul(0.6))
       .mul(vnoise(wS.mul(13.0).add(seed.mul(31.0))).mul(0.08).add(vnoise(wS.mul(41.0)).mul(0.05)).add(0.94));
     const col = mix(r_.col, toneS, single), nT = mix(r_.nT, vec3(0, 0, 1), single);
     // weathering streaks: faint vertical runs (rain under sills and openings), stronger low on the wall

@@ -1,22 +1,22 @@
 # Mesh audit (packed): stalle.lod2
 
-8,197 triangles, 5,146 welded vertices, 2,083 open edges, 171,170 rays, 683 ms.
+8,195 triangles, 5,145 welded vertices, 2,083 open edges, 170,674 rays, 831 ms.
 
-**0 blocking**, 222 warnings. Clean (no blocking item).
+**0 blocking**, 228 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| sliver | warn | 165 |
+| sliver | warn | 171 |
 | winding | warn | 2 |
 | nonmanifold | warn | 28 |
 | tjunction | warn | 27 |
 | seam | info | 120 |
-| opening | info | 57 |
+| opening | info | 56 |
 | backtoback | info | 84 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## sliver (warn, 165)
+## sliver (warn, 171)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -61,7 +61,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.57, 37.92, -2.15 | Stalle_lod2/sandstone_rubble | 56 | 3.814 |
 | 11.32, 39.73, -2.15 | Stalle_lod2/sandstone_rubble | 53 | 2.363 |
 
-(125 more in the JSON)
+(131 more in the JSON)
 
 ## winding (warn, 2)
 
@@ -118,10 +118,10 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 11.20, 34.72, -4.25 | Stalle_lod2/sandstone_rubble | 4.24 |
 | 0.00, 34.97, 4.45 | Stalle_lod2/sandstone_rubble | 4.13 |
 | 10.55, 34.72, 4.45 | Stalle_lod2/sandstone_rubble | 4.13 |
-| 0.00, 39.27, -2.15 | Stalle_lod2/sandstone_rubble | 1.187 |
-| 11.20, 34.72, -2.15 | Stalle_lod2/sandstone_rubble | 5.75 |
+| 0.00, 39.27, -2.15 | Stalle_lod2/sandstone_rubble | 1.027 |
+| 11.20, 34.72, -2.15 | Stalle_lod2/sandstone_rubble | 5.91 |
 | 11.20, 34.72, -2.15 | Stalle_lod2/sandstone_rubble | 1.615 |
-| 0.00, 39.27, 2.35 | Stalle_lod2/sandstone_rubble | 1.187 |
+| 0.00, 39.27, 2.35 | Stalle_lod2/sandstone_rubble | 1.027 |
 | 0.00, 34.32, 0.80 | Stalle_lod2/stone_white | 2.12 |
 | 0.00, 34.32, -0.60 | Stalle_lod2/stone_white | 2.12 |
 | 0.32, 44.73, 0.04 | Stalle_lod2/stone_white | 0.58 |
@@ -145,7 +145,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.23, 34.72, 4.45 | Stalle_lod2/sandstone_rubble + Stalle_lod2/sandstone_rubble | 10.55 | 41 | 90 |
 | 11.05, 38.46, 2.35 | Stalle_lod2/sandstone_rubble + Stalle_lod2/slate | 7.78 | 35 | 65.7 |
 | 10.97, 34.72, -4.25 | Stalle_lod2/sandstone_rubble + Stalle_lod2/sandstone_rubble | 13.52 | 32 | 90 |
-| 1.20, 39.24, 2.35 | Stalle_lod2/sandstone_rubble + Stalle_lod2/slate | 19.84 | 30 | 48.1 |
+| 0.95, 39.24, 2.35 | Stalle_lod2/sandstone_rubble + Stalle_lod2/slate | 19.84 | 30 | 48.1 |
 | 3.23, 34.72, -4.25 | Stalle_lod2/sandstone_rubble + Stalle_lod2/sandstone_rubble | 8.82 | 29 | 90 |
 | 0.00, 34.97, -4.00 | Stalle_lod2/sandstone_rubble + Stalle_lod2/sandstone_rubble | 5.06 | 27 | 90 |
 | 0.00, 34.09, -0.85 | Stalle_lod2/sandstone_rubble + Stalle_lod2/stone_blue | 6.04 | 27 | 90 |
@@ -153,22 +153,24 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -2.53, 34.00, 4.31 | Stalle_lod2/stone_white + Stalle_lod2/painted_wood_red | 5.93 | 26 | 90 |
 | -6.67, 41.01, 6.67 | Stalle_lod2/stone_white + Stalle_lod2/brick_red_brussels | 9.24 | 26 | 90 |
 | 0.58, 41.00, 7.46 | Stalle_lod2/stone_white + Stalle_lod2/brick_red_brussels | 9.24 | 26 | 90 |
-| 1.20, 39.24, -2.15 | Stalle_lod2/sandstone_rubble + Stalle_lod2/slate | 19.9 | 24 | 48.1 |
 | 6.02, 42.72, -0.34 | Stalle_lod2/slate + Stalle_lod2/slate | 7.44 | 24 | 44.8 |
 | 0.00, 40.64, -2.04 | Stalle_lod2/sandstone_rubble + Stalle_lod2/stone_white | 7.56 | 22 | 90 |
+| 0.95, 39.24, -2.15 | Stalle_lod2/sandstone_rubble + Stalle_lod2/slate | 19.9 | 22 | 48.1 |
 | -6.61, 41.38, 6.97 | Stalle_lod2/stone_white + Stalle_lod2/brick_red_brussels | 3.95 | 20 | 38.7 |
 | -6.61, 42.22, 7.33 | Stalle_lod2/stone_white + Stalle_lod2/brick_red_brussels | 4.32 | 20 | 90 |
 | 0.33, 41.12, 7.36 | Stalle_lod2/stone_white + Stalle_lod2/brick_red_brussels | 3.95 | 20 | 38.7 |
 | 0.04, 42.22, 6.77 | Stalle_lod2/stone_white + Stalle_lod2/brick_red_brussels | 4.32 | 20 | 90 |
 | 0.77, 37.38, -4.22 | Stalle_lod2/stone_white + Stalle_lod2/slate | 1.34 | 18 | 41.9 |
+| 10.95, 39.23, -2.15 | Stalle_lod2/sandstone_rubble + Stalle_lod2/stone_white | 2.61 | 17 | 40.7 |
 | 0.13, 37.70, 4.10 | Stalle_lod2/stone_white + Stalle_lod2/stone_white | 3.84 | 17 | 40.4 |
 | -0.08, 37.25, 4.15 | Stalle_lod2/stone_white + Stalle_lod2/brick_red_brussels | 1.75 | 17 | 90 |
-| 10.76, 39.23, -2.15 | Stalle_lod2/sandstone_rubble + Stalle_lod2/stone_white | 2.61 | 15 | 40.7 |
 | 0.73, 37.65, -3.96 | Stalle_lod2/stone_white + Stalle_lod2/stone_white | 2.48 | 15 | 40.4 |
 | -0.04, 33.99, -1.68 | Stalle_lod2/sandstone_rubble + Stalle_lod2/cobbles | 3.4 | 14 | 76.8 |
+| 0.04, 39.19, -2.15 | Stalle_lod2/sandstone_rubble + Stalle_lod2/stone_white | 1.82 | 14 | 49.5 |
 | 0.00, 37.22, -4.24 | Stalle_lod2/sandstone_rubble + Stalle_lod2/stone_white | 0.89 | 13 | 90 |
 | 10.43, 37.25, -4.25 | Stalle_lod2/sandstone_rubble + Stalle_lod2/slate | 10 | 13 | 48.1 |
 | 0.01, 37.22, 4.45 | Stalle_lod2/sandstone_rubble + Stalle_lod2/stone_white | 0.88 | 13 | 90 |
+| 0.12, 39.19, 2.35 | Stalle_lod2/sandstone_rubble + Stalle_lod2/stone_white | 1.82 | 13 | 49.6 |
 | 0.76, 40.77, -1.94 | Stalle_lod2/stone_white + Stalle_lod2/stone_white | 2.29 | 13 | 55.1 |
 | 0.04, 37.65, 4.16 | Stalle_lod2/stone_white + Stalle_lod2/stone_white | 2.47 | 13 | 40.4 |
 | 0.36, 37.66, 4.15 | Stalle_lod2/stone_white + Stalle_lod2/brick_red_brussels | 0.87 | 13 | 49.6 |
@@ -177,12 +179,10 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -6.22, 37.67, 9.97 | Stalle_lod2/stone_white + Stalle_lod2/brick_red_brussels | 0.7 | 13 | 90 |
 | 0.13, 37.68, 9.97 | Stalle_lod2/stone_white + Stalle_lod2/brick_red_brussels | 0.7 | 13 | 90 |
 | 0.13, 37.67, 4.15 | Stalle_lod2/stone_white + Stalle_lod2/brick_red_brussels | 0.7 | 13 | 90 |
-| -0.32, 33.95, 0.55 | Stalle_lod2/stone_blue + Stalle_lod2/cobbles | 2.55 | 13 | 82 |
-| -0.68, 33.90, 0.98 | Stalle_lod2/stone_blue + Stalle_lod2/cobbles | 2.92 | 13 | 85 |
 
 (80 more in the JSON)
 
-## opening (info, 57)
+## opening (info, 56)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -194,8 +194,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 10.60, 37.47, -4.23 | Stalle_lod2/sandstone_rubble | -1 + 0 + 0 | 0.163 |
 | 0.75, 40.14, -2.15 | Stalle_lod2/sandstone_rubble | 0 + 0 + -1 | 14.75 |
 | 0.05, 40.14, 2.35 | Stalle_lod2/sandstone_rubble | 0 + 0 + 1 | 14.75 |
-| 0.15, 38.95, 2.35 | Stalle_lod2/sandstone_rubble | 0 + 0 + 1 | 10.55 |
-| 10.55, 38.90, 2.35 | Stalle_lod2/sandstone_rubble | 0 + 0 + 1 | 5.75 |
+| 10.55, 38.86, 2.35 | Stalle_lod2/sandstone_rubble | 0 + 0 + 1 | 5.91 |
 | 0.32, 44.73, 0.10 | Stalle_lod2/stone_white | -1 + 0 + 0 | 0.11 |
 | 0.43, 44.73, 0.10 | Stalle_lod2/stone_white | 1 + 0 + 0 | 0.11 |
 | 0.43, 44.73, 0.33 | Stalle_lod2/stone_white | 0 + -1 + 0 | 0.235 |
@@ -226,8 +225,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -6.15, 34.58, -4.60 | Stalle_lod2/cobbles | -0.02 + 1 + -0.02 | 0.5 |
 | -6.60, 34.57, -4.55 | Stalle_lod2/cobbles | 0.01 + 1 + -0.03 | 0.878 |
 | -6.60, 34.60, -3.67 | Stalle_lod2/cobbles | 0.08 + 1 + -0.03 | 0.878 |
+| -6.60, 34.61, -2.79 | Stalle_lod2/cobbles | 0.26 + 0.95 + 0.16 | 0.891 |
 
-(17 more in the JSON)
+(16 more in the JSON)
 
 ## backtoback (info, 84)
 

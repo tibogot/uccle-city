@@ -93,7 +93,7 @@ HOUSE = dict(u0=-6.67, u1=0.58, w0=4.15, w1=9.97, eave=37.9, ridge=41.3)
 class Builder:
     """faces + per-face slot, code, optional UV0, construction group (lightmap islands are split by group), the per-piece
     seed (COLOR_0.b: 0 = none; slates, statue...) and a forced per-vertex AO flag (small repeated pieces: slates)"""
-    def __init__(self): self.v = []; self.f = []; self.m = []; self.c = []; self.uv = []; self.g = []; self.b = []; self.vao = []; self.grp = 0; self.crease = set(); self.smooth = set(); self.flat = set()
+    def __init__(self): self.v = []; self.f = []; self.m = []; self.c = []; self.uv = []; self.g = []; self.b = []; self.vao = []; self.grp = 0; self.crease = set(); self.smooth = set(); self.flat = set(); self.hard = set()
     def face(self, pts, mat, code=0, uv=None):
         if len(pts) < 3: return
         i0 = len(self.v); self.v.extend(Vector(p) for p in pts)
@@ -200,12 +200,14 @@ def fill2d(fr, loops, d, mat, code=0, flip=False):
         sv = K.VAO; K.VAO = sv or 2                     # 2: lightmapped even where the triangle is a sliver
         K.B.face([fr.p(a[0], a[1], d), fr.p(b[0], b[1], d), fr.p(c[0], c[1], d)], mat, code)
         K.VAO = sv
-def strip2d(fr, loop, d0, d1, mat, code=0, inward=True):
-    """side walls of a loop between depths d0 and d1 (inward: facing the loop's inside, e.g. a reveal)"""
+def strip2d(fr, loop, d0, d1, mat, code=0, inward=True, skip=None):
+    """side walls of a loop between depths d0 and d1 (inward: facing the loop's inside, e.g. a reveal); skip(a, b) -> True
+    leaves that edge's side out (round 5: a voussoir's intrados, drawn by the soffit)"""
     loop = ccw(loop); n = len(loop)
     cs = sum(p[0] for p in loop) / n; cv = sum(p[1] for p in loop) / n
     for i in range(n):
         a, b = loop[i], loop[(i + 1) % n]
+        if skip is not None and skip(a, b): continue
         A0, B0, B1, A1 = fr.p(a[0], a[1], d0), fr.p(b[0], b[1], d0), fr.p(b[0], b[1], d1), fr.p(a[0], a[1], d1)
         # outward = the edge's right-hand normal for a ccw loop
         ex, ey = b[0] - a[0], b[1] - a[1]
@@ -491,6 +493,18 @@ def make_object(scn, mats, slots, name, bld, v0, v1, ao_px, smart=True, thin_lim
             if len(e.link_faces) != 2: continue
             f0, f1 = e.link_faces
             if f0[gl] != f1[gl] and (f0[gl] in bld.crease or f1[gl] in bld.crease) and f0.normal.angle(f1.normal, 0.0) > math.radians(8): e.smooth = False
+        bm.to_mesh(me); bm.free()
+    if bld.hard:
+        # round 5: HARD groups (mouldings swept round corners: the octagonal abaci, the returned imposts): an edge is sharp
+        # when its faces look in plan directions > 20 deg apart (the octagon's corners, the mitres), smooth along the
+        # profile (the coves). The 32 deg rule alone smoothed the near-horizontal part of a cove across the corners
+        bm = bmesh.new(); bm.from_mesh(me); gl = bm.faces.layers.int.get("grp")
+        for e in bm.edges:
+            if len(e.link_faces) != 2: continue
+            f0, f1 = e.link_faces
+            if f0[gl] not in bld.hard and f1[gl] not in bld.hard: continue
+            h0, h1 = Vector((f0.normal.x, f0.normal.y, 0)), Vector((f1.normal.x, f1.normal.y, 0))
+            if h0.length > 0.02 and h1.length > 0.02 and h0.angle(h1, 0.0) > math.radians(20): e.smooth = False
         bm.to_mesh(me); bm.free()
     me.validate()
     ntri = sum(len(p.vertices) - 2 for p in me.polygons)

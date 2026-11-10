@@ -129,8 +129,10 @@ function glassMaterial() {
 
 function loadRGBM(url) {
   return new THREE.TextureLoader().loadAsync(url).then((t) => {
-    t.colorSpace = THREE.NoColorSpace; t.flipY = false; t.generateMipmaps = true; t.premultiplyAlpha = false;
-    t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter;
+    // round 5: NO mipmaps (the flicker test, north aisle: at grazing angles the coarse mips mixed each chart's border
+    // with the empty atlas round it, the ceiling / wall junction blinked while moving); the bake is smooth, linear is enough
+    t.colorSpace = THREE.NoColorSpace; t.flipY = false; t.generateMipmaps = false; t.premultiplyAlpha = false;
+    t.minFilter = THREE.LinearFilter; t.magFilter = THREE.LinearFilter;
     return t;
   });
 }

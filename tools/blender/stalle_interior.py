@@ -231,7 +231,10 @@ def voussoirs(fr, head, cs, spring_v, width=0.2, d=0.015, n=11, mat=STONE, s_lo=
         if nx * (p_[0] - cs) + ny * (p_[1] - (spring_v - 0.3)) < 0: nx, ny = -nx, -ny
         return nx, ny
     def ring_pts(t0, t1, m):
-        inner = [at(t0 + (t1 - t0) * j / m) for j in range(m + 1)]
+        # the inner edge follows the intrados polyline EXACTLY (its own vertices inside t0..t1 added: chords between
+        # samples crossed the soffit at 1-2 deg)
+        ts = sorted(set([t0 + (t1 - t0) * j / m for j in range(m + 1)] + [acc[i] / tot for i in range(len(pts)) if t0 < acc[i] / tot < t1]))
+        inner = [at(t) for t in ts]
         outer = []
         for j in range(m, -1, -1):
             t = t0 + (t1 - t0) * j / m; x, y = at(t); nx, ny = nrm_at(t)
@@ -252,11 +255,22 @@ def voussoirs(fr, head, cs, spring_v, width=0.2, d=0.015, n=11, mat=STONE, s_lo=
     if len(back) >= 3:
         if flush: fill2d(fr, [back], 0.0, mat, C_ARCH)
         else: fill2d(fr, [back], d * 0.3, mat, C_ARCH); strip2d(fr, back, d * 0.3, 0.0, mat, C_ARCH, inward=False)
+    # round 5 (owner: a thin bright edge along the arches): the stones' 1.5 cm intrados sides took per-corner light, far
+    # brighter than the lightmapped soffit beside them; with `flush` the soffit runs 1.5 cm out under the ring
+    # (arcade()) and the intrados sides are left out: one surface, one light
+    def on_intr(p_):
+        for i in range(len(pts) - 1):
+            (x0, y0), (x1, y1) = pts[i], pts[i + 1]; ex_, ey_ = x1 - x0, y1 - y0; L2 = ex_ * ex_ + ey_ * ey_
+            if L2 < 1e-12: continue
+            t_ = max(0.0, min(1.0, ((p_[0] - x0) * ex_ + (p_[1] - y0) * ey_) / L2))
+            if math.hypot(p_[0] - x0 - ex_ * t_, p_[1] - y0 - ey_ * t_) < 2e-4: return True
+        return False
+    skip = (lambda a_, b_: on_intr(a_) and on_intr(b_) and on_intr(((a_[0] + b_[0]) / 2, (a_[1] + b_[1]) / 2))) if flush else None
     for k in range(n):
         t0, t1 = k / n + (0.0015 if k else 0.0), (k + 1) / n - (0.0015 if k < n - 1 else 0.0)
         loop = _clip_s(ring_pts(t0, t1, 6), s_lo, s_hi)
         if len(loop) < 3: continue
-        fill2d(fr, [loop], d, mat, C_ARCH); strip2d(fr, loop, d, 0.0 if flush else d * 0.3, mat, C_ARCH, inward=False)
+        fill2d(fr, [loop], d, mat, C_ARCH); strip2d(fr, loop, d, 0.0 if flush else d * 0.3, mat, C_ARCH, inward=False, skip=skip)
     K.B = KB_
 
 # ------------------------------------------------------------------------------------------------ architecture
@@ -298,6 +312,21 @@ def west_wall():
     # holy-water stoup north of the door (stone shell on a corbel)
     c = fr.p(sc - 1.25, hz(F0 + 0.95), 0.18)
     lathe(c, [(0.0, -0.2), (0.07, -0.17), (0.1, -0.08), (0.2, 0.0), (0.21, 0.04), (0.16, 0.05), (0.0, 0.0)], 12, STONE, C_PLAIN)
+
+# round 5 (owner: "a plain rectangular box impost hanging off the wall"): an impost BAND that wraps the respond's corners
+# and RETURNS into the wall at its ends (a mitred return, the way real imposts stop: no end cap, no box); a deep cavetto,
+# a fillet step, a chamfered face, 26 cm: the same family as the abaci. chain = plan points (u, w) along the wall faces,
+# its first and last points 4 cm inside the wall; solid = a plan point inside the masonry (the band faces away from it)
+_cv = [(0.08 - 0.068 * math.cos(math.pi / 2 * k / 7), -0.26 + 0.09 * math.sin(math.pi / 2 * k / 7)) for k in range(8)]   # foot 1.2 cm off the wall (tangent to it crossed the wall plane)
+IMPOST = [(-0.01, -0.26)] + _cv + [(0.095, -0.17), (0.095, -0.155), (0.11, -0.14), (0.11, -0.015), (0.095, 0.0), (-0.01, 0.0)]
+def impost_band(chain, top, solid, prof=IMPOST):
+    pts = [P(u, w, OY) + Z * hz(top) for (u, w) in chain]
+    m = len(pts) // 2
+    t = (pts[m] - pts[m - 1]).normalized(); r = t.cross(Z)
+    mid = (pts[m] + pts[m - 1]) / 2; sp = P(solid[0], solid[1], OY) + Z * hz(top)
+    if r.dot(mid - sp) < 0: pts = pts[::-1]
+    sweep3d(pts, prof, Z, STONE, C_CAP, caps=False)
+    K.B.hard.add(K.B.grp)
 
 def arcade(side):
     """one arcade: the wall between the nave and an aisle, carried by round piers: pointed arches SPRING FROM THE ABACI
@@ -362,8 +391,9 @@ def arcade(side):
         K.B.new_group()
         for i in range(len(arc) - 1):
             p0, p1 = arc[i], arc[i + 1]
-            A0, B0 = frN.p(p0[0], p0[1], 0.0), frN.p(p1[0], p1[1], 0.0)
-            A1, B1 = frN.p(p0[0], p0[1], -(ARC_A - ARC_N)), frN.p(p1[0], p1[1], -(ARC_A - ARC_N))
+            # round 5: 1.5 cm out of both faces, under the rings (their intrados sides are left out: voussoirs())
+            A0, B0 = frN.p(p0[0], p0[1], 0.015), frN.p(p1[0], p1[1], 0.015)
+            A1, B1 = frN.p(p0[0], p0[1], -(ARC_A - ARC_N) - 0.015), frN.p(p1[0], p1[1], -(ARC_A - ARC_N) - 0.015)
             mid = Vector(((p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2)); cxs = (arc[0][0] + arc[-1][0]) / 2
             inward = frN.U * (cxs - mid.x) + Z * (hz(SPRING) - mid.y)
             face_dir([A0, B0, B1, A1], inward, STONE, C_ARCH)
@@ -397,24 +427,39 @@ def arcade(side):
         for k in range(1, 17):
             t = k / 16
             r = PIER_R * 0.985 + (0.39 - PIER_R * 0.985) * (3 * t * t - 2 * t * t * t) ** 1.15 + 0.012 * math.sin(math.pi * t)
-            bell.append((r, 0.048 + 0.30 * t))
-        lathe(c + Z * hz(36.33), ring + bell + [(0.392, 0.35)], 64, STONE, C_CAP)
+            bell.append((r, 0.048 + 0.215 * t))      # its last step rises 2 mm (flat, it lay in the abacus soffit)
+        # round 5: the bell ends at 36.595 (the abacus is 20.5 cm deep now, its top still at SPRING)
+        lathe(c + Z * hz(36.33), ring + bell + [(0.392, 0.265)], 64, STONE, C_CAP)
         # abacus: octagonal slab, chamfered under (the ribs' springer lands on it)
         # round 4: a moulded octagonal abacus (soffit chamfer, fillet, a small top chamfer: no plain slab) over a
         # 64-sided bead where the bell meets it
-        oct_ = [(0.0, 0.0), (0.415, 0.0), (0.435, 0.012), (0.47, 0.045), (0.47, 0.098), (0.462, 0.106), (0.462, 0.112), (0.452, 0.12), (0.0, 0.12)]
-        lathe(c + Z * hz(36.68), oct_, 8, STONE, C_CAP, a0=math.pi / 8)
-        K.B.flat.add(K.B.grp)                     # the octagon's facets and chamfers flat-shaded (no smoothing across them)
+        # round 5 (owner: the round 4 mouldings, 1-3 cm, did not read): a deep cavetto (7 steps of 13 deg: smooth along
+        # the profile, sharp at the octagon's 45 deg corners by the 32 deg rule), a 1.5 cm fillet step, a chamfer, a
+        # 9 cm face and a top chamfer: 20.5 cm, the face's apothem 0.50 (the cavetto's foot covers the bell: apothem 0.397)
+        AB0 = SPRING - 0.205
+        cav = [(0.51 - 0.08 * math.cos(math.pi / 2 * k / 7), 0.075 * math.sin(math.pi / 2 * k / 7)) for k in range(8)]
+        oct_ = [(0.0, 0.0), (0.43, 0.0)] + cav[1:] + [(0.525, 0.075), (0.525, 0.09), (0.54, 0.105), (0.54, 0.19), (0.525, 0.205), (0.0, 0.205)]
+        lathe(c + Z * hz(AB0), oct_, 8, STONE, C_CAP, a0=math.pi / 8)
+        K.B.hard.add(K.B.grp)                     # crisp octagon corners, smooth cavetto
         bead = [(0.392, -0.02)] + [(0.392 + 0.012 * math.sin(math.pi * k / 8), -0.02 + 0.02 * k / 8) for k in range(1, 9)]
-        lathe(c + Z * hz(36.68), bead + [(0.392, 0.002)], 64, STONE, C_CAP)
+        lathe(c + Z * hz(AB0), bead + [(0.392, 0.002)], 64, STONE, C_CAP)
     K.B = KB
-    # responds: impost mouldings where the end arches spring from the walls
-    for uu, sg in ((SC.RESP_W, 1), (U_CA0, -1)):
-        for fr, ww in ((frN, wn), (frA, wa)):
-            s = S(fr, uu, ww)
-            # round 3b: a moulded impost (ogee profile, like the abaci's chamfer) instead of a plain box
-            e_ = s + sg * 0.32 * (1 if S(fr, uu + 1, ww) > s else -1)
-            sweep2d(fr, [(min(s, e_), hz(36.8)), (max(s, e_), hz(36.8))], [(0.0, -0.12), (0.025, -0.105), (0.05, -0.06), (0.075, -0.02), (0.08, 0.0), (0.0, 0.0)], STONE, C_CAP)
+    # responds: impost bands where the end arches spring from the walls (round 5: wrapping, returned, no boxes)
+    dn = 1 if wa > wn else -1
+    E = 0.04
+    # west respond (u = RESP_W, the arcade wall's end face looking east): nave face -> respond face -> aisle face
+    R = SC.RESP_W
+    impost_band([(R - 0.25, wn + dn * E), (R - 0.25, wn), (R, wn), (R, wa), (R - 0.25, wa), (R - 0.25, wa - dn * E)],
+                SPRING, (R - 0.3, (wn + wa) / 2))
+    # east respond: on the chancel wall's face (u = U_CA0, looking west), 25 cm onto the nave side and returned; on the
+    # aisle side the chancel wall continues (south: the aisle's east wall in the same plane) or turns a corner (north:
+    # the aisle runs on to U_AE = 10.6: the band wraps it and dies into the aisle's east wall)
+    C0 = U_CA0
+    if U_AE[side] > C0 + 0.05:
+        ch = [(C0 + E, wn - dn * 0.25), (C0, wn - dn * 0.25), (C0, wa), (U_AE[side] + E, wa)]
+    else:
+        ch = [(C0 + E, wn - dn * 0.25), (C0, wn - dn * 0.25), (C0, wa + dn * 0.25), (C0 + E, wa + dn * 0.25)]
+    impost_band(ch, SPRING, (C0 + 0.3, (wn + wa) / 2))
 
 def aisle(side):
     w_out = WC + side * AI
@@ -499,12 +544,14 @@ def choir():
         hole = pointed(sc - ca["hw"], sc + ca["hw"], hz(ca["spring"]), hz(ca["apex"]), n=12, bottom=hz((F0 if nu < 0 else F1) - 0.05))
         fill2d(fr, [rect(a, hz(F0 - 0.1), b, hz(WALL_TOP)), hole], 0.0, BRICK, C_PLAIN)
         voussoirs(fr, hole, sc, hz(ca["spring"]), 0.24, 0.015, 13)
-        for sg in (-1, 1):       # imposts
-            # round 4: moulded (ogee) imposts like the arcade's, not boxes
-            a_, b_ = sc + sg * ca["hw"] - (0.3 if sg > 0 else 0.0), sc + sg * ca["hw"] + (0.3 if sg < 0 else 0.0)
-            sweep2d(fr, [(a_, hz(ca["spring"])), (b_, hz(ca["spring"]))], [(0.0, -0.15), (0.025, -0.13), (0.05, -0.075), (0.075, -0.025), (0.08, 0.0), (0.0, 0.0)], STONE, C_CAP)
         if nu < 0:
             strip2d(fr, hole, 0.0, -(U_CA1 - U_CA0), STONE, C_ARCH)
+    # round 5: the choir arch's imposts = bands round each jamb: 15 cm on the nave face (returned), through the jamb,
+    # on the choir face to the choir's side wall (were ogee strips with square ends: boxes)
+    for sg in (-1, 1):
+        J = WC + sg * ca["hw"]
+        impost_band([(U_CA0 + 0.04, J + sg * 0.15), (U_CA0, J + sg * 0.15), (U_CA0, J), (U_CA1, J), (U_CA1, WC + sg * (CH + 0.04))],
+                    ca["spring"], ((U_CA0 + U_CA1) / 2, J + sg * 0.1))
     # choir walls + apse (inner faces), the north window, the cove ceiling
     pts = CHOIR_IN
     cen = (14.0, WC)
@@ -522,6 +569,11 @@ def choir():
     cove_ceiling([(U_CA1, WC - CH)] + pts[1:-1] + [(U_CA1, WC + CH)], WALL_TOP, 0.45, CEIL)
 
 # ------------------------------------------------------------------------------------------------ props (per-corner light)
+# round 5: the figures' heads: an egg (wider at the cranium, a narrower chin), pole to pole in 16 steps
+# of < 12 deg so the 32 deg sharp rule never facets it (the round 4 head had 7 profile points: 30-50 deg kinks)
+HEAD_PROF = [(max(0.0, 0.07 * math.cos(th) * (1.0 + 0.07 * math.sin(th))), 0.08 * (1.0 + math.sin(th)))
+             for th in [-math.pi / 2 + math.pi * k / 16 for k in range(17)]]
+
 def figure(c, fwd, side, height, prof, mat_code=C_ROBE, segs=20, head=True, crown=False):
     """a standing draped figure: rings with folds (code by height: robe / mantle / skin)"""
     rings = []
@@ -548,7 +600,7 @@ def figure(c, fwd, side, height, prof, mat_code=C_ROBE, segs=20, head=True, crow
     face_dir(rings[0][0], -Z, POLY, prof[0][4])
     if head:
         hc = c + Z * (height * 0.9) + fwd * 0.01 * height
-        lathe_axis(hc, Z, side, [(0.0, 0.0), (0.05, 0.015), (0.068, 0.04), (0.075, 0.07), (0.072, 0.095), (0.065, 0.12), (0.04, 0.15), (0.0, 0.16)], 24, POLY, C_SKIN)   # 24 sides (10 read as a faceted ball)
+        lathe_axis(hc, Z, side, HEAD_PROF, 32, POLY, C_SKIN)   # round 5: 32 sides x 18 rings, an egg (< 12 deg per step: all smooth)
         if crown:
             lathe_axis(hc + Z * 0.12, Z, side, [(0.06, 0.0), (0.07, 0.02), (0.075, 0.07), (0.065, 0.07), (0.06, 0.03), (0.055, 0.0)], 24, POLY, C_HATCH)
 VIRGIN = [(0.0, 0.2, 0.15, 0.06, C_ROBE), (0.06, 0.21, 0.16, 0.07, C_ROBE), (0.35, 0.16, 0.13, 0.08, C_MANTLE), (0.6, 0.15, 0.12, 0.06, C_MANTLE),
@@ -913,6 +965,23 @@ if BAKE:
     for o in ext:
         for i, s in enumerate(o.data.materials):
             o.data.materials[i] = tr if (s and s.name.startswith("glass")) else occ
+    # round 5: the shell's faces lying ON an interior surface (within 3 cm, parallel: its inner wall faces, the aisle
+    # roofs' soffits) go: the bake rays left the interior faces from inside them, a deterministic ragged self-shadow
+    # (the blotchy walls of the light-only view: unchanged from 768 to 1536 samples). The interior is its own occluder there
+    from mathutils.bvhtree import BVHTree
+    dg = bpy.context.evaluated_depsgraph_get()
+    bvh = BVHTree.FromObject(ob_arch, dg)
+    gone = 0
+    for o in ext:
+        bm_ = bmesh.new(); bm_.from_mesh(o.data); mw = o.matrix_world; mi = ob_arch.matrix_world.inverted(); nm = mw.to_3x3()
+        kill = []
+        for f in bm_.faces:
+            c = mi @ (mw @ f.calc_center_median()); n = (nm @ f.normal).normalized()
+            hit = bvh.find_nearest(c, 0.03)
+            if hit[0] is not None and abs(hit[1].normalized().dot(n)) > 0.95: kill.append(f)
+        gone += len(kill)
+        bmesh.ops.delete(bm_, geom=kill, context="FACES"); bm_.to_mesh(o.data); bm_.free()
+    print(f"  occluder: {gone} shell faces on interior surfaces removed")
     # the interior's own glass: clear in the bake
     ob_glass.data.materials.clear(); ob_glass.data.materials.append(tr)
     ob_col.hide_render = True
@@ -981,7 +1050,14 @@ if BAKE:
             nb = np.stack([np.where(np.roll(np.roll(mask, dy, 0), dx, 1) > 0, np.roll(np.roll(L0, dy, 0), dx, 1), np.nan)
                            for dy in range(-3, 4) for dx in range(-3, 4)]).astype(np.float32)
             medL = np.nanmedian(nb, axis=0); del nb
-            dark = (mask > 0) & np.isfinite(medL) & (L0 < 0.3 * medL)
+            # round 5: and the chart's BORDER texels (within 2 texels of its edge: their sample points fall off the
+            # triangle into the surface it meets) under 70 % of it: the blotches along the walls' corners and seams in
+            # the light-only view; texels inside the charts keep their shadows
+            inner = np.ones_like(mask, dtype=bool)
+            for dy in range(-2, 3):
+                for dx in range(-2, 3): inner &= np.roll(np.roll(mask, dy, 0), dx, 1) > 0
+            border = (mask > 0) & ~inner
+            dark = (mask > 0) & np.isfinite(medL) & ((L0 < 0.3 * medL) | (border & (L0 < 0.7 * medL)))
             fixk = np.where(dark, medL / np.maximum(L0, 1e-4), 1.0)[..., None]
             v = np.where(dark[..., None], np.where(L0[..., None] > 1e-4, v * fixk, medL[..., None]), v)
             print(f"  lightmap: {int(dark.sum())} occluded (dark) texels lifted to their neighbourhood")
@@ -992,7 +1068,9 @@ if BAKE:
             pick = np.nanargmin(np.abs(np.where(np.isnan(lum), np.inf, lum - med[None])), axis=0)
             out = np.where(mk > 0, np.take_along_axis(st, pick[None].repeat(3, axis=3), 0)[0], v)
             k1 = [(-2, 1 / 16), (-1, 1 / 4), (0, 3 / 8), (1, 1 / 4), (2, 1 / 16)]
-            for it, sig in ((1, 0.35), (2, 0.25), (4, 0.18), (8, 0.12)):
+            # round 5: + a 16-texel pass (the blotchy low-light walls, e.g. the north aisle's west end: noise at ~30 cm
+            # survived the 8-texel pass); its edge stop (15 % relative) keeps the sun's shadow edges
+            for it, sig in ((1, 0.35), (2, 0.25), (4, 0.18), (8, 0.15), (16, 0.15)):
                 L = out.mean(axis=2, keepdims=True)
                 acc = np.zeros_like(out); ws = np.zeros_like(L)
                 for dy, ky in k1:

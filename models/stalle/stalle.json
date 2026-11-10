@@ -1,11 +1,11 @@
 {
  "asset": "Chapelle de Stalle (Notre-Dame de Bon-Secours), rue de Stalle 50, Uccle + the sacristan's house (tools/blender/stalle.py)",
- "triangles_lod0": 33073,
- "triangles_far": 8197,
+ "triangles_lod0": 33071,
+ "triangles_far": 8195,
  "triangles_door": 188,
  "triangles_slates": 39507,
  "triangles_per_slot_lod0": {
-  "sandstone_rubble": 4011,
+  "sandstone_rubble": 4009,
   "stone_white": 22340,
   "stone_blue": 32,
   "brick_red_brussels": 1437,
@@ -18,7 +18,7 @@
   "cobbles": 280
  },
  "triangles_per_slot_far": {
-  "sandstone_rubble": 3463,
+  "sandstone_rubble": 3461,
   "stone_white": 2102,
   "stone_blue": 20,
   "brick_red_brussels": 1429,
@@ -79,7 +79,7 @@
    0.94
   ],
   "lod0_px_per_m": 35.9,
-  "far_px_per_m": 13.1,
+  "far_px_per_m": 12.8,
   "thin_faces_vertex_ao": [
    17740,
    918,

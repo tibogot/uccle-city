@@ -553,8 +553,11 @@ def clerestory(side):
     def S(u): return fr.s_of(u, w)
     oc = [circle(S(u), hz(39.72), 0.16, OCU_N) for u in SC.CLER_OCULI]
     eave = SC.NAVE_EAVE
+    # round 5: the wall starts at 39.11 (was 38.95): from 38.95 to the interior's aisle ceiling (39.08) it lay IN the
+    # interior's arcade wall (the same plane, NW): it z-fought through the interior along the aisle ceilings (the flicker
+    # test inside, north aisle). Still under the aisle roof's deck (its soffit at the wall: 39.18)
     if side < 0:
-        out = poly_s(fr, [(0.0, w, SC.AISLE_TOP - 0.25), (ua, w, SC.AISLE_TOP - 0.25), (ua, w, HB), (SC.U_APSE, w, HB), (SC.U_APSE, w, eave), (0.0, w, eave)])
+        out = poly_s(fr, [(0.0, w, SC.AISLE_TOP - 0.09), (ua, w, SC.AISLE_TOP - 0.09), (ua, w, HB), (SC.U_APSE, w, HB), (SC.U_APSE, w, eave), (0.0, w, eave)])
         cw = window_hole(S(SC.CHOIR_WIN_N), 37.4, 38.85, 39.75, 1.1)
         fill2d(fr, [out, cw] + oc, 0.0, RUB, C_PLAIN)
         gothic_window(fr, S(SC.CHOIR_WIN_N), 37.4, 38.85, 39.75, 1.1, 2, foils=[(0.0, 39.42, 0.2, 4)])
@@ -565,7 +568,7 @@ def clerestory(side):
             sweep2d(fr, [(a, hz(37.25)), (b + 0.07, hz(37.25))], [(0.0, -0.1), (0.07, -0.06), (0.07, 0.03), (0.0, 0.06)], STONE, C_BAND)
     else:
         # full height behind the sacristy (its hipped roof left the wall's lower edge open above the hips)
-        out = poly_s(fr, [(0.0, w, SC.AISLE_TOP - 0.25), (ua, w, SC.AISLE_TOP - 0.25), (ua, w, HB), (SC.U_APSE, w, HB), (SC.U_APSE, w, eave), (0.0, w, eave)])
+        out = poly_s(fr, [(0.0, w, SC.AISLE_TOP - 0.09), (ua, w, SC.AISLE_TOP - 0.09), (ua, w, HB), (SC.U_APSE, w, HB), (SC.U_APSE, w, eave), (0.0, w, eave)])
         fill2d(fr, [out] + oc, 0.0, RUB, C_PLAIN)
     for u in SC.CLER_OCULI: oculus(fr, S(u), 39.72, 0.16, 0.27, depth=0.26)
     # flashing ledge where the aisle roof meets the clerestory (photo P01: a light stone line)
