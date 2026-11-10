@@ -1,22 +1,22 @@
 {
  "summary": {
-  "triangles": 108816,
-  "vertices_welded": 61781,
-  "open_edges": 21404,
-  "rays": 1083950,
+  "triangles": 108838,
+  "vertices_welded": 61797,
+  "open_edges": 21420,
+  "rays": 1085238,
   "blocking": 0,
-  "warnings": 32303,
+  "warnings": 32321,
   "counts": {
-   "sliver": 30396,
+   "sliver": 30408,
    "degenerate": 2,
-   "nonmanifold": 1690,
+   "nonmanifold": 1694,
    "backtoback": 146,
-   "seam": 947,
-   "tjunction": 215,
+   "seam": 954,
+   "tjunction": 217,
    "opening": 3832,
    "leak": 0
   },
-  "ms": 12108,
+  "ms": 12617,
   "accepted": 1
  },
  "options": {
@@ -110,7 +110,7 @@
   {
    "name": "Villa",
    "slot": "oak_door",
-   "triangles": 20,
+   "triangles": 42,
    "maxDistance": 70
   },
   {
@@ -3396,8 +3396,8 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.621,
-     106.853,
+     0.619,
+     106.855,
      1.8
     ],
     "part": "Villa/roof_tiles_flat_dark",
@@ -3408,8 +3408,8 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.575,
-     106.825,
+     0.574,
+     106.827,
      5.2
     ],
     "part": "Villa/roof_tiles_flat_dark",
@@ -3420,32 +3420,32 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.536,
-     106.788,
+     0.534,
+     106.79,
      1.8
     ],
     "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 340,
+    "aspect": 309,
     "longest": 10.2
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.541,
-     106.779,
+     0.54,
+     106.78,
      5.2
     ],
     "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 340,
+    "aspect": 309,
     "longest": 10.2
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.725,
-     106.825,
+     0.726,
+     106.827,
      1.8
     ],
     "part": "Villa/roof_tiles_flat_dark",
@@ -3456,8 +3456,8 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.679,
-     106.853,
+     0.681,
+     106.855,
      5.2
     ],
     "part": "Villa/roof_tiles_flat_dark",
@@ -3468,24 +3468,24 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.759,
-     106.779,
+     0.76,
+     106.78,
      1.8
     ],
     "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 340,
+    "aspect": 309,
     "longest": 10.2
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.764,
-     106.788,
+     0.766,
+     106.79,
      5.2
     ],
     "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 340,
+    "aspect": 309,
     "longest": 10.2
    },
    {
@@ -3493,11 +3493,11 @@
     "severity": "warn",
     "at": [
      2.453,
-     106.728,
-     3.591
+     106.73,
+     3.59
     ],
     "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 172,
+    "aspect": 144,
     "longest": 5.17
    },
    {
@@ -3505,11 +3505,11 @@
     "severity": "warn",
     "at": [
      4.177,
-     106.737,
-     3.586
+     106.74,
+     3.584
     ],
     "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 172,
+    "aspect": 144,
     "longest": 5.17
    },
    {
@@ -3517,11 +3517,11 @@
     "severity": "warn",
     "at": [
      2.453,
-     106.737,
-     3.814
+     106.74,
+     3.816
     ],
     "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 172,
+    "aspect": 144,
     "longest": 5.17
    },
    {
@@ -3529,11 +3529,11 @@
     "severity": "warn",
     "at": [
      4.177,
-     106.728,
-     3.809
+     106.73,
+     3.81
     ],
     "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 172,
+    "aspect": 144,
     "longest": 5.17
    },
    {
@@ -3593,7 +3593,7 @@
      -1.457
     ],
     "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 134,
+    "aspect": 122,
     "longest": 4.019
    },
    {
@@ -3601,11 +3601,11 @@
     "severity": "warn",
     "at": [
      4.11,
-     105.534,
-     -1.462
+     105.536,
+     -1.463
     ],
     "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 134,
+    "aspect": 122,
     "longest": 4.019
    },
    {
@@ -3613,11 +3613,11 @@
     "severity": "warn",
     "at": [
      2.771,
-     105.534,
-     -1.238
+     105.536,
+     -1.237
     ],
     "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 134,
+    "aspect": 122,
     "longest": 4.019
    },
    {
@@ -3629,7 +3629,7 @@
      -1.243
     ],
     "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 134,
+    "aspect": 122,
     "longest": 4.019
    },
    {
@@ -3637,8 +3637,8 @@
     "severity": "warn",
     "at": [
      -2.471,
-     105.602,
-     -1.379
+     105.607,
+     -1.383
     ],
     "part": "Villa/roof_tiles_flat_dark",
     "aspect": 44,
@@ -3649,56 +3649,8 @@
     "severity": "warn",
     "at": [
      -4.81,
-     105.572,
-     -1.424
-    ],
-    "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 44,
-    "longest": 7.021
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -2.471,
-     105.534,
-     -1.462
-    ],
-    "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 234,
-    "longest": 7.019
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -4.81,
-     105.526,
-     -1.457
-    ],
-    "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 234,
-    "longest": 7.019
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -2.471,
-     105.572,
-     -1.276
-    ],
-    "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 44,
-    "longest": 7.021
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -4.81,
-     105.602,
-     -1.321
+     105.577,
+     -1.427
     ],
     "part": "Villa/roof_tiles_flat_dark",
     "aspect": 44,
@@ -3709,11 +3661,11 @@
     "severity": "warn",
     "at": [
      -2.471,
-     105.526,
-     -1.243
+     105.537,
+     -1.464
     ],
     "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 234,
+    "aspect": 195,
     "longest": 7.019
    },
    {
@@ -3721,35 +3673,83 @@
     "severity": "warn",
     "at": [
      -4.81,
-     105.534,
-     -1.238
+     105.527,
+     -1.458
     ],
     "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 234,
+    "aspect": 195,
     "longest": 7.019
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -3.465,
-     104.737,
+     -2.471,
+     105.577,
+     -1.273
+    ],
+    "part": "Villa/roof_tiles_flat_dark",
+    "aspect": 44,
+    "longest": 7.021
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -4.81,
+     105.607,
+     -1.317
+    ],
+    "part": "Villa/roof_tiles_flat_dark",
+    "aspect": 44,
+    "longest": 7.021
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.471,
+     105.527,
+     -1.242
+    ],
+    "part": "Villa/roof_tiles_flat_dark",
+    "aspect": 195,
+    "longest": 7.019
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -4.81,
+     105.537,
+     -1.236
+    ],
+    "part": "Villa/roof_tiles_flat_dark",
+    "aspect": 195,
+    "longest": 7.019
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -3.467,
+     104.738,
      -5.006
     ],
     "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 158,
+    "aspect": 143,
     "longest": 4.725
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -3.456,
+     -3.457,
      104.733,
      -3.431
     ],
     "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 158,
+    "aspect": 143,
     "longest": 4.725
    },
    {
@@ -3757,11 +3757,11 @@
     "severity": "warn",
     "at": [
      -3.27,
-     104.848,
+     104.849,
      -5.006
     ],
     "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 158,
+    "aspect": 143,
     "longest": 4.725
    },
    {
@@ -3769,35 +3769,35 @@
     "severity": "warn",
     "at": [
      -3.27,
-     104.858,
+     104.86,
      -3.431
     ],
     "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 158,
+    "aspect": 143,
     "longest": 4.725
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     2.177,
-     104.745,
+     2.18,
+     104.747,
      -3.847
     ],
     "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 199,
+    "aspect": 166,
     "longest": 5.973
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     2.168,
-     104.739,
+     2.17,
+     104.74,
      -5.838
     ],
     "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 199,
+    "aspect": 166,
     "longest": 5.973
    },
    {
@@ -3805,11 +3805,11 @@
     "severity": "warn",
     "at": [
      1.97,
-     104.848,
+     104.85,
      -3.847
     ],
     "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 199,
+    "aspect": 166,
     "longest": 5.973
    },
    {
@@ -3817,11 +3817,11 @@
     "severity": "warn",
     "at": [
      1.97,
-     104.858,
+     104.862,
      -5.838
     ],
     "part": "Villa/roof_tiles_flat_dark",
-    "aspect": 199,
+    "aspect": 166,
     "longest": 5.973
    },
    {
@@ -5152,6 +5152,50 @@
      -3.535
     ],
     "part": "Villa/concrete_white",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     7.251,
+     95.555,
+     -1.79
+    ],
+    "part": "Villa/oak_door",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     7.251,
+     95.555,
+     -0.91
+    ],
+    "part": "Villa/oak_door",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     7.251,
+     97.532,
+     -1.79
+    ],
+    "part": "Villa/oak_door",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     7.251,
+     97.532,
+     -0.91
+    ],
+    "part": "Villa/oak_door",
     "uses": 3
    },
    {
@@ -9333,50 +9377,6 @@
     ],
     "part": "Villa_courses/brick_orange_amsterdam",
     "uses": 4
-   },
-   {
-    "check": "nonmanifold",
-    "severity": "warn",
-    "at": [
-     7.587,
-     95.944,
-     -3.837
-    ],
-    "part": "Villa_courses/brick_orange_amsterdam",
-    "uses": 4
-   },
-   {
-    "check": "nonmanifold",
-    "severity": "warn",
-    "at": [
-     7.587,
-     96.006,
-     1.187
-    ],
-    "part": "Villa_courses/brick_orange_amsterdam",
-    "uses": 4
-   },
-   {
-    "check": "nonmanifold",
-    "severity": "warn",
-    "at": [
-     7.587,
-     96.006,
-     -3.837
-    ],
-    "part": "Villa_courses/brick_orange_amsterdam",
-    "uses": 4
-   },
-   {
-    "check": "nonmanifold",
-    "severity": "warn",
-    "at": [
-     7.587,
-     96.069,
-     1.187
-    ],
-    "part": "Villa_courses/brick_orange_amsterdam",
-    "uses": 4
    }
   ],
   "backtoback": [
@@ -9398,8 +9398,8 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     6.431,
-     97.743,
+     6.393,
+     97.736,
      -4.45
     ],
     "parts": [
@@ -17190,15 +17190,15 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     5.15,
-     106.748,
-     3.584
+     5.163,
+     106.751,
+     3.579
     ],
     "parts": [
      "Villa/roof_tiles_flat_dark",
      "Villa_courses/brick_orange_amsterdam"
     ],
-    "length_m": 0.24,
+    "length_m": 0.25,
     "pieces": 19,
     "min_angle_deg": 32.5
    },
@@ -17207,14 +17207,14 @@
     "severity": "info",
     "at": [
      5.163,
-     106.822,
-     3.699
+     106.825,
+     3.706
     ],
     "parts": [
      "Villa/roof_tiles_flat_dark",
      "Villa_courses/brick_orange_amsterdam"
     ],
-    "length_m": 0.24,
+    "length_m": 0.25,
     "pieces": 19,
     "min_angle_deg": 32.5
    },
@@ -19026,6 +19026,28 @@
     ],
     "part": "Villa/wood_varnished",
     "edge_m": 0.334
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     7.24,
+     95.555,
+     -1.765
+    ],
+    "part": "Villa/oak_door",
+    "edge_m": 0.88
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     7.24,
+     97.532,
+     -1.765
+    ],
+    "part": "Villa/oak_door",
+    "edge_m": 0.88
    },
    {
     "check": "tjunction",

@@ -1,22 +1,22 @@
 # Mesh audit (before pack): vanbuuren.lod0
 
-108,816 triangles, 61,781 welded vertices, 21,404 open edges, 1,083,950 rays, 12108 ms.
+108,838 triangles, 61,797 welded vertices, 21,420 open edges, 1,085,238 rays, 12617 ms.
 
-**0 blocking**, 32303 warnings. Clean (no blocking item).
+**0 blocking**, 32321 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| sliver | warn | 30396 |
-| nonmanifold | warn | 1690 |
-| tjunction | warn | 215 |
+| sliver | warn | 30408 |
+| nonmanifold | warn | 1694 |
+| tjunction | warn | 217 |
 | degenerate | warn | 2 |
-| seam | info | 947 |
+| seam | info | 954 |
 | opening | info | 3832 |
 | backtoback | info | 146 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## sliver (warn, 30396)
+## sliver (warn, 30408)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -61,9 +61,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 6.18, 101.01, 5.85 | Villa/concrete_white | 183 | 1.825 |
 | 6.18, 101.01, 6.46 | Villa/concrete_white | 183 | 1.825 |
 
-(30356 more in the JSON)
+(30368 more in the JSON)
 
-## nonmanifold (warn, 1690)
+## nonmanifold (warn, 1694)
 
 | at | part | uses |
 |---|---|---|
@@ -83,6 +83,10 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -7.10, 101.30, -3.54 | Villa/concrete_white | 3 |
 | -7.10, 99.40, -0.08 | Villa/concrete_white | 3 |
 | -7.10, 99.40, -3.54 | Villa/concrete_white | 3 |
+| 7.25, 95.56, -1.79 | Villa/oak_door | 3 |
+| 7.25, 95.56, -0.91 | Villa/oak_door | 3 |
+| 7.25, 97.53, -1.79 | Villa/oak_door | 3 |
+| 7.25, 97.53, -0.91 | Villa/oak_door | 3 |
 | 5.74, 94.82, 7.09 | Villa_courses/brick_orange_amsterdam | 4 |
 | 5.74, 94.88, 7.09 | Villa_courses/brick_orange_amsterdam | 4 |
 | 5.74, 94.94, 7.09 | Villa_courses/brick_orange_amsterdam | 4 |
@@ -103,14 +107,10 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 5.74, 95.88, 7.09 | Villa_courses/brick_orange_amsterdam | 4 |
 | 5.74, 95.94, 7.09 | Villa_courses/brick_orange_amsterdam | 4 |
 | 5.74, 96.01, 7.09 | Villa_courses/brick_orange_amsterdam | 4 |
-| 5.74, 96.07, 7.09 | Villa_courses/brick_orange_amsterdam | 4 |
-| 5.74, 96.13, 7.09 | Villa_courses/brick_orange_amsterdam | 4 |
-| 5.74, 96.19, 7.09 | Villa_courses/brick_orange_amsterdam | 4 |
-| 5.74, 96.26, 7.09 | Villa_courses/brick_orange_amsterdam | 4 |
 
-(1650 more in the JSON)
+(1654 more in the JSON)
 
-## tjunction (warn, 215)
+## tjunction (warn, 217)
 
 | at | part | edge_m |
 |---|---|---|
@@ -155,7 +155,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 6.24, 97.71, -3.82 | Villa/concrete_white | 5.555 |
 | 8.88, 97.71, -4.45 | Villa/concrete_white | 2.68 |
 
-(175 more in the JSON)
+(177 more in the JSON)
 
 ## degenerate (warn, 2)
 
@@ -164,7 +164,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 5.75, 103.64, 5.65 | Villa_courses/brick_orange_amsterdam | 0.0239 |
 | -7.57, 104.39, -4.23 | Villa_courses/brick_orange_amsterdam | 0.0179 |
 
-## seam (info, 947)
+## seam (info, 954)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -209,7 +209,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -7.61, 95.70, -4.30 | Villa/glass_window + Villa_courses/brick_orange_amsterdam | 3.48 | 316 | 90 |
 | -7.62, 95.70, -4.32 | Villa/glass_window + Villa_courses/brick_orange_amsterdam | 3.48 | 316 | 90 |
 
-(907 more in the JSON)
+(914 more in the JSON)
 
 ## opening (info, 3832)
 
@@ -263,7 +263,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | at | parts | area |
 |---|---|---|
 | 6.65, 97.73, -4.45 | Villa/concrete_white + Villa/concrete_white | 0.0073 |
-| 6.43, 97.74, -4.45 | Villa/concrete_white + Villa/concrete_white | 0.02822 |
+| 6.39, 97.74, -4.45 | Villa/concrete_white + Villa/concrete_white | 0.02822 |
 | -9.47, 98.45, -7.24 | Villa/concrete_white + Villa_courses/brick_orange_amsterdam | 0.00022 |
 | -8.20, 98.45, -5.23 | Villa/concrete_white + Villa_courses/brick_orange_amsterdam | 0.02311 |
 | -8.85, 98.45, -6.23 | Villa/concrete_white + Villa_courses/brick_orange_amsterdam | 0.02311 |

@@ -1,6 +1,6 @@
 # Mesh audit (packed): vanbuuren.lod1
 
-3,815 triangles, 3,237 welded vertices, 2,743 open edges, 643,046 rays, 1690 ms.
+3,815 triangles, 3,237 welded vertices, 2,743 open edges, 643,142 rays, 1759 ms.
 
 **1 blocking**, 588 warnings. NOT CLEAN.
 
@@ -10,8 +10,8 @@
 | sliver | warn | 364 |
 | nonmanifold | warn | 16 |
 | tjunction | warn | 208 |
-| seam | info | 553 |
-| opening | info | 466 |
+| seam | info | 551 |
+| opening | info | 467 |
 | backtoback | info | 15 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
@@ -137,7 +137,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (168 more in the JSON)
 
-## seam (info, 553)
+## seam (info, 551)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -182,9 +182,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 7.60, 95.91, 1.06 | Villa_far/brick_orange_amsterdam + Villa_far/concrete_white | 1.64 | 20 | 90 |
 | 7.60, 97.62, -2.83 | Villa_far/brick_orange_amsterdam + Villa_far/concrete_white | 1.66 | 20 | 90 |
 
-(513 more in the JSON)
+(511 more in the JSON)
 
-## opening (info, 466)
+## opening (info, 467)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -229,7 +229,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 5.30, 101.01, -3.79 | Villa_far/brick_orange_amsterdam | 1 + 0 + 0 | 0.337 |
 | 5.30, 102.31, -3.68 | Villa_far/brick_orange_amsterdam | 1 + 0 + 0 | 0.337 |
 
-(426 more in the JSON)
+(427 more in the JSON)
 
 ## backtoback (info, 15)
 

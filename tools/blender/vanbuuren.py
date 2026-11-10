@@ -131,7 +131,12 @@ def build_roof_solids():
     S.append(RF.plane_slab([(RD["u0"], -1.6, RD["h"]), (RD["u1"], -1.6, RD["h"]), (RD["u1"], wn(RD["u1"]), RD["h"]), (RD["u0"], wn(RD["u0"]), RD["h"])]))
     S.append(RF.plane_slab([(RD["u1"], wn(RD["u1"]), RD["h"]), (RD["u1"], -1.6, RD["h"]), (ue, W_NG - 0.25, he), (ue, wn(ue), he)]))
     S.append(RF.plane_slab([(RD["u0"], -1.6, RD["h"]), (RD["u0"], wn(RD["u0"]), RD["h"]), (uw, wn(uw), hw), (uw, -1.6, hw)]))
-    # the NW wing (ESTIMATED): a roof along its long axis, hipped over the veranda end, against 509389 at the other
+    # the NW wing (DSM 0.5 m, least squares in the wing's frame, t along from the SW / veranda end, c across toward the
+    # house): a LEAN-TO rising toward the house (P2: z = 101.04 + 0.602 c + 0.758 t, rms 0.11 m over t 2.5..4) up to a
+    # FLAT roof at 104.85 over the north-east part (the plateau, t > 4.5), a brick step under the flat roof's edge.
+    # NOT modelled yet: the first ~2 m at the veranda end fit a second plane rising toward the SW end
+    # (P1: z = 103.96 + 0.755 c - 0.671 t, rms 0.03 m) with a valley across the wing at t ~2.05; its slab joins left
+    # 12-30 mm slits under the valley that the mesh audit stops (docs/TODO.md)
     a0, a1, b1, b0 = [Vector((u, w)) for (u, w) in NWW]       # a0-a1 the SW (veranda) end, b1-b0 the NE end
     ax = ((b1 - a1) + (b0 - a0)) / 2; L = ax.length; ax = ax / L
     cr = Vector((-ax.y, ax.x))
@@ -320,11 +325,15 @@ def build_parts(FD, tops):
     s0, s1 = o.s0 + 0.24, o.s1 - 0.24; dl = -0.11 * 3 - 0.02
     fbox(fr, s0 - 0.01, s1 + 0.01, GF - 0.02, o.h1 + 0.01, dl - 0.04, dl, OAK, C_PANEL, skip=("back",))
     if not K.FAR:
-        fbox(fr, s0 + 0.04, s1 - 0.04, GF + 0.06, o.h1 - 0.06, dl - 0.01, dl + 0.012, OAK, C_FRAME, skip=("back",))   # the black edging bead
+        # the black edging bead: a ring 2.5 cm wide, 6 cm inside the leaf's edge (v04: the leaf stays oak inside it)
+        e0, e1, f0, f1, bw_ = s0 + 0.06, s1 - 0.06, GF + 0.08, o.h1 - 0.08, 0.025
+        for (a_, b_, c_, d_, sk) in ((e0, e1, f0, f0 + bw_, ("back",)), (e0, e1, f1 - bw_, f1, ("back",)),
+                                     (e0, e0 + bw_, f0 + bw_, f1 - bw_, ("back", "top", "bottom")), (e1 - bw_, e1, f0 + bw_, f1 - bw_, ("back", "top", "bottom"))):
+            fbox(fr, a_, b_, c_, d_, dl - 0.01, dl + 0.012, OAK, C_FRAME, skip=sk)
         sc = (s0 + s1) / 2
         for j in range(4):
             y0 = GF + 0.95 + j * 0.30
-            fbox(fr, sc - 0.10, sc + 0.10, y0, y0 + 0.24, dl + 0.005, dl + 0.02, LEAD, C_PANEL, skip=("back", "front"))
+            fbox(fr, sc - 0.10, sc + 0.10, y0, y0 + 0.24, dl - 0.005, dl + 0.02, LEAD, C_PANEL, skip=("back", "front"))
             face_dir([fr.p(sc - 0.10, y0, dl + 0.02), fr.p(sc + 0.10, y0, dl + 0.02), fr.p(sc + 0.10, y0 + 0.24, dl + 0.02),
                       fr.p(sc - 0.10, y0 + 0.24, dl + 0.02)], fr.N, LEAD, C_PANEL, [(0, 0), (1, 0), (1, 1), (0, 1)])
         fbox(fr, sc - 0.33, sc - 0.29, GF + 1.0, GF + 1.08, dl + 0.005, dl + 0.05, ZINC, C_PLAIN, skip=("back",))   # the knob

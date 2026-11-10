@@ -217,6 +217,7 @@ def trims(bm, far=None):
         mid = (a + b) / 2 + hn * 0.12
         if bvh.ray_cast(mid + Z * 0.01, Z, 30.0)[0] is not None: continue
         gutter(a + d * 0.01 - Z * 0.04, b - d * 0.01 - Z * 0.04, hn)
+    nridge = 0
     for e in bm.edges:
         fs = [g for g in e.link_faces if is_top(g)]
         if len(fs) != 2: continue
@@ -227,6 +228,7 @@ def trims(bm, far=None):
         c1 = f1.calc_center_median()
         convex = (c1 - a).dot(f2.normal) < 0
         if convex:
+            nridge += 1
             # a ridge cap: on each slope a strip of ridge tiles 13 cm wide lying 18 mm over the plane (over the tiles'
             # butts), its lower edge folded down into the courses; the two strips cross each other along the ridge
             ax = (b - a).normalized()
@@ -236,7 +238,9 @@ def trims(bm, far=None):
                 cen = ff.calc_center_median()
                 side = nn.cross(ax)
                 if side.dot(cen - a) < 0: side = -side
-                lo = 0.018 if not far else 0.012
+                # two ridges meeting on one plane (the NW wing's creases) lay their strips on it: each ridge its own
+                # height (3 mm steps), never two coplanar strips
+                lo = (0.018 if not far else 0.012) + (0.003 if not far else 0.010) * (nridge % 3)
                 p0, p1 = a + nn * lo - side * 0.03, b + nn * lo - side * 0.03
                 q0, q1 = a + nn * lo + side * 0.13, b + nn * lo + side * 0.13
                 face_dir([p0, p1, q1, q0], nn, TILES, C_RIDGE)

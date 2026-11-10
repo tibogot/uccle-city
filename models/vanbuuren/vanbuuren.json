@@ -1,22 +1,22 @@
 {
  "asset": "Villa van Buuren, Avenue Leo Errera 41 (tools/blender/vanbuuren.py)",
- "triangles_lod0": 108816,
- "triangles_lod0_main": 16392,
+ "triangles_lod0": 108838,
+ "triangles_lod0_main": 16414,
  "triangles_lod0_courses": 92424,
  "triangles_far": 3815,
  "triangles_per_slot_lod0": {
-  "glass_leaded": 112,
-  "concrete_white": 1628,
-  "oak_door": 20,
-  "brick_orange_amsterdam": 85642,
-  "zinc_gutter": 478,
-  "glass_window": 476,
-  "wood_varnished": 3098,
-  "wood_frame_white": 1980,
   "roof_tiles_flat_dark": 12112,
   "stone_blue": 56,
+  "brick_orange_amsterdam": 85642,
+  "wood_frame_white": 1980,
   "brick_pattern": 3074,
-  "metal_green_veranda": 140
+  "metal_green_veranda": 140,
+  "concrete_white": 1628,
+  "glass_window": 476,
+  "zinc_gutter": 478,
+  "wood_varnished": 3098,
+  "glass_leaded": 112,
+  "oak_door": 42
  },
  "triangles_per_slot_far": {
   "brick_orange_amsterdam": 924,
@@ -90,9 +90,9 @@
    25.7,
    34.9
   ],
-  "far_px_per_m": 11.8,
+  "far_px_per_m": 11.9,
   "thin_faces_vertex_ao": [
-   29711,
+   29723,
    236
   ]
  },
