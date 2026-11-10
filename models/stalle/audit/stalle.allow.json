@@ -1,9 +1,3 @@
 [
- { "check": "coplanar", "at": [-0.062, 37.809, 0.151], "radius": 0.03, "why": "statue: the meshopt-simplified robe folds onto itself (0.7 cm2 at 4.7 deg, a pinched crease the simplifier left; both triangles are the figure's surface 30 mm inside a fold), seen from >= 3 m below; nothing blinks there in the flicker test" },
- { "check": "leak", "at": [-0.195, 37.671, 0.005], "radius": 0.03, "why": "statue: a 19 mm pinch edge in the same fold (the figure is one closed piece; the audit counts the simplifier's non-manifold pinch as open); the ray only escapes within 30 mm of the fold, which faces the wall" },
- { "check": "leak", "at": [-0.01, 34.75, -4.25], "radius": 0.05, "why": "NOT a slit: the west plinth's chamfered end at the NW corner, a convex corner; the 1.5 mm ray grazes along the open west face, the larger offsets enter the north plinth's solid" },
- { "check": "leak", "at": [-0.025, 34.35, -0.96], "radius": 0.05, "why": "NOT a slit: the plinth's chamfered end beside the door (convex); the 1.5-12 mm rays graze along the wall face into the open doorway, 30 mm is inside the wall" },
- { "check": "leak", "at": [-0.025, 34.35, 1.16], "radius": 0.05, "why": "the same, south of the door" },
- { "check": "leak", "at": [13.07, 36.142, 7.19], "radius": 0.05, "why": "sacristy window: the transom's top meets the glass; the ray runs parallel to the glass, 1.5 mm behind it, into the sacristy (not modelled inside, never visited): a window, not a slit" },
- { "check": "leak", "at": [15.412, 36.848, 7.368], "radius": 0.1, "why": "sacristy east hip: the under-eave strip's back edge meets the deck's vertical skirt; the viewpoint is under the deck in the sacristy's roof void (the enclosure vote misses it next to the apse wall's outer face), no camera gets there" }
+ { "check": "coplanar", "at": [-0.062, 37.809, 0.151], "radius": 0.03, "why": "statue: the meshopt-simplified robe folds onto itself (0.7 cm2 at 4.7 deg: a pinched crease the simplifier left, both triangles are the figure's surface 30 mm inside a fold, facing the wall), seen from >= 3 m below" }
 ]

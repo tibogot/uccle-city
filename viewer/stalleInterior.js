@@ -215,7 +215,7 @@ export function loadStalleInterior({ placement, lib = null }) {
       materials: Object.values(mats),
       /** per frame: the door (opens within 3.5 m of the player), the eye adaptation inside */
       update(dt, player, eye) {
-        const want = player && player.distanceTo(doorPos) < 3.5 ? 1 : 0;
+        const want = this.forceDoor != null ? this.forceDoor : player && player.distanceTo(doorPos) < 3.5 ? 1 : 0;   // forceDoor: lab tests
         this.doorOpen += (want - this.doorOpen) * Math.min(1, dt * 2.2);
         const a = THREE.MathUtils.degToRad(info.door_open_angle_deg) * THREE.MathUtils.smoothstep(this.doorOpen, 0, 1);
         if (doors.DoorL) doors.DoorL.rotation.y = doors.DoorL.userData.closedY + a;

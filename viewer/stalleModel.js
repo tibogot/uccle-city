@@ -95,7 +95,9 @@ export function loadStalle() {
     let doorShown = true;
     const make = (k) => {
       const g = new THREE.Group(); g.name = `stalle_lod${k}`;
-      const parts = k < 2 ? [...lods[k], ...door.map((d) => ({ ...d, door: true })), ...(k === 0 ? slates.map((d) => ({ ...d, slates: true })) : [])] : lods[k];
+      // the door's leaves and the real slates with LOD0 only (round 3: LOD1 is the scripted far variant, which has its own
+      // door panel in the frame: the leaves on it would z-fight)
+      const parts = k === 0 ? [...lods[0], ...door.map((d) => ({ ...d, door: true })), ...slates.map((d) => ({ ...d, slates: true }))] : lods[k];
       for (const { slot, geometry, door: isDoor, slates: isSlates } of parts) {
         const m = new THREE.Mesh(geometry, materials[slot]);
         m.name = isDoor ? `door ${slot}` : isSlates ? "slates" : slot; m.userData.slot = slot; m.userData.door = !!isDoor; m.userData.slates = !!isSlates;
@@ -124,7 +126,7 @@ export function loadStalle() {
       aoBytes: aoTex.userData.bytes, glbBytes: lods_json.glbBytes, lodsJson: lods_json,
       tempMaterial: (s) => wrapAO(TEMP[s](), aoTex, s),
       libraryMaterial: (name) => sourceMaterial(name, lib),
-      drawCalls: lods.map((l, k) => l.length + (k < 2 ? door.length : 0)),
+      drawCalls: lods.map((l, k) => l.length + (k === 0 ? door.length : 0)),
     };
   })());
 }

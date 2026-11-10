@@ -22,7 +22,8 @@ export async function auditGlb(file, { nodes = null, range = {}, allow = [], ski
   // accepted items
   for (const [k, list] of Object.entries(report.items)) {
     report.items[k] = list.filter((x) => {
-      const a = allow.find((q) => q.check === k && Math.hypot(...q.at.map((v, i) => v - x.at[i])) <= (q.radius ?? 0.05));
+      // allow positions are as REPORTED (after --offset, README)
+      const a = allow.find((q) => q.check === k && Math.hypot(...q.at.map((v, i) => v - x.at[i] - offset[i])) <= (q.radius ?? 0.05));
       if (a) { report.summary.counts[k]--; report.summary.accepted = (report.summary.accepted ?? 0) + 1; return false; }
       return !skip.includes(k);
     });

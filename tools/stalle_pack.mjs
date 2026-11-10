@@ -111,7 +111,11 @@ function addLod(srcName, dstName, totalTarget, err, prune) {
   console.log(`${dstName}: ${tris} -> ${outTris} triangles`);
 }
 if (!NOLOD) {
-  addLod("Stalle", "Stalle_lod1", LOD1_TRIS, LOD1_ERR, false);
+  // round 3: LOD1 = the scripted far variant as it is (5k tris, audited clean). LOD0 simplified by meshoptimizer gave a
+  // LOD1 with ~1700 blocking audit items (collapsed parts overlapping: coplanar, streaks, slits; round 2's had ~1500),
+  // the kind of thing that sparkles at 100-300 m. --lod1-simplified = the old way.
+  if (process.argv.includes("--lod1-simplified")) addLod("Stalle", "Stalle_lod1", LOD1_TRIS, LOD1_ERR, false);
+  else addLod("Stalle_far", "Stalle_lod1", Infinity, 0, false);
   addLod("Stalle_far", "Stalle_lod2", LOD2_TRIS, LOD2_ERR, true);
 }
 
@@ -195,5 +199,5 @@ const c2 = Buffer.alloc(8); c2.writeUInt32LE(binOut.length, 0); c2.writeUInt32LE
 fs.writeFileSync(dst, Buffer.concat([head, c1, js, c2, binOut]));
 console.log(`${src} ${(glb.length / 1048576).toFixed(2)} MB -> ${dst} ${(total / 1048576).toFixed(2)} MB`);
 fs.writeFileSync(dst.replace(/\.glb$/, ".lods.json"), JSON.stringify({ ...lodReport, glbBytes: total, rawBytes: glb.length }, null, 1));
-if (!process.argv.includes("--no-audit")) await auditGroups(dst, NOLOD ? AUDIT : { ...AUDIT, groups: [{ name: "lod0", nodes: ["Stalle", "Stalle_door", "Stalle_slates"] }, { name: "lod1", nodes: ["Stalle_lod1", "Stalle_door"] }, { name: "lod2", nodes: ["Stalle_lod2"] }] }, true);
+if (!process.argv.includes("--no-audit")) await auditGroups(dst, NOLOD ? AUDIT : { ...AUDIT, groups: [{ name: "lod0", nodes: ["Stalle", "Stalle_door", "Stalle_slates"] }, { name: "lod1", nodes: ["Stalle_lod1"] }, { name: "lod2", nodes: ["Stalle_lod2"] }] }, true);
 

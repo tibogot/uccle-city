@@ -144,10 +144,13 @@ def cove_ceiling(loop, h0, inset, h1, mat=RENDER, n=5):
         rings.append([P(u, w, h) for u, w in offset_loop(lp, -off)] if off > 1e-6 else [P(u, w, h) for u, w in lp])
     cu = sum(p[0] for p in lp) / len(lp); cw = sum(p[1] for p in lp) / len(lp)
     cen = P(cu, cw, h0 - 1.0)
-    K.B.new_group()
-    m = len(lp)
-    for k in range(n):
-        for i in range(m):
+    m = len(rings[0])
+    # one builder group per side, creased against its neighbours (stalle_common.make_object: K.B.crease): the mitres
+    # stay sharp, so the 9 m quads along the nave keep their own normals (averaged across the corners they shaded the
+    # whole cove in a gradient: the audit's streaks)
+    for i in range(m):
+        K.B.new_group(); K.B.crease.add(K.B.grp)
+        for k in range(n):
             a, b = rings[k][i], rings[k][(i + 1) % m]; c, d = rings[k + 1][(i + 1) % m], rings[k + 1][i]
             mid = (a + b + c + d) / 4
             face_dir([a, b, c, d], cen - mid, mat, C_COVE)
@@ -296,6 +299,13 @@ def arcade(side):
     for (a, b) in feet:
         L = head(frN, wn, a, b)
         arc = sorted([p for p in L if p[1] >= hz(SPRING) - 1e-6], key=lambda p: p[0])
+        # at a respond the soffit's foot runs 3 cm INTO the end wall: the arch starts vertical, so its first quad lay 2 deg
+        # off the chancel wall's face (the audit's coplanar strip at the east responds)
+        for uu, into in ((SC.RESP_W, -1), (U_CA0, 1)):
+            if uu not in (a, b): continue
+            su = S(frN, uu, wn); j = min(range(len(arc)), key=lambda q: abs(arc[q][0] - su))
+            sdir = 1 if S(frN, uu + into, wn) > su else -1
+            arc[j] = (arc[j][0] + sdir * 0.03, arc[j][1])
         K.B.new_group()
         for i in range(len(arc) - 1):
             p0, p1 = arc[i], arc[i + 1]
@@ -309,7 +319,9 @@ def arcade(side):
             xs = [p[0] for p in hd]; cs = (min(xs) + max(xs)) / 2
             sa, sb = S(fr, a, ww), S(fr, b, ww)
             # clip at the piers' axes (S0 beyond the feet), not at the responds
-            pa = S(fr, a - (S0 if a != SC.RESP_W else 0.0), ww); pb = S(fr, b + (S0 if b != U_CA0 else 0.0), ww)
+            # at the responds the rings stop 1 cm short of the end walls (the arch starts vertical there: the ring's
+            # intrados and end face lay in the chancel wall's face, a coplanar strip at the east responds)
+            pa = S(fr, a - (S0 if a != SC.RESP_W else -0.01), ww); pb = S(fr, b + (S0 if b != U_CA0 else -0.01), ww)
             lo, hi = sorted((pa, pb))
             voussoirs(fr, hd, cs, hz(SPRING), 0.2, 0.015, 11 if b - a > 2 else 7, s_lo=lo, s_hi=hi)
     for uu, into in ((SC.RESP_W, 1), (U_CA0, -1)):
@@ -438,16 +450,26 @@ def choir():
         if i == 0:
             def holes_fn(fr, a=a, b=b):
                 o, _, _, _ = SC.window_lights(S(fr, SC.CHOIR_WIN_N, a[1]), **{k: SC.CHOIR_WINDOW[k] for k in ("sill", "spring", "apex", "w")}, n_lights=SC.CHOIR_WINDOW["n"])
-                return [scale_loop(o, S(fr, SC.CHOIR_WIN_N, a[1]), hz(SC.CHOIR_WINDOW["sill"]), 1.35, 1.0, sill_drop=0.3)]
+                # the SAME loop as window_inside's splay (it was 1.35 / 0.3 against the splay's 1.3 / 0.25: a 2-5 cm gap
+                # round the splay to the outside, the audit's choir-window leaks)
+                return [scale_loop(o, S(fr, SC.CHOIR_WIN_N, a[1]), hz(SC.CHOIR_WINDOW["sill"]), 1.3, 1.0, sill_drop=0.25)]
         fr = wall_plan(a, b, F1 - 0.05, WALL_TOP, cen, holes_fn=holes_fn)
         if i == 0: window_inside(fr, S(fr, SC.CHOIR_WIN_N, a[1]), SC.CHOIR_WINDOW, SC.T_CHOIR - 0.2)
     cove_ceiling([(U_CA1, WC - CH)] + pts[1:-1] + [(U_CA1, WC + CH)], WALL_TOP, 0.45, CEIL)
 
 # ------------------------------------------------------------------------------------------------ props (per-corner light)
-def figure(c, fwd, side, height, prof, mat_code=C_ROBE, segs=14, head=True, crown=False):
+def figure(c, fwd, side, height, prof, mat_code=C_ROBE, segs=20, head=True, crown=False):
     """a standing draped figure: rings with folds (code by height: robe / mantle / skin)"""
     rings = []
-    for (h, ra, rf, rip, code) in prof:
+    # 3 rings between the profile's (the folds turn with the height: on the tall quads the corner normals diverged,
+    # the audit's streaks on the polychrome figures)
+    fine = []
+    for i in range(len(prof) - 1):
+        p0, p1 = prof[i], prof[i + 1]
+        sub = 4 if p1[0] - p0[0] > 0.04 else 1
+        for j in range(sub): t = j / sub; fine.append(tuple(p0[q] + (p1[q] - p0[q]) * t for q in range(4)) + (p0[4],))
+    fine.append(prof[-1])
+    for (h, ra, rf, rip, code) in fine:
         ring = []
         for k in range(segs):
             a = 2 * math.pi * k / segs
@@ -517,7 +539,7 @@ def retable():
         d_ = fr.U * math.cos(a) + Z * math.sin(a)
         L = 0.24 + 0.1 * (k % 2)
         tri_ = [cR + d_ * 0.2 + fr.N.cross(d_) * 0.025, cR + d_ * 0.2 - fr.N.cross(d_) * 0.025, cR + d_ * (0.2 + L)]
-        face_dir([p_ + fr.N * 0.012 for p_ in tri_], fr.N, WHITE, C_GILT)
+        face_dir([p_ + fr.N * (0.012 + 0.004 * (k % 2)) for p_ in tri_], fr.N, WHITE, C_GILT)   # odd rays 4 mm prouder: their bases overlap
     # the Virgin (polychrome) on a gilt cloud base
     lathe(fr.p(0.0, m0 + 0.25, -0.05), [(0.0, 0.0), (0.18, 0.0), (0.2, 0.06), (0.16, 0.12), (0.0, 0.13)], 12, WHITE, C_GILT)
     figure(fr.p(0.0, m0 + 0.38, -0.05), fr.N, fr.U, 1.05, VIRGIN, crown=True)
@@ -552,7 +574,7 @@ def retable():
         fbox(fr, sg * 0.42 - 0.06, sg * 0.42 + 0.06, u0, u0 + 1.0, 0.05, 0.14, WHITE, C_GILT)
         for k in range(5):
             a = math.pi / 2 * k / 4
-            x = sg * (0.48 + 0.42 * math.cos(a)); y = u0 + 0.05 + 0.45 * math.sin(a)
+            x = sg * (0.486 + 0.42 * math.cos(a)); y = u0 + 0.05 + 0.45 * math.sin(a)      # 6 mm off the pilasters' sides
             fbox(fr, min(x, x - sg * 0.1), max(x, x - sg * 0.1), y, y + 0.14, 0.02, 0.12, WHITE, C_PLAIN if k % 2 else C_GILT)
     fbox(fr, -0.55, 0.55, u0 + 1.05, u0 + 1.15, 0.0, 0.2, WHITE, C_PLAIN, skip=("back",))
     lathe_axis(fr.p(0.0, u0 + 1.42, 0.1), fr.N, Z, [(0.0, 0.0), (0.22, 0.0), (0.24, 0.04), (0.2, 0.08), (0.0, 0.09)], 14, WHITE, C_GILT)
@@ -561,7 +583,7 @@ def retable():
     fbox(fr, -0.95, 0.95, b0 - 0.3 + 0.3, b0 + 0.72, a0 - 0.75, a0, WHITE, C_PLAIN, skip=("back",))
     fbox(fr, -1.0, 1.0, b0 + 0.72, b0 + 0.8, a0 - 0.8, a0 + 0.05, WHITE, C_PLAIN, skip=())
     fbox(fr, -1.02, 1.02, b0 + 0.6, b0 + 0.8, a0 + 0.05, a0 + 0.06, WHITE, C_PLAIN)       # the cloth's fall
-    fbox(fr, -0.03, 0.03, b0 + 0.15, b0 + 0.55, a0, a0 + 0.02, WHITE, C_GILT); fbox(fr, -0.13, 0.13, b0 + 0.38, b0 + 0.44, a0, a0 + 0.02, WHITE, C_GILT)
+    fbox(fr, -0.03, 0.03, b0 + 0.15, b0 + 0.55, a0, a0 + 0.02, WHITE, C_GILT); fbox(fr, -0.13, 0.13, b0 + 0.38, b0 + 0.44, a0, a0 + 0.024, WHITE, C_GILT)   # the cross bar 4 mm prouder
     for sg in (-1, 1):
         lathe(fr.p(sg * 1.35, fl + 0.0, 1.3), [(0.0, 0.0), (0.16, 0.0), (0.12, 0.05), (0.025, 0.12), (0.02, 1.25), (0.08, 1.28), (0.08, 1.3), (0.02, 1.31), (0.012, 1.45), (0.0, 1.46)], 8, IRON, C_PLAIN)
     return fr
@@ -644,11 +666,11 @@ def furniture():
     rod(cc, P(ch["u"], WC, CEIL - 0.1), 0.012, IRON)
     lathe(cc - Z * 0.15, [(0.0, 0.0), (0.06, 0.02), (0.05, 0.12), (0.02, 0.2), (0.0, 0.22)], 10, IRON, C_PLAIN)
     sweep3d([cc + Vector((math.cos(a) * 0.45, math.sin(a) * 0.45, 0)) for a in [2 * math.pi * k / 24 for k in range(25)]],
-            [(-0.012, -0.012), (0.012, -0.012), (0.012, 0.012), (-0.012, 0.012), (-0.012, -0.012)], Z, IRON, C_PLAIN, caps=False)
+            [(-0.012, -0.012), (0.012, -0.012), (0.012, 0.012), (-0.012, 0.012), (-0.012, -0.012)], Z, IRON, C_PLAIN, closed=True)
     for k in range(6):
         a = 2 * math.pi * k / 6
         d = Vector((math.cos(a), math.sin(a), 0))
-        rod(cc - Z * 0.1, cc + d * 0.45, 0.01, IRON)
+        rod(cc - Z * 0.1 + d * 0.04, cc + d * 0.45, 0.01, IRON)      # from inside the hub (six rods from one point overlapped)
         p = cc + d * 0.45
         lathe(p, [(0.0, 0.0), (0.035, 0.0), (0.035, 0.02), (0.012, 0.03)], 8, IRON, C_PLAIN)
         lathe(p + Z * 0.03, [(0.012, 0.0), (0.012, 0.12), (0.0, 0.13)], 6, WHITE, C_CANDLE)
@@ -682,7 +704,7 @@ def west_door_leaves():
         if side > 0:            # the cover strip over the meeting stiles (inner face of the right leaf): no slit between them
             fbox(fr, sm - 0.028, sm + 0.028, hz(F0 + 0.004), hz(vt) - 0.01, 0.0, 0.012, DOOR, C_PLAIN, skip=("back",))
         # iron bolt + ring
-        if side > 0: lathe_axis(fr.p(sm + 0.08 * (1 if c > sm else -1), hz(F0 + 1.0), 0.03), fr.N, Z, [(0.04, 0.0), (0.04, 0.012), (0.03, 0.012), (0.03, 0.0)], 10, IRON)
+        if side > 0: lathe_axis(fr.p(sm + 0.08 * (1 if c > sm else -1), hz(F0 + 1.0), -0.002), fr.N, Z, [(0.04, 0.0), (0.04, 0.044), (0.03, 0.044), (0.03, 0.0)], 16, IRON)   # on the boards (it floated 3 cm off them)
         K.B = KB
         out[name] = (b, P(hinge[0], hinge[1], F0))
     return out

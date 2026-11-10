@@ -1,0 +1,4 @@
+[
+ { "check": "coplanar", "at": [15.0, 4.49, -1.1], "radius": 0.4, "why": "choir floor: the iron candle stand's foot and the altar step's bottom face both face DOWN onto the choir floor (y 4.49 = 34.49 m TAW); never visible" },
+ { "check": "coplanar", "at": [15.0, 4.49, 1.3], "radius": 0.4, "why": "the same, south stand" }
+]

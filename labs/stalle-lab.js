@@ -427,4 +427,14 @@ lab.flicker = async (opts = {}) => {
     return r;
   } finally { lab.resume(); }
 };
+// MOVING FRAME SEQUENCES (labs/frameStrip.js): lab.strip({ path: (t) => ({ pos, target, before }), seconds, shots, title })
+lab.strip = async (opts = {}) => {
+  const { frameStrip, showSheet } = await import("./frameStrip.js");
+  lab.pause();
+  try {
+    const r = await frameStrip({ renderFrame: (dt) => frame(dt), canvas: renderer.domElement, camera, controls, label: () => S.lodInfo, ...opts });
+    if (opts.show !== false) showSheet(r);
+    return { labels: r.labels, width: r.width, height: r.height };
+  } finally { lab.resume(); }
+};
 addEventListener("resize", fitFrame);

@@ -46,6 +46,7 @@ export const DEFAULTS = {
   streakAspect: 6,            // ... on a triangle stretched more than this = a shading streak
   normalBlockDeg: 85,         // a corner normal more than this from its face: blocking
   flipDot: -0.25,             // mean corner normal . face normal below this = flipped
+  flipMinArea: 1e-6,          // m2: smaller triangles are not checked for flipped winding (quantization noise)
   degenerateArea: 1e-9,
   leakStep: 0.1,              // m between samples along open edges
   leakOffsets: [0.0015, 0.004, 0.012, 0.03],   // m beyond the edge
@@ -55,6 +56,7 @@ export const DEFAULTS = {
                               // gauge, 14.5 cm, up the slope), not the sky, the void or the interior (which escape)
   frontClear: 0.25,           // m of free space in front needed for a camera to look at the gap
   insideVotes: 3,             // a viewpoint whose rays (6 axes) hit >= this many back faces first is inside the model
+  insideSkin: 0.03,           // m: a viewpoint whose nearest surface is seen from behind closer than this is inside it
   ignoreBelow: -Infinity,     // drop items below this height (Y): under the ground
   maxItemsPerCheck: 400,
   vertexSeparation: 0,        // 1: the pre-2026-11-10 separation (min vertex distance) instead of over the overlap
@@ -282,7 +284,8 @@ export function auditParts(parts, options = {}) {
     const n = Nf(i), cn = [0, 1, 2].map((c) => [T.cn[i * 9 + c * 3], T.cn[i * 9 + c * 3 + 1], T.cn[i * 9 + c * 3 + 2]]);
     const mean = [cn[0][0] + cn[1][0] + cn[2][0], cn[0][1] + cn[1][1] + cn[2][1], cn[0][2] + cn[1][2] + cn[2][2]];
     const ml = len(mean) || 1;
-    if (dot(mean, n) / ml < O.flipDot) { add("flipped", cen(i), { part: partName(i), dot: +(dot(mean, n) / ml).toFixed(2), area: +T.area[i].toFixed(5) }); continue; }
+    // (below 1 mm2 the winding of a quantized triangle is noise: the packed gutter ends' 0.1 mm2 slivers came out "flipped")
+    if (T.area[i] > O.flipMinArea && dot(mean, n) / ml < O.flipDot) { add("flipped", cen(i), { part: partName(i), dot: +(dot(mean, n) / ml).toFixed(2), area: +T.area[i].toFixed(5) }); continue; }
     let worstFace = 0, spread = 0;
     for (let c = 0; c < 3; c++) {
       worstFace = Math.max(worstFace, Math.acos(Math.max(-1, Math.min(1, dot(cn[c], n)))) / DEG);
@@ -440,13 +443,19 @@ export function auditParts(parts, options = {}) {
   // ... or it is ENCLOSED: every ray but the downward one hits something (the ground is not part of a hero) and at least
   // two of them hit back faces (the sacristy's roof void: the roof's underside and the walls from within, the choir
   // wall's outer face across it; round 3 found ~500 "leaks" seen from there)
+  // ... or it sits just BEHIND a surface: the nearest hit is a back face closer than insideSkin (under a floor, under a
+  // roof deck: no camera is ever 1-30 mm behind a surface it would see from behind)
   const inside = (p) => {
-    let back = 0, hit = 0;
+    let back = 0, hit = 0, nearT = Infinity, nearBack = false;
     for (const d of AX) {
       rays++; const h = rayCast(T, bvh, p, d, 1e9);
-      if (h) { if (d[1] >= 0) hit++; if (dot(Nf(h.tri), d) > 0) back++; }
+      if (h) {
+        const isBack = dot(Nf(h.tri), d) > 0;
+        if (d[1] >= 0) hit++; if (isBack) back++;
+        if (h.t < nearT) { nearT = h.t; nearBack = isBack; }
+      }
     }
-    return back >= O.insideVotes || (hit === 5 && back >= 2);
+    return back >= O.insideVotes || (hit === 5 && back >= 2) || (nearBack && nearT < O.insideSkin);
   };
   for (const [a, b, tri] of openEdges) {
     if (onOpen.has(`${Math.min(a, b)},${Math.max(a, b)}`)) continue;     // a T-junction: the neighbour continues the surface
@@ -481,7 +490,10 @@ export function auditParts(parts, options = {}) {
       if (O.traceAt && Math.hypot(P[0] - O.traceAt[0], P[1] - O.traceAt[1], P[2] - O.traceAt[2]) < 0.01) console.log("[trace leak]", P.map((v) => v.toFixed(4)).join(","), "n", n.map((v) => v.toFixed(2)).join(","), "out", out.map((v) => v.toFixed(2)).join(","), res.join(" "), (O._tr || []).join(" ; "));
       if (O.traceAt) O._tr = [];
       if (res[0] !== "through") continue;
-      const narrowAt = O.leakOffsets.findIndex((o, k) => k > 0 && res[k] !== "through" && o <= O.leakNarrow);   // closed / covered / inside
+      // a SLIT: further out the ray really hits the far side ("closed"); an offset whose viewpoint is covered or inside a
+      // solid cannot be observed and proves nothing (a convex corner, a surface ending on a solid)
+      const narrowAt = O.leakOffsets.findIndex((o, k) => k > 0 && res[k].startsWith("closed") && o <= O.leakNarrow);
+      if (narrowAt < 0 && res.slice(1).some((r) => r !== "through")) continue;      // unobservable further out: not an opening either
       const key = `${tri}`;
       if (leakAt.has(key)) continue;
       leakAt.set(key, 1);

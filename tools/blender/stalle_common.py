@@ -92,7 +92,7 @@ HOUSE = dict(u0=-6.67, u1=0.58, w0=4.15, w1=9.97, eave=37.9, ridge=41.3)
 class Builder:
     """faces + per-face slot, code, optional UV0, construction group (lightmap islands are split by group), the per-piece
     seed (COLOR_0.b: 0 = none; slates, statue...) and a forced per-vertex AO flag (small repeated pieces: slates)"""
-    def __init__(self): self.v = []; self.f = []; self.m = []; self.c = []; self.uv = []; self.g = []; self.b = []; self.vao = []; self.grp = 0
+    def __init__(self): self.v = []; self.f = []; self.m = []; self.c = []; self.uv = []; self.g = []; self.b = []; self.vao = []; self.grp = 0; self.crease = set()
     def face(self, pts, mat, code=0, uv=None):
         if len(pts) < 3: return
         i0 = len(self.v); self.v.extend(Vector(p) for p in pts)
@@ -453,6 +453,14 @@ def make_object(scn, mats, slots, name, bld, v0, v1, ao_px, smart=True, thin_lim
     bm.to_mesh(me); bm.free()
     me.shade_smooth()
     me.set_sharp_from_angle(angle=math.radians(32))
+    if bld.crease:
+        # creased groups (e.g. the cove's sides): their edges against any other group are sharp when the faces turn > 8 deg
+        bm = bmesh.new(); bm.from_mesh(me); gl = bm.faces.layers.int.get("grp")
+        for e in bm.edges:
+            if len(e.link_faces) != 2: continue
+            f0, f1 = e.link_faces
+            if f0[gl] != f1[gl] and (f0[gl] in bld.crease or f1[gl] in bld.crease) and f0.normal.angle(f1.normal, 0.0) > math.radians(8): e.smooth = False
+        bm.to_mesh(me); bm.free()
     me.validate()
     ntri = sum(len(p.vertices) - 2 for p in me.polygons)
     print(name, "faces", len(me.polygons), "triangles", ntri, "verts", len(me.vertices))
