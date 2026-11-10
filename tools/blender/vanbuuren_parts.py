@@ -88,7 +88,7 @@ def slab(rects, h_top, thick, drip=True, slot=CONC, soffit_band=None):
     (1.5 cm wide, 1 cm deep, 3 cm in). Sides against a wall or another rect get no face (they start inside the wall).
     soffit_band: (slot, width) a thin painted band on the underside along the free edges (the orange soffit band)."""
     B = K.B; B.new_group()
-    h0 = h_top - thick
+    h_top = off_course(h_top); h0 = off_course(h_top - thick)
     g_in, g_w, g_d = 0.03, 0.015, 0.01
     for (u0, u1, w0, w1, outer) in rects:
         # top
@@ -140,6 +140,14 @@ def slab(rects, h_top, thick, drip=True, slot=CONC, soffit_band=None):
                     face_dir([a, b, b + Z * g_d, a + Z * g_d], want, slot, C_DRIP)
         if soffit_band and not K.FAR:
             pass
+
+def off_course(h, tol=0.004):
+    """a horizontal face must not lie on a course line (the grooves' faces there would be coplanar with it)"""
+    for base in (0.0, JOINT):
+        k = round((h - COURSE_BASE - base) / COURSE)
+        line = COURSE_BASE + k * COURSE + base
+        if abs(h - line) < tol: return line + (tol + 0.002) * (1 if h >= line else -1)
+    return h
 
 def hood(fr, s0, s1, h_top, depth, thick=0.15, ends=("free", "free")):
     """a cantilevered hood over a window on frame fr: from 3 cm inside the wall to `depth` out, s0..s1"""
@@ -202,11 +210,14 @@ def gutter(a, b, out_dir, r=0.065, slot=ZINC):
         mid = (ra[k] + ra[k + 1]) / 2
         face_dir([ra[k], rb[k], rb[k + 1], ra[k + 1]], mid - c0, slot, C_PLAIN)
     B.smooth = sv
-    # the rolled bead on the front lip
-    pipe(ra[0] - d * 0.0, rb[0], 0.008, 6, slot)
+    # stop ends (flat half discs, as quads to the centre line: no fan of slivers)
+    for (rr, sgn) in ((ra, -1), (rb, 1)):
+        cc = (rr[0] + rr[-1]) / 2
+        for k in range(segs):
+            face_dir([rr[k], rr[k + 1], cc], d * sgn, slot, C_PLAIN)
 
 def downpipe(u, w, h_top, h_bot, r=0.045, slot=ZINC):
-    pipe(P(u, w, h_bot), P(u, w, h_top), r, 12, slot)
+    pipe(P(u, w, h_bot), P(u, w, h_top), r, 16, slot)
 
 # ------------------------------------------------------------------------------------------------ the lattice (gable tops)
 def lattice(fr, s_lo, s_hi, h0, top, cell_w=0.23, cell_h=4 * COURSE, gap=0.02, proud=0.018, d0=0.0):

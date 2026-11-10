@@ -11,3 +11,8 @@ models/interior/*/interior.pack.glb
 models/townhall/*.raw.glb
 docs/townhall/side_*
 models/townhall/townhall_lod1_bake.bin
+models/vanbuuren/*.raw.glb
+models/vanbuuren/*.blend
+models/vanbuuren/*.blend1
+models/vanbuuren/vanbuuren_lod1_bake.bin
+docs/vanbuuren/side_*

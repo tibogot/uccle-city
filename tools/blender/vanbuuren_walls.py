@@ -14,7 +14,7 @@ class Opening:
     brick faces) or None (something else closes it: a concrete box frame, a sill block, a lintel)"""
     def __init__(self, s0, s1, h0, h1, depth=0.12, jambs="brick", head="brick", sill="brick", snap=True):
         if snap: h0, h1 = snap_course(h0, "j0"), snap_course(h1, "f0")
-        self.__dict__.update(s0=s0, s1=s1, h0=h0, h1=h1, depth=depth, jambs=jambs, head=head, sill=sill)
+        self.__dict__.update(s0=s0, s1=s1, h0=h0, h1=h1, depth=depth, jambs=jambs, head=head, sill=sill, tag=None)
 
 
 def _bis(top, h, lo, hi, up):
@@ -96,7 +96,7 @@ def wall_field(fr, s_a, s_b, h_bot, top, openings=(), ends=("convex", "convex"),
 
     def kind_at(x, sr):
         for o in ops:
-            if abs(x - o.s0) < 1e-5 or abs(x - o.s1) < 1e-5: return "convex" if o.jambs == "brick" else "free"
+            if abs(x - o.s0) < 1e-5 or abs(x - o.s1) < 1e-5: return {"brick": "convex", "concave": "concave", "concave2": "concave2"}.get(o.jambs, "free")
         if abs(x - s_a) < 1e-5 and abs(sr[0] - s_a) < 1e-5: return ends[0]
         if abs(x - s_b) < 1e-5 and abs(sr[1] - s_b) < 1e-5: return ends[1]
         return "rake"
