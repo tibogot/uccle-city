@@ -184,7 +184,7 @@ const S = {
   lod: "auto", show: "new model", wireframe: false, view: "east facade (Commons 3557)", photo: 0, frame: false, notes: true,
   time: preset, hour: lighting.hour, day: lighting.day, post: true, ao: 1, aoDirect: 0.55, weather: 1,
   slot: "stone_white", swap: "table default (temporary)", swapAll: false,
-  stats: "", lodInfo: "", bench: "—", swapInfo: "—", fadeAlways: false,
+  stats: "", lodInfo: "", bench: "—", swapInfo: "—", fadeAlways: false, thinFar: 1,
 };
 const ui = new Panel({ title: "Town Hall Lab" });
 const fv = ui.addFolder("View");
@@ -210,6 +210,7 @@ fl.add(S, "post").name("post effects (AO, SSR, bloom)");
 fl.add(S, "ao", 0, 1, 0.01).name("baked AO").onChange((v) => { thLook.aoStrength.value = v; });
 fl.add(S, "aoDirect", 0, 1, 0.01).name("AO on direct light").onChange((v) => { thLook.aoDirect.value = v; });
 fl.add(S, "weather", 0, 1, 0.01).name("stone weathering").onChange((v) => { thLook.weather.value = v; });
+fl.add(S, "thinFar", 0, 1, 0.01).name("thin parts far away shade like the wall (anti-sparkle)").onChange((v) => { thLook.thinFar.value = v; });
 const fp = ui.addFolder("Performance");
 fp.add(S, "stats").name("frame");
 fp.add({ go: () => bench() }, "go").name("benchmark: GPU ms per LOD at this view");

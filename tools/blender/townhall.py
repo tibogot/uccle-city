@@ -1184,6 +1184,48 @@ def shrink_low_priority(me, thin):
         for li in loops:
             u = lm[li].uv; lm[li].uv = (cx + (u.x - cx) * s_, cy + (u.y - cy) * s_)
 
+def region_width(me):
+    """(polish 2b) COLOR_0.b = the WIDTH of the region each face belongs to (edge-connected faces whose normals turn by < 50 deg
+    from one face to the next: a flat face, a moulding, a lathed baluster; the
+    smaller side of the region's bounding rectangle in its plane, or 2 x area / perimeter when smaller: a frame around
+    its panes is as narrow as its bars), encoded b = sqrt(width / 4 m): a quoin course's top
+    3.5 cm, a band's top 15 cm, a pilaster's face 0.78 m, a wall several metres. The viewer bends the shading normal of a
+    region toward the view once a pixel outgrows it (no sub-pixel sunlit slivers = no sparkle far away)."""
+    bm = bmesh.new(); bm.from_mesh(me); bm.faces.ensure_lookup_table()
+    cos_t = math.cos(math.radians(50))       # neighbour to neighbour: a lathed or curved part (8-16 facets) is ONE region
+    seen = [False] * len(bm.faces); width = [4.0] * len(bm.faces)
+    for f0 in bm.faces:
+        if seen[f0.index]: continue
+        reg, stack = [], [f0]; seen[f0.index] = True; n0 = f0.normal.copy()
+        while stack:
+            f = stack.pop(); reg.append(f)
+            for e in f.edges:
+                for g in e.link_faces:
+                    if not seen[g.index] and g.normal.dot(f.normal) > cos_t:
+                        seen[g.index] = True; stack.append(g)
+        t = Z.cross(n0)
+        t = t.normalized() if t.length > 1e-3 else Vector((1, 0, 0))
+        bv = n0.cross(t).normalized()
+        xs = [v.co.dot(t) for f in reg for v in f.verts]; ys = [v.co.dot(bv) for f in reg for v in f.verts]
+        w = min(max(xs) - min(xs), max(ys) - min(ys))
+        zs = [v.co.dot(n0) for f in reg for v in f.verts]
+        ext = sorted((max(xs) - min(xs), max(ys) - min(ys), max(zs) - min(zs)))
+        if ext[0] > 0.01: w = ext[1]                       # a curved / folded region: its second-largest extent (a baluster: its girth)
+        # a perforated region (a casement's frame around its panes, a grid of bars) is as narrow as its bars: 2 x area /
+        # perimeter (= the width of a long strip) when that is smaller than the bounding rectangle's side
+        inreg = set(f.index for f in reg)
+        area = sum(f.calc_area() for f in reg)
+        per = sum(e.calc_length() for f in reg for e in f.edges if sum(1 for g in e.link_faces if g.index in inreg) == 1)
+        if per > 1e-6: w = min(w, 2.0 * area / per)
+        for f in reg: width[f.index] = w
+    bm.free()
+    col = me.color_attributes["Col"]
+    c = [0.0] * (4 * len(me.loops)); col.data.foreach_get("color", c)
+    for poly in me.polygons:
+        enc = min(1.0, math.sqrt(max(0.0, width[poly.index]) / 4.0))
+        for li in poly.loop_indices: c[4 * li + 2] = enc
+    col.data.foreach_set("color", c)
+
 def make_object(name, bld, v0, v1):
     used = sorted(set(bld.m))
     remap = {m: i for i, m in enumerate(used)}
@@ -1222,6 +1264,7 @@ def make_object(name, bld, v0, v1):
     me.shade_smooth()
     me.set_sharp_from_angle(angle=math.radians(32))
     me.validate()
+    region_width(me)
     ntri = sum(len(p.vertices) - 2 for p in me.polygons)
     print(name, "faces", len(me.polygons), "triangles", ntri, "verts", len(me.vertices))
     uv1 = me.uv_layers.new(name="Lightmap")
@@ -1393,7 +1436,7 @@ info = {
     "asset": "Uccle town hall, Place Jean Vander Elst 29 (tools/blender/townhall.py)",
     "triangles_lod0": ntri, "triangles_far": ntri_far, "triangles_per_slot_lod0": per_slot, "triangles_per_slot_far": per_slot_far,
     "flag_poles": FLAG_POLES,
-    "slots": SLOTS, "codes": {"COLOR_0.r": "code / 16 + 1/32", "COLOR_0.g": "per-vertex AO of the thin faces (1 elsewhere)", "names": CODES},
+    "slots": SLOTS, "codes": {"COLOR_0.r": "code / 16 + 1/32", "COLOR_0.g": "per-vertex AO of the thin faces (1 elsewhere)", "COLOR_0.b": "sqrt(width of the flat region / 4 m)", "names": CODES},
     "uv": {"TEXCOORD_0": "world metres, per face (walls u along / v up; lathed parts arc length)", "TEXCOORD_1": "AO lightmap (thin faces: u > 0.994, AO 1)"},
     "lightmap": {"px": AO_PX, "split_v": AO_SPLIT, "lod0_px_per_m": round(obj["px_per_m"], 1), "far_px_per_m": round(far["px_per_m"], 1),
                  "thin_faces_vertex_ao": [obj["thin"], far["thin"]]},

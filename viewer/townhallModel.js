@@ -18,7 +18,7 @@
 //   const m = await loadTownHall();  m.make(k) -> Group;  m.distance(cameraPos);  m.placement;  m.boundsWorld
 import * as THREE from "three/webgpu";
 import {
-  attribute, uv, texture, normalWorld, positionWorld, vec2, vec3, float, floor, fract, mix, step, smoothstep, clamp, abs, dot,
+  attribute, uv, texture, normalWorld, normalView, positionWorld, length, vec2, vec3, float, floor, fract, mix, step, smoothstep, clamp, abs, dot,
   fwidth, max, min, mod, mrt, roughness, uniform, Fn, vec4,
 } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -39,6 +39,8 @@ export const TH_CODES = ["plain", "band", "surround", "cornice", "plinth", "pila
   "interior", "seam", "coping", "console", "door"];
 /** LOD switch distances (m, camera to the building's box) and the half-width of each cross-fade band */
 export const TH_LODS = [{ until: 110, band: 18 }, { until: 420, band: 50 }, { until: Infinity }];
+/** the baked AO's weight per level (see lodAo) */
+export const TH_LOD_AO = [1, 0.55, 1];
 
 // ------------------------------------------------------------------------------------------------ material source
 // THE ONE LINE: "temp" = the temporary TSL materials below; when viewer/materials/ (the Material Lab's library) lands,
@@ -47,7 +49,7 @@ export const TH_LODS = [{ until: 110, band: 18 }, { until: 420, band: 50 }, { un
 const SOURCE = "temp";
 
 /** Live look controls (uniforms: no recompiles) */
-export const thLook = { aoStrength: uniform(1.0), aoDirect: uniform(0.55), weather: uniform(1.0) };
+export const thLook = { aoStrength: uniform(1.0), aoDirect: uniform(0.55), weather: uniform(1.0), thinFar: uniform(1.0) };
 
 let promise = null;
 export function loadTownHall() {
@@ -85,7 +87,7 @@ export function loadTownHall() {
       const g = new THREE.Group(); g.name = `townhall_lod${k}`;
       for (const { slot, geometry } of lods[k]) {
         const m = new THREE.Mesh(geometry, materials[slot]);
-        m.name = slot; m.userData.slot = slot; m.userData.base = m.material;
+        m.name = slot; m.userData.slot = slot; m.userData.base = m.material; m.userData.aoScale = TH_LOD_AO[k];
         m.castShadow = slot !== "glass_window" && slot !== "cobbles"; m.receiveShadow = true;   // (the forecourt paving: ground)
         g.add(m);
       }
@@ -143,18 +145,36 @@ function sourceMaterial(name, lib) {
   return m ?? (TEMP[name] ?? TEMP.render_white)();
 }
 
+/** the baked AO's weight per level (mesh.userData.aoScale): LOD1's AO is baked on LOD1 itself (per corner, COLOR_0.g;
+ *  tools/blender/townhall_lod1_ao.py), where the simplification's overlapping leftovers read darker than LOD0's lightmap:
+ *  0.55 matches LOD0's brightness at the 110 m hand-over (lab, side by side) */
+const lodAo = uniform(1).onObjectUpdate(({ object }) => object.userData.aoScale ?? 1);
+
 /** The baked AO (lighting only) on any slot material: aoNode = lightmap AO x the thin parts' vertex AO (indirect
  *  light), and the colour darkened by a share of it (direct light in crevices). Glass gets none in its colour. */
 function wrapAO(src, aoTex, slot) {
   const m = src.clone();
   m.name = `townhall ${slot}`;
   const ao = texture(aoTex, uv(1)).r.mul(attribute("color", "vec4").g);
-  const aoK = mix(float(1), ao, thLook.aoStrength);
+  const aoK = mix(float(1), ao, thLook.aoStrength.mul(lodAo));
   m.aoNode = src.aoNode ? src.aoNode.mul(aoK) : aoK;
+  // (polish 2b) SMALL PARTS FAR AWAY: COLOR_0.b holds the width of the flat region a face belongs to (a quoin course's
+  // top 3.5 cm, a band's top 15 cm, a glazing bar, a sill's edge...). Once the pixel footprint outgrows it, the part is a
+  // sub-pixel sliver: a sunlit one on a shaded facade (or the reverse), or a white glazing bar on dark glass, lit lone
+  // pixels = the sparkle the owner saw from ~90 m, shimmering while moving. There (1) its shading normal bends toward
+  // the view direction: it shades like the wall it sits on; (2) its albedo is scaled by the share of the pixel it really
+  // covers (a rasterised sliver covers a whole pixel or none): the facade converges to its average, no sparkle, no
+  // shimmer. Close up nothing changes (a part only changes when narrower than ~0.6-1.6 pixel footprints).
+  const cw = attribute("color", "vec4").b;
+  const width = cw.mul(cw).mul(4.0).max(0.002);
+  const foot = length(fwidth(positionWorld));               // ~ metres per pixel (x 1.4-2)
+  const k = smoothstep(0.6, 1.6, foot.div(width)).mul(thLook.thinFar);
+  const cover = mix(float(1), clamp(width.mul(2.0).div(foot), 0.35, 1.0), k);
   if (slot !== "glass_window") {
     const base = src.colorNode ?? vec3(src.color?.r ?? 1, src.color?.g ?? 1, src.color?.b ?? 1);
-    m.colorNode = base.mul(mix(float(1), aoK, thLook.aoDirect));
+    m.colorNode = base.mul(mix(float(1), aoK, thLook.aoDirect)).mul(cover);
   }
+  m.normalNode = mix(src.normalNode ?? normalView, vec3(0, 0, 1), k).normalize();
   m.userData.shared = true;
   m.userData.slot = slot;
   return m;

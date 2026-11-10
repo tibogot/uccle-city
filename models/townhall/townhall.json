@@ -135,6 +135,7 @@
  "codes": {
   "COLOR_0.r": "code / 16 + 1/32",
   "COLOR_0.g": "per-vertex AO of the thin faces (1 elsewhere)",
+  "COLOR_0.b": "sqrt(width of the flat region / 4 m)",
   "names": [
    "plain",
    "band",

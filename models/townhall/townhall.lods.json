@@ -2,13 +2,19 @@
  "TownHall_lod1": {
   "from": "TownHall",
   "sourceTris": 54734,
-  "tris": 22534
+  "tris": 22534,
+  "crossIslandTris": null,
+  "aoBakedOnLevel": true,
+  "addedVertices": 63545
  },
  "TownHall_lod2": {
   "from": "TownHall_far",
   "sourceTris": 3359,
-  "tris": 3031
+  "tris": 3031,
+  "crossIslandTris": 719,
+  "aoBakedOnLevel": false,
+  "addedVertices": 1345
  },
- "glbBytes": 1861144,
- "rawBytes": 5848272
+ "glbBytes": 2694956,
+ "rawBytes": 5862096
 }

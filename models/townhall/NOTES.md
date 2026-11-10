@@ -9,6 +9,9 @@ online). The administration left for rue de Stalle 77 in March 2022. No tower, n
 python tools/townhall_measure.py [--dump]              # UrbIS solid + DSM/DTM -> site.json, site_dtm.bin (1 s)
 "C:/Program Files/Blender Foundation/Blender 5.0/blender.exe" --factory-startup -b -P tools/blender/townhall.py -- models/townhall [--no-bake] [--previews]
 node tools/townhall_pack.mjs models/townhall/townhall.raw.glb models/townhall/townhall.glb     # LODs + meshopt (tools/worker: npm ci)
+# when LOD1 changed (the pack says "stale"): bake its AO on itself, then pack again
+"C:/Program Files/Blender Foundation/Blender 5.0/blender.exe" --factory-startup -b -P tools/blender/townhall_lod1_ao.py -- models/townhall
+node tools/townhall_pack.mjs models/townhall/townhall.raw.glb models/townhall/townhall.glb
 ```
 Blender ~45 s (AO bake 25 s CPU, vertex AO 1 s), ~110 s with `--previews` (docs/townhall/preview_*.png). Pack 2 s.
 Viewer: `viewer/townhallModel.js` (loader, slot adapter table), `viewer/townhallCity.js` (city, `?townhall=1`),
@@ -17,16 +20,17 @@ Viewer: `viewer/townhallModel.js` (loader, slot adapter table), `viewer/townhall
 ## Files
 | file | what |
 |---|---|
-| `townhall.glb` | 1.77 MB (EXT_meshopt_compression + KHR_mesh_quantization; 5.6 MB raw). Nodes `TownHall` (LOD0, 54.7k tris), `TownHall_lod1` (22.5k, meshopt of LOD0, shares its vertex buffers), `TownHall_far` (3.4k, the script's far variant), `TownHall_lod2` (3.0k, far trimmed). One primitive per slot: 10 / 10 / 9 draw calls per LOD (+ shadow pass; the paving apron casts none) |
+| `townhall.glb` | 2.57 MB (EXT_meshopt_compression + KHR_mesh_quantization; 5.6 MB raw). Nodes `TownHall` (LOD0, 54.7k tris), `TownHall_lod1` (22.5k, meshopt of LOD0, shares its vertex accessors: its 63.5k own corner vertices, with its own baked AO, are appended to them), `TownHall_far` (3.4k, the script's far variant), `TownHall_lod2` (3.0k, far trimmed). One primitive per slot: 10 / 10 / 9 draw calls per LOD (+ shadow pass; the paving apron casts none) |
 | `townhall_ao.png` | Cycles AO (4 m, 96 samples) in TEXCOORD_1, 2048 px: LOD0 in v 0..0.885 (16 px/m mean, walls more: roofs and decks shrunk), far above; u > 0.994 a reserved column of AO 1.0 for the THIN faces, whose AO is baked per vertex instead (COLOR_0.g: 15k faces, 59k corners: glazing bars, sills' edges, quoin joints, balusters, railings) |
 | `townhall.json` | slots, codes, placement, the measurements used (levels_taw: door head, portico soffit, balcony floor), triangles per slot, lightmap density, `flag_poles` (see below) |
 | `townhall.lods.json` | LOD triangle counts, GLB sizes |
+| `townhall_lod1_ao.bin` | LOD1's AO per triangle corner (tools/blender/townhall_lod1_ao.py; the pack checks it matches LOD1's corners) |
 | `site.json`, `site_dtm.*` | the measurements (input of the Blender script), the DTM patch (lab ground, AO bake) |
 
 ## Materials (the owner's rule: no colour or pattern baked; only lighting)
 - GLB slots: brick_red_brussels, stone_white, stone_blue, slate, zinc_roof, wood_frame_white, wood_frame_dark,
   glass_window, cast_iron_green, cobbles (polish 2: the forecourt paving apron; a library name, so SOURCE switches it too). COLOR_0.r = per-face code / 16 + 1/32 (plain, band, surround, cornice, plinth,
-  pilaster, sill, keystone, pediment, baluster, column, interior, seam, coping, console, door); COLOR_0.g = vertex AO.
+  pilaster, sill, keystone, pediment, baluster, column, interior, seam, coping, console, door); COLOR_0.g = vertex AO; COLOR_0.b = sqrt(width of the face's region / 4 m) (polish 2b, the anti-sparkle).
 - TEXCOORD_0 = world metres per face (walls u along / v up; mouldings: path length x profile length; lathed parts arc).
 - `viewer/townhallModel.js`: `SLOT_TABLE` (GLB slot -> any of the 18 library names) and the ONE line `const SOURCE =
   "temp"` -> `"./materials/library.js"` (createMaterial(name, { mapping: "uv" }), or getMaterial / materials[name]).
@@ -147,3 +151,44 @@ VISUAL FIXES:
   (4 cm proud, chamfered) and a blue-stone edge down below the ground on the front (the city's ground there lies up to
   25 cm under the DTM). Temporary material: grey setts 14 x 10 cm, sanded joints. docs/townhall/city_perron_apron_plinth.png.
 - Lab + Cycles previews rebuilt (preview_*.png). Load: GLB + AO 83-107 ms, shaders 0.24-1.5 s before it shows.
+
+## Polish round 2b (2026-11-10): the SPARKLE far away (owner's review of round 2)
+White / beige speckle on the quoins, window surrounds and frames from ~90 m, worse on LOD1. Found three causes, looking at
+the frames pixel by pixel in the lab (normals, AO-only and flat-slot debug renders, A/B toggles):
+1. LOD1's attributes (the real "worse on LOD1"). The welded meshopt simplification gave each new triangle's corner the
+   original vertex whose normal best matched, but (a) a corner where only side faces existed (the back edge of a
+   pilaster's side) put a SIDE normal on a front face = sunlit beige strips; (b) corners from different lightmap islands
+   (or from a thin face parked on the AO-1.0 column) made the triangle's AO UVs span the atlas = bright / black patches;
+   (c) faces the simplification uncovers (a pilaster's plate behind its 3.5 cm quoin courses) are baked dark in LOD0's
+   lightmap. Fixed in tools/townhall_pack.mjs: a corner that faces away (> 45 deg) gets a copy with the triangle's own
+   normal; LOD1's AO is now BAKED ON LOD1 ITSELF (tools/blender/townhall_lod1_ao.py: LOD1's corners -> Cycles AO 4 m on a
+   lightmap of LOD1 + the ground -> per corner, read a quarter of the way in) into COLOR_0.g, its lightmap UV parked at
+   AO 1.0 (u 0.997, v 0.25). LOD2 keeps the far lightmap but picks its corners inside one island and on baked texels
+   (else vertex AO sampled inside the island). The baked LOD1 AO reads darker than LOD0's lightmap (the simplification's
+   overlapping leftovers): its weight is 0.55 (TH_LOD_AO, per-mesh uniform), which matches LOD0 at the 110 m hand-over.
+2. SUB-PIXEL PARTS (LOD0 too): quoin course tops, band and sill tops, glazing bars are 2-15 cm wide; from ~60 m they are
+   slivers that hit a pixel or not: a sunlit top on a shaded facade, a white bar on dark glass = lone bright pixels that
+   shimmer while moving (not specular: a roughness-0.95 test kept them; not the post chain: post off kept them).
+   Fixed in the shader (viewer/townhallModel.js wrapAO, every slot, library materials included): Blender writes each
+   face's REGION WIDTH in COLOR_0.b (edge-connected faces turning < 50 deg from face to face, the region's second
+   extent or 2 x area / perimeter: a casement frame around its panes counts as wide as its bars, a lathed baluster as
+   its girth); where the pixel footprint (length(fwidth(positionWorld))) outgrows the width (0.6 -> 1.6 x), the shading
+   normal bends toward the view (the part shades like the wall it sits on) and the albedo scales by the share of the
+   pixel the part really covers (min 0.35). The facade converges to its average; nothing changes close up (portico
+   close-up: 1.2 % of pixels differ, the flag poles and the balusters' thinnest rings; docs/townhall/
+   lab_closeup_antisparkle_off_on.jpg). Lab slider "thin parts far away shade like the wall" (thLook.thinFar) = A/B.
+3. Not changed, noted: the dither of the 92-128 m hand-over still shows a fine grain where LOD0 and LOD1 differ (much
+   less now); a few faint glass glints in windows at 250 m.
+Verification (city, ?townhall=1, midday): moving 60 -> 520 m through both bands, crops on the facade, BEFORE (round 2
+GLB, anti-sparkle off) | AFTER: docs/townhall/city_sparkle_moving_before_after.jpg; slow lateral pan at ~130 m (box
+distance), 4 consecutive frames each: city_sparkle_pan150_before_after.jpg (before: beige patches that change from frame
+to frame; after: stable); the after-only strip city_antisparkle_moving_60-520m.jpg.
+GPU (lab benchmark, same method as round 2, two runs): portico L0 +1.41-1.56 / L1 +1.14-1.26 / L2 +0.93-1.04 (round 2
++1.39-1.42 / +1.13-1.14 / +0.90-0.92); 3557 view +0.46 / +0.25-0.37 / +0.23-0.30 (round 2 +0.54-0.55 / +0.39-0.40 /
++0.27-0.37); SE corner +0.97-1.04 / +0.75 / +0.54-0.67 (+0.97-1.03 / +0.73-0.81 / +0.63-0.67); 900 m noise. Same cost
+within the noise. GLB 1.77 -> 2.57 MB (LOD1's own corner vertices; COLOR_0 now uint8).
+City flight (debug/townhallFlight.js): coverage 1.000 and the fading copies right in every frame of every run; frame
+times this session were disturbed by GPU contention (another Chrome session): slow (33 ms) frames came and went between
+runs, also at 300-900 m where the building is a few hundred triangles (one run: 86 frames at 0.4-5.7 s), round-2 GLB
+1-6 per run, this GLB 1-25 (first run after load) and 6 / 86 in noisy runs; no long task in any run. Re-run on a quiet
+machine before merging.
