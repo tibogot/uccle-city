@@ -27,7 +27,7 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 Stairs paused until the owner's Mixamo clips are in `data/raw/animations/mixamo/` (and the owner decides: Mixamo clips committed for the live site, or local only).
 
 **City test bugs the owner saw (2026-11-10, flying with the birds; re-test on a combined build, some may be fixed by unmerged branches):**
-- [ ] trees jittering (LOD / shadows while moving?); ALSO distant trees flickering even in a still/slow camera (owner saw it in the town hall city view, 2026-11-10): check far-tree LOD / alpha-cutout aliasing / impostors
+- [ ] distant trees flickering / shimmering, even with a still or slow camera (owner, 2026-11-10: this IS the "tree jitter" seen flying with the birds; seen again in the town hall city view). Check far-tree LOD, alpha-cutout aliasing (alpha-to-coverage / mip alpha), impostors.
 - [ ] z-fighting (flicker) on shader buildings (facades / roof edges?)
 - [ ] some curved roads completely broken (road geometry at sharp curves?)
 - [ ] some trees standing in the middle of the road (LiDAR tree points not filtered against the road surface?)
