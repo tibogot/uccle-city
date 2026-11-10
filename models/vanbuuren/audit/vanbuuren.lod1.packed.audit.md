@@ -1,6 +1,6 @@
 # Mesh audit (packed): vanbuuren.lod1
 
-3,828 triangles, 3,255 welded vertices, 2,772 open edges, 636,160 rays, 1410 ms.
+3,828 triangles, 3,255 welded vertices, 2,772 open edges, 636,160 rays, 2389 ms.
 
 **2 blocking**, 606 warnings. NOT CLEAN.
 

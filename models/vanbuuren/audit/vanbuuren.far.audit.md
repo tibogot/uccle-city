@@ -1,6 +1,6 @@
 # Mesh audit (before pack): vanbuuren.far
 
-3,828 triangles, 3,255 welded vertices, 2,772 open edges, 635,710 rays, 1511 ms.
+3,828 triangles, 3,255 welded vertices, 2,772 open edges, 635,710 rays, 2765 ms.
 
 **0 blocking**, 607 warnings. Clean (no blocking item).
 

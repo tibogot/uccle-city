@@ -78,3 +78,86 @@ NORTH: hidden by 509389 and the trees: ESTIMATED (plain brick, no openings model
 - The whole north side (against 509389), the NW wing's north / east faces, the bay's ground floor on the east, the
   south-east ground floor; the exact depth of the projecting bays (from the side faces' widths in v04 / v02); the
   leaded / stained glass patterns (from the photos, not traced); the lattice brick pattern (read from v04 / v06).
+
+## Pipeline (2026-11-10)
+```
+python tools/vanbuuren_measure.py                       # site.json (villa frame, roof parts, profiles), site_dtm.* (1 s)
+"C:/Program Files/Blender Foundation/Blender 5.0/blender.exe" --factory-startup -b -P tools/blender/vanbuuren.py -- models/vanbuuren [--no-bake] [--previews] [--quick]
+python tools/vanbuuren_photopose.py [--undistort] [--write-measured]   # poses, photo-measured openings (iterate with Blender)
+node tools/vanbuuren_pack.mjs models/vanbuuren/vanbuuren.raw.glb models/vanbuuren/vanbuuren.glb   # audit, then pack
+python tools/vanbuuren_sidebyside.py <lab screenshot> v03.jpg docs/vanbuuren/side_v03.jpg
+```
+Blender ~2 min with the bake (AO 4 m, 96 samples, 2048 px), +1.5 min previews; pack ~40 s (most of it the audits).
+Files: `vanbuuren.glb` (2.69 MB, meshopt + quantization; raw 8.75 MB), `vanbuuren_ao.png` (2048 px, 2.7 MB),
+`vanbuuren.json` (slots, codes, placement, measured, counts), `vanbuuren_landmarks.json` (the photo poses' 3D points +
+wall planes), `photo_views.json` (solved poses), `photo_measured.json` (openings measured on the photos), `audit/`.
+Kit: `tools/blender/vanbuuren_kit.py` (builder, frames, boxes, lathe), `vanbuuren_walls.py` (course fields),
+`vanbuuren_roof.py` (roof shell + tile courses + trims), `vanbuuren_parts.py` (joinery, slabs, box frames, gutters, lattice).
+
+## Method, what was done
+- PHOTOS FIRST: the 7 full-size Commons originals fetched (2 s between requests, one 429 backed off); upright copies
+  (EXIF). Heritage inventory: no record online for n° 41; Mapillary not tried (token); Street View not needed.
+- POSES (tools/vanbuuren_photopose.py, the Stalle method + more): the EXIF focal as a prior (27 mm / 18 mm eq.: 3602 /
+  1697 px; the Sony 16.8 mm: 3038 px), radial distortion k1 k2 (the ultra-wide), wall-corner LINES (a pixel on the
+  vertical edge through a footprint corner) besides points, a camera-height prior for v00. The openings' corners picked
+  on the photos are back-projected on their wall planes and fed back to the model (photo_measured.json): three rounds
+  converge. Mean reprojection: v03 (entrance, east) 7.4 px, v06 (garden, west) 8.4 px, v00 (south) 23 px (its points are
+  nearly planar; the weakest: TODO). Lab overlays use the photos remapped to the solved pinhole camera.
+- ROOF from the DSM: three crossing gable roofs (A north-south 106.85, B east-west 106.80, C east-west 105.60, pitches
+  56-58 deg), the north wing's flat top 104.85 with 57 / 63 deg slopes; valley B/C at w 0.85 (DSM 0.85). The gable faces
+  where each ridge ends on the DSM (east S gable 5.75 with its bay to 6.50: v04's side face; east N gable 5.30 behind the
+  single-storey porch to 7.60 and the canopy to 8.92 = the footprint's porch), the footprint for the rest.
+- GEOMETRY (all scripted): brick walls with the BED JOINTS RAKED 13 mm deep as geometry on a 62.5 mm course grid shared
+  by every wall (perpends flush, in the material), convex / concave corner rules (no coplanar groove faces), reveals
+  split per course, every face a ladder of quads (no fans, no T-junctions inside a field); the roof as the boolean union
+  of convex plane slabs (exact valleys and crossings) laid with real tile COURSES (11 cm gauge, 12 mm butts) per plane,
+  ridge caps, zinc valley flashings, raised verge boards, half-round gutters with stop ends, downpipes; white concrete
+  hoods, canopy and slabs with drip grooves; two deep box frames with the folding grilles; the porch's stepped door
+  recess, brick ribs, the oak door with four leaded panels, the leaded windows' deep white frames, blue-stone steps,
+  planters; the chimney breast on a stepped corbel and its stack; the corbelled south-west corner oriel; the dormer;
+  projecting-brick lattice panels and soldier bands in the gable tops; the three bays (west French-window bay with white
+  piers, the west and south picture-window bays); the terrace's retaining wall with steps, the low south wall, the round
+  basin on its green drum; the NW wing and its green veranda (ESTIMATED).
+- MATERIALS: 12 named slots, no colour in the GLB (codes in COLOR_0.r); UV0 in metres aligned with the geometry's courses
+  (walls: height above 90 m TAW; roofs: along the eave / up the slope), so the far LOD's painted courses fall where LOD0's
+  geometry has them. Temporary TSL materials in viewer/vanbuurenModel.js, SOURCE = the one-line switch, the adapter table.
+- AO: lightmap UV1 (course fields and roof planes keep one PLANAR island each; the raked joints' faces and the other thin
+  parts take vertex AO: baked into the brick rows they had bled in as blotchy bands under grazing light; fixed).
+- LODs: LOD0 = Villa + Villa_courses (105,453 tris: 15,955 + 89,498 courses; 15 draws), LOD1 = the scripted far variant
+  (3,828 tris, 12 draws, its own AO bake). A LOD2 by meshopt of the far variant was tried and dropped (71 blocking audit
+  items after packing for 1.6k triangles saved; `--lod2` keeps it). LOD0 < 55 m (+-10 m dithered band) to the box.
+- Normals: every face flat except round parts (pipes, gutters, the basin). NB Blender 5's set_sharp_from_angle marks
+  every face smooth: the smooth flags are set after it (that gave 5 bent soffits before).
+
+## Mesh audit (tools/mesh_audit, copied as-is from claude/stalle @ a3d14ab)
+- Raw GLB, per LOD group, before the pack (the pack stops on any blocking item; it stopped twice during the work):
+  LOD0 **0 blocking** (6 items accepted in audit/vanbuuren.allow.json, each hidden: against 509389's wall, under roof D,
+  underground), far **0 blocking**. Warnings: ~29k slivers = the course strips by design (5 cm x up to 8 m, lightmapped
+  with planar islands, flat normals), 1.6k nonmanifold edges (course corners), ~280 T-junctions (field joins inside
+  hoods / roofs).
+- Packed (quantized, report only): LOD0 6 (five 4-30 mm slits at ridge-cap / NW-roof course ends, one 2 cm2 streak at
+  roof C's split), LOD1 2. TODO.
+
+## Verification (this machine, one Chrome tab, 1400 x 900, dpr 1)
+- Side-by-sides at the solved poses (git-ignored, they hold the photos): docs/vanbuuren/side_v03.jpg, side_v06.jpg,
+  side_v00.jpg (photo | model | blend + the photo's edges).
+- Grazing light: docs/vanbuuren/lab_grazing_east_ff_window.png (December noon, the sun skimming the east wall: crisp raked
+  joints, reveals, sill, hood drip), lab_grazing_west_boxframe.png (June evening on the west box frame and slabs).
+- Moving through the LOD band: docs/vanbuuren/lab_lod_band_moving_east.png (lab, 31 -> 77 m, 8 frames of a 5 s move),
+  city_lod_band_moving.jpg (city, 45 / 54 / 61 / 70 m): no pop seen. City: city_east_avenue.png.
+- Flicker test (lab, 24 frames): fixed 0 ppm (25 m, 31 m); strafe 186 / 135 ppm, dolly 27 ppm: single pixels scattered
+  over the roof courses and brick joints (sub-pixel geometry at 25-30 m), no clustered z-fight blobs
+  (docs/vanbuuren/lab_flicker_east_strafe_25m.png).
+- GPU (lab bench, median whole frame, + = the villa): porch close-up L0 +0.72 / L1 +0.46 ms; v03 view (~10 m) +0.59 /
+  +0.20; south-east 40 m +0.13 / noise; 70 m +0.13 / +0.07; 400 m noise (timer quantum ~0.065 ms).
+- Load: GLB + AO 103-274 ms; shaders 1.2 s (lab) / 4.2 s (city, in the background) before it shows.
+- City flight (debug/vanbuurenFlight.js, 500 m -> 30 m -> orbit -> 500 m, 24 s, twice): 1431 / 1429 frames, median 16.7,
+  p99 16.9 ms; coverage 1.000 every frame, fading copies right every frame, no long task; run 1: one 117 ms frame at 6.5 s
+  (d 64 m, the session's first hand-over) + 3 at 33 ms; run 2: worst 33.4 ms (11 frames > 25 ms, at the 500 m end).
+
+## Still weak
+- The v00 pose (23 px) and so the south side's exact proportions; the NW wing (roof form, windows, veranda placement).
+- The brick reads darker / redder than the photos' orange in shade (temporary material; the library decides).
+- Strafe flicker ~150-190 ppm from the course geometry at 25-30 m (the anti-sparkle filter softens far parts, not these).
+- The east bay's ground floor, the south-east ground floor, the north side: plain brick (not seen).
+- Leaded / stained glass is a generic material pattern, not each window's design.

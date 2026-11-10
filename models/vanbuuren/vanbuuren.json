@@ -5,18 +5,18 @@
  "triangles_lod0_courses": 89451,
  "triangles_far": 3828,
  "triangles_per_slot_lod0": {
-  "wood_frame_white": 1980,
+  "metal_green_veranda": 140,
+  "stone_blue": 56,
   "wood_varnished": 3102,
+  "glass_window": 104,
   "brick_pattern": 3072,
   "concrete_white": 1628,
+  "roof_tiles_flat_dark": 12258,
+  "glass_leaded": 46,
+  "brick_orange_amsterdam": 82533,
   "zinc_gutter": 514,
   "oak_door": 20,
-  "brick_orange_amsterdam": 82533,
-  "stone_blue": 56,
-  "roof_tiles_flat_dark": 12258,
-  "glass_window": 104,
-  "metal_green_veranda": 140,
-  "glass_leaded": 46
+  "wood_frame_white": 1980
  },
  "triangles_per_slot_far": {
   "brick_orange_amsterdam": 922,
@@ -86,10 +86,10 @@
  "lightmap": {
   "px": 2048,
   "split_v": 0.86,
-  "lod0_px_per_m": 28.3,
+  "lod0_px_per_m": 29.3,
   "far_px_per_m": 11.9,
   "thin_faces_vertex_ao": [
-   6258,
+   28734,
    239
   ]
  },

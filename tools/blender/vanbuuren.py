@@ -725,6 +725,7 @@ def make_mesh(name, bld):
     ga = me.attributes.new("grp", "INT", "FACE"); ga.data.foreach_set("value", bld.g)
     pa = me.attributes.new("planar", "INT", "FACE"); pa.data.foreach_set("value", [int(x) for x in planar])
     sa = me.attributes.new("smoothf", "INT", "FACE"); sa.data.foreach_set("value", [int(x) for x in bld.sm])
+    ja = me.attributes.new("jointf", "INT", "FACE"); ja.data.foreach_set("value", [int(c == C_JOINT) for c in bld.c])
     rwa = me.attributes.new("rw", "FLOAT", "FACE"); rwa.data.foreach_set("value", [(-1.0 if r is None else r) for r in bld.rw])
     obj = bpy.data.objects.new(name, me); scn.collection.objects.link(obj)
     bm = bmesh.new(); bm.from_mesh(me)
@@ -757,7 +758,10 @@ def lightmap(objs, v0, v1):
     for obj in objs:
         me = obj.data
         planar = [0] * len(me.polygons); me.attributes["planar"].data.foreach_get("value", planar); planar = [bool(x) for x in planar]
-        thin = [False] * len(me.polygons)
+        jf = [0] * len(me.polygons); me.attributes["jointf"].data.foreach_get("value", jf)
+        # the raked joints' faces take no texels (per-vertex AO): baked into the brick faces' rows (a texel ~3.5 cm, a
+        # joint 1.25 cm) their dark AO bled into the bricks as blotchy bands under grazing light
+        thin = [bool(j) for j in jf]
         for p_ in me.polygons:
             if planar[p_.index]: continue
             co = [me.vertices[v].co for v in p_.vertices]
@@ -810,7 +814,7 @@ def lightmap(objs, v0, v1):
     dens = math.sqrt(cov * AO_PX * AO_PX / max(area, 1))
     print(f"  lightmap v {v0:.3f}..{v1:.3f}: {sum(sum(t) for t in thin_all.values())} thin faces (vertex AO), {area:.0f} m2, {dens:.1f} px/m")
     for obj in objs:
-        for a in ("grp", "planar", "smoothf", "rw"):
+        for a in ("grp", "planar", "smoothf", "rw", "jointf"):
             if a in obj.data.attributes: obj.data.attributes.remove(obj.data.attributes[a])
     return thin_all, dens
 

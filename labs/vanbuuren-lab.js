@@ -363,6 +363,13 @@ lab.strip = async (opts = {}) => {
     return { labels: r.labels, width: r.width, height: r.height, url: r.url };
   } finally { lab.resume(); }
 };
+/** put the camera at (u, w, h) looking at (u, w, h) in the building frame (un-pins a photo view) */
+lab.look = (p, t, fov = 40) => {
+  pinned = null;
+  const [x, z] = toCity(p[0], p[1]), [tx, tz] = toCity(t[0], t[1]);
+  camera.position.set(x, p[2], z); controls.target.set(tx, t[2], tz); camera.lookAt(controls.target);
+  camera.fov = fov; camera.updateProjectionMatrix(); $photo.removeAttribute("src"); $credit.style.display = "none";
+};
 /** a camera path in the building frame: from (u, w, h) a to b looking at target (u, w, h) */
 lab.pathUWH = (a, b, tgt) => (t) => {
   const u = a[0] + (b[0] - a[0]) * t, w = a[1] + (b[1] - a[1]) * t, h = a[2] + (b[2] - a[2]) * t;

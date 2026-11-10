@@ -1,6 +1,6 @@
 # Mesh audit (before pack): vanbuuren.lod0
 
-105,453 triangles, 60,357 welded vertices, 22,264 open edges, 1,249,990 rays, 11996 ms.
+105,453 triangles, 60,357 welded vertices, 22,264 open edges, 1,249,990 rays, 19376 ms.
 
 **0 blocking**, 31212 warnings. Clean (no blocking item).
 
