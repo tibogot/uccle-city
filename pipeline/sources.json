@@ -417,6 +417,16 @@
       "licence": "CC0 1.0 (UrbIS Topo, Paradigm; served by Brussels Mobility)",
       "verified": "2026-11-05",
       "urls": []
+    },
+    "markings": {
+      "title": "Measured road markings: UrbIS Topo marking_line / marking_point (CR2301L zebra edges, CR2302L stop lines, CR2303L give-way, CR21*/CR22* lines, CR24*P arrows), Brussels Mobility pedestrian crossing polygons, marking inventory (bm_equipment marking_line / marking_polygon / marking_point) and traffic signs, Brussels Mobility WFS",
+      "page": "https://data-mobility.irisnet.be/geoserver/ows?service=WFS&request=GetCapabilities&version=2.0.0",
+      "techSpec": "https://urbisdownload.datastore.brussels/UrbIS/TechSpec/Topo_TechSpec_FR20230428.pdf",
+      "wfs": "https://data-mobility.irisnet.be/geoserver/ows?service=WFS&version=2.0.0&request=GetFeature&typeNames={layer}&outputFormat=application/json&srsName=EPSG:31370&bbox={e0},{n0},{e1},{n1},EPSG:31370",
+      "expect": "GeoJSON per tile bbox (+30 m) and layer, fetched by pipeline/fetch_markings.py into data/raw/markings/<T>.<layer>.geojson -> data/tiles/<T>/markings.json (pipeline/build_markings.py).",
+      "licence": "UrbIS Topo layers CC0 1.0 (Paradigm). Brussels Mobility layers (bm_pedestrian, bm_equipment): licence not stated on the WFS, asked (docs/roads/brussels_mobility_request.md)",
+      "verified": "2026-11-10",
+      "urls": []
     }
   }
 }
