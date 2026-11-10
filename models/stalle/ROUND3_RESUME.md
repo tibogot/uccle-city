@@ -27,6 +27,8 @@ Round-2 assets for A/B: models/stalle/_before/ (git-ignored) and a detached work
 
 ## Round 4 done (coordinator review): capital stepped line (albedo UV cells), moulded abacus, flush voussoir rings, interior grazing tour, rubble wander, window ring + door relieving course, door leaves near flush, plinth 3.5 cm. See NOTES.md.
 
+## Round 5 done (owner via coordinator): abaci, returned impost bands, arch bright edge, figure heads, rubble colour / size, interior flicker (cross-GLB z-fight fixed), nave walk, light-only tour. See NOTES.md "Round 5".
+
 ## Open (for the owner / next round)
 - Statue (owner to choose: better scripted approach or a CC0 / CC-BY museum scan): clearly better than round 2's lathe figure, still not AAA: soft face, blobby Child, hair waves read as curls,
   the Child's legs stand off in side view.
@@ -41,3 +43,6 @@ Round-2 assets for A/B: models/stalle/_before/ (git-ignored) and a detached work
 - LOD1 (far variant): the house's windows turn into dark holes; the chapel's oculi too (window tracery fixed).
 - Round 4 leftovers: aisle-wall lightmap still slightly mottled near the lepers' window (light-only view); a thin bright
   edge on one arch extrados in one view; statue edges flicker at 5 m (291 ppm, statue untouched by decision).
+- Round 5 leftovers: north aisle west end blotchy in the light-only view (cause not found, see NOTES); exterior pack
+  needs `6000 99999` (LOD2 = whole far variant). The mesh audit should also check the exterior and interior GLBs
+  TOGETHER (the clerestory / arcade z-fight was invisible to the per-GLB audit).

@@ -179,6 +179,34 @@ justified, audit/stalle.allow.json), far 73 -> 0, packed LOD1 1,506 -> 0 (LOD1 i
 - GPU round 3 -> round 4 (lab bench, median of 3, + = the chapel): c00 L0 +0.39 -> +0.00, L1 +0.26 -> +0.07, L2 -0.13
   -> +0.07; c05 L0 +0.72 -> +0.13, L1 +0.46 -> -0.20, L2 +0.46 -> -0.52; overview +0.07 -> +0.33 / +0.66 (timer steps
   0.065 ms, noise +-0.3 ms: no measurable change). Images: docs/stalle/round3/*_r4*.
+- Round 5 (owner, from springer_AFTER_r4 / side_round4_west_c00): abaci = a 20.5 cm moulded octagon (7-step cavetto,
+  1.5 cm fillet, chamfer, 9 cm face, top chamfer; bell shortened to meet it), smoothing by a new builder rule ("hard"
+  groups: sharp where the faces' plan directions differ > 20 deg, smooth along the profile); impost BANDS (26 cm,
+  cavetto + fillet + chamfered face) wrapping the west responds, running across the chancel wall at the east responds
+  (north: round the corner into the aisle's east wall) and round each choir-arch jamb, every free end RETURNED into the
+  wall (no end caps: no boxes); the arches' thin bright edge = the rings' 1.5 cm intrados sides (per-corner light, far
+  brighter than the lightmapped soffit): the soffit now runs 1.5 cm out under the rings on both faces and the stones'
+  intrados sides are left out (their inner edges follow the soffit polyline exactly); figure heads = an egg, 32 x 16,
+  11 deg steps (smooth); rubble cream-beige (wall / white-band chroma, same lab light: r/g 0.94 -> 0.98, b/g 1.09 ->
+  1.02; c00 1.00 / 0.98), stones 0.2-1.8 x the course's length. Checks: the interior flicker test found the exterior
+  clerestory wall (from 38.95) lying IN the interior's arcade wall below the aisle ceilings (39.08): a z-fight across
+  two GLBs the per-GLB audit cannot see; the wall starts at 39.11 now (north aisle strafe / dolly 367 / 354 -> 45 / 34
+  ppm). Lightmaps without mips (chart borders mixed with the empty atlas at grazing angles). Bake 1536 samples, border
+  texels under 70 % lifted, the shell's faces lying on interior surfaces dropped from the occluder (279).
+- Flicker inside (ppm fixed / strafe / dolly): door 0 / 157 / 3 (leaf meeting line, one brick joint), capitals 0 / 190 /
+  23, north aisle 0 / 45 / 34, south aisle 0 / 171 / 48. Walk up the central aisle past the north capitals: nearest
+  geometry 1.03 m (raycast, 61 samples x 26 directions).
+- Triangles round 5: interior 119,009 (was 115,259); exterior unchanged (LOD0 72.8k incl. slates, far 8,195). Pack:
+  `node tools/stalle_pack.mjs models/stalle/stalle.raw.glb models/stalle/stalle.glb 6000 99999` (LOD2 = the whole far
+  variant; the default 1200 simplifies it to 1,268 tris with 294 blocking items). Audits: interior 0 before the pack (1
+  after quantization: the retable Virgin's crown, a 4 mm slit), exterior 0 (packed LOD0: the 4 gutter slivers).
+- GPU round 4 -> 5 (+ = the chapel): c00 L0 +0.00 -> -0.07, L1 +0.07 -> -0.26, L2 +0.07 -> -0.13; c05 +0.13 -> +0.20,
+  -0.20 -> +0.07, -0.52 -> 0.00; overview +0.33 -> +0.20, +0.66 -> 0.00, +0.66 -> +0.07 (noise +-0.3; another lab tab on
+  the GPU). Images: docs/stalle/round5/.
+- Open: the north aisle's west end still blotchy in the light-only view (sky bake, dark ragged patches along chart
+  borders; unchanged by 768 -> 1536 samples, the border lift or dropping the shell's coplanar faces: cause not found);
+  a blue strip at the north aisle view's edge; the wall lamp's hot spot right under the choir-arch impost (estimated
+  lamp position).
 - Images: docs/stalle/round3/ (flicker heat maps, frame strips, grazing before / after); side-by-sides
   docs/stalle/side_round3_*.jpg (git-ignored: they hold the photos).
 
