@@ -201,7 +201,7 @@ def _clip_s(loop, lo, hi):
             if ip != iq:
                 t = (x0 - p[0]) / (q[0] - p[0]); out.append((x0, p[1] + (q[1] - p[1]) * t))
     return out
-def voussoirs(fr, head, cs, spring_v, width=0.2, d=0.015, n=11, mat=STONE, s_lo=None, s_hi=None):
+def voussoirs(fr, head, cs, spring_v, width=0.2, d=0.015, n=11, mat=STONE, s_lo=None, s_hi=None, flush=False, b_lo=None, b_hi=None, b_top=None, ext=None):
     """a ring of separate voussoirs (real joints) along an arch head (points above the spring line, left to right);
     s_lo / s_hi clip the ring (two neighbouring rings meet on the pier's axis: one springer, no overlapping fronts)"""
     pts = [p for p in head if p[1] >= spring_v - 1e-6]
@@ -237,13 +237,27 @@ def voussoirs(fr, head, cs, spring_v, width=0.2, d=0.015, n=11, mat=STONE, s_lo=
             t = t0 + (t1 - t0) * j / m; x, y = at(t); nx, ny = nrm_at(t)
             outer.append((x + nx * width, max(spring_v, y + ny * width)))
         return inner + outer
-    back = _clip_s(ring_pts(0.0, 1.0, 48), s_lo, s_hi)
-    if len(back) >= 3: fill2d(fr, [back], d * 0.3, mat, C_ARCH); strip2d(fr, back, d * 0.3, 0.0, mat, C_ARCH, inward=False)
+    # the ring goes to the PROPS (per-corner light): its 4.5 mm strips took lightmap texels of their own, baked dark,
+    # that bled as dark "hairs" along every arch's extrados (the light-only tour, round 4)
+    KB_, K.B = K.B, BP
+    # flush: the wall is CUT under the ring (arcade(): its arch heads are the extrados), the backing lies in the wall's
+    # plane and closes it; no wall texels under the ring baked black and bleeding round its edge (the dark "hairs")
+    if flush and ext is not None:
+        # the backing between the intrados and EXACTLY the wall's cut line (the same extrados polyline)
+        ex = sorted([p for p in ext if p[1] >= spring_v - 1e-6], key=lambda p: p[0])
+        back = _clip_s([at(j / 48) for j in range(49)] + ex[::-1], b_lo, b_hi)
+    else:
+        back = _clip_s(ring_pts(0.0, 1.0, 48), b_lo if flush else s_lo, b_hi if flush else s_hi)
+    if flush and b_top is not None: back = [(x, min(y, b_top)) for x, y in back]       # under the face's top (as the wall)
+    if len(back) >= 3:
+        if flush: fill2d(fr, [back], 0.0, mat, C_ARCH)
+        else: fill2d(fr, [back], d * 0.3, mat, C_ARCH); strip2d(fr, back, d * 0.3, 0.0, mat, C_ARCH, inward=False)
     for k in range(n):
         t0, t1 = k / n + (0.0015 if k else 0.0), (k + 1) / n - (0.0015 if k < n - 1 else 0.0)
         loop = _clip_s(ring_pts(t0, t1, 6), s_lo, s_hi)
         if len(loop) < 3: continue
-        fill2d(fr, [loop], d, mat, C_ARCH); strip2d(fr, loop, d, d * 0.3, mat, C_ARCH, inward=False)
+        fill2d(fr, [loop], d, mat, C_ARCH); strip2d(fr, loop, d, 0.0 if flush else d * 0.3, mat, C_ARCH, inward=False)
+    K.B = KB_
 
 # ------------------------------------------------------------------------------------------------ architecture
 def floors():
@@ -297,12 +311,34 @@ def arcade(side):
         s0, s1 = sorted((S(fr, a, ww), S(fr, b, ww)))
         apex = min(38.98, SPRING + 0.86 * (BAYS[[f for f in feet].index((a, b))][1] - BAYS[[f for f in feet].index((a, b))][0]))
         return pointed(s0, s1, hz(SPRING), hz(apex), n=24)
+    RW = 0.2                                                   # the voussoir rings' depth (voussoirs(..., 0.2, ...))
+    def head_ext(fr, ww, a, b):
+        """the ring's extrados: the same arcs' centres, radius + RW (round 4: the wall stops there, the ring's flush
+        backing fills the band down to the intrados)"""
+        s0, s1 = sorted((S(fr, a, ww), S(fr, b, ww)))
+        hd = head(fr, ww, a, b); ap = max(p[1] for p in hd)
+        w = s1 - s0; h = ap - hz(SPRING); R = (w * w / 4 + h * h) / w
+        w2 = w + 2 * RW; R2 = R + RW; h2 = math.sqrt(max(R2 * w2 - w2 * w2 / 4, 0.0))
+        return pointed(s0 - RW, s1 + RW, hz(SPRING), hz(SPRING) + h2, n=28)
+    def bounds(fr, ww, a, b):
+        pa = S(fr, a - (S0 if a != SC.RESP_W else 0.0), ww); pb = S(fr, b + (S0 if b != U_CA0 else 0.0), ww)
+        return sorted((pa, pb))
     def outline(fr, ww, top):
-        """the wall: from the west respond's foot, up its face, over every arch and springer, down the east end"""
+        """the wall: from the west respond's foot, up its face, over every arch's EXTRADOS (clipped at the piers'
+        axes, where two rings meet), down the east end"""
         o = [(S(fr, U_W, ww), hz(F0 - 0.1)), (S(fr, SC.RESP_W, ww), hz(F0 - 0.1))]
         for (a, b) in feet:
-            hd = head(fr, ww, a, b)
-            pts = sorted([p for p in hd if p[1] >= hz(SPRING) - 1e-6], key=lambda p: p[0] * (1 if S(fr, b, ww) > S(fr, a, ww) else -1))
+            hd = [p for p in head_ext(fr, ww, a, b) if p[1] >= hz(SPRING) - 1e-6]
+            lo, hi = bounds(fr, ww, a, b)
+            hd = sorted(hd, key=lambda p: p[0])
+            def y_at(x):
+                for i in range(len(hd) - 1):
+                    if hd[i][0] <= x <= hd[i + 1][0]:
+                        t = (x - hd[i][0]) / max(hd[i + 1][0] - hd[i][0], 1e-9); return hd[i][1] + (hd[i + 1][1] - hd[i][1]) * t
+                return hz(SPRING)
+            pts = [(lo, y_at(lo))] + [p for p in hd if lo < p[0] < hi] + [(hi, y_at(hi))]
+            pts = [(x, min(y, hz(top))) for x, y in pts]                  # never above the face's top
+            if not (S(fr, b, ww) > S(fr, a, ww)): pts = pts[::-1]
             o += pts
         o += [(S(fr, U_CA0, ww), hz(top)), (S(fr, U_W, ww), hz(top))]
         return o
@@ -340,7 +376,9 @@ def arcade(side):
             # intrados and end face lay in the chancel wall's face, a coplanar strip at the east responds)
             pa = S(fr, a - (S0 if a != SC.RESP_W else -0.01), ww); pb = S(fr, b + (S0 if b != U_CA0 else -0.01), ww)
             lo, hi = sorted((pa, pb))
-            voussoirs(fr, hd, cs, hz(SPRING), 0.2, 0.015, 11 if b - a > 2 else 7, s_lo=lo, s_hi=hi)
+            blo, bhi = bounds(fr, ww, a, b)
+            voussoirs(fr, hd, cs, hz(SPRING), RW, 0.015, 11 if b - a > 2 else 7, s_lo=lo, s_hi=hi, flush=True, b_lo=blo, b_hi=bhi,
+                      b_top=hz(WALL_TOP if fr is frN else AISLE_HI + 0.02), ext=head_ext(fr, ww, a, b))
     for uu, into in ((SC.RESP_W, 1), (U_CA0, -1)):
         a_, b_ = sorted((wn, wa))
         fr = Frame(P(uu, (wn + wa) / 2, OY), Vector((into, 0, 0)))
