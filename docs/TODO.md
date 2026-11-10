@@ -26,6 +26,11 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 
 Stairs paused until the owner's Mixamo clips are in `data/raw/animations/mixamo/` (and the owner decides: Mixamo clips committed for the live site, or local only).
 
+**Done 2026-11-10 while the owner was away (own branches, not merged; waiting for the owner's eye):**
+- [ ] `claude/smallfixes` (d61221e): night lamps pick the 6 nearest without a per-frame allocation or full sort (same lamps, 2000 random checks); `?sunlight=1` uses Mr.doob's newer shadow settings (2048 px, 220 m). GPU A/B still to measure on a quiet machine.
+- [ ] `claude/flags` (d22d6da, labs/flag-lab.html, docs/FLAGS.md): flag system v1, lab only. Verlet cloth near, baked loop far (GPU, zero CPU), no pops at the hand-overs (measured), wind changes re-recorded in a worker and cross-faded, town hall balcony poles with wall collision, Belgium / EU / Uccle designs. Live cloth ~0.08 ms per flag (Node), more in the busy browser: budget 4 live flags. Next: GPU A/B, the city (town hall), the city wind.
+- [ ] `claude/hero-prep` (de4ddf8, docs/heroes/): preparation only for Villa van Buuren (solid 550409) and Wolvendael (chateau 537523 + Louis XV pavilion 537211): measurements, photo sources + licences, facade read, parts / slots, risks; owner decision needed on how to do carved ornament (pavilion) and statues (Stalle).
+
 **City test bugs the owner saw (2026-11-10, flying with the birds; re-test on a combined build, some may be fixed by unmerged branches):**
 - [ ] distant trees flickering / shimmering, even with a still or slow camera (owner, 2026-11-10: this IS the "tree jitter" seen flying with the birds; seen again in the town hall city view). Check far-tree LOD, alpha-cutout aliasing (alpha-to-coverage / mip alpha), impostors.
 - [ ] z-fighting (flicker) on shader buildings (facades / roof edges?)
