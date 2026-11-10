@@ -42,8 +42,8 @@ OXC, OZC = FR["origin_city"]; ROT = FR["rotation_rad"]
 OY = 60.0
 
 SLOTS = ["brick_red_brussels", "stone_white", "stone_blue", "slate", "zinc_roof", "wood_frame_white", "wood_frame_dark",
-         "glass_window", "cast_iron_green"]
-BRICK, STONE, BLUE, SLATE, ZINC, WOOD, DOOR_WOOD, GLASS, IRON = range(9)
+         "glass_window", "cast_iron_green", "cobbles"]
+BRICK, STONE, BLUE, SLATE, ZINC, WOOD, DOOR_WOOD, GLASS, IRON, COBBLES = range(10)
 CODES = ["plain", "band", "surround", "cornice", "plinth", "pilaster", "sill", "keystone", "pediment", "baluster", "column",
          "interior", "seam", "coping", "console", "door"]
 (C_PLAIN, C_BAND, C_SUR, C_CORN, C_PLINTH, C_PIL, C_SILL, C_KEY, C_PED, C_BAL, C_COL, C_INT, C_SEAM, C_COPING,
@@ -245,7 +245,13 @@ CONTOUR = [(UE, -WM), (UE, WM), (UW1, WM), (UW1, WW), (UW0, WW), (UW0, WM), (UB1
 FLOOR_GF = 62.95          # ground floor (the perron's landing): east ground 61.05 (DTM) + 11 risers of 0.17
 PLINTH_TOP = 63.00          # the inventory views: ground-floor windows nearly as tall as the first floor ones, a low plinth
 GF_SILL, GF_HEAD = 63.25, 66.20
-BAND1 = 66.95             # string course at the first floor (= the balcony's floor level 67.0, DSM balustrade 67.9)
+# THE PORTICO (polish 2, measured on the full-size photo 3557 at 61.5 px/m: the door's head is level with the ground-floor
+# windows' heads (66.20, y 1235), the soffit of the portico's entablature 35 px above it (66.77), its cornice top 48 px
+# higher (67.55 = the balcony's floor); round 1 had them 0.47 m lower and no room for the carved panel over the door)
+DOOR_HEAD = 66.22         # the main door's opening
+PORTICO_SOFFIT = 66.78    # the underside of the portico's entablature: the carved panel fills the wall from the door to it
+BALC_FLOOR = 67.55        # the balcony's floor (the entablature's top), above the string course (66.95-67.37)
+BAND1 = 66.95             # string course at the first floor
 SILLC = 68.46             # first-floor sill course (68.46-68.68), sills at 68.70
 F1_SILL = 68.70
 ORD = {
@@ -398,8 +404,8 @@ class Win:
         fill2d(fr, [mid, inner], pr + 0.035, mat_s, C_SUR)
         strip2d(fr, mid, pr + 0.035, pr, mat_s, C_SUR, inward=False)
         strip2d(fr, inner, pr + 0.035, -0.26, mat_s, C_SUR)
-        # ears (crossettes) at the top corners of the surround
-        for sg in (-1, 1):
+        # ears (crossettes) at the top corners of the surround (not the main door: the carved panel sits on its head)
+        for sg in ((-1, 1) if self.kind != "door" else ()):
             e0 = s + sg * (w / 2 + sur)
             fbox(fr, min(e0, e0 + sg * 0.085), max(e0, e0 + sg * 0.085), s1 + sur - 0.34, s1 + sur, 0.0, pr, mat_s, C_SUR)
         d = -0.21
@@ -491,11 +497,11 @@ def openings_of(e):
         w = b[3] if len(b) > 3 else O["win"]; lights = b[4] if len(b) > 4 else 2
         s = e.s(c)
         if gf == "door":
-            out.append(Win(s, FLOOR_GF, GF_HEAD + 0.1, 1.62, None, "door", order=e.order))
+            out.append(Win(s, FLOOR_GF, DOOR_HEAD, 1.62, None, "door", order=e.order))
         elif gf:
             out.append(Win(s, GF_SILL, GF_HEAD, w, gf, "win", lights, e.order))
         if f1 == "balc":
-            out.append(Win(s, BAND1 + 0.06, O["f1_head"], 1.5, "hood", "balc", 2, e.order))
+            out.append(Win(s, BALC_FLOOR + 0.02, O["f1_head"], 1.5, "hood", "balc", 2, e.order))
         elif f1:
             out.append(Win(s, F1_SILL, O["f1_head"], w, f1, "win", lights, e.order))
         if gf not in ("door",) and plinth_h > 1.25:
@@ -869,7 +875,7 @@ def portico(e):
                 q = fr.p(mid, base(d), d)
                 box(q, fr.U, Z, fr.N, -0.035, 0.035, 0.0, rail(d) - base(d) + 0.08, -0.035, 0.035, IRON, C_PLAIN)
     # columns (Tuscan, entasis) on square plinths, the wall's pilasters answer them (EXTRA_PIL)
-    z_cap = hz(66.0); z_ab = hz(66.3)
+    z_cap = hz(PORTICO_SOFFIT - 0.3); z_ab = hz(PORTICO_SOFFIT)
     for sg in (-1, 1):
         cs = s + sg * 1.33
         c = fr.p(cs, 0, dc)
@@ -885,7 +891,7 @@ def portico(e):
         lathe(c + Z * (zgf + 0.22), prof, 16, STONE, C_COL)
         wbox(c, fr.U, fr.N, 0.31, 0.31, z_cap, z_ab, STONE, C_COL)
     # entablature (architrave + frieze + cornice) on the columns, the balcony slab on top
-    ztop = hz(BAND1 + 0.05)
+    ztop = hz(BALC_FLOOR)
     fbox(fr, s - 1.71, s + 1.71, z_ab, ztop - 0.25, 0.0, dpt, STONE, C_CORN, skip=("back",))
     if not FAR:
         fbox(fr, s - 1.74, s + 1.74, z_ab + 0.18, z_ab + 0.24, 0.0, dpt + 0.03, STONE, C_BAND, skip=("back",))
@@ -911,10 +917,187 @@ def portico(e):
             lathe(q + Z * (zb0 + 0.13), [(0.06, 0.0), (0.075, 0.03), (0.06, 0.07), (0.05, 0.1), (0.085, 0.24), (0.06, 0.38), (0.04, 0.48),
                                           (0.055, 0.53), (0.07, 0.58), (0.07, 0.61), (0.0, 0.61)], 8, STONE, C_BAL)
 
+# -------------------------------------------------------------------------------------------- polish 2: carved panel, flag poles, paving apron
+def wall_dome(fr, cs, cv, a, b, h, d0, ang=0.0, segs=16, mat=STONE, code=C_PED, sharp=1.0):
+    """a carved relief boss on a wall: an elliptic dome (half axes a, b in the wall plane, rotated by ang, height h out of
+    the wall from depth d0); the profile z = h (1 - r^2)^(0.5 sharp) gives a soft carved edge (no hard rim)"""
+    B.new_group()
+    ca, sa = math.cos(ang), math.sin(ang)
+    def pt(r, t):
+        x, y = a * r * math.cos(t), b * r * math.sin(t)
+        return fr.p(cs + x * ca - y * sa, cv + x * sa + y * ca, d0 + h * max(0.0, 1 - r * r) ** (0.5 * sharp))
+    radii = [1.0, 0.82, 0.55, 0.0]
+    top = fr.p(cs, cv, d0 + h)
+    back = fr.p(cs, cv, d0 - 0.5)
+    for i in range(len(radii) - 1):
+        r0, r1 = radii[i], radii[i + 1]
+        for k in range(segs):
+            t0, t1 = 2 * math.pi * k / segs, 2 * math.pi * (k + 1) / segs
+            pts = [pt(r0, t0), pt(r0, t1), pt(r1, t1), pt(r1, t0)] if r1 > 1e-6 else [pt(r0, t0), pt(r0, t1), top]
+            c = sum(pts, Vector()) / len(pts)
+            face_dir(pts, c - back, mat, code)
+
+def door_panel(e):
+    """THE CARVED PANEL OVER THE MAIN DOOR (polish 2): a stone tablet between the centre pilasters, from the door's surround
+    to the portico's architrave, framed by a bead moulding; on it a domed cartouche with a rolled rim, C-scrolls at its
+    sides and two laurel branches tied by a ribbon under it. The photos (P01, 3557) are too small to read the carving:
+    its motif is ESTIMATED (the usual Louis XIII / eclectic cartouche); its size and place are measured."""
+    if FAR: return
+    fr = e.fr; s = e.s(0.0)
+    # the tablet stands on the door surround's inner step (its face 0.095 out covers the surround's 0.085)
+    z0, z1 = hz(DOOR_HEAD + 0.075), hz(PORTICO_SOFFIT)
+    hw = 0.96; d0 = 0.095
+    fbox(fr, s - hw, s + hw, z0, z1, 0.0, d0, STONE, C_PED)
+    # bead frame (a closed path, CCW: its left normal points into the field)
+    m = 0.045
+    BEAD = [(0.0, 0.0), (0.014, 0.0), (0.024, 0.008), (0.028, 0.02), (0.024, 0.032), (0.014, 0.04), (0.0, 0.04)]
+    sweep2d(fr, [(s - hw + m, z0 + m), (s + hw - m, z0 + m), (s + hw - m, z1 - m), (s - hw + m, z1 - m)], BEAD, STONE, C_PED,
+            closed=True, d0=d0)
+    cv = (z0 + z1) / 2 + 0.01
+    a, b = 0.21, (z1 - z0) / 2 - 0.085
+    # cartouche: a domed shield and a rolled rim (round section)
+    wall_dome(fr, s, cv, a, b, 0.045, d0, segs=24, sharp=0.8)
+    ROLL = [(0.0, -0.016), (0.012, -0.013), (0.019, -0.004), (0.019, 0.006), (0.012, 0.014), (0.0, 0.017)]
+    rim = [(s + (a + 0.012) * math.cos(2 * math.pi * k / 28), cv + (b + 0.012) * math.sin(2 * math.pi * k / 28)) for k in range(28)]
+    sweep2d(fr, rim, ROLL, STONE, C_PED, closed=True, d0=d0)
+    # on the shield: an inner bead ring following the dome, a rosette of eight petals round a boss at its crown
+    hd = 0.045
+    ring = [(s + 0.74 * a * math.cos(2 * math.pi * k / 24), cv + 0.74 * b * math.sin(2 * math.pi * k / 24)) for k in range(24)]
+    sweep2d(fr, ring, [(0.0, -0.006), (0.006, -0.004), (0.008, 0.0), (0.006, 0.004), (0.0, 0.006)], STONE, C_PED, closed=True,
+            d0=d0 + hd * (1 - 0.74 ** 2) ** 0.4 - 0.004)
+    ztop = d0 + hd - 0.006
+    for k in range(8):
+        t = 2 * math.pi * k / 8 + math.pi / 8
+        wall_dome(fr, s + math.cos(t) * 0.052, cv + math.sin(t) * 0.052, 0.042, 0.017, 0.012, ztop - 0.004, ang=t, segs=10, sharp=0.7)
+    wall_dome(fr, s, cv, 0.024, 0.024, 0.018, ztop, segs=12)
+    # C-scrolls at its sides (volutes: a round section swept along a tightening spiral) with a boss at the eye
+    ROUND = [(0.0, -0.011), (0.011, -0.008), (0.016, 0.0), (0.011, 0.008), (0.0, 0.011)]
+    for sg in (-1, 1):
+        cx = s + sg * (a + 0.085)
+        path = []
+        for k in range(15):
+            t = k / 14; th = math.pi * (0.5 + 1.9 * t); rho = 0.075 * (1 - 0.62 * t)
+            path.append((cx - sg * rho * math.cos(th), cv + 0.02 + rho * math.sin(th)))
+        sweep2d(fr, path, ROUND, STONE, C_PED, d0=d0)
+        wall_dome(fr, path[-1][0], path[-1][1], 0.018, 0.018, 0.02, d0, segs=10)
+    # laurel branches: a stem from the ribbon under the cartouche out to the panel's ends, leaves in pairs along it
+    STEM = [(0.0, -0.007), (0.008, -0.005), (0.011, 0.0), (0.008, 0.005), (0.0, 0.007)]
+    for sg in (-1, 1):
+        p0 = (s + sg * 0.05, z0 + 0.12); p1 = (s + sg * 0.48, z0 + 0.06); p2 = (s + sg * (hw - 0.12), cv + 0.07)
+        bez = lambda t: ((1 - t) ** 2 * p0[0] + 2 * t * (1 - t) * p1[0] + t * t * p2[0], (1 - t) ** 2 * p0[1] + 2 * t * (1 - t) * p1[1] + t * t * p2[1])
+        sweep2d(fr, [bez(k / 12) for k in range(13)], STEM, STONE, C_PED, d0=d0)
+        n = 9
+        for j in range(n):
+            t = 0.12 + 0.86 * j / (n - 1)
+            x, y = bez(t)
+            dx = 2 * (1 - t) * (p1[0] - p0[0]) + 2 * t * (p2[0] - p1[0]); dy = 2 * (1 - t) * (p1[1] - p0[1]) + 2 * t * (p2[1] - p1[1])
+            ang = math.atan2(dy, dx); L = 0.05 * (1 - 0.35 * t)
+            for side in (1, -1):
+                la = ang + side * math.radians(38)
+                wall_dome(fr, x + math.cos(la) * L * 0.9, y + math.sin(la) * L * 0.9, L, L * 0.36, 0.016, d0, ang=la, segs=10, sharp=0.7)
+            if j == n - 1:
+                wall_dome(fr, x + math.cos(ang) * L * 1.2, y + math.sin(ang) * L * 1.2, L, L * 0.36, 0.016, d0, ang=ang, segs=10, sharp=0.7)
+    # the ribbon: a knot and two loops over the crossing stems, two tails
+    wall_dome(fr, s, z0 + 0.12, 0.03, 0.026, 0.028, d0, segs=12)
+    for sg in (-1, 1):
+        wall_dome(fr, s + sg * 0.06, z0 + 0.135, 0.045, 0.02, 0.018, d0, ang=sg * math.radians(20), segs=12, sharp=0.7)
+        wall_dome(fr, s + sg * 0.05, z0 + 0.075, 0.04, 0.012, 0.014, d0, ang=-sg * math.radians(55), segs=10, sharp=0.7)
+
+FLAG_POLES = []
+def flag_poles(e):
+    """FLAG POLES on the balcony (polish 2; the flags themselves are left for the cloth-simulation flag system): three
+    painted iron poles as in the inventory's frontal view P01 (EU south / Belgium centre / Uccle north; the Commons photo
+    3557 of 2008 shows two, Belgium south and Uccle north, from the same corners): the side poles rise from the
+    balustrade's front corner dies leaning out sideways and forward, the centre one from the middle of the front rail.
+    Each stands in a socket on a bracket fixed to the stone, with a stay; a ball finial on top. The poles' ends, axes and
+    lengths go to townhall.json (flag_poles) for the flag system."""
+    fr = e.fr; s0 = e.s(0.0)
+    dpt = UPOR - UE
+    zb0 = hz(BALC_FLOOR); zr = zb0 + 0.86
+    spec = [("south", e.s(1.71), zr + 0.13, dpt - 0.02, 38.0, 3.9, "EU (P01) / Belgium (3557, 2008)"),
+            ("centre", s0, zr, dpt - 0.02, 16.0, 3.5, "Belgium (P01)"),
+            ("north", e.s(-1.71), zr + 0.13, dpt - 0.02, 38.0, 3.9, "Uccle (P01 and 3557)")]
+    if not FAR: FLAG_POLES.clear()
+    for name, ss, zb, dd, lean, L, flag in spec:
+        sgn = 1 if ss > s0 + 1e-6 else (-1 if ss < s0 - 1e-6 else 0)
+        a = math.radians(lean)
+        D = (Z * math.cos(a) + fr.U * (sgn * math.sin(a) * 0.8) + fr.N * (math.sin(a) * (0.6 if sgn else 1.0))).normalized()
+        base = fr.p(ss, zb, dd) + fr.N * 0.03
+        ref = fr.U if abs(D.dot(fr.U)) < 0.9 else fr.N
+        if FAR:
+            lathe_axis(base, D, ref, [(0.03, 0.0), (0.025, L), (0.0, L)], 5, IRON, C_PLAIN)
+            continue
+        # pole (slight taper), a collar, the ball finial on a neck
+        lathe_axis(base, D, ref, [(0.0, -0.02), (0.03, -0.02), (0.03, L - 0.02), (0.022, L), (0.016, L + 0.03), (0.016, L + 0.05),
+                                  (0.034, L + 0.07), (0.045, L + 0.1), (0.034, L + 0.135), (0.0, L + 0.15)], 10, IRON, C_PLAIN)
+        # the socket: a short tube with a lip
+        lathe_axis(base, D, ref, [(0.0, -0.06), (0.045, -0.06), (0.045, 0.28), (0.055, 0.3), (0.055, 0.33), (0.036, 0.33), (0.036, 0.3)], 10, IRON, C_PLAIN)
+        q = fr.p(ss, zb, dd)
+        if sgn:      # side poles: a plate on the die's coping with two bolt heads
+            box(q, fr.U, Z, fr.N, -0.09, 0.09, -0.005, 0.012, -0.12, 0.06, IRON, C_PLAIN)
+            for bx in (-0.05, 0.05):
+                lathe(q + fr.U * bx - fr.N * 0.07 + Z * 0.012, [(0.012, 0.0), (0.012, 0.01), (0.0, 0.014)], 6, IRON, C_PLAIN)
+        else:        # centre pole: a saddle clamp over the rail
+            box(q, fr.U, Z, fr.N, -0.08, 0.08, -0.13, 0.015, -0.155, 0.155, IRON, C_PLAIN, skip=("bottom",))
+        # a flat stay from the plate to the socket
+        st0 = base + D * 0.22; st1 = q + Z * 0.012 - fr.N * 0.05
+        dv = st0 - st1; Ls = dv.length; dv.normalize()
+        sideV = dv.cross(fr.U if abs(dv.dot(fr.U)) < 0.9 else fr.N).normalized()
+        box(st1, dv, sideV, dv.cross(sideV), 0.0, Ls, -0.012, 0.012, -0.006, 0.006, IRON, C_PLAIN)
+        tip = base + D * L
+        bw = lambda v: [round(v.x, 3), round(-v.y, 3), round(v.z + OY, 3)]
+        FLAG_POLES.append({"name": name, "base_building_uwh": bw(base), "tip_building_uwh": bw(tip),
+                           "axis_building_uwh": [round(D.x, 4), round(-D.y, 4), round(D.z, 4)], "length_m": L, "radius_m": 0.03,
+                           "base_city_xyz": [round(city(base.x, -base.y)[0], 2), round(base.z + OY, 2), round(city(base.x, -base.y)[1], 2)],
+                           "tip_city_xyz": [round(city(tip.x, -tip.y)[0], 2), round(tip.z + OY, 2), round(city(tip.x, -tip.y)[1], 2)],
+                           "flag_in_photos": flag})
+
+def paving_apron(e):
+    """THE FORECOURT PAVING at the foot of the perron (polish 2): the Place Jean Vander Elst's paving reaches the steps in the
+    photos (P01: setts between the planted beds), but the city's sidewalk polygon (UrbIS Land cover street surface 140243)
+    starts 4.9 m out from the facade, and the city drew grass up to the steps. A paved apron in its OWN slot (cobbles) from
+    the facade to the sidewalk's inner edge, between kerbs of blue stone, on the DTM (+5 cm), with a skirt down below the
+    ground on its open front (the city's ground there lies up to 25 cm under the DTM)."""
+    fr = e.fr; s = e.s(0.0)
+    u1 = 17.27 - UE                                   # out from the facade to the sidewalk's edge (UrbIS street surface)
+    hw = 3.3; kw = 0.12
+    nS, nD = (12, 10) if not FAR else (4, 3)
+    ss = [s - hw + kw + (2 * (hw - kw)) * k / nS for k in range(nS + 1)]
+    ds = [u1 * k / nD for k in range(nD + 1)]
+    def gz(si, di):
+        p = fr.p(si, 0.0, di)
+        return ground(p.x, -p.y) - OY + 0.05
+    B.new_group()
+    for i in range(len(ss) - 1):
+        for j in range(len(ds) - 1):
+            pts = [fr.p(ss[i], gz(ss[i], ds[j]), ds[j]), fr.p(ss[i + 1], gz(ss[i + 1], ds[j]), ds[j]),
+                   fr.p(ss[i + 1], gz(ss[i + 1], ds[j + 1]), ds[j + 1]), fr.p(ss[i], gz(ss[i], ds[j + 1]), ds[j + 1])]
+            face_dir(pts, Z, COBBLES, C_PLAIN)
+    for i in range(len(ss) - 1):           # the open front: an edge of blue stone down below the ground (the city sidewalk meets it)
+        a, b = ss[i], ss[i + 1]
+        face_dir([fr.p(a, gz(a, u1), u1), fr.p(b, gz(b, u1), u1), fr.p(b, gz(b, u1) - 0.4, u1), fr.p(a, gz(a, u1) - 0.4, u1)], fr.N, BLUE, C_COPING)
+    # kerbs along both sides (blue stone, 4 cm proud with a 1 cm chamfer on the paving side), down below the ground
+    B.new_group()
+    for sg in (-1, 1):
+        k0, k1 = s + sg * (hw - kw), s + sg * hw
+        lo, hi = sorted((k0, k1)); inner = k0; ch = 0.01
+        xc = inner + (ch if inner == lo else -ch)
+        for j in range(len(ds) - 1):
+            d_a, d_b = ds[j], ds[j + 1]
+            za, zb = gz(k1, d_a), gz(k1, d_b)
+            t0, t1 = (xc, k1) if inner == lo else (k1, xc)
+            face_dir([fr.p(t0, za + 0.04, d_a), fr.p(t1, za + 0.04, d_a), fr.p(t1, zb + 0.04, d_b), fr.p(t0, zb + 0.04, d_b)], Z, BLUE, C_COPING)
+            face_dir([fr.p(xc, za + 0.04, d_a), fr.p(inner, za + 0.03, d_a), fr.p(inner, zb + 0.03, d_b), fr.p(xc, zb + 0.04, d_b)], fr.U * (-sg) + Z, BLUE, C_COPING)
+            face_dir([fr.p(inner, za + 0.03, d_a), fr.p(inner, za - 0.02, d_a), fr.p(inner, zb - 0.02, d_b), fr.p(inner, zb + 0.03, d_b)], fr.U * (-sg), BLUE, C_COPING)
+            face_dir([fr.p(k1, za + 0.04, d_a), fr.p(k1, za - 0.4, d_a), fr.p(k1, zb - 0.4, d_b), fr.p(k1, zb + 0.04, d_b)], fr.U * sg, BLUE, C_COPING)
+        zf = gz(k1, u1)
+        face_dir([fr.p(k0, zf + 0.04, u1), fr.p(k1, zf + 0.04, u1), fr.p(k1, zf - 0.4, u1), fr.p(k0, zf - 0.4, u1)], fr.N, BLUE, C_COPING)
+
 # ------------------------------------------------------------------------------------------------ build
 def build_all():
     for e in EDGES: build_edge(e)
     portico(EDGES[0])
+    door_panel(EDGES[0]); flag_poles(EDGES[0]); paving_apron(EDGES[0])
     R = {m.name: m for m in ROOFS}
     for m in ROOFS: brisis_faces(m)
     for (u0, u1, w0, w1), h in VALLEY_DECKS:
@@ -1209,6 +1392,7 @@ corners = [city(u, -y) for u in (min(bx), max(bx)) for y in (min(by), max(by))]
 info = {
     "asset": "Uccle town hall, Place Jean Vander Elst 29 (tools/blender/townhall.py)",
     "triangles_lod0": ntri, "triangles_far": ntri_far, "triangles_per_slot_lod0": per_slot, "triangles_per_slot_far": per_slot_far,
+    "flag_poles": FLAG_POLES,
     "slots": SLOTS, "codes": {"COLOR_0.r": "code / 16 + 1/32", "COLOR_0.g": "per-vertex AO of the thin faces (1 elsewhere)", "names": CODES},
     "uv": {"TEXCOORD_0": "world metres, per face (walls u along / v up; lathed parts arc length)", "TEXCOORD_1": "AO lightmap (thin faces: u > 0.994, AO 1)"},
     "lightmap": {"px": AO_PX, "split_v": AO_SPLIT, "lod0_px_per_m": round(obj["px_per_m"], 1), "far_px_per_m": round(far["px_per_m"], 1),
@@ -1221,7 +1405,7 @@ info = {
                     "y": [round(min(p.z for p in B_MAIN.v) + OY, 1), round(max(p.z for p in B_MAIN.v) + OY, 1)]},
     "measured": {"plan_m": PL, "roof_taw": {k: v["p50"] for k, v in ROOF.items()}, "core_curb_taw": R_CORE_CURB,
                  "ground_taw": SITE["ground"], "frame": FR},
-    "levels_taw": {"ground_floor": FLOOR_GF, "plinth_top": PLINTH_TOP, "gf_windows": [GF_SILL, GF_HEAD], "string_course": BAND1,
+    "levels_taw": {"ground_floor": FLOOR_GF, "plinth_top": PLINTH_TOP, "gf_windows": [GF_SILL, GF_HEAD], "string_course": BAND1, "door_head": DOOR_HEAD, "portico_soffit": PORTICO_SOFFIT, "balcony_floor": BALC_FLOOR,
                    "f1_sill": F1_SILL, "orders": ORD},
     "estimated": "storey heights and window sizes from the photo 3557 scaled on the UrbIS facade width (61.5 px/m) and the DSM "
                  "roof levels; mouldings, consoles, modillions, quoin courses; the WEST facade (no photo); the north facade = mirror of the south",
@@ -1230,9 +1414,9 @@ json.dump(info, open(os.path.join(OUT, "townhall.json"), "w"), indent=1)
 
 # ------------------------------------------------------------------------------------------------ previews
 if PREVIEWS:
-    cols = {"brick_red_brussels": (0.2, 0.065, 0.04), "stone_white": (0.6, 0.56, 0.48), "stone_blue": (0.2, 0.21, 0.22), "slate": (0.06, 0.065, 0.075),
+    cols = {"brick_red_brussels": (0.2, 0.065, 0.04), "stone_white": (0.6, 0.56, 0.48), "stone_blue": (0.33, 0.335, 0.33), "slate": (0.06, 0.065, 0.075),
             "zinc_roof": (0.3, 0.32, 0.33), "wood_frame_white": (0.8, 0.8, 0.78), "wood_frame_dark": (0.03, 0.035, 0.035),
-            "glass_window": (0.02, 0.025, 0.03), "cast_iron_green": (0.03, 0.05, 0.04)}
+            "glass_window": (0.02, 0.025, 0.03), "cast_iron_green": (0.03, 0.05, 0.04), "cobbles": (0.16, 0.155, 0.15)}
     for m in mats:
         nt = m.node_tree; bsdf = nt.nodes["Principled BSDF"]
         uvn = nt.nodes.new("ShaderNodeUVMap"); uvn.uv_map = "Lightmap"

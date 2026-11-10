@@ -5,10 +5,12 @@
 //    decoded in a worker, LODs precomputed offline; its shaders are built through the page's precompile queue
 //    (warmup.js) BEFORE it is shown: no shader build on a frame;
 //  - three levels cross-fade by distance to the building's box (dithered, lodFade.js objectFade; the shadow pass uses
-//    the same fade). ?smooth=0: hard switches.
+//    the same fade) through the FADING COPIES of the slot materials, drawn only while a level is inside its hand-over
+//    band (setLodFades): outside the bands every material is opaque without a discard (early-z kept). The copies are
+//    compiled with the model (fadeProxies), so the first hand-over builds no shader. ?smooth=0: hard switches.
 import * as THREE from "three/webgpu";
-import { loadTownHall, TH_LODS, TH_SLOTS } from "./townhallModel.js";
-import { withObjectFade, SMOOTH } from "./lodFade.js";
+import { loadTownHall, TH_LODS, setLodFades } from "./townhallModel.js";
+import { SMOOTH, fadeProxies } from "./lodFade.js";
 
 export async function addTownHall({ scene, updaters, hide, world, manifest, log, compiler }) {
   const t0 = performance.now();
@@ -17,7 +19,6 @@ export async function addTownHall({ scene, updaters, hide, world, manifest, log,
   hide.push(...notes.placement.hides_bu_ids);
   loadTownHall().then(async (m) => {
     const tLoad = performance.now() - t0;
-    for (const s of TH_SLOTS) if (SMOOTH) withObjectFade(m.materials[s]);
     const root = new THREE.Group(); root.name = "townhall";
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;
     const levels = TH_LODS.map((_, k) => m.make(k));
@@ -28,7 +29,8 @@ export async function addTownHall({ scene, updaters, hide, world, manifest, log,
     const tc = performance.now();
     let compile = compiler();
     while (!compile) { await new Promise((r) => setTimeout(r, 250)); compile = compiler(); }
-    await compile([root]);
+    const fp = fadeProxies(root);                      // the fading copies (drawn only inside the LOD bands) too
+    await compile(fp ? [root, fp] : [root]);
     const tComp = performance.now() - tc;
     const homes = manifest.tiles.filter((t) => t.bounds.x[0] < m.boundsWorld.max.x && t.bounds.x[1] > m.boundsWorld.min.x &&
       t.bounds.z[0] < m.boundsWorld.max.z && t.bounds.z[1] > m.boundsWorld.min.z).map((t) => t.name);
@@ -43,7 +45,7 @@ export async function addTownHall({ scene, updaters, hide, world, manifest, log,
         const t1 = ramp(d, 0), t2 = ramp(d, 1);
         const fades = [2 + t1, t1 < 1 ? t1 : 2 + t2, t2];        // outgoing keeps n >= t (2 + t), incoming n < t
         const shown = [t1 < 1, t1 > 0 && t2 < 1, t2 > 0];
-        levels.forEach((g, k) => { g.visible = shown[k]; if (shown[k]) for (const o of g.children) o.userData.fade = fades[k]; });
+        setLodFades(levels, shown, fades);
       } else {
         const k = TH_LODS.findIndex((l) => d < l.until);
         levels.forEach((g, i) => { g.visible = i === k; });

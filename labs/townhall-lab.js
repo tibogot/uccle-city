@@ -4,16 +4,17 @@
 // LOD switch + auto LOD by distance with the city's dithered cross-fades (lodFade.js), wireframe, the UrbIS solid it
 // replaces, the photos' viewpoints with an overlay of the photo (data/raw/refs/townhall/, never shipped; the Commons
 // photo is CC BY-SA 3.0, credited on screen), a live material-slot swap through the adapter table (any slot -> any
-// library name), stats, long-task record and a GPU benchmark per LOD.
+// library name), stats, long-task record and a GPU benchmark per LOD (labs/townhall-bench.js: the interleaved version
+// over the NOTES views; lab.force(mode) pins a LOD or "off"; the A/B toggle puts the old always-on fade back).
 import * as THREE from "three/webgpu";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { texture, vec3, float, mix, smoothstep, positionWorld, select, uv, attribute } from "three/tsl";
 import { Panel } from "../viewer/panelUI.js";
 import { Lighting, PRESETS } from "../viewer/lighting.js";
 import { createPipeline } from "../viewer/post.js";
-import { withObjectFade, SMOOTH } from "../viewer/lodFade.js";
+import { SMOOTH, fadeProxies, fadeVariant } from "../viewer/lodFade.js";
 import { precompile } from "../viewer/warmup.js";
-import { loadTownHall, TH_LODS, TH_SLOTS, LIBRARY_NAMES, SLOT_TABLE, TH_TEMP_MATERIALS, thLook } from "../viewer/townhallModel.js";
+import { loadTownHall, TH_LODS, TH_SLOTS, LIBRARY_NAMES, SLOT_TABLE, TH_TEMP_MATERIALS, thLook, setLodFades } from "../viewer/townhallModel.js";
 
 const qp = new URLSearchParams(location.search);
 const longTasks = [];
@@ -41,8 +42,6 @@ const loadMs = performance.now() - t0;
 const root = new THREE.Group();
 root.position.copy(model.placement.position); root.rotation.y = model.placement.rotationY;
 scene.add(root);
-const fadeOn = (m) => (SMOOTH ? withObjectFade(m) : m);
-for (const s of TH_SLOTS) fadeOn(model.materials[s]);
 const levels = TH_LODS.map((_, k) => { const g = model.make(k); root.add(g); return g; });
 root.visible = false;                   // shown once its shaders are built (precompile, below)
 const centre = model.boundsWorld.getCenter(new THREE.Vector3());
@@ -185,7 +184,7 @@ const S = {
   lod: "auto", show: "new model", wireframe: false, view: "east facade (Commons 3557)", photo: 0, frame: false, notes: true,
   time: preset, hour: lighting.hour, day: lighting.day, post: true, ao: 1, aoDirect: 0.55, weather: 1,
   slot: "stone_white", swap: "table default (temporary)", swapAll: false,
-  stats: "", lodInfo: "", bench: "—", swapInfo: "—",
+  stats: "", lodInfo: "", bench: "—", swapInfo: "—", fadeAlways: false,
 };
 const ui = new Panel({ title: "Town Hall Lab" });
 const fv = ui.addFolder("View");
@@ -196,7 +195,7 @@ fv.add(S, "notes").name("notes & sources").onChange((v) => { $notes.style.displa
 const fm = ui.addFolder("Model");
 fm.add(S, "lod", ["auto", "LOD0", "LOD1", "LOD2"]).name("LOD");
 fm.add(S, "show", ["new model", "UrbIS solid (city today)", "new + UrbIS ghost"]).onChange(applyShow);
-fm.add(S, "wireframe").onChange((v) => { for (const s of TH_SLOTS) model.materials[s].wireframe = v; });
+fm.add(S, "wireframe").onChange((v) => { for (const s of TH_SLOTS) { model.materials[s].wireframe = v; if (SMOOTH) fadeVariant(model.materials[s]).wireframe = v; } });
 fm.add(S, "lodInfo").name("LOD now");
 const fs = ui.addFolder("Material slots (adapter table)");
 fs.add(S, "slot", TH_SLOTS).name("GLB slot");
@@ -215,6 +214,7 @@ const fp = ui.addFolder("Performance");
 fp.add(S, "stats").name("frame");
 fp.add({ go: () => bench() }, "go").name("benchmark: GPU ms per LOD at this view");
 fp.add(S, "bench").name("result");
+fp.add(S, "fadeAlways").name("A/B: LOD-fade discard on every material (the old way)");
 
 function applyShow() {
   root.visible = S.show !== "UrbIS solid (city today)";
@@ -229,9 +229,11 @@ async function doSwap() {
   const slots = S.swapAll ? TH_SLOTS : [S.slot];
   const proxy = new THREE.Group();
   const wrapped = slots.map((s) => {
-    const w = model.setSlotMaterial(s, make(s), { fade: fadeOn, dryRun: true }); w.wireframe = S.wireframe;
+    const w = model.setSlotMaterial(s, make(s), { dryRun: true }); w.wireframe = S.wireframe;
     const geo = model.lods[0].find((l) => l.slot === s)?.geometry ?? model.lods[0][0].geometry;
-    proxy.add(new THREE.Mesh(geo, w)); return [s, w];
+    proxy.add(new THREE.Mesh(geo, w));
+    if (SMOOTH) { const v = fadeVariant(w); v.wireframe = S.wireframe; proxy.add(new THREE.Mesh(geo, v)); }   // its fading copy too
+    return [s, w];
   });
   proxy.position.copy(root.position); proxy.rotation.copy(root.rotation); scene.add(proxy); proxy.updateMatrixWorld(true);
   await precompile(renderer, [proxy], camera, scene, { target: pipe?.passTarget ?? null, mrt: pipe?.passMRT ?? null });
@@ -270,7 +272,9 @@ await lighting.attach(camera);
 let pipe = createPipeline(renderer, scene, camera);
 pipe.setExposureScale(lighting.exposureScale); pipe.look(preset);
 const tc0 = performance.now();
-await precompile(renderer, [scene], camera, scene, { target: pipe.passTarget ?? null, mrt: pipe.passMRT ?? null });
+const fadeCopies = fadeProxies(root);         // the LOD bands' fading copies, built before it shows too
+if (fadeCopies) { fadeCopies.position.copy(root.position); fadeCopies.rotation.copy(root.rotation); fadeCopies.updateMatrixWorld(true); }
+await precompile(renderer, fadeCopies ? [scene, fadeCopies] : [scene], camera, scene, { target: pipe.passTarget ?? null, mrt: pipe.passMRT ?? null });
 const compileMs = performance.now() - tc0;
 const shownAt = performance.now();
 root.visible = true;
@@ -305,7 +309,7 @@ async function bench() {
   return res;
 }
 const hitches = [];
-window.lab = { renderer, scene, camera, controls, model, lighting, goView, fitFrame, bench, gpu, S, PHOTOS, levels, hitches, doSwap, loadMs, compileMs, shownAt, longTasks, toCity, groundAt, root };
+window.lab = { force: (m) => { forced = m; }, renderer, scene, camera, controls, model, lighting, goView, fitFrame, bench, gpu, S, PHOTOS, levels, hitches, doSwap, loadMs, compileMs, shownAt, longTasks, toCity, groundAt, root };
 
 const ramp = (d, k) => { const s = TH_LODS[k].until, w = TH_LODS[k].band; return THREE.MathUtils.smoothstep(d, s - w, s + w); };
 let last = performance.now(), frames = 0, fpsAcc = 0, fpsN = 0, fps = 0;
@@ -319,14 +323,15 @@ renderer.setAnimationLoop(() => {
     const t1 = ramp(dist, 0), t2 = ramp(dist, 1);
     const fades = [2 + t1, t1 < 1 ? t1 : 2 + t2, t2];
     const shown = [t1 < 1, t1 > 0 && t2 < 1, t2 > 0];
-    levels.forEach((g, k) => { g.visible = shown[k]; if (shown[k]) for (const o of g.children) o.userData.fade = fades[k]; });
+    setLodFades(levels, shown, fades);
     S.lodInfo = `${shown.map((v, k) => (v ? `L${k}` : "")).filter(Boolean).join("+")} · ${dist.toFixed(0)} m`;
   } else {
     let k = S.lod === "auto" ? TH_LODS.findIndex((l) => dist < l.until) : +S.lod.slice(3);
     if (forced !== null) k = forced === "off" ? -1 : forced;
-    levels.forEach((g, i) => { g.visible = i === k; if (g.visible) for (const o of g.children) o.userData.fade = 1; });
+    setLodFades(levels, levels.map((_, i) => i === k), levels.map(() => 1));
     S.lodInfo = k >= 0 ? `LOD${k} · ${model.tris[k].toLocaleString()} tris · ${dist.toFixed(0)} m` : "off";
   }
+  if (S.fadeAlways && SMOOTH) for (const g of levels) if (g.visible) for (const o of g.children) o.material = fadeVariant(o.userData.base);
   if (forced === "off") root.visible = false; else if (forced !== null) root.visible = true; else applyShow();
   lighting.update(camera.position.y, groundAt(camera.position.x, camera.position.z), controls.target, THREE.MathUtils.clamp(camera.position.distanceTo(centre) * 0.9, 60, 420));
   if (S.post) pipe.render(hazeHook); else renderer.render(scene, camera);
