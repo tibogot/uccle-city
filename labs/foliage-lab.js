@@ -9,7 +9,7 @@
 // benchmark (alternating on / off rounds), flicker test, moving frame strips.
 import * as THREE from "three/webgpu";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { texture, vec2, vec3, float, mix, smoothstep, positionWorld, length, cameraPosition, color } from "three/tsl";
+import { texture, vec2, vec3, float, mix, smoothstep, positionWorld, length, cameraPosition, color, fract } from "three/tsl";
 import { Panel } from "../viewer/panelUI.js";
 import { Lighting, PRESETS } from "../viewer/lighting.js";
 import { createPipeline } from "../viewer/post.js";
@@ -19,12 +19,13 @@ import { FoliageMask, GroundHeights, GrassSystem, grassGroundColor, grassU, GRAS
 import { MaskBuilder, frontGardens, hedgeRuns, scatterPlants, KIND, hash2 } from "../viewer/foliage/placement.js";
 import { noiseAt } from "../viewer/foliage/noise.js";
 import { buildHedges } from "../viewer/foliage/hedges.js";
+import { buildFront, FRONT_REGION } from "./foliage-front.js";
 import { buildPlants, PLANT_TYPES } from "../viewer/foliage/plants.js";
 import { flickerTest } from "./flickerTest.js";
 import { frameStrip } from "./frameStrip.js";
 
 const qp = new URLSearchParams(location.search);
-const SCENE = qp.get("scene") === "garden" ? "garden" : "street";
+const SCENE = ["garden", "front"].includes(qp.get("scene")) ? qp.get("scene") : "street";
 const $info = document.getElementById("info");
 const renderer = new THREE.WebGPURenderer({ antialias: true, powerPreference: "high-performance", reversedDepthBuffer: true, trackTimestamp: qp.get("gpu") !== "0" });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
@@ -42,7 +43,7 @@ const lighting = new Lighting(scene, renderer, preset);
 
 // ------------------------------------------------------------------------------------------------ the region
 const log = [];
-let region, heights, mb, gardens = null, hedges = [], plants = [], tileData = null, streetMask = null;
+let region, heights, mb, gardens = null, hedges = [], plants = [], tileData = null, streetMask = null, front = null;
 if (SCENE === "street") {
   const T = "D8";
   const get = (f) => fetch(`../data/tiles/${T}/${f}`);
@@ -68,6 +69,26 @@ if (SCENE === "street") {
   for (const s of surf.surfaces) { const raised = [4, 5, 6, 7, 8].includes(s.c); sm.fill(s.rings, { cover: raised ? 0 : 1, kind: raised ? 1 : 0 }); }
   streetMask = new FoliageMask(sm.data(), 480, region.x0, region.z0, region.size);
   log.push(`D8: ${hedges.length} hedge runs (${hedges.reduce((s, h) => s + h.points.length * 0.5, 0).toFixed(0)} m), ${plants.length} plants`);
+} else if (SCENE === "front") {
+  region = FRONT_REGION;
+  const n = region.size + 1, H = new Float32Array(n * n);
+  // a gentle Uccle slope down the street (1.5 %) and a 3 cm crossfall to the gutter
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { const x = region.x0 + i, z = region.z0 + j; H[j * n + i] = 70 + x * 0.015 - Math.max(0, z - 2.75) * 0.01; }
+  heights = new GroundHeights(H, n, n, region.x0, region.z0, 1);
+  front = buildFront(heights);
+  mb = new MaskBuilder(region.x0, region.z0, region.size, 384);
+  for (const r of front.lawns) mb.fill(r, { cover: 1, kind: KIND.lawn, flowers: 0.35, litter: 0.3 });
+  mb.feather(1.2);
+  for (const r of front.gravel) mb.cut(r);
+  hedges = front.hedges; plants = front.plants;
+  const sm = new MaskBuilder(region.x0, region.z0, region.size, 384);
+  const rect = (x0, z0, x1, z1) => [[[x0, z0], [x1, z0], [x1, z1], [x0, z1]]];
+  sm.fill(rect(-24, 2.75, 24, 26), { cover: 1 });            // asphalt
+  sm.fill(rect(-24, 0, 24, 2.75), { kind: 1 });               // sidewalk paving
+  for (const r of front.gravel) sm.fill(r, { flowers: 1 });   // gravel (B)
+  streetMask = new FoliageMask(sm.data(), 384, region.x0, region.z0, region.size);
+  scene.add(front.group);
+  log.push(`front garden: ivy ${front.ivy.stats.branches} branches / ${front.ivy.stats.leafCards} leaf cards`);
 } else {
   region = { x0: -24, z0: -24, size: 48 };
   const n = 49, H = new Float32Array(n * n);
@@ -99,7 +120,10 @@ scene.add(grassSys.group);
   if (streetMask) {
     const s = streetMask.atFrag(xz);
     const asphalt = mix(color(0x3c3d40), color(0x47484b), n), pave = mix(color(0x8b8780), color(0x9a958c), n);
-    base = mix(base, pave, s.g); base = mix(base, asphalt, s.r);
+    const gravelC = mix(color(0x8f8170), color(0xb3a68c), noiseAt(xz, 1 / 0.35).a).mul(noiseAt(xz, 1 / 0.06).a.mul(0.35).add(0.8));
+    // paving: 30 x 30 cm concrete tiles with dark joints (Brussels sidewalk)
+    const tile = smoothstep(0.0, 0.012, fract(xz.x.div(0.3)).min(fract(xz.y.div(0.3))));
+    base = mix(base, pave.mul(tile.mul(0.25).add(0.75)), s.g); base = mix(base, asphalt, s.r); base = mix(base, gravelC, s.b);
   } else {
     const gravel = mix(color(0x9a8c74), color(0xb8ab92), n);
     base = mix(soil, gravel, smoothstep(0.75, 0.6, P.z.abs()));
@@ -122,7 +146,15 @@ if (tileData) {
 
 // ------------------------------------------------------------------------------------------------ views
 const G = (x, z, dy = 1.65) => new THREE.Vector3(x, heights.get(x, z) + dy, z);
-const VIEWS = SCENE === "street" ? {
+const VIEWS = SCENE === "front" ? {
+  "from the sidewalk": [G(-2.2, 1.6), G(0.3, -5, 1.2)],
+  "façade, ivy, window boxes": [G(3.2, 4.5), G(-1.2, -7, 4.2)],
+  "path to the door": [G(0, -0.2), G(0, -7, 1.0)],
+  "down the street": [G(-17, 1.4), G(6, -3.5, 1.0)],
+  "from across the street": [G(1, 11), G(0, -5, 2.6)],
+  "bed close": [G(-2.6, -4.6, 1.1), G(-2.4, -6.6, 0.4)],
+  "from the sky (300 m)": [G(0, -60, 300), G(0, -3, 0)],
+} : SCENE === "street" ? {
   "street level": [G(-1056, 1735), G(-1050, 1770, 0.6)],
   "front gardens close": [G(-1057, 1752), G(-1066, 1757, 0.3)],
   "down the street": [G(-1053, 1695), G(-1060, 1800, 0.8)],

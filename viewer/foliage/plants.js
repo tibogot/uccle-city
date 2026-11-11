@@ -289,7 +289,7 @@ export async function buildPlants(list, groundAt) {
   for (const t of PLANT_TYPES) {
     const mine = list.filter((p) => p.type === t);
     if (!mine.length || !lib.types[t]) continue;
-    const inst = mine.map((p) => ({ x: p.x, y: groundAt(p.x, p.z) - 0.02, z: p.z, yaw: p.yaw, scale: p.scale, rnd: frac(Math.sin(p.x * 12.9898 + p.z * 78.233) * 43758.5453) }));
+    const inst = mine.map((p) => ({ x: p.x, y: p.y ?? groundAt(p.x, p.z) - 0.02, z: p.z, yaw: p.yaw, scale: p.scale, rnd: frac(Math.sin(p.x * 12.9898 + p.z * 78.233) * 43758.5453) }));
     const f = new PlantField(t, lib.types[t], inst);
     fields.push(f);
     for (const m of f.meshes) group.add(m);
