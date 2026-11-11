@@ -12,7 +12,7 @@ import { playBuffer } from "./util.js";
 export const RENDER_RATE = 24000;
 
 function setup(ctx, opts = {}) {
-  const engine = new SoundEngine(ctx, { offline: true, environment: opts.env || "canyon", voiceLimit: opts.voiceLimit ?? 40 });
+  const engine = new SoundEngine(ctx, { offline: true, environment: opts.env || "canyon", voiceLimit: opts.voiceLimit ?? 40, ...(opts.engine || {}) });
   engine.envAuto = false;
   const banks = { feet: new FootstepBank(ctx), veh: new VehicleBank(ctx), tr: new TransitBank(ctx), amb: new AmbienceBank(ctx), birds: new BirdBank(ctx), bells: new BellBank(ctx) };
   return { engine, banks };
@@ -152,11 +152,11 @@ SCENARIOS.stress_40 = {
 };
 
 // Render a scenario; returns { buffer, renderMs, buildMs, stats }.
-export async function renderScenario(name, { rate = RENDER_RATE, voiceLimit } = {}) {
+export async function renderScenario(name, { rate = RENDER_RATE, voiceLimit, engine: engineOpts } = {}) {
   const sc = SCENARIOS[name];
   const ctx = new OfflineAudioContext(2, Math.ceil(sc.dur * rate), rate);
   const t0 = performance.now();
-  const { engine, banks } = setup(ctx, { env: sc.env, voiceLimit });
+  const { engine, banks } = setup(ctx, { env: sc.env, voiceLimit, engine: engineOpts });
   const step = sc.build(engine, banks, ctx);
   const dt = 1 / engine.controlRate;
   let maxVoices = 0, ctlMs = 0, n = 0;
@@ -164,7 +164,7 @@ export async function renderScenario(name, { rate = RENDER_RATE, voiceLimit } = 
   const t1 = performance.now();
   const buffer = await ctx.startRendering();
   const t2 = performance.now();
-  return { buffer, buildMs: t1 - t0, renderMs: t2 - t1, controlMsAvg: ctlMs / n, maxVoices, stereo: !!sc.stereo, dur: sc.dur };
+  return { created: engine.stats.created, events: engine.stats.eventsTotal, buffer, buildMs: t1 - t0, renderMs: t2 - t1, controlMsAvg: ctlMs / n, maxVoices, stereo: !!sc.stereo, dur: sc.dur };
 }
 
 // 16-bit PCM WAV (mono = average of L+R when the scenario is not stereo). Peak-normalised to -1 dBFS only if
@@ -172,7 +172,7 @@ export async function renderScenario(name, { rate = RENDER_RATE, voiceLimit } = 
 export function encodeWav(buffer, stereo) {
   const ch = stereo ? 2 : 1, n = buffer.length, L = buffer.getChannelData(0), R = buffer.getChannelData(1);
   let peak = 0; for (let i = 0; i < n; i++) peak = Math.max(peak, Math.abs(L[i]), Math.abs(R[i]));
-  const g = peak > 0.89 ? 0.89 / peak : 1;
+  const g = peak > 0 ? 0.7 / peak : 1;          // each render peak-normalised to -3 dBFS for auditioning
   const out = new DataView(new ArrayBuffer(44 + n * ch * 2));
   const w = (o, s) => { for (let i = 0; i < s.length; i++) out.setUint8(o + i, s.charCodeAt(i)); };
   w(0, "RIFF"); out.setUint32(4, 36 + n * ch * 2, true); w(8, "WAVE"); w(12, "fmt "); out.setUint32(16, 16, true); out.setUint16(20, 1, true);

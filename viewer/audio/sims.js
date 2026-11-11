@@ -174,7 +174,7 @@ export class BellTowers {
 
 // ---- a dog in a garden ------------------------------------------------------------------------------------------
 export class Dog {
-  constructor(engine, ctx, pos, { every = [25, 70], size = 1 } = {}) { Object.assign(this, { engine, pos, every }); this.bufs = [1, 2, 3].map((s) => barkBuffer(ctx, s, size)); this.next = 3; }
+  constructor(engine, ctx, pos, { every = [25, 70], size = 1, bank = null } = {}) { Object.assign(this, { engine, pos, every }); this.bufs = [1, 2, 3].map((s) => (bank ? bank.bark(s, size) : barkBuffer(ctx, s, size))); this.next = 3; }
   bark(t) { const b = this.bufs[Math.floor(Math.random() * 3)]; this.engine.event({ category: "people", priority: 1.3, ref: 3, range: 220, ...this.pos }, (ctx, out, when) => playBuffer(ctx, b, out, when, { gain: 0.8 }), t); }
   step(t) { if (t >= this.next) { this.bark(t); this.next = t + this.every[0] + Math.random() * (this.every[1] - this.every[0]); } }
 }

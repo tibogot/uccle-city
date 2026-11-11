@@ -9,6 +9,8 @@ export class AmbienceBank {
   pink() { return (this.c.pink ??= bake(this.ctx, 4, ([d], sr, r) => { const p = pinkSource(r); for (let i = 0; i < d.length; i++) d[i] = p(); }, { rms: 0.25, loop: true, seed: 515 })); }
   white() { return (this.c.white ??= bake(this.ctx, 3, ([d], sr, r) => { for (let i = 0; i < d.length; i++) d[i] = r() * 2 - 1; }, { rms: 0.25, loop: true, seed: 616 })); }
   gusts() { return (this.c.gust ??= gustBuffer(this.ctx)); }
+  playground(seed) { return (this.c["pg" + seed] ??= playgroundBuffer(this.ctx, seed)); }
+  bark(seed, size = 1) { return (this.c["bk" + seed + "_" + size] ??= barkBuffer(this.ctx, seed, size)); }
   cubeCurve() { return (this.c.cube ??= Float32Array.from({ length: 257 }, (_, i) => { const x = i / 128 - 1; return x * x * x * 1.6; })); }
   // Leaf flutter: a control-rate random envelope (8 kHz) with 15-60 ms "flicks" (many leaves moving).
   flutter() {
@@ -113,21 +115,30 @@ export function createHumBed(bank) {
 // params: intensity 0..1 (light..heavy), mix of ground / roof / trees (by where the listener stands).
 export function createRainBed(bank) {
   return (ctx, out) => {
+    // Layers (surface x light/heavy) are built only while their weight is > 0 and torn down 3 s after it
+    // returns to 0: a dry day costs nothing (each layer = 2 looping buffers, L/R decorrelated by offset).
     const layers = {};
-    for (const surf of ["ground", "roof", "trees"]) for (const heavy of [0, 1]) {
+    const layer = (key, surf, heavy) => {
       const g = makeGain(ctx, 0), m = ctx.createChannelMerger(2);
       const a = loopSource(ctx, bank.rain(surf, heavy), 1, 0), b = loopSource(ctx, bank.rain(surf, heavy), 1, 2.1);
       a.connect(m, 0, 0); b.connect(m, 0, 1); m.connect(g).connect(out);
-      layers[surf + heavy] = smoothParam(g.gain, 0.5);
-    }
-    const washSrc = loopSource(ctx, bank.pink(), 1.1), wash = makeFilter(ctx, "bandpass", 2500, 0.4), wg = makeGain(ctx, 0);
-    washSrc.connect(wash).connect(wg).connect(out); const W = smoothParam(wg.gain, 0.5);
+      return { set: smoothParam(g.gain, 0.5), last: 0, kill(t) { a.stop(t + 1.5); b.stop(t + 1.5); a.onended = () => { a.disconnect(); b.disconnect(); m.disconnect(); g.disconnect(); }; } };
+    };
+    let wash = null;
     return {
       params: { intensity: 0, ground: 1, roof: 0, trees: 0 },
       update(t) {
         const p = this.params, i = clamp(p.intensity), on = i > 0.01 ? 1 : 0, hv = clamp((i - 0.3) / 0.6);
-        for (const s of ["ground", "roof", "trees"]) { layers[s + 0]((1 - hv) * p[s] * on * (0.3 + i) * 0.7, t); layers[s + 1](hv * p[s] * (0.4 + i) * 0.8, t); }
-        W(on * i * i * 0.25 * (1 - p.trees * 0.5), t);
+        for (const sf of ["ground", "roof", "trees"]) for (const h of [0, 1]) {
+          const w = (h ? hv * (0.4 + i) * 0.8 : (1 - hv) * on * (0.3 + i) * 0.7) * p[sf], key = sf + h;
+          if (w > 0.001) { const L = (layers[key] ??= layer(key, sf, h)); L.set(w, t); L.last = t; }
+          else if (layers[key]) { layers[key].set(0, t); if (t - layers[key].last > 3) { layers[key].kill(t); delete layers[key]; } }
+        }
+        if (on && !wash) { const src = loopSource(ctx, bank.pink(), 1.1), f = makeFilter(ctx, "bandpass", 2500, 0.4), g = makeGain(ctx, 0); src.connect(f).connect(g).connect(out); wash = { src, set: smoothParam(g.gain, 0.5), last: t, nodes: [src, f, g] }; }
+        if (wash) {
+          wash.set(on * i * i * 0.25 * (1 - p.trees * 0.5), t);
+          if (on) wash.last = t; else if (t - wash.last > 3) { const w = wash; w.src.stop(t + 1.5); w.src.onended = () => w.nodes.forEach((n) => n.disconnect()); wash = null; }
+        }
       },
     };
   };

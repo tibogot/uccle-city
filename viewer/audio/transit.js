@@ -102,25 +102,27 @@ export function createTramVoice(ctx, bank, out, src, now) {
   const ringF = own(makeFilter(ctx, "bandpass", 1150, 1.4)), ringG = own(makeGain(ctx, 0));
   const hissF = own(makeFilter(ctx, "highpass", 5200, 0.7)), hissG = own(makeGain(ctx, 0));
   pink.connect(rumF).connect(rumG).connect(mix); pink.connect(ringF).connect(ringG).connect(mix); pink.connect(hissF).connect(hissG).connect(mix);
-  const [qa, qb] = src.squealHz || [1250, 3240];
-  const sqA = osc("sine", qa), sqB = osc("sine", qb), sqAG = own(makeGain(ctx, 0)), sqBG = own(makeGain(ctx, 0));
-  const sqH = osc("sine", qa * 2), sqHG = own(makeGain(ctx, 0));
-  sqA.connect(sqAG).connect(mix); sqB.connect(sqBG).connect(mix); sqH.connect(sqHG).connect(mix);
-  const P = {
-    rum: smoothParam(rumG.gain, 0.2), ring: smoothParam(ringG.gain, 0.2), hiss: smoothParam(hissG.gain, 0.15),
-    a: smoothParam(sqAG.gain, 0.05), b: smoothParam(sqBG.gain, 0.05), h: smoothParam(sqHG.gain, 0.05),
-    af: smoothParam(sqA.frequency, 0.3, 0.5), bf: smoothParam(sqB.frequency, 0.3, 0.5), hf: smoothParam(sqH.frequency, 0.3, 0.5),
-    rate: smoothParam(pink.playbackRate, 0.3, 1e-3),
-  };
-  let carG, gearO, gearG, fmO, fmG, auxG;
-  if (src.part !== "rear") {
-    const car = osc("triangle", 1400); fmO = osc("sine", 10); fmG = own(makeGain(ctx, 0)); fmO.connect(fmG).connect(car.frequency);
-    carG = own(makeGain(ctx, 0)); const carF = own(makeFilter(ctx, "bandpass", 1400, 2)); car.connect(carF).connect(carG).connect(mix);
-    gearO = osc("triangle", 100); const gF = own(makeFilter(ctx, "lowpass", 1800, 0.7)); gearG = own(makeGain(ctx, 0)); gearO.connect(gF).connect(gearG).connect(mix);
-    const fan = own(makeFilter(ctx, "bandpass", 300, 0.8)), hum = osc("sine", 100); auxG = own(makeGain(ctx, 0.035));
-    pink.connect(fan).connect(auxG); const humG = own(makeGain(ctx, 0.006)); hum.connect(humG).connect(mix); auxG.connect(mix);
-    Object.assign(P, { car: smoothParam(carG.gain, 0.1), fmF: smoothParam(fmO.frequency, 0.1, 0.1), fmD: smoothParam(fmG.gain, 0.1, 0.5),
-      gear: smoothParam(gearG.gain, 0.1), gearF: smoothParam(gearO.frequency, 0.05, 0.5) });
+  const P = { rum: smoothParam(rumG.gain, 0.2), ring: smoothParam(ringG.gain, 0.2), hiss: smoothParam(hissG.gain, 0.15), rate: smoothParam(pink.playbackRate, 0.3, 1e-3) };
+  // Squeal and traction are LAZY layers: built when needed (in a curve / under effort), torn down after 3 s
+  // of silence: oscillators (and FM above all) cost audio-thread time even when their gain is 0.
+  const squeal = lazyLayer(ctx, mix, now, (L) => {
+    const [qa, qb] = src.squealHz || [1250, 3240];
+    const sqA = L.osc("sine", qa), sqB = L.osc("sine", qb), sqH = L.osc("sine", qa * 2);
+    const gA = L.gain(), gB = L.gain(), gH = L.gain();
+    sqA.connect(gA).connect(L.out); sqB.connect(gB).connect(L.out); sqH.connect(gH).connect(L.out);
+    return { a: smoothParam(gA.gain, 0.05), b: smoothParam(gB.gain, 0.05), h: smoothParam(gH.gain, 0.05),
+      af: smoothParam(sqA.frequency, 0.3, 0.5), bf: smoothParam(sqB.frequency, 0.3, 0.5), hf: smoothParam(sqH.frequency, 0.3, 0.5) };
+  });
+  const front = src.part !== "rear";
+  const traction = lazyLayer(ctx, mix, now, (L) => {
+    const car = L.osc("triangle", 1400), fmO = L.osc("sine", 10), fmG = L.gain(); fmO.connect(fmG).connect(car.frequency);
+    const carG = L.gain(), carF = L.filter("bandpass", 1400, 2); car.connect(carF).connect(carG).connect(L.out);
+    const gearO = L.osc("triangle", 100), gF = L.filter("lowpass", 1800, 0.7), gearG = L.gain(); gearO.connect(gF).connect(gearG).connect(L.out);
+    return { car: smoothParam(carG.gain, 0.1), fmF: smoothParam(fmO.frequency, 0.1, 0.1), fmD: smoothParam(fmG.gain, 0.1, 0.5), gear: smoothParam(gearG.gain, 0.1), gearF: smoothParam(gearO.frequency, 0.05, 0.5) };
+  });
+  if (front) {   // auxiliaries (HVAC fan + 100 Hz hum): always on, what you hear at a stop
+    const fan = own(makeFilter(ctx, "bandpass", 300, 0.8)), hum = osc("sine", 100), auxG = own(makeGain(ctx, 0.035)), humG = own(makeGain(ctx, 0.006));
+    pink.connect(fan).connect(auxG).connect(mix); hum.connect(humG).connect(mix);
   }
   let stick = 0, stickUntil = 0, stickB = 0, stickBUntil = 0;
   return {
@@ -129,21 +131,46 @@ export function createTramVoice(ctx, bank, out, src, now) {
       P.rum(roll * 0.5 * (s.rollGain ?? 1), t); P.ring(roll * 0.08 * (s.rollGain ?? 1), t); P.rate(0.8 + clamp(v / 12) * 0.4, t);
       // Squeal: curvature above ~1/60 m and speed above ~1.5 m/s; bursts from a random stick-slip state.
       const k = clamp(((s.curvature || 0) - 1 / 60) / (1 / 18 - 1 / 60)) * clamp((v - 1.5) / 3) * (s.squeal ?? 1);
-      if (t >= stickUntil) { stick = Math.random() < 0.5 ? 0.4 + Math.random() * 0.5 : 0; stickUntil = t + 0.2 + Math.random() * 1.6; }
-      if (t >= stickBUntil) { stickB = Math.random() < 0.35 ? Math.random() : 0; stickBUntil = t + 0.15 + Math.random() * 1.0; }
-      const [fa, fb] = s.squealHz || [1250, 3240], wander = 1 + (Math.random() - 0.5) * 0.008;
-      P.af(fa * wander, t); P.hf(fa * 2 * wander, t); P.bf(fb * (1 + (Math.random() - 0.5) * 0.006), t);
-      P.a(k * stick * 0.22, t); P.h(k * stick * 0.05, t); P.b(k * stickB * 0.1, t);
       P.hiss(k * 0.05 + roll * 0.006, t);
-      if (P.car) {
-        const effort = clamp(Math.abs(s.accel || 0) / 1.3) * (v > 0.05 || (s.accel || 0) > 0 ? 1 : 0);
-        const fel = v * 9.5;                      // motor electrical frequency (Hz) ~ speed
-        P.car(effort * 0.045 * (s.motorGain ?? 1), t); P.fmF(Math.max(1, fel * 2), t); P.fmD(Math.min(600, 60 + fel * 6), t);
-        P.gear(effort * clamp(v / 2) * 0.03 * (s.motorGain ?? 1), t); P.gearF(Math.max(20, v * 78), t);
-      }
+      if (k > 0) {
+        const Q = squeal.on(t);
+        if (t >= stickUntil) { stick = Math.random() < 0.5 ? 0.4 + Math.random() * 0.5 : 0; stickUntil = t + 0.2 + Math.random() * 1.6; }
+        if (t >= stickBUntil) { stickB = Math.random() < 0.35 ? Math.random() : 0; stickBUntil = t + 0.15 + Math.random() * 1.0; }
+        const [fa, fb] = s.squealHz || [1250, 3240], wander = 1 + (Math.random() - 0.5) * 0.008;
+        Q.af(fa * wander, t); Q.hf(fa * 2 * wander, t); Q.bf(fb * (1 + (Math.random() - 0.5) * 0.006), t);
+        Q.a(k * stick * 0.22, t); Q.h(k * stick * 0.05, t); Q.b(k * stickB * 0.1, t);
+      } else if (squeal.P) { squeal.P.a(0, t); squeal.P.b(0, t); squeal.P.h(0, t); squeal.idle(t); }
+      const effort = front ? clamp(Math.abs(s.accel || 0) / 1.3) * (v > 0.05 || (s.accel || 0) > 0 ? 1 : 0) : 0;
+      if (effort > 0.02) {
+        const T = traction.on(t), fel = v * 9.5;          // motor electrical frequency (Hz) ~ speed
+        T.car(effort * 0.045 * (s.motorGain ?? 1), t); T.fmF(Math.max(1, fel * 2), t); T.fmD(Math.min(600, 60 + fel * 6), t);
+        T.gear(effort * clamp(v / 2) * 0.03 * (s.motorGain ?? 1), t); T.gearF(Math.max(20, v * 78), t);
+      } else if (traction.P) { traction.P.car(0, t); traction.P.gear(0, t); traction.idle(t); }
     },
-    dispose(when) { for (const s of sources) { try { s.stop(when + 0.05); } catch { /* */ } } sources[0].onended = () => { for (const n of nodes) n.disconnect(); }; },
+    dispose(when) { squeal.stop(when); traction.stop(when); for (const s of sources) { try { s.stop(when + 0.05); } catch { /* */ } } sources[0].onended = () => { for (const n of nodes) n.disconnect(); }; },
   };
+}
+
+// A layer of nodes built on demand: on(t) builds it (once) and returns its params; idle(t) tears it down when
+// it has not been needed for `linger` s; stop(when) ends it.
+function lazyLayer(ctx, out, now, build, linger = 3) {
+  const self = { P: null, last: 0, nodes: [], srcs: [] };
+  const L = {
+    out: null,
+    osc: (type, f) => { const o = ctx.createOscillator(); o.type = type; o.frequency.value = f; o.start(self.t0); self.srcs.push(o); self.nodes.push(o); return o; },
+    gain: (g = 0) => { const n = makeGain(ctx, g); self.nodes.push(n); return n; },
+    filter: (type, f, q) => { const n = makeFilter(ctx, type, f, q); self.nodes.push(n); return n; },
+  };
+  self.on = (t) => { if (!self.P) { self.t0 = t; L.out = makeGain(ctx, 1); L.out.connect(out); self.nodes = [L.out]; self.srcs = []; self.P = build(L); } self.last = t; return self.P; };
+  self.stop = (when) => {
+    if (!self.P) return;
+    const nodes = self.nodes, srcs = self.srcs;
+    for (const s of srcs) s.stop(when + 0.3);
+    if (srcs[0]) srcs[0].onended = () => { for (const n of nodes) n.disconnect(); };
+    self.P = null;
+  };
+  self.idle = (t) => { if (self.P && t - self.last > linger) self.stop(t); };
+  return self;
 }
 
 // ---- train voice (one per car) ----------------------------------------------------------------------------

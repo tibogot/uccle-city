@@ -108,38 +108,43 @@ class Emitter {
     const g = makeGain(ctx, now0 ? 1 : 0), p = this._panner(model);
     this.lp.connect(g).connect(p).connect(this.direct);
     if (!now0) {
-      g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(1, now + 0.08);
+      g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(1, now + 0.25);
       for (const old of this.paths) {
         old.g.gain.cancelAndHoldAtTime(now);
-        old.g.gain.linearRampToValueAtTime(0, now + 0.08);
-        old.dead = now + 0.12;
+        old.g.gain.linearRampToValueAtTime(0, now + 0.25);
+        old.dead = now + 0.3;
       }
     }
     this.paths.push({ g, p, dead: 0 });
-    this.model = model;
+    this.model = model; this.newPath = true;
   }
   // Called at control rate. `ahead` = control period: ramps reach the next target as the next update arrives.
+  // Cost matters here (~40 voices x 10 Hz): AudioParam calls are the main-thread cost, so every write is skipped
+  // when its value has not changed enough to hear (positions of parked sources, gains, filters).
   control(now, ahead, L) {
-    const s = this.src, e = this.engine;
+    const s = this.src, e = this.engine, k = this.k ??= { x: NaN, y: NaN, z: NaN, g: NaN, dir: NaN, lp: NaN, send: NaN, delay: NaN };
     // Extrapolate one period ahead with the source velocity so ramps lead instead of lag.
     const x = s.x + (s.vx || 0) * ahead, y = s.y + (s.vy || 0) * ahead, z = s.z + (s.vz || 0) * ahead;
     const d = Math.hypot(x - L.x, y - L.y, z - L.z);
-    for (const path of this.paths) {
-      if (path.dead) continue;
-      const p = path.p;
-      for (const [param, v] of [[p.positionX, x], [p.positionY, y], [p.positionZ, z]]) {
-        param.cancelAndHoldAtTime(now); param.linearRampToValueAtTime(v, now + ahead);
+    const moved = Math.abs(x - k.x) + Math.abs(y - k.y) + Math.abs(z - k.z) > 0.01 || this.newPath;
+    if (moved) {
+      for (const path of this.paths) {
+        if (path.dead) continue;
+        const p = path.p;
+        p.positionX.cancelAndHoldAtTime(now); p.positionX.linearRampToValueAtTime(x, now + ahead);
+        p.positionY.cancelAndHoldAtTime(now); p.positionY.linearRampToValueAtTime(y, now + ahead);
+        p.positionZ.cancelAndHoldAtTime(now); p.positionZ.linearRampToValueAtTime(z, now + ahead);
+        if (s.cone && Number.isFinite(s.heading)) { p.orientationX.value = Math.sin(s.heading); p.orientationZ.value = Math.cos(s.heading); }
       }
-      if (s.cone && Number.isFinite(s.heading)) { p.orientationX.value = Math.sin(s.heading); p.orientationZ.value = Math.cos(s.heading); }
+      k.x = x; k.y = y; k.z = z; this.newPath = false;
     }
-    for (let i = this.paths.length - 1; i >= 0; i--) {
+    if (this.paths.length > 1 && !e.offline) for (let i = this.paths.length - 1; i >= 0; i--) {
       const path = this.paths[i];
-      if (path.dead && now >= path.dead && !e.offline) { path.g.disconnect(); path.p.disconnect(); this.paths.splice(i, 1); }
+      if (path.dead && now >= path.dead) { path.g.disconnect(); path.p.disconnect(); this.paths.splice(i, 1); }
     }
     if (this.delay) {
-      const dt = this.delay.delayTime;
-      dt.cancelAndHoldAtTime(now);
-      dt.linearRampToValueAtTime(Math.min(1.45, d / C), now + ahead);
+      const dl = Math.min(1.45, d / C);
+      if (Math.abs(dl - k.delay) > 2e-6) { const dt = this.delay.delayTime; dt.cancelAndHoldAtTime(now); dt.linearRampToValueAtTime(dl, now + ahead); k.delay = dl; }
     }
     if (now >= this.nextOccl) {
       this.occl = e.obstruction(s, L);
@@ -149,13 +154,15 @@ class Emitter {
     const range = s.range ?? 200;
     const fade = clamp((range - d) / (range * 0.25));
     const g = (s.gain ?? 1) * fade * fade * (3 - 2 * fade) * (this.retiring ? 0 : 1);
-    this.input.gain.setTargetAtTime(g, now, this.fresh ? 0.01 : 0.04);
-    this.direct.gain.setTargetAtTime(1 - this.occl * 0.8, now, 0.12);
-    const air = Math.max(1200, 19000 * Math.exp(-d / 260));
-    this.lp.frequency.setTargetAtTime(air * Math.pow(0.07, this.occl), now, 0.1);
+    if (Math.abs(g - k.g) > 0.004 * Math.max(g, 0.05) || this.fresh) { this.input.gain.setTargetAtTime(g, now, this.fresh ? 0.01 : 0.04); k.g = g; }
+    const dir = 1 - this.occl * 0.8;
+    if (Math.abs(dir - k.dir) > 0.005) { this.direct.gain.setTargetAtTime(dir, now, 0.12); k.dir = dir; }
+    const lp = Math.max(1200, 19000 * Math.exp(-d / 260)) * Math.pow(0.07, this.occl);
+    if (Math.abs(lp - k.lp) > 0.01 * lp) { this.lp.frequency.setTargetAtTime(lp, now, 0.1); k.lp = lp; }
     // Reverb send: diffuse level falls slower than the direct sound (distance cue = direct/reverb ratio).
     const ref = s.ref ?? 3;
-    this.send.gain.setTargetAtTime(e.envSend * (s.wet ?? 1) * Math.sqrt(ref / Math.max(ref, d)) * fade, now, 0.15);
+    const send = e.envSend * (s.wet ?? 1) * Math.sqrt(ref / Math.max(ref, d)) * fade;
+    if (Math.abs(send - k.send) > 0.01 * Math.max(send, 0.01)) { this.send.gain.setTargetAtTime(send, now, 0.15); k.send = send; }
     this.fresh = false;
     return d;
   }
@@ -170,8 +177,8 @@ class Emitter {
 
 // ---- engine -----------------------------------------------------------------------------------------------
 export class SoundEngine {
-  constructor(ctx, { voiceLimit = 40, hrtfVoices = 8, controlRate = 10, offline = false, environment = "canyon" } = {}) {
-    this.ctx = ctx; this.offline = offline; this.hrtfRadius = 60;
+  constructor(ctx, { voiceLimit = 40, hrtfVoices = 8, hrtfRadius = 60, controlRate = 10, offline = false, environment = "canyon" } = {}) {
+    this.ctx = ctx; this.offline = offline; this.hrtfRadius = hrtfRadius; this.maxNewPerStep = offline ? 99 : 4; this.fps = 60;
     this.voiceLimit = voiceLimit; this.hrtfVoices = hrtfVoices; this.controlRate = controlRate;
     this.now = 0; this.acc = 0;
     this.listener = { x: 0, y: 1.7, z: 0, fx: 0, fy: 0, fz: -1 };
@@ -302,12 +309,30 @@ export class SoundEngine {
     s._voice = null; s._emitter = null; s._retiring = false;
   }
 
-  // Per frame (live). Runs the control step at controlRate; returns ms spent.
+  // Per frame (live). Runs the control step at controlRate, and a slice of the voice updates on the frames
+  // in between; returns ms spent.
   frame(dt) {
+    if (dt > 0) this.fps = this.fps * 0.95 + Math.min(240, 1 / dt) * 0.05;
     this.acc += dt;
-    if (this.acc < 1 / this.controlRate) return 0;
+    if (this.acc < 1 / this.controlRate) {
+      if (!this._work || this._next >= this._work.length) return 0;
+      const t0 = performance.now(); this._slice(this.ctx.currentTime + 0.01); return performance.now() - t0;
+    }
     this.acc %= 1 / this.controlRate;
     return this.control(this.ctx.currentTime + 0.01);
+  }
+  _slice(now) {
+    const work = this._work, L = this.listener, ahead = 1 / this.controlRate;
+    const end = Math.min(work.length, this._next + Math.ceil(work.length / this._slices));
+    for (let i = this._next; i < end; i++) {
+      const s = work[i];
+      if (!s._voice) continue;
+      // Far voices (beyond 80 m) update at half the control rate (their ramps span two periods).
+      if (s._d > 80 && !s._emitter.fresh && (s._tick = (s._tick || 0) ^ 1)) continue;
+      s._emitter.control(now, s._d > 80 ? ahead * 2 : ahead, L);
+      s._voice.update(now, s, s._d);
+    }
+    this._next = end;
   }
 
   // The control step (live: from frame(); offline: called by the scene simulation with an explicit time).
@@ -343,13 +368,17 @@ export class SoundEngine {
     const ranked = this._ranked ??= [];
     ranked.length = 0;
     for (const s of this.sources) { s._d = this.distanceTo(s); s.score = s.active === false ? 0 : this.score(s, s._d); if (s.score > 0) ranked.push(s); }
-    ranked.sort((a, b) => b.score - a.score);
+    // Hysteresis: a source that holds a voice ranks 30 % higher, so voices near the cut-off don't churn
+    // (building / tearing down graphs is the expensive part of a control step).
+    ranked.sort((a, b) => b.score * (b._voice ? 1.3 : 1) - a.score * (a._voice ? 1.3 : 1));
     const slots = Math.max(0, this.voiceLimit - this.events.length);
     for (let i = 0; i < ranked.length; i++) ranked[i]._want = i < slots;
+    let created = 0;
     for (const s of this.sources) {
       const want = s.score > 0 && s._want;
       if (want && !s._voice) {
-        s._emitter = new Emitter(this, s, "equalpower"); s._emitter.fresh = true;
+        if (created++ >= this.maxNewPerStep) { s._want = false; continue; }   // spread graph building over steps
+        s._emitter = new Emitter(this, s, "equalpower"); s._emitter.fresh = true; this.stats.created = (this.stats.created || 0) + 1;
         s._voice = s.create(ctx, s._emitter.input, now);
       } else if (!want && s._voice) {
         this._release(s, now);
@@ -364,12 +393,18 @@ export class SoundEngine {
     let hrtf = 0;
     for (let i = 0; i < voiced.length; i++) {
       const s = voiced[i];
-      const model = i < this.hrtfVoices && s._d < this.hrtfRadius ? "HRTF" : "equalpower";
+      // Hysteresis (+20 % radius, +2 ranks) so a voice near the boundary doesn't flip models; the swap is a
+      // 0.25 s cross-fade (HRTF and equal-power differ in timbre, mostly the far ear's highs).
+      const was = s._emitter.model === "HRTF";
+      const model = i < this.hrtfVoices + (was ? 2 : 0) && s._d < this.hrtfRadius * (was ? 1.2 : 1) ? "HRTF" : "equalpower";
       s._emitter.setModel(model);
       if (model === "HRTF") hrtf++;
-      s._emitter.control(now, ahead, L);
-      s._voice.update(now, s, s._d);
     }
+    // Per-voice parameter writes are the bulk of the cost: live, they are spread over the frames until the next
+    // control step (slices), so no single frame pays for all 40 voices. Offline: all at once.
+    this._work = voiced; this._next = 0;
+    this._slices = this.offline ? 1 : Math.max(1, Math.min(6, Math.round(this.fps / this.controlRate)));
+    this._slice(now);
     for (const ev of this.events) if (ev.em.model === "HRTF") hrtf++;
     for (const b of this.beds) b.update?.(now);
     const st = this.stats;

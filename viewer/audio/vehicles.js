@@ -9,7 +9,7 @@
 // exciting tyre-cavity / body modes (two banks, 4 and 12 m/s references, cross-faded) and +8 dB rolling noise.
 import { combustionBuffers } from "../../vendor/slop-sound/audio-synthesis.js";
 import { horn as hornBuffer } from "../../vendor/slop-sound/audio-events.js";
-import { bake, Biquad, Mode, OnePole, clamp, loopSource, makeFilter, makeGain, pinkSource, playBuffer, smoothParam } from "./util.js";
+import { bake, Biquad, Mode, OnePole, TAU, clamp, loopSource, makeFilter, makeGain, pinkSource, playBuffer, smoothParam } from "./util.js";
 
 export const ROAD_SURFACES = ["asphalt", "setts", "concrete"];
 
@@ -57,6 +57,13 @@ export class VehicleBank {
       }
     }, { seed: seed + (close ? 5 : 0), peak: 0.8 }));
   }
+  squeal(k) {
+    return (this.c["sq" + k] ??= bake(this.ctx, 0.9, ([d], sr, r) => {
+      const f = 3100 + k * 350; let ph = 0;
+      for (let i = 0; i < d.length; i++) { const t = i / sr; ph += f * (1 + 0.008 * Math.sin(TAU * 7 * t) + 0.004 * Math.sin(TAU * 13.3 * t)) / sr;
+        d[i] = (Math.sin(TAU * ph) + 0.2 * Math.sin(2 * TAU * ph)) * Math.min(1, t / 0.08) * Math.min(1, (0.9 - t) / 0.25) * (0.7 + 0.3 * Math.sin(TAU * 3.1 * t)); }
+    }, { seed: 40 + k, peak: 0.7 }));
+  }
   horn(len) { return (this.c["h" + len] ??= hornBuffer(this.ctx, len, 17 + Math.round(len * 10))); }
 }
 
@@ -78,19 +85,21 @@ export function createCarVoice(ctx, bank, out, src, now) {
   ex.connect(gLo).connect(exF); exHi.connect(gHi).connect(exF); exF.connect(exG).connect(mix);
   const mech = loop(eng.mechanical), mechF = own(makeFilter(ctx, "bandpass", 1700, 0.45)), mechG = own(makeGain(ctx, 0));
   mech.connect(mechF).connect(mechG).connect(mix);
-  const road = loop(bank.pink()), roadHP = own(makeFilter(ctx, "highpass", 200, 0.5)), roadBP = own(makeFilter(ctx, "peaking", 900, 0.9, 6)), roadLP = own(makeFilter(ctx, "lowpass", 3500, 0.5)), roadG = own(makeGain(ctx, 0));
-  road.connect(roadHP).connect(roadBP).connect(roadLP).connect(roadG).connect(mix);
-  const s4 = loop(bank.setts(4)), s12 = loop(bank.setts(12)), s4G = own(makeGain(ctx, 0)), s12G = own(makeGain(ctx, 0));
-  s4.connect(s4G).connect(mix); s12.connect(s12G).connect(mix);
-  const sq = own(ctx.createOscillator()); sq.frequency.value = 3100 + Math.random() * 900; sources.push(sq); sq.start(now);
-  const vib = own(ctx.createOscillator()); vib.frequency.value = 7; const vibG = own(makeGain(ctx, 25)); vib.connect(vibG).connect(sq.frequency); sources.push(vib); vib.start(now);
-  const sqG = own(makeGain(ctx, 0)); sq.connect(sqG).connect(mix);
+  // Rolling noise: one broad band-pass (the CPX tyre/road spectrum is a broad hump around 0.8-1 kHz).
+  const road = loop(bank.pink()), roadBP = own(makeFilter(ctx, "bandpass", 900, 0.55)), roadG = own(makeGain(ctx, 0));
+  road.connect(roadBP).connect(roadG).connect(mix);
+  // Setts layers are built only once the car is on setts (cost: two loops), the brake squeal is a one-shot.
+  let S = null;
+  const setts = () => {
+    const s4 = loop(bank.setts(4)), s12 = loop(bank.setts(12)), s4G = own(makeGain(ctx, 0)), s12G = own(makeGain(ctx, 0));
+    s4.connect(s4G).connect(mix); s12.connect(s12G).connect(mix);
+    return { s4: smoothParam(s4G.gain, 0.12), s12: smoothParam(s12G.gain, 0.12), s4r: smoothParam(s4.playbackRate, 0.1, 1e-3), s12r: smoothParam(s12.playbackRate, 0.1, 1e-3) };
+  };
   const P = {
     exRate: smoothParam(ex.playbackRate, 0.035, 5e-4), exHiRate: smoothParam(exHi.playbackRate, 0.035, 5e-4), mechRate: smoothParam(mech.playbackRate, 0.035, 5e-4),
     lo: smoothParam(gLo.gain, 0.07), hi: smoothParam(gHi.gain, 0.07), exCut: smoothParam(exF.frequency, 0.07, 1), exLev: smoothParam(exG.gain, 0.06),
     mechF: smoothParam(mechF.frequency, 0.12, 1), mechLev: smoothParam(mechG.gain, 0.09),
-    road: smoothParam(roadG.gain, 0.15), roadF: smoothParam(roadBP.frequency, 0.2, 1), s4: smoothParam(s4G.gain, 0.12), s12: smoothParam(s12G.gain, 0.12),
-    s4r: smoothParam(s4.playbackRate, 0.1, 1e-3), s12r: smoothParam(s12.playbackRate, 0.1, 1e-3), sq: smoothParam(sqG.gain, 0.05),
+    road: smoothParam(roadG.gain, 0.15), roadF: smoothParam(roadBP.frequency, 0.2, 1),
   };
   let gear = 0, rpm = IDLE[kind], thr = 0, last = -1, lock = 0, squealUntil = 0;
   return {
@@ -123,12 +132,16 @@ export function createCarVoice(ctx, bank, out, src, now) {
       const roll = Math.pow(clamp(v / 14, 0, 1.6), 1.5) * 0.12;
       P.road(roll * (surf === "setts" ? 2.5 : surf === "concrete" ? 1.4 : 1) * (s.tyreGain ?? 1), t);
       P.roadF(surf === "setts" ? 650 : 900 + v * 15, t);
-      const sv = surf === "setts" ? clamp(v / 2) : 0, mixHi = clamp((v - 4) / 8);
-      P.s4(sv * (1 - mixHi) * 0.35 * (s.tyreGain ?? 1), t); P.s12(sv * mixHi * 0.5 * (s.tyreGain ?? 1), t);
-      P.s4r(Math.max(0.05, v / 4), t); P.s12r(Math.max(0.05, v / 12), t);
-      // Brake squeal: braking hard-ish under 4 m/s, sometimes (worn pads).
-      if (load < -0.3 && v > 0.4 && v < 4 && t > squealUntil && (s.seed * 1000) % 1 < (s.squeal ?? 0.5)) squealUntil = t + 0.4 + v * 0.3;
-      P.sq(t < squealUntil && v > 0.3 ? 0.03 : 0, t);
+      if (surf === "setts" && !S) S = setts();
+      if (S) {
+        const sv = surf === "setts" ? clamp(v / 2) : 0, mixHi = clamp((v - 4) / 8);
+        S.s4(sv * (1 - mixHi) * 0.35 * (s.tyreGain ?? 1), t); S.s12(sv * mixHi * 0.5 * (s.tyreGain ?? 1), t);
+        S.s4r(Math.max(0.05, v / 4), t); S.s12r(Math.max(0.05, v / 12), t);
+      }
+      // Brake squeal (worn pads, some cars): braking under 4 m/s -> a one-shot squeal (2.8-4 kHz with vibrato).
+      if (load < -0.3 && v > 0.6 && v < 4 && t > squealUntil && (s.seed * 1000) % 1 < (s.squeal ?? 0.5)) {
+        squealUntil = t + 3; playBuffer(ctx, bank.squeal(Math.floor(s.seed * 3)), mix, t, { gain: 0.06, rate: 0.9 + s.seed * 0.25 });
+      }
     },
     dispose(when) { for (const s of sources) { try { s.stop(when + 0.05); } catch { /* already stopped */ } } sources[0].onended = () => { for (const n of nodes) n.disconnect(); }; },
   };
