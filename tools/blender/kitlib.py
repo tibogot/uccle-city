@@ -330,8 +330,10 @@ def bake_ao(objs, out_png, px=2048, samples=64, distance=1.0, spacing=14.0):
         o.data.uv_layers.active = o.data.uv_layers["UVMap"]
         first = False
         print(f"  AO {o.name} {time.time() - t:.0f}s")
-    img.filepath_raw = out_png; img.file_format = "PNG"
-    img.save()
+    # 8-bit grey PNG (the AO is one channel)
+    st = scn.render.image_settings
+    st.file_format = "PNG"; st.color_mode = "BW"; st.color_depth = "8"; st.compression = 90
+    img.save_render(out_png, scene=scn)
     for g in gplanes: bpy.data.objects.remove(g)
     for o in objs: o.location = home[o.name]
     for m in mats: m.node_tree.nodes.remove(m.node_tree.nodes["AO_BAKE"])

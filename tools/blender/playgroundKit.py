@@ -58,9 +58,15 @@ def post(P, x, y, h, s=0.09, cap=True, mat=WOOD, z0=-0.1):
         P.add_bm(bm_cyl(s * 0.18, 0.04, 10, 0.015, 2, r2=0.004), mat, Zv, M((x, y, h + 0.05)))
 
 
-def beam(P, a, b, sy, sz, mat=WOOD, bevel=0.006):
-    m, L = align_z(a, b)
-    P.add_bm(bm_box(sy, sz, L, bevel), mat, Zv, m @ M((0, 0, L / 2)))
+def beam(P, a, b, sw, sh, mat=WOOD, bevel=0.006):
+    """a sawn beam from a to b: sw wide (horizontal, across it), sh high (in the vertical plane through it)"""
+    a, b = Vector(a), Vector(b)
+    d = b - a; L = d.length; d.normalize()
+    w = Vector((0, 0, 1)).cross(d)
+    w = w.normalized() if w.length > 1e-6 else Vector((1, 0, 0))
+    u = d.cross(w).normalized()
+    R = Matrix((w, u, d)).transposed().to_4x4()
+    P.add_bm(bm_box(sw, sh, L, bevel), mat, Zv, Matrix.Translation((a + b) / 2) @ R)
 
 
 def rod(P, a, b, r, mat, segs=10, cap=True, bevel=0.0):
@@ -128,9 +134,9 @@ def chain(P, top, bottom, pitch=0.075, far=None):
     for i in range(n):
         c = top.lerp(bottom, (i + 0.5) / n)
         rot = (math.pi / 2, 0, (math.pi / 2) * (i % 2))
-        P.add_bm(bm_torus(0.021, 0.0042, 8, 4, 1.65), GALV, Zv, M(c) @ Matrix.Rotation(rot[2], 4, "Z") @ Matrix.Rotation(math.pi / 2, 4, "Y"))
+        P.add_bm(bm_torus(0.021, 0.0042, 12, 5, 1.65), GALV, Zv, M(c) @ Matrix.Rotation(rot[2], 4, "Z") @ Matrix.Rotation(math.pi / 2, 4, "Y"))
     if far is not None:
-        far.add_bm(bm_cyl(0.007, (top - bottom).length, 5, 0, 1, False), GALV, Zv, align_z(bottom, top)[0])
+        far.add_bm(bm_cyl(0.007, (top - bottom).length, 5, 0, 1, True), GALV, Zv, align_z(bottom, top)[0])
 
 
 def plank_deck(P, x0, x1, y0, y1, z, w=0.12, gap=0.012, th=0.03):
@@ -139,6 +145,12 @@ def plank_deck(P, x0, x1, y0, y1, z, w=0.12, gap=0.012, th=0.03):
         y2 = min(y1, y + w)
         P.add_bm(bm_box(x1 - x0, y2 - y - gap, th, 0.004), WOOD, X, M(((x0 + x1) / 2, (y + y2 - gap) / 2 + gap / 2, z - th / 2)))
         y = y2
+
+
+def deck_frame(P, s, zp):
+    """the platform's frame: beams along x on the post lines, beams along y butting between them (4 mm lower)"""
+    for y in (-s, s): beam(P, (-s, y, zp - 0.07), (s, y, zp - 0.07), 0.045, 0.09)
+    for x in (-s, s): beam(P, (x, -s + 0.0235, zp - 0.074), (x, s - 0.0235, zp - 0.074), 0.045, 0.09)
 
 
 def leaf_outline(L, Wd, n=20):
@@ -206,10 +218,7 @@ def slide():
         for y in (-s, s):
             post(P, x, y, 2.45 if y > 0 else 1.95)
     plank_deck(P, -s + 0.045, s - 0.045, -s + 0.045, s - 0.045, zp)
-    beam(P, (-s, -s, zp - 0.07), (s, -s, zp - 0.07), 0.045, 0.09)
-    beam(P, (-s, s, zp - 0.07), (s, s, zp - 0.07), 0.045, 0.09)
-    beam(P, (-s, -s, zp - 0.07), (-s, s, zp - 0.07), 0.045, 0.09)
-    beam(P, (s, -s, zp - 0.07), (s, s, zp - 0.07), 0.045, 0.09)
+    deck_frame(P, s, zp)
     for x in (-s - 0.01, s + 0.01):
         hpl_panel(P, (x, 0, zp + 0.45), 0.86, 0.7, math.pi / 2)
         for z in (zp + 0.2, zp + 0.7):
@@ -224,10 +233,10 @@ def slide():
         z = zp - 0.02 - (zp - 0.33) * (0.5 - 0.5 * math.cos(math.pi * min(1, t / 0.85))) if t < 0.85 else 0.31
         path.append((0, y, z))
     path.append((0, -s - 2.95, 0.30)); path.append((0, -s - 3.15, 0.31))
-    mid = [(-0.3, 0.26), (-0.27, 0.25), (-0.26, 0.07), (-0.24, 0.025), (-0.2, 0.0), (0.2, 0.0), (0.24, 0.025), (0.26, 0.07), (0.27, 0.25), (0.3, 0.26)]
+    # the sheet's mid-line, its edges rolled outwards and down (the lips: one part, no separate tube)
+    mid = [(-0.322, 0.236), (-0.318, 0.258), (-0.3, 0.27), (-0.28, 0.258), (-0.265, 0.2), (-0.26, 0.07), (-0.24, 0.025), (-0.2, 0.0), (0.2, 0.0),
+           (0.24, 0.025), (0.26, 0.07), (0.265, 0.2), (0.28, 0.258), (0.3, 0.27), (0.318, 0.258), (0.322, 0.236)]
     P.add_bm(sweep_profile(path, thick_line(mid, 0.018), side=Vector((1, 0, 0))), INOX, Y)
-    for x in (-0.31, 0.31):                                               # rolled lips
-        tube(P, [(x, p[1], p[2] + 0.262) for p in path[:-1]], 0.015, INOX, 8)
     for y, z in ((-s - 2.85, 0.3),):                                       # exit support
         for x in (-0.22, 0.22): rod(P, (x, y, -0.1), (x, y, z - 0.01), 0.022, GALV, 10)
         rod(P, (-0.22, y, 0.2), (0.22, y, 0.2), 0.016, GALV, 8)
@@ -252,8 +261,9 @@ def climb():
         for y in (-s, s):
             post(P, x, y, 2.9 if (x > 0) == (y > 0) else 2.4)
     plank_deck(P, -s + 0.045, s - 0.045, -s + 0.045, s - 0.045, zp)
-    for a, b in (((-s, -s), (s, -s)), ((-s, s), (s, s)), ((-s, -s), (-s, s)), ((s, -s), (s, s))):
-        beam(P, (a[0], a[1], zp - 0.07), (b[0], b[1], zp - 0.07), 0.045, 0.09)
+    deck_frame(P, s, zp)
+    pole = bm_cyl(0.03, 3.0 - zp - 0.02, 12, 0.0, 1, True)                                   # the leaf roof's pole
+    P.add_bm(pole, GALV, Zv, M((0.05, 0.05, zp)))
     leaf_roof(P, (0.05, 0.05, 3.0), 1.7, 1.1, 0.3, 0.6)
     # hoop ladder (front, -Y): two galvanised flat-bar arcs, red rungs
     R = 1.25; cy = -s - 0.02
@@ -264,7 +274,7 @@ def climb():
         P.add_bm(sweep_profile(pts, [(-0.007, -0.03), (0.007, -0.03), (0.007, 0.03), (-0.007, 0.03)], side=Vector((1, 0, 0))), GALV, Y)
     for i in range(1, 8):
         y, z = hoop(i / 8)
-        rod(P, (-0.37, y, z), (0.37, y, z), 0.016, RED, 10, True, 0.004)
+        rod(P, (-0.36, y, z), (0.36, y, z), 0.016, RED, 10, True, 0.004)
     # rope net (right, +X): diamond grid between the two right posts, zp-1.4..zp
     x = s + 0.06
     knots = {}
@@ -272,13 +282,14 @@ def climb():
     for i in range(N + 1):
         for j in range(N + 1):
             knots[(i, j)] = Vector((x + 0.02 * math.sin(i + j), -s + 2 * s * i / N, 0.05 + (zp - 0.05) * j / N))
+    for i in range(N + 1):                                             # vertical ropes
+        D.add_bm(bm_tube_path([knots[(i, j)] for j in range(N + 1)], 0.008, 6), ROPE, Zv)
+        F.add_bm(bm_tube_path([knots[(i, j)] for j in range(N + 1)], 0.011, 4), ROPE, Zv)
+    for j in range(N + 1):                                             # horizontal ropes
+        D.add_bm(bm_tube_path([knots[(i, j)] for i in range(N + 1)], 0.008, 6), ROPE, Y)
+        F.add_bm(bm_tube_path([knots[(i, j)] for i in range(N + 1)], 0.011, 4), ROPE, Y)
     for i in range(N + 1):
         for j in range(N + 1):
-            for di, dj in ((1, 0), (0, 1)):
-                if (i + di, j + dj) in knots:
-                    a, b = knots[(i, j)], knots[(i + di, j + dj)]
-                    rod(D, a, b, 0.008, ROPE, 6, False)
-                    rod(F, a, b, 0.011, ROPE, 4, False)
             bm = bmesh.new(); bmesh.ops.create_icosphere(bm, subdivisions=1, radius=0.018)
             for f in bm.faces: f.smooth = True
             D.add_bm(bm, ROPE, None, M(knots[(i, j)]))
@@ -358,9 +369,9 @@ def bench():
     frame = [(0.0, 0.30, -0.05), (0.0, 0.26, 0.40), (0.0, -0.20, 0.42), (0.0, -0.24, 0.40), (0.0, -0.28, 0.0)]
     back = [(0.0, -0.18, 0.42), (0.0, -0.27, 0.85)]
     for x in (-0.72, 0.72):
-        for path in (frame, back):
+        for path, t in ((frame, 0.006), (back, 0.004)):
             pts = [(x, p[1], p[2]) for p in path]
-            P.add_bm(sweep_profile(pts, [(-0.006, -0.03), (0.006, -0.03), (0.006, 0.03), (-0.006, 0.03)], side=Vector((1, 0, 0))), GREEN, Y)
+            P.add_bm(sweep_profile(pts, [(-t, -0.03), (t, -0.03), (t, 0.03), (-t, 0.03)], side=Vector((1, 0, 0))), GREEN, Y)
         tube(P, [(x + (0.06 if x > 0 else -0.06), 0.24, 0.40), (x + (0.06 if x > 0 else -0.06), 0.22, 0.62), (x + (0.06 if x > 0 else -0.06), -0.1, 0.64), (x + (0.06 if x > 0 else -0.06), -0.2, 0.5)], 0.016, GREEN, 10)
     for k, y in enumerate((0.21, 0.1, -0.01, -0.12)):
         P.add_bm(bm_box(L, 0.095, 0.035, 0.008), BENCHW, X, M((0, y, 0.455)))
@@ -380,7 +391,7 @@ def mesh_panel(P, x0, x1, z0, z1, y=0.0, mat=GREEN, vstep=0.05, hstep=0.2, far=N
     for j in range(m + 1):
         z = z0 + (z1 - z0) * j / m
         for dy in (-0.005, 0.005):
-            rod(P, (x0, y + dy, z), (x1, y + dy, z), 0.003, mat, 5, False)
+            rod(P, (x0, y + dy, z), (x1, y + dy, z), 0.003, mat, 5, True)
     if far is not None:
         far.add_bm(bm_box(x1 - x0, 0.006, z1 - z0, 0.0), mat, X, M(((x0 + x1) / 2, y, (z0 + z1) / 2)))
 
@@ -402,13 +413,13 @@ def gate():
         P.add_bm(bm_box(0.08, 0.08, 1.3, 0.005), GREEN, Zv, M((x, 0, 0.55)))
         P.add_bm(bm_box(0.088, 0.088, 0.012, 0.003), GREEN, None, M((x, 0, 1.206)))
     x0, x1, z0, z1 = -0.5, 0.5, 0.08, 1.05
-    for a, b in (((x0, z0), (x1, z0)), ((x0, z1), (x1, z1)), ((x0, z0), (x0, z1)), ((x1, z0), (x1, z1))):
-        beam(P, (a[0], 0.03, a[1]), (b[0], 0.03, b[1]), 0.04, 0.04, GREEN, 0.004)
+    for z in (z0, z1): beam(P, (x0 - 0.02, 0.03, z), (x1 + 0.02, 0.03, z), 0.04, 0.04, GREEN, 0.004)
+    for x in (x0, x1): beam(P, (x, 0.03, z0 + 0.0205), (x, 0.03, z1 - 0.0205), 0.038, 0.038, GREEN, 0.004)
     mesh_panel(P, x0 + 0.03, x1 - 0.03, z0 + 0.03, z1 - 0.03, 0.03, detail=D)
     for z in (0.2, 0.9):
         rod(P, (-0.535, 0.03, z - 0.05), (-0.535, 0.03, z + 0.05), 0.016, GALV, 10, True, 0.003)
     P.add_bm(bm_box(0.08, 0.06, 0.14, 0.006), GALV, None, M((0.53, 0.03, 0.95)))
-    tube(P, bent((0.42, -0.03, 0.88), (0.42, -0.03, 1.0), 0.06, 8), 0.011, GALV, 8)
+    tube(P, [(0.42, -0.03, 0.88), (0.42, -0.085, 0.885), (0.42, -0.1, 0.94), (0.42, -0.085, 0.995), (0.42, -0.03, 1.0)], 0.011, GALV, 8)
     return P, None, D
 
 

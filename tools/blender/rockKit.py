@@ -97,7 +97,7 @@ def block_mass(spec, rnd):
     add_box(bm, cx0, cx1, cy0, cy1, 0.0, H * spec.get("core", 0.78))
     lo, hi = spec.get("joints", (0.45, 1.1))
     gap = spec.get("gap", 0.07)
-    sb0, sb1 = spec.get("setback", (-0.28, 0.18))
+    sb0, sb1 = spec.get("setback", (-0.34, 0.24))
     t0, t1 = spec.get("tops", (0.62, 1.0))
     for side in faces:
         along = W if side in ("front", "back") else D
@@ -114,8 +114,8 @@ def block_mass(spec, rnd):
                 za = zs[j] + (0.03 if j else -0.1); zb = zs[j + 1] - 0.03
                 off = drift + rnd.uniform(sb0, sb1) * 0.6 - (spec.get("overhang", 0.0) if j == len(zs) - 2 and top > H * 0.8 else 0.0)
                 th = rnd.uniform(0.5, 0.95)
-                lean = (rnd.uniform(-0.07, 0.07), rnd.uniform(-0.05, 0.05), rnd.uniform(-0.1, 0.1))
-                cuts_n = rnd.choice((0, 1, 1, 2, 2, 3))
+                lean = (rnd.uniform(-0.12, 0.12), rnd.uniform(-0.08, 0.08), rnd.uniform(-0.18, 0.18))
+                cuts_n = rnd.choice((1, 1, 2, 2, 3, 3))
                 if side == "front": blk = chamfered_block(a, b, -D / 2 + off, -D / 2 + off + th, za, zb, rnd, cuts_n, lean)
                 elif side == "back":
                     blk = chamfered_block(a, b, -D / 2 + off, -D / 2 + off + th, za, zb, rnd, cuts_n, lean)
@@ -192,8 +192,8 @@ def displace(o, spec, rnd):
     for v in bm.verts:
         p, n = v.co, v.normal
         steep = max(0.0, 1.0 - abs(n.z) * 1.3)
-        d = 0.035 * fbm(p * 1.3 + seed, 3)                                                    # large bulges
-        d += 0.012 * fbm(p * 4.5 + seed * 1.7, 3)                                             # hand-worked lumps
+        d = 0.055 * fbm(p * 1.1 + seed, 3)                                                    # large bulges
+        d += 0.016 * fbm(p * 4.5 + seed * 1.7, 3)                                             # hand-worked lumps
         if bed > 0:
             warp = 0.05 * noise.noise(p * 2.5 + seed, noise_basis="PERLIN_NEW")
             ph = (p.z + warp) / bed
