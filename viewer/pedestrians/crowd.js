@@ -15,6 +15,7 @@ import { Fn, If, int, float, vec3, vec4, instanceIndex, attributeArray, storage,
 import { PersonRig } from "../../vendor/slop-ped/pedestrians.js";
 import { createPersonMaterial } from "./personMaterial.js";
 import { buildBody } from "./bodies.js";
+import { overlay } from "./overlays.js";
 import { keepBand } from "../lodFade.js";
 import { BONES, STRIDE, BIND, blendPose, rot, childify, solePoints } from "./boneTable.js";
 import { buildLod2 } from "./lod2.js";
@@ -343,6 +344,7 @@ export class Crowd {
         if (!a.live) a.live = this._rig(p);
         a.liveW = 1; a.liveTarget = 1;
         a.live.update(dt, p.anim.dx ?? p.x, p.anim.dz ?? p.z, p.yaw, this._groundFn, null, 0, true, p.diveTime >= 0 ? p.diveTime : -1);
+        if (p.family && p.family !== "base" && !(p.diveTime >= 0)) overlay(a.live, p.family);    // the family's arms / stoop
         if (p.look) headGlance(a.live.pose, p.look);
         if (p.childK) childify(a.live.pose, p.childK, this.bindArr[p.sex]);
       }
@@ -363,6 +365,7 @@ export class Crowd {
         if (!a.live) continue;
         a.warm = (a.warm || 0) + dt;
         a.live.update(dt, p.anim.dx ?? p.x, p.anim.dz ?? p.z, p.yaw, this._groundFn, null, 0, true, p.diveTime >= 0 ? p.diveTime : -1);
+        if (p.family && p.family !== "base" && !(p.diveTime >= 0)) overlay(a.live, p.family);    // the family's arms / stoop
         if (p.look) headGlance(a.live.pose, p.look);
         if (p.childK) childify(a.live.pose, p.childK, this.bindArr[p.sex]);
         // hand-over: in, after the rig has walked 0.8 s (pre-warmed out to 23 m); the table's phase is pulled toward
