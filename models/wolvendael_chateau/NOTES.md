@@ -92,3 +92,102 @@ rendered one-storey block with a hipped slate roof. Street View may be LOOKED at
 - Banks 0.3-0.7 m above the water (DTM 47.0-47.5 round it); the lawn rises to the house (48.3-50).
 - Photos w01-w04: near-mirror reflections of the house, the sky and the trees, a few reeds and some debris; no lilies
   in March 2019 (lilies are summer: placed sparsely, near the edges).
+
+## Pipeline (2026-11-11)
+```
+python tools/wolvendael_measure.py [--dump]                  # site.json (frame, roof, ground, pond), site_dtm.* (1 s)
+python tools/wolvendael_photopose.py [--measure] [--undistort]  # poses, back-projected openings, lab overlays (undist/, git-ignored)
+"C:/Program Files/Blender Foundation/Blender 5.0/blender.exe" --factory-startup -b -P tools/blender/wolvendael_chateau.py -- models/wolvendael_chateau [--no-bake] [--previews] [--fast]
+node tools/wolvendael_pack.mjs models/wolvendael_chateau/wolvendael.raw.glb models/wolvendael_chateau/wolvendael.glb   # audit, LOD2, meshopt
+python tools/wolvendael_sidebyside.py <screenshot> w04.jpg docs/wolvendael/side_w04_city.jpg                          # (git-ignored output)
+```
+Blender ~25 s with the AO bake (2048 px, 96 samples), ~60 s with previews; pack ~60 s (mostly the audits).
+Kit: `tools/blender/wolvendael_kit.py` (builder, frames, boxes, chamfered blocks, profile sweeps round a polygon, lathes,
+pipes, knobs). Viewer: `viewer/wolvendaelModel.js` (loader, slot table, temporary TSL materials, AO, anti-sparkle, LOD
+fades), `viewer/wolvendaelCity.js` (`?wolvendael=1`), `labs/wolvendael-lab.html` (Château Lab), `debug/wolvendaelFlight.js`
+(city flight + GPU A/B). The pond: `viewer/water/pondBed.js` + `viewer/water/pondWater.js` (reusable), the wave texture in
+`vendor/slop-water/` (Mr.doob, MIT, ORIGIN.md).
+
+## Model (what is geometry)
+- Walls as quad grids round the openings (no fans; arches: vertical strips from the arc to the crown line); reveals 22 cm.
+- Stone: corner quoins (alternating 57 / 40 cm, the corner block wrapping by its projection as its own closed box) and
+  rusticated strips A / B / C (23 courses of 29 cm, 12 mm chamfers, 1.2 cm joints showing the plate behind), string course,
+  the centre's deeper band over the arches with three keystones, plinth cap, chamfered sills, the entablature (architrave,
+  frieze, bed mould 6 facets, corona, cavetto 8 facets: flat-shaded, the checker reads long smooth moulding strips as bent
+  flat walls) swept round the L with mitres.
+- Joinery: casements (frame, leaves, glazing bars 5 mm behind the leaves, panes), ground-floor transom lights, the arched
+  fanlights (ring, transom, hub, radiating bars), 54 louvred shutter leaves (stiles, rails, 45 deg slats; bi-fold beside
+  the arches), the back door (ESTIMATED: panels + transom).
+- Roof: the brisis as one ring (cornice 57.91 -> break 60.05, 0.8 m in); the terrasson = Blender exact-boolean UNION of two
+  convex hip roofs from the DSM (A main 62.94, B the SW pavilion 63.85 with its pond hip in A's plane); zinc rolls
+  (16-sided, flat) on every convex edge (collinear pieces merged), the break and the brisis arrises, knobs where they meet;
+  12 dormers (5 pond front, 2 NE end, 3 back + 2 SW end ESTIMATED): slate-hung fronts and cheeks, white casing, segmental
+  head, zinc sill, hipped cap with zinc edges; a roof window; 3 chimneys slate-hung (the zigzag in the material) with caps,
+  3 pots + 1 cowl + 4 small pots (SW stack, size ESTIMATED); the terrace (DTM 50.0 out to 3 m) with 5 risers and rendered
+  cheeks; 2 downpipes on the front (+2 ESTIMATED); the annex (ESTIMATED).
+- Triangles per slot LOD0: shutters 16.9k, joinery 13.8k, zinc 10.7k, stone 7.2k, terracotta 1.9k, render 1.8k, glass 1.0k,
+  slate 0.7k, blue stone 0.3k. Lightmap LOD0 17 px/m, far 9.5 px/m; 19.6k thin faces with vertex AO.
+
+## Mesh audit (tools/mesh_audit @ a3d14ab)
+- Raw, before every pack: LOD0 **0 blocking** (54,274 tris; warnings: 8.8k slivers = long cornice / roll strips, 1.5k
+  T-junctions, non-manifold box joints), far **0 blocking** (11,299). Five rounds to get there (thresholds' bottoms on the
+  plinth cap, fanlight ring vs jambs, corner quoin ends, coincident roll facets at corners -> knobs, dormer casing vs
+  reveals, smooth cornice curves -> flat, 12-sided rolls -> 16, a slit beside the door leaf).
+- Packed (report only): LOD0 12 (crossings round knobs, 7 slits at dormer eave ends after quantization), LOD1 0, LOD2 86
+  (meshopt collapses: thresholds onto the plinth cap, frames; LOD2 only beyond ~440 m, the building < 60 px wide).
+
+## LODs
+LOD0 54,274 tris / 9 draws; LOD1 (scripted far variant) 11,299 / 8; LOD2 (meshopt of LOD1, target 4.5k, 0.12 m) 4,556 / 8.
+Switch by distance to the box: LOD0 < 90 m (+-15), LOD1 < 400 m (+-40). GLB 1.97 MB (raw 6.2 MB), AO PNG 1.9 MB (5.3 MB GPU).
+
+## The pond (viewer/water/)
+- Bed: water cells = the OSM ring grown 1 m where the DTM < level + 14 cm; a bowl 0.9 m deep with a 3 m ramp (chamfer
+  distance). The tile worker carves it (tileData.js carvePonds, before the terrain mesh) and the shader's depth texture uses
+  the same grid from the same F4 DTM; the OSM water area leaves the land-cover mask (no blue paint under the bank).
+- Surface: a 1 m grid at 46.72, transparent, no depth write: the shoreline is where the terrain rises through it, the water
+  fading by depth (body opaque from 30 cm, reflection from 10 cm): no z-fight. Three small LEAN wave layers (slope rms ~1 %),
+  Fresnel (Schlick, F0 0.02), a murky olive body lit by the scene, a sun glint.
+- Reflection: our own planar pass (three's ReflectorNode camera maths + the oblique plane, reversed depth handled) at half
+  resolution, drawing only POND_LAYER: the château (all levels, fading copies), the sky dome, the terrain of the pond's
+  tiles, the reeds and LOW-POLY TREE PROXIES (icosahedron crowns + trunks from the LiDAR trees within 95 m; the real tree
+  field cost +1.8 ms). Only while the pond is on screen, the camera above it and < 220 m (fade 170-220 m); else the analytic
+  sky. The shadow map is not re-rendered for it. An object joins the reflection only after a precompile for its target.
+- Reeds (patches on the shallow fringe and wet bank, swaying) and lilies (shallow water near the edges) shrink to nothing
+  between 85 and 110 m.
+
+## Verification (this machine, one Chrome tab of mine; another agent's WebGPU tab on port 8822 ran for part of it)
+- Side-by-sides at the solved poses (git-ignored, they hold the photos): docs/wolvendael/side_w04_city.jpg, side_w02_city.jpg
+  (city, the photos' sun: day 83, 15.9 h), side_w04_lab.jpg; side_w00_city.jpg is not usable (the w00 pose is approximate
+  and a LiDAR tree trunk stands at the photographer's place). Renders without the photos: city_w04_pose.png,
+  city_w02_pose.png. The model lands on the photo's edges (facade, cornice, dormers, chimneys, the SW pavilion's roof); the
+  reflections of the house, the sky and the trees sit where the photo has them.
+- Grazing light (a June sunset skimming the pond front): lab_grazing_arches.png, lab_grazing_dormer_cornice.png: flat walls
+  clean, reveals and sills cast crisp shadows, the slate courses read.
+- Moving through the bands: lab_lod0_band_moving.png (47 -> 112 m: L0, L0+L1, L1), lab_lod1_band_moving.png (306 -> 474 m):
+  no pop seen; the pond: lab_pond_walk_strip.png (walking the far bank at eye height).
+- Flicker (lab, 24 frames): w04 view with the pond hidden: fixed 0 / strafe 2 / dolly 11 ppm (lab_flicker_w04_strafe_nopond.png);
+  NE corner at 30 m: 0 / 53 / 35 ppm. With the pond: 1400-1800 ppm = its own animated ripples and reed sway (the test does
+  not stop TSL time): not z-fight, but the shoreline under a frozen clock is NOT proven.
+- GPU, lab bench (median whole frame, + = the part, 3 interleaved cycles): w04 view L0 +0.59 / L1 +0.52 / L2 +0.52, pond
+  +0.20 (no trees in the lab); arches close-up L0 +1.84 / L1 +1.44 / L2 +1.44; NE corner +0.85 / +0.66 / +0.59, pond +0.13;
+  pond close-up L0 +0.46, pond +0.26; 500 m: +0.07 / 0 / 0, pond 0.
+- GPU, city at the w04 pose (pond on / off, 4 cycles): +0.98 ms (reflection CPU 1.25 ms); with the real tree field +2.49 ms
+  (CPU 4.5 ms); reflection at 0.35 scale +0.36 ms. The château in the city ~0 (it hides the trees behind it).
+- City flight (debug/wolvendaelFlight.js, 900 m -> 45 m -> orbit -> 900 m, 24 s), the last pair: run 1 1290 frames, median
+  16.7, p99 50, worst 300 ms (18 frames > 34 ms at 6.2-9.6 s, no long task, one reflection pipeline built on the frame:
+  terracotta's fading copy; the other agent's tab changed preset then); run 2 1383 frames, median 16.7, p99 33.4, worst
+  33.5, none > 34. Coverage 1.000 and the right material (opaque / fading copy) in every frame of every run. The pair
+  before the second warm camera: worst 66.7 / 34.0 ms; before the warm fix: 450-1870 ms frames.
+- Load: GLB + AO 113-406 ms; shaders 2.2 s (lab) / 5-15 s in the city's background queue + 0.6-1.1 s shadow and reflection
+  warm, before anything shows.
+
+## Still weak
+- The entrance side, the SW end, the annex and the back dormers are ESTIMATED (no photo; Street View not looked at yet).
+- The central band is plain (the photo shows a moulded frieze with consoles); the sign has no lettering.
+- The city's trees are summer-green stylized trees, the photos are March (bare): the reflections differ in kind; the tree
+  proxies in the reflection are round blobs.
+- Water seen steeply from above reads very dark (low Fresnel, dark body).
+- The first flight after load still builds one fading-copy pipeline on a frame (~60 ms); run-1 frames of 50-300 ms under
+  GPU contention are not fully explained.
+- Packed LOD2: 86 audit items (> 440 m); packed LOD0: 12.
+- Window frames still read darker than the photo's white at 50 m.
