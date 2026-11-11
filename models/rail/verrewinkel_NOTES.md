@@ -87,3 +87,17 @@ Verrewinkel (arches unconfirmed: no free photo of the faces found). A second pre
 - spans and pier widths +-0.5 m, the pitch of the arcade (1.91 vs 2.09 m), the corbel depth (0.12);
 - the footbridge's supports, its exact plan and level; the wing walls and end piers' shape;
 - the catenary under the bridge (lowered to fit: contact ~4.9 m, messenger ~5.3 m over the rail) [E].
+
+## Built (2026-11-11, tools/blender/roadBridge.py)
+Final layout (bridge frame): arches A -15.0..-7.0, B -5.5..5.5, C 7.0..15.0 (semi-ellipses sampled at equal normal turns,
+crowns 1.65 m under the road, rises 3.4 / 3.3 / 3.4), piers 1.5 m; 17 consoles at a 1.99 m pitch centred on the axis, end
+bays 1.20 m to the wing folds (s05: the last arch is ~0.65 of a bay); corbel 0.12 m; coping bottom road + 0.90, top + 1.17;
+wings flare 0.8 m from |X| 17.2 to 19.85 (UrbIS), end piers with stone caps; NE sidewalk +0.13 with dropped kerbs at the
+ends; SE apron (2.5 m, -0.45 m) into the city street. s05 camera vs the built model: consoles 41 px mean, coping 3 px, arch
+crowns 21-43 px, rails 47-52 px, SE fold 9 px (4896 px wide): the pitch on the photo alone was 2.04-2.21 m (scale weakly
+determined), the layout keeps the UrbIS footprint. Side by side: docs/trains/verrewinkel/s05_city_compare.jpg.
+
+Mesh: LOD0 34,073 tris (bridge 31,411 incl. the arch-ring node, footbridge 2,662), 12 primitives; LOD1 24,417 (an exact
+subset: no rings / railing posts / mesh panels / benches), 8; LOD2 5,725 (meshoptimizer error 0.06 + prune, flat), 7.
+Checker: LOD0 0 blocking, LOD1 0 blocking, LOD2 534 blocking (leaks / coplanar from the simplification; see TODO).
+GLB 3.1 MB (uncompressed), AO 2048 PNG 2.4 MB.

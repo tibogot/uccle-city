@@ -1,21 +1,21 @@
 # Mesh audit: verrewinkel.glb
 
-37,297 triangles, 21,843 welded vertices, 6,893 open edges, 256,634 rays, 25230 ms.
+34,073 triangles, 18,723 welded vertices, 3,773 open edges, 238,746 rays, 3724 ms.
 
-**0 blocking**, 6758 warnings. Clean (no blocking item).
+**0 blocking**, 3430 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| sliver | warn | 5434 |
+| sliver | warn | 2106 |
 | nonmanifold | warn | 1212 |
 | tjunction | warn | 112 |
-| seam | info | 1763 |
+| seam | info | 1123 |
 | opening | info | 14 |
 | backtoback | info | 1010 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## sliver (warn, 5434)
+## sliver (warn, 2106)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -60,7 +60,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -19.27, 1.55, -2.72 | verrewinkel/brick_red_brussels | 556 | 9.429 |
 | -19.28, 1.55, -3.32 | verrewinkel/brick_red_brussels | 556 | 9.429 |
 
-(5394 more in the JSON)
+(2066 more in the JSON)
 
 ## nonmanifold (warn, 1212)
 
@@ -156,7 +156,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (72 more in the JSON)
 
-## seam (info, 1763)
+## seam (info, 1123)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -201,7 +201,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.43, 7.45, 2.50 | verrewinkel/brick_red_brussels + verrewinkel_fine/brick_red_brussels | 2.85 | 48 | 90 |
 | -4.67, 6.13, 3.80 | verrewinkel_foot/concrete + verrewinkel_foot/painted_metal_white | 0.89 | 48 | 66.2 |
 
-(1723 more in the JSON)
+(1083 more in the JSON)
 
 ## opening (info, 14)
 

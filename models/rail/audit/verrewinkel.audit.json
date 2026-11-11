@@ -1,20 +1,20 @@
 {
  "summary": {
-  "triangles": 37297,
-  "vertices_welded": 21843,
-  "open_edges": 6893,
-  "rays": 256634,
+  "triangles": 34073,
+  "vertices_welded": 18723,
+  "open_edges": 3773,
+  "rays": 238746,
   "blocking": 0,
-  "warnings": 6758,
+  "warnings": 3430,
   "counts": {
-   "sliver": 5434,
+   "sliver": 2106,
    "nonmanifold": 1212,
    "backtoback": 1010,
-   "seam": 1763,
+   "seam": 1123,
    "tjunction": 112,
    "opening": 14
   },
-  "ms": 25230
+  "ms": 3724
  },
  "options": {
   "weld": 0.0001,
@@ -95,7 +95,7 @@
   {
    "name": "verrewinkel_foot",
    "slot": "painted_metal_grey",
-   "triangles": 4072,
+   "triangles": 744,
    "maxDistance": 120
   },
   {
@@ -114,6 +114,12 @@
    "name": "verrewinkel_foot",
    "slot": "wood_frame_dark",
    "triangles": 48,
+   "maxDistance": 120
+  },
+  {
+   "name": "verrewinkel_foot",
+   "slot": "wire_mesh_grey",
+   "triangles": 104,
    "maxDistance": 120
   },
   {

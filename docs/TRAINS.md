@@ -144,6 +144,37 @@ Research (lines, stations, every road crossing, sources, licences): `docs/trains
 - **GPU**: same view as the St-Job photo (2 cars LOD0), old vs new glb alternated (reload each): medians 3.34 (old) vs
   3.37 ms (new, 6 samples 2.8-3.5): unchanged within noise (the GPU is shared; triangles -0.06 %).
 
+## Rue de Verrewinkel road bridge (branch claude/verrewinkel, 2026-11-11)
+
+The brick road bridge over L26 at the Parc de la Sauvagère's west entrance, a hero like the two rail bridges (`?trains=1`).
+Notes, measures, counts, what is estimated: `models/rail/verrewinkel_NOTES.md`; resume: `models/rail/verrewinkel_RESUME.md`.
+
+- **Generator** `tools/blender/roadBridge.py` (road over rail; preset `verrewinkel`): three elliptical brick arches (A 8 m
+  over the NW slope, B 11 m over the tracks, C 8 m over the SE slope) with rowlock rings, a corbelled arcade of 18 small
+  brick arches on 17 blue-stone consoles (sheared with the 4.9 % road grade), the rounded blue-stone bolster coping in
+  V-jointed blocks, wings flared as UrbIS, end piers, the road deck (asphalt, NE sidewalk with dropped kerbs, SW strip), the
+  2022 footbridge (precast deck, terracotta resin, glass parapet with leaning white fins, splayed tube supports, the two OSM
+  benches) and the galvanised mesh railings (wire panels drawn as a box-filtered pattern with alpha-to-coverage). Three
+  nodes: `verrewinkel`, `verrewinkel_fine` (arch rings: LOD0 only), `verrewinkel_foot` (2022 work: hidden for the 2021 photo).
+  Faces flat / smooth by flag, bevel chamfers flat, n-gons triangulated by Blender (beauty), slivers < 0.3 mm dropped.
+- **Photo**: `tools/verrewinkel_photopose.py` solves s05's camera against the model (consoles, coping line, near track,
+  SE fold; EXIF focal): `models/rail/verrewinkel_photo_views.json` (bridge + city frames), side by side
+  `docs/trains/verrewinkel/s05_city_compare.jpg`.
+- **City** (`viewer/rail/bridgeModel.js`, `railData.js`, `tileData.js`, `main.js`): the hero footprint polygon replaces the
+  UrbIS ROB slab, trees cleared on it, the terrain kept 0.12 m under the deck, arch B's floor carved, the catenary dips under
+  the arches (0.3 m under the intrados, 1:12 back up), no mast under a hero; the road engine and the measured surfaces get the
+  deck as ground over the cutting (`roadDeckGround`); walk / drive / third person stand on the deck (`deckHeightFn`), the
+  parapets are drive colliders; OSM furniture with layer >= 1 is not dropped into the cutting any more. All bridges now draw
+  their fading copies only inside the LOD bands; `warmBridge` precompiles (+ fading copies) and warms the shadow pass.
+- **Checker**: LOD0 0 blocking (34,073 tris), LOD1 0 (24,417, an exact subset), LOD2 534 (5,725, meshoptimizer: to redo).
+- **Measured** (city, this machine, GPU shared with another session, bridge vs moved away, 5 alternating rounds, medians):
+  road approach +0.19 ms, from the track -0.13 (noise), overview at ~100 m +0.13; +22 draws, +67.6k triangles (incl.
+  shadows) at LOD0. 20 s flight 900 -> 40 -> 900 m: LOD states 100/110/010/011/001, long frames come and go with the bridge
+  off too (city / GPU contention). Flicker (strafe 24 frames): road approach 3964 -> 679 ppm after the wire panels (the rest:
+  sky, leaves, a city kerb), NE face 601, footbridge 569 (bench shadow), SE join 257.
+- Frames: `docs/trains/verrewinkel/lod_band_*.jpg` (dolly through both bands, zoom holding the size: no jump),
+  `city_*.jpg` (both deck ends, the NE face, the footbridge, from the track).
+
 ## What still looks weak (honest list)
 
 - **AM08 nose (round 4)**: the yellow pillar's rear edge on the cab side steps across the ring rows (a diagonal on a

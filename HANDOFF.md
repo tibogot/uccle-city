@@ -31,6 +31,8 @@ terrain carved under the ballast), the hero bridges over Chaussee de Saint-Job a
 cost and weak points `docs/TRAINS.md` (round 2 section: worker carve + rail meshes, Calevoet 5 arches, AM08 front / bogies, perf, frame sequences); research and sources `docs/trains/RESEARCH.md`. Rebuild: `python pipeline/build_rail.py`,
 `python pipeline/build_trains.py` (GTFS: the curl in its header), Blender `--factory-startup -b -P tools/blender/railBridge.py -- stjob|calevoet models/rail [--preview <dir>]`
 and `... am08.py -- models/rail [--preview <dir>]`.
+Road bridges over the line: `tools/blender/roadBridge.py -- verrewinkel models/rail` (the Rue de Verrewinkel bridge + the
+2022 footbridge, branch claude/verrewinkel; docs/TRAINS.md "Rue de Verrewinkel", models/rail/verrewinkel_NOTES.md).
 
 ## The Saint-Job falcons (branch claude/falcons)
 

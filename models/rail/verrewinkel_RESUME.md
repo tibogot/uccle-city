@@ -1,6 +1,7 @@
 # Verrewinkel bridge: where the work stands (resume here)
 
-Branch `claude/verrewinkel` (from claude/trains 2de8f9d). Notes and counts: `verrewinkel_NOTES.md`.
+Branch `claude/verrewinkel` (from claude/trains 2de8f9d). Notes, counts, results: `verrewinkel_NOTES.md`; docs/TRAINS.md
+"Verrewinkel" section.
 
 Rebuild:
 ```
@@ -10,11 +11,6 @@ node tools/verrewinkel_lods.mjs models/rail/verrewinkel.glb --out models/rail/au
 python tools/verrewinkel_photopose.py                                                                    # s05 camera (venv: numpy, Pillow)
 node tools/build_worker.mjs                                                                              # after railData.js / tileData.js
 ```
-City: `http://localhost:8823/viewer/index.html?tile=F7&trains=1&at=-268,1308` (serve the worktree on 8823).
+City: `http://localhost:8823/viewer/index.html?tile=F7&trains=1&at=-268,1308`.
 
-Done: generator + model (LOD0 37.3k tris, checker 0 blocking; LOD1 24.4k, 0 blocking; LOD2 5.7k, NOT clean: see TODO),
-s05 camera solve + side by side, city integration (carve, keepClear, UrbIS slab replaced, catenary dips, walk / drive on
-the deck, parapet colliders, warm-up, fading copies only in the bands).
-
-Left (in order): moving frame strips through the LOD bands and the deck joins, flicker test, GPU per view, LOD2 clean-up
-(a purpose-built far node instead of meshoptimizer), docs/TRAINS.md section, TODO.
+Open items: docs/TODO.md (Verrewinkel lines under Trains).

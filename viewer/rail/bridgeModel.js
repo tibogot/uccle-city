@@ -32,8 +32,8 @@ export const BRIDGES = ["stjob", "calevoet", "verrewinkel"];
  *  mesh checker. */
 export const ROAD_BRIDGE_LODS = [
   {},
-  { drop: ["painted_metal_grey", "wood_frame_dark"], simplify: {} },                      // an exact subset of LOD0: 0 checker items
-  { drop: ["painted_metal_grey", "wood_frame_dark", "glass_window"], simplify: { "*": 0.06 }, prune: true },
+  { drop: ["painted_metal_grey", "wood_frame_dark", "wire_mesh_grey"], simplify: {} },                      // an exact subset of LOD0: 0 checker items
+  { drop: ["painted_metal_grey", "wood_frame_dark", "glass_window", "wire_mesh_grey"], simplify: { "*": 0.06 }, prune: true },
 ];
 const cache = new Map();
 
@@ -88,7 +88,7 @@ export function loadBridge(name) {
       for (const { geometry, slot, foot: isFoot } of lods[k].meshes) {
         if (isFoot && !foot) continue;
         const m = new THREE.Mesh(geometry, materials[slot]);
-        m.castShadow = !materials[slot].transparent; m.receiveShadow = true;
+        m.castShadow = !materials[slot].transparent && !materials[slot].userData.noShadow; m.receiveShadow = true;
         m.userData.base = m.material; m.userData.foot = !!isFoot;
         g.add(m);
       }
@@ -295,11 +295,21 @@ export async function materialFor(slot, aoTex) {
     m.roughnessNode = float(0.88);
   } else if (slot === "resin_terracotta") {
     // the footbridge's walking surface: a terracotta resin with fine aggregate
-    m.colorNode = mix(color(0xa86a52), color(0xb98068), noise2D(p.mul(0.8))).mul(mix(0.93, 1.05, hash2D(floor(p.mul(120)))));
+    m.colorNode = mix(color(0x93604f), color(0xa2705d), noise2D(p.mul(0.8))).mul(mix(0.93, 1.05, hash2D(floor(p.mul(120)))));
     m.roughnessNode = float(0.8);
   } else if (slot === "painted_metal_grey") {
     m.colorNode = mix(color(0x6d7072), color(0x7d8082), noise2D(p.mul(2.0)));
     m.roughnessNode = float(0.5); m.metalnessNode = float(0.35);
+  } else if (slot === "wire_mesh_grey") {
+    // galvanised welded mesh, 50 x 200 mm: the wires box-filtered by the pixel footprint (coverage -> alpha, drawn with
+    // alpha-to-coverage): far away it becomes an even grey veil, no sub-pixel wire to sparkle
+    const v = filteredPulse(p.x.div(0.05), float(0), float(0.005 / 0.05), fw.div(0.05));
+    const h = filteredPulse(p.y.div(0.2), float(0), float(0.006 / 0.2), fw.div(0.2));
+    m.colorNode = mix(color(0x8a8e90), color(0x9da1a3), noise2D(p.mul(1.5)));
+    m.opacityNode = clamp(max(v, h), 0, 1);
+    m.alphaToCoverage = true;
+    m.roughnessNode = float(0.45); m.metalnessNode = float(0.5);
+    m.userData.noShadow = true;
   } else if (slot === "glass_window") {
     m.colorNode = color(0x9fb2b4); m.roughnessNode = float(0.05); m.metalnessNode = float(0.0);
     m.transparent = true; m.opacity = 0.28; m.depthWrite = false;
