@@ -1,17 +1,17 @@
 {
  "summary": {
-  "triangles": 1460,
-  "vertices_welded": 806,
+  "triangles": 2244,
+  "vertices_welded": 1206,
   "open_edges": 0,
   "rays": 0,
   "blocking": 0,
-  "warnings": 289,
+  "warnings": 360,
   "counts": {
-   "sliver": 289,
-   "backtoback": 5,
-   "seam": 16
+   "sliver": 360,
+   "backtoback": 8,
+   "seam": 20
   },
-  "ms": 48
+  "ms": 49
  },
  "options": {
   "weld": 0.0001,
@@ -55,32 +55,8 @@
  "parts": [
   {
    "name": "pg_slide_lod2",
-   "slot": "wood_stained",
-   "triangles": 664,
-   "maxDistance": 160
-  },
-  {
-   "name": "pg_slide_lod2",
-   "slot": "hpl_panel",
-   "triangles": 96,
-   "maxDistance": 160
-  },
-  {
-   "name": "pg_slide_lod2",
-   "slot": "steel_galvanised",
-   "triangles": 178,
-   "maxDistance": 160
-  },
-  {
-   "name": "pg_slide_lod2",
-   "slot": "hdpe_green",
-   "triangles": 104,
-   "maxDistance": 160
-  },
-  {
-   "name": "pg_slide_lod2",
-   "slot": "stainless_steel",
-   "triangles": 418,
+   "slot": "playground",
+   "triangles": 2244,
    "maxDistance": 160
   }
  ],
@@ -90,24 +66,48 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -0.54,
+     -0.539,
      1.264,
-     0.542
+     0.544
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 180,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 332,
     "longest": 2.034
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -0.542,
+     -0.541,
      0.586,
-     0.54
+     0.543
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 180,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 332,
+    "longest": 2.034
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.543,
+     1.264,
+     0.541
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 331,
+    "longest": 2.034
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.544,
+     0.586,
+     0.539
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 331,
     "longest": 2.034
    },
    {
@@ -118,7 +118,7 @@
      1.264,
      0.458
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 180,
     "longest": 2.034
    },
@@ -130,7 +130,7 @@
      0.586,
      0.46
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 180,
     "longest": 2.034
    },
@@ -142,7 +142,7 @@
      0.586,
      0.46
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 180,
     "longest": 2.034
    },
@@ -154,7 +154,7 @@
      1.264,
      0.458
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 180,
     "longest": 2.034
    },
@@ -166,7 +166,7 @@
      0.586,
      0.542
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 180,
     "longest": 2.034
    },
@@ -178,7 +178,7 @@
      1.264,
      0.54
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 180,
     "longest": 2.034
    },
@@ -186,96 +186,168 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -0.54,
+     -0.539,
      1.597,
-     -0.458
+     -0.456
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 224,
-    "longest": 2.534
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -0.542,
-     0.753,
-     -0.46
-    ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 224,
-    "longest": 2.534
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -0.54,
-     1.597,
-     -0.542
-    ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 224,
-    "longest": 2.534
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -0.542,
-     0.753,
-     -0.54
-    ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 224,
-    "longest": 2.534
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -0.458,
-     0.753,
-     -0.54
-    ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 224,
-    "longest": 2.534
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -0.46,
-     1.597,
-     -0.542
-    ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 224,
-    "longest": 2.534
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -0.46,
-     0.753,
-     -0.458
-    ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 224,
-    "longest": 2.534
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -0.458,
-     1.597,
-     -0.458
-    ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 414,
+    "longest": 2.534
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.541,
+     0.753,
+     -0.457
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 414,
+    "longest": 2.534
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.543,
+     1.597,
+     -0.459
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 413,
+    "longest": 2.534
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.544,
+     0.753,
+     -0.461
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 413,
+    "longest": 2.534
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.539,
+     0.753,
+     -0.544
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 414,
+    "longest": 2.534
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.541,
+     1.597,
+     -0.543
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 414,
+    "longest": 2.534
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.543,
+     0.753,
+     -0.541
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 413,
+    "longest": 2.534
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.544,
+     1.597,
+     -0.539
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 413,
+    "longest": 2.534
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.456,
+     1.597,
+     -0.539
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 413,
+    "longest": 2.534
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.458,
+     0.753,
+     -0.542
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 224,
+    "longest": 2.534
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.461,
+     1.597,
+     -0.544
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 414,
+    "longest": 2.534
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.461,
+     0.753,
+     -0.456
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 414,
+    "longest": 2.534
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.459,
+     1.597,
+     -0.457
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 414,
+    "longest": 2.534
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.457,
+     0.753,
+     -0.459
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 413,
     "longest": 2.534
    },
    {
@@ -286,32 +358,56 @@
      1.597,
      -0.461
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 414,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 413,
     "longest": 2.534
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.46,
+     0.461,
      1.264,
-     0.542
+     0.544
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 180,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 332,
     "longest": 2.034
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.458,
+     0.459,
      0.586,
-     0.54
+     0.543
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 180,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 332,
+    "longest": 2.034
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.457,
+     1.264,
+     0.541
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 331,
+    "longest": 2.034
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.456,
+     0.586,
+     0.539
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 331,
     "longest": 2.034
    },
    {
@@ -322,7 +418,7 @@
      1.264,
      0.458
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 180,
     "longest": 2.034
    },
@@ -334,7 +430,7 @@
      0.586,
      0.46
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 180,
     "longest": 2.034
    },
@@ -346,7 +442,31 @@
      0.586,
      0.461
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
+    "aspect": 331,
+    "longest": 2.034
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.543,
+     1.264,
+     0.459
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 331,
+    "longest": 2.034
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.541,
+     0.586,
+     0.457
+    ],
+    "part": "pg_slide_lod2/playground",
     "aspect": 332,
     "longest": 2.034
    },
@@ -354,48 +474,48 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.542,
-     0.586,
-     0.458
-    ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 333,
-    "longest": 2.034
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     0.54,
+     0.539,
      1.264,
-     0.458
+     0.456
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 180,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 332,
     "longest": 2.034
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.54,
+     0.539,
      0.586,
-     0.542
+     0.544
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 180,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 332,
     "longest": 2.034
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.542,
+     0.541,
      1.264,
-     0.542
+     0.543
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 333,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 332,
+    "longest": 2.034
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.543,
+     0.586,
+     0.541
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 331,
     "longest": 2.034
    },
    {
@@ -406,32 +526,56 @@
      1.264,
      0.539
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 332,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 331,
     "longest": 2.034
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.46,
-     0.753,
-     -0.458
+     0.461,
+     1.597,
+     -0.456
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 224,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 414,
     "longest": 2.534
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.458,
-     1.597,
-     -0.46
+     0.459,
+     0.753,
+     -0.457
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 224,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 414,
+    "longest": 2.534
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.457,
+     1.597,
+     -0.459
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 413,
+    "longest": 2.534
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.456,
+     0.753,
+     -0.461
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 413,
     "longest": 2.534
    },
    {
@@ -442,7 +586,7 @@
      1.597,
      -0.542
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 224,
     "longest": 2.534
    },
@@ -454,7 +598,7 @@
      0.753,
      -0.54
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 224,
     "longest": 2.534
    },
@@ -463,23 +607,35 @@
     "severity": "warn",
     "at": [
      0.544,
-     1.597,
+     0.753,
      -0.539
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 414,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 413,
     "longest": 2.534
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.542,
-     0.753,
-     -0.542
+     0.543,
+     1.597,
+     -0.541
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 224,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 413,
+    "longest": 2.534
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.541,
+     0.753,
+     -0.543
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 414,
     "longest": 2.534
    },
    {
@@ -490,7 +646,7 @@
      1.597,
      -0.544
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 414,
     "longest": 2.534
    },
@@ -498,24 +654,48 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.54,
+     0.539,
      0.753,
-     -0.458
+     -0.456
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 224,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 414,
     "longest": 2.534
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.542,
+     0.541,
      1.597,
-     -0.46
+     -0.457
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 224,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 414,
+    "longest": 2.534
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.543,
+     0.753,
+     -0.459
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 413,
+    "longest": 2.534
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.544,
+     1.597,
+     -0.461
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 413,
     "longest": 2.534
    },
    {
@@ -526,7 +706,7 @@
      1.171,
      0.344
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -538,7 +718,7 @@
      1.173,
      0.342
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -550,7 +730,7 @@
      1.199,
      0.344
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -562,7 +742,7 @@
      1.197,
      0.342
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -574,7 +754,7 @@
      1.171,
      0.446
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -586,7 +766,7 @@
      1.173,
      0.448
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -598,7 +778,7 @@
      1.199,
      0.446
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -610,7 +790,7 @@
      1.197,
      0.448
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -622,7 +802,7 @@
      1.189,
      0.449
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -634,7 +814,7 @@
      1.181,
      0.449
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -646,7 +826,7 @@
      1.189,
      0.341
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -658,7 +838,7 @@
      1.181,
      0.341
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -670,8 +850,8 @@
      1.171,
      0.224
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 159,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 160,
     "longest": 0.902
    },
    {
@@ -682,8 +862,8 @@
      1.173,
      0.222
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 159,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 160,
     "longest": 0.902
    },
    {
@@ -694,8 +874,8 @@
      1.199,
      0.224
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 159,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 160,
     "longest": 0.902
    },
    {
@@ -706,8 +886,8 @@
      1.197,
      0.222
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 159,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 160,
     "longest": 0.902
    },
    {
@@ -718,7 +898,7 @@
      1.171,
      0.326
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -730,7 +910,7 @@
      1.173,
      0.328
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -742,7 +922,7 @@
      1.199,
      0.326
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -754,7 +934,7 @@
      1.197,
      0.328
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -766,7 +946,7 @@
      1.189,
      0.329
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -778,7 +958,7 @@
      1.181,
      0.329
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -790,7 +970,7 @@
      1.189,
      0.221
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -802,7 +982,7 @@
      1.181,
      0.221
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -814,7 +994,7 @@
      1.171,
      0.104
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -826,7 +1006,7 @@
      1.173,
      0.102
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -838,7 +1018,7 @@
      1.199,
      0.104
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -850,7 +1030,7 @@
      1.197,
      0.102
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -862,8 +1042,8 @@
      1.171,
      0.206
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 160,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 159,
     "longest": 0.902
    },
    {
@@ -874,8 +1054,8 @@
      1.173,
      0.208
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 160,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 159,
     "longest": 0.902
    },
    {
@@ -886,8 +1066,8 @@
      1.199,
      0.206
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 160,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 159,
     "longest": 0.902
    },
    {
@@ -898,8 +1078,8 @@
      1.197,
      0.208
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 160,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 159,
     "longest": 0.902
    },
    {
@@ -910,7 +1090,7 @@
      1.189,
      0.209
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -922,7 +1102,7 @@
      1.181,
      0.209
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -934,7 +1114,7 @@
      1.189,
      0.101
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -946,7 +1126,7 @@
      1.181,
      0.101
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -958,7 +1138,7 @@
      1.171,
      -0.016
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -970,7 +1150,7 @@
      1.173,
      -0.018
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -982,7 +1162,7 @@
      1.199,
      -0.016
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -994,7 +1174,7 @@
      1.197,
      -0.018
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1006,7 +1186,7 @@
      1.171,
      0.086
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1018,7 +1198,7 @@
      1.173,
      0.088
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1030,7 +1210,7 @@
      1.199,
      0.086
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1042,7 +1222,7 @@
      1.197,
      0.088
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1054,7 +1234,7 @@
      1.189,
      0.089
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1066,7 +1246,7 @@
      1.181,
      0.089
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1078,7 +1258,7 @@
      1.189,
      -0.019
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1090,7 +1270,7 @@
      1.181,
      -0.019
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1102,8 +1282,8 @@
      1.171,
      -0.136
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 159,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 160,
     "longest": 0.902
    },
    {
@@ -1114,8 +1294,8 @@
      1.173,
      -0.138
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 159,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 160,
     "longest": 0.902
    },
    {
@@ -1126,8 +1306,8 @@
      1.199,
      -0.136
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 159,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 160,
     "longest": 0.902
    },
    {
@@ -1138,8 +1318,8 @@
      1.197,
      -0.138
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 159,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 160,
     "longest": 0.902
    },
    {
@@ -1150,7 +1330,7 @@
      1.171,
      -0.034
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1162,7 +1342,7 @@
      1.173,
      -0.032
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1174,7 +1354,7 @@
      1.199,
      -0.034
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1186,7 +1366,7 @@
      1.197,
      -0.032
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1198,7 +1378,7 @@
      1.189,
      -0.031
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1210,7 +1390,7 @@
      1.181,
      -0.031
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1222,7 +1402,7 @@
      1.189,
      -0.139
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1234,7 +1414,7 @@
      1.181,
      -0.139
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1246,7 +1426,7 @@
      1.171,
      -0.256
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1258,7 +1438,7 @@
      1.173,
      -0.258
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1270,7 +1450,7 @@
      1.199,
      -0.256
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1282,7 +1462,7 @@
      1.197,
      -0.258
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1294,7 +1474,7 @@
      1.171,
      -0.154
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1306,7 +1486,7 @@
      1.173,
      -0.152
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1318,7 +1498,7 @@
      1.199,
      -0.154
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1330,7 +1510,7 @@
      1.197,
      -0.152
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1342,7 +1522,7 @@
      1.189,
      -0.151
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1354,7 +1534,7 @@
      1.181,
      -0.151
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1366,7 +1546,7 @@
      1.189,
      -0.259
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1378,7 +1558,7 @@
      1.181,
      -0.259
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1390,7 +1570,7 @@
      1.171,
      -0.376
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1402,7 +1582,7 @@
      1.173,
      -0.378
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1414,7 +1594,7 @@
      1.199,
      -0.376
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1426,7 +1606,7 @@
      1.197,
      -0.378
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1438,7 +1618,7 @@
      1.171,
      -0.274
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1450,7 +1630,7 @@
      1.173,
      -0.272
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1462,7 +1642,7 @@
      1.199,
      -0.274
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1474,7 +1654,7 @@
      1.197,
      -0.272
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1486,7 +1666,7 @@
      1.189,
      -0.271
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1498,7 +1678,7 @@
      1.181,
      -0.271
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1510,7 +1690,7 @@
      1.189,
      -0.379
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1522,7 +1702,7 @@
      1.181,
      -0.379
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1534,7 +1714,7 @@
      1.171,
      -0.446
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1546,7 +1726,7 @@
      1.173,
      -0.448
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1558,7 +1738,7 @@
      1.199,
      -0.446
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1570,7 +1750,7 @@
      1.197,
      -0.448
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1582,7 +1762,7 @@
      1.171,
      -0.394
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1594,7 +1774,7 @@
      1.173,
      -0.392
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1606,7 +1786,7 @@
      1.199,
      -0.394
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1618,7 +1798,7 @@
      1.197,
      -0.392
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1630,7 +1810,7 @@
      1.189,
      -0.391
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1642,7 +1822,7 @@
      1.181,
      -0.391
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1654,7 +1834,7 @@
      1.189,
      -0.449
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1666,7 +1846,7 @@
      1.181,
      -0.449
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1676,10 +1856,10 @@
     "at": [
      -0.165,
      1.087,
-     0.518
+     0.519
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -1688,10 +1868,10 @@
     "at": [
      0.165,
      1.089,
-     0.521
+     0.52
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -1700,9 +1880,9 @@
     "at": [
      0.165,
      1.173,
-     0.518
+     0.519
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 117,
     "longest": 0.988
    },
@@ -1712,9 +1892,9 @@
     "at": [
      -0.165,
      1.171,
-     0.521
+     0.52
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 117,
     "longest": 0.988
    },
@@ -1724,9 +1904,9 @@
     "at": [
      0.165,
      1.171,
-     0.479
+     0.48
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 117,
     "longest": 0.988
    },
@@ -1736,9 +1916,9 @@
     "at": [
      -0.165,
      1.173,
-     0.482
+     0.481
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 117,
     "longest": 0.988
    },
@@ -1748,10 +1928,10 @@
     "at": [
      0.165,
      1.087,
-     0.482
+     0.481
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -1760,10 +1940,10 @@
     "at": [
      -0.165,
      1.089,
-     0.479
+     0.48
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -1772,10 +1952,10 @@
     "at": [
      -0.165,
      1.087,
-     -0.482
+     -0.481
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -1784,10 +1964,10 @@
     "at": [
      0.165,
      1.089,
-     -0.479
+     -0.48
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -1796,9 +1976,9 @@
     "at": [
      0.165,
      1.173,
-     -0.482
+     -0.481
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 117,
     "longest": 0.988
    },
@@ -1808,9 +1988,9 @@
     "at": [
      -0.165,
      1.171,
-     -0.479
+     -0.48
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 117,
     "longest": 0.988
    },
@@ -1820,9 +2000,9 @@
     "at": [
      0.165,
      1.171,
-     -0.521
+     -0.52
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 117,
     "longest": 0.988
    },
@@ -1832,9 +2012,9 @@
     "at": [
      -0.165,
      1.173,
-     -0.518
+     -0.519
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 117,
     "longest": 0.988
    },
@@ -1844,10 +2024,10 @@
     "at": [
      0.165,
      1.087,
-     -0.518
+     -0.519
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -1856,10 +2036,10 @@
     "at": [
      -0.165,
      1.089,
-     -0.521
+     -0.52
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -1870,7 +2050,7 @@
      1.083,
      0.157
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -1882,7 +2062,7 @@
      1.085,
      -0.157
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -1894,7 +2074,7 @@
      1.169,
      -0.157
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -1906,7 +2086,7 @@
      1.167,
      0.157
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -1918,7 +2098,7 @@
      1.167,
      -0.157
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -1930,7 +2110,7 @@
      1.169,
      0.157
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -1942,7 +2122,7 @@
      1.083,
      -0.157
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -1954,7 +2134,7 @@
      1.085,
      0.157
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -1966,7 +2146,7 @@
      1.083,
      0.157
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -1978,7 +2158,7 @@
      1.085,
      -0.157
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -1990,7 +2170,7 @@
      1.169,
      -0.157
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -2002,7 +2182,7 @@
      1.167,
      0.157
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -2014,7 +2194,7 @@
      1.167,
      -0.157
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -2026,7 +2206,7 @@
      1.169,
      0.157
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -2038,7 +2218,7 @@
      1.083,
      -0.157
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -2050,7 +2230,7 @@
      1.085,
      0.157
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -2060,10 +2240,10 @@
     "at": [
      -0.165,
      1.907,
-     0.518
+     0.519
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -2072,10 +2252,10 @@
     "at": [
      0.165,
      1.909,
-     0.521
+     0.52
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -2084,9 +2264,9 @@
     "at": [
      0.165,
      1.993,
-     0.518
+     0.519
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 117,
     "longest": 0.988
    },
@@ -2096,9 +2276,9 @@
     "at": [
      -0.165,
      1.991,
-     0.521
+     0.52
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 117,
     "longest": 0.988
    },
@@ -2108,9 +2288,9 @@
     "at": [
      0.165,
      1.991,
-     0.479
+     0.48
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 117,
     "longest": 0.988
    },
@@ -2120,9 +2300,9 @@
     "at": [
      -0.165,
      1.993,
-     0.482
+     0.481
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 117,
     "longest": 0.988
    },
@@ -2132,10 +2312,10 @@
     "at": [
      0.165,
      1.907,
-     0.482
+     0.481
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -2144,10 +2324,10 @@
     "at": [
      -0.165,
      1.909,
-     0.479
+     0.48
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -2155,23 +2335,47 @@
     "severity": "warn",
     "at": [
      -0.258,
-     0.326,
-     -1.075
+     0.772,
+     -0.793
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 187,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 346,
     "longest": 1.583
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -0.26,
-     0.774,
+     -0.259,
+     0.326,
+     -1.074
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 345,
+    "longest": 1.583
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.261,
+     0.773,
      -0.795
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 187,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 344,
+    "longest": 1.583
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.262,
+     0.327,
+     -1.077
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 346,
     "longest": 1.583
    },
    {
@@ -2179,23 +2383,47 @@
     "severity": "warn",
     "at": [
      -0.258,
-     0.824,
-     -0.875
+     0.378,
+     -1.157
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 187,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 344,
     "longest": 1.583
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -0.26,
-     0.376,
+     -0.259,
+     0.824,
+     -0.876
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 344,
+    "longest": 1.583
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.261,
+     0.377,
      -1.155
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 187,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 346,
+    "longest": 1.583
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.262,
+     0.823,
+     -0.873
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 344,
     "longest": 1.583
    },
    {
@@ -2206,7 +2434,7 @@
      0.823,
      -0.873
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 344,
     "longest": 1.583
    },
@@ -2218,8 +2446,8 @@
      0.377,
      -1.156
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 186,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 187,
     "longest": 1.583
    },
    {
@@ -2230,8 +2458,8 @@
      0.825,
      -0.876
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 345,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 344,
     "longest": 1.583
    },
    {
@@ -2239,23 +2467,47 @@
     "severity": "warn",
     "at": [
      -0.222,
-     0.326,
-     -1.075
+     0.325,
+     -1.074
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 187,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 345,
     "longest": 1.583
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -0.22,
-     0.774,
-     -0.795
+     -0.221,
+     0.772,
+     -0.793
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 187,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 346,
+    "longest": 1.583
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.219,
+     0.327,
+     -1.076
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 346,
+    "longest": 1.583
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.218,
+     0.774,
+     -0.796
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 344,
     "longest": 1.583
    },
    {
@@ -2266,7 +2518,7 @@
      0.772,
      -0.792
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 48,
     "longest": 1.584
    },
@@ -2278,7 +2530,7 @@
      0.325,
      -1.073
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 48,
     "longest": 1.584
    },
@@ -2290,7 +2542,7 @@
      0.825,
      -0.877
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 48,
     "longest": 1.584
    },
@@ -2302,7 +2554,7 @@
      0.378,
      -1.158
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 48,
     "longest": 1.584
    },
@@ -2311,34 +2563,22 @@
     "severity": "warn",
     "at": [
      0.222,
+     0.772,
+     -0.793
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 346,
+    "longest": 1.583
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.221,
      0.326,
-     -1.075
+     -1.074
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 187,
-    "longest": 1.583
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     0.22,
-     0.774,
-     -0.795
-    ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 187,
-    "longest": 1.583
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     0.222,
-     0.825,
-     -0.876
-    ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 345,
     "longest": 1.583
    },
@@ -2346,12 +2586,60 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.22,
-     0.377,
-     -1.156
+     0.219,
+     0.773,
+     -0.795
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 186,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 344,
+    "longest": 1.583
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.218,
+     0.327,
+     -1.077
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 346,
+    "longest": 1.583
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.222,
+     0.378,
+     -1.157
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 344,
+    "longest": 1.583
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.221,
+     0.824,
+     -0.876
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 344,
+    "longest": 1.583
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.219,
+     0.377,
+     -1.155
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 346,
     "longest": 1.583
    },
    {
@@ -2362,7 +2650,7 @@
      0.823,
      -0.873
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 344,
     "longest": 1.583
    },
@@ -2374,7 +2662,7 @@
      0.823,
      -0.873
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 344,
     "longest": 1.583
    },
@@ -2386,7 +2674,7 @@
      0.377,
      -1.156
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 187,
     "longest": 1.583
    },
@@ -2398,8 +2686,8 @@
      0.825,
      -0.876
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 345,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 344,
     "longest": 1.583
    },
    {
@@ -2410,7 +2698,7 @@
      0.325,
      -1.074
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 345,
     "longest": 1.583
    },
@@ -2418,12 +2706,24 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.26,
-     0.773,
-     -0.794
+     0.259,
+     0.772,
+     -0.793
     ],
-    "part": "pg_slide_lod2/wood_stained",
-    "aspect": 187,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 346,
+    "longest": 1.583
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.261,
+     0.327,
+     -1.076
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 346,
     "longest": 1.583
    },
    {
@@ -2431,10 +2731,10 @@
     "severity": "warn",
     "at": [
      0.262,
-     0.327,
-     -1.077
+     0.774,
+     -0.796
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 344,
     "longest": 1.583
    },
@@ -2446,7 +2746,7 @@
      0.772,
      -0.792
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 48,
     "longest": 1.584
    },
@@ -2458,7 +2758,7 @@
      0.325,
      -1.073
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 48,
     "longest": 1.584
    },
@@ -2470,7 +2770,7 @@
      0.825,
      -0.877
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 48,
     "longest": 1.584
    },
@@ -2482,9 +2782,21 @@
      0.378,
      -1.158
     ],
-    "part": "pg_slide_lod2/wood_stained",
+    "part": "pg_slide_lod2/playground",
     "aspect": 48,
     "longest": 1.584
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.504,
+     1.553,
+     -0.428
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 82,
+    "longest": 0.58
    },
    {
     "check": "sliver",
@@ -2494,7 +2806,7 @@
      1.754,
      -0.425
     ],
-    "part": "pg_slide_lod2/hpl_panel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 58,
     "longest": 0.601
    },
@@ -2502,12 +2814,12 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -0.507,
+     -0.504,
      2,
      0.123
     ],
-    "part": "pg_slide_lod2/hpl_panel",
-    "aspect": 59,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 193,
     "longest": 0.74
    },
    {
@@ -2515,11 +2827,35 @@
     "severity": "warn",
     "at": [
      -0.503,
-     1.996,
+     1.999,
+     -0.123
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 193,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.501,
+     1.997,
+     0.123
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 193,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.501,
+     1.995,
      -0.13
     ],
-    "part": "pg_slide_lod2/hpl_panel",
-    "aspect": 74,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 97,
     "longest": 0.761
    },
    {
@@ -2530,7 +2866,7 @@
      1.546,
      0.427
     ],
-    "part": "pg_slide_lod2/hpl_panel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 59,
     "longest": 0.601
    },
@@ -2542,9 +2878,21 @@
      1.74,
      0.425
     ],
-    "part": "pg_slide_lod2/hpl_panel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 85,
     "longest": 0.601
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.504,
+     1.302,
+     -0.123
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 105,
+    "longest": 0.74
    },
    {
     "check": "sliver",
@@ -2554,7 +2902,7 @@
      1.305,
      0.131
     ],
-    "part": "pg_slide_lod2/hpl_panel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 73,
     "longest": 0.761
    },
@@ -2562,12 +2910,36 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -0.517,
-     1.998,
+     -0.519,
+     1.997,
      0.123
     ],
-    "part": "pg_slide_lod2/hpl_panel",
-    "aspect": 105,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 193,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.517,
+     1.999,
+     0.123
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 194,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.516,
+     2,
+     -0.123
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 194,
     "longest": 0.74
    },
    {
@@ -2575,24 +2947,48 @@
     "severity": "warn",
     "at": [
      -0.518,
-     1.305,
-     -0.116
+     1.747,
+     0.427
     ],
-    "part": "pg_slide_lod2/hpl_panel",
-    "aspect": 108,
-    "longest": 0.761
+    "part": "pg_slide_lod2/playground",
+    "aspect": 82,
+    "longest": 0.58
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
      -0.516,
-     1.303,
-     0.13
+     1.553,
+     0.428
     ],
-    "part": "pg_slide_lod2/hpl_panel",
-    "aspect": 74,
-    "longest": 0.761
+    "part": "pg_slide_lod2/playground",
+    "aspect": 82,
+    "longest": 0.58
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.518,
+     1.303,
+     -0.123
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 105,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.516,
+     1.302,
+     0.123
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 105,
+    "longest": 0.74
    },
    {
     "check": "sliver",
@@ -2602,7 +2998,7 @@
      1.56,
      -0.425
     ],
-    "part": "pg_slide_lod2/hpl_panel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 85,
     "longest": 0.601
    },
@@ -2610,12 +3006,48 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
+     -0.516,
+     1.754,
+     -0.427
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 59,
+    "longest": 0.601
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.512,
+     1.553,
+     -0.43
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 64,
+    "longest": 0.58
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.509,
+     1.747,
+     -0.43
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 64,
+    "longest": 0.58
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
      -0.501,
-     1.989,
+     1.988,
      0.129
     ],
-    "part": "pg_slide_lod2/hpl_panel",
-    "aspect": 42,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 51,
     "longest": 0.8
    },
    {
@@ -2626,7 +3058,7 @@
      1.752,
      0.418
     ],
-    "part": "pg_slide_lod2/hpl_panel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.64
    },
@@ -2634,13 +3066,49 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -0.513,
+     -0.512,
      2,
      -0.123
     ],
-    "part": "pg_slide_lod2/hpl_panel",
-    "aspect": 59,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 82,
     "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.509,
+     2,
+     0.123
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 82,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.512,
+     1.747,
+     0.43
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 64,
+    "longest": 0.58
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.509,
+     1.553,
+     0.43
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 64,
+    "longest": 0.58
    },
    {
     "check": "sliver",
@@ -2650,7 +3118,7 @@
      1.3,
      0.123
     ],
-    "part": "pg_slide_lod2/hpl_panel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 82,
     "longest": 0.74
    },
@@ -2658,13 +3126,37 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -0.507,
-     1.302,
+     -0.509,
+     1.3,
      -0.123
     ],
-    "part": "pg_slide_lod2/hpl_panel",
-    "aspect": 50,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 82,
     "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.52,
+     1.306,
+     0.13
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 183,
+    "longest": 0.761
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.519,
+     1.995,
+     -0.13
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 97,
+    "longest": 0.761
    },
    {
     "check": "sliver",
@@ -2674,7 +3166,7 @@
      1.548,
      -0.418
     ],
-    "part": "pg_slide_lod2/hpl_panel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.64
    },
@@ -2686,9 +3178,21 @@
      1.312,
      -0.129
     ],
-    "part": "pg_slide_lod2/hpl_panel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 51,
     "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.517,
+     1.546,
+     -0.426
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 344,
+    "longest": 0.602
    },
    {
     "check": "sliver",
@@ -2698,7 +3202,7 @@
      1.747,
      -0.427
     ],
-    "part": "pg_slide_lod2/hpl_panel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 82,
     "longest": 0.58
    },
@@ -2706,48 +3210,60 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.514,
-     1.996,
-     -0.13
+     0.517,
+     1.998,
+     -0.123
     ],
-    "part": "pg_slide_lod2/hpl_panel",
-    "aspect": 46,
-    "longest": 0.761
+    "part": "pg_slide_lod2/playground",
+    "aspect": 105,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.519,
+     1.996,
+     0.123
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 193,
+    "longest": 0.739
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
      0.516,
-     1.546,
-     0.427
+     1.553,
+     0.428
     ],
-    "part": "pg_slide_lod2/hpl_panel",
-    "aspect": 59,
-    "longest": 0.601
+    "part": "pg_slide_lod2/playground",
+    "aspect": 82,
+    "longest": 0.58
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
      0.518,
-     1.74,
-     0.425
+     1.747,
+     0.427
     ],
-    "part": "pg_slide_lod2/hpl_panel",
-    "aspect": 85,
-    "longest": 0.601
+    "part": "pg_slide_lod2/playground",
+    "aspect": 82,
+    "longest": 0.58
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.513,
+     0.517,
      1.302,
      -0.123
     ],
-    "part": "pg_slide_lod2/hpl_panel",
-    "aspect": 50,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 193,
     "longest": 0.74
    },
    {
@@ -2758,7 +3274,7 @@
      1.305,
      0.131
     ],
-    "part": "pg_slide_lod2/hpl_panel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 73,
     "longest": 0.761
    },
@@ -2770,7 +3286,7 @@
      1.997,
      -0.123
     ],
-    "part": "pg_slide_lod2/hpl_panel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 105,
     "longest": 0.74
    },
@@ -2778,13 +3294,37 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.508,
+     0.504,
      1.998,
      0.123
     ],
-    "part": "pg_slide_lod2/hpl_panel",
-    "aspect": 41,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 105,
     "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.501,
+     1.747,
+     0.426
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 151,
+    "longest": 0.579
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.503,
+     1.553,
+     0.428
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 82,
+    "longest": 0.58
    },
    {
     "check": "sliver",
@@ -2792,34 +3332,106 @@
     "at": [
      0.502,
      1.305,
-     -0.116
+     0.131
     ],
-    "part": "pg_slide_lod2/hpl_panel",
-    "aspect": 108,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 73,
     "longest": 0.761
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.502,
-     1.56,
-     -0.425
+     0.504,
+     1.302,
+     -0.123
     ],
-    "part": "pg_slide_lod2/hpl_panel",
-    "aspect": 85,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 105,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.502,
+     1.553,
+     -0.427
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 82,
+    "longest": 0.58
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.504,
+     1.747,
+     -0.428
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 82,
+    "longest": 0.58
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.51,
+     1.546,
+     -0.428
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 45,
+    "longest": 0.603
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.513,
+     1.739,
+     -0.428
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 67,
+    "longest": 0.603
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.52,
+     1.994,
+     -0.13
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 183,
+    "longest": 0.761
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.52,
+     1.546,
+     0.424
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 146,
     "longest": 0.601
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.519,
-     1.989,
+     0.52,
+     1.988,
      0.129
     ],
-    "part": "pg_slide_lod2/hpl_panel",
-    "aspect": 42,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 51,
     "longest": 0.8
    },
    {
@@ -2830,7 +3442,7 @@
      1.752,
      0.418
     ],
-    "part": "pg_slide_lod2/hpl_panel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.64
    },
@@ -2838,13 +3450,85 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.507,
-     1.303,
-     0.13
+     0.509,
+     2,
+     -0.123
     ],
-    "part": "pg_slide_lod2/hpl_panel",
+    "part": "pg_slide_lod2/playground",
+    "aspect": 82,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.513,
+     2,
+     0.123
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 59,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.507,
+     1.747,
+     0.43
+    ],
+    "part": "pg_slide_lod2/playground",
     "aspect": 46,
-    "longest": 0.761
+    "longest": 0.58
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.512,
+     1.553,
+     0.43
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 64,
+    "longest": 0.58
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.509,
+     1.3,
+     0.123
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 82,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.513,
+     1.3,
+     -0.123
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 59,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.501,
+     1.754,
+     -0.424
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 146,
+    "longest": 0.601
    },
    {
     "check": "sliver",
@@ -2854,7 +3538,7 @@
      1.548,
      -0.418
     ],
-    "part": "pg_slide_lod2/hpl_panel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 41,
     "longest": 0.64
    },
@@ -2866,7 +3550,7 @@
      1.312,
      -0.129
     ],
-    "part": "pg_slide_lod2/hpl_panel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 51,
     "longest": 0.8
    },
@@ -2878,7 +3562,7 @@
      2.488,
      -0.034
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 168,
     "longest": 1.428
    },
@@ -2890,19 +3574,7 @@
      2.487,
      -0.031
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
-    "aspect": 168,
-    "longest": 1.428
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -0.238,
-     2.463,
-     -0.025
-    ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 168,
     "longest": 1.428
    },
@@ -2911,11 +3583,47 @@
     "severity": "warn",
     "at": [
      0.238,
-     2.466,
+     2.462,
+     -0.025
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 310,
+    "longest": 1.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.238,
+     2.463,
      -0.024
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
-    "aspect": 168,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 310,
+    "longest": 1.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.238,
+     2.465,
+     -0.023
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 312,
+    "longest": 1.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.238,
+     2.467,
+     -0.023
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 312,
     "longest": 1.428
    },
    {
@@ -2926,7 +3634,7 @@
      2.48,
      -0.055
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 168,
     "longest": 1.428
    },
@@ -2938,8 +3646,20 @@
      2.478,
      -0.056
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 168,
+    "longest": 1.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.238,
+     2.455,
+     -0.045
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 312,
     "longest": 1.428
    },
    {
@@ -2948,9 +3668,9 @@
     "at": [
      0.238,
      2.456,
-     -0.046
+     -0.047
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 168,
     "longest": 1.428
    },
@@ -2960,10 +3680,10 @@
     "at": [
      -0.238,
      2.457,
-     -0.048
+     -0.05
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
-    "aspect": 168,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 310,
     "longest": 1.428
    },
    {
@@ -2974,7 +3694,7 @@
      2.487,
      -0.042
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 79,
     "longest": 1.428
    },
@@ -2986,7 +3706,7 @@
      2.485,
      -0.048
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 79,
     "longest": 1.428
    },
@@ -2998,7 +3718,7 @@
      2.464,
      -0.053
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 79,
     "longest": 1.428
    },
@@ -3010,7 +3730,7 @@
      2.469,
      -0.055
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 79,
     "longest": 1.428
    },
@@ -3022,7 +3742,7 @@
      2.459,
      -0.032
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 79,
     "longest": 1.428
    },
@@ -3034,7 +3754,7 @@
      2.457,
      -0.037
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 79,
     "longest": 1.428
    },
@@ -3046,7 +3766,7 @@
      2.474,
      -0.025
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 79,
     "longest": 1.428
    },
@@ -3058,21 +3778,9 @@
      2.48,
      -0.027
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 79,
     "longest": 1.428
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -0.3,
-     1.397,
-     0.508
-    ],
-    "part": "pg_slide_lod2/steel_galvanised",
-    "aspect": 46,
-    "longest": 0.398
    },
    {
     "check": "sliver",
@@ -3082,7 +3790,7 @@
      1.087,
      -1.108
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 55,
     "longest": 1.098
    },
@@ -3094,7 +3802,7 @@
      1.423,
      -0.96
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 40,
     "longest": 1.099
    },
@@ -3106,7 +3814,7 @@
      1.417,
      -0.952
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 106,
     "longest": 1.097
    },
@@ -3114,13 +3822,25 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -0.305,
-     1.41,
-     -0.939
+     -0.314,
+     1.414,
+     -0.946
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
-    "aspect": 55,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 105,
     "longest": 1.096
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.303,
+     1.409,
+     -0.936
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 104,
+    "longest": 1.094
    },
    {
     "check": "sliver",
@@ -3130,7 +3850,7 @@
      1.079,
      -1.092
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 55,
     "longest": 1.096
    },
@@ -3142,7 +3862,7 @@
      1.41,
      -0.939
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 55,
     "longest": 1.096
    },
@@ -3150,12 +3870,24 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -0.286,
-     1.418,
-     -0.951
+     -0.284,
+     1.416,
+     -0.948
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
-    "aspect": 56,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 106,
+    "longest": 1.097
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.286,
+     1.419,
+     -0.954
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 106,
     "longest": 1.099
    },
    {
@@ -3166,9 +3898,45 @@
      1.815,
      -0.683
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 43,
     "longest": 0.403
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.314,
+     1.811,
+     -0.678
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 41,
+    "longest": 0.398
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.284,
+     1.818,
+     -0.683
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 44,
+    "longest": 0.408
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.286,
+     1.822,
+     -0.689
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 42,
+    "longest": 0.412
    },
    {
     "check": "sliver",
@@ -3178,7 +3946,7 @@
      1.087,
      -1.108
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 55,
     "longest": 1.098
    },
@@ -3190,7 +3958,7 @@
      1.423,
      -0.96
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 40,
     "longest": 1.099
    },
@@ -3202,7 +3970,7 @@
      1.081,
      -1.096
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 55,
     "longest": 1.096
    },
@@ -3214,9 +3982,21 @@
      1.417,
      -0.952
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 106,
     "longest": 1.097
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.3,
+     1.076,
+     -1.087
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 55,
+    "longest": 1.094
    },
    {
     "check": "sliver",
@@ -3226,7 +4006,7 @@
      1.411,
      -0.94
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 55,
     "longest": 1.096
    },
@@ -3234,11 +4014,11 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.311,
-     1.412,
-     -0.942
+     0.309,
+     1.411,
+     -0.94
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 55,
     "longest": 1.096
    },
@@ -3247,11 +4027,35 @@
     "severity": "warn",
     "at": [
      0.314,
-     1.418,
-     -0.951
+     1.08,
+     -1.093
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
-    "aspect": 56,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 104,
+    "longest": 1.096
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.316,
+     1.416,
+     -0.948
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 106,
+    "longest": 1.097
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.314,
+     1.419,
+     -0.954
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 106,
     "longest": 1.099
    },
    {
@@ -3262,7 +4066,7 @@
      1.815,
      -0.683
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 43,
     "longest": 0.403
    },
@@ -3274,7 +4078,7 @@
      1.884,
      -0.568
     ],
-    "part": "pg_slide_lod2/steel_galvanised",
+    "part": "pg_slide_lod2/playground",
     "aspect": 45,
     "longest": 0.408
    },
@@ -3282,13 +4086,25 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.32,
-     2.656,
-     0.349
+     0.316,
+     1.818,
+     -0.683
     ],
-    "part": "pg_slide_lod2/hdpe_green",
+    "part": "pg_slide_lod2/playground",
+    "aspect": 44,
+    "longest": 0.408
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.314,
+     1.822,
+     -0.689
+    ],
+    "part": "pg_slide_lod2/playground",
     "aspect": 42,
-    "longest": 0.285
+    "longest": 0.412
    },
    {
     "check": "sliver",
@@ -3298,7 +4114,7 @@
      2.431,
      -0.267
     ],
-    "part": "pg_slide_lod2/hdpe_green",
+    "part": "pg_slide_lod2/playground",
     "aspect": 53,
     "longest": 0.342
    },
@@ -3307,60 +4123,24 @@
     "severity": "warn",
     "at": [
      0.303,
-     1.413,
-     0.716
+     1.296,
+     1.16
     ],
-    "part": "pg_slide_lod2/stainless_steel",
-    "aspect": 41,
-    "longest": 0.456
+    "part": "pg_slide_lod2/playground",
+    "aspect": 45,
+    "longest": 0.467
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -0.329,
-     1.366,
-     0.9
+     -0.311,
+     1.285,
+     1.156
     ],
-    "part": "pg_slide_lod2/stainless_steel",
-    "aspect": 56,
-    "longest": 0.464
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     0.327,
-     1.302,
-     1.121
-    ],
-    "part": "pg_slide_lod2/stainless_steel",
-    "aspect": 66,
-    "longest": 0.583
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     0.311,
-     1.22,
-     1.296
-    ],
-    "part": "pg_slide_lod2/stainless_steel",
-    "aspect": 58,
-    "longest": 0.581
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     0.292,
-     1.074,
-     1.601
-    ],
-    "part": "pg_slide_lod2/stainless_steel",
-    "aspect": 51,
-    "longest": 0.9
+    "part": "pg_slide_lod2/playground",
+    "aspect": 45,
+    "longest": 0.465
    },
    {
     "check": "sliver",
@@ -3370,7 +4150,7 @@
      1.04,
      1.671
     ],
-    "part": "pg_slide_lod2/stainless_steel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 69,
     "longest": 0.784
    },
@@ -3379,11 +4159,11 @@
     "severity": "warn",
     "at": [
      0.296,
-     0.929,
-     1.863
+     1.022,
+     1.704
     ],
-    "part": "pg_slide_lod2/stainless_steel",
-    "aspect": 57,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 64,
     "longest": 0.784
    },
    {
@@ -3394,7 +4174,7 @@
      1.041,
      1.671
     ],
-    "part": "pg_slide_lod2/stainless_steel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 63,
     "longest": 0.784
    },
@@ -3406,7 +4186,7 @@
      0.929,
      1.863
     ],
-    "part": "pg_slide_lod2/stainless_steel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 60,
     "longest": 0.784
    },
@@ -3418,7 +4198,7 @@
      1.056,
      1.635
     ],
-    "part": "pg_slide_lod2/stainless_steel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 60,
     "longest": 0.784
    },
@@ -3430,7 +4210,7 @@
      1.03,
      1.665
     ],
-    "part": "pg_slide_lod2/stainless_steel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 50,
     "longest": 0.784
    },
@@ -3442,7 +4222,7 @@
      1.021,
      1.661
     ],
-    "part": "pg_slide_lod2/stainless_steel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 48,
     "longest": 0.783
    },
@@ -3454,8 +4234,8 @@
      0.925,
      1.866
     ],
-    "part": "pg_slide_lod2/stainless_steel",
-    "aspect": 55,
+    "part": "pg_slide_lod2/playground",
+    "aspect": 56,
     "longest": 0.668
    },
    {
@@ -3463,12 +4243,12 @@
     "severity": "warn",
     "at": [
      -0.292,
-     0.909,
-     1.897
+     0.893,
+     1.927
     ],
-    "part": "pg_slide_lod2/stainless_steel",
-    "aspect": 48,
-    "longest": 0.668
+    "part": "pg_slide_lod2/playground",
+    "aspect": 62,
+    "longest": 0.77
    },
    {
     "check": "sliver",
@@ -3478,7 +4258,7 @@
      0.893,
      1.883
     ],
-    "part": "pg_slide_lod2/stainless_steel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 50,
     "longest": 0.886
    },
@@ -3490,9 +4270,33 @@
      0.914,
      1.855
     ],
-    "part": "pg_slide_lod2/stainless_steel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 58,
     "longest": 0.886
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.312,
+     0.879,
+     1.919
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 50,
+    "longest": 0.77
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.319,
+     0.858,
+     1.947
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 43,
+    "longest": 0.77
    },
    {
     "check": "sliver",
@@ -3502,7 +4306,7 @@
      0.987,
      1.725
     ],
-    "part": "pg_slide_lod2/stainless_steel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 43,
     "longest": 0.77
    },
@@ -3514,7 +4318,7 @@
      0.583,
      2.594
     ],
-    "part": "pg_slide_lod2/stainless_steel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 43,
     "longest": 0.33
    },
@@ -3526,7 +4330,7 @@
      0.583,
      2.594
     ],
-    "part": "pg_slide_lod2/stainless_steel",
+    "part": "pg_slide_lod2/playground",
     "aspect": 43,
     "longest": 0.33
    },
@@ -3535,24 +4339,48 @@
     "severity": "warn",
     "at": [
      0.296,
-     0.561,
-     3.144
+     0.569,
+     3.003
     ],
-    "part": "pg_slide_lod2/stainless_steel",
-    "aspect": 42,
-    "longest": 0.697
+    "part": "pg_slide_lod2/playground",
+    "aspect": 62,
+    "longest": 0.474
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -0.299,
-     0.563,
-     3.105
+     -0.303,
+     0.569,
+     3.003
     ],
-    "part": "pg_slide_lod2/stainless_steel",
-    "aspect": 53,
-    "longest": 0.613
+    "part": "pg_slide_lod2/playground",
+    "aspect": 66,
+    "longest": 0.474
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.292,
+     0.563,
+     3.235
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 67,
+    "longest": 0.423
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.307,
+     0.562,
+     3.235
+    ],
+    "part": "pg_slide_lod2/playground",
+    "aspect": 77,
+    "longest": 0.423
    }
   ],
   "backtoback": [
@@ -3560,71 +4388,113 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     0.234,
-     1.169,
-     0.808
+     -0.505,
+     1.95,
+     0.494
     ],
     "parts": [
-     "pg_slide_lod2/stainless_steel",
-     "pg_slide_lod2/stainless_steel"
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
     ],
-    "area": 0.01093
+    "area": 0.00043
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     0.242,
-     1.127,
-     0.995
+     -0.491,
+     1.95,
+     0.501
     ],
     "parts": [
-     "pg_slide_lod2/stainless_steel",
-     "pg_slide_lod2/stainless_steel"
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
     ],
-    "area": 0.00558
+    "area": 0.00058
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -0.228,
-     0.487,
-     2.209
+     -0.514,
+     2.45,
+     -0.497
     ],
     "parts": [
-     "pg_slide_lod2/stainless_steel",
-     "pg_slide_lod2/stainless_steel"
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
     ],
-    "area": 0.00753
+    "area": 0.00034
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -0.24,
-     0.55,
-     2.112
+     -0.497,
+     2.45,
+     -0.492
     ],
     "parts": [
-     "pg_slide_lod2/stainless_steel",
-     "pg_slide_lod2/stainless_steel"
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
     ],
-    "area": 0.00419
+    "area": 0.00022
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -0.039,
-     0.372,
-     2.419
+     0.491,
+     1.95,
+     0.498
     ],
     "parts": [
-     "pg_slide_lod2/stainless_steel",
-     "pg_slide_lod2/stainless_steel"
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
     ],
-    "area": 0.02372
+    "area": 0.00053
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.508,
+     1.95,
+     0.5
+    ],
+    "parts": [
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
+    ],
+    "area": 0.00024
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.496,
+     2.45,
+     -0.511
+    ],
+    "parts": [
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
+    ],
+    "area": 0.00041
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.312,
+     1.423,
+     0.532
+    ],
+    "parts": [
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
+    ],
+    "area": 0.00011
    }
   ],
   "seam": [
@@ -3632,16 +4502,16 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -0.29,
-     1.443,
-     0.537
+     -0.313,
+     1.414,
+     0.532
     ],
     "parts": [
-     "pg_slide_lod2/steel_galvanised",
-     "pg_slide_lod2/stainless_steel"
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
     ],
-    "length_m": 0.18,
-    "pieces": 24,
+    "length_m": 0.2,
+    "pieces": 41,
     "min_angle_deg": 17.7
    },
    {
@@ -3649,48 +4519,64 @@
     "severity": "info",
     "at": [
      -0.494,
-     1.993,
-     0.493
+     1.976,
+     0.522
     ],
     "parts": [
-     "pg_slide_lod2/wood_stained",
-     "pg_slide_lod2/wood_stained"
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
     ],
-    "length_m": 0.2,
-    "pieces": 22,
-    "min_angle_deg": 33.4
+    "length_m": 0.22,
+    "pieces": 30,
+    "min_angle_deg": 29.8
    },
    {
     "check": "seam",
     "severity": "info",
     "at": [
-     0.494,
-     1.959,
-     0.484
+     0.496,
+     1.952,
+     0.479
     ],
     "parts": [
-     "pg_slide_lod2/wood_stained",
-     "pg_slide_lod2/wood_stained"
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
     ],
-    "length_m": 0.2,
-    "pieces": 20,
-    "min_angle_deg": 31.7
+    "length_m": 0.21,
+    "pieces": 26,
+    "min_angle_deg": 15.1
    },
    {
     "check": "seam",
     "severity": "info",
     "at": [
-     -0.456,
-     1.943,
-     0.523
+     -0.462,
+     1.949,
+     0.522
     ],
     "parts": [
-     "pg_slide_lod2/wood_stained",
-     "pg_slide_lod2/wood_stained"
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
     ],
     "length_m": 0.24,
-    "pieces": 18,
-    "min_angle_deg": 84.4
+    "pieces": 20,
+    "min_angle_deg": 86.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.46,
+     1.947,
+     0.522
+    ],
+    "parts": [
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
+    ],
+    "length_m": 0.24,
+    "pieces": 20,
+    "min_angle_deg": 86.3
    },
    {
     "check": "seam",
@@ -3701,8 +4587,8 @@
      0.455
     ],
     "parts": [
-     "pg_slide_lod2/wood_stained",
-     "pg_slide_lod2/wood_stained"
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
     ],
     "length_m": 0.26,
     "pieces": 18,
@@ -3717,8 +4603,8 @@
      0.483
     ],
     "parts": [
-     "pg_slide_lod2/wood_stained",
-     "pg_slide_lod2/wood_stained"
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
     ],
     "length_m": 0.26,
     "pieces": 18,
@@ -3733,8 +4619,8 @@
      -0.455
     ],
     "parts": [
-     "pg_slide_lod2/wood_stained",
-     "pg_slide_lod2/wood_stained"
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
     ],
     "length_m": 0.26,
     "pieces": 18,
@@ -3749,8 +4635,8 @@
      -0.517
     ],
     "parts": [
-     "pg_slide_lod2/wood_stained",
-     "pg_slide_lod2/wood_stained"
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
     ],
     "length_m": 0.26,
     "pieces": 18,
@@ -3765,8 +4651,8 @@
      0.517
     ],
     "parts": [
-     "pg_slide_lod2/wood_stained",
-     "pg_slide_lod2/wood_stained"
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
     ],
     "length_m": 0.26,
     "pieces": 18,
@@ -3781,8 +4667,8 @@
      0.455
     ],
     "parts": [
-     "pg_slide_lod2/wood_stained",
-     "pg_slide_lod2/wood_stained"
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
     ],
     "length_m": 0.26,
     "pieces": 18,
@@ -3797,8 +4683,8 @@
      -0.483
     ],
     "parts": [
-     "pg_slide_lod2/wood_stained",
-     "pg_slide_lod2/wood_stained"
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
     ],
     "length_m": 0.26,
     "pieces": 18,
@@ -3813,8 +4699,8 @@
      -0.455
     ],
     "parts": [
-     "pg_slide_lod2/wood_stained",
-     "pg_slide_lod2/wood_stained"
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
     ],
     "length_m": 0.26,
     "pieces": 18,
@@ -3824,32 +4710,16 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     0.458,
-     1.945,
-     0.523
+     -0.206,
+     0.2,
+     3.334
     ],
     "parts": [
-     "pg_slide_lod2/wood_stained",
-     "pg_slide_lod2/wood_stained"
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
     ],
-    "length_m": 0.24,
-    "pieces": 17,
-    "min_angle_deg": 84.4
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -0.212,
-     0.19,
-     3.344
-    ],
-    "parts": [
-     "pg_slide_lod2/steel_galvanised",
-     "pg_slide_lod2/steel_galvanised"
-    ],
-    "length_m": 0.11,
-    "pieces": 13,
+    "length_m": 0.1,
+    "pieces": 14,
     "min_angle_deg": 35.4
    },
    {
@@ -3861,28 +4731,92 @@
      0.521
     ],
     "parts": [
-     "pg_slide_lod2/wood_stained",
-     "pg_slide_lod2/stainless_steel"
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
     ],
     "length_m": 0.81,
-    "pieces": 12,
-    "min_angle_deg": 42.6
+    "pieces": 13,
+    "min_angle_deg": 42.8
    },
    {
     "check": "seam",
     "severity": "info",
     "at": [
-     0.213,
-     0.189,
-     3.352
+     0.202,
+     0.188,
+     3.359
     ],
     "parts": [
-     "pg_slide_lod2/steel_galvanised",
-     "pg_slide_lod2/steel_galvanised"
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
     ],
-    "length_m": 0.09,
-    "pieces": 10,
-    "min_angle_deg": 71.4
+    "length_m": 0.1,
+    "pieces": 12,
+    "min_angle_deg": 36.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.517,
+     2.45,
+     -0.487
+    ],
+    "parts": [
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
+    ],
+    "length_m": 0.12,
+    "pieces": 5,
+    "min_angle_deg": 5.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.498,
+     1.95,
+     0.484
+    ],
+    "parts": [
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
+    ],
+    "length_m": 0.13,
+    "pieces": 5,
+    "min_angle_deg": 7.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.501,
+     2.45,
+     -0.518
+    ],
+    "parts": [
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
+    ],
+    "length_m": 0.11,
+    "pieces": 5,
+    "min_angle_deg": 5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.516,
+     1.95,
+     0.498
+    ],
+    "parts": [
+     "pg_slide_lod2/playground",
+     "pg_slide_lod2/playground"
+    ],
+    "length_m": 0.04,
+    "pieces": 2,
+    "min_angle_deg": 27.5
    }
   ]
  },

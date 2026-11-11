@@ -1,0 +1,90 @@
+{
+ "summary": {
+  "triangles": 1143,
+  "vertices_welded": 612,
+  "open_edges": 83,
+  "rays": 5282,
+  "blocking": 0,
+  "warnings": 2,
+  "counts": {
+   "sliver": 2
+  },
+  "ms": 21
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0.00003332970663905144,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": 0.07,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "rk2_grotto_lod2",
+   "slot": "rocaille_concrete",
+   "triangles": 1143,
+   "maxDistance": 200
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.509,
+     2.361,
+     -0.649
+    ],
+    "part": "rk2_grotto_lod2/rocaille_concrete",
+    "aspect": 42,
+    "longest": 0.904
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.382,
+     0.51,
+     -1.3
+    ],
+    "part": "rk2_grotto_lod2/rocaille_concrete",
+    "aspect": 68,
+    "longest": 0.49
+   }
+  ]
+ },
+ "file": "rockkit.glb"
+}

@@ -11,7 +11,7 @@
    "backtoback": 8,
    "seam": 6
   },
-  "ms": 12
+  "ms": 8
  },
  "options": {
   "weld": 0.0001,
@@ -55,7 +55,7 @@
  "parts": [
   {
    "name": "pg_fence_lod1",
-   "slot": "steel_painted_green",
+   "slot": "playground",
    "triangles": 496,
    "maxDistance": 55
   }
@@ -70,7 +70,7 @@
      0.699,
      0.02
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 390,
     "longest": 1.192
    },
@@ -82,7 +82,7 @@
      0.301,
      0.019
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 390,
     "longest": 1.192
    },
@@ -94,7 +94,7 @@
      0.699,
      0.018
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 389,
     "longest": 1.192
    },
@@ -106,7 +106,7 @@
      0.301,
      0.017
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 389,
     "longest": 1.192
    },
@@ -118,7 +118,7 @@
      0.301,
      -0.02
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 390,
     "longest": 1.192
    },
@@ -130,7 +130,7 @@
      0.699,
      -0.019
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 390,
     "longest": 1.192
    },
@@ -142,7 +142,7 @@
      0.301,
      -0.018
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 389,
     "longest": 1.192
    },
@@ -154,7 +154,7 @@
      0.699,
      -0.017
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 389,
     "longest": 1.192
    },
@@ -166,7 +166,7 @@
      0.301,
      -0.017
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 389,
     "longest": 1.192
    },
@@ -178,7 +178,7 @@
      0.699,
      -0.018
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 389,
     "longest": 1.192
    },
@@ -190,7 +190,7 @@
      0.301,
      -0.019
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 390,
     "longest": 1.192
    },
@@ -202,7 +202,7 @@
      0.699,
      -0.02
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 390,
     "longest": 1.192
    },
@@ -214,7 +214,7 @@
      0.301,
      0.02
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 390,
     "longest": 1.192
    },
@@ -226,7 +226,7 @@
      0.699,
      0.019
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 390,
     "longest": 1.192
    },
@@ -238,7 +238,7 @@
      0.301,
      0.018
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 389,
     "longest": 1.192
    },
@@ -250,7 +250,7 @@
      0.699,
      0.017
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 389,
     "longest": 1.192
    },
@@ -262,7 +262,7 @@
      0.699,
      0.02
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 390,
     "longest": 1.192
    },
@@ -274,7 +274,7 @@
      0.301,
      0.019
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 390,
     "longest": 1.192
    },
@@ -286,7 +286,7 @@
      0.699,
      0.018
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 389,
     "longest": 1.192
    },
@@ -298,7 +298,7 @@
      0.301,
      0.017
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 389,
     "longest": 1.192
    },
@@ -310,7 +310,7 @@
      0.301,
      -0.02
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 390,
     "longest": 1.192
    },
@@ -322,7 +322,7 @@
      0.699,
      -0.019
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 390,
     "longest": 1.192
    },
@@ -334,7 +334,7 @@
      0.301,
      -0.018
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 389,
     "longest": 1.192
    },
@@ -346,7 +346,7 @@
      0.699,
      -0.017
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 389,
     "longest": 1.192
    },
@@ -358,7 +358,7 @@
      0.301,
      -0.017
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 389,
     "longest": 1.192
    },
@@ -370,7 +370,7 @@
      0.699,
      -0.018
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 389,
     "longest": 1.192
    },
@@ -382,7 +382,7 @@
      0.301,
      -0.019
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 390,
     "longest": 1.192
    },
@@ -394,7 +394,7 @@
      0.699,
      -0.02
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 390,
     "longest": 1.192
    },
@@ -406,7 +406,7 @@
      0.301,
      0.02
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 390,
     "longest": 1.192
    },
@@ -418,7 +418,7 @@
      0.699,
      0.019
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 390,
     "longest": 1.192
    },
@@ -430,7 +430,7 @@
      0.301,
      0.018
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 389,
     "longest": 1.192
    },
@@ -442,7 +442,7 @@
      0.699,
      0.017
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 389,
     "longest": 1.192
    },
@@ -454,7 +454,7 @@
      0.059,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -466,7 +466,7 @@
      0.058,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -478,7 +478,7 @@
      0.058,
      -0.025
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -490,7 +490,7 @@
      0.058,
      -0.024
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -502,7 +502,7 @@
      0.059,
      -0.023
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -514,7 +514,7 @@
      0.061,
      -0.023
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -526,7 +526,7 @@
      0.062,
      -0.024
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -538,7 +538,7 @@
      0.062,
      -0.025
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -550,7 +550,7 @@
      0.062,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -562,7 +562,7 @@
      0.061,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -574,7 +574,7 @@
      0.059,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -586,7 +586,7 @@
      0.058,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -598,7 +598,7 @@
      0.058,
      -0.035
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -610,7 +610,7 @@
      0.058,
      -0.034
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -622,7 +622,7 @@
      0.059,
      -0.033
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -634,7 +634,7 @@
      0.061,
      -0.033
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -646,7 +646,7 @@
      0.062,
      -0.034
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -658,7 +658,7 @@
      0.062,
      -0.035
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -670,7 +670,7 @@
      0.062,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -682,7 +682,7 @@
      0.061,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -694,7 +694,7 @@
      0.247,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -706,7 +706,7 @@
      0.246,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -718,7 +718,7 @@
      0.246,
      -0.025
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -730,7 +730,7 @@
      0.246,
      -0.024
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -742,7 +742,7 @@
      0.247,
      -0.023
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -754,7 +754,7 @@
      0.249,
      -0.023
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -766,7 +766,7 @@
      0.25,
      -0.024
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -778,7 +778,7 @@
      0.25,
      -0.025
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -790,7 +790,7 @@
      0.25,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -802,7 +802,7 @@
      0.249,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -814,7 +814,7 @@
      0.247,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -826,7 +826,7 @@
      0.246,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -838,7 +838,7 @@
      0.246,
      -0.035
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -850,7 +850,7 @@
      0.246,
      -0.034
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -862,7 +862,7 @@
      0.247,
      -0.033
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -874,7 +874,7 @@
      0.249,
      -0.033
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -886,7 +886,7 @@
      0.25,
      -0.034
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -898,7 +898,7 @@
      0.25,
      -0.035
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -910,7 +910,7 @@
      0.25,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -922,7 +922,7 @@
      0.249,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -934,7 +934,7 @@
      0.435,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -946,7 +946,7 @@
      0.434,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -958,7 +958,7 @@
      0.434,
      -0.025
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -970,7 +970,7 @@
      0.434,
      -0.024
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -982,7 +982,7 @@
      0.435,
      -0.023
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -994,7 +994,7 @@
      0.437,
      -0.023
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1006,7 +1006,7 @@
      0.438,
      -0.024
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1018,7 +1018,7 @@
      0.438,
      -0.025
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1030,7 +1030,7 @@
      0.438,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1042,7 +1042,7 @@
      0.437,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1054,7 +1054,7 @@
      0.435,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1066,7 +1066,7 @@
      0.434,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1078,7 +1078,7 @@
      0.434,
      -0.035
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1090,7 +1090,7 @@
      0.434,
      -0.034
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1102,7 +1102,7 @@
      0.435,
      -0.033
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1114,7 +1114,7 @@
      0.437,
      -0.033
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1126,7 +1126,7 @@
      0.438,
      -0.034
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1138,7 +1138,7 @@
      0.438,
      -0.035
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1150,7 +1150,7 @@
      0.438,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1162,7 +1162,7 @@
      0.437,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1174,7 +1174,7 @@
      0.623,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1186,7 +1186,7 @@
      0.622,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1198,7 +1198,7 @@
      0.622,
      -0.025
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1210,7 +1210,7 @@
      0.622,
      -0.024
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1222,7 +1222,7 @@
      0.623,
      -0.023
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1234,7 +1234,7 @@
      0.625,
      -0.023
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1246,7 +1246,7 @@
      0.626,
      -0.024
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1258,7 +1258,7 @@
      0.626,
      -0.025
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1270,7 +1270,7 @@
      0.626,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1282,7 +1282,7 @@
      0.625,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1294,7 +1294,7 @@
      0.623,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1306,7 +1306,7 @@
      0.622,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1318,7 +1318,7 @@
      0.622,
      -0.035
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1330,7 +1330,7 @@
      0.622,
      -0.034
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1342,7 +1342,7 @@
      0.623,
      -0.033
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1354,7 +1354,7 @@
      0.625,
      -0.033
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1366,7 +1366,7 @@
      0.626,
      -0.034
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1378,7 +1378,7 @@
      0.626,
      -0.035
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1390,7 +1390,7 @@
      0.626,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1402,7 +1402,7 @@
      0.625,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1414,7 +1414,7 @@
      0.811,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1426,7 +1426,7 @@
      0.81,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1438,7 +1438,7 @@
      0.81,
      -0.025
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1450,7 +1450,7 @@
      0.81,
      -0.024
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1462,7 +1462,7 @@
      0.811,
      -0.023
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1474,7 +1474,7 @@
      0.813,
      -0.023
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1486,7 +1486,7 @@
      0.814,
      -0.024
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1498,7 +1498,7 @@
      0.814,
      -0.025
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1510,7 +1510,7 @@
      0.814,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1522,7 +1522,7 @@
      0.813,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1534,7 +1534,7 @@
      0.811,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1546,7 +1546,7 @@
      0.81,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1558,7 +1558,7 @@
      0.81,
      -0.035
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1570,7 +1570,7 @@
      0.81,
      -0.034
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1582,7 +1582,7 @@
      0.811,
      -0.033
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1594,7 +1594,7 @@
      0.813,
      -0.033
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1606,7 +1606,7 @@
      0.814,
      -0.034
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1618,7 +1618,7 @@
      0.814,
      -0.035
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1630,7 +1630,7 @@
      0.814,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1642,7 +1642,7 @@
      0.813,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1654,7 +1654,7 @@
      0.999,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1666,7 +1666,7 @@
      0.998,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1678,7 +1678,7 @@
      0.998,
      -0.025
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1690,7 +1690,7 @@
      0.998,
      -0.024
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1702,7 +1702,7 @@
      0.999,
      -0.023
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 542,
     "longest": 1.92
    },
@@ -1714,7 +1714,7 @@
      1.001,
      -0.023
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 542,
     "longest": 1.92
    },
@@ -1726,7 +1726,7 @@
      1.002,
      -0.024
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1738,7 +1738,7 @@
      1.002,
      -0.025
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1750,7 +1750,7 @@
      1.002,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1762,7 +1762,7 @@
      1.001,
      -0.027
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1774,7 +1774,7 @@
      0.999,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1786,7 +1786,7 @@
      0.998,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1798,7 +1798,7 @@
      0.998,
      -0.035
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1810,7 +1810,7 @@
      0.998,
      -0.034
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1822,7 +1822,7 @@
      0.999,
      -0.033
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 542,
     "longest": 1.92
    },
@@ -1834,7 +1834,7 @@
      1.001,
      -0.033
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 542,
     "longest": 1.92
    },
@@ -1846,7 +1846,7 @@
      1.002,
      -0.034
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1858,7 +1858,7 @@
      1.002,
      -0.035
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 545,
     "longest": 1.92
    },
@@ -1870,7 +1870,7 @@
      1.002,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    },
@@ -1882,7 +1882,7 @@
      1.001,
      -0.037
     ],
-    "part": "pg_fence_lod1/steel_painted_green",
+    "part": "pg_fence_lod1/playground",
     "aspect": 544,
     "longest": 1.92
    }
@@ -1897,8 +1897,8 @@
      -0.011
     ],
     "parts": [
-     "pg_fence_lod1/steel_painted_green",
-     "pg_fence_lod1/steel_painted_green"
+     "pg_fence_lod1/playground",
+     "pg_fence_lod1/playground"
     ],
     "area": 0.0004
    },
@@ -1911,8 +1911,8 @@
      -0.004
     ],
     "parts": [
-     "pg_fence_lod1/steel_painted_green",
-     "pg_fence_lod1/steel_painted_green"
+     "pg_fence_lod1/playground",
+     "pg_fence_lod1/playground"
     ],
     "area": 0.00043
    },
@@ -1925,8 +1925,8 @@
      0.004
     ],
     "parts": [
-     "pg_fence_lod1/steel_painted_green",
-     "pg_fence_lod1/steel_painted_green"
+     "pg_fence_lod1/playground",
+     "pg_fence_lod1/playground"
     ],
     "area": 0.00043
    },
@@ -1939,8 +1939,8 @@
      0.011
     ],
     "parts": [
-     "pg_fence_lod1/steel_painted_green",
-     "pg_fence_lod1/steel_painted_green"
+     "pg_fence_lod1/playground",
+     "pg_fence_lod1/playground"
     ],
     "area": 0.0004
    },
@@ -1953,8 +1953,8 @@
      -0.011
     ],
     "parts": [
-     "pg_fence_lod1/steel_painted_green",
-     "pg_fence_lod1/steel_painted_green"
+     "pg_fence_lod1/playground",
+     "pg_fence_lod1/playground"
     ],
     "area": 0.0004
    },
@@ -1967,8 +1967,8 @@
      -0.004
     ],
     "parts": [
-     "pg_fence_lod1/steel_painted_green",
-     "pg_fence_lod1/steel_painted_green"
+     "pg_fence_lod1/playground",
+     "pg_fence_lod1/playground"
     ],
     "area": 0.00043
    },
@@ -1981,8 +1981,8 @@
      0.004
     ],
     "parts": [
-     "pg_fence_lod1/steel_painted_green",
-     "pg_fence_lod1/steel_painted_green"
+     "pg_fence_lod1/playground",
+     "pg_fence_lod1/playground"
     ],
     "area": 0.00043
    },
@@ -1995,8 +1995,8 @@
      0.011
     ],
     "parts": [
-     "pg_fence_lod1/steel_painted_green",
-     "pg_fence_lod1/steel_painted_green"
+     "pg_fence_lod1/playground",
+     "pg_fence_lod1/playground"
     ],
     "area": 0.0004
    }
@@ -2011,8 +2011,8 @@
      -0.016
     ],
     "parts": [
-     "pg_fence_lod1/steel_painted_green",
-     "pg_fence_lod1/steel_painted_green"
+     "pg_fence_lod1/playground",
+     "pg_fence_lod1/playground"
     ],
     "length_m": 0.12,
     "pieces": 25,
@@ -2027,8 +2027,8 @@
      -0.02
     ],
     "parts": [
-     "pg_fence_lod1/steel_painted_green",
-     "pg_fence_lod1/steel_painted_green"
+     "pg_fence_lod1/playground",
+     "pg_fence_lod1/playground"
     ],
     "length_m": 0.12,
     "pieces": 23,
@@ -2043,8 +2043,8 @@
      -0.02
     ],
     "parts": [
-     "pg_fence_lod1/steel_painted_green",
-     "pg_fence_lod1/steel_painted_green"
+     "pg_fence_lod1/playground",
+     "pg_fence_lod1/playground"
     ],
     "length_m": 0.12,
     "pieces": 23,
@@ -2059,8 +2059,8 @@
      -0.016
     ],
     "parts": [
-     "pg_fence_lod1/steel_painted_green",
-     "pg_fence_lod1/steel_painted_green"
+     "pg_fence_lod1/playground",
+     "pg_fence_lod1/playground"
     ],
     "length_m": 0.12,
     "pieces": 22,
@@ -2075,8 +2075,8 @@
      0
     ],
     "parts": [
-     "pg_fence_lod1/steel_painted_green",
-     "pg_fence_lod1/steel_painted_green"
+     "pg_fence_lod1/playground",
+     "pg_fence_lod1/playground"
     ],
     "length_m": 0.17,
     "pieces": 6,
@@ -2091,8 +2091,8 @@
      0
     ],
     "parts": [
-     "pg_fence_lod1/steel_painted_green",
-     "pg_fence_lod1/steel_painted_green"
+     "pg_fence_lod1/playground",
+     "pg_fence_lod1/playground"
     ],
     "length_m": 0.17,
     "pieces": 6,

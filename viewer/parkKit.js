@@ -23,7 +23,7 @@
 // glitter far away).
 import * as THREE from "three/webgpu";
 import {
-  attribute, uv, texture, normalWorld, positionWorld, positionLocal, vec2, vec3, float, fract, mix, smoothstep, clamp, abs, dot, sin, floor,
+  attribute, uv, texture, normalWorld, positionWorld, positionView, normalView, positionLocal, vec2, vec3, float, fract, mix, smoothstep, clamp, abs, dot, sin, floor,
   fwidth, max, min, length, Fn, select, instancedBufferAttribute, uniform,
 } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -32,7 +32,7 @@ import { ditherNoise, SMOOTH } from "./lodFade.js";
 
 export const KITS = ["rockkit", "playgroundkit"];
 /** live look controls (uniforms) */
-export const kitLook = { ao: uniform(1.0), aoDirect: uniform(0.5), moss: uniform(1.0) };
+export const kitLook = { ao: uniform(1.0), aoDirect: uniform(0.5), moss: uniform(1.0), normal: uniform(1.0), normalY: uniform(-1.0) };
 
 // ------------------------------------------------------------------------------------------------ loading
 const cache = new Map();
@@ -41,10 +41,13 @@ export function loadParkKit(name) {
   const p = (async () => {
     const base = new URL("../models/parkkit/", import.meta.url).href;
     const t0 = performance.now();
-    const [gltf, info, aoTex] = await Promise.all([
+    const [gltf, info, aoTex, nrmTex] = await Promise.all([
       new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(`${base}${name}.glb`),
       fetch(`${base}${name}.json`).then((r) => r.json()),
       loadAO(`${base}${name}_ao.png`),
+      new THREE.TextureLoader().loadAsync(`${base}${name}_nrm.jpg`).then((t) => {
+        t.flipY = false; t.colorSpace = THREE.NoColorSpace; t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; t.anisotropy = 4; return t;
+      }).catch(() => null),
     ]);
     const pieces = {};
     gltf.scene.traverse((o) => {
@@ -61,13 +64,14 @@ export function loadParkKit(name) {
       p.tris = p.lods.map((l) => l.reduce((s, x) => s + x.geometry.index.count / 3, 0));
       p.draws = p.lods.map((l) => l.length);
       p.size = info.pieces[p.name]?.size_m ?? [1, 1, 1];
+      p.range = info.lods?.[p.name]?.range ?? null;          // per-piece LOD bands (else the kit's)
     }
     const materials = {};
     const slotMaterial = (slot, vertexAo) => {
       const key = `${slot}|${vertexAo ? "v" : "t"}`;
-      return (materials[key] ??= withAO(slotMat(slot), aoTex, vertexAo, slot));
+      return (materials[key] ??= withAO(slot === "playground" ? playgroundMat(info.slot_order) : slotMat(slot), aoTex, vertexAo, slot, nrmTex));
     };
-    return { name, pieces, info, aoTex, ranges: info.lod_ranges_m?.bands ?? [25, 70, 250], slotMaterial, materials, loadMs: performance.now() - t0 };
+    return { name, pieces, info, aoTex, nrmTex, ranges: info.lod_ranges_m?.bands ?? [25, 70, 250], slotMaterial, materials, loadMs: performance.now() - t0 };
   })();
   cache.set(name, p);
   return p;
@@ -93,8 +97,24 @@ function loadAO(url) {
 
 /** the kit's AO on a slot material: lightmap (uv1) or vertex AO (COLOR_0.a), indirect (aoNode) + a share on the colour;
  *  geometric specular anti-aliasing on the roughness */
-function withAO(m, aoTex, vertexAo, slot) {
+function withAO(m, aoTex, vertexAo, slot, nrmTex = null) {
   const ao = vertexAo ? attribute("color", "vec4").a : texture(aoTex, uv(1)).r;
+  // the baked normal map (rock kit, LOD0: the sculpt's detail on the light low-poly), in the atlas (TEXCOORD_1). The
+  // tangent frame comes from the screen-space derivatives of the position and of uv1 (three's instancing does not
+  // rotate tangent attributes; this frame follows every instance by itself)
+  if (nrmTex && !vertexAo && slot !== "playground") {
+    m.normalNode = Fn(() => {
+      const t = uv(1);
+      const n = texture(nrmTex, t).xyz.mul(2).sub(1).toVar();
+      n.assign(vec3(n.x.mul(kitLook.normal), n.y.mul(kitLook.normal).mul(kitLook.normalY), n.z).normalize());
+      const q0 = positionView.dFdx(), q1 = positionView.dFdy(), s0 = t.dFdx(), s1 = t.dFdy();
+      const N = normalView.toVar();
+      const q1p = q1.cross(N), q0p = N.cross(q0);
+      const T = q1p.mul(s0.x).add(q0p.mul(s1.x)), B = q1p.mul(s0.y).add(q0p.mul(s1.y));
+      const det = max(dot(T, T), dot(B, B)), k = select(det.equal(0), float(0), det.inverseSqrt());
+      return T.mul(k).mul(n.x).add(B.mul(k).mul(n.y)).add(N.mul(n.z)).normalize();
+    })();
+  }
   const aoK = mix(float(1), ao, kitLook.ao);
   m.aoNode = m.aoNode ? m.aoNode.mul(aoK) : aoK;
   const base = m.colorNode ?? vec3(m.color.r, m.color.g, m.color.b);
@@ -154,7 +174,7 @@ function standard(color, rough = 0.8, metal = 0) {
 }
 function rocaille(baseSrgb, opts = {}) {
   const m = new THREE.MeshStandardNodeMaterial({ roughness: opts.rough ?? 0.9, metalness: 0 });
-  const base = lin(...baseSrgb), mossC = lin(0.16, 0.19, 0.09), dirt = lin(0.24, 0.22, 0.19);
+  const base = lin(...baseSrgb), mossC = lin(0.2, 0.25, 0.1), dirt = lin(0.27, 0.26, 0.23), algae = lin(0.17, 0.2, 0.12);
   const tex = noiseTexture();
   m.colorNode = Fn(() => {
     const C = attribute("color", "vec4");
@@ -165,7 +185,8 @@ function rocaille(baseSrgb, opts = {}) {
     const tone = mix(float(0.9), float(1.08), layer);
     const col = cv(base).mul(tone).mul(float(0.82).add(a.r.mul(0.2)).add(a.g.mul(0.1)).add(a.b.mul(0.1))).toVar();
     col.assign(mix(col, cv(dirt), smoothstep(0.45, 0.85, b.r).mul(opts.stain ?? 0.45)));                 // grey-brown weathering
-    col.assign(col.mul(float(1).sub(smoothstep(0.55, 0.9, a.a).mul(0.18).mul(float(1).sub(abs(normalWorld.y))))));   // rain streaks
+    col.assign(col.mul(float(1).sub(smoothstep(0.5, 0.9, a.a).mul(opts.streak ?? 0.18).mul(float(1).sub(abs(normalWorld.y))))));   // dark rain streaks
+    col.assign(mix(col, cv(algae), smoothstep(0.9, 0.1, positionWorld.y).mul(smoothstep(0.3, 0.6, b.b)).mul(0.6)));   // green algae near the water (lab: water at y 0)
     col.assign(col.mul(mix(float(1), float(0.62), smoothstep(0.64, 0.92, cav))));                         // joints, cracks (deep ones only)
     col.assign(col.mul(float(1).add(edge.mul(0.12))));                                                    // worn edges
     const mossM = clamp(smoothstep(0.5, 0.9, normalWorld.y).mul(smoothstep(0.35, 0.7, b.g)).add(smoothstep(0.62, 0.85, cav).mul(0.4)), 0, 1)
@@ -205,7 +226,7 @@ function rope() {
   return m;
 }
 const SLOTS = {
-  rocaille_concrete: () => rocaille([0.74, 0.68, 0.56]),
+  rocaille_concrete: () => rocaille([0.64, 0.63, 0.59], { stain: 0.55, moss: 0.9, streak: 0.32 }),   // grey weathered concrete (owner's photo o01)
   rock_sandstone: () => rocaille([0.6, 0.5, 0.36], { moss: 0.5, stain: 0.3 }),
   rock_schist_dark: () => rocaille([0.3, 0.3, 0.29], { moss: 0.35, rough: 0.7, stain: 0.2 }),
   wood_stained: () => wood([0.38, 0.22, 0.12]),
@@ -224,6 +245,44 @@ const SLOTS = {
   surface_woodchip: () => speckle([0.45, 0.30, 0.18], [0.25, 0.15, 0.08], 25),
   sand: () => speckle([0.78, 0.70, 0.55], [0.66, 0.58, 0.45], 40, { rough: 0.95 }),
 };
+/** ONE material for every playground piece (all slots batched: COLOR_0.r = the slot's index in kit.info.slot_order).
+ *  Per slot: colour, roughness, metalness and a detail mode (0 plain, 1 wood along uv0.x, 2 speckle, 3 rope). */
+const PG = {
+  wood_stained: [[0.38, 0.22, 0.12], 0.75, 0, 1], wood_log: [[0.55, 0.44, 0.33], 0.85, 0, 1], wood_bench: [[0.45, 0.30, 0.18], 0.7, 0, 1],
+  steel_galvanised: [[0.60, 0.61, 0.62], 0.45, 0.8, 2], steel_painted_red: [[0.55, 0.06, 0.05], 0.5, 0, 0], steel_painted_green: [[0.08, 0.22, 0.12], 0.55, 0, 0],
+  hpl_panel: [[0.62, 0.30, 0.12], 0.45, 0, 0], hdpe_green: [[0.10, 0.42, 0.32], 0.5, 0, 0], hdpe_red: [[0.66, 0.10, 0.08], 0.5, 0, 0],
+  rope_grey: [[0.13, 0.13, 0.14], 0.9, 0, 3], rubber_black: [[0.06, 0.06, 0.06], 0.85, 0, 0], stainless_steel: [[0.75, 0.75, 0.76], 0.28, 1, 0],
+  surface_rubber: [[0.36, 0.13, 0.08], 0.9, 0, 2], surface_woodchip: [[0.38, 0.25, 0.14], 0.9, 0, 2], sand: [[0.74, 0.66, 0.51], 0.95, 0, 2],
+};
+export const pgLook = { surface: uniform(12) };      // the slot drawn for "surface_rubber" (index in slot_order + 2 extras)
+function playgroundMat(order) {
+  const m = new THREE.MeshStandardNodeMaterial({ roughness: 0.8 });
+  const tex = noiseTexture();
+  const names = [...order, "surface_woodchip"];
+  const idx = attribute("color", "vec4").r.mul(32).floor().toVar();
+  const surf = order.indexOf("surface_rubber");
+  const pick = (f) => {         // a select chain over the slots
+    let out = f(PG[names[names.length - 1]], names.length - 1);
+    for (let i = names.length - 2; i >= 0; i--) out = select(idx.equal(i), f(PG[names[i]], i), out);
+    return out;
+  };
+  m.colorNode = Fn(() => {
+    const id = select(idx.equal(surf), pgLook.surface, idx).toVar();
+    const pk = (f) => { let out = f(PG[names[names.length - 1]]); for (let i = names.length - 2; i >= 0; i--) out = select(id.equal(i), f(PG[names[i]]), out); return out; };
+    const base = pk((q) => cv(lin(...q[0])));
+    const mode = pk((q) => float(q[3])).toVar();
+    // ONE texture read: its coordinates chosen by the mode (wood along uv0.x, speckle on the world plane, rope twist)
+    const t = uv(0);
+    const c = select(mode.equal(1), vec2(t.x.mul(0.02), t.y.mul(0.8)), select(mode.equal(2), planar().mul(0.6), vec2(t.x.mul(3), t.y.mul(0.5))));
+    const n = texture(tex, c);
+    const k = select(mode.equal(0), float(1), select(mode.equal(1), float(0.85).add(n.b.mul(0.2)).add(n.g.mul(0.1)), float(0.88).add(n.b.mul(0.24))));
+    return base.mul(k);
+  })();
+  m.roughnessNode = pick((q) => float(q[1]));
+  m.metalnessNode = pick((q) => float(q[2]));
+  m.name = "playground";
+  return m;
+}
 export const SLOT_NAMES = Object.keys(SLOTS);
 function slotMat(slot) {
   const m = (SLOTS[slot] ?? (() => standard(lin(0.6, 0.6, 0.6), 0.8)))();
@@ -232,9 +291,12 @@ function slotMat(slot) {
 }
 
 // ------------------------------------------------------------------------------------------------ instanced field with LODs
-const FADE = 0.15;                 // the cross-fade covers the last 15 % of each band
+const FADE = 0.08;                 // the cross-fade covers the last 8 % of each band (a fading instance draws twice, with discard)
+/** the layer of the shadow proxies: add it to the sun's shadow camera (light.shadow.camera.layers.enable(SHADOW_LAYER)) */
+export const SHADOW_LAYER = 2;                 // the cross-fade covers the last 15 % of each band
 export class KitField {
-  constructor(kit, { castShadow = true, receiveShadow = true, slotOverride = {} } = {}) {
+  constructor(kit, { castShadow = true, receiveShadow = true, slotOverride = {}, shadowProxy = false } = {}) {
+    this.shadowProxy = shadowProxy;     // LOD0 / LOD1 cast their shadow through the LOD2 mesh (layer SHADOW_LAYER: enable it on the sun's shadow camera)
     this.kit = kit; this.group = new THREE.Group(); this.group.name = `kitfield ${kit.name}`;
     this.inst = {};                 // piece -> [{ m: Matrix4, p: Vector3 }]
     this.castShadow = castShadow; this.receiveShadow = receiveShadow;
@@ -276,21 +338,36 @@ export class KitField {
         };
         return { solid: mk(false), fade: mk(true) };
       });
-      this.built[piece] = { list, lods };
+      // shadow proxy: the LOD2 mesh for every instance drawn at LOD0 / LOD1 (once: the outgoing side of a fade), shadow layer only
+      let proxy = null;
+      if (this.shadowProxy && P.lods.length > 1) {
+        const SL = P.lods[P.lods.length - 1];        // the shadow is cast by the LAST LOD's mesh (LOD2) for LOD0 and LOD1
+        proxy = { meshes: SL.map(({ geometry }) => {
+          const im = new THREE.InstancedMesh(geometry, this.kit.slotMaterial(SL[0].slot, !geometry.attributes.uv1), cap);
+          im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); im.count = 0; im.frustumCulled = false; im.visible = false;
+          im.castShadow = true; im.receiveShadow = false; im.layers.set(SHADOW_LAYER); im.name = `${piece} shadow proxy`;
+          this.group.add(im); this.meshes.push(im); return im;
+        }), buf: new Float32Array(cap * 16), n: 0 };
+        for (let k = 0; k < lods.length - 1; k++) for (const kind of ["solid", "fade"]) for (const im of lods[k][kind].meshes) im.castShadow = false;
+      }
+      this.built[piece] = { list, lods, proxy };
     }
   }
   /** per frame: LOD buckets for every instance from the eye position */
   update(eye) {
     if (!this.built) this.commit();
-    const R = this.kit.ranges.map((r) => r * this.rangeScale);
+    const R0 = this.kit.ranges.map((r) => r * this.rangeScale);
     const st = this.stats; st.lod = [0, 0, 0]; st.fading = 0; st.tris = 0; st.draws = 0;
-    for (const [piece, { list, lods }] of Object.entries(this.built)) {
+    for (const [piece, { list, lods, proxy }] of Object.entries(this.built)) {
+      const R = this.kit.pieces[piece].range ? this.kit.pieces[piece].range.map((r) => r * this.rangeScale) : R0;
       for (const L of lods) { L.solid.n = 0; L.fade.n = 0; }
+      if (proxy) proxy.n = 0;
       const put = (k, kind, i, val) => {
         const B = lods[k]?.[kind]; if (!B) return;
         list[i].m.toArray(B.buf, B.n * 16);
         if (B.vals) B.vals[B.n] = val;
         B.n++;
+        if (proxy && k < lods.length - 1 && (kind === "solid" || val > 1.5)) { list[i].m.toArray(proxy.buf, proxy.n * 16); proxy.n++; }
       };
       for (let i = 0; i < list.length; i++) {
         if (this.force === "off") continue;
@@ -316,6 +393,10 @@ export class KitField {
           if (B.attr && B.n) B.attr.needsUpdate = true;
         }
       });
+      if (proxy) for (const im of proxy.meshes) {
+        im.count = proxy.n; im.visible = proxy.n > 0;
+        if (proxy.n) { im.instanceMatrix.array.set(proxy.buf.subarray(0, proxy.n * 16)); im.instanceMatrix.needsUpdate = true; st.shadowTris = (st.shadowTris ?? 0) + proxy.n * im.geometry.index.count / 3; }
+      }
     }
     return st;
   }
@@ -323,6 +404,7 @@ export class KitField {
     this.slotOverride[slot] = toSlot;
     for (const im of this.meshes) {
       if (im.userData.slot !== slot) continue;
+      if (im.name.endsWith("shadow proxy")) continue;
       const fade = im.name.endsWith(" fade");
       const vertexAo = !im.geometry.attributes.uv1;
       let mat = this.kit.slotMaterial(toSlot, vertexAo);
@@ -351,7 +433,7 @@ function fadeCopy(mat, attr) {
 export function sampleCliff(field, { n = 40, seed = 3, length = 34, height = 5.2, origin = new THREE.Vector3(), yaw = 0, ground = () => 0 } = {}) {
   let s = seed;
   const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
-  const faces = ["rk_face_a", "rk_face_b", "rk_corner", "rk_grotto"], small = ["rk_boulder_a", "rk_boulder_b", "rk_ledge", "rk_step"];
+  const faces = ["rk2_pillars_tall", "rk2_pillars_low", "rk2_slabs", "rk2_grotto"], small = ["rk2_pillar", "rk2_cap", "rk2_foot", "rk_step"];
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), pos = new THREE.Vector3();
   const rot = new THREE.Matrix4().makeRotationY(yaw);
   let placed = 0;
@@ -359,12 +441,12 @@ export function sampleCliff(field, { n = 40, seed = 3, length = 34, height = 5.2
   const rows = [{ z: 0, y: 0, k: 0.95 }, { z: 1.1, y: 1.9, k: 0.8 }, { z: 2.0, y: 3.4, k: 0.65 }];
   for (const r of rows) {
     for (let x = -length / 2; x < length / 2 && placed < n * 0.72;) {
-      const name = r.y === 0 && Math.abs(x) < 2.5 ? "rk_grotto" : faces[Math.floor(rnd() * 3)];
+      const name = r.y === 0 && Math.abs(x) < 2.5 ? "rk2_grotto" : faces[Math.floor(rnd() * 3)];
       const scl = r.k * (0.8 + rnd() * 0.45);
       const w = (field.kit.pieces[name].size[0] || 3) * scl;
       const bend = Math.sin((x / length) * Math.PI) * 3.0;
       pos.set(x + w / 2, r.y + (rnd() - 0.5) * 0.7 - 0.15, r.z - bend + (rnd() - 0.5) * 0.9);
-      q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), (rnd() - 0.5) * 0.9 + Math.cos((x / length) * Math.PI) * 0.35);
+      q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI + (rnd() - 0.5) * 0.9 + Math.cos((x / length) * Math.PI) * 0.35);   // (the pieces' front is +z)
       sc.set(scl, scl * (0.85 + rnd() * 0.35), scl);
       m.compose(pos, q, sc).premultiply(rot); m.setPosition(m.elements[12] + origin.x, m.elements[13] + origin.y + ground(m.elements[12] + origin.x, m.elements[14] + origin.z), m.elements[14] + origin.z);
       field.add(name, m); placed++;
@@ -409,4 +491,39 @@ export function samplePlayground(field, { origin = new THREE.Vector3(), yaw = 0 
     }
   };
   seg(-W / 2, D / 2, W / 2, D / 2); seg(W / 2, D / 2, W / 2, -D / 2); seg(W / 2, -D / 2, -W / 2, -D / 2); seg(-W / 2, -D / 2, -W / 2, D / 2);
+}
+
+/** THE SAUVAGERE CLIFF, laid out like the owner's photo o01 (from the pond, looking east; DTM: ~28 m of face, 5 m
+ *  from the water at 88.5 to the top at 93.3-94.3): slanted slabs on the left, pillars rising to the right, the
+ *  grotto at the water under the middle, ledges along the water line, cap ledges on top under the temple.
+ *  Lab frame: the water line at y = 0 along x, the cliff's front facing -z (the pieces' front is +z: yaw pi). */
+export function sampleSauvagereCliff(field, { origin = new THREE.Vector3(), yaw = 0 } = {}) {
+  const L = [
+    // name, x, y, z, yaw (deg, 0 = facing the pond), scale. o01 read left to right: low broad slanted blocks and
+    // ledges with plants (left, ~2-3 m), the grotto and lower pillars (middle), tall pillars rising to the right
+    // (4.5-5 m) with a back row filling up to the top under the temple; ledges and slabs along the water line.
+    ["rk2_foot", -12.0, -0.3, -0.9, 4, 1.0], ["rk2_cap", -11.4, -0.1, 0.6, 80, 1.2], ["rk2_slabs", -9.0, -0.2, 0.4, -12, 1.0],
+    ["rk2_foot", -7.4, -0.3, -1.2, -3, 1.05], ["rk2_cap", -8.2, 1.0, 2.6, 95, 1.1], ["rk2_slabs", -5.6, 0.0, 0.0, 18, 1.15],
+    ["nat_slab", -5.6, -0.15, -1.9, 20, 1.2], ["rk2_pillars_low", -6.2, 0.4, 2.8, -8, 0.95],
+    ["rk2_pillars_low", -2.6, -0.2, 0.2, 6, 1.0], ["rk2_grotto", 0.2, -0.15, 0.3, -4, 1.0], ["rk2_foot", -1.6, -0.3, -1.3, 2, 0.95],
+    ["rk2_pillars_tall", -2.4, -0.6, 3.0, -2, 0.85], ["rk2_slabs", -0.4, 1.6, 3.4, 4, 1.05], ["rk2_pillars_low", 3.1, 0.0, 0.0, -5, 1.1],
+    ["rk2_pillars_tall", 2.4, -0.2, 3.0, -3, 1.05],
+    ["rk2_pillars_tall", 6.2, -0.1, 0.4, 2, 1.0], ["rk2_pillar", 4.6, -0.1, -1.1, 15, 0.95], ["rk2_pillars_tall", 9.4, -0.3, 0.6, -6, 0.95],
+    ["rk2_pillar", 7.8, -0.2, -1.0, -10, 0.85], ["rk2_pillars_low", 12.4, 0.0, 0.6, 9, 1.15], ["rk2_foot", 9.4, -0.3, -1.6, 0, 1.1],
+    ["rk2_foot", 5.2, -0.3, -1.8, -4, 1.0], ["rk2_pillars_tall", 6.6, 0.1, 3.2, 8, 1.1], ["rk2_pillars_tall", 10.4, -0.4, 3.4, -5, 1.0],
+    ["rk2_pillars_low", 14.6, -0.2, 2.0, 25, 1.0], ["rk_step", 15.8, 0.0, -1.2, 30, 1.0],
+  ];
+
+
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), pos = new THREE.Vector3();
+  const rot = new THREE.Matrix4().makeRotationY(yaw), Y = new THREE.Vector3(0, 1, 0);
+  for (const [name, x, y, z, a, s] of L) {
+    if (!field.kit.pieces[name]) continue;
+    // (seen from the pond, i.e. looking +z, screen-right is -x: x is mirrored so the list reads left to right like o01)
+    pos.set(-x, y, z); q.setFromAxisAngle(Y, Math.PI - THREE.MathUtils.degToRad(a)); sc.setScalar(s);
+    m.compose(pos, q, sc).premultiply(rot);
+    m.setPosition(m.elements[12] + origin.x, m.elements[13] + origin.y, m.elements[14] + origin.z);
+    field.add(name, m);
+  }
+  return L.length;
 }

@@ -10,7 +10,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { Panel } from "../viewer/panelUI.js";
 import { Lighting, PRESETS } from "../viewer/lighting.js";
 import { createPipeline } from "../viewer/post.js";
-import { loadParkKit, KitField, sampleCliff, samplePlayground, kitLook } from "../viewer/parkKit.js";
+import { loadParkKit, KitField, sampleCliff, samplePlayground, sampleSauvagereCliff, kitLook, pgLook, SHADOW_LAYER } from "../viewer/parkKit.js";
 
 const qp = new URLSearchParams(location.search);
 const $info = document.getElementById("info"), $page = document.getElementById("page");
@@ -36,13 +36,18 @@ const lighting = new Lighting(scene, renderer, preset);
   pad.position.set(80, -0.005, 0); pad.receiveShadow = true; scene.add(pad);
 }
 
+// a flat dark pond in front of the Sauvagere cliff (context only: the real water is the park-water module, claude/wolvendael)
+const water = new THREE.Mesh(new THREE.PlaneGeometry(40, 16).rotateX(-Math.PI / 2), new THREE.MeshStandardNodeMaterial({ color: 0x1d2420, roughness: 0.08, metalness: 0 }));
+water.position.set(1, 0.03, -9.5); water.receiveShadow = true; scene.add(water);
+
 // ------------------------------------------------------------------------------------------------ kits and scenes
 const t0 = performance.now();
 const [rocks, play] = await Promise.all([loadParkKit("rockkit"), loadParkKit("playgroundkit")]);
 const loadMs = performance.now() - t0;
-const fields = { rock: new KitField(rocks), play: new KitField(play) };
+const fields = { rock: new KitField(rocks, { shadowProxy: qp.get("proxy") !== "0" }), play: new KitField(play) };
+lighting.sun?.shadow?.camera?.layers.enable(SHADOW_LAYER);
 for (const f of Object.values(fields)) scene.add(f.group);
-const SCENES = ["sample cliff (40 pieces)", "rock gallery", "sample playground", "playground gallery", "cliff + playground"];
+const SCENES = ["Sauvagère cliff (o01)", "sample cliff (40 pieces)", "rock gallery", "sample playground", "playground gallery", "cliff + playground"];
 const FOCUS = { rock: new THREE.Vector3(0, 1.5, 0), play: new THREE.Vector3(80, 1, 0) };
 function gallery(field, kit, origin) {
   const names = Object.keys(kit.pieces).sort();
@@ -57,7 +62,9 @@ function gallery(field, kit, origin) {
 function build(sc) {
   for (const f of Object.values(fields)) f.clear();
   if (sc === "rock gallery") gallery(fields.rock, rocks, new THREE.Vector3(0, 0, 0));
-  if (sc === "sample cliff (40 pieces)" || sc === "cliff + playground") sampleCliff(fields.rock, { n: 40 });
+  if (sc === "sample cliff (40 pieces)") sampleCliff(fields.rock, { n: 40 });
+  if (sc === "Sauvagère cliff (o01)" || sc === "cliff + playground") sampleSauvagereCliff(fields.rock);
+  water.visible = sc.startsWith("Sauvagère");
   if (sc === "playground gallery") gallery(fields.play, play, new THREE.Vector3(80, 0, 0));
   if (sc === "sample playground" || sc === "cliff + playground") samplePlayground(fields.play, { origin: new THREE.Vector3(80, 0, 0) });
   for (const f of Object.values(fields)) f.commit();
@@ -69,6 +76,10 @@ build(S.scene);
 
 // ------------------------------------------------------------------------------------------------ views
 const VIEWS = {
+  "o01: from the pond": [new THREE.Vector3(-2.0, 1.2, -12.5), new THREE.Vector3(-1.6, 2.6, 0)],
+  "Sauvagère: walking 12 m": [new THREE.Vector3(0, 1.7, -12), new THREE.Vector3(1, 2.2, 0)],
+  "Sauvagère: 30 m": [new THREE.Vector3(6, 2.5, -30), new THREE.Vector3(1, 2.2, 0)],
+  "Sauvagère: grazing close-up": [new THREE.Vector3(-4.0, 1.6, -3.8), new THREE.Vector3(-6.0, 1.8, -0.4)],
   "cliff: walking 12 m": [new THREE.Vector3(-4, 1.7, -12), new THREE.Vector3(0, 2.0, 0)],
   "cliff: grazing close-up": [new THREE.Vector3(-3.4, 1.4, -2.8), new THREE.Vector3(-1.0, 1.6, 0.3)],
   "cliff: from the path 30 m": [new THREE.Vector3(14, 3, -26), new THREE.Vector3(0, 2.5, 0)],
@@ -81,7 +92,8 @@ const VIEWS = {
 function goView(v) {
   const [p, t] = VIEWS[v]; camera.position.copy(p); controls.target.copy(t); controls.update(); S.view = v;
 }
-goView(qp.get("view") && VIEWS[qp.get("view")] ? qp.get("view") : S.scene.includes("playground") && !S.scene.includes("cliff") ? "playground: walking 10 m" : "cliff: walking 12 m");
+const defView = (sc) => sc.includes("playground") && !sc.includes("cliff") ? "playground: walking 10 m" : sc.startsWith("Sauvagère") ? "o01: from the pond" : "cliff: walking 12 m";
+goView(qp.get("view") && VIEWS[qp.get("view")] ? qp.get("view") : defView(S.scene));
 
 /** camera along a line from `from` m to `to` m off the focus point, in `seconds` (the moving check through the LOD bands) */
 let dollyState = null;
@@ -130,7 +142,7 @@ if (qp.get("page") === "1") showPage();
 // ------------------------------------------------------------------------------------------------ panel
 const ui = new Panel({ title: "Park Kit Lab" });
 const fs = ui.addFolder("Scene");
-fs.add(S, "scene", SCENES).name("scene").onChange((v) => { build(v); goView(v.includes("playground") && !v.includes("cliff") ? "playground: walking 10 m" : "cliff: walking 12 m"); warm(); });
+fs.add(S, "scene", SCENES).name("scene").onChange((v) => { build(v); goView(defView(v)); warm(); });
 fs.add(S, "view", Object.keys(VIEWS)).name("view").onChange(goView);
 fs.add({ go: () => dolly("rock") }, "go").name("dolly through the rock LOD bands");
 fs.add({ go: () => dolly("play", 4, 200) }, "go").name("dolly through the playground bands");
@@ -147,7 +159,8 @@ fm.add(S, "post").name("post chain");
 fm.add(kitLook.ao, "value", 0, 1, 0.05).name("AO strength");
 fm.add(kitLook.aoDirect, "value", 0, 1, 0.05).name("AO on direct light");
 fm.add(kitLook.moss, "value", 0, 2, 0.05).name("moss");
-fm.add(S, "surface", ["surface_rubber", "surface_woodchip", "sand"]).name("safety surface slot").onChange((v) => fields.play.setSlot("surface_rubber", v));
+fm.add(S, "surface", ["surface_rubber", "surface_woodchip", "sand"]).name("safety surface slot").onChange((v) => { const o = play.info.slot_order; pgLook.surface.value = v === "surface_woodchip" ? o.length : o.indexOf(v); });
+fm.add(kitLook.normal, "value", 0, 2, 0.05).name("rock normal map");
 const fb = ui.addFolder("GPU");
 fb.add({ go: () => bench() }, "go").name("benchmark this view (kit vs none)");
 fb.add(S, "bench").name("result").listen();

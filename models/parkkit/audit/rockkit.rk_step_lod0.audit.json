@@ -1,13 +1,13 @@
 {
  "summary": {
-  "triangles": 705,
-  "vertices_welded": 377,
-  "open_edges": 49,
-  "rays": 1664,
+  "triangles": 698,
+  "vertices_welded": 375,
+  "open_edges": 50,
+  "rays": 1600,
   "blocking": 0,
   "warnings": 0,
   "counts": {},
-  "ms": 22
+  "ms": 20
  },
  "options": {
   "weld": 0.0001,
@@ -17,7 +17,7 @@
   "minOverlapArea": 0.00004,
   "depthEps": 1.1920928955078125e-7,
   "depthSafety": 64,
-  "quantum": 0.000021938234567642212,
+  "quantum": 0.00003332970663905144,
   "defaultMaxDistance": 120,
   "shallowCrossDeg": 12,
   "sliverAspect": 40,
@@ -52,8 +52,8 @@
   {
    "name": "rk_step_lod0",
    "slot": "rocaille_concrete",
-   "triangles": 705,
-   "maxDistance": 14
+   "triangles": 698,
+   "maxDistance": 13
   }
  ],
  "items": {},

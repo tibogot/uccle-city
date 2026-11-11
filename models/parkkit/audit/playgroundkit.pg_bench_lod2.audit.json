@@ -12,7 +12,7 @@
    "backtoback": 6,
    "seam": 10
   },
-  "ms": 14
+  "ms": 11
  },
  "options": {
   "weld": 0.0001,
@@ -56,14 +56,8 @@
  "parts": [
   {
    "name": "pg_bench_lod2",
-   "slot": "steel_painted_green",
-   "triangles": 138,
-   "maxDistance": 160
-  },
-  {
-   "name": "pg_bench_lod2",
-   "slot": "wood_bench",
-   "triangles": 196,
+   "slot": "playground",
+   "triangles": 334,
    "maxDistance": 160
   }
  ],
@@ -77,7 +71,7 @@
      0.431,
      -0.12
     ],
-    "part": "pg_bench_lod2/steel_painted_green",
+    "part": "pg_bench_lod2/playground",
     "aspect": 40,
     "longest": 0.482
    },
@@ -89,7 +83,7 @@
      0.441,
      0.04
     ],
-    "part": "pg_bench_lod2/steel_painted_green",
+    "part": "pg_bench_lod2/playground",
     "aspect": 40,
     "longest": 0.482
    },
@@ -101,7 +95,7 @@
      0.557,
      0.239
     ],
-    "part": "pg_bench_lod2/steel_painted_green",
+    "part": "pg_bench_lod2/playground",
     "aspect": 55,
     "longest": 0.439
    },
@@ -113,7 +107,7 @@
      0.701,
      0.269
     ],
-    "part": "pg_bench_lod2/steel_painted_green",
+    "part": "pg_bench_lod2/playground",
     "aspect": 55,
     "longest": 0.439
    },
@@ -125,7 +119,7 @@
      0.569,
      0.181
     ],
-    "part": "pg_bench_lod2/steel_painted_green",
+    "part": "pg_bench_lod2/playground",
     "aspect": 55,
     "longest": 0.439
    },
@@ -137,7 +131,7 @@
      0.713,
      0.211
     ],
-    "part": "pg_bench_lod2/steel_painted_green",
+    "part": "pg_bench_lod2/playground",
     "aspect": 55,
     "longest": 0.439
    },
@@ -149,7 +143,7 @@
      0.431,
      -0.12
     ],
-    "part": "pg_bench_lod2/steel_painted_green",
+    "part": "pg_bench_lod2/playground",
     "aspect": 40,
     "longest": 0.482
    },
@@ -161,7 +155,7 @@
      0.441,
      0.04
     ],
-    "part": "pg_bench_lod2/steel_painted_green",
+    "part": "pg_bench_lod2/playground",
     "aspect": 40,
     "longest": 0.482
    },
@@ -173,7 +167,7 @@
      0.557,
      0.239
     ],
-    "part": "pg_bench_lod2/steel_painted_green",
+    "part": "pg_bench_lod2/playground",
     "aspect": 55,
     "longest": 0.439
    },
@@ -185,7 +179,7 @@
      0.701,
      0.269
     ],
-    "part": "pg_bench_lod2/steel_painted_green",
+    "part": "pg_bench_lod2/playground",
     "aspect": 55,
     "longest": 0.439
    },
@@ -197,7 +191,7 @@
      0.569,
      0.181
     ],
-    "part": "pg_bench_lod2/steel_painted_green",
+    "part": "pg_bench_lod2/playground",
     "aspect": 55,
     "longest": 0.439
    },
@@ -209,7 +203,7 @@
      0.713,
      0.211
     ],
-    "part": "pg_bench_lod2/steel_painted_green",
+    "part": "pg_bench_lod2/playground",
     "aspect": 55,
     "longest": 0.439
    },
@@ -221,7 +215,7 @@
      0.44,
      -0.252
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -233,7 +227,7 @@
      0.443,
      -0.255
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -245,7 +239,7 @@
      0.47,
      -0.252
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -257,7 +251,7 @@
      0.467,
      -0.255
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -269,7 +263,7 @@
      0.44,
      -0.168
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -281,7 +275,7 @@
      0.443,
      -0.165
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -293,7 +287,7 @@
      0.47,
      -0.168
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -305,7 +299,7 @@
      0.467,
      -0.165
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -317,7 +311,7 @@
      0.458,
      -0.162
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -329,7 +323,7 @@
      0.452,
      -0.162
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -341,7 +335,7 @@
      0.458,
      -0.257
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -353,7 +347,7 @@
      0.452,
      -0.257
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -365,7 +359,7 @@
      0.44,
      -0.142
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -377,7 +371,7 @@
      0.443,
      -0.145
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -389,7 +383,7 @@
      0.47,
      -0.142
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -401,7 +395,7 @@
      0.467,
      -0.145
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -413,7 +407,7 @@
      0.44,
      -0.058
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -425,7 +419,7 @@
      0.443,
      -0.055
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -437,7 +431,7 @@
      0.47,
      -0.058
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -449,7 +443,7 @@
      0.467,
      -0.055
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -461,7 +455,7 @@
      0.458,
      -0.053
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -473,7 +467,7 @@
      0.452,
      -0.053
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -485,7 +479,7 @@
      0.458,
      -0.147
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -497,7 +491,7 @@
      0.452,
      -0.147
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -509,7 +503,7 @@
      0.44,
      -0.032
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -521,7 +515,7 @@
      0.443,
      -0.035
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -533,7 +527,7 @@
      0.47,
      -0.032
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -545,7 +539,7 @@
      0.467,
      -0.035
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -557,7 +551,7 @@
      0.44,
      0.052
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -569,7 +563,7 @@
      0.443,
      0.055
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -581,7 +575,7 @@
      0.47,
      0.052
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -593,7 +587,7 @@
      0.467,
      0.055
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -605,7 +599,7 @@
      0.458,
      0.057
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -617,7 +611,7 @@
      0.452,
      0.057
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -629,7 +623,7 @@
      0.458,
      -0.037
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -641,7 +635,7 @@
      0.452,
      -0.037
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -653,7 +647,7 @@
      0.44,
      0.078
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -665,7 +659,7 @@
      0.443,
      0.075
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -677,7 +671,7 @@
      0.47,
      0.078
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -689,7 +683,7 @@
      0.467,
      0.075
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -701,7 +695,7 @@
      0.44,
      0.162
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -713,7 +707,7 @@
      0.443,
      0.165
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -725,7 +719,7 @@
      0.47,
      0.162
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -737,7 +731,7 @@
      0.467,
      0.165
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -749,7 +743,7 @@
      0.458,
      0.167
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -761,7 +755,7 @@
      0.452,
      0.167
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -773,7 +767,7 @@
      0.458,
      0.072
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -785,7 +779,7 @@
      0.452,
      0.072
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -797,7 +791,7 @@
      0.516,
      0.265
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -809,7 +803,7 @@
      0.514,
      0.262
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -821,7 +815,7 @@
      0.522,
      0.236
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -833,7 +827,7 @@
      0.519,
      0.238
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -845,7 +839,7 @@
      0.598,
      0.283
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -857,7 +851,7 @@
      0.601,
      0.281
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -869,7 +863,7 @@
      0.604,
      0.254
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -881,7 +875,7 @@
      0.606,
      0.257
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -893,7 +887,7 @@
      0.607,
      0.266
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -905,7 +899,7 @@
      0.606,
      0.272
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -917,7 +911,7 @@
      0.514,
      0.246
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -929,7 +923,7 @@
      0.513,
      0.253
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -941,7 +935,7 @@
      0.636,
      0.29
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -953,7 +947,7 @@
      0.634,
      0.287
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -965,7 +959,7 @@
      0.642,
      0.261
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -977,7 +971,7 @@
      0.639,
      0.263
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -989,7 +983,7 @@
      0.718,
      0.308
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -1001,7 +995,7 @@
      0.721,
      0.306
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -1013,7 +1007,7 @@
      0.724,
      0.279
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -1025,7 +1019,7 @@
      0.726,
      0.282
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -1037,7 +1031,7 @@
      0.727,
      0.291
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -1049,7 +1043,7 @@
      0.726,
      0.297
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -1061,7 +1055,7 @@
      0.634,
      0.271
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -1073,7 +1067,7 @@
      0.633,
      0.278
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -1085,7 +1079,7 @@
      0.756,
      0.315
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -1097,7 +1091,7 @@
      0.754,
      0.312
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -1109,7 +1103,7 @@
      0.762,
      0.286
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -1121,7 +1115,7 @@
      0.759,
      0.288
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -1133,7 +1127,7 @@
      0.838,
      0.333
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -1145,7 +1139,7 @@
      0.841,
      0.331
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -1157,7 +1151,7 @@
      0.844,
      0.304
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -1169,7 +1163,7 @@
      0.846,
      0.307
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 158,
     "longest": 1.784
    },
@@ -1181,7 +1175,7 @@
      0.847,
      0.316
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -1193,7 +1187,7 @@
      0.846,
      0.323
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -1205,7 +1199,7 @@
      0.754,
      0.297
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    },
@@ -1217,7 +1211,7 @@
      0.753,
      0.303
     ],
-    "part": "pg_bench_lod2/wood_bench",
+    "part": "pg_bench_lod2/playground",
     "aspect": 94,
     "longest": 1.784
    }
@@ -1232,8 +1226,8 @@
      0.17
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/steel_painted_green"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "separation_mm": 2.01,
     "overlap_cm2": 1.1,
@@ -1256,8 +1250,8 @@
      0.176
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/steel_painted_green"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "separation_mm": 2.01,
     "overlap_cm2": 12.1,
@@ -1280,8 +1274,8 @@
      0.177
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/steel_painted_green"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "separation_mm": 2,
     "overlap_cm2": 12.8,
@@ -1304,8 +1298,8 @@
      0.202
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/steel_painted_green"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "separation_mm": 2.01,
     "overlap_cm2": 1.2,
@@ -1328,8 +1322,8 @@
      0.207
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/steel_painted_green"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "separation_mm": 2.01,
     "overlap_cm2": 2.2,
@@ -1352,8 +1346,8 @@
      0.212
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/steel_painted_green"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "separation_mm": 2.01,
     "overlap_cm2": 0.5,
@@ -1376,8 +1370,8 @@
      0.202
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/steel_painted_green"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "separation_mm": 2,
     "overlap_cm2": 1.2,
@@ -1400,8 +1394,8 @@
      0.208
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/steel_painted_green"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "separation_mm": 2,
     "overlap_cm2": 2.7,
@@ -1424,8 +1418,8 @@
      0.17
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/steel_painted_green"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "separation_mm": 2,
     "overlap_cm2": 1.1,
@@ -1448,8 +1442,8 @@
      0.178
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/steel_painted_green"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "separation_mm": 2,
     "overlap_cm2": 13.2,
@@ -1472,8 +1466,8 @@
      0.177
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/steel_painted_green"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "separation_mm": 2.01,
     "overlap_cm2": 12.8,
@@ -1496,8 +1490,8 @@
      0.207
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/steel_painted_green"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "separation_mm": 2,
     "overlap_cm2": 2.2,
@@ -1520,8 +1514,8 @@
      0.212
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/steel_painted_green"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "separation_mm": 2,
     "overlap_cm2": 0.5,
@@ -1544,8 +1538,8 @@
      0.202
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/steel_painted_green"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "separation_mm": 2.01,
     "overlap_cm2": 1.2,
@@ -1568,8 +1562,8 @@
      0.208
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/steel_painted_green"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "separation_mm": 2.01,
     "overlap_cm2": 2.7,
@@ -1594,8 +1588,8 @@
      -0.026
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/wood_bench"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "area": 0.00004
    },
@@ -1608,8 +1602,8 @@
      0.014
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/wood_bench"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "area": 0.00033
    },
@@ -1622,8 +1616,8 @@
      -0.026
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/wood_bench"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "area": 0.00005
    },
@@ -1636,8 +1630,8 @@
      0.014
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/wood_bench"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "area": 0.00052
    },
@@ -1650,8 +1644,8 @@
      0.006
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/wood_bench"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "area": 0.00034
    },
@@ -1664,8 +1658,8 @@
      0.006
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/wood_bench"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "area": 0.00051
    }
@@ -1680,8 +1674,8 @@
      0.08
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/wood_bench"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "length_m": 0.22,
     "pieces": 20,
@@ -1696,8 +1690,8 @@
      0.163
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/wood_bench"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "length_m": 0.11,
     "pieces": 20,
@@ -1712,8 +1706,8 @@
      0.078
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/wood_bench"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "length_m": 0.22,
     "pieces": 20,
@@ -1728,8 +1722,8 @@
      0.16
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/wood_bench"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "length_m": 0.11,
     "pieces": 20,
@@ -1744,8 +1738,8 @@
      -0.248
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/wood_bench"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "length_m": 0.16,
     "pieces": 16,
@@ -1760,8 +1754,8 @@
      -0.242
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/wood_bench"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "length_m": 0.15,
     "pieces": 14,
@@ -1776,8 +1770,8 @@
      0.178
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/steel_painted_green"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "length_m": 0.14,
     "pieces": 12,
@@ -1792,8 +1786,8 @@
      0.178
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/steel_painted_green"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "length_m": 0.14,
     "pieces": 12,
@@ -1808,8 +1802,8 @@
      0.05
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/wood_bench"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "length_m": 0.15,
     "pieces": 10,
@@ -1824,8 +1818,8 @@
      0.051
     ],
     "parts": [
-     "pg_bench_lod2/steel_painted_green",
-     "pg_bench_lod2/wood_bench"
+     "pg_bench_lod2/playground",
+     "pg_bench_lod2/playground"
     ],
     "length_m": 0.15,
     "pieces": 6,

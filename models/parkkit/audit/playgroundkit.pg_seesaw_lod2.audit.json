@@ -12,7 +12,7 @@
    "backtoback": 1,
    "seam": 7
   },
-  "ms": 6
+  "ms": 5
  },
  "options": {
   "weld": 0.0001,
@@ -56,26 +56,8 @@
  "parts": [
   {
    "name": "pg_seesaw_lod2",
-   "slot": "wood_stained",
-   "triangles": 172,
-   "maxDistance": 160
-  },
-  {
-   "name": "pg_seesaw_lod2",
-   "slot": "steel_galvanised",
-   "triangles": 36,
-   "maxDistance": 160
-  },
-  {
-   "name": "pg_seesaw_lod2",
-   "slot": "steel_painted_red",
-   "triangles": 72,
-   "maxDistance": 160
-  },
-  {
-   "name": "pg_seesaw_lod2",
-   "slot": "rubber_black",
-   "triangles": 254,
+   "slot": "playground",
+   "triangles": 534,
    "maxDistance": 160
   }
  ],
@@ -89,7 +71,7 @@
      0.173,
      0.196
     ],
-    "part": "pg_seesaw_lod2/wood_stained",
+    "part": "pg_seesaw_lod2/playground",
     "aspect": 41,
     "longest": 0.348
    },
@@ -101,7 +83,7 @@
      0.171,
      0.198
     ],
-    "part": "pg_seesaw_lod2/wood_stained",
+    "part": "pg_seesaw_lod2/playground",
     "aspect": 41,
     "longest": 0.348
    },
@@ -113,7 +95,7 @@
      0.171,
      -0.065
     ],
-    "part": "pg_seesaw_lod2/wood_stained",
+    "part": "pg_seesaw_lod2/playground",
     "aspect": 46,
     "longest": 0.388
    },
@@ -125,7 +107,7 @@
      0.173,
      0.065
     ],
-    "part": "pg_seesaw_lod2/wood_stained",
+    "part": "pg_seesaw_lod2/playground",
     "aspect": 46,
     "longest": 0.388
    },
@@ -137,7 +119,7 @@
      0.171,
      -0.065
     ],
-    "part": "pg_seesaw_lod2/wood_stained",
+    "part": "pg_seesaw_lod2/playground",
     "aspect": 46,
     "longest": 0.388
    },
@@ -149,7 +131,7 @@
      0.173,
      0.065
     ],
-    "part": "pg_seesaw_lod2/wood_stained",
+    "part": "pg_seesaw_lod2/playground",
     "aspect": 46,
     "longest": 0.388
    },
@@ -161,7 +143,7 @@
      0.171,
      -0.198
     ],
-    "part": "pg_seesaw_lod2/wood_stained",
+    "part": "pg_seesaw_lod2/playground",
     "aspect": 41,
     "longest": 0.348
    },
@@ -173,7 +155,7 @@
      0.173,
      -0.196
     ],
-    "part": "pg_seesaw_lod2/wood_stained",
+    "part": "pg_seesaw_lod2/playground",
     "aspect": 41,
     "longest": 0.348
    },
@@ -185,7 +167,7 @@
      0.532,
      0.056
     ],
-    "part": "pg_seesaw_lod2/wood_stained",
+    "part": "pg_seesaw_lod2/playground",
     "aspect": 376,
     "longest": 3.188
    },
@@ -197,7 +179,7 @@
      0.534,
      0.058
     ],
-    "part": "pg_seesaw_lod2/wood_stained",
+    "part": "pg_seesaw_lod2/playground",
     "aspect": 376,
     "longest": 3.188
    },
@@ -209,7 +191,7 @@
      0.628,
      0.056
     ],
-    "part": "pg_seesaw_lod2/wood_stained",
+    "part": "pg_seesaw_lod2/playground",
     "aspect": 376,
     "longest": 3.188
    },
@@ -221,7 +203,7 @@
      0.626,
      0.058
     ],
-    "part": "pg_seesaw_lod2/wood_stained",
+    "part": "pg_seesaw_lod2/playground",
     "aspect": 376,
     "longest": 3.188
    },
@@ -233,7 +215,7 @@
      0.626,
      -0.058
     ],
-    "part": "pg_seesaw_lod2/wood_stained",
+    "part": "pg_seesaw_lod2/playground",
     "aspect": 376,
     "longest": 3.188
    },
@@ -245,7 +227,7 @@
      0.628,
      -0.056
     ],
-    "part": "pg_seesaw_lod2/wood_stained",
+    "part": "pg_seesaw_lod2/playground",
     "aspect": 376,
     "longest": 3.188
    },
@@ -257,7 +239,7 @@
      0.532,
      -0.056
     ],
-    "part": "pg_seesaw_lod2/wood_stained",
+    "part": "pg_seesaw_lod2/playground",
     "aspect": 376,
     "longest": 3.188
    },
@@ -269,7 +251,7 @@
      0.534,
      -0.058
     ],
-    "part": "pg_seesaw_lod2/wood_stained",
+    "part": "pg_seesaw_lod2/playground",
     "aspect": 376,
     "longest": 3.188
    }
@@ -283,7 +265,7 @@
      0.915,
      0.049
     ],
-    "part": "pg_seesaw_lod2/steel_painted_red",
+    "part": "pg_seesaw_lod2/playground",
     "uses": 4
    },
    {
@@ -294,7 +276,7 @@
      0.676,
      0.156
     ],
-    "part": "pg_seesaw_lod2/steel_painted_red",
+    "part": "pg_seesaw_lod2/playground",
     "uses": 4
    },
    {
@@ -305,7 +287,7 @@
      0.915,
      -0.049
     ],
-    "part": "pg_seesaw_lod2/steel_painted_red",
+    "part": "pg_seesaw_lod2/playground",
     "uses": 4
    }
   ],
@@ -319,8 +301,8 @@
      0.153
     ],
     "parts": [
-     "pg_seesaw_lod2/steel_painted_red",
-     "pg_seesaw_lod2/steel_painted_red"
+     "pg_seesaw_lod2/playground",
+     "pg_seesaw_lod2/playground"
     ],
     "area": 0.0014
    }
@@ -335,8 +317,8 @@
      -0.149
     ],
     "parts": [
-     "pg_seesaw_lod2/steel_galvanised",
-     "pg_seesaw_lod2/steel_galvanised"
+     "pg_seesaw_lod2/playground",
+     "pg_seesaw_lod2/playground"
     ],
     "length_m": 0.33,
     "pieces": 20,
@@ -351,8 +333,8 @@
      0.161
     ],
     "parts": [
-     "pg_seesaw_lod2/steel_galvanised",
-     "pg_seesaw_lod2/steel_galvanised"
+     "pg_seesaw_lod2/playground",
+     "pg_seesaw_lod2/playground"
     ],
     "length_m": 0.33,
     "pieces": 20,
@@ -367,8 +349,8 @@
      0.126
     ],
     "parts": [
-     "pg_seesaw_lod2/wood_stained",
-     "pg_seesaw_lod2/wood_stained"
+     "pg_seesaw_lod2/playground",
+     "pg_seesaw_lod2/playground"
     ],
     "length_m": 0.98,
     "pieces": 18,
@@ -383,8 +365,8 @@
      0.054
     ],
     "parts": [
-     "pg_seesaw_lod2/wood_stained",
-     "pg_seesaw_lod2/wood_stained"
+     "pg_seesaw_lod2/playground",
+     "pg_seesaw_lod2/playground"
     ],
     "length_m": 0.91,
     "pieces": 14,
@@ -399,8 +381,8 @@
      0.056
     ],
     "parts": [
-     "pg_seesaw_lod2/wood_stained",
-     "pg_seesaw_lod2/wood_stained"
+     "pg_seesaw_lod2/playground",
+     "pg_seesaw_lod2/playground"
     ],
     "length_m": 0.91,
     "pieces": 14,
@@ -415,8 +397,8 @@
      -0.149
     ],
     "parts": [
-     "pg_seesaw_lod2/wood_stained",
-     "pg_seesaw_lod2/steel_galvanised"
+     "pg_seesaw_lod2/playground",
+     "pg_seesaw_lod2/playground"
     ],
     "length_m": 0.26,
     "pieces": 9,
@@ -431,8 +413,8 @@
      0.149
     ],
     "parts": [
-     "pg_seesaw_lod2/wood_stained",
-     "pg_seesaw_lod2/steel_galvanised"
+     "pg_seesaw_lod2/playground",
+     "pg_seesaw_lod2/playground"
     ],
     "length_m": 0.26,
     "pieces": 8,

@@ -1,6 +1,6 @@
 # Mesh audit (before pack): rockkit.nat_boulder_lod0
 
-2,432 triangles, 1,218 welded vertices, 0 open edges, 0 rays, 62 ms.
+930 triangles, 467 welded vertices, 0 open edges, 0 rays, 13 ms.
 
 **0 blocking**, 0 warnings. Clean (no blocking item).
 
@@ -10,4 +10,4 @@
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 
-Nodes: nat_boulder_lod0. Distances: {"rk_boulder_a_lod0":14,"rk_boulder_a_lod1":45,"rk_boulder_a_lod2":200,"rk_boulder_b_lod0":14,"rk_boulder_b_lod1":45,"rk_boulder_b_lod2":200,"rk_ledge_lod0":14,"rk_ledge_lod1":45,"rk_ledge_lod2":200,"rk_face_a_lod0":14,"rk_face_a_lod1":45,"rk_face_a_lod2":200,"rk_face_b_lod0":14,"rk_face_b_lod1":45,"rk_face_b_lod2":200,"rk_corner_lod0":14,"rk_corner_lod1":45,"rk_corner_lod2":200,"rk_step_lod0":14,"rk_step_lod1":45,"rk_step_lod2":200,"rk_grotto_lod0":14,"rk_grotto_lod1":45,"rk_grotto_lod2":200,"rk_channel_lod0":14,"rk_channel_lod1":45,"rk_channel_lod2":200,"nat_boulder_lod0":14,"nat_boulder_lod1":45,"nat_boulder_lod2":200,"nat_slab_lod0":14,"nat_slab_lod1":45,"nat_slab_lod2":200}. Quantum 0.022 mm. Offset 0,0,0.
+Nodes: nat_boulder_lod0. Distances: {"rk2_pillars_tall_lod0":13,"rk2_pillars_tall_lod1":32,"rk2_pillars_tall_lod2":200,"rk2_pillars_low_lod0":13,"rk2_pillars_low_lod1":32,"rk2_pillars_low_lod2":200,"rk2_pillar_lod0":13,"rk2_pillar_lod1":32,"rk2_pillar_lod2":200,"rk2_slabs_lod0":13,"rk2_slabs_lod1":32,"rk2_slabs_lod2":200,"rk2_cap_lod0":13,"rk2_cap_lod1":32,"rk2_cap_lod2":200,"rk2_foot_lod0":13,"rk2_foot_lod1":32,"rk2_foot_lod2":200,"rk2_grotto_lod0":13,"rk2_grotto_lod1":32,"rk2_grotto_lod2":200,"rk_step_lod0":13,"rk_step_lod1":32,"rk_step_lod2":200,"rk_channel_lod0":13,"rk_channel_lod1":32,"rk_channel_lod2":200,"nat_boulder_lod0":13,"nat_boulder_lod1":32,"nat_boulder_lod2":200,"nat_slab_lod0":13,"nat_slab_lod1":32,"nat_slab_lod2":200}. Quantum 0.033 mm. Offset 0,0,0.

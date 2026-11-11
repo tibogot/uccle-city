@@ -33,9 +33,9 @@ const NO_AUDIT = process.argv.includes("--no-audit");
 const CREASE_PG = 50;        // playground: 10-16 sided tubes stay smooth, box edges and panel faces stay sharp / flat
 const CREASE = +(process.argv.find((a) => a.startsWith("--crease="))?.slice(8) ?? 60);
 /** per piece / LOD simplification error overrides, where the checker found a fold (meshopt left two faces overlapping) */
-const ERR_OVERRIDE = {};
+const ERR_OVERRIDE = { "pg_slide:2": 0.025 };
 const CFG = KIT === "rock"
-  ? { lod: [{ err: 0.004 }, { err: 0.015, weld: true }, { err: 0.05, weld: true, prune: true }], range: [14, 45, 200] }
+  ? { lod: [{ err: 0.003 }, { err: 0.025, weld: true }, { err: 0.06, weld: true, prune: true }], range: [13, 32, 200] }
   : { lod: [{ err: 0 }, { err: 0.01, weld: true }, { err: 0.035, weld: true, prune: true }], range: [20, 55, 160] };
 
 // ------------------------------------------------------------------------------------------------ read the raw GLB
@@ -220,6 +220,20 @@ function renormal(m, creaseDeg) {
   }
   return { slot: m.slot, P: new Float32Array(P), N: new Float32Array(N), UV0: m.UV0 ? new Float32Array(U0) : null, UV1: m.UV1 ? new Float32Array(U1) : null, C: m.C ? new Float32Array(C) : null, I };
 }
+/** PLAYGROUND BATCHING: every slot of a piece merged into ONE primitive ("playground" material): COLOR_0.r holds the
+ *  slot's index in SLOT_ORDER (/ 32 + 1/64), COLOR_0.a the vertex AO (LOD1 / LOD2; 1 at LOD0). One draw per piece and LOD. */
+const SLOT_ORDER = ["wood_stained", "wood_log", "wood_bench", "steel_galvanised", "steel_painted_red", "steel_painted_green", "hpl_panel",
+  "hdpe_green", "hdpe_red", "rope_grey", "rubber_black", "stainless_steel", "surface_rubber", "sand"];
+function oneSlot(prims) {
+  for (const m of prims) {
+    const si = SLOT_ORDER.indexOf(m.slot); if (si < 0) throw new Error(`slot ${m.slot} not in SLOT_ORDER`);
+    const nv = m.P.length / 3, C = new Float32Array(nv * 4);
+    for (let i = 0; i < nv; i++) { C[i * 4] = si / 32 + 1 / 64; C[i * 4 + 3] = m.C ? m.C[i * 4 + 3] : 1; }
+    m.C = C; m.slot = "playground";
+  }
+  const all = mergeSlots(prims);
+  return all;
+}
 /** merge primitives per slot (main + detail / far): one draw per slot */
 function mergeSlots(list) {
   const by = new Map();
@@ -246,17 +260,21 @@ const out = [];            // { name, prims }
 const table = {};
 for (const piece of pieces) {
   const main = meshes[piece], detail = meshes[`${piece}__detail`] || [], far = meshes[`${piece}__far`] || [];
-  table[piece] = { lods: [], range: CFG.range };
+  // per-piece bands: the welded-mesh fence / gate (40 wires of 5 mm a panel) costs ~0.4 ms for 26 panels at LOD0: its
+  // wires stop at 8 m
+  const PIECE_RANGE = { pg_fence: [8, 35, 140], pg_gate: [8, 35, 140] };
+  table[piece] = { lods: [], range: PIECE_RANGE[piece] ?? CFG.range };
   CFG.lod.forEach((L0, k) => {
    // meshopt can leave a fold (two faces overlapping): the checker runs on the LOD as made, and the LOD is re-made with
    // a slightly different error until it is clean (at most 5 tries; the last one is kept and the final audit reports it)
    for (const mul of (k === 0 && KIT !== "rock") ? [1] : [1, 0.85, 1.15, 0.7, 1.3, 0.6, 1.45, 0.92, 1.07, 1.6]) {
     const L = { ...L0, err: (ERR_OVERRIDE[`${piece}:${k}`] ?? L0.err) * mul };
     let prims;
-    if (KIT === "rock") prims = main.map((m) => renormal(L.weld ? simplifyWelded(m, L.err, L.prune) : simplifySeams(m, L.err, false), CREASE));
-    else if (k === 0) prims = mergeSlots([...main, ...detail]).map((m) => renormal(m, CREASE_PG));
+    // rock LOD0 keeps smooth normals except folds over 85 deg (the normal map was baked against the low-poly's smooth normals)
+    if (KIT === "rock") prims = main.map((m) => renormal(L.weld ? simplifyWelded(m, L.err, L.prune) : simplifySeams(m, L.err, false), L.weld ? CREASE : 85));
+    else if (k === 0) prims = oneSlot(mergeSlots([...main, ...detail]).map((m) => renormal(m, CREASE_PG)));
     // LOD1 / LOD2: welded + vertex AO like the rocks (the hard-surface seams would block meshopt), + the far stand-ins
-    else prims = mergeSlots([...main.map((m) => simplifyWelded(m, L.err, L.prune)), ...far.map((m) => simplifyWelded(m, k === 2 ? L.err * 0.5 : 0.0005, false))]).map((m) => renormal(m, CREASE_PG));
+    else prims = oneSlot(mergeSlots([...main.map((m) => simplifyWelded(m, L.err, L.prune)), ...far.map((m) => simplifyWelded(m, k === 2 ? L.err * 0.5 : 0.0005, false))]).map((m) => renormal(m, CREASE_PG)));
     prims = prims.filter((m) => m.I.length);
     if (!NO_AUDIT && mul !== 1.6) {
       const r = auditParts(prims.map((m) => ({ name: `${piece}_lod${k}`, slot: m.slot, positions: m.P, normals: m.N, index: m.I, maxDistance: CFG.range[k] })), { ignoreBelow: KIT === "rock" ? 0.07 : -0.02 });
@@ -335,6 +353,7 @@ const infoFile = path.join(DIR, `${NAME}.json`);
 const info = JSON.parse(fs.readFileSync(infoFile));
 info.lods = table;
 info.glb_bytes = fs.statSync(DST).size;
+if (KIT !== "rock") info.slot_order = SLOT_ORDER;
 info.lod_ranges_m = { note: "each LOD's band END (camera distance); dithered cross-fades over the last 15 % of a band", bands: CFG.range };
 
 // ------------------------------------------------------------------------------------------------ mesh checker (0 blocking per piece and LOD)

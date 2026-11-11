@@ -312,11 +312,9 @@
     {
      "node": "pg_swing_lod0",
      "triangles": 13556,
-     "draws": 3,
+     "draws": 1,
      "slots": [
-      "wood_log",
-      "steel_galvanised",
-      "rubber_black"
+      "playground"
      ],
      "error_m": 0,
      "vertex_ao": false
@@ -324,11 +322,9 @@
     {
      "node": "pg_swing_lod1",
      "triangles": 1130,
-     "draws": 3,
+     "draws": 1,
      "slots": [
-      "wood_log",
-      "steel_galvanised",
-      "rubber_black"
+      "playground"
      ],
      "error_m": 0.01,
      "vertex_ao": true
@@ -336,11 +332,9 @@
     {
      "node": "pg_swing_lod2",
      "triangles": 456,
-     "draws": 3,
+     "draws": 1,
      "slots": [
-      "wood_log",
-      "steel_galvanised",
-      "rubber_black"
+      "playground"
      ],
      "error_m": 0.035,
      "vertex_ao": true
@@ -357,13 +351,9 @@
     {
      "node": "pg_slide_lod0",
      "triangles": 7348,
-     "draws": 5,
+     "draws": 1,
      "slots": [
-      "wood_stained",
-      "hpl_panel",
-      "steel_galvanised",
-      "hdpe_green",
-      "stainless_steel"
+      "playground"
      ],
      "error_m": 0,
      "vertex_ao": false
@@ -371,29 +361,21 @@
     {
      "node": "pg_slide_lod1",
      "triangles": 3318,
-     "draws": 5,
+     "draws": 1,
      "slots": [
-      "wood_stained",
-      "hpl_panel",
-      "steel_galvanised",
-      "hdpe_green",
-      "stainless_steel"
+      "playground"
      ],
      "error_m": 0.0085,
      "vertex_ao": true
     },
     {
      "node": "pg_slide_lod2",
-     "triangles": 1460,
-     "draws": 5,
+     "triangles": 2244,
+     "draws": 1,
      "slots": [
-      "wood_stained",
-      "hpl_panel",
-      "steel_galvanised",
-      "hdpe_green",
-      "stainless_steel"
+      "playground"
      ],
-     "error_m": 0.035,
+     "error_m": 0.017499999999999998,
      "vertex_ao": true
     }
    ],
@@ -408,15 +390,9 @@
     {
      "node": "pg_climb_lod0",
      "triangles": 6916,
-     "draws": 7,
+     "draws": 1,
      "slots": [
-      "wood_stained",
-      "steel_galvanised",
-      "hdpe_green",
-      "steel_painted_red",
-      "hpl_panel",
-      "hdpe_red",
-      "rope_grey"
+      "playground"
      ],
      "error_m": 0,
      "vertex_ao": false
@@ -424,15 +400,9 @@
     {
      "node": "pg_climb_lod1",
      "triangles": 2788,
-     "draws": 7,
+     "draws": 1,
      "slots": [
-      "wood_stained",
-      "steel_galvanised",
-      "hdpe_green",
-      "steel_painted_red",
-      "hpl_panel",
-      "hdpe_red",
-      "rope_grey"
+      "playground"
      ],
      "error_m": 0.01,
      "vertex_ao": true
@@ -440,15 +410,9 @@
     {
      "node": "pg_climb_lod2",
      "triangles": 1514,
-     "draws": 7,
+     "draws": 1,
      "slots": [
-      "wood_stained",
-      "steel_galvanised",
-      "hdpe_green",
-      "steel_painted_red",
-      "hpl_panel",
-      "hdpe_red",
-      "rope_grey"
+      "playground"
      ],
      "error_m": 0.035,
      "vertex_ao": true
@@ -465,11 +429,9 @@
     {
      "node": "pg_spring_lod0",
      "triangles": 2496,
-     "draws": 3,
+     "draws": 1,
      "slots": [
-      "steel_galvanised",
-      "hdpe_red",
-      "hdpe_green"
+      "playground"
      ],
      "error_m": 0,
      "vertex_ao": false
@@ -477,11 +439,9 @@
     {
      "node": "pg_spring_lod1",
      "triangles": 1012,
-     "draws": 3,
+     "draws": 1,
      "slots": [
-      "steel_galvanised",
-      "hdpe_red",
-      "hdpe_green"
+      "playground"
      ],
      "error_m": 0.01,
      "vertex_ao": true
@@ -489,11 +449,9 @@
     {
      "node": "pg_spring_lod2",
      "triangles": 380,
-     "draws": 3,
+     "draws": 1,
      "slots": [
-      "steel_galvanised",
-      "hdpe_red",
-      "hdpe_green"
+      "playground"
      ],
      "error_m": 0.035,
      "vertex_ao": true
@@ -510,10 +468,9 @@
     {
      "node": "pg_sandpit_lod0",
      "triangles": 1080,
-     "draws": 2,
+     "draws": 1,
      "slots": [
-      "wood_log",
-      "sand"
+      "playground"
      ],
      "error_m": 0,
      "vertex_ao": false
@@ -521,10 +478,9 @@
     {
      "node": "pg_sandpit_lod1",
      "triangles": 466,
-     "draws": 2,
+     "draws": 1,
      "slots": [
-      "wood_log",
-      "sand"
+      "playground"
      ],
      "error_m": 0.01,
      "vertex_ao": true
@@ -532,10 +488,9 @@
     {
      "node": "pg_sandpit_lod2",
      "triangles": 192,
-     "draws": 2,
+     "draws": 1,
      "slots": [
-      "wood_log",
-      "sand"
+      "playground"
      ],
      "error_m": 0.035,
      "vertex_ao": true
@@ -552,12 +507,9 @@
     {
      "node": "pg_seesaw_lod0",
      "triangles": 1808,
-     "draws": 4,
+     "draws": 1,
      "slots": [
-      "wood_stained",
-      "steel_galvanised",
-      "steel_painted_red",
-      "rubber_black"
+      "playground"
      ],
      "error_m": 0,
      "vertex_ao": false
@@ -565,12 +517,9 @@
     {
      "node": "pg_seesaw_lod1",
      "triangles": 1142,
-     "draws": 4,
+     "draws": 1,
      "slots": [
-      "wood_stained",
-      "steel_galvanised",
-      "steel_painted_red",
-      "rubber_black"
+      "playground"
      ],
      "error_m": 0.01,
      "vertex_ao": true
@@ -578,12 +527,9 @@
     {
      "node": "pg_seesaw_lod2",
      "triangles": 534,
-     "draws": 4,
+     "draws": 1,
      "slots": [
-      "wood_stained",
-      "steel_galvanised",
-      "steel_painted_red",
-      "rubber_black"
+      "playground"
      ],
      "error_m": 0.035,
      "vertex_ao": true
@@ -600,10 +546,9 @@
     {
      "node": "pg_bench_lod0",
      "triangles": 1004,
-     "draws": 2,
+     "draws": 1,
      "slots": [
-      "steel_painted_green",
-      "wood_bench"
+      "playground"
      ],
      "error_m": 0,
      "vertex_ao": false
@@ -611,10 +556,9 @@
     {
      "node": "pg_bench_lod1",
      "triangles": 628,
-     "draws": 2,
+     "draws": 1,
      "slots": [
-      "steel_painted_green",
-      "wood_bench"
+      "playground"
      ],
      "error_m": 0.01,
      "vertex_ao": true
@@ -622,10 +566,9 @@
     {
      "node": "pg_bench_lod2",
      "triangles": 334,
-     "draws": 2,
+     "draws": 1,
      "slots": [
-      "steel_painted_green",
-      "wood_bench"
+      "playground"
      ],
      "error_m": 0.035,
      "vertex_ao": true
@@ -644,7 +587,7 @@
      "triangles": 1446,
      "draws": 1,
      "slots": [
-      "steel_painted_green"
+      "playground"
      ],
      "error_m": 0,
      "vertex_ao": false
@@ -654,7 +597,7 @@
      "triangles": 496,
      "draws": 1,
      "slots": [
-      "steel_painted_green"
+      "playground"
      ],
      "error_m": 0.01,
      "vertex_ao": true
@@ -664,16 +607,16 @@
      "triangles": 138,
      "draws": 1,
      "slots": [
-      "steel_painted_green"
+      "playground"
      ],
      "error_m": 0.035,
      "vertex_ao": true
     }
    ],
    "range": [
-    20,
-    55,
-    160
+    8,
+    35,
+    140
    ]
   },
   "pg_gate": {
@@ -681,10 +624,9 @@
     {
      "node": "pg_gate_lod0",
      "triangles": 1592,
-     "draws": 2,
+     "draws": 1,
      "slots": [
-      "steel_painted_green",
-      "steel_galvanised"
+      "playground"
      ],
      "error_m": 0,
      "vertex_ao": false
@@ -692,10 +634,9 @@
     {
      "node": "pg_gate_lod1",
      "triangles": 642,
-     "draws": 2,
+     "draws": 1,
      "slots": [
-      "steel_painted_green",
-      "steel_galvanised"
+      "playground"
      ],
      "error_m": 0.01,
      "vertex_ao": true
@@ -703,19 +644,18 @@
     {
      "node": "pg_gate_lod2",
      "triangles": 296,
-     "draws": 2,
+     "draws": 1,
      "slots": [
-      "steel_painted_green",
-      "steel_galvanised"
+      "playground"
      ],
      "error_m": 0.035,
      "vertex_ao": true
     }
    ],
    "range": [
-    20,
-    55,
-    160
+    8,
+    35,
+    140
    ]
   },
   "pg_surface": {
@@ -725,7 +665,7 @@
      "triangles": 250,
      "draws": 1,
      "slots": [
-      "surface_rubber"
+      "playground"
      ],
      "error_m": 0,
      "vertex_ao": false
@@ -735,7 +675,7 @@
      "triangles": 170,
      "draws": 1,
      "slots": [
-      "surface_rubber"
+      "playground"
      ],
      "error_m": 0.01,
      "vertex_ao": true
@@ -745,7 +685,7 @@
      "triangles": 74,
      "draws": 1,
      "slots": [
-      "surface_rubber"
+      "playground"
      ],
      "error_m": 0.035,
      "vertex_ao": true
@@ -813,11 +753,11 @@
   },
   "pg_slide_lod2": {
    "blocking": 0,
-   "warnings": 289,
+   "warnings": 360,
    "counts": {
-    "sliver": 289,
-    "backtoback": 5,
-    "seam": 16
+    "sliver": 360,
+    "backtoback": 8,
+    "seam": 20
    }
   },
   "pg_climb_lod0": {
@@ -1036,5 +976,21 @@
    }
   }
  },
- "glb_bytes": 1451628
+ "glb_bytes": 1345288,
+ "slot_order": [
+  "wood_stained",
+  "wood_log",
+  "wood_bench",
+  "steel_galvanised",
+  "steel_painted_red",
+  "steel_painted_green",
+  "hpl_panel",
+  "hdpe_green",
+  "hdpe_red",
+  "rope_grey",
+  "rubber_black",
+  "stainless_steel",
+  "surface_rubber",
+  "sand"
+ ]
 }

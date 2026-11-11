@@ -12,7 +12,7 @@
    "near": 4,
    "seam": 163
   },
-  "ms": 452
+  "ms": 208
  },
  "options": {
   "weld": 0.0001,
@@ -56,44 +56,8 @@
  "parts": [
   {
    "name": "pg_climb_lod0",
-   "slot": "wood_stained",
-   "triangles": 2896,
-   "maxDistance": 20
-  },
-  {
-   "name": "pg_climb_lod0",
-   "slot": "steel_galvanised",
-   "triangles": 544,
-   "maxDistance": 20
-  },
-  {
-   "name": "pg_climb_lod0",
-   "slot": "hdpe_green",
-   "triangles": 852,
-   "maxDistance": 20
-  },
-  {
-   "name": "pg_climb_lod0",
-   "slot": "steel_painted_red",
-   "triangles": 532,
-   "maxDistance": 20
-  },
-  {
-   "name": "pg_climb_lod0",
-   "slot": "hpl_panel",
-   "triangles": 236,
-   "maxDistance": 20
-  },
-  {
-   "name": "pg_climb_lod0",
-   "slot": "hdpe_red",
-   "triangles": 320,
-   "maxDistance": 20
-  },
-  {
-   "name": "pg_climb_lod0",
-   "slot": "rope_grey",
-   "triangles": 1536,
+   "slot": "playground",
+   "triangles": 6916,
    "maxDistance": 20
   }
  ],
@@ -107,8 +71,8 @@
      1.897,
      0.644
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 488,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 487,
     "longest": 2.984
    },
    {
@@ -119,8 +83,8 @@
      0.903,
      0.643
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 488,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 487,
     "longest": 2.984
    },
    {
@@ -131,8 +95,8 @@
      1.897,
      0.641
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 488,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 487,
     "longest": 2.984
    },
    {
@@ -143,8 +107,8 @@
      0.903,
      0.639
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 488,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 487,
     "longest": 2.984
    },
    {
@@ -155,8 +119,8 @@
      0.903,
      0.556
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 488,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 487,
     "longest": 2.984
    },
    {
@@ -167,8 +131,8 @@
      1.897,
      0.557
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 488,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 487,
     "longest": 2.984
    },
    {
@@ -179,7 +143,7 @@
      0.903,
      0.559
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 487,
     "longest": 2.984
    },
@@ -191,7 +155,7 @@
      1.897,
      0.561
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 487,
     "longest": 2.984
    },
@@ -203,7 +167,7 @@
      0.903,
      0.561
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 487,
     "longest": 2.984
    },
@@ -215,7 +179,7 @@
      1.897,
      0.559
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 487,
     "longest": 2.984
    },
@@ -227,7 +191,7 @@
      0.903,
      0.557
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 487,
     "longest": 2.984
    },
@@ -239,7 +203,7 @@
      1.897,
      0.556
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 487,
     "longest": 2.984
    },
@@ -251,7 +215,7 @@
      0.903,
      0.644
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 487,
     "longest": 2.984
    },
@@ -263,7 +227,7 @@
      1.897,
      0.643
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 487,
     "longest": 2.984
    },
@@ -275,8 +239,8 @@
      0.903,
      0.641
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 488,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 487,
     "longest": 2.984
    },
    {
@@ -287,8 +251,8 @@
      1.897,
      0.639
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 488,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 487,
     "longest": 2.984
    },
    {
@@ -299,7 +263,7 @@
      1.897,
      0.612
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 40,
     "longest": 2.985
    },
@@ -311,7 +275,7 @@
      0.903,
      0.588
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 40,
     "longest": 2.985
    },
@@ -323,7 +287,7 @@
      1.897,
      0.645
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 40,
     "longest": 2.985
    },
@@ -335,7 +299,7 @@
      0.903,
      0.645
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 40,
     "longest": 2.985
    },
@@ -347,7 +311,7 @@
      1.897,
      0.555
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 40,
     "longest": 2.985
    },
@@ -359,7 +323,7 @@
      0.903,
      0.555
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 40,
     "longest": 2.985
    },
@@ -371,7 +335,7 @@
      1.897,
      0.588
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 40,
     "longest": 2.985
    },
@@ -383,7 +347,7 @@
      0.903,
      0.612
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 40,
     "longest": 2.985
    },
@@ -395,7 +359,7 @@
      1.564,
      -0.556
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 406,
     "longest": 2.484
    },
@@ -407,7 +371,7 @@
      0.736,
      -0.557
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 406,
     "longest": 2.484
    },
@@ -419,7 +383,7 @@
      1.564,
      -0.559
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 405,
     "longest": 2.484
    },
@@ -431,7 +395,7 @@
      0.736,
      -0.561
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 405,
     "longest": 2.484
    },
@@ -443,7 +407,7 @@
      0.736,
      -0.644
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 406,
     "longest": 2.484
    },
@@ -455,7 +419,7 @@
      1.564,
      -0.643
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 406,
     "longest": 2.484
    },
@@ -467,8 +431,8 @@
      0.736,
      -0.641
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 406,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 405,
     "longest": 2.484
    },
    {
@@ -479,8 +443,8 @@
      1.564,
      -0.639
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 406,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 405,
     "longest": 2.484
    },
    {
@@ -491,8 +455,8 @@
      0.736,
      -0.639
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 406,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 405,
     "longest": 2.484
    },
    {
@@ -503,8 +467,8 @@
      1.564,
      -0.641
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 406,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 405,
     "longest": 2.484
    },
    {
@@ -515,7 +479,7 @@
      0.736,
      -0.643
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 405,
     "longest": 2.484
    },
@@ -527,7 +491,7 @@
      1.564,
      -0.644
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 405,
     "longest": 2.484
    },
@@ -539,7 +503,7 @@
      0.736,
      -0.556
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 405,
     "longest": 2.484
    },
@@ -551,7 +515,7 @@
      1.564,
      -0.557
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 405,
     "longest": 2.484
    },
@@ -563,7 +527,7 @@
      0.736,
      -0.559
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 405,
     "longest": 2.484
    },
@@ -575,7 +539,7 @@
      1.564,
      -0.561
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 405,
     "longest": 2.484
    },
@@ -587,7 +551,7 @@
      1.564,
      0.644
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 405,
     "longest": 2.484
    },
@@ -599,7 +563,7 @@
      0.736,
      0.643
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 405,
     "longest": 2.484
    },
@@ -611,8 +575,8 @@
      1.564,
      0.641
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 406,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 405,
     "longest": 2.484
    },
    {
@@ -623,8 +587,8 @@
      0.736,
      0.639
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 406,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 405,
     "longest": 2.484
    },
    {
@@ -635,7 +599,7 @@
      0.736,
      0.556
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 405,
     "longest": 2.484
    },
@@ -647,7 +611,7 @@
      1.564,
      0.557
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 405,
     "longest": 2.484
    },
@@ -659,7 +623,7 @@
      0.736,
      0.559
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 405,
     "longest": 2.484
    },
@@ -671,7 +635,7 @@
      1.564,
      0.561
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 405,
     "longest": 2.484
    },
@@ -683,7 +647,7 @@
      0.736,
      0.561
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 405,
     "longest": 2.484
    },
@@ -695,7 +659,7 @@
      1.564,
      0.559
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 405,
     "longest": 2.484
    },
@@ -707,7 +671,7 @@
      0.736,
      0.557
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 406,
     "longest": 2.484
    },
@@ -719,7 +683,7 @@
      1.564,
      0.556
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 406,
     "longest": 2.484
    },
@@ -731,7 +695,7 @@
      0.736,
      0.644
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 406,
     "longest": 2.484
    },
@@ -743,7 +707,7 @@
      1.564,
      0.643
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 406,
     "longest": 2.484
    },
@@ -755,8 +719,8 @@
      0.736,
      0.641
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 406,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 405,
     "longest": 2.484
    },
    {
@@ -767,8 +731,8 @@
      1.564,
      0.639
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 406,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 405,
     "longest": 2.484
    },
    {
@@ -779,7 +743,7 @@
      1.897,
      -0.556
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 487,
     "longest": 2.984
    },
@@ -791,7 +755,7 @@
      0.903,
      -0.557
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 487,
     "longest": 2.984
    },
@@ -803,7 +767,7 @@
      1.897,
      -0.559
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 487,
     "longest": 2.984
    },
@@ -815,7 +779,7 @@
      0.903,
      -0.561
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 487,
     "longest": 2.984
    },
@@ -827,7 +791,7 @@
      0.903,
      -0.644
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 487,
     "longest": 2.984
    },
@@ -839,7 +803,7 @@
      1.897,
      -0.643
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 487,
     "longest": 2.984
    },
@@ -851,8 +815,8 @@
      0.903,
      -0.641
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 488,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 487,
     "longest": 2.984
    },
    {
@@ -863,8 +827,8 @@
      1.897,
      -0.639
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 488,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 487,
     "longest": 2.984
    },
    {
@@ -875,8 +839,8 @@
      0.903,
      -0.639
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 488,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 487,
     "longest": 2.984
    },
    {
@@ -887,8 +851,8 @@
      1.897,
      -0.641
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 488,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 487,
     "longest": 2.984
    },
    {
@@ -899,8 +863,8 @@
      0.903,
      -0.643
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 488,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 487,
     "longest": 2.984
    },
    {
@@ -911,8 +875,8 @@
      1.897,
      -0.644
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 488,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 487,
     "longest": 2.984
    },
    {
@@ -923,8 +887,8 @@
      0.903,
      -0.556
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 488,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 487,
     "longest": 2.984
    },
    {
@@ -935,8 +899,8 @@
      1.897,
      -0.557
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 488,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 487,
     "longest": 2.984
    },
    {
@@ -947,7 +911,7 @@
      0.903,
      -0.559
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 487,
     "longest": 2.984
    },
@@ -959,7 +923,7 @@
      1.897,
      -0.561
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 487,
     "longest": 2.984
    },
@@ -971,7 +935,7 @@
      1.897,
      -0.588
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 40,
     "longest": 2.985
    },
@@ -983,7 +947,7 @@
      0.903,
      -0.612
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 40,
     "longest": 2.985
    },
@@ -995,7 +959,7 @@
      1.897,
      -0.555
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 40,
     "longest": 2.985
    },
@@ -1007,7 +971,7 @@
      0.903,
      -0.555
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 40,
     "longest": 2.985
    },
@@ -1019,7 +983,7 @@
      1.897,
      -0.645
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 40,
     "longest": 2.985
    },
@@ -1031,7 +995,7 @@
      0.903,
      -0.645
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 40,
     "longest": 2.985
    },
@@ -1043,7 +1007,7 @@
      1.897,
      -0.612
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 40,
     "longest": 2.985
    },
@@ -1055,7 +1019,7 @@
      0.903,
      -0.588
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 40,
     "longest": 2.985
    },
@@ -1067,8 +1031,8 @@
      1.47,
      0.444
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -1079,8 +1043,8 @@
      1.471,
      0.443
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -1091,7 +1055,7 @@
      1.472,
      0.442
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1103,7 +1067,7 @@
      1.473,
      0.441
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1115,8 +1079,8 @@
      1.5,
      0.444
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -1127,8 +1091,8 @@
      1.499,
      0.443
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -1139,7 +1103,7 @@
      1.498,
      0.442
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1151,7 +1115,7 @@
      1.497,
      0.441
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1163,8 +1127,8 @@
      1.47,
      0.546
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -1175,8 +1139,8 @@
      1.471,
      0.547
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -1187,7 +1151,7 @@
      1.472,
      0.548
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1199,7 +1163,7 @@
      1.473,
      0.549
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1211,8 +1175,8 @@
      1.5,
      0.546
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -1223,8 +1187,8 @@
      1.499,
      0.547
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -1235,7 +1199,7 @@
      1.498,
      0.548
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1247,7 +1211,7 @@
      1.497,
      0.549
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1259,7 +1223,7 @@
      1.489,
      0.549
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -1271,7 +1235,7 @@
      1.481,
      0.549
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -1283,7 +1247,7 @@
      1.489,
      0.441
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -1295,7 +1259,7 @@
      1.481,
      0.441
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -1307,7 +1271,7 @@
      1.47,
      0.324
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 361,
     "longest": 1.102
    },
@@ -1319,7 +1283,7 @@
      1.471,
      0.323
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 361,
     "longest": 1.102
    },
@@ -1331,7 +1295,7 @@
      1.472,
      0.322
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1343,7 +1307,7 @@
      1.473,
      0.321
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1355,7 +1319,7 @@
      1.5,
      0.324
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 361,
     "longest": 1.102
    },
@@ -1367,7 +1331,7 @@
      1.499,
      0.323
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 361,
     "longest": 1.102
    },
@@ -1379,7 +1343,7 @@
      1.498,
      0.322
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1391,7 +1355,7 @@
      1.497,
      0.321
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1403,7 +1367,7 @@
      1.47,
      0.426
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 361,
     "longest": 1.102
    },
@@ -1415,7 +1379,7 @@
      1.471,
      0.427
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 361,
     "longest": 1.102
    },
@@ -1427,7 +1391,7 @@
      1.472,
      0.428
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1439,7 +1403,7 @@
      1.473,
      0.429
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1451,7 +1415,7 @@
      1.5,
      0.426
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 361,
     "longest": 1.102
    },
@@ -1463,7 +1427,7 @@
      1.499,
      0.427
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 361,
     "longest": 1.102
    },
@@ -1475,7 +1439,7 @@
      1.498,
      0.428
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1487,7 +1451,7 @@
      1.497,
      0.429
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1499,7 +1463,7 @@
      1.489,
      0.429
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -1511,7 +1475,7 @@
      1.481,
      0.429
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -1523,7 +1487,7 @@
      1.489,
      0.321
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -1535,7 +1499,7 @@
      1.481,
      0.321
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -1547,8 +1511,8 @@
      1.47,
      0.204
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -1559,8 +1523,8 @@
      1.471,
      0.203
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -1571,7 +1535,7 @@
      1.472,
      0.202
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1583,7 +1547,7 @@
      1.473,
      0.201
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1595,8 +1559,8 @@
      1.5,
      0.204
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -1607,8 +1571,8 @@
      1.499,
      0.203
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -1619,7 +1583,7 @@
      1.498,
      0.202
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1631,7 +1595,7 @@
      1.497,
      0.201
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1643,8 +1607,8 @@
      1.47,
      0.306
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -1655,8 +1619,8 @@
      1.471,
      0.307
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -1667,7 +1631,7 @@
      1.472,
      0.308
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1679,7 +1643,7 @@
      1.473,
      0.309
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1691,8 +1655,8 @@
      1.5,
      0.306
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -1703,8 +1667,8 @@
      1.499,
      0.307
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -1715,7 +1679,7 @@
      1.498,
      0.308
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1727,7 +1691,7 @@
      1.497,
      0.309
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1739,7 +1703,7 @@
      1.489,
      0.309
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -1751,7 +1715,7 @@
      1.481,
      0.309
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -1763,7 +1727,7 @@
      1.489,
      0.201
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -1775,7 +1739,7 @@
      1.481,
      0.201
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -1787,8 +1751,8 @@
      1.47,
      0.084
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -1799,8 +1763,8 @@
      1.471,
      0.083
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -1811,7 +1775,7 @@
      1.472,
      0.082
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1823,7 +1787,7 @@
      1.473,
      0.081
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1835,8 +1799,8 @@
      1.5,
      0.084
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -1847,8 +1811,8 @@
      1.499,
      0.083
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -1859,7 +1823,7 @@
      1.498,
      0.082
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1871,7 +1835,7 @@
      1.497,
      0.081
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1883,8 +1847,8 @@
      1.47,
      0.186
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -1895,8 +1859,8 @@
      1.471,
      0.187
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -1907,7 +1871,7 @@
      1.472,
      0.188
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1919,7 +1883,7 @@
      1.473,
      0.189
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1931,8 +1895,8 @@
      1.5,
      0.186
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -1943,8 +1907,8 @@
      1.499,
      0.187
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -1955,7 +1919,7 @@
      1.498,
      0.188
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1967,7 +1931,7 @@
      1.497,
      0.189
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -1979,7 +1943,7 @@
      1.489,
      0.189
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -1991,7 +1955,7 @@
      1.481,
      0.189
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -2003,7 +1967,7 @@
      1.489,
      0.081
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -2015,7 +1979,7 @@
      1.481,
      0.081
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -2027,7 +1991,7 @@
      1.47,
      -0.036
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 361,
     "longest": 1.102
    },
@@ -2039,7 +2003,7 @@
      1.471,
      -0.037
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 361,
     "longest": 1.102
    },
@@ -2051,7 +2015,7 @@
      1.472,
      -0.038
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2063,7 +2027,7 @@
      1.473,
      -0.039
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2075,7 +2039,7 @@
      1.5,
      -0.036
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 361,
     "longest": 1.102
    },
@@ -2087,7 +2051,7 @@
      1.499,
      -0.037
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 361,
     "longest": 1.102
    },
@@ -2099,7 +2063,7 @@
      1.498,
      -0.038
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2111,7 +2075,7 @@
      1.497,
      -0.039
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2123,7 +2087,7 @@
      1.47,
      0.066
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 361,
     "longest": 1.102
    },
@@ -2135,7 +2099,7 @@
      1.471,
      0.067
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 361,
     "longest": 1.102
    },
@@ -2147,7 +2111,7 @@
      1.472,
      0.068
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2159,7 +2123,7 @@
      1.473,
      0.069
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2171,7 +2135,7 @@
      1.5,
      0.066
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 361,
     "longest": 1.102
    },
@@ -2183,7 +2147,7 @@
      1.499,
      0.067
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 361,
     "longest": 1.102
    },
@@ -2195,7 +2159,7 @@
      1.498,
      0.068
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2207,7 +2171,7 @@
      1.497,
      0.069
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2219,7 +2183,7 @@
      1.489,
      0.069
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -2231,7 +2195,7 @@
      1.481,
      0.069
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -2243,7 +2207,7 @@
      1.489,
      -0.039
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -2255,7 +2219,7 @@
      1.481,
      -0.039
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -2267,8 +2231,8 @@
      1.47,
      -0.156
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -2279,8 +2243,8 @@
      1.471,
      -0.157
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -2291,7 +2255,7 @@
      1.472,
      -0.158
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2303,7 +2267,7 @@
      1.473,
      -0.159
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2315,8 +2279,8 @@
      1.5,
      -0.156
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -2327,8 +2291,8 @@
      1.499,
      -0.157
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -2339,7 +2303,7 @@
      1.498,
      -0.158
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2351,7 +2315,7 @@
      1.497,
      -0.159
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2363,8 +2327,8 @@
      1.47,
      -0.054
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -2375,8 +2339,8 @@
      1.471,
      -0.053
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -2387,7 +2351,7 @@
      1.472,
      -0.052
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2399,7 +2363,7 @@
      1.473,
      -0.051
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2411,8 +2375,8 @@
      1.5,
      -0.054
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -2423,8 +2387,8 @@
      1.499,
      -0.053
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -2435,7 +2399,7 @@
      1.498,
      -0.052
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2447,7 +2411,7 @@
      1.497,
      -0.051
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2459,7 +2423,7 @@
      1.489,
      -0.051
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -2471,7 +2435,7 @@
      1.481,
      -0.051
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -2483,7 +2447,7 @@
      1.489,
      -0.159
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -2495,7 +2459,7 @@
      1.481,
      -0.159
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -2507,8 +2471,8 @@
      1.47,
      -0.276
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -2519,8 +2483,8 @@
      1.471,
      -0.277
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -2531,7 +2495,7 @@
      1.472,
      -0.278
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2543,7 +2507,7 @@
      1.473,
      -0.279
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2555,8 +2519,8 @@
      1.5,
      -0.276
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -2567,8 +2531,8 @@
      1.499,
      -0.277
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -2579,7 +2543,7 @@
      1.498,
      -0.278
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2591,7 +2555,7 @@
      1.497,
      -0.279
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2603,8 +2567,8 @@
      1.47,
      -0.174
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -2615,8 +2579,8 @@
      1.471,
      -0.173
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -2627,7 +2591,7 @@
      1.472,
      -0.172
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2639,7 +2603,7 @@
      1.473,
      -0.171
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2651,8 +2615,8 @@
      1.5,
      -0.174
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -2663,8 +2627,8 @@
      1.499,
      -0.173
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -2675,7 +2639,7 @@
      1.498,
      -0.172
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2687,7 +2651,7 @@
      1.497,
      -0.171
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2699,7 +2663,7 @@
      1.489,
      -0.171
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -2711,7 +2675,7 @@
      1.481,
      -0.171
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -2723,7 +2687,7 @@
      1.489,
      -0.279
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -2735,7 +2699,7 @@
      1.481,
      -0.279
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -2747,8 +2711,8 @@
      1.47,
      -0.396
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -2759,8 +2723,8 @@
      1.471,
      -0.397
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -2771,7 +2735,7 @@
      1.472,
      -0.398
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2783,7 +2747,7 @@
      1.473,
      -0.399
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2795,8 +2759,8 @@
      1.5,
      -0.396
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -2807,8 +2771,8 @@
      1.499,
      -0.397
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -2819,7 +2783,7 @@
      1.498,
      -0.398
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2831,7 +2795,7 @@
      1.497,
      -0.399
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2843,7 +2807,7 @@
      1.47,
      -0.294
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 361,
     "longest": 1.102
    },
@@ -2855,7 +2819,7 @@
      1.471,
      -0.293
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 361,
     "longest": 1.102
    },
@@ -2867,7 +2831,7 @@
      1.472,
      -0.292
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2879,7 +2843,7 @@
      1.473,
      -0.291
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2891,7 +2855,7 @@
      1.5,
      -0.294
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 361,
     "longest": 1.102
    },
@@ -2903,7 +2867,7 @@
      1.499,
      -0.293
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 361,
     "longest": 1.102
    },
@@ -2915,7 +2879,7 @@
      1.498,
      -0.292
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2927,7 +2891,7 @@
      1.497,
      -0.291
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -2939,7 +2903,7 @@
      1.489,
      -0.291
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -2951,7 +2915,7 @@
      1.481,
      -0.291
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -2963,7 +2927,7 @@
      1.489,
      -0.399
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -2975,7 +2939,7 @@
      1.481,
      -0.399
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -2987,8 +2951,8 @@
      1.47,
      -0.516
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -2999,8 +2963,8 @@
      1.471,
      -0.517
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -3011,7 +2975,7 @@
      1.472,
      -0.518
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -3023,7 +2987,7 @@
      1.473,
      -0.519
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -3035,8 +2999,8 @@
      1.5,
      -0.516
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -3047,8 +3011,8 @@
      1.499,
      -0.517
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -3059,7 +3023,7 @@
      1.498,
      -0.518
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -3071,7 +3035,7 @@
      1.497,
      -0.519
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -3083,8 +3047,8 @@
      1.47,
      -0.414
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -3095,8 +3059,8 @@
      1.471,
      -0.413
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -3107,7 +3071,7 @@
      1.472,
      -0.412
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -3119,7 +3083,7 @@
      1.473,
      -0.411
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -3131,8 +3095,8 @@
      1.5,
      -0.414
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -3143,8 +3107,8 @@
      1.499,
      -0.413
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -3155,7 +3119,7 @@
      1.498,
      -0.412
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -3167,7 +3131,7 @@
      1.497,
      -0.411
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -3179,7 +3143,7 @@
      1.489,
      -0.411
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -3191,7 +3155,7 @@
      1.481,
      -0.411
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -3203,7 +3167,7 @@
      1.489,
      -0.519
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -3215,7 +3179,7 @@
      1.481,
      -0.519
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -3227,8 +3191,8 @@
      1.47,
      -0.546
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -3239,8 +3203,8 @@
      1.471,
      -0.547
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -3251,7 +3215,7 @@
      1.472,
      -0.548
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -3263,7 +3227,7 @@
      1.473,
      -0.549
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -3275,8 +3239,8 @@
      1.5,
      -0.546
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -3287,8 +3251,8 @@
      1.499,
      -0.547
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 361,
     "longest": 1.102
    },
    {
@@ -3299,7 +3263,7 @@
      1.498,
      -0.548
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -3311,7 +3275,7 @@
      1.497,
      -0.549
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -3323,8 +3287,8 @@
      1.47,
      -0.534
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -3335,8 +3299,8 @@
      1.471,
      -0.533
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -3347,7 +3311,7 @@
      1.472,
      -0.532
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -3359,7 +3323,7 @@
      1.473,
      -0.531
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -3371,8 +3335,8 @@
      1.5,
      -0.534
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -3383,8 +3347,8 @@
      1.499,
      -0.533
     ],
-    "part": "pg_climb_lod0/wood_stained",
-    "aspect": 360,
+    "part": "pg_climb_lod0/playground",
+    "aspect": 359,
     "longest": 1.102
    },
    {
@@ -3395,7 +3359,7 @@
      1.498,
      -0.532
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -3407,7 +3371,7 @@
      1.497,
      -0.531
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 359,
     "longest": 1.102
    },
@@ -3419,7 +3383,7 @@
      1.47,
      -0.542
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 110,
     "longest": 1.102
    },
@@ -3431,7 +3395,7 @@
      1.47,
      -0.538
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 110,
     "longest": 1.102
    },
@@ -3443,7 +3407,7 @@
      1.489,
      -0.531
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -3455,7 +3419,7 @@
      1.481,
      -0.531
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -3467,7 +3431,7 @@
      1.5,
      -0.542
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 110,
     "longest": 1.102
    },
@@ -3479,7 +3443,7 @@
      1.5,
      -0.538
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 110,
     "longest": 1.102
    },
@@ -3491,7 +3455,7 @@
      1.489,
      -0.549
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -3503,7 +3467,7 @@
      1.481,
      -0.549
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 50,
     "longest": 1.102
    },
@@ -3515,7 +3479,7 @@
      1.386,
      0.618
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3527,7 +3491,7 @@
      1.386,
      0.619
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3539,7 +3503,7 @@
      1.388,
      0.621
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3551,7 +3515,7 @@
      1.39,
      0.622
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3563,7 +3527,7 @@
      1.474,
      0.618
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 258,
     "longest": 1.188
    },
@@ -3575,7 +3539,7 @@
      1.474,
      0.619
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 258,
     "longest": 1.188
    },
@@ -3587,7 +3551,7 @@
      1.472,
      0.621
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3599,7 +3563,7 @@
      1.47,
      0.622
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3611,7 +3575,7 @@
      1.47,
      0.578
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3623,7 +3587,7 @@
      1.472,
      0.579
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3635,7 +3599,7 @@
      1.474,
      0.581
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 258,
     "longest": 1.188
    },
@@ -3647,7 +3611,7 @@
      1.474,
      0.582
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 258,
     "longest": 1.188
    },
@@ -3659,7 +3623,7 @@
      1.386,
      0.582
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3671,7 +3635,7 @@
      1.386,
      0.581
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3683,7 +3647,7 @@
      1.388,
      0.579
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3695,7 +3659,7 @@
      1.39,
      0.578
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3707,7 +3671,7 @@
      1.386,
      -0.582
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3719,7 +3683,7 @@
      1.386,
      -0.581
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3731,7 +3695,7 @@
      1.388,
      -0.579
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3743,7 +3707,7 @@
      1.39,
      -0.578
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3755,7 +3719,7 @@
      1.474,
      -0.582
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 258,
     "longest": 1.188
    },
@@ -3767,7 +3731,7 @@
      1.474,
      -0.581
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 258,
     "longest": 1.188
    },
@@ -3779,7 +3743,7 @@
      1.472,
      -0.579
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3791,7 +3755,7 @@
      1.47,
      -0.578
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3803,7 +3767,7 @@
      1.47,
      -0.622
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3815,7 +3779,7 @@
      1.472,
      -0.621
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3827,7 +3791,7 @@
      1.474,
      -0.619
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 258,
     "longest": 1.188
    },
@@ -3839,7 +3803,7 @@
      1.474,
      -0.618
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 258,
     "longest": 1.188
    },
@@ -3851,7 +3815,7 @@
      1.386,
      -0.618
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3863,7 +3827,7 @@
      1.386,
      -0.619
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3875,7 +3839,7 @@
      1.388,
      -0.621
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3887,7 +3851,7 @@
      1.39,
      -0.622
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 259,
     "longest": 1.188
    },
@@ -3899,7 +3863,7 @@
      1.382,
      -0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 248,
     "longest": 1.141
    },
@@ -3911,7 +3875,7 @@
      1.382,
      0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 248,
     "longest": 1.141
    },
@@ -3923,7 +3887,7 @@
      1.384,
      -0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 249,
     "longest": 1.141
    },
@@ -3935,7 +3899,7 @@
      1.386,
      0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 249,
     "longest": 1.141
    },
@@ -3947,7 +3911,7 @@
      1.47,
      0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 248,
     "longest": 1.141
    },
@@ -3959,7 +3923,7 @@
      1.47,
      -0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 248,
     "longest": 1.141
    },
@@ -3971,7 +3935,7 @@
      1.468,
      0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 249,
     "longest": 1.141
    },
@@ -3983,7 +3947,7 @@
      1.466,
      -0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 249,
     "longest": 1.141
    },
@@ -3995,7 +3959,7 @@
      1.466,
      0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 249,
     "longest": 1.141
    },
@@ -4007,7 +3971,7 @@
      1.468,
      -0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 249,
     "longest": 1.141
    },
@@ -4019,7 +3983,7 @@
      1.47,
      0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 248,
     "longest": 1.141
    },
@@ -4031,7 +3995,7 @@
      1.47,
      -0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 248,
     "longest": 1.141
    },
@@ -4043,7 +4007,7 @@
      1.382,
      0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 249,
     "longest": 1.141
    },
@@ -4055,7 +4019,7 @@
      1.382,
      -0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 249,
     "longest": 1.141
    },
@@ -4067,7 +4031,7 @@
      1.384,
      0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 249,
     "longest": 1.141
    },
@@ -4079,7 +4043,7 @@
      1.386,
      -0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 249,
     "longest": 1.141
    },
@@ -4091,7 +4055,7 @@
      1.382,
      -0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 249,
     "longest": 1.141
    },
@@ -4103,7 +4067,7 @@
      1.382,
      0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 249,
     "longest": 1.141
    },
@@ -4115,7 +4079,7 @@
      1.384,
      -0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 249,
     "longest": 1.141
    },
@@ -4127,7 +4091,7 @@
      1.386,
      0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 249,
     "longest": 1.141
    },
@@ -4139,7 +4103,7 @@
      1.47,
      0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 248,
     "longest": 1.141
    },
@@ -4151,7 +4115,7 @@
      1.47,
      -0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 248,
     "longest": 1.141
    },
@@ -4163,7 +4127,7 @@
      1.468,
      0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 249,
     "longest": 1.141
    },
@@ -4175,7 +4139,7 @@
      1.466,
      -0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 249,
     "longest": 1.141
    },
@@ -4187,7 +4151,7 @@
      1.466,
      0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 249,
     "longest": 1.141
    },
@@ -4199,7 +4163,7 @@
      1.468,
      -0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 249,
     "longest": 1.141
    },
@@ -4211,7 +4175,7 @@
      1.47,
      0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 248,
     "longest": 1.141
    },
@@ -4223,7 +4187,7 @@
      1.47,
      -0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 248,
     "longest": 1.141
    },
@@ -4235,7 +4199,7 @@
      1.382,
      0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 248,
     "longest": 1.141
    },
@@ -4247,7 +4211,7 @@
      1.382,
      -0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 248,
     "longest": 1.141
    },
@@ -4259,7 +4223,7 @@
      1.384,
      0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 249,
     "longest": 1.141
    },
@@ -4271,7 +4235,7 @@
      1.386,
      -0.19
     ],
-    "part": "pg_climb_lod0/wood_stained",
+    "part": "pg_climb_lod0/playground",
     "aspect": 249,
     "longest": 1.141
    },
@@ -4283,7 +4247,7 @@
      2.487,
      -0.079
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4295,7 +4259,7 @@
      1.993,
      -0.077
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4307,7 +4271,7 @@
      2.487,
      -0.072
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4319,7 +4283,7 @@
      1.993,
      -0.069
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4331,7 +4295,7 @@
      2.487,
      -0.06
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4343,7 +4307,7 @@
      1.993,
      -0.055
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4355,7 +4319,7 @@
      2.487,
      -0.045
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4367,7 +4331,7 @@
      1.993,
      -0.04
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4379,7 +4343,7 @@
      2.487,
      -0.031
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4391,7 +4355,7 @@
      1.993,
      -0.028
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4403,7 +4367,7 @@
      2.487,
      -0.023
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4415,7 +4379,7 @@
      1.993,
      -0.021
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4427,7 +4391,7 @@
      2.487,
      -0.021
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4439,7 +4403,7 @@
      1.993,
      -0.023
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4451,7 +4415,7 @@
      2.487,
      -0.028
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4463,7 +4427,7 @@
      1.993,
      -0.031
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4475,7 +4439,7 @@
      2.487,
      -0.04
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4487,7 +4451,7 @@
      1.993,
      -0.045
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4499,7 +4463,7 @@
      2.487,
      -0.055
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4511,7 +4475,7 @@
      1.993,
      -0.06
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4523,7 +4487,7 @@
      2.487,
      -0.069
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4535,7 +4499,7 @@
      1.993,
      -0.072
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4547,7 +4511,7 @@
      2.487,
      -0.077
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4559,7 +4523,7 @@
      1.993,
      -0.079
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 95,
     "longest": 1.48
    },
@@ -4571,7 +4535,7 @@
      2.982,
      0.097
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 331,
     "longest": 1.518
    },
@@ -4583,7 +4547,7 @@
      2.981,
      -0.187
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 331,
     "longest": 1.518
    },
@@ -4595,7 +4559,7 @@
      2.979,
      0.099
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 330,
     "longest": 1.518
    },
@@ -4607,7 +4571,7 @@
      2.977,
      -0.186
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 330,
     "longest": 1.518
    },
@@ -4619,7 +4583,7 @@
      2.954,
      -0.195
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 331,
     "longest": 1.518
    },
@@ -4631,7 +4595,7 @@
      2.955,
      0.091
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 330,
     "longest": 1.518
    },
@@ -4643,7 +4607,7 @@
      2.956,
      -0.192
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 330,
     "longest": 1.518
    },
@@ -4655,7 +4619,7 @@
      2.957,
      0.094
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 331,
     "longest": 1.518
    },
@@ -4667,7 +4631,7 @@
      2.988,
      -0.205
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 331,
     "longest": 1.518
    },
@@ -4679,7 +4643,7 @@
      2.988,
      0.08
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 330,
     "longest": 1.518
    },
@@ -4691,7 +4655,7 @@
      2.987,
      -0.208
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 330,
     "longest": 1.518
    },
@@ -4703,7 +4667,7 @@
      2.986,
      0.077
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 331,
     "longest": 1.518
    },
@@ -4715,7 +4679,7 @@
      2.961,
      0.074
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 329,
     "longest": 1.518
    },
@@ -4727,7 +4691,7 @@
      2.962,
      -0.213
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 330,
     "longest": 1.518
    },
@@ -4739,7 +4703,7 @@
      2.964,
      0.072
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 332,
     "longest": 1.518
    },
@@ -4751,7 +4715,7 @@
      2.966,
      -0.214
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 332,
     "longest": 1.518
    },
@@ -4763,7 +4727,7 @@
      2.985,
      -0.194
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 84,
     "longest": 1.518
    },
@@ -4775,7 +4739,7 @@
      2.987,
      0.087
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 84,
     "longest": 1.518
    },
@@ -4787,7 +4751,7 @@
      2.973,
      -0.213
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 84,
     "longest": 1.518
    },
@@ -4799,7 +4763,7 @@
      2.979,
      0.074
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 84,
     "longest": 1.518
    },
@@ -4811,7 +4775,7 @@
      2.956,
      0.084
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 84,
     "longest": 1.518
    },
@@ -4823,7 +4787,7 @@
      2.958,
      -0.206
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 84,
     "longest": 1.518
    },
@@ -4835,7 +4799,7 @@
      2.964,
      0.097
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 84,
     "longest": 1.518
    },
@@ -4847,7 +4811,7 @@
      2.97,
      -0.188
     ],
-    "part": "pg_climb_lod0/steel_galvanised",
+    "part": "pg_climb_lod0/playground",
     "aspect": 84,
     "longest": 1.518
    },
@@ -4859,7 +4823,7 @@
      0.022,
      1.702
     ],
-    "part": "pg_climb_lod0/steel_painted_red",
+    "part": "pg_climb_lod0/playground",
     "aspect": 72,
     "longest": 0.712
    },
@@ -4871,7 +4835,7 @@
      0.019,
      1.703
     ],
-    "part": "pg_climb_lod0/steel_painted_red",
+    "part": "pg_climb_lod0/playground",
     "aspect": 72,
     "longest": 0.712
    },
@@ -4883,7 +4847,7 @@
      0.032,
      1.703
     ],
-    "part": "pg_climb_lod0/steel_painted_red",
+    "part": "pg_climb_lod0/playground",
     "aspect": 72,
     "longest": 0.712
    },
@@ -4895,7 +4859,7 @@
      0.029,
      1.702
     ],
-    "part": "pg_climb_lod0/steel_painted_red",
+    "part": "pg_climb_lod0/playground",
     "aspect": 72,
     "longest": 0.712
    }
@@ -4910,8 +4874,8 @@
      0.577
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00004
    },
@@ -4924,8 +4888,8 @@
      0.588
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00004
    },
@@ -4938,8 +4902,8 @@
      0.583
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00019
    },
@@ -4952,8 +4916,8 @@
      0.602
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00026
    },
@@ -4966,8 +4930,8 @@
      0.594
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00038
    },
@@ -4980,8 +4944,8 @@
      0.592
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00009
    },
@@ -4994,8 +4958,8 @@
      0.606
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00046
    },
@@ -5008,8 +4972,8 @@
      0.612
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00004
    },
@@ -5022,8 +4986,8 @@
      0.623
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00004
    },
@@ -5036,8 +5000,8 @@
      0.615
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00028
    },
@@ -5050,8 +5014,8 @@
      0.596
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00006
    },
@@ -5064,8 +5028,8 @@
      0.599
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00013
    },
@@ -5078,8 +5042,8 @@
      0.608
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00006
    },
@@ -5092,8 +5056,8 @@
      -0.623
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00004
    },
@@ -5106,8 +5070,8 @@
      -0.612
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00004
    },
@@ -5120,8 +5084,8 @@
      -0.617
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00019
    },
@@ -5134,8 +5098,8 @@
      -0.598
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00026
    },
@@ -5148,8 +5112,8 @@
      -0.606
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00038
    },
@@ -5162,8 +5126,8 @@
      -0.588
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00004
    },
@@ -5176,8 +5140,8 @@
      -0.577
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00004
    },
@@ -5190,8 +5154,8 @@
      -0.608
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00009
    },
@@ -5204,8 +5168,8 @@
      -0.585
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00028
    },
@@ -5218,8 +5182,8 @@
      -0.594
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00046
    },
@@ -5232,8 +5196,8 @@
      -0.604
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00006
    },
@@ -5246,8 +5210,8 @@
      -0.592
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00006
    },
@@ -5260,8 +5224,8 @@
      -0.601
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00013
    },
@@ -5274,8 +5238,8 @@
      0.577
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00004
    },
@@ -5288,8 +5252,8 @@
      0.588
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00004
    },
@@ -5302,8 +5266,8 @@
      0.583
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00019
    },
@@ -5316,8 +5280,8 @@
      0.602
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00026
    },
@@ -5330,8 +5294,8 @@
      0.594
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00038
    },
@@ -5344,8 +5308,8 @@
      0.592
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00009
    },
@@ -5358,8 +5322,8 @@
      0.606
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00046
    },
@@ -5372,8 +5336,8 @@
      0.623
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00004
    },
@@ -5386,8 +5350,8 @@
      0.615
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00028
    },
@@ -5400,8 +5364,8 @@
      0.612
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00004
    },
@@ -5414,8 +5378,8 @@
      0.598
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00056
    },
@@ -5428,8 +5392,8 @@
      0.601
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00116
    },
@@ -5442,8 +5406,8 @@
      0.599
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.0006
    },
@@ -5456,8 +5420,8 @@
      0.596
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00006
    },
@@ -5470,8 +5434,8 @@
      0.599
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00013
    },
@@ -5484,8 +5448,8 @@
      0.608
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00006
    },
@@ -5498,8 +5462,8 @@
      -0.623
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00004
    },
@@ -5512,8 +5476,8 @@
      -0.612
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00004
    },
@@ -5526,8 +5490,8 @@
      -0.617
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00019
    },
@@ -5540,8 +5504,8 @@
      -0.598
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00026
    },
@@ -5554,8 +5518,8 @@
      -0.606
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00038
    },
@@ -5568,8 +5532,8 @@
      -0.577
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00004
    },
@@ -5582,8 +5546,8 @@
      -0.608
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00009
    },
@@ -5596,8 +5560,8 @@
      -0.585
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00028
    },
@@ -5610,8 +5574,8 @@
      -0.594
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00046
    },
@@ -5624,8 +5588,8 @@
      -0.588
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00004
    },
@@ -5638,10 +5602,10 @@
      -0.602
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
-    "area": 0.00084
+    "area": 0.00085
    },
    {
     "check": "backtoback",
@@ -5652,8 +5616,8 @@
      -0.599
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00116
    },
@@ -5666,8 +5630,8 @@
      -0.601
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00116
    },
@@ -5680,8 +5644,8 @@
      -0.599
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00116
    },
@@ -5694,8 +5658,8 @@
      -0.6
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00032
    },
@@ -5708,8 +5672,8 @@
      -0.604
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00006
    },
@@ -5722,8 +5686,8 @@
      -0.592
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00006
    },
@@ -5736,8 +5700,8 @@
      -0.601
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00013
    },
@@ -5750,8 +5714,8 @@
      -0.023
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/steel_galvanised"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00006
    },
@@ -5764,8 +5728,8 @@
      -0.03
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/steel_galvanised"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00026
    },
@@ -5778,8 +5742,8 @@
      -0.031
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/steel_galvanised"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.0001
    },
@@ -5792,8 +5756,8 @@
      -0.077
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/steel_galvanised"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00006
    },
@@ -5806,8 +5770,8 @@
      -0.063
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/steel_galvanised"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00006
    },
@@ -5820,8 +5784,8 @@
      -0.063
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/steel_galvanised"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00006
    },
@@ -5834,8 +5798,8 @@
      -0.065
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/steel_galvanised"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00038
    },
@@ -5848,8 +5812,8 @@
      -0.062
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/steel_galvanised"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00013
    },
@@ -5862,8 +5826,8 @@
      -0.062
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/steel_galvanised"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "area": 0.00038
    }
@@ -5878,8 +5842,8 @@
      0.599
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "separation_mm": 2.75,
     "overlap_cm2": 11.2,
@@ -5902,8 +5866,8 @@
      0.602
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "separation_mm": 2.75,
     "overlap_cm2": 11.2,
@@ -5926,8 +5890,8 @@
      -0.601
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "separation_mm": 2.75,
     "overlap_cm2": 11.6,
@@ -5950,8 +5914,8 @@
      -0.599
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "separation_mm": 2.75,
     "overlap_cm2": 11.6,
@@ -5976,12 +5940,12 @@
      -0.622
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/hpl_panel"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 2.39,
     "pieces": 68,
-    "min_angle_deg": 56.2
+    "min_angle_deg": 56.3
    },
    {
     "check": "seam",
@@ -5992,8 +5956,8 @@
      -0.079
     ],
     "parts": [
-     "pg_climb_lod0/steel_galvanised",
-     "pg_climb_lod0/steel_galvanised"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.25,
     "pieces": 54,
@@ -6008,8 +5972,8 @@
      0.356
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.12,
     "pieces": 44,
@@ -6024,8 +5988,8 @@
      0.356
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.12,
     "pieces": 44,
@@ -6040,8 +6004,8 @@
      0.356
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.12,
     "pieces": 44,
@@ -6056,8 +6020,8 @@
      0.356
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.12,
     "pieces": 44,
@@ -6072,8 +6036,8 @@
      0.116
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.12,
     "pieces": 44,
@@ -6088,8 +6052,8 @@
      0.116
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.12,
     "pieces": 44,
@@ -6104,8 +6068,8 @@
      0.116
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.12,
     "pieces": 44,
@@ -6120,8 +6084,8 @@
      0.116
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.12,
     "pieces": 44,
@@ -6136,8 +6100,8 @@
      -0.124
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.12,
     "pieces": 44,
@@ -6152,8 +6116,8 @@
      -0.124
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.12,
     "pieces": 44,
@@ -6168,8 +6132,8 @@
      -0.124
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.12,
     "pieces": 44,
@@ -6184,8 +6148,8 @@
      -0.124
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.12,
     "pieces": 44,
@@ -6200,8 +6164,8 @@
      -0.364
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.12,
     "pieces": 44,
@@ -6216,8 +6180,8 @@
      -0.364
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.12,
     "pieces": 44,
@@ -6232,8 +6196,8 @@
      -0.364
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.12,
     "pieces": 44,
@@ -6248,8 +6212,8 @@
      -0.364
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.12,
     "pieces": 44,
@@ -6264,8 +6228,8 @@
      0.596
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 34,
@@ -6280,8 +6244,8 @@
      0.596
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 34,
@@ -6296,12 +6260,12 @@
      0.596
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 34,
-    "min_angle_deg": 54.6
+    "min_angle_deg": 54.7
    },
    {
     "check": "seam",
@@ -6312,8 +6276,8 @@
      0.596
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 34,
@@ -6328,8 +6292,8 @@
      0.356
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 34,
@@ -6344,8 +6308,8 @@
      0.356
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 34,
@@ -6360,8 +6324,8 @@
      0.356
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 34,
@@ -6376,8 +6340,8 @@
      0.356
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 34,
@@ -6392,12 +6356,12 @@
      0.116
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 34,
-    "min_angle_deg": 54.7
+    "min_angle_deg": 54.6
    },
    {
     "check": "seam",
@@ -6408,8 +6372,8 @@
      0.116
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 34,
@@ -6424,8 +6388,8 @@
      0.116
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 34,
@@ -6440,8 +6404,8 @@
      -0.124
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 34,
@@ -6456,28 +6420,12 @@
      -0.124
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 34,
     "min_angle_deg": 49.9
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     0.666,
-     1.198,
-     -0.124
-    ],
-    "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
-    ],
-    "length_m": 0.1,
-    "pieces": 34,
-    "min_angle_deg": 48.9
    },
    {
     "check": "seam",
@@ -6488,8 +6436,8 @@
      -0.364
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 34,
@@ -6504,12 +6452,44 @@
      -0.364
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 34,
-    "min_angle_deg": 51.3
+    "min_angle_deg": 51.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.647,
+     0.328,
+     -0.604
+    ],
+    "parts": [
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
+    ],
+    "length_m": 0.1,
+    "pieces": 34,
+    "min_angle_deg": 48.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.666,
+     0.618,
+     -0.604
+    ],
+    "parts": [
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
+    ],
+    "length_m": 0.1,
+    "pieces": 34,
+    "min_angle_deg": 48.9
    },
    {
     "check": "seam",
@@ -6520,8 +6500,8 @@
      -0.604
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 34,
@@ -6536,8 +6516,8 @@
      -0.604
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 34,
@@ -6552,8 +6532,8 @@
      0.116
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 33,
@@ -6568,24 +6548,8 @@
      -0.124
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
-    ],
-    "length_m": 0.1,
-    "pieces": 33,
-    "min_angle_deg": 48.9
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     0.647,
-     0.618,
-     -0.364
-    ],
-    "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 33,
@@ -6596,28 +6560,28 @@
     "severity": "info",
     "at": [
      0.666,
-     0.908,
-     -0.364
+     1.198,
+     -0.124
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 33,
-    "min_angle_deg": 48.9
+    "min_angle_deg": 48.8
    },
    {
     "check": "seam",
     "severity": "info",
     "at": [
      0.647,
-     0.328,
-     -0.604
+     0.618,
+     -0.364
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 33,
@@ -6628,12 +6592,12 @@
     "severity": "info",
     "at": [
      0.666,
-     0.618,
-     -0.604
+     0.909,
+     -0.364
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 33,
@@ -6648,8 +6612,8 @@
      -0.348
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 30,
@@ -6664,8 +6628,8 @@
      0.596
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.07,
     "pieces": 28,
@@ -6680,8 +6644,8 @@
      0.596
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.07,
     "pieces": 28,
@@ -6696,8 +6660,8 @@
      0.596
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.07,
     "pieces": 28,
@@ -6712,8 +6676,8 @@
      0.596
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.07,
     "pieces": 28,
@@ -6728,8 +6692,8 @@
      -0.596
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.07,
     "pieces": 28,
@@ -6744,8 +6708,8 @@
      -0.596
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.07,
     "pieces": 28,
@@ -6760,8 +6724,8 @@
      -0.596
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.07,
     "pieces": 28,
@@ -6776,8 +6740,8 @@
      -0.596
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.07,
     "pieces": 28,
@@ -6792,8 +6756,8 @@
      0.373
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 28,
@@ -6808,8 +6772,8 @@
      0.133
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 28,
@@ -6824,8 +6788,8 @@
      -0.108
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 28,
@@ -6840,8 +6804,8 @@
      -0.348
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 28,
@@ -6856,8 +6820,8 @@
      0.373
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 28,
@@ -6872,8 +6836,8 @@
      0.132
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 28,
@@ -6888,8 +6852,8 @@
      -0.108
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 28,
@@ -6904,8 +6868,8 @@
      -0.347
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 28,
@@ -6920,8 +6884,8 @@
      0.372
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 28,
@@ -6936,8 +6900,8 @@
      0.132
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 28,
@@ -6952,8 +6916,8 @@
      -0.107
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 28,
@@ -6968,12 +6932,12 @@
      -0.347
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 28,
-    "min_angle_deg": 65.2
+    "min_angle_deg": 65.3
    },
    {
     "check": "seam",
@@ -6984,8 +6948,8 @@
      0.372
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 28,
@@ -7000,8 +6964,8 @@
      0.133
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 28,
@@ -7016,8 +6980,8 @@
      -0.107
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 28,
@@ -7032,8 +6996,8 @@
      -0.347
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 28,
@@ -7048,8 +7012,8 @@
      0.373
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 28,
@@ -7064,12 +7028,12 @@
      0.133
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 28,
-    "min_angle_deg": 65.3
+    "min_angle_deg": 65.2
    },
    {
     "check": "seam",
@@ -7080,12 +7044,12 @@
      -0.107
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 28,
-    "min_angle_deg": 65.3
+    "min_angle_deg": 65.2
    },
    {
     "check": "seam",
@@ -7096,8 +7060,8 @@
      -0.347
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 28,
@@ -7112,12 +7076,12 @@
      0.373
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 28,
-    "min_angle_deg": 65.2
+    "min_angle_deg": 65.3
    },
    {
     "check": "seam",
@@ -7128,8 +7092,8 @@
      0.133
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 28,
@@ -7144,8 +7108,8 @@
      -0.107
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 28,
@@ -7160,8 +7124,8 @@
      0.555
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.26,
     "pieces": 26,
@@ -7176,8 +7140,8 @@
      0.581
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.26,
     "pieces": 26,
@@ -7192,8 +7156,8 @@
      -0.555
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.26,
     "pieces": 26,
@@ -7208,8 +7172,8 @@
      -0.619
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.26,
     "pieces": 26,
@@ -7224,8 +7188,8 @@
      0.604
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.26,
     "pieces": 26,
@@ -7240,8 +7204,8 @@
      0.555
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.26,
     "pieces": 26,
@@ -7256,8 +7220,8 @@
      -0.581
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.26,
     "pieces": 26,
@@ -7272,8 +7236,8 @@
      -0.555
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.26,
     "pieces": 26,
@@ -7288,8 +7252,8 @@
      0.562
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.12,
     "pieces": 24,
@@ -7304,8 +7268,8 @@
      -0.556
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.13,
     "pieces": 22,
@@ -7320,8 +7284,8 @@
      1.704
     ],
     "parts": [
-     "pg_climb_lod0/steel_galvanised",
-     "pg_climb_lod0/steel_painted_red"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 22,
@@ -7336,8 +7300,8 @@
      1.594
     ],
     "parts": [
-     "pg_climb_lod0/steel_galvanised",
-     "pg_climb_lod0/steel_painted_red"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 22,
@@ -7352,8 +7316,8 @@
      1.447
     ],
     "parts": [
-     "pg_climb_lod0/steel_galvanised",
-     "pg_climb_lod0/steel_painted_red"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 22,
@@ -7368,8 +7332,8 @@
      1.267
     ],
     "parts": [
-     "pg_climb_lod0/steel_galvanised",
-     "pg_climb_lod0/steel_painted_red"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 22,
@@ -7384,8 +7348,8 @@
      1.061
     ],
     "parts": [
-     "pg_climb_lod0/steel_galvanised",
-     "pg_climb_lod0/steel_painted_red"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 22,
@@ -7400,8 +7364,8 @@
      0.839
     ],
     "parts": [
-     "pg_climb_lod0/steel_galvanised",
-     "pg_climb_lod0/steel_painted_red"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 22,
@@ -7416,8 +7380,8 @@
      1.704
     ],
     "parts": [
-     "pg_climb_lod0/steel_galvanised",
-     "pg_climb_lod0/steel_painted_red"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 22,
@@ -7432,8 +7396,8 @@
      1.594
     ],
     "parts": [
-     "pg_climb_lod0/steel_galvanised",
-     "pg_climb_lod0/steel_painted_red"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 22,
@@ -7448,8 +7412,8 @@
      1.447
     ],
     "parts": [
-     "pg_climb_lod0/steel_galvanised",
-     "pg_climb_lod0/steel_painted_red"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 22,
@@ -7464,8 +7428,8 @@
      1.267
     ],
     "parts": [
-     "pg_climb_lod0/steel_galvanised",
-     "pg_climb_lod0/steel_painted_red"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 22,
@@ -7480,8 +7444,8 @@
      1.061
     ],
     "parts": [
-     "pg_climb_lod0/steel_galvanised",
-     "pg_climb_lod0/steel_painted_red"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 22,
@@ -7496,8 +7460,8 @@
      0.839
     ],
     "parts": [
-     "pg_climb_lod0/steel_galvanised",
-     "pg_climb_lod0/steel_painted_red"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 22,
@@ -7512,8 +7476,8 @@
      0.355
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.06,
     "pieces": 22,
@@ -7528,8 +7492,8 @@
      0.356
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.06,
     "pieces": 22,
@@ -7544,8 +7508,8 @@
      0.115
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.06,
     "pieces": 22,
@@ -7560,8 +7524,8 @@
      0.116
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.06,
     "pieces": 22,
@@ -7576,8 +7540,8 @@
      -0.125
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.06,
     "pieces": 22,
@@ -7592,8 +7556,8 @@
      -0.124
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.06,
     "pieces": 22,
@@ -7608,8 +7572,8 @@
      -0.365
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.06,
     "pieces": 22,
@@ -7624,8 +7588,8 @@
      -0.364
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.06,
     "pieces": 22,
@@ -7640,8 +7604,8 @@
      0.562
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.12,
     "pieces": 20,
@@ -7656,8 +7620,8 @@
      -0.63
     ],
     "parts": [
-     "pg_climb_lod0/hdpe_green",
-     "pg_climb_lod0/hpl_panel"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.25,
     "pieces": 18,
@@ -7672,8 +7636,8 @@
      -0.63
     ],
     "parts": [
-     "pg_climb_lod0/hdpe_green",
-     "pg_climb_lod0/hpl_panel"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.25,
     "pieces": 18,
@@ -7688,8 +7652,8 @@
      -0.63
     ],
     "parts": [
-     "pg_climb_lod0/hdpe_green",
-     "pg_climb_lod0/hpl_panel"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.26,
     "pieces": 18,
@@ -7704,8 +7668,8 @@
      -0.63
     ],
     "parts": [
-     "pg_climb_lod0/hdpe_green",
-     "pg_climb_lod0/hpl_panel"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.26,
     "pieces": 18,
@@ -7720,12 +7684,12 @@
      -0.63
     ],
     "parts": [
-     "pg_climb_lod0/hdpe_green",
-     "pg_climb_lod0/hpl_panel"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.27,
     "pieces": 18,
-    "min_angle_deg": 15.7
+    "min_angle_deg": 15.6
    },
    {
     "check": "seam",
@@ -7736,8 +7700,8 @@
      -0.63
     ],
     "parts": [
-     "pg_climb_lod0/hpl_panel",
-     "pg_climb_lod0/hdpe_red"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.26,
     "pieces": 18,
@@ -7752,8 +7716,8 @@
      -0.63
     ],
     "parts": [
-     "pg_climb_lod0/hpl_panel",
-     "pg_climb_lod0/hdpe_red"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.25,
     "pieces": 18,
@@ -7768,12 +7732,12 @@
      -0.63
     ],
     "parts": [
-     "pg_climb_lod0/hpl_panel",
-     "pg_climb_lod0/hdpe_red"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.26,
     "pieces": 18,
-    "min_angle_deg": 18.2
+    "min_angle_deg": 18.1
    },
    {
     "check": "seam",
@@ -7784,12 +7748,12 @@
      -0.63
     ],
     "parts": [
-     "pg_climb_lod0/hpl_panel",
-     "pg_climb_lod0/hdpe_red"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.25,
     "pieces": 18,
-    "min_angle_deg": 21.8
+    "min_angle_deg": 21.7
    },
    {
     "check": "seam",
@@ -7800,12 +7764,12 @@
      0.595
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 18,
-    "min_angle_deg": 27
+    "min_angle_deg": 26.9
    },
    {
     "check": "seam",
@@ -7816,8 +7780,8 @@
      0.596
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 18,
@@ -7832,8 +7796,8 @@
      -0.598
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 18,
@@ -7848,8 +7812,8 @@
      -0.596
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 18,
@@ -7864,8 +7828,8 @@
      -0.604
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.58,
     "pieces": 17,
@@ -7880,8 +7844,8 @@
      0.596
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 17,
@@ -7896,8 +7860,8 @@
      0.596
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 17,
@@ -7912,8 +7876,8 @@
      0.356
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 17,
@@ -7928,8 +7892,8 @@
      0.356
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 17,
@@ -7944,8 +7908,8 @@
      0.116
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 17,
@@ -7960,12 +7924,12 @@
      -0.124
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 17,
-    "min_angle_deg": 54.7
+    "min_angle_deg": 54.6
    },
    {
     "check": "seam",
@@ -7976,8 +7940,8 @@
      -0.124
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 17,
@@ -7992,8 +7956,8 @@
      -0.364
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 17,
@@ -8008,8 +7972,8 @@
      -0.364
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 17,
@@ -8024,8 +7988,8 @@
      -0.604
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 17,
@@ -8040,8 +8004,8 @@
      -0.604
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 17,
@@ -8056,8 +8020,8 @@
      0.591
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.08,
     "pieces": 16,
@@ -8072,8 +8036,8 @@
      -0.609
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.08,
     "pieces": 16,
@@ -8088,8 +8052,8 @@
      0.589
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.08,
     "pieces": 16,
@@ -8104,8 +8068,8 @@
      -0.611
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.08,
     "pieces": 16,
@@ -8120,8 +8084,8 @@
      0.116
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 16,
@@ -8136,12 +8100,12 @@
      -0.588
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 16,
-    "min_angle_deg": 42.3
+    "min_angle_deg": 42.2
    },
    {
     "check": "seam",
@@ -8152,8 +8116,8 @@
      0.595
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.82,
     "pieces": 15,
@@ -8168,8 +8132,8 @@
      0.58
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.16,
     "pieces": 14,
@@ -8184,8 +8148,8 @@
      -0.62
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.16,
     "pieces": 14,
@@ -8200,8 +8164,8 @@
      0.576
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.16,
     "pieces": 14,
@@ -8216,8 +8180,8 @@
      -0.624
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/wood_stained"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.16,
     "pieces": 14,
@@ -8232,8 +8196,8 @@
      0.588
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 14,
@@ -8248,8 +8212,8 @@
      -0.587
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 14,
@@ -8264,8 +8228,8 @@
      0.587
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 14,
@@ -8280,8 +8244,8 @@
      -0.587
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 14,
@@ -8296,12 +8260,12 @@
      0.587
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 14,
-    "min_angle_deg": 65.9
+    "min_angle_deg": 66
    },
    {
     "check": "seam",
@@ -8312,12 +8276,12 @@
      -0.587
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 14,
-    "min_angle_deg": 65.2
+    "min_angle_deg": 65.3
    },
    {
     "check": "seam",
@@ -8328,8 +8292,8 @@
      0.587
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 14,
@@ -8344,28 +8308,12 @@
      -0.587
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 14,
     "min_angle_deg": 67.7
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     0.651,
-     1.206,
-     0.587
-    ],
-    "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
-    ],
-    "length_m": 0.05,
-    "pieces": 14,
-    "min_angle_deg": 68.3
    },
    {
     "check": "seam",
@@ -8376,8 +8324,8 @@
      -0.588
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 14,
@@ -8392,8 +8340,8 @@
      0.588
     ],
     "parts": [
-     "pg_climb_lod0/rope_grey",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.05,
     "pieces": 14,
@@ -8408,12 +8356,12 @@
      0.6
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 13,
-    "min_angle_deg": 52.6
+    "min_angle_deg": 52.5
    },
    {
     "check": "seam",
@@ -8424,8 +8372,8 @@
      0.6
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 13,
@@ -8440,12 +8388,28 @@
      -0.599
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 13,
     "min_angle_deg": 52.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.651,
+     1.206,
+     0.587
+    ],
+    "parts": [
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
+    ],
+    "length_m": 0.05,
+    "pieces": 13,
+    "min_angle_deg": 68.3
    },
    {
     "check": "seam",
@@ -8456,8 +8420,8 @@
      -0.592
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.1,
     "pieces": 11,
@@ -8472,8 +8436,8 @@
      -0.055
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/steel_galvanised"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.14,
     "pieces": 11,
@@ -8488,8 +8452,8 @@
      -0.038
     ],
     "parts": [
-     "pg_climb_lod0/steel_galvanised",
-     "pg_climb_lod0/hdpe_green"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.08,
     "pieces": 11,
@@ -8504,8 +8468,8 @@
      -0.562
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.09,
     "pieces": 10,
@@ -8520,8 +8484,8 @@
      -0.595
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.08,
     "pieces": 9,
@@ -8536,8 +8500,8 @@
      -0.035
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/steel_galvanised"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.11,
     "pieces": 9,
@@ -8552,8 +8516,8 @@
      -0.562
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.03,
     "pieces": 8,
@@ -8568,8 +8532,8 @@
      0.599
     ],
     "parts": [
-     "pg_climb_lod0/wood_stained",
-     "pg_climb_lod0/rope_grey"
+     "pg_climb_lod0/playground",
+     "pg_climb_lod0/playground"
     ],
     "length_m": 0.02,
     "pieces": 5,

@@ -1,0 +1,126 @@
+{
+ "summary": {
+  "triangles": 1125,
+  "vertices_welded": 610,
+  "open_edges": 97,
+  "rays": 5504,
+  "blocking": 0,
+  "warnings": 5,
+  "counts": {
+   "sliver": 5
+  },
+  "ms": 26
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0.00003332970663905144,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": 0.07,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "rk2_pillars_low_lod2",
+   "slot": "rocaille_concrete",
+   "triangles": 1125,
+   "maxDistance": 200
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.884,
+     0.397,
+     0.32
+    ],
+    "part": "rk2_pillars_low_lod2/rocaille_concrete",
+    "aspect": 46,
+    "longest": 0.586
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.125,
+     1.154,
+     0.482
+    ],
+    "part": "rk2_pillars_low_lod2/rocaille_concrete",
+    "aspect": 57,
+    "longest": 0.597
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.104,
+     1.421,
+     0.476
+    ],
+    "part": "rk2_pillars_low_lod2/rocaille_concrete",
+    "aspect": 59,
+    "longest": 0.512
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.634,
+     2.033,
+     0.332
+    ],
+    "part": "rk2_pillars_low_lod2/rocaille_concrete",
+    "aspect": 51,
+    "longest": 0.367
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.495,
+     0.954,
+     0.924
+    ],
+    "part": "rk2_pillars_low_lod2/rocaille_concrete",
+    "aspect": 236,
+    "longest": 0.435
+   }
+  ]
+ },
+ "file": "rockkit.glb"
+}

@@ -10,7 +10,7 @@
    "sliver": 130,
    "seam": 18
   },
-  "ms": 48
+  "ms": 22
  },
  "options": {
   "weld": 0.0001,
@@ -54,20 +54,8 @@
  "parts": [
   {
    "name": "pg_swing_lod2",
-   "slot": "wood_log",
-   "triangles": 200,
-   "maxDistance": 160
-  },
-  {
-   "name": "pg_swing_lod2",
-   "slot": "steel_galvanised",
-   "triangles": 206,
-   "maxDistance": 160
-  },
-  {
-   "name": "pg_swing_lod2",
-   "slot": "rubber_black",
-   "triangles": 50,
+   "slot": "playground",
+   "triangles": 456,
    "maxDistance": 160
   }
  ],
@@ -81,7 +69,7 @@
      1.482,
      0.269
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -93,7 +81,7 @@
      0.663,
      0.532
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -105,7 +93,7 @@
      1.483,
      0.271
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -117,7 +105,7 @@
      0.663,
      0.53
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -129,7 +117,7 @@
      1.485,
      0.278
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -141,7 +129,7 @@
      0.67,
      0.552
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 50,
     "longest": 2.579
    },
@@ -153,7 +141,7 @@
      0.687,
      0.605
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 50,
     "longest": 2.579
    },
@@ -165,7 +153,7 @@
      1.513,
      0.365
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -177,7 +165,7 @@
      0.695,
      0.632
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -189,7 +177,7 @@
      1.517,
      0.378
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -201,7 +189,7 @@
      0.698,
      0.641
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -213,7 +201,7 @@
      1.517,
      0.38
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -225,7 +213,7 @@
      0.697,
      0.639
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -237,7 +225,7 @@
      1.514,
      0.371
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -249,7 +237,7 @@
      0.691,
      0.619
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 50,
     "longest": 2.579
    },
@@ -261,7 +249,7 @@
      0.674,
      0.566
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 50,
     "longest": 2.579
    },
@@ -273,7 +261,7 @@
      1.486,
      0.284
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -285,7 +273,7 @@
      0.666,
      0.539
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -297,7 +285,7 @@
      1.517,
      -0.38
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -309,7 +297,7 @@
      1.517,
      -0.378
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -321,7 +309,7 @@
      0.698,
      -0.641
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -333,7 +321,7 @@
      1.515,
      -0.373
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -345,7 +333,7 @@
      1.503,
      -0.336
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 50,
     "longest": 2.579
    },
@@ -357,7 +345,7 @@
      0.677,
      -0.574
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 50,
     "longest": 2.579
    },
@@ -369,7 +357,7 @@
      1.489,
      -0.291
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 50,
     "longest": 2.579
    },
@@ -381,7 +369,7 @@
      0.666,
      -0.539
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -393,7 +381,7 @@
      1.483,
      -0.271
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -405,7 +393,7 @@
      0.663,
      -0.53
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -417,7 +405,7 @@
      1.482,
      -0.269
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -429,7 +417,7 @@
      0.663,
      -0.532
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -441,7 +429,7 @@
      1.485,
      -0.278
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -453,7 +441,7 @@
      0.667,
      -0.545
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -465,7 +453,7 @@
      1.491,
      -0.297
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -477,7 +465,7 @@
      1.506,
      -0.344
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 50,
     "longest": 2.579
    },
@@ -489,7 +477,7 @@
      1.513,
      -0.365
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -501,7 +489,7 @@
      0.695,
      -0.632
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -513,7 +501,7 @@
      1.482,
      0.269
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -525,7 +513,7 @@
      0.663,
      0.532
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -537,7 +525,7 @@
      1.483,
      0.271
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -549,7 +537,7 @@
      0.663,
      0.53
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -561,7 +549,7 @@
      1.485,
      0.278
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -573,7 +561,7 @@
      0.67,
      0.552
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 50,
     "longest": 2.579
    },
@@ -585,7 +573,7 @@
      0.687,
      0.605
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 50,
     "longest": 2.579
    },
@@ -597,7 +585,7 @@
      1.513,
      0.365
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -609,7 +597,7 @@
      0.695,
      0.632
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -621,7 +609,7 @@
      1.517,
      0.378
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -633,7 +621,7 @@
      0.698,
      0.641
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -645,7 +633,7 @@
      1.517,
      0.38
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -657,7 +645,7 @@
      0.697,
      0.639
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -669,7 +657,7 @@
      1.514,
      0.371
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -681,7 +669,7 @@
      1.51,
      0.358
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -693,7 +681,7 @@
      1.496,
      0.313
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 50,
     "longest": 2.579
    },
@@ -705,7 +693,7 @@
      0.672,
      0.557
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -717,7 +705,7 @@
      1.486,
      0.284
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -729,7 +717,7 @@
      0.666,
      0.539
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -741,7 +729,7 @@
      1.517,
      -0.38
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -753,7 +741,7 @@
      0.697,
      -0.639
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -765,7 +753,7 @@
      1.517,
      -0.378
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -777,7 +765,7 @@
      0.698,
      -0.641
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -789,7 +777,7 @@
      1.514,
      -0.371
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -801,7 +789,7 @@
      0.691,
      -0.619
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 50,
     "longest": 2.579
    },
@@ -813,7 +801,7 @@
      1.503,
      -0.336
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 50,
     "longest": 2.579
    },
@@ -825,7 +813,7 @@
      0.679,
      -0.581
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -837,7 +825,7 @@
      0.674,
      -0.565
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -849,7 +837,7 @@
      1.489,
      -0.291
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 50,
     "longest": 2.579
    },
@@ -861,7 +849,7 @@
      0.666,
      -0.539
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -873,7 +861,7 @@
      1.483,
      -0.271
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -885,7 +873,7 @@
      0.663,
      -0.53
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -897,7 +885,7 @@
      1.482,
      -0.269
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -909,7 +897,7 @@
      0.663,
      -0.532
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -921,7 +909,7 @@
      1.485,
      -0.278
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -933,7 +921,7 @@
      0.67,
      -0.552
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 50,
     "longest": 2.579
    },
@@ -945,7 +933,7 @@
      0.684,
      -0.597
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -957,7 +945,7 @@
      0.691,
      -0.619
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 50,
     "longest": 2.579
    },
@@ -969,7 +957,7 @@
      1.514,
      -0.371
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 97,
     "longest": 2.579
    },
@@ -981,7 +969,7 @@
      0.783,
      -0.154
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 43,
     "longest": 0.923
    },
@@ -993,7 +981,7 @@
      2.428,
      -0.061
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 45,
     "longest": 3.51
    },
@@ -1005,7 +993,7 @@
      2.39,
      -0.054
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 45,
     "longest": 3.51
    },
@@ -1017,7 +1005,7 @@
      2.368,
      -0.039
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 66,
     "longest": 3.51
    },
@@ -1029,7 +1017,7 @@
      2.355,
      -0.009
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 66,
     "longest": 3.51
    },
@@ -1041,7 +1029,7 @@
      2.36,
      0.016
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 45,
     "longest": 3.51
    },
@@ -1053,7 +1041,7 @@
      2.373,
      0.047
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 65,
     "longest": 3.51
    },
@@ -1065,7 +1053,7 @@
      2.404,
      0.06
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 45,
     "longest": 3.51
    },
@@ -1077,7 +1065,7 @@
      2.42,
      0.066
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 129,
     "longest": 3.51
    },
@@ -1089,7 +1077,7 @@
      2.445,
      0.061
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 66,
     "longest": 3.51
    },
@@ -1101,7 +1089,7 @@
      2.467,
      0.047
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 65,
     "longest": 3.51
    },
@@ -1113,7 +1101,7 @@
      2.481,
      0.025
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 66,
     "longest": 3.51
    },
@@ -1125,7 +1113,7 @@
      2.481,
      -0.008
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 45,
     "longest": 3.51
    },
@@ -1137,7 +1125,7 @@
      2.476,
      -0.033
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 66,
     "longest": 3.51
    },
@@ -1149,7 +1137,7 @@
      2.453,
      -0.056
     ],
-    "part": "pg_swing_lod2/wood_log",
+    "part": "pg_swing_lod2/playground",
     "aspect": 66,
     "longest": 3.51
    },
@@ -1161,7 +1149,7 @@
      1.68,
      -0.005
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1173,7 +1161,7 @@
      1.09,
      -0.004
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1185,7 +1173,7 @@
      1.68,
      0
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1197,7 +1185,7 @@
      1.09,
      0.003
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1209,7 +1197,7 @@
      1.68,
      0.006
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1221,7 +1209,7 @@
      1.09,
      0.006
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1233,7 +1221,7 @@
      1.68,
      0.003
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1245,7 +1233,7 @@
      1.09,
      0
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1257,7 +1245,7 @@
      1.68,
      -0.004
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1269,7 +1257,7 @@
      1.09,
      -0.005
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1281,7 +1269,7 @@
      1.68,
      -0.005
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1293,7 +1281,7 @@
      1.09,
      -0.004
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1305,7 +1293,7 @@
      1.68,
      0
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1317,7 +1305,7 @@
      1.09,
      0.003
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1329,7 +1317,7 @@
      1.68,
      0.006
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1341,7 +1329,7 @@
      1.09,
      0.006
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1353,7 +1341,7 @@
      1.68,
      0.003
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1365,7 +1353,7 @@
      1.09,
      0
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1377,7 +1365,7 @@
      1.68,
      -0.004
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1389,7 +1377,7 @@
      1.09,
      -0.005
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1401,7 +1389,7 @@
      1.68,
      -0.005
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1413,7 +1401,7 @@
      1.09,
      -0.004
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1425,7 +1413,7 @@
      1.68,
      0
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1437,7 +1425,7 @@
      1.09,
      0.003
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1449,7 +1437,7 @@
      1.68,
      0.006
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1461,7 +1449,7 @@
      1.09,
      0.006
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1473,7 +1461,7 @@
      1.68,
      0.003
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1485,7 +1473,7 @@
      1.09,
      0
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1497,7 +1485,7 @@
      1.68,
      -0.004
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1509,7 +1497,7 @@
      1.09,
      -0.005
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1521,7 +1509,7 @@
      1.68,
      -0.005
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1533,7 +1521,7 @@
      1.09,
      -0.004
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1545,7 +1533,7 @@
      1.68,
      0
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1557,7 +1545,7 @@
      1.09,
      0.003
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1569,7 +1557,7 @@
      1.68,
      0.006
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1581,7 +1569,7 @@
      1.09,
      0.006
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1593,7 +1581,7 @@
      1.68,
      0.003
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1605,7 +1593,7 @@
      1.09,
      0
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1617,7 +1605,7 @@
      1.68,
      -0.004
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    },
@@ -1629,7 +1617,7 @@
      1.09,
      -0.005
     ],
-    "part": "pg_swing_lod2/steel_galvanised",
+    "part": "pg_swing_lod2/playground",
     "aspect": 215,
     "longest": 1.77
    }
@@ -1644,8 +1632,8 @@
      0.013
     ],
     "parts": [
-     "pg_swing_lod2/wood_log",
-     "pg_swing_lod2/steel_galvanised"
+     "pg_swing_lod2/playground",
+     "pg_swing_lod2/playground"
     ],
     "length_m": 0.62,
     "pieces": 26,
@@ -1660,8 +1648,8 @@
      -0.019
     ],
     "parts": [
-     "pg_swing_lod2/wood_log",
-     "pg_swing_lod2/steel_galvanised"
+     "pg_swing_lod2/playground",
+     "pg_swing_lod2/playground"
     ],
     "length_m": 0.62,
     "pieces": 26,
@@ -1676,8 +1664,8 @@
      0.114
     ],
     "parts": [
-     "pg_swing_lod2/wood_log",
-     "pg_swing_lod2/steel_galvanised"
+     "pg_swing_lod2/playground",
+     "pg_swing_lod2/playground"
     ],
     "length_m": 0.62,
     "pieces": 25,
@@ -1692,8 +1680,8 @@
      -0.114
     ],
     "parts": [
-     "pg_swing_lod2/wood_log",
-     "pg_swing_lod2/steel_galvanised"
+     "pg_swing_lod2/playground",
+     "pg_swing_lod2/playground"
     ],
     "length_m": 0.62,
     "pieces": 24,
@@ -1708,8 +1696,8 @@
      -0.07
     ],
     "parts": [
-     "pg_swing_lod2/wood_log",
-     "pg_swing_lod2/steel_galvanised"
+     "pg_swing_lod2/playground",
+     "pg_swing_lod2/playground"
     ],
     "length_m": 0.48,
     "pieces": 24,
@@ -1724,8 +1712,8 @@
      -0.06
     ],
     "parts": [
-     "pg_swing_lod2/wood_log",
-     "pg_swing_lod2/steel_galvanised"
+     "pg_swing_lod2/playground",
+     "pg_swing_lod2/playground"
     ],
     "length_m": 0.47,
     "pieces": 22,
@@ -1740,8 +1728,8 @@
      0
     ],
     "parts": [
-     "pg_swing_lod2/steel_galvanised",
-     "pg_swing_lod2/steel_galvanised"
+     "pg_swing_lod2/playground",
+     "pg_swing_lod2/playground"
     ],
     "length_m": 0.04,
     "pieces": 12,
@@ -1756,8 +1744,8 @@
      -0.007
     ],
     "parts": [
-     "pg_swing_lod2/steel_galvanised",
-     "pg_swing_lod2/steel_galvanised"
+     "pg_swing_lod2/playground",
+     "pg_swing_lod2/playground"
     ],
     "length_m": 0.04,
     "pieces": 12,
@@ -1772,8 +1760,8 @@
      0.006
     ],
     "parts": [
-     "pg_swing_lod2/steel_galvanised",
-     "pg_swing_lod2/steel_galvanised"
+     "pg_swing_lod2/playground",
+     "pg_swing_lod2/playground"
     ],
     "length_m": 0.04,
     "pieces": 12,
@@ -1788,8 +1776,8 @@
      -0.007
     ],
     "parts": [
-     "pg_swing_lod2/steel_galvanised",
-     "pg_swing_lod2/steel_galvanised"
+     "pg_swing_lod2/playground",
+     "pg_swing_lod2/playground"
     ],
     "length_m": 0.04,
     "pieces": 12,
@@ -1804,8 +1792,8 @@
      0.007
     ],
     "parts": [
-     "pg_swing_lod2/steel_galvanised",
-     "pg_swing_lod2/rubber_black"
+     "pg_swing_lod2/playground",
+     "pg_swing_lod2/playground"
     ],
     "length_m": 0.11,
     "pieces": 11,
@@ -1820,8 +1808,8 @@
      0.01
     ],
     "parts": [
-     "pg_swing_lod2/steel_galvanised",
-     "pg_swing_lod2/rubber_black"
+     "pg_swing_lod2/playground",
+     "pg_swing_lod2/playground"
     ],
     "length_m": 0.1,
     "pieces": 11,
@@ -1836,8 +1824,8 @@
      0.006
     ],
     "parts": [
-     "pg_swing_lod2/wood_log",
-     "pg_swing_lod2/steel_galvanised"
+     "pg_swing_lod2/playground",
+     "pg_swing_lod2/playground"
     ],
     "length_m": 0.19,
     "pieces": 10,
@@ -1852,8 +1840,8 @@
      0.003
     ],
     "parts": [
-     "pg_swing_lod2/wood_log",
-     "pg_swing_lod2/steel_galvanised"
+     "pg_swing_lod2/playground",
+     "pg_swing_lod2/playground"
     ],
     "length_m": 0.18,
     "pieces": 10,
@@ -1868,8 +1856,8 @@
      -0.014
     ],
     "parts": [
-     "pg_swing_lod2/wood_log",
-     "pg_swing_lod2/steel_galvanised"
+     "pg_swing_lod2/playground",
+     "pg_swing_lod2/playground"
     ],
     "length_m": 0.18,
     "pieces": 10,
@@ -1884,8 +1872,8 @@
      -0.019
     ],
     "parts": [
-     "pg_swing_lod2/wood_log",
-     "pg_swing_lod2/steel_galvanised"
+     "pg_swing_lod2/playground",
+     "pg_swing_lod2/playground"
     ],
     "length_m": 0.2,
     "pieces": 10,
@@ -1900,8 +1888,8 @@
      0.025
     ],
     "parts": [
-     "pg_swing_lod2/steel_galvanised",
-     "pg_swing_lod2/rubber_black"
+     "pg_swing_lod2/playground",
+     "pg_swing_lod2/playground"
     ],
     "length_m": 0.11,
     "pieces": 10,
@@ -1916,8 +1904,8 @@
      -0.021
     ],
     "parts": [
-     "pg_swing_lod2/steel_galvanised",
-     "pg_swing_lod2/rubber_black"
+     "pg_swing_lod2/playground",
+     "pg_swing_lod2/playground"
     ],
     "length_m": 0.11,
     "pieces": 10,

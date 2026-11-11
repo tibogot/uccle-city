@@ -74,7 +74,16 @@ of horizontal distance, from z ≈ 1215 to 1245 (≈ 30 m of face), lower (89.2-
 z 1215. The DSM shows only canopy there (trees 13-23 m over the temple): **the temple and the rock cannot be measured in
 the DSM**; their size comes from OSM (the 5.2 m circle) and the photos.
 
-### The temple (to model in phase 2, after the owner's photos and OK)
+### The temple: CORRECTED from the owner's photo o02 (2026-11-11)
+It is an **exedra**, not a round temple: a **semicircular (about three-quarter) parapet in concrete with a bench
+along its inside**, **5 fluted columns** standing on square pedestals that are part of the parapet (two at the ends,
+three round the curve), a **gap at the front** where the path enters, a **stepped curved base** (a curb step round
+the outside), a **paved floor** (concrete slabs, cracked in o02). The parapet's outer face is plain with a recessed
+panel line; mossy, green-stained. No entablature in o02 (pre-restoration); the 2026 photo shows a dark-red ring on
+the columns: to confirm. It sits on the top of the cliff (o01), its front open to the path behind, its curve facing
+the pond. Modelled later (phase 2), not in this round. Earlier reading kept below for the record.
+
+### The temple: first reading (phase 1, superseded by o02)
 - Form: a **monopteros**: a round podium (5.2 m) with a low curb / step, a **low curved parapet wall with a bench
   seat inside** (open on one side: the entrance faces the path, not the pond), **fluted columns** on square pedestals
   that are part of the parapet (Commons `s01`, 2015: 4 left standing, cracked floor slab). The 1910 photo shows the full
@@ -85,7 +94,15 @@ the DSM**; their size comes from OSM (the 5.2 m circle) and the photos.
 - BE calls it a "temple en fausse rocaille": the podium sits ON the rockwork, and the rock is part of the composition.
 - Not known: the order (the capitals look plain / Tuscan in `s01`), the ring's exact profile, the floor finish.
 
-### The rockwork (the rock kit's brief)
+### The rockwork: CORRECTED from the owner's photo o01 (2026-11-11)
+**Grey** weathered grey-brown concrete with darker streaks, green moss and algae patches, plants growing in the
+cracks (not cream / orange: the "restored cream" in the cascade photo is the new cascade channel, not the cliff).
+Forms: **big vertical slab-like columns and pillars** (stratified rock stood on end) with deep vertical clefts,
+blocks stacked with horizontal joints and some cantilevered, slanted slabs on the left, horizontal ledges at the top
+and at the water line, dark cave mouths at the water. Left part lower (~2-3 m, broad slanted blocks and plants), the
+right part rising to ~5 m in pillars, the exedra on top. The rock kit's round 2 follows this grammar.
+
+### The rockwork: first reading (phase 1)
 - Technique (study, after Odile De Bruyn): **no natural stone at all**: cement sprayed on an iron mesh, 3-6 cm thick,
   hollow behind (damaged pieces show the void), hand-finished with a finer render, tinted. Dumilieu's speciality:
   rocks made to be planted (fissures with soil behind, not "holy-water stoups").
@@ -189,6 +206,23 @@ Rock LOD bands 14 / 45 / 200 m (fade over the last 15 %), playground 20 / 55 / 1
 as-is from claude/stalle): **0 blocking on every piece and LOD of both kits** (models/parkkit/audit/). Images:
 docs/heroes/sauvagere/lab_rock_grazing.jpeg, lab_rock_dolly_strip.jpg (12-19 m through the LOD0/1 band: no visible
 pop), lab_playground_walking.jpeg; Blender previews in models/parkkit/previews/ (git-ignored, re-made by --previews).
+
+### Round 2 (2026-11-11, after the owner's photos)
+- Rock kit: 7 new pieces in the pillar grammar (`rk2_pillars_tall`, `rk2_pillars_low`, `rk2_pillar`, `rk2_slabs`,
+  `rk2_cap`, `rk2_foot`, `rk2_grotto`) + `rk_step`, `rk_channel`, `nat_boulder`, `nat_slab`; the round-1 cream block
+  pieces are gone. Each is a sculpt (voxel 3.5 cm + displacement, 20-108k tris) BAKED onto a light low-poly (remesh
+  ~10 cm, shrink-wrapped): tangent-space normals + AO in the kit atlas (rockkit_nrm.jpg, rockkit_ao.png). LOD0 0.7-9.9k
+  tris, LOD1 0.2-3.5k, LOD2 0.1-1.5k (models/parkkit/rockkit.json); GLB 0.96 MB (was 2.4 MB).
+- LOD0 and LOD1 cast no shadow: the LOD2 mesh casts it (shadow proxies on layer 2, the sun's shadow camera only).
+  Bands 13 / 32 / 200 m, fades over the last 8 % of a band.
+- Sample cliff laid out like o01 (26 pieces, ~30 m x 5 m): **0.92 ms at 12 m walking, 0.26 ms at 30 m** (target 0.8
+  / 0.3), 0.79 ms from the pond (o01 view), 1.44 ms in a grazing close-up; the round-1 40-piece cliff was 1.64 / 0.92.
+- Playground: all slots of a piece batched into ONE primitive and ONE material (the slot index per vertex): 39 -> 16
+  draws in the sample playground, same look; fences' wires stop at 8 m (they were ~0.4 ms of the 1 ms): the sample
+  playground costs ~1.05 ms at 10 m walking (52 instances incl. 26 fence panels), 0.4-0.5 ms from 60 m.
+- Images: docs/heroes/sauvagere/lab_round2_cliff_o01_view.jpeg, lab_round2_rock_grazing.jpeg, lab_round2_dolly_strip.jpg;
+  the side-by-side with the owner's photo is kept OUT of the repo (data/raw/refs/sauvagere/owner/compare/o01_vs_lab_round2.jpg)
+  as o01 looks like a web image (560 x 420).
 
 ## 5. Risks
 

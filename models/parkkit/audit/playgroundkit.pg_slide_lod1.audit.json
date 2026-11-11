@@ -11,7 +11,7 @@
    "backtoback": 11,
    "seam": 32
   },
-  "ms": 155
+  "ms": 69
  },
  "options": {
   "weld": 0.0001,
@@ -55,32 +55,8 @@
  "parts": [
   {
    "name": "pg_slide_lod1",
-   "slot": "wood_stained",
-   "triangles": 1368,
-   "maxDistance": 55
-  },
-  {
-   "name": "pg_slide_lod1",
-   "slot": "hpl_panel",
-   "triangles": 246,
-   "maxDistance": 55
-  },
-  {
-   "name": "pg_slide_lod1",
-   "slot": "steel_galvanised",
-   "triangles": 516,
-   "maxDistance": 55
-  },
-  {
-   "name": "pg_slide_lod1",
-   "slot": "hdpe_green",
-   "triangles": 292,
-   "maxDistance": 55
-  },
-  {
-   "name": "pg_slide_lod1",
-   "slot": "stainless_steel",
-   "triangles": 896,
+   "slot": "playground",
+   "triangles": 3318,
    "maxDistance": 55
   }
  ],
@@ -94,8 +70,8 @@
      1.264,
      0.544
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 333,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 332,
     "longest": 2.034
    },
    {
@@ -106,8 +82,8 @@
      0.586,
      0.543
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 333,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 332,
     "longest": 2.034
    },
    {
@@ -118,8 +94,8 @@
      1.264,
      0.541
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 332,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 331,
     "longest": 2.034
    },
    {
@@ -130,8 +106,8 @@
      0.586,
      0.539
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 332,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 331,
     "longest": 2.034
    },
    {
@@ -142,8 +118,8 @@
      0.586,
      0.456
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 333,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 332,
     "longest": 2.034
    },
    {
@@ -154,8 +130,8 @@
      1.264,
      0.457
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 333,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 332,
     "longest": 2.034
    },
    {
@@ -166,8 +142,8 @@
      0.586,
      0.459
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 332,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 331,
     "longest": 2.034
    },
    {
@@ -178,8 +154,8 @@
      1.264,
      0.461
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 332,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 331,
     "longest": 2.034
    },
    {
@@ -190,8 +166,8 @@
      0.586,
      0.461
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 332,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 331,
     "longest": 2.034
    },
    {
@@ -202,8 +178,8 @@
      1.264,
      0.459
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 332,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 331,
     "longest": 2.034
    },
    {
@@ -214,8 +190,8 @@
      0.586,
      0.457
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 333,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 332,
     "longest": 2.034
    },
    {
@@ -226,8 +202,8 @@
      1.264,
      0.456
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 333,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 332,
     "longest": 2.034
    },
    {
@@ -238,8 +214,8 @@
      0.586,
      0.544
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 333,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 332,
     "longest": 2.034
    },
    {
@@ -250,8 +226,8 @@
      1.264,
      0.543
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 333,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 332,
     "longest": 2.034
    },
    {
@@ -262,8 +238,8 @@
      0.586,
      0.541
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 332,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 331,
     "longest": 2.034
    },
    {
@@ -274,8 +250,8 @@
      1.264,
      0.539
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 332,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 331,
     "longest": 2.034
    },
    {
@@ -286,7 +262,7 @@
      1.597,
      -0.456
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 414,
     "longest": 2.534
    },
@@ -298,7 +274,7 @@
      0.753,
      -0.457
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 414,
     "longest": 2.534
    },
@@ -310,8 +286,8 @@
      1.597,
      -0.459
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 414,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 413,
     "longest": 2.534
    },
    {
@@ -322,8 +298,8 @@
      0.753,
      -0.461
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 414,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 413,
     "longest": 2.534
    },
    {
@@ -334,7 +310,7 @@
      0.753,
      -0.544
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 414,
     "longest": 2.534
    },
@@ -346,7 +322,7 @@
      1.597,
      -0.543
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 414,
     "longest": 2.534
    },
@@ -358,8 +334,8 @@
      0.753,
      -0.541
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 414,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 413,
     "longest": 2.534
    },
    {
@@ -370,8 +346,8 @@
      1.597,
      -0.539
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 414,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 413,
     "longest": 2.534
    },
    {
@@ -382,8 +358,8 @@
      0.753,
      -0.539
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 414,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 413,
     "longest": 2.534
    },
    {
@@ -394,8 +370,8 @@
      1.597,
      -0.541
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 414,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 413,
     "longest": 2.534
    },
    {
@@ -406,7 +382,7 @@
      0.753,
      -0.543
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 414,
     "longest": 2.534
    },
@@ -418,7 +394,7 @@
      1.597,
      -0.544
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 414,
     "longest": 2.534
    },
@@ -430,7 +406,7 @@
      0.753,
      -0.456
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 414,
     "longest": 2.534
    },
@@ -442,7 +418,7 @@
      1.597,
      -0.457
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 414,
     "longest": 2.534
    },
@@ -454,8 +430,8 @@
      0.753,
      -0.459
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 414,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 413,
     "longest": 2.534
    },
    {
@@ -466,8 +442,8 @@
      1.597,
      -0.461
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 414,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 413,
     "longest": 2.534
    },
    {
@@ -478,8 +454,8 @@
      1.264,
      0.544
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 333,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 332,
     "longest": 2.034
    },
    {
@@ -490,8 +466,8 @@
      0.586,
      0.543
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 333,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 332,
     "longest": 2.034
    },
    {
@@ -502,8 +478,8 @@
      1.264,
      0.541
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 332,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 331,
     "longest": 2.034
    },
    {
@@ -514,8 +490,8 @@
      0.586,
      0.539
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 332,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 331,
     "longest": 2.034
    },
    {
@@ -526,8 +502,8 @@
      0.586,
      0.456
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 333,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 332,
     "longest": 2.034
    },
    {
@@ -538,8 +514,8 @@
      1.264,
      0.457
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 333,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 332,
     "longest": 2.034
    },
    {
@@ -550,8 +526,8 @@
      0.586,
      0.459
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 332,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 331,
     "longest": 2.034
    },
    {
@@ -562,8 +538,8 @@
      1.264,
      0.461
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 332,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 331,
     "longest": 2.034
    },
    {
@@ -574,8 +550,8 @@
      0.586,
      0.461
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 332,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 331,
     "longest": 2.034
    },
    {
@@ -586,8 +562,8 @@
      1.264,
      0.459
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 332,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 331,
     "longest": 2.034
    },
    {
@@ -598,8 +574,8 @@
      0.586,
      0.457
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 333,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 332,
     "longest": 2.034
    },
    {
@@ -610,8 +586,8 @@
      1.264,
      0.456
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 333,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 332,
     "longest": 2.034
    },
    {
@@ -622,8 +598,8 @@
      0.586,
      0.544
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 333,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 332,
     "longest": 2.034
    },
    {
@@ -634,8 +610,8 @@
      1.264,
      0.543
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 333,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 332,
     "longest": 2.034
    },
    {
@@ -646,8 +622,8 @@
      0.586,
      0.541
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 332,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 331,
     "longest": 2.034
    },
    {
@@ -658,8 +634,8 @@
      1.264,
      0.539
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 332,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 331,
     "longest": 2.034
    },
    {
@@ -670,7 +646,7 @@
      1.597,
      -0.456
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 414,
     "longest": 2.534
    },
@@ -682,7 +658,7 @@
      0.753,
      -0.457
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 414,
     "longest": 2.534
    },
@@ -694,8 +670,8 @@
      1.597,
      -0.459
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 414,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 413,
     "longest": 2.534
    },
    {
@@ -706,8 +682,8 @@
      0.753,
      -0.461
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 414,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 413,
     "longest": 2.534
    },
    {
@@ -718,7 +694,7 @@
      0.753,
      -0.544
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 414,
     "longest": 2.534
    },
@@ -730,7 +706,7 @@
      1.597,
      -0.543
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 414,
     "longest": 2.534
    },
@@ -742,8 +718,8 @@
      0.753,
      -0.541
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 414,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 413,
     "longest": 2.534
    },
    {
@@ -754,8 +730,8 @@
      1.597,
      -0.539
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 414,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 413,
     "longest": 2.534
    },
    {
@@ -766,8 +742,8 @@
      0.753,
      -0.539
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 414,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 413,
     "longest": 2.534
    },
    {
@@ -778,8 +754,8 @@
      1.597,
      -0.541
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 414,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 413,
     "longest": 2.534
    },
    {
@@ -790,7 +766,7 @@
      0.753,
      -0.543
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 414,
     "longest": 2.534
    },
@@ -802,7 +778,7 @@
      1.597,
      -0.544
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 414,
     "longest": 2.534
    },
@@ -814,7 +790,7 @@
      0.753,
      -0.456
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 414,
     "longest": 2.534
    },
@@ -826,7 +802,7 @@
      1.597,
      -0.457
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 414,
     "longest": 2.534
    },
@@ -838,8 +814,8 @@
      0.753,
      -0.459
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 414,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 413,
     "longest": 2.534
    },
    {
@@ -850,8 +826,8 @@
      1.597,
      -0.461
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 414,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 413,
     "longest": 2.534
    },
    {
@@ -862,7 +838,7 @@
      1.171,
      0.344
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -874,7 +850,7 @@
      1.173,
      0.342
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -886,7 +862,7 @@
      1.199,
      0.344
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -898,7 +874,7 @@
      1.197,
      0.342
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -910,7 +886,7 @@
      1.171,
      0.446
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -922,7 +898,7 @@
      1.173,
      0.448
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -934,8 +910,8 @@
      1.2,
      0.446
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 294,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 296,
     "longest": 0.902
    },
    {
@@ -946,7 +922,7 @@
      1.198,
      0.447
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -958,7 +934,7 @@
      1.197,
      0.449
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 296,
     "longest": 0.902
    },
@@ -970,7 +946,7 @@
      1.189,
      0.449
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -982,7 +958,7 @@
      1.181,
      0.449
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -994,7 +970,7 @@
      1.189,
      0.341
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1006,7 +982,7 @@
      1.181,
      0.341
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1018,7 +994,7 @@
      1.17,
      0.224
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 294,
     "longest": 0.902
    },
@@ -1030,7 +1006,7 @@
      1.171,
      0.223
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 294,
     "longest": 0.902
    },
@@ -1042,7 +1018,7 @@
      1.172,
      0.222
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 294,
     "longest": 0.902
    },
@@ -1054,7 +1030,7 @@
      1.173,
      0.221
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 294,
     "longest": 0.902
    },
@@ -1066,8 +1042,8 @@
      1.199,
      0.224
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 159,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 160,
     "longest": 0.902
    },
    {
@@ -1078,8 +1054,8 @@
      1.197,
      0.222
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 159,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 160,
     "longest": 0.902
    },
    {
@@ -1090,8 +1066,8 @@
      1.17,
      0.326
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 294,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 297,
     "longest": 0.902
    },
    {
@@ -1102,7 +1078,7 @@
      1.172,
      0.327
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1114,8 +1090,8 @@
      1.173,
      0.329
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 294,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 293,
     "longest": 0.902
    },
    {
@@ -1126,8 +1102,8 @@
      1.2,
      0.326
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 293,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 296,
     "longest": 0.902
    },
    {
@@ -1138,8 +1114,8 @@
      1.199,
      0.327
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 293,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 296,
     "longest": 0.902
    },
    {
@@ -1150,8 +1126,8 @@
      1.198,
      0.328
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 297,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 296,
     "longest": 0.902
    },
    {
@@ -1162,8 +1138,8 @@
      1.197,
      0.329
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 297,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 296,
     "longest": 0.902
    },
    {
@@ -1174,7 +1150,7 @@
      1.189,
      0.329
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1186,7 +1162,7 @@
      1.181,
      0.329
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1198,7 +1174,7 @@
      1.189,
      0.221
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1210,7 +1186,7 @@
      1.181,
      0.221
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1222,8 +1198,8 @@
      1.17,
      0.104
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 296,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 294,
     "longest": 0.902
    },
    {
@@ -1234,7 +1210,7 @@
      1.172,
      0.103
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1246,7 +1222,7 @@
      1.173,
      0.101
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 294,
     "longest": 0.902
    },
@@ -1258,8 +1234,8 @@
      1.2,
      0.104
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 294,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 293,
     "longest": 0.902
    },
    {
@@ -1270,8 +1246,8 @@
      1.199,
      0.103
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 294,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 293,
     "longest": 0.902
    },
    {
@@ -1282,8 +1258,8 @@
      1.198,
      0.102
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 296,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 297,
     "longest": 0.902
    },
    {
@@ -1294,8 +1270,8 @@
      1.197,
      0.101
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 296,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 297,
     "longest": 0.902
    },
    {
@@ -1306,8 +1282,8 @@
      1.17,
      0.206
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 296,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 294,
     "longest": 0.902
    },
    {
@@ -1318,8 +1294,8 @@
      1.171,
      0.207
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 296,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 294,
     "longest": 0.902
    },
    {
@@ -1330,8 +1306,8 @@
      1.172,
      0.208
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 294,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 293,
     "longest": 0.902
    },
    {
@@ -1342,8 +1318,8 @@
      1.173,
      0.209
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 294,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 293,
     "longest": 0.902
    },
    {
@@ -1354,8 +1330,8 @@
      1.199,
      0.206
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 160,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 159,
     "longest": 0.902
    },
    {
@@ -1366,8 +1342,8 @@
      1.197,
      0.208
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 160,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 159,
     "longest": 0.902
    },
    {
@@ -1378,7 +1354,7 @@
      1.189,
      0.209
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1390,7 +1366,7 @@
      1.181,
      0.209
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1402,7 +1378,7 @@
      1.189,
      0.101
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1414,7 +1390,7 @@
      1.181,
      0.101
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1426,7 +1402,7 @@
      1.171,
      -0.016
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1438,7 +1414,7 @@
      1.173,
      -0.018
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1450,8 +1426,8 @@
      1.2,
      -0.016
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 294,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 296,
     "longest": 0.902
    },
    {
@@ -1462,7 +1438,7 @@
      1.198,
      -0.017
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1474,7 +1450,7 @@
      1.197,
      -0.019
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 296,
     "longest": 0.902
    },
@@ -1486,8 +1462,8 @@
      1.17,
      0.086
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 296,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 294,
     "longest": 0.902
    },
    {
@@ -1498,7 +1474,7 @@
      1.172,
      0.087
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1510,7 +1486,7 @@
      1.173,
      0.089
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 294,
     "longest": 0.902
    },
@@ -1522,8 +1498,8 @@
      1.2,
      0.086
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 294,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 293,
     "longest": 0.902
    },
    {
@@ -1534,8 +1510,8 @@
      1.199,
      0.087
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 294,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 293,
     "longest": 0.902
    },
    {
@@ -1546,8 +1522,8 @@
      1.198,
      0.088
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 296,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 297,
     "longest": 0.902
    },
    {
@@ -1558,8 +1534,8 @@
      1.197,
      0.089
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 296,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 297,
     "longest": 0.902
    },
    {
@@ -1570,7 +1546,7 @@
      1.189,
      0.089
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1582,7 +1558,7 @@
      1.181,
      0.089
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1594,7 +1570,7 @@
      1.189,
      -0.019
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1606,7 +1582,7 @@
      1.181,
      -0.019
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1618,8 +1594,8 @@
      1.171,
      -0.136
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 159,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 160,
     "longest": 0.902
    },
    {
@@ -1630,8 +1606,8 @@
      1.173,
      -0.138
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 159,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 160,
     "longest": 0.902
    },
    {
@@ -1642,8 +1618,8 @@
      1.199,
      -0.136
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 159,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 160,
     "longest": 0.902
    },
    {
@@ -1654,8 +1630,8 @@
      1.197,
      -0.138
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 159,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 160,
     "longest": 0.902
    },
    {
@@ -1666,7 +1642,7 @@
      1.17,
      -0.034
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 294,
     "longest": 0.902
    },
@@ -1678,7 +1654,7 @@
      1.172,
      -0.033
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1690,7 +1666,7 @@
      1.173,
      -0.031
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 294,
     "longest": 0.902
    },
@@ -1702,7 +1678,7 @@
      1.199,
      -0.034
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1714,7 +1690,7 @@
      1.197,
      -0.032
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1726,7 +1702,7 @@
      1.189,
      -0.031
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1738,7 +1714,7 @@
      1.181,
      -0.031
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1750,7 +1726,7 @@
      1.189,
      -0.139
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1762,7 +1738,7 @@
      1.181,
      -0.139
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1774,7 +1750,7 @@
      1.171,
      -0.256
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1786,7 +1762,7 @@
      1.173,
      -0.258
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -1798,8 +1774,8 @@
      1.2,
      -0.256
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 294,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 293,
     "longest": 0.902
    },
    {
@@ -1810,8 +1786,8 @@
      1.199,
      -0.257
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 294,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 293,
     "longest": 0.902
    },
    {
@@ -1822,8 +1798,8 @@
      1.198,
      -0.258
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 296,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 297,
     "longest": 0.902
    },
    {
@@ -1834,8 +1810,8 @@
      1.197,
      -0.259
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 296,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 297,
     "longest": 0.902
    },
    {
@@ -1846,8 +1822,8 @@
      1.17,
      -0.154
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 296,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 294,
     "longest": 0.902
    },
    {
@@ -1858,8 +1834,8 @@
      1.171,
      -0.153
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 296,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 294,
     "longest": 0.902
    },
    {
@@ -1870,7 +1846,7 @@
      1.172,
      -0.152
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 294,
     "longest": 0.902
    },
@@ -1882,7 +1858,7 @@
      1.173,
      -0.151
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 294,
     "longest": 0.902
    },
@@ -1894,8 +1870,8 @@
      1.2,
      -0.154
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 294,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 293,
     "longest": 0.902
    },
    {
@@ -1906,8 +1882,8 @@
      1.199,
      -0.153
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 294,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 293,
     "longest": 0.902
    },
    {
@@ -1918,8 +1894,8 @@
      1.198,
      -0.152
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 296,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 297,
     "longest": 0.902
    },
    {
@@ -1930,8 +1906,8 @@
      1.197,
      -0.151
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 296,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 297,
     "longest": 0.902
    },
    {
@@ -1942,7 +1918,7 @@
      1.189,
      -0.151
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1954,7 +1930,7 @@
      1.181,
      -0.151
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1966,7 +1942,7 @@
      1.189,
      -0.259
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1978,7 +1954,7 @@
      1.181,
      -0.259
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -1990,7 +1966,7 @@
      1.171,
      -0.376
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -2002,7 +1978,7 @@
      1.173,
      -0.378
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -2014,8 +1990,8 @@
      1.2,
      -0.376
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 294,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 293,
     "longest": 0.902
    },
    {
@@ -2026,7 +2002,7 @@
      1.198,
      -0.377
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -2038,8 +2014,8 @@
      1.197,
      -0.379
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 296,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 297,
     "longest": 0.902
    },
    {
@@ -2050,7 +2026,7 @@
      1.171,
      -0.274
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -2062,7 +2038,7 @@
      1.173,
      -0.272
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -2074,7 +2050,7 @@
      1.199,
      -0.274
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -2086,7 +2062,7 @@
      1.197,
      -0.272
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -2098,7 +2074,7 @@
      1.189,
      -0.271
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -2110,7 +2086,7 @@
      1.181,
      -0.271
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -2122,7 +2098,7 @@
      1.189,
      -0.379
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -2134,7 +2110,7 @@
      1.181,
      -0.379
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -2146,7 +2122,7 @@
      1.171,
      -0.446
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -2158,7 +2134,7 @@
      1.173,
      -0.448
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -2170,7 +2146,7 @@
      1.199,
      -0.446
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -2182,7 +2158,7 @@
      1.197,
      -0.448
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 160,
     "longest": 0.902
    },
@@ -2194,8 +2170,8 @@
      1.17,
      -0.394
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 294,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 297,
     "longest": 0.902
    },
    {
@@ -2206,8 +2182,8 @@
      1.171,
      -0.393
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 294,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 297,
     "longest": 0.902
    },
    {
@@ -2218,8 +2194,8 @@
      1.172,
      -0.392
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 294,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 293,
     "longest": 0.902
    },
    {
@@ -2230,8 +2206,8 @@
      1.173,
      -0.391
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 294,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 293,
     "longest": 0.902
    },
    {
@@ -2242,8 +2218,8 @@
      1.2,
      -0.394
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 293,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 296,
     "longest": 0.902
    },
    {
@@ -2254,8 +2230,8 @@
      1.199,
      -0.393
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 293,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 296,
     "longest": 0.902
    },
    {
@@ -2266,8 +2242,8 @@
      1.198,
      -0.392
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 297,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 296,
     "longest": 0.902
    },
    {
@@ -2278,8 +2254,8 @@
      1.197,
      -0.391
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 297,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 296,
     "longest": 0.902
    },
    {
@@ -2290,7 +2266,7 @@
      1.189,
      -0.391
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -2302,7 +2278,7 @@
      1.181,
      -0.391
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -2314,7 +2290,7 @@
      1.189,
      -0.449
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -2326,7 +2302,7 @@
      1.181,
      -0.449
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.902
    },
@@ -2336,10 +2312,10 @@
     "at": [
      -0.165,
      1.087,
-     0.518
+     0.519
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -2348,10 +2324,10 @@
     "at": [
      0.165,
      1.089,
-     0.521
+     0.52
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -2360,9 +2336,9 @@
     "at": [
      0.165,
      1.173,
-     0.518
+     0.519
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 117,
     "longest": 0.988
    },
@@ -2372,9 +2348,9 @@
     "at": [
      -0.165,
      1.171,
-     0.521
+     0.52
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 117,
     "longest": 0.988
    },
@@ -2384,9 +2360,9 @@
     "at": [
      0.165,
      1.171,
-     0.479
+     0.48
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 117,
     "longest": 0.988
    },
@@ -2396,9 +2372,9 @@
     "at": [
      -0.165,
      1.173,
-     0.482
+     0.481
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 117,
     "longest": 0.988
    },
@@ -2408,10 +2384,10 @@
     "at": [
      0.165,
      1.087,
-     0.482
+     0.481
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -2420,10 +2396,10 @@
     "at": [
      -0.165,
      1.089,
-     0.479
+     0.48
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -2432,10 +2408,10 @@
     "at": [
      -0.165,
      1.087,
-     -0.482
+     -0.481
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -2444,10 +2420,10 @@
     "at": [
      0.165,
      1.089,
-     -0.479
+     -0.48
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -2456,9 +2432,9 @@
     "at": [
      0.165,
      1.173,
-     -0.482
+     -0.481
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 117,
     "longest": 0.988
    },
@@ -2468,9 +2444,9 @@
     "at": [
      -0.165,
      1.171,
-     -0.479
+     -0.48
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 117,
     "longest": 0.988
    },
@@ -2480,9 +2456,9 @@
     "at": [
      0.165,
      1.171,
-     -0.521
+     -0.52
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 117,
     "longest": 0.988
    },
@@ -2492,9 +2468,9 @@
     "at": [
      -0.165,
      1.173,
-     -0.518
+     -0.519
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 117,
     "longest": 0.988
    },
@@ -2504,10 +2480,10 @@
     "at": [
      0.165,
      1.087,
-     -0.518
+     -0.519
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -2516,10 +2492,10 @@
     "at": [
      -0.165,
      1.089,
-     -0.521
+     -0.52
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -2530,7 +2506,7 @@
      1.083,
      0.157
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -2542,7 +2518,7 @@
      1.085,
      -0.157
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -2554,7 +2530,7 @@
      1.169,
      -0.157
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -2566,7 +2542,7 @@
      1.167,
      0.157
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -2578,7 +2554,7 @@
      1.167,
      -0.157
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -2590,7 +2566,7 @@
      1.169,
      0.157
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -2602,7 +2578,7 @@
      1.082,
      -0.157
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 205,
     "longest": 0.941
    },
@@ -2614,7 +2590,7 @@
      1.084,
      0.157
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -2626,7 +2602,7 @@
      1.086,
      -0.157
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 205,
     "longest": 0.941
    },
@@ -2638,7 +2614,7 @@
      1.083,
      0.157
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -2650,7 +2626,7 @@
      1.085,
      -0.157
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -2662,7 +2638,7 @@
      1.169,
      -0.157
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -2674,7 +2650,7 @@
      1.167,
      0.157
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -2686,7 +2662,7 @@
      1.167,
      -0.157
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -2698,7 +2674,7 @@
      1.169,
      0.157
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -2710,7 +2686,7 @@
      1.083,
      -0.157
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -2722,7 +2698,7 @@
      1.085,
      0.157
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 111,
     "longest": 0.941
    },
@@ -2732,10 +2708,10 @@
     "at": [
      -0.165,
      1.907,
-     0.518
+     0.519
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -2744,10 +2720,10 @@
     "at": [
      0.165,
      1.909,
-     0.521
+     0.52
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -2758,7 +2734,7 @@
      1.994,
      0.518
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 216,
     "longest": 0.988
    },
@@ -2770,7 +2746,7 @@
      1.992,
      0.52
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 117,
     "longest": 0.988
    },
@@ -2782,8 +2758,8 @@
      1.99,
      0.522
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 215,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 216,
     "longest": 0.988
    },
    {
@@ -2792,9 +2768,9 @@
     "at": [
      0.165,
      1.991,
-     0.479
+     0.48
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 117,
     "longest": 0.988
    },
@@ -2804,9 +2780,9 @@
     "at": [
      -0.165,
      1.993,
-     0.482
+     0.481
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 117,
     "longest": 0.988
    },
@@ -2816,10 +2792,10 @@
     "at": [
      0.165,
      1.907,
-     0.482
+     0.481
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -2828,10 +2804,10 @@
     "at": [
      -0.165,
      1.909,
-     0.479
+     0.48
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 116,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 117,
     "longest": 0.988
    },
    {
@@ -2842,8 +2818,8 @@
      0.772,
      -0.793
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 345,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 346,
     "longest": 1.583
    },
    {
@@ -2854,7 +2830,7 @@
      0.326,
      -1.074
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 345,
     "longest": 1.583
    },
@@ -2866,8 +2842,8 @@
      0.773,
      -0.795
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 345,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 344,
     "longest": 1.583
    },
    {
@@ -2878,8 +2854,8 @@
      0.327,
      -1.077
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 344,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 346,
     "longest": 1.583
    },
    {
@@ -2890,7 +2866,7 @@
      0.378,
      -1.157
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 344,
     "longest": 1.583
    },
@@ -2902,8 +2878,8 @@
      0.824,
      -0.876
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 345,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 344,
     "longest": 1.583
    },
    {
@@ -2914,8 +2890,8 @@
      0.377,
      -1.155
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 345,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 346,
     "longest": 1.583
    },
    {
@@ -2926,7 +2902,7 @@
      0.823,
      -0.873
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 344,
     "longest": 1.583
    },
@@ -2938,8 +2914,8 @@
      0.376,
      -1.154
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 345,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 346,
     "longest": 1.583
    },
    {
@@ -2950,7 +2926,7 @@
      0.823,
      -0.874
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 344,
     "longest": 1.583
    },
@@ -2962,7 +2938,7 @@
      0.378,
      -1.157
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 344,
     "longest": 1.583
    },
@@ -2974,8 +2950,8 @@
      0.825,
      -0.876
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 345,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 344,
     "longest": 1.583
    },
    {
@@ -2986,7 +2962,7 @@
      0.325,
      -1.074
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 345,
     "longest": 1.583
    },
@@ -2998,8 +2974,8 @@
      0.772,
      -0.793
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 345,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 346,
     "longest": 1.583
    },
    {
@@ -3010,8 +2986,8 @@
      0.327,
      -1.076
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 344,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 346,
     "longest": 1.583
    },
    {
@@ -3022,8 +2998,8 @@
      0.774,
      -0.796
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 345,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 344,
     "longest": 1.583
    },
    {
@@ -3034,7 +3010,7 @@
      0.772,
      -0.792
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 48,
     "longest": 1.584
    },
@@ -3046,7 +3022,7 @@
      0.325,
      -1.073
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 48,
     "longest": 1.584
    },
@@ -3058,7 +3034,7 @@
      0.825,
      -0.877
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 48,
     "longest": 1.584
    },
@@ -3070,7 +3046,7 @@
      0.378,
      -1.158
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 48,
     "longest": 1.584
    },
@@ -3082,8 +3058,8 @@
      0.772,
      -0.793
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 345,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 346,
     "longest": 1.583
    },
    {
@@ -3094,7 +3070,7 @@
      0.326,
      -1.074
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 345,
     "longest": 1.583
    },
@@ -3106,8 +3082,8 @@
      0.773,
      -0.795
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 345,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 344,
     "longest": 1.583
    },
    {
@@ -3118,8 +3094,8 @@
      0.327,
      -1.077
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 344,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 346,
     "longest": 1.583
    },
    {
@@ -3130,7 +3106,7 @@
      0.378,
      -1.157
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 344,
     "longest": 1.583
    },
@@ -3142,8 +3118,8 @@
      0.824,
      -0.876
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 345,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 344,
     "longest": 1.583
    },
    {
@@ -3154,8 +3130,8 @@
      0.377,
      -1.155
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 345,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 346,
     "longest": 1.583
    },
    {
@@ -3166,7 +3142,7 @@
      0.823,
      -0.873
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 344,
     "longest": 1.583
    },
@@ -3178,8 +3154,8 @@
      0.376,
      -1.154
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 345,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 346,
     "longest": 1.583
    },
    {
@@ -3190,7 +3166,7 @@
      0.823,
      -0.874
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 344,
     "longest": 1.583
    },
@@ -3202,7 +3178,7 @@
      0.378,
      -1.157
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 344,
     "longest": 1.583
    },
@@ -3214,8 +3190,8 @@
      0.825,
      -0.876
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 345,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 344,
     "longest": 1.583
    },
    {
@@ -3226,7 +3202,7 @@
      0.325,
      -1.074
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 345,
     "longest": 1.583
    },
@@ -3238,8 +3214,8 @@
      0.772,
      -0.793
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 345,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 346,
     "longest": 1.583
    },
    {
@@ -3250,8 +3226,8 @@
      0.327,
      -1.076
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 344,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 346,
     "longest": 1.583
    },
    {
@@ -3262,8 +3238,8 @@
      0.774,
      -0.796
     ],
-    "part": "pg_slide_lod1/wood_stained",
-    "aspect": 345,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 344,
     "longest": 1.583
    },
    {
@@ -3274,7 +3250,7 @@
      0.772,
      -0.792
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 48,
     "longest": 1.584
    },
@@ -3286,7 +3262,7 @@
      0.325,
      -1.073
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 48,
     "longest": 1.584
    },
@@ -3298,7 +3274,7 @@
      0.825,
      -0.877
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 48,
     "longest": 1.584
    },
@@ -3310,7 +3286,7 @@
      0.378,
      -1.158
     ],
-    "part": "pg_slide_lod1/wood_stained",
+    "part": "pg_slide_lod1/playground",
     "aspect": 48,
     "longest": 1.584
    },
@@ -3322,7 +3298,7 @@
      1.553,
      -0.428
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 82,
     "longest": 0.58
    },
@@ -3334,7 +3310,7 @@
      1.747,
      -0.427
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 82,
     "longest": 0.58
    },
@@ -3346,7 +3322,7 @@
      2,
      0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 193,
     "longest": 0.74
    },
@@ -3358,7 +3334,7 @@
      1.999,
      -0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 193,
     "longest": 0.74
    },
@@ -3370,7 +3346,7 @@
      1.997,
      0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 193,
     "longest": 0.74
    },
@@ -3382,7 +3358,7 @@
      1.996,
      -0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 193,
     "longest": 0.739
    },
@@ -3394,7 +3370,7 @@
      1.553,
      0.428
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 82,
     "longest": 0.58
    },
@@ -3406,7 +3382,7 @@
      1.747,
      0.427
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 82,
     "longest": 0.58
    },
@@ -3418,7 +3394,7 @@
      1.3,
      -0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 193,
     "longest": 0.74
    },
@@ -3430,7 +3406,7 @@
      1.301,
      0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 193,
     "longest": 0.74
    },
@@ -3442,7 +3418,7 @@
      1.303,
      -0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 193,
     "longest": 0.74
    },
@@ -3454,7 +3430,7 @@
      1.304,
      0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 193,
     "longest": 0.739
    },
@@ -3466,7 +3442,7 @@
      1.996,
      0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 193,
     "longest": 0.739
    },
@@ -3478,7 +3454,7 @@
      1.997,
      -0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 193,
     "longest": 0.74
    },
@@ -3490,7 +3466,7 @@
      1.999,
      0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 194,
     "longest": 0.74
    },
@@ -3502,7 +3478,7 @@
      2,
      -0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 194,
     "longest": 0.74
    },
@@ -3514,7 +3490,7 @@
      1.747,
      0.427
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 82,
     "longest": 0.58
    },
@@ -3526,7 +3502,7 @@
      1.553,
      0.428
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 82,
     "longest": 0.58
    },
@@ -3538,7 +3514,7 @@
      1.304,
      -0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 193,
     "longest": 0.739
    },
@@ -3550,7 +3526,7 @@
      1.302,
      0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 105,
     "longest": 0.74
    },
@@ -3562,7 +3538,7 @@
      1.3,
      -0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 194,
     "longest": 0.74
    },
@@ -3574,7 +3550,7 @@
      1.553,
      -0.427
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 82,
     "longest": 0.58
    },
@@ -3586,7 +3562,7 @@
      1.747,
      -0.428
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 82,
     "longest": 0.58
    },
@@ -3598,7 +3574,7 @@
      1.553,
      -0.43
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 64,
     "longest": 0.58
    },
@@ -3610,7 +3586,7 @@
      1.747,
      -0.43
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 64,
     "longest": 0.58
    },
@@ -3622,7 +3598,7 @@
      1.754,
      -0.424
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 146,
     "longest": 0.601
    },
@@ -3634,7 +3610,7 @@
      1.994,
      -0.13
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 183,
     "longest": 0.761
    },
@@ -3646,7 +3622,7 @@
      1.546,
      0.424
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 146,
     "longest": 0.601
    },
@@ -3658,7 +3634,7 @@
      1.306,
      0.13
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 183,
     "longest": 0.761
    },
@@ -3670,7 +3646,7 @@
      1.988,
      0.129
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 51,
     "longest": 0.8
    },
@@ -3682,7 +3658,7 @@
      1.752,
      0.418
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.64
    },
@@ -3694,7 +3670,7 @@
      2,
      -0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 82,
     "longest": 0.74
    },
@@ -3706,7 +3682,7 @@
      2,
      0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 82,
     "longest": 0.74
    },
@@ -3718,7 +3694,7 @@
      1.747,
      0.43
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 64,
     "longest": 0.58
    },
@@ -3730,7 +3706,7 @@
      1.553,
      0.43
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 64,
     "longest": 0.58
    },
@@ -3742,7 +3718,7 @@
      1.3,
      0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 82,
     "longest": 0.74
    },
@@ -3754,7 +3730,7 @@
      1.3,
      -0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 82,
     "longest": 0.74
    },
@@ -3766,7 +3742,7 @@
      1.754,
      -0.424
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 146,
     "longest": 0.601
    },
@@ -3778,7 +3754,7 @@
      1.306,
      0.13
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 183,
     "longest": 0.761
    },
@@ -3790,7 +3766,7 @@
      1.546,
      0.424
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 146,
     "longest": 0.601
    },
@@ -3802,7 +3778,7 @@
      1.994,
      -0.13
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 183,
     "longest": 0.761
    },
@@ -3814,7 +3790,7 @@
      1.548,
      -0.418
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.64
    },
@@ -3826,7 +3802,7 @@
      1.312,
      -0.129
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 51,
     "longest": 0.8
    },
@@ -3838,7 +3814,7 @@
      1.553,
      -0.43
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 152,
     "longest": 0.58
    },
@@ -3850,7 +3826,7 @@
      1.747,
      -0.428
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 82,
     "longest": 0.58
    },
@@ -3862,7 +3838,7 @@
      1.553,
      -0.426
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 151,
     "longest": 0.579
    },
@@ -3874,7 +3850,7 @@
      2,
      0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 194,
     "longest": 0.74
    },
@@ -3886,7 +3862,7 @@
      1.998,
      -0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 105,
     "longest": 0.74
    },
@@ -3898,7 +3874,7 @@
      1.996,
      0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 193,
     "longest": 0.739
    },
@@ -3910,7 +3886,7 @@
      1.747,
      0.43
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 152,
     "longest": 0.58
    },
@@ -3922,7 +3898,7 @@
      1.553,
      0.428
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 82,
     "longest": 0.58
    },
@@ -3934,7 +3910,7 @@
      1.747,
      0.426
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 151,
     "longest": 0.579
    },
@@ -3946,7 +3922,7 @@
      1.3,
      -0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 194,
     "longest": 0.74
    },
@@ -3958,7 +3934,7 @@
      1.301,
      0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 194,
     "longest": 0.74
    },
@@ -3970,7 +3946,7 @@
      1.303,
      -0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 193,
     "longest": 0.74
    },
@@ -3982,7 +3958,7 @@
      1.304,
      0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 193,
     "longest": 0.739
    },
@@ -3994,7 +3970,7 @@
      1.996,
      0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 193,
     "longest": 0.739
    },
@@ -4006,7 +3982,7 @@
      1.998,
      -0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 105,
     "longest": 0.74
    },
@@ -4018,7 +3994,7 @@
      2,
      0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 193,
     "longest": 0.74
    },
@@ -4030,8 +4006,8 @@
      1.747,
      0.426
     ],
-    "part": "pg_slide_lod1/hpl_panel",
-    "aspect": 152,
+    "part": "pg_slide_lod1/playground",
+    "aspect": 151,
     "longest": 0.579
    },
    {
@@ -4042,7 +4018,7 @@
      1.553,
      0.428
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 82,
     "longest": 0.58
    },
@@ -4054,7 +4030,7 @@
      1.747,
      0.43
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 151,
     "longest": 0.58
    },
@@ -4066,7 +4042,7 @@
      1.304,
      -0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 193,
     "longest": 0.739
    },
@@ -4078,7 +4054,7 @@
      1.303,
      0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 193,
     "longest": 0.74
    },
@@ -4090,7 +4066,7 @@
      1.301,
      -0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 193,
     "longest": 0.74
    },
@@ -4102,7 +4078,7 @@
      1.3,
      0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 193,
     "longest": 0.74
    },
@@ -4114,7 +4090,7 @@
      1.553,
      -0.427
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 82,
     "longest": 0.58
    },
@@ -4126,7 +4102,7 @@
      1.747,
      -0.428
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 82,
     "longest": 0.58
    },
@@ -4138,7 +4114,7 @@
      1.553,
      -0.43
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 64,
     "longest": 0.58
    },
@@ -4150,7 +4126,7 @@
      1.747,
      -0.43
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 64,
     "longest": 0.58
    },
@@ -4162,7 +4138,7 @@
      1.994,
      -0.13
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 183,
     "longest": 0.761
    },
@@ -4174,7 +4150,7 @@
      1.546,
      0.424
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 146,
     "longest": 0.601
    },
@@ -4186,7 +4162,7 @@
      1.306,
      0.13
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 183,
     "longest": 0.761
    },
@@ -4198,7 +4174,7 @@
      1.988,
      0.129
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 51,
     "longest": 0.8
    },
@@ -4210,7 +4186,7 @@
      1.752,
      0.418
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.64
    },
@@ -4222,7 +4198,7 @@
      2,
      -0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 82,
     "longest": 0.74
    },
@@ -4234,7 +4210,7 @@
      2,
      0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 82,
     "longest": 0.74
    },
@@ -4246,7 +4222,7 @@
      1.747,
      0.43
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 64,
     "longest": 0.58
    },
@@ -4258,7 +4234,7 @@
      1.553,
      0.43
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 64,
     "longest": 0.58
    },
@@ -4270,7 +4246,7 @@
      1.3,
      0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 82,
     "longest": 0.74
    },
@@ -4282,7 +4258,7 @@
      1.3,
      -0.123
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 82,
     "longest": 0.74
    },
@@ -4294,7 +4270,7 @@
      1.754,
      -0.424
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 146,
     "longest": 0.601
    },
@@ -4306,7 +4282,7 @@
      1.306,
      0.13
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 183,
     "longest": 0.761
    },
@@ -4318,7 +4294,7 @@
      1.546,
      0.424
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 146,
     "longest": 0.601
    },
@@ -4330,7 +4306,7 @@
      1.548,
      -0.418
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 41,
     "longest": 0.64
    },
@@ -4342,7 +4318,7 @@
      1.312,
      -0.129
     ],
-    "part": "pg_slide_lod1/hpl_panel",
+    "part": "pg_slide_lod1/playground",
     "aspect": 51,
     "longest": 0.8
    },
@@ -4354,7 +4330,7 @@
      2.489,
      -0.035
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 310,
     "longest": 1.428
    },
@@ -4366,7 +4342,7 @@
      2.489,
      -0.033
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 310,
     "longest": 1.428
    },
@@ -4378,7 +4354,7 @@
      2.488,
      -0.031
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 312,
     "longest": 1.428
    },
@@ -4390,7 +4366,7 @@
      2.487,
      -0.03
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 312,
     "longest": 1.428
    },
@@ -4402,7 +4378,7 @@
      2.462,
      -0.025
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 310,
     "longest": 1.428
    },
@@ -4414,7 +4390,7 @@
      2.463,
      -0.024
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 310,
     "longest": 1.428
    },
@@ -4426,7 +4402,7 @@
      2.465,
      -0.023
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 312,
     "longest": 1.428
    },
@@ -4438,7 +4414,7 @@
      2.467,
      -0.023
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 312,
     "longest": 1.428
    },
@@ -4450,7 +4426,7 @@
      2.482,
      -0.054
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 310,
     "longest": 1.428
    },
@@ -4462,7 +4438,7 @@
      2.481,
      -0.056
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 310,
     "longest": 1.428
    },
@@ -4474,7 +4450,7 @@
      2.478,
      -0.057
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 312,
     "longest": 1.428
    },
@@ -4486,7 +4462,7 @@
      2.477,
      -0.057
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 312,
     "longest": 1.428
    },
@@ -4498,7 +4474,7 @@
      2.455,
      -0.045
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 312,
     "longest": 1.428
    },
@@ -4510,7 +4486,7 @@
      2.455,
      -0.046
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 312,
     "longest": 1.428
    },
@@ -4522,7 +4498,7 @@
      2.456,
      -0.049
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 310,
     "longest": 1.428
    },
@@ -4534,7 +4510,7 @@
      2.457,
      -0.05
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 310,
     "longest": 1.428
    },
@@ -4546,7 +4522,7 @@
      2.487,
      -0.042
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 79,
     "longest": 1.428
    },
@@ -4558,7 +4534,7 @@
      2.485,
      -0.048
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 79,
     "longest": 1.428
    },
@@ -4570,7 +4546,7 @@
      2.464,
      -0.053
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 79,
     "longest": 1.428
    },
@@ -4582,7 +4558,7 @@
      2.469,
      -0.055
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 79,
     "longest": 1.428
    },
@@ -4594,7 +4570,7 @@
      2.459,
      -0.032
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 79,
     "longest": 1.428
    },
@@ -4606,7 +4582,7 @@
      2.457,
      -0.037
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 79,
     "longest": 1.428
    },
@@ -4618,7 +4594,7 @@
      2.474,
      -0.025
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 79,
     "longest": 1.428
    },
@@ -4630,7 +4606,7 @@
      2.48,
      -0.027
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 79,
     "longest": 1.428
    },
@@ -4642,7 +4618,7 @@
      1.09,
      -1.113
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 105,
     "longest": 1.099
    },
@@ -4654,7 +4630,7 @@
      1.425,
      -0.964
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 105,
     "longest": 1.099
    },
@@ -4666,7 +4642,7 @@
      1.087,
      -1.107
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 104,
     "longest": 1.097
    },
@@ -4678,7 +4654,7 @@
      1.422,
      -0.959
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 106,
     "longest": 1.099
    },
@@ -4690,7 +4666,7 @@
      1.082,
      -1.099
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 104,
     "longest": 1.096
    },
@@ -4702,7 +4678,7 @@
      1.417,
      -0.952
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 106,
     "longest": 1.097
    },
@@ -4714,7 +4690,7 @@
      1.078,
      -1.09
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 104,
     "longest": 1.094
    },
@@ -4726,7 +4702,7 @@
      1.412,
      -0.943
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 105,
     "longest": 1.096
    },
@@ -4738,7 +4714,7 @@
      1.076,
      -1.086
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 104,
     "longest": 1.094
    },
@@ -4750,7 +4726,7 @@
      1.409,
      -0.937
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 104,
     "longest": 1.094
    },
@@ -4762,7 +4738,7 @@
      1.077,
      -1.087
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 104,
     "longest": 1.094
    },
@@ -4774,7 +4750,7 @@
      1.409,
      -0.936
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 104,
     "longest": 1.094
    },
@@ -4786,7 +4762,7 @@
      1.08,
      -1.093
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 104,
     "longest": 1.096
    },
@@ -4798,7 +4774,7 @@
      1.411,
      -0.941
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 105,
     "longest": 1.096
    },
@@ -4810,7 +4786,7 @@
      1.084,
      -1.101
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 104,
     "longest": 1.097
    },
@@ -4822,7 +4798,7 @@
      1.416,
      -0.948
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 106,
     "longest": 1.097
    },
@@ -4834,7 +4810,7 @@
      1.088,
      -1.11
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 105,
     "longest": 1.099
    },
@@ -4846,7 +4822,7 @@
      1.421,
      -0.957
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 106,
     "longest": 1.099
    },
@@ -4858,7 +4834,7 @@
      1.091,
      -1.114
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 105,
     "longest": 1.099
    },
@@ -4870,7 +4846,7 @@
      1.424,
      -0.963
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 105,
     "longest": 1.099
    },
@@ -4882,7 +4858,7 @@
      1.827,
      -0.692
     ],
-    "part": "pg_slide_lod1/steel_galvanised",
+    "part": "pg_slide_lod1/playground",
     "aspect": 40,
     "longest": 0.418
    }
@@ -4897,8 +4873,8 @@
      0.483
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "area": 0.00026
    },
@@ -4911,8 +4887,8 @@
      0.506
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "area": 0.00019
    },
@@ -4925,8 +4901,8 @@
      0.495
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "area": 0.00038
    },
@@ -4939,8 +4915,8 @@
      0.517
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "area": 0.00009
    },
@@ -4953,8 +4929,8 @@
      0.502
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "area": 0.00046
    },
@@ -4967,8 +4943,8 @@
      -0.497
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "area": 0.00034
    },
@@ -4981,8 +4957,8 @@
      -0.492
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "area": 0.00022
    },
@@ -4995,8 +4971,8 @@
      -0.503
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "area": 0.00013
    },
@@ -5009,8 +4985,8 @@
      0.498
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "area": 0.00053
    },
@@ -5023,8 +4999,8 @@
      0.5
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "area": 0.00024
    },
@@ -5037,8 +5013,8 @@
      -0.511
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "area": 0.00041
    }
@@ -5053,8 +5029,8 @@
      0.534
     ],
     "parts": [
-     "pg_slide_lod1/steel_galvanised",
-     "pg_slide_lod1/stainless_steel"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.35,
     "pieces": 71,
@@ -5069,8 +5045,8 @@
      0.521
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.24,
     "pieces": 36,
@@ -5085,8 +5061,8 @@
      0.482
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.22,
     "pieces": 30,
@@ -5098,11 +5074,11 @@
     "at": [
      -0.462,
      1.949,
-     0.523
+     0.522
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.25,
     "pieces": 22,
@@ -5114,11 +5090,11 @@
     "at": [
      0.46,
      1.947,
-     0.523
+     0.522
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.25,
     "pieces": 22,
@@ -5133,8 +5109,8 @@
      3.334
     ],
     "parts": [
-     "pg_slide_lod1/steel_galvanised",
-     "pg_slide_lod1/steel_galvanised"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.11,
     "pieces": 22,
@@ -5149,8 +5125,8 @@
      3.366
     ],
     "parts": [
-     "pg_slide_lod1/steel_galvanised",
-     "pg_slide_lod1/steel_galvanised"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.1,
     "pieces": 22,
@@ -5165,8 +5141,8 @@
      0.455
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.26,
     "pieces": 19,
@@ -5181,8 +5157,8 @@
      -0.455
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.26,
     "pieces": 19,
@@ -5197,8 +5173,8 @@
      0.483
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.26,
     "pieces": 18,
@@ -5213,8 +5189,8 @@
      -0.517
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.26,
     "pieces": 18,
@@ -5229,8 +5205,8 @@
      0.517
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.26,
     "pieces": 18,
@@ -5245,8 +5221,8 @@
      0.455
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.26,
     "pieces": 18,
@@ -5261,8 +5237,8 @@
      -0.483
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.26,
     "pieces": 18,
@@ -5277,8 +5253,8 @@
      -0.455
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.26,
     "pieces": 18,
@@ -5293,12 +5269,12 @@
      0.521
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/stainless_steel"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.81,
     "pieces": 13,
-    "min_angle_deg": 42.6
+    "min_angle_deg": 42.8
    },
    {
     "check": "seam",
@@ -5309,8 +5285,8 @@
      -0.907
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.1,
     "pieces": 12,
@@ -5325,8 +5301,8 @@
      -1.057
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.1,
     "pieces": 12,
@@ -5341,8 +5317,8 @@
      -0.891
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.1,
     "pieces": 12,
@@ -5357,8 +5333,8 @@
      -0.704
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.11,
     "pieces": 11,
@@ -5373,8 +5349,8 @@
      -0.728
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.1,
     "pieces": 9,
@@ -5389,8 +5365,8 @@
      0.479
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.15,
     "pieces": 7,
@@ -5405,8 +5381,8 @@
      -1.235
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.07,
     "pieces": 6,
@@ -5421,8 +5397,8 @@
      -0.487
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.12,
     "pieces": 5,
@@ -5437,8 +5413,8 @@
      -0.502
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.05,
     "pieces": 5,
@@ -5453,8 +5429,8 @@
      0.484
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.13,
     "pieces": 5,
@@ -5469,8 +5445,8 @@
      -0.518
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.11,
     "pieces": 5,
@@ -5485,8 +5461,8 @@
      -1.214
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.07,
     "pieces": 5,
@@ -5501,8 +5477,8 @@
      -1.044
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.07,
     "pieces": 5,
@@ -5517,8 +5493,8 @@
      0.506
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.03,
     "pieces": 4,
@@ -5533,8 +5509,8 @@
      0.497
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0,
     "pieces": 2,
@@ -5549,8 +5525,8 @@
      -0.496
     ],
     "parts": [
-     "pg_slide_lod1/wood_stained",
-     "pg_slide_lod1/wood_stained"
+     "pg_slide_lod1/playground",
+     "pg_slide_lod1/playground"
     ],
     "length_m": 0.02,
     "pieces": 2,

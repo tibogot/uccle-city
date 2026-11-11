@@ -1,13 +1,13 @@
 {
  "summary": {
-  "triangles": 316,
-  "vertices_welded": 175,
-  "open_edges": 30,
-  "rays": 2048,
+  "triangles": 191,
+  "vertices_welded": 106,
+  "open_edges": 19,
+  "rays": 1920,
   "blocking": 0,
   "warnings": 0,
   "counts": {},
-  "ms": 4
+  "ms": 6
  },
  "options": {
   "weld": 0.0001,
@@ -17,7 +17,7 @@
   "minOverlapArea": 0.00004,
   "depthEps": 1.1920928955078125e-7,
   "depthSafety": 64,
-  "quantum": 0.000021938234567642212,
+  "quantum": 0.00003332970663905144,
   "defaultMaxDistance": 120,
   "shallowCrossDeg": 12,
   "sliverAspect": 40,
@@ -52,7 +52,7 @@
   {
    "name": "rk_channel_lod2",
    "slot": "rocaille_concrete",
-   "triangles": 316,
+   "triangles": 191,
    "maxDistance": 200
   }
  ],
