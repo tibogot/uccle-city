@@ -409,6 +409,7 @@ export class Traffic {
     const lane = this.lanes[2];
     const c = this.cars.filter((x) => x.lane === lane).sort((a, b) => Math.abs(a.s + 60) - Math.abs(b.s + 60))[0];
     c.vMax0 = c.vMax; c.vMax = 15; c.reckless = t + 12; c.s = -60; c.v = 14;
+    for (const o of this.cars) if (o !== c && o.lane === lane && o.s > -75 && o.s < 30) o.s += 110;     // a clear run
     return c;
   }
   /** Calm step back (the owner's default): people waiting at a kerb step 0.5 m back while a car passes within 2 m of

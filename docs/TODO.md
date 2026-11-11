@@ -81,10 +81,11 @@ Stairs paused until the owner's Mixamo clips are in `data/raw/animations/mixamo/
 
 **Pedestrian Lab P0 + P1 DONE 2026-11-11 (branch claude/pedestrians, lab only; docs/PEDESTRIANS.md, resume: docs/PEDESTRIANS_RESUME.md):** Mr.doob's people vendored unchanged (vendor/slop-ped, 536a907); gait baked from his rig (tools/peds/bakeGait.mjs -> models/pedestrians/clips.*); banded crowd (live rig < 18 m, bone table on the GPU 18-250 m, LOD0 3.4k / LOD1 954 / LOD2 269 tris, dithered fades, nothing beyond 250 m); meters: 0 coverage / shadow pops, 0 unfaded spawns in view, live slide p95 0.05 m/s, baked mid p95 0.11-0.36 m/s (turns), gap p95 < 1 cm; CPU 300 people 0.46-0.56 ms (his all-live 1.0 ms). Remaining:
 - [ ] GPU cost of 300 on a QUIET machine (this run: +0.39 ms at best, +2 ms under the shared GPU; target <= 1 ms)
-- [ ] Baked foot slide in turns (body yaw about the root), baked feet on kerbs / slopes (per-foot ground in the compute pass)
-- [ ] P4 bodies v2: children, older people, coats, skirts, scarves, hats, umbrellas, bags, a pram, a dog; colours by season (owner defaults 2026-11-12: children + dogs from the start, stylised)
-- [ ] UAL1 (CC0) clips for sit / pram / phone (owner OK 2026-11-12), retargeted to the 15-bone crowd skeleton; CREDITS row
-- [ ] Behaviour: calm step back near cars, dive only at speed, groups, conversations, benches (sitting), shop windows
+- [x] Baked foot slide in turns, baked feet on kerbs / slopes: round 2 (plant pin + per-foot ground): mid p95 0.03-0.07 m/s, no sinking in the mid band
+- [ ] Far band (> 64 m) still slides / sinks at kerbs for a moment (no pin there, to save CPU); CPU for 300 at ~0.5-0.6 ms: quiet re-run, then trim (SoA arrays, pin at 30 Hz in LOD0 too?)
+- [x] P4 bodies v2 (round 2): children, older people (stoop, cane), coats, skirts, scarves, hats, umbrellas (rain hook), bags, backpacks, prams, dogs; season palettes. Left: female-fitted clothes, child limb proportions, a better pram / dog, more hair styles
+- [x] UAL1 (CC0) sit / sit-talk / talk retargeted (round 2); phone and pram are scripted overlays (not in the free pack). Left: Sitting_Enter / Exit transitions
+- [x] Behaviour round 2: calm step back, dives only at speed (test car), groups of 2, talking pairs, sitting on benches / café chairs. Left: groups of 3, shop windows, companions with their own route
 - [ ] P2 walk graph from data (UrbIS sidewalks, roads v2 crossings, OSM paths, tram stops) -> P3 signals + traffic (claude/traffic) -> P5 overlays -> P6 behaviour in the city -> P7 `?peds=1` streaming, determinism, A/B in the city -> P8 optional (MPFB2 near band, night lights)
 
 **Parks, in order (owner, 2026-11-11):**

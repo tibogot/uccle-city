@@ -116,6 +116,113 @@ Frame strips (looked at, `docs/pedestrians/`):
 - Test ground: no crossing paint at the signalled crossings, boxy cars / tram / trees (lab props).
 - `performance.now()` is coarsened to 0.1 ms in this browser: CPU numbers are means over ~130 frames.
 
+## Round 2 (2026-11-11 evening): foot locking, kerbs, variety, UAL1 clips, behaviour
+
+Owner defaults applied: CC0 UAL clips for sit / talk, code-built bodies only, stylised, calm step back, dives only at
+speed, rare red runners, children and dogs, a few people at night, zebra priority with a glance.
+
+**Research used.** Unreal's pose warping: *orientation warping* (twist the body toward the motion instead of
+skating) and *stride warping* (scale the stride to the capsule speed), and *distance matching* (advance the clip by
+distance so the feet do not slide; Epic notes that too much of either looks wrong)
+([Pose Warping](https://dev.epicgames.com/documentation/unreal-engine/pose-warping-in-unreal-engine),
+[Distance Matching API](https://docs.unrealengine.com/PythonAPI/class/AnimDistanceMatchingLibrary.html),
+[Stride Warping node](https://docs.unrealengine.com/PythonAPI/class/AnimNode_StrideWarping.html),
+[Lyra animation notes](https://www.unrealengine.com/tech-blog/adapting-lyra-animation-to-your-ue5-game)). We
+already had distance matching (round 1). For a crowd on the GPU, the cheapest "warp" is a root correction:
+
+1. **Plant pinning (baked walkers, `crowd.js place()`)**: each frame the CPU samples just the two feet of the person's
+   two clip slices (`boneTable.feet()`: heel and ball of each foot), finds the stance foot (the bake's flags), and
+   moves the drawn root so the planted foot's PIVOT (whichever of heel / ball moved less: a rolling foot pivots on
+   one) stays put. The correction is released toward the sim position at <= 2.5 cm/s (12 % of the offset per second),
+   capped at 45 cm. Turning, side-stepping, start / stop blends and the keep-right dodge no longer skate. The LOD1
+   band (38-64 m) does it at 30 Hz (pose and position step together), LOD2 (> 64 m) at 15 Hz without the pin.
+2. **Per-foot ground (kerbs, slopes)**: the ground under each foot (a planted foot across a kerb edge rests on the
+   higher of heel / ball: it may float a little, never sinks); the root sits between the two; each leg's bones are
+   lifted by its own offset in the compute pass (the thigh by half). Two to four `ground()` samples per person.
+
+**Variety (P4, `bodies.js`, `personMaterial.js`, `props.js`)**: Mr.doob's body (unchanged) plus new lofted parts in
+the same vertex layout, so still ONE draw per LOD: beanies / caps, scarves (ring + tail), skirts and knee-length coats
+(skinned pelvis -> thighs so the hem follows the stride), a shoulder bag with strap, backpacks, an umbrella (open with
+`personUniforms.rain` > 0.5, closed below: **the weather lab's hook** is `personUniforms.rain` + `sim.setWeather`), a
+cane. Children (scale 0.58-0.78, 1.2x head, backpacks, sneakers), older people (stoop, grey hair, slower, 35 % with a
+cane). Palettes by season (`personUniforms.season`, 0 summer .. 1 winter: November = dark coats; summer = light
+tops). Clip families baked from his rig with scripted arm overrides (his IK): pram pushing, umbrella holding, phone at
+the ear, old (stoop), cane. A code-built pram (instanced, ahead of the pusher's hands) and dogs on leads (a lofted
+quadruped with a trot in the vertex shader whose phase advances by distance: no sliding; a lead from the owner's hand
+to the collar). The material is an adapted copy of his `createPersonMaterial` (credited in its header); the vendored
+file is still unchanged. Triangles per person: LOD0 3,434 -> 4,440, LOD1 954 -> 1,563, LOD2 269 -> 414.
+
+**UAL1 (CC0, `data/raw/characters/ual1/`, credited in CREDITS.md)**: the free "Standard" pack from Quaternius'
+itch.io page (43 clips). `tools/peds/ual.mjs` reads the GLB in Node; the baker retargets **Sitting_Idle_Loop (sit),
+Sitting_Talking_Loop (sitTalk), Idle_Talking_Loop (talk)** onto the 15-bone skeleton: torso / head by world-rotation
+deltas from the rest pose, arms and legs by his two-bone IK toward the UAL wrists / ankles (scaled by limb length),
+knees and elbows toward the UAL ones, hips on a 45 cm seat, feet flat on the floor. **Not in the free pack: a phone
+call** (a scripted arm overlay instead) and **a pram push** (UAL's Push_Loop shoves a heavy object; the pram family is
+a scripted arm overlay on our gait, which keeps the feet exact). People sit on the square's benches (two seats each),
+the park bench and 8 café chairs (sitTalk); couples talk when they stand together.
+
+**Behaviour**: groups (25 % of spawns bring a companion: a partner side by side, or a child at the side; single file
+on narrow lines; they wait together, talk at the kerb, leave together); calm step back (people at a kerb take half a
+step back while a car passes within ~2 m of the kerb line, then return); **dives only at speed** (lab button "a
+speeding car runs the red": a car at 54 km/h; people in its path within 1.2 s dive away with Mr.doob's dive poses in
+the live band, a quick side-step further out); red runners 2 % (round 1).
+
+### Round 2 meters (same checks, 150 people at peak, winter palette; `docs/pedestrians/results_round2_2026-11-11.json`)
+
+| Check | slide p95 mid (m/s), round 1 -> 2 | slide p95 live | slide p95 far | sinking (worst gap, mid / far) | pops coverage / shadow / pose |
+|---|---|---|---|---|---|
+| dolly at 1.4 m/s | 0.36 -> **0.030** | 0.045 | 0.17 -> 0.21 | 0 / -0.13 m | 0 / 0 / 18 |
+| dolly at 50 km/h | 0.13 -> **0.050** | 0.045 | 0.16 -> 0.15 | 0 / -0.13 m | 0 / 0 / 11 |
+| orbit the junction | 0.16 -> **0.069** | - | 0.16 -> 0.20 | 0 / -0.03 m | 0 / 0 / 1 |
+| backwards through the bands | 0.11 -> **0.069** | 0.044 | 0.16 -> 0.20 | 0 / -0.13 m | 0 / 0 / 13 |
+| 60 s spawn orbit | - | - | 0.16 | far -0.13 m | 0 / 0 / 0 (0 unfaded spawns) |
+
+- **Mid band (18-64 m) foot slide p95 0.030-0.069 m/s: the <= 0.08 target is met in every check** (was 0.11-0.36).
+- **Sinking in the mid band: none (worst gap 0.000 m)**; round 1 had -0.13 to -0.25 m. Far band: still -0.13 m at
+  kerbs for a moment (no per-foot ground past 64 m, a CPU saving at 7-30 px tall) and far slide p95 ~0.2 m/s (no pin
+  past 64 m; the 15 Hz step reads as small hops at that size). Live band unchanged (his rig).
+- Hand-over blends (0.4 s) still slide (p95 0.3-0.45 m/s while blending).
+- Pose snaps are now counted under 38 m only (the 30 Hz LOD1 band steps on purpose).
+
+### Round 2 cost (street view, ~285 of 300 in view; bands LOD0 51-89 / LOD1 57-72 / LOD2 182-194, 15-24 live)
+
+The machine was shared with three other labs (foliage, weather, sound) during every round-2 run: his all-live crowd,
+the same code as in round 1, read 1.17-1.32 ms CPU (round 1: 0.96-1.08), so absolute numbers are ~25 % high.
+
+| | CPU crowd, banded | CPU his (all live) | ratio | GPU delta banded (noisy) |
+|---|---|---|---|---|
+| round 1 | 0.46-0.56 | 0.96-1.08 | 0.46-0.52 | owner's quiet run: +0.26 / +0.33 ms, 0.42 ms CPU |
+| round 2, first try (pin everywhere, 24 live) | 0.77-1.03 | 1.00-1.27 | 0.77-0.81 | +0.46 to +0.85 |
+| **round 2, final** (LOD1 at 30 Hz, LOD2 no pin, 16 live, pre-warm 3.5 m) | **0.65-0.84** | 1.25-1.32 | **0.52-0.65** | +0.52 to +0.85 |
+
+- **CPU estimate on a quiet machine: ~0.5-0.6 ms for 300 (target 0.5: at the line or slightly over)**, from the
+  ratio to his crowd times the owner's round-1 quiet numbers. In-page toggles: the plant pin costs ~0.13 ms, the live
+  rigs ~0.1 ms. **Needs the owner's quiet re-run** (`lab.bench()`).
+- **GPU**: more triangles (LOD0 +29 %, LOD1 +64 %) and the props: +0.52 to +0.85 ms under load (round 1, same
+  conditions: +0.39 to +0.66). **Needs the quiet re-run**; target 1 ms.
+
+### Round 2 images (looked at; `docs/pedestrians/`)
+- `r2_variety_a.jpg`, `r2_variety_b.jpg`: one of each kind on the park lawn (rain on): a child, an old man with a cane,
+  two pram pushers, a dog on a lead, a phone call, long coats, a skirt, scarves, hats, bags, a backpack, an umbrella.
+- `r2_cafe_sitting.jpg`: people sitting and talking at the café tables (UAL1 sitTalk), a pram passing.
+- `r2_strip_dive.jpg`: the speeding-car test: people on the crossing dive (frames 2-4), get up, walk on.
+- `r2_strip_walk_past.jpg`: eye level, winter clothes (a long coat walking past).
+
+### Round 2 weak points
+- CPU at or slightly over 0.5 ms for 300 (estimate; quiet re-run needed); the plant pin is the new cost.
+- Far band (> 64 m): no pin, one ground sample: slide p95 ~0.2 m/s and 13 cm kerb sinks for a moment (7-30 px).
+- Bodies: female bodies wear male-sized scarves / coats / skirts (no female morph on the new parts: small gaps); the
+  coat / skirt is a flared tube blended to the thighs, knees can poke through at long strides; the umbrella and the
+  cane are built at frame 0 of their family's idle (they sway with the arm, the cane tip slides ~5 cm); children are
+  scaled adults with a bigger head (no child limb proportions); the pram's bassinet is a capsule and its wheels do not
+  turn; the dog is a stiff lofted quadruped (shear trot, cat-like ears), no sniffing stops.
+- Sitting: idle -> sit is a 0.6 s pose blend (the pelvis goes down through the blend), not UAL's Sitting_Enter; the
+  sitter is placed by the bench / chair node, not by contact; benches are boxes.
+- Groups: companions steer to a slot beside the leader (no own route on the graph): they can clip props (a pram
+  through a café table was seen). Conversations start only when a pair stands still 1.5 s (rare outside kerbs).
+- Dives: only from the lab's test car; baked people far away side-step instead of diving.
+- Phone and pram are scripted arm overlays, not UAL clips (not in the free pack).
+
 ## How to re-run
 
 ```

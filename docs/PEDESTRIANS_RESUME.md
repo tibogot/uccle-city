@@ -8,7 +8,14 @@ hour / season controls, his crowd as the baseline mode) and **P1** (gait baker, 
 LOD0 / LOD1 / LOD2 with dithered fades, live <-> baked hand-over, distance-driven clips, 15 Hz far band, meters,
 moving checks, strips). Not done: P4 (bodies v2), UAL clips, P2+ (city).
 
-Next, in order:
+**Round 2 done (2026-11-11 evening)**: plant pin + per-foot ground for baked walkers (mid-band slide p95
+0.03-0.07 m/s, no sinking), bodies v2 (children, older people, clothes, umbrellas, bags, prams, dogs, seasons), UAL1
+sit / sit-talk / talk, groups, step back, dives at speed. See "Round 2" in `docs/PEDESTRIANS.md`.
+Round-2 next: the owner's quiet CPU / GPU re-run (`lab.bench()`; CPU estimated ~0.5-0.6 ms for 300); if CPU is over,
+move the per-person arrays to SoA and pin LOD0 at 30 Hz too; female-fitted clothes; child proportions; a better dog
+and pram; Sitting_Enter / Exit; far-band kerb sinks. Items 2-5 below are done.
+
+Next (round 1 list), in order:
 1. **GPU cost on a quiet machine**: `lab.bench()` in the lab (street view, 50 / 150 / 300), also `?post=0`; split
    the crowd's time (shadow pass vs beauty vs compute) by toggling `castShadow` / bands. Update the table in
    `docs/PEDESTRIANS.md`. Target 300 <= 1.0 ms.
