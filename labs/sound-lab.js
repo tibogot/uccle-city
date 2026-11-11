@@ -51,7 +51,7 @@ const scene = new THREE.Scene(); scene.background = new THREE.Color(0xa9bccb); s
 scene.add(new THREE.HemisphereLight(0xdfe8f0, 0x4a4f42, 1.6));
 const sunL = new THREE.DirectionalLight(0xffffff, 1.6); sunL.position.set(60, 100, 40); scene.add(sunL);
 const mat = (c, e = 0) => new THREE.MeshStandardNodeMaterial({ color: c, roughness: 0.9, emissive: e });
-ZONES.forEach(([a, b, c, d, , col], i) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(b - a, d - c).rotateX(-Math.PI / 2), mat(col)); m.position.set((a + b) / 2, i * 0.004, (c + d) / 2); scene.add(m); });
+ZONES.forEach(([a, b, c, d, , col], i) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(b - a, d - c).rotateX(-Math.PI / 2), mat(col)); m.position.set((a + b) / 2, i * 0.03, (c + d) / 2); m.material.polygonOffset = true; m.material.polygonOffsetFactor = -i; scene.add(m); });
 for (const [a, b, c, d, h] of BLOCKS) { const m = new THREE.Mesh(new THREE.BoxGeometry(b - a, h, d - c), mat(0xb9a58c)); m.position.set((a + b) / 2, h / 2, (c + d) / 2); scene.add(m); }
 { const t = new THREE.Mesh(new THREE.BoxGeometry(7, TOWER.y + 6, 7), mat(0x9a948a)); t.position.set(TOWER.x, (TOWER.y + 6) / 2, TOWER.z); scene.add(t);
   const sp = new THREE.Mesh(new THREE.ConeGeometry(5, 14, 4), mat(0x4d5560)); sp.position.set(TOWER.x, TOWER.y + 13, TOWER.z); sp.rotation.y = Math.PI / 4; scene.add(sp); }
