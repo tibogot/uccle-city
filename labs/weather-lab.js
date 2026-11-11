@@ -579,7 +579,7 @@ function animate(dt) {
     driveCar.obj.position.x = carX;
     const L = Math.max(driveCar.size.x, driveCar.size.z) * 0.33, W = 0.78;
     const cur = [[carX + L, -1.8 + W], [carX + L, -1.8 - W], [carX - L, -1.8 + W], [carX - L, -1.8 - W]];
-    cur.forEach(([x, z], k) => stamps.push({ x, z, px: carPrev ? carPrev[k][0] : x, pz: carPrev ? carPrev[k][1] : z, r: 0.12, strength: 0.95 }));
+    cur.forEach(([x, z], k) => stamps.push({ x, z, px: carPrev ? carPrev[k][0] : x, pz: carPrev ? carPrev[k][1] : z, r: 0.15, strength: 0.95 }));
     carPrev = cur;
   }
   if (!path) { stamps.push(...footprints); return; }
@@ -591,7 +591,7 @@ function animate(dt) {
     camera.lookAt(x + 6, 1.2, -2.6);
     if (path.t * path.speed - path.lastStep > 0.7) {
       path.lastStep = path.t * path.speed; path.side *= -1;
-      footprints[path.side > 0 ? 0 : 1] = { x: x + 0.2, z: z + path.side * 0.13, px: x + 0.42, pz: z + path.side * 0.13, r: 0.1, strength: 0.8 };
+      footprints[path.side > 0 ? 0 : 1] = { x: x + 0.2, z: z + path.side * 0.13, px: x + 0.42, pz: z + path.side * 0.13, r: 0.15, strength: 0.85 };
     }
     stamps.push(...footprints);
   } else if (path.kind === "drive") {

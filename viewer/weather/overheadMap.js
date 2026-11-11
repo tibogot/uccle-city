@@ -40,7 +40,9 @@ export function createOverheadMap({ renderer, centre = new THREE.Vector3(), size
   rt.texture.colorSpace = THREE.NoColorSpace;
   const cam = new THREE.OrthographicCamera(-size / 2, size / 2, size / 2, -size / 2, 0.1, depth);
   const mat = new THREE.MeshBasicNodeMaterial();
-  mat.colorNode = vec4(positionWorld.y, positionWorld.x, positionWorld.z, 1);
+  // all three POSITIVE (r187 clamps negative colour output on this path: x < 0 read back as 0), decoded in toGrid()
+  const uEnc = uniform(new THREE.Vector3());
+  mat.colorNode = vec4(positionWorld.y.add(1000), positionWorld.x.sub(uEnc.x), positionWorld.z.sub(uEnc.z), 1);
   mat.fog = false; mat.toneMapped = false; mat.side = THREE.DoubleSide;
   const data = new Float32Array(res * res * 4);
   const tex = new THREE.DataTexture(data, res, res, THREE.RGBAFormat, THREE.FloatType);
@@ -84,6 +86,7 @@ export function createOverheadMap({ renderer, centre = new THREE.Vector3(), size
 
   async function pass(scene, layer) {
     cam.layers.disableAll(); cam.layers.enable(layer);
+    uEnc.value.set(uOrigin.value.x - 1, 0, uOrigin.value.y - 1);
     cam.position.set(map.centre.x, map.centre.y + height, map.centre.z);
     cam.up.set(0, 0, -1);
     cam.lookAt(map.centre.x, map.centre.y, map.centre.z);
@@ -105,12 +108,11 @@ export function createOverheadMap({ renderer, centre = new THREE.Vector3(), size
   /** readback -> canonical grid, using each texel's own world x / z (G, B) */
   function toGrid(px, out, empty) {
     out.fill(NaN);
-    const x0 = uOrigin.value.x, z0 = uOrigin.value.y;
     for (let k = 0; k < res * res; k++) {
       if (px[k * 4 + 3] < 0.5) continue;
-      const i = Math.floor((px[k * 4 + 1] - x0) / cell), j = Math.floor((px[k * 4 + 2] - z0) / cell);
+      const i = Math.floor((px[k * 4 + 1] - 1) / cell), j = Math.floor((px[k * 4 + 2] - 1) / cell);
       if (i < 0 || j < 0 || i >= res || j >= res) continue;
-      const v = px[k * 4];
+      const v = px[k * 4] - 1000;
       const o = j * res + i;
       if (!(out[o] >= v)) out[o] = v;            // the topmost when two texels land in one cell
     }
@@ -154,16 +156,24 @@ export function createOverheadMap({ renderer, centre = new THREE.Vector3(), size
       const o = j * N + i, h = H[o];
       // local slope from the continuous neighbours (a step is not a slope): one-sided where the other side jumps
       const l = at(i - 1, j), r = at(i + 1, j), u = at(i, j - 1), d = at(i, j + 1);
-      const okL = Math.abs(l - h) < 0.3 * 1.8, okR = Math.abs(r - h) < 0.3 * 1.8, okU = Math.abs(u - h) < 0.3 * 1.8, okD = Math.abs(d - h) < 0.3 * 1.8;
-      const gx = okL && okR ? (r - l) / (2 * cell) : okR ? (r - h) / cell : okL ? (h - l) / cell : 0;
-      const gz = okU && okD ? (d - u) / (2 * cell) : okD ? (d - h) / cell : okU ? (h - u) / cell : 0;
+      // a slope rises the same on both sides; a step (kerb, eave) does not: then the flatter side is the slope
+      const SLOPE_MAX = 1.6 * cell;   // above ~58 deg it is a step anyway
+      const grad = (m, p) => {
+        const a = h - m, b = p - h;
+        if (Math.abs(a - b) < 0.05 && Math.abs(a) < SLOPE_MAX) return (p - m) / (2 * cell);
+        const s = Math.abs(a) < Math.abs(b) ? a : b;
+        return Math.abs(s) < SLOPE_MAX ? s / cell : 0;
+      };
+      const gx = grad(l, r), gz = grad(u, d);
       slope[o] = Math.atan(Math.hypot(gx, gz)) * 180 / Math.PI;
       // steps after the plane: a neighbour much LOWER than the plane = I am on a drop edge; much HIGHER = a wall foot
       let lo = false, hi = false;
       for (const [di, dj] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
         const e = at(i + di, j + dj) - (h + gx * di * cell + gz * dj * cell);
-        if (e < -S.cliff) lo = true;
-        if (e > S.cliff) hi = true;
+        // a ridge / valley bends the slope (up to 2 x its rise): a crease, not a step
+        const tol = S.cliff + 2 * Math.abs(di ? gx : gz) * cell;
+        if (e < -tol) lo = true;
+        if (e > tol) hi = true;
       }
       edge[o] = lo ? 1 : 0; wall[o] = hi ? 1 : 0;
       cliff[o] = lo || hi ? 1 : 0;
