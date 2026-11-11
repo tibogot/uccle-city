@@ -72,13 +72,16 @@ export const glint = Fn(([p, fw]) => {
 });
 
 /** The snow cover mask at a world point for a given up-facing share / exposure (shared with the snow layer). */
-export function snowMask(P, up, exposure, cover = wx.uSnowCover) {
+export function snowMask(P, up, exposure, cover = wx.uSnowCover, upLo = 0.42, upHi = 0.78) {
   const n = noise2D(P.xz.mul(2.7)).mul(0.6).add(noise2D(P.xz.mul(0.6)).mul(0.4));
-  const cov = smoothstep(0.42, 0.78, up).mul(exposure).mul(cover);
+  const cov = smoothstep(upLo, upHi, up).mul(exposure).mul(cover);
   return smoothstep(0.32, 0.5, cov.mul(1.45).sub(n.mul(0.45)));
 }
 
 export function weatherize(m, o = {}) {
+  // LITE (far tiles, ~0.1 ms): wet darkening + film roughness + SSR metalness + a one-octave snow cover; no puddles,
+  // ripples, rivulets, beads, litter, flowers, sparkle or micro bump (they are sub-pixel past ~150 m anyway)
+  if (o.lite) o = { porosity: o.porosity, map: o.map, snow: o.snow, slush: o.slush, lite: true };
   const map = o.map;
   const porosity = float(o.porosity ?? 0.5);
   const baseCol = m.colorNode ?? vec3(m.color.r, m.color.g, m.color.b);
@@ -92,7 +95,10 @@ export function weatherize(m, o = {}) {
   if (map) {
     const s = map.sample(P.xz);
     const inside = map.inside(P.xz);
-    exposed = select(inside, smoothstep(s.x.sub(0.3), s.x.sub(0.06), P.y), float(1));
+    // topmost = fully exposed; under something HIGH above (an eave 3 m up, not a car roof 1 m up) the wind still
+    // brings some snow and rain in (sills under a 40 cm overhang do whiten in photos)
+    const gap = s.x.sub(P.y);
+    exposed = select(inside, max(smoothstep(s.x.sub(0.3), s.x.sub(0.06), P.y), smoothstep(1.2, 4.0, gap).mul(0.65)), float(1));
     shelter = select(inside, s.y, float(0)).mul(season.uLeafDensity.mul(0.75).add(0.25));
   }
   const t = wx.uTime;
@@ -193,7 +199,18 @@ export function weatherize(m, o = {}) {
 
   // ---- snow cover
   if (o.snow !== false) {
-    const sm = snowMask(P, up, exposed.mul(float(1).sub(shelter.mul(0.6))), wx.uSnowCover).toVar();
+    if (o.lite) {
+      const cov = smoothstep(0.42, 0.78, up).mul(exposed).mul(wx.uSnowCover);
+      const sm = smoothstep(0.32, 0.5, cov.mul(1.45).sub(noise2D(P.xz.mul(0.6)).mul(0.45)));
+      col = mix(col, mix(SNOW_ALBEDO, vec3(0.42, 0.43, 0.44), (o.slush ? wx.uSlush : wx.uSlush.mul(0.35)).mul(0.8)), sm);
+      rough = mix(rough, float(0.72), sm);
+      metal = mix(metal, float(0), sm);
+      m.colorNode = col; m.roughnessNode = clamp(rough, 0.02, 1); m.metalnessNode = clamp(metal, 0, 1); m.normalNode = nView;
+      m.userData.weatherized = "lite";
+      return m;
+    }
+    // snowUp: the up-facing range that holds snow (branches: a round limb holds a ridge from ~0.15 up)
+    const sm = snowMask(P, up, exposed.mul(float(1).sub(shelter.mul(0.6))), wx.uSnowCover, ...(o.snowUp ?? [0.42, 0.78])).toVar();
     // slush: melting snow on roads / pavements turns grey, wet and patchy
     const slush = o.slush ? wx.uSlush : wx.uSlush.mul(0.35);
     const sCol = mix(SNOW_ALBEDO, vec3(0.42, 0.43, 0.44), slush.mul(0.8));

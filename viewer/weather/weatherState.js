@@ -20,6 +20,8 @@ export const wx = {
   uWind: uniform(new THREE.Vector2(0, 0)),   // m/s, world xz, the direction the air MOVES to
   uTime: uniform(0),            // s: animation time (frozen by the flicker test)
   uFrost: uniform(0),           // 0..1 hoar frost on grass / cars below 0 C with clear sky
+  uIcicle: uniform(0),          // 0..1 icicle growth under eaves (cold days with snow on the roofs)
+  uDrip: uniform(0),            // 0..1 drips from eaves (melting snow, or rain through the gutters)
 };
 
 /** Preset = inputs (+ a starting surface state, so a preset is a believable moment, not a cold start). */
@@ -31,8 +33,9 @@ export const WEATHER_PRESETS = {
   "morning mist": { rain: 0, snow: 0, temp: 4, wind: 0.5, windDir: 90, cloud: 0.4, vis: 400, state: { wet: 0.45, puddle: 0.2, depth: 0 } },
   "light snow": { rain: 0, snow: 0.6, temp: -1, wind: 2, windDir: 60, cloud: 1, vis: 3000, state: { wet: 0.2, puddle: 0, depth: 0.04 } },
   "snowstorm": { rain: 0, snow: 4, temp: -3, wind: 9, windDir: 50, cloud: 1, vis: 600, state: { wet: 0.1, puddle: 0, depth: 0.18 } },
-  "deep snow, sun": { rain: 0, snow: 0, temp: -4, wind: 1, windDir: 60, cloud: 0.15, vis: 25000, state: { wet: 0, puddle: 0, depth: 0.25 } },
-  "thaw": { rain: 1.2, snow: 0, temp: 4, wind: 4, windDir: 230, cloud: 1, vis: 5000, state: { wet: 0.9, puddle: 0.5, depth: 0.12 } },
+  "deep snow, sun": { rain: 0, snow: 0, temp: -4, wind: 1, windDir: 60, cloud: 0.15, vis: 25000, state: { wet: 0, puddle: 0, depth: 0.25, icicle: 0.8 } },
+  "thaw": { rain: 1.2, snow: 0, temp: 4, wind: 4, windDir: 230, cloud: 1, vis: 5000, state: { wet: 0.9, puddle: 0.5, depth: 0.12, slush: 0.7, icicle: 0.5 } },
+  "blizzard (dense)": { rain: 0, snow: 8, temp: -5, wind: 12, windDir: 40, cloud: 1, vis: 250, state: { wet: 0, puddle: 0, depth: 0.22 } },
 };
 
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -44,7 +47,7 @@ export class Weather {
     // inputs (live; the lab's panel binds this object)
     this.input = { rain: 0, snow: 0, temp: 12, wind: 2, windDir: 240, cloud: 0.3, vis: 25000 };
     // surface state
-    this.state = { wet: 0, puddle: 0, depth: 0, slush: 0, frost: 0 };
+    this.state = { wet: 0, puddle: 0, depth: 0, slush: 0, frost: 0, icicle: 0 };
     this.timeScale = 60;           // simulated seconds per real second
     this.maxDepth = 0.35;          // m: the snow layer is built for this much
     this.time = 0;
@@ -57,11 +60,11 @@ export class Weather {
     if (!p) return;
     this.fade = { from: { ...this.input }, to: p, t: 0, dur: Math.max(1e-3, seconds) };
     if (seconds <= 0) { Object.assign(this.input, Object.fromEntries(KEYS.map((k) => [k, p[k]]))); this.fade = null; }
-    if (withState) Object.assign(this.state, { slush: 0, frost: 0 }, p.state);
+    if (withState) Object.assign(this.state, { slush: 0, frost: 0, icicle: 0 }, p.state);
   }
   /** Rain intensity 0..1 from mm/h (0.5 drizzle .. 4 moderate .. 10+ heavy): a soft log curve. */
   static rainLevel(mmh) { return mmh <= 0 ? 0 : Math.min(1, Math.log1p(mmh) / Math.log1p(12)); }
-  static snowLevel(cmh) { return cmh <= 0 ? 0 : Math.min(1, Math.log1p(cmh * 2) / Math.log1p(8)); }
+  static snowLevel(cmh) { return cmh <= 0 ? 0 : Math.min(1, Math.log1p(cmh * 2) / Math.log1p(18)); }   // 1 = a 9 cm/h blizzard
 
   update(dtReal) {
     if (this.fade) {
@@ -100,6 +103,10 @@ export class Weather {
     // hoar frost: below 0 C under a clear-ish sky (radiative cooling), gone above +1 C
     S.frost = I.temp < 0 && I.cloud < 0.6 ? Math.min(1, S.frost + dt / 1800) : Math.max(0, S.frost - dt / 600);
 
+    // icicles: snow on the roofs and a frosty spell (sun melts the roof snow by day, the eaves refreeze it): grow over
+    // ~4 h, gone in ~1 h above +1 C
+    if (I.temp <= 0 && S.depth > 0.02) S.icicle = Math.min(1, S.icicle + dt / (4 * 3600) * (0.4 + sun));
+    else if (I.temp > 1) S.icicle = Math.max(0, S.icicle - dt / 3600 * (0.5 + 0.2 * I.temp));
     // --- uniforms
     wx.uRain.value = Weather.rainLevel(rainMMH);
     wx.uSnowFall.value = Weather.snowLevel(snowCMH);
@@ -110,6 +117,8 @@ export class Weather {
     wx.uSnowCover.value = Math.min(1, S.depth / 0.012);
     wx.uSlush.value = S.slush;
     wx.uFrost.value = S.frost;
+    wx.uIcicle.value = S.icicle;
+    wx.uDrip.value = Math.min(1, (I.temp > 0 && S.depth > 0.004 ? 0.4 + 0.15 * I.temp : 0) + (rainMMH > 0.05 ? 0.3 + 0.1 * rainMMH : 0) + (I.temp > 0 ? S.icicle * 0.5 : 0));
     const a = I.windDir * Math.PI / 180;                                    // FROM direction, deg (0 = from north, -z)
     // our axes: +x east, +z south. Wind from north blows toward +z.
     wx.uWind.value.set(-Math.sin(a) * I.wind, Math.cos(a) * I.wind);

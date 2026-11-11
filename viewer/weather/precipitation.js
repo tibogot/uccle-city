@@ -15,7 +15,7 @@ import { season } from "../seasons/season.js";
 
 const KIND = {
   rain: { max: 24000, box: 44, top: 22, fall: 8.5, size: 0.006, len: 0.55 },
-  snow: { max: 32000, box: 24, top: 12, fall: 1.0, size: 0.022, len: 0 },
+  snow: { max: 64000, box: 24, top: 12, fall: 1.0, size: 0.022, len: 0 },
   leaves: { max: 900, box: 60, top: 14, fall: 1.1, size: 0.05, len: 0 },
 };
 

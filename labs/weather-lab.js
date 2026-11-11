@@ -29,6 +29,7 @@ import { createOverheadMap, markSolid, markCanopy } from "../viewer/weather/over
 import { createPrecipitation } from "../viewer/weather/precipitation.js";
 import { createSnowLayer } from "../viewer/weather/snowLayer.js";
 import { createWeatherFog } from "../viewer/weather/weatherFog.js";
+import { snowOnBranches, snowOnFoliage, createLedgeCaps, createEaveIce } from "../viewer/weather/snowExtras.js";
 import { fetchLive, mapLive } from "../viewer/weather/liveWeather.js";
 import { season, setDay, dayLabel, seasonName, dayOfYear } from "../viewer/seasons/season.js";
 import { flickerTest, showHeat } from "./flickerTest.js";
@@ -128,14 +129,16 @@ function barkMat() {
 }
 const WEATHER_OPTS = new Map();
 /** Build a mesh with a dry and a weatherized version of the same material (A/B). */
-function mesh(geo, mk, opts, { cast = true, receive = true, solid = true } = {}) {
-  const dry = mk(), wet = weatherize(mk(), { map: omap, ...opts });
+function mesh(geo, mk, opts, { cast = true, receive = true, solid = true, post = null } = {}) {
+  const dry = mk(), wet = weatherize(mk(), { map: omap, ...opts }), lite = weatherize(mk(), { map: omap, ...opts, lite: true });
+  if (post) { post(wet); post(lite); }
   const me = new THREE.Mesh(geo, wet);
   me.castShadow = cast; me.receiveShadow = receive;
   if (solid) markSolid(me);
-  reg.push({ mesh: me, dry, wet });
+  reg.push({ mesh: me, dry, wet, lite });
   return me;
 }
+const ledges = [];   // narrow up-facing ledges for the snow caps: { x, y, z, len, width, axis }
 
 // the overhead map: 64 m around the street (12.5 cm cells)
 const omap = createOverheadMap({ renderer, centre: new THREE.Vector3(0, 0, 0), size: 64, res: 512 });
@@ -223,6 +226,7 @@ function windows(x0, w, floors, h0, fh, mats) {
       root.add(mesh(new THREE.BoxGeometry(w, h, 0.07).translate(cx + dx, y + dy, front + 0.035), mats.frame, { porosity: 0.1 }));
     }
     const sill = new THREE.BoxGeometry(1.3, 0.07, 0.16).translate(cx, y - 0.035, front + 0.08);
+    ledges.push({ x: cx, y, z: front + 0.08, len: 1.3, width: 0.16, axis: "x" });
     root.add(mesh(sill, mats.stone, { porosity: 0.35 }));
   }
 }
@@ -274,10 +278,12 @@ const houses = [
       }
       // a cornice at the foot of the mansard (a ledge for snow)
       root.add(mesh(new THREE.BoxGeometry(h.w, 0.18, 0.35).translate(x + h.w / 2, wallH - 0.05, front + 0.12), mats.stone, { porosity: 0.35 }));
+      ledges.push({ x: x + h.w / 2, y: wallH + 0.04, z: front + 0.12 + 0.02, len: h.w, width: 0.3, axis: "x" });
     } else if (h.roof === "flat") {
       root.add(mesh(new THREE.BoxGeometry(h.w, 0.12, depthH).translate(x + h.w / 2, wallH + 0.06, zc), () => plainMat(0x33302c, 0.9), { porosity: 0.4, puddles: true }));
       for (const [dx, dz, sx, sz] of [[0, -depthH / 2 + 0.15, h.w, 0.3], [0, depthH / 2 - 0.15, h.w, 0.3]]) {
         root.add(mesh(new THREE.BoxGeometry(sx, 0.6, sz).translate(x + h.w / 2 + dx, wallH + 0.3, zc + dz), mkB, WALL_OPTS));
+        ledges.push({ x: x + h.w / 2 + dx, y: wallH + 0.6, z: zc + dz, len: sx, width: sz, axis: "x" });
       }
       // a skylight box on the roof
       root.add(mesh(new THREE.BoxGeometry(1.4, 0.5, 1.4).translate(x + h.w / 2, wallH + 0.37, zc - 1), () => plainMat(0x777a7d, 0.5), { porosity: 0.1 }));
@@ -312,7 +318,9 @@ function cyl(a, b, r0, r1) {
   const g = new THREE.CylinderGeometry(r1, r0, L, 7, 1, false).translate(0, L / 2, 0);
   g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize())).translate(a.x, a.y, a.z);
   for (const k of ["uv"]) g.deleteAttribute(k);
-  return g.toNonIndexed();
+  const ng = g.toNonIndexed();
+  ng.setAttribute("aRad", new THREE.Float32BufferAttribute(new Float32Array(ng.attributes.position.count).fill(r0), 1));
+  return ng;
 }
 function grow(a, dir, len, r, depth, out) {
   const b = a.clone().addScaledVector(dir, len);
@@ -331,8 +339,8 @@ function grow(a, dir, len, r, depth, out) {
   }
   const kids = depth > 2 ? 3 : 2 + (rand() < 0.5 ? 1 : 0);
   for (let k = 0; k < kids; k++) {
-    const nd = dir.clone().add(new THREE.Vector3((rand() - 0.5) * 1.3, 0.25 + rand() * 0.5, (rand() - 0.5) * 1.3)).normalize();
-    grow(b, nd, len * (0.68 + rand() * 0.12), r * 0.62, depth - 1, out);
+    const nd = dir.clone().multiplyScalar(0.6).add(new THREE.Vector3((rand() - 0.5) * 1.6, 0.1 + rand() * 0.35, (rand() - 0.5) * 1.6)).normalize();
+    grow(b, nd, len * (0.7 + rand() * 0.12), r * 0.58, depth - 1, out);
   }
 }
 const { mergeGeometries } = await import("three/addons/utils/BufferGeometryUtils.js");
@@ -355,9 +363,9 @@ const leafMat = (() => {
 for (const s of treeSites) {
   const out = { br: [], lf: [] };
   const base = new THREE.Vector3(s.x, KERB, s.z);
-  grow(base, new THREE.Vector3(0, 1, 0), 3.2, 0.24, 4, out);
+  grow(base, new THREE.Vector3(0, 1, 0), 3.2, 0.2, 4, out);
   const bg = mergeGeometries(out.br); const lg = mergeGeometries(out.lf);
-  const bm = mesh(bg, barkMat, { porosity: 0.7, streaks: false }, { solid: false });
+  const bm = mesh(bg, barkMat, { porosity: 0.7, streaks: false, snowUp: [0.12, 0.45] }, { solid: false, post: (m) => snowOnBranches(m, { radiusAttr: "aRad" }) });
   treesG.add(bm);
   const lm = new THREE.Mesh(lg, leafMat); lm.castShadow = true; lm.receiveShadow = true; lm.name = "leaves";
   markCanopy(lm); treesG.add(lm);
@@ -365,6 +373,31 @@ for (const s of treeSites) {
   s.r = Math.max(lg.boundingBox.max.x - lg.boundingBox.min.x, lg.boundingBox.max.z - lg.boundingBox.min.z) / 2;
   s.y = (lg.boundingBox.max.y + lg.boundingBox.min.y) / 2;
   s.top = lg.boundingBox.max.y;
+}
+
+// ---------------------------------------------------------------- evergreens: a privet hedge and two yews (foliage hook)
+function evergreenMat() {
+  const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, roughness: 0.85 });
+  const n1 = noise2D(P.xz.mul(6.0).add(P.y.mul(5.0))), n2 = noise2D(P.xz.mul(19.0).add(P.y.mul(17.0)));
+  m.colorNode = vec3(0.025, 0.055, 0.022).mul(n1.mul(0.6).add(0.6)).mul(n2.mul(0.5).add(0.75));
+  m.normalNode = bumpNormal(n1.mul(0.03).add(n2.mul(0.012)));
+  return m;
+}
+{
+  // hedge: solid (the volumetric layer caps its top with rounded edges), its sides take the foliage snow
+  const g = new THREE.BoxGeometry(14, 1.2, 0.8, 28, 4, 2).translate(1, KERB + 0.6, 7.0);
+  const pp = g.attributes.position;
+  for (let i = 0; i < pp.count; i++) pp.setY(i, pp.getY(i) + 0.05 * Math.sin(pp.getX(i) * 2.3) * (pp.getY(i) > KERB + 1 ? 1 : 0));
+  g.computeVertexNormals();
+  root.add(mesh(g, evergreenMat, { porosity: 0.3, snow: false }, { post: (m) => snowOnFoliage(m) }));
+  // yews: stacked cones (canopy: shelter beneath, foliage snow on the tiers)
+  for (const [x, z, hh] of [[11, 15, 4.2], [-15, 16.5, 3.4]]) {
+    const parts = [];
+    for (let k = 0; k < 3; k++) parts.push(new THREE.ConeGeometry(1.5 - k * 0.38, hh * 0.5, 14, 2).translate(x, KERB + 0.6 + k * hh * 0.25 + hh * 0.25, z));
+    const cg = mergeGeometries(parts.map((q) => q.toNonIndexed()));
+    const me = mesh(cg, evergreenMat, { porosity: 0.3, snow: false }, { solid: false, post: (m) => snowOnFoliage(m) });
+    markCanopy(me); root.add(me);
+  }
 }
 
 // ---------------------------------------------------------------- lamps (the city's model)
@@ -434,6 +467,10 @@ const leaves = createPrecipitation({ renderer, kind: "leaves", map: omap, trees:
 scene.add(rain.mesh, rain.splashes, snowP.mesh, leaves.mesh);
 const snowLayer = createSnowLayer({ renderer, map: omap });
 scene.add(snowLayer.mesh);
+const caps = createLedgeCaps(ledges);
+scene.add(caps.mesh);
+const eaveIce = createEaveIce(omap);
+scene.add(eaveIce.group);
 
 // ================================================================================================ pipeline
 await lighting.attach(camera);
@@ -447,7 +484,7 @@ const S = {
   preset: qp.get("preset") && WEATHER_PRESETS[qp.get("preset")] ? qp.get("preset") : "overcast, after rain",
   day: +(qp.get("day") ?? dayOfYear(today)), hour: +(qp.get("hour") ?? 11.5), night: false,
   live: false, liveInfo: "—", mist: 0, fogScale: 1,
-  rainOn: true, splashOn: true, snowOn: true, layerOn: true, leavesOn: true, matOn: true, fogOn: true, post: true,
+  rainOn: true, splashOn: true, snowOn: true, layerOn: true, iceOn: true, matMode: "full", leavesOn: true, matOn: true, fogOn: true, post: true,
   view: "orbit", gpu: "—", stats: "", bench: "—", flicker: "—", dateLabel: "", seasonLabel: "", sunLabel: "",
 };
 const ui = new Panel({ title: "Weather Lab" });
@@ -489,6 +526,8 @@ fX.add(S, "snowOn").name("snow flakes");
 fX.add(S, "layerOn").name("volumetric snow layer");
 fX.add(S, "leavesOn").name("falling leaves");
 fX.add(S, "matOn").name("weather on materials").onChange(swapMaterials);
+fX.add(S, "matMode", ["full", "lite (far tiles)"]).name("weatherize path").onChange(() => swapMaterials(S.matOn));
+fX.add(S, "iceOn").name("icicles + drips");
 fX.add(S, "fogOn").name("weather fog");
 fX.add(S, "post").name("post (AO, SSR, bloom)");
 fX.add(wxLook.uSparkle, "value", 0, 2, 0.01).name("snow sparkle");
@@ -528,7 +567,7 @@ function applyDay(d) {
   S.sunLabel = `rise ${hm(p.sunrise)} set ${hm(p.sunset)} (solar) · day ${p.dayLength.toFixed(1)} h · noon ${p.noonElevation.toFixed(1)} deg · snow chance ${(p.snowChance * 100).toFixed(0)} %/day`;
   ui.controllersRecursive().forEach((c) => c.updateDisplay());
 }
-function swapMaterials(on) { for (const r of reg) r.mesh.material = on ? r.wet : r.dry; }
+function swapMaterials(on) { for (const r of reg) r.mesh.material = on ? (S.matMode === "full" ? r.wet : r.lite) : r.dry; }
 async function goLive() {
   S.liveInfo = "fetching…";
   try {
@@ -650,6 +689,8 @@ function frame(dtOverride = null) {
   leaves.update(camera, pdt, S.leavesOn ? season.uLeafFall.value * (0.4 + 0.6 * Math.min(1, weather.input.wind / 6)) : 0, H);
   treesG.traverse((o) => { if (o.name === "leaves") o.visible = season.uLeafDensity.value > 0.005; });
   snowLayer.update(pdt, stamps);
+  caps.update(); eaveIce.update();
+  caps.mesh.visible &&= S.layerOn; eaveIce.group.visible = S.iceOn;
   snowLayer.mesh.visible = S.layerOn && wx.uSnowDepth.value > 0.003;
   if (!path) controls.update();
   lighting.update(camera.position.y, 0, controls.target, 60, dt);
@@ -693,7 +734,9 @@ async function bench(cycles = 5) {
   VIEWS()["street, eye level"]();
   weather.setPreset("heavy rain", 0);
   out.rain = await rounds({ off: () => only(["matOn", "fogOn"]), drops: () => only(["matOn", "fogOn", "rainOn"]), dropsSplash: () => only(["matOn", "fogOn", "rainOn", "splashOn"]) }, cycles);
-  out.wet = await rounds({ dry: () => only(["fogOn"]), wet: () => only(["fogOn", "matOn"]) }, cycles);
+  const mode = (m) => () => { S.matMode = m; only(["fogOn", "matOn"]); };
+  out.wet = await rounds({ dry: () => { S.matMode = "full"; only(["fogOn"]); }, wet: mode("full"), lite: mode("lite (far tiles)") }, cycles);
+  S.matMode = "full";
   weather.setPreset("snowstorm", 0); weather.state.depth = 0.2;
   out.snow = await rounds({ off: () => only(["fogOn"]), flakes: () => only(["fogOn", "snowOn"]), layer: () => only(["fogOn", "layerOn"]),
     cover: () => only(["fogOn", "matOn"]), all: () => only(["fogOn", "snowOn", "layerOn", "matOn"]) }, cycles);
