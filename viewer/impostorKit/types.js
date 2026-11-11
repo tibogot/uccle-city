@@ -1,0 +1,45 @@
+// impostorKit / types.js: per object type presets (grid, cell, distances, options) and the types' lighting.
+// A new type = a preset here + a source (sources/*.js: object(v), sphere(v), bake materials from bake.js
+// bakeMaterial) + a shade function (how its baked inputs are lit). docs/IMPOSTOR_KIT.md walks through it.
+import * as THREE from "three/webgpu";
+import { Fn, uniform, vec3, float, mix, step, saturate, pow, dot, normalize, positionWorld, cameraPosition, transformNormalToView } from "three/tsl";
+import { treeTint } from "../../vendor/stylized-trees/stylizedTrees.js";
+
+/** Presets. Cell px from the screen at the hand-over (Usnul's rule: ~1 texel per pixel there), research 3.2.2. */
+export const TYPES = {
+  // street / park trees: 16 x 16 hemi views of 64 px (56 inside a 4 px gutter): 1024^2 per variant
+  tree: { grid: 16, cell: 64, gutter: 4, ss: 4, full: false, minCell: 8,
+    fade: { start: 400, band: 30, end: 1500, endBand: 300, anchorH: 6 },
+    material: { blend: "bary3", parallax: 1, pdo: true, alpha: "a2c-ramp", card: "octagon", far: "ground" } },
+  // later (docs/TODO.md): parked cars 12 x 12 x 48 + paint mask + PDO + casting inside the shadow box
+  car: { grid: 12, cell: 48, gutter: 4, ss: 4, full: false, minCell: 6,
+    fade: { start: 150, band: 15, end: 600, endBand: 100, anchorH: 0.8 },
+    material: { blend: "bary3", parallax: 1, pdo: true, alpha: "a2c-ramp", card: "octagon", far: "ground" } },
+  prop: { grid: 8, cell: 40, gutter: 4, ss: 4, full: false, minCell: 5,
+    fade: { start: 80, band: 10, end: 300, endBand: 60, anchorH: 0.6 },
+    material: { blend: "bary3", parallax: 1, pdo: true, alpha: "a2c-ramp", card: "octagon", far: "ground" } },
+};
+
+/** The far fade's target: what the ground under the trees looks like (albedo, linear). */
+export const FAR = { ground: uniform(new THREE.Color(0.11, 0.13, 0.07)) };
+
+/**
+ * The stylized trees' leaf lighting on the baked inputs (viewer/impostors.js:244-258 / the vendor's makeLeafMaterial):
+ * per-tree tint from the tree's turn and scale (the same value the mesh leaves get), light through the leaves toward
+ * the sun, fill; aux = leaf flag + occlusion (>= 0.5 leaf: 0.5 + 0.5 x AO; 0.25 bark).
+ * far in [0, 1]: fade the shading into the ground's (albedo, up normal, no glow), no pixel dropped.
+ */
+export const treeShade = (U) => ({ m, albedo, nW, aux, far, inst }) => {
+  const leaf = step(0.4, aux), ao = mix(float(1), saturate(aux.sub(0.5).mul(2)), leaf);
+  const tint = treeTint(vec3(inst.cy, inst.sy, inst.scl), U.tintVar);
+  const alb = albedo.mul(mix(float(1), tint, leaf));
+  m.colorNode = mix(alb, vec3(FAR.ground), far);
+  m.aoNode = mix(ao, float(1), far);
+  m.normalNode = transformNormalToView(normalize(mix(nW, vec3(0, 1, 0), far))).normalize();
+  m.emissiveNode = Fn(() => {
+    const V = normalize(positionWorld.sub(cameraPosition));
+    const back = pow(saturate(dot(V, U.sunDir)), 4.0);
+    const glow = U.transColor.mul(U.sunColor).mul(back).mul(ao.mul(ao)).mul(U.translucency);
+    return glow.add(alb.mul(U.fillColor).mul(U.fill).mul(ao.mul(0.5).add(0.5))).mul(leaf).mul(float(1).sub(far));
+  })();
+};
