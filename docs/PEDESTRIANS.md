@@ -223,6 +223,92 @@ the same code as in round 1, read 1.17-1.32 ms CPU (round 1: 0.96-1.08), so abso
 - Dives: only from the lab's test car; baked people far away side-step instead of diving.
 - Phone and pram are scripted arm overlays, not UAL clips (not in the free pack).
 
+## Round 3 (2026-11-11, late): pram, dogs, children, women's clothes, CPU, companions, benches
+
+1. **Pram** (`props.js`): a modern pushchair built in code, one instanced draw: an aluminium frame (handlebar,
+   folding side stays, rear legs, front forks, carrycot rails), two 28 cm rear wheels and two pairs of 17 cm front
+   wheels, each with a tyre, hub and spokes, that **roll** (the vertex shader turns them by distance / radius), a
+   lofted carrycot with a padded rim, a ribbed folding hood (both faces), a shopping basket. The handlebar sits where
+   the pram family's baked hands are (0.5 m ahead at 0.93 m, scaled with the pusher), so the hands hold it.
+2. **Dogs**: one geometry with three breeds (the others collapsed per instance): a Labrador (56 cm, floppy ears,
+   yellow / black / chocolate), a small terrier (30 cm, folded "button" ears, white / grey with tan or black patches),
+   a spaniel (42 cm, long ears, liver / black / golden on white). Lofted body with chest and tuck-up, neck, head,
+   muzzle, nose and eyes, tapering tail, two-segment legs with paws. **Trot in the vertex shader**: diagonal pairs
+   swing about the shoulder / hip with a knee lift, the spine bobs twice per stride and bends sideways, the head bobs;
+   the phase advances by distance (no sliding paws); **sniffing stops** (head down 1.5-3.5 s every 6-16 s) until the
+   lead is taut, then a trot to catch up; tail wag.
+3. **Children with child proportions** (`boneTable.js childify()`, and the same in the compute pass): legs shortened
+   about the hips (x0.80-0.86), arms about the shoulders, their bones scaled (thinner), the body lowered by the lost leg
+   length (feet stay on the ground), a 1.2x head (the material); strides scale with the legs (the clip phase advances
+   by distance / (height x leg factor x stride): no sliding). **Toddlers** (~0.8 m, legs x0.72) **held by the hand**:
+   two more baked families (the parent's left hand down and out, the toddler's right hand up), walking side by side at
+   the parent's pace. Children stay on the bone table (the live rig would walk with adult strides).
+4. **Women's clothes**: the new parts follow his female morph (`femaleDelta` on hats -5 %, scarves -13 % at the
+   neck, the scarf tail over the bust, the bag strap across a narrower chest, coats / skirts +3 % at the hips): no
+   floating, no cut-ins. **Knees**: the coat / skirt hem now follows the thighs (blend 0.35 -> 0.85 down the hem,
+   only the very middle front / back stays with the pelvis) and the flare is 1.5 cm wider.
+5. **CPU** (profiled: Chrome trace + in-page toggles + a tight-loop micro-benchmark): the people and their animation
+   state now keep ONE hidden class (every field declared up front: objects growing field by field fell into V8's slow
+   dictionary mode); one compute dispatch for the three bands (the clip index and the bind joints share one buffer:
+   a compute stage may bind 8 storage buffers); people past the live band step at 30 Hz (pose and position together),
+   LOD2 at 15 Hz with no pin but the highest of four ground samples (no kerb sink); `Math.hypot` replaced in hot
+   paths; one clip slice when unmixed; held people keep their culling; 12 live rigs. **Live-band overlays**: the
+   families' arms / stoop now also on Mr.doob's live rig (`overlays.js`; before, a pram pusher swung their arms within
+   18 m).
+6. **Companions**: their slot beside the leader is used only while it stays on the leader's line; else single file
+   behind (no cutting through furniture); a seated leader's companion takes the free seat next to it; pram / dog /
+   toddler walkers never go to seats; the square's walk graph keeps the café terrace clear. **Benches**: the Brussels
+   bench of the furniture kit (`claude/furniture`, `tools/blender/furniture.py bench()`: slats on dark steel frames,
+   seat 45 cm), its glb copied to `models/furniture/brussels_furniture.glb`, placed by the lab (`BENCHES`).
+
+### Round 3 meters (150 people, winter; `docs/pedestrians/results_round3_2026-11-11.json`)
+
+| Check | slide p95 live / mid / far (m/s) | worst sink mid / far (m), round 2 -> 3 | pops (coverage / shadow / pose) |
+|---|---|---|---|
+| dolly at 1.4 m/s | 0.046 / **0.038** / 0.20 | 0 / **-0.13 -> -0.036** | 0 / 0 / 17 |
+| dolly at 50 km/h | 0.045 / **0.025** / 0.17 | 0 / -0.13 -> **-0.001** | 0 / 0 / 9 |
+| orbit the junction | - / 0.088 / 0.13 | -0.001 / -0.03 -> **0** | 0 / 0 / 0 |
+| backwards through the bands | 0.043 / **0.025** / 0.18 | 0 / -0.13 -> **0** | 0 / 0 / 7 |
+
+- Mid band slide within 0.08 except the orbit (0.088: people turning at the junction seen from above).
+- Sinking: none in the mid band; the far band's kerb sink went from 13-25 cm to 0-3.6 cm (four ground samples).
+- 0 unfaded spawns in view in every check.
+
+### Round 3 cost (300 in view, street; A/B rounds alternating with Mr.doob's all-live crowd; the foliage and
+weather labs ran on the same machine)
+
+| | CPU banded | CPU his | ratio |
+|---|---|---|---|
+| round 1 (owner's quiet run: 0.42 ms) | 0.46-0.56 | 0.96-1.08 | 0.46-0.52 |
+| round 2 final | 0.65-0.84 | 1.25-1.32 | 0.52-0.65 |
+| round 3, before the hidden-class fix | 0.56-0.65 | 0.92-0.96 | 0.60-0.68 |
+| **round 3 final** | **0.40-0.52** | 0.93 | **0.43-0.55** |
+
+- **CPU for 300: 0.40-0.52 ms under load, ratio 0.43-0.55 to his crowd: back at round 1's ratio, so ~0.40-0.45 ms
+  quiet (estimate from the owner's 0.42 ms at ratio ~0.5)**: within 0.5. 50 people: 0.23 ms, 150: 0.29 ms.
+- GPU delta (noisy): +0.39 to +0.59 ms for 300 (more triangles: LOD0 ~4,500, the props). Needs the quiet re-run.
+- The lab's own sim also got cheaper with the hidden-class fix (0.6 -> 0.48 ms; lab code, not the city's).
+
+### Round 3 images (looked at; `docs/pedestrians/`)
+- Before: `r2_variety_a.jpg` (the pram "blob", the stiff yellow "cat"). After: `r3_variety_after.jpg` (same lineup),
+  `r3_pram_dog_close.jpg` (the pushchair with spoked wheels, carrycot, hood, hands on the bar; a terrier on a lead),
+  `r3_dog_breeds.jpg` (a black Labrador, a grey terrier).
+- `r3_toddler_hand_in_hand.jpg`: a mother and a toddler hand in hand (live band, overlays on the live rig).
+- `r3_female_fit.jpg`: women in a long coat + hat + scarf and a skirt + scarf + bag, men alike.
+- `r3_brussels_bench.jpg`: someone sitting on the Brussels bench.
+
+### Round 3 weak points
+- The coat / skirt tube starts at the hips with a visible line where his jacket hem meets it (a slightly different
+  shade); hats are one beanie shape (the cap is a colour); no hair under hats is hidden (long hair goes through).
+- Dogs: low-poly lofts (a little boxy, the terrier especially); the lead is straight (no sag); a dog can pass through a
+  pedestrian or a pole (no avoidance); no dogs sniffing at trees on purpose.
+- Pram: wheels roll but the front wheels do not swivel in turns; no baby inside; the hood shell is thin.
+- Children: proportions by bone scaling (thin limbs); no child faces (the face shader is the adult one, scaled);
+  toddlers walk at the parent's pace with quick steps; a child near the camera has no live rig (bone table only).
+- Mid-band slide in the junction orbit 0.088 (> 0.08); hand-over blends still slide while blending (p95 0.34-0.37).
+- CPU: 0.40-0.52 ms under load (ratio 0.43-0.55): quiet re-run to confirm <= 0.5.
+- The bench glb is a copy of the furniture branch's file: when that branch merges, keep one copy.
+
 ## How to re-run
 
 ```

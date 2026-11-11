@@ -15,6 +15,11 @@ Round-2 next: the owner's quiet CPU / GPU re-run (`lab.bench()`; CPU estimated ~
 move the per-person arrays to SoA and pin LOD0 at 30 Hz too; female-fitted clothes; child proportions; a better dog
 and pram; Sitting_Enter / Exit; far-band kerb sinks. Items 2-5 below are done.
 
+**Round 3 done (2026-11-11, late)**: pushchair, three dog breeds with a trot, child proportions + toddlers hand in
+hand, female-fitted clothes, live-band overlays, companions on the line / seated, the Brussels bench, CPU back to
+ratio 0.43-0.55 vs Mr.doob's crowd (~0.40-0.45 ms quiet, estimate). See "Round 3" in `docs/PEDESTRIANS.md`.
+Next: quiet CPU / GPU re-run; coat hem seam; dog avoidance and lead sag; swivel front wheels; child faces.
+
 Next (round 1 list), in order:
 1. **GPU cost on a quiet machine**: `lab.bench()` in the lab (street view, 50 / 150 / 300), also `?post=0`; split
    the crowd's time (shadow pass vs beauty vs compute) by toggling `castShadow` / bands. Update the table in
