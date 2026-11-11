@@ -17,14 +17,14 @@ import { uniform, float, vec2, vec3, fract, dot, floor, normalize, cross, positi
 import { lodEye, ditherNoise, rampTo } from "../lodFade.js";
 
 /** Per object type: the live fade distances (metres from the view camera, lodEye). */
-export function makeFade({ start = 400, band = 30, end = 1500, endBand = 300, cell = 0.25, anchorH = 6, noise = 1 } = {}) {
+export function makeFade({ start = 400, band = 30, end = 1500, endBand = 300, cell = 0.25, anchorH = 6, noise = 0 } = {}) {
   return {
     start: uniform(start), band: uniform(band), end: uniform(end), endBand: uniform(endBand),
     /** metres per pixel at the hand-over: set it from the camera (setCellFromCamera) */
     cell: uniform(cell),
     /** metres (x instance scale) above the instance's foot: the anchor plane's centre */
     anchorH: uniform(anchorH),
-    /** 1 = object-anchored noise, 0 = the city's screen IGN (A/B) */
+    /** 0 = the screen IGN (default: measured steadier at the hand-over, docs/IMPOSTOR_KIT.md), 1 = object-anchored */
     noise: uniform(noise),
   };
 }

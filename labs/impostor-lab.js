@@ -143,7 +143,7 @@ let todayBake = null, todayMat = null;
 // the kit's
 const S = {
   scene: qp.get("scene") ?? "row50", mode: qp.get("mode") ?? "kit", distance: 600, post: true, time: preset, hour: 0,
-  blend: "bary3", parallax: 1, pdo: true, alpha: "a2c-ramp", gain: 2, card: "octagon", noise: "object", far: "ground", lodBias: 0, colourDepth: "equal",
+  blend: "bary3", parallax: 1, pdo: true, alpha: "a2c-ramp", gain: 2, card: "octagon", noise: "screen", far: "ground", lodBias: 0, colourDepth: "equal",
   start: 400, band: 30, end: 1500, endBand: 300, todayEnd: 1100,
   grid: 16, cell: 64, bakeLod: 2, bakeInfo: "", todayInfo: "",
   path: "orbit", frames: 24, orbitDeg: 0.02, strafe: 0.12, dolly: 1.0, result: "—", gpu: "—", bench: "—",
@@ -405,7 +405,7 @@ async function meter(mode, path = S.path, { strip = false } = {}) {
   frozen = true;
   renderFrame(0);
   startPath();
-  const bands = world.groups.filter((g) => g.name !== "near" && g.n).map((g) => ({
+  const bands = world.groups.filter((g) => g.n && (g.name !== "near" || world.id === "single")).map((g) => ({
     name: g.name, hide: () => { g.hidden = true; applyMode(); }, show: () => { g.hidden = false; applyMode(); },
   }));
   const crop = strip ? stripCrop() : null;
