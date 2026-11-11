@@ -25,7 +25,7 @@ import { windAt, wind } from "./wind.js";
 import { noiseAt } from "./noise.js";
 
 export const SLOTS = ["leaf", "leaf_mass", "stem", "flower_a", "flower_b", "flower_centre"];
-export const LOD_D = [11, 28, 65];            // LOD0 to 11 m, LOD1 to 28 m, LOD2 (shell) to 65 m
+export const LOD_D = [7, 16, 65];             // LOD0 to 7 m, LOD1 to 16 m, LOD2 (shell) to 65 m (11 / 28 sparkled: sub-pixel leaves)
 const BAND = 2.0;
 export const plantU = { lodScale: uniform(1), fadeOut: uniform(LOD_D[2]), dbg: uniform(0) };
 

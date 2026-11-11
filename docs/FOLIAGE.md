@@ -85,6 +85,43 @@ plus `season.snow` / `season.wet` for the weather lab (`season.apply()` after ch
 `wind.direction`, `wind.gust`, `wind.update(dt)`, `windAt(xz)` (TSL) are read by grass, flowers, hedges' cards
 and plants.
 
-## 7. Measurements
+## 7. Measurements (2026-11-11)
 
-See §8 of `docs/FOLIAGE_RESUME.md` for the raw numbers; the summary is filled in below once measured.
+**Noise warning:** every number below was taken while two other agents' labs ran in the same Chrome (a Pedestrian
+Lab with 300-450 people, a Weather Lab). Timestamps step in ~0.065 ms. Re-measure on a quiet machine.
+
+GPU, 1280 x 720, pixel ratio 1, midday, post chain on, 4x MSAA; median of alternating rounds (0.5 s settle,
+1.3-1.5 s sample), whole frame (render + compute timestamps); street scene (654 m of hedges, 430 plants, grass):
+
+| View | none | all foliage | delta | grass | plants | hedges |
+|---|---|---|---|---|---|---|
+| street level | 2.43 | 2.82 | **+0.39** | +0.00 | +0.07 | +0.13 |
+| down the street | 2.43 | 2.69 | **+0.26** | +0.13 | +0.13 | +0.20 |
+| front gardens close | 2.43 | 2.75 | **+0.33** | +0.07 | +0.20 | +0.20 |
+| from the sky (300 m) | 1.64 | 1.70 | **+0.07** | 0 | +0.07 | +0.07 |
+
+Budget (<= 0.8 ms at street level, ~0 from the sky): met in this run. Before batching every foliage dispatch into ONE
+compute pass (12 separate passes: 4 grass layers + 8 plant types) the same views cost +0.8 / +1.25 / +1.5 / +0.13:
+the per-pass overhead was most of it. Culling grass candidates before any memory read and skipping idle layers
+(litter in summer, flowers in winter) also landed in that round. CPU: the foliage's per-frame JS (uniform writes +
+one compute call) reads 0.18-0.21 ms in the lab's EMA read-out, which includes the WebGPU command encoding of the
+dispatches; no per-instance CPU work. The lab's "compute" read-out (0.8-1.1 ms) disagrees with the on/off delta; I
+trust the alternating on/off delta (the compute timestamp likely spans queue gaps).
+
+**Flicker test** (`lab.runFlicker("strafe")`, 24 frames, 4 mm / frame, front gardens view): foliage off 129 ppm,
+foliage on 2,615 ppm with plant LOD0 to 11 m / LOD1 to 28 m, **1,887 ppm** after LOD0 to 7 m / LOD1 to 16 m. Left:
+one thinned-leaf shrub at ~12 m and the far edge of a garden's grass (20-30 m). Images: `foliage/flicker_strafe_front_gardens.png`
+(before), `foliage/flicker_strafe_front_gardens_v2.png` (after).
+
+**Moving strip** (`foliage/strip_garden_walk_bands.png`): a 30 m walk along the verge / meadow, layers tinted: the
+near and main bands hand over with no line and no pop; the far grass merges into the ground colour.
+
+**Mesh audit** (tools/mesh_audit from `claude/stalle` 076ce46, per plant node, `--skip-checks leak`:
+`foliage/audit_summary.txt`): far shells 0 blocking; box ball 1, rose 2, hydrangea 9, geranium 17, lavender 26,
+bulbs 36, laurel 40, rhododendron 117 (petals / leaves crossing or coplanar at 1-3 mm). NOT yet 0. The `leak`
+check is skipped for foliage: it casts rays with back faces culled, and every plant material is double-sided by
+design (open leaf / petal sheets); with it the counts were 13-478 per plant. Flat normals on all leaves / petals /
+stems (streak and flipped went from 1,402 / 97 to 0) and parallel-transported stem frames fixed the real topology
+issues.
+
+Images: `foliage/street_level_july.png`, `foliage/garden_hedges_january.png` (beech hedge holding its brown leaves).
