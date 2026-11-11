@@ -16,7 +16,7 @@ import * as THREE from "three/webgpu";
 import {
   Fn, If, uniform, float, int, uint, vec2, vec3, vec4, instanceIndex, instancedArray, storage, atomicAdd, atomicStore,
   hash, smoothstep, mix, clamp, max, min, abs, length, normalize, cos, sin, cameraPosition, attribute, select, screenCoordinate,
-  fract, dot, Discard, varying, step, PI2, positionWorld, cameraViewMatrix, faceDirection,
+  fract, dot, Discard, varying, step, PI2, positionWorld, cameraViewMatrix, faceDirection, sign,
 } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
@@ -236,13 +236,20 @@ class PlantField {
     mat.positionNode = root.add(rot).add(vec3(lean.x, 0, lean.y));
     // the normal rotates with the plant
     const n0 = attribute("normal", "vec3");
-    const nW = vec3(n0.x.mul(c).sub(n0.z.mul(s)), n0.y, n0.x.mul(s).add(n0.z.mul(c)));
-    mat.normalNode = normalize(cameraViewMatrix.mul(vec4(varying(nW, "v_pN"), 0)).xyz).mul(faceDirection);
+    const nF = vec3(n0.x.mul(c).sub(n0.z.mul(s)), n0.y, n0.x.mul(s).add(n0.z.mul(c)));
+    // CROWN NORMALS: leaves lit partly as the crown's ellipsoid (the foliage artists' trick), more so with distance:
+    // flat-shaded leaves a few pixels wide otherwise flip light / dark as the camera moves (the sparkle at ~12 m)
+    const pW = root.add(rot);
+    const crownN = normalize(pW.sub(root.add(vec3(0, float(H).mul(sc).mul(0.45), 0))).mul(vec3(1, 1.4, 1)).add(vec3(0, 0.25, 0)));
+    const dCam = length(cameraPosition.sub(root));
+    const kCrown = mix(float(0.35), float(0.9), smoothstep(3, 12, dCam)).mul(isLeaf.add(isFlower).add(step(2.5, kind)).min(1));
+    const nW = normalize(mix(nF.mul(sign(dot(nF, crownN)).add(0.001)), crownN, kCrown));
+    mat.normalNode = normalize(cameraViewMatrix.mul(vec4(varying(nW, "v_pN"), 0)).xyz);   // (oriented already: no faceDirection flip)
     // colours per slot
     const leafC = vec3(uniform(new THREE.Color(T.leaf))).toVar();
     const autumnC = vec3(uniform(new THREE.Color("#8a5a1e")));
     let lc = mix(vec3(uniform(new THREE.Color(T.leaf))), autumnC, T.evergreen ? float(0) : S.autumn.mul(0.85));
-    lc = lc.mul(prnd.mul(0.3).add(0.85)).mul(noiseAt(root.xz, 1 / 3, true).b.mul(0.3).add(0.85));
+    lc = lc.mul(prnd.sub(0.5).mul(mix(float(0.3), float(0.08), smoothstep(4, 14, length(cameraPosition.sub(root))))).add(1)).mul(noiseAt(root.xz, 1 / 3, true).b.mul(0.3).add(0.85));
     void leafC;
     const pick = (arr) => { let c0 = vec3(uniform(new THREE.Color(arr[arr.length - 1]))); for (let k = arr.length - 2; k >= 0; k--) c0 = select(rnd.lessThan((k + 1) / arr.length), vec3(uniform(new THREE.Color(arr[k]))), c0); return c0; };
     let fa = pick(T.flowers);

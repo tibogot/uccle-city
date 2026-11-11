@@ -7,9 +7,9 @@
    "ao_mean": 0.464
   },
   "box_ball_far": {
-   "triangles": 80,
+   "triangles": 320,
    "height": 0.702,
-   "ao_mean": 0.78
+   "ao_mean": 0.777
   },
   "laurel": {
    "triangles": 6556,
@@ -17,9 +17,9 @@
    "ao_mean": 0.786
   },
   "laurel_far": {
-   "triangles": 80,
-   "height": 1.448,
-   "ao_mean": 0.927
+   "triangles": 320,
+   "height": 1.454,
+   "ao_mean": 0.914
   },
   "rhododendron": {
    "triangles": 12092,
@@ -27,9 +27,9 @@
    "ao_mean": 0.64
   },
   "rhododendron_far": {
-   "triangles": 80,
+   "triangles": 320,
    "height": 1.194,
-   "ao_mean": 0.904
+   "ao_mean": 0.891
   },
   "hydrangea": {
    "triangles": 15228,
@@ -37,9 +37,9 @@
    "ao_mean": 0.573
   },
   "hydrangea_far": {
-   "triangles": 80,
+   "triangles": 320,
    "height": 0.881,
-   "ao_mean": 0.806
+   "ao_mean": 0.811
   },
   "rose": {
    "triangles": 3238,
@@ -47,7 +47,7 @@
    "ao_mean": 0.739
   },
   "rose_far": {
-   "triangles": 80,
+   "triangles": 320,
    "height": 0.821,
    "ao_mean": 0.81
   },
@@ -57,9 +57,9 @@
    "ao_mean": 0.78
   },
   "lavender_far": {
-   "triangles": 80,
-   "height": 0.446,
-   "ao_mean": 0.693
+   "triangles": 320,
+   "height": 0.447,
+   "ao_mean": 0.692
   },
   "bulbs": {
    "triangles": 834,

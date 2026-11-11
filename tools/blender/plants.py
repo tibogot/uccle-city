@@ -272,7 +272,7 @@ def box_ball():
 
 def box_ball_far():
     rng = random.Random(1); B = Builder("box_ball_far")
-    shell(B, Vector((0, 0, 0.36)), (0.37, 0.37, 0.34), 0.05, rng, subdiv=2, flat_bottom=0.25)
+    shell(B, Vector((0, 0, 0.36)), (0.37, 0.37, 0.34), 0.05, rng, subdiv=3, flat_bottom=0.25)
     return B.finish(COL)
 
 def laurel():
@@ -427,7 +427,7 @@ def geranium():
 
 def far_shell(name, c, r, lump, seed):
     rng = random.Random(seed); B = Builder(name + "_far")
-    shell(B, c, r, lump, rng, subdiv=2, flat_bottom=0.3)
+    shell(B, c, r, lump, rng, subdiv=3, flat_bottom=0.3)
     return B.finish(COL)
 
 objs = [box_ball(), box_ball_far(), laurel(), far_shell("laurel", Vector((0, 0, 0.75)), (0.75, 0.75, 0.7), 0.12, 2),

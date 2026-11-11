@@ -22,11 +22,11 @@ import { bumpNormal } from "../tslkit.js";
 
 // species colours (sRGB): summer leaf, winter leaf, card size (m), card density (per m²), lumpiness (m)
 const SP = {
-  privet:   { summer: "#3f5a22", winter: "#3c4a24", card: 0.2, dens: 30, lump: 0.025, gloss: 0.55 },
-  beech:    { summer: "#4c6a26", winter: "#8a5a2c", card: 0.26, dens: 24, lump: 0.035, gloss: 0.7, holds: 1 },
-  hornbeam: { summer: "#4f6e2a", winter: "#7d5c33", card: 0.25, dens: 24, lump: 0.04, gloss: 0.75, holds: 0.6 },
-  laurel:   { summer: "#2a4a1c", winter: "#2a4620", card: 0.34, dens: 14, lump: 0.05, gloss: 0.35 },
-  box:      { summer: "#33501f", winter: "#3a4a22", card: 0.14, dens: 50, lump: 0.015, gloss: 0.6 },
+  privet:   { summer: "#4a6a28", winter: "#45552a", card: 0.2, dens: 30, lump: 0.025, gloss: 0.55 },
+  beech:    { summer: "#557a2c", winter: "#94603a", card: 0.26, dens: 24, lump: 0.035, gloss: 0.7, holds: 1 },
+  hornbeam: { summer: "#5a7e30", winter: "#86643a", card: 0.25, dens: 24, lump: 0.04, gloss: 0.75, holds: 0.6 },
+  laurel:   { summer: "#335722", winter: "#335222", card: 0.34, dens: 14, lump: 0.05, gloss: 0.35 },
+  box:      { summer: "#3d5e25", winter: "#425228", card: 0.14, dens: 50, lump: 0.015, gloss: 0.6 },
 };
 export const HEDGE_SPECIES = Object.keys(SP);
 export const hedgeU = { cardNear: uniform(10), cardFar: uniform(18), cards: uniform(1) };
@@ -37,7 +37,23 @@ function vnoise1(x, seed) {
   return h(i) * (1 - s) + h(i + 1) * s;
 }
 
-function smoothLine(pts, step = 0.4) {
+/** smooth 3D value noise 0..1 (world-anchored bulges: the same hedge always clips the same way) */
+function vnoise3(x, y, z, seed) {
+  const h = (i, j, k) => { let v = Math.imul(i, 374761393) ^ Math.imul(j, 668265263) ^ Math.imul(k, 2147483647) ^ Math.imul(seed, 1274126177); v = Math.imul(v ^ (v >>> 13), 1274126177); return ((v ^ (v >>> 16)) >>> 0) / 4294967296; };
+  const i = Math.floor(x), j = Math.floor(y), k = Math.floor(z), fx = x - i, fy = y - j, fz = z - k;
+  const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy), sz = fz * fz * (3 - 2 * fz);
+  const L = (a, b, t) => a + (b - a) * t;
+  return L(L(L(h(i, j, k), h(i + 1, j, k), sx), L(h(i, j + 1, k), h(i + 1, j + 1, k), sx), sy),
+           L(L(h(i, j, k + 1), h(i + 1, j, k + 1), sx), L(h(i, j + 1, k + 1), h(i + 1, j + 1, k + 1), sx), sy), sz);
+}
+/** a clipped hedge's face: big soft bulges (~0.6 m), clumps (~0.2 m), a little leaf-scale roughness */
+function bulge(x, y, z, sp, seed) {
+  return (vnoise3(x * 1.6, y * 1.6, z * 1.6, seed) - 0.5) * 2 * sp.lump * 1.6
+       + (vnoise3(x * 5.5, y * 5.5, z * 5.5, seed + 3) - 0.5) * 2 * sp.lump * 0.9
+       + (vnoise3(x * 17, y * 17, z * 17, seed + 9) - 0.5) * 2 * sp.lump * 0.25;
+}
+
+function smoothLine(pts, step = 0.25) {
   // moving average (window 5), then resample by arc length
   const sm = pts.map((p, i) => {
     let x = 0, z = 0, n = 0;
@@ -66,7 +82,13 @@ function section(w, H) {
   P.push([0, H + 0.01, 0, 1]);
   for (let k = 0; k <= 3; k++) { const a = Math.PI / 2 - (k / 3) * (Math.PI / 2); P.push([wt - r + Math.cos(a) * r, H - r + Math.sin(a) * r, Math.cos(a), Math.sin(a)]); }
   P.push([w * 0.96, H * 0.4, 1, 0.05], [w, -0.08, 1, 0]);
-  return P;
+  // denser: every segment longer than 12 cm split (the bulges need vertices to live on)
+  const out = [P[0]];
+  for (let k = 1; k < P.length; k++) {
+    const a = P[k - 1], b = P[k], L = Math.hypot(b[0] - a[0], b[1] - a[1]), m = Math.max(1, Math.ceil(L / 0.12));
+    for (let j = 1; j <= m; j++) { const t = j / m; out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t, a[3] + (b[3] - a[3]) * t]); }
+  }
+  return out;
 }
 
 /** one run -> { pos, nrm, uv, idx } appended to `G`, plus card samples appended to `C` */
@@ -100,9 +122,11 @@ function buildRun(run, groundAt, G, C, seed) {
     const gy = Math.min(groundAt(R.p[0] + nx * w, R.p[1] + nz * w), groundAt(R.p[0] - nx * w, R.p[1] - nz * w), groundAt(R.p[0], R.p[1]));
     for (let k = 0; k < S; k++) {
       const [a, y, an, ay] = sec[k];
-      const lump = (vnoise1(s * 1.7 + k * 0.37, seed) - 0.5) * 2 * sp.lump + (vnoise1(s * 5.1 + y * 3.1, seed + 7) - 0.5) * sp.lump;
       const sc = R.sc;
-      const off = a * sc + an * lump, yy = (y > 0.2 ? y * (0.85 + 0.15 * sc) : y) + ay * lump;
+      const off0 = a * sc, yy0 = (y > 0.2 ? y * (0.85 + 0.15 * sc) : y);
+      const wx = R.p[0] + nx * off0, wz = R.p[1] + nz * off0;
+      const lump = y < 0.02 ? 0 : bulge(wx, gy + yy0, wz, sp, seed) * Math.min(1, y / 0.25);
+      const off = off0 + an * lump, yy = yy0 + ay * lump;
       G.pos.push(R.p[0] + nx * off, gy + yy, R.p[1] + nz * off);
       G.nrm.push(nx * an, ay, nz * an);
       G.uv.push(s, vlen[k]);
@@ -122,7 +146,7 @@ function buildRun(run, groundAt, G, C, seed) {
   }
   // cards: on the surface of the main rings (not the caps' tips), density per m²
   const area = s * vlen[S - 1];
-  const count = Math.round(area * sp.dens * 0.7);
+  const count = Math.round(area * sp.dens * 0.85);
   let h = seed * 9973;
   const rnd = () => { h = Math.imul(h ^ (h >>> 15), 2246822507) + 0x9e3779b9 | 0; return ((h >>> 0) / 4294967296); };
   for (let c = 0; c < count; c++) {
@@ -132,6 +156,8 @@ function buildRun(run, groundAt, G, C, seed) {
     const M = (i) => (N(0, i) * (1 - fr) + N(S, i) * fr) * (1 - fk) + (N(1, i) * (1 - fr) + N(S + 1, i) * fr) * fk;
     const y = L(1);
     if (sec[k][1] < 0.05) continue;                                 // not into the ground
+    // the top corners carry more: that is where a clipped hedge's leaves stick out against the sky
+    if (Math.abs(sec[k][2]) > 0.2 && Math.abs(sec[k][3]) > 0.2 ? false : rnd() < 0.25) continue;
     C.pos.push(L(0), y, L(2)); C.nrm.push(M(0), M(1), M(2)); C.rnd.push(rnd(), rnd(), rnd(), rnd());
   }
 }
@@ -152,8 +178,12 @@ function speciesMaterials(name) {
   const leaves = n2.mul(0.5).add(n3.mul(0.5));
   const crev = smoothstep(0.15, 0.55, leaves);                      // dark gaps between leaf clumps
   const snowTop = smoothstep(0.55, 0.9, normalWorld.y).mul(season.uSnow);
-  body.colorNode = mix(leafC.mul(mix(0.45, 1.05, crev)).mul(clumps.mul(0.25).add(0.85)), vec3(0.88, 0.9, 0.94), snowTop);
-  body.normalNode = bumpNormal(leaves.mul(0.035).add(n1.mul(0.03)));
+  // holes into the hedge's dark interior (twigs, shadow) where the leaf noise dips: the body reads as a mass of
+  // leaves with depth, not a painted box
+  const holes = smoothstep(0.3, 0.12, leaves).mul(smoothstep(0.35, 0.6, n1).mul(0.6).add(0.4));
+  const lit = leafC.mul(mix(0.5, 1.15, crev)).mul(clumps.mul(0.3).add(0.82));
+  body.colorNode = mix(mix(lit, leafC.mul(0.12), holes), vec3(0.88, 0.9, 0.94), snowTop);
+  body.normalNode = bumpNormal(leaves.mul(0.05).add(n1.mul(0.04)).sub(holes.mul(0.04)));
   body.roughnessNode = mix(float(sp.gloss), float(0.95), float(1).sub(crev).mul(0.5));
   // CARDS
   const tex = leafCard(name);
@@ -174,7 +204,7 @@ function speciesMaterials(name) {
   const p = attribute("position", "vec3");                        // quad -0.5..0.5 in x, y
   const w = windAt(cpos.xz);
   const flick = sin(wind.uTime.mul(5.0).add(cr.w.mul(40))).mul(w.z.mul(0.02).add(0.004));
-  card.positionNode = cpos.add(cn.mul(size.mul(0.18))).add(ax.mul(p.x.mul(size))).add(cardY.mul(p.y.add(0.35).mul(size))).add(vec3(flick, 0, flick));
+  card.positionNode = cpos.add(cn.mul(size.mul(0.42))).add(ax.mul(p.x.mul(size))).add(cardY.mul(p.y.add(0.35).mul(size))).add(vec3(flick, 0, flick));
   const a = texture(tex, uv());
   // alpha to coverage, sharpened around 0.5 by its own screen derivative (Golus) on a coverage-preserving chain
   card.opacityNode = saturate(a.a.sub(0.5).div(max(fwidth(a.a), 1e-4)).add(0.5));

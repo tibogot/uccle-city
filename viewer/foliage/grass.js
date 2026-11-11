@@ -108,11 +108,11 @@ export class GroundHeights {
 // ---------------------------------------------------------------------------------------------- shared uniforms
 export const grassU = {
   density: uniform(1),          // global density multiplier (quality)
-  minPixels: uniform(0.8),      // blade width floor in pixels
+  minPixels: uniform(1.1),      // blade width floor in pixels
   pixelScale: uniform(500),     // (projection[5] * viewport height / 2): metres -> pixels at 1 m
   // pushers (feet, wheels): xyz + radius; radius 0 = off
   push: [0, 1, 2, 3].map(() => uniform(new THREE.Vector4(0, -1e4, 0, 0))),
-  lawnH: uniform(0.075), vergeH: uniform(0.32), meadowH: uniform(0.48),
+  lawnH: uniform(0.09), vergeH: uniform(0.32), meadowH: uniform(0.48),
   debugLayers: uniform(0),      // 1: tint the layers (near red, main blue) to show the bands
 };
 
@@ -129,9 +129,13 @@ export const grassAlbedo = Fn(([xz, kind, h, r]) => {
   const n = noiseAt(xz, 1 / 23, true);                  // patches: ~23 m tile, features of a few metres
   // patches: lusher / paler, and dry straw on long grass in summer (and a little on lawns)
   const lush = n.b.sub(0.5).mul(0.35);
+  // tufts (~0.3 m) and clumps (~1.2 m): darker, bluer-green where the grass is thick, paler yellow-green where thin
+  const tuft = noiseAt(xz, 1 / 5, true).a, clumpN = noiseAt(xz.add(vec2(13.1, 7.7)), 1 / 19, true).a;
+  const thick = tuft.mul(0.6).add(clumpN.mul(0.4));
   const dryAmt = smoothstep(0.55, 0.85, n.r.add(r.mul(0.25))).mul(S.dry).mul(mix(float(0.35), float(1), isLong));
   let c = mix(root, tip, pow(max(h, 0.001), float(0.8)));
-  c = c.mul(float(1).add(lush)).mul(r.mul(0.3).add(0.85));
+  c = c.mul(float(1).add(lush)).mul(r.mul(0.45).add(0.78));
+  c = mix(c.mul(vec3(1.12, 1.1, 0.85)), c.mul(vec3(0.78, 0.86, 0.9)), smoothstep(0.25, 0.75, thick));
   c = mix(c, vec3(0.42, 0.33, 0.17).mul(h.mul(0.5).add(0.6)), dryAmt.mul(0.7));
   return c;
 });
@@ -143,7 +147,13 @@ export function grassGroundColor(xz, m, dist, baseColor, layer) {
   // the average over a blade's height (h ~ 0.55) and over r (0.5), times the blades' own AO average
   const avg = grassAlbedo(xz, kind, float(0.55), float(0.5)).mul(0.86);
   const far = smoothstep(layer.fadeA * 0.5, layer.fadeB, dist);
-  const under = mix(avg.mul(mix(0.55, 0.62, kind)), avg, far);      // near: the thatch between blades is darker
+  // texture that survives the hand-over: tufts / clumps (same noise as the blades), plus mown-lawn grain (~8 cm)
+  // and long-grass streaks, from MIPMAPPED taps (fragment stage: they filter to their mean far away, no shimmer)
+  const grain = noiseAt(xz, 1 / 0.6).a, grain2 = noiseAt(xz.mul(vec2(1, 0.35)).add(vec2(3.3, 1.1)), 1 / 1.4).a;
+  const detail = mix(grain.mul(0.5).add(0.75), grain2.mul(0.6).add(0.7), clamp(kind.mul(2), 0, 1));
+  const tuftF = noiseAt(xz, 1 / 5).a;
+  const textured = avg.mul(detail).mul(mix(1.12, 0.8, smoothstep(0.3, 0.7, tuftF)));
+  const under = mix(textured.mul(mix(0.55, 0.62, kind)), textured, far);      // near: the thatch between blades is darker
   const snow = season.uSnow;
   const g = mix(under, vec3(0.86, 0.88, 0.92), snow.mul(0.9));
   return mix(baseColor, g, cover);
@@ -248,7 +258,7 @@ class ScatterLayer {
         else if (kind === "flower") {
           // meadow / verge wildflowers by B; lawn daisies: a few wherever there is lawn (less on mown lawns in summer)
           const lawn = float(1).sub(clamp(m.g.mul(2), 0, 1));
-          dens = m.r.mul(m.b.mul(season.u.wild).mul(0.8).add(lawn.mul(season.u.daisy).mul(0.07)));
+          dens = m.r.mul(m.b.mul(season.u.wild).mul(0.8).add(lawn.mul(season.u.daisy).mul(0.12)));
         } else dens = m.a.mul(season.u.litter).mul(0.55);
         const keepCover = dens.sub(r2);
         If(keepCover.greaterThan(0), () => {
@@ -313,7 +323,7 @@ class ScatterLayer {
     const S = season.u;
     const Hbase = kindMix(kind, grassU.lawnH, grassU.vergeH.mul(S.height), grassU.meadowH.mul(S.height));
     const snowFlat = float(1).sub(season.uSnow.mul(0.75));
-    const H = Hbase.mul(r.mul(0.6).add(0.7)).mul(clump.mul(0.5).add(0.75)).mul(grow).mul(snowFlat);
+    const H = Hbase.mul(r.mul(0.6).add(0.7)).mul(clump.mul(0.8).add(0.6)).mul(grow).mul(snowFlat);
     // width: authored, widened by the thinning, floored in pixels
     const W0 = kindMix(kind, float(0.0045), float(0.006), float(0.0065)).mul(r2.mul(0.5).add(0.75)).mul(widen);
     const camD = max(length(cameraPosition.sub(root)), 0.1);
@@ -351,6 +361,9 @@ class ScatterLayer {
     // colour: the shared grass albedo, root AO (deeper in long grass), wind-flattened blades show paler undersides
     const ao = mix(kindMix(kind, float(0.55), float(0.4), float(0.35)), float(1), smoothstep(0, 0.75, h));
     let c = grassAlbedo(root.xz, kind, h, r).mul(ao).mul(float(1).add(w.z.mul(lm).mul(h).mul(0.15)));
+    // far blades converge to what the ground shows there: a blade that flickers across a pixel then changes it little
+    const conv = smoothstep(10, 34, camD);
+    c = mix(c, grassAlbedo(root.xz, kind, float(0.55), float(0.5)).mul(0.86), conv.mul(0.7));
     c = mix(c, vec3(0.9, 0.92, 0.95), season.uSnow.mul(smoothstep(0.3, 1, h)).mul(0.6));
     const dbg = this.name === "near" ? vec3(1.6, 0.6, 0.6) : vec3(0.6, 0.8, 1.6);
     c = mix(c, c.mul(dbg), grassU.debugLayers);

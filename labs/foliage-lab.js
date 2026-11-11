@@ -141,7 +141,7 @@ function goView(name) { const v = VIEWS[name]; if (!v) return; camera.position.c
 
 // ------------------------------------------------------------------------------------------------ panel
 const S = { plants: true, hedges: true, view: Object.keys(VIEWS)[0], month: season.month, snow: 0, grass: true, near: true, main: true, flowers: true, litter: true,
-  density: 1, debugBands: false, minPx: 0.8, windSpeed: wind.speed, windDir: wind.direction, gust: wind.gust, freeze: false, time: preset, post: true,
+  density: 1, debugBands: false, minPx: 1.1, windSpeed: wind.speed, windDir: wind.direction, gust: wind.gust, freeze: false, time: preset, post: true,
   stats: "", bench: "(run)", flicker: "(run)" };
 const ui = new Panel({ title: "Foliage Lab" });
 const fv = ui.addFolder("View");
