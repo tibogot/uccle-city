@@ -348,7 +348,7 @@ export function buildGraph(doors) {
   g.join(last(access), plat[0], "platform", { width: 2 });
   const board = g.node(-37.4, 55, "board", { spreadX: 1.3, spreadZ: 40, face: -Math.PI / 2 });
   g.join(at(plat, -36.6, 50), board, "platform", { width: 1.5, weight: 0.6 });
-  const doorsT = [41, 47, 53, 59, 65].map((z) => ({ x: -38.7, z, face: Math.PI / 2 }));
+  const doorsT = [41, 47, 53, 59, 65].map((z) => ({ x: -38.3, z, face: Math.PI / 2 }));
   return { graph: g, platformLine: plat, tramDoors: doorsT };
 }
 

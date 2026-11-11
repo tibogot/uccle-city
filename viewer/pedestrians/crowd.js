@@ -203,7 +203,8 @@ export class Crowd {
     a.ox = ox; a.oz = oz; a.dx = p.x + ox; a.dz = p.z + oz; a.dyaw = p.yaw;
     (a.fprev ||= new Float32Array(12)).set(F); a.fpl0 = pl0; a.fpl1 = pl1;
     // per-foot ground: planted feet take their ground at once (they do not move), swinging ones ease over 60 ms
-    const gl = this.ground((F[0] + F[3]) * 0.5, (F[2] + F[5]) * 0.5), gr = this.ground((F[6] + F[9]) * 0.5, (F[8] + F[11]) * 0.5);
+    // a foot across a kerb edge rests on the higher side (heel or ball): it may float a little, it never sinks
+    const gl = Math.max(this.ground(F[0], F[2]), this.ground(F[3], F[5])), gr = Math.max(this.ground(F[6], F[8]), this.ground(F[9], F[11]));
     const e = Math.min(1, dt / 0.06);
     a.gL = a.gL === undefined || pl0 ? gl : a.gL + (gl - a.gL) * e;
     a.gR = a.gR === undefined || pl1 ? gr : a.gR + (gr - a.gR) * e;
