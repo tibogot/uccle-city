@@ -226,8 +226,9 @@ function frame(dt) {
   wind.update(dt);
   applyShow();
   const t0 = performance.now();
-  grassSys.frame(renderer, camera);
-  if (!forcedOff && S.plants) plantSet.frame(renderer, camera);
+  const disp = grassSys.frame(renderer, camera);
+  if (!forcedOff && S.plants) disp.push(...plantSet.frame(renderer, camera));
+  if (disp.length) renderer.compute(disp);
   plantSet.group.visible = !forcedOff && S.plants; hedgeSet.group.visible = !forcedOff && S.hedges;
   cpuMs = cpuMs * 0.95 + (performance.now() - t0) * 0.05;
   lighting.update(camera.position.y, heights.get(camera.position.x, camera.position.z), controls.target, 150);
@@ -272,6 +273,26 @@ async function bench(rounds = 6, views = [S.view]) {
   console.log("[foliage lab] bench", JSON.stringify(out));
   return out;
 }
+/** what costs what: alternating rounds of variants (setup functions) */
+async function abBench(variants, rounds = 5, views = [S.view]) {
+  const out = {};
+  for (const v of views) {
+    goView(v); await wait(1200);
+    const acc = Object.fromEntries(Object.keys(variants).map((k) => [k, []]));
+    for (let k = 0; k < rounds; k++) for (const [name, setup] of Object.entries(variants)) { setup(); await wait(500); gpu.samples.length = 0; await wait(1300); acc[name].push(med(gpu.samples)); }
+    out[v] = Object.fromEntries(Object.entries(acc).map(([k, a]) => [k, +med(a).toFixed(3)]));
+  }
+  Object.assign(S, { grass: true, plants: true, hedges: true }); forcedOff = false;
+  console.log("[foliage lab] abBench", JSON.stringify(out));
+  return out;
+}
+const PARTS = {
+  none: () => { forcedOff = true; },
+  all: () => { forcedOff = false; Object.assign(S, { grass: true, plants: true, hedges: true }); },
+  grass: () => { forcedOff = false; Object.assign(S, { grass: true, plants: false, hedges: false }); },
+  plants: () => { forcedOff = false; Object.assign(S, { grass: false, plants: true, hedges: false }); },
+  hedges: () => { forcedOff = false; Object.assign(S, { grass: false, plants: false, hedges: true }); },
+};
 async function runFlicker(move = "strafe", opts = {}) {
   paused = true; wind.frozen = true;
   try {
@@ -285,4 +306,4 @@ async function strip(path, opts = {}) {
   try { return await frameStrip({ renderFrame: (dt) => frame(dt), canvas: renderer.domElement, camera, controls, path, ...opts }); }
   finally { paused = false; last = performance.now(); }
 }
-window.lab = { renderer, scene, camera, controls, lighting, grassSys, mask, heights, hedges, plants, gardens, mb, bench, runFlicker, strip, goView, VIEWS, S, gpu, wind, season, grassU, extras, G, frame, setPaused: (v) => { paused = v; last = performance.now(); } };
+window.lab = { abBench, PARTS, renderer, scene, camera, controls, lighting, grassSys, mask, heights, hedges, plants, gardens, mb, bench, runFlicker, strip, goView, VIEWS, S, gpu, wind, season, grassU, extras, G, frame, setPaused: (v) => { paused = v; last = performance.now(); } };

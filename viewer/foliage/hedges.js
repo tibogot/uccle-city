@@ -29,7 +29,7 @@ const SP = {
   box:      { summer: "#33501f", winter: "#3a4a22", card: 0.14, dens: 50, lump: 0.015, gloss: 0.6 },
 };
 export const HEDGE_SPECIES = Object.keys(SP);
-export const hedgeU = { cardNear: uniform(14), cardFar: uniform(24), cards: uniform(1) };
+export const hedgeU = { cardNear: uniform(10), cardFar: uniform(18), cards: uniform(1) };
 
 function vnoise1(x, seed) {
   const h = (i) => { let v = Math.imul(i ^ seed, 2654435761); v ^= v >>> 15; return ((Math.imul(v, 2246822519) >>> 0) / 4294967296); };
@@ -122,7 +122,7 @@ function buildRun(run, groundAt, G, C, seed) {
   }
   // cards: on the surface of the main rings (not the caps' tips), density per m²
   const area = s * vlen[S - 1];
-  const count = Math.round(area * sp.dens);
+  const count = Math.round(area * sp.dens * 0.7);
   let h = seed * 9973;
   const rnd = () => { h = Math.imul(h ^ (h >>> 15), 2246822507) + 0x9e3779b9 | 0; return ((h >>> 0) / 4294967296); };
   for (let c = 0; c < count; c++) {

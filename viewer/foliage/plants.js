@@ -268,7 +268,7 @@ class PlantField {
   frame(renderer, camera) {
     this.u.cam.value.copy(camera.position);
     this.u.vp.value.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
-    renderer.compute([this.reset, this.update]);
+    return [this.reset, this.update];
   }
 }
 
@@ -290,7 +290,8 @@ export async function buildPlants(list, groundAt) {
   }
   return {
     group, fields, stats, lib,
-    frame(renderer, camera) { for (const f of fields) f.frame(renderer, camera); },
+    /** the dispatches of every type (the caller runs them in one compute pass with the grass's) */
+    frame(renderer, camera) { return fields.flatMap((f) => f.frame(renderer, camera)); },
   };
 }
 const frac = (x) => x - Math.floor(x);

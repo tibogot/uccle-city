@@ -210,7 +210,7 @@ class ScatterLayer {
     this.side = Math.ceil((this.fadeB * 2) / this.spacing) + 2;
     this.count = this.side * this.side;
     this.cap = Math.min(this.count, o.cap ?? this.count);
-    this.u = { base: uniform(new THREE.Vector2()), cam: uniform(new THREE.Vector3()), vp: uniform(new THREE.Matrix4()), fadeA: uniform(this.fadeA), fadeB: uniform(this.fadeB) };
+    this.u = { groundY: uniform(0), base: uniform(new THREE.Vector2()), cam: uniform(new THREE.Vector3()), vp: uniform(new THREE.Matrix4()), fadeA: uniform(this.fadeA), fadeB: uniform(this.fadeB) };
     this.lastCount = 0;
     this.build();
   }
@@ -234,30 +234,40 @@ class ScatterLayer {
       const seed = uint(cx.add(1048576)).mul(uint(73856093)).bitXor(uint(cz.add(1048576)).mul(uint(19349663))).add(seedOff);
       const r0 = hash(seed), r1 = hash(seed.add(1)), r2 = hash(seed.add(2)), r3 = hash(seed.add(3));
       const xz = vec2(float(cx).add(r0), float(cz).add(r1)).mul(spacing);
-      const m = sys.mask.at(xz);
-      // how many of these grow here (0-1)
-      let dens;
-      if (kind === "blade") dens = m.r.mul(grassU.density);
-      else if (kind === "flower") {
-        // meadow / verge wildflowers by B; lawn daisies: a few wherever there is lawn (less on mown lawns in summer)
-        const lawn = float(1).sub(clamp(m.g.mul(2), 0, 1));
-        dens = m.r.mul(m.b.mul(season.u.wild).mul(0.8).add(lawn.mul(season.u.daisy).mul(0.07)));
-      } else dens = m.a.mul(season.u.litter).mul(0.55);
-      const keepCover = dens.sub(r2);
-      const pos = vec3(xz.x, sys.ground.at(xz), xz.y);
-      const d = length(pos.sub(u.cam));
-      const p = float(1).sub(smoothstep(u.fadeA, u.fadeB, d));
-      const keepDist = p.sub(r3);
-      // frustum (generous margin: the tallest thing here is < 1 m with its lean)
-      const clip = u.vp.mul(vec4(pos.add(vec3(0, 0.3, 0)), 1));
-      const inside = abs(clip.x).lessThan(clip.w.add(1.2)).and(abs(clip.y).lessThan(clip.w.add(1.2))).and(clip.w.greaterThan(-1));
-      If(keepCover.greaterThan(0).and(keepDist.greaterThan(0)).and(inside), () => {
-        const slot = atomicAdd(counter.element(1), uint(1));
-        If(slot.lessThan(cap), () => {
-          const grow = smoothstep(0, 0.12, keepDist).mul(smoothstep(0, 0.1, keepCover));
-          const widen = clamp(float(1).div(sqrt(max(p, 0.02))), 1, this.maxWiden);
-          A.element(slot).assign(vec4(pos, float(seed.bitAnd(uint(0xffffff)))));
-          B.element(slot).assign(vec4(grow, widen, m.g, d));
+      // cheap tests FIRST (no memory reads): the layer's disc and the frustum at the camera's ground height
+      // (+- 4 m of slope margin); only then the mask and the ground height
+      const dxz = length(xz.sub(u.cam.xz));
+      const roughP = vec3(xz.x, u.groundY, xz.y);
+      const rc = u.vp.mul(vec4(roughP, 1));
+      const roughIn = abs(rc.x).lessThan(rc.w.add(4)).and(abs(rc.y).lessThan(rc.w.add(12))).and(rc.w.greaterThan(-6));
+      If(dxz.lessThan(u.fadeB).and(roughIn), () => {
+        const m = sys.mask.at(xz);
+        // how many of these grow here (0-1)
+        let dens;
+        if (kind === "blade") dens = m.r.mul(grassU.density);
+        else if (kind === "flower") {
+          // meadow / verge wildflowers by B; lawn daisies: a few wherever there is lawn (less on mown lawns in summer)
+          const lawn = float(1).sub(clamp(m.g.mul(2), 0, 1));
+          dens = m.r.mul(m.b.mul(season.u.wild).mul(0.8).add(lawn.mul(season.u.daisy).mul(0.07)));
+        } else dens = m.a.mul(season.u.litter).mul(0.55);
+        const keepCover = dens.sub(r2);
+        If(keepCover.greaterThan(0), () => {
+          const pos = vec3(xz.x, sys.ground.at(xz), xz.y);
+          const d = length(pos.sub(u.cam));
+          const p = float(1).sub(smoothstep(u.fadeA, u.fadeB, d));
+          const keepDist = p.sub(r3);
+          // exact frustum (generous margin: the tallest thing here is < 1 m with its lean)
+          const clip = u.vp.mul(vec4(pos.add(vec3(0, 0.3, 0)), 1));
+          const inside = abs(clip.x).lessThan(clip.w.add(1.2)).and(abs(clip.y).lessThan(clip.w.add(1.2))).and(clip.w.greaterThan(-1));
+          If(keepDist.greaterThan(0).and(inside), () => {
+            const slot = atomicAdd(counter.element(1), uint(1));
+            If(slot.lessThan(cap), () => {
+              const grow = smoothstep(0, 0.12, keepDist).mul(smoothstep(0, 0.1, keepCover));
+              const widen = clamp(float(1).div(sqrt(max(p, 0.02))), 1, this.maxWiden);
+              A.element(slot).assign(vec4(pos, float(seed.bitAnd(uint(0xffffff)))));
+              B.element(slot).assign(vec4(grow, widen, m.g, d));
+            });
+          });
         });
       });
     })().compute(this.count, [256]);
@@ -415,14 +425,16 @@ class ScatterLayer {
     const cam = camera.position;
     // from the sky: nothing to draw and nothing to compute
     const above = cam.y - groundY;
-    const on = this.enabled !== false && above < this.fadeB;
+    // nothing to grow this season (litter in July, flowers in January): no dispatch at all
+    const S = season.u, idle = (this.kind === "leaf" && S.litter.value < 0.01) || (this.kind === "flower" && S.wild.value < 0.01 && S.daisy.value < 0.01);
+    const on = this.enabled !== false && above < this.fadeB && !idle;
+    this.u.groundY.value = groundY;
     this.mesh.visible = on;
     if (!on) return false;
     this.u.cam.value.copy(cam);
     this.u.base.value.set(Math.floor(cam.x / this.spacing) - (this.side >> 1), Math.floor(cam.z / this.spacing) - (this.side >> 1));
     this.u.vp.value.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
-    renderer.compute([this.reset, this.update]);
-    return true;
+    return [this.reset, this.update];
   }
 
   /** read the drawn instance count back (lab read-out; async, occasional) */
@@ -452,9 +464,10 @@ export class GrassSystem {
   frame(renderer, camera) {
     grassU.pixelScale.value = camera.projectionMatrix.elements[5] * renderer.domElement.height * 0.5;
     const gy = this.ground.get(camera.position.x, camera.position.z);
-    let n = 0;
-    for (const L of Object.values(this.layers)) if (L.frame(renderer, camera, gy)) n++;
-    return n;
+    // every layer's dispatches in ONE compute pass (one pass per layer cost more in pass overhead than the work)
+    const nodes = [];
+    for (const L of Object.values(this.layers)) { const r = L.frame(renderer, camera, gy); if (r) nodes.push(...r); }
+    return nodes;
   }
   /** for the read-out: candidate threads per frame and the cap of each layer */
   stats() { return Object.fromEntries(Object.entries(this.layers).map(([k, L]) => [k, { threads: L.count, cap: L.cap, drawn: L.lastCount }])); }
