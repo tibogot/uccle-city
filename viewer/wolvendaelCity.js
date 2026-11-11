@@ -15,6 +15,7 @@ import * as THREE from "three/webgpu";
 import { loadWolvendael, WV_LODS, setLodFades, wvLodState } from "./wolvendaelModel.js";
 import { SMOOTH, fadeProxies } from "./lodFade.js";
 import { openParallelPipelines } from "../vendor/engine/parallelPipelines.js";
+import { precompile } from "./warmup.js";
 import { Heightmap } from "./heightmap.js";
 import { pondBedGrid } from "./water/pondBed.js";
 import { createPond, POND_LAYER, buildReflectionTrees } from "./water/pondWater.js";
@@ -83,7 +84,6 @@ export async function addWolvendael({ scene, updaters, hide, ponds, world, manif
     root.updateMatrixWorld(true);
     // what the pond reflects: the château (every level and its fading copies), the sky dome, the terrain and trees of
     // the pond's tile and its neighbours (rescanned: tiles stream), the reeds
-    pond.addReflected(root);
     if (pond.reeds) pond.addReflected(pond.reeds);
     const sky = scene.getObjectByName("FirmamentSkyDome") || lighting?.sky?.mesh || lighting?.sky;
     if (sky?.isObject3D) pond.addReflected(sky);
@@ -105,15 +105,26 @@ export async function addWolvendael({ scene, updaters, hide, ponds, world, manif
     const feats = await Promise.all(ptiles.map((t) => fetch(new URL(t.files.features, DATA)).then((r) => r.json()).catch(() => null)));
     const proxies = buildReflectionTrees(feats.flatMap((f) => f?.trees || []), pc0, 95);
     if (proxies) scene.add(proxies);
+    // An object joins the reflection only once its shaders are built for the reflection pass (its target format, no
+    // MRT: other pipelines than the scene pass's): precompiled in the background first. Run 1 of the city flight before
+    // this: 0.4-1.9 s frames near the pond (the sky dome and the neighbour tiles' terrain built on the frame).
+    const camC = new THREE.PerspectiveCamera(50, 1.5, 0.5, 5000); camC.layers.enableAll();
+    const pending = new WeakSet();
+    const toReflection = (o) => {
+      if (o.layers.isEnabled(POND_LAYER) || pending.has(o)) return;
+      pending.add(o);
+      precompile(renderer, [o], camC, scene, { target: pond.refl.rt, mrt: null }).then(() => pond.addReflected(o), () => pond.addReflected(o));
+    };
     const scanTiles = () => {
       // (the sky dome is added by the lighting after this module starts: looked up here)
       const dome = scene.getObjectByName("FirmamentSkyDome");
-      if (dome && !dome.layers.isEnabled(POND_LAYER)) pond.addReflected(dome);
+      if (dome) toReflection(dome);
       for (const t of world.tiles) {
         if (!near.has(t.name)) continue;
         for (const g of t.groups || []) g.traverse((o) => {
           const on = o.name === "terrain" ? state.reflTerrain : o.name === "StylizedTreesTile" ? state.reflTrees : null;
-          if (on !== null) o.traverse((q) => (on ? q.layers.enable(POND_LAYER) : q.layers.disable(POND_LAYER)));
+          if (on === true) toReflection(o);
+          else if (on === false && o.layers.isEnabled(POND_LAYER)) { o.traverse((q) => q.layers.disable(POND_LAYER)); pending.delete(o); }
         });
       }
     };
@@ -123,6 +134,15 @@ export async function addWolvendael({ scene, updaters, hide, ponds, world, manif
     while (!compile) { await new Promise((r) => setTimeout(r, 250)); compile = compiler(); }
     const fp = fadeProxies(root);
     await compile(fp ? [root, fp, pond.group] : [root, pond.group]);
+    // the same for the reflection pass (its target, no MRT): the levels with their opaque materials AND with their fading
+    // copies on the real geometry (the copies' proxies did not give the same pipelines: the first hand-over near the pond
+    // built 9 of them on the frame, 450 ms), the tree proxies, the reeds
+    const allOn = levels.map(() => true);
+    for (const f of [1, 0.5]) {
+      setLodFades(levels, allOn, levels.map(() => f));
+      await precompile(renderer, [root, proxies, pond.reeds].filter(Boolean), camC, scene, { target: pond.refl.rt, mrt: null });
+    }
+    pond.addReflected(root);
     const tComp = performance.now() - tc;
     // the shadow pass's pipelines (and the reflection pass's: one reflection render inside the async window)
     const tw = performance.now();
@@ -135,12 +155,18 @@ export async function addWolvendael({ scene, updaters, hide, ponds, world, manif
     const winR = renderer?.backend?.isWebGPUBackend ? openParallelPipelines(renderer, scene) : null;
     const wc = new THREE.PerspectiveCamera(50, 1.5, 0.5, 4000);
     const pc = pond.water.geometry.boundingSphere.center;
-    wc.position.set(pc.x + 20, pondDesc.level + 2, pc.z + 25); wc.lookAt(m.boundsWorld.getCenter(new THREE.Vector3()));
+    wc.position.set(pc.x + 20, pondDesc.level + 2, pc.z + 25); wc.lookAt(m.boundsWorld.getCenter(new THREE.Vector3())); wc.updateMatrixWorld(true);
     root.visible = true; levels.forEach((g) => { g.visible = true; });
     scanTiles();
-    pond.refl.render(scene, wc, pondDesc.level, null);
+    // every level with its opaque materials, then with its FADING COPIES (a hand-over near the pond draws them in the
+    // reflection pass too: run 1 of the flight built them on the frame, 617 ms)
+    // (two cameras: low over the water, and higher and farther: the chimney pots were outside the first's view)
+    const wc2 = new THREE.PerspectiveCamera(60, 1.5, 0.5, 4000);
+    wc2.position.set(pc.x + 10, pondDesc.level + 12, pc.z + 5); wc2.lookAt(m.boundsWorld.getCenter(new THREE.Vector3()).add(new THREE.Vector3(0, 6, 0))); wc2.updateMatrixWorld(true);
+    const both = (fade) => { setLodFades(levels, levels.map(() => true), levels.map(() => fade)); for (const c of [wc, wc2]) pond.refl.render(scene, c, pondDesc.level, null); };
+    both(1); both(0.5);
     if (winR) await winR.end();
-    pond.refl.render(scene, wc, pondDesc.level, null);
+    both(1); both(0.5);
     root.visible = false;
     const tWarm = performance.now() - tw;
     const homes = manifest.tiles.filter((t) => t.bounds.x[0] < m.boundsWorld.max.x && t.bounds.x[1] > m.boundsWorld.min.x &&

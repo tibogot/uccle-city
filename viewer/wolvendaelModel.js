@@ -303,7 +303,9 @@ const TEMP = {
       const speck = hash2(floor(w.mul(90.0))).toVar();
       const fws = length(fwidth(w.mul(90.0)));
       const sp = mix(speck, float(0.5), smoothstep(0.4, 1.0, fws));
-      const stone = mix(lin(0xd7ccb3), lin(0xc9bda2), h).mul(float(0.95).add(sp.mul(0.08))).toVar();
+      // (the cornice and the bands are long mouldings, not coursed blocks: no per-course tone there)
+      const hk = h.mul(float(1).sub(isC(cd, C.cornice).add(isC(cd, C.band)).min(1).mul(0.85)));
+      const stone = mix(lin(0xd7ccb3), lin(0xc9bda2), hk).mul(float(0.95).add(sp.mul(0.08))).toVar();
       const grime = smoothstep(0.55, 0.0, fract(cv)).mul(0.07).mul(wvLook.weather);
       const blk = stone.mul(float(1).sub(grime.mul(isC(cd, C.block).add(isC(cd, C.joint)).min(1))));
       // the far plates (code block): joints painted at the course lines, fading to the mean once sub-pixel
