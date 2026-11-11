@@ -1,6 +1,6 @@
 # Mesh audit (before pack): playgroundkit.pg_surface_lod2
 
-74 triangles, 46 welded vertices, 16 open edges, 4,736 rays, 3 ms.
+74 triangles, 46 welded vertices, 16 open edges, 4,736 rays, 4 ms.
 
 **0 blocking**, 12 warnings. Clean (no blocking item).
 

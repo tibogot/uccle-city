@@ -1,6 +1,6 @@
 # Mesh audit (before pack): playgroundkit.pg_swing_lod2
 
-456 triangles, 274 welded vertices, 0 open edges, 0 rays, 21 ms.
+456 triangles, 274 welded vertices, 0 open edges, 0 rays, 48 ms.
 
 **0 blocking**, 130 warnings. Clean (no blocking item).
 

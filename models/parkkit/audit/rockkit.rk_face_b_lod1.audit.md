@@ -1,6 +1,6 @@
 # Mesh audit (before pack): rockkit.rk_face_b_lod1
 
-6,624 triangles, 3,466 welded vertices, 310 open edges, 10,312 rays, 133 ms.
+5,817 triangles, 3,055 welded vertices, 295 open edges, 9,830 rays, 83 ms.
 
 **0 blocking**, 0 warnings. Clean (no blocking item).
 

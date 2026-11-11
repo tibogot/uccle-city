@@ -1,14 +1,12 @@
 {
  "summary": {
-  "triangles": 100,
-  "vertices_welded": 58,
-  "open_edges": 14,
-  "rays": 832,
+  "triangles": 103,
+  "vertices_welded": 59,
+  "open_edges": 13,
+  "rays": 800,
   "blocking": 0,
-  "warnings": 1,
-  "counts": {
-   "sliver": 1
-  },
+  "warnings": 0,
+  "counts": {},
   "ms": 2
  },
  "options": {
@@ -54,25 +52,10 @@
   {
    "name": "rk_step_lod2",
    "slot": "rocaille_concrete",
-   "triangles": 100,
+   "triangles": 103,
    "maxDistance": 200
   }
  ],
- "items": {
-  "sliver": [
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -0.126,
-     0.33,
-     -0.27
-    ],
-    "part": "rk_step_lod2/rocaille_concrete",
-    "aspect": 46,
-    "longest": 0.679
-   }
-  ]
- },
+ "items": {},
  "file": "rockkit.glb"
 }

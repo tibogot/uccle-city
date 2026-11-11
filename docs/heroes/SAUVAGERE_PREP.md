@@ -174,6 +174,22 @@ Rock kit: 9 rocaille pieces (`rk_boulder_a/b`, `rk_ledge`, `rk_face_a/b`, `rk_co
 `rk_channel`) + 2 natural (`nat_boulder` sandstone, `nat_slab` dark schist). Playground kit: `pg_swing`, `pg_slide`,
 `pg_climb`, `pg_spring`, `pg_sandpit`, `pg_seesaw`, `pg_bench`, `pg_fence`, `pg_gate`, `pg_surface`.
 
+Measured 2026-11-11 (Park Kit Lab, GPU timestamp medians, kit drawn vs not, interleaved windows, one WebGPU tab):
+
+| view | kit cost |
+|---|---|
+| 40-piece sample cliff, walking 12 m | **1.64 ms** (was 5.3 ms before the LOD bands were tightened and the noise moved to a texture) |
+| same, from the path 30 m | 0.92 ms |
+| same, from 120 m | 0.26 ms |
+| same, grazing close-up 3 m | 2.23 ms |
+| sample playground (52 instances incl. 26 fence panels), walking 10 m | 0.98 ms |
+| same, from 60 m | 0.39 ms |
+
+Rock LOD bands 14 / 45 / 200 m (fade over the last 15 %), playground 20 / 55 / 160 m. Checker (tools/mesh_audit,
+as-is from claude/stalle): **0 blocking on every piece and LOD of both kits** (models/parkkit/audit/). Images:
+docs/heroes/sauvagere/lab_rock_grazing.jpeg, lab_rock_dolly_strip.jpg (12-19 m through the LOD0/1 band: no visible
+pop), lab_playground_walking.jpeg; Blender previews in models/parkkit/previews/ (git-ignored, re-made by --previews).
+
 ## 5. Risks
 
 1. **The cliff's cost.** Stratified rock needs geometry near (the bedding and joints are the look); 40 pieces at

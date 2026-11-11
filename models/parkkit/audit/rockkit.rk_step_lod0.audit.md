@@ -1,6 +1,6 @@
 # Mesh audit (before pack): rockkit.rk_step_lod0
 
-687 triangles, 366 welded vertices, 45 open edges, 1,568 rays, 17 ms.
+705 triangles, 377 welded vertices, 49 open edges, 1,664 rays, 22 ms.
 
 **0 blocking**, 0 warnings. Clean (no blocking item).
 

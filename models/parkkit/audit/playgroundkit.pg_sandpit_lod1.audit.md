@@ -1,6 +1,6 @@
 # Mesh audit (before pack): playgroundkit.pg_sandpit_lod1
 
-466 triangles, 257 welded vertices, 30 open edges, 944 rays, 31 ms.
+466 triangles, 257 welded vertices, 30 open edges, 944 rays, 54 ms.
 
 **0 blocking**, 92 warnings. Clean (no blocking item).
 

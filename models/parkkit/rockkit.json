@@ -3,99 +3,99 @@
  "pieces": {
   "rk_boulder_a": {
    "slot": "rocaille_concrete",
-   "triangles_raw": 15344,
+   "triangles_raw": 15336,
    "size_m": [
     1.86,
     1.61,
     1.3
    ],
    "atlas": [
-    0.2095,
-    0.7721,
-    0.1909
+    0.2096,
+    0.7717,
+    0.191
    ]
   },
   "rk_boulder_b": {
    "slot": "rocaille_concrete",
-   "triangles_raw": 17232,
+   "triangles_raw": 17254,
    "size_m": [
     1.45,
     1.41,
-    2.11
+    2.12
    ],
    "atlas": [
     0,
-    0.7721,
-    0.2055
+    0.7717,
+    0.2056
    ]
   },
   "rk_ledge": {
    "slot": "rocaille_concrete",
-   "triangles_raw": 19100,
+   "triangles_raw": 19096,
    "size_m": [
     3.34,
     2.25,
     0.74
    ],
    "atlas": [
-    0.661,
-    0.4141,
-    0.217
+    0.6608,
+    0.4138,
+    0.2172
    ]
   },
   "rk_face_a": {
    "slot": "rocaille_concrete",
-   "triangles_raw": 66634,
+   "triangles_raw": 66626,
    "size_m": [
-    4.71,
+    4.72,
     2.14,
     3.01
    ],
    "atlas": [
     0,
     0,
-    0.4101
+    0.4098
    ]
   },
   "rk_face_b": {
    "slot": "rocaille_concrete",
-   "triangles_raw": 36384,
+   "triangles_raw": 36354,
    "size_m": [
-    3.46,
+    3.45,
     1.75,
     2
    ],
    "atlas": [
-    0.3581,
-    0.4141,
+    0.3579,
+    0.4138,
     0.2989
    ]
   },
   "rk_corner": {
    "slot": "rocaille_concrete",
-   "triangles_raw": 48768,
+   "triangles_raw": 48748,
    "size_m": [
-    2.95,
+    2.94,
     2.85,
     2.44
    ],
    "atlas": [
     0,
-    0.4141,
-    0.3541
+    0.4138,
+    0.3539
    ]
   },
   "rk_step": {
    "slot": "rocaille_concrete",
-   "triangles_raw": 1762,
+   "triangles_raw": 1750,
    "size_m": [
-    0.98,
+    0.99,
     0.54,
     0.37
    ],
    "atlas": [
-    0.7794,
-    0.7721,
+    0.7804,
+    0.7717,
     0.0647
    ]
   },
@@ -108,7 +108,7 @@
     2.67
    ],
    "atlas": [
-    0.4141,
+    0.4138,
     0,
     0.4046
    ]
@@ -122,9 +122,9 @@
     0.46
    ],
    "atlas": [
-    0.6558,
-    0.7721,
-    0.1196
+    0.6566,
+    0.7717,
+    0.1197
    ]
   },
   "nat_boulder": {
@@ -136,23 +136,23 @@
     0.68
    ],
    "atlas": [
-    0.5318,
-    0.7721,
-    0.12
+    0.5323,
+    0.7717,
+    0.1203
    ]
   },
   "nat_slab": {
    "slot": "rock_schist_dark",
-   "triangles_raw": 6424,
+   "triangles_raw": 6426,
    "size_m": [
     2.03,
-    1.36,
+    1.37,
     0.44
    ],
    "atlas": [
     0.4045,
-    0.7721,
-    0.1233
+    0.7717,
+    0.1238
    ]
   }
  },
@@ -173,7 +173,7 @@
    "lods": [
     {
      "node": "rk_boulder_a_lod0",
-     "triangles": 7797,
+     "triangles": 6746,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -183,7 +183,7 @@
     },
     {
      "node": "rk_boulder_a_lod1",
-     "triangles": 2747,
+     "triangles": 2430,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -193,7 +193,7 @@
     },
     {
      "node": "rk_boulder_a_lod2",
-     "triangles": 770,
+     "triangles": 717,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -212,7 +212,7 @@
    "lods": [
     {
      "node": "rk_boulder_b_lod0",
-     "triangles": 8248,
+     "triangles": 7258,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -222,7 +222,7 @@
     },
     {
      "node": "rk_boulder_b_lod1",
-     "triangles": 3098,
+     "triangles": 2572,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -232,7 +232,7 @@
     },
     {
      "node": "rk_boulder_b_lod2",
-     "triangles": 840,
+     "triangles": 743,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -251,7 +251,7 @@
    "lods": [
     {
      "node": "rk_ledge_lod0",
-     "triangles": 7656,
+     "triangles": 6978,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -261,7 +261,7 @@
     },
     {
      "node": "rk_ledge_lod1",
-     "triangles": 3036,
+     "triangles": 2770,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -271,7 +271,7 @@
     },
     {
      "node": "rk_ledge_lod2",
-     "triangles": 862,
+     "triangles": 826,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -290,27 +290,27 @@
    "lods": [
     {
      "node": "rk_face_a_lod0",
-     "triangles": 31379,
+     "triangles": 32117,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
      ],
-     "error_m": 0.004,
+     "error_m": 0.0034,
      "vertex_ao": false
     },
     {
      "node": "rk_face_a_lod1",
-     "triangles": 12190,
+     "triangles": 15736,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
      ],
-     "error_m": 0.015,
+     "error_m": 0.010499999999999999,
      "vertex_ao": true
     },
     {
      "node": "rk_face_a_lod2",
-     "triangles": 3263,
+     "triangles": 3013,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -329,17 +329,17 @@
    "lods": [
     {
      "node": "rk_face_b_lod0",
-     "triangles": 19228,
+     "triangles": 15492,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
      ],
-     "error_m": 0.0034,
+     "error_m": 0.004,
      "vertex_ao": false
     },
     {
      "node": "rk_face_b_lod1",
-     "triangles": 6624,
+     "triangles": 5817,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -349,7 +349,7 @@
     },
     {
      "node": "rk_face_b_lod2",
-     "triangles": 1790,
+     "triangles": 1697,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -368,7 +368,7 @@
    "lods": [
     {
      "node": "rk_corner_lod0",
-     "triangles": 22385,
+     "triangles": 20814,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -378,22 +378,22 @@
     },
     {
      "node": "rk_corner_lod1",
-     "triangles": 8898,
+     "triangles": 6531,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
      ],
-     "error_m": 0.015,
+     "error_m": 0.017249999999999998,
      "vertex_ao": true
     },
     {
      "node": "rk_corner_lod2",
-     "triangles": 2407,
+     "triangles": 2522,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
      ],
-     "error_m": 0.05,
+     "error_m": 0.0425,
      "vertex_ao": true
     }
    ],
@@ -407,7 +407,7 @@
    "lods": [
     {
      "node": "rk_step_lod0",
-     "triangles": 687,
+     "triangles": 705,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -417,7 +417,7 @@
     },
     {
      "node": "rk_step_lod1",
-     "triangles": 343,
+     "triangles": 312,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -427,7 +427,7 @@
     },
     {
      "node": "rk_step_lod2",
-     "triangles": 100,
+     "triangles": 103,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -446,7 +446,7 @@
    "lods": [
     {
      "node": "rk_grotto_lod0",
-     "triangles": 30179,
+     "triangles": 27113,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -456,17 +456,17 @@
     },
     {
      "node": "rk_grotto_lod1",
-     "triangles": 13809,
+     "triangles": 6518,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
      ],
-     "error_m": 0.01275,
+     "error_m": 0.02175,
      "vertex_ao": true
     },
     {
      "node": "rk_grotto_lod2",
-     "triangles": 3097,
+     "triangles": 2881,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -485,7 +485,7 @@
    "lods": [
     {
      "node": "rk_channel_lod0",
-     "triangles": 2220,
+     "triangles": 2110,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -495,7 +495,7 @@
     },
     {
      "node": "rk_channel_lod1",
-     "triangles": 1101,
+     "triangles": 1020,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -505,7 +505,7 @@
     },
     {
      "node": "rk_channel_lod2",
-     "triangles": 323,
+     "triangles": 316,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -534,7 +534,7 @@
     },
     {
      "node": "nat_boulder_lod1",
-     "triangles": 828,
+     "triangles": 838,
      "draws": 1,
      "slots": [
       "rock_sandstone"
@@ -544,7 +544,7 @@
     },
     {
      "node": "nat_boulder_lod2",
-     "triangles": 258,
+     "triangles": 244,
      "draws": 1,
      "slots": [
       "rock_sandstone"
@@ -563,7 +563,7 @@
    "lods": [
     {
      "node": "nat_slab_lod0",
-     "triangles": 1791,
+     "triangles": 1667,
      "draws": 1,
      "slots": [
       "rock_schist_dark"
@@ -573,7 +573,7 @@
     },
     {
      "node": "nat_slab_lod1",
-     "triangles": 845,
+     "triangles": 763,
      "draws": 1,
      "slots": [
       "rock_schist_dark"
@@ -583,7 +583,7 @@
     },
     {
      "node": "nat_slab_lod2",
-     "triangles": 255,
+     "triangles": 269,
      "draws": 1,
      "slots": [
       "rock_schist_dark"
@@ -599,7 +599,7 @@
    ]
   }
  },
- "glb_bytes": 4163984,
+ "glb_bytes": 2518416,
  "lod_ranges_m": {
   "note": "each LOD's band END (camera distance); dithered cross-fades over the last 15 % of a band",
   "bands": [
@@ -611,10 +611,8 @@
  "audit": {
   "rk_boulder_a_lod0": {
    "blocking": 0,
-   "warnings": 1,
-   "counts": {
-    "sliver": 1
-   }
+   "warnings": 0,
+   "counts": {}
   },
   "rk_boulder_a_lod1": {
    "blocking": 0,
@@ -630,22 +628,21 @@
   },
   "rk_boulder_b_lod0": {
    "blocking": 0,
-   "warnings": 0,
-   "counts": {}
+   "warnings": 2,
+   "counts": {
+    "nonmanifold": 2,
+    "backtoback": 2
+   }
   },
   "rk_boulder_b_lod1": {
    "blocking": 0,
    "warnings": 0,
-   "counts": {
-    "backtoback": 1
-   }
+   "counts": {}
   },
   "rk_boulder_b_lod2": {
    "blocking": 0,
-   "warnings": 2,
-   "counts": {
-    "sliver": 2
-   }
+   "warnings": 0,
+   "counts": {}
   },
   "rk_ledge_lod0": {
    "blocking": 0,
@@ -664,26 +661,33 @@
   },
   "rk_face_a_lod0": {
    "blocking": 0,
-   "warnings": 3,
+   "warnings": 0,
    "counts": {
-    "nonmanifold": 3,
-    "backtoback": 3
+    "backtoback": 1
    }
   },
   "rk_face_a_lod1": {
    "blocking": 0,
    "warnings": 0,
-   "counts": {}
+   "counts": {
+    "backtoback": 1
+   }
   },
   "rk_face_a_lod2": {
    "blocking": 0,
-   "warnings": 0,
-   "counts": {}
+   "warnings": 1,
+   "counts": {
+    "sliver": 1
+   }
   },
   "rk_face_b_lod0": {
    "blocking": 0,
-   "warnings": 0,
-   "counts": {}
+   "warnings": 2,
+   "counts": {
+    "sliver": 1,
+    "nonmanifold": 1,
+    "backtoback": 1
+   }
   },
   "rk_face_b_lod1": {
    "blocking": 0,
@@ -692,10 +696,8 @@
   },
   "rk_face_b_lod2": {
    "blocking": 0,
-   "warnings": 3,
-   "counts": {
-    "sliver": 3
-   }
+   "warnings": 0,
+   "counts": {}
   },
   "rk_corner_lod0": {
    "blocking": 0,
@@ -707,17 +709,16 @@
   },
   "rk_corner_lod1": {
    "blocking": 0,
-   "warnings": 1,
+   "warnings": 0,
    "counts": {
-    "sliver": 1
+    "backtoback": 2
    }
   },
   "rk_corner_lod2": {
    "blocking": 0,
-   "warnings": 1,
+   "warnings": 2,
    "counts": {
-    "sliver": 1,
-    "backtoback": 1
+    "sliver": 2
    }
   },
   "rk_step_lod0": {
@@ -732,35 +733,29 @@
   },
   "rk_step_lod2": {
    "blocking": 0,
-   "warnings": 1,
-   "counts": {
-    "sliver": 1
-   }
+   "warnings": 0,
+   "counts": {}
   },
   "rk_grotto_lod0": {
    "blocking": 0,
-   "warnings": 0,
+   "warnings": 3,
    "counts": {
-    "backtoback": 1
+    "nonmanifold": 3,
+    "backtoback": 4
    }
   },
   "rk_grotto_lod1": {
    "blocking": 0,
-   "warnings": 4,
+   "warnings": 1,
    "counts": {
-    "sliver": 2,
-    "nonmanifold": 2,
-    "backtoback": 3
+    "nonmanifold": 1,
+    "backtoback": 1
    }
   },
   "rk_grotto_lod2": {
    "blocking": 0,
-   "warnings": 3,
-   "counts": {
-    "sliver": 1,
-    "nonmanifold": 2,
-    "backtoback": 2
-   }
+   "warnings": 0,
+   "counts": {}
   },
   "rk_channel_lod0": {
    "blocking": 0,
@@ -772,18 +767,15 @@
   },
   "rk_channel_lod1": {
    "blocking": 0,
-   "warnings": 1,
+   "warnings": 0,
    "counts": {
-    "sliver": 1,
-    "backtoback": 2
+    "backtoback": 1
    }
   },
   "rk_channel_lod2": {
    "blocking": 0,
-   "warnings": 2,
-   "counts": {
-    "sliver": 2
-   }
+   "warnings": 0,
+   "counts": {}
   },
   "nat_boulder_lod0": {
    "blocking": 0,
@@ -812,8 +804,10 @@
   },
   "nat_slab_lod2": {
    "blocking": 0,
-   "warnings": 0,
-   "counts": {}
+   "warnings": 1,
+   "counts": {
+    "sliver": 1
+   }
   }
  }
 }

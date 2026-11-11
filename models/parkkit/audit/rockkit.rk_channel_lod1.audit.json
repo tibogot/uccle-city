@@ -1,16 +1,15 @@
 {
  "summary": {
-  "triangles": 1101,
-  "vertices_welded": 588,
-  "open_edges": 71,
-  "rays": 2842,
+  "triangles": 1020,
+  "vertices_welded": 546,
+  "open_edges": 68,
+  "rays": 2848,
   "blocking": 0,
-  "warnings": 1,
+  "warnings": 0,
   "counts": {
-   "sliver": 1,
-   "backtoback": 2
+   "backtoback": 1
   },
-  "ms": 21
+  "ms": 18
  },
  "options": {
   "weld": 0.0001,
@@ -55,45 +54,17 @@
   {
    "name": "rk_channel_lod1",
    "slot": "rocaille_concrete",
-   "triangles": 1101,
+   "triangles": 1020,
    "maxDistance": 45
   }
  ],
  "items": {
-  "sliver": [
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -0.881,
-     0.383,
-     -0.261
-    ],
-    "part": "rk_channel_lod1/rocaille_concrete",
-    "aspect": 62,
-    "longest": 0.295
-   }
-  ],
   "backtoback": [
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -1.174,
-     0.227,
-     -0.093
-    ],
-    "parts": [
-     "rk_channel_lod1/rocaille_concrete",
-     "rk_channel_lod1/rocaille_concrete"
-    ],
-    "area": 0.00024
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     0.593,
+     0.592,
      0.258,
      -0.315
     ],
@@ -101,7 +72,7 @@
      "rk_channel_lod1/rocaille_concrete",
      "rk_channel_lod1/rocaille_concrete"
     ],
-    "area": 0.00007
+    "area": 0.00005
    }
   ]
  },

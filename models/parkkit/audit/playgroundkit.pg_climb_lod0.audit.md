@@ -1,6 +1,6 @@
 # Mesh audit (before pack): playgroundkit.pg_climb_lod0
 
-6,916 triangles, 3,650 welded vertices, 0 open edges, 0 rays, 296 ms.
+6,916 triangles, 3,650 welded vertices, 0 open edges, 0 rays, 452 ms.
 
 **0 blocking**, 574 warnings. Clean (no blocking item).
 

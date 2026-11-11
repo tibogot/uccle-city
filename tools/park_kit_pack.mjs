@@ -250,7 +250,7 @@ for (const piece of pieces) {
   CFG.lod.forEach((L0, k) => {
    // meshopt can leave a fold (two faces overlapping): the checker runs on the LOD as made, and the LOD is re-made with
    // a slightly different error until it is clean (at most 5 tries; the last one is kept and the final audit reports it)
-   for (const mul of (k === 0 && KIT !== "rock") ? [1] : [1, 0.85, 1.15, 0.7, 1.3]) {
+   for (const mul of (k === 0 && KIT !== "rock") ? [1] : [1, 0.85, 1.15, 0.7, 1.3, 0.6, 1.45, 0.92, 1.07, 1.6]) {
     const L = { ...L0, err: (ERR_OVERRIDE[`${piece}:${k}`] ?? L0.err) * mul };
     let prims;
     if (KIT === "rock") prims = main.map((m) => renormal(L.weld ? simplifyWelded(m, L.err, L.prune) : simplifySeams(m, L.err, false), CREASE));
@@ -258,7 +258,7 @@ for (const piece of pieces) {
     // LOD1 / LOD2: welded + vertex AO like the rocks (the hard-surface seams would block meshopt), + the far stand-ins
     else prims = mergeSlots([...main.map((m) => simplifyWelded(m, L.err, L.prune)), ...far.map((m) => simplifyWelded(m, k === 2 ? L.err * 0.5 : 0.0005, false))]).map((m) => renormal(m, CREASE_PG));
     prims = prims.filter((m) => m.I.length);
-    if (!NO_AUDIT && mul !== 1.3) {
+    if (!NO_AUDIT && mul !== 1.6) {
       const r = auditParts(prims.map((m) => ({ name: `${piece}_lod${k}`, slot: m.slot, positions: m.P, normals: m.N, index: m.I, maxDistance: CFG.range[k] })), { ignoreBelow: KIT === "rock" ? 0.07 : -0.02 });
       const c = r.summary.counts, b = ["coplanar", "depth", "crossing", "leak", "flipped", "streak", "bentflat"].reduce((s, x) => s + (c[x] ?? 0), 0);
       if (b) { console.log(`  ${piece} lod${k} err ${L.err.toFixed(4)}: ${b} blocking, re-made`); continue; }

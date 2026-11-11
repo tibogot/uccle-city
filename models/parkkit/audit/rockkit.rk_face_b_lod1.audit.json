@@ -1,13 +1,13 @@
 {
  "summary": {
-  "triangles": 6624,
-  "vertices_welded": 3466,
-  "open_edges": 310,
-  "rays": 10312,
+  "triangles": 5817,
+  "vertices_welded": 3055,
+  "open_edges": 295,
+  "rays": 9830,
   "blocking": 0,
   "warnings": 0,
   "counts": {},
-  "ms": 133
+  "ms": 83
  },
  "options": {
   "weld": 0.0001,
@@ -52,7 +52,7 @@
   {
    "name": "rk_face_b_lod1",
    "slot": "rocaille_concrete",
-   "triangles": 6624,
+   "triangles": 5817,
    "maxDistance": 45
   }
  ],

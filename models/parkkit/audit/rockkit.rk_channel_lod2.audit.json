@@ -1,15 +1,13 @@
 {
  "summary": {
-  "triangles": 323,
-  "vertices_welded": 177,
-  "open_edges": 27,
-  "rays": 1984,
+  "triangles": 316,
+  "vertices_welded": 175,
+  "open_edges": 30,
+  "rays": 2048,
   "blocking": 0,
-  "warnings": 2,
-  "counts": {
-   "sliver": 2
-  },
-  "ms": 5
+  "warnings": 0,
+  "counts": {},
+  "ms": 4
  },
  "options": {
   "weld": 0.0001,
@@ -54,37 +52,10 @@
   {
    "name": "rk_channel_lod2",
    "slot": "rocaille_concrete",
-   "triangles": 323,
+   "triangles": 316,
    "maxDistance": 200
   }
  ],
- "items": {
-  "sliver": [
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -0.393,
-     0.243,
-     -0.018
-    ],
-    "part": "rk_channel_lod2/rocaille_concrete",
-    "aspect": 55,
-    "longest": 0.361
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     0.807,
-     0.257,
-     -0.339
-    ],
-    "part": "rk_channel_lod2/rocaille_concrete",
-    "aspect": 49,
-    "longest": 0.361
-   }
-  ]
- },
+ "items": {},
  "file": "rockkit.glb"
 }

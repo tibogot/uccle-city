@@ -1,15 +1,13 @@
 {
  "summary": {
-  "triangles": 7797,
-  "vertices_welded": 3982,
-  "open_edges": 165,
-  "rays": 5300,
+  "triangles": 6746,
+  "vertices_welded": 3449,
+  "open_edges": 148,
+  "rays": 4794,
   "blocking": 0,
-  "warnings": 1,
-  "counts": {
-   "sliver": 1
-  },
-  "ms": 315
+  "warnings": 0,
+  "counts": {},
+  "ms": 319
  },
  "options": {
   "weld": 0.0001,
@@ -54,25 +52,10 @@
   {
    "name": "rk_boulder_a_lod0",
    "slot": "rocaille_concrete",
-   "triangles": 7797,
+   "triangles": 6746,
    "maxDistance": 14
   }
  ],
- "items": {
-  "sliver": [
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -0.408,
-     1.13,
-     -0.367
-    ],
-    "part": "rk_boulder_a_lod0/rocaille_concrete",
-    "aspect": 79,
-    "longest": 0.27
-   }
-  ]
- },
+ "items": {},
  "file": "rockkit.glb"
 }

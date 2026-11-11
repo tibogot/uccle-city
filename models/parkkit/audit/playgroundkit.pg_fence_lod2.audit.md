@@ -1,6 +1,6 @@
 # Mesh audit (before pack): playgroundkit.pg_fence_lod2
 
-138 triangles, 101 welded vertices, 0 open edges, 0 rays, 4 ms.
+138 triangles, 101 welded vertices, 0 open edges, 0 rays, 3 ms.
 
 **0 blocking**, 71 warnings. Clean (no blocking item).
 

@@ -1,6 +1,6 @@
 # Mesh audit (before pack): rockkit.rk_ledge_lod2
 
-862 triangles, 464 welded vertices, 64 open edges, 3,758 rays, 14 ms.
+826 triangles, 448 welded vertices, 68 open edges, 3,552 rays, 25 ms.
 
 **0 blocking**, 0 warnings. Clean (no blocking item).
 

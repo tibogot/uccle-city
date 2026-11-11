@@ -1,13 +1,13 @@
 {
  "summary": {
-  "triangles": 343,
-  "vertices_welded": 189,
-  "open_edges": 35,
-  "rays": 1344,
+  "triangles": 312,
+  "vertices_welded": 174,
+  "open_edges": 36,
+  "rays": 1440,
   "blocking": 0,
   "warnings": 0,
   "counts": {},
-  "ms": 10
+  "ms": 6
  },
  "options": {
   "weld": 0.0001,
@@ -52,7 +52,7 @@
   {
    "name": "rk_step_lod1",
    "slot": "rocaille_concrete",
-   "triangles": 343,
+   "triangles": 312,
    "maxDistance": 45
   }
  ],

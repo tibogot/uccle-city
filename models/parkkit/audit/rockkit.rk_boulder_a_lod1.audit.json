@@ -1,13 +1,13 @@
 {
  "summary": {
-  "triangles": 2747,
-  "vertices_welded": 1429,
-  "open_edges": 109,
-  "rays": 3930,
+  "triangles": 2430,
+  "vertices_welded": 1265,
+  "open_edges": 96,
+  "rays": 3488,
   "blocking": 0,
   "warnings": 0,
   "counts": {},
-  "ms": 74
+  "ms": 77
  },
  "options": {
   "weld": 0.0001,
@@ -52,7 +52,7 @@
   {
    "name": "rk_boulder_a_lod1",
    "slot": "rocaille_concrete",
-   "triangles": 2747,
+   "triangles": 2430,
    "maxDistance": 45
   }
  ],

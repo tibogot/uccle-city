@@ -1,6 +1,6 @@
 # Mesh audit (before pack): playgroundkit.pg_seesaw_lod0
 
-1,808 triangles, 924 welded vertices, 0 open edges, 0 rays, 92 ms.
+1,808 triangles, 924 welded vertices, 0 open edges, 0 rays, 129 ms.
 
 **0 blocking**, 88 warnings. Clean (no blocking item).
 

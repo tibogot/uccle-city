@@ -1,16 +1,15 @@
 {
  "summary": {
-  "triangles": 31379,
-  "vertices_welded": 15909,
-  "open_edges": 423,
-  "rays": 13858,
+  "triangles": 32117,
+  "vertices_welded": 16275,
+  "open_edges": 417,
+  "rays": 13634,
   "blocking": 0,
-  "warnings": 3,
+  "warnings": 0,
   "counts": {
-   "nonmanifold": 3,
-   "backtoback": 3
+   "backtoback": 1
   },
-  "ms": 729
+  "ms": 619
  },
  "options": {
   "weld": 0.0001,
@@ -55,88 +54,25 @@
   {
    "name": "rk_face_a_lod0",
    "slot": "rocaille_concrete",
-   "triangles": 31379,
+   "triangles": 32117,
    "maxDistance": 14
   }
  ],
  "items": {
-  "nonmanifold": [
-   {
-    "check": "nonmanifold",
-    "severity": "warn",
-    "at": [
-     -2.041,
-     1.828,
-     0.383
-    ],
-    "part": "rk_face_a_lod0/rocaille_concrete",
-    "uses": 4
-   },
-   {
-    "check": "nonmanifold",
-    "severity": "warn",
-    "at": [
-     1.968,
-     1.915,
-     0.723
-    ],
-    "part": "rk_face_a_lod0/rocaille_concrete",
-    "uses": 4
-   },
-   {
-    "check": "nonmanifold",
-    "severity": "warn",
-    "at": [
-     2.034,
-     0.157,
-     -0.161
-    ],
-    "part": "rk_face_a_lod0/rocaille_concrete",
-    "uses": 4
-   }
-  ],
   "backtoback": [
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -2.042,
-     1.827,
-     0.384
+     0.313,
+     0.925,
+     1.031
     ],
     "parts": [
      "rk_face_a_lod0/rocaille_concrete",
      "rk_face_a_lod0/rocaille_concrete"
     ],
-    "area": 0.00013
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     1.97,
-     1.915,
-     0.723
-    ],
-    "parts": [
-     "rk_face_a_lod0/rocaille_concrete",
-     "rk_face_a_lod0/rocaille_concrete"
-    ],
-    "area": 0.00011
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     2.035,
-     0.157,
-     -0.16
-    ],
-    "parts": [
-     "rk_face_a_lod0/rocaille_concrete",
-     "rk_face_a_lod0/rocaille_concrete"
-    ],
-    "area": 0.00014
+    "area": 0.00004
    }
   ]
  },

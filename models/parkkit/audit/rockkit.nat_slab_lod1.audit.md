@@ -1,6 +1,6 @@
 # Mesh audit (before pack): rockkit.nat_slab_lod1
 
-845 triangles, 457 welded vertices, 67 open edges, 2,970 rays, 15 ms.
+763 triangles, 416 welded vertices, 67 open edges, 2,932 rays, 12 ms.
 
 **0 blocking**, 0 warnings. Clean (no blocking item).
 

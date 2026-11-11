@@ -1,16 +1,16 @@
 {
  "summary": {
-  "triangles": 2220,
-  "vertices_welded": 1158,
-  "open_edges": 92,
-  "rays": 3392,
+  "triangles": 2110,
+  "vertices_welded": 1107,
+  "open_edges": 100,
+  "rays": 3584,
   "blocking": 0,
   "warnings": 2,
   "counts": {
    "nonmanifold": 2,
    "backtoback": 1
   },
-  "ms": 60
+  "ms": 55
  },
  "options": {
   "weld": 0.0001,
@@ -55,7 +55,7 @@
   {
    "name": "rk_channel_lod0",
    "slot": "rocaille_concrete",
-   "triangles": 2220,
+   "triangles": 2110,
    "maxDistance": 14
   }
  ],

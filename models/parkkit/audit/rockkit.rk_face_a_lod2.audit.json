@@ -1,13 +1,15 @@
 {
  "summary": {
-  "triangles": 3263,
-  "vertices_welded": 1677,
-  "open_edges": 85,
-  "rays": 5624,
+  "triangles": 3013,
+  "vertices_welded": 1556,
+  "open_edges": 91,
+  "rays": 5664,
   "blocking": 0,
-  "warnings": 0,
-  "counts": {},
-  "ms": 44
+  "warnings": 1,
+  "counts": {
+   "sliver": 1
+  },
+  "ms": 34
  },
  "options": {
   "weld": 0.0001,
@@ -52,10 +54,25 @@
   {
    "name": "rk_face_a_lod2",
    "slot": "rocaille_concrete",
-   "triangles": 3263,
+   "triangles": 3013,
    "maxDistance": 200
   }
  ],
- "items": {},
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.367,
+     0.98,
+     -0.85
+    ],
+    "part": "rk_face_a_lod2/rocaille_concrete",
+    "aspect": 63,
+    "longest": 0.37
+   }
+  ]
+ },
  "file": "rockkit.glb"
 }

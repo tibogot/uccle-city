@@ -1,6 +1,6 @@
 # Mesh audit (before pack): playgroundkit.pg_slide_lod2
 
-1,460 triangles, 806 welded vertices, 0 open edges, 0 rays, 39 ms.
+1,460 triangles, 806 welded vertices, 0 open edges, 0 rays, 48 ms.
 
 **0 blocking**, 289 warnings. Clean (no blocking item).
 

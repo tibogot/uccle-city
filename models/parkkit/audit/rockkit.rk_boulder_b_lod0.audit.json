@@ -1,13 +1,16 @@
 {
  "summary": {
-  "triangles": 8248,
-  "vertices_welded": 4190,
-  "open_edges": 128,
-  "rays": 4098,
+  "triangles": 7258,
+  "vertices_welded": 3694,
+  "open_edges": 124,
+  "rays": 4034,
   "blocking": 0,
-  "warnings": 0,
-  "counts": {},
-  "ms": 168
+  "warnings": 2,
+  "counts": {
+   "nonmanifold": 2,
+   "backtoback": 2
+  },
+  "ms": 123
  },
  "options": {
   "weld": 0.0001,
@@ -52,10 +55,65 @@
   {
    "name": "rk_boulder_b_lod0",
    "slot": "rocaille_concrete",
-   "triangles": 8248,
+   "triangles": 7258,
    "maxDistance": 14
   }
  ],
- "items": {},
+ "items": {
+  "nonmanifold": [
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.211,
+     1.248,
+     -0.574
+    ],
+    "part": "rk_boulder_b_lod0/rocaille_concrete",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.657,
+     0.525,
+     -0.003
+    ],
+    "part": "rk_boulder_b_lod0/rocaille_concrete",
+    "uses": 4
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.211,
+     1.249,
+     -0.575
+    ],
+    "parts": [
+     "rk_boulder_b_lod0/rocaille_concrete",
+     "rk_boulder_b_lod0/rocaille_concrete"
+    ],
+    "area": 0.00013
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.656,
+     0.525,
+     -0.003
+    ],
+    "parts": [
+     "rk_boulder_b_lod0/rocaille_concrete",
+     "rk_boulder_b_lod0/rocaille_concrete"
+    ],
+    "area": 0.00014
+   }
+  ]
+ },
  "file": "rockkit.glb"
 }

@@ -1,15 +1,16 @@
 {
  "summary": {
-  "triangles": 30179,
-  "vertices_welded": 15352,
-  "open_edges": 503,
-  "rays": 15596,
+  "triangles": 27113,
+  "vertices_welded": 13827,
+  "open_edges": 519,
+  "rays": 16102,
   "blocking": 0,
-  "warnings": 0,
+  "warnings": 3,
   "counts": {
-   "backtoback": 1
+   "nonmanifold": 3,
+   "backtoback": 4
   },
-  "ms": 699
+  "ms": 583
  },
  "options": {
   "weld": 0.0001,
@@ -54,25 +55,102 @@
   {
    "name": "rk_grotto_lod0",
    "slot": "rocaille_concrete",
-   "triangles": 30179,
+   "triangles": 27113,
    "maxDistance": 14
   }
  ],
  "items": {
+  "nonmanifold": [
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -1.804,
+     1.241,
+     0.382
+    ],
+    "part": "rk_grotto_lod0/rocaille_concrete",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -1.782,
+     0.156,
+     -0.863
+    ],
+    "part": "rk_grotto_lod0/rocaille_concrete",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.989,
+     0.674,
+     -1.201
+    ],
+    "part": "rk_grotto_lod0/rocaille_concrete",
+    "uses": 4
+   }
+  ],
   "backtoback": [
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     1.546,
-     0.809,
-     0.143
+     -1.807,
+     1.243,
+     0.377
     ],
     "parts": [
      "rk_grotto_lod0/rocaille_concrete",
      "rk_grotto_lod0/rocaille_concrete"
     ],
-    "area": 0.00021
+    "area": 0.0004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1.779,
+     0.16,
+     -0.868
+    ],
+    "parts": [
+     "rk_grotto_lod0/rocaille_concrete",
+     "rk_grotto_lod0/rocaille_concrete"
+    ],
+    "area": 0.00033
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.547,
+     0.809,
+     0.144
+    ],
+    "parts": [
+     "rk_grotto_lod0/rocaille_concrete",
+     "rk_grotto_lod0/rocaille_concrete"
+    ],
+    "area": 0.00018
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.989,
+     0.674,
+     -1.2
+    ],
+    "parts": [
+     "rk_grotto_lod0/rocaille_concrete",
+     "rk_grotto_lod0/rocaille_concrete"
+    ],
+    "area": 0.00013
    }
   ]
  },

@@ -1,6 +1,6 @@
 # Mesh audit (before pack): rockkit.rk_channel_lod0
 
-2,220 triangles, 1,158 welded vertices, 92 open edges, 3,392 rays, 60 ms.
+2,110 triangles, 1,107 welded vertices, 100 open edges, 3,584 rays, 55 ms.
 
 **0 blocking**, 2 warnings. Clean (no blocking item).
 

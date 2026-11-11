@@ -1,15 +1,15 @@
 {
  "summary": {
-  "triangles": 770,
-  "vertices_welded": 404,
-  "open_edges": 36,
-  "rays": 1984,
+  "triangles": 717,
+  "vertices_welded": 378,
+  "open_edges": 37,
+  "rays": 2016,
   "blocking": 0,
   "warnings": 1,
   "counts": {
    "sliver": 1
   },
-  "ms": 14
+  "ms": 27
  },
  "options": {
   "weld": 0.0001,
@@ -54,7 +54,7 @@
   {
    "name": "rk_boulder_a_lod2",
    "slot": "rocaille_concrete",
-   "triangles": 770,
+   "triangles": 717,
    "maxDistance": 200
   }
  ],
@@ -64,13 +64,13 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -0.837,
-     0.55,
-     0.195
+     -0.422,
+     1.129,
+     -0.168
     ],
     "part": "rk_boulder_a_lod2/rocaille_concrete",
-    "aspect": 52,
-    "longest": 0.319
+    "aspect": 44,
+    "longest": 0.289
    }
   ]
  },

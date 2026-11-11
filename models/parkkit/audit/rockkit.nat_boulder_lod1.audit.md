@@ -1,6 +1,6 @@
 # Mesh audit (before pack): rockkit.nat_boulder_lod1
 
-828 triangles, 416 welded vertices, 0 open edges, 0 rays, 12 ms.
+838 triangles, 421 welded vertices, 0 open edges, 0 rays, 10 ms.
 
 **0 blocking**, 0 warnings. Clean (no blocking item).
 

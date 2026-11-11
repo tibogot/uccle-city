@@ -1,13 +1,15 @@
 {
  "summary": {
-  "triangles": 255,
-  "vertices_welded": 141,
+  "triangles": 269,
+  "vertices_welded": 148,
   "open_edges": 25,
-  "rays": 2016,
+  "rays": 1920,
   "blocking": 0,
-  "warnings": 0,
-  "counts": {},
-  "ms": 4
+  "warnings": 1,
+  "counts": {
+   "sliver": 1
+  },
+  "ms": 5
  },
  "options": {
   "weld": 0.0001,
@@ -52,10 +54,25 @@
   {
    "name": "nat_slab_lod2",
    "slot": "rock_schist_dark",
-   "triangles": 255,
+   "triangles": 269,
    "maxDistance": 200
   }
  ],
- "items": {},
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.152,
+     0.257,
+     -0.546
+    ],
+    "part": "nat_slab_lod2/rock_schist_dark",
+    "aspect": 47,
+    "longest": 0.448
+   }
+  ]
+ },
  "file": "rockkit.glb"
 }

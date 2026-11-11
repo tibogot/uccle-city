@@ -1,13 +1,13 @@
 {
  "summary": {
-  "triangles": 7656,
-  "vertices_welded": 3989,
+  "triangles": 6978,
+  "vertices_welded": 3650,
   "open_edges": 316,
-  "rays": 10216,
+  "rays": 10212,
   "blocking": 0,
   "warnings": 0,
   "counts": {},
-  "ms": 161
+  "ms": 135
  },
  "options": {
   "weld": 0.0001,
@@ -52,7 +52,7 @@
   {
    "name": "rk_ledge_lod0",
    "slot": "rocaille_concrete",
-   "triangles": 7656,
+   "triangles": 6978,
    "maxDistance": 14
   }
  ],

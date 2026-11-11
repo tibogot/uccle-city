@@ -1,6 +1,6 @@
 # Mesh audit (before pack): rockkit.rk_boulder_a_lod1
 
-2,747 triangles, 1,429 welded vertices, 109 open edges, 3,930 rays, 74 ms.
+2,430 triangles, 1,265 welded vertices, 96 open edges, 3,488 rays, 77 ms.
 
 **0 blocking**, 0 warnings. Clean (no blocking item).
 

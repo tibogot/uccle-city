@@ -1,16 +1,15 @@
 {
  "summary": {
-  "triangles": 2407,
-  "vertices_welded": 1269,
-  "open_edges": 117,
-  "rays": 6078,
+  "triangles": 2522,
+  "vertices_welded": 1339,
+  "open_edges": 142,
+  "rays": 6500,
   "blocking": 0,
-  "warnings": 1,
+  "warnings": 2,
   "counts": {
-   "sliver": 1,
-   "backtoback": 1
+   "sliver": 2
   },
-  "ms": 50
+  "ms": 31
  },
  "options": {
   "weld": 0.0001,
@@ -55,7 +54,7 @@
   {
    "name": "rk_corner_lod2",
    "slot": "rocaille_concrete",
-   "triangles": 2407,
+   "triangles": 2522,
    "maxDistance": 200
   }
  ],
@@ -65,29 +64,25 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.193,
-     1.019,
-     1.313
+     0.742,
+     2.231,
+     -0.646
     ],
     "part": "rk_corner_lod2/rocaille_concrete",
-    "aspect": 47,
-    "longest": 0.281
-   }
-  ],
-  "backtoback": [
+    "aspect": 48,
+    "longest": 0.285
+   },
    {
-    "check": "backtoback",
-    "severity": "info",
+    "check": "sliver",
+    "severity": "warn",
     "at": [
-     -0.642,
-     0.602,
-     1.055
+     1.458,
+     0.802,
+     -1.168
     ],
-    "parts": [
-     "rk_corner_lod2/rocaille_concrete",
-     "rk_corner_lod2/rocaille_concrete"
-    ],
-    "area": 0.00035
+    "part": "rk_corner_lod2/rocaille_concrete",
+    "aspect": 41,
+    "longest": 0.282
    }
   ]
  },
