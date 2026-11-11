@@ -6830,6 +6830,22 @@ function heroFrame(h) {
   const ring2 = (h.footprint || [[-L2, -W], [L2, -W], [L2, W], [-L2, W]]).map(([X, Y]) => toWorld(X, Y));
   return { ...h, toLocal, toWorld, ring: ring2, road: py };
 }
+function roadDeckGround(heroes, ground) {
+  const decks = (heroes || []).filter((h) => h.kind === "road_over_rail").map((h) => {
+    const f = heroFrame(h), d = h.deck;
+    return { f, d, road: (X) => d.road_ends[0] + (X - d.x0) * (d.road_ends[1] - d.road_ends[0]) / (d.x1 - d.x0) };
+  });
+  if (!decks.length) return ground;
+  return (x, z) => {
+    for (const { f, d, road } of decks) {
+      const [X, Y] = f.toLocal(x, z);
+      if (X < d.x0 || X > d.x1) continue;
+      if (Math.abs(Y) > d.parapet_inner + 0.45 + d.flare * Math.max(0, (Math.abs(X) - d.fold) / (d.x1 - d.fold))) continue;
+      return road(X);
+    }
+    return ground(x, z);
+  };
+}
 function bridgeRings(doc, heroes) {
   const hs = (heroes || []).map(heroFrame);
   const rings = hs.map((h) => h.ring);
@@ -7442,9 +7458,10 @@ async function buildTileData(entry, base) {
     if (s) (r.meta ??= {}).surface = s;
   }
   const hm = new Heightmap(tHdr, tBuf);
-  const prep = surf ? await step("surfaces + width fit", () => prepareSurfaces(surf, hm.ground, bounds, entry.pits === false ? null : feats.trees)) : null;
+  const roadGround = rail ? roadDeckGround(rail.heroes, hm.ground) : hm.ground;
+  const prep = surf ? await step("surfaces + width fit", () => prepareSurfaces(surf, roadGround, bounds, entry.pits === false ? null : feats.trees)) : null;
   const widthFit = prep ? fitRoadWidths(roads, prep) : null;
-  const net = await step("buildRoadNetwork", () => buildRoadNetwork(roads, { ground: hm.ground }));
+  const net = await step("buildRoadNetwork", () => buildRoadNetwork(roads, { ground: roadGround }));
   const errors = net.issues.filter((i) => i.level === "error");
   const byCode = {};
   for (const i of errors) byCode[i.code] = (byCode[i.code] || 0) + 1;

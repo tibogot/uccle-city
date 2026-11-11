@@ -54,6 +54,27 @@ export function heroFrame(h) {
   return { ...h, toLocal, toWorld, ring, road: py };
 }
 
+/** The road's ground with the hero ROAD bridges' decks in it: (x, z) -> the deck's road level on a deck, else ground(x, z).
+ *  The DTM under a road bridge is the railway cutting (its deck is not in the LiDAR ground); the road engine sampled it and
+ *  pulled the street ends down into a 0.4-0.6 m dip at Verrewinkel's SE end. Feeding it the deck keeps the street level
+ *  with the bridge's road (the hero's deck ends were taken from this ground at the polygon ends). */
+export function roadDeckGround(heroes, ground) {
+  const decks = (heroes || []).filter((h) => h.kind === "road_over_rail").map((h) => {
+    const f = heroFrame(h), d = h.deck;
+    return { f, d, road: (X) => d.road_ends[0] + (X - d.x0) * (d.road_ends[1] - d.road_ends[0]) / (d.x1 - d.x0) };
+  });
+  if (!decks.length) return ground;
+  return (x, z) => {
+    for (const { f, d, road } of decks) {
+      const [X, Y] = f.toLocal(x, z);
+      if (X < d.x0 || X > d.x1) continue;
+      if (Math.abs(Y) > d.parapet_inner + 0.45 + d.flare * Math.max(0, (Math.abs(X) - d.fold) / (d.x1 - d.fold))) continue;
+      return road(X);
+    }
+    return ground(x, z);
+  };
+}
+
 /** the rail bridge footprints: the hero models' (they may run beyond UrbIS), else the UrbIS RAB polygons */
 function bridgeRings(doc, heroes) {
   const hs = (heroes || []).map(heroFrame);

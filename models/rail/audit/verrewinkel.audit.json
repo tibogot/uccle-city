@@ -1,20 +1,20 @@
 {
  "summary": {
-  "triangles": 37287,
-  "vertices_welded": 21837,
-  "open_edges": 6891,
-  "rays": 255354,
+  "triangles": 37297,
+  "vertices_welded": 21843,
+  "open_edges": 6893,
+  "rays": 256634,
   "blocking": 0,
-  "warnings": 6754,
+  "warnings": 6758,
   "counts": {
-   "sliver": 5430,
+   "sliver": 5434,
    "nonmanifold": 1212,
    "backtoback": 1010,
    "seam": 1763,
    "tjunction": 112,
-   "opening": 12
+   "opening": 14
   },
-  "ms": 3143
+  "ms": 25230
  },
  "options": {
   "weld": 0.0001,
@@ -71,13 +71,13 @@
   {
    "name": "verrewinkel",
    "slot": "asphalt",
-   "triangles": 44,
+   "triangles": 46,
    "maxDistance": 120
   },
   {
    "name": "verrewinkel",
    "slot": "paving_concrete",
-   "triangles": 214,
+   "triangles": 222,
    "maxDistance": 120
   },
   {
@@ -9879,20 +9879,6 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -18.219,
-     7.47,
-     -2.712
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "area": 0.00212
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
      -18.203,
      7.47,
      -2.708
@@ -9902,6 +9888,20 @@
      "verrewinkel/stone_blue"
     ],
     "area": 0.00086
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -18.219,
+     7.47,
+     -2.712
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "area": 0.00212
    },
    {
     "check": "backtoback",
@@ -10173,20 +10173,6 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -13.519,
-     7.699,
-     -2.269
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "area": 0.00288
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
      -13.5,
      7.7,
      -2.269
@@ -10201,8 +10187,22 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -13.51,
-     7.7,
+     -13.162,
+     7.717,
+     -2.268
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "area": 0.22363
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -13.519,
+     7.699,
      -2.269
     ],
     "parts": [
@@ -10215,15 +10215,15 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -13.162,
-     7.717,
-     -2.268
+     -13.51,
+     7.7,
+     -2.269
     ],
     "parts": [
      "verrewinkel/brick_red_brussels",
      "verrewinkel/stone_blue"
     ],
-    "area": 0.22363
+    "area": 0.00288
    },
    {
     "check": "backtoback",
@@ -10439,6 +10439,20 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
+     -9.454,
+     7.898,
+     -2.248
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "area": 0.20958
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
      -9.832,
      7.88,
      -2.249
@@ -10462,20 +10476,6 @@
      "verrewinkel/stone_blue"
     ],
     "area": 0.00251
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     -9.454,
-     7.898,
-     -2.248
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "area": 0.20958
    },
    {
     "check": "backtoback",
@@ -10509,6 +10509,20 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
+     -8.604,
+     7.94,
+     -2.242
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "area": 0.00213
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
      -8.594,
      7.94,
      -2.242
@@ -10532,20 +10546,6 @@
      "verrewinkel/stone_blue"
     ],
     "area": 0.20408
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     -8.604,
-     7.94,
-     -2.242
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "area": 0.00213
    },
    {
     "check": "backtoback",
@@ -10677,6 +10677,20 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
+     -6.146,
+     8.06,
+     -2.229
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "area": 0.00179
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
      -6.137,
      8.06,
      -2.229
@@ -10700,20 +10714,6 @@
      "verrewinkel/stone_blue"
     ],
     "area": 0.19184
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     -6.146,
-     8.06,
-     -2.229
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "area": 0.00179
    },
    {
     "check": "backtoback",
@@ -10845,20 +10845,6 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -3.689,
-     8.18,
-     -2.215
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "area": 0.00149
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
      -3.679,
      8.18,
      -2.215
@@ -10873,15 +10859,15 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -3.273,
-     8.2,
-     -2.214
+     -3.689,
+     8.18,
+     -2.215
     ],
     "parts": [
      "verrewinkel/brick_red_brussels",
      "verrewinkel/stone_blue"
     ],
-    "area": 0.17797
+    "area": 0.00149
    },
    {
     "check": "backtoback",
@@ -10896,6 +10882,20 @@
      "verrewinkel/stone_blue"
     ],
     "area": 0.00164
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -3.273,
+     8.2,
+     -2.214
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "area": 0.17797
    },
    {
     "check": "backtoback",
@@ -11027,20 +11027,6 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -0.801,
-     8.321,
-     -2.2
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "area": 0.16245
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
      -1.232,
      8.3,
      -2.202
@@ -11064,6 +11050,20 @@
      "verrewinkel/stone_blue"
     ],
     "area": 0.00134
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.801,
+     8.321,
+     -2.2
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "area": 0.16245
    },
    {
     "check": "backtoback",
@@ -11111,6 +11111,20 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
+     0.436,
+     8.381,
+     -2.193
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "area": 0.15407
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
      -0.003,
      8.36,
      -2.195
@@ -11134,20 +11148,6 @@
      "verrewinkel/stone_blue"
     ],
     "area": 0.00121
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     0.436,
-     8.381,
-     -2.193
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "area": 0.15407
    },
    {
     "check": "backtoback",
@@ -11517,20 +11517,6 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     6.141,
-     8.66,
-     -2.161
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "area": 0.00054
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
      6.15,
      8.661,
      -2.161
@@ -11554,6 +11540,20 @@
      "verrewinkel/stone_blue"
     ],
     "area": 0.10605
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     6.141,
+     8.66,
+     -2.161
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "area": 0.00054
    },
    {
     "check": "backtoback",
@@ -11783,6 +11783,20 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
+     10.564,
+     8.876,
+     -2.136
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "area": 0.06924
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
      9.827,
      8.84,
      -2.141
@@ -11806,20 +11820,6 @@
      "verrewinkel/stone_blue"
     ],
     "area": 0.00035
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     10.564,
-     8.876,
-     -2.136
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "area": 0.06924
    },
    {
     "check": "backtoback",
@@ -12315,20 +12315,6 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     18.937,
-     9.285,
-     -2.685
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "area": 0.09133
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
      18.242,
      9.251,
      -2.531
@@ -12366,6 +12352,20 @@
      "verrewinkel/stone_blue"
     ],
     "area": 0.06169
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     18.937,
+     9.285,
+     -2.685
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "area": 0.09133
    },
    {
     "check": "backtoback",
@@ -12917,20 +12917,6 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     18.937,
-     9.285,
-     2.685
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "area": 0.09133
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
      18.242,
      9.251,
      2.531
@@ -12968,6 +12954,20 @@
      "verrewinkel/stone_blue"
     ],
     "area": 0.06169
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     18.937,
+     9.285,
+     2.685
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "area": 0.09133
    },
    {
     "check": "backtoback",
@@ -13197,20 +13197,6 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -13.529,
-     7.699,
-     2.31
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "area": 0.00364
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
      -13.499,
      7.7,
      2.31
@@ -13225,20 +13211,6 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -13.509,
-     7.7,
-     2.31
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "area": 0.0034
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
      -12.59,
      7.745,
      2.314
@@ -13248,6 +13220,34 @@
      "verrewinkel/stone_blue"
     ],
     "area": 0.18649
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -13.529,
+     7.699,
+     2.31
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "area": 0.00364
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -13.509,
+     7.7,
+     2.31
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "area": 0.0034
    },
    {
     "check": "backtoback",
@@ -13463,6 +13463,20 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
+     -9.55,
+     7.893,
+     2.333
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "area": 0.15354
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
      -9.843,
      7.879,
      2.33
@@ -13486,20 +13500,6 @@
      "verrewinkel/stone_blue"
     ],
     "area": 0.00323
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     -9.55,
-     7.893,
-     2.333
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "area": 0.15354
    },
    {
     "check": "backtoback",
@@ -13533,6 +13533,20 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
+     -8.614,
+     7.939,
+     2.337
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "area": 0.00335
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
      -8.584,
      7.941,
      2.337
@@ -13556,20 +13570,6 @@
      "verrewinkel/stone_blue"
     ],
     "area": 0.13905
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     -8.614,
-     7.939,
-     2.337
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "area": 0.00335
    },
    {
     "check": "backtoback",
@@ -13701,6 +13701,20 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
+     -6.157,
+     8.059,
+     2.351
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "area": 0.00316
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
      -6.127,
      8.061,
      2.351
@@ -13724,20 +13738,6 @@
      "verrewinkel/stone_blue"
     ],
     "area": 0.11779
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     -6.157,
-     8.059,
-     2.351
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "area": 0.00316
    },
    {
     "check": "backtoback",
@@ -13869,20 +13869,6 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -3.699,
-     8.179,
-     2.364
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "area": 0.00295
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
      -3.67,
      8.181,
      2.364
@@ -13897,15 +13883,15 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -2.701,
-     8.228,
-     2.369
+     -3.699,
+     8.179,
+     2.364
     ],
     "parts": [
      "verrewinkel/brick_red_brussels",
      "verrewinkel/stone_blue"
     ],
-    "area": 0.09817
+    "area": 0.00295
    },
    {
     "check": "backtoback",
@@ -13920,6 +13906,20 @@
      "verrewinkel/stone_blue"
     ],
     "area": 0.00279
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -2.701,
+     8.228,
+     2.369
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "area": 0.09817
    },
    {
     "check": "backtoback",
@@ -14051,20 +14051,6 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -0.229,
-     8.349,
-     2.383
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "area": 0.08019
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
      -1.242,
      8.299,
      2.378
@@ -14088,6 +14074,20 @@
      "verrewinkel/stone_blue"
     ],
     "area": 0.00257
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.229,
+     8.349,
+     2.383
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "area": 0.08019
    },
    {
     "check": "backtoback",
@@ -14135,6 +14135,20 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
+     1.007,
+     8.409,
+     2.39
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "area": 0.07182
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
      -0.013,
      8.359,
      2.384
@@ -14158,20 +14172,6 @@
      "verrewinkel/stone_blue"
     ],
     "area": 0.00244
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     1.007,
-     8.409,
-     2.39
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "area": 0.07182
    },
    {
     "check": "backtoback",
@@ -14541,20 +14541,6 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     6.13,
-     8.66,
-     2.418
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "area": 0.00181
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
      6.16,
      8.661,
      2.419
@@ -14578,6 +14564,20 @@
      "verrewinkel/stone_blue"
     ],
     "area": 0.0361
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     6.13,
+     8.66,
+     2.418
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "area": 0.00181
    },
    {
     "check": "backtoback",
@@ -14807,6 +14807,20 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
+     10.896,
+     8.892,
+     2.444
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "area": 0.01959
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
      9.816,
      8.84,
      2.439
@@ -14830,20 +14844,6 @@
      "verrewinkel/stone_blue"
     ],
     "area": 0.00121
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     10.896,
-     8.892,
-     2.444
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "area": 0.01959
    },
    {
     "check": "backtoback",
@@ -15079,9 +15079,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -7.683,
-     5.985,
-     3.849
+     -7.746,
+     5.981,
+     3.805
     ],
     "parts": [
      "verrewinkel_foot/concrete",
@@ -15111,9 +15111,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     4.822,
-     6.596,
-     3.855
+     4.779,
+     6.594,
+     3.821
     ],
     "parts": [
      "verrewinkel_foot/concrete",
@@ -15335,8 +15335,8 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     7.625,
-     7.734,
+     7.585,
+     7.76,
      -2.5
     ],
     "parts": [
@@ -15559,9 +15559,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -4.608,
-     6.135,
-     3.839
+     -4.668,
+     6.132,
+     3.802
     ],
     "parts": [
      "verrewinkel_foot/concrete",
@@ -15575,9 +15575,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     7.875,
-     6.745,
-     3.83
+     7.809,
+     6.742,
+     3.803
     ],
     "parts": [
      "verrewinkel_foot/concrete",
@@ -15623,9 +15623,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -4.575,
+     -4.581,
      6.136,
-     7.601
+     7.636
     ],
     "parts": [
      "verrewinkel_foot/concrete",
@@ -15639,9 +15639,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     7.912,
+     7.915,
      6.747,
-     7.542
+     7.631
     ],
     "parts": [
      "verrewinkel_foot/concrete",
@@ -15655,9 +15655,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -6.054,
+     -6.126,
      0.851,
-     5.422
+     5.431
     ],
     "parts": [
      "verrewinkel_foot/concrete",
@@ -15671,9 +15671,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     6.433,
+     6.5,
      1.883,
-     5.417
+     5.437
     ],
     "parts": [
      "verrewinkel_foot/concrete",
@@ -15719,8 +15719,8 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     13.53,
-     8.066,
+     13.601,
+     8.02,
      -2.5
     ],
     "parts": [
@@ -16039,9 +16039,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -19.27,
-     7.423,
-     -2.92
+     -19.332,
+     7.422,
+     -2.708
     ],
     "parts": [
      "verrewinkel/brick_red_brussels",
@@ -16055,9 +16055,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -14.355,
-     7.927,
-     -2.323
+     -14.413,
+     7.923,
+     -2.33
     ],
     "parts": [
      "verrewinkel/stone_blue",
@@ -16407,24 +16407,8 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -17.03,
-     7.797,
-     -2.296
-    ],
-    "parts": [
-     "verrewinkel/stone_blue",
-     "verrewinkel_foot/painted_metal_grey"
-    ],
-    "length_m": 0.24,
-    "pieces": 12,
-    "min_angle_deg": 85.5
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     16.97,
-     9.459,
+     -16.97,
+     7.8,
      -2.294
     ],
     "parts": [
@@ -16439,9 +16423,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -17.03,
-     7.797,
-     2.296
+     17.03,
+     9.462,
+     -2.296
     ],
     "parts": [
      "verrewinkel/stone_blue",
@@ -16455,9 +16439,25 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     16.97,
-     9.459,
+     -16.97,
+     7.8,
      2.294
+    ],
+    "parts": [
+     "verrewinkel/stone_blue",
+     "verrewinkel_foot/painted_metal_grey"
+    ],
+    "length_m": 0.24,
+    "pieces": 12,
+    "min_angle_deg": 85.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     17.03,
+     9.462,
+     2.296
     ],
     "parts": [
      "verrewinkel/stone_blue",
@@ -16545,7 +16545,7 @@
     ],
     "length_m": 0.82,
     "pieces": 11,
-    "min_angle_deg": 85.4
+    "min_angle_deg": 81.2
    },
    {
     "check": "seam",
@@ -16721,7 +16721,7 @@
     ],
     "length_m": 0.82,
     "pieces": 10,
-    "min_angle_deg": 85.2
+    "min_angle_deg": 80.9
    },
    {
     "check": "seam",
@@ -17127,9 +17127,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -9.124,
-     8.183,
-     2.286
+     -9.183,
+     8.179,
+     2.27
     ],
     "parts": [
      "verrewinkel/stone_blue",
@@ -17175,9 +17175,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -1.337,
-     8.563,
-     2.27
+     -1.278,
+     8.567,
+     2.286
     ],
     "parts": [
      "verrewinkel/stone_blue",
@@ -17911,22 +17911,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -9.706,
-     6.386,
-     2.399
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "length_m": 1.14,
-    "pieces": 8,
-    "min_angle_deg": 29.2
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      -9.696,
      6.38,
      2.393
@@ -17938,6 +17922,22 @@
     "length_m": 0.07,
     "pieces": 8,
     "min_angle_deg": 82.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -9.706,
+     6.386,
+     2.399
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "length_m": 1.14,
+    "pieces": 8,
+    "min_angle_deg": 29.2
    },
    {
     "check": "seam",
@@ -19191,22 +19191,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -15.666,
-     6.089,
-     2.393
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/brick_red_brussels"
-    ],
-    "length_m": 0.07,
-    "pieces": 7,
-    "min_angle_deg": 59.2
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      -15.676,
      6.094,
      2.399
@@ -19218,6 +19202,22 @@
     "length_m": 0.66,
     "pieces": 7,
     "min_angle_deg": 29.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -15.666,
+     6.089,
+     2.393
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/brick_red_brussels"
+    ],
+    "length_m": 0.07,
+    "pieces": 7,
+    "min_angle_deg": 59.2
    },
    {
     "check": "seam",
@@ -20183,9 +20183,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -19.201,
-     7.419,
-     3.086
+     -19.11,
+     7.424,
+     3.058
     ],
     "parts": [
      "verrewinkel/brick_red_brussels",
@@ -20777,7 +20777,7 @@
     "at": [
      -6.508,
      8.402,
-     -2.285
+     -2.315
     ],
     "parts": [
      "verrewinkel_foot/painted_metal_grey",
@@ -20841,7 +20841,7 @@
     "at": [
      -3.893,
      8.53,
-     -2.285
+     -2.315
     ],
     "parts": [
      "verrewinkel_foot/painted_metal_grey",
@@ -20905,7 +20905,7 @@
     "at": [
      3.953,
      8.913,
-     -2.285
+     -2.315
     ],
     "parts": [
      "verrewinkel_foot/painted_metal_grey",
@@ -22587,14 +22587,14 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     20.45,
-     8.4,
+     22.35,
+     8.072,
      1.701
     ],
     "part": "verrewinkel/asphalt",
     "facing": [
-     0.05,
-     1,
+     0.13,
+     0.99,
      0
     ],
     "edge_m": 2.95
@@ -22651,6 +22651,22 @@
     "check": "opening",
     "severity": "info",
     "at": [
+     22.302,
+     8.178,
+     3
+    ],
+    "part": "verrewinkel/paving_concrete",
+    "facing": [
+     0.13,
+     0.99,
+     -0.06
+    ],
+    "edge_m": 1.261
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
      -20.45,
      6.47,
      1.75
@@ -22667,14 +22683,30 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     20.45,
-     8.4,
+     19.994,
+     8.408,
+     -2.912
+    ],
+    "part": "verrewinkel/paving_concrete",
+    "facing": [
+     0.15,
+     0.99,
+     0
+    ],
+    "edge_m": 1.269
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     22.35,
+     8.072,
      -1.402
     ],
     "part": "verrewinkel/paving_concrete",
     "facing": [
-     0.05,
-     1,
+     0.13,
+     0.99,
      0
     ],
     "edge_m": 1.65
@@ -22683,14 +22715,14 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     20.45,
-     8.4,
+     22.35,
+     8.072,
      -1.275
     ],
     "part": "verrewinkel/paving_concrete",
     "facing": [
-     0.05,
-     1,
+     0.13,
+     0.99,
      0
     ],
     "edge_m": 0.15
@@ -22699,14 +22731,14 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     20.45,
-     8.423,
-     1.798
+     22.35,
+     8.169,
+     2.952
     ],
     "part": "verrewinkel/paving_concrete",
     "facing": [
-     0.06,
-     1,
+     0.13,
+     0.99,
      -0.06
     ],
     "edge_m": 1.253
@@ -22715,8 +22747,8 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     20.45,
-     8.41,
+     22.35,
+     8.082,
      1.75
     ],
     "part": "verrewinkel/paving_concrete",

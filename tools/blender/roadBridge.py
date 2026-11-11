@@ -44,7 +44,7 @@ BRIDGES = {
         "urbis": "ROB 879", "line": "L26", "road": "Rue de Verrewinkel",
         "centre": (-268.81, 1308.28), "dir": (28.2, 26.2), "floor": 70.30,                 # [M] UrbIS centroid, OSM axis, DTM floor
         "ends": (-19.85, 19.85), "road_ends": (76.79, 78.73),                               # [M] polygon ends, city terrain there
-        "fold": 17.2, "flare": 0.80,                                                        # [M] UrbIS: the wings flare 0.8 m over 2.65 m
+        "fold": 17.2, "flare": 0.80, "apron_se": 0.45,                                                        # [M] UrbIS: the wings flare 0.8 m over 2.65 m
         "y_upper": 2.50, "y_lower": 2.38, "y_inner": 2.10,                                  # [M] +-2.46 UrbIS; corbel 0.12 [P/E]; parapet 0.40 [E]
         "kerb_ne": 1.20, "kerb_sw": -1.75,                                                  # [M] UrbIS level +1 strips (NE sidewalk, SW strip)
         "coping_bottom": 0.90, "coping_h": 0.27, "coping_w": 0.56, "coping_block": 1.25,    # over the road [P courses / L]
@@ -344,10 +344,13 @@ for sx in (-1, 1):
 
 # ------------------------------------------------------------------------------------------------ the road deck
 KNE, KSW = B["kerb_ne"], B["kerb_sw"]
-XS = sorted(set([-XB - 0.6, -XB, -XB + 1.0, -FOLD, FOLD, XB - 1.0, XB, XB + 0.6] + [-FOLD + k * 2 * FOLD / 16 for k in range(1, 16)]))
+APRON = B.get("apron_se", 0.0)                 # the SE end: the city's street dips up to 0.5 m on its SW half within 4 m
+XS = sorted(set([-XB - 0.6, -XB, -XB + 1.0, -FOLD, FOLD, XB - 1.0, XB] + ([XB + 1.25, XB + 2.5] if APRON else [XB + 0.6]) + [-FOLD + k * 2 * FOLD / 16 for k in range(1, 16)]))
 
 
-def rd(x):                                     # road heights carried 0.6 m past the ends, tucked 3 cm under the city's road
+def rd(x):                                     # road heights carried past the ends, tucked 3 cm under the city's road; at the
+    if x > XB + 1e-6 and APRON:                # SE end a 2.5 m apron sloping down 0.45 m (it shows as a ramp where the city's
+        return road(XB) + GRADE * (x - XB) - 0.03 - APRON * (x - XB) / 2.5      # street is low, hides under it elsewhere)
     return road(x) - (0.03 if abs(x) > XB + 1e-6 else 0.0)
 
 
