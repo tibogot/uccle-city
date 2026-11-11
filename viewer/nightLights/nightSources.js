@@ -22,9 +22,10 @@ import { NearestN, StaticSources, ShadowLamps, smooth01 } from "./lightSelect.js
 export const CAR = { HX: 0, HY: 1, HZ: 2, FX: 3, FY: 4, FZ: 5, TX: 6, TY: 7, TZ: 8, HEAD: 9, TAIL: 10, FADE: 11, STRIDE: 12 };
 
 export const nightParams = {
-  lamps: true, windows: true, shops: true, signs: true, headlights: true, rear: true, tram: true, cones: true,
-  lampI: 110, lampRange: 18, lampUp: 0.3, lampBatwing: 0.35,
-  windowI: 9, windowRange: 9, shopI: 32, shopRange: 12, signI: 6, signRange: 5, rearRange: 4.5, headI: 1000, headRange: 40, rearI: 1.6, tramI: 900, tramSaloon: 7,
+  lamps: true, windows: true, shops: true, signs: true, headlights: true, rear: true, tram: true,
+  cones: 'wet only',       // the beams in damp air: 'on' / 'wet only' / 'off' (~0.3 ms when on: additive overdraw)
+  lampI: 110, lampRange: 16, lampUp: 0.3, lampBatwing: 0.35,
+  windowI: 9, windowRange: 9, shopI: 24, shopRange: 12, signI: 6, signRange: 5, rearRange: 4.5, headI: 1000, headRange: 34, headCone: 0.55, rearI: 1.6, tramI: 900, tramSaloon: 7,
   coneDensity: 0.025,     // dry air: a hint; x2.5 when the street is wet (damp air, spray)
 };
 const LAMP_RGB = [1.0, 0.78, 0.52], HEAD_RGB = [1.0, 0.97, 0.92], REAR_RGB = [1.0, 0.04, 0.02], SALOON_RGB = [0.82, 0.9, 1.0];
@@ -59,7 +60,8 @@ export class NightSources {
   }
 
   /** cam: Vector3; dt: s; scale: master x night */
-  update(cam, dt, scale = 1) {
+  update(cam, dt, scale = 1, wetNow = false) {
+    this.conesOn = nightParams.cones === "on" || (nightParams.cones === "wet only" && wetNow);
     const t0 = performance.now();
     const P = this.pool, p = nightParams, cx = cam.x, cy = cam.y, cz = cam.z;
     P.scale = scale;
@@ -79,7 +81,7 @@ export class NightSources {
         tr.cur[id] = w;
         P.set(b + k, S.x[id], S.y[id], S.z[id], p.lampRange, LAMP_RGB[0] * I, LAMP_RGB[1] * I, LAMP_RGB[2] * I, w * (1 - this.shadow.blend(id)), 0.22);
         P.omni(b + k); P.profile(b + k, PROFILE.LANTERN, p.lampUp, p.lampBatwing);
-        if (C && p.cones && w > 0.01) C.write(cone++, S.x[id], S.y[id] - 0.1, S.z[id], 0, -1, 0, S.y[id] - 0.1, 3.4, LAMP_RGB[0] * w, LAMP_RGB[1] * w, LAMP_RGB[2] * w);
+        if (C && this.conesOn && w > 0.01) C.write(cone++, S.x[id], S.y[id] - 0.1, S.z[id], 0, -1, 0, S.y[id] - 0.1, 3.4, LAMP_RGB[0] * w, LAMP_RGB[1] * w, LAMP_RGB[2] * w);
       }
       tr.end();
       this.stats.lamps = sel.count;
@@ -128,9 +130,9 @@ export class NightSources {
         const i = sh.i[k], o = i * CAR.STRIDE, w = sh.weight(k) * D[o + CAR.FADE] * D[o + CAR.HEAD], I = p.headI;
         th.cur[i] = w;
         P.set(bh + k, D[o], D[o + 1], D[o + 2], p.headRange, HEAD_RGB[0] * I, HEAD_RGB[1] * I, HEAD_RGB[2] * I, w, 0.15);
-        P.spot(bh + k, D[o + 3], D[o + 4], D[o + 5], 0.7, 0.2);
+        P.spot(bh + k, D[o + 3], D[o + 4], D[o + 5], p.headCone, p.headCone * 0.3);
         P.profile(bh + k, PROFILE.LOWBEAM, -0.012, 0.268);
-        if (C && p.cones && w > 0.01) C.write(cone++, D[o], D[o + 1], D[o + 2], D[o + 3], D[o + 4] - 0.02, D[o + 5], 16, 3.2, 0.45 * w, 0.44 * w, 0.42 * w);
+        if (C && this.conesOn && w > 0.01) C.write(cone++, D[o], D[o + 1], D[o + 2], D[o + 3], D[o + 4] - 0.02, D[o + 5], 16, 3.2, 0.45 * w, 0.44 * w, 0.42 * w);
       }
       for (let k = 0; k < this.N.rear; k++) {
         if (k >= sr.count) { P.weight(br + k, 0); continue; }
@@ -151,7 +153,7 @@ export class NightSources {
         const I = p.tramI, pitch = 0.03, fx = T.fx * Math.cos(pitch), fz = T.fz * Math.cos(pitch), fy = -Math.sin(pitch);
         P.set(b, T.hx, 1.1, T.hz, p.headRange, HEAD_RGB[0] * I, HEAD_RGB[1] * I, HEAD_RGB[2] * I, w, 0.3);
         P.spot(b, fx, fy, fz, 0.7, 0.4); P.profile(b, PROFILE.LOWBEAM, -0.01, 0);
-        if (C && p.cones) C.write(cone++, T.hx, 1.1, T.hz, fx, fy - 0.02, fz, 18, 3.6, 0.45 * w, 0.44 * w, 0.42 * w);
+        if (C && this.conesOn) C.write(cone++, T.hx, 1.1, T.hz, fx, fy - 0.02, fz, 18, 3.6, 0.45 * w, 0.44 * w, 0.42 * w);
         P.set(b + 1, T.rx, 1.2, T.rz, 6, REAR_RGB[0] * p.rearI * 1.5, REAR_RGB[1] * p.rearI * 1.5, REAR_RGB[2] * p.rearI * 1.5, w, 0.15);
         P.omni(b + 1); P.profile(b + 1, PROFILE.PLAIN); P.diffuseOnly(b + 1, true);
         for (let k = 0; k < 3; k++) {

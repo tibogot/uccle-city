@@ -41,9 +41,10 @@ export function createCones(max) {
       C[k * 3] = r; C[k * 3 + 1] = g; C[k * 3 + 2] = b;
     },
     commit(n) {
+      // whole-buffer uploads (96 cones: 7.5 kB): addUpdateRange() allocates a range object per call, every frame
       mesh.count = n;
-      mesh.instanceMatrix.clearUpdateRanges(); mesh.instanceMatrix.addUpdateRange(0, Math.max(1, n) * 16); mesh.instanceMatrix.needsUpdate = true;
-      col.clearUpdateRanges(); col.addUpdateRange(0, Math.max(1, n) * 3); col.needsUpdate = true;
+      mesh.instanceMatrix.needsUpdate = true;
+      col.needsUpdate = true;
     },
   };
 }

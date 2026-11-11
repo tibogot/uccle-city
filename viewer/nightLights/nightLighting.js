@@ -126,7 +126,7 @@ class NightLightsNode extends ClusteredLightsNode {
       // saves two matrix products per light
       const x = D[o], y = D[o + 1], z = D[o + 2], ax = D[o + 8], ay = D[o + 9], az = D[o + 10];
       T[ROW.POS * line + q] = m[0] * x + m[4] * y + m[8] * z + m[12]; T[ROW.POS * line + q + 1] = m[1] * x + m[5] * y + m[9] * z + m[13];
-      T[ROW.POS * line + q + 2] = m[2] * x + m[6] * y + m[10] * z + m[14]; T[ROW.POS * line + q + 3] = D[o + 3];
+      T[ROW.POS * line + q + 2] = m[2] * x + m[6] * y + m[10] * z + m[14]; T[ROW.POS * line + q + 3] = D[o + S.PROF] === PROFILE.LOWBEAM ? -D[o + 3] : D[o + 3];   // < 0: a low beam
       T[ROW.COLOR * line + q] = D[o + 4] * w; T[ROW.COLOR * line + q + 1] = D[o + 5] * w; T[ROW.COLOR * line + q + 2] = D[o + 6] * w; T[ROW.COLOR * line + q + 3] = D[o + 7];
       T[ROW.SPOT * line + q] = m[0] * ax + m[4] * ay + m[8] * az; T[ROW.SPOT * line + q + 1] = m[1] * ax + m[5] * ay + m[9] * az;
       T[ROW.SPOT * line + q + 2] = m[2] * ax + m[6] * ay + m[10] * az; T[ROW.SPOT * line + q + 3] = D[o + 11];
@@ -168,24 +168,37 @@ class NightLightsNode extends ClusteredLightsNode {
       // the cluster's list is ivec4 chunks: one storage load per 4 lights (three's loop reloads the chunk per light)
       const base = this._screenClusterIndex.mul(int(this._chunksPerCluster)).toVar();
       const chunk = ivec4(0).toVar();
+      // with each chunk, the four lights' position rows are fetched together (four loads in flight instead of a
+      // dependent load per iteration: the loop is latency-bound, not ALU-bound - measured in the lab)
+      const A0 = vec4(0).toVar(), A1 = vec4(0).toVar(), A2 = vec4(0).toVar(), A3 = vec4(0).toVar();
+      const row = (k) => textureLoad(tex, ivec2(max(chunk.element(k).sub(1), 0), ROW.POS));
       Loop(this.maxLightsPerCluster, ({ i }) => {
-        const ii = int(i);
-        If(ii.mod(4).equal(0), () => { chunk.assign(this._lightIndexes.element(base.add(ii.div(4)))); });
-        const li = chunk.element(ii.mod(4));
+        const ii = int(i), j = ii.mod(4);
+        If(j.equal(0), () => {
+          chunk.assign(this._lightIndexes.element(base.add(ii.div(4))));
+          A0.assign(row(0)); A1.assign(row(1)); A2.assign(row(2)); A3.assign(row(3));
+        });
+        const li = chunk.element(j);
         If(li.equal(int(0)), () => { Break(); });
         const idx = li.sub(1);
-        const A = textureLoad(tex, ivec2(idx, ROW.POS)), B = textureLoad(tex, ivec2(idx, ROW.COLOR)), C = textureLoad(tex, ivec2(idx, ROW.SPOT));
+        // cheapest rejections first: the range test (prefetched row), the cone test (one more fetch), the rest only for
+        // a fragment that the light reaches (a cluster lists every light whose bounding sphere touches it: most fail)
+        const A = select(j.equal(0), A0, select(j.equal(1), A1, select(j.equal(2), A2, A3))).toVar();
         const Lv = A.xyz.sub(positionView).toVar();             // fragment -> light (view space)
-        const d2 = dot(Lv, Lv).toVar(), range = A.w;
+        const d2 = dot(Lv, Lv).toVar(), range = abs(A.w);
         If(d2.lessThan(range.mul(range)), () => {
-          const E0 = textureLoad(extra, ivec2(idx, 0)), E1 = textureLoad(extra, ivec2(idx, 1));
+          const C = textureLoad(tex, ivec2(idx, ROW.SPOT)).toVar();
           const d = sqrt(d2);
           const L = Lv.div(max(d, 1e-4)).toVar();               // unit, fragment -> light
           const f = L.negate();                                  // unit, light -> fragment
           const axis = C.xyz;                                    // beam (unit, view space)
           const cosA = dot(f, axis).toVar();
+          // a low beam (range stored negative) lights nothing above its cut-off (~ +2 % at the kink): the facades and
+          // everything higher than the lamp skip the rest (a headlight's cone covers a lot of screen otherwise)
+          If(cosA.greaterThan(C.w).and(A.w.greaterThan(0).or(dot(f, upV).lessThan(0.035))), () => {
+          const B = textureLoad(tex, ivec2(idx, ROW.COLOR)).toVar();
+          const E0 = textureLoad(extra, ivec2(idx, 0)).toVar(), E1 = textureLoad(extra, ivec2(idx, 1)).toVar();
           const spot = smoothstep(C.w, E1.x, cosA).toVar();
-          If(spot.greaterThan(0), () => {
             const prof = E0.x;
             const k = float(1).toVar();
             // 1 LOW BEAM: x = lateral tangent (+ = kerb side), y = sine of the elevation above the horizon
@@ -199,7 +212,7 @@ class NightLightsNode extends ClusteredLightsNode {
               // right in front of the car dim, or the eye adapts to it and the distance goes black)
               const hot = exp(x.sub(0.03).div(0.2).pow2().negate()).mul(exp(y.sub(cut).add(0.02).div(0.035).pow2().negate()));
               const spread = exp(x.div(0.6).pow2().negate()).mul(smoothstep(-0.35, -0.04, y).mul(0.25).add(0.04));
-              k.assign(below.mul(0.97).add(0.03).mul(hot.mul(1.4).add(spread)));
+              k.assign(below.mul(hot.mul(1.4).add(spread)));
             });
             // 2 LANTERN: c = cos from nadir; up share E0.y, batwing E0.z
             If(prof.greaterThan(1.5).and(prof.lessThan(2.5)), () => {

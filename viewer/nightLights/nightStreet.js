@@ -159,7 +159,7 @@ export function buildStreet(lampModel, { seed = 7 } = {}) {
       if (f === 0 && hs.shop) {
         const sw = w - 2.4, sx = (hs.x0 + hs.x1) / 2 - 0.4;
         const col = R() < 0.25 ? [0.85, 0.93, 1.0] : [1.0, 0.86, 0.66];
-        openings.push({ x: sx, y: 0.35, z: zf, w: sw, h: 2.6, kind: 2, lit: col.map((c) => c * 1.6), side: hs.side });
+        openings.push({ x: sx, y: 0.35, z: zf, w: sw, h: 2.6, kind: 2, lit: col.map((c) => c * 1.0), side: hs.side });
         openings.push({ x: hs.x1 - 1.0, y: 0.15, z: zf, w: 0.95, h: 2.2, kind: 1, lit: [0, 0, 0], side: hs.side });
         shops.push({ x: sx, y: 1.65, z: zf, hw: sw / 2, hh: 1.3, side: hs.side, col });
         signs.push({ x: sx, y: 3.25, z: zf - hs.side * 0.12, w: Math.min(sw, 4.2), side: hs.side, label: Math.floor(R() * 6) });
@@ -227,7 +227,7 @@ export function buildStreet(lampModel, { seed = 7 } = {}) {
   const signM = new THREE.MeshStandardNodeMaterial({ roughness: 0.4 });
   {
     const row = instancedBufferAttribute(aRow);
-    const n = normalWorld, front = abs(n.z).greaterThan(0.5);
+    const n = normalWorld, front = n.z.mul(positionWorld.z.negate().sign()).greaterThan(0.5);    // the face toward the street only
     const u = uv();
     const tx = texture(atlas, vec2(u.x, float(1).sub(row.add(float(1).sub(u.y)).div(LABELS.length))));
     signM.colorNode = select(front, tx.rgb.mul(0.3), vec3(0.04));

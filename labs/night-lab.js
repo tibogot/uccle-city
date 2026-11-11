@@ -64,7 +64,9 @@ for (let k = 0; k < K; k++) {
 }
 const cones = createCones(96);
 scene.add(cones.mesh);
-const night = new NightSources(pool, street, { cars: 128, shadowLights, cones });
+// ?pools=heads:16,lamps:24 overrides the pool sizes (nightSources.js)
+const sizes = Object.fromEntries((qp.get("pools") || "").split(",").filter(Boolean).map((kv) => { const [k, v] = kv.split(":"); return [k, +v]; }));
+const night = new NightSources(pool, street, { cars: 128, shadowLights, cones, sizes });
 
 // ------------------------------------------------------------------------------------------------ cars
 const PAINTS = [0x0d0e10, 0x0d0e10, 0x1a1c1f, 0x34383d, 0x4a4e53, 0x8f959c, 0x9ea4ab, 0xb8bcc0, 0xe8e8e4, 0xdcdcd6, 0x1d3f6e, 0x2e5a8a, 0x8a1414, 0x24483a, 0x6b5a48];
@@ -75,7 +77,9 @@ const LANE_CARS = +(qp.get("traffic") || 16);
 for (const dir of [1, -1]) for (let i = 0; i < LANE_CARS; i++)
   cars.push({ type: pickType(h01()), x: -X.carWrap + (i + h01() * 0.4) * (2 * X.carWrap / LANE_CARS), z: dir * Z.lane, beta: dir > 0 ? 0 : Math.PI,
     speed: dir * (dir > 0 ? 9.5 : 8.8), moving: true, paint: PAINTS[Math.floor(h01() * PAINTS.length)] });
-const leadCar = cars.find((c) => c.moving && c.speed > 0);
+let leadCar = cars.find((c) => c.moving && c.speed > 0);
+/** the eastbound car nearest to x (the drive camera follows it) */
+function pickLead(x = -110) { let best = null; for (const c of cars) if (c.moving && c.speed > 0 && (!best || Math.abs(c.x - x) < Math.abs(best.x - x))) best = c; leadCar = best; }
 const carTypes = {}, carTypeList = [];   // id -> { mesh, n, head: [x,y,z], tail, alpha (local forward angle) }
 let carsReady = false;
 (async () => {
@@ -196,8 +200,8 @@ function poseCamera(t) {
     _look.set(x + 10, 1.4, -5);
   } else if (VIEW.mode === "fly") {
     const x = -110 + ((t * 6) % 220);
-    camera.position.set(x, 16 + 4 * Math.sin(t * 0.15), 22);
-    _look.set(x + 45, 0, -2);
+    camera.position.set(x, 19 + 4 * Math.sin(t * 0.15), 2.5);     // above the street, looking down it
+    _look.set(x + 45, 0, -1);
   } else return;
   camera.lookAt(_look);
   controls.target.copy(_look);
@@ -218,7 +222,8 @@ function updateLights(dt) {
   const n = env.uNight.value;
   lastNight = n;
   coneLook.uDensity.value = nightParams.coneDensity * (P.wet ? 2.5 : 1);
-  night.update(camera.position, dt, P.master * smooth01((n - 0.15) / 0.5));
+  cones.mesh.visible = nightParams.cones !== "off" && pool.enabled;
+  night.update(camera.position, dt, P.master * smooth01((n - 0.15) / 0.5), P.wet);
 }
 function frame(dt) {
   if (!sim.frozen && !P.paused) stepSim(dt);
@@ -287,26 +292,36 @@ function cpuTest(n = 20000) {
 
 // ------------------------------------------------------------------------------------------------ strips + pop metric
 /** n frames, `step` s apart (the lights update at 60 Hz in between: the real fades), as a 4-wide contact sheet */
-async function strip(mode = "drive", n = 8, step = 0.5, cols = 4) {
+async function strip(mode = "drive", n = 8, step = 0.5, cols = 4, scale = 0.5, png = false) {
   const keepMode = VIEW.mode; VIEW.mode = mode; sim.frozen = true;
-  const W = renderer.domElement.width, H = renderer.domElement.height, tw = Math.round(W / cols), th = Math.round(H / cols);
+  if (mode === "drive") pickLead(-110);
+  if (mode === "walk") sim.t = 20;
+  if (mode === "fly") sim.t = 6;
+  const W = renderer.domElement.width, H = renderer.domElement.height, tw = Math.round(W * scale), th = Math.round(H * scale);
   const rows = Math.ceil(n / cols), cv = document.createElement("canvas"); cv.width = tw * cols; cv.height = th * rows;
   const g = cv.getContext("2d");
-  for (const t of Object.values(night.track)) t.maxJump = 0;
-  let worstFrame = 0;
+  let worstFrame = 0, popEvents = 0;
+  const kinds = Object.values(night.track);
   for (let f = 0; f < n; f++) {
-    const sub = f === 0 ? 30 : Math.round(step * 60);
-    for (let i = 0; i < sub; i++) { stepSim(1 / 60); poseCamera(sim.t); camera.updateMatrixWorld(); updateLights(1 / 60); if (f > 0) worstFrame = Math.max(worstFrame, ...Object.values(night.track).map((t) => t.frameJump)); }
-    lighting.update(camera.position.y, 0, controls.target, 120);
+    const sub = f === 0 ? 60 : Math.round(step * 60);
+    for (let i = 0; i < sub; i++) {
+      stepSim(1 / 60); poseCamera(sim.t); camera.updateMatrixWorld(); updateLights(1 / 60);
+      lighting.update(camera.position.y, 0, controls.target, 120);
+      pipe.setExposureFactor(lighting.adapt(1 / 60));
+      if (f > 0) for (const t of kinds) { if (t.frameJump > worstFrame) worstFrame = t.frameJump; if (t.frameJump > 0.1) popEvents++; }
+    }
+    if (f === 0) for (const t of kinds) t.maxJump = 0;
     if (P.post) pipe.render(hazeHook); else renderer.render(scene, camera);
-    g.drawImage(renderer.domElement, (f % cols) * tw, Math.floor(f / cols) * th, tw, th);
-    g.fillStyle = "#fff"; g.font = "14px monospace";
-    g.fillText(`${mode} t=${sim.t.toFixed(1)}s  lights ${pool.active}`, (f % cols) * tw + 8, Math.floor(f / cols) * th + 18);
+    g.drawImage(renderer.domElement, 0, 0, W, H, (f % cols) * tw, Math.floor(f / cols) * th, tw, th);
+    g.fillStyle = "#fff"; g.font = `${Math.round(16 * scale * 2)}px monospace`;
+    g.fillText(`${mode} t=${sim.t.toFixed(1)}s  ${pool.active} lights`, (f % cols) * tw + 10, Math.floor(f / cols) * th + 26);
     await new Promise((r) => setTimeout(r, 0));
   }
   sim.frozen = false; VIEW.mode = keepMode;
   $strip.innerHTML = ""; $strip.append(cv); $strip.style.display = "block";
-  return { mode, frames: n, step, maxWeightJumpPerFrame: +worstFrame.toFixed(4), perKind: Object.fromEntries(Object.entries(night.track).map(([k, t]) => [k, +t.maxJump.toFixed(4)])) };
+  const out = { mode, frames: n, step, maxWeightJumpPerFrame: +worstFrame.toFixed(4), popEvents, perKind: Object.fromEntries(Object.entries(night.track).map(([k, t]) => [k, +t.maxJump.toFixed(4)])) };
+  if (png) out.png = cv.toDataURL("image/png");
+  return out;
 }
 $strip.onclick = () => { $strip.style.display = "none"; };
 
@@ -326,7 +341,7 @@ const ui = new Panel({ title: "Night Lights Lab" });
 const fs = ui.addFolder("Scene");
 fs.add(P, "view", ["orbit", "drive", "walk", "fly"]).name("camera").onChange((v) => { VIEW.mode = v; });
 fs.add(P, "hour", 17, 23.9, 0.05).name("solar hour").onChange((v) => { lighting.hourOverride = v; });
-fs.add(P, "wet").name("wet street").onChange(applyWet);
+fs.add(P, "wet").name("wet street").onChange(applyWet).listen();
 fs.add(P, "wetness", 0, 1, 0.01).onChange(applyWet);
 fs.add(P, "puddles", 0, 1, 0.01).onChange(applyWet);
 fs.add(P, "paused").name("pause traffic");
@@ -334,7 +349,8 @@ fs.add({ f: () => { const L = tramModel ? tramModel.layout.length : 32; tramS.di
 fs.add(P, "post").name("post chain (AO SSR bloom)");
 const fl = ui.addFolder("Lights");
 fl.add(P, "master", 0, 2, 0.01).name("all lights x");
-for (const k of ["lamps", "windows", "shops", "signs", "headlights", "rear", "tram", "cones"]) fl.add(nightParams, k);
+for (const k of ["lamps", "windows", "shops", "signs", "headlights", "rear", "tram"]) fl.add(nightParams, k);
+fl.add(nightParams, "cones", ["on", "wet only", "off"]).name("beams (cones)");
 fl.add(nightParams, "lampI", 0, 400, 1).name("lamp cd");
 fl.add(nightParams, "lampUp", 0, 1, 0.01).name("lamp up share");
 fl.add(nightParams, "lampBatwing", 0, 2, 0.01).name("lamp batwing");
