@@ -34,6 +34,7 @@ export class Meters {
   sample(people, dt, cameraMoving = true) {
     if (!this.on || dt <= 0) return;
     this.frames++; if (cameraMoving) this.movingFrames++;
+    this.clock = (this.clock || 0) + dt;
     const c = this.crowd, T = c.table;
     // (a) coverage pops on every drawn / in-view person (cheap)
     for (const p of people) {
@@ -54,6 +55,8 @@ export class Meters {
     for (let i = 0; i < n; i++) {
       const p = drawn[(this.cursor + i) % drawn.length];
       const s = this.state.get(p.id), a = p.anim;
+      // far people step at 15 Hz (their pose is held in between): sample them when they step, over the time since
+      if (a.pend > 0) continue;
       // the pose the crowd DREW this frame: the live rig's, the live <-> baked blend, or the bone table's
       const live = a.live && a.liveW > 0;
       const pose = live ? (a.drawnPose || a.live.pose) : c.bakedPose(p, this._pose);
@@ -70,10 +73,11 @@ export class Meters {
       });
       const pc = a.w < 0.5 ? a.codeA : a.codeB;
       const planted = [0, 1].map((f) => (a.live && a.liveW >= 1 ? !a.live.feet[f].swing : T.planted(Math.floor(pc), pc % 1, p.sex, f) === 1));
-      const fresh = s.frame === this.frames - 1 && p.gen === s.gen && !s.respawned;
+      const fresh = this.frames - s.frame <= 4 && p.gen === s.gen && !s.respawned;
+      const dts = Math.max(1e-4, this.clock - (s.t ?? this.clock - dt));
       for (let f = 0; f < 2; f++) {
         if (fresh && planted[f] && s.planted?.[f]) {
-          const v = Math.min(...[0, 1].map((k) => Math.hypot(sole[f][k][0] - s.sole[f][k][0], sole[f][k][2] - s.sole[f][k][2]))) / dt;
+          const v = Math.min(...[0, 1].map((k) => Math.hypot(sole[f][k][0] - s.sole[f][k][0], sole[f][k][2] - s.sole[f][k][2]))) / dts;
           this.slide[band].push(v);
           if (v > 0.15) this.worst.push({ id: p.id, v: +v.toFixed(3), band, d: +p.dist.toFixed(1), speed: +p.speed.toFixed(2), w: +a.w.toFixed(2), clip: Math.floor(a.codeA) + "/" + Math.floor(a.codeB), x: +p.x.toFixed(1), z: +p.z.toFixed(1) });
         }
@@ -86,16 +90,16 @@ export class Meters {
       // 60 Hz frame; > 5 cm: a snap
       const pts = [ank[0], ank[1], head];
       if (fresh && s.v) {
-        const vel = pts.map((q, k) => [0, 1, 2].map((c2) => (q[c2] - s.pts[k][c2]) / dt));
-        if (s.velFrame === this.frames - 1) {
+        const vel = pts.map((q, k) => [0, 1, 2].map((c2) => (q[c2] - s.pts[k][c2]) / dts));
+        if (this.frames - s.velFrame <= 4) {
           for (let q = 0; q < 3; q++) {
             const jerk = Math.hypot(vel[q][0] - s.v[q][0], vel[q][1] - s.v[q][1], vel[q][2] - s.v[q][2]) / 60;
             if (jerk > 0.05 && this.frames > 10 && p.dist < 64) { this.pops.pose++; this._ev("pose", p, jerk, band); break; }
           }
         }
         s.v = vel; s.velFrame = this.frames;
-      } else if (fresh) { s.v = pts.map((q, k) => [0, 1, 2].map((c2) => (q[c2] - s.pts[k][c2]) / dt)); s.velFrame = this.frames; }
-      s.pts = pts; s.sole = sole; s.planted = planted; s.frame = this.frames; s.gen = p.gen; s.respawned = false;
+      } else if (fresh) { s.v = pts.map((q, k) => [0, 1, 2].map((c2) => (q[c2] - s.pts[k][c2]) / dts)); s.velFrame = this.frames; }
+      s.pts = pts; s.sole = sole; s.planted = planted; s.frame = this.frames; s.t = this.clock; s.gen = p.gen; s.respawned = false;
     }
     // the sampled window holds for 30 frames (speeds and second differences need consecutive frames), then moves on
     if (this.frames % 30 === 0) this.cursor = (this.cursor + n) % Math.max(1, drawn.length);

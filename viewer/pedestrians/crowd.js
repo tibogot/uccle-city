@@ -195,7 +195,7 @@ export class Crowd {
       if (n) { ox += ex / n; oz += ez / n; }
     }
     const r = Math.hypot(ox, oz);
-    if (r > 1e-6) { const rel = (n ? 0.04 : 0.4) * dt + Math.max(0, r - 0.45); const k = Math.max(0, r - rel) / r; ox *= k; oz *= k; }
+    if (r > 1e-6) { const rel = (n ? Math.min(0.025, 0.12 * r) : 0.4) * dt + Math.max(0, r - 0.45); const k = Math.max(0, r - rel) / r; ox *= k; oz *= k; }
     const dxo = ox - (a.ox || 0), dzo = oz - (a.oz || 0);
     for (let k = 0; k < 12; k += 3) { F[k] += dxo; F[k + 2] += dzo; }
     a.ox = ox; a.oz = oz; a.dx = p.x + ox; a.dz = p.z + oz; a.dyaw = p.yaw;
@@ -226,7 +226,7 @@ export class Crowd {
     Object.assign(r, { seed: p.seed, s: p.scale, female: p.sex, girth: p.girth, armSwing: p.armSwing ?? 1, stride: 1, bind: this.bind[p.sex], placed: false });
     r.time = p.seed * 7.3; r.leanAt = r.time + 3.5 * ((p.seed * 0.618) % 1); r.leanCount = 0; r.leanTarget = 0;
     r.pose.set([p.seed, p.sex, p.girth, p.hair], 120);
-    r.reset(p.x, p.z, p.yaw, this._groundFn);
+    r.reset(p.anim?.dx ?? p.x, p.anim?.dz ?? p.z, p.yaw, this._groundFn);
     // start the rig at the bone table's phase: same gait maths (stride 1, as baked), so the two stay in step and the
     // hand-over blend mixes the same step
     if (p.anim) r.phase = p.anim.loco;
@@ -275,7 +275,7 @@ export class Crowd {
         const a = p.anim;
         if (!a.live) a.live = this._rig(p);
         a.liveW = 1; a.liveTarget = 1;
-        a.live.update(dt, p.x, p.z, p.yaw, this._groundFn, null, 0, true);
+        a.live.update(dt, p.anim.dx ?? p.x, p.anim.dz ?? p.z, p.yaw, this._groundFn, null, 0, true);
         if (p.look) headGlance(a.live.pose, p.look);
       }
     } else {
@@ -286,13 +286,14 @@ export class Crowd {
       let nLive = 0;
       for (const p of near) {
         const a = p.anim;
-        const want = nLive < B.maxLive && (p.dist < B.live || (a.liveTarget === 1 && p.dist < B.liveOut));
-        const warm = nLive < B.maxLive && p.dist < B.liveWarm;
+        // (no live rig while sitting / talking: those are UAL clips, table only)
+        const want = p.action == null && nLive < B.maxLive && (p.dist < B.live || (a.liveTarget === 1 && p.dist < B.liveOut));
+        const warm = p.action == null && nLive < B.maxLive && p.dist < B.liveWarm;
         if (want || warm || a.liveW > 0) nLive++;
         if ((want || warm) && !a.live) { a.live = this._rig(p); a.warm = 0; }
         if (!a.live) continue;
         a.warm = (a.warm || 0) + dt;
-        a.live.update(dt, p.x, p.z, p.yaw, this._groundFn, null, 0, true);
+        a.live.update(dt, p.anim.dx ?? p.x, p.anim.dz ?? p.z, p.yaw, this._groundFn, null, 0, true);
         if (p.look) headGlance(a.live.pose, p.look);
         // hand-over: in, after the rig has walked 0.8 s (pre-warmed out to 23 m); the table's phase is pulled toward
         // the rig's meanwhile so both show the same step when they blend
