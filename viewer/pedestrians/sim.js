@@ -15,6 +15,8 @@ export function rng(seed) {
 }
 /** Normal sample (Box-Muller) from a stream. */
 const gauss = (r) => Math.sqrt(-2 * Math.log(Math.max(1e-9, r()))) * Math.cos(TAU * r());
+// style bits (personMaterial.js STYLE)
+const ST = { HAT: 1, SCARF: 2, COAT: 4, SKIRT: 8, BAG: 16, BACKPACK: 32, UMBRELLA: 64, CANE: 128, CHILD: 256, OLD: 512, CAP: 1024 };
 
 export class Graph {
   constructor() { this.nodes = []; this.edges = []; }
@@ -53,6 +55,48 @@ export class PedSim {
     this.redRunnerShare = 0.02;
     this.leaves = world.graph.nodes.filter((n) => n.kind === "door" || n.kind === "end");
     this.grid = new Map();
+    this.season = 0.75;      // 0 summer .. 1 winter (November ~0.75)
+    this.rain = 0;           // 0 dry .. 1 rain (the weather lab's hook: setWeather)
+    this.groupShare = 0.25;  // spawns that bring a companion (a couple, a parent and a child)
+  }
+  setWeather({ season, rain } = {}) { if (season != null) this.season = season; if (rain != null) this.rain = rain; }
+
+  /** Who this person is today (P4): age, family of clips (pram, umbrella, phone, old, cane), clothes, a dog. Drawn
+   *  from the seeded stream at each placement, weighted by season and rain. */
+  dress(p, kind = null) {
+    const r = this.r, w = this.season, rain = this.rain;
+    const u = r();
+    const age = kind || (u < 0.12 ? "child" : u > 0.86 ? "old" : "adult");
+    let style = 0, family = "base";
+    p.age = age; p.pram = false; p.dog = false;
+    if (age === "child") {
+      p.scale = 0.58 + r() * 0.2; p.vPref = 1.15 + r() * 0.25; style |= ST.CHILD;
+      if (r() < 0.55) style |= ST.BACKPACK;
+      if (r() < 0.6 * w) style |= ST.HAT; else if (r() < 0.3 * (1 - w)) style |= ST.CAP;
+      if (r() < 0.45 * w) style |= ST.SCARF;
+      if (p.sex && r() < 0.3 * (1 - w)) style |= ST.SKIRT;
+    } else {
+      p.scale = (p.sex ? 0.92 : 0.98) + gauss(r) * 0.035;
+      if (age === "old") {
+        style |= ST.OLD; p.vPref = 0.8 + r() * 0.3;
+        family = r() < 0.35 ? "cane" : "old";
+        if (family === "cane") style |= ST.CANE;
+      } else {
+        p.vPref = Math.min(1.75, Math.max(0.85, 1.3 + gauss(r) * 0.16));
+        const f = r();
+        if (rain > 0.4 && f < 0.6) { family = "umbrella"; style |= ST.UMBRELLA; }
+        else if (f < 0.66 && f > 0.62) { family = "pram"; p.pram = true; p.vPref = Math.min(p.vPref, 1.15); }
+        else if (f > 0.93) family = "phone";
+        if (r() < 0.05 && family === "base") { p.dog = true; p.vPref = Math.min(p.vPref, 1.2); }
+      }
+      if (r() < 0.55 * w) style |= ST.HAT; else if (r() < 0.12 * (1 - w)) style |= ST.CAP;
+      if (r() < 0.5 * w) style |= ST.SCARF;
+      if (r() < 0.4 * w) style |= ST.COAT;
+      else if (p.sex && r() < 0.18 + 0.25 * (1 - w)) style |= ST.SKIRT;
+      if (r() < 0.25 && family !== "pram") style |= ST.BAG;
+      else if (r() < 0.12) style |= ST.BACKPACK;
+    }
+    p.style = style; p.family = family;
   }
 
   // ------------------------------------------------------------------------------------- people
@@ -89,6 +133,8 @@ export class PedSim {
       s = r() * e.len; dir = r() < 0.5 ? 1 : -1;
     }
     p.gen = (p.gen || 0) + 1;
+    if (!p.keepDress) this.dress(p); p.keepDress = false;
+    p.leader = null; p.action = null; p.talkT = 0; p.standUntil = 0; p.dive = null; p.diveTime = -1; p.backed = 0;
     Object.assign(p, { alive: true, edge: e, dir, s, onCrossing: null, holding: false, tramWait: false, boarding: false, spotUntil: 0, glance: 0, fadeDir: 0, face: null, lane: (r() - 0.5) * Math.min(0.9, e.width * 0.5), state: "walk", hold: false, timer: 0, kerb: null, spot: null, leaving: false, v: p.vPref * 0.8, look: 0 });
     const c = this._carrot(p, _c);
     p.x = c.x - (dir * e.ux) * 0.5; p.z = c.z - (dir * e.uz) * 0.5;
@@ -108,7 +154,22 @@ export class PedSim {
     while (this.people.length < this.max) this.people.push(this._newPerson());
     this.target = n;
     let alive = this.people.filter((p) => p.alive).length;
-    for (const p of this.people) { if (alive >= n) break; if (!p.alive) { this._place(p); p.fade = 1; alive++; } }
+    for (const p of this.people) {
+      if (alive >= n) break;
+      if (!p.alive) { this._place(p); p.fade = 1; alive++; if (alive < n && p.age !== "child" && this.r() < this.groupShare) { this._companion(p, false); alive++; } }
+    }
+  }
+  /** A companion walking with p: a partner (side by side) or a child (holding the side, smaller, keeps the pace). */
+  _companion(p, faded) {
+    const q = this.people.find((x) => !x.alive);
+    if (!q) return;
+    const child = p.age === "adult" && !p.pram && this.r() < 0.4;
+    this.dress(q, child ? "child" : p.age === "old" ? "old" : "adult"); q.keepDress = true;
+    this._place(q, null);
+    q.leader = p; q.side = this.r() < 0.5 ? 0.62 : -0.62; if (child) q.side = Math.sign(q.side) * 0.5;
+    q.x = p.x + Math.cos(p.yaw) * q.side; q.z = p.z - Math.sin(p.yaw) * q.side; q.yaw = p.yaw; q.y = q.gy = this.w.ground(q.x, q.z);
+    q.vPref = p.vPref; q.fade = faded ? 0 : 1; q.fadeDir = faded ? 1 / 0.5 : 0;
+    p.companion = q;
   }
 
   // ------------------------------------------------------------------------------------- step
@@ -126,6 +187,7 @@ export class PedSim {
       const seen = w.inView(p.x, p.y + 0.9, p.z);
       if (seen) { p.fade = 0; p.fadeDir = 1 / 0.5; this.counters.spawnFaded++; } else { p.fade = 1; this.counters.spawnHidden++; }
       alive++;
+      if (alive < this.target && p.age !== "child" && r() < this.groupShare) { this._companion(p, seen); alive++; }
     }
     if (alive > this.target) {
       let extra = alive - this.target;
@@ -167,6 +229,9 @@ export class PedSim {
       if (p.fade <= 0 && p.fadeDir < 0) { p.fadeDir = 0; p.alive = false; p.fade = 1; return; }
       if (p.fadeDir < 0) { p.v = 0; p.speed *= 0.8; return; }       // vanishing in a doorway: stands
     }
+    if (p.dive) return this._diving(p, dt);
+    if (p.leader) return this._follow(p, dt);
+    if (p.standUntil && this.t < p.standUntil) { p.speed *= Math.max(0, 1 - dt * 8); p.v = 0; return; }   // standing up first
     // 1. the carrot: advance along the line while the person is within the look-ahead
     const look = 0.8;
     let hold = false;
@@ -238,7 +303,64 @@ export class PedSim {
       p.look = t < 0.6 ? 0.75 * Math.sin((t / 0.6) * Math.PI * 0.5) : t < 1.2 ? 0.75 * Math.cos(((t - 0.6) / 0.6) * Math.PI) : -0.75 * (1 - (t - 1.2) / 0.4);
       if (p.glance <= 0) p.look = 0;
     } else p.look *= Math.max(0, 1 - dt * 6);
-    if (p.state === "pause") { p.timer -= dt; if (p.timer <= 0) { p.state = "walk"; p.spot = null; p.face = null; } }
+    if (p.state === "pause") {
+      p.timer -= dt;
+      if (p.seat && !p.action && Math.hypot(p.x - p.spot.x, p.z - p.spot.z) < 0.12) p.action = p.seat;   // at the seat: sit
+      if (p.timer <= 0) { p.state = "walk"; p.spot = null; p.face = null; if (p.action) { p.action = null; p.standUntil = this.t + 0.75; } p.seat = null; }
+    }
+    // conversations: a person standing still next to their companion for 1.5 s talks (Idle_Talking, UAL1); faces them
+    const q = p.companion;
+    if (q && q.alive && q.leader === p) {
+      const still = p.speed < 0.1 && q.speed < 0.1 && !p.seat;
+      p.talkT = still ? p.talkT + dt : 0;
+      if (p.talkT > 1.5 && Math.hypot(q.x - p.x, q.z - p.z) < 1.6) { p.action = p.action || "talk"; p.face = Math.atan2(q.x - p.x, q.z - p.z); }
+      else if (p.action === "talk") { p.action = null; if (!p.kerb && !p.spot) p.face = null; }
+    }
+  }
+
+  /** A companion: walks beside (or, on a narrow line, behind) its leader, waits when the leader waits, talks to them
+   *  when both stand, and leaves with them. */
+  _follow(p, dt) {
+    const L = p.leader;
+    if (!L.alive || L.leader) { p.leader = null; this._enter(p, p.edge, p.dir > 0 ? p.edge.a : p.edge.b); return; }
+    if (L.fadeDir < 0 && !p.fadeDir) { p.fadeDir = L.fadeDir; }
+    const fx = Math.sin(L.yaw), fz = Math.cos(L.yaw), narrow = L.edge && L.edge.width < 1.4 && L.speed > 0.3;
+    const side = narrow ? 0 : p.side;
+    const tx = L.x + fz * side - (narrow ? fx * 0.85 : 0), tz = L.z - fx * side - (narrow ? fz * 0.85 : 0);
+    const dx = tx - p.x, dz = tz - p.z, d = Math.hypot(dx, dz);
+    const want = Math.min(2.2, L.speed + d * 1.2);
+    p.v += (want - p.v) * Math.min(1, dt * 3);
+    const step = Math.min(d, p.v * dt);
+    const ox = p.x, oz = p.z;
+    if (d > 1e-3) { p.x += (dx / d) * step; p.z += (dz / d) * step; }
+    const moving = step / Math.max(dt, 1e-4) > 0.15;
+    const talking = L.speed < 0.1 && p.speed < 0.15 && L.talkT > 1.5;
+    const hdg = talking ? Math.atan2(L.x - p.x, L.z - p.z) : moving && d > 0.15 ? Math.atan2(dx, dz) : L.yaw;
+    const maxTurn = (moving ? 4.5 : 2.2) * dt, dy = Math.max(-maxTurn, Math.min(maxTurn, wrap(hdg - p.yaw)));
+    p.yaw = wrap(p.yaw + dy);
+    p.turnRate += (dy / Math.max(dt, 1e-4) - p.turnRate) * Math.min(1, dt * 8);
+    const sp = Math.hypot(p.x - ox, p.z - oz) / Math.max(dt, 1e-4);
+    p.speed += (sp - p.speed) * Math.min(1, dt * 12);
+    p.action = talking ? "talk" : null;
+    p.onCrossing = L.onCrossing;
+    const gy = this.w.ground(p.x, p.z); p.gy = gy; p.y += (gy - p.y) * Math.min(1, dt / 0.12);
+  }
+
+  /** A dive away from a car coming fast (owner default: only at speed): 1.6 m sideways in 0.55 s, down for a moment,
+   *  up again (Mr.doob's dive poses in the live band; further out, the bone table shows a quick side-step). */
+  _diving(p, dt) {
+    const D = p.dive, t = this.t - D.t0;
+    p.diveTime = t;
+    if (t < 0.55) { const k = dt / 0.55 * 1.6; p.x += D.dx * k; p.z += D.dz * k; }
+    p.speed = t < 0.55 ? 2.9 : 0; p.v = 0;
+    if (t > 2.6) { p.dive = null; p.diveTime = -1; }
+  }
+  /** Traffic asks: a car at speed is about to hit this person. */
+  startDive(p, awayX, awayZ) {
+    if (p.dive || !p.alive) return;
+    const l = Math.hypot(awayX, awayZ) || 1;
+    p.dive = { t0: this.t, dx: awayX / l, dz: awayZ / l }; p.yaw = Math.atan2(awayX, awayZ);
+    this.counters.dives = (this.counters.dives || 0) + 1;
   }
 
   /** At a node: may the person go on? (false: wait here). Picks the next edge. */
@@ -250,8 +372,10 @@ export class PedSim {
       this._remove(p); p.spot = { x: node.x, z: node.z }; return false;
     }
     if (node.kind === "pause" && p.state !== "pause" && !p._paused?.has(node.id) && r() < (node.pause ?? 0.4)) {
+      if (node.taken && node.taken.alive && node.taken.seat && node.taken !== p) return this._pickNext(p, node, e0);   // seat taken
       p.state = "pause"; p.timer = (node.minT ?? 3) + r() * ((node.maxT ?? 15) - (node.minT ?? 3));
-      p.spot = { x: node.x + (r() - 0.5) * (node.spread ?? 1), z: node.z + (r() - 0.5) * (node.spread ?? 1) };
+      p.spot = node.sit ? { x: node.x, z: node.z } : { x: node.x + (r() - 0.5) * (node.spread ?? 1), z: node.z + (r() - 0.5) * (node.spread ?? 1) };
+      if (node.sit) { p.seat = node.sit; node.taken = p; }
       p.face = node.face ?? p.yaw;
       (p._paused ||= new Set()).add(node.id);
       return false;
@@ -259,6 +383,10 @@ export class PedSim {
     if (p.state === "pause") return false;
     if (p._paused && p._paused.size > 6) p._paused.clear();
     if (node.kind === "board") return this._tram(p, node);
+    return this._pickNext(p, node, e0);
+  }
+  _pickNext(p, node, e0) {
+    const r = this.r;
     // choose the next edge: not back, weighted by kind
     const opts = node.edges.filter((e) => e !== e0);
     if (!opts.length) { this._enter(p, e0, node); return true; }               // dead end: turn round

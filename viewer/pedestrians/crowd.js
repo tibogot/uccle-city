@@ -12,7 +12,9 @@
 import * as THREE from "three/webgpu";
 import { Fn, If, int, float, vec3, vec4, instanceIndex, attributeArray, storage, uniform, cross, dot, normalize, mix, select,
   floor, fract, sin, cos, vertexStage } from "three/tsl";
-import { buildPersonGeometry, createPersonMaterial, PersonRig } from "../../vendor/slop-ped/pedestrians.js";
+import { PersonRig } from "../../vendor/slop-ped/pedestrians.js";
+import { createPersonMaterial } from "./personMaterial.js";
+import { buildBody } from "./bodies.js";
 import { keepBand } from "../lodFade.js";
 import { BONES, STRIDE, BIND, blendPose, rot } from "./boneTable.js";
 import { buildLod2 } from "./lod2.js";
@@ -93,14 +95,14 @@ class Band {
 
 export class Crowd {
   static async create(renderer, table, opts = {}) {
-    const lod2 = await buildLod2(buildPersonGeometry(0), opts.lod2);
+    const lod2 = await buildLod2(buildBody(0, table), opts.lod2);
     return new Crowd(renderer, table, lod2, opts);
   }
   constructor(renderer, table, lod2Geo, { max = 640 } = {}) {
     this.renderer = renderer; this.table = table;
     this.tableNode = attributeArray(table.data, "vec4").toReadOnly();
     this.clipNode = attributeArray(table.clipInfo, "vec4").toReadOnly();
-    const g0 = buildPersonGeometry(1), g1 = buildPersonGeometry(0);
+    const g0 = buildBody(1, table), g1 = buildBody(0, table);
     this.tris = [g0, g1, lod2Geo].map((g) => g.index.count / 3);
     this.bands = [
       new Band("LOD0", g0, 1, Math.min(max, 160), table, this.tableNode, this.clipNode, { castShadow: true }),
@@ -215,7 +217,7 @@ export class Crowd {
     const a = p.anim, s = this._sp;
     s.sex = p.sex; s.clipA = Math.floor(a.codeA); s.phaseA = a.codeA % 1; s.clipB = Math.floor(a.codeB); s.phaseB = a.codeB % 1; s.w = a.w;
     s.x = a.dx ?? p.x; s.y = a.dy ?? p.y; s.z = a.dz ?? p.z; s.yaw = a.dyaw ?? p.yaw; s.offL = a.offL || 0; s.offR = a.offR || 0;
-    s.scale = p.scale; s.look = p.look || 0; s.seed = p.seed; s.girth = p.girth; s.hair = p.hair;
+    s.scale = p.scale; s.look = p.look || 0; s.seed = p.seed; s.girth = p.girth; s.hair = p.hair + 2 * (p.style || 0);
     return this.table.samplePose(out, s);
   }
 
@@ -225,7 +227,7 @@ export class Crowd {
     // re-dress a pooled rig for this person (the constructor's fields)
     Object.assign(r, { seed: p.seed, s: p.scale, female: p.sex, girth: p.girth, armSwing: p.armSwing ?? 1, stride: 1, bind: this.bind[p.sex], placed: false });
     r.time = p.seed * 7.3; r.leanAt = r.time + 3.5 * ((p.seed * 0.618) % 1); r.leanCount = 0; r.leanTarget = 0;
-    r.pose.set([p.seed, p.sex, p.girth, p.hair], 120);
+    r.pose.set([p.seed, p.sex, p.girth, p.hair + 2 * (p.style || 0)], 120);
     r.reset(p.anim?.dx ?? p.x, p.anim?.dz ?? p.z, p.yaw, this._groundFn);
     // start the rig at the bone table's phase: same gait maths (stride 1, as baked), so the two stay in step and the
     // hand-over blend mixes the same step
@@ -275,7 +277,7 @@ export class Crowd {
         const a = p.anim;
         if (!a.live) a.live = this._rig(p);
         a.liveW = 1; a.liveTarget = 1;
-        a.live.update(dt, p.anim.dx ?? p.x, p.anim.dz ?? p.z, p.yaw, this._groundFn, null, 0, true);
+        a.live.update(dt, p.anim.dx ?? p.x, p.anim.dz ?? p.z, p.yaw, this._groundFn, null, 0, true, p.diveTime >= 0 ? p.diveTime : -1);
         if (p.look) headGlance(a.live.pose, p.look);
       }
     } else {
@@ -287,17 +289,18 @@ export class Crowd {
       for (const p of near) {
         const a = p.anim;
         // (no live rig while sitting / talking: those are UAL clips, table only)
-        const want = p.action == null && nLive < B.maxLive && (p.dist < B.live || (a.liveTarget === 1 && p.dist < B.liveOut));
+        const diving = p.diveTime >= 0 && p.dist < B.liveWarm;
+        const want = diving || p.action == null && nLive < B.maxLive && (p.dist < B.live || (a.liveTarget === 1 && p.dist < B.liveOut));
         const warm = p.action == null && nLive < B.maxLive && p.dist < B.liveWarm;
         if (want || warm || a.liveW > 0) nLive++;
         if ((want || warm) && !a.live) { a.live = this._rig(p); a.warm = 0; }
         if (!a.live) continue;
         a.warm = (a.warm || 0) + dt;
-        a.live.update(dt, p.anim.dx ?? p.x, p.anim.dz ?? p.z, p.yaw, this._groundFn, null, 0, true);
+        a.live.update(dt, p.anim.dx ?? p.x, p.anim.dz ?? p.z, p.yaw, this._groundFn, null, 0, true, p.diveTime >= 0 ? p.diveTime : -1);
         if (p.look) headGlance(a.live.pose, p.look);
         // hand-over: in, after the rig has walked 0.8 s (pre-warmed out to 23 m); the table's phase is pulled toward
         // the rig's meanwhile so both show the same step when they blend
-        const goIn = want && a.warm > 0.8;
+        const goIn = want && (a.warm > 0.8 || diving);
         if (goIn && a.liveTarget === 0) a.liveTarget = 1;
         if (!want && a.liveTarget === 1) { a.liveTarget = 0; a.loco = a.live.phase; }       // out: the table takes over at the rig's phase
         if (a.liveTarget === 0 && a.liveW === 0 && p.speed > 0.3) {
@@ -350,7 +353,7 @@ export class Crowd {
         const P = b.params.value.array, o = slot * 16;
         P[o] = a.dx; P[o + 1] = a.dy; P[o + 2] = a.dz; P[o + 3] = a.dyaw;
         P[o + 4] = live ? -1 : a.codeA; P[o + 5] = a.codeB; P[o + 6] = a.w; P[o + 7] = p.scale;
-        P[o + 8] = p.seed; P[o + 9] = p.sex; P[o + 10] = p.girth; P[o + 11] = p.hair;
+        P[o + 8] = p.seed; P[o + 9] = p.sex; P[o + 10] = p.girth; P[o + 11] = p.hair + 2 * (p.style || 0);
         P[o + 12] = p.look || 0; P[o + 13] = a.offL || 0; P[o + 14] = a.offR || 0; P[o + 15] = 0;
         const F = b.fade.value.array, of = slot * 4;
         F[of] = lo; F[of + 1] = hi;

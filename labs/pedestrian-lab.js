@@ -19,6 +19,8 @@ import { BoneTable } from "../viewer/pedestrians/boneTable.js";
 import { Crowd, BANDS } from "../viewer/pedestrians/crowd.js";
 import { PedSim } from "../viewer/pedestrians/sim.js";
 import { Meters } from "../viewer/pedestrians/meters.js";
+import { Props } from "../viewer/pedestrians/props.js";
+import { personUniforms } from "../viewer/pedestrians/personMaterial.js";
 import { ground, buildGround, buildGraph, Traffic, SignalPosts, Tram, SIGNAL } from "./pedestrian-ground.js";
 
 const qp = new URLSearchParams(location.search);
@@ -54,6 +56,7 @@ const crowd = await Crowd.create(renderer, table);
 crowd.ground = ground;
 for (const m of crowd.meshes) scene.add(m);
 const meters = new Meters(crowd, ground);
+const props = new Props(scene);
 // P0 baseline: his crowd as is (all live rigs, near / far LOD at 34 m)
 const his = new PersonCrowd(640);
 for (const m of his.meshes) scene.add(m);
@@ -67,7 +70,7 @@ const HOURS = (h) => {      // people out by hour (weekday), share of the mornin
 };
 const S = {
   scene: qp.get("scene") || "sidewalk", mode: qp.get("mode") || "banded", count: +(qp.get("count") ?? 150), density: 1, hour: +(qp.get("hour") ?? 8.5),
-  season: "autumn", timeScale: 1, paused: false, post: qp.get("post") !== "0", meters: false, spawning: true, showGraph: false,
+  season: +(qp.get("season") ?? 0.75), rain: +(qp.get("rain") ?? 0), timeScale: 1, paused: false, post: qp.get("post") !== "0", meters: false, spawning: true, showGraph: false,
   lod01: BANDS.lod01, lod12: BANDS.lod12, live: BANDS.live, end: BANDS.end, shadow: BANDS.shadow,
   stats: "", bandsTxt: "", cost: "", metersTxt: "", bench: "—",
 };
@@ -89,7 +92,9 @@ const ui = new Panel({ title: "Pedestrian Lab" });
 const fs = ui.addFolder("Scene");
 fs.add(S, "scene", Object.keys(VIEWS)).name("view").onChange(setView);
 fs.add(S, "hour", 0, 23.9, 0.05).name("hour (city clock)").onChange((v) => { lighting.hourOverride = v; });
-fs.add(S, "season", ["winter", "spring", "summer", "autumn"]).name("season (palette: P4)");
+fs.add(S, "season", 0, 1, 0.05).name("season (0 summer .. 1 winter)").onChange((v) => { personUniforms.season.value = v; sim.setWeather({ season: v }); });
+fs.add(S, "rain", 0, 1, 0.05).name("rain (umbrellas)").onChange((v) => { personUniforms.rain.value = v; sim.setWeather({ rain: v }); });
+fs.add({ go: () => { for (const p of sim.people) if (p.alive && !p.leader) { sim.dress(p); if (p.companion?.leader === p) sim.dress(p.companion, p.companion.age); } } }, "go").name("re-dress everyone (season / rain now)");
 fs.add(S, "timeScale", 0, 4, 0.05).name("speed of time");
 fs.add(S, "paused").name("pause");
 fs.add(S, "post").name("post effects");
@@ -116,14 +121,17 @@ fm.add({ go: () => runCheck("dolly-drive") }, "go").name("check: dolly at drivin
 fm.add({ go: () => runCheck("orbit") }, "go").name("check: orbit the junction");
 fm.add({ go: () => runCheck("bands") }, "go").name("check: dolly through the bands");
 fm.add({ go: () => runCheck("spawn60") }, "go").name("check: spawns in view (60 s orbit)");
+fm.add({ go: () => traffic.speeder(clock) }, "go").name("test: a speeding car runs the red (dives)");
 fm.add({ go: () => bench() }, "go").name("cost: A/B 50 / 150 / 300");
 fm.add(S, "bench").name("result").listen();
 setView(S.scene);
 lighting.hourOverride = S.hour;
+personUniforms.season.value = S.season; personUniforms.rain.value = S.rain; sim.setWeather({ season: S.season, rain: S.rain });
 
 function applyMode() {
   for (const m of crowd.meshes) m.visible = S.mode === "banded";
   for (const m of his.meshes) m.visible = S.mode === "his";
+  for (const B of [props.prams, props.dogs, props.leashes]) B.mesh.visible = S.mode === "banded" && B.n > 0;
   crowd.mode = "banded";
   if (S.mode !== "banded") for (const p of sim.people) if (p.anim?.live) crowd._free(p);
   if (S.mode !== "his") hisRigs.clear();
@@ -199,6 +207,7 @@ renderer.setAnimationLoop(() => {
     push(cpu.crowd, performance.now() - tc); push(cpu.rig, st.rigMs);
     const moving = camera.position.distanceTo(prevCam) > 1e-3;
     if (meters.on) meters.sample(sim.people, Math.max(sdt, 1e-4), moving);
+    props.update(sim.people, Math.max(sdt, 1e-4), ground);
   } else if (S.mode === "his") {
     hisUpdate(Math.max(sdt, 1e-4));
     push(cpu.crowd, performance.now() - tc);
@@ -341,3 +350,25 @@ const strip = {
   reset() { strip.t = 0; strip.cam = null; camera.fov = 50; camera.updateProjectionMatrix(); S.paused = false; fixedDt = 0; },
 };
 window.lab.strip = strip;
+
+/** A contact sheet of the variety (P4): one of each kind, standing in a row on the park lawn, the sim paused.
+ *  lab.lineup() then lab.lineupShot(i) frames person i (or the row's left / right half with -1 / -2). */
+function lineup() {
+  personUniforms.rain.value = 1; sim.setWeather({ rain: 1 }); S.rain = 1; S.paused = true;
+  const al = sim.people.filter((p) => p.alive && !p.leader);
+  const kinds = [(p) => p.age === "child", (p) => p.family === "cane", (p) => p.pram, (p) => p.dog, (p) => p.family === "phone",
+    (p) => p.style & 8, (p) => p.style & 4, (p) => p.style & 1, (p) => p.age === "old" && p.family === "old", (p) => p.style & 32, (p) => p.style & 16];
+  const row = [];
+  for (const f of kinds) { const p = al.find((q) => !row.includes(q) && f(q)); if (p) row.push(p); }
+  const u = al.find((q) => !row.includes(q)); if (u) { for (let k = 0; k < 60 && u.family !== "umbrella"; k++) sim.dress(u, "adult"); row.push(u); }
+  row.forEach((p, i) => { p.x = 95 + i * 1.05; p.z = 40; p.yaw = 0; p.speed = 0; p.turnRate = 0; p.action = null; p.y = p.gy = ground(p.x, p.z); p.gen++; p.spot = { x: p.x, z: p.z }; p.state = "pause"; p.timer = 1e9; p.leader = null; });
+  window.lab.row = row;
+  return row.map((p) => `${p.age}/${p.family}/${p.style}${p.pram ? "/pram" : ""}${p.dog ? "/dog" : ""}`);
+}
+function lineupShot(i) {
+  const row = window.lab.row, x = i >= 0 ? row[i].x : i === -1 ? 95 + 2.7 : 95 + 8.7;
+  const near = i >= 0, gy = ground(x, 46);
+  camera.fov = near ? 30 : 40; camera.updateProjectionMatrix();
+  camera.position.set(x + (near ? 0.6 : 0), gy + (near ? 1.2 : 1.25), near ? 43.4 : 46.5); controls.target.set(x, gy + 0.85, 40); controls.update();
+}
+Object.assign(window.lab, { lineup, lineupShot, props });

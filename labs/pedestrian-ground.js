@@ -206,6 +206,12 @@ export function buildGround(scene) {
   // the square: benches along its west edge, a café terrace (tables), a few trees
   for (const z of [-20, -30, -40, -50]) parts.wood.push(box(0.5, 0.06, 1.9, SQUARE.x0 + 1.6, ground(17, z) + 0.45, z), box(0.08, 0.45, 1.9, SQUARE.x0 + 1.35, ground(17, z) + 0.68, z),
     box(0.4, 0.42, 0.08, SQUARE.x0 + 1.6, ground(17, z) + 0.21, z - 0.85), box(0.4, 0.42, 0.08, SQUARE.x0 + 1.6, ground(17, z) + 0.21, z + 0.85));
+  // café chairs (two per table, facing it), seat 45 cm
+  for (const [x, z] of [[44, -15], [49, -15], [44, -21], [49, -21]]) for (const sz of [-1, 1]) {
+    const cz = z + sz * 0.85, y0 = ground(x, cz);
+    parts.wood.push(box(0.42, 0.04, 0.42, x, y0 + 0.45, cz), box(0.42, 0.42, 0.04, x, y0 + 0.68, cz + sz * 0.21));
+    for (const [lx, lz] of [[-0.18, -0.18], [0.18, -0.18], [-0.18, 0.18], [0.18, 0.18]]) parts.metal.push(new THREE.CylinderGeometry(0.012, 0.012, 0.45, 5).translate(x + lx, y0 + 0.225, cz + lz));
+  }
   for (const [x, z] of [[44, -15], [49, -15], [44, -21], [49, -21]]) parts.metal.push(new THREE.CylinderGeometry(0.4, 0.4, 0.03, 16).translate(x, ground(x, z) + 0.74, z), new THREE.CylinderGeometry(0.03, 0.03, 0.74, 8).translate(x, ground(x, z) + 0.37, z));
   for (const [x, z] of [[30, -45], [40, -55], [25, -60]]) {
     parts.bark.push(new THREE.CylinderGeometry(0.13, 0.18, 4.4, 9).translate(x, ground(x, z) + 2.2, z));
@@ -320,13 +326,21 @@ export function buildGraph(doors) {
   }
   for (const a of field) for (const b of field) if (a.id < b.id && Math.hypot(a.x - b.x, a.z - b.z) < 15) g.join(a, b, "square", { width: 3 });
   for (const x of [20, 35, 50]) { const o = at(Ao[1], x, -6.2); const n = g.node(x, -8.5, "walk"); g.join(o, n, "walk", { width: 2 }); g.join(n, at(field, x, -10), "square", { width: 3 }); }
-  for (const z of [-20, -30, -40, -50]) { const b = g.node(SQUARE.x0 + 2.1, z, "pause", { pause: 0.9, minT: 15, maxT: 60, spread: 0.3, face: Math.PI / 2 }); g.join(b, at(field, SQUARE.x0 + 6, z), "square", { width: 2 }); }
-  for (const [x, z, f] of [[44, -16.4, Math.PI], [49, -13.6, 0], [44, -19.6, 0], [49, -22.4, Math.PI]]) { const t = g.node(x, z, "pause", { pause: 0.8, minT: 20, maxT: 70, spread: 0.2, face: f }); g.join(t, at(field, x, z), "square", { width: 2 }); }
+  // benches: two seats each (the sitter's root = the seat, hips over it; UAL1 Sitting_Idle_Loop), facing the square
+  for (const z of [-20, -30, -40, -50]) for (const dz of [-0.45, 0.45]) {
+    const b = g.node(SQUARE.x0 + 1.68, z + dz, "pause", { pause: 0.7, minT: 15, maxT: 60, face: Math.PI / 2, sit: "sit" });
+    g.join(b, at(field, SQUARE.x0 + 6, z), "square", { width: 2 });
+  }
+  // café chairs: sit and talk (UAL1 Sitting_Talking_Loop), facing the table
+  for (const [x, z] of [[44, -15], [49, -15], [44, -21], [49, -21]]) for (const sz of [-1, 1]) {
+    const t = g.node(x, z + sz * 0.93, "pause", { pause: 0.8, minT: 20, maxT: 70, face: sz < 0 ? 0 : Math.PI, sit: "sitTalk" });
+    g.join(t, at(field, x, z), "square", { width: 2 });
+  }
   // the park path (from street A south at x = 40 to street B east at z = 100) and its bench
   const pp = parkPath();
   const pn = g.chain(pp.slice(1, -1), "path", { width: 2.4, weight: 0.8 });
   g.join(at(As[1], 40, 4.6), pn[0], "path", { width: 2.4 }); g.join(last(pn), at(Be[1], 4.8, 100), "path", { width: 2.4 });
-  { const near = at(pn, 52, 57); const b = g.node(52.5, 55.6, "pause", { pause: 0.7, minT: 15, maxT: 60, spread: 0.2, face: Math.PI }); g.join(near, b, "path", { width: 1.5 }); }
+  { const near = at(pn, 52, 57); for (const dx of [-0.45, 0.45]) { const b = g.node(52.5 + dx, 55.28, "pause", { pause: 0.6, minT: 15, maxT: 60, face: 0, sit: "sit" }); g.join(near, b, "path", { width: 1.5 }); } }
   // the tram platform: from the south sidewalk at x = -37 down the ramp, a line along the platform, the boarding spot
   const access = g.chain([[-37, 6.5], [-37, 14], [-37, 22], [-37, 30]], "walk", { width: 2 });
   g.join(at(As[0], -37, 4.6), access[0], "walk", { width: 2 });
@@ -390,7 +404,33 @@ export class Traffic {
     }
     return { canGo, clear };
   }
+  /** The lab's test: the nearest car on street B's southbound lane speeds (54 km/h) through the junction for 12 s. */
+  speeder(t) {
+    const lane = this.lanes[2];
+    const c = this.cars.filter((x) => x.lane === lane).sort((a, b) => Math.abs(a.s + 60) - Math.abs(b.s + 60))[0];
+    c.vMax0 = c.vMax; c.vMax = 15; c.reckless = t + 12; c.s = -60; c.v = 14;
+    return c;
+  }
+  /** Calm step back (the owner's default): people waiting at a kerb step 0.5 m back while a car passes within 2 m of
+   *  the kerb line, then return. */
+  stepBack(t) {
+    for (const p of this.sim.people) {
+      if (!p.alive || !p.kerb || !p.spot) continue;
+      const e = p.kerb.e, L = e.road === "A" ? (x, z) => [x, z] : (x, z) => [z, x];
+      const [pa, pl] = L(p.x, p.z);                        // along the road, across it
+      let close = false;
+      for (const c of this.cars) {
+        if (c.lane.road !== e.road) continue;
+        const d = (pa - c.s) * c.lane.dir;
+        if (d > -4 && d < 10 + c.v && Math.abs(pl - c.lane.off) < 3.6) { close = true; break; }
+      }
+      const back = close && Math.abs(pl) < 4.4;              // standing within ~0.9 m of the kerb edge (3.5 m)
+      if (back && !p.backed) { p.backed = 1; p.spot = { x: p.spot.x - e.ux * p.kerb.into * 0.5, z: p.spot.z - e.uz * p.kerb.into * 0.5 }; }
+      else if (!close && p.backed) { p.backed = 0; p.spot = { x: p.spot.x + e.ux * p.kerb.into * 0.5, z: p.spot.z + e.uz * p.kerb.into * 0.5 }; }
+    }
+  }
   step(dt, t) {
+    this.stepBack(t);
     const sim = this.sim;
     // who is on / waiting at each crossing (cars must not enter an occupied one)
     for (const c of this.cars) {
@@ -410,8 +450,23 @@ export class Traffic {
         const d = (e.coord - c.s) * L2.dir - (e.width / 2 + 2.1 + 1.5);
         if (d > -3 && d < 50) limit = Math.min(limit, Math.max(0, d));
       }
+      // a reckless car (the lab's "speeding car" test): runs the red at its speed; people in its way dive (at speed
+      // only: the owner's default), the rest of the time drivers stop
+      if (c.reckless && t < c.reckless) {
+        limit = Infinity;
+        for (const p of sim.people) {
+          if (!p.alive || !p.onCrossing || p.onCrossing.road !== L2.road || p.dive) continue;
+          const along = (L2.axis === "x" ? p.x : p.z) - c.s, lat = (L2.axis === "x" ? p.z : p.x) - L2.off;
+          const ahead = along * L2.dir;
+          if (ahead > 0 && ahead < c.v * 1.2 + 3 && Math.abs(lat) < 1.6 && c.v > 5.5) {
+            const away = Math.sign(lat || 1);
+            sim.startDive(p, L2.axis === "x" ? 0 : away, L2.axis === "x" ? away : 0);
+          }
+        }
+      } else if (c.reckless) { c.reckless = 0; c.vMax = c.vMax0; }
       // the car ahead
       for (const o of this.cars) if (o !== c && o.lane === L2) { const d = (o.s - c.s) * L2.dir; if (d > 0 && d < 60) limit = Math.min(limit, d - 6.5); }
+      if (c.reckless) for (const o of this.cars) if (o !== c && o.lane === L2) { const d = (o.s - c.s) * L2.dir; if (d > 0 && d < 60) limit = Math.min(limit, d - 6.5); }
       const vWant = limit < Infinity ? Math.max(0, Math.min(c.vMax, Math.sqrt(Math.max(0, 2 * 3 * limit)))) : c.vMax;
       c.v += Math.max(-6 * dt, Math.min(2 * dt, vWant - c.v));
       c.s += c.v * dt * L2.dir;
