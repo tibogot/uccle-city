@@ -66,7 +66,7 @@ export const glint = Fn(([p, fw]) => {
   // fade: full while a cell is >= 3 px, gone at <= 1.6 px
   const px = cs.div(max(fw, 1e-5));
   const fade = smoothstep(1.6, 3.0, px);
-  const a = h2.mul(6.2832), tilt = h3.mul(0.45);
+  const a = h2.mul(6.2832), tilt = h3.mul(0.18);   // small tilts: a facet that flashes the sun, not a dark speck in the diffuse
   const n = normalize(vec3(cos(a).mul(tilt), 1, sin(a).mul(tilt)));
   return vec4(n, on.mul(disk).mul(fade).mul(wxLook.uSparkle));
 });

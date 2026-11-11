@@ -161,7 +161,9 @@ const KERB = 0.13;
 }
 // sidewalks (the city's concrete tiles) + blue-stone kerbs
 function sidewalk(z0, z1) {
-  const g = new THREE.BoxGeometry(140, KERB, z1 - z0, 1, 1, 1).translate(0, KERB / 2, (z0 + z1) / 2);
+  // the slabs stop where the 15 cm kerb stone starts (no coplanar faces: they z-fought in the flicker test)
+  const s0 = z0 < 0 ? z0 : z0 + 0.15, s1 = z0 < 0 ? z1 - 0.15 : z1;
+  const g = new THREE.BoxGeometry(140, KERB, s1 - s0, 1, 1, 1).translate(0, KERB / 2, (s0 + s1) / 2);
   g.setAttribute("aKind", new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count).fill(0), 1));
   root.add(mesh(g, () => concreteMaterial(), { porosity: 0.55, puddles: true, puddleBias: float(-0.2), litter: true, slush: true }));
   const kz = z0 < 0 ? z1 - 0.15 : z0;
@@ -535,7 +537,7 @@ async function goLive() {
     Object.assign(weather.input, m.input);
     weather.state.depth = m.state.depth;
     if (m.state.wetHint != null) weather.state.wet = Math.max(weather.state.wet, m.state.wetHint);
-    S.liveInfo = m.label;
+    S.liveInfo = m.label; S.preset = "live";
     S.day = dayOfYear(new Date()); applyDay(S.day);
     S.mist = m.input.vis < 1000 ? 0.02 : 0;
     $credit.innerHTML = `Live: ${m.label} · <a href="https://open-meteo.com/" target="_blank">Weather data by Open-Meteo.com</a> (CC BY 4.0)`;

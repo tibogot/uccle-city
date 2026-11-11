@@ -321,6 +321,21 @@ falcon, labs (Bird, Lamp), the dev panel.
       trees (branch skeletons already exist), winter sun path (Firmament `?day=` ~350), low sun, frost /
       wet roads, falling snow. Switchable by date or a preset.
 
+## 7c. Weather + seasons lab (branch claude/weather, docs/WEATHER.md)
+- [x] Research (docs/WEATHER_RESEARCH.md); lab labs/weather-lab.html with rain, wet / puddles / ripples, fog + mist,
+      falling snow, volumetric snow (drifts, rounded eaves, footprints, tyre tracks, slush), seasons, live weather.
+- [ ] Owner review of the lab (rain at night, snowstorm, deep snow + sun, autumn, live weather).
+- [ ] City wiring: one `Weather` + `weatherize()` in the ground / facade / roof / car material factories, the overhead
+      map + snow layer as a sliding window round the camera (shape pass in a worker), weather fog as scene.fogNode,
+      dev-panel "Weather" folder (presets + live toggle), the date slider driving `season.js`.
+- [ ] Far-tile variant of weatherize (wet darkening + roughness only past ~150 m) to bring wetness to ~0.1 ms.
+- [ ] Trees: claude/foliage reads `viewer/seasons/season.js` (leaf colour / autumn / density per leaf, fall).
+- [ ] Side-by-side with real photos of Uccle / Brussels in rain and snow (look-only).
+- [ ] Snow: snow on branches (up-facing cover on the real trees), snow sliding off steep roofs, icicles, snow on
+      sills with thickness (sub-cell), finer layer near the camera (2 cascades: 6 cm near, 25 cm far).
+- [ ] Rain: drips from eaves and gutters, wet glass close-up (normal-mapped drops), thunder / lightning (sound lab).
+- [ ] GPU numbers on a quiet machine (another lab ran during the 2026-11-11 rounds).
+
 ## 8. Game / app
 - [x] Driving (branch claude/drive): Car Lab + drive mode, arcade car on the drivable-surface grid, footprint / island /
       trunk / lamp colliders per tile (viewer/drive/, `?view=drive`). Next: parked cars and trams as colliders (oriented
