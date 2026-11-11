@@ -123,6 +123,8 @@ Stairs paused until the owner's Mixamo clips are in `data/raw/animations/mixamo/
 
 **Fine-tuning:** cars (fronts per type, the van is the reference; police, ambulance); street furniture 2nd pass (quality, lab z-fighting, UrbIS positions of bins / bollards / signs); character jump clip; interior reflections with real textures, taller trumeau mirror, brick-red strip at the stairwell; falcons (better chicks: round down, a proper peregrine model); street-level GPU cost (~1 ms from the smoothness work).
 
+**Later (owner, 2026-11-12): extend north to ALTITUDE CENT (Forest) for the Église Saint-Augustin (1930s Art Deco concrete church on the hilltop, OSM way 40614983, ref:UrbIS 5077320; city ~(-899, -1966), outside Uccle and outside our 120 tiles): with the Brussels expansion, after Uccle is clean.**
+
 **Bigger steps:** phones and tablets; all of Brussels (pipeline at scale, GPU culling); the first game (suggested: the Saint-Job falcons; also driving, tram 92, exploration).
 
 ## NEXT SESSION (agreed order, 2026-11-04)
