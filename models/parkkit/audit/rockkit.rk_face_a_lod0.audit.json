@@ -1,0 +1,144 @@
+{
+ "summary": {
+  "triangles": 31379,
+  "vertices_welded": 15909,
+  "open_edges": 423,
+  "rays": 13858,
+  "blocking": 0,
+  "warnings": 3,
+  "counts": {
+   "nonmanifold": 3,
+   "backtoback": 3
+  },
+  "ms": 729
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0.000021938234567642212,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": 0.07,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "rk_face_a_lod0",
+   "slot": "rocaille_concrete",
+   "triangles": 31379,
+   "maxDistance": 14
+  }
+ ],
+ "items": {
+  "nonmanifold": [
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -2.041,
+     1.828,
+     0.383
+    ],
+    "part": "rk_face_a_lod0/rocaille_concrete",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     1.968,
+     1.915,
+     0.723
+    ],
+    "part": "rk_face_a_lod0/rocaille_concrete",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     2.034,
+     0.157,
+     -0.161
+    ],
+    "part": "rk_face_a_lod0/rocaille_concrete",
+    "uses": 4
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -2.042,
+     1.827,
+     0.384
+    ],
+    "parts": [
+     "rk_face_a_lod0/rocaille_concrete",
+     "rk_face_a_lod0/rocaille_concrete"
+    ],
+    "area": 0.00013
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.97,
+     1.915,
+     0.723
+    ],
+    "parts": [
+     "rk_face_a_lod0/rocaille_concrete",
+     "rk_face_a_lod0/rocaille_concrete"
+    ],
+    "area": 0.00011
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     2.035,
+     0.157,
+     -0.16
+    ],
+    "parts": [
+     "rk_face_a_lod0/rocaille_concrete",
+     "rk_face_a_lod0/rocaille_concrete"
+    ],
+    "area": 0.00014
+   }
+  ]
+ },
+ "file": "rockkit.glb"
+}

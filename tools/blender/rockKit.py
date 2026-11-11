@@ -185,7 +185,7 @@ def displace(o, spec, rnd):
         bmesh.ops.smooth_vert(bm, verts=bm.verts, factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=True)
     bm.normal_update()
     seed = Vector((rnd.uniform(0, 100), rnd.uniform(0, 100), rnd.uniform(0, 100)))
-    bed = spec.get("bedding", 0.16)
+    bed = spec.get("bedding", 0.2)
     amp = spec.get("amp", 1.0)
     crack_scale = Vector((0.9, 0.9, 0.25))
     offs = []
@@ -195,9 +195,9 @@ def displace(o, spec, rnd):
         d = 0.055 * fbm(p * 1.1 + seed, 3)                                                    # large bulges
         d += 0.016 * fbm(p * 4.5 + seed * 1.7, 3)                                             # hand-worked lumps
         if bed > 0:
-            warp = 0.05 * noise.noise(p * 2.5 + seed, noise_basis="PERLIN_NEW")
+            warp = 0.02 * noise.noise(p * 1.5 + seed, noise_basis="PERLIN_NEW")
             ph = (p.z + warp) / bed
-            d -= steep * 0.012 * (0.5 + 0.5 * math.cos(2 * math.pi * ph)) ** 2                    # bedding lines (grooves, >= 4 vertices a period)
+            d -= steep * 0.008 * (0.5 + 0.5 * math.cos(2 * math.pi * ph)) ** 2                    # bedding lines (grooves, >= 4 vertices a period)
         if spec.get("cracks", True):
             q = Vector((p.x * crack_scale.x, p.y * crack_scale.y, p.z * crack_scale.z)) + seed
             f = noise.voronoi(q, distance_metric="DISTANCE")[0]

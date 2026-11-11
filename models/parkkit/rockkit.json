@@ -1,0 +1,819 @@
+{
+ "asset": "Park kit: concrete rockwork (rocaille) + natural rock (tools/blender/rockKit.py)",
+ "pieces": {
+  "rk_boulder_a": {
+   "slot": "rocaille_concrete",
+   "triangles_raw": 15344,
+   "size_m": [
+    1.86,
+    1.61,
+    1.3
+   ],
+   "atlas": [
+    0.2095,
+    0.7721,
+    0.1909
+   ]
+  },
+  "rk_boulder_b": {
+   "slot": "rocaille_concrete",
+   "triangles_raw": 17232,
+   "size_m": [
+    1.45,
+    1.41,
+    2.11
+   ],
+   "atlas": [
+    0,
+    0.7721,
+    0.2055
+   ]
+  },
+  "rk_ledge": {
+   "slot": "rocaille_concrete",
+   "triangles_raw": 19100,
+   "size_m": [
+    3.34,
+    2.25,
+    0.74
+   ],
+   "atlas": [
+    0.661,
+    0.4141,
+    0.217
+   ]
+  },
+  "rk_face_a": {
+   "slot": "rocaille_concrete",
+   "triangles_raw": 66634,
+   "size_m": [
+    4.71,
+    2.14,
+    3.01
+   ],
+   "atlas": [
+    0,
+    0,
+    0.4101
+   ]
+  },
+  "rk_face_b": {
+   "slot": "rocaille_concrete",
+   "triangles_raw": 36384,
+   "size_m": [
+    3.46,
+    1.75,
+    2
+   ],
+   "atlas": [
+    0.3581,
+    0.4141,
+    0.2989
+   ]
+  },
+  "rk_corner": {
+   "slot": "rocaille_concrete",
+   "triangles_raw": 48768,
+   "size_m": [
+    2.95,
+    2.85,
+    2.44
+   ],
+   "atlas": [
+    0,
+    0.4141,
+    0.3541
+   ]
+  },
+  "rk_step": {
+   "slot": "rocaille_concrete",
+   "triangles_raw": 1762,
+   "size_m": [
+    0.98,
+    0.54,
+    0.37
+   ],
+   "atlas": [
+    0.7794,
+    0.7721,
+    0.0647
+   ]
+  },
+  "rk_grotto": {
+   "slot": "rocaille_concrete",
+   "triangles_raw": 67946,
+   "size_m": [
+    3.93,
+    2.73,
+    2.67
+   ],
+   "atlas": [
+    0.4141,
+    0,
+    0.4046
+   ]
+  },
+  "rk_channel": {
+   "slot": "rocaille_concrete",
+   "triangles_raw": 6062,
+   "size_m": [
+    2.41,
+    0.74,
+    0.46
+   ],
+   "atlas": [
+    0.6558,
+    0.7721,
+    0.1196
+   ]
+  },
+  "nat_boulder": {
+   "slot": "rock_sandstone",
+   "triangles_raw": 6252,
+   "size_m": [
+    1.44,
+    1.17,
+    0.68
+   ],
+   "atlas": [
+    0.5318,
+    0.7721,
+    0.12
+   ]
+  },
+  "nat_slab": {
+   "slot": "rock_schist_dark",
+   "triangles_raw": 6424,
+   "size_m": [
+    2.03,
+    1.36,
+    0.44
+   ],
+   "atlas": [
+    0.4045,
+    0.7721,
+    0.1233
+   ]
+  }
+ },
+ "slots": {
+  "rocaille_concrete": "1910 cement rockwork, restored (cream / sand, darker joints, moss on ledges)",
+  "rock_sandstone": "natural Brussels sandstone boulder (natural variant)",
+  "rock_schist_dark": "dark grey slab (the cascade bed's slabs)"
+ },
+ "attributes": {
+  "COLOR_0": "r cavity (0.5 flat, >0.5 concave), g layer tone, b convexity",
+  "TEXCOORD_0": "metres (smart-projected, scaled)",
+  "TEXCOORD_1": "AO atlas rockkit_ao.png"
+ },
+ "frame": "glTF Y up, origin = footprint centre on the ground, faces toward -Z (glTF) = the cliff's front; sink 0.05-0.2 m into the terrain",
+ "voxel_m": 0.04,
+ "lods": {
+  "rk_boulder_a": {
+   "lods": [
+    {
+     "node": "rk_boulder_a_lod0",
+     "triangles": 7797,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.004,
+     "vertex_ao": false
+    },
+    {
+     "node": "rk_boulder_a_lod1",
+     "triangles": 2747,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.015,
+     "vertex_ao": true
+    },
+    {
+     "node": "rk_boulder_a_lod2",
+     "triangles": 770,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.05,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    14,
+    45,
+    200
+   ]
+  },
+  "rk_boulder_b": {
+   "lods": [
+    {
+     "node": "rk_boulder_b_lod0",
+     "triangles": 8248,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.004,
+     "vertex_ao": false
+    },
+    {
+     "node": "rk_boulder_b_lod1",
+     "triangles": 3098,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.015,
+     "vertex_ao": true
+    },
+    {
+     "node": "rk_boulder_b_lod2",
+     "triangles": 840,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.05,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    14,
+    45,
+    200
+   ]
+  },
+  "rk_ledge": {
+   "lods": [
+    {
+     "node": "rk_ledge_lod0",
+     "triangles": 7656,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.004,
+     "vertex_ao": false
+    },
+    {
+     "node": "rk_ledge_lod1",
+     "triangles": 3036,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.015,
+     "vertex_ao": true
+    },
+    {
+     "node": "rk_ledge_lod2",
+     "triangles": 862,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.05,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    14,
+    45,
+    200
+   ]
+  },
+  "rk_face_a": {
+   "lods": [
+    {
+     "node": "rk_face_a_lod0",
+     "triangles": 31379,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.004,
+     "vertex_ao": false
+    },
+    {
+     "node": "rk_face_a_lod1",
+     "triangles": 12190,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.015,
+     "vertex_ao": true
+    },
+    {
+     "node": "rk_face_a_lod2",
+     "triangles": 3263,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.05,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    14,
+    45,
+    200
+   ]
+  },
+  "rk_face_b": {
+   "lods": [
+    {
+     "node": "rk_face_b_lod0",
+     "triangles": 19228,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.0034,
+     "vertex_ao": false
+    },
+    {
+     "node": "rk_face_b_lod1",
+     "triangles": 6624,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.015,
+     "vertex_ao": true
+    },
+    {
+     "node": "rk_face_b_lod2",
+     "triangles": 1790,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.05,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    14,
+    45,
+    200
+   ]
+  },
+  "rk_corner": {
+   "lods": [
+    {
+     "node": "rk_corner_lod0",
+     "triangles": 22385,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.004,
+     "vertex_ao": false
+    },
+    {
+     "node": "rk_corner_lod1",
+     "triangles": 8898,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.015,
+     "vertex_ao": true
+    },
+    {
+     "node": "rk_corner_lod2",
+     "triangles": 2407,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.05,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    14,
+    45,
+    200
+   ]
+  },
+  "rk_step": {
+   "lods": [
+    {
+     "node": "rk_step_lod0",
+     "triangles": 687,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.004,
+     "vertex_ao": false
+    },
+    {
+     "node": "rk_step_lod1",
+     "triangles": 343,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.015,
+     "vertex_ao": true
+    },
+    {
+     "node": "rk_step_lod2",
+     "triangles": 100,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.05,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    14,
+    45,
+    200
+   ]
+  },
+  "rk_grotto": {
+   "lods": [
+    {
+     "node": "rk_grotto_lod0",
+     "triangles": 30179,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.004,
+     "vertex_ao": false
+    },
+    {
+     "node": "rk_grotto_lod1",
+     "triangles": 13809,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.01275,
+     "vertex_ao": true
+    },
+    {
+     "node": "rk_grotto_lod2",
+     "triangles": 3097,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.05,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    14,
+    45,
+    200
+   ]
+  },
+  "rk_channel": {
+   "lods": [
+    {
+     "node": "rk_channel_lod0",
+     "triangles": 2220,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.004,
+     "vertex_ao": false
+    },
+    {
+     "node": "rk_channel_lod1",
+     "triangles": 1101,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.015,
+     "vertex_ao": true
+    },
+    {
+     "node": "rk_channel_lod2",
+     "triangles": 323,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.05,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    14,
+    45,
+    200
+   ]
+  },
+  "nat_boulder": {
+   "lods": [
+    {
+     "node": "nat_boulder_lod0",
+     "triangles": 2432,
+     "draws": 1,
+     "slots": [
+      "rock_sandstone"
+     ],
+     "error_m": 0.004,
+     "vertex_ao": false
+    },
+    {
+     "node": "nat_boulder_lod1",
+     "triangles": 828,
+     "draws": 1,
+     "slots": [
+      "rock_sandstone"
+     ],
+     "error_m": 0.015,
+     "vertex_ao": true
+    },
+    {
+     "node": "nat_boulder_lod2",
+     "triangles": 258,
+     "draws": 1,
+     "slots": [
+      "rock_sandstone"
+     ],
+     "error_m": 0.05,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    14,
+    45,
+    200
+   ]
+  },
+  "nat_slab": {
+   "lods": [
+    {
+     "node": "nat_slab_lod0",
+     "triangles": 1791,
+     "draws": 1,
+     "slots": [
+      "rock_schist_dark"
+     ],
+     "error_m": 0.004,
+     "vertex_ao": false
+    },
+    {
+     "node": "nat_slab_lod1",
+     "triangles": 845,
+     "draws": 1,
+     "slots": [
+      "rock_schist_dark"
+     ],
+     "error_m": 0.015,
+     "vertex_ao": true
+    },
+    {
+     "node": "nat_slab_lod2",
+     "triangles": 255,
+     "draws": 1,
+     "slots": [
+      "rock_schist_dark"
+     ],
+     "error_m": 0.05,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    14,
+    45,
+    200
+   ]
+  }
+ },
+ "glb_bytes": 4163984,
+ "lod_ranges_m": {
+  "note": "each LOD's band END (camera distance); dithered cross-fades over the last 15 % of a band",
+  "bands": [
+   14,
+   45,
+   200
+  ]
+ },
+ "audit": {
+  "rk_boulder_a_lod0": {
+   "blocking": 0,
+   "warnings": 1,
+   "counts": {
+    "sliver": 1
+   }
+  },
+  "rk_boulder_a_lod1": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "rk_boulder_a_lod2": {
+   "blocking": 0,
+   "warnings": 1,
+   "counts": {
+    "sliver": 1
+   }
+  },
+  "rk_boulder_b_lod0": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "rk_boulder_b_lod1": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {
+    "backtoback": 1
+   }
+  },
+  "rk_boulder_b_lod2": {
+   "blocking": 0,
+   "warnings": 2,
+   "counts": {
+    "sliver": 2
+   }
+  },
+  "rk_ledge_lod0": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "rk_ledge_lod1": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "rk_ledge_lod2": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "rk_face_a_lod0": {
+   "blocking": 0,
+   "warnings": 3,
+   "counts": {
+    "nonmanifold": 3,
+    "backtoback": 3
+   }
+  },
+  "rk_face_a_lod1": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "rk_face_a_lod2": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "rk_face_b_lod0": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "rk_face_b_lod1": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "rk_face_b_lod2": {
+   "blocking": 0,
+   "warnings": 3,
+   "counts": {
+    "sliver": 3
+   }
+  },
+  "rk_corner_lod0": {
+   "blocking": 0,
+   "warnings": 2,
+   "counts": {
+    "nonmanifold": 2,
+    "backtoback": 2
+   }
+  },
+  "rk_corner_lod1": {
+   "blocking": 0,
+   "warnings": 1,
+   "counts": {
+    "sliver": 1
+   }
+  },
+  "rk_corner_lod2": {
+   "blocking": 0,
+   "warnings": 1,
+   "counts": {
+    "sliver": 1,
+    "backtoback": 1
+   }
+  },
+  "rk_step_lod0": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "rk_step_lod1": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "rk_step_lod2": {
+   "blocking": 0,
+   "warnings": 1,
+   "counts": {
+    "sliver": 1
+   }
+  },
+  "rk_grotto_lod0": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {
+    "backtoback": 1
+   }
+  },
+  "rk_grotto_lod1": {
+   "blocking": 0,
+   "warnings": 4,
+   "counts": {
+    "sliver": 2,
+    "nonmanifold": 2,
+    "backtoback": 3
+   }
+  },
+  "rk_grotto_lod2": {
+   "blocking": 0,
+   "warnings": 3,
+   "counts": {
+    "sliver": 1,
+    "nonmanifold": 2,
+    "backtoback": 2
+   }
+  },
+  "rk_channel_lod0": {
+   "blocking": 0,
+   "warnings": 2,
+   "counts": {
+    "nonmanifold": 2,
+    "backtoback": 1
+   }
+  },
+  "rk_channel_lod1": {
+   "blocking": 0,
+   "warnings": 1,
+   "counts": {
+    "sliver": 1,
+    "backtoback": 2
+   }
+  },
+  "rk_channel_lod2": {
+   "blocking": 0,
+   "warnings": 2,
+   "counts": {
+    "sliver": 2
+   }
+  },
+  "nat_boulder_lod0": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "nat_boulder_lod1": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "nat_boulder_lod2": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "nat_slab_lod0": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "nat_slab_lod1": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "nat_slab_lod2": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  }
+ }
+}

@@ -1,0 +1,90 @@
+{
+ "summary": {
+  "triangles": 840,
+  "vertices_welded": 436,
+  "open_edges": 30,
+  "rays": 1600,
+  "blocking": 0,
+  "warnings": 2,
+  "counts": {
+   "sliver": 2
+  },
+  "ms": 9
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0.000021938234567642212,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": 0.07,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "rk_boulder_b_lod2",
+   "slot": "rocaille_concrete",
+   "triangles": 840,
+   "maxDistance": 200
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.613,
+     0.383,
+     0.435
+    ],
+    "part": "rk_boulder_b_lod2/rocaille_concrete",
+    "aspect": 51,
+    "longest": 0.338
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.02,
+     0.778,
+     0.567
+    ],
+    "part": "rk_boulder_b_lod2/rocaille_concrete",
+    "aspect": 47,
+    "longest": 0.323
+   }
+  ]
+ },
+ "file": "rockkit.glb"
+}

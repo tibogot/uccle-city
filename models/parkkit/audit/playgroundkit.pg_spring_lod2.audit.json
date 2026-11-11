@@ -1,0 +1,296 @@
+{
+ "summary": {
+  "triangles": 380,
+  "vertices_welded": 206,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 9,
+  "counts": {
+   "sliver": 4,
+   "nonmanifold": 5,
+   "backtoback": 3,
+   "seam": 4
+  },
+  "ms": 9
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0.000027850735932588577,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.02,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "pg_spring_lod2",
+   "slot": "steel_galvanised",
+   "triangles": 294,
+   "maxDistance": 160
+  },
+  {
+   "name": "pg_spring_lod2",
+   "slot": "hdpe_red",
+   "triangles": 48,
+   "maxDistance": 160
+  },
+  {
+   "name": "pg_spring_lod2",
+   "slot": "hdpe_green",
+   "triangles": 38,
+   "maxDistance": 160
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.177,
+     0.001,
+     -0.059
+    ],
+    "part": "pg_spring_lod2/steel_galvanised",
+    "aspect": 62,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.177,
+     0.001,
+     -0.059
+    ],
+    "part": "pg_spring_lod2/steel_galvanised",
+    "aspect": 62,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.29,
+     0.72,
+     0.02
+    ],
+    "part": "pg_spring_lod2/hdpe_red",
+    "aspect": 53,
+    "longest": 0.437
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.29,
+     0.72,
+     -0.02
+    ],
+    "part": "pg_spring_lod2/hdpe_red",
+    "aspect": 53,
+    "longest": 0.437
+   }
+  ],
+  "nonmanifold": [
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.093,
+     0.219,
+     -0.012
+    ],
+    "part": "pg_spring_lod2/steel_galvanised",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.057,
+     0.286,
+     -0.07
+    ],
+    "part": "pg_spring_lod2/steel_galvanised",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.084,
+     0.341,
+     -0.041
+    ],
+    "part": "pg_spring_lod2/steel_galvanised",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.065,
+     0.345,
+     -0.067
+    ],
+    "part": "pg_spring_lod2/steel_galvanised",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.056,
+     0.385,
+     0.077
+    ],
+    "part": "pg_spring_lod2/steel_galvanised",
+    "uses": 4
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.092,
+     0.109,
+     0.032
+    ],
+    "parts": [
+     "pg_spring_lod2/steel_galvanised",
+     "pg_spring_lod2/steel_galvanised"
+    ],
+    "area": 0.00087
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.077,
+     0.348,
+     -0.055
+    ],
+    "parts": [
+     "pg_spring_lod2/steel_galvanised",
+     "pg_spring_lod2/steel_galvanised"
+    ],
+    "area": 0.00102
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.27,
+     0.855,
+     0.042
+    ],
+    "parts": [
+     "pg_spring_lod2/hdpe_green",
+     "pg_spring_lod2/hdpe_green"
+    ],
+    "area": 0.00352
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.043,
+     0.567,
+     0.02
+    ],
+    "parts": [
+     "pg_spring_lod2/steel_galvanised",
+     "pg_spring_lod2/hdpe_red"
+    ],
+    "length_m": 0.42,
+    "pieces": 31,
+    "min_angle_deg": 82.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.049,
+     0.491,
+     -0.061
+    ],
+    "parts": [
+     "pg_spring_lod2/steel_galvanised",
+     "pg_spring_lod2/hdpe_green"
+    ],
+    "length_m": 0.31,
+    "pieces": 18,
+    "min_angle_deg": 29.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.043,
+     0.476,
+     -0.063
+    ],
+    "parts": [
+     "pg_spring_lod2/steel_galvanised",
+     "pg_spring_lod2/steel_galvanised"
+    ],
+    "length_m": 0.43,
+    "pieces": 13,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.008,
+     0.6,
+     -0.008
+    ],
+    "parts": [
+     "pg_spring_lod2/hdpe_red",
+     "pg_spring_lod2/hdpe_green"
+    ],
+    "length_m": 0.63,
+    "pieces": 4,
+    "min_angle_deg": 23.2
+   }
+  ]
+ },
+ "file": "playgroundkit.glb"
+}

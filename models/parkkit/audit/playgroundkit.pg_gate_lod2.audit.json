@@ -1,0 +1,1857 @@
+{
+ "summary": {
+  "triangles": 296,
+  "vertices_welded": 196,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 102,
+  "counts": {
+   "sliver": 96,
+   "nonmanifold": 6,
+   "backtoback": 33,
+   "seam": 6
+  },
+  "ms": 6
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0.000027850735932588577,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.02,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "pg_gate_lod2",
+   "slot": "steel_painted_green",
+   "triangles": 256,
+   "maxDistance": 160
+  },
+  {
+   "name": "pg_gate_lod2",
+   "slot": "steel_galvanised",
+   "triangles": 40,
+   "maxDistance": 160
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.617,
+     0.335,
+     0.038
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.29
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.618,
+     0.765,
+     0.037
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.29
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.617,
+     0.335,
+     -0.038
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.29
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.618,
+     0.765,
+     -0.037
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.29
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.542,
+     0.335,
+     -0.037
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.29
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.543,
+     0.765,
+     -0.038
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.29
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.543,
+     0.765,
+     0.038
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.29
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.542,
+     0.335,
+     0.037
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.29
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.543,
+     0.765,
+     0.038
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.29
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.542,
+     0.335,
+     0.037
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.29
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.543,
+     0.765,
+     -0.038
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.29
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.542,
+     0.335,
+     -0.037
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.29
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.618,
+     0.335,
+     -0.037
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.29
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.617,
+     0.765,
+     -0.038
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.29
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.617,
+     0.765,
+     0.038
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.29
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.618,
+     0.335,
+     0.037
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.29
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.172,
+     0.061,
+     -0.013
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.032
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.172,
+     0.063,
+     -0.011
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.032
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.172,
+     0.099,
+     -0.013
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.032
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.172,
+     0.097,
+     -0.011
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.032
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.172,
+     0.097,
+     -0.049
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.032
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.172,
+     0.099,
+     -0.047
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.032
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.172,
+     0.061,
+     -0.047
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.032
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.172,
+     0.063,
+     -0.049
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.032
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.172,
+     1.031,
+     -0.013
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.032
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.172,
+     1.033,
+     -0.011
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.032
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.172,
+     1.069,
+     -0.013
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.032
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.172,
+     1.067,
+     -0.011
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.032
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.172,
+     1.067,
+     -0.049
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.032
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.172,
+     1.069,
+     -0.047
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.032
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.172,
+     1.031,
+     -0.047
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.032
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.172,
+     1.033,
+     -0.049
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 182,
+    "longest": 1.032
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.516,
+     0.412,
+     -0.012
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 163,
+    "longest": 0.921
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.518,
+     0.719,
+     -0.014
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 163,
+    "longest": 0.921
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.516,
+     0.719,
+     -0.048
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 163,
+    "longest": 0.921
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.518,
+     0.412,
+     -0.046
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 163,
+    "longest": 0.921
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.482,
+     0.719,
+     -0.046
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 163,
+    "longest": 0.921
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.484,
+     0.412,
+     -0.048
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 163,
+    "longest": 0.921
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.484,
+     0.719,
+     -0.012
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 163,
+    "longest": 0.921
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.482,
+     0.412,
+     -0.014
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 163,
+    "longest": 0.921
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.484,
+     0.412,
+     -0.012
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 163,
+    "longest": 0.921
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.482,
+     0.719,
+     -0.014
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 163,
+    "longest": 0.921
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.484,
+     0.412,
+     -0.048
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 163,
+    "longest": 0.921
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.482,
+     0.719,
+     -0.046
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 163,
+    "longest": 0.921
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.518,
+     0.719,
+     -0.046
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 163,
+    "longest": 0.921
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.516,
+     0.412,
+     -0.048
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 163,
+    "longest": 0.921
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.516,
+     0.719,
+     -0.012
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 163,
+    "longest": 0.921
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.518,
+     0.412,
+     -0.014
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 163,
+    "longest": 0.921
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     0.109,
+     -0.025
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     0.111,
+     -0.025
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     0.111,
+     -0.025
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     0.109,
+     -0.026
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     0.111,
+     -0.035
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     0.11,
+     -0.034
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     0.11,
+     -0.034
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     0.111,
+     -0.035
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     0.291,
+     -0.026
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     0.291,
+     -0.025
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     0.293,
+     -0.025
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     0.293,
+     -0.025
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     0.29,
+     -0.035
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     0.291,
+     -0.034
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     0.292,
+     -0.034
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     0.292,
+     -0.035
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     0.474,
+     -0.025
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     0.475,
+     -0.025
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     0.476,
+     -0.025
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     0.474,
+     -0.027
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     0.472,
+     -0.035
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     0.473,
+     -0.034
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     0.474,
+     -0.034
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     0.474,
+     -0.035
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     0.655,
+     -0.025
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     0.655,
+     -0.024
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     0.657,
+     -0.024
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     0.657,
+     -0.025
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     0.655,
+     -0.035
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     0.656,
+     -0.034
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     0.656,
+     -0.034
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     0.655,
+     -0.035
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     0.837,
+     -0.025
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     0.838,
+     -0.024
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     0.838,
+     -0.024
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     0.837,
+     -0.025
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     0.837,
+     -0.035
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     0.837,
+     -0.034
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     0.839,
+     -0.034
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     0.839,
+     -0.035
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     1.019,
+     -0.025
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     1.019,
+     -0.024
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     1.021,
+     -0.024
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     1.021,
+     -0.025
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     1.02,
+     -0.035
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     1.021,
+     -0.035
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.157,
+     1.022,
+     -0.035
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.157,
+     1.02,
+     -0.037
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "aspect": 165,
+    "longest": 0.94
+   }
+  ],
+  "nonmanifold": [
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0,
+     0.111,
+     -0.034
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0,
+     0.655,
+     -0.034
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0,
+     0.837,
+     -0.024
+    ],
+    "part": "pg_gate_lod2/steel_painted_green",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.424,
+     0.886,
+     0.084
+    ],
+    "part": "pg_gate_lod2/steel_galvanised",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.424,
+     0.917,
+     0.093
+    ],
+    "part": "pg_gate_lod2/steel_galvanised",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.424,
+     0.994,
+     0.084
+    ],
+    "part": "pg_gate_lod2/steel_galvanised",
+    "uses": 4
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.589,
+     1.2,
+     -0.026
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00123
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.603,
+     1.2,
+     0
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00122
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.34,
+     0.11,
+     -0.024
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00148
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.34,
+     0.109,
+     -0.025
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00148
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.157,
+     0.111,
+     -0.035
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00268
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.157,
+     0.11,
+     -0.034
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00268
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.34,
+     0.293,
+     -0.026
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00148
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.34,
+     0.292,
+     -0.024
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00148
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.29,
+     0.29,
+     -0.035
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00205
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.291,
+     0.291,
+     -0.034
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00205
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.291,
+     0.474,
+     -0.025
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00205
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.291,
+     0.473,
+     -0.025
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00205
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.291,
+     0.472,
+     -0.035
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00205
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.291,
+     0.473,
+     -0.034
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00205
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.29,
+     0.657,
+     -0.025
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00205
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.291,
+     0.656,
+     -0.023
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00205
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.157,
+     0.655,
+     -0.035
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00268
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.157,
+     0.656,
+     -0.034
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00268
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.157,
+     0.837,
+     -0.025
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00268
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.157,
+     0.838,
+     -0.024
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00268
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.291,
+     0.839,
+     -0.035
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00205
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.29,
+     0.838,
+     -0.033
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00205
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.29,
+     1.021,
+     -0.025
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00205
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.291,
+     1.02,
+     -0.023
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00205
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.29,
+     1.02,
+     -0.035
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00205
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.29,
+     1.019,
+     -0.035
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "area": 0.00205
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.531,
+     0.235,
+     -0.034
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_galvanised",
+     "pg_gate_lod2/steel_galvanised"
+    ],
+    "area": 0.00072
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.546,
+     0.188,
+     -0.029
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_galvanised",
+     "pg_gate_lod2/steel_galvanised"
+    ],
+    "area": 0.00072
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.524,
+     0.212,
+     -0.031
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_galvanised",
+     "pg_gate_lod2/steel_galvanised"
+    ],
+    "area": 0.00072
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.539,
+     0.165,
+     -0.026
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_galvanised",
+     "pg_gate_lod2/steel_galvanised"
+    ],
+    "area": 0.00072
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.425,
+     0.882,
+     0.066
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_galvanised",
+     "pg_gate_lod2/steel_galvanised"
+    ],
+    "area": 0.00052
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.425,
+     0.904,
+     0.092
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_galvanised",
+     "pg_gate_lod2/steel_galvanised"
+    ],
+    "area": 0.00056
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.426,
+     0.996,
+     0.066
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_galvanised",
+     "pg_gate_lod2/steel_galvanised"
+    ],
+    "area": 0.00049
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.517,
+     0.882,
+     -0.047
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_galvanised"
+    ],
+    "length_m": 0.44,
+    "pieces": 28,
+    "min_angle_deg": 83
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.543,
+     0.884,
+     -0.038
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_galvanised"
+    ],
+    "length_m": 0.38,
+    "pieces": 17,
+    "min_angle_deg": 83.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.541,
+     0.853,
+     -0.036
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_galvanised"
+    ],
+    "length_m": 0.2,
+    "pieces": 11,
+    "min_angle_deg": 19.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.615,
+     1.2,
+     0
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "length_m": 0.24,
+    "pieces": 4,
+    "min_angle_deg": 5.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.54,
+     0.216,
+     -0.032
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_galvanised"
+    ],
+    "length_m": 0.19,
+    "pieces": 4,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.597,
+     1.2,
+     -0.018
+    ],
+    "parts": [
+     "pg_gate_lod2/steel_painted_green",
+     "pg_gate_lod2/steel_painted_green"
+    ],
+    "length_m": 0.2,
+    "pieces": 4,
+    "min_angle_deg": 5.4
+   }
+  ]
+ },
+ "file": "playgroundkit.glb"
+}

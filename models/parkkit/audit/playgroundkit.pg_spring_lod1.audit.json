@@ -1,0 +1,656 @@
+{
+ "summary": {
+  "triangles": 1012,
+  "vertices_welded": 522,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 35,
+  "counts": {
+   "sliver": 35,
+   "backtoback": 4,
+   "seam": 6
+  },
+  "ms": 51
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0.000027850735932588577,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.02,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "pg_spring_lod1",
+   "slot": "steel_galvanised",
+   "triangles": 834,
+   "maxDistance": 55
+  },
+  {
+   "name": "pg_spring_lod1",
+   "slot": "hdpe_red",
+   "triangles": 100,
+   "maxDistance": 55
+  },
+  {
+   "name": "pg_spring_lod1",
+   "slot": "hdpe_green",
+   "triangles": 78,
+   "maxDistance": 55
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.177,
+     0.001,
+     0.059
+    ],
+    "part": "pg_spring_lod1/steel_galvanised",
+    "aspect": 62,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.179,
+     0.003,
+     -0.059
+    ],
+    "part": "pg_spring_lod1/steel_galvanised",
+    "aspect": 62,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.059,
+     0.001,
+     -0.177
+    ],
+    "part": "pg_spring_lod1/steel_galvanised",
+    "aspect": 62,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.059,
+     0.003,
+     -0.179
+    ],
+    "part": "pg_spring_lod1/steel_galvanised",
+    "aspect": 62,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.059,
+     0.012,
+     -0.177
+    ],
+    "part": "pg_spring_lod1/steel_galvanised",
+    "aspect": 115,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.177,
+     0.001,
+     -0.059
+    ],
+    "part": "pg_spring_lod1/steel_galvanised",
+    "aspect": 62,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.179,
+     0.003,
+     0.059
+    ],
+    "part": "pg_spring_lod1/steel_galvanised",
+    "aspect": 62,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.177,
+     0.011,
+     -0.059
+    ],
+    "part": "pg_spring_lod1/steel_galvanised",
+    "aspect": 62,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.059,
+     0,
+     0.177
+    ],
+    "part": "pg_spring_lod1/steel_galvanised",
+    "aspect": 115,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.059,
+     0.011,
+     0.177
+    ],
+    "part": "pg_spring_lod1/steel_galvanised",
+    "aspect": 62,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.059,
+     0.009,
+     0.179
+    ],
+    "part": "pg_spring_lod1/steel_galvanised",
+    "aspect": 62,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.059,
+     0.006,
+     0.18
+    ],
+    "part": "pg_spring_lod1/steel_galvanised",
+    "aspect": 51,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.059,
+     0.006,
+     -0.18
+    ],
+    "part": "pg_spring_lod1/steel_galvanised",
+    "aspect": 51,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.18,
+     0.005,
+     -0.059
+    ],
+    "part": "pg_spring_lod1/steel_galvanised",
+    "aspect": 88,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.045,
+     0.465,
+     -0.097
+    ],
+    "part": "pg_spring_lod1/steel_galvanised",
+    "aspect": 48,
+    "longest": 0.272
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.045,
+     0.475,
+     -0.097
+    ],
+    "part": "pg_spring_lod1/steel_galvanised",
+    "aspect": 48,
+    "longest": 0.272
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.045,
+     0.464,
+     0.097
+    ],
+    "part": "pg_spring_lod1/steel_galvanised",
+    "aspect": 89,
+    "longest": 0.272
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.045,
+     0.475,
+     0.097
+    ],
+    "part": "pg_spring_lod1/steel_galvanised",
+    "aspect": 48,
+    "longest": 0.272
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.045,
+     0.473,
+     0.099
+    ],
+    "part": "pg_spring_lod1/steel_galvanised",
+    "aspect": 48,
+    "longest": 0.272
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.133,
+     0.529,
+     0.019
+    ],
+    "part": "pg_spring_lod1/hdpe_red",
+    "aspect": 54,
+    "longest": 0.496
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.032,
+     0.526,
+     0.018
+    ],
+    "part": "pg_spring_lod1/hdpe_red",
+    "aspect": 54,
+    "longest": 0.498
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.133,
+     0.522,
+     0.014
+    ],
+    "part": "pg_spring_lod1/hdpe_red",
+    "aspect": 54,
+    "longest": 0.499
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.033,
+     0.521,
+     0.011
+    ],
+    "part": "pg_spring_lod1/hdpe_red",
+    "aspect": 54,
+    "longest": 0.5
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.006,
+     0.599,
+     -0.011
+    ],
+    "part": "pg_spring_lod1/hdpe_red",
+    "aspect": 62,
+    "longest": 0.563
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.192,
+     0.598,
+     -0.014
+    ],
+    "part": "pg_spring_lod1/hdpe_red",
+    "aspect": 62,
+    "longest": 0.563
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.002,
+     0.594,
+     -0.018
+    ],
+    "part": "pg_spring_lod1/hdpe_red",
+    "aspect": 62,
+    "longest": 0.567
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.187,
+     0.591,
+     -0.019
+    ],
+    "part": "pg_spring_lod1/hdpe_red",
+    "aspect": 62,
+    "longest": 0.567
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.133,
+     0.521,
+     -0.011
+    ],
+    "part": "pg_spring_lod1/hdpe_red",
+    "aspect": 54,
+    "longest": 0.5
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.033,
+     0.522,
+     -0.014
+    ],
+    "part": "pg_spring_lod1/hdpe_red",
+    "aspect": 54,
+    "longest": 0.499
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.133,
+     0.526,
+     -0.018
+    ],
+    "part": "pg_spring_lod1/hdpe_red",
+    "aspect": 54,
+    "longest": 0.498
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.033,
+     0.529,
+     -0.019
+    ],
+    "part": "pg_spring_lod1/hdpe_red",
+    "aspect": 54,
+    "longest": 0.497
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.243,
+     0.732,
+     0.02
+    ],
+    "part": "pg_spring_lod1/hdpe_red",
+    "aspect": 43,
+    "longest": 0.328
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.29,
+     0.72,
+     0.02
+    ],
+    "part": "pg_spring_lod1/hdpe_red",
+    "aspect": 53,
+    "longest": 0.437
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.243,
+     0.732,
+     -0.02
+    ],
+    "part": "pg_spring_lod1/hdpe_red",
+    "aspect": 43,
+    "longest": 0.328
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.29,
+     0.72,
+     -0.02
+    ],
+    "part": "pg_spring_lod1/hdpe_red",
+    "aspect": 53,
+    "longest": 0.437
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.002,
+     0.6,
+     0.003
+    ],
+    "parts": [
+     "pg_spring_lod1/hdpe_red",
+     "pg_spring_lod1/hdpe_green"
+    ],
+    "area": 0.00165
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.156,
+     0.6,
+     0.005
+    ],
+    "parts": [
+     "pg_spring_lod1/hdpe_red",
+     "pg_spring_lod1/hdpe_green"
+    ],
+    "area": 0.00105
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.005,
+     0.6,
+     -0.005
+    ],
+    "parts": [
+     "pg_spring_lod1/hdpe_red",
+     "pg_spring_lod1/hdpe_green"
+    ],
+    "area": 0.00087
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.163,
+     0.6,
+     -0.003
+    ],
+    "parts": [
+     "pg_spring_lod1/hdpe_red",
+     "pg_spring_lod1/hdpe_green"
+    ],
+    "area": 0.00147
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.043,
+     0.567,
+     0.02
+    ],
+    "parts": [
+     "pg_spring_lod1/steel_galvanised",
+     "pg_spring_lod1/hdpe_red"
+    ],
+    "length_m": 0.43,
+    "pieces": 43,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.049,
+     0.491,
+     -0.061
+    ],
+    "parts": [
+     "pg_spring_lod1/steel_galvanised",
+     "pg_spring_lod1/hdpe_green"
+    ],
+    "length_m": 0.33,
+    "pieces": 26,
+    "min_angle_deg": 48.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.043,
+     0.476,
+     -0.063
+    ],
+    "parts": [
+     "pg_spring_lod1/steel_galvanised",
+     "pg_spring_lod1/steel_galvanised"
+    ],
+    "length_m": 0.43,
+    "pieces": 14,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.006,
+     0.6,
+     0.008
+    ],
+    "parts": [
+     "pg_spring_lod1/hdpe_red",
+     "pg_spring_lod1/hdpe_green"
+    ],
+    "length_m": 0.66,
+    "pieces": 8,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.281,
+     0.854,
+     0.009
+    ],
+    "parts": [
+     "pg_spring_lod1/hdpe_red",
+     "pg_spring_lod1/hdpe_green"
+    ],
+    "length_m": 0.05,
+    "pieces": 8,
+    "min_angle_deg": 30
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.096,
+     0.464,
+     -0.011
+    ],
+    "parts": [
+     "pg_spring_lod1/steel_galvanised",
+     "pg_spring_lod1/steel_galvanised"
+    ],
+    "length_m": 0.04,
+    "pieces": 4,
+    "min_angle_deg": 30.9
+   }
+  ]
+ },
+ "file": "playgroundkit.glb"
+}

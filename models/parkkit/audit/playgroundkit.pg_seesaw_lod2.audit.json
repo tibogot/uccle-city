@@ -1,0 +1,444 @@
+{
+ "summary": {
+  "triangles": 534,
+  "vertices_welded": 287,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 19,
+  "counts": {
+   "sliver": 16,
+   "nonmanifold": 3,
+   "backtoback": 1,
+   "seam": 7
+  },
+  "ms": 7
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0.000027850735932588577,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.02,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "pg_seesaw_lod2",
+   "slot": "wood_stained",
+   "triangles": 172,
+   "maxDistance": 160
+  },
+  {
+   "name": "pg_seesaw_lod2",
+   "slot": "steel_galvanised",
+   "triangles": 36,
+   "maxDistance": 160
+  },
+  {
+   "name": "pg_seesaw_lod2",
+   "slot": "steel_painted_red",
+   "triangles": 72,
+   "maxDistance": 160
+  },
+  {
+   "name": "pg_seesaw_lod2",
+   "slot": "rubber_black",
+   "triangles": 254,
+   "maxDistance": 160
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.058,
+     0.173,
+     0.196
+    ],
+    "part": "pg_seesaw_lod2/wood_stained",
+    "aspect": 41,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.058,
+     0.171,
+     0.198
+    ],
+    "part": "pg_seesaw_lod2/wood_stained",
+    "aspect": 41,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.178,
+     0.171,
+     -0.065
+    ],
+    "part": "pg_seesaw_lod2/wood_stained",
+    "aspect": 46,
+    "longest": 0.388
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.176,
+     0.173,
+     0.065
+    ],
+    "part": "pg_seesaw_lod2/wood_stained",
+    "aspect": 46,
+    "longest": 0.388
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.178,
+     0.171,
+     -0.065
+    ],
+    "part": "pg_seesaw_lod2/wood_stained",
+    "aspect": 46,
+    "longest": 0.388
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.176,
+     0.173,
+     0.065
+    ],
+    "part": "pg_seesaw_lod2/wood_stained",
+    "aspect": 46,
+    "longest": 0.388
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.058,
+     0.171,
+     -0.198
+    ],
+    "part": "pg_seesaw_lod2/wood_stained",
+    "aspect": 41,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.058,
+     0.173,
+     -0.196
+    ],
+    "part": "pg_seesaw_lod2/wood_stained",
+    "aspect": 41,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.531,
+     0.532,
+     0.056
+    ],
+    "part": "pg_seesaw_lod2/wood_stained",
+    "aspect": 376,
+    "longest": 3.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.531,
+     0.534,
+     0.058
+    ],
+    "part": "pg_seesaw_lod2/wood_stained",
+    "aspect": 376,
+    "longest": 3.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.531,
+     0.628,
+     0.056
+    ],
+    "part": "pg_seesaw_lod2/wood_stained",
+    "aspect": 376,
+    "longest": 3.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.531,
+     0.626,
+     0.058
+    ],
+    "part": "pg_seesaw_lod2/wood_stained",
+    "aspect": 376,
+    "longest": 3.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.531,
+     0.626,
+     -0.058
+    ],
+    "part": "pg_seesaw_lod2/wood_stained",
+    "aspect": 376,
+    "longest": 3.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.531,
+     0.628,
+     -0.056
+    ],
+    "part": "pg_seesaw_lod2/wood_stained",
+    "aspect": 376,
+    "longest": 3.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.531,
+     0.532,
+     -0.056
+    ],
+    "part": "pg_seesaw_lod2/wood_stained",
+    "aspect": 376,
+    "longest": 3.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.531,
+     0.534,
+     -0.058
+    ],
+    "part": "pg_seesaw_lod2/wood_stained",
+    "aspect": 376,
+    "longest": 3.188
+   }
+  ],
+  "nonmanifold": [
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -1.1,
+     0.915,
+     0.049
+    ],
+    "part": "pg_seesaw_lod2/steel_painted_red",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     1.1,
+     0.676,
+     0.156
+    ],
+    "part": "pg_seesaw_lod2/steel_painted_red",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     1.1,
+     0.915,
+     -0.049
+    ],
+    "part": "pg_seesaw_lod2/steel_painted_red",
+    "uses": 4
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.103,
+     0.66,
+     0.153
+    ],
+    "parts": [
+     "pg_seesaw_lod2/steel_painted_red",
+     "pg_seesaw_lod2/steel_painted_red"
+    ],
+    "area": 0.0014
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.015,
+     0.475,
+     -0.149
+    ],
+    "parts": [
+     "pg_seesaw_lod2/steel_galvanised",
+     "pg_seesaw_lod2/steel_galvanised"
+    ],
+    "length_m": 0.33,
+    "pieces": 20,
+    "min_angle_deg": 87.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.015,
+     0.485,
+     0.161
+    ],
+    "parts": [
+     "pg_seesaw_lod2/steel_galvanised",
+     "pg_seesaw_lod2/steel_galvanised"
+    ],
+    "length_m": 0.33,
+    "pieces": 20,
+    "min_angle_deg": 87.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.1,
+     0.175,
+     0.126
+    ],
+    "parts": [
+     "pg_seesaw_lod2/wood_stained",
+     "pg_seesaw_lod2/wood_stained"
+    ],
+    "length_m": 0.98,
+    "pieces": 18,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.522,
+     0.63,
+     0.054
+    ],
+    "parts": [
+     "pg_seesaw_lod2/wood_stained",
+     "pg_seesaw_lod2/wood_stained"
+    ],
+    "length_m": 0.91,
+    "pieces": 14,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.469,
+     0.628,
+     0.056
+    ],
+    "parts": [
+     "pg_seesaw_lod2/wood_stained",
+     "pg_seesaw_lod2/wood_stained"
+    ],
+    "length_m": 0.91,
+    "pieces": 14,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.056,
+     0.411,
+     -0.149
+    ],
+    "parts": [
+     "pg_seesaw_lod2/wood_stained",
+     "pg_seesaw_lod2/steel_galvanised"
+    ],
+    "length_m": 0.26,
+    "pieces": 9,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.056,
+     0.411,
+     0.149
+    ],
+    "parts": [
+     "pg_seesaw_lod2/wood_stained",
+     "pg_seesaw_lod2/steel_galvanised"
+    ],
+    "length_m": 0.26,
+    "pieces": 8,
+    "min_angle_deg": 45
+   }
+  ]
+ },
+ "file": "playgroundkit.glb"
+}

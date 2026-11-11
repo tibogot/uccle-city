@@ -166,7 +166,7 @@ function rocaille(baseSrgb, opts = {}) {
     const col = cv(base).mul(tone).mul(float(0.82).add(a.r.mul(0.2)).add(a.g.mul(0.1)).add(a.b.mul(0.1))).toVar();
     col.assign(mix(col, cv(dirt), smoothstep(0.45, 0.85, b.r).mul(opts.stain ?? 0.45)));                 // grey-brown weathering
     col.assign(col.mul(float(1).sub(smoothstep(0.55, 0.9, a.a).mul(0.18).mul(float(1).sub(abs(normalWorld.y))))));   // rain streaks
-    col.assign(col.mul(mix(float(1), float(0.45), smoothstep(0.56, 0.85, cav))));                         // joints, cracks
+    col.assign(col.mul(mix(float(1), float(0.62), smoothstep(0.64, 0.92, cav))));                         // joints, cracks (deep ones only)
     col.assign(col.mul(float(1).add(edge.mul(0.12))));                                                    // worn edges
     const mossM = clamp(smoothstep(0.5, 0.9, normalWorld.y).mul(smoothstep(0.35, 0.7, b.g)).add(smoothstep(0.62, 0.85, cav).mul(0.4)), 0, 1)
       .mul(opts.moss ?? 0.75).mul(kitLook.moss);

@@ -1,0 +1,8581 @@
+{
+ "summary": {
+  "triangles": 6916,
+  "vertices_welded": 3650,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 574,
+  "counts": {
+   "sliver": 570,
+   "backtoback": 69,
+   "near": 4,
+   "seam": 163
+  },
+  "ms": 296
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0.000027850735932588577,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.02,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "pg_climb_lod0",
+   "slot": "wood_stained",
+   "triangles": 2896,
+   "maxDistance": 20
+  },
+  {
+   "name": "pg_climb_lod0",
+   "slot": "steel_galvanised",
+   "triangles": 544,
+   "maxDistance": 20
+  },
+  {
+   "name": "pg_climb_lod0",
+   "slot": "hdpe_green",
+   "triangles": 852,
+   "maxDistance": 20
+  },
+  {
+   "name": "pg_climb_lod0",
+   "slot": "steel_painted_red",
+   "triangles": 532,
+   "maxDistance": 20
+  },
+  {
+   "name": "pg_climb_lod0",
+   "slot": "hpl_panel",
+   "triangles": 236,
+   "maxDistance": 20
+  },
+  {
+   "name": "pg_climb_lod0",
+   "slot": "hdpe_red",
+   "triangles": 320,
+   "maxDistance": 20
+  },
+  {
+   "name": "pg_climb_lod0",
+   "slot": "rope_grey",
+   "triangles": 1536,
+   "maxDistance": 20
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.639,
+     1.897,
+     0.644
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 488,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.641,
+     0.903,
+     0.643
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 488,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.643,
+     1.897,
+     0.641
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 488,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.644,
+     0.903,
+     0.639
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 488,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.639,
+     0.903,
+     0.556
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 488,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.641,
+     1.897,
+     0.557
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 488,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.643,
+     0.903,
+     0.559
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 487,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.644,
+     1.897,
+     0.561
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 487,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.556,
+     0.903,
+     0.561
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 487,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.557,
+     1.897,
+     0.559
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 487,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.559,
+     0.903,
+     0.557
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 487,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.561,
+     1.897,
+     0.556
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 487,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.561,
+     0.903,
+     0.644
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 487,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.559,
+     1.897,
+     0.643
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 487,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.557,
+     0.903,
+     0.641
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 488,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.556,
+     1.897,
+     0.639
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 488,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.645,
+     1.897,
+     0.612
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.645,
+     0.903,
+     0.588
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.588,
+     1.897,
+     0.645
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.612,
+     0.903,
+     0.645
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.612,
+     1.897,
+     0.555
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.588,
+     0.903,
+     0.555
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.555,
+     1.897,
+     0.588
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.555,
+     0.903,
+     0.612
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.639,
+     1.564,
+     -0.556
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 406,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.641,
+     0.736,
+     -0.557
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 406,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.643,
+     1.564,
+     -0.559
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 405,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.644,
+     0.736,
+     -0.561
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 405,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.639,
+     0.736,
+     -0.644
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 406,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.641,
+     1.564,
+     -0.643
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 406,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.643,
+     0.736,
+     -0.641
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 406,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.644,
+     1.564,
+     -0.639
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 406,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.556,
+     0.736,
+     -0.639
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 406,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.557,
+     1.564,
+     -0.641
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 406,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.559,
+     0.736,
+     -0.643
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 405,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.561,
+     1.564,
+     -0.644
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 405,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.561,
+     0.736,
+     -0.556
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 405,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.559,
+     1.564,
+     -0.557
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 405,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.557,
+     0.736,
+     -0.559
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 405,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.556,
+     1.564,
+     -0.561
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 405,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.561,
+     1.564,
+     0.644
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 405,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.559,
+     0.736,
+     0.643
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 405,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.557,
+     1.564,
+     0.641
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 406,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.556,
+     0.736,
+     0.639
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 406,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.561,
+     0.736,
+     0.556
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 405,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.559,
+     1.564,
+     0.557
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 405,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.557,
+     0.736,
+     0.559
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 405,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.556,
+     1.564,
+     0.561
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 405,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.644,
+     0.736,
+     0.561
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 405,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.643,
+     1.564,
+     0.559
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 405,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.641,
+     0.736,
+     0.557
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 406,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.639,
+     1.564,
+     0.556
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 406,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.639,
+     0.736,
+     0.644
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 406,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.641,
+     1.564,
+     0.643
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 406,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.643,
+     0.736,
+     0.641
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 406,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.644,
+     1.564,
+     0.639
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 406,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.561,
+     1.897,
+     -0.556
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 487,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.559,
+     0.903,
+     -0.557
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 487,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.557,
+     1.897,
+     -0.559
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 487,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.556,
+     0.903,
+     -0.561
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 487,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.561,
+     0.903,
+     -0.644
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 487,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.559,
+     1.897,
+     -0.643
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 487,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.557,
+     0.903,
+     -0.641
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 488,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.556,
+     1.897,
+     -0.639
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 488,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.644,
+     0.903,
+     -0.639
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 488,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.643,
+     1.897,
+     -0.641
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 488,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.641,
+     0.903,
+     -0.643
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 488,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.639,
+     1.897,
+     -0.644
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 488,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.639,
+     0.903,
+     -0.556
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 488,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.641,
+     1.897,
+     -0.557
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 488,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.643,
+     0.903,
+     -0.559
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 487,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.644,
+     1.897,
+     -0.561
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 487,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.555,
+     1.897,
+     -0.588
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.555,
+     0.903,
+     -0.612
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.612,
+     1.897,
+     -0.555
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.588,
+     0.903,
+     -0.555
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.588,
+     1.897,
+     -0.645
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.612,
+     0.903,
+     -0.645
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.645,
+     1.897,
+     -0.612
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.645,
+     0.903,
+     -0.588
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.47,
+     0.444
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.471,
+     0.443
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.472,
+     0.442
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.473,
+     0.441
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.5,
+     0.444
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.499,
+     0.443
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.498,
+     0.442
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.497,
+     0.441
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.47,
+     0.546
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.471,
+     0.547
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.472,
+     0.548
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.473,
+     0.549
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.5,
+     0.546
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.499,
+     0.547
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.498,
+     0.548
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.497,
+     0.549
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.489,
+     0.549
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.481,
+     0.549
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.489,
+     0.441
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.481,
+     0.441
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.47,
+     0.324
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 361,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.471,
+     0.323
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 361,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.472,
+     0.322
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.473,
+     0.321
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.5,
+     0.324
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 361,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.499,
+     0.323
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 361,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.498,
+     0.322
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.497,
+     0.321
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.47,
+     0.426
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 361,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.471,
+     0.427
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 361,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.472,
+     0.428
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.473,
+     0.429
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.5,
+     0.426
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 361,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.499,
+     0.427
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 361,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.498,
+     0.428
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.497,
+     0.429
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.489,
+     0.429
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.481,
+     0.429
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.489,
+     0.321
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.481,
+     0.321
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.47,
+     0.204
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.471,
+     0.203
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.472,
+     0.202
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.473,
+     0.201
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.5,
+     0.204
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.499,
+     0.203
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.498,
+     0.202
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.497,
+     0.201
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.47,
+     0.306
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.471,
+     0.307
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.472,
+     0.308
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.473,
+     0.309
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.5,
+     0.306
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.499,
+     0.307
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.498,
+     0.308
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.497,
+     0.309
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.489,
+     0.309
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.481,
+     0.309
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.489,
+     0.201
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.481,
+     0.201
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.47,
+     0.084
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.471,
+     0.083
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.472,
+     0.082
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.473,
+     0.081
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.5,
+     0.084
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.499,
+     0.083
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.498,
+     0.082
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.497,
+     0.081
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.47,
+     0.186
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.471,
+     0.187
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.472,
+     0.188
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.473,
+     0.189
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.5,
+     0.186
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.499,
+     0.187
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.498,
+     0.188
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.497,
+     0.189
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.489,
+     0.189
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.481,
+     0.189
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.489,
+     0.081
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.481,
+     0.081
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.47,
+     -0.036
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 361,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.471,
+     -0.037
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 361,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.472,
+     -0.038
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.473,
+     -0.039
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.5,
+     -0.036
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 361,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.499,
+     -0.037
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 361,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.498,
+     -0.038
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.497,
+     -0.039
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.47,
+     0.066
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 361,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.471,
+     0.067
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 361,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.472,
+     0.068
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.473,
+     0.069
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.5,
+     0.066
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 361,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.499,
+     0.067
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 361,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.498,
+     0.068
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.497,
+     0.069
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.489,
+     0.069
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.481,
+     0.069
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.489,
+     -0.039
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.481,
+     -0.039
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.47,
+     -0.156
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.471,
+     -0.157
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.472,
+     -0.158
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.473,
+     -0.159
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.5,
+     -0.156
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.499,
+     -0.157
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.498,
+     -0.158
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.497,
+     -0.159
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.47,
+     -0.054
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.471,
+     -0.053
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.472,
+     -0.052
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.473,
+     -0.051
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.5,
+     -0.054
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.499,
+     -0.053
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.498,
+     -0.052
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.497,
+     -0.051
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.489,
+     -0.051
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.481,
+     -0.051
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.489,
+     -0.159
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.481,
+     -0.159
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.47,
+     -0.276
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.471,
+     -0.277
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.472,
+     -0.278
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.473,
+     -0.279
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.5,
+     -0.276
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.499,
+     -0.277
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.498,
+     -0.278
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.497,
+     -0.279
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.47,
+     -0.174
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.471,
+     -0.173
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.472,
+     -0.172
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.473,
+     -0.171
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.5,
+     -0.174
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.499,
+     -0.173
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.498,
+     -0.172
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.497,
+     -0.171
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.489,
+     -0.171
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.481,
+     -0.171
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.489,
+     -0.279
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.481,
+     -0.279
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.47,
+     -0.396
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.471,
+     -0.397
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.472,
+     -0.398
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.473,
+     -0.399
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.5,
+     -0.396
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.499,
+     -0.397
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.498,
+     -0.398
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.497,
+     -0.399
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.47,
+     -0.294
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 361,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.471,
+     -0.293
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 361,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.472,
+     -0.292
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.473,
+     -0.291
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.5,
+     -0.294
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 361,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.499,
+     -0.293
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 361,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.498,
+     -0.292
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.497,
+     -0.291
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.489,
+     -0.291
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.481,
+     -0.291
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.489,
+     -0.399
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.481,
+     -0.399
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.47,
+     -0.516
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.471,
+     -0.517
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.472,
+     -0.518
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.473,
+     -0.519
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.5,
+     -0.516
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.499,
+     -0.517
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.498,
+     -0.518
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.497,
+     -0.519
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.47,
+     -0.414
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.471,
+     -0.413
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.472,
+     -0.412
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.473,
+     -0.411
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.5,
+     -0.414
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.499,
+     -0.413
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.498,
+     -0.412
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.497,
+     -0.411
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.489,
+     -0.411
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.481,
+     -0.411
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.489,
+     -0.519
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.481,
+     -0.519
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.47,
+     -0.546
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.471,
+     -0.547
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.472,
+     -0.548
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.473,
+     -0.549
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.5,
+     -0.546
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.499,
+     -0.547
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.498,
+     -0.548
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.497,
+     -0.549
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.47,
+     -0.534
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.471,
+     -0.533
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.472,
+     -0.532
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.473,
+     -0.531
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.5,
+     -0.534
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.499,
+     -0.533
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 360,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.498,
+     -0.532
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.497,
+     -0.531
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 359,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.47,
+     -0.542
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 110,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.47,
+     -0.538
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 110,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.489,
+     -0.531
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.481,
+     -0.531
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.5,
+     -0.542
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 110,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.5,
+     -0.538
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 110,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.489,
+     -0.549
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.481,
+     -0.549
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.386,
+     0.618
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.386,
+     0.619
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.388,
+     0.621
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.39,
+     0.622
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.474,
+     0.618
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 258,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.474,
+     0.619
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 258,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.472,
+     0.621
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.47,
+     0.622
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.47,
+     0.578
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.472,
+     0.579
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.474,
+     0.581
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 258,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.474,
+     0.582
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 258,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.386,
+     0.582
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.386,
+     0.581
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.388,
+     0.579
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.39,
+     0.578
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.386,
+     -0.582
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.386,
+     -0.581
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.388,
+     -0.579
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.39,
+     -0.578
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.474,
+     -0.582
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 258,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.474,
+     -0.581
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 258,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.472,
+     -0.579
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.47,
+     -0.578
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.47,
+     -0.622
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.472,
+     -0.621
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.474,
+     -0.619
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 258,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.474,
+     -0.618
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 258,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.386,
+     -0.618
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.386,
+     -0.619
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.388,
+     -0.621
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.39,
+     -0.622
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.582,
+     1.382,
+     -0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 248,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.581,
+     1.382,
+     0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 248,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.579,
+     1.384,
+     -0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 249,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.578,
+     1.386,
+     0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 249,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.582,
+     1.47,
+     0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 248,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.581,
+     1.47,
+     -0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 248,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.579,
+     1.468,
+     0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 249,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.578,
+     1.466,
+     -0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 249,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.622,
+     1.466,
+     0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 249,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.621,
+     1.468,
+     -0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 249,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.619,
+     1.47,
+     0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 248,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.618,
+     1.47,
+     -0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 248,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.618,
+     1.382,
+     0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 249,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.619,
+     1.382,
+     -0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 249,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.621,
+     1.384,
+     0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 249,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.622,
+     1.386,
+     -0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 249,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.618,
+     1.382,
+     -0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 249,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.619,
+     1.382,
+     0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 249,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.621,
+     1.384,
+     -0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 249,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.622,
+     1.386,
+     0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 249,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.618,
+     1.47,
+     0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 248,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.619,
+     1.47,
+     -0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 248,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.621,
+     1.468,
+     0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 249,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.622,
+     1.466,
+     -0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 249,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.578,
+     1.466,
+     0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 249,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.579,
+     1.468,
+     -0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 249,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.581,
+     1.47,
+     0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 248,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.582,
+     1.47,
+     -0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 248,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.582,
+     1.382,
+     0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 248,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.581,
+     1.382,
+     -0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 248,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.579,
+     1.384,
+     0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 249,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.578,
+     1.386,
+     -0.19
+    ],
+    "part": "pg_climb_lod0/wood_stained",
+    "aspect": 249,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.055,
+     2.487,
+     -0.079
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.06,
+     1.993,
+     -0.077
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.069,
+     2.487,
+     -0.072
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     1.993,
+     -0.069
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.077,
+     2.487,
+     -0.06
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.079,
+     1.993,
+     -0.055
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.079,
+     2.487,
+     -0.045
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.077,
+     1.993,
+     -0.04
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     2.487,
+     -0.031
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.069,
+     1.993,
+     -0.028
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.06,
+     2.487,
+     -0.023
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.055,
+     1.993,
+     -0.021
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.045,
+     2.487,
+     -0.021
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.04,
+     1.993,
+     -0.023
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.031,
+     2.487,
+     -0.028
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.028,
+     1.993,
+     -0.031
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.023,
+     2.487,
+     -0.04
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.021,
+     1.993,
+     -0.045
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.021,
+     2.487,
+     -0.055
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.023,
+     1.993,
+     -0.06
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.028,
+     2.487,
+     -0.069
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.031,
+     1.993,
+     -0.072
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.04,
+     2.487,
+     -0.077
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.045,
+     1.993,
+     -0.079
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.156,
+     2.982,
+     0.097
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 331,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.262,
+     2.981,
+     -0.187
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 331,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.154,
+     2.979,
+     0.099
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 330,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.263,
+     2.977,
+     -0.186
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 330,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.257,
+     2.954,
+     -0.195
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 331,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.16,
+     2.955,
+     0.091
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 330,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.259,
+     2.956,
+     -0.192
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 330,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.158,
+     2.957,
+     0.094
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 331,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.251,
+     2.988,
+     -0.205
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 331,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.168,
+     2.988,
+     0.08
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 330,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.248,
+     2.987,
+     -0.208
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 330,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.17,
+     2.986,
+     0.077
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 331,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.172,
+     2.961,
+     0.074
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 329,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.245,
+     2.962,
+     -0.213
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 330,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.173,
+     2.964,
+     0.072
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 332,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.244,
+     2.966,
+     -0.214
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 332,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.258,
+     2.985,
+     -0.194
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 84,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.163,
+     2.987,
+     0.087
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 84,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.245,
+     2.973,
+     -0.213
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 84,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.171,
+     2.979,
+     0.074
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 84,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.165,
+     2.956,
+     0.084
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 84,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.25,
+     2.958,
+     -0.206
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 84,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.156,
+     2.964,
+     0.097
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 84,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.262,
+     2.97,
+     -0.188
+    ],
+    "part": "pg_climb_lod0/steel_galvanised",
+    "aspect": 84,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.119,
+     0.022,
+     1.702
+    ],
+    "part": "pg_climb_lod0/steel_painted_red",
+    "aspect": 72,
+    "longest": 0.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.119,
+     0.019,
+     1.703
+    ],
+    "part": "pg_climb_lod0/steel_painted_red",
+    "aspect": 72,
+    "longest": 0.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.119,
+     0.032,
+     1.703
+    ],
+    "part": "pg_climb_lod0/steel_painted_red",
+    "aspect": 72,
+    "longest": 0.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.119,
+     0.029,
+     1.702
+    ],
+    "part": "pg_climb_lod0/steel_painted_red",
+    "aspect": 72,
+    "longest": 0.712
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.6,
+     2.9,
+     0.577
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.62,
+     2.9,
+     0.588
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.594,
+     2.9,
+     0.583
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00019
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.617,
+     2.9,
+     0.602
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00026
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.605,
+     2.9,
+     0.594
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00038
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.583,
+     2.9,
+     0.592
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00009
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.598,
+     2.9,
+     0.606
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00046
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.58,
+     2.9,
+     0.612
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.6,
+     2.9,
+     0.623
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.592,
+     2.9,
+     0.615
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00028
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.595,
+     2.95,
+     0.596
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.602,
+     2.95,
+     0.599
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00013
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.6,
+     2.95,
+     0.608
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.6,
+     2.4,
+     -0.623
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.62,
+     2.4,
+     -0.612
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.594,
+     2.4,
+     -0.617
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00019
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.617,
+     2.4,
+     -0.598
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00026
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.605,
+     2.4,
+     -0.606
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00038
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.58,
+     2.4,
+     -0.588
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.6,
+     2.4,
+     -0.577
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.583,
+     2.4,
+     -0.608
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00009
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.592,
+     2.4,
+     -0.585
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00028
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.598,
+     2.4,
+     -0.594
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00046
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.595,
+     2.45,
+     -0.604
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.6,
+     2.45,
+     -0.592
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.602,
+     2.45,
+     -0.601
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00013
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.6,
+     2.4,
+     0.577
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.58,
+     2.4,
+     0.588
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.606,
+     2.4,
+     0.583
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00019
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.583,
+     2.4,
+     0.602
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00026
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.595,
+     2.4,
+     0.594
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00038
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.617,
+     2.4,
+     0.592
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00009
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.602,
+     2.4,
+     0.606
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00046
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.6,
+     2.4,
+     0.623
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.608,
+     2.4,
+     0.615
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00028
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.62,
+     2.4,
+     0.612
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.645,
+     1.145,
+     0.598
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "area": 0.00056
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.645,
+     1.016,
+     0.601
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "area": 0.00116
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.645,
+     1.089,
+     0.599
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "area": 0.0006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.605,
+     2.45,
+     0.596
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.598,
+     2.45,
+     0.599
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00013
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.6,
+     2.45,
+     0.608
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.6,
+     2.9,
+     -0.623
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.58,
+     2.9,
+     -0.612
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.606,
+     2.9,
+     -0.617
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00019
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.583,
+     2.9,
+     -0.598
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00026
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.595,
+     2.9,
+     -0.606
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00038
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.6,
+     2.9,
+     -0.577
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.617,
+     2.9,
+     -0.608
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00009
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.608,
+     2.9,
+     -0.585
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00028
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.602,
+     2.9,
+     -0.594
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00046
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.62,
+     2.9,
+     -0.588
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.645,
+     1.413,
+     -0.602
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "area": 0.00084
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.645,
+     0.147,
+     -0.599
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "area": 0.00116
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.645,
+     0.244,
+     -0.601
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "area": 0.00116
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.645,
+     1.306,
+     -0.599
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "area": 0.00116
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.645,
+     1.362,
+     -0.6
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "area": 0.00032
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.605,
+     2.95,
+     -0.604
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.6,
+     2.95,
+     -0.592
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.598,
+     2.95,
+     -0.601
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "area": 0.00013
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.05,
+     1.5,
+     -0.023
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/steel_galvanised"
+    ],
+    "area": 0.00006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.056,
+     1.5,
+     -0.03
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/steel_galvanised"
+    ],
+    "area": 0.00026
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.041,
+     1.5,
+     -0.031
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/steel_galvanised"
+    ],
+    "area": 0.0001
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.05,
+     1.5,
+     -0.077
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/steel_galvanised"
+    ],
+    "area": 0.00006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.074,
+     1.5,
+     -0.063
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/steel_galvanised"
+    ],
+    "area": 0.00006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.026,
+     1.5,
+     -0.063
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/steel_galvanised"
+    ],
+    "area": 0.00006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.062,
+     1.5,
+     -0.065
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/steel_galvanised"
+    ],
+    "area": 0.00038
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.031,
+     1.5,
+     -0.062
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/steel_galvanised"
+    ],
+    "area": 0.00013
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.047,
+     1.5,
+     -0.062
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/steel_galvanised"
+    ],
+    "area": 0.00038
+   }
+  ],
+  "near": [
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.645,
+     1.292,
+     0.599
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "separation_mm": 2.75,
+    "overlap_cm2": 11.2,
+    "angle_deg": 0.8,
+    "maxDistance": 20,
+    "need_mm": 0.18,
+    "sameComponent": false,
+    "normal": [
+     1,
+     0,
+     0
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.645,
+     1.383,
+     0.602
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "separation_mm": 2.75,
+    "overlap_cm2": 11.2,
+    "angle_deg": 0.8,
+    "maxDistance": 20,
+    "need_mm": 0.18,
+    "sameComponent": false,
+    "normal": [
+     1,
+     0,
+     0
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.645,
+     0.146,
+     -0.601
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "separation_mm": 2.75,
+    "overlap_cm2": 11.6,
+    "angle_deg": 2.7,
+    "maxDistance": 20,
+    "need_mm": 0.18,
+    "sameComponent": false,
+    "normal": [
+     1,
+     0,
+     0
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.645,
+     0.243,
+     -0.599
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "separation_mm": 2.75,
+    "overlap_cm2": 11.6,
+    "angle_deg": 2.7,
+    "maxDistance": 20,
+    "need_mm": 0.18,
+    "sameComponent": false,
+    "normal": [
+     1,
+     0,
+     0
+    ]
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.54,
+     1.471,
+     -0.622
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/hpl_panel"
+    ],
+    "length_m": 2.39,
+    "pieces": 68,
+    "min_angle_deg": 56.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.053,
+     2.96,
+     -0.079
+    ],
+    "parts": [
+     "pg_climb_lod0/steel_galvanised",
+     "pg_climb_lod0/steel_galvanised"
+    ],
+    "length_m": 0.25,
+    "pieces": 54,
+    "min_angle_deg": 20
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.671,
+     0.338,
+     0.356
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.12,
+    "pieces": 44,
+    "min_angle_deg": 27
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.656,
+     0.627,
+     0.356
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.12,
+    "pieces": 44,
+    "min_angle_deg": 26.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.638,
+     0.918,
+     0.356
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.12,
+    "pieces": 44,
+    "min_angle_deg": 26.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.634,
+     1.208,
+     0.356
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.12,
+    "pieces": 44,
+    "min_angle_deg": 27.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.656,
+     0.337,
+     0.116
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.12,
+    "pieces": 44,
+    "min_angle_deg": 26.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.638,
+     0.628,
+     0.116
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.12,
+    "pieces": 44,
+    "min_angle_deg": 26.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.634,
+     0.918,
+     0.116
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.12,
+    "pieces": 44,
+    "min_angle_deg": 27.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.647,
+     1.209,
+     0.116
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.12,
+    "pieces": 44,
+    "min_angle_deg": 26.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.638,
+     0.338,
+     -0.124
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.12,
+    "pieces": 44,
+    "min_angle_deg": 26.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.634,
+     0.628,
+     -0.124
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.12,
+    "pieces": 44,
+    "min_angle_deg": 27.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.647,
+     0.919,
+     -0.124
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.12,
+    "pieces": 44,
+    "min_angle_deg": 26.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.666,
+     1.208,
+     -0.124
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.12,
+    "pieces": 44,
+    "min_angle_deg": 26.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.634,
+     0.338,
+     -0.364
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.12,
+    "pieces": 44,
+    "min_angle_deg": 27.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.647,
+     0.629,
+     -0.364
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.12,
+    "pieces": 44,
+    "min_angle_deg": 26.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.666,
+     0.918,
+     -0.364
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.12,
+    "pieces": 44,
+    "min_angle_deg": 26.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.673,
+     1.208,
+     -0.364
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.12,
+    "pieces": 44,
+    "min_angle_deg": 27.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.669,
+     0.328,
+     0.596
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 34,
+    "min_angle_deg": 49.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.671,
+     0.618,
+     0.596
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 34,
+    "min_angle_deg": 52.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.657,
+     0.908,
+     0.596
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 34,
+    "min_angle_deg": 54.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.639,
+     1.198,
+     0.596
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 34,
+    "min_angle_deg": 53.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.671,
+     0.328,
+     0.356
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 34,
+    "min_angle_deg": 52.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.657,
+     0.618,
+     0.356
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 34,
+    "min_angle_deg": 54.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.639,
+     0.908,
+     0.356
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 34,
+    "min_angle_deg": 53.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.634,
+     1.198,
+     0.356
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 34,
+    "min_angle_deg": 49.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.657,
+     0.328,
+     0.116
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 34,
+    "min_angle_deg": 54.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.639,
+     0.618,
+     0.116
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 34,
+    "min_angle_deg": 53.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.634,
+     0.908,
+     0.116
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 34,
+    "min_angle_deg": 49.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.639,
+     0.328,
+     -0.124
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 34,
+    "min_angle_deg": 53.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.634,
+     0.618,
+     -0.124
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 34,
+    "min_angle_deg": 49.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.666,
+     1.198,
+     -0.124
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 34,
+    "min_angle_deg": 48.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.634,
+     0.328,
+     -0.364
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 34,
+    "min_angle_deg": 49.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.673,
+     1.198,
+     -0.364
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 34,
+    "min_angle_deg": 51.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.673,
+     0.908,
+     -0.604
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 34,
+    "min_angle_deg": 51.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.662,
+     1.198,
+     -0.604
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 34,
+    "min_angle_deg": 54.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.647,
+     1.198,
+     0.116
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 33,
+    "min_angle_deg": 48.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.647,
+     0.908,
+     -0.124
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 33,
+    "min_angle_deg": 48.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.647,
+     0.618,
+     -0.364
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 33,
+    "min_angle_deg": 48.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.666,
+     0.908,
+     -0.364
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 33,
+    "min_angle_deg": 48.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.647,
+     0.328,
+     -0.604
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 33,
+    "min_angle_deg": 48.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.666,
+     0.618,
+     -0.604
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 33,
+    "min_angle_deg": 48.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.673,
+     1.493,
+     -0.348
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 30,
+    "min_angle_deg": 42.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.67,
+     0.338,
+     0.596
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.07,
+    "pieces": 28,
+    "min_angle_deg": 26.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.671,
+     0.628,
+     0.596
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.07,
+    "pieces": 28,
+    "min_angle_deg": 27.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.656,
+     0.917,
+     0.596
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.07,
+    "pieces": 28,
+    "min_angle_deg": 26.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.638,
+     1.208,
+     0.596
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.07,
+    "pieces": 28,
+    "min_angle_deg": 26.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.647,
+     0.338,
+     -0.596
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.07,
+    "pieces": 28,
+    "min_angle_deg": 26.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.666,
+     0.628,
+     -0.596
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.07,
+    "pieces": 28,
+    "min_angle_deg": 26.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.673,
+     0.918,
+     -0.596
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.07,
+    "pieces": 28,
+    "min_angle_deg": 27.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.661,
+     1.208,
+     -0.596
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.07,
+    "pieces": 28,
+    "min_angle_deg": 26.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.68,
+     0.043,
+     0.373
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 28,
+    "min_angle_deg": 65.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.682,
+     0.043,
+     0.133
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 28,
+    "min_angle_deg": 65.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.668,
+     0.043,
+     -0.108
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 28,
+    "min_angle_deg": 65.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.65,
+     0.043,
+     -0.348
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 28,
+    "min_angle_deg": 65.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.682,
+     0.333,
+     0.373
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 28,
+    "min_angle_deg": 65.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.668,
+     0.333,
+     0.132
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 28,
+    "min_angle_deg": 65.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.65,
+     0.333,
+     -0.108
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 28,
+    "min_angle_deg": 65.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.645,
+     0.333,
+     -0.347
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 28,
+    "min_angle_deg": 66.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.668,
+     0.623,
+     0.372
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 28,
+    "min_angle_deg": 65.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.65,
+     0.623,
+     0.132
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 28,
+    "min_angle_deg": 65.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.645,
+     0.623,
+     -0.107
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 28,
+    "min_angle_deg": 66.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.658,
+     0.623,
+     -0.347
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 28,
+    "min_angle_deg": 65.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.65,
+     0.913,
+     0.372
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 28,
+    "min_angle_deg": 65.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.645,
+     0.913,
+     0.133
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 28,
+    "min_angle_deg": 66.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.658,
+     0.913,
+     -0.107
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 28,
+    "min_angle_deg": 65.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.676,
+     0.913,
+     -0.347
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 28,
+    "min_angle_deg": 65.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.645,
+     1.203,
+     0.373
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 28,
+    "min_angle_deg": 66.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.658,
+     1.203,
+     0.133
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 28,
+    "min_angle_deg": 65.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.676,
+     1.203,
+     -0.107
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 28,
+    "min_angle_deg": 65.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.684,
+     1.203,
+     -0.347
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 28,
+    "min_angle_deg": 66.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.658,
+     1.493,
+     0.373
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 28,
+    "min_angle_deg": 65.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.676,
+     1.493,
+     0.133
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 28,
+    "min_angle_deg": 65.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.684,
+     1.493,
+     -0.107
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 28,
+    "min_angle_deg": 66.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.619,
+     1.382,
+     0.555
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "length_m": 0.26,
+    "pieces": 26,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.555,
+     1.386,
+     0.581
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "length_m": 0.26,
+    "pieces": 26,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.581,
+     1.382,
+     -0.555
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "length_m": 0.26,
+    "pieces": 26,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.555,
+     1.386,
+     -0.619
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "length_m": 0.26,
+    "pieces": 26,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.555,
+     1.385,
+     0.604
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "length_m": 0.26,
+    "pieces": 26,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.581,
+     1.382,
+     0.555
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "length_m": 0.26,
+    "pieces": 26,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.555,
+     1.386,
+     -0.581
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "length_m": 0.26,
+    "pieces": 26,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.608,
+     1.381,
+     -0.555
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "length_m": 0.26,
+    "pieces": 26,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.645,
+     1.493,
+     0.562
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.12,
+    "pieces": 24,
+    "min_angle_deg": 30.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.638,
+     0.043,
+     -0.556
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.13,
+    "pieces": 22,
+    "min_angle_deg": 30
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.353,
+     0.016,
+     1.704
+    ],
+    "parts": [
+     "pg_climb_lod0/steel_galvanised",
+     "pg_climb_lod0/steel_painted_red"
+    ],
+    "length_m": 0.1,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.353,
+     0.169,
+     1.594
+    ],
+    "parts": [
+     "pg_climb_lod0/steel_galvanised",
+     "pg_climb_lod0/steel_painted_red"
+    ],
+    "length_m": 0.1,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.353,
+     0.374,
+     1.447
+    ],
+    "parts": [
+     "pg_climb_lod0/steel_galvanised",
+     "pg_climb_lod0/steel_painted_red"
+    ],
+    "length_m": 0.1,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.353,
+     0.624,
+     1.267
+    ],
+    "parts": [
+     "pg_climb_lod0/steel_galvanised",
+     "pg_climb_lod0/steel_painted_red"
+    ],
+    "length_m": 0.1,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.353,
+     0.909,
+     1.061
+    ],
+    "parts": [
+     "pg_climb_lod0/steel_galvanised",
+     "pg_climb_lod0/steel_painted_red"
+    ],
+    "length_m": 0.1,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.353,
+     1.219,
+     0.839
+    ],
+    "parts": [
+     "pg_climb_lod0/steel_galvanised",
+     "pg_climb_lod0/steel_painted_red"
+    ],
+    "length_m": 0.1,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.353,
+     0.016,
+     1.704
+    ],
+    "parts": [
+     "pg_climb_lod0/steel_galvanised",
+     "pg_climb_lod0/steel_painted_red"
+    ],
+    "length_m": 0.1,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.353,
+     0.169,
+     1.594
+    ],
+    "parts": [
+     "pg_climb_lod0/steel_galvanised",
+     "pg_climb_lod0/steel_painted_red"
+    ],
+    "length_m": 0.1,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.353,
+     0.374,
+     1.447
+    ],
+    "parts": [
+     "pg_climb_lod0/steel_galvanised",
+     "pg_climb_lod0/steel_painted_red"
+    ],
+    "length_m": 0.1,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.353,
+     0.624,
+     1.267
+    ],
+    "parts": [
+     "pg_climb_lod0/steel_galvanised",
+     "pg_climb_lod0/steel_painted_red"
+    ],
+    "length_m": 0.1,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.353,
+     0.909,
+     1.061
+    ],
+    "parts": [
+     "pg_climb_lod0/steel_galvanised",
+     "pg_climb_lod0/steel_painted_red"
+    ],
+    "length_m": 0.1,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.353,
+     1.219,
+     0.839
+    ],
+    "parts": [
+     "pg_climb_lod0/steel_galvanised",
+     "pg_climb_lod0/steel_painted_red"
+    ],
+    "length_m": 0.1,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.671,
+     0.054,
+     0.355
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.06,
+    "pieces": 22,
+    "min_angle_deg": 29.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.647,
+     1.499,
+     0.356
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.06,
+    "pieces": 22,
+    "min_angle_deg": 27.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.672,
+     0.055,
+     0.115
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.06,
+    "pieces": 22,
+    "min_angle_deg": 27
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.666,
+     1.498,
+     0.116
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.06,
+    "pieces": 22,
+    "min_angle_deg": 26.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.657,
+     0.055,
+     -0.125
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.06,
+    "pieces": 22,
+    "min_angle_deg": 26.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.673,
+     1.498,
+     -0.124
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.06,
+    "pieces": 22,
+    "min_angle_deg": 28.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.639,
+     0.054,
+     -0.365
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.06,
+    "pieces": 22,
+    "min_angle_deg": 29.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.661,
+     1.497,
+     -0.364
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.06,
+    "pieces": 22,
+    "min_angle_deg": 27.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.644,
+     1.203,
+     0.562
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.12,
+    "pieces": 20,
+    "min_angle_deg": 69.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.201,
+     0.231,
+     -0.63
+    ],
+    "parts": [
+     "pg_climb_lod0/hdpe_green",
+     "pg_climb_lod0/hpl_panel"
+    ],
+    "length_m": 0.25,
+    "pieces": 18,
+    "min_angle_deg": 16.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.374,
+     0.49,
+     -0.63
+    ],
+    "parts": [
+     "pg_climb_lod0/hdpe_green",
+     "pg_climb_lod0/hpl_panel"
+    ],
+    "length_m": 0.25,
+    "pieces": 18,
+    "min_angle_deg": 20.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.281,
+     0.79,
+     -0.63
+    ],
+    "parts": [
+     "pg_climb_lod0/hdpe_green",
+     "pg_climb_lod0/hpl_panel"
+    ],
+    "length_m": 0.26,
+    "pieces": 18,
+    "min_angle_deg": 18.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.271,
+     1.083,
+     -0.63
+    ],
+    "parts": [
+     "pg_climb_lod0/hdpe_green",
+     "pg_climb_lod0/hpl_panel"
+    ],
+    "length_m": 0.26,
+    "pieces": 18,
+    "min_angle_deg": 17.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.132,
+     1.316,
+     -0.63
+    ],
+    "parts": [
+     "pg_climb_lod0/hdpe_green",
+     "pg_climb_lod0/hpl_panel"
+    ],
+    "length_m": 0.27,
+    "pieces": 18,
+    "min_angle_deg": 15.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.132,
+     0.385,
+     -0.63
+    ],
+    "parts": [
+     "pg_climb_lod0/hpl_panel",
+     "pg_climb_lod0/hdpe_red"
+    ],
+    "length_m": 0.26,
+    "pieces": 18,
+    "min_angle_deg": 18.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.216,
+     0.645,
+     -0.63
+    ],
+    "parts": [
+     "pg_climb_lod0/hpl_panel",
+     "pg_climb_lod0/hdpe_red"
+    ],
+    "length_m": 0.25,
+    "pieces": 18,
+    "min_angle_deg": 17.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.159,
+     0.894,
+     -0.63
+    ],
+    "parts": [
+     "pg_climb_lod0/hpl_panel",
+     "pg_climb_lod0/hdpe_red"
+    ],
+    "length_m": 0.26,
+    "pieces": 18,
+    "min_angle_deg": 18.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.065,
+     1.202,
+     -0.63
+    ],
+    "parts": [
+     "pg_climb_lod0/hpl_panel",
+     "pg_climb_lod0/hdpe_red"
+    ],
+    "length_m": 0.25,
+    "pieces": 18,
+    "min_angle_deg": 21.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.655,
+     0.054,
+     0.595
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 18,
+    "min_angle_deg": 27
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.634,
+     1.498,
+     0.596
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 18,
+    "min_angle_deg": 29.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.634,
+     0.052,
+     -0.598
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 18,
+    "min_angle_deg": 27.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.642,
+     1.499,
+     -0.596
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 18,
+    "min_angle_deg": 26.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.645,
+     1.463,
+     -0.604
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.58,
+    "pieces": 17,
+    "min_angle_deg": 60
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.654,
+     0.063,
+     0.596
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 17,
+    "min_angle_deg": 49.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.634,
+     1.488,
+     0.596
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 17,
+    "min_angle_deg": 53.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.67,
+     0.063,
+     0.356
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 17,
+    "min_angle_deg": 52.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.647,
+     1.488,
+     0.356
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 17,
+    "min_angle_deg": 49.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.671,
+     0.063,
+     0.116
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 17,
+    "min_angle_deg": 54.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.656,
+     0.063,
+     -0.124
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 17,
+    "min_angle_deg": 54.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.673,
+     1.488,
+     -0.124
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 17,
+    "min_angle_deg": 51.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.638,
+     0.063,
+     -0.364
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 17,
+    "min_angle_deg": 53.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.662,
+     1.488,
+     -0.364
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 17,
+    "min_angle_deg": 54.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.635,
+     0.063,
+     -0.604
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 17,
+    "min_angle_deg": 49.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.643,
+     1.488,
+     -0.604
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 17,
+    "min_angle_deg": 54.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.592,
+     2.95,
+     0.591
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "length_m": 0.08,
+    "pieces": 16,
+    "min_angle_deg": 24.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.592,
+     2.45,
+     -0.609
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "length_m": 0.08,
+    "pieces": 16,
+    "min_angle_deg": 24.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.604,
+     2.45,
+     0.589
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "length_m": 0.08,
+    "pieces": 16,
+    "min_angle_deg": 24.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.604,
+     2.95,
+     -0.611
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "length_m": 0.08,
+    "pieces": 16,
+    "min_angle_deg": 24.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.666,
+     1.488,
+     0.116
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 16,
+    "min_angle_deg": 48.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.654,
+     1.493,
+     -0.588
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 16,
+    "min_angle_deg": 42.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.645,
+     1.112,
+     0.595
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.82,
+    "pieces": 15,
+    "min_angle_deg": 60
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.585,
+     2.9,
+     0.58
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "length_m": 0.16,
+    "pieces": 14,
+    "min_angle_deg": 23.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.585,
+     2.4,
+     -0.62
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "length_m": 0.16,
+    "pieces": 14,
+    "min_angle_deg": 23.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.606,
+     2.4,
+     0.576
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "length_m": 0.16,
+    "pieces": 14,
+    "min_angle_deg": 23.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.606,
+     2.9,
+     -0.624
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/wood_stained"
+    ],
+    "length_m": 0.16,
+    "pieces": 14,
+    "min_angle_deg": 23.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.667,
+     0.046,
+     0.588
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 14,
+    "min_angle_deg": 65.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.645,
+     0.043,
+     -0.587
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 14,
+    "min_angle_deg": 68.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.683,
+     0.336,
+     0.587
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 14,
+    "min_angle_deg": 68.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.658,
+     0.333,
+     -0.587
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 14,
+    "min_angle_deg": 66.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.683,
+     0.626,
+     0.587
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 14,
+    "min_angle_deg": 65.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.676,
+     0.623,
+     -0.587
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 14,
+    "min_angle_deg": 65.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.668,
+     0.916,
+     0.587
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 14,
+    "min_angle_deg": 65.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.684,
+     0.913,
+     -0.587
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 14,
+    "min_angle_deg": 67.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.651,
+     1.206,
+     0.587
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 14,
+    "min_angle_deg": 68.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.673,
+     1.203,
+     -0.588
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 14,
+    "min_angle_deg": 66.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.647,
+     1.496,
+     0.588
+    ],
+    "parts": [
+     "pg_climb_lod0/rope_grey",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.05,
+    "pieces": 14,
+    "min_angle_deg": 66.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.645,
+     1.192,
+     0.6
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 13,
+    "min_angle_deg": 52.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.645,
+     1.485,
+     0.6
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 13,
+    "min_angle_deg": 52.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.645,
+     1.485,
+     -0.599
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 13,
+    "min_angle_deg": 52.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.645,
+     0.039,
+     -0.592
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.1,
+    "pieces": 11,
+    "min_angle_deg": 52.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.078,
+     1.5,
+     -0.055
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/steel_galvanised"
+    ],
+    "length_m": 0.14,
+    "pieces": 11,
+    "min_angle_deg": 22.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.077,
+     2.979,
+     -0.038
+    ],
+    "parts": [
+     "pg_climb_lod0/steel_galvanised",
+     "pg_climb_lod0/hdpe_green"
+    ],
+    "length_m": 0.08,
+    "pieces": 11,
+    "min_angle_deg": 17.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.644,
+     1.499,
+     -0.562
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.09,
+    "pieces": 10,
+    "min_angle_deg": 30.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.645,
+     0.33,
+     -0.595
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.08,
+    "pieces": 9,
+    "min_angle_deg": 37.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.074,
+     1.5,
+     -0.035
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/steel_galvanised"
+    ],
+    "length_m": 0.11,
+    "pieces": 9,
+    "min_angle_deg": 22.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.644,
+     0.34,
+     -0.562
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.03,
+    "pieces": 8,
+    "min_angle_deg": 30.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.645,
+     0.042,
+     0.599
+    ],
+    "parts": [
+     "pg_climb_lod0/wood_stained",
+     "pg_climb_lod0/rope_grey"
+    ],
+    "length_m": 0.02,
+    "pieces": 5,
+    "min_angle_deg": 10.8
+   }
+  ]
+ },
+ "file": "playgroundkit.glb"
+}

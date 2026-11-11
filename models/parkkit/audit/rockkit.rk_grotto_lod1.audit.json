@@ -1,0 +1,160 @@
+{
+ "summary": {
+  "triangles": 13809,
+  "vertices_welded": 7110,
+  "open_edges": 389,
+  "rays": 12860,
+  "blocking": 0,
+  "warnings": 4,
+  "counts": {
+   "sliver": 2,
+   "nonmanifold": 2,
+   "backtoback": 3
+  },
+  "ms": 457
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0.000021938234567642212,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": 0.07,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "rk_grotto_lod1",
+   "slot": "rocaille_concrete",
+   "triangles": 13809,
+   "maxDistance": 45
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.34,
+     2.03,
+     -1.177
+    ],
+    "part": "rk_grotto_lod1/rocaille_concrete",
+    "aspect": 42,
+    "longest": 0.281
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.299,
+     0.7,
+     1.384
+    ],
+    "part": "rk_grotto_lod1/rocaille_concrete",
+    "aspect": 126,
+    "longest": 0.255
+   }
+  ],
+  "nonmanifold": [
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -1.088,
+     1.56,
+     1.298
+    ],
+    "part": "rk_grotto_lod1/rocaille_concrete",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     1.418,
+     1.219,
+     1.14
+    ],
+    "part": "rk_grotto_lod1/rocaille_concrete",
+    "uses": 4
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1.089,
+     1.56,
+     1.3
+    ],
+    "parts": [
+     "rk_grotto_lod1/rocaille_concrete",
+     "rk_grotto_lod1/rocaille_concrete"
+    ],
+    "area": 0.00012
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.419,
+     1.219,
+     1.144
+    ],
+    "parts": [
+     "rk_grotto_lod1/rocaille_concrete",
+     "rk_grotto_lod1/rocaille_concrete"
+    ],
+    "area": 0.00072
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.546,
+     0.809,
+     0.143
+    ],
+    "parts": [
+     "rk_grotto_lod1/rocaille_concrete",
+     "rk_grotto_lod1/rocaille_concrete"
+    ],
+    "area": 0.00021
+   }
+  ]
+ },
+ "file": "rockkit.glb"
+}

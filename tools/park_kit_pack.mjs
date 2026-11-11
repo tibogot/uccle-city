@@ -23,6 +23,7 @@ import zlib from "zlib";
 import { MeshoptSimplifier } from "./worker/node_modules/meshoptimizer/meshopt_simplifier.js";
 import { MeshoptEncoder } from "./worker/node_modules/meshoptimizer/meshopt_encoder.js";
 import { auditGroups } from "./mesh_audit/hook.mjs";
+import { auditParts } from "./mesh_audit/audit.js";
 
 const KIT = process.argv[2] || "rock";
 const DIR = "models/parkkit";
@@ -30,11 +31,11 @@ const NAME = KIT === "rock" ? "rockkit" : "playgroundkit";
 const SRC = path.join(DIR, `${NAME}.raw.glb`), DST = path.join(DIR, `${NAME}.glb`);
 const NO_AUDIT = process.argv.includes("--no-audit");
 const CREASE_PG = 50;        // playground: 10-16 sided tubes stay smooth, box edges and panel faces stay sharp / flat
-const CREASE = +(process.argv.find((a) => a.startsWith("--crease="))?.slice(8) ?? 40);
+const CREASE = +(process.argv.find((a) => a.startsWith("--crease="))?.slice(8) ?? 60);
 /** per piece / LOD simplification error overrides, where the checker found a fold (meshopt left two faces overlapping) */
-const ERR_OVERRIDE = { "rk_face_a:1": 0.0115, "pg_slide:2": 0.015, "pg_slide:1": 0.008 };
+const ERR_OVERRIDE = {};
 const CFG = KIT === "rock"
-  ? { lod: [{ err: 0.004 }, { err: 0.01, weld: true }, { err: 0.04, weld: true, prune: true }], range: [14, 45, 200] }
+  ? { lod: [{ err: 0.004 }, { err: 0.015, weld: true }, { err: 0.05, weld: true, prune: true }], range: [14, 45, 200] }
   : { lod: [{ err: 0 }, { err: 0.01, weld: true }, { err: 0.035, weld: true, prune: true }], range: [20, 55, 160] };
 
 // ------------------------------------------------------------------------------------------------ read the raw GLB
@@ -188,15 +189,24 @@ function renormal(m, creaseDeg) {
   }
   const P = [], N = [], U0 = [], U1 = [], C = [], I = new Uint32Array(m.I.length);
   const E = (a, b) => Math.hypot(m.P[a * 3] - m.P[b * 3], m.P[a * 3 + 1] - m.P[b * 3 + 1], m.P[a * 3 + 2] - m.P[b * 3 + 2]);
+  const sliverFlat = new Uint8Array(nf);
+  for (let f = 0; f < nf; f++) {
+    const ids = [m.I[f * 3], m.I[f * 3 + 1], m.I[f * 3 + 2]];
+    const L = Math.max(E(ids[0], ids[1]), E(ids[1], ids[2]), E(ids[2], ids[0])), A2 = Math.hypot(FN[f * 3], FN[f * 3 + 1], FN[f * 3 + 2]);
+    if (L < 0.12 || L * L < 5 * A2) continue;                     // (aspect = L / h = L^2 / A2 > 5)
+    const cn = ids.map((v) => { let x = 0, y = 0, z = 0; for (const g of adj[canon[v]]) if (FU[g * 3] * FU[f * 3] + FU[g * 3 + 1] * FU[f * 3 + 1] + FU[g * 3 + 2] * FU[f * 3 + 2] >= cosC) { x += FN[g * 3]; y += FN[g * 3 + 1]; z += FN[g * 3 + 2]; } const l = Math.hypot(x, y, z) || 1; return [x / l, y / l, z / l]; });
+    const d = (p, q) => p[0] * q[0] + p[1] * q[1] + p[2] * q[2];
+    if (Math.min(d(cn[0], cn[1]), d(cn[1], cn[2]), d(cn[0], cn[2])) < Math.cos(25 * Math.PI / 180)) sliverFlat[f] = 1;
+  }
   for (let f = 0; f < nf; f++) for (let k = 0; k < 3; k++) {
     const v = m.I[f * 3 + k];
     let x = 0, y = 0, z = 0;
-    // a SLIVER (longest edge > 5 x its height) is shaded flat: smooth corner normals across it streak
     const a = m.I[f * 3], b = m.I[f * 3 + 1], c = m.I[f * 3 + 2];
-    const longest = Math.max(E(a, b), E(b, c), E(c, a)), area2 = Math.hypot(FN[f * 3], FN[f * 3 + 1], FN[f * 3 + 2]);
-    if (longest * longest > 5 * area2) { x = FN[f * 3]; y = FN[f * 3 + 1]; z = FN[f * 3 + 2]; }
-    else if (planar[f] === 2) { x = FN[f * 3]; y = FN[f * 3 + 1]; z = FN[f * 3 + 2]; }
-    else { const cc = cosC; for (const g of adj[canon[v]]) if (FU[g * 3] * FU[f * 3] + FU[g * 3 + 1] * FU[f * 3 + 1] + FU[g * 3 + 2] * FU[f * 3 + 2] >= cc) { x += FN[g * 3]; y += FN[g * 3 + 1]; z += FN[g * 3 + 2]; } }
+    if (planar[f] === 2) { x = FN[f * 3]; y = FN[f * 3 + 1]; z = FN[f * 3 + 2]; }
+    else for (const g of adj[canon[v]]) if (FU[g * 3] * FU[f * 3] + FU[g * 3 + 1] * FU[f * 3 + 1] + FU[g * 3 + 2] * FU[f * 3 + 2] >= cosC) { x += FN[g * 3]; y += FN[g * 3 + 1]; z += FN[g * 3 + 2]; }
+    // a SLIVER whose smooth corner normals would streak (the checker's rule: > 6:1, > 15 cm, corners > 30 deg apart)
+    // is shaded flat; other slivers stay smooth (flat ones show as facets close up)
+    if (sliverFlat[f]) { x = FN[f * 3]; y = FN[f * 3 + 1]; z = FN[f * 3 + 2]; }
     const l = Math.hypot(x, y, z) || 1; x /= l; y /= l; z /= l;
     const kk = `${v},${Math.round(x * 200)},${Math.round(y * 200)},${Math.round(z * 200)}`;
     let o = key.get(kk);
@@ -238,16 +248,26 @@ for (const piece of pieces) {
   const main = meshes[piece], detail = meshes[`${piece}__detail`] || [], far = meshes[`${piece}__far`] || [];
   table[piece] = { lods: [], range: CFG.range };
   CFG.lod.forEach((L0, k) => {
-    const L = { ...L0, err: ERR_OVERRIDE[`${piece}:${k}`] ?? L0.err };
+   // meshopt can leave a fold (two faces overlapping): the checker runs on the LOD as made, and the LOD is re-made with
+   // a slightly different error until it is clean (at most 5 tries; the last one is kept and the final audit reports it)
+   for (const mul of (k === 0 && KIT !== "rock") ? [1] : [1, 0.85, 1.15, 0.7, 1.3]) {
+    const L = { ...L0, err: (ERR_OVERRIDE[`${piece}:${k}`] ?? L0.err) * mul };
     let prims;
     if (KIT === "rock") prims = main.map((m) => renormal(L.weld ? simplifyWelded(m, L.err, L.prune) : simplifySeams(m, L.err, false), CREASE));
     else if (k === 0) prims = mergeSlots([...main, ...detail]).map((m) => renormal(m, CREASE_PG));
     // LOD1 / LOD2: welded + vertex AO like the rocks (the hard-surface seams would block meshopt), + the far stand-ins
     else prims = mergeSlots([...main.map((m) => simplifyWelded(m, L.err, L.prune)), ...far.map((m) => simplifyWelded(m, k === 2 ? L.err * 0.5 : 0.0005, false))]).map((m) => renormal(m, CREASE_PG));
     prims = prims.filter((m) => m.I.length);
+    if (!NO_AUDIT && mul !== 1.3) {
+      const r = auditParts(prims.map((m) => ({ name: `${piece}_lod${k}`, slot: m.slot, positions: m.P, normals: m.N, index: m.I, maxDistance: CFG.range[k] })), { ignoreBelow: KIT === "rock" ? 0.07 : -0.02 });
+      const c = r.summary.counts, b = ["coplanar", "depth", "crossing", "leak", "flipped", "streak", "bentflat"].reduce((s, x) => s + (c[x] ?? 0), 0);
+      if (b) { console.log(`  ${piece} lod${k} err ${L.err.toFixed(4)}: ${b} blocking, re-made`); continue; }
+    }
     const t = prims.reduce((s, m) => s + tris(m), 0);
     table[piece].lods.push({ node: `${piece}_lod${k}`, triangles: t, draws: prims.length, slots: prims.map((m) => m.slot), error_m: L.err, vertex_ao: !!L.weld });
     out.push({ name: `${piece}_lod${k}`, prims });
+    break;
+   }
   });
   const raw = [...main, ...detail].reduce((s, m) => s + tris(m), 0);
   console.log(`${piece.padEnd(14)} raw ${String(raw).padStart(6)}  ` + table[piece].lods.map((l, k) => `lod${k} ${String(l.triangles).padStart(6)} (${l.draws})`).join("  "));
