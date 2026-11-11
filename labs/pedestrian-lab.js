@@ -177,6 +177,10 @@ function step(dt) {
   const t1 = performance.now();
   push(cpu.sim, t1 - t0);
 }
+await lighting.attach(camera);
+const pipe = createPipeline(renderer, scene, camera);
+pipe.setExposureScale(lighting.exposureScale); pipe.look(preset);
+const hazeHook = (rt, d, size) => lighting.hazeHook(rt, d, size);
 renderer.setAnimationLoop(() => {
   const now = performance.now();
   let dt = Math.min((now - last) / 1000, 0.1); last = now;
@@ -227,10 +231,6 @@ function readouts() {
 }
 const frameTimes = []; { let lt = performance.now(); const tick = () => { const n = performance.now(); push(frameTimes, n - lt); lt = n; requestAnimationFrame(tick); }; requestAnimationFrame(tick); }
 
-await lighting.attach(camera);
-const pipe = createPipeline(renderer, scene, camera);
-pipe.setExposureScale(lighting.exposureScale); pipe.look(preset);
-const hazeHook = (rt, d, size) => lighting.hazeHook(rt, d, size);
 
 // ------------------------------------------------------------------------------------------------ checks
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

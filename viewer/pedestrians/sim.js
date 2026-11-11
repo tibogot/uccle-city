@@ -229,7 +229,7 @@ export class PedSim {
     const w = this.w, r = this.r, e0 = p.edge;
     // waiting for a crossing?
     if (p.kerb) return this._crossing(p, dt);
-    if ((node.kind === "door" || node.kind === "end") && (p.leaving || r() < 0.5) && node.edges.length === 1) {
+    if ((node.kind === "door" || node.kind === "end") && (p.leaving || r() < 0.08) && node.edges.length === 1) {
       this._remove(p); p.spot = { x: node.x, z: node.z }; return false;
     }
     if (node.kind === "pause" && p.state !== "pause" && !p._paused?.has(node.id) && r() < (node.pause ?? 0.4)) {
@@ -245,7 +245,7 @@ export class PedSim {
     // choose the next edge: not back, weighted by kind
     const opts = node.edges.filter((e) => e !== e0);
     if (!opts.length) { this._enter(p, e0, node); return true; }               // dead end: turn round
-    const wgt = opts.map((e) => (e.kind === "door" ? (p.leaving ? 6 : 0.15) : e.kind === "cross" || e.kind === "zebra" ? 0.7 : e.weight ?? 1));
+    const wgt = opts.map((e) => (e.kind === "door" ? (p.leaving ? 6 : 0.03) : e.kind === "cross" || e.kind === "zebra" ? 0.7 : e.weight ?? 1));
     let k = r() * wgt.reduce((a, b) => a + b, 0), e = opts[0];
     for (let i = 0; i < opts.length; i++) { k -= wgt[i]; if (k <= 0) { e = opts[i]; break; } }
     if (e.kind === "cross" || e.kind === "zebra") {

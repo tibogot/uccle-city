@@ -129,18 +129,28 @@ export class Crowd {
     a.loco = (a.loco + (v * dt) / (S * L.stride)) % 1;
     a.idle = (a.idle + dt / 16) % 1;
     const turn = Math.abs(p.turnRate || 0);
-    if (v < 0.7) {
-      const walkW = smooth(0.08, 0.7, v);
-      if (turn > 0.25 && walkW < 0.5) {
-        const tc = p.turnRate > 0 ? T.turnL : T.turnR, tpc = Math.abs(T.clips[tc].turnPerCycle[p.sex]);
+    // slow (< 0.7 m/s): idle mixed with ONE second slice (walking off, or turning on the spot). The second slice changes
+    // only once its weight has faded to ~0, and weights move at <= 3 / s: no clip switch ever jumps a pose
+    const fast = v >= 0.7 && (a.wasFast || (a.slowB === "walk" && a.w > 0.95));
+    if (!fast) {
+      if (a.wasFast) { a.slowB = "walk"; a.w = 1; }          // (walk070, walk100, ~0) == (idle, walk070, 1)
+      const wantB = turn > 0.25 && v < 0.3 ? (p.turnRate > 0 ? "turnL" : "turnR") : "walk";
+      if (!a.slowB) a.slowB = wantB;
+      let target;
+      if (wantB !== a.slowB) { target = 0; if (a.w < 0.03) a.slowB = wantB; }
+      else target = a.slowB === "walk" ? smooth(0.08, 0.7, v) : smooth(0.25, 0.7, turn);
+      a.w += Math.max(-3 * dt, Math.min(3 * dt, target - a.w));
+      if (a.slowB !== "walk") {
+        const tc = a.slowB === "turnL" ? T.turnL : T.turnR, tpc = Math.abs(T.clips[tc].turnPerCycle[p.sex]);
         a.turn = (a.turn + (turn * dt) / tpc) % 1;
-        a.codeA = T.idle + a.idle * 0.9999; a.codeB = tc + a.turn * 0.9999; a.w = smooth(0.25, 0.7, turn) * (1 - walkW * 2);
+        a.codeA = T.idle + a.idle * 0.9999; a.codeB = tc + a.turn * 0.9999;
       } else {
-        a.codeA = T.idle + a.idle * 0.9999; a.codeB = L.a + a.loco * 0.9999; a.w = walkW;
+        a.codeA = T.idle + a.idle * 0.9999; a.codeB = T.walks[0].i + a.loco * 0.9999;
       }
     } else {
       a.codeA = L.a + a.loco * 0.9999; a.codeB = L.b + a.loco * 0.9999; a.w = L.w;
     }
+    a.wasFast = fast;
     return a;
   }
 
@@ -156,10 +166,13 @@ export class Crowd {
     let r = this.rigPool.pop();
     if (!r) r = new PersonRig({});
     // re-dress a pooled rig for this person (the constructor's fields)
-    Object.assign(r, { seed: p.seed, s: p.scale, female: p.sex, girth: p.girth, armSwing: p.armSwing ?? 1, stride: p.strideK ?? 1, bind: this.bind[p.sex], placed: false });
+    Object.assign(r, { seed: p.seed, s: p.scale, female: p.sex, girth: p.girth, armSwing: p.armSwing ?? 1, stride: 1, bind: this.bind[p.sex], placed: false });
     r.time = p.seed * 7.3; r.leanAt = r.time + 3.5 * ((p.seed * 0.618) % 1); r.leanCount = 0; r.leanTarget = 0;
     r.pose.set([p.seed, p.sex, p.girth, p.hair], 120);
     r.reset(p.x, p.z, p.yaw, this._groundFn);
+    // start the rig at the bone table's phase: same gait maths (stride 1, as baked), so the two stay in step and the
+    // hand-over blend mixes the same step
+    if (p.anim) r.phase = p.anim.loco;
     this.rigs.add(r);
     return r;
   }
@@ -224,7 +237,7 @@ export class Crowd {
         if (!want && a.liveTarget === 1) { a.liveTarget = 0; a.loco = a.live.phase; }       // out: the table takes over at the rig's phase
         if (a.liveTarget === 0 && a.liveW === 0 && p.speed > 0.3) {
           let d = a.live.phase - a.loco; d -= Math.round(d);
-          a.loco = (a.loco + Math.max(-0.5 * dt, Math.min(0.5 * dt, d)) + 1) % 1;
+          a.loco = (a.loco + Math.max(-0.05 * dt, Math.min(0.05 * dt, d)) + 1) % 1;
         }
         a.liveW = Math.max(0, Math.min(1, a.liveW + (a.liveTarget ? dt : -dt) / B.blend));
         if (a.liveW === 0 && !want && !warm) this._free(p);
@@ -247,7 +260,8 @@ export class Crowd {
       let pose = null;
       if (live) {
         if (a.liveW >= 1) pose = a.live.pose;
-        else { pose = blendPose(this._tmp2, this.bakedPose(p, this._tmp), a.live.pose, smooth(0, 1, a.liveW)); st.blending++; }
+        else { pose = blendPose(a.drawnPose ||= new Float32Array(124), this.bakedPose(p, this._tmp), a.live.pose, smooth(0, 1, a.liveW)); st.blending++; }
+        if (pose === a.live.pose) (a.drawnPose ||= new Float32Array(124)).set(pose);
         st.live++;
       }
       p.lodMix = ranges.map(([lo, hi]) => Math.max(0, hi - lo));
