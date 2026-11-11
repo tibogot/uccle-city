@@ -406,8 +406,9 @@ export class Traffic {
         if (!p.alive) continue;
         const e = p.onCrossing || (p.kerb && p.kerb.e.kind === "zebra" ? p.kerb.e : null);
         if (!e || e.road !== L2.road) continue;
-        const d = (e.coord - c.s) * L2.dir - 3;
-        if (d > -1 && d < 50) limit = Math.min(limit, d - 0.5);
+        // stop with the front bumper 1.5 m before the crossing's near edge (car half length 2.1 m)
+        const d = (e.coord - c.s) * L2.dir - (e.width / 2 + 2.1 + 1.5);
+        if (d > -3 && d < 50) limit = Math.min(limit, Math.max(0, d));
       }
       // the car ahead
       for (const o of this.cars) if (o !== c && o.lane === L2) { const d = (o.s - c.s) * L2.dir; if (d > 0 && d < 60) limit = Math.min(limit, d - 6.5); }

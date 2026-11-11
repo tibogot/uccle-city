@@ -89,7 +89,7 @@ export class PedSim {
       s = r() * e.len; dir = r() < 0.5 ? 1 : -1;
     }
     p.gen = (p.gen || 0) + 1;
-    Object.assign(p, { alive: true, edge: e, dir, s, onCrossing: null, tramWait: false, boarding: false, spotUntil: 0, glance: 0, fadeDir: 0, face: null, lane: (r() - 0.5) * Math.min(0.9, e.width * 0.5), state: "walk", hold: false, timer: 0, kerb: null, spot: null, leaving: false, v: p.vPref * 0.8, look: 0 });
+    Object.assign(p, { alive: true, edge: e, dir, s, onCrossing: null, holding: false, tramWait: false, boarding: false, spotUntil: 0, glance: 0, fadeDir: 0, face: null, lane: (r() - 0.5) * Math.min(0.9, e.width * 0.5), state: "walk", hold: false, timer: 0, kerb: null, spot: null, leaving: false, v: p.vPref * 0.8, look: 0 });
     const c = this._carrot(p, _c);
     p.x = c.x - (dir * e.ux) * 0.5; p.z = c.z - (dir * e.uz) * 0.5;
     p.yaw = Math.atan2(dir * e.ux, dir * e.uz);
@@ -173,15 +173,20 @@ export class PedSim {
     for (let guard = 0; guard < 4; guard++) {
       const c = this._carrot(p, _c);
       const d = Math.hypot(c.x - p.x, c.z - p.z);
-      if (d > look) break;
+      // (a person held at a node, standing at a spot away from it: a kerb queue, the tram platform, a pause, keeps
+      // asking the node every frame, however far the spot is from the line's end)
       const end = p.dir > 0 ? p.edge.len : 0;
-      const room = (end - p.s) * p.dir;
-      const stepS = look - d + 0.05;
-      if (room > stepS) { p.s += stepS * p.dir; break; }
+      if (!p.holding) {
+        if (d > look) break;
+        const room = (end - p.s) * p.dir;
+        const stepS = look - d + 0.05;
+        if (room > stepS) { p.s += stepS * p.dir; break; }
+      }
       // at a node: decide what comes next
       const node = p.dir > 0 ? p.edge.b : p.edge.a;
       const go = this._atNode(p, node, dt);
-      if (!go) { p.s = end; hold = true; break; }
+      if (!go) { p.s = end; hold = true; p.holding = true; break; }
+      p.holding = false;
     }
     // 2. steer toward the carrot (or the waiting spot)
     let tx, tz;
