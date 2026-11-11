@@ -12,6 +12,7 @@
 import * as THREE from "three/webgpu";
 import { loadPolice, PO_LODS, setLodFades, poLodState } from "./policeModel.js";
 import { buildPoliceYard } from "./policeYard.js";
+import { buildPoliceCars } from "./policeCars.js";
 import { SMOOTH, fadeProxies } from "./lodFade.js";
 import { openParallelPipelines } from "../vendor/engine/parallelPipelines.js";
 import { Heightmap } from "./heightmap.js";
@@ -59,7 +60,9 @@ export async function addPolice({ scene, updaters, hide, world, manifest, log, c
       return { b: t.bounds, hm: new Heightmap(hdr, buf) };
     }));
     const groundAt = (x, z) => (hms.find(({ b }) => x >= b.x[0] && x <= b.x[1] && z >= b.z[0] && z <= b.z[1]) ?? hms[0]).hm.surface(x, z);
-    return buildPoliceYard({ site, groundAt });
+    const yard = buildPoliceYard({ site, groundAt });
+    yard.cars = await buildPoliceCars({ site, groundAt }).catch((e) => { log(`Police cars: ${e.message}`); return null; });
+    return yard;
   })();
 
   Promise.all([loadPolice(), yardReady]).then(async ([m, yard]) => {
@@ -70,27 +73,33 @@ export async function addPolice({ scene, updaters, hide, world, manifest, log, c
     root.add(...levels);
     root.visible = false; yard.mesh.visible = false;
     scene.add(root, yard.mesh);
+    const cars = yard.cars;
+    if (cars) { cars.group.visible = false; scene.add(cars.group); cars.group.updateMatrixWorld(true); }
     root.updateMatrixWorld(true);
     const tc = performance.now();
     let compile = compiler();
     while (!compile) { await new Promise((r) => setTimeout(r, 250)); compile = compiler(); }
     const fp = fadeProxies(root);
-    await compile(fp ? [root, fp, yard.mesh] : [root, yard.mesh]);
+    const fpc = cars ? fadeProxies(cars.group) : null;
+    await compile([root, fp, yard.mesh, cars?.group, fpc].filter(Boolean));
     const tComp = performance.now() - tc;
     const tw = performance.now();
     const meshes = [yard.mesh];
     for (const lv of levels) lv.traverse((o) => { if (o.isMesh) meshes.push(o); });
     if (fp) fp.traverse((o) => { if (o.isMesh) meshes.push(o); });
+    if (cars) cars.group.traverse((o) => { if (o.isMesh) meshes.push(o); });
+    if (fpc) fpc.traverse((o) => { if (o.isMesh) meshes.push(o); });
     const warm = await warmShadowPass(renderer, scene, meshes);
     const tWarm = performance.now() - tw;
     const homes = manifest.tiles.filter((t) => t.bounds.x[0] < m.boundsWorld.max.x && t.bounds.x[1] > m.boundsWorld.min.x &&
       t.bounds.z[0] < m.boundsWorld.max.z && t.bounds.z[1] > m.boundsWorld.min.z).map((t) => t.name);
     let n = 0, home = false;
-    const state = { d: 0, shown: [], fades: [], on: true, yardOn: true };
+    const state = { d: 0, shown: [], fades: [], on: true, yardOn: true, carsOn: true };
+    const tmpC = new THREE.Vector3();
     updaters.push((camPos) => {
       if (n++ % 30 === 0) home = homes.some((h) => world.tiles.some((t) => t.name === h) || !!scene.getObjectByName(`${h}-lite`));
       root.visible = home && state.on;
-      if (!home) { yard.mesh.visible = false; return; }
+      if (!home) { yard.mesh.visible = false; if (cars) cars.group.visible = false; return; }
       const d = m.distance(camPos);
       state.d = d;
       if (SMOOTH) {
@@ -101,9 +110,11 @@ export async function addPolice({ scene, updaters, hide, world, manifest, log, c
         const k = PO_LODS.findIndex((l) => d < l.until);
         levels.forEach((g, i) => { g.visible = i === k; });
       }
-      yard.mesh.visible = root.visible && state.yardOn && d < PO_LODS[1].until + PO_LODS[1].band;
+      // (the yard stays with the station at every distance: 1 draw, 6k triangles; hiding it would pop)
+      yard.mesh.visible = root.visible && state.yardOn;
+      if (cars) { cars.group.visible = yard.mesh.visible && state.carsOn; cars.update(camPos, m.boundsWorld.getCenter(tmpC)); }
     });
-    log(`Police station (Rue Rouge 17): scripted, LODs ${m.tris.join(" / ")} triangles, ${m.drawCalls.join("/")} draws; yard ${yard.tris} tris; loaded ${tLoad.toFixed(0)} ms, shaders ${tComp.toFixed(0)} ms + shadow pass ${tWarm.toFixed(0)} ms (in the background)`);
-    window.police = { model: m, root, levels, yard, tLoad, tComp, tWarm, warm, state };
+    log(`Police station (Rue Rouge 17): scripted, LODs ${m.tris.join(" / ")} triangles, ${m.drawCalls.join("/")} draws; yard ${yard.tris} tris; ${cars ? `${cars.places.length} patrol cars (${cars.tris.join(" / ")} tris)` : "no cars"}; loaded ${tLoad.toFixed(0)} ms, shaders ${tComp.toFixed(0)} ms + shadow pass ${tWarm.toFixed(0)} ms (in the background)`);
+    window.police = { model: m, root, levels, yard, cars, tLoad, tComp, tWarm, warm, state };
   }).catch((e) => log(`Police model failed (${e.message}): its UrbIS solids are hidden, reload without ?police=1`));
 }

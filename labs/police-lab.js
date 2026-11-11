@@ -18,6 +18,7 @@ import { createPipeline } from "../viewer/post.js";
 import { SMOOTH, fadeProxies, fadeVariant } from "../viewer/lodFade.js";
 import { precompile } from "../viewer/warmup.js";
 import { buildPoliceYard } from "../viewer/policeYard.js";
+import { buildPoliceCars } from "../viewer/policeCars.js";
 import { loadPolice, PO_LODS, PO_SLOTS, LIBRARY_NAMES, SLOT_TABLE, poLook, setLodFades, poLodState } from "../viewer/policeModel.js";
 
 const qp = new URLSearchParams(location.search);
@@ -104,6 +105,9 @@ const groundAt = (x, z) => {
 // the yard (asphalt + markings) on the same ground
 const yard = buildPoliceYard({ site: SITE, groundAt });
 scene.add(yard.mesh);
+// the parked patrol cars (the city's faceted car family in a police livery, viewer/policeCars.js)
+const cars = await buildPoliceCars({ site: SITE, groundAt }).catch((e) => { console.warn("[police lab] cars:", e.message); return null; });
+if (cars) scene.add(cars.group);
 
 // ------------------------------------------------------------------------------------------------ UrbIS: the solids it replaces + the neighbours (tiles E4 + F4)
 const HIDE = new Set(model.notes.placement.hides_solids);
@@ -193,7 +197,7 @@ const SWAPS = {
 // ------------------------------------------------------------------------------------------------ panel
 const firstView = Object.keys(VIEWS)[0];
 const S = {
-  lod: "auto", show: "new model", wireframe: false, view: firstView, notes: true, neighbours: true, yard: true,
+  lod: "auto", show: "new model", wireframe: false, view: firstView, notes: true, neighbours: true, yard: true, cars: true,
   time: preset, hour: lighting.hourOverride ?? lighting.hour, day: lighting.day, post: true, ao: 1, aoDirect: 0.55, thinFar: 1, relief: 1, weather: 1,
   refl: 1, slot: "brick_yellow", swap: "table default (temporary)", swapAll: false,
   stats: "", lodInfo: "", bench: "—", swapInfo: "—", fadeAlways: false, flicker: "—", grazeInfo: "—",
@@ -208,6 +212,7 @@ fm.add(S, "lod", ["auto", "LOD0", "LOD1", "LOD2"]).name("LOD");
 fm.add(S, "show", ["new model", "UrbIS solid (city today)", "new + UrbIS ghost"]).onChange(applyShow);
 fm.add(S, "neighbours").name("UrbIS neighbours").onChange((v) => { neighbours.visible = v; });
 fm.add(S, "yard").name("yard (asphalt, markings)").onChange((v) => { yard.mesh.visible = v; });
+fm.add(S, "cars").name("patrol cars (livery)").onChange((v) => { if (cars) cars.group.visible = v; });
 fm.add(S, "wireframe").onChange((v) => { for (const s of PO_SLOTS) { model.materials[s].wireframe = v; if (SMOOTH) fadeVariant(model.materials[s]).wireframe = v; } });
 fm.add(S, "lodInfo").name("LOD now");
 const fs = ui.addFolder("Material slots (adapter table)");
@@ -283,6 +288,7 @@ pipe.setExposureScale(lighting.exposureScale); pipe.look(preset);
 const tc0 = performance.now();
 const fadeCopies = fadeProxies(root);
 if (fadeCopies) { fadeCopies.position.copy(root.position); fadeCopies.rotation.copy(root.rotation); fadeCopies.updateMatrixWorld(true); }
+if (cars) { cars.group.updateMatrixWorld(true); const fc = fadeProxies(cars.group); if (fc) fadeCopies?.add(...fc.children); }
 root.visible = true;
 await precompile(renderer, fadeCopies ? [scene, fadeCopies] : [scene], camera, scene, { target: pipe.passTarget ?? null, mrt: pipe.passMRT ?? null });
 const compileMs = performance.now() - tc0;
@@ -325,7 +331,7 @@ async function bench({ cycles = 4, win = 1200 } = {}) {
 }
 const hitches = [];
 Object.assign(lab, { force: (m) => { forced = m; }, forceYard: (v) => { yardForced = v; }, renderer, scene, camera, controls, model, lighting, goView, bench, gpu, S, VIEWS, levels,
-  hitches, doSwap, loadMs, compileMs, shownAt, longTasks, toCity, groundAt, root, urbis, neighbours, yard, poLook, setGrazing, pipe: () => pipe });
+  hitches, doSwap, loadMs, compileMs, shownAt, longTasks, toCity, groundAt, root, urbis, neighbours, yard, cars, poLook, setGrazing, pipe: () => pipe });
 
 let last = performance.now(), frames = 0, fpsAcc = 0, fpsN = 0, fps = 0;
 const frame = (dtFixed = null) => {
@@ -348,6 +354,7 @@ const frame = (dtFixed = null) => {
   if (S.fadeAlways && SMOOTH) for (const g of levels) if (g.visible) for (const o of g.children) o.material = fadeVariant(o.userData.base);
   if (forced === "off") root.visible = false; else if (forced !== null) root.visible = true; else applyShow();
   yard.mesh.visible = yardForced ?? S.yard;
+  if (cars) { cars.group.visible = (yardForced ?? S.yard) && S.cars; cars.update(camera.position, centre); }
   camera.updateMatrixWorld();
   lighting.update(camera.position.y, groundAt(camera.position.x, camera.position.z), controls.target, THREE.MathUtils.clamp(camera.position.distanceTo(centre) * 0.9, 50, 420), dt);
   if (lab.grazeDir && lighting.sun) {
