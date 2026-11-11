@@ -32,6 +32,7 @@ Stairs paused until the owner's Mixamo clips are in `data/raw/animations/mixamo/
 - [ ] Roads v2 phases 0+1 (`claude/roads2`, port 8815: http://localhost:8815/labs/road-lab.html?j=1&view=plan, &paint=v1 = before); send docs/roads/brussels_mobility_request.md.
 - [ ] Flag Lab (`claude/flags`, port 8817: http://localhost:8817/labs/flag-lab.html; city http://localhost:8817/viewer/index.html?townhall=1&flags=1&tile=D3&at=-1134,-506).
 - [ ] Minimap + full map (`claude/minimap`, port 8819: http://localhost:8819/labs/map-lab.html, city http://localhost:8819/viewer/index.html?map=1&view=walk&tile=E4&at=-916,-195; M = full map, click to teleport). Weak: few names at walking zoom, Avenue Brugmann unnamed sometimes.
+- [ ] Wolvendael chateau + pond (`claude/wolvendael`, port 8821: http://localhost:8821/labs/wolvendael-lab.html, city http://localhost:8821/viewer/index.html?wolvendael=1&tile=F4&at=-470,-430). Chateau matches w04; pond mirrors; weak: water too dark, blob tree reflections, stick reeds, dark frames far, estimated entrance side.
 - [ ] City mesh audit report (docs/CITY_MESH_AUDIT.md): facade details coplanar with walls = likely the building flicker.
 - [ ] Small fixes (`claude/smallfixes`): lamps + ?sunlight=1.
 - [ ] Hero prep notes (`claude/hero-prep`, docs/heroes/): Van Buuren + Wolvendael.
