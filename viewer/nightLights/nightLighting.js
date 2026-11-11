@@ -29,6 +29,7 @@ import { DataTexture, FloatType, RGBAFormat, LightsNode } from "three/webgpu";
 import {
   Fn, Loop, If, Break, int, float, vec3, vec4, ivec2, ivec4, textureLoad, positionView, cameraViewMatrix, dot, cross, normalize,
   smoothstep, max, min, abs, exp, sqrt, clamp, select, uniform, normalView, BRDF_Lambert, diffuseContribution,
+  instancedArray, pow, log, instanceIndex, screenCoordinate, mix, step, BRDF_GGX, specularColorBlended, specularF90,
 } from "three/tsl";
 import { ClusteredLighting } from "three/addons/lighting/ClusteredLighting.js";
 import ClusteredLightsNode from "three/addons/tsl/lighting/ClusteredLightsNode.js";
@@ -92,6 +93,10 @@ class NightLightsNode extends ClusteredLightsNode {
     super(...a);
     this.pool = pool;
     this._extra = new DataTexture(new Float32Array(this.maxLights * 4 * 2), this.maxLights, 2, RGBAFormat, FloatType);
+    // up to 4 culling planes per light (view space, n.xyz + d; outside = dot(n, p) + d > 0): the low beam's wedge, the
+    // window's frustum. The cluster pass rejects a cluster lying wholly outside any of them (lights without planes:
+    // n = 0, d = -1, never reject)
+    this._planes = new DataTexture(new Float32Array(this.maxLights * 4 * 4), this.maxLights, 4, RGBAFormat, FloatType);
     this._order = new Int32Array(this.maxLights);
     this._viewZ = new Float32Array(this.maxLights);
     this._src = new Int32Array(this.maxLights);
@@ -137,7 +142,9 @@ class NightLightsNode extends ClusteredLightsNode {
       T[ROW.BOUNDS * line + q] = cx; T[ROW.BOUNDS * line + q + 1] = cy; T[ROW.BOUNDS * line + q + 2] = cz; T[ROW.BOUNDS * line + q + 3] = r;
       E[q] = D[o + S.PROF]; E[q + 1] = D[o + S.P1]; E[q + 2] = D[o + S.P2]; E[q + 3] = D[o + S.P3];
       E[eLine + q] = D[o + S.PEN]; E[eLine + q + 1] = D[o + S.P4]; E[eLine + q + 2] = D[o + S.FLAGS]; E[eLine + q + 3] = 0;
+      this._writePlanes(j, o, m);
     }
+    this._planes.needsUpdate = true;
     this._lightsTexture.needsUpdate = true;
     this._extra.needsUpdate = true;
     // depth-slice ranges (three's code, over the sorted list)
@@ -154,6 +161,117 @@ class NightLightsNode extends ClusteredLightsNode {
       zR[z * 4] = a; zR[z * 4 + 1] = b;
     }
     this._zSliceRangesTexture.needsUpdate = true;
+  }
+
+  /** culling planes of sorted light j (pool slot offset o), world -> view with the camera's matrix elements m */
+  _writePlanes(j, o, m) {
+    const D = this.pool.data, PL = this._planes.image.data, line = this._planes.image.width * 4, prof = D[o + S.PROF];
+    const px = D[o], py = D[o + 1], pz = D[o + 2];
+    let k = 0;
+    if (prof === PROFILE.LOWBEAM) {
+      // the wedge under the cut-off: above (rising 3.5 % with distance), behind, and the two sides of the beam
+      let hx = D[o + 8], hz = D[o + 10]; const hl = Math.hypot(hx, hz) || 1; hx /= hl; hz /= hl;
+      const rx = -hz, rz = hx, th = Math.acos(Math.min(1, D[o + S.CONE])) + 0.05, c = Math.cos(th), sn = Math.sin(th);
+      this._plane(j, k++, -0.035 * hx, 1, -0.035 * hz, px, py, pz, m);
+      this._plane(j, k++, -hx, 0, -hz, px, py, pz, m);
+      this._plane(j, k++, rx * c - hx * sn, 0, rz * c - hz * sn, px, py, pz, m);
+      this._plane(j, k++, -rx * c - hx * sn, 0, -rz * c - hz * sn, px, py, pz, m);
+    } else if (prof === PROFILE.APERTURE) {
+      // the pyramid from the light through the opening (+ its soft edge)
+      const ax = D[o + 8], az = D[o + 10], depth = D[o + S.P3], soft = Math.min(D[o + S.P1], D[o + S.P2]) * 0.22 + 0.05;
+      const hw = D[o + S.P1] + soft, hh = D[o + S.P2] + soft, rx = -az, rz = ax;     // right = axis x up (horizontal axis)
+      this._plane(j, k++, rx * depth - ax * hw, 0, rz * depth - az * hw, px, py, pz, m);
+      this._plane(j, k++, -rx * depth - ax * hw, 0, -rz * depth - az * hw, px, py, pz, m);
+      this._plane(j, k++, -ax * hh, depth, -az * hh, px, py, pz, m);
+      this._plane(j, k++, -ax * hh, -depth, -az * hh, px, py, pz, m);
+    }
+    for (; k < 4; k++) { const q = k * line + j * 4; PL[q] = 0; PL[q + 1] = 0; PL[q + 2] = 0; PL[q + 3] = -1; }
+  }
+
+  /** plane k of sorted light j: through (px, py, pz) with outward normal n (world), stored in view space */
+  _plane(j, k, nx, ny, nz, px, py, pz, m) {
+    const PL = this._planes.image.data, line = this._planes.image.width * 4;
+    const l = Math.hypot(nx, ny, nz) || 1; nx /= l; ny /= l; nz /= l;
+    const vx = m[0] * nx + m[4] * ny + m[8] * nz, vy = m[1] * nx + m[5] * ny + m[9] * nz, vz = m[2] * nx + m[6] * ny + m[10] * nz;
+    const q = k * line + j * 4;
+    PL[q] = vx; PL[q + 1] = vy; PL[q + 2] = vz; PL[q + 3] = -(nx * px + ny * py + nz * pz) - (vx * m[12] + vy * m[13] + vz * m[14]);
+  }
+
+  /** three r187's ClusteredLightsNode._create (MIT, three.js authors), with one change: a light is listed in a cluster
+   *  only if its bounding sphere touches the cluster's box AND the box is not wholly outside one of its planes. */
+  _create(clusterCount) {
+    const { tileSize, zSlices, _chunksPerCluster: chunksPerCluster } = this;
+    const NZ = zSlices, grid = this._gridDimensions, NX = int(grid.x), NY = int(grid.y);
+    const requiredElements = clusterCount * chunksPerCluster;
+    const previousElements = this._lightIndexes !== null ? this._lightIndexes.value.array.length / 4 : 0;
+    const elements = previousElements === 0 ? Math.ceil(requiredElements * 1.5) : Math.max(requiredElements, previousElements * 2);
+    if (this._compute !== null) { this.needsUpdate = true; this._compute.dispose(); this._lightIndexes.value.dispose(); }
+    const lightIndexes = instancedArray(new Int32Array(elements * 4), "ivec4").setPBO(true).setName("lightIndexes");
+    const getClusterBounds = (clusterIndex) => {
+      const invFocalX = float(1).div(this._cameraProjectionMatrix.element(0).element(0));
+      const invFocalY = float(1).div(this._cameraProjectionMatrix.element(1).element(1));
+      const cx = clusterIndex.mod(NX), cy = clusterIndex.div(NX).mod(NY), cz = clusterIndex.div(NX.mul(NY));
+      const ndcXmin = float(cx).mul(2.0).div(grid.x).sub(1.0), ndcXmax = float(cx.add(int(1))).mul(2.0).div(grid.x).sub(1.0);
+      const ndcYmax = float(1).sub(float(cy).mul(2.0).div(grid.y)), ndcYmin = float(1).sub(float(cy.add(int(1))).mul(2.0).div(grid.y));
+      const farOverNear = this._cameraFar.div(this._cameraNear);
+      const zNear = this._cameraNear.mul(pow(farOverNear, float(cz).mul(1.0 / NZ))).negate();
+      const zFar = this._cameraNear.mul(pow(farOverNear, float(cz.add(int(1))).mul(1.0 / NZ))).negate();
+      const sNX = zNear.negate().mul(invFocalX), sFX = zFar.negate().mul(invFocalX), sNY = zNear.negate().mul(invFocalY), sFY = zFar.negate().mul(invFocalY);
+      const aabbMin = vec3(min(ndcXmin.mul(sNX), ndcXmin.mul(sFX)), min(ndcYmin.mul(sNY), ndcYmin.mul(sFY)), zFar);
+      const aabbMax = vec3(max(ndcXmax.mul(sNX), ndcXmax.mul(sFX)), max(ndcYmax.mul(sNY), ndcYmax.mul(sFY)), zNear);
+      return { cz, aabbMin, aabbMax };
+    };
+    const planes = this._planes;
+    const intersectsCluster = (lightIdx, aabbMin, aabbMax) => {
+      const { center, radius } = this._getLightBounds(lightIdx);
+      const closest = max(aabbMin, min(center, aabbMax)), diff = center.sub(closest);
+      let ok = radius.lessThan(0).or(dot(diff, diff).lessThanEqual(radius.mul(radius)));
+      for (let k = 0; k < 4; k++) {
+        const pl = textureLoad(planes, ivec2(lightIdx, k));
+        const pmin = mix(aabbMax, aabbMin, step(0, pl.xyz));          // the box corner deepest inside the plane
+        ok = ok.and(dot(pl.xyz, pmin).add(pl.w).lessThanEqual(0));
+      }
+      return ok;
+    };
+    const chunksPerInvocation = this._isWebGLBackend ? 1 : chunksPerCluster;
+    const invocationsPerCluster = chunksPerCluster / chunksPerInvocation;
+    this._invocationsPerCluster = invocationsPerCluster;
+    const compute = Fn(() => {
+      const clusterIndex = int(instanceIndex.div(invocationsPerCluster));
+      const firstChunk = int(instanceIndex.mod(invocationsPerCluster)).mul(chunksPerInvocation);
+      const firstSlot = firstChunk.mul(4), lastSlot = firstSlot.add(chunksPerInvocation * 4);
+      const { cz, aabbMin, aabbMax } = getClusterBounds(clusterIndex);
+      const chunks = ivec4(0).toArray(chunksPerInvocation).toVar();
+      const index = int(0).toVar();
+      const zRange = textureLoad(this._zSliceRangesTexture, ivec2(cz, 0));
+      const rangeStart = int(zRange.x), rangeEnd = int(zRange.y);
+      Loop(this.maxLights, ({ i }) => {
+        const lightIdx = rangeStart.add(i);
+        If(index.greaterThanEqual(lastSlot).or(lightIdx.greaterThanEqual(rangeEnd)), () => { Break(); });
+        If(intersectsCluster(lightIdx, aabbMin, aabbMax), () => {
+          If(index.greaterThanEqual(firstSlot), () => {
+            const slot = index.sub(firstSlot);
+            chunks.element(slot.div(4)).element(slot.mod(4)).assign(lightIdx.add(int(1)));
+          });
+          index.addAssign(int(1));
+        });
+      });
+      const firstElement = clusterIndex.mul(chunksPerCluster).add(firstChunk);
+      const writeChunks = () => { Loop(chunksPerInvocation, ({ i }) => { lightIndexes.element(firstElement.add(i)).assign(chunks.element(i)); }); };
+      if (this._isWebGLBackend === true) If(firstElement.lessThan(int(elements)).and(int(this.id).notEqual(int(-1))), writeChunks);
+      else writeChunks();
+    })().compute(clusterCount * invocationsPerCluster).setName("Update Clustered Lights (night)");
+    const getScreenClusterIndex = Fn(() => {
+      const screenTile = screenCoordinate.div(tileSize).floor();
+      const viewDepth = positionView.z.negate();
+      const invLog = float(1).div(log(this._cameraFar.div(this._cameraNear)));
+      const zSlice = clamp(log(viewDepth.div(this._cameraNear)).mul(invLog).mul(float(NZ)).floor(), float(0), float(NZ - 1));
+      return int(screenTile.x).add(int(screenTile.y).mul(NX)).add(int(zSlice).mul(NX.mul(NY)));
+    });
+    this._lightIndexes = lightIndexes;
+    this._screenClusterIndex = getScreenClusterIndex().toVar();
+    this._compute = compute;
+    this._needsRebuild = false;
   }
 
   setupLights(builder, lightNodes) {
@@ -249,7 +367,7 @@ class NightLightsNode extends ClusteredLightsNode {
     }, "void")();
   }
 
-  dispose() { this._extra.dispose(); super.dispose(); }
+  dispose() { this._extra.dispose(); this._planes.dispose(); super.dispose(); }
 }
 
 /** renderer.lighting = new NightLighting(pool): ClusteredLighting whose clustered lights come from the pool. */
