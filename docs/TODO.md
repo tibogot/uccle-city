@@ -33,6 +33,7 @@ Stairs paused until the owner's Mixamo clips are in `data/raw/animations/mixamo/
 - [ ] Flag Lab (`claude/flags`, port 8817: http://localhost:8817/labs/flag-lab.html; city http://localhost:8817/viewer/index.html?townhall=1&flags=1&tile=D3&at=-1134,-506).
 - [ ] Minimap + full map (`claude/minimap`, port 8819: http://localhost:8819/labs/map-lab.html, city http://localhost:8819/viewer/index.html?map=1&view=walk&tile=E4&at=-916,-195; M = full map, click to teleport). Weak: few names at walking zoom, Avenue Brugmann unnamed sometimes.
 - [ ] Wolvendael chateau + pond (`claude/wolvendael`, port 8821: http://localhost:8821/labs/wolvendael-lab.html, city http://localhost:8821/viewer/index.html?wolvendael=1&tile=F4&at=-470,-430). Chateau matches w04; pond mirrors; weak: water too dark, blob tree reflections, stick reeds, dark frames far, estimated entrance side.
+- [ ] Sauvagère phase 1 (`claude/sauvagere`, port 8822: http://localhost:8822/labs/park-kit-lab.html, prep docs/heroes/SAUVAGERE_PREP.md): rock + playground kits (0 blocking). Weak: rock too orange / blocky vs the cream rocaille, cliff 1.64 ms at 12 m (over budget), playground generic. Needs the OWNER'S PHOTOS (list in the prep note).
 - [ ] City mesh audit report (docs/CITY_MESH_AUDIT.md): facade details coplanar with walls = likely the building flicker.
 - [ ] Small fixes (`claude/smallfixes`): lamps + ?sunlight=1.
 - [ ] Hero prep notes (`claude/hero-prep`, docs/heroes/): Van Buuren + Wolvendael.
