@@ -143,7 +143,7 @@ let todayBake = null, todayMat = null;
 // the kit's
 const S = {
   scene: qp.get("scene") ?? "row50", mode: qp.get("mode") ?? "kit", distance: 600, post: true, time: preset, hour: 0,
-  blend: "bary3", parallax: 1, pdo: true, alpha: "a2c-ramp", gain: 1, card: "octagon", noise: "screen", far: "ground", lodBias: -1, colourDepth: "equal", ringSplit: 600, farParallax: 0, farBlend: "bary3",
+  blend: "bary3", parallax: 0, pdo: false, alpha: "a2c-ramp", gain: 1, card: "octagon", noise: "screen", far: "ground", lodBias: -1, colourDepth: "equal", ringSplit: 0, sortKit: true, farParallax: 0, farBlend: "bary3",
   start: 400, band: 30, end: 1500, endBand: 300, todayEnd: 1100,
   grid: 16, cell: 64, bakeLod: 2, bakeInfo: "", todayInfo: "",
   path: "orbit", frames: 24, orbitDeg: 0.02, strafe: 0.12, dolly: 1.0, result: "—", gpu: "—", bench: "—",
@@ -313,6 +313,7 @@ function rebuildKitField() {
   if (world.kit) { scene.remove(world.kit.group); world.kit.dispose(); }
   world.kit = K.impostorField(kitMats, world.kitPlacements, { card: S.card, name: "tree-kit", farMats: kitFarMats });
   world.kit.card = S.card;
+  if (S.sortKit) world.kit.sort(world.eye);
   scene.add(world.kit.group);
   applyMode();
 }
@@ -601,6 +602,7 @@ fk.add(S, "far", ["ground", "none"]).name("far fade").onChange(buildKitMats);
 fk.add(S, "lodBias", -2, 2, 0.1).name("mip bias").onChange((v) => { view.lodBias.value = v; });
 fk.add(S, "colourDepth", ["equal", "lequal"]).name("colour pass depth").onChange(buildKitMats);
 fk.add(S, "ringSplit", 0, 1500, 10).name("far ring from (m, 0 = off)").onChange(buildKitMats);
+fk.add(S, "sortKit").name("front-to-back order").onChange(rebuildKitField);
 fk.add(S, "farParallax", [0, 1]).name("far ring parallax").onChange(buildKitMats);
 fk.add(S, "farBlend", ["bary3", "dominant"]).name("far ring blend").onChange(buildKitMats);
 const fd = ui.addFolder("Distances (m)");
@@ -642,7 +644,7 @@ async function stackHeat(h) { return stackURLs(Object.values(h), "heat maps: " +
 /** an object URL -> data URL (to save an image from the console / devtools) */
 const dataURL = (url) => fetch(url).then((r) => r.blob()).then((b) => new Promise((res) => { const f = new FileReader(); f.onload = () => res(f.result); f.readAsDataURL(b); }));
 let lastShown = null;
-window.lab = { dataURL, treeStats, get lastShown() { return lastShown; }, renderer, scene, camera, controls, S, H, IMP, U, view, shared, buildScene, applyMode, meter, meterAB, bench, sideBySide, stripSet, stackURLs, show, bakeKit, buildKitMats, renderFrame, get atlas() { return atlas; }, get world() { return world; }, todayBake, gpu, poseFor, startPath, endPath };
+window.lab = { dataURL, treeStats, rebuildKitField, get lastShown() { return lastShown; }, renderer, scene, camera, controls, S, H, IMP, U, view, shared, buildScene, applyMode, meter, meterAB, bench, sideBySide, stripSet, stackURLs, show, bakeKit, buildKitMats, renderFrame, get atlas() { return atlas; }, get world() { return world; }, todayBake, gpu, poseFor, startPath, endPath };
 
 await bakeKit();
 await buildScene(S.scene);

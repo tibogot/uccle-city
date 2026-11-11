@@ -8,9 +8,12 @@ import { treeTint } from "../../vendor/stylized-trees/stylizedTrees.js";
 /** Presets. Cell px from the screen at the hand-over (Usnul's rule: ~1 texel per pixel there), research 3.2.2. */
 export const TYPES = {
   // street / park trees: 16 x 16 hemi views of 64 px (56 inside a 4 px gutter): 1024^2 per variant
+  // (trees: no depth out, no parallax: measured in the lab's far forest, 83k LiDAR trees, depth out on the 400-600 m ring
+  //  cost +2.7 ms (frag_depth turns early-z off over a dense crown carpet) for no measurable jitter gain; the jitter
+  //  meter saw no difference from parallax either, and it costs 3 taps. Both stay available per type: cars.)
   tree: { grid: 16, cell: 64, gutter: 4, ss: 4, full: false, minCell: 8,
     fade: { start: 400, band: 30, end: 1500, endBand: 300, anchorH: 6 },
-    material: { blend: "bary3", parallax: 1, pdo: true, alpha: "a2c-ramp", card: "octagon", far: "ground" } },
+    material: { blend: "bary3", parallax: 0, pdo: false, alpha: "a2c-ramp", card: "octagon", far: "ground" } },
   // later (docs/TODO.md): parked cars 12 x 12 x 48 + paint mask + PDO + casting inside the shadow box
   car: { grid: 12, cell: 48, gutter: 4, ss: 4, full: false, minCell: 6,
     fade: { start: 150, band: 15, end: 600, endBand: 100, anchorH: 0.8 },

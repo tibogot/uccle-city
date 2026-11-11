@@ -59,8 +59,18 @@ export function impostorField(mats, placements, { card = "octagon", name = "impo
     return { colour: c, depth: d };
   };
   if (farMats) far = mkFar(farMats);
+  // front-to-back order (by distance to a point): the pre-pass discards (coverage), so the GPU tests depth early but
+  // writes it late; cards drawn nearest first let the hidden ones behind fail the early test before shading.
+  // Measured in the lab's far forest (83k trees): see docs/IMPOSTOR_KIT.md. Call again when the camera moved far.
+  const order = new Uint32Array(n), keyD = new Float32Array(n), src = { pos: pos.array.slice(0, n * 3), data: data.array.slice(0, n * 4) };
+  const sort = (eye) => {
+    for (let i = 0; i < n; i++) { order[i] = i; keyD[i] = (src.pos[i * 3] - eye.x) ** 2 + (src.pos[i * 3 + 1] - eye.y) ** 2 + (src.pos[i * 3 + 2] - eye.z) ** 2; }
+    order.sort((a, b) => keyD[a] - keyD[b]);
+    for (let k = 0; k < n; k++) { const i = order[k]; pos.array.set(src.pos.subarray(i * 3, i * 3 + 3), k * 3); data.array.set(src.data.subarray(i * 4, i * 4 + 4), k * 4); }
+    pos.needsUpdate = data.needsUpdate = true;
+  };
   return {
-    group, colour, depth, count: n,
+    group, colour, depth, count: n, sort,
     setMaterials(m, fm = null) {
       colour.material = m.colour; depth.material = m.depth;
       if (fm && !far) far = mkFar(fm);
