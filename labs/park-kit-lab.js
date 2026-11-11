@@ -11,7 +11,7 @@ import { Panel } from "../viewer/panelUI.js";
 import { Lighting, PRESETS } from "../viewer/lighting.js";
 import { createPipeline } from "../viewer/post.js";
 import { loadParkKit, KitField, sampleCliff, samplePlayground, sampleSauvagereCliff, kitLook, pgLook, SHADOW_LAYER } from "../viewer/parkKit.js";
-import { loadSauvagereSite, placeSauvagereCliff, siteTerrain } from "../viewer/sauvagereCliff.js";
+import { loadSauvagereSite, placeSauvagereCliff, siteTerrain, plantsOn } from "../viewer/sauvagereCliff.js";
 import { PlantField } from "../viewer/parkPlants.js";
 import { texture as tslTexture, positionWorld as tslPW, float as tslF, smoothstep as tslSS, vec3 as tslV3 } from "three/tsl";
 
@@ -45,9 +45,11 @@ water.position.set(1, 0.03, -9.5); water.scale.set(1.3, 1, 1.4); water.receiveSh
 
 // ------------------------------------------------------------------------------------------------ kits and scenes
 const t0 = performance.now();
-const [rocks, play] = await Promise.all([loadParkKit("rockkit"), loadParkKit("playgroundkit")]);
+const [rocks, play, cliffKit] = await Promise.all([loadParkKit("rockkit"), loadParkKit("playgroundkit"), loadParkKit("sauvagere_cliff").catch(() => null)]);
 const loadMs = performance.now() - t0;
 const fields = { rock: new KitField(rocks, { shadowProxy: qp.get("proxy") !== "0" }), play: new KitField(play) };
+// round 4: the hero cliff (one scripted surface, cut in 4 m chunks: each chunk one "piece" at identity, own LOD)
+if (cliffKit) fields.cliff = new KitField(cliffKit, { shadowProxy: qp.get("proxy") !== "0" });
 // round 3: the measured mound (DTM) + plants
 const site = await loadSauvagereSite();
 // the mound's ground: soil on the gentle parts, a ROCK SKIN on the steep face (between the pieces it reads as rockwork,
@@ -68,7 +70,7 @@ const plants = new PlantField({ near: 12, far: 17 });
 scene.add(plants.group);
 lighting.sun?.shadow?.camera?.layers.enable(SHADOW_LAYER);
 for (const f of Object.values(fields)) scene.add(f.group);
-const SCENES = ["Sauvagère mound (DTM, o01)", "Sauvagère cliff (o01)", "sample cliff (40 pieces)", "rock gallery", "sample playground", "playground gallery", "cliff + playground"];
+const SCENES = ["Sauvagère hero cliff (round 4)", "Sauvagère mound (DTM, o01)", "Sauvagère cliff (o01)", "sample cliff (40 pieces)", "rock gallery", "sample playground", "playground gallery", "cliff + playground"];
 const FOCUS = { rock: new THREE.Vector3(0, 1.5, 0), play: new THREE.Vector3(80, 1, 0) };
 function gallery(field, kit, origin) {
   const names = Object.keys(kit.pieces).sort();
@@ -87,20 +89,25 @@ function build(sc) {
   if (sc === "Sauvagère cliff (o01)" || sc === "cliff + playground") sampleSauvagereCliff(fields.rock);
   plants.set("fern", []); plants.set("grass", []); plants.set("ivy", []); plants.commit();
   if (sc === "Sauvagère mound (DTM, o01)") placeSauvagereCliff(fields.rock, site, plants, { scaleMul: S.mscale, density: S.mdensity });
+  if (sc === "Sauvagère hero cliff (round 4)" && fields.cliff) {
+    const placed = Object.keys(cliffKit.pieces).sort().map((name) => { const m = new THREE.Matrix4(); fields.cliff.add(name, m); return { name, matrix: m }; });
+    S.plantCounts = JSON.stringify(plantsOn(placed, cliffKit, plants, site, { density: S.pdensity }));
+  }
   water.visible = sc.startsWith("Sauvagère");
-  terrain.visible = sc.startsWith("Sauvagère mound");
+  terrain.visible = sc.startsWith("Sauvagère mound");      // (the hero cliff carries its own ground: the mound's core)
   if (sc === "playground gallery") gallery(fields.play, play, new THREE.Vector3(80, 0, 0));
   if (sc === "sample playground" || sc === "cliff + playground") samplePlayground(fields.play, { origin: new THREE.Vector3(80, 0, 0) });
   for (const f of Object.values(fields)) f.commit();
   S.instances = `${fields.rock.instances} rock + ${fields.play.instances} playground instances`;
 }
-const S = { mscale: +(qp.get("mscale") ?? 0.9), mdensity: +(qp.get("mdensity") ?? 1), canopy: qp.get("canopy") !== "0", scene: qp.get("scene") && SCENES.includes(qp.get("scene")) ? qp.get("scene") : SCENES[0], lod: "auto", rangeScale: 1, wire: false, post: true,
+const S = { pdensity: +(qp.get("pdensity") ?? 1.2), mscale: +(qp.get("mscale") ?? 0.9), mdensity: +(qp.get("mdensity") ?? 1), canopy: qp.get("canopy") !== "0", scene: qp.get("scene") && SCENES.includes(qp.get("scene")) ? qp.get("scene") : SCENES[0], lod: "auto", rangeScale: 1, wire: false, post: true,
   time: preset, surface: "surface_rubber", instances: "", stats: "", bench: "(not run)", lodInfo: "" };
 build(S.scene);
 
 // ------------------------------------------------------------------------------------------------ views
 const VIEWS = {
   "o01 under the canopy": [new THREE.Vector3(1.0, 1.1, -16.5), new THREE.Vector3(0.5, 2.7, 3.0)],
+  "o01 (solved)": [new THREE.Vector3(0.6, 1.0, -14.0), new THREE.Vector3(0.2, 2.9, 3.0)],
   "mound: walking 12 m": [new THREE.Vector3(-1, 1.7, -10.5), new THREE.Vector3(0, 2.5, 3)],
   "mound: 30 m": [new THREE.Vector3(3, 2.5, -28), new THREE.Vector3(0, 2.5, 3)],
   "mound: grazing close-up": [new THREE.Vector3(-2.5, 2.0, -1.0), new THREE.Vector3(-4.5, 2.3, 2.0)],
@@ -120,7 +127,7 @@ const VIEWS = {
 function goView(v) {
   const [p, t] = VIEWS[v]; camera.position.copy(p); controls.target.copy(t); controls.update(); S.view = v;
 }
-const defView = (sc) => sc.includes("playground") && !sc.includes("cliff") ? "playground: walking 10 m" : sc.startsWith("Sauvagère mound") ? "o01 under the canopy" : sc.startsWith("Sauvagère") ? "o01: from the pond" : "cliff: walking 12 m";
+const defView = (sc) => sc.includes("playground") && !sc.includes("cliff") ? "playground: walking 10 m" : sc.startsWith("Sauvagère hero") ? "o01 (solved)" : sc.startsWith("Sauvagère mound") ? "o01 under the canopy" : sc.startsWith("Sauvagère") ? "o01: from the pond" : "cliff: walking 12 m";
 goView(qp.get("view") && VIEWS[qp.get("view")] ? qp.get("view") : defView(S.scene));
 
 /** camera along a line from `from` m to `to` m off the focus point, in `seconds` (the moving check through the LOD bands) */
@@ -185,25 +192,31 @@ fl.add(S, "lodInfo").name("now").listen();
 // few sun flecks through, by its shadow), a green-filtered sky light, the sun at half strength, less sky reflection
 const canopy = new THREE.Group(); canopy.name = "canopy"; scene.add(canopy);
 {
-  // a leaf dome all round down below the horizon (the park's trees), with small holes (sky specks, sun flecks)
+  // a leaf dome all round (no holes: it is the backdrop of foliage), and a LEAF SCREEN 16 m up, drawn only into the
+  // sun's shadow map (layer SHADOW_LAYER): the dappled sun patches on the rock and the ground
   const dome = new THREE.Mesh(new THREE.SphereGeometry(46, 72, 36, 0, Math.PI * 2, 0, Math.PI * 0.6), new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, roughness: 1 }));
   const P = tslPW;
   const f1 = P.x.mul(1.37).sin().mul(P.z.mul(1.13).cos()).add(P.y.mul(1.71).add(P.x.mul(0.6)).sin().mul(0.6)).add(P.z.mul(2.9).add(P.y.mul(2.3)).sin().mul(0.35));
   const f2 = P.x.mul(0.31).sin().mul(P.z.mul(0.27).cos()).add(P.y.mul(0.41).sin().mul(0.5));
-  dome.material.colorNode = tslV3(0.045, 0.1, 0.03).mul(tslF(0.55).add(tslSS(-0.8, 1.2, f1).mul(0.7)).add(tslSS(-0.5, 1.0, f2).mul(0.35)));
-  dome.material.maskNode = f1.add(f2.mul(0.8)).lessThan(1.55);
-  dome.position.set(0, -6, 6); dome.castShadow = true; dome.receiveShadow = false;
+  dome.material.colorNode = tslV3(0.04, 0.085, 0.028).mul(tslF(0.5).add(tslSS(-0.8, 1.2, f1).mul(0.7)).add(tslSS(-0.5, 1.0, f2).mul(0.4)));
+  dome.position.set(0, -6, 6); dome.castShadow = false; dome.receiveShadow = false;
+  const screen = new THREE.Mesh(new THREE.PlaneGeometry(90, 90).rotateX(-Math.PI / 2), new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide }));
+  const g1 = P.x.mul(0.83).sin().mul(P.z.mul(0.71).cos()).add(P.x.mul(0.29).add(P.z.mul(0.37)).sin().mul(0.7)).add(P.z.mul(1.9).sin().mul(P.x.mul(1.7).cos()).mul(0.3));
+  screen.material.maskNode = g1.lessThan(1.05);
+  screen.position.set(0, 16, 4); screen.castShadow = true; screen.receiveShadow = false; screen.layers.set(SHADOW_LAYER);
+  canopy.add(screen);
   canopy.add(dome);
 }
 canopy.visible = false;
 const canopyLook = () => {
   if (!S.canopy) return;
-  lighting.hemi.color.setHex(0x86a070); lighting.hemi.groundColor.setHex(0x4d4231); lighting.hemi.intensity = 1.1;
-  scene.environmentIntensity = 0.32;
+  lighting.hemi.color.setHex(0x8aa477); lighting.hemi.groundColor.setHex(0x4d4231); lighting.hemi.intensity = 1.35;
+  scene.environmentIntensity = 0.28;
   if (lighting.sun) lighting.sun.intensity = (PRESETS[S.time]?.sunIntensity ?? 5) * 0.55;
 };
 const fm = ui.addFolder("Look");
 fm.add(S, "canopy").name("canopy shade (o01)").onChange((v) => { canopy.visible = v; if (!v) { lighting.apply(S.time); scene.environmentIntensity = 1; } });
+fs.add(S, "plantCounts").name("plants").listen();
 fm.add(kitLook.bump, "value", 0, 2, 0.05).name("rough concrete detail");
 fm.add(S, "time", Object.keys(PRESETS)).name("time").onChange((v) => { lighting.apply(v); pipe?.look(v); });
 fm.add(S, "post").name("post chain");
@@ -295,7 +308,7 @@ renderer.setAnimationLoop(() => {
   fpsAcc += dt; fpsN++; if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
   stepDolly(dt);
   controls.update();
-  const st = [fields.rock.update(camera.position), fields.play.update(camera.position)];
+  const st = Object.values(fields).map((f) => f.update(camera.position));
   lighting.update(camera.position.y, 0, controls.target, THREE.MathUtils.clamp(camera.position.distanceTo(controls.target) * 1.2, 30, 300));
   canopy.visible = S.canopy && S.scene.startsWith("Sauvagère"); if (canopy.visible) canopyLook();
   const pst = plants.update(camera.position);
@@ -307,7 +320,7 @@ renderer.setAnimationLoop(() => {
     const r = renderer.info.render;
     const kitTris = st.reduce((s, x) => s + x.tris, 0), kitDraws = st.reduce((s, x) => s + x.draws, 0);
     S.stats = `${fps.toFixed(0)} fps · GPU ${gpu.avg.toFixed(2)} ms`;
-    if (!dollyState) S.lodInfo = `rock L0/L1/L2 ${st[0].lod.join("/")} · play ${st[1].lod.join("/")} · fading ${st[0].fading + st[1].fading}`;
+    if (!dollyState) S.lodInfo = `rock L0/L1/L2 ${st[0].lod.join("/")} · play ${st[1].lod.join("/")}` + (st[2] ? ` · cliff chunks ${st[2].lod.join("/")}` : "") + ` · fading ${st.reduce((a, x) => a + x.fading, 0)}`;
     $info.textContent = `${backend} · ${S.stats} · ${r.drawCalls ?? r.calls} draws · ${(r.triangles / 1000).toFixed(0)}k tris (frame, incl. shadows)\n` +
       `kits now: ${kitDraws} instanced draws, ${(kitTris / 1000).toFixed(1)}k tris (main pass) · ${S.lodInfo} · plants ${pst.plants} drawn (${(pst.tris / 1000).toFixed(1)}k tris) of ${plants.total}\n` +
       `${S.instances} · load ${loadMs.toFixed(0)} ms · shaders ${(S.compileMs ?? 0).toFixed(0)} ms · GPU bench (kits' cost in this view): ${S.bench}`;

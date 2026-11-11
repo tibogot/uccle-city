@@ -1,0 +1,1026 @@
+{
+ "summary": {
+  "triangles": 49254,
+  "vertices_welded": 25152,
+  "open_edges": 1066,
+  "rays": 47416,
+  "blocking": 0,
+  "warnings": 61,
+  "counts": {
+   "sliver": 59,
+   "bentflat": 0,
+   "seam": 1,
+   "tjunction": 2,
+   "opening": 10
+  },
+  "ms": 951,
+  "accepted": 2
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0.00013777799904346466,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.3,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "cliff_c7_lod1",
+   "slot": "rockwork_concrete",
+   "triangles": 7129,
+   "maxDistance": 40
+  },
+  {
+   "name": "cliff_c0_lod1",
+   "slot": "rockwork_concrete",
+   "triangles": 8208,
+   "maxDistance": 40
+  },
+  {
+   "name": "cliff_c1_lod1",
+   "slot": "rockwork_concrete",
+   "triangles": 6324,
+   "maxDistance": 40
+  },
+  {
+   "name": "cliff_c2_lod1",
+   "slot": "rockwork_concrete",
+   "triangles": 7034,
+   "maxDistance": 40
+  },
+  {
+   "name": "cliff_c3_lod1",
+   "slot": "rockwork_concrete",
+   "triangles": 5415,
+   "maxDistance": 40
+  },
+  {
+   "name": "cliff_c4_lod1",
+   "slot": "rockwork_concrete",
+   "triangles": 4573,
+   "maxDistance": 40
+  },
+  {
+   "name": "cliff_c5_lod1",
+   "slot": "rockwork_concrete",
+   "triangles": 4705,
+   "maxDistance": 40
+  },
+  {
+   "name": "cliff_c6_lod1",
+   "slot": "rockwork_concrete",
+   "triangles": 5866,
+   "maxDistance": 40
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     12.193,
+     3.971,
+     7.707
+    ],
+    "part": "cliff_c7_lod1/rockwork_concrete",
+    "aspect": 64,
+    "longest": 0.403
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     14.398,
+     3.13,
+     7.765
+    ],
+    "part": "cliff_c7_lod1/rockwork_concrete",
+    "aspect": 44,
+    "longest": 0.398
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     13.275,
+     1.552,
+     -2.321
+    ],
+    "part": "cliff_c7_lod1/rockwork_concrete",
+    "aspect": 52,
+    "longest": 0.424
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -15.803,
+     3.226,
+     12.008
+    ],
+    "part": "cliff_c0_lod1/rockwork_concrete",
+    "aspect": 42,
+    "longest": 1.05
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -13.574,
+     1.722,
+     3.674
+    ],
+    "part": "cliff_c0_lod1/rockwork_concrete",
+    "aspect": 42,
+    "longest": 0.669
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -12,
+     5.324,
+     10.996
+    ],
+    "part": "cliff_c0_lod1/rockwork_concrete",
+    "aspect": 114,
+    "longest": 0.298
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -12,
+     5.207,
+     8.936
+    ],
+    "part": "cliff_c0_lod1/rockwork_concrete",
+    "aspect": 153,
+    "longest": 0.362
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -11.054,
+     3.527,
+     5.123
+    ],
+    "part": "cliff_c1_lod1/rockwork_concrete",
+    "aspect": 86,
+    "longest": 0.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -9.982,
+     2.924,
+     3.36
+    ],
+    "part": "cliff_c1_lod1/rockwork_concrete",
+    "aspect": 55,
+    "longest": 0.298
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -12,
+     4.873,
+     11.323
+    ],
+    "part": "cliff_c1_lod1/rockwork_concrete",
+    "aspect": 70,
+    "longest": 0.282
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -8.004,
+     1.426,
+     1.127
+    ],
+    "part": "cliff_c1_lod1/rockwork_concrete",
+    "aspect": 46,
+    "longest": 0.312
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -8.02,
+     2.214,
+     12.003
+    ],
+    "part": "cliff_c1_lod1/rockwork_concrete",
+    "aspect": 557,
+    "longest": 0.343
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -8.02,
+     2.211,
+     12.003
+    ],
+    "part": "cliff_c1_lod1/rockwork_concrete",
+    "aspect": 378,
+    "longest": 0.339
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -8,
+     4.579,
+     6.192
+    ],
+    "part": "cliff_c1_lod1/rockwork_concrete",
+    "aspect": 90,
+    "longest": 0.286
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -8,
+     0.829,
+     1.07
+    ],
+    "part": "cliff_c2_lod1/rockwork_concrete",
+    "aspect": 99,
+    "longest": 0.287
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -4.138,
+     4.646,
+     9.769
+    ],
+    "part": "cliff_c2_lod1/rockwork_concrete",
+    "aspect": 641,
+    "longest": 0.51
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -4,
+     3.512,
+     1.127
+    ],
+    "part": "cliff_c2_lod1/rockwork_concrete",
+    "aspect": 68,
+    "longest": 0.317
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -7.96,
+     4.65,
+     9.707
+    ],
+    "part": "cliff_c2_lod1/rockwork_concrete",
+    "aspect": 49,
+    "longest": 0.347
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -7.911,
+     1.933,
+     12.005
+    ],
+    "part": "cliff_c2_lod1/rockwork_concrete",
+    "aspect": 112,
+    "longest": 0.416
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -4,
+     1.575,
+     -1.264
+    ],
+    "part": "cliff_c2_lod1/rockwork_concrete",
+    "aspect": 162,
+    "longest": 0.3
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -4,
+     1.477,
+     -1.254
+    ],
+    "part": "cliff_c2_lod1/rockwork_concrete",
+    "aspect": 71,
+    "longest": 0.445
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -4,
+     1.272,
+     11.995
+    ],
+    "part": "cliff_c2_lod1/rockwork_concrete",
+    "aspect": 209,
+    "longest": 0.291
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -3.995,
+     0.926,
+     11.995
+    ],
+    "part": "cliff_c3_lod1/rockwork_concrete",
+    "aspect": 60,
+    "longest": 0.448
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -4,
+     5.032,
+     3.183
+    ],
+    "part": "cliff_c3_lod1/rockwork_concrete",
+    "aspect": 80,
+    "longest": 0.285
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.274,
+     4.854,
+     9.075
+    ],
+    "part": "cliff_c3_lod1/rockwork_concrete",
+    "aspect": 51,
+    "longest": 0.43
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -3.995,
+     1.522,
+     -1.264
+    ],
+    "part": "cliff_c3_lod1/rockwork_concrete",
+    "aspect": 91,
+    "longest": 0.458
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.084,
+     0.151,
+     -2.534
+    ],
+    "part": "cliff_c3_lod1/rockwork_concrete",
+    "aspect": 96,
+    "longest": 0.436
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -3.942,
+     4.677,
+     6.985
+    ],
+    "part": "cliff_c3_lod1/rockwork_concrete",
+    "aspect": 70,
+    "longest": 0.511
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -3.995,
+     0.468,
+     11.999
+    ],
+    "part": "cliff_c3_lod1/rockwork_concrete",
+    "aspect": 72,
+    "longest": 0.359
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0,
+     3.378,
+     0.533
+    ],
+    "part": "cliff_c4_lod1/rockwork_concrete",
+    "aspect": 78,
+    "longest": 0.297
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.627,
+     0.924,
+     11.996
+    ],
+    "part": "cliff_c4_lod1/rockwork_concrete",
+    "aspect": 203,
+    "longest": 0.845
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     4,
+     5.397,
+     4.565
+    ],
+    "part": "cliff_c4_lod1/rockwork_concrete",
+    "aspect": 159,
+    "longest": 0.273
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0,
+     2.097,
+     -1.707
+    ],
+    "part": "cliff_c4_lod1/rockwork_concrete",
+    "aspect": 74,
+    "longest": 0.317
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.699,
+     -0.005,
+     -2.705
+    ],
+    "part": "cliff_c4_lod1/rockwork_concrete",
+    "aspect": 43,
+    "longest": 0.26
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     4,
+     2.269,
+     -0.98
+    ],
+    "part": "cliff_c4_lod1/rockwork_concrete",
+    "aspect": 692,
+    "longest": 0.269
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     4,
+     2.258,
+     -0.94
+    ],
+    "part": "cliff_c4_lod1/rockwork_concrete",
+    "aspect": 869,
+    "longest": 0.303
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     4.002,
+     5.396,
+     4.564
+    ],
+    "part": "cliff_c5_lod1/rockwork_concrete",
+    "aspect": 108,
+    "longest": 0.274
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     4,
+     5.431,
+     4.818
+    ],
+    "part": "cliff_c5_lod1/rockwork_concrete",
+    "aspect": 218,
+    "longest": 0.325
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     8,
+     4.26,
+     10.425
+    ],
+    "part": "cliff_c5_lod1/rockwork_concrete",
+    "aspect": 60,
+    "longest": 0.302
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     8,
+     5.025,
+     8.858
+    ],
+    "part": "cliff_c5_lod1/rockwork_concrete",
+    "aspect": 1653,
+    "longest": 0.301
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     8,
+     5.325,
+     8.858
+    ],
+    "part": "cliff_c5_lod1/rockwork_concrete",
+    "aspect": 50,
+    "longest": 0.299
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     8,
+     5.503,
+     5.475
+    ],
+    "part": "cliff_c5_lod1/rockwork_concrete",
+    "aspect": 289,
+    "longest": 0.3
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     7.871,
+     4.88,
+     3.672
+    ],
+    "part": "cliff_c5_lod1/rockwork_concrete",
+    "aspect": 83,
+    "longest": 0.279
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     8,
+     4.801,
+     3.51
+    ],
+    "part": "cliff_c5_lod1/rockwork_concrete",
+    "aspect": 184,
+    "longest": 0.311
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     8,
+     4.779,
+     3.421
+    ],
+    "part": "cliff_c5_lod1/rockwork_concrete",
+    "aspect": 906,
+    "longest": 0.459
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     4,
+     5.324,
+     3.826
+    ],
+    "part": "cliff_c5_lod1/rockwork_concrete",
+    "aspect": 79,
+    "longest": 0.301
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     4,
+     5.437,
+     4.877
+    ],
+    "part": "cliff_c5_lod1/rockwork_concrete",
+    "aspect": 145,
+    "longest": 0.293
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     4.054,
+     4.792,
+     1.43
+    ],
+    "part": "cliff_c5_lod1/rockwork_concrete",
+    "aspect": 43,
+    "longest": 0.489
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     4.002,
+     5.351,
+     4.177
+    ],
+    "part": "cliff_c5_lod1/rockwork_concrete",
+    "aspect": 271,
+    "longest": 0.455
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     4.002,
+     5.361,
+     4.28
+    ],
+    "part": "cliff_c5_lod1/rockwork_concrete",
+    "aspect": 89,
+    "longest": 0.303
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     9.788,
+     -0.291,
+     12.001
+    ],
+    "part": "cliff_c6_lod1/rockwork_concrete",
+    "aspect": 176,
+    "longest": 0.629
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     8,
+     5.788,
+     8.175
+    ],
+    "part": "cliff_c6_lod1/rockwork_concrete",
+    "aspect": 162,
+    "longest": 0.3
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     8.585,
+     4.73,
+     8.436
+    ],
+    "part": "cliff_c6_lod1/rockwork_concrete",
+    "aspect": 336,
+    "longest": 0.365
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     9.773,
+     3.578,
+     11.775
+    ],
+    "part": "cliff_c6_lod1/rockwork_concrete",
+    "aspect": 78,
+    "longest": 0.609
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     11.029,
+     1.466,
+     0.677
+    ],
+    "part": "cliff_c6_lod1/rockwork_concrete",
+    "aspect": 120,
+    "longest": 0.431
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     8,
+     4.333,
+     3.883
+    ],
+    "part": "cliff_c6_lod1/rockwork_concrete",
+    "aspect": 235,
+    "longest": 0.331
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     8,
+     4.272,
+     3.889
+    ],
+    "part": "cliff_c6_lod1/rockwork_concrete",
+    "aspect": 42,
+    "longest": 0.291
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     8,
+     4.121,
+     11.624
+    ],
+    "part": "cliff_c6_lod1/rockwork_concrete",
+    "aspect": 346,
+    "longest": 0.293
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     11.983,
+     2.486,
+     4.47
+    ],
+    "part": "cliff_c6_lod1/rockwork_concrete",
+    "aspect": 74,
+    "longest": 0.274
+   }
+  ],
+  "bentflat": [],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -4,
+     3.467,
+     1.259
+    ],
+    "parts": [
+     "cliff_c2_lod1/rockwork_concrete",
+     "cliff_c3_lod1/rockwork_concrete"
+    ],
+    "length_m": 0,
+    "pieces": 1,
+    "min_angle_deg": 77.8
+   }
+  ],
+  "tjunction": [
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     8,
+     4.842,
+     3.671
+    ],
+    "part": "cliff_c5_lod1/rockwork_concrete",
+    "edge_m": 0.002
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     8,
+     4.842,
+     3.671
+    ],
+    "part": "cliff_c6_lod1/rockwork_concrete",
+    "edge_m": 0.002
+   }
+  ],
+  "opening": [
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     2.92,
+     0.182,
+     -1.611
+    ],
+    "part": "cliff_c4_lod1/rockwork_concrete",
+    "facing": [
+     -0.56,
+     -0.82,
+     0.12
+    ],
+    "edge_m": 0.153
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     2.902,
+     0.181,
+     -1.838
+    ],
+    "part": "cliff_c4_lod1/rockwork_concrete",
+    "facing": [
+     -0.55,
+     -0.83,
+     -0.03
+    ],
+    "edge_m": 0.152
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     2.908,
+     0.183,
+     -1.915
+    ],
+    "part": "cliff_c4_lod1/rockwork_concrete",
+    "facing": [
+     -0.54,
+     -0.83,
+     -0.1
+    ],
+    "edge_m": 0.157
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     2.925,
+     0.204,
+     -2.103
+    ],
+    "part": "cliff_c4_lod1/rockwork_concrete",
+    "facing": [
+     -0.54,
+     -0.82,
+     -0.2
+    ],
+    "edge_m": 0.149
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     3.046,
+     0.169,
+     -2.255
+    ],
+    "part": "cliff_c4_lod1/rockwork_concrete",
+    "facing": [
+     -0.53,
+     -0.81,
+     -0.25
+    ],
+    "edge_m": 0.149
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     3.218,
+     0.197,
+     -1.205
+    ],
+    "part": "cliff_c4_lod1/rockwork_concrete",
+    "facing": [
+     -0.27,
+     -0.87,
+     0.41
+    ],
+    "edge_m": 0.133
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     3.215,
+     0.214,
+     -2.598
+    ],
+    "part": "cliff_c4_lod1/rockwork_concrete",
+    "facing": [
+     -0.62,
+     -0.76,
+     -0.2
+    ],
+    "edge_m": 0.159
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     3.111,
+     0.229,
+     -2.48
+    ],
+    "part": "cliff_c4_lod1/rockwork_concrete",
+    "facing": [
+     -0.37,
+     -0.78,
+     -0.51
+    ],
+    "edge_m": 0.159
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     3.36,
+     0.211,
+     -2.75
+    ],
+    "part": "cliff_c4_lod1/rockwork_concrete",
+    "facing": [
+     -0.4,
+     -0.83,
+     -0.38
+    ],
+    "edge_m": 0.154
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     3.508,
+     0.069,
+     -2.472
+    ],
+    "part": "cliff_c4_lod1/rockwork_concrete",
+    "facing": [
+     -0.32,
+     -0.92,
+     -0.24
+    ],
+    "edge_m": 0.034
+   }
+  ]
+ },
+ "file": "sauvagere_cliff.glb"
+}

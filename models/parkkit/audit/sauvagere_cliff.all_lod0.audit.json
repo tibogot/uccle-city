@@ -1,0 +1,2636 @@
+{
+ "summary": {
+  "triangles": 92640,
+  "vertices_welded": 46840,
+  "open_edges": 1050,
+  "rays": 47170,
+  "blocking": 0,
+  "warnings": 197,
+  "counts": {
+   "sliver": 195,
+   "degenerate": 2,
+   "opening": 10
+  },
+  "ms": 2122
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0.00013777799904346466,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.3,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "cliff_c7_lod0",
+   "slot": "rockwork_concrete",
+   "triangles": 14271,
+   "maxDistance": 16
+  },
+  {
+   "name": "cliff_c0_lod0",
+   "slot": "rockwork_concrete",
+   "triangles": 16888,
+   "maxDistance": 16
+  },
+  {
+   "name": "cliff_c1_lod0",
+   "slot": "rockwork_concrete",
+   "triangles": 11074,
+   "maxDistance": 16
+  },
+  {
+   "name": "cliff_c2_lod0",
+   "slot": "rockwork_concrete",
+   "triangles": 11958,
+   "maxDistance": 16
+  },
+  {
+   "name": "cliff_c3_lod0",
+   "slot": "rockwork_concrete",
+   "triangles": 9875,
+   "maxDistance": 16
+  },
+  {
+   "name": "cliff_c4_lod0",
+   "slot": "rockwork_concrete",
+   "triangles": 10101,
+   "maxDistance": 16
+  },
+  {
+   "name": "cliff_c5_lod0",
+   "slot": "rockwork_concrete",
+   "triangles": 8767,
+   "maxDistance": 16
+  },
+  {
+   "name": "cliff_c6_lod0",
+   "slot": "rockwork_concrete",
+   "triangles": 9706,
+   "maxDistance": 16
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     14.922,
+     -0.224,
+     11.983
+    ],
+    "part": "cliff_c7_lod0/rockwork_concrete",
+    "aspect": 154,
+    "longest": 0.308
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     12.927,
+     0.923,
+     11.997
+    ],
+    "part": "cliff_c7_lod0/rockwork_concrete",
+    "aspect": 63,
+    "longest": 0.551
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     12.872,
+     1.764,
+     11.992
+    ],
+    "part": "cliff_c7_lod0/rockwork_concrete",
+    "aspect": 49,
+    "longest": 0.481
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     12.769,
+     1.843,
+     11.999
+    ],
+    "part": "cliff_c7_lod0/rockwork_concrete",
+    "aspect": 51,
+    "longest": 0.604
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     12.246,
+     2.696,
+     12.005
+    ],
+    "part": "cliff_c7_lod0/rockwork_concrete",
+    "aspect": 52,
+    "longest": 0.328
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     13.093,
+     3.156,
+     9.698
+    ],
+    "part": "cliff_c7_lod0/rockwork_concrete",
+    "aspect": 42,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     13.963,
+     3.674,
+     6.59
+    ],
+    "part": "cliff_c7_lod0/rockwork_concrete",
+    "aspect": 77,
+    "longest": 0.3
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     13.998,
+     2.628,
+     4.428
+    ],
+    "part": "cliff_c7_lod0/rockwork_concrete",
+    "aspect": 62,
+    "longest": 0.42
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     14.174,
+     2.822,
+     1.584
+    ],
+    "part": "cliff_c7_lod0/rockwork_concrete",
+    "aspect": 67,
+    "longest": 0.409
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     14.633,
+     2.475,
+     12.011
+    ],
+    "part": "cliff_c7_lod0/rockwork_concrete",
+    "aspect": 78,
+    "longest": 0.3
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     14.274,
+     1.913,
+     12.004
+    ],
+    "part": "cliff_c7_lod0/rockwork_concrete",
+    "aspect": 80,
+    "longest": 0.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     14.924,
+     1.275,
+     11.987
+    ],
+    "part": "cliff_c7_lod0/rockwork_concrete",
+    "aspect": 80,
+    "longest": 0.3
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     14.333,
+     3.235,
+     7.716
+    ],
+    "part": "cliff_c7_lod0/rockwork_concrete",
+    "aspect": 90,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     14.993,
+     2.623,
+     0.318
+    ],
+    "part": "cliff_c7_lod0/rockwork_concrete",
+    "aspect": 110,
+    "longest": 0.373
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     15.653,
+     1.342,
+     12
+    ],
+    "part": "cliff_c7_lod0/rockwork_concrete",
+    "aspect": 73,
+    "longest": 0.336
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     16.266,
+     0.972,
+     8.419
+    ],
+    "part": "cliff_c7_lod0/rockwork_concrete",
+    "aspect": 82,
+    "longest": 0.285
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     15.906,
+     1.962,
+     9.399
+    ],
+    "part": "cliff_c7_lod0/rockwork_concrete",
+    "aspect": 44,
+    "longest": 0.341
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     15.985,
+     3.073,
+     6.608
+    ],
+    "part": "cliff_c7_lod0/rockwork_concrete",
+    "aspect": 54,
+    "longest": 0.287
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     15.825,
+     2.472,
+     0.228
+    ],
+    "part": "cliff_c7_lod0/rockwork_concrete",
+    "aspect": 57,
+    "longest": 0.422
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     17.353,
+     2.846,
+     6.605
+    ],
+    "part": "cliff_c7_lod0/rockwork_concrete",
+    "aspect": 79,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     17.239,
+     1.472,
+     2.061
+    ],
+    "part": "cliff_c7_lod0/rockwork_concrete",
+    "aspect": 60,
+    "longest": 0.41
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     15.252,
+     1.665,
+     -0.209
+    ],
+    "part": "cliff_c7_lod0/rockwork_concrete",
+    "aspect": 110,
+    "longest": 0.439
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     15.971,
+     1.182,
+     -2.175
+    ],
+    "part": "cliff_c7_lod0/rockwork_concrete",
+    "aspect": 150,
+    "longest": 0.32
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -17.476,
+     -0.226,
+     4.624
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 160,
+    "longest": 0.305
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -18.032,
+     5.624,
+     8.776
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 86,
+    "longest": 0.299
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -17.786,
+     4.528,
+     10.519
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 167,
+    "longest": 0.44
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -17.616,
+     4.725,
+     10.497
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 110,
+    "longest": 0.323
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -17.175,
+     4.278,
+     10.405
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 112,
+    "longest": 0.43
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -17.791,
+     4.87,
+     10.517
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 49,
+    "longest": 0.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -17.565,
+     5.78,
+     10.08
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 74,
+    "longest": 0.678
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -17.102,
+     5.527,
+     10.107
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 115,
+    "longest": 0.631
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -17.883,
+     0.676,
+     7.325
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 101,
+    "longest": 0.452
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -17.883,
+     2.317,
+     3.825
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 76,
+    "longest": 0.301
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -17.897,
+     1.274,
+     0.377
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 188,
+    "longest": 0.665
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -15.992,
+     4.425,
+     11.324
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 127,
+    "longest": 0.426
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -16.569,
+     2.473,
+     10.323
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 121,
+    "longest": 0.29
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -16.578,
+     3.524,
+     10.326
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 92,
+    "longest": 0.304
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -16.714,
+     5.992,
+     8.842
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 43,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -15.721,
+     5.022,
+     8.691
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 116,
+    "longest": 0.294
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -16.473,
+     0.527,
+     4.983
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 85,
+    "longest": 0.455
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -15.991,
+     2.354,
+     4.98
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 42,
+    "longest": 0.273
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -16.424,
+     3.241,
+     5.759
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 88,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -16.752,
+     1.253,
+     4.529
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 84,
+    "longest": 0.336
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -15.073,
+     0.524,
+     12.01
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 75,
+    "longest": 0.418
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -14.782,
+     0.364,
+     12.002
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 48,
+    "longest": 0.317
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -14.753,
+     1.396,
+     12
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 92,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -15.525,
+     3.523,
+     5.753
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 675,
+    "longest": 0.295
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -13.933,
+     3.148,
+     12.003
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 43,
+    "longest": 0.702
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -14.175,
+     0.476,
+     11.998
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 72,
+    "longest": 0.372
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -13.345,
+     1.346,
+     12
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 120,
+    "longest": 0.471
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -13.94,
+     4.578,
+     11.996
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 85,
+    "longest": 0.335
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -14.076,
+     4.66,
+     9.658
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 43,
+    "longest": 0.55
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -13.874,
+     4.788,
+     10.269
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 47,
+    "longest": 0.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -13.974,
+     5.183,
+     9.075
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 194,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -14.031,
+     4.691,
+     7.421
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 75,
+    "longest": 0.294
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -13.706,
+     4.632,
+     7.283
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 101,
+    "longest": 0.402
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -13.424,
+     3.067,
+     5.384
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 70,
+    "longest": 0.295
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -14.086,
+     3.673,
+     5.566
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 85,
+    "longest": 0.365
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -13.871,
+     2.474,
+     4.015
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 188,
+    "longest": 0.666
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -12.676,
+     4.823,
+     11.474
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 125,
+    "longest": 0.298
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -12.225,
+     4.804,
+     11.717
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 177,
+    "longest": 0.366
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -12.224,
+     -0.231,
+     -1.878
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 71,
+    "longest": 0.418
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -16.125,
+     0.252,
+     -1.721
+    ],
+    "part": "cliff_c0_lod0/rockwork_concrete",
+    "aspect": 163,
+    "longest": 0.299
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -8.244,
+     -0.207,
+     12.001
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 42,
+    "longest": 0.339
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -11.052,
+     2.537,
+     12.001
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 75,
+    "longest": 0.314
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -11.642,
+     0.375,
+     11.99
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 57,
+    "longest": 0.399
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -10.939,
+     2.427,
+     12
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 58,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -11.428,
+     5.325,
+     8.077
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 47,
+    "longest": 0.382
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -11.8,
+     3.084,
+     4.613
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 48,
+    "longest": 0.558
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -9.978,
+     3.822,
+     12.009
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 75,
+    "longest": 0.302
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -10.275,
+     0.226,
+     11.981
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 338,
+    "longest": 0.299
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -10.235,
+     3.672,
+     11.999
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 134,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -9.633,
+     3.818,
+     12.001
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 42,
+    "longest": 0.456
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -10.422,
+     4.812,
+     10.122
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 96,
+    "longest": 0.307
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -10.805,
+     5.54,
+     7.953
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 46,
+    "longest": 0.266
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -10.472,
+     2.926,
+     3.269
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 242,
+    "longest": 0.478
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -9.675,
+     2.465,
+     12.01
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 194,
+    "longest": 0.302
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -9.574,
+     2.466,
+     12.007
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 80,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -8.913,
+     4.124,
+     12.004
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 192,
+    "longest": 0.301
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -9.143,
+     2.353,
+     12.006
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 61,
+    "longest": 0.344
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -9.525,
+     4.75,
+     9.674
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 145,
+    "longest": 0.302
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -9.311,
+     4.335,
+     6.191
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 41,
+    "longest": 0.292
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -8.159,
+     0.218,
+     12.004
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 89,
+    "longest": 0.257
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -8.093,
+     2.211,
+     11.999
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 92,
+    "longest": 0.356
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -8.474,
+     3.676,
+     12.008
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 184,
+    "longest": 0.42
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -8.139,
+     2.41,
+     11.997
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 63,
+    "longest": 0.361
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -11.025,
+     -0.274,
+     -3.67
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 117,
+    "longest": 0.416
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -10.125,
+     -0.268,
+     -3.524
+    ],
+    "part": "cliff_c1_lod0/rockwork_concrete",
+    "aspect": 115,
+    "longest": 0.423
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -7.273,
+     4.272,
+     12.013
+    ],
+    "part": "cliff_c2_lod0/rockwork_concrete",
+    "aspect": 47,
+    "longest": 0.287
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -7.707,
+     0.968,
+     11.995
+    ],
+    "part": "cliff_c2_lod0/rockwork_concrete",
+    "aspect": 51,
+    "longest": 0.262
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -7.998,
+     0.829,
+     1.072
+    ],
+    "part": "cliff_c2_lod0/rockwork_concrete",
+    "aspect": 45,
+    "longest": 0.287
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -7.505,
+     0.525,
+     0.697
+    ],
+    "part": "cliff_c2_lod0/rockwork_concrete",
+    "aspect": 46,
+    "longest": 0.317
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -6.495,
+     0.825,
+     11.996
+    ],
+    "part": "cliff_c2_lod0/rockwork_concrete",
+    "aspect": 60,
+    "longest": 0.403
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -6.621,
+     1.716,
+     11.99
+    ],
+    "part": "cliff_c2_lod0/rockwork_concrete",
+    "aspect": 54,
+    "longest": 0.451
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -6.181,
+     4.737,
+     6.225
+    ],
+    "part": "cliff_c2_lod0/rockwork_concrete",
+    "aspect": 57,
+    "longest": 0.341
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -6.411,
+     4.343,
+     5.607
+    ],
+    "part": "cliff_c2_lod0/rockwork_concrete",
+    "aspect": 283,
+    "longest": 0.404
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -6.221,
+     4.386,
+     5.775
+    ],
+    "part": "cliff_c2_lod0/rockwork_concrete",
+    "aspect": 88,
+    "longest": 0.3
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -6.228,
+     3.682,
+     2.464
+    ],
+    "part": "cliff_c2_lod0/rockwork_concrete",
+    "aspect": 102,
+    "longest": 0.451
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -5.926,
+     0.524,
+     12.012
+    ],
+    "part": "cliff_c2_lod0/rockwork_concrete",
+    "aspect": 67,
+    "longest": 0.418
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -5.476,
+     -0.075,
+     11.985
+    ],
+    "part": "cliff_c2_lod0/rockwork_concrete",
+    "aspect": 637,
+    "longest": 0.424
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -5.421,
+     1.415,
+     12.005
+    ],
+    "part": "cliff_c2_lod0/rockwork_concrete",
+    "aspect": 105,
+    "longest": 0.764
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -5.667,
+     4.128,
+     2.361
+    ],
+    "part": "cliff_c2_lod0/rockwork_concrete",
+    "aspect": 43,
+    "longest": 0.369
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -4.724,
+     2.325,
+     12.011
+    ],
+    "part": "cliff_c2_lod0/rockwork_concrete",
+    "aspect": 216,
+    "longest": 0.672
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -4.877,
+     0.83,
+     11.992
+    ],
+    "part": "cliff_c2_lod0/rockwork_concrete",
+    "aspect": 58,
+    "longest": 0.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -4,
+     5.116,
+     5.317
+    ],
+    "part": "cliff_c2_lod0/rockwork_concrete",
+    "aspect": 357,
+    "longest": 0.275
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -4.908,
+     1.076,
+     -0.542
+    ],
+    "part": "cliff_c2_lod0/rockwork_concrete",
+    "aspect": 102,
+    "longest": 0.448
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -7.867,
+     4.635,
+     9.972
+    ],
+    "part": "cliff_c2_lod0/rockwork_concrete",
+    "aspect": 106,
+    "longest": 0.275
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -7.908,
+     2.084,
+     12.005
+    ],
+    "part": "cliff_c2_lod0/rockwork_concrete",
+    "aspect": 60,
+    "longest": 0.308
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.776,
+     -0.227,
+     12.013
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 73,
+    "longest": 0.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -3.874,
+     1.726,
+     12.005
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 227,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -3.856,
+     0.476,
+     12.007
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 75,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -3.929,
+     4.167,
+     1.939
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 40,
+    "longest": 0.631
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -3.174,
+     2.013,
+     12.006
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 62,
+    "longest": 0.445
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -3.476,
+     4.122,
+     12.007
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 96,
+    "longest": 0.452
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -3.257,
+     1.939,
+     12.003
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 49,
+    "longest": 0.61
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -3.394,
+     2.394,
+     12.001
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 59,
+    "longest": 0.345
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.624,
+     3.978,
+     12.009
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 77,
+    "longest": 0.848
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.701,
+     4.503,
+     3.438
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 41,
+    "longest": 0.667
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.474,
+     4.121,
+     1.185
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 92,
+    "longest": 0.285
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.425,
+     0.976,
+     11.99
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 86,
+    "longest": 0.301
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.45,
+     1.412,
+     11.999
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 44,
+    "longest": 0.349
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.755,
+     3.586,
+     12.001
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 44,
+    "longest": 0.334
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.179,
+     4.755,
+     9.373
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 72,
+    "longest": 0.294
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.925,
+     4.981,
+     5.926
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 149,
+    "longest": 0.601
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.425,
+     4.885,
+     3.978
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 85,
+    "longest": 0.3
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.886,
+     2.641,
+     12.002
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 41,
+    "longest": 0.335
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.104,
+     3.208,
+     11.996
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 67,
+    "longest": 0.318
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.825,
+     4.125,
+     11.979
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 454,
+    "longest": 0.3
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.627,
+     1.586,
+     -1.875
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 203,
+    "longest": 0.447
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.317,
+     2.325,
+     -1.615
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 387,
+    "longest": 0.423
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -3.993,
+     4.596,
+     2.672
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 59,
+    "longest": 0.443
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -3.995,
+     0.468,
+     11.999
+    ],
+    "part": "cliff_c3_lod0/rockwork_concrete",
+    "aspect": 72,
+    "longest": 0.359
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.696,
+     2.538,
+     11.998
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "aspect": 74,
+    "longest": 0.346
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.67,
+     5.082,
+     11.178
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "aspect": 161,
+    "longest": 0.438
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.823,
+     4.86,
+     6.974
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "aspect": 87,
+    "longest": 0.426
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.659,
+     2.206,
+     12.004
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "aspect": 91,
+    "longest": 0.298
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.297,
+     4.579,
+     12
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "aspect": 76,
+    "longest": 0.319
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.425,
+     5.104,
+     11.689
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "aspect": 54,
+    "longest": 0.354
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.025,
+     4.778,
+     3.975
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "aspect": 106,
+    "longest": 0.3
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.692,
+     2.237,
+     12.005
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "aspect": 44,
+    "longest": 0.459
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.395,
+     2.641,
+     12.009
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "aspect": 40,
+    "longest": 0.736
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.625,
+     2.775,
+     12.012
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "aspect": 774,
+    "longest": 0.299
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.478,
+     3.073,
+     12.008
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "aspect": 89,
+    "longest": 0.409
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.775,
+     0.525,
+     11.98
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "aspect": 128,
+    "longest": 0.302
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.929,
+     3.377,
+     11.989
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "aspect": 81,
+    "longest": 0.299
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     3.387,
+     5.037,
+     6.04
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "aspect": 84,
+    "longest": 0.32
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     3.992,
+     3.389,
+     11.99
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "aspect": 172,
+    "longest": 0.49
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     3.992,
+     3.326,
+     11.988
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "aspect": 54,
+    "longest": 0.45
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.105,
+     2.434,
+     -1.046
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "aspect": 46,
+    "longest": 0.257
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     4.578,
+     1.594,
+     12.002
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "aspect": 51,
+    "longest": 0.304
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     4.284,
+     4.827,
+     5.774
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "aspect": 114,
+    "longest": 0.648
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     5.522,
+     3.888,
+     12.006
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "aspect": 71,
+    "longest": 0.47
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     4.873,
+     3.668,
+     11.998
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "aspect": 78,
+    "longest": 0.302
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     6.675,
+     3.227,
+     12.011
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "aspect": 207,
+    "longest": 0.3
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     5.924,
+     0.225,
+     11.984
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "aspect": 295,
+    "longest": 0.424
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     6.527,
+     0.972,
+     11.991
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "aspect": 90,
+    "longest": 0.306
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     7.08,
+     0.779,
+     11.998
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "aspect": 48,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     6.747,
+     2.002,
+     11.996
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "aspect": 54,
+    "longest": 0.455
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     6.875,
+     1.329,
+     11.994
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "aspect": 131,
+    "longest": 0.695
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     6.273,
+     4.023,
+     11.997
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "aspect": 170,
+    "longest": 0.429
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     6.37,
+     4.028,
+     11.998
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "aspect": 69,
+    "longest": 0.286
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     6.378,
+     4.602,
+     10.124
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "aspect": 287,
+    "longest": 0.298
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     6.671,
+     4.562,
+     9.674
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "aspect": 143,
+    "longest": 0.419
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     7.373,
+     0.326,
+     12.012
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "aspect": 202,
+    "longest": 0.638
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     7.728,
+     2.637,
+     12.009
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "aspect": 46,
+    "longest": 0.459
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     7.355,
+     2.443,
+     12.002
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "aspect": 64,
+    "longest": 0.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     8,
+     4.26,
+     10.425
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "aspect": 60,
+    "longest": 0.302
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     7.575,
+     4.975,
+     3.677
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "aspect": 41,
+    "longest": 0.325
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     4.208,
+     2.769,
+     -0.602
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "aspect": 161,
+    "longest": 0.528
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     6.589,
+     1.045,
+     -1.637
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "aspect": 64,
+    "longest": 0.401
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     8,
+     4.801,
+     3.51
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "aspect": 184,
+    "longest": 0.311
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     8.143,
+     0.915,
+     12.001
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 76,
+    "longest": 0.433
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     9.115,
+     1.06,
+     11.993
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 44,
+    "longest": 0.349
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     8.378,
+     1.277,
+     11.988
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 139,
+    "longest": 0.587
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     8.69,
+     4.873,
+     8.352
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 311,
+    "longest": 0.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     8.63,
+     2.369,
+     0.672
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 56,
+    "longest": 0.422
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     10.551,
+     0.64,
+     11.999
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 114,
+    "longest": 0.39
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     10.156,
+     3.584,
+     10.44
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 41,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     10.424,
+     4.723,
+     9.07
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 78,
+    "longest": 0.299
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     10.081,
+     4.874,
+     7.032
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 124,
+    "longest": 0.373
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     10.631,
+     3.222,
+     4.192
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 95,
+    "longest": 0.292
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     9.825,
+     4.006,
+     3.824
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 60,
+    "longest": 0.305
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     9.883,
+     2.48,
+     2.885
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 91,
+    "longest": 0.363
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     10.58,
+     2.572,
+     3.336
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 66,
+    "longest": 0.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     11.027,
+     2.925,
+     12.004
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 144,
+    "longest": 0.406
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     11.478,
+     0.962,
+     12
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 137,
+    "longest": 0.736
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     10.745,
+     3.373,
+     4.159
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 42,
+    "longest": 0.257
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     11.948,
+     1.426,
+     2.925
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 58,
+    "longest": 0.298
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     11.475,
+     -0.265,
+     -3.175
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 470,
+    "longest": 0.751
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     8.465,
+     0.068,
+     -1.87
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 44,
+    "longest": 0.289
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     8,
+     3.065,
+     -0.222
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 120,
+    "longest": 0.294
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     8.005,
+     1.876,
+     11.986
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 40,
+    "longest": 0.301
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     8.006,
+     4.364,
+     9.231
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 48,
+    "longest": 0.3
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     8,
+     5.505,
+     5.025
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 259,
+    "longest": 0.301
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     8,
+     4.121,
+     11.624
+    ],
+    "part": "cliff_c6_lod0/rockwork_concrete",
+    "aspect": 346,
+    "longest": 0.293
+   }
+  ],
+  "degenerate": [
+   {
+    "check": "degenerate",
+    "severity": "warn",
+    "at": [
+     8,
+     4.842,
+     3.78
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "edge": 0.007
+   },
+   {
+    "check": "degenerate",
+    "severity": "warn",
+    "at": [
+     7.965,
+     4.854,
+     3.796
+    ],
+    "part": "cliff_c5_lod0/rockwork_concrete",
+    "edge": 0.12
+   }
+  ],
+  "opening": [
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     2.92,
+     0.182,
+     -1.611
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "facing": [
+     -0.52,
+     -0.85,
+     0.11
+    ],
+    "edge_m": 0.153
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     2.901,
+     0.18,
+     -1.762
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "facing": [
+     -0.53,
+     -0.85,
+     -0.03
+    ],
+    "edge_m": 0.152
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     2.908,
+     0.183,
+     -1.915
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "facing": [
+     -0.54,
+     -0.83,
+     -0.1
+    ],
+    "edge_m": 0.157
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     2.925,
+     0.204,
+     -2.103
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "facing": [
+     -0.55,
+     -0.81,
+     -0.2
+    ],
+    "edge_m": 0.149
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     3.046,
+     0.169,
+     -2.255
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "facing": [
+     -0.5,
+     -0.83,
+     -0.24
+    ],
+    "edge_m": 0.149
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     3.218,
+     0.197,
+     -1.205
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "facing": [
+     -0.27,
+     -0.87,
+     0.41
+    ],
+    "edge_m": 0.133
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     3.215,
+     0.214,
+     -2.598
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "facing": [
+     -0.62,
+     -0.76,
+     -0.2
+    ],
+    "edge_m": 0.159
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     3.111,
+     0.229,
+     -2.48
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "facing": [
+     -0.37,
+     -0.78,
+     -0.51
+    ],
+    "edge_m": 0.159
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     3.36,
+     0.211,
+     -2.75
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "facing": [
+     -0.4,
+     -0.83,
+     -0.38
+    ],
+    "edge_m": 0.154
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     3.508,
+     0.069,
+     -2.472
+    ],
+    "part": "cliff_c4_lod0/rockwork_concrete",
+    "facing": [
+     -0.32,
+     -0.92,
+     -0.24
+    ],
+    "edge_m": 0.034
+   }
+  ]
+ },
+ "file": "sauvagere_cliff.glb"
+}

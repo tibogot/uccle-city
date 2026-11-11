@@ -94,40 +94,53 @@ export function placeSauvagereCliff(field, site, plants = null, { seed = 7, dens
     if (Math.hypot(xe - ex[0], zt - ex[1]) > exR) put(pick(right ? ["rk3_broken", "rk2_pillar", "rk3_block_s"] : ["rk3_block_s", "rk3_broken", "rk2_cap", "rk3_block_s"]), xe, zt - 0.3, { scale: U(0.6, 1.0), sink: 0.35, tilt: T(18) });
     x += w / density;
   }
-  // 4) plants on the up-facing ledges of the placed pieces (LOD2 triangles facing up), area-weighted, by height
-  if (plants) {
-    const out = { fern: [], grass: [], ivy: [] };
-    const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), n = new THREE.Vector3(), p = new THREE.Vector3(), M = new THREE.Matrix4();
-    for (const { name, matrix } of placed) {
-      const prims = kit.pieces[name].lods[kit.pieces[name].lods.length - 1];
-      for (const { geometry } of prims) {
-        const P = geometry.attributes.position, I = geometry.index.array;
-        for (let t = 0; t < I.length; t += 3) {
-          a.fromBufferAttribute(P, I[t]).applyMatrix4(matrix); b.fromBufferAttribute(P, I[t + 1]).applyMatrix4(matrix); c.fromBufferAttribute(P, I[t + 2]).applyMatrix4(matrix);
-          n.subVectors(b, a).cross(p.subVectors(c, a)); const area = n.length() / 2; n.normalize();
-          if (n.y < 0.62 || a.y < 0.15) continue;
-          let k = area * 1.4 * density;
-          while (k > 0) {
-            if (rnd() > k) break; k -= 1;
-            const r1 = Math.sqrt(rnd()), r2 = rnd();
-            p.copy(a).multiplyScalar(1 - r1).addScaledVector(b, r1 * (1 - r2)).addScaledVector(c, r1 * r2);
-            if (Math.hypot(p.x - ex[0], p.z - ex[1]) < exR - 0.4) continue;
-            const kind = p.y < 2.2 ? (rnd() < 0.7 ? "fern" : "ivy") : rnd() < 0.45 ? "grass" : rnd() < 0.6 ? "ivy" : "fern";
-            M.compose(p.clone().setY(p.y - 0.02), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, rnd() * 6.283, 0)), new THREE.Vector3().setScalar(U(0.7, 1.4)));
-            out[kind].push(M.clone());
-          }
+  if (plants) plantsOn(placed, kit, plants, site, { density });
+  return placed;
+}
+
+/** plants on placed kit pieces (or the hero cliff's chunks): up-facing triangles of their LOD2 mesh (ledges), and
+ *  steeper triangles in concave spots (COLOR_0.r cavity > 0.6: the clefts), area-weighted; ferns low, grass / ivy high;
+ *  plus grass / ivy on the mound's gentle ground. `left` (lab x > 0, o01's left part) gets more, as in o01. */
+export function plantsOn(placed, kit, plants, site, { density = 1, seed = 5, ground = true } = {}) {
+  let s = seed;
+  const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+  const U = (a, b) => a + (b - a) * rnd();
+  const { h, grad } = siteSampler(site);
+  const ex = site.exedra.lab, exR = site.exedra.radius + 0.6;
+  const out = { fern: [], grass: [], ivy: [] };
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), n = new THREE.Vector3(), p = new THREE.Vector3(), M = new THREE.Matrix4();
+  for (const { name, matrix } of placed) {
+    const prims = kit.pieces[name].lods[kit.pieces[name].lods.length - 1];
+    for (const { geometry } of prims) {
+      const P = geometry.attributes.position, I = geometry.index.array, C = geometry.attributes.color;
+      for (let t = 0; t < I.length; t += 3) {
+        a.fromBufferAttribute(P, I[t]).applyMatrix4(matrix); b.fromBufferAttribute(P, I[t + 1]).applyMatrix4(matrix); c.fromBufferAttribute(P, I[t + 2]).applyMatrix4(matrix);
+        n.subVectors(b, a).cross(p.subVectors(c, a)); const area = n.length() / 2; n.normalize();
+        if (a.y < 0.15) continue;
+        const cav = C ? (C.getX(I[t]) + C.getX(I[t + 1]) + C.getX(I[t + 2])) / 3 : 0.5;
+        const ledge = n.y > 0.62, cleft = n.y > 0.2 && cav > 0.6;
+        if (!ledge && !cleft) continue;
+        const left = a.x > 0 ? 1.5 : 1.0;
+        let k = area * (ledge ? 1.4 : 2.2) * density * left;
+        while (k > 0) {
+          if (rnd() > k) break; k -= 1;
+          const r1 = Math.sqrt(rnd()), r2 = rnd();
+          p.copy(a).multiplyScalar(1 - r1).addScaledVector(b, r1 * (1 - r2)).addScaledVector(c, r1 * r2);
+          if (Math.hypot(p.x - ex[0], p.z - ex[1]) < exR - 0.4) continue;
+          const kind = cleft && !ledge ? (rnd() < 0.6 ? "fern" : "ivy") : p.y < 2.2 ? (rnd() < 0.7 ? "fern" : "ivy") : rnd() < 0.45 ? "grass" : rnd() < 0.6 ? "ivy" : "fern";
+          M.compose(p.clone().setY(p.y - 0.02), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, rnd() * 6.283, 0)), new THREE.Vector3().setScalar(U(0.7, 1.4)));
+          out[kind].push(M.clone());
         }
       }
     }
-    // the mound's top and gentle slopes: grass and ivy (not on the exedra, not in the water)
-    for (let i = 0; i < 260 * density; i++) {
-      const x = U(-16, 16), z = U(-1, 12), y = h(x, z), [gx, gz] = grad(x, z);
-      if (y < 0.3 || Math.hypot(gx, gz) > 0.6 || Math.hypot(x - ex[0], z - ex[1]) < exR) continue;
-      M.compose(new THREE.Vector3(x, y - 0.12, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, rnd() * 6.283, 0)), new THREE.Vector3().setScalar(U(0.8, 1.5)));
-      out[rnd() < 0.6 ? "grass" : "ivy"].push(M.clone());
-    }
-    for (const [k, list] of Object.entries(out)) plants.set(k, list);
-    plants.commit();
   }
-  return placed;
+  if (ground) for (let i = 0; i < 260 * density; i++) {
+    const x = U(-16, 16), z = U(-1, 12), y = h(x, z), [gx, gz] = grad(x, z);
+    if (y < 0.3 || Math.hypot(gx, gz) > 0.6 || Math.hypot(x - ex[0], z - ex[1]) < exR) continue;
+    M.compose(new THREE.Vector3(x, y - 0.1, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, rnd() * 6.283, 0)), new THREE.Vector3().setScalar(U(0.8, 1.5)));
+    out[rnd() < 0.6 ? "grass" : "ivy"].push(M.clone());
+  }
+  for (const [k, list] of Object.entries(out)) plants.set(k, list);
+  plants.commit();
+  return Object.fromEntries(Object.entries(out).map(([k, l]) => [k, l.length]));
 }

@@ -27,14 +27,18 @@ import { auditParts } from "./mesh_audit/audit.js";
 
 const KIT = process.argv[2] || "rock";
 const DIR = "models/parkkit";
-const NAME = KIT === "rock" ? "rockkit" : "playgroundkit";
+const NAME = KIT === "rock" ? "rockkit" : KIT === "cliff" ? "sauvagere_cliff" : "playgroundkit";
+const ROCKLIKE = KIT === "rock" || KIT === "cliff";       // the cliff (one hero surface cut in chunks) packs like the rocks,
+const LOCK = KIT === "cliff";                             // with the chunk borders LOCKED (no cracks between chunks at different LODs)
 const SRC = path.join(DIR, `${NAME}.raw.glb`), DST = path.join(DIR, `${NAME}.glb`);
 const NO_AUDIT = process.argv.includes("--no-audit");
 const CREASE_PG = 50;        // playground: 10-16 sided tubes stay smooth, box edges and panel faces stay sharp / flat
 const CREASE = +(process.argv.find((a) => a.startsWith("--crease="))?.slice(8) ?? 60);
 /** per piece / LOD simplification error overrides, where the checker found a fold (meshopt left two faces overlapping) */
 const ERR_OVERRIDE = { "pg_slide:2": 0.025 };
-const CFG = KIT === "rock"
+const CFG = KIT === "cliff"
+  ? { lod: [{ err: 0.004 }, { err: 0.025, weld: true }, { err: 0.07, weld: true }], range: [16, 40, 260] }
+  : KIT === "rock"
   ? { lod: [{ err: 0.003 }, { err: 0.025, weld: true }, { err: 0.06, weld: true, prune: true }], range: [13, 32, 200] }
   : { lod: [{ err: 0 }, { err: 0.01, weld: true }, { err: 0.035, weld: true, prune: true }], range: [20, 55, 160] };
 
@@ -118,7 +122,7 @@ function compact(m, I) {
 /** seam-aware: the raw buffers (vertices split at UV seams / hard edges); meshopt keeps the seams consistent */
 function simplifySeams(m, err, prune) {
   if (err <= 0) return m;
-  const flags = ["ErrorAbsolute"]; if (prune) flags.push("Prune");
+  const flags = ["ErrorAbsolute"]; if (prune) flags.push("Prune"); if (LOCK) flags.push("LockBorder");
   const [I] = MeshoptSimplifier.simplify(m.I, m.P, 3, 0, err, flags);
   return compact(m, I);
 }
@@ -144,7 +148,7 @@ function simplifyWelded(m, err, prune) {
     Cf[c * 4] = C[c * 3] / cnt[c]; Cf[c * 4 + 1] = C[c * 3 + 1] / cnt[c]; Cf[c * 4 + 2] = C[c * 3 + 2] / cnt[c]; Cf[c * 4 + 3] = AO[c] / cnt[c];
   }
   const I0 = Uint32Array.from(m.I, (i) => canon[i]);
-  const flags = ["ErrorAbsolute"]; if (prune) flags.push("Prune");
+  const flags = ["ErrorAbsolute"]; if (prune) flags.push("Prune"); if (LOCK) flags.push("LockBorder");
   const [I] = MeshoptSimplifier.simplifyWithAttributes(I0, Pf, 3, attr, 4, [0.4, 0.4, 0.4, 0.8], null, 0, err, flags);
   const Nf = new Float32Array(nv * 3); for (let c = 0; c < nv; c++) { Nf[c * 3] = attr[c * 4]; Nf[c * 3 + 1] = attr[c * 4 + 1]; Nf[c * 3 + 2] = attr[c * 4 + 2]; }
   return compact({ slot: m.slot, P: Pf, N: Nf, UV0: null, UV1: null, C: Cf, I }, I);
@@ -267,19 +271,22 @@ for (const piece of pieces) {
   CFG.lod.forEach((L0, k) => {
    // meshopt can leave a fold (two faces overlapping): the checker runs on the LOD as made, and the LOD is re-made with
    // a slightly different error until it is clean (at most 5 tries; the last one is kept and the final audit reports it)
-   for (const mul of (k === 0 && KIT !== "rock") ? [1] : [1, 0.85, 1.15, 0.7, 1.3, 0.6, 1.45, 0.92, 1.07, 1.6]) {
+   for (const mul of (k === 0 && !ROCKLIKE) ? [1] : [1, 0.85, 1.15, 0.7, 1.3, 0.6, 1.45, 0.92, 1.07, 1.6]) {
     const L = { ...L0, err: (ERR_OVERRIDE[`${piece}:${k}`] ?? L0.err) * mul };
     let prims;
     // rock LOD0 keeps smooth normals except folds over 85 deg (the normal map was baked against the low-poly's smooth normals)
-    if (KIT === "rock") prims = main.map((m) => renormal(L.weld ? simplifyWelded(m, L.err, L.prune) : simplifySeams(m, L.err, false), L.weld ? CREASE : 85));
+    // (the cliff's LOD0 keeps Blender's normals, computed on the whole surface before it was cut: no seams at the chunk edges)
+    if (KIT === "cliff") prims = main.map((m) => (L.weld ? simplifyWelded(m, L.err, L.prune) : simplifySeams(m, L.err, false)));   // (normals: below, on the whole surface)
+    else if (ROCKLIKE) prims = main.map((m) => renormal(L.weld ? simplifyWelded(m, L.err, L.prune) : simplifySeams(m, L.err, false), L.weld ? CREASE : 85));
     else if (k === 0) prims = oneSlot(mergeSlots([...main, ...detail]).map((m) => renormal(m, CREASE_PG)));
     // LOD1 / LOD2: welded + vertex AO like the rocks (the hard-surface seams would block meshopt), + the far stand-ins
     else prims = oneSlot(mergeSlots([...main.map((m) => simplifyWelded(m, L.err, L.prune)), ...far.map((m) => simplifyWelded(m, k === 2 ? L.err * 0.5 : 0.0005, false))]).map((m) => renormal(m, CREASE_PG)));
     prims = prims.filter((m) => m.I.length);
     if (!NO_AUDIT && mul !== 1.6) {
-      const r = auditParts(prims.map((m) => ({ name: `${piece}_lod${k}`, slot: m.slot, positions: m.P, normals: m.N, index: m.I, maxDistance: CFG.range[k] })), { ignoreBelow: KIT === "rock" ? 0.07 : -0.02 });
-      const c = r.summary.counts, b = ["coplanar", "depth", "crossing", "leak", "flipped", "streak", "bentflat"].reduce((s, x) => s + (c[x] ?? 0), 0);
-      if (b) { console.log(`  ${piece} lod${k} err ${L.err.toFixed(4)}: ${b} blocking, re-made`); continue; }
+      const r = auditParts(prims.map((m) => ({ name: `${piece}_lod${k}`, slot: m.slot, positions: m.P, normals: m.N, index: m.I, maxDistance: CFG.range[k] })), { ignoreBelow: KIT === "rock" ? 0.07 : KIT === "cliff" ? -0.3 : -0.02 });
+      // (a cliff CHUNK alone has open cut edges where its neighbours join: "leak" is judged on the whole LOD, below)
+      const c = r.summary.counts, b = ["coplanar", "depth", "crossing", ...(KIT === "cliff" ? [] : ["leak", "streak", "bentflat"]), "flipped"].reduce((s, x) => s + (c[x] ?? 0), 0);
+      if (b) { console.log(`  ${piece} lod${k} err ${L.err.toFixed(4)}: ${b} blocking (${Object.entries(c).filter(([, v]) => v).map(([kk, v]) => kk + " " + v).join(", ")}), re-made`); continue; }
     }
     const t = prims.reduce((s, m) => s + tris(m), 0);
     table[piece].lods.push({ node: `${piece}_lod${k}`, triangles: t, draws: prims.length, slots: prims.map((m) => m.slot), error_m: L.err, vertex_ao: !!L.weld });
@@ -289,6 +296,27 @@ for (const piece of pieces) {
   });
   const raw = [...main, ...detail].reduce((s, m) => s + tris(m), 0);
   console.log(`${piece.padEnd(14)} raw ${String(raw).padStart(6)}  ` + table[piece].lods.map((l, k) => `lod${k} ${String(l.triangles).padStart(6)} (${l.draws})`).join("  "));
+}
+
+// ------------------------------------------------------------------------------------------------ the cliff: normals over the WHOLE surface
+// Each LOD's chunks are joined (their locked borders coincide), renormalled together (crease, planar regions, slivers:
+// see renormal) and split back: the normals agree across the chunk cuts, and the checker's streak / bentflat rules hold.
+if (KIT === "cliff") {
+  for (let k = 0; k < CFG.lod.length; k++) {
+    const nodes = out.filter((o) => o.name.endsWith(`_lod${k}`));
+    const parts = nodes.map((o) => o.prims[0]);
+    const nv = parts.reduce((s, m) => s + m.P.length / 3, 0), ni = parts.reduce((s, m) => s + m.I.length, 0);
+    const has = (key) => parts.every((m) => m[key]);
+    const all = { slot: parts[0].slot, P: new Float32Array(nv * 3), N: new Float32Array(nv * 3), UV0: has("UV0") ? new Float32Array(nv * 2) : null, UV1: has("UV1") ? new Float32Array(nv * 2) : null, C: has("C") ? new Float32Array(nv * 4) : null, I: new Uint32Array(ni) };
+    let v = 0, i = 0; const ranges = [];
+    for (const m of parts) {
+      all.P.set(m.P, v * 3); all.N.set(m.N, v * 3); if (all.UV0) all.UV0.set(m.UV0, v * 2); if (all.UV1) all.UV1.set(m.UV1, v * 2); if (all.C) all.C.set(m.C, v * 4);
+      for (let q = 0; q < m.I.length; q++) all.I[i + q] = m.I[q] + v;
+      ranges.push([i, i + m.I.length]); v += m.P.length / 3; i += m.I.length;
+    }
+    const rn = renormal(all, k === 0 ? 70 : CREASE);
+    nodes.forEach((o, j) => { o.prims = [compact(rn, rn.I.slice(ranges[j][0], ranges[j][1]))]; });
+  }
 }
 
 // ------------------------------------------------------------------------------------------------ write the GLB
@@ -358,10 +386,13 @@ info.lod_ranges_m = { note: "each LOD's band END (camera distance); dithered cro
 
 // ------------------------------------------------------------------------------------------------ mesh checker (0 blocking per piece and LOD)
 if (!NO_AUDIT) {
-  const groups = out.map((o) => ({ name: o.name, nodes: [o.name] }));
+  // the cliff's chunks are drawn together: one audit group per LOD with every chunk (their locked borders close the cuts)
+  const groups = KIT === "cliff" ? [0, 1, 2].map((k) => ({ name: `all_lod${k}`, nodes: out.filter((o) => o.name.endsWith(`_lod${k}`)).map((o) => o.name) }))
+    : out.map((o) => ({ name: o.name, nodes: [o.name] }));
   const range = Object.fromEntries(out.map((o) => [o.name, CFG.range[+o.name.slice(-1)]]));
+  if (KIT === "cliff") for (const g of groups) range[g.name] = CFG.range[+g.name.slice(-1)];
   // rocks are set 0.08-0.2 m into the ground (their bottom is open: rockkit.json "frame"); playground pieces stand on it
-  const res = await auditGroups(DST, { name: NAME, groups, range, ignoreBelow: KIT === "rock" ? 0.07 : -0.02, reportDir: path.join(DIR, "audit"), allowFile: path.join(DIR, "audit", `${NAME}.allow.json`) });
+  const res = await auditGroups(DST, { name: NAME, groups, range, ignoreBelow: KIT === "rock" ? 0.07 : KIT === "cliff" ? -0.3 : -0.02, reportDir: path.join(DIR, "audit"), allowFile: path.join(DIR, "audit", `${NAME}.allow.json`) });
   info.audit = Object.fromEntries(Object.entries(res).map(([k, s]) => [k, { blocking: s.blocking, warnings: s.warnings, counts: Object.fromEntries(Object.entries(s.counts).filter(([, v]) => v)) }]));
   const blk = Object.values(res).reduce((s, x) => s + x.blocking, 0);
   console.log(`[mesh audit] ${NAME}: ${blk} blocking over ${groups.length} groups`);

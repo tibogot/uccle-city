@@ -102,7 +102,7 @@ function withAO(m, aoTex, vertexAo, slot, nrmTex = null) {
   // the baked normal map (rock kit, LOD0: the sculpt's detail on the light low-poly), in the atlas (TEXCOORD_1). The
   // tangent frame comes from the screen-space derivatives of the position and of uv1 (three's instancing does not
   // rotate tangent attributes; this frame follows every instance by itself)
-  const rock = ["rocaille_concrete", "rock_sandstone", "rock_schist_dark"].includes(slot);
+  const rock = ["rocaille_concrete", "rock_sandstone", "rock_schist_dark", "rockwork_concrete", "moss"].includes(slot);
   if (rock) {
     // ROUGH CONCRETE close up: a bump from the noise texture (2-6 cm pitting and aggregate, ~3 mm deep) on top of the
     // baked normal map (LOD0) or the mesh normal (LOD1 / LOD2); mipmapped, so it flattens out with distance by itself
@@ -225,14 +225,15 @@ function rocaille(baseSrgb, opts = {}) {
     const q = planar();
     const a = texture(tex, q.div(4.0)).toVar();                   // R 1 m, G 25 cm, B 6 cm, A streaks
     const b = texture(tex, q.div(17.0).add(0.37)).toVar();         // large weathering patches
-    const tone = mix(float(0.9), float(1.08), layer);
+    const tone = opts.mossMask ? float(1) : mix(float(0.9), float(1.08), layer);
     const col = cv(base).mul(tone).mul(float(0.82).add(a.r.mul(0.2)).add(a.g.mul(0.1)).add(a.b.mul(0.1))).toVar();
     col.assign(mix(col, cv(dirt), smoothstep(0.45, 0.85, b.r).mul(opts.stain ?? 0.45)));                 // grey-brown weathering
     col.assign(col.mul(float(1).sub(smoothstep(0.5, 0.9, a.a).mul(opts.streak ?? 0.18).mul(float(1).sub(abs(normalWorld.y))))));   // dark rain streaks
     col.assign(mix(col, cv(algae), smoothstep(0.9, 0.1, positionWorld.y).mul(smoothstep(0.3, 0.6, b.b)).mul(0.6)));   // green algae near the water (lab: water at y 0)
     col.assign(col.mul(mix(float(1), float(0.62), smoothstep(0.64, 0.92, cav))));                         // joints, cracks (deep ones only)
     col.assign(col.mul(float(1).add(edge.mul(0.12))));                                                    // worn edges
-    const mossM = clamp(smoothstep(0.5, 0.9, normalWorld.y).mul(smoothstep(0.35, 0.7, b.g)).add(smoothstep(0.62, 0.85, cav).mul(0.4)), 0, 1)
+    const mossBase = opts.mossMask ? layer.mul(smoothstep(0.25, 0.6, b.g)).add(smoothstep(0.62, 0.85, cav).mul(0.35)) : smoothstep(0.5, 0.9, normalWorld.y).mul(smoothstep(0.35, 0.7, b.g)).add(smoothstep(0.62, 0.85, cav).mul(0.4));
+    const mossM = clamp(mossBase, 0, 1)
       .mul(opts.moss ?? 0.75).mul(kitLook.moss);
     col.assign(mix(col, cv(mossC).mul(float(0.75).add(a.b.mul(0.5))), mossM));
     return col;
@@ -271,6 +272,9 @@ function rope() {
 const SLOTS = {
   rocaille_concrete: () => rocaille([0.58, 0.555, 0.51], { stain: 0.6, moss: 0.9, streak: 0.3 }),   // warm grey-brown weathered concrete (o01, round 3)   // grey weathered concrete (owner's photo o01)
   rock_sandstone: () => rocaille([0.6, 0.5, 0.36], { moss: 0.5, stain: 0.3 }),
+  // the Sauvagere hero cliff (tools/blender/sauvagereCliff.py): the same weathered concrete; moss on its ledges
+  rockwork_concrete: () => rocaille([0.58, 0.555, 0.51], { stain: 0.6, moss: 0.9, streak: 0.3, mossMask: true }),
+  moss: () => rocaille([0.27, 0.31, 0.15], { stain: 0.5, moss: 1.6, streak: 0.1, rough: 0.97 }),
   rock_schist_dark: () => rocaille([0.3, 0.3, 0.29], { moss: 0.35, rough: 0.7, stain: 0.2 }),
   wood_stained: () => wood([0.38, 0.22, 0.12]),
   wood_log: () => wood([0.55, 0.44, 0.33], { ring: 0.5, rough: 0.85 }),
