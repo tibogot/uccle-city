@@ -350,9 +350,9 @@ const TEMP = {
     // per window
     const m = std({ roughnessNode: float(0.08), metalnessNode: float(0) });
     m.colorNode = Fn(() => {
-      // the room (a tone per window: 0.8 m cells x a storey) or, in about a third of the windows, net curtains (v06:
+      // the room (a tone per window: 3 m cells x a storey, wider than any window: rarely split) or, in about a third of the windows, net curtains (v06:
       // pale, softly pleated) right behind the glass
-      const h = hash2(floor(positionWorld.xz.mul(0.8)).add(floor(positionWorld.y.div(2.6)))).toVar();
+      const h = hash2(floor(positionWorld.xz.div(3.0)).add(floor(positionWorld.y.div(2.6)))).toVar();
       const room = mix(lin(0x2a2724), lin(0x3d3832), h).mul(mix(float(0.8), float(1.15), hash2(vec2(h.mul(91.0), 3.0))));
       const pleat = abs(fract(uv(0).x.mul(7.0)).sub(0.5)).mul(2.0);
       const fw = fwidth(uv(0).x.mul(7.0));

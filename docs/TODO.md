@@ -92,14 +92,18 @@ Stairs paused until the owner's Mixamo clips are in `data/raw/animations/mixamo/
 - [ ] Owner's review (lab side-by-sides docs/vanbuuren/side_*.jpg, git-ignored; city moving strips docs/vanbuuren/city_*).
 - [ ] The v00 (south) pose is the weakest (23 px mean, focal 12 % off the EXIF prior): more off-plane correspondences
       (the oriel's corners, the B roof's south eave, the basin) or the south face from another photo.
-- [ ] The NW wing (roof, first-floor windows, veranda position) is ESTIMATED from far photos under trees: a closer photo
-      (Mapillary token / a visit) would fix its roof form (v06 suggests a hip / lean-to more than a gable).
+- [ ] The NW wing: lean-to + flat roof from the DSM (look round); its SW end's second plane (z = 103.96 + 0.755 c -
+      0.671 t, valley at t ~2.05) is not modelled: the two-slab valley left 12-30 mm slits the audit stops (try a filler
+      solid under the valley). Windows / veranda still ESTIMATED.
+- [ ] Glass: the lower-left east window in the low sun reads brighter than v03; frames 6.5 cm vs ~10 cm in the photos.
+- [ ] The lab's porch soffit takes a warm brown bounce in the post chain (white without it): check the SSGI / SSR input.
+- [ ] Lab "post effects" off: every material with an mrtNode (glass, zinc, green) fails to build (WGSL "structures must
+      have at least one member"): lab-only, the city always renders through the scene pass.
 - [ ] The east gable's ground-floor bay (behind the topiary) and the south-east ground floor: not seen, plain brick.
 - [ ] The heritage inventory has no record for Avenue Leo Errera 41 (2026-11-10): check again / the museum's plans.
 - [ ] Packed-audit leftovers after quantization (raw GLB 0 blocking): a few 4 mm slits at the ridge caps / NW roof
       course ends, one 2 cm2 union sliver at roof C's split (u -2.0); look again with a coarser quantization guard.
-- [ ] LOD2 was dropped (meshopt of the 3.8k far variant gave collapsed slabs, 71 blocking after packing): if far tiles
-      need fewer than 3.8k tris, script a "far2" (no joinery) instead of simplifying.
+- [x] LOD2: 2 levels kept (LOD1 = 0.07 % of the city frame's triangles, 2.8 % of its draws, +0.13 ms at 400 m; NOTES).
 - [ ] Materials: brick_orange_amsterdam, roof_tiles_flat_dark, concrete_white (+ brick_pattern, wood_varnished,
       glass_leaded, oak_door, metal_green_veranda, zinc_gutter) proposed for the library (claude/materials); the slot
       adapter table in viewer/vanbuurenModel.js points them at the library with one line.

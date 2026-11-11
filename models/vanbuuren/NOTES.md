@@ -155,9 +155,66 @@ Kit: `tools/blender/vanbuuren_kit.py` (builder, frames, boxes, lathe), `vanbuure
   p99 16.9 ms; coverage 1.000 every frame, fading copies right every frame, no long task; run 1: one 117 ms frame at 6.5 s
   (d 64 m, the session's first hand-over) + 3 at 33 ms; run 2: worst 33.4 ms (11 frames > 25 ms, at the 500 m end).
 
+## Look round (2026-11-11, coordinator's review of side_v03 / side_v06)
+- Black hoods / canopy: NOT lighting. Blender's smart_project left 1098 of the "Villa" object's faces (hoods, slabs, box
+  frames, sills, frames) with no lightmap area (all four UVs at one point): they sampled AO 0 = black in every light.
+  Fix (tools/blender/vanbuuren.py lightmap()): each object has its own lightmap region (Villa 0..0.34, courses
+  0.345..0.86, far 0.865..1), and faces smart_project leaves empty get a planar projection of their own (metres on their
+  plane) before the pack. Check (Blender, the AO png sampled at every face's UV centre): black-centre faces 2408 / 3609
+  -> 538; the rest face the ground or are closed (304 with no free ray at all). Roof soffits inside the attic take
+  vertex AO.
+- Glass (viewer/vanbuurenModel.js glassReflection): the sky gradient (env's horizon / zenith) above a dark skyline band
+  and the street, emissive, Fresnel 2.5 % head-on -> 47 % grazing; a dim room per window or net curtains (pleated) in
+  about a third. Leaded glass per pane (the glass is now one face per pane, UV 0..1): code "lead" = the stair window's
+  mosaic of blue-grey rectangles (each its own glint), code "panel" = the porch windows' and the door's symmetric panels
+  (clear centre, cream squares in columns), far = the average.
+- Wood: frames golden tan (0xc4935a / 0xae7d48), bargeboards / roof soffits dark brown (v04, v00). The door's black
+  bead was a full box over the leaf (the door read black): now a 2.5 cm ring.
+- Brick (temporary): calibrated on photo samples against the white concrete in the same frame (linear, per channel, so
+  the camera's white balance and exposure drop out). Shade (v03, the north gable): photo 0.22 / 0.063 / 0.058, model
+  0.25 / 0.070 / 0.060 (before: 0.24 / 0.030 / 0.020, too saturated). Sun (v06, the west gable): photo 0.50 / 0.145 /
+  0.083, model 0.46 / 0.13 / 0.07. Lab light matched per photo: v03 day 75 15:30, v06 day 220 14:00, v00 day 75 14:00.
+- NW wing roof: DSM least squares in the wing's frame (t along from the SW end, c across toward the house): a lean-to
+  rising toward the house (z = 101.04 + 0.602 c + 0.758 t, rms 0.11 m) up to a flat roof at 104.85 (the plateau over the
+  north-east part), a brick step under the flat roof's edge: modelled. The first ~2 m at the veranda end fit a second
+  plane rising toward the SW end (z = 103.96 + 0.755 c - 0.671 t, rms 0.03 m) with a valley at t ~2.05: tried (two
+  slabs, the crease into the flat part as one convex solid), the audit kept 5-11 blocking items (12-30 mm slits under
+  the valley, a 2 mm2 coplanar at the house corner): reverted, TODO.
+- LOD2: kept at 2 levels, with numbers: LOD1 is 3,815 tris / 12 draws; the city frame at the flight's start draws 422
+  calls / 5.66 M tris (GPU 12.2 ms), so LOD1 is 0.07 % of the triangles and 2.8 % of the draws; at 400 m the villa
+  costs +0.13 ms GPU (2 timer quanta, shadow pass included). A third level cannot go under ~6 draws (one per slot still
+  visible far away) and would save < 3.8k tris; meshopt on the far variant gave 71 blocking audit items.
+- First hand-over hitch (117 ms): the shadow pass is not in compileAsync, so the first frame a level cast a shadow built
+  its shadow pipelines on the frame. viewer/vanbuurenCity.js now warms it before the model shows: every mesh and every
+  fading copy drawn one frame (3 per frame) 4 km under the city with async pipeline creation (vendor
+  parallelPipelines), then once more after the pipelines are in: 7 pipelines created, 14 draws skipped, 1.8 s in the
+  background.
+- Joints: the raked joints' colour and vertex AO go to the wall's mean once sub-pixel (vbLook.jointFade); the roof's
+  course butts get region width 0.02 (the anti-sparkle bends them far away).
+- Ridge-cap strips of ridges sharing a plane are staggered 3 mm (10 mm far) so they are never coplanar.
+
+## Look round: verification (one Chrome tab of mine; another agent's WebGPU tab, port 8819, was open: GPU noisier)
+- Side-by-sides: docs/vanbuuren/side_v03.jpg, side_v06.jpg, side_v00.jpg (git-ignored). Porch: lab_porch_look.png.
+  Grazing: lab_grazing_east_ff_window.png, lab_grazing_west_boxframe.png. Moving: lab_lod_band_moving_east.png (31 -> 72
+  m, L0 / L0+L1 / L1, no pop seen). Flicker heat map: lab_flicker_east_strafe_25m.png.
+- Mesh audit: raw LOD0 0 blocking (108,838 tris), far 0 blocking (3,815 tris); packed (report only) LOD0 4, LOD1 1.
+- GLB 2.80 MB; LOD0 108,838 tris / 15 draws, LOD1 3,815 / 12.
+- Flicker (lab, 24 frames): east 25 m fixed 0, strafe 57-78 ppm (joint fade off: 63-91), dolly 8-10 (off: 13-33);
+  SE 40 m fixed 0, strafe 61-103 (off: 58-104). Before the round: strafe 135-186. Single pixels on silhouettes,
+  chimney cap, lattice; no clusters.
+- GPU (lab, whole frame median, + = the villa, alternating off / L0 / L1): porch +1.18 / +0.78 ms, v03 +0.73 / +0.40,
+  v06 +0.91 / +0.39, SE 40 m +0.33 / 0, 70 m +0.46 / +0.20, 400 m +0.26 / +0.13 (before: porch +0.72 / +0.46, v03
+  +0.59 / +0.20; the per-pane glass with its reflection and the other tab account for the rise).
+- City flight (debug/vanbuurenFlight.js, 24 s, twice): median 16.7 ms both, coverage 1.000 every frame, fading copies
+  right every frame. Run 1: first hand-over at 6.39 s (65 m): no 117 ms frame; worst 50 ms (6.54 s, like the 50 ms
+  frames before it while tiles stream); run 2: worst 83 ms at 11.6 s in the orbit (no LOD change then), 7 frames > 34 ms.
+
 ## Still weak
-- The v00 pose (23 px) and so the south side's exact proportions; the NW wing (roof form, windows, veranda placement).
-- The brick reads darker / redder than the photos' orange in shade (temporary material; the library decides).
-- Strafe flicker ~150-190 ppm from the course geometry at 25-30 m (the anti-sparkle filter softens far parts, not these).
+- The v00 pose (23 px) and so the south side's exact proportions; the NW wing (its SW end's second roof plane, windows,
+  veranda placement).
+- Glass in the low sun's glare (v03's lower-left window) reads brighter than the photo; frames 6.5 cm (the photos read
+  ~10 cm on the first floor).
+- The porch canopy's soffit picks up a warm brown bounce in the lab's post chain (white in the AO-only debug).
+- Strafe flicker 57-103 ppm at 25-40 m (was 135-186).
 - The east bay's ground floor, the south-east ground floor, the north side: plain brick (not seen).
-- Leaded / stained glass is a generic material pattern, not each window's design.
+- Leaded glass: two patterns (stair mosaic, porch / door panels) read from v04, not each pane's exact design.
