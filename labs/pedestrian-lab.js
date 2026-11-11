@@ -107,7 +107,7 @@ fc.add(S, "stats").name("drawn").listen();
 fc.add(S, "bandsTxt").name("bands").listen();
 fc.add(S, "cost").name("cost").listen();
 const fl = ui.addFolder("LOD bands (m)");
-fl.add(S, "live", 0, 40, 0.5).name("live rig until").onChange((v) => { BANDS.live = v; BANDS.liveOut = v + 2; BANDS.liveWarm = v + 5; });
+fl.add(S, "live", 0, 40, 0.5).name("live rig until").onChange((v) => { BANDS.live = v; BANDS.liveOut = v + 2; BANDS.liveWarm = v + 3.5; });
 fl.add(S, "lod01", 10, 80, 1).name("LOD0 -> LOD1").onChange((v) => { BANDS.lod01 = v; });
 fl.add(S, "lod12", 20, 150, 1).name("LOD1 -> LOD2").onChange((v) => { BANDS.lod12 = v; });
 fl.add(S, "shadow", 10, 120, 1).name("shadows fade at").onChange((v) => { BANDS.shadow = v; });

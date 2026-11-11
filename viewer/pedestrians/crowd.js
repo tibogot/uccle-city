@@ -20,7 +20,7 @@ import { BONES, STRIDE, BIND, blendPose, rot } from "./boneTable.js";
 import { buildLod2 } from "./lod2.js";
 
 export const BANDS = {
-  live: 18, liveOut: 20, liveWarm: 23, maxLive: 24, blend: 0.4,  // m, m, m, people, s
+  live: 18, liveOut: 20, liveWarm: 21.5, maxLive: 16, blend: 0.4,  // m, m, m, people, s
   lod01: 35, lod01w: 3,            // LOD0 -> LOD1 cross-fade centre and half-width (m)
   lod12: 60, lod12w: 4,            // LOD1 -> LOD2
   end: 250, endw: 25,              // LOD2 fades out over 225-250 m
@@ -178,6 +178,13 @@ export class Crowd {
    */
   place(p, dt) {
     const a = p.anim, T = this.table, s = this._sp, F = this._feet;
+    if (p.dist > BANDS.lod12 + BANDS.lod12w && dt > 0) {
+      // far band (7-30 px tall, 15 Hz): no pin, one ground sample; the offset left from the mid band fades out
+      const r = Math.hypot(a.ox || 0, a.oz || 0), k = r > 1e-6 ? Math.max(0, r - 0.2 * dt) / r : 0;
+      a.ox = (a.ox || 0) * k; a.oz = (a.oz || 0) * k; a.dx = p.x + a.ox; a.dz = p.z + a.oz; a.dyaw = p.yaw;
+      a.dy = p.y; a.offL = a.offR = 0; a.gL = a.gR = undefined; a.fprev = null;
+      return;
+    }
     let ox = a.ox || 0, oz = a.oz || 0;
     s.sex = p.sex; s.clipA = Math.floor(a.codeA); s.phaseA = a.codeA % 1; s.clipB = Math.floor(a.codeB); s.phaseB = a.codeB % 1; s.w = a.w;
     s.x = p.x + ox; s.y = 0; s.z = p.z + oz; s.yaw = p.yaw; s.scale = p.scale;
@@ -204,7 +211,8 @@ export class Crowd {
     (a.fprev ||= new Float32Array(12)).set(F); a.fpl0 = pl0; a.fpl1 = pl1;
     // per-foot ground: planted feet take their ground at once (they do not move), swinging ones ease over 60 ms
     // a foot across a kerb edge rests on the higher side (heel or ball): it may float a little, it never sinks
-    const gl = Math.max(this.ground(F[0], F[2]), this.ground(F[3], F[5])), gr = Math.max(this.ground(F[6], F[8]), this.ground(F[9], F[11]));
+    const gl = pl0 ? Math.max(this.ground(F[0], F[2]), this.ground(F[3], F[5])) : this.ground((F[0] + F[3]) * 0.5, (F[2] + F[5]) * 0.5);
+    const gr = pl1 ? Math.max(this.ground(F[6], F[8]), this.ground(F[9], F[11])) : this.ground((F[6] + F[9]) * 0.5, (F[8] + F[11]) * 0.5);
     const e = Math.min(1, dt / 0.06);
     a.gL = a.gL === undefined || pl0 ? gl : a.gL + (gl - a.gL) * e;
     a.gR = a.gR === undefined || pl1 ? gr : a.gR + (gr - a.gR) * e;
@@ -263,13 +271,19 @@ export class Crowd {
       { const dx = p.x - cx, dy = p.y + 0.9 - cy, dz = p.z - cz; p.dist = Math.sqrt(dx * dx + dy * dy + dz * dz); }
       // far band (past the LOD1 -> LOD2 fade): clip state and drawn position step at 1 / farRate of the frame rate
       // (15 Hz at 60 fps), in farRate groups
-      if (p.dist > B.lod12 + B.lod12w && !p.anim.live && (p.id + this.frame) % B.farRate) { p.anim.pend = (p.anim.pend || 0) + dt; }
-      else { const d2 = dt + (p.anim.pend || 0); this.advance(p, d2); this.place(p, d2); p.anim.pend = 0; }
-      if (p.dist > B.end) { p.drawn = false; st.beyond++; if (p.anim.live) this._free(p); continue; }
+      // (the drawn placement, place(), only for people drawn: a culled one restarts its pin when seen again)
+      let d2 = -1;
+      // (the LOD1 band, 38-64 m, steps at 30 Hz the same way: half the plant-pin work)
+      const rate = p.dist > B.lod12 + B.lod12w ? B.farRate : p.dist > B.lod01 + B.lod01w ? 2 : 1;
+      if (rate > 1 && !p.anim.live && (p.id + this.frame) % rate) { p.anim.pend = (p.anim.pend || 0) + dt; }
+      else { d2 = dt + (p.anim.pend || 0); this.advance(p, d2); p.anim.pend = 0; }
+      if (p.dist > B.end) { p.drawn = false; st.beyond++; p.anim.fprev = null; if (p.anim.live) this._free(p); continue; }
       _sph.center.set(p.x, p.y + 0.9 * p.scale, p.z); _sph.radius = 1.1 * p.scale;
       p.inView = this.frustum.intersectsSphere(_sph);
       p.drawn = p.inView || p.dist < B.shadow + B.shadoww;     // shadow casters behind the camera too
-      if (!p.drawn) { st.culled++; if (p.anim.live && !allLive) this._free(p); continue; }
+      if (!p.drawn) { st.culled++; p.anim.fprev = null; if (p.anim.live && !allLive) this._free(p); continue; }
+      if (d2 >= 0 && !(p.anim.live && p.anim.liveW >= 1)) this.place(p, d2);
+      else if (d2 >= 0) { const a = p.anim; a.dx = p.x + (a.ox || 0); a.dz = p.z + (a.oz || 0); a.dyaw = p.yaw; a.fprev = null; }
       cand.push(p);
     }
     const tr = performance.now();
