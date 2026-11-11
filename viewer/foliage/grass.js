@@ -264,7 +264,12 @@ class ScatterLayer {
         If(keepCover.greaterThan(0), () => {
           const pos = vec3(xz.x, sys.ground.at(xz), xz.y);
           const d = length(pos.sub(u.cam));
-          const p = float(1).sub(smoothstep(u.fadeA, u.fadeB, d));
+          // mown lawn blades are short and thin: they hand over to the (textured) ground 1.45x sooner than long grass
+          // (their tips against a dark hedge base were the last crawling pixels at 20-30 m)
+          // lawn daisies (9 mm heads) likewise end sooner (2.6x) than meadow flowers
+          const dEff = kind === "blade" ? d.mul(mix(float(1.45), float(1), clamp(m.g.mul(2), 0, 1)))
+            : kind === "flower" ? d.mul(mix(float(2.6), float(1), clamp(m.g.mul(2), 0, 1))) : d;
+          const p = float(1).sub(smoothstep(u.fadeA, u.fadeB, dEff));
           const keepDist = p.sub(r3);
           // exact frustum (generous margin: the tallest thing here is < 1 m with its lean)
           const clip = u.vp.mul(vec4(pos.add(vec3(0, 0.3, 0)), 1));
@@ -362,8 +367,8 @@ class ScatterLayer {
     const ao = mix(kindMix(kind, float(0.55), float(0.4), float(0.35)), float(1), smoothstep(0, 0.75, h));
     let c = grassAlbedo(root.xz, kind, h, r).mul(ao).mul(float(1).add(w.z.mul(lm).mul(h).mul(0.15)));
     // far blades converge to what the ground shows there: a blade that flickers across a pixel then changes it little
-    const conv = smoothstep(10, 34, camD);
-    c = mix(c, grassAlbedo(root.xz, kind, float(0.55), float(0.5)).mul(0.86), conv.mul(0.7));
+    const conv = smoothstep(6, 26, camD);
+    c = mix(c, grassAlbedo(root.xz, kind, float(0.55), float(0.5)).mul(0.86), conv.mul(0.85));
     c = mix(c, vec3(0.9, 0.92, 0.95), season.uSnow.mul(smoothstep(0.3, 1, h)).mul(0.6));
     const dbg = this.name === "near" ? vec3(1.6, 0.6, 0.6) : vec3(0.6, 0.8, 1.6);
     c = mix(c, c.mul(dbg), grassU.debugLayers);
@@ -396,8 +401,11 @@ class ScatterLayer {
     const stemP = root.add(vec3(lean.x.mul(hh.mul(hh)).mul(stemH), hh.mul(stemH), lean.y.mul(hh.mul(hh)).mul(stemH)))
       .add(vec3(cos(yaw), 0, sin(yaw)).mul(P0().x.mul(0.003)));
     // head: a slightly cupped disc facing up (tilted with the lean)
-    const hx = P0().x.mul(headR), hz = P0().z.mul(headR);
-    const headP = stemTop.add(vec3(hx, rad.mul(headR).mul(0.35).add(0.004), hz));
+    // a head never smaller than ~1.2 px across (sub-pixel white dots on a lawn crawl)
+    const camDf = max(length(cameraPosition.sub(root)), 0.1);
+    const headRp = max(headR, grassU.minPixels.mul(0.55).mul(camDf).div(grassU.pixelScale)).mul(min(grow.mul(4), 1));
+    const hx = P0().x.mul(headRp), hz = P0().z.mul(headRp);
+    const headP = stemTop.add(vec3(hx, rad.mul(headRp).mul(0.35).add(0.004), hz));
     mat.positionNode = select(part.lessThan(0.5), stemP, headP);
     // colours
     const yellow = vec3(0.95, 0.72, 0.05), white = vec3(0.92, 0.92, 0.88), pink = vec3(0.62, 0.3, 0.5), blue = vec3(0.2, 0.32, 0.8), red = vec3(0.8, 0.08, 0.05);

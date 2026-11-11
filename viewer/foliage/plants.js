@@ -26,7 +26,7 @@ import { windAt, wind } from "./wind.js";
 import { noiseAt } from "./noise.js";
 
 export const SLOTS = ["leaf", "leaf_mass", "stem", "flower_a", "flower_b", "flower_centre"];
-export const LOD_D = [7, 16, 65];             // LOD0 to 7 m, LOD1 to 16 m, LOD2 (shell) to 65 m (11 / 28 sparkled: sub-pixel leaves)
+export const LOD_D = [6, 12, 65];             // LOD0 to 6 m, LOD1 to 12 m, LOD2 (shell) to 65 m (sub-pixel leaves and petals sparkled further out)
 const BAND = 2.0;
 export const plantU = { lodScale: uniform(1), fadeOut: uniform(LOD_D[2]), dbg: uniform(0) };
 
@@ -94,7 +94,8 @@ function thinLeaves(g, keep) {
     const a = I[t], kind = U3.getY(a), r = U1.getY(a);
     if (kind < 0.5) { stemTris.push(I[t], I[t + 1], I[t + 2]); continue; }
     if (kind > 2.5) { out.push(I[t], I[t + 1], I[t + 2]); continue; }
-    if (r >= keep) continue;
+    // flowers: petals are a few cm, sub-pixel by 10 m: keep whole flowers (one random per flower) at half the rate
+    if (r >= (kind > 1.5 ? keep * 0.5 : keep)) continue;
     out.push(I[t], I[t + 1], I[t + 2]);
   }
   // grow kept leaves about their base (each vertex knows its part's base)
@@ -257,7 +258,15 @@ class PlantField {
     if (T.spikeGrey) fa = mix(vec3(0.42, 0.45, 0.38), fa, smoothstep(0.1, 0.6, S.lavender));
     const fb = T.flowersB ? pick(T.flowersB) : fa;
     const stemC = vec3(0.16, 0.2, 0.06);
-    const massC = lc.mul(noiseAt(p0.xz.add(p0.y).add(rnd.mul(17)), 1 / 0.3, true).a.mul(0.5).add(0.7));
+    const mn = noiseAt(p0.xz.add(p0.y).add(rnd.mul(17)), 1 / 0.3, true);
+    let massC = lc.mul(mn.a.mul(0.5).add(0.7));
+    // the far shell keeps the plant's blooms as patches (no colour pop at the LOD1 -> shell hand-over), upper half most
+    const SHELL_BLOOM = { hydrangea: 0.5, rhododendron: 0.4, rose: 0.18, lavender: 0.65 }[this.name] ?? 0;
+    if (SHELL_BLOOM && T.bloom) {
+      const bloomNow = T.brown ? max(S[T.bloom], S[T.brown].mul(0.8)) : S[T.bloom];
+      const patch = smoothstep(float(1 - SHELL_BLOOM), float(1.05 - SHELL_BLOOM * 0.6), mn.b.mul(0.7).add(clamp(p0.y.div(H), 0, 1).mul(0.45))).mul(bloomNow);
+      massC = mix(massC, fa.mul(mn.a.mul(0.3).add(0.8)), patch);
+    }
     const centreC = vec3(0.95, 0.6, 0.05);
     const sl = slot;
     const col = select(sl.lessThan(0.5), lc, select(sl.lessThan(1.5), massC, select(sl.lessThan(2.5), stemC, select(sl.lessThan(3.5), fa, select(sl.lessThan(4.5), fb, centreC)))));
