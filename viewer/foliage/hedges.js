@@ -53,7 +53,7 @@ function bulge(x, y, z, sp, seed) {
        + (vnoise3(x * 17, y * 17, z * 17, seed + 9) - 0.5) * 2 * sp.lump * 0.25;
 }
 
-function smoothLine(pts, step = 0.25) {
+function smoothLine(pts, step = 0.33) {
   // moving average (window 5), then resample by arc length
   const sm = pts.map((p, i) => {
     let x = 0, z = 0, n = 0;
@@ -85,7 +85,7 @@ function section(w, H) {
   // denser: every segment longer than 12 cm split (the bulges need vertices to live on)
   const out = [P[0]];
   for (let k = 1; k < P.length; k++) {
-    const a = P[k - 1], b = P[k], L = Math.hypot(b[0] - a[0], b[1] - a[1]), m = Math.max(1, Math.ceil(L / 0.12));
+    const a = P[k - 1], b = P[k], L = Math.hypot(b[0] - a[0], b[1] - a[1]), m = Math.max(1, Math.ceil(L / 0.16));
     for (let j = 1; j <= m; j++) { const t = j / m; out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t, a[3] + (b[3] - a[3]) * t]); }
   }
   return out;

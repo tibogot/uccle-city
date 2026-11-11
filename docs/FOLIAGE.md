@@ -125,3 +125,53 @@ stems (streak and flipped went from 1,402 / 97 to 0) and parallel-transported st
 issues.
 
 Images: `foliage/street_level_july.png`, `foliage/garden_hedges_january.png` (beech hedge holding its brown leaves).
+
+## 8. Round 2 (coordinator review, 2026-11-11 evening)
+
+**Front-garden scene** (`?scene=front`, `labs/foliage-front.js`): three terraced houses drawn with the city's own
+façade material (`viewer/facades.js` `wallMaterial`, imported read-only, on quads carrying its `aWall / aBld / aFN`
+attributes; the window grid is recomputed in JS to place the window boxes and cut the ivy round the openings); a low
+brick wall + coping + gate on the street line, gravel path, lawns, privet / laurel / beech hedges, box edging,
+beds, box balls, a rhododendron, ivy, window boxes of geraniums, 30 cm concrete sidewalk tiles, kerb, asphalt.
+Images: `foliage/front_from_sidewalk_july.png`, `foliage/front_facade_ivy_boxes.png`,
+`foliage/front_across_street_june.png` / `..._january.png` (beech hedge brown, window boxes empty, ivy evergreen).
+NOT done: side-by-sides with online photos of Uccle front gardens (look-only); no time left.
+
+**Ivy** (`viewer/foliage/ivy.js`): grown on a wall plane (roots, up-pull + wander + branching, cut back round windows),
+stems as ribbons, ivy leaf-spray cards (coverage mips, a2c) shrinking 12-22 m into a **mantle** (a quad whose alpha
+is the ivy's blurred coverage with coverage-preserving mips): stable from afar. **Window boxes**
+(`viewer/foliage/windowBoxes.js`): painted / terracotta planters with brackets and soil, geraniums from the plants
+system (explicit y).
+
+**Hedges v2**: denser swept shell (rings every 33 cm, section points every 16 cm) displaced by world-space 3D value
+noise (bulges ~0.6 m, clumps ~0.2 m, roughness), cards standing out 42 % of their size (they break the top and
+sides), more on the top corners, holes into a dark interior in the body shader, lighter species colours.
+654 m of hedges in D8: 105,752 triangles, 30,714 cards.
+
+**Grass v2**: tufts (~0.3 m) and clumps (~1.2 m) shared by blades and ground; a textured far ground (mipmapped
+grain for lawns, streaks for long grass); lawn 9 cm, stronger clump height; far blades converge 85 % to the field
+colour between 6 and 26 m; mown-lawn blades hand over 1.45x sooner, lawn daisies 2.6x; pixel floor 1.1 px; flower
+heads floored at ~1.2 px.
+
+**Plants v2**: mesh audit **0 blocking on every plant and far shell** (`foliage/audit_summary.txt`; checked at the
+LOD's real draw distance, `leak` skipped because every plant material is double-sided by design: open leaf / petal
+sheets). How: a disc-overlap test when placing each leaf / petal (turned and retried, else dropped), alternating
+petal whorls (3 mm, 0.36 rad), stems keep clear of each other, children start on the parent's surface, then an exact
+BVH pass in Blender removes any part that still crosses or lies within 1.5 mm of another at < 16 deg (rhododendron
+127 parts, rose 26, geranium 19, ...). Caveat: LOD1 (leaf thinning, grown 1/sqrt(.4)) is made in JS and is not
+audited. Crown normals by distance (no light / dark flipping of tiny flat leaves), LODs 6 / 12 / 65 m, far shells 320
+tris with bloom patches. **Packed** (`tools/foliage_pack.mjs`: meshopt compression, octahedral normals, uint16
+AO): plants.glb **7.22 MB -> 1.82 MB** (no textures in it: every card texture is drawn in code at load).
+
+**Flicker** (strafe, 24 frames, D8 "front gardens close"; foliage off = 129-141 ppm):
+2,615 (round 1) -> 1,887 (LOD 7/16) -> 1,620 (look pass) -> 818 (LOD 6/12, flowers thinned) -> 489 (lawn hands
+over sooner) -> **404 ppm** (blade convergence); orbit 399 vs 128 off. Front scene from across the street:
+124 ppm vs 20 off. Heat maps `foliage/flicker_strafe_front_gardens_v3..v5.png`. What is left: the lawn at 10-20 m
+(blade tips) and roof edges (baseline).
+
+**GPU** (VERY noisy: another agent's Pedestrian Lab with 300 people and a Weather Lab ran in the same Chrome; the
+lab's own fps read 30 at times): D8 street level +0.33, down the street +0.66, front gardens close +0.52, sky +0.07
+ms (6 alternating rounds); front scene from the sidewalk +1.64, façade view +1.44, down the street +0.92 ms (5
+rounds; the close views draw several LOD0 plants of 12-15k triangles, 12 geraniums, dense near grass and close hedge
+cards). Per-part runs in this state were not additive (grass alone > all), so trust none of them to better than
++-0.4 ms; re-measure on a quiet machine. The front scene is a close-up worst case, not the street budget.

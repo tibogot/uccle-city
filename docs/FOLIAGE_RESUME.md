@@ -10,7 +10,11 @@ open `http://localhost:8827/labs/foliage-lab.html` (`?scene=garden` for the test
   GPU LODs; lab panel, on/off and per-part GPU benchmarks, flicker test and frame strips wired (`lab.runFlicker`,
   `lab.strip`).
 
-## Not done (in priority order)
+## Round 2 done (see FOLIAGE.md §8)
+Front-garden scene, ivy, window boxes, hedges v2, grass v2, mesh audit 0 blocking, plants packed 1.82 MB, flicker
+2,615 -> 404 ppm.
+
+## Not done (in priority order) — round 1 list, items 1, 2, 4 now DONE
 1. **Ivy** (JS growth on a wall: Luft's IvyGenerator rules; leaves = the `ivy` card already drawn in `cards.js`) and
    **window boxes** (a JS box planter + the Blender `geranium` instanced 3-4 per box). Not started.
 2. **Mesh audit to 0 blocking** on every plant (`docs/foliage/audit_summary.txt`, `leak` skipped: see FOLIAGE.md §7):
@@ -22,5 +26,9 @@ open `http://localhost:8827/labs/foliage-lab.html` (`?scene=garden` for the test
 4. Plants GLB is 9.8 MB (per-corner AO splits every vertex): pack with meshopt compression / quantization
    (gltfpack or the townhall pack script) and store AO per vertex.
 5. Snow look (white tops on hedges / shrubs exist; grass under snow shortens; a snow ground layer is the weather lab's).
+5b. Quiet-machine GPU numbers (round 2 numbers were taken beside two other labs); the front scene close-ups
+   (+1.4-1.6 ms) want LOD0 plants cheaper (rhododendron / hydrangea 12-15k tris) or LOD0 only within 4 m.
+5c. Side-by-sides with real Uccle front-garden photos (look-only), the lawn sparkle at 10-20 m, hedge body
+   holes read dotty close up.
 6. City integration (later, after the owner's review): masks + placements per tile in the worker, the ground shader
    taking `grassGroundColor()`.
