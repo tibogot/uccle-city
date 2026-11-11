@@ -94,7 +94,7 @@ export class Meters {
         if (this.frames - s.velFrame <= 4) {
           for (let q = 0; q < 3; q++) {
             const jerk = Math.hypot(vel[q][0] - s.v[q][0], vel[q][1] - s.v[q][1], vel[q][2] - s.v[q][2]) / 60;
-            if (jerk > 0.05 && this.frames > 10 && p.dist < 25) { this.pops.pose++; this._ev("pose", p, jerk, band); break; }
+            if (jerk > 0.05 && this.frames > 10 && p.dist < 20) { this.pops.pose++; this._ev("pose", p, jerk, band); break; }
           }
         }
         s.v = vel; s.velFrame = this.frames;

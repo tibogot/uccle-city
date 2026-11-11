@@ -168,7 +168,10 @@ export class Crowd {
   /** Advance a person's clip slices from their motion this frame (distance walked, yaw turned, time): the
    *  locomotion phase moves by distance / stride, so a planted foot stays planted whatever the speed. */
   advance(p, dt) {
-    const T = this.table, a = (p.anim ||= { loco: 0, idle: (p.seed * 7.31) % 1, turn: 0, codeA: 0, codeB: 0, w: 0, live: null, liveW: 0, liveTarget: 0 });
+    const T = this.table, a = (p.anim ||= { loco: 0, idle: (p.seed * 7.31) % 1, turn: 0, act: 0, codeA: 0, codeB: 0, w: 0, live: null, liveW: 0, liveTarget: 0,
+      // (all fields up front: one hidden class)
+      slowB: null, wasFast: false, gen: 0, pend: 0, held: false, warm: 0, ox: 0, oz: 0, dx: p.x, dy: p.y, dz: p.z, dyaw: p.yaw,
+      fprev: null, fpl0: 0, fpl1: 0, gL: undefined, gR: undefined, offL: 0, offR: 0, drawnPose: null });
     const v = p.speed, S = p.scale * (p.childK || 1);             // children: shorter legs, shorter strides
     const fam = T.fam(p.family), famName = T.families[p.family] ? p.family : "base";
     T.loco(Math.max(v, 0.7), p.sex, this._loco, famName);
@@ -222,10 +225,11 @@ export class Crowd {
       // far band (7-30 px tall, 15 Hz): no pin, one ground sample; the offset left from the mid band fades out
       const r = Math.sqrt((a.ox || 0) * (a.ox || 0) + (a.oz || 0) * (a.oz || 0)), k = r > 1e-6 ? Math.max(0, r - 0.2 * dt) / r : 0;
       a.ox = (a.ox || 0) * k; a.oz = (a.oz || 0) * k; a.dx = p.x + a.ox; a.dz = p.z + a.oz; a.dyaw = p.yaw;
-      // ground: the higher of two samples 0.3 m ahead / behind along the heading (where the feet are in a stride):
+      // ground: the highest of four samples (0.3 m ahead / behind, 0.12 m to each side: where the feet are in a stride):
       // a foot may float over a kerb edge for a moment, it does not sink into it
-      const fx = Math.sin(p.yaw) * 0.3 * p.scale, fz = Math.cos(p.yaw) * 0.3 * p.scale;
-      a.dy = Math.max(this.ground(a.dx + fx, a.dz + fz), this.ground(a.dx - fx, a.dz - fz));
+      const fx = Math.sin(p.yaw) * 0.3 * p.scale, fz = Math.cos(p.yaw) * 0.3 * p.scale, sx = fz * 0.4, sz = -fx * 0.4;
+      a.dy = Math.max(this.ground(a.dx + fx + sx, a.dz + fz + sz), this.ground(a.dx + fx - sx, a.dz + fz - sz),
+        this.ground(a.dx - fx + sx, a.dz - fz + sz), this.ground(a.dx - fx - sx, a.dz - fz - sz));   // (4 at 15 Hz)
       a.offL = a.offR = 0; a.gL = a.gR = undefined; a.fprev = null;
       return;
     }
@@ -322,7 +326,7 @@ export class Crowd {
       // (the drawn placement, place(), only for people drawn: a culled one restarts its pin when seen again)
       let d2 = -1;
       // (the LOD1 band, 38-64 m, steps at 30 Hz the same way: half the plant-pin work)
-      const rate = p.dist > B.lod12 + B.lod12w ? B.farRate : p.dist > B.liveWarm + 3.5 ? 2 : 1;     // 30 Hz from 25 m
+      const rate = p.dist > B.lod12 + B.lod12w ? B.farRate : p.dist > B.liveOut && !p.anim.live ? 2 : 1;     // 30 Hz past the live band
       if (rate > 1 && !p.anim.live && (p.id + this.frame) % rate) { p.anim.pend = (p.anim.pend || 0) + dt; }
       else { d2 = dt + (p.anim.pend || 0); this.advance(p, d2); p.anim.pend = 0; }
       if (p.dist > B.end) { p.drawn = false; st.beyond++; p.anim.fprev = null; if (p.anim.live) this._free(p); continue; }
@@ -358,8 +362,8 @@ export class Crowd {
         const a = p.anim;
         // (no live rig while sitting / talking: those are UAL clips, table only)
         const diving = p.diveTime >= 0 && p.dist < B.liveWarm;
-        const want = diving || p.action == null && nLive < B.maxLive && (p.dist < B.live || (a.liveTarget === 1 && p.dist < B.liveOut));
-        const warm = p.action == null && nLive < B.maxLive && p.dist < B.liveWarm;
+        const want = diving || p.action == null && !p.childK && nLive < B.maxLive && (p.dist < B.live || (a.liveTarget === 1 && p.dist < B.liveOut));
+        const warm = p.action == null && !p.childK && nLive < B.maxLive && p.dist < B.liveWarm;
         if (want || warm || a.liveW > 0) nLive++;
         if ((want || warm) && !a.live) { a.live = this._rig(p); a.warm = 0; }
         if (!a.live) continue;

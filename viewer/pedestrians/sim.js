@@ -117,11 +117,19 @@ export class PedSim {
       girth: 0.92 + r() * 0.22,
       hair: sex ? (hairRoll < 0.6 ? 1 : 0.3 + hairRoll * 0.25) : hairRoll < 0.08 ? 1 : hairRoll * 0.35,
       armSwing: 0.8 + r() * 0.4, strideK: 0.95 + r() * 0.1,
-      vPref: Math.min(1.75, Math.max(0.85, 1.3 + gauss(r) * 0.16)), age,
+      vPref: Math.min(1.75, Math.max(0.85, 1.3 + gauss(r) * 0.16)), age: age < 2 ? "adult" : "adult",
       x: 0, y: 0, z: 0, yaw: 0, speed: 0, turnRate: 0, look: 0, fade: 1, fadeDir: 0,
       // navigation: the carrot on the graph
       edge: null, dir: 1, s: 0, lane: 0, laneT: 0, state: "walk", timer: 0, hold: false, face: null, leaving: false,
       v: 0, kerb: null, spot: null, delay: 0, goal: null,
+      // every field any module sets later, declared here: the people keep ONE hidden class (a person object that grows
+      // property by property falls into V8's slow dictionary mode; measured: the crowd's per-frame CPU drops with this)
+      gen: 0, onCrossing: null, holding: false, tramWait: false, boarding: false, spotUntil: 0, glance: 0, dodge: 0, gy: 0,
+      redRunner: false, backed: 0, talkT: 0, standUntil: 0, action: null, seat: null, seatNode: null, leader: null, companion: null,
+      side: 0, handHeld: false, keepDress: false, dive: null, diveTime: -1, style: 0, family: "base", childK: 0, pram: false, dog: false,
+      _paused: null, _pram: null, after: null,
+      // set by the crowd each frame
+      anim: null, dist: 0, inView: false, drawn: false, lodMix: null, shadowMix: 0,
     };
   }
   /** Place a person on a random edge (initial fill: anywhere; respawn: at a leaf). */
