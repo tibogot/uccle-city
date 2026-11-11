@@ -21,7 +21,8 @@ import { PedSim } from "../viewer/pedestrians/sim.js";
 import { Meters } from "../viewer/pedestrians/meters.js";
 import { Props } from "../viewer/pedestrians/props.js";
 import { personUniforms } from "../viewer/pedestrians/personMaterial.js";
-import { ground, buildGround, buildGraph, Traffic, SignalPosts, Tram, SIGNAL } from "./pedestrian-ground.js";
+import { ground, buildGround, buildGraph, Traffic, SignalPosts, Tram, SIGNAL, BENCHES } from "./pedestrian-ground.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 const qp = new URLSearchParams(location.search);
 const $info = document.getElementById("info");
@@ -42,6 +43,17 @@ const lighting = new Lighting(scene, renderer, preset);
 
 // ------------------------------------------------------------------------------------------------ the world
 const G = buildGround(scene);
+// the Brussels bench of the furniture kit (claude/furniture, tools/blender/furniture.py bench(); its glb copied to
+// models/furniture/): seat 0.45 m, slats on dark steel frames, facing -Z in the file
+new GLTFLoader().loadAsync(new URL("../models/furniture/brussels_furniture.glb", import.meta.url).href).then((gltf) => {
+  const src = gltf.scene.getObjectByName("bench");
+  if (!src) return;
+  for (const [x, z, yaw] of BENCHES) {
+    const b = src.clone(true); b.position.set(x, ground(x, z), z); b.rotation.set(0, yaw - Math.PI, 0);
+    b.traverse((o) => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; } });
+    scene.add(b);
+  }
+}).catch((e) => console.warn("bench model", e));
 const { graph, platformLine, tramDoors } = buildGraph(G.doors);
 const frustum = new THREE.Frustum(), pm = new THREE.Matrix4(), sph = new THREE.Sphere();
 const inView = (x, y, z) => { sph.center.set(x, y, z); sph.radius = 1.0; return frustum.intersectsSphere(sph) && camera.position.distanceTo(sph.center) < BANDS.end; };
@@ -207,7 +219,7 @@ renderer.setAnimationLoop(() => {
     push(cpu.crowd, performance.now() - tc); push(cpu.rig, st.rigMs);
     const moving = camera.position.distanceTo(prevCam) > 1e-3;
     if (meters.on) meters.sample(sim.people, Math.max(sdt, 1e-4), moving);
-    props.update(sim.people, Math.max(sdt, 1e-4), ground);
+    props.update(sim.people, Math.max(sdt, 1e-4), ground, clock);
   } else if (S.mode === "his") {
     hisUpdate(Math.max(sdt, 1e-4));
     push(cpu.crowd, performance.now() - tc);

@@ -65,6 +65,10 @@ const POST = {
   old: (rig) => stoop(rig),
   // older with a cane in the right hand (hand forward-low; the cane is drawn from the hand to the ground)
   cane: (rig) => { stoop(rig); armTo(rig, 1, [0.24, 0.82, 0.22 + 0.05 * Math.sin(rig.phase * Math.PI * 2)], [0.4, -0.6, -1]); },
+  // a parent holding a toddler's hand with the left hand (down and out to the side), and the toddler reaching up with
+  // the right (in adult proportions: the crowd shortens a child's arms, so this lands at ~0.62 m for a 0.8 m toddler)
+  holdL: (rig) => armTo(rig, 0, [0.34, 0.66, 0.06], [0.3, -1, -0.5]),
+  reachR: (rig) => armTo(rig, 1, [0.6, 1.4, 0.1], [0.2, -1, -0.6]),
 };
 const FAM_WALKS = [0.7, 1.0, 1.35, 1.7];
 const CLIPS = [
@@ -80,7 +84,7 @@ const CLIPS = [
 ];
 for (const fam of Object.keys(POST)) {
   CLIPS.push({ name: `${fam}:idle`, family: fam, kind: "idle", seconds: 8, blend: 1.2, fps: 15, post: POST[fam] });
-  for (const v of fam === "old" || fam === "cane" ? [0.7, 1.0, 1.35] : FAM_WALKS)
+  for (const v of ["old", "cane", "holdL", "reachR"].includes(fam) ? [0.7, 1.0, 1.35] : FAM_WALKS)
     CLIPS.push({ name: `${fam}:walk${String(Math.round(v * 100)).padStart(3, "0")}`, family: fam, kind: "walk", speed: v, post: POST[fam] });
 }
 

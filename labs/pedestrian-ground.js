@@ -21,6 +21,10 @@ export const A = { half: 3.5, north: -7, south: 5.5 };       // street A: carria
 export const B = { half: 3.5, west: -6, east: 6 };           // street B: |x| < 3.5, sidewalks to x -6 / 6
 export const KERB = 0.13;
 export const ZEBRA = { x: 60, half: 2.5 };
+/** Bench positions (x, z) and the direction a sitter faces (yaw): the square's four, the park's one. The lab puts the
+ *  Brussels bench of the furniture kit (claude/furniture tools/blender/furniture.py bench(), models/furniture/
+ *  brussels_furniture.glb, seat 0.45 m, 1.8 m long) there. */
+export const BENCHES = [[16.6, -20, Math.PI / 2], [16.6, -30, Math.PI / 2], [16.6, -40, Math.PI / 2], [16.6, -50, Math.PI / 2], [52.5, 55.2, 0]];
 export const SQUARE = { x0: 15, x1: 55, z0: -67, z1: -7 };
 export const PARK = { x0: 18, x1: 130, z0: 5.5, z1: 130 };
 export const TRAM = { x: -40.2, z0: 12, z1: 150, plat: { x0: -38.5, x1: -35.5, z0: 30, z1: 80 }, h: 0.25 };
@@ -204,8 +208,7 @@ export function buildGround(scene) {
   for (let x = -140; x < -10; x += 4.5) if (Math.abs(x + 80) > 4) parts.metal.push(new THREE.CylinderGeometry(0.06, 0.07, 0.9, 10).translate(x, ground(x, 3.8) + 0.45, 3.8));
   parts.metal.push(box(0.7, 1.3, 0.45, -80, ground(-80, 5.1) + 0.65, 5.15));               // the street cabinet (the detour)
   // the square: benches along its west edge, a café terrace (tables), a few trees
-  for (const z of [-20, -30, -40, -50]) parts.wood.push(box(0.5, 0.06, 1.9, SQUARE.x0 + 1.6, ground(17, z) + 0.45, z), box(0.08, 0.45, 1.9, SQUARE.x0 + 1.35, ground(17, z) + 0.68, z),
-    box(0.4, 0.42, 0.08, SQUARE.x0 + 1.6, ground(17, z) + 0.21, z - 0.85), box(0.4, 0.42, 0.08, SQUARE.x0 + 1.6, ground(17, z) + 0.21, z + 0.85));
+  // (the benches: the Brussels bench from the furniture kit, placed by the lab: BENCHES below)
   // café chairs (two per table, facing it), seat 45 cm
   for (const [x, z] of [[44, -15], [49, -15], [44, -21], [49, -21]]) for (const sz of [-1, 1]) {
     const cz = z + sz * 0.85, y0 = ground(x, cz);
@@ -218,7 +221,6 @@ export function buildGround(scene) {
     parts.leaves.push(new THREE.IcosahedronGeometry(2.4, 2).scale(1, 1.1, 1).translate(x, ground(x, z) + 6, z));
   }
   // the park bench (beside the path) and park trees
-  parts.wood.push(box(1.9, 0.06, 0.5, 52.5, ground(52.5, 56) + 0.45, 55.2), box(1.9, 0.45, 0.08, 52.5, ground(52.5, 56) + 0.68, 54.95));
   for (let i = 0; i < 26; i++) {
     const x = PARK.x0 + 6 + hsh(i * 3.1) * (PARK.x1 - PARK.x0 - 12), z = PARK.z0 + 8 + hsh(i * 7.7) * (PARK.z1 - PARK.z0 - 12);
     if (path.some(([px, pz]) => Math.hypot(px - x, pz - z) < 4)) continue;
@@ -324,7 +326,11 @@ export function buildGraph(doors) {
     const x = SQUARE.x0 + 6 + i * 9.3 + (((i * 7 + j * 3) % 5) - 2) * 0.6, z = SQUARE.z0 + 7 + j * 11 + (((i * 3 + j * 5) % 5) - 2) * 0.7;
     field.push(g.node(x, z, "pause", { pause: 0.3, minT: 3, maxT: 18, spread: 1.5 }));
   }
-  for (const a of field) for (const b of field) if (a.id < b.id && Math.hypot(a.x - b.x, a.z - b.z) < 15) g.join(a, b, "square", { width: 3 });
+  // keep the café terrace (tables at x 44-49, z -15..-21) clear: field nodes pushed out of it, no edge across it
+  const CAFE = [46.5, -18], CAFE_R = 4.6;
+  for (const n of field) { const dx = n.x - CAFE[0], dz = n.z - CAFE[1], d = Math.hypot(dx, dz); if (d < CAFE_R) { n.x = CAFE[0] + (dx / (d || 1)) * CAFE_R; n.z = CAFE[1] + (dz / (d || 1)) * CAFE_R; } }
+  const segDist = (a, b, p) => { const vx = b.x - a.x, vz = b.z - a.z, t = Math.max(0, Math.min(1, ((p[0] - a.x) * vx + (p[1] - a.z) * vz) / (vx * vx + vz * vz))); return Math.hypot(a.x + vx * t - p[0], a.z + vz * t - p[1]); };
+  for (const a of field) for (const b of field) if (a.id < b.id && Math.hypot(a.x - b.x, a.z - b.z) < 15 && segDist(a, b, CAFE) > CAFE_R - 0.4) g.join(a, b, "square", { width: 3 });
   for (const x of [20, 35, 50]) { const o = at(Ao[1], x, -6.2); const n = g.node(x, -8.5, "walk"); g.join(o, n, "walk", { width: 2 }); g.join(n, at(field, x, -10), "square", { width: 3 }); }
   // benches: two seats each (the sitter's root = the seat, hips over it; UAL1 Sitting_Idle_Loop), facing the square
   for (const z of [-20, -30, -40, -50]) for (const dz of [-0.45, 0.45]) {

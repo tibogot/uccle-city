@@ -16,7 +16,7 @@ import { PersonRig } from "../../vendor/slop-ped/pedestrians.js";
 import { createPersonMaterial } from "./personMaterial.js";
 import { buildBody } from "./bodies.js";
 import { keepBand } from "../lodFade.js";
-import { BONES, STRIDE, BIND, blendPose, rot } from "./boneTable.js";
+import { BONES, STRIDE, BIND, blendPose, rot, childify, solePoints } from "./boneTable.js";
 import { buildLod2 } from "./lod2.js";
 
 export const BANDS = {
@@ -36,7 +36,7 @@ const nlerp = (a, b, t) => normalize(mix(a, b.mul(select(dot(a, b).lessThan(0), 
 const yawQ = (a) => vec4(0, sin(a.mul(0.5)), 0, cos(a.mul(0.5)));
 
 class Band {
-  constructor(name, geometry, detail, max, table, tableNode, clipNode, { castShadow }) {
+  constructor(name, geometry, detail, max, table, tableNode, clipNode, { castShadow, bindNode, bindOff = 0 }) {
     this.name = name; this.max = max;
     this.pose = attributeArray(max * STRIDE, "vec4");
     const poseRO = storage(this.pose.value, "vec4", this.pose.value.count).toReadOnly();
@@ -56,22 +56,43 @@ class Band {
     this.countU = uniform(0, "int");
     // the compute pass body for this band's slot `person`, bone `bone` (one kernel for the three bands: Crowd)
     const total = table.total, params = this.params, pose = this.pose;
+    // (bindNode from the options: the bind joints per sex, for child proportions)
     this.body = (person, bone) => {
       {
         const P0 = params.element(person.mul(4)), P1 = params.element(person.mul(4).add(1));
         const P2 = params.element(person.mul(4).add(2)), P3 = params.element(person.mul(4).add(3));
         If(P1.x.greaterThanEqual(0.0), () => {
           const sexBase = int(P2.y).mul(total);
-          const slice = (code) => {
+          const slice = (code, bn = bone) => {
             const ci = clipNode.element(int(floor(code)));
             const frames = ci.y, f = fract(code).mul(frames), f0 = int(floor(f)), t = fract(f);
             const f1 = f0.add(1).mod(int(frames));
-            const o0 = sexBase.add(int(ci.x)).add(f0).mul(BONES).add(bone).mul(2);
-            const o1 = sexBase.add(int(ci.x)).add(f1).mul(BONES).add(bone).mul(2);
+            const o0 = sexBase.add(int(ci.x)).add(f0).mul(BONES).add(bn).mul(2);
+            const o1 = sexBase.add(int(ci.x)).add(f1).mul(BONES).add(bn).mul(2);
             return [nlerp(tableNode.element(o0), tableNode.element(o1), t), mix(tableNode.element(o0.add(1)), tableNode.element(o1.add(1)), t)];
           };
           const [qa, ta] = slice(P1.x), [qb, tb] = slice(P1.y);
           const q = nlerp(qa, qb, P1.z).toVar(), tl = mix(ta.xyz, tb.xyz, P1.z).toVar();
+          // child proportions (P3.w = leg factor, 0 = adult; boneTable.js childify() on the CPU): limbs shortened about
+          // the hip / shoulder (their bones scaled), the body lowered by the legs' lost length
+          const kb = float(1).toVar();
+          If(P3.w.greaterThan(0.0), () => {
+            const kLeg = P3.w, kArm = float(1).sub(float(1).sub(kLeg).mul(0.6));
+            const isLeg = bone.greaterThanEqual(7), isArm = bone.greaterThanEqual(3).and(bone.lessThan(7));
+            If(isLeg.or(isArm), () => {
+              const root = select(isLeg, select(bone.lessThan(11), int(7), int(11)), select(bone.lessThan(5), int(3), int(5)));
+              const [qra, tra] = slice(P1.x, root), [qrb, trb] = slice(P1.y, root);
+              const qr = nlerp(qra, qrb, P1.z), tr = mix(tra.xyz, trb.xyz, P1.z);
+              const sexOff = int(P2.y).mul(BONES);
+              const jr = tr.add(qrot(qr, bindNode.element(sexOff.add(root).add(bindOff)).xyz));
+              const bj = bindNode.element(sexOff.add(bone).add(bindOff)).xyz;
+              const k = select(isLeg, kLeg, kArm);
+              const pb = tl.add(qrot(q, bj));
+              tl.assign(jr.add(pb.sub(jr).mul(k)).sub(qrot(q, bj.mul(k))));
+              kb.assign(k);
+            });
+            tl.assign(tl.sub(vec3(0, float(1).sub(kLeg).mul(0.84), 0)));
+          });
           // head glance (P3.x rad about the vertical through the head joint; 0 for every other bone)
           const look = select(bone.equal(2), P3.x, float(0));
           const hj = vec3(...BIND.head), pj = tl.add(qrot(q, hj));
@@ -83,7 +104,7 @@ class Band {
           // per-foot ground: the left leg (bones 7-10) lifted by P3.y, the right (11-14) by P3.z, the thighs by half
           const lift = select(bone.greaterThanEqual(11), P3.z, select(bone.greaterThanEqual(7), P3.y, float(0)))
             .mul(select(bone.equal(7).or(bone.equal(11)), float(0.5), float(1)));
-          pose.element(base.add(1)).assign(vec4(qrot(qy, t2.mul(S)).add(P0.xyz).add(vec3(0, lift, 0)), S));
+          pose.element(base.add(1)).assign(vec4(qrot(qy, t2.mul(S)).add(P0.xyz).add(vec3(0, lift, 0)), S.mul(kb)));
           If(bone.equal(0), () => { pose.element(person.mul(STRIDE).add(STRIDE - 1)).assign(P2); });
         });
       }
@@ -99,13 +120,23 @@ export class Crowd {
   constructor(renderer, table, lod2Geo, { max = 640 } = {}) {
     this.renderer = renderer; this.table = table;
     this.tableNode = attributeArray(table.data, "vec4").toReadOnly();
-    this.clipNode = attributeArray(table.clipInfo, "vec4").toReadOnly();
     const g0 = buildBody(1, table), g1 = buildBody(0, table);
+    // the skeleton's bind joints per sex (child proportions, CPU + GPU)
+    const rigs = [new PersonRig({ female: false }), new PersonRig({ female: true })];
+    this.bindArr = rigs.map((r) => r.bind.map((v) => [v.x, v.y, v.z]));
+    const bindData = new Float32Array(2 * BONES * 4);
+    this.bindArr.forEach((arr, sx) => arr.forEach((v, b) => bindData.set([v[0], v[1], v[2], 0], (sx * BONES + b) * 4)));
+    // the clip table index and the bind joints share ONE small buffer (a compute stage may bind only 8 storage buffers:
+    // 3 params + 3 poses + the bone table + this)
+    const meta = new Float32Array(table.clipInfo.length + bindData.length);
+    meta.set(table.clipInfo); meta.set(bindData, table.clipInfo.length);
+    this.clipNode = this.bindNode = attributeArray(meta, "vec4").toReadOnly();
+    this.bindOff = table.clipInfo.length / 4;
     this.tris = [g0, g1, lod2Geo].map((g) => g.index.count / 3);
     this.bands = [
-      new Band("LOD0", g0, 1, Math.min(max, 160), table, this.tableNode, this.clipNode, { castShadow: true }),
-      new Band("LOD1", g1, 0, Math.min(max, 320), table, this.tableNode, this.clipNode, { castShadow: true }),
-      new Band("LOD2", lod2Geo, 0, max, table, this.tableNode, this.clipNode, { castShadow: false }),
+      new Band("LOD0", g0, 1, Math.min(max, 160), table, this.tableNode, this.clipNode, { castShadow: true, bindNode: this.bindNode, bindOff: this.bindOff }),
+      new Band("LOD1", g1, 0, Math.min(max, 320), table, this.tableNode, this.clipNode, { castShadow: true, bindNode: this.bindNode, bindOff: this.bindOff }),
+      new Band("LOD2", lod2Geo, 0, max, table, this.tableNode, this.clipNode, { castShadow: false, bindNode: this.bindNode, bindOff: this.bindOff }),
     ];
     this.meshes = this.bands.map((b) => b.mesh);
     // ONE compute dispatch for the three bands (a thread per (person, bone); band slots laid end to end)
@@ -137,7 +168,7 @@ export class Crowd {
    *  locomotion phase moves by distance / stride, so a planted foot stays planted whatever the speed. */
   advance(p, dt) {
     const T = this.table, a = (p.anim ||= { loco: 0, idle: (p.seed * 7.31) % 1, turn: 0, codeA: 0, codeB: 0, w: 0, live: null, liveW: 0, liveTarget: 0 });
-    const v = p.speed, S = p.scale;
+    const v = p.speed, S = p.scale * (p.childK || 1);             // children: shorter legs, shorter strides
     const fam = T.fam(p.family), famName = T.families[p.family] ? p.family : "base";
     T.loco(Math.max(v, 0.7), p.sex, this._loco, famName);
     const L = this._loco;
@@ -200,7 +231,10 @@ export class Crowd {
     let ox = a.ox || 0, oz = a.oz || 0;
     s.sex = p.sex; s.clipA = Math.floor(a.codeA); s.phaseA = a.codeA % 1; s.clipB = Math.floor(a.codeB); s.phaseB = a.codeB % 1; s.w = a.w;
     s.x = p.x + ox; s.y = 0; s.z = p.z + oz; s.yaw = p.yaw; s.scale = p.scale;
-    T.feet(s, F);
+    if (p.childK) {
+      s.offL = s.offR = 0; s.look = 0; s.seed = p.seed; s.girth = p.girth; s.hair = 0;
+      solePoints(childify(T.samplePose(this._tmp, s), p.childK, this.bindArr[p.sex]), F);
+    } else T.feet(s, F);
     const pc = a.w < 0.5 ? a.codeA : a.codeB, c = T.clips[Math.floor(pc)];
     const bits = c.plant[p.sex][Math.floor((pc % 1) * c.frames) % c.frames];
     const pl0 = bits & 1, pl1 = (bits >> 1) & 1;
@@ -239,7 +273,8 @@ export class Crowd {
     s.sex = p.sex; s.clipA = Math.floor(a.codeA); s.phaseA = a.codeA % 1; s.clipB = Math.floor(a.codeB); s.phaseB = a.codeB % 1; s.w = a.w;
     s.x = a.dx ?? p.x; s.y = a.dy ?? p.y; s.z = a.dz ?? p.z; s.yaw = a.dyaw ?? p.yaw; s.offL = a.offL || 0; s.offR = a.offR || 0;
     s.scale = p.scale; s.look = p.look || 0; s.seed = p.seed; s.girth = p.girth; s.hair = p.hair + 2 * (p.style || 0);
-    return this.table.samplePose(out, s);
+    this.table.samplePose(out, s);
+    return p.childK ? childify(out, p.childK, this.bindArr[p.sex]) : out;
   }
 
   _rig(p) {
@@ -309,6 +344,7 @@ export class Crowd {
         a.liveW = 1; a.liveTarget = 1;
         a.live.update(dt, p.anim.dx ?? p.x, p.anim.dz ?? p.z, p.yaw, this._groundFn, null, 0, true, p.diveTime >= 0 ? p.diveTime : -1);
         if (p.look) headGlance(a.live.pose, p.look);
+        if (p.childK) childify(a.live.pose, p.childK, this.bindArr[p.sex]);
       }
     } else {
       // only the near ones (warm range, or still holding a rig) compete for the live rigs: sort just those
@@ -328,6 +364,7 @@ export class Crowd {
         a.warm = (a.warm || 0) + dt;
         a.live.update(dt, p.anim.dx ?? p.x, p.anim.dz ?? p.z, p.yaw, this._groundFn, null, 0, true, p.diveTime >= 0 ? p.diveTime : -1);
         if (p.look) headGlance(a.live.pose, p.look);
+        if (p.childK) childify(a.live.pose, p.childK, this.bindArr[p.sex]);
         // hand-over: in, after the rig has walked 0.8 s (pre-warmed out to 23 m); the table's phase is pulled toward
         // the rig's meanwhile so both show the same step when they blend
         const goIn = want && (a.warm > 0.8 || diving);
@@ -384,7 +421,7 @@ export class Crowd {
         P[o] = a.dx; P[o + 1] = a.dy; P[o + 2] = a.dz; P[o + 3] = a.dyaw;
         P[o + 4] = live ? -1 : a.codeA; P[o + 5] = a.codeB; P[o + 6] = a.w; P[o + 7] = p.scale;
         P[o + 8] = p.seed; P[o + 9] = p.sex; P[o + 10] = p.girth; P[o + 11] = p.hair + 2 * (p.style || 0);
-        P[o + 12] = p.look || 0; P[o + 13] = a.offL || 0; P[o + 14] = a.offR || 0; P[o + 15] = 0;
+        P[o + 12] = p.look || 0; P[o + 13] = a.offL || 0; P[o + 14] = a.offR || 0; P[o + 15] = p.childK || 0;
         const F = b.fade.value.array, of = slot * 4;
         F[of] = lo; F[of + 1] = hi;
         // shadow: the same pixel split, cut at the shadow fade

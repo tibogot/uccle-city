@@ -15,7 +15,7 @@ const B = { PELVIS: 0, CHEST: 1, HEAD: 2, FOREARM_R: 6, THIGH_L: 7, THIGH_R: 11 
 
 /** A closed loft through rings (arrays of [x, y, z]); skinFn(x, y, z) -> [boneA, boneB, wB]. Caps: centroid fans
  *  (small parts only; the hat top and the umbrella tip close onto a point ring instead). */
-function loft(rings, part, skinFn, { capStart = false, capEnd = false, girth = null } = {}) {
+function loft(rings, part, skinFn, { capStart = false, capEnd = false, girth = null, fem = null } = {}) {
   const rows = rings.length, cols = rings[0].length, per = cols + 1;
   const pos = [], idx = [];
   for (let i = 0; i < rows; i++) for (let j = 0; j < per; j++) pos.push(...rings[i][j % cols]);
@@ -43,7 +43,15 @@ function loft(rings, part, skinFn, { capStart = false, capEnd = false, girth = n
   }
   g.setAttribute("skin", new THREE.BufferAttribute(skin, 4));
   g.setAttribute("extra", new THREE.BufferAttribute(extra, 3));
-  g.setAttribute("femaleDelta", new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  // the female fit (round 3): his female target is narrower at the shoulders and neck, a little smaller at the head
+  // and wider at the hips; the new parts follow it so nothing floats or cuts in on women
+  const fd = new Float32Array(n * 3);
+  if (fem) for (let v = 0; v < n; v++) {
+    const x = pos[v * 3], y = pos[v * 3 + 1], z = pos[v * 3 + 2];
+    const [kx, ky, kz, cz, dy] = typeof fem === "function" ? fem(x, y, z) : fem;
+    fd[v * 3] = x * (kx - 1); fd[v * 3 + 1] = (y - (fem.y0 ?? y)) * 0 + (ky - 1) * 0 + (dy || 0); fd[v * 3 + 2] = (z - cz) * (kz - 1);
+  }
+  g.setAttribute("femaleDelta", new THREE.BufferAttribute(fd, 3));
   g.setAttribute("hairDelta", new THREE.BufferAttribute(new Float32Array(n * 3), 3));
   return g;
 }
@@ -75,14 +83,17 @@ export function buildExtras(detail, table) {
   // hat (a beanie; the "cap" style uses the same shell, coloured): over the hair shell
   {
     const rows = [[1.6, 0.106, 0.112, 0.118, -0.012], [1.64, 0.112, 0.116, 0.124, -0.012], [1.69, 0.108, 0.11, 0.12, -0.013], [1.735, 0.09, 0.09, 0.1, -0.013], [1.77, 0.055, 0.055, 0.06, -0.013], [1.787, 0.012, 0.012, 0.012, -0.013]];
-    parts.push(loft(rows.map(([y, rx, f, b, cz]) => ring(y, rx, f, b, cz, n)), PART.HAT, fixed(B.HEAD), { capEnd: true }));
+    parts.push(loft(rows.map(([y, rx, f, b, cz]) => ring(y, rx, f, b, cz, n)), PART.HAT, fixed(B.HEAD), { capEnd: true, fem: [0.95, 1, 0.95, -0.012, -0.004] }));
   }
   // scarf: a thick ring round the neck + a tail down the chest
   {
     const rows = [[1.445, 0.1, 0.1, 0.095, -0.008], [1.47, 0.088, 0.096, 0.088, -0.01], [1.5, 0.078, 0.088, 0.08, -0.012], [1.53, 0.07, 0.08, 0.072, -0.012]];
-    parts.push(loft(rows.map(([y, rx, f, b, cz]) => ring(y, rx, f, b, cz, n)), PART.SCARF, (x, y) => (y > 1.5 ? [B.CHEST, B.HEAD, 0.35] : [B.CHEST, B.CHEST, 0]), { capStart: true, capEnd: true }));
+    parts.push(loft(rows.map(([y, rx, f, b, cz]) => ring(y, rx, f, b, cz, n)), PART.SCARF, (x, y) => (y > 1.5 ? [B.CHEST, B.HEAD, 0.35] : [B.CHEST, B.CHEST, 0]), { capStart: true, capEnd: true, fem: [0.87, 1, 0.9, -0.01, -0.008] }));
     const tail = [1.46, 1.38, 1.3, 1.24].map((y, i) => ring(y, 0.032, 0.012, 0.012, 0.118 + i * 0.006 - (1.46 - y) * 0.05, 6, 0.035));
-    parts.push(loft(tail, PART.SCARF, fixed(B.CHEST), { capStart: true, capEnd: true }));
+    parts.push(loft(tail, PART.SCARF, fixed(B.CHEST), { capStart: true, capEnd: true, fem: (x, y, z) => [0.85, 1, 1, 0, 0] }));
+    // (the tail lies on the chest: with the bust it is pushed forward on women)
+    { const g = parts[parts.length - 1], fd = g.attributes.femaleDelta, p = g.attributes.position;
+      for (let v = 0; v < fd.count; v++) { const y = p.getY(v); fd.setZ(v, fd.getZ(v) + (y < 1.4 && y > 1.22 ? 0.022 * Math.sin(Math.PI * (1.4 - y) / 0.18) : 0) - 0.004); } }
   }
   // skirt (to just above the knee) and long coat (to below the knee): a flared tube from the hips, blended to the thighs
   const tube = (part, yTop, yHem, rTop, rHem) => {
@@ -90,12 +101,12 @@ export function buildExtras(detail, table) {
     const rows = ys.map((t) => { const y = yTop + (yHem - yTop) * t, r = rTop.map((v, k) => v + (rHem[k] - v) * t); return ring(y, r[0], r[1], r[2], 0, hi ? 16 : 8); });
     return loft(rows, part, (x, y) => {
       const t = Math.min(1, Math.max(0, (yTop - y) / (yTop - yHem)));
-      const k = Math.min(1, Math.abs(x) / 0.06);                     // the middle front / back stays with the pelvis
-      return [B.PELVIS, x >= 0 ? B.THIGH_L : B.THIGH_R, 0.62 * t * k];
-    }, { girth: 0.6 });
+      const k = Math.min(1, Math.abs(x) / 0.04);                     // the middle front / back stays with the pelvis
+      return [B.PELVIS, x >= 0 ? B.THIGH_L : B.THIGH_R, (0.35 + 0.5 * t) * t * k];   // the hem follows the thigh (no knee through)
+    }, { girth: 0.6, fem: (x, y, z) => [y > 0.85 ? 1.03 : 1.02, 1, y > 0.85 ? 1.04 : 1.02, 0, 0] });
   };
-  parts.push(tube(PART.SKIRT, 0.99, 0.5, [0.172, 0.112, 0.118], [0.215, 0.16, 0.17]));
-  parts.push(tube(PART.COAT, 0.97, 0.42, [0.18, 0.12, 0.125], [0.225, 0.17, 0.18]));
+  parts.push(tube(PART.SKIRT, 0.99, 0.5, [0.175, 0.115, 0.121], [0.23, 0.175, 0.185]));
+  parts.push(tube(PART.COAT, 0.97, 0.42, [0.183, 0.123, 0.128], [0.24, 0.185, 0.195]));
   // shoulder bag at the left hip + its strap over the right shoulder
   {
     const box = (cx, cy, cz, hx, hy, hz, part, bone) => {
@@ -108,7 +119,7 @@ export function buildExtras(detail, table) {
       const t = i / 6, x = -0.13 + (0.2 + 0.13) * t, y = 1.45 - (1.45 - 1.03) * t, z = 0.105 * Math.sin(Math.PI * t) + 0.02;
       strap.push(ring(y, 0.014, 0.006, 0.006, z, 4, x));
     }
-    parts.push(loft(strap, PART.BAG, (x, y) => (y > 1.12 ? [B.CHEST, B.CHEST, 0] : [B.CHEST, B.PELVIS, 0.6])));
+    parts.push(loft(strap, PART.BAG, (x, y) => (y > 1.12 ? [B.CHEST, B.CHEST, 0] : [B.CHEST, B.PELVIS, 0.6]), { fem: (x, y, z) => [0.9, 1, y < 1.38 && y > 1.2 ? 1.18 : 1, 0, 0] }));
     // backpack on the back
     parts.push(box(0, 1.2, -0.2, 0.14, 0.19, 0.07, PART.BACKPACK, B.CHEST));
   }

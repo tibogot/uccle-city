@@ -186,3 +186,40 @@ export function blendPose(out, a, b, w) {
   for (let j = 120; j < 124; j++) out[j] = b[j];
   return out;
 }
+
+/**
+ * Child proportions (round 3) on a WORLD pose (31 vec4 layout), in place: legs shortened about the hips by kLeg, arms
+ * about the shoulders by kArm (their bones scaled too: thinner, shorter), the whole body lowered by the legs' lost
+ * length so the feet stay on the ground. The GPU does the same in the crowd's compute pass. bind: the skeleton's bind
+ * joints for the person's sex ([x, y, z] per bone, scale 1).
+ */
+const LEGS = [[7, 8, 9, 10], [11, 12, 13, 14]], ARMS = [[3, 4], [5, 6]];
+const _r = [0, 0, 0], _p = [0, 0, 0], _b = [0, 0, 0];
+export function childify(pose, kLeg, bind) {
+  if (!kLeg || kLeg >= 1) return pose;
+  const kArm = 1 - (1 - kLeg) * 0.6, S = pose[7], drop = (1 - kLeg) * 0.84 * S;
+  for (const [chains, k] of [[LEGS, kLeg], [ARMS, kArm]]) for (const chain of chains) {
+    jointOf(pose, chain[0], bind[chain[0]], _r);                 // the hip / shoulder
+    for (const b of chain) {
+      const o = b * 8, s = pose[o + 7];
+      jointOf(pose, b, bind[b], _p);
+      const px = _r[0] + (_p[0] - _r[0]) * k, py = _r[1] + (_p[1] - _r[1]) * k, pz = _r[2] + (_p[2] - _r[2]) * k;
+      rot(pose[o], pose[o + 1], pose[o + 2], pose[o + 3], bind[b][0] * s * k, bind[b][1] * s * k, bind[b][2] * s * k, _b);
+      pose[o + 4] = px - _b[0]; pose[o + 5] = py - _b[1]; pose[o + 6] = pz - _b[2]; pose[o + 7] = s * k;
+    }
+  }
+  for (let b = 0; b < BONES; b++) pose[b * 8 + 5] -= drop;
+  return pose;
+}
+/** Heel and ball points of both feet from a world pose: out = 12 floats (as BoneTable.feet). */
+export function solePoints(pose, out) {
+  for (let k = 0; k < 2; k++) {
+    const b = k ? BONE.FOOT_R : BONE.FOOT_L, o = b * 8, s = pose[o + 7];
+    jointOf(pose, b, k ? BIND.footR : BIND.footL, _p);
+    for (let j = 0; j < 2; j++) {
+      rot(pose[o], pose[o + 1], pose[o + 2], pose[o + 3], 0, -ANKLE_H * s, (j ? 0.135 : -0.07) * s, _b);
+      out[k * 6 + j * 3] = _p[0] + _b[0]; out[k * 6 + j * 3 + 1] = _p[1] + _b[1]; out[k * 6 + j * 3 + 2] = _p[2] + _b[2];
+    }
+  }
+  return out;
+}
