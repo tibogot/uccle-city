@@ -81,7 +81,7 @@ export function snowMask(P, up, exposure, cover = wx.uSnowCover, upLo = 0.42, up
 export function weatherize(m, o = {}) {
   // LITE (far tiles, ~0.1 ms): wet darkening + film roughness + SSR metalness + a one-octave snow cover; no puddles,
   // ripples, rivulets, beads, litter, flowers, sparkle or micro bump (they are sub-pixel past ~150 m anyway)
-  if (o.lite) o = { porosity: o.porosity, map: o.map, snow: o.snow, slush: o.slush, lite: true };
+  if (o.lite) o = { porosity: o.porosity, map: o.map, snow: o.snow, slush: o.slush, road: o.road, edge: o.edge, lite: true };
   const map = o.map;
   const porosity = float(o.porosity ?? 0.5);
   const baseCol = m.colorNode ?? vec3(m.color.r, m.color.g, m.color.b);
@@ -108,10 +108,19 @@ export function weatherize(m, o = {}) {
   // ---- wet film: rain reaches floors that are exposed; walls take ~60 %, sheltered floors ~15 %
   const reach = mix(mix(float(0.15), float(1), exposed).mul(float(1).sub(shelter.mul(0.4))), float(0.6), vert);
   const wet = clamp(wx.uWet.mul(reach), 0, 1).toVar();
+  // ROAD (o.road): salted / ploughed: the snow becomes melt water on the carriageway (wet black asphalt), kept as dirty
+  // slush only along the kerbs (o.edge: 1 at the gutter) and in a thin band between the wheel paths
+  let roadKeep = float(1);
+  if (o.road) {
+    const edge = o.edge ?? float(0);
+    roadKeep = float(1).sub(wx.uSalt.mul(float(1).sub(edge.mul(0.85))));
+    wet.assign(max(wet, wx.uSalt.mul(smoothstep(0.0, 0.3, wx.uSnowCover)).mul(0.6).mul(float(1).sub(edge.mul(0.5)))));
+  }
   let col = baseCol.mul(float(1).sub(wet.mul(porosity).mul(wxLook.uDarken)));
   // a soaked porous surface also gets a touch more saturated (Lagarde: the water layer)
   let rough = mix(baseRough, baseRough.mul(0.3).add(0.06), wet.mul(mix(float(0.55), float(1), horiz)));
   let metal = mix(baseMetal, max(baseMetal, float(0.12)), wet.mul(horiz));
+  if (o.road) { rough = mix(rough, max(rough, float(0.42)), wx.uSalt.mul(wx.uSnowCover.min(1))); metal = metal.mul(float(1).sub(wx.uSalt.mul(wx.uSnowCover.min(1)).mul(0.6))); }
   let nView = baseN;
 
   // ---- puddles
@@ -201,7 +210,7 @@ export function weatherize(m, o = {}) {
   if (o.snow !== false) {
     if (o.lite) {
       const cov = smoothstep(0.42, 0.78, up).mul(exposed).mul(wx.uSnowCover);
-      const sm = smoothstep(0.32, 0.5, cov.mul(1.45).sub(noise2D(P.xz.mul(0.6)).mul(0.45)));
+      const sm = smoothstep(0.32, 0.5, cov.mul(1.45).sub(noise2D(P.xz.mul(0.6)).mul(0.45))).mul(roadKeep);
       col = mix(col, mix(SNOW_ALBEDO, vec3(0.42, 0.43, 0.44), (o.slush ? wx.uSlush : wx.uSlush.mul(0.35)).mul(0.8)), sm);
       rough = mix(rough, float(0.72), sm);
       metal = mix(metal, float(0), sm);
@@ -211,9 +220,19 @@ export function weatherize(m, o = {}) {
     }
     // snowUp: the up-facing range that holds snow (branches: a round limb holds a ridge from ~0.15 up)
     const sm = snowMask(P, up, exposed.mul(float(1).sub(shelter.mul(0.6))), wx.uSnowCover, ...(o.snowUp ?? [0.42, 0.78])).toVar();
+    if (o.plaster) {
+      // wind-driven snow plastered on the windward side of trunks and posts (the night photo, Av. Churchill 2024)
+      const wn = wx.uWind.length();
+      const windward = smoothstep(0.25, 0.75, dot(normalize(Nw.xz.add(vec2(1e-4, 0))), wx.uWind.div(max(wn, 0.01)).negate()));
+      const pl = windward.mul(smoothstep(2.0, 8.0, wn)).mul(wx.uSnowCover).mul(vert);
+      const n2 = noise2D(vec2(P.y.mul(3.0), dot(P.xz, vec2(7.0, 5.0))));
+      sm.assign(max(sm, smoothstep(0.35, 0.6, pl.mul(1.3).sub(n2.mul(0.5)))));
+    }
     // slush: melting snow on roads / pavements turns grey, wet and patchy
-    const slush = o.slush ? wx.uSlush : wx.uSlush.mul(0.35);
-    const sCol = mix(SNOW_ALBEDO, vec3(0.42, 0.43, 0.44), slush.mul(0.8));
+    sm.mulAssign(roadKeep);
+    // what is left on a salted road is old, dirty slush (grey-brown), whatever the melt state
+    const slush = o.slush ? max(wx.uSlush, o.road ? wx.uSalt.mul(0.85) : float(0)) : wx.uSlush.mul(0.35);
+    const sCol = mix(SNOW_ALBEDO, vec3(0.36, 0.35, 0.33), slush.mul(0.85));
     const gl = glint(P, fw);
     const sRough = mix(mix(float(0.72), float(0.12), gl.w), float(0.22), slush);
     const bumpH = noise2D(P.xz.mul(9.0)).mul(0.006).mul(float(1).sub(smoothstep(0.004, 0.02, fw)));

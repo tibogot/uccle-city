@@ -15,7 +15,7 @@ import { season } from "../seasons/season.js";
 
 const KIND = {
   rain: { max: 24000, box: 44, top: 22, fall: 8.5, size: 0.006, len: 0.55 },
-  snow: { max: 64000, box: 24, top: 12, fall: 1.0, size: 0.022, len: 0 },
+  snow: { max: 64000, box: 24, top: 12, fall: 1.0, size: 0.017, len: 0 },
   leaves: { max: 900, box: 60, top: 14, fall: 1.1, size: 0.05, len: 0 },
 };
 
@@ -154,9 +154,15 @@ export function createPrecipitation({ renderer, kind = "rain", map = null, trees
     const s0 = uSize.mul(P.w.mul(0.9).add(0.6));
     const sPx = dist.mul(uPx).mul(1.6);
     const s = max(s0, sPx);
-    mat.positionNode = C.add(vec3(uRight).mul(positionGeometry.x.mul(s))).add(vec3(uUp).mul(positionGeometry.y.mul(s)));
+    // motion blur (the night photo, Av. Churchill: flakes near the lamps are short streaks): stretched along the
+    // flake's velocity by ~1/40 s of travel
+    const vel = vec3(wx.uWind.x.mul(0.9), uFall.negate(), wx.uWind.y.mul(0.9));
+    const vdir = normalize(vel), sideF = normalize(cross(vdir, normalize(toCam)));
+    const sLen = s.add(length(vel).mul(0.025));
+    mat.positionNode = C.add(sideF.mul(positionGeometry.x.mul(s))).add(vdir.mul(positionGeometry.y.mul(sLen)));
     const energy = varying(s0.div(s).mul(edge).mul(smoothstep(0.4, 1.5, dist)));   // widened -> fainter (linear: a 1.6 px dot keeps its look)
-    const r = length(uv().sub(0.5)).mul(2);
+    const q = uv().sub(0.5).mul(2);
+    const r = length(vec2(q.x, q.y.mul(0.85)));
     mat.colorNode = vec3(uColor);
     mat.opacityNode = smoothstep(1.0, 0.2, r).mul(energy).mul(uOpacity);
   } else {

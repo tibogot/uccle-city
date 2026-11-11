@@ -20,6 +20,7 @@ export const wx = {
   uWind: uniform(new THREE.Vector2(0, 0)),   // m/s, world xz, the direction the air MOVES to
   uTime: uniform(0),            // s: animation time (frozen by the flicker test)
   uFrost: uniform(0),           // 0..1 hoar frost on grass / cars below 0 C with clear sky
+  uSalt: uniform(1),            // 0..1 roads salted / ploughed (Brussels treats its main roads: black wet asphalt, slush at the kerbs)
   uIcicle: uniform(0),          // 0..1 icicle growth under eaves (cold days with snow on the roofs)
   uDrip: uniform(0),            // 0..1 drips from eaves (melting snow, or rain through the gutters)
 };
@@ -113,8 +114,8 @@ export class Weather {
     wx.uWet.value = S.wet;
     wx.uPuddle.value = S.puddle;
     wx.uSnowDepth.value = S.depth;
-    // white cover: 1 cm already hides the ground on lawns; 0.3 cm is a dusting
-    wx.uSnowCover.value = Math.min(1, S.depth / 0.012);
+    // white cover: ~2.5 cm hides the ground; 1 cm is still patchy (the Bosveldweg photo: thin snow, ground showing)
+    wx.uSnowCover.value = Math.min(1, S.depth / 0.025);
     wx.uSlush.value = S.slush;
     wx.uFrost.value = S.frost;
     wx.uIcicle.value = S.icicle;

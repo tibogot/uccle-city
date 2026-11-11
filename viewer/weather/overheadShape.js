@@ -14,7 +14,7 @@ export const SHAPE = {
   shelter: 0.65,        // under a full crown, snow depth x (1 - shelter)
 };
 
-export function computeOverheadShape({ solidPx, canopyPx, res, cell, origin }) {
+export function computeOverheadShape({ solidPx, canopyPx, roadPx = null, res, cell, origin }) {
   const N = res, S = SHAPE;
   const H = new Float32Array(N * N), Hs = new Float32Array(N * N), shelter = new Float32Array(N * N), shape = new Float32Array(N * N), cliff = new Uint8Array(N * N);
   const uOrigin = { value: { x: origin[0], y: origin[1] } };
@@ -119,6 +119,9 @@ export function computeOverheadShape({ solidPx, canopyPx, res, cell, origin }) {
   for (let k = 0; k < N * N; k++) shelter[k] = Cn[k] > H[k] + 0.8 ? 1 : 0;
   blur(shelter, 3);
   computeShape();
+  // road cells: a carriageway is the topmost surface here
+  const road = new Uint8Array(N * N);
+  if (roadPx) { const Rd = new Float32Array(N * N); toGrid(roadPx, Rd, -1e4); for (let k = 0; k < N * N; k++) road[k] = Rd[k] > H[k] - 0.05 ? 1 : 0; }
   // Hs: two passes of a 3 x 3 blur over the neighbours that are NOT across a step (gentle curves lose their terraces)
   Hs.set(H);
   const tmp = new Float32Array(N * N);
@@ -146,12 +149,13 @@ export function computeOverheadShape({ solidPx, canopyPx, res, cell, origin }) {
     const o = j * N + i, h = H[o];
     if (!cliff[o] || h < 1.5) continue;
     for (const [di, dj] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
-      const lo = H[(j + dj) * N + i + di];
-      if (h - lo > 1.5 && rnd() < 0.55) {
+      const lo = H[(j + dj) * N + i + di], inner = H[(j - dj) * N + i - di];
+      // a roof edge, not a ledge on a wall (a sill under a taller facade has a much higher cell behind it)
+      if (h - lo > 1.5 && inner < h + 0.3 && rnd() < 0.55) {
         eaves.push((i + 0.5 + di * 0.5) * cell + origin[0], h, (j + 0.5 + dj * 0.5) * cell + origin[1], di, dj, h - lo);
         break;
       }
     }
   }
-  return { H, Hs, shelter, shape, cliff, eaves: new Float32Array(eaves), ms: Date.now() - t0 };
+  return { H, Hs, shelter, shape, cliff, road, eaves: new Float32Array(eaves), ms: Date.now() - t0 };
 }

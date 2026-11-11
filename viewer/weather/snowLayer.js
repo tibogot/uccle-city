@@ -78,7 +78,9 @@ export function createSnowLayer({ renderer, map }) {
     const s = map.load(i.clamp(0, N - 1), j.clamp(0, N - 1));
     const idx = j.clamp(0, N - 1).mul(N).add(i.clamp(0, N - 1));
     const tr = track.element(idx);
-    const d = wx.uSnowDepth.mul(s.z).mul(float(1).sub(shelterK.mul(s.y)));     // (unevenness is baked in the shape)
+    // A = cliff + 2 x road: a salted carriageway keeps only a little (it is slush on the material below)
+    const road = s.w.greaterThan(1.5).select(float(1), float(0));
+    const d = wx.uSnowDepth.mul(s.z).mul(float(1).sub(shelterK.mul(s.y))).mul(float(1).sub(road.mul(wx.uSalt)));     // (unevenness is baked in the shape)
     return { s, tr, d };
   };
   const C = depthAt(ii, jj), L = depthAt(ii.sub(1), jj), R = depthAt(ii.add(1), jj), U = depthAt(ii, jj.sub(1)), D = depthAt(ii, jj.add(1));
@@ -86,10 +88,11 @@ export function createSnowLayer({ renderer, map }) {
   const hOf = (X, rim) => X.s.x.add(X.d.mul(float(1).sub(X.tr.mul(0.72))).mul(float(1).add(rim)));
   const hC = hOf(C, rimOf(C));
   // a neighbour across a cliff is replaced by the centre (no normal bent toward the street below)
-  const nb = (X) => select(X.s.w.greaterThan(0.5).or(X.s.x.sub(C.s.x).abs().greaterThan(0.3)), hC, hOf(X, float(0)));
+  const isCliff = (X) => X.s.w.mod(2.0).greaterThan(0.5);
+  const nb = (X) => select(isCliff(X).or(X.s.x.sub(C.s.x).abs().greaterThan(0.3)), hC, hOf(X, float(0)));
   const hL = nb(L), hR = nb(R), hU = nb(U), hD = nb(D);
   const nW = normalize(vec3(hL.sub(hR), uCell.mul(2), hU.sub(hD)));
-  const hide = select(C.s.w.greaterThan(0.5).or(C.d.lessThan(0.004)).or(C.s.x.lessThan(-1000)), float(1), float(0));
+  const hide = select(isCliff(C).or(C.d.lessThan(0.004)).or(C.s.x.lessThan(-1000)), float(1), float(0));
   mat.positionNode = vec3(positionGeometry.x, hC.add(0.003), positionGeometry.z);
   const vHide = varying(hide), vN = varying(nW), vTrack = varying(C.tr), vDepth = varying(C.d);
   const P = positionWorld;

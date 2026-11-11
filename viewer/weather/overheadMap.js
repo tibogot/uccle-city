@@ -20,9 +20,11 @@ export { SHAPE };
 import { positionWorld, vec4, vec2, float, uniform, texture, clamp, ivec2, textureLoad } from "three/tsl";
 
 export const SOLID_LAYER = 20;     // meshes that stop rain and carry snow (ground, roads, roofs, cars, walls)
-export const CANOPY_LAYER = 21;    // tree crowns (shelter: less snow and less rain under them)
+export const CANOPY_LAYER = 21;
+export const ROAD_LAYER = 22;     // carriageways (salted / ploughed in winter: the snow layer keeps little there)    // tree crowns (shelter: less snow and less rain under them)
 
 export function markSolid(obj, on = true) { obj.traverse((o) => { if (o.isMesh) on ? o.layers.enable(SOLID_LAYER) : o.layers.disable(SOLID_LAYER); }); return obj; }
+export function markRoad(obj, on = true) { obj.traverse((o) => { if (o.isMesh) on ? o.layers.enable(ROAD_LAYER) : o.layers.disable(ROAD_LAYER); }); return obj; }
 export function markCanopy(obj, on = true) { obj.traverse((o) => { if (o.isMesh) on ? o.layers.enable(CANOPY_LAYER) : o.layers.disable(CANOPY_LAYER); }); return obj; }
 
 export function createOverheadMap({ renderer, centre = new THREE.Vector3(), size = 64, res = 512, depth = 200, height = 120 } = {}) {
@@ -65,19 +67,20 @@ export function createOverheadMap({ renderer, centre = new THREE.Vector3(), size
       const t0 = performance.now();
       const solidPx = await pass(scene, SOLID_LAYER);
       const canopyPx = await pass(scene, CANOPY_LAYER);
-      const job = { solidPx, canopyPx, res, cell, origin: [uOrigin.value.x, uOrigin.value.y] };
+      const roadPx = await pass(scene, ROAD_LAYER);
+      const job = { solidPx, canopyPx, roadPx, res, cell, origin: [uOrigin.value.x, uOrigin.value.y] };
       const t1 = performance.now();
       let r;
       try {
         worker ??= new Worker(new URL("./overheadWorker.js", import.meta.url), { type: "module" });
-        r = await new Promise((ok, fail) => { worker.onmessage = (e) => ok(e.data); worker.onerror = fail; worker.postMessage(job, [solidPx.buffer, canopyPx.buffer]); });
+        r = await new Promise((ok, fail) => { worker.onmessage = (e) => ok(e.data); worker.onerror = fail; worker.postMessage(job, [solidPx.buffer, canopyPx.buffer, roadPx.buffer]); });
         map.inWorker = true;
       } catch (e) {
         console.warn("[overhead] worker failed, shape pass on the main thread", e);
         r = computeOverheadShape(job); map.inWorker = false;
       }
       H.set(r.H); shelter.set(r.shelter); shape.set(r.shape); cliff.set(r.cliff); map.eaves = r.eaves; map.Hs = r.Hs;
-      for (let k = 0; k < res * res; k++) { data[k * 4] = r.Hs[k]; data[k * 4 + 1] = shelter[k]; data[k * 4 + 2] = shape[k]; data[k * 4 + 3] = cliff[k]; }
+      for (let k = 0; k < res * res; k++) { data[k * 4] = r.Hs[k]; data[k * 4 + 1] = shelter[k]; data[k * 4 + 2] = shape[k]; data[k * 4 + 3] = cliff[k] + 2 * r.road[k]; }
       tex.needsUpdate = true;
       map.ready = true;
       map.bakeMs = performance.now() - t0;

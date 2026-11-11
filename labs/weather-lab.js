@@ -25,7 +25,7 @@ import { loadLampModel } from "../viewer/lampModel.js";
 import { hash2D, noise2D, bumpNormal, filteredPulse } from "../viewer/tslkit.js";
 import { Weather, WEATHER_PRESETS, wx } from "../viewer/weather/weatherState.js";
 import { weatherize, wxLook } from "../viewer/weather/surfaceWeather.js";
-import { createOverheadMap, markSolid, markCanopy } from "../viewer/weather/overheadMap.js";
+import { createOverheadMap, markSolid, markCanopy, markRoad } from "../viewer/weather/overheadMap.js";
 import { createPrecipitation } from "../viewer/weather/precipitation.js";
 import { createSnowLayer } from "../viewer/weather/snowLayer.js";
 import { createWeatherFog } from "../viewer/weather/weatherFog.js";
@@ -154,7 +154,7 @@ const KERB = 0.13;
   for (let i = 0; i < p.count; i++) { const z = p.getZ(i), u = (z + 1) / 2.5; p.setY(i, 0.05 * (1 - u * u) + 0.002 * Math.sin(p.getX(i) * 0.7) * Math.sin(z * 3.1)); }
   g.computeVertexNormals();
   const gutter = smoothstep(1.0, 0.0, min(abs(P.z.add(3.5)), abs(P.z.sub(1.5))));
-  root.add(mesh(g, asphaltMat, { porosity: 0.75, puddles: true, puddleBias: gutter.mul(0.22), slush: true }));
+  root.add(markRoad(mesh(g, asphaltMat, { porosity: 0.75, puddles: true, puddleBias: gutter.mul(0.22), slush: true, road: true, edge: smoothstep(0.55, 0.15, min(abs(P.z.add(3.5)), abs(P.z.sub(1.5)))) })));
 }
 { // parking strip in setts (the city's cobble material: uv in metres along / across the strip)
   const g = new THREE.PlaneGeometry(140, 2, 280, 8).rotateX(-Math.PI / 2).translate(0, 0.0, 2.5);
@@ -365,7 +365,7 @@ for (const s of treeSites) {
   const base = new THREE.Vector3(s.x, KERB, s.z);
   grow(base, new THREE.Vector3(0, 1, 0), 3.2, 0.2, 4, out);
   const bg = mergeGeometries(out.br); const lg = mergeGeometries(out.lf);
-  const bm = mesh(bg, barkMat, { porosity: 0.7, streaks: false, snowUp: [0.12, 0.45] }, { solid: false, post: (m) => snowOnBranches(m, { radiusAttr: "aRad" }) });
+  const bm = mesh(bg, barkMat, { porosity: 0.7, streaks: false, snowUp: [0.12, 0.45], plaster: true }, { solid: false, post: (m) => snowOnBranches(m, { radiusAttr: "aRad" }) });
   treesG.add(bm);
   const lm = new THREE.Mesh(lg, leafMat); lm.castShadow = true; lm.receiveShadow = true; lm.name = "leaves";
   markCanopy(lm); treesG.add(lm);
@@ -484,7 +484,7 @@ const S = {
   preset: qp.get("preset") && WEATHER_PRESETS[qp.get("preset")] ? qp.get("preset") : "overcast, after rain",
   day: +(qp.get("day") ?? dayOfYear(today)), hour: +(qp.get("hour") ?? 11.5), night: false,
   live: false, liveInfo: "—", mist: 0, fogScale: 1,
-  rainOn: true, splashOn: true, snowOn: true, layerOn: true, iceOn: true, matMode: "full", leavesOn: true, matOn: true, fogOn: true, post: true,
+  rainOn: true, splashOn: true, snowOn: true, layerOn: true, iceOn: true, skyGlow: 0.25, matMode: "full", leavesOn: true, matOn: true, fogOn: true, post: true,
   view: "orbit", gpu: "—", stats: "", bench: "—", flicker: "—", dateLabel: "", seasonLabel: "", sunLabel: "",
 };
 const ui = new Panel({ title: "Weather Lab" });
@@ -528,6 +528,8 @@ fX.add(S, "leavesOn").name("falling leaves");
 fX.add(S, "matOn").name("weather on materials").onChange(swapMaterials);
 fX.add(S, "matMode", ["full", "lite (far tiles)"]).name("weatherize path").onChange(() => swapMaterials(S.matOn));
 fX.add(S, "iceOn").name("icicles + drips");
+fX.add(wx.uSalt, "value", 0, 1, 0.01).name("roads salted / ploughed");
+fX.add(S, "skyGlow", 0, 2, 0.01).name("urban sky glow (night)");
 fX.add(S, "fogOn").name("weather fog");
 fX.add(S, "post").name("post (AO, SSR, bloom)");
 fX.add(wxLook.uSparkle, "value", 0, 2, 0.01).name("snow sparkle");
@@ -696,6 +698,12 @@ function frame(dtOverride = null) {
   lighting.update(camera.position.y, 0, controls.target, 60, dt);
   // under a full deck the sun casts (almost) no shadow: the key light fades, the sky's environment carries the light
   lighting.uKey.value.multiplyScalar(1 - 0.88 * deck);
+  // URBAN SKY GLOW (the night photos: a cloud deck over Brussels glows orange-grey from the street lights and lights
+  // the snow everywhere, not only in the lamp pools): the lab's constant hemisphere light, warm, x night x cloud,
+  // more with snow on the ground (its albedo sends the light back up to the clouds)
+  const glow = env.uNight.value * (0.25 + 0.75 * weather.input.cloud) * (1 + 1.5 * wx.uSnowCover.value) * S.skyGlow;
+  lighting.hemi.color.setRGB(1.0, 0.72, 0.48); lighting.hemi.groundColor.setRGB(0.5, 0.42, 0.36);
+  lighting.hemi.intensity = glow;
   if (S.post) pipe.render(hazeHook); else renderer.render(scene, camera);
   pipe.setExposureFactor(lighting.adapt(dt));
   if (!S.post) renderer.toneMappingExposure = lighting.exposureScale * 0.85 * lighting.adapt(0);

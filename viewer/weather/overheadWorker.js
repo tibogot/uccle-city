@@ -2,5 +2,5 @@
 import { computeOverheadShape } from "./overheadShape.js";
 self.onmessage = (e) => {
   const r = computeOverheadShape(e.data);
-  self.postMessage(r, [r.H.buffer, r.Hs.buffer, r.shelter.buffer, r.shape.buffer, r.cliff.buffer, r.eaves.buffer]);
+  self.postMessage(r, [r.H.buffer, r.Hs.buffer, r.shelter.buffer, r.shape.buffer, r.cliff.buffer, r.road.buffer, r.eaves.buffer]);
 };
