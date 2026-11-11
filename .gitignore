@@ -14,3 +14,5 @@ models/townhall/townhall_lod1_bake.bin
 models/wolvendael_chateau/wolvendael.raw.glb
 models/wolvendael_chateau/wolvendael_lod1_bake.bin
 docs/wolvendael/side_*
+models/police_rouge/police.raw.glb
+models/police_rouge/police_lod1_*.bin
