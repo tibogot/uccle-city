@@ -205,12 +205,19 @@ async function loadTile(id) {
     g.computeVertexNormals();
     const ortho = await new THREE.TextureLoader().loadAsync(`../data/tiles/${id}/ortho.jpg`).catch(() => null);
     const m = new THREE.MeshStandardNodeMaterial({ roughness: 0.95 });
-    if (ortho) { ortho.colorSpace = THREE.SRGBColorSpace; ortho.anisotropy = 8; m.map = ortho; }
+    let avg = null;
+    if (ortho) {
+      ortho.colorSpace = THREE.SRGBColorSpace; ortho.anisotropy = 8; m.map = ortho;
+      // the orthophoto's mean colour (linear): what the far trees fade into (FAR.ground)
+      const c = new OffscreenCanvas(16, 16), x = c.getContext("2d"); x.drawImage(ortho.image, 0, 0, 16, 16);
+      const d = x.getImageData(0, 0, 16, 16).data, lin = (v) => Math.pow(v / 255, 2.2);
+      avg = [0, 0, 0]; for (let i = 0; i < d.length; i += 4) for (let k = 0; k < 3; k++) avg[k] += lin(d[i + k]) / 256;
+    }
     else m.color.set(0x4a5236);
     const mesh = new THREE.Mesh(g, m);
     mesh.receiveShadow = true;
     const ground = (x, z) => hAt(Math.round((x - hdr.x0) / hdr.step), Math.round((z - hdr.z0) / hdr.step));
-    return { id, hdr, mesh, trees: feats.trees ?? [], ground };
+    return { id, hdr, mesh, trees: feats.trees ?? [], ground, avg };
   })();
   TILE_CACHE.set(id, p);
   return p;
@@ -301,6 +308,11 @@ async function buildScene(id) {
     gi++;
   }
   w.trees = trees.length;
+  // the far fade's target: the mean orthophoto under the scene (flat ground: its own colour)
+  const avgs = [];
+  for (const id of TILE_CACHE.keys()) { const t = await TILE_CACHE.get(id); if (t?.avg && w.grounds.includes(t.mesh)) avgs.push(t.avg); }
+  if (avgs.length) K.FAR.ground.value.setRGB(...[0, 1, 2].map((k) => avgs.reduce((a, v) => a + v[k], 0) / avgs.length));
+  else K.FAR.ground.value.copy(flatGround.material.color);
   w.kitPlacements = kitPlacements;
   world = w;
   rebuildKitField();
