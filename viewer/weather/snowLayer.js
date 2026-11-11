@@ -78,9 +78,7 @@ export function createSnowLayer({ renderer, map }) {
     const s = map.load(i.clamp(0, N - 1), j.clamp(0, N - 1));
     const idx = j.clamp(0, N - 1).mul(N).add(i.clamp(0, N - 1));
     const tr = track.element(idx);
-    const xz = vec2(float(i).add(0.5), float(j).add(0.5)).mul(uCell).add(uOrigin);
-    const nz = noise2D(xz.mul(0.23)).mul(0.3).add(0.85).add(noise2D(xz.mul(1.9)).mul(0.08));
-    const d = wx.uSnowDepth.mul(s.z).mul(float(1).sub(shelterK.mul(s.y))).mul(nz);
+    const d = wx.uSnowDepth.mul(s.z).mul(float(1).sub(shelterK.mul(s.y)));     // (unevenness is baked in the shape)
     return { s, tr, d };
   };
   const C = depthAt(ii, jj), L = depthAt(ii.sub(1), jj), R = depthAt(ii.add(1), jj), U = depthAt(ii, jj.sub(1)), D = depthAt(ii, jj.add(1));
@@ -113,10 +111,23 @@ export function createSnowLayer({ renderer, map }) {
   const base = toView(normalize(vN));
   // the macro normal from the field; micro bump as a small tilt of it; the glint facet on top
   mat.normalNode = normalize(mix(normalize(base.add(bumpNormal(bump).sub(toView(vec3(0, 1, 0))))), toView(gl.xyz), gl.w.mul(float(1).sub(packed))));
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.receiveShadow = true; mesh.castShadow = false;
-  mesh.frustumCulled = false;
-  mesh.name = "snow-layer";
+  // 8 x 8 chunks of 64^2 cells, each its own draw with a bounding box: the frustum culls what is off screen
+  const mesh = new THREE.Group(); mesh.name = "snow-layer";
+  const CH = 8, M = N / CH;
+  let hMin = Infinity, hMax = -Infinity;
+  for (let k = 0; k < N * N; k++) { const h = map.H[k]; if (h > -1000) { hMin = Math.min(hMin, h); hMax = Math.max(hMax, h); } }
+  for (let cj = 0; cj < CH; cj++) for (let ci = 0; ci < CH; ci++) {
+    const n = Math.min(M + 1, N - ci * M), m = Math.min(M + 1, N - cj * M);
+    const g = new THREE.PlaneGeometry((n - 1) * cell, (m - 1) * cell, n - 1, m - 1).rotateX(-Math.PI / 2)
+      .translate(x0 + (ci * M + 0.5) * cell + (n - 1) * cell / 2, 0, z0 + (cj * M + 0.5) * cell + (m - 1) * cell / 2);
+    g.deleteAttribute("uv");
+    g.boundingBox = new THREE.Box3(new THREE.Vector3(x0 + ci * M * cell, hMin, z0 + cj * M * cell), new THREE.Vector3(x0 + (ci * M + n) * cell, hMax + 1.0, z0 + (cj * M + m) * cell));
+    g.boundingSphere = g.boundingBox.getBoundingSphere(new THREE.Sphere());
+    const c = new THREE.Mesh(g, mat);
+    c.receiveShadow = true; c.castShadow = false;
+    mesh.add(c);
+  }
+  geo.dispose();
 
   return {
     mesh, track, stampA, stampB, uRefill,

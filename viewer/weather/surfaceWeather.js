@@ -168,7 +168,7 @@ export function weatherize(m, o = {}) {
   if (o.litter) {
     const g = P.xz.div(0.07), c = floor(g), f = fract(g).sub(0.5);
     const h = H2(c), h2 = H2(c.add(19.0));
-    const dens = season.uLitter.mul(shelter.mul(0.8).add(0.35)).mul(mix(float(0.5), float(1), noise2D(P.xz.mul(0.5))));
+    const dens = season.uLitter.mul(shelter.mul(1.2).add(0.5)).mul(mix(float(0.5), float(1), noise2D(P.xz.mul(0.5))));
     const leaf = smoothstep(0.42, 0.3, length(f.mul(vec2(1, 1.6)))).mul(step01(dens, h)).mul(horiz);
     const far = smoothstep(0.004, 0.02, fw);                       // far: the leaves' mean colour
     const lc = mix(mix(vec3(0.32, 0.14, 0.02), vec3(0.42, 0.28, 0.03), h2), vec3(0.16, 0.07, 0.02), smoothstep(0.7, 1.0, h2));

@@ -317,9 +317,9 @@ function grow(a, dir, len, r, depth, out) {
   out.br.push(cyl(a, b, r, r * 0.7));
   if (depth === 0) {
     // a leaf cluster: ~40 cards around the tip
-    for (let k = 0; k < 40; k++) {
+    for (let k = 0; k < 70; k++) {
       const c = b.clone().add(new THREE.Vector3((rand() - 0.5) * 1.4, (rand() - 0.5) * 1.0, (rand() - 0.5) * 1.4));
-      const q = new THREE.PlaneGeometry(0.16, 0.16);
+      const q = new THREE.PlaneGeometry(0.26, 0.26);
       q.applyQuaternion(new THREE.Quaternion().setFromEuler(new THREE.Euler(rand() * 6.28, rand() * 6.28, rand() * 6.28))).translate(c.x, c.y, c.z);
       const n = q.attributes.position.count, r1 = rand(), r2 = rand(), r3 = rand();
       q.setAttribute("aR", new THREE.Float32BufferAttribute(new Float32Array(n * 3).map((_, i) => [r1, r2, r3][i % 3]), 3));

@@ -194,6 +194,9 @@ export function createOverheadMap({ renderer, centre = new THREE.Vector3(), size
         const t = Math.max(0, 1 - (w - 0.5 * cell) / S.driftWidth);
         f *= 1 + S.driftGain * t * t;
       }
+      // low-frequency unevenness (wind-packed, uneven fall), baked here so the snow layer's vertex shader has no noise
+      const wx = (i + 0.5) * cell + uOrigin.value.x, wz = (j + 0.5) * cell + uOrigin.value.y;
+      f *= 1 + 0.12 * Math.sin(wx * 0.31 + Math.sin(wz * 0.17) * 2.1) * Math.sin(wz * 0.27 + 1.3) + 0.05 * Math.sin(wx * 1.9 + wz * 1.3);
       shape[o] = f;
     }
   }
