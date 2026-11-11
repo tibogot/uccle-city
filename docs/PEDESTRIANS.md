@@ -309,6 +309,34 @@ weather labs ran on the same machine)
 - CPU: 0.40-0.52 ms under load (ratio 0.43-0.55): quiet re-run to confirm <= 0.5.
 - The bench glb is a copy of the furniture branch's file: when that branch merges, keep one copy.
 
+## Polish (2026-11-11, late)
+
+1. **Leads sag** (`props.js`): the lead is a 14-segment tube whose height is the parameter t along it; the vertex
+   shader drops the hand-to-collar chord by `sag x 4t(1-t)` (a parabola: the catenary of a light lead with this little
+   slack) and builds the cross-section round the curve's tangent. `sag` on the CPU from the slack of a 1.6 m lead
+   (x the owner's size): `h = max(sqrt(3 d slack / 8), slack / 2)` (a short chord hangs in a V), never below the
+   ground, eased (no snap when it goes taut). Data: (hand xyz, sag), (collar xyz, fade).
+2. **A baby in the carrycot**: a head (four skin tones by the pram's seed) under the hood, a knitted bonnet and a
+   rounded blanket from the chin to the feet (cream / pale blue / pink), all in the pram's one draw (pid 5 / 6).
+3. **Front castors swivel**: the front legs end in a pivot 3 cm ahead of the wheel axle (the wheel trails it); the
+   wheels and the fork below the pivot carry `castor = (pivot x, pivot z, 1)` and turn about it after rolling. The
+   angle on the CPU: the pivots (0.63 m ahead of the rear axle) move sideways at yawRate x 0.63 while the pram goes
+   forward at v -> `atan2(yawRate x 0.63, v)`, clamped +-1.3 rad, eased; kept while stopped. Pram data now 3 vec4.
+4. **Jacket hem / long coat line**: under a long coat the jacket's hem is forced to 0.9 m (below the tube's top at
+   0.97: before, a hem at 0.955-1.0 left a band of trouser colour or the hem shade right above the coat), the tube
+   takes the jacket's own shade (was x0.92), and a tuck ring 5 cm higher and 10 % narrower makes the tube grow out of
+   the jacket in a taper instead of starting with a ledge.
+
+Images (`docs/pedestrians/`): `polish_dog_lead_before.jpeg` / `polish_dog_lead_after.jpeg` (straight -> sagging
+lead; the two long coats on the right lose their hip line), `polish_pram_before.jpeg` (empty cot) /
+`polish_pram_baby_after.jpeg`, `polish_pram_castors_turning.jpeg` (a pram in a turn: front pairs swivelled).
+Not re-measured: meters / CPU (the changes are in the props' shaders and the CPU prop update: a few arithmetic ops
+per pram / dog; the sim and the crowd are untouched).
+
+Weak (polish): the lead can still pass through legs, poles and the dog's own body; the baby is static (no hands,
+no movement) and the cot stays low-poly; the castor angle reads from a 2-frame turn rate (fine at 30-60 Hz, jittery if
+the person's yaw is noisy); the coat's waist still shows a soft shading change in grazing light.
+
 ## How to re-run
 
 ```

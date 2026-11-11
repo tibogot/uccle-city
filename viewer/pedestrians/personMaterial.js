@@ -106,7 +106,9 @@ export function createPersonMaterial(pose, detail = 1) {
   const legsCol = vertexStage(mix(pick(LEG_M, lane(47.0)), pick(LEG_F, lane(47.0)), female)).toVar();
   const bald = vertexStage(step(lane(41.0), 0.08).mul(float(1.0).sub(female)).mul(float(1).sub(fChild))).toVar();
   const tailored = vertexStage(step(0.42, lane(89.0)).mul(float(1).sub(fChild))).toVar();
-  const hemY = vertexStage(mix(mix(0.955, 0.88, female), 1.0, lane(61.0))).toVar();
+  // polish 2026-11-11: under a long coat the jacket runs on below the coat's top (hem 0.9 < the tube's 0.97): before, a
+  // jacket hem at 0.955-1.0 left a band of trouser colour (or the hem shade) right above the coat = a visible line
+  const hemY = vertexStage(mix(mix(mix(0.955, 0.88, female), 1.0, lane(61.0)), 0.9, fCoat)).toVar();
   const sneaker = vertexStage(max(step(0.4, lane(5.0)), fChild)).toVar();
   const upperCol = vertexStage(mix(mix(color(0x201e1c), color(0x4a3524), lane(23.0)), mix(color(0x252b32), color(0xc8c3b8), step(0.55, lane(31.0))), sneaker)).toVar();
   const soleCol = vertexStage(mix(color(0x191816), color(0xd5d1c8), sneaker)).toVar();
@@ -117,7 +119,7 @@ export function createPersonMaterial(pose, detail = 1) {
     mix(mix(mix(mix(mix(mix(mix(
       woolCol,                                                         // hat / scarf
       pick(SKIRT, lane(37.0)), isP(PART.SKIRT)),
-      coatCol.mul(0.92), isP(PART.COAT)),
+      coatCol, isP(PART.COAT)),                                      // the same shade as the jacket above it
       pick(BAG, lane(59.0)), isP(PART.BAG)),
       pick(PACK, lane(67.0)), isP(PART.BACKPACK)),
       pick(UMB, lane(79.0)), max(isP(PART.UMBRELLA), isP(PART.UMB_CLOSED))),

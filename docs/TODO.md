@@ -86,6 +86,7 @@ Stairs paused until the owner's Mixamo clips are in `data/raw/animations/mixamo/
 - [x] P4 bodies v2 (round 2): children, older people (stoop, cane), coats, skirts, scarves, hats, umbrellas (rain hook), bags, backpacks, prams, dogs; season palettes. Left: female-fitted clothes, child limb proportions, a better pram / dog, more hair styles
 - [x] UAL1 (CC0) sit / sit-talk / talk retargeted (round 2); phone and pram are scripted overlays (not in the free pack). Left: Sitting_Enter / Exit transitions
 - [x] Behaviour round 2: calm step back, dives only at speed (test car), groups of 2, talking pairs, sitting on benches / café chairs. Left: groups of 3, shop windows, companions with their own route
+- [x] Polish 2026-11-11 (docs/PEDESTRIANS.md "Polish"): dog leads sag (parabola from the slack of a 1.6 m lead), a baby in the pram's carrycot (head, bonnet, blanket), the pram's front castors swivel into turns, no line where a jacket meets a long coat. Left: lead never wraps round legs / poles; the baby does not move
 - [ ] P2 walk graph from data (UrbIS sidewalks, roads v2 crossings, OSM paths, tram stops) -> P3 signals + traffic (claude/traffic) -> P5 overlays -> P6 behaviour in the city -> P7 `?peds=1` streaming, determinism, A/B in the city -> P8 optional (MPFB2 near band, night lights)
 
 **Parks, in order (owner, 2026-11-11):**

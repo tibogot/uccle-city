@@ -96,9 +96,12 @@ export function buildExtras(detail, table) {
       for (let v = 0; v < fd.count; v++) { const y = p.getY(v); fd.setZ(v, fd.getZ(v) + (y < 1.4 && y > 1.22 ? 0.022 * Math.sin(Math.PI * (1.4 - y) / 0.18) : 0) - 0.004); } }
   }
   // skirt (to just above the knee) and long coat (to below the knee): a flared tube from the hips, blended to the thighs
-  const tube = (part, yTop, yHem, rTop, rHem) => {
+  // tuck (polish 2026-11-11): a ring 5 cm higher and 10 % narrower above the top, so the tube grows out of the jacket
+  // in a taper instead of starting with a ledge (the line where the jacket hem met a long coat)
+  const tube = (part, yTop, yHem, rTop, rHem, tuck = 0) => {
     const ys = hi ? [0, 0.25, 0.5, 0.75, 1] : [0, 0.5, 1];
     const rows = ys.map((t) => { const y = yTop + (yHem - yTop) * t, r = rTop.map((v, k) => v + (rHem[k] - v) * t); return ring(y, r[0], r[1], r[2], 0, hi ? 16 : 8); });
+    if (tuck) rows.unshift(ring(yTop + tuck, rTop[0] * 0.9, rTop[1] * 0.9, rTop[2] * 0.9, 0, hi ? 16 : 8));
     return loft(rows, part, (x, y) => {
       const t = Math.min(1, Math.max(0, (yTop - y) / (yTop - yHem)));
       const k = Math.min(1, Math.abs(x) / 0.04);                     // the middle front / back stays with the pelvis
@@ -106,7 +109,7 @@ export function buildExtras(detail, table) {
     }, { girth: 0.6, fem: (x, y, z) => [y > 0.85 ? 1.03 : 1.02, 1, y > 0.85 ? 1.04 : 1.02, 0, 0] });
   };
   parts.push(tube(PART.SKIRT, 0.99, 0.5, [0.175, 0.115, 0.121], [0.23, 0.175, 0.185]));
-  parts.push(tube(PART.COAT, 0.97, 0.42, [0.183, 0.123, 0.128], [0.24, 0.185, 0.195]));
+  parts.push(tube(PART.COAT, 0.97, 0.42, [0.183, 0.123, 0.128], [0.24, 0.185, 0.195], 0.05));
   // shoulder bag at the left hip + its strap over the right shoulder
   {
     const box = (cx, cy, cz, hx, hy, hz, part, bone) => {

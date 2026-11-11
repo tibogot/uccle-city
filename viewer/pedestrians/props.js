@@ -3,13 +3,14 @@
 // dithered with the person's own pixel share and faded out over 100-120 m.
 //   pram  a modern pushchair: an aluminium frame (handlebar, folding side stays, rear legs, front forks), two big rear
 //         wheels and two front wheel pairs that ROLL (angle = distance / radius, in the vertex shader), a carrycot
-//         (lofted, padded rim) with a folding hood (ribbed shell), a shopping basket;
+//         (lofted, padded rim) with a folding hood (ribbed shell), a shopping basket, a baby under a blanket; the
+//         front castors SWIVEL into turns (angle from the turn rate);
 //   dog   three breeds in one geometry (Labrador, small terrier, spaniel; the others collapsed per instance): lofted
 //         body, neck, head, muzzle, ears (floppy / upright), tail, two-segment legs with paws; a trot in the vertex
 //         shader (diagonal pairs, legs swing about the shoulder / hip with a knee lift, the spine bobs twice a stride and
 //         bends sideways, the head bobs), sniffing stops (head down), tail wag; coats by breed with patches.
 import * as THREE from "three/webgpu";
-import { Fn, attribute, instanceIndex, vec3, float, sin, cos, mix, storage, attributeArray, vertexStage, color, step, abs, max, min, clamp, fract, floor, smoothstep } from "three/tsl";
+import { Fn, attribute, instanceIndex, vec3, float, sin, cos, mix, storage, attributeArray, vertexStage, color, step, abs, max, min, clamp, fract, floor, smoothstep, normalize, cross } from "three/tsl";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { keepBand } from "../lodFade.js";
 
@@ -64,7 +65,9 @@ const doubleSided = (g) => { const f = g.clone(); const I = f.index.array; for (
 // origin on the ground under the handlebar's middle, +Z forward (away from the pusher); pid 0 fabric, 1 frame,
 // 2 tyres, 3 hubs, 4 basket; axle (y, z, r) on the wheels
 function pramGeometry() {
-  const P = [], frame = (g) => P.push(tag(g, { pid: 1, axle: [0, 0, 0] }));
+  // every part carries `castor` = (pivot x, pivot z, 1) on the front wheels and their forks (they swivel about a
+  // vertical axis there), (0, 0, 0) elsewhere
+  const P = [], T = (g, a) => tag(g, { castor: [0, 0, 0], ...a }), frame = (g) => P.push(T(g, { pid: 1, axle: [0, 0, 0] }));
   const R = { y: 0.14, z: 0.26, x: 0.27, r: 0.14 }, F = { y: 0.085, z: 0.86, x: 0.22, r: 0.085 };
   // frame: handlebar, side stays to the fold joint, rear legs, front legs, axles
   frame(tube([-0.25, 0.93, 0], [0.25, 0.93, 0], 0.016, 10));
@@ -72,32 +75,35 @@ function pramGeometry() {
     const J = [s * 0.26, 0.5, 0.2];
     frame(tube([s * 0.25, 0.93, 0], J, 0.013));
     frame(tube(J, [s * R.x, R.y, R.z], 0.013));
-    frame(tube(J, [s * F.x, F.y + 0.12, F.z - 0.04], 0.013));
-    frame(tube([s * F.x, F.y + 0.12, F.z - 0.04], [s * F.x, F.y, F.z], 0.011));
+    // the front leg ends in a castor pivot 3 cm AHEAD of the wheel's axle (the wheel trails it, so it swivels into
+    // the direction of travel); the fork below the pivot swivels with the wheels
+    frame(tube(J, [s * F.x, F.y + 0.12, F.z + 0.03], 0.013));
+    P.push(T(tube([s * F.x, F.y + 0.12, F.z + 0.03], [s * F.x, F.y, F.z], 0.011), { pid: 1, axle: [0, 0, 0], castor: [s * F.x, F.z + 0.03, 1] }));
     frame(tube([s * 0.24, 0.52, 0.32], [s * 0.21, 0.52, 0.9], 0.011));          // carrycot rails
   }
   frame(tube([-R.x, R.y, R.z], [R.x, R.y, R.z], 0.009));
   // wheels: tyre (torus), hub, 5 spokes; rear big, front pairs small
-  const wheel = (x, W, isFront) => {
+  const wheel = (x, W, isFront, cx = 0) => {
+    const castor = isFront ? [cx, F.z + 0.03, 1] : [0, 0, 0];
     const tyre = new THREE.TorusGeometry(W.r - 0.018, 0.018, 8, 22).rotateY(Math.PI / 2).translate(x, W.y, W.z);
-    P.push(tag(tyre, { pid: 2, axle: [W.y, W.z, W.r] }));
+    P.push(T(tyre, { pid: 2, axle: [W.y, W.z, W.r], castor }));
     const hub = new THREE.CylinderGeometry(0.025, 0.025, 0.04, 10).rotateZ(Math.PI / 2).translate(x, W.y, W.z);
-    P.push(tag(hub, { pid: 3, axle: [W.y, W.z, W.r] }));
+    P.push(T(hub, { pid: 3, axle: [W.y, W.z, W.r], castor }));
     for (let k = 0; k < 5; k++) {
       const a = (k / 5) * TAU, rr = W.r - 0.03;
-      P.push(tag(tube([x, W.y, W.z], [x, W.y + Math.sin(a) * rr, W.z + Math.cos(a) * rr], isFront ? 0.004 : 0.005, 4), { pid: 3, axle: [W.y, W.z, W.r] }));
+      P.push(T(tube([x, W.y, W.z], [x, W.y + Math.sin(a) * rr, W.z + Math.cos(a) * rr], isFront ? 0.004 : 0.005, 4), { pid: 3, axle: [W.y, W.z, W.r], castor }));
     }
   };
-  for (const s of [-1, 1]) { wheel(s * R.x, R, false); wheel(s * (F.x - 0.025), F, true); wheel(s * (F.x + 0.025), F, true); }
+  for (const s of [-1, 1]) { wheel(s * R.x, R, false); wheel(s * (F.x - 0.025), F, true, s * F.x); wheel(s * (F.x + 0.025), F, true, s * F.x); }
   // carrycot: a padded boat, open at the top (a rim + a dark inner mattress)
   {
     const zs = [0.27, 0.3, 0.38, 0.5, 0.65, 0.8, 0.92, 0.98, 1.0];
     const prof = (z) => { const t = (z - 0.27) / 0.73; const end = Math.min(1, Math.sin(Math.PI * Math.min(1, Math.max(0, t))) * 1.6); return 0.35 + 0.65 * Math.min(1, end); };
     const rings = zs.map((z) => ringXY(z, 0, 0.62, 0.19 * prof(z), 0.06, 16, 2.6, 0.12 * prof(z)));
-    P.push(tag(loftG(rings), { pid: 0, axle: [0, 0, 0] }));
+    P.push(T(loftG(rings), { pid: 0, axle: [0, 0, 0] }));
     // padded rim
     const rim = zs.slice(1, -1).map((z) => ringXY(z, 0, 0.685, 0.185 * prof(z), 0.022, 10, 2, 0.022));
-    P.push(tag(loftG(rim), { pid: 4, axle: [0, 0, 0] }));
+    P.push(T(loftG(rim), { pid: 4, axle: [0, 0, 0] }));
   }
   // hood: a ribbed half-shell over the head end (the pusher's side), both faces
   {
@@ -109,10 +115,23 @@ function pramGeometry() {
     arcs.forEach((r) => r.forEach((p) => pos.push(p.x, p.y, p.z)));
     for (let i = 0; i < arcs.length - 1; i++) for (let j = 0; j < 12; j++) { const a = i * per + j; idx.push(a, a + 1, a + per, a + 1, a + per + 1, a + per); }
     const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
-    for (const h of doubleSided(g)) P.push(tag(h, { pid: 0, axle: [0, 0, 0] }));
+    for (const h of doubleSided(g)) P.push(T(h, { pid: 0, axle: [0, 0, 0] }));
   }
   // basket under the cot
-  P.push(tag(new THREE.BoxGeometry(0.34, 0.07, 0.42).translate(0, 0.22, 0.55), { pid: 4, axle: [0, 0, 0] }));
+  P.push(T(new THREE.BoxGeometry(0.34, 0.07, 0.42).translate(0, 0.22, 0.55), { pid: 4, axle: [0, 0, 0] }));
+  // the baby (polish 2026-11-11): lying in the carrycot, head under the hood (the pusher's end) facing up and out,
+  // a knitted bonnet, a blanket over the body up to the chin; pid 5 skin, 6 blanket / bonnet
+  {
+    const head = new THREE.SphereGeometry(0.056, 16, 12).scale(1, 0.92, 1.05).translate(0, 0.708, 0.37);
+    P.push(T(head, { pid: 5, axle: [0, 0, 0] }));
+    const bonnet = new THREE.SphereGeometry(0.06, 16, 8, 0, TAU, 0, Math.PI * 0.55).rotateX(-Math.PI * 0.42).translate(0, 0.709, 0.362);
+    P.push(T(bonnet, { pid: 6, axle: [0, 0, 0] }));
+    // blanket: a soft mound from the chin to the feet (the body and legs under it), its edge tucked into the cot
+    const zs = [0.405, 0.415, 0.44, 0.48, 0.53, 0.59, 0.65, 0.71, 0.76, 0.79, 0.8];
+    const bump = (z) => { const t = (z - 0.405) / 0.395; return Math.sin(Math.PI * Math.min(1, t * 1.05)) ** 0.6; };
+    const rings = zs.map((z) => ringXY(z, 0, 0.672, 0.035 + 0.1 * bump(z), 0.014 + 0.065 * bump(z) * (1.15 - 0.45 * (z - 0.405) / 0.395), 20, 2.0, 0.004));
+    P.push(T(loftG(rings), { pid: 6, axle: [0, 0, 0] }));
+  }
   return mergeGeometries(P);
 }
 
@@ -185,21 +204,27 @@ export class Props {
       const y = p.y.sub(py), z = p.z.sub(pz), c = cos(a), s = sin(a);
       return vec3(p.x, y.mul(c).sub(z.mul(s)).add(py), y.mul(s).add(z.mul(c)).add(pz));
     };
-    // prams: (x, y, z, yaw), (scale, distance rolled, fade, colour seed)
-    this.prams = mk(pramGeometry(), "Prams", 2, (m, ro) => {
-      const P = vertexStage(ro.element(instanceIndex.mul(2))), Q = ro.element(instanceIndex.mul(2).add(1));
+    // prams: (x, y, z, yaw), (scale, distance rolled, fade, colour seed), (front castor swivel, -, -, -)
+    this.prams = mk(pramGeometry(), "Prams", 3, (m, ro) => {
+      const P = vertexStage(ro.element(instanceIndex.mul(3))), Q = ro.element(instanceIndex.mul(3).add(1)), Rv = ro.element(instanceIndex.mul(3).add(2));
       m.positionNode = Fn(() => {
         let p = attribute("position", "vec3").toVar();
         const ax = attribute("axle", "vec3"), isWheel = step(0.001, ax.z);
         p = mix(p, rotX(p, ax.x, ax.y, Q.y.div(max(ax.z, 0.01))), isWheel);      // the wheels roll
+        // the front castors swivel about their vertical pivot (after rolling): the angle comes from the turn rate
+        const cs = attribute("castor", "vec3"), a = Rv.x.mul(cs.z), c = cos(a), sn = sin(a);
+        const lx = p.x.sub(cs.x), lz = p.z.sub(cs.y);
+        p = vec3(lx.mul(c).add(lz.mul(sn)).add(cs.x), p.y, lz.mul(c).sub(lx.mul(sn)).add(cs.y));
         return yawTo(p.mul(Q.x), P);
       })();
-      const f = vertexStage(ro.element(instanceIndex.mul(2).add(1)).z);
+      const f = vertexStage(ro.element(instanceIndex.mul(3).add(1)).z);
       m.maskNode = keepBand(float(0), f); m.maskShadowNode = keepBand(float(0), f);
-      const seed = vertexStage(ro.element(instanceIndex.mul(2).add(1)).w), pid = attribute("pid", "float");
+      const seed = vertexStage(ro.element(instanceIndex.mul(3).add(1)).w), pid = attribute("pid", "float");
       const fabric = mix(mix(mix(color(0x23324a), color(0x6b2a30), step(0.3, seed)), color(0x6e706c), step(0.55, seed)), mix(color(0xb9a98c), color(0x2c3b2e), step(0.9, seed)), step(0.78, seed));
       const frameCol = mix(color(0x1c1d1f), color(0x9ea2a6), step(0.6, fract(seed.mul(7.3))));
-      m.colorNode = mix(mix(mix(mix(fabric, frameCol, step(0.5, pid)), color(0x111112), step(1.5, pid)), color(0x55585c), step(2.5, pid)), fabric.mul(0.45), step(3.5, pid));
+      const skin = mix(mix(color(0xe9c3a8), color(0xb07a58), step(0.62, fract(seed.mul(11.3)))), color(0x6e4630), step(0.85, fract(seed.mul(11.3))));
+      const knit = mix(mix(color(0xe7dccb), color(0xb9cde0), step(0.35, fract(seed.mul(5.9)))), color(0xe6b9c1), step(0.7, fract(seed.mul(5.9))));
+      m.colorNode = mix(mix(mix(mix(mix(mix(fabric, frameCol, step(0.5, pid)), color(0x111112), step(1.5, pid)), color(0x55585c), step(2.5, pid)), fabric.mul(0.45), step(3.5, pid)), skin, step(4.5, pid)), knit, step(5.5, pid));
       m.roughnessNode = mix(float(0.85), float(0.35), step(0.5, pid).mul(step(pid, 1.5)).add(step(2.5, pid).mul(step(pid, 3.5))));
       m.metalnessNode = mix(float(0), float(0.7), step(0.5, pid).mul(step(pid, 1.5)));
     }, true);
@@ -249,15 +274,21 @@ export class Props {
       m.colorNode = mix(coat, color(0x0d0c0c), step(abs(part.sub(7)), 0.1));
       m.roughnessNode = mix(float(0.88), float(0.3), step(abs(part.sub(7)), 0.1));
     }, true);
-    this.leashes = mk(new THREE.CylinderGeometry(0.006, 0.006, 1, 5).translate(0, 0.5, 0), "Leashes", 2, (m, ro) => {
-      // a lead: from P.xyz (the hand) toward the collar: Q.y = length, P.w = yaw, Q.w = pitch from vertical
-      const P = vertexStage(ro.element(instanceIndex.mul(2))), Q = ro.element(instanceIndex.mul(2).add(1));
+    // leads (polish 2026-11-11): a SAGGING curve, not a straight rod. (hand x, y, z, sag), (collar x, y, z, fade).
+    // The tube's height (0..1) is the parameter t along the lead; the centre line is the chord dropped by
+    // sag * 4 t (1 - t) (a parabola: the catenary of a light lead with this little slack); its cross-section is built
+    // round the curve's tangent.
+    this.leashes = mk(new THREE.CylinderGeometry(0.005, 0.005, 1, 5, 14, true).translate(0, 0.5, 0), "Leashes", 2, (m, ro) => {
+      const P = vertexStage(ro.element(instanceIndex.mul(2))), Q = vertexStage(ro.element(instanceIndex.mul(2).add(1)));
       m.positionNode = Fn(() => {
-        const p = attribute("position", "vec3").toVar(), y = p.y.mul(Q.y), cp = cos(Q.w), sp = sin(Q.w);
-        const v = vec3(p.x, y.mul(cp).sub(p.z.mul(sp)), y.mul(sp).add(p.z.mul(cp)));
-        return yawTo(v, P);
+        const p = attribute("position", "vec3"), t = p.y;
+        const H = P.xyz, C = Q.xyz, d = C.sub(H);
+        const c = H.add(d.mul(t)).sub(vec3(0, P.w.mul(4).mul(t).mul(float(1).sub(t)), 0));
+        const T = normalize(d.sub(vec3(0, P.w.mul(float(4).sub(t.mul(8))), 0)));
+        const side = normalize(cross(T, vec3(0, 1, 0)).add(vec3(1e-4, 0, 0))), up2 = cross(side, T);
+        return c.add(side.mul(p.x)).add(up2.mul(p.z));
       })();
-      const f = vertexStage(ro.element(instanceIndex.mul(2).add(1)).z);
+      const f = Q.w;
       m.maskNode = keepBand(float(0), f);
       m.colorNode = color(0x7a1e1e);
     }, false);
@@ -276,9 +307,15 @@ export class Props {
       if (p.pram) {
         // the handlebar where the pram family's baked hands are (0.5 m ahead at 0.93 m, scaled with the pusher)
         const S = p.scale, x = a.dx + fx * 0.5 * S, z = a.dz + fz * 0.5 * S;
-        const g = (p._pram ||= { roll: 0, x, z });
-        g.roll += Math.hypot(x - g.x, z - g.z); g.x = x; g.z = z;
-        if (PR.n < PR.max && vis > 0.001 && p.drawn) write(PR, [x, ground(x, z), z, a.dyaw, S, g.roll / S, vis, (p.seed * 3.7) % 1]);
+        const g = (p._pram ||= { roll: 0, x, z, yaw: a.dyaw, sw: 0 });
+        const moved = Math.hypot(x - g.x, z - g.z);
+        g.roll += moved; g.x = x; g.z = z;
+        // castors: the front pivots (0.63 m ahead of the rear axle) move sideways at yawRate x 0.63 while the pram goes
+        // forward at v: the wheels trail into that direction (atan2), eased; they keep their angle when stopped
+        let dyw = a.dyaw - g.yaw; dyw -= Math.round(dyw / TAU) * TAU; g.yaw = a.dyaw;
+        const v = moved / Math.max(dt, 1e-4);
+        if (v > 0.05) { const target = Math.max(-1.3, Math.min(1.3, Math.atan2((dyw / Math.max(dt, 1e-4)) * 0.63 * S, v))); g.sw += (target - g.sw) * Math.min(1, dt * 8); }
+        if (PR.n < PR.max && vis > 0.001 && p.drawn) write(PR, [x, ground(x, z), z, a.dyaw, S, g.roll / S, vis, (p.seed * 3.7) % 1, g.sw, 0, 0, 0]);
       }
       if (p.dog) {
         // the dog walks ahead-left of its owner on a ~1.5 m lead; it stops to sniff now and then (head down) until the
@@ -313,8 +350,13 @@ export class Props {
           // the lead: from the owner's left hand (approx.) to the collar
           const hx = a.dx + fx * 0.12 - rx * 0.27 * p.scale, hz = a.dz + fz * 0.12 - rz * 0.27 * p.scale, hy = a.dy + 0.8 * p.scale;
           const cl = B.L / 2 + 0.02, cx = g.x + Math.sin(g.yaw) * cl * g.size, cz = g.z + Math.cos(g.yaw) * cl * g.size, cy = y + (B.h + 0.03) * g.size - g.sniff * 0.12 * g.size;
-          const lx = cx - hx, ly = cy - hy, lz = cz - hz, len = Math.hypot(lx, ly, lz);
-          if (LS.n < LS.max) write(LS, [hx, hy, hz, Math.atan2(lx, lz), 1, len, vis, Math.acos(Math.max(-1, Math.min(1, ly / Math.max(len, 1e-4))))]);
+          // sag from the slack: a 1.6 m lead (x the owner's size) over the chord d; a shallow parabola has length
+          // d + 8 h^2 / (3 d) -> h = sqrt(3 d slack / 8); a short chord hangs in a V (h -> slack / 2); never below the
+          // ground; eased so a lead that goes taut / slack does not snap
+          const len = Math.hypot(cx - hx, cy - hy, cz - hz), rope = 1.6 * p.scale, slack = Math.max(0, rope - len);
+          const want = Math.min(Math.max(Math.sqrt((3 * len * slack) / 8), slack * 0.5), (hy + cy) / 2 - y - 0.03);
+          g.sag = (g.sag ?? want) + (Math.max(0, want) - (g.sag ?? want)) * Math.min(1, dt * 10);
+          if (LS.n < LS.max) write(LS, [hx, hy, hz, g.sag, cx, cy, cz, vis]);
         }
       }
     }
