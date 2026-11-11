@@ -121,6 +121,14 @@ function grassMat() {
   m.normalNode = bumpNormal(c.mul(0.004).mul(float(1).sub(smoothstep(0.003, 0.012, fw))));
   return m;
 }
+/** Thin snow on a lawn: it sits in the hollows between tufts first (the grass material's own tuft / blade noise). */
+function grassGround() {
+  const fw = fwN();
+  const tuft = noise2D(P.xz.mul(4.0)), blade = noise2D(P.xz.mul(23.0)), tip = noise2D(P.xz.mul(67.0).add(5.3));
+  // tufts (25 cm) set the patches, blades (4 cm) and tips (1.5 cm) rag their edges; each fades to its mean when sub-pixel
+  const g = float(1).sub(tuft.mul(0.4).add(mix(blade, float(0.5), smoothstep(0.003, 0.015, fw)).mul(0.35)).add(mix(tip, float(0.5), smoothstep(0.0015, 0.006, fw)).mul(0.25)));
+  return smoothstep(0.2, 0.8, g);
+}
 function barkMat() {
   const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, roughness: 0.92 });
   const n = noise2D(vec2(P.y.mul(3.0), P.x.add(P.z).mul(18.0)));
@@ -162,7 +170,8 @@ const KERB = 0.13;
   const g = new THREE.PlaneGeometry(140, 2, 280, 8).rotateX(-Math.PI / 2).translate(0, 0.0, 2.5);
   const uvA = g.attributes.uv; const p = g.attributes.position;
   for (let i = 0; i < uvA.count; i++) uvA.setXY(i, p.getX(i) + 70, p.getZ(i) - 1.5);
-  root.add(mesh(g, cobbleMaterial, { porosity: 0.55, puddles: true, puddleBias: float(0.06), slush: true }));
+  // thin snow lingers in the sett joints first (dark joints: o.ground from the dry colour)
+  root.add(mesh(g, cobbleMaterial, { porosity: 0.55, puddles: true, puddleBias: float(0.06), slush: true, ground: { lum: [0.065, 0.11] } }));
 }
 // sidewalks (the city's concrete tiles) + blue-stone kerbs
 function sidewalk(z0, z1) {
@@ -179,9 +188,9 @@ function sidewalk(z0, z1) {
 sidewalk(3.5, 6); sidewalk(-6.4, -3.5);
 { // lawn (park) south of the sidewalk, and far ground
   const g = new THREE.PlaneGeometry(140, 60, 1, 1).rotateX(-Math.PI / 2).translate(0, KERB - 0.01, 36);
-  root.add(mesh(g, grassMat, { porosity: 0.9, flowers: true, litter: true, frost: true }));
+  root.add(mesh(g, grassMat, { porosity: 0.9, flowers: true, litter: true, frost: true, ground: grassGround() }));
   const back = new THREE.PlaneGeometry(140, 60, 1, 1).rotateX(-Math.PI / 2).translate(0, KERB - 0.01, -36);
-  root.add(mesh(back, grassMat, { porosity: 0.9, litter: true, frost: true }));
+  root.add(mesh(back, grassMat, { porosity: 0.9, litter: true, frost: true, ground: grassGround() }));
   const far = mesh(new THREE.CircleGeometry(3000, 48).rotateX(-Math.PI / 2).translate(0, -0.05, 0), () => plainMat(0x2f3a28, 1), { porosity: 0.9, frost: true }, { cast: false, solid: false });
   scene.add(far);
 }

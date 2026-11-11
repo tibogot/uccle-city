@@ -175,3 +175,40 @@ NOISY: the baseline itself moved from 3.3 to 4.2-4.9 ms between sessions (other 
 - Wet asphalt still mirrors the bright snowy street at grazing angles more than in the photo.
 - The night sky glow is a hemisphere light in the lab, not in Firmament.
 - Lab trees are procedural skeletons (claude/foliage will replace them).
+
+---
+
+# Polish (2026-11-11, late)
+
+**Puddle reflections at night (the round-2 weakest spot).** `weatherize()` puddles: the ripple slope is filtered by its
+own screen footprint before it bends the reflection: `dv = fwidth(slope)`; the slope fades to its mean (flat) by
+`1 / (1 + (30 dv)^2)` and the lost variance goes into roughness (`sqrt(0.025^2 + 16 dv^2 + 0.1 |slope|^2)`, max 0.22:
+Toksvig-style specular AA), so the half-res SSR blur widens instead of neighbouring rays scattering; the rings' far fade
+starts earlier (fw 0.8-2.5 cm, was 1.2-3.5). Ripples still read (`docs/weather/polish_rain_night_puddles.png`).
+
+Flicker (heavy rain, 22:30, 15 Jan, "puddles low", strafe, 24 frames; the lab's own animation between samples, so each
+sample freezes a different ripple phase; region = the puddle, x 0-900, y 430-800 of 1280 x 800):
+
+| | whole frame, 0.6 mm (8 samples) | puddle region, 3 mm (8 samples) |
+|---|---|---|
+| before | mean 10 ppm (6-12) | mean 40, max 102 ppm (`polish_flicker_puddle_before.png`) |
+| after | mean 10 ppm (6-11) | **0 in all 8** (`polish_flicker_puddle_after.png` is the intermediate try, 69 mean, before the roughness term) |
+
+NOTE: round 2's 884 ppm did NOT reproduce today (the same view, before the change, measured 7-16 ppm): the lab's
+moving car, the date and the ripple phase move the number a lot; the remaining whole-frame blinks are the parked cars'
+plates / wheel rims, the lamp post and rain streaks, not the water. The background tab only renders when the script
+pumps `lab.frame()` (rAF is throttled), so these tests drive frames by hand.
+
+**Thin-snow holes follow the ground.** `weatherize({ ground })`: a node (1 = holds snow) or `{ lum: [lo, hi] }` (from
+the dry colour: dark joints hold it). `snowMask(..., ground)`: while the cover is thin (< ~2.5 cm) the big blobby noise
+drops to a soft drift and the texture decides the edge; the ground term fades to 0.5 where the texture is sub-pixel.
+Lab: setts `ground: { lum: [0.065, 0.11] }` (snow stays in the joints, the domed stone tops show), lawn
+`grassGround()` (tufts 25 cm set the patches, blades 4 cm and tips 1.5 cm rag the edges). The snow LAYER dissolves while
+thin (its keep threshold rises to 1 as the cover drops below 0.75), except packed tracks, so the materials' textured
+cover shows instead of the layer's noise edge. Images (1.4 cm, sun): `polish_thin_snow_setts_before/after.png`,
+`polish_thin_snow_lawn_before/after.png`. Flicker at those views (0.6 mm strafe): setts 290 ppm, lawn 127 ppm, the
+clusters on the far snowfield at the horizon and the trunk / fir edges, not the near setts or lawn.
+
+Weak (polish): lawn patches at 5-15 m are still the tuft noise (smooth blobs); the sidewalk tiles have no `ground` yet;
+the bare sett tops are clean-cut (no partial dusting); the far snowfield blinks a little at the horizon in thin snow.
+

@@ -53,7 +53,7 @@ export const rippleSlope = Fn(([xz, t, fw]) => {
     acc.addAssign(d.div(max(length(d), 0.001)).mul(w));
   }
   // rings ~11 cm wavelength: gone before a ring is 3 px across (no crawl)
-  return acc.mul(0.13).mul(float(1).sub(smoothstep(0.012, 0.035, fw))).mul(wx.uRain.mul(1.5).min(1)).mul(wxLook.uRipple);
+  return acc.mul(0.13).mul(float(1).sub(smoothstep(0.008, 0.025, fw))).mul(wx.uRain.mul(1.5).min(1)).mul(wxLook.uRipple);
 });
 
 /** Snow sparkle: a sparse set of cells whose facet is tilted at random; returns vec4(view normal tilt xyz, mask). */
@@ -72,10 +72,17 @@ export const glint = Fn(([p, fw]) => {
 });
 
 /** The snow cover mask at a world point for a given up-facing share / exposure (shared with the snow layer). */
-export function snowMask(P, up, exposure, cover = wx.uSnowCover, upLo = 0.42, upHi = 0.78) {
+// `ground` (optional, 0..1): where the surface's own texture holds snow longest (sett joints, the hollows between grass
+// blades: 1) or loses it first (stone tops, blade tips: 0). While the snow is thin (< ~2.5 cm, cover < 1) the holes
+// follow it instead of one blobby noise: the big noise drops to a gentle drift and the texture decides the edge.
+export function snowMask(P, up, exposure, cover = wx.uSnowCover, upLo = 0.42, upHi = 0.78, ground = null) {
   const n = noise2D(P.xz.mul(2.7)).mul(0.6).add(noise2D(P.xz.mul(0.6)).mul(0.4));
   const cov = smoothstep(upLo, upHi, up).mul(exposure).mul(cover);
-  return smoothstep(0.32, 0.5, cov.mul(1.45).sub(n.mul(0.45)));
+  if (!ground) return smoothstep(0.32, 0.5, cov.mul(1.45).sub(n.mul(0.45)));
+  const thin = float(1).sub(smoothstep(0.75, 1.0, cover));
+  const drift = noise2D(P.xz.mul(0.45)).mul(0.7).add(noise2D(P.xz.mul(1.9)).mul(0.3));    // large, soft drifts only
+  const v = cov.mul(mix(float(1.45), float(1.3), thin)).sub(mix(n, drift, thin).mul(0.45)).add(float(ground).sub(0.5).mul(thin).mul(0.55));
+  return smoothstep(mix(float(0.32), float(0.38), thin), mix(float(0.5), float(0.44), thin), v);
 }
 
 export function weatherize(m, o = {}) {
@@ -137,7 +144,16 @@ export function weatherize(m, o = {}) {
     col = mix(col, col.mul(0.42), puddle);
     rough = mix(rough, float(0.025), puddle);
     metal = mix(metal, float(0.55), puddle);
-    const rs = rippleSlope(P.xz, t, fw);
+    // ripple normals FILTERED for the reflection (polish 2026-11-11): the SSR pass traces at half resolution, so a
+    // ripple slope that changes a lot between neighbouring pixels sends neighbouring rays to unrelated hits and the
+    // near puddles blink under a sub-pixel move. dv = slope change per pixel (its screen footprint): where it is large
+    // the slope fades to its mean (flat) and the lost variance goes into roughness (Toksvig / specular AA), so the SSR
+    // blur widens instead of the rays scattering.
+    const rs0 = rippleSlope(P.xz, t, fw);
+    const dv = fwidth(rs0.x).add(fwidth(rs0.y));
+    const keep = float(1).div(float(1).add(dv.mul(30.0).pow(2)));
+    const rs = rs0.mul(keep);
+    rough = mix(rough, min(sqrt(float(0.025 * 0.025).add(dv.mul(dv).mul(16.0)).add(rs0.dot(rs0).mul(0.1))), float(0.22)), puddle);
     const nW = normalize(vec3(rs.x.negate(), 1, rs.y.negate()));
     nView = normalize(mix(nView, toView(nW), puddle));
   }
@@ -219,7 +235,15 @@ export function weatherize(m, o = {}) {
       return m;
     }
     // snowUp: the up-facing range that holds snow (branches: a round limb holds a ridge from ~0.15 up)
-    const sm = snowMask(P, up, exposed.mul(float(1).sub(shelter.mul(0.6))), wx.uSnowCover, ...(o.snowUp ?? [0.42, 0.78])).toVar();
+    // o.ground: the texture that steers thin-snow holes: a node (1 = holds snow), or { lum: [lo, hi] } = from the dry
+    // colour (dark joints / hollows hold it: luminance lo -> 1, hi -> 0), faded to 0.5 where the texture is sub-pixel
+    let ground = null;
+    if (o.ground?.isNode) ground = o.ground;
+    else if (o.ground?.lum) {
+      const Lc = dot(baseCol, vec3(0.2126, 0.7152, 0.0722));
+      ground = mix(smoothstep(float(o.ground.lum[1]), float(o.ground.lum[0]), Lc), float(0.5), smoothstep(0.01, 0.06, fw));
+    }
+    const sm = snowMask(P, up, exposed.mul(float(1).sub(shelter.mul(0.6))), wx.uSnowCover, ...(o.snowUp ?? [0.42, 0.78]), ground).toVar();
     if (o.plaster) {
       // wind-driven snow plastered on the windward side of trunks and posts (the night photo, Av. Churchill 2024)
       const wn = wx.uWind.length();

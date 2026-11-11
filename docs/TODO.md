@@ -332,7 +332,10 @@ falcon, labs (Bird, Lamp), the dev panel.
 - [ ] Trees: claude/foliage reads `viewer/seasons/season.js` (leaf colour / autumn / density per leaf, fall).
 - [x] Side-by-side with real photos (round 2: data/raw/weather_refs/compare_*.jpg, findings in docs/WEATHER.md).
 - [ ] Night: the cloud deck's orange city glow in Firmament itself (the lab fakes it with a hemisphere light).
-- [ ] Puddle ripples + SSR flicker near the camera (884 ppm): filter ripple normals for SSR.
+- [x] Puddle ripples + SSR flicker near the camera: ripple normals filtered by their pixel footprint + specular AA
+      roughness (polish 2026-11-11, docs/WEATHER.md "Polish"); puddle region 0 ppm over 8 samples (was up to 102).
+- [x] Thin-snow holes follow the ground texture (sett joints, grass tufts: `weatherize({ ground })`), the layer gives
+      way below ~2 cm (polish 2026-11-11). Lawn mid-distance patches still a little blobby (tuft noise).
 - [ ] Trampled sidewalk snow, snow on rails / fences, tracks in thin snow on the materials.
 - [x] Snow on branches / evergreens (hooks), sill caps, icicles + drips, salted roads (round 2).
 - [ ] Snow sliding off steep roofs; finer layer near the camera (2 cascades: 6 cm near, 25 cm far).

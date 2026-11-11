@@ -116,6 +116,11 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null }) {
     // where wheels and feet packed it down to the ground (the Bosveldweg photo: dark tyre lines in 1 cm of snow)
     const thin = float(1).sub(smoothstep(0.02, 0.06, wx.uSnowDepth));
     const keep = snowMask(P, float(1), float(1), wx.uSnowCover);
+    // polish: while the cover is thin (< ~2.5 cm) the layer dissolves (its keep threshold rises to 1) except the packed tracks: the
+    // materials' own cover (weatherize o.ground: snow in the sett joints / between grass tufts) shows the pattern, not
+    // the layer's blobby noise edge
+    const thinC = float(1).sub(smoothstep(0.75, 1.0, wx.uSnowCover));
+    If(keep.lessThan(mix(float(0.3), float(1.01), thinC)).and(packed.lessThan(0.15)), () => { Discard(); });
     If(keep.lessThan(0.3), () => { Discard(); });
     const v = noise2D(P.xz.mul(0.8)).mul(0.04).add(0.98);
     const slushC = vec3(0.4, 0.41, 0.42);
