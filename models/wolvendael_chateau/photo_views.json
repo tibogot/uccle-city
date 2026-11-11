@@ -1,0 +1,119 @@
+{
+ "pond front across the pond (w02)": {
+  "file": "w02.jpg",
+  "credit": "Photo: Donarreiskoffer, 2019, CC BY-SA 4.0 (Wikimedia Commons, Wolvendael Park 02.jpg)",
+  "size": [
+   4618,
+   3464
+  ],
+  "pos": [
+   28.131,
+   -63.156,
+   48.461
+  ],
+  "target": [
+   14.285,
+   -4.892,
+   44.775
+  ],
+  "up": [
+   0.0071,
+   0.0648,
+   0.9979
+  ],
+  "fov": 51.455,
+  "f_px": 3594.4,
+  "k1": 0.0,
+  "err_px": [
+   9.7,
+   4.4
+  ],
+  "line_err_px": [
+   5.3,
+   1.5,
+   2.9,
+   3.6,
+   8.8,
+   7.3
+  ],
+  "mean_err": 5.45
+ },
+ "pond front across the pond, closer (w04)": {
+  "file": "w04.jpg",
+  "credit": "Photo: Donarreiskoffer, 2019, CC BY-SA 4.0 (Wikimedia Commons, Wolvendael Park 04.jpg)",
+  "size": [
+   4618,
+   3464
+  ],
+  "pos": [
+   28.083,
+   -62.885,
+   48.395
+  ],
+  "target": [
+   16.756,
+   -3.991,
+   46.637
+  ],
+  "up": [
+   -0.0175,
+   0.0265,
+   0.9995
+  ],
+  "fov": 51.368,
+  "f_px": 3601.4,
+  "k1": 0.0,
+  "err_px": [
+   9.2,
+   8.9
+  ],
+  "line_err_px": [
+   2.2,
+   0.6,
+   2.2,
+   0.8,
+   0.6,
+   2.3
+  ],
+  "mean_err": 3.34
+ },
+ "pond front and the north-east end, snow (w00)": {
+  "file": "w00.jpg",
+  "credit": "Photo: Edison McCullen, 2026, CC BY 4.0 (Wikimedia Commons, Ecole des Arts d'Uccle.jpg)",
+  "size": [
+   8160,
+   3768
+  ],
+  "pos": [
+   43.575,
+   -58.76,
+   50.77
+  ],
+  "target": [
+   12.792,
+   -7.516,
+   45.619
+  ],
+  "up": [
+   -0.0687,
+   0.0589,
+   0.9959
+  ],
+  "fov": 37.851,
+  "f_px": 5494.7,
+  "k1": 0.0,
+  "err_px": [
+   27.6,
+   17.4,
+   33.2,
+   20.4
+  ],
+  "line_err_px": [
+   3.7,
+   6.0,
+   1.7,
+   0.5
+  ],
+  "mean_err": 13.81
+ }
+}
