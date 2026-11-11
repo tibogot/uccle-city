@@ -143,7 +143,7 @@ let todayBake = null, todayMat = null;
 // the kit's
 const S = {
   scene: qp.get("scene") ?? "row50", mode: qp.get("mode") ?? "kit", distance: 600, post: true, time: preset, hour: 0,
-  blend: "bary3", parallax: 1, pdo: true, alpha: "a2c-ramp", gain: 2, card: "octagon", noise: "screen", far: "ground", lodBias: 0, colourDepth: "equal",
+  blend: "bary3", parallax: 1, pdo: true, alpha: "a2c-ramp", gain: 1, card: "octagon", noise: "screen", far: "ground", lodBias: -1, colourDepth: "equal",
   start: 400, band: 30, end: 1500, endBand: 300, todayEnd: 1100,
   grid: 16, cell: 64, bakeLod: 2, bakeInfo: "", todayInfo: "",
   path: "orbit", frames: 24, orbitDeg: 0.02, strafe: 0.12, dolly: 1.0, result: "—", gpu: "—", bench: "—",
@@ -484,6 +484,32 @@ async function sideBySide(mode = "kit") {
   return url;
 }
 
+/** The far trees' look in a mode, at this camera: mean linear-ish colour over their pixels (brightness match) and
+ *  the mean |Laplacian| of luminance inside the crowns (leafy breakup: higher = crisper), the mask from on/off. */
+function treeStats(mode) {
+  frozen = true;
+  const grab = () => { const c = new OffscreenCanvas(CW, CH), x = c.getContext("2d"); x.drawImage(renderer.domElement, 0, 0); return x.getImageData(0, 0, CW, CH).data; };
+  const keep = S.mode;
+  S.mode = mode; applyMode(); renderFrame(0); renderFrame(0);
+  const on = grab();
+  for (const g of world.groups) g.hidden = true;
+  applyMode(); renderFrame(0); const off = grab();
+  for (const g of world.groups) g.hidden = false;
+  S.mode = keep; applyMode(); frozen = false;
+  const m = new Uint8Array(CW * CH), L = new Float32Array(CW * CH);
+  for (let j = 0, i = 0; j < m.length; j++, i += 4) {
+    L[j] = (0.2126 * on[i] + 0.7152 * on[i + 1] + 0.0722 * on[i + 2]) / 255;
+    if (Math.abs(on[i] - off[i]) + Math.abs(on[i + 1] - off[i + 1]) + Math.abs(on[i + 2] - off[i + 2]) > 6) m[j] = 1;
+  }
+  let n = 0, r = 0, g = 0, b = 0, lap = 0, nl = 0, li = 0;
+  for (let y = 1; y < CH - 1; y++) for (let x = 1; x < CW - 1; x++) {
+    const j = y * CW + x; if (!m[j]) continue;
+    n++; r += on[j * 4]; g += on[j * 4 + 1]; b += on[j * 4 + 2];
+    if (m[j - 1] && m[j + 1] && m[j - CW] && m[j + CW]) { lap += Math.abs(4 * L[j] - L[j - 1] - L[j + 1] - L[j - CW] - L[j + CW]); nl++; li += L[j]; }
+  }
+  return { mode, px: n, rgb: [r / n, g / n, b / n].map((v) => +v.toFixed(1)), lum: +((0.2126 * r + 0.7152 * g + 0.0722 * b) / n).toFixed(1), crisp: +(nl ? (lap / nl) * 1000 : 0).toFixed(1), inner: +(nl ? (li / nl) * 255 : 0).toFixed(1) };
+}
+
 // ------------------------------------------------------------------------------------------------ GPU bench
 const gpu = { avg: 0, pending: false, samples: [] };
 function sampleGpu() {
@@ -604,7 +630,7 @@ async function stackHeat(h) { return stackURLs(Object.values(h), "heat maps: " +
 /** an object URL -> data URL (to save an image from the console / devtools) */
 const dataURL = (url) => fetch(url).then((r) => r.blob()).then((b) => new Promise((res) => { const f = new FileReader(); f.onload = () => res(f.result); f.readAsDataURL(b); }));
 let lastShown = null;
-window.lab = { dataURL, get lastShown() { return lastShown; }, renderer, scene, camera, controls, S, H, IMP, U, view, shared, buildScene, applyMode, meter, meterAB, bench, sideBySide, stripSet, stackURLs, show, bakeKit, buildKitMats, renderFrame, get atlas() { return atlas; }, get world() { return world; }, todayBake, gpu, poseFor, startPath, endPath };
+window.lab = { dataURL, treeStats, get lastShown() { return lastShown; }, renderer, scene, camera, controls, S, H, IMP, U, view, shared, buildScene, applyMode, meter, meterAB, bench, sideBySide, stripSet, stackURLs, show, bakeKit, buildKitMats, renderFrame, get atlas() { return atlas; }, get world() { return world; }, todayBake, gpu, poseFor, startPath, endPath };
 
 await bakeKit();
 await buildScene(S.scene);

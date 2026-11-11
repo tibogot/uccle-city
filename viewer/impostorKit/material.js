@@ -34,8 +34,12 @@ import { octDecode } from "./bake.js";
 import { fadeNoise, impostorKeep, farT, anchorOf, footSeed } from "./fade.js";
 
 /** Per field / per camera uniforms (field.update sets them). */
-export function makeView() {
-  return { p11: uniform(1.9), viewH: uniform(800), lodBias: uniform(0), hideMask: uniform(0), gain: uniform(2), cutoff: uniform(0.5) };
+export function makeView({ lodBias = -1, gain = 1 } = {}) {
+  // lodBias -1 (measured, docs/IMPOSTOR_KIT.md): the crowns' leafy breakup as crisp as the mesh LODs' (mean
+  // |Laplacian| over the crowns 308 vs 319 on the row of 50, 320 vs 314 over the forest; 230 at bias 0) at about half
+  // the mesh's jitter. gain 1 (coverage = alpha around the cut): the crowns as bright as the mesh's against the sky
+  // (94.3 vs 93.7 mean; gain 4 was 8 % darker: the mesh's far leaves let the sky through), jitter unchanged.
+  return { p11: uniform(1.9), viewH: uniform(800), lodBias: uniform(lodBias), hideMask: uniform(0), gain: uniform(gain), cutoff: uniform(0.5) };
 }
 
 /**
