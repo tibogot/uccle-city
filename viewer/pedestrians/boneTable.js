@@ -78,7 +78,7 @@ export class BoneTable {
       if (qx * bx + qy * by + qz * bz + qw * bw < 0) { bx = -bx; by = -by; bz = -bz; bw = -bw; }
       const w = p.w;
       qx += (bx - qx) * w; qy += (by - qy) * w; qz += (bz - qz) * w; qw += (bw - qw) * w;
-      const n = 1 / Math.hypot(qx, qy, qz, qw); qx *= n; qy *= n; qz *= n; qw *= n;
+      const n = 1 / Math.sqrt(qx * qx + qy * qy + qz * qz + qw * qw); qx *= n; qy *= n; qz *= n; qw *= n;
       let tx = A[o + 4] + (B[o + 4] - A[o + 4]) * w, ty = A[o + 5] + (B[o + 5] - A[o + 5]) * w, tz = A[o + 6] + (B[o + 6] - A[o + 6]) * w;
       if (b === BONE.HEAD && p.look) {
         // glance: turn the head about the vertical through its joint (local frame)
@@ -106,12 +106,14 @@ export class BoneTable {
     const cy = Math.cos(p.yaw * 0.5), sy = Math.sin(p.yaw * 0.5), S = p.scale;
     for (let k = 0; k < 2; k++) {
       const b = k ? BONE.FOOT_R : BONE.FOOT_L, bj = k ? BIND.footR : BIND.footL;
-      bonePair(this, p.sex, p.clipA, p.phaseA, b, _ba); bonePair(this, p.sex, p.clipB, p.phaseB, b, _bb);
+      // (one slice only when the mix is all one way: walking at a baked speed, standing)
+      if (p.w > 0.995) { bonePair(this, p.sex, p.clipB, p.phaseB, b, _bb); _ba.set(_bb); }
+      else { bonePair(this, p.sex, p.clipA, p.phaseA, b, _ba); if (p.w < 0.005) _bb.set(_ba); else bonePair(this, p.sex, p.clipB, p.phaseB, b, _bb); }
       let bx = _bb[0], by = _bb[1], bz = _bb[2], bw = _bb[3];
       if (_ba[0] * bx + _ba[1] * by + _ba[2] * bz + _ba[3] * bw < 0) { bx = -bx; by = -by; bz = -bz; bw = -bw; }
       const w = p.w;
       let qx = _ba[0] + (bx - _ba[0]) * w, qy = _ba[1] + (by - _ba[1]) * w, qz = _ba[2] + (bz - _ba[2]) * w, qw = _ba[3] + (bw - _ba[3]) * w;
-      const n = 1 / Math.hypot(qx, qy, qz, qw); qx *= n; qy *= n; qz *= n; qw *= n;
+      const n = 1 / Math.sqrt(qx * qx + qy * qy + qz * qz + qw * qw); qx *= n; qy *= n; qz *= n; qw *= n;
       rot(qx, qy, qz, qw, bj[0], bj[1], bj[2], _v);
       const lx = _ba[4] + (_bb[4] - _ba[4]) * w + _v[0], ly = _ba[5] + (_bb[5] - _ba[5]) * w + _v[1], lz = _ba[6] + (_bb[6] - _ba[6]) * w + _v[2];
       // the sole's heel and ball (a rolling foot pivots on one of them), then to the world
@@ -133,7 +135,7 @@ export class BoneTable {
       let bx = d[e], by = d[e + 1], bz = d[e + 2], bw = d[e + 3];
       if (d[a] * bx + d[a + 1] * by + d[a + 2] * bz + d[a + 3] * bw < 0) { bx = -bx; by = -by; bz = -bz; bw = -bw; }
       let qx = d[a] + (bx - d[a]) * t, qy = d[a + 1] + (by - d[a + 1]) * t, qz = d[a + 2] + (bz - d[a + 2]) * t, qw = d[a + 3] + (bw - d[a + 3]) * t;
-      const n = 1 / Math.hypot(qx, qy, qz, qw);
+      const n = 1 / Math.sqrt(qx * qx + qy * qy + qz * qz + qw * qw);
       out[o] = qx * n; out[o + 1] = qy * n; out[o + 2] = qz * n; out[o + 3] = qw * n;
       for (let k = 4; k < 8; k++) out[o + k] = d[a + k] + (d[e + k] - d[a + k]) * t;
     }
@@ -149,7 +151,7 @@ function bonePair(T, sex, clip, phase, b, out) {
   let bx = d[e], by = d[e + 1], bz = d[e + 2], bw = d[e + 3];
   if (d[a] * bx + d[a + 1] * by + d[a + 2] * bz + d[a + 3] * bw < 0) { bx = -bx; by = -by; bz = -bz; bw = -bw; }
   const qx = d[a] + (bx - d[a]) * t, qy = d[a + 1] + (by - d[a + 1]) * t, qz = d[a + 2] + (bz - d[a + 2]) * t, qw = d[a + 3] + (bw - d[a + 3]) * t;
-  const n = 1 / Math.hypot(qx, qy, qz, qw);
+  const n = 1 / Math.sqrt(qx * qx + qy * qy + qz * qz + qw * qw);
   out[0] = qx * n; out[1] = qy * n; out[2] = qz * n; out[3] = qw * n;
   for (let k = 4; k < 8; k++) out[k] = d[a + k] + (d[e + k] - d[a + k]) * t;
   return out;
@@ -177,7 +179,7 @@ export function blendPose(out, a, b, w) {
     let bx = b[o], by = b[o + 1], bz = b[o + 2], bw = b[o + 3];
     if (a[o] * bx + a[o + 1] * by + a[o + 2] * bz + a[o + 3] * bw < 0) { bx = -bx; by = -by; bz = -bz; bw = -bw; }
     const qx = a[o] + (bx - a[o]) * w, qy = a[o + 1] + (by - a[o + 1]) * w, qz = a[o + 2] + (bz - a[o + 2]) * w, qw = a[o + 3] + (bw - a[o + 3]) * w;
-    const n = 1 / Math.hypot(qx, qy, qz, qw);
+    const n = 1 / Math.sqrt(qx * qx + qy * qy + qz * qz + qw * qw);
     out[o] = qx * n; out[o + 1] = qy * n; out[o + 2] = qz * n; out[o + 3] = qw * n;
     for (let j = 4; j < 8; j++) out[o + j] = a[o + j] + (b[o + j] - a[o + j]) * w;
   }

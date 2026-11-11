@@ -20,7 +20,7 @@ import { BONES, STRIDE, BIND, blendPose, rot } from "./boneTable.js";
 import { buildLod2 } from "./lod2.js";
 
 export const BANDS = {
-  live: 18, liveOut: 20, liveWarm: 21.5, maxLive: 16, blend: 0.4,  // m, m, m, people, s
+  live: 18, liveOut: 20, liveWarm: 21.5, maxLive: 12, blend: 0.4,  // m, m, m, people, s
   lod01: 35, lod01w: 3,            // LOD0 -> LOD1 cross-fade centre and half-width (m)
   lod12: 60, lod12w: 4,            // LOD1 -> LOD2
   end: 250, endw: 25,              // LOD2 fades out over 225-250 m
@@ -54,12 +54,10 @@ class Band {
     this.mesh.count = 1;                                  // one degenerate person while the pipelines compile
     this.count = 0; this.live = 0; this.frames = 0;
     this.countU = uniform(0, "int");
-    // the compute pass: one thread per (person, bone)
+    // the compute pass body for this band's slot `person`, bone `bone` (one kernel for the three bands: Crowd)
     const total = table.total, params = this.params, pose = this.pose;
-    this.compute = Fn(() => {
-      const i = int(instanceIndex);
-      const person = i.div(BONES), bone = i.sub(person.mul(BONES));
-      If(person.lessThan(this.countU), () => {
+    this.body = (person, bone) => {
+      {
         const P0 = params.element(person.mul(4)), P1 = params.element(person.mul(4).add(1));
         const P2 = params.element(person.mul(4).add(2)), P3 = params.element(person.mul(4).add(3));
         If(P1.x.greaterThanEqual(0.0), () => {
@@ -88,8 +86,8 @@ class Band {
           pose.element(base.add(1)).assign(vec4(qrot(qy, t2.mul(S)).add(P0.xyz).add(vec3(0, lift, 0)), S));
           If(bone.equal(0), () => { pose.element(person.mul(STRIDE).add(STRIDE - 1)).assign(P2); });
         });
-      });
-    })().compute(max * BONES, [64]);
+      }
+    };
   }
 }
 
@@ -110,6 +108,16 @@ export class Crowd {
       new Band("LOD2", lod2Geo, 0, max, table, this.tableNode, this.clipNode, { castShadow: false }),
     ];
     this.meshes = this.bands.map((b) => b.mesh);
+    // ONE compute dispatch for the three bands (a thread per (person, bone); band slots laid end to end)
+    const [b0, b1, b2] = this.bands;
+    this.compute = Fn(() => {
+      const i = int(instanceIndex);
+      const g = i.div(BONES), bone = i.sub(g.mul(BONES));
+      const c0 = b0.countU, c01 = b0.countU.add(b1.countU), c012 = c01.add(b2.countU);
+      If(g.lessThan(c0), () => b0.body(g, bone))
+        .ElseIf(g.lessThan(c01), () => b1.body(g.sub(c0), bone))
+        .ElseIf(g.lessThan(c012), () => b2.body(g.sub(c01), bone));
+    })().compute((b0.max + b1.max + b2.max) * BONES, [64]);
     this.frustum = new THREE.Frustum(); this.pm = new THREE.Matrix4();
     this.rigPool = []; this.rigs = new Set();
     // the vendored skeleton's bind joints per sex (PersonRig keeps them as .bind)
@@ -180,9 +188,13 @@ export class Crowd {
     const a = p.anim, T = this.table, s = this._sp, F = this._feet;
     if (p.dist > BANDS.lod12 + BANDS.lod12w && dt > 0) {
       // far band (7-30 px tall, 15 Hz): no pin, one ground sample; the offset left from the mid band fades out
-      const r = Math.hypot(a.ox || 0, a.oz || 0), k = r > 1e-6 ? Math.max(0, r - 0.2 * dt) / r : 0;
+      const r = Math.sqrt((a.ox || 0) * (a.ox || 0) + (a.oz || 0) * (a.oz || 0)), k = r > 1e-6 ? Math.max(0, r - 0.2 * dt) / r : 0;
       a.ox = (a.ox || 0) * k; a.oz = (a.oz || 0) * k; a.dx = p.x + a.ox; a.dz = p.z + a.oz; a.dyaw = p.yaw;
-      a.dy = p.y; a.offL = a.offR = 0; a.gL = a.gR = undefined; a.fprev = null;
+      // ground: the higher of two samples 0.3 m ahead / behind along the heading (where the feet are in a stride):
+      // a foot may float over a kerb edge for a moment, it does not sink into it
+      const fx = Math.sin(p.yaw) * 0.3 * p.scale, fz = Math.cos(p.yaw) * 0.3 * p.scale;
+      a.dy = Math.max(this.ground(a.dx + fx, a.dz + fz), this.ground(a.dx - fx, a.dz - fz));
+      a.offL = a.offR = 0; a.gL = a.gR = undefined; a.fprev = null;
       return;
     }
     let ox = a.ox || 0, oz = a.oz || 0;
@@ -203,7 +215,7 @@ export class Crowd {
       }
       if (n) { ox += ex / n; oz += ez / n; }
     }
-    const r = Math.hypot(ox, oz);
+    const r = Math.sqrt(ox * ox + oz * oz);
     if (r > 1e-6) { const rel = (n ? Math.min(0.025, 0.12 * r) : 0.4) * dt + Math.max(0, r - 0.45); const k = Math.max(0, r - rel) / r; ox *= k; oz *= k; }
     const dxo = ox - (a.ox || 0), dzo = oz - (a.oz || 0);
     for (let k = 0; k < 12; k += 3) { F[k] += dxo; F[k + 2] += dzo; }
@@ -274,12 +286,15 @@ export class Crowd {
       // (the drawn placement, place(), only for people drawn: a culled one restarts its pin when seen again)
       let d2 = -1;
       // (the LOD1 band, 38-64 m, steps at 30 Hz the same way: half the plant-pin work)
-      const rate = p.dist > B.lod12 + B.lod12w ? B.farRate : p.dist > B.lod01 + B.lod01w ? 2 : 1;
+      const rate = p.dist > B.lod12 + B.lod12w ? B.farRate : p.dist > B.liveWarm + 3.5 ? 2 : 1;     // 30 Hz from 25 m
       if (rate > 1 && !p.anim.live && (p.id + this.frame) % rate) { p.anim.pend = (p.anim.pend || 0) + dt; }
       else { d2 = dt + (p.anim.pend || 0); this.advance(p, d2); p.anim.pend = 0; }
       if (p.dist > B.end) { p.drawn = false; st.beyond++; p.anim.fprev = null; if (p.anim.live) this._free(p); continue; }
-      _sph.center.set(p.x, p.y + 0.9 * p.scale, p.z); _sph.radius = 1.1 * p.scale;
-      p.inView = this.frustum.intersectsSphere(_sph);
+      p.anim.held = d2 < 0;
+      if (!p.anim.held || p.inView === undefined) {                // (held far / LOD1 people keep last step's culling)
+        _sph.center.set(p.x, p.y + 0.9 * p.scale, p.z); _sph.radius = 1.1 * p.scale;
+        p.inView = this.frustum.intersectsSphere(_sph);
+      }
       p.drawn = p.inView || p.dist < B.shadow + B.shadoww;     // shadow casters behind the camera too
       if (!p.drawn) { st.culled++; p.anim.fprev = null; if (p.anim.live && !allLive) this._free(p); continue; }
       if (d2 >= 0 && !(p.anim.live && p.anim.liveW >= 1)) this.place(p, d2);
@@ -331,10 +346,10 @@ export class Crowd {
     // 2. bands and fades, buffers
     for (const p of cand) {
       const d = p.dist, a = p.anim, sp = p.fade ?? 1;     // sp: spawn / despawn fade (dithered, 0..1)
-      const t01 = smooth(B.lod01 - B.lod01w, B.lod01 + B.lod01w, d);
-      const t12 = smooth(B.lod12 - B.lod12w, B.lod12 + B.lod12w, d);
-      const tEnd = smooth(B.end - B.endw, B.end, d);
-      const shadowKeep = 1 - smooth(B.shadow - B.shadoww, B.shadow + B.shadoww, d);
+      const t01 = d < B.lod01 - B.lod01w ? 0 : smooth(B.lod01 - B.lod01w, B.lod01 + B.lod01w, d);
+      const t12 = d < B.lod12 - B.lod12w ? 0 : smooth(B.lod12 - B.lod12w, B.lod12 + B.lod12w, d);
+      const tEnd = d < B.end - B.endw ? 0 : smooth(B.end - B.endw, B.end, d);
+      const shadowKeep = d > B.shadow + B.shadoww ? 0 : 1 - smooth(B.shadow - B.shadoww, B.shadow + B.shadoww, d);
       const vis = sp * (1 - tEnd);                    // share of the person's pixels drawn at all
       // the person's pixels [0, vis) split between the LODs: LOD0 [0, a0), LOD1 [a0, a1), LOD2 [a1, vis)
       const a0 = Math.min(vis, 1 - t01), a1 = Math.min(vis, Math.max(a0, 1 - t12));
@@ -382,6 +397,7 @@ export class Crowd {
     // 3. upload + compute
     for (const b of bands) {
       b.frames++;
+      b.countU.value = b.count;                 // (always: the one kernel lays the bands' slots end to end)
       const warm = b.frames <= 3;
       if (b.count === 0 && !warm) { b.mesh.visible = false; b.mesh.count = 0; continue; }
       b.mesh.visible = true;
@@ -392,7 +408,7 @@ export class Crowd {
       b.countU.value = b.count;
     }
     st.cpuMs = performance.now() - t0;
-    for (const b of bands) if (b.mesh.visible && b.count > b.live) this.renderer.compute(b.compute);
+    if (bands.some((b) => b.mesh.visible && b.count > b.live)) this.renderer.compute(this.compute);
     return st;
   }
   _moveSlot(b, from, to) {

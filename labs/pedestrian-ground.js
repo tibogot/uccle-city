@@ -432,6 +432,8 @@ export class Traffic {
   }
   step(dt, t) {
     this.stepBack(t);
+    const occ = this._occ || (this._occ = []); occ.length = 0;
+    for (const p of this.sim.people) if (p.alive && (p.onCrossing || (p.kerb && p.kerb.e.kind === "zebra"))) occ.push(p);
     const sim = this.sim;
     // who is on / waiting at each crossing (cars must not enter an occupied one)
     for (const c of this.cars) {
@@ -442,11 +444,10 @@ export class Traffic {
       const dStop = (stopAt - c.s) * L2.dir;
       const sig = SIGNAL.car(L2.road, t);
       if (dStop > 0 && (sig === "red" || (sig === "amber" && dStop > (c.v * c.v) / (2 * 3.5) + 1))) limit = Math.min(limit, dStop - 1);
-      // pedestrians on a crossing of this road ahead, or waiting at a zebra
-      for (const p of sim.people) {
-        if (!p.alive) continue;
-        const e = p.onCrossing || (p.kerb && p.kerb.e.kind === "zebra" ? p.kerb.e : null);
-        if (!e || e.road !== L2.road) continue;
+      // pedestrians on a crossing of this road ahead, or waiting at a zebra (the list is made once per step)
+      for (const p of occ) {
+        const e = p.onCrossing || p.kerb.e;
+        if (e.road !== L2.road) continue;
         // stop with the front bumper 1.5 m before the crossing's near edge (car half length 2.1 m)
         const d = (e.coord - c.s) * L2.dir - (e.width / 2 + 2.1 + 1.5);
         if (d > -3 && d < 50) limit = Math.min(limit, Math.max(0, d));
