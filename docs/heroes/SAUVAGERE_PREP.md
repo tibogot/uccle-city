@@ -224,6 +224,30 @@ pop), lab_playground_walking.jpeg; Blender previews in models/parkkit/previews/ 
   the side-by-side with the owner's photo is kept OUT of the repo (data/raw/refs/sauvagere/owner/compare/o01_vs_lab_round2.jpg)
   as o01 looks like a web image (560 x 420).
 
+### Round 3 (2026-11-11): the mound, by rules, on the measured ground
+- Ground: the UrbIS DTM 2021 round the pond's east shore in the lab frame (models/parkkit/sauvagere_site.json, 0.5 m):
+  the face rises 4.5-5.3 m from the water (y 0) over 3-5 m, lab x -9..+8, the exedra at (-0.8, 5.6), floor y 5.24.
+- Placement by rules (viewer/sauvagereCliff.js): column by column along the shore, the water edge and the top found on
+  the DTM; a water-line row (ledges, dark slabs, the grotto left of centre), rows up the face (pillars only right of
+  centre, elsewhere broad blocks / wedges / slabs tilted up to +-25 deg, 30 % pushed out = overhangs), small and
+  broken-top pieces on the upper edge, the exedra's footprint kept clear; no piece repeats its two neighbours;
+  seeded. A rock skin on the DTM's steep face (lab ground material) reads as rock between the pieces.
+- New pieces: rk3_block, rk3_block_s, rk3_wedge, rk3_broken. Checker: 0 blocking on 45 groups.
+- Plants (viewer/parkPlants.js): opaque procedural ferns / ivy / grass clumps, one instanced draw per kind, no shadows,
+  dithered out from 12 to 17 m; on the pieces' up-facing triangles (area-weighted) and the mound's gentle ground.
+- Canopy-shade preset (lab): a leaf dome with holes (shade + a few sun flecks by its shadow), green-filtered sky light,
+  the sun at 55 %, environment light at 32 %.
+- CC0 evaluation (owner's suggestion): (a) Poly Haven "rock_surface" normal map as a close-up DETAIL normal on the
+  scripted kit: ADOPTED (clearly less clay-like close up, one texture read, no colour taken; 1k jpg 0.44 MB; CREDITS.md).
+  (b) Poly Haven "namaqualand_cliff_02" (CC0 scanned cliff, 364k tris, 20 x 6.6 x 7.2 m): tried in the lab; NOT adopted:
+  it is one 20 m natural granite face (brown, rounded joints), not modular concrete rockwork, and my quick import came
+  out torn (the 1k glTF with the 8k bin listed by the API: to check before any further try). Quixel Megascans on Fab:
+  Fab Standard Licence, not looked at in depth and not downloaded (the owner must claim); ambientCG / Sketchfab CC0
+  not tried this round.
+- Images: docs/heroes/sauvagere/lab_round3_mound_o01_view.jpeg (default), lab_round3_mound_o01_view_dense.jpeg,
+  round3_option_a_detail_closeup.jpg, lab_round3_dolly_strip.jpg; the side-by-side with o01 (three-way) is kept out of the
+  repo: data/raw/refs/sauvagere/owner/compare/o01_vs_lab_round3.jpg.
+
 ## 5. Risks
 
 1. **The cliff's cost.** Stratified rock needs geometry near (the bedding and joints are the look); 40 pieces at
