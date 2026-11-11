@@ -41,7 +41,7 @@ freeze); **Grass and ground fields** (each layer on/off, density, min blade px, 
 Per polyline: smoothed, resampled every 0.4 m, a clipped section swept along it (battered sides, rounded top
 corners), lumps of 1.5-5 cm by species, rounded ends + caps, UV0 in metres. Leaf-mass shading from the shared noise
 in UV metres (clumps, leaves, dark crevices, bump normals). **Leaf-spray cards** (code-drawn per species,
-`cards.js`, coverage-preserving mips) tilted out of the surface; they shrink into the body between 14 and 24 m, so
+`cards.js`, coverage-preserving mips) tilted out of the surface; they shrink into the body between 10 and 18 m (30 % fewer than first built), so
 no alpha far away. Species: privet, beech (keeps brown leaves in winter), hornbeam (half), laurel, box. One merged
 body mesh + one instanced card mesh per species (2 draws). Bodies cast shadows; cards do not.
 
@@ -54,8 +54,8 @@ leaf_mass, stem, flower_a, flower_b, flower_centre), UV0 metres, Cycles AO in UV
 part's base + kind in UV2 / UV3 (the exporter writes v as 1-v: `plants.js` undoes it for the data channels).
 
 Runtime: per type, one compute pass picks each instance's LOD (frustum + distance) into 3 indirect draws:
-LOD0 the model to 11 m, LOD1 **leaf thinning** (keep 40 % of leaves / florets by their own random, grown
-1/sqrt(.4) about their base; stems through meshoptimizer 1.5 cm) to 28 m, LOD2 the far shell to 65 m; 2 m
+LOD0 the model to 7 m, LOD1 **leaf thinning** (keep 40 % of leaves / florets by their own random, grown
+1/sqrt(.4) about their base; stems through meshoptimizer 1.5 cm) to 16 m, LOD2 the far shell to 65 m; 2 m
 complementary screen-IGN dither bands at each hand-over and at the end. All slots of a plant in one geometry +
 one material (slot id per vertex): 3 draws per type. Seasons: deciduous leaves shrink to their base by the leaf
 amount (each its own threshold), flowers by the species' bloom, hydrangea heads brown in winter, bulbs only in
