@@ -126,7 +126,7 @@ class Emitter {
     // Extrapolate one period ahead with the source velocity so ramps lead instead of lag.
     const x = s.x + (s.vx || 0) * ahead, y = s.y + (s.vy || 0) * ahead, z = s.z + (s.vz || 0) * ahead;
     const d = Math.hypot(x - L.x, y - L.y, z - L.z);
-    const moved = Math.abs(x - k.x) + Math.abs(y - k.y) + Math.abs(z - k.z) > 0.01 || this.newPath;
+    const moved = !(Math.abs(x - k.x) + Math.abs(y - k.y) + Math.abs(z - k.z) <= 0.01) || this.newPath;  // NaN-safe: first call writes
     if (moved) {
       for (const path of this.paths) {
         if (path.dead) continue;
@@ -144,7 +144,7 @@ class Emitter {
     }
     if (this.delay) {
       const dl = Math.min(1.45, d / C);
-      if (Math.abs(dl - k.delay) > 2e-6) { const dt = this.delay.delayTime; dt.cancelAndHoldAtTime(now); dt.linearRampToValueAtTime(dl, now + ahead); k.delay = dl; }
+      if (!(Math.abs(dl - k.delay) <= 2e-6)) { const dt = this.delay.delayTime; dt.cancelAndHoldAtTime(now); dt.linearRampToValueAtTime(dl, now + ahead); k.delay = dl; }
     }
     if (now >= this.nextOccl) {
       this.occl = e.obstruction(s, L);
@@ -154,15 +154,15 @@ class Emitter {
     const range = s.range ?? 200;
     const fade = clamp((range - d) / (range * 0.25));
     const g = (s.gain ?? 1) * fade * fade * (3 - 2 * fade) * (this.retiring ? 0 : 1);
-    if (Math.abs(g - k.g) > 0.004 * Math.max(g, 0.05) || this.fresh) { this.input.gain.setTargetAtTime(g, now, this.fresh ? 0.01 : 0.04); k.g = g; }
+    if (!(Math.abs(g - k.g) <= 0.004 * Math.max(g, 0.05)) || this.fresh) { this.input.gain.setTargetAtTime(g, now, this.fresh ? 0.01 : 0.04); k.g = g; }
     const dir = 1 - this.occl * 0.8;
-    if (Math.abs(dir - k.dir) > 0.005) { this.direct.gain.setTargetAtTime(dir, now, 0.12); k.dir = dir; }
+    if (!(Math.abs(dir - k.dir) <= 0.005)) { this.direct.gain.setTargetAtTime(dir, now, 0.12); k.dir = dir; }
     const lp = Math.max(1200, 19000 * Math.exp(-d / 260)) * Math.pow(0.07, this.occl);
-    if (Math.abs(lp - k.lp) > 0.01 * lp) { this.lp.frequency.setTargetAtTime(lp, now, 0.1); k.lp = lp; }
+    if (!(Math.abs(lp - k.lp) <= 0.01 * lp)) { this.lp.frequency.setTargetAtTime(lp, now, 0.1); k.lp = lp; }
     // Reverb send: diffuse level falls slower than the direct sound (distance cue = direct/reverb ratio).
     const ref = s.ref ?? 3;
     const send = e.envSend * (s.wet ?? 1) * Math.sqrt(ref / Math.max(ref, d)) * fade;
-    if (Math.abs(send - k.send) > 0.01 * Math.max(send, 0.01)) { this.send.gain.setTargetAtTime(send, now, 0.15); k.send = send; }
+    if (!(Math.abs(send - k.send) <= 0.01 * Math.max(send, 0.01))) { this.send.gain.setTargetAtTime(send, now, 0.15); k.send = send; }
     this.fresh = false;
     return d;
   }
