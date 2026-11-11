@@ -19,6 +19,7 @@ import { FoliageMask, GroundHeights, GrassSystem, grassGroundColor, grassU, GRAS
 import { MaskBuilder, frontGardens, hedgeRuns, scatterPlants, KIND, hash2 } from "../viewer/foliage/placement.js";
 import { noiseAt } from "../viewer/foliage/noise.js";
 import { buildHedges } from "../viewer/foliage/hedges.js";
+import { buildPlants, PLANT_TYPES } from "../viewer/foliage/plants.js";
 import { flickerTest } from "./flickerTest.js";
 import { frameStrip } from "./frameStrip.js";
 
@@ -134,11 +135,12 @@ const VIEWS = SCENE === "street" ? {
   "overview": [G(-30, 34, 22), G(0, 0, 0)],
   "hedges": [G(-4, -13), G(1, -21, 0.9)],
   "box edging and bed": [G(-8, 10, 1.4), G(-12, 15.5, 0.2)],
+  "plants row": [G(-11.5, 21.0, 1.7), G(-11.5, 15.5, 0.3)],
 };
 function goView(name) { const v = VIEWS[name]; if (!v) return; camera.position.copy(v[0]); controls.target.copy(v[1]); S.view = name; }
 
 // ------------------------------------------------------------------------------------------------ panel
-const S = { view: Object.keys(VIEWS)[0], month: season.month, snow: 0, grass: true, near: true, main: true, flowers: true, litter: true,
+const S = { plants: true, hedges: true, view: Object.keys(VIEWS)[0], month: season.month, snow: 0, grass: true, near: true, main: true, flowers: true, litter: true,
   density: 1, debugBands: false, minPx: 0.8, windSpeed: wind.speed, windDir: wind.direction, gust: wind.gust, freeze: false, time: preset, post: true,
   stats: "", bench: "(run)", flicker: "(run)" };
 const ui = new Panel({ title: "Foliage Lab" });
@@ -160,6 +162,8 @@ fg.add(S, "grass").name("all fields");
 for (const k of Object.keys(grassSys.layers)) fg.add(S, k).name(`layer ${k}`);
 fg.add(S, "density", 0, 1.5, 0.01).onChange((v) => { grassU.density.value = v; });
 fg.add(S, "minPx", 0, 2, 0.05).name("min blade px").onChange((v) => { grassU.minPixels.value = v; });
+fg.add(S, "plants").name("plants (Blender)");
+fg.add(S, "hedges");
 fg.add(S, "debugBands").name("tint layers").onChange((v) => { grassU.debugLayers.value = v ? 1 : 0; });
 const fb = ui.addFolder("Measure");
 fb.add(S, "stats").name("stats").listen();
@@ -206,6 +210,14 @@ if (SCENE === "garden") hedges.push(
   { points: densify([[-20, 17.8], [-4, 17.8]]), species: "box", height: 0.55, width: 0.4 });
 const hedgeSet = buildHedges(hedges, (x, z) => heights.get(x, z));
 extras.add(hedgeSet.group);
+// ------------------------------------------------------------------------------------------------ plants
+if (SCENE === "garden") {
+  PLANT_TYPES.forEach((t, k) => plants.push({ x: -19 + k * 2.1, z: 15.5, type: t, yaw: k * 1.3, scale: 1 }));
+  for (let k = 0; k < 14; k++) plants.push({ x: -18 + (k % 7) * 2.2, z: -15 + Math.floor(k / 7) * 3, type: PLANT_TYPES[k % 4], yaw: k * 2.1, scale: 0.9 + (k % 3) * 0.1 });
+}
+const plantSet = await buildPlants(plants, (x, z) => heights.get(x, z));
+extras.add(plantSet.group);
+log.push(`plants: ${plants.length} (${Object.entries(plantSet.stats.byType).map(([k, v]) => `${k} ${v.n}: ${v.tris.join("/")} tris`).join(", ")})`);
 log.push(`hedges: ${hedgeSet.stats.metres.toFixed(0)} m, ${hedgeSet.stats.tris.toLocaleString()} tris, ${hedgeSet.stats.cards.toLocaleString()} leaf cards, ${hedgeSet.stats.draws} draws`);
 
 let last = performance.now(), frames = 0, fpsAcc = 0, fpsN = 0, fps = 0, cpuMs = 0;
@@ -215,6 +227,8 @@ function frame(dt) {
   applyShow();
   const t0 = performance.now();
   grassSys.frame(renderer, camera);
+  if (!forcedOff && S.plants) plantSet.frame(renderer, camera);
+  plantSet.group.visible = !forcedOff && S.plants; hedgeSet.group.visible = !forcedOff && S.hedges;
   cpuMs = cpuMs * 0.95 + (performance.now() - t0) * 0.05;
   lighting.update(camera.position.y, heights.get(camera.position.x, camera.position.z), controls.target, 150);
   if (S.post) pipe.render(hazeHook); else renderer.render(scene, camera);

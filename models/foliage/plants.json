@@ -1,0 +1,84 @@
+{
+ "asset": "garden plants (tools/blender/plants.py)",
+ "plants": {
+  "box_ball": {
+   "triangles": 5214,
+   "height": 0.715,
+   "ao_mean": 0.448
+  },
+  "box_ball_far": {
+   "triangles": 80,
+   "height": 0.702,
+   "ao_mean": 0.78
+  },
+  "laurel": {
+   "triangles": 7654,
+   "height": 1.533,
+   "ao_mean": 0.666
+  },
+  "laurel_far": {
+   "triangles": 80,
+   "height": 1.448,
+   "ao_mean": 0.927
+  },
+  "rhododendron": {
+   "triangles": 19626,
+   "height": 1.317,
+   "ao_mean": 0.43
+  },
+  "rhododendron_far": {
+   "triangles": 80,
+   "height": 1.194,
+   "ao_mean": 0.904
+  },
+  "hydrangea": {
+   "triangles": 17282,
+   "height": 0.972,
+   "ao_mean": 0.333
+  },
+  "hydrangea_far": {
+   "triangles": 80,
+   "height": 0.881,
+   "ao_mean": 0.806
+  },
+  "rose": {
+   "triangles": 5392,
+   "height": 0.984,
+   "ao_mean": 0.606
+  },
+  "rose_far": {
+   "triangles": 80,
+   "height": 0.821,
+   "ao_mean": 0.81
+  },
+  "lavender": {
+   "triangles": 5880,
+   "height": 0.609,
+   "ao_mean": 0.655
+  },
+  "lavender_far": {
+   "triangles": 80,
+   "height": 0.446,
+   "ao_mean": 0.693
+  },
+  "bulbs": {
+   "triangles": 1188,
+   "height": 0.477,
+   "ao_mean": 0.451
+  },
+  "geranium": {
+   "triangles": 3132,
+   "height": 0.354,
+   "ao_mean": 0.226
+  }
+ },
+ "attributes": "UV0 metres; UV1 = (AO, random per leaf); UV2 = (base x, base y); UV3 = (base z, kind 0 stem 1 leaf 2 flower 3 shell), glTF frame",
+ "slots": [
+  "leaf",
+  "leaf_mass",
+  "stem",
+  "flower_a",
+  "flower_b",
+  "flower_centre"
+ ]
+}
