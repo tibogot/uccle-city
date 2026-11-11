@@ -611,3 +611,8 @@ before the owner has reviewed the tree branches. The lab is the only consumer in
 - Unigine impostor material (depth offset): https://developer.unigine.com/en/docs/latest/editor2/tools/impostors_creator/impostor_material
 - three.js r187 builds read for API checks: https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.core.js , https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js
 - From memory (not re-fetched): Décoret et al. 2003 Billboard Clouds; Max & Ohsaki 1995; Todt et al. 2007; Bruneton & Neyret 2012.
+
+
+## Owner test, 2026-11-11
+
+Smoothness -> "fade-out band" = 0 in the city did NOT remove the jitter. The owner describes it as SMALL DOTS on the foliage that jitter when the camera moves: cause 1 (the screen-locked far fade) is not the main one; the dots match cause 2 (alpha-to-coverage applied to a blurred, union-of-4-views, mip-boosted alpha: a crown that is mostly partial alpha becomes a sparse MSAA sample pattern, and any sub-pixel move changes which samples pass). Phase 1 of the kit starts with the alpha path.
