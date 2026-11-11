@@ -77,6 +77,8 @@ function advances(ctx, text) {
   }
   return a;
 }
+/** Text along screen direction (dx, dy) reads upright: left to right, and upwards when (nearly) vertical. */
+const readsForward = (dx, dy) => { const a = Math.atan2(dy, dx); return a > -Math.PI / 2 - 0.15 && a <= Math.PI / 2 - 0.15; };
 const wrapA = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const spriteMeta = new Map();    // sprite key -> its centre in the world
 
@@ -120,7 +122,12 @@ function curvedSprite(glyphs, s0, dpr, color, fpx) {
 function miniLabels(m) {
   const t0 = performance.now();
   const { px, pz, bear, s, r, dpr } = m;
-  const bucket = Math.round(Math.log(s) / Math.log(1.08)), s0 = Math.pow(1.08, bucket);
+  // zoom bucket with hysteresis: keep the last one while within 10 % (speed changes the zoom all the time when
+  // driving; a new bucket re-renders every sprite and the main thread uploads each new one)
+  let bucket = Math.round(Math.log(s) / Math.log(1.08));
+  if (miniLabels.bucket != null && Math.abs(s / Math.pow(1.08, miniLabels.bucket) - 1) < 0.1) bucket = miniLabels.bucket;
+  miniLabels.bucket = bucket;
+  const s0 = Math.pow(1.08, bucket);
   const labels = M.labels(m.lang);
   const reach = r / s;
   const cb = Math.cos(-bear), sb = Math.sin(-bear);
@@ -157,8 +164,8 @@ function miniLabels(m) {
     if (same && same.some(([x, y]) => Math.hypot(x - c.X, y - c.Y) < 120)) continue;
     tried++;
     // reading direction: left to right on screen for the current heading
-    const e0 = M.pointAt(c.l, c.c - 5), e1 = M.pointAt(c.l, c.c + 5);
-    const dir = toS(e1.x, e1.z)[0] - toS(e0.x, e0.z)[0] >= 0 ? 1 : -1;
+    const e0 = M.pointAt(c.l, c.c - 5), e1 = M.pointAt(c.l, c.c + 5), s0p = toS(e0.x, e0.z), s1p = toS(e1.x, e1.z);
+    const dir = readsForward(s1p[0] - s0p[0], s1p[1] - s0p[1]) ? 1 : -1;
     const { g, maxTurn } = layoutCurved(c.l, c.text, c.c, c.adv, s0, dir);
     if (maxTurn > 0.55) continue;                                   // too sharp a bend for text
     const boxes = [], hh = c.fpx * 0.5 + 1.5;
@@ -235,7 +242,7 @@ function fullCurvedLabels(ctx, v, labels, placedList, { fontPx, maxLabels, sameN
     const half = c.adv[c.adv.length - 1] / 2 / s;
     const e0 = M.pointAt(c.l, c.c - half), e1 = M.pointAt(c.l, c.c + half);
     if (placed.hits([v.toX(e0.x) - hh, v.toY(e0.z) - hh, v.toX(e0.x) + hh, v.toY(e0.z) + hh]) || placed.hits([v.toX(e1.x) - hh, v.toY(e1.z) - hh, v.toX(e1.x) + hh, v.toY(e1.z) + hh])) { fails.set(c.l.id, (fails.get(c.l.id) || 0) + 1); continue; }
-    const dir = e1.x - e0.x >= 0 ? 1 : -1;
+    const dir = readsForward(e1.x - e0.x, e1.z - e0.z) ? 1 : -1;
     const { g, maxTurn } = layoutCurved(c.l, c.l.text, c.c, c.adv, s, dir);
     if (maxTurn > 0.55) { fails.set(c.l.id, (fails.get(c.l.id) || 0) + 1); continue; }
     const boxes = g.map((q2) => { const X = v.toX(q2.x), Y = v.toY(q2.z); return [X - hh, Y - hh, X + hh, Y + hh]; });

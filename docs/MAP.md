@@ -96,3 +96,75 @@ Place de Saint-Job walking; Alsemberg and Rue Engeland driving; third person; fl
 ## Weak points / next
 
 See docs/TODO.md "Map (claude/minimap)".
+
+## Round 2 (2026-11-11): curved names, dual carriageways, live trams, Drive button
+
+**Owner's condition:** no performance loss. Main-thread cost at or below round 1 (average ≤ 0.08 ms a frame while
+driving), no new long tasks, measured the same way before and after.
+
+- **Curved street names (minimap).** Each glyph sits on the street polyline at its own arc length. Glyph advances
+  come from the text-width cache's prefix widths, so kerning is kept. Each glyph turns with the street. The label reads
+  left to right, and upwards when the street is vertical.
+  - The worker draws each label once into a north-up sprite at an 8 % zoom bucket (with 10 % hysteresis, so a
+    changing driving speed does not re-render every sprite). The main thread turns the sprite with the map: still one
+    `drawImage` per label.
+  - Candidate places sit at fixed arc lengths along each street, so a sprite is reused from pass to pass.
+  - The abbreviation (Av., Ch., Bd, Pl., Sq.; Dutch names kept whole) competes with a lower score, so it wins only
+    where the full name does not fit.
+  - Side streets use a font one point smaller. Labels have no overlaps (per-glyph boxes), all corners stay inside the
+    disc, and the arrow is kept clear.
+- **Curved names on the full map too**, drawn straight into the worker's frame. This replaces the vendor's
+  straight-run `drawRoadLabels`, which `vendor/slop-map/` still has, unchanged.
+  - Placed boxes go in a 32 px grid. A flat list made placement O(n²): 250-500 ms a frame.
+  - A street that fails three times is skipped. The two label ends are tested before the full layout.
+- **Dual carriageways** (`mapData.buildChains`): same-name segments are chained through every node, taking the
+  straightest same-name road on (within 45°). A chain that runs beside a longer chain of the same name (≤ 35 m away
+  over ≥ 70 % of its length) is dropped. Avenue Brugmann is now one 1.34 km chain, and is named at every full-map zoom.
+- **Live trams 92** on both maps. `getTrams` is the city's own `tramline.positions()` (the GTFS timetable the viewer
+  already runs; no other simulation).
+  - It is sampled 4 times a second and drawn one sample late, interpolated.
+  - Each dot is a white disc with a red heart; a stop is a small red dot with a white ring.
+  - Trams alone redraw the minimap at most 10 times a second.
+  - The lab has no tram simulation, so no dots there.
+- **Drive button:** it now starts on the nearest road of the tile the player stands in (walk, third person, fly).
+  Before, it always used `?at=` or Saint-Job. This is a small change in `viewer/main.js` `drive()`.
+- **Redraw skip threshold** raised from 0.25 px / 0.15° to 0.35 px / 0.2°, to pay for the above.
+
+**Names per view** (before → after; same positions and headings, Map Lab, `__lab.at()`):
+
+| View | Round 1 | Round 2 |
+|---|---|---|
+| minimap, walk, Ch. d'Alsemberg (-918,-153) | 0 | 4 |
+| minimap, walk, Ch. d'Alsemberg (-922,-81) | 1 | 2 |
+| minimap, walk, Avenue Brugmann (-390,-932) | 0 | 2 |
+| minimap, walk, Place de Saint-Job (1168,536) | 1 | 4 |
+| minimap, walk, Place de Saint-Job (1184,532) | 2 | 4 |
+| minimap, drive, Ch. d'Alsemberg | 1 | 4 |
+| minimap, drive, Avenue Brugmann | 0 | 2 |
+| full map, whole Uccle (0.144 px/m) | 0 | 26 (Brugmann, Alsemberg, Waterloo, Saint-Job…) |
+| full map, mid zoom (0.336) | 19 (no Brugmann) | 85 (Brugmann twice) |
+| full map, close (2.2) at Saint-Job | 10 | 21 |
+
+**CPU, main thread** (same `cpu_drive` script: city, tile I6, Drive, 3 × 7.5 s of W / S / W+A / W). Round 1 was
+served from a `git archive` of 1c03ed7. Times are in-page `performance.now()` (100 µs resolution, averaged over about
+450 frames).
+
+| | Round 1 | Round 2 |
+|---|---|---|
+| City, driving, average per frame | 0.098 / 0.074 / 0.063 (mean 0.078) | 0.046 / 0.069 / 0.046 (mean 0.054) |
+| Worst frame | 0.5 ms | 1.0 ms |
+| Lab, drive (deterministic route, same frames redrawn: 180 / 164 / 261 vs 177 / 162 / 254) | avg 0.050 / 0.048 / 0.085 | avg 0.060 / 0.053 / 0.072 |
+| Lab, walk | avg 0.033 / 0.030 / 0.036 | avg 0.034 / 0.039 / 0.045 |
+| Tram sampling (`tramline.positions()`, 4 Hz) | — | 0.04-0.07 ms a call, max 0.6 ms (≈ 0.003 ms a frame averaged) |
+| Trace, city drive (`?mapprof=1`, exact marks) | all frames avg 0.105, max 0.80 ms | all frames avg 0.101, p99 0.37, max 0.56 ms |
+| Main tasks > 50 ms in that trace | city render only | 3 (254, 300, 56 ms: three.js `update`, the city's render while tiles stream; the map's marked spans inside them are < 0.6 ms) |
+
+- Drawing one frame (2,000 draws in a loop, recording only): 15.7 µs, 4 labels (round 1: 15.3 µs).
+- The cost per frame that is actually redrawn rose by ~0.02 ms: more labels, the tram dots, and new sprite uploads.
+  The higher skip threshold more than pays it back.
+- Worker: label pass avg 0.3-1.5 ms (max 8 ms); full-map frame 17-90 ms (whole Uccle 17-80 ms, mid zoom 42-145 ms;
+  round 1: 5-15 ms). The full map shows the last frame moved and scaled meanwhile.
+
+**Images:** `docs/map/r2_minimap_city_strip.jpg` (walk Alsemberg ×2, Brugmann, Place de Saint-Job with a tram 18 m
+away; drive at Saint-Job after the Drive button, with a tram; drive on Alsemberg), `r2_full_zoom1_uccle.png`,
+`r2_full_zoom2_brugmann.png`, `r2_full_zoom3_saintjob.png`, `r2_full_trams.png`.

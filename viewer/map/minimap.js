@@ -166,7 +166,7 @@ export class Minimap {
       });
     }
 
-    // 4. draw, skipped while the change stays under a quarter pixel / 0.15° (a canvas touched at all costs ~0.07 ms,
+    // 4. draw, skipped while the change stays under 0.35 px / 0.2° (round 2; was 0.25 px / 0.15°) (a canvas touched at all costs ~0.07 ms,
     //    measured; walking or driving straight moves the map < 0.1 px a frame, so it redraws ~15 times a second)
     // live trams (sampled a few times a second by the host, drawn one sample late, interpolated between the two)
     const T = this.trams;
@@ -178,15 +178,16 @@ export class Minimap {
         const o = T.drawn.get(c.trip);
         if (!o || Math.hypot(o[0] - x, o[1] - z) * s > 0.4) moved = moved || Math.hypot(x - p.x, z - p.z) * s < R + 8;
       }
-      if (moved) this.last = null;
+      if (moved && t0 - (this.drawT || 0) > 100) this.last = null;      // trams alone redraw it 10 times a second at most
     }
     const key = this.last;
-    if (key && Math.hypot(key.x - p.x, key.z - p.z) * s < 0.25 && Math.abs(wrap(key.bear - p.bear)) < 0.0025 && Math.abs(wrap(key.heading - p.heading)) < 0.004 && Math.abs(key.s - s) / s < 0.002) {
+    if (key && Math.hypot(key.x - p.x, key.z - p.z) * s < 0.35 && Math.abs(wrap(key.bear - p.bear)) < 0.0035 && Math.abs(wrap(key.heading - p.heading)) < 0.005 && Math.abs(key.s - s) / s < 0.003) {
       this.account(performance.now() - t0, false);
       return;
     }
     this.last = { x: p.x, z: p.z, bear: p.bear, heading: p.heading, s };
     this.draw(p, s, R, dpr);
+    this.drawT = t0;
     this.account(performance.now() - t0, true);
   }
 
@@ -236,8 +237,10 @@ export class Minimap {
       for (let i = 0; i < T.now.length; i += 2) {
         const [X, Y] = toScreen(T.now[i], T.now[i + 1]);
         if (X * X + Y * Y > (R - 4) * (R - 4)) continue;
-        ctx.beginPath(); ctx.arc(X, Y, 4.6, 0, TAU); ctx.fillStyle = PAL.tram; ctx.fill();
-        ctx.lineWidth = 1.8; ctx.strokeStyle = '#ffffff'; ctx.stroke();
+        // a tram: a white disc with a red heart and a dark rim (a stop is a small red dot with a white ring)
+        ctx.beginPath(); ctx.arc(X, Y, 6.2, 0, TAU); ctx.fillStyle = '#ffffff'; ctx.fill();
+        ctx.lineWidth = 1.5; ctx.strokeStyle = PAL.label.halo; ctx.stroke();
+        ctx.beginPath(); ctx.arc(X, Y, 3.6, 0, TAU); ctx.fillStyle = PAL.tram; ctx.fill();
       }
       T.cur.forEach((c, i) => T.drawn.set(c.trip, [T.now[2 * i], T.now[2 * i + 1]]));
     }

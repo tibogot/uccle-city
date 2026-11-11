@@ -205,8 +205,9 @@ export class FullMap {
     if (tr) for (let i = 0; i < tr.length; i += 2) {
       const X = v.toX(tr[i]), Y = v.toY(tr[i + 1]);
       if (Math.abs(X) > w / 2 + 8 || Math.abs(Y) > h / 2 + 8) continue;
-      const rr = Math.max(4, Math.min(7, 30 * v.s));
-      ctx.beginPath(); ctx.arc(X, Y, rr, 0, Math.PI * 2); ctx.fillStyle = PAL.tram; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#ffffff'; ctx.stroke();
+      const rr = Math.max(5, Math.min(8, 30 * v.s));
+      ctx.beginPath(); ctx.arc(X, Y, rr, 0, Math.PI * 2); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = PAL.label.halo; ctx.stroke();
+      ctx.beginPath(); ctx.arc(X, Y, rr * 0.58, 0, Math.PI * 2); ctx.fillStyle = PAL.tram; ctx.fill();
     }
     // the player, with a slow pulse to find it at a glance
     const p = this.opts.getPlayer();
