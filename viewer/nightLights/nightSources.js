@@ -23,9 +23,9 @@ export const CAR = { HX: 0, HY: 1, HZ: 2, FX: 3, FY: 4, FZ: 5, TX: 6, TY: 7, TZ:
 
 export const nightParams = {
   lamps: true, windows: true, shops: true, signs: true, headlights: true, rear: true, tram: true, cones: true,
-  lampI: 110, lampRange: 24, lampUp: 0.3, lampBatwing: 0.35,
-  windowI: 9, shopI: 32, signI: 6, headI: 750, headRange: 55, rearI: 1.6, tramI: 900, tramSaloon: 7,
-  coneDensity: 0.06,
+  lampI: 110, lampRange: 18, lampUp: 0.3, lampBatwing: 0.35,
+  windowI: 9, windowRange: 9, shopI: 32, shopRange: 12, signI: 6, signRange: 5, rearRange: 4.5, headI: 1000, headRange: 40, rearI: 1.6, tramI: 900, tramSaloon: 7,
+  coneDensity: 0.025,     // dry air: a hint; x2.5 when the street is wet (damp air, spray)
 };
 const LAMP_RGB = [1.0, 0.78, 0.52], HEAD_RGB = [1.0, 0.97, 0.92], REAR_RGB = [1.0, 0.04, 0.02], SALOON_RGB = [0.82, 0.9, 1.0];
 
@@ -37,15 +37,15 @@ class Track {          // per-source weight history: the largest frame-to-frame 
 
 export class NightSources {
   constructor(pool, street, { cars = 64, shadowLights = [], cones = null, sizes = {} } = {}) {
-    const N = { lamps: 48, windows: 40, shops: 12, signs: 10, heads: 40, rear: 36, ...sizes };
+    const N = { lamps: 40, windows: 32, shops: 10, signs: 8, heads: 40, rear: 32, ...sizes };
     this.pool = pool; this.cones = cones; this.N = N;
     const S = street.sources;
     this.src = S;
     this.grid = {};
     for (const k of ["lamps", "windows", "shops", "signs"]) this.grid[k] = new StaticSources(S[k].x, S[k].y, S[k].z, 32);
     this.sel = {
-      lamps: new NearestN(N.lamps, 150), windows: new NearestN(N.windows, 90), shops: new NearestN(N.shops, 110),
-      signs: new NearestN(N.signs, 90), heads: new NearestN(N.heads, 170), rear: new NearestN(N.rear, 75),
+      lamps: new NearestN(N.lamps, 220), windows: new NearestN(N.windows, 110), shops: new NearestN(N.shops, 130),
+      signs: new NearestN(N.signs, 110), heads: new NearestN(N.heads, 230), rear: new NearestN(N.rear, 120),
     };
     this.base = {};
     for (const k of ["lamps", "windows", "shops", "signs", "heads", "rear"]) this.base[k] = pool.reserve(N[k]);
@@ -87,7 +87,7 @@ export class NightSources {
       const SH = this.shadow;
       for (let s = 0; s < SH.K; s++) {
         const L = SH.lights[s], id = SH.lamp[s];
-        if (id < 0 || !p.lamps) { L.intensity = 0; continue; }
+        if (id < 0 || !p.lamps || !P.enabled) { L.intensity = 0; continue; }
         L.position.set(S.x[id], S.y[id], S.z[id]);
         L.target.position.set(S.x[id], S.y[id] - 6, S.z[id]);
         L.target.updateMatrixWorld();
@@ -96,8 +96,8 @@ export class NightSources {
       }
     }
     // ---- windows and shop fronts (APERTURE): outward = the facade's normal (+z for the north side)
-    this.aperture("windows", p.windows, p.windowI, 1.2, 14, 0.8);
-    this.aperture("shops", p.shops, p.shopI, 2.0, 16, 0.0);
+    this.aperture("windows", p.windows, p.windowI, 1.2, p.windowRange, 0.8);
+    this.aperture("shops", p.shops, p.shopI, 2.0, p.shopRange, 0.0);
     // ---- signs
     {
       const sel = this.sel.signs, S = this.src.signs, L = S.list, b = this.base.signs;
@@ -105,8 +105,8 @@ export class NightSources {
       for (let k = 0; k < this.N.signs; k++) {
         if (k >= sel.count) { P.weight(b + k, 0); continue; }
         const id = sel.i[k], s = L[id], out = s.side < 0 ? 1 : -1, I = p.signI;
-        P.set(b + k, S.x[id], S.y[id] - 0.1, S.z[id] + out * 0.7, 8, s.col[0] * I, s.col[1] * I, s.col[2] * I, sel.weight(k), 0.4);
-        P.omni(b + k); P.profile(b + k, PROFILE.PLAIN);
+        P.set(b + k, S.x[id], S.y[id] - 0.1, S.z[id] + out * 0.7, p.signRange, s.col[0] * I, s.col[1] * I, s.col[2] * I, sel.weight(k), 0.4);
+        P.omni(b + k); P.profile(b + k, PROFILE.PLAIN); P.diffuseOnly(b + k, true);
       }
       this.stats.signs = sel.count;
     }
@@ -128,7 +128,7 @@ export class NightSources {
         const i = sh.i[k], o = i * CAR.STRIDE, w = sh.weight(k) * D[o + CAR.FADE] * D[o + CAR.HEAD], I = p.headI;
         th.cur[i] = w;
         P.set(bh + k, D[o], D[o + 1], D[o + 2], p.headRange, HEAD_RGB[0] * I, HEAD_RGB[1] * I, HEAD_RGB[2] * I, w, 0.15);
-        P.spot(bh + k, D[o + 3], D[o + 4], D[o + 5], 0.62, 0.36);
+        P.spot(bh + k, D[o + 3], D[o + 4], D[o + 5], 0.7, 0.2);
         P.profile(bh + k, PROFILE.LOWBEAM, -0.012, 0.268);
         if (C && p.cones && w > 0.01) C.write(cone++, D[o], D[o + 1], D[o + 2], D[o + 3], D[o + 4] - 0.02, D[o + 5], 16, 3.2, 0.45 * w, 0.44 * w, 0.42 * w);
       }
@@ -136,8 +136,8 @@ export class NightSources {
         if (k >= sr.count) { P.weight(br + k, 0); continue; }
         const i = sr.i[k], o = i * CAR.STRIDE, w = sr.weight(k) * D[o + CAR.FADE] * D[o + CAR.TAIL], I = p.rearI * D[o + CAR.TAIL];
         trr.cur[i] = w;
-        P.set(br + k, D[o + 6], D[o + 7], D[o + 8], 6, REAR_RGB[0] * I, REAR_RGB[1] * I, REAR_RGB[2] * I, w, 0.35);
-        P.omni(br + k); P.profile(br + k, PROFILE.PLAIN);
+        P.set(br + k, D[o + 6], D[o + 7], D[o + 8], p.rearRange, REAR_RGB[0] * I, REAR_RGB[1] * I, REAR_RGB[2] * I, w, 0.35);
+        P.omni(br + k); P.profile(br + k, PROFILE.PLAIN); P.diffuseOnly(br + k, true);
       }
       th.end(); trr.end();
       this.stats.heads = sh.count; this.stats.rear = sr.count;
@@ -153,11 +153,11 @@ export class NightSources {
         P.spot(b, fx, fy, fz, 0.7, 0.4); P.profile(b, PROFILE.LOWBEAM, -0.01, 0);
         if (C && p.cones) C.write(cone++, T.hx, 1.1, T.hz, fx, fy - 0.02, fz, 18, 3.6, 0.45 * w, 0.44 * w, 0.42 * w);
         P.set(b + 1, T.rx, 1.2, T.rz, 6, REAR_RGB[0] * p.rearI * 1.5, REAR_RGB[1] * p.rearI * 1.5, REAR_RGB[2] * p.rearI * 1.5, w, 0.15);
-        P.omni(b + 1); P.profile(b + 1, PROFILE.PLAIN);
+        P.omni(b + 1); P.profile(b + 1, PROFILE.PLAIN); P.diffuseOnly(b + 1, true);
         for (let k = 0; k < 3; k++) {
           const f = (k + 1) / 4, x = T.hx + (T.rx - T.hx) * f, z = T.hz + (T.rz - T.hz) * f, I2 = p.tramSaloon;
           P.set(b + 2 + k, x, 2.1, z, 8, SALOON_RGB[0] * I2, SALOON_RGB[1] * I2, SALOON_RGB[2] * I2, w, 1.0);
-          P.omni(b + 2 + k); P.profile(b + 2 + k, PROFILE.PLAIN);
+          P.omni(b + 2 + k); P.profile(b + 2 + k, PROFILE.PLAIN); P.diffuseOnly(b + 2 + k, true);
         }
       }
       this.stats.tram = w > 0 ? 5 : 0;
@@ -177,8 +177,8 @@ export class NightSources {
       const id = sel.i[k], s = L[id], out = s.side < 0 ? 1 : -1, w = sel.weight(k), g = I * (s.b ?? 1);
       if (tr) tr.cur[id] = w;
       P.set(b + k, S.x[id], S.y[id], S.z[id] - out * depth, range + depth, s.col[0] * g, s.col[1] * g, s.col[2] * g, w, 0.35);
-      P.spot(b + k, 0, 0, out, 1.4, 1.05);
-      P.profile(b + k, PROFILE.APERTURE, s.hw, s.hh, depth, mullion);
+      P.spot(b + k, 0, 0, out, 1.25, 0.95);
+      P.profile(b + k, PROFILE.APERTURE, s.hw, s.hh, depth, mullion); P.diffuseOnly(b + k, true);
     }
     tr?.end();
     this.stats[kind] = sel.count;

@@ -9,7 +9,7 @@
 // Verify: frame strips while driving / walking / flying (no popping), the flicker test (labs/flickerTest.js, from
 // claude/stalle eebd3d6), GPU A/B rounds (lights on / off, alternating), CPU per frame and an allocation check.
 import * as THREE from "three/webgpu";
-import { attribute } from "three/tsl";
+import { attribute, int, float, vec3, mix, clamp } from "three/tsl";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { Panel } from "../viewer/panelUI.js";
 import { Lighting, env } from "../viewer/lighting.js";
@@ -18,7 +18,7 @@ import { loadLampModel } from "../viewer/lampModel.js";
 import { loadTramModel, createTramFleet, tramPose } from "../viewer/tramModel.js";
 import { PACK_SOURCES, packMaterial } from "../viewer/drive/carPacks.js";
 import { pickType } from "../viewer/carFleet.js";
-import { LightPool, NightLighting } from "../viewer/nightLights/nightLighting.js";
+import { LightPool, NightLighting, nightLook } from "../viewer/nightLights/nightLighting.js";
 import { NightSources, CAR, nightParams } from "../viewer/nightLights/nightSources.js";
 import { createCones, coneLook } from "../viewer/nightLights/lightCones.js";
 import { buildStreet, wet, X, Z } from "../viewer/nightLights/nightStreet.js";
@@ -34,7 +34,7 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const pool = new LightPool(256);
 const clustered = qp.get("clustered") !== "0";
-if (clustered) renderer.lighting = new NightLighting(pool, { maxLightsPerCluster: +(qp.get("percluster") || 48) });
+if (clustered) renderer.lighting = new NightLighting(pool, { maxLightsPerCluster: +(qp.get("percluster") || 48), tileSize: +(qp.get("tile") || 32), zSlices: +(qp.get("slices") || 24) });
 document.body.prepend(renderer.domElement);
 await renderer.init();
 
@@ -71,7 +71,7 @@ const PAINTS = [0x0d0e10, 0x0d0e10, 0x1a1c1f, 0x34383d, 0x4a4e53, 0x8f959c, 0x9e
 const cars = [];     // { type, x, z, beta, speed, moving, paint, inst }
 let hh = 0.5; const h01 = () => (hh = (hh * 9301 + 49297) % 233280) / 233280;
 for (const s of street.parkSlots) cars.push({ type: pickType(h01()), x: s.x, z: s.z, beta: s.side > 0 ? 0 : Math.PI, speed: 0, moving: false, paint: PAINTS[Math.floor(s.pv * PAINTS.length)] });
-const LANE_CARS = +(qp.get("traffic") || 11);
+const LANE_CARS = +(qp.get("traffic") || 16);
 for (const dir of [1, -1]) for (let i = 0; i < LANE_CARS; i++)
   cars.push({ type: pickType(h01()), x: -X.carWrap + (i + h01() * 0.4) * (2 * X.carWrap / LANE_CARS), z: dir * Z.lane, beta: dir > 0 ? 0 : Math.PI,
     speed: dir * (dir > 0 ? 9.5 : 8.8), moving: true, paint: PAINTS[Math.floor(h01() * PAINTS.length)] });
@@ -217,7 +217,7 @@ function updateLights(dt) {
   placeCars(); placeTram();
   const n = env.uNight.value;
   lastNight = n;
-  coneLook.uDensity.value = nightParams.coneDensity * (P.wet ? 1.6 : 1);
+  coneLook.uDensity.value = nightParams.coneDensity * (P.wet ? 2.5 : 1);
   night.update(camera.position, dt, P.master * smooth01((n - 0.15) / 0.5));
 }
 function frame(dt) {
@@ -245,21 +245,32 @@ function sampleGpu() {
 const median = (a) => { const s = [...a].sort((x, y) => x - y); return s.length ? s[s.length >> 1] : NaN; };
 const nextFrame = () => new Promise((r) => requestAnimationFrame(r));
 
-/** alternating rounds: A = every night light on, B = the pool + cones off (sun / moon, emissive and bloom stay) */
-async function bench({ rounds = 4, frames = 90 } = {}) {
-  const keep = { paused: P.paused }; P.paused = true;
-  const res = { on: [], off: [], cpu: [] };
-  const set = (on) => { pool.enabled = on; cones.mesh.visible = on; for (const L of shadowLights) L.visible = on; };
-  for (let r = 0; r < rounds; r++) for (const mode of r % 2 ? ["off", "on"] : ["on", "off"]) {
-    set(mode === "on");
-    for (let i = 0; i < 20; i++) await nextFrame();
-    gpu.samples.length = 0;
-    for (let i = 0; i < frames; i++) { await nextFrame(); }
-    res[mode].push(median(gpu.samples));
-  }
-  set(true); P.paused = keep.paused;
+/** alternating rounds: A = every night light on, B = the pool + cones + shadowed spots off (sun / moon, emissive and
+ *  bloom stay). Frames are driven here (not by requestAnimationFrame: a background tab gets ~1 fps) and each frame's
+ *  GPU time is read back from the timestamp queries (render passes + the cluster compute). */
+async function bench({ rounds = 4, frames = 60, toggle = null } = {}) {
+  renderer.setAnimationLoop(null);
+  const res = { on: [], off: [] };
+  // (the shadowed spots stay in the scene - removing a light rebuilds every material - but stop re-rendering their maps
+  //  and go dark: their shadow lookups in the shaders remain, a small part of their cost)
+  const set = toggle || ((on) => { pool.enabled = on; cones.mesh.visible = on; for (const L of shadowLights) L.shadow.autoUpdate = on; });
+  const one = async () => {
+    frame(0);
+    const [r, c] = await Promise.all([renderer.resolveTimestampsAsync("render"), renderer.resolveTimestampsAsync("compute")]);
+    return (typeof r === "number" ? r : 0) + (typeof c === "number" ? c : 0);
+  };
+  const keep = P.paused; P.paused = true;
+  try {
+    for (let r = 0; r < rounds; r++) for (const mode of r % 2 ? ["off", "on"] : ["on", "off"]) {
+      set(mode === "on");
+      for (let i = 0; i < 8; i++) await one();
+      const ms = [];
+      for (let i = 0; i < frames; i++) ms.push(await one());
+      res[mode].push(median(ms));
+    }
+  } finally { set(true); P.paused = keep; renderer.setAnimationLoop(loop); }
   const on = median(res.on), off = median(res.off);
-  const out = { on: +on.toFixed(3), off: +off.toFixed(3), delta: +(on - off).toFixed(3), roundsOn: res.on.map((v) => +v.toFixed(3)), roundsOff: res.off.map((v) => +v.toFixed(3)), active: pool.active, stats: { ...night.stats } };
+  const out = { on: +on.toFixed(3), off: +off.toFixed(3), delta: +(on - off).toFixed(3), roundsOn: res.on.map((v) => +v.toFixed(3)), roundsOff: res.off.map((v) => +v.toFixed(3)), active: pool.active, stats: { ...night.stats }, px: [renderer.domElement.width, renderer.domElement.height] };
   S.bench = `on ${out.on} / off ${out.off} ms → lights ${out.delta} ms (${out.active} active)`;
   return out;
 }
@@ -346,14 +357,26 @@ fv.add({ f: () => bench() }, "f").name("GPU A/B (lights on / off)");
 fv.add(S, "bench").name("bench").listen();
 fv.add(S, "flicker").name("flicker").listen();
 
-window.lab = { renderer, scene, camera, controls, pool, night, nightParams, P, VIEW, sim, cars, tramS, street, bench, cpuTest, strip, flicker, gpu, wet, lighting,
+/** debug: lights listed in each pixel's cluster (blue 0 -> green 8 -> red 24+), drawn without post */
+let heatMat = null;
+function heat(on) {
+  if (on && !heatMat) {
+    const node = renderer.lighting.getNode(scene);
+    heatMat = new THREE.MeshBasicNodeMaterial();
+    const n = float(node.getClusterLightCount(int(-1)));
+    heatMat.colorNode = mix(mix(vec3(0, 0, 0.6), vec3(0, 1, 0), clamp(n.div(8), 0, 1)), vec3(1, 0, 0), clamp(n.sub(8).div(16), 0, 1));
+  }
+  scene.overrideMaterial = on ? heatMat : null;
+  P.post = !on;
+}
+window.lab = { nightLook, heat, cones, shadowLights, frame, renderer, scene, camera, controls, pool, night, nightParams, P, VIEW, sim, cars, tramS, street, bench, cpuTest, strip, flicker, gpu, wet, lighting,
   setView(pos, tgt) { VIEW.mode = "orbit"; P.view = "orbit"; camera.position.set(...pos); controls.target.set(...tgt); controls.update(); } };
 
 const c = street.counts;
 const clock = new THREE.Clock();
 let cpuAvg = 0;
 addEventListener("resize", () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
-renderer.setAnimationLoop(() => {
+function loop() {
   const dt = Math.min(0.05, clock.getDelta());
   frame(dt);
   sampleGpu();
@@ -365,4 +388,5 @@ renderer.setAnimationLoop(() => {
   $info.textContent = `${clustered ? "clustered" : "NO clustering (?clustered=0)"} · ${pool.active} lights drawn · night ${lastNight.toFixed(2)} · GPU ${S.gpu} ms · light update ${S.cpu}\n` +
     `street: ${c.houses} houses, ${c.openings} openings, ${c.windows} spill windows, ${c.shops} shops, ${c.lamps} lamps, ${c.trees} trees, ${c.parked} parked + ${LANE_CARS * 2} driving cars, tram ${tramModel ? "T3000" : "missing"}\n` +
     `${P.wet ? "WET" : "dry"} · shadows on the ${K} nearest lamps · camera ${VIEW.mode}`;
-});
+}
+renderer.setAnimationLoop(loop);

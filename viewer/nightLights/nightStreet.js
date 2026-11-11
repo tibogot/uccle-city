@@ -173,8 +173,8 @@ export function buildStreet(lampModel, { seed = 7 } = {}) {
         const c = tv ? COOL : WARM[Math.floor(R() * WARM.length)], b = lit ? 0.6 + R() * 0.7 : 0;
         const o = { x, y: y0, z: zf, w: 1.1, h: 1.55, kind: 0, lit: c.map((v) => v * b), side: hs.side };
         openings.push(o);
-        // the ground and first floors' lit windows light the garden / sidewalk (upper ones would only reach the far facade)
-        if (lit && f <= 1) windows.push({ x, y: y0 + 0.78, z: zf, hw: 0.55, hh: 0.78, side: hs.side, col: c, b });
+        // the ground floor's lit windows light the garden / sidewalk (upper ones: mostly the facade below and the far side)
+        if (lit && f === 0) windows.push({ x, y: y0 + 0.78, z: zf, hw: 0.55, hh: 0.78, side: hs.side, col: c, b });
       }
     }
   }

@@ -27,11 +27,14 @@
 import * as THREE from "three/webgpu";
 import { DataTexture, FloatType, RGBAFormat, LightsNode } from "three/webgpu";
 import {
-  Fn, Loop, If, Break, int, float, vec3, vec4, ivec2, textureLoad, positionView, cameraViewMatrix, dot, cross, normalize,
-  smoothstep, max, min, abs, exp, sqrt, clamp, select,
+  Fn, Loop, If, Break, int, float, vec3, vec4, ivec2, ivec4, textureLoad, positionView, cameraViewMatrix, dot, cross, normalize,
+  smoothstep, max, min, abs, exp, sqrt, clamp, select, uniform, normalView, BRDF_Lambert, diffuseContribution,
 } from "three/tsl";
 import { ClusteredLighting } from "three/addons/lighting/ClusteredLighting.js";
 import ClusteredLightsNode from "three/addons/tsl/lighting/ClusteredLightsNode.js";
+
+/** live switches (uniforms: no rebuild) */
+export const nightLook = { uDiffuseOnly: uniform(0) };
 
 export const PROFILE = { PLAIN: 0, LOWBEAM: 1, LANTERN: 2, APERTURE: 3 };
 
@@ -41,6 +44,7 @@ export const S = {
   DX: 8, DY: 9, DZ: 10, CONE: 11, PEN: 12,                    // beam direction (unit, light -> target), cos(outer), cos(inner)
   PROF: 13, P1: 14, P2: 15, P3: 16, P4: 17,                   // profile + its parameters
   W: 18,                                                      // weight (fade) 0..1: 0 = not drawn
+  FLAGS: 19,                                                  // 1 = diffuse only (a soft source)
   STRIDE: 20,
 };
 
@@ -78,6 +82,7 @@ export class LightPool {
     d[o + 13] = p; d[o + 14] = p1; d[o + 15] = p2; d[o + 16] = p3; d[o + 17] = p4;
   }
   weight(i, w) { this.data[i * S.STRIDE + S.W] = w; }
+  diffuseOnly(i, on) { this.data[i * S.STRIDE + S.FLAGS] = on ? 1 : 0; }
 }
 
 const ROW = { POS: 0, COLOR: 1, SPOT: 2, BOUNDS: 3 };   // three's rows (its compute reads BOUNDS)
@@ -117,16 +122,21 @@ class NightLightsNode extends ClusteredLightsNode {
     this._lightsCount.value = n;
     for (let j = 0; j < n; j++) {
       const o = this._src[j] * S.STRIDE, q = j * 4, w = D[o + S.W] * k;
-      T[ROW.POS * line + q] = D[o]; T[ROW.POS * line + q + 1] = D[o + 1]; T[ROW.POS * line + q + 2] = D[o + 2]; T[ROW.POS * line + q + 3] = D[o + 3];
+      // POS and SPOT go in VIEW space (three's compute reads only the BOUNDS row, in world space): the fragment loop
+      // saves two matrix products per light
+      const x = D[o], y = D[o + 1], z = D[o + 2], ax = D[o + 8], ay = D[o + 9], az = D[o + 10];
+      T[ROW.POS * line + q] = m[0] * x + m[4] * y + m[8] * z + m[12]; T[ROW.POS * line + q + 1] = m[1] * x + m[5] * y + m[9] * z + m[13];
+      T[ROW.POS * line + q + 2] = m[2] * x + m[6] * y + m[10] * z + m[14]; T[ROW.POS * line + q + 3] = D[o + 3];
       T[ROW.COLOR * line + q] = D[o + 4] * w; T[ROW.COLOR * line + q + 1] = D[o + 5] * w; T[ROW.COLOR * line + q + 2] = D[o + 6] * w; T[ROW.COLOR * line + q + 3] = D[o + 7];
-      T[ROW.SPOT * line + q] = D[o + 8]; T[ROW.SPOT * line + q + 1] = D[o + 9]; T[ROW.SPOT * line + q + 2] = D[o + 10]; T[ROW.SPOT * line + q + 3] = D[o + 11];
+      T[ROW.SPOT * line + q] = m[0] * ax + m[4] * ay + m[8] * az; T[ROW.SPOT * line + q + 1] = m[1] * ax + m[5] * ay + m[9] * az;
+      T[ROW.SPOT * line + q + 2] = m[2] * ax + m[6] * ay + m[10] * az; T[ROW.SPOT * line + q + 3] = D[o + 11];
       // bounding sphere: a narrow spot (< 45 deg) the smallest sphere round its cone (three's), else the light's sphere
       const cone = D[o + S.CONE];
       let cx = D[o], cy = D[o + 1], cz = D[o + 2], r = D[o + 3];
       if (cone > 0.7071) { const off = r / (2 * cone); cx += D[o + 8] * off; cy += D[o + 9] * off; cz += D[o + 10] * off; r = off; }
       T[ROW.BOUNDS * line + q] = cx; T[ROW.BOUNDS * line + q + 1] = cy; T[ROW.BOUNDS * line + q + 2] = cz; T[ROW.BOUNDS * line + q + 3] = r;
       E[q] = D[o + S.PROF]; E[q + 1] = D[o + S.P1]; E[q + 2] = D[o + S.P2]; E[q + 3] = D[o + S.P3];
-      E[eLine + q] = D[o + S.PEN]; E[eLine + q + 1] = D[o + S.P4]; E[eLine + q + 2] = 0; E[eLine + q + 3] = 0;
+      E[eLine + q] = D[o + S.PEN]; E[eLine + q + 1] = D[o + S.P4]; E[eLine + q + 2] = D[o + S.FLAGS]; E[eLine + q + 3] = 0;
     }
     this._lightsTexture.needsUpdate = true;
     this._extra.needsUpdate = true;
@@ -152,23 +162,27 @@ class NightLightsNode extends ClusteredLightsNode {
     reflected.directDiffuse.toStack();
     reflected.directSpecular.toStack();
     LightsNode.prototype.setupLights.call(this, builder, lightNodes);     // sun, moon, shadowed spots
-    const tex = this._lightsTexture, extra = this._extra, view = this._cameraViewMatrix;
+    const tex = this._lightsTexture, extra = this._extra;
     Fn(() => {
       const upV = normalize(cameraViewMatrix.mul(vec4(0, 1, 0, 0)).xyz).toVar();
+      // the cluster's list is ivec4 chunks: one storage load per 4 lights (three's loop reloads the chunk per light)
+      const base = this._screenClusterIndex.mul(int(this._chunksPerCluster)).toVar();
+      const chunk = ivec4(0).toVar();
       Loop(this.maxLightsPerCluster, ({ i }) => {
-        const li = this._getTile(i);
+        const ii = int(i);
+        If(ii.mod(4).equal(0), () => { chunk.assign(this._lightIndexes.element(base.add(ii.div(4)))); });
+        const li = chunk.element(ii.mod(4));
         If(li.equal(int(0)), () => { Break(); });
         const idx = li.sub(1);
         const A = textureLoad(tex, ivec2(idx, ROW.POS)), B = textureLoad(tex, ivec2(idx, ROW.COLOR)), C = textureLoad(tex, ivec2(idx, ROW.SPOT));
-        const lp = view.mul(vec4(A.xyz, 1.0)).xyz;
-        const Lv = lp.sub(positionView).toVar();             // fragment -> light (view space)
+        const Lv = A.xyz.sub(positionView).toVar();             // fragment -> light (view space)
         const d2 = dot(Lv, Lv).toVar(), range = A.w;
         If(d2.lessThan(range.mul(range)), () => {
           const E0 = textureLoad(extra, ivec2(idx, 0)), E1 = textureLoad(extra, ivec2(idx, 1));
           const d = sqrt(d2);
           const L = Lv.div(max(d, 1e-4)).toVar();               // unit, fragment -> light
           const f = L.negate();                                  // unit, light -> fragment
-          const axis = view.mul(vec4(C.xyz, 0.0)).xyz;           // beam (unit)
+          const axis = C.xyz;                                    // beam (unit, view space)
           const cosA = dot(f, axis).toVar();
           const spot = smoothstep(C.w, E1.x, cosA).toVar();
           If(spot.greaterThan(0), () => {
@@ -181,9 +195,11 @@ class NightLightsNode extends ClusteredLightsNode {
               const y = dot(f, upV);
               const cut = E0.y.add(clamp(x, 0, 0.12).mul(E0.z));   // aim (-0.012) + 15 deg kink on the kerb side
               const below = float(1).sub(smoothstep(cut.sub(0.003), cut.add(0.004), y));
-              const hot = exp(x.sub(0.03).div(0.17).pow2().negate()).mul(exp(y.sub(cut).add(0.018).div(0.03).pow2().negate()));
-              const spread = exp(x.div(0.55).pow2().negate());
-              k.assign(below.mul(0.97).add(0.03).mul(hot.mul(1.25).add(spread.mul(0.32)).add(0.05)));
+              // hot band just under the cut-off (the far road), a dim wide foreground (a real low beam keeps the road
+              // right in front of the car dim, or the eye adapts to it and the distance goes black)
+              const hot = exp(x.sub(0.03).div(0.2).pow2().negate()).mul(exp(y.sub(cut).add(0.02).div(0.035).pow2().negate()));
+              const spread = exp(x.div(0.6).pow2().negate()).mul(smoothstep(-0.35, -0.04, y).mul(0.25).add(0.04));
+              k.assign(below.mul(0.97).add(0.03).mul(hot.mul(1.4).add(spread)));
             });
             // 2 LANTERN: c = cos from nadir; up share E0.y, batwing E0.z
             If(prof.greaterThan(1.5).and(prof.lessThan(2.5)), () => {
@@ -205,7 +221,15 @@ class NightLightsNode extends ClusteredLightsNode {
             // falloff: finite source (radius B.w) x Frostbite's window at the range
             const win = float(1).sub(d2.div(range.mul(range)).pow2()).clamp().pow2();
             const att = win.div(d2.add(B.w.mul(B.w)));
-            builder.lightsNode.setupDirectLight(builder, this, { lightDirection: L, lightColor: B.rgb.mul(spot.mul(k).mul(att)) });
+            const lc = B.rgb.mul(spot.mul(k).mul(att));
+            // soft sources (windows, shop fronts, signs, rear lights: flag E1.z) light the DIFFUSE term only: Lambert,
+            // no GGX / clear coat (their glossy reflections come from SSR of the lit glass); lamps and headlights keep
+            // the full BRDF (the long specular streaks on a wet road)
+            If(E1.z.greaterThan(0.5).or(nightLook.uDiffuseOnly.greaterThan(0.5)), () => {
+              reflected.directDiffuse.addAssign(max(dot(normalView, L), 0).mul(lc).mul(BRDF_Lambert({ diffuseColor: diffuseContribution })));
+            }).Else(() => {
+              builder.lightsNode.setupDirectLight(builder, this, { lightDirection: L, lightColor: lc });
+            });
           });
         });
       });
