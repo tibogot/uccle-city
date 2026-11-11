@@ -82,6 +82,9 @@ Stairs paused until the owner's Mixamo clips are in `data/raw/animations/mixamo/
    - [x] Round 3: mound from the DTM, rule-based placement, plants, canopy preset, CC0 detail normal (Poly Haven, adopted), CC0 scanned cliff (tried, not adopted).
    - [ ] Round 3 GPU numbers to re-take on a quiet GPU (another agent's WebGPU tab was open during the last runs: interleaved A/B gave contradictory deltas). Last clean runs: 44 smaller pieces 0.46 ms at 12 m / 0.13-0.26 ms at 30 m; 53 bigger pieces 0.92-1.11 / 0.39.
    - [ ] Mound look: still fewer, smaller and more separate blocks than o01 (its face is all rock); the dense variant (?mscale=1.1&mdensity=1.3) is closer but costs more; the canopy dome is a stand-in (blobby holes); plants are small and sparse.
+   - [x] Round 4: the cliff as ONE scripted hero surface (sauvagereCliff.py, 8 LOD chunks, checker 0), plants in clefts, canopy without holes + dappled shadow screen.
+   - [ ] Round 4 look vs o01: blocks still too regular / rounded (a stacked "wall"); o01 has bigger, more angular pillars and slanted slabs, broken overhangs; white fuzzy fringes on some edges close up (detail normal / bake margin); ferns are crude zig-zag triangles close up; water is a flat plane.
+   - [ ] Round 4 cost with the post chain: 1.11 ms at 12 m in the lab (vs an empty sky): measure in the city context (trees behind) before deciding.
    - [ ] Exedra (the temple, o02): semicircular parapet + bench, 5 fluted columns, stepped curved base, paved floor: phase 2.
    - [ ] Playground kit cost: ~1.05 ms in the sample playground at 10 m after batching (16 draws, was 39): next, shadow proxies like the rocks and lighter swing chains.
    - [ ] Temple hero (phase 2), cliff placement JSON from the photos, cascade from rk_channel + the park-water module (claude/wolvendael), playground placement, near planting; Verrewinkel brick bridge (3 arches, corbel frieze: railBridge.py variant, trains work).

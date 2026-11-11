@@ -248,6 +248,31 @@ pop), lab_playground_walking.jpeg; Blender previews in models/parkkit/previews/ 
   round3_option_a_detail_closeup.jpg, lab_round3_dolly_strip.jpg; the side-by-side with o01 (three-way) is kept out of the
   repo: data/raw/refs/sauvagere/owner/compare/o01_vs_lab_round3.jpg.
 
+### Round 4 (2026-11-11): the cliff as ONE scripted hero surface
+- tools/blender/sauvagereCliff.py: the DTM mound as a closed core + 153 anisotropic Voronoi cells (narrow vertical slabs
+  right of centre, broad blocks / wedges elsewhere) extruded into prisms from under the water to above the slope,
+  inset 4-11 cm (clefts), tilted tops, pushed in / out, split by horizontal joints, a raised broken crest, flat ledges
+  pushed out at the water, the exedra's platform kept clear; all fused by a voxel union (8 cm, then 5 cm), the grotto
+  carved left of centre at the water (MANIFOLD boolean), displaced = the sculpt (1.85 M tris); a 15 cm low-poly
+  shrink-wrapped and relaxed, hard edges over 60 deg, ONE slot rockwork_concrete with its moss layer as a mask
+  (COLOR_0.g: a separate moss primitive made slits along the slot border in the LODs), UV0 metres, UV1 the full atlas,
+  normal + AO baked from the sculpt (2048); cut into 8 chunks of 4 m.
+- tools/park_kit_pack.mjs cliff: per chunk LOD0 / LOD1 / LOD2 (meshoptimizer, chunk borders LOCKED: no cracks between
+  neighbours at different LODs), normals recomputed over the WHOLE surface per LOD (no seams at the cuts); LOD0
+  5.5k-16.9k tris a chunk (~93k for the whole cliff), LOD1 ~50k, LOD2 ~25k; GLB 2.2 MB; bands 16 / 40 / 260 m.
+- Checker: 0 blocking per LOD over all chunks; 6 items accepted with reasons (models/parkkit/audit/sauvagere_cliff.allow.json:
+  bentflat / hairline leak on the closed end and back walls and on the plateau behind the crest, LOD1 / LOD2 only).
+- Plants in the clefts (cavity) and on the ledges (viewer/sauvagereCliff.js plantsOn), more on o01's left part: 1333
+  clumps, drawn to 23 m.
+- Canopy preset: no holes in the dome (a dark foliage backdrop); the sun patches come from a hidden leaf screen 16 m up
+  drawn only in the sun's shadow map (layer 2); green-filtered sky light, sun 55 %, environment 28 %.
+- GPU (two other agents on the GPU, ports 8823 / 8824; interleaved A/B, 3 rounds): with the lab's post chain (SSAO / SSR)
+  the cliff + plants cost 1.11 ms at 12 m and 0.46 ms at 30 m against an EMPTY sky background (the post passes then run
+  on pixels that would be trees and ground in the city anyway); without the post chain 0.46-0.52 ms at 12 m and 0.13 ms
+  at 30 m. Repeated rounds agreed within ~0.05 ms here; earlier runs the same evening swung by up to +-0.5 ms.
+- Images: lab_round4_cliff_o01_canopy.jpeg, lab_round4_cliff_o01_open.jpeg, lab_round4_cliff_grazing.jpg,
+  lab_round4_dolly_strip.jpg, lab_round4_lod0_vs_lod1_17m.jpg; side-by-side (out of git): data/raw/refs/sauvagere/owner/compare/o01_vs_lab_round4.jpg.
+
 ## 5. Risks
 
 1. **The cliff's cost.** Stratified rock needs geometry near (the bedding and joints are the look); 40 pieces at

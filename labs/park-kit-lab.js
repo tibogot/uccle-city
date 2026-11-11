@@ -40,7 +40,7 @@ const lighting = new Lighting(scene, renderer, preset);
 }
 
 // a flat dark pond in front of the Sauvagere cliff (context only: the real water is the park-water module, claude/wolvendael)
-const water = new THREE.Mesh(new THREE.PlaneGeometry(40, 16).rotateX(-Math.PI / 2), new THREE.MeshStandardNodeMaterial({ color: 0x1c2016, roughness: 0.22, metalness: 0 }));
+const water = new THREE.Mesh(new THREE.PlaneGeometry(40, 16).rotateX(-Math.PI / 2), new THREE.MeshStandardNodeMaterial({ color: 0x141a10, roughness: 0.38, metalness: 0 }));
 water.position.set(1, 0.03, -9.5); water.scale.set(1.3, 1, 1.4); water.receiveShadow = true; scene.add(water);
 
 // ------------------------------------------------------------------------------------------------ kits and scenes
@@ -66,7 +66,7 @@ const terrainMat = new THREE.MeshStandardNodeMaterial({ roughness: 0.95 });
 }
 const terrain = siteTerrain(site, terrainMat);
 terrain.visible = false; scene.add(terrain);
-const plants = new PlantField({ near: 12, far: 17 });
+const plants = new PlantField({ near: 17, far: 23 });
 scene.add(plants.group);
 lighting.sun?.shadow?.camera?.layers.enable(SHADOW_LAYER);
 for (const f of Object.values(fields)) scene.add(f.group);
@@ -107,7 +107,7 @@ build(S.scene);
 // ------------------------------------------------------------------------------------------------ views
 const VIEWS = {
   "o01 under the canopy": [new THREE.Vector3(1.0, 1.1, -16.5), new THREE.Vector3(0.5, 2.7, 3.0)],
-  "o01 (solved)": [new THREE.Vector3(0.6, 1.0, -14.0), new THREE.Vector3(0.2, 2.9, 3.0)],
+  "o01 (solved)": [new THREE.Vector3(1.8, 1.0, -10.5), new THREE.Vector3(0.6, 2.8, 2.0)],
   "mound: walking 12 m": [new THREE.Vector3(-1, 1.7, -10.5), new THREE.Vector3(0, 2.5, 3)],
   "mound: 30 m": [new THREE.Vector3(3, 2.5, -28), new THREE.Vector3(0, 2.5, 3)],
   "mound: grazing close-up": [new THREE.Vector3(-2.5, 2.0, -1.0), new THREE.Vector3(-4.5, 2.3, 2.0)],
