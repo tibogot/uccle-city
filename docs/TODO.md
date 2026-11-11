@@ -39,7 +39,7 @@ Stairs paused until the owner's Mixamo clips are in `data/raw/animations/mixamo/
 - [ ] Impostor Lab (`claude/impostors`, port 8824: http://localhost:8824/labs/impostor-lab.html?scene=forest): dots gone. QUIET-MACHINE GPU (coordinator, 2026-11-12, median frame deltas): far forest 83k trees: kit +0.92/+1.18/+0.98 ms to 1.5 km vs today +1.77/+2.16/+1.90 ms to 1.1 km; forest patch: kit +0.20 vs today +0.33 ms. Target met.
 - [ ] Pedestrian Lab P0+P1 (`claude/pedestrians`, port 8825: http://localhost:8825/labs/pedestrian-lab.html, ?scene=sidewalk|crossing|zebra|square|tram|park): 0 pops. QUIET-MACHINE (coordinator, 2026-11-12, street scene): 300 people banded GPU +0.26/+0.33 ms, CPU 0.42 ms (Mr.doob's all-live crowd CPU 0.92-0.97 ms); 150: GPU +0.07-0.26, CPU 0.33. Targets met; weak: baked feet slide on turns, kerb steps, nobody sits (no UAL clips yet), P4 bodies (children, dogs...) not started.
 - [ ] City mesh audit report (docs/CITY_MESH_AUDIT.md): facade details coplanar with walls = likely the building flicker.
-- [ ] Small fixes (`claude/smallfixes`): lamps + ?sunlight=1.
+- [ ] Small fixes (`claude/smallfixes`, port 8816): lamps + ?sunlight=1 + NIGHT BRIGHTNESS FIX (2026-11-12: Firmament night look +1.6 -> +0.6 EV, total x6 -> x3; trees' moonlight dimmed; leaf fill scaled by daylight). Compare: http://localhost:8820/viewer/index.html?tile=E4&time=night (before) vs http://localhost:8816/viewer/index.html?tile=E4&time=night (after); &nightev= to tune. Trees still a bit too green at night (desaturate at night later).
 - [ ] Hero prep notes (`claude/hero-prep`, docs/heroes/): Van Buuren + Wolvendael.
 - Decisions: statues / carved ornament (scripted vs museum scans); chapel close-up slates +0.3 ms.
 
