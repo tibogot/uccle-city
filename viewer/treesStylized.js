@@ -15,6 +15,7 @@ import { branchShape } from "../vendor/stylized-trees/branchTree.js";
 import { bumpNormal } from "./tslkit.js";
 import { bakeTreeImpostors, impostorMaterial, impostorField, IMPOSTOR_START, IMP } from "./impostors.js";
 import { SMOOTH, lodEye, keepBand, rampTo } from "./lodFade.js";
+import { env } from "./lighting.js";
 
 // Far LOD: octahedral impostors past IMPOSTOR_START (viewer/impostors.js) with ?impostors=1. OFF by
 // default since 2026-11-04: side by side from Saint-Job (zoomed on 150-400 m) the real LOD 1 / LOD 2
@@ -390,9 +391,14 @@ export function buildStylizedTreeField(trees, ground, inTile) {
   const update = (p) => {
     if (lighting) {
       sunDir.copy(lighting.sunDir);
-      const c = lighting.keyColor, k = 0.18;          // the key light's colour x intensity, either sky
+      // the key light's colour x intensity, either sky; at night the key is the MOON, whose colour the trees took at
+      // full sun strength (vivid green crowns under the night exposure): dim it with the night (owner 2026-11-12)
+      const c = lighting.keyColor, k = 0.18 * (1 - 0.8 * env.uNight.value);
       sunCol[0] = c.r * k; sunCol[1] = c.g * k; sunCol[2] = c.b * k;
     }
+    // the leaves' FILL is an unlit (emissive) term: scale it with the daylight, else trees (and their impostors,
+    // which share the uniform) glow green at night (owner, 2026-11-12: "far away the city is very bright at night")
+    if (shared.U?.fill) shared.U.fill.value = params().fill * (1 - 0.92 * env.uNight.value);
     cam.position.copy(p);
     if (SMOOTH) f.params.maxDist = IMP.start.value;   // (live: the dev panel's impostor distance)
     f.update(cam, light);

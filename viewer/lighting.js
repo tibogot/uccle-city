@@ -215,8 +215,9 @@ export class Lighting {
     if (!this.firmament || this.sky) return;
     this.camera = camera;
     this.sky = createFirmamentSky({ renderer: this.renderer, camera, params: { latitude: BRUSSELS_LAT, dayOfYear: DAY, autoExposure: true,
-      // Firmament's night look: +1.6 EV at full night (a readable moonlit city), moonlit clouds, stars
-      nightLook: true, nightEV: 1.6 } });
+      // Firmament's night look: extra EV at full night (a readable moonlit city), moonlit clouds, stars. Was +1.6
+      // (x6 with the eye adaptation's x2): the far city and the trees read far too bright at night (owner 2026-11-12)
+      nightLook: true, nightEV: +(new URLSearchParams(location.search).get("nightev") ?? 0.6) } });
     await this.sky.ready;
     this.scene.add(this.sky.mesh);
     // the key light x the cumulus shadow over the ground (labScene.js)
