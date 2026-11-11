@@ -149,6 +149,7 @@ function sourceMaterial(name, lib) {
   return m ?? (TEMP[name] ?? TEMP.render_white_lime)();
 }
 
+const AO_MIN = { wood_frame_white: 0.6, wood_painted_grey: 0.5, glass_window: 0.5 };
 /** the baked AO's weight per level (mesh.userData.aoScale, WV_LOD_AO) */
 const lodAo = uniform(1).onObjectUpdate(({ object }) => object.userData.aoScale ?? 1);
 
@@ -157,7 +158,8 @@ const lodAo = uniform(1).onObjectUpdate(({ object }) => object.userData.aoScale 
 function wrapAO(src, aoTex, slot) {
   const m = src.clone();
   m.name = `wolvendael ${slot}`;
-  const ao = texture(aoTex, uv(1)).r.mul(attribute("color", "vec4").g);
+  // (joinery and shutters sit deep in the reveals and are thin: their baked AO floored, the photos show them bright)
+  const ao = texture(aoTex, uv(1)).r.mul(attribute("color", "vec4").g).max(AO_MIN[slot] ?? 0);
   const aoK = mix(float(1), ao, wvLook.aoStrength.mul(lodAo));
   m.aoNode = src.aoNode ? src.aoNode.mul(aoK) : aoK;
   // (polish 2b) SMALL PARTS FAR AWAY: COLOR_0.b holds the width of the flat region a face belongs to (a quoin course's
@@ -171,7 +173,8 @@ function wrapAO(src, aoTex, slot) {
   const width = cw.mul(cw).mul(4.0).max(0.002);
   const foot = length(fwidth(positionWorld));               // ~ metres per pixel (x 1.4-2)
   const k = smoothstep(0.6, 1.6, foot.div(width)).mul(wvLook.thinFar);
-  const cover = mix(float(1), clamp(width.mul(2.0).div(foot), 0.35, 1.0), k);
+  // (the white joinery keeps more of its share: the photos read the window frames as a white grid from 50 m)
+  const cover = mix(float(1), clamp(width.mul(2.0).div(foot), slot === "wood_frame_white" ? 0.75 : 0.35, 1.0), k);
   if (slot !== "glass_window") {
     const base = src.colorNode ?? vec3(src.color?.r ?? 1, src.color?.g ?? 1, src.color?.b ?? 1);
     m.colorNode = base.mul(mix(float(1), aoK, wvLook.aoDirect)).mul(cover);
@@ -254,7 +257,7 @@ function glassReflection(k) {
   const n = normalWorld.toVar();
   const r = reflect(v.negate(), n).toVar();
   const ndv = clamp(abs(dot(v, n)), 0.0, 1.0);
-  const fres = pow(float(1).sub(ndv), 3.0).mul(0.45).add(0.025);
+  const fres = pow(float(1).sub(ndv), 3.0).mul(0.5).add(0.06);
   const sky = mix(vec3(env.uSkyHorizon), vec3(env.uSkyTop), smoothstep(0.0, 0.7, r.y));
   const skyline = hash2(floor(vec2(r.x, r.z).mul(9.0))).mul(0.16).add(0.10);           // the park's trees opposite
   const below = mix(lin(0x3e4a35), lin(0x2c3326), smoothstep(-0.05, -0.4, r.y));
@@ -276,15 +279,15 @@ const TEMP = {
       const fwG = length(fwidth(w.mul(160.0)));
       const g = mix(grain, float(0.5), smoothstep(0.4, 1.0, fwG));
       const streak = smoothstep(0.55, 0.95, vnoise(vec2(w.x.mul(2.6), w.y.mul(0.16)).add(3.0))).mul(wvLook.weather);
-      const base = mix(lin(0xe9e6dd), lin(0xdcd8cc), lump).mul(float(0.97).add(g.mul(0.05))).toVar();
-      const streaked = base.mul(float(1).sub(streak.mul(0.07)));
+      const base = mix(lin(0xf2f0ea), lin(0xe8e5dd), lump).mul(float(0.975).add(g.mul(0.04))).toVar();
+      const streaked = base.mul(float(1).sub(streak.mul(0.05)));
       // the plinth: a greyer render, darker toward its foot (v = m TAW - 40; the floor is at 10.35)
       const foot = smoothstep(9.9, 7.5, w.y).mul(isC(cd, C.plinth));
       const pl = mix(streaked, streaked.mul(lin(0xcfccbf)).mul(1.08), isC(cd, C.plinth)).mul(float(1).sub(foot.mul(0.18)));
       // reveals a touch darker (less weathered paint, in shade)
       return pl.mul(mix(float(1), float(0.96), isC(cd, C.reveal)));
     })();
-    m.normalNode = relief(0.06, 5.0);
+    m.normalNode = relief(0.025, 9.0);
     return m;
   },
   stone_white() {

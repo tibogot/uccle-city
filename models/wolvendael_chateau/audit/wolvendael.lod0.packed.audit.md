@@ -1,6 +1,6 @@
 # Mesh audit (packed): wolvendael.lod0
 
-54,274 triangles, 42,004 welded vertices, 29,277 open edges, 1,228,322 rays, 13855 ms.
+54,274 triangles, 42,004 welded vertices, 29,277 open edges, 1,228,322 rays, 17968 ms.
 
 **12 blocking**, 11658 warnings. NOT CLEAN.
 

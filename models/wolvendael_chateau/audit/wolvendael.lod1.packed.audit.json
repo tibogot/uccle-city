@@ -14,7 +14,7 @@
    "tjunction": 253,
    "opening": 257
   },
-  "ms": 3880
+  "ms": 6348
  },
  "options": {
   "weld": 0.0001,
@@ -27257,5 +27257,5 @@
    }
   ]
  },
- "file": "t.glb"
+ "file": "wolvendael.glb"
 }

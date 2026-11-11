@@ -41,7 +41,7 @@ export const waterLook = {
 // ------------------------------------------------------------------------------------------------ planar reflection
 const _q = new THREE.Vector4(), _clip = new THREE.Vector4(), _plane = new THREE.Plane(), _n = new THREE.Vector3(0, 1, 0);
 const _view = new THREE.Vector3(), _target = new THREE.Vector3(), _look = new THREE.Vector3(), _rot = new THREE.Matrix4(), _p = new THREE.Vector3();
-const _size = new THREE.Vector2();
+const _size = new THREE.Vector2(), _col = new THREE.Color();
 
 /** A horizontal mirror at y = level: the virtual camera of three's ReflectorNode (r187, MIT: the same mirrored view,
  *  the oblique near plane at the water), rendering only POND_LAYER into a half-float target at `scale` of the
@@ -94,9 +94,10 @@ export class PlanarReflection {
     const restore = suspend?.();
     const prevRT = r.getRenderTarget(), prevMRT = r.getMRT(), prevAuto = r.autoClear;
     const t0 = performance.now();
-    r.setMRT(null); r.setRenderTarget(this.rt); r.autoClear = true;
+    const prevAlpha = r.getClearAlpha(); r.getClearColor(_col);
+    r.setMRT(null); r.setRenderTarget(this.rt); r.autoClear = true; r.setClearColor(0x000000, 0);
     r.render(scene, vc);
-    r.setMRT(prevMRT); r.setRenderTarget(prevRT); r.autoClear = prevAuto;
+    r.setMRT(prevMRT); r.setRenderTarget(prevRT); r.autoClear = prevAuto; r.setClearColor(_col, prevAlpha);
     this.lastMs = performance.now() - t0;
     restore?.();
     this.renders++;
@@ -173,8 +174,9 @@ export function createPond({ pond, bed, renderer, reflectionScale = 0.5, nearRef
     // unresolved slope variance (a lower mip is not available on the half-float target: the offset jitter does it)
     const off = nW.xz.mul(waterLook.distort).mul(0.22).div(max(dist.mul(0.08), 1.0));
     const sUV = vec2(float(1).sub(screenUV.x), screenUV.y).add(off);
-    const planar = reflTex.sample(clamp(sUV, 0.001, 0.999)).rgb;
-    return mix(sky, planar, uRefl).mul(waterLook.reflection);
+    const planar = reflTex.sample(clamp(sUV, 0.001, 0.999)).toVar();
+    // (the pass clears to alpha 0: where it drew nothing, the analytic sky)
+    return mix(sky, planar.rgb, uRefl.mul(planar.a)).mul(waterLook.reflection);
   })();
   const sunGlint = Fn(() => {
     const r = reflect(view.negate(), nW);
@@ -184,7 +186,7 @@ export function createPond({ pond, bed, renderer, reflectionScale = 0.5, nearRef
   mat.colorNode = Fn(() => {
     // the murky body (olive, a little browner where shallow: the bed shows through); its transmitted share = 1 - F
     const d = depth.toVar();
-    const body = mix(lin(0x4a4532), lin(0x1f261b), smoothstep(0.05, 0.7, d)).mul(waterLook.murk);
+    const body = mix(lin(0x3a3727), lin(0x10140d), smoothstep(0.05, 0.6, d)).mul(waterLook.murk);
     return body.mul(float(1).sub(F));
   })();
   mat.emissiveNode = reflColor.mul(F).add(sunGlint);
@@ -320,19 +322,51 @@ function buildLilies(bed, level, uProps) {
   g.setIndex(idx);
   const m = new THREE.MeshStandardNodeMaterial({ roughness: 0.55, metalness: 0 });
   m.name = "pond-lilies";
-  m.colorNode = Fn(() => {
-    const r = length(positionLocal.xz);
-    const vein = smoothstep(0.92, 1.0, fract(abs(positionLocal.x.mul(5.0).add(positionLocal.z.mul(0.0)))));
-    return mix(lin(0x2f4d24), lin(0x4b6a33), r.mul(0.6)).mul(float(1).sub(vein.mul(0.08))).mul(mix(float(0.85), float(1.1), fract(float(instanceIndex).mul(0.618))));
-  })();
+  // (a per-instance tone through instanceColor; a TSL colour node with the vein pattern glowed under the post chain)
+  m.color.set(0xffffff);
   m.positionNode = positionLocal.mul(vec3(uProps, 1, uProps));
   const mesh = new THREE.InstancedMesh(g, m, sites.length);
   const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), Sv = new THREE.Vector3(), Pv = new THREE.Vector3();
   sites.forEach(([x, z, s, a], i) => {
     Q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), a); Sv.set(s, 1, s);
     mesh.setMatrixAt(i, M.compose(Pv.set(x, level + 0.006, z), Q, Sv));
+    mesh.setColorAt(i, new THREE.Color().setHSL(0.26 + hash(i * 3.1) * 0.05, 0.38, 0.2 + hash(i * 5.3) * 0.08));
   });
   mesh.instanceMatrix.needsUpdate = true; mesh.computeBoundingSphere();
   mesh.name = "pond-lilies"; mesh.castShadow = false; mesh.receiveShadow = true;
   return mesh;
+}
+
+// ------------------------------------------------------------------------------------------------ reflection proxies
+/** The park's trees as the POND SEES THEM: low-poly crowns (an icosahedron per tree, sized from the LiDAR height and
+ *  crown) and trunks, drawn ONLY in the reflection pass (layer POND_LAYER alone: the main camera never draws them). The
+ *  city's own tree field costs ~1.8 ms of GPU in a second pass (measured, docs in NOTES); the reflection is rippled
+ *  and dimmed by the Fresnel term, the proxies cost ~0.1 ms. trees = [{ x, z, y (ground), height, crown }] */
+export function buildReflectionTrees(trees, center, radius = 90) {
+  const near = trees.filter((t) => Math.hypot(t.x - center.x, t.z - center.z) < radius && t.height > 3);
+  if (!near.length) return null;
+  const crownG = new THREE.IcosahedronGeometry(1, 1), trunkG = new THREE.CylinderGeometry(0.6, 1, 1, 6, 1, true).translate(0, 0.5, 0);
+  const cm = new THREE.MeshStandardNodeMaterial({ roughness: 0.9, metalness: 0 });
+  cm.name = "pond-reflection-crowns";
+  cm.colorNode = Fn(() => {
+    const p = positionWorld;
+    const n = fract(sin(floor(p.x.mul(0.9)).mul(12.9898).add(floor(p.y.mul(0.9)).mul(4.1)).add(floor(p.z.mul(0.9)).mul(78.233))).mul(43758.5453));
+    const up = clamp(normalWorld.y.mul(0.5).add(0.5), 0, 1);
+    return mix(lin(0x3a4a26), lin(0x84995a), up.mul(0.7).add(n.mul(0.3)));
+  })();
+  const tm = new THREE.MeshStandardNodeMaterial({ color: 0x4a3d30, roughness: 0.95, metalness: 0 });
+  tm.name = "pond-reflection-trunks";
+  const crowns = new THREE.InstancedMesh(crownG, cm, near.length), trunks = new THREE.InstancedMesh(trunkG, tm, near.length);
+  const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), S = new THREE.Vector3(), P = new THREE.Vector3();
+  near.forEach((t, i) => {
+    const r = Math.max(1.5, t.crown * 0.85), ry = Math.max(r, t.height * 0.33);
+    Q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), hash(i) * 6.28);
+    crowns.setMatrixAt(i, M.compose(P.set(t.x, t.y + t.height - ry, t.z), Q, S.set(r, ry, r * (0.85 + hash(i + 3) * 0.3))));
+    trunks.setMatrixAt(i, M.compose(P.set(t.x, t.y - 0.3, t.z), Q, S.set(0.25 + t.height * 0.008, t.height - ry + 0.5, 0.25 + t.height * 0.008)));
+  });
+  const g = new THREE.Group(); g.name = "pond-reflection-trees";
+  for (const m of [crowns, trunks]) { m.instanceMatrix.needsUpdate = true; m.computeBoundingSphere(); m.layers.set(POND_LAYER); m.castShadow = false; g.add(m); }
+  g.layers.set(POND_LAYER);
+  g.userData.count = near.length;
+  return g;
 }

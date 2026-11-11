@@ -1,47 +1,40 @@
 # Mesh audit (packed): wolvendael.lod2
 
-6,213 triangles, 4,602 welded vertices, 1,955 open edges, 662,168 rays, 3903 ms.
+4,556 triangles, 3,841 welded vertices, 1,685 open edges, 625,576 rays, 3992 ms.
 
-**148 blocking**, 896 warnings. NOT CLEAN.
+**86 blocking**, 512 warnings. NOT CLEAN.
 
 | check | severity | count |
 |---|---|---|
-| coplanar | block | 34 |
+| coplanar | block | 25 |
 | depth | block | 2 |
-| crossing | block | 102 |
-| leak | block | 10 |
-| sliver | warn | 517 |
-| nonmanifold | warn | 342 |
-| tjunction | warn | 37 |
-| seam | info | 1536 |
-| opening | info | 110 |
-| backtoback | info | 882 |
+| crossing | block | 36 |
+| leak | block | 23 |
+| sliver | warn | 345 |
+| nonmanifold | warn | 138 |
+| tjunction | warn | 29 |
+| seam | info | 1149 |
+| opening | info | 217 |
+| backtoback | info | 1198 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## coplanar (block, 34)
+## coplanar (block, 25)
 
 | at | parts | separation_mm | overlap_cm2 | angle_deg | maxDistance | need_mm | sameComponent | normal |
 |---|---|---|---|---|---|---|---|---|
-| 10.72, 51.22, -11.16 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 0 | 457.6 | 2.5 | 2000 | 15.45 | false | -1 + -0.04 + 0 |
-| 10.70, 51.70, -11.19 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 0 | 583.3 | 2.5 | 2000 | 15.45 | false | -1 + -0.04 + 0 |
-| 9.56, 51.23, -11.19 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 0 | 590.4 | 2.5 | 2000 | 15.45 | false | 1 + -0.04 + 0 |
-| 9.57, 51.56, -11.16 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 0 | 575.8 | 2.5 | 2000 | 15.45 | false | 1 + -0.04 + 0 |
-| 8.46, 51.22, -11.16 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 0 | 457.6 | 2.5 | 2000 | 15.45 | false | -1 + -0.04 + 0 |
-| 8.44, 51.70, -11.19 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 0 | 583.3 | 2.5 | 2000 | 15.45 | false | -1 + -0.04 + 0 |
-| 7.30, 51.23, -11.19 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 0 | 590.4 | 2.5 | 2000 | 15.45 | false | 1 + -0.04 + 0 |
-| 7.31, 51.60, -11.16 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 0 | 575.8 | 2.5 | 2000 | 15.45 | false | 1 + -0.04 + 0 |
-| 6.20, 51.22, -11.16 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 0 | 457.6 | 2.5 | 2000 | 15.45 | false | -1 + -0.04 + 0 |
-| 6.18, 51.70, -11.19 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 0 | 583.3 | 2.5 | 2000 | 15.45 | false | -1 + -0.04 + 0 |
-| 5.04, 51.23, -11.19 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 0 | 590.4 | 2.5 | 2000 | 15.45 | false | 1 + -0.04 + 0 |
-| 5.05, 51.60, -11.16 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 0 | 575.8 | 2.5 | 2000 | 15.45 | false | 1 + -0.04 + 0 |
+| 10.71, 51.39, -11.16 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 0 | 610.4 | 2.5 | 2000 | 15.45 | false | -1 + -0.04 + 0 |
+| 9.57, 51.52, -11.19 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 0 | 545.7 | 2.5 | 2000 | 15.45 | false | 1 + -0.04 + 0 |
+| 8.46, 51.39, -11.16 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 0 | 610.4 | 2.5 | 2000 | 15.45 | false | -1 + -0.04 + 0 |
+| 7.31, 51.52, -11.19 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 0 | 545.7 | 2.5 | 2000 | 15.45 | false | 1 + -0.04 + 0 |
+| 6.20, 51.39, -11.16 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 0 | 610.4 | 2.5 | 2000 | 15.45 | false | -1 + -0.04 + 0 |
+| 5.05, 51.52, -11.19 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 0 | 545.7 | 2.5 | 2000 | 15.45 | false | 1 + -0.04 + 0 |
 | 20.51, 53.65, -2.74 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 0 | 1668.5 | 0 | 2000 | 15.45 | false | 0 + 0 + 1 |
 | 20.49, 54.21, -2.74 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 0 | 1529.9 | 0 | 2000 | 15.45 | false | 0 + 0 + 1 |
 | 20.50, 56.86, -2.74 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 0 | 138.6 | 0 | 2000 | 15.45 | false | 0 + 0 + 1 |
 | 20.47, 52.53, -11.37 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 0 | 1684.9 | 0 | 2000 | 15.45 | false | 1 + 0 + 0 |
 | 20.47, 55.19, -11.37 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 0 | 1543.7 | 0 | 2000 | 15.45 | false | 1 + 0 + 0 |
 | 20.47, 56.86, -11.37 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 0 | 141.2 | 0 | 2000 | 15.45 | false | 1 + 0 + 0 |
-| 5.13, 54.49, -2.88 | Chateau_lod2/stone_white + Chateau_lod2/wood_frame_white | 0 | 9.3 | 3.7 | 2000 | 15.45 | false | -0.05 + -1 + -0.04 |
 | -0.57, 53.65, 3.37 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 0 | 1674.6 | 0 | 2000 | 15.45 | false | 0 + 0 + 1 |
 | -0.58, 55.19, 3.37 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 0 | 1535.1 | 0 | 2000 | 15.45 | false | 0 + 0 + 1 |
 | -0.58, 56.86, 3.37 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 0 | 139.5 | 0 | 2000 | 15.45 | false | 0 + 0 + 1 |
@@ -51,33 +44,27 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -12.70, 53.65, -11.34 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 0 | 1668.5 | 0 | 2000 | 15.45 | false | 0 + 0 + -1 |
 | -12.69, 55.19, -11.34 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 0 | 1530 | 0 | 2000 | 15.45 | false | 0 + 0 + -1 |
 | -12.69, 56.86, -11.34 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 0 | 138.5 | 0 | 2000 | 15.45 | false | 0 + 0 + -1 |
-| -5.59, 49.94, 7.52 | Chateau_lod2/stone_white + Chateau_lod2/wood_frame_white | 0 | 7.1 | 3.9 | 2000 | 15.45 | false | -0.05 + -1 + -0.05 |
-| 20.38, 59.54, -8.74 | Chateau_lod2/slate + Chateau_lod2/wood_frame_white | 0 | 182.2 | 2.4 | 2000 | 15.45 | false | 1 + 0 + 0 |
-| 20.38, 59.54, -5.10 | Chateau_lod2/slate + Chateau_lod2/wood_frame_white | 0 | 25.8 | 3 | 2000 | 15.45 | false | 1 + 0 + 0 |
-| -12.56, 59.55, -2.02 | Chateau_lod2/slate + Chateau_lod2/wood_frame_white | 0 | 138.8 | 3.9 | 2000 | 15.45 | false | -1 + 0 + 0 |
-| -2.46, 60.35, -10.10 | Chateau_lod2/zinc_roof + Chateau_lod2/zinc_roof | 0 | 33.3 | 0.2 | 2000 | 15.45 | false | -0.84 + -0.41 + 0.35 |
-| -1.94, 60.85, -9.52 | Chateau_lod2/zinc_roof + Chateau_lod2/zinc_roof | 0 | 33.7 | 0.2 | 2000 | 15.45 | false | 0.85 + -0.41 + 0.34 |
+| 20.38, 59.53, -8.83 | Chateau_lod2/slate + Chateau_lod2/wood_frame_white | 0 | 100.1 | 2.4 | 2000 | 15.45 | false | 1 + 0 + 0 |
+| 20.38, 59.58, -5.19 | Chateau_lod2/slate + Chateau_lod2/wood_frame_white | 0 | 1 | 3 | 2000 | 15.45 | false | 1 + 0 + 0 |
+| -12.56, 59.54, -2.01 | Chateau_lod2/slate + Chateau_lod2/wood_frame_white | 0 | 83.3 | 3.9 | 2000 | 15.45 | false | -1 + 0 + 0 |
+| 20.26, 59.09, -9.23 | Chateau_lod2/wood_frame_white + Chateau_lod2/glass_window | 0 | 5.5 | 4.2 | 2000 | 15.45 | false | 1 + -0.05 + -0.05 |
 
 ## depth (block, 2)
 
 | at | parts | separation_mm | overlap_cm2 | angle_deg | maxDistance | need_mm | sameComponent | normal |
 |---|---|---|---|---|---|---|---|---|
-| 5.07, 54.49, -2.88 | Chateau_lod2/stone_white + Chateau_lod2/wood_frame_white | 2.08 | 14.2 | 3.7 | 2000 | 15.45 | false | -0.05 + -1 + -0.04 |
-| -5.64, 49.94, 7.52 | Chateau_lod2/stone_white + Chateau_lod2/wood_frame_white | 2.07 | 13.5 | 3.9 | 2000 | 15.45 | false | -0.05 + -1 + -0.05 |
+| 20.38, 59.55, -5.11 | Chateau_lod2/slate + Chateau_lod2/wood_frame_white | 1.75 | 24.8 | 3 | 2000 | 15.45 | false | 1 + 0 + 0 |
+| 6.06, 59.36, -11.14 | Chateau_lod2/wood_frame_white + Chateau_lod2/wood_frame_white | 0.65 | 43.9 | 3.5 | 2000 | 15.45 | false | -0.06 + 0 + -1 |
 
-## crossing (block, 102)
+## crossing (block, 36)
 
 | at | parts | angle_deg | length_cm |
 |---|---|---|---|
 | 20.49, 50.31, -3.06 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 5.2 | 2 |
 | 20.49, 56.99, -3.06 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 5.2 | 1.2 |
-| 20.49, 56.99, -7.58 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 10.2 | 45.1 |
-| 20.49, 57.01, -7.88 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 10.2 | 15.2 |
 | 20.49, 57.00, -3.06 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 5.2 | 0.8 |
 | -0.59, 50.31, 3.04 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 5.2 | 2 |
 | -0.59, 56.99, 3.04 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 5.2 | 1.1 |
-| -0.59, 56.99, 0.02 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 10.2 | 22.3 |
-| -0.59, 57.00, -0.19 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 10.2 | 20.1 |
 | -0.59, 57.00, 3.04 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 5.2 | 0.8 |
 | -12.33, 50.31, 3.39 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 5.2 | 2 |
 | -12.33, 56.99, 3.39 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 5.2 | 1.1 |
@@ -88,59 +75,69 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 20.14, 50.31, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 5.2 | 2 |
 | 20.14, 56.99, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 5.2 | 1.1 |
 | 20.14, 57.00, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 5.2 | 0.8 |
+| 11.15, 53.45, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 8.8 | 10.9 |
+| 10.93, 53.45, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 8.8 | 35 |
+| 10.07, 50.35, -11.31 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_blue | 11.7 | 11.2 |
+| 10.56, 53.45, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 8.8 | 38 |
+| 9.75, 53.45, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 8.8 | 38.3 |
+| 10.15, 53.45, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 8.8 | 43.1 |
+| 9.16, 53.45, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 8.8 | 78.9 |
+| 8.59, 53.45, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 8.8 | 34.7 |
+| 7.69, 53.45, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 8.8 | 70.2 |
+| 8.23, 53.45, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 8.8 | 38 |
+| 6.86, 53.45, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 8.8 | 95 |
+| 6.22, 53.45, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 8.8 | 34.7 |
+| 5.35, 53.45, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 8.8 | 63.3 |
+| 5.85, 53.45, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 8.8 | 37.9 |
+| 4.62, 53.45, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 8.8 | 12.9 |
+| 4.77, 53.45, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 8.8 | 18.8 |
+| 4.95, 53.45, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 8.8 | 16.2 |
 | -0.56, 51.83, 3.31 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 5.2 | 0.9 |
 | -0.56, 51.74, 3.31 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 5.2 | 15.1 |
-| 20.54, 50.25, -5.48 | Chateau_lod2/stone_white + Chateau_lod2/stone_blue | 8 | 95.1 |
-| 20.54, 50.25, -4.86 | Chateau_lod2/stone_white + Chateau_lod2/stone_blue | 8 | 28.9 |
-| 20.54, 50.25, -8.88 | Chateau_lod2/stone_white + Chateau_lod2/stone_blue | 8 | 95.1 |
-| 20.54, 50.25, -8.27 | Chateau_lod2/stone_white + Chateau_lod2/stone_blue | 8 | 28.9 |
-| 0.59, 50.25, -2.67 | Chateau_lod2/stone_white + Chateau_lod2/stone_blue | 8.2 | 95.1 |
-| -0.03, 50.25, -2.67 | Chateau_lod2/stone_white + Chateau_lod2/stone_blue | 8.2 | 28.9 |
-| 3.49, 50.25, -2.67 | Chateau_lod2/stone_white + Chateau_lod2/stone_blue | 8.2 | 95.1 |
-| 2.87, 50.25, -2.67 | Chateau_lod2/stone_white + Chateau_lod2/stone_blue | 8.2 | 28.9 |
-| 5.76, 50.25, -2.67 | Chateau_lod2/stone_white + Chateau_lod2/stone_blue | 8.2 | 95.1 |
-| 5.14, 50.25, -2.67 | Chateau_lod2/stone_white + Chateau_lod2/stone_blue | 8.2 | 28.9 |
-| 8.05, 50.25, -2.67 | Chateau_lod2/stone_white + Chateau_lod2/stone_blue | 8.2 | 115.1 |
-| 7.30, 50.25, -2.67 | Chateau_lod2/stone_white + Chateau_lod2/stone_blue | 8.2 | 34.9 |
-| 9.90, 50.25, -2.67 | Chateau_lod2/stone_white + Chateau_lod2/stone_blue | 8.2 | 18.6 |
-| 9.66, 50.25, -2.67 | Chateau_lod2/stone_white + Chateau_lod2/stone_blue | 8.2 | 28.9 |
-| 10.38, 50.25, -2.67 | Chateau_lod2/stone_white + Chateau_lod2/stone_blue | 8.2 | 76.5 |
-| 12.55, 50.25, -2.67 | Chateau_lod2/stone_white + Chateau_lod2/stone_blue | 8.2 | 95.1 |
-| 11.93, 50.25, -2.67 | Chateau_lod2/stone_white + Chateau_lod2/stone_blue | 8.2 | 28.9 |
-| 15.46, 50.25, -2.67 | Chateau_lod2/stone_white + Chateau_lod2/stone_blue | 8.2 | 95.1 |
-| 14.84, 50.25, -2.67 | Chateau_lod2/stone_white + Chateau_lod2/stone_blue | 8.2 | 28.9 |
+| 5.02, 59.44, -11.24 | Chateau_lod2/slate + Chateau_lod2/wood_frame_white | 11.4 | 0.1 |
+| 5.14, 59.49, -11.24 | Chateau_lod2/slate + Chateau_lod2/wood_frame_white | 11.4 | 24.8 |
 
-(62 more in the JSON)
-
-## leak (block, 10)
+## leak (block, 23)
 
 | at | part | slit_mm | facing | edge_m |
 |---|---|---|---|---|
-| -6.46, 59.51, -11.24 | Chateau_lod2/slate | 12 | 0 + 0 + -1 | 0.35 |
-| 20.38, 59.48, -9.01 | Chateau_lod2/slate | 12 | 1 + 0 + 0 | 0.35 |
-| 5.35, 59.48, -2.83 | Chateau_lod2/slate | 12 | 0 + 0 + 1 | 0.35 |
-| 5.45, 59.50, -2.83 | Chateau_lod2/slate | 12 | 0 + 0 + 1 | 0.234 |
-| -12.56, 59.45, -6.18 | Chateau_lod2/slate | 12 | -1 + 0 + 0 | 0.35 |
-| -12.56, 59.47, -1.84 | Chateau_lod2/slate | 12 | -1 + 0 + 0 | 0.35 |
-| -12.56, 59.44, -1.74 | Chateau_lod2/slate | 12 | -1 + 0 + 0 | 0.234 |
-| 10.27, 59.50, -11.27 | Chateau_lod2/wood_frame_white | 30 | 0.07 + 0.45 + -0.89 | 0.35 |
-| 20.40, 59.48, -9.01 | Chateau_lod2/wood_frame_white | 12 | 1 + 0 + 0 | 0.35 |
-| -12.59, 59.44, -1.74 | Chateau_lod2/wood_frame_white | 12 | -1 + 0 + 0 | 0.234 |
+| 9.55, 50.38, -2.88 | Chateau_lod2/render_white_lime | 4 | 1 + 0 + 0 | 0.21 |
+| 10.62, 50.38, -11.17 | Chateau_lod2/render_white_lime | 12 | 0.09 + 0.84 + -0.53 | 1.257 |
+| 19.38, 50.38, -11.20 | Chateau_lod2/render_white_lime | 4 | -1 + 0 + 0 | 0.21 |
+| 11.42, 50.22, -11.36 | Chateau_lod2/render_white_lime | 4 | -1 + 0 + 0 | 4.25 |
+| 10.09, 59.51, -11.24 | Chateau_lod2/slate | 12 | 0 + 0 + -1 | 0.58 |
+| 5.85, 59.46, -11.24 | Chateau_lod2/slate | 4 | 0 + 0 + -1 | 0.579 |
+| 20.38, 59.48, -8.88 | Chateau_lod2/slate | 12 | 1 + 0 + 0 | 0.579 |
+| 15.08, 59.46, -2.83 | Chateau_lod2/slate | 4 | 0 + 0 + 1 | 0.58 |
+| 5.39, 59.46, -2.83 | Chateau_lod2/slate | 4 | 0 + 0 + 1 | 0.58 |
+| -12.56, 59.51, -5.78 | Chateau_lod2/slate | 12 | -1 + 0 + 0 | 0.58 |
+| -12.56, 59.46, -2.37 | Chateau_lod2/slate | 4 | -1 + 0 + 0 | 0.58 |
+| -10.13, 60.85, -10.09 | Chateau_lod2/slate | 12 | 1 + 0 + 0 | 0.45 |
+| -11.28, 60.85, -9.82 | Chateau_lod2/slate | 30 | -1 + 0 + 0 | 0.45 |
+| 15.29, 59.44, -11.09 | Chateau_lod2/wood_frame_white | 30 | -0.09 + -0.41 + -0.91 | 0.622 |
+| 0.22, 59.44, -11.27 | Chateau_lod2/wood_frame_white | 12 | -0.07 + 0.32 + -0.94 | 0.692 |
+| 0.42, 59.44, -11.09 | Chateau_lod2/wood_frame_white | 12 | -0.08 + -0.37 + -0.93 | 0.622 |
+| 20.40, 59.49, -8.83 | Chateau_lod2/wood_frame_white | 30 | 0.85 + 0.53 + 0 | 0.465 |
+| 20.40, 59.41, -5.76 | Chateau_lod2/wood_frame_white | 12 | 1 + 0 + 0 | 0.579 |
+| 20.40, 59.51, -5.29 | Chateau_lod2/wood_frame_white | 4 | 0.97 + 0.24 + 0.06 | 0.58 |
+| 15.26, 59.49, -2.94 | Chateau_lod2/wood_frame_white | 4 | 0.13 + -0.56 + 0.82 | 0.666 |
+| -12.59, 59.46, -2.37 | Chateau_lod2/wood_frame_white | 4 | -1 + 0 + 0 | 0.58 |
+| 7.62, 52.78, -11.16 | Chateau_lod2/glass_window | 30 | 0 + 0 + -1 | 0.912 |
+| 5.36, 52.78, -11.16 | Chateau_lod2/glass_window | 30 | 0 + 0 + -1 | 0.912 |
 
-## sliver (warn, 517)
+## sliver (warn, 345)
 
 | at | part | aspect | longest |
 |---|---|---|---|
 | 20.49, 52.54, -2.73 | Chateau_lod2/render_white_lime | 333 | 6.661 |
 | 20.49, 54.76, -2.73 | Chateau_lod2/render_white_lime | 333 | 6.661 |
+| 20.49, 50.27, -5.79 | Chateau_lod2/render_white_lime | 124 | 8.64 |
+| 20.49, 50.32, -6.47 | Chateau_lod2/render_white_lime | 111 | 8.07 |
+| 20.49, 50.32, -9.36 | Chateau_lod2/render_white_lime | 97 | 5.431 |
+| 20.49, 50.34, -7.35 | Chateau_lod2/render_white_lime | 285 | 6.611 |
+| 20.49, 50.36, -8.29 | Chateau_lod2/render_white_lime | 177 | 4.86 |
 | 20.49, 57.00, -5.11 | Chateau_lod2/render_white_lime | 226 | 6.61 |
-| 20.49, 50.36, -4.66 | Chateau_lod2/render_white_lime | 98 | 2.641 |
-| 20.49, 50.36, -5.79 | Chateau_lod2/render_white_lime | 177 | 4.86 |
-| 20.49, 50.36, -6.92 | Chateau_lod2/render_white_lime | 515 | 6.04 |
-| 20.49, 50.30, -5.60 | Chateau_lod2/render_white_lime | 124 | 8.07 |
-| 20.49, 50.34, -7.80 | Chateau_lod2/render_white_lime | 125 | 7.5 |
-| 20.49, 50.27, -8.48 | Chateau_lod2/render_white_lime | 124 | 8.64 |
-| 20.49, 50.30, -8.29 | Chateau_lod2/render_white_lime | 1876 | 8.64 |
+| 20.49, 50.36, -9.42 | Chateau_lod2/render_white_lime | 98 | 2.641 |
 | 20.49, 57.00, -10.49 | Chateau_lod2/render_white_lime | 69 | 2.03 |
 | 0.86, 50.36, -2.72 | Chateau_lod2/render_white_lime | 48 | 1.851 |
 | 1.13, 50.30, -2.72 | Chateau_lod2/render_white_lime | 206 | 2.866 |
@@ -170,62 +167,63 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 18.16, 57.00, -2.72 | Chateau_lod2/render_white_lime | 220 | 6.435 |
 | -0.59, 52.54, 3.38 | Chateau_lod2/render_white_lime | 333 | 6.661 |
 | -0.59, 54.76, 3.38 | Chateau_lod2/render_white_lime | 333 | 6.661 |
-| -0.59, 50.29, 0.53 | Chateau_lod2/render_white_lime | 47 | 6.11 |
+| -0.59, 50.32, 1.99 | Chateau_lod2/render_white_lime | 74 | 3.647 |
+| -0.59, 50.36, 1.16 | Chateau_lod2/render_white_lime | 133 | 3.076 |
 
-(477 more in the JSON)
+(305 more in the JSON)
 
-## nonmanifold (warn, 342)
+## nonmanifold (warn, 138)
 
 | at | part | uses |
 |---|---|---|
 | 20.52, 53.65, -2.74 | Chateau_lod2/stone_white | 3 |
 | 20.47, 53.65, -11.39 | Chateau_lod2/stone_white | 3 |
-| 20.43, 54.50, -9.42 | Chateau_lod2/stone_white | 3 |
-| 20.43, 54.50, -8.06 | Chateau_lod2/stone_white | 3 |
-| 19.46, 54.50, -2.79 | Chateau_lod2/stone_white | 3 |
-| 15.99, 54.50, -2.79 | Chateau_lod2/stone_white | 3 |
-| 11.73, 54.50, -2.79 | Chateau_lod2/stone_white | 3 |
-| 10.82, 54.50, -2.79 | Chateau_lod2/stone_white | 3 |
-| 9.46, 54.50, -2.79 | Chateau_lod2/stone_white | 3 |
-| 8.56, 54.50, -2.79 | Chateau_lod2/stone_white | 3 |
-| 4.94, 54.50, -2.79 | Chateau_lod2/stone_white | 3 |
-| 4.03, 54.50, -2.79 | Chateau_lod2/stone_white | 3 |
-| 1.13, 54.50, -2.79 | Chateau_lod2/stone_white | 3 |
 | -0.56, 53.65, 3.37 | Chateau_lod2/stone_white | 3 |
-| -0.66, 54.50, 1.01 | Chateau_lod2/stone_white | 3 |
 | -12.66, 53.65, 3.42 | Chateau_lod2/stone_white | 3 |
 | -12.71, 53.65, -11.34 | Chateau_lod2/stone_white | 3 |
-| -12.62, 54.50, -8.84 | Chateau_lod2/stone_white | 3 |
-| -12.62, 54.50, -10.20 | Chateau_lod2/stone_white | 3 |
-| -12.62, 54.50, -6.51 | Chateau_lod2/stone_white | 3 |
-| -12.62, 47.75, -8.98 | Chateau_lod2/stone_white | 3 |
-| -12.62, 47.75, -10.06 | Chateau_lod2/stone_white | 3 |
-| -12.62, 47.75, -5.29 | Chateau_lod2/stone_white | 3 |
-| -12.62, 47.75, -6.37 | Chateau_lod2/stone_white | 3 |
-| -12.62, 47.75, -1.60 | Chateau_lod2/stone_white | 3 |
-| 9.46, 54.50, -11.29 | Chateau_lod2/stone_white | 3 |
-| 10.82, 54.50, -11.29 | Chateau_lod2/stone_white | 3 |
-| 4.94, 54.50, -11.29 | Chateau_lod2/stone_white | 3 |
-| 4.03, 54.50, -11.29 | Chateau_lod2/stone_white | 3 |
-| -0.23, 54.50, -11.29 | Chateau_lod2/stone_white | 3 |
-| -11.39, 54.50, -11.29 | Chateau_lod2/stone_white | 3 |
-| -10.04, 54.50, -11.29 | Chateau_lod2/stone_white | 3 |
-| -5.77, 49.95, 7.62 | Chateau_lod2/stone_white | 3 |
-| -6.55, 49.95, 6.50 | Chateau_lod2/stone_white | 3 |
-| -2.44, 60.86, -9.53 | Chateau_lod2/zinc_roof | 4 |
-| -2.47, 60.36, -10.12 | Chateau_lod2/zinc_roof | 4 |
 | -1.96, 60.38, -10.10 | Chateau_lod2/zinc_roof | 4 |
-| -1.93, 60.88, -9.51 | Chateau_lod2/zinc_roof | 4 |
 | 20.31, 56.27, -8.21 | Chateau_lod2/wood_frame_white | 4 |
-| 20.31, 54.49, -8.21 | Chateau_lod2/wood_frame_white | 4 |
+| 20.31, 56.23, -9.27 | Chateau_lod2/wood_frame_white | 4 |
+| 20.31, 52.88, -8.21 | Chateau_lod2/wood_frame_white | 4 |
+| 20.31, 52.88, -9.27 | Chateau_lod2/wood_frame_white | 4 |
+| 20.31, 56.27, -4.82 | Chateau_lod2/wood_frame_white | 4 |
+| 20.31, 56.27, -5.87 | Chateau_lod2/wood_frame_white | 4 |
+| 20.31, 56.23, -5.34 | Chateau_lod2/wood_frame_white | 4 |
+| 20.31, 52.92, -4.78 | Chateau_lod2/wood_frame_white | 4 |
+| 20.31, 52.92, -5.90 | Chateau_lod2/wood_frame_white | 4 |
+| 18.26, 56.23, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 19.31, 56.27, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 18.26, 52.88, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 19.31, 52.88, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 14.79, 56.23, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 15.84, 56.23, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 14.79, 52.88, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 15.84, 52.88, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 11.88, 56.27, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 12.94, 56.23, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 12.41, 56.23, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 11.88, 52.88, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 12.94, 52.88, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 9.62, 56.23, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 10.66, 56.23, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 9.62, 52.88, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 10.66, 52.88, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 7.36, 56.23, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 8.40, 56.23, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 8.57, 52.54, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 5.09, 56.23, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 6.14, 56.23, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 5.09, 52.88, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 6.14, 52.88, -2.90 | Chateau_lod2/wood_frame_white | 4 |
+| 2.83, 56.23, -2.90 | Chateau_lod2/wood_frame_white | 4 |
 
-(302 more in the JSON)
+(98 more in the JSON)
 
-## tjunction (warn, 37)
+## tjunction (warn, 29)
 
 | at | part | edge_m |
 |---|---|---|
-| 9.90, 52.95, -11.36 | Chateau_lod2/render_white_lime | 1.199 |
+| 10.14, 52.95, -11.36 | Chateau_lod2/render_white_lime | 1.199 |
 | 7.88, 52.95, -11.36 | Chateau_lod2/render_white_lime | 1.035 |
 | 5.62, 52.95, -11.36 | Chateau_lod2/render_white_lime | 0.933 |
 | 20.52, 48.92, -2.69 | Chateau_lod2/render_white_lime | 1.416 |
@@ -250,117 +248,112 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 4.00, 50.22, -11.31 | Chateau_lod2/stone_white | 0.39 |
 | 11.42, 50.22, -11.31 | Chateau_lod2/stone_white | 0.39 |
 | -4.49, 49.95, 7.74 | Chateau_lod2/stone_white | 0.27 |
-| 15.31, 59.52, -11.24 | Chateau_lod2/slate | 0.906 |
-| 10.14, 59.52, -11.24 | Chateau_lod2/slate | 0.906 |
 | 0.45, 59.52, -11.24 | Chateau_lod2/slate | 1.12 |
 | -6.42, 59.52, -11.24 | Chateau_lod2/slate | 1.12 |
-| 20.38, 59.52, -9.20 | Chateau_lod2/slate | 0.906 |
-| 20.38, 59.52, -5.34 | Chateau_lod2/slate | 0.906 |
-| 14.97, 59.52, -2.83 | Chateau_lod2/slate | 0.56 |
-| 10.14, 59.52, -2.83 | Chateau_lod2/slate | 0.793 |
-| 5.62, 59.52, -2.83 | Chateau_lod2/slate | 1.12 |
-| -12.56, 59.52, -5.83 | Chateau_lod2/slate | 0.911 |
 | -0.72, 51.85, 3.20 | Chateau_lod2/slate | 4.53 |
 | -6.56, 51.85, 3.20 | Chateau_lod2/slate | 4.53 |
 
-## seam (info, 1536)
+## seam (info, 1149)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
-| 20.49, 53.76, -2.73 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 174.78 | 345 | 90 |
-| 20.49, 50.32, -2.73 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 115.46 | 89 | 90 |
-| 20.49, 56.98, -8.25 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 42.13 | 42 | 22 |
-| 11.11, 53.32, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 14.71 | 40 | 76.7 |
-| -0.16, 50.38, -2.72 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_blue | 0.72 | 25 | 90 |
-| 2.75, 50.38, -2.72 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_blue | 0.72 | 25 | 90 |
-| -12.68, 50.26, 0.93 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_blue | 0.72 | 25 | 90 |
-| 6.14, 52.60, -11.20 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 1.69 | 25 | 22.7 |
-| 10.66, 52.60, -11.20 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 1.65 | 24 | 22.7 |
-| 8.40, 52.60, -11.20 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 1.65 | 24 | 22.7 |
-| -0.04, 59.37, -11.13 | Chateau_lod2/wood_frame_white + Chateau_lod2/wood_frame_white | 1.33 | 24 | 12.9 |
-| 10.58, 59.33, -2.97 | Chateau_lod2/wood_frame_white + Chateau_lod2/wood_frame_white | 1.4 | 24 | 12.9 |
-| -12.43, 59.33, -5.39 | Chateau_lod2/wood_frame_white + Chateau_lod2/wood_frame_white | 1.41 | 24 | 12.9 |
-| 20.49, 50.38, -4.74 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_blue | 0.72 | 23 | 90 |
-| 14.70, 50.28, -2.72 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_blue | 0.72 | 23 | 90 |
-| 8.53, 50.25, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_blue | 0.72 | 23 | 87.5 |
-| -11.34, 50.25, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_blue | 0.72 | 23 | 90 |
-| -12.68, 50.28, -2.76 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_blue | 0.72 | 22 | 90 |
+| 10.66, 52.60, -11.20 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 1.63 | 23 | 22.7 |
+| 8.41, 52.50, -11.15 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 1.67 | 23 | 24.7 |
 | 20.37, 57.93, -7.11 | Chateau_lod2/stone_white + Chateau_lod2/slate | 94.89 | 22 | 65.7 |
-| 5.17, 59.36, -11.13 | Chateau_lod2/wood_frame_white + Chateau_lod2/wood_frame_white | 1.47 | 22 | 21.5 |
 | 5.02, 54.49, -2.72 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 21 | 74.1 |
-| 6.27, 50.38, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_blue | 0.72 | 21 | 87.5 |
-| -9.19, 50.26, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_blue | 0.72 | 21 | 90 |
-| -7.04, 50.26, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_blue | 0.72 | 21 | 90 |
-| -0.17, 50.28, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_blue | 0.72 | 21 | 90 |
+| 6.14, 52.60, -11.20 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 1.62 | 21 | 27 |
 | 20.49, 54.49, -8.14 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 20 | 87.5 |
-| 5.00, 50.38, -2.72 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_blue | 0.72 | 20 | 90 |
-| 11.79, 50.33, -2.72 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_blue | 0.72 | 20 | 90 |
 | 11.81, 54.49, -2.72 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 20 | 87.5 |
 | 18.18, 54.49, -2.72 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 20 | 87.5 |
 | -0.59, 54.49, 0.93 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 20 | 87.5 |
-| -11.32, 50.38, 3.39 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_blue | 0.72 | 20 | 90 |
 | -9.17, 54.45, 3.39 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.66 | 20 | 74.1 |
 | -12.68, 54.49, 0.95 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 20 | 87.5 |
-| 19.41, 50.38, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_blue | 0.72 | 20 | 90 |
 | 15.91, 54.49, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 20 | 87.5 |
-| 9.49, 50.26, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_blue | 0.72 | 20 | 87.5 |
 | 13.00, 54.49, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 20 | 87.5 |
-| 3.94, 54.49, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 20 | 87.5 |
 | -2.43, 54.49, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 20 | 87.5 |
+| -10.12, 54.49, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 20 | 87.5 |
+| 0.42, 50.33, -2.72 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_blue | 1.9 | 19 | 55.2 |
+| 3.07, 50.37, -2.72 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_blue | 1.9 | 19 | 55.2 |
+| -12.68, 50.26, 2.06 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_blue | 1.9 | 19 | 55.2 |
+| 20.49, 54.49, -4.75 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 18 | 87.5 |
+| 9.55, 54.49, -2.72 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 18 | 87.5 |
+| -11.31, 54.45, 3.39 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.07 | 18 | 74.1 |
+| -12.68, 54.49, -10.11 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 18 | 87.5 |
+| -12.68, 54.49, -6.42 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 18 | 87.5 |
+| -12.68, 54.49, -2.74 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 18 | 87.5 |
+| 19.38, 54.49, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 18 | 87.5 |
+| 11.21, 53.53, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 7.79 | 18 | 76.7 |
+| 10.78, 54.49, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 18 | 87.5 |
+| 8.52, 54.49, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 18 | 87.5 |
+| 3.94, 54.49, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 18 | 87.5 |
+| 1.04, 54.49, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 18 | 87.5 |
+| -5.82, 54.49, -11.36 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 18 | 87.5 |
+| 7.24, 54.45, -2.72 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.66 | 17 | 74.1 |
+| 15.70, 50.27, -2.72 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_blue | 1.9 | 17 | 55.2 |
+| -0.66, 51.67, 3.20 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 15.04 | 17 | 90 |
+| -5.73, 49.94, 7.68 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.76 | 17 | 74.1 |
+| -0.57, 51.67, 3.25 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 0.95 | 17 | 82.7 |
+| -0.19, 54.49, -2.72 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 16 | 87.5 |
+| 3.93, 54.49, -2.72 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 16 | 87.5 |
+| 14.72, 54.49, -2.72 | Chateau_lod2/render_white_lime + Chateau_lod2/stone_white | 2.9 | 16 | 87.5 |
+| 7.16, 51.77, -2.88 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_painted_grey | 8.81 | 16 | 90 |
 
-(1496 more in the JSON)
+(1109 more in the JSON)
 
-## opening (info, 110)
+## opening (info, 217)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
 | 20.49, 50.37, -2.72 | Chateau_lod2/render_white_lime | 1 + 0 + 0 | 6.661 |
+| 20.28, 56.25, -9.33 | Chateau_lod2/render_white_lime | 0 + 0 + 1 | 1.8 |
+| 20.28, 56.30, -8.99 | Chateau_lod2/render_white_lime | 0 + -1 + 0 | 1.18 |
+| 20.28, 52.90, -9.33 | Chateau_lod2/render_white_lime | 0 + 0 + 1 | 2.57 |
+| 20.28, 52.95, -8.99 | Chateau_lod2/render_white_lime | 0 + -1 + 0 | 1.18 |
+| 20.28, 56.25, -5.93 | Chateau_lod2/render_white_lime | 0 + 0 + 1 | 1.8 |
+| 20.28, 56.30, -5.29 | Chateau_lod2/render_white_lime | 0 + -1 + 0 | 1.18 |
+| 20.28, 52.90, -5.93 | Chateau_lod2/render_white_lime | 0 + 0 + 1 | 2.57 |
+| 20.28, 52.95, -5.29 | Chateau_lod2/render_white_lime | 0 + -1 + 0 | 1.18 |
+| 14.87, 56.30, -2.93 | Chateau_lod2/render_white_lime | 0 + -1 + 0 | 1.18 |
+| 14.72, 52.90, -2.93 | Chateau_lod2/render_white_lime | 1 + 0 + 0 | 2.57 |
+| 15.90, 52.90, -2.93 | Chateau_lod2/render_white_lime | -1 + 0 + 0 | 2.57 |
+| 14.87, 52.95, -2.93 | Chateau_lod2/render_white_lime | 0 + -1 + 0 | 1.18 |
+| 13.00, 50.38, -2.77 | Chateau_lod2/render_white_lime | -1 + 0 + 0 | 0.21 |
+| 9.70, 56.30, -2.93 | Chateau_lod2/render_white_lime | 0 + -1 + 0 | 1.18 |
+| 10.73, 50.38, -2.77 | Chateau_lod2/render_white_lime | -1 + 0 + 0 | 0.21 |
+| 8.60, 50.38, -2.77 | Chateau_lod2/render_white_lime | -1 + 0 + 0 | 0.21 |
+| 5.18, 56.30, -2.93 | Chateau_lod2/render_white_lime | 0 + -1 + 0 | 1.18 |
+| 6.21, 50.38, -2.77 | Chateau_lod2/render_white_lime | -1 + 0 + 0 | 0.21 |
+| 3.94, 50.38, -2.77 | Chateau_lod2/render_white_lime | -1 + 0 + 0 | 0.21 |
+| 1.03, 50.38, -2.77 | Chateau_lod2/render_white_lime | -1 + 0 + 0 | 0.21 |
 | -0.59, 52.26, 3.39 | Chateau_lod2/render_white_lime | 1 + 0 + 0 | 6.661 |
 | -12.68, 50.37, 3.39 | Chateau_lod2/render_white_lime | 0 + 0 + 1 | 6.661 |
+| -11.30, 52.90, 3.18 | Chateau_lod2/render_white_lime | 1 + 0 + 0 | 2.57 |
+| -10.13, 52.90, 3.18 | Chateau_lod2/render_white_lime | -1 + 0 + 0 | 2.57 |
+| -11.16, 52.95, 3.18 | Chateau_lod2/render_white_lime | 0 + -1 + 0 | 1.18 |
+| -9.15, 52.90, 3.18 | Chateau_lod2/render_white_lime | 1 + 0 + 0 | 2.57 |
+| -7.97, 52.90, 3.18 | Chateau_lod2/render_white_lime | -1 + 0 + 0 | 2.57 |
+| -9.01, 52.95, 3.18 | Chateau_lod2/render_white_lime | 0 + -1 + 0 | 1.18 |
 | -12.68, 50.37, -11.36 | Chateau_lod2/render_white_lime | -1 + 0 + 0 | 6.661 |
+| -12.63, 50.38, -8.93 | Chateau_lod2/render_white_lime | 0 + 0 + -1 | 0.21 |
+| -12.47, 56.30, -5.88 | Chateau_lod2/render_white_lime | 0 + -1 + 0 | 1.18 |
+| -12.47, 52.90, -5.24 | Chateau_lod2/render_white_lime | 0 + 0 + -1 | 2.57 |
+| -12.47, 52.95, -5.88 | Chateau_lod2/render_white_lime | 0 + -1 + 0 | 1.18 |
+| -12.63, 50.38, -1.55 | Chateau_lod2/render_white_lime | 0 + 0 + -1 | 0.21 |
 | 20.49, 50.37, -11.36 | Chateau_lod2/render_white_lime | 0 + 0 + -1 | 6.661 |
 | 10.71, 52.95, -11.36 | Chateau_lod2/render_white_lime | 0 + 0 + -1 | 0.62 |
-| 10.08, 52.95, -11.36 | Chateau_lod2/render_white_lime | 0 + 0 + -1 | 0.235 |
-| 9.62, 52.95, -11.36 | Chateau_lod2/render_white_lime | 0 + 0 + -1 | 0.344 |
+| 9.61, 52.95, -11.36 | Chateau_lod2/render_white_lime | 0 + 0 + -1 | 0.579 |
 | 8.35, 52.95, -11.36 | Chateau_lod2/render_white_lime | 0 + 0 + -1 | 0.518 |
 | 7.41, 52.95, -11.36 | Chateau_lod2/render_white_lime | 0 + 0 + -1 | 0.518 |
-| 5.91, 52.95, -11.36 | Chateau_lod2/render_white_lime | 0 + 0 + -1 | 0.343 |
-| 5.08, 52.95, -11.36 | Chateau_lod2/render_white_lime | 0 + 0 + -1 | 0.59 |
-| 20.52, 48.77, -2.74 | Chateau_lod2/render_white_lime | 1 + 0 + 0 | 8.7 |
-| -0.51, 48.92, -2.69 | Chateau_lod2/render_white_lime | 0 + 0 + 1 | 21.08 |
-| -0.56, 48.88, 3.37 | Chateau_lod2/render_white_lime | 1 + 0 + 0 | 6.11 |
-| -12.47, 47.80, -6.28 | Chateau_lod2/render_white_lime | 0 + 0 + 1 | 0.8 |
-| -12.47, 48.50, -5.38 | Chateau_lod2/render_white_lime | 0 + 0 + -1 | 0.8 |
-| -12.47, 48.55, -6.23 | Chateau_lod2/render_white_lime | 0 + -1 + 0 | 0.9 |
-| -12.47, 47.80, -2.59 | Chateau_lod2/render_white_lime | 0 + 0 + 1 | 0.8 |
-| -12.47, 48.50, -1.69 | Chateau_lod2/render_white_lime | 0 + 0 + -1 | 0.8 |
-| -12.47, 48.55, -2.54 | Chateau_lod2/render_white_lime | 0 + -1 + 0 | 0.9 |
-| 4.28, 48.72, -15.56 | Chateau_lod2/render_white_lime | 0 + 0 + -1 | 0.33 |
-| 4.33, 48.72, -11.46 | Chateau_lod2/render_white_lime | 1 + 0 + 0 | 4.25 |
-| 4.00, 48.72, -11.36 | Chateau_lod2/render_white_lime | -1 + 0 + 0 | 4.25 |
-| 11.70, 48.72, -15.56 | Chateau_lod2/render_white_lime | 0 + 0 + -1 | 0.33 |
-| 11.75, 48.72, -11.36 | Chateau_lod2/render_white_lime | 1 + 0 + 0 | 4.25 |
-| 11.42, 48.72, -11.46 | Chateau_lod2/render_white_lime | -1 + 0 + 0 | 4.25 |
-| -0.66, 48.88, 7.63 | Chateau_lod2/render_white_lime | 1 + 0 + 0 | 4.54 |
-| -0.71, 48.88, 7.68 | Chateau_lod2/render_white_lime | 0 + 0 + 1 | 5.96 |
-| -6.62, 48.88, 7.63 | Chateau_lod2/render_white_lime | -1 + 0 + 0 | 4.54 |
-| 20.47, 56.95, -2.74 | Chateau_lod2/stone_white | 0 + 0 + 1 | 6.7 |
-| 20.52, 54.50, -9.42 | Chateau_lod2/stone_white | 0 + 0 + -1 | 0.27 |
-| 20.56, 54.50, -8.06 | Chateau_lod2/stone_white | 0 + 0 + 1 | 0.012 |
-| 19.46, 54.50, -2.69 | Chateau_lod2/stone_white | 1 + 0 + 0 | 0.27 |
-| 15.99, 54.50, -2.69 | Chateau_lod2/stone_white | 1 + 0 + 0 | 0.27 |
-| 11.73, 54.50, -2.65 | Chateau_lod2/stone_white | -1 + 0 + 0 | 0.012 |
-| 10.82, 54.50, -2.69 | Chateau_lod2/stone_white | 1 + 0 + 0 | 0.27 |
-| 9.46, 54.50, -2.65 | Chateau_lod2/stone_white | -1 + 0 + 0 | 0.012 |
-| 8.56, 54.50, -2.69 | Chateau_lod2/stone_white | 1 + 0 + 0 | 0.27 |
-| 7.20, 54.50, -2.71 | Chateau_lod2/stone_white | 0 + 1 + 0 | 0.258 |
 
-(70 more in the JSON)
+(177 more in the JSON)
 
-## backtoback (info, 882)
+## backtoback (info, 1198)
 
 | at | parts | area |
 |---|---|---|
+| 20.34, 56.30, -8.37 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 0.00157 |
+| 18.57, 56.30, -2.92 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 0.02651 |
+| -8.93, 56.30, 3.24 | Chateau_lod2/render_white_lime + Chateau_lod2/wood_frame_white | 0.0016 |
 | 20.32, 54.50, -8.57 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 0.09172 |
 | 20.46, 54.49, -9.25 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 0.09172 |
 | 20.39, 54.50, -8.23 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 0.09172 |
@@ -398,11 +391,8 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.07, 54.50, -2.82 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 0.09189 |
 | 0.61, 54.49, -2.68 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 0.09189 |
 | -0.76, 54.50, 0.51 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 0.09189 |
-| -0.62, 54.49, -0.17 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 0.09189 |
-| -0.69, 54.50, 0.84 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 0.09189 |
-| -0.55, 54.49, 0.17 | Chateau_lod2/stone_white + Chateau_lod2/stone_white | 0.09189 |
 
-(842 more in the JSON)
+(1158 more in the JSON)
 
 
 Nodes: Chateau_lod2. Distances: {"Chateau":105,"Chateau_far":440,"Chateau_lod2":2000}. Quantum 0.189 mm. Offset 0,40,0.

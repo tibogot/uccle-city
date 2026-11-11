@@ -17,12 +17,12 @@ import { SMOOTH, fadeProxies } from "./lodFade.js";
 import { openParallelPipelines } from "../vendor/engine/parallelPipelines.js";
 import { Heightmap } from "./heightmap.js";
 import { pondBedGrid } from "./water/pondBed.js";
-import { createPond, POND_LAYER } from "./water/pondWater.js";
+import { createPond, POND_LAYER, buildReflectionTrees } from "./water/pondWater.js";
 
 /** the pond's measured description (site.json "pond"): the same object goes to the tiles (the carve) and the water */
 export function wolvendaelPond(site) {
   const p = site.pond;
-  return { id: "wolvendael", ring: p.ring_city, level: p.water_level, maxDepth: 0.9, ramp: 3.0, wet: 0.14, grow: 1.0 };
+  return { id: "wolvendael", osm: p.osm, ring: p.ring_city, level: p.water_level, maxDepth: 0.9, ramp: 3.0, wet: 0.14, grow: 1.0 };
 }
 
 /** The SHADOW pass is not in compileAsync: the first frame a level casts a shadow built its shadow pipelines on the
@@ -78,6 +78,7 @@ export async function addWolvendael({ scene, updaters, hide, ponds, world, manif
     const levels = WV_LODS.map((_, k) => m.make(k));
     root.add(...levels);
     root.visible = false; pond.group.visible = false;
+    const pc0 = pond.water.geometry.boundingSphere.center.clone();
     scene.add(root, pond.group);
     root.updateMatrixWorld(true);
     // what the pond reflects: the château (every level and its fading copies), the sky dome, the terrain and trees of
@@ -97,11 +98,22 @@ export async function addWolvendael({ scene, updaters, hide, ponds, world, manif
       const px = (pondDesc.ring[0][0]), pz = pondDesc.ring[0][1];
       if (dx === 0 && dz === 0 && Math.max(t.bounds.x[0] - px, px - t.bounds.x[1], t.bounds.z[0] - pz, pz - t.bounds.z[1]) < 150) near.add(t.name);
     }
+    // (the city's tree field in the reflection pass costs ~1.8 ms GPU: by default the reflection draws the trees round the
+    // pond as cheap proxies instead; reflTrees = the real field, for A/B)
+    const state = { reflTerrain: true, reflTrees: false, reflProxies: true };
+    const ptiles = manifest.tiles.filter((t) => t.bounds.x[0] < pc0.x + 100 && t.bounds.x[1] > pc0.x - 100 && t.bounds.z[0] < pc0.z + 100 && t.bounds.z[1] > pc0.z - 100);
+    const feats = await Promise.all(ptiles.map((t) => fetch(new URL(t.files.features, DATA)).then((r) => r.json()).catch(() => null)));
+    const proxies = buildReflectionTrees(feats.flatMap((f) => f?.trees || []), pc0, 95);
+    if (proxies) scene.add(proxies);
     const scanTiles = () => {
+      // (the sky dome is added by the lighting after this module starts: looked up here)
+      const dome = scene.getObjectByName("FirmamentSkyDome");
+      if (dome && !dome.layers.isEnabled(POND_LAYER)) pond.addReflected(dome);
       for (const t of world.tiles) {
         if (!near.has(t.name)) continue;
         for (const g of t.groups || []) g.traverse((o) => {
-          if (o.name === "terrain" || o.name === "StylizedTreesTile") o.traverse((q) => q.layers.enable(POND_LAYER));
+          const on = o.name === "terrain" ? state.reflTerrain : o.name === "StylizedTreesTile" ? state.reflTrees : null;
+          if (on !== null) o.traverse((q) => (on ? q.layers.enable(POND_LAYER) : q.layers.disable(POND_LAYER)));
         });
       }
     };
@@ -134,13 +146,14 @@ export async function addWolvendael({ scene, updaters, hide, ponds, world, manif
     const homes = manifest.tiles.filter((t) => t.bounds.x[0] < m.boundsWorld.max.x && t.bounds.x[1] > m.boundsWorld.min.x &&
       t.bounds.z[0] < m.boundsWorld.max.z && t.bounds.z[1] > m.boundsWorld.min.z).map((t) => t.name);
     let n = 0, home = false;
-    const state = { d: 0, shown: [], pond: pond.stats };
+    // (pondOn / chateauOn: A/B timing; reflTerrain / reflTrees: what the reflection draws besides the château and the sky)
+    Object.assign(state, { d: 0, shown: [], pond: pond.stats, pondOn: true, chateauOn: true });
     updaters.push((camPos, cam) => {
       if (n++ % 30 === 0) {
         home = homes.some((h) => world.tiles.some((t) => t.name === h) || !!scene.getObjectByName(`${h}-lite`));
         scanTiles();
       }
-      root.visible = home; pond.group.visible = home && world.tiles.some((t) => t.name === tileOf.name);
+      root.visible = home && state.chateauOn; pond.group.visible = state.pondOn && home && world.tiles.some((t) => t.name === tileOf.name);
       if (!home) return;
       const d = m.distance(camPos);
       state.d = d;
@@ -152,9 +165,10 @@ export async function addWolvendael({ scene, updaters, hide, ponds, world, manif
         const k = WV_LODS.findIndex((l) => d < l.until);
         levels.forEach((g, i) => { g.visible = i === k; });
       }
+      if (proxies) proxies.visible = state.reflProxies && pond.group.visible;
       if (pond.group.visible && cam) pond.update(cam, scene);
     });
     log(`Wolvendael: scripted château, LODs ${m.tris.join(" / ")} triangles, ${m.drawCalls.join("/")} draws; pond ${pond.bed.waterArea.toFixed(0)} m² of water at ${pondDesc.level} m; loaded ${tLoad.toFixed(0)} ms, shaders ${tComp.toFixed(0)} ms + shadow / reflection passes ${tWarm.toFixed(0)} ms (in the background)`);
-    window.wolvendael = { model: m, root, levels, pond, tLoad, tComp, tWarm, warm, state };
+    window.wolvendael = { model: m, root, levels, pond, tLoad, tComp, tWarm, warm, state, scanTiles };
   }).catch((e) => log(`Wolvendael model failed (${e.message}): its UrbIS solids are hidden, reload without ?wolvendael=1`));
 }

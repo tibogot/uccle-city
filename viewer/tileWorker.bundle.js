@@ -7037,6 +7037,10 @@ async function buildTileData(entry, base) {
     }
     return { parts, atlas, carvedCells, triangles, surfaceStats, surfaceData };
   });
+  if (entry.ponds?.length) {
+    const ids = new Set(entry.ponds.map((p) => p.osm).filter(Boolean));
+    feats.areas = (feats.areas || []).filter((a) => !ids.has(a.id));
+  }
   if (entry.ponds?.length) await step("pond beds", () => carvePonds(hm, entry.ponds.filter((p) => p.ring.some(([x, z]) => x >= x0 - 5 && x <= x1 + 5 && z >= z0 - 5 && z <= z1 + 5))));
   const terrain = await step("terrain grid", () => terrainArrays(hm));
   await step("terrain simplify", async () => {

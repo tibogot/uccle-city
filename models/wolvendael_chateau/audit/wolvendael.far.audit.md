@@ -1,6 +1,6 @@
 # Mesh audit (before pack): wolvendael.far
 
-11,299 triangles, 7,880 welded vertices, 3,756 open edges, 722,894 rays, 3582 ms.
+11,299 triangles, 7,880 welded vertices, 3,756 open edges, 722,894 rays, 5304 ms.
 
 **0 blocking**, 1700 warnings. Clean (no blocking item).
 
