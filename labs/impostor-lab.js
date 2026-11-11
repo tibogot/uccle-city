@@ -146,7 +146,7 @@ const S = {
   blend: "bary3", parallax: 1, pdo: true, alpha: "a2c-ramp", gain: 2, card: "octagon", noise: "object", far: "ground", lodBias: 0, colourDepth: "equal",
   start: 400, band: 30, end: 1500, endBand: 300, todayEnd: 1100,
   grid: 16, cell: 64, bakeLod: 2, bakeInfo: "", todayInfo: "",
-  path: "orbit", frames: 24, orbitDeg: 0.1, strafe: 0.12, dolly: 1.0, result: "—", gpu: "—", bench: "—",
+  path: "orbit", frames: 24, orbitDeg: 0.02, strafe: 0.12, dolly: 1.0, result: "—", gpu: "—", bench: "—",
   atlasOn: false, layer: 0, channel: "albedo", stats: "",
 };
 const view = K.makeView();
@@ -289,6 +289,7 @@ async function buildScene(id) {
     const mesh = (byBand || gr.dmin < 700) ? meshField(placements) : null;
     if (mesh) scene.add(mesh.holder);
     const today = todayField(placements, variants, todayMat);
+    today.mesh.traverse((o) => { o.frustumCulled = false; });   // (the city gives it the tile's sphere instead)
     scene.add(today.mesh);
     const band = byBand ? gi : 0;
     placements.forEach((p, i) => kitPlacements.push({ x: p[0], y: p[2] - 0.25, z: p[1], yaw: p[3], scale: p[4], variant: variants[i], band }));
@@ -440,7 +441,7 @@ async function meterAB(path = S.path, modes = ["mesh", "today", "kit"]) {
   return out;
 }
 const kitSettings = () => ({ blend: S.blend, parallax: S.parallax, pdo: S.pdo, alpha: S.alpha, gain: S.gain, card: S.card, noise: S.noise, far: S.far, lodBias: S.lodBias, grid: S.grid, cell: S.cell, bakeLod: S.bakeLod, post: S.post });
-function show(url, caption = "") { $ov.style.display = "block"; $ov.querySelector("img").src = url; $ov.querySelector("div").textContent = caption; }
+function show(url, caption = "") { lastShown = url; $ov.style.display = "block"; $ov.querySelector("img").src = url; $ov.querySelector("div").textContent = caption; }
 $ov.onclick = () => { $ov.style.display = "none"; };
 async function stackURLs(urls, caption) {
   const bms = [];
@@ -600,7 +601,10 @@ fp.add({ go: () => bench() }, "go").name("GPU bench: none / mesh / today / kit")
 fp.add(S, "bench").name("result").listen();
 async function stackHeat(h) { return stackURLs(Object.values(h), "heat maps: " + Object.keys(h).join(" / ") + " (yellow = blinking, red = |d2|, blue tint = mask)"); }
 
-window.lab = { renderer, scene, camera, controls, S, H, IMP, U, view, shared, buildScene, applyMode, meter, meterAB, bench, sideBySide, stripSet, stackURLs, show, bakeKit, buildKitMats, renderFrame, get atlas() { return atlas; }, get world() { return world; }, todayBake, gpu, poseFor, startPath, endPath };
+/** an object URL -> data URL (to save an image from the console / devtools) */
+const dataURL = (url) => fetch(url).then((r) => r.blob()).then((b) => new Promise((res) => { const f = new FileReader(); f.onload = () => res(f.result); f.readAsDataURL(b); }));
+let lastShown = null;
+window.lab = { dataURL, get lastShown() { return lastShown; }, renderer, scene, camera, controls, S, H, IMP, U, view, shared, buildScene, applyMode, meter, meterAB, bench, sideBySide, stripSet, stackURLs, show, bakeKit, buildKitMats, renderFrame, get atlas() { return atlas; }, get world() { return world; }, todayBake, gpu, poseFor, startPath, endPath };
 
 await bakeKit();
 await buildScene(S.scene);
