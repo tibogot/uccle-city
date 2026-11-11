@@ -18,6 +18,7 @@ import { season, SEASON_NAMES } from "../viewer/foliage/seasons.js";
 import { FoliageMask, GroundHeights, GrassSystem, grassGroundColor, grassU, GRASS_LAYERS } from "../viewer/foliage/grass.js";
 import { MaskBuilder, frontGardens, hedgeRuns, scatterPlants, KIND, hash2 } from "../viewer/foliage/placement.js";
 import { noiseAt } from "../viewer/foliage/noise.js";
+import { buildHedges } from "../viewer/foliage/hedges.js";
 import { flickerTest } from "./flickerTest.js";
 import { frameStrip } from "./frameStrip.js";
 
@@ -47,8 +48,8 @@ if (SCENE === "street") {
   const [terr, tbuf, surf, bmeta, bbin, feats] = await Promise.all([get("terrain.json").then((r) => r.json()), get("terrain.u16").then((r) => r.arrayBuffer()),
     get("surfaces.json").then((r) => r.json()), get("buildings.json").then((r) => r.json()), get("buildings.bin").then((r) => r.arrayBuffer()), get("features.json").then((r) => r.json())]);
   const ortho = await createImageBitmap(await get("ortho.jpg").then((r) => r.blob()));
-  // the terraced streets west of the cemetery (Rue ... / Avenue ... around x -1330, z 1640): 240 m square
-  region = { x0: -1450, z0: 1520, size: 240 };
+  // the villa streets east of the railway (detached houses with front gardens, hedges on the street line): 240 m square
+  region = { x0: -1240, z0: 1660, size: 240 };
   const raw = new Uint16Array(tbuf), n = region.size + 1, H = new Float32Array(n * n);
   for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
     const c = Math.round(region.x0 + i - terr.x0), r = Math.round(region.z0 + j - terr.z0);
@@ -121,16 +122,18 @@ if (tileData) {
 // ------------------------------------------------------------------------------------------------ views
 const G = (x, z, dy = 1.65) => new THREE.Vector3(x, heights.get(x, z) + dy, z);
 const VIEWS = SCENE === "street" ? {
-  "street level": [G(-1338, 1606), G(-1326, 1630, 0.6)],
-  "front gardens close": [G(-1352, 1600), G(-1344, 1612, 0.3)],
-  "down the street": [G(-1370, 1570), G(-1320, 1660, 0.5)],
-  "from the sky (300 m)": [G(-1330, 1500, 300), G(-1330, 1640, 0)],
-  "first floor window": [G(-1338, 1606, 6), G(-1326, 1628, 0.2)],
+  "street level": [G(-1056, 1735), G(-1050, 1770, 0.6)],
+  "front gardens close": [G(-1057, 1752), G(-1066, 1757, 0.3)],
+  "down the street": [G(-1053, 1695), G(-1060, 1800, 0.8)],
+  "from the sky (300 m)": [G(-1090, 1640, 300), G(-1090, 1780, 0)],
+  "first floor window": [G(-1070, 1772, 6), G(-1050, 1760, 0.2)],
 } : {
   "lawn / verge / meadow": [G(0, 22), G(0, 0, 0.3)],
   "meadow close": [G(16, 8, 1.2), G(16, -2, 0)],
   "lawn close": [G(-12, 6, 1.0), G(-12, -3, 0)],
   "overview": [G(-30, 34, 22), G(0, 0, 0)],
+  "hedges": [G(-4, -13), G(1, -21, 0.9)],
+  "box edging and bed": [G(-8, 10, 1.4), G(-12, 15.5, 0.2)],
 };
 function goView(name) { const v = VIEWS[name]; if (!v) return; camera.position.copy(v[0]); controls.target.copy(v[1]); S.view = name; }
 
@@ -192,6 +195,18 @@ function applyShow() {
   extras.visible = !forcedOff;
 }
 const extras = new THREE.Group(); scene.add(extras);
+// ------------------------------------------------------------------------------------------------ hedges
+const densify = (pts, step = 0.5) => { const o = []; for (let i = 0; i < pts.length - 1; i++) { const [a, b] = [pts[i], pts[i + 1]], d = Math.hypot(b[0] - a[0], b[1] - a[1]); for (let t = 0; t < d; t += step) o.push([a[0] + (b[0] - a[0]) * t / d, a[1] + (b[1] - a[1]) * t / d]); } o.push(pts[pts.length - 1]); return o; };
+if (SCENE === "garden") hedges.push(
+  { points: densify([[-20, -21], [-6, -21]]), species: "privet", height: 1.6, width: 0.7 },
+  { points: densify([[-3, -21], [3, -20.2], [8, -21.5]]), species: "beech", height: 1.8, width: 0.75 },
+  { points: densify([[10, -21], [22, -21]]), species: "hornbeam", height: 1.4, width: 0.65 },
+  { points: densify([[23, -18], [23, -3]]), species: "laurel", height: 2.0, width: 1.0 },
+  { points: densify([[-20, 13.2], [-4, 13.2]]), species: "box", height: 0.45, width: 0.35 },
+  { points: densify([[-20, 17.8], [-4, 17.8]]), species: "box", height: 0.55, width: 0.4 });
+const hedgeSet = buildHedges(hedges, (x, z) => heights.get(x, z));
+extras.add(hedgeSet.group);
+log.push(`hedges: ${hedgeSet.stats.metres.toFixed(0)} m, ${hedgeSet.stats.tris.toLocaleString()} tris, ${hedgeSet.stats.cards.toLocaleString()} leaf cards, ${hedgeSet.stats.draws} draws`);
 
 let last = performance.now(), frames = 0, fpsAcc = 0, fpsN = 0, fps = 0, cpuMs = 0;
 function frame(dt) {
