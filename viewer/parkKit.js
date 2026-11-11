@@ -23,7 +23,7 @@
 // glitter far away).
 import * as THREE from "three/webgpu";
 import {
-  attribute, uv, texture, normalWorld, positionWorld, positionView, normalView, positionLocal, vec2, vec3, float, fract, mix, smoothstep, clamp, abs, dot, sin, floor,
+  attribute, uv, texture, normalWorld, positionWorld, positionView, normalView, cameraViewMatrix, vec4, positionLocal, vec2, vec3, float, fract, mix, smoothstep, clamp, abs, dot, sin, floor,
   fwidth, max, min, length, Fn, select, instancedBufferAttribute, uniform,
 } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -32,7 +32,7 @@ import { ditherNoise, SMOOTH } from "./lodFade.js";
 
 export const KITS = ["rockkit", "playgroundkit"];
 /** live look controls (uniforms) */
-export const kitLook = { ao: uniform(1.0), aoDirect: uniform(0.5), moss: uniform(1.0), normal: uniform(1.0), normalY: uniform(-1.0), bump: uniform(1.0) };
+export const kitLook = { ao: uniform(1.0), aoDirect: uniform(0.5), moss: uniform(1.0), normal: uniform(1.0), normalY: uniform(-1.0), bump: uniform(1.0), detailMode: uniform(1) };
 
 // ------------------------------------------------------------------------------------------------ loading
 const cache = new Map();
@@ -120,6 +120,16 @@ function withAO(m, aoTex, vertexAo, slot, nrmTex = null) {
         N.assign(T.mul(k).mul(n.x).add(B.mul(k).mul(n.y)).add(N.mul(n.z)).normalize());
       }
       const q = planar();
+      // (a) CC0 scanned DETAIL (Poly Haven "rock_surface" normal map, 1.6 m tile, planar-projected: no colour used)
+      //     or (b) the procedural noise bump; kitLook.detailMode picks (1 = scan, 0 = noise)
+      if (DETAIL_MODE === "scan") {
+        const an = abs(normalWorld);
+        const top = an.y.greaterThan(max(an.x, an.z));
+        const tW = select(top, vec3(1, 0, 0), select(an.x.greaterThan(an.z), vec3(0, 0, 1), vec3(1, 0, 0)));
+        const bW = select(top, vec3(0, 0, 1), vec3(0, 1, 0));
+        const dn = texture(detailTex(), q.div(1.6)).xy.mul(2).sub(1).mul(kitLook.bump).mul(0.85);
+        return N.add(cameraViewMatrix.mul(vec4(tW.mul(dn.x).add(bW.mul(dn.y)), 0)).xyz).normalize();
+      }
       const hgt = texture(noise, q.div(2.0)).b.mul(0.0035).add(texture(noise, q.div(0.9)).b.mul(0.0025)).mul(kitLook.bump);
       const dpx = positionView.dFdx(), dpy = positionView.dFdy();
       const r1 = dpy.cross(N), r2 = N.cross(dpx), det2 = dot(dpx, r1);
@@ -157,7 +167,16 @@ function withAO(m, aoTex, vertexAo, slot, nrmTex = null) {
 // so far away it averages out by itself (no sparkle) and a pixel costs 1-2 texture reads instead of 3D noise.
 const lin = (r, g, b) => new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace);
 const cv = (c) => vec3(c.r, c.g, c.b);
-let NOISE = null;
+let NOISE = null, DETAIL = null;
+/** close-up rock detail: "scan" = the CC0 scanned normal map (default), "noise" = the procedural bump (?detail=noise) */
+const DETAIL_MODE = new URLSearchParams(location.search).get("detail") === "noise" ? "noise" : "scan";
+/** the CC0 scanned rock detail normal map (Poly Haven "rock_surface", CC0; CREDITS.md) */
+function detailTex() {
+  if (DETAIL) return DETAIL;
+  DETAIL = new THREE.TextureLoader().load(new URL("../models/parkkit/detail_rock_surface_nor_1k.jpg", import.meta.url).href);
+  DETAIL.wrapS = DETAIL.wrapT = THREE.RepeatWrapping; DETAIL.colorSpace = THREE.NoColorSpace; DETAIL.anisotropy = 4;
+  return DETAIL;
+}
 function noiseTexture() {
   if (NOISE) return NOISE;
   const S = 256, d = new Uint8Array(S * S * 4);

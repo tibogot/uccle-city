@@ -13,3 +13,4 @@ docs/townhall/side_*
 models/townhall/townhall_lod1_bake.bin
 models/parkkit/*.raw.glb
 models/parkkit/previews/
+models/parkkit/cc0_test/

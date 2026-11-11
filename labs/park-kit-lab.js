@@ -50,9 +50,21 @@ const loadMs = performance.now() - t0;
 const fields = { rock: new KitField(rocks, { shadowProxy: qp.get("proxy") !== "0" }), play: new KitField(play) };
 // round 3: the measured mound (DTM) + plants
 const site = await loadSauvagereSite();
-const terrain = siteTerrain(site, new THREE.MeshStandardNodeMaterial({ color: 0x6a4e36, roughness: 1 }));
+// the mound's ground: soil on the gentle parts, a ROCK SKIN on the steep face (between the pieces it reads as rockwork,
+// not soil: cheap coverage), moss on the gentle top
+const terrainMat = new THREE.MeshStandardNodeMaterial({ roughness: 0.95 });
+{
+  const { texture: tx, normalWorld: nW, positionWorld: pW, mix: mx, smoothstep: ss, vec3: v3, float: fl } = await import("three/tsl");
+  const nt = rocks.aoTex;   // (placeholder to keep the import list short)
+  const noise = new THREE.TextureLoader().load("../models/parkkit/detail_rock_surface_nor_1k.jpg"); noise.wrapS = noise.wrapT = THREE.RepeatWrapping;
+  const n = tx(noise, pW.xz.mul(0.35)).g;
+  const steep = ss(0.86, 0.6, nW.y);
+  const soil = v3(0.085, 0.06, 0.04), rockc = v3(0.15, 0.135, 0.115).mul(fl(0.7).add(n.mul(0.6))), moss = v3(0.035, 0.05, 0.018);   // (linear)
+  terrainMat.colorNode = mx(mx(soil, moss, ss(0.4, 0.7, n).mul(ss(1.0, 3.0, pW.y))), rockc, steep);
+}
+const terrain = siteTerrain(site, terrainMat);
 terrain.visible = false; scene.add(terrain);
-const plants = new PlantField({ near: 15, far: 21 });
+const plants = new PlantField({ near: 12, far: 17 });
 scene.add(plants.group);
 lighting.sun?.shadow?.camera?.layers.enable(SHADOW_LAYER);
 for (const f of Object.values(fields)) scene.add(f.group);
@@ -74,7 +86,7 @@ function build(sc) {
   if (sc === "sample cliff (40 pieces)") sampleCliff(fields.rock, { n: 40 });
   if (sc === "Sauvagère cliff (o01)" || sc === "cliff + playground") sampleSauvagereCliff(fields.rock);
   plants.set("fern", []); plants.set("grass", []); plants.set("ivy", []); plants.commit();
-  if (sc === "Sauvagère mound (DTM, o01)") placeSauvagereCliff(fields.rock, site, plants);
+  if (sc === "Sauvagère mound (DTM, o01)") placeSauvagereCliff(fields.rock, site, plants, { scaleMul: S.mscale, density: S.mdensity });
   water.visible = sc.startsWith("Sauvagère");
   terrain.visible = sc.startsWith("Sauvagère mound");
   if (sc === "playground gallery") gallery(fields.play, play, new THREE.Vector3(80, 0, 0));
@@ -82,7 +94,7 @@ function build(sc) {
   for (const f of Object.values(fields)) f.commit();
   S.instances = `${fields.rock.instances} rock + ${fields.play.instances} playground instances`;
 }
-const S = { canopy: qp.get("canopy") !== "0", scene: qp.get("scene") && SCENES.includes(qp.get("scene")) ? qp.get("scene") : SCENES[0], lod: "auto", rangeScale: 1, wire: false, post: true,
+const S = { mscale: +(qp.get("mscale") ?? 0.9), mdensity: +(qp.get("mdensity") ?? 1), canopy: qp.get("canopy") !== "0", scene: qp.get("scene") && SCENES.includes(qp.get("scene")) ? qp.get("scene") : SCENES[0], lod: "auto", rangeScale: 1, wire: false, post: true,
   time: preset, surface: "surface_rubber", instances: "", stats: "", bench: "(not run)", lodInfo: "" };
 build(S.scene);
 
@@ -192,7 +204,7 @@ const canopyLook = () => {
 };
 const fm = ui.addFolder("Look");
 fm.add(S, "canopy").name("canopy shade (o01)").onChange((v) => { canopy.visible = v; if (!v) { lighting.apply(S.time); scene.environmentIntensity = 1; } });
-fm.add(kitLook.bump, "value", 0, 2, 0.05).name("rough concrete bump");
+fm.add(kitLook.bump, "value", 0, 2, 0.05).name("rough concrete detail");
 fm.add(S, "time", Object.keys(PRESETS)).name("time").onChange((v) => { lighting.apply(v); pipe?.look(v); });
 fm.add(S, "post").name("post chain");
 fm.add(kitLook.ao, "value", 0, 1, 0.05).name("AO strength");
@@ -204,6 +216,34 @@ const fb = ui.addFolder("GPU");
 fb.add({ go: () => bench() }, "go").name("benchmark this view (kit vs none)");
 fb.add(S, "bench").name("result").listen();
 fb.add(S, "stats").name("now").listen();
+
+// ------------------------------------------------------------------------------------------------ option (b) test: a CC0 scanned cliff
+// (Poly Haven "namaqualand_cliff_02", CC0, 364k tris, 20 x 6.6 x 7.2 m; models/parkkit/cc0_test/, git-ignored): simplified HERE
+// with meshoptimizer for the test only (a real use would pack it at build time like the kits), grey-toned with its own
+// normal map and AO, placed on the mound's left part. lab.testScan({ tris, x, z, scale, yaw }) -> { tris, ms }
+let scanMesh = null;
+async function testScan({ tris = 20000, x = 7.5, z = 1.5, y = -0.6, scale = 0.42, yaw = Math.PI, remove = false } = {}) {
+  if (scanMesh) { scene.remove(scanMesh); scanMesh = null; }
+  if (remove) return null;
+  const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
+  const { MeshoptSimplifier } = await import("meshoptimizer/simplifier");
+  await MeshoptSimplifier.ready;
+  const g = await new GLTFLoader().loadAsync("../models/parkkit/cc0_test/namaqualand_cliff_02_1k.gltf");
+  let src = null; g.scene.traverse((o) => { if (o.isMesh && !src) src = o; });
+  const geo = src.geometry, P = geo.attributes.position.array, I = new Uint32Array(geo.index.array);
+  const [J] = MeshoptSimplifier.simplify(I, new Float32Array(P), 3, Math.min(I.length, tris * 3), 0.05, []);
+  const geo2 = geo.clone(); geo2.setIndex(new THREE.BufferAttribute(new Uint32Array(J), 1));
+  const tl = new THREE.TextureLoader(), base = "../models/parkkit/cc0_test/textures/namaqualand_cliff_02_";
+  const [nrm, arm] = await Promise.all([tl.loadAsync(base + "nor_gl_1k.jpg"), tl.loadAsync(base + "arm_1k.jpg")]);
+  for (const t of [nrm, arm]) { t.flipY = false; t.colorSpace = THREE.NoColorSpace; }
+  const m = new THREE.MeshStandardMaterial({ color: new THREE.Color().setRGB(0.58, 0.555, 0.51, THREE.SRGBColorSpace), normalMap: nrm, aoMap: arm, roughness: 0.9 });
+  scanMesh = new THREE.Mesh(geo2, m);
+  const bb = new THREE.Box3().setFromBufferAttribute(geo.attributes.position);
+  scanMesh.scale.setScalar(scale); scanMesh.rotation.y = yaw; scanMesh.position.set(x, y - bb.min.y * scale, z);
+  scanMesh.castShadow = scanMesh.receiveShadow = true;
+  scene.add(scanMesh);
+  return { tris: J.length / 3, size: bb.getSize(new THREE.Vector3()).multiplyScalar(scale).toArray().map((v) => +v.toFixed(2)) };
+}
 
 // ------------------------------------------------------------------------------------------------ render
 await lighting.attach(camera);
@@ -247,7 +287,7 @@ async function bench(cycles = 5) {
   S.bench = `${(on - off).toFixed(2)} ms (with ${on.toFixed(2)}, without ${off.toFixed(2)})`;
   return { view: S.view, scene: S.scene, on, off, delta: on - off, n: acc.on.length };
 }
-window.lab = { plants, site, terrain, canopy, renderer, scene, camera, controls, fields, rocks, play, goView, dolly, bench, gpu, S, VIEWS, build, warm, showPage, kitLook, loadMs };
+window.lab = { testScan, plants, site, terrain, canopy, renderer, scene, camera, controls, fields, rocks, play, goView, dolly, bench, gpu, S, VIEWS, build, warm, showPage, kitLook, loadMs };
 
 let last = performance.now(), frames = 0, fpsAcc = 0, fpsN = 0, fps = 0;
 renderer.setAnimationLoop(() => {

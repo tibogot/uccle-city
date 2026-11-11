@@ -43,6 +43,13 @@ the check dates are in `pipeline/sources.json`.
   Its data can lag: the extract used for G4 has `timestamp_osm_base`
   2026-06-01T08:52:28Z, five months before the fetch.
 
+## Textures (CC0)
+
+- `models/parkkit/detail_rock_surface_nor_1k.jpg`: the normal map of **"Rock Surface"** by Poly Haven
+  (https://polyhaven.com/a/rock_surface), **CC0 1.0**. Used as a close-up DETAIL normal (rough concrete) on the park
+  rock kit (viewer/parkKit.js; no colour taken from it). Source files and the tested-but-not-shipped scan
+  ("Namaqualand Cliff 02", Dario Barresi / Rico Cilliers, CC0) are listed in data/raw/cc0/polyhaven/SOURCES.md.
+
 ## Code and libraries
 
 | Component | Licence | Notes |

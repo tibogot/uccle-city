@@ -39,7 +39,7 @@ export function siteTerrain(site, material) {
   return m;
 }
 
-export function placeSauvagereCliff(field, site, plants = null, { seed = 7, density = 1 } = {}) {
+export function placeSauvagereCliff(field, site, plants = null, { seed = 7, density = 1, scaleMul = 1 } = {}) {
   let s = seed;
   const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
   const U = (a, b) => a + (b - a) * rnd();
@@ -63,6 +63,7 @@ export function placeSauvagereCliff(field, site, plants = null, { seed = 7, dens
     // the pieces' front is +z: facing downhill means rotating +z onto the downhill vector
     e.set(U(-tilt, tilt), yaw, U(-tilt, tilt), "YXZ"); q.setFromEuler(e);
     pos.set(x + Math.sin(down) * push, y, z + Math.cos(down) * push);
+    scale *= scaleMul;
     sc.set(scale * U(0.9, 1.1), scale * U(0.9, 1.15), scale * U(0.9, 1.1));
     m.compose(pos, q, sc);
     field.add(name, m); placed.push({ name, matrix: m.clone() });
@@ -75,18 +76,18 @@ export function placeSauvagereCliff(field, site, plants = null, { seed = 7, dens
     let zw = -6; while (h(x, zw) < 0.15 && zw < 12) zw += 0.25;
     let zt = zw; while (zt < 14) { const [gx, gz] = grad(x, zt); if (Math.hypot(gx, gz) < 0.25 && h(x, zt) > 2.5) break; zt += 0.25; }
     const top = h(x, zt);
-    const w = right ? U(1.7, 2.6) : U(2.0, 3.0);
+    const w = right ? U(2.0, 2.9) : U(2.3, 3.3);
     // 1) the water line: ledges, the grotto (left of centre, o01), dark slabs
     if (Math.abs(x - 3.5) < 1.6 && !placed.some((p) => p.name === "rk2_grotto")) put("rk2_grotto", x, zw + 0.6, { scale: 1.05, sink: 0.15, tilt: T(4), yawJitter: 0.15 });
     else put(pick(["rk2_foot", "rk2_foot", "nat_slab", "rk3_block_s"]), x + U(-0.4, 0.4), zw - U(0.2, 0.6), { scale: U(0.8, 1.15), sink: 0.25, tilt: T(10) });
     // 2) up the face, rows every ~1.2-1.8 m of height
-    for (let y = U(0.9, 1.4); y < top - 0.6; y += U(1.3, 1.9)) {
+    for (let y = U(1.0, 1.5); y < top - 0.6; y += U(1.6, 2.2)) {
       let z = zw; while (h(x, z) < y && z < zt) z += 0.2;
       const xx = x + U(-0.6, 0.6);
       if (Math.hypot(xx - ex[0], z - ex[1]) < exR && y > top - 1.2) continue;
       if (right) put(pick(["rk2_pillars_tall", "rk2_pillars_low", "rk2_pillar", "rk3_broken", "rk2_pillars_low"]), xx, z + 0.8, { scale: U(0.95, 1.3), sink: 0.6 + y * 0.15, tilt: T(6), push: rnd() < 0.3 ? U(0.2, 0.5) : 0, yawJitter: 0.25 });
       else if (farRight) put(pick(["rk3_block_s", "rk3_block", "nat_boulder"]), xx, z, { scale: U(0.7, 1.1), sink: 0.35, tilt: T(20) });
-      else put(pick(["rk3_block", "rk3_wedge", "rk2_slabs", "rk3_block_s", "rk3_broken", "rk3_block"]), xx, z + 0.4, { scale: U(1.0, 1.6), sink: 0.45, tilt: T(25), push: rnd() < 0.35 ? U(0.25, 0.6) : 0 });
+      else put(pick(["rk3_block", "rk3_wedge", "rk2_slabs", "rk3_block_s", "rk3_broken", "rk3_block"]), xx, z + 0.4, { scale: U(0.95, 1.45), sink: 0.45, tilt: T(25), push: rnd() < 0.35 ? U(0.25, 0.6) : 0 });
     }
     // 3) the upper edge: smaller blocks and broken tops (clear of the exedra)
     const xe = x + U(-0.5, 0.5);
