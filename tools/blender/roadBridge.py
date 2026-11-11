@@ -83,6 +83,12 @@ def road(x):
 GRADE = (B["road_ends"][1] - B["road_ends"][0]) / (XB - XA)
 
 
+def sw_drop(x):                                # the NE sidewalk's height factor: 1 on the bridge, 0 past its ends
+    return max(0.0, min(1.0, (XB - abs(x)) / 1.0))
+
+
+
+
 def to_local(x, z):
     """city (x, z) -> bridge (X, Y)"""
     dx, dz = x - B["centre"][0], z - B["centre"][1]
@@ -184,6 +190,7 @@ class Mesh:
 
 
 MASS, DET, COP, DECK, FOOT = Mesh("mass"), Mesh("details"), Mesh("coping"), Mesh("deck"), Mesh("foot")
+RING = Mesh("rings")              # the 12-20 mm proud arch rings: node "<name>_fine", drawn at LOD0 only
 
 
 # ------------------------------------------------------------------------------------------------ curves
@@ -299,8 +306,8 @@ for sg in (1, -1):
         MASS.poly([(xf, sg * face_y(xf, YU), FOUND), (xe, sg * face_y(xe, YU), FOUND), (xe, sg * face_y(xe, YU), zcb(xe)), (xf, sg * face_y(xf, YU), zcb(xf))], BR, (0, sg, 0))
         MASS.poly([(xe, sg * face_y(xe, YI), road(xe) - 0.03), (xe, sg * face_y(xe, YU), road(xe) - 0.03), (xe, sg * face_y(xe, YU), zcb(xe)), (xe, sg * face_y(xe, YI), zcb(xe))], BR, (sx, 0, 0))
     # (f) parapet inner face, fold to fold and along the wings (from the pavement to the coping bottom)
-    xs = [-XB, -FOLD] + [-FOLD + k * 2 * FOLD / 24 for k in range(1, 24)] + [FOLD, XB]
-    zb = lambda x: road(x) + (0.13 if sg > 0 else 0.10)        # NE sidewalk top / SW strip top at the wall
+    xs = [-XB, -XB + 1.0, -FOLD] + [-FOLD + k * 2 * FOLD / 24 for k in range(1, 24)] + [FOLD, XB - 1.0, XB]
+    zb = lambda x: road(x) + (0.13 * sw_drop(x) if sg > 0 else 0.10)        # NE sidewalk top / SW strip top at the wall
     A = [Vector((x, sg * face_y(x, YI), zb(x))) for x in xs]
     Bv = [Vector((x, sg * face_y(x, YI), zcb(x))) for x in xs]
     MASS.strip(A, Bv, BR, Vector((0, -sg, 0)))
@@ -337,14 +344,14 @@ for sx in (-1, 1):
 
 # ------------------------------------------------------------------------------------------------ the road deck
 KNE, KSW = B["kerb_ne"], B["kerb_sw"]
-XS = sorted(set([-XB - 0.6, -XB, -FOLD, FOLD, XB, XB + 0.6] + [-FOLD + k * 2 * FOLD / 16 for k in range(1, 16)]))
+XS = sorted(set([-XB - 0.6, -XB, -XB + 1.0, -FOLD, FOLD, XB - 1.0, XB, XB + 0.6] + [-FOLD + k * 2 * FOLD / 16 for k in range(1, 16)]))
 
 
 def rd(x):                                     # road heights carried 0.6 m past the ends, tucked 3 cm under the city's road
     return road(x) - (0.03 if abs(x) > XB + 1e-6 else 0.0)
 
 
-def deck_strip(y0, y1, dz0, dz1, mat):
+def deck_strip(y0, y1, dz0, dz1, mat, ramp=False):
     """a deck surface between y0 and y1 (clamped to the parapets' inner faces, flared beyond the fold); dz0 / dz1 = height
     over the road at y0 / y1"""
     for i in range(len(XS) - 1):
@@ -355,17 +362,19 @@ def deck_strip(y0, y1, dz0, dz1, mat):
             lo, hi = max(y0, -w), min(y1, w)
             q.append((x, lo, hi))
         (xa, la, ha), (xb, lb, hb) = q
-        DECK.poly([(xa, la, rd(xa) + dz0), (xb, lb, rd(xb) + dz0), (xb, hb, rd(xb) + dz1), (xa, ha, rd(xa) + dz1)], mat, Z)
+        fa, fb = (sw_drop(xa), sw_drop(xb)) if ramp else (1.0, 1.0)
+        DECK.poly([(xa, la, rd(xa) + dz0 * fa), (xb, lb, rd(xb) + dz0 * fb), (xb, hb, rd(xb) + dz1 * fb), (xa, ha, rd(xa) + dz1 * fa)], mat, Z)
 
 
 deck_strip(KSW, KNE, 0.0, 0.0, AS)                          # roadway
-deck_strip(KNE + 0.15, YI + 0.9, 0.13, 0.13, PV)                  # NE sidewalk (concrete slabs), out to the parapet
-deck_strip(KNE, KNE + 0.15, 0.13, 0.13, PV)                 # kerb top
+deck_strip(KNE + 0.15, YI + 0.9, 0.13, 0.13, PV, True)            # NE sidewalk (concrete slabs), out to the parapet
+deck_strip(KNE, KNE + 0.15, 0.13, 0.13, PV, True)           # kerb top
 deck_strip(-YI - 0.9, KSW, 0.10, 0.02, PV)                        # SW sloping concrete strip
 # kerb face (NE): vertical 0.13
 for i in range(len(XS) - 1):
     xa, xb = XS[i], XS[i + 1]
-    DECK.poly([(xa, KNE, rd(xa)), (xb, KNE, rd(xb)), (xb, KNE, rd(xb) + 0.13), (xa, KNE, rd(xa) + 0.13)], PV, (0, -1, 0))
+    if sw_drop(xa) + sw_drop(xb) > 0:
+        DECK.poly([(xa, KNE, rd(xa)), (xb, KNE, rd(xb)), (xb, KNE, rd(xb) + 0.13 * sw_drop(xb)), (xa, KNE, rd(xa) + 0.13 * sw_drop(xa))], PV, (0, -1, 0))
     DECK.poly([(xa, KSW, rd(xa)), (xb, KSW, rd(xb)), (xb, KSW, rd(xb) + 0.02), (xa, KSW, rd(xa) + 0.02)], PV, (0, 1, 0))
 
 # ------------------------------------------------------------------------------------------------ details: arch rings, consoles
@@ -391,11 +400,11 @@ for sg in (1, -1):
         Ii = [p + Vector((0, y0, 0)) for p in rin]; Io = [p + Vector((0, y0, 0)) for p in rout]
         uvi, uvo = polar_uv(o["cx"], o["spring"], pts, pts)
         uvi = [(0.0, v) for _, v in uvi]; uvo = [(B["ring"], v) for _, v in uvo]
-        DET.strip(Fi, Fo, BR, w, uvi, uvo)                                     # front (polar UV)
-        DET.strip(Ii, Fi, BR, [Vector((-nx, 0, -nz)) for nx, nz in [ell_normal(o["cx"], o["spring"], o["a"], o["rise"], (pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2) for i in range(len(pts) - 1)]], smooth=True)
-        DET.strip(Io, Fo, BR, [Vector((nx, 0, nz)) for nx, nz in [ell_normal(o["cx"], o["spring"], o["a"], o["rise"], (pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2) for i in range(len(pts) - 1)]], smooth=True)
+        RING.strip(Fi, Fo, BR, w, uvi, uvo)                                    # front (polar UV)
+        RING.strip(Ii, Fi, BR, [Vector((-nx, 0, -nz)) for nx, nz in [ell_normal(o["cx"], o["spring"], o["a"], o["rise"], (pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2) for i in range(len(pts) - 1)]], smooth=True)
+        RING.strip(Io, Fo, BR, [Vector((nx, 0, nz)) for nx, nz in [ell_normal(o["cx"], o["spring"], o["a"], o["rise"], (pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2) for i in range(len(pts) - 1)]], smooth=True)
         for k in (0, -1):                                                       # the band's ends at the springing
-            DET.poly([Ii[k], Io[k], Fo[k], Fi[k]], BR, (0, 0, -1))
+            RING.poly([Ii[k], Io[k], Fo[k], Fi[k]], BR, (0, 0, -1))
     # small arch rings on the upper face (rowlock, 12 mm proud), sheared like the arcade
     for pts, (cx, cz, R), x0, x1 in ARCS:
         lvl = [(x, z - zspring(x)) for x, z in pts]                         # back to the level arch
@@ -415,11 +424,11 @@ for sg in (1, -1):
         Ii = [p + Vector((0, y0, 0)) for p in rin]; Io = [p + Vector((0, y0, 0)) for p in rout]
         L = [0.0]
         for i in range(1, len(rin)): L.append(L[-1] + (rin[i] - rin[i - 1]).length)
-        DET.strip(Fi, Fo, BR, w, [(0.0, l) for l in L], [(AR["ring"], l) for l in L])
+        RING.strip(Fi, Fo, BR, w, [(0.0, l) for l in L], [(AR["ring"], l) for l in L])
         mids = [((lvl[i][0] + lvl[i + 1][0]) / 2, (lvl[i][1] + lvl[i + 1][1]) / 2) for i in range(len(lvl) - 1)]
-        DET.strip(Ii, Fi, BR, [Vector((cx - mx, 0, cz - mz)) for mx, mz in mids], smooth=True)
-        DET.strip(Io, Fo, BR, [Vector((mx - cx, 0, mz - cz)) for mx, mz in mids], smooth=True)
-        for k in (0, -1): DET.poly([Ii[k], Io[k], Fo[k], Fi[k]], BR, (0, 0, -1))
+        RING.strip(Ii, Fi, BR, [Vector((cx - mx, 0, cz - mz)) for mx, mz in mids], smooth=True)
+        RING.strip(Io, Fo, BR, [Vector((mx - cx, 0, mz - cz)) for mx, mz in mids], smooth=True)
+        for k in (0, -1): RING.poly([Ii[k], Io[k], Fo[k], Fi[k]], BR, (0, 0, -1))
     # consoles: a stone slab under each joint of the arcade and a smaller block with a rounded nose under it; built level
     # about the console centre, then sheared by the grade (their tops lie under the arcade's straight run)
     for x in CONSOLES:
@@ -499,13 +508,14 @@ for sg in (1, -1):
     xs = [-XB]
     n_main = max(1, round(2 * FOLD / B["coping_block"]))
     wing = [-XB, -FOLD]
-    blocks = [-XB, -XB + (XB - FOLD) / 2, -FOLD] + [-FOLD + k * 2 * FOLD / n_main for k in range(1, n_main)] + [FOLD, FOLD + (XB - FOLD) / 2, XB]
+    XE = XB - 0.58                                         # the end pier's inner face
+    blocks = [-XE, -(XE + FOLD) / 2, -FOLD] + [-FOLD + k * 2 * FOLD / n_main for k in range(1, n_main)] + [FOLD, (XE + FOLD) / 2, XE]
     coping_run(sg, blocks)
 
 # end piers: a square brick pier at each wing end with a stone cap (estimated)
 for sx in (-1, 1):
     for sg in (1, -1):
-        x = sx * (XB - 0.30)
+        x = sx * (XB - 0.27)                                  # its outer face 4 cm past the end cap (never coplanar)
         yc = sg * (face_y(x, YI) + face_y(x, YU)) / 2
         zt = zcb(x) + CH + 0.18
         DET.box((x, yc, (FOUND + zt) / 2), (0.62, 0.62, zt - FOUND), BR)
@@ -700,7 +710,8 @@ def site_ground(margin=30.0):
             X = -R + i * step; Yb = -R + j * step
             wx, wz = to_city(X, Yb)
             h = H(wx, wz) - FLOOR
-            # under the deck the DTM has the cutting (no deck in it here); keep it under the vaults' feet
+            if XA - 0.6 <= X <= XB + 0.6 and abs(Yb) <= face_y(X, YU) + 0.2:      # as the city's carve: under the deck
+                h = min(h, road(X) - 0.3)
             verts.append((X, Yb, h))
     for j in range(n):
         for i in range(n):
@@ -750,7 +761,7 @@ for bx, by in BENCHES:
     for ex in (-0.7, 0.7):
         SUP.box((bx + ex, by, z0 + 0.195), (0.05, 0.38, 0.41), PG)
 
-parts = [make(MASS, 0.02, 0), make(DET, 0.012, 0), make(COP, 0.006, 0), make(DECK, 0.0, 0), make(FOOT, 0.0, 1), make(SUP, 0.0, 1)]
+parts = [make(MASS, 0.02, 0), make(DET, 0.012, 0), make(RING, 0.006, 2), make(COP, 0.006, 0), make(DECK, 0.0, 0), make(FOOT, 0.0, 1), make(SUP, 0.0, 1)]
 for oo in scn.objects: oo.select_set(False)
 for o in parts: o.select_set(True)
 bpy.context.view_layer.objects.active = parts[0]
@@ -821,17 +832,18 @@ for m in mats: m.node_tree.nodes.remove(m.node_tree.nodes["AO"])
 
 # ------------------------------------------------------------------------------------------------ split (bridge / footbridge) and export
 foot = obj.copy(); foot.data = obj.data.copy(); foot.name = NAME + "_foot"; foot.data.name = NAME + "_foot"
-scn.collection.objects.link(foot)
-for o, keep in ((obj, 0), (foot, 1)):
+fine = obj.copy(); fine.data = obj.data.copy(); fine.name = NAME + "_fine"; fine.data.name = NAME + "_fine"
+scn.collection.objects.link(foot); scn.collection.objects.link(fine)
+for o, keep in ((obj, 0), (foot, 1), (fine, 2)):
     bm = bmesh.new(); bm.from_mesh(o.data)
     lay = bm.faces.layers.int.get("part")
     bmesh.ops.delete(bm, geom=[f for f in bm.faces if f[lay] != keep], context="FACES")
     bm.to_mesh(o.data); bm.free()
     o.data.attributes.remove(o.data.attributes["part"])
-tri_bridge, tri_foot = len(obj.data.polygons), len(foot.data.polygons)
+tri_bridge, tri_foot = len(obj.data.polygons) + len(fine.data.polygons), len(foot.data.polygons)
 ground.hide_set(True)
 for oo in scn.objects: oo.select_set(False)
-obj.select_set(True); foot.select_set(True); bpy.context.view_layer.objects.active = obj
+obj.select_set(True); foot.select_set(True); fine.select_set(True); bpy.context.view_layer.objects.active = obj
 glb = os.path.join(OUT, NAME + ".glb")
 bpy.ops.export_scene.gltf(filepath=glb, export_format="GLB", use_selection=True, export_yup=True, export_apply=True,
                           export_texcoords=True, export_normals=True, export_materials="EXPORT", export_image_format="NONE",
@@ -844,7 +856,7 @@ info = {
     "asset": f"road bridge '{NAME}' over the railway (tools/blender/roadBridge.py)", "kind": "road_over_rail",
     "urbis": B["urbis"], "line": B["line"], "road": B["road"],
     "triangles": tri_bridge + tri_foot, "triangles_bridge": tri_bridge, "triangles_foot": tri_foot, "materials": MATS,
-    "nodes": {"bridge": NAME, "foot": NAME + "_foot"},
+    "nodes": {"bridge": NAME, "fine": NAME + "_fine", "foot": NAME + "_foot"},
     "frame": "glTF Y up; +x = along the road (NW->SE), -z = Blender +Y (NE); origin = UrbIS polygon centroid at the cutting floor",
     "placement": {"city_local_position": [B["centre"][0], FLOOR, B["centre"][1]], "rotation_y_rad": th},
     "deck": {"length": XB - XA, "width": 2 * (YU + 0.06), "x0": XA, "x1": XB,

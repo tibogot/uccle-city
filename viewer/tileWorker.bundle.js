@@ -6902,8 +6902,18 @@ function carveGrid(doc, Y, hdr, bounds, heroes = []) {
     const c0 = Math.max(0, Math.floor((bx.x0 - 8 - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((bx.x1 + 8 - x0) / step));
     const r0 = Math.max(0, Math.floor((bx.z0 - 8 - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((bx.z1 + 8 - z0) / step));
     const Wh = h.deck.width / 2;
+    const dk = h.kind === "road_over_rail" ? h.deck : null;
+    const dRoad = dk && ((X) => {
+      const xc = Math.max(dk.x0, Math.min(dk.x1, X));
+      return dk.road_ends[0] + (xc - dk.x0) * (dk.road_ends[1] - dk.road_ends[0]) / (dk.x1 - dk.x0);
+    });
+    const dHalf = dk && ((X) => dk.parapet_inner + 0.45 + dk.flare * Math.max(0, (Math.abs(X) - dk.fold) / (dk.x1 - dk.fold)));
     for (let rr = r0; rr <= r1; rr++) for (let c = c0; c <= c1; c++) {
       const [X, Yb] = h.toLocal(x0 + c * step, z0 + rr * step);
+      if (dk && X >= dk.x0 && X <= dk.x1 && Math.abs(Yb) <= dHalf(X)) {
+        const k = rr * cols + c, t = dRoad(X) - 0.12;
+        if (Y[k] > t) set(k, t);
+      }
       const out = Math.max(0, Math.abs(Yb) - Wh);
       if (out > 5) continue;
       for (const o of h.openings) {

@@ -25,6 +25,16 @@ export const BRIDGE_LODS = [
   { ratio: 0.06, until: Infinity, prune: true },
 ];
 export const BRIDGES = ["stjob", "calevoet", "verrewinkel"];
+/** Road bridges (roadBridge.py), per level: which slots are dropped (thin railings, benches, glass), which are
+ *  simplified by meshoptimizer with an ERROR bound in metres (not a ratio: the planar walls stay planar, the proud details
+ *  never collapse into them) and then FLAT-shaded (a simplified facet keeps no smooth corner normal from LOD0); the arch
+ *  rings (node "<name>_fine", 12-20 mm proud) are LOD0 only. tools/verrewinkel_lods.mjs runs this same recipe through the
+ *  mesh checker. */
+export const ROAD_BRIDGE_LODS = [
+  {},
+  { drop: ["painted_metal_grey", "wood_frame_dark"], simplify: {} },                      // an exact subset of LOD0: 0 checker items
+  { drop: ["painted_metal_grey", "wood_frame_dark", "glass_window"], simplify: { "*": 0.06 }, prune: true },
+];
 const cache = new Map();
 
 export function loadBridge(name) {
@@ -40,10 +50,23 @@ export function loadBridge(name) {
     gltf.scene.traverse((o) => {
       if (!o.isMesh) return;
       const node = o.parent && o.parent !== gltf.scene && !o.parent.isMesh ? o.parent.name : o.name;
-      prims.push({ geometry: o.geometry, slot: o.material.name, foot: /_foot$/.test(node) });
+      prims.push({ geometry: o.geometry, slot: o.material.name, foot: /_foot$/.test(node), fine: /_fine$/.test(node) });
     });
     const tris0 = prims.reduce((s, p) => s + p.geometry.index.count / 3, 0);
-    const lods = BRIDGE_LODS.map(({ ratio, prune }) => {
+    const road = info.kind === "road_over_rail";
+    const lods = road ? ROAD_BRIDGE_LODS.map(({ drop, simplify, prune }, k) => {
+      if (!k) return { meshes: prims, tris: tris0 };
+      const meshes = prims.filter((q) => !q.fine && !drop.includes(q.slot)).map(({ geometry: g, slot, foot }) => {
+        const err = simplify[slot] ?? simplify["*"];
+        if (err == null) return { geometry: g, slot, foot };
+        let s = new THREE.BufferGeometry();
+        for (const a of Object.keys(g.attributes)) s.setAttribute(a, g.attributes[a]);
+        s.setIndex(new THREE.BufferAttribute(simplifyWelded(g, 3, prune, err), 1));
+        s = s.toNonIndexed(); s.deleteAttribute("normal"); s.computeVertexNormals();
+        return { geometry: s, slot, foot };
+      });
+      return { meshes, tris: 0 };
+    }) : BRIDGE_LODS.map(({ ratio, prune }) => {
       if (ratio >= 1) return { meshes: prims, tris: tris0 };
       const meshes = prims.map(({ geometry: g, slot, foot }) => {
         const want = Math.min(g.index.count, Math.max(12, Math.floor((g.index.count / 3) * ratio)) * 3);
@@ -52,9 +75,10 @@ export function loadBridge(name) {
         s.setIndex(want >= g.index.count ? g.index : new THREE.BufferAttribute(simplifyWelded(g, want, prune), 1));
         return { geometry: s, slot, foot };
       });
-      return { meshes, tris: meshes.reduce((s, m) => s + m.geometry.index.count / 3, 0) };
+      return { meshes, tris: 0 };
     });
     for (const l of lods) for (const m of l.meshes) { m.geometry.computeBoundingSphere(); m.geometry.userData.shared = true; }
+    for (const l of lods) l.tris = l.meshes.reduce((s, m) => s + (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3, 0);
     const materials = {};
     for (const p of prims) materials[p.slot] ??= await materialFor(p.slot, aoTex);
     const pl = info.placement;
@@ -284,7 +308,7 @@ export async function materialFor(slot, aoTex) {
     m.colorNode = mix(color(0x5b3b24), color(0x7a5434), smoothstep(0.2, 0.8, g));
     m.roughnessNode = float(0.75);
   } else if (slot === "painted_metal_white") {
-    m.colorNode = mix(color(0xd9d8d2), color(0x8b5a3a), smoothstep(0.75, 0.95, noise2D(p.mul(3.0))).mul(0.4));
+    m.colorNode = mix(color(0xb9b9b4), color(0x8b5a3a), smoothstep(0.75, 0.95, noise2D(p.mul(3.0))).mul(0.25));
     m.roughnessNode = float(0.55); m.metalnessNode = float(0.2);
   } else {      // concrete
     m.colorNode = mix(color(0x87837c), color(0x9c978e), noise2D(p.mul(0.9)));
@@ -297,7 +321,7 @@ export async function materialFor(slot, aoTex) {
 
 /** meshoptimizer on a position-welded index, each new corner given back the original vertex whose normal best fits
  *  the new triangle (UVs, normals stay right on the faces that survive). Prune drops small loose parts. */
-function simplifyWelded(g, want, prune) {
+function simplifyWelded(g, want, prune, error = 2.0) {
   const P = g.attributes.position.array, Nn = g.attributes.normal.array, I = g.index.array;
   const n = P.length / 3, canon = new Uint32Array(n), map = new Map(), cpos = [], members = [];
   for (let i = 0; i < n; i++) {
@@ -308,7 +332,8 @@ function simplifyWelded(g, want, prune) {
   }
   const ci = new Uint32Array(I.length);
   for (let i = 0; i < I.length; i++) ci[i] = canon[I[i]];
-  const [out] = MeshoptSimplifier.simplify(ci, new Float32Array(cpos), 3, want, 2.0, prune ? ["ErrorAbsolute", "Prune"] : ["ErrorAbsolute"]);
+  const flags = ["ErrorAbsolute"]; if (prune) flags.push("Prune");
+  const [out] = MeshoptSimplifier.simplify(ci, new Float32Array(cpos), 3, want, error, flags);
   const res = new Uint32Array(out.length), C = cpos;
   for (let t = 0; t < out.length; t += 3) {
     const a = out[t], b = out[t + 1], c = out[t + 2];

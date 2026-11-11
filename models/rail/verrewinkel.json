@@ -4,8 +4,8 @@
  "urbis": "ROB 879",
  "line": "L26",
  "road": "Rue de Verrewinkel",
- "triangles": 34826,
- "triangles_bridge": 28940,
+ "triangles": 37287,
+ "triangles_bridge": 31401,
  "triangles_foot": 5886,
  "materials": [
   "brick_red_brussels",
@@ -21,6 +21,7 @@
  ],
  "nodes": {
   "bridge": "verrewinkel",
+  "fine": "verrewinkel_fine",
   "foot": "verrewinkel_foot"
  },
  "frame": "glTF Y up; +x = along the road (NW->SE), -z = Blender +Y (NE); origin = UrbIS polygon centroid at the cutting floor",
