@@ -307,6 +307,20 @@ falcon, labs (Bird, Lamp), the dev panel.
 - [ ] Waiting-time display at stops (WaitingTimes feed).
 - [ ] AI traffic on the road engine's lane graph; traffic lights in sync; pedestrians on sidewalks.
 - [ ] Tram vehicle sound, bells; ambient city sound; church bells on the hour.
+- [x] Sound Lab (branch claude/sound, 2026-11-11): all procedural (no audio files), `labs/sound-lab.html`, `viewer/audio/`,
+      method / costs / renders in `docs/SOUND.md`. Footsteps x6 surfaces, cars (RPM/load, setts tyres, doors, horn, Doppler),
+      tram 92 (rumble, curve squeal, whine, bell, doors, chime), AM08 trains, wind, rain, hum, 6 bird species by hour and season,
+      church bells on the hour, dog, playground; HRTF near / equal-power far, muffling, one reverb, voice limit, mixer.
+- [ ] Sound, owner review: listen to `docs/sound/renders/*.wav` (list + what to listen for in docs/SOUND.md); compare the
+      T3000 bell / door beeps / stop chime, the AM08 horn, the Saint-Job curve squeal pitch and the Saint-Job / Saint-Pierre
+      bells with the real ones (all are panel parameters; none is documented online); say which sounds are wrong.
+- [ ] Sound into the city: SoundEngine on the camera; occluders from the drive colliders' 48 m cells; sources from carFleet /
+      tramline (real curve geometry) / falcons (calls) / Saint-Job tower; footstep surface from surfaces.js; birds on street
+      trees by land cover; the city clock + weather drive birds, rain, wind; a "Sound" dev-panel folder (mixer, mute N).
+- [ ] Sound polish: better children's voices (formant babble is robotic close up), stronger muffling for sources behind whole
+      blocks, night birds (tawny owl), positional rain drips (gutters, car roofs, awnings), tyre squeal in corners, bicycles,
+      buses, sirens (Mr.doob's siren voice is in vendor/slop-sound), pedestrian talk, the falcons' calls; audio-thread budget
+      on weak laptops (adaptive voice limit / HRTF count from a render-capacity probe).
 
 ## 7. Atmosphere
 - [ ] Real sun position for date and time (Brussels lat/lon); the clock shared with the trams.

@@ -29,6 +29,13 @@ fly-mode rig (`viewer/falcons.js`, baked Perch / Sit poses). Fly mode now starts
 flight; `?flystart=spire` = the old start, `?birdskin=adult` = the old plumage). Lab `labs/falcon-lab.html`; method,
 cost (GPU within noise, ~0.1-0.17 ms CPU), reference comparisons and weak points: `docs/FALCONS.md`.
 
+## Sound (branch claude/sound, lab only)
+
+Procedural city sound with the Web Audio API, no audio files (after Mr.doob's slop-newyork audio, copied in
+`vendor/slop-sound/`). Lab `labs/sound-lab.html` (walkable scene, a panel per sound, mixer, costs), offline renders
+`labs/sound-render.html` and `docs/sound/renders/*.wav`; code `viewer/audio/`; method, costs, what to listen for and
+weak points: `docs/SOUND.md`. Not in the city yet (TODO section 6).
+
 ## Interiors (branch claude/interior, pilot)
 
 The first interior cell: a terraced house near Place de Saint-Job (UrbIS 1786120). Lab `labs/interior-lab.html`, city
