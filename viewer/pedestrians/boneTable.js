@@ -25,7 +25,15 @@ export class BoneTable {
     this.clips = meta.clips;
     this.total = meta.totalFrames;
     this.byName = Object.fromEntries(this.clips.map((c, i) => [c.name, i]));
-    this.walks = this.clips.map((c, i) => [c, i]).filter(([c]) => c.kind === "walk").map(([c, i]) => ({ i, speed: c.speed, stride: c.stride }));
+    // families (base + scripted overlays: pram, umbrella, phone, old, cane): each its own idle and walk speeds
+    this.families = {};
+    this.clips.forEach((c, i) => {
+      const f = (this.families[c.family || "base"] ||= { walks: [], idle: -1 });
+      if (c.kind === "walk") f.walks.push({ i, speed: c.speed, stride: c.stride });
+      if (c.kind === "idle") f.idle = i;
+    });
+    for (const f of Object.values(this.families)) f.walks.sort((a, b) => a.speed - b.speed);
+    this.walks = this.families.base.walks;
     this.idle = this.byName.idle;
     this.turnL = this.byName.turnL; this.turnR = this.byName.turnR;
     // clip info for the GPU: (first frame, frame count, 0, 0) per clip
@@ -36,8 +44,9 @@ export class BoneTable {
   /** Locomotion slices for a ground speed v (m/s): { a, b, w } with a, b clip indices (walk / jog / run bakes; all
    *  share one phase, heel strike at 0) and the stride per cycle at scale 1 for the mix. v < first walk speed: the
    *  slowest walk with w toward idle handled by the caller. */
-  loco(v, sex, out) {
-    const W = this.walks;
+  fam(name) { return this.families[name] || this.families.base; }
+  loco(v, sex, out, family = "base") {
+    const W = this.fam(family).walks;
     if (v <= W[0].speed) { out.a = W[0].i; out.b = W[0].i; out.w = 0; out.stride = W[0].stride[sex]; return out; }
     for (let k = 0; k < W.length - 1; k++) {
       if (v <= W[k + 1].speed || k === W.length - 2) {
@@ -84,9 +93,35 @@ export class BoneTable {
       const wx = cy * qx + sy * qz, wy = cy * qy + sy * qw, wz = cy * qz - sy * qx, ww = cy * qw - sy * qy;
       rot(0, sy, 0, cy, tx * S, ty * S, tz * S, _v);
       out[o] = wx; out[o + 1] = wy; out[o + 2] = wz; out[o + 3] = ww;
-      out[o + 4] = _v[0] + p.x; out[o + 5] = _v[1] + p.y; out[o + 6] = _v[2] + p.z; out[o + 7] = S;
+      // per-foot ground: the leg's bones lifted by that foot's ground height above the root (thigh by half)
+      const lift = b >= 7 && b <= 10 ? (p.offL || 0) * (b === 7 ? 0.5 : 1) : b >= 11 ? (p.offR || 0) * (b === 11 ? 0.5 : 1) : 0;
+      out[o + 4] = _v[0] + p.x; out[o + 5] = _v[1] + p.y + lift; out[o + 6] = _v[2] + p.z; out[o + 7] = S;
     }
     out[120] = p.seed; out[121] = p.sex; out[122] = p.girth; out[123] = p.hair;
+    return out;
+  }
+  /** World ankle joints of both feet only (cheap: 2 bones), for the plant correction and per-foot ground.
+   *  p as samplePose; out = 12 floats: [left heel xyz, left ball xyz, right heel xyz, right ball xyz] (no per-foot lift). */
+  feet(p, out) {
+    const cy = Math.cos(p.yaw * 0.5), sy = Math.sin(p.yaw * 0.5), S = p.scale;
+    for (let k = 0; k < 2; k++) {
+      const b = k ? BONE.FOOT_R : BONE.FOOT_L, bj = k ? BIND.footR : BIND.footL;
+      bonePair(this, p.sex, p.clipA, p.phaseA, b, _ba); bonePair(this, p.sex, p.clipB, p.phaseB, b, _bb);
+      let bx = _bb[0], by = _bb[1], bz = _bb[2], bw = _bb[3];
+      if (_ba[0] * bx + _ba[1] * by + _ba[2] * bz + _ba[3] * bw < 0) { bx = -bx; by = -by; bz = -bz; bw = -bw; }
+      const w = p.w;
+      let qx = _ba[0] + (bx - _ba[0]) * w, qy = _ba[1] + (by - _ba[1]) * w, qz = _ba[2] + (bz - _ba[2]) * w, qw = _ba[3] + (bw - _ba[3]) * w;
+      const n = 1 / Math.hypot(qx, qy, qz, qw); qx *= n; qy *= n; qz *= n; qw *= n;
+      rot(qx, qy, qz, qw, bj[0], bj[1], bj[2], _v);
+      const lx = _ba[4] + (_bb[4] - _ba[4]) * w + _v[0], ly = _ba[5] + (_bb[5] - _ba[5]) * w + _v[1], lz = _ba[6] + (_bb[6] - _ba[6]) * w + _v[2];
+      // the sole's heel and ball (a rolling foot pivots on one of them), then to the world
+      for (let j = 0; j < 2; j++) {
+        rot(qx, qy, qz, qw, 0, -ANKLE_H, j ? 0.135 : -0.07, _v);
+        rot(0, sy, 0, cy, (lx + _v[0]) * S, (ly + _v[1]) * S, (lz + _v[2]) * S, _v);
+        const o = k * 6 + j * 3;
+        out[o] = _v[0] + p.x; out[o + 1] = _v[1] + p.y; out[o + 2] = _v[2] + p.z;
+      }
+    }
     return out;
   }
   _slice(sex, clip, phase, out) {
@@ -105,7 +140,20 @@ export class BoneTable {
     return out;
   }
 }
-const _sa = new Float32Array(BONES * 8), _sb = new Float32Array(BONES * 8), _v = [0, 0, 0];
+const _sa = new Float32Array(BONES * 8), _sb = new Float32Array(BONES * 8), _v = [0, 0, 0], _ba = new Float32Array(8), _bb = new Float32Array(8);
+/** One bone of one clip slice (frames interpolated), local frame: out = q.xyzw, t.xyz, s. */
+function bonePair(T, sex, clip, phase, b, out) {
+  const c = T.clips[clip], F = c.frames, f = (((phase % 1) + 1) % 1) * F;
+  const f0 = Math.floor(f) % F, f1 = (f0 + 1) % F, t = f - Math.floor(f), d = T.data;
+  const a = ((sex * T.total + c.start + f0) * BONES + b) * FPB, e = ((sex * T.total + c.start + f1) * BONES + b) * FPB;
+  let bx = d[e], by = d[e + 1], bz = d[e + 2], bw = d[e + 3];
+  if (d[a] * bx + d[a + 1] * by + d[a + 2] * bz + d[a + 3] * bw < 0) { bx = -bx; by = -by; bz = -bz; bw = -bw; }
+  const qx = d[a] + (bx - d[a]) * t, qy = d[a + 1] + (by - d[a + 1]) * t, qz = d[a + 2] + (bz - d[a + 2]) * t, qw = d[a + 3] + (bw - d[a + 3]) * t;
+  const n = 1 / Math.hypot(qx, qy, qz, qw);
+  out[0] = qx * n; out[1] = qy * n; out[2] = qz * n; out[3] = qw * n;
+  for (let k = 4; k < 8; k++) out[k] = d[a + k] + (d[e + k] - d[a + k]) * t;
+  return out;
+}
 /** v rotated by the unit quaternion q (same formula as the vendored shader's qrot). */
 export function rot(qx, qy, qz, qw, vx, vy, vz, out) {
   // t = 2 * cross(q.xyz, v); v' = v + w t + cross(q.xyz, t)

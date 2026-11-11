@@ -80,7 +80,10 @@ class Band {
           const qy = yawQ(P0.w), S = P1.w;
           const base = person.mul(STRIDE).add(bone.mul(2));
           pose.element(base).assign(qmul(qy, q2));
-          pose.element(base.add(1)).assign(vec4(qrot(qy, t2.mul(S)).add(P0.xyz), S));
+          // per-foot ground: the left leg (bones 7-10) lifted by P3.y, the right (11-14) by P3.z, the thighs by half
+          const lift = select(bone.greaterThanEqual(11), P3.z, select(bone.greaterThanEqual(7), P3.y, float(0)))
+            .mul(select(bone.equal(7).or(bone.equal(11)), float(0.5), float(1)));
+          pose.element(base.add(1)).assign(vec4(qrot(qy, t2.mul(S)).add(P0.xyz).add(vec3(0, lift, 0)), S));
           If(bone.equal(0), () => { pose.element(person.mul(STRIDE).add(STRIDE - 1)).assign(P2); });
         });
       });
@@ -116,6 +119,7 @@ export class Crowd {
     this._tmp = new Float32Array(124); this._tmp2 = new Float32Array(124);
     this._sp = { sex: 0, clipA: 0, phaseA: 0, clipB: 0, phaseB: 0, w: 0, x: 0, y: 0, z: 0, yaw: 0, scale: 1, look: 0, seed: 0, girth: 1, hair: 0 };
     this._loco = { a: 0, b: 0, w: 0, stride: 1 };
+    this._feet = new Float32Array(12);
   }
 
   // ------------------------------------------------------------------------------------- clip state per person
@@ -124,28 +128,36 @@ export class Crowd {
   advance(p, dt) {
     const T = this.table, a = (p.anim ||= { loco: 0, idle: (p.seed * 7.31) % 1, turn: 0, codeA: 0, codeB: 0, w: 0, live: null, liveW: 0, liveTarget: 0 });
     const v = p.speed, S = p.scale;
-    T.loco(Math.max(v, 0.7), p.sex, this._loco);
+    const fam = T.fam(p.family), famName = T.families[p.family] ? p.family : "base";
+    T.loco(Math.max(v, 0.7), p.sex, this._loco, famName);
     const L = this._loco;
     a.loco = (a.loco + (v * dt) / (S * L.stride)) % 1;
-    a.idle = (a.idle + dt / 16) % 1;
+    a.idle = (a.idle + dt / T.clips[fam.idle].cycleSeconds[p.sex]) % 1;
+    const actClip = p.action != null ? T.byName[p.action] : undefined;
+    if (actClip !== undefined) a.act = ((a.act || 0) + dt / T.clips[actClip].cycleSeconds[p.sex]) % 1;
     const turn = Math.abs(p.turnRate || 0);
     // slow (< 0.7 m/s): idle mixed with ONE second slice (walking off, or turning on the spot). The second slice changes
     // only once its weight has faded to ~0, and weights move at <= 3 / s: no clip switch ever jumps a pose
-    const fast = v >= 0.7 && (a.wasFast || (a.slowB === "walk" && a.w > 0.95));
+    const fast = v >= 0.7 && actClip === undefined && (a.wasFast || (a.slowB === "walk" && a.w > 0.95));
     if (!fast) {
       if (a.wasFast) { a.slowB = "walk"; a.w = 1; }          // (walk070, walk100, ~0) == (idle, walk070, 1)
-      const wantB = turn > 0.25 && v < 0.3 ? (p.turnRate > 0 ? "turnL" : "turnR") : "walk";
+      // an action (sit, talk: the UAL clips) only once standing at its spot; else walking off or turning on the spot
+      const wantB = actClip !== undefined && v < 0.2 ? "act:" + actClip : turn > 0.25 && v < 0.3 ? (p.turnRate > 0 ? "turnL" : "turnR") : "walk";
       if (!a.slowB) a.slowB = wantB;
       let target;
       if (wantB !== a.slowB) { target = 0; if (a.w < 0.03) a.slowB = wantB; }
-      else target = a.slowB === "walk" ? smooth(0.08, 0.7, v) : smooth(0.25, 0.7, turn);
-      a.w += Math.max(-3 * dt, Math.min(3 * dt, target - a.w));
-      if (a.slowB !== "walk") {
+      else target = a.slowB === "walk" ? smooth(0.08, 0.7, v) : a.slowB.startsWith("act:") ? 1 : smooth(0.25, 0.7, turn);
+      const rate = a.slowB.startsWith("act:") ? 1.6 : 3;               // sitting down / standing up over ~0.6 s
+      a.w += Math.max(-rate * dt, Math.min(rate * dt, target - a.w));
+      const fi = fam.idle;
+      if (a.slowB.startsWith("act:")) {
+        a.codeA = fi + a.idle * 0.9999; a.codeB = +a.slowB.slice(4) + (a.act || 0) * 0.9999;
+      } else if (a.slowB !== "walk") {
         const tc = a.slowB === "turnL" ? T.turnL : T.turnR, tpc = Math.abs(T.clips[tc].turnPerCycle[p.sex]);
         a.turn = (a.turn + (turn * dt) / tpc) % 1;
-        a.codeA = T.idle + a.idle * 0.9999; a.codeB = tc + a.turn * 0.9999;
+        a.codeA = fi + a.idle * 0.9999; a.codeB = tc + a.turn * 0.9999;
       } else {
-        a.codeA = T.idle + a.idle * 0.9999; a.codeB = T.walks[0].i + a.loco * 0.9999;
+        a.codeA = fi + a.idle * 0.9999; a.codeB = fam.walks[0].i + a.loco * 0.9999;
       }
     } else {
       a.codeA = L.a + a.loco * 0.9999; a.codeB = L.b + a.loco * 0.9999; a.w = L.w;
@@ -154,11 +166,55 @@ export class Crowd {
     return a;
   }
 
+  /**
+   * Where the baked person is drawn: the sim position plus an offset that PINS the planted foot (the bake's stance
+   * flag of the dominant slice; the pivot is whichever of heel / ball moved less, as a rolling foot pivots on one):
+   * whatever the body does (turning, side-stepping, mixing clips), a planted foot does not move. The offset is then
+   * released toward the sim at <= 4 cm/s (orientation / stride warping in its cheapest form: the error becomes a slow
+   * drift instead of a skate). Then the ground under EACH foot: the root sits between the two foot grounds and each
+   * leg is lifted by its own (kerbs, slopes, the platform ramp).
+   */
+  place(p, dt) {
+    const a = p.anim, T = this.table, s = this._sp, F = this._feet;
+    let ox = a.ox || 0, oz = a.oz || 0;
+    s.sex = p.sex; s.clipA = Math.floor(a.codeA); s.phaseA = a.codeA % 1; s.clipB = Math.floor(a.codeB); s.phaseB = a.codeB % 1; s.w = a.w;
+    s.x = p.x + ox; s.y = 0; s.z = p.z + oz; s.yaw = p.yaw; s.scale = p.scale;
+    T.feet(s, F);
+    const pc = a.w < 0.5 ? a.codeA : a.codeB, c = T.clips[Math.floor(pc)];
+    const bits = c.plant[p.sex][Math.floor((pc % 1) * c.frames) % c.frames];
+    const pl0 = bits & 1, pl1 = (bits >> 1) & 1;
+    let n = 0, ex = 0, ez = 0;
+    if (a.fprev && dt > 0 && dt < 0.25) {
+      for (let k = 0; k < 2; k++) {
+        if (!(k ? pl1 && a.fpl1 : pl0 && a.fpl0)) continue;
+        const o = k * 6;
+        const hx = a.fprev[o] - F[o], hz = a.fprev[o + 2] - F[o + 2], bx = a.fprev[o + 3] - F[o + 3], bz = a.fprev[o + 5] - F[o + 5];
+        if (hx * hx + hz * hz < bx * bx + bz * bz) { ex += hx; ez += hz; } else { ex += bx; ez += bz; }
+        n++;
+      }
+      if (n) { ox += ex / n; oz += ez / n; }
+    }
+    const r = Math.hypot(ox, oz);
+    if (r > 1e-6) { const rel = (n ? 0.04 : 0.4) * dt + Math.max(0, r - 0.45); const k = Math.max(0, r - rel) / r; ox *= k; oz *= k; }
+    const dxo = ox - (a.ox || 0), dzo = oz - (a.oz || 0);
+    for (let k = 0; k < 12; k += 3) { F[k] += dxo; F[k + 2] += dzo; }
+    a.ox = ox; a.oz = oz; a.dx = p.x + ox; a.dz = p.z + oz; a.dyaw = p.yaw;
+    (a.fprev ||= new Float32Array(12)).set(F); a.fpl0 = pl0; a.fpl1 = pl1;
+    // per-foot ground: planted feet take their ground at once (they do not move), swinging ones ease over 60 ms
+    const gl = this.ground((F[0] + F[3]) * 0.5, (F[2] + F[5]) * 0.5), gr = this.ground((F[6] + F[9]) * 0.5, (F[8] + F[11]) * 0.5);
+    const e = Math.min(1, dt / 0.06);
+    a.gL = a.gL === undefined || pl0 ? gl : a.gL + (gl - a.gL) * e;
+    a.gR = a.gR === undefined || pl1 ? gr : a.gR + (gr - a.gR) * e;
+    const root = (a.gL + a.gR) * 0.5;
+    a.dy = a.dy === undefined ? root : a.dy + (root - a.dy) * Math.min(1, dt / 0.05);
+    a.offL = Math.max(-0.25, Math.min(0.25, a.gL - a.dy)); a.offR = Math.max(-0.25, Math.min(0.25, a.gR - a.dy));
+  }
+
   /** The person's baked pose on the CPU (the compute pass's maths): blends and meters. */
   bakedPose(p, out) {
     const a = p.anim, s = this._sp;
     s.sex = p.sex; s.clipA = Math.floor(a.codeA); s.phaseA = a.codeA % 1; s.clipB = Math.floor(a.codeB); s.phaseB = a.codeB % 1; s.w = a.w;
-    if (a.held) { s.x = a.hx; s.y = a.hy; s.z = a.hz; s.yaw = a.hyaw; } else { s.x = p.x; s.y = p.y; s.z = p.z; s.yaw = p.yaw; }
+    s.x = a.dx ?? p.x; s.y = a.dy ?? p.y; s.z = a.dz ?? p.z; s.yaw = a.dyaw ?? p.yaw; s.offL = a.offL || 0; s.offR = a.offR || 0;
     s.scale = p.scale; s.look = p.look || 0; s.seed = p.seed; s.girth = p.girth; s.hair = p.hair;
     return this.table.samplePose(out, s);
   }
@@ -200,17 +256,12 @@ export class Crowd {
     for (const p of people) {
       if (!p.alive) { if (p.anim?.live) this._free(p); continue; }
       if (p.anim && p.anim.gen !== p.gen) { if (p.anim.live) this._free(p); p.anim = null; }     // re-placed: fresh state
-      if (!p.anim) { this.advance(p, 0); Object.assign(p.anim, { gen: p.gen, hx: p.x, hy: p.y, hz: p.z, hyaw: p.yaw }); }
-      const dx = p.x - cx, dy = p.y + 0.9 - cy, dz = p.z - cz;
-      p.dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-      // far band (past the LOD1 -> LOD2 fade): the clip state steps at 1 / farRate of the frame rate (15 Hz at 60 fps),
-      // in farRate groups; the position still moves every frame
-      // (the drawn position steps with it: a pose held while the body slides on would be a foot slide)
-      if (p.anim && p.dist > B.lod12 + B.lod12w && !p.anim.live && (p.id + this.frame) % B.farRate) { p.anim.pend = (p.anim.pend || 0) + dt; p.anim.held = true; }
-      else {
-        const a0 = p.anim; this.advance(p, dt + (a0?.pend || 0));
-        const a = p.anim; a.pend = 0; a.held = false; a.hx = p.x; a.hy = p.y; a.hz = p.z; a.hyaw = p.yaw;
-      }
+      if (!p.anim) { this.advance(p, 0); p.anim.gen = p.gen; this.place(p, 0); }
+      { const dx = p.x - cx, dy = p.y + 0.9 - cy, dz = p.z - cz; p.dist = Math.sqrt(dx * dx + dy * dy + dz * dz); }
+      // far band (past the LOD1 -> LOD2 fade): clip state and drawn position step at 1 / farRate of the frame rate
+      // (15 Hz at 60 fps), in farRate groups
+      if (p.dist > B.lod12 + B.lod12w && !p.anim.live && (p.id + this.frame) % B.farRate) { p.anim.pend = (p.anim.pend || 0) + dt; }
+      else { const d2 = dt + (p.anim.pend || 0); this.advance(p, d2); this.place(p, d2); p.anim.pend = 0; }
       if (p.dist > B.end) { p.drawn = false; st.beyond++; if (p.anim.live) this._free(p); continue; }
       _sph.center.set(p.x, p.y + 0.9 * p.scale, p.z); _sph.radius = 1.1 * p.scale;
       p.inView = this.frustum.intersectsSphere(_sph);
@@ -296,11 +347,10 @@ export class Crowd {
           b.pose.value.array.set(pose, slot * STRIDE * 4);
         } else slot = b.count++;
         const P = b.params.value.array, o = slot * 16;
-        if (a.held) { P[o] = a.hx; P[o + 1] = a.hy; P[o + 2] = a.hz; P[o + 3] = a.hyaw; }
-        else { P[o] = p.x; P[o + 1] = p.y; P[o + 2] = p.z; P[o + 3] = p.yaw; }
+        P[o] = a.dx; P[o + 1] = a.dy; P[o + 2] = a.dz; P[o + 3] = a.dyaw;
         P[o + 4] = live ? -1 : a.codeA; P[o + 5] = a.codeB; P[o + 6] = a.w; P[o + 7] = p.scale;
         P[o + 8] = p.seed; P[o + 9] = p.sex; P[o + 10] = p.girth; P[o + 11] = p.hair;
-        P[o + 12] = p.look || 0; P[o + 13] = 0; P[o + 14] = 0; P[o + 15] = 0;
+        P[o + 12] = p.look || 0; P[o + 13] = a.offL || 0; P[o + 14] = a.offR || 0; P[o + 15] = 0;
         const F = b.fade.value.array, of = slot * 4;
         F[of] = lo; F[of + 1] = hi;
         // shadow: the same pixel split, cut at the shadow fade
