@@ -37,6 +37,8 @@ export class Driver {
       else if (k === "KeyG") this.debug.visible = !this.debug.visible; else if (k === "Escape") this.onExit?.();
     } });
     this.ground = (x, z) => {
+      const dk = this.world.decks?.length ? this.world.deckY(x, z) : null;          // a hero road bridge's deck
+      if (dk != null) return dk;
       const t = this.world.at(x, z);
       return t.drive ? driveHeight(t.hm, t.drive.ground.delta, x, z) : t.hm.surface(x, z) + 0.12;
     };

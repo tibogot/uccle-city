@@ -38,6 +38,7 @@ export async function startThirdPerson({ scene, camera, renderer, controls, worl
   const cw = new CollisionWorld();
   const tiles = world.tiles;
   const heightAt = (x, z) => {                       // allocation-free tile lookup
+    if (world.decks?.length) { const d = world.deckY(x, z); if (d != null) return d; }      // hero road-bridge decks
     for (let i = 0; i < tiles.length; i++) { const b = tiles[i].bounds; if (x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1) return tiles[i].hm.surface(x, z); }
     return tiles[0].hm.surface(x, z);
   };

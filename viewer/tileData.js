@@ -19,7 +19,7 @@ let railP = null;
 /** ?trains=1: rail.json + the hero bridges' notes, fetched once per worker */
 const railDocs = (base) => (railP ??= Promise.all([
   fetch(new URL("../rail/rail.json", base)).then((r) => r.json()).then(prepRail),
-  Promise.all(["stjob", "calevoet"].map((n) => fetch(new URL(`../../models/rail/${n}.json`, base)).then((r) => (r.ok ? r.json() : null)).catch(() => null))).then((a) => a.filter(Boolean)),
+  Promise.all(["stjob", "calevoet", "verrewinkel"].map((n) => fetch(new URL(`../../models/rail/${n}.json`, base)).then((r) => (r.ok ? r.json() : null)).catch(() => null))).then((a) => a.filter(Boolean)),
 ]).then(([doc, heroes]) => ({ doc, heroes })));
 
 export const CARVE = 0.12;         // terrain is pushed this far under any road surface
@@ -198,7 +198,7 @@ export async function buildTileData(entry, base) {
   let railOut = null;
   if (rail) {
     const c = await step("rail carve", () => carveGrid(rail.doc, hm.y, tHdr, bounds, rail.heroes));
-    railOut = await step("rail meshes", () => railTileData(rail.doc, bounds));
+    railOut = await step("rail meshes", () => railTileData(rail.doc, bounds, rail.heroes));
     railOut.stats.carved = c.moved; railOut.stats.treesDropped = railDropped;
   }
   const terrain = await step("terrain grid", () => terrainArrays(hm));

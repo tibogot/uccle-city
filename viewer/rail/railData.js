@@ -6,11 +6,14 @@
 //   carveGrid(doc, Y, hdr, bounds, heroes) the tile's 1 m terrain grid (Y = heights, row-major cols x rows) pushed under
 //                                        the ballast and the platforms, raised to a 1:1.5 fill where a track runs above
 //                                        the ground off a bridge, opened under the hero bridges' arches
-//   railTileData(doc, bounds)            ballast / rails / wires geometry, sleeper / mast / shelter instance matrices,
-//                                        platform and deck geometry, as transferable typed arrays
+//   railTileData(doc, bounds, heroes)    ballast / rails / wires geometry, sleeper / mast / shelter instance matrices,
+//                                        platform and deck geometry, as transferable typed arrays (a hero ROAD bridge
+//                                        replaces the UrbIS deck slab; the catenary dips under its arches, no mast in it)
 //   railKeepClear(doc, bounds, heroes)   (x, z) -> true where no tree may stand (rail bridge decks, platforms, the ballast)
 // heroes = the hero bridges' Blender notes (models/rail/<name>.json: placement, deck, openings, skew): their footprint
 // replaces the UrbIS polygon (the Calevoet viaduct runs on beyond it), their openings are carved to the arch floors.
+// Road bridges over the line (info.kind "road_over_rail", tools/blender/roadBridge.py) give their own footprint polygon
+// (the 2022 footbridge beside Verrewinkel's) and the arches' springing / rise, for the wires.
 import earcut from "three/src/extras/lib/earcut.js";
 
 export const GAUGE = 1.435, RAIL_C = GAUGE / 2 + 0.036;      // rail centre lines (head 72 mm)
@@ -47,7 +50,7 @@ export function heroFrame(h) {
   const toLocal = (x, z) => { const dx = x - px, dz = z - pz; const mx = dx * c + dz * s, mz = -dx * s + dz * c; return [mx, -mz]; };
   const toWorld = (X, Y) => { const mz = -Y; return [px + X * c - mz * s, pz + X * s + mz * c]; };
   const L = h.deck.length / 2 + 0.5, W = h.deck.width / 2 + 0.5;
-  const ring = [[-L, -W], [L, -W], [L, W], [-L, W]].map(([X, Y]) => toWorld(X, Y));
+  const ring = (h.footprint || [[-L, -W], [L, -W], [L, W], [-L, W]]).map(([X, Y]) => toWorld(X, Y));
   return { ...h, toLocal, toWorld, ring, road: py };
 }
 
@@ -256,8 +259,28 @@ const idxArray = (I, nV) => (nV > 65535 ? Uint32Array.from(I) : Uint16Array.from
 function ringArea(r) { let a = 0; for (let i = 0; i < r.length; i++) { const p = r[i], q = r[(i + 1) % r.length]; a += p[0] * q[1] - q[0] * p[1]; } return a / 2; }
 
 /** Everything drawn for one tile, as typed arrays (transferable). */
-export function railTileData(doc, bounds) {
+export function railTileData(doc, bounds, heroes = []) {
   const ts = tracksIn(doc, bounds, 1);
+  const hs = (heroes || []).map(heroFrame);
+  const roadHeroes = hs.filter((h) => h.kind === "road_over_rail");
+  const inHero = (x, z, m = 0) => hs.some((h) => { const [X, Y] = h.toLocal(x, z); const hb = ringBox(h.ring); return x > hb.x0 - m && x < hb.x1 + m && z > hb.z0 - m && z < hb.z1 + m && inRing(h.ring, x, z); });
+  /** the highest the catenary may run at (x, z): under a road bridge's arch, 0.3 m under its intrados, sloping back up
+   *  at 1:12 away from the faces (Infinity elsewhere) */
+  const wireCap = (x, z) => {
+    let cap = Infinity;
+    for (const h of roadHeroes) {
+      const [X, Y] = h.toLocal(x, z);
+      const out = Math.max(0, Math.abs(Y) - h.deck.width / 2);
+      if (out > 25) continue;
+      for (const o of h.openings) {
+        const a = (o.x1 - o.x0) / 2, cx = (o.x0 + o.x1) / 2, u = (X - cx) / a;
+        if (Math.abs(u) >= 1) continue;
+        const intra = h.road + o.spring + o.rise * Math.sqrt(1 - u * u);
+        cap = Math.min(cap, intra - 0.3 + out / 12);
+      }
+    }
+    return cap;
+  };
   const nearTracks = tracksIn(doc, bounds, 30);
   const bal = { p: [], u: [], s: [], i: [] }, rl = { p: [], i: [] };
   const sleepers = [], masts = [], wires = { p: [], t: [], side: [], r: [], i: [] };
@@ -289,7 +312,10 @@ export function railTileData(doc, bounds) {
     const sA = F[0].s, sB = F[F.length - 1].s;
     for (let s = Math.ceil(sA / SLEEPER_STEP) * SLEEPER_STEP; s < sB; s += SLEEPER_STEP) sleepers.push(sample(F, s));
     if (t.electrified) {
-      for (let s = Math.ceil(sA / MAST_STEP) * MAST_STEP; s < sB; s += MAST_STEP) {
+      for (let s0 = Math.ceil(sA / MAST_STEP) * MAST_STEP; s0 < sB; s0 += MAST_STEP) {
+        let s = s0;
+        for (let k = 0; k < 8 && inHero(sample(F, s).x, sample(F, s).z, 3); k++) s += 4;     // no mast under / in a hero bridge
+        if (s >= sB) continue;
         const f = sample(F, s), side = outerSide(nearTracks, t, f);
         let off = MAST_OFF;
         while (off < 9 && onPlatform(f.x + f.nx * off * side, f.z + f.nz * off * side)) off += 0.5;
@@ -301,9 +327,11 @@ export function railTileData(doc, bounds) {
         const f = sample(F, Math.min(s, sB));
         const ph = (f.s / MAST_STEP) % 2, zig = (ph < 1 ? ph : 2 - ph) * 0.4 - 0.2;
         const m = (f.s / MAST_STEP) % 1, sag = 4 * m * (1 - m) * 0.75;
-        contact.push([f.x + f.nx * zig, f.y + WIRE_H, f.z + f.nz * zig]);
-        mess.push([f.x, f.y + MESSENGER_H - sag, f.z]);
-        if (Math.round(f.s) % 6 === 0) addWire([[f.x + f.nx * zig, f.y + WIRE_H, f.z + f.nz * zig], [f.x, f.y + MESSENGER_H - sag, f.z]], 0.004);
+        const cap = roadHeroes.length ? wireCap(f.x, f.z) : Infinity;
+        const yc = Math.min(f.y + WIRE_H, cap - 0.3), ym = Math.max(yc + 0.15, Math.min(f.y + MESSENGER_H - sag, cap));
+        contact.push([f.x + f.nx * zig, yc, f.z + f.nz * zig]);
+        mess.push([f.x, ym, f.z]);
+        if (Math.round(f.s) % 6 === 0) addWire([[f.x + f.nx * zig, yc, f.z + f.nz * zig], [f.x, ym, f.z]], 0.004);
       }
       addWire(contact, 0.0065);
       addWire(mess, 0.0055);
@@ -383,7 +411,7 @@ export function railTileData(doc, bounds) {
     if (shelters.length) { const M = new Float32Array(shelters.length * 16); shelters.forEach(([x, y, z, a], k) => yawMatrix(M, k, a, x, y, z)); out.shelters = M; }
   }
   // decks over the line: the UrbIS polygon extruded 0.9 m down from the DTM (flat-shaded)
-  const decks = doc.decks.filter((b) => inside(bounds, b.centre[0], b.centre[1]));
+  const decks = doc.decks.filter((b) => inside(bounds, b.centre[0], b.centre[1]) && !inHero(b.centre[0], b.centre[1]));
   if (decks.length) {
     const P = [];
     for (const b of decks) {

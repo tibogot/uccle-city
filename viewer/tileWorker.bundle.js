@@ -6827,7 +6827,7 @@ function heroFrame(h) {
     return [px + X * c - mz * s, pz + X * s + mz * c];
   };
   const L2 = h.deck.length / 2 + 0.5, W = h.deck.width / 2 + 0.5;
-  const ring2 = [[-L2, -W], [L2, -W], [L2, W], [-L2, W]].map(([X, Y]) => toWorld(X, Y));
+  const ring2 = (h.footprint || [[-L2, -W], [L2, -W], [L2, W], [-L2, W]]).map(([X, Y]) => toWorld(X, Y));
   return { ...h, toLocal, toWorld, ring: ring2, road: py };
 }
 function bridgeRings(doc, heroes) {
@@ -7059,8 +7059,30 @@ function ringArea2(r) {
   }
   return a / 2;
 }
-function railTileData(doc, bounds) {
+function railTileData(doc, bounds, heroes = []) {
   const ts = tracksIn(doc, bounds, 1);
+  const hs = (heroes || []).map(heroFrame);
+  const roadHeroes = hs.filter((h) => h.kind === "road_over_rail");
+  const inHero = (x, z, m = 0) => hs.some((h) => {
+    const [X, Y] = h.toLocal(x, z);
+    const hb = ringBox(h.ring);
+    return x > hb.x0 - m && x < hb.x1 + m && z > hb.z0 - m && z < hb.z1 + m && inRing(h.ring, x, z);
+  });
+  const wireCap = (x, z) => {
+    let cap2 = Infinity;
+    for (const h of roadHeroes) {
+      const [X, Y] = h.toLocal(x, z);
+      const out2 = Math.max(0, Math.abs(Y) - h.deck.width / 2);
+      if (out2 > 25) continue;
+      for (const o of h.openings) {
+        const a = (o.x1 - o.x0) / 2, cx = (o.x0 + o.x1) / 2, u = (X - cx) / a;
+        if (Math.abs(u) >= 1) continue;
+        const intra = h.road + o.spring + o.rise * Math.sqrt(1 - u * u);
+        cap2 = Math.min(cap2, intra - 0.3 + out2 / 12);
+      }
+    }
+    return cap2;
+  };
   const nearTracks = tracksIn(doc, bounds, 30);
   const bal = { p: [], u: [], s: [], i: [] }, rl = { p: [], i: [] };
   const sleepers = [], masts = [], wires = { p: [], t: [], side: [], r: [], i: [] };
@@ -7110,7 +7132,10 @@ function railTileData(doc, bounds) {
     const sA = F[0].s, sB = F[F.length - 1].s;
     for (let s = Math.ceil(sA / SLEEPER_STEP) * SLEEPER_STEP; s < sB; s += SLEEPER_STEP) sleepers.push(sample(F, s));
     if (t.electrified) {
-      for (let s = Math.ceil(sA / MAST_STEP) * MAST_STEP; s < sB; s += MAST_STEP) {
+      for (let s0 = Math.ceil(sA / MAST_STEP) * MAST_STEP; s0 < sB; s0 += MAST_STEP) {
+        let s = s0;
+        for (let k = 0; k < 8 && inHero(sample(F, s).x, sample(F, s).z, 3); k++) s += 4;
+        if (s >= sB) continue;
         const f = sample(F, s), side = outerSide(nearTracks, t, f);
         let off = MAST_OFF;
         while (off < 9 && onPlatform(f.x + f.nx * off * side, f.z + f.nz * off * side)) off += 0.5;
@@ -7122,9 +7147,11 @@ function railTileData(doc, bounds) {
         const f = sample(F, Math.min(s, sB));
         const ph = f.s / MAST_STEP % 2, zig = (ph < 1 ? ph : 2 - ph) * 0.4 - 0.2;
         const m = f.s / MAST_STEP % 1, sag = 4 * m * (1 - m) * 0.75;
-        contact.push([f.x + f.nx * zig, f.y + WIRE_H, f.z + f.nz * zig]);
-        mess.push([f.x, f.y + MESSENGER_H - sag, f.z]);
-        if (Math.round(f.s) % 6 === 0) addWire([[f.x + f.nx * zig, f.y + WIRE_H, f.z + f.nz * zig], [f.x, f.y + MESSENGER_H - sag, f.z]], 4e-3);
+        const cap2 = roadHeroes.length ? wireCap(f.x, f.z) : Infinity;
+        const yc = Math.min(f.y + WIRE_H, cap2 - 0.3), ym = Math.max(yc + 0.15, Math.min(f.y + MESSENGER_H - sag, cap2));
+        contact.push([f.x + f.nx * zig, yc, f.z + f.nz * zig]);
+        mess.push([f.x, ym, f.z]);
+        if (Math.round(f.s) % 6 === 0) addWire([[f.x + f.nx * zig, yc, f.z + f.nz * zig], [f.x, ym, f.z]], 4e-3);
       }
       addWire(contact, 65e-4);
       addWire(mess, 55e-4);
@@ -7241,7 +7268,7 @@ function railTileData(doc, bounds) {
       out.shelters = M;
     }
   }
-  const decks = doc.decks.filter((b) => inside(bounds, b.centre[0], b.centre[1]));
+  const decks = doc.decks.filter((b) => inside(bounds, b.centre[0], b.centre[1]) && !inHero(b.centre[0], b.centre[1]));
   if (decks.length) {
     const P = [];
     for (const b of decks) {
@@ -7284,7 +7311,7 @@ function railTileData(doc, bounds) {
 var railP = null;
 var railDocs = (base) => railP ??= Promise.all([
   fetch(new URL("../rail/rail.json", base)).then((r) => r.json()).then(prepRail),
-  Promise.all(["stjob", "calevoet"].map((n) => fetch(new URL(`../../models/rail/${n}.json`, base)).then((r) => r.ok ? r.json() : null).catch(() => null))).then((a) => a.filter(Boolean))
+  Promise.all(["stjob", "calevoet", "verrewinkel"].map((n) => fetch(new URL(`../../models/rail/${n}.json`, base)).then((r) => r.ok ? r.json() : null).catch(() => null))).then((a) => a.filter(Boolean))
 ]).then(([doc, heroes]) => ({ doc, heroes }));
 var CARVE = 0.12;
 var TERRAIN_ERROR = 0.05;
@@ -7475,7 +7502,7 @@ async function buildTileData(entry, base) {
   let railOut = null;
   if (rail) {
     const c = await step("rail carve", () => carveGrid(rail.doc, hm.y, tHdr, bounds, rail.heroes));
-    railOut = await step("rail meshes", () => railTileData(rail.doc, bounds));
+    railOut = await step("rail meshes", () => railTileData(rail.doc, bounds, rail.heroes));
     railOut.stats.carved = c.moved;
     railOut.stats.treesDropped = railDropped;
   }

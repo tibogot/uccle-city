@@ -48,7 +48,7 @@ BRIDGES = {
         "y_upper": 2.50, "y_lower": 2.38, "y_inner": 2.10,                                  # [M] +-2.46 UrbIS; corbel 0.12 [P/E]; parapet 0.40 [E]
         "kerb_ne": 1.20, "kerb_sw": -1.75,                                                  # [M] UrbIS level +1 strips (NE sidewalk, SW strip)
         "coping_bottom": 0.90, "coping_h": 0.27, "coping_w": 0.56, "coping_block": 1.25,    # over the road [P courses / L]
-        "arcade": {"x": 16.65, "n": 18, "spring": -0.60, "rise": 0.47, "ring": 0.26,       # [P] 17 consoles, 18 bays; heights over the road
+        "arcade": {"x": 17.12, "n": 18, "pitch": 1.99, "spring": -0.60, "rise": 0.47, "ring": 0.26,       # [P] 17 consoles, 18 bays; heights over the road
                    "console": {"w": 0.52, "h": 0.17, "d": 0.25, "w2": 0.36, "h2": 0.16, "d2": 0.20}},
         "arches": [                                                                          # [P] spans / rises, crowns 1.65 under the road
             {"name": "A", "x0": -15.0, "x1": -7.0, "rise": 3.40, "floor": None},
@@ -231,10 +231,12 @@ def opening_curve(o, n=48):
 
 # the arcade: consoles at the bay joints, small arches spring from the console tops (over the road: following the grade)
 AR = B["arcade"]
-AX = AR["x"]; NB = AR["n"]; PITCH = 2 * AX / NB
+AX = AR["x"]; NB = AR["n"]; PITCH = AR["pitch"]
 CON = AR["console"]
-CONSOLES = [-AX + k * PITCH for k in range(1, NB)]
-print(f"arcade: {NB} bays of {PITCH:.3f} m, {len(CONSOLES)} consoles")
+# 17 consoles at an equal pitch, centred; the two end bays (to the wings' folds) are narrower, as on s05 (the arch after
+# C17 is ~0.65 of a bay)
+CONSOLES = [(k - (NB - 2) / 2) * PITCH for k in range(NB - 1)]
+print(f"arcade: {NB} bays, pitch {PITCH:.3f} m, {len(CONSOLES)} consoles {CONSOLES[0]:.2f}..{CONSOLES[-1]:.2f}, end bays {AX - CONSOLES[-1]:.2f}")
 
 
 def zspring(x): return road(x) + AR["spring"]

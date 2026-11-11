@@ -564,8 +564,12 @@ async function main() {
     at(x, z) { return this.tiles.find((t) => x >= t.bounds.x0 && x <= t.bounds.x1 && z >= t.bounds.z0 && z <= t.bounds.z1) || this.tiles[0]; },
     surface(x, z) { return this.at(x, z).hm.surface(x, z); },
     ground(x, z) { return this.at(x, z).hm.ground(x, z); },
-    /** where feet stand: the road level, plus the kerb height on measured sidewalks / squares (?roads=surface) */
-    walkY(x, z) { const t = this.at(x, z); return t.hm.surface(x, z) + CARVE + (t.lift ? t.lift(x, z) : 0); },
+    /** hero road-bridge decks (viewer/rail/bridgeModel.js deckHeightFn): (x, z) -> m TAW or null off them */
+    decks: [],
+    deckY(x, z) { for (const f of this.decks) { const y = f(x, z); if (y != null) return y; } return null; },
+    /** where feet stand: the road level, plus the kerb height on measured sidewalks / squares (?roads=surface); on a
+     *  hero road bridge its deck (the terrain there is the cutting under it) */
+    walkY(x, z) { const d = this.decks.length ? this.deckY(x, z) : null; if (d != null) return d; const t = this.at(x, z); return t.hm.surface(x, z) + CARVE + (t.lift ? t.lift(x, z) : 0); },
     /** the highest solid here: ground or a roof (fly-mode collision) */
     heightAt(x, z) { const t = this.at(x, z); return Math.max(t.hm.surface(x, z), t.roofAt ? t.roofAt(x, z) : 0); },
     get h() {
@@ -632,11 +636,23 @@ async function main() {
   if (TRAINS) {
     const rail = await railP;
     if (rail) {
-      const { loadBridge, placeBridge, BRIDGES } = await import("./rail/bridgeModel.js");
+      const { loadBridge, placeBridge, warmBridge, deckHeightFn, roadBridgeColliders, BRIDGES } = await import("./rail/bridgeModel.js");
+      const { openParallelPipelines } = await import("../vendor/engine/parallelPipelines.js");
       for (const name of BRIDGES) {
-        loadBridge(name).then((b) => {
-          const pb = placeBridge(b, { smooth: SMOOTH, objectFade: withObjectFade });
+        loadBridge(name).then(async (b) => {
+          const pb = placeBridge(b, { smooth: SMOOTH });
+          // a road bridge: its deck carries walk / drive heights, its parapets block the car
+          if (b.info.kind === "road_over_rail") {
+            world.decks.push(deckHeightFn(b.info));
+            const cols = roadBridgeColliders(b.info);
+            if (window.__driver) window.__driver.addStatic(cols); else (window.__pendingStatics ??= []).push(cols);
+          }
+          // shaders (+ fading copies) and the shadow pass built before it shows (nothing compiled on a frame)
+          const tw = performance.now();
+          for (let i = 0; i < 200 && !compileFor && params.get("precompile") !== "0"; i++) await new Promise((r) => setTimeout(r, 100));
+          const warm = await warmBridge(pb, { compile: compileFor, renderer, scene, openParallel: renderer.backend?.isWebGPUBackend ? openParallelPipelines : null }).catch((e) => ({ ms: performance.now() - tw, err: e.message }));
           scene.add(pb.group);
+          window.__bridges ??= {}; window.__bridges[name] = { b, pb, warm };
           const p = b.placement.position;
           const home = manifest.tiles.find((t) => p.x >= t.bounds.x[0] && p.x < t.bounds.x[1] && p.z >= t.bounds.z[0] && p.z < t.bounds.z[1])?.name;
           let n = 0;
@@ -645,7 +661,7 @@ async function main() {
             if (n++ % 30) return;
             pb.group.visible = world.tiles.some((t) => t.name === home) || !!scene.getObjectByName(`${home}-lite`);
           });
-          log(`railway bridge ${name} (${b.info.urbis}, ${b.info.line} over ${b.info.road}): LODs ${b.lods.map((l) => Math.round(l.tris)).join(" / ")} triangles`);
+          log(`${b.info.kind === "road_over_rail" ? "road bridge" : "railway bridge"} ${name} (${b.info.urbis}, ${b.info.kind === "road_over_rail" ? `${b.info.road} over ${b.info.line}` : `${b.info.line} over ${b.info.road}`}): LODs ${b.lods.map((l) => Math.round(l.tris)).join(" / ")} triangles; warmed in ${Math.round(warm.ms)} ms${warm.err ? ` (${warm.err})` : ""}`);
         }).catch((e) => log(`bridge ${name}: ${e.message}`));
       }
       try {
@@ -740,6 +756,8 @@ async function main() {
   const driver = new Driver(camera, renderer.domElement, scene, world);
   window.__driver = driver;
   if (HIDE_BU_IDS.length) loadStJob().then((m) => driver.addStatic(stjobColliders(m.placement))).catch(() => {});   // the church's front steps
+  for (const cols of window.__pendingStatics ?? []) driver.addStatic(cols);                                           // hero road bridges' parapets
+  window.__pendingStatics = [];
   const drive = () => {
     const [px, pz] = atP?.length === 2 ? atP : [1201.6, 549.3];
     const s = roadStart(roads, px, pz, bounds) || start;

@@ -1,0 +1,121 @@
+{
+ "asset": "road bridge 'verrewinkel' over the railway (tools/blender/roadBridge.py)",
+ "kind": "road_over_rail",
+ "urbis": "ROB 879",
+ "line": "L26",
+ "road": "Rue de Verrewinkel",
+ "triangles": 34826,
+ "triangles_bridge": 28940,
+ "triangles_foot": 5886,
+ "materials": [
+  "brick_red_brussels",
+  "stone_blue",
+  "asphalt",
+  "paving_concrete",
+  "concrete",
+  "painted_metal_white",
+  "painted_metal_grey",
+  "glass_window",
+  "resin_terracotta",
+  "wood_frame_dark"
+ ],
+ "nodes": {
+  "bridge": "verrewinkel",
+  "foot": "verrewinkel_foot"
+ },
+ "frame": "glTF Y up; +x = along the road (NW->SE), -z = Blender +Y (NE); origin = UrbIS polygon centroid at the cutting floor",
+ "placement": {
+  "city_local_position": [
+   -268.81,
+   70.3,
+   1308.28
+  ],
+  "rotation_y_rad": -0.7486500204325218
+ },
+ "deck": {
+  "length": 39.7,
+  "width": 5.12,
+  "x0": -19.85,
+  "x1": 19.85,
+  "road_ends": [
+   76.79,
+   78.73
+  ],
+  "grade": 0.04887,
+  "kerb_ne": 1.2,
+  "kerb_sw": -1.75,
+  "sidewalk_ne": 0.13,
+  "strip_sw": [
+   0.1,
+   0.02
+  ],
+  "parapet_inner": 2.1,
+  "parapet_top": 1.17,
+  "fold": 17.2,
+  "flare": 0.8
+ },
+ "footprint": [
+  [
+   -20.35,
+   -11.66
+  ],
+  [
+   20.35,
+   -9.46
+  ],
+  [
+   20.35,
+   3.8
+  ],
+  [
+   -20.35,
+   3.8
+  ]
+ ],
+ "foot": {
+  "x0": -21.5,
+  "x1": 21.0,
+  "y_inner": -2.56,
+  "w": 6.4,
+  "w_nw": 8.6,
+  "x_flare": -13.0,
+  "top_under_road": 0.25
+ },
+ "openings": [
+  {
+   "name": "A",
+   "x0": -15.0,
+   "x1": -7.0,
+   "spring": 1.872,
+   "crown": 5.272,
+   "rise": 3.4,
+   "floor": null
+  },
+  {
+   "name": "B",
+   "x0": -5.5,
+   "x1": 5.5,
+   "spring": 2.51,
+   "crown": 5.81,
+   "rise": 3.3,
+   "floor": 0.0
+  },
+  {
+   "name": "C",
+   "x0": 7.0,
+   "x1": 15.0,
+   "spring": 2.948,
+   "crown": 6.348,
+   "rise": 3.4,
+   "floor": null
+  }
+ ],
+ "skew_dx_per_dy": 0.0,
+ "arcade": {
+  "bays": 18,
+  "pitch": 1.99,
+  "consoles": 17
+ },
+ "measured": "UrbIS Land cover ROB 879 (length, width, wing flare, axis), level +1 street surfaces (kerbs), DTM 2021 (cutting floor, slopes), city terrain at the deck ends (road heights), rail.json (rails), OSM (tracks, footbridge, benches)",
+ "estimated": "from the free photo s05 (solved camera): spans, rises, crowns, the arcade (count 17 consoles, pitch), console / coping shape; the NE face (mirror), the wings and end piers, the footbridge's supports and level (look-only references), the corbel depth"
+}
