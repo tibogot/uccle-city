@@ -328,11 +328,14 @@ falcon, labs (Bird, Lamp), the dev panel.
 - [ ] City wiring: one `Weather` + `weatherize()` in the ground / facade / roof / car material factories, the overhead
       map + snow layer as a sliding window round the camera (shape pass in a worker), weather fog as scene.fogNode,
       dev-panel "Weather" folder (presets + live toggle), the date slider driving `season.js`.
-- [ ] Far-tile variant of weatherize (wet darkening + roughness only past ~150 m) to bring wetness to ~0.1 ms.
+- [x] Far-tile variant of weatherize: `lite: true` (round 2, ~0-0.1 ms measured); wire it to the far tiles.
 - [ ] Trees: claude/foliage reads `viewer/seasons/season.js` (leaf colour / autumn / density per leaf, fall).
-- [ ] Side-by-side with real photos of Uccle / Brussels in rain and snow (look-only).
-- [ ] Snow: snow on branches (up-facing cover on the real trees), snow sliding off steep roofs, icicles, snow on
-      sills with thickness (sub-cell), finer layer near the camera (2 cascades: 6 cm near, 25 cm far).
+- [x] Side-by-side with real photos (round 2: data/raw/weather_refs/compare_*.jpg, findings in docs/WEATHER.md).
+- [ ] Night: the cloud deck's orange city glow in Firmament itself (the lab fakes it with a hemisphere light).
+- [ ] Puddle ripples + SSR flicker near the camera (884 ppm): filter ripple normals for SSR.
+- [ ] Trampled sidewalk snow, snow on rails / fences, tracks in thin snow on the materials.
+- [x] Snow on branches / evergreens (hooks), sill caps, icicles + drips, salted roads (round 2).
+- [ ] Snow sliding off steep roofs; finer layer near the camera (2 cascades: 6 cm near, 25 cm far).
 - [ ] Rain: drips from eaves and gutters, wet glass close-up (normal-mapped drops), thunder / lightning (sound lab).
 - [ ] GPU numbers on a quiet machine (another lab ran during the 2026-11-11 rounds).
 

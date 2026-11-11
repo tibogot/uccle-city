@@ -53,7 +53,7 @@ export const rippleSlope = Fn(([xz, t, fw]) => {
     acc.addAssign(d.div(max(length(d), 0.001)).mul(w));
   }
   // rings ~11 cm wavelength: gone before a ring is 3 px across (no crawl)
-  return acc.mul(0.22).mul(float(1).sub(smoothstep(0.012, 0.035, fw))).mul(wx.uRain.mul(1.5).min(1)).mul(wxLook.uRipple);
+  return acc.mul(0.13).mul(float(1).sub(smoothstep(0.012, 0.035, fw))).mul(wx.uRain.mul(1.5).min(1)).mul(wxLook.uRipple);
 });
 
 /** Snow sparkle: a sparse set of cells whose facet is tilted at random; returns vec4(view normal tilt xyz, mask). */
@@ -120,7 +120,7 @@ export function weatherize(m, o = {}) {
   // a soaked porous surface also gets a touch more saturated (Lagarde: the water layer)
   let rough = mix(baseRough, baseRough.mul(0.3).add(0.06), wet.mul(mix(float(0.55), float(1), horiz)));
   let metal = mix(baseMetal, max(baseMetal, float(0.12)), wet.mul(horiz));
-  if (o.road) { rough = mix(rough, max(rough, float(0.42)), wx.uSalt.mul(wx.uSnowCover.min(1))); metal = metal.mul(float(1).sub(wx.uSalt.mul(wx.uSnowCover.min(1)).mul(0.6))); }
+  if (o.road) { rough = mix(rough, max(rough, float(0.55)), wx.uSalt.mul(wx.uSnowCover.min(1))); metal = metal.mul(float(1).sub(wx.uSalt.mul(wx.uSnowCover.min(1)).mul(0.6))); }
   let nView = baseN;
 
   // ---- puddles
@@ -230,6 +230,10 @@ export function weatherize(m, o = {}) {
     }
     // slush: melting snow on roads / pavements turns grey, wet and patchy
     sm.mulAssign(roadKeep);
+    if (o.track) {   // thin snow: packed tracks show the ground (wheel lines, footprints)
+      const thin = float(1).sub(smoothstep(0.02, 0.06, wx.uSnowDepth));
+      sm.mulAssign(float(1).sub(smoothstep(0.35, 0.75, o.track(P.xz)).mul(thin).mul(horiz)));
+    }
     // what is left on a salted road is old, dirty slush (grey-brown), whatever the melt state
     const slush = o.slush ? max(wx.uSlush, o.road ? wx.uSalt.mul(0.85) : float(0)) : wx.uSlush.mul(0.35);
     const sCol = mix(SNOW_ALBEDO, vec3(0.36, 0.35, 0.33), slush.mul(0.85));

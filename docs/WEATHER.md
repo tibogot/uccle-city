@@ -92,3 +92,86 @@ Heat maps: `docs/weather/flicker_wet_strafe.png`, `flicker_snow_strafe.png`, `fl
 - Glass in the lab is a dark mirror (no interior): night windows are black; the city's facade windows have interiors.
 - Snow sparkle: dark specks were visible with large facet tilts; tilt reduced to 0.18 rad, re-check up close.
 - GPU numbers taken with another lab running in the same Chrome: redo on a quiet machine.
+
+---
+
+# Round 2 (2026-11-11 evening): winter
+
+## Photo side-by-sides (free Commons photos, kept in `data/raw/weather_refs/` with `SOURCES.md`, never shipped)
+Composites (photo | lab render), local only: `data/raw/weather_refs/compare_after_snow_sun.jpg` (Uccle, Av. Churchill
+after snow, charles lecompte CC BY-SA 3.0), `compare_snowfall_night.jpg` (Av. Churchill 17-01-2024, Sjenghai CC BY 4.0),
+`compare_night_snow_demey.jpg` (Av. G. Demey, Szilas CC BY-SA 4.0), `compare_patchy_snow.jpg` (Bosveldweg, charles
+lecompte CC BY-SA 3.0), `compare_rain_day.jpg` (rue des Fripiers in rain, charles lecompte CC BY-SA 3.0). Lab-only
+renders: `docs/weather/r2_*.png`.
+
+What the photos taught, and what changed:
+
+| Photo says | Lab before | Now |
+|---|---|---|
+| Main roads are salted / ploughed: black WET asphalt, dirty slush only at the kerbs; snow stays on sidewalks, parking strips, lawns, cars (Av. Churchill, day) | the whole street white | `wx.uSalt` + a ROAD bake layer: the volumetric layer keeps almost nothing on carriageways; the road material (`weatherize({ road, edge })`) goes wet dark asphalt with grey-brown slush along the gutters; a slider for unsalted side streets |
+| At night the snow is lit EVERYWHERE, warm (street lights + the glowing cloud deck) | black snow outside the two lamp pools | "urban sky glow": the lab's constant hemisphere light, warm, x night x cloud x snow cover (a finding for the city's night look) |
+| Falling flakes near lamps are short streaks (exposure blur) | round dots | flakes stretched along their velocity by ~1/40 s; a "blizzard (dense)" preset (64k flakes, 12 m/s) |
+| Snow plastered on the windward side of trunks | none | `weatherize({ plaster: true })` on bark |
+| Snow on the upper side of every branch | only the cut ends | `snowOnBranches()` (thickness) + bark `snowUp: [0.12, 0.45]` (colour) |
+| Thin snow (1 cm) is patchy; wheel tracks show the dark ground (Bosveldweg) | uniform white layer | full cover at 2.5 cm (was 1.2); the layer follows the same cover pattern; in thin snow packed tracks turn to dark wet ground |
+| Sills and cornices carry rounded snow; sills under a high eave still whiten | sills grey (the overhead test said "sheltered") | ledge caps (instanced, rounded) + exposure that lets wind-blown snow under eaves > 1.2 m above |
+| Wet day (setts with reflections, white sky) | close already | ripple normals softened (SSR flicker) |
+
+Not matched yet: the orange cloud glow of the night sky itself (Firmament, not touched); trampled sidewalk snow; snow on
+rails and fences; snow-covered windscreens.
+
+## New in round 2
+- **Shape pass in a worker** (`viewer/weather/overheadShape.js` pure, `overheadWorker.js` module worker, transferred
+  buffers): ~150 ms of loops off the main thread (fallback: main thread). The GPU bake + readback stays async.
+- **Smoother layer**: base heights `Hs` blurred twice across non-step neighbours (car roofs and gentle slopes lose
+  their 12.5 cm terraces); lip at cuts 0.12 -> 0.04 (the cut's stair-step on diagonals is nearly flat).
+- **Snow on branches + evergreens** (`viewer/weather/snowExtras.js`): `snowOnBranches(material)` (built on the
+  instanced positionLocal: works for instanced trees), `snowOnFoliage(material, { heightNode })` for hedges / conifers
+  (the hook for claude/foliage). Lab: a privet hedge (solid: the layer caps it) and two yews.
+- **Ledge caps**: `createLedgeCaps([{ x, y, z, len, width, axis }])`, one instanced draw, height = min(0.8 depth,
+  0.55 width), only where the layer cuts the ledge out (sills, a cornice under a wall); a cap on a ledge the layer also
+  covers z-fights.
+- **Icicles + drips**: `createEaveIce(map)`: sites from the overhead map (roof drop edges > 1.5 m, not wall ledges),
+  ~1000 cones grown by `wx.uIcicle` (cold + snow on roofs, ~4 h; melt above +1 C), never thinner than ~1 px; drips
+  vertex-animated (gravity, the real drop height) while melting or raining (`wx.uDrip`).
+- **Lite weatherize** (`weatherize({ ..., lite: true })`): wet darkening + film + SSR metalness + one-octave snow cover
+  + salted road: the far-tile path.
+- **r187 gotcha**: `positionNode` REPLACES the instanced position (instancing is applied before it): instanced weather
+  meshes carry their own per-instance attributes.
+
+## GPU (street level, interleaved rounds, mean / median ms)
+NOISY: the baseline itself moved from 3.3 to 4.2-4.9 ms between sessions (other GPU work on the machine); ~±0.2 ms.
+
+| Effect | Cost |
+|---|---|
+| Rain drops + splashes (heavy rain) | +0.07 / +0.07 (round 1: +0.29) |
+| Wetness, full weatherize on every material (7 rounds) | +0.47 / +0.39 |
+| Wetness, LITE path (7 rounds) | -0.05 / -0.13: below the noise, ~0-0.1 |
+| Snow flakes (46k, snowstorm) | +0.49 / +0.66 |
+| Snow layer | +0.55 / +0.72 |
+| Icicles + drips + caps | +0.13 / +0.26 |
+| All snow (flakes + layer + cover + ice + caps + branches), 7 rounds | **+0.74 / +0.79** (budget 1.0) |
+
+## Flicker (24 frames, strafe 0.6 mm unless noted)
+| Scene | ppm | Where |
+|---|---|---|
+| deep snow, snowy branches, icicles, hedge | 237 (1 732 before fixing a lab z-fight: flat-roof slab coplanar with the parapet) | branch tips (thin tree geometry), a few icicle tips |
+| blizzard street | 14 | - |
+| heavy rain at night, puddles low | 884 (1 092 before softening the ripples) | SSR reflections of the rippled puddle right in front of the camera: the weakest spot |
+| car close-up in snow, orbit 0.5 mrad | 983 | car model detail (rims, rails), not the snow |
+
+## Images (round 2)
+`docs/weather/r2_sills_icicles.png`, `r2_sill_close.png` (rounded sill caps), `r2_branches_hedge.png`,
+`r2_after_snow_sun.png` (salted road), `r2_snowfall_night.png` (sky glow, streaked flakes), `r2_patchy_snow_setts.png`
+(thin snow, dark tyre lines), `r2_rain_day.png`, `r2_blizzard.png`, `r2_car_roof_close.png`,
+`r2_strip_walk_winter.png`, `r2_strip_fly_snow.png`; flicker heat maps `r2_flicker_branches.png`,
+`r2_flicker_rain_night.png`.
+
+## Weak (round 2)
+- Puddle ripples + SSR still flicker close to the camera (884 ppm): filter the ripple normals for the SSR pass.
+- The materials' "tracks in thin snow" sampler (`weatherize({ track })`, a storage-buffer read in the fragment) did not
+  show in the test: not wired (the layer alone darkens the tracks).
+- Thin-snow patchiness is one noise: blobby holes; real thin snow follows the ground texture (sett joints, grass).
+- Wet asphalt still mirrors the bright snowy street at grazing angles more than in the photo.
+- The night sky glow is a hemisphere light in the lab, not in Firmament.
+- Lab trees are procedural skeletons (claude/foliage will replace them).

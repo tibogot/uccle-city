@@ -18,17 +18,28 @@ import { wx } from "./weatherState.js";
 import { season } from "../seasons/season.js";
 import { SHAPE } from "./overheadMap.js";
 import { noise2D, bumpNormal } from "../tslkit.js";
-import { glint, SNOW_ALBEDO, wxLook } from "./surfaceWeather.js";
+import { glint, SNOW_ALBEDO, wxLook, snowMask } from "./surfaceWeather.js";
 
 const NSTAMP = 6;
 
-export function createSnowLayer({ renderer, map }) {
+/** The track field (footprints / tyre tracks), one float per overhead cell. Create it BEFORE the materials when they
+ *  should show tracks in thin snow too (weatherize({ track: trackSampler(field, map) })). */
+export function createTrackField(map) { return instancedArray(map.res * map.res, "float"); }
+/** fragment sampler of the track field at a world xz (0 fresh .. 1 packed); 0 outside the map */
+export function trackSampler(field, map) {
+  return (xz) => {
+    const c = clamp(xz.sub(map.uOrigin).div(map.uSize).mul(map.res).floor(), 0, map.res - 1);
+    return select(map.inside(xz), field.element(int(c.y).mul(map.res).add(int(c.x))), float(0));
+  };
+}
+
+export function createSnowLayer({ renderer, map, track: sharedTrack = null }) {
   const N = map.res, cell = map.cell;
   const x0 = map.uOrigin.value.x, z0 = map.uOrigin.value.y;
   const geo = new THREE.PlaneGeometry(map.size - cell, map.size - cell, N - 1, N - 1).rotateX(-Math.PI / 2)
     .translate(x0 + map.size / 2, 0, z0 + map.size / 2);
   geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(x0 + map.size / 2, 0, z0 + map.size / 2), map.size);
-  const track = instancedArray(N * N, "float");
+  const track = sharedTrack ?? instancedArray(N * N, "float");
   const uDt = uniform(0);
   const uRefill = uniform(0);                          // track units per second (snowfall fills tracks back)
   const stampA = Array.from({ length: NSTAMP }, () => uniform(new THREE.Vector4(0, 0, 0, 0)));    // x, z, prev x, prev z
@@ -101,11 +112,19 @@ export function createSnowLayer({ renderer, map }) {
   const packed = smoothstep(0.15, 0.7, vTrack);
   mat.colorNode = Fn(() => {
     If(vHide.greaterThan(0.001), () => { Discard(); });
+    // thin snow is patchy: the layer keeps the materials' own cover pattern (same noise) and, while it is thin, opens
+    // where wheels and feet packed it down to the ground (the Bosveldweg photo: dark tyre lines in 1 cm of snow)
+    const thin = float(1).sub(smoothstep(0.02, 0.06, wx.uSnowDepth));
+    const keep = snowMask(P, float(1), float(1), wx.uSnowCover);
+    If(keep.lessThan(0.3), () => { Discard(); });
     const v = noise2D(P.xz.mul(0.8)).mul(0.04).add(0.98);
     const slushC = vec3(0.4, 0.41, 0.42);
     let c = SNOW_ALBEDO.mul(v);
     c = mix(c, c.mul(0.78).mul(vec3(0.97, 0.97, 0.96)), packed);              // packed snow: greyer, a little dirty
     c = mix(c, slushC, wx.uSlush.mul(mix(float(0.5), float(1), packed)));      // thaw: tracks go to slush first
+    // thin snow: the tracks are pressed through to the wet ground (dark lines, the Bosveldweg photo)
+    const thinT = float(1).sub(smoothstep(0.02, 0.06, wx.uSnowDepth));
+    c = mix(c, vec3(0.07, 0.068, 0.065), packed.mul(thinT).mul(0.9));
     return c;
   })();
   mat.roughnessNode = mix(mix(mix(float(0.74), float(0.12), gl.w), float(0.5), packed), float(0.22), wx.uSlush);

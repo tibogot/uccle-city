@@ -27,7 +27,7 @@ import { Weather, WEATHER_PRESETS, wx } from "../viewer/weather/weatherState.js"
 import { weatherize, wxLook } from "../viewer/weather/surfaceWeather.js";
 import { createOverheadMap, markSolid, markCanopy, markRoad } from "../viewer/weather/overheadMap.js";
 import { createPrecipitation } from "../viewer/weather/precipitation.js";
-import { createSnowLayer } from "../viewer/weather/snowLayer.js";
+import { createSnowLayer, createTrackField, trackSampler } from "../viewer/weather/snowLayer.js";
 import { createWeatherFog } from "../viewer/weather/weatherFog.js";
 import { snowOnBranches, snowOnFoliage, createLedgeCaps, createEaveIce } from "../viewer/weather/snowExtras.js";
 import { fetchLive, mapLive } from "../viewer/weather/liveWeather.js";
@@ -142,6 +142,8 @@ const ledges = [];   // narrow up-facing ledges for the snow caps: { x, y, z, le
 
 // the overhead map: 64 m around the street (12.5 cm cells)
 const omap = createOverheadMap({ renderer, centre: new THREE.Vector3(0, 0, 0), size: 64, res: 512 });
+const trackField = createTrackField(omap);
+const trackAt = trackSampler(trackField, omap);
 
 // ================================================================================================ the street
 const root = new THREE.Group(); scene.add(root);
@@ -278,12 +280,13 @@ const houses = [
       }
       // a cornice at the foot of the mansard (a ledge for snow)
       root.add(mesh(new THREE.BoxGeometry(h.w, 0.18, 0.35).translate(x + h.w / 2, wallH - 0.05, front + 0.12), mats.stone, { porosity: 0.35 }));
-      ledges.push({ x: x + h.w / 2, y: wallH + 0.04, z: front + 0.12 + 0.02, len: h.w, width: 0.3, axis: "x" });
+      // the cornice is cut out of the volumetric layer (a mansard wall behind, a drop in front): a cap
+      ledges.push({ x: x + h.w / 2, y: wallH + 0.04, z: front + 0.12 + 0.03, len: h.w, width: 0.28, axis: "x" });
     } else if (h.roof === "flat") {
-      root.add(mesh(new THREE.BoxGeometry(h.w, 0.12, depthH).translate(x + h.w / 2, wallH + 0.06, zc), () => plainMat(0x33302c, 0.9), { porosity: 0.4, puddles: true }));
+      // (inset 3 cm from the facade: its front face was coplanar with the parapet's and z-fought in the flicker test)
+      root.add(mesh(new THREE.BoxGeometry(h.w - 0.06, 0.12, depthH - 0.06).translate(x + h.w / 2, wallH + 0.06, zc), () => plainMat(0x33302c, 0.9), { porosity: 0.4, puddles: true }));
       for (const [dx, dz, sx, sz] of [[0, -depthH / 2 + 0.15, h.w, 0.3], [0, depthH / 2 - 0.15, h.w, 0.3]]) {
         root.add(mesh(new THREE.BoxGeometry(sx, 0.6, sz).translate(x + h.w / 2 + dx, wallH + 0.3, zc + dz), mkB, WALL_OPTS));
-        ledges.push({ x: x + h.w / 2 + dx, y: wallH + 0.6, z: zc + dz, len: sx, width: sz, axis: "x" });
       }
       // a skylight box on the roof
       root.add(mesh(new THREE.BoxGeometry(1.4, 0.5, 1.4).translate(x + h.w / 2, wallH + 0.37, zc - 1), () => plainMat(0x777a7d, 0.5), { porosity: 0.1 }));
@@ -465,7 +468,7 @@ const rain = createPrecipitation({ renderer, kind: "rain", map: omap });
 const snowP = createPrecipitation({ renderer, kind: "snow", map: omap });
 const leaves = createPrecipitation({ renderer, kind: "leaves", map: omap, trees: treeSites.map((t) => ({ x: t.x, z: t.z, r: t.r * 0.8, y: t.y })) });
 scene.add(rain.mesh, rain.splashes, snowP.mesh, leaves.mesh);
-const snowLayer = createSnowLayer({ renderer, map: omap });
+const snowLayer = createSnowLayer({ renderer, map: omap, track: trackField });
 scene.add(snowLayer.mesh);
 const caps = createLedgeCaps(ledges);
 scene.add(caps.mesh);

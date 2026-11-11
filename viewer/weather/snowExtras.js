@@ -128,7 +128,8 @@ export function createEaveIce(map, { perSite = 2, maxSites = 700 } = {}) {
   cone.setAttribute("aIce", new THREE.InstancedBufferAttribute(S4, 4));
   const ic = attribute("aIce", "vec4"), r = ic.w;
   const len = wx.uIcicle.mul(r.mul(r).mul(0.55).add(0.15)).mul(smoothstep(0.25, 0.35, r));   // a third of the sites stay bare
-  const rad = len.mul(0.06).add(0.004);
+  // never thinner than ~1 px (a sub-pixel icicle blinks as the camera moves: the flicker test)
+  const rad = max(len.mul(0.06).add(0.004), length(cameraPosition.sub(ic.xyz)).mul(0.0009)).mul(smoothstep(0.0, 0.02, len));
   im.positionNode = ic.xyz.add(vec3(positionGeometry.x.mul(rad), positionGeometry.y.mul(len), positionGeometry.z.mul(rad)));
   im.colorNode = mix(vec3(0.55, 0.68, 0.78), vec3(0.85, 0.9, 0.95), positionGeometry.y.negate());
   // (normals: the cone's own, unscaled: fine for a thin cone)
