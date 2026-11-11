@@ -88,6 +88,7 @@ export class PedSim {
       for (const x of walkable) { k -= x.len; if (k <= 0) { e = x; break; } }
       s = r() * e.len; dir = r() < 0.5 ? 1 : -1;
     }
+    p.gen = (p.gen || 0) + 1;
     Object.assign(p, { alive: true, edge: e, dir, s, onCrossing: null, tramWait: false, boarding: false, spotUntil: 0, glance: 0, fadeDir: 0, face: null, lane: (r() - 0.5) * Math.min(0.9, e.width * 0.5), state: "walk", hold: false, timer: 0, kerb: null, spot: null, leaving: false, v: p.vPref * 0.8, look: 0 });
     const c = this._carrot(p, _c);
     p.x = c.x - (dir * e.ux) * 0.5; p.z = c.z - (dir * e.uz) * 0.5;
@@ -97,7 +98,8 @@ export class PedSim {
   _carrot(p, out) {
     const e = p.edge, s = p.s;
     const nx = -e.uz, nz = e.ux;              // left of the edge's a -> b direction
-    const lane = p.lane * p.dir;              // lane: + to the walker's left
+    const half = Math.max(0, e.width * 0.5 - 0.3);
+    const lane = Math.max(-half, Math.min(half, p.lane + (p.dodge || 0))) * p.dir;   // lane: + to the walker's left
     out.x = e.a.x + e.ux * s + nx * lane; out.z = e.a.z + e.uz * s + nz * lane;
     return out;
   }
@@ -194,6 +196,16 @@ export class PedSim {
       const ex = p.x - q.x, ez = p.z - q.z, dd = ex * ex + ez * ez;
       if (dd < 0.42 && dd > 1e-6) { const k = (0.65 - Math.sqrt(dd)) / 0.65; sx += ex * k; sz += ez * k; }
     });
+    // keep right for oncoming people (Mr.doob's side-step idea, his pedestrian-system.js:503-506): someone ahead within
+    // 3.5 m, coming the other way, less than 0.7 m across -> drift 0.45 m to the right, then back
+    const fx = Math.sin(p.yaw), fz = Math.cos(p.yaw);
+    let oncoming = false;
+    if (p.v > 0.3 && !p.spot) this._neighbours(p, (q) => {
+      const ex = q.x - p.x, ez = q.z - p.z, ahead = ex * fx + ez * fz, across = Math.abs(ex * fz - ez * fx);
+      if (ahead > 0 && ahead < 3.5 && across < 0.7 && Math.sin(q.yaw) * fx + Math.cos(q.yaw) * fz < -0.3) oncoming = true;
+    });
+    const dodgeT = oncoming ? -0.45 : 0;
+    p.dodge = (p.dodge || 0) + Math.max(-0.35 * dt, Math.min(0.35 * dt, dodgeT - (p.dodge || 0)));
     let mx = 0, mz = 0;
     if (dist > 1e-3) { mx = (dx / dist) * Math.min(p.v * dt, dist); mz = (dz / dist) * Math.min(p.v * dt, dist); }
     mx += sx * dt * 0.8; mz += sz * dt * 0.8;

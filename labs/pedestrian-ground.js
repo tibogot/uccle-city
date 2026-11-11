@@ -182,7 +182,7 @@ export function buildGround(scene) {
       const dpos = cx - w * 0.25;
       const [dx, dz] = axis === "x" ? [dpos, line - side * 0.03] : [line - side * 0.03, dpos];
       parts.door.push(axis === "x" ? box(1.0, 2.2, 0.06, dx, g0 + 1.1, dz) : box(0.06, 2.2, 1.0, dx, g0 + 1.1, dz));
-      doors.push({ x: axis === "x" ? dpos : line - side * 0.25, z: axis === "x" ? line - side * 0.25 : dpos, axis, side });
+      doors.push({ x: axis === "x" ? dpos : line - side * 0.45, z: axis === "x" ? line - side * 0.45 : dpos, axis, side });
       a += w;
     }
   };

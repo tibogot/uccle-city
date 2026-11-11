@@ -158,7 +158,8 @@ export class Crowd {
   bakedPose(p, out) {
     const a = p.anim, s = this._sp;
     s.sex = p.sex; s.clipA = Math.floor(a.codeA); s.phaseA = a.codeA % 1; s.clipB = Math.floor(a.codeB); s.phaseB = a.codeB % 1; s.w = a.w;
-    s.x = p.x; s.y = p.y; s.z = p.z; s.yaw = p.yaw; s.scale = p.scale; s.look = p.look || 0; s.seed = p.seed; s.girth = p.girth; s.hair = p.hair;
+    if (a.held) { s.x = a.hx; s.y = a.hy; s.z = a.hz; s.yaw = a.hyaw; } else { s.x = p.x; s.y = p.y; s.z = p.z; s.yaw = p.yaw; }
+    s.scale = p.scale; s.look = p.look || 0; s.seed = p.seed; s.girth = p.girth; s.hair = p.hair;
     return this.table.samplePose(out, s);
   }
 
@@ -198,9 +199,18 @@ export class Crowd {
     const cand = this._cand || (this._cand = []); cand.length = 0;
     for (const p of people) {
       if (!p.alive) { if (p.anim?.live) this._free(p); continue; }
+      if (p.anim && p.anim.gen !== p.gen) { if (p.anim.live) this._free(p); p.anim = null; }     // re-placed: fresh state
+      if (!p.anim) { this.advance(p, 0); Object.assign(p.anim, { gen: p.gen, hx: p.x, hy: p.y, hz: p.z, hyaw: p.yaw }); }
       const dx = p.x - cx, dy = p.y + 0.9 - cy, dz = p.z - cz;
       p.dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-      this.advance(p, dt);
+      // far band (past the LOD1 -> LOD2 fade): the clip state steps at 1 / farRate of the frame rate (15 Hz at 60 fps),
+      // in farRate groups; the position still moves every frame
+      // (the drawn position steps with it: a pose held while the body slides on would be a foot slide)
+      if (p.anim && p.dist > B.lod12 + B.lod12w && !p.anim.live && (p.id + this.frame) % B.farRate) { p.anim.pend = (p.anim.pend || 0) + dt; p.anim.held = true; }
+      else {
+        const a0 = p.anim; this.advance(p, dt + (a0?.pend || 0));
+        const a = p.anim; a.pend = 0; a.held = false; a.hx = p.x; a.hy = p.y; a.hz = p.z; a.hyaw = p.yaw;
+      }
       if (p.dist > B.end) { p.drawn = false; st.beyond++; if (p.anim.live) this._free(p); continue; }
       _sph.center.set(p.x, p.y + 0.9 * p.scale, p.z); _sph.radius = 1.1 * p.scale;
       p.inView = this.frustum.intersectsSphere(_sph);
@@ -218,9 +228,12 @@ export class Crowd {
         if (p.look) headGlance(a.live.pose, p.look);
       }
     } else {
-      cand.sort((a, b) => a.dist - b.dist);
+      // only the near ones (warm range, or still holding a rig) compete for the live rigs: sort just those
+      const near = this._near || (this._near = []); near.length = 0;
+      for (const p of cand) if (p.dist < B.liveWarm || p.anim.live) near.push(p);
+      near.sort((a, b) => a.dist - b.dist);
       let nLive = 0;
-      for (const p of cand) {
+      for (const p of near) {
         const a = p.anim;
         const want = nLive < B.maxLive && (p.dist < B.live || (a.liveTarget === 1 && p.dist < B.liveOut));
         const warm = nLive < B.maxLive && p.dist < B.liveWarm;
@@ -255,7 +268,8 @@ export class Crowd {
       const vis = sp * (1 - tEnd);                    // share of the person's pixels drawn at all
       // the person's pixels [0, vis) split between the LODs: LOD0 [0, a0), LOD1 [a0, a1), LOD2 [a1, vis)
       const a0 = Math.min(vis, 1 - t01), a1 = Math.min(vis, Math.max(a0, 1 - t12));
-      const ranges = [[0, a0], [a0, a1], [a1, vis]];
+      const R = this._ranges || (this._ranges = new Float32Array(4));
+      R[0] = 0; R[1] = a0; R[2] = a1; R[3] = vis;
       const live = a.live && a.liveW > 0;
       let pose = null;
       if (live) {
@@ -264,11 +278,12 @@ export class Crowd {
         if (pose === a.live.pose) (a.drawnPose ||= new Float32Array(124)).set(pose);
         st.live++;
       }
-      p.lodMix = ranges.map(([lo, hi]) => Math.max(0, hi - lo));
+      const mix = p.lodMix || (p.lodMix = [0, 0, 0]);
+      for (let k = 0; k < 3; k++) mix[k] = Math.max(0, R[k + 1] - R[k]);
       p.shadowMix = shadowKeep * vis;
       let drew = false;
       for (let k = 0; k < 3; k++) {
-        const [lo, hi] = ranges[k];
+        const lo = R[k], hi = R[k + 1];
         if (hi - lo <= 1e-4) continue;
         const b = bands[k];
         if (b.count >= b.max) continue;
@@ -281,7 +296,8 @@ export class Crowd {
           b.pose.value.array.set(pose, slot * STRIDE * 4);
         } else slot = b.count++;
         const P = b.params.value.array, o = slot * 16;
-        P[o] = p.x; P[o + 1] = p.y; P[o + 2] = p.z; P[o + 3] = p.yaw;
+        if (a.held) { P[o] = a.hx; P[o + 1] = a.hy; P[o + 2] = a.hz; P[o + 3] = a.hyaw; }
+        else { P[o] = p.x; P[o + 1] = p.y; P[o + 2] = p.z; P[o + 3] = p.yaw; }
         P[o + 4] = live ? -1 : a.codeA; P[o + 5] = a.codeB; P[o + 6] = a.w; P[o + 7] = p.scale;
         P[o + 8] = p.seed; P[o + 9] = p.sex; P[o + 10] = p.girth; P[o + 11] = p.hair;
         P[o + 12] = p.look || 0; P[o + 13] = 0; P[o + 14] = 0; P[o + 15] = 0;

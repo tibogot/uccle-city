@@ -42,9 +42,10 @@ export class Meters {
       const cov = p.alive && p.dist <= 250 && p.drawn ? (p.lodMix ? p.lodMix[0] + p.lodMix[1] + p.lodMix[2] : 0) : 0;
       const sh = p.alive && p.drawn ? p.shadowMix ?? 0 : 0;
       const seen = p.alive && p.inView;
-      if (s.cov >= 0 && seen && s.inView && p.alive && !s.respawned && Math.abs(cov - s.cov) > 0.2) { this.pops.coverage++; this._ev("coverage", p, s.cov, cov); }
-      if (s.sh >= 0 && seen && s.inView && p.alive && !s.respawned && Math.abs(sh - s.sh) > 0.2 && p.dist < 60) { this.pops.shadow++; this._ev("shadow", p, s.sh, sh); }
-      if (!p.alive) s.respawned = true;
+      if (!p.alive || (s.cgen !== undefined && s.cgen !== p.gen)) { s.respawned = true;  if (s.cgen !== p.gen && s.cgen !== undefined) { s.cov = -1; s.sh = -1; } }
+      s.cgen = p.gen;
+      if (s.cov >= 0 && seen && s.inView && p.alive && Math.abs(cov - s.cov) / (60 * dt) > 0.2) { this.pops.coverage++; this._ev("coverage", p, s.cov, cov); }
+      if (s.sh >= 0 && seen && s.inView && p.alive && Math.abs(sh - s.sh) / (60 * dt) > 0.2 && p.dist < 60) { this.pops.shadow++; this._ev("shadow", p, s.sh, sh); }
       s.cov = cov; s.sh = sh; s.inView = seen;
     }
     // (b) poses: round-robin a budget of drawn people
@@ -69,7 +70,7 @@ export class Meters {
       });
       const pc = a.w < 0.5 ? a.codeA : a.codeB;
       const planted = [0, 1].map((f) => (a.live && a.liveW >= 1 ? !a.live.feet[f].swing : T.planted(Math.floor(pc), pc % 1, p.sex, f) === 1));
-      const fresh = s.frame === this.frames - 1 && p.id === s.pid && !s.respawned;
+      const fresh = s.frame === this.frames - 1 && p.gen === s.gen && !s.respawned;
       for (let f = 0; f < 2; f++) {
         if (fresh && planted[f] && s.planted?.[f]) {
           const v = Math.min(...[0, 1].map((k) => Math.hypot(sole[f][k][0] - s.sole[f][k][0], sole[f][k][2] - s.sole[f][k][2]))) / dt;
@@ -89,12 +90,12 @@ export class Meters {
         if (s.velFrame === this.frames - 1) {
           for (let q = 0; q < 3; q++) {
             const jerk = Math.hypot(vel[q][0] - s.v[q][0], vel[q][1] - s.v[q][1], vel[q][2] - s.v[q][2]) / 60;
-            if (jerk > 0.05 && this.frames > 10) { this.pops.pose++; this._ev("pose", p, jerk, band); break; }
+            if (jerk > 0.05 && this.frames > 10 && p.dist < 64) { this.pops.pose++; this._ev("pose", p, jerk, band); break; }
           }
         }
         s.v = vel; s.velFrame = this.frames;
       } else if (fresh) { s.v = pts.map((q, k) => [0, 1, 2].map((c2) => (q[c2] - s.pts[k][c2]) / dt)); s.velFrame = this.frames; }
-      s.pts = pts; s.sole = sole; s.planted = planted; s.frame = this.frames; s.pid = p.id; s.respawned = false;
+      s.pts = pts; s.sole = sole; s.planted = planted; s.frame = this.frames; s.gen = p.gen; s.respawned = false;
     }
     // the sampled window holds for 30 frames (speeds and second differences need consecutive frames), then moves on
     if (this.frames % 30 === 0) this.cursor = (this.cursor + n) % Math.max(1, drawn.length);

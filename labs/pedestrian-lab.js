@@ -146,6 +146,7 @@ function sampleGpu() {
   }).catch(() => {}).finally(() => { gpu.pending = false; });
 }
 const push = (a, v) => { a.push(v); if (a.length > 600) a.shift(); };
+const mean = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
 const med = (a) => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
 
 let clock = 0, last = performance.now(), frame = 0, camPath = null, fixedDt = 0;
@@ -217,7 +218,7 @@ function readouts() {
   const vis = sim.people.filter((p) => p.alive && p.inView && p.dist <= BANDS.end).length;
   S.stats = `${alive} alive · ${vis} in view · ${st.drawn} drawn`;
   S.bandsTxt = S.mode === "banded" ? `LOD0 ${st.perBand[0]} · LOD1 ${st.perBand[1]} · LOD2 ${st.perBand[2]} · live ${st.live} (${st.blending} blending)` : S.mode;
-  S.cost = `CPU sim ${med(cpu.sim).toFixed(3)} + crowd ${med(cpu.crowd).toFixed(3)} ms · GPU ${gpu.render.toFixed(2)} + ${gpu.compute.toFixed(3)} ms`;
+  S.cost = `CPU sim ${mean(cpu.sim).toFixed(3)} + crowd ${mean(cpu.crowd).toFixed(3)} ms · GPU ${gpu.render.toFixed(2)} + ${gpu.compute.toFixed(3)} ms`;
   if (meters.on) {
     const m = meters.summary();
     S.metersTxt = `slide p95 live ${m.slide.live.p95} mid ${m.slide.mid.p95} far ${m.slide.far.p95} m/s · pops ${m.pops.coverage}/${m.pops.shadow}/${m.pops.pose}`;
@@ -239,8 +240,8 @@ const results = {};
 const PATHS = {
   "dolly-walk": { secs: 30, f: (t) => ({ pos: [-140 + 1.4 * t, 1.7, -5.6], target: [-140 + 1.4 * t + 20, 1.4, -5.6] }) },
   "dolly-drive": { secs: 20, f: (t) => ({ pos: [-145 + 13.9 * t, 1.3, 1.75], target: [-145 + 13.9 * t + 30, 1.0, 1.75] }) },
-  orbit: { secs: 40, f: (t) => { const a = t * 0.16; return { pos: [Math.cos(a) * 40, 14, Math.sin(a) * 40], target: [0, 0.5, 0] }; } },
-  bands: { secs: 36, f: (t) => { const d = 6 + t * 8; return { pos: [-90 - d * 0.2, 1.7 + d * 0.15, -5.6 + d * 0.98], target: [-90, 0.8, -5.6] }; } },
+  orbit: { secs: 40, f: (t) => { const a = t * 0.16; return { pos: [Math.cos(a) * 40, 30, Math.sin(a) * 40], target: [0, 0.5, 0] }; } },
+  bands: { secs: 32, f: (t) => { const d = 6 + t * 8; return { pos: [-120 + d, 1.7 + d * 0.03, 0.5], target: [-120, 1.0, -4.5] }; } },     // backwards down street A: every person crosses every band
   spawn60: { secs: 60, f: (t) => { const a = t * 0.1; return { pos: [Math.cos(a) * 110, 60, Math.sin(a) * 110], target: [0, 0, 0] }; } },
 };
 async function runCheck(name, { fixed = 0 } = {}) {
@@ -268,7 +269,10 @@ async function runCheck(name, { fixed = 0 } = {}) {
 
 /** GPU / CPU A/B: for each count, rounds of crowd off / banded / his in the current view (spawning off, a fixed
  *  population); median GPU ms (render + compute) and median CPU ms (crowd update; the sim reported apart). */
-async function bench({ counts = [50, 150, 300], modes = ["banded", "his"], rounds = 3, settle = 700, measure = 2200 } = {}) {
+async function bench({ counts = [50, 150, 300], modes = ["banded", "his"], rounds = 3, settle = 700, measure = 2200, street = true } = {}) {
+  // street: everyone on street A's west sidewalks (the "street" view looks down it: all of them in view, every band)
+  const keepW = sim._walkable, keepL = sim._walkLen;
+  if (street) { sim._walkable = graph.edges.filter((e) => e.kind === "walk" && Math.abs(e.a.z) < 8 && Math.abs(e.b.z) < 8 && e.a.x < -8 && e.b.x < -8); sim._walkLen = 0; setView("street"); }
   const keep = { mode: S.mode, count: S.count, spawning: S.spawning, density: S.density, hour: S.hour };
   S.spawning = false;
   const res = {};
@@ -283,17 +287,19 @@ async function bench({ counts = [50, 150, 300], modes = ["banded", "his"], round
       gpu.samples.length = 0; cpu.crowd.length = 0; cpu.sim.length = 0; cpu.rig.length = 0;
       await sleep(measure);
       const row = (res[n][mode] ||= { gpu: [], cpu: [], sim: [], rig: [], inView: 0, bands: null });
-      row.gpu.push(med(gpu.samples)); row.cpu.push(mode === "off" ? 0 : med(cpu.crowd)); row.sim.push(med(cpu.sim)); row.rig.push(med(cpu.rig));
+      // CPU: means (performance.now() is coarsened to 0.1 ms here: a median of such samples is meaningless)
+      row.gpu.push(med(gpu.samples)); row.cpu.push(mode === "off" ? 0 : mean(cpu.crowd)); row.sim.push(mean(cpu.sim)); row.rig.push(mean(cpu.rig)); row.gpuCompute = gpu.compute;
       row.inView = sim.people.filter((p) => p.alive && p.inView).length;
       if (mode === "banded") row.bands = [...crowd.stats.perBand, crowd.stats.live];
     }
   }
   Object.assign(S, keep); applyMode();
+  sim._walkable = keepW; sim._walkLen = keepL;
   const out = {};
   for (const [n, byMode] of Object.entries(res)) {
     const off = Math.min(...byMode.off.gpu);
     out[n] = Object.fromEntries(Object.entries(byMode).map(([m, v]) => [m, { gpuMs: +med(v.gpu).toFixed(3), gpuMin: +Math.min(...v.gpu).toFixed(3), dGpu: +(med(v.gpu) - med(byMode.off.gpu)).toFixed(3), dGpuMin: +(Math.min(...v.gpu) - off).toFixed(3),
-      cpuMs: +med(v.cpu).toFixed(3), rigMs: +med(v.rig).toFixed(3), simMs: +med(v.sim).toFixed(3), runs: v.gpu.map((x) => +x.toFixed(2)), inView: v.inView, bands: v.bands }]));
+      cpuMs: +med(v.cpu).toFixed(3), rigMs: +med(v.rig).toFixed(3), simMs: +med(v.sim).toFixed(3), compute: +(v.gpuCompute ?? 0).toFixed(3), runs: v.gpu.map((x) => +x.toFixed(2)), inView: v.inView, bands: v.bands }]));
   }
   results.bench = out;
   S.bench = Object.entries(out).map(([n, o]) => `${n}: banded +${o.banded?.dGpu} GPU / ${o.banded?.cpuMs} CPU · his +${o.his?.dGpu} / ${o.his?.cpuMs}`).join(" | ");
@@ -303,3 +309,35 @@ async function bench({ counts = [50, 150, 300], modes = ["banded", "his"], round
 
 window.lab = { renderer, scene, camera, controls, lighting, S, sim, crowd, his, meters, table, traffic, tram, graph, results, bench, runCheck, setView, PATHS, gpu, cpu, applyMode,
   setFixed: (dt) => { fixedDt = dt; }, setCamPath: (f) => { camPath = f; }, ground, BANDS, med };
+
+// ------------------------------------------------------------------------------------------------ frame strips
+// Deterministic stepping for review strips (the owner wants moving evidence): lab.strip.ui(false) hides the overlays,
+// lab.strip.cam = (t) => ({ pos, target, fov? }) drives the camera from the strip clock, await lab.strip.step(frames)
+// advances the world by frames x 1/60 s and holds still for a screenshot. lab.strip.follow(person, d(t)) = a dolly-
+// zoom on one person (the field of view keeps them ~2.2 m tall on screen) to show every band switch up close.
+const strip = {
+  t: 0, cam: null,
+  ui(on) { for (const s of [".upanel", "#title", "#info"]) document.querySelector(s).style.display = on ? "" : "none"; },
+  async step(frames) {
+    fixedDt = 1 / 60; S.paused = false;
+    for (let i = 0; i < frames; i++) {
+      strip.t += 1 / 60;
+      if (strip.cam) { const v = strip.cam(strip.t); camera.position.set(...v.pos); camera.lookAt(...v.target); controls.target.set(...v.target); if (v.fov) { camera.fov = v.fov; camera.updateProjectionMatrix(); } }
+      await new Promise((r) => requestAnimationFrame(r));
+    }
+    S.paused = true; fixedDt = 0;
+    await new Promise((r) => requestAnimationFrame(r)); await new Promise((r) => requestAnimationFrame(r));
+    return strip.t;
+  },
+  follow(p, dist) {
+    strip.cam = (t) => {
+      // in front of the walker along the sidewalk (a clear line of sight), a little toward the road
+      const d = dist(t), fx = Math.sin(p.yaw), fz = Math.cos(p.yaw);
+      let sx = fz, sz = -fx; if (Math.abs(p.z + sz) > Math.abs(p.z - sz)) { sx = -sx; sz = -sz; }
+      const pos = [p.x + fx * d * 0.985 + sx * d * 0.17, p.y + 1.25 + d * 0.012, p.z + fz * d * 0.985 + sz * d * 0.17];
+      return { pos, target: [p.x, p.y + 0.95, p.z], fov: (2 * Math.atan(1.25 / d) * 180) / Math.PI };
+    };
+  },
+  reset() { strip.t = 0; strip.cam = null; camera.fov = 50; camera.updateProjectionMatrix(); S.paused = false; fixedDt = 0; },
+};
+window.lab.strip = strip;
