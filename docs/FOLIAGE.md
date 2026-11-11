@@ -175,3 +175,41 @@ ms (6 alternating rounds); front scene from the sidewalk +1.64, façade view +1.
 rounds; the close views draw several LOD0 plants of 12-15k triangles, 12 geraniums, dense near grass and close hedge
 cards). Per-part runs in this state were not additive (grass alone > all), so trust none of them to better than
 +-0.4 ms; re-measure on a quiet machine. The front scene is a close-up worst case, not the street budget.
+
+## 9. Polish (2026-11-11, late)
+
+**Ivy grows like ivy** (`viewer/foliage/ivy.js` `growIvy`; the lab's ivy wall is now the whole main façade, 8.3 m, with
+the same three roots). The old ivy grew straight up and died at every window: tall columns between the windows. Now:
+- the colony is a **mound over each root** (height 72-100 % of `maxHeight`, lateral spread 0.42-0.64 x `reach`), its
+  top ragged by two sines; it decides how far the ivy spreads, not the wall's edge;
+- stems climb with an up-pull (main stems 0.3, side shoots 0.12), branch often (5-7.5 % per 4 cm step, up to 320),
+  side shoots start sideways, and every stem is **pushed away from what is already covered** (a 6 cm density grid);
+  a stem stops when the wall there is full;
+- at a window (or the envelope) a stem **deflects** (turns 40 / 75 / 110 deg, the emptier side first) instead of
+  dying, so the ivy hugs the frames, fills the spandrels and goes over lintels and under sills;
+- leaves: **patchy** (a 0.8 m / 0.3 m value noise: thin places where the brick shows), **thinning to a ragged margin**
+  near the envelope (0.9 m band), at most 2 sprays per 6 cm cell, none more than 6 cm inside an opening; cards still
+  overhang the frames a little ("wrapping");
+- **trailing stems** (up to 40): from the top edge (30-100 cm) and over window heads (8-22 cm), standing off the wall
+  as they hang, with a few sprays;
+- the **mantle** coverage is painted smaller (8 cm discs, was 11) so the cards cover it near, and the openings are
+  cleared from it (the far mass never covers glass).
+Front scene: 2,792 leaf cards (was 3,756), 16.4k stem triangles. Images: `foliage/polish_ivy_before.png`,
+`polish_ivy_after.png`, `polish_ivy_close_after.png`.
+
+**Hedge body holes** (`hedges.js`): were the 1-3 cm leaf noise dipping (dotty close up). Now fewer, bigger, softer gaps
+from a 40 cm / 12 cm noise (dark core + soft rim), the edge widened by the noise's own footprint, the share converging
+to its mean (7 %) as the texel footprint grows (the procedural form of coverage-preserving mips); leaf crevice contrast
+a little lower (0.62-1.12, was 0.5-1.15). Gotcha: the first try put the hole mask (which contains `fwidth`) into the
+bump height: differentiated twice, it flickered (front view 241 -> 1,036 ppm); the bump now takes a smooth
+hole depth. Images: `foliage/polish_hedge_close_before.png` / `_after.png` (1 m from the privet).
+
+**Flicker** (strafe, 24 frames; before -> after): front scene "façade, ivy, window boxes" (4 mm steps) **241 -> 261 ppm**
+(run-to-run noise; the clusters are the hedge tops and cards, the ivy shows none:
+`polish_flicker_facade_before.png` / `_after.png`); hedge close-up at 1 m (0.6 mm steps) **5,648 -> 5,563 ppm**
+(clusters: the bed plants' leaves against the sky and the hedge top at grazing angles).
+
+Weak (polish): where the ivy is sparse at its edge the mantle shows as flat dark blobs at 1-2 m; no aerial roots /
+adventitious rootlets; the ivy on the façade is still one plane (no wrap onto the reveal / round the corner); hedge
+tops at grazing angles still sparkle (leaf noise, unchanged); no mesh audit for the ivy (procedural ribbons + cards).
+

@@ -178,12 +178,21 @@ function speciesMaterials(name) {
   const leaves = n2.mul(0.5).add(n3.mul(0.5));
   const crev = smoothstep(0.15, 0.55, leaves);                      // dark gaps between leaf clumps
   const snowTop = smoothstep(0.55, 0.9, normalWorld.y).mul(season.uSnow);
-  // holes into the hedge's dark interior (twigs, shadow) where the leaf noise dips: the body reads as a mass of
-  // leaves with depth, not a painted box
-  const holes = smoothstep(0.3, 0.12, leaves).mul(smoothstep(0.35, 0.6, n1).mul(0.6).add(0.4));
-  const lit = leafC.mul(mix(0.5, 1.15, crev)).mul(clumps.mul(0.3).add(0.82));
-  body.colorNode = mix(mix(lit, leafC.mul(0.12), holes), vec3(0.88, 0.9, 0.94), snowTop);
-  body.normalNode = bumpNormal(leaves.mul(0.05).add(n1.mul(0.04)).sub(holes.mul(0.04)));
+  // holes into the hedge's dark interior (twigs, shadow): the body reads as a mass of leaves with depth, not a
+  // painted box. Polish 2026-11-11: the holes were the 1-3 cm leaf noise dipping (dotty up close); now FEWER, BIGGER,
+  // SOFTER gaps from a 40 cm / 12 cm noise, a dark core with a soft rim, the edge widened by the noise's own
+  // footprint (no crisp sub-pixel specks), and the share converging to its mean (~7 %) as the texel footprint grows:
+  // the coverage the noise's mips would otherwise shift (the procedural form of coverage-preserving mips).
+  const hN = noiseAt(u.add(vec2(3.7, 1.3)), 1 / 1.6).b.mul(0.62).add(noiseAt(u.add(vec2(0.9, 5.2)), 1 / 0.75).g.mul(0.38));
+  const hE = max(fwidth(hN).mul(1.5), float(0.06));
+  const hRaw = smoothstep(float(0.27).add(hE), float(0.27).sub(hE), hN);
+  const hCore = smoothstep(0.24, 0.16, hN);
+  const hFar = smoothstep(0.015, 0.07, length(fwidth(u)));
+  const holes = mix(hRaw.mul(0.55).add(hCore.mul(0.45)), float(0.07), hFar);
+  const lit = leafC.mul(mix(0.62, 1.12, crev)).mul(clumps.mul(0.3).add(0.82));
+  body.colorNode = mix(mix(lit, leafC.mul(0.12), holes.mul(0.92)), vec3(0.88, 0.9, 0.94), snowTop);
+  // the bump takes a smooth hole depth (no fwidth inside a height that is differentiated again: that flickered)
+  body.normalNode = bumpNormal(leaves.mul(0.05).add(n1.mul(0.04)).sub(smoothstep(0.34, 0.16, hN).mul(0.05)));
   body.roughnessNode = mix(float(sp.gloss), float(0.95), float(1).sub(crev).mul(0.5));
   // CARDS
   const tex = leafCard(name);

@@ -126,8 +126,9 @@ export function buildFront(heights) {
   const wb = windowBoxes(sills.map((w) => ({ centre: new THREE.Vector3(main.x0 + (w.u0 + w.u1) / 2, main.base + w.v0 - 0.02, main.zf), right: X, out: Z, width: w.u1 - w.u0 - 0.1 })), 7);
   group.add(wb.group);
   plants.push(...wb.plants);
-  // ---- ivy on the left of the main façade, cut back round the windows and the door
-  const ivy = growIvy({ origin: new THREE.Vector3(main.x0, main.base + 0.3, main.zf), right: X, up: new THREE.Vector3(0, 1, 0), normal: Z, width: 3.4, height: main.top - 0.6 },
+  // ---- ivy on the left of the main façade, cut back round the windows and the door (the wall is the whole façade:
+  //      the colony's own envelope, a mound over each root, decides how far it spreads; polish 2026-11-11)
+  const ivy = growIvy({ origin: new THREE.Vector3(main.x0, main.base + 0.3, main.zf), right: X, up: new THREE.Vector3(0, 1, 0), normal: Z, width: main.fw - 0.1, height: main.top - 0.6 },
     { roots: [0.35, 1.0, 2.9], maxHeight: 7.4, avoid: main.wins.map((w) => [w.u0, w.v0 - 0.3, w.u1, w.v1 - 0.3]), seed: 11, reach: 3 });
   group.add(ivy.group);
   return { group, lawns, gravel, hedges, plants, ivy, houses, KIND };
