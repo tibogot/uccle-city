@@ -1,13 +1,13 @@
 {
  "summary": {
-  "triangles": 3451,
-  "vertices_welded": 1810,
-  "open_edges": 173,
-  "rays": 7072,
+  "triangles": 3445,
+  "vertices_welded": 1806,
+  "open_edges": 171,
+  "rays": 7040,
   "blocking": 0,
   "warnings": 0,
   "counts": {},
-  "ms": 109
+  "ms": 71
  },
  "options": {
   "weld": 0.0001,
@@ -52,7 +52,7 @@
   {
    "name": "rk2_pillars_tall_lod1",
    "slot": "rocaille_concrete",
-   "triangles": 3451,
+   "triangles": 3445,
    "maxDistance": 32
   }
  ],

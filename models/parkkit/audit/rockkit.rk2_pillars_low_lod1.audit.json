@@ -1,15 +1,15 @@
 {
  "summary": {
-  "triangles": 2500,
-  "vertices_welded": 1328,
-  "open_edges": 158,
+  "triangles": 2537,
+  "vertices_welded": 1347,
+  "open_edges": 159,
   "rays": 6496,
   "blocking": 0,
   "warnings": 2,
   "counts": {
    "sliver": 2
   },
-  "ms": 57
+  "ms": 79
  },
  "options": {
   "weld": 0.0001,
@@ -54,7 +54,7 @@
   {
    "name": "rk2_pillars_low_lod1",
    "slot": "rocaille_concrete",
-   "triangles": 2500,
+   "triangles": 2537,
    "maxDistance": 32
   }
  ],
@@ -64,25 +64,25 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -0.851,
-     0.482,
-     0.553
+     -0.745,
+     1.311,
+     0.544
     ],
     "part": "rk2_pillars_low_lod1/rocaille_concrete",
-    "aspect": 42,
-    "longest": 0.406
+    "aspect": 45,
+    "longest": 0.32
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.961,
-     0.622,
-     0.339
+     -0.345,
+     1.419,
+     0.316
     ],
     "part": "rk2_pillars_low_lod1/rocaille_concrete",
-    "aspect": 51,
-    "longest": 0.287
+    "aspect": 42,
+    "longest": 0.509
    }
   ]
  },

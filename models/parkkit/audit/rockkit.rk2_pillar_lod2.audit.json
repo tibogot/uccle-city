@@ -1,13 +1,13 @@
 {
  "summary": {
-  "triangles": 270,
-  "vertices_welded": 144,
-  "open_edges": 16,
+  "triangles": 279,
+  "vertices_welded": 149,
+  "open_edges": 17,
   "rays": 960,
   "blocking": 0,
   "warnings": 0,
   "counts": {},
-  "ms": 5
+  "ms": 4
  },
  "options": {
   "weld": 0.0001,
@@ -52,7 +52,7 @@
   {
    "name": "rk2_pillar_lod2",
    "slot": "rocaille_concrete",
-   "triangles": 270,
+   "triangles": 279,
    "maxDistance": 200
   }
  ],

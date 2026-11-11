@@ -32,7 +32,7 @@ import { ditherNoise, SMOOTH } from "./lodFade.js";
 
 export const KITS = ["rockkit", "playgroundkit"];
 /** live look controls (uniforms) */
-export const kitLook = { ao: uniform(1.0), aoDirect: uniform(0.5), moss: uniform(1.0), normal: uniform(1.0), normalY: uniform(-1.0) };
+export const kitLook = { ao: uniform(1.0), aoDirect: uniform(0.5), moss: uniform(1.0), normal: uniform(1.0), normalY: uniform(-1.0), bump: uniform(1.0) };
 
 // ------------------------------------------------------------------------------------------------ loading
 const cache = new Map();
@@ -102,7 +102,31 @@ function withAO(m, aoTex, vertexAo, slot, nrmTex = null) {
   // the baked normal map (rock kit, LOD0: the sculpt's detail on the light low-poly), in the atlas (TEXCOORD_1). The
   // tangent frame comes from the screen-space derivatives of the position and of uv1 (three's instancing does not
   // rotate tangent attributes; this frame follows every instance by itself)
-  if (nrmTex && !vertexAo && slot !== "playground") {
+  const rock = ["rocaille_concrete", "rock_sandstone", "rock_schist_dark"].includes(slot);
+  if (rock) {
+    // ROUGH CONCRETE close up: a bump from the noise texture (2-6 cm pitting and aggregate, ~3 mm deep) on top of the
+    // baked normal map (LOD0) or the mesh normal (LOD1 / LOD2); mipmapped, so it flattens out with distance by itself
+    const noise = noiseTexture();
+    m.normalNode = Fn(() => {
+      let N = normalView.toVar();
+      if (nrmTex && !vertexAo) {
+        const t = uv(1);
+        const n = texture(nrmTex, t).xyz.mul(2).sub(1).toVar();
+        n.assign(vec3(n.x.mul(kitLook.normal), n.y.mul(kitLook.normal).mul(kitLook.normalY), n.z).normalize());
+        const q0 = positionView.dFdx(), q1 = positionView.dFdy(), s0 = t.dFdx(), s1 = t.dFdy();
+        const q1p = q1.cross(N), q0p = N.cross(q0);
+        const T = q1p.mul(s0.x).add(q0p.mul(s1.x)), B = q1p.mul(s0.y).add(q0p.mul(s1.y));
+        const det = max(dot(T, T), dot(B, B)), k = select(det.equal(0), float(0), det.inverseSqrt());
+        N.assign(T.mul(k).mul(n.x).add(B.mul(k).mul(n.y)).add(N.mul(n.z)).normalize());
+      }
+      const q = planar();
+      const hgt = texture(noise, q.div(2.0)).b.mul(0.0035).add(texture(noise, q.div(0.9)).b.mul(0.0025)).mul(kitLook.bump);
+      const dpx = positionView.dFdx(), dpy = positionView.dFdy();
+      const r1 = dpy.cross(N), r2 = N.cross(dpx), det2 = dot(dpx, r1);
+      const g = r1.mul(hgt.dFdx()).add(r2.mul(hgt.dFdy())).mul(select(det2.lessThan(0), float(-1), float(1)));
+      return abs(det2).mul(N).sub(g).normalize();
+    })();
+  } else if (nrmTex && !vertexAo && slot !== "playground") {
     m.normalNode = Fn(() => {
       const t = uv(1);
       const n = texture(nrmTex, t).xyz.mul(2).sub(1).toVar();
@@ -174,7 +198,7 @@ function standard(color, rough = 0.8, metal = 0) {
 }
 function rocaille(baseSrgb, opts = {}) {
   const m = new THREE.MeshStandardNodeMaterial({ roughness: opts.rough ?? 0.9, metalness: 0 });
-  const base = lin(...baseSrgb), mossC = lin(0.2, 0.25, 0.1), dirt = lin(0.27, 0.26, 0.23), algae = lin(0.17, 0.2, 0.12);
+  const base = lin(...baseSrgb), mossC = lin(0.22, 0.27, 0.1), dirt = lin(0.3, 0.26, 0.21), algae = lin(0.17, 0.2, 0.12);
   const tex = noiseTexture();
   m.colorNode = Fn(() => {
     const C = attribute("color", "vec4");
@@ -226,7 +250,7 @@ function rope() {
   return m;
 }
 const SLOTS = {
-  rocaille_concrete: () => rocaille([0.64, 0.63, 0.59], { stain: 0.55, moss: 0.9, streak: 0.32 }),   // grey weathered concrete (owner's photo o01)
+  rocaille_concrete: () => rocaille([0.58, 0.555, 0.51], { stain: 0.6, moss: 0.9, streak: 0.3 }),   // warm grey-brown weathered concrete (o01, round 3)   // grey weathered concrete (owner's photo o01)
   rock_sandstone: () => rocaille([0.6, 0.5, 0.36], { moss: 0.5, stain: 0.3 }),
   rock_schist_dark: () => rocaille([0.3, 0.3, 0.29], { moss: 0.35, rough: 0.7, stain: 0.2 }),
   wood_stained: () => wood([0.38, 0.22, 0.12]),

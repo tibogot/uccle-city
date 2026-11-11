@@ -1,9 +1,9 @@
 {
  "summary": {
-  "triangles": 225,
-  "vertices_welded": 127,
-  "open_edges": 27,
-  "rays": 1920,
+  "triangles": 239,
+  "vertices_welded": 132,
+  "open_edges": 23,
+  "rays": 1888,
   "blocking": 0,
   "warnings": 0,
   "counts": {},
@@ -52,7 +52,7 @@
   {
    "name": "nat_slab_lod2",
    "slot": "rock_schist_dark",
-   "triangles": 225,
+   "triangles": 239,
    "maxDistance": 200
   }
  ],

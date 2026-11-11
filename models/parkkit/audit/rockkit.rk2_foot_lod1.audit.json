@@ -1,13 +1,13 @@
 {
  "summary": {
-  "triangles": 1299,
-  "vertices_welded": 710,
-  "open_edges": 111,
+  "triangles": 1306,
+  "vertices_welded": 714,
+  "open_edges": 112,
   "rays": 5184,
   "blocking": 0,
   "warnings": 0,
   "counts": {},
-  "ms": 19
+  "ms": 23
  },
  "options": {
   "weld": 0.0001,
@@ -52,7 +52,7 @@
   {
    "name": "rk2_foot_lod1",
    "slot": "rocaille_concrete",
-   "triangles": 1299,
+   "triangles": 1306,
    "maxDistance": 32
   }
  ],

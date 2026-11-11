@@ -1,13 +1,15 @@
 {
  "summary": {
-  "triangles": 545,
-  "vertices_welded": 306,
+  "triangles": 561,
+  "vertices_welded": 314,
   "open_edges": 61,
   "rays": 4352,
   "blocking": 0,
-  "warnings": 0,
-  "counts": {},
-  "ms": 13
+  "warnings": 1,
+  "counts": {
+   "sliver": 1
+  },
+  "ms": 8
  },
  "options": {
   "weld": 0.0001,
@@ -52,10 +54,25 @@
   {
    "name": "rk2_foot_lod2",
    "slot": "rocaille_concrete",
-   "triangles": 545,
+   "triangles": 561,
    "maxDistance": 200
   }
  ],
- "items": {},
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.117,
+     0.327,
+     0.872
+    ],
+    "part": "rk2_foot_lod2/rocaille_concrete",
+    "aspect": 41,
+    "longest": 0.807
+   }
+  ]
+ },
  "file": "rockkit.glb"
 }

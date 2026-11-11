@@ -1,13 +1,13 @@
 {
  "summary": {
-  "triangles": 122,
-  "vertices_welded": 63,
+  "triangles": 126,
+  "vertices_welded": 65,
   "open_edges": 0,
   "rays": 0,
   "blocking": 0,
   "warnings": 0,
   "counts": {},
-  "ms": 3
+  "ms": 1
  },
  "options": {
   "weld": 0.0001,
@@ -52,7 +52,7 @@
   {
    "name": "nat_boulder_lod2",
    "slot": "rock_sandstone",
-   "triangles": 122,
+   "triangles": 126,
    "maxDistance": 200
   }
  ],

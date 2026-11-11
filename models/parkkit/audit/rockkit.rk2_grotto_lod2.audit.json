@@ -1,15 +1,15 @@
 {
  "summary": {
-  "triangles": 1143,
-  "vertices_welded": 612,
-  "open_edges": 83,
-  "rays": 5282,
+  "triangles": 1362,
+  "vertices_welded": 729,
+  "open_edges": 98,
+  "rays": 5512,
   "blocking": 0,
-  "warnings": 2,
+  "warnings": 1,
   "counts": {
-   "sliver": 2
+   "sliver": 1
   },
-  "ms": 21
+  "ms": 24
  },
  "options": {
   "weld": 0.0001,
@@ -54,7 +54,7 @@
   {
    "name": "rk2_grotto_lod2",
    "slot": "rocaille_concrete",
-   "triangles": 1143,
+   "triangles": 1362,
    "maxDistance": 200
   }
  ],
@@ -64,25 +64,13 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -1.509,
-     2.361,
-     -0.649
+     0.149,
+     0.25,
+     -1.338
     ],
     "part": "rk2_grotto_lod2/rocaille_concrete",
-    "aspect": 42,
-    "longest": 0.904
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -0.382,
-     0.51,
-     -1.3
-    ],
-    "part": "rk2_grotto_lod2/rocaille_concrete",
-    "aspect": 68,
-    "longest": 0.49
+    "aspect": 52,
+    "longest": 0.288
    }
   ]
  },

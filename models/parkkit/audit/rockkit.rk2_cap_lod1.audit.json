@@ -1,13 +1,13 @@
 {
  "summary": {
-  "triangles": 1289,
-  "vertices_welded": 715,
-  "open_edges": 137,
+  "triangles": 1292,
+  "vertices_welded": 717,
+  "open_edges": 138,
   "rays": 6336,
   "blocking": 0,
   "warnings": 0,
   "counts": {},
-  "ms": 26
+  "ms": 16
  },
  "options": {
   "weld": 0.0001,
@@ -52,7 +52,7 @@
   {
    "name": "rk2_cap_lod1",
    "slot": "rocaille_concrete",
-   "triangles": 1289,
+   "triangles": 1292,
    "maxDistance": 32
   }
  ],

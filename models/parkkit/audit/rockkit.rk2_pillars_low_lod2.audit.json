@@ -1,15 +1,13 @@
 {
  "summary": {
-  "triangles": 1125,
-  "vertices_welded": 610,
-  "open_edges": 97,
-  "rays": 5504,
+  "triangles": 1127,
+  "vertices_welded": 611,
+  "open_edges": 95,
+  "rays": 5184,
   "blocking": 0,
-  "warnings": 5,
-  "counts": {
-   "sliver": 5
-  },
-  "ms": 26
+  "warnings": 0,
+  "counts": {},
+  "ms": 38
  },
  "options": {
   "weld": 0.0001,
@@ -54,73 +52,10 @@
   {
    "name": "rk2_pillars_low_lod2",
    "slot": "rocaille_concrete",
-   "triangles": 1125,
+   "triangles": 1127,
    "maxDistance": 200
   }
  ],
- "items": {
-  "sliver": [
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -0.884,
-     0.397,
-     0.32
-    ],
-    "part": "rk2_pillars_low_lod2/rocaille_concrete",
-    "aspect": 46,
-    "longest": 0.586
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -1.125,
-     1.154,
-     0.482
-    ],
-    "part": "rk2_pillars_low_lod2/rocaille_concrete",
-    "aspect": 57,
-    "longest": 0.597
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -1.104,
-     1.421,
-     0.476
-    ],
-    "part": "rk2_pillars_low_lod2/rocaille_concrete",
-    "aspect": 59,
-    "longest": 0.512
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     0.634,
-     2.033,
-     0.332
-    ],
-    "part": "rk2_pillars_low_lod2/rocaille_concrete",
-    "aspect": 51,
-    "longest": 0.367
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     1.495,
-     0.954,
-     0.924
-    ],
-    "part": "rk2_pillars_low_lod2/rocaille_concrete",
-    "aspect": 236,
-    "longest": 0.435
-   }
-  ]
- },
+ "items": {},
  "file": "rockkit.glb"
 }

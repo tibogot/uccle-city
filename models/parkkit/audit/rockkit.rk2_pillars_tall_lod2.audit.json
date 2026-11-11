@@ -1,15 +1,13 @@
 {
  "summary": {
-  "triangles": 1512,
-  "vertices_welded": 803,
-  "open_edges": 100,
-  "rays": 5796,
+  "triangles": 1483,
+  "vertices_welded": 788,
+  "open_edges": 99,
+  "rays": 5764,
   "blocking": 0,
-  "warnings": 2,
-  "counts": {
-   "sliver": 2
-  },
-  "ms": 58
+  "warnings": 0,
+  "counts": {},
+  "ms": 41
  },
  "options": {
   "weld": 0.0001,
@@ -54,37 +52,10 @@
   {
    "name": "rk2_pillars_tall_lod2",
    "slot": "rocaille_concrete",
-   "triangles": 1512,
+   "triangles": 1483,
    "maxDistance": 200
   }
  ],
- "items": {
-  "sliver": [
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     0.793,
-     0.25,
-     1.105
-    ],
-    "part": "rk2_pillars_tall_lod2/rocaille_concrete",
-    "aspect": 41,
-    "longest": 0.373
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     0.951,
-     2.75,
-     0.958
-    ],
-    "part": "rk2_pillars_tall_lod2/rocaille_concrete",
-    "aspect": 78,
-    "longest": 0.432
-   }
-  ]
- },
+ "items": {},
  "file": "rockkit.glb"
 }

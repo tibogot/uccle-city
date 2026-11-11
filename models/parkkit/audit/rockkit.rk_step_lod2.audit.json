@@ -1,16 +1,13 @@
 {
  "summary": {
-  "triangles": 81,
-  "vertices_welded": 47,
-  "open_edges": 11,
+  "triangles": 78,
+  "vertices_welded": 45,
+  "open_edges": 10,
   "rays": 800,
   "blocking": 0,
-  "warnings": 1,
-  "counts": {
-   "nonmanifold": 1,
-   "backtoback": 1
-  },
-  "ms": 4
+  "warnings": 0,
+  "counts": {},
+  "ms": 1
  },
  "options": {
   "weld": 0.0001,
@@ -55,40 +52,10 @@
   {
    "name": "rk_step_lod2",
    "slot": "rocaille_concrete",
-   "triangles": 81,
+   "triangles": 78,
    "maxDistance": 200
   }
  ],
- "items": {
-  "nonmanifold": [
-   {
-    "check": "nonmanifold",
-    "severity": "warn",
-    "at": [
-     -0.406,
-     0.257,
-     -0.25
-    ],
-    "part": "rk_step_lod2/rocaille_concrete",
-    "uses": 4
-   }
-  ],
-  "backtoback": [
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     -0.43,
-     0.263,
-     -0.245
-    ],
-    "parts": [
-     "rk_step_lod2/rocaille_concrete",
-     "rk_step_lod2/rocaille_concrete"
-    ],
-    "area": 0.0028
-   }
-  ]
- },
+ "items": {},
  "file": "rockkit.glb"
 }

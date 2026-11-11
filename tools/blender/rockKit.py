@@ -38,7 +38,7 @@ os.makedirs(OUT, exist_ok=True)
 T0 = time.time()
 scn = K.reset()
 
-ROCAILLE = K.mat("rocaille_concrete", (0.36, 0.355, 0.33), 0.85)
+ROCAILLE = K.mat("rocaille_concrete", (0.42, 0.39, 0.34), 0.85)
 SANDSTONE = K.mat("rock_sandstone", (0.52, 0.45, 0.34), 0.9)
 SCHIST = K.mat("rock_schist_dark", (0.17, 0.17, 0.16), 0.75)
 
@@ -187,7 +187,7 @@ def pillar_mass(spec, rnd):
                 fwd = rnd.uniform(-0.12, 0.22) if j else 0.0
                 ww = (w - spec.get("cleft", 0.12)) * rnd.uniform(0.85, 1.05)
                 merge(bm, prism(cx + rnd.uniform(-0.06, 0.06), cy - fwd + rnd.uniform(-0.06, 0.06), ww, dep * rnd.uniform(0.85, 1.1), z0, zs[j + 1], rnd,
-                                0.5 if j == len(zs) - 2 else 0.08, lean=(rnd.uniform(-0.07, 0.07), rnd.uniform(-0.08, 0.08))))
+                                spec.get("top_tilt", 0.5) if j == len(zs) - 2 else 0.08, lean=(rnd.uniform(-0.07, 0.07), rnd.uniform(-0.08, 0.08))))
         x += w
     if spec.get("cap"):
         for k in range(2):
@@ -318,6 +318,11 @@ PIECES = [
     ("rk2_cap", ROCAILLE, dict(W=3.8, D=2.4, H=0.9, pillars=True, widths=(1.0, 1.8), tops=(0.6, 0.85), cap=True, core=0.5, seed=35)),
     ("rk2_foot", ROCAILLE, dict(W=4.0, D=1.6, H=0.9, pillars=True, widths=(0.6, 1.4), tops=(0.6, 1.0), foot=0.35, core=0.6, seed=36)),
     ("rk2_grotto", ROCAILLE, dict(W=3.6, D=2.6, H=3.0, pillars=True, widths=(0.6, 1.1), tops=(0.7, 1.0), hollow=((0.0, -1.3, 0.7), (1.0, 1.5, 1.1)), seed=37)),
+    # ROUND 3 (the mound of o01): broad blocks, wedge slabs, broken tops, small blocks
+    ("rk3_block", ROCAILLE, dict(W=2.4, D=2.0, H=1.6, pillars=True, widths=(0.9, 1.8), tops=(0.55, 1.0), top_tilt=0.6, core=0.55, back="strata", seed=41)),
+    ("rk3_block_s", ROCAILLE, dict(W=1.4, D=1.3, H=1.1, pillars=True, widths=(0.6, 1.1), tops=(0.6, 1.0), top_tilt=0.7, core=0.3, back="strata", seed=42)),
+    ("rk3_wedge", ROCAILLE, dict(W=2.6, D=1.8, H=1.8, pillars=True, slant=True, widths=(1.0, 1.7), tops=(0.7, 1.0), core=0.4, seed=43)),
+    ("rk3_broken", ROCAILLE, dict(W=2.2, D=1.6, H=2.4, pillars=True, widths=(0.5, 1.0), tops=(0.4, 1.0), top_tilt=0.95, core=0.6, seed=44)),
     ("rk_step", ROCAILLE, dict(W=1.6, D=1.0, H=0.38, steps=True, joints=(0.6, 1.0), layers=(0.3, 0.4), tops=(0.92, 1.0), setback=(-0.05, 0.05), dome=0.0, seed=17)),
     ("rk_channel", ROCAILLE, dict(W=2.4, D=1.3, H=0.45, faces=("front", "back"), joints=(0.45, 0.9), layers=(0.4, 0.5), tops=(0.85, 1.0), setback=(-0.08, 0.08), dome=0.0, channel=True, core=0.9, seed=19)),
     ("nat_boulder", SANDSTONE, dict(W=1.4, D=1.1, H=0.8, natural=True, seed=21)),

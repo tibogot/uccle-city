@@ -1,22 +1,20 @@
 # Mesh audit (before pack): rockkit.rk2_grotto_lod1
 
-2,369 triangles, 1,262 welded vertices, 151 open edges, 6,396 rays, 39 ms.
+2,676 triangles, 1,419 welded vertices, 158 open edges, 6,492 rays, 33 ms.
 
-**0 blocking**, 3 warnings. Clean (no blocking item).
+**0 blocking**, 1 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| sliver | warn | 3 |
+| sliver | warn | 1 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## sliver (warn, 3)
+## sliver (warn, 1)
 
 | at | part | aspect | longest |
 |---|---|---|---|
-| -0.65, 2.40, 0.16 | rk2_grotto_lod1/rocaille_concrete | 170 | 0.411 |
-| 0.22, 2.39, 0.39 | rk2_grotto_lod1/rocaille_concrete | 68 | 0.562 |
-| 1.50, 0.59, -0.11 | rk2_grotto_lod1/rocaille_concrete | 43 | 0.272 |
+| -1.49, 0.64, -0.84 | rk2_grotto_lod1/rocaille_concrete | 42 | 0.273 |
 
 
-Nodes: rk2_grotto_lod1. Distances: {"rk2_pillars_tall_lod0":13,"rk2_pillars_tall_lod1":32,"rk2_pillars_tall_lod2":200,"rk2_pillars_low_lod0":13,"rk2_pillars_low_lod1":32,"rk2_pillars_low_lod2":200,"rk2_pillar_lod0":13,"rk2_pillar_lod1":32,"rk2_pillar_lod2":200,"rk2_slabs_lod0":13,"rk2_slabs_lod1":32,"rk2_slabs_lod2":200,"rk2_cap_lod0":13,"rk2_cap_lod1":32,"rk2_cap_lod2":200,"rk2_foot_lod0":13,"rk2_foot_lod1":32,"rk2_foot_lod2":200,"rk2_grotto_lod0":13,"rk2_grotto_lod1":32,"rk2_grotto_lod2":200,"rk_step_lod0":13,"rk_step_lod1":32,"rk_step_lod2":200,"rk_channel_lod0":13,"rk_channel_lod1":32,"rk_channel_lod2":200,"nat_boulder_lod0":13,"nat_boulder_lod1":32,"nat_boulder_lod2":200,"nat_slab_lod0":13,"nat_slab_lod1":32,"nat_slab_lod2":200}. Quantum 0.033 mm. Offset 0,0,0.
+Nodes: rk2_grotto_lod1. Distances: {"rk2_pillars_tall_lod0":13,"rk2_pillars_tall_lod1":32,"rk2_pillars_tall_lod2":200,"rk2_pillars_low_lod0":13,"rk2_pillars_low_lod1":32,"rk2_pillars_low_lod2":200,"rk2_pillar_lod0":13,"rk2_pillar_lod1":32,"rk2_pillar_lod2":200,"rk2_slabs_lod0":13,"rk2_slabs_lod1":32,"rk2_slabs_lod2":200,"rk2_cap_lod0":13,"rk2_cap_lod1":32,"rk2_cap_lod2":200,"rk2_foot_lod0":13,"rk2_foot_lod1":32,"rk2_foot_lod2":200,"rk2_grotto_lod0":13,"rk2_grotto_lod1":32,"rk2_grotto_lod2":200,"rk3_block_lod0":13,"rk3_block_lod1":32,"rk3_block_lod2":200,"rk3_block_s_lod0":13,"rk3_block_s_lod1":32,"rk3_block_s_lod2":200,"rk3_wedge_lod0":13,"rk3_wedge_lod1":32,"rk3_wedge_lod2":200,"rk3_broken_lod0":13,"rk3_broken_lod1":32,"rk3_broken_lod2":200,"rk_step_lod0":13,"rk_step_lod1":32,"rk_step_lod2":200,"rk_channel_lod0":13,"rk_channel_lod1":32,"rk_channel_lod2":200,"nat_boulder_lod0":13,"nat_boulder_lod1":32,"nat_boulder_lod2":200,"nat_slab_lod0":13,"nat_slab_lod1":32,"nat_slab_lod2":200}. Quantum 0.033 mm. Offset 0,0,0.

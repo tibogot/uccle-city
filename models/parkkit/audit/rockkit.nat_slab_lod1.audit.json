@@ -1,13 +1,13 @@
 {
  "summary": {
   "triangles": 525,
-  "vertices_welded": 288,
-  "open_edges": 49,
-  "rays": 2304,
+  "vertices_welded": 287,
+  "open_edges": 47,
+  "rays": 2272,
   "blocking": 0,
   "warnings": 0,
   "counts": {},
-  "ms": 9
+  "ms": 10
  },
  "options": {
   "weld": 0.0001,

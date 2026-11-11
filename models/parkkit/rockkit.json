@@ -12,7 +12,7 @@
    "atlas": [
     0,
     0,
-    0.419
+    0.3689
    ]
   },
   "rk2_pillars_low": {
@@ -24,9 +24,9 @@
     2.73
    ],
    "atlas": [
+    0.7017,
     0,
-    0.423,
-    0.3368
+    0.2965
    ]
   },
   "rk2_pillar": {
@@ -38,9 +38,9 @@
     3.48
    ],
    "atlas": [
-    0.2236,
-    0.7638,
-    0.191
+    0.1973,
+    0.6674,
+    0.1682
    ]
   },
   "rk2_slabs": {
@@ -52,9 +52,9 @@
     2.56
    ],
    "atlas": [
-    0.3408,
-    0.423,
-    0.3299
+    0,
+    0.3729,
+    0.2905
    ]
   },
   "rk2_cap": {
@@ -66,9 +66,9 @@
     0.96
    ],
    "atlas": [
-    0.6747,
-    0.423,
-    0.2383
+    0.2945,
+    0.3729,
+    0.2098
    ]
   },
   "rk2_foot": {
@@ -81,8 +81,8 @@
    ],
    "atlas": [
     0,
-    0.7638,
-    0.2196
+    0.6674,
+    0.1933
    ]
   },
   "rk2_grotto": {
@@ -94,9 +94,65 @@
     2.81
    ],
    "atlas": [
-    0.423,
+    0.3729,
     0,
-    0.369
+    0.3249
+   ]
+  },
+  "rk3_block": {
+   "slot": "rocaille_concrete",
+   "triangles_raw": 2638,
+   "size_m": [
+    1.95,
+    1.69,
+    1.29
+   ],
+   "atlas": [
+    0.3695,
+    0.6674,
+    0.1655
+   ]
+  },
+  "rk3_block_s": {
+   "slot": "rocaille_concrete",
+   "triangles_raw": 1078,
+   "size_m": [
+    1.15,
+    1.18,
+    0.94
+   ],
+   "atlas": [
+    0.6502,
+    0.6674,
+    0.1043
+   ]
+  },
+  "rk3_wedge": {
+   "slot": "rocaille_concrete",
+   "triangles_raw": 4008,
+   "size_m": [
+    2.35,
+    2.89,
+    1.88
+   ],
+   "atlas": [
+    0.7149,
+    0.3729,
+    0.2001
+   ]
+  },
+  "rk3_broken": {
+   "slot": "rocaille_concrete",
+   "triangles_raw": 3750,
+   "size_m": [
+    1.99,
+    1.68,
+    2.21
+   ],
+   "atlas": [
+    0.5082,
+    0.3729,
+    0.2026
    ]
   },
   "rk_step": {
@@ -108,9 +164,9 @@
     0.36
    ],
    "atlas": [
-    0.7816,
-    0.7638,
-    0.0627
+    0,
+    0.8647,
+    0.0552
    ]
   },
   "rk_channel": {
@@ -122,9 +178,9 @@
     0.44
    ],
    "atlas": [
-    0.6646,
-    0.7638,
-    0.113
+    0.8648,
+    0.6674,
+    0.0995
    ]
   },
   "nat_boulder": {
@@ -136,9 +192,9 @@
     0.68
    ],
    "atlas": [
-    0.5444,
-    0.7638,
-    0.1162
+    0.7585,
+    0.6674,
+    0.1023
    ]
   },
   "nat_slab": {
@@ -150,9 +206,9 @@
     0.43
    ],
    "atlas": [
-    0.4186,
-    0.7638,
-    0.1218
+    0.539,
+    0.6674,
+    0.1072
    ]
   }
  },
@@ -174,6 +230,10 @@
   "rk2_cap": 43368,
   "rk2_foot": 38664,
   "rk2_grotto": 83664,
+  "rk3_block": 24320,
+  "rk3_block_s": 10532,
+  "rk3_wedge": 37932,
+  "rk3_broken": 34936,
   "rk_step": 3016,
   "rk_channel": 10892,
   "nat_boulder": 8068,
@@ -196,7 +256,7 @@
     },
     {
      "node": "rk2_pillars_tall_lod1",
-     "triangles": 3451,
+     "triangles": 3445,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -206,7 +266,7 @@
     },
     {
      "node": "rk2_pillars_tall_lod2",
-     "triangles": 1512,
+     "triangles": 1483,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -235,7 +295,7 @@
     },
     {
      "node": "rk2_pillars_low_lod1",
-     "triangles": 2500,
+     "triangles": 2537,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -245,7 +305,7 @@
     },
     {
      "node": "rk2_pillars_low_lod2",
-     "triangles": 1125,
+     "triangles": 1127,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -274,7 +334,7 @@
     },
     {
      "node": "rk2_pillar_lod1",
-     "triangles": 679,
+     "triangles": 691,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -284,7 +344,7 @@
     },
     {
      "node": "rk2_pillar_lod2",
-     "triangles": 270,
+     "triangles": 279,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -313,7 +373,7 @@
     },
     {
      "node": "rk2_slabs_lod1",
-     "triangles": 2514,
+     "triangles": 2489,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -323,7 +383,7 @@
     },
     {
      "node": "rk2_slabs_lod2",
-     "triangles": 1093,
+     "triangles": 1078,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -352,7 +412,7 @@
     },
     {
      "node": "rk2_cap_lod1",
-     "triangles": 1289,
+     "triangles": 1292,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -362,7 +422,7 @@
     },
     {
      "node": "rk2_cap_lod2",
-     "triangles": 518,
+     "triangles": 537,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -391,7 +451,7 @@
     },
     {
      "node": "rk2_foot_lod1",
-     "triangles": 1299,
+     "triangles": 1306,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -401,7 +461,7 @@
     },
     {
      "node": "rk2_foot_lod2",
-     "triangles": 545,
+     "triangles": 561,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -430,17 +490,173 @@
     },
     {
      "node": "rk2_grotto_lod1",
-     "triangles": 2369,
+     "triangles": 2676,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
      ],
-     "error_m": 0.028749999999999998,
+     "error_m": 0.025,
      "vertex_ao": true
     },
     {
      "node": "rk2_grotto_lod2",
-     "triangles": 1143,
+     "triangles": 1362,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.051,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    13,
+    32,
+    200
+   ]
+  },
+  "rk3_block": {
+   "lods": [
+    {
+     "node": "rk3_block_lod0",
+     "triangles": 2104,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.003,
+     "vertex_ao": false
+    },
+    {
+     "node": "rk3_block_lod1",
+     "triangles": 899,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.025,
+     "vertex_ao": true
+    },
+    {
+     "node": "rk3_block_lod2",
+     "triangles": 404,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.06,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    13,
+    32,
+    200
+   ]
+  },
+  "rk3_block_s": {
+   "lods": [
+    {
+     "node": "rk3_block_s_lod0",
+     "triangles": 934,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.003,
+     "vertex_ao": false
+    },
+    {
+     "node": "rk3_block_s_lod1",
+     "triangles": 516,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.025,
+     "vertex_ao": true
+    },
+    {
+     "node": "rk3_block_s_lod2",
+     "triangles": 220,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.06,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    13,
+    32,
+    200
+   ]
+  },
+  "rk3_wedge": {
+   "lods": [
+    {
+     "node": "rk3_wedge_lod0",
+     "triangles": 3270,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.003,
+     "vertex_ao": false
+    },
+    {
+     "node": "rk3_wedge_lod1",
+     "triangles": 1278,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.025,
+     "vertex_ao": true
+    },
+    {
+     "node": "rk3_wedge_lod2",
+     "triangles": 553,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.06,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    13,
+    32,
+    200
+   ]
+  },
+  "rk3_broken": {
+   "lods": [
+    {
+     "node": "rk3_broken_lod0",
+     "triangles": 3061,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.003,
+     "vertex_ao": false
+    },
+    {
+     "node": "rk3_broken_lod1",
+     "triangles": 1319,
+     "draws": 1,
+     "slots": [
+      "rocaille_concrete"
+     ],
+     "error_m": 0.025,
+     "vertex_ao": true
+    },
+    {
+     "node": "rk3_broken_lod2",
+     "triangles": 568,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -469,7 +685,7 @@
     },
     {
      "node": "rk_step_lod1",
-     "triangles": 180,
+     "triangles": 199,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -479,7 +695,7 @@
     },
     {
      "node": "rk_step_lod2",
-     "triangles": 81,
+     "triangles": 78,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -508,7 +724,7 @@
     },
     {
      "node": "rk_channel_lod1",
-     "triangles": 486,
+     "triangles": 459,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -518,7 +734,7 @@
     },
     {
      "node": "rk_channel_lod2",
-     "triangles": 191,
+     "triangles": 190,
      "draws": 1,
      "slots": [
       "rocaille_concrete"
@@ -547,7 +763,7 @@
     },
     {
      "node": "nat_boulder_lod1",
-     "triangles": 306,
+     "triangles": 310,
      "draws": 1,
      "slots": [
       "rock_sandstone"
@@ -557,7 +773,7 @@
     },
     {
      "node": "nat_boulder_lod2",
-     "triangles": 122,
+     "triangles": 126,
      "draws": 1,
      "slots": [
       "rock_sandstone"
@@ -596,7 +812,7 @@
     },
     {
      "node": "nat_slab_lod2",
-     "triangles": 225,
+     "triangles": 239,
      "draws": 1,
      "slots": [
       "rock_schist_dark"
@@ -612,7 +828,7 @@
    ]
   }
  },
- "glb_bytes": 1003600,
+ "glb_bytes": 1257740,
  "lod_ranges_m": {
   "note": "each LOD's band END (camera distance); dithered cross-fades over the last 15 % of a band",
   "bands": [
@@ -636,10 +852,8 @@
   },
   "rk2_pillars_tall_lod2": {
    "blocking": 0,
-   "warnings": 2,
-   "counts": {
-    "sliver": 2
-   }
+   "warnings": 0,
+   "counts": {}
   },
   "rk2_pillars_low_lod0": {
    "blocking": 0,
@@ -658,10 +872,8 @@
   },
   "rk2_pillars_low_lod2": {
    "blocking": 0,
-   "warnings": 5,
-   "counts": {
-    "sliver": 5
-   }
+   "warnings": 0,
+   "counts": {}
   },
   "rk2_pillar_lod0": {
    "blocking": 0,
@@ -685,16 +897,16 @@
   },
   "rk2_slabs_lod1": {
    "blocking": 0,
-   "warnings": 2,
+   "warnings": 1,
    "counts": {
-    "sliver": 2
+    "sliver": 1
    }
   },
   "rk2_slabs_lod2": {
    "blocking": 0,
-   "warnings": 2,
+   "warnings": 1,
    "counts": {
-    "sliver": 2
+    "sliver": 1
    }
   },
   "rk2_cap_lod0": {
@@ -724,8 +936,10 @@
   },
   "rk2_foot_lod2": {
    "blocking": 0,
-   "warnings": 0,
-   "counts": {}
+   "warnings": 1,
+   "counts": {
+    "sliver": 1
+   }
   },
   "rk2_grotto_lod0": {
    "blocking": 0,
@@ -736,17 +950,85 @@
   },
   "rk2_grotto_lod1": {
    "blocking": 0,
-   "warnings": 3,
+   "warnings": 1,
    "counts": {
-    "sliver": 3
+    "sliver": 1
    }
   },
   "rk2_grotto_lod2": {
    "blocking": 0,
-   "warnings": 2,
+   "warnings": 1,
    "counts": {
-    "sliver": 2
+    "sliver": 1
    }
+  },
+  "rk3_block_lod0": {
+   "blocking": 0,
+   "warnings": 1,
+   "counts": {
+    "sliver": 1
+   }
+  },
+  "rk3_block_lod1": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "rk3_block_lod2": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "rk3_block_s_lod0": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "rk3_block_s_lod1": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "rk3_block_s_lod2": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "rk3_wedge_lod0": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "rk3_wedge_lod1": {
+   "blocking": 0,
+   "warnings": 1,
+   "counts": {
+    "sliver": 1
+   }
+  },
+  "rk3_wedge_lod2": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "rk3_broken_lod0": {
+   "blocking": 0,
+   "warnings": 1,
+   "counts": {
+    "sliver": 1
+   }
+  },
+  "rk3_broken_lod1": {
+   "blocking": 0,
+   "warnings": 1,
+   "counts": {
+    "sliver": 1
+   }
+  },
+  "rk3_broken_lod2": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
   },
   "rk_step_lod0": {
    "blocking": 0,
@@ -760,11 +1042,8 @@
   },
   "rk_step_lod2": {
    "blocking": 0,
-   "warnings": 1,
-   "counts": {
-    "nonmanifold": 1,
-    "backtoback": 1
-   }
+   "warnings": 0,
+   "counts": {}
   },
   "rk_channel_lod0": {
    "blocking": 0,

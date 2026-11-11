@@ -1,15 +1,15 @@
 {
  "summary": {
-  "triangles": 2514,
-  "vertices_welded": 1323,
-  "open_edges": 136,
+  "triangles": 2489,
+  "vertices_welded": 1311,
+  "open_edges": 137,
   "rays": 5312,
   "blocking": 0,
-  "warnings": 2,
+  "warnings": 1,
   "counts": {
-   "sliver": 2
+   "sliver": 1
   },
-  "ms": 59
+  "ms": 32
  },
  "options": {
   "weld": 0.0001,
@@ -54,7 +54,7 @@
   {
    "name": "rk2_slabs_lod1",
    "slot": "rocaille_concrete",
-   "triangles": 2514,
+   "triangles": 2489,
    "maxDistance": 32
   }
  ],
@@ -64,25 +64,13 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     0.989,
-     1.817,
-     1.18
+     -0.75,
+     1.349,
+     0.44
     ],
     "part": "rk2_slabs_lod1/rocaille_concrete",
     "aspect": 66,
-    "longest": 0.321
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     1.525,
-     0.851,
-     -0.751
-    ],
-    "part": "rk2_slabs_lod1/rocaille_concrete",
-    "aspect": 72,
-    "longest": 0.283
+    "longest": 0.28
    }
   ]
  },
