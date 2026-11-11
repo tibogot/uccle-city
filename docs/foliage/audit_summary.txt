@@ -1,0 +1,14 @@
+box_ball: [mesh audit] plants.glb: 5214 tris, 1 BLOCKING, 0 warnings (611 ms)   crossing 1 · seam 270 · opening 232 
+laurel: [mesh audit] plants.glb: 7654 tris, 40 BLOCKING, 55 warnings (911 ms)   coplanar 16 · near 13 · crossing 23 · depth 1 · seam 498 · tjunction 42 · opening 639 
+rhododendron: [mesh audit] plants.glb: 19626 tris, 117 BLOCKING, 297 warnings (3263 ms)   crossing 88 · near 80 · coplanar 23 · backtoback 4 · depth 6 · seam 4137 · tjunction 217 · opening 1174 
+hydrangea: [mesh audit] plants.glb: 17282 tris, 9 BLOCKING, 16 warnings (4483 ms)   crossing 9 · near 1 · seam 3020 · tjunction 15 · opening 1310 
+rose: [mesh audit] plants.glb: 5392 tris, 2 BLOCKING, 42 warnings (827 ms)   crossing 2 · seam 535 · tjunction 42 · opening 730 
+lavender: [mesh audit] plants.glb: 5880 tris, 26 BLOCKING, 35 warnings (1131 ms)   sliver 6 · crossing 4 · near 28 · coplanar 15 · depth 7 · seam 40 · tjunction 1 · opening 20 
+bulbs: [mesh audit] plants.glb: 1188 tris, 36 BLOCKING, 1 warnings (247 ms)   coplanar 36 · seam 139 · tjunction 1 · opening 161 
+geranium: [mesh audit] plants.glb: 3132 tris, 17 BLOCKING, 48 warnings (872 ms)   depth 1 · near 25 · crossing 4 · coplanar 12 · seam 227 · tjunction 23 · opening 207 
+box_ball_far: [mesh audit] plants.glb: 80 tris, 0 BLOCKING, 0 warnings (5 ms) 
+laurel_far: [mesh audit] plants.glb: 80 tris, 0 BLOCKING, 0 warnings (5 ms) 
+rhododendron_far: [mesh audit] plants.glb: 80 tris, 0 BLOCKING, 0 warnings (5 ms) 
+hydrangea_far: [mesh audit] plants.glb: 80 tris, 0 BLOCKING, 0 warnings (4 ms) 
+rose_far: [mesh audit] plants.glb: 80 tris, 0 BLOCKING, 0 warnings (5 ms) 
+lavender_far: [mesh audit] plants.glb: 80 tris, 0 BLOCKING, 0 warnings (5 ms) 

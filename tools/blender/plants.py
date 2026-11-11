@@ -51,7 +51,7 @@ class Builder:
         for l, uv in zip(f.loops, uvs):
             l[self.uv0].uv = uv; l[self.uv1].uv = (1.0, rnd); l[self.uv2].uv = (base.x, base.z); l[self.uv3].uv = (-base.y, kind)
         return f
-    def part(self, P, U, tris, slot, rnd, base, kind, smooth=True):
+    def part(self, P, U, tris, slot, rnd, base, kind, smooth=None):
         """an indexed piece: shared vertices (P), per-vertex UV0 (U), triangles / quads as index tuples"""
         vs = [self.bm.verts.new(p) for p in P]
         for t in tris:
@@ -59,16 +59,21 @@ class Builder:
                 f = self.bm.faces.new([vs[i] for i in t])
             except ValueError:
                 continue
-            f.material_index = SLOTS.index(slot); f.smooth = smooth
+            # flat normals on leaves, petals and stems (thin open sheets and 3-5 sided stems: smooth groups across their
+            # creases streak; the owner's no-bad-shading rule); only the closed shells are smooth
+            f.material_index = SLOTS.index(slot); f.smooth = (kind == 3) if smooth is None else smooth
             for l, i in zip(f.loops, t):
                 l[self.uv0].uv = U[i]; l[self.uv1].uv = (1.0, rnd); l[self.uv2].uv = (base.x, base.z); l[self.uv3].uv = (-base.y, kind)
     def tube(self, path, radii, slot="stem", sides=5, rnd=0.0, kind=0):
         """a closed-ish tube along a polyline (open ends: they are buried or hidden in foliage)"""
         P, U, T = [], [], []
         s = 0.0
+        a = None
         for i, p in enumerate(path):
             t = (path[min(i + 1, len(path) - 1)] - path[max(i - 1, 0)]).normalized()
-            a = t.orthogonal().normalized(); b = t.cross(a)
+            # parallel transport of the frame (t.orthogonal() jumps between rings: twisted, flipped quads)
+            a = t.orthogonal().normalized() if a is None else (a - t * a.dot(t)).normalized()
+            b = t.cross(a)
             if i: s += (path[i] - path[i - 1]).length
             for k in range(sides + 1):
                 ang = 2 * math.pi * k / sides
@@ -228,10 +233,10 @@ def hydrangea():
         for f in range(70):
             u, v = rng.random() * 1.6 - 0.6, rng.random() * 6.283
             dn = Vector((math.sqrt(max(0, 1 - u * u)) * math.cos(v), math.sqrt(max(0, 1 - u * u)) * math.sin(v), u)).normalized()
-            fc = c + dn * R
+            fc = c + dn * R * (1.0 + 0.22 * (f % 5) / 4)          # florets in layers: none share a tangent plane
             for pi in range(4):
                 side = dn.orthogonal().normalized(); side.rotate(Matrix.Rotation(pi / 4 * 6.283 + rng.random() * 0.2, 3, dn))
-                B.leaf(fc, side, dn, 0.018, 0.018, "flower_a", droop=0.0, fold=0.05, rnd=rr, kind=2, tip=0.9)
+                B.leaf(fc, (side + dn * 0.45).normalized(), dn, 0.017, 0.016, "flower_a", droop=0.0, fold=0.2, rnd=rr, kind=2, tip=0.9)
     return B.finish(COL)
 
 def rose():
@@ -309,8 +314,9 @@ def geranium():
         p = Vector((math.cos(a) * r * 0.5, math.sin(a) * r * 0.5, 0.03 + rng.random() * 0.1))
         tip = p + Vector((math.cos(a) * 0.08, math.sin(a) * 0.08, 0.06))
         B.tube([p - Vector((0, 0, 0.05)), tip], [0.003, 0.002], "stem", sides=3)
-        d = Vector((math.cos(a), math.sin(a), 0.25)).normalized()
-        B.leaf(tip, d, Vector((0, 0, 1)), 0.06 + 0.02 * rng.random(), 0.075, droop=0.05, fold=0.15, tip=0.9)
+        d = Vector((math.cos(a), math.sin(a), -0.1 + 0.7 * rng.random())).normalized()
+        up = Vector((-math.sin(a), math.cos(a), 0)).cross(d).normalized()
+        B.leaf(tip, d, up, 0.06 + 0.02 * rng.random(), 0.075, droop=0.05, fold=0.3, tip=0.9)
     for u in range(6):
         a = u / 6 * 6.283 + rng.random() * 0.4; rr = rng.random()
         p0 = Vector((math.cos(a) * 0.04, math.sin(a) * 0.04, 0.08))
@@ -319,10 +325,10 @@ def geranium():
         for f in range(14):
             uu, vv = rng.random() * 0.9 + 0.1, rng.random() * 6.283
             dn = Vector((math.sqrt(1 - uu * uu) * math.cos(vv), math.sqrt(1 - uu * uu) * math.sin(vv), uu))
-            fc = top + dn * 0.025
+            fc = top + dn * 0.025 * (1.0 + 0.3 * (f % 4) / 3)
             for pi in range(5):
                 side = dn.orthogonal().normalized(); side.rotate(Matrix.Rotation(pi / 5 * 6.283, 3, dn))
-                B.leaf(fc, side, dn, 0.013, 0.012, "flower_a", droop=0.0, fold=0.1, rnd=rr, kind=2, tip=0.9)
+                B.leaf(fc, (side + dn * 0.4).normalized(), dn, 0.012, 0.011, "flower_a", droop=0.0, fold=0.25, rnd=rr, kind=2, tip=0.9)
     return B.finish(COL)
 
 def far_shell(name, c, r, lump, seed):
