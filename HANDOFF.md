@@ -36,6 +36,13 @@ The first interior cell: a terraced house near Place de Saint-Job (UrbIS 1786120
 bakes, per-corner light on pieces, ambient-cube probes, façade/terrain cut, portal, character hooks): `docs/INTERIOR.md`;
 status and re-run commands: `docs/interior/STATUS.md`.
 
+## Pedestrians (branch claude/pedestrians, lab only)
+
+Pedestrian Lab `labs/pedestrian-lab.html`: Mr.doob's people (`vendor/slop-ped/`, MIT, unchanged), gait baked from his
+rig (`node tools/peds/bakeGait.mjs` -> `models/pedestrians/clips.*`), banded crowd in `viewer/pedestrians/` (live rig
+< 18 m, bone table on the GPU to 250 m, three mesh LODs with dithered fades), sim + meters. Results, weak points:
+`docs/PEDESTRIANS.md`; next steps: `docs/PEDESTRIANS_RESUME.md`. Nothing in the city yet.
+
 ## Rules that still hold
 
 - `github.com/tibogot/game-engine-v1` is a READ-ONLY reference: never modify or push to it.

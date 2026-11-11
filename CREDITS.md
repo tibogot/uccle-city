@@ -58,6 +58,7 @@ the check dates are in `pipeline/sources.json`.
 | mapbox-earcut (Python) | ISC | pipeline (triangulates 3D faces) |
 | scipy | BSD-3 | pipeline (tree peaks in the canopy height model) |
 | mrdoob/slop-newyork (techniques and adapted code in `viewer/lighting.js`, `post.js`, `tslkit.js`, `facades.js` interiors, `trees.js` approach) | MIT, © 2026 Mr.doob | Notice kept in `viewer/tslkit.js`; source credited in each file header. |
+| mrdoob/slop-newyork pedestrians (`vendor/slop-ped/pedestrians.js`: bodies, clothes shader, GPU skinning, `PersonRig` gait), commit `536a907c`; the crowd's baked clips (`models/pedestrians/clips.*`) are generated from that gait code by `tools/peds/bakeGait.mjs` | MIT, © 2026 Mr.doob | `vendor/slop-ped/LICENSE` and `ORIGIN.md`. Used by `viewer/pedestrians/` and `labs/pedestrian-lab.html`. No third-party animation clips (no Mixamo, no UAL yet) |
 | mrdoob/slop-newyork tree system (`vendor/slop-trees/`: `trees.js`, `building-collision.js`, tree material), commit `737b7691` | MIT, © Mr.doob | `vendor/slop-trees/LICENSE` and `ORIGIN.md`. Used by `viewer/treesSlop.js` |
 
 ## 3D models (CC0 packs, Car Lab comparison)
