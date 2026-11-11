@@ -39,3 +39,44 @@ Where the z-fight items sit (the first items by mesh pair; the item lists are ca
    margin or cut them into it cleanly; no coplanar strips), then re-run I6 and 3 other tiles.
 3. Re-run roads on `claude/roads2`.
 4. A `city` profile + a Node runner over all 120 tiles as a build check.
+
+## Triage (2026-11-11): what causes the façade flicker
+
+Re-run on I6 with the checker's `debugTris` (both triangles of every item, up to 4,000 per check), each item sorted by
+mesh pair and by the DETAIL triangle's height (every detail is a `box()` in `viewer/facadeGeom.js`, whose height
+identifies it). In the 4,000 coplanar items sampled (13,816 in all):
+
+| detail | where (`viewer/facadeGeom.js`) | coplanar | depth | cause |
+|---|---|---|---|---|
+| cornice upper box, 0.16 m | line 321 | 1,099 vs walls + 85 vs details | 93 + 82 | the box's SQUARE END CAP at an outside corner lies exactly in the next wall's plane, facing out (separation 0 mm): it fights the wall; at inside corners the box runs into the neighbour wall |
+| cornice lower box, 0.12 m | line 322 | 1,050 vs walls + 19 | 88 | the same |
+| gutter, 0.1 m | line 395 | 213 vs walls + 365 vs details | 22 + 30 | the same, plus gutters of adjoining segments overlapping |
+| box tops at corners | 321 / 322 / 393 | 701 (details vs details, horizontal) | 15 | at a corner the two segments' boxes both cover the corner square: two coplanar tops (and soffits) overlap |
+| party-wall / fire-wall caps, 2.4 m | line 353 | 58 | 15 | both neighbours build the same wall cap |
+| roof vs roof / wall vs wall | roofs, walls | 153 / 127 (+ 31 roof vs wall) | 11 / 6 | adjoining buildings whose UrbIS solids share a plane (party walls drawn twice: 23,046 back-to-back pairs) |
+| crossings | details vs walls 349, details vs details 110 | | | boxes running into the neighbour wall at inside corners |
+
+The other numbers are mostly NOT flicker:
+- `flipped` 62,136 on details: `box()` winds some quads against their normal; the detail material is
+  `side: THREE.DoubleSide` (`viewer/facades.js:454`), which hides it. Not visible today, but it doubles the detail
+  fill cost and breaks back-face culling: fix the winding, then drop DoubleSide.
+- `bentflat` on walls (2,757): to check (smooth normals on wall faces next to openings?); `sliver` / `seam` / `opening`:
+  info, by design.
+
+## The fix plan (in `viewer/facadeGeom.js`, worker code; rebuild the bundle)
+
+1. **Mitred corners for the strip details** (cornices, bands, gutters): build each façade ring's strips as one chain;
+   at every vertex mitre the two boxes on the bisector (outside corners) or stop them at the neighbour's front plane
+   (inside corners). No end caps where a strip continues; end caps only at a free end, set back 2 mm from any wall.
+   This removes ~2,500 of the 4,000 sampled items (cornice, gutter, corner tops).
+2. **Party walls**: generate a shared wall / cap once (the building with the lower id draws it), the neighbour skips it.
+3. **Winding**: wind every `box()` / `beam()` quad by its normal; then the detail material goes back to front-side
+   only (cheaper).
+4. Coplanar roofs of adjoining solids: lift the later one's roof by the depth-safe margin at its own LOD distance
+   (the checker's `need_mm`), or clip the shared region.
+5. Re-run the checker on I6 + 3 tiles (0 coplanar / depth / crossing on details), then the flicker test while flying
+   over a street at 30, 80, 200 m, before / after strips.
+
+Conflicts: the façade-kit branch (`claude/facade-kit`, waiting for the owner) changes the face loop of
+`analyseBuildings` but not `box()` / `beam()` nor their callers' geometry: do this fix after (or on top of) the kit
+merge to avoid a messy conflict.
