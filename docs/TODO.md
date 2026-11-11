@@ -37,6 +37,7 @@ Stairs paused until the owner's Mixamo clips are in `data/raw/animations/mixamo/
 - [ ] Rue de Verrewinkel railway bridge (`claude/verrewinkel`, on top of claude/trains; port 8823: http://localhost:8823/viewer/index.html?tile=F7&trains=1&at=-268,1308): 3 brick arches + console frieze matching s05, the 2022 footbridge; weak: LOD2 not checker-clean, no lab view, SE street dip (roads side), NE face mirrored.
 - [ ] Sound Lab (`claude/sound`, port 8826: http://localhost:8826/labs/sound-lab.html, click to start; WAV renders in .claude/worktrees/sound/docs/sound/renders/ with what to listen for in docs/SOUND.md): LISTEN. Unsure: T3000 bell / chime, AM08 horn, church bell pitches, children + dog voices.
 - [ ] Impostor Lab (`claude/impostors`, port 8824: http://localhost:8824/labs/impostor-lab.html?scene=forest): dots gone; GPU numbers to re-take on a QUIET machine (owner's GPU project closed).
+- [ ] Pedestrian Lab P0+P1 (`claude/pedestrians`, port 8825: http://localhost:8825/labs/pedestrian-lab.html, ?scene=sidewalk|crossing|zebra|square|tram|park): 0 pops, CPU 300 people 0.46-0.56 ms; GPU to re-take on a QUIET machine; weak: baked feet slide on turns, kerb steps, nobody sits (no UAL clips yet), P4 bodies (children, dogs...) not started.
 - [ ] City mesh audit report (docs/CITY_MESH_AUDIT.md): facade details coplanar with walls = likely the building flicker.
 - [ ] Small fixes (`claude/smallfixes`): lamps + ?sunlight=1.
 - [ ] Hero prep notes (`claude/hero-prep`, docs/heroes/): Van Buuren + Wolvendael.
