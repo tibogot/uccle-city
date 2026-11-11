@@ -1,0 +1,186 @@
+// THE NIGHT SOURCES: every kind of light the street has, each with its own fixed pool range, written into the
+// LightPool each frame (nightLighting.js draws them). Static sources (lamps, lit windows, shop fronts, signs) are
+// queried through a grid (StaticSources); moving ones (car headlights, rear lights, the tram) are offered from flat
+// arrays the lab / city fills. NearestN gives every kept source its fade weight (lightSelect.js: no popping).
+//
+//   lamps      omni, LANTERN profile (up share + batwing), finite globe (r 0.22 m); the K nearest also carry a
+//              shadowed THREE.SpotLight, cross-faded (ShadowLamps)
+//   windows    APERTURE spot from 1.2 m inside the room through the window (mullion cross): the patch on the garden
+//   shops      APERTURE spot from 2 m inside through the shop front: the bright patch on the sidewalk
+//   signs      a small coloured omni in front of the fascia
+//   headlights one LOW BEAM spot per car (the two lamps merged: the same light on the road beyond a few metres; GTA V
+//              draws "only 2 headlights" for far cars, we go one step further for the lit pool)
+//   rear       one red omni per car (5 m)
+//   tram       the lead cab's low beam (symmetric), a red rear omni, three saloon omnis (light through the windows)
+// Volumetric cones (lightCones.js) follow the lamp and headlight slots.
+// Per frame: no allocation (typed arrays, preallocated selections); cost = the grid cells / cars visited.
+import * as THREE from "three/webgpu";
+import { PROFILE } from "./nightLighting.js";
+import { NearestN, StaticSources, ShadowLamps, smooth01 } from "./lightSelect.js";
+
+/** Moving lights: car i at CAR.STRIDE * i (written by the owner of the cars). */
+export const CAR = { HX: 0, HY: 1, HZ: 2, FX: 3, FY: 4, FZ: 5, TX: 6, TY: 7, TZ: 8, HEAD: 9, TAIL: 10, FADE: 11, STRIDE: 12 };
+
+export const nightParams = {
+  lamps: true, windows: true, shops: true, signs: true, headlights: true, rear: true, tram: true, cones: true,
+  lampI: 110, lampRange: 24, lampUp: 0.3, lampBatwing: 0.35,
+  windowI: 9, shopI: 32, signI: 6, headI: 750, headRange: 55, rearI: 1.6, tramI: 900, tramSaloon: 7,
+  coneDensity: 0.06,
+};
+const LAMP_RGB = [1.0, 0.78, 0.52], HEAD_RGB = [1.0, 0.97, 0.92], REAR_RGB = [1.0, 0.04, 0.02], SALOON_RGB = [0.82, 0.9, 1.0];
+
+class Track {          // per-source weight history: the largest frame-to-frame jump (the pop detector)
+  constructor(n) { this.prev = new Float32Array(n); this.cur = new Float32Array(n); this.maxJump = 0; this.frameJump = 0; }
+  begin() { const t = this.prev; this.prev = this.cur; this.cur = t; this.cur.fill(0); }
+  end() { let m = 0; for (let i = 0; i < this.cur.length; i++) { const d = Math.abs(this.cur[i] - this.prev[i]); if (d > m) m = d; } this.frameJump = m; if (m > this.maxJump) this.maxJump = m; }
+}
+
+export class NightSources {
+  constructor(pool, street, { cars = 64, shadowLights = [], cones = null, sizes = {} } = {}) {
+    const N = { lamps: 48, windows: 40, shops: 12, signs: 10, heads: 40, rear: 36, ...sizes };
+    this.pool = pool; this.cones = cones; this.N = N;
+    const S = street.sources;
+    this.src = S;
+    this.grid = {};
+    for (const k of ["lamps", "windows", "shops", "signs"]) this.grid[k] = new StaticSources(S[k].x, S[k].y, S[k].z, 32);
+    this.sel = {
+      lamps: new NearestN(N.lamps, 150), windows: new NearestN(N.windows, 90), shops: new NearestN(N.shops, 110),
+      signs: new NearestN(N.signs, 90), heads: new NearestN(N.heads, 170), rear: new NearestN(N.rear, 75),
+    };
+    this.base = {};
+    for (const k of ["lamps", "windows", "shops", "signs", "heads", "rear"]) this.base[k] = pool.reserve(N[k]);
+    this.base.tram = pool.reserve(5);
+    this.carData = new Float32Array(cars * CAR.STRIDE); this.carCount = 0;
+    this.shadow = new ShadowLamps(shadowLights, S.lamps.x.length);
+    this.tram = { on: false, hx: 0, hy: 0, hz: 0, fx: 1, fz: 0, rx: 0, rz: 0, len: 32 };
+    this.track = { lamps: new Track(S.lamps.x.length), windows: new Track(S.windows.x.length), heads: new Track(cars), rear: new Track(cars) };
+    this.stats = { lamps: 0, windows: 0, shops: 0, signs: 0, heads: 0, rear: 0, tram: 0, total: 0 };
+    this.ms = 0;
+  }
+
+  /** cam: Vector3; dt: s; scale: master x night */
+  update(cam, dt, scale = 1) {
+    const t0 = performance.now();
+    const P = this.pool, p = nightParams, cx = cam.x, cy = cam.y, cz = cam.z;
+    P.scale = scale;
+    this.cx = cx; this.cy = cy; this.cz = cz;
+    let cone = 0;
+    const C = this.cones;
+    // ---- street lamps
+    {
+      const sel = this.sel.lamps, S = this.src.lamps, b = this.base.lamps, tr = this.track.lamps;
+      sel.begin(); if (p.lamps) this.grid.lamps.query(cx, cy, cz, sel.maxDist, sel); sel.end();
+      this.shadow.update(sel, dt);
+      tr.begin();
+      const I = p.lampI;
+      for (let k = 0; k < this.N.lamps; k++) {
+        if (k >= sel.count) { P.weight(b + k, 0); continue; }
+        const id = sel.i[k], w = sel.weight(k);
+        tr.cur[id] = w;
+        P.set(b + k, S.x[id], S.y[id], S.z[id], p.lampRange, LAMP_RGB[0] * I, LAMP_RGB[1] * I, LAMP_RGB[2] * I, w * (1 - this.shadow.blend(id)), 0.22);
+        P.omni(b + k); P.profile(b + k, PROFILE.LANTERN, p.lampUp, p.lampBatwing);
+        if (C && p.cones && w > 0.01) C.write(cone++, S.x[id], S.y[id] - 0.1, S.z[id], 0, -1, 0, S.y[id] - 0.1, 3.4, LAMP_RGB[0] * w, LAMP_RGB[1] * w, LAMP_RGB[2] * w);
+      }
+      tr.end();
+      this.stats.lamps = sel.count;
+      // the shadowed share of the nearest lamps: real spot lights (three's path, soft PCF shadows)
+      const SH = this.shadow;
+      for (let s = 0; s < SH.K; s++) {
+        const L = SH.lights[s], id = SH.lamp[s];
+        if (id < 0 || !p.lamps) { L.intensity = 0; continue; }
+        L.position.set(S.x[id], S.y[id], S.z[id]);
+        L.target.position.set(S.x[id], S.y[id] - 6, S.z[id]);
+        L.target.updateMatrixWorld();
+        L.intensity = I * scale * SH.blend(id);
+        L.distance = p.lampRange;
+      }
+    }
+    // ---- windows and shop fronts (APERTURE): outward = the facade's normal (+z for the north side)
+    this.aperture("windows", p.windows, p.windowI, 1.2, 14, 0.8);
+    this.aperture("shops", p.shops, p.shopI, 2.0, 16, 0.0);
+    // ---- signs
+    {
+      const sel = this.sel.signs, S = this.src.signs, L = S.list, b = this.base.signs;
+      sel.begin(); if (p.signs) this.grid.signs.query(cx, cy, cz, sel.maxDist, sel); sel.end();
+      for (let k = 0; k < this.N.signs; k++) {
+        if (k >= sel.count) { P.weight(b + k, 0); continue; }
+        const id = sel.i[k], s = L[id], out = s.side < 0 ? 1 : -1, I = p.signI;
+        P.set(b + k, S.x[id], S.y[id] - 0.1, S.z[id] + out * 0.7, 8, s.col[0] * I, s.col[1] * I, s.col[2] * I, sel.weight(k), 0.4);
+        P.omni(b + k); P.profile(b + k, PROFILE.PLAIN);
+      }
+      this.stats.signs = sel.count;
+    }
+    // ---- cars: headlights, rear lights
+    {
+      const D = this.carData, n = this.carCount, sh = this.sel.heads, sr = this.sel.rear, th = this.track.heads, trr = this.track.rear;
+      sh.begin(); sr.begin();
+      for (let i = 0; i < n; i++) {
+        const o = i * CAR.STRIDE;
+        if (D[o + CAR.FADE] <= 0) continue;
+        if (p.headlights && D[o + CAR.HEAD] > 0) { const dx = D[o] - cx, dy = D[o + 1] - cy, dz = D[o + 2] - cz; sh.offer(i, dx * dx + dy * dy + dz * dz); }
+        if (p.rear && D[o + CAR.TAIL] > 0) { const dx = D[o + 6] - cx, dy = D[o + 7] - cy, dz = D[o + 8] - cz; sr.offer(i, dx * dx + dy * dy + dz * dz); }
+      }
+      sh.end(); sr.end();
+      th.begin(); trr.begin();
+      const bh = this.base.heads, br = this.base.rear;
+      for (let k = 0; k < this.N.heads; k++) {
+        if (k >= sh.count) { P.weight(bh + k, 0); continue; }
+        const i = sh.i[k], o = i * CAR.STRIDE, w = sh.weight(k) * D[o + CAR.FADE] * D[o + CAR.HEAD], I = p.headI;
+        th.cur[i] = w;
+        P.set(bh + k, D[o], D[o + 1], D[o + 2], p.headRange, HEAD_RGB[0] * I, HEAD_RGB[1] * I, HEAD_RGB[2] * I, w, 0.15);
+        P.spot(bh + k, D[o + 3], D[o + 4], D[o + 5], 0.62, 0.36);
+        P.profile(bh + k, PROFILE.LOWBEAM, -0.012, 0.268);
+        if (C && p.cones && w > 0.01) C.write(cone++, D[o], D[o + 1], D[o + 2], D[o + 3], D[o + 4] - 0.02, D[o + 5], 16, 3.2, 0.45 * w, 0.44 * w, 0.42 * w);
+      }
+      for (let k = 0; k < this.N.rear; k++) {
+        if (k >= sr.count) { P.weight(br + k, 0); continue; }
+        const i = sr.i[k], o = i * CAR.STRIDE, w = sr.weight(k) * D[o + CAR.FADE] * D[o + CAR.TAIL], I = p.rearI * D[o + CAR.TAIL];
+        trr.cur[i] = w;
+        P.set(br + k, D[o + 6], D[o + 7], D[o + 8], 6, REAR_RGB[0] * I, REAR_RGB[1] * I, REAR_RGB[2] * I, w, 0.35);
+        P.omni(br + k); P.profile(br + k, PROFILE.PLAIN);
+      }
+      th.end(); trr.end();
+      this.stats.heads = sh.count; this.stats.rear = sr.count;
+    }
+    // ---- the tram: fixed slots, faded with the distance
+    {
+      const T = this.tram, b = this.base.tram;
+      const dx = T.hx - cx, dz = T.hz - cz, w = T.on && p.tram ? smooth01((200 - Math.hypot(dx, dz)) / 60) : 0;
+      if (w <= 0) for (let k = 0; k < 5; k++) P.weight(b + k, 0);
+      else {
+        const I = p.tramI, pitch = 0.03, fx = T.fx * Math.cos(pitch), fz = T.fz * Math.cos(pitch), fy = -Math.sin(pitch);
+        P.set(b, T.hx, 1.1, T.hz, p.headRange, HEAD_RGB[0] * I, HEAD_RGB[1] * I, HEAD_RGB[2] * I, w, 0.3);
+        P.spot(b, fx, fy, fz, 0.7, 0.4); P.profile(b, PROFILE.LOWBEAM, -0.01, 0);
+        if (C && p.cones) C.write(cone++, T.hx, 1.1, T.hz, fx, fy - 0.02, fz, 18, 3.6, 0.45 * w, 0.44 * w, 0.42 * w);
+        P.set(b + 1, T.rx, 1.2, T.rz, 6, REAR_RGB[0] * p.rearI * 1.5, REAR_RGB[1] * p.rearI * 1.5, REAR_RGB[2] * p.rearI * 1.5, w, 0.15);
+        P.omni(b + 1); P.profile(b + 1, PROFILE.PLAIN);
+        for (let k = 0; k < 3; k++) {
+          const f = (k + 1) / 4, x = T.hx + (T.rx - T.hx) * f, z = T.hz + (T.rz - T.hz) * f, I2 = p.tramSaloon;
+          P.set(b + 2 + k, x, 2.1, z, 8, SALOON_RGB[0] * I2, SALOON_RGB[1] * I2, SALOON_RGB[2] * I2, w, 1.0);
+          P.omni(b + 2 + k); P.profile(b + 2 + k, PROFILE.PLAIN);
+        }
+      }
+      this.stats.tram = w > 0 ? 5 : 0;
+    }
+    if (C) C.commit(cone);
+    const st = this.stats;
+    st.total = st.lamps + st.windows + st.shops + st.signs + st.heads + st.rear + st.tram;
+    this.ms = performance.now() - t0;
+  }
+
+  aperture(kind, on, I, depth, range, mullion) {
+    const P = this.pool, sel = this.sel[kind], S = this.src[kind], L = S.list, b = this.base[kind], tr = this.track[kind];
+    sel.begin(); if (on) this.grid[kind].query(this.cx, this.cy, this.cz, sel.maxDist, sel); sel.end();
+    tr?.begin();
+    for (let k = 0; k < this.N[kind]; k++) {
+      if (k >= sel.count) { P.weight(b + k, 0); continue; }
+      const id = sel.i[k], s = L[id], out = s.side < 0 ? 1 : -1, w = sel.weight(k), g = I * (s.b ?? 1);
+      if (tr) tr.cur[id] = w;
+      P.set(b + k, S.x[id], S.y[id], S.z[id] - out * depth, range + depth, s.col[0] * g, s.col[1] * g, s.col[2] * g, w, 0.35);
+      P.spot(b + k, 0, 0, out, 1.4, 1.05);
+      P.profile(b + k, PROFILE.APERTURE, s.hw, s.hh, depth, mullion);
+    }
+    tr?.end();
+    this.stats[kind] = sel.count;
+  }
+}
