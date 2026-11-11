@@ -1,0 +1,314 @@
+{
+ "asset": "Chateau de Wolvendael, Parc de Wolvendael (tools/blender/wolvendael_chateau.py)",
+ "triangles_lod0": 54274,
+ "triangles_far": 11299,
+ "triangles_per_slot_lod0": {
+  "render_white_lime": 1828,
+  "stone_white": 7180,
+  "stone_blue": 310,
+  "slate": 656,
+  "zinc_roof": 10704,
+  "wood_frame_white": 13796,
+  "wood_painted_grey": 16926,
+  "glass_window": 970,
+  "terracotta": 1904
+ },
+ "triangles_per_slot_far": {
+  "render_white_lime": 1786,
+  "stone_white": 880,
+  "stone_blue": 310,
+  "slate": 686,
+  "zinc_roof": 224,
+  "wood_frame_white": 6420,
+  "wood_painted_grey": 708,
+  "glass_window": 285
+ },
+ "slots": [
+  "render_white_lime",
+  "stone_white",
+  "stone_blue",
+  "slate",
+  "zinc_roof",
+  "wood_frame_white",
+  "wood_painted_grey",
+  "glass_window",
+  "terracotta"
+ ],
+ "codes": {
+  "COLOR_0.r": "code / 16 + 1/32",
+  "COLOR_0.g": "per-vertex AO of the thin faces (1 elsewhere)",
+  "COLOR_0.b": "sqrt(width of the flat region / 4 m)",
+  "names": [
+   "plain",
+   "block",
+   "joint",
+   "reveal",
+   "sill",
+   "surround",
+   "band",
+   "cornice",
+   "plinth",
+   "keystone",
+   "frame",
+   "bar",
+   "pane",
+   "louvre",
+   "hung",
+   "ridge"
+  ]
+ },
+ "uv": {
+  "TEXCOORD_0": "world metres per face: walls (along, m TAW - 40), roofs (along the eave, up the slope from the break)",
+  "TEXCOORD_1": "AO lightmap (thin faces: u > 0.994, AO 1)"
+ },
+ "lightmap": {
+  "px": 2048,
+  "split_v": 0.8,
+  "lod0_px_per_m": 17.2,
+  "far_px_per_m": 9.5,
+  "thin_faces_vertex_ao": [
+   19643,
+   2187
+  ]
+ },
+ "frame": "glTF Y up; three.js local (u, m TAW - OY, w); node at the city position of the frame origin, rotation.y = -rotation",
+ "placement": {
+  "city_local_position": [
+   -468.703,
+   40.0,
+   -365.572
+  ],
+  "rotation_y_rad": 0.585885,
+  "hides_solids": [
+   "https://databrussels.be/id/buildingsolid/537523",
+   "https://databrussels.be/id/buildingsolid/538880"
+  ],
+  "hides_bu_ids": [
+   "https://databrussels.be/id/building/1587095"
+  ]
+ },
+ "bounds_city": {
+  "x": [
+   -488.3,
+   -446.9
+  ],
+  "z": [
+   -390.2,
+   -351.8
+  ],
+  "y": [
+   46.5,
+   64.7
+  ]
+ },
+ "measured": {
+  "footprint_squared": [
+   [
+    20.49,
+    -11.36
+   ],
+   [
+    20.49,
+    -2.72
+   ],
+   [
+    -0.59,
+    -2.72
+   ],
+   [
+    -0.59,
+    3.39
+   ],
+   [
+    -12.68,
+    3.39
+   ],
+   [
+    -12.68,
+    -11.36
+   ]
+  ],
+  "annex": [
+   -6.62,
+   -0.66,
+   3.39,
+   7.68
+  ],
+  "levels_taw": {
+   "gf_floor": 50.35,
+   "gf_head": 52.95,
+   "arch_spring": 52.47,
+   "arch_crown": 52.95,
+   "string_course": [
+    53.76,
+    53.99
+   ],
+   "centre_band": [
+    53.32,
+    54.02
+   ],
+   "ff_sill": 54.5,
+   "ff_head": 56.3,
+   "architrave": 56.98,
+   "soffit": 57.4,
+   "cornice": 57.91,
+   "break": 60.05,
+   "ridge_A": 62.94,
+   "ridge_B": 63.85
+  },
+  "bays_u": {
+   "1": 18.785,
+   "2": 15.315,
+   "3": 12.41,
+   "4": 10.14,
+   "5": 7.88,
+   "6": 5.62,
+   "7": 3.3499999999999996,
+   "8": 0.4450000000000003,
+   "9": -3.0249999999999995,
+   "10": -6.414999999999999,
+   "11": -8.565,
+   "12": -10.715
+  },
+  "strips_u": [
+   13.77,
+   1.9900000000000002,
+   -4.7299999999999995
+  ],
+  "roof": {
+   "A": {
+    "u": [
+     -6.635,
+     19.59
+    ],
+    "w": [
+     -10.459999999999999,
+     -3.62
+    ],
+    "ridge_w": -7.039999999999999,
+    "ridge": 62.94,
+    "slope_deg": 40.19878731169951
+   },
+   "B": {
+    "u": [
+     -11.78,
+     -1.49
+    ],
+    "w": [
+     -10.459999999999999,
+     2.49
+    ],
+    "ridge_u": -6.635,
+    "ridge": 63.85,
+    "ridge_w": [
+     -5.9631141868512065,
+     -2.6549999999999994
+    ],
+    "slope_side_deg": 36.44887619992085,
+    "slope_pond_deg": 40.19878731169951
+   }
+  },
+  "chimneys": [
+   {
+    "u": 13.23,
+    "w": -6.66,
+    "su": 1.0,
+    "sw": 1.8,
+    "top": 63.95,
+    "pots": [
+     "cowl"
+    ]
+   },
+   {
+    "u": 1.84,
+    "w": -7.58,
+    "su": 1.0,
+    "sw": 1.8,
+    "top": 63.95,
+    "pots": [
+     "pot",
+     "pot",
+     "pot"
+    ]
+   },
+   {
+    "u": -10.7,
+    "w": -10.0,
+    "su": 1.15,
+    "sw": 0.45,
+    "top": 60.85,
+    "pots": [
+     "pot",
+     "pot",
+     "pot",
+     "pot"
+    ],
+    "pot_r": 0.62,
+    "est": true
+   }
+  ]
+ },
+ "estimated": "the entrance side (back of the main block: the pond front's rhythm, a door at B5), the SW part's back / NE / SW-end faces, the annex, the plinth (hidden by the hedge), the back and SW-end dormers, the SW chimney's size, the mouldings' profiles, the joinery's sections",
+ "landmarks": {
+  "dormer_front_15.31": [
+   5.175,
+   58.15,
+   59.42
+  ],
+  "dormer_front_10.14": [
+   10.35,
+   58.15,
+   59.42
+  ],
+  "dormer_front_5.62": [
+   14.87,
+   58.15,
+   59.42
+  ],
+  "dormer_front_0.45": [
+   20.045,
+   58.15,
+   59.42
+  ],
+  "dormer_front_-6.41": [
+   26.905,
+   58.15,
+   59.42
+  ],
+  "dormer_ne_-8.74": [
+   6.02,
+   58.15,
+   59.42
+  ],
+  "dormer_ne_-5.34": [
+   2.62,
+   58.15,
+   59.42
+  ],
+  "dormer_back_15.31": [
+   15.905,
+   58.15,
+   59.42
+  ],
+  "dormer_back_10.14": [
+   10.73,
+   58.15,
+   59.42
+  ],
+  "dormer_back_5.62": [
+   6.21,
+   58.15,
+   59.42
+  ],
+  "dormer_sw_-5.83": [
+   5.53,
+   58.15,
+   59.42
+  ],
+  "dormer_sw_-2.14": [
+   9.22,
+   58.15,
+   59.42
+  ]
+ }
+}

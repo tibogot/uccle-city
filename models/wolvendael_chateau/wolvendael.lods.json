@@ -1,0 +1,12 @@
+{
+ "Chateau_lod2": {
+  "from": "Chateau_far",
+  "sourceTris": 11299,
+  "tris": 2850,
+  "crossIslandTris": 2058,
+  "aoBakedOnLevel": false,
+  "addedVertices": 7175
+ },
+ "glbBytes": 2011460,
+ "rawBytes": 6195172
+}
