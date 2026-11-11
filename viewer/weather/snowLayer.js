@@ -35,23 +35,39 @@ export function createSnowLayer({ renderer, map }) {
   const stampB = Array.from({ length: NSTAMP }, () => uniform(new THREE.Vector4(0, 0, 0, 0)));    // radius, strength, on
   const uOrigin = map.uOrigin, uCell = float(cell);
 
-  // ---- compute: stamp + refill
+  // ---- compute (GPU-driven, ~0 CPU): stamps write only a 4 x 4 m window round each stamper (6 x 32^2 threads); the
+  // refill by falling snow sweeps 1/16 of the field per frame (x16 dt), so the full 512^2 field is never touched per frame
+  const W = 32, SLICES = 16;
+  const uSlice = uniform(0);
+  const stampCell = stampA.map((a) => uniform(new THREE.Vector2()));   // the window's first cell (i, j) per stamper
   const stampPass = Fn(() => {
-    const i = instanceIndex.mod(uint(N)), j = instanceIndex.div(uint(N));
-    const xz = vec2(float(i).add(0.5), float(j).add(0.5)).mul(uCell).add(uOrigin);
-    const t = track.element(instanceIndex);
-    const v = t.sub(uRefill.mul(uDt)).max(0).toVar();
-    for (let k = 0; k < NSTAMP; k++) {
-      const a = stampA[k], b = stampB[k];
-      const p = a.xy, q = a.zw, pq = q.sub(p);
-      const h = clamp(xz.sub(p).dot(pq).div(max(pq.dot(pq), 1e-6)), 0, 1);
-      const d = length(xz.sub(p).sub(pq.mul(h)));
-      const s = smoothstep(b.x, b.x.mul(0.55), d).mul(b.y).mul(b.z);
-      v.assign(max(v, s));
+    const k = instanceIndex.div(uint(W * W)), l = instanceIndex.mod(uint(W * W));
+    const v = float(0).toVar();
+    const ci = int(0).toVar(), cj = int(0).toVar();
+    for (let s = 0; s < NSTAMP; s++) {
+      If(k.equal(uint(s)), () => {
+        const a = stampA[s], b = stampB[s];
+        ci.assign(int(stampCell[s].x).add(int(l.mod(uint(W)))));
+        cj.assign(int(stampCell[s].y).add(int(l.div(uint(W)))));
+        const xz = vec2(float(ci).add(0.5), float(cj).add(0.5)).mul(uCell).add(uOrigin);
+        const p = a.xy, q = a.zw, pq = q.sub(p);
+        const h = clamp(xz.sub(p).dot(pq).div(max(pq.dot(pq), 1e-6)), 0, 1);
+        const d = length(xz.sub(p).sub(pq.mul(h)));
+        v.assign(smoothstep(b.x, b.x.mul(0.55), d).mul(b.y).mul(b.z));
+      });
     }
-    // no snow: nothing to remember
-    t.assign(select(wx.uSnowDepth.lessThan(0.003), float(0), v));
-  })().compute(N * N);
+    If(v.greaterThan(0.001).and(ci.greaterThanEqual(0)).and(cj.greaterThanEqual(0)).and(ci.lessThan(N)).and(cj.lessThan(N)), () => {
+      const t = track.element(cj.mul(N).add(ci));
+      t.assign(max(t, v));
+    });
+  })().compute(NSTAMP * W * W);
+  const refillPass = Fn(() => {
+    const idx = instanceIndex.add(uint(uSlice).mul(uint(N * N / SLICES)));
+    const t = track.element(idx);
+    t.assign(t.sub(uRefill.mul(uDt).mul(SLICES)).max(0));
+  })().compute(N * N / SLICES);
+  const clearPass = Fn(() => { track.element(instanceIndex).assign(0); })().compute(N * N);
+  let hadSnow = false, slice = 0;
 
   // ---- the layer
   const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.75, metalness: 0 });
@@ -114,8 +130,19 @@ export function createSnowLayer({ renderer, map }) {
       uDt.value = Math.min(0.05, dt);
       // fresh snow fills the tracks: ~5 cm of fresh snow buries a footprint
       uRefill.value = (wx.uSnowFall.value * 2.5) / 3600 * 60;   // per real second at the lab's x60
-      mesh.visible = wx.uSnowDepth.value > 0.003;
-      if (mesh.visible) renderer.compute(stampPass);
+      const snow = wx.uSnowDepth.value > 0.003;
+      mesh.visible = snow;
+      if (!snow) { if (hadSnow) renderer.compute(clearPass); hadSnow = false; return; }
+      hadSnow = true;
+      let any = false;
+      for (let k = 0; k < NSTAMP; k++) {
+        const s = stamps[k];
+        if (!s) continue;
+        any = true;
+        stampCell[k].value.set(Math.floor(((s.x + (s.px ?? s.x)) / 2 - map.uOrigin.value.x) / cell) - W / 2, Math.floor(((s.z + (s.pz ?? s.z)) / 2 - map.uOrigin.value.y) / cell) - W / 2);
+      }
+      if (any && dt > 0) renderer.compute(stampPass);
+      if (uRefill.value > 0 && dt > 0) { uSlice.value = slice; slice = (slice + 1) % SLICES; renderer.compute(refillPass); }
     },
   };
 }

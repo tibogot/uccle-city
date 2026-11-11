@@ -53,7 +53,7 @@ export const rippleSlope = Fn(([xz, t, fw]) => {
     acc.addAssign(d.div(max(length(d), 0.001)).mul(w));
   }
   // rings ~11 cm wavelength: gone before a ring is 3 px across (no crawl)
-  return acc.mul(0.35).mul(float(1).sub(smoothstep(0.012, 0.035, fw))).mul(wx.uRain.mul(1.5).min(1)).mul(wxLook.uRipple);
+  return acc.mul(0.22).mul(float(1).sub(smoothstep(0.012, 0.035, fw))).mul(wx.uRain.mul(1.5).min(1)).mul(wxLook.uRipple);
 });
 
 /** Snow sparkle: a sparse set of cells whose facet is tilted at random; returns vec4(view normal tilt xyz, mask). */
@@ -112,7 +112,7 @@ export function weatherize(m, o = {}) {
   let puddle = float(0);
   if (o.puddles) {
     const low = noise2D(P.xz.mul(0.31)).mul(0.55).add(noise2D(P.xz.mul(1.17).add(3.1)).mul(0.3)).add(noise2D(P.xz.mul(4.3).add(7.7)).mul(0.15));
-    const level = wx.uPuddle.mul(0.62).add(o.puddleBias ?? float(0));
+    const level = wx.uPuddle.mul(0.5).add(o.puddleBias ?? float(0));
     const e = fwidth(low).add(0.004);
     puddle = smoothstep(level.add(e), level.sub(e), low).mul(horiz).mul(exposed).mul(wx.uPuddle.greaterThan(0.001).select(1, 0)).toVar();
     // rim: damp darker band round each puddle

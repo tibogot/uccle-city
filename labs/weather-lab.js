@@ -163,7 +163,7 @@ const KERB = 0.13;
 function sidewalk(z0, z1) {
   const g = new THREE.BoxGeometry(140, KERB, z1 - z0, 1, 1, 1).translate(0, KERB / 2, (z0 + z1) / 2);
   g.setAttribute("aKind", new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count).fill(0), 1));
-  root.add(mesh(g, () => concreteMaterial(), { porosity: 0.55, puddles: true, puddleBias: float(-0.12), litter: true, slush: true }));
+  root.add(mesh(g, () => concreteMaterial(), { porosity: 0.55, puddles: true, puddleBias: float(-0.2), litter: true, slush: true }));
   const kz = z0 < 0 ? z1 - 0.15 : z0;
   const k = new THREE.BoxGeometry(140, KERB + 0.004, 0.15).translate(0, (KERB + 0.004) / 2, kz + 0.075);
   k.setAttribute("aKind", new THREE.Float32BufferAttribute(new Float32Array(k.attributes.position.count).fill(1), 1));
@@ -175,8 +175,8 @@ sidewalk(3.5, 6); sidewalk(-6.4, -3.5);
   root.add(mesh(g, grassMat, { porosity: 0.9, flowers: true, litter: true, frost: true }));
   const back = new THREE.PlaneGeometry(140, 60, 1, 1).rotateX(-Math.PI / 2).translate(0, KERB - 0.01, -36);
   root.add(mesh(back, grassMat, { porosity: 0.9, litter: true, frost: true }));
-  const far = new THREE.Mesh(new THREE.CircleGeometry(3000, 48).rotateX(-Math.PI / 2).translate(0, -0.05, 0), plainMat(0x2f3a28, 1));
-  far.receiveShadow = true; scene.add(far);
+  const far = mesh(new THREE.CircleGeometry(3000, 48).rotateX(-Math.PI / 2).translate(0, -0.05, 0), () => plainMat(0x2f3a28, 1), { porosity: 0.9, frost: true }, { cast: false, solid: false });
+  scene.add(far);
 }
 
 // ---------------------------------------------------------------- houses
@@ -198,20 +198,34 @@ function roofSlabs(x0, w, zc, d, yTop, pitchDeg, over, mk, opts) {
   }
   return out;
 }
+/** A roof slab along x (x0 .. x0 + w) whose TOP surface runs from edge a = [z, y] to edge b = [z, y]; sg: the side it faces. */
+function slabBetween(x0, w, a, b, mk, opts, sg) {
+  const t = 0.12, dz = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dz, dy);
+  const g = new THREE.BoxGeometry(w, t, L + 0.02);
+  // local z along the slope (from a to b), local y = the outward normal
+  const dir = new THREE.Vector3(0, dy, dz).normalize();
+  let n = new THREE.Vector3(0, -dir.z, dir.y); if (n.y < 0) n.negate();
+  const m = new THREE.Matrix4().makeBasis(new THREE.Vector3(1, 0, 0), n, new THREE.Vector3(1, 0, 0).cross(n));   // right-handed
+  g.applyMatrix4(m);
+  const c = new THREE.Vector3(x0 + w / 2, (a[1] + b[1]) / 2, (a[0] + b[0]) / 2).addScaledVector(n, -t / 2);
+  g.translate(c.x, c.y, c.z);
+  return mesh(g, mk, opts);
+}
 function windows(x0, w, floors, h0, fh, mats) {
   const n = Math.max(2, Math.round(w / 2.2));
   for (let f = 0; f < floors; f++) for (let i = 0; i < n; i++) {
     const cx = x0 + (i + 0.5) * w / n, y = h0 + f * fh + 0.9;
-    const glass = new THREE.BoxGeometry(1.0, 1.55, 0.04).translate(cx, y + 0.78, front + 0.02 - 0.12);
+    const glass = new THREE.BoxGeometry(1.0, 1.55, 0.02).translate(cx, y + 0.78, front + 0.012);
     root.add(mesh(glass, mats.glass, { porosity: 0.0, glass: true, snow: false }));
-    const frame = new THREE.BoxGeometry(1.14, 1.69, 0.1).translate(cx, y + 0.78, front - 0.1);
-    root.add(mesh(frame, mats.frame, { porosity: 0.1 }));
+    for (const [w, h, dx, dy] of [[1.16, 0.08, 0, 1.59], [1.16, 0.08, 0, -0.04], [0.08, 1.6, -0.54, 0.78], [0.08, 1.6, 0.54, 0.78], [0.05, 1.55, 0, 0.78]]) {
+      root.add(mesh(new THREE.BoxGeometry(w, h, 0.07).translate(cx + dx, y + dy, front + 0.035), mats.frame, { porosity: 0.1 }));
+    }
     const sill = new THREE.BoxGeometry(1.3, 0.07, 0.16).translate(cx, y - 0.035, front + 0.08);
     root.add(mesh(sill, mats.stone, { porosity: 0.35 }));
   }
 }
 const mats = {
-  glass: () => plainMat(0x0a0d10, 0.04, 0.6),
+  glass: () => plainMat(0x6a737a, 0.04, 0.9),
   frame: () => plainMat(0xd8d6cf, 0.45),
   stone: () => plainMat(0x9a9890, 0.75),
   door: () => plainMat(0x2a1a12, 0.5),
@@ -238,7 +252,6 @@ const houses = [
     // door
     root.add(mesh(new THREE.BoxGeometry(1.1, 2.3, 0.06).translate(x + h.w - 1.0, KERB + 1.15 + 0.1, front + 0.01), mats.door, { porosity: 0.1 }));
     windows(x, h.w - 1.6, h.floors, KERB + 0.4, fh, mats);
-    windows(x + h.w - 1.6, 1.6, h.floors, KERB + 0.4 + fh, fh, mats);
     const mkR = () => roofMat(h.tile);
     if (h.roof === "gable") {
       const rh = (depthH / 2) * Math.tan(h.pitch * Math.PI / 180);
@@ -251,7 +264,12 @@ const houses = [
       const a = 1.1, h1 = 2.6, h2 = 1.0;
       const s = new THREE.Shape(); s.moveTo(-depthH / 2, 0); s.lineTo(depthH / 2, 0); s.lineTo(depthH / 2 - a, h1); s.lineTo(0, h1 + h2); s.lineTo(-depthH / 2 + a, h1); s.closePath();
       const g = new THREE.ExtrudeGeometry(s, { depth: h.w, bevelEnabled: false }).rotateY(Math.PI / 2).translate(x, wallH, zc);
-      root.add(mesh(g, mkR, ROOF_OPTS));
+      root.add(mesh(g, mkB, WALL_OPTS));                              // the attic volume (hidden under the slabs)
+      // roof planes as slabs (their own normals): steep lower faces, shallow top
+      for (const sg of [1, -1]) {
+        root.add(slabBetween(x, h.w, [zc + sg * (depthH / 2 + 0.06), wallH - 0.05], [zc + sg * (depthH / 2 - a), wallH + h1], mkR, ROOF_OPTS, sg));
+        root.add(slabBetween(x, h.w, [zc + sg * (depthH / 2 - a + 0.08), wallH + h1 - 0.03], [zc, wallH + h1 + h2], mkR, ROOF_OPTS, sg));
+      }
       // a cornice at the foot of the mansard (a ledge for snow)
       root.add(mesh(new THREE.BoxGeometry(h.w, 0.18, 0.35).translate(x + h.w / 2, wallH - 0.05, front + 0.12), mats.stone, { porosity: 0.35 }));
     } else if (h.roof === "flat") {
@@ -327,7 +345,7 @@ const leafMat = (() => {
   m.colorNode = mix(fresh, autumnC, turned);
   const f = uv().sub(0.5);
   const shape = smoothstep(0.5, 0.4, f.mul(vec2(1.6, 1)).length().add(abs(f.x).mul(0.25)));
-  const present = smoothstep(R.z.add(0.01), R.z.sub(0.01), season.uLeafDensity);
+  const present = smoothstep(R.z.sub(0.01), R.z.add(0.01), season.uLeafDensity);
   m.opacityNode = shape.mul(present);
   return m;
 })();
@@ -370,8 +388,17 @@ try {
     src.position.set(0, 0, 0); src.rotation.set(0, 0, 0);
     src.traverse((o) => {
       if (!o.isMesh) return;
-      const sm = o.material, isGlass = /glass|window/i.test(sm.name), isBody = /body|paint/i.test(sm.name);
-      const mk = () => plainMat(isBody ? paint : sm.color, isGlass ? 0.05 : (sm.roughness ?? 0.6), isGlass ? 0.5 : (isBody ? 0.3 : (sm.metalness ?? 0)));
+      // the faceted family's vertex kinds (viewer/drive/carPacks.js): 1 paint, 2 head, 3 tail, 4 glass, 5 chrome, 6 rubber
+      const mk = () => {
+        const m = new THREE.MeshStandardNodeMaterial();
+        const kind = attribute("_kind", "float").add(0.5).floor(), vc = attribute("color", "vec3");
+        const isPaint = kind.equal(1), isGlass = kind.equal(4), isChrome = kind.equal(5), isRubber = kind.equal(6);
+        const pc = new THREE.Color(paint);
+        m.colorNode = select(isPaint, vec3(pc.r, pc.g, pc.b), select(isGlass, vec3(0.02, 0.025, 0.03), vc));
+        m.roughnessNode = select(isPaint, float(0.32), select(isGlass, float(0.05), select(isChrome, float(0.25), select(isRubber, float(0.9), float(0.6)))));
+        m.metalnessNode = select(isPaint, float(0.35), select(isGlass, float(0.5), select(isChrome, float(0.9), float(0))));
+        return m;
+      };
       const me = mesh(o.geometry, mk, { porosity: 0.05, beads: true, frost: true });
       o.parent.add(me); me.position.copy(o.position); me.quaternion.copy(o.quaternion); me.scale.copy(o.scale);
       o.visible = false;
@@ -470,6 +497,24 @@ fP.add(S, "bench").name("bench").listen();
 fP.add(S, "flicker").name("flicker").listen();
 fP.add({ f: () => bench().then((r) => console.log(r)) }, "f").name("run A/B bench (40 s)");
 
+// Firmament's own overcast look (vendor/firmament CLOUD presets "overcast": a low stratus deck), blended in by cloud cover
+let SKY0 = null, deck = 0;
+function skyFromWeather() {
+  const p = lighting.sky?.params; if (!p) return;
+  SKY0 ??= { weatherBias: p.weatherBias, cloudBase: p.cloudBase, cloudThickness: p.cloudThickness, stratusThickness: p.stratusThickness, typeVariation: p.typeVariation, haze: p.haze, cirrus: p.cirrus };
+  const c = weather.input.cloud, k = THREE.MathUtils.smoothstep(c, 0.55, 0.95);
+  deck = k;
+  const wetAir = Math.min(1, wx.uRain.value + wx.uSnowFall.value);
+  const L = THREE.MathUtils.lerp;
+  p.weatherBias = L(SKY0.weatherBias, 0.92, k);
+  p.cloudBase = L(SKY0.cloudBase, 900 - 300 * wetAir, k);
+  p.cloudThickness = L(SKY0.cloudThickness, 3000, k);
+  p.stratusThickness = L(SKY0.stratusThickness, 0.16, k);
+  p.typeVariation = L(SKY0.typeVariation, 0.12, k);
+  p.cirrus = L(SKY0.cirrus, 0.1, k);
+  p.wetness = 0.5 * wetAir;
+  p.haze = SKY0.haze * (1 + 1.5 * wetAir + 2 * Math.min(1, 2000 / Math.max(200, weather.input.vis)));
+}
 function applyMist(name) { S.mist = name === "morning mist" ? 0.03 : 0; }
 function applyDay(d) {
   const p = setDay(d);
@@ -580,6 +625,7 @@ function frame(dtOverride = null) {
   // sky follows the weather: cloud cover; a solid deck goes stratus
   lighting.firm.coverage = 0.15 + 0.85 * weather.input.cloud;
   lighting.firm.cloudType = weather.input.cloud > 0.85 ? 0.08 : 0.5;
+  skyFromWeather();
   // fog
   fogW.uBeta.value = S.fogOn ? weather.fogBeta * S.fogScale : 0;
   fogW.uMist.value = S.fogOn ? S.mist : 0;
@@ -602,6 +648,8 @@ function frame(dtOverride = null) {
   snowLayer.mesh.visible = S.layerOn && wx.uSnowDepth.value > 0.003;
   if (!path) controls.update();
   lighting.update(camera.position.y, 0, controls.target, 60, dt);
+  // under a full deck the sun casts (almost) no shadow: the key light fades, the sky's environment carries the light
+  lighting.uKey.value.multiplyScalar(1 - 0.88 * deck);
   if (S.post) pipe.render(hazeHook); else renderer.render(scene, camera);
   pipe.setExposureFactor(lighting.adapt(dt));
   if (!S.post) renderer.toneMappingExposure = lighting.exposureScale * 0.85 * lighting.adapt(0);
@@ -623,7 +671,7 @@ addEventListener("resize", () => { camera.aspect = innerWidth / innerHeight; cam
 // ================================================================================================ bench + tests (window.lab)
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 /** Interleaved A/B rounds: each variant `cycles` x (0.4 s settle + 1.2 s sampled). Returns mean GPU ms per variant. */
-async function windows(variants, cycles = 5) {
+async function rounds(variants, cycles = 5) {
   const acc = Object.fromEntries(Object.keys(variants).map((k) => [k, []]));
   for (let c = 0; c < cycles; c++) for (const [k, setup] of Object.entries(variants)) {
     setup(); await wait(400); gpu.samples.length = 0; await wait(1200); acc[k].push(...gpu.samples);
@@ -639,10 +687,10 @@ async function bench(cycles = 5) {
   // RAIN at street level: heavy rain
   VIEWS()["street, eye level"]();
   weather.setPreset("heavy rain", 0);
-  out.rain = await windows({ off: () => only(["matOn", "fogOn"]), drops: () => only(["matOn", "fogOn", "rainOn"]), dropsSplash: () => only(["matOn", "fogOn", "rainOn", "splashOn"]) }, cycles);
-  out.wet = await windows({ dry: () => only(["fogOn"]), wet: () => only(["fogOn", "matOn"]) }, cycles);
+  out.rain = await rounds({ off: () => only(["matOn", "fogOn"]), drops: () => only(["matOn", "fogOn", "rainOn"]), dropsSplash: () => only(["matOn", "fogOn", "rainOn", "splashOn"]) }, cycles);
+  out.wet = await rounds({ dry: () => only(["fogOn"]), wet: () => only(["fogOn", "matOn"]) }, cycles);
   weather.setPreset("snowstorm", 0); weather.state.depth = 0.2;
-  out.snow = await windows({ off: () => only(["fogOn"]), flakes: () => only(["fogOn", "snowOn"]), layer: () => only(["fogOn", "layerOn"]),
+  out.snow = await rounds({ off: () => only(["fogOn"]), flakes: () => only(["fogOn", "snowOn"]), layer: () => only(["fogOn", "layerOn"]),
     cover: () => only(["fogOn", "matOn"]), all: () => only(["fogOn", "snowOn", "layerOn", "matOn"]) }, cycles);
   Object.assign(weather.input, save.input); Object.assign(weather.state, save.state);
   for (const k of ALL) S[k] = save[k]; swapMaterials(S.matOn);
@@ -674,6 +722,6 @@ async function strip({ view = "walk (footprints)", count = 6, every = 0.8, scale
   el.src = cv.toDataURL("image/jpeg", 0.85);
   return { w: cv.width, h: cv.height };
 }
-window.lab = { renderer, scene, camera, controls, lighting, weather, wx, season, S, omap, rain, snowP, leaves, snowLayer, gpu, bench, windows, only, flicker, strip,
+window.lab = { renderer, scene, camera, controls, lighting, weather, wx, season, S, omap, rain, snowP, leaves, snowLayer, gpu, bench, rounds, only, flicker, strip,
   views: VIEWS(), setView, setDay: (d) => { S.day = d; applyDay(d); }, preset: (p, s = 0) => { S.preset = p; weather.setPreset(p, s); applyMist(p); }, goLive, reg, frame,
   freeze: (v) => { frozen = v; } };
