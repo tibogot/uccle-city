@@ -30,6 +30,7 @@ import {
 } from "three/tsl";
 import { lodEye } from "../lodFade.js";
 import { triangleTSL, decodeTSL, basisTSL } from "./octa.js";
+import { octDecode } from "./bake.js";
 import { fadeNoise, impostorKeep, farT, anchorOf, footSeed } from "./fade.js";
 
 /** Per field / per camera uniforms (field.update sets them). */
@@ -149,13 +150,13 @@ export function impostorMaterials(atlas, o) {
   }
   const inv = float(1).div(max(alpha, 1e-4));
   const albedo = col.mul(inv), auxN = aux.mul(inv);
-  // normal: the bake's view-space normal (xy, z reconstructed toward the viewer) in the card's frame (the 3 views
+  // normal: the bake's view-space normal (octahedral-encoded, back-facing kept) in the card's frame (the 3 views
   // are within one grid step, ~6 degrees at 16 x 16, of the card's)
   const toCamF = normalize(cameraPosition.sub(vCentre));
   const pT = smoothstep(0.9, 1.0, abs(toCamF.y));
   const rightF = normalize(cross(vec3(0, float(1).sub(pT), pT), toCamF)), upF = cross(toCamF, rightF);
-  const nxy = auxN.xy.mul(2).sub(1), nz = sqrt(saturate(float(1).sub(dot(nxy, nxy))));
-  const nW = normalize(rightF.mul(nxy.x).add(upF.mul(nxy.y)).add(toCamF.mul(nz)));
+  const nV = octDecode(auxN.xy.mul(2).sub(1));
+  const nW = normalize(rightF.mul(nV.x).add(upF.mul(nV.y)).add(toCamF.mul(nV.z)));
   // reconstructed surface point (world): the pixel's ray at the blended depth from the card's plane
   const hW = auxN.z.mul(2).sub(1).mul(R).mul(vMisc.z);
   const rayW = positionWorld.sub(cameraPosition);

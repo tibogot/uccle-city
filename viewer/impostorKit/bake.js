@@ -20,7 +20,7 @@
 import * as THREE from "three/webgpu";
 import {
   Fn, Discard, mrt, vec4, vec3, vec2, float, int, ivec2, uniform, positionView, cameraViewMatrix, normalize, saturate,
-  screenCoordinate, textureLoad, max, floor,
+  screenCoordinate, textureLoad, max, floor, abs, select,
 } from "three/tsl";
 import { gridToDir, upRef } from "./octa.js";
 
@@ -46,11 +46,25 @@ export function bakeMaterial({ albedo, normal, aux = float(1), discard = null, p
     if (discard) Discard(discard);
     return vec4(albedo, 1);
   })();
-  m.mrtNode = mrt({ output: out, aux: vec4(nV.xy.mul(0.5).add(0.5), depth, aux) });
+  m.mrtNode = mrt({ output: out, aux: vec4(octEncode(nV).mul(0.5).add(0.5), depth, aux) });
   m.toneMapped = false;
   m.fog = false;
   m.lights = false;
   return m;
+}
+
+/** Full octahedral encoding of a unit vector -> [-1, 1]^2 (keeps normals facing away from the view: the crown's
+ *  dark back clumps seen through gaps; a "z toward the viewer" reconstruction lit them like the front). */
+export function octEncode(n) {
+  const p = n.xy.div(abs(n.x).add(abs(n.y)).add(abs(n.z)));
+  const s = vec2(select(p.x.greaterThanEqual(0), float(1), float(-1)), select(p.y.greaterThanEqual(0), float(1), float(-1)));
+  return select(n.z.lessThan(0), vec2(float(1).sub(abs(p.y)), float(1).sub(abs(p.x))).mul(s), p);
+}
+export function octDecode(e) {
+  const z = float(1).sub(abs(e.x)).sub(abs(e.y));
+  const s = vec2(select(e.x.greaterThanEqual(0), float(1), float(-1)), select(e.y.greaterThanEqual(0), float(1), float(-1)));
+  const xy = select(z.lessThan(0), vec2(float(1).sub(abs(e.y)), float(1).sub(abs(e.x))).mul(s), e);
+  return normalize(vec3(xy, z));
 }
 
 const nextFrame = () => new Promise((r) => (typeof requestAnimationFrame === "function" ? requestAnimationFrame(() => r()) : setTimeout(r, 0)));
