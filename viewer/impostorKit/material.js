@@ -39,7 +39,8 @@ export function makeView({ lodBias = -1, gain = 1 } = {}) {
   // |Laplacian| over the crowns 308 vs 319 on the row of 50, 320 vs 314 over the forest; 230 at bias 0) at about half
   // the mesh's jitter. gain 1 (coverage = alpha around the cut): the crowns as bright as the mesh's against the sky
   // (94.3 vs 93.7 mean; gain 4 was 8 % darker: the mesh's far leaves let the sky through), jitter unchanged.
-  return { p11: uniform(1.9), viewH: uniform(800), lodBias: uniform(lodBias), hideMask: uniform(0), gain: uniform(gain), cutoff: uniform(0.5) };
+  return { p11: uniform(1.9), viewH: uniform(800), lodBias: uniform(lodBias), hideMask: uniform(0), gain: uniform(gain), cutoff: uniform(0.5),
+    /** near ring (PDO, parallax) < ringSplit <= far ring (no depth out: early-z kept) */ ringSplit: uniform(600) };
 }
 
 /**
@@ -56,7 +57,8 @@ export function makeView({ lodBias = -1, gain = 1 } = {}) {
  *   nearFade  hand over from a mesh LOD over [start - band, start] (false: drawn from 0 m)
  *   far       "ground" | "none"
  *   colourDepth "equal" | "lequal"  (the colour pass's depth test against the pre-pass)
- *   reversedDepth  the renderer's reversedDepthBuffer
+ *   ring      "all" | "near" | "far": draw only the instances nearer / farther than view.ringSplit (field.js:
+ *             a near-ring material with depth out + parallax and a cheap far-ring one, research 3.2.9)
  */
 export function impostorMaterials(atlas, o) {
   const F = o.fade, V = o.view;
@@ -76,7 +78,10 @@ export function impostorMaterials(atlas, o) {
   const dEye = centreW.sub(lodEye).length();
   const lo = nearFade ? F.start.sub(F.band) : float(-1);
   const hidden = mod(floor(V.hideMask.div(pow(2, band))), 2).greaterThan(0.5);
-  const visible = dEye.greaterThanEqual(lo).and(dEye.lessThanEqual(F.end)).and(hidden.not());
+  let visible = dEye.greaterThanEqual(lo).and(dEye.lessThanEqual(F.end)).and(hidden.not());
+  // rings: the same instances drawn by two materials, split at V.ringSplit (an instance is in exactly one)
+  if (o.ring === "near") visible = visible.and(dEye.lessThan(V.ringSplit));
+  else if (o.ring === "far") visible = visible.and(dEye.greaterThanEqual(V.ringSplit));
   const toCam = normalize(cameraPosition.sub(centreW));
   const poleT = smoothstep(0.9, 1.0, abs(toCam.y));
   const right = normalize(cross(vec3(0, float(1).sub(poleT), poleT), toCam));

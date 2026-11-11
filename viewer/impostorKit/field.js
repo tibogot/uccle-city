@@ -9,7 +9,7 @@
 // (renderOrder 1 / 2): far trees are mostly hidden behind houses at street level and the depth test rejects them.
 import * as THREE from "three/webgpu";
 
-export function impostorField(mats, placements, { card = "octagon", name = "impostor-kit" } = {}) {
+export function impostorField(mats, placements, { card = "octagon", name = "impostor-kit", farMats = null } = {}) {
   const n = placements.length, cap = Math.max(n, 1025);   // >= 1025: one shader whatever the count (vendor CHANGES #4)
   const geo = new THREE.BufferGeometry();
   if (card === "quad") {
@@ -47,9 +47,26 @@ export function impostorField(mats, placements, { card = "octagon", name = "impo
   const group = new THREE.Group();
   group.name = name;
   group.add(depth, colour);
+  // the far ring (optional): the same instances and card, a cheaper material pair (2 more draws per pass)
+  let far = null;
+  const mkFar = (m) => {
+    const c = new THREE.InstancedMesh(geo, m.colour, cap), d = new THREE.InstancedMesh(geo, m.depth, cap);
+    d.instanceMatrix = c.instanceMatrix = colour.instanceMatrix;
+    c.count = d.count = n; c.frustumCulled = d.frustumCulled = false; c.castShadow = d.castShadow = false;
+    c.receiveShadow = true; d.receiveShadow = false; d.renderOrder = 1; c.renderOrder = 2; d.userData.depthPrepass = true;
+    c.name = `${name}:far`; d.name = `${name}:far:depth`;
+    group.add(d, c);
+    return { colour: c, depth: d };
+  };
+  if (farMats) far = mkFar(farMats);
   return {
     group, colour, depth, count: n,
-    setMaterials(m) { colour.material = m.colour; depth.material = m.depth; },
+    setMaterials(m, fm = null) {
+      colour.material = m.colour; depth.material = m.depth;
+      if (fm && !far) far = mkFar(fm);
+      else if (fm) { far.colour.material = fm.colour; far.depth.material = fm.depth; }
+      else if (far) { group.remove(far.colour, far.depth); far = null; }
+    },
     dispose() { geo.dispose(); },
   };
 }

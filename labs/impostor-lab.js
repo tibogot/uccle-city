@@ -143,14 +143,14 @@ let todayBake = null, todayMat = null;
 // the kit's
 const S = {
   scene: qp.get("scene") ?? "row50", mode: qp.get("mode") ?? "kit", distance: 600, post: true, time: preset, hour: 0,
-  blend: "bary3", parallax: 1, pdo: true, alpha: "a2c-ramp", gain: 1, card: "octagon", noise: "screen", far: "ground", lodBias: -1, colourDepth: "equal",
+  blend: "bary3", parallax: 1, pdo: true, alpha: "a2c-ramp", gain: 1, card: "octagon", noise: "screen", far: "ground", lodBias: -1, colourDepth: "equal", ringSplit: 600, farParallax: 0, farBlend: "bary3",
   start: 400, band: 30, end: 1500, endBand: 300, todayEnd: 1100,
   grid: 16, cell: 64, bakeLod: 2, bakeInfo: "", todayInfo: "",
   path: "orbit", frames: 24, orbitDeg: 0.02, strafe: 0.12, dolly: 1.0, result: "—", gpu: "—", bench: "—",
   atlasOn: false, layer: 0, channel: "albedo", stats: "",
 };
 const view = K.makeView();
-let atlas = null, kitMats = null;
+let atlas = null, kitMats = null, kitFarMats = null;
 async function bakeKit() {
   S.bakeInfo = "baking…";
   const spec = { ...K.TYPES.tree, grid: S.grid, cell: S.cell };
@@ -165,14 +165,18 @@ async function bakeKit() {
 function buildKitMats() {
   if (!atlas) return;
   const old = kitMats;
-  kitMats = K.impostorMaterials(atlas, {
-    fade: H, view, shade: K.treeShade(U), blend: S.blend, parallax: +S.parallax, pdo: S.pdo, alpha: S.alpha, card: S.card,
-    far: S.far, colourDepth: S.colourDepth, name: "tree-kit",
-  });
+  const opt = { fade: H, view, shade: K.treeShade(U), blend: S.blend, parallax: +S.parallax, pdo: S.pdo, alpha: S.alpha, card: S.card,
+    far: S.far, colourDepth: S.colourDepth, name: "tree-kit" };
+  const oldFar = kitFarMats;
+  const rings = S.ringSplit > 0;
+  kitMats = K.impostorMaterials(atlas, { ...opt, ring: rings ? "near" : "all" });
+  kitFarMats = rings ? K.impostorMaterials(atlas, { ...opt, ring: "far", pdo: false, parallax: +S.farParallax, blend: S.farBlend, name: "tree-kit-far" }) : null;
+  view.ringSplit.value = S.ringSplit;
+  oldFar?.colour.dispose(); oldFar?.depth.dispose();
   view.gain.value = S.gain; view.lodBias.value = S.lodBias;
   if (world?.kit) {
     // the card geometry is part of the field: rebuild it when the card changes
-    if (world.kit.card !== S.card) rebuildKitField(); else world.kit.setMaterials(kitMats);
+    if (world.kit.card !== S.card) rebuildKitField(); else world.kit.setMaterials(kitMats, kitFarMats);
   }
   old?.colour.dispose(); old?.depth.dispose();
 }
@@ -307,7 +311,7 @@ async function buildScene(id) {
 function rebuildKitField() {
   if (!world || !kitMats) return;
   if (world.kit) { scene.remove(world.kit.group); world.kit.dispose(); }
-  world.kit = K.impostorField(kitMats, world.kitPlacements, { card: S.card, name: "tree-kit" });
+  world.kit = K.impostorField(kitMats, world.kitPlacements, { card: S.card, name: "tree-kit", farMats: kitFarMats });
   world.kit.card = S.card;
   scene.add(world.kit.group);
   applyMode();
@@ -440,7 +444,7 @@ async function meterAB(path = S.path, modes = ["mesh", "today", "kit"]) {
   window.lab.lastHeat = Object.fromEntries(Object.entries(out).map(([k, v]) => [k, v.heatURL]));
   return out;
 }
-const kitSettings = () => ({ blend: S.blend, parallax: S.parallax, pdo: S.pdo, alpha: S.alpha, gain: S.gain, card: S.card, noise: S.noise, far: S.far, lodBias: S.lodBias, grid: S.grid, cell: S.cell, bakeLod: S.bakeLod, post: S.post });
+const kitSettings = () => ({ ringSplit: S.ringSplit, farParallax: S.farParallax, farBlend: S.farBlend, blend: S.blend, parallax: S.parallax, pdo: S.pdo, alpha: S.alpha, gain: S.gain, card: S.card, noise: S.noise, far: S.far, lodBias: S.lodBias, grid: S.grid, cell: S.cell, bakeLod: S.bakeLod, post: S.post });
 function show(url, caption = "") { lastShown = url; $ov.style.display = "block"; $ov.querySelector("img").src = url; $ov.querySelector("div").textContent = caption; }
 $ov.onclick = () => { $ov.style.display = "none"; };
 async function stackURLs(urls, caption) {
@@ -465,20 +469,25 @@ async function stripSet(path = S.path) {
   return stackURLs(urls, `${world.id} ${path}: mesh / today / kit`);
 }
 /** impostor vs mesh at the same camera: left the mode, right the mesh, then |diff| x4 */
-async function sideBySide(mode = "kit") {
+async function sideBySide(mode = "kit", crop = null, k = 1) {
   frozen = true;
   const grabMode = (m) => { S.mode = m; applyMode(); renderFrame(0); renderFrame(0); const c = new OffscreenCanvas(CW, CH), x = c.getContext("2d"); x.drawImage(renderer.domElement, 0, 0); return x.getImageData(0, 0, CW, CH); };
   const keep = S.mode;
-  const a = grabMode(mode), b = grabMode("mesh");
+  let a = grabMode(mode), b = grabMode("mesh");
   S.mode = keep; applyMode(); frozen = false;
-  const c = new OffscreenCanvas(CW * 3, CH), x = c.getContext("2d");
-  x.putImageData(a, 0, 0); x.putImageData(b, CW, 0);
-  const d = x.createImageData(CW, CH);
+  if (crop) {   // a region, scaled k x (nearest): the hand-over close-up
+    const cut = (im) => { const c0 = new OffscreenCanvas(CW, CH), x0 = c0.getContext("2d"); x0.putImageData(im, 0, 0); const c1 = new OffscreenCanvas(crop[2] * k, crop[3] * k), x1 = c1.getContext("2d"); x1.imageSmoothingEnabled = false; x1.drawImage(c0, crop[0], crop[1], crop[2], crop[3], 0, 0, crop[2] * k, crop[3] * k); return x1.getImageData(0, 0, crop[2] * k, crop[3] * k); };
+    a = cut(a); b = cut(b);
+  }
+  const w = a.width, h = a.height;
+  const c = new OffscreenCanvas(w * 3, h), x = c.getContext("2d");
+  x.putImageData(a, 0, 0); x.putImageData(b, w, 0);
+  const d = x.createImageData(w, h);
   for (let i = 0; i < d.data.length; i += 4) for (let k = 0; k < 3; k++) d.data[i + k] = Math.min(255, Math.abs(a.data[i + k] - b.data[i + k]) * 4);
   for (let i = 3; i < d.data.length; i += 4) d.data[i] = 255;
-  x.putImageData(d, CW * 2, 0);
+  x.putImageData(d, w * 2, 0);
   x.fillStyle = "#fff"; x.font = "18px monospace";
-  x.fillText(`${mode}`, 10, 24); x.fillText("mesh LODs", CW + 10, 24); x.fillText("|diff| x4", CW * 2 + 10, 24);
+  x.fillText(`${mode}`, 10, 24); x.fillText("mesh LODs", w + 10, 24); x.fillText("|diff| x4", w * 2 + 10, 24);
   const url = URL.createObjectURL(await c.convertToBlob({ type: "image/png" }));
   show(url, `${world.id}: ${mode} | mesh | diff x4`);
   return url;
@@ -591,6 +600,9 @@ fk.add(S, "noise", ["object", "screen"]).name("hand-over noise").onChange(applyM
 fk.add(S, "far", ["ground", "none"]).name("far fade").onChange(buildKitMats);
 fk.add(S, "lodBias", -2, 2, 0.1).name("mip bias").onChange((v) => { view.lodBias.value = v; });
 fk.add(S, "colourDepth", ["equal", "lequal"]).name("colour pass depth").onChange(buildKitMats);
+fk.add(S, "ringSplit", 0, 1500, 10).name("far ring from (m, 0 = off)").onChange(buildKitMats);
+fk.add(S, "farParallax", [0, 1]).name("far ring parallax").onChange(buildKitMats);
+fk.add(S, "farBlend", ["bary3", "dominant"]).name("far ring blend").onChange(buildKitMats);
 const fd = ui.addFolder("Distances (m)");
 fd.add(S, "start", 150, 900, 5).name("hand-over at").onChange(applyMode);
 fd.add(S, "band", 1, 100, 1).name("hand-over band").onChange(applyMode);
