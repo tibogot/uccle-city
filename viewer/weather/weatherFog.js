@@ -37,6 +37,6 @@ export function createWeatherFog({ colorNode }) {
   const amount = clamp(float(1).sub(exp(tau.negate())), 0, 1);
   const c = vec3(colorNode);
   const L = dot(c, vec3(0.2126, 0.7152, 0.0722));
-  const col = mix(c, vec3(L).mul(vec3(0.97, 0.99, 1.02)), u.uGrey);
+  const col = mix(c, vec3(L).mul(vec3(0.94, 0.98, 1.05)), u.uGrey);
   return { node: fog(col, amount), ...u };
 }

@@ -347,6 +347,7 @@ const leafMat = (() => {
   const shape = smoothstep(0.5, 0.4, f.mul(vec2(1.6, 1)).length().add(abs(f.x).mul(0.25)));
   const present = smoothstep(R.z.sub(0.01), R.z.add(0.01), season.uLeafDensity);
   m.opacityNode = shape.mul(present);
+  m.maskNode = shape.mul(present).greaterThan(0.5);      // also in the shadow pass (bare trees cast bare shadows)
   return m;
 })();
 for (const s of treeSites) {
@@ -356,7 +357,7 @@ for (const s of treeSites) {
   const bg = mergeGeometries(out.br); const lg = mergeGeometries(out.lf);
   const bm = mesh(bg, barkMat, { porosity: 0.7, streaks: false }, { solid: false });
   treesG.add(bm);
-  const lm = new THREE.Mesh(lg, leafMat); lm.castShadow = true; lm.receiveShadow = true;
+  const lm = new THREE.Mesh(lg, leafMat); lm.castShadow = true; lm.receiveShadow = true; lm.name = "leaves";
   markCanopy(lm); treesG.add(lm);
   lg.computeBoundingBox();
   s.r = Math.max(lg.boundingBox.max.x - lg.boundingBox.min.x, lg.boundingBox.max.z - lg.boundingBox.min.z) / 2;
@@ -548,7 +549,7 @@ lighting.hourOverride = S.hour;
 // ================================================================================================ views and paths
 function VIEWS() {
   return {
-    "street, eye level": () => go([-12, 1.7, 1.5], [6, 1.6, -2]),
+    "street, eye level": () => go([-12, 1.7, 0.6], [6, 1.6, -2]),
     "houses + roofs": () => go([-4, 7, 16], [-3, 6, -10]),
     "roof eaves close": () => go([-11.5, 13.5, -1.5], [-12, 11.5, -8]),
     "puddles low": () => go([-2, 0.6, 0.5], [8, 0.0, -1.5]),
@@ -629,7 +630,7 @@ function frame(dtOverride = null) {
   // fog
   fogW.uBeta.value = S.fogOn ? weather.fogBeta * S.fogScale : 0;
   fogW.uMist.value = S.fogOn ? S.mist : 0;
-  fogW.uGrey.value = Math.pow(weather.input.cloud, 2) * 0.8;
+  fogW.uGrey.value = Math.min(0.95, Math.pow(weather.input.cloud, 2) * 0.8 + 0.3 * Math.min(1, wx.uRain.value + wx.uSnowFall.value));
   // night lamps
   const night = env.uNight.value;
   for (const l of pools) l.intensity = 60 * night;
@@ -637,13 +638,15 @@ function frame(dtOverride = null) {
   // particles: colour from the sky's horizon radiance (drops are lenses of what is behind), + lamp light at night
   const fc = lighting.uFogColor.value;
   rain.uColor.value.setRGB(fc.x * 0.95 + night * 0.25, fc.y * 0.97 + night * 0.2, fc.z + night * 0.14);
-  snowP.uColor.value.setRGB(fc.x * 1.25 + night * 0.35, fc.y * 1.28 + night * 0.3, fc.z * 1.3 + night * 0.25);
+  // flakes are white grains lit by the whole sky: brighter than the horizon behind them (else a snowstorm hides its own snow)
+  snowP.uColor.value.setRGB(fc.x * 2.2 + night * 0.5, fc.y * 2.25 + night * 0.45, fc.z * 2.35 + night * 0.4);
   const H = renderer.domElement.height, pdt = frozen ? 0 : dt;
   rain.mesh.visible = S.rainOn; snowP.mesh.visible = S.snowOn; leaves.mesh.visible = S.leavesOn;
   rain.update(camera, pdt, S.rainOn ? wx.uRain.value : 0, H);
   rain.splashes.visible = S.splashOn && rain.splashes.count > 0;
   snowP.update(camera, pdt, S.snowOn ? wx.uSnowFall.value : 0, H);
   leaves.update(camera, pdt, S.leavesOn ? season.uLeafFall.value * (0.4 + 0.6 * Math.min(1, weather.input.wind / 6)) : 0, H);
+  treesG.traverse((o) => { if (o.name === "leaves") o.visible = season.uLeafDensity.value > 0.005; });
   snowLayer.update(pdt, stamps);
   snowLayer.mesh.visible = S.layerOn && wx.uSnowDepth.value > 0.003;
   if (!path) controls.update();

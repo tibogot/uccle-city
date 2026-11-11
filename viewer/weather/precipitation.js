@@ -15,7 +15,7 @@ import { season } from "../seasons/season.js";
 
 const KIND = {
   rain: { max: 24000, box: 44, top: 22, fall: 8.5, size: 0.006, len: 0.55 },
-  snow: { max: 32000, box: 30, top: 16, fall: 1.0, size: 0.009, len: 0 },
+  snow: { max: 32000, box: 24, top: 12, fall: 1.0, size: 0.022, len: 0 },
   leaves: { max: 900, box: 60, top: 14, fall: 1.1, size: 0.05, len: 0 },
 };
 
@@ -40,7 +40,9 @@ export function createPrecipitation({ renderer, kind = "rain", map = null, trees
   const NT = Math.min(8, trees.length);
   const treeU = trees.slice(0, 8).map((t) => uniform(new THREE.Vector4(t.x, t.z, t.r, t.y)));
 
-  const rnd = (k) => hash(instanceIndex.add(uFrame.mul(7919)).add(k * 104729));
+  // per particle x per frame random: a per-particle hash moved along a golden-ratio sequence by the frame number
+  // (hashing instanceIndex + frame x prime directly ran past float precision: every particle got the same value)
+  const rnd = (k) => hash(instanceIndex.add(k * 1009)).add(uFrame.mul(0.61803398875).add(k * 0.137)).fract();
   const floorAt = (xz) => {
     if (!map) return uGroundY;
     const s = map.sample(xz);
@@ -67,7 +69,7 @@ export function createPrecipitation({ renderer, kind = "rain", map = null, trees
   const init = Fn(() => {
     const p = pos.element(instanceIndex);
     const xz = spawnXZ(1);
-    const y = kind === "leaves" ? floorAt(xz).sub(50) : uCam.y.add(rnd(5).mul(uTop.add(10)).sub(10));
+    const y = kind === "leaves" ? floorAt(xz).sub(50) : max(floorAt(xz).add(0.1), uCam.y.sub(2)).add(rnd(5).mul(uTop));   // spread through the column at once
     p.assign(vec4(xz.x, y, xz.y, hash(instanceIndex.add(12345))));
     if (spl) spl.element(instanceIndex).assign(vec4(0, -1e4, 0, 2));
   })().compute(MAX);
@@ -89,9 +91,12 @@ export function createPrecipitation({ renderer, kind = "rain", map = null, trees
       v = vec3(wx.uWind.x.mul(0.6).add(w), uFall.mul(seed.mul(0.6).add(0.7)).negate().mul(sin(t.mul(3.0).add(seed.mul(9))).mul(0.4).add(1.0)), wx.uWind.y.mul(0.6).add(cos(t.mul(1.7).add(seed.mul(5))).mul(0.6)));
     }
     P.addAssign(v.mul(uDt));
+    const wrapped = float(0).toVar();
     if (kind !== "leaves") {
       // wrap round the window that follows the camera
-      const rel = mod(P.xz.sub(uCam.xz).add(uBox.mul(0.5)), uBox).sub(uBox.mul(0.5));
+      const raw = P.xz.sub(uCam.xz);
+      const rel = mod(raw.add(uBox.mul(0.5)), uBox).sub(uBox.mul(0.5));
+      wrapped.assign(select(length(rel.sub(raw)).greaterThan(1.0), float(1), float(0)));
       P.x.assign(uCam.x.add(rel.x)); P.z.assign(uCam.z.add(rel.y));
     }
     const fy = floorAt(P.xz);
@@ -101,13 +106,19 @@ export function createPrecipitation({ renderer, kind = "rain", map = null, trees
       if (spl) If(hit.and(P.y.greaterThan(fy.sub(1.5))), () => { spl.element(instanceIndex).assign(vec4(P.x, fy.add(0.01), P.z, 0)); });
       if (kind === "leaves") {
         // a landed leaf rests ~a minute (it lies there) then a new one leaves a crown
-        If(lost.or(seed.greaterThan(0.0).and(hash(instanceIndex.add(uFrame)).lessThan(uDt.mul(0.05)))), () => {
+        If(lost.or(rnd(11).lessThan(uDt.mul(0.05))), () => {
           const xz = spawnXZ(3);
           P.assign(vec3(xz.x, spawnY(xz, 7), xz.y));
         }).Else(() => { P.y.assign(fy.add(0.02)); });
       } else {
+        // fell onto a surface: a new drop at the top. Wrapped INTO a building (wind carries it across the window's
+        // border): somewhere in the open column instead, else the street in the lee of the houses empties
         const xz = spawnXZ(3);
-        P.assign(vec3(xz.x, uCam.y.add(uTop.mul(rnd(9).mul(0.25).add(0.75))), xz.y));
+        const f2 = floorAt(xz);
+        const lo = max(f2.add(0.2), uCam.y.sub(2.0)), hi = uCam.y.add(uTop);
+        const yTop = uCam.y.add(uTop.mul(rnd(9).mul(0.25).add(0.75)));
+        const yCol = lo.add(rnd(10).mul(max(hi.sub(lo), 0.5)));
+        P.assign(vec3(xz.x, select(wrapped.greaterThan(0.5).or(lost), yCol, yTop), xz.y));
       }
     });
     p.assign(vec4(P, seed));
@@ -144,7 +155,7 @@ export function createPrecipitation({ renderer, kind = "rain", map = null, trees
     const sPx = dist.mul(uPx).mul(1.6);
     const s = max(s0, sPx);
     mat.positionNode = C.add(vec3(uRight).mul(positionGeometry.x.mul(s))).add(vec3(uUp).mul(positionGeometry.y.mul(s)));
-    const energy = varying(s0.div(s).pow(2).mul(edge).mul(smoothstep(0.4, 1.5, dist)));
+    const energy = varying(s0.div(s).mul(edge).mul(smoothstep(0.4, 1.5, dist)));   // widened -> fainter (linear: a 1.6 px dot keeps its look)
     const r = length(uv().sub(0.5)).mul(2);
     mat.colorNode = vec3(uColor);
     mat.opacityNode = smoothstep(1.0, 0.2, r).mul(energy).mul(uOpacity);
@@ -210,13 +221,16 @@ export function createPrecipitation({ renderer, kind = "rain", map = null, trees
   let initialised = false, frame = 0;
   const _r = new THREE.Vector3(), _u = new THREE.Vector3();
   return {
-    mesh, splashes, uColor, uOpacity, uSize, uLen, uFall, uBox, uGroundY, max: MAX, kind,
+    mesh, splashes, pos, uColor, uOpacity, uSize, uLen, uFall, uBox, uGroundY, max: MAX, kind,
     /** intensity 0..1 -> the drawn count; dt in seconds (0 = frozen) */
     update(camera, dt, intensity, H) {
-      if (!initialised) { uCam.value.copy(camera.position); renderer.compute(init); initialised = true; }
+      const n0 = Math.round(MAX * Math.min(1, Math.max(0, intensity)));
       uCam.value.copy(camera.position);
+      // (re)fill the whole column round the camera when the kind starts (else it starts as one sheet at the top)
+      if (!initialised || (n0 > 0 && !this.active)) { renderer.compute(init); initialised = true; }
+      this.active = n0 > 0;
       uDt.value = Math.min(dt, 0.05);
-      uFrame.value = (++frame % 100000);
+      uFrame.value = (++frame % 1000);
       uPx.value = 2 * Math.tan(camera.fov * Math.PI / 360) / Math.max(1, H);
       _r.setFromMatrixColumn(camera.matrixWorld, 0); _u.setFromMatrixColumn(camera.matrixWorld, 1);
       uRight.value.copy(_r); uUp.value.copy(_u);

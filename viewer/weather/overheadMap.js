@@ -57,7 +57,9 @@ export function createOverheadMap({ renderer, centre = new THREE.Vector3(), size
     /** uv of a world xz node in the canonical texture */
     uvAt: (xz) => xz.sub(uOrigin).div(uSize),
     /** the map's texel at a world xz (vec4: base, shelter, shape, cliff); outside the map: base -1e4 (never hit) */
-    sample: (xz) => texture(tex, clamp(xz.sub(uOrigin).div(uSize), 0.0001, 0.9999)).level(0),
+    // (an integer texel load, the same addressing as load(): a filtered-path texture() lookup of this DataTexture came out
+    // mirrored in z in the compute pass, rain over the lawn hit the houses' roofs)
+    sample: (xz) => { const c = clamp(xz.sub(uOrigin).div(uSize).mul(res).floor(), 0, res - 1); return textureLoad(tex, ivec2(c)); },
     /** integer texel load (vertex / compute) */
     load: (i, j) => textureLoad(tex, ivec2(i, j)),
     inside: (xz) => { const u = xz.sub(uOrigin).div(uSize); return u.x.greaterThan(0).and(u.x.lessThan(1)).and(u.y.greaterThan(0)).and(u.y.lessThan(1)); },
