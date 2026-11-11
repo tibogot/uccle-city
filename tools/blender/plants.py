@@ -466,7 +466,7 @@ for o2 in objs: o2.hide_render = False
 # leaves and petals: smooth within a leaf (the fold reads as a soft crease); shells smooth; stems smooth
 for o in scn.objects: o.select_set(False)
 for ob in objs: ob.select_set(True)
-glb = os.path.join(OUT, "plants.glb")
+glb = os.path.join(OUT, "plants.raw.glb")      # packed by tools/foliage_pack.mjs -> plants.glb
 bpy.ops.export_scene.gltf(filepath=glb, export_format="GLB", use_selection=True, export_yup=True, export_apply=True,
                           export_normals=True, export_texcoords=True, export_materials="EXPORT", export_image_format="NONE", export_extras=False)
 json.dump({"asset": "garden plants (tools/blender/plants.py)", "plants": stats,

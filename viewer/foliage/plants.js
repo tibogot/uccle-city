@@ -19,6 +19,7 @@ import {
   fract, dot, Discard, varying, step, PI2, positionWorld, cameraViewMatrix, faceDirection,
 } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { season } from "./seasons.js";
 import { windAt, wind } from "./wind.js";
@@ -46,7 +47,7 @@ let promise = null;
 /** { types: { name: { lods: [geometry x3], tris: [n x3], height } } } */
 export function loadPlants() {
   return (promise ??= (async () => {
-    const gltf = await new GLTFLoader().loadAsync(new URL("../../models/foliage/plants.glb", import.meta.url).href);
+    const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(new URL("../../models/foliage/plants.glb", import.meta.url).href);
     await MeshoptSimplifier.ready;
     gltf.scene.updateMatrixWorld(true);
     const nodes = {};
