@@ -3,6 +3,9 @@ export const SURFACE = { asphalt: 0, sett: 1, paving_stones: 2, unhewn_cobblesto
   gravel: 4, fine_gravel: 4, compacted: 4, unpaved: 4, concrete: 0 };
 
 /** Same hash as laneRoadMesh.js hashPhase (not exported upstream). */
+/** 0: the asphalt shader's tone is world space only (round 2); the Road Checker's C21 reads it */
+export const ASPHALT_PIECE_TONE = 0;
+
 export function hashPhase(id) {
   let h = 2166136261;
   for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 16777619);

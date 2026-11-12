@@ -28,7 +28,11 @@ const MARKABLE = new Set([0, 1, 3]);  // roadway / junction, tram-shared roadway
 const CARRIAGE = new Set([0, 1, 2, 3]);
 const RESIDENTIAL = new Set(["local", "oneWay", "alley"]);
 const OSM_ALONG = 3.5;               // m: band width of a crossing OSM tags but nobody measured (the BM polygons' median: 3.46)
-const OSM_MAX_ACROSS = 14;           // m: wider than this kerb to kerb, an OSM crossing node is inside a junction
+const OSM_MAX_ACROSS = 14;
+const PHOTO_NO = 0.4;                // orthophoto bar score under which the photo shows no zebra (pipeline/verify_crossings.mjs)
+const PHOTO_OSM = 0.4;               // an OSM-only crossing needs at least this
+const PHOTO_YES = 0.5;               // clear bars
+const OSM_NEAR = 8;                  // m: an OSM node this close to a kept measured outline is that crossing           // m: wider than this kerb to kerb, an OSM crossing node is inside a junction
 const STRIPE = 0.5, STRIPE_PERIOD = 1.0;
 const TOOTH = { base: 0.5, gap: 0.25, tall: 0.7 };
 const SHARROW_STEP = 40;
@@ -151,6 +155,11 @@ export function afterNetworkV2(net, ctx, surf) {
     ctx.stats.nodesMapped++;
     if ((n.kind === "junction" || n.kind === "roundabout") && n.arms.length >= 3) junctions.push(n);
     if (n.kind !== "junction") continue;
+    // round 2: on a mapped junction the engine's own glyphs are guesses (turn arrows from its lane stack, drawn
+    // half-cut by the measured clip: the owner's "broken turn arrows"); UrbIS Topo has the arrows it surveyed
+    // (CR2401P / 2402P / 2410P) but no legend of their kinds yet: none are drawn rather than wrong ones
+    const nm = (n.markings || []).filter((m) => m.tag !== "zebra").length;
+    if (nm) { ctx.stats.engineGlyphsStripped = (ctx.stats.engineGlyphsStripped || 0) + nm; n.markings = (n.markings || []).filter((m) => m.tag === "zebra"); }
     // the engine's signal stop lines: our own placement replaces them
     const drop = [];
     for (const a of n.arms) {
@@ -183,9 +192,28 @@ export function afterNetworkV2(net, ctx, surf) {
 
   // ---- crossings
   const xArms = [];
-  const measuredPolys = (markings?.crossings || []).filter((c) => c.poly && near(c.c[0], c.c[1])).map((c) => hull(c.poly));
-  for (const c of markings?.crossings || []) {
+  // Round 2: ONE crossing per real crossing, and only where the 2024 orthophoto does not contradict it
+  // (pipeline/verify_crossings.mjs wrote `photo` into each record: s = the zebra-bar score of the photo there).
+  //  - a measured outline (BM / Topo) the photo clearly shows WITHOUT bars on open asphalt is gone (re-designed
+  //    junctions: Place de Saint-Job's bm:13395 was moved; the photo is the latest survey). Under trees the photo
+  //    cannot tell: kept.
+  //  - an OSM-only node needs the photo's bars (s >= PHOTO_OSM) and must not sit within OSM_NEAR m of a kept measured
+  //    outline unless the bars are clear (s >= PHOTO_YES): the OSM nodes on every way a long diagonal crossing passes
+  //    (tram tracks, both carriageways) are that crossing, not more crossings.
+  //  - a band overlapping one already drawn (bm, then topo, then osm) is the same crossing.
+  const photoNo = (c) => !!c.photo && c.photo.s < PHOTO_NO && (c.photo.veg ?? 0) < 0.15;
+  const keptMeasured = (markings?.crossings || []).filter((c) => c.poly && near(c.c[0], c.c[1]) && !photoNo(c));
+  const measuredPolys = keptMeasured.map((c) => hull(c.poly));
+  const ringD = (x, z, ring) => { if (pip(x, z, ring)) return 0; let d = Infinity; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) d = Math.min(d, segD(x, z, ring[j][0], ring[j][1], ring[i][0], ring[i][1])); return d; };
+  const drawnPolys = [];
+  inv.stats.crossingsPhotoDropped = 0; inv.stats.crossingsOsmNear = 0; inv.stats.crossingsOverlap = 0;
+  const ORDER = { bm: 0, topo: 1, osm: 2 };
+  const xlist = [...(markings?.crossings || [])].sort((a, b) => (ORDER[a.src] ?? 3) - (ORDER[b.src] ?? 3));
+  for (const c of xlist) {
     if (!near(c.c[0], c.c[1])) continue;
+    if (photoNo(c) && (c.poly || c.photo.s < PHOTO_OSM)) { inv.stats.crossingsPhotoDropped++; continue; }
+    if (!c.poly && c.photo && c.photo.s < PHOTO_OSM && (c.photo.veg ?? 0) < 0.15) { inv.stats.crossingsPhotoDropped++; continue; }
+    if (!c.poly && !(c.photo && c.photo.s >= PHOTO_YES) && measuredPolys.some((m) => ringD(c.c[0], c.c[1], m) < OSM_NEAR)) { inv.stats.crossingsOsmNear++; continue; }
     let poly = c.poly, along = c.along, axis = c.axis;
     const ax = Math.cos(axis), az = Math.sin(axis), bx = -az, bz = ax;
     if (!poly) {
@@ -206,8 +234,9 @@ export function afterNetworkV2(net, ctx, surf) {
       poly = [[x + ax * ulo - bx * km, z + az * ulo - bz * km], [x + ax * uhi - bx * km, z + az * uhi - bz * km], [x + ax * uhi + bx * kp, z + az * uhi + bz * kp], [x + ax * ulo + bx * kp, z + az * ulo + bz * kp]];
     }
     poly = hull(poly);
-    // a derived (OSM) band that overlaps a measured outline is the same crossing, already drawn
-    if (!c.poly && measuredPolys.some((m) => { const o = clipConvex(poly, m); return o.length >= 3 && Math.abs(area2(o)) > 1.0; })) continue;
+    // a band that overlaps one already drawn is the same crossing
+    if (drawnPolys.some((m) => { const o = clipConvex(poly, m); return o.length >= 3 && Math.abs(area2(o)) > 0.5; })) { inv.stats.crossingsOverlap++; continue; }
+    drawnPolys.push(poly);
     // the band's frame: u along the road (the stripes' length), v across (kerb to kerb)
     const [cx, cz] = c.c;
     let u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity;
@@ -263,6 +292,10 @@ export function afterNetworkV2(net, ctx, surf) {
       if (!a.approach?.length) continue;
       const key = `${n.id}|${a.road.id}|${a.end}`;
       if (measuredOn.has(key)) continue;
+      // an internal link of one junction (a short road between two mapped junction nodes, e.g. the merged node of
+      // Place de Saint-Job): its "approach" is inside the junction, a stop line there floats in the middle of it
+      const far = a.end === "a" ? a.road.armB : a.road.armA;
+      if (a.road.L < 30 && far?.node && far.node.kind === "junction" && ctx.mappedNodes.has(far.node.id)) { ctx.stats.stopsInternalLink = (ctx.stats.stopsInternalLink || 0) + 1; continue; }
       const inCorr = (x, z, latMax) => { const ox = x - a.ox, oz = z - a.oz, sg = ox * a.dx + oz * a.dz, t = ox * a.nx + oz * a.nz; return sg >= -2 && sg <= a.trim + 30 && t >= a.edges.curbR - 1 && t <= a.edges.curbL + latMax ? { sg, t } : null; };
       let kind = null, controller = null;
       if (n.control === "signal") { kind = "stop"; controller = "osm:traffic_signals"; }
@@ -319,6 +352,9 @@ export function afterNetworkV2(net, ctx, surf) {
       while (hits(sg) && tries++ < 40) sg += 0.25;
       if (tries > 40) continue;
       const p = armPoint(a, sg, t0), q = armPoint(a, sg, t1);
+      // never inside the measured junction polygon, never a stray dash
+      const mid = armPoint(a, sg + w / 2, (t0 + t1) / 2);
+      if (inJunction(mid[0], mid[1]) || t1 - t0 < 2.5) { ctx.stats.stopsDropped = (ctx.stats.stopsDropped || 0) + 1; continue; }
       items.push(lineItem(kind, p, q, a.dx, a.dz, w));
       inv.stops.push({ id: `v2:${key}`, src: controller.startsWith("osm") ? "osm" : "bm", kind, line: [armPoint(a, sg + w / 2, t0), armPoint(a, sg + w / 2, t1)],
         node: n.id, road: a.road.id, end: a.end, controller });

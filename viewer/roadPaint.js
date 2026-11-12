@@ -70,12 +70,14 @@ export function asphaltMaterial(atlas) {
   const phase = piece.x;
 
   // --- asphalt: patches (old repairs), grain, wheel-path polish
-  const patch = n3(x.mul(0.11), phase, z.mul(0.11));
+  // world space only (round 2): the tone and the repair patches used to depend on the piece (aPiece), so where two
+  // pieces meet or overlap (a junction pad and its arm, an engine strip over the measured base, a narrowing) the
+  // asphalt changed shade along a straight edge: the owner's darker wedge, the "faceted" junction
+  const patch = n3(x.mul(0.11), float(0.37), z.mul(0.11));
   const grain = n3(x.mul(7.0), z.mul(7.0), 0.0);
   const speck = n3(x.mul(41.0), z.mul(41.0), 3.0);
   const wheel = smoothstep(float(0.22), float(0.0), abs(abs(lat).sub(0.5)));      // 1 on each wheel path
   let tone = float(0.068).add(patch.mul(0.016)).add(grain.mul(0.009)).add(speck.mul(0.006)).sub(wheel.mul(0.012));
-  tone = tone.add(fract(phase.mul(7.31)).sub(0.5).mul(0.014));                     // each road a touch different
   const asphalt = vec3(tone.mul(0.97), tone, tone.mul(1.04));
   const asphaltRough = float(0.9).sub(wheel.mul(0.12));
 

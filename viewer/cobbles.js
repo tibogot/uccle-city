@@ -57,12 +57,15 @@ export function cobbleMaterial() {
   // stones: blue-grey granite to warm brown-grey, light and dark ones, mottled; worn and dirtier at the joints
   const tone = mix(sid, float(0.5), far), hue = mix(sid2, float(0.5), far);
   const mottle = n3(P.x.mul(19.0), P.z.mul(19.0), 2.0);
-  let stone = mix(vec3(0.092, 0.089, 0.086), vec3(0.14, 0.116, 0.088), hue);      // grey to brown-grey granite
+  // round 2: the owner read the square as "flat brown dirt": the far mean was brown (hue mix 0.116 / 0.103 / 0.087) and
+  // the joints near-black brown. Granite setts read GREY from afar, lighter than the asphalt (orthophoto: the square
+  // 0.37 grey against the roads round it ~0.33), with light sandy joints (owner photos 2026-11-04, roadPaint settCol)
+  let stone = mix(vec3(0.118, 0.12, 0.124), vec3(0.158, 0.146, 0.13), hue);       // blue-grey to warm grey granite
   stone = stone.mul(tone.mul(0.85).add(0.55)).add(mottle.mul(0.01));
   const dirt = n3(P.x.mul(0.45), P.z.mul(0.45), 6.0);                    // big patches: wear, shade of the trees
-  stone = stone.mul(dirt.mul(0.12).add(1.0));
+  stone = stone.mul(dirt.mul(0.08).add(1.0));
   const moss = smoothstep(float(0.25), float(0.65), noise2D(vec2(P.x.mul(1.3), P.z.mul(1.3))));
-  const jointCol = mix(vec3(0.07, 0.064, 0.052), vec3(0.045, 0.062, 0.03), moss.mul(0.7));   // sandy-dark, mossy in places
+  const jointCol = mix(vec3(0.15, 0.138, 0.112), vec3(0.07, 0.085, 0.045), moss.mul(0.5));   // light sand, mossy in places
   m.colorNode = mix(stone, jointCol, joint);
   // worn tops smoother, joints matte
   m.roughnessNode = mix(mix(float(0.62), float(0.82), tone), float(0.97), joint);
