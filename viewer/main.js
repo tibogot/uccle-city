@@ -15,6 +15,7 @@ import { loadStJob, STJOB_LODS, STJOB_BU_ID, stjobColliders } from "./stjobModel
 import { addStalle } from "./stalleCity.js";
 import { addTownHall } from "./townhallCity.js";
 import { addVanBuuren } from "./vanbuurenCity.js";
+import { addWolvendael } from "./wolvendaelCity.js";
 import { buildFurniture } from "./furniture.js";
 import { buildTram } from "./tram.js";
 import { buildCars } from "./cars.js";
@@ -330,6 +331,8 @@ if (params.get("worker") !== "0") {
 }
 /** UrbIS solids replaced by a scripted model (the Saint-Job church): not drawn, kept in the roof grid. */
 const HIDE_BU_IDS = params.get("stjob") !== "0" ? [STJOB_BU_ID] : [];
+/** Park ponds whose bed the tiles carve (viewer/water/pondBed.js; the Wolvendael pond with ?wolvendael=1). */
+const PONDS = [];
 /** Tiles that have surfaces.json draw the measured UrbIS street surfaces (viewer/surfaces.js), the default since
  *  2026-11-05; ?roads=engine: the road engine's own guessed carriageways, sidewalks and kerbs, as before. */
 const ROAD_SURFACES = params.get("roads") !== "engine";
@@ -337,6 +340,7 @@ const ROAD_SURFACES = params.get("roads") !== "engine";
 function tileData(entry, lite = false) {
   entry = { ...entry, hide: HIDE_BU_IDS, surface: ROAD_SURFACES, pits: params.get("pits") !== "0",   // ?pits=0: no tree pits (A/B)
     kit: cityKit.on && !lite, kitExclude: cityKit.exclude };                                         // ?kit=1: the façade kit (viewer/facadeKit/)
+  entry = { ...entry, hide: HIDE_BU_IDS, ponds: PONDS, surface: ROAD_SURFACES, pits: params.get("pits") !== "0" };   // ?pits=0: no tree pits (A/B)
   const local = () => import("./tileData.js").then((m) => (lite ? m.buildLiteData : m.buildTileData)(entry, DATA.href));
   if (!tileWorker) return local();
   return new Promise((resolve, reject) => {
@@ -620,6 +624,9 @@ async function main() {
   // The Villa van Buuren (tools/blender/vanbuuren.py, viewer/vanbuurenCity.js) in place of UrbIS solid 550409 only,
   // behind ?vanbuuren=1 for now
   if (params.get("vanbuuren") === "1") await addVanBuuren({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer });
+  // The Château de Wolvendael (tools/blender/wolvendael_chateau.py, viewer/wolvendaelCity.js) in place of UrbIS solids
+  // 537523 + 538880, and its pond (viewer/water/), behind ?wolvendael=1 for now
+  if (params.get("wolvendael") === "1") await addWolvendael({ scene, updaters, hide: HIDE_BU_IDS, ponds: PONDS, world, manifest, log, compiler: () => compileFor, renderer, lighting });
   const T0 = await loadTile(entry, { layers, contourOn, verbose: true });
   world.tiles.push(T0);
   const { hm, roads, net } = T0;

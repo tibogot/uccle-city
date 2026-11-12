@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chateau Lab</title>
+<link rel="icon" href="../viewer/favicon.svg" type="image/svg+xml">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #8e9aa6; font: 13px/1.4 system-ui, sans-serif; }
+  canvas { display: block; }
+  #info { position: fixed; left: 10px; bottom: 10px; max-width: 640px; padding: 8px 10px; border-radius: 6px;
+          background: rgba(20, 24, 30, .78); color: #dfe4ea; font: 12px/1.35 ui-monospace, monospace; white-space: pre-wrap; z-index: 2; }
+  #title { position: fixed; left: 10px; top: 10px; padding: 6px 10px; border-radius: 6px; background: rgba(20, 24, 30, .78);
+           color: #e6e9ee; z-index: 2; }
+  #title a { color: #9cc4ff; }
+  #photo { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; opacity: 0; z-index: 1; }
+  #credit { position: fixed; right: 10px; bottom: 10px; padding: 4px 8px; border-radius: 4px; background: rgba(20, 24, 30, .7);
+            color: #dfe4ea; font: 11px system-ui, sans-serif; z-index: 2; display: none; }
+  #notes { position: fixed; left: 10px; top: 48px; width: 400px; max-height: calc(100vh - 250px); overflow-y: auto; padding: 8px 10px;
+           border-radius: 6px; background: rgba(20, 24, 30, .78); color: #dfe4ea; font: 12px/1.4 system-ui, sans-serif; z-index: 2; display: none; }
+  #notes h3 { margin: 6px 0 2px; font-size: 12px; color: #9cc4ff; }
+  #notes p, #notes li { margin: 2px 0; }
+  #notes ul { padding-left: 16px; margin: 2px 0; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.tsl.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/",
+    "three/src/": "https://cdn.jsdelivr.net/npm/three@0.187.0/src/",
+    "meshoptimizer/simplifier": "https://cdn.jsdelivr.net/npm/meshoptimizer@1.2.0/meshopt_simplifier.js"
+  }
+}
+</script>
+</head>
+<body>
+<div id="title"><b>Château Lab</b> — the Château de Wolvendael (18th c.; today the École d’art d’Uccle) and its pond · <a href="./">all labs</a> · <a href="../viewer/index.html?wolvendael=1&tile=F4&at=-470,-430&cam=-445,-450,52">in the city</a></div>
+<img id="photo" alt="">
+<div id="credit"></div>
+<div id="notes"></div>
+<div id="info">loading…</div>
+<script type="module" src="./wolvendael-lab.js"></script>
+</body>
+</html>

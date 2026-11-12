@@ -24,3 +24,6 @@ models/vanbuuren/*.blend
 models/vanbuuren/*.blend1
 models/vanbuuren/vanbuuren_lod1_bake.bin
 docs/vanbuuren/side_*
+models/wolvendael_chateau/wolvendael.raw.glb
+models/wolvendael_chateau/wolvendael_lod1_bake.bin
+docs/wolvendael/side_*

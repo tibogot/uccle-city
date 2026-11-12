@@ -3,6 +3,7 @@
 // the façade analysis and the land-cover raster. Runs in the tile worker (viewer/tileWorker.js,
 // bundled to tileWorker.bundle.js) so loading a tile doesn't freeze the frame; main.js falls back to
 // running it on the main thread if the worker can't start. The result is plain data (typed arrays).
+import { carvePonds } from "./water/pondBed.js";
 import { buildRoadNetwork } from "../vendor/roads/roadNetwork.js";
 import { buildLaneRoadMesh } from "../vendor/roads/mesh/laneRoadMesh.js";
 import { Heightmap } from "./heightmap.js";
@@ -95,11 +96,12 @@ export const onRoof = (g, x, z) => {
   return i >= 0 && j >= 0 && i < g.nx && j < g.nz && g.data[j * g.nx + i] > 0;
 };
 
-/** Drop the UrbIS solids a scripted model replaces (entry.hide = BU_IDs, e.g. the Saint-Job church). */
+/** Drop the UrbIS solids a scripted model replaces (entry.hide = BU_IDs, e.g. the Saint-Job church, or solid ids for
+ *  the solids that have no BU_ID, e.g. the Château de Wolvendael's 537523). */
 function hideBuildings(bDoc, hide) {
   if (!hide?.length) return;
   const h = new Set(hide);
-  bDoc.buildings = bDoc.buildings.filter((b) => !h.has(b.attrs?.BU_ID));
+  bDoc.buildings = bDoc.buildings.filter((b) => !h.has(b.attrs?.BU_ID) && !h.has(b.id));
 }
 
 /** Build all CPU-side data for one manifest entry (entry.hide: BU_IDs not to draw). `base` = URL of data/tiles/. */
@@ -176,6 +178,10 @@ export async function buildTileData(entry, base) {
     }
     return { parts, atlas, carvedCells, triangles, surfaceStats, surfaceData };
   });
+  // park ponds (entry.ponds, viewer/water/pondBed.js): the bed carved under the water before the terrain mesh is built
+  // (and their OSM water areas leave the land-cover mask: the ground under the pond is the bank / bed, the water is the pond's own surface)
+  if (entry.ponds?.length) { const ids = new Set(entry.ponds.map((p) => p.osm).filter(Boolean)); feats.areas = (feats.areas || []).filter((a) => !ids.has(a.id)); }
+  if (entry.ponds?.length) await step("pond beds", () => carvePonds(hm, entry.ponds.filter((p) => p.ring.some(([x, z]) => x >= x0 - 5 && x <= x1 + 5 && z >= z0 - 5 && z <= z1 + 5))));
   const terrain = await step("terrain grid", () => terrainArrays(hm));
   await step("terrain simplify", async () => {
     await MeshoptSimplifier.ready;
