@@ -221,6 +221,11 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
   const pose = [], railTop = (x, z) => (prof?.y(x, z, 1.5) ?? ground(x, z)) + 0.02;           // (culling, the box trams)
   // the drawn rail top under a point of the track running at heading h (main.js featureObjects draws the rails there)
   const railY = (x, z, h) => (prof?.railTop(x, z, roadOff, 1.5) ?? ground(x, z)) + 0.02;
+  // ... along a shape, averaged over +-3 m (1-2-3-2-1): the profile is already smooth (this moves it by < 5 mm), but where
+  // the line leaves the OSM tracks (321 m along the commune's north edge, outside the study area: no rails drawn there)
+  // the fallback is the raw road surface, and this softens it and the hand-over to the profile
+  const TAPS = [[-3, 1], [-1.5, 2], [0, 3], [1.5, 2], [3, 1]];
+  const yAlong = (shape, q) => { let s = 0; for (const [o, w] of TAPS) { const [x, z, h] = at(shape, q + o); s += w * railY(x, z, h); } return s / 9; };
   let scale = +(params.get("timescale") || 1);
   const clockP = params.get("clock");
   let t0 = performance.now();
@@ -320,7 +325,7 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
       if ((x - near.x) ** 2 + (z - near.z) ** 2 > near.r * near.r || s.cab >= MAX_TRAMS * 2) continue;
       if (fleet) {
         const shape = shapes[t.shape];
-        tramPose(model.layout, (q) => at(shape, q), d, pose, false, prof ? (q) => { const [x, z, h] = at(shape, q); return railY(x, z, h); } : null);
+        tramPose(model.layout, (q) => at(shape, q), d, pose, false, prof ? (q) => yAlong(shape, q) : null);
         doorsLR[0] = doorsLR[1] = 0;
         if (dOpen > 0) doorsLR[platformSide(t, stop) > 0 ? 0 : 1] = dOpen;
         fleet.add(pose, railTop, { sign: model.sign.index[t.head] ?? 0, doors: doorsLR, brake });
@@ -353,5 +358,5 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
   // live clock (the dev panel): set the time of day (seconds) or the speed; both re-anchor, so nothing jumps but the set
   const setClock = (secs = null) => { startSecs = secs ?? brusselsNow().secs; t0 = performance.now(); };   // null: Brussels now
   const setTimescale = (k) => { startSecs = clock(); t0 = performance.now(); scale = k; };
-  return { update, snapTile, info, doc, fleet, model, positions, trackAt, railTop, railY, prof, setClock, setTimescale, get clockSecs() { return clock() % 86400; }, get timescale() { return scale; } };
+  return { update, snapTile, info, doc, fleet, model, positions, trackAt, railTop, railY, yAlong: (id, q) => { const t = trips.find((r) => (r.id ?? r.head) === id); return t ? yAlong(shapes[t.shape], q) : null; }, prof, setClock, setTimescale, get clockSecs() { return clock() % 86400; }, get timescale() { return scale; } };
 }

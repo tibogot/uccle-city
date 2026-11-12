@@ -30,6 +30,8 @@ export async function strip({ cam = null, look = null, clock, seconds = 12, view
   const canvas = viewer.renderer.domElement, camera = viewer.camera;
   const W = viewer.world;
   const yAt = (x, z) => W.surface(x, z);
+  // the chase camera rides at the tram's own height (its rail top: on the bridge, not down in the cutting)
+  const tyAt = (q) => (T.yAlong ? T.yAlong(q.trip, q.d - 30) : null) ?? yAt(q.x, q.z);
   let p = first;
   // side view: perpendicular to the track at `at`, on the side given by the sign of `side`
   const h = first.yaw, tx = Math.cos(h), tz = -Math.sin(h), nx = -tz, nz = tx;
@@ -43,13 +45,13 @@ export async function strip({ cam = null, look = null, clock, seconds = 12, view
         if (view === "side") { const cx = at[0] + nx * side, cz = at[1] + nz * side; return [cx, yAt(at[0], at[1]) + height, cz]; }
         const dx = Math.cos(p.yaw), dz = -Math.sin(p.yaw), sx = -dz, sz = dx;
         const cx = p.x - dx * back + sx * side * 0.25, cz = p.z - dz * back + sz * side * 0.25;
-        return [cx, yAt(p.x, p.z) + up, cz];
+        return [cx, tyAt(p) + up, cz];
       },
       get target() {
         if (look) return look;
         if (view === "side") return [at[0], yAt(at[0], at[1]) + 1.6, at[1]];
         const dx = Math.cos(p.yaw), dz = -Math.sin(p.yaw);
-        return [p.x + dx * 8, yAt(p.x, p.z) + 1.5, p.z + dz * 8];
+        return [p.x + dx * 8, tyAt(p) + 1.5, p.z + dz * 8];
       },
     }),
     label: () => `d ${p ? p.d.toFixed(0) : "-"} m`,
@@ -70,7 +72,7 @@ export function poseCheck(secs, x, z) {
 /** THE JOINT CHECK: a tram of line 92 posed every `step` m along trip `trip` from d0 to d1, the OLD way (each piece
  *  pitched from the road under its own ends, viewer/tram2Model.js HALF) and the NEW way (tramPose with the track
  *  profile): per articulation the vertical mismatch between the two sections' ends (m), per bogie its height off the
- *  drawn rail (m), and the largest pitch change between two poses 0.5 m apart (deg: the "kink" rate). */
+ *  drawn rail (m; where rails are drawn: on an OSM track), and the largest pitch change between two poses 0.5 m apart (deg: the "kink" rate). */
 export async function jointCheck(trip, d0, d1, step = 0.5) {
   const { tramPose } = await import("/viewer/tramModel.js");
   const T = tram(), W = viewer.world, model = T.model, L = model.layout, M = L.modules;
@@ -88,7 +90,7 @@ export async function jointCheck(trip, d0, d1, step = 0.5) {
   for (let d = d0; d <= d1; d += step) {
     if (!loaded(d) || !loaded(d - 32)) { res.skipped++; prev = { old: null, new: null }; continue; }
     for (const mode of ["old", "new"]) {
-      tramPose(L, at, d, pose, false, mode === "new" ? (q) => { const [x, z, h] = at(q); return T.railY(x, z, h); } : null);
+      tramPose(L, at, d, pose, false, mode === "new" ? (q) => T.yAlong(trip, q) : null);
       const pieces = [];
       for (const p of pose) {
         let y, pitch;
@@ -104,7 +106,7 @@ export async function jointCheck(trip, d0, d1, step = 0.5) {
         const rearA = a.y - Math.sin(pa) * La / 2, frontB = b.y + Math.sin(pb) * Lb / 2;
         res[mode].joint.push(Math.abs(rearA - frontB));
       }
-      for (const b of pieces.filter((p) => p.piece === "Bogie")) res[mode].bogie.push(Math.abs(b.y - (mode === "new" ? railDrawn(b.x, b.z, b.yaw) : oldTop(b.x, b.z))));
+      for (const b of pieces.filter((p) => p.piece === "Bogie" && (!T.prof || T.prof.y(p.x, p.z, 1.5) != null))) res[mode].bogie.push(Math.abs(b.y - (mode === "new" ? railDrawn(b.x, b.z, b.yaw) : oldTop(b.x, b.z))));
       const pit = secs.map((p) => (p.flip ? -p.pitch : p.pitch));
       if (prev[mode]) for (let i = 0; i < pit.length; i++) res[mode].kink = Math.max(res[mode].kink, Math.abs(pit[i] - prev[mode][i]) * 180 / Math.PI / step * 0.5);
       prev[mode] = pit;
