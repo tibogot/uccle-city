@@ -13,8 +13,11 @@
 //        meta.merged = [absorbed node ids].
 //   (a merge that would leave two roads between the same two nodes is not done)
 //   tight-bend      (a bend tighter than the road is wide, after the engine shrank its radius)
-//     remove the PI nearest the reported point; with no PI left, the kink is at a node joining two
-//     roads (a continuation): make that node kind "junction" so it becomes a corner.
+//     never delete a curve point (roads v2): fit-curve = the PIs around the bend become one arc through the drawn
+//     curve (<= MAX_FIT_DEV from the OSM points); else narrow-sidewalk (the engine's own sidewalk on that road, 1 m);
+//     else split-corner (a PI turning > 50°: the road splits there into two roads at a two-arm junction node, drawn as
+//     a kerbed corner; the point stays); else slim-road (no guessed parking strip, 0.5 m sidewalks); else keep-tight (left, flagged). With no PI at all, the kink is at a node joining two roads (a continuation):
+//     make that node kind "junction" so it becomes a corner.
 //
 //     If the road has a parallel twin (same two end nodes) and at most one PI, an alley/service
 //     road is dropped instead ("drop-parallel"); other types are left for review.
@@ -100,7 +103,115 @@ function noParking(r) {
   }
   const t = TYPE_STACK[r.type];
   const side = (n) => [...Array(n)].map(() => ({ type: "driving", width: t.drive })).concat([{ type: "sidewalk", width: t.sidewalk }]);
-  return { center: { ...t.center }, right: side(t.n), left: t.oneWay ? [{ type: "sidewalk", width: t.sidewalk }] : side(t.n) };
+  return { center: { ...t.center, guess: true }, right: side(t.n), left: t.oneWay ? [{ type: "sidewalk", width: t.sidewalk }] : side(t.n) };
+}
+
+// ---- tight bends without deleting points (see the tight-bend branch below)
+const MAX_FIT_DEV = 1.2;       // m: the fitted arc stays this close to the OSM points it replaces
+const keepTight = new Set();
+const HALF_W = { alley: 3.8, local: 7.7, oneWay: 7.7, collector: 7.9, avenue: 12.3 };   // type default half width incl. sidewalk
+const halfWidth = (road) => {
+  if (!road.lanes) return HALF_W[road.type] ?? 8;
+  const sum = (side) => (side || []).reduce((t, l) => t + (l.width || 0), 0);
+  return Math.max(sum(road.lanes.left), sum(road.lanes.right)) + (road.lanes.center?.width || 0) / 2;
+};
+const segDist = (p, q0, q1) => {
+  const sx = q1[0] - q0[0], sz = q1[1] - q0[1], L = sx * sx + sz * sz || 1e-9;
+  const t = Math.max(0, Math.min(1, ((p[0] - q0[0]) * sx + (p[1] - q0[1]) * sz) / L));
+  return Math.hypot(q0[0] + sx * t - p[0], q0[1] + sz * t - p[1]);
+};
+/** Replace a run of PIs around the tight bend by one PI whose arc passes through the original curve:
+ *  the PI = where the run's entry and exit legs meet, the radius = the one whose arc midpoint is as far from that
+ *  PI as the original polyline (capped so the tangents fit on the outer legs). Rejected if the arc is still
+ *  tighter than the road is wide, or strays more than MAX_FIT_DEV from the points it replaces. */
+function fitCurve(road, A, B, e) {
+  const P = [A, ...road.pts, B].map((p) => [p.x, p.z]);
+  const np = road.pts.length;
+  let k = 0, bd = Infinity;
+  road.pts.forEach((p, i) => { const d = Math.hypot(p.x - e.x, p.z - e.z); if (d < bd) { bd = d; k = i; } });
+  const need = halfWidth(road) * 1.15;
+  const turnAt = (q) => {
+    const u = [P[q][0] - P[q - 1][0], P[q][1] - P[q - 1][1]], v = [P[q + 1][0] - P[q][0], P[q + 1][1] - P[q][1]];
+    return Math.atan2(u[0] * v[1] - u[1] * v[0], u[0] * v[0] + u[1] * v[1]);
+  };
+  let best = null;
+  // run = road.pts[i..j] (P indices i+1..j+1); legs a->b into it and c->d out of it
+  for (let i = Math.max(0, k - 3); i <= k; i++) for (let j = k; j <= Math.min(np - 1, k + 3); j++) {
+    const a = P[i], b = P[i + 1], c = P[j + 1], d = P[j + 2];
+    const turns = [];
+    for (let q = i + 1; q <= j + 1; q++) turns.push(turnAt(q));
+    if (turns.some((t) => Math.sign(t) !== Math.sign(turns[0]))) continue;     // an S bend: not one arc
+    const delta = turns.reduce((t, x) => t + x, 0);
+    if (Math.abs(delta) < 0.05 || Math.abs(delta) > Math.PI * 0.95) continue;
+    const ux = b[0] - a[0], uz = b[1] - a[1], vx = d[0] - c[0], vz = d[1] - c[1];
+    const den = ux * vz - uz * vx;
+    if (Math.abs(den) < 1e-9) continue;
+    const tA = ((c[0] - a[0]) * vz - (c[1] - a[1]) * vx) / den, tC = ((c[0] - a[0]) * uz - (c[1] - a[1]) * ux) / den;
+    if (!(tA > 0.3) || !(tC < 0.7)) continue;               // the legs meet ahead of the entry and behind the exit
+    const X = [a[0] + ux * tA, a[1] + uz * tA];
+    const L1 = Math.hypot(X[0] - a[0], X[1] - a[1]), L2 = Math.hypot(d[0] - X[0], d[1] - X[1]);
+    const half = Math.abs(delta) / 2, tanH = Math.tan(half);
+    let apex = Infinity;
+    for (let q = i; q <= j + 1; q++) apex = Math.min(apex, segDist(X, P[q], P[q + 1]));
+    let R = apex / (1 / Math.cos(half) - 1);
+    R = Math.min(R, (Math.min(L1, L2) * 0.9) / tanH);
+    if (!(R >= need)) continue;
+    const n1 = Math.hypot(ux, uz), n2 = Math.hypot(vx, vz);
+    const u1 = [ux / n1, uz / n1], u2 = [vx / n2, vz / n2];
+    const T = R * tanH, T1 = [X[0] - u1[0] * T, X[1] - u1[1] * T], T2 = [X[0] + u2[0] * T, X[1] + u2[1] * T];
+    const bis = [u2[0] - u1[0], u2[1] - u1[1]], bl = Math.hypot(bis[0], bis[1]) || 1;
+    const C = [X[0] + (bis[0] / bl) * (R / Math.cos(half)), X[1] + (bis[1] / bl) * (R / Math.cos(half))];
+    const a1 = Math.atan2(T1[1] - C[1], T1[0] - C[0]), a2 = Math.atan2(T2[1] - C[1], T2[0] - C[0]);
+    const span = Math.atan2(Math.sin(a2 - a1), Math.cos(a2 - a1));
+    const onArc = (p) => {
+      const rel = Math.atan2(Math.sin(Math.atan2(p[1] - C[1], p[0] - C[0]) - a1), Math.cos(Math.atan2(p[1] - C[1], p[0] - C[0]) - a1));
+      return span > 0 ? rel >= 0 && rel <= span : rel <= 0 && rel >= span;
+    };
+    let dev = 0;
+    for (let q = i + 1; q <= j + 1; q++) {
+      const p = P[q];
+      const dd = Math.min(segDist(p, a, T1), segDist(p, T2, d), onArc(p) ? Math.abs(Math.hypot(p[0] - C[0], p[1] - C[1]) - R) : Infinity);
+      dev = Math.max(dev, dd);
+    }
+    if (dev > MAX_FIT_DEV) continue;
+    const score = dev + 0.1 * (j - i);
+    if (!best || score < best.score) best = { i, j, score, dev: +dev.toFixed(2), pi: { x: +X[0].toFixed(2), z: +X[1].toFixed(2), r: +R.toFixed(2) } };
+  }
+  return best;
+}
+/** Split `road` at its PI nearest the tight bend when that PI is a real corner (turn > 50°) with room on both sides. */
+function cornerSplit(road, A, B, e) {
+  if (!road.pts.length) return null;
+  const P = [A, ...road.pts, B].map((p) => [p.x, p.z]);
+  let k = 0, bd = Infinity;
+  road.pts.forEach((p, i) => { const d = Math.hypot(p.x - e.x, p.z - e.z); if (d < bd) { bd = d; k = i; } });
+  const q = k + 1, u = [P[q][0] - P[q - 1][0], P[q][1] - P[q - 1][1]], v = [P[q + 1][0] - P[q][0], P[q + 1][1] - P[q][1]];
+  const turn = Math.abs(Math.atan2(u[0] * v[1] - u[1] * v[0], u[0] * v[0] + u[1] * v[1]));
+  if (turn < (50 * Math.PI) / 180 || Math.hypot(...u) < 6 || Math.hypot(...v) < 6) return null;
+  const pi = road.pts[k], id = `k${road.id.slice(1)}_${k}`;
+  const node = { id, x: pi.x, z: pi.z, kind: "junction", radius: TIGHT_RADIUS[road.type] ?? 3, meta: { corner: true, from: road.id } };
+  const a = { ...JSON.parse(JSON.stringify(road)), id: `${road.id}c0`, b: id, pts: road.pts.slice(0, k) };
+  const b = { ...JSON.parse(JSON.stringify(road)), id: `${road.id}c1`, a: id, pts: road.pts.slice(k + 1) };
+  return { node, roads: [a, b] };
+}
+/** narrowSidewalks, then without guessed parking lanes and with 0.5 m sidewalks. */
+function slimStack(r) {
+  const base = narrowSidewalks(r);
+  if (!base) return r.lanes;
+  const sl = (side) => side.filter((l) => !(l.type === "parking" && l.guess)).map((l) => (l.type === "sidewalk" ? { ...l, width: Math.min(l.width, 0.5) } : l));
+  return { ...base, left: sl(base.left), right: sl(base.right) };
+}
+/** The road's stack with the engine's own sidewalks at most 1 m wide (the city draws the measured ones). */
+function narrowSidewalks(r) {
+  let base = r.lanes;
+  if (!base) {
+    const t = TYPE_STACK[r.type];
+    if (!t) return r.lanes;
+    const side = (n) => [...Array(n)].map(() => ({ type: "driving", width: t.drive })).concat([{ type: "parking", width: t.parking, guess: true }, { type: "sidewalk", width: t.sidewalk }]);
+    base = { center: { ...t.center, guess: true }, right: side(t.n), left: t.oneWay ? [{ type: "parking", width: t.parking, guess: true }, { type: "sidewalk", width: t.sidewalk }] : side(t.n) };
+  }
+  const nar = (side) => side.map((l) => (l.type === "sidewalk" ? { ...l, width: Math.min(l.width, 1.0) } : l));
+  return { ...base, left: nar(base.left), right: nar(base.right) };
 }
 
 const counts = (issues) => {
@@ -204,11 +315,47 @@ for (let round = 0; round < MAX_ROUNDS; round++) {
         touched.add(road.id); touched.add(ends[0].id); changed++;
         continue;
       }
-      let k = 0, bd = Infinity;
-      road.pts.forEach((p, i) => { const d = Math.hypot(p.x - e.x, p.z - e.z); if (d < bd) { bd = d; k = i; } });
-      const [p] = road.pts.splice(k, 1);
-      log.push({ round, action: "drop-pi", road: road.id, at: [p.x, p.z] });
-      touched.add(road.id); changed++;
+      // Roads v2 (docs/ROADS_V2_RESEARCH.md §1.6): never delete a curve's point (that drew a chord across the
+      // real, curved street). 1. fit-curve: the PIs fighting for the same leg become ONE arc that still passes
+      // through the drawn curve (max MAX_FIT_DEV from the OSM points); 2. narrow-sidewalk: the engine's own
+      // sidewalk on this road shrinks (the measured sidewalks are drawn in the city anyway); 3. keep-tight: left
+      // as it is and flagged (the Road Checker's C8 lists it).
+      if (keepTight.has(road.id)) continue;
+      const fit = fitCurve(road, A, B, e);
+      if (fit) {
+        road.pts.splice(fit.i, fit.j - fit.i + 1, fit.pi);
+        log.push({ round, action: "fit-curve", road: road.id, at: [fit.pi.x, fit.pi.z], merged: fit.j - fit.i + 1, r: fit.pi.r, dev: fit.dev });
+        touched.add(road.id); changed++;
+        continue;
+      }
+      // a real corner (one PI turning > 50°, its arc squeezed to nothing): the road is split there into two roads
+      // meeting at a two-arm junction node, which the engine draws as a corner with kerb fillets; the point stays
+      const cor = cornerSplit(road, A, B, e);
+      if (cor) {
+        data.nodes.push(cor.node); N.set(cor.node.id, cor.node); deg.set(cor.node.id, 2);
+        data.roads = data.roads.filter((r) => r !== road).concat(cor.roads);
+        log.push({ round, action: "split-corner", road: road.id, node: cor.node.id, at: [cor.node.x, cor.node.z] });
+        touched.add(road.id); touched.add(cor.node.id); for (const r of cor.roads) touched.add(r.id); changed++;
+        continue;
+      }
+      if (!road.meta?.narrowed) {
+        road.lanes = narrowSidewalks(road);
+        road.meta = { ...(road.meta || {}), narrowed: true };
+        log.push({ round, action: "narrow-sidewalk", road: road.id, at: [e.x, e.z] });
+        touched.add(road.id); changed++;
+        continue;
+      }
+      if (!road.meta?.slim) {
+        // the bend is still tighter than the road is wide: no guessed parking strip on this road (a car does not
+        // park on a bend that tight) and 0.5 m engine sidewalks; the drawn street stays the measured one
+        road.lanes = slimStack(road);
+        road.meta = { ...(road.meta || {}), slim: true };
+        log.push({ round, action: "slim-road", road: road.id, at: [e.x, e.z] });
+        touched.add(road.id); changed++;
+        continue;
+      }
+      keepTight.add(road.id);
+      log.push({ round, action: "keep-tight", road: road.id, at: [e.x, e.z] });
       continue;
     }
     if (e.code !== "road-swallowed") continue;

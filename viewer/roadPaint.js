@@ -21,7 +21,7 @@ import {
   fwidth, hash, mx_noise_float, uniform,
 } from "three/tsl";
 import { addLampLight } from "./lampLight.js";
-import { filteredPulse } from "./tslkit.js";
+import { filteredPulse, boxCoverage } from "./tslkit.js";
 
 import { SURFACE, hashPhase, surfaceAttribute } from "./roadData.js";
 export { SURFACE, hashPhase, surfaceAttribute };
@@ -70,12 +70,14 @@ export function asphaltMaterial(atlas) {
   const phase = piece.x;
 
   // --- asphalt: patches (old repairs), grain, wheel-path polish
-  const patch = n3(x.mul(0.11), phase, z.mul(0.11));
+  // world space only (round 2): the tone and the repair patches used to depend on the piece (aPiece), so where two
+  // pieces meet or overlap (a junction pad and its arm, an engine strip over the measured base, a narrowing) the
+  // asphalt changed shade along a straight edge: the owner's darker wedge, the "faceted" junction
+  const patch = n3(x.mul(0.11), float(0.37), z.mul(0.11));
   const grain = n3(x.mul(7.0), z.mul(7.0), 0.0);
   const speck = n3(x.mul(41.0), z.mul(41.0), 3.0);
   const wheel = smoothstep(float(0.22), float(0.0), abs(abs(lat).sub(0.5)));      // 1 on each wheel path
   let tone = float(0.068).add(patch.mul(0.016)).add(grain.mul(0.009)).add(speck.mul(0.006)).sub(wheel.mul(0.012));
-  tone = tone.add(fract(phase.mul(7.31)).sub(0.5).mul(0.014));                     // each road a touch different
   const asphalt = vec3(tone.mul(0.97), tone, tone.mul(1.04));
   const asphaltRough = float(0.9).sub(wheel.mul(0.12));
 
@@ -170,11 +172,43 @@ export function asphaltMaterial(atlas) {
   return addLampLight(m);
 }
 
+// ---------------------------------------------------------------- measured paint (decal mesh)
+
+/** The measured paint of paint v2 (viewer/streets/measuredPaint.js paintMeshV2): crossings, stop and give-way lines,
+ *  sharrows, as one decal mesh PAINT_LIFT above the street. No texture: each mark's (u, v) metres give box-filtered
+ *  edges and stripes (tslkit filteredPulse / boxCoverage), so a zebra fades to its 50 % average far away instead of
+ *  shimmering. Same paint colour and wear as the lines in the asphalt shader above. */
+export function paintMaterial() {
+  const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, transparent: true, depthWrite: false,
+    polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+  const P = positionWorld, x = P.x, z = P.z;
+  const a = attribute("aPaint", "vec4"), e = attribute("aPaint2", "vec4");
+  const u = a.x, v = a.y, kind = a.z, n = a.w;
+  const fu = fwidth(u).mul(0.7).add(0.003), fv = fwidth(v).mul(0.7).add(0.003);
+  const inU = boxCoverage(u, float(0), e.x, fu);
+  const solid = inU.mul(boxCoverage(v, float(0), e.y, fv));
+  // zebra: n bands 0.5 m wide every 1.0 m across the road (v), each running the band's width along the road (u)
+  const zebra = inU.mul(filteredPulse(v, float(0), float(0.5), fv)).mul(boxCoverage(v, float(0), n.sub(0.5), fv));
+  // give-way teeth: base 0.5 m on the line (u = 0), apex 0.7 m upstream, every 0.75 m
+  const per = float(0.75), w = fract(v.div(per)).mul(per).sub(per.mul(0.5));
+  const hw = float(0.25).mul(float(1).sub(u.div(0.7)));
+  const teeth = smoothstep(fv.negate(), fv, hw.sub(abs(w))).mul(inU).mul(boxCoverage(v, float(0), e.y, fv));
+  let cov = solid.mul(band(kind, 0)).add(zebra.mul(band(kind, 1))).add(teeth.mul(band(kind, 2)));
+  const speck = n3(x.mul(41.0), z.mul(41.0), 3.0);
+  const wear = smoothstep(float(-0.65), float(-0.25), n3(x.mul(1.7), z.mul(1.7), 11.0)).mul(smoothstep(float(-0.8), float(-0.45), speck));
+  cov = cov.mul(wear).mul(0.92);
+  m.colorNode = vec3(0.62, 0.62, 0.6);
+  m.opacityNode = cov;
+  m.roughnessNode = float(0.62);
+  return addLampLight(m);
+}
+
 // ---------------------------------------------------------------- sidewalks, kerbs, aprons
 
 /** `framed` (viewer/surfaces.js, ?roads=surface): aKind 3 = a sidewalk slab whose uv is (station along the nearest
  *  kerb, metres from it), so the tiles run along the street in one continuous pattern, and the first 15 cm from
  *  the kerb is painted as the blue-stone kerb band. */
+const KERB_STONE = 1.0;            // m: kerbstone length
 export function concreteMaterial({ framed = false } = {}) {
   const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   const P = positionWorld, x = P.x, z = P.z;
@@ -206,7 +240,19 @@ export function concreteMaterial({ framed = false } = {}) {
   const ap = courses(x, z, 0.12, 0.12, float(0.012), float(4.0), fw);
   const apron = mix(mix(vec3(0.16, 0.07, 0.045), vec3(0.24, 0.11, 0.07), ap.tone), vec3(0.05, 0.03, 0.02), ap.joint);
   const isKerb = band(kind, 1), isApron = band(kind, 2);
-  m.colorNode = mix(mix(slab, kerb, isKerb), apron, isApron);
+  // round 2: Belgian blue-stone kerbstones ~1 m long, butt joints (uv.x = the station along the kerb on the face and on
+  // the sidewalk's painted 15 cm band, viewer/surfaces.js), AA'd with the world footprint, faded far away; each stone a
+  // touch different
+  const ks = uv().x, kd = abs(fract(ks.div(KERB_STONE).add(0.5)).sub(0.5)).mul(KERB_STONE);
+  // (round 3: joints and arris fade out while still several pixels wide: a 3 mm line under a 5 mm footprint blinked at
+  // the kerb in the flicker test)
+  const kJoint = float(1).sub(smoothstep(float(0.003), float(0.003).add(fw), kd)).mul(float(1).sub(smoothstep(float(0.002), float(0.008), fw)));
+  const stoneTone = hash(floor(ks.div(KERB_STONE)).add(17.0)).sub(0.5).mul(0.012);
+  // the top arris: a 12 mm worn, lighter band on the kerb FACE (uv.y = metres down from the top there; on the band
+  // painted on the sidewalk uv.y is the distance from the kerb, so the first 12 mm of the band light up the same way)
+  const arris = float(1).sub(smoothstep(float(0.008), float(0.016), uv().y)).mul(float(1).sub(smoothstep(float(0.0015), float(0.005), fw)));
+  const kerbStone = mix(mix(kerb.add(stoneTone), kerb.mul(1.9), arris.mul(0.6)), vec3(0.03, 0.032, 0.036), kJoint);
+  m.colorNode = mix(mix(slab, framed ? kerbStone : kerb, isKerb), apron, isApron);
   // framed (?roads=surface): honed blue stone, rougher, so a kerb face toward a low sun does not flare white
   m.roughnessNode = mix(mix(mix(float(framed ? 0.92 : 0.88), float(0.95), tiles.joint), float(framed ? 0.82 : 0.6), isKerb), float(0.8), isApron);
   return addLampLight(m);

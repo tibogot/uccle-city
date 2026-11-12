@@ -38,6 +38,13 @@ export const MEDIAN_KERB = 0.15;   // islands a touch taller
 export const PIT_SINK = 0.04;
 export const RAISE = [0, 0, 0, 0, KERB, KERB, MEDIAN_KERB, 0, 0.07, KERB - PIT_SINK];
 export const RAMP_LOW = 0.02, RAMP_DEPTH = 1.0;   // a dropped kerb: 2 cm at the kerb, the full KERB 1 m behind it
+export const RAMP_WING = 0.45;     // m: and the full KERB again at its sides (sloped wings into the sidewalk)
+const RAMP_EDGE = 0.5;             // m: ramp triangles are split to this so the warped surface is smooth
+// m: sidewalk triangles too (round 2): their paving uv is the kerb frame at the vertices, interpolated linearly; over
+// a 6 m triangle on a curve that bent the rows into a visible kink line
+const PAVE_EDGE = 2.5;
+const SKIP_HIDDEN_BASE = false;
+const SPLIT_BENDS = false;         // round 3: off (cost); the paving keeps the kerb frame round corners instead
 // squares: their own part and material (viewer/cobbles.js: old irregular setts), one more draw where there is a square
 const PART = ["asphalt", "asphalt", "asphalt", "asphalt", "square", "concrete", "grass", "concrete", "concrete", "pits"];
 /** low classes the engine's markings may lie on (not tram sites or paths) */
@@ -54,10 +61,15 @@ export const CELL = 6;             // m: height-field grid
 // (I6 median |H - DTM| 3.6 -> 6-10 cm), so folds are handled by the wide-stencil normals instead
 const SMOOTH_PASSES = 0;
 const LIFT = 0.006;                // engine marking layer above the measured base (reversed-z: far above precision)
+// Lift tier between engine pieces that overlap in plan (paint v2). Reversed-z float depth resolves about
+// d * 2^-23 * a few: ~0.2 mm at 500 m, so 1.5 mm keeps overlapping pieces apart at any distance the tile is drawn
+// (the far tiles carry no roads); 3 tiers + DEV stay under the paint decal (viewer/streets/measuredPaint.js PAINT_LIFT).
+const TIER = 0.0015, MAX_TIER = 3;
 const BASE_DROP = 0.01;            // the measured roadway base sits this far under H, the engine layer LIFT above it
-const DEV = [-0.014, 0.012];       // so an uncut engine triangle may sit this far below / above H and stay on top
+const DEV = [-0.014, 0.008];       // so an uncut engine triangle may sit this far below / above H and stay on top (round 2: 12 -> 8 mm: LIFT 6 + 3 tiers 4.5 + DEV must stay 3 mm under the paint decal, PAINT_LIFT 22 mm)
 const BAND = 0.15;                 // kerb-stone band on top of the kerb
 const BAND_LIFT = 0.004;
+const CHAMFER = 0.012;             // m: the kerbstone's top arris (a shading chamfer: normals half way to up)
 const KERB_DOWN = 0.03;            // kerb face starts this far under the roadway (no crack)
 const SKIRT_DOWN = 0.2;            // outer skirts reach this far under H (terrain is carved 0.12)
 // laneRoadMesh CONCRETE_KIND, plus 3: a sidewalk slab with kerb-frame uv (x = station along the kerb, y = metres
@@ -227,8 +239,10 @@ function placePits(trees, classAt, nearKerb, surf, bounds) {
       if (sq) { tx = Math.cos(sq.course * Math.PI / 180); tz = Math.sin(sq.course * Math.PI / 180); }
     } else if (k) { tx = k.tx; tz = k.tz; }
     const fits = (cx, cz) => {
+      // (round 3: 25 cm clear of the paving's edge all round: a pit on a kerb corner poked its slab over the kerb)
+      const m = o + 0.25;
       for (const a of [-1, -0.5, 0, 0.5, 1]) for (const b of [-1, -0.5, 0, 0.5, 1]) {
-        const x = cx + (tx * a - tz * b) * o, z = cz + (tz * a + tx * b) * o;
+        const x = cx + (tx * a - tz * b) * m, z = cz + (tz * a + tx * b) * m;
         if (classAt(x, z) !== host) return false;
       }
       return true;
@@ -248,8 +262,165 @@ function placePits(trees, classAt, nearKerb, surf, bounds) {
   return out;
 }
 
+/**
+ * Round 2 (the owner's narrowing): UrbIS draws a kerb extension / a narrowing as a STEP, two right angles a short
+ * piece apart (a rectangular notch in the sidewalk and a sharp protruding corner, with the road's lines running into
+ * it). Built, they are tapers. A step (two opposite turns > 50° joined by a piece 0.15-3 m long, between two near
+ * parallel kerb runs > 1.5 m) becomes a taper: its first corner B moves back along the run before it by
+ * TAPER x the step (at most 60 % of that run, 1-6 m). B is moved in EVERY ring, kerb, edge and flank that has it
+ * (one vertex, shared), so the roadway and the sidewalk stay exactly complementary. Only vertices shared by at most
+ * two rings are moved (a third polygon at the corner, a ramp or a crossing, keeps it). In place, once per surf.
+ */
+const TAPER = 2.5;
+export function taperSteps(surf) {
+  if (surf._tapered) return surf._tapered;
+  const key = (p) => `${Math.round(p[0] * 100)},${Math.round(p[1] * 100)}`;
+  const rings = new Map();
+  for (const q of surf.surfaces) for (const r of q.rings) for (const p of r) rings.set(key(p), (rings.get(key(p)) || 0) + 1);
+  const move = new Map();
+  // ring vertices on a 4 m grid (for the taper's wedge test)
+  const vg = new Map();
+  for (const q of surf.surfaces) for (const r of q.rings) for (const p of r) { const k2 = `${Math.floor(p[0] / 4)},${Math.floor(p[1] / 4)}`; const l = vg.get(k2); if (l) l.push(p); else vg.set(k2, [p]); }
+  const nearPts = (p, r) => { const out = []; for (let i = Math.floor((p[0] - r) / 4); i <= Math.floor((p[0] + r) / 4); i++) for (let j = Math.floor((p[1] - r) / 4); j <= Math.floor((p[1] + r) / 4); j++) for (const q of vg.get(`${i},${j}`) || []) out.push(q); return out; };
+  const ang = (a, b, c) => { const ux = b[0] - a[0], uz = b[1] - a[1], vx = c[0] - b[0], vz = c[1] - b[1]; return Math.atan2(ux * vz - uz * vx, ux * vx + uz * vz); };
+  const D = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+  for (const l of surf.kerbs || []) {
+    // corners: vertices turning > 50°; the step's two corners may have small turns (< 12°) between them
+    const cum = [0];
+    for (let k = 1; k < l.length; k++) cum.push(cum[k - 1] + D(l[k - 1], l[k]));
+    const turn = l.map((p, k) => (k === 0 || k === l.length - 1 ? 0 : ang(l[k - 1], p, l[k + 1])));
+    const corners = [];
+    for (let k = 1; k + 1 < l.length; k++) if (Math.abs(turn[k]) > 0.87) corners.push(k);
+    for (let c = 0; c + 1 < corners.length; c++) {
+      const kb = corners[c], kc = corners[c + 1];
+      if (Math.sign(turn[kb]) === Math.sign(turn[kc])) continue;
+      let small = true;
+      for (let k = kb + 1; k < kc; k++) if (Math.abs(turn[k]) > 0.21) small = false;
+      const bc = cum[kc] - cum[kb];
+      if (!small || bc < 0.15 || bc > 3) continue;
+      // the runs before and after: back to the previous corner / on to the next one (at least 1.5 m)
+      const ka = c > 0 ? corners[c - 1] : 0, kd = c + 2 < corners.length ? corners[c + 2] : l.length - 1;
+      const ab = cum[kb] - cum[ka], cd = cum[kd] - cum[kc];
+      if (ab < 1.5 || cd < 1.5) continue;
+      const A = l[kb - 1], B = l[kb], C = l[kc], Dd = l[kc + 1];
+      if (Math.abs(ang(A, B, [B[0] + Dd[0] - C[0], B[1] + Dd[1] - C[1]])) > 0.52) continue;   // runs within 30° of parallel
+      // round 3: a dropped kerb (ramp) cut over the step's corner (build_surfaces.py places them from driveway lines and
+      // OSM crossing nodes, not from a survey of the ramp) kept the step's shape and read as a notch in the taper: it
+      // becomes plain sidewalk, and the vertex it shared moves with the rest
+      const rampsHere = surf.surfaces.filter((q) => q.c === 8 && q.rings[0].some((p) => key(p) === key(B) || key(p) === key(C)));
+      if ((rings.get(key(B)) || 0) - rampsHere.length > 2 || move.has(key(B))) continue;
+      // B moves back along the run before it, over straight pieces only (it stays on the old kerb line)
+      const seg = D(A, B);
+      let Lt = Math.max(1, Math.min(TAPER * bc, 0.6 * ab, 6, seg - 0.05));
+      if (Lt < 0.5 || seg < 1.0) continue;
+      // round 3: the wedge B' B C the taper hands from one side to the other must hold no other vertex of the rings
+      // there (a ramp's or a sidewalk's inner edge): else the new diagonal crosses it and folds the polygon (the
+      // owner's notch at the narrowing was such a fold). Shorter tapers are tried, else the step stays
+      const inTri = (p, a, b, c) => { const d1 = (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]), d2 = (c[0] - b[0]) * (p[1] - b[1]) - (c[1] - b[1]) * (p[0] - b[0]), d3 = (a[0] - c[0]) * (p[1] - c[1]) - (a[1] - c[1]) * (p[0] - c[0]); return (d1 > 1e-6 && d2 > 1e-6 && d3 > 1e-6) || (d1 < -1e-6 && d2 < -1e-6 && d3 < -1e-6); };
+      const near = nearPts(B, 8);
+      let Bn = null;
+      for (; Lt >= 0.5; Lt *= 0.6) {
+        const cand = [B[0] + (A[0] - B[0]) / seg * Lt, B[1] + (A[1] - B[1]) / seg * Lt];
+        if (!near.some((p) => key(p) !== key(B) && key(p) !== key(C) && inTri(p, cand, B, C))) { Bn = cand; break; }
+      }
+      if (!Bn) continue;
+      for (const q of rampsHere) { q.c = 5; q.rampAtTaper = true; }
+      move.set(key(B), Bn);
+      // the small vertices between the corners go on the new diagonal B'..C
+      const nb = move.get(key(B));
+      for (let k = kb + 1; k < kc; k++) {
+        if ((rings.get(key(l[k])) || 0) > 2) continue;
+        const f = (cum[k] - cum[kb]) / bc;
+        move.set(key(l[k]), [nb[0] + (C[0] - nb[0]) * f, nb[1] + (C[1] - nb[1]) * f]);
+      }
+    }
+  }
+  const fix = (r) => { for (let i = 0; i < r.length; i++) { const m = move.get(key(r[i])); if (m) r[i] = [m[0], m[1]]; } };
+  if (move.size) {
+    for (const q of surf.surfaces) for (const r of q.rings) fix(r);
+    for (const l of surf.kerbs || []) fix(l);
+    for (const e of surf.edges || []) fix(e.line);
+    for (const l of surf.flanks || []) fix(l);
+  }
+  surf._tapered = { steps: move.size };
+  return surf._tapered;
+}
+
+/**
+ * Round 2 (the owner: "curves look blocky and faceted"): UrbIS draws a kerb radius or a curved street edge as a few
+ * chords (5-30° per vertex). Every curved run of the kerbs and outer edges is refined by ERROR: between two measured
+ * vertices of a curve, points on a centripetal Catmull-Rom spline through the measured vertices (which stay where they
+ * are), so no piece turns more than CURVE_DEG (3°; pieces >= 0.3 m: a 6 m kerb radius is cut every ~0.3 m, chord error < 1 mm). The same points go into every ring, kerb, edge and flank that has that
+ * edge (roadway, sidewalk, kerb face and paving all follow ONE curve). A vertex is "on a curve" when it turns 3-60°
+ * between pieces shorter than 12 m; a corner sharper than 60° stays a corner. In place, once per surf.
+ */
+const CURVE_ERR = 0.015;           // m: chord error allowed on a refined curve (round 3: by error, not by angle)
+export function smoothCurves(surf) {
+  if (surf._curved) return surf._curved;
+  const key = (p) => `${Math.round(p[0] * 100)},${Math.round(p[1] * 100)}`;
+  const ins = new Map();                 // "a|b" -> points strictly between a and b (in a -> b order)
+  let added = 0, maxTurnBefore = 0;
+  const turnAt = (a, b, c) => { const ux = b[0] - a[0], uz = b[1] - a[1], vx = c[0] - b[0], vz = c[1] - b[1]; return Math.abs(Math.atan2(ux * vz - uz * vx, ux * vx + uz * vz)) * 180 / Math.PI; };
+  const D = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const cr = (p0, p1, p2, p3, t) => {                   // centripetal Catmull-Rom between p1 and p2
+    const al = 0.5, d01 = Math.pow(Math.max(D(p0, p1), 1e-4), al), d12 = Math.pow(Math.max(D(p1, p2), 1e-4), al), d23 = Math.pow(Math.max(D(p2, p3), 1e-4), al);
+    const t0 = 0, t1 = d01, t2 = t1 + d12, t3 = t2 + d23, u = t1 + (t2 - t1) * t;
+    const L = (a, b, ta, tb) => [0, 1].map((k) => ((tb - u) * a[k] + (u - ta) * b[k]) / (tb - ta));
+    const A1 = L(p0, p1, t0, t1), A2 = L(p1, p2, t1, t2), A3 = L(p2, p3, t2, t3);
+    const B1 = L(A1, A2, t0, t2), B2 = L(A2, A3, t1, t3);
+    return L(B1, B2, t1, t2);
+  };
+  const lines = [...(surf.kerbs || []), ...(surf.edges || []).map((e) => e.line)];
+  for (const l of lines) {
+    const n = l.length;
+    if (n < 3) continue;
+    // round 3: every vertex turning 1-60° is on a curve, long pieces included (an arc drawn with 20 m chords is a curve
+    // too), and pieces are cut by ERROR: the spline's sagitta over a piece of length l at radius R is l² / 8R, kept
+    // under CURVE_ERR (R from the vertex's turn over its shorter piece)
+    const curve = l.map((p, k) => { if (k === 0 || k === n - 1) return 0; const t = turnAt(l[k - 1], p, l[k + 1]); return t >= 1 && t <= 75 ? t : 0; });
+    for (let k = 0; k + 1 < n; k++) {
+      const tb = Math.max(curve[k], curve[k + 1]);
+      if (!tb) continue;
+      maxTurnBefore = Math.max(maxTurnBefore, tb);
+      const a = l[k], b = l[k + 1], p0 = curve[k] && k > 0 ? l[k - 1] : [2 * a[0] - b[0], 2 * a[1] - b[1]], p3 = curve[k + 1] && k + 2 < n ? l[k + 2] : [2 * b[0] - a[0], 2 * b[1] - a[1]];
+      const radius = (k) => (curve[k] ? Math.min(D(l[Math.max(0, k - 1)], l[k]), D(l[k], l[Math.min(n - 1, k + 1)])) / (curve[k] * Math.PI / 180) : Infinity);
+      const R = Math.min(radius(k), radius(k + 1)), piece = Math.max(0.25, Math.sqrt(8 * R * CURVE_ERR));
+      const m = Math.min(40, Math.ceil(D(a, b) / piece));
+      if (m < 2) continue;
+      const pts = [];
+      for (let i = 1; i < m; i++) pts.push(cr(p0, a, b, p3, i / m));
+      const kab = `${key(a)}|${key(b)}`;
+      if (!ins.has(kab) && !ins.has(`${key(b)}|${key(a)}`)) { ins.set(kab, pts); added += pts.length; }
+    }
+  }
+  const refine = (r, closed) => {
+    const out = [];
+    const N = r.length;
+    for (let i = 0; i < N; i++) {
+      out.push(r[i]);
+      if (!closed && i === N - 1) break;
+      const a = r[i], b = r[(i + 1) % N];
+      const f = ins.get(`${key(a)}|${key(b)}`);
+      if (f) { for (const p of f) out.push([p[0], p[1]]); continue; }
+      const g = ins.get(`${key(b)}|${key(a)}`);
+      if (g) for (let j = g.length - 1; j >= 0; j--) out.push([g[j][0], g[j][1]]);
+    }
+    return out;
+  };
+  if (ins.size) {
+    for (const q of surf.surfaces) q.rings = q.rings.map((r) => refine(r, true));
+    if (surf.kerbs) surf.kerbs = surf.kerbs.map((l) => refine(l, false));
+    for (const e of surf.edges || []) e.line = refine(e.line, false);
+    if (surf.flanks) surf.flanks = surf.flanks.map((l) => refine(l, false));
+  }
+  surf._curved = { edges: ins.size, points: added, maxTurnBefore: Math.round(maxTurnBefore) };
+  return surf._curved;
+}
+
 export function prepareSurfaces(surf, ground, bounds, trees = null) {
   const t0 = (globalThis.performance ?? Date).now();
+  const tapered = taperSteps(surf);
+  const curved = smoothCurves(surf);
   const G = ground;
   const base = [];                       // { cls, si, a, b, c, hk }
   const halves = new Map();              // halfKey -> base indices
@@ -263,6 +434,12 @@ export function prepareSurfaces(surf, ground, bounds, trees = null) {
     push(halves, hk, base.length - 1);
     if (COVER[cls]) coverArea.set(hk, (coverArea.get(hk) || 0) + A);
   };
+  // round 2: a tram site the orthophoto shows as its street's own asphalt (pipeline/photo_surfaces.mjs look "asphalt")
+  // is tram-shared roadway: asphalt, markable (Ch. d'Alsemberg / Av. Brugmann: the zebras run over it), not setts
+  for (const s of surf.surfaces) if (s.c === SURF_CLASS.tramSite && s.photo?.look === "asphalt") { s.c = SURF_CLASS.tramRoad; s.photoLook = true; }
+  // and a median (island) the photo shows paved (green share < 25 %) is a paved island: sidewalk paving at sidewalk
+  // height (it meets sidewalks: a 15 / 13 cm pair left a 2 cm step with no face)
+  for (const s of surf.surfaces) if (s.c === SURF_CLASS.median && s.photo && s.photo.veg < 0.25) { s.c = SURF_CLASS.sidewalk; s.photoLook = true; }
   surf.surfaces.forEach((s, si) => {
     const rings = s.rings;
     let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
@@ -401,6 +578,37 @@ export function prepareSurfaces(surf, ground, bounds, trees = null) {
     });
     return { pts: l, cum, kap: kv.slice(1).map((v, k) => (v + kv[k]) / 2) };
   });
+  // round 2: the PAVING frame comes from a smoothed copy of each kerb (Chaikin, 2 rounds: corners rounded over
+  // ~1 m). On the measured polyline a convex corner (a ramp's jog, a notch) makes the nearest-point station jump or
+  // fold across the corner's bisector: the paving pattern sheared along a line from the kerb into the sidewalk
+  const chaikin = (pts, n) => {
+    let p = pts;
+    for (let r = 0; r < n && p.length > 2; r++) {
+      const q = [p[0]];
+      for (let k = 0; k + 1 < p.length; k++) { const a = p[k], b = p[k + 1]; q.push([0.75 * a[0] + 0.25 * b[0], 0.75 * a[1] + 0.25 * b[1]], [0.25 * a[0] + 0.75 * b[0], 0.25 * a[1] + 0.75 * b[1]]); }
+      q.push(p[p.length - 1]);
+      p = q;
+    }
+    return p;
+  };
+  const uvLines = lines.map((L) => {
+    const pts = chaikin(L.pts, 2), cum = [0];
+    for (let k = 1; k < pts.length; k++) cum.push(cum[k - 1] + Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]));
+    const kv = pts.map((p, k) => {
+      if (k === 0 || k === pts.length - 1) return 0;
+      const a = pts[k - 1], b = pts[k + 1], ux = p[0] - a[0], uz = p[1] - a[1], vx = b[0] - p[0], vz = b[1] - p[1];
+      return Math.abs(Math.atan2(ux * vz - uz * vx, ux * vx + uz * vz)) / Math.max(0.05, (Math.hypot(ux, uz) + Math.hypot(vx, vz)) / 2);
+    });
+    return { pts, cum, kap: kv.slice(1).map((v, k) => (v + kv[k]) / 2) };
+  });
+  const uvSegs = new Map();
+  uvLines.forEach((L, li) => {
+    for (let k = 1; k < L.pts.length; k++) {
+      const [ax, az] = L.pts[k - 1], [bx, bz] = L.pts[k];
+      for (let i = Math.floor(Math.min(ax, bx) / 8); i <= Math.floor(Math.max(ax, bx) / 8); i++)
+        for (let j = Math.floor(Math.min(az, bz) / 8); j <= Math.floor(Math.max(az, bz) / 8); j++) push(uvSegs, cellKey(i, j), [li, k]);
+    }
+  });
   const segs = new Map();
   lines.forEach((L, li) => {
     for (let k = 1; k < L.pts.length; k++) {
@@ -411,13 +619,16 @@ export function prepareSurfaces(surf, ground, bounds, trees = null) {
   });
   /** nearest kerb point (optionally on line `only`) within ~16 m: { li, s (station), d (signed: + = raised side),
    *  x, z (on the kerb), tx, tz (unit tangent) } */
-  const nearKerb = (x, z, only = -1) => {
+  // (round 2: the 3 x 3 cells first, the 5 x 5 ring only when nothing lies within 8 m; no per-call Set: a segment in two
+  // cells is just measured twice. It was a third of the road stage once curves were refined)
+  const nearKerbIn = (LINES, SEGS) => (x, z, only = -1) => {
     let best = null, bd = 16 * 16;
-    const i0 = Math.floor(x / 8), j0 = Math.floor(z / 8), seen = new Set();
-    for (let di = -2; di <= 2; di++) for (let dj = -2; dj <= 2; dj++) for (const [li, k] of segs.get(cellKey(i0 + di, j0 + dj)) || []) {
-      if ((only >= 0 && li !== only) || seen.has(li * 1e6 + k)) continue;
-      seen.add(li * 1e6 + k);
-      const L = lines[li], [ax, az] = L.pts[k - 1], [bx, bz] = L.pts[k], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1e-12;
+    const i0 = Math.floor(x / 8), j0 = Math.floor(z / 8);
+    for (let ring = 1; ring <= 2; ring++) for (let di = -ring; di <= ring; di++) for (let dj = -ring; dj <= ring; dj++) {
+      if (ring === 2 && (Math.abs(di) < 2 && Math.abs(dj) < 2 || bd <= 64)) continue;
+      for (const [li, k] of SEGS.get(cellKey(i0 + di, j0 + dj)) || []) {
+      if (only >= 0 && li !== only) continue;
+      const L = LINES[li], [ax, az] = L.pts[k - 1], [bx, bz] = L.pts[k], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1e-12;
       const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)), px = ax + dx * t, pz = az + dz * t;
       const d2 = (x - px) ** 2 + (z - pz) ** 2;
       if (d2 < bd) {
@@ -425,13 +636,86 @@ export function prepareSurfaces(surf, ground, bounds, trees = null) {
         const l = Math.sqrt(l2), tx = dx / l, tz = dz / l;
         best = { li, s: L.cum[k - 1] + t * l, d: (x - px) * -tz + (z - pz) * tx, x: px, z: pz, tx, tz, kap: L.kap[k - 1] };
       }
+      }
     }
     return best;
   };
-  /** height of a dropped kerb above H: RAMP_LOW at the kerb, KERB at RAMP_DEPTH behind it */
-  const rampRise = (x, z) => { const k = nearKerb(x, z); const d = k ? Math.max(0, k.d) : RAMP_DEPTH; return RAMP_LOW + (KERB - RAMP_LOW) * Math.min(1, d / RAMP_DEPTH); };
+  const nearKerb = nearKerbIn(lines, segs);
+  /** nearKerb on the smoothed kerbs: the paving frame (station, distance) */
+  const nearKerbUV0 = nearKerbIn(uvLines, uvSegs), uvCache = new Map();
+  const nearKerbUV = (x, z, only = -1) => {
+    const k = `${Math.round(x * 1000)},${Math.round(z * 1000)},${only}`;
+    let v = uvCache.get(k);
+    if (v === undefined) { v = nearKerbUV0(x, z, only); uvCache.set(k, v); }
+    return v;
+  };
+  // ---- dropped kerbs (round 3). Each UrbIS ramp polygon is a band RAMP_DEPTH deep cut out of the sidewalk along a
+  // kerb piece (build_surfaces.py: a driveway or a crossing, + flares). Its bateau is defined in ITS kerb frame: station s
+  // along its kerb (s0..s1 = the polygon's extent) and distance d from it. Low at the kerb (RAMP_LOW), back to KERB at
+  // d = RAMP_DEPTH and at both ends over the wings (min(RAMP_WING, a third of its length)). Every edge of the ramp that
+  // is not on the kerb is therefore at KERB, the sidewalk's own height: no wall, no step, whatever small mismatch
+  // the two outlines have. The height is piecewise linear between the lines s0 + W, s1 - W and d = RAMP_DEPTH, so the
+  // ramp's triangles only need cutting along those three lines (a few triangles a ramp, not a grid)
+  const rampList = [];
+  const rampGrid = new Map();
+  surf.surfaces.forEach((q, si) => {
+    if (q.c !== SURF_CLASS.ramp) return;
+    const r = q.rings[0], votes = new Map();
+    for (const p of r) { const k = nearKerb(p[0], p[1]); if (k && Math.abs(k.d) < RAMP_DEPTH + 0.5) votes.set(k.li, (votes.get(k.li) || 0) + 1); }
+    const best = [...votes].sort((x, y) => y[1] - x[1])[0];
+    if (!best) return;
+    const li = best[0];
+    let s0 = Infinity, s1 = -Infinity, x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (const p of r) {
+      const k = nearKerb(p[0], p[1], li); if (!k) continue;
+      s0 = Math.min(s0, k.s); s1 = Math.max(s1, k.s);
+      x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[1]); z1 = Math.max(z1, p[1]);
+    }
+    if (!(s1 > s0)) return;
+    const W = Math.min(RAMP_WING, (s1 - s0) / 3), R = { si, li, s0, s1, W, ring: r, x0, x1, z0, z1 };
+    rampList.push(R);
+    for (let i = Math.floor((x0 - 0.5) / 8); i <= Math.floor((x1 + 0.5) / 8); i++) for (let j = Math.floor((z0 - 0.5) / 8); j <= Math.floor((z1 + 0.5) / 8); j++) push(rampGrid, cellKey(i, j), R);
+  });
+  const pipR = (x, z, ring) => { let ins = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const [xi, zi] = ring[i], [xj, zj] = ring[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) ins = !ins; } return ins; };
+  /** the ramp record at (x, z): the one containing it, else one within 0.3 m of it (points on its outline) */
+  const rampAt = (x, z, si = -1) => {
+    let near = null;
+    for (const R of rampGrid.get(cellKey(Math.floor(x / 8), Math.floor(z / 8))) || []) {
+      if (si >= 0 && R.si !== si) continue;
+      if (x < R.x0 - 0.3 || x > R.x1 + 0.3 || z < R.z0 - 0.3 || z > R.z1 + 0.3) continue;
+      if (si >= 0 || pipR(x, z, R.ring)) return R;
+      near ??= R;
+    }
+    return near;
+  };
+  /** height of a dropped kerb ("bateau") above H at (x, z), of ramp si (or the ramp there) */
+  const rampRise = (x, z, si = -1) => {
+    const R = rampAt(x, z, si);
+    if (!R) { const k = nearKerb(x, z), d = k ? Math.max(0, k.d) : RAMP_DEPTH; return RAMP_LOW + (KERB - RAMP_LOW) * Math.min(1, d / RAMP_DEPTH); }
+    const k = nearKerb(x, z, R.li);
+    if (!k) return KERB;
+    const d = Math.max(0, k.d), along = Math.max(0, Math.min(1, Math.min(k.s - R.s0, R.s1 - k.s) / R.W));
+    // (full height from 0.85 RAMP_DEPTH: the ramp's back edge is drawn a few cm either side of 1 m, and anything under
+    // KERB there left a 2-5 mm crack against the sidewalk)
+    const low = (1 - Math.min(1, d / (RAMP_DEPTH * 0.85))) * along;
+    return KERB - (KERB - RAMP_LOW) * low;
+  };
+  /** the two wing cut lines of a ramp, as [ax, az, bx, bz] world lines (long enough to cross the whole ramp) */
+  const rampCuts = (R) => {
+    const L = lines[R.li], at = (s) => {
+      let k = 1; while (k < L.cum.length - 1 && L.cum[k] < s) k++;
+      const t = (s - L.cum[k - 1]) / Math.max(1e-9, L.cum[k] - L.cum[k - 1]), [ax, az] = L.pts[k - 1], [bx, bz] = L.pts[k];
+      const len = Math.hypot(bx - ax, bz - az) || 1, tx = (bx - ax) / len, tz = (bz - az) / len;
+      return { x: ax + (bx - ax) * t, z: az + (bz - az) * t, tx, tz };
+    };
+    const out = [];
+    for (const sv of [R.s0 + R.W, R.s1 - R.W]) { const p = at(sv), nx = -p.tz, nz = p.tx; out.push([p.x - nx * 3, p.z - nz * 3, p.x + nx * 3, p.z + nz * 3]); }
+    // (no cut at d = RAMP_DEPTH: build_surfaces.py makes every ramp a band exactly RAMP_DEPTH deep, so its back edge IS
+    // that line and the height is linear in d across it)
+    return out;
+  };
   /** height above H of the surface class c at (x, z) */
-  const riseAt = (c, x, z) => (c === SURF_CLASS.ramp ? rampRise(x, z) : RAISE[c]);
+  const riseAt = (c, x, z, si = -1) => (c === SURF_CLASS.ramp ? rampRise(x, z, si) : RAISE[c]);
   // ---- tree pits: cut their outer squares out of the paving, mark their soil in the raster
   const pits = trees ? placePits(trees, classAt, nearKerb, surf, bounds) : [];
   if (pits.length) {
@@ -465,7 +749,7 @@ export function prepareSurfaces(surf, ground, bounds, trees = null) {
       for (const p of pieces) for (let k2 = 1; k2 + 1 < p.length; k2++) if (Math.abs(area2(p[0], p[k2], p[k2 + 1])) > 1e-7) keep.push({ ...b, a: p[0], b: p[k2], c: p[k2 + 1] });
     }
     base.length = 0;
-    base.push(...keep);
+    for (const b of keep) base.push(b);
     halves.clear();
     base.forEach((b, i) => push(halves, b.hk, i));
     // the soil in the raster (the walker, the tree's foot)
@@ -478,8 +762,69 @@ export function prepareSurfaces(surf, ground, bounds, trees = null) {
       }
     }
   }
-  return { pits, surf, G, H, nrmAt, rampRise, riseAt, base, halves, coverArea, convexCover, baseAt, classAt, grid: { data: grid, nx, nz, x0: bounds.x0, z0: bounds.z0, step: GRID },
-    nearKerb, bounds, inside, fallbacks, streetCorners: street.size, ms: Math.round((globalThis.performance ?? Date).now() - t0) };
+  // ---- ramps: split their triangles (midpoints) until no edge is longer than RAMP_EDGE, so the warped bateau (wings)
+  // is drawn smoothly; their edges on the sidewalk sit at the sidewalk's height, so the new midpoints make no crack
+  {
+    const out = [];
+    const split = (b, depth, lim = limit(b)) => {
+      const P = [b.a, b.b, b.c];
+      const L = [[b.a, b.b], [b.b, b.c], [b.c, b.a]].map(([p, q]) => Math.hypot(q[0] - p[0], q[1] - p[1]));
+      let k;
+      if (false) {
+      } else {
+        const m = Math.max(...L);
+        if (m <= lim || depth > 8) { out.push(b); return; }
+        k = L.indexOf(m);
+      }
+      const p = P[k], q = P[(k + 1) % 3], r = P[(k + 2) % 3], mid = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+      split({ ...b, a: p, b: mid, c: r }, depth + 1, lim); split({ ...b, a: mid, b: q, c: r }, depth + 1, lim);
+    };
+    let any = false;
+    // sidewalks only where their kerb bends (radius < 25 m within 4 m of it): elsewhere the frame is straight and a
+    // big triangle interpolates it exactly
+    const cen = (b) => [(b.a[0] + b.b[0] + b.c[0]) / 3, (b.a[1] + b.b[1] + b.c[1]) / 3];
+    const bends = (b) => { const k = nearKerbUV(...cen(b)); return k && Math.abs(k.d) < 4 && k.kap > 0.04; };
+    // a ramp only where it is warped (within RAMP_DEPTH of the kerb, plus the largest triangle's reach): behind that
+    // it is flat at KERB
+    const warped = (b) => { const k = nearKerb(...cen(b)); return k && k.d < RAMP_DEPTH + 0.6; };
+    const limit = (b) => (b.cls === SURF_CLASS.ramp && warped(b) ? RAMP_EDGE : bends(b) ? PAVE_EDGE : Infinity);
+    const rampBySi = new Map(rampList.map((R) => [R.si, R])), cutsOf = new Map();
+    const lineCut = (b) => {
+      const R = rampBySi.get(b.si);
+      if (!R) { out.push(b); return; }
+      if (!cutsOf.has(R.si)) cutsOf.set(R.si, rampCuts(R));
+      let pieces = [[b.a, b.b, b.c]];
+      for (const [ax, az, bx, bz] of cutsOf.get(R.si)) {
+        const next = [];
+        for (const pc of pieces) for (const sg of [1, -1]) { const q = clipHalf(pc, ax, az, bx, bz, sg); if (q.length >= 3 && Math.abs(ringArea(q)) > 1e-6) next.push(q); }
+        pieces = next;
+      }
+      for (const q of pieces) for (let k = 1; k + 1 < q.length; k++) if (Math.abs(area2(q[0], q[k], q[k + 1])) > 1e-7) out.push({ ...b, a: q[0], b: q[k], c: q[k + 1] });
+    };
+    for (const b of base) {
+      if (b.cls === SURF_CLASS.ramp) { any = true; lineCut(b); }
+      else if (SPLIT_BENDS && b.cls === SURF_CLASS.sidewalk && bends(b)) { any = true; split(b, 0); }
+      else out.push(b);
+    }
+    if (any) { base.length = 0; for (const b of out) base.push(b); halves.clear(); base.forEach((b, i) => push(halves, b.hk, i)); }
+  }
+  // a ramp's paving is its host sidewalk's (the polygon it is cut out of): one kerb frame, one straight frame, welded
+  // vertices, so the pattern runs on across it (round 2: the pattern sheared along the ramp's sides)
+  const host = new Map();
+  {
+    const vk = (p) => `${Math.round(p[0] * 100)},${Math.round(p[1] * 100)}`;
+    const owner = new Map();
+    surf.surfaces.forEach((q, si) => { if (q.c === SURF_CLASS.sidewalk) for (const p of q.rings[0]) push(owner, vk(p), si); });
+    surf.surfaces.forEach((q, si) => {
+      if (q.c !== SURF_CLASS.ramp) return;
+      const votes = new Map();
+      for (const p of q.rings[0]) for (const o of owner.get(vk(p)) || []) votes.set(o, (votes.get(o) || 0) + 1);
+      const best = [...votes].sort((a, b) => b[1] - a[1])[0];
+      if (best && best[1] >= 2) host.set(si, best[0]);
+    });
+  }
+  return { pits, host, rampAt, surf, G, H, nrmAt, rampRise, riseAt, base, halves, coverArea, convexCover, baseAt, classAt, grid: { data: grid, nx, nz, x0: bounds.x0, z0: bounds.z0, step: GRID },
+    nearKerb, nearKerbUV, bounds, inside, fallbacks, tapered, curved, streetCorners: street.size, ms: Math.round((globalThis.performance ?? Date).now() - t0) };
 }
 
 // ---------------------------------------------------------------- 2. lane stacks fitted to the measured width
@@ -561,6 +906,74 @@ export function fitRoadWidths(roads, prep) {
 
 // ---------------------------------------------------------------- 3. meshes
 
+/** Index offsets of the engine triangles whose uv-frame orientation is the minority of their piece (folded strips). */
+function foldedTriangles(E, phaseOf) {
+  const P = E.position, U = E.uv, I = E.index;
+  const sign = new Int8Array(I.length / 3), per = new Map();
+  for (let t = 0; t < I.length; t += 3) {
+    const a = I[t], b = I[t + 1], c = I[t + 2];
+    const ap = (P[b * 3] - P[a * 3]) * (P[c * 3 + 2] - P[a * 3 + 2]) - (P[b * 3 + 2] - P[a * 3 + 2]) * (P[c * 3] - P[a * 3]);
+    const au = (U[b * 2] - U[a * 2]) * (U[c * 2 + 1] - U[a * 2 + 1]) - (U[b * 2 + 1] - U[a * 2 + 1]) * (U[c * 2] - U[a * 2]);
+    if (Math.abs(ap) < 1e-6 || Math.abs(au) < 1e-6) continue;
+    const sg = ap * au > 0 ? 1 : -1;
+    sign[t / 3] = sg;
+    const ph = phaseOf(a), m = per.get(ph) || [0, 0];
+    m[sg > 0 ? 0 : 1]++;
+    per.set(ph, m);
+  }
+  const out = new Set();
+  for (let t = 0; t < I.length; t += 3) {
+    const sg = sign[t / 3];
+    if (!sg) continue;
+    const m = per.get(phaseOf(I[t]));
+    const major = m[0] >= m[1] ? 1 : -1;
+    if (sg !== major && Math.min(m[0], m[1]) < 0.25 * (m[0] + m[1])) out.add(t);
+  }
+  return out;
+}
+
+/** Engine pieces (aPiece phase) whose triangles overlap in plan -> a lift tier each: a greedy colouring in rising
+ *  priority, so of two overlapping pieces the higher priority is drawn higher. Overlap = a 0.5 m sample point inside
+ *  triangles of two different pieces. Pieces that overlap nothing stay at tier 0. */
+function liftTiers(E, inTile, phaseOf, priority) {
+  const P = E.position, I = E.index, S = 0.25;
+  const cells = new Map();
+  for (let t = 0; t < I.length; t += 3) {
+    const a = I[t], b = I[t + 1], c = I[t + 2];
+    const ax = P[a * 3], az = P[a * 3 + 2], bx = P[b * 3], bz = P[b * 3 + 2], cx = P[c * 3], cz = P[c * 3 + 2];
+    const mx = (ax + bx + cx) / 3, mz = (az + bz + cz) / 3;
+    if (!inTile(mx, mz)) continue;
+    const ph = phaseOf(a);
+    const d = (bx - ax) * (cz - az) - (bz - az) * (cx - ax);
+    if (Math.abs(d) < 1e-9) continue;
+    for (let i = Math.ceil(Math.min(ax, bx, cx) / S); i <= Math.floor(Math.max(ax, bx, cx) / S); i++)
+      for (let j = Math.ceil(Math.min(az, bz, cz) / S); j <= Math.floor(Math.max(az, bz, cz) / S); j++) {
+        const x = i * S, z = j * S;
+        const w1 = ((x - ax) * (cz - az) - (z - az) * (cx - ax)) / d, w2 = ((bx - ax) * (z - az) - (bz - az) * (x - ax)) / d;
+        if (w1 < 0.02 || w2 < 0.02 || w1 + w2 > 0.98) continue;          // strictly inside: shared edges are no overlap
+        const k = i * 1048576 + j;
+        let set = cells.get(k);
+        if (!set) cells.set(k, (set = new Set()));
+        set.add(ph);
+      }
+  }
+  const nb = new Map();
+  for (const set of cells.values()) {
+    if (set.size < 2) continue;
+    for (const p of set) for (const q of set) if (p !== q) { let m = nb.get(p); if (!m) nb.set(p, (m = new Map())); m.set(q, (m.get(q) || 0) + 1); }
+  }
+  const tier = new Map();
+  const order = [...nb.keys()].sort((p, q) => priority(p) - priority(q) || p - q);
+  for (const p of order) {
+    const used = new Set();
+    for (const [q] of nb.get(p)) if (tier.has(q)) used.add(tier.get(q));
+    let t = 0;
+    while (used.has(t) && t < MAX_TIER) t++;
+    tier.set(p, t);
+  }
+  return tier;
+}
+
 /**
  * @param {object} prep    prepareSurfaces()
  * @param {object} built   buildLaneRoadMesh() output (asphalt / concrete / grass parts)
@@ -568,9 +981,12 @@ export function fitRoadWidths(roads, prep) {
  * @param {object} roads   roads.json (street name -> OSM surface map, names of mapped roads)
  * @param {(x:number, z:number) => boolean} [onBuilding]  under a UrbIS building? (engine roads UrbIS does not map
  *        are kept as built, except where the engine put them on a house)
+ * @param {object} [opts]  { priority(phase) }: give engine pieces that OVERLAP in plan distinct lift tiers (the higher
+ *        priority on top, TIER apart), so two coplanar pieces can never z-fight (paint v2; without it every engine
+ *        triangle sits exactly LIFT above H, research §1.7)
  * @returns {{ parts: {asphalt, concrete, grass}, carve: {position, index}[], grid, kerbs, bollards, stats }}
  */
-export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => false) {
+export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => false, opts = {}) {
   const t0 = (globalThis.performance ?? Date).now();
   const { surf, H, nrmAt, base, halves, coverArea, convexCover, baseAt, bounds, riseAt } = prep;
   const UP = [0, 1, 0];
@@ -626,7 +1042,46 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
     return ex;
   };
   let overlayTris = 0, overlayWhole = 0, keptTris = 0, droppedTris = 0, devFail = 0, cutAtEdge = 0;
+  const lift = opts.priority ? liftTiers(E, inTile, phaseOf, opts.priority) : null;
+  // folds: where a bend is tighter than the road is wide, the engine's outer strips turn inside out and lie over
+  // the road itself (a z-fight with no tier possible). Such a triangle's orientation in its own (station, lateral)
+  // uv frame disagrees with the rest of its piece: drop it (the measured base and the unfolded strip cover the spot)
+  const folded = opts.dropFolds ? foldedTriangles(E, phaseOf) : null;
+  let foldDropped = 0;
+  const liftOf = (v) => (lift ? LIFT + (lift.get(phaseOf(v)) || 0) * TIER : LIFT);
   const keptEngine = [];
+  // round 2: no lane line through a crossing. The pieces of engine triangles inside a drawn crossing (opts.lineCuts,
+  // convex outlines) get their line codes zeroed (aEdges.zw), so the lines stop at the zebra, mid-block too
+  let zeroLines = false;
+  const exOfZ = (vs, w) => { const ex = exOf(vs, w); if (zeroLines) { ex.aEdges = [ex.aEdges[0], ex.aEdges[1], 0, 0]; } return ex; };
+  const cuts = (opts.lineCuts || []).map((c) => { const r = ringArea(c) < 0 ? c.slice().reverse() : c; let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const [x, z] of r) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); } return { r, x0, x1, z0, z1 }; });
+  let linesCut = 0;
+  /** poly split by the crossing outlines: [{ poly, inside }] */
+  const splitByCuts = (poly) => {
+    let parts = [{ poly, inside: false }];
+    if (!cuts.length) return parts;
+    const xs = poly.map((q) => q[0]), zs = poly.map((q) => q[1]);
+    const bx0 = Math.min(...xs), bx1 = Math.max(...xs), bz0 = Math.min(...zs), bz1 = Math.max(...zs);
+    for (const C of cuts) {
+      if (C.x1 < bx0 || C.x0 > bx1 || C.z1 < bz0 || C.z0 > bz1) continue;
+      const next = [];
+      for (const pt of parts) {
+        if (pt.inside) { next.push(pt); continue; }
+        let inside = pt.poly;
+        const outs = [];
+        for (let e = 0; e < C.r.length && inside.length >= 3; e++) {
+          const [ax, az] = C.r[e], [bx, bz] = C.r[(e + 1) % C.r.length];
+          const o = clipHalf(inside, ax, az, bx, bz, -1);
+          if (o.length >= 3 && Math.abs(ringArea(o)) > 1e-6) outs.push(o);
+          inside = clipHalf(inside, ax, az, bx, bz, 1);
+        }
+        if (inside.length >= 3 && Math.abs(ringArea(inside)) > 1e-6) { next.push({ poly: inside, inside: true }); for (const o of outs) next.push({ poly: o, inside: false }); linesCut++; }
+        else next.push(pt);
+      }
+      parts = next;
+    }
+    return parts;
+  };
   const emit = (poly, vs, P2) => {     // a convex piece of engine triangle vs, LIFT above H
     const idx = [];
     for (const q of poly) {
@@ -634,9 +1089,9 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
       if (!we) return;
       const u = we[0] * E.uv[vs[0] * 2] + we[1] * E.uv[vs[1] * 2] + we[2] * E.uv[vs[2] * 2];
       const v = we[0] * E.uv[vs[0] * 2 + 1] + we[1] * E.uv[vs[1] * 2 + 1] + we[2] * E.uv[vs[2] * 2 + 1];
-      const ex = exOf(vs, we);
+      const ex = exOfZ(vs, we);
       const key = `o${Math.round(q[0] * 1000)},${Math.round(q[1] * 1000)},${Math.round(u * 1000)},${Math.round(v * 1000)},${ex.aPiece[0].toFixed(2)},${ex.aEdges.map((e) => e.toFixed(3)).join()},${ex.aMark.map((e) => e.toFixed(4)).join()},${ex.aLateral.toFixed(3)}`;
-      idx.push(A.keyed(key, () => A.vert(q[0], H(q[0], q[1]) + LIFT, q[1], nrmAt(q[0], q[1]), u, v, ex)));
+      idx.push(A.keyed(key, () => A.vert(q[0], H(q[0], q[1]) + liftOf(vs[0]), q[1], nrmAt(q[0], q[1]), u, v, ex)));
     }
     for (let k = 1; k + 1 < idx.length; k++) if (A.tri(idx[0], idx[k], idx[k + 1], UP, true)) overlayTris++;
   };
@@ -672,18 +1127,25 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
       if (!we) return;
       const u = we[0] * E.uv[vs[0] * 2] + we[1] * E.uv[vs[1] * 2] + we[2] * E.uv[vs[2] * 2];
       const v = we[0] * E.uv[vs[0] * 2 + 1] + we[1] * E.uv[vs[1] * 2 + 1] + we[2] * E.uv[vs[2] * 2 + 1];
-      idx.push(A.vert(q[0], we[0] * hv[0] + we[1] * hv[1] + we[2] * hv[2] + LIFT, q[1], nrmAt(q[0], q[1]), u, v, exOf(vs, we)));
+      idx.push(A.vert(q[0], we[0] * hv[0] + we[1] * hv[1] + we[2] * hv[2] + liftOf(vs[0]), q[1], nrmAt(q[0], q[1]), u, v, exOfZ(vs, we)));
     }
     for (let k = 1; k + 1 < idx.length; k++) if (A.tri(idx[0], idx[k], idx[k + 1], UP, true)) overlayTris++;
   };
   for (let t = 0; t < EI.length; t += 3) {
+    if (folded?.has(t)) { foldDropped++; droppedTris++; continue; }
     const vs = [EI[t], EI[t + 1], EI[t + 2]];
     const P2 = vs.map((v) => [EP[v * 3], EP[v * 3 + 2]]);
     const cx = (P2[0][0] + P2[1][0] + P2[2][0]) / 3, cz = (P2[0][1] + P2[1][1] + P2[2][1]) / 3;
     if (!mapped.has(phaseOf(vs[0]))) {
-      if (!inTile(cx, cz) || baseAt(cx, cz) || onBuilding(cx, cz)) { droppedTris++; continue; }
+      // round 2: not over the measured street anywhere (corners, edge middles, centre): such a triangle kept its own
+      // engine heights and lay up to 15 cm over the measured roadway and its paint (Alsemberg / Brugmann)
+      const probe = [...P2, [(P2[0][0] + P2[1][0]) / 2, (P2[0][1] + P2[1][1]) / 2], [(P2[1][0] + P2[2][0]) / 2, (P2[1][1] + P2[2][1]) / 2], [(P2[2][0] + P2[0][0]) / 2, (P2[2][1] + P2[0][1]) / 2], [cx, cz]];
+      if (!inTile(cx, cz) || probe.some(([x, z]) => baseAt(x, z)) || onBuilding(cx, cz)) { droppedTris++; continue; }
       const w3 = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
-      const idx = vs.map((v, q) => A.vert(EP[v * 3], EP[v * 3 + 1], EP[v * 3 + 2], [E.normal[v * 3], E.normal[v * 3 + 1], E.normal[v * 3 + 2]], E.uv[v * 2], E.uv[v * 2 + 1], exOf(vs, w3[q])));
+      const up = lift ? liftOf(vs[0]) - LIFT : 0;     // unmapped engine road: as built, + its tier where it overlaps
+      // (round 3: shading normals from the one smooth height field, not the engine's: its junction pads and road
+      // strips carried different normals at the same position, 7,831 shading seams on the roads UrbIS does not map)
+      const idx = vs.map((v, q) => A.vert(EP[v * 3], EP[v * 3 + 1] + up, EP[v * 3 + 2], nrmAt(EP[v * 3], EP[v * 3 + 2]), E.uv[v * 2], E.uv[v * 2 + 1], exOf(vs, w3[q])));
       A.idxFirst.push(idx[0], idx[1], idx[2]);
       for (const v of vs) keptEngine.push(EP[v * 3], EP[v * 3 + 1], EP[v * 3 + 2]);
       keptTris++;
@@ -699,6 +1161,36 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
       poly = clipHalf(poly, bounds.x0, bounds.z1, bounds.x0, bounds.z0, 1); poly = clipHalf(poly, bounds.x1, bounds.z0, bounds.x1, bounds.z1, 1); }
     if (poly.length < 3 || Math.abs(ringArea(poly)) < 1e-5) { droppedTris++; continue; }
     if (hits.length) cutAtEdge++;
+    const cutParts = splitByCuts(poly);
+    if (cutParts.length > 1 || cutParts[0].inside) {
+      // split by a crossing: every part on the plane through H at the triangle's corners (as an uncut triangle), the
+      // parts inside with no line codes
+      // (each part drawn as an uncut one would be: on the triangle's plane when that stays within DEV of H at every
+      // crease it spans, else cut at the creases. Drawn on the plane always, a part could rise over the paint decal)
+      const hv = P2.map((q) => H(q[0], q[1]));
+      for (const cp of cutParts) {
+        zeroLines = cp.inside;
+        const xs2 = cp.poly.map((q) => q[0]), zs2 = cp.poly.map((q) => q[1]), pcs = [];
+        for (let i = Math.floor(Math.min(...xs2) / CELL); i <= Math.floor(Math.max(...xs2) / CELL); i++)
+          for (let j = Math.floor(Math.min(...zs2) / CELL); j <= Math.floor(Math.max(...zs2) / CELL); j++) for (let h = 0; h < 2; h++) {
+            const q = clipHalfCell(cp.poly, i, j, h);
+            if (q.length >= 3 && Math.abs(ringArea(q)) > 1e-6) pcs.push(q);
+          }
+        // (the plane is the WHOLE triangle's: check every crease the whole triangle spans, as the uncut case does)
+        let fine = true;
+        const all = [];
+        { const xa = P2.map((q) => q[0]), za = P2.map((q) => q[1]);
+          for (let i = Math.floor(Math.min(...xa) / CELL); i <= Math.floor(Math.max(...xa) / CELL); i++)
+            for (let j = Math.floor(Math.min(...za) / CELL); j <= Math.floor(Math.max(...za) / CELL); j++) for (let h = 0; h < 2; h++) {
+              const q = clipHalfCell(P2, i, j, h); if (q.length >= 3 && Math.abs(ringArea(q)) > 1e-6) all.push(q);
+            } }
+        if (all.length > 1) for (const q of all) { for (const r of q) { const w = bary(r, P2[0], P2[1], P2[2]); const dev = w ? w[0] * hv[0] + w[1] * hv[1] + w[2] * hv[2] - H(r[0], r[1]) : 0; if (dev < DEV[0] || dev > DEV[1]) { fine = false; break; } } if (!fine) break; }
+        if (fine) emitPlane(cp.poly, vs, P2); else for (const q of pcs) emit(q, vs, P2);
+        zeroLines = false;
+      }
+      overlayWhole++;
+      continue;
+    }
     // drawn uncut when its own plane stays within DEV of H at every crease it spans, else cut at the creases
     const xs = poly.map((q) => q[0]), zs = poly.map((q) => q[1]);
     const pieces = [];
@@ -734,16 +1226,18 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
   const votes2 = new Map();
   const paved = (c) => c === SURF_CLASS.sidewalk || c === SURF_CLASS.ramp;
   const cen = new Map();                 // si -> [sum ax, sum az, area] for the polygon's own straight frame
+  const hostOf = (si) => prep.host?.get(si) ?? si;
   for (const b of base) {
     if (!paved(b.cls)) continue;
-    const A2 = Math.abs(area2(b.a, b.b, b.c)), c0 = cen.get(b.si) || [0, 0, 0];
+    const fsi = hostOf(b.si);
+    const A2 = Math.abs(area2(b.a, b.b, b.c)), c0 = cen.get(fsi) || [0, 0, 0];
     c0[0] += A2 * (b.a[0] + b.b[0] + b.c[0]) / 3; c0[1] += A2 * (b.a[1] + b.b[1] + b.c[1]) / 3; c0[2] += A2;
-    cen.set(b.si, c0);
+    cen.set(fsi, c0);
     const k = prep.nearKerb((b.a[0] + b.b[0] + b.c[0]) / 3, (b.a[1] + b.b[1] + b.c[1]) / 3);
     if (!k) continue;
-    const m = votes2.get(b.si) || new Map();
+    const m = votes2.get(fsi) || new Map();
     m.set(k.li, (m.get(k.li) || 0) + Math.abs(area2(b.a, b.b, b.c)));
-    votes2.set(b.si, m);
+    votes2.set(fsi, m);
   }
   const sidewalkKerb = new Map([...votes2].map(([si, m]) => [si, [...m].sort((p, q) => q[1] - p[1])[0][0]]));
   // the polygon's own straight frame: rows along its kerb's direction at the point nearest its centroid
@@ -752,9 +1246,38 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
     const li = sidewalkKerb.get(si), k = li !== undefined && A2 > 0 ? prep.nearKerb(sx / A2, sz / A2, li) || prep.nearKerb(sx / A2, sz / A2) : null;
     straight.set(si, k ? [k.tx, k.tz] : [1, 0]);
   }
+  // round 2: a median (island) the orthophoto shows paved (green share < 25 %: pipeline/photo_surfaces.mjs) is paving,
+  // not grass (Square Georges Marlow's corners, most of the islands: 145 of 191)
+  const partName = (s, cls) => (cls === SURF_CLASS.median && s.photo && s.photo.veg < 0.25 ? "concrete" : PART[cls]);
   const sst = (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
+  // round 3 (cost): a measured roadway base triangle wholly under the engine layer is never seen (the layer lies
+  // LIFT + BASE_DROP above it, opaque): not drawn. "Wholly" = its corners (2 cm in), edge middles and centre all inside
+  // engine-layer triangles
+  const ovGrid = new Map();
+  { const P = A.pos, I = A.idxFirst;
+    for (let t = 0; t < I.length; t += 3) {
+      const xs = [P[I[t] * 3], P[I[t + 1] * 3], P[I[t + 2] * 3]], zs = [P[I[t] * 3 + 2], P[I[t + 1] * 3 + 2], P[I[t + 2] * 3 + 2]];
+      for (let i = Math.floor(Math.min(...xs) / 2); i <= Math.floor(Math.max(...xs) / 2); i++) for (let j = Math.floor(Math.min(...zs) / 2); j <= Math.floor(Math.max(...zs) / 2); j++) push(ovGrid, cellKey(i, j), t);
+    } }
+  const underLayer = (x, z) => {
+    const P = A.pos, I = A.idxFirst;
+    for (const t of ovGrid.get(cellKey(Math.floor(x / 2), Math.floor(z / 2))) || []) {
+      const w = bary([x, z], [P[I[t] * 3], P[I[t] * 3 + 2]], [P[I[t + 1] * 3], P[I[t + 1] * 3 + 2]], [P[I[t + 2] * 3], P[I[t + 2] * 3 + 2]]);
+      if (w && w[0] >= -1e-6 && w[1] >= -1e-6 && w[2] >= -1e-6) return true;
+    }
+    return false;
+  };
+  let baseHidden = 0;
   for (const b of base) {
-    const s = surf.surfaces[b.si], cls = b.cls, part = out[PART[cls]];
+    const s = surf.surfaces[b.si], cls = b.cls, pname = partName(s, cls), part = out[pname];
+    if (OVERLAY[cls]) {
+      const cx = (b.a[0] + b.b[0] + b.c[0]) / 3, cz = (b.a[1] + b.b[1] + b.c[1]) / 3;
+      const probe = [[cx, cz], ...[b.a, b.b, b.c].map((p) => { const dx = cx - p[0], dz = cz - p[1], L = Math.hypot(dx, dz) || 1, f = Math.min(0.02, L) / L; return [p[0] + dx * f, p[1] + dz * f]; }),
+        [(b.a[0] + b.b[0]) / 2, (b.a[1] + b.b[1]) / 2], [(b.b[0] + b.c[0]) / 2, (b.b[1] + b.c[1]) / 2], [(b.c[0] + b.a[0]) / 2, (b.c[1] + b.a[1]) / 2]];
+      // (off: the engine layer has T-junction steps of up to 8 mm between its uncut and crease-cut pieces; the base under
+      // it is what fills them. Kept for the record: it saved ~5 % of the road triangles)
+      if (SKIP_HIDDEN_BASE && probe.every(([x, z]) => underLayer(x, z))) { baseHidden++; continue; }
+    }
     const pts = [b.a, b.b, b.c];
     let uvs = pts.map((p) => [p[0], p[1]]), frame = -1, uv2 = uvs, fw = [0, 0, 0];
     if (paved(cls)) {
@@ -763,29 +1286,37 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
       // inside a sidewalk
       // (a sidewalk round a block faces several streets: where its own kerb is out of reach, the nearest kerb)
       const ok = (ks) => ks && ks.every(Boolean) && Math.max(...ks.map((k) => k.s)) - Math.min(...ks.map((k) => k.s)) < 3 * CELL;
-      let li = sidewalkKerb.get(b.si) ?? -1;
-      let ks = li >= 0 ? pts.map((p) => prep.nearKerb(p[0], p[1], li)) : null;
+      let li = sidewalkKerb.get(hostOf(b.si)) ?? -1;
+      let ks = li >= 0 ? pts.map((p) => prep.nearKerbUV(p[0], p[1], li)) : null;
       if (!ok(ks)) {
-        const k0 = prep.nearKerb((b.a[0] + b.b[0] + b.c[0]) / 3, (b.a[1] + b.b[1] + b.c[1]) / 3);
+        const k0 = prep.nearKerbUV((b.a[0] + b.b[0] + b.c[0]) / 3, (b.a[1] + b.b[1] + b.c[1]) / 3);
         li = k0 ? k0.li : -1;
-        ks = k0 ? pts.map((p) => prep.nearKerb(p[0], p[1], li)) : null;
+        ks = k0 ? pts.map((p) => prep.nearKerbUV(p[0], p[1], li)) : null;
       }
       if (ok(ks)) {
         uvs = ks.map((k) => [k.s, k.d]); frame = li;
         // cross-fade to the polygon's straight frame where the kerb frame would stretch the pavers: far from the kerb
         // (a wide forecourt, where two kerbs' frames meet) or outside a tight bend (|d| x curvature large)
-        const [tx, tz] = straight.get(b.si) || [1, 0];
+        const [tx, tz] = straight.get(hostOf(b.si)) || [1, 0];
         uv2 = pts.map((p) => [p[0] * tx + p[1] * tz, -p[0] * tz + p[1] * tx]);
-        fw = ks.map((k) => Math.max(sst(2.5, 4.5, Math.abs(k.d)), sst(0.12, 0.3, Math.abs(k.d * k.kap))));
+        // (round 2: the kerb frame kept further: on the smoothed kerb a corner spreads its curvature, and the cross-fade
+        // to the straight frame showed two patterns at once over whole corners. Tiles fanning round a corner is how they
+        // are laid)
+        // round 3: ONE frame per triangle, no cross-fade, no kinked interpolation: tiles run along the kerb where it is
+        // straight (radius > 30 m) and near it (< 5 m); round a corner or deep in a forecourt they run straight (the
+        // sidewalk polygon's own direction) and are cut at the curved kerb, as laid. Where the two meet, one clean
+        // joint line, not a zig-zag
+        const bend = ks.some((k) => Math.abs(k.kap) > 1 / 30 && Math.abs(k.d) < 6) || ks.some((k) => Math.abs(k.d) > 5);
+        fw = bend ? [1, 1, 1] : [0, 0, 0];
       } else unframed++;
     } else if (cls === SURF_CLASS.square) {
       const th = ((s.course ?? 0) * Math.PI) / 180, c = Math.cos(th), sn = Math.sin(th);
       uvs = pts.map((p) => [p[0] * c + p[1] * sn, -p[0] * sn + p[1] * c]);    // setts rows along the square
     }
-    const exOfV = (q) => (PART[cls] === "asphalt" ? { aPiece: [hashPhase(s.id || String(b.si)), 0], aSurf: nameSurf.get(s.name) || BASE_SURF[cls] }
-      : PART[cls] === "concrete" ? { aKind: frame >= 0 ? KIND.framed : KIND.slab, aUv2: uv2[q], aFrameW: fw[q] } : null);
+    const exOfV = (q) => (pname === "asphalt" ? { aPiece: [hashPhase(s.id || String(b.si)), 0], aSurf: nameSurf.get(s.name) || BASE_SURF[cls] }
+      : pname === "concrete" ? { aKind: frame >= 0 ? KIND.framed : KIND.slab, aUv2: uv2[q], aFrameW: fw[q] } : null);
     const idx = pts.map((p, q) =>
-      part.keyed(`${b.si}|${frame}|${Math.round(p[0] * 1000)}|${Math.round(p[1] * 1000)}`, () => part.vert(p[0], H(p[0], p[1]) + riseAt(cls, p[0], p[1]) - (OVERLAY[cls] ? BASE_DROP : 0), p[1], nrmAt(p[0], p[1]), uvs[q][0], uvs[q][1], exOfV(q))));
+      part.keyed(`${paved(cls) ? hostOf(b.si) : b.si}|${frame}|${fw[0]}|${Math.round(p[0] * 1000)}|${Math.round(p[1] * 1000)}`, () => part.vert(p[0], H(p[0], p[1]) + riseAt(cls, p[0], p[1], b.si) - (OVERLAY[cls] ? BASE_DROP : 0), p[1], nrmAt(p[0], p[1]), uvs[q][0], uvs[q][1], exOfV(q))));
     part.tri(idx[0], idx[1], idx[2], UP);
   }
   const carveTris = new Float32Array(base.length * 9);
@@ -844,8 +1375,19 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
     return pts;
   };
   let kerbLen = 0;
-  for (const line of surf.kerbs) {
-    const pts = densify(line);
+  for (let li = 0; li < surf.kerbs.length; li++) {
+    const line = surf.kerbs[li];
+    // along a dropped kerb the top follows the bateau's wings: a vertex every 0.25 m there
+    const pts = [];
+    for (const p of densify(line)) {
+      const q = pts[pts.length - 1];
+      if (q) {
+        const L = Math.hypot(p[0] - q[0], p[1] - q[1]), mx = (p[0] + q[0]) / 2, mz = (p[1] + q[1]) / 2, nx = -(p[1] - q[1]) / (L || 1), nz = (p[0] - q[0]) / (L || 1);
+        const ramp = [1, -1].some((sg) => prep.classAt(mx + nx * 0.3 * sg, mz + nz * 0.3 * sg) === SURF_CLASS.ramp);
+        if (ramp && L > 0.6) { const n = Math.ceil(L / 0.5); for (let k = 1; k < n; k++) pts.push([q[0] + (p[0] - q[0]) * k / n, q[1] + (p[1] - q[1]) * k / n]); }
+      }
+      pts.push(p);
+    }
     if (pts.length < 2) continue;
     const segN = (a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz) || 1; return [-dz / L, dx / L]; };
     const nl = pts.map((p, k) => {
@@ -864,9 +1406,15 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
     for (let k = 0; k < pts.length; k++) {
       const [x, z] = pts[k], y = H(x, z), right = [-nl[k][0], 0, -nl[k][1]];      // the face looks at the roadway
       const bx = x + nl[k][0] * BAND, bz = z + nl[k][1] * BAND, n = nrmAt(x, z);
+      // round 2 (Brussels blue-stone kerbs): uv.x = the station along the kerb, the same one the sidewalk's paving and
+      // painted kerb band use (nearKerbUV on the smoothed kerb), so the shader's kerbstone joints every KERB_STONE m line
+      // up on the face and on the band; the top 12 mm of the face is a chamfer (its normal half way to up)
+      const ks = prep.nearKerbUV(x, z, li), st = ks ? ks.s : 0;
+      // (round 3: uv.y = metres DOWN from the kerb's top, so the shader draws the 12 mm arris as a lighter band: the
+      // chamfer row of round 2 doubled the kerb faces' triangles)
       const cur = {
-        bot: C.vert(x, y - KERB_DOWN, z, right, x, z, ex), top: C.vert(x, y + rise[k], z, right, x, z, ex),
-        bo: C.vert(x, y + rise[k] + BAND_LIFT, z, n, x, z, ex), bi: C.vert(bx, H(bx, bz) + rise[k] + BAND_LIFT, bz, n, bx, bz, ex),
+        bot: C.vert(x, y - KERB_DOWN, z, right, st, KERB_DOWN + rise[k], ex), top: C.vert(x, y + rise[k], z, right, st, 0, ex),
+        bo: C.vert(x, y + rise[k] + BAND_LIFT, z, n, st, 0, ex), bi: C.vert(bx, H(bx, bz) + rise[k] + BAND_LIFT, bz, n, st, BAND, ex),
       };
       if (prev) {
         C.tri(prev.bot, cur.bot, cur.top, right); C.tri(prev.bot, cur.top, prev.top, right);
@@ -885,7 +1433,10 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
   for (const P of prep.pits || []) {
     const { o, w } = P, iw = o - w;
     const X = (u, v) => [P.x + P.tx * u - P.tz * v, P.z + P.tz * u + P.tx * v];
-    const top = (u, v) => { const [x, z] = X(u, v); return H(x, z) + P.raise; };
+    // (round 3: one plane per pit, H's tangent plane at its centre: its slabs crossed H's creases and their butt joints
+    // opened 2-5 mm cracks; the outer skirt hides the mm against the paving round it)
+    const hc = H(P.x, P.z), gx = (H(P.x + 1, P.z) - H(P.x - 1, P.z)) / 2, gz = (H(P.x, P.z + 1) - H(P.x, P.z - 1)) / 2;
+    const top = (u, v) => { const [x, z] = X(u, v); return hc + gx * (x - P.x) + gz * (z - P.z) + P.raise; };
     const dirW = (du, dv) => [P.tx * du - P.tz * dv, 0, P.tz * du + P.tx * dv];
     const slab = (u0, u1, v0, v1, alongU) => {
       // top: uv.x = metres along the slab, uv.y = metres to its far end (the shader draws the joints at both ends)
@@ -947,6 +1498,7 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
   }
 
   // ---- skirts along the outer edges, down into the carved terrain (surface on the left)
+  let skirtsInWalls = 0;
   for (const e of surf.edges) {
     const pts = densify(e.line);
     let pb = null, pt = null;
@@ -959,7 +1511,11 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
       if (e.raised) { const q = raisedAt(x - dz / L * 0.2, z + dx / L * 0.2); r = q ? riseAt(q.cls, x, z) : KERB; }
       const y = H(x, z);
       const bot = C.vert(x, y - SKIRT_DOWN, z, right, x, z, { aKind: KIND.slab }), top = C.vert(x, y + r, z, right, x, z, { aKind: KIND.slab });
-      if (pb !== null) { C.tri(pb, bot, top, right); C.tri(pb, top, pt, right); }
+      // (round 3, cost: no skirt where the outside of the edge is a house: a face inside a wall is never seen)
+      if (pb !== null) {
+        const mx = (x + pts[k - 1][0]) / 2, mz = (z + pts[k - 1][1]) / 2;
+        if (!onBuilding(mx + right[0] * 0.4, mz + right[2] * 0.4)) { C.tri(pb, bot, top, right); C.tri(pb, top, pt, right); } else skirtsInWalls++;
+      }
       pb = bot; pt = top;
     }
   }
@@ -973,6 +1529,8 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
   const bollards = (surf.bollards || []).filter(([x, z]) => inTile(x, z)).map(([x, z]) => { const c = prep.classAt(x, z); return [x, H(x, z) + (c >= 0 ? riseAt(c, x, z) : 0), z]; });
   const stats = {
     surfaces: surf.surfaces.length, baseTris: base.length, overlayTris, overlayWhole, overlayCutAtCreases: devFail, overlayCutAtStreetEdge: cutAtEdge, keptEngineTris: keptTris, droppedEngineTris: droppedTris,
+    foldDropped, linesCutAtCrossings: linesCut, baseHiddenUnderLayer: baseHidden, skirtsInWalls,
+    liftTiers: lift ? { pieces: lift.size, overlapping: [...lift.values()].filter((t) => t > 0).length, max: Math.max(0, ...lift.values()) } : null,
     keptSideTris: keptSide, kerbLength: Math.round(kerbLen), mappedPieces: mapped.size, unmappedPieces: tally.size - mapped.size,
     unframedSidewalkTris: unframed, cutFallbacks: prep.fallbacks, bollards: bollards.length, treePits: (prep.pits || []).length,
     heightError: (() => {      // |H - DTM| at the triangle centroids (m)

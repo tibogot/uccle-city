@@ -14,7 +14,7 @@ FILES = {"roads": "roads.json", "buildings": "buildings.json", "buildingsBin": "
          "terrain": "terrain.u16", "terrainHeader": "terrain.json", "features": "features.json",
          "ortho": "ortho.jpg"}
 # listed when present, but a tile without them is still "built" (surfaces: build_surfaces.py, viewer ?roads=surface)
-OPTIONAL = {"surfaces": "surfaces.json"}
+OPTIONAL = {"surfaces": "surfaces.json", "markings": "markings.json"}   # markings: build_markings.py (measured paint)
 
 
 def main():

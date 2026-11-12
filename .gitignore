@@ -44,3 +44,7 @@ models/foliage/plants.raw.glb
 
 # texture candidates (tools/textures/candidates.py rebuilds them; chosen ones get promoted + committed)
 viewer/materials/textures/cand/
+# Road Checker per-tile reports: only summaries and the Road Lab's tiles are committed (tools/road_audit/)
+tools/road_audit/node_modules/
+docs/roads/audit/*/*.json
+!docs/roads/audit/*/summary.json

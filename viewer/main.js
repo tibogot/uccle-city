@@ -30,7 +30,7 @@ import { cobbleMaterial, pitMaterial } from "./cobbles.js";
 import { landCoverTexture, groundMaterial } from "./ground.js";
 import { Heightmap } from "./heightmap.js";
 import { createTramLine } from "./tramline.js";
-import { asphaltMaterial, concreteMaterial, vergeMaterial } from "./roadPaint.js";
+import { asphaltMaterial, concreteMaterial, vergeMaterial, paintMaterial } from "./roadPaint.js";
 import { buildingMeshes as facadeMeshes } from "./facades.js";
 import { Lighting, PRESETS } from "./lighting.js";
 import { createPipeline } from "./post.js";
@@ -158,6 +158,7 @@ function buildingMeshes(doc, buf) {
 /** GPU meshes for a tile's roads from the worker's data (tileData.js). */
 function roadMeshes(road) {
   const mats = { asphalt: asphaltMaterial(road.atlas), grass: sharedMat("verge", vergeMaterial), square: sharedMat("cobbles", cobbleMaterial), pits: sharedMat("tree-pits", pitMaterial),
+    paint: sharedMat("road-paint", paintMaterial),         // measured paint, paint v2 (viewer/streets/measuredPaint.js)
     concrete: road.surfaceStats ? sharedMat("concrete-framed", () => concreteMaterial({ framed: true })) : sharedMat("concrete", concreteMaterial) };
   const meshes = [];
   for (const [name, part] of Object.entries(road.parts)) {
@@ -347,11 +348,13 @@ const PONDS = [];
 /** Tiles that have surfaces.json draw the measured UrbIS street surfaces (viewer/surfaces.js), the default since
  *  2026-11-05; ?roads=engine: the road engine's own guessed carriageways, sidewalks and kerbs, as before. */
 const ROAD_SURFACES = params.get("roads") !== "engine";
+const PAINT_PARAM = ["v1", "v2"].includes(params.get("paint")) ? params.get("paint") : undefined;
 /** CPU data for a tile: from the worker, or on the main thread (?worker=0, or if the worker fails). */
 function tileData(entry, lite = false) {
   entry = { ...entry, hide: HIDE_BU_IDS, ponds: PONDS, surface: ROAD_SURFACES, pits: params.get("pits") !== "0",   // ?pits=0: no tree pits (A/B)
     kit: cityKit.on && !lite, kitExclude: cityKit.exclude,                                           // the façade kit (viewer/facadeKit/), ?kit=0 off
-    rail: TRAINS, driveLegacy: params.get("drivecol") === "legacy" };                                // ?drivecol=legacy: the drive colliders before the audit
+    rail: TRAINS, driveLegacy: params.get("drivecol") === "legacy",
+    paint: PAINT_PARAM };                                                                            // ?paint=v1: the road engine's own markings (A/B)                                // ?drivecol=legacy: the drive colliders before the audit
   const local = () => import("./tileData.js").then((m) => (lite ? m.buildLiteData : m.buildTileData)(entry, DATA.href));
   if (!tileWorker) return local();
   return new Promise((resolve, reject) => {

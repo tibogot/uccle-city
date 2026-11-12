@@ -108,6 +108,1420 @@ function carvePonds(hm, ponds) {
   return n;
 }
 
+// viewer/heightmap.js
+var Heightmap = class _Heightmap {
+  /** Rebuild from arrays computed elsewhere (the tile worker): header, carved grid, original grid. */
+  static from(hdr, y, orig) {
+    const m = Object.create(_Heightmap.prototype);
+    m.h = hdr;
+    m.y = y;
+    m.orig = orig;
+    m.ground = (x, z) => m.sample(m.orig, x, z);
+    m.surface = (x, z) => m.sample(m.y, x, z);
+    return m;
+  }
+  constructor(hdr, buf) {
+    this.h = hdr;
+    const raw = new Uint16Array(buf);
+    this.y = new Float32Array(raw.length);
+    let lo = Infinity;
+    for (let k = 0; k < raw.length; k++) if (raw[k] !== hdr.nodata) lo = Math.min(lo, raw[k]);
+    for (let k = 0; k < raw.length; k++) this.y[k] = (raw[k] === hdr.nodata ? lo : raw[k]) / 100;
+    this.orig = this.y.slice();
+  }
+  /** Bilinear lookup; points outside the tile are clamped to the edge (neighbour tiles aren't loaded). */
+  sample(arr, x, z) {
+    const h = this.h;
+    const c = Math.min(Math.max((x - h.x0) / h.step, 0), h.cols - 1);
+    const r = Math.min(Math.max((z - h.z0) / h.step, 0), h.rows - 1);
+    const c0 = Math.min(Math.floor(c), h.cols - 2), r0 = Math.min(Math.floor(r), h.rows - 2);
+    const fc = c - c0, fr = r - r0, i = r0 * h.cols + c0;
+    return (arr[i] * (1 - fc) + arr[i + 1] * fc) * (1 - fr) + (arr[i + h.cols] * (1 - fc) + arr[i + h.cols + 1] * fc) * fr;
+  }
+  ground = (x, z) => this.sample(this.orig, x, z);
+  surface = (x, z) => this.sample(this.y, x, z);
+  /** Push the grid under the given triangles (local xyz arrays + index) to `y − depth`, then one ring of neighbours. */
+  carve(position, index, depth) {
+    const { x0, z0, cols, rows, step } = this.h;
+    const carved = new Uint8Array(cols * rows);
+    const Y = this.y;
+    for (let t = 0; t < index.length; t += 3) {
+      const a = index[t] * 3, b = index[t + 1] * 3, c = index[t + 2] * 3;
+      const ax = position[a], az = position[a + 2], bx = position[b], bz = position[b + 2], cx = position[c], cz = position[c + 2];
+      const det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+      if (Math.abs(det) < 1e-9) continue;
+      const c0 = Math.max(0, Math.ceil((Math.min(ax, bx, cx) - x0) / step)), c1 = Math.min(cols - 1, Math.floor((Math.max(ax, bx, cx) - x0) / step));
+      const r0 = Math.max(0, Math.ceil((Math.min(az, bz, cz) - z0) / step)), r1 = Math.min(rows - 1, Math.floor((Math.max(az, bz, cz) - z0) / step));
+      for (let r = r0; r <= r1; r++) {
+        const pz = z0 + r * step;
+        for (let cc = c0; cc <= c1; cc++) {
+          const px = x0 + cc * step;
+          const l1 = ((bz - cz) * (px - cx) + (cx - bx) * (pz - cz)) / det;
+          const l2 = ((cz - az) * (px - cx) + (ax - cx) * (pz - cz)) / det;
+          const l3 = 1 - l1 - l2;
+          if (l1 < -1e-6 || l2 < -1e-6 || l3 < -1e-6) continue;
+          const y = l1 * position[a + 1] + l2 * position[b + 1] + l3 * position[c + 1] - depth;
+          const k = r * cols + cc;
+          if (y < Y[k]) Y[k] = y;
+          carved[k] = 1;
+        }
+      }
+    }
+    const out = Y.slice();
+    let n = 0;
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const k = r * cols + c;
+      if (carved[k]) {
+        n++;
+        continue;
+      }
+      let best = Infinity;
+      for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+        const rr = r + dr, cc = c + dc;
+        if (rr < 0 || cc < 0 || rr >= rows || cc >= cols) continue;
+        const kk = rr * cols + cc;
+        if (carved[kk]) best = Math.min(best, Y[kk] + 0.05);
+      }
+      if (best < out[k]) out[k] = best;
+    }
+    this.y = out;
+    return n;
+  }
+};
+
+// viewer/facadeGeom.js
+var PARTY_PROBE = 0.35;
+var STREET_REACH = 30;
+function hash01(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
+  return (h >>> 0) % 1000003 / 1000003;
+}
+function wallStyle(r, height) {
+  const tall = height > 14;
+  const table = tall ? [[0, 0.15], [1, 0.25], [2, 0.3], [3, 0.55], [4, 0.7], [5, 1]] : [[0, 0.3], [1, 0.48], [2, 0.56], [3, 0.8], [4, 0.93], [5, 1]];
+  for (const [s, c] of table) if (r < c) return s;
+  return 0;
+}
+function pip(x, z, ring2) {
+  let inside3 = false;
+  for (let i = 0, j = ring2.length - 1; i < ring2.length; j = i++) {
+    const [xi, zi] = ring2[i], [xj, zj] = ring2[j];
+    if (zi > z !== zj > z && x < (xj - xi) * (z - zi) / (zj - zi) + xi) inside3 = !inside3;
+  }
+  return inside3;
+}
+var Grid = class {
+  constructor(cell) {
+    this.cell = cell;
+    this.m = /* @__PURE__ */ new Map();
+  }
+  key(i, j) {
+    return i * 100003 + j;
+  }
+  add(x0, z0, x1, z1, item) {
+    const c = this.cell;
+    for (let i = Math.floor(x0 / c); i <= Math.floor(x1 / c); i++)
+      for (let j = Math.floor(z0 / c); j <= Math.floor(z1 / c); j++) {
+        const k = this.key(i, j);
+        if (!this.m.has(k)) this.m.set(k, []);
+        this.m.get(k).push(item);
+      }
+  }
+  near(x, z, r = 0) {
+    const c = this.cell, out = /* @__PURE__ */ new Set();
+    for (let i = Math.floor((x - r) / c); i <= Math.floor((x + r) / c); i++)
+      for (let j = Math.floor((z - r) / c); j <= Math.floor((z + r) / c); j++) for (const it of this.m.get(this.key(i, j)) || []) out.add(it);
+    return out;
+  }
+};
+var CREASE = Math.cos(32 * Math.PI / 180);
+function smoother(tris) {
+  const key = (q) => `${Math.round(q[0] * 50)}|${Math.round(q[1] * 50)}|${Math.round(q[2] * 50)}`;
+  const adj = /* @__PURE__ */ new Map();
+  for (const t of tris) for (const q of t.p) {
+    const k = key(q);
+    if (!adj.has(k)) adj.set(k, []);
+    adj.get(k).push(t);
+  }
+  return (t, q) => {
+    let x = 0, y = 0, z = 0;
+    for (const o of adj.get(key(q))) {
+      if (o.n[0] * t.n[0] + o.n[1] * t.n[1] + o.n[2] * t.n[2] < CREASE) continue;
+      x += o.n[0] * o.area;
+      y += o.n[1] * o.area;
+      z += o.n[2] * o.area;
+    }
+    const L2 = Math.hypot(x, y, z) || 1;
+    return [x / L2, y / L2, z / L2];
+  };
+}
+function triOf(P, I, t) {
+  const p = [0, 1, 2].map((q) => {
+    const i = I[t * 3 + q];
+    return [P[i * 3], P[i * 3 + 1], P[i * 3 + 2]];
+  });
+  const ux = p[1][0] - p[0][0], uy = p[1][1] - p[0][1], uz = p[1][2] - p[0][2];
+  const wx = p[2][0] - p[0][0], wy = p[2][1] - p[0][1], wz = p[2][2] - p[0][2];
+  const nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx;
+  const L2 = Math.hypot(nx, ny, nz);
+  return L2 < 1e-9 ? null : { p, n: [nx / L2, ny / L2, nz / L2], area: L2 / 2 };
+}
+function box(D, A, B, yTop, height, depth, nx, nz, col) {
+  if (height <= 0.01) return;
+  const y0 = yTop - height, y1 = yTop;
+  const ax = A[0], az = A[2], bx = B[0], bz = B[2];
+  const ox = nx * depth, oz = nz * depth;
+  let tx = bx - ax, tz = bz - az;
+  const tl = Math.hypot(tx, tz) || 1;
+  tx /= tl;
+  tz /= tl;
+  const quad = (p0, p1, p2, p3, n) => {
+    for (const q of [p0, p1, p2, p0, p2, p3]) {
+      D.position.push(q[0], q[1], q[2]);
+      D.normal.push(n[0], n[1], n[2]);
+      D.color.push(col[0], col[1], col[2]);
+    }
+  };
+  const a0 = [ax, y0, az], b0 = [bx, y0, bz], a1 = [ax, y1, az], b1 = [bx, y1, bz];
+  const A0 = [ax + ox, y0, az + oz], B0 = [bx + ox, y0, bz + oz], A1 = [ax + ox, y1, az + oz], B1 = [bx + ox, y1, bz + oz];
+  quad(A0, B0, B1, A1, [nx, 0, nz]);
+  quad(a1, A1, B1, b1, [0, 1, 0]);
+  quad(a0, b0, B0, A0, [0, -1, 0]);
+  quad(a0, A0, A1, a1, [-tx, 0, -tz]);
+  quad(b0, b1, B1, B0, [tx, 0, tz]);
+}
+function beam(D, P0, P1, w, h, col) {
+  let dx = P1[0] - P0[0], dy = P1[1] - P0[1], dz = P1[2] - P0[2];
+  const L2 = Math.hypot(dx, dy, dz);
+  if (L2 < 0.3) return;
+  dx /= L2;
+  dy /= L2;
+  dz /= L2;
+  let sx = -dz, sz = dx;
+  const sl = Math.hypot(sx, sz) || 1;
+  sx /= sl;
+  sz /= sl;
+  const ux = -sz * dy, uy = sz * dx - sx * dz, uz = sx * dy;
+  const at = (P, a, b) => [P[0] + sx * a + ux * b, P[1] + uy * b, P[2] + sz * a + uz * b];
+  const hw = w / 2, lo = -h * 0.35, hi = h * 0.65;
+  const quad = (p0, p1, p2, p3, n) => {
+    for (const q of [p0, p1, p2, p0, p2, p3]) {
+      D.position.push(q[0], q[1], q[2]);
+      D.normal.push(n[0], n[1], n[2]);
+      D.color.push(col[0], col[1], col[2]);
+    }
+  };
+  quad(at(P0, -hw * 0.6, hi), at(P1, -hw * 0.6, hi), at(P1, hw * 0.6, hi), at(P0, hw * 0.6, hi), [ux, uy, uz]);
+  const n1 = [ux * 0.6 + sx * 0.8, uy * 0.6, uz * 0.6 + sz * 0.8], n2 = [ux * 0.6 - sx * 0.8, uy * 0.6, uz * 0.6 - sz * 0.8];
+  quad(at(P0, hw * 0.6, hi), at(P1, hw * 0.6, hi), at(P1, hw, lo), at(P0, hw, lo), n1);
+  quad(at(P0, -hw, lo), at(P1, -hw, lo), at(P1, -hw * 0.6, hi), at(P0, -hw * 0.6, hi), n2);
+}
+function analyseBuildings(doc, buf, roads, feats, opts = {}) {
+  const kit = opts.kit || null;
+  const dv = new DataView(buf);
+  const V = dv.getUint32(0, true), T2 = dv.getUint32(4, true);
+  const P = new Float32Array(buf, 8, V * 3);
+  const I = new Uint32Array(buf, 8 + V * 12, T2 * 3);
+  const fp = new Grid(25);
+  doc.buildings.forEach((b, bi) => {
+    const ring2 = b.footprint[0];
+    let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+    for (const [x, z] of ring2) {
+      x0 = Math.min(x0, x);
+      z0 = Math.min(z0, z);
+      x1 = Math.max(x1, x);
+      z1 = Math.max(z1, z);
+    }
+    fp.add(x0, z0, x1, z1, { bi, ring: ring2, x0, z0, x1, z1 });
+  });
+  const roofAt = (bi, x, z) => {
+    const b = doc.buildings[bi];
+    let best = -Infinity;
+    for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) {
+      const a = I[t * 3] * 3, c = I[t * 3 + 1] * 3, d = I[t * 3 + 2] * 3;
+      const ax = P[a], az = P[a + 2], bx = P[c], bz = P[c + 2], cx = P[d], cz = P[d + 2];
+      const det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+      if (Math.abs(det) < 1e-9) continue;
+      const l1 = ((bz - cz) * (x - cx) + (cx - bx) * (z - cz)) / det, l2 = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / det, l3 = 1 - l1 - l2;
+      if (l1 < -1e-4 || l2 < -1e-4 || l3 < -1e-4) continue;
+      best = Math.max(best, l1 * P[a + 1] + l2 * P[c + 1] + l3 * P[d + 1]);
+    }
+    return best > -Infinity ? best : b.eaves ?? b.top;
+  };
+  const otherAt = (x, z, bi) => {
+    let best = -1;
+    for (const f of fp.near(x, z)) if (f.bi !== bi && x >= f.x0 && x <= f.x1 && z >= f.z0 && z <= f.z1 && pip(x, z, f.ring)) {
+      if (best < 0 || doc.buildings[f.bi].top > doc.buildings[best].top) best = f.bi;
+    }
+    return best;
+  };
+  const segs = new Grid(40);
+  const N = new Map(roads.nodes.map((n) => [n.id, n]));
+  for (const r of roads.roads) {
+    if (r.meta?.highway === "service") continue;
+    const pts = [N.get(r.a), ...r.pts, N.get(r.b)];
+    for (let k = 1; k < pts.length; k++) {
+      const a = pts[k - 1], b = pts[k];
+      segs.add(Math.min(a.x, b.x), Math.min(a.z, b.z), Math.max(a.x, b.x), Math.max(a.z, b.z), [a.x, a.z, b.x, b.z]);
+    }
+  }
+  const facesStreet = (cx, cz, nx, nz) => {
+    let best = Infinity;
+    for (const [ax, az, bx, bz] of segs.near(cx, cz, STREET_REACH)) {
+      const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1;
+      const t = Math.max(0, Math.min(1, ((cx - ax) * dx + (cz - az) * dz) / L2));
+      const qx = ax + dx * t - cx, qz = az + dz * t - cz, d = Math.hypot(qx, qz);
+      if (d < best && d > 0.5 && (qx * nx + qz * nz) / d > 0.55) best = d;
+    }
+    return best < STREET_REACH;
+  };
+  const W = { position: [], normal: [], aWall: [], aBld: [], aFN: [] };
+  const WK = { position: [], normal: [], aWall: [], aBld: [], aFN: [], aKit: [] };
+  const shops = new Grid(40);
+  for (const p of feats?.points || []) if (p.kind === "shop") {
+    p.used = false;
+    shops.add(p.x, p.z, p.x, p.z, p);
+  }
+  const PAINT2 = [[0.03, 0.09, 0.06], [0.2, 0.035, 0.045], [0.03, 0.05, 0.13], [0.025, 0.025, 0.025]];
+  const AWNING = /* @__PURE__ */ new Set(["cafe", "restaurant", "bar", "pub", "bakery", "ice_cream", "butcher", "greengrocer", "pastry", "chocolate"]);
+  const D = { position: [], normal: [], color: [] };
+  const R = { position: [], normal: [], aRoof: [], aRoofCol: [] };
+  const stats = { faces: 0, party: 0, street: 0, cornices: 0, buttresses: 0, ridges: 0, chimneys: 0, shops: 0 };
+  doc.buildings.forEach((b, bi) => {
+    const base = b.base, eaves = (b.eaves ?? b.top) - base;
+    const key = String(b.attrs?.BU_ID ?? b.id);
+    const landmark = b.attrs?._landmark;
+    const rnd = hash01(key);
+    let ext = 0;
+    if (landmark) {
+      const xs = b.footprint[0].map((q) => q[0]), zs = b.footprint[0].map((q) => q[1]);
+      ext = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs));
+    }
+    const style = landmark ? ext < 11 && b.height > 16 ? 6.25 : 6 : wallStyle(hash01(key + "s"), b.height);
+    const roofStyle = hash01(key + "r");
+    const rc = b.roofColor || (roofStyle < 0.4 ? [0.27, 0.085, 0.05] : [0.06, 0.065, 0.075]);
+    const all = [];
+    for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) {
+      const o = triOf(P, I, t);
+      if (o) all.push(o);
+    }
+    const wallTris = all.length;
+    for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) {
+      const o = triOf(P, I, t);
+      if (o) all.push(o);
+    }
+    const smooth3 = smoother(all);
+    const faces = /* @__PURE__ */ new Map();
+    for (let k0 = 0; k0 < wallTris; k0++) {
+      const tri = all[k0], p = tri.p, [nx, ny, nz] = tri.n;
+      const h = Math.hypot(nx, nz) || 1;
+      const d = (p[0][0] * nx + p[0][2] * nz) / h;
+      const k = `${Math.round(Math.atan2(nz, nx) * 20)}|${Math.round(d * 4)}`;
+      if (!faces.has(k)) faces.set(k, { tris: [], nx: nx / h, nz: nz / h });
+      faces.get(k).tris.push({ p, n: tri.n, src: tri });
+    }
+    const fl = [...faces.values()];
+    for (const f of fl) {
+      const tx = -f.nz, tz = f.nx;
+      let u0 = Infinity, u1 = -Infinity, dd = 0, k = 0;
+      for (const { p } of f.tris) for (const q of p) {
+        const uu = q[0] * tx + q[2] * tz;
+        u0 = Math.min(u0, uu);
+        u1 = Math.max(u1, uu);
+        dd += q[0] * f.nx + q[2] * f.nz;
+        k++;
+      }
+      f.u0 = u0;
+      f.u1 = u1;
+      f.d = dd / k;
+    }
+    for (let i = 0; i < fl.length; i++) {
+      const a = fl[i];
+      if (a.dead) continue;
+      for (let j = i + 1; j < fl.length; j++) {
+        const c = fl[j];
+        if (c.dead) continue;
+        if (a.nx * c.nx + a.nz * c.nz < 0.9985 || Math.abs(a.d - c.d) > 0.3) continue;
+        if (c.u0 > a.u1 + 0.15 || a.u0 > c.u1 + 0.15) continue;
+        a.tris.push(...c.tris);
+        a.u0 = Math.min(a.u0, c.u0);
+        a.u1 = Math.max(a.u1, c.u1);
+        c.dead = true;
+        j = i;
+      }
+    }
+    const ownRing = b.footprint[0];
+    const live = fl.filter((q) => !q.dead);
+    for (const f of live) {
+      {
+        let mx = 0, mz = 0, k = 0;
+        for (const { p } of f.tris) for (const q of p) {
+          mx += q[0];
+          mz += q[2];
+          k++;
+        }
+        mx /= k;
+        mz /= k;
+        if (pip(mx + f.nx * 0.5, mz + f.nz * 0.5, ownRing) && !pip(mx - f.nx * 0.5, mz - f.nz * 0.5, ownRing)) {
+          f.nx = -f.nx;
+          f.nz = -f.nz;
+        }
+      }
+      const tx = -f.nz, tz = f.nx;
+      let u0 = Infinity, u1 = -Infinity, cx = 0, cz = 0, n = 0, top = -Infinity;
+      for (const { p } of f.tris) for (const q of p) {
+        const u = q[0] * tx + q[2] * tz;
+        u0 = Math.min(u0, u);
+        u1 = Math.max(u1, u);
+        cx += q[0];
+        cz += q[2];
+        n++;
+        top = Math.max(top, q[1]);
+      }
+      cx /= n;
+      cz /= n;
+      const width = u1 - u0;
+      const ob = width > 0.3 ? otherAt(cx + f.nx * PARTY_PROBE, cz + f.nz * PARTY_PROBE, bi) : -1;
+      const sameBld = ob >= 0 && b.attrs?.BU_ID && doc.buildings[ob].attrs?.BU_ID === b.attrs.BU_ID;
+      const partyH = ob < 0 ? 0 : sameBld || landmark ? Math.max(0.01, roofAt(ob, cx + f.nx * PARTY_PROBE, cz + f.nz * PARTY_PROBE) - base) : 999;
+      const street = partyH < 999 && facesStreet(cx, cz, f.nx, f.nz) ? 1 : 0;
+      f.pre = { tx, tz, u0, u1, cx, cz, top, width, partyH, street };
+    }
+    let doorFace = null;
+    for (const f of live) if (f.pre.street && f.pre.width >= 1.6 && (!doorFace || f.pre.width > doorFace.pre.width)) doorFace = f;
+    for (const f of live) {
+      const { tx, tz, u0, u1, cx, cz, top, width, partyH, street } = f.pre;
+      const faceEaves = landmark ? top - base : eaves;
+      const party = partyH > 0 ? 1 : 0;
+      stats.faces++;
+      stats.party += party;
+      stats.street += street;
+      let shopU = 0, shopW = 0;
+      if (street && !landmark && width > 3.2) {
+        let best = null;
+        for (const sp of shops.near(cx, cz, width / 2 + 12)) {
+          if (sp.used) continue;
+          const dp = (sp.x - cx) * f.nx + (sp.z - cz) * f.nz, uu = sp.x * tx + sp.z * tz;
+          if (uu < u0 - 1 || uu > u1 + 1) continue;
+          if (!(dp > 0 && dp < 6) && !(dp <= 0 && dp > -14 && pip(sp.x, sp.z, ownRing))) continue;
+          if (!best || Math.abs(dp) < best.d) best = { sp, d: Math.abs(dp), uu };
+        }
+        if (best) {
+          best.sp.used = true;
+          const sw = Math.min(width - 0.8, 6.5), paint = Math.floor(hash01(best.sp.id) * 4);
+          const uc = Math.min(Math.max(best.uu, u0 + sw / 2 + 0.4), u1 - sw / 2 - 0.4);
+          shopU = uc - u0;
+          shopW = sw + 10 * paint;
+          const ox = cx - tx * (cx * tx + cz * tz - uc), oz = cz - tz * (cx * tx + cz * tz - uc);
+          const fa = [ox - tx * (sw / 2 + 0.15), 0, oz - tz * (sw / 2 + 0.15)], fb = [ox + tx * (sw / 2 + 0.15), 0, oz + tz * (sw / 2 + 0.15)];
+          const pc = PAINT2[paint];
+          box(D, fa, fb, base + 3.5, 0.55, 0.12, f.nx, f.nz, pc);
+          const kind = best.sp.tags?.shop || best.sp.tags?.amenity;
+          if (AWNING.has(kind)) {
+            const ac = hash01(best.sp.id + "a") < 0.5 ? [0.45, 0.06, 0.05] : [0.6, 0.55, 0.42];
+            box(D, fa, fb, base + 2.95, 0.07, 1.25, f.nx, f.nz, ac);
+            box(D, [fa[0] + f.nx * 1.2, 0, fa[2] + f.nz * 1.2], [fb[0] + f.nx * 1.2, 0, fb[2] + f.nz * 1.2], base + 2.95, 0.28, 0.05, f.nx, f.nz, ac);
+          }
+          stats.shops++;
+        }
+      }
+      const faceH = top - base;
+      if (partyH < 999 && width > 1.2 && faceH > 3) {
+        const seen = /* @__PURE__ */ new Set();
+        for (const { p } of f.tris) for (let e = 0; e < 3; e++) {
+          const A = p[e], B = p[(e + 1) % 3];
+          if (Math.abs(A[1] - B[1]) > 0.05 || Math.abs(A[1] - top) > 0.08) continue;
+          const L2 = Math.hypot(B[0] - A[0], B[2] - A[2]);
+          const key2 = [A[0], A[2], B[0], B[2]].map((v) => Math.round(v * 20)).sort().join();
+          if (L2 < 0.6 || seen.has(key2)) continue;
+          seen.add(key2);
+          const col = landmark ? [0.5, 0.47, 0.42] : style >= 3 ? [0.6, 0.58, 0.54] : [0.52, 0.5, 0.46];
+          box(D, A, B, top - 0.02, 0.16, landmark ? 0.32 : 0.22, f.nx, f.nz, col);
+          box(D, A, B, top - 0.18, 0.12, landmark ? 0.18 : 0.12, f.nx, f.nz, col.map((c) => c * 0.93));
+          stats.cornices++;
+        }
+      }
+      if (landmark && partyH < 999 && width >= 4 && faceH >= 5 && faceH <= 16) {
+        const nbL = Math.max(1, Math.floor(width / 3.6 + 0.5)), bwL = width / nbL;
+        let q0 = f.tris[0].p[0];
+        const uq = q0[0] * tx + q0[2] * tz - u0;
+        for (let k2 = 0; k2 <= nbL; k2++) {
+          const uu = Math.min(width - 0.35, Math.max(0.35, k2 * bwL)) - uq;
+          const cxk = q0[0] + tx * uu, czk = q0[2] + tz * uu;
+          const hw = 0.4, A = [cxk - tx * hw, 0, czk - tz * hw], B = [cxk + tx * hw, 0, czk + tz * hw];
+          const h1 = base + faceH * 0.55, h2 = base + faceH * 0.85;
+          box(D, A, B, h1, h1 - base + 0.3, 0.55, f.nx, f.nz, [0.5, 0.47, 0.41]);
+          box(D, A, B, h2, h2 - h1, 0.32, f.nx, f.nz, [0.52, 0.49, 0.43]);
+          box(D, A, B, h1 + 0.12, 0.12, 0.62, f.nx, f.nz, [0.44, 0.42, 0.38]);
+          stats.buttresses++;
+        }
+      }
+      if (!landmark && partyH >= 999 && faceH > 5 && width > 3 && hash01(key + "c" + Math.round(cx) + Math.round(cz)) < 0.7) {
+        let hq = null;
+        for (const { p } of f.tris) for (const q of p) if (!hq || q[1] > hq[1]) hq = q;
+        if (hq && hq[1] - base > eaves + 0.8) {
+          const uq = hq[0] * tx + hq[2] * tz;
+          const um = Math.min(Math.max(uq, u0 + 0.8), u1 - 0.8) - uq;
+          const cxq = hq[0] + tx * um, czq = hq[2] + tz * um;
+          const hw = 0.45, A = [cxq - tx * hw, 0, czq - tz * hw], B = [cxq + tx * hw, 0, czq + tz * hw];
+          const top2 = hq[1] + 1.1, brick = style <= 2 ? [0.2, 0.085, 0.055] : [0.24, 0.11, 0.07];
+          const A2 = [A[0] + f.nx * 0.3, 0, A[2] + f.nz * 0.3], B2 = [B[0] + f.nx * 0.3, 0, B[2] + f.nz * 0.3];
+          box(D, A2, B2, top2, 2.4, 0.6, -f.nx, -f.nz, brick);
+          const cA = [A2[0] - tx * 0.06 + f.nx * 0.06, 0, A2[2] - tz * 0.06 + f.nz * 0.06];
+          const cB = [B2[0] + tx * 0.06 + f.nx * 0.06, 0, B2[2] + tz * 0.06 + f.nz * 0.06];
+          box(D, cA, cB, top2 + 0.1, 0.14, 0.72, -f.nx, -f.nz, [0.42, 0.41, 0.39]);
+          for (const k2 of [-0.2, 0.2]) {
+            const px = cxq + tx * k2 - f.nx * 0, pz = czq + tz * k2 - f.nz * 0;
+            box(D, [px - tx * 0.09, 0, pz - tz * 0.09], [px + tx * 0.09, 0, pz + tz * 0.09], top2 + 0.42, 0.32, 0.18, f.nx, f.nz, [0.33, 0.13, 0.07]);
+          }
+          stats.chimneys++;
+        }
+      }
+      const k = kit ? kit.face({
+        key,
+        building: b,
+        doorFace: f === doorFace,
+        wallStyle: style,
+        landmark: !!landmark,
+        rnd,
+        width,
+        eaves: faceEaves,
+        partyH,
+        street,
+        roofAt: (x, z) => roofAt(bi, x, z),
+        shopU,
+        shopW,
+        base,
+        top,
+        nx: f.nx,
+        nz: f.nz,
+        tx,
+        tz,
+        u0,
+        tris: f.tris
+      }) : null;
+      const T3 = k?.on ? WK : W;
+      for (const { p, n: nn, src } of f.tris) for (const q of p) {
+        T3.position.push(q[0], q[1], q[2]);
+        const sn = src ? smooth3(src, q) : nn;
+        T3.normal.push(sn[0], sn[1], sn[2]);
+        T3.aWall.push(q[0] * tx + q[2] * tz - u0, width, q[1] - base, faceEaves);
+        T3.aBld.push(style, partyH, street, rnd);
+        T3.aFN.push(f.nx, f.nz, shopU, shopW);
+        if (T3 === WK) WK.aKit.push(1, k.rise, k.doorless, k.french);
+      }
+    }
+    {
+      const edges = /* @__PURE__ */ new Map(), kv = (q) => `${Math.round(q[0] * 50)},${Math.round(q[1] * 50)},${Math.round(q[2] * 50)}`;
+      for (let k = wallTris; k < all.length; k++) {
+        const tri = all[k];
+        for (let e = 0; e < 3; e++) {
+          const A = tri.p[e], B = tri.p[(e + 1) % 3], ka = kv(A), kb = kv(B);
+          const key2 = ka < kb ? ka + "|" + kb : kb + "|" + ka;
+          if (!edges.has(key2)) edges.set(key2, []);
+          edges.get(key2).push({ tri, A, B, C: tri.p[(e + 2) % 3] });
+        }
+      }
+      const capCol = landmark ? [0.47, 0.45, 0.4] : [rc[0] * 0.72, rc[1] * 0.72, rc[2] * 0.72];
+      for (const list of edges.values()) {
+        if (list.length === 1 && !landmark) {
+          const { tri, A: A2, B, C: C2 } = list[0], n = tri.n[1] < 0 ? tri.n.map((v) => -v) : tri.n;
+          if (n[1] > 0.2 && n[1] < 0.97 && Math.abs(A2[1] - B[1]) < 0.05 && C2[1] > A2[1] + 0.3) {
+            const hl = Math.hypot(n[0], n[2]) || 1, ox = n[0] / hl, oz = n[2] / hl;
+            box(D, A2, B, A2[1] + 0.03, 0.1, 0.32, ox, oz, [rc[0] * 0.8, rc[1] * 0.8, rc[2] * 0.8]);
+            const gA = [A2[0] + ox * 0.26, 0, A2[2] + oz * 0.26], gB = [B[0] + ox * 0.26, 0, B[2] + oz * 0.26];
+            box(D, gA, gB, A2[1] - 0.05, 0.12, 0.13, ox, oz, [0.3, 0.31, 0.32]);
+            stats.eaves = (stats.eaves || 0) + 1;
+          }
+          continue;
+        }
+        if (list.length !== 2) continue;
+        const [e1, e2] = list, up = (n) => n[1] < 0 ? n.map((v) => -v) : n, n1 = up(e1.tri.n), n2 = up(e2.tri.n);
+        if (n1[0] * n2[0] + n1[1] * n2[1] + n1[2] * n2[2] > 0.978) continue;
+        if (n1[1] < 0.15 || n2[1] < 0.15) continue;
+        const C = e2.C, A = e1.A;
+        if ((C[0] - A[0]) * n1[0] + (C[1] - A[1]) * n1[1] + (C[2] - A[2]) * n1[2] > -0.02) continue;
+        beam(D, e1.A, e1.B, landmark ? 0.34 : 0.26, landmark ? 0.2 : 0.14, capCol);
+        stats.ridges++;
+      }
+    }
+    for (let k = wallTris; k < all.length; k++) {
+      const tri = all[k], p = tri.p;
+      const [nx, ny, nz] = tri.n;
+      const flat = ny > 0.97 ? 1 : 0;
+      const h = Math.hypot(nx, nz) || 1, dx = nx / h, dz = nz / h;
+      for (const q of p) {
+        R.position.push(q[0], q[1], q[2]);
+        const sn = smooth3(tri, q);
+        R.normal.push(sn[0], sn[1], sn[2]);
+        R.aRoofCol.push(rc[0], rc[1], rc[2]);
+        if (flat) R.aRoof.push(q[0], q[2], 1, roofStyle);
+        else R.aRoof.push(q[0] * -dz + q[2] * dx, (q[0] * dx + q[2] * dz) / Math.max(ny, 0.2), 0, roofStyle);
+      }
+    }
+  });
+  const f32 = (a) => new Float32Array(a);
+  return {
+    walls: {
+      position: f32(W.position),
+      normal: f32(W.normal),
+      aWall: f32(W.aWall),
+      aBld: f32(W.aBld),
+      aFN: f32(W.aFN),
+      kit: kit ? { position: f32(WK.position), normal: f32(WK.normal), aWall: f32(WK.aWall), aBld: f32(WK.aBld), aFN: f32(WK.aFN), aKit: f32(WK.aKit) } : null
+    },
+    kit: kit ? kit.finish() : null,
+    details: { position: f32(D.position), normal: f32(D.normal), aCol: f32(D.color) },
+    roofs: { position: f32(R.position), normal: f32(R.normal), aRoof: f32(R.aRoof), aRoofCol: f32(R.aRoofCol) },
+    stats: { ...stats, triangles: T2, vertices: V }
+  };
+}
+
+// viewer/landcover.js
+var KIND = {
+  wood: [255, 0, 0, 0],
+  forest: [255, 0, 0, 0],
+  scrub: [170, 0, 0, 0],
+  playground: [0, 0, 255, 0],
+  water: [0, 0, 0, 255]
+};
+var PATHS = /* @__PURE__ */ new Set(["footway", "path", "cycleway", "steps", "pedestrian"]);
+function landCoverData(feats, bounds) {
+  const W = Math.round(bounds.x1 - bounds.x0), H = Math.round(bounds.z1 - bounds.z0);
+  const cv = new OffscreenCanvas(W, H), g = cv.getContext("2d");
+  g.clearRect(0, 0, W, H);
+  g.globalCompositeOperation = "lighter";
+  const px = (x) => x - bounds.x0, pz = (z) => z - bounds.z0;
+  let areas = 0, paths = 0;
+  for (const a of feats.areas || []) {
+    const c = KIND[a.kind];
+    if (!c) continue;
+    g.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},1)`;
+    g.beginPath();
+    for (const ring2 of a.rings || []) {
+      ring2.forEach(([x, z], i) => i ? g.lineTo(px(x), pz(z)) : g.moveTo(px(x), pz(z)));
+      g.closePath();
+    }
+    g.fill("evenodd");
+    areas++;
+  }
+  if (feats.railVerges?.length) {
+    g.strokeStyle = "rgba(225,0,0,1)";
+    g.lineCap = g.lineJoin = "round";
+    g.lineWidth = 30;
+    for (const l of feats.railVerges) {
+      g.beginPath();
+      l.forEach(([x, z], i) => i ? g.lineTo(px(x), pz(z)) : g.moveTo(px(x), pz(z)));
+      g.stroke();
+    }
+  }
+  g.strokeStyle = "rgba(0,255,0,1)";
+  g.lineCap = g.lineJoin = "round";
+  for (const l of feats.lines || []) {
+    if (!PATHS.has(l.kind)) continue;
+    g.lineWidth = l.kind === "pedestrian" ? 4 : 1.6;
+    g.beginPath();
+    l.line.forEach(([x, z], i) => i ? g.lineTo(px(x), pz(z)) : g.moveTo(px(x), pz(z)));
+    g.stroke();
+    paths++;
+  }
+  const img = g.getImageData(0, 0, W, H).data;
+  const wc = new OffscreenCanvas(W, H), wg = wc.getContext("2d");
+  wg.fillStyle = "#fff";
+  for (const a of feats.areas || []) {
+    if (a.kind !== "water") continue;
+    wg.beginPath();
+    for (const ring2 of a.rings || []) {
+      ring2.forEach(([x, z], i) => i ? wg.lineTo(px(x), pz(z)) : wg.moveTo(px(x), pz(z)));
+      wg.closePath();
+    }
+    wg.fill("evenodd");
+  }
+  const wimg = wg.getImageData(0, 0, W, H).data;
+  const data = new Uint8Array(W * H * 4);
+  for (let i = 0; i < W * H; i++) {
+    const a = img[i * 4 + 3] / 255 || 1;
+    data[i * 4] = Math.min(255, img[i * 4] / a);
+    data[i * 4 + 1] = Math.min(255, img[i * 4 + 1] / a);
+    data[i * 4 + 2] = Math.min(255, img[i * 4 + 2] / a);
+    data[i * 4 + 3] = wimg[i * 4];
+    if (!img[i * 4 + 3]) data[i * 4] = data[i * 4 + 1] = data[i * 4 + 2] = 0;
+  }
+  return { data, W, H, areas, paths };
+}
+
+// tools/worker/node_modules/meshoptimizer/meshopt_simplifier.js
+var MeshoptSimplifier = (function() {
+  var wasm = "b9H79Tebbbe:6eO9Geueu9Geub9Gbb9Gsuuuuuuuuuuuu99uueu9Gvuuuuub9Gruuuuuuub9Gouuuuuue999Gvuuuuueu9Gzuuuuuuuuuuu99uuuub9Gquuuuuuu99uueu9GPuuuuuuuuuuu99uueu9Gquuuuuuuu99ueu9Gruuuuuu99eu9Gwuuuuuu99ueu9Giuuue999Gluuuueu9Gluuuub9GiuuueuiLQdilvorlwDiqkxmPszbHHbelve9Weiiviebeoweuecj:Gdkr:Bdxo9TW9T9VV95dbH9F9F939H79T9F9J9H229F9Jt9VV7bbz9TW79O9V9Wt9F79P9T9W29P9M95bw8E9TW79O9V9Wt9F79P9T9W29P9M959x9Pt9OcttV9P9I91tW7bD8A9TW79O9V9Wt9F79P9T9W29P9M959x9Pt9O9v9W9K9HtWbqQ9TW79O9V9Wt9F79P9T9W29P9M959t29V9W9W95bkX9TW79O9V9Wt9F79P9T9W29P9M959qV919UWbxQ9TW79O9V9Wt9F79P9T9W29P9M959q9V9P9Ut7bmX9TW79O9V9Wt9F79P9T9W29P9M959t9J9H2WbPa9TW79O9V9Wt9F9V9Wt9P9T9P96W9wWVtW94SWt9J9O9sW9T9H9Wbs59TW79O9V9Wt9F9NW9UWV9HtW9q9V79Pt9P9V9U9sW9T9H9Wbzl79IV9RbHDwebcekdCXq;y;WeQdbk;r:herYue99iuY99Xue9:D998Jjjjjbcj;sb9Rgs8Kjjjjbcbhzasc:Cefcbc;Kbz:tjjjb8AdnabaeSmbabaeadcdtzMjjjb8AkdnamcdGTmbalcrfci4cbyd1:H:cjbHjjjjbbhHasc:Cefasyd;8egecdtfaHBdbasaecefBd;8ecbhlcbhednadTmbabheadhOinaHaeydbci4fcb86bbaeclfheaOcufgOmbkcbhlabheadhOinaHaeydbgAci4fgCaCRbbgCceaAcrGgAtV86bbaCcu7aA4ceGalfhlaeclfheaOcufgOmbkcualcdtalcFFFFi0Ehekaecbyd1:H:cjbHjjjjbbhzasc:Cefasyd;8egecdtfazBdbasaecefBd;8ealcd4alfhOcehHinaHgecethHaeaO6mbkcbhXcuaecdtgOaecFFFFi0Ecbyd1:H:cjbHjjjjbbhHasc:Cefasyd;8egAcdtfaHBdbasaAcefBd;8eaHcFeaOz:tjjjbhQdnadTmbaecufhLcbhKindndnaQabaKcdtfgYydbgAc:v;t;h;Ev2aLGgOcdtfgCydbgHcuSmbceheinazaHcdtfydbaASmdaOaefhHaecefheaQaHaLGgOcdtfgCydbgHcu9hmbkkazaXcdtfaABdbaCaXBdbaXhHaXcefhXkaYaHBdbaKcefgKad9hmbkkaQcbyd:m:H:cjbH:bjjjbbasasyd;8ecufBd;8ekcbh8AcualcefgecdtaecFFFFi0Ecbyd1:H:cjbHjjjjbbhLasc:Cefasyd;8egecdtfaLBdbasaLBdNeasaecefBd;8ecuadcitadcFFFFe0Ecbyd1:H:cjbHjjjjbbhEasc:Cefasyd;8egecdtfaEBdbasaEBd:yeasaecefBd;8eascNefabadalcbz:cjjjbcualcdtgealcFFFFi0Eg3cbyd1:H:cjbHjjjjbbhOasc:Cefasyd;8egHcdtfaOBdbasaHcefBd;8ea3cbyd1:H:cjbHjjjjbbhQasc:Cefasyd;8egHcdtfaQBdbasaHcefBd;8eaOaQaialavazasc:Cefz:djjjbalcbyd1:H:cjbHjjjjbbhYasc:Cefasyd;8egHcdtfaYBdbasaHcefBd;8ea3cbyd1:H:cjbHjjjjbbhHasc:Cefasyd;8egAcdtfaHBdbasaAcefBd;8ea3cbyd1:H:cjbHjjjjbbhAasc:Cefasyd;8egCcdtfaABdbasaCcefBd;8eaHcFeaez:tjjjbh5aAcFeaez:tjjjbh8EdnalTmbindnaLa8AgAcefg8AcdtfydbgCaLaAcdtgefydbgHSmbaCaH9Rh8FaEaHcitfhaa8Eaefhha5aefhKcbhCindndnaaaCcitfydbgXaA9hmbaKaABdbahaABdbxekdnaLaXcdtggfgeclfydbgHaeydbgeSmbaHae9RhHaEaecitfheinaeydbaASmdaecwfheaHcufgHmbkka8EagfgeaAaXaeydbcuSEBdbaKaXaAaKydbcuSEBdbkaCcefgCa8F9hmbkka8Aal9hmbkaOhHaQhAa5hXa8EhCcbheindndnaeaHydbgK9hmbdnaeaAydbgK9hmbaXydbhKdnaCydbg8Fcu9hmbaKcu9hmbaYaefcb86bbxikdna8FcuSmbaKcuSmbaea8FSmbaOa8FcdtfydbaOaKcdtfydb9hmbaYaefcd86bbxikaYaefhadnaea8FSmbaeaKSmbaace86bbxikaacl86bbxdkdnaeaQaKcdtg8Ffydb9hmbdnaCydbgacuSmbaeaaSmbaXydbggcuSmbaeagSmba8Ea8FfydbghcuSmbahaKSmba5a8Ffydbg8FcuSmba8FaKSmbdnaOaacdtfydbgKaOa8Fcdtfydb9hmbaKaOagcdtfydbg8FSmba8FaOahcdtfydb9hmbaYaefcd86bbxlkaYaefcl86bbxikaYaefcl86bbxdkaYaefcl86bbxekaYaefaYaKfRbb86bbkaHclfhHaAclfhAaXclfhXaCclfhCalaecefge9hmbkdnamcaGTmbcbh8JindndnaYa8Jfg8KRbbg8Lc9:fPibebekdndndnaOa8Jcdtfydbgea8J9hmbdnaqmbcbh8FxdkdnazTmbcbh8Fa8JheinaqazaecdtgefydbfRbbce4a8FVceGh8FaQaefydbgea8J9hmbxikkcbh8Fa8JheinaqaefRbbce4a8FVceGh8FaQaecdtfydbgea8J9hmbxdkkaYaefRbbhexeka8JheindnaLaecdtg8AfgeclfydbgHaeydbgeSmbaHae9RhgaEaecitfhhaOa8AfhacbhKinahaKcitfydbgXhednindnaLaecdtgCfgeclfydbgHaeydbgeSmbaHae9RhHaEaecitfheaaydbhAdninaOaeydbcdtfydbaASmeaecwfheaHcufgHTmdxbkkcbhexdkaQaCfydbgeaX9hmbkceheka8FaeVh8FaKcefgKag9hmbkkaQa8Afydbgea8J9hmbka8Lcia8FceGEheka8Kae86bbka8Jcefg8Jal9hmbkkdnaqTmbdndnazTmbazheaOhHalhAindnaqaeydbfRbbceGTmbaYaHydbfcl86bbkaeclfheaHclfhHaAcufgAmbxdkkaqheaOhHalhAindnaeRbbceGTmbaYaHydbfcl86bbkaecefheaHclfhHaAcufgAmbkkaOhealhAaYhHindnaYaeydbfRbbcl9hmbaHcl86bbkaeclfheaHcefhHaAcufgAmbkkamceGTmbaYhealhHindnaeRbbce9hmbaecl86bbkaecefheaHcufgHmbkkcbh8Mcualcx2alc;v:Q;v:Qe0Ecbyd1:H:cjbHjjjjbbh8Nasc:Cefasyd;8egecdtfa8NBdbasaecefBd;8eascbBd:qeas9cb83i1ea8Naialavazasc1efz:ejjjbhydndnaDmbcbh8PcbhCxekcbhCawhecbhHindnaeIdbJbbbb9ETmbasaCcdtfaHBdbaCcefhCkaeclfheaDaHcefgH9hmbkcuaCal2gecdtaecFFFFi0Ecbyd1:H:cjbHjjjjbbh8Pasc:Cefasyd;8egecdtfa8PBdbasaecefBd;8ealTmbdnaCmbcbhCxekarcd4hgdnazTmbaCcdthhcbh8Fa8Phainaoaza8Fcdtfydbag2cdtfhKasheaahHaChAinaHaKaeydbcdtgXfIdbawaXfIdbNUdbaeclfheaHclfhHaAcufgAmbkaaahfhaa8Fcefg8Fal9hmbxdkkaCcdthhcbh8Fa8Phainaoa8Fag2cdtfhKasheaahHaChAinaHaKaeydbcdtgXfIdbawaXfIdbNUdbaeclfheaHclfhHaAcufgAmbkaaahfhaa8Fcefg8Fal9hmbkkcualc8S2gHalc;D;O;f8U0EgXcbyd1:H:cjbHjjjjbbheasc:Cefasyd;8egAcdtfaeBdbasaAcefBd;8eaecbaHz:tjjjbhIcbh8RcbhgdnaCTmbcbh8MaXcbyd1:H:cjbHjjjjbbhgasc:Cefasyd;8egecdtfagBdbasaecefBd;8eagcbaHz:tjjjb8AcuaCal2gecltgHaecFFFFb0Ecbyd1:H:cjbHjjjjbbh8Rasc:Cefasyd;8egecdtfa8RBdbasaecefBd;8ea8RcbaHz:tjjjb8AamcjjjjdGTmbcualcltgealcFFFFb0Ecbyd1:H:cjbHjjjjbbh8Masc:Cefasyd;8egHcdtfa8MBdbasaHcefBd;8ea8Mcbaez:tjjjb8AkdnadTmbcbhKabhHina8NaHclfydbg8Fcx2fgeIdba8NaHydbgacx2fgAIdbg8S:tgRa8NaHcwfydbghcx2fgXIdlaAIdlg8U:tg8VNaeIdla8U:tg8WaXIdba8S:tg8XN:tg8Ya8YNa8WaXIdwaAIdwg8Z:tg80NaeIdwa8Z:tg8Wa8VN:tg81a81Na8Wa8XNaRa80N:tg80a80NMMg8V:rhBa8Yh8Xa80h8Wa81hRdna8VJbbbb9EgATmba8YaB:vh8Xa80aB:vh8Wa81aB:vhRkaIaOaacdtfydbgXc8S2fgeaRaB:rg8VaRNNg83aeIdbMUdbaea8Wa8Va8WNgUNg85aeIdlMUdlaea8Xa8Va8XNg86Ng87aeIdwMUdwaeaRaUNgUaeIdxMUdxaea86aRNg88aeIdzMUdzaea8Wa86Ng89aeIdCMUdCaeaRa8Va8Xa8ZNaRa8SNa8Ua8WNMM:mg8:Ng86NgRaeIdKMUdKaea8Wa86Ng8WaeId3MUd3aea8Xa86Ng8XaeIdaMUdaaea86a8:Ng86aeId8KMUd8Kaea8VaeIdyMUdyaIaOa8Fcdtfydbg8Fc8S2fgea83aeIdbMUdbaea85aeIdlMUdlaea87aeIdwMUdwaeaUaeIdxMUdxaea88aeIdzMUdzaea89aeIdCMUdCaeaRaeIdKMUdKaea8WaeId3MUd3aea8XaeIdaMUdaaea86aeId8KMUd8Kaea8VaeIdyMUdyaIaOahcdtfydbgac8S2fgea83aeIdbMUdbaea85aeIdlMUdlaea87aeIdwMUdwaeaUaeIdxMUdxaea88aeIdzMUdzaea89aeIdCMUdCaeaRaeIdKMUdKaea8WaeId3MUd3aea8XaeIdaMUdaaea86aeId8KMUd8Kaea8VaeIdyMUdydna8MTmbdnaATmba8YaB:vh8Ya80aB:vh80a81aB:vh81ka8MaXcltfgeaBJbbbZNgRa80Ng8VaeIdlMUdlaeaRa8YNg8WaeIdwMUdwaeaRa81Ng8XaeIdbMUdbaeaRa8S:ma81Na8Ua80N:ta8Za8YN:tNgRaeIdxMUdxa8Ma8Fcltfgea8VaeIdlMUdlaea8WaeIdwMUdwaea8XaeIdbMUdbaeaRaeIdxMUdxa8Maacltfgea8VaeIdlMUdlaea8WaeIdwMUdwaea8XaeIdbMUdbaeaRaeIdxMUdxkaHcxfhHaKcifgKad6mbkkdnalTmbJq;x8J88J;n;m;m89J:v:;;w8ZamczGEamc;abGEh80cbhHaOhXazhKaIhea8NhAindnaHaXydb9hmbaHh8FdnazTmbaKydbh8Fka80hRdnaqTmbJbbjZa80aqa8FfRbbclGEhRkaecxfg8Fa8FIdbJbbbbMUdbaeczfg8Fa8FIdbJbbbbMUdbaecCfg8Fa8FIdbJbbbbMUdbaeaRaecyfg8FIdbg8YNgRaeIdbMUdbaeclfgaaRaaIdbMUdbaecwfgaaRaaIdbMUdbaecKfgaaaIdbaAIdbg8WaRN:tUdbaAcwfIdbh8Vaec3fgaaaIdbaRaAclfIdbg8XN:tUdbaecafgaaaIdbaRa8VN:tUdbaec8KfgaIdbh81a8Fa8YaRMUdbaaa81aRa8Va8VNa8Wa8WNa8Xa8XNMMNMUdbkaXclfhXaKclfhKaec8SfheaAcxfhAalaHcefgH9hmbkkdnadTmbcbh8Aabhainaba8Acdtfh8FcbhHinaYa8FaHc:G:G:cjbfydbcdtfydbgAfRbbhedndnaYaaaHfydbgXfRbbgKc99fcFeGcpe0mbaec99fcFeGc;:e6mekdnaKcufcFeGce0mba5aXcdtfydbaA9hmekdnaecufcFeGce0mba8EaAcdtfydbaX9hmekJbbacJbbacJbbbZaecFeGceSEaKcFeGceSEhUdna8Na8FaHc:K:G:cjbfydbcdtfydbcx2fgeIdwa8NaXcx2fgKIdwg86:tg8Sa8NaAcx2fghIdwa86:tg8Xa8XNahIdbaKIdbg8U:tg80a80NahIdlaKIdlg8Z:tg8Va8VNMMg81Na8Xa8Sa8XNaeIdba8U:tg83a80Na8VaeIdla8Z:tg85NMMg8WN:tg8Ya8YNa83a81Na80a8WN:tgRaRNa85a81Na8Va8WN:tg8Wa8WNMMgBJbbbb9ETmba8YaB:rgB:vh8Ya8WaB:vh8WaRaB:vhRkaUa81:rNgBa8Ya86NaRa8UNa8Za8WNMM:mg81Ng87a81Nh88a80a85Na8Va83N:tg81a81Na8Va8SNa8Xa85N:tg8Va8VNa8Xa83Na80a8SN:tg8Xa8XNMMg83:rh80a8Ya87Nh85a8Wa87Nh89aRa87Nh87a8WaBa8YNg8SNh8:a8SaRNhZaRaBa8WNgnNhca8Ya8SNh8Ya8WanNh8WaRaBaRNNh8Sdna83Jbbbb9ETmba81a80:vh81a8Xa80:vh8Xa8Va80:vh8VkaIaOaXcdtfydbc8S2fgeaeIdba8Sa8VaUa80:rNgRa8VNNMg80MUdbaea8Wa8XaRa8XNg8SNMg83aeIdlMUdlaea8Ya81aRa81Ng8WNMg8YaeIdwMUdwaeaca8Va8SNMg8SaeIdxMUdxaeaZa8Wa8VNMgUaeIdzMUdzaea8:a8Xa8WNMg8WaeIdCMUdCaea87a8VaRa81a86Na8Va8UNa8Za8XNMMg86:mNgRNMg8VaeIdKMUdKaea89a8XaRNMg8XaeId3MUd3aea85a81aRNMg81aeIdaMUdaaea88a86aRN:tgRaeId8KMUd8KaeaBaeIdyMUdyaIaOaAcdtfydbc8S2fgea80aeIdbMUdbaea83aeIdlMUdlaea8YaeIdwMUdwaea8SaeIdxMUdxaeaUaeIdzMUdzaea8WaeIdCMUdCaea8VaeIdKMUdKaea8XaeId3MUd3aea81aeIdaMUdaaeaRaeId8KMUd8KaeaBaeIdyMUdykaHclfgHcx9hmbkaacxfhaa8Acifg8Aad6mbkaCTmbcbhainJbbbbh80a8Nabaacdtfgeclfydbg8Fcx2fgHIdwa8Naeydbghcx2fgAIdwg8Z:tg8Va8VNaHIdbaAIdbg83:tg8Wa8WNaHIdlaAIdlg85:tg8Xa8XNMMg8Sa8Naecwfydbg8Acx2fgeIdwa8Z:tg8YNa8Va8YNa8WaeIdba83:tg81Na8XaeIdla85:tgBNMMgRa8VN:tJbbbbJbbjZa8Sa8Ya8YNa81a81NaBaBNMMg8UNaRaRN:tg86:va86Jbbbb9BEg86Nh88a8Ua8VNaRa8YN:ta86Nh89a8SaBNaRa8XN:ta86Nh8:a8Ua8XNaRaBN:ta86NhZa8Sa81NaRa8WN:ta86Nhna8Ua8WNaRa81N:ta86Nhca8WaBNa8Xa81N:tgRaRNa8Xa8YNa8VaBN:tgRaRNa8Va81Na8Wa8YN:tgRaRNMM:rJbbbZNhRa8PahaC2g8JcdtfhHa8Pa8AaC2gDcdtfhAa8Pa8FaC2g8KcdtfhXa8Z:mh9ca85:mhJa83:mh9eascjdfheaChKJbbbbhBJbbbbh86Jbbbbh8SJbbbbh8UJbbbbh8ZJbbbbh83Jbbbbh85Jbbbbh87JbbbbhUinaecwfaRa89aXIdbaHIdbg8Y:tg8XNa88aAIdba8Y:tg81NMg8VNUdbaeclfaRaZa8XNa8:a81NMg8WNUdbaeaRaca8XNana81NMg8XNUdbaecxfaRa9ca8VNaJa8WNa8Ya9ea8XNMMMg8YNUdbaRa8Va8WNNa8ZMh8ZaRa8Va8XNNa8UMh8UaRa8Wa8XNNa8SMh8SaRa8Ya8YNNaUMhUaRa8Va8YNNa87Mh87aRa8Wa8YNNa85Mh85aRa8Xa8YNNa83Mh83aRa8Va8VNNa86Mh86aRa8Wa8WNNaBMhBaRa8Xa8XNNa80Mh80aHclfhHaXclfhXaAclfhAaeczfheaKcufgKmbkagahc8S2fgea80aeIdbMUdbaeaBaeIdlMUdlaea86aeIdwMUdwaea8SaeIdxMUdxaea8UaeIdzMUdzaea8ZaeIdCMUdCaea83aeIdKMUdKaea85aeId3MUd3aea87aeIdaMUdaaeaUaeId8KMUd8KaeaRaeIdyMUdyaga8Fc8S2fgea80aeIdbMUdbaeaBaeIdlMUdlaea86aeIdwMUdwaea8SaeIdxMUdxaea8UaeIdzMUdzaea8ZaeIdCMUdCaea83aeIdKMUdKaea85aeId3MUd3aea87aeIdaMUdaaeaUaeId8KMUd8KaeaRaeIdyMUdyaga8Ac8S2fgea80aeIdbMUdbaeaBaeIdlMUdlaea86aeIdwMUdwaea8SaeIdxMUdxaea8UaeIdzMUdzaea8ZaeIdCMUdCaea83aeIdKMUdKaea85aeId3MUd3aea87aeIdaMUdaaeaUaeId8KMUd8KaeaRaeIdyMUdya8Ra8Jcltfh8FcbhHaChXina8FaHfgeascjdfaHfgAIdbaeIdbMUdbaeclfgKaAclfIdbaKIdbMUdbaecwfgKaAcwfIdbaKIdbMUdbaecxfgeaAcxfIdbaeIdbMUdbaHczfhHaXcufgXmbka8Ra8Kcltfh8FcbhHaChXina8FaHfgeascjdfaHfgAIdbaeIdbMUdbaeclfgKaAclfIdbaKIdbMUdbaecwfgKaAcwfIdbaKIdbMUdbaecxfgeaAcxfIdbaeIdbMUdbaHczfhHaXcufgXmbka8RaDcltfh8FcbhHaChXina8FaHfgeascjdfaHfgAIdbaeIdbMUdbaeclfgKaAclfIdbaKIdbMUdbaecwfgKaAcwfIdbaKIdbMUdbaecxfgeaAcxfIdbaeIdbMUdbaHczfhHaXcufgXmbkaacifgaad6mbkkcbhAdndnamcwGgTmbJbbbbh8ScbhScbh9hcbh9ixekcbhSa3cbyd1:H:cjbHjjjjbbh9iasc:Cefasyd;8egecdtfa9iBdbasaecefBd;8ecua9ialabadaOz:fjjjbgXcltaXcjjjjiGEcbyd1:H:cjbHjjjjbbh9hasc:Cefasyd;8egecdtfa9hBdbasaecefBd;8ea9haXa9ia8Nalz:gjjjbJFFuuh8SaXTmba9hheaXhHinaeIdbgRa8Sa8SaR9EEh8SaeclfheaHcufgHmbkaXhSkdnalTmbaLclfheaLydbhXaYhHalhKcbhAincbaeydbg8FaX9RaHRbbcpeGEaAfhAaHcefhHaeclfhea8FhXaKcufgKmbkaAce4hAkcuadaA9Rcifg6cx2a6c;v:Q;v:Qe0Ecbyd1:H:cjbHjjjjbbh9kasc:Cefasyd;8egecdtfa9kBdbasaecefBd;8ecua6cdta6cFFFFi0Ecbyd1:H:cjbHjjjjbbh0asc:Cefasyd;8egecdtfa0BdbasaecefBd;8ea3cbyd1:H:cjbHjjjjbbh9masc:Cefasyd;8egecdtfa9mBdbasaecefBd;8ealcbyd1:H:cjbHjjjjbbh9nasc:Cefasyd;8egecdtfa9nBdbasaecefBd;8eaxaxNayJbbjZamclGEgZaZN:vh87JbbbbhUdnadak9nmbdna6ci6mbaCclth9oa9kcwfh9pJbbbbh85JbbbbhUinascNefabadalaOz:cjjjbabh8Acbh9qcbh9rinaba9rcdtfhDcbheindnaOa8AaefydbgAcdtghfydbgXaOaDaec:W:G:cjbfydbcdtfydbgHcdtg8JfydbgKSmbaYaHfRbbgacv2aYaAfRbbg8FfRb;a:G:cjbg8La8Fcv2aafg8KRb;a:G:cjbg3VcFeGTmbdnaKaX9nmba8KRb;G:G:cjbcFeGmekdna8FcufcFeGce0mbaaTmba5ahfydbaH9hmekdna8FTmbaacufcFeGce0mba8Ea8JfydbaA9hmeka9ka9qcx2fgXaHaAa3cFeGgKEBdlaXaAaHaKEBdbaXaKa8LGcb9hBdwa9qcefh9qkaeclfgecx9hmbkdna9rcifg9rad9pmba8Acxfh8Aa9qcifa69nmekka9qTmdcbh8KinaIaOa9ka8Kcx2fghydbgKcdtgXfydbg8Ac8S2fgeIdwa8Nahydlg8Fcx2fgHIdwg8WNaeIdzaHIdbg8XNaeIdaMgRaRMMa8WNaeIdlaHIdlg8YNaeIdCa8WNaeId3MgRaRMMa8YNaeIdba8XNaeIdxa8YNaeIdKMgRaRMMa8XNaeId8KMMM:lhRJbbbbJbbjZaeIdyg8V:va8VJbbbb9BEh8VdndnahydwgDmbJFFuuh86xekJbbbbJbbjZaIaOa8Fcdtfydbc8S2fgeIdyg81:va81Jbbbb9BEaeIdwa8NaKcx2fgHIdwg81NaeIdzaHIdbg80NaeIdaMgBaBMMa81NaeIdlaHIdlgBNaeIdCa81NaeId3Mg81a81MMaBNaeIdba80NaeIdxaBNaeIdKMg81a81MMa80NaeId8KMMM:lNh86ka8VaRNhBdnaCTmbagaKc8S2fgAIdwa8WNaAIdza8XNaAIdaMgRaRMMa8WNaAIdla8YNaAIdCa8WNaAId3MgRaRMMa8YNaAIdba8XNaAIdxa8YNaAIdKMgRaRMMa8XNaAId8KMMMhRa8Pa8FaC2gacdtfhHa8RaKaC2g8JcltfheaAIdyh81aChAinaHIdbg8Va8Va81NaecxfIdba8WaecwfIdbNa8XaeIdbNa8YaeclfIdbNMMMg8Va8VM:tNaRMhRaHclfhHaeczfheaAcufgAmbkdndnaDmbJbbbbh8Vxekaga8Fc8S2fgAIdwa8NaKcx2fgeIdwg8XNaAIdzaeIdbg8YNaAIdaMg8Va8VMMa8XNaAIdlaeIdlg81NaAIdCa8XNaAId3Mg8Va8VMMa81NaAIdba8YNaAIdxa81NaAIdKMg8Va8VMMa8YNaAId8KMMMh8Va8Pa8JcdtfhHa8RaacltfheaAIdyh80aChAinaHIdbg8Wa8Wa80NaecxfIdba8XaecwfIdbNa8YaeIdbNa81aeclfIdbNMMMg8Wa8WM:tNa8VMh8VaHclfhHaeczfheaAcufgAmbka8V:lh8VkaBaR:lMhBa86a8VMh86dndndnaYaKfRbbc9:fPddbekaQaXfydbgXaKSmbaOa8Fcdtfydbh8Jindndna5aXcdtgafydbgecuSmbaOaecdtfydba8JSmekdna8EaafydbgecuSmbaOaecdtfydba8JSmeka8FhekagaXc8S2fgAIdwa8Naecx2fgHIdwg8WNaAIdzaHIdbg8XNaAIdaMgRaRMMa8WNaAIdlaHIdlg8YNaAIdCa8WNaAId3MgRaRMMa8YNaAIdba8XNaAIdxa8YNaAIdKMgRaRMMa8XNaAId8KMMMhRa8PaeaC2cdtfhHa8RaXaC2cltfheaAIdyh81aChAinaHIdbg8Va8Va81NaecxfIdba8WaecwfIdbNa8XaeIdbNa8YaeclfIdbNMMMg8Va8VM:tNaRMhRaHclfhHaeczfheaAcufgAmbkaBaR:lMhBaQaafydbgXaK9hmbkkaYa8FfRbbci9hmeaDTmeaQa8FcdtfydbgXa8FSmeindndna5aXcdtgafydbgecuSmbaOaecdtfydba8ASmekdna8EaafydbgecuSmbaOaecdtfydba8ASmekaKhekagaXc8S2fgAIdwa8Naecx2fgHIdwg8WNaAIdzaHIdbg8XNaAIdaMgRaRMMa8WNaAIdlaHIdlg8YNaAIdCa8WNaAId3MgRaRMMa8YNaAIdba8XNaAIdxa8YNaAIdKMgRaRMMa8XNaAId8KMMMhRa8PaeaC2cdtfhHa8RaXaC2cltfheaAIdyh81aChAinaHIdbg8Va8Va81NaecxfIdba8WaecwfIdbNa8XaeIdbNa8YaeclfIdbNMMMg8Va8VM:tNaRMhRaHclfhHaeczfheaAcufgAmbka86aR:lMh86aQaafydbgXa8F9hmbxdkkdna8Ea5a5aXfydba8FSEaQaXfydbgacdtfydbgXcu9hmbaQa8FcdtfydbhXkagaac8S2fgAIdwa8NaXcx2fgeIdwg8WNaAIdzaeIdbg8XNaAIdaMgRaRMMa8WNaAIdlaeIdlg8YNaAIdCa8WNaAId3MgRaRMMa8YNaAIdba8XNaAIdxa8YNaAIdKMgRaRMMa8XNaAId8KMMMhRa8PaXaC2g8AcdtfhHa8RaaaC2g8JcltfheaAIdyh81aChAinaHIdbg8Va8Va81NaecxfIdba8WaecwfIdbNa8XaeIdbNa8YaeclfIdbNMMMg8Va8VM:tNaRMhRaHclfhHaeczfheaAcufgAmbkdndnaDmbJbbbbh8VxekagaXc8S2fgAIdwa8Naacx2fgeIdwg8XNaAIdzaeIdbg8YNaAIdaMg8Va8VMMa8XNaAIdlaeIdlg81NaAIdCa8XNaAId3Mg8Va8VMMa81NaAIdba8YNaAIdxa81NaAIdKMg8Va8VMMa8YNaAId8KMMMh8Va8Pa8JcdtfhHa8Ra8AcltfheaAIdyh80aChAinaHIdbg8Wa8Wa80NaecxfIdba8XaecwfIdbNa8YaeIdbNa81aeclfIdbNMMMg8Wa8WM:tNa8VMh8VaHclfhHaeczfheaAcufgAmbka8V:lh8VkaBaR:lMhBa86a8VMh86kaha86aBa86aB9DgeEUdwahaKa8FaeaDcb9hGgeEBdlaha8FaKaeEBdba8Kcefg8Ka9q9hmbkascjdfcbcj;qbz:tjjjb8Aa9phea9qhHinascjdfaeydbcA4cF8FGgAcFAaAcFA6EcdtfgAaAydbcefBdbaecxfheaHcufgHmbkcbhecbhHinascjdfaefgAydbhXaAaHBdbaXaHfhHaeclfgecj;qb9hmbkcbhea9phHinascjdfaHydbcA4cF8FGgAcFAaAcFA6EcdtfgAaAydbgAcefBdba0aAcdtfaeBdbaHcxfhHa9qaecefge9hmbkadak9RgAci9Uh9sdnalTmbcbhea9mhHinaHaeBdbaHclfhHalaecefge9hmbkkcbh9ta9ncbalz:tjjjbh3aAcO9Uh9ua9sce4h9rcbh8Lcbh8Kdnina9ka0a8Kcdtfydbcx2fg8JIdwgRa879Emea8La9s9pmeJFFuuh8Vdna9ra9q9pmba9ka0a9rcdtfydbcx2fIdwJbb;aZNh8VkdnaRa8V9ETmbaRaU9ETmba8La9u0mdkdna3aOa8JydlgDcdtg9vfg8AydbgAfg9wRbba3aOa8Jydbghcdtg9xfydbgefg9yRbbVmbaYahfRbbh9zdndnaLaecdtfgHclfydbgXaHydbgHSmbaXaH9RhXa8NaAcx2fh8Fa8Naecx2fhaaEaHcitfheindna9maeydbcdtfydbgHaASmba9maeclfydbcdtfydbgKaASmbaHaKSmba8NaKcx2fgKIdba8NaHcx2fgHIdbg8W:tgRaaIdlaHIdlg8X:tg80NaKIdla8X:tg8VaaIdba8W:tgBN:tg8YaRa8FIdla8X:tg86Na8Va8FIdba8W:tg8UN:tg8XNa8VaaIdwaHIdwg81:tg8ZNaKIdwa81:tg8Wa80N:tg80a8Va8FIdwa81:tg83Na8Wa86N:tg8VNa8WaBNaRa8ZN:tg81a8Wa8UNaRa83N:tgRNMMa8Ya8YNa80a80Na81a81NMMa8Xa8XNa8Va8VNaRaRNMMN:rJbbj8:N9FmikaecwfheaXcufgXmbkkdndndndna9zc9:fPdebdkahheina8AydbhAdndna5aecdtgHfydbgecuSmbaOaecdtfydbaASmekdna8EaHfydbgecuSmbaOaecdtfydbaASmekaDheka9maHfaeBdbaQaHfydbgeah9hmbxikkdna8Ea5a5a9xfydbaDSEaQa9xfydbghcdtfydbgecu9hmbaQa9vfydbheka9ma9xfaDBdbaehDka9mahcdtfaDBdbka9yce86bba9wce86bba8JIdwgRaUaUaR9DEhUa9tcefh9tcecda9zceSEa8Lfh8Lxeka9rcefh9rka8Kcefg8Ka9q9hmbkka9tTmddnalTmbcbh8Fcbhhindna9mahcdtgefydbgAahSmbaOaAcdtfydbh8AdnahaOaefydb9hg8JmbaIa8Ac8S2fgeaIahc8S2fgHIdbaeIdbMUdbaeaHIdlaeIdlMUdlaeaHIdwaeIdwMUdwaeaHIdxaeIdxMUdxaeaHIdzaeIdzMUdzaeaHIdCaeIdCMUdCaeaHIdKaeIdKMUdKaeaHId3aeId3MUd3aeaHIdaaeIdaMUdaaeaHId8KaeId8KMUd8KaeaHIdyaeIdyMUdya8MTmba8Ma8Acltfgea8MahcltfgHIdbaeIdbMUdbaeaHIdlaeIdlMUdlaeaHIdwaeIdwMUdwaeaHIdxaeIdxMUdxkaCTmbagaAc8S2fgeagahc8S2gDfgHIdbaeIdbMUdbaeaHIdlaeIdlMUdlaeaHIdwaeIdwMUdwaeaHIdxaeIdxMUdxaeaHIdzaeIdzMUdzaeaHIdCaeIdCMUdCaeaHIdKaeIdKMUdKaeaHId3aeId3MUd3aeaHIdaaeIdaMUdaaeaHId8KaeId8KMUd8KaeaHIdyaeIdyMUdya9oaA2haa8RhHaChXinaHaafgeaHa8FfgAIdbaeIdbMUdbaeclfgKaAclfIdbaKIdbMUdbaecwfgKaAcwfIdbaKIdbMUdbaecxfgeaAcxfIdbaeIdbMUdbaHczfhHaXcufgXmbka8JmbJbbbbJbbjZaIaDfgeIdygR:vaRJbbbb9BEaeIdwa8Na8Acx2fgHIdwgRNaeIdzaHIdbg8VNaeIdaMg8Wa8WMMaRNaeIdlaHIdlg8WNaeIdCaRNaeId3MgRaRMMa8WNaeIdba8VNaeIdxa8WNaeIdKMgRaRMMa8VNaeId8KMMM:lNgRa85a85aR9DEh85ka8Fa9ofh8Fahcefghal9hmbkcbhHa5heindnaeydbgAcuSmbdnaHa9maAcdtgXfydbgA9hmbcuhAa5aXfydbgXcuSmba9maXcdtfydbhAkaeaABdbkaeclfhealaHcefgH9hmbkcbhHa8EheindnaeydbgAcuSmbdnaHa9maAcdtgXfydbgA9hmbcuhAa8EaXfydbgXcuSmba9maXcdtfydbhAkaeaABdbkaeclfhealaHcefgH9hmbkka85aUaCEh85cbhHabhecbhAindnaOa9maeydbcdtfydbg8FcdtfydbgXaOa9maeclfydbcdtfydbgacdtfydbgKSmbaXaOa9maecwfydbcdtfydbg8AcdtfydbghSmbaKahSmbabaHcdtfgXa8FBdbaXcwfa8ABdbaXclfaaBdbaHcifhHkaecxfheaAcifgAad6mbkdndnaTmbaHhdxekdnaHak0mbaHhdxekdna8Sa859FmbaHhdxekJFFuuh8ScbhdabhecbhAindna9ha9iaeydbgXcdtfydbcdtfIdbgRa859ETmbaeclf8Pdbh9AabadcdtfgKaXBdbaKclfa9A83dbaRa8Sa8SaR9EEh8SadcifhdkaecxfheaAcifgAaH6mbkkadak0mbxdkkascNefabadalaOz:cjjjbkdndnadak0mbadhaxekdnaTmbadhaxekdna8Sa879FmbadhaxekcehKina8SJbb;aZNgRa87aRa879DEh8WJbbbbhRdnaSTmba9hheaShHinaeIdbg8VaRa8Va8W9FEaRa8VaR9EEhRaeclfheaHcufgHmbkkJFFuuh8ScbhaabhecbhHindna9ha9iaeydbgAcdtfydbcdtfIdbg8Va8W9ETmbaeclf8Pdbh9AabaacdtfgXaABdbaXclfa9A83dba8Va8Sa8Sa8V9EEh8SaacifhakaecxfheaHcifgHad6mbkdnaKaaad9hVceGmbadhaxdkaRaUaUaR9DEhUaaak9nmecbhKaahda8Sa879FmbkkdnamcjjjjdGTmba9ncbalz:tjjjbh8AdnaaTmbabheaahHina8AaeydbgAfce86bba8AaOaAcdtfydbfce86bbaeclfheaHcufgHmbkkascNefabaaalaOz:cjjjbdndnalTmbcbhXindna8AaXfRbbTmbdnaYaXfRbbgecl0mbceaetcQGmekdnaOaXcdtg8FfydbgeaXSmba8NaXcx2fgHa8Naecx2fgeydwBdwaHae8Pdb83dbxekaIaXc8S2fgKIdygcacJL:3;rUNgRMh87aKIdwg9BaRMh8SaKIdlg9CaRMh8UaKIdbg9DaRMh81aKIdag9EaRa8NaXcx2fg8JIdwg88N:th8ZaKId3g9FaRa8JIdlg89N:th83aKIdKg9Ga8JIdbg8:aRN:th80JbbbbhnaKIdCg9HJbbbbMh85aKIdzg9IJbbbbMhBaKIdxg9JJbbbbMh86dndnaCTmbaXhAinJbbbba87agaAc8S2fgHIdygR:vaRJbbbb9BEhRa8RaAaC2cltfheaHIdaa87Na8ZMh8ZaHId3a87Na83Mh83aHIdKa87Na80Mh80aHIdCa87Na85Mh85aHIdza87NaBMhBaHIdxa87Na86Mh86aHIdwa87Na8SMh8SaHIdla87Na8UMh8UaHIdba87Na81Mh81aChHina8ZaecwfIdbg8VaecxfIdbg8YNaRN:th8Za83aeclfIdbg8Wa8YNaRN:th83a85a8Wa8VNaRN:th85a81aeIdbg8Xa8XNaRN:th81a80a8Xa8YNaRN:th80aBa8Xa8VNaRN:thBa86a8Xa8WNaRN:th86a8Sa8Va8VNaRN:th8Sa8Ua8Wa8WNaRN:th8UaeczfheaHcufgHmbkaQaAcdtfydbgAaX9hmbka8MTmba8MaXcltfgeIdxhxaeIdwh9caeIdlhJaeIdbhRxekJbbbbhxJbbbbh9cJbbbbhJJbbbbhRkaBa81:vg8Wa80Na8Z:ta85aBa86a81:vg8VN:tg8Za8Ua86a8VN:tg8Y:vg8Xa8Va80Na83:tg8UN:th83a9caRa8WN:taJaRa8VN:tg86a8XN:tg85a8SaBa8WN:ta8Za8XN:tgB:vg8S:mh8Za86a8Y:vg9c:mhJdnJbbbbaRaRa81:vg9eN:ta86a9cN:ta85a8SN:tg86:la87J:983:g81NgR9ETmba8Za83NaJa8UNa9ea80Nax:tMMa86:vhnka81:laR9ETmba8Y:laR9ETmbaB:laR9ETmba9e:manNa8W:ma8ZanNa83aB:vMgBNa8V:maJanNa8X:maBNa8Ua8Y:vMMg85Na80:ma81:vMMMh87aLa8FfgeclfydbgHaeydbge9RhhaEaecitfh8FJbbbbhRdnaHaeSgDmbJbbbbhRa8FheahhAina8Naeclfydbcx2fgHIdwa88:tg8Va8VNaHIdba8::tg8Va8VNaHIdla89:tg8Va8VNMMg8Va8Naeydbcx2fgHIdwa88:tg8Wa8WNaHIdba8::tg8Wa8WNaHIdla89:tg8Wa8WNMMg8WaRaRa8W9DEgRaRa8V9DEhRaecwfheaAcufgAmbkaR:rgRaRNhRkaBa88:tg8Va8VNa87a8::tg8Va8VNa85a89:tg8Va8VNMMaR9EmbaKId8KhndnaDmbina8Na8Fclfydbcx2fgeIdba8Na8Fydbcx2fgHIdbg8W:tgRa89aHIdlg8X:tg80NaeIdla8X:tg8Va8:a8W:tg86N:tg8YaRa85a8X:tg8SNa8Va87a8W:tg8UN:tg8XNa8Va88aHIdwg81:tg8ZNaeIdwa81:tg8Wa80N:tg80a8VaBa81:tg83Na8Wa8SN:tg8VNa8Wa86NaRa8ZN:tg81a8Wa8UNaRa83N:tgRNMMa8Ya8YNa80a80Na81a81NMMa8Xa8XNa8Va8VNaRaRNMMN:rJbbj8:N9Fmda8Fcwfh8FahcufghmbkkJbbbbJbbjZac:vacJbbbb9BEgRa9BaBNa9Ia87Na9EMg8Va8VMMaBNa9Ca85Na9HaBNa9FMg8Va8VMMa85Na9Da87Na9Ja85Na9GMg8Va8VMMa87NanMMM:lNaRa9Ba88Na9Ia8:Na9EMg8Va8VMMa88Na9Ca89Na9Ha88Na9FMg8Va8VMMa89Na9Da8:Na9Ja89Na9GMg8Va8VMMa8:NanMMM:lNJbb;aZNJ:983:g81M9Emba8JaBUdwa8Ja85Udla8Ja87UdbkaXcefgXal9hmbkdnaCmbcbhCxdkcbhXindna8AaXfRbbTmbaOaXcdtgefydbaX9hmbaYaXfhhaQaefh8Ja8NaXcx2fhAa8PaXaC2cdtfhDcbhEincuhLdnahRbbci9hmbaXhLa8JydbgeaXSmba8PaEcdtgHfhKaDaHfIdbhRaXhLinaLhHcuhLdnaKaeaC2cdtfIdbaR9CmbaHcuSmbaHhLagaec8S2fIdyagaHc8S2fIdy9ETmbaehLkaQaecdtfydbgeaX9hmbkka8PaEcdtfhKa8RaEcltfh8FaXheinaKaeaC2cdtfJbbbbJbbjZagaeaLaLcuSEgHc8S2fIdygR:vaRJbbbb9BEa8FaHaC2cltfgHIdwaAIdwNaHIdbaAIdbNaHIdlaAIdlNMMaHIdxMNUdbaQaecdtfydbgeaX9hmbkaEcefgEaC9hmbkkaXcefgXal9hmbxdkkaCmbcbhCkaiavaoarawaCala8Na8Pazasayasc1efaYa8Aaqz:hjjjbkdnamcjjjjlGTmbazmbaaTmbabhecbhLinaYaeydbgAfRbbc3thQaecwfgXydbhHcjjjj94hCdna5aAcdtgEfydbaeclfgKydbgOSmbcjjjj94cba8EaOcdtfydbaASEhCkaeaQaCVaAVBdbaYaOfRbbc3th8Fcjjjj94hCcjjjj94hQdna5aOcdtfydbaHSmbcjjjj94cba8EaHcdtfydbaOSEhQkaKa8FaQVaOVBdbaYaHfRbbc3thOdna5aHcdtfydbaASmbcjjjj94cba8EaEfydbaHSEhCkaXaOaCVaHVBdbaecxfheaLcifgLaa6mbkkdnazTmbaaTmbaaheinabazabydbcdtfydbBdbabclfhbaecufgembkkdnaPTmbaPaZaU:rNUdbkdnasyd;8egHTmbaHcdtasc:Ceffc98fheinaeydbcbyd:m:H:cjbH:bjjjbbaec98fheaHcufgHmbkkascj;sbf8Kjjjjbaak;Yieouabydlhvabydbclfcbaicdtz:tjjjbhoadci9UhrdnadTmbdnalTmbaehwadhDinaoalawydbcdtfydbcdtfgqaqydbcefBdbawclfhwaDcufgDmbxdkkaehwadhDinaoawydbcdtfgqaqydbcefBdbawclfhwaDcufgDmbkkdnaiTmbcbhDaohwinawydbhqawaDBdbawclfhwaqaDfhDaicufgimbkkdnadci6mbinaecwfydbhwaeclfydbhDaeydbhidnalTmbalawcdtfydbhwalaDcdtfydbhDalaicdtfydbhikavaoaicdtfgqydbcitfaDBdbavaqydbcitfawBdlaqaqydbcefBdbavaoaDcdtfgqydbcitfawBdbavaqydbcitfaiBdlaqaqydbcefBdbavaoawcdtfgwydbcitfaiBdbavawydbcitfaDBdlawawydbcefBdbaecxfhearcufgrmbkkabydbcbBdbk:todDue99aicd4aifhrcehwinawgDcethwaDar6mbkcuaDcdtgraDcFFFFi0Ecbyd1:H:cjbHjjjjbbhwaoaoyd9GgqcefBd9GaoaqcdtfawBdbawcFearz:tjjjbhkdnaiTmbalcd4hlaDcufhxcbhminamhDdnavTmbavamcdtfydbhDkcbadaDal2cdtfgDydlgwawcjjjj94SEgwcH4aw7c:F:b:DD2cbaDydbgwawcjjjj94SEgwcH4aw7c;D;O:B8J27cbaDydwgDaDcjjjj94SEgDcH4aD7c:3F;N8N27axGhwamcdthPdndndnavTmbakawcdtfgrydbgDcuSmeadavaPfydbal2cdtfgsIdbhzcehqinaqhrdnadavaDcdtfydbal2cdtfgqIdbaz9CmbaqIdlasIdl9CmbaqIdwasIdw9BmlkarcefhqakawarfaxGgwcdtfgrydbgDcu9hmbxdkkakawcdtfgrydbgDcuSmbadamal2cdtfgsIdbhzcehqinaqhrdnadaDal2cdtfgqIdbaz9CmbaqIdlasIdl9CmbaqIdwasIdw9BmikarcefhqakawarfaxGgwcdtfgrydbgDcu9hmbkkaramBdbamhDkabaPfaDBdbamcefgmai9hmbkkakcbyd:m:H:cjbH:bjjjbbaoaoyd9GcufBd9GdnaeTmbaiTmbcbhDaehwinawaDBdbawclfhwaiaDcefgD9hmbkcbhDaehwindnaDabydbgrSmbawaearcdtfgrydbBdbaraDBdbkabclfhbawclfhwaiaDcefgD9hmbkkk;:odvuv998Jjjjjbca9Rgocbyd1:G:cjbBdKaocb8Pdj:G:cjb83izaocbydN:G:cjbBdwaocb8Pd:m:G:cjb83ibdnadTmbaicd4hrdnabmbdnalTmbcbhwinaealawcdtfydbar2cdtfhDcbhiinaoczfaifgqaDaifIdbgkaqIdbgxaxak9EEUdbaoaifgqakaqIdbgxaxak9DEUdbaiclfgicx9hmbkawcefgwad9hmbxikkarcdthwcbhDincbhiinaoczfaifgqaeaifIdbgkaqIdbgxaxak9EEUdbaoaifgqakaqIdbgxaxak9DEUdbaiclfgicx9hmbkaeawfheaDcefgDad9hmbxdkkdnalTmbcbhwinabawcx2fgiaealawcdtfydbar2cdtfgDIdbUdbaiaDIdlUdlaiaDIdwUdwcbhiinaoczfaifgqaDaifIdbgkaqIdbgxaxak9EEUdbaoaifgqakaqIdbgxaxak9DEUdbaiclfgicx9hmbkawcefgwad9hmbxdkkarcdthlcbhwaehDinabawcx2fgiaeawar2cdtfgqIdbUdbaiaqIdlUdlaiaqIdwUdwcbhiinaoczfaifgqaDaifIdbgkaqIdbgxaxak9EEUdbaoaifgqakaqIdbgxaxak9DEUdbaiclfgicx9hmbkaDalfhDawcefgwad9hmbkkJbbbbaoIdbaoIdzgx:tgkakJbbbb9DEgkaoIdlaoIdCgm:tgPaPak9DEgkaoIdwaoIdKgP:tgsasak9DEhsdnabTmbadTmbJbbbbJbbjZas:vasJbbbb9BEhkinabakabIdbax:tNUdbabclfgoakaoIdbam:tNUdbabcwfgoakaoIdbaP:tNUdbabcxfhbadcufgdmbkkdnavTmbavaPUdwavamUdlavaxUdbkask:WlewudnaeTmbcbhvabhoinaoavBdbaoclfhoaeavcefgv9hmbkkdnaiTmbcbhrinadarcdtfhwcbhDinalawaDcdtgvyd:G:G:cjbcdtfydbcdtfydbhodnalawavfydbcdtfydbgqabaqcdtfgkydbgvSmbinakabavgqcdtfgxydbgvBdbaxhkaqav9hmbkkdnaoabaocdtfgkydbgvSmbinakabavgocdtfgxydbgvBdbaxhkaoav9hmbkkdnaqaoSmbabaqaoaqao0Ecdtfaqaoaqao6EBdbkaDcefgDci9hmbkarcifgrai6mbkkdnaembcbskcbhxindnalaxcdtgvfydbax9hmbaxhodnaxabavfgDydbgvSmbaDhqinaqabavgocdtfgkydbgvBdbakhqaoav9hmbkkaDaoBdbkaxcefgxae9hmbkcbhkabhvcbhoindndnaoalydbgq9hmbdnaoavydbgq9hmbavakBdbakcefhkxdkavabaqcdtfydbBdbxekavabaqcdtfydbBdbkalclfhlavclfhvaeaocefgo9hmbkakk;jiilud99euabcbaecltz:tjjjbhvdnalTmbadhoaihralhwinarcwfIdbhDarclfIdbhqavaoydbcltfgkarIdbakIdbMUdbakaqakIdlMUdlakaDakIdwMUdwakakIdxJbbjZMUdxaoclfhoarcxfhrawcufgwmbkkdnaeTmbavhkaehrinakcxfgoIdbhDaocbBdbakakIdbJbbbbJbbjZaD:vaDJbbbb9BEgDNUdbakclfgoaDaoIdbNUdbakcwfgoaDaoIdbNUdbakczfhkarcufgrmbkkdnalTmbinavadydbcltfgkaicwfIdbakIdw:tgDaDNaiIdbakIdb:tgDaDNaiclfIdbakIdl:tgDaDNMMgDakIdxgqaqaD9DEUdxadclfhdaicxfhialcufglmbkkdnaeTmbavcxfhkinabakIdbUdbakczfhkabclfhbaecufgembkkk:moerudnaoTmbaecd4hzdnavTmbaicd4hHavcdthOcbhAindnaPaAfRbbTmbaAhednaDTmbaDaAcdtfydbhekdnasTmbasaefRbbceGmekdnamaAfRbbclSmbabaeaz2cdtfgiaraAcx2fgCIdbakNaxIdbMUdbaiaCIdlakNaxIdlMUdlaiaCIdwakNaxIdwMUdwkadaeaH2cdtfhXaqheawhiavhCinaXaeydbcdtgQfaiIdbalaQfIdb:vUdbaeclfheaiclfhiaCcufgCmbkkawaOfhwaAcefgAao9hmbxdkkdnasmbcbheaDhiindnaPaefRbbTmbaehCdnaDTmbaiydbhCkamaefRbbclSmbabaCaz2cdtfgCarIdbakNaxIdbMUdbaCarclfIdbakNaxIdlMUdlaCarcwfIdbakNaxIdwMUdwkaiclfhiarcxfhraoaecefge9hmbxdkkdnaDTmbindnaPRbbTmbasaDydbgefRbbceGmbamRbbclSmbabaeaz2cdtfgearIdbakNaxIdbMUdbaearclfIdbakNaxIdlMUdlaearcwfIdbakNaxIdwMUdwkaPcefhPaDclfhDamcefhmarcxfhraocufgombxdkkazcdthicbheindnaPaefRbbTmbasaefRbbceGmbamaefRbbclSmbabarIdbakNaxIdbMUdbabclfarclfIdbakNaxIdlMUdbabcwfarcwfIdbakNaxIdwMUdbkarcxfhrabaifhbaoaecefge9hmbkkk8MbabaeadaialavcbcbcbcbcbaoarawaDz:bjjjbk8MbabaeadaialavaoarawaDaqakaxamaPz:bjjjbkRbababaeadaialavaoarawaDaqakaxcjjjjdVamz:bjjjbk:g8Koque99due99duq998Jjjjjbc;Wb9Rgq8Kjjjjbcbhkaqcxfcbc;Kbz:tjjjb8Aaqcualcx2alc;v:Q;v:Qe0Ecbyd1:H:cjbHjjjjbbgxBdxaqceBd2axaialavcbcbz:ejjjb8AaqcualcdtalcFFFFi0Egmcbyd1:H:cjbHjjjjbbgiBdzaqcdBd2dndnJFF959eJbbjZawJbbjZawJbbjZ9DE:vawJ9VO:d869DEgw:lJbbb9p9DTmbaw:OhPxekcjjjj94hPkadci9Uhsarco9UhzdndnaombaPcd9imekdnalTmbaPcuf:YhwdnaoTmbcbhvaihHaxhOindndnaoavfRbbceGTmbavcjjjjlVhAxekdndnaOclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhAxekcjjjj94hAkaAcqthAdndnaOcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaAaXVhAdndnaOIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaAaXcCtVhAkaHaABdbaHclfhHaOcxfhOalavcefgv9hmbxdkkaxhvaihOalhHindndnavIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhAxekcjjjj94hAkaAcCthAdndnavclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaXcqtaAVhAdndnavcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaOaAaXVBdbavcxfhvaOclfhOaHcufgHmbkkadTmbcbhkaehvcbhOinakaiavclfydbcdtfydbgHaiavcwfydbcdtfydbgA9haiavydbcdtfydbgXaH9haXaA9hGGfhkavcxfhvaOcifgOad6mbkkarci9UhQdndnaz:Z:rJbbbZMgw:lJbbb9p9DTmbaw:Ohvxekcjjjj94hvkaQ:ZhLcbhKc:bwhzdninakaQ9pmeazaP9Rcd9imeavazcufgOavaO9iEaPcefavaP9kEhYdnalTmbaYcuf:YhwdnaoTmbcbhOaihHaxhvindndnaoaOfRbbceGTmbaOcjjjjlVhAxekdndnavclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhAxekcjjjj94hAkaAcqthAdndnavcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaAaXVhAdndnavIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaAaXcCtVhAkaHaABdbaHclfhHavcxfhvalaOcefgO9hmbxdkkaxhvaihOalhHindndnavIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhAxekcjjjj94hAkaAcCthAdndnavclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaXcqtaAVhAdndnavcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaOaAaXVBdbavcxfhvaOclfhOaHcufgHmbkkcbhOdnadTmbaehvcbhHinaOaiavclfydbcdtfydbgAaiavcwfydbcdtfydbgX9haiavydbcdtfydbgraA9haraX9hGGfhOavcxfhvaHcifgHad6mbkkdnas:ZgCaL:taY:Ygwaz:Y:tg8ANak:ZgEaO:Zg3:tNaEaL:tawaP:Y:tg5Na3aC:tNMg8EJbbbb9BmbaCaE:ta5a8Aa3aL:tNNNa8E:vawMhwkdndnaOaQ0mbaOhkaYhPxekaOhsaYhzkdndnaKcl0mbdnawJbbbZMgw:lJbbb9p9DTmbaw:Ohvxdkcjjjj94hvxekaPazfcd9ThvkaKcefgKcs9hmbkkdndndnakmbJbbjZhwcbhOcdhvaDmexdkalcd4alfhHcehOinaOgvcethOavaH6mbkcbhOaqcuavcdtgYavcFFFFi0Ecbyd1:H:cjbHjjjjbbgKBdCaqciBd2aqamcbyd1:H:cjbHjjjjbbgzBdKaqclBd2dndndndnalTmbaPcuf:YhwaoTmecbhOaihAaxhHindndnaoaOfRbbceGTmbaOcjjjjlVhXxekdndnaHclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaXcqthXdndnaHcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:Ohrxekcjjjj94hrkaXarVhXdndnaHIdbawNJbbbZMgC:lJbbb9p9DTmbaC:Ohrxekcjjjj94hrkaXarcCtVhXkaAaXBdbaAclfhAaHcxfhHalaOcefgO9hmbxikkaKcFeaYz:tjjjb8AcbhPcbhvxdkaxhOaihHalhAindndnaOIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaXcCthXdndnaOclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:Ohrxekcjjjj94hrkarcqtaXVhXdndnaOcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:Ohrxekcjjjj94hrkaHaXarVBdbaOcxfhOaHclfhHaAcufgAmbkkaKcFeaYz:tjjjbhravcufhocbhPcbhYindndndnaraiaYcdtgKfydbgAcm4aA7c:v;t;h;Ev2gvcs4av7aoGgHcdtfgXydbgOcuSmbcehvinaiaOcdtgOfydbaASmdaHavfhOavcefhvaraOaoGgHcdtfgXydbgOcu9hmbkkaXaYBdbaPhvaPcefhPxekazaOfydbhvkazaKfavBdbaYcefgYal9hmbkcuaPc8S2gOaPc;D;O;f8U0EhvkcbhXaqavcbyd1:H:cjbHjjjjbbgvBd3aqcvBd2avcbaOz:tjjjbhOdnadTmbaehiinaxaiclfydbgrcx2fgvIdbaxaiydbgocx2fgHIdbg3:tgCaxaicwfydbgYcx2fgAIdlaHIdlg8A:tgwNavIdla8A:tgEaAIdba3:tg8EN:tgLaLNaEaAIdwaHIdwg5:tg8FNavIdwa5:tgEawN:tgwawNaEa8ENaCa8FN:tgCaCNMMg8E:rhEJbbnnJbbjZazaocdtfydbgvazarcdtfydbgASavazaYcdtfydbgrSGgHEh8Fdna8EJbbbb9ETmbaLaE:vhLaCaE:vhCawaE:vhwkaOavc8S2fgvavIdbawa8FaE:rNgEawNNg8FMUdbavaCaEaCNgaNghavIdlMUdlavaLaEaLNg8ENggavIdwMUdwavawaaNgaavIdxMUdxava8EawNg8JavIdzMUdzavaCa8ENg8EavIdCMUdCavawaEaLa5Nawa3Na8AaCNMM:mg8ANg3NgwavIdKMUdKavaCa3NgCavId3MUd3avaLa3NgLavIdaMUdaava3a8ANg3avId8KMUd8KavaEavIdyMUdydnaHmbaOaAc8S2fgva8FavIdbMUdbavahavIdlMUdlavagavIdwMUdwavaaavIdxMUdxava8JavIdzMUdzava8EavIdCMUdCavawavIdKMUdKavaCavId3MUd3avaLavIdaMUdaava3avId8KMUd8KavaEavIdyMUdyaOarc8S2fgva8FavIdbMUdbavahavIdlMUdlavagavIdwMUdwavaaavIdxMUdxava8JavIdzMUdzava8EavIdCMUdCavawavIdKMUdKavaCavId3MUd3avaLavIdaMUdaava3avId8KMUd8KavaEavIdyMUdykaicxfhiaXcifgXad6mbkkcbhAaqcuaPcdtgvaPcFFFFi0Egicbyd1:H:cjbHjjjjbbgHBdaaqcoBd2aqaicbyd1:H:cjbHjjjjbbgiBd8KaqcrBd2aHcFeavz:tjjjbhYdnalTmbazhHinJbbbbJbbjZaOaHydbgXc8S2fgvIdygw:vawJbbbb9BEavIdwaxcwfIdbgwNavIdzaxIdbgCNavIdaMgLaLMMawNavIdlaxclfIdbgLNavIdCawNavId3MgwawMMaLNavIdbaCNavIdxaLNavIdKMgwawMMaCNavId8KMMM:lNhwdndnaYaXcdtgvfgXydbcuSmbaiavfIdbaw9ETmekaXaABdbaiavfawUdbkaHclfhHaxcxfhxalaAcefgA9hmbkkdndnaPmbJbbbbhwxekJbbbbhwinaiIdbgCawawaC9DEhwaiclfhiaPcufgPmbkaw:rhwkakcd4akfhOcehiinaigvcethiavaO6mbkcbhOaqcuavcdtgiavcFFFFi0Ecbyd1:H:cjbHjjjjbbgHBdyaHcFeaiz:tjjjbhXdnadTmbavcufhrcbhPcbhxindnazaeaxcdtfgvydbcdtfydbgiazavclfydbcdtfydbgOSmbaiazavcwfydbcdtfydbgvSmbaOavSmbaYavcdtfydbhAdndnaYaOcdtfydbgvaYaicdtfydbgi9pmbavaA9pmbaAhlaihoavhAxekdnaAai9pmbaAav9pmbaihlavhoxekavhlaAhoaihAkabaPcx2fgvaABdbavcwfaoBdbavclfalBdbdnaXaoc:3F;N8N2alc:F:b:DD27aAc;D;O:B8J27arGgOcdtfgvydbgicuSmbcehHinaHhvdnabaicx2fgiydbaA9hmbaiydlal9hmbaiydwaoSmikavcefhHaXaOavfarGgOcdtfgvydbgicu9hmbkkavaPBdbaPcefhPkaxcifgxad6mbkaPci2hOkcwhvaDTmekaDawUdbkavcdthvaqcxfc98fhiinaiavfydbcbyd:m:H:cjbH:bjjjbbavc98fgvmbkaqc;Wbf8KjjjjbaOk:3ldrue9:8Jjjjjbc;Wb9Rgr8Kjjjjbcbhwarcxfcbc;Kbz:tjjjb8AdnabaeSmbabaeadcdtzMjjjb8AkarcualcdtalcFFFFi0EgDcbyd1:H:cjbHjjjjbbgqBdxarceBd2aqcbaialavcbarcxfz:djjjbcualcx2alc;v:Q;v:Qe0Ecbyd1:H:cjbHjjjjbbhkarcxfaryd2gxcdtfakBdbaraxcefgmBd2akaialavcbcbz:ejjjb8AarcxfamcdtfaDcbyd1:H:cjbHjjjjbbgiBdbaraxcdfgvBd2arcxfavcdtfcuaialaeadaqz:fjjjbgecltaecjjjjiGEcbyd1:H:cjbHjjjjbbgqBdbaqaeaiakalz:gjjjbaxcifhkdnadTmbaoaoNhocbhwabhlcbheindnaqaialydbgvcdtfydbcdtfIdbao9ETmbalclf8PdbhPabawcdtfgDavBdbaDclfaP83dbawcifhwkalcxfhlaecifgead6mbkkdnakTmbaxcdtarcxffcwfhlinalydbcbyd:m:H:cjbH:bjjjbbalc98fhlakcufgkmbkkarc;Wbf8Kjjjjbawk:WCoDud99vue99vuv998Jjjjjbc;Wb9Rgw8KjjjjbdndnarmbcbhDxekawcxfcbc;Kbz:tjjjb8Aawcuadcx2adc;v:Q;v:Qe0Ecbyd1:H:cjbHjjjjbbgqBdxawceBd2aqaeadaicbcbz:ejjjb8AawcuadcdtadcFFFFi0Egkcbyd1:H:cjbHjjjjbbgxBdzawcdBd2adcd4adfhmceheinaegicetheaiam6mbkcbhPawcuaicdtgsaicFFFFi0Ecbyd1:H:cjbHjjjjbbgzBdCawciBd2dndnar:ZgH:rJbbbZMgO:lJbbb9p9DTmbaO:Ohexekcjjjj94hekaicufhAc:bwhCcbhXadhQcbhLinaeaCcufgiaeai9iEaPcefaeaP9kEhDdndnadTmbaDcuf:YhOaqhiaxheadhmindndnaiIdbaONJbbbZMgK:lJbbb9p9DTmbaK:OhYxekcjjjj94hYkaYcCthYdndnaiclfIdbaONJbbbZMgK:lJbbb9p9DTmbaK:Oh8Axekcjjjj94h8Aka8AcqtaYVhYdndnaicwfIdbaONJbbbZMgK:lJbbb9p9DTmbaK:Oh8Axekcjjjj94h8AkaeaYa8AVBdbaicxfhiaeclfheamcufgmmbkazcFeasz:tjjjbhEcbh3cbh5indnaEaxa5cdtfydbgYcm4aY7c:v;t;h;Ev2gics4ai7aAGgmcdtfg8AydbgecuSmbaeaYSmbcehiinaEamaifaAGgmcdtfg8AydbgecuSmeaicefhiaeaY9hmbkka8AaYBdba3aecuSfh3a5cefg5ad9hmbxdkkazcFeasz:tjjjb8Acbh3kdnaQ:ZgKaH:taD:YgOaC:Y:tg8ENaX:Zg8Fa3:Zga:tNa8FaH:taOaP:Y:tghNaaaK:tNMggJbbbb9BmbaKa8F:taha8EaaaH:tNNNag:vaOMhOkaPaDa3ar0giEhPaXa3aiEhXdna3arSmbaDaCaiEgCaP9Rcd9imbdndnaLcl0mbdnaOJbbbZMgO:lJbbb9p9DTmbaO:Ohexdkcjjjj94hexekaPaCfcd9Theka3aQaiEhQaLcefgLcs9hmekkdndnaXmbcihicbhDxekcbhiawakcbyd1:H:cjbHjjjjbbg5BdKawclBd2aPcuf:YhKdndnadTmbaqhiaxheadhmindndnaiIdbaKNJbbbZMgO:lJbbb9p9DTmbaO:OhYxekcjjjj94hYkaYcCthYdndnaiclfIdbaKNJbbbZMgO:lJbbb9p9DTmbaO:Oh8Axekcjjjj94h8Aka8AcqtaYVhYdndnaicwfIdbaKNJbbbZMgO:lJbbb9p9DTmbaO:Oh8Axekcjjjj94h8AkaeaYa8AVBdbaicxfhiaeclfheamcufgmmbkazcFeasz:tjjjbhEcbhDcbh3indndndnaEaxa3cdtgCfydbgYcm4aY7c:v;t;h;Ev2gics4ai7aAGgmcdtfg8AydbgecuSmbcehiinaxaecdtgefydbaYSmdamaifheaicefhiaEaeaAGgmcdtfg8Aydbgecu9hmbkka8Aa3BdbaDhiaDcefhDxeka5aefydbhika5aCfaiBdba3cefg3ad9hmbkcuaDc32giaDc;j:KM;jb0EhexekazcFeasz:tjjjb8AcbhDcbhekawaecbyd1:H:cjbHjjjjbbgeBd3awcvBd2aecbaiz:tjjjbh8Aavcd4hxdnadTmbdnalTmbaxcdthEa5hYaqhealhmadhAina8AaYydbc32fgiaeIdbaiIdbMUdbaiaeclfIdbaiIdlMUdlaiaecwfIdbaiIdwMUdwaiamIdbaiIdxMUdxaiamclfIdbaiIdzMUdzaiamcwfIdbaiIdCMUdCaiaiIdKJbbjZMUdKaYclfhYaecxfheamaEfhmaAcufgAmbxdkka5hmaqheadhYina8Aamydbc32fgiaeIdbaiIdbMUdbaiaeclfIdbaiIdlMUdlaiaecwfIdbaiIdwMUdwaiaiIdxJbbbbMUdxaiaiIdzJbbbbMUdzaiaiIdCJbbbbMUdCaiaiIdKJbbjZMUdKamclfhmaecxfheaYcufgYmbkkdnaDTmba8AhiaDheinaiaiIdbJbbbbJbbjZaicKfIdbgO:vaOJbbbb9BEgONUdbaiclfgmaOamIdbNUdbaicwfgmaOamIdbNUdbaicxfgmaOamIdbNUdbaiczfgmaOamIdbNUdbaicCfgmaOamIdbNUdbaic3fhiaecufgembkkcbhYawcuaDcdtgCaDcFFFFi0Egicbyd1:H:cjbHjjjjbbgeBdaawcoBd2awaicbyd1:H:cjbHjjjjbbgEBd8KaecFeaCz:tjjjbh3dnadTmbaoJbbjZJbbjZaK:vaPceSENgOaONhKaxcdthxalheinaKaec;8:G:cjbalEgmIdwa8Aa5ydbgAc32fgiIdC:tgOaONamIdbaiIdx:tgOaONamIdlaiIdz:tgOaONMMNaqcwfIdbaiIdw:tgOaONaqIdbaiIdb:tgOaONaqclfIdbaiIdl:tgOaONMMMhOdndna3aAcdtgifgmydbcuSmbaEaifIdbaO9ETmekamaYBdbaEaifaOUdbka5clfh5aqcxfhqaeaxfheadaYcefgY9hmbkkaba3aCzMjjjb8Acrhikaicdthiawcxfc98fheinaeaifydbcbyd:m:H:cjbH:bjjjbbaic98fgimbkkawc;Wbf8KjjjjbaDk:Pdidui99ducbhi8Jjjjjbca9Rglcbyd1:G:cjbBdKalcb8Pdj:G:cjb83izalcbydN:G:cjbBdwalcb8Pd:m:G:cjb83ibdndnaembJbbjFhvJbbjFhoJbbjFhrxekadcd4cdthwincbhdinalczfadfgDabadfIdbgvaDIdbgoaoav9EEUdbaladfgDavaDIdbgoaoav9DEUdbadclfgdcx9hmbkabawfhbaicefgiae9hmbkalIdwalIdK:thralIdlalIdC:thoalIdbalIdz:thvkJbbbbavavJbbbb9DEgvaoaoav9DEgvararav9DEk9DeeuabcFeaicdtz:tjjjbhlcbhbdnadTmbindnalaeydbcdtfgiydbcu9hmbaiabBdbabcefhbkaeclfheadcufgdmbkkabk;Bidqui998Jjjjjbc;Wb9Rgl8Kjjjjbalcxfcbc;Kbz:tjjjb8Aadcd4adfhvcehoinaogrcethoarav6mbkalcuarcdtgoarcFFFFi0Ecbyd1:H:cjbHjjjjbbgvBdxavcFeaoz:tjjjbhwdnadTmbaicd4hDarcufhqcbhkindndnawcbaeakaD2cdtfgrydlgiaicjjjj94SEgocH4ao7c:F:b:DD2cbarydbgxaxcjjjj94SEgocH4ao7c;D;O:B8J27cbarydwgmamcjjjj94SEgrcH4ar7c:3F;N8N27aqGgvcdtfgrydbgocuSmbam::hPai::hsax::hzcehiinaihrdnaeaoaD2cdtfgiIdbaz9CmbaiIdlas9CmbaiIdwaP9BmikarcefhiawavarfaqGgvcdtfgrydbgocu9hmbkkarakBdbakhokabakcdtfaoBdbakcefgkad9hmbkkalydxcbyd:m:H:cjbH:bjjjbbalc;Wbf8Kjjjjbk9teiucbcbyd:q:H:cjbgeabcifc98GfgbBd:q:H:cjbdndnabZbcztgd9nmbcuhiabad9RcFFifcz4nbcuSmekaehikaik;LeeeudndnaeabVciGTmbabhixekdndnadcz9pmbabhixekabhiinaiaeydbBdbaiclfaeclfydbBdbaicwfaecwfydbBdbaicxfaecxfydbBdbaeczfheaiczfhiadc9Wfgdcs0mbkkadcl6mbinaiaeydbBdbaeclfheaiclfhiadc98fgdci0mbkkdnadTmbinaiaeRbb86bbaicefhiaecefheadcufgdmbkkabk;aeedudndnabciGTmbabhixekaecFeGc:b:c:ew2hldndnadcz9pmbabhixekabhiinaialBdbaicxfalBdbaicwfalBdbaiclfalBdbaiczfhiadc9Wfgdcs0mbkkadcl6mbinaialBdbaiclfhiadc98fgdci0mbkkdnadTmbinaiae86bbaicefhiadcufgdmbkkabk9teiucbcbyd:q:H:cjbgeabcrfc94GfgbBd:q:H:cjbdndnabZbcztgd9nmbcuhiabad9RcFFifcz4nbcuSmekaehikaikTeeucbabcbyd:q:H:cjbge9Rcifc98GaefgbBd:q:H:cjbdnabZbcztge9nmbabae9RcFFifcz4nb8Akkk:Kedbcj:Gdk1eFFuuFFuuFFuuFFuFFFuFFFuFbbbbbbbbebbbdbbbbbbbebbbebbbdbbbbbbbbbbbeeeeebebbebbebebbbeebbbbbbbbbbbbeeeeeebebbeeebeebbbbebebbbbbbbbbbbbbbbbbbc1:Hdkxebbbdbbb:G:qbb";
+  var wasmpack = new Uint8Array([
+    32,
+    0,
+    65,
+    2,
+    1,
+    106,
+    34,
+    33,
+    3,
+    128,
+    11,
+    4,
+    13,
+    64,
+    6,
+    253,
+    10,
+    7,
+    15,
+    116,
+    127,
+    5,
+    8,
+    12,
+    40,
+    16,
+    19,
+    54,
+    20,
+    9,
+    27,
+    255,
+    113,
+    17,
+    42,
+    67,
+    24,
+    23,
+    146,
+    148,
+    18,
+    14,
+    22,
+    45,
+    70,
+    69,
+    56,
+    114,
+    101,
+    21,
+    25,
+    63,
+    75,
+    136,
+    108,
+    28,
+    118,
+    29,
+    73,
+    115
+  ]);
+  if (typeof WebAssembly !== "object") {
+    return {
+      supported: false
+    };
+  }
+  var instance;
+  var ready = WebAssembly.instantiate(unpack(wasm), {}).then(function(result) {
+    instance = result.instance;
+    instance.exports.__wasm_call_ctors();
+  });
+  function unpack(data) {
+    var result = new Uint8Array(data.length);
+    for (var i = 0; i < data.length; ++i) {
+      var ch = data.charCodeAt(i);
+      result[i] = ch > 96 ? ch - 97 : ch > 64 ? ch - 39 : ch + 4;
+    }
+    var write = 0;
+    for (var i = 0; i < data.length; ++i) {
+      result[write++] = result[i] < 60 ? wasmpack[result[i]] : (result[i] - 60) * 64 + result[++i];
+    }
+    return result.buffer.slice(0, write);
+  }
+  function assert(cond) {
+    if (!cond) {
+      throw new Error("Assertion failed");
+    }
+  }
+  function bytes(view) {
+    return new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
+  }
+  function genremap(fun, positions, vertices, stride) {
+    var sbrk = instance.exports.sbrk;
+    var rp = sbrk(vertices * 4);
+    var sp = sbrk(vertices * stride * 4);
+    var heap = new Uint8Array(instance.exports.memory.buffer);
+    heap.set(bytes(positions), sp);
+    fun(rp, sp, vertices, stride * 4);
+    heap = new Uint8Array(instance.exports.memory.buffer);
+    var remap = new Uint32Array(vertices);
+    new Uint8Array(remap.buffer).set(heap.subarray(rp, rp + vertices * 4));
+    sbrk(rp - sbrk(0));
+    return remap;
+  }
+  function reorder(fun, indices, vertices) {
+    var sbrk = instance.exports.sbrk;
+    var ip = sbrk(indices.length * 4);
+    var rp = sbrk(vertices * 4);
+    var heap = new Uint8Array(instance.exports.memory.buffer);
+    var indices8 = bytes(indices);
+    heap.set(indices8, ip);
+    var unique = fun(rp, ip, indices.length, vertices);
+    heap = new Uint8Array(instance.exports.memory.buffer);
+    var remap = new Uint32Array(vertices);
+    new Uint8Array(remap.buffer).set(heap.subarray(rp, rp + vertices * 4));
+    sbrk(ip - sbrk(0));
+    for (var i = 0; i < indices.length; ++i) indices[i] = remap[indices[i]];
+    return [remap, unique];
+  }
+  function maxindex(source) {
+    var result = 0;
+    for (var i = 0; i < source.length; ++i) {
+      var index = source[i];
+      result = result < index ? index : result;
+    }
+    return result;
+  }
+  function simplify(fun, indices, index_count, vertex_positions, vertex_count, vertex_positions_stride, target_index_count, target_error, options) {
+    var sbrk = instance.exports.sbrk;
+    var te = sbrk(4);
+    var ti = sbrk(index_count * 4);
+    var sp = sbrk(vertex_count * vertex_positions_stride);
+    var si2 = sbrk(index_count * 4);
+    var heap = new Uint8Array(instance.exports.memory.buffer);
+    heap.set(bytes(vertex_positions), sp);
+    heap.set(bytes(indices), si2);
+    var result = fun(ti, si2, index_count, sp, vertex_count, vertex_positions_stride, target_index_count, target_error, options, te);
+    heap = new Uint8Array(instance.exports.memory.buffer);
+    var target = new Uint32Array(result);
+    bytes(target).set(heap.subarray(ti, ti + result * 4));
+    var error = new Float32Array(1);
+    bytes(error).set(heap.subarray(te, te + 4));
+    sbrk(te - sbrk(0));
+    return [target, error[0]];
+  }
+  function simplifyAttr(fun, indices, index_count, vertex_positions, vertex_count, vertex_positions_stride, vertex_attributes, vertex_attributes_stride, attribute_weights, vertex_lock, target_index_count, target_error, options) {
+    var sbrk = instance.exports.sbrk;
+    var te = sbrk(4);
+    var ti = sbrk(index_count * 4);
+    var sp = sbrk(vertex_count * vertex_positions_stride);
+    var sa = sbrk(vertex_count * vertex_attributes_stride);
+    var sw = sbrk(attribute_weights.length * 4);
+    var si2 = sbrk(index_count * 4);
+    var vl = vertex_lock ? sbrk(vertex_count) : 0;
+    var heap = new Uint8Array(instance.exports.memory.buffer);
+    heap.set(bytes(vertex_positions), sp);
+    heap.set(bytes(vertex_attributes), sa);
+    heap.set(bytes(attribute_weights), sw);
+    heap.set(bytes(indices), si2);
+    if (vertex_lock) {
+      heap.set(bytes(vertex_lock), vl);
+    }
+    var result = fun(
+      ti,
+      si2,
+      index_count,
+      sp,
+      vertex_count,
+      vertex_positions_stride,
+      sa,
+      vertex_attributes_stride,
+      sw,
+      attribute_weights.length,
+      vl,
+      target_index_count,
+      target_error,
+      options,
+      te
+    );
+    heap = new Uint8Array(instance.exports.memory.buffer);
+    var target = new Uint32Array(result);
+    bytes(target).set(heap.subarray(ti, ti + result * 4));
+    var error = new Float32Array(1);
+    bytes(error).set(heap.subarray(te, te + 4));
+    sbrk(te - sbrk(0));
+    return [target, error[0]];
+  }
+  function simplifyUpdate(fun, indices, index_count, vertex_positions, vertex_count, vertex_positions_stride, vertex_attributes, vertex_attributes_stride, attribute_weights, vertex_lock, target_index_count, target_error, options) {
+    var sbrk = instance.exports.sbrk;
+    var te = sbrk(4);
+    var sp = sbrk(vertex_count * vertex_positions_stride);
+    var sa = sbrk(vertex_count * vertex_attributes_stride);
+    var sw = sbrk(attribute_weights.length * 4);
+    var si2 = sbrk(index_count * 4);
+    var vl = vertex_lock ? sbrk(vertex_count) : 0;
+    var heap = new Uint8Array(instance.exports.memory.buffer);
+    heap.set(bytes(vertex_positions), sp);
+    heap.set(bytes(vertex_attributes), sa);
+    heap.set(bytes(attribute_weights), sw);
+    heap.set(bytes(indices), si2);
+    if (vertex_lock) {
+      heap.set(bytes(vertex_lock), vl);
+    }
+    var result = fun(
+      si2,
+      index_count,
+      sp,
+      vertex_count,
+      vertex_positions_stride,
+      sa,
+      vertex_attributes_stride,
+      sw,
+      attribute_weights.length,
+      vl,
+      target_index_count,
+      target_error,
+      options,
+      te
+    );
+    heap = new Uint8Array(instance.exports.memory.buffer);
+    bytes(indices).set(heap.subarray(si2, si2 + result * 4));
+    bytes(vertex_positions).set(heap.subarray(sp, sp + vertex_count * vertex_positions_stride));
+    bytes(vertex_attributes).set(heap.subarray(sa, sa + vertex_count * vertex_attributes_stride));
+    var error = new Float32Array(1);
+    bytes(error).set(heap.subarray(te, te + 4));
+    sbrk(te - sbrk(0));
+    return [result, error[0]];
+  }
+  function simplifyScale(fun, vertex_positions, vertex_count, vertex_positions_stride) {
+    var sbrk = instance.exports.sbrk;
+    var sp = sbrk(vertex_count * vertex_positions_stride);
+    var heap = new Uint8Array(instance.exports.memory.buffer);
+    heap.set(bytes(vertex_positions), sp);
+    var result = fun(sp, vertex_count, vertex_positions_stride);
+    sbrk(sp - sbrk(0));
+    return result;
+  }
+  function simplifyPoints(fun, vertex_positions, vertex_count, vertex_positions_stride, vertex_colors, vertex_colors_stride, color_weight, target_vertex_count) {
+    var sbrk = instance.exports.sbrk;
+    var ti = sbrk(target_vertex_count * 4);
+    var sp = sbrk(vertex_count * vertex_positions_stride);
+    var sc = vertex_colors ? sbrk(vertex_count * vertex_colors_stride) : 0;
+    var heap = new Uint8Array(instance.exports.memory.buffer);
+    heap.set(bytes(vertex_positions), sp);
+    if (vertex_colors) {
+      heap.set(bytes(vertex_colors), sc);
+    }
+    var result = fun(ti, sp, vertex_count, vertex_positions_stride, sc, vertex_colors_stride, color_weight, target_vertex_count);
+    heap = new Uint8Array(instance.exports.memory.buffer);
+    var target = new Uint32Array(result);
+    bytes(target).set(heap.subarray(ti, ti + result * 4));
+    sbrk(ti - sbrk(0));
+    return target;
+  }
+  function simplifySloppy(fun, indices, index_count, vertex_positions, vertex_count, vertex_positions_stride, vertex_lock, target_index_count, target_error) {
+    var sbrk = instance.exports.sbrk;
+    var te = sbrk(4);
+    var ti = sbrk(index_count * 4);
+    var sp = sbrk(vertex_count * vertex_positions_stride);
+    var si2 = sbrk(index_count * 4);
+    var vl = vertex_lock ? sbrk(vertex_count) : 0;
+    var heap = new Uint8Array(instance.exports.memory.buffer);
+    heap.set(bytes(vertex_positions), sp);
+    heap.set(bytes(indices), si2);
+    if (vertex_lock) {
+      heap.set(bytes(vertex_lock), vl);
+    }
+    var result = fun(ti, si2, index_count, sp, vertex_count, vertex_positions_stride, vl, target_index_count, target_error, te);
+    heap = new Uint8Array(instance.exports.memory.buffer);
+    var target = new Uint32Array(result);
+    bytes(target).set(heap.subarray(ti, ti + result * 4));
+    var error = new Float32Array(1);
+    bytes(error).set(heap.subarray(te, te + 4));
+    sbrk(te - sbrk(0));
+    return [target, error[0]];
+  }
+  function simplifyPrune(fun, indices, index_count, vertex_positions, vertex_count, vertex_positions_stride, target_error) {
+    var sbrk = instance.exports.sbrk;
+    var ti = sbrk(index_count * 4);
+    var sp = sbrk(vertex_count * vertex_positions_stride);
+    var si2 = sbrk(index_count * 4);
+    var heap = new Uint8Array(instance.exports.memory.buffer);
+    heap.set(bytes(vertex_positions), sp);
+    heap.set(bytes(indices), si2);
+    var result = fun(ti, si2, index_count, sp, vertex_count, vertex_positions_stride, target_error);
+    heap = new Uint8Array(instance.exports.memory.buffer);
+    var target = new Uint32Array(result);
+    bytes(target).set(heap.subarray(ti, ti + result * 4));
+    sbrk(ti - sbrk(0));
+    return target;
+  }
+  var simplifyOptions = {
+    LockBorder: 1,
+    Sparse: 2,
+    ErrorAbsolute: 4,
+    Prune: 8,
+    Regularize: 16,
+    Permissive: 32,
+    RegularizeLight: 64,
+    _InternalDebug: 1 << 30
+    // internal, don't use!
+  };
+  return {
+    ready,
+    supported: true,
+    compactMesh: function(indices) {
+      assert(
+        indices instanceof Uint32Array || indices instanceof Int32Array || indices instanceof Uint16Array || indices instanceof Int16Array
+      );
+      assert(indices.length % 3 == 0);
+      var indices32 = indices.BYTES_PER_ELEMENT == 4 ? indices : new Uint32Array(indices);
+      var result = reorder(instance.exports.meshopt_optimizeVertexFetchRemap, indices32, maxindex(indices) + 1);
+      if (indices !== indices32) {
+        for (var i = 0; i < indices32.length; ++i) {
+          indices[i] = indices32[i];
+        }
+      }
+      return result;
+    },
+    generatePositionRemap: function(vertex_positions, vertex_positions_stride) {
+      assert(vertex_positions instanceof Float32Array);
+      assert(vertex_positions.length % vertex_positions_stride == 0);
+      assert(vertex_positions_stride >= 3);
+      return genremap(
+        instance.exports.meshopt_generatePositionRemap,
+        vertex_positions,
+        vertex_positions.length / vertex_positions_stride,
+        vertex_positions_stride
+      );
+    },
+    simplify: function(indices, vertex_positions, vertex_positions_stride, target_index_count, target_error, flags) {
+      assert(
+        indices instanceof Uint32Array || indices instanceof Int32Array || indices instanceof Uint16Array || indices instanceof Int16Array
+      );
+      assert(indices.length % 3 == 0);
+      assert(vertex_positions instanceof Float32Array);
+      assert(vertex_positions.length % vertex_positions_stride == 0);
+      assert(vertex_positions_stride >= 3);
+      assert(target_index_count >= 0 && target_index_count <= indices.length);
+      assert(target_index_count % 3 == 0);
+      assert(target_error >= 0);
+      var options = 0;
+      for (var i = 0; i < (flags ? flags.length : 0); ++i) {
+        assert(flags[i] in simplifyOptions);
+        options |= simplifyOptions[flags[i]];
+      }
+      var indices32 = indices.BYTES_PER_ELEMENT == 4 ? indices : new Uint32Array(indices);
+      var result = simplify(
+        instance.exports.meshopt_simplify,
+        indices32,
+        indices.length,
+        vertex_positions,
+        vertex_positions.length / vertex_positions_stride,
+        vertex_positions_stride * 4,
+        target_index_count,
+        target_error,
+        options
+      );
+      result[0] = indices instanceof Uint32Array ? result[0] : new indices.constructor(result[0]);
+      return result;
+    },
+    simplifyWithAttributes: function(indices, vertex_positions, vertex_positions_stride, vertex_attributes, vertex_attributes_stride, attribute_weights, vertex_lock, target_index_count, target_error, flags) {
+      assert(
+        indices instanceof Uint32Array || indices instanceof Int32Array || indices instanceof Uint16Array || indices instanceof Int16Array
+      );
+      assert(indices.length % 3 == 0);
+      assert(vertex_positions instanceof Float32Array);
+      assert(vertex_positions.length % vertex_positions_stride == 0);
+      assert(vertex_positions_stride >= 3);
+      assert(vertex_attributes instanceof Float32Array);
+      assert(vertex_attributes.length == vertex_attributes_stride * (vertex_positions.length / vertex_positions_stride));
+      assert(vertex_attributes_stride >= 0);
+      assert(vertex_lock == null || vertex_lock instanceof Uint8Array);
+      assert(vertex_lock == null || vertex_lock.length == vertex_positions.length / vertex_positions_stride);
+      assert(target_index_count >= 0 && target_index_count <= indices.length);
+      assert(target_index_count % 3 == 0);
+      assert(target_error >= 0);
+      assert(Array.isArray(attribute_weights));
+      assert(vertex_attributes_stride >= attribute_weights.length);
+      assert(attribute_weights.length <= 32);
+      for (var i = 0; i < attribute_weights.length; ++i) {
+        assert(attribute_weights[i] >= 0);
+      }
+      var options = 0;
+      for (var i = 0; i < (flags ? flags.length : 0); ++i) {
+        assert(flags[i] in simplifyOptions);
+        options |= simplifyOptions[flags[i]];
+      }
+      var indices32 = indices.BYTES_PER_ELEMENT == 4 ? indices : new Uint32Array(indices);
+      var result = simplifyAttr(
+        instance.exports.meshopt_simplifyWithAttributes,
+        indices32,
+        indices.length,
+        vertex_positions,
+        vertex_positions.length / vertex_positions_stride,
+        vertex_positions_stride * 4,
+        vertex_attributes,
+        vertex_attributes_stride * 4,
+        new Float32Array(attribute_weights),
+        vertex_lock,
+        target_index_count,
+        target_error,
+        options
+      );
+      result[0] = indices instanceof Uint32Array ? result[0] : new indices.constructor(result[0]);
+      return result;
+    },
+    simplifyWithUpdate: function(indices, vertex_positions, vertex_positions_stride, vertex_attributes, vertex_attributes_stride, attribute_weights, vertex_lock, target_index_count, target_error, flags) {
+      assert(
+        indices instanceof Uint32Array || indices instanceof Int32Array || indices instanceof Uint16Array || indices instanceof Int16Array
+      );
+      assert(indices.length % 3 == 0);
+      assert(vertex_positions instanceof Float32Array);
+      assert(vertex_positions.length % vertex_positions_stride == 0);
+      assert(vertex_positions_stride >= 3);
+      assert(vertex_attributes instanceof Float32Array);
+      assert(vertex_attributes.length == vertex_attributes_stride * (vertex_positions.length / vertex_positions_stride));
+      assert(vertex_attributes_stride >= 0);
+      assert(vertex_lock == null || vertex_lock instanceof Uint8Array);
+      assert(vertex_lock == null || vertex_lock.length == vertex_positions.length / vertex_positions_stride);
+      assert(target_index_count >= 0 && target_index_count <= indices.length);
+      assert(target_index_count % 3 == 0);
+      assert(target_error >= 0);
+      assert(Array.isArray(attribute_weights));
+      assert(vertex_attributes_stride >= attribute_weights.length);
+      assert(attribute_weights.length <= 32);
+      for (var i = 0; i < attribute_weights.length; ++i) {
+        assert(attribute_weights[i] >= 0);
+      }
+      var options = 0;
+      for (var i = 0; i < (flags ? flags.length : 0); ++i) {
+        assert(flags[i] in simplifyOptions);
+        options |= simplifyOptions[flags[i]];
+      }
+      var indices32 = indices.BYTES_PER_ELEMENT == 4 ? indices : new Uint32Array(indices);
+      var result = simplifyUpdate(
+        instance.exports.meshopt_simplifyWithUpdate,
+        indices32,
+        indices.length,
+        vertex_positions,
+        vertex_positions.length / vertex_positions_stride,
+        vertex_positions_stride * 4,
+        vertex_attributes,
+        vertex_attributes_stride * 4,
+        new Float32Array(attribute_weights),
+        vertex_lock,
+        target_index_count,
+        target_error,
+        options
+      );
+      if (indices !== indices32) {
+        for (var i = 0; i < result[0]; ++i) {
+          indices[i] = indices32[i];
+        }
+      }
+      return result;
+    },
+    getScale: function(vertex_positions, vertex_positions_stride) {
+      assert(vertex_positions instanceof Float32Array);
+      assert(vertex_positions.length % vertex_positions_stride == 0);
+      assert(vertex_positions_stride >= 3);
+      return simplifyScale(
+        instance.exports.meshopt_simplifyScale,
+        vertex_positions,
+        vertex_positions.length / vertex_positions_stride,
+        vertex_positions_stride * 4
+      );
+    },
+    simplifyPoints: function(vertex_positions, vertex_positions_stride, target_vertex_count, vertex_colors, vertex_colors_stride, color_weight) {
+      assert(vertex_positions instanceof Float32Array);
+      assert(vertex_positions.length % vertex_positions_stride == 0);
+      assert(vertex_positions_stride >= 3);
+      assert(target_vertex_count >= 0 && target_vertex_count <= vertex_positions.length / vertex_positions_stride);
+      if (vertex_colors) {
+        assert(vertex_colors instanceof Float32Array);
+        assert(vertex_colors.length % vertex_colors_stride == 0);
+        assert(vertex_colors_stride >= 3);
+        assert(vertex_positions.length / vertex_positions_stride == vertex_colors.length / vertex_colors_stride);
+        return simplifyPoints(
+          instance.exports.meshopt_simplifyPoints,
+          vertex_positions,
+          vertex_positions.length / vertex_positions_stride,
+          vertex_positions_stride * 4,
+          vertex_colors,
+          vertex_colors_stride * 4,
+          color_weight || 0,
+          target_vertex_count
+        );
+      } else {
+        return simplifyPoints(
+          instance.exports.meshopt_simplifyPoints,
+          vertex_positions,
+          vertex_positions.length / vertex_positions_stride,
+          vertex_positions_stride * 4,
+          void 0,
+          0,
+          0,
+          target_vertex_count
+        );
+      }
+    },
+    simplifySloppy: function(indices, vertex_positions, vertex_positions_stride, vertex_lock, target_index_count, target_error) {
+      assert(
+        indices instanceof Uint32Array || indices instanceof Int32Array || indices instanceof Uint16Array || indices instanceof Int16Array
+      );
+      assert(indices.length % 3 == 0);
+      assert(vertex_positions instanceof Float32Array);
+      assert(vertex_positions.length % vertex_positions_stride == 0);
+      assert(vertex_positions_stride >= 3);
+      assert(vertex_lock == null || vertex_lock instanceof Uint8Array);
+      assert(vertex_lock == null || vertex_lock.length == vertex_positions.length / vertex_positions_stride);
+      assert(target_index_count >= 0 && target_index_count <= indices.length);
+      assert(target_index_count % 3 == 0);
+      assert(target_error >= 0);
+      var indices32 = indices.BYTES_PER_ELEMENT == 4 ? indices : new Uint32Array(indices);
+      var result = simplifySloppy(
+        instance.exports.meshopt_simplifySloppy,
+        indices32,
+        indices.length,
+        vertex_positions,
+        vertex_positions.length / vertex_positions_stride,
+        vertex_positions_stride * 4,
+        vertex_lock,
+        target_index_count,
+        target_error
+      );
+      result[0] = indices instanceof Uint32Array ? result[0] : new indices.constructor(result[0]);
+      return result;
+    },
+    simplifyPrune: function(indices, vertex_positions, vertex_positions_stride, target_error) {
+      assert(
+        indices instanceof Uint32Array || indices instanceof Int32Array || indices instanceof Uint16Array || indices instanceof Int16Array
+      );
+      assert(indices.length % 3 == 0);
+      assert(vertex_positions instanceof Float32Array);
+      assert(vertex_positions.length % vertex_positions_stride == 0);
+      assert(vertex_positions_stride >= 3);
+      assert(target_error >= 0);
+      var indices32 = indices.BYTES_PER_ELEMENT == 4 ? indices : new Uint32Array(indices);
+      var result = simplifyPrune(
+        instance.exports.meshopt_simplifyPrune,
+        indices32,
+        indices.length,
+        vertex_positions,
+        vertex_positions.length / vertex_positions_stride,
+        vertex_positions_stride * 4,
+        target_error
+      );
+      result = indices instanceof Uint32Array ? result : new indices.constructor(result);
+      return result;
+    }
+  };
+})();
+
+// viewer/drive/colliders.js
+var CELL = 48;
+var KIND2 = { building: 0, island: 1, tree: 2, lamp: 3, post: 4, wall: 5 };
+function buildColliders(polys, circles, bounds) {
+  let nv = 0, nr = 0;
+  for (const p of polys) for (const r2 of p.rings) {
+    nv += r2.length;
+    nr++;
+  }
+  const pts = new Float32Array(nv * 2), ringStart = new Uint32Array(nr + 1), polyRing = new Uint32Array(polys.length + 1);
+  const pbox = new Float32Array(polys.length * 4), pkind = new Uint8Array(polys.length), ptop = new Float32Array(polys.length), pbase = new Float32Array(polys.length);
+  let v = 0, r = 0;
+  polys.forEach((p, i) => {
+    polyRing[i] = r;
+    let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity;
+    for (const ring2 of p.rings) {
+      ringStart[r++] = v;
+      for (const [x, z] of ring2) {
+        pts[v * 2] = x;
+        pts[v * 2 + 1] = z;
+        v++;
+        if (x < a) a = x;
+        if (x > c) c = x;
+        if (z < b) b = z;
+        if (z > d) d = z;
+      }
+    }
+    pbox[i * 4] = a;
+    pbox[i * 4 + 1] = b;
+    pbox[i * 4 + 2] = c;
+    pbox[i * 4 + 3] = d;
+    pkind[i] = p.kind ?? KIND2.building;
+    ptop[i] = p.top ?? 1e4;
+    pbase[i] = p.base ?? -1e4;
+  });
+  ringStart[nr] = v;
+  polyRing[polys.length] = r;
+  const circ = new Float32Array(circles.length * 3), ckind = new Uint8Array(circles.length);
+  circles.forEach((q, i) => {
+    circ[i * 3] = q.x;
+    circ[i * 3 + 1] = q.z;
+    circ[i * 3 + 2] = q.r;
+    ckind[i] = q.kind ?? KIND2.post;
+  });
+  const col = { cell: CELL, bounds, pts, ringStart, polyRing, pbox, pkind, ptop, pbase, circ, ckind };
+  indexCells(col);
+  return col;
+}
+function indexCells(col) {
+  const { bounds: b, pbox, circ } = col;
+  const nx = Math.max(1, Math.ceil((b.x1 - b.x0) / CELL)), nz = Math.max(1, Math.ceil((b.z1 - b.z0) / CELL));
+  const P = pbox.length / 4, C = circ.length / 3;
+  const ci = (x) => Math.min(nx - 1, Math.max(0, Math.floor((x - b.x0) / CELL)));
+  const cj = (z) => Math.min(nz - 1, Math.max(0, Math.floor((z - b.z0) / CELL)));
+  const span = (k) => k < P ? [pbox[k * 4], pbox[k * 4 + 1], pbox[k * 4 + 2], pbox[k * 4 + 3]] : [circ[(k - P) * 3] - circ[(k - P) * 3 + 2], circ[(k - P) * 3 + 1] - circ[(k - P) * 3 + 2], circ[(k - P) * 3] + circ[(k - P) * 3 + 2], circ[(k - P) * 3 + 1] + circ[(k - P) * 3 + 2]];
+  const count = new Uint32Array(nx * nz + 1);
+  const keep = (s) => s[2] >= b.x0 - CELL && s[0] <= b.x1 + CELL && s[3] >= b.z0 - CELL && s[1] <= b.z1 + CELL;
+  for (let k = 0; k < P + C; k++) {
+    const s = span(k);
+    if (!keep(s)) continue;
+    for (let j = cj(s[1]); j <= cj(s[3]); j++) for (let i = ci(s[0]); i <= ci(s[2]); i++) count[j * nx + i + 1]++;
+  }
+  for (let k = 1; k < count.length; k++) count[k] += count[k - 1];
+  const items = new Uint32Array(count[count.length - 1]), fill = count.slice(0, -1);
+  for (let k = 0; k < P + C; k++) {
+    const s = span(k);
+    if (!keep(s)) continue;
+    for (let j = cj(s[1]); j <= cj(s[3]); j++) for (let i = ci(s[0]); i <= ci(s[2]); i++) items[fill[j * nx + i]++] = k;
+  }
+  Object.assign(col, { nx, nz, cellStart: count, cellItems: items, P, C });
+  col.seen = new Uint32Array(P + C);
+  col.stamp = 0;
+  return col;
+}
+var CAR_CLEAR = 2.2;
+var RAISED = 20;
+function inRings(rings, x, z) {
+  let inside3 = false;
+  for (const ring2 of rings) for (let i = 0, j = ring2.length - 1; i < ring2.length; j = i++) {
+    const [ax, az] = ring2[i], [bx, bz] = ring2[j];
+    if (az > z !== bz > z && x < ax + (bx - ax) * (z - az) / (bz - az)) inside3 = !inside3;
+  }
+  return inside3;
+}
+function samplesIn(rings, step = 1) {
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (const [x, z] of rings[0]) {
+    x0 = Math.min(x0, x);
+    x1 = Math.max(x1, x);
+    z0 = Math.min(z0, z);
+    z1 = Math.max(z1, z);
+  }
+  const s = Math.max(step, Math.sqrt((x1 - x0) * (z1 - z0) / 400));
+  const out = [];
+  for (let x = x0 + s / 2; x < x1; x += s) for (let z = z0 + s / 2; z < z1; z += s) if (inRings(rings, x, z)) out.push([x, z]);
+  if (!out.length) {
+    let cx = 0, cz = 0;
+    for (const [x, z] of rings[0]) {
+      cx += x;
+      cz += z;
+    }
+    out.push([cx / rings[0].length, cz / rings[0].length]);
+  }
+  return out;
+}
+function deckAt(hm, delta, x, z) {
+  const h = hm.h, c = Math.round((x - h.x0) / h.step), r = Math.round((z - h.z0) / h.step);
+  return c >= 0 && r >= 0 && c < h.cols && r < h.rows ? delta[r * h.cols + c] : 0;
+}
+function raisedShare(hm, delta, rings) {
+  const s = samplesIn(rings);
+  let n = 0;
+  for (const [x, z] of s) if (deckAt(hm, delta, x, z) >= RAISED) n++;
+  return n / s.length;
+}
+function clearanceUnder(hm, rings, base) {
+  let g = -Infinity;
+  for (const [x, z] of rings[0]) g = Math.max(g, hm.ground(x, z));
+  for (const [x, z] of samplesIn(rings, 2)) g = Math.max(g, hm.ground(x, z));
+  return base - g;
+}
+function cleanRing(ring2) {
+  const out = [];
+  for (const p of ring2) {
+    const q = out[out.length - 1];
+    if (!q || Math.abs(q[0] - p[0]) > 1e-3 || Math.abs(q[1] - p[1]) > 1e-3) out.push([p[0], p[1]]);
+  }
+  if (out.length > 2) {
+    const a = out[0], b = out[out.length - 1];
+    if (Math.abs(a[0] - b[0]) < 1e-3 && Math.abs(a[1] - b[1]) < 1e-3) out.pop();
+  }
+  return out;
+}
+function buildDriveData({ bDoc, net, feats, hm, parts, bounds, surf = null, legacy = false }) {
+  const polys = [], circles = [];
+  const ground = driveGround(hm, parts);
+  let overhead = 0, islands = 0, islandsHidden = 0, medianIslands = 0;
+  for (const bd of bDoc.buildings) {
+    const rings = (bd.footprint || []).map(cleanRing).filter((r) => r.length >= 3);
+    if (!rings.length) continue;
+    const base = bd.base != null ? +bd.base : -1e4;
+    if (!legacy && base > -1e3 && clearanceUnder(hm, rings, base) > CAR_CLEAR) {
+      overhead++;
+      continue;
+    }
+    polys.push({ rings, kind: KIND2.building, top: +bd.top || 1e4, base });
+  }
+  const inTile = (ring2) => ring2.some(([x, z]) => x >= bounds.x0 - 5 && x <= bounds.x1 + 5 && z >= bounds.z0 - 5 && z <= bounds.z1 + 5);
+  const island2 = (r) => {
+    if (r.length < 3 || !inTile(r)) return;
+    if (!legacy && raisedShare(hm, ground.delta, [r]) < 0.5) {
+      islandsHidden++;
+      return;
+    }
+    polys.push({ rings: [r], kind: KIND2.island });
+    islands++;
+  };
+  for (const node of net.nodes || []) for (const isl of node.islands || []) {
+    if (isl.kind !== "raised" && isl.kind !== "grass") continue;
+    island2(cleanRing(isl.poly || []));
+  }
+  for (const rr of net.roads || []) {
+    const ck = rr.stack?.center?.kind;
+    if (!rr.center?.poly || ck !== "raised" && ck !== "barrier") continue;
+    island2(cleanRing(rr.center.poly));
+  }
+  const medians = [];
+  for (const s of surf?.surfaces || []) if (s.c === 6 && s.rings?.[0]?.length >= 3 && inTile(s.rings[0])) medians.push(s.rings.map(cleanRing).filter((r) => r.length >= 3));
+  if (!legacy) {
+    for (const m of medians) if (raisedShare(hm, ground.delta, m) >= 0.5) {
+      polys.push({ rings: m, kind: KIND2.island });
+      medianIslands++;
+    }
+  }
+  for (const t of feats.trees || []) {
+    if (t.x < bounds.x0 || t.x > bounds.x1 || t.z < bounds.z0 || t.z > bounds.z1) continue;
+    circles.push({ x: t.x, z: t.z, r: Math.min(0.5, Math.max(0.22, 0.16 + 0.012 * (t.height || 10))), kind: KIND2.tree });
+  }
+  const col = buildColliders(polys, circles, bounds);
+  return { col, medians, ground, legacy, counts: { buildings: bDoc.buildings.length - overhead, overhead, islands, islandsHidden, medianIslands, trees: circles.length } };
+}
+function driveGround(hm, parts) {
+  const { x0, z0, cols, rows, step } = hm.h, Y = hm.y;
+  const top = new Float32Array(cols * rows).fill(-1e9);
+  for (const part of Object.values(parts)) {
+    if (!part?.index) continue;
+    const P = part.position, I = part.index;
+    for (let t = 0; t < I.length; t += 3) {
+      const a = I[t] * 3, b = I[t + 1] * 3, c = I[t + 2] * 3;
+      const ax = P[a], az = P[a + 2], bx = P[b], bz = P[b + 2], cx = P[c], cz = P[c + 2];
+      const det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+      if (Math.abs(det) < 1e-6) continue;
+      const c0 = Math.max(0, Math.ceil((Math.min(ax, bx, cx) - x0) / step)), c1 = Math.min(cols - 1, Math.floor((Math.max(ax, bx, cx) - x0) / step));
+      const r0 = Math.max(0, Math.ceil((Math.min(az, bz, cz) - z0) / step)), r1 = Math.min(rows - 1, Math.floor((Math.max(az, bz, cz) - z0) / step));
+      for (let r = r0; r <= r1; r++) {
+        const pz = z0 + r * step;
+        for (let k = c0; k <= c1; k++) {
+          const px = x0 + k * step;
+          const l1 = ((bz - cz) * (px - cx) + (cx - bx) * (pz - cz)) / det;
+          const l2 = ((cz - az) * (px - cx) + (ax - cx) * (pz - cz)) / det;
+          const l3 = 1 - l1 - l2;
+          if (l1 < -1e-6 || l2 < -1e-6 || l3 < -1e-6) continue;
+          const y = l1 * P[a + 1] + l2 * P[b + 1] + l3 * P[c + 1], q = r * cols + k;
+          if (y > top[q]) top[q] = y;
+        }
+      }
+    }
+  }
+  const delta = new Uint8Array(cols * rows);
+  for (let q = 0; q < delta.length; q++) if (top[q] > -1e8) delta[q] = Math.max(0, Math.min(255, Math.round((top[q] - Y[q]) * 100)));
+  return { delta };
+}
+
 // vendor/roads/roadMath.js
 var TAU = Math.PI * 2;
 var clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -4414,87 +5828,6 @@ function buildLaneRoadMesh(result, opts = {}) {
   return out;
 }
 
-// viewer/heightmap.js
-var Heightmap = class _Heightmap {
-  /** Rebuild from arrays computed elsewhere (the tile worker): header, carved grid, original grid. */
-  static from(hdr, y, orig) {
-    const m = Object.create(_Heightmap.prototype);
-    m.h = hdr;
-    m.y = y;
-    m.orig = orig;
-    m.ground = (x, z) => m.sample(m.orig, x, z);
-    m.surface = (x, z) => m.sample(m.y, x, z);
-    return m;
-  }
-  constructor(hdr, buf) {
-    this.h = hdr;
-    const raw = new Uint16Array(buf);
-    this.y = new Float32Array(raw.length);
-    let lo = Infinity;
-    for (let k = 0; k < raw.length; k++) if (raw[k] !== hdr.nodata) lo = Math.min(lo, raw[k]);
-    for (let k = 0; k < raw.length; k++) this.y[k] = (raw[k] === hdr.nodata ? lo : raw[k]) / 100;
-    this.orig = this.y.slice();
-  }
-  /** Bilinear lookup; points outside the tile are clamped to the edge (neighbour tiles aren't loaded). */
-  sample(arr, x, z) {
-    const h = this.h;
-    const c = Math.min(Math.max((x - h.x0) / h.step, 0), h.cols - 1);
-    const r = Math.min(Math.max((z - h.z0) / h.step, 0), h.rows - 1);
-    const c0 = Math.min(Math.floor(c), h.cols - 2), r0 = Math.min(Math.floor(r), h.rows - 2);
-    const fc = c - c0, fr = r - r0, i = r0 * h.cols + c0;
-    return (arr[i] * (1 - fc) + arr[i + 1] * fc) * (1 - fr) + (arr[i + h.cols] * (1 - fc) + arr[i + h.cols + 1] * fc) * fr;
-  }
-  ground = (x, z) => this.sample(this.orig, x, z);
-  surface = (x, z) => this.sample(this.y, x, z);
-  /** Push the grid under the given triangles (local xyz arrays + index) to `y − depth`, then one ring of neighbours. */
-  carve(position, index, depth) {
-    const { x0, z0, cols, rows, step } = this.h;
-    const carved = new Uint8Array(cols * rows);
-    const Y = this.y;
-    for (let t = 0; t < index.length; t += 3) {
-      const a = index[t] * 3, b = index[t + 1] * 3, c = index[t + 2] * 3;
-      const ax = position[a], az = position[a + 2], bx = position[b], bz = position[b + 2], cx = position[c], cz = position[c + 2];
-      const det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
-      if (Math.abs(det) < 1e-9) continue;
-      const c0 = Math.max(0, Math.ceil((Math.min(ax, bx, cx) - x0) / step)), c1 = Math.min(cols - 1, Math.floor((Math.max(ax, bx, cx) - x0) / step));
-      const r0 = Math.max(0, Math.ceil((Math.min(az, bz, cz) - z0) / step)), r1 = Math.min(rows - 1, Math.floor((Math.max(az, bz, cz) - z0) / step));
-      for (let r = r0; r <= r1; r++) {
-        const pz = z0 + r * step;
-        for (let cc = c0; cc <= c1; cc++) {
-          const px = x0 + cc * step;
-          const l1 = ((bz - cz) * (px - cx) + (cx - bx) * (pz - cz)) / det;
-          const l2 = ((cz - az) * (px - cx) + (ax - cx) * (pz - cz)) / det;
-          const l3 = 1 - l1 - l2;
-          if (l1 < -1e-6 || l2 < -1e-6 || l3 < -1e-6) continue;
-          const y = l1 * position[a + 1] + l2 * position[b + 1] + l3 * position[c + 1] - depth;
-          const k = r * cols + cc;
-          if (y < Y[k]) Y[k] = y;
-          carved[k] = 1;
-        }
-      }
-    }
-    const out = Y.slice();
-    let n = 0;
-    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
-      const k = r * cols + c;
-      if (carved[k]) {
-        n++;
-        continue;
-      }
-      let best = Infinity;
-      for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
-        const rr = r + dr, cc = c + dc;
-        if (rr < 0 || cc < 0 || rr >= rows || cc >= cols) continue;
-        const kk = rr * cols + cc;
-        if (carved[kk]) best = Math.min(best, Y[kk] + 0.05);
-      }
-      if (best < out[k]) out[k] = best;
-    }
-    this.y = out;
-    return n;
-  }
-};
-
 // viewer/roadData.js
 var SURFACE = {
   asphalt: 0,
@@ -4540,1339 +5873,6 @@ function surfaceAttribute(net, part) {
   return out;
 }
 
-// viewer/facadeGeom.js
-var PARTY_PROBE = 0.35;
-var STREET_REACH = 30;
-function hash01(str) {
-  let h = 2166136261;
-  for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
-  return (h >>> 0) % 1000003 / 1000003;
-}
-function wallStyle(r, height) {
-  const tall = height > 14;
-  const table = tall ? [[0, 0.15], [1, 0.25], [2, 0.3], [3, 0.55], [4, 0.7], [5, 1]] : [[0, 0.3], [1, 0.48], [2, 0.56], [3, 0.8], [4, 0.93], [5, 1]];
-  for (const [s, c] of table) if (r < c) return s;
-  return 0;
-}
-function pip(x, z, ring2) {
-  let inside3 = false;
-  for (let i = 0, j = ring2.length - 1; i < ring2.length; j = i++) {
-    const [xi, zi] = ring2[i], [xj, zj] = ring2[j];
-    if (zi > z !== zj > z && x < (xj - xi) * (z - zi) / (zj - zi) + xi) inside3 = !inside3;
-  }
-  return inside3;
-}
-var Grid = class {
-  constructor(cell) {
-    this.cell = cell;
-    this.m = /* @__PURE__ */ new Map();
-  }
-  key(i, j) {
-    return i * 100003 + j;
-  }
-  add(x0, z0, x1, z1, item) {
-    const c = this.cell;
-    for (let i = Math.floor(x0 / c); i <= Math.floor(x1 / c); i++)
-      for (let j = Math.floor(z0 / c); j <= Math.floor(z1 / c); j++) {
-        const k = this.key(i, j);
-        if (!this.m.has(k)) this.m.set(k, []);
-        this.m.get(k).push(item);
-      }
-  }
-  near(x, z, r = 0) {
-    const c = this.cell, out = /* @__PURE__ */ new Set();
-    for (let i = Math.floor((x - r) / c); i <= Math.floor((x + r) / c); i++)
-      for (let j = Math.floor((z - r) / c); j <= Math.floor((z + r) / c); j++) for (const it of this.m.get(this.key(i, j)) || []) out.add(it);
-    return out;
-  }
-};
-var CREASE = Math.cos(32 * Math.PI / 180);
-function smoother(tris) {
-  const key = (q) => `${Math.round(q[0] * 50)}|${Math.round(q[1] * 50)}|${Math.round(q[2] * 50)}`;
-  const adj = /* @__PURE__ */ new Map();
-  for (const t of tris) for (const q of t.p) {
-    const k = key(q);
-    if (!adj.has(k)) adj.set(k, []);
-    adj.get(k).push(t);
-  }
-  return (t, q) => {
-    let x = 0, y = 0, z = 0;
-    for (const o of adj.get(key(q))) {
-      if (o.n[0] * t.n[0] + o.n[1] * t.n[1] + o.n[2] * t.n[2] < CREASE) continue;
-      x += o.n[0] * o.area;
-      y += o.n[1] * o.area;
-      z += o.n[2] * o.area;
-    }
-    const L2 = Math.hypot(x, y, z) || 1;
-    return [x / L2, y / L2, z / L2];
-  };
-}
-function triOf(P, I, t) {
-  const p = [0, 1, 2].map((q) => {
-    const i = I[t * 3 + q];
-    return [P[i * 3], P[i * 3 + 1], P[i * 3 + 2]];
-  });
-  const ux = p[1][0] - p[0][0], uy = p[1][1] - p[0][1], uz = p[1][2] - p[0][2];
-  const wx = p[2][0] - p[0][0], wy = p[2][1] - p[0][1], wz = p[2][2] - p[0][2];
-  const nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx;
-  const L2 = Math.hypot(nx, ny, nz);
-  return L2 < 1e-9 ? null : { p, n: [nx / L2, ny / L2, nz / L2], area: L2 / 2 };
-}
-function box(D, A, B, yTop, height, depth, nx, nz, col) {
-  if (height <= 0.01) return;
-  const y0 = yTop - height, y1 = yTop;
-  const ax = A[0], az = A[2], bx = B[0], bz = B[2];
-  const ox = nx * depth, oz = nz * depth;
-  let tx = bx - ax, tz = bz - az;
-  const tl = Math.hypot(tx, tz) || 1;
-  tx /= tl;
-  tz /= tl;
-  const quad = (p0, p1, p2, p3, n) => {
-    for (const q of [p0, p1, p2, p0, p2, p3]) {
-      D.position.push(q[0], q[1], q[2]);
-      D.normal.push(n[0], n[1], n[2]);
-      D.color.push(col[0], col[1], col[2]);
-    }
-  };
-  const a0 = [ax, y0, az], b0 = [bx, y0, bz], a1 = [ax, y1, az], b1 = [bx, y1, bz];
-  const A0 = [ax + ox, y0, az + oz], B0 = [bx + ox, y0, bz + oz], A1 = [ax + ox, y1, az + oz], B1 = [bx + ox, y1, bz + oz];
-  quad(A0, B0, B1, A1, [nx, 0, nz]);
-  quad(a1, A1, B1, b1, [0, 1, 0]);
-  quad(a0, b0, B0, A0, [0, -1, 0]);
-  quad(a0, A0, A1, a1, [-tx, 0, -tz]);
-  quad(b0, b1, B1, B0, [tx, 0, tz]);
-}
-function beam(D, P0, P1, w, h, col) {
-  let dx = P1[0] - P0[0], dy = P1[1] - P0[1], dz = P1[2] - P0[2];
-  const L2 = Math.hypot(dx, dy, dz);
-  if (L2 < 0.3) return;
-  dx /= L2;
-  dy /= L2;
-  dz /= L2;
-  let sx = -dz, sz = dx;
-  const sl = Math.hypot(sx, sz) || 1;
-  sx /= sl;
-  sz /= sl;
-  const ux = -sz * dy, uy = sz * dx - sx * dz, uz = sx * dy;
-  const at = (P, a, b) => [P[0] + sx * a + ux * b, P[1] + uy * b, P[2] + sz * a + uz * b];
-  const hw = w / 2, lo = -h * 0.35, hi = h * 0.65;
-  const quad = (p0, p1, p2, p3, n) => {
-    for (const q of [p0, p1, p2, p0, p2, p3]) {
-      D.position.push(q[0], q[1], q[2]);
-      D.normal.push(n[0], n[1], n[2]);
-      D.color.push(col[0], col[1], col[2]);
-    }
-  };
-  quad(at(P0, -hw * 0.6, hi), at(P1, -hw * 0.6, hi), at(P1, hw * 0.6, hi), at(P0, hw * 0.6, hi), [ux, uy, uz]);
-  const n1 = [ux * 0.6 + sx * 0.8, uy * 0.6, uz * 0.6 + sz * 0.8], n2 = [ux * 0.6 - sx * 0.8, uy * 0.6, uz * 0.6 - sz * 0.8];
-  quad(at(P0, hw * 0.6, hi), at(P1, hw * 0.6, hi), at(P1, hw, lo), at(P0, hw, lo), n1);
-  quad(at(P0, -hw, lo), at(P1, -hw, lo), at(P1, -hw * 0.6, hi), at(P0, -hw * 0.6, hi), n2);
-}
-function analyseBuildings(doc, buf, roads, feats, opts = {}) {
-  const kit = opts.kit || null;
-  const dv = new DataView(buf);
-  const V = dv.getUint32(0, true), T2 = dv.getUint32(4, true);
-  const P = new Float32Array(buf, 8, V * 3);
-  const I = new Uint32Array(buf, 8 + V * 12, T2 * 3);
-  const fp = new Grid(25);
-  doc.buildings.forEach((b, bi) => {
-    const ring2 = b.footprint[0];
-    let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
-    for (const [x, z] of ring2) {
-      x0 = Math.min(x0, x);
-      z0 = Math.min(z0, z);
-      x1 = Math.max(x1, x);
-      z1 = Math.max(z1, z);
-    }
-    fp.add(x0, z0, x1, z1, { bi, ring: ring2, x0, z0, x1, z1 });
-  });
-  const roofAt = (bi, x, z) => {
-    const b = doc.buildings[bi];
-    let best = -Infinity;
-    for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) {
-      const a = I[t * 3] * 3, c = I[t * 3 + 1] * 3, d = I[t * 3 + 2] * 3;
-      const ax = P[a], az = P[a + 2], bx = P[c], bz = P[c + 2], cx = P[d], cz = P[d + 2];
-      const det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
-      if (Math.abs(det) < 1e-9) continue;
-      const l1 = ((bz - cz) * (x - cx) + (cx - bx) * (z - cz)) / det, l2 = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / det, l3 = 1 - l1 - l2;
-      if (l1 < -1e-4 || l2 < -1e-4 || l3 < -1e-4) continue;
-      best = Math.max(best, l1 * P[a + 1] + l2 * P[c + 1] + l3 * P[d + 1]);
-    }
-    return best > -Infinity ? best : b.eaves ?? b.top;
-  };
-  const otherAt = (x, z, bi) => {
-    let best = -1;
-    for (const f of fp.near(x, z)) if (f.bi !== bi && x >= f.x0 && x <= f.x1 && z >= f.z0 && z <= f.z1 && pip(x, z, f.ring)) {
-      if (best < 0 || doc.buildings[f.bi].top > doc.buildings[best].top) best = f.bi;
-    }
-    return best;
-  };
-  const segs = new Grid(40);
-  const N = new Map(roads.nodes.map((n) => [n.id, n]));
-  for (const r of roads.roads) {
-    if (r.meta?.highway === "service") continue;
-    const pts = [N.get(r.a), ...r.pts, N.get(r.b)];
-    for (let k = 1; k < pts.length; k++) {
-      const a = pts[k - 1], b = pts[k];
-      segs.add(Math.min(a.x, b.x), Math.min(a.z, b.z), Math.max(a.x, b.x), Math.max(a.z, b.z), [a.x, a.z, b.x, b.z]);
-    }
-  }
-  const facesStreet = (cx, cz, nx, nz) => {
-    let best = Infinity;
-    for (const [ax, az, bx, bz] of segs.near(cx, cz, STREET_REACH)) {
-      const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1;
-      const t = Math.max(0, Math.min(1, ((cx - ax) * dx + (cz - az) * dz) / L2));
-      const qx = ax + dx * t - cx, qz = az + dz * t - cz, d = Math.hypot(qx, qz);
-      if (d < best && d > 0.5 && (qx * nx + qz * nz) / d > 0.55) best = d;
-    }
-    return best < STREET_REACH;
-  };
-  const W = { position: [], normal: [], aWall: [], aBld: [], aFN: [] };
-  const WK = { position: [], normal: [], aWall: [], aBld: [], aFN: [], aKit: [] };
-  const shops = new Grid(40);
-  for (const p of feats?.points || []) if (p.kind === "shop") {
-    p.used = false;
-    shops.add(p.x, p.z, p.x, p.z, p);
-  }
-  const PAINT = [[0.03, 0.09, 0.06], [0.2, 0.035, 0.045], [0.03, 0.05, 0.13], [0.025, 0.025, 0.025]];
-  const AWNING = /* @__PURE__ */ new Set(["cafe", "restaurant", "bar", "pub", "bakery", "ice_cream", "butcher", "greengrocer", "pastry", "chocolate"]);
-  const D = { position: [], normal: [], color: [] };
-  const R = { position: [], normal: [], aRoof: [], aRoofCol: [] };
-  const stats = { faces: 0, party: 0, street: 0, cornices: 0, buttresses: 0, ridges: 0, chimneys: 0, shops: 0 };
-  doc.buildings.forEach((b, bi) => {
-    const base = b.base, eaves = (b.eaves ?? b.top) - base;
-    const key = String(b.attrs?.BU_ID ?? b.id);
-    const landmark = b.attrs?._landmark;
-    const rnd = hash01(key);
-    let ext = 0;
-    if (landmark) {
-      const xs = b.footprint[0].map((q) => q[0]), zs = b.footprint[0].map((q) => q[1]);
-      ext = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs));
-    }
-    const style = landmark ? ext < 11 && b.height > 16 ? 6.25 : 6 : wallStyle(hash01(key + "s"), b.height);
-    const roofStyle = hash01(key + "r");
-    const rc = b.roofColor || (roofStyle < 0.4 ? [0.27, 0.085, 0.05] : [0.06, 0.065, 0.075]);
-    const all = [];
-    for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) {
-      const o = triOf(P, I, t);
-      if (o) all.push(o);
-    }
-    const wallTris = all.length;
-    for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) {
-      const o = triOf(P, I, t);
-      if (o) all.push(o);
-    }
-    const smooth2 = smoother(all);
-    const faces = /* @__PURE__ */ new Map();
-    for (let k0 = 0; k0 < wallTris; k0++) {
-      const tri = all[k0], p = tri.p, [nx, ny, nz] = tri.n;
-      const h = Math.hypot(nx, nz) || 1;
-      const d = (p[0][0] * nx + p[0][2] * nz) / h;
-      const k = `${Math.round(Math.atan2(nz, nx) * 20)}|${Math.round(d * 4)}`;
-      if (!faces.has(k)) faces.set(k, { tris: [], nx: nx / h, nz: nz / h });
-      faces.get(k).tris.push({ p, n: tri.n, src: tri });
-    }
-    const fl = [...faces.values()];
-    for (const f of fl) {
-      const tx = -f.nz, tz = f.nx;
-      let u0 = Infinity, u1 = -Infinity, dd = 0, k = 0;
-      for (const { p } of f.tris) for (const q of p) {
-        const uu = q[0] * tx + q[2] * tz;
-        u0 = Math.min(u0, uu);
-        u1 = Math.max(u1, uu);
-        dd += q[0] * f.nx + q[2] * f.nz;
-        k++;
-      }
-      f.u0 = u0;
-      f.u1 = u1;
-      f.d = dd / k;
-    }
-    for (let i = 0; i < fl.length; i++) {
-      const a = fl[i];
-      if (a.dead) continue;
-      for (let j = i + 1; j < fl.length; j++) {
-        const c = fl[j];
-        if (c.dead) continue;
-        if (a.nx * c.nx + a.nz * c.nz < 0.9985 || Math.abs(a.d - c.d) > 0.3) continue;
-        if (c.u0 > a.u1 + 0.15 || a.u0 > c.u1 + 0.15) continue;
-        a.tris.push(...c.tris);
-        a.u0 = Math.min(a.u0, c.u0);
-        a.u1 = Math.max(a.u1, c.u1);
-        c.dead = true;
-        j = i;
-      }
-    }
-    const ownRing = b.footprint[0];
-    const live = fl.filter((q) => !q.dead);
-    for (const f of live) {
-      {
-        let mx = 0, mz = 0, k = 0;
-        for (const { p } of f.tris) for (const q of p) {
-          mx += q[0];
-          mz += q[2];
-          k++;
-        }
-        mx /= k;
-        mz /= k;
-        if (pip(mx + f.nx * 0.5, mz + f.nz * 0.5, ownRing) && !pip(mx - f.nx * 0.5, mz - f.nz * 0.5, ownRing)) {
-          f.nx = -f.nx;
-          f.nz = -f.nz;
-        }
-      }
-      const tx = -f.nz, tz = f.nx;
-      let u0 = Infinity, u1 = -Infinity, cx = 0, cz = 0, n = 0, top = -Infinity;
-      for (const { p } of f.tris) for (const q of p) {
-        const u = q[0] * tx + q[2] * tz;
-        u0 = Math.min(u0, u);
-        u1 = Math.max(u1, u);
-        cx += q[0];
-        cz += q[2];
-        n++;
-        top = Math.max(top, q[1]);
-      }
-      cx /= n;
-      cz /= n;
-      const width = u1 - u0;
-      const ob = width > 0.3 ? otherAt(cx + f.nx * PARTY_PROBE, cz + f.nz * PARTY_PROBE, bi) : -1;
-      const sameBld = ob >= 0 && b.attrs?.BU_ID && doc.buildings[ob].attrs?.BU_ID === b.attrs.BU_ID;
-      const partyH = ob < 0 ? 0 : sameBld || landmark ? Math.max(0.01, roofAt(ob, cx + f.nx * PARTY_PROBE, cz + f.nz * PARTY_PROBE) - base) : 999;
-      const street = partyH < 999 && facesStreet(cx, cz, f.nx, f.nz) ? 1 : 0;
-      f.pre = { tx, tz, u0, u1, cx, cz, top, width, partyH, street };
-    }
-    let doorFace = null;
-    for (const f of live) if (f.pre.street && f.pre.width >= 1.6 && (!doorFace || f.pre.width > doorFace.pre.width)) doorFace = f;
-    for (const f of live) {
-      const { tx, tz, u0, u1, cx, cz, top, width, partyH, street } = f.pre;
-      const faceEaves = landmark ? top - base : eaves;
-      const party = partyH > 0 ? 1 : 0;
-      stats.faces++;
-      stats.party += party;
-      stats.street += street;
-      let shopU = 0, shopW = 0;
-      if (street && !landmark && width > 3.2) {
-        let best = null;
-        for (const sp of shops.near(cx, cz, width / 2 + 12)) {
-          if (sp.used) continue;
-          const dp = (sp.x - cx) * f.nx + (sp.z - cz) * f.nz, uu = sp.x * tx + sp.z * tz;
-          if (uu < u0 - 1 || uu > u1 + 1) continue;
-          if (!(dp > 0 && dp < 6) && !(dp <= 0 && dp > -14 && pip(sp.x, sp.z, ownRing))) continue;
-          if (!best || Math.abs(dp) < best.d) best = { sp, d: Math.abs(dp), uu };
-        }
-        if (best) {
-          best.sp.used = true;
-          const sw = Math.min(width - 0.8, 6.5), paint = Math.floor(hash01(best.sp.id) * 4);
-          const uc = Math.min(Math.max(best.uu, u0 + sw / 2 + 0.4), u1 - sw / 2 - 0.4);
-          shopU = uc - u0;
-          shopW = sw + 10 * paint;
-          const ox = cx - tx * (cx * tx + cz * tz - uc), oz = cz - tz * (cx * tx + cz * tz - uc);
-          const fa = [ox - tx * (sw / 2 + 0.15), 0, oz - tz * (sw / 2 + 0.15)], fb = [ox + tx * (sw / 2 + 0.15), 0, oz + tz * (sw / 2 + 0.15)];
-          const pc = PAINT[paint];
-          box(D, fa, fb, base + 3.5, 0.55, 0.12, f.nx, f.nz, pc);
-          const kind = best.sp.tags?.shop || best.sp.tags?.amenity;
-          if (AWNING.has(kind)) {
-            const ac = hash01(best.sp.id + "a") < 0.5 ? [0.45, 0.06, 0.05] : [0.6, 0.55, 0.42];
-            box(D, fa, fb, base + 2.95, 0.07, 1.25, f.nx, f.nz, ac);
-            box(D, [fa[0] + f.nx * 1.2, 0, fa[2] + f.nz * 1.2], [fb[0] + f.nx * 1.2, 0, fb[2] + f.nz * 1.2], base + 2.95, 0.28, 0.05, f.nx, f.nz, ac);
-          }
-          stats.shops++;
-        }
-      }
-      const faceH = top - base;
-      if (partyH < 999 && width > 1.2 && faceH > 3) {
-        const seen = /* @__PURE__ */ new Set();
-        for (const { p } of f.tris) for (let e = 0; e < 3; e++) {
-          const A = p[e], B = p[(e + 1) % 3];
-          if (Math.abs(A[1] - B[1]) > 0.05 || Math.abs(A[1] - top) > 0.08) continue;
-          const L2 = Math.hypot(B[0] - A[0], B[2] - A[2]);
-          const key2 = [A[0], A[2], B[0], B[2]].map((v) => Math.round(v * 20)).sort().join();
-          if (L2 < 0.6 || seen.has(key2)) continue;
-          seen.add(key2);
-          const col = landmark ? [0.5, 0.47, 0.42] : style >= 3 ? [0.6, 0.58, 0.54] : [0.52, 0.5, 0.46];
-          box(D, A, B, top - 0.02, 0.16, landmark ? 0.32 : 0.22, f.nx, f.nz, col);
-          box(D, A, B, top - 0.18, 0.12, landmark ? 0.18 : 0.12, f.nx, f.nz, col.map((c) => c * 0.93));
-          stats.cornices++;
-        }
-      }
-      if (landmark && partyH < 999 && width >= 4 && faceH >= 5 && faceH <= 16) {
-        const nbL = Math.max(1, Math.floor(width / 3.6 + 0.5)), bwL = width / nbL;
-        let q0 = f.tris[0].p[0];
-        const uq = q0[0] * tx + q0[2] * tz - u0;
-        for (let k2 = 0; k2 <= nbL; k2++) {
-          const uu = Math.min(width - 0.35, Math.max(0.35, k2 * bwL)) - uq;
-          const cxk = q0[0] + tx * uu, czk = q0[2] + tz * uu;
-          const hw = 0.4, A = [cxk - tx * hw, 0, czk - tz * hw], B = [cxk + tx * hw, 0, czk + tz * hw];
-          const h1 = base + faceH * 0.55, h2 = base + faceH * 0.85;
-          box(D, A, B, h1, h1 - base + 0.3, 0.55, f.nx, f.nz, [0.5, 0.47, 0.41]);
-          box(D, A, B, h2, h2 - h1, 0.32, f.nx, f.nz, [0.52, 0.49, 0.43]);
-          box(D, A, B, h1 + 0.12, 0.12, 0.62, f.nx, f.nz, [0.44, 0.42, 0.38]);
-          stats.buttresses++;
-        }
-      }
-      if (!landmark && partyH >= 999 && faceH > 5 && width > 3 && hash01(key + "c" + Math.round(cx) + Math.round(cz)) < 0.7) {
-        let hq = null;
-        for (const { p } of f.tris) for (const q of p) if (!hq || q[1] > hq[1]) hq = q;
-        if (hq && hq[1] - base > eaves + 0.8) {
-          const uq = hq[0] * tx + hq[2] * tz;
-          const um = Math.min(Math.max(uq, u0 + 0.8), u1 - 0.8) - uq;
-          const cxq = hq[0] + tx * um, czq = hq[2] + tz * um;
-          const hw = 0.45, A = [cxq - tx * hw, 0, czq - tz * hw], B = [cxq + tx * hw, 0, czq + tz * hw];
-          const top2 = hq[1] + 1.1, brick = style <= 2 ? [0.2, 0.085, 0.055] : [0.24, 0.11, 0.07];
-          const A2 = [A[0] + f.nx * 0.3, 0, A[2] + f.nz * 0.3], B2 = [B[0] + f.nx * 0.3, 0, B[2] + f.nz * 0.3];
-          box(D, A2, B2, top2, 2.4, 0.6, -f.nx, -f.nz, brick);
-          const cA = [A2[0] - tx * 0.06 + f.nx * 0.06, 0, A2[2] - tz * 0.06 + f.nz * 0.06];
-          const cB = [B2[0] + tx * 0.06 + f.nx * 0.06, 0, B2[2] + tz * 0.06 + f.nz * 0.06];
-          box(D, cA, cB, top2 + 0.1, 0.14, 0.72, -f.nx, -f.nz, [0.42, 0.41, 0.39]);
-          for (const k2 of [-0.2, 0.2]) {
-            const px = cxq + tx * k2 - f.nx * 0, pz = czq + tz * k2 - f.nz * 0;
-            box(D, [px - tx * 0.09, 0, pz - tz * 0.09], [px + tx * 0.09, 0, pz + tz * 0.09], top2 + 0.42, 0.32, 0.18, f.nx, f.nz, [0.33, 0.13, 0.07]);
-          }
-          stats.chimneys++;
-        }
-      }
-      const k = kit ? kit.face({
-        key,
-        building: b,
-        doorFace: f === doorFace,
-        wallStyle: style,
-        landmark: !!landmark,
-        rnd,
-        width,
-        eaves: faceEaves,
-        partyH,
-        street,
-        roofAt: (x, z) => roofAt(bi, x, z),
-        shopU,
-        shopW,
-        base,
-        top,
-        nx: f.nx,
-        nz: f.nz,
-        tx,
-        tz,
-        u0,
-        tris: f.tris
-      }) : null;
-      const T3 = k?.on ? WK : W;
-      for (const { p, n: nn, src } of f.tris) for (const q of p) {
-        T3.position.push(q[0], q[1], q[2]);
-        const sn = src ? smooth2(src, q) : nn;
-        T3.normal.push(sn[0], sn[1], sn[2]);
-        T3.aWall.push(q[0] * tx + q[2] * tz - u0, width, q[1] - base, faceEaves);
-        T3.aBld.push(style, partyH, street, rnd);
-        T3.aFN.push(f.nx, f.nz, shopU, shopW);
-        if (T3 === WK) WK.aKit.push(1, k.rise, k.doorless, k.french);
-      }
-    }
-    {
-      const edges = /* @__PURE__ */ new Map(), kv = (q) => `${Math.round(q[0] * 50)},${Math.round(q[1] * 50)},${Math.round(q[2] * 50)}`;
-      for (let k = wallTris; k < all.length; k++) {
-        const tri = all[k];
-        for (let e = 0; e < 3; e++) {
-          const A = tri.p[e], B = tri.p[(e + 1) % 3], ka = kv(A), kb = kv(B);
-          const key2 = ka < kb ? ka + "|" + kb : kb + "|" + ka;
-          if (!edges.has(key2)) edges.set(key2, []);
-          edges.get(key2).push({ tri, A, B, C: tri.p[(e + 2) % 3] });
-        }
-      }
-      const capCol = landmark ? [0.47, 0.45, 0.4] : [rc[0] * 0.72, rc[1] * 0.72, rc[2] * 0.72];
-      for (const list of edges.values()) {
-        if (list.length === 1 && !landmark) {
-          const { tri, A: A2, B, C: C2 } = list[0], n = tri.n[1] < 0 ? tri.n.map((v) => -v) : tri.n;
-          if (n[1] > 0.2 && n[1] < 0.97 && Math.abs(A2[1] - B[1]) < 0.05 && C2[1] > A2[1] + 0.3) {
-            const hl = Math.hypot(n[0], n[2]) || 1, ox = n[0] / hl, oz = n[2] / hl;
-            box(D, A2, B, A2[1] + 0.03, 0.1, 0.32, ox, oz, [rc[0] * 0.8, rc[1] * 0.8, rc[2] * 0.8]);
-            const gA = [A2[0] + ox * 0.26, 0, A2[2] + oz * 0.26], gB = [B[0] + ox * 0.26, 0, B[2] + oz * 0.26];
-            box(D, gA, gB, A2[1] - 0.05, 0.12, 0.13, ox, oz, [0.3, 0.31, 0.32]);
-            stats.eaves = (stats.eaves || 0) + 1;
-          }
-          continue;
-        }
-        if (list.length !== 2) continue;
-        const [e1, e2] = list, up = (n) => n[1] < 0 ? n.map((v) => -v) : n, n1 = up(e1.tri.n), n2 = up(e2.tri.n);
-        if (n1[0] * n2[0] + n1[1] * n2[1] + n1[2] * n2[2] > 0.978) continue;
-        if (n1[1] < 0.15 || n2[1] < 0.15) continue;
-        const C = e2.C, A = e1.A;
-        if ((C[0] - A[0]) * n1[0] + (C[1] - A[1]) * n1[1] + (C[2] - A[2]) * n1[2] > -0.02) continue;
-        beam(D, e1.A, e1.B, landmark ? 0.34 : 0.26, landmark ? 0.2 : 0.14, capCol);
-        stats.ridges++;
-      }
-    }
-    for (let k = wallTris; k < all.length; k++) {
-      const tri = all[k], p = tri.p;
-      const [nx, ny, nz] = tri.n;
-      const flat = ny > 0.97 ? 1 : 0;
-      const h = Math.hypot(nx, nz) || 1, dx = nx / h, dz = nz / h;
-      for (const q of p) {
-        R.position.push(q[0], q[1], q[2]);
-        const sn = smooth2(tri, q);
-        R.normal.push(sn[0], sn[1], sn[2]);
-        R.aRoofCol.push(rc[0], rc[1], rc[2]);
-        if (flat) R.aRoof.push(q[0], q[2], 1, roofStyle);
-        else R.aRoof.push(q[0] * -dz + q[2] * dx, (q[0] * dx + q[2] * dz) / Math.max(ny, 0.2), 0, roofStyle);
-      }
-    }
-  });
-  const f32 = (a) => new Float32Array(a);
-  return {
-    walls: {
-      position: f32(W.position),
-      normal: f32(W.normal),
-      aWall: f32(W.aWall),
-      aBld: f32(W.aBld),
-      aFN: f32(W.aFN),
-      kit: kit ? { position: f32(WK.position), normal: f32(WK.normal), aWall: f32(WK.aWall), aBld: f32(WK.aBld), aFN: f32(WK.aFN), aKit: f32(WK.aKit) } : null
-    },
-    kit: kit ? kit.finish() : null,
-    details: { position: f32(D.position), normal: f32(D.normal), aCol: f32(D.color) },
-    roofs: { position: f32(R.position), normal: f32(R.normal), aRoof: f32(R.aRoof), aRoofCol: f32(R.aRoofCol) },
-    stats: { ...stats, triangles: T2, vertices: V }
-  };
-}
-
-// viewer/landcover.js
-var KIND = {
-  wood: [255, 0, 0, 0],
-  forest: [255, 0, 0, 0],
-  scrub: [170, 0, 0, 0],
-  playground: [0, 0, 255, 0],
-  water: [0, 0, 0, 255]
-};
-var PATHS = /* @__PURE__ */ new Set(["footway", "path", "cycleway", "steps", "pedestrian"]);
-function landCoverData(feats, bounds) {
-  const W = Math.round(bounds.x1 - bounds.x0), H = Math.round(bounds.z1 - bounds.z0);
-  const cv = new OffscreenCanvas(W, H), g = cv.getContext("2d");
-  g.clearRect(0, 0, W, H);
-  g.globalCompositeOperation = "lighter";
-  const px = (x) => x - bounds.x0, pz = (z) => z - bounds.z0;
-  let areas = 0, paths = 0;
-  for (const a of feats.areas || []) {
-    const c = KIND[a.kind];
-    if (!c) continue;
-    g.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},1)`;
-    g.beginPath();
-    for (const ring2 of a.rings || []) {
-      ring2.forEach(([x, z], i) => i ? g.lineTo(px(x), pz(z)) : g.moveTo(px(x), pz(z)));
-      g.closePath();
-    }
-    g.fill("evenodd");
-    areas++;
-  }
-  if (feats.railVerges?.length) {
-    g.strokeStyle = "rgba(225,0,0,1)";
-    g.lineCap = g.lineJoin = "round";
-    g.lineWidth = 30;
-    for (const l of feats.railVerges) {
-      g.beginPath();
-      l.forEach(([x, z], i) => i ? g.lineTo(px(x), pz(z)) : g.moveTo(px(x), pz(z)));
-      g.stroke();
-    }
-  }
-  g.strokeStyle = "rgba(0,255,0,1)";
-  g.lineCap = g.lineJoin = "round";
-  for (const l of feats.lines || []) {
-    if (!PATHS.has(l.kind)) continue;
-    g.lineWidth = l.kind === "pedestrian" ? 4 : 1.6;
-    g.beginPath();
-    l.line.forEach(([x, z], i) => i ? g.lineTo(px(x), pz(z)) : g.moveTo(px(x), pz(z)));
-    g.stroke();
-    paths++;
-  }
-  const img = g.getImageData(0, 0, W, H).data;
-  const wc = new OffscreenCanvas(W, H), wg = wc.getContext("2d");
-  wg.fillStyle = "#fff";
-  for (const a of feats.areas || []) {
-    if (a.kind !== "water") continue;
-    wg.beginPath();
-    for (const ring2 of a.rings || []) {
-      ring2.forEach(([x, z], i) => i ? wg.lineTo(px(x), pz(z)) : wg.moveTo(px(x), pz(z)));
-      wg.closePath();
-    }
-    wg.fill("evenodd");
-  }
-  const wimg = wg.getImageData(0, 0, W, H).data;
-  const data = new Uint8Array(W * H * 4);
-  for (let i = 0; i < W * H; i++) {
-    const a = img[i * 4 + 3] / 255 || 1;
-    data[i * 4] = Math.min(255, img[i * 4] / a);
-    data[i * 4 + 1] = Math.min(255, img[i * 4 + 1] / a);
-    data[i * 4 + 2] = Math.min(255, img[i * 4 + 2] / a);
-    data[i * 4 + 3] = wimg[i * 4];
-    if (!img[i * 4 + 3]) data[i * 4] = data[i * 4 + 1] = data[i * 4 + 2] = 0;
-  }
-  return { data, W, H, areas, paths };
-}
-
-// tools/worker/node_modules/meshoptimizer/meshopt_simplifier.js
-var MeshoptSimplifier = (function() {
-  var wasm = "b9H79Tebbbe:6eO9Geueu9Geub9Gbb9Gsuuuuuuuuuuuu99uueu9Gvuuuuub9Gruuuuuuub9Gouuuuuue999Gvuuuuueu9Gzuuuuuuuuuuu99uuuub9Gquuuuuuu99uueu9GPuuuuuuuuuuu99uueu9Gquuuuuuuu99ueu9Gruuuuuu99eu9Gwuuuuuu99ueu9Giuuue999Gluuuueu9Gluuuub9GiuuueuiLQdilvorlwDiqkxmPszbHHbelve9Weiiviebeoweuecj:Gdkr:Bdxo9TW9T9VV95dbH9F9F939H79T9F9J9H229F9Jt9VV7bbz9TW79O9V9Wt9F79P9T9W29P9M95bw8E9TW79O9V9Wt9F79P9T9W29P9M959x9Pt9OcttV9P9I91tW7bD8A9TW79O9V9Wt9F79P9T9W29P9M959x9Pt9O9v9W9K9HtWbqQ9TW79O9V9Wt9F79P9T9W29P9M959t29V9W9W95bkX9TW79O9V9Wt9F79P9T9W29P9M959qV919UWbxQ9TW79O9V9Wt9F79P9T9W29P9M959q9V9P9Ut7bmX9TW79O9V9Wt9F79P9T9W29P9M959t9J9H2WbPa9TW79O9V9Wt9F9V9Wt9P9T9P96W9wWVtW94SWt9J9O9sW9T9H9Wbs59TW79O9V9Wt9F9NW9UWV9HtW9q9V79Pt9P9V9U9sW9T9H9Wbzl79IV9RbHDwebcekdCXq;y;WeQdbk;r:herYue99iuY99Xue9:D998Jjjjjbcj;sb9Rgs8Kjjjjbcbhzasc:Cefcbc;Kbz:tjjjb8AdnabaeSmbabaeadcdtzMjjjb8AkdnamcdGTmbalcrfci4cbyd1:H:cjbHjjjjbbhHasc:Cefasyd;8egecdtfaHBdbasaecefBd;8ecbhlcbhednadTmbabheadhOinaHaeydbci4fcb86bbaeclfheaOcufgOmbkcbhlabheadhOinaHaeydbgAci4fgCaCRbbgCceaAcrGgAtV86bbaCcu7aA4ceGalfhlaeclfheaOcufgOmbkcualcdtalcFFFFi0Ehekaecbyd1:H:cjbHjjjjbbhzasc:Cefasyd;8egecdtfazBdbasaecefBd;8ealcd4alfhOcehHinaHgecethHaeaO6mbkcbhXcuaecdtgOaecFFFFi0Ecbyd1:H:cjbHjjjjbbhHasc:Cefasyd;8egAcdtfaHBdbasaAcefBd;8eaHcFeaOz:tjjjbhQdnadTmbaecufhLcbhKindndnaQabaKcdtfgYydbgAc:v;t;h;Ev2aLGgOcdtfgCydbgHcuSmbceheinazaHcdtfydbaASmdaOaefhHaecefheaQaHaLGgOcdtfgCydbgHcu9hmbkkazaXcdtfaABdbaCaXBdbaXhHaXcefhXkaYaHBdbaKcefgKad9hmbkkaQcbyd:m:H:cjbH:bjjjbbasasyd;8ecufBd;8ekcbh8AcualcefgecdtaecFFFFi0Ecbyd1:H:cjbHjjjjbbhLasc:Cefasyd;8egecdtfaLBdbasaLBdNeasaecefBd;8ecuadcitadcFFFFe0Ecbyd1:H:cjbHjjjjbbhEasc:Cefasyd;8egecdtfaEBdbasaEBd:yeasaecefBd;8eascNefabadalcbz:cjjjbcualcdtgealcFFFFi0Eg3cbyd1:H:cjbHjjjjbbhOasc:Cefasyd;8egHcdtfaOBdbasaHcefBd;8ea3cbyd1:H:cjbHjjjjbbhQasc:Cefasyd;8egHcdtfaQBdbasaHcefBd;8eaOaQaialavazasc:Cefz:djjjbalcbyd1:H:cjbHjjjjbbhYasc:Cefasyd;8egHcdtfaYBdbasaHcefBd;8ea3cbyd1:H:cjbHjjjjbbhHasc:Cefasyd;8egAcdtfaHBdbasaAcefBd;8ea3cbyd1:H:cjbHjjjjbbhAasc:Cefasyd;8egCcdtfaABdbasaCcefBd;8eaHcFeaez:tjjjbh5aAcFeaez:tjjjbh8EdnalTmbindnaLa8AgAcefg8AcdtfydbgCaLaAcdtgefydbgHSmbaCaH9Rh8FaEaHcitfhaa8Eaefhha5aefhKcbhCindndnaaaCcitfydbgXaA9hmbaKaABdbahaABdbxekdnaLaXcdtggfgeclfydbgHaeydbgeSmbaHae9RhHaEaecitfheinaeydbaASmdaecwfheaHcufgHmbkka8EagfgeaAaXaeydbcuSEBdbaKaXaAaKydbcuSEBdbkaCcefgCa8F9hmbkka8Aal9hmbkaOhHaQhAa5hXa8EhCcbheindndnaeaHydbgK9hmbdnaeaAydbgK9hmbaXydbhKdnaCydbg8Fcu9hmbaKcu9hmbaYaefcb86bbxikdna8FcuSmbaKcuSmbaea8FSmbaOa8FcdtfydbaOaKcdtfydb9hmbaYaefcd86bbxikaYaefhadnaea8FSmbaeaKSmbaace86bbxikaacl86bbxdkdnaeaQaKcdtg8Ffydb9hmbdnaCydbgacuSmbaeaaSmbaXydbggcuSmbaeagSmba8Ea8FfydbghcuSmbahaKSmba5a8Ffydbg8FcuSmba8FaKSmbdnaOaacdtfydbgKaOa8Fcdtfydb9hmbaKaOagcdtfydbg8FSmba8FaOahcdtfydb9hmbaYaefcd86bbxlkaYaefcl86bbxikaYaefcl86bbxdkaYaefcl86bbxekaYaefaYaKfRbb86bbkaHclfhHaAclfhAaXclfhXaCclfhCalaecefge9hmbkdnamcaGTmbcbh8JindndnaYa8Jfg8KRbbg8Lc9:fPibebekdndndnaOa8Jcdtfydbgea8J9hmbdnaqmbcbh8FxdkdnazTmbcbh8Fa8JheinaqazaecdtgefydbfRbbce4a8FVceGh8FaQaefydbgea8J9hmbxikkcbh8Fa8JheinaqaefRbbce4a8FVceGh8FaQaecdtfydbgea8J9hmbxdkkaYaefRbbhexeka8JheindnaLaecdtg8AfgeclfydbgHaeydbgeSmbaHae9RhgaEaecitfhhaOa8AfhacbhKinahaKcitfydbgXhednindnaLaecdtgCfgeclfydbgHaeydbgeSmbaHae9RhHaEaecitfheaaydbhAdninaOaeydbcdtfydbaASmeaecwfheaHcufgHTmdxbkkcbhexdkaQaCfydbgeaX9hmbkceheka8FaeVh8FaKcefgKag9hmbkkaQa8Afydbgea8J9hmbka8Lcia8FceGEheka8Kae86bbka8Jcefg8Jal9hmbkkdnaqTmbdndnazTmbazheaOhHalhAindnaqaeydbfRbbceGTmbaYaHydbfcl86bbkaeclfheaHclfhHaAcufgAmbxdkkaqheaOhHalhAindnaeRbbceGTmbaYaHydbfcl86bbkaecefheaHclfhHaAcufgAmbkkaOhealhAaYhHindnaYaeydbfRbbcl9hmbaHcl86bbkaeclfheaHcefhHaAcufgAmbkkamceGTmbaYhealhHindnaeRbbce9hmbaecl86bbkaecefheaHcufgHmbkkcbh8Mcualcx2alc;v:Q;v:Qe0Ecbyd1:H:cjbHjjjjbbh8Nasc:Cefasyd;8egecdtfa8NBdbasaecefBd;8eascbBd:qeas9cb83i1ea8Naialavazasc1efz:ejjjbhydndnaDmbcbh8PcbhCxekcbhCawhecbhHindnaeIdbJbbbb9ETmbasaCcdtfaHBdbaCcefhCkaeclfheaDaHcefgH9hmbkcuaCal2gecdtaecFFFFi0Ecbyd1:H:cjbHjjjjbbh8Pasc:Cefasyd;8egecdtfa8PBdbasaecefBd;8ealTmbdnaCmbcbhCxekarcd4hgdnazTmbaCcdthhcbh8Fa8Phainaoaza8Fcdtfydbag2cdtfhKasheaahHaChAinaHaKaeydbcdtgXfIdbawaXfIdbNUdbaeclfheaHclfhHaAcufgAmbkaaahfhaa8Fcefg8Fal9hmbxdkkaCcdthhcbh8Fa8Phainaoa8Fag2cdtfhKasheaahHaChAinaHaKaeydbcdtgXfIdbawaXfIdbNUdbaeclfheaHclfhHaAcufgAmbkaaahfhaa8Fcefg8Fal9hmbkkcualc8S2gHalc;D;O;f8U0EgXcbyd1:H:cjbHjjjjbbheasc:Cefasyd;8egAcdtfaeBdbasaAcefBd;8eaecbaHz:tjjjbhIcbh8RcbhgdnaCTmbcbh8MaXcbyd1:H:cjbHjjjjbbhgasc:Cefasyd;8egecdtfagBdbasaecefBd;8eagcbaHz:tjjjb8AcuaCal2gecltgHaecFFFFb0Ecbyd1:H:cjbHjjjjbbh8Rasc:Cefasyd;8egecdtfa8RBdbasaecefBd;8ea8RcbaHz:tjjjb8AamcjjjjdGTmbcualcltgealcFFFFb0Ecbyd1:H:cjbHjjjjbbh8Masc:Cefasyd;8egHcdtfa8MBdbasaHcefBd;8ea8Mcbaez:tjjjb8AkdnadTmbcbhKabhHina8NaHclfydbg8Fcx2fgeIdba8NaHydbgacx2fgAIdbg8S:tgRa8NaHcwfydbghcx2fgXIdlaAIdlg8U:tg8VNaeIdla8U:tg8WaXIdba8S:tg8XN:tg8Ya8YNa8WaXIdwaAIdwg8Z:tg80NaeIdwa8Z:tg8Wa8VN:tg81a81Na8Wa8XNaRa80N:tg80a80NMMg8V:rhBa8Yh8Xa80h8Wa81hRdna8VJbbbb9EgATmba8YaB:vh8Xa80aB:vh8Wa81aB:vhRkaIaOaacdtfydbgXc8S2fgeaRaB:rg8VaRNNg83aeIdbMUdbaea8Wa8Va8WNgUNg85aeIdlMUdlaea8Xa8Va8XNg86Ng87aeIdwMUdwaeaRaUNgUaeIdxMUdxaea86aRNg88aeIdzMUdzaea8Wa86Ng89aeIdCMUdCaeaRa8Va8Xa8ZNaRa8SNa8Ua8WNMM:mg8:Ng86NgRaeIdKMUdKaea8Wa86Ng8WaeId3MUd3aea8Xa86Ng8XaeIdaMUdaaea86a8:Ng86aeId8KMUd8Kaea8VaeIdyMUdyaIaOa8Fcdtfydbg8Fc8S2fgea83aeIdbMUdbaea85aeIdlMUdlaea87aeIdwMUdwaeaUaeIdxMUdxaea88aeIdzMUdzaea89aeIdCMUdCaeaRaeIdKMUdKaea8WaeId3MUd3aea8XaeIdaMUdaaea86aeId8KMUd8Kaea8VaeIdyMUdyaIaOahcdtfydbgac8S2fgea83aeIdbMUdbaea85aeIdlMUdlaea87aeIdwMUdwaeaUaeIdxMUdxaea88aeIdzMUdzaea89aeIdCMUdCaeaRaeIdKMUdKaea8WaeId3MUd3aea8XaeIdaMUdaaea86aeId8KMUd8Kaea8VaeIdyMUdydna8MTmbdnaATmba8YaB:vh8Ya80aB:vh80a81aB:vh81ka8MaXcltfgeaBJbbbZNgRa80Ng8VaeIdlMUdlaeaRa8YNg8WaeIdwMUdwaeaRa81Ng8XaeIdbMUdbaeaRa8S:ma81Na8Ua80N:ta8Za8YN:tNgRaeIdxMUdxa8Ma8Fcltfgea8VaeIdlMUdlaea8WaeIdwMUdwaea8XaeIdbMUdbaeaRaeIdxMUdxa8Maacltfgea8VaeIdlMUdlaea8WaeIdwMUdwaea8XaeIdbMUdbaeaRaeIdxMUdxkaHcxfhHaKcifgKad6mbkkdnalTmbJq;x8J88J;n;m;m89J:v:;;w8ZamczGEamc;abGEh80cbhHaOhXazhKaIhea8NhAindnaHaXydb9hmbaHh8FdnazTmbaKydbh8Fka80hRdnaqTmbJbbjZa80aqa8FfRbbclGEhRkaecxfg8Fa8FIdbJbbbbMUdbaeczfg8Fa8FIdbJbbbbMUdbaecCfg8Fa8FIdbJbbbbMUdbaeaRaecyfg8FIdbg8YNgRaeIdbMUdbaeclfgaaRaaIdbMUdbaecwfgaaRaaIdbMUdbaecKfgaaaIdbaAIdbg8WaRN:tUdbaAcwfIdbh8Vaec3fgaaaIdbaRaAclfIdbg8XN:tUdbaecafgaaaIdbaRa8VN:tUdbaec8KfgaIdbh81a8Fa8YaRMUdbaaa81aRa8Va8VNa8Wa8WNa8Xa8XNMMNMUdbkaXclfhXaKclfhKaec8SfheaAcxfhAalaHcefgH9hmbkkdnadTmbcbh8Aabhainaba8Acdtfh8FcbhHinaYa8FaHc:G:G:cjbfydbcdtfydbgAfRbbhedndnaYaaaHfydbgXfRbbgKc99fcFeGcpe0mbaec99fcFeGc;:e6mekdnaKcufcFeGce0mba5aXcdtfydbaA9hmekdnaecufcFeGce0mba8EaAcdtfydbaX9hmekJbbacJbbacJbbbZaecFeGceSEaKcFeGceSEhUdna8Na8FaHc:K:G:cjbfydbcdtfydbcx2fgeIdwa8NaXcx2fgKIdwg86:tg8Sa8NaAcx2fghIdwa86:tg8Xa8XNahIdbaKIdbg8U:tg80a80NahIdlaKIdlg8Z:tg8Va8VNMMg81Na8Xa8Sa8XNaeIdba8U:tg83a80Na8VaeIdla8Z:tg85NMMg8WN:tg8Ya8YNa83a81Na80a8WN:tgRaRNa85a81Na8Va8WN:tg8Wa8WNMMgBJbbbb9ETmba8YaB:rgB:vh8Ya8WaB:vh8WaRaB:vhRkaUa81:rNgBa8Ya86NaRa8UNa8Za8WNMM:mg81Ng87a81Nh88a80a85Na8Va83N:tg81a81Na8Va8SNa8Xa85N:tg8Va8VNa8Xa83Na80a8SN:tg8Xa8XNMMg83:rh80a8Ya87Nh85a8Wa87Nh89aRa87Nh87a8WaBa8YNg8SNh8:a8SaRNhZaRaBa8WNgnNhca8Ya8SNh8Ya8WanNh8WaRaBaRNNh8Sdna83Jbbbb9ETmba81a80:vh81a8Xa80:vh8Xa8Va80:vh8VkaIaOaXcdtfydbc8S2fgeaeIdba8Sa8VaUa80:rNgRa8VNNMg80MUdbaea8Wa8XaRa8XNg8SNMg83aeIdlMUdlaea8Ya81aRa81Ng8WNMg8YaeIdwMUdwaeaca8Va8SNMg8SaeIdxMUdxaeaZa8Wa8VNMgUaeIdzMUdzaea8:a8Xa8WNMg8WaeIdCMUdCaea87a8VaRa81a86Na8Va8UNa8Za8XNMMg86:mNgRNMg8VaeIdKMUdKaea89a8XaRNMg8XaeId3MUd3aea85a81aRNMg81aeIdaMUdaaea88a86aRN:tgRaeId8KMUd8KaeaBaeIdyMUdyaIaOaAcdtfydbc8S2fgea80aeIdbMUdbaea83aeIdlMUdlaea8YaeIdwMUdwaea8SaeIdxMUdxaeaUaeIdzMUdzaea8WaeIdCMUdCaea8VaeIdKMUdKaea8XaeId3MUd3aea81aeIdaMUdaaeaRaeId8KMUd8KaeaBaeIdyMUdykaHclfgHcx9hmbkaacxfhaa8Acifg8Aad6mbkaCTmbcbhainJbbbbh80a8Nabaacdtfgeclfydbg8Fcx2fgHIdwa8Naeydbghcx2fgAIdwg8Z:tg8Va8VNaHIdbaAIdbg83:tg8Wa8WNaHIdlaAIdlg85:tg8Xa8XNMMg8Sa8Naecwfydbg8Acx2fgeIdwa8Z:tg8YNa8Va8YNa8WaeIdba83:tg81Na8XaeIdla85:tgBNMMgRa8VN:tJbbbbJbbjZa8Sa8Ya8YNa81a81NaBaBNMMg8UNaRaRN:tg86:va86Jbbbb9BEg86Nh88a8Ua8VNaRa8YN:ta86Nh89a8SaBNaRa8XN:ta86Nh8:a8Ua8XNaRaBN:ta86NhZa8Sa81NaRa8WN:ta86Nhna8Ua8WNaRa81N:ta86Nhca8WaBNa8Xa81N:tgRaRNa8Xa8YNa8VaBN:tgRaRNa8Va81Na8Wa8YN:tgRaRNMM:rJbbbZNhRa8PahaC2g8JcdtfhHa8Pa8AaC2gDcdtfhAa8Pa8FaC2g8KcdtfhXa8Z:mh9ca85:mhJa83:mh9eascjdfheaChKJbbbbhBJbbbbh86Jbbbbh8SJbbbbh8UJbbbbh8ZJbbbbh83Jbbbbh85Jbbbbh87JbbbbhUinaecwfaRa89aXIdbaHIdbg8Y:tg8XNa88aAIdba8Y:tg81NMg8VNUdbaeclfaRaZa8XNa8:a81NMg8WNUdbaeaRaca8XNana81NMg8XNUdbaecxfaRa9ca8VNaJa8WNa8Ya9ea8XNMMMg8YNUdbaRa8Va8WNNa8ZMh8ZaRa8Va8XNNa8UMh8UaRa8Wa8XNNa8SMh8SaRa8Ya8YNNaUMhUaRa8Va8YNNa87Mh87aRa8Wa8YNNa85Mh85aRa8Xa8YNNa83Mh83aRa8Va8VNNa86Mh86aRa8Wa8WNNaBMhBaRa8Xa8XNNa80Mh80aHclfhHaXclfhXaAclfhAaeczfheaKcufgKmbkagahc8S2fgea80aeIdbMUdbaeaBaeIdlMUdlaea86aeIdwMUdwaea8SaeIdxMUdxaea8UaeIdzMUdzaea8ZaeIdCMUdCaea83aeIdKMUdKaea85aeId3MUd3aea87aeIdaMUdaaeaUaeId8KMUd8KaeaRaeIdyMUdyaga8Fc8S2fgea80aeIdbMUdbaeaBaeIdlMUdlaea86aeIdwMUdwaea8SaeIdxMUdxaea8UaeIdzMUdzaea8ZaeIdCMUdCaea83aeIdKMUdKaea85aeId3MUd3aea87aeIdaMUdaaeaUaeId8KMUd8KaeaRaeIdyMUdyaga8Ac8S2fgea80aeIdbMUdbaeaBaeIdlMUdlaea86aeIdwMUdwaea8SaeIdxMUdxaea8UaeIdzMUdzaea8ZaeIdCMUdCaea83aeIdKMUdKaea85aeId3MUd3aea87aeIdaMUdaaeaUaeId8KMUd8KaeaRaeIdyMUdya8Ra8Jcltfh8FcbhHaChXina8FaHfgeascjdfaHfgAIdbaeIdbMUdbaeclfgKaAclfIdbaKIdbMUdbaecwfgKaAcwfIdbaKIdbMUdbaecxfgeaAcxfIdbaeIdbMUdbaHczfhHaXcufgXmbka8Ra8Kcltfh8FcbhHaChXina8FaHfgeascjdfaHfgAIdbaeIdbMUdbaeclfgKaAclfIdbaKIdbMUdbaecwfgKaAcwfIdbaKIdbMUdbaecxfgeaAcxfIdbaeIdbMUdbaHczfhHaXcufgXmbka8RaDcltfh8FcbhHaChXina8FaHfgeascjdfaHfgAIdbaeIdbMUdbaeclfgKaAclfIdbaKIdbMUdbaecwfgKaAcwfIdbaKIdbMUdbaecxfgeaAcxfIdbaeIdbMUdbaHczfhHaXcufgXmbkaacifgaad6mbkkcbhAdndnamcwGgTmbJbbbbh8ScbhScbh9hcbh9ixekcbhSa3cbyd1:H:cjbHjjjjbbh9iasc:Cefasyd;8egecdtfa9iBdbasaecefBd;8ecua9ialabadaOz:fjjjbgXcltaXcjjjjiGEcbyd1:H:cjbHjjjjbbh9hasc:Cefasyd;8egecdtfa9hBdbasaecefBd;8ea9haXa9ia8Nalz:gjjjbJFFuuh8SaXTmba9hheaXhHinaeIdbgRa8Sa8SaR9EEh8SaeclfheaHcufgHmbkaXhSkdnalTmbaLclfheaLydbhXaYhHalhKcbhAincbaeydbg8FaX9RaHRbbcpeGEaAfhAaHcefhHaeclfhea8FhXaKcufgKmbkaAce4hAkcuadaA9Rcifg6cx2a6c;v:Q;v:Qe0Ecbyd1:H:cjbHjjjjbbh9kasc:Cefasyd;8egecdtfa9kBdbasaecefBd;8ecua6cdta6cFFFFi0Ecbyd1:H:cjbHjjjjbbh0asc:Cefasyd;8egecdtfa0BdbasaecefBd;8ea3cbyd1:H:cjbHjjjjbbh9masc:Cefasyd;8egecdtfa9mBdbasaecefBd;8ealcbyd1:H:cjbHjjjjbbh9nasc:Cefasyd;8egecdtfa9nBdbasaecefBd;8eaxaxNayJbbjZamclGEgZaZN:vh87JbbbbhUdnadak9nmbdna6ci6mbaCclth9oa9kcwfh9pJbbbbh85JbbbbhUinascNefabadalaOz:cjjjbabh8Acbh9qcbh9rinaba9rcdtfhDcbheindnaOa8AaefydbgAcdtghfydbgXaOaDaec:W:G:cjbfydbcdtfydbgHcdtg8JfydbgKSmbaYaHfRbbgacv2aYaAfRbbg8FfRb;a:G:cjbg8La8Fcv2aafg8KRb;a:G:cjbg3VcFeGTmbdnaKaX9nmba8KRb;G:G:cjbcFeGmekdna8FcufcFeGce0mbaaTmba5ahfydbaH9hmekdna8FTmbaacufcFeGce0mba8Ea8JfydbaA9hmeka9ka9qcx2fgXaHaAa3cFeGgKEBdlaXaAaHaKEBdbaXaKa8LGcb9hBdwa9qcefh9qkaeclfgecx9hmbkdna9rcifg9rad9pmba8Acxfh8Aa9qcifa69nmekka9qTmdcbh8KinaIaOa9ka8Kcx2fghydbgKcdtgXfydbg8Ac8S2fgeIdwa8Nahydlg8Fcx2fgHIdwg8WNaeIdzaHIdbg8XNaeIdaMgRaRMMa8WNaeIdlaHIdlg8YNaeIdCa8WNaeId3MgRaRMMa8YNaeIdba8XNaeIdxa8YNaeIdKMgRaRMMa8XNaeId8KMMM:lhRJbbbbJbbjZaeIdyg8V:va8VJbbbb9BEh8VdndnahydwgDmbJFFuuh86xekJbbbbJbbjZaIaOa8Fcdtfydbc8S2fgeIdyg81:va81Jbbbb9BEaeIdwa8NaKcx2fgHIdwg81NaeIdzaHIdbg80NaeIdaMgBaBMMa81NaeIdlaHIdlgBNaeIdCa81NaeId3Mg81a81MMaBNaeIdba80NaeIdxaBNaeIdKMg81a81MMa80NaeId8KMMM:lNh86ka8VaRNhBdnaCTmbagaKc8S2fgAIdwa8WNaAIdza8XNaAIdaMgRaRMMa8WNaAIdla8YNaAIdCa8WNaAId3MgRaRMMa8YNaAIdba8XNaAIdxa8YNaAIdKMgRaRMMa8XNaAId8KMMMhRa8Pa8FaC2gacdtfhHa8RaKaC2g8JcltfheaAIdyh81aChAinaHIdbg8Va8Va81NaecxfIdba8WaecwfIdbNa8XaeIdbNa8YaeclfIdbNMMMg8Va8VM:tNaRMhRaHclfhHaeczfheaAcufgAmbkdndnaDmbJbbbbh8Vxekaga8Fc8S2fgAIdwa8NaKcx2fgeIdwg8XNaAIdzaeIdbg8YNaAIdaMg8Va8VMMa8XNaAIdlaeIdlg81NaAIdCa8XNaAId3Mg8Va8VMMa81NaAIdba8YNaAIdxa81NaAIdKMg8Va8VMMa8YNaAId8KMMMh8Va8Pa8JcdtfhHa8RaacltfheaAIdyh80aChAinaHIdbg8Wa8Wa80NaecxfIdba8XaecwfIdbNa8YaeIdbNa81aeclfIdbNMMMg8Wa8WM:tNa8VMh8VaHclfhHaeczfheaAcufgAmbka8V:lh8VkaBaR:lMhBa86a8VMh86dndndnaYaKfRbbc9:fPddbekaQaXfydbgXaKSmbaOa8Fcdtfydbh8Jindndna5aXcdtgafydbgecuSmbaOaecdtfydba8JSmekdna8EaafydbgecuSmbaOaecdtfydba8JSmeka8FhekagaXc8S2fgAIdwa8Naecx2fgHIdwg8WNaAIdzaHIdbg8XNaAIdaMgRaRMMa8WNaAIdlaHIdlg8YNaAIdCa8WNaAId3MgRaRMMa8YNaAIdba8XNaAIdxa8YNaAIdKMgRaRMMa8XNaAId8KMMMhRa8PaeaC2cdtfhHa8RaXaC2cltfheaAIdyh81aChAinaHIdbg8Va8Va81NaecxfIdba8WaecwfIdbNa8XaeIdbNa8YaeclfIdbNMMMg8Va8VM:tNaRMhRaHclfhHaeczfheaAcufgAmbkaBaR:lMhBaQaafydbgXaK9hmbkkaYa8FfRbbci9hmeaDTmeaQa8FcdtfydbgXa8FSmeindndna5aXcdtgafydbgecuSmbaOaecdtfydba8ASmekdna8EaafydbgecuSmbaOaecdtfydba8ASmekaKhekagaXc8S2fgAIdwa8Naecx2fgHIdwg8WNaAIdzaHIdbg8XNaAIdaMgRaRMMa8WNaAIdlaHIdlg8YNaAIdCa8WNaAId3MgRaRMMa8YNaAIdba8XNaAIdxa8YNaAIdKMgRaRMMa8XNaAId8KMMMhRa8PaeaC2cdtfhHa8RaXaC2cltfheaAIdyh81aChAinaHIdbg8Va8Va81NaecxfIdba8WaecwfIdbNa8XaeIdbNa8YaeclfIdbNMMMg8Va8VM:tNaRMhRaHclfhHaeczfheaAcufgAmbka86aR:lMh86aQaafydbgXa8F9hmbxdkkdna8Ea5a5aXfydba8FSEaQaXfydbgacdtfydbgXcu9hmbaQa8FcdtfydbhXkagaac8S2fgAIdwa8NaXcx2fgeIdwg8WNaAIdzaeIdbg8XNaAIdaMgRaRMMa8WNaAIdlaeIdlg8YNaAIdCa8WNaAId3MgRaRMMa8YNaAIdba8XNaAIdxa8YNaAIdKMgRaRMMa8XNaAId8KMMMhRa8PaXaC2g8AcdtfhHa8RaaaC2g8JcltfheaAIdyh81aChAinaHIdbg8Va8Va81NaecxfIdba8WaecwfIdbNa8XaeIdbNa8YaeclfIdbNMMMg8Va8VM:tNaRMhRaHclfhHaeczfheaAcufgAmbkdndnaDmbJbbbbh8VxekagaXc8S2fgAIdwa8Naacx2fgeIdwg8XNaAIdzaeIdbg8YNaAIdaMg8Va8VMMa8XNaAIdlaeIdlg81NaAIdCa8XNaAId3Mg8Va8VMMa81NaAIdba8YNaAIdxa81NaAIdKMg8Va8VMMa8YNaAId8KMMMh8Va8Pa8JcdtfhHa8Ra8AcltfheaAIdyh80aChAinaHIdbg8Wa8Wa80NaecxfIdba8XaecwfIdbNa8YaeIdbNa81aeclfIdbNMMMg8Wa8WM:tNa8VMh8VaHclfhHaeczfheaAcufgAmbka8V:lh8VkaBaR:lMhBa86a8VMh86kaha86aBa86aB9DgeEUdwahaKa8FaeaDcb9hGgeEBdlaha8FaKaeEBdba8Kcefg8Ka9q9hmbkascjdfcbcj;qbz:tjjjb8Aa9phea9qhHinascjdfaeydbcA4cF8FGgAcFAaAcFA6EcdtfgAaAydbcefBdbaecxfheaHcufgHmbkcbhecbhHinascjdfaefgAydbhXaAaHBdbaXaHfhHaeclfgecj;qb9hmbkcbhea9phHinascjdfaHydbcA4cF8FGgAcFAaAcFA6EcdtfgAaAydbgAcefBdba0aAcdtfaeBdbaHcxfhHa9qaecefge9hmbkadak9RgAci9Uh9sdnalTmbcbhea9mhHinaHaeBdbaHclfhHalaecefge9hmbkkcbh9ta9ncbalz:tjjjbh3aAcO9Uh9ua9sce4h9rcbh8Lcbh8Kdnina9ka0a8Kcdtfydbcx2fg8JIdwgRa879Emea8La9s9pmeJFFuuh8Vdna9ra9q9pmba9ka0a9rcdtfydbcx2fIdwJbb;aZNh8VkdnaRa8V9ETmbaRaU9ETmba8La9u0mdkdna3aOa8JydlgDcdtg9vfg8AydbgAfg9wRbba3aOa8Jydbghcdtg9xfydbgefg9yRbbVmbaYahfRbbh9zdndnaLaecdtfgHclfydbgXaHydbgHSmbaXaH9RhXa8NaAcx2fh8Fa8Naecx2fhaaEaHcitfheindna9maeydbcdtfydbgHaASmba9maeclfydbcdtfydbgKaASmbaHaKSmba8NaKcx2fgKIdba8NaHcx2fgHIdbg8W:tgRaaIdlaHIdlg8X:tg80NaKIdla8X:tg8VaaIdba8W:tgBN:tg8YaRa8FIdla8X:tg86Na8Va8FIdba8W:tg8UN:tg8XNa8VaaIdwaHIdwg81:tg8ZNaKIdwa81:tg8Wa80N:tg80a8Va8FIdwa81:tg83Na8Wa86N:tg8VNa8WaBNaRa8ZN:tg81a8Wa8UNaRa83N:tgRNMMa8Ya8YNa80a80Na81a81NMMa8Xa8XNa8Va8VNaRaRNMMN:rJbbj8:N9FmikaecwfheaXcufgXmbkkdndndndna9zc9:fPdebdkahheina8AydbhAdndna5aecdtgHfydbgecuSmbaOaecdtfydbaASmekdna8EaHfydbgecuSmbaOaecdtfydbaASmekaDheka9maHfaeBdbaQaHfydbgeah9hmbxikkdna8Ea5a5a9xfydbaDSEaQa9xfydbghcdtfydbgecu9hmbaQa9vfydbheka9ma9xfaDBdbaehDka9mahcdtfaDBdbka9yce86bba9wce86bba8JIdwgRaUaUaR9DEhUa9tcefh9tcecda9zceSEa8Lfh8Lxeka9rcefh9rka8Kcefg8Ka9q9hmbkka9tTmddnalTmbcbh8Fcbhhindna9mahcdtgefydbgAahSmbaOaAcdtfydbh8AdnahaOaefydb9hg8JmbaIa8Ac8S2fgeaIahc8S2fgHIdbaeIdbMUdbaeaHIdlaeIdlMUdlaeaHIdwaeIdwMUdwaeaHIdxaeIdxMUdxaeaHIdzaeIdzMUdzaeaHIdCaeIdCMUdCaeaHIdKaeIdKMUdKaeaHId3aeId3MUd3aeaHIdaaeIdaMUdaaeaHId8KaeId8KMUd8KaeaHIdyaeIdyMUdya8MTmba8Ma8Acltfgea8MahcltfgHIdbaeIdbMUdbaeaHIdlaeIdlMUdlaeaHIdwaeIdwMUdwaeaHIdxaeIdxMUdxkaCTmbagaAc8S2fgeagahc8S2gDfgHIdbaeIdbMUdbaeaHIdlaeIdlMUdlaeaHIdwaeIdwMUdwaeaHIdxaeIdxMUdxaeaHIdzaeIdzMUdzaeaHIdCaeIdCMUdCaeaHIdKaeIdKMUdKaeaHId3aeId3MUd3aeaHIdaaeIdaMUdaaeaHId8KaeId8KMUd8KaeaHIdyaeIdyMUdya9oaA2haa8RhHaChXinaHaafgeaHa8FfgAIdbaeIdbMUdbaeclfgKaAclfIdbaKIdbMUdbaecwfgKaAcwfIdbaKIdbMUdbaecxfgeaAcxfIdbaeIdbMUdbaHczfhHaXcufgXmbka8JmbJbbbbJbbjZaIaDfgeIdygR:vaRJbbbb9BEaeIdwa8Na8Acx2fgHIdwgRNaeIdzaHIdbg8VNaeIdaMg8Wa8WMMaRNaeIdlaHIdlg8WNaeIdCaRNaeId3MgRaRMMa8WNaeIdba8VNaeIdxa8WNaeIdKMgRaRMMa8VNaeId8KMMM:lNgRa85a85aR9DEh85ka8Fa9ofh8Fahcefghal9hmbkcbhHa5heindnaeydbgAcuSmbdnaHa9maAcdtgXfydbgA9hmbcuhAa5aXfydbgXcuSmba9maXcdtfydbhAkaeaABdbkaeclfhealaHcefgH9hmbkcbhHa8EheindnaeydbgAcuSmbdnaHa9maAcdtgXfydbgA9hmbcuhAa8EaXfydbgXcuSmba9maXcdtfydbhAkaeaABdbkaeclfhealaHcefgH9hmbkka85aUaCEh85cbhHabhecbhAindnaOa9maeydbcdtfydbg8FcdtfydbgXaOa9maeclfydbcdtfydbgacdtfydbgKSmbaXaOa9maecwfydbcdtfydbg8AcdtfydbghSmbaKahSmbabaHcdtfgXa8FBdbaXcwfa8ABdbaXclfaaBdbaHcifhHkaecxfheaAcifgAad6mbkdndnaTmbaHhdxekdnaHak0mbaHhdxekdna8Sa859FmbaHhdxekJFFuuh8ScbhdabhecbhAindna9ha9iaeydbgXcdtfydbcdtfIdbgRa859ETmbaeclf8Pdbh9AabadcdtfgKaXBdbaKclfa9A83dbaRa8Sa8SaR9EEh8SadcifhdkaecxfheaAcifgAaH6mbkkadak0mbxdkkascNefabadalaOz:cjjjbkdndnadak0mbadhaxekdnaTmbadhaxekdna8Sa879FmbadhaxekcehKina8SJbb;aZNgRa87aRa879DEh8WJbbbbhRdnaSTmba9hheaShHinaeIdbg8VaRa8Va8W9FEaRa8VaR9EEhRaeclfheaHcufgHmbkkJFFuuh8ScbhaabhecbhHindna9ha9iaeydbgAcdtfydbcdtfIdbg8Va8W9ETmbaeclf8Pdbh9AabaacdtfgXaABdbaXclfa9A83dba8Va8Sa8Sa8V9EEh8SaacifhakaecxfheaHcifgHad6mbkdnaKaaad9hVceGmbadhaxdkaRaUaUaR9DEhUaaak9nmecbhKaahda8Sa879FmbkkdnamcjjjjdGTmba9ncbalz:tjjjbh8AdnaaTmbabheaahHina8AaeydbgAfce86bba8AaOaAcdtfydbfce86bbaeclfheaHcufgHmbkkascNefabaaalaOz:cjjjbdndnalTmbcbhXindna8AaXfRbbTmbdnaYaXfRbbgecl0mbceaetcQGmekdnaOaXcdtg8FfydbgeaXSmba8NaXcx2fgHa8Naecx2fgeydwBdwaHae8Pdb83dbxekaIaXc8S2fgKIdygcacJL:3;rUNgRMh87aKIdwg9BaRMh8SaKIdlg9CaRMh8UaKIdbg9DaRMh81aKIdag9EaRa8NaXcx2fg8JIdwg88N:th8ZaKId3g9FaRa8JIdlg89N:th83aKIdKg9Ga8JIdbg8:aRN:th80JbbbbhnaKIdCg9HJbbbbMh85aKIdzg9IJbbbbMhBaKIdxg9JJbbbbMh86dndnaCTmbaXhAinJbbbba87agaAc8S2fgHIdygR:vaRJbbbb9BEhRa8RaAaC2cltfheaHIdaa87Na8ZMh8ZaHId3a87Na83Mh83aHIdKa87Na80Mh80aHIdCa87Na85Mh85aHIdza87NaBMhBaHIdxa87Na86Mh86aHIdwa87Na8SMh8SaHIdla87Na8UMh8UaHIdba87Na81Mh81aChHina8ZaecwfIdbg8VaecxfIdbg8YNaRN:th8Za83aeclfIdbg8Wa8YNaRN:th83a85a8Wa8VNaRN:th85a81aeIdbg8Xa8XNaRN:th81a80a8Xa8YNaRN:th80aBa8Xa8VNaRN:thBa86a8Xa8WNaRN:th86a8Sa8Va8VNaRN:th8Sa8Ua8Wa8WNaRN:th8UaeczfheaHcufgHmbkaQaAcdtfydbgAaX9hmbka8MTmba8MaXcltfgeIdxhxaeIdwh9caeIdlhJaeIdbhRxekJbbbbhxJbbbbh9cJbbbbhJJbbbbhRkaBa81:vg8Wa80Na8Z:ta85aBa86a81:vg8VN:tg8Za8Ua86a8VN:tg8Y:vg8Xa8Va80Na83:tg8UN:th83a9caRa8WN:taJaRa8VN:tg86a8XN:tg85a8SaBa8WN:ta8Za8XN:tgB:vg8S:mh8Za86a8Y:vg9c:mhJdnJbbbbaRaRa81:vg9eN:ta86a9cN:ta85a8SN:tg86:la87J:983:g81NgR9ETmba8Za83NaJa8UNa9ea80Nax:tMMa86:vhnka81:laR9ETmba8Y:laR9ETmbaB:laR9ETmba9e:manNa8W:ma8ZanNa83aB:vMgBNa8V:maJanNa8X:maBNa8Ua8Y:vMMg85Na80:ma81:vMMMh87aLa8FfgeclfydbgHaeydbge9RhhaEaecitfh8FJbbbbhRdnaHaeSgDmbJbbbbhRa8FheahhAina8Naeclfydbcx2fgHIdwa88:tg8Va8VNaHIdba8::tg8Va8VNaHIdla89:tg8Va8VNMMg8Va8Naeydbcx2fgHIdwa88:tg8Wa8WNaHIdba8::tg8Wa8WNaHIdla89:tg8Wa8WNMMg8WaRaRa8W9DEgRaRa8V9DEhRaecwfheaAcufgAmbkaR:rgRaRNhRkaBa88:tg8Va8VNa87a8::tg8Va8VNa85a89:tg8Va8VNMMaR9EmbaKId8KhndnaDmbina8Na8Fclfydbcx2fgeIdba8Na8Fydbcx2fgHIdbg8W:tgRa89aHIdlg8X:tg80NaeIdla8X:tg8Va8:a8W:tg86N:tg8YaRa85a8X:tg8SNa8Va87a8W:tg8UN:tg8XNa8Va88aHIdwg81:tg8ZNaeIdwa81:tg8Wa80N:tg80a8VaBa81:tg83Na8Wa8SN:tg8VNa8Wa86NaRa8ZN:tg81a8Wa8UNaRa83N:tgRNMMa8Ya8YNa80a80Na81a81NMMa8Xa8XNa8Va8VNaRaRNMMN:rJbbj8:N9Fmda8Fcwfh8FahcufghmbkkJbbbbJbbjZac:vacJbbbb9BEgRa9BaBNa9Ia87Na9EMg8Va8VMMaBNa9Ca85Na9HaBNa9FMg8Va8VMMa85Na9Da87Na9Ja85Na9GMg8Va8VMMa87NanMMM:lNaRa9Ba88Na9Ia8:Na9EMg8Va8VMMa88Na9Ca89Na9Ha88Na9FMg8Va8VMMa89Na9Da8:Na9Ja89Na9GMg8Va8VMMa8:NanMMM:lNJbb;aZNJ:983:g81M9Emba8JaBUdwa8Ja85Udla8Ja87UdbkaXcefgXal9hmbkdnaCmbcbhCxdkcbhXindna8AaXfRbbTmbaOaXcdtgefydbaX9hmbaYaXfhhaQaefh8Ja8NaXcx2fhAa8PaXaC2cdtfhDcbhEincuhLdnahRbbci9hmbaXhLa8JydbgeaXSmba8PaEcdtgHfhKaDaHfIdbhRaXhLinaLhHcuhLdnaKaeaC2cdtfIdbaR9CmbaHcuSmbaHhLagaec8S2fIdyagaHc8S2fIdy9ETmbaehLkaQaecdtfydbgeaX9hmbkka8PaEcdtfhKa8RaEcltfh8FaXheinaKaeaC2cdtfJbbbbJbbjZagaeaLaLcuSEgHc8S2fIdygR:vaRJbbbb9BEa8FaHaC2cltfgHIdwaAIdwNaHIdbaAIdbNaHIdlaAIdlNMMaHIdxMNUdbaQaecdtfydbgeaX9hmbkaEcefgEaC9hmbkkaXcefgXal9hmbxdkkaCmbcbhCkaiavaoarawaCala8Na8Pazasayasc1efaYa8Aaqz:hjjjbkdnamcjjjjlGTmbazmbaaTmbabhecbhLinaYaeydbgAfRbbc3thQaecwfgXydbhHcjjjj94hCdna5aAcdtgEfydbaeclfgKydbgOSmbcjjjj94cba8EaOcdtfydbaASEhCkaeaQaCVaAVBdbaYaOfRbbc3th8Fcjjjj94hCcjjjj94hQdna5aOcdtfydbaHSmbcjjjj94cba8EaHcdtfydbaOSEhQkaKa8FaQVaOVBdbaYaHfRbbc3thOdna5aHcdtfydbaASmbcjjjj94cba8EaEfydbaHSEhCkaXaOaCVaHVBdbaecxfheaLcifgLaa6mbkkdnazTmbaaTmbaaheinabazabydbcdtfydbBdbabclfhbaecufgembkkdnaPTmbaPaZaU:rNUdbkdnasyd;8egHTmbaHcdtasc:Ceffc98fheinaeydbcbyd:m:H:cjbH:bjjjbbaec98fheaHcufgHmbkkascj;sbf8Kjjjjbaak;Yieouabydlhvabydbclfcbaicdtz:tjjjbhoadci9UhrdnadTmbdnalTmbaehwadhDinaoalawydbcdtfydbcdtfgqaqydbcefBdbawclfhwaDcufgDmbxdkkaehwadhDinaoawydbcdtfgqaqydbcefBdbawclfhwaDcufgDmbkkdnaiTmbcbhDaohwinawydbhqawaDBdbawclfhwaqaDfhDaicufgimbkkdnadci6mbinaecwfydbhwaeclfydbhDaeydbhidnalTmbalawcdtfydbhwalaDcdtfydbhDalaicdtfydbhikavaoaicdtfgqydbcitfaDBdbavaqydbcitfawBdlaqaqydbcefBdbavaoaDcdtfgqydbcitfawBdbavaqydbcitfaiBdlaqaqydbcefBdbavaoawcdtfgwydbcitfaiBdbavawydbcitfaDBdlawawydbcefBdbaecxfhearcufgrmbkkabydbcbBdbk:todDue99aicd4aifhrcehwinawgDcethwaDar6mbkcuaDcdtgraDcFFFFi0Ecbyd1:H:cjbHjjjjbbhwaoaoyd9GgqcefBd9GaoaqcdtfawBdbawcFearz:tjjjbhkdnaiTmbalcd4hlaDcufhxcbhminamhDdnavTmbavamcdtfydbhDkcbadaDal2cdtfgDydlgwawcjjjj94SEgwcH4aw7c:F:b:DD2cbaDydbgwawcjjjj94SEgwcH4aw7c;D;O:B8J27cbaDydwgDaDcjjjj94SEgDcH4aD7c:3F;N8N27axGhwamcdthPdndndnavTmbakawcdtfgrydbgDcuSmeadavaPfydbal2cdtfgsIdbhzcehqinaqhrdnadavaDcdtfydbal2cdtfgqIdbaz9CmbaqIdlasIdl9CmbaqIdwasIdw9BmlkarcefhqakawarfaxGgwcdtfgrydbgDcu9hmbxdkkakawcdtfgrydbgDcuSmbadamal2cdtfgsIdbhzcehqinaqhrdnadaDal2cdtfgqIdbaz9CmbaqIdlasIdl9CmbaqIdwasIdw9BmikarcefhqakawarfaxGgwcdtfgrydbgDcu9hmbkkaramBdbamhDkabaPfaDBdbamcefgmai9hmbkkakcbyd:m:H:cjbH:bjjjbbaoaoyd9GcufBd9GdnaeTmbaiTmbcbhDaehwinawaDBdbawclfhwaiaDcefgD9hmbkcbhDaehwindnaDabydbgrSmbawaearcdtfgrydbBdbaraDBdbkabclfhbawclfhwaiaDcefgD9hmbkkk;:odvuv998Jjjjjbca9Rgocbyd1:G:cjbBdKaocb8Pdj:G:cjb83izaocbydN:G:cjbBdwaocb8Pd:m:G:cjb83ibdnadTmbaicd4hrdnabmbdnalTmbcbhwinaealawcdtfydbar2cdtfhDcbhiinaoczfaifgqaDaifIdbgkaqIdbgxaxak9EEUdbaoaifgqakaqIdbgxaxak9DEUdbaiclfgicx9hmbkawcefgwad9hmbxikkarcdthwcbhDincbhiinaoczfaifgqaeaifIdbgkaqIdbgxaxak9EEUdbaoaifgqakaqIdbgxaxak9DEUdbaiclfgicx9hmbkaeawfheaDcefgDad9hmbxdkkdnalTmbcbhwinabawcx2fgiaealawcdtfydbar2cdtfgDIdbUdbaiaDIdlUdlaiaDIdwUdwcbhiinaoczfaifgqaDaifIdbgkaqIdbgxaxak9EEUdbaoaifgqakaqIdbgxaxak9DEUdbaiclfgicx9hmbkawcefgwad9hmbxdkkarcdthlcbhwaehDinabawcx2fgiaeawar2cdtfgqIdbUdbaiaqIdlUdlaiaqIdwUdwcbhiinaoczfaifgqaDaifIdbgkaqIdbgxaxak9EEUdbaoaifgqakaqIdbgxaxak9DEUdbaiclfgicx9hmbkaDalfhDawcefgwad9hmbkkJbbbbaoIdbaoIdzgx:tgkakJbbbb9DEgkaoIdlaoIdCgm:tgPaPak9DEgkaoIdwaoIdKgP:tgsasak9DEhsdnabTmbadTmbJbbbbJbbjZas:vasJbbbb9BEhkinabakabIdbax:tNUdbabclfgoakaoIdbam:tNUdbabcwfgoakaoIdbaP:tNUdbabcxfhbadcufgdmbkkdnavTmbavaPUdwavamUdlavaxUdbkask:WlewudnaeTmbcbhvabhoinaoavBdbaoclfhoaeavcefgv9hmbkkdnaiTmbcbhrinadarcdtfhwcbhDinalawaDcdtgvyd:G:G:cjbcdtfydbcdtfydbhodnalawavfydbcdtfydbgqabaqcdtfgkydbgvSmbinakabavgqcdtfgxydbgvBdbaxhkaqav9hmbkkdnaoabaocdtfgkydbgvSmbinakabavgocdtfgxydbgvBdbaxhkaoav9hmbkkdnaqaoSmbabaqaoaqao0Ecdtfaqaoaqao6EBdbkaDcefgDci9hmbkarcifgrai6mbkkdnaembcbskcbhxindnalaxcdtgvfydbax9hmbaxhodnaxabavfgDydbgvSmbaDhqinaqabavgocdtfgkydbgvBdbakhqaoav9hmbkkaDaoBdbkaxcefgxae9hmbkcbhkabhvcbhoindndnaoalydbgq9hmbdnaoavydbgq9hmbavakBdbakcefhkxdkavabaqcdtfydbBdbxekavabaqcdtfydbBdbkalclfhlavclfhvaeaocefgo9hmbkakk;jiilud99euabcbaecltz:tjjjbhvdnalTmbadhoaihralhwinarcwfIdbhDarclfIdbhqavaoydbcltfgkarIdbakIdbMUdbakaqakIdlMUdlakaDakIdwMUdwakakIdxJbbjZMUdxaoclfhoarcxfhrawcufgwmbkkdnaeTmbavhkaehrinakcxfgoIdbhDaocbBdbakakIdbJbbbbJbbjZaD:vaDJbbbb9BEgDNUdbakclfgoaDaoIdbNUdbakcwfgoaDaoIdbNUdbakczfhkarcufgrmbkkdnalTmbinavadydbcltfgkaicwfIdbakIdw:tgDaDNaiIdbakIdb:tgDaDNaiclfIdbakIdl:tgDaDNMMgDakIdxgqaqaD9DEUdxadclfhdaicxfhialcufglmbkkdnaeTmbavcxfhkinabakIdbUdbakczfhkabclfhbaecufgembkkk:moerudnaoTmbaecd4hzdnavTmbaicd4hHavcdthOcbhAindnaPaAfRbbTmbaAhednaDTmbaDaAcdtfydbhekdnasTmbasaefRbbceGmekdnamaAfRbbclSmbabaeaz2cdtfgiaraAcx2fgCIdbakNaxIdbMUdbaiaCIdlakNaxIdlMUdlaiaCIdwakNaxIdwMUdwkadaeaH2cdtfhXaqheawhiavhCinaXaeydbcdtgQfaiIdbalaQfIdb:vUdbaeclfheaiclfhiaCcufgCmbkkawaOfhwaAcefgAao9hmbxdkkdnasmbcbheaDhiindnaPaefRbbTmbaehCdnaDTmbaiydbhCkamaefRbbclSmbabaCaz2cdtfgCarIdbakNaxIdbMUdbaCarclfIdbakNaxIdlMUdlaCarcwfIdbakNaxIdwMUdwkaiclfhiarcxfhraoaecefge9hmbxdkkdnaDTmbindnaPRbbTmbasaDydbgefRbbceGmbamRbbclSmbabaeaz2cdtfgearIdbakNaxIdbMUdbaearclfIdbakNaxIdlMUdlaearcwfIdbakNaxIdwMUdwkaPcefhPaDclfhDamcefhmarcxfhraocufgombxdkkazcdthicbheindnaPaefRbbTmbasaefRbbceGmbamaefRbbclSmbabarIdbakNaxIdbMUdbabclfarclfIdbakNaxIdlMUdbabcwfarcwfIdbakNaxIdwMUdbkarcxfhrabaifhbaoaecefge9hmbkkk8MbabaeadaialavcbcbcbcbcbaoarawaDz:bjjjbk8MbabaeadaialavaoarawaDaqakaxamaPz:bjjjbkRbababaeadaialavaoarawaDaqakaxcjjjjdVamz:bjjjbk:g8Koque99due99duq998Jjjjjbc;Wb9Rgq8Kjjjjbcbhkaqcxfcbc;Kbz:tjjjb8Aaqcualcx2alc;v:Q;v:Qe0Ecbyd1:H:cjbHjjjjbbgxBdxaqceBd2axaialavcbcbz:ejjjb8AaqcualcdtalcFFFFi0Egmcbyd1:H:cjbHjjjjbbgiBdzaqcdBd2dndnJFF959eJbbjZawJbbjZawJbbjZ9DE:vawJ9VO:d869DEgw:lJbbb9p9DTmbaw:OhPxekcjjjj94hPkadci9Uhsarco9UhzdndnaombaPcd9imekdnalTmbaPcuf:YhwdnaoTmbcbhvaihHaxhOindndnaoavfRbbceGTmbavcjjjjlVhAxekdndnaOclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhAxekcjjjj94hAkaAcqthAdndnaOcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaAaXVhAdndnaOIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaAaXcCtVhAkaHaABdbaHclfhHaOcxfhOalavcefgv9hmbxdkkaxhvaihOalhHindndnavIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhAxekcjjjj94hAkaAcCthAdndnavclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaXcqtaAVhAdndnavcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaOaAaXVBdbavcxfhvaOclfhOaHcufgHmbkkadTmbcbhkaehvcbhOinakaiavclfydbcdtfydbgHaiavcwfydbcdtfydbgA9haiavydbcdtfydbgXaH9haXaA9hGGfhkavcxfhvaOcifgOad6mbkkarci9UhQdndnaz:Z:rJbbbZMgw:lJbbb9p9DTmbaw:Ohvxekcjjjj94hvkaQ:ZhLcbhKc:bwhzdninakaQ9pmeazaP9Rcd9imeavazcufgOavaO9iEaPcefavaP9kEhYdnalTmbaYcuf:YhwdnaoTmbcbhOaihHaxhvindndnaoaOfRbbceGTmbaOcjjjjlVhAxekdndnavclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhAxekcjjjj94hAkaAcqthAdndnavcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaAaXVhAdndnavIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaAaXcCtVhAkaHaABdbaHclfhHavcxfhvalaOcefgO9hmbxdkkaxhvaihOalhHindndnavIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhAxekcjjjj94hAkaAcCthAdndnavclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaXcqtaAVhAdndnavcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaOaAaXVBdbavcxfhvaOclfhOaHcufgHmbkkcbhOdnadTmbaehvcbhHinaOaiavclfydbcdtfydbgAaiavcwfydbcdtfydbgX9haiavydbcdtfydbgraA9haraX9hGGfhOavcxfhvaHcifgHad6mbkkdnas:ZgCaL:taY:Ygwaz:Y:tg8ANak:ZgEaO:Zg3:tNaEaL:tawaP:Y:tg5Na3aC:tNMg8EJbbbb9BmbaCaE:ta5a8Aa3aL:tNNNa8E:vawMhwkdndnaOaQ0mbaOhkaYhPxekaOhsaYhzkdndnaKcl0mbdnawJbbbZMgw:lJbbb9p9DTmbaw:Ohvxdkcjjjj94hvxekaPazfcd9ThvkaKcefgKcs9hmbkkdndndnakmbJbbjZhwcbhOcdhvaDmexdkalcd4alfhHcehOinaOgvcethOavaH6mbkcbhOaqcuavcdtgYavcFFFFi0Ecbyd1:H:cjbHjjjjbbgKBdCaqciBd2aqamcbyd1:H:cjbHjjjjbbgzBdKaqclBd2dndndndnalTmbaPcuf:YhwaoTmecbhOaihAaxhHindndnaoaOfRbbceGTmbaOcjjjjlVhXxekdndnaHclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaXcqthXdndnaHcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:Ohrxekcjjjj94hrkaXarVhXdndnaHIdbawNJbbbZMgC:lJbbb9p9DTmbaC:Ohrxekcjjjj94hrkaXarcCtVhXkaAaXBdbaAclfhAaHcxfhHalaOcefgO9hmbxikkaKcFeaYz:tjjjb8AcbhPcbhvxdkaxhOaihHalhAindndnaOIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaXcCthXdndnaOclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:Ohrxekcjjjj94hrkarcqtaXVhXdndnaOcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:Ohrxekcjjjj94hrkaHaXarVBdbaOcxfhOaHclfhHaAcufgAmbkkaKcFeaYz:tjjjbhravcufhocbhPcbhYindndndnaraiaYcdtgKfydbgAcm4aA7c:v;t;h;Ev2gvcs4av7aoGgHcdtfgXydbgOcuSmbcehvinaiaOcdtgOfydbaASmdaHavfhOavcefhvaraOaoGgHcdtfgXydbgOcu9hmbkkaXaYBdbaPhvaPcefhPxekazaOfydbhvkazaKfavBdbaYcefgYal9hmbkcuaPc8S2gOaPc;D;O;f8U0EhvkcbhXaqavcbyd1:H:cjbHjjjjbbgvBd3aqcvBd2avcbaOz:tjjjbhOdnadTmbaehiinaxaiclfydbgrcx2fgvIdbaxaiydbgocx2fgHIdbg3:tgCaxaicwfydbgYcx2fgAIdlaHIdlg8A:tgwNavIdla8A:tgEaAIdba3:tg8EN:tgLaLNaEaAIdwaHIdwg5:tg8FNavIdwa5:tgEawN:tgwawNaEa8ENaCa8FN:tgCaCNMMg8E:rhEJbbnnJbbjZazaocdtfydbgvazarcdtfydbgASavazaYcdtfydbgrSGgHEh8Fdna8EJbbbb9ETmbaLaE:vhLaCaE:vhCawaE:vhwkaOavc8S2fgvavIdbawa8FaE:rNgEawNNg8FMUdbavaCaEaCNgaNghavIdlMUdlavaLaEaLNg8ENggavIdwMUdwavawaaNgaavIdxMUdxava8EawNg8JavIdzMUdzavaCa8ENg8EavIdCMUdCavawaEaLa5Nawa3Na8AaCNMM:mg8ANg3NgwavIdKMUdKavaCa3NgCavId3MUd3avaLa3NgLavIdaMUdaava3a8ANg3avId8KMUd8KavaEavIdyMUdydnaHmbaOaAc8S2fgva8FavIdbMUdbavahavIdlMUdlavagavIdwMUdwavaaavIdxMUdxava8JavIdzMUdzava8EavIdCMUdCavawavIdKMUdKavaCavId3MUd3avaLavIdaMUdaava3avId8KMUd8KavaEavIdyMUdyaOarc8S2fgva8FavIdbMUdbavahavIdlMUdlavagavIdwMUdwavaaavIdxMUdxava8JavIdzMUdzava8EavIdCMUdCavawavIdKMUdKavaCavId3MUd3avaLavIdaMUdaava3avId8KMUd8KavaEavIdyMUdykaicxfhiaXcifgXad6mbkkcbhAaqcuaPcdtgvaPcFFFFi0Egicbyd1:H:cjbHjjjjbbgHBdaaqcoBd2aqaicbyd1:H:cjbHjjjjbbgiBd8KaqcrBd2aHcFeavz:tjjjbhYdnalTmbazhHinJbbbbJbbjZaOaHydbgXc8S2fgvIdygw:vawJbbbb9BEavIdwaxcwfIdbgwNavIdzaxIdbgCNavIdaMgLaLMMawNavIdlaxclfIdbgLNavIdCawNavId3MgwawMMaLNavIdbaCNavIdxaLNavIdKMgwawMMaCNavId8KMMM:lNhwdndnaYaXcdtgvfgXydbcuSmbaiavfIdbaw9ETmekaXaABdbaiavfawUdbkaHclfhHaxcxfhxalaAcefgA9hmbkkdndnaPmbJbbbbhwxekJbbbbhwinaiIdbgCawawaC9DEhwaiclfhiaPcufgPmbkaw:rhwkakcd4akfhOcehiinaigvcethiavaO6mbkcbhOaqcuavcdtgiavcFFFFi0Ecbyd1:H:cjbHjjjjbbgHBdyaHcFeaiz:tjjjbhXdnadTmbavcufhrcbhPcbhxindnazaeaxcdtfgvydbcdtfydbgiazavclfydbcdtfydbgOSmbaiazavcwfydbcdtfydbgvSmbaOavSmbaYavcdtfydbhAdndnaYaOcdtfydbgvaYaicdtfydbgi9pmbavaA9pmbaAhlaihoavhAxekdnaAai9pmbaAav9pmbaihlavhoxekavhlaAhoaihAkabaPcx2fgvaABdbavcwfaoBdbavclfalBdbdnaXaoc:3F;N8N2alc:F:b:DD27aAc;D;O:B8J27arGgOcdtfgvydbgicuSmbcehHinaHhvdnabaicx2fgiydbaA9hmbaiydlal9hmbaiydwaoSmikavcefhHaXaOavfarGgOcdtfgvydbgicu9hmbkkavaPBdbaPcefhPkaxcifgxad6mbkaPci2hOkcwhvaDTmekaDawUdbkavcdthvaqcxfc98fhiinaiavfydbcbyd:m:H:cjbH:bjjjbbavc98fgvmbkaqc;Wbf8KjjjjbaOk:3ldrue9:8Jjjjjbc;Wb9Rgr8Kjjjjbcbhwarcxfcbc;Kbz:tjjjb8AdnabaeSmbabaeadcdtzMjjjb8AkarcualcdtalcFFFFi0EgDcbyd1:H:cjbHjjjjbbgqBdxarceBd2aqcbaialavcbarcxfz:djjjbcualcx2alc;v:Q;v:Qe0Ecbyd1:H:cjbHjjjjbbhkarcxfaryd2gxcdtfakBdbaraxcefgmBd2akaialavcbcbz:ejjjb8AarcxfamcdtfaDcbyd1:H:cjbHjjjjbbgiBdbaraxcdfgvBd2arcxfavcdtfcuaialaeadaqz:fjjjbgecltaecjjjjiGEcbyd1:H:cjbHjjjjbbgqBdbaqaeaiakalz:gjjjbaxcifhkdnadTmbaoaoNhocbhwabhlcbheindnaqaialydbgvcdtfydbcdtfIdbao9ETmbalclf8PdbhPabawcdtfgDavBdbaDclfaP83dbawcifhwkalcxfhlaecifgead6mbkkdnakTmbaxcdtarcxffcwfhlinalydbcbyd:m:H:cjbH:bjjjbbalc98fhlakcufgkmbkkarc;Wbf8Kjjjjbawk:WCoDud99vue99vuv998Jjjjjbc;Wb9Rgw8KjjjjbdndnarmbcbhDxekawcxfcbc;Kbz:tjjjb8Aawcuadcx2adc;v:Q;v:Qe0Ecbyd1:H:cjbHjjjjbbgqBdxawceBd2aqaeadaicbcbz:ejjjb8AawcuadcdtadcFFFFi0Egkcbyd1:H:cjbHjjjjbbgxBdzawcdBd2adcd4adfhmceheinaegicetheaiam6mbkcbhPawcuaicdtgsaicFFFFi0Ecbyd1:H:cjbHjjjjbbgzBdCawciBd2dndnar:ZgH:rJbbbZMgO:lJbbb9p9DTmbaO:Ohexekcjjjj94hekaicufhAc:bwhCcbhXadhQcbhLinaeaCcufgiaeai9iEaPcefaeaP9kEhDdndnadTmbaDcuf:YhOaqhiaxheadhmindndnaiIdbaONJbbbZMgK:lJbbb9p9DTmbaK:OhYxekcjjjj94hYkaYcCthYdndnaiclfIdbaONJbbbZMgK:lJbbb9p9DTmbaK:Oh8Axekcjjjj94h8Aka8AcqtaYVhYdndnaicwfIdbaONJbbbZMgK:lJbbb9p9DTmbaK:Oh8Axekcjjjj94h8AkaeaYa8AVBdbaicxfhiaeclfheamcufgmmbkazcFeasz:tjjjbhEcbh3cbh5indnaEaxa5cdtfydbgYcm4aY7c:v;t;h;Ev2gics4ai7aAGgmcdtfg8AydbgecuSmbaeaYSmbcehiinaEamaifaAGgmcdtfg8AydbgecuSmeaicefhiaeaY9hmbkka8AaYBdba3aecuSfh3a5cefg5ad9hmbxdkkazcFeasz:tjjjb8Acbh3kdnaQ:ZgKaH:taD:YgOaC:Y:tg8ENaX:Zg8Fa3:Zga:tNa8FaH:taOaP:Y:tghNaaaK:tNMggJbbbb9BmbaKa8F:taha8EaaaH:tNNNag:vaOMhOkaPaDa3ar0giEhPaXa3aiEhXdna3arSmbaDaCaiEgCaP9Rcd9imbdndnaLcl0mbdnaOJbbbZMgO:lJbbb9p9DTmbaO:Ohexdkcjjjj94hexekaPaCfcd9Theka3aQaiEhQaLcefgLcs9hmekkdndnaXmbcihicbhDxekcbhiawakcbyd1:H:cjbHjjjjbbg5BdKawclBd2aPcuf:YhKdndnadTmbaqhiaxheadhmindndnaiIdbaKNJbbbZMgO:lJbbb9p9DTmbaO:OhYxekcjjjj94hYkaYcCthYdndnaiclfIdbaKNJbbbZMgO:lJbbb9p9DTmbaO:Oh8Axekcjjjj94h8Aka8AcqtaYVhYdndnaicwfIdbaKNJbbbZMgO:lJbbb9p9DTmbaO:Oh8Axekcjjjj94h8AkaeaYa8AVBdbaicxfhiaeclfheamcufgmmbkazcFeasz:tjjjbhEcbhDcbh3indndndnaEaxa3cdtgCfydbgYcm4aY7c:v;t;h;Ev2gics4ai7aAGgmcdtfg8AydbgecuSmbcehiinaxaecdtgefydbaYSmdamaifheaicefhiaEaeaAGgmcdtfg8Aydbgecu9hmbkka8Aa3BdbaDhiaDcefhDxeka5aefydbhika5aCfaiBdba3cefg3ad9hmbkcuaDc32giaDc;j:KM;jb0EhexekazcFeasz:tjjjb8AcbhDcbhekawaecbyd1:H:cjbHjjjjbbgeBd3awcvBd2aecbaiz:tjjjbh8Aavcd4hxdnadTmbdnalTmbaxcdthEa5hYaqhealhmadhAina8AaYydbc32fgiaeIdbaiIdbMUdbaiaeclfIdbaiIdlMUdlaiaecwfIdbaiIdwMUdwaiamIdbaiIdxMUdxaiamclfIdbaiIdzMUdzaiamcwfIdbaiIdCMUdCaiaiIdKJbbjZMUdKaYclfhYaecxfheamaEfhmaAcufgAmbxdkka5hmaqheadhYina8Aamydbc32fgiaeIdbaiIdbMUdbaiaeclfIdbaiIdlMUdlaiaecwfIdbaiIdwMUdwaiaiIdxJbbbbMUdxaiaiIdzJbbbbMUdzaiaiIdCJbbbbMUdCaiaiIdKJbbjZMUdKamclfhmaecxfheaYcufgYmbkkdnaDTmba8AhiaDheinaiaiIdbJbbbbJbbjZaicKfIdbgO:vaOJbbbb9BEgONUdbaiclfgmaOamIdbNUdbaicwfgmaOamIdbNUdbaicxfgmaOamIdbNUdbaiczfgmaOamIdbNUdbaicCfgmaOamIdbNUdbaic3fhiaecufgembkkcbhYawcuaDcdtgCaDcFFFFi0Egicbyd1:H:cjbHjjjjbbgeBdaawcoBd2awaicbyd1:H:cjbHjjjjbbgEBd8KaecFeaCz:tjjjbh3dnadTmbaoJbbjZJbbjZaK:vaPceSENgOaONhKaxcdthxalheinaKaec;8:G:cjbalEgmIdwa8Aa5ydbgAc32fgiIdC:tgOaONamIdbaiIdx:tgOaONamIdlaiIdz:tgOaONMMNaqcwfIdbaiIdw:tgOaONaqIdbaiIdb:tgOaONaqclfIdbaiIdl:tgOaONMMMhOdndna3aAcdtgifgmydbcuSmbaEaifIdbaO9ETmekamaYBdbaEaifaOUdbka5clfh5aqcxfhqaeaxfheadaYcefgY9hmbkkaba3aCzMjjjb8Acrhikaicdthiawcxfc98fheinaeaifydbcbyd:m:H:cjbH:bjjjbbaic98fgimbkkawc;Wbf8KjjjjbaDk:Pdidui99ducbhi8Jjjjjbca9Rglcbyd1:G:cjbBdKalcb8Pdj:G:cjb83izalcbydN:G:cjbBdwalcb8Pd:m:G:cjb83ibdndnaembJbbjFhvJbbjFhoJbbjFhrxekadcd4cdthwincbhdinalczfadfgDabadfIdbgvaDIdbgoaoav9EEUdbaladfgDavaDIdbgoaoav9DEUdbadclfgdcx9hmbkabawfhbaicefgiae9hmbkalIdwalIdK:thralIdlalIdC:thoalIdbalIdz:thvkJbbbbavavJbbbb9DEgvaoaoav9DEgvararav9DEk9DeeuabcFeaicdtz:tjjjbhlcbhbdnadTmbindnalaeydbcdtfgiydbcu9hmbaiabBdbabcefhbkaeclfheadcufgdmbkkabk;Bidqui998Jjjjjbc;Wb9Rgl8Kjjjjbalcxfcbc;Kbz:tjjjb8Aadcd4adfhvcehoinaogrcethoarav6mbkalcuarcdtgoarcFFFFi0Ecbyd1:H:cjbHjjjjbbgvBdxavcFeaoz:tjjjbhwdnadTmbaicd4hDarcufhqcbhkindndnawcbaeakaD2cdtfgrydlgiaicjjjj94SEgocH4ao7c:F:b:DD2cbarydbgxaxcjjjj94SEgocH4ao7c;D;O:B8J27cbarydwgmamcjjjj94SEgrcH4ar7c:3F;N8N27aqGgvcdtfgrydbgocuSmbam::hPai::hsax::hzcehiinaihrdnaeaoaD2cdtfgiIdbaz9CmbaiIdlas9CmbaiIdwaP9BmikarcefhiawavarfaqGgvcdtfgrydbgocu9hmbkkarakBdbakhokabakcdtfaoBdbakcefgkad9hmbkkalydxcbyd:m:H:cjbH:bjjjbbalc;Wbf8Kjjjjbk9teiucbcbyd:q:H:cjbgeabcifc98GfgbBd:q:H:cjbdndnabZbcztgd9nmbcuhiabad9RcFFifcz4nbcuSmekaehikaik;LeeeudndnaeabVciGTmbabhixekdndnadcz9pmbabhixekabhiinaiaeydbBdbaiclfaeclfydbBdbaicwfaecwfydbBdbaicxfaecxfydbBdbaeczfheaiczfhiadc9Wfgdcs0mbkkadcl6mbinaiaeydbBdbaeclfheaiclfhiadc98fgdci0mbkkdnadTmbinaiaeRbb86bbaicefhiaecefheadcufgdmbkkabk;aeedudndnabciGTmbabhixekaecFeGc:b:c:ew2hldndnadcz9pmbabhixekabhiinaialBdbaicxfalBdbaicwfalBdbaiclfalBdbaiczfhiadc9Wfgdcs0mbkkadcl6mbinaialBdbaiclfhiadc98fgdci0mbkkdnadTmbinaiae86bbaicefhiadcufgdmbkkabk9teiucbcbyd:q:H:cjbgeabcrfc94GfgbBd:q:H:cjbdndnabZbcztgd9nmbcuhiabad9RcFFifcz4nbcuSmekaehikaikTeeucbabcbyd:q:H:cjbge9Rcifc98GaefgbBd:q:H:cjbdnabZbcztge9nmbabae9RcFFifcz4nb8Akkk:Kedbcj:Gdk1eFFuuFFuuFFuuFFuFFFuFFFuFbbbbbbbbebbbdbbbbbbbebbbebbbdbbbbbbbbbbbeeeeebebbebbebebbbeebbbbbbbbbbbbeeeeeebebbeeebeebbbbebebbbbbbbbbbbbbbbbbbc1:Hdkxebbbdbbb:G:qbb";
-  var wasmpack = new Uint8Array([
-    32,
-    0,
-    65,
-    2,
-    1,
-    106,
-    34,
-    33,
-    3,
-    128,
-    11,
-    4,
-    13,
-    64,
-    6,
-    253,
-    10,
-    7,
-    15,
-    116,
-    127,
-    5,
-    8,
-    12,
-    40,
-    16,
-    19,
-    54,
-    20,
-    9,
-    27,
-    255,
-    113,
-    17,
-    42,
-    67,
-    24,
-    23,
-    146,
-    148,
-    18,
-    14,
-    22,
-    45,
-    70,
-    69,
-    56,
-    114,
-    101,
-    21,
-    25,
-    63,
-    75,
-    136,
-    108,
-    28,
-    118,
-    29,
-    73,
-    115
-  ]);
-  if (typeof WebAssembly !== "object") {
-    return {
-      supported: false
-    };
-  }
-  var instance;
-  var ready = WebAssembly.instantiate(unpack(wasm), {}).then(function(result) {
-    instance = result.instance;
-    instance.exports.__wasm_call_ctors();
-  });
-  function unpack(data) {
-    var result = new Uint8Array(data.length);
-    for (var i = 0; i < data.length; ++i) {
-      var ch = data.charCodeAt(i);
-      result[i] = ch > 96 ? ch - 97 : ch > 64 ? ch - 39 : ch + 4;
-    }
-    var write = 0;
-    for (var i = 0; i < data.length; ++i) {
-      result[write++] = result[i] < 60 ? wasmpack[result[i]] : (result[i] - 60) * 64 + result[++i];
-    }
-    return result.buffer.slice(0, write);
-  }
-  function assert(cond) {
-    if (!cond) {
-      throw new Error("Assertion failed");
-    }
-  }
-  function bytes(view) {
-    return new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
-  }
-  function genremap(fun, positions, vertices, stride) {
-    var sbrk = instance.exports.sbrk;
-    var rp = sbrk(vertices * 4);
-    var sp = sbrk(vertices * stride * 4);
-    var heap = new Uint8Array(instance.exports.memory.buffer);
-    heap.set(bytes(positions), sp);
-    fun(rp, sp, vertices, stride * 4);
-    heap = new Uint8Array(instance.exports.memory.buffer);
-    var remap = new Uint32Array(vertices);
-    new Uint8Array(remap.buffer).set(heap.subarray(rp, rp + vertices * 4));
-    sbrk(rp - sbrk(0));
-    return remap;
-  }
-  function reorder(fun, indices, vertices) {
-    var sbrk = instance.exports.sbrk;
-    var ip = sbrk(indices.length * 4);
-    var rp = sbrk(vertices * 4);
-    var heap = new Uint8Array(instance.exports.memory.buffer);
-    var indices8 = bytes(indices);
-    heap.set(indices8, ip);
-    var unique = fun(rp, ip, indices.length, vertices);
-    heap = new Uint8Array(instance.exports.memory.buffer);
-    var remap = new Uint32Array(vertices);
-    new Uint8Array(remap.buffer).set(heap.subarray(rp, rp + vertices * 4));
-    sbrk(ip - sbrk(0));
-    for (var i = 0; i < indices.length; ++i) indices[i] = remap[indices[i]];
-    return [remap, unique];
-  }
-  function maxindex(source) {
-    var result = 0;
-    for (var i = 0; i < source.length; ++i) {
-      var index = source[i];
-      result = result < index ? index : result;
-    }
-    return result;
-  }
-  function simplify(fun, indices, index_count, vertex_positions, vertex_count, vertex_positions_stride, target_index_count, target_error, options) {
-    var sbrk = instance.exports.sbrk;
-    var te = sbrk(4);
-    var ti = sbrk(index_count * 4);
-    var sp = sbrk(vertex_count * vertex_positions_stride);
-    var si2 = sbrk(index_count * 4);
-    var heap = new Uint8Array(instance.exports.memory.buffer);
-    heap.set(bytes(vertex_positions), sp);
-    heap.set(bytes(indices), si2);
-    var result = fun(ti, si2, index_count, sp, vertex_count, vertex_positions_stride, target_index_count, target_error, options, te);
-    heap = new Uint8Array(instance.exports.memory.buffer);
-    var target = new Uint32Array(result);
-    bytes(target).set(heap.subarray(ti, ti + result * 4));
-    var error = new Float32Array(1);
-    bytes(error).set(heap.subarray(te, te + 4));
-    sbrk(te - sbrk(0));
-    return [target, error[0]];
-  }
-  function simplifyAttr(fun, indices, index_count, vertex_positions, vertex_count, vertex_positions_stride, vertex_attributes, vertex_attributes_stride, attribute_weights, vertex_lock, target_index_count, target_error, options) {
-    var sbrk = instance.exports.sbrk;
-    var te = sbrk(4);
-    var ti = sbrk(index_count * 4);
-    var sp = sbrk(vertex_count * vertex_positions_stride);
-    var sa = sbrk(vertex_count * vertex_attributes_stride);
-    var sw = sbrk(attribute_weights.length * 4);
-    var si2 = sbrk(index_count * 4);
-    var vl = vertex_lock ? sbrk(vertex_count) : 0;
-    var heap = new Uint8Array(instance.exports.memory.buffer);
-    heap.set(bytes(vertex_positions), sp);
-    heap.set(bytes(vertex_attributes), sa);
-    heap.set(bytes(attribute_weights), sw);
-    heap.set(bytes(indices), si2);
-    if (vertex_lock) {
-      heap.set(bytes(vertex_lock), vl);
-    }
-    var result = fun(
-      ti,
-      si2,
-      index_count,
-      sp,
-      vertex_count,
-      vertex_positions_stride,
-      sa,
-      vertex_attributes_stride,
-      sw,
-      attribute_weights.length,
-      vl,
-      target_index_count,
-      target_error,
-      options,
-      te
-    );
-    heap = new Uint8Array(instance.exports.memory.buffer);
-    var target = new Uint32Array(result);
-    bytes(target).set(heap.subarray(ti, ti + result * 4));
-    var error = new Float32Array(1);
-    bytes(error).set(heap.subarray(te, te + 4));
-    sbrk(te - sbrk(0));
-    return [target, error[0]];
-  }
-  function simplifyUpdate(fun, indices, index_count, vertex_positions, vertex_count, vertex_positions_stride, vertex_attributes, vertex_attributes_stride, attribute_weights, vertex_lock, target_index_count, target_error, options) {
-    var sbrk = instance.exports.sbrk;
-    var te = sbrk(4);
-    var sp = sbrk(vertex_count * vertex_positions_stride);
-    var sa = sbrk(vertex_count * vertex_attributes_stride);
-    var sw = sbrk(attribute_weights.length * 4);
-    var si2 = sbrk(index_count * 4);
-    var vl = vertex_lock ? sbrk(vertex_count) : 0;
-    var heap = new Uint8Array(instance.exports.memory.buffer);
-    heap.set(bytes(vertex_positions), sp);
-    heap.set(bytes(vertex_attributes), sa);
-    heap.set(bytes(attribute_weights), sw);
-    heap.set(bytes(indices), si2);
-    if (vertex_lock) {
-      heap.set(bytes(vertex_lock), vl);
-    }
-    var result = fun(
-      si2,
-      index_count,
-      sp,
-      vertex_count,
-      vertex_positions_stride,
-      sa,
-      vertex_attributes_stride,
-      sw,
-      attribute_weights.length,
-      vl,
-      target_index_count,
-      target_error,
-      options,
-      te
-    );
-    heap = new Uint8Array(instance.exports.memory.buffer);
-    bytes(indices).set(heap.subarray(si2, si2 + result * 4));
-    bytes(vertex_positions).set(heap.subarray(sp, sp + vertex_count * vertex_positions_stride));
-    bytes(vertex_attributes).set(heap.subarray(sa, sa + vertex_count * vertex_attributes_stride));
-    var error = new Float32Array(1);
-    bytes(error).set(heap.subarray(te, te + 4));
-    sbrk(te - sbrk(0));
-    return [result, error[0]];
-  }
-  function simplifyScale(fun, vertex_positions, vertex_count, vertex_positions_stride) {
-    var sbrk = instance.exports.sbrk;
-    var sp = sbrk(vertex_count * vertex_positions_stride);
-    var heap = new Uint8Array(instance.exports.memory.buffer);
-    heap.set(bytes(vertex_positions), sp);
-    var result = fun(sp, vertex_count, vertex_positions_stride);
-    sbrk(sp - sbrk(0));
-    return result;
-  }
-  function simplifyPoints(fun, vertex_positions, vertex_count, vertex_positions_stride, vertex_colors, vertex_colors_stride, color_weight, target_vertex_count) {
-    var sbrk = instance.exports.sbrk;
-    var ti = sbrk(target_vertex_count * 4);
-    var sp = sbrk(vertex_count * vertex_positions_stride);
-    var sc = vertex_colors ? sbrk(vertex_count * vertex_colors_stride) : 0;
-    var heap = new Uint8Array(instance.exports.memory.buffer);
-    heap.set(bytes(vertex_positions), sp);
-    if (vertex_colors) {
-      heap.set(bytes(vertex_colors), sc);
-    }
-    var result = fun(ti, sp, vertex_count, vertex_positions_stride, sc, vertex_colors_stride, color_weight, target_vertex_count);
-    heap = new Uint8Array(instance.exports.memory.buffer);
-    var target = new Uint32Array(result);
-    bytes(target).set(heap.subarray(ti, ti + result * 4));
-    sbrk(ti - sbrk(0));
-    return target;
-  }
-  function simplifySloppy(fun, indices, index_count, vertex_positions, vertex_count, vertex_positions_stride, vertex_lock, target_index_count, target_error) {
-    var sbrk = instance.exports.sbrk;
-    var te = sbrk(4);
-    var ti = sbrk(index_count * 4);
-    var sp = sbrk(vertex_count * vertex_positions_stride);
-    var si2 = sbrk(index_count * 4);
-    var vl = vertex_lock ? sbrk(vertex_count) : 0;
-    var heap = new Uint8Array(instance.exports.memory.buffer);
-    heap.set(bytes(vertex_positions), sp);
-    heap.set(bytes(indices), si2);
-    if (vertex_lock) {
-      heap.set(bytes(vertex_lock), vl);
-    }
-    var result = fun(ti, si2, index_count, sp, vertex_count, vertex_positions_stride, vl, target_index_count, target_error, te);
-    heap = new Uint8Array(instance.exports.memory.buffer);
-    var target = new Uint32Array(result);
-    bytes(target).set(heap.subarray(ti, ti + result * 4));
-    var error = new Float32Array(1);
-    bytes(error).set(heap.subarray(te, te + 4));
-    sbrk(te - sbrk(0));
-    return [target, error[0]];
-  }
-  function simplifyPrune(fun, indices, index_count, vertex_positions, vertex_count, vertex_positions_stride, target_error) {
-    var sbrk = instance.exports.sbrk;
-    var ti = sbrk(index_count * 4);
-    var sp = sbrk(vertex_count * vertex_positions_stride);
-    var si2 = sbrk(index_count * 4);
-    var heap = new Uint8Array(instance.exports.memory.buffer);
-    heap.set(bytes(vertex_positions), sp);
-    heap.set(bytes(indices), si2);
-    var result = fun(ti, si2, index_count, sp, vertex_count, vertex_positions_stride, target_error);
-    heap = new Uint8Array(instance.exports.memory.buffer);
-    var target = new Uint32Array(result);
-    bytes(target).set(heap.subarray(ti, ti + result * 4));
-    sbrk(ti - sbrk(0));
-    return target;
-  }
-  var simplifyOptions = {
-    LockBorder: 1,
-    Sparse: 2,
-    ErrorAbsolute: 4,
-    Prune: 8,
-    Regularize: 16,
-    Permissive: 32,
-    RegularizeLight: 64,
-    _InternalDebug: 1 << 30
-    // internal, don't use!
-  };
-  return {
-    ready,
-    supported: true,
-    compactMesh: function(indices) {
-      assert(
-        indices instanceof Uint32Array || indices instanceof Int32Array || indices instanceof Uint16Array || indices instanceof Int16Array
-      );
-      assert(indices.length % 3 == 0);
-      var indices32 = indices.BYTES_PER_ELEMENT == 4 ? indices : new Uint32Array(indices);
-      var result = reorder(instance.exports.meshopt_optimizeVertexFetchRemap, indices32, maxindex(indices) + 1);
-      if (indices !== indices32) {
-        for (var i = 0; i < indices32.length; ++i) {
-          indices[i] = indices32[i];
-        }
-      }
-      return result;
-    },
-    generatePositionRemap: function(vertex_positions, vertex_positions_stride) {
-      assert(vertex_positions instanceof Float32Array);
-      assert(vertex_positions.length % vertex_positions_stride == 0);
-      assert(vertex_positions_stride >= 3);
-      return genremap(
-        instance.exports.meshopt_generatePositionRemap,
-        vertex_positions,
-        vertex_positions.length / vertex_positions_stride,
-        vertex_positions_stride
-      );
-    },
-    simplify: function(indices, vertex_positions, vertex_positions_stride, target_index_count, target_error, flags) {
-      assert(
-        indices instanceof Uint32Array || indices instanceof Int32Array || indices instanceof Uint16Array || indices instanceof Int16Array
-      );
-      assert(indices.length % 3 == 0);
-      assert(vertex_positions instanceof Float32Array);
-      assert(vertex_positions.length % vertex_positions_stride == 0);
-      assert(vertex_positions_stride >= 3);
-      assert(target_index_count >= 0 && target_index_count <= indices.length);
-      assert(target_index_count % 3 == 0);
-      assert(target_error >= 0);
-      var options = 0;
-      for (var i = 0; i < (flags ? flags.length : 0); ++i) {
-        assert(flags[i] in simplifyOptions);
-        options |= simplifyOptions[flags[i]];
-      }
-      var indices32 = indices.BYTES_PER_ELEMENT == 4 ? indices : new Uint32Array(indices);
-      var result = simplify(
-        instance.exports.meshopt_simplify,
-        indices32,
-        indices.length,
-        vertex_positions,
-        vertex_positions.length / vertex_positions_stride,
-        vertex_positions_stride * 4,
-        target_index_count,
-        target_error,
-        options
-      );
-      result[0] = indices instanceof Uint32Array ? result[0] : new indices.constructor(result[0]);
-      return result;
-    },
-    simplifyWithAttributes: function(indices, vertex_positions, vertex_positions_stride, vertex_attributes, vertex_attributes_stride, attribute_weights, vertex_lock, target_index_count, target_error, flags) {
-      assert(
-        indices instanceof Uint32Array || indices instanceof Int32Array || indices instanceof Uint16Array || indices instanceof Int16Array
-      );
-      assert(indices.length % 3 == 0);
-      assert(vertex_positions instanceof Float32Array);
-      assert(vertex_positions.length % vertex_positions_stride == 0);
-      assert(vertex_positions_stride >= 3);
-      assert(vertex_attributes instanceof Float32Array);
-      assert(vertex_attributes.length == vertex_attributes_stride * (vertex_positions.length / vertex_positions_stride));
-      assert(vertex_attributes_stride >= 0);
-      assert(vertex_lock == null || vertex_lock instanceof Uint8Array);
-      assert(vertex_lock == null || vertex_lock.length == vertex_positions.length / vertex_positions_stride);
-      assert(target_index_count >= 0 && target_index_count <= indices.length);
-      assert(target_index_count % 3 == 0);
-      assert(target_error >= 0);
-      assert(Array.isArray(attribute_weights));
-      assert(vertex_attributes_stride >= attribute_weights.length);
-      assert(attribute_weights.length <= 32);
-      for (var i = 0; i < attribute_weights.length; ++i) {
-        assert(attribute_weights[i] >= 0);
-      }
-      var options = 0;
-      for (var i = 0; i < (flags ? flags.length : 0); ++i) {
-        assert(flags[i] in simplifyOptions);
-        options |= simplifyOptions[flags[i]];
-      }
-      var indices32 = indices.BYTES_PER_ELEMENT == 4 ? indices : new Uint32Array(indices);
-      var result = simplifyAttr(
-        instance.exports.meshopt_simplifyWithAttributes,
-        indices32,
-        indices.length,
-        vertex_positions,
-        vertex_positions.length / vertex_positions_stride,
-        vertex_positions_stride * 4,
-        vertex_attributes,
-        vertex_attributes_stride * 4,
-        new Float32Array(attribute_weights),
-        vertex_lock,
-        target_index_count,
-        target_error,
-        options
-      );
-      result[0] = indices instanceof Uint32Array ? result[0] : new indices.constructor(result[0]);
-      return result;
-    },
-    simplifyWithUpdate: function(indices, vertex_positions, vertex_positions_stride, vertex_attributes, vertex_attributes_stride, attribute_weights, vertex_lock, target_index_count, target_error, flags) {
-      assert(
-        indices instanceof Uint32Array || indices instanceof Int32Array || indices instanceof Uint16Array || indices instanceof Int16Array
-      );
-      assert(indices.length % 3 == 0);
-      assert(vertex_positions instanceof Float32Array);
-      assert(vertex_positions.length % vertex_positions_stride == 0);
-      assert(vertex_positions_stride >= 3);
-      assert(vertex_attributes instanceof Float32Array);
-      assert(vertex_attributes.length == vertex_attributes_stride * (vertex_positions.length / vertex_positions_stride));
-      assert(vertex_attributes_stride >= 0);
-      assert(vertex_lock == null || vertex_lock instanceof Uint8Array);
-      assert(vertex_lock == null || vertex_lock.length == vertex_positions.length / vertex_positions_stride);
-      assert(target_index_count >= 0 && target_index_count <= indices.length);
-      assert(target_index_count % 3 == 0);
-      assert(target_error >= 0);
-      assert(Array.isArray(attribute_weights));
-      assert(vertex_attributes_stride >= attribute_weights.length);
-      assert(attribute_weights.length <= 32);
-      for (var i = 0; i < attribute_weights.length; ++i) {
-        assert(attribute_weights[i] >= 0);
-      }
-      var options = 0;
-      for (var i = 0; i < (flags ? flags.length : 0); ++i) {
-        assert(flags[i] in simplifyOptions);
-        options |= simplifyOptions[flags[i]];
-      }
-      var indices32 = indices.BYTES_PER_ELEMENT == 4 ? indices : new Uint32Array(indices);
-      var result = simplifyUpdate(
-        instance.exports.meshopt_simplifyWithUpdate,
-        indices32,
-        indices.length,
-        vertex_positions,
-        vertex_positions.length / vertex_positions_stride,
-        vertex_positions_stride * 4,
-        vertex_attributes,
-        vertex_attributes_stride * 4,
-        new Float32Array(attribute_weights),
-        vertex_lock,
-        target_index_count,
-        target_error,
-        options
-      );
-      if (indices !== indices32) {
-        for (var i = 0; i < result[0]; ++i) {
-          indices[i] = indices32[i];
-        }
-      }
-      return result;
-    },
-    getScale: function(vertex_positions, vertex_positions_stride) {
-      assert(vertex_positions instanceof Float32Array);
-      assert(vertex_positions.length % vertex_positions_stride == 0);
-      assert(vertex_positions_stride >= 3);
-      return simplifyScale(
-        instance.exports.meshopt_simplifyScale,
-        vertex_positions,
-        vertex_positions.length / vertex_positions_stride,
-        vertex_positions_stride * 4
-      );
-    },
-    simplifyPoints: function(vertex_positions, vertex_positions_stride, target_vertex_count, vertex_colors, vertex_colors_stride, color_weight) {
-      assert(vertex_positions instanceof Float32Array);
-      assert(vertex_positions.length % vertex_positions_stride == 0);
-      assert(vertex_positions_stride >= 3);
-      assert(target_vertex_count >= 0 && target_vertex_count <= vertex_positions.length / vertex_positions_stride);
-      if (vertex_colors) {
-        assert(vertex_colors instanceof Float32Array);
-        assert(vertex_colors.length % vertex_colors_stride == 0);
-        assert(vertex_colors_stride >= 3);
-        assert(vertex_positions.length / vertex_positions_stride == vertex_colors.length / vertex_colors_stride);
-        return simplifyPoints(
-          instance.exports.meshopt_simplifyPoints,
-          vertex_positions,
-          vertex_positions.length / vertex_positions_stride,
-          vertex_positions_stride * 4,
-          vertex_colors,
-          vertex_colors_stride * 4,
-          color_weight || 0,
-          target_vertex_count
-        );
-      } else {
-        return simplifyPoints(
-          instance.exports.meshopt_simplifyPoints,
-          vertex_positions,
-          vertex_positions.length / vertex_positions_stride,
-          vertex_positions_stride * 4,
-          void 0,
-          0,
-          0,
-          target_vertex_count
-        );
-      }
-    },
-    simplifySloppy: function(indices, vertex_positions, vertex_positions_stride, vertex_lock, target_index_count, target_error) {
-      assert(
-        indices instanceof Uint32Array || indices instanceof Int32Array || indices instanceof Uint16Array || indices instanceof Int16Array
-      );
-      assert(indices.length % 3 == 0);
-      assert(vertex_positions instanceof Float32Array);
-      assert(vertex_positions.length % vertex_positions_stride == 0);
-      assert(vertex_positions_stride >= 3);
-      assert(vertex_lock == null || vertex_lock instanceof Uint8Array);
-      assert(vertex_lock == null || vertex_lock.length == vertex_positions.length / vertex_positions_stride);
-      assert(target_index_count >= 0 && target_index_count <= indices.length);
-      assert(target_index_count % 3 == 0);
-      assert(target_error >= 0);
-      var indices32 = indices.BYTES_PER_ELEMENT == 4 ? indices : new Uint32Array(indices);
-      var result = simplifySloppy(
-        instance.exports.meshopt_simplifySloppy,
-        indices32,
-        indices.length,
-        vertex_positions,
-        vertex_positions.length / vertex_positions_stride,
-        vertex_positions_stride * 4,
-        vertex_lock,
-        target_index_count,
-        target_error
-      );
-      result[0] = indices instanceof Uint32Array ? result[0] : new indices.constructor(result[0]);
-      return result;
-    },
-    simplifyPrune: function(indices, vertex_positions, vertex_positions_stride, target_error) {
-      assert(
-        indices instanceof Uint32Array || indices instanceof Int32Array || indices instanceof Uint16Array || indices instanceof Int16Array
-      );
-      assert(indices.length % 3 == 0);
-      assert(vertex_positions instanceof Float32Array);
-      assert(vertex_positions.length % vertex_positions_stride == 0);
-      assert(vertex_positions_stride >= 3);
-      assert(target_error >= 0);
-      var indices32 = indices.BYTES_PER_ELEMENT == 4 ? indices : new Uint32Array(indices);
-      var result = simplifyPrune(
-        instance.exports.meshopt_simplifyPrune,
-        indices32,
-        indices.length,
-        vertex_positions,
-        vertex_positions.length / vertex_positions_stride,
-        vertex_positions_stride * 4,
-        target_error
-      );
-      result = indices instanceof Uint32Array ? result : new indices.constructor(result);
-      return result;
-    }
-  };
-})();
-
-// viewer/drive/colliders.js
-var CELL = 48;
-var KIND2 = { building: 0, island: 1, tree: 2, lamp: 3, post: 4, wall: 5 };
-function buildColliders(polys, circles, bounds) {
-  let nv = 0, nr = 0;
-  for (const p of polys) for (const r2 of p.rings) {
-    nv += r2.length;
-    nr++;
-  }
-  const pts = new Float32Array(nv * 2), ringStart = new Uint32Array(nr + 1), polyRing = new Uint32Array(polys.length + 1);
-  const pbox = new Float32Array(polys.length * 4), pkind = new Uint8Array(polys.length), ptop = new Float32Array(polys.length), pbase = new Float32Array(polys.length);
-  let v = 0, r = 0;
-  polys.forEach((p, i) => {
-    polyRing[i] = r;
-    let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity;
-    for (const ring2 of p.rings) {
-      ringStart[r++] = v;
-      for (const [x, z] of ring2) {
-        pts[v * 2] = x;
-        pts[v * 2 + 1] = z;
-        v++;
-        if (x < a) a = x;
-        if (x > c) c = x;
-        if (z < b) b = z;
-        if (z > d) d = z;
-      }
-    }
-    pbox[i * 4] = a;
-    pbox[i * 4 + 1] = b;
-    pbox[i * 4 + 2] = c;
-    pbox[i * 4 + 3] = d;
-    pkind[i] = p.kind ?? KIND2.building;
-    ptop[i] = p.top ?? 1e4;
-    pbase[i] = p.base ?? -1e4;
-  });
-  ringStart[nr] = v;
-  polyRing[polys.length] = r;
-  const circ = new Float32Array(circles.length * 3), ckind = new Uint8Array(circles.length);
-  circles.forEach((q, i) => {
-    circ[i * 3] = q.x;
-    circ[i * 3 + 1] = q.z;
-    circ[i * 3 + 2] = q.r;
-    ckind[i] = q.kind ?? KIND2.post;
-  });
-  const col = { cell: CELL, bounds, pts, ringStart, polyRing, pbox, pkind, ptop, pbase, circ, ckind };
-  indexCells(col);
-  return col;
-}
-function indexCells(col) {
-  const { bounds: b, pbox, circ } = col;
-  const nx = Math.max(1, Math.ceil((b.x1 - b.x0) / CELL)), nz = Math.max(1, Math.ceil((b.z1 - b.z0) / CELL));
-  const P = pbox.length / 4, C = circ.length / 3;
-  const ci = (x) => Math.min(nx - 1, Math.max(0, Math.floor((x - b.x0) / CELL)));
-  const cj = (z) => Math.min(nz - 1, Math.max(0, Math.floor((z - b.z0) / CELL)));
-  const span = (k) => k < P ? [pbox[k * 4], pbox[k * 4 + 1], pbox[k * 4 + 2], pbox[k * 4 + 3]] : [circ[(k - P) * 3] - circ[(k - P) * 3 + 2], circ[(k - P) * 3 + 1] - circ[(k - P) * 3 + 2], circ[(k - P) * 3] + circ[(k - P) * 3 + 2], circ[(k - P) * 3 + 1] + circ[(k - P) * 3 + 2]];
-  const count = new Uint32Array(nx * nz + 1);
-  const keep = (s) => s[2] >= b.x0 - CELL && s[0] <= b.x1 + CELL && s[3] >= b.z0 - CELL && s[1] <= b.z1 + CELL;
-  for (let k = 0; k < P + C; k++) {
-    const s = span(k);
-    if (!keep(s)) continue;
-    for (let j = cj(s[1]); j <= cj(s[3]); j++) for (let i = ci(s[0]); i <= ci(s[2]); i++) count[j * nx + i + 1]++;
-  }
-  for (let k = 1; k < count.length; k++) count[k] += count[k - 1];
-  const items = new Uint32Array(count[count.length - 1]), fill = count.slice(0, -1);
-  for (let k = 0; k < P + C; k++) {
-    const s = span(k);
-    if (!keep(s)) continue;
-    for (let j = cj(s[1]); j <= cj(s[3]); j++) for (let i = ci(s[0]); i <= ci(s[2]); i++) items[fill[j * nx + i]++] = k;
-  }
-  Object.assign(col, { nx, nz, cellStart: count, cellItems: items, P, C });
-  col.seen = new Uint32Array(P + C);
-  col.stamp = 0;
-  return col;
-}
-var CAR_CLEAR = 2.2;
-var RAISED = 20;
-function inRings(rings, x, z) {
-  let inside3 = false;
-  for (const ring2 of rings) for (let i = 0, j = ring2.length - 1; i < ring2.length; j = i++) {
-    const [ax, az] = ring2[i], [bx, bz] = ring2[j];
-    if (az > z !== bz > z && x < ax + (bx - ax) * (z - az) / (bz - az)) inside3 = !inside3;
-  }
-  return inside3;
-}
-function samplesIn(rings, step = 1) {
-  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
-  for (const [x, z] of rings[0]) {
-    x0 = Math.min(x0, x);
-    x1 = Math.max(x1, x);
-    z0 = Math.min(z0, z);
-    z1 = Math.max(z1, z);
-  }
-  const s = Math.max(step, Math.sqrt((x1 - x0) * (z1 - z0) / 400));
-  const out = [];
-  for (let x = x0 + s / 2; x < x1; x += s) for (let z = z0 + s / 2; z < z1; z += s) if (inRings(rings, x, z)) out.push([x, z]);
-  if (!out.length) {
-    let cx = 0, cz = 0;
-    for (const [x, z] of rings[0]) {
-      cx += x;
-      cz += z;
-    }
-    out.push([cx / rings[0].length, cz / rings[0].length]);
-  }
-  return out;
-}
-function deckAt(hm, delta, x, z) {
-  const h = hm.h, c = Math.round((x - h.x0) / h.step), r = Math.round((z - h.z0) / h.step);
-  return c >= 0 && r >= 0 && c < h.cols && r < h.rows ? delta[r * h.cols + c] : 0;
-}
-function raisedShare(hm, delta, rings) {
-  const s = samplesIn(rings);
-  let n = 0;
-  for (const [x, z] of s) if (deckAt(hm, delta, x, z) >= RAISED) n++;
-  return n / s.length;
-}
-function clearanceUnder(hm, rings, base) {
-  let g = -Infinity;
-  for (const [x, z] of rings[0]) g = Math.max(g, hm.ground(x, z));
-  for (const [x, z] of samplesIn(rings, 2)) g = Math.max(g, hm.ground(x, z));
-  return base - g;
-}
-function cleanRing(ring2) {
-  const out = [];
-  for (const p of ring2) {
-    const q = out[out.length - 1];
-    if (!q || Math.abs(q[0] - p[0]) > 1e-3 || Math.abs(q[1] - p[1]) > 1e-3) out.push([p[0], p[1]]);
-  }
-  if (out.length > 2) {
-    const a = out[0], b = out[out.length - 1];
-    if (Math.abs(a[0] - b[0]) < 1e-3 && Math.abs(a[1] - b[1]) < 1e-3) out.pop();
-  }
-  return out;
-}
-function buildDriveData({ bDoc, net, feats, hm, parts, bounds, surf = null, legacy = false }) {
-  const polys = [], circles = [];
-  const ground = driveGround(hm, parts);
-  let overhead = 0, islands = 0, islandsHidden = 0, medianIslands = 0;
-  for (const bd of bDoc.buildings) {
-    const rings = (bd.footprint || []).map(cleanRing).filter((r) => r.length >= 3);
-    if (!rings.length) continue;
-    const base = bd.base != null ? +bd.base : -1e4;
-    if (!legacy && base > -1e3 && clearanceUnder(hm, rings, base) > CAR_CLEAR) {
-      overhead++;
-      continue;
-    }
-    polys.push({ rings, kind: KIND2.building, top: +bd.top || 1e4, base });
-  }
-  const inTile = (ring2) => ring2.some(([x, z]) => x >= bounds.x0 - 5 && x <= bounds.x1 + 5 && z >= bounds.z0 - 5 && z <= bounds.z1 + 5);
-  const island2 = (r) => {
-    if (r.length < 3 || !inTile(r)) return;
-    if (!legacy && raisedShare(hm, ground.delta, [r]) < 0.5) {
-      islandsHidden++;
-      return;
-    }
-    polys.push({ rings: [r], kind: KIND2.island });
-    islands++;
-  };
-  for (const node of net.nodes || []) for (const isl of node.islands || []) {
-    if (isl.kind !== "raised" && isl.kind !== "grass") continue;
-    island2(cleanRing(isl.poly || []));
-  }
-  for (const rr of net.roads || []) {
-    const ck = rr.stack?.center?.kind;
-    if (!rr.center?.poly || ck !== "raised" && ck !== "barrier") continue;
-    island2(cleanRing(rr.center.poly));
-  }
-  const medians = [];
-  for (const s of surf?.surfaces || []) if (s.c === 6 && s.rings?.[0]?.length >= 3 && inTile(s.rings[0])) medians.push(s.rings.map(cleanRing).filter((r) => r.length >= 3));
-  if (!legacy) {
-    for (const m of medians) if (raisedShare(hm, ground.delta, m) >= 0.5) {
-      polys.push({ rings: m, kind: KIND2.island });
-      medianIslands++;
-    }
-  }
-  for (const t of feats.trees || []) {
-    if (t.x < bounds.x0 || t.x > bounds.x1 || t.z < bounds.z0 || t.z > bounds.z1) continue;
-    circles.push({ x: t.x, z: t.z, r: Math.min(0.5, Math.max(0.22, 0.16 + 0.012 * (t.height || 10))), kind: KIND2.tree });
-  }
-  const col = buildColliders(polys, circles, bounds);
-  return { col, medians, ground, legacy, counts: { buildings: bDoc.buildings.length - overhead, overhead, islands, islandsHidden, medianIslands, trees: circles.length } };
-}
-function driveGround(hm, parts) {
-  const { x0, z0, cols, rows, step } = hm.h, Y = hm.y;
-  const top = new Float32Array(cols * rows).fill(-1e9);
-  for (const part of Object.values(parts)) {
-    if (!part?.index) continue;
-    const P = part.position, I = part.index;
-    for (let t = 0; t < I.length; t += 3) {
-      const a = I[t] * 3, b = I[t + 1] * 3, c = I[t + 2] * 3;
-      const ax = P[a], az = P[a + 2], bx = P[b], bz = P[b + 2], cx = P[c], cz = P[c + 2];
-      const det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
-      if (Math.abs(det) < 1e-6) continue;
-      const c0 = Math.max(0, Math.ceil((Math.min(ax, bx, cx) - x0) / step)), c1 = Math.min(cols - 1, Math.floor((Math.max(ax, bx, cx) - x0) / step));
-      const r0 = Math.max(0, Math.ceil((Math.min(az, bz, cz) - z0) / step)), r1 = Math.min(rows - 1, Math.floor((Math.max(az, bz, cz) - z0) / step));
-      for (let r = r0; r <= r1; r++) {
-        const pz = z0 + r * step;
-        for (let k = c0; k <= c1; k++) {
-          const px = x0 + k * step;
-          const l1 = ((bz - cz) * (px - cx) + (cx - bx) * (pz - cz)) / det;
-          const l2 = ((cz - az) * (px - cx) + (ax - cx) * (pz - cz)) / det;
-          const l3 = 1 - l1 - l2;
-          if (l1 < -1e-6 || l2 < -1e-6 || l3 < -1e-6) continue;
-          const y = l1 * P[a + 1] + l2 * P[b + 1] + l3 * P[c + 1], q = r * cols + k;
-          if (y > top[q]) top[q] = y;
-        }
-      }
-    }
-  }
-  const delta = new Uint8Array(cols * rows);
-  for (let q = 0; q < delta.length; q++) if (top[q] > -1e8) delta[q] = Math.max(0, Math.min(255, Math.round((top[q] - Y[q]) * 100)));
-  return { delta };
-}
-
 // viewer/surfaces.js
 var SURF_CLASS = { roadway: 0, tramRoad: 1, tramSite: 2, parking: 3, square: 4, sidewalk: 5, median: 6, path: 7, ramp: 8, pit: 9 };
 var KERB = 0.13;
@@ -5881,6 +5881,11 @@ var PIT_SINK = 0.04;
 var RAISE = [0, 0, 0, 0, KERB, KERB, MEDIAN_KERB, 0, 0.07, KERB - PIT_SINK];
 var RAMP_LOW = 0.02;
 var RAMP_DEPTH = 1;
+var RAMP_WING = 0.45;
+var RAMP_EDGE = 0.5;
+var PAVE_EDGE = 2.5;
+var SKIP_HIDDEN_BASE = false;
+var SPLIT_BENDS = false;
 var PART = ["asphalt", "asphalt", "asphalt", "asphalt", "square", "concrete", "grass", "concrete", "concrete", "pits"];
 var OVERLAY = [1, 1, 0, 1, 0, 0, 0, 0, 0, 0];
 var COVER = OVERLAY.map((o, c) => o || RAISE[c] > 0 ? 1 : 0);
@@ -5889,8 +5894,10 @@ var BASE_SURF = [0, 0, 1, 2, 1, 0, 0, 0, 0, 0];
 var CELL2 = 6;
 var SMOOTH_PASSES = 0;
 var LIFT = 6e-3;
+var TIER = 15e-4;
+var MAX_TIER = 3;
 var BASE_DROP = 0.01;
-var DEV = [-0.014, 0.012];
+var DEV = [-0.014, 8e-3];
 var BAND = 0.15;
 var BAND_LIFT = 4e-3;
 var KERB_DOWN = 0.03;
@@ -6072,8 +6079,9 @@ function placePits(trees, classAt, nearKerb, surf, bounds) {
       tz = k.tz;
     }
     const fits = (cx, cz) => {
+      const m = o + 0.25;
       for (const a of [-1, -0.5, 0, 0.5, 1]) for (const b of [-1, -0.5, 0, 0.5, 1]) {
-        const x = cx + (tx * a - tz * b) * o, z = cz + (tz * a + tx * b) * o;
+        const x = cx + (tx * a - tz * b) * m, z = cz + (tz * a + tx * b) * m;
         if (classAt(x, z) !== host) return false;
       }
       return true;
@@ -6094,8 +6102,171 @@ function placePits(trees, classAt, nearKerb, surf, bounds) {
   }
   return out;
 }
+var TAPER = 2.5;
+function taperSteps(surf) {
+  if (surf._tapered) return surf._tapered;
+  const key = (p) => `${Math.round(p[0] * 100)},${Math.round(p[1] * 100)}`;
+  const rings = /* @__PURE__ */ new Map();
+  for (const q of surf.surfaces) for (const r of q.rings) for (const p of r) rings.set(key(p), (rings.get(key(p)) || 0) + 1);
+  const move = /* @__PURE__ */ new Map();
+  const vg = /* @__PURE__ */ new Map();
+  for (const q of surf.surfaces) for (const r of q.rings) for (const p of r) {
+    const k2 = `${Math.floor(p[0] / 4)},${Math.floor(p[1] / 4)}`;
+    const l = vg.get(k2);
+    if (l) l.push(p);
+    else vg.set(k2, [p]);
+  }
+  const nearPts = (p, r) => {
+    const out = [];
+    for (let i = Math.floor((p[0] - r) / 4); i <= Math.floor((p[0] + r) / 4); i++) for (let j = Math.floor((p[1] - r) / 4); j <= Math.floor((p[1] + r) / 4); j++) for (const q of vg.get(`${i},${j}`) || []) out.push(q);
+    return out;
+  };
+  const ang = (a, b, c) => {
+    const ux = b[0] - a[0], uz = b[1] - a[1], vx = c[0] - b[0], vz = c[1] - b[1];
+    return Math.atan2(ux * vz - uz * vx, ux * vx + uz * vz);
+  };
+  const D = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+  for (const l of surf.kerbs || []) {
+    const cum = [0];
+    for (let k = 1; k < l.length; k++) cum.push(cum[k - 1] + D(l[k - 1], l[k]));
+    const turn = l.map((p, k) => k === 0 || k === l.length - 1 ? 0 : ang(l[k - 1], p, l[k + 1]));
+    const corners = [];
+    for (let k = 1; k + 1 < l.length; k++) if (Math.abs(turn[k]) > 0.87) corners.push(k);
+    for (let c = 0; c + 1 < corners.length; c++) {
+      const kb = corners[c], kc = corners[c + 1];
+      if (Math.sign(turn[kb]) === Math.sign(turn[kc])) continue;
+      let small = true;
+      for (let k = kb + 1; k < kc; k++) if (Math.abs(turn[k]) > 0.21) small = false;
+      const bc = cum[kc] - cum[kb];
+      if (!small || bc < 0.15 || bc > 3) continue;
+      const ka = c > 0 ? corners[c - 1] : 0, kd = c + 2 < corners.length ? corners[c + 2] : l.length - 1;
+      const ab = cum[kb] - cum[ka], cd = cum[kd] - cum[kc];
+      if (ab < 1.5 || cd < 1.5) continue;
+      const A = l[kb - 1], B = l[kb], C = l[kc], Dd = l[kc + 1];
+      if (Math.abs(ang(A, B, [B[0] + Dd[0] - C[0], B[1] + Dd[1] - C[1]])) > 0.52) continue;
+      const rampsHere = surf.surfaces.filter((q) => q.c === 8 && q.rings[0].some((p) => key(p) === key(B) || key(p) === key(C)));
+      if ((rings.get(key(B)) || 0) - rampsHere.length > 2 || move.has(key(B))) continue;
+      const seg = D(A, B);
+      let Lt = Math.max(1, Math.min(TAPER * bc, 0.6 * ab, 6, seg - 0.05));
+      if (Lt < 0.5 || seg < 1) continue;
+      const inTri2 = (p, a, b, c2) => {
+        const d1 = (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]), d2 = (c2[0] - b[0]) * (p[1] - b[1]) - (c2[1] - b[1]) * (p[0] - b[0]), d3 = (a[0] - c2[0]) * (p[1] - c2[1]) - (a[1] - c2[1]) * (p[0] - c2[0]);
+        return d1 > 1e-6 && d2 > 1e-6 && d3 > 1e-6 || d1 < -1e-6 && d2 < -1e-6 && d3 < -1e-6;
+      };
+      const near = nearPts(B, 8);
+      let Bn = null;
+      for (; Lt >= 0.5; Lt *= 0.6) {
+        const cand = [B[0] + (A[0] - B[0]) / seg * Lt, B[1] + (A[1] - B[1]) / seg * Lt];
+        if (!near.some((p) => key(p) !== key(B) && key(p) !== key(C) && inTri2(p, cand, B, C))) {
+          Bn = cand;
+          break;
+        }
+      }
+      if (!Bn) continue;
+      for (const q of rampsHere) {
+        q.c = 5;
+        q.rampAtTaper = true;
+      }
+      move.set(key(B), Bn);
+      const nb = move.get(key(B));
+      for (let k = kb + 1; k < kc; k++) {
+        if ((rings.get(key(l[k])) || 0) > 2) continue;
+        const f = (cum[k] - cum[kb]) / bc;
+        move.set(key(l[k]), [nb[0] + (C[0] - nb[0]) * f, nb[1] + (C[1] - nb[1]) * f]);
+      }
+    }
+  }
+  const fix = (r) => {
+    for (let i = 0; i < r.length; i++) {
+      const m = move.get(key(r[i]));
+      if (m) r[i] = [m[0], m[1]];
+    }
+  };
+  if (move.size) {
+    for (const q of surf.surfaces) for (const r of q.rings) fix(r);
+    for (const l of surf.kerbs || []) fix(l);
+    for (const e of surf.edges || []) fix(e.line);
+    for (const l of surf.flanks || []) fix(l);
+  }
+  surf._tapered = { steps: move.size };
+  return surf._tapered;
+}
+var CURVE_ERR = 0.015;
+function smoothCurves(surf) {
+  if (surf._curved) return surf._curved;
+  const key = (p) => `${Math.round(p[0] * 100)},${Math.round(p[1] * 100)}`;
+  const ins = /* @__PURE__ */ new Map();
+  let added = 0, maxTurnBefore = 0;
+  const turnAt = (a, b, c) => {
+    const ux = b[0] - a[0], uz = b[1] - a[1], vx = c[0] - b[0], vz = c[1] - b[1];
+    return Math.abs(Math.atan2(ux * vz - uz * vx, ux * vx + uz * vz)) * 180 / Math.PI;
+  };
+  const D = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const cr = (p0, p1, p2, p3, t) => {
+    const al = 0.5, d01 = Math.pow(Math.max(D(p0, p1), 1e-4), al), d12 = Math.pow(Math.max(D(p1, p2), 1e-4), al), d23 = Math.pow(Math.max(D(p2, p3), 1e-4), al);
+    const t0 = 0, t1 = d01, t2 = t1 + d12, t3 = t2 + d23, u = t1 + (t2 - t1) * t;
+    const L2 = (a, b, ta, tb) => [0, 1].map((k) => ((tb - u) * a[k] + (u - ta) * b[k]) / (tb - ta));
+    const A1 = L2(p0, p1, t0, t1), A2 = L2(p1, p2, t1, t2), A3 = L2(p2, p3, t2, t3);
+    const B1 = L2(A1, A2, t0, t2), B2 = L2(A2, A3, t1, t3);
+    return L2(B1, B2, t1, t2);
+  };
+  const lines = [...surf.kerbs || [], ...(surf.edges || []).map((e) => e.line)];
+  for (const l of lines) {
+    const n = l.length;
+    if (n < 3) continue;
+    const curve = l.map((p, k) => {
+      if (k === 0 || k === n - 1) return 0;
+      const t = turnAt(l[k - 1], p, l[k + 1]);
+      return t >= 1 && t <= 75 ? t : 0;
+    });
+    for (let k = 0; k + 1 < n; k++) {
+      const tb = Math.max(curve[k], curve[k + 1]);
+      if (!tb) continue;
+      maxTurnBefore = Math.max(maxTurnBefore, tb);
+      const a = l[k], b = l[k + 1], p0 = curve[k] && k > 0 ? l[k - 1] : [2 * a[0] - b[0], 2 * a[1] - b[1]], p3 = curve[k + 1] && k + 2 < n ? l[k + 2] : [2 * b[0] - a[0], 2 * b[1] - a[1]];
+      const radius = (k2) => curve[k2] ? Math.min(D(l[Math.max(0, k2 - 1)], l[k2]), D(l[k2], l[Math.min(n - 1, k2 + 1)])) / (curve[k2] * Math.PI / 180) : Infinity;
+      const R = Math.min(radius(k), radius(k + 1)), piece = Math.max(0.25, Math.sqrt(8 * R * CURVE_ERR));
+      const m = Math.min(40, Math.ceil(D(a, b) / piece));
+      if (m < 2) continue;
+      const pts = [];
+      for (let i = 1; i < m; i++) pts.push(cr(p0, a, b, p3, i / m));
+      const kab = `${key(a)}|${key(b)}`;
+      if (!ins.has(kab) && !ins.has(`${key(b)}|${key(a)}`)) {
+        ins.set(kab, pts);
+        added += pts.length;
+      }
+    }
+  }
+  const refine = (r, closed) => {
+    const out = [];
+    const N = r.length;
+    for (let i = 0; i < N; i++) {
+      out.push(r[i]);
+      if (!closed && i === N - 1) break;
+      const a = r[i], b = r[(i + 1) % N];
+      const f = ins.get(`${key(a)}|${key(b)}`);
+      if (f) {
+        for (const p of f) out.push([p[0], p[1]]);
+        continue;
+      }
+      const g = ins.get(`${key(b)}|${key(a)}`);
+      if (g) for (let j = g.length - 1; j >= 0; j--) out.push([g[j][0], g[j][1]]);
+    }
+    return out;
+  };
+  if (ins.size) {
+    for (const q of surf.surfaces) q.rings = q.rings.map((r) => refine(r, true));
+    if (surf.kerbs) surf.kerbs = surf.kerbs.map((l) => refine(l, false));
+    for (const e of surf.edges || []) e.line = refine(e.line, false);
+    if (surf.flanks) surf.flanks = surf.flanks.map((l) => refine(l, false));
+  }
+  surf._curved = { edges: ins.size, points: added, maxTurnBefore: Math.round(maxTurnBefore) };
+  return surf._curved;
+}
 function prepareSurfaces(surf, ground, bounds, trees = null) {
   const t0 = (globalThis.performance ?? Date).now();
+  const tapered = taperSteps(surf);
+  const curved = smoothCurves(surf);
   const G2 = ground;
   const base = [];
   const halves = /* @__PURE__ */ new Map();
@@ -6109,6 +6280,14 @@ function prepareSurfaces(surf, ground, bounds, trees = null) {
     push(halves, hk, base.length - 1);
     if (COVER[cls]) coverArea.set(hk, (coverArea.get(hk) || 0) + A);
   };
+  for (const s of surf.surfaces) if (s.c === SURF_CLASS.tramSite && s.photo?.look === "asphalt") {
+    s.c = SURF_CLASS.tramRoad;
+    s.photoLook = true;
+  }
+  for (const s of surf.surfaces) if (s.c === SURF_CLASS.median && s.photo && s.photo.veg < 0.25) {
+    s.c = SURF_CLASS.sidewalk;
+    s.photoLook = true;
+  }
   surf.surfaces.forEach((s, si2) => {
     const rings = s.rings;
     let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
@@ -6266,6 +6445,37 @@ function prepareSurfaces(surf, ground, bounds, trees = null) {
     });
     return { pts: l, cum, kap: kv.slice(1).map((v, k) => (v + kv[k]) / 2) };
   });
+  const chaikin = (pts, n) => {
+    let p = pts;
+    for (let r = 0; r < n && p.length > 2; r++) {
+      const q = [p[0]];
+      for (let k = 0; k + 1 < p.length; k++) {
+        const a = p[k], b = p[k + 1];
+        q.push([0.75 * a[0] + 0.25 * b[0], 0.75 * a[1] + 0.25 * b[1]], [0.25 * a[0] + 0.75 * b[0], 0.25 * a[1] + 0.75 * b[1]]);
+      }
+      q.push(p[p.length - 1]);
+      p = q;
+    }
+    return p;
+  };
+  const uvLines = lines.map((L2) => {
+    const pts = chaikin(L2.pts, 2), cum = [0];
+    for (let k = 1; k < pts.length; k++) cum.push(cum[k - 1] + Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]));
+    const kv = pts.map((p, k) => {
+      if (k === 0 || k === pts.length - 1) return 0;
+      const a = pts[k - 1], b = pts[k + 1], ux = p[0] - a[0], uz = p[1] - a[1], vx = b[0] - p[0], vz = b[1] - p[1];
+      return Math.abs(Math.atan2(ux * vz - uz * vx, ux * vx + uz * vz)) / Math.max(0.05, (Math.hypot(ux, uz) + Math.hypot(vx, vz)) / 2);
+    });
+    return { pts, cum, kap: kv.slice(1).map((v, k) => (v + kv[k]) / 2) };
+  });
+  const uvSegs = /* @__PURE__ */ new Map();
+  uvLines.forEach((L2, li) => {
+    for (let k = 1; k < L2.pts.length; k++) {
+      const [ax, az] = L2.pts[k - 1], [bx, bz] = L2.pts[k];
+      for (let i = Math.floor(Math.min(ax, bx) / 8); i <= Math.floor(Math.max(ax, bx) / 8); i++)
+        for (let j = Math.floor(Math.min(az, bz) / 8); j <= Math.floor(Math.max(az, bz) / 8); j++) push(uvSegs, cellKey(i, j), [li, k]);
+    }
+  });
   const segs = /* @__PURE__ */ new Map();
   lines.forEach((L2, li) => {
     for (let k = 1; k < L2.pts.length; k++) {
@@ -6274,29 +6484,110 @@ function prepareSurfaces(surf, ground, bounds, trees = null) {
         for (let j = Math.floor(Math.min(az, bz) / 8); j <= Math.floor(Math.max(az, bz) / 8); j++) push(segs, cellKey(i, j), [li, k]);
     }
   });
-  const nearKerb = (x, z, only = -1) => {
+  const nearKerbIn = (LINES, SEGS) => (x, z, only = -1) => {
     let best = null, bd = 16 * 16;
-    const i0 = Math.floor(x / 8), j0 = Math.floor(z / 8), seen = /* @__PURE__ */ new Set();
-    for (let di = -2; di <= 2; di++) for (let dj = -2; dj <= 2; dj++) for (const [li, k] of segs.get(cellKey(i0 + di, j0 + dj)) || []) {
-      if (only >= 0 && li !== only || seen.has(li * 1e6 + k)) continue;
-      seen.add(li * 1e6 + k);
-      const L2 = lines[li], [ax, az] = L2.pts[k - 1], [bx, bz] = L2.pts[k], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1e-12;
-      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)), px = ax + dx * t, pz = az + dz * t;
-      const d2 = (x - px) ** 2 + (z - pz) ** 2;
-      if (d2 < bd) {
-        bd = d2;
-        const l = Math.sqrt(l2), tx = dx / l, tz = dz / l;
-        best = { li, s: L2.cum[k - 1] + t * l, d: (x - px) * -tz + (z - pz) * tx, x: px, z: pz, tx, tz, kap: L2.kap[k - 1] };
+    const i0 = Math.floor(x / 8), j0 = Math.floor(z / 8);
+    for (let ring2 = 1; ring2 <= 2; ring2++) for (let di = -ring2; di <= ring2; di++) for (let dj = -ring2; dj <= ring2; dj++) {
+      if (ring2 === 2 && (Math.abs(di) < 2 && Math.abs(dj) < 2 || bd <= 64)) continue;
+      for (const [li, k] of SEGS.get(cellKey(i0 + di, j0 + dj)) || []) {
+        if (only >= 0 && li !== only) continue;
+        const L2 = LINES[li], [ax, az] = L2.pts[k - 1], [bx, bz] = L2.pts[k], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1e-12;
+        const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)), px = ax + dx * t, pz = az + dz * t;
+        const d2 = (x - px) ** 2 + (z - pz) ** 2;
+        if (d2 < bd) {
+          bd = d2;
+          const l = Math.sqrt(l2), tx = dx / l, tz = dz / l;
+          best = { li, s: L2.cum[k - 1] + t * l, d: (x - px) * -tz + (z - pz) * tx, x: px, z: pz, tx, tz, kap: L2.kap[k - 1] };
+        }
       }
     }
     return best;
   };
-  const rampRise = (x, z) => {
-    const k = nearKerb(x, z);
-    const d = k ? Math.max(0, k.d) : RAMP_DEPTH;
-    return RAMP_LOW + (KERB - RAMP_LOW) * Math.min(1, d / RAMP_DEPTH);
+  const nearKerb = nearKerbIn(lines, segs);
+  const nearKerbUV0 = nearKerbIn(uvLines, uvSegs), uvCache = /* @__PURE__ */ new Map();
+  const nearKerbUV = (x, z, only = -1) => {
+    const k = `${Math.round(x * 1e3)},${Math.round(z * 1e3)},${only}`;
+    let v = uvCache.get(k);
+    if (v === void 0) {
+      v = nearKerbUV0(x, z, only);
+      uvCache.set(k, v);
+    }
+    return v;
   };
-  const riseAt = (c, x, z) => c === SURF_CLASS.ramp ? rampRise(x, z) : RAISE[c];
+  const rampList = [];
+  const rampGrid = /* @__PURE__ */ new Map();
+  surf.surfaces.forEach((q, si2) => {
+    if (q.c !== SURF_CLASS.ramp) return;
+    const r = q.rings[0], votes = /* @__PURE__ */ new Map();
+    for (const p of r) {
+      const k = nearKerb(p[0], p[1]);
+      if (k && Math.abs(k.d) < RAMP_DEPTH + 0.5) votes.set(k.li, (votes.get(k.li) || 0) + 1);
+    }
+    const best = [...votes].sort((x, y) => y[1] - x[1])[0];
+    if (!best) return;
+    const li = best[0];
+    let s0 = Infinity, s1 = -Infinity, x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (const p of r) {
+      const k = nearKerb(p[0], p[1], li);
+      if (!k) continue;
+      s0 = Math.min(s0, k.s);
+      s1 = Math.max(s1, k.s);
+      x0 = Math.min(x0, p[0]);
+      x1 = Math.max(x1, p[0]);
+      z0 = Math.min(z0, p[1]);
+      z1 = Math.max(z1, p[1]);
+    }
+    if (!(s1 > s0)) return;
+    const W = Math.min(RAMP_WING, (s1 - s0) / 3), R = { si: si2, li, s0, s1, W, ring: r, x0, x1, z0, z1 };
+    rampList.push(R);
+    for (let i = Math.floor((x0 - 0.5) / 8); i <= Math.floor((x1 + 0.5) / 8); i++) for (let j = Math.floor((z0 - 0.5) / 8); j <= Math.floor((z1 + 0.5) / 8); j++) push(rampGrid, cellKey(i, j), R);
+  });
+  const pipR = (x, z, ring2) => {
+    let ins = false;
+    for (let i = 0, j = ring2.length - 1; i < ring2.length; j = i++) {
+      const [xi, zi] = ring2[i], [xj, zj] = ring2[j];
+      if (zi > z !== zj > z && x < (xj - xi) * (z - zi) / (zj - zi) + xi) ins = !ins;
+    }
+    return ins;
+  };
+  const rampAt = (x, z, si2 = -1) => {
+    let near = null;
+    for (const R of rampGrid.get(cellKey(Math.floor(x / 8), Math.floor(z / 8))) || []) {
+      if (si2 >= 0 && R.si !== si2) continue;
+      if (x < R.x0 - 0.3 || x > R.x1 + 0.3 || z < R.z0 - 0.3 || z > R.z1 + 0.3) continue;
+      if (si2 >= 0 || pipR(x, z, R.ring)) return R;
+      near ??= R;
+    }
+    return near;
+  };
+  const rampRise = (x, z, si2 = -1) => {
+    const R = rampAt(x, z, si2);
+    if (!R) {
+      const k2 = nearKerb(x, z), d2 = k2 ? Math.max(0, k2.d) : RAMP_DEPTH;
+      return RAMP_LOW + (KERB - RAMP_LOW) * Math.min(1, d2 / RAMP_DEPTH);
+    }
+    const k = nearKerb(x, z, R.li);
+    if (!k) return KERB;
+    const d = Math.max(0, k.d), along = Math.max(0, Math.min(1, Math.min(k.s - R.s0, R.s1 - k.s) / R.W));
+    const low = (1 - Math.min(1, d / (RAMP_DEPTH * 0.85))) * along;
+    return KERB - (KERB - RAMP_LOW) * low;
+  };
+  const rampCuts = (R) => {
+    const L2 = lines[R.li], at = (s) => {
+      let k = 1;
+      while (k < L2.cum.length - 1 && L2.cum[k] < s) k++;
+      const t = (s - L2.cum[k - 1]) / Math.max(1e-9, L2.cum[k] - L2.cum[k - 1]), [ax, az] = L2.pts[k - 1], [bx, bz] = L2.pts[k];
+      const len = Math.hypot(bx - ax, bz - az) || 1, tx = (bx - ax) / len, tz = (bz - az) / len;
+      return { x: ax + (bx - ax) * t, z: az + (bz - az) * t, tx, tz };
+    };
+    const out = [];
+    for (const sv of [R.s0 + R.W, R.s1 - R.W]) {
+      const p = at(sv), nx2 = -p.tz, nz2 = p.tx;
+      out.push([p.x - nx2 * 3, p.z - nz2 * 3, p.x + nx2 * 3, p.z + nz2 * 3]);
+    }
+    return out;
+  };
+  const riseAt = (c, x, z, si2 = -1) => c === SURF_CLASS.ramp ? rampRise(x, z, si2) : RAISE[c];
   const pits = trees ? placePits(trees, classAt, nearKerb, surf, bounds) : [];
   if (pits.length) {
     const keep = [];
@@ -6332,7 +6623,7 @@ function prepareSurfaces(surf, ground, bounds, trees = null) {
       for (const p of pieces) for (let k2 = 1; k2 + 1 < p.length; k2++) if (Math.abs(area2(p[0], p[k2], p[k2 + 1])) > 1e-7) keep.push({ ...b, a: p[0], b: p[k2], c: p[k2 + 1] });
     }
     base.length = 0;
-    base.push(...keep);
+    for (const b of keep) base.push(b);
     halves.clear();
     base.forEach((b, i) => push(halves, b.hk, i));
     for (const P of pits) {
@@ -6344,8 +6635,90 @@ function prepareSurfaces(surf, ground, bounds, trees = null) {
       }
     }
   }
+  {
+    const out = [];
+    const split = (b, depth, lim = limit(b)) => {
+      const P = [b.a, b.b, b.c];
+      const L2 = [[b.a, b.b], [b.b, b.c], [b.c, b.a]].map(([p2, q2]) => Math.hypot(q2[0] - p2[0], q2[1] - p2[1]));
+      let k;
+      if (false) {
+      } else {
+        const m = Math.max(...L2);
+        if (m <= lim || depth > 8) {
+          out.push(b);
+          return;
+        }
+        k = L2.indexOf(m);
+      }
+      const p = P[k], q = P[(k + 1) % 3], r = P[(k + 2) % 3], mid = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+      split({ ...b, a: p, b: mid, c: r }, depth + 1, lim);
+      split({ ...b, a: mid, b: q, c: r }, depth + 1, lim);
+    };
+    let any = false;
+    const cen = (b) => [(b.a[0] + b.b[0] + b.c[0]) / 3, (b.a[1] + b.b[1] + b.c[1]) / 3];
+    const bends = (b) => {
+      const k = nearKerbUV(...cen(b));
+      return k && Math.abs(k.d) < 4 && k.kap > 0.04;
+    };
+    const warped = (b) => {
+      const k = nearKerb(...cen(b));
+      return k && k.d < RAMP_DEPTH + 0.6;
+    };
+    const limit = (b) => b.cls === SURF_CLASS.ramp && warped(b) ? RAMP_EDGE : bends(b) ? PAVE_EDGE : Infinity;
+    const rampBySi = new Map(rampList.map((R) => [R.si, R])), cutsOf = /* @__PURE__ */ new Map();
+    const lineCut = (b) => {
+      const R = rampBySi.get(b.si);
+      if (!R) {
+        out.push(b);
+        return;
+      }
+      if (!cutsOf.has(R.si)) cutsOf.set(R.si, rampCuts(R));
+      let pieces = [[b.a, b.b, b.c]];
+      for (const [ax, az, bx, bz] of cutsOf.get(R.si)) {
+        const next = [];
+        for (const pc of pieces) for (const sg of [1, -1]) {
+          const q = clipHalf(pc, ax, az, bx, bz, sg);
+          if (q.length >= 3 && Math.abs(ringArea(q)) > 1e-6) next.push(q);
+        }
+        pieces = next;
+      }
+      for (const q of pieces) for (let k = 1; k + 1 < q.length; k++) if (Math.abs(area2(q[0], q[k], q[k + 1])) > 1e-7) out.push({ ...b, a: q[0], b: q[k], c: q[k + 1] });
+    };
+    for (const b of base) {
+      if (b.cls === SURF_CLASS.ramp) {
+        any = true;
+        lineCut(b);
+      } else if (SPLIT_BENDS && b.cls === SURF_CLASS.sidewalk && bends(b)) {
+        any = true;
+        split(b, 0);
+      } else out.push(b);
+    }
+    if (any) {
+      base.length = 0;
+      for (const b of out) base.push(b);
+      halves.clear();
+      base.forEach((b, i) => push(halves, b.hk, i));
+    }
+  }
+  const host = /* @__PURE__ */ new Map();
+  {
+    const vk = (p) => `${Math.round(p[0] * 100)},${Math.round(p[1] * 100)}`;
+    const owner = /* @__PURE__ */ new Map();
+    surf.surfaces.forEach((q, si2) => {
+      if (q.c === SURF_CLASS.sidewalk) for (const p of q.rings[0]) push(owner, vk(p), si2);
+    });
+    surf.surfaces.forEach((q, si2) => {
+      if (q.c !== SURF_CLASS.ramp) return;
+      const votes = /* @__PURE__ */ new Map();
+      for (const p of q.rings[0]) for (const o of owner.get(vk(p)) || []) votes.set(o, (votes.get(o) || 0) + 1);
+      const best = [...votes].sort((a, b) => b[1] - a[1])[0];
+      if (best && best[1] >= 2) host.set(si2, best[0]);
+    });
+  }
   return {
     pits,
+    host,
+    rampAt,
     surf,
     G: G2,
     H,
@@ -6360,9 +6733,12 @@ function prepareSurfaces(surf, ground, bounds, trees = null) {
     classAt,
     grid: { data: grid, nx, nz, x0: bounds.x0, z0: bounds.z0, step: GRID },
     nearKerb,
+    nearKerbUV,
     bounds,
     inside: inside3,
     fallbacks,
+    tapered,
+    curved,
     streetCorners: street.size,
     ms: Math.round((globalThis.performance ?? Date).now() - t0)
   };
@@ -6461,7 +6837,73 @@ function fitRoadWidths(roads, prep) {
   st.meanAbsChange = st.fitted ? Math.round(chg / (2 * st.fitted) * 100) / 100 : 0;
   return st;
 }
-function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => false) {
+function foldedTriangles(E, phaseOf) {
+  const P = E.position, U = E.uv, I = E.index;
+  const sign2 = new Int8Array(I.length / 3), per = /* @__PURE__ */ new Map();
+  for (let t = 0; t < I.length; t += 3) {
+    const a = I[t], b = I[t + 1], c = I[t + 2];
+    const ap = (P[b * 3] - P[a * 3]) * (P[c * 3 + 2] - P[a * 3 + 2]) - (P[b * 3 + 2] - P[a * 3 + 2]) * (P[c * 3] - P[a * 3]);
+    const au = (U[b * 2] - U[a * 2]) * (U[c * 2 + 1] - U[a * 2 + 1]) - (U[b * 2 + 1] - U[a * 2 + 1]) * (U[c * 2] - U[a * 2]);
+    if (Math.abs(ap) < 1e-6 || Math.abs(au) < 1e-6) continue;
+    const sg = ap * au > 0 ? 1 : -1;
+    sign2[t / 3] = sg;
+    const ph = phaseOf(a), m = per.get(ph) || [0, 0];
+    m[sg > 0 ? 0 : 1]++;
+    per.set(ph, m);
+  }
+  const out = /* @__PURE__ */ new Set();
+  for (let t = 0; t < I.length; t += 3) {
+    const sg = sign2[t / 3];
+    if (!sg) continue;
+    const m = per.get(phaseOf(I[t]));
+    const major = m[0] >= m[1] ? 1 : -1;
+    if (sg !== major && Math.min(m[0], m[1]) < 0.25 * (m[0] + m[1])) out.add(t);
+  }
+  return out;
+}
+function liftTiers(E, inTile, phaseOf, priority) {
+  const P = E.position, I = E.index, S2 = 0.25;
+  const cells = /* @__PURE__ */ new Map();
+  for (let t = 0; t < I.length; t += 3) {
+    const a = I[t], b = I[t + 1], c = I[t + 2];
+    const ax = P[a * 3], az = P[a * 3 + 2], bx = P[b * 3], bz = P[b * 3 + 2], cx = P[c * 3], cz = P[c * 3 + 2];
+    const mx = (ax + bx + cx) / 3, mz = (az + bz + cz) / 3;
+    if (!inTile(mx, mz)) continue;
+    const ph = phaseOf(a);
+    const d = (bx - ax) * (cz - az) - (bz - az) * (cx - ax);
+    if (Math.abs(d) < 1e-9) continue;
+    for (let i = Math.ceil(Math.min(ax, bx, cx) / S2); i <= Math.floor(Math.max(ax, bx, cx) / S2); i++)
+      for (let j = Math.ceil(Math.min(az, bz, cz) / S2); j <= Math.floor(Math.max(az, bz, cz) / S2); j++) {
+        const x = i * S2, z = j * S2;
+        const w1 = ((x - ax) * (cz - az) - (z - az) * (cx - ax)) / d, w2 = ((bx - ax) * (z - az) - (bz - az) * (x - ax)) / d;
+        if (w1 < 0.02 || w2 < 0.02 || w1 + w2 > 0.98) continue;
+        const k = i * 1048576 + j;
+        let set = cells.get(k);
+        if (!set) cells.set(k, set = /* @__PURE__ */ new Set());
+        set.add(ph);
+      }
+  }
+  const nb = /* @__PURE__ */ new Map();
+  for (const set of cells.values()) {
+    if (set.size < 2) continue;
+    for (const p of set) for (const q of set) if (p !== q) {
+      let m = nb.get(p);
+      if (!m) nb.set(p, m = /* @__PURE__ */ new Map());
+      m.set(q, (m.get(q) || 0) + 1);
+    }
+  }
+  const tier = /* @__PURE__ */ new Map();
+  const order = [...nb.keys()].sort((p, q) => priority(p) - priority(q) || p - q);
+  for (const p of order) {
+    const used = /* @__PURE__ */ new Set();
+    for (const [q] of nb.get(p)) if (tier.has(q)) used.add(tier.get(q));
+    let t = 0;
+    while (used.has(t) && t < MAX_TIER) t++;
+    tier.set(p, t);
+  }
+  return tier;
+}
+function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => false, opts = {}) {
   const t0 = (globalThis.performance ?? Date).now();
   const { surf, H, nrmAt, base, halves, coverArea, convexCover, baseAt, bounds, riseAt } = prep;
   const UP2 = [0, 1, 0];
@@ -6515,7 +6957,62 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     return ex;
   };
   let overlayTris = 0, overlayWhole = 0, keptTris = 0, droppedTris = 0, devFail = 0, cutAtEdge = 0;
+  const lift = opts.priority ? liftTiers(E, inTile, phaseOf, opts.priority) : null;
+  const folded = opts.dropFolds ? foldedTriangles(E, phaseOf) : null;
+  let foldDropped = 0;
+  const liftOf = (v) => lift ? LIFT + (lift.get(phaseOf(v)) || 0) * TIER : LIFT;
   const keptEngine = [];
+  let zeroLines = false;
+  const exOfZ = (vs, w) => {
+    const ex = exOf(vs, w);
+    if (zeroLines) {
+      ex.aEdges = [ex.aEdges[0], ex.aEdges[1], 0, 0];
+    }
+    return ex;
+  };
+  const cuts = (opts.lineCuts || []).map((c) => {
+    const r = ringArea(c) < 0 ? c.slice().reverse() : c;
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (const [x, z] of r) {
+      x0 = Math.min(x0, x);
+      x1 = Math.max(x1, x);
+      z0 = Math.min(z0, z);
+      z1 = Math.max(z1, z);
+    }
+    return { r, x0, x1, z0, z1 };
+  });
+  let linesCut = 0;
+  const splitByCuts = (poly) => {
+    let parts2 = [{ poly, inside: false }];
+    if (!cuts.length) return parts2;
+    const xs = poly.map((q) => q[0]), zs = poly.map((q) => q[1]);
+    const bx0 = Math.min(...xs), bx1 = Math.max(...xs), bz0 = Math.min(...zs), bz1 = Math.max(...zs);
+    for (const C2 of cuts) {
+      if (C2.x1 < bx0 || C2.x0 > bx1 || C2.z1 < bz0 || C2.z0 > bz1) continue;
+      const next = [];
+      for (const pt of parts2) {
+        if (pt.inside) {
+          next.push(pt);
+          continue;
+        }
+        let inside3 = pt.poly;
+        const outs = [];
+        for (let e = 0; e < C2.r.length && inside3.length >= 3; e++) {
+          const [ax, az] = C2.r[e], [bx, bz] = C2.r[(e + 1) % C2.r.length];
+          const o = clipHalf(inside3, ax, az, bx, bz, -1);
+          if (o.length >= 3 && Math.abs(ringArea(o)) > 1e-6) outs.push(o);
+          inside3 = clipHalf(inside3, ax, az, bx, bz, 1);
+        }
+        if (inside3.length >= 3 && Math.abs(ringArea(inside3)) > 1e-6) {
+          next.push({ poly: inside3, inside: true });
+          for (const o of outs) next.push({ poly: o, inside: false });
+          linesCut++;
+        } else next.push(pt);
+      }
+      parts2 = next;
+    }
+    return parts2;
+  };
   const emit = (poly, vs, P2) => {
     const idx = [];
     for (const q of poly) {
@@ -6523,9 +7020,9 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       if (!we) return;
       const u = we[0] * E.uv[vs[0] * 2] + we[1] * E.uv[vs[1] * 2] + we[2] * E.uv[vs[2] * 2];
       const v = we[0] * E.uv[vs[0] * 2 + 1] + we[1] * E.uv[vs[1] * 2 + 1] + we[2] * E.uv[vs[2] * 2 + 1];
-      const ex = exOf(vs, we);
+      const ex = exOfZ(vs, we);
       const key = `o${Math.round(q[0] * 1e3)},${Math.round(q[1] * 1e3)},${Math.round(u * 1e3)},${Math.round(v * 1e3)},${ex.aPiece[0].toFixed(2)},${ex.aEdges.map((e) => e.toFixed(3)).join()},${ex.aMark.map((e) => e.toFixed(4)).join()},${ex.aLateral.toFixed(3)}`;
-      idx.push(A.keyed(key, () => A.vert(q[0], H(q[0], q[1]) + LIFT, q[1], nrmAt(q[0], q[1]), u, v, ex)));
+      idx.push(A.keyed(key, () => A.vert(q[0], H(q[0], q[1]) + liftOf(vs[0]), q[1], nrmAt(q[0], q[1]), u, v, ex)));
     }
     for (let k = 1; k + 1 < idx.length; k++) if (A.tri(idx[0], idx[k], idx[k + 1], UP2, true)) overlayTris++;
   };
@@ -6569,21 +7066,28 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       if (!we) return;
       const u = we[0] * E.uv[vs[0] * 2] + we[1] * E.uv[vs[1] * 2] + we[2] * E.uv[vs[2] * 2];
       const v = we[0] * E.uv[vs[0] * 2 + 1] + we[1] * E.uv[vs[1] * 2 + 1] + we[2] * E.uv[vs[2] * 2 + 1];
-      idx.push(A.vert(q[0], we[0] * hv[0] + we[1] * hv[1] + we[2] * hv[2] + LIFT, q[1], nrmAt(q[0], q[1]), u, v, exOf(vs, we)));
+      idx.push(A.vert(q[0], we[0] * hv[0] + we[1] * hv[1] + we[2] * hv[2] + liftOf(vs[0]), q[1], nrmAt(q[0], q[1]), u, v, exOfZ(vs, we)));
     }
     for (let k = 1; k + 1 < idx.length; k++) if (A.tri(idx[0], idx[k], idx[k + 1], UP2, true)) overlayTris++;
   };
   for (let t = 0; t < EI.length; t += 3) {
+    if (folded?.has(t)) {
+      foldDropped++;
+      droppedTris++;
+      continue;
+    }
     const vs = [EI[t], EI[t + 1], EI[t + 2]];
     const P2 = vs.map((v) => [EP[v * 3], EP[v * 3 + 2]]);
     const cx = (P2[0][0] + P2[1][0] + P2[2][0]) / 3, cz = (P2[0][1] + P2[1][1] + P2[2][1]) / 3;
     if (!mapped.has(phaseOf(vs[0]))) {
-      if (!inTile(cx, cz) || baseAt(cx, cz) || onBuilding(cx, cz)) {
+      const probe = [...P2, [(P2[0][0] + P2[1][0]) / 2, (P2[0][1] + P2[1][1]) / 2], [(P2[1][0] + P2[2][0]) / 2, (P2[1][1] + P2[2][1]) / 2], [(P2[2][0] + P2[0][0]) / 2, (P2[2][1] + P2[0][1]) / 2], [cx, cz]];
+      if (!inTile(cx, cz) || probe.some(([x, z]) => baseAt(x, z)) || onBuilding(cx, cz)) {
         droppedTris++;
         continue;
       }
       const w3 = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
-      const idx = vs.map((v, q) => A.vert(EP[v * 3], EP[v * 3 + 1], EP[v * 3 + 2], [E.normal[v * 3], E.normal[v * 3 + 1], E.normal[v * 3 + 2]], E.uv[v * 2], E.uv[v * 2 + 1], exOf(vs, w3[q])));
+      const up = lift ? liftOf(vs[0]) - LIFT : 0;
+      const idx = vs.map((v, q) => A.vert(EP[v * 3], EP[v * 3 + 1] + up, EP[v * 3 + 2], nrmAt(EP[v * 3], EP[v * 3 + 2]), E.uv[v * 2], E.uv[v * 2 + 1], exOf(vs, w3[q])));
       A.idxFirst.push(idx[0], idx[1], idx[2]);
       for (const v of vs) keptEngine.push(EP[v * 3], EP[v * 3 + 1], EP[v * 3 + 2]);
       keptTris++;
@@ -6610,6 +7114,45 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       continue;
     }
     if (hits.length) cutAtEdge++;
+    const cutParts = splitByCuts(poly);
+    if (cutParts.length > 1 || cutParts[0].inside) {
+      const hv = P2.map((q) => H(q[0], q[1]));
+      for (const cp of cutParts) {
+        zeroLines = cp.inside;
+        const xs2 = cp.poly.map((q) => q[0]), zs2 = cp.poly.map((q) => q[1]), pcs = [];
+        for (let i = Math.floor(Math.min(...xs2) / CELL2); i <= Math.floor(Math.max(...xs2) / CELL2); i++)
+          for (let j = Math.floor(Math.min(...zs2) / CELL2); j <= Math.floor(Math.max(...zs2) / CELL2); j++) for (let h = 0; h < 2; h++) {
+            const q = clipHalfCell(cp.poly, i, j, h);
+            if (q.length >= 3 && Math.abs(ringArea(q)) > 1e-6) pcs.push(q);
+          }
+        let fine = true;
+        const all = [];
+        {
+          const xa = P2.map((q) => q[0]), za = P2.map((q) => q[1]);
+          for (let i = Math.floor(Math.min(...xa) / CELL2); i <= Math.floor(Math.max(...xa) / CELL2); i++)
+            for (let j = Math.floor(Math.min(...za) / CELL2); j <= Math.floor(Math.max(...za) / CELL2); j++) for (let h = 0; h < 2; h++) {
+              const q = clipHalfCell(P2, i, j, h);
+              if (q.length >= 3 && Math.abs(ringArea(q)) > 1e-6) all.push(q);
+            }
+        }
+        if (all.length > 1) for (const q of all) {
+          for (const r of q) {
+            const w = bary(r, P2[0], P2[1], P2[2]);
+            const dev = w ? w[0] * hv[0] + w[1] * hv[1] + w[2] * hv[2] - H(r[0], r[1]) : 0;
+            if (dev < DEV[0] || dev > DEV[1]) {
+              fine = false;
+              break;
+            }
+          }
+          if (!fine) break;
+        }
+        if (fine) emitPlane(cp.poly, vs, P2);
+        else for (const q of pcs) emit(q, vs, P2);
+        zeroLines = false;
+      }
+      overlayWhole++;
+      continue;
+    }
     const xs = poly.map((q) => q[0]), zs = poly.map((q) => q[1]);
     const pieces = [];
     for (let i = Math.floor(Math.min(...xs) / CELL2); i <= Math.floor(Math.max(...xs) / CELL2); i++)
@@ -6649,18 +7192,20 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
   const votes2 = /* @__PURE__ */ new Map();
   const paved = (c) => c === SURF_CLASS.sidewalk || c === SURF_CLASS.ramp;
   const cen = /* @__PURE__ */ new Map();
+  const hostOf = (si2) => prep.host?.get(si2) ?? si2;
   for (const b of base) {
     if (!paved(b.cls)) continue;
-    const A2 = Math.abs(area2(b.a, b.b, b.c)), c0 = cen.get(b.si) || [0, 0, 0];
+    const fsi = hostOf(b.si);
+    const A2 = Math.abs(area2(b.a, b.b, b.c)), c0 = cen.get(fsi) || [0, 0, 0];
     c0[0] += A2 * (b.a[0] + b.b[0] + b.c[0]) / 3;
     c0[1] += A2 * (b.a[1] + b.b[1] + b.c[1]) / 3;
     c0[2] += A2;
-    cen.set(b.si, c0);
+    cen.set(fsi, c0);
     const k = prep.nearKerb((b.a[0] + b.b[0] + b.c[0]) / 3, (b.a[1] + b.b[1] + b.c[1]) / 3);
     if (!k) continue;
-    const m = votes2.get(b.si) || /* @__PURE__ */ new Map();
+    const m = votes2.get(fsi) || /* @__PURE__ */ new Map();
     m.set(k.li, (m.get(k.li) || 0) + Math.abs(area2(b.a, b.b, b.c)));
-    votes2.set(b.si, m);
+    votes2.set(fsi, m);
   }
   const sidewalkKerb = new Map([...votes2].map(([si2, m]) => [si2, [...m].sort((p, q) => q[1] - p[1])[0][0]]));
   const straight = /* @__PURE__ */ new Map();
@@ -6668,36 +7213,72 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     const li = sidewalkKerb.get(si2), k = li !== void 0 && A2 > 0 ? prep.nearKerb(sx / A2, sz / A2, li) || prep.nearKerb(sx / A2, sz / A2) : null;
     straight.set(si2, k ? [k.tx, k.tz] : [1, 0]);
   }
+  const partName = (s, cls) => cls === SURF_CLASS.median && s.photo && s.photo.veg < 0.25 ? "concrete" : PART[cls];
   const sst = (a, b, v) => {
     const t = Math.min(1, Math.max(0, (v - a) / (b - a)));
     return t * t * (3 - 2 * t);
   };
+  const ovGrid = /* @__PURE__ */ new Map();
+  {
+    const P = A.pos, I = A.idxFirst;
+    for (let t = 0; t < I.length; t += 3) {
+      const xs = [P[I[t] * 3], P[I[t + 1] * 3], P[I[t + 2] * 3]], zs = [P[I[t] * 3 + 2], P[I[t + 1] * 3 + 2], P[I[t + 2] * 3 + 2]];
+      for (let i = Math.floor(Math.min(...xs) / 2); i <= Math.floor(Math.max(...xs) / 2); i++) for (let j = Math.floor(Math.min(...zs) / 2); j <= Math.floor(Math.max(...zs) / 2); j++) push(ovGrid, cellKey(i, j), t);
+    }
+  }
+  const underLayer = (x, z) => {
+    const P = A.pos, I = A.idxFirst;
+    for (const t of ovGrid.get(cellKey(Math.floor(x / 2), Math.floor(z / 2))) || []) {
+      const w = bary([x, z], [P[I[t] * 3], P[I[t] * 3 + 2]], [P[I[t + 1] * 3], P[I[t + 1] * 3 + 2]], [P[I[t + 2] * 3], P[I[t + 2] * 3 + 2]]);
+      if (w && w[0] >= -1e-6 && w[1] >= -1e-6 && w[2] >= -1e-6) return true;
+    }
+    return false;
+  };
+  let baseHidden = 0;
   for (const b of base) {
-    const s = surf.surfaces[b.si], cls = b.cls, part = out[PART[cls]];
+    const s = surf.surfaces[b.si], cls = b.cls, pname = partName(s, cls), part = out[pname];
+    if (OVERLAY[cls]) {
+      const cx = (b.a[0] + b.b[0] + b.c[0]) / 3, cz = (b.a[1] + b.b[1] + b.c[1]) / 3;
+      const probe = [
+        [cx, cz],
+        ...[b.a, b.b, b.c].map((p) => {
+          const dx = cx - p[0], dz = cz - p[1], L2 = Math.hypot(dx, dz) || 1, f = Math.min(0.02, L2) / L2;
+          return [p[0] + dx * f, p[1] + dz * f];
+        }),
+        [(b.a[0] + b.b[0]) / 2, (b.a[1] + b.b[1]) / 2],
+        [(b.b[0] + b.c[0]) / 2, (b.b[1] + b.c[1]) / 2],
+        [(b.c[0] + b.a[0]) / 2, (b.c[1] + b.a[1]) / 2]
+      ];
+      if (SKIP_HIDDEN_BASE && probe.every(([x, z]) => underLayer(x, z))) {
+        baseHidden++;
+        continue;
+      }
+    }
     const pts = [b.a, b.b, b.c];
     let uvs = pts.map((p) => [p[0], p[1]]), frame = -1, uv2 = uvs, fw = [0, 0, 0];
     if (paved(cls)) {
       const ok = (ks2) => ks2 && ks2.every(Boolean) && Math.max(...ks2.map((k) => k.s)) - Math.min(...ks2.map((k) => k.s)) < 3 * CELL2;
-      let li = sidewalkKerb.get(b.si) ?? -1;
-      let ks = li >= 0 ? pts.map((p) => prep.nearKerb(p[0], p[1], li)) : null;
+      let li = sidewalkKerb.get(hostOf(b.si)) ?? -1;
+      let ks = li >= 0 ? pts.map((p) => prep.nearKerbUV(p[0], p[1], li)) : null;
       if (!ok(ks)) {
-        const k0 = prep.nearKerb((b.a[0] + b.b[0] + b.c[0]) / 3, (b.a[1] + b.b[1] + b.c[1]) / 3);
+        const k0 = prep.nearKerbUV((b.a[0] + b.b[0] + b.c[0]) / 3, (b.a[1] + b.b[1] + b.c[1]) / 3);
         li = k0 ? k0.li : -1;
-        ks = k0 ? pts.map((p) => prep.nearKerb(p[0], p[1], li)) : null;
+        ks = k0 ? pts.map((p) => prep.nearKerbUV(p[0], p[1], li)) : null;
       }
       if (ok(ks)) {
         uvs = ks.map((k) => [k.s, k.d]);
         frame = li;
-        const [tx, tz] = straight.get(b.si) || [1, 0];
+        const [tx, tz] = straight.get(hostOf(b.si)) || [1, 0];
         uv2 = pts.map((p) => [p[0] * tx + p[1] * tz, -p[0] * tz + p[1] * tx]);
-        fw = ks.map((k) => Math.max(sst(2.5, 4.5, Math.abs(k.d)), sst(0.12, 0.3, Math.abs(k.d * k.kap))));
+        const bend = ks.some((k) => Math.abs(k.kap) > 1 / 30 && Math.abs(k.d) < 6) || ks.some((k) => Math.abs(k.d) > 5);
+        fw = bend ? [1, 1, 1] : [0, 0, 0];
       } else unframed++;
     } else if (cls === SURF_CLASS.square) {
       const th = (s.course ?? 0) * Math.PI / 180, c = Math.cos(th), sn = Math.sin(th);
       uvs = pts.map((p) => [p[0] * c + p[1] * sn, -p[0] * sn + p[1] * c]);
     }
-    const exOfV = (q) => PART[cls] === "asphalt" ? { aPiece: [hashPhase2(s.id || String(b.si)), 0], aSurf: nameSurf.get(s.name) || BASE_SURF[cls] } : PART[cls] === "concrete" ? { aKind: frame >= 0 ? KIND3.framed : KIND3.slab, aUv2: uv2[q], aFrameW: fw[q] } : null;
-    const idx = pts.map((p, q) => part.keyed(`${b.si}|${frame}|${Math.round(p[0] * 1e3)}|${Math.round(p[1] * 1e3)}`, () => part.vert(p[0], H(p[0], p[1]) + riseAt(cls, p[0], p[1]) - (OVERLAY[cls] ? BASE_DROP : 0), p[1], nrmAt(p[0], p[1]), uvs[q][0], uvs[q][1], exOfV(q))));
+    const exOfV = (q) => pname === "asphalt" ? { aPiece: [hashPhase2(s.id || String(b.si)), 0], aSurf: nameSurf.get(s.name) || BASE_SURF[cls] } : pname === "concrete" ? { aKind: frame >= 0 ? KIND3.framed : KIND3.slab, aUv2: uv2[q], aFrameW: fw[q] } : null;
+    const idx = pts.map((p, q) => part.keyed(`${paved(cls) ? hostOf(b.si) : b.si}|${frame}|${fw[0]}|${Math.round(p[0] * 1e3)}|${Math.round(p[1] * 1e3)}`, () => part.vert(p[0], H(p[0], p[1]) + riseAt(cls, p[0], p[1], b.si) - (OVERLAY[cls] ? BASE_DROP : 0), p[1], nrmAt(p[0], p[1]), uvs[q][0], uvs[q][1], exOfV(q))));
     part.tri(idx[0], idx[1], idx[2], UP2);
   }
   const carveTris = new Float32Array(base.length * 9);
@@ -6770,8 +7351,21 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     return pts;
   };
   let kerbLen = 0;
-  for (const line of surf.kerbs) {
-    const pts = densify(line);
+  for (let li = 0; li < surf.kerbs.length; li++) {
+    const line = surf.kerbs[li];
+    const pts = [];
+    for (const p of densify(line)) {
+      const q = pts[pts.length - 1];
+      if (q) {
+        const L2 = Math.hypot(p[0] - q[0], p[1] - q[1]), mx = (p[0] + q[0]) / 2, mz = (p[1] + q[1]) / 2, nx = -(p[1] - q[1]) / (L2 || 1), nz = (p[0] - q[0]) / (L2 || 1);
+        const ramp = [1, -1].some((sg) => prep.classAt(mx + nx * 0.3 * sg, mz + nz * 0.3 * sg) === SURF_CLASS.ramp);
+        if (ramp && L2 > 0.6) {
+          const n = Math.ceil(L2 / 0.5);
+          for (let k = 1; k < n; k++) pts.push([q[0] + (p[0] - q[0]) * k / n, q[1] + (p[1] - q[1]) * k / n]);
+        }
+      }
+      pts.push(p);
+    }
     if (pts.length < 2) continue;
     const segN = (a, b) => {
       const dx = b[0] - a[0], dz = b[1] - a[1], L2 = Math.hypot(dx, dz) || 1;
@@ -6793,11 +7387,12 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     for (let k = 0; k < pts.length; k++) {
       const [x, z] = pts[k], y = H(x, z), right = [-nl[k][0], 0, -nl[k][1]];
       const bx = x + nl[k][0] * BAND, bz = z + nl[k][1] * BAND, n = nrmAt(x, z);
+      const ks = prep.nearKerbUV(x, z, li), st = ks ? ks.s : 0;
       const cur = {
-        bot: C.vert(x, y - KERB_DOWN, z, right, x, z, ex),
-        top: C.vert(x, y + rise[k], z, right, x, z, ex),
-        bo: C.vert(x, y + rise[k] + BAND_LIFT, z, n, x, z, ex),
-        bi: C.vert(bx, H(bx, bz) + rise[k] + BAND_LIFT, bz, n, bx, bz, ex)
+        bot: C.vert(x, y - KERB_DOWN, z, right, st, KERB_DOWN + rise[k], ex),
+        top: C.vert(x, y + rise[k], z, right, st, 0, ex),
+        bo: C.vert(x, y + rise[k] + BAND_LIFT, z, n, st, 0, ex),
+        bi: C.vert(bx, H(bx, bz) + rise[k] + BAND_LIFT, bz, n, st, BAND, ex)
       };
       if (prev) {
         C.tri(prev.bot, cur.bot, cur.top, right);
@@ -6816,9 +7411,10 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
   for (const P of prep.pits || []) {
     const { o, w } = P, iw = o - w;
     const X = (u, v) => [P.x + P.tx * u - P.tz * v, P.z + P.tz * u + P.tx * v];
+    const hc = H(P.x, P.z), gx = (H(P.x + 1, P.z) - H(P.x - 1, P.z)) / 2, gz = (H(P.x, P.z + 1) - H(P.x, P.z - 1)) / 2;
     const top = (u, v) => {
       const [x, z] = X(u, v);
-      return H(x, z) + P.raise;
+      return hc + gx * (x - P.x) + gz * (z - P.z) + P.raise;
     };
     const dirW = (du, dv) => [P.tx * du - P.tz * dv, 0, P.tz * du + P.tx * dv];
     const slab = (u0, u1, v0, v1, alongU) => {
@@ -6879,6 +7475,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       pv = cur;
     }
   }
+  let skirtsInWalls = 0;
   for (const e of surf.edges) {
     const pts = densify(e.line);
     let pb = null, pt = null;
@@ -6895,8 +7492,11 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       const y = H(x, z);
       const bot = C.vert(x, y - SKIRT_DOWN, z, right, x, z, { aKind: KIND3.slab }), top = C.vert(x, y + r, z, right, x, z, { aKind: KIND3.slab });
       if (pb !== null) {
-        C.tri(pb, bot, top, right);
-        C.tri(pb, top, pt, right);
+        const mx = (x + pts[k - 1][0]) / 2, mz = (z + pts[k - 1][1]) / 2;
+        if (!onBuilding(mx + right[0] * 0.4, mz + right[2] * 0.4)) {
+          C.tri(pb, bot, top, right);
+          C.tri(pb, top, pt, right);
+        } else skirtsInWalls++;
       }
       pb = bot;
       pt = top;
@@ -6920,6 +7520,11 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     overlayCutAtStreetEdge: cutAtEdge,
     keptEngineTris: keptTris,
     droppedEngineTris: droppedTris,
+    foldDropped,
+    linesCutAtCrossings: linesCut,
+    baseHiddenUnderLayer: baseHidden,
+    skirtsInWalls,
+    liftTiers: lift ? { pieces: lift.size, overlapping: [...lift.values()].filter((t) => t > 0).length, max: Math.max(0, ...lift.values()) } : null,
     keptSideTris: keptSide,
     kerbLength: Math.round(kerbLen),
     mappedPieces: mapped.size,
@@ -6939,6 +7544,1048 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     ms: Math.round((globalThis.performance ?? Date).now() - t0) + prep.ms
   };
   return { parts, carve, grid: prep.grid, kerbs: surf.kerbs, bollards: Float32Array.from(bollards.flat()), stats };
+}
+
+// viewer/streets/inventory.js
+function approachSpan(arm) {
+  const tIn = Math.max(arm.cw / 2, 0);
+  let tOut = tIn;
+  for (const l of arm.lanesL || []) if ((l.drive || l.type === "bike") && l.w > 0.3) tOut = Math.max(tOut, l.tOut);
+  return [tIn, tOut];
+}
+
+// viewer/streets/measuredPaint.js
+var PAINT_LIFT = 0.022;
+var MARKABLE = /* @__PURE__ */ new Set([0, 1, 3]);
+var CARRIAGE2 = /* @__PURE__ */ new Set([0, 1, 2, 3]);
+var RESIDENTIAL = /* @__PURE__ */ new Set(["local", "oneWay", "alley"]);
+var OSM_ALONG = 3.5;
+var OSM_MAX_ACROSS = 14;
+var PHOTO_NO = 0.4;
+var PHOTO_OSM = 0.4;
+var PHOTO_YES = 0.5;
+var OSM_NEAR = 8;
+var STRIPE = 0.5;
+var STRIPE_PERIOD = 1;
+var TOOTH = { base: 0.5, gap: 0.25, tall: 0.7 };
+var SHARROW_STEP = 40;
+var PARKING_CODE = lineCode(markingStyle("parking", "eu", 1));
+var clone = (o) => JSON.parse(JSON.stringify(o));
+var pip2 = (x, z, ring2) => {
+  let ins = false;
+  for (let i = 0, j = ring2.length - 1; i < ring2.length; j = i++) {
+    const [xi, zi] = ring2[i], [xj, zj] = ring2[j];
+    if (zi > z !== zj > z && x < (xj - xi) * (z - zi) / (zj - zi) + xi) ins = !ins;
+  }
+  return ins;
+};
+var segD = (px, pz, ax, az, bx, bz) => {
+  const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz;
+  const t = L2 > 1e-12 ? Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / L2)) : 0;
+  return Math.hypot(px - ax - dx * t, pz - az - dz * t);
+};
+var lineDist = (x, z, pts) => {
+  let d = Infinity;
+  for (let i = 1; i < pts.length; i++) d = Math.min(d, segD(x, z, pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1]));
+  return d;
+};
+var area22 = (p) => {
+  let a = 0;
+  for (let i = 0, j = p.length - 1; i < p.length; j = i++) a += p[j][0] * p[i][1] - p[i][0] * p[j][1];
+  return a / 2;
+};
+function hull(pts) {
+  const P = [...pts].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lo = [], up = [];
+  for (const p of P) {
+    while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop();
+    lo.push(p);
+  }
+  for (const p of P.reverse()) {
+    while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop();
+    up.push(p);
+  }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}
+function clipConvex(subject, clip) {
+  let out = subject;
+  const s = area22(clip) > 0 ? 1 : -1;
+  for (let i = 0; i < clip.length && out.length; i++) {
+    const a = clip[i], b = clip[(i + 1) % clip.length];
+    const side = (p) => s * ((b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]));
+    const inp = out;
+    out = [];
+    for (let k = 0; k < inp.length; k++) {
+      const P = inp[k], Q = inp[(k + 1) % inp.length], sp = side(P), sq = side(Q);
+      if (sp >= 0) out.push(P);
+      if (sp >= 0 !== sq >= 0) {
+        const t = sp / (sp - sq);
+        out.push([P[0] + (Q[0] - P[0]) * t, P[1] + (Q[1] - P[1]) * t]);
+      }
+    }
+  }
+  return out;
+}
+function stackOf(r) {
+  if (r.lanes) return clone(r.lanes);
+  const t = ROAD_TYPES[r.type] || ROAD_TYPES.local;
+  const mark = (side) => side.map((l) => ({ ...l, ...l.type === "bike" || l.type === "parking" ? { guess: true } : {} }));
+  return { center: { ...t.center, ...t.center.kind === "line" ? { guess: true } : {} }, left: mark(t.left), right: mark(t.right), _default: true };
+}
+function preparePaintV2(roads, prep, markings, bounds) {
+  const ctx = {
+    prep,
+    markings,
+    bounds,
+    mapped: /* @__PURE__ */ new Set(),
+    mappedNodes: /* @__PURE__ */ new Set(),
+    suppressed: /* @__PURE__ */ new Set(),
+    sharrow: /* @__PURE__ */ new Map(),
+    stats: { centreRemoved: 0, centreKept: 0, bikeRemoved: 0, sharrowRoads: 0, parkingUnpainted: 0, nodesMapped: 0, nodesEngine: 0, engineStopsStripped: 0 }
+  };
+  if (!prep) return ctx;
+  const N = new Map(roads.nodes.map((n) => [n.id, n]));
+  const topo = (markings?.lines || []).filter((l) => l.kind === "solid" || l.kind === "dashed");
+  const near = (x, z) => [[0, 0], [2, 0], [-2, 0], [0, 2], [0, -2]].some(([dx, dz]) => prep.classAt(x + dx, z + dz) >= 0);
+  for (const r of roads.roads) {
+    const pts = [N.get(r.a), ...r.pts || [], N.get(r.b)].filter(Boolean);
+    let n = 0, on = 0, cl = 0, cn = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i], L2 = Math.hypot(b.x - a.x, b.z - a.z);
+      for (let d = 0; d < L2; d += 4) {
+        const x = a.x + (b.x - a.x) * (d / L2), z = a.z + (b.z - a.z) * (d / L2);
+        if (!prep.inside(x, z)) continue;
+        n++;
+        if (near(x, z)) on++;
+        cn++;
+        if (topo.some((l) => lineDist(x, z, l.line) < 1.5)) cl++;
+      }
+    }
+    if (!n || on < 0.2 * n) continue;
+    ctx.mapped.add(r.id);
+    const st = stackOf(r);
+    const residential = RESIDENTIAL.has(r.type);
+    if (residential && st.center?.kind === "line" && (st.center.guess || st._default)) {
+      if (cn && cl >= 0.4 * cn) ctx.stats.centreKept++;
+      else {
+        st.center.kind = "none";
+        ctx.stats.centreRemoved++;
+      }
+    }
+    const sh = { left: false, right: false };
+    for (const side of ["left", "right"]) {
+      const keep = [];
+      for (const l of st[side] || []) {
+        if (l.type === "bike" && (l.guess || l.sharrow)) {
+          if (l.sharrow) sh[side] = true;
+          ctx.stats.bikeRemoved++;
+          continue;
+        }
+        if (l.type === "parking" && l.guess) {
+          ctx.suppressed.add(`${r.id}|parking`);
+          ctx.suppressed.add(`${r.id}|parkingTick`);
+        }
+        keep.push(l);
+      }
+      st[side] = keep;
+    }
+    if (ctx.suppressed.has(`${r.id}|parking`)) ctx.stats.parkingUnpainted++;
+    if (sh.left || sh.right) {
+      ctx.sharrow.set(r.id, sh);
+      ctx.stats.sharrowRoads++;
+    }
+    delete st._default;
+    r.lanes = st;
+  }
+  const touches = /* @__PURE__ */ new Map();
+  for (const r of roads.roads) if (ctx.mapped.has(r.id)) for (const id of [r.a, r.b]) touches.set(id, true);
+  for (const n of roads.nodes) {
+    if (n.meta?.cut) continue;
+    if (prep.inside(n.x, n.z) ? !near(n.x, n.z) : !touches.get(n.id)) continue;
+    ctx.mappedNodes.add(n.id);
+    n.crosswalks = false;
+    if (n.kind !== "roundabout" && n.control !== "signal") n.control = "priority";
+  }
+  return ctx;
+}
+var rect2 = (arm, s0, s1, t0, t1) => [armPoint(arm, s0, t0), armPoint(arm, s1, t0), armPoint(arm, s1, t1), armPoint(arm, s0, t1)];
+var same = (P, Q) => P.length === Q.length && P.every((p, i) => Math.abs(p[0] - Q[i][0]) < 0.01 && Math.abs(p[1] - Q[i][1]) < 0.01);
+function afterNetworkV2(net, ctx, surf) {
+  const { prep, markings, bounds } = ctx;
+  const inv = { crossings: [], stops: [], symbols: [], engineNodes: [], suppressed: [...ctx.suppressed], stats: ctx.stats };
+  if (!prep) {
+    inv.engineNodes = net.nodes.map((n) => n.id);
+    return { items: [], inventory: inv };
+  }
+  const cls = (x, z) => prep.classAt(x, z);
+  const margin = 30;
+  const near = (x, z) => x >= bounds.x0 - margin && x < bounds.x1 + margin && z >= bounds.z0 - margin && z < bounds.z1 + margin;
+  const junctionPolys = (surf?.surfaces || []).filter((s) => s.type === "I" || s.type === "IC").map((s) => s.rings[0]);
+  const inJunction = (x, z) => junctionPolys.some((r) => pip2(x, z, r));
+  const junctions = [];
+  for (const n of net.nodes) {
+    if (!ctx.mappedNodes.has(n.id)) {
+      inv.engineNodes.push(n.id);
+      ctx.stats.nodesEngine++;
+      continue;
+    }
+    ctx.stats.nodesMapped++;
+    if ((n.kind === "junction" || n.kind === "roundabout") && n.arms.length >= 3) junctions.push(n);
+    if (n.kind !== "junction") continue;
+    const nm = (n.markings || []).filter((m) => m.tag !== "zebra").length;
+    if (nm) {
+      ctx.stats.engineGlyphsStripped = (ctx.stats.engineGlyphsStripped || 0) + nm;
+      n.markings = (n.markings || []).filter((m) => m.tag === "zebra");
+    }
+    const drop = [];
+    for (const a of n.arms) {
+      if (a.control !== "signal" && a.control !== "stop" || a.stopStation == null || !a.approach?.length) continue;
+      const [tIn, tOut] = approachSpan(a), w = a.control === "stop" ? 0.5 : 0.35;
+      drop.push(rect2(a, a.stopStation, a.stopStation + w, tIn, tOut));
+    }
+    if (drop.length) {
+      const before = n.markings.length;
+      n.markings = n.markings.filter((m) => !(m.kind === "poly" && !m.tag && drop.some((d) => same(m.pts, d))));
+      ctx.stats.engineStopsStripped += before - n.markings.length;
+    }
+  }
+  const items = [];
+  const armOf = (x, z, reach = 25) => {
+    let best2 = null;
+    for (const n of junctions) {
+      if (Math.hypot(n.x - x, n.z - z) > 90) continue;
+      for (const a of n.arms) {
+        const ox = x - a.ox, oz = z - a.oz, sg = ox * a.dx + oz * a.dz, t = ox * a.nx + oz * a.nz;
+        if (sg < -1 || sg > a.trim + reach || t < a.edges.curbR - 2 || t > a.edges.curbL + 2) continue;
+        const sc = Math.abs(t) + Math.max(0, -sg) * 3;
+        if (!best2 || sc < best2.sc) best2 = { node: n, arm: a, sigma: sg, t, sc };
+      }
+    }
+    return best2;
+  };
+  const ray = (x, z, dx, dz, max = 25) => {
+    for (let d = 0.1; d < max; d += 0.1) if (!CARRIAGE2.has(cls(x + dx * d, z + dz * d))) return d;
+    return null;
+  };
+  const xArms = [];
+  const best = (c) => Math.max(c.photo.f ?? c.photo.s, c.photo.wm ?? 0);
+  const photoNo = (c) => !!c.photo && best(c) < PHOTO_NO && (c.photo.veg ?? 0) < 0.15 && (c.photo.d ?? 0) < 0.55 && (c.photo.lum ?? 1) > 0.3;
+  const keptMeasured = (markings?.crossings || []).filter((c) => c.poly && near(c.c[0], c.c[1]) && !photoNo(c));
+  const measuredPolys = keptMeasured.map((c) => hull(c.poly));
+  const ringD = (x, z, ring2) => {
+    if (pip2(x, z, ring2)) return 0;
+    let d = Infinity;
+    for (let i = 0, j = ring2.length - 1; i < ring2.length; j = i++) d = Math.min(d, segD(x, z, ring2[j][0], ring2[j][1], ring2[i][0], ring2[i][1]));
+    return d;
+  };
+  const drawnPolys = [];
+  inv.stats.crossingsPhotoDropped = 0;
+  inv.stats.crossingsOsmNear = 0;
+  inv.stats.crossingsOverlap = 0;
+  const ORDER = { bm: 0, topo: 1, osm: 2 };
+  const xlist = [...markings?.crossings || []].sort((a, b) => (ORDER[a.src] ?? 3) - (ORDER[b.src] ?? 3));
+  for (const c of xlist) {
+    if (!near(c.c[0], c.c[1])) continue;
+    if (photoNo(c)) {
+      inv.stats.crossingsPhotoDropped++;
+      continue;
+    }
+    if (!c.poly && c.photo && best(c) < PHOTO_OSM && (c.photo.veg ?? 0) < 0.15 && (c.photo.lum ?? 1) > 0.3) {
+      inv.stats.crossingsPhotoDropped++;
+      continue;
+    }
+    if (!c.poly && !(c.photo && (c.photo.e ?? 0) >= PHOTO_YES) && measuredPolys.some((m) => ringD(c.c[0], c.c[1], m) < OSM_NEAR)) {
+      inv.stats.crossingsOsmNear++;
+      continue;
+    }
+    let poly = c.poly, along = c.along, axis = c.axis;
+    const ax = Math.cos(axis), az = Math.sin(axis), bx = -az, bz = ax;
+    if (!poly) {
+      const [x, z] = c.c;
+      if (!CARRIAGE2.has(cls(x, z))) continue;
+      const kp2 = ray(x, z, bx, bz), km2 = ray(x, z, -bx, -bz);
+      if (kp2 == null || km2 == null || kp2 + km2 > OSM_MAX_ACROSS) continue;
+      along = OSM_ALONG;
+      let ulo = -along / 2, uhi = along / 2;
+      for (const st of markings?.stops || []) {
+        const m = st.line[Math.floor(st.line.length / 2)], mu = (m[0] - x) * ax + (m[1] - z) * az, mv = (m[0] - x) * bx + (m[1] - z) * bz;
+        if (Math.abs(mv) > Math.max(kp2, km2) + 1 || Math.abs(mu) > along / 2 + 0.6) continue;
+        if (mu > 0) uhi = Math.min(uhi, mu - 0.6);
+        else ulo = Math.max(ulo, mu + 0.6);
+      }
+      if (uhi - ulo < 2) {
+        ulo = -along / 2;
+        uhi = along / 2;
+      }
+      poly = [[x + ax * ulo - bx * km2, z + az * ulo - bz * km2], [x + ax * uhi - bx * km2, z + az * uhi - bz * km2], [x + ax * uhi + bx * kp2, z + az * uhi + bz * kp2], [x + ax * ulo + bx * kp2, z + az * ulo + bz * kp2]];
+    }
+    poly = hull(poly);
+    if (drawnPolys.some((m) => {
+      const o = clipConvex(poly, m);
+      return o.length >= 3 && Math.abs(area22(o)) > 0.5;
+    })) {
+      inv.stats.crossingsOverlap++;
+      continue;
+    }
+    drawnPolys.push(poly);
+    const [cx, cz] = c.c;
+    let u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity;
+    for (const p of poly) {
+      const u = (p[0] - cx) * ax + (p[1] - cz) * az, v = (p[0] - cx) * bx + (p[1] - cz) * bz;
+      u0 = Math.min(u0, u);
+      u1 = Math.max(u1, u);
+      v0 = Math.min(v0, v);
+      v1 = Math.max(v1, v);
+    }
+    const kp = ray(cx, cz, bx, bz, 30), km = ray(cx, cz, -bx, -bz, 30);
+    const lo = km != null ? Math.max(v0, -km + 0.15) : v0, hi = kp != null ? Math.min(v1, kp - 0.15) : v1;
+    const width = hi - lo, n = Math.max(1, Math.floor((width + STRIPE) / STRIPE_PERIOD));
+    const start = lo + (width - (2 * n - 1) * STRIPE) / 2;
+    const am = armOf(cx, cz);
+    items.push({ kind: "zebra", poly, frame: { o: [cx, cz], a: [ax, az], b: [bx, bz], u0, u1, v0: start, n } });
+    const rec = {
+      id: c.id,
+      src: c.src,
+      poly,
+      c: [cx, cz],
+      axis,
+      along: u1 - u0,
+      across: hi - lo,
+      vSpan: [lo, hi],
+      drawn: "decal",
+      confirm: c.confirm,
+      rule: c.rule || false,
+      node: am?.node.id ?? null,
+      road: am?.arm.road.id ?? null,
+      end: am?.arm.end ?? null,
+      sigma: am ? Math.round(am.sigma * 100) / 100 : null
+    };
+    inv.crossings.push(rec);
+    if (am) xArms.push({ am, rec });
+  }
+  for (const { am, rec } of xArms) {
+    const rr = am.arm.road;
+    if (!rr.markRange) continue;
+    const s = am.sigma + rec.along / 2 + 0.5;
+    if (s > rr.L / 2) continue;
+    if (am.arm.end === "a") {
+      rr.markRange[0] = Math.max(rr.markRange[0], s);
+      if (rr.walkRange) rr.walkRange[0] = Math.max(rr.walkRange[0], s);
+    } else {
+      rr.markRange[1] = Math.min(rr.markRange[1], rr.L - s);
+      if (rr.walkRange) rr.walkRange[1] = Math.min(rr.walkRange[1], rr.L - s);
+    }
+  }
+  const measuredOn = /* @__PURE__ */ new Set();
+  for (const s of markings?.stops || []) {
+    const L0 = s.line;
+    if (L0.length < 2 || !near(L0[0][0], L0[0][1])) continue;
+    let p = L0[0], q = L0[L0.length - 1];
+    {
+      const len0 = Math.hypot(q[0] - p[0], q[1] - p[1]);
+      if (len0 > 0.3) {
+        const ux = (q[0] - p[0]) / len0, uz = (q[1] - p[1]) / len0;
+        const kq = ray(q[0], q[1], ux, uz, 6), kp = ray(p[0], p[1], -ux, -uz, 6);
+        if (kq != null && kq > 0.35 && kq < 3.5 && (kp == null || kq <= kp)) q = [q[0] + ux * (kq - 0.3), q[1] + uz * (kq - 0.3)];
+        else if (kp != null && kp > 0.35 && kp < 3.5) p = [p[0] - ux * (kp - 0.3), p[1] - uz * (kp - 0.3)];
+        if (kq != null && kp != null && kq < 3.5 && kp < 3.5 && kq + kp + len0 < 7.5) {
+          if (Math.hypot(q[0] - L0[L0.length - 1][0], q[1] - L0[L0.length - 1][1]) < 0.01 && kq > 0.35) q = [q[0] + ux * (kq - 0.3), q[1] + uz * (kq - 0.3)];
+          if (Math.hypot(p[0] - L0[0][0], p[1] - L0[0][1]) < 0.01 && kp > 0.35) p = [p[0] - ux * (kp - 0.3), p[1] - uz * (kp - 0.3)];
+        }
+      }
+    }
+    const L2 = [p, q];
+    for (let i = 1; i < L2.length; i++) {
+      const [p2, q2] = [L2[i - 1], L2[i]], len = Math.hypot(q2[0] - p2[0], q2[1] - p2[1]);
+      if (len < 0.3) continue;
+      const ux = (q2[0] - p2[0]) / len, uz = (q2[1] - p2[1]) / len;
+      let nx = -uz, nz = ux;
+      const m = [(p2[0] + q2[0]) / 2, (p2[1] + q2[1]) / 2];
+      const am = armOf(m[0], m[1], 30);
+      if (am) {
+        const dot = nx * am.arm.dx + nz * am.arm.dz;
+        if (dot < 0) {
+          nx = -nx;
+          nz = -nz;
+        }
+        if (s.kind === "stop") measuredOn.add(`${am.node.id}|${am.arm.road.id}|${am.arm.end}`);
+        else measuredOn.add(`${am.node.id}|${am.arm.road.id}|${am.arm.end}`);
+      }
+      items.push(lineItem(s.kind, p2, q2, nx, nz, s.kind === "stop" ? 0.5 : TOOTH.tall));
+      inv.stops.push({ id: s.id, src: "topo", kind: s.kind, line: [p2, q2], node: am?.node.id ?? null, road: am?.arm.road.id ?? null, end: am?.arm.end ?? null, controller: `topo:${s.type}` });
+    }
+  }
+  const ctrls = (markings?.osm?.control || []).filter((c) => c.kind === "give_way" || c.kind === "stop");
+  const signs = markings?.signs || [];
+  for (const n of junctions) {
+    if (n.kind !== "junction") continue;
+    for (const a of n.arms) {
+      if (!a.approach?.length) continue;
+      const key = `${n.id}|${a.road.id}|${a.end}`;
+      if (measuredOn.has(key)) continue;
+      const far = a.end === "a" ? a.road.armB : a.road.armA;
+      if (a.road.L < 30 && far?.node && far.node.kind === "junction" && ctx.mappedNodes.has(far.node.id)) {
+        ctx.stats.stopsInternalLink = (ctx.stats.stopsInternalLink || 0) + 1;
+        continue;
+      }
+      const inCorr = (x, z, latMax) => {
+        const ox = x - a.ox, oz = z - a.oz, sg2 = ox * a.dx + oz * a.dz, t = ox * a.nx + oz * a.nz;
+        return sg2 >= -2 && sg2 <= a.trim + 30 && t >= a.edges.curbR - 1 && t <= a.edges.curbL + latMax ? { sg: sg2, t } : null;
+      };
+      let kind = null, controller = null;
+      if (n.control === "signal") {
+        kind = "stop";
+        controller = "osm:traffic_signals";
+      }
+      for (const c of ctrls) {
+        const h = inCorr(c.x, c.z, 3);
+        if (!h) continue;
+        if (c.dir) {
+          const wd = [Math.cos(c.th) * c.dir, Math.sin(c.th) * c.dir];
+          if (wd[0] * a.dx + wd[1] * a.dz > 0.3) continue;
+        }
+        kind = c.kind === "stop" ? "stop" : kind === "stop" ? "stop" : "giveway";
+        controller = `${c.id}:${c.kind}`;
+      }
+      if (!kind) for (const s of signs) {
+        const h = inCorr(s.x, s.z, 7);
+        if (!h || h.t < 0) continue;
+        kind = s.code === "B5" ? "stop" : "giveway";
+        controller = `${s.id}:${s.code}`;
+      }
+      if (!kind) continue;
+      const [tIn0, tOut0] = approachSpan(a);
+      const tMid = (tIn0 + tOut0) / 2;
+      let sg = null;
+      const polys = inv.crossings.map((c) => c.poly);
+      for (const c of inv.crossings) {
+        const oc = [c.c[0] - a.ox, c.c[1] - a.oz], sc = oc[0] * a.dx + oc[1] * a.dz, tc = oc[0] * a.nx + oc[1] * a.nz;
+        if (sc < 0 || sc > a.trim + 30 || tc < a.edges.curbR - 1 || tc > a.edges.curbL + 1) continue;
+        let outer = -Infinity;
+        for (const p2 of c.poly) outer = Math.max(outer, (p2[0] - a.ox) * a.dx + (p2[1] - a.oz) * a.dz);
+        sg = Math.max(sg ?? -Infinity, outer + 1);
+      }
+      if (sg == null) {
+        let exit = null;
+        for (let s = 0; s <= a.trim + 15; s += 0.25) {
+          const [x, z] = armPoint(a, s, tMid);
+          if (inJunction(x, z)) exit = null;
+          else if (exit == null && s > 0) exit = s;
+          if (exit != null && s - exit > 1.5) break;
+        }
+        sg = exit != null ? exit + 0.5 : a.trim + 1;
+      }
+      const w = kind === "stop" ? n.control === "signal" ? 0.4 : 0.5 : TOOTH.tall;
+      const twoWay = (a.lanesR || []).some((l) => l.drive && l.w > 0.3);
+      const [cx, cz] = armPoint(a, sg + w / 2, twoWay ? tIn0 + 0.3 : tMid);
+      if (!CARRIAGE2.has(cls(cx, cz))) continue;
+      const kL = ray(cx, cz, a.nx, a.nz, 20);
+      if (kL == null) continue;
+      const t1 = (twoWay ? tIn0 + 0.3 : tMid) + kL - 0.3;
+      let t0 = twoWay ? tIn0 + 0.1 : tMid - ((ray(cx, cz, -a.nx, -a.nz, 20) ?? 0.3) - 0.3);
+      if (t1 - t0 < 1.5) continue;
+      const hits = (s0) => {
+        const band = [armPoint(a, s0, t0), armPoint(a, s0, t1), armPoint(a, s0 + w, t1), armPoint(a, s0 + w, t0)];
+        return polys.some((P) => clipConvex(band, P).length >= 3 && Math.abs(area22(clipConvex(band, P))) > 0.01);
+      };
+      let tries = 0;
+      while (hits(sg) && tries++ < 40) sg += 0.25;
+      if (tries > 40) continue;
+      const p = armPoint(a, sg, t0), q = armPoint(a, sg, t1);
+      const mid = armPoint(a, sg + w / 2, (t0 + t1) / 2);
+      if (inJunction(mid[0], mid[1]) || t1 - t0 < 2.5) {
+        ctx.stats.stopsDropped = (ctx.stats.stopsDropped || 0) + 1;
+        continue;
+      }
+      items.push(lineItem(kind, p, q, a.dx, a.dz, w));
+      inv.stops.push({
+        id: `v2:${key}`,
+        src: controller.startsWith("osm") ? "osm" : "bm",
+        kind,
+        line: [armPoint(a, sg + w / 2, t0), armPoint(a, sg + w / 2, t1)],
+        node: n.id,
+        road: a.road.id,
+        end: a.end,
+        controller
+      });
+    }
+  }
+  inv.symbols ??= [];
+  let glyphs = 0;
+  for (const g of markings?.bm?.polys || []) {
+    if (!/^P(01|04|09)$/.test(g.type || "") || g.poly.length < 3) continue;
+    const c = g.poly.reduce((a, q) => [a[0] + q[0] / g.poly.length, a[1] + q[1] / g.poly.length], [0, 0]);
+    if (!near(c[0], c[1]) || !MARKABLE.has(cls(c[0], c[1]))) continue;
+    if (g.type === "P09") {
+      let sxx = 0, szz = 0, sxz = 0;
+      for (const [x, z] of g.poly) {
+        const dx = x - c[0], dz = z - c[1];
+        sxx += dx * dx;
+        szz += dz * dz;
+        sxz += dx * dz;
+      }
+      const th = 0.5 * Math.atan2(2 * sxz, sxx - szz);
+      items.push(...sharrow(c[0] + Math.cos(th) * 0.3, c[1] + Math.sin(th) * 0.3, th, false));
+      inv.symbols.push({ id: g.id, src: "bm", kind: "glyph:P09", x: c[0], z: c[1] });
+      glyphs++;
+      continue;
+    }
+    const flat = g.poly.flat(), tri = earcut(flat, null, 2);
+    let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+    for (const [x, z] of g.poly) {
+      x0 = Math.min(x0, x);
+      x1 = Math.max(x1, x);
+      z0 = Math.min(z0, z);
+      z1 = Math.max(z1, z);
+    }
+    const F = { o: [x0 - 0.05, z0 - 0.05], a: [1, 0], b: [0, 1], u0: 0, u1: x1 - x0 + 0.1, v0: 0, vLen: z1 - z0 + 0.1 };
+    for (let k = 0; k < tri.length; k += 3) {
+      const t3 = [0, 1, 2].map((m) => [flat[tri[k + m] * 2], flat[tri[k + m] * 2 + 1]]);
+      if (Math.abs(area22(t3)) < 1e-6) continue;
+      items.push({ kind: "solid", poly: t3, frame: F });
+    }
+    inv.symbols.push({ id: g.id, src: "bm", kind: `glyph:${g.type}`, x: c[0], z: c[1] });
+    glyphs++;
+  }
+  ctx.stats.bmGlyphs = glyphs;
+  for (const rr of net.roads) {
+    const sh = ctx.sharrow.get(rr.id);
+    if (!sh || !rr.smp) continue;
+    for (const side of ["left", "right"]) {
+      if (!sh[side]) continue;
+      for (let s = rr.s0 + 12; s < rr.s1 - 12; s += SHARROW_STEP) {
+        let i = 1;
+        while (i < rr.smp.s.length - 1 && rr.smp.s[i] < s) i++;
+        const lay = rr.lays[i];
+        const lanes = (lay[side] || []).filter((l2) => l2.present && LANE_TYPES[l2.type]?.drive);
+        if (!lanes.length) continue;
+        const l = lanes[lanes.length - 1], t = (l.tIn + l.tOut) / 2;
+        const th = rr.smp.th[i], nx = Math.sin(th), nz = -Math.cos(th);
+        const x = rr.smp.x[i] + nx * t, z = rr.smp.z[i] + nz * t;
+        if (!MARKABLE.has(cls(x, z))) continue;
+        const dir = side === "right" ? th : th + Math.PI;
+        items.push(...sharrow(x, z, dir));
+        inv.symbols.push({ id: `v2:sharrow:${rr.id}:${side}:${Math.round(s)}`, src: "osm", kind: "sharrow", x, z, dir, road: rr.id });
+      }
+    }
+  }
+  return { items, inventory: inv };
+}
+function lineItem(kind, p, q, dx, dz, w) {
+  const len = Math.hypot(q[0] - p[0], q[1] - p[1]), bx = (q[0] - p[0]) / len, bz = (q[1] - p[1]) / len;
+  const poly = [p, q, [q[0] + dx * w, q[1] + dz * w], [p[0] + dx * w, p[1] + dz * w]];
+  return { kind: kind === "stop" ? "solid" : "teeth", poly: hull(poly), frame: { o: p, a: [dx, dz], b: [bx, bz], u0: 0, u1: w, v0: 0, vLen: len } };
+}
+function sharrow(x, z, dir, chevrons = true) {
+  const fx = Math.cos(dir), fz = Math.sin(dir), lx = -fz, lz = fx;
+  const P = (u, v) => [x + fx * u + lx * v, z + fz * u + lz * v];
+  const bar = (u0, v0, u1, v1, w) => {
+    const du = u1 - u0, dv = v1 - v0, L2 = Math.hypot(du, dv) || 1, nu = -dv / L2 * w / 2, nv = du / L2 * w / 2;
+    const poly = [P(u0 + nu, v0 + nv), P(u1 + nu, v1 + nv), P(u1 - nu, v1 - nv), P(u0 - nu, v0 - nv)];
+    return { kind: "solid", poly, frame: null };
+  };
+  const out = [];
+  const ring2 = (cu, cv, r, w) => {
+    const K = 14;
+    for (let k = 0; k < K; k++) {
+      const a0 = k / K * Math.PI * 2, a1 = (k + 1) / K * Math.PI * 2;
+      out.push(bar(cu + Math.cos(a0) * r, cv + Math.sin(a0) * r, cu + Math.cos(a1) * r, cv + Math.sin(a1) * r, w));
+    }
+  };
+  ring2(-0.9, 0, 0.32, 0.07);
+  ring2(0.3, 0, 0.32, 0.07);
+  out.push(bar(-0.9, 0, -0.45, 0.02, 0.07), bar(-0.45, 0.02, 0.3, 0, 0.07), bar(-0.9, 0, -0.25, -0.02, 0.07), bar(-0.25, -0.02, -0.45, 0.02, 0.07));
+  out.push(bar(-0.25, -0.02, 0.3, 0, 0.07), bar(-0.5, 0.02, -0.55, 0.12, 0.07), bar(0.25, 0, 0.12, 0.2, 0.07));
+  if (chevrons) for (const u of [0.95, 1.35]) out.push(bar(u, -0.45, u + 0.35, 0, 0.12), bar(u + 0.35, 0, u, 0.45, 0.12));
+  return out;
+}
+function unpaintParking(built, ctx) {
+  const roads = new Set([...ctx.suppressed].filter((k) => k.endsWith("|parking")).map((k) => hashPhase2(k.slice(0, -8))));
+  if (!roads.size) return 0;
+  const A = built.asphalt.attributes, piece = A.aPiece.array, edges = A.aEdges.array, mark = A.aMark.array;
+  let n = 0;
+  for (let v = 0; v < piece.length / 2; v++) {
+    if (!roads.has(Math.round(piece[v * 2] * 100) / 100)) continue;
+    for (const k of [2, 3]) if (Math.floor(edges[v * 4 + k] + 1e-4) === PARKING_CODE) {
+      edges[v * 4 + k] = 0;
+      n++;
+    }
+    if (mark[v * 4 + 3]) {
+      mark[v * 4 + 3] = 0;
+      n++;
+    }
+  }
+  return n;
+}
+function paintMeshV2(items, prep, bounds) {
+  const pos = [], nrm = [], uv = [], a1 = [], a2 = [], idx = [];
+  if (!items.length) return null;
+  const grid = /* @__PURE__ */ new Map();
+  prep.base.forEach((b, i) => {
+    if (!MARKABLE.has(b.cls)) return;
+    const xs = [b.a[0], b.b[0], b.c[0]], zs = [b.a[1], b.b[1], b.c[1]];
+    for (let gi = Math.floor(Math.min(...xs) / 4); gi <= Math.floor(Math.max(...xs) / 4); gi++)
+      for (let gj = Math.floor(Math.min(...zs) / 4); gj <= Math.floor(Math.max(...zs) / 4); gj++) {
+        const k = gi * 65536 + gj;
+        let l = grid.get(k);
+        if (!l) grid.set(k, l = []);
+        l.push(i);
+      }
+  });
+  const tile = [[bounds.x0, bounds.z0], [bounds.x1, bounds.z0], [bounds.x1, bounds.z1], [bounds.x0, bounds.z1]];
+  const KIND4 = { solid: 0, zebra: 1, teeth: 2 };
+  for (const it of items) {
+    let poly = clipConvex(it.poly, tile);
+    if (poly.length < 3) continue;
+    const xs = poly.map((p) => p[0]), zs = poly.map((p) => p[1]);
+    const seen = /* @__PURE__ */ new Set();
+    let F = it.frame;
+    if (!F) {
+      const [p0, p1, , p3] = it.poly, ax = p1[0] - p0[0], az = p1[1] - p0[1], La = Math.hypot(ax, az), bx = p3[0] - p0[0], bz = p3[1] - p0[1], Lb = Math.hypot(bx, bz);
+      F = { o: p0, a: [ax / La, az / La], b: [bx / Lb, bz / Lb], u0: 0, u1: La, v0: 0, vLen: Lb };
+    }
+    const uvOf = (p) => [(p[0] - F.o[0]) * F.a[0] + (p[1] - F.o[1]) * F.a[1] - F.u0, (p[0] - F.o[0]) * F.b[0] + (p[1] - F.o[1]) * F.b[1] - F.v0];
+    const kind = KIND4[it.kind] ?? 0;
+    const ext = [F.u1 - F.u0, F.vLen ?? (2 * F.n - 1) * STRIPE];
+    for (let gi = Math.floor(Math.min(...xs) / 4); gi <= Math.floor(Math.max(...xs) / 4); gi++)
+      for (let gj = Math.floor(Math.min(...zs) / 4); gj <= Math.floor(Math.max(...zs) / 4); gj++) {
+        for (const bi of grid.get(gi * 65536 + gj) || []) {
+          if (seen.has(bi)) continue;
+          seen.add(bi);
+          const b = prep.base[bi];
+          const piece = clipConvex(poly, [b.a, b.b, b.c]);
+          if (piece.length < 3 || Math.abs(area22(piece)) < 1e-5) continue;
+          const v0 = pos.length / 3;
+          const [pa, pb, pc] = piece;
+          const ccw = (pc[0] - pa[0]) * (pb[1] - pa[1]) - (pb[0] - pa[0]) * (pc[1] - pa[1]) < 0;
+          for (const p of piece) {
+            pos.push(p[0], prep.H(p[0], p[1]) + PAINT_LIFT, p[1]);
+            const nn = prep.nrmAt(p[0], p[1]);
+            nrm.push(nn[0], nn[1], nn[2]);
+            const [u, v] = uvOf(p);
+            uv.push(u, v);
+            a1.push(u, v, kind, F.n ?? 0);
+            a2.push(ext[0], ext[1], 0, 0);
+          }
+          for (let k = 1; k + 1 < piece.length; k++) {
+            if (ccw) idx.push(v0, v0 + k + 1, v0 + k);
+            else idx.push(v0, v0 + k, v0 + k + 1);
+          }
+        }
+      }
+  }
+  if (!idx.length) return null;
+  return {
+    position: new Float32Array(pos),
+    normal: new Float32Array(nrm),
+    uv: new Float32Array(uv),
+    index: new Uint32Array(idx),
+    attributes: { aPaint: { array: new Float32Array(a1), itemSize: 4 }, aPaint2: { array: new Float32Array(a2), itemSize: 4 } }
+  };
+}
+
+// viewer/streets/laneGraph.js
+var CARRIAGE3 = /* @__PURE__ */ new Set([0, 1, 2, 3]);
+var XY = (q) => [q[0] ?? q.x, q[1] ?? q.z];
+function cumulative2(P) {
+  const c = [0];
+  for (let k = 1; k < P.length; k++) c.push(c[k - 1] + Math.hypot(P[k][0] - P[k - 1][0], P[k][1] - P[k - 1][1]));
+  return c;
+}
+function segX(p, q, r, s) {
+  const d = (q[0] - p[0]) * (s[1] - r[1]) - (q[1] - p[1]) * (s[0] - r[0]);
+  if (Math.abs(d) < 1e-12) return null;
+  const t = ((r[0] - p[0]) * (s[1] - r[1]) - (r[1] - p[1]) * (s[0] - r[0])) / d, u = ((r[0] - p[0]) * (q[1] - p[1]) - (r[1] - p[1]) * (q[0] - p[0])) / d;
+  return t > 1e-6 && t < 1 - 1e-6 && u > 1e-6 && u < 1 - 1e-6 ? [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t] : null;
+}
+function unloop(P, st) {
+  let changed = true, guard = 0;
+  while (changed && guard++ < 50) {
+    changed = false;
+    outer: for (let i = 0; i + 1 < P.length; i++) for (let j = i + 2; j + 1 < P.length && j < i + 60; j++) {
+      const h = segX(P[i], P[i + 1], P[j], P[j + 1]);
+      if (!h) continue;
+      P.splice(i + 1, j - i, h);
+      st.loops++;
+      changed = true;
+      break outer;
+    }
+  }
+  for (let pass = 0; pass < 5; pass++) {
+    let any = false;
+    for (let k = 1; k + 1 < P.length; k++) {
+      const a = P[k - 1], b = P[k], c = P[k + 1];
+      const ux = b[0] - a[0], uz = b[1] - a[1], vx = c[0] - b[0], vz = c[1] - b[1];
+      const lu = Math.hypot(ux, uz), lv = Math.hypot(vx, vz);
+      if (lu < 1e-4 || lv < 1e-4 || (ux * vx + uz * vz) / (lu * lv) < -0.5) {
+        P.splice(k, 1);
+        st.cusps++;
+        any = true;
+        k--;
+      }
+    }
+    if (!any) break;
+  }
+  return P;
+}
+function resample(P, step) {
+  const c = cumulative2(P), L2 = c[c.length - 1];
+  if (L2 < 2 * step) return P.map((p) => [p[0], p[1]]);
+  const n = Math.max(2, Math.round(L2 / step)), out = [];
+  let k = 1;
+  for (let i = 0; i <= n; i++) {
+    const s = L2 * i / n;
+    while (k < c.length - 1 && c[k] < s) k++;
+    const t = (s - c[k - 1]) / Math.max(1e-9, c[k] - c[k - 1]);
+    out.push([P[k - 1][0] + (P[k][0] - P[k - 1][0]) * t, P[k - 1][1] + (P[k][1] - P[k - 1][1]) * t]);
+  }
+  return out;
+}
+function smooth2(P, passes = 3) {
+  for (let r = 0; r < passes; r++) {
+    const Q = P.map((p) => [p[0], p[1]]);
+    for (let k = 1; k + 1 < P.length; k++) {
+      Q[k][0] = 0.25 * P[k - 1][0] + 0.5 * P[k][0] + 0.25 * P[k + 1][0];
+      Q[k][1] = 0.25 * P[k - 1][1] + 0.5 * P[k][1] + 0.25 * P[k + 1][1];
+    }
+    P = Q;
+  }
+  return P;
+}
+function refineLaneGraph(net, prep, inventory) {
+  const st = { paths: 0, loops: 0, cusps: 0, centred: 0, centredPts: 0, holds: 0 };
+  if (!net?.graph) return st;
+  const cls = (x, z) => prep ? prep.classAt(x, z) : -1;
+  const roadById = new Map(net.roads.map((r) => [r.id, r]));
+  const nodeById = new Map(net.nodes.map((n) => [n.id, n]));
+  const simple = (p) => {
+    const rr = roadById.get(p.roadId);
+    if (!rr?.stack) return null;
+    const drive = (side) => (rr.stack.sides[side] || []).filter((l) => l.type === "driving" || l.type === "bus").length;
+    const me = drive(p.side), other = drive(p.side === "left" ? "right" : "left");
+    if (me !== 1 || other > 1) return null;
+    if ((rr.stack.sides[p.side] || []).some((l) => l.type === "parking")) return null;
+    return { oneWay: other === 0 };
+  };
+  const ray = (x, z, dx, dz) => {
+    for (let d = 0.1; d < 15; d += 0.1) if (!CARRIAGE3.has(cls(x + dx * d, z + dz * d))) return d;
+    return null;
+  };
+  const CLEAR = 1.4;
+  const clearAt = (x, z, nx, nz) => {
+    if (!CARRIAGE3.has(cls(x, z))) return -1;
+    const a = ray(x, z, nx, nz) ?? 15, b = ray(x, z, -nx, -nz) ?? 15;
+    return Math.min(a, b, CLEAR + 0.01) >= CLEAR ? CLEAR : Math.min(a, b) >= (a + b) / 2 - 0.15 ? CLEAR : Math.min(a, b);
+  };
+  const keepOnCarriage = (P, stt) => {
+    if (P.length < 3) return P;
+    const mv = P.map((q, k) => {
+      const o = P[Math.max(0, k - 1)], n2 = P[Math.min(P.length - 1, k + 1)], tx = n2[0] - o[0], tz = n2[1] - o[1], tl = Math.hypot(tx, tz) || 1, nx = -tz / tl, nz = tx / tl;
+      if (clearAt(q[0], q[1], nx, nz) >= CLEAR) return null;
+      for (let d = 0.2; d <= 8; d += 0.2) for (const sg of [1, -1]) {
+        const x = q[0] + nx * d * sg, z = q[1] + nz * d * sg;
+        if (clearAt(x, z, nx, nz) >= CLEAR) return [nx * d * sg, nz * d * sg];
+      }
+      return null;
+    });
+    if (!mv.some(Boolean)) return P;
+    stt.keptOn = (stt.keptOn || 0) + 1;
+    const M = mv.map((_, k) => {
+      let bx = 0, bz = 0, bw = 0;
+      for (let j = Math.max(0, k - 6); j <= Math.min(mv.length - 1, k + 6); j++) {
+        if (!mv[j]) continue;
+        const w = 1 - Math.abs(j - k) / 7;
+        const L2 = Math.hypot(mv[j][0], mv[j][1]) * w;
+        if (L2 > bw) {
+          bw = L2;
+          bx = mv[j][0] * w;
+          bz = mv[j][1] * w;
+        }
+      }
+      return [bx, bz];
+    });
+    return P.map((q, k) => [q[0] + M[k][0], q[1] + M[k][1]]);
+  };
+  const endMove = /* @__PURE__ */ new Map();
+  const lanes = net.graph.paths.filter((p) => p.kind === "lane"), others = net.graph.paths.filter((p) => p.kind !== "lane");
+  for (const p of lanes) {
+    st.paths++;
+    const L0 = p.len;
+    let P = unloop(p.pts.map(XY), st);
+    P = resample(P, 1);
+    const kind = prep ? simple(p) : null;
+    const a0 = [P[0][0], P[0][1]], b0 = [P[P.length - 1][0], P[P.length - 1][1]];
+    if (kind && P.length >= 4) {
+      const shift = P.map(() => null);
+      for (let k = 0; k < P.length; k++) {
+        const q = P[Math.min(P.length - 1, k + 1)], o = P[Math.max(0, k - 1)];
+        const tx = q[0] - o[0], tz = q[1] - o[1], tl = Math.hypot(tx, tz) || 1;
+        const rx = -tz / tl, rz = tx / tl;
+        const [x, z] = P[k];
+        if (!CARRIAGE3.has(cls(x, z))) continue;
+        const dr = ray(x, z, rx, rz), dl = ray(x, z, -rx, -rz);
+        if (dl == null || dr == null) continue;
+        const W = dl + dr, want = kind.oneWay ? W / 2 : W / 4;
+        let m = dr - want;
+        if (!kind.oneWay && W < 5) continue;
+        m = Math.max(-1.5, Math.min(1.5, m));
+        shift[k] = [rx * m, rz * m];
+      }
+      let last = null;
+      for (let k = 0; k < shift.length; k++) if (shift[k]) last = shift[k];
+      else if (last) shift[k] = last;
+      last = null;
+      for (let k = shift.length - 1; k >= 0; k--) if (shift[k] && !last) last = shift[k];
+      else if (!shift[k] && last) shift[k] = last;
+      if (shift.every(Boolean)) {
+        let S2 = shift;
+        for (let r = 0; r < 6; r++) S2 = S2.map((s, k) => {
+          const a = S2[Math.max(0, k - 1)], b = S2[Math.min(S2.length - 1, k + 1)];
+          return [0.25 * a[0] + 0.5 * s[0] + 0.25 * b[0], 0.25 * a[1] + 0.5 * s[1] + 0.25 * b[1]];
+        });
+        P = P.map((p2, k) => [p2[0] + S2[k][0], p2[1] + S2[k][1]]);
+        st.centred++;
+        st.centredPts += P.length;
+      }
+    }
+    P = unloop(P, st);
+    if (prep && kind) P = keepOnCarriage(P, st);
+    P = smooth2(P, 3);
+    endMove.set(p.id, { a: [P[0][0] - a0[0], P[0][1] - a0[1]], b: [P[P.length - 1][0] - b0[0], P[P.length - 1][1] - b0[1]] });
+    p.pts = P;
+    p.cum = cumulative2(P);
+    p.len = p.cum[p.cum.length - 1];
+    if (p.stop && L0 > 0) p.stop.at = Math.max(0, p.stop.at * (p.len / L0));
+  }
+  for (const p of others) {
+    st.paths++;
+    let P = unloop(p.pts.map(XY), st);
+    const prev = (p.prev || []).map((id) => endMove.get(id)?.b).find(Boolean), next = (p.next || []).map((id) => endMove.get(id)?.a).find(Boolean);
+    if (prev || next) {
+      const c = cumulative2(P), L2 = c[c.length - 1] || 1;
+      P = P.map((q, k) => {
+        const f = c[k] / L2, a = prev || [0, 0], b = next || [0, 0];
+        return [q[0] + a[0] * (1 - f) + b[0] * f, q[1] + a[1] * (1 - f) + b[1] * f];
+      });
+    }
+    if (P.length >= 3) {
+      P = resample(P, 1);
+      P = smooth2(P, 2);
+    }
+    const node = p.nodeId ? nodeById.get(p.nodeId) : null;
+    if (prep && node && P.length >= 3) {
+      const clear = (x, z) => CARRIAGE3.has(cls(x, z)) && [[0.9, 0], [-0.9, 0], [0, 0.9], [0, -0.9]].every(([a, b]) => CARRIAGE3.has(cls(x + a, z + b)));
+      const need = P.map((q, k) => {
+        if (k === 0 || k === P.length - 1 || clear(q[0], q[1])) return 0;
+        const dx = node.x - q[0], dz = node.z - q[1], L2 = Math.hypot(dx, dz);
+        for (let d = 0.25; d <= Math.min(6, L2 - 0.5); d += 0.25) if (clear(q[0] + dx / L2 * d, q[1] + dz / L2 * d)) return d;
+        return 0;
+      });
+      if (need.some((d) => d > 0)) {
+        const env = need.map((_, k) => {
+          let m = 0;
+          for (let j = Math.max(0, k - 5); j <= Math.min(need.length - 1, k + 5); j++) m = Math.max(m, need[j] * (1 - Math.abs(j - k) / 6));
+          return m;
+        });
+        const f = (k) => Math.min(k, P.length - 1 - k) / 3;
+        P = P.map((q, k) => {
+          const dx = node.x - q[0], dz = node.z - q[1], L2 = Math.hypot(dx, dz) || 1, d = env[k] * Math.min(1, f(k));
+          return [q[0] + dx / L2 * d, q[1] + dz / L2 * d];
+        });
+        P = smooth2(P, 4);
+        st.pulledIn = (st.pulledIn || 0) + 1;
+        P = resample(P, 0.5);
+        const maxTurn2 = (Q) => {
+          let m = 0;
+          for (let k = 1; k + 1 < Q.length; k++) {
+            const h0 = Math.atan2(Q[k][1] - Q[k - 1][1], Q[k][0] - Q[k - 1][0]), h1 = Math.atan2(Q[k + 1][1] - Q[k][1], Q[k + 1][0] - Q[k][0]);
+            m = Math.max(m, Math.abs(Math.atan2(Math.sin(h1 - h0), Math.cos(h1 - h0))) / 0.5);
+          }
+          return m * 180 / Math.PI;
+        };
+        for (let r = 0; r < 40 && maxTurn2(P) > 14; r++) P = smooth2(P, 1);
+      }
+    }
+    if (prep && P.length >= 5) {
+      const inner = keepOnCarriage(P, st);
+      P = P.map((q, k) => {
+        const f = Math.min(1, Math.min(k, P.length - 1 - k) / 3);
+        return [q[0] + (inner[k][0] - q[0]) * f, q[1] + (inner[k][1] - q[1]) * f];
+      });
+      P = smooth2(P, 2);
+    }
+    p.pts = P;
+    p.cum = cumulative2(P);
+    p.len = p.cum[p.cum.length - 1];
+  }
+  const maxTurn = (Q) => {
+    let m = 0;
+    for (let k = 1; k + 1 < Q.length; k++) {
+      const a = Q[k - 1], b = Q[k], c = Q[k + 1];
+      const h0 = Math.atan2(b[1] - a[1], b[0] - a[0]), h1 = Math.atan2(c[1] - b[1], c[0] - b[0]), l = (Math.hypot(b[0] - a[0], b[1] - a[1]) + Math.hypot(c[0] - b[0], c[1] - b[1])) / 2 || 1;
+      m = Math.max(m, Math.abs(Math.atan2(Math.sin(h1 - h0), Math.cos(h1 - h0))) / l);
+    }
+    return m * 180 / Math.PI;
+  };
+  for (const p of net.graph.paths) {
+    if (p.turn === "uturn" || p.pts.length < 4) continue;
+    const L0 = p.len;
+    let P = resample(p.pts.map(XY), 0.5);
+    for (let r = 0; r < 60 && maxTurn(P) > 14; r++) P = smooth2(P, 1);
+    p.pts = P;
+    p.cum = cumulative2(P);
+    p.len = p.cum[p.cum.length - 1];
+    if (p.stop && L0 > 0 && !p.stop.line) p.stop.at = Math.max(0, p.stop.at * (p.len / L0));
+  }
+  if (inventory?.stops?.length) {
+    const ends = /* @__PURE__ */ new Map();
+    for (const s of inventory.stops) {
+      if (s.ring) continue;
+      const [A, B] = s.line;
+      ends.set(s, [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2]);
+    }
+    for (const p of lanes) {
+      if (!p.next?.length) continue;
+      const E = p.pts[p.pts.length - 1];
+      let best = null;
+      for (const [s, m] of ends) {
+        if (Math.hypot(m[0] - E[0], m[1] - E[1]) > 40) continue;
+        const [A, B] = s.line, L2 = Math.hypot(B[0] - A[0], B[1] - A[1]) || 1, ex = (B[0] - A[0]) / L2 * 0.5, ez = (B[1] - A[1]) / L2 * 0.5;
+        for (let k = p.pts.length - 1; k >= 1 && p.len - p.cum[k] < 30; k--) {
+          const h = segX(p.pts[k - 1], p.pts[k], [A[0] - ex, A[1] - ez], [B[0] + ex, B[1] + ez]);
+          if (h) {
+            const at = p.cum[k - 1] + Math.hypot(h[0] - p.pts[k - 1][0], h[1] - p.pts[k - 1][1]);
+            if (!best || at > best.at) best = { at, s };
+            break;
+          }
+        }
+      }
+      if (!best) continue;
+      p.stop = { ...p.stop || {}, at: Math.max(0, best.at - 0.6), line: best.s.id, control: p.stop?.control ?? (best.s.kind === "giveway" ? "yield" : "stop") };
+      st.holds++;
+    }
+  }
+  return st;
+}
+
+// viewer/roadBuild.js
+var CARVE = 0.12;
+var now3 = () => (globalThis.performance ?? Date).now();
+function clipToTile(part, b) {
+  const p = part.position, src = part.index, keep = [];
+  for (let t = 0; t < src.length; t += 3) {
+    const a = src[t] * 3, bb = src[t + 1] * 3, c = src[t + 2] * 3;
+    const x = (p[a] + p[bb] + p[c]) / 3, z = (p[a + 2] + p[bb + 2] + p[c + 2]) / 3;
+    if (x >= b.x0 && x < b.x1 && z >= b.z0 && z < b.z1) keep.push(src[t], src[t + 1], src[t + 2]);
+  }
+  return Uint32Array.from(keep);
+}
+function compactAtlas(at) {
+  if (!at) return null;
+  const W2 = Math.ceil(at.width / 2), H2 = Math.ceil(at.height / 2), src = at.data, d8 = new Uint8Array(W2 * H2);
+  for (let y = 0; y < H2; y++) for (let x = 0; x < W2; x++) {
+    let sum = 0, n = 0;
+    for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) {
+      const xx = 2 * x + dx, yy = 2 * y + dy;
+      if (xx < at.width && yy < at.height) {
+        sum += src[(yy * at.width + xx) * 2];
+        n++;
+      }
+    }
+    d8[y * W2 + x] = Math.round(sum / n);
+  }
+  return {
+    data: d8,
+    width: W2,
+    height: H2,
+    format: "R8",
+    scale: at.scale,
+    range: at.range,
+    texel: at.texel * 2,
+    stats: { regions: at.stats?.regions, bytes: d8.length, bytesBefore: at.data.length }
+  };
+}
+function buildRoadData(o) {
+  const { roads, surf, hm, bounds, onBuilding = () => false } = o;
+  const times = {};
+  let t0 = now3();
+  const lap = (k) => {
+    const t = now3();
+    times[k] = Math.round(t - t0);
+    t0 = t;
+  };
+  const ground = o.ground ?? hm.ground;
+  const prep = surf ? prepareSurfaces(surf, ground, bounds, o.trees ?? null) : null;
+  const v2 = o.paint === "v2" && !!prep;
+  const ctx = v2 ? preparePaintV2(roads, prep, o.markings ?? null, bounds) : null;
+  const widthFit = prep ? fitRoadWidths(roads, prep) : null;
+  lap("surfaces + width fit");
+  const net = buildRoadNetwork(roads, { ground });
+  lap("buildRoadNetwork");
+  const pv = v2 ? afterNetworkV2(net, ctx, surf) : null;
+  if (v2) lap("measured paint");
+  const laneGraph = v2 ? refineLaneGraph(net, prep, pv.inventory) : null;
+  if (v2) {
+    pv.inventory.stats.laneGraph = laneGraph;
+    lap("lane graph");
+  }
+  const errors = net.issues.filter((i) => i.level === "error");
+  const byCode = {};
+  for (const i of errors) byCode[i.code] = (byCode[i.code] || 0) + 1;
+  const netInfo = { roads: net.roads.length, nodes: net.nodes.length, errors: errors.length, byCode, warnings: net.issues.length - errors.length };
+  const built = buildLaneRoadMesh(net, { markings: true });
+  if (v2) pv.inventory.stats.parkingVerticesUnpainted = unpaintParking(built, ctx);
+  let priority = null;
+  if (v2) {
+    const pr = /* @__PURE__ */ new Map();
+    for (const rr of net.roads) pr.set(hashPhase2(rr.id), rr.type.rank ?? 1);
+    for (const n of net.nodes) pr.set(hashPhase2(n.id), 10);
+    priority = (ph) => pr.get(ph) ?? 0;
+  }
+  const parts = {};
+  let carvedCells = 0, triangles = 0, surfaceStats = null, surfaceData = null;
+  if (surf) {
+    const lineCuts = v2 ? pv.inventory.crossings.filter((c) => c.poly).map((c) => c.poly) : null;
+    const S2 = buildSurfaceRoads(prep, built, surfaceAttribute(net, built.asphalt), roads, onBuilding, priority ? { priority, dropFolds: true, lineCuts } : {});
+    for (const c of S2.carve) carvedCells += hm.carve(c.position, c.index, CARVE);
+    for (const [name, part] of Object.entries(S2.parts)) {
+      parts[name] = { position: part.position, normal: part.normal, uv: part.uv, attributes: part.attributes, index: part.index, aSurf: part.extra };
+      triangles += part.index.length / 3;
+    }
+    surfaceStats = { ...S2.stats, widthFit };
+    surfaceData = { grid: S2.grid, kerbs: S2.kerbs, bollards: S2.bollards };
+  }
+  for (const name of surf ? [] : ["asphalt", "concrete", "grass"]) {
+    const part = built[name];
+    if (!part.vertexCount) continue;
+    const index = clipToTile(part, bounds);
+    carvedCells += hm.carve(part.position, index, CARVE);
+    const attributes = {};
+    for (const [k, a] of Object.entries(part.attributes)) attributes[k] = { array: a.array, itemSize: a.itemSize };
+    parts[name] = {
+      position: part.position,
+      normal: part.normal,
+      uv: part.uv,
+      attributes,
+      index,
+      aSurf: name === "asphalt" ? surfaceAttribute(net, part) : null
+    };
+    triangles += index.length / 3;
+  }
+  const atlas = compactAtlas(built.atlas);
+  lap("road meshes + carve");
+  if (v2) {
+    const paintPart = paintMeshV2(pv.items, prep, bounds);
+    if (paintPart) {
+      parts.paint = paintPart;
+      triangles += paintPart.index.length / 3;
+    }
+    lap("paint decal");
+  }
+  const out = { parts, atlas, carvedCells, triangles, surfaceStats, surfaceData, netInfo, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1" };
+  if (o.keep) Object.assign(out, { prep, built });
+  return out;
 }
 
 // viewer/track.js
@@ -7980,17 +9627,8 @@ var railDocs = (base) => railP ??= Promise.all([
   fetch(new URL("../rail/rail.json", base)).then((r) => r.json()).then(prepRail),
   Promise.all(["stjob", "calevoet", "verrewinkel"].map((n) => fetch(new URL(`../../models/rail/${n}.json`, base)).then((r) => r.ok ? r.json() : null).catch(() => null))).then((a) => a.filter(Boolean))
 ]).then(([doc, heroes]) => ({ doc, heroes }));
-var CARVE = 0.12;
 var TERRAIN_ERROR = 0.05;
-function clipToTile(part, b) {
-  const p = part.position, src = part.index, keep = [];
-  for (let t = 0; t < src.length; t += 3) {
-    const a = src[t] * 3, bb = src[t + 1] * 3, c = src[t + 2] * 3;
-    const x = (p[a] + p[bb] + p[c]) / 3, z = (p[a + 2] + p[bb + 2] + p[c + 2]) / 3;
-    if (x >= b.x0 && x < b.x1 && z >= b.z0 && z < b.z1) keep.push(src[t], src[t + 1], src[t + 2]);
-  }
-  return Uint32Array.from(keep);
-}
+var PAINT = "v2";
 function terrainArrays(hm) {
   const { x0, z0, cols, rows, step } = hm.h, Y = hm.y;
   const pos = new Float32Array(cols * rows * 3), nrm = new Float32Array(cols * rows * 3);
@@ -8099,74 +9737,33 @@ async function buildTileData(entry, base) {
     if (s) (r.meta ??= {}).surface = s;
   }
   const hm = new Heightmap(tHdr, tBuf);
-  const roadGround = rail ? roadDeckGround(rail.heroes, hm.ground) : hm.ground;
-  const prep = surf ? await step("surfaces + width fit", () => prepareSurfaces(surf, roadGround, bounds, entry.pits === false ? null : feats.trees)) : null;
-  const widthFit = prep ? fitRoadWidths(roads, prep) : null;
-  const net = await step("buildRoadNetwork", () => buildRoadNetwork(roads, { ground: roadGround }));
-  const errors = net.issues.filter((i) => i.level === "error");
-  const byCode = {};
-  for (const i of errors) byCode[i.code] = (byCode[i.code] || 0) + 1;
-  const netInfo = { roads: net.roads.length, nodes: net.nodes.length, errors: errors.length, byCode, warnings: net.issues.length - errors.length };
+  const paint = entry.paint || PAINT;
+  const markings = F.markings && paint === "v2" ? await step("fetch markings", () => get(F.markings).catch(() => null)) : null;
   const roofs = await step("roof grid", () => roofGrid(bDoc, bounds));
-  const road = await step("road meshes + carve", () => {
-    const built = buildLaneRoadMesh(net, { markings: true });
-    const parts = {};
-    let carvedCells = 0, triangles = 0, surfaceStats = null, surfaceData = null;
-    if (surf) {
-      const S2 = buildSurfaceRoads(prep, built, surfaceAttribute(net, built.asphalt), roads, (x, z) => onRoof(roofs, x, z));
-      for (const c of S2.carve) carvedCells += hm.carve(c.position, c.index, CARVE);
-      for (const [name, part] of Object.entries(S2.parts)) {
-        parts[name] = { position: part.position, normal: part.normal, uv: part.uv, attributes: part.attributes, index: part.index, aSurf: part.extra };
-        triangles += part.index.length / 3;
-      }
-      surfaceStats = { ...S2.stats, widthFit };
-      surfaceData = { grid: S2.grid, kerbs: S2.kerbs, bollards: S2.bollards };
-    }
-    for (const name of surf ? [] : ["asphalt", "concrete", "grass"]) {
-      const part = built[name];
-      if (!part.vertexCount) continue;
-      const index = clipToTile(part, bounds);
-      carvedCells += hm.carve(part.position, index, CARVE);
-      const attributes = {};
-      for (const [k, a] of Object.entries(part.attributes)) attributes[k] = { array: a.array, itemSize: a.itemSize };
-      parts[name] = {
-        position: part.position,
-        normal: part.normal,
-        uv: part.uv,
-        attributes,
-        index,
-        aSurf: name === "asphalt" ? surfaceAttribute(net, part) : null
-      };
-      triangles += index.length / 3;
-    }
-    const at = built.atlas;
-    let atlas = null;
-    if (at) {
-      const W2 = Math.ceil(at.width / 2), H2 = Math.ceil(at.height / 2), src = at.data, d8 = new Uint8Array(W2 * H2);
-      for (let y = 0; y < H2; y++) for (let x = 0; x < W2; x++) {
-        let sum = 0, n = 0;
-        for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) {
-          const xx = 2 * x + dx, yy = 2 * y + dy;
-          if (xx < at.width && yy < at.height) {
-            sum += src[(yy * at.width + xx) * 2];
-            n++;
-          }
-        }
-        d8[y * W2 + x] = Math.round(sum / n);
-      }
-      atlas = {
-        data: d8,
-        width: W2,
-        height: H2,
-        format: "R8",
-        scale: at.scale,
-        range: at.range,
-        texel: at.texel * 2,
-        stats: { regions: at.stats?.regions, bytes: d8.length, bytesBefore: at.data.length }
-      };
-    }
-    return { parts, atlas, carvedCells, triangles, surfaceStats, surfaceData };
-  });
+  const roadGround = rail ? roadDeckGround(rail.heroes, hm.ground) : hm.ground;
+  const rd = await step("roads", () => buildRoadData({
+    roads,
+    surf,
+    markings,
+    hm,
+    bounds,
+    paint,
+    ground: roadGround,
+    trees: entry.pits === false ? null : feats.trees,
+    onBuilding: (x, z) => onRoof(roofs, x, z)
+  }));
+  Object.assign(times, rd.times);
+  const { netInfo } = rd;
+  const road = {
+    parts: rd.parts,
+    atlas: rd.atlas,
+    carvedCells: rd.carvedCells,
+    triangles: rd.triangles,
+    surfaceStats: rd.surfaceStats,
+    surfaceData: rd.surfaceData,
+    inventory: rd.inventory ?? null
+  };
+  const net = rd.net;
   if (entry.ponds?.length) {
     const ids = new Set(entry.ponds.map((p) => p.osm).filter(Boolean));
     feats.areas = (feats.areas || []).filter((a) => !ids.has(a.id));
