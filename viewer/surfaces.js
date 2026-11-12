@@ -1300,7 +1300,12 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
         // (round 2: the kerb frame kept further: on the smoothed kerb a corner spreads its curvature, and the cross-fade
         // to the straight frame showed two patterns at once over whole corners. Tiles fanning round a corner is how they
         // are laid)
-        fw = ks.map((k) => Math.max(sst(4, 6, Math.abs(k.d)), sst(0.35, 0.6, Math.abs(k.d * k.kap))));
+        // round 3: ONE frame per triangle, no cross-fade, no kinked interpolation: tiles run along the kerb where it is
+        // straight (radius > 30 m) and near it (< 5 m); round a corner or deep in a forecourt they run straight (the
+        // sidewalk polygon's own direction) and are cut at the curved kerb, as laid. Where the two meet, one clean
+        // joint line, not a zig-zag
+        const bend = ks.some((k) => Math.abs(k.kap) > 1 / 30 && Math.abs(k.d) < 6) || ks.some((k) => Math.abs(k.d) > 5);
+        fw = bend ? [1, 1, 1] : [0, 0, 0];
       } else unframed++;
     } else if (cls === SURF_CLASS.square) {
       const th = ((s.course ?? 0) * Math.PI) / 180, c = Math.cos(th), sn = Math.sin(th);
@@ -1309,7 +1314,7 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
     const exOfV = (q) => (pname === "asphalt" ? { aPiece: [hashPhase(s.id || String(b.si)), 0], aSurf: nameSurf.get(s.name) || BASE_SURF[cls] }
       : pname === "concrete" ? { aKind: frame >= 0 ? KIND.framed : KIND.slab, aUv2: uv2[q], aFrameW: fw[q] } : null);
     const idx = pts.map((p, q) =>
-      part.keyed(`${paved(cls) ? hostOf(b.si) : b.si}|${frame}|${Math.round(p[0] * 1000)}|${Math.round(p[1] * 1000)}`, () => part.vert(p[0], H(p[0], p[1]) + riseAt(cls, p[0], p[1], b.si) - (OVERLAY[cls] ? BASE_DROP : 0), p[1], nrmAt(p[0], p[1]), uvs[q][0], uvs[q][1], exOfV(q))));
+      part.keyed(`${paved(cls) ? hostOf(b.si) : b.si}|${frame}|${fw[0]}|${Math.round(p[0] * 1000)}|${Math.round(p[1] * 1000)}`, () => part.vert(p[0], H(p[0], p[1]) + riseAt(cls, p[0], p[1], b.si) - (OVERLAY[cls] ? BASE_DROP : 0), p[1], nrmAt(p[0], p[1]), uvs[q][0], uvs[q][1], exOfV(q))));
     part.tri(idx[0], idx[1], idx[2], UP);
   }
   const carveTris = new Float32Array(base.length * 9);

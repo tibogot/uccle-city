@@ -7046,14 +7046,15 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
         frame = li;
         const [tx, tz] = straight.get(hostOf(b.si)) || [1, 0];
         uv2 = pts.map((p) => [p[0] * tx + p[1] * tz, -p[0] * tz + p[1] * tx]);
-        fw = ks.map((k) => Math.max(sst(4, 6, Math.abs(k.d)), sst(0.35, 0.6, Math.abs(k.d * k.kap))));
+        const bend = ks.some((k) => Math.abs(k.kap) > 1 / 30 && Math.abs(k.d) < 6) || ks.some((k) => Math.abs(k.d) > 5);
+        fw = bend ? [1, 1, 1] : [0, 0, 0];
       } else unframed++;
     } else if (cls === SURF_CLASS.square) {
       const th = (s.course ?? 0) * Math.PI / 180, c = Math.cos(th), sn = Math.sin(th);
       uvs = pts.map((p) => [p[0] * c + p[1] * sn, -p[0] * sn + p[1] * c]);
     }
     const exOfV = (q) => pname === "asphalt" ? { aPiece: [hashPhase2(s.id || String(b.si)), 0], aSurf: nameSurf.get(s.name) || BASE_SURF[cls] } : pname === "concrete" ? { aKind: frame >= 0 ? KIND3.framed : KIND3.slab, aUv2: uv2[q], aFrameW: fw[q] } : null;
-    const idx = pts.map((p, q) => part.keyed(`${paved(cls) ? hostOf(b.si) : b.si}|${frame}|${Math.round(p[0] * 1e3)}|${Math.round(p[1] * 1e3)}`, () => part.vert(p[0], H(p[0], p[1]) + riseAt(cls, p[0], p[1], b.si) - (OVERLAY[cls] ? BASE_DROP : 0), p[1], nrmAt(p[0], p[1]), uvs[q][0], uvs[q][1], exOfV(q))));
+    const idx = pts.map((p, q) => part.keyed(`${paved(cls) ? hostOf(b.si) : b.si}|${frame}|${fw[0]}|${Math.round(p[0] * 1e3)}|${Math.round(p[1] * 1e3)}`, () => part.vert(p[0], H(p[0], p[1]) + riseAt(cls, p[0], p[1], b.si) - (OVERLAY[cls] ? BASE_DROP : 0), p[1], nrmAt(p[0], p[1]), uvs[q][0], uvs[q][1], exOfV(q))));
     part.tri(idx[0], idx[1], idx[2], UP2);
   }
   const carveTris = new Float32Array(base.length * 9);
