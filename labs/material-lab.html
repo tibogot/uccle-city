@@ -6,8 +6,9 @@
 <title>Material Lab</title>
 <link rel="icon" href="../viewer/favicon.svg" type="image/svg+xml">
 <style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #8e9aa6; font: 13px/1.4 system-ui, sans-serif; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #1a1d22; font: 13px/1.4 system-ui, sans-serif; color: #e6e9ee; }
   canvas { display: block; }
+  /* the old lab (?old=1) */
   #info { position: fixed; left: 10px; bottom: 10px; max-width: 640px; padding: 8px 10px; border-radius: 6px;
           background: rgba(20, 24, 30, .78); color: #dfe4ea; font: 12px/1.35 ui-monospace, monospace; white-space: pre-wrap; z-index: 2; }
   #title { position: fixed; left: 10px; top: 10px; padding: 6px 10px; border-radius: 6px; background: rgba(20, 24, 30, .78);
@@ -36,10 +37,15 @@
 </script>
 </head>
 <body>
-<div id="title"><b>Material Lab</b> — the shared material library (<code>viewer/materials/</code>) · <a href="./">all labs</a> · <a href="../docs/MATERIALS.md">docs</a></div>
-<div id="split"><span style="left:0">A · procedural</span><span style="left:33.3%">B · scan (CC0)</span><span style="left:66.6%">C · hybrid</span></div>
-<div id="notes"></div>
-<div id="info">loading…</div>
-<script type="module" src="./material-lab.js"></script>
+<script type="module">
+  // the review lab (2026-11-12) by default; ?old=1 = the first lab (gallery, sliders, city sample)
+  if (new URLSearchParams(location.search).get("old") === "1") {
+    document.body.insertAdjacentHTML("beforeend", `<div id="title"><b>Material Lab (old)</b> · <a href="?">new review lab</a> · <a href="./">all labs</a> · <a href="../docs/MATERIALS.md">docs</a></div>
+      <div id="split"><span style="left:0">A · procedural</span><span style="left:33.3%">B · scan (CC0)</span><span style="left:66.6%">C · scan (was hybrid)</span></div>
+      <div id="notes"></div><div id="info">loading…</div>`);
+    document.body.style.background = "#8e9aa6";
+    import("./material-lab.js");
+  } else import("./material-review.js");
+</script>
 </body>
 </html>

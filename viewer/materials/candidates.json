@@ -1,0 +1,1969 @@
+{
+ "materials": {
+  "brick_red_brussels": [
+   {
+    "id": "ph_red_brick",
+    "source": "polyhaven",
+    "asset": "red_brick",
+    "name": "Red Brick",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/red_brick",
+    "size_m": 1.5,
+    "size_native_m": 1.399999976158142,
+    "px": 1024,
+    "note": "cur: the owner's pick over procedural (2026-11-12)",
+    "current": true,
+    "mean_albedo_linear": [
+     0.2769,
+     0.1381,
+     0.0858
+    ],
+    "mean_roughness": 0.923,
+    "lum_std": 0.219,
+    "lattice": [
+     0,
+     20
+    ],
+    "files": "textures/brick_red_brussels",
+    "albedo_webp_bytes": 168578,
+    "nra_webp_bytes": 1017322,
+    "albedo_ktx2_bytes": 1184317,
+    "nra_ktx2_bytes": 1295968
+   },
+   {
+    "id": "ph_brick_wall_006",
+    "source": "polyhaven",
+    "asset": "brick_wall_006",
+    "name": "Brick Wall 006",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/brick_wall_006",
+    "size_m": 2.925,
+    "size_native_m": 3.0,
+    "px": 1024,
+    "note": "rustic orange-red, uneven courses",
+    "current": false,
+    "mean_albedo_linear": [
+     0.4345,
+     0.1932,
+     0.1017
+    ],
+    "mean_roughness": 0.788,
+    "lum_std": 0.5,
+    "lattice": [
+     0,
+     39
+    ],
+    "files": "textures/cand/ph_brick_wall_006",
+    "albedo_webp_bytes": 367964,
+    "nra_webp_bytes": 893774
+   },
+   {
+    "id": "ph_brick_wall_001",
+    "source": "polyhaven",
+    "asset": "brick_wall_001",
+    "name": "Brick Wall 001",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/brick_wall_001",
+    "size_m": 1.05,
+    "size_native_m": 3.0,
+    "px": 1024,
+    "note": "mixed red / dark headers, Brussels terrace look",
+    "current": false,
+    "mean_albedo_linear": [
+     0.1397,
+     0.0772,
+     0.0512
+    ],
+    "mean_roughness": 0.911,
+    "lum_std": 0.631,
+    "lattice": [
+     0,
+     14
+    ],
+    "files": "textures/cand/ph_brick_wall_001",
+    "albedo_webp_bytes": 216220,
+    "nra_webp_bytes": 757450
+   },
+   {
+    "id": "acg_Bricks085",
+    "source": "ambientcg",
+    "asset": "Bricks085",
+    "name": "Bricks 085",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Bricks085",
+    "size_m": 1.05,
+    "size_native_m": 2.4,
+    "px": 1024,
+    "note": "clean red-brown, pale mortar",
+    "current": false,
+    "mean_albedo_linear": [
+     0.311,
+     0.1996,
+     0.1446
+    ],
+    "mean_roughness": 0.58,
+    "lum_std": 0.552,
+    "lattice": [
+     0,
+     14
+    ],
+    "files": "textures/cand/acg_Bricks085",
+    "albedo_webp_bytes": 222934,
+    "nra_webp_bytes": 810380
+   }
+  ],
+  "brick_yellow": [
+   {
+    "id": "acg_Bricks105",
+    "source": "ambientcg",
+    "asset": "Bricks105",
+    "name": "Bricks 105",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Bricks105",
+    "size_m": 1.2,
+    "size_native_m": 2.4,
+    "px": 1024,
+    "note": "beige-yellow rough, running bond",
+    "current": false,
+    "mean_albedo_linear": [
+     0.4884,
+     0.2998,
+     0.1497
+    ],
+    "mean_roughness": 0.595,
+    "lum_std": 0.197,
+    "lattice": [
+     0,
+     16
+    ],
+    "files": "textures/cand/acg_Bricks105",
+    "albedo_webp_bytes": 200592,
+    "nra_webp_bytes": 775904
+   },
+   {
+    "id": "acg_Bricks016",
+    "source": "ambientcg",
+    "asset": "Bricks016",
+    "name": "Bricks 016",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Bricks016",
+    "size_m": 1.125,
+    "size_native_m": 1.5,
+    "px": 1024,
+    "note": "clean flat yellow",
+    "current": false,
+    "mean_albedo_linear": [
+     0.324,
+     0.1612,
+     0.0848
+    ],
+    "mean_roughness": 0.566,
+    "lum_std": 0.286,
+    "lattice": [
+     0,
+     15
+    ],
+    "files": "textures/cand/acg_Bricks016",
+    "albedo_webp_bytes": 114996,
+    "nra_webp_bytes": 516114
+   },
+   {
+    "id": "ph_yellow_brick",
+    "source": "polyhaven",
+    "asset": "yellow_brick",
+    "name": "Yellow Brick",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/yellow_brick",
+    "size_m": 1.95,
+    "size_native_m": 2.0,
+    "px": 1024,
+    "note": "dirty ochre, deep joints",
+    "current": false,
+    "mean_albedo_linear": [
+     0.4026,
+     0.277,
+     0.1732
+    ],
+    "mean_roughness": 0.839,
+    "lum_std": 0.536,
+    "lattice": [
+     0,
+     26
+    ],
+    "files": "textures/cand/ph_yellow_brick",
+    "albedo_webp_bytes": 421768,
+    "nra_webp_bytes": 675712
+   }
+  ],
+  "brick_dark": [
+   {
+    "id": "acg_Bricks055",
+    "source": "ambientcg",
+    "asset": "Bricks055",
+    "name": "Bricks 055",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Bricks055",
+    "size_m": 1.2,
+    "size_native_m": 1.05,
+    "px": 1024,
+    "note": "dark brown clinker, pale mortar",
+    "current": false,
+    "mean_albedo_linear": [
+     0.1942,
+     0.1737,
+     0.1308
+    ],
+    "mean_roughness": 0.573,
+    "lum_std": 0.834,
+    "lattice": [
+     0,
+     16
+    ],
+    "files": "textures/cand/acg_Bricks055",
+    "albedo_webp_bytes": 215172,
+    "nra_webp_bytes": 737288
+   },
+   {
+    "id": "acg_Bricks057",
+    "source": "ambientcg",
+    "asset": "Bricks057",
+    "name": "Bricks 057",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Bricks057",
+    "size_m": 1.2,
+    "size_native_m": 1.05,
+    "px": 1024,
+    "note": "brown",
+    "current": false,
+    "mean_albedo_linear": [
+     0.27,
+     0.2074,
+     0.146
+    ],
+    "mean_roughness": 0.598,
+    "lum_std": 0.705,
+    "lattice": [
+     0,
+     16
+    ],
+    "files": "textures/cand/acg_Bricks057",
+    "albedo_webp_bytes": 213592,
+    "nra_webp_bytes": 727700
+   },
+   {
+    "id": "ph_dark_brick_wall",
+    "source": "polyhaven",
+    "asset": "dark_brick_wall",
+    "name": "Dark Brick Wall",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/dark_brick_wall",
+    "size_m": 0.9,
+    "size_native_m": 1.0499998331069946,
+    "px": 1024,
+    "note": "near-black, tinted to the clinker colour",
+    "current": false,
+    "mean_albedo_linear": [
+     0.1254,
+     0.0863,
+     0.053
+    ],
+    "mean_roughness": 0.813,
+    "lum_std": 1.17,
+    "lattice": [
+     0,
+     12
+    ],
+    "files": "textures/cand/ph_dark_brick_wall",
+    "albedo_webp_bytes": 244988,
+    "nra_webp_bytes": 1202682
+   },
+   {
+    "id": "acg_Bricks056",
+    "source": "ambientcg",
+    "asset": "Bricks056",
+    "name": "Bricks 056",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Bricks056",
+    "size_m": 1.2,
+    "size_native_m": 1.05,
+    "px": 1024,
+    "note": "dark grey-brown, glazed",
+    "current": false,
+    "mean_albedo_linear": [
+     0.1981,
+     0.1777,
+     0.1516
+    ],
+    "mean_roughness": 0.598,
+    "lum_std": 0.822,
+    "lattice": [
+     0,
+     16
+    ],
+    "files": "textures/cand/acg_Bricks056",
+    "albedo_webp_bytes": 203052,
+    "nra_webp_bytes": 727370
+   }
+  ],
+  "mortar": [
+   {
+    "id": "ph_grey_plaster",
+    "source": "polyhaven",
+    "asset": "grey_plaster",
+    "name": "Grey Plaster",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/grey_plaster",
+    "size_m": 1.0,
+    "size_native_m": 1.0,
+    "px": 1024,
+    "note": "fine grey lime",
+    "current": false,
+    "mean_albedo_linear": [
+     0.2688,
+     0.2466,
+     0.1843
+    ],
+    "mean_roughness": 0.769,
+    "lum_std": 0.308,
+    "lattice": [
+     0,
+     3
+    ],
+    "files": "textures/cand/ph_grey_plaster",
+    "albedo_webp_bytes": 393274,
+    "nra_webp_bytes": 717700
+   },
+   {
+    "id": "acg_Plaster001",
+    "source": "ambientcg",
+    "asset": "Plaster001",
+    "name": "Plaster 001",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Plaster001",
+    "size_m": 2.0,
+    "size_native_m": null,
+    "px": 1024,
+    "note": "clean matte",
+    "current": false,
+    "mean_albedo_linear": [
+     0.6797,
+     0.6532,
+     0.63
+    ],
+    "mean_roughness": 0.79,
+    "lum_std": 0.054,
+    "lattice": [
+     0,
+     4
+    ],
+    "files": "textures/cand/acg_Plaster001",
+    "albedo_webp_bytes": 88506,
+    "nra_webp_bytes": 355154
+   }
+  ],
+  "stone_white": [
+   {
+    "id": "ph_sandstone_blocks_08",
+    "source": "polyhaven",
+    "asset": "sandstone_blocks_08",
+    "name": "Sandstone Blocks 08",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/sandstone_blocks_08",
+    "size_m": 3.0,
+    "size_native_m": 3.0,
+    "px": 1024,
+    "note": "cur",
+    "current": true,
+    "mean_albedo_linear": [
+     0.3773,
+     0.2891,
+     0.1765
+    ],
+    "mean_roughness": 0.506,
+    "lum_std": 0.07,
+    "lattice": null,
+    "files": "textures/stone_white",
+    "albedo_webp_bytes": 46290,
+    "nra_webp_bytes": 357798,
+    "albedo_ktx2_bytes": 737692,
+    "nra_ktx2_bytes": 878248
+   },
+   {
+    "id": "acg_Bricks008",
+    "source": "ambientcg",
+    "asset": "Bricks008",
+    "name": "Bricks 008",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Bricks008",
+    "size_m": 1.65,
+    "size_native_m": 1.65,
+    "px": 1024,
+    "note": "white ashlar",
+    "current": false,
+    "mean_albedo_linear": [
+     0.27,
+     0.2678,
+     0.2424
+    ],
+    "mean_roughness": 0.546,
+    "lum_std": 0.141,
+    "lattice": [
+     0,
+     6
+    ],
+    "files": "textures/cand/acg_Bricks008",
+    "albedo_webp_bytes": 130336,
+    "nra_webp_bytes": 553624
+   },
+   {
+    "id": "acg_Bricks024",
+    "source": "ambientcg",
+    "asset": "Bricks024",
+    "name": "Bricks 024",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Bricks024",
+    "size_m": 2.0,
+    "size_native_m": null,
+    "px": 1024,
+    "note": "porous white limestone",
+    "current": false,
+    "mean_albedo_linear": [
+     0.597,
+     0.5812,
+     0.5478
+    ],
+    "mean_roughness": 0.594,
+    "lum_std": 0.193,
+    "lattice": null,
+    "files": "textures/cand/acg_Bricks024",
+    "albedo_webp_bytes": 366702,
+    "nra_webp_bytes": 734598
+   },
+   {
+    "id": "ph_white_sandstone_bricks_03",
+    "source": "polyhaven",
+    "asset": "white_sandstone_bricks_03",
+    "name": "White Sandstone Bricks 03",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/white_sandstone_bricks_03",
+    "size_m": 2.0,
+    "size_native_m": 2.0,
+    "px": 1024,
+    "note": "small coursed white stone",
+    "current": false,
+    "mean_albedo_linear": [
+     0.4566,
+     0.3657,
+     0.248
+    ],
+    "mean_roughness": 0.526,
+    "lum_std": 0.348,
+    "lattice": [
+     0,
+     12
+    ],
+    "files": "textures/cand/ph_white_sandstone_bricks_03",
+    "albedo_webp_bytes": 327426,
+    "nra_webp_bytes": 804994
+   }
+  ],
+  "stone_blue": [
+   {
+    "id": "ph_granite_tile_04",
+    "source": "polyhaven",
+    "asset": "granite_tile_04",
+    "name": "Granite Tile 04",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/granite_tile_04",
+    "size_m": 2.0,
+    "size_native_m": 2.0,
+    "px": 1024,
+    "note": "cur",
+    "current": true,
+    "mean_albedo_linear": [
+     0.1675,
+     0.1317,
+     0.0955
+    ],
+    "mean_roughness": 0.77,
+    "lum_std": 0.274,
+    "lattice": [
+     0,
+     10
+    ],
+    "files": "textures/stone_blue",
+    "albedo_webp_bytes": 336502,
+    "nra_webp_bytes": 419354,
+    "albedo_ktx2_bytes": 1254359,
+    "nra_ktx2_bytes": 1082620
+   },
+   {
+    "id": "ph_stone_tile_wall",
+    "source": "polyhaven",
+    "asset": "stone_tile_wall",
+    "name": "Stone Tile Wall",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/stone_tile_wall",
+    "size_m": 2.0,
+    "size_native_m": 2.0,
+    "px": 1024,
+    "note": "grey ashlar, tooled",
+    "current": false,
+    "mean_albedo_linear": [
+     0.4064,
+     0.3814,
+     0.3572
+    ],
+    "mean_roughness": 0.927,
+    "lum_std": 0.161,
+    "lattice": [
+     0,
+     10
+    ],
+    "files": "textures/cand/ph_stone_tile_wall",
+    "albedo_webp_bytes": 133966,
+    "nra_webp_bytes": 418776
+   },
+   {
+    "id": "ph_stone_wall_02",
+    "source": "polyhaven",
+    "asset": "stone_wall_02",
+    "name": "Stone Wall 02",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/stone_wall_02",
+    "size_m": 2.0,
+    "size_native_m": 2.0,
+    "px": 1024,
+    "note": "dark tooled blocks",
+    "current": false,
+    "mean_albedo_linear": [
+     0.1123,
+     0.081,
+     0.0611
+    ],
+    "mean_roughness": 0.83,
+    "lum_std": 0.165,
+    "lattice": null,
+    "files": "textures/cand/ph_stone_wall_02",
+    "albedo_webp_bytes": 125410,
+    "nra_webp_bytes": 942206
+   }
+  ],
+  "render_white": [
+   {
+    "id": "acg_Plaster002",
+    "source": "ambientcg",
+    "asset": "Plaster002",
+    "name": "Plaster 002",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Plaster002",
+    "size_m": 2.0,
+    "size_native_m": null,
+    "px": 1024,
+    "note": "white rough lime",
+    "current": false,
+    "mean_albedo_linear": [
+     0.6943,
+     0.6698,
+     0.6458
+    ],
+    "mean_roughness": 0.548,
+    "lum_std": 0.09,
+    "lattice": [
+     0,
+     4
+    ],
+    "files": "textures/cand/acg_Plaster002",
+    "albedo_webp_bytes": 223922,
+    "nra_webp_bytes": 303512
+   },
+   {
+    "id": "acg_Plaster004",
+    "source": "ambientcg",
+    "asset": "Plaster004",
+    "name": "Plaster 004",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Plaster004",
+    "size_m": 2.0,
+    "size_native_m": null,
+    "px": 1024,
+    "note": "white, trowel marks",
+    "current": false,
+    "mean_albedo_linear": [
+     0.327,
+     0.3261,
+     0.3062
+    ],
+    "mean_roughness": 0.65,
+    "lum_std": 0.124,
+    "lattice": [
+     0,
+     3
+    ],
+    "files": "textures/cand/acg_Plaster004",
+    "albedo_webp_bytes": 204934,
+    "nra_webp_bytes": 417526
+   },
+   {
+    "id": "ph_white_stucco",
+    "source": "polyhaven",
+    "asset": "white_stucco",
+    "name": "White Stucco",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/white_stucco",
+    "size_m": 1.998,
+    "size_native_m": 1.9980629682540894,
+    "px": 1024,
+    "note": "fine stucco",
+    "current": false,
+    "mean_albedo_linear": [
+     0.6805,
+     0.6515,
+     0.6288
+    ],
+    "mean_roughness": 0.881,
+    "lum_std": 0.039,
+    "lattice": [
+     0,
+     3
+    ],
+    "files": "textures/cand/ph_white_stucco",
+    "albedo_webp_bytes": 79678,
+    "nra_webp_bytes": 684970
+   },
+   {
+    "id": "ph_painted_plaster_wall",
+    "source": "polyhaven",
+    "asset": "painted_plaster_wall",
+    "name": "Painted Plaster Wall",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/painted_plaster_wall",
+    "size_m": 2.0,
+    "size_native_m": 2.0,
+    "px": 1024,
+    "note": "painted, fine",
+    "current": false,
+    "mean_albedo_linear": [
+     0.4074,
+     0.3663,
+     0.351
+    ],
+    "mean_roughness": 0.919,
+    "lum_std": 0.088,
+    "lattice": [
+     0,
+     3
+    ],
+    "files": "textures/cand/ph_painted_plaster_wall",
+    "albedo_webp_bytes": 171750,
+    "nra_webp_bytes": 749456
+   }
+  ],
+  "render_painted": [
+   {
+    "id": "ph_painted_plaster_wall",
+    "source": "polyhaven",
+    "asset": "painted_plaster_wall",
+    "name": "Painted Plaster Wall",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/painted_plaster_wall",
+    "size_m": 2.0,
+    "size_native_m": 2.0,
+    "px": 1024,
+    "note": "neutral, takes the building colour",
+    "current": false,
+    "mean_albedo_linear": [
+     0.4074,
+     0.3663,
+     0.351
+    ],
+    "mean_roughness": 0.919,
+    "lum_std": 0.088,
+    "lattice": [
+     0,
+     3
+    ],
+    "files": "textures/cand/ph_painted_plaster_wall",
+    "albedo_webp_bytes": 171750,
+    "nra_webp_bytes": 749456
+   },
+   {
+    "id": "ph_beige_wall_002",
+    "source": "polyhaven",
+    "asset": "beige_wall_002",
+    "name": "Beige Wall 002",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/beige_wall_002",
+    "size_m": 3.0,
+    "size_native_m": 3.0,
+    "px": 1024,
+    "note": "beige sand finish",
+    "current": false,
+    "mean_albedo_linear": [
+     0.2274,
+     0.1584,
+     0.0923
+    ],
+    "mean_roughness": 0.666,
+    "lum_std": 0.089,
+    "lattice": null,
+    "files": "textures/cand/ph_beige_wall_002",
+    "albedo_webp_bytes": 96762,
+    "nra_webp_bytes": 666176
+   },
+   {
+    "id": "acg_Plaster007",
+    "source": "ambientcg",
+    "asset": "Plaster007",
+    "name": "Plaster 007",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Plaster007",
+    "size_m": 2.0,
+    "size_native_m": null,
+    "px": 1024,
+    "note": "white with broken paint",
+    "current": false,
+    "mean_albedo_linear": [
+     0.5231,
+     0.5174,
+     0.4746
+    ],
+    "mean_roughness": 0.499,
+    "lum_std": 0.137,
+    "lattice": [
+     0,
+     3
+    ],
+    "files": "textures/cand/acg_Plaster007",
+    "albedo_webp_bytes": 175954,
+    "nra_webp_bytes": 898286
+   }
+  ],
+  "slate": [
+   {
+    "id": "ph_roof_slates_02",
+    "source": "polyhaven",
+    "asset": "roof_slates_02",
+    "name": "Roof Slates 02",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/roof_slates_02",
+    "size_m": 3.0,
+    "size_native_m": 3.0,
+    "px": 1024,
+    "note": "cur",
+    "current": true,
+    "mean_albedo_linear": [
+     0.2966,
+     0.2532,
+     0.194
+    ],
+    "mean_roughness": 0.845,
+    "lum_std": 0.416,
+    "lattice": [
+     0,
+     26
+    ],
+    "files": "textures/slate",
+    "albedo_webp_bytes": 279010,
+    "nra_webp_bytes": 955946,
+    "albedo_ktx2_bytes": 1295163,
+    "nra_ktx2_bytes": 1337711
+   },
+   {
+    "id": "ph_roof_slates_03",
+    "source": "polyhaven",
+    "asset": "roof_slates_03",
+    "name": "Roof Slates 03",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/roof_slates_03",
+    "size_m": 3.0,
+    "size_native_m": 3.0,
+    "px": 1024,
+    "note": "blue-grey, regular (Belgian look)",
+    "current": false,
+    "mean_albedo_linear": [
+     0.1699,
+     0.1634,
+     0.1441
+    ],
+    "mean_roughness": 1.0,
+    "lum_std": 0.359,
+    "lattice": [
+     0,
+     29
+    ],
+    "files": "textures/cand/ph_roof_slates_03",
+    "albedo_webp_bytes": 144940,
+    "nra_webp_bytes": 756340
+   },
+   {
+    "id": "acg_RoofingTiles003",
+    "source": "ambientcg",
+    "asset": "RoofingTiles003",
+    "name": "Roofing Tiles 003",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=RoofingTiles003",
+    "size_m": 2.0,
+    "size_native_m": null,
+    "px": 1024,
+    "note": "square slates",
+    "current": false,
+    "mean_albedo_linear": [
+     0.0375,
+     0.0406,
+     0.0375
+    ],
+    "mean_roughness": 0.683,
+    "lum_std": 0.686,
+    "lattice": [
+     0,
+     16
+    ],
+    "files": "textures/cand/acg_RoofingTiles003",
+    "albedo_webp_bytes": 176518,
+    "nra_webp_bytes": 344646
+   },
+   {
+    "id": "ph_grey_roof_tiles_02",
+    "source": "polyhaven",
+    "asset": "grey_roof_tiles_02",
+    "name": "Grey Roof Tiles 02",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/grey_roof_tiles_02",
+    "size_m": 1.5,
+    "size_native_m": 1.5,
+    "px": 1024,
+    "note": "large slates",
+    "current": false,
+    "mean_albedo_linear": [
+     0.1939,
+     0.2006,
+     0.1989
+    ],
+    "mean_roughness": 0.57,
+    "lum_std": 0.302,
+    "lattice": [
+     0,
+     11
+    ],
+    "files": "textures/cand/ph_grey_roof_tiles_02",
+    "albedo_webp_bytes": 151994,
+    "nra_webp_bytes": 740618
+   }
+  ],
+  "roof_tiles_red": [
+   {
+    "id": "ph_clay_roof_tiles_02",
+    "source": "polyhaven",
+    "asset": "clay_roof_tiles_02",
+    "name": "Clay Roof Tiles 02",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/clay_roof_tiles_02",
+    "size_m": 2.5,
+    "size_native_m": 2.5,
+    "px": 1024,
+    "note": "orange S tiles",
+    "current": false,
+    "mean_albedo_linear": [
+     0.3119,
+     0.0864,
+     0.0267
+    ],
+    "mean_roughness": 0.915,
+    "lum_std": 0.49,
+    "lattice": null,
+    "files": "textures/cand/ph_clay_roof_tiles_02",
+    "albedo_webp_bytes": 225496,
+    "nra_webp_bytes": 751872
+   },
+   {
+    "id": "ph_clay_roof_tiles_03",
+    "source": "polyhaven",
+    "asset": "clay_roof_tiles_03",
+    "name": "Clay Roof Tiles 03",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/clay_roof_tiles_03",
+    "size_m": 2.6,
+    "size_native_m": 2.5999999046325684,
+    "px": 1024,
+    "note": "flat interlocking red",
+    "current": false,
+    "mean_albedo_linear": [
+     0.279,
+     0.0956,
+     0.0406
+    ],
+    "mean_roughness": 0.85,
+    "lum_std": 0.341,
+    "lattice": [
+     0,
+     8
+    ],
+    "files": "textures/cand/ph_clay_roof_tiles_03",
+    "albedo_webp_bytes": 287918,
+    "nra_webp_bytes": 744568
+   },
+   {
+    "id": "acg_RoofingTiles014B",
+    "source": "ambientcg",
+    "asset": "RoofingTiles014B",
+    "name": "Roofing Tiles 014 B",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=RoofingTiles014B",
+    "size_m": 2.9,
+    "size_native_m": 2.9,
+    "px": 1024,
+    "note": "pantile, dirty",
+    "current": false,
+    "mean_albedo_linear": [
+     0.2431,
+     0.1059,
+     0.0608
+    ],
+    "mean_roughness": 0.696,
+    "lum_std": 0.228,
+    "lattice": [
+     19,
+     11
+    ],
+    "files": "textures/cand/acg_RoofingTiles014B",
+    "albedo_webp_bytes": 98320,
+    "nra_webp_bytes": 518642
+   },
+   {
+    "id": "acg_RoofingTiles007",
+    "source": "ambientcg",
+    "asset": "RoofingTiles007",
+    "name": "Roofing Tiles 007",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=RoofingTiles007",
+    "size_m": 3.2,
+    "size_native_m": 3.2,
+    "px": 1024,
+    "note": "red, mossy runs",
+    "current": false,
+    "mean_albedo_linear": [
+     0.1258,
+     0.0421,
+     0.0177
+    ],
+    "mean_roughness": 0.638,
+    "lum_std": 0.448,
+    "lattice": [
+     8,
+     8
+    ],
+    "files": "textures/cand/acg_RoofingTiles007",
+    "albedo_webp_bytes": 41762,
+    "nra_webp_bytes": 643106
+   }
+  ],
+  "roof_tiles_flat_dark": [
+   {
+    "id": "acg_RoofingTiles013A",
+    "source": "ambientcg",
+    "asset": "RoofingTiles013A",
+    "name": "Roofing Tiles 013 A",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=RoofingTiles013A",
+    "size_m": 2.9,
+    "size_native_m": 2.9,
+    "px": 1024,
+    "note": "black flat interlocking",
+    "current": false,
+    "mean_albedo_linear": [
+     0.0315,
+     0.0303,
+     0.0364
+    ],
+    "mean_roughness": 0.5,
+    "lum_std": 0.167,
+    "lattice": [
+     13,
+     13
+    ],
+    "files": "textures/cand/acg_RoofingTiles013A",
+    "albedo_webp_bytes": 21862,
+    "nra_webp_bytes": 314020
+   },
+   {
+    "id": "acg_RoofingTiles009",
+    "source": "ambientcg",
+    "asset": "RoofingTiles009",
+    "name": "Roofing Tiles 009",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=RoofingTiles009",
+    "size_m": 3.2,
+    "size_native_m": 3.2,
+    "px": 1024,
+    "note": "dark modern",
+    "current": false,
+    "mean_albedo_linear": [
+     0.0151,
+     0.0163,
+     0.0165
+    ],
+    "mean_roughness": 0.483,
+    "lum_std": 0.717,
+    "lattice": [
+     8,
+     8
+    ],
+    "files": "textures/cand/acg_RoofingTiles009",
+    "albedo_webp_bytes": 25126,
+    "nra_webp_bytes": 689570
+   },
+   {
+    "id": "ph_grey_roof_01",
+    "source": "polyhaven",
+    "asset": "grey_roof_01",
+    "name": "Grey Roof 01",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/grey_roof_01",
+    "size_m": 8.0,
+    "size_native_m": 8.0,
+    "px": 1024,
+    "note": "dark grey small tiles",
+    "current": false,
+    "mean_albedo_linear": [
+     0.11,
+     0.1066,
+     0.0978
+    ],
+    "mean_roughness": 0.857,
+    "lum_std": 0.633,
+    "lattice": [
+     0,
+     27
+    ],
+    "files": "textures/cand/ph_grey_roof_01",
+    "albedo_webp_bytes": 177278,
+    "nra_webp_bytes": 596384
+   }
+  ],
+  "zinc_roof": [
+   {
+    "id": "acg_Metal032",
+    "source": "ambientcg",
+    "asset": "Metal032",
+    "name": "Metal 032",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Metal032",
+    "size_m": 2.0,
+    "size_native_m": null,
+    "px": 1024,
+    "note": "matte blue-grey",
+    "current": false,
+    "mean_albedo_linear": [
+     0.205,
+     0.2484,
+     0.2939
+    ],
+    "mean_roughness": 0.408,
+    "lum_std": 0.054,
+    "lattice": [
+     2,
+     3
+    ],
+    "files": "textures/cand/acg_Metal032",
+    "albedo_webp_bytes": 10626,
+    "nra_webp_bytes": 4820
+   },
+   {
+    "id": "acg_Metal049C",
+    "source": "ambientcg",
+    "asset": "Metal049C",
+    "name": "Metal 049 C",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Metal049C",
+    "size_m": 2.0,
+    "size_native_m": null,
+    "px": 1024,
+    "note": "dented rough silver",
+    "current": false,
+    "mean_albedo_linear": [
+     0.9427,
+     0.9338,
+     0.8933
+    ],
+    "mean_roughness": 0.214,
+    "lum_std": 0.029,
+    "lattice": [
+     0,
+     4
+    ],
+    "files": "textures/cand/acg_Metal049C",
+    "albedo_webp_bytes": 15524,
+    "nra_webp_bytes": 13136
+   }
+  ],
+  "lead_roof": [
+   {
+    "id": "acg_Metal046B",
+    "source": "ambientcg",
+    "asset": "Metal046B",
+    "name": "Metal 046 B",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Metal046B",
+    "size_m": 2.0,
+    "size_native_m": null,
+    "px": 1024,
+    "note": "dark dirty",
+    "current": false,
+    "mean_albedo_linear": [
+     0.0504,
+     0.0504,
+     0.0508
+    ],
+    "mean_roughness": 0.354,
+    "lum_std": 0.27,
+    "lattice": [
+     0,
+     3
+    ],
+    "files": "textures/cand/acg_Metal046B",
+    "albedo_webp_bytes": 154970,
+    "nra_webp_bytes": 62844
+   },
+   {
+    "id": "acg_Metal055A",
+    "source": "ambientcg",
+    "asset": "Metal055A",
+    "name": "Metal 055 A",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Metal055A",
+    "size_m": 2.0,
+    "size_native_m": null,
+    "px": 1024,
+    "note": "grey iron, matte",
+    "current": false,
+    "mean_albedo_linear": [
+     0.5146,
+     0.517,
+     0.5155
+    ],
+    "mean_roughness": 0.274,
+    "lum_std": 0.103,
+    "lattice": [
+     2,
+     4
+    ],
+    "files": "textures/cand/acg_Metal055A",
+    "albedo_webp_bytes": 59644,
+    "nra_webp_bytes": 21830
+   }
+  ],
+  "copper_patina": [
+   {
+    "id": "acg_Metal058C",
+    "source": "ambientcg",
+    "asset": "Metal058C",
+    "name": "Metal 058 C",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Metal058C",
+    "size_m": 2.0,
+    "size_native_m": null,
+    "px": 1024,
+    "note": "cur",
+    "current": true,
+    "mean_albedo_linear": [
+     0.2838,
+     0.4781,
+     0.407
+    ],
+    "mean_roughness": 0.453,
+    "lum_std": 0.176,
+    "lattice": [
+     0,
+     3
+    ],
+    "files": "textures/copper_patina",
+    "albedo_webp_bytes": 256270,
+    "nra_webp_bytes": 30942,
+    "albedo_ktx2_bytes": 1337815,
+    "nra_ktx2_bytes": 950870
+   },
+   {
+    "id": "acg_Metal058B",
+    "source": "ambientcg",
+    "asset": "Metal058B",
+    "name": "Metal 058 B",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Metal058B",
+    "size_m": 2.0,
+    "size_native_m": null,
+    "px": 1024,
+    "note": "patina over copper",
+    "current": false,
+    "mean_albedo_linear": [
+     0.66,
+     0.5631,
+     0.4725
+    ],
+    "mean_roughness": 0.339,
+    "lum_std": 0.108,
+    "lattice": [
+     0,
+     3
+    ],
+    "files": "textures/cand/acg_Metal058B",
+    "albedo_webp_bytes": 98640,
+    "nra_webp_bytes": 12024
+   }
+  ],
+  "painted_metal_white": [
+   {
+    "id": "acg_PaintedMetal012",
+    "source": "ambientcg",
+    "asset": "PaintedMetal012",
+    "name": "Painted Metal 012",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=PaintedMetal012",
+    "size_m": 2.0,
+    "size_native_m": null,
+    "px": 1024,
+    "note": "white, chipped",
+    "current": false,
+    "mean_albedo_linear": [
+     0.6853,
+     0.677,
+     0.6711
+    ],
+    "mean_roughness": 0.276,
+    "lum_std": 0.237,
+    "lattice": [
+     0,
+     4
+    ],
+    "files": "textures/cand/acg_PaintedMetal012",
+    "albedo_webp_bytes": 179914,
+    "nra_webp_bytes": 751874
+   },
+   {
+    "id": "acg_PaintedMetal010",
+    "source": "ambientcg",
+    "asset": "PaintedMetal010",
+    "name": "Painted Metal 010",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=PaintedMetal010",
+    "size_m": 2.0,
+    "size_native_m": null,
+    "px": 1024,
+    "note": "white, rust",
+    "current": false,
+    "mean_albedo_linear": [
+     0.6974,
+     0.7051,
+     0.6707
+    ],
+    "mean_roughness": 0.337,
+    "lum_std": 0.318,
+    "lattice": [
+     0,
+     3
+    ],
+    "files": "textures/cand/acg_PaintedMetal010",
+    "albedo_webp_bytes": 153488,
+    "nra_webp_bytes": 715572
+   },
+   {
+    "id": "acg_Metal016",
+    "source": "ambientcg",
+    "asset": "Metal016",
+    "name": "Metal 016",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Metal016",
+    "size_m": 2.0,
+    "size_native_m": null,
+    "px": 1024,
+    "note": "white rough paint",
+    "current": false,
+    "mean_albedo_linear": [
+     0.7463,
+     0.712,
+     0.715
+    ],
+    "mean_roughness": 0.506,
+    "lum_std": 0.202,
+    "lattice": [
+     0,
+     3
+    ],
+    "files": "textures/cand/acg_Metal016",
+    "albedo_webp_bytes": 281002,
+    "nra_webp_bytes": 114356
+   }
+  ],
+  "cast_iron_green": [
+   {
+    "id": "ph_green_metal_rust",
+    "source": "polyhaven",
+    "asset": "green_metal_rust",
+    "name": "Green Metal Rust",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/green_metal_rust",
+    "size_m": 1.0,
+    "size_native_m": 1.0,
+    "px": 1024,
+    "note": "dark green paint",
+    "current": false,
+    "mean_albedo_linear": [
+     0.0499,
+     0.074,
+     0.0343
+    ],
+    "mean_roughness": 0.503,
+    "lum_std": 0.138,
+    "lattice": [
+     0,
+     3
+    ],
+    "files": "textures/cand/ph_green_metal_rust",
+    "albedo_webp_bytes": 34874,
+    "nra_webp_bytes": 625252
+   },
+   {
+    "id": "acg_PaintedMetal006",
+    "source": "ambientcg",
+    "asset": "PaintedMetal006",
+    "name": "Painted Metal 006",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=PaintedMetal006",
+    "size_m": 2.0,
+    "size_native_m": null,
+    "px": 1024,
+    "note": "green, rust (tinted)",
+    "current": false,
+    "mean_albedo_linear": [
+     0.0559,
+     0.1603,
+     0.0914
+    ],
+    "mean_roughness": 0.45,
+    "lum_std": 0.432,
+    "lattice": [
+     0,
+     3
+    ],
+    "files": "textures/cand/acg_PaintedMetal006",
+    "albedo_webp_bytes": 259526,
+    "nra_webp_bytes": 1098028
+   }
+  ],
+  "wood_frame_white": [
+   {
+    "id": "acg_Wood049",
+    "source": "ambientcg",
+    "asset": "Wood049",
+    "name": "Wood 049",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Wood049",
+    "size_m": 0.8,
+    "size_native_m": 0.8,
+    "px": 1024,
+    "note": "fine grain (tinted white)",
+    "current": false,
+    "mean_albedo_linear": [
+     0.2022,
+     0.1274,
+     0.077
+    ],
+    "mean_roughness": 0.504,
+    "lum_std": 0.272,
+    "lattice": null,
+    "files": "textures/cand/acg_Wood049",
+    "albedo_webp_bytes": 117556,
+    "nra_webp_bytes": 177784
+   },
+   {
+    "id": "ph_plywood",
+    "source": "polyhaven",
+    "asset": "plywood",
+    "name": "Plywood",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/plywood",
+    "size_m": 0.5,
+    "size_native_m": 0.499999940395355,
+    "px": 1024,
+    "note": "fine grain",
+    "current": false,
+    "mean_albedo_linear": [
+     0.2119,
+     0.1219,
+     0.0544
+    ],
+    "mean_roughness": 0.748,
+    "lum_std": 0.248,
+    "lattice": null,
+    "files": "textures/cand/ph_plywood",
+    "albedo_webp_bytes": 291068,
+    "nra_webp_bytes": 808530
+   }
+  ],
+  "wood_frame_dark": [
+   {
+    "id": "acg_Wood051",
+    "source": "ambientcg",
+    "asset": "Wood051",
+    "name": "Wood 051",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Wood051",
+    "size_m": 0.8,
+    "size_native_m": 0.8,
+    "px": 1024,
+    "note": "dark stained",
+    "current": false,
+    "mean_albedo_linear": [
+     0.0547,
+     0.0353,
+     0.028
+    ],
+    "mean_roughness": 0.543,
+    "lum_std": 0.26,
+    "lattice": null,
+    "files": "textures/cand/acg_Wood051",
+    "albedo_webp_bytes": 73614,
+    "nra_webp_bytes": 180316
+   },
+   {
+    "id": "acg_Wood060",
+    "source": "ambientcg",
+    "asset": "Wood060",
+    "name": "Wood 060",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Wood060",
+    "size_m": 2.0,
+    "size_native_m": null,
+    "px": 1024,
+    "note": "brown hardwood",
+    "current": false,
+    "mean_albedo_linear": [
+     0.1435,
+     0.0622,
+     0.0322
+    ],
+    "mean_roughness": 0.664,
+    "lum_std": 0.496,
+    "lattice": [
+     0,
+     4
+    ],
+    "files": "textures/cand/acg_Wood060",
+    "albedo_webp_bytes": 417812,
+    "nra_webp_bytes": 1114964
+   }
+  ],
+  "cobbles": [
+   {
+    "id": "ph_cobblestone_floor_08",
+    "source": "polyhaven",
+    "asset": "cobblestone_floor_08",
+    "name": "Cobblestone Floor 08",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/cobblestone_floor_08",
+    "size_m": 2.0,
+    "size_native_m": 2.0,
+    "px": 1024,
+    "note": "cur",
+    "current": true,
+    "mean_albedo_linear": [
+     0.302,
+     0.2752,
+     0.231
+    ],
+    "mean_roughness": 0.578,
+    "lum_std": 0.395,
+    "lattice": [
+     0,
+     10
+    ],
+    "files": "textures/cobbles",
+    "albedo_webp_bytes": 300226,
+    "nra_webp_bytes": 813980,
+    "albedo_ktx2_bytes": 1308778,
+    "nra_ktx2_bytes": 1338400
+   },
+   {
+    "id": "ph_cobblestone_floor_03",
+    "source": "polyhaven",
+    "asset": "cobblestone_floor_03",
+    "name": "Cobblestone Floor 03",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/cobblestone_floor_03",
+    "size_m": 2.4,
+    "size_native_m": 2.4000000953674316,
+    "px": 1024,
+    "note": "grey setts in rows",
+    "current": false,
+    "mean_albedo_linear": [
+     0.1975,
+     0.1755,
+     0.1287
+    ],
+    "mean_roughness": 0.972,
+    "lum_std": 0.402,
+    "lattice": [
+     0,
+     8
+    ],
+    "files": "textures/cand/ph_cobblestone_floor_03",
+    "albedo_webp_bytes": 286476,
+    "nra_webp_bytes": 653558
+   },
+   {
+    "id": "ph_cobblestone_square",
+    "source": "polyhaven",
+    "asset": "cobblestone_square",
+    "name": "Cobblestone Square",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/cobblestone_square",
+    "size_m": 1.0,
+    "size_native_m": 1.0,
+    "px": 1024,
+    "note": "square setts",
+    "current": false,
+    "mean_albedo_linear": [
+     0.2366,
+     0.2058,
+     0.148
+    ],
+    "mean_roughness": 0.828,
+    "lum_std": 0.431,
+    "lattice": [
+     0,
+     12
+    ],
+    "files": "textures/cand/ph_cobblestone_square",
+    "albedo_webp_bytes": 350968,
+    "nra_webp_bytes": 649524
+   },
+   {
+    "id": "acg_PavingStones070",
+    "source": "ambientcg",
+    "asset": "PavingStones070",
+    "name": "Paving Stones 070",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=PavingStones070",
+    "size_m": 1.15,
+    "size_native_m": 1.15,
+    "px": 1024,
+    "note": "pale setts, moss joints",
+    "current": false,
+    "mean_albedo_linear": [
+     0.2756,
+     0.268,
+     0.2426
+    ],
+    "mean_roughness": 0.517,
+    "lum_std": 0.398,
+    "lattice": [
+     0,
+     12
+    ],
+    "files": "textures/cand/acg_PavingStones070",
+    "albedo_webp_bytes": 418800,
+    "nra_webp_bytes": 734718
+   }
+  ],
+  "paving_concrete": [
+   {
+    "id": "ph_concrete_tiles",
+    "source": "polyhaven",
+    "asset": "concrete_tiles",
+    "name": "Concrete Tiles",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/concrete_tiles",
+    "size_m": 1.85,
+    "size_native_m": 1.8500001430511475,
+    "px": 1024,
+    "note": "cur",
+    "current": true,
+    "mean_albedo_linear": [
+     0.1449,
+     0.1027,
+     0.0642
+    ],
+    "mean_roughness": 0.808,
+    "lum_std": 0.228,
+    "lattice": [
+     16,
+     64
+    ],
+    "files": "textures/paving_concrete",
+    "albedo_webp_bytes": 292998,
+    "nra_webp_bytes": 959572,
+    "albedo_ktx2_bytes": 1223070,
+    "nra_ktx2_bytes": 1081997
+   },
+   {
+    "id": "ph_concrete_pavement",
+    "source": "polyhaven",
+    "asset": "concrete_pavement",
+    "name": "Concrete Pavement",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/concrete_pavement",
+    "size_m": 1.8,
+    "size_native_m": 1.8000000715255737,
+    "px": 1024,
+    "note": "grey slabs",
+    "current": false,
+    "mean_albedo_linear": [
+     0.216,
+     0.1781,
+     0.1363
+    ],
+    "mean_roughness": 0.862,
+    "lum_std": 0.197,
+    "lattice": [
+     0,
+     12
+    ],
+    "files": "textures/cand/ph_concrete_pavement",
+    "albedo_webp_bytes": 295510,
+    "nra_webp_bytes": 1210170
+   },
+   {
+    "id": "ph_concrete_pavement_03",
+    "source": "polyhaven",
+    "asset": "concrete_pavement_03",
+    "name": "Concrete Pavement 03",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/concrete_pavement_03",
+    "size_m": 2.1,
+    "size_native_m": 2.0999999046325684,
+    "px": 1024,
+    "note": "small dark slabs",
+    "current": false,
+    "mean_albedo_linear": [
+     0.0715,
+     0.0521,
+     0.0378
+    ],
+    "mean_roughness": 0.928,
+    "lum_std": 0.294,
+    "lattice": [
+     0,
+     28
+    ],
+    "files": "textures/cand/ph_concrete_pavement_03",
+    "albedo_webp_bytes": 251962,
+    "nra_webp_bytes": 1062578
+   }
+  ],
+  "asphalt": [
+   {
+    "id": "ph_asphalt_02",
+    "source": "polyhaven",
+    "asset": "asphalt_02",
+    "name": "Asphalt 02",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/asphalt_02",
+    "size_m": 3.0,
+    "size_native_m": 3.000000238418579,
+    "px": 1024,
+    "note": "cur",
+    "current": true,
+    "mean_albedo_linear": [
+     0.1121,
+     0.1103,
+     0.098
+    ],
+    "mean_roughness": 0.77,
+    "lum_std": 0.585,
+    "lattice": [
+     0,
+     3
+    ],
+    "files": "textures/asphalt",
+    "albedo_webp_bytes": 453394,
+    "nra_webp_bytes": 1241048,
+    "albedo_ktx2_bytes": 1331544,
+    "nra_ktx2_bytes": 1357067
+   },
+   {
+    "id": "ph_asphalt_04",
+    "source": "polyhaven",
+    "asset": "asphalt_04",
+    "name": "Asphalt 04",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/asphalt_04",
+    "size_m": 4.04,
+    "size_native_m": 4.039999961853027,
+    "px": 1024,
+    "note": "light grey, fine",
+    "current": false,
+    "mean_albedo_linear": [
+     0.2404,
+     0.2246,
+     0.2125
+    ],
+    "mean_roughness": 0.931,
+    "lum_std": 0.236,
+    "lattice": [
+     0,
+     3
+    ],
+    "files": "textures/cand/ph_asphalt_04",
+    "albedo_webp_bytes": 324586,
+    "nra_webp_bytes": 741326
+   },
+   {
+    "id": "acg_Asphalt015",
+    "source": "ambientcg",
+    "asset": "Asphalt015",
+    "name": "Asphalt 015",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Asphalt015",
+    "size_m": 2.0,
+    "size_native_m": null,
+    "px": 1024,
+    "note": "grey road",
+    "current": false,
+    "mean_albedo_linear": [
+     0.1791,
+     0.1811,
+     0.1853
+    ],
+    "mean_roughness": 0.528,
+    "lum_std": 0.51,
+    "lattice": [
+     0,
+     4
+    ],
+    "files": "textures/cand/acg_Asphalt015",
+    "albedo_webp_bytes": 437040,
+    "nra_webp_bytes": 376068
+   },
+   {
+    "id": "acg_Asphalt020S",
+    "source": "ambientcg",
+    "asset": "Asphalt020S",
+    "name": "Asphalt 020 S",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Asphalt020S",
+    "size_m": 1.85,
+    "size_native_m": 1.85,
+    "px": 1024,
+    "note": "dark smooth",
+    "current": false,
+    "mean_albedo_linear": [
+     0.1466,
+     0.1496,
+     0.1368
+    ],
+    "mean_roughness": 0.643,
+    "lum_std": 0.295,
+    "lattice": null,
+    "files": "textures/cand/acg_Asphalt020S",
+    "albedo_webp_bytes": 337262,
+    "nra_webp_bytes": 1441600
+   }
+  ],
+  "concrete_white": [
+   {
+    "id": "acg_Concrete034",
+    "source": "ambientcg",
+    "asset": "Concrete034",
+    "name": "Concrete 034",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Concrete034",
+    "size_m": 1.1,
+    "size_native_m": 1.1,
+    "px": 1024,
+    "note": "light smooth",
+    "current": false,
+    "mean_albedo_linear": [
+     0.482,
+     0.482,
+     0.482
+    ],
+    "mean_roughness": 0.516,
+    "lum_std": 0.073,
+    "lattice": [
+     0,
+     4
+    ],
+    "files": "textures/cand/acg_Concrete034",
+    "albedo_webp_bytes": 100758,
+    "nra_webp_bytes": 192148
+   },
+   {
+    "id": "acg_Concrete046",
+    "source": "ambientcg",
+    "asset": "Concrete046",
+    "name": "Concrete 046",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Concrete046",
+    "size_m": 2.4,
+    "size_native_m": 2.4,
+    "px": 1024,
+    "note": "white plain",
+    "current": false,
+    "mean_albedo_linear": [
+     0.6098,
+     0.6167,
+     0.4878
+    ],
+    "mean_roughness": 0.495,
+    "lum_std": 0.093,
+    "lattice": [
+     0,
+     3
+    ],
+    "files": "textures/cand/acg_Concrete046",
+    "albedo_webp_bytes": 171030,
+    "nra_webp_bytes": 41892
+   },
+   {
+    "id": "ph_concrete_wall_008",
+    "source": "polyhaven",
+    "asset": "concrete_wall_008",
+    "name": "Concrete Wall 008",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://polyhaven.com/a/concrete_wall_008",
+    "size_m": 2.71,
+    "size_native_m": 2.7100000381469727,
+    "px": 1024,
+    "note": "board-formed, warm",
+    "current": false,
+    "mean_albedo_linear": [
+     0.266,
+     0.2371,
+     0.1612
+    ],
+    "mean_roughness": 0.737,
+    "lum_std": 0.088,
+    "lattice": null,
+    "files": "textures/cand/ph_concrete_wall_008",
+    "albedo_webp_bytes": 112980,
+    "nra_webp_bytes": 424416
+   }
+  ],
+  "rockwork_concrete": [
+   {
+    "id": "acg_Rock030",
+    "source": "ambientcg",
+    "asset": "Rock030",
+    "name": "Rock 030",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Rock030",
+    "size_m": 2.0,
+    "size_native_m": null,
+    "px": 1024,
+    "note": "rough rock (tinted cream)",
+    "current": false,
+    "mean_albedo_linear": [
+     0.0841,
+     0.0784,
+     0.0656
+    ],
+    "mean_roughness": 0.693,
+    "lum_std": 0.512,
+    "lattice": [
+     0,
+     5
+    ],
+    "files": "textures/cand/acg_Rock030",
+    "albedo_webp_bytes": 350790,
+    "nra_webp_bytes": 1102610
+   },
+   {
+    "id": "acg_Rock023",
+    "source": "ambientcg",
+    "asset": "Rock023",
+    "name": "Rock 023",
+    "licence": "CC0",
+    "kind": "cc0",
+    "url": "https://ambientcg.com/view?id=Rock023",
+    "size_m": 2.0,
+    "size_native_m": null,
+    "px": 1024,
+    "note": "pale layered rock",
+    "current": false,
+    "mean_albedo_linear": [
+     0.2737,
+     0.2692,
+     0.259
+    ],
+    "mean_roughness": 0.611,
+    "lum_std": 0.348,
+    "lattice": [
+     0,
+     9
+    ],
+    "files": "textures/cand/acg_Rock023",
+    "albedo_webp_bytes": 357554,
+    "nra_webp_bytes": 540816
+   }
+  ]
+ },
+ "about": "Texture candidates per library material (tools/textures/candidates.py). files: path under viewer/materials/ without the _albedo / _nra suffix; kind cc0 | megascans (Fab licence: not for the public site before the owner's licence check). lattice = [units across, courses up] per repeat (anti-tiling offsets snap to it); size_m = metres per repeat."
+}
