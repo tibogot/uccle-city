@@ -70,6 +70,14 @@ function* blockerSteps(T, ground, { band = BAND, kind = KIND.wall } = {}) {
   // the drive surface on a 0.5 m lattice over the box
   const gx = Math.ceil(nx / 2) + 1, gz = Math.ceil(nz / 2) + 1, G = new Float32Array(gx * gz);
   for (let k = 0; k < gz; k++) for (let i = 0; i < gx; i++) G[k * gx + i] = ground(x0 + i * 0.5, z0 + k * 0.5);
+  {                                    // the LOWEST surface within 1 m: a wall stops a car from its lower side
+    const L = G.slice();
+    for (let k = 0; k < gz; k++) for (let i = 0; i < gx; i++) {
+      let v = Infinity;
+      for (let dk = -2; dk <= 2; dk++) for (let di = -2; di <= 2; di++) { const ii = i + di, kk = k + dk; if (ii >= 0 && kk >= 0 && ii < gx && kk < gz) v = Math.min(v, L[kk * gx + ii]); }
+      G[k * gx + i] = v;
+    }
+  }
   const gAt = (x, z) => G[Math.min(gz - 1, Math.max(0, Math.round((z - z0) / 0.5))) * gx + Math.min(gx - 1, Math.max(0, Math.round((x - x0) / 0.5)))];
   let slice = performance.now();
   for (let t = 0; t < T.length; t += 9) {

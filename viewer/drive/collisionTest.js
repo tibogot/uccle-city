@@ -433,16 +433,25 @@ export function driveRoutes({ scene, tile, driver, truth, G, maxRoads = Infinity
           if (!any) break;
         }
         // a ledge over MAX_STEP (carEnv.js): a road wall the car does not climb
-        if (driver.ledges !== false && Number.isFinite(st.y) && ledgeContact(st, body, ground, contact)) {
+        const inner = st.x > b.x0 + 4 && st.x < b.x1 - 4 && st.z > b.z0 + 4 && st.z < b.z1 - 4;     // (the drive surface of an unloaded neighbour is a clamp)
+        if (driver.ledges !== false && inner && Number.isFinite(st.y) && ledgeContact(st, body, ground, contact)) {
           st.x += contact.nx * contact.depth; st.z += contact.nz * contact.depth; hitStep = true;
           const vn = -(Math.sin(st.heading) * st.speed * contact.nx + Math.cos(st.heading) * st.speed * contact.nz);
           if (vn > 0) st.speed *= 0.5;
           const key = `ledge:${Math.round(st.x / 3)},${Math.round(st.z / 3)}`;
           if (!touched.has(key)) {
             touched.add(key); R.contacts++; R.ledges = (R.ledges || 0) + 1;
-            let dmin = Infinity;
-            for (const [u, w] of [[1, 1], [1, -1], [-1, 1], [-1, -1], [0, 1], [0, -1], [1, 0], [-1, 0]]) { const j = G.idx(st.x + u * body.hx * body.cos + w * body.hz * body.sin, st.z - u * body.hx * body.sin + w * body.hz * body.cos); if (j >= 0) dmin = Math.min(dmin, Dt[j]); }
-            if (dmin > 0.6) { R.invisibleHits++; item("invisible hit", st.x, st.z, { collider: "ledge" }); }
+            // a STEP (the surface jumps: a road wall, an open road edge over the terrain) or a SLOPE (a steep bank: the
+            // terrain is drawn, the car just cannot climb it): half way out the surface has risen less than a third
+            let dmin = Infinity, step = false;
+            for (const [u, w] of [[1, 1], [1, -1], [-1, 1], [-1, -1], [0, 1], [0, -1], [1, 0], [-1, 0]]) {
+              const qx = st.x + u * body.hx * body.cos + w * body.hz * body.sin, qz = st.z - u * body.hx * body.sin + w * body.hz * body.cos;
+              const j = G.idx(qx, qz); if (j >= 0) dmin = Math.min(dmin, Dt[j]);
+              const rise = ground(qx, qz) - st.y;
+              if (rise > 0.5 && ground((qx + st.x) / 2, (qz + st.z) / 2) - st.y < rise / 3) step = true;
+            }
+            if (!step) R.slopes = (R.slopes || 0) + 1;
+            else if (dmin > 0.6) { R.invisibleHits++; item("invisible hit", st.x, st.z, { collider: "ledge" }); }
           }
         }
       },

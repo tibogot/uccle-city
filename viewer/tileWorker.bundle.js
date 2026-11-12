@@ -5856,7 +5856,16 @@ function buildingBlocks(bDoc, bBuf, height, bounds, { margin = 30, cell = 0.25, 
   const g = new Uint8Array(nx * nz);
   const lx = Math.ceil(nx * cell) + 2, lz = Math.ceil(nz * cell) + 2, L2 = new Float32Array(lx * lz);
   for (let k = 0; k < lz; k++) for (let i = 0; i < lx; i++) L2[k * lx + i] = height(x0 + i, z0 + k);
-  const gAt = (x, z) => L2[Math.min(lz - 1, Math.max(0, Math.round(z - z0))) * lx + Math.min(lx - 1, Math.max(0, Math.round(x - x0)))];
+  const Lm = new Float32Array(lx * lz);
+  for (let k = 0; k < lz; k++) for (let i = 0; i < lx; i++) {
+    let v = Infinity;
+    for (let dk = -1; dk <= 1; dk++) for (let di = -1; di <= 1; di++) {
+      const ii = i + di, kk = k + dk;
+      if (ii >= 0 && kk >= 0 && ii < lx && kk < lz) v = Math.min(v, L2[kk * lx + ii]);
+    }
+    Lm[k * lx + i] = v;
+  }
+  const gAt = (x, z) => Lm[Math.min(lz - 1, Math.max(0, Math.round(z - z0))) * lx + Math.min(lx - 1, Math.max(0, Math.round(x - x0)))];
   let walls = 0;
   for (const b of bDoc.buildings) {
     for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) {
