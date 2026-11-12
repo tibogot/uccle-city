@@ -57,7 +57,9 @@
     ],
     "files": "textures/cand/ph_brick_wall_006",
     "albedo_webp_bytes": 367964,
-    "nra_webp_bytes": 893774
+    "nra_webp_bytes": 893774,
+    "albedo_ktx2_bytes": 1390406,
+    "nra_ktx2_bytes": 1321422
    },
    {
     "id": "ph_brick_wall_001",
@@ -85,7 +87,9 @@
     ],
     "files": "textures/cand/ph_brick_wall_001",
     "albedo_webp_bytes": 216220,
-    "nra_webp_bytes": 757450
+    "nra_webp_bytes": 757450,
+    "albedo_ktx2_bytes": 1366171,
+    "nra_ktx2_bytes": 1324461
    },
    {
     "id": "acg_Bricks085",
@@ -113,7 +117,9 @@
     ],
     "files": "textures/cand/acg_Bricks085",
     "albedo_webp_bytes": 222934,
-    "nra_webp_bytes": 810380
+    "nra_webp_bytes": 810380,
+    "albedo_ktx2_bytes": 1372253,
+    "nra_ktx2_bytes": 1319923
    }
   ],
   "brick_yellow": [
@@ -143,7 +149,9 @@
     ],
     "files": "textures/cand/acg_Bricks105",
     "albedo_webp_bytes": 200592,
-    "nra_webp_bytes": 775904
+    "nra_webp_bytes": 775904,
+    "albedo_ktx2_bytes": 1359611,
+    "nra_ktx2_bytes": 1228602
    },
    {
     "id": "acg_Bricks016",
@@ -171,7 +179,9 @@
     ],
     "files": "textures/cand/acg_Bricks016",
     "albedo_webp_bytes": 114996,
-    "nra_webp_bytes": 516114
+    "nra_webp_bytes": 516114,
+    "albedo_ktx2_bytes": 1043427,
+    "nra_ktx2_bytes": 1359486
    },
    {
     "id": "ph_yellow_brick",
@@ -199,7 +209,9 @@
     ],
     "files": "textures/cand/ph_yellow_brick",
     "albedo_webp_bytes": 421768,
-    "nra_webp_bytes": 675712
+    "nra_webp_bytes": 675712,
+    "albedo_ktx2_bytes": 1374554,
+    "nra_ktx2_bytes": 1297865
    }
   ],
   "brick_dark": [
@@ -229,7 +241,9 @@
     ],
     "files": "textures/cand/acg_Bricks055",
     "albedo_webp_bytes": 215172,
-    "nra_webp_bytes": 737288
+    "nra_webp_bytes": 737288,
+    "albedo_ktx2_bytes": 1197583,
+    "nra_ktx2_bytes": 1290910
    },
    {
     "id": "acg_Bricks057",
@@ -257,7 +271,9 @@
     ],
     "files": "textures/cand/acg_Bricks057",
     "albedo_webp_bytes": 213592,
-    "nra_webp_bytes": 727700
+    "nra_webp_bytes": 727700,
+    "albedo_ktx2_bytes": 1228824,
+    "nra_ktx2_bytes": 1287279
    },
    {
     "id": "ph_dark_brick_wall",
@@ -285,7 +301,9 @@
     ],
     "files": "textures/cand/ph_dark_brick_wall",
     "albedo_webp_bytes": 244988,
-    "nra_webp_bytes": 1202682
+    "nra_webp_bytes": 1202682,
+    "albedo_ktx2_bytes": 1342375,
+    "nra_ktx2_bytes": 1341060
    },
    {
     "id": "acg_Bricks056",
@@ -313,7 +331,9 @@
     ],
     "files": "textures/cand/acg_Bricks056",
     "albedo_webp_bytes": 203052,
-    "nra_webp_bytes": 727370
+    "nra_webp_bytes": 727370,
+    "albedo_ktx2_bytes": 1192690,
+    "nra_ktx2_bytes": 1291163
    }
   ],
   "mortar": [
@@ -343,7 +363,9 @@
     ],
     "files": "textures/cand/ph_grey_plaster",
     "albedo_webp_bytes": 393274,
-    "nra_webp_bytes": 717700
+    "nra_webp_bytes": 717700,
+    "albedo_ktx2_bytes": 1356637,
+    "nra_ktx2_bytes": 1261129
    },
    {
     "id": "acg_Plaster001",
@@ -371,7 +393,9 @@
     ],
     "files": "textures/cand/acg_Plaster001",
     "albedo_webp_bytes": 88506,
-    "nra_webp_bytes": 355154
+    "nra_webp_bytes": 355154,
+    "albedo_ktx2_bytes": 1084743,
+    "nra_ktx2_bytes": 1322828
    }
   ],
   "stone_white": [
@@ -428,7 +452,9 @@
     ],
     "files": "textures/cand/acg_Bricks008",
     "albedo_webp_bytes": 130336,
-    "nra_webp_bytes": 553624
+    "nra_webp_bytes": 553624,
+    "albedo_ktx2_bytes": 1088686,
+    "nra_ktx2_bytes": 1342909
    },
    {
     "id": "acg_Bricks024",
@@ -453,7 +479,9 @@
     "lattice": null,
     "files": "textures/cand/acg_Bricks024",
     "albedo_webp_bytes": 366702,
-    "nra_webp_bytes": 734598
+    "nra_webp_bytes": 734598,
+    "albedo_ktx2_bytes": 1372341,
+    "nra_ktx2_bytes": 1329885
    },
    {
     "id": "ph_white_sandstone_bricks_03",
@@ -481,7 +509,9 @@
     ],
     "files": "textures/cand/ph_white_sandstone_bricks_03",
     "albedo_webp_bytes": 327426,
-    "nra_webp_bytes": 804994
+    "nra_webp_bytes": 804994,
+    "albedo_ktx2_bytes": 1364720,
+    "nra_ktx2_bytes": 1274181
    }
   ],
   "stone_blue": [
@@ -541,7 +571,9 @@
     ],
     "files": "textures/cand/ph_stone_tile_wall",
     "albedo_webp_bytes": 133966,
-    "nra_webp_bytes": 418776
+    "nra_webp_bytes": 418776,
+    "albedo_ktx2_bytes": 1146993,
+    "nra_ktx2_bytes": 1079566
    },
    {
     "id": "ph_stone_wall_02",
@@ -566,7 +598,9 @@
     "lattice": null,
     "files": "textures/cand/ph_stone_wall_02",
     "albedo_webp_bytes": 125410,
-    "nra_webp_bytes": 942206
+    "nra_webp_bytes": 942206,
+    "albedo_ktx2_bytes": 1159375,
+    "nra_ktx2_bytes": 1239004
    }
   ],
   "render_white": [
@@ -596,7 +630,9 @@
     ],
     "files": "textures/cand/acg_Plaster002",
     "albedo_webp_bytes": 223922,
-    "nra_webp_bytes": 303512
+    "nra_webp_bytes": 303512,
+    "albedo_ktx2_bytes": 1187086,
+    "nra_ktx2_bytes": 1337953
    },
    {
     "id": "acg_Plaster004",
@@ -624,7 +660,9 @@
     ],
     "files": "textures/cand/acg_Plaster004",
     "albedo_webp_bytes": 204934,
-    "nra_webp_bytes": 417526
+    "nra_webp_bytes": 417526,
+    "albedo_ktx2_bytes": 1127523,
+    "nra_ktx2_bytes": 1342817
    },
    {
     "id": "ph_white_stucco",
@@ -652,7 +690,9 @@
     ],
     "files": "textures/cand/ph_white_stucco",
     "albedo_webp_bytes": 79678,
-    "nra_webp_bytes": 684970
+    "nra_webp_bytes": 684970,
+    "albedo_ktx2_bytes": 959686,
+    "nra_ktx2_bytes": 1061704
    },
    {
     "id": "ph_painted_plaster_wall",
@@ -710,7 +750,9 @@
     ],
     "files": "textures/cand/ph_painted_plaster_wall",
     "albedo_webp_bytes": 171750,
-    "nra_webp_bytes": 749456
+    "nra_webp_bytes": 749456,
+    "albedo_ktx2_bytes": 1111365,
+    "nra_ktx2_bytes": 1073924
    },
    {
     "id": "ph_beige_wall_002",
@@ -735,7 +777,9 @@
     "lattice": null,
     "files": "textures/cand/ph_beige_wall_002",
     "albedo_webp_bytes": 96762,
-    "nra_webp_bytes": 666176
+    "nra_webp_bytes": 666176,
+    "albedo_ktx2_bytes": 1000522,
+    "nra_ktx2_bytes": 1276628
    },
    {
     "id": "acg_Plaster007",
@@ -763,7 +807,9 @@
     ],
     "files": "textures/cand/acg_Plaster007",
     "albedo_webp_bytes": 175954,
-    "nra_webp_bytes": 898286
+    "nra_webp_bytes": 898286,
+    "albedo_ktx2_bytes": 1311878,
+    "nra_ktx2_bytes": 1306494
    }
   ],
   "slate": [
@@ -823,7 +869,9 @@
     ],
     "files": "textures/cand/ph_roof_slates_03",
     "albedo_webp_bytes": 144940,
-    "nra_webp_bytes": 756340
+    "nra_webp_bytes": 756340,
+    "albedo_ktx2_bytes": 1241854,
+    "nra_ktx2_bytes": 1202381
    },
    {
     "id": "acg_RoofingTiles003",
@@ -851,7 +899,9 @@
     ],
     "files": "textures/cand/acg_RoofingTiles003",
     "albedo_webp_bytes": 176518,
-    "nra_webp_bytes": 344646
+    "nra_webp_bytes": 344646,
+    "albedo_ktx2_bytes": 1243395,
+    "nra_ktx2_bytes": 1353991
    },
    {
     "id": "ph_grey_roof_tiles_02",
@@ -879,7 +929,9 @@
     ],
     "files": "textures/cand/ph_grey_roof_tiles_02",
     "albedo_webp_bytes": 151994,
-    "nra_webp_bytes": 740618
+    "nra_webp_bytes": 740618,
+    "albedo_ktx2_bytes": 1245708,
+    "nra_ktx2_bytes": 1308635
    }
   ],
   "roof_tiles_red": [
@@ -906,7 +958,9 @@
     "lattice": null,
     "files": "textures/cand/ph_clay_roof_tiles_02",
     "albedo_webp_bytes": 225496,
-    "nra_webp_bytes": 751872
+    "nra_webp_bytes": 751872,
+    "albedo_ktx2_bytes": 1368497,
+    "nra_ktx2_bytes": 1279279
    },
    {
     "id": "ph_clay_roof_tiles_03",
@@ -934,7 +988,9 @@
     ],
     "files": "textures/cand/ph_clay_roof_tiles_03",
     "albedo_webp_bytes": 287918,
-    "nra_webp_bytes": 744568
+    "nra_webp_bytes": 744568,
+    "albedo_ktx2_bytes": 1376055,
+    "nra_ktx2_bytes": 1298167
    },
    {
     "id": "acg_RoofingTiles014B",
@@ -962,7 +1018,9 @@
     ],
     "files": "textures/cand/acg_RoofingTiles014B",
     "albedo_webp_bytes": 98320,
-    "nra_webp_bytes": 518642
+    "nra_webp_bytes": 518642,
+    "albedo_ktx2_bytes": 1263496,
+    "nra_ktx2_bytes": 1217114
    },
    {
     "id": "acg_RoofingTiles007",
@@ -990,7 +1048,9 @@
     ],
     "files": "textures/cand/acg_RoofingTiles007",
     "albedo_webp_bytes": 41762,
-    "nra_webp_bytes": 643106
+    "nra_webp_bytes": 643106,
+    "albedo_ktx2_bytes": 1248240,
+    "nra_ktx2_bytes": 1285857
    }
   ],
   "roof_tiles_flat_dark": [
@@ -1020,7 +1080,9 @@
     ],
     "files": "textures/cand/acg_RoofingTiles013A",
     "albedo_webp_bytes": 21862,
-    "nra_webp_bytes": 314020
+    "nra_webp_bytes": 314020,
+    "albedo_ktx2_bytes": 910352,
+    "nra_ktx2_bytes": 1137043
    },
    {
     "id": "acg_RoofingTiles009",
@@ -1048,7 +1110,9 @@
     ],
     "files": "textures/cand/acg_RoofingTiles009",
     "albedo_webp_bytes": 25126,
-    "nra_webp_bytes": 689570
+    "nra_webp_bytes": 689570,
+    "albedo_ktx2_bytes": 1144887,
+    "nra_ktx2_bytes": 1294342
    },
    {
     "id": "ph_grey_roof_01",
@@ -1076,7 +1140,9 @@
     ],
     "files": "textures/cand/ph_grey_roof_01",
     "albedo_webp_bytes": 177278,
-    "nra_webp_bytes": 596384
+    "nra_webp_bytes": 596384,
+    "albedo_ktx2_bytes": 1356913,
+    "nra_ktx2_bytes": 1279067
    }
   ],
   "zinc_roof": [
@@ -1106,7 +1172,9 @@
     ],
     "files": "textures/cand/acg_Metal032",
     "albedo_webp_bytes": 10626,
-    "nra_webp_bytes": 4820
+    "nra_webp_bytes": 4820,
+    "albedo_ktx2_bytes": 959144,
+    "nra_ktx2_bytes": 829407
    },
    {
     "id": "acg_Metal049C",
@@ -1134,7 +1202,9 @@
     ],
     "files": "textures/cand/acg_Metal049C",
     "albedo_webp_bytes": 15524,
-    "nra_webp_bytes": 13136
+    "nra_webp_bytes": 13136,
+    "albedo_ktx2_bytes": 950049,
+    "nra_ktx2_bytes": 969041
    }
   ],
   "lead_roof": [
@@ -1164,7 +1234,9 @@
     ],
     "files": "textures/cand/acg_Metal046B",
     "albedo_webp_bytes": 154970,
-    "nra_webp_bytes": 62844
+    "nra_webp_bytes": 62844,
+    "albedo_ktx2_bytes": 1051472,
+    "nra_ktx2_bytes": 1261422
    },
    {
     "id": "acg_Metal055A",
@@ -1192,7 +1264,9 @@
     ],
     "files": "textures/cand/acg_Metal055A",
     "albedo_webp_bytes": 59644,
-    "nra_webp_bytes": 21830
+    "nra_webp_bytes": 21830,
+    "albedo_ktx2_bytes": 1212146,
+    "nra_ktx2_bytes": 1070851
    }
   ],
   "copper_patina": [
@@ -1252,7 +1326,9 @@
     ],
     "files": "textures/cand/acg_Metal058B",
     "albedo_webp_bytes": 98640,
-    "nra_webp_bytes": 12024
+    "nra_webp_bytes": 12024,
+    "albedo_ktx2_bytes": 1322751,
+    "nra_ktx2_bytes": 1047493
    }
   ],
   "painted_metal_white": [
@@ -1282,7 +1358,9 @@
     ],
     "files": "textures/cand/acg_PaintedMetal012",
     "albedo_webp_bytes": 179914,
-    "nra_webp_bytes": 751874
+    "nra_webp_bytes": 751874,
+    "albedo_ktx2_bytes": 1240415,
+    "nra_ktx2_bytes": 1267440
    },
    {
     "id": "acg_PaintedMetal010",
@@ -1310,7 +1388,9 @@
     ],
     "files": "textures/cand/acg_PaintedMetal010",
     "albedo_webp_bytes": 153488,
-    "nra_webp_bytes": 715572
+    "nra_webp_bytes": 715572,
+    "albedo_ktx2_bytes": 1248849,
+    "nra_ktx2_bytes": 1270048
    },
    {
     "id": "acg_Metal016",
@@ -1338,7 +1418,9 @@
     ],
     "files": "textures/cand/acg_Metal016",
     "albedo_webp_bytes": 281002,
-    "nra_webp_bytes": 114356
+    "nra_webp_bytes": 114356,
+    "albedo_ktx2_bytes": 1234553,
+    "nra_ktx2_bytes": 1313702
    }
   ],
   "cast_iron_green": [
@@ -1368,7 +1450,9 @@
     ],
     "files": "textures/cand/ph_green_metal_rust",
     "albedo_webp_bytes": 34874,
-    "nra_webp_bytes": 625252
+    "nra_webp_bytes": 625252,
+    "albedo_ktx2_bytes": 1083727,
+    "nra_ktx2_bytes": 1006846
    },
    {
     "id": "acg_PaintedMetal006",
@@ -1396,7 +1480,9 @@
     ],
     "files": "textures/cand/acg_PaintedMetal006",
     "albedo_webp_bytes": 259526,
-    "nra_webp_bytes": 1098028
+    "nra_webp_bytes": 1098028,
+    "albedo_ktx2_bytes": 1371433,
+    "nra_ktx2_bytes": 1349980
    }
   ],
   "wood_frame_white": [
@@ -1423,7 +1509,9 @@
     "lattice": null,
     "files": "textures/cand/acg_Wood049",
     "albedo_webp_bytes": 117556,
-    "nra_webp_bytes": 177784
+    "nra_webp_bytes": 177784,
+    "albedo_ktx2_bytes": 1060490,
+    "nra_ktx2_bytes": 1214969
    },
    {
     "id": "ph_plywood",
@@ -1448,7 +1536,9 @@
     "lattice": null,
     "files": "textures/cand/ph_plywood",
     "albedo_webp_bytes": 291068,
-    "nra_webp_bytes": 808530
+    "nra_webp_bytes": 808530,
+    "albedo_ktx2_bytes": 1265368,
+    "nra_ktx2_bytes": 1144658
    }
   ],
   "wood_frame_dark": [
@@ -1475,7 +1565,9 @@
     "lattice": null,
     "files": "textures/cand/acg_Wood051",
     "albedo_webp_bytes": 73614,
-    "nra_webp_bytes": 180316
+    "nra_webp_bytes": 180316,
+    "albedo_ktx2_bytes": 1012339,
+    "nra_ktx2_bytes": 1214964
    },
    {
     "id": "acg_Wood060",
@@ -1503,7 +1595,9 @@
     ],
     "files": "textures/cand/acg_Wood060",
     "albedo_webp_bytes": 417812,
-    "nra_webp_bytes": 1114964
+    "nra_webp_bytes": 1114964,
+    "albedo_ktx2_bytes": 1343326,
+    "nra_ktx2_bytes": 1318997
    }
   ],
   "cobbles": [
@@ -1563,7 +1657,9 @@
     ],
     "files": "textures/cand/ph_cobblestone_floor_03",
     "albedo_webp_bytes": 286476,
-    "nra_webp_bytes": 653558
+    "nra_webp_bytes": 653558,
+    "albedo_ktx2_bytes": 1342831,
+    "nra_ktx2_bytes": 1311825
    },
    {
     "id": "ph_cobblestone_square",
@@ -1591,7 +1687,9 @@
     ],
     "files": "textures/cand/ph_cobblestone_square",
     "albedo_webp_bytes": 350968,
-    "nra_webp_bytes": 649524
+    "nra_webp_bytes": 649524,
+    "albedo_ktx2_bytes": 1368227,
+    "nra_ktx2_bytes": 1310646
    },
    {
     "id": "acg_PavingStones070",
@@ -1619,7 +1717,9 @@
     ],
     "files": "textures/cand/acg_PavingStones070",
     "albedo_webp_bytes": 418800,
-    "nra_webp_bytes": 734718
+    "nra_webp_bytes": 734718,
+    "albedo_ktx2_bytes": 1383543,
+    "nra_ktx2_bytes": 1359155
    }
   ],
   "paving_concrete": [
@@ -1679,7 +1779,9 @@
     ],
     "files": "textures/cand/ph_concrete_pavement",
     "albedo_webp_bytes": 295510,
-    "nra_webp_bytes": 1210170
+    "nra_webp_bytes": 1210170,
+    "albedo_ktx2_bytes": 1287961,
+    "nra_ktx2_bytes": 1266960
    },
    {
     "id": "ph_concrete_pavement_03",
@@ -1707,7 +1809,9 @@
     ],
     "files": "textures/cand/ph_concrete_pavement_03",
     "albedo_webp_bytes": 251962,
-    "nra_webp_bytes": 1062578
+    "nra_webp_bytes": 1062578,
+    "albedo_ktx2_bytes": 1178782,
+    "nra_ktx2_bytes": 1155250
    }
   ],
   "asphalt": [
@@ -1767,7 +1871,9 @@
     ],
     "files": "textures/cand/ph_asphalt_04",
     "albedo_webp_bytes": 324586,
-    "nra_webp_bytes": 741326
+    "nra_webp_bytes": 741326,
+    "albedo_ktx2_bytes": 1166715,
+    "nra_ktx2_bytes": 1118895
    },
    {
     "id": "acg_Asphalt015",
@@ -1795,7 +1901,9 @@
     ],
     "files": "textures/cand/acg_Asphalt015",
     "albedo_webp_bytes": 437040,
-    "nra_webp_bytes": 376068
+    "nra_webp_bytes": 376068,
+    "albedo_ktx2_bytes": 908250,
+    "nra_ktx2_bytes": 1261870
    },
    {
     "id": "acg_Asphalt020S",
@@ -1820,7 +1928,9 @@
     "lattice": null,
     "files": "textures/cand/acg_Asphalt020S",
     "albedo_webp_bytes": 337262,
-    "nra_webp_bytes": 1441600
+    "nra_webp_bytes": 1441600,
+    "albedo_ktx2_bytes": 1334561,
+    "nra_ktx2_bytes": 1364094
    }
   ],
   "concrete_white": [
@@ -1880,7 +1990,9 @@
     ],
     "files": "textures/cand/acg_Concrete046",
     "albedo_webp_bytes": 171030,
-    "nra_webp_bytes": 41892
+    "nra_webp_bytes": 41892,
+    "albedo_ktx2_bytes": 1223418,
+    "nra_ktx2_bytes": 1163514
    },
    {
     "id": "ph_concrete_wall_008",
@@ -1905,7 +2017,9 @@
     "lattice": null,
     "files": "textures/cand/ph_concrete_wall_008",
     "albedo_webp_bytes": 112980,
-    "nra_webp_bytes": 424416
+    "nra_webp_bytes": 424416,
+    "albedo_ktx2_bytes": 812115,
+    "nra_ktx2_bytes": 738107
    }
   ],
   "rockwork_concrete": [
@@ -1935,7 +2049,9 @@
     ],
     "files": "textures/cand/acg_Rock030",
     "albedo_webp_bytes": 350790,
-    "nra_webp_bytes": 1102610
+    "nra_webp_bytes": 1102610,
+    "albedo_ktx2_bytes": 1356863,
+    "nra_ktx2_bytes": 1346745
    },
    {
     "id": "acg_Rock023",
@@ -1963,7 +2079,9 @@
     ],
     "files": "textures/cand/acg_Rock023",
     "albedo_webp_bytes": 357554,
-    "nra_webp_bytes": 540816
+    "nra_webp_bytes": 540816,
+    "albedo_ktx2_bytes": 1334923,
+    "nra_ktx2_bytes": 1353010
    }
   ]
  },
