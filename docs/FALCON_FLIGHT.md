@@ -72,7 +72,7 @@ A 1.0 kg juvenile female (`FALCON` in flightModel.js; carrying a pigeon +0.33 kg
 
 ## Pigeons
 
-150 by default (slider 0-200), roosting at start on ~2,000 ridge points round the Place, the church's eight wing
+150 by default (slider 0-200), roosting at start on ~4,700 roost points (ridges every 1.1 m within 170 m of the Place), the church's eight wing
 ridges and drum cornice, and the setts (feeding: pecking in the vertex frame). The falcon within 32 m (58 m when
 fast, more in the stoop) raises an alarm with a 0.05-0.3 s delay; a bird leaving alarms its neighbours within 7 m
 (the burst ripples across a roof: the clatter sound). Flying: separation / alignment / cohesion within 6 m, a home
@@ -158,6 +158,7 @@ noise" is honest. 200 x ~110 triangles = 22k triangles, one draw; gulls one draw
   cars; the far tree impostors show dithering at mid distance (alpha-to-coverage), as on the city's far tiles.
 - In some ridge grabs the falcon is hidden behind roofs (it flies 5-20 m over them at life size).
 - GPU numbers are noisy (shared GPU); the pigeons' cost is "below noise", not a precise figure.
+- The pigeon mesh is crude up close (flat pale wings, the bars faint): it is made to be read at 10-100 m.
 - Sound: no positional wing sound for the pigeons in flight (only take-off clatter), no falcon calls except the catch.
 
 ## How the city could adopt it
