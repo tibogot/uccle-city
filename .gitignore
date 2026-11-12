@@ -9,3 +9,6 @@ node_modules/
 models/interior/*/interior.raw.glb
 models/interior/*/interior.pack.glb
 models/facadekit/src/
+models/townhall/*.raw.glb
+docs/townhall/side_*
+models/townhall/townhall_lod1_bake.bin
