@@ -56,5 +56,100 @@ export function orthoSampler(T) {
     }
     return Math.round(best * 100) / 100;
   };
-  return { at, zebraScore, x0, z0, px, W, H };
+  /** green-ness (vegetation over the road: the photo cannot tell) at (x, z): G - max(R, B), 0..1 */
+  const greenAt = (x, z) => {
+    const i = Math.round((x - x0) / px - 0.5), j = Math.round((z - z0) / px - 0.5);
+    if (i < 0 || j < 0 || i >= W || j >= H) return 0;
+    const k = (j * W + i) * 3;
+    return Math.max(0, data[k + 1] - Math.max(data[k], data[k + 2])) / 255;
+  };
+  /**
+   * Stripe scan of a crossing outline, direction-free (round 2): the zebra's bars may run at any angle to the outline
+   * (the long diagonal Brussels Mobility polygons). For every direction (3° steps) the brightness INSIDE the outline is
+   * averaged along the bars into a profile across them (5 cm bins); the score is the best 0.9-1.15 m period component (the Belgian zebra: 0.5 m bars, 0.5 m gaps)
+   * over the profile's spread (1 ~ clean bars). Returns { score, th (the bars' normal: the direction ACROSS the
+   * stripes, radians), period, contrast (p90 - p10 of the grey), veg (share of green samples: trees over the road) }.
+   */
+  const stripeScan = (poly) => {
+    const pip = (x, z) => { let ins = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [xi, zi] = poly[i], [xj, zj] = poly[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) ins = !ins; } return ins; };
+    let xa = Infinity, xb = -Infinity, za = Infinity, zb = -Infinity;
+    for (const [x, z] of poly) { xa = Math.min(xa, x); xb = Math.max(xb, x); za = Math.min(za, z); zb = Math.max(zb, z); }
+    const S = [];
+    let veg = 0;
+    for (let x = xa + 0.05; x < xb; x += 0.1) for (let z = za + 0.05; z < zb; z += 0.1) {
+      if (!pip(x, z)) continue;
+      const g = at(x, z);
+      if (g == null) continue;
+      S.push(x, z, g);
+      if (greenAt(x, z) > 0.04) veg++;
+    }
+    const n = S.length / 3;
+    if (n < 200) return null;
+    const gs = []; for (let i = 2; i < S.length; i += 3) gs.push(S[i]);
+    gs.sort((a, b) => a - b);
+    const contrast = gs[Math.floor(n * 0.9)] - gs[Math.floor(n * 0.1)];
+    const cx = (xa + xb) / 2, cz = (za + zb) / 2, BIN = 0.05;
+    let best = { score: 0, th: 0, period: 1 };
+    for (let deg = 0; deg < 180; deg += 3) {
+      const th = (deg * Math.PI) / 180, dx = Math.cos(th), dz = Math.sin(th);
+      const sum = new Map(), cnt = new Map();
+      for (let i = 0; i < S.length; i += 3) {
+        const b = Math.round(((S[i] - cx) * dx + (S[i + 1] - cz) * dz) / BIN);
+        sum.set(b, (sum.get(b) || 0) + S[i + 2]); cnt.set(b, (cnt.get(b) || 0) + 1);
+      }
+      const prof = [];
+      for (const [b, s] of sum) if (cnt.get(b) >= 4) prof.push([b * BIN, s / cnt.get(b)]);
+      if (prof.length < 40) continue;
+      const mean = prof.reduce((a, p) => a + p[1], 0) / prof.length;
+      const sd = Math.sqrt(prof.reduce((a, p) => a + (p[1] - mean) ** 2, 0) / prof.length);
+      if (sd < 0.01) continue;
+      for (let period = 0.9; period <= 1.16; period += 0.025) {
+        let re = 0, im = 0;
+        for (const [v, g] of prof) { const a = (2 * Math.PI * v) / period; re += (g - mean) * Math.cos(a); im += (g - mean) * Math.sin(a); }
+        const sc = (2 * Math.hypot(re, im)) / prof.length / (sd * Math.SQRT2);
+        if (sc > best.score) best = { score: sc, th, period };
+      }
+    }
+    return { score: Math.round(best.score * 100) / 100, th: best.th, period: Math.round(best.period * 100) / 100, contrast: Math.round(contrast * 100) / 100, veg: Math.round((veg / n) * 100) / 100, n };
+  };
+  /** Windowed stripe scan: 2.4 x 2.4 m windows on a 1.2 m lattice inside the outline, each scanned on its own (cars, a bus,
+   *  a shadow or a tram rail spoil a window, not the crossing). Returns { score: the 75th percentile of the windows'
+   *  scores, good: share of windows >= 0.5, windows, th (median direction of the good windows) } or null. */
+  const stripeWindows = (poly) => {
+    const pip = (x, z) => { let ins = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [xi, zi] = poly[i], [xj, zj] = poly[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) ins = !ins; } return ins; };
+    let xa = Infinity, xb = -Infinity, za = Infinity, zb = -Infinity;
+    for (const [x, z] of poly) { xa = Math.min(xa, x); xb = Math.max(xb, x); za = Math.min(za, z); zb = Math.max(zb, z); }
+    const W = [];
+    for (let x = xa + 1.2; x <= xb - 1.0; x += 1.2) for (let z = za + 1.2; z <= zb - 1.0; z += 1.2) {
+      if (!pip(x, z)) continue;
+      const win = [[x - 1.2, z - 1.2], [x + 1.2, z - 1.2], [x + 1.2, z + 1.2], [x - 1.2, z + 1.2]];
+      const clip = win.every(([a, b]) => pip(a, b)) ? win : null;       // whole windows only
+      if (!clip) continue;
+      const r = stripeScan(clip);
+      if (r) W.push(r);
+    }
+    if (!W.length) { const r = stripeScan(poly); return r ? { score: r.score, good: r.score >= 0.5 ? 1 : 0, windows: 1, th: r.th } : null; }
+    const sc = W.map((w) => w.score).sort((a, b) => a - b);
+    const good = W.filter((w) => w.score >= 0.5);
+    const ths = good.map((w) => w.th % Math.PI).sort((a, b) => a - b);
+    return { score: sc[Math.floor((sc.length - 1) * 0.75)], good: Math.round((good.length / W.length) * 100) / 100, windows: W.length, th: ths.length ? ths[ths.length >> 1] : null };
+  };
+  return { at, greenAt, zebraScore, stripeScan, stripeWindows, x0, z0, px, W, H };
 }
+
+/** pipeline/verify_crossings.mjs: the photo record of one crossing (BM / Topo outline, or a band round an OSM node) */
+const OSM_BAND = [3.5, 6.0];       // along x across (m): the outline scanned around an OSM node
+
+export function photoOf(o, c) {
+  let poly = c.poly;
+  if (!poly) {
+    const ax = Math.cos(c.axis), az = Math.sin(c.axis), bx = -az, bz = ax, [x, z] = c.c, [A, B] = OSM_BAND;
+    poly = [[-A / 2, -B / 2], [A / 2, -B / 2], [A / 2, B / 2], [-A / 2, B / 2]].map(([u, v]) => [x + ax * u + bx * v, z + az * u + bz * v]);
+  }
+  const full = o.stripeScan(poly);
+  if (!full) return null;
+  const win = o.stripeWindows(poly);
+  const useW = win && win.windows >= 4;
+  return { s: useW ? win.score : full.score, w: useW ? win.windows : 1, th: Math.round(((useW && win.th != null ? win.th : full.th) % Math.PI) * 1000) / 1000, veg: full.veg };
+}
+

@@ -331,4 +331,22 @@ window.lab = {
   layers(o) { Object.assign(S, o); applyLayers(); ui.controllersRecursive().forEach((c) => c.updateDisplay()); },
   view: setView, frames,
   stats: () => ({ gpuMs, draws: renderer.info.render.drawCalls, tris: renderer.info.render.triangles }),
+  /** camera at pos looking at target (world x, y, z; y null = the junction's ground + dy) */
+  cam(pos, target, up = null) {
+    camera.up.set(...(up || [0, 1, 0]));
+    controls.target.set(...target); camera.position.set(...pos); camera.lookAt(...target); controls.update();
+  },
+  /** ground height under (x, z) (the road stage's H where measured, else the DTM) */
+  y(x, z) { const t = cur.tiles.find((q) => x >= q.b.x0 && x < q.b.x1 && z >= q.b.z0 && z < q.b.z1) || cur.tiles[0]; return t.rd.prep ? t.rd.prep.H(x, z) : t.hm.ground(x, z); },
+  /** render one frame and POST it as a JPEG to a local save sink (url + "?path=" + name) */
+  async shot(name, sink = "http://127.0.0.1:8817/save", q = 0.9) {
+    await frames(8);
+    renderer.render(scene, camera);
+    const c = new OffscreenCanvas(renderer.domElement.width, renderer.domElement.height);
+    c.getContext("2d").drawImage(renderer.domElement, 0, 0);
+    const blob = await c.convertToBlob({ type: "image/jpeg", quality: q });
+    const r = await fetch(`${sink}?path=${encodeURIComponent(name)}`, { method: "POST", body: blob });
+    return r.ok ? `${name} ${blob.size}` : `failed ${r.status}`;
+  },
+  cur: () => cur,
 };

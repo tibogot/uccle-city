@@ -12,13 +12,15 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { loadTile, allTiles, ROOT } from "./tile.mjs";
-import { orthoSampler } from "./ortho.mjs";
+import { orthoSampler, photoOf } from "./ortho.mjs";
 
 const imp = (p) => import(pathToFileURL(join(ROOT, p)).href);
 const { paintInventory } = await imp("viewer/streets/inventory.js");
 const { evalAlignment } = await imp("vendor/roads/roadAlignment.js");
 const { layoutEdges } = await imp("vendor/roads/roadCrossSection.js");
 const { polylineAt } = await imp("vendor/roads/roadMath.js");
+const { roundTwoChecks, laneGraphChecks } = await import(pathToFileURL(join(ROOT, "tools/road_audit/mesh_checks.mjs")).href);
+const roadData = await imp("viewer/roadData.js");
 
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv.splice(i, 2)[1] : d; };
@@ -28,12 +30,16 @@ const ROADS_FROM = opt("--roads-from", null);     // another set of roads.json (
 const NO_ORTHO = flag("--no-ortho"), QUIET = flag("--quiet"), ALL = flag("--all");
 const TILES = ALL ? allTiles() : argv.map((t) => t.toUpperCase());
 if (!TILES.length) { console.error("usage: road_audit.mjs [--paint v1|v2] [--label L] T... | --all"); process.exit(2); }
-const BLOCKING = new Set(["C1", "C2", "C3", "C4", "C5", "C8", "C9"]);
-const CHECKS = ["C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13"];
+const BLOCKING = new Set(["C1", "C2", "C3", "C4", "C5", "C8", "C9", "C14", "C15", "C16", "C18", "C19", "C20", "C21", "C22"]);
+const CHECKS = ["C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20", "C21", "C22"];
 const TITLE = {
   C1: "zebra on one arm", C2: "zebra square and full", C3: "stop line before the junction", C4: "paint on the carriageway",
   C5: "paint = evidence", C6: "lanes on the street", C7: "hold points = painted lines", C8: "curve continuity",
   C9: "no coplanar overlaps", C10: "tile seams", C11: "levels", C12: "orthophoto agreement (soft)", C13: "inventory by source",
+  C14: "one crossing per real crossing (no duplicates, photo agrees, not clipped)", C15: "paint not across crossings / not doubled",
+  C16: "stop line spans its approach, square, no stray dashes", C17: "no sliver triangles", C18: "no cracks (T-junctions, open steps)",
+  C19: "kerbs: no notches, no gaps", C20: "paving uv continuous", C21: "shading: no normal jumps, no per-piece tone seams",
+  C22: "lane graph: smooth, centred, clear of kerbs, no crossings",
 };
 
 // ---------------------------------------------------------------- OSM tags of the ways (evidence for C5)
@@ -360,6 +366,13 @@ function auditTile(T, ortho) {
     add("C11", "warn", rr.smp.x[i], rr.smp.z[i], `${m.bridge ? "bridge" : "tunnel"} ${m.name || r.id} drawn at ground level (levels: phase 4)`, { id: r.id });
   }
 
+  // ---- C14-C22 (round 2): the meshes and paint as drawn
+  for (const s of inv.stops) if (s.node && s.road) { const n = net.nodes.find((q) => q.id === s.node); s.arm = n?.arms?.find((a) => a.road.id === s.road && a.end === s.end) || null; }
+  rd.pieceTone = roadData.ASPHALT_PIECE_TONE !== 0;
+  const r2c = roundTwoChecks({ rd, inv, prep, surf, markings, inTile, photo: ortho ? (m) => photoOf(ortho, m) : null, add: (...a) => { add(...a); return F[F.length - 1]; } });
+  const lg = laneGraphChecks({ net, prep, inTile, add: (...a) => { add(...a); return F[F.length - 1]; } });
+  for (const s of inv.stops) delete s.arm;
+
   // ---- C13: inventory by source
   const bySrc = (arr) => arr.reduce((o, c) => ((o[c.src] = (o[c.src] || 0) + 1), o), {});
   const laneKinds = {};
@@ -398,6 +411,7 @@ function auditTile(T, ortho) {
       roadsLeavingStreet: drifted, coplanarPairs: z9.pairs, coplanarAreaM2: r2(z9.area), triangles: rd.triangles, buildMs: rd.totalMs, times: rd.times,
       widthFit: rd.surfaceStats?.widthFit ?? null, engineErrors: rd.netInfo.byCode, atlas: rd.atlas ? `${rd.atlas.width}x${rd.atlas.height}` : null,
       paintTriangles: rd.parts.paint ? rd.parts.paint.index.length / 3 : 0,
+      round2: r2c, laneGraph: lg,
     },
   };
 }

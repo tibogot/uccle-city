@@ -41,6 +41,7 @@ from osm import load_osm
 SRC = RAW / "markings"
 KEEP = 30.0
 OSM_MATCH = 6.0            # m: an OSM crossing node this close to a measured crossing is the same crossing
+OSM_NEAR_OUTLINE = 3.0     # m: ... or this close to a measured crossing's outline (long diagonal polygons)
 AXIS_SEARCH = 15.0         # m: the road axis of a measured crossing = the nearest OSM car way within this
 PAIR_GAP = (1.8, 7.0)      # m: the two CR2301L edge lines of one crossing are this far apart
 MARKED = {"zebra", "marked", "uncontrolled", "traffic_signals"}
@@ -269,7 +270,7 @@ def build(tile, osm, ways):
                 out["signs"].append({"id": f"bm:{f['properties'].get('gid')}", "code": code, "x": x, "z": z})
 
     # --- OSM crossing and control nodes on car ways
-    measured = [Point(*c["c"]) for c in out["crossings"]]
+    measured = [Polygon(c["poly"]) if c.get("poly") and len(c["poly"]) >= 3 else Point(*c["c"]) for c in out["crossings"]]
     for nid, n in osm.nodes.items():
         t = n["tags"]
         if not t or not keep.contains(Point(n["x"], n["z"])):
@@ -292,8 +293,20 @@ def build(tile, osm, ways):
                    "marked": marked, "rule": mk is None, "signals": cr == "traffic_signals" or hw == "traffic_signals"}
             out["osm"]["crossings"].append(rec)
             if marked:
-                dmin = min((Point(x, z).distance(p) for p in measured), default=1e9)
-                hit = [c for c in out["crossings"] if Point(*c["c"]).distance(Point(x, z)) == dmin] if dmin <= OSM_MATCH else []
+                # the same crossing when the node is within OSM_MATCH of a measured centre OR within OSM_NEAR_OUTLINE of
+                # a measured OUTLINE (round 2: the long diagonal BM polygons at Alsemberg / Brugmann have their
+                # centres 9-12 m from the OSM nodes on the tram and car ways they cross: each node became a band of
+                # its own, 2-3 crossings stacked on one), or within OSM_MATCH of an OSM crossing already kept
+                pt = Point(x, z)
+                cands = []
+                for c, shp in zip(out["crossings"], measured):
+                    d = pt.distance(shp) if isinstance(shp, Polygon) else pt.distance(Point(*c["c"]))
+                    lim = OSM_NEAR_OUTLINE if isinstance(shp, Polygon) else OSM_MATCH
+                    d0 = pt.distance(Point(*c["c"]))
+                    if d <= lim or d0 <= OSM_MATCH:
+                        cands.append((min(d, d0), c))
+                cands.sort(key=lambda q: q[0])
+                hit = [cands[0][1]] if cands else []
                 if hit:
                     hit[0]["confirm"].append(rec["id"])
                     if rec["signals"]:
@@ -302,6 +315,7 @@ def build(tile, osm, ways):
                     out["crossings"].append({"id": rec["id"], "src": "osm", "poly": None, "c": [x, z], "axis": round(th, 4),
                                              "along": None, "across": None, "osm": nid, "rule": rec["rule"],
                                              "signals": rec["signals"], "confirm": []})
+                    measured.append(Point(x, z))
         if ctrl:
             d = t.get("direction") or t.get("traffic_signals:direction")
             dirv = 1 if d in ("forward",) else -1 if d in ("backward",) else 0
