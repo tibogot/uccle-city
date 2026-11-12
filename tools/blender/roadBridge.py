@@ -109,8 +109,8 @@ def face_y(x, base):
 
 
 MATS = ["brick_red_brussels", "stone_blue", "asphalt", "paving_concrete", "concrete", "painted_metal_white",
-        "painted_metal_grey", "glass_window", "resin_terracotta", "wood_frame_dark"]
-BR, ST, AS, PV, CO, PW, PG, GL, RS, WD = range(len(MATS))
+        "painted_metal_grey", "glass_window", "resin_terracotta", "wood_frame_dark", "wire_mesh_grey"]
+BR, ST, AS, PV, CO, PW, PG, GL, RS, WD, WM = range(len(MATS))
 
 
 # ------------------------------------------------------------------------------------------------ geometry builder
@@ -614,10 +614,13 @@ def mesh_railing(sg):
             L = xb - xa; tz = (zb - za) / L
             uax = Vector((1, 0, tz)).normalized()
             FOOT.box(((xa + xb) / 2, yc(x), (za + zb) / 2), (math.hypot(L, zb - za), 0.03, 0.04), PG, frame=(uax, Vector((0, 1, 0)), Vector((-tz, 0, 1)).normalized()), skip=("-u", "+u"))
-        m = int((xb - xa) / 0.15)
-        for j in range(1, m):
-            xx = xa + j * (xb - xa) / m
-            FOOT.box((xx, yc(x), ztop(xx) + 0.47), (0.012, 0.012, 0.74), PG, skip=("-w", "+w"))
+        # the welded mesh: ONE panel each side (slot wire_mesh_grey: the viewer draws the wires as a box-filtered pattern
+        # with alpha-to-coverage, no sub-pixel bars to sparkle at a distance), 4 mm either side of the rails' centre plane
+        for side in (1, -1):
+            yy = yc(x) + side * 0.004
+            pts = [(xa, yy, ztop(xa) + 0.10), (xb, yy, ztop(xb) + 0.10), (xb, yy, ztop(xb) + 0.84), (xa, yy, ztop(xa) + 0.84)]
+            uvp = [(xa, 0.10), (xb, 0.10 + 0.0), (xb, 0.84), (xa, 0.84)]
+            FOOT.poly(pts, WM, (0, side, 0), uvp)
 
 
 for sg in (1, -1): mesh_railing(sg)
@@ -632,7 +635,7 @@ mats = []
 PREVIEW_COL = {"brick_red_brussels": (0.33, 0.12, 0.075), "stone_blue": (0.40, 0.41, 0.42), "asphalt": (0.08, 0.08, 0.085),
                "paving_concrete": (0.45, 0.44, 0.41), "concrete": (0.62, 0.62, 0.60), "painted_metal_white": (0.8, 0.8, 0.78),
                "painted_metal_grey": (0.35, 0.36, 0.37), "glass_window": (0.2, 0.25, 0.27), "resin_terracotta": (0.55, 0.30, 0.20),
-               "wood_frame_dark": (0.25, 0.15, 0.08)}
+               "wood_frame_dark": (0.25, 0.15, 0.08), "wire_mesh_grey": (0.35, 0.36, 0.37)}
 for nm in MATS:
     m = bpy.data.materials.new(nm); m.use_nodes = True
     m.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (*PREVIEW_COL[nm], 1)

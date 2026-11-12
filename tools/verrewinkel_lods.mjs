@@ -13,8 +13,8 @@ const args = process.argv.slice(2);
 const file = args.find((a) => a.endsWith(".glb")) ?? "models/rail/verrewinkel.glb";
 const out = args.includes("--out") ? args[args.indexOf("--out") + 1] : path.join(path.dirname(file), "audit");
 const LODS = [{ until: 140 },                                                       // as bridgeModel.js ROAD_BRIDGE_LODS
-  { drop: ["painted_metal_grey", "wood_frame_dark"], simplify: {}, until: 420 },
-  { drop: ["painted_metal_grey", "wood_frame_dark", "glass_window"], simplify: { "*": 0.06 }, prune: true, until: 2000 }];
+  { drop: ["painted_metal_grey", "wood_frame_dark", "wire_mesh_grey"], simplify: {}, until: 420 },
+  { drop: ["painted_metal_grey", "wood_frame_dark", "glass_window", "wire_mesh_grey"], simplify: { "*": 0.06 }, prune: true, until: 2000 }];
 const IGNORE_BELOW = -1.5;                         // the foundations under the cutting floor (buried)
 
 function simplifyWelded(P, Nn, I, want, prune, error) {
