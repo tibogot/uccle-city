@@ -531,7 +531,10 @@ export function buildingMeshes(doc, buf, roads, feats, pre) {
   };
   // one set of materials for every tile (same shaders, no recompiles, never disposed with a tile)
   if (!MATS) {
-    const detailMat = new THREE.MeshStandardNodeMaterial({ roughness: 0.82, side: THREE.DoubleSide });
+    // front faces only (fixes1: every detail quad is wound by its normal now, facadeGeom.js pushQuad; DoubleSide hid 68k
+    // wrongly wound triangles and doubled the fill); the shadow pass keeps both sides (the strips are open boxes on the wall)
+    const detailMat = new THREE.MeshStandardNodeMaterial({ roughness: 0.82, side: THREE.FrontSide });
+    detailMat.shadowSide = THREE.DoubleSide;
     detailMat.colorNode = attribute("aCol", "vec3");
     MATS = { wall: wallMaterial(), roof: roofMaterial(), detail: detailMat };
     for (const m of Object.values(MATS)) m.userData.shared = true;

@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 import { analyseBuildings } from "../../viewer/facadeGeom.js";
 import { auditParts } from "./audit.js";
 
+const STJOB = "https://databrussels.be/id/building/1587133";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; };
@@ -24,6 +25,8 @@ for (const t of tiles.length ? tiles : ["I6"]) {
   const buf = b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
   const roads = JSON.parse(fs.readFileSync(path.join(dir, "roads.json"), "utf8"));
   const feats = JSON.parse(fs.readFileSync(path.join(dir, "features.json"), "utf8"));
+  // as the city draws it by default: the Saint-Job church is the hero model (main.js HIDE_BU_IDS); --all keeps it
+  if (!args.includes("--all")) doc.buildings = doc.buildings.filter((b) => b.attrs?.BU_ID !== STJOB);
   const t0 = Date.now();
   const a = analyseBuildings(doc, buf, roads, feats);
   const part = (name, g) => ({ name, slot: "", positions: g.position, normals: g.normal, index: null, maxDistance: maxD });
