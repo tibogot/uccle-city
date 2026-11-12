@@ -571,7 +571,7 @@ function seamLayer(c, s) {
 }
 
 // ------------------------------------------------------------------------------------------------ frames, mapping
-function cotangentFrame(N, P, st) {
+export function cotangentFrame(N, P, st) {
   const dp1 = P.dFdx(), dp2 = P.dFdy(), duv1 = st.dFdx(), duv2 = st.dFdy();
   const dp2perp = cross(dp2, N), dp1perp = cross(N, dp1);
   const T = dp2perp.mul(duv1.x).add(dp1perp.mul(duv2.x));

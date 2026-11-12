@@ -111,3 +111,20 @@ export async function landmarkSwap(modulePath, loadName) {
   for (const m of meshes) { m.userData.__libMat = m.material; m.userData.__tmpMat = model.tempMaterial ? model.tempMaterial(m.userData.slot) : m.material; }
   return { count: meshes.length, apply: (on) => { for (const m of meshes) m.material = on ? m.userData.__libMat : m.userData.__tmpMat; } };
 }
+
+/** a swapper for the procedural façades (facades.js walls + roofs + kit walls): on = the page's, off = procedural */
+export async function facadeSwap() {
+  const F = await import("/viewer/facades.js"), L = await import("/viewer/facadeLib.js");
+  L.setFacadeLib(false);
+  const alt = { wall: F.wallMaterial(), roof: F.roofMaterial(), kit: F.wallMaterial({ kit: true }), kitFar: F.wallMaterial({ kit: true, cut: false }) };
+  L.setFacadeLib(null);
+  const list = [];
+  window.viewer.scene.traverse((o) => {
+    if (!o.isMesh) return;
+    if (o.name === "buildings-walls") list.push([o, "material", alt.wall]);
+    else if (o.name === "buildings-roofs") list.push([o, "material", alt.roof]);
+    else if (o.name === "buildings-walls-kit") { list.push([o.userData, "cutMat", alt.kit]); list.push([o.userData, "plainMat", alt.kitFar]); list.push([o, "material", o.material === o.userData.cutMat ? alt.kit : alt.kitFar]); }
+  });
+  for (const e of list) e.push(e[0][e[1]]);
+  return { count: list.length, apply: (on) => { for (const [obj, key, off, onV] of list) obj[key] = on ? onV : off; } };
+}

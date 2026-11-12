@@ -36,6 +36,7 @@ import { analyseBuildings } from "./facadeGeom.js";
 import { houseCut, cutOpacity } from "./interior/cut.js";
 import { kitShows, wallKitFade } from "./facadeKit/kitFade.js";
 import { FRENCH_SILL } from "./facadeKit/placement.js";
+import { facadeLibOn, facadeWallLook, facadeRoofLook } from "./facadeLib.js";
 export { analyseBuildings };
 
 const C = (r, g, b) => vec3(r, g, b);
@@ -243,8 +244,12 @@ export function wallMaterial(opts = {}) {
   col = mix(col, renderOf(C(0.56, 0.47, 0.32)), band(style, 4));
   col = mix(col, renderOf(C(0.3, 0.29, 0.27)), band(style, 5));
   const isBrick = float(1).sub(step(float(2.5), style)).toVar();
+  // (2026-11-13) the wall surface from the material library's shipped sets (viewer/facadeLib.js; ?libmat=-facades: off)
+  const wl = facadeLibOn() ? facadeWallLook(u, h, style, [[0.29, 0.085, 0.05], [0.17, 0.075, 0.045], [0.4, 0.27, 0.14],
+    [0.62, 0.6, 0.55], [0.56, 0.47, 0.32], [0.3, 0.29, 0.27]]) : null;
+  if (wl) col = wl.col;
   // relief: domed bricks, recessed openings, protruding sills / plinth / cornice (metres)
-  let height = isBrick.mul(float(1).sub(brick.joint)).mul(0.0045);
+  let height = wl ? float(0) : isBrick.mul(float(1).sub(brick.joint)).mul(0.0045);
   height = height.sub(opening.mul(0.12));                                        // reveal: the opening sits 12 cm back
   const aaH = fwidth(h).add(0.002);
   const plinth = float(1).sub(smoothstep(float(0.5).sub(aaH), float(0.5).add(aaH), h)).toVar();
@@ -434,10 +439,13 @@ export function wallMaterial(opts = {}) {
   // ---- lighting terms
   // glass is FLAT: the wall's bump on low-roughness glass made the sun's highlight sparkle pixel by pixel
   // (white speckle on every window, 2026-11-04)
-  const relief = mix(bumpNormal(height.mul(near)), normalView, clamp(glassPart.add(lmGlass).add(shopGlass), 0.0, 1.0));
+  let relief = mix(bumpNormal(height.mul(near)), normalView, clamp(glassPart.add(lmGlass).add(shopGlass), 0.0, 1.0));
+  // the library set's normal map on the plain wall only (not openings, frames, sills, plinth, cornice, shops, landmarks)
+  const wallOnly = wl ? float(1).sub(opening).mul(float(1).sub(plinth)).mul(float(1).sub(corn)).mul(float(1).sub(sill)).mul(notShop).mul(float(1).sub(isLM)).toVar() : null;
+  if (wl) relief = normalize(relief.add(wl.nView.mul(wallOnly)));
   m.normalNode = relief;
   m.colorNode = col;
-  m.roughnessNode = mix(mix(mix(mix(float(0.85), float(0.93), isBrick), float(0.5), frame), mix(float(0.2), float(0.4), dirt.sub(0.4).mul(2.5)), glassPart),   // glass >= 0.18 (game-engine-v1 facade rule: no aliasing over the room)
+  m.roughnessNode = mix(mix(mix(wl ? mix(mix(float(0.85), float(0.93), isBrick), wl.rough, wallOnly) : mix(float(0.85), float(0.93), isBrick), float(0.5), frame), mix(float(0.2), float(0.4), dirt.sub(0.4).mul(2.5)), glassPart),   // glass >= 0.18 (game-engine-v1 facade rule: no aliasing over the room)
     mix(float(0.8), float(0.15), lmGlass), isLM);
   // no metalness on glass: it made SSR reflect the WALL the glass sits in (the glass is coplanar with it): a
   // brick pattern in every window, like z-fighting (owner, 2026-11-04). The glass's reflection is the
@@ -499,9 +507,11 @@ export function roofMaterial() {
   const relief = lap.sub(joint.mul(0.006)).mul(near).mul(fine).mul(float(1).sub(flat));
   // flat roofs: the real colour with gravel speckle
   const flatCol = base.mul(n3(P.x.mul(30.0), 0.0, P.z.mul(30.0)).mul(0.18).add(1.0)).add(weather.mul(0.01));
-  m.colorNode = mix(col, flatCol, flat);
-  m.normalNode = bumpNormal(relief);
-  m.roughnessNode = mix(mix(float(0.62), float(0.78), clayK), float(0.95), flat);
+  // (2026-11-13) pitched roofs: the library's shipped slate / pantile sets on the roof's real colour (viewer/facadeLib.js)
+  const rl = facadeLibOn() ? facadeRoofLook(u, v, base, clayK) : null;
+  m.colorNode = mix(rl ? rl.col : col, flatCol, flat);
+  m.normalNode = rl ? normalize(normalView.add(rl.nView.mul(float(1).sub(flat)))) : bumpNormal(relief);
+  m.roughnessNode = mix(rl ? rl.rough : mix(float(0.62), float(0.78), clayK), float(0.95), flat);
   return m;
 }
 
