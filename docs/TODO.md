@@ -6,6 +6,45 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 `docs/PLAN.md` has the history and details of what is done. Rule of thumb for every item:
 **look better without costing frame time** (instancing, shared materials, LOD, compressed assets).
 
+## CURRENT STATE (2026-11-13) — read this first
+
+**In the city by default** (claude/foundation, NOT pushed to Vercel; `?x=0` turns one off): measured roads v2
+(rounds 1-3), the facade kit, the material library (best set per material), every landmark (Saint-Job, town hall +
+flags, Stalle, Van Buuren, Wolvendael + pond, police, Calevoet, Saint-Pierre, Observatory), trains + 3 hero bridges,
+tram 92 v2, falcons, city trees off the roads + the tree impostor kit, colliders from what is drawn, the minimap,
+the fixed lamp-light pool (no more long freeze). **Lab-only, merged:** falcon flight game, night lights, sound,
+weather + seasons, foliage, pedestrians, street life, car impostors, police car (branch), Material / Tree labs.
+
+**Running (agents):** roads round 4 (`claude/roads2`: kerb shimmer, cost, ground materials, traffic on the new lanes,
+leftovers) · collisions + joins audit (`claude/audit-collide`) · fixes1 (`claude/fixes1`: tram on slopes, clean-buildings
+pass, garage door, grainy far forest).
+
+**Next, in order:**
+1. Falcon flight game in the city's fly mode (needs a streaming world adapter: floor / lift grid / thermals / roosts
+   following the falcon; FALCON_FLIGHT.md "How the city could adopt it") — next free agent.
+2. PERFORMANCE AUDIT on a quiet GPU (plan: docs/perf/AUDIT_PLAN.md): shadow pipeline re-created every ~20 s, boot long
+   tasks, tile-streaming stutter, draw calls (InstancedMesh2 / BatchedMesh / kit batching / one ground material), blocky
+   clouds, mid-range GPU run, re-measure everything measured on a shared GPU.
+3. City hookups, one at a time, each measured: night lights, sound (owner listens first), foliage, pedestrians, street
+   life, weather + seasons, car impostors.
+4. Fine-tuning in the labs: landmarks (Stalle statue + aisle, Van Buuren angles, Wolvendael estimated sides,
+   Saint-Pierre / tram noses, Calevoet car-park side, town-hall sparkle, Observatory +0.5 ms), materials factory round 2
+   + tree barks / leaves + more species, kit texture-limit slots, decals, tram details.
+5. Roads phase 4 (bridges / underpasses as levels) and phase 5 (bumps, manholes, wear, photo review of every tile).
+6. Games: police car round 2, then the first game (unmarked police car or the falcon); GeoGuessr-Uccle later.
+7. Later: Altitude Cent / Saint-Augustin, the Brussels region, live STIB, multiplayer.
+
+**Waiting on the owner:** Sauvagère + Nekkersgat photos; Megascans download + Fab licence check; Brussels Mobility
+email (marking legend); SNCB GTFS agreement; listen to the sound renders; when to push to Vercel.
+
+**Rules learned this week:** JOINS (no open edge / gap where a model meets city ground); a FIXED light count (pools,
+never add / remove lights at runtime); merges of shared files are checked line by line (keep-both stacked three tile
+entry lines once and silently dropped the facade kit + pond beds).
+
+---
+Everything below is the running history (decisions, rounds, details). Items there may already be done: the list above
+is the current one.
+
 ## OWNER'S MASTER LIST (2026-11-06, newest decisions first; keep this up to date)
 
 **In progress (agents, own branches, lab first):**
