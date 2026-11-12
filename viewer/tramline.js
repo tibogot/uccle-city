@@ -71,7 +71,8 @@ function moduleGeometry(cab, lineCol) {
   return mergeGeometries(g);
 }
 
-export async function createTramLine(url, scene, ground) {
+/** ground(x, z): the road surface; prof (viewer/trackProfile.js, optional): the tracks' smooth rail-top profile */
+export async function createTramLine(url, scene, ground, prof = null, roadOff = null) {
   const r = await fetch(url);
   if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
   const doc = await r.json();
@@ -215,7 +216,11 @@ export async function createTramLine(url, scene, ground) {
     mids = new THREE.InstancedMesh(moduleGeometry(false, lc), mat, MAX_TRAMS * (MODS - 2));
     for (const m of [cabs, mids]) { m.castShadow = m.receiveShadow = true; m.frustumCulled = false; m.count = 0; scene.add(m); }
   }
-  const pose = [], railTop = (x, z) => ground(x, z) + 0.02;
+  // rail top: the track's smooth vertical profile (vertical curves, bridge decks; the rails are drawn on it too), else
+  // the road surface under the point
+  const pose = [], railTop = (x, z) => (prof?.y(x, z, 1.5) ?? ground(x, z)) + 0.02;           // (culling, the box trams)
+  // the drawn rail top under a point of the track running at heading h (main.js featureObjects draws the rails there)
+  const railY = (x, z, h) => (prof?.railTop(x, z, roadOff, 1.5) ?? ground(x, z)) + 0.02;
   let scale = +(params.get("timescale") || 1);
   const clockP = params.get("clock");
   let t0 = performance.now();
@@ -315,7 +320,7 @@ export async function createTramLine(url, scene, ground) {
       if ((x - near.x) ** 2 + (z - near.z) ** 2 > near.r * near.r || s.cab >= MAX_TRAMS * 2) continue;
       if (fleet) {
         const shape = shapes[t.shape];
-        tramPose(model.layout, (q) => at(shape, q), d, pose);
+        tramPose(model.layout, (q) => at(shape, q), d, pose, false, prof ? (q) => { const [x, z, h] = at(shape, q); return railY(x, z, h); } : null);
         doorsLR[0] = doorsLR[1] = 0;
         if (dOpen > 0) doorsLR[platformSide(t, stop) > 0 ? 0 : 1] = dOpen;
         fleet.add(pose, railTop, { sign: model.sign.index[t.head] ?? 0, doors: doorsLR, brake });
@@ -348,5 +353,5 @@ export async function createTramLine(url, scene, ground) {
   // live clock (the dev panel): set the time of day (seconds) or the speed; both re-anchor, so nothing jumps but the set
   const setClock = (secs = null) => { startSecs = secs ?? brusselsNow().secs; t0 = performance.now(); };   // null: Brussels now
   const setTimescale = (k) => { startSecs = clock(); t0 = performance.now(); scale = k; };
-  return { update, snapTile, info, doc, fleet, model, positions, trackAt, setClock, setTimescale, get clockSecs() { return clock() % 86400; }, get timescale() { return scale; } };
+  return { update, snapTile, info, doc, fleet, model, positions, trackAt, railTop, railY, prof, setClock, setTimescale, get clockSecs() { return clock() % 86400; }, get timescale() { return scale; } };
 }
