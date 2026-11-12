@@ -17,6 +17,7 @@ import {
   instancedBufferAttribute, texture, uv, color,
 } from "three/tsl";
 import { noise2D, hash2D, filteredPulse } from "../tslkit.js";
+import { cameraPosition, dot, step, normalize, vec4 } from "three/tsl";
 
 export const wet = { uWet: uniform(0), uPuddle: uniform(0) };
 /** Take the weather lab's uniforms (wx.uWet, wx.uPuddle) instead of ours: call before buildStreet(). */
@@ -49,6 +50,54 @@ export function wetSurface(m, { porosity = 0.5, puddles = true, floor: isFloor =
   m.colorNode = col; m.roughnessNode = rough; m.metalnessNode = metal;
   return m;
 }
+
+/** soft band: 1 inside [a, b], filtered over fw */
+const band = (x, a, b, fw) => smoothstep(float(a).sub(fw), float(a).add(fw), x).mul(float(1).sub(smoothstep(float(b).sub(fw), float(b).add(fw), x)));
+
+/**
+ * THE SHOP ROOM behind a shop front (interior mapping: a ray from the eye through the glass into a w x h x 3.6 m box),
+ * adapted from mrdoob/slop-newyork js/tsl-materials.js createStorefront's interior (MIT, (c) 2026 Mr.doob): shelves of
+ * goods on the back and side walls, a counter 1.3 m in (it parallax-shifts against the shelves as you walk by), a
+ * tiled floor, ceiling light panels. U: metres across the opening from its bottom-left, sz: its size, n: the facade's
+ * outward normal (world), seed 0..1, light: the room's light colour. Returns vec4(colour, how lit 0..1).
+ */
+const shopRoom = Fn(([U, sz, n, seed, light]) => {
+  const ray = positionWorld.sub(cameraPosition).toVar();
+  const inward = max(abs(dot(ray, n)), 0.1);
+  const tdir = vec3(n.z, 0, n.x.negate());                                   // the opening's +x in world
+  const dx = dot(ray, tdir).div(inward).toVar(), dy = ray.y.div(inward).toVar();
+  const w = sz.x, h = sz.y, D = float(3.6);
+  const ox = U.x.sub(w.mul(0.5)), oy = U.y.sub(h.mul(0.5));
+  const tx = w.mul(0.5).sub(ox.mul(dx.sign())).div(max(abs(dx), 0.001));
+  const ty = h.mul(0.5).sub(oy.mul(dy.sign())).div(max(abs(dy), 0.001));
+  const depth = min(min(tx, ty), D).toVar();
+  const px = U.x.add(dx.mul(depth)), py = U.y.add(dy.mul(depth));
+  const onSide = step(tx, min(ty, D)), onH = step(ty, min(tx, D));
+  const ceil = onH.mul(step(0, dy)), flo = onH.mul(float(1).sub(step(0, dy)));
+  const back = float(1).sub(max(onSide, onH));
+  const fw = fwidth(px).add(fwidth(py)).add(0.003);
+  // along the walls: shelves of goods (back wall: x, side walls: depth)
+  const along = select(back.greaterThan(0.5), px, depth.mul(1.4));
+  const shelfY = py.div(0.5);
+  const shelves = filteredPulse(shelfY, 0.0, 0.07, fw.div(0.5)).mul(band(py, 0.3, 2.2, fw)).mul(float(1).sub(onH));
+  const gx = along.div(0.22), gs = hash2D(vec2(floor(gx), floor(shelfY)).add(seed.mul(53)));
+  const goods = filteredPulse(gx, 0.1, 0.9, fw.div(0.22)).mul(filteredPulse(shelfY, 0.1, gs.mul(0.35).add(0.45), fw.div(0.5)))
+    .mul(band(py, 0.3, 2.2, fw)).mul(float(1).sub(onH));
+  const goodsCol = mix(mix(vec3(0.75, 0.3, 0.18), vec3(0.2, 0.45, 0.7), gs), vec3(0.85, 0.78, 0.4), hash2D(vec2(gs, seed)));
+  const wall = mix(vec3(0.62, 0.6, 0.55), vec3(0.5, 0.56, 0.55), seed);
+  const tiles = filteredPulse(px.div(0.4), 0.04, 0.96, fw.div(0.4)).mul(filteredPulse(depth.div(0.4), 0.04, 0.96, fw.div(0.4)));
+  const floorCol = mix(vec3(0.18, 0.17, 0.16), vec3(0.42, 0.4, 0.37), tiles);
+  const shell = mix(mix(wall, floorCol, flo), vec3(0.85, 0.84, 0.8), ceil);
+  const stocked = mix(mix(shell, goodsCol, goods), vec3(0.22, 0.17, 0.12), shelves);
+  // the counter: a plane 1.3 m in, 0.9 m high, over the left two thirds
+  const cx = U.x.add(dx.mul(1.3)), cy = U.y.add(dy.mul(1.3));
+  const counter = band(cy, -0.4, 0.75, fw).mul(band(cx, w.mul(0.08), w.mul(0.62), fw)).mul(step(1.3, depth));
+  const room = mix(stocked, vec3(0.32, 0.24, 0.17), counter.mul(0.9));
+  // ceiling light panels
+  const panel = band(px, w.mul(0.2), w.mul(0.8), fw).mul(band(fract(depth.div(1.2)), 0.35, 0.65, fw.div(1.2))).mul(ceil);
+  const shade = mix(float(0.55), float(1), smoothstep(0.0, 0.6, min(px, w.sub(px)))).mul(mix(float(1), float(0.7), depth.div(D)));
+  return vec4(mix(room.mul(light).mul(shade), light.mul(3.0), panel), panel);
+});
 
 const box = (w, h, d, x, y, z) => new THREE.BoxGeometry(w, h, d).translate(x, y + h / 2, z);
 
@@ -195,11 +244,16 @@ export function buildStreet(lampModel, { seed = 7, ground = null } = {}) {
     // inside a lit room: curtains (a soft vertical fold pattern), brighter at the top (a ceiling lamp); the shop: shelves
     const fold = noise2D(vec2(U.x.mul(9), 0.5)).mul(0.35).add(0.75);
     const shelves = kind.greaterThan(1.5).select(filteredPulse(U.y.div(0.45), 0.0, 0.8, fwidth(U.y.div(0.45))).mul(0.35).add(0.65), fold);
-    const glow = lit.mul(shelves).mul(mix(float(0.75), float(1.15), uv().y));
+    let glow = lit.mul(shelves).mul(mix(float(0.75), float(1.15), uv().y));
+    // shop fronts: the room behind the glass (interior mapping) instead of a flat glow
+    const isShop = kind.greaterThan(1.5);
+    const seedS = hash2D(vec2(sz.x.mul(7.3), lit.x.add(lit.z).mul(3.1)));
+    const room = shopRoom(U, sz, normalize(normalWorld), seedS, lit.div(max(max(lit.x, lit.y), 0.01)));
+    glow = select(isShop, room.rgb.mul(0.6), glow);
     const glass = vec3(0.02, 0.025, 0.03);
-    glassM.colorNode = select(isDoor, vec3(0.12, 0.07, 0.04), mix(glass, vec3(0.78, 0.76, 0.72), frame));
+    glassM.colorNode = select(isDoor, vec3(0.12, 0.07, 0.04), mix(select(isShop, vec3(0.01), glass), vec3(0.78, 0.76, 0.72), frame));
     glassM.roughnessNode = select(isDoor, float(0.6), mix(float(0.06), float(0.5), frame));
-    glassM.metalnessNode = select(isDoor, float(0), mix(float(0.9), float(0), frame));       // dark glass: SSR mirror
+    glassM.metalnessNode = select(isDoor, float(0), mix(select(isShop, float(0.15), float(0.9)), float(0), frame));   // dark glass: SSR mirror; shop glass: see-through
     glassM.emissiveNode = glow.mul(float(1).sub(frame)).mul(select(isDoor, float(0), float(1)));
   }
   const ops = new THREE.InstancedMesh(quad, glassM, on);

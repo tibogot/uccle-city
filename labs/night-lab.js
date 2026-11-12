@@ -23,6 +23,7 @@ import { NightSources, CAR, nightParams } from "../viewer/nightLights/nightSourc
 import { createCones, coneLook } from "../viewer/nightLights/lightCones.js";
 import { buildStreet, wet, X, Z, WALK_Y } from "../viewer/nightLights/nightStreet.js";
 import { GroundLight } from "../viewer/nightLights/groundLight.js";
+import { createGlare, glareLook } from "../viewer/nightLights/glare.js";
 import { smooth01 } from "../viewer/nightLights/lightSelect.js";
 import { flickerTest, showHeat } from "./flickerTest.js";
 
@@ -68,6 +69,8 @@ for (let k = 0; k < K; k++) {
 }
 const cones = createCones(96);
 scene.add(cones.mesh);
+const glare = createGlare(256);
+scene.add(glare.mesh);
 // ?pools=heads:16,lamps:24 overrides the pool sizes (nightSources.js)
 const sizes = Object.fromEntries((qp.get("pools") || "").split(",").filter(Boolean).map((kv) => { const [k, v] = kv.split(":"); return [k, +v]; }));
 const night = new NightSources(pool, street, { cars: 128, shadowLights, cones, sizes, ground });
@@ -219,11 +222,33 @@ await lighting.attach(camera);
 const pipe = createPipeline(renderer, scene, camera);
 pipe.setExposureScale(lighting.exposureScale); pipe.look("night");
 const hazeHook = (rt, d, size) => lighting.hazeHook(rt, d, size);
-const P = { master: 1, wet: qp.get("wet") === "1", wetness: 1, puddles: 0.45, post: true, view: VIEW.mode, hour: lighting.hour, paused: false };
+// DEPTH PRE-PASS experiment (?prepass=1 or the panel): the opaque scene drawn depth-only first into the post chain's
+// scene target, then the real pass with depth test LessEqual and no clear: every pixel's lighting loop runs once (no
+// overdraw). Transparent things (cones, glare, the sky) skip the pre-pass. Shadow maps are drawn in the pre-pass only.
+const depthOnly = new THREE.MeshBasicNodeMaterial({ colorWrite: false });
+const renderOrig = renderer.render.bind(renderer);
+const prepassHidden = [];
+renderer.render = (s, c) => {
+  if (!(P.prepass && s === scene && renderer.getRenderTarget() === pipe.passTarget)) return renderOrig(s, c);
+  prepassHidden.length = 0;
+  for (const o of [cones.mesh, glare.mesh, lighting.sky?.mesh]) if (o?.visible) { o.visible = false; prepassHidden.push(o); }
+  s.overrideMaterial = depthOnly;
+  renderOrig(s, c);
+  s.overrideMaterial = null;
+  for (const o of prepassHidden) o.visible = true;
+  const ac = renderer.autoClear, shadowed = [lighting.sun, ...shadowLights];
+  for (const L of shadowed) L.shadow.autoUpdate = false;
+  renderer.autoClear = false;
+  renderOrig(s, c);
+  renderer.autoClear = ac;
+  for (const L of shadowed) L.shadow.autoUpdate = true;
+};
+const P = { prepass: qp.get("prepass") === "1", glare: true, master: 1, wet: qp.get("wet") === "1", wetness: 1, puddles: 0.45, post: true, view: VIEW.mode, hour: lighting.hour, paused: false };
 function applyWet() { wet.uWet.value = P.wet ? P.wetness : 0; wet.uPuddle.value = P.wet ? P.puddles : 0; }
 applyWet();
 
 let lastNight = 0;
+function glareLamp(g, l, k) { glare.write(g, l.hx, l.hy, l.hz, 0.9, 1.6 * k, 1.25 * k, 0.8 * k); return g + 1; }
 function updateLights(dt) {
   placeCars(); placeTram();
   const n = env.uNight.value;
@@ -233,6 +258,23 @@ function updateLights(dt) {
   const scale = P.master * smooth01((n - 0.15) / 0.5);
   night.update(camera.position, dt, scale, P.wet);
   nightLook.uWet.value = wet.uWet.value;
+  // far lights' glare cards (glare.js): every lamp head, car front / rear, the tram's front
+  {
+    let g = 0;
+    const L = street.sources.lamps.list, k = scale * (P.glare && pool.enabled ? 1 : 0), D = night.carData;
+    if (k > 0) {
+      for (let i = 0; i < L.length; i++) g = glareLamp(g, L[i], k);
+      for (let i = 0; i < night.carCount; i++) {
+        const o = i * CAR.STRIDE, f = D[o + CAR.FADE] * k;
+        if (f <= 0) continue;
+        glare.write(g++, D[o], D[o + 1], D[o + 2], 0.55, 1.6 * f, 1.55 * f, 1.45 * f, D[o + 3], D[o + 4], D[o + 5]);
+        glare.write(g++, D[o + 6] + D[o + 3] * 0.55, D[o + 7] + 0.15, D[o + 8] + D[o + 5] * 0.55, 0.32, 1.2 * f, 0.05 * f, 0.03 * f);
+      }
+      const T = night.tram;
+      if (T.on) glare.write(g++, T.hx, 1.15, T.hz, 0.7, 1.6 * k, 1.55 * k, 1.45 * k, T.fx, -0.03, T.fz);
+    }
+    glare.commit(g, camera, renderer.domElement.height);
+  }
   if (ground) {
     const on = pool.enabled ? 1 : 0, np = nightParams;
     ground.uA.value = scale * on * (np.lamps ? 1 : 0); ground.uB.value = scale * on * (np.windows || np.shops ? 1 : 0); ground.uDyn.value = on;
@@ -361,8 +403,11 @@ fs.add(P, "puddles", 0, 1, 0.01).onChange(applyWet);
 fs.add(P, "paused").name("pause traffic");
 fs.add({ f: () => { const L = tramModel ? tramModel.layout.length : 32; tramS.dir = 1; tramS.d = Math.min(TRACK - 1, Math.max(L + 1, camera.position.x + TRACK / 2 - 60 + L)); } }, "f").name("tram: pass now");
 fs.add(P, "post").name("post chain (AO SSR bloom)");
+fs.add(P, "prepass").name("depth pre-pass (test)");
 const fl = ui.addFolder("Lights");
 fl.add(P, "master", 0, 2, 0.01).name("all lights x");
+fl.add(P, "glare").name("far glare cards");
+fl.add(glareLook.uStrength, "value", 0, 4, 0.05).name("glare strength");
 for (const k of ["lamps", "windows", "shops", "signs", "headlights", "rear", "tram"]) fl.add(nightParams, k);
 fl.add(nightParams, "cones", ["on", "wet only", "off"]).name("beams (cones)");
 fl.add(nightParams, "lampI", 0, 400, 1).name("lamp cd").onChange(rebake);
