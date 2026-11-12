@@ -1,0 +1,12 @@
+{
+ "source": "UrbIS DTM 2021 (CC0), sheet 147164, 0.5 m, bilinear",
+ "x0": -1325,
+ "z0": 690,
+ "step": 0.5,
+ "cols": 401,
+ "rows": 401,
+ "base": 40.0,
+ "encoding": "u16le, centimetres above 40 m TAW, row-major (z rows, x columns)",
+ "min": 47.55,
+ "max": 58.9
+}
