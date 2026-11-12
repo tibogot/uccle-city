@@ -5,6 +5,37 @@
 Read this first when resuming (with Claude or by hand). Rendering and performance plan: `docs/RENDER_PLAN.md`; what we learned from slop-newyork, game-engine-v1 and three r187: `docs/RESEARCH.md`. Details are in `docs/PLAN.md`
 (roadmap and history) and `docs/CONTRACT.md` (data format, v0.7).
 
+## State on 2026-11-12: many systems built as labs, waiting for the owner's review
+
+`claude/foundation` (main, last pushed to Vercel at aa07f5f) has the town hall hero merged (`?townhall=1`). Almost
+everything else lives on its own branch / worktree (`.claude/worktrees/<name>`), lab first, NOT merged. The owner reviews
+each page separately; the list with every URL is at the top of `docs/TODO.md` ("OWNER REVIEW LIST"); the merge order,
+conflicts and dependencies are in **`docs/MERGE_PLAN.md`**. Review servers: `python %TEMP%/uccle_nocache_server.py
+<port> <worktree>` (they die on shutdown; ports 8801-8832).
+
+| system | branch | lab / doc | notes |
+|---|---|---|---|
+| Mesh checker (no z-fight, no bad shading) | stalle (copied into several) | `tools/mesh_audit/README.md`, `labs/flickerTest.js` | every hero 0 blocking before packing; city audit: `docs/CITY_MESH_AUDIT.md` |
+| Heroes | stalle, saint-pierre, observatory, vanbuuren, wolvendael (+ pond / park water `viewer/water/`), police (Rue Rouge 17), nekkersgat (= the Calevoet STATION), trains (+ verrewinkel bridge) | each `labs/<name>-lab.html`, `models/<name>/NOTES.md` | method: `docs/heroes/*_PREP.md`, photos -> poses -> counts -> Blender -> checker |
+| Roads v2 (measured markings, no invented zebras) | roads2 | `labs/road-lab.html`, `docs/ROADS_V2_RESEARCH.md`, `docs/roads/PHASE01.md` | phases 2-5 next; bridges / underpasses not built yet |
+| Traffic | traffic | `labs/traffic-lab.html`, `docs/TRAFFIC.md` | adapt to roads v2 when merging |
+| Impostor kit (trees, cars) | impostors | `labs/impostor-lab.html`, `docs/IMPOSTOR_KIT.md` | fixes the far-tree dots; trees switch after the tree-branch review |
+| Weather + seasons + winter + live Open-Meteo | weather | `labs/weather-lab.html`, `docs/WEATHER.md` | `viewer/weather/`, `viewer/seasons/season.js` (shared hooks) |
+| Foliage (grass, hedges, plants, ivy) | foliage | `labs/foliage-lab.html`, `docs/FOLIAGE.md` | placement API from land cover + ortho |
+| Pedestrians | pedestrians | `labs/pedestrian-lab.html`, `docs/PEDESTRIANS.md` | Mr.doob's people (MIT) + bone tables + variety |
+| Sound (all synthesised) | sound | `labs/sound-lab.html`, `docs/SOUND.md` | WAV renders for listening in `docs/sound/renders/` |
+| Night lights (clustered + ground light map) | nightlights (on smallfixes) | `labs/night-lab.html`, `docs/NIGHT_LIGHTS.md` | the night-brightness fix is on `smallfixes` |
+| Street life (shops, plates, stops, numbers) | streetlife | `labs/streetlife-lab.html`, `docs/STREETLIFE.md` | data licences to confirm before public |
+| Minimap + full map | minimap | `labs/map-lab.html`, `docs/MAP.md` | `?map=1` |
+| Flags (Verlet + baked loops) | flags | `labs/flag-lab.html`, `docs/FLAGS.md` | town hall poles `?flags=1` |
+| Sauvagère park (rock cliff, playground kit) | sauvagere | `labs/park-kit-lab.html` | PAUSED: owner photos |
+| Research | in main | `docs/SLOP_NEWYORK_AUDIT.md`, `docs/PEDESTRIANS_RESEARCH.md`, `docs/IMPOSTORS_RESEARCH.md`, `docs/MARKET.md` (refreshed) | |
+
+Open questions to settle: an InstancedMesh seemed to add a fixed ~0.8 ms on an idle GPU in r187 (Street Life round 2):
+measure on a quiet machine before merging instanced layers. Owner's standing rules for agents: max 2 heavy agents (3
+allowed when worth it), one short-lived Chrome tab each, check three.js + Mr.doob's slop-newyork first for rendering,
+LOOK-only use of Google imagery, never merge or push without the owner's OK.
+
 ## Drive mode (branch claude/drive)
 
 "Drive" button / `?view=drive`. W/S throttle-brake-reverse, A/D steer, Space handbrake, R reset, C camera
@@ -20,6 +51,15 @@ The car: one loader, `viewer/drive/carModel.js loadCarModel(spec)` (`scripted` =
 `quaternius:<id>` = CC0 packs via `viewer/drive/carPacks.js`); `?car=<spec>` or `__driver.setCar(spec)`; `fitBody`
 sizes the physics box to the model. Packs: `node tools/cars/convertPacks.mjs` (raw packs in data/raw/cars/, see CREDITS).
 
+## The Saint-Job falcons (branch claude/falcons)
+
+A peregrine family at the church, on by default (`?falcons=0` = none): the eyrie behind the falcons' louvred arch
+(`tools/blender/falconNest.py` -> `models/falcons/nest.glb`), three eyases, the female and the tiercel with behaviour
+state machines (perches from the church's `perch_*` nodes, thermals, stoops, the aerial food pass, feeding), all on the
+fly-mode rig (`viewer/falcons.js`, baked Perch / Sit poses). Fly mode now starts at the nest (the young falcon's first
+flight; `?flystart=spire` = the old start, `?birdskin=adult` = the old plumage). Lab `labs/falcon-lab.html`; method,
+cost (GPU within noise, ~0.1-0.17 ms CPU), reference comparisons and weak points: `docs/FALCONS.md`.
+
 ## Interiors (branch claude/interior, pilot)
 
 The first interior cell: a terraced house near Place de Saint-Job (UrbIS 1786120). Lab `labs/interior-lab.html`, city
@@ -34,6 +74,12 @@ status and re-run commands: `docs/interior/STATUS.md`.
   If you must, log it in that folder's `CHANGES.md` with the reason.
 - Never substitute mocked or made-up data: if a dataset can't be fetched, say so.
 - Work on branch `claude/foundation`.
+- Asset quality (Blender AND procedural JS), owner's rules: no z-fighting (no coplanar or near-coincident
+  overlapping faces, sealed gaps, no light leaks) and no bad shading from topology / normals (no triangle fans
+  around circles and openings, no streaks across flat walls, no faceted round parts): flat faces keep flat
+  normals, support loops round openings, quality triangulation without slivers, enough segments + area-weighted
+  normals on round parts, no shared vertices across hard edges. Check with the mesh checker (`tools/mesh_audit/`,
+  on `claude/stalle` until merged) and grazing-light close-ups before claiming; no hero merges without a clean run.
 
 ## Smooth LOD
 

@@ -1,5 +1,51 @@
 # Uccle 3D: can it make money? (market research)
 
+## Refresh, 12 November 2026: what the city can do now, and what that changes
+
+No new web research in this refresh (the 4 November findings below still stand); this section maps what was built since
+to the routes, and sets priorities. Everything listed exists at least as a lab; most is not merged or public yet.
+
+**New capabilities since 4 November** (branch in brackets):
+- Hero landmarks matched to photos, window by window: town hall (merged), Saint-Job, Chapelle de Stalle with a walkable
+  interior, Saint-Pierre, the Royal Observatory, Villa van Buuren, Château de Wolvendael with its pond, three railway
+  bridges (`claude/stalle`, `claude/saint-pierre`, `claude/observatory`, `claude/vanbuuren`, `claude/wolvendael`,
+  `claude/trains`, `claude/verrewinkel`).
+- Measured roads with real crossings and markings from the Brussels survey (`claude/roads2`), moving traffic with signals
+  (`claude/traffic`), tram 92 and SNCB trains on the real timetables (`claude/tram2`, `claude/trains`).
+- Weather and seasons: rain, wet streets, fog, snow with real depth, icicles, salted roads, autumn / winter / spring,
+  the real sun for any date, and **live weather from Open-Meteo** (`claude/weather`).
+- Gardens and parks: grass, hedges, plants, ivy (`claude/foliage`); pedestrians with children, prams, dogs, benches
+  (`claude/pedestrians`); city sound generated in code (`claude/sound`); far forests to 1.5 km at ~1 ms
+  (`claude/impostors`); a minimap with search and teleport (`claude/minimap`); flags (`claude/flags`).
+- All at real-time frame rates in a browser, measured on this machine.
+
+**What changes per route:**
+
+| Route | Before | Now | Why |
+|---|---|---|---|
+| A. Sun / shadow study + project in context (architects) | best route 1 | **still first**, stronger | The real sun for any date already works; weather and seasons make the before/after more convincing (a winter-solstice view with bare trees is exactly the "you take my sun" argument). Still missing: importing a project volume and the one-page report. |
+| B. Participation pages for communes | best route 2 | **stronger** | Heroes like the town hall and Wolvendael, real crossings and traffic, pedestrians and sound make "see the project in your street" feel real. A square redesign or a tram stop is now showable with life in it. |
+| C. Showcase for freelance WebGL work | do anyway | **now very strong** | Winter Uccle, a rainy night street, the château reflected in its pond: each is a 30-second clip that sells your skills. Fastest money. |
+| D. Tourism / brands / events | rare | **better** | Seasonal versions (Christmas in winter Uccle, a spring garden day) and live weather fit city marketing and events. Still sales-heavy. |
+| E. Sun hours for real estate | weak | unchanged | Same problem: needs volume and a channel. |
+| **F. NEW: a game set in real Uccle** | — | **worth testing small** | A police game around the Rue Rouge station, a falcon game at Saint-Job, a tram-driver or delivery game on real streets. Free web game first (showcase + audience), paid extras later. Risky as income; strong as marketing. |
+
+**Priorities (suggested):**
+1. **Showcase first (Route C, this month):** merge the best labs into the city, then record 4-5 short clips: winter
+   Uccle with snow and icicles, a rainy night street, Wolvendael at sunset, the town hall with its flags, tram 92 at
+   Saint-Job. Put them on a public page and LinkedIn / Instagram / ArtStation. Costs nothing, brings freelance work.
+2. **Route A demo (next):** project-volume import + the sun-study report for one real Uccle permit, as already planned
+   below (step 1). Show it to 5-10 architects.
+3. **Route B pitch:** a "your square, redesigned, with life in it" page for Uccle (Place de Saint-Job or the town hall
+   square), sent to Uccle's urbanism department.
+4. **Game (Route F):** only a small prototype after the city is merged and clean.
+
+**Before anything public:** licences (OSM credit visible; the SNCB GTFS re-use agreement; STIB licence read; Megascans
+not used on the live site; Mixamo clips not shipped; Open-Meteo attribution), and the Vercel push only on the owner's
+word.
+
+---
+
 Research date: 4 November 2026. Web research only. When I could not verify something, it says **unverified** or **estimate**. Prices are what I found, not quotes.
 
 ---

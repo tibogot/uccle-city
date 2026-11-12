@@ -128,3 +128,18 @@ three.js's example Soldier.glb (Mixamo, not shippable; it was only loaded by URL
 | esbuild 0.25 | MIT | `tools/build_worker.mjs` bundles the tile worker (`viewer/tileWorker.bundle.js`) |
 | three.js earcut (inside the worker bundle) | ISC / MIT | road polygon triangulation (via vendor/roads) |
 
+## Falcon reference photos (docs/falcons/compare_*.jpg only, never shipped with the viewer)
+
+The realism checks of the Saint-Job falcons (docs/FALCONS.md) put these Wikimedia Commons photos beside our renders,
+credited in each image. The originals stay in `data/raw/refs/falcons/` (git-ignored; SOURCES.json has the page URLs).
+
+| File (Wikimedia Commons) | Author | Licence |
+|---|---|---|
+| Peregrine falcon chicks on Derby Cathedral 2018.jpg | Nick Moyes | CC BY-SA 4.0 |
+| Wanderfalkenjunge Allenberg.jpg | Martin Lindner | CC BY-SA 4.0 |
+| Peregrine Falcon, Town Hall, Leeds - geograph.org.uk - 4878908.jpg | Mark Stevenson | CC BY-SA 2.0 |
+| Les tours de la Cathédrale St-Michel (2008).jpg | Eric PROCES | CC BY-SA 4.0 |
+| Falco peregrinus St John's Church Bath 5.jpg | Stewart Black | CC BY 2.0 |
+| Falco peregrinus -England -flying-8.jpg | Steve Childs | CC BY 2.0 |
+| Faucon pelerin ND reims 1530624.jpg | G.Garitan | CC BY-SA 4.0 |
+

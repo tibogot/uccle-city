@@ -214,8 +214,8 @@ def beam(p0, p1, up, hw, h0, h1, mat, sub=0, band=0, ends=True):
 # ------------------------------------------------------------------------------------------------ openings
 class Arch:
     """A round-arched opening: stone surround (proud), reveal, glass / louvres / door at the back, stone sill."""
-    def __init__(self, uc, sill, top, w, depth=0.32, sur=0.2, kind="glass", proud=0.05, seg=8, ledge=True):
-        self.__dict__.update(uc=uc, sill=sill, top=top, w=w, depth=depth, sur=sur, kind=kind, proud=proud, seg=seg, ledge=ledge)
+    def __init__(self, uc, sill, top, w, depth=0.32, sur=0.2, kind="glass", proud=0.05, seg=8, ledge=True, gap=0.0):
+        self.__dict__.update(uc=uc, sill=sill, top=top, w=w, depth=depth, sur=sur, kind=kind, proud=proud, seg=seg, ledge=ledge, gap=gap)
     def contour(self, r, bottom):
         uc, sp = self.uc, self.top - self.w / 2
         pts = [(uc - r, bottom), (uc + r, bottom)]
@@ -255,6 +255,7 @@ def louvres(fr, op):
     wb = -op.depth + 0.12
     y = op.sill + 0.12
     while y < sp + op.w * 0.35:
+        if y < op.sill + op.gap: y += 0.27; continue      # the falcons' way in: the lowest boards taken out (nest arch)
         half = math.sqrt(max(0.0, (op.w / 2) ** 2 - max(0.0, y + 0.2 - sp) ** 2)) if y + 0.2 > sp else op.w / 2
         a, b = max(x0, op.uc - half + 0.02), min(x1, op.uc + half - 0.02)
         if b - a > 0.1:
@@ -265,6 +266,8 @@ def louvres(fr, op):
             t = Z * -0.025
             quad(p1 + t, p0 + t, q0 + t, q1 + t, MASONRY, WOOD)
             quad(p0 + t, p1 + t, p1, p0, MASONRY, WOOD)
+            if op.gap > 0:                                # the falcons' arch is open behind: the boards seen from inside too
+                quad(q0, q1, p1, p0, MASONRY, WOOD); quad(q1 + t, q0 + t, p0 + t, p1 + t, MASONRY, WOOD)
         y += 0.27
 
 class Rose:
@@ -692,6 +695,8 @@ def lantern():
     p = Z * (CUPOLA_TOP + 0.45)
     apex_cross(p, 1.25, METAL, IRON)
 
+PERCH = {}
+
 def tower():
     """The tower [M square 9.07 m on the NW diagonal, walls to 104.80 m, spire tip 130.25 m, weathercock 135.45 m],
     levels from the photos: slit windows, a triple window, the belfry (three louvred arches per face), corbel cornice,
@@ -707,7 +712,9 @@ def tower():
         if j != 2:
             ops.append(Arch(0, 11.8, 13.6, 0.45, sur=0.13, seg=6))
         ops += [Arch(x, 17.1, 19.25, 0.56, sur=0.14, seg=6) for x in (-0.9, 0, 0.9)]
-        ops += [Arch(x, 21.45, 26.35, 1.04, sur=0.19, kind="louvre", depth=0.62, seg=8) for x in (-1.5, 0, 1.5)]
+        # the falcons' arch (outer face, right-hand): its three lowest louvre boards are out, as at nest sites where a
+        # board or two is removed for the birds; 0.93 m clear above the sill
+        ops += [Arch(x, 21.45, 26.35, 1.04, sur=0.19, kind="louvre", depth=0.62, seg=8, gap=0.85 if (j == 0 and x == 1.5) else 0.0) for x in (-1.5, 0, 1.5)]
         wall(fr, [(-h, GROUND), (h, GROUND), (h, T_TOP), (-h, T_TOP)], ops)
         # string courses and the top cornice (stone), plinth ledge
         for z0, z1, pr in ((PLINTH - 0.18, PLINTH, 0.1), (16.5, 16.75, 0.14), (20.75, 21.05, 0.22), (27.35, 27.55, 0.1)):
@@ -738,11 +745,17 @@ def tower():
             face_up([r0_, e0, e1, r1_], ROOF, SLATE)
         if j == 0:
             nest = fr.p(1.5, 20.95, -1.05)                   # on the chamber floor behind the right-hand belfry arch, outer face
+            # falcon perches (viewer/falcons.js): position + the way the bird faces
+            PERCH["perch_ledge"] = (fr.p(1.5, 21.45, -0.1), n)          # the nest arch's reveal floor, in the gap
+            PERCH["perch_louvre"] = (fr.p(0.0, 21.45, -0.14), n)        # the middle arch's reveal, in front of the boards
+            PERCH["perch_gable"] = (fr.p(0.0, T_TOP + 4.6 + 0.6, 0.0), n)   # on top of the stone cross of the NW clock gable
     # belfry chamber (dark, seen through the louvres), its floor = the nest ledge
     hi = h - 0.62
     for j, n in enumerate(faces if not FAR else []):
         fr = Frame(Tc + n * hi, n)
-        fill2d(fr, [[(-hi, 20.9), (hi, 20.9), (hi, 28.2), (-hi, 28.2)]], 0.0, MASONRY, DARK, flip=True)
+        # the falcons' arch (outer face, right) is open right through: the eyrie looks out (and fly mode starts there)
+        holes = [Arch(1.5, 21.45, 26.35, 1.04, seg=8).inner()] if j == 0 else []
+        fill2d(fr, [[(-hi, 20.9), (hi, 20.9), (hi, 28.2), (-hi, 28.2)]] + holes, 0.0, MASONRY, DARK, flip=True)
     if not FAR: face_up([Tc + u * hi + v * hi + Z * 20.9, Tc + u * hi - v * hi + Z * 20.9, Tc - u * hi - v * hi + Z * 20.9, Tc - u * hi + v * hi + Z * 20.9], MASONRY, DARK)
     # corner pinnacles
     for su in (-1, 1):
@@ -788,6 +801,7 @@ def tower():
     box(tip, v, Z, u, -0.55, 0.55, 2.9, 3.0, -0.04, 0.04, METAL, IRON)
     box(tip, v, Z, u, -0.04, 0.04, 2.9, 3.0, -0.55, 0.55, METAL, IRON)
     if not FAR: cock(tip + Z * (CROSS_TOP - SPIRE_TIP - 0.8), u)
+    PERCH["perch_cross"] = (tip + Z * 3.0 + v * 0.34, u)               # on the iron cross's arm (along v), facing out (NW)
     return Tc, nest
 
 def cock(base, facing):
@@ -1020,8 +1034,13 @@ for m in mats:                                     # drop the bake node so the G
 nest_e = bpy.data.objects.new("nest", None); nest_e.location = nest; scn.collection.objects.link(nest_e)
 nest_e.empty_display_type = "SPHERE"; nest_e.empty_display_size = 0.4
 tip_e = bpy.data.objects.new("spire_tip", None); tip_e.location = Tc + Z * SPIRE_TIP; scn.collection.objects.link(tip_e)
+perch_e = []
+for name, (loc, face) in PERCH.items():                # local +Y (Blender) = the way the bird faces -> three.js local -Z
+    e = bpy.data.objects.new(name, None); e.location = loc; scn.collection.objects.link(e)
+    e.rotation_mode = "QUATERNION"; e.rotation_quaternion = Vector(face).normalized().to_track_quat("Y", "Z")
+    e.empty_display_type = "SINGLE_ARROW"; e.empty_display_size = 0.3; perch_e.append(e)
 for o in scn.objects: o.select_set(False)
-for o in (obj, far, nest_e, tip_e): o.select_set(True)
+for o in (obj, far, nest_e, tip_e, *perch_e): o.select_set(True)
 bpy.context.view_layer.objects.active = obj
 glb = os.path.join(OUT, "stjob.glb")
 bpy.ops.export_scene.gltf(filepath=glb, export_format="GLB", use_selection=True, export_yup=True, export_apply=True,
@@ -1055,6 +1074,7 @@ info = {
     "estimated": {"floor_taw": FLOOR, "plinth_top_above_floor": PLINTH,
                   "from_photos": "window / rose / belfry / clock positions and sizes, band spacing, steps, dormers, lantern piers, railing"},
     "nest": [round(nest.x, 2), round(nest.z, 2), round(-nest.y, 2)],
+    "perches": {k: {"pos": [round(p.x, 3), round(p.z, 3), round(-p.y, 3)], "facing": [round(f.x, 3), round(f.z, 3), round(-f.y, 3)]} for k, (p, f) in PERCH.items()},
 }
 json.dump(info, open(os.path.join(OUT, "stjob.json"), "w"), indent=1)
 
