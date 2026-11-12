@@ -5855,8 +5855,9 @@ function placePits(trees, classAt, nearKerb, surf, bounds) {
       tz = k.tz;
     }
     const fits = (cx, cz) => {
+      const m = o + 0.25;
       for (const a of [-1, -0.5, 0, 0.5, 1]) for (const b of [-1, -0.5, 0, 0.5, 1]) {
-        const x = cx + (tx * a - tz * b) * o, z = cz + (tz * a + tx * b) * o;
+        const x = cx + (tx * a - tz * b) * m, z = cz + (tz * a + tx * b) * m;
         if (classAt(x, z) !== host) return false;
       }
       return true;
@@ -6862,7 +6863,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       }
       const w3 = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
       const up = lift ? liftOf(vs[0]) - LIFT : 0;
-      const idx = vs.map((v, q) => A.vert(EP[v * 3], EP[v * 3 + 1] + up, EP[v * 3 + 2], [E.normal[v * 3], E.normal[v * 3 + 1], E.normal[v * 3 + 2]], E.uv[v * 2], E.uv[v * 2 + 1], exOf(vs, w3[q])));
+      const idx = vs.map((v, q) => A.vert(EP[v * 3], EP[v * 3 + 1] + up, EP[v * 3 + 2], nrmAt(EP[v * 3], EP[v * 3 + 2]), E.uv[v * 2], E.uv[v * 2 + 1], exOf(vs, w3[q])));
       A.idxFirst.push(idx[0], idx[1], idx[2]);
       for (const v of vs) keptEngine.push(EP[v * 3], EP[v * 3 + 1], EP[v * 3 + 2]);
       keptTris++;
@@ -8045,6 +8046,41 @@ function refineLaneGraph(net, prep, inventory) {
     for (let d = 0.1; d < 15; d += 0.1) if (!CARRIAGE3.has(cls(x + dx * d, z + dz * d))) return d;
     return null;
   };
+  const CLEAR = 1.4;
+  const clearAt = (x, z, nx, nz) => {
+    if (!CARRIAGE3.has(cls(x, z))) return -1;
+    const a = ray(x, z, nx, nz) ?? 15, b = ray(x, z, -nx, -nz) ?? 15;
+    return Math.min(a, b, CLEAR + 0.01) >= CLEAR ? CLEAR : Math.min(a, b) >= (a + b) / 2 - 0.15 ? CLEAR : Math.min(a, b);
+  };
+  const keepOnCarriage = (P, stt) => {
+    if (P.length < 3) return P;
+    const mv = P.map((q, k) => {
+      const o = P[Math.max(0, k - 1)], n2 = P[Math.min(P.length - 1, k + 1)], tx = n2[0] - o[0], tz = n2[1] - o[1], tl = Math.hypot(tx, tz) || 1, nx = -tz / tl, nz = tx / tl;
+      if (clearAt(q[0], q[1], nx, nz) >= CLEAR) return null;
+      for (let d = 0.2; d <= 8; d += 0.2) for (const sg of [1, -1]) {
+        const x = q[0] + nx * d * sg, z = q[1] + nz * d * sg;
+        if (clearAt(x, z, nx, nz) >= CLEAR) return [nx * d * sg, nz * d * sg];
+      }
+      return null;
+    });
+    if (!mv.some(Boolean)) return P;
+    stt.keptOn = (stt.keptOn || 0) + 1;
+    const M = mv.map((_, k) => {
+      let bx = 0, bz = 0, bw = 0;
+      for (let j = Math.max(0, k - 6); j <= Math.min(mv.length - 1, k + 6); j++) {
+        if (!mv[j]) continue;
+        const w = 1 - Math.abs(j - k) / 7;
+        const L2 = Math.hypot(mv[j][0], mv[j][1]) * w;
+        if (L2 > bw) {
+          bw = L2;
+          bx = mv[j][0] * w;
+          bz = mv[j][1] * w;
+        }
+      }
+      return [bx, bz];
+    });
+    return P.map((q, k) => [q[0] + M[k][0], q[1] + M[k][1]]);
+  };
   const endMove = /* @__PURE__ */ new Map();
   const lanes = net.graph.paths.filter((p) => p.kind === "lane"), others = net.graph.paths.filter((p) => p.kind !== "lane");
   for (const p of lanes) {
@@ -8088,6 +8124,7 @@ function refineLaneGraph(net, prep, inventory) {
       }
     }
     P = unloop(P, st);
+    if (prep) P = keepOnCarriage(P, st);
     P = smooth(P, 3);
     endMove.set(p.id, { a: [P[0][0] - a0[0], P[0][1] - a0[1]], b: [P[P.length - 1][0] - b0[0], P[P.length - 1][1] - b0[1]] });
     p.pts = P;
@@ -8133,7 +8170,7 @@ function refineLaneGraph(net, prep, inventory) {
         P = smooth(P, 4);
         st.pulledIn = (st.pulledIn || 0) + 1;
         P = resample(P, 0.5);
-        const maxTurn = (Q) => {
+        const maxTurn2 = (Q) => {
           let m = 0;
           for (let k = 1; k + 1 < Q.length; k++) {
             const h0 = Math.atan2(Q[k][1] - Q[k - 1][1], Q[k][0] - Q[k - 1][0]), h1 = Math.atan2(Q[k + 1][1] - Q[k][1], Q[k + 1][0] - Q[k][0]);
@@ -8141,12 +8178,39 @@ function refineLaneGraph(net, prep, inventory) {
           }
           return m * 180 / Math.PI;
         };
-        for (let r = 0; r < 40 && maxTurn(P) > 14; r++) P = smooth(P, 1);
+        for (let r = 0; r < 40 && maxTurn2(P) > 14; r++) P = smooth(P, 1);
       }
+    }
+    if (prep && P.length >= 5) {
+      const inner = keepOnCarriage(P, st);
+      P = P.map((q, k) => {
+        const f = Math.min(1, Math.min(k, P.length - 1 - k) / 3);
+        return [q[0] + (inner[k][0] - q[0]) * f, q[1] + (inner[k][1] - q[1]) * f];
+      });
+      P = smooth(P, 2);
     }
     p.pts = P;
     p.cum = cumulative2(P);
     p.len = p.cum[p.cum.length - 1];
+  }
+  const maxTurn = (Q) => {
+    let m = 0;
+    for (let k = 1; k + 1 < Q.length; k++) {
+      const a = Q[k - 1], b = Q[k], c = Q[k + 1];
+      const h0 = Math.atan2(b[1] - a[1], b[0] - a[0]), h1 = Math.atan2(c[1] - b[1], c[0] - b[0]), l = (Math.hypot(b[0] - a[0], b[1] - a[1]) + Math.hypot(c[0] - b[0], c[1] - b[1])) / 2 || 1;
+      m = Math.max(m, Math.abs(Math.atan2(Math.sin(h1 - h0), Math.cos(h1 - h0))) / l);
+    }
+    return m * 180 / Math.PI;
+  };
+  for (const p of net.graph.paths) {
+    if (p.turn === "uturn" || p.pts.length < 4) continue;
+    const L0 = p.len;
+    let P = resample(p.pts.map(XY), 0.5);
+    for (let r = 0; r < 60 && maxTurn(P) > 14; r++) P = smooth(P, 1);
+    p.pts = P;
+    p.cum = cumulative2(P);
+    p.len = p.cum[p.cum.length - 1];
+    if (p.stop && L0 > 0 && !p.stop.line) p.stop.at = Math.max(0, p.stop.at * (p.len / L0));
   }
   if (inventory?.stops?.length) {
     const ends = /* @__PURE__ */ new Map();

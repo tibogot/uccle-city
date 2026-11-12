@@ -83,6 +83,28 @@ export function refineLaneGraph(net, prep, inventory) {
     return { oneWay: other === 0 };
   };
   const ray = (x, z, dx, dz) => { for (let d = 0.1; d < 15; d += 0.1) if (!CARRIAGE.has(cls(x + dx * d, z + dz * d))) return d; return null; };
+  // round 3: a path point off the measured carriageway, or closer than CLEAR to its kerb, moves across the path to the
+  // nearest place with CLEAR on both sides (or the middle of a carriageway narrower than 2 x CLEAR); the moves get a
+  // tent envelope over +-6 points and the path is smoothed after, so it bends instead of denting. A lane whose engine
+  // centreline left the measured street (J1's south-west arm) comes back onto it this way
+  const CLEAR = 1.4;
+  const clearAt = (x, z, nx, nz) => { if (!CARRIAGE.has(cls(x, z))) return -1; const a = ray(x, z, nx, nz) ?? 15, b = ray(x, z, -nx, -nz) ?? 15; return Math.min(a, b, CLEAR + 0.01) >= CLEAR ? CLEAR : Math.min(a, b) >= (a + b) / 2 - 0.15 ? CLEAR : Math.min(a, b); };
+  const keepOnCarriage = (P, stt) => {
+    if (P.length < 3) return P;
+    const mv = P.map((q, k) => {
+      const o = P[Math.max(0, k - 1)], n2 = P[Math.min(P.length - 1, k + 1)], tx = n2[0] - o[0], tz = n2[1] - o[1], tl = Math.hypot(tx, tz) || 1, nx = -tz / tl, nz = tx / tl;
+      if (clearAt(q[0], q[1], nx, nz) >= CLEAR) return null;
+      for (let d = 0.2; d <= 8; d += 0.2) for (const sg of [1, -1]) {
+        const x = q[0] + nx * d * sg, z = q[1] + nz * d * sg;
+        if (clearAt(x, z, nx, nz) >= CLEAR) return [nx * d * sg, nz * d * sg];
+      }
+      return null;
+    });
+    if (!mv.some(Boolean)) return P;
+    stt.keptOn = (stt.keptOn || 0) + 1;
+    const M = mv.map((_, k) => { let bx = 0, bz = 0, bw = 0; for (let j = Math.max(0, k - 6); j <= Math.min(mv.length - 1, k + 6); j++) { if (!mv[j]) continue; const w = 1 - Math.abs(j - k) / 7; const L = Math.hypot(mv[j][0], mv[j][1]) * w; if (L > bw) { bw = L; bx = mv[j][0] * w; bz = mv[j][1] * w; } } return [bx, bz]; });
+    return P.map((q, k) => [q[0] + M[k][0], q[1] + M[k][1]]);
+  };
   const endMove = new Map();       // path id -> { a: [dx, dz] at its start, b: at its end }
   // ---- lanes first (loops, centring, smoothing), then connectors (loops, following their lanes' end moves)
   const lanes = net.graph.paths.filter((p) => p.kind === "lane"), others = net.graph.paths.filter((p) => p.kind !== "lane");
@@ -122,6 +144,7 @@ export function refineLaneGraph(net, prep, inventory) {
       }
     }
     P = unloop(P, st);
+    if (prep) P = keepOnCarriage(P, st);
     P = smooth(P, 3);
     endMove.set(p.id, { a: [P[0][0] - a0[0], P[0][1] - a0[1]], b: [P[P.length - 1][0] - b0[0], P[P.length - 1][1] - b0[1]] });
     p.pts = P;
@@ -162,8 +185,24 @@ export function refineLaneGraph(net, prep, inventory) {
         for (let r = 0; r < 40 && maxTurn(P) > 14; r++) P = smooth(P, 1);
       }
     }
+    if (prep && P.length >= 5) {
+      // ends stay joined to their lanes: only the inner points are kept on the carriageway
+      const inner = keepOnCarriage(P, st);
+      P = P.map((q, k) => { const f = Math.min(1, Math.min(k, P.length - 1 - k) / 3); return [q[0] + (inner[k][0] - q[0]) * f, q[1] + (inner[k][1] - q[1]) * f]; });
+      P = smooth(P, 2);
+    }
     p.pts = P;
     p.cum = cumulative(P); p.len = p.cum[p.cum.length - 1];
+  }
+  // ---- round 3: every path ends with no turn tighter than a car drives (R >= 4 m, 14°/m; U-turns excepted), ends fixed
+  const maxTurn = (Q) => { let m = 0; for (let k = 1; k + 1 < Q.length; k++) { const a = Q[k - 1], b = Q[k], c = Q[k + 1]; const h0 = Math.atan2(b[1] - a[1], b[0] - a[0]), h1 = Math.atan2(c[1] - b[1], c[0] - b[0]), l = (Math.hypot(b[0] - a[0], b[1] - a[1]) + Math.hypot(c[0] - b[0], c[1] - b[1])) / 2 || 1; m = Math.max(m, Math.abs(Math.atan2(Math.sin(h1 - h0), Math.cos(h1 - h0))) / l); } return (m * 180) / Math.PI; };
+  for (const p of net.graph.paths) {
+    if (p.turn === "uturn" || p.pts.length < 4) continue;
+    const L0 = p.len;
+    let P = resample(p.pts.map(XY), 0.5);
+    for (let r = 0; r < 60 && maxTurn(P) > 14; r++) P = smooth(P, 1);
+    p.pts = P; p.cum = cumulative(P); p.len = p.cum[p.cum.length - 1];
+    if (p.stop && L0 > 0 && !p.stop.line) p.stop.at = Math.max(0, p.stop.at * (p.len / L0));
   }
   // ---- hold points at the painted lines
   if (inventory?.stops?.length) {

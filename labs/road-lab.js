@@ -363,6 +363,32 @@ window.lab = {
     await fetch(`${sink}?path=${encodeURIComponent(name)}`, { method: "POST", body: blob });
     return { name, labels: r.labels.length, speed: `${(L / seconds).toFixed(1)} m/s` };
   },
+  /** a moving strip along the lane graph through the junction (round 3: the drive starts and stays on a lane): the
+   *  connector nearest the junction centre with its previous and next lanes, `len` m of it centred on the junction */
+  async stripLane(name, { len = 90, seconds = 4, h = 1.2, look = 20, sink = "http://127.0.0.1:8817/save", title = name } = {}) {
+    const { jn, tiles } = cur, t0 = tiles.find((t) => jn.x >= t.b.x0 && jn.x < t.b.x1 && jn.z >= t.b.z0 && jn.z < t.b.z1) || tiles[0];
+    const g = t0.rd.net.graph, XY = (q) => [q[0] ?? q.x, q[1] ?? q.z];
+    let best = null;
+    for (const p of g.paths) {
+      if (p.kind !== "connector" || p.turn !== "straight" || !p.prev?.length || !p.next?.length) continue;
+      const m = XY(p.pts[p.pts.length >> 1]), d = Math.hypot(m[0] - jn.x, m[1] - jn.z);
+      if (!best || d < best.d) best = { p, d };
+    }
+    if (!best) return { name, error: "no straight connector" };
+    const prev = g.byId.get(best.p.prev[0]), next = g.byId.get(best.p.next[0]);
+    const pts = [...prev.pts.map(XY), ...best.p.pts.map(XY), ...next.pts.map(XY)];
+    const cum = [0]; for (let k = 1; k < pts.length; k++) cum.push(cum[k - 1] + Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]));
+    const mid = cum[prev.pts.length + (best.p.pts.length >> 1)], s0 = Math.max(0, mid - len / 2), s1 = Math.min(cum[cum.length - 1], mid + len / 2);
+    const at = (s) => { let k = 1; while (k < cum.length - 1 && cum[k] < s) k++; const f = (s - cum[k - 1]) / Math.max(1e-9, cum[k] - cum[k - 1]); return [pts[k - 1][0] + (pts[k][0] - pts[k - 1][0]) * f, pts[k - 1][1] + (pts[k][1] - pts[k - 1][1]) * f]; };
+    camera.up.set(0, 1, 0);
+    const r = await frameStrip({ renderFrame: () => { controls.update(); lighting.update?.(camera.position.y, cur?.y ?? 0, controls.target, 120); renderer.render(scene, camera); },
+      canvas: renderer.domElement, camera, controls, seconds, fps: 60, shots: 8, cols: 4, cellW: 480, title,
+      path: (t) => { const s = s0 + (s1 - s0) * t, [x, z] = at(s), [tx, tz] = at(Math.min(s1 + look, s + look)); return { pos: [x, this.y(x, z) + h, z], target: [tx, this.y(tx, tz) + h * 0.7, tz] }; },
+      label: (t) => `${((s1 - s0) * t).toFixed(0)} m` });
+    const blob = await fetch(r.url).then((q) => q.blob());
+    await fetch(`${sink}?path=${encodeURIComponent(name)}`, { method: "POST", body: blob });
+    return { name, speed: `${((s1 - s0) / seconds).toFixed(1)} m/s`, from: best.p.id };
+  },
   /** the flicker test (labs/flickerTest.js) from the current camera: blinking pixels while it moves very slowly */
   async flicker(name, { frames = 24, move = "strafe", step = 0.002, sink = "http://127.0.0.1:8817/save" } = {}) {
     const r = await flickerTest({ renderFrame: () => renderer.render(scene, camera), canvas: renderer.domElement, camera, controls, frames, move, step });

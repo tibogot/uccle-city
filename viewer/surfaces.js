@@ -239,8 +239,10 @@ function placePits(trees, classAt, nearKerb, surf, bounds) {
       if (sq) { tx = Math.cos(sq.course * Math.PI / 180); tz = Math.sin(sq.course * Math.PI / 180); }
     } else if (k) { tx = k.tx; tz = k.tz; }
     const fits = (cx, cz) => {
+      // (round 3: 25 cm clear of the paving's edge all round: a pit on a kerb corner poked its slab over the kerb)
+      const m = o + 0.25;
       for (const a of [-1, -0.5, 0, 0.5, 1]) for (const b of [-1, -0.5, 0, 0.5, 1]) {
-        const x = cx + (tx * a - tz * b) * o, z = cz + (tz * a + tx * b) * o;
+        const x = cx + (tx * a - tz * b) * m, z = cz + (tz * a + tx * b) * m;
         if (classAt(x, z) !== host) return false;
       }
       return true;
@@ -1139,7 +1141,9 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
       if (!inTile(cx, cz) || probe.some(([x, z]) => baseAt(x, z)) || onBuilding(cx, cz)) { droppedTris++; continue; }
       const w3 = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
       const up = lift ? liftOf(vs[0]) - LIFT : 0;     // unmapped engine road: as built, + its tier where it overlaps
-      const idx = vs.map((v, q) => A.vert(EP[v * 3], EP[v * 3 + 1] + up, EP[v * 3 + 2], [E.normal[v * 3], E.normal[v * 3 + 1], E.normal[v * 3 + 2]], E.uv[v * 2], E.uv[v * 2 + 1], exOf(vs, w3[q])));
+      // (round 3: shading normals from the one smooth height field, not the engine's: its junction pads and road
+      // strips carried different normals at the same position, 7,831 shading seams on the roads UrbIS does not map)
+      const idx = vs.map((v, q) => A.vert(EP[v * 3], EP[v * 3 + 1] + up, EP[v * 3 + 2], nrmAt(EP[v * 3], EP[v * 3 + 2]), E.uv[v * 2], E.uv[v * 2 + 1], exOf(vs, w3[q])));
       A.idxFirst.push(idx[0], idx[1], idx[2]);
       for (const v of vs) keptEngine.push(EP[v * 3], EP[v * 3 + 1], EP[v * 3 + 2]);
       keptTris++;
