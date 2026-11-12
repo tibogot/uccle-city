@@ -802,12 +802,15 @@ async function main() {
   for (const cols of window.__pendingStatics ?? []) driver.addStatic(cols);                                           // hero road bridges' parapets
   window.__pendingStatics = [];
   const drive = () => {
-    const [px, pz] = atP?.length === 2 ? atP : [1201.6, 549.3];
-    const s = roadStart(roads, px, pz, bounds) || start;
+    // from where the player is (walk / third person / fly): the nearest road of the tile there; else ?at=x,z or Saint-Job
+    const here = third?.on ? [third.tp.x, third.tp.z] : walker.on ? [walker.x, walker.z] : flyer.on ? [flyer.x, flyer.z] : null;
+    const T = here && world.tiles.find((t) => here[0] >= t.bounds.x0 && here[0] <= t.bounds.x1 && here[1] >= t.bounds.z0 && here[1] <= t.bounds.z1);
+    const [px, pz] = T ? here : atP?.length === 2 ? atP : [1201.6, 549.3];
+    const s = (T ? roadStart(T.roads, px, pz, T.bounds) : roadStart(roads, px, pz, bounds)) || start;
     if (!s) return;
     if (third?.on) third.stop(); walker.on = false; flyer.stop(); controls.enabled = false;
     let h = s.yaw + Math.PI;                                       // walk yaw -> car heading (forward = sin h, cos h)
-    if (TILE === "I6" && !atP && Math.sin(h) * (1153 - s.x) + Math.cos(h) * (540 - s.z) < 0) h += Math.PI;   // face the church
+    if (TILE === "I6" && !atP && !T && Math.sin(h) * (1153 - s.x) + Math.cos(h) * (540 - s.z) < 0) h += Math.PI;   // face the church
     driver.start(s.x - Math.cos(h) * 1.6, s.z + Math.sin(h) * 1.6, h);   // keep right
   };
   driver.onExit = () => setView("stjob");
@@ -880,6 +883,7 @@ async function main() {
   if (params.get("precompile") !== "0") compileFor = (roots) => precompile(renderer, roots, camera, scene, { target: pipe?.passTarget ?? null, mrt: pipe?.passMRT ?? null });   // ?precompile=0: A/B
   else { renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = lighting.exposureScale; }
   const focus = new THREE.Vector3(), fwd = new THREE.Vector3();
+  let mapHook = null;                      // ?map=1: the minimap + full map (viewer/map/cityMap.js), set below
   const hazeHook = lighting.firmament ? (rt, d, size) => lighting.hazeHook(rt, d, size) : null;   // ?haze=0: off
   const dev = { haze: params.get("haze") !== "0" };    // live switches (the dev panel)
   const renderFrame = () => (pipe ? pipe.render(dev.haze ? hazeHook : null) : renderer.render(scene, camera));
@@ -898,6 +902,7 @@ async function main() {
     if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
     if (third?.on) third.update(dt); else if (flyer.on) flyer.update(dt); else if (driver.on) driver.update(dt); else if (walker.on) walker.update(dt); else controls.update();
     fader.update(dt);
+    mapHook?.update(dt);
     if (!stateFreeze) { lodEye.value.copy(camera.position); for (const u of updaters) u(camera.position, camera); }
     renderFrame();
     if (pipe && lighting.firmament) pipe.setExposureFactor(lighting.adapt(dt));
@@ -925,6 +930,7 @@ async function main() {
   const lite = new Map();                 // name -> lite tile
   const pending = new Set();
   let busy = null, firstLite = !!bootPipes;
+  let streamJump = false;                 // a map teleport: tiles left behind go at once (no far-tile hand-over first)
   /** Fade a tile's groups out, then dispose it (at once with ?tilefade=0). */
   const retire = async (groups, dispose) => {
     if (!TILE_FADE) { dispose(); return; }
@@ -949,7 +955,7 @@ async function main() {
       if (t !== here && dist(byName(t.name)) > ring + 1.01 && world.tiles.length > 1) {
         world.tiles.splice(world.tiles.indexOf(t), 1);
         // smooth LOD: its far tile first, then the full one fades out over it (no hole, no pop)
-        if (TILE_FADE && far > ring && dist(byName(t.name)) <= far + 0.01 && !lite.has(t.name) && !pending.has(t.name)) {
+        if (TILE_FADE && !streamJump && far > ring && dist(byName(t.name)) <= far + 0.01 && !lite.has(t.name) && !pending.has(t.name)) {
           pending.add(t.name);
           try { const l = await loadLiteTile(byName(t.name), liteGroup); lite.set(t.name, l); fader.fade(l.group, +1); } catch (e) { log(`far tile ${t.name} failed: ${e.message}`); }
           pending.delete(t.name);
@@ -1028,6 +1034,66 @@ async function main() {
       const { createDevPanel } = await import("./devPanel.js");
       createDevPanel({ renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, drive, thirdPerson, driver, getThird: () => third, getTram: () => tramLine, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log, fader });
     } catch (e) { log(`dev panel: ${e.message}`); }
+  }
+  // ?map=1: the minimap (bottom left) and the full map (M) with click-to-teleport (viewer/map/, docs/MAP.md)
+  if (params.get("map") === "1") {
+    const mode = () => (third?.on ? "third" : flyer.on ? "fly" : driver.on ? "drive" : walker.on ? "walk" : "orbit");
+    const dir = new THREE.Vector3();
+    const getPlayer = () => {
+      const m = mode();
+      camera.getWorldDirection(dir);
+      const bear = Math.atan2(dir.x, -dir.z);                          // radians clockwise from north (-z)
+      let x, z, heading, y;
+      if (m === "third") { x = third.tp.x; z = third.tp.z; y = third.tp.y; heading = Math.PI - third.tp.ctl.yaw; }
+      else if (m === "fly") { x = flyer.x; z = flyer.z; y = flyer.pos.y; heading = -flyer.yaw; }
+      else if (m === "drive") { x = driver.x; z = driver.z; y = driver.state?.y ?? 0; heading = Math.PI - (driver.state?.heading ?? 0); }
+      else if (m === "walk") { x = walker.x; z = walker.z; y = camera.position.y; heading = -walker.yaw; }
+      else { x = controls.target.x; z = controls.target.z; y = camera.position.y; heading = bear; }
+      const fov = 2 * Math.atan(Math.tan(camera.fov * Math.PI / 360) * camera.aspect);
+      return { x, z, heading, bear, mode: m, alt: y - world.surface(x, z), fov };
+    };
+    // teleport: park the camera over the target (orbit), let the streaming load the tile under it (the orbit target
+    // drives the streaming), then start the same mode there, facing along the street (the side nearest the old heading)
+    const teleport = async ({ x, z, yaw: dirAng }) => {
+      const t0 = performance.now();
+      const entry = manifest.tiles.find((t) => t.status !== "missing" && x >= t.bounds.x[0] && x < t.bounds.x[1] && z >= t.bounds.z[0] && z < t.bounds.z[1]);
+      if (!entry) throw new Error("outside the built tiles");
+      const before = getPlayer();
+      let b = Math.atan2(Math.cos(dirAng), -Math.sin(dirAng));       // the street's bearing
+      if (Math.abs(Math.atan2(Math.sin(b - before.heading), Math.cos(b - before.heading))) > Math.PI / 2) b += Math.PI;
+      const m = before.mode;
+      if (third?.on) third.stop(); walker.on = false; flyer.stop(); driver.stop(); controls.enabled = true;
+      const loaded = world.tiles.some((t) => t.name === entry.name);
+      const [, hmax] = entry.counts?.terrainMinMax || [60, 100];
+      controls.target.set(x, hmax, z);
+      camera.position.set(x - Math.sin(b) * 160, hmax + 140, z + Math.cos(b) * 160);
+      controls.update();
+      lighting.snapNext = true;
+      streamJump = true;
+      while (!world.tiles.some((t) => t.name === entry.name)) {
+        if (!busy) busy = (async () => { while (await stream()); })().finally(() => { busy = null; });
+        await Promise.race([busy, new Promise((r) => setTimeout(r, 150))]);
+      }
+      streamJump = false;
+      const tTile = performance.now() - t0;
+      if (m === "walk") walker.start(x, z, -b);
+      else if (m === "fly") { controls.enabled = false; flyer.start(x, z, -b, world.surface(x, z) + 45); }
+      else if (m === "drive") { controls.enabled = false; await driver.start(x, z, Math.PI - b); }
+      else if (m === "third") {
+        controls.enabled = false;
+        third.last = [x, world.walkY(x, z) + 0.6, z, Math.PI - b];
+        third.resume();
+        // its colliders for the new tile are built a moment later (cityHook sync): hold it in place until the ground is there
+        const top = world.heightAt(x, z) + 40;
+        for (let i = 0; i < 80 && !(third.world.ray(x, top, z, 0, -1, 0, 80) < Infinity); i++) { third.tp.start(x, world.walkY(x, z) + 0.6, z, Math.PI - b); await new Promise((r) => setTimeout(r, 100)); }
+        const hit = third.world.ray(x, top, z, 0, -1, 0, 80);
+        third.tp.start(x, (hit < Infinity ? top - hit : world.walkY(x, z)) + 0.05, z, Math.PI - b);
+      } else { const y = world.surface(x, z); controls.target.set(x, y, z); camera.position.set(x - Math.sin(b) * 110, y + 70, z + Math.cos(b) * 110); controls.update(); }
+      lighting.snapNext = true;
+      return { ms: performance.now() - t0, tileMs: +tTile.toFixed(0), tile: entry.name, loaded: !loaded, mode: m };
+    };
+    import("./map/cityMap.js").then((mm) => mm.startCityMap({ getPlayer, teleport, getTrams: () => tramLine?.positions() ?? null, log })).then((h) => { mapHook = h; window.__map = h; })
+      .catch((e) => log(`map: ${e.message}`));
   }
   // stateAt(pos, focus, half, dt): the smoothness harness (docs/SMOOTH_LOD.md): every LOD, fade and the shadow box
   // as if the camera were at `pos` (looking at `focus`), while the view camera stays where it is; freeze(true)

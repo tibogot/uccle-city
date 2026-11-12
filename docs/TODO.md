@@ -115,6 +115,21 @@ Stairs paused until the owner's Mixamo clips are in `data/raw/animations/mixamo/
 1. [ ] Combined preview build of everything waiting for review; the owner tests the city and lists problems; I reproduce each with frame sequences before fixing.
 2. [x] Gap audit vs mrdoob/slop-newyork DONE 2026-11-10 (his HEAD 536a907): docs/SLOP_NEWYORK_AUDIT.md. Top to take: minimap + full map (his js/nyc-map.js, MIT), real lights at night on cars/lamps/shops (clustered light pools), procedural sound (none today), pedestrians (instanced crowd), wet roads/puddles (uWetness unused), shadow stand-ins + his new shadow/bloom numbers, street-sign HUD + text atlas with REAL names (his are fake), parallax shop interiors, pond water, matrixWorldAutoUpdate off per tile. Small fixes found: viewer/lamps.js:187 allocates + sorts every frame at night; ?sunlight=1 uses his old shadow settings (viewer/lighting.js:152-155).
 3. [ ] Minimap (round, turns with heading, current + upcoming street names, landmarks, tram/rail) + full map on a key with click-to-teleport. Pre-rendered from our own data, a 2D canvas updated a few times per second. OSM credit on the map.
+   **Map (claude/minimap), built 2026-11-11, waiting for the owner's eye** (docs/MAP.md; Map Lab; city `?map=1`, off by default): baked map (tools/build_map.py -> data/map, 1.2 MB), heading-up round minimap drawn by a worker (main thread avg 0.03-0.07 ms per frame, cache rebuilds 0 ms on the main thread), current + next street from the road graph, full map with FR/NL search and teleport (2.6-5.9 s to ready, mostly the tile's own build). Left:
+   - [x] round 2: curved names + abbreviations (minimap 5 -> 22 names over 7 test views; full map 0/19/10 -> 26/85/21)
+   - [ ] minimap names still sparse where streets are shorter than their names at walking zoom (a 110 m radius holds few streets): try a smaller font or 'R.' for Rue
+   - [ ] full-map worker frame is slower with curved names (17-145 ms vs 5-15): cache glyph layouts per chain and zoom, or draw names into a separate layer
+   - [ ] a tram dot can sit over a street name (live overlay on top); names could avoid the tram line
+   - [x] round 2: dual carriageways merged for labels (Brugmann named at every zoom)
+   - [x] round 2: live tram 92 dots (city only; the lab has no tram simulation)
+   - [ ] other STIB lines (4, 51, 97, buses) and SNCB stations' names on the minimap
+   - [ ] route to a searched place (A* on the road graph, drawn on both maps) and a waypoint
+   - [ ] neighbourhood names (Uccle-Centre, Saint-Job, Fort-Jaco, Calevoet, Stalle, Vivier d'Oie…) from OSM place=* (not in our raw fetch yet)
+   - [ ] UrbIS street axes as the authoritative bilingual names (OSM today)
+   - [ ] orthophoto "satellite" toggle on the full map (data/tiles/*/ortho.jpg) and hill shading from the DTM
+   - [ ] teleport: the target tile's own build dominates (I6 5.8 s); a lighter first pass (ground + roads first) would cut the wait
+   - [x] round 2: the Drive button starts where the player is (walk / third person / fly)
+   - [ ] one 14.5 ms outlier frame in the minimap's own timing once in ~2,000 frames (not reproduced): watch with a trace
 4. [ ] Wayfinding / realism layer: bilingual FR/NL street name plates at corners (UrbIS street names); OSM POIs in their real places (shops with their names on the fronts, fuel stations with canopies + pumps, pharmacies with green crosses, cafés with terraces, supermarkets, schools); STIB tram/bus stop names (GTFS). Real brand names as text only, no trademark logos. Perf: one text atlas, instanced signs, built per tile in the worker, text only within ~80 m, lit at night.
 5. [ ] Street character from real data so streets differ: hedges/fences, front gardens, real tree species, parking, bins, lamp types (avenues vs villa streets vs centre).
 6. [ ] Planting system (owner, 2026-11-10; later, with item 5): flower beds, shrubs, hedges, window boxes, grass tufts, ivy. Scripted Blender plants (premium) + meshopt LODs, instanced per tile in the worker, alpha-to-coverage cards only near (< ~60 m), fade to a coloured ground decal / nothing beyond, dithered fades, no shadow casting for small plants, seasonal colour. Placement from real data (UrbIS/OSM green areas, garden zones, the town hall beds on the photos). Budget ~0.2-0.5 ms in a dense street; benchmark in a Planting Lab before the city.
