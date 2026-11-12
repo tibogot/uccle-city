@@ -470,8 +470,11 @@ export function walkRoutes({ scene, tile, truth, G, makeController, walkY, maxRo
         const i = G.idx(ctl.dbg[o], ctl.dbg[o + 2]);
         if (i >= 0 && Dt[i] > 0.6) { R.invisibleHits++; item("invisible hit", ctl.dbg[o], ctl.dbg[o + 2]); }
       }
-      // body (radius 0.3, shrunk 0.12) over walk-band truth
-      for (const [ox, oz] of [[0, 0], [0.1, 0], [-0.1, 0], [0, 0.1], [0, -0.1]]) {
+      // passed through: the body's centre on a drawn solid while nothing holds it (no wall contact this step; a body
+      // sliding along a facade has its centre within a cell of the wall: not a pass)
+      let held = false;
+      for (let k = 0; k < ctl.dbgN; k++) if (ctl.dbg[k * 7 + 6] === 1) held = true;
+      if (!held) for (const [ox, oz] of [[0, 0]]) {
         const i = G.idx(ctl.pos[0] + ox, ctl.pos[2] + oz);
         if (i >= 0 && truth[i]) { const key = `${Math.round(ctl.pos[0] / 2)},${Math.round(ctl.pos[2] / 2)}`; if (!passed.has(key)) { passed.add(key); R.passThrough++; item("passed through", ctl.pos[0], ctl.pos[2], { drawn: SRC_NAME[truth[i]] }); } break; }
       }

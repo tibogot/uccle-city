@@ -50,7 +50,20 @@ function boxOf(T) {
  * Car blockers of a triangle soup: [{ rings: [[4 corners]], kind: KIND.wall }] (rectangles of 0.25 m cells merged
  * along rows, then rows of the same span merged). ground(x, z) = the drive surface. Async: yields every ~6 ms.
  */
-export async function carBlockers(T, ground, { band = BAND } = {}) {
+export async function carBlockers(T, ground, opts = {}) {
+  const it = blockerSteps(T, ground, opts);
+  let r = it.next();
+  while (!r.done) { await new Promise((ok) => setTimeout(ok, 0)); r = it.next(); }
+  return r.value;
+}
+/** The same, at once (small soups: a bench, a shelter). */
+export function carBlockersSync(T, ground, opts = {}) {
+  const it = blockerSteps(T, ground, opts);
+  let r = it.next();
+  while (!r.done) r = it.next();
+  return r.value;
+}
+function* blockerSteps(T, ground, { band = BAND, kind = KIND.wall } = {}) {
   const b = boxOf(T), x0 = b.x0 - 0.5, z0 = b.z0 - 0.5;
   const nx = Math.ceil((b.x1 + 0.5 - x0) / CELL), nz = Math.ceil((b.z1 + 0.5 - z0) / CELL);
   const grid = new Uint8Array(nx * nz);
@@ -60,7 +73,7 @@ export async function carBlockers(T, ground, { band = BAND } = {}) {
   const gAt = (x, z) => G[Math.min(gz - 1, Math.max(0, Math.round((z - z0) / 0.5))) * gx + Math.min(gx - 1, Math.max(0, Math.round((x - x0) / 0.5)))];
   let slice = performance.now();
   for (let t = 0; t < T.length; t += 9) {
-    if ((t & 0x3fff) === 0 && performance.now() - slice > 6) { await new Promise((r) => setTimeout(r, 0)); slice = performance.now(); }
+    if ((t & 0x3fff) === 0 && performance.now() - slice > 6) { yield; slice = performance.now(); }
     const ax = T[t], ay = T[t + 1], az = T[t + 2], bx = T[t + 3], by = T[t + 4], bz = T[t + 5], cx = T[t + 6], cy = T[t + 7], cz = T[t + 8];
     const g = gAt((ax + bx + cx) / 3, (az + bz + cz) / 3);
     if (Math.min(ay, by, cy) > g + band[1] + 1 || Math.max(ay, by, cy) < g + band[0] - 1) continue;
@@ -93,7 +106,7 @@ export async function carBlockers(T, ground, { band = BAND } = {}) {
   }
   return rects.map(({ i0, i1, k0, k1 }) => {
     const ax = x0 + i0 * CELL, bx = x0 + (i1 + 1) * CELL, az = z0 + k0 * CELL, bz = z0 + (k1 + 1) * CELL;
-    return { rings: [[[ax, az], [bx, az], [bx, bz], [ax, bz]]], kind: KIND.wall };
+    return { rings: [[[ax, az], [bx, az], [bx, bz], [ax, bz]]], kind };
   });
 }
 

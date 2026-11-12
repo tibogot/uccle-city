@@ -8241,8 +8241,9 @@ async function buildTileData(entry, base) {
     terrain.idx = idx;
   });
   const nb = bDoc.buildings.length;
+  const keep = entry.driveKeepHidden ? { buildings: bDoc.buildings.slice() } : null;
   hideBuildings(bDoc, entry.hide);
-  const drive = await step("drive colliders", () => buildDriveData({ bDoc, net, feats, hm, parts: road.parts, bounds, surf, legacy: !!entry.driveLegacy }));
+  const drive = await step("drive colliders", () => buildDriveData({ bDoc: keep || bDoc, net, feats, hm, parts: road.parts, bounds, surf, legacy: !!entry.driveLegacy }));
   drive.counts.hidden = nb - bDoc.buildings.length;
   const kit = entry.kit ? kitCollector({ exclude: new Set(entry.kitExclude || []), ground: (x, z) => hm.ground(x, z) }) : null;
   const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit }));

@@ -222,8 +222,9 @@ export async function buildTileData(entry, base) {
   // viewer/heroColliders.js: its footprint corners blocked where the model has a porch or a recess, and missed its
   // steps, yard walls, fences and parapets)
   const nb = bDoc.buildings.length;
+  const keep = entry.driveKeepHidden ? { buildings: bDoc.buildings.slice() } : null;      // ?colfix=0: the old way
   hideBuildings(bDoc, entry.hide);
-  const drive = await step("drive colliders", () => buildDriveData({ bDoc, net, feats, hm, parts: road.parts, bounds, surf, legacy: !!entry.driveLegacy }));   // drive mode (viewer/drive/)
+  const drive = await step("drive colliders", () => buildDriveData({ bDoc: keep || bDoc, net, feats, hm, parts: road.parts, bounds, surf, legacy: !!entry.driveLegacy }));   // drive mode (viewer/drive/)
   drive.counts.hidden = nb - bDoc.buildings.length;     // solids a hero model replaces (it collides by its own LOD0)
   // ?kit=1: the façade kit's placement (viewer/facadeKit/placement.js) runs inside the analysis, here in the worker;
   // entry.kitExclude = BU_IDs a hero model or the interior pilot replaces

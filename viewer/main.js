@@ -298,6 +298,7 @@ class Walker {
   start(x, z, yaw) {
     this.on = true; this.yaw = yaw; this.pitch = -0.05; this.x = x; this.z = z;
     this.ctl = null;
+    if (!COLFIX) return;                  // ?colfix=0: the old walk (no collision)
     const token = this.token = {};
     (this.collision ??= import("./character/cityHook.js").then((m) => m.cityCollision({ scene: this.scene, world: this.hm, log })))
       .then(async ({ cw }) => {
@@ -367,6 +368,10 @@ if (params.get("worker") !== "0") {
 }
 /** UrbIS solids replaced by a scripted model (the Saint-Job church): not drawn, kept in the roof grid. */
 const HIDE_BU_IDS = params.get("stjob") !== "0" ? [STJOB_BU_ID] : [];
+/** ?colfix=0: the colliders as before the collisions audit (docs/collisions/README.md): no parked cars / furniture /
+ *  poles for the car, the UrbIS footprints of the replaced solids + the hand-made Saint-Job steps and bridge parapets
+ *  instead of the landmarks' own geometry, walk mode without collision. For A/B and the "before" runs. */
+const COLFIX = params.get("colfix") !== "0";
 /** Park ponds whose bed the tiles carve (viewer/water/pondBed.js; the Wolvendael pond with ?wolvendael=1). */
 const PONDS = [];
 /** Tiles that have surfaces.json draw the measured UrbIS street surfaces (viewer/surfaces.js), the default since
@@ -376,7 +381,7 @@ const ROAD_SURFACES = params.get("roads") !== "engine";
 function tileData(entry, lite = false) {
   entry = { ...entry, hide: HIDE_BU_IDS, ponds: PONDS, surface: ROAD_SURFACES, pits: params.get("pits") !== "0",   // ?pits=0: no tree pits (A/B)
     kit: cityKit.on && !lite, kitExclude: cityKit.exclude,                                           // the façade kit (viewer/facadeKit/), ?kit=0 off
-    rail: TRAINS, driveLegacy: params.get("drivecol") === "legacy" };                                // ?drivecol=legacy: the drive colliders before the audit
+    rail: TRAINS, driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX };                                // ?drivecol=legacy: the drive colliders before the audit
   const local = () => import("./tileData.js").then((m) => (lite ? m.buildLiteData : m.buildTileData)(entry, DATA.href));
   if (!tileWorker) return local();
   return new Promise((resolve, reject) => {
@@ -547,7 +552,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const bxyz = d.road.surfaceData?.bollards || [];
   const drawn = { trees: fo.userData.treesDrawn || [], lamps: lamps.sites || [], bollards: Array.from({ length: bxyz.length / 3 }, (_, i) => ({ x: bxyz[i * 3], z: bxyz[i * 3 + 2] })),
     hiddenBuildings: d.drive?.counts?.hidden || 0 };
-  const drive = tileDrive(d.drive, roads, bounds, drawn, own.features);
+  const drive = tileDrive(d.drive, roads, bounds, drawn, COLFIX ? own.features : null);
   frame("drive colliders");
   log(`tile ${entry.name}: main-thread work ${busy.toFixed(0)} ms, longest slice ${longest.toFixed(0)} ms (${worst}); slices over 4 ms: ${slices.join(", ") || "none"}; ${tileWorker ? "CPU build in the worker" : "CPU build ALSO on the main thread"}`);
   // roof heights (m TAW, 0 = none) for fly-mode collision: the max of the 2 m cells around the point, so the bird
@@ -723,7 +728,10 @@ async function main() {
         loadBridge(name).then(async (b) => {
           const pb = placeBridge(b, { smooth: SMOOTH });
           // a road bridge: its deck carries walk / drive heights, its parapets block the car
-          if (b.info.kind === "road_over_rail") world.decks.push(deckHeightFn(b.info));     // its parapets: viewer/heroColliders.js
+          if (b.info.kind === "road_over_rail") {
+            world.decks.push(deckHeightFn(b.info));     // its parapets: viewer/heroColliders.js (?colfix=0: the old hand-made rings)
+            if (!COLFIX) { const cols = (await import("./rail/bridgeModel.js")).roadBridgeColliders(b.info); if (window.__driver) window.__driver.addStatic(cols); else (window.__pendingStatics ??= []).push(cols); }
+          }
           // shaders (+ fading copies) and the shadow pass built before it shows (nothing compiled on a frame)
           const tw = performance.now();
           for (let i = 0; i < 200 && !compileFor && params.get("precompile") !== "0"; i++) await new Promise((r) => setTimeout(r, 100));
@@ -763,7 +771,7 @@ async function main() {
   controls.maxPolarAngle = Math.PI * 0.495;
   const walker = new Walker(camera, renderer.domElement, world);
   walker.scene = scene;
-  world.hide = HIDE_BU_IDS;                // the UrbIS solids the landmarks replace (out of the colliders on foot too)
+  world.hide = COLFIX ? HIDE_BU_IDS : [];  // the UrbIS solids the landmarks replace (out of the colliders on foot too)
   const atP = params.get("at")?.split(",").map(Number);
   const start = atP?.length === 2 ? roadStart(roads, atP[0], atP[1], bounds)
     : TILE === "I6" ? roadStart(roads, 1153.1, 540.1, bounds) : roadStart(roads, cx, cz, bounds);   // ?at=, else Place de Saint-Job on I6
@@ -836,8 +844,12 @@ async function main() {
   window.__driver = driver;
   // every landmark / bridge collides by its own LOD0 (car blocks + character triangles), built once its tiles are in
   // (viewer/heroColliders.js; replaces the hand-made Saint-Job steps and road-bridge parapet rings)
-  const heroCols = (await import("./heroColliders.js")).createHeroColliders({ scene, world, manifest, driver, log });
-  window.__heroCols = heroCols;
+  if (COLFIX) window.__heroCols = (await import("./heroColliders.js")).createHeroColliders({ scene, world, manifest, driver, log });
+  else {
+    if (params.get("stjob") !== "0") loadStJob().then((m) => driver.addStatic(stjobColliders(m.placement))).catch(() => {});
+    for (const cols of window.__pendingStatics ?? []) driver.addStatic(cols);
+    window.__pendingStatics = [];
+  }
   const drive = () => {
     // from where the player is (walk / third person / fly): the nearest road of the tile there; else ?at=x,z or Saint-Job
     const here = third?.on ? [third.tp.x, third.tp.z] : walker.on ? [walker.x, walker.z] : flyer.on ? [flyer.x, flyer.z] : null;

@@ -15,6 +15,7 @@ import { ColliderDebug } from "./debugDraw.js";
 import { auditTile } from "./colliderAudit.js";
 import { DriveKeys } from "./input.js";
 import { lampSites } from "../lamps.js";
+import { carBlockersSync } from "../heroColliders.js";
 import { env as lightEnv } from "../lighting.js";
 
 /** Main thread, once per loaded tile: the worker's drive data + the tile's lamp posts and bollards, from the lists the
@@ -61,9 +62,19 @@ export function featureColliders(features, bounds) {
       o.set(0, 0, 0).applyMatrix4(W);
       if (!inT(o.x, o.z)) continue;
       if (kind === "pole") { circles.push({ x: o.x, z: o.z, r: n === "tram-poles" || n === "rail-masts" ? 0.15 : 0.08, kind: KIND.furniture }); counts.poles++; continue; }
-      const ring = [[bb.min.x, bb.min.z], [bb.max.x, bb.min.z], [bb.max.x, bb.max.z], [bb.min.x, bb.max.z]].map(([x, z]) => { v.set(x, bb.min.y, z).applyMatrix4(W); return [v.x, v.z]; });
-      polys.push({ rings: [ring], kind: kind === "car" ? KIND.car : KIND.furniture });
-      counts[kind === "car" ? "cars" : "furniture"]++;
+      if (kind === "car") {
+        const ring = [[bb.min.x, bb.min.z], [bb.max.x, bb.min.z], [bb.max.x, bb.max.z], [bb.min.x, bb.max.z]].map(([x, z]) => { v.set(x, bb.min.y, z).applyMatrix4(W); return [v.x, v.z]; });
+        polys.push({ rings: [ring], kind: KIND.car }); counts.cars++;
+        continue;
+      }
+      // benches, bike racks, shelters: what they draw at car height (a shelter's roof overhangs its posts and glass;
+      // a bike rack is hoops, not a box), sliced like the landmarks (viewer/heroColliders.js)
+      const P = m.geometry.attributes.position, I = m.geometry.index, cnt = I ? I.count : P.count, T = new Float32Array(cnt * 3);
+      for (let q = 0; q < cnt; q++) { v.fromBufferAttribute(P, I ? I.getX(q) : q).applyMatrix4(W); T[q * 3] = v.x; T[q * 3 + 1] = v.y; T[q * 3 + 2] = v.z; }
+      v.set(0, bb.min.y, 0).applyMatrix4(W);
+      const base = v.y;
+      for (const pq of carBlockersSync(T, () => base, { kind: KIND.furniture })) polys.push(pq);
+      counts.furniture++;
     }
   });
   return { polys, circles, counts };
