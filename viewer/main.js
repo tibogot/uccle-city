@@ -21,7 +21,7 @@ import { addCalevoet } from "./calevoetCity.js";
 import { addStPierre } from "./stpierreCity.js";
 import { addObservatory } from "./observatoryCity.js";
 import { addFlags } from "./flagsCity.js";
-import { buildFurniture } from "./furniture.js";
+import { buildFurniture, updateSignals } from "./furniture.js";
 import { buildTram } from "./tram.js";
 import { buildCars } from "./cars.js";
 import { carFleet } from "./carFleet.js";
@@ -274,6 +274,11 @@ const updaters = [];
 // The railway (?trains=1, Train Lab first): tracks per tile, hero bridges, SNCB trains on the real timetable (viewer/rail/)
 const TRAINS = params.get("trains") !== "0";
 const railP = TRAINS ? import("./rail/railway.js").then(async (m) => ({ m, doc: await m.loadRail() })).catch((e) => { log(`railway: ${e.message}`); return null; }) : null;
+// ?traffic=1: the moving traffic (viewer/traffic/cityTraffic.js). Each full tile's lane graph is kept here until the
+// traffic exists, then added / removed with its tile.
+const TRAFFIC = params.get("traffic") === "1";
+const trafficTiles = new Map();
+let cityTraffic = null;
 let falconsReady = null, falconsOn = true;   // the Saint-Job peregrines (viewer/falcons.js), once loaded       // per-frame updates (tree LOD, lamp lights) of every loaded tile
 
 // ------------------------------------------------------------------ walk mode
@@ -518,9 +523,11 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
       g.removeFromParent();
     }
     for (const t of R.textures) t.dispose();
+    if (trafficTiles.delete(entry.name)) cityTraffic?.removeTile(entry.name);
   };
   await frame("show");
   tramLine?.snapTile(entry.name, feats, bounds);
+  if (TRAFFIC && d.traffic) { trafficTiles.set(entry.name, d.traffic); cityTraffic?.addTile(entry.name, d.traffic); }
   await frame("tram line snap");
   const bxyz = d.road.surfaceData?.bollards || [];
   const drawn = { trees: fo.userData.treesDrawn || [], lamps: lamps.sites || [], bollards: Array.from({ length: bxyz.length / 3 }, (_, i) => ({ x: bxyz[i * 3], z: bxyz[i * 3 + 2] })),
@@ -591,6 +598,7 @@ async function main() {
   // the parked cars of every tile, as one fleet (viewer/carFleet.js; ?cars=box: the old box cars per tile)
   if (params.get("cars") !== "box") { scene.add(carFleet.group); updaters.push(carFleet.update); carFleet.setRenderer(renderer, scene); }
   updaters.push(lampLightPool(scene));               // the city's lamp lights: ONE fixed pool for the session (light count never changes)
+  updaters.push(updateSignals);           // the signal heads' cycle (viewer/traffic/signals.js), shared with the traffic
   // the world: the main tile now, its neighbours streamed in after the first frame (?ring=0|1|2)
   const world = {
     tiles: [],
@@ -862,6 +870,30 @@ async function main() {
     } catch (e) { log(`third person: ${e.message}`); controls.enabled = true; }
   };
   $("btnThird").onclick = thirdPerson;
+  // ?traffic=1: the moving traffic on the lane graph (viewer/traffic/), updated before the parked fleet so a car pulling
+  // out is hidden there in the same frame it appears in the traffic
+  if (TRAFFIC) {
+    try {
+      const { createCityTraffic } = await import("./traffic/cityTraffic.js");
+      const { env } = await import("./lighting.js");
+      const fpos = { x: 0, z: 0 };
+      const focusOf = () => {
+        if (third?.on) { fpos.x = third.tp.ctl.pos[0]; fpos.z = third.tp.ctl.pos[2]; }
+        else if (flyer.on) { fpos.x = flyer.x; fpos.z = flyer.z; }
+        else if (driver.on) { fpos.x = driver.x; fpos.z = driver.z; }
+        else if (walker.on) { fpos.x = walker.x; fpos.z = walker.z; }
+        else { fpos.x = controls.target.x; fpos.z = controls.target.z; }
+        return fpos;
+      };
+      cityTraffic = createCityTraffic({ scene, renderer, camera, ground: (x, z) => world.surface(x, z) + CARVE, night: env.uNight, focus: focusOf,
+        driver, getThird: () => third, getTram: () => tramLine, log });
+      for (const [n, g] of trafficTiles) cityTraffic.addTile(n, g);
+      const ci = updaters.indexOf(carFleet.update);
+      updaters.splice(ci >= 0 ? ci : 0, 0, cityTraffic.update);
+      window.__traffic = cityTraffic;
+      log(`traffic: on (?traffic=1), ${trafficTiles.size} tile graphs; ?trafficdebug=1 draws the lane graph`);
+    } catch (e) { log(`traffic: ${e.message}`); console.error(e); }
+  }
   if (v0 === "third") thirdPerson();
   // ?interior=1: the pilot interior cell (viewer/interior/cityInterior.js; Interior Lab first)
   if (params.get("interior") === "1") import("./interior/cityInterior.js").then((m) => m.startCityInterior({ scene, renderer, camera, lighting, updaters, getThird: () => third, log })).catch((e) => log(`interior: ${e.message}`));

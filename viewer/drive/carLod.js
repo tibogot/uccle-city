@@ -145,14 +145,18 @@ export function parseCarGlb(buf) {
   });
 }
 
-/** Concatenate meshes, each translated by its offset: one geometry per car per LOD (instancing). */
+/** Concatenate meshes, each translated by its offset: one geometry per car per LOD (instancing). W (per vertex: the
+ *  wheel centre xyz + 1 front wheel / 2 rear wheel / 0 body, from the part names Wheel_F* / Wheel_R*): the moving
+ *  traffic (viewer/traffic/trafficFleet.js) rolls and steers the wheels in the vertex shader. */
 export function mergeMeshes(list) {
   let nv = 0, ni = 0;
   for (const { mesh } of list) { nv += mesh.P.length / 3; ni += mesh.I.length; }
-  const out = { P: new Float32Array(nv * 3), N: new Float32Array(nv * 3), C: new Float32Array(nv * 3), K: new Float32Array(nv), I: new Uint32Array(ni) };
+  const out = { P: new Float32Array(nv * 3), N: new Float32Array(nv * 3), C: new Float32Array(nv * 3), K: new Float32Array(nv), I: new Uint32Array(ni), W: new Float32Array(nv * 4) };
   let v = 0, i = 0;
-  for (const { mesh: m, pos } of list) {
+  for (const { mesh: m, pos, name = "" } of list) {
     const n = m.P.length / 3;
+    const wf = /^Wheel_F/.test(name) ? 1 : /^Wheel_R/.test(name) ? 2 : 0;
+    if (wf) for (let k = 0; k < n; k++) { out.W[(v + k) * 4] = pos[0]; out.W[(v + k) * 4 + 1] = pos[1]; out.W[(v + k) * 4 + 2] = pos[2]; out.W[(v + k) * 4 + 3] = wf; }
     for (let k = 0; k < n; k++) { out.P[(v + k) * 3] = m.P[k * 3] + pos[0]; out.P[(v + k) * 3 + 1] = m.P[k * 3 + 1] + pos[1]; out.P[(v + k) * 3 + 2] = m.P[k * 3 + 2] + pos[2]; }
     out.N.set(m.N, v * 3); out.C.set(m.C, v * 3); out.K.set(m.K, v);
     for (let k = 0; k < m.I.length; k++) out.I[i + k] = m.I[k] + v;

@@ -13,6 +13,7 @@ import { buildRoadData, CARVE } from "./roadBuild.js";
 import { smoothPolyline } from "./track.js";
 import { kitCollector } from "./facadeKit/placement.js";
 import { prepRail, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround } from "./rail/railData.js";
+import { buildTrafficGraph } from "./traffic/trafficGraph.js";
 
 let railP = null;
 /** ?trains=1: rail.json + the hero bridges' notes, fetched once per worker */
@@ -157,6 +158,10 @@ export async function buildTileData(entry, base) {
     railOut = await step("rail meshes", () => railTileData(rail.doc, bounds, rail.heroes));
     railOut.stats.carved = c.moved; railOut.stats.treesDropped = railDropped;
   }
+  // the lane graph for the moving traffic (viewer/traffic/: lanes on the measured carriageway, connectors, junction
+  // control from OSM, conflicts). Round 4: built on the roads2 network (rd.net, its lane graph already repaired by
+  // viewer/streets/laneGraph.js) and the measured class raster
+  const traffic = await step("traffic graph", () => buildTrafficGraph(net, roads, feats, bounds, road.surfaceData?.grid));
   const terrain = await step("terrain grid", () => terrainArrays(hm));
   await step("terrain simplify", async () => {
     await MeshoptSimplifier.ready;
@@ -174,7 +179,7 @@ export async function buildTileData(entry, base) {
   const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit }));
   const cover = await step("land cover", () => landCoverData(feats, bounds));
   return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs, drive,
-    netInfo, road, terrain, buildings, cover, times, rail: railOut };
+    netInfo, road, terrain, buildings, cover, traffic, times, rail: railOut };
 }
 
 // ---------------------------------------------------------------- far level of detail
