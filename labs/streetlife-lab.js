@@ -55,7 +55,7 @@ tileWorker.onmessage = (e) => { const p = pending.get(e.data.id); pending.delete
 const tileData = (entry) => new Promise((resolve, reject) => { const id = ++reqId; pending.set(id, { resolve, reject }); tileWorker.postMessage({ id, entry: { ...entry, hide: [STJOB_BU_ID], surface: true, pits: true }, base: DATA.href, lite: false }); });
 const shared = new Map();
 const sharedMat = (k, f) => { if (!shared.has(k)) shared.set(k, f()); return shared.get(k); };
-const hms = [];
+const hms = [], cityRoads = [];
 const cityGroup = new THREE.Group(); scene.add(cityGroup);
 async function loadCityTile(name) {
   const entry = manifest.tiles.find((t) => t.name === name);
@@ -89,6 +89,7 @@ async function loadCityTile(name) {
   const feats = { ...d.feats, points: (d.feats.points || []).filter((p) => p.kind !== "shop") };
   const B = facadeMeshes(null, null, null, null, analyseBuildings(bDoc, bBuf, d.roads, feats));
   for (const m of B.meshes) cityGroup.add(m);
+  cityRoads.push(d.roads);
   return d;
 }
 const groundAt = (x, z) => { for (const t of hms) if (x >= t.bounds.x0 && x < t.bounds.x1 && z >= t.bounds.z0 && z < t.bounds.z1) return t.hm.ground(x, z); return hms[0]?.hm.ground(x, z) ?? 70; };
@@ -111,30 +112,58 @@ console.log("[streetlife lab] tiles", tileStats);
 
 // ------------------------------------------------------------------------------------------------ camera paths
 const docs = await Promise.all(SITE.tiles.map((t) => fetch(`../data/streetlife/${t}.json`).then((r) => r.json())));
+/** the site's main street as the road engine has it (roads.json centrelines, chained), the camera path along it:
+ *  drive = the right-hand lane (1.7 m off the centreline), walk = the sidewalk on the shops' side (half the carriageway
+ *  + 1.6 m), looking ahead and a little toward the shops */
 function streetPath(kind) {
-  // the shop fronts of the site's streets, ordered along the street's main direction, offset into the street
+  const segs = [];
+  for (const R of cityRoads) {
+    const N = new Map(R.nodes.map((n) => [n.id, n]));
+    for (const r of R.roads) if (SITE.street.test(r.meta?.name || "") && !/service|footway/.test(r.meta?.highway || "")) {
+      const pts = [N.get(r.a), ...r.pts, N.get(r.b)].map((q) => [q.x, q.z]);
+      let half = 0; for (const side of ["left", "right"]) half = Math.max(half, (r.lanes?.[side] || []).filter((l) => l.type !== "sidewalk").reduce((t, l) => t + (l.width || 0), 0));
+      segs.push({ pts, half: half || 3.5 });
+    }
+  }
+  if (!segs.length) return null;
+  // chain: start with the longest piece, append pieces whose end touches the chain's end (either way round)
+  const len = (p) => p.reduce((t, q, i) => t + (i ? Math.hypot(q[0] - p[i - 1][0], q[1] - p[i - 1][1]) : 0), 0);
+  segs.sort((x, y) => len(y.pts) - len(x.pts));
+  let chain = segs.shift().pts.slice(), half = 3.5, grew = true;
+  const near = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]) < 3;
+  while (grew) {
+    grew = false;
+    for (let i = 0; i < segs.length; i++) {
+      const q = segs[i].pts;
+      if (near(chain.at(-1), q[0])) chain.push(...q.slice(1));
+      else if (near(chain.at(-1), q.at(-1))) chain.push(...q.slice(0, -1).reverse());
+      else if (near(chain[0], q.at(-1))) chain.unshift(...q.slice(0, -1));
+      else if (near(chain[0], q[0])) chain.unshift(...q.slice(1).reverse());
+      else continue;
+      half = Math.max(half, segs[i].half); segs.splice(i, 1); grew = true; break;
+    }
+  }
+  // the shops' side: the side most shop fronts of this street are on
   const P = docs.flatMap((d) => d.pois).filter((p) => p.face && SITE.street.test(p.face.street || ""));
-  if (P.length < 2) return null;
-  let mx = 0, mz = 0; for (const p of P) { mx += p.face.x; mz += p.face.z; } mx /= P.length; mz /= P.length;
-  let sxx = 0, sxz = 0, szz = 0; for (const p of P) { const dx = p.face.x - mx, dz = p.face.z - mz; sxx += dx * dx; sxz += dx * dz; szz += dz * dz; }
-  const a = 0.5 * Math.atan2(2 * sxz, sxx - szz), ax = Math.cos(a), az = Math.sin(a);
-  // one side of the street only (the side with the most shops): the walk stays on its sidewalk
-  const side = (p) => Math.sign(p.face.nx * -az + p.face.nz * ax);
-  const major = P.filter((p) => side(p) > 0).length >= P.length / 2 ? 1 : -1;
-  for (let i = P.length - 1; i >= 0; i--) if (side(P[i]) !== major) P.splice(i, 1);
-  P.sort((p, q) => (p.face.x * ax + p.face.z * az) - (q.face.x * ax + q.face.z * az));
-  const off = kind === "drive" ? 5.5 : 2.4, eye = kind === "drive" ? 1.25 : 1.65;
-  const pts = [];
+  let vote = 0;
   for (const p of P) {
-    const s = kind === "drive" ? Math.min(off, (p.face.side ?? 3) + 1.8) : Math.max(2.4, Math.min(4, (p.face.side ?? 3) * 0.6));
-    const x = p.face.x + p.face.nx * s, z = p.face.z + p.face.nz * s;
-    if (pts.length && Math.hypot(pts.at(-1).x - x, pts.at(-1).z - z) < 6) continue;
-    pts.push(new THREE.Vector3(x, groundAt(x, z) + eye + 0.13, z));
+    let best = null;
+    for (let i = 1; i < chain.length; i++) { const [ax, az] = chain[i - 1], [bx, bz] = chain[i]; const mx = (ax + bx) / 2, mz = (az + bz) / 2, d = Math.hypot(p.face.x - mx, p.face.z - mz); if (!best || d < best.d) best = { d, ax, az, bx, bz }; }
+    if (best) vote += Math.sign((best.bx - best.ax) * (p.face.z - best.az) - (best.bz - best.az) * (p.face.x - best.ax));
+  }
+  const shopSide = vote >= 0 ? 1 : -1;                 // + = left of the chain's direction (x right, z toward the viewer)
+  const off = kind === "drive" ? -shopSide * 1.7 : shopSide * (half + 1.6), eye = kind === "drive" ? 1.25 : 1.65;
+  const pts = [];
+  for (let i = 0; i < chain.length; i++) {
+    const a = chain[Math.max(0, i - 1)], b = chain[Math.min(chain.length - 1, i + 1)], L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    const nx = -(b[1] - a[1]) / L, nz = (b[0] - a[0]) / L;          // left normal
+    const x = chain[i][0] + nx * off, z = chain[i][1] + nz * off;
+    if (pts.length && Math.hypot(pts.at(-1).x - x, pts.at(-1).z - z) < 2) continue;
+    pts.push(new THREE.Vector3(x, groundAt(x, z) + eye + (kind === "drive" ? 0 : 0.13), z));
   }
   if (pts.length < 2) return null;
   const c = new THREE.CatmullRomCurve3(pts, false, "centripetal");
-  let nx = 0, nz = 0; for (const p of P) { nx += p.face.nx; nz += p.face.nz; }
-  c.userData = { toShops: new THREE.Vector3(-nx, 0, -nz).normalize() };
+  c.userData = { shopSide };
   return c;
 }
 const paths = { walk: streetPath("walk"), drive: streetPath("drive") };
@@ -154,7 +183,8 @@ function rideStep(dt) {
   camera.position.copy(p);
   // look ahead, turned ~35 deg toward the shops
   const fwd = q.clone().sub(p).setY(0).normalize();
-  const look = p.clone().addScaledVector(fwd, 10).addScaledVector(ride.curve.userData.toShops, ride.kind === "drive" ? 5 : 3.5);
+  const left = new THREE.Vector3(-fwd.z, 0, fwd.x);   // the same side convention as streetPath (its "left normal")
+  const look = p.clone().addScaledVector(fwd, 10).addScaledVector(left, ride.curve.userData.shopSide * (ride.kind === "drive" ? 5 : 2.5));
   look.y = p.y + 0.6;
   camera.lookAt(look); controls.target.copy(look);
 }

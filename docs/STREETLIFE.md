@@ -142,3 +142,63 @@ its worker time 302 ms (1,271 boxes, 411 labels: the busiest tile seen).
 - City integration (after the façade kit + roads v2 merges): replace facadeGeom.js's OSM shopfront boxes by this layer
   (the lab hides them by filtering the shop points), stream it with the tiles (worker per tile is ready), drive the
   night uniform from the night-lights lab.
+
+## Round 2 (owner / coordinator review, 2026-11-12)
+
+| ask | done | how / where |
+|---|---|---|
+| 1. fascia names read small and dark | **yes** | the fascia is 0.80 m tall (0.68 m on a single-storey front) and the label ROW is 1.22 x that height (`box({ fill })`): cap height ≈ 0.55 x the board = 37-44 cm, shrunk only when the name is too long for the front. Boards and inks chosen by contrast (`lum(board) > 0.18` -> dark letters, else light), light boards added (white, cream, stone). Three treatments, per shop by hash (styling, not data): **backlit letters** (ink glows by night, 22 % by day), **gooseneck spotlights** (new kit `spot`, 2-3 over the board; the board and letters get a 0.35 wash at night; their positions go to `nightSources().spots` for the night lights lab), **lightbox** (the board glows, 14 % by day). Images: `fortjaco_shops_pharmacy_cross.jpg` (before) vs `r2_fortjaco_shops_pharmacy_cross.jpg`, `r2_fortjaco_glass_bourgeoises.jpg`, `r2_fortjaco_nomade_terrace_on_paving.jpg`, `r2_fortjaco_night_spots_backlit.jpg`. |
+| real photos (look only) | partly | Google Street View at Fort-Jaco (Chaussée de Waterloo 1333, Neuhaus) and Place de Saint-Job (Chaussée de Saint-Job 666) looked at, nothing stored: real fascias are 30-60 cm bands with 20-30 cm letters, white or dark, Neuhaus' is red; at Saint-Job "St Job" is letters straight on a white wall and a coiffeur has white capitals on a black band. Not done: letters directly on the wall (no board) - the box needs a board. The forecourt at Fort-Jaco is paving in reality but OSM land cover draws grass there (city data, not this layer). |
+| 2. Uccle plate style | **yes** | the whole plate is ONE label drawn by the canvas (`sdfText.js` plateUccle): FR street type small top-left, the commune small top-right, the shared name big, NL type small bottom-right, when FR and NL share their proper name ("Rue Jean Benaets" / "Jean Benaetsstraat" -> "Rue", "Jean Benaets", "straat", "Uccle - Ukkel"): 1,134 of 2,155 plates; the others show both full names + the commune line (plateTwo). The commune is the UrbIS address data's own MUNNAMEFRE / MUNNAMEDUT of the nearest address of that street (so plates of Forest streets at the tile edges say "Forest - Vorst"). OSM names written "NL - FR" are put back in FR / NL order. First try used 1 mm decals for the small words: they flickered at their edges, replaced by the one-label layout. `r2_stjob_plate_uccle_style.jpg`. |
+| 3. terraces on the measured sidewalk | **yes** | `pave`: the depth of continuous UrbIS sidewalk / square surface in front of the shop (sampled every 20 cm along the wall normal at three points across the front, must start within 0.8 m of the wall), terrace = pave − 1.5 m passage, one row from 1.2 m, two + parasols from 2.6 m; never on anything that is not measured paving (grass, gardens, OSM-only areas). Saint-Job's Le Passage / Madonna terraces (on grass in round 1) are gone; Nomade at Fort-Jaco has one (`r2_fortjaco_nomade_terrace_on_paving.jpg`). |
+| 4. per-tile atlas uploads | **yes** | the atlas is a `DataArrayTexture` of 12 pages of 2048² R8 (mipmapped); a tile packs into pages of its own and only those layers are uploaded (`texture.addLayerUpdate`, supported by r187's WebGPU backend: checked in its source); `removeTile` frees the pages. Measured in the lab, alternating 6 rounds of (no upload, one page, whole atlas) on the same view: render call CPU **+0.7 ms** for one page (4 MB) vs **+4.6 ms** for the whole atlas (48 MB); until the GPU finished: +2 ms vs +11 ms. A tile's whole first frame (new meshes + atlas) +8.7 ms per page vs +10.3 ms full (4 rounds each; noisy). Mipmaps are regenerated for the texture on each update (GPU only). `?atlas=full` = the old behaviour. |
+| 5. shopfronts on the real wall, glass | **yes** | the build reads the UrbIS wall triangles (buildings.bin) of the building and puts each shopfront and wall plate on the area-weighted wall plane facing the street over the shop's span (offset AND the wall's own normal, not the footprint edge's). In practice the walls follow the footprints: 5 of 537 fronts moved (max 0.53 m); plates now lie in the wall plane (one cut into a slanted wall in round 2's first try). Windows: a near-black, very smooth dielectric (roughness 0.02) so the street and sky reflect (IBL + the city's SSR) over the parallax interior, which shows as emissive (`r2_fortjaco_glass_bourgeoises.jpg`). Shopfront frame boxes no longer overlap coplanar (head between the jambs, transom bar behind the mullion). |
+| 6. OSM from overpass-api.de | **no** | overpass-api.de answered 502 again (status page 406). Mirrors: kumi.systems has osm_base **2026-07-24** (kept, the build uses it), private.coffee only 2026-06-01 (kept aside as `osm_pois.privatecoffee-2026-06-01.json`). Re-fetch with `python tools/streetlife/fetch_streetlife.py --only osm --force` when the main endpoint is back. |
+| 7. licences | **see below** | |
+
+### Licences to confirm BEFORE going public
+
+| data | used for | what we know | where to confirm |
+|---|---|---|---|
+| OpenStreetMap | shop / amenity names, fuel, street names | ODbL: "© OpenStreetMap contributors" shown in the lab; a public city must show it too and share-alike applies to a derived database | https://www.openstreetmap.org/copyright |
+| Brussels Mobility WFS `bm_public_transport:stib_stops`, `bm_bike:villo`, `bm_other:pointpostal` | stop names / lines, Villo stations, bpost boxes | open WFS, **licence not checked**; the STIB stop names may come from STIB's own data under its own terms, the bpost points from bpost | https://data-mobility.irisnet.be/ (layer pages, e.g. https://data-mobility.irisnet.be/info/urbadm_adpt for the address layer they also serve) and https://data.mobility.brussels/ |
+| UrbIS AddressNumbers (urbisvector WFS) | house numbers, FR / NL street + commune names | the UrbIS ADM address points are listed under **CC0** on the Brussels Mobility portal; datastore.brussels uses CC0, CC-BY or paid licences per dataset; the cadastral layer of UrbIS ADM is NOT CC0 (FPS Finance) - we do not use it | https://geobru-geonetwork.irisnet.be/geonetwork/srv/api/records/a8a807b0-6b0b-11ed-8e3b-010101010000 (UrbIS - Addresses), https://be.brussels/en/about-region/urbis-data |
+| UrbIS 3D buildings, land cover (street surfaces), DTM | façades, paving, heights | CC0 (CONTRACT / MARKET.md) | datastore.brussels dataset pages |
+
+### Round 2 numbers (noise: the machine also runs other GPU work; read the pairs)
+- **GPU A/B, layer on - off** (alternating rounds, Fort-Jaco): street level at Nomade **+0.79 ms** (pairs 0.79 0.72 0.85 0.59
+  0.85 0.79), from the sky **+0.79 ms** (pairs 0.79 0.79 0.79 0.85 0.79). Earlier in the round, under the other project's heavy
+  load (frames 14-34 ms), the pairs swung by +-12 ms: unusable.
+- **That +0.8 ms is NOT the layer's content**: the same constant shows from the sky, where only 2 meshes of 19 are drawn and
+  cover a few pixels, and with a PLAIN material on them. Controls in the same lab, same view: an unrelated plain
+  `InstancedMesh` of cubes costs +0.92 / +0.85 (2 instances), +0.98 / +0.72 (39), +1.05 / +1.11 (575), +0.66 / +0.59 (2000);
+  a plain single `Mesh` costs 0.00 (4 rounds). So on this near-idle GPU (frame ~2 ms) ANY instanced draw adds a fixed
+  ~0.6-1 ms (most likely the GPU's clock / power state, or a fixed per-pipeline cost of instanced draws in r187's WebGPU
+  backend: to investigate, TODO), independent of instance count and shading. The layer's own increment is below what
+  this A/B resolves. Round 1 (GPU kept busy by the other project): +0.13 ms street, ~0 sky.
+- CPU per frame: update() < 0.1 ms (timer resolution); the atlas does not re-upload between frames (texture version stable).
+- **Atlas upload** (alternating, 6 rounds): one 4 MB page +0.7 ms CPU in the render call (+2 ms until the GPU is done) vs the
+  whole 48 MB atlas +4.6 ms (+11 ms).
+- Worker per tile: J6 150-195 ms, I6 172-195 ms, I5 87-144 ms (the SDF of the labels is ~85 % of it).
+- Mesh audit: 13 kits (spot added), 0 blocking.
+- **Flicker** (24 frames, 0.6 mm steps): Nomade fascia 9 m strafe **1 px** (`r2_flicker_nomade_9m_strafe.jpg`), dolly 10;
+  Neuhaus 30 m without post 25 / 74 px, none on text (with post a whole-sky flip, 150k px, from the post chain's sky, not
+  the layer); street plate at 3.2 m: the plate's edge blinks ONLY with the post chain on (GTAO / SSR on its 2 cm depth
+  step: `r2_flicker_plate_3m_strafe_after.jpg`); post off 23 px, none on the plate. Round 2's first plate (1 mm decals for
+  the small words) blinked at the decals (`r2_flicker_plate_3m_strafe.jpg`): replaced by the one-label plate. No
+  shimmering letters.
+- **Names check**: "every shop / fuel name shown is in the data" (0 outside the data), Fort-Jaco and Saint-Job.
+- Frame strips: `r2_strip_drive_fortjaco_1.jpg`, `r2_strip_drive_fortjaco_2.jpg` (the camera paths now follow the street's
+  real centreline from roads.json: right lane for the drive, the shops' sidewalk for the walk; round 1's paths cut through
+  gardens).
+
+### Round 2 weak points
+- The fixed ~0.8 ms of instanced draws on an idle GPU (above): needs a proper look (render one frame with only the
+  instanced meshes, compare the WebGPU pipeline / pass, check GPU clocks) before the city merge.
+- Letters mounted straight on the wall (no board), as at "St Job", are not possible yet: every sign is a board.
+- Terraces now appear only where UrbIS measures paving in front: many real terraces (on forecourts or paved private strips
+  the land cover calls something else) are gone; at Fort-Jaco the real forecourt is paved but drawn as grass by the city.
+- The street-type split (FR "Avenue de" / NL "laan") is a regex over the names: 1,134 of 2,155 plates get the Uccle layout,
+  the rest show both full names (e.g. "Avenue De Fré", whose "De" is read as an article).
+- Sign treatment (backlit / spots / lightbox) and paint are chosen by a hash per shop: plausible, not the real shop's.
+- The gooseneck spots give no light in the lab (their positions go to the night lights lab); the board gets a fixed wash.
