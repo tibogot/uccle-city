@@ -19,3 +19,8 @@ models/stalle/statue_raw.json
 models/stalle/audit/*.json
 !models/stalle/audit/*.allow.json
 models/stalle/stalle.audit.raw.glb
+models/vanbuuren/*.raw.glb
+models/vanbuuren/*.blend
+models/vanbuuren/*.blend1
+models/vanbuuren/vanbuuren_lod1_bake.bin
+docs/vanbuuren/side_*

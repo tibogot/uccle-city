@@ -1,0 +1,8 @@
+[
+ { "check": "leak", "at": [-2.0, 101.039, -4.433], "radius": 0.1, "why": "inside the north wing's roof D (the course end at roof C's eave step at u -2.0 lies under D's flat top): never seen" },
+ { "check": "leak", "at": [6.552, 97.803, -7.525], "radius": 0.1, "why": "roof D's east eave end on the line of 509389's south wall (the neighbour, kept as UrbIS, closes it in the city)" },
+ { "check": "leak", "at": [-4.065, 103.117, -8.256], "radius": 0.1, "why": "roof D's west end on the line of 509389 (closed by the neighbour's wall in the city)" },
+ { "check": "leak", "at": [-3.261, 104.76, -8.202], "radius": 0.1, "why": "roof D's flat top's north end on the line of 509389 (closed by the neighbour's wall in the city)" },
+ { "check": "leak", "at": [-6.993, 94.825, -4.7], "radius": 0.1, "why": "0.4 m under the DTM (95.2) at the north-west gable's foot: underground" },
+ { "check": "coplanar", "at": [-2.62, 103.263, -9.646], "radius": 0.1, "why": "the NW wing roof's end against 509389 (1.6 cm2 between two end faces, hidden by the neighbour)" }
+]
