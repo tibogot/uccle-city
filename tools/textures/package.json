@@ -1,0 +1,7 @@
+{
+  "name": "uccle-textures",
+  "private": true,
+  "type": "module",
+  "description": "KTX2 encoding of the material library's CC0 scans (encode_ktx2.mjs)",
+  "dependencies": { "ktx2-encoder": "0.6.0" }
+}

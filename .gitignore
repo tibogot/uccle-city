@@ -41,3 +41,6 @@ models/parkkit/*.raw.glb
 models/parkkit/previews/
 models/parkkit/cc0_test/
 models/foliage/plants.raw.glb
+
+# texture candidates (tools/textures/candidates.py rebuilds them; chosen ones get promoted + committed)
+viewer/materials/textures/cand/

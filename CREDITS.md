@@ -70,6 +70,101 @@ the check dates are in `pipeline/sources.json`.
 | Quaternius **Universal Animation Library** (Standard, free tier; https://quaternius.com/packs/universalanimationlibrary.html, downloaded from https://quaternius.itch.io/universal-animation-library on 2026-11-11, raw in `data/raw/characters/ual1/`, git-ignored) | **CC0 1.0** (License.txt in the pack) | Clips Sitting_Idle_Loop, Sitting_Talking_Loop, Idle_Talking_Loop retargeted onto the crowd skeleton by `tools/peds/bakeGait.mjs` into `models/pedestrians/clips.bin` (sit, sitTalk, talk) |
 | mrdoob/slop-newyork tree system (`vendor/slop-trees/`: `trees.js`, `building-collision.js`, tree material), commit `737b7691` | MIT, © Mr.doob | `vendor/slop-trees/LICENSE` and `ORIGIN.md`. Used by `viewer/treesSlop.js` |
 
+## Material scans (CC0, Material Lab and viewer/materials/)
+
+Raw 2k JPG maps in `data/raw/textures/<source>/<id>/` (git-ignored, read as image data only; fetched by
+`tools/textures/fetch_textures.py`). Processed by `tools/textures/process_textures.py` (1024 px, albedo + packed
+normal / roughness / AO) and `tools/textures/encode_ktx2.mjs` (Basis UASTC + zstd KTX2 through the MIT `ktx2-encoder`
+npm package, build time only) into `viewer/materials/textures/` (`<mat>_albedo.ktx2`, `<mat>_nra.ktx2`, WebP fallback).
+All CC0 (public domain, no attribution required); credited anyway. Downloaded and checked 2026-11-05.
+
+| Library material | Asset | Source | Licence |
+|---|---|---|---|
+| brick_red_brussels | Red Brick (`red_brick`), Rob Tuytel | https://polyhaven.com/a/red_brick | CC0 |
+| stone_white | Sandstone Blocks 08 (`sandstone_blocks_08`) | https://polyhaven.com/a/sandstone_blocks_08 | CC0 |
+| stone_blue | Granite Tile 04 (`granite_tile_04`) | https://polyhaven.com/a/granite_tile_04 | CC0 |
+| slate | Roof Slates 02 (`roof_slates_02`) | https://polyhaven.com/a/roof_slates_02 | CC0 |
+| cobbles | Cobblestone Floor 08 (`cobblestone_floor_08`) | https://polyhaven.com/a/cobblestone_floor_08 | CC0 |
+| asphalt | Asphalt 02 (`asphalt_02`) | https://polyhaven.com/a/asphalt_02 | CC0 |
+| paving_concrete | Concrete Tiles (`concrete_tiles`) | https://polyhaven.com/a/concrete_tiles | CC0 |
+| copper_patina | Metal 058 C (`Metal058C`) | https://ambientcg.com/view?id=Metal058C | CC0 |
+
+Poly Haven licence: https://polyhaven.com/license (CC0). ambientCG licence: https://docs.ambientcg.com/license/ (CC0).
+No AI-generated maps, no web-search images.
+
+### Candidates for the Material Lab review (2026-11-12)
+
+Fetched by `tools/textures/candidates.py` (same pipeline; 1K, KTX2 + WebP into `viewer/materials/textures/cand/`,
+git-ignored and rebuilt by the tool; only the owner's picks get committed). All CC0.
+
+| Library material | Asset | Source | Licence |
+|---|---|---|---|
+| brick_red_brussels | Brick Wall 006 (`brick_wall_006`), Jan Burghardt | https://polyhaven.com/a/brick_wall_006 | CC0 |
+| brick_red_brussels | Brick Wall 001 (`brick_wall_001`), Rob Tuytel, Dimitrios Savva | https://polyhaven.com/a/brick_wall_001 | CC0 |
+| brick_red_brussels | Bricks 085 (`Bricks085`) | https://ambientcg.com/view?id=Bricks085 | CC0 |
+| brick_yellow | Bricks 105 (`Bricks105`) | https://ambientcg.com/view?id=Bricks105 | CC0 |
+| brick_yellow | Bricks 016 (`Bricks016`) | https://ambientcg.com/view?id=Bricks016 | CC0 |
+| brick_yellow | Yellow Brick (`yellow_brick`), Rob Tuytel | https://polyhaven.com/a/yellow_brick | CC0 |
+| brick_dark | Bricks 055 (`Bricks055`) | https://ambientcg.com/view?id=Bricks055 | CC0 |
+| brick_dark | Bricks 057 (`Bricks057`) | https://ambientcg.com/view?id=Bricks057 | CC0 |
+| brick_dark | Dark Brick Wall (`dark_brick_wall`), Dario Barresi, Dimitrios Savva | https://polyhaven.com/a/dark_brick_wall | CC0 |
+| brick_dark | Bricks 056 (`Bricks056`) | https://ambientcg.com/view?id=Bricks056 | CC0 |
+| mortar | Grey Plaster (`grey_plaster`), Rob Tuytel | https://polyhaven.com/a/grey_plaster | CC0 |
+| mortar | Plaster 001 (`Plaster001`) | https://ambientcg.com/view?id=Plaster001 | CC0 |
+| stone_white | Bricks 008 (`Bricks008`) | https://ambientcg.com/view?id=Bricks008 | CC0 |
+| stone_white | Bricks 024 (`Bricks024`) | https://ambientcg.com/view?id=Bricks024 | CC0 |
+| stone_white | White Sandstone Bricks 03 (`white_sandstone_bricks_03`), Rob Tuytel | https://polyhaven.com/a/white_sandstone_bricks_03 | CC0 |
+| stone_blue | Stone Tile Wall (`stone_tile_wall`), Charlotte Baglioni | https://polyhaven.com/a/stone_tile_wall | CC0 |
+| stone_blue | Stone Wall 02 (`stone_wall_02`), Dario Barresi, Charlotte Baglioni | https://polyhaven.com/a/stone_wall_02 | CC0 |
+| render_white | Plaster 002 (`Plaster002`) | https://ambientcg.com/view?id=Plaster002 | CC0 |
+| render_white | Plaster 004 (`Plaster004`) | https://ambientcg.com/view?id=Plaster004 | CC0 |
+| render_white | White Stucco (`white_stucco`), Amal Kumar | https://polyhaven.com/a/white_stucco | CC0 |
+| render_white | Painted Plaster Wall (`painted_plaster_wall`), Amal Kumar | https://polyhaven.com/a/painted_plaster_wall | CC0 |
+| render_painted | Painted Plaster Wall (`painted_plaster_wall`), Amal Kumar | https://polyhaven.com/a/painted_plaster_wall | CC0 |
+| render_painted | Beige Wall 002 (`beige_wall_002`), Dimitrios Savva, Rico Cilliers | https://polyhaven.com/a/beige_wall_002 | CC0 |
+| render_painted | Plaster 007 (`Plaster007`) | https://ambientcg.com/view?id=Plaster007 | CC0 |
+| slate | Roof Slates 03 (`roof_slates_03`), Rob Tuytel | https://polyhaven.com/a/roof_slates_03 | CC0 |
+| slate | Roofing Tiles 003 (`RoofingTiles003`) | https://ambientcg.com/view?id=RoofingTiles003 | CC0 |
+| slate | Grey Roof Tiles 02 (`grey_roof_tiles_02`), Rob Tuytel | https://polyhaven.com/a/grey_roof_tiles_02 | CC0 |
+| roof_tiles_red | Clay Roof Tiles 02 (`clay_roof_tiles_02`), Amal Kumar | https://polyhaven.com/a/clay_roof_tiles_02 | CC0 |
+| roof_tiles_red | Clay Roof Tiles 03 (`clay_roof_tiles_03`), Amal Kumar | https://polyhaven.com/a/clay_roof_tiles_03 | CC0 |
+| roof_tiles_red | Roofing Tiles 014 B (`RoofingTiles014B`) | https://ambientcg.com/view?id=RoofingTiles014B | CC0 |
+| roof_tiles_red | Roofing Tiles 007 (`RoofingTiles007`) | https://ambientcg.com/view?id=RoofingTiles007 | CC0 |
+| roof_tiles_flat_dark | Roofing Tiles 013 A (`RoofingTiles013A`) | https://ambientcg.com/view?id=RoofingTiles013A | CC0 |
+| roof_tiles_flat_dark | Roofing Tiles 009 (`RoofingTiles009`) | https://ambientcg.com/view?id=RoofingTiles009 | CC0 |
+| roof_tiles_flat_dark | Grey Roof 01 (`grey_roof_01`), Rob Tuytel | https://polyhaven.com/a/grey_roof_01 | CC0 |
+| zinc_roof | Metal 032 (`Metal032`) | https://ambientcg.com/view?id=Metal032 | CC0 |
+| zinc_roof | Metal 049 C (`Metal049C`) | https://ambientcg.com/view?id=Metal049C | CC0 |
+| lead_roof | Metal 046 B (`Metal046B`) | https://ambientcg.com/view?id=Metal046B | CC0 |
+| lead_roof | Metal 055 A (`Metal055A`) | https://ambientcg.com/view?id=Metal055A | CC0 |
+| copper_patina | Metal 058 B (`Metal058B`) | https://ambientcg.com/view?id=Metal058B | CC0 |
+| painted_metal_white | Painted Metal 012 (`PaintedMetal012`) | https://ambientcg.com/view?id=PaintedMetal012 | CC0 |
+| painted_metal_white | Painted Metal 010 (`PaintedMetal010`) | https://ambientcg.com/view?id=PaintedMetal010 | CC0 |
+| painted_metal_white | Metal 016 (`Metal016`) | https://ambientcg.com/view?id=Metal016 | CC0 |
+| cast_iron_green | Green Metal Rust (`green_metal_rust`), Rob Tuytel | https://polyhaven.com/a/green_metal_rust | CC0 |
+| cast_iron_green | Painted Metal 006 (`PaintedMetal006`) | https://ambientcg.com/view?id=PaintedMetal006 | CC0 |
+| wood_frame_white | Wood 049 (`Wood049`) | https://ambientcg.com/view?id=Wood049 | CC0 |
+| wood_frame_white | Plywood (`plywood`), Rob Tuytel | https://polyhaven.com/a/plywood | CC0 |
+| wood_frame_dark | Wood 051 (`Wood051`) | https://ambientcg.com/view?id=Wood051 | CC0 |
+| wood_frame_dark | Wood 060 (`Wood060`) | https://ambientcg.com/view?id=Wood060 | CC0 |
+| cobbles | Cobblestone Floor 03 (`cobblestone_floor_03`), Rob Tuytel | https://polyhaven.com/a/cobblestone_floor_03 | CC0 |
+| cobbles | Cobblestone Square (`cobblestone_square`), Rob Tuytel | https://polyhaven.com/a/cobblestone_square | CC0 |
+| cobbles | Paving Stones 070 (`PavingStones070`) | https://ambientcg.com/view?id=PavingStones070 | CC0 |
+| paving_concrete | Concrete Pavement (`concrete_pavement`), Charlotte Baglioni | https://polyhaven.com/a/concrete_pavement | CC0 |
+| paving_concrete | Concrete Pavement 03 (`concrete_pavement_03`), Charlotte Baglioni | https://polyhaven.com/a/concrete_pavement_03 | CC0 |
+| asphalt | Asphalt 04 (`asphalt_04`), Jenelle van Heerden, Sergej Majboroda | https://polyhaven.com/a/asphalt_04 | CC0 |
+| asphalt | Asphalt 015 (`Asphalt015`) | https://ambientcg.com/view?id=Asphalt015 | CC0 |
+| asphalt | Asphalt 020 S (`Asphalt020S`) | https://ambientcg.com/view?id=Asphalt020S | CC0 |
+| concrete_white | Concrete 034 (`Concrete034`) | https://ambientcg.com/view?id=Concrete034 | CC0 |
+| concrete_white | Concrete 046 (`Concrete046`) | https://ambientcg.com/view?id=Concrete046 | CC0 |
+| concrete_white | Concrete Wall 008 (`concrete_wall_008`), Dario Barresi, Charlotte Baglioni | https://polyhaven.com/a/concrete_wall_008 | CC0 |
+| rockwork_concrete | Rock 030 (`Rock030`) | https://ambientcg.com/view?id=Rock030 | CC0 |
+| rockwork_concrete | Rock 023 (`Rock023`) | https://ambientcg.com/view?id=Rock023 | CC0 |
+
+Quixel Megascans (Fab Standard License, NOT CC0) are NOT in the repo: the owner downloads them into
+`data/raw/megascans/` (git-ignored) for the lab only; see docs/materials/MEGASCANS_LIST.md.
+
+
 ## 3D models (CC0 packs, Car Lab comparison)
 
 Raw downloads in `data/raw/cars/<source>/` (git-ignored, read as data only). Converted by `tools/cars/convertPacks.mjs`

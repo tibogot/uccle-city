@@ -1,0 +1,170 @@
+// Pattern helpers for the material library (viewer/materials/library.js). All TSL, all antialiased by the pixel
+// footprint `fw` (metres per pixel, from the world-space fwidth): every joint is a BOX-FILTERED coverage (tslkit
+// filteredPulse) widened to >= 1.5 px and softened by the joint's own width (a real joint is not a knife edge), every
+// per-unit value fades to its mean over a long smoothstep of the footprint, every noise fades by ITS OWN frequency
+// (fadeF: before one period spans 3 px), and the reliefs of the units are ANALYTIC (`grad`: dh/da, dh/db from the
+// unit's edge distance, ramped over >= 1.5 px), not screen-space derivatives of a height: no crawling outlines.
+// No hard LOD switch anywhere: the far look is the integral of the near one.
+//
+// 2026-11-12 shimmer fix (owner: "fine diagonal 'firing' streaks alias + bump outlines crawl"): (1) the value noise
+// hashed fract(sin(dot(p, k)) * 43758) of WORLD coordinates x 60: sin() of ~1e5 loses its precision on GPUs and the
+// hash collapses to a function of dot(p, k) = DIAGONAL STREAKS; now a sin-free hash (Hoskins) of lattice ids wrapped
+// mod 1024; (2) noises at 20-60 cycles / m now fade by their own frequency, not by the brick's; (3) analytic bump.
+import { Fn, float, vec2, vec3, floor, fract, mix, min, max, abs, smoothstep, clamp, sqrt, select, mx_noise_float, sin, dot } from "three/tsl";
+import { filteredPulse } from "../tslkit.js";
+
+// sin-free hashes (Dave Hoskins, "Hash without Sine"); inputs are integer lattice ids, wrapped mod 1024 first
+const wrap = (p) => fract(p.div(1024)).mul(1024);
+const h3 = (p) => {
+  const p3 = fract(wrap(p).mul(0.1031));
+  const q = p3.add(dot(p3, vec3(p3.z, p3.y, p3.x).add(31.32)));
+  return fract(q.x.add(q.y).mul(q.z));
+};
+const h2 = (p) => {
+  const q0 = wrap(p);
+  const p3 = fract(vec3(q0.x, q0.y, q0.x).mul(0.1031));
+  const q = p3.add(dot(p3, vec3(p3.y, p3.z, p3.x).add(33.33)));
+  return fract(q.x.add(q.y).mul(q.z));
+};
+const vnoise3 = Fn(([p_]) => {
+  const p = vec3(p_).toVar(), i = floor(p).toVar(), f = fract(p).toVar();
+  const u = f.mul(f).mul(float(3).sub(f.mul(2))).toVar();
+  const c = (x, y, z) => h3(i.add(vec3(x, y, z)));
+  return mix(mix(mix(c(0, 0, 0), c(1, 0, 0), u.x), mix(c(0, 1, 0), c(1, 1, 0), u.x), u.y),
+    mix(mix(c(0, 0, 1), c(1, 0, 1), u.x), mix(c(0, 1, 1), c(1, 1, 1), u.x), u.y), u.z);
+});
+const vnoise2 = Fn(([p_]) => {
+  const p = vec2(p_).toVar(), i = floor(p).toVar(), f = fract(p).toVar();
+  const u = f.mul(f).mul(float(3).sub(f.mul(2))).toVar();
+  const c = (x, y) => h2(i.add(vec2(x, y)));
+  return mix(mix(c(0, 0), c(1, 0), u.x), mix(c(0, 1), c(1, 1), u.x), u.y);
+});
+/** per-cell random in [0,1) of an integer vec2 (sin-free, wrapped) */
+export const hash2 = (p) => h2(p);
+/** fade weight 1 (resolved) .. 0 for a noise of `freq` cycles per metre at footprint fw: gone before a period is 3 px */
+export const fadeF = (fw, freq) => float(1).sub(smoothstep(0.12, 0.33, fw.mul(freq)));
+/** -1..1 noise (3D value noise) */
+export const n3 = (x, y, z) => vnoise3(vec3(x, y, z)).mul(2).sub(1);
+/** 0..1 noise */
+export const n01 = (x, y, z) => vnoise3(vec3(x, y, z));
+/** 0..1 2D value noise (cheapest: 4 hashes) */
+export const n2 = (x, y) => vnoise2(vec2(x, y));
+/** -1..1 gradient (Perlin) noise where its isotropy matters (crack / vein iso-lines) */
+export const g3 = (x, y, z) => mx_noise_float(vec3(x, y, z));
+/** per-cell random in [0,1): the inputs are integer cell ids; taken modulo 1024 so far-away cells keep precision */
+export const H2 = (a, b) => h2(vec2(a, b));
+
+/** Fade weight 0 (near) .. 1 (far) for a feature of size `unit` m: starts when a pixel is `lo` x the unit, done at `hi`. */
+export const farK = (fw, unit, lo = 0.12, hi = 0.8) => smoothstep(float(unit).mul(lo), float(unit).mul(hi), fw);
+
+/** Fade-out weight of a relief of size `unit` (it goes before its colour does: bump edges alias first). */
+export const bumpK = (fw, unit) => float(1).sub(smoothstep(float(unit).mul(0.04), float(unit).mul(0.25), fw));
+
+/**
+ * Running-bond courses (bricks, ashlar, setts, slabs). a = along the course (m), b = across (up the wall / slope).
+ * H = course height incl. joint, L = unit length incl. joint, J = joint width, stagger = row offset (0.5 = half bond),
+ * vary = 0..1 random unit length per row (ashlar), seed = per-surface seed.
+ * Returns { joint 0..1 (filtered coverage), tone, tone2 (per unit, fading to 0.5), edge (m from the unit's edge,
+ * for arrises / pillows), id (vec2), fu, fv (0..1 inside the unit), far }.
+ */
+export function bond(a, b, fw, { H, L, J, stagger = 0.5, vary = 0, seed = 0, soft = 0.35 }) {
+  H = float(H); L = float(L); J = float(J);
+  const rf = b.div(H), row = floor(rf);
+  const Lr = vary ? L.mul(H2(row, float(seed).add(5.0)).mul(vary).add(1.0 - vary * 0.5)) : L;
+  const off = vary ? H2(row, float(seed).add(9.0)) : row.mul(stagger);
+  const cf = a.div(Lr).add(off), col = floor(cf);
+  // joints centred on the unit edges, box-filtered over max(1.5 px, a soft natural edge of `soft` x the joint width)
+  const wj = sqrt(fw.mul(fw).mul(2.25).add(J.mul(soft).pow(2)));
+  const jv = filteredPulse(rf.add(J.div(H).mul(0.5)), float(0), J.div(H), wj.div(H));
+  const ju = filteredPulse(cf.add(J.div(Lr).mul(0.5)), float(0), J.div(Lr), wj.div(Lr));
+  const joint = float(1).sub(float(1).sub(jv).mul(float(1).sub(ju)));
+  const fu = fract(cf), fv = fract(rf);
+  const ex = min(fu, float(1).sub(fu)).mul(Lr), ey = min(fv, float(1).sub(fv)).mul(H);
+  const edge = max(min(ex, ey).sub(J.mul(0.5)), 0.0);
+  // d(edge)/d(a, b): +-1 along whichever edge is nearer, blended over a short mitre (no crease line)
+  const sx = select(fu.lessThan(0.5), float(1), float(-1)), sy = select(fv.lessThan(0.5), float(1), float(-1));
+  const mit = smoothstep(J.mul(-0.5).sub(fw), J.mul(0.5).add(fw), ey.sub(ex));      // 1: the vertical edge is nearer
+  const eg = vec2(sx.mul(mit), sy.mul(float(1).sub(mit)));
+  const far = farK(fw, min(H, Lr), 0.15, 0.9);
+  const t0 = H2(col.add(float(seed).mul(17.0)), row), t1 = H2(col, row.add(float(seed).add(71.0)));
+  return { joint, tone: mix(t0, float(0.5), far), tone2: mix(t1, float(0.5), far), raw: t0, raw2: t1, edge, eg, id: vec2(col, row), fu, fv, far, Lr };
+}
+
+/**
+ * Analytic pillow relief from a unit's edge distance: height = amp * smoothstep(0, r, edge), r >= 1.5 px (the ramp
+ * widens with the footprint, so its slope falls instead of aliasing), faded out by `keep` (bumpK). Returns
+ * { h (m), grad vec2 (dh/da, dh/db) }.
+ */
+export function pillow(edge, eg, amp, r0, fw, keep) {
+  const r = max(float(r0), fw.mul(1.5));
+  const t = clamp(edge.div(r), 0, 1);
+  const h = t.mul(t).mul(float(3).sub(t.mul(2))).mul(amp).mul(keep);
+  const dh = t.mul(float(1).sub(t)).mul(6).div(r).mul(amp).mul(keep);
+  return { h, grad: eg.mul(dh) };
+}
+
+/**
+ * Jittered cells (F1/F2 Worley on a staggered grid): setts, gravel. Cell size sx x sy (m), jitter 0..1.
+ * Returns { F1, edge (half F2-F1, ~ m to the border), id, rx, rz (offset to the centre, m) }.
+ */
+export function cells(a, b, sx, sy, jitter = 0.8, rowJitter = true) {
+  const gy = b.div(sy), row0 = floor(gy);
+  let F1 = float(9), F2 = float(9), id = vec2(0, 0), rx = float(0), rz = float(0);
+  for (let dj = -1; dj <= 1; dj++) {
+    const r = row0.add(dj);
+    const len = rowJitter ? H2(r, 3.0).mul(0.55).add(0.75).mul(sx) : float(sx);
+    const gx = a.div(len).add(rowJitter ? H2(r, 9.0) : float(0));
+    const c0 = floor(gx);
+    for (let di = -1; di <= 1; di++) {
+      const c = c0.add(di);
+      const h1 = H2(c, r), h2 = H2(c.add(57.0), r.add(113.0));
+      const px = c.add(0.5).add(h1.sub(0.5).mul(jitter)).sub(gx).mul(len);
+      const pz = r.add(0.5).add(h2.sub(0.5).mul(jitter * 0.75)).sub(gy).mul(sy);
+      const d = sqrt(px.mul(px).add(pz.mul(pz)));
+      const closer = d.lessThan(F1);
+      F2 = select(closer, F1, min(F2, d));
+      id = select(closer, vec2(c, r), id);
+      rx = select(closer, px, rx); rz = select(closer, pz, rz);
+      F1 = min(F1, d);
+    }
+  }
+  return { F1, edge: F2.sub(F1).mul(0.5), id, rx, rz };
+}
+
+/** Coverage of a thin line where |v| < w (v a smooth field in metres, e.g. a noise iso-line scaled), AA by its own fwidth. */
+export function isoLine(v, w, fwv) {
+  return float(1).sub(smoothstep(float(w).sub(fwv), float(w).add(fwv), abs(v)));
+}
+
+/** Standing-seam / batten roll profile across `a` (period P m, seam width W m): { seam 0..1 coverage, height m, grad }. */
+export function seams(a, P, W, h, fw) {
+  const x = a.div(P);
+  const seam = filteredPulse(x.add(float(W).div(P).mul(0.5)), float(0), float(W).div(P), fw.mul(1.5).div(P));
+  const q = fract(x.add(0.5)).sub(0.5);
+  const d = abs(q).mul(P);                                          // m from the seam centre
+  const lo = float(W).mul(0.25), hi = max(float(W).mul(0.6), lo.add(fw.mul(1.5)));
+  const t = clamp(d.sub(lo).div(hi.sub(lo)), 0, 1);
+  const prof = float(1).sub(t.mul(t).mul(float(3).sub(t.mul(2))));
+  const dprof = t.mul(float(1).sub(t)).mul(-6).div(hi.sub(lo)).mul(select(q.lessThan(0), float(-1), float(1)));
+  return { seam, height: prof.mul(h), d, grad: vec2(dprof.mul(h), 0) };
+}
+
+/** Vertical rain streaks: thin, long noise (x across, y down), 0..1. */
+export function streakNoise(x, y, seed = 0) {
+  const s1 = n2(x.mul(9.0).add(seed * 17), y.mul(0.35));
+  const s2 = n2(x.mul(23.0), y.mul(0.8).add(seed * 7 + 4));
+  return smoothstep(0.45, 0.85, s1.mul(0.65).add(s2.mul(0.35)));
+}
+
+/** Wood grain: ring field along `along`, figure across. 0..1 lines (fade with fw). */
+export function woodGrain(along, across, fw, seed = 0) {
+  const w = n3(along.mul(0.6), across.mul(3.0), float(seed)).mul(0.35);
+  const ring = fract(across.mul(38.0).add(w.mul(6.0)).add(n3(along.mul(2.0), across.mul(8.0), float(seed).add(3)).mul(0.6)));
+  const line = smoothstep(0.0, 0.25, ring).mul(smoothstep(1.0, 0.6, ring));
+  const fade = smoothstep(0.0008, 0.006, fw);
+  return mix(line, float(0.55), fade);
+}
+
+/** sin-hash for a non-integer scalar (only for stable, non-interpolated inputs) */
+export const hash1 = (x) => fract(sin(dot(vec2(x, 0.37), vec2(127.1, 311.7))).mul(43758.5453));
+export { clamp };
