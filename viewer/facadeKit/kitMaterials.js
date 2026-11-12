@@ -29,7 +29,10 @@ export const KIT_SLOTS = ["stone_white", "stone_blue", "brick_red_brussels", "br
   // round 3 (new pieces): library names where the library has one (slate, brick_dark, render_white, copper_patina), two
   // kit looks it has not (glass_stained: leaded coloured lights, opaque; metal_anodised: 1960s aluminium; enamel_blue: the
   // house-number plates)
-  "slate", "brick_dark", "render_white", "copper_patina", "glass_stained", "metal_anodised", "enamel_blue"];
+  "slate", "brick_dark", "render_white", "copper_patina", "glass_stained", "metal_anodised", "enamel_blue",
+  // fixes1 (the garage door, tools/blender/facadeKit.py garage): garage_steel = painted stucco-embossed steel (the leaf and
+  // its frame: colour per building, grime at the foot, a rust streak under the lock), rubber_black = the seals
+  "garage_steel", "rubber_black"];
 /** THE ADAPTER TABLE: kit slot -> look name (a KIT_SLOTS / library name) */
 export const SLOT_TABLE = Object.fromEntries(KIT_SLOTS.map((s) => [s, s]));
 // THE ONE LINE: "temp" | "../materials/library.js" (2026-11-13: the library by default; ?libmat=0 or ?libmat=-kit: temp).
@@ -195,7 +198,7 @@ export function kitOpaqueMaterial(lod, opts = {}) {
   const metal = Fn(() => {
     const mt = float(0).toVar();
     If(eff.equal(7), () => mt.assign(0.35)).ElseIf(eff.equal(8), () => mt.assign(0.1)).ElseIf(eff.equal(9), () => mt.assign(0.4)).ElseIf(eff.equal(6), () => mt.assign(0.0))
-      .ElseIf(eff.equal(13), () => mt.assign(0.15)).ElseIf(eff.equal(15), () => mt.assign(0.8));
+      .ElseIf(eff.equal(13), () => mt.assign(0.15)).ElseIf(eff.equal(15), () => mt.assign(0.8)).ElseIf(eff.equal(17), () => mt.assign(0.05));
     return mt;
   })();
   m.colorNode = out.rgb;
@@ -321,4 +324,28 @@ export const LOOKS = {
     const ring = filteredPulse(u, 0.075, 0.925, fwidth(u)).mul(filteredPulse(v, 0.1, 0.9, fwidth(v)));
     return { col: mix(lin(0x123a8a), lin(0xe8e6df), clamp(inner.sub(ring), 0, 1)), rough: float(0.2) };
   },
+  garage_steel(st) {
+    // a sectional garage door's painted steel (and its frame). Colour per building (the instance seed): traffic white
+    // (most), anthracite, sepia brown, moss green. Stucco embossing as a fine box-filtered tone speckle. WEATHERING (no
+    // baked texture: the piece's uv is metres in its own frame, y up from the threshold): road grime and splash on the
+    // bottom 45 cm, and a rust streak running down from the lock / handle set, which sits in the right-hand rigid band at
+    // 0.205 m from the right jamb (facadeKit.py garage hx): its x is (1.2 + aKitI.y) - st.x there (the stretch moves the
+    // band by aKitI.y = (width - 2.4) / 2).
+    // (every smoothstep with low < high: WGSL leaves the reversed form undefined)
+    const s = seed();
+    const base = select(s.lessThan(0.5), lin(0xe9e8e2), select(s.lessThan(0.72), lin(0x3a3d40), select(s.lessThan(0.9), lin(0x4a3428), lin(0x2f4536))));
+    const fw = max(fwidth(st.x), fwidth(st.y)).mul(400.0);
+    const speck = hashFade(hash2(floor(st.mul(400.0))), fw);
+    const vert = step(abs(normalWorld.y), 0.7);                    // faces standing up (their uv.y is the height)
+    const foot = float(1).sub(smoothstep(0.0, 0.45, st.y)).mul(vert);
+    const splash = step(0.82, hashFade(hash2(floor(st.mul(90.0)).add(s.mul(31.0))), max(fwidth(st.x), fwidth(st.y)).mul(90.0))).mul(float(1).sub(smoothstep(0.02, 0.3, st.y))).mul(vert);
+    const xr = float(1.2).add(attribute("aKitI", "vec4").y).sub(st.x).sub(0.205);   // 0 under the lock
+    const wid = mix(float(0.006), float(0.022), float(1).sub(smoothstep(0.15, 0.6, st.y)));        // the streak widens downwards
+    const streak = float(1).sub(smoothstep(float(0), wid, abs(xr))).mul(float(1).sub(smoothstep(0.5, 0.62, st.y))).mul(smoothstep(0.05, 0.3, st.y)).mul(vert).mul(0.55);
+    let col = base.mul(mix(float(0.975), float(1.02), speck));
+    col = mix(col, lin(0x6a6052), foot.mul(0.32).add(splash.mul(0.25)).mul(kitLook.weather));
+    col = mix(col, lin(0x7a4a26), streak.mul(kitLook.weather));
+    return { col: col.mul(grime()), rough: mix(float(0.42), float(0.7), foot.mul(0.6).add(streak)) };
+  },
+  rubber_black() { return { col: lin(0x141414), rough: float(0.85) }; },
 };

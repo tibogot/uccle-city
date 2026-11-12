@@ -192,3 +192,71 @@ Separate reloads, kit=0 vs kit=1 (spread over 3+ runs each): street 5.74 / 6.69 
 4. Art nouveau / art deco set (sgraffito panels, horseshoe arches, wrought-iron), brick banding and string courses.
 5. Shopfronts (fascia, pilasters, roller shutter box) on the OSM shop faces; garage doors.
 6. Corner pieces: cut-corner door, quoins (stone / brick toothing).
+
+## Garage door (fixes1, 2026-11-12)
+
+Owner: the garage door looked "way too cheap". Rebuilt in `tools/blender/facadeKit.py` `garage()` (+ its scripted FAR
+variant = the LOD1 source), Blender 5.0 `--factory-startup -b ... --only garage`, packed by `packKit.mjs` (meshoptimizer
+LOD1), checked by `auditKit.mjs`.
+
+**Type: an insulated SECTIONAL door**, not an up-and-over. On the 1950-1980 Brussels houses and villas with the garage
+in the ground floor, most original up-and-over doors have been replaced by sectional doors with horizontal ribs (white,
+anthracite, brown, some green): general knowledge, NOT checked on Street View in this round (a look along the CR42L
+hits below would confirm the type and the colour mix). The sectional's horizontal joints and ribs also stretch
+cleanly with the 9-slice in width, where an up-and-over's vertical ribs would stretch apart.
+
+| part | what | slot |
+|---|---|---|
+| frame | folded steel jamb lining down the whole 22 cm reveal: 55 mm face flange on the wall (back 4 mm in the wall), a 12 mm rounded nose over the cut edge, a 50 mm stop lip at the back with a rounded edge; one mitred sweep round jambs and head | garage_steel |
+| seals | rubber bulb seal along the sides and the head (the top seal), 10 mm proud of the lip, pressed 1.5 mm into the leaf; a bottom seal on the threshold | rubber_black |
+| lintel | blue stone (petit granit) 22 x 4 cm proud, 20 cm past each jamb, DRIP GROOVE in the soffit, rounded front arris, weathered top; its back 8 mm in the wall (never the flange's plane) | stone_blue |
+| threshold | blue-stone plate 15 mm over the ground, from behind the leaf to 10 cm out, bevelled | stone_blue |
+| leaf | 4 sections of 42 mm sandwich panel, each one closed extrusion: rounded TONGUE (r 10 mm) at its top, SOCKET (r 6 mm) at its bottom: the joint is a 16 mm wide, 10 mm deep shadow line, the faces then meet (no slit); a pressed M-rib (30 mm, 5 mm deep, 8 segments) per section; an aluminium bottom rail | garage_steel, metal_anodised |
+| handle | rosette, a bow pull handle (swept, rounded bends), lock escutcheon + cylinder, in the RIGHT-HAND rigid 9-slice band (0.205 m from the jamb): it never stretches | metal_anodised |
+
+Not modelled: hinges / rollers (on the inside face, behind the stop lip: invisible from the street).
+
+**Weathering through the named slot only** (`kitMaterials.js` look `garage_steel`, no texture): colour per building from
+the instance seed (traffic white 50 %, anthracite 22 %, sepia brown 18 %, moss green 10 %), stucco embossing as a
+box-filtered speckle, road grime and splash on the bottom 45 cm (vertical faces), a RUST STREAK running down from the lock
+(its x follows the right jamb through `aKitI.y`, so it stays under the lock at any width), up-facing faces (joint noses)
+dirtier through the kit's `grime()`; `kitLook.weather` scales it. New slots `garage_steel`, `rubber_black` appended
+(indices 17, 18) in `SLOTS` (facadeKit.py) and `KIT_SLOTS` (kitMaterials.js). The old garage was all
+`painted_metal_white`, a slot `packKit.mjs` DROPS at LOD1 (small hardware): its leaf vanished beyond 28 m (LOD1 = 30
+triangles: lintel + reveal only).
+
+| | LOD0 / LOD1 triangles | slots | audit (3 sizes x 2 LODs) |
+|---|---|---|---|
+| before | 1966 / 30 | stone_white, painted_metal_white, render_white, metal_anodised | 0 blocking, 480 / 8 warnings |
+| after | 1136 / 236 | stone_blue, metal_anodised, garage_steel, rubber_black | **0 blocking** (coplanar / depth / crossing / leak / flipped / streak / bentflat all 0), 371-377 / 110-122 warnings (slivers of the long extrusions, 3 non-manifold joint edges, the test wall's own T-junctions) |
+
+During the work the checker found: the sweeps do not close a profile by themselves (open backs: a leak at the handle
+bow), the rail and bottom seal end caps in one plane, the bottom seal 1 mm behind the rail face at LOD1; all fixed.
+The whole kit was rebuilt (`models/facadekit/src` is not in git); the other pieces' geometry and triangle counts are
+unchanged (only the Cycles AO bake noise moves a few vertices' AO), and the full audit is still 0 blocking.
+
+Images: `wip/garage_before.png` (the old piece, rendered before the edit), `wip/garage_after.png` (same camera),
+`wip/garage_after_closeup.png` (right jamb at grazing light from above: joints, ribs, seal, handle),
+`wip/garage_lab.jpg` (the kit lab, midday, the shader's weathering: grime at the foot, the rust streak under the lock).
+
+### Placement (not done: plan)
+
+The piece stays unplaced: placing it needs a garage opening in the wall cut and the painted façade (`facades.js`
+wallMaterial / painted grid, `facadeGeom.js` opts.kit), not only `placement.js`. Where the garages are:
+
+- OSM (data/raw/osm/area.json): no `building=garage(s)` at all (160 building-tagged objects in the commune), 12
+  `entrance=garage`, 56 `amenity=parking_entrance`, 412 `service=driveway` ways. I6: 1 driveway, none ending on a façade.
+  Too sparse.
+- **UrbIS Topo `CR42L` (driveway, "entrée carrossable", drawn on the property line; already fetched for the dropped kerbs:
+  data/raw/urbis/topo_poles/<T>.street_furniture_line.geojson)**: I6 303 segments (tile bbox), **59 lying on a building
+  wall** (both ends < 0.8 m from one footprint edge, inside its span): 8 narrower than 2.2 m, 34 of 2.2-3.2 m, 17 wider
+  (double garages, carriage gates). Other tiles: H6 116 / 203, E5 93 / 239, C8 42 / 220, D4 31 / 220, F5 17 / 210
+  (villa districts: the driveway meets the front garden line, not the house).
+- Rule: a CR42L segment on a street face of an analysed building = a garage opening of its length (2.2-3.2 m: the
+  garage piece; > 3.2 m: two doors or a carriage gate, later), sill at the façade base, height 2.1 m, the ground-floor bay
+  under it becomes the garage (no window / door / soupirail there; the house's front door moves to another bay).
+- Steps: (1) pipeline: carry the CR42L segments into features.json (or the buildings' faces) per tile; (2)
+  `facadeGeom.js`: mark the ground-floor bay(s) under each segment (u range on the face) as a garage in the opening
+  table; (3) `facades.js`: paint a garage door there in the far painted façade and cut it in the kit wall
+  (`wallMaterial({ kit: true })`), like the French window's aKit.w; (4) `placement.js`: emit `garage` instances (the
+  9-slice slice "garage" already works in kitField.js / auditKit.mjs); the DTM under the threshold like the door steps.
