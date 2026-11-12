@@ -124,7 +124,7 @@ function scenarios(F) {
       } };
     },
     church() { return landOn((q) => q.name === "cross", "perch on the spire's cross"); },
-    ridge() { return landOn((q) => q.ridge && Math.hypot(q.pos.x - P.x, q.pos.z - P.z) > 60 && Math.hypot(q.pos.x - P.x, q.pos.z - P.z) < 120, "land on a roof ridge"); },
+    ridge() { return landOn((q) => q.ridge && Math.hypot(q.pos.x - P.x, q.pos.z - P.z) > 60 && Math.hypot(q.pos.x - P.x, q.pos.z - P.z) < 120 && clearApproach(q), "land on a roof ridge", 12); },
     far() {
       // a long flight west to east and back south: tiles stream in and out under the falcon (25-30 m/s, ~70 m up)
       air.setWind(3, 240);
@@ -142,12 +142,18 @@ function scenarios(F) {
       } };
     },
   };
-  function landOn(pick, note) {
+  // a ridge perch whose approach (45 m out along its facing, descending from 12 m over it) clears every roof by 3 m
+  function clearApproach(q) {
+    const ox = -Math.sin(q.yaw), oz = -Math.cos(q.yaw);
+    for (let d = 2; d <= 45; d += 1.5) { const y = q.pos.y + 12 * d / 45 + 1; if (w.floor(q.pos.x + ox * d, q.pos.z + oz * d) > y - 3) return false; }
+    return true;
+  }
+  function landOn(pick, note, up = 6) {
     air.setWind(2, 240);
     const q = g.perches.find(pick);
     if (!q) throw new Error(`no perch for ${note}`);
     const out = { x: -Math.sin(q.yaw), z: -Math.cos(q.yaw) };
-    const s = { x: q.pos.x + out.x * 45, y: q.pos.y + 6, z: q.pos.z + out.z * 45 };
+    const s = { x: q.pos.x + out.x * 45, y: q.pos.y + up, z: q.pos.z + out.z * 45 };
     fl.start(s.x, s.z, Math.atan2(out.x, out.z), s.y, 13, -0.05);
     let asked = false;
     return { seconds: 9, note, perch: q, script: (f) => {

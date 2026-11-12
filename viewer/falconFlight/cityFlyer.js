@@ -366,7 +366,8 @@ export class CityFlyer {
 <span class="k">stamina</span> ${bar(f.stamina, f.stamina < 0.15 ? "#e0705a" : "#7fd18b")}
 <span class="k">target </span> ${win ? `${win.d.toFixed(0)} m, closing ${win.closing.toFixed(0)} m/s${win.ok ? "  <b>WINDOW</b>" : ""}${g.talonsOut ? " · talons" : ""}` : "-"}
 <span class="k">score  </span> ${sc.points} · caught ${sc.catches} · delivered ${sc.delivered} · best ${sc.bestStrike} m/s${this.bird.prey ? "\n<b>CARRYING</b>: to the eyrie's ledge (E near it)" : ""}
-<span class="k">W/S A/D · Space flap · Shift stoop · C half · Q flare · F talons · E land · V cam · click: mouse aim · Esc</span>`;
+<span class="k">W/S A/D fly · Space flap · Shift stoop · C half · Q flare
+F talons · E land · V camera · click: mouse aim · Esc out</span>`;
     this.msg.innerHTML = g.messages.filter((m) => g.t - m.t < 4).map((m) => m.s).join("<br>");
     const [aimEl, tgtEl, perchEl] = this.rings;
     if (this._aim && inp.mouseAim && inp.mouse.locked && g.mode === "fly") this.ring(aimEl, this.camera.position.clone().addScaledVector(this._aim, 50), true); else aimEl.style.display = "none";

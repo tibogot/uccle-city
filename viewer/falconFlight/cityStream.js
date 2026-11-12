@@ -42,7 +42,7 @@ export class CityFalconWorld {
     this.church = null;            // { x, z, y0, c, s } (the placement, its rotation)
     this.proxies = [];             // landmark height proxies (rasters)
     this.roosts = [];
-    this.liftGrid = null; this.job = null; this.liftStats = { builds: 0, lastMs: 0, slices: 0, worstSlice: 0 };
+    this.liftGrid = null; this.job = null; this.pool = []; this.liftStats = { builds: 0, lastMs: 0, slices: 0, worstSlice: 0 };
     this.thermalSources = [];
     this._t = null;
     this._feat = new WeakMap();
@@ -169,7 +169,9 @@ export class CityFalconWorld {
       const off = g ? Math.max(Math.abs(fx - g.cx), Math.abs(fz - g.cz)) : Infinity;
       if (!this.city.tiles.length || (g && off < S.rebuild && (g.sig === sig || performance.now() - g.at < 3000))) return false;
       const cx = Math.round(fx / S.step) * S.step, cz = Math.round(fz / S.step) * S.step, nx = Math.round(2 * S.half / S.step) + 1;
-      this.job = { cx, cz, x0: cx - S.half, z0: cz - S.half, nx, nz: nx, a: new Float32Array(nx * nx), b: new Float32Array(nx * nx), j: 0, pass: 0, sig, t0: performance.now(), slices: 0 };
+      // the arrays are recycled (the old grid's and the scratch), no garbage per build
+      const take = () => { const q = this.pool.pop(); return q && q.length === nx * nx ? q : new Float32Array(nx * nx); };
+      this.job = { cx, cz, x0: cx - S.half, z0: cz - S.half, nx, nz: nx, a: take(), b: take(), j: 0, pass: 0, sig, t0: performance.now(), slices: 0 };
     }
     const J = this.job, nx = J.nx, nz = J.nz, step = S.step;
     let swapped = false;
@@ -187,6 +189,8 @@ export class CityFalconWorld {
         boxBlur(J.a, J.b, nx, nz, S.rad, J.pass % 2 === 0);
         const s = J.a; J.a = J.b; J.b = s; J.pass++;
       } else {
+        if (this.liftGrid) this.pool.push(this.liftGrid.data);
+        this.pool.push(J.b);
         this.liftGrid = { data: J.a, nx, nz, x0: J.x0, z0: J.z0, step, cx: J.cx, cz: J.cz, sig: J.sig, at: performance.now() };
         if (air) air.grid = this.liftGrid;
         this.liftStats.builds++; this.liftStats.lastMs = performance.now() - J.t0; this.liftStats.slices = J.slices;
@@ -195,7 +199,7 @@ export class CityFalconWorld {
       }
     }
     const ms = performance.now() - t0;
-    this.liftStats.worstSlice = Math.max(this.liftStats.worstSlice, ms);
+    if (ms > this.liftStats.worstSlice) { this.liftStats.worstSlice = ms; this.liftStats.worstAt = Math.round(t0); this.liftStats.worstPhase = J.j < nz ? `row ${J.j}` : `blur ${J.pass}`; }
     this.cpu.lift = this.cpu.lift * 0.95 + ms * 0.05;
     return swapped;
   }
