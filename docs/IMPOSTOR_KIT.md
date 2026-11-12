@@ -1,7 +1,7 @@
 # Impostor kit (`viewer/impostorKit/`) and the Impostor Lab
 
 A generic octahedral impostor system for three.js r187 WebGPU + TSL. This covers phases 0-2 of
-`docs/IMPOSTORS_RESEARCH.md` §5 and runs in the lab only. Trees move to it after the owner's tree-branch review
+`docs/IMPOSTORS_RESEARCH.md` §5 (trees) and phase 4 (parked cars, §5 below) and runs in the lab only. Trees move to it after the owner's tree-branch review
 (`docs/TODO.md`). Lab: `labs/impostor-lab.html` (`?scene=single|row50|forest|far`, `?mode=kit|today|mesh|none`,
 `?w=&h=` canvas size). Branch `claude/impostors`.
 
@@ -189,7 +189,186 @@ All of them are far below today's 182.
 - **EQUAL depth with `depthNode`.** Not checked on other GPUs (the `colourDepth: "lequal"` option exists). Full
   octahedral layout untested. Shadows: receive only, no casting proxy.
 - **Not done:**
-  - the lab's car / building / rock slots are empty;
+  - the lab's building / rock slots are empty (cars: §5);
   - KTX2;
   - the city migration (phase 3, after the tree-branch review);
   - the WebGL2 fallback: the kit needs WebGPU for `writeTexture`.
+
+## 5. Phase 4: parked cars (2026-11-12, lab only)
+
+Lab: `labs/impostor-lab.html?scene=cars` (`labs/impostor-cars.js`; `&mode=kit|today|mesh|none`, `&start=`, `&grid=`,
+`&cell=`, `&full=1`, `&lod=`, `&pdo=0`, `&parallax=0`, `&time=night`). A straight street of **300 parked cars**, 150 per
+kerb, in real slots (the fleet's type mix `TYPE_MIX` and slot lengths `slotNeed`, 0.2-1.3 m gaps, a driveway now and
+then; 900 m), terraced facades, the city's lighting and post chain. The cars are the city's own: the faceted family made
+into LODs by the city's worker (`viewer/carLodWorker.js`), drawn with `packMaterial` and `carFleet.js`'s batching and
+LOD / cross-fade loop (copied into the lab, because the fleet is a singleton whose distances are module constants).
+
+Modes:
+- **mesh**: the LODs to 1.5 km (LOD 3 past 130 m). This is the reference.
+- **today**: the city as it is (fade-out at 380-420 m).
+- **kit**: the mesh LODs to the hand-over, then impostors.
+- **none**: no cars.
+
+### 5.1 How it is built
+
+| Piece | What |
+|---|---|
+| `sources/fleetCars.js` | One layer per car type (8: hatch_s, hatch_c, estate, saloon, suv, van_c, van_p, taxi), baked from the worker's LOD arrays. **Paint as a linear split:** `A.rgb` = the colour of everything that is not paint (0 on the paint), `B.a` = the paint's shade (its vertex colour is a grey that the paint multiplies). At runtime colour = `A.rgb + B.a x paint`. This stays exact through the resolve, dilation, mips and bilinear taps. |
+| `types.js` `carShade` | packMaterial's far material (MeshStandard: paint roughness 0.34 / metalness 0.25, the rest 0.62 / 0), the paint from `inst.tint`, far fade into `FAR.road`. |
+| `field.js` | New per-instance `ikTint` (rgb, default 1; sorted with the other attributes). The taxi passes its own paint. |
+| `contact.js` | `contactShadows(items)`: Mr.doob's contact quad (his `createContactShadowMaterial`: footprint + 0.33 m wide, + 0.55 m long, 1.8 cm up), one instanced transparent draw, culled past the kit's end. |
+| Hand-over | Screen IGN, complementary on both sides. The mesh's LOD 3 fade batch keeps h < 1 - t (`lodFade = 2 - t`, packMaterial's "incoming" range); the impostor keeps h >= 1 - t. Both sides take t from the distance to the **bake sphere centre**. |
+
+**First cut, rejected.** It stored a neutral albedo plus a paint *mask* and computed colour = albedo x mix(1, paint,
+mask). Every texel straddling a paint border leaked the white neutral shade, which drew bright lines along the window
+line and the sills. A black car measured 76 against the mesh's 26 (luminance). With the split above it measures 29 vs 20
+at 80 m, 26 vs 22 at 160 m and 44 vs 39 at 300 m.
+
+### 5.2 Decisions, with the evidence
+
+Each variant was measured two ways:
+- the jitter meter: d2 x1000 per band, on the drive and fly paths;
+- **mad**: the mean |kit - mesh| (0-255) over the far cars' pixels (bands past 150 m), from three views: street level,
+  a first-floor window, and above (55 m).
+
+Absolute luminances drift between runs (the lab's exposure adapts in between), so compare only within one run.
+
+| Variant | Atlas MB | mad street / above / window | drive 150-250 | fly 150-250 |
+|---|---|---|---|---|
+| **hemi 12 x 12 x 48, LOD 3, PDO + parallax 1 (default)** | **26.9** | **19.8 / 18.8 / 24.5** | 15.7 | 130 |
+| full 12 x 12 x 48 | 26.9 | 21.4 / 19.6 / 25.5 | 16.4 | 128 |
+| full 16 x 16 x 48 | 47.8 | 21.1 / 18.7 / 24.5 | 16.7 | 132 |
+| hemi 16 x 16 x 48 | 47.8 | 20.3 / 17.9 / 23.3 | 16.1 | 131 |
+| hemi 8 x 8 x 48 | 12.0 | 20.3 / 21.9 / 24.7 | 15.8 | 131 |
+| hemi 12 x 12 x 64 | 47.8 | 19.3 / 18.9 / 24.9 | 15.4 | 131 |
+| hemi 12 x 12 x 32 | 11.8 | 18.2 / 18.8 / 25.2 | 16.7 | 121 |
+| bake from LOD 0 | 26.9 | 27.4 / 25.3 / 31.4 | 15.5 | 143 |
+| bake from LOD 2 | 26.9 | 27.9 / 24.9 / 32.5 | 16.3 | 142 |
+| no parallax | 26.9 | 26.1 / 26.8 / 32.7 | 14.9 | 123 |
+| no depth out | 26.9 | 25.2 / 24.0 / 31.5 | 14.7 | 129 |
+| neither | 26.9 | 24.9 / 26.1 / 32.4 | 14.5 | 118 |
+
+- **Hemi, not full.**
+  - The check: every parked-car slot of every tile against eye points 1.6 m over the roads, 150-600 m apart, with a
+    terrain line of sight, on the city's DTM and road graph.
+  - Result: 43 % of the visible pairs see the car from slightly *below* its centre, but only by median -0.9°, p99
+    -3.5°, worst -4.7°.
+  - Hemi clamps those views to the horizon row. The error stays under the 12 x 12 grid's ~8° view spacing.
+  - Full octahedral halves the side views' density for the same memory, and it measured worse (21.4 vs 19.8). Views
+    from above (fly, windows) are on the hemisphere anyway.
+- **12 x 12.** 16 x 16 buys about 1 point of error for +78 % memory; 8 x 8 loses 3 points from above.
+- **48 px.** 32 px measures the same at 720p. But a 40-px cell over the ~5 m sphere gives a texel per pixel at 150 m at
+  1440p (the owner's screen). 64 px costs +78 % memory for no measurable gain.
+- **Bake from LOD 3**, the mesh the kit hands over from. LOD 0 and LOD 2 bakes are 7-8 points further from the mesh.
+- **Depth out + 1 parallax step ON.**
+  - Cost: a little stability (drive 15.7 vs 14.5), and +0.016 ms GPU for 250 impostors (one timestamp step).
+  - Gain: the impostor sits much closer to the mesh (mad 19-25 vs 25-33).
+  - Why: the card's flat depth clipped the lower body against the road and kerb, and let the contact quad draw over it
+    from above.
+- **Coverage gain 2** (`TYPES.car.view`). Cars are solid. At gain 1 (the trees' setting) the soft edge let the bright
+  background through: at night, 250-600 m, the kit measured 61 / 77 against the mesh's 48 / 60. Kit / mesh luminance
+  over the far cars:
+
+  | | street | above | window |
+  |---|---|---|---|
+  | midday, gain 1 | 78.5 / 69.2 | 87.1 / 88.8 | 83.0 / 81.1 |
+  | **midday, gain 2** | 69.7 / 63.8 | 83.8 / 86.0 | 76.9 / 79.6 |
+  | midday, gain 4 | 67.2 / 63.2 | 82.6 / 85.7 | 75.3 / 79.1 |
+  | night, gain 1 | 27.6 / 20.1 | 36.0 / 32.2 | 41.3 / 32.2 |
+  | **night, gain 2** | 24.5 / 20.7 | 31.2 / 31.8 | 32.7 / 31.8 |
+  | night, gain 4 | 22.6 / 20.6 | 29.9 / 31.8 | 29.3 / 31.8 |
+
+- **Hand-over at 150 m**, band 12 m (clear of the LOD 2 -> 3 cross-fade at 130 m ± 5 %).
+  - Starts at 100, 150, 200 and 250 m all measured at or under the mesh's jitter in the band that holds the hand-over
+    (drive, 100-150 m: kit 25 with a 100 m start, mesh 42).
+  - 150 m is where a texel is a pixel at 1440p, so the impostor is not magnified there.
+  - Strip: `impostors/cars_handover_strip_132_156m.png` (FOV 20, x3, the centre car from 132 to 156 m; mesh row, kit
+    row). The only change is the dither inside the band: no pop, same paint.
+- **Night.** Parked cars have their lights off on both sides: packMaterial gets no `lights`, and the impostor bakes the
+  unlit lamp colours. Image: `impostors/cars_sbs_night_above_x3.png`.
+
+### 5.3 Jitter meter (final defaults, 24 frames, 1280 x 720)
+
+Each cell gives blink share / d2 x1000. Bands are measured from the path's start eye; the "100-150" band holds the
+hand-over.
+
+| Path | Band | mesh | today | kit |
+|---|---|---|---|---|
+| drive-by at 30 km/h, eye 1.25 m | 100-150 | 12.5 % / 54.0 | 12.5 % / 54.2 | 12.7 % / 53.3 |
+| | 150-250 | 1.5 % / 24.1 | 1.5 % / 24.0 | **0.6 % / 18.0** |
+| | 250-400 | 1.3 % / 11.2 | 1.3 % / 12.6 | **0 % / 6.4** |
+| | 400-600 | 0 % / 8.3 | 0 % / 7.1 (19 px, fading out) | **0 % / 3.4** |
+| orbit 0.02°/frame around 260 m | 150-250 | 49 % / 89.1 | 48.6 % / 88.7 | **38.2 % / 79.5** |
+| | 400-600 | 34.7 % / 75.7 | 45.5 % / 58.0 | **22.5 % / 57.1** |
+| strafe 5 cm/frame | 150-250 | 61.3 % / 99.4 | 60.3 % / 99.9 | **48.4 % / 86.3** |
+| | 250-400 | 52.9 % / 96.4 | 45.7 % / 92.5 | **32.6 % / 83.4** |
+| fly 0.6 m/frame, 45-60 m up | 150-250 | 30.8 % / 115 | 31.1 % / 117 | 40.0 % / 125 |
+| | 400-600 | 21.1 % / 67.0 | 20.0 % / 56.4 | **5.3 % / 41.8** |
+| | > 600 | 20.4 % / 71.1 | (no cars) | **1.6 % / 34.5** |
+
+- **Mask sizes.** At street level the masks are small: cars at 150-600 m seen from 1.6 m up cover a few hundred pixels
+  in every mode. The fly path's masks are 3-12k px.
+- **Result.** The kit is at or under the mesh everywhere except fly 150-250 m (+9 % d2), the first impostor band seen
+  from above.
+
+### 5.4 GPU and memory
+
+**Isolated cost** (`lab.microBench()`):
+- the cars alone in their own scene, with no shadows and no post;
+- 60 renders per sample, 6 alternating rounds, timestamp medians;
+- the timestamps step by 0.016 ms, and the GPU is shared with other tabs, so treat ±0.02 ms as noise.
+
+| View | mesh LODs, all 300 | today (to 420 m) | **kit, all 300** | mesh past 150 m | **kit past 150 m** | contact quads |
+|---|---|---|---|---|---|---|
+| street level | 0.23-0.30 | 0.18-0.25 | **0.20-0.25** | 0.066 | **0.033-0.049** | < 0.016 |
+| above (55 m) | 0.12-0.21 | 0.07-0.13 | **0.07-0.15** | 0.05-0.12 | **0.016-0.049** | < 0.016 |
+
+- **Target met:** 300 cars ≤ 0.3 ms with impostors beyond 150 m. The near mesh cars are most of that cost.
+- **Impostors vs LOD 3:** the impostors cost a third to a half of the LOD 3 meshes they replace, and they draw every car
+  out to 900 m, where the city drops cars at 420 m.
+- **Whole-frame bench** (`lab.bench()`): it could not separate the cars from the shared GPU's noise (±0.2 ms between
+  rounds). Its medians agreed with the isolated numbers: none 0.92-0.98, mesh +0.46-0.52, today +0.46, kit
+  +0.39-0.46 ms.
+
+**Memory and bake:**
+- Atlas: 26.9 MB (8 layers x 576² x 2 RGBA8 textures, 4 mip levels).
+- Mesh LODs (all 4 LODs of the 8 types): 13.0 MB of geometry.
+- Bake: 2.1-3.0 s wall time, of which 53-114 ms are main-thread render submits spread over 96 frames, and 0.4-0.5 s
+  run in the worker.
+
+### 5.5 Adding a car type
+
+1. Add the car to `tools/blender/carFaceted.py` (the GLB contract: Body / Wheel_* children, `_KIND`, `COLOR_0`; paint
+   is kind 1 with a grey shade; `extras.keepPaint` / `paint` for fixed-colour cars), and to `carFleet.js` `TYPE_MIX` /
+   `SIZES`.
+2. Nothing changes in the kit: `fleetCarSource(lodData.cars)` makes one layer per car in the worker's output (+3.4 MB
+   per type).
+3. Placements carry `tint` = the car's paint (linear), or the car's own `extras.paint`.
+
+### 5.6 Images
+
+- `impostors/cars_street_kit.jpg`, `impostors/cars_above_kit.jpg`: the scene in kit mode.
+- `impostors/cars_sbs_above_140_300m_x3.png`: kit | mesh | |diff| x4 from above, 140-300 m.
+- `impostors/cars_sbs_street_150_400m_x6.png`: the same at street level (cars of 5-15 px).
+- `impostors/cars_handover_strip_132_156m.png`: across the hand-over.
+- `impostors/cars_sbs_night_above_x3.png`: night.
+- `impostors/cars_contact_on_off_x4.png`: contact quads on / off at 150-230 m (a subtle darkening under the bodies).
+
+### 5.7 Weak points
+
+- **No glass channel.**
+  - The split uses `B.a` for the paint, so glass (roughness 0.06) is shaded as "the rest" (0.62).
+  - LOD 3 has almost no glass faces (its windows are interior / dark kinds), so the far material still matches.
+  - What is lost: a glossy window glint at 150-300 m. A third texture would bring it back (+13 MB).
+- **Street-level brightness** at 150-600 m is still +9 % (midday) / +18 % (night) over the mesh at gain 2, on a few
+  hundred pixels. From above and from windows it is within ±3 %.
+- **Fly path, first impostor band** (150-250 m seen from above): d2 is 9 % over the mesh.
+- **Hand-over dither:** the screen IGN band (138-150 m) is visible in a magnified view (FOV 20), as on the city's own
+  LOD fades.
+- **Telephoto:** below FOV ~20, a car past 150 m is magnified beyond its 40-px cell and goes soft.
+- **The lab's mesh fleet is a copy** of `carFleet.js`'s loop (with live distances). The city switch must add the
+  hand-over to `carFleet.js` itself (TODO).
+- **Quad card:** drew nothing in a quick test with cars. The octagon is the default and was used throughout; not
+  investigated.
+- **Hemi below the horizon:** argued from the DTM statistics (worst -4.7°), not rendered from a slope in the lab.
+- **GPU numbers** are at the timestamp resolution (0.016 ms), on a GPU shared with other tabs.

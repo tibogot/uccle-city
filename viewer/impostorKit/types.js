@@ -14,10 +14,15 @@ export const TYPES = {
   tree: { grid: 16, cell: 64, gutter: 4, ss: 4, full: false, minCell: 8,
     fade: { start: 400, band: 30, end: 1500, endBand: 300, anchorH: 6 },
     material: { blend: "bary3", parallax: 0, pdo: false, alpha: "a2c-ramp", card: "octagon", far: "ground" } },
-  // later (docs/TODO.md): parked cars 12 x 12 x 48 + paint mask + PDO + casting inside the shadow box
+  // parked cars (phase 4, measured in the lab's 300-car street, docs/IMPOSTOR_KIT.md §5): 12 x 12 HEMI views of 48 px
+  // (a 40-px cell over a ~5 m sphere: a texel per pixel at 150 m at 1440p), baked from LOD 3 (the mesh it hands over
+  // from), depth out + 1 parallax step (the side-by-side error vs the mesh 19 vs 24-26 without), hand-over 150 m over
+  // 12 m (clear of the LOD 2 -> 3 switch at 130 m +-5 %), far end faded into the road from 600 to 900 m;
+  // view gain 2: cars are solid, a softer coverage ramp let the background bleed in (night +28 % too bright at gain 1)
   car: { grid: 12, cell: 48, gutter: 4, ss: 4, full: false, minCell: 6,
-    fade: { start: 150, band: 15, end: 600, endBand: 100, anchorH: 0.8 },
-    material: { blend: "bary3", parallax: 1, pdo: true, alpha: "a2c-ramp", card: "octagon", far: "ground" } },
+    fade: { start: 150, band: 12, end: 900, endBand: 300, anchorH: 0.8 },
+    material: { blend: "bary3", parallax: 1, pdo: true, alpha: "a2c-ramp", card: "octagon", far: "ground" },
+    view: { lodBias: -1, gain: 2 } },
   prop: { grid: 8, cell: 40, gutter: 4, ss: 4, full: false, minCell: 5,
     fade: { start: 80, band: 10, end: 300, endBand: 60, anchorH: 0.6 },
     material: { blend: "bary3", parallax: 1, pdo: true, alpha: "a2c-ramp", card: "octagon", far: "ground" } },

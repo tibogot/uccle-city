@@ -51,7 +51,7 @@ const S = {
   mode: qp.get("mode") ?? "kit", time: preset, post: true, contact: true, contactStrength: 1,
   start: +(qp.get("start") ?? 150), band: 12, end: 900, endBand: 300, meshEnd: 1500,
   grid: +(qp.get("grid") ?? 12), cell: +(qp.get("cell") ?? 48), full: qp.get("full") === "1", bakeLod: +(qp.get("lod") ?? 3),
-  parallax: +(qp.get("parallax") ?? 1), pdo: qp.get("pdo") !== "0", blend: "bary3", alpha: "a2c-ramp", gain: 1, lodBias: -1, card: "octagon",
+  parallax: +(qp.get("parallax") ?? 1), pdo: qp.get("pdo") !== "0", blend: "bary3", alpha: "a2c-ramp", gain: K.TYPES.car.view.gain, lodBias: K.TYPES.car.view.lodBias, card: "octagon",
   path: "drive", frames: 24, orbitDeg: 0.02, strafe: 0.05, driveKmh: 30, result: "—", bench: "—", stats: "", bakeInfo: "", meshInfo: "",
   atlasOn: false, layer: 0, channel: "albedo",
 };
@@ -505,6 +505,56 @@ async function bench(modes = ["none", "mesh", "today", "kit"], rounds = 4) {
   return res;
 }
 
+/**
+ * ISOLATED cost (the whole-frame bench above drowns ~0.1 ms of cars in the shared GPU's noise): the cars alone in a
+ * scene of their own (a road plane, two lights, no shadows, no post), rendered N times per sample with the lab loop
+ * frozen, timestamp medians, configurations alternated round by round. -> ms over the empty scene per configuration.
+ *   meshFar / kitFar: only the cars past the 100-150 m bands (the hand-over side), meshAll / kitAll: every car,
+ *   contactAll: the contact quads alone.
+ */
+async function microBench(reps = 6, N = 60) {
+  const r = renderer;
+  if (assignBands(EYE)) rebuildBandsAttr();
+  const bs = new THREE.Scene(); bs.environment = scene.environment;
+  const dl = new THREE.DirectionalLight(0xffffff, 3); dl.position.set(-1, 3, 2);
+  bs.add(dl, new THREE.HemisphereLight(0xaaccff, 0x806040, 1));
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 2000).rotateX(-Math.PI / 2), new THREE.MeshStandardNodeMaterial({ color: 0x3b3c3f }));
+  ground.position.z = -450; bs.add(ground);
+  bs.add(fleetGroup, field.group, contact.mesh);
+  const sm = r.shadowMap.enabled; r.shadowMap.enabled = false;
+  frozen = true;
+  const keep = { mode: S.mode, contact: S.contact };
+  const cfgs = {
+    none: () => { S.mode = "none"; S.contact = false; hidden = new Set(); },
+    meshFar: () => { S.mode = "mesh"; S.contact = false; hidden = new Set([0, 1]); },
+    kitFar: () => { S.mode = "kit"; S.contact = false; hidden = new Set([0, 1]); },
+    meshAll: () => { S.mode = "mesh"; S.contact = false; hidden = new Set(); },
+    kitAll: () => { S.mode = "kit"; S.contact = false; hidden = new Set(); },
+    todayAll: () => { S.mode = "today"; S.contact = false; hidden = new Set(); },
+    contactAll: () => { S.mode = "none"; S.contact = true; hidden = new Set(); },
+  };
+  const res = Object.fromEntries(Object.keys(cfgs).map((k) => [k, []]));
+  for (let rep = 0; rep < reps; rep++) for (const k of (rep % 2 ? Object.keys(cfgs).reverse() : Object.keys(cfgs))) {
+    cfgs[k](); applyMode();
+    if (k === "contactAll") contact.mesh.visible = true;
+    lodEye.value.copy(camera.position); updateFleet(); K.updateView(view, camera, r);
+    for (let i = 0; i < 4; i++) r.render(bs, camera);
+    await r.resolveTimestampsAsync("render");
+    const t = [];
+    for (let i = 0; i < N; i++) { r.render(bs, camera); if (i % 4 === 3) { const ms = await r.resolveTimestampsAsync("render"); if (ms > 0) t.push(ms / 4); } }
+    t.sort((a, b) => a - b); res[k].push(t[Math.floor(t.length / 2)]);
+  }
+  scene.add(fleetGroup, field.group, contact.mesh);
+  r.shadowMap.enabled = sm; Object.assign(S, keep); hidden = new Set(); applyMode(); frozen = false;
+  const med = (a) => { const q = [...a].sort((x, y) => x - y); return q[Math.floor(q.length / 2)]; };
+  const base = med(res.none);
+  const out = Object.fromEntries(Object.entries(res).filter(([k]) => k !== "none").map(([k, v]) => [k, +(med(v) - base).toFixed(3)]));
+  out.empty = +base.toFixed(3);
+  console.log("[cars] isolated GPU ms over the empty scene:", out, res);
+  (window.lab.micro ??= []).push({ view: camera.position.toArray(), out, res, settings: settings() });
+  return out;
+}
+
 // ------------------------------------------------------------------------------------------------ atlas viewer
 function drawAtlas() {
   $atlas.style.display = S.atlasOn && atlas ? "block" : "none";
@@ -582,7 +632,7 @@ fp.add({ go: () => bench() }, "go").name("GPU bench: none / mesh / today / kit")
 fp.add(S, "bench").name("result").listen();
 
 const dataURL = (url) => fetch(url).then((r) => r.blob()).then((b) => new Promise((res) => { const f = new FileReader(); f.onload = () => res(f.result); f.readAsDataURL(b); }));
-window.lab = { dataURL, renderer, scene, camera, controls, S, H, view, cars, types, lodData, source, meter, meterAB, bench, sideBySide, carStats, stripSet, stackURLs, cropAt, show,
+window.lab = { microBench, freeze(v) { frozen = v; }, dataURL, renderer, scene, camera, controls, S, H, view, cars, types, lodData, source, meter, meterAB, bench, sideBySide, carStats, stripSet, stackURLs, cropAt, show,
   bakeKit, buildKitMats, rebuildField, buildContact, applyMode, renderFrame, poseFor, startPath, endPath, resetView, assignBands, fstats, gpu,
   get atlas() { return atlas; }, get field() { return field; }, get contact() { return contact; }, get lastShown() { return lastShown; },
   setHidden(list) { hidden = new Set(list); applyMode(); }, EYE, FOCUS, BANDS, TYPE_MIX };
