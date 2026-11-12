@@ -336,11 +336,16 @@ function cleanRing(ring) {
  *  - lamps and bollards: added on the main thread from the drawn lists (driveMode.js tileDrive).
  * legacy = true: the old sets (every engine island, every footprint) for the audit's "before".
  */
-export function buildDriveData({ bDoc, net, feats, hm, parts, bounds, surf = null, legacy = false }) {
+export function buildDriveData({ bDoc, bBuf = null, net, feats, hm, parts, bounds, surf = null, legacy = false }) {
   const polys = [], circles = [];
   const ground = driveGround(hm, parts);
-  let overhead = 0, islands = 0, islandsHidden = 0, medianIslands = 0;
-  for (const bd of bDoc.buildings) {
+  let overhead = 0, islands = 0, islandsHidden = 0, medianIslands = 0, fromWalls = null;
+  // the drawn walls at car height (buildingBlocks); the footprints for ?drivecol=legacy and ?colfix=0 (no bBuf)
+  if (bBuf && !legacy) {
+    fromWalls = buildingBlocks(bDoc, bBuf, (x, z) => driveHeight(hm, ground, x, z), bounds);
+    polys.push(...fromWalls.polys);
+  }
+  if (!fromWalls) for (const bd of bDoc.buildings) {
     const rings = (bd.footprint || []).map(cleanRing).filter((r) => r.length >= 3);
     if (!rings.length) continue;
     const base = bd.base != null ? +bd.base : -1e4;
@@ -373,16 +378,163 @@ export function buildDriveData({ bDoc, net, feats, hm, parts, bounds, surf = nul
     circles.push({ x: t.x, z: t.z, r: Math.min(0.5, Math.max(0.22, 0.16 + 0.012 * (t.height || 10))), kind: KIND.tree });
   }
   const col = buildColliders(polys, circles, bounds);
-  return { col, medians, ground, legacy, counts: { buildings: bDoc.buildings.length - overhead, overhead, islands, islandsHidden, medianIslands, trees: circles.length } };
+  return { col, medians, ground, legacy, counts: { buildings: fromWalls ? fromWalls.polys.length : bDoc.buildings.length - overhead, overhead, buildingRegions: fromWalls?.regions, islands, islandsHidden, medianIslands, trees: circles.length } };
+}
+
+/**
+ * BUILDING COLLIDERS FROM THE DRAWN WALLS (docs/collisions/README.md): the UrbIS 2D footprint and the 3D solid the city
+ * draws differ (arcades and recessed ground floors under an upper storey, porches, bays, the 3D wall 0.3-1 m off the
+ * footprint): the footprint blocked where nothing was drawn and let the car into drawn walls. Now: every wall triangle
+ * of the drawn solids sampled every 12 cm, kept 0.30-1.30 m over the drive surface under it, on a 0.25 m grid over the
+ * tile (+ a margin for the solids across its edge); what the outside cannot reach (a 4-connected flood from the border)
+ * is filled; each 8-connected solid region is traced into rings (cell edges, Douglas-Peucker at 15 cm): one polygon per
+ * region, its courtyards as holes (even-odd). A passage under a building has no wall at car height: open.
+ * bDoc / bBuf: buildings.json + buildings.bin (V, T, positions, indices); height(x, z) = the drive surface.
+ */
+export function buildingBlocks(bDoc, bBuf, height, bounds, { margin = 30, cell = 0.25, step = 0.12, band = [0.3, 1.3], tol = 0.15 } = {}) {
+  const dv = new DataView(bBuf), V = dv.getUint32(0, true), T = dv.getUint32(4, true);
+  const P = new Float32Array(bBuf, 8, V * 3), I = new Uint32Array(bBuf, 8 + V * 12, T * 3);
+  const x0 = bounds.x0 - margin, z0 = bounds.z0 - margin;
+  const nx = Math.ceil((bounds.x1 + margin - x0) / cell), nz = Math.ceil((bounds.z1 + margin - z0) / cell);
+  const g = new Uint8Array(nx * nz);
+  // the drive surface on a 1 m lattice (the walls' band reference)
+  const lx = Math.ceil(nx * cell) + 2, lz = Math.ceil(nz * cell) + 2, L = new Float32Array(lx * lz);
+  for (let k = 0; k < lz; k++) for (let i = 0; i < lx; i++) L[k * lx + i] = height(x0 + i, z0 + k);
+  const gAt = (x, z) => L[Math.min(lz - 1, Math.max(0, Math.round(z - z0))) * lx + Math.min(lx - 1, Math.max(0, Math.round(x - x0)))];
+  let walls = 0;
+  for (const b of bDoc.buildings) {
+    for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) {
+      const a = I[t * 3] * 3, c = I[t * 3 + 1] * 3, d = I[t * 3 + 2] * 3;
+      const ax = P[a], ay = P[a + 1], az = P[a + 2], bx = P[c], by = P[c + 1], bz = P[c + 2], cx = P[d], cy = P[d + 1], cz = P[d + 2];
+      if (Math.max(ax, bx, cx) < x0 || Math.min(ax, bx, cx) > x0 + nx * cell || Math.max(az, bz, cz) < z0 || Math.min(az, bz, cz) > z0 + nz * cell) continue;
+      const gm = gAt((ax + bx + cx) / 3, (az + bz + cz) / 3);
+      if (Math.min(ay, by, cy) > gm + band[1] + 2 || Math.max(ay, by, cy) < gm + band[0] - 2) continue;
+      walls++;
+      const n1 = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay, bz - az) / step)), n2 = Math.max(1, Math.ceil(Math.hypot(cx - ax, cy - ay, cz - az) / step));
+      for (let i = 0; i <= n1; i++) for (let j = 0; j <= n2; j++) {
+        let u = i / n1, w = j / n2;
+        if (u + w > 1) { if (u + w > 1 + 1 / Math.max(n1, n2)) continue; const s = u + w; u /= s; w /= s; }
+        const x = ax + (bx - ax) * u + (cx - ax) * w, y = ay + (by - ay) * u + (cy - ay) * w, z = az + (bz - az) * u + (cz - az) * w;
+        const h = y - gAt(x, z);
+        if (h < band[0] || h > band[1]) continue;
+        const ci = Math.floor((x - x0) / cell), ck = Math.floor((z - z0) / cell);
+        if (ci >= 0 && ck >= 0 && ci < nx && ck < nz) g[ck * nx + ci] = 1;
+      }
+    }
+  }
+  // fill: the cells the outside cannot reach (4-connected flood from the border over empty cells)
+  const out = new Uint8Array(nx * nz), stack = [];
+  const push = (q) => { if (!g[q] && !out[q]) { out[q] = 1; stack.push(q); } };
+  for (let i = 0; i < nx; i++) { push(i); push((nz - 1) * nx + i); }
+  for (let k = 0; k < nz; k++) { push(k * nx); push(k * nx + nx - 1); }
+  while (stack.length) {
+    const q = stack.pop(), i = q % nx, k = (q - i) / nx;
+    if (i > 0) push(q - 1);
+    if (i < nx - 1) push(q + 1);
+    if (k > 0) push(q - nx);
+    if (k < nz - 1) push(q + nx);
+  }
+  for (let q = 0; q < g.length; q++) if (!out[q]) g[q] = 1;
+  // components (8-connected) of solid cells
+  const comp = new Int32Array(nx * nz).fill(-1);
+  let nc = 0;
+  for (let s = 0; s < g.length; s++) {
+    if (!g[s] || comp[s] >= 0) continue;
+    comp[s] = nc; stack.push(s);
+    while (stack.length) {
+      const q = stack.pop(), i = q % nx, k = (q - i) / nx;
+      for (let dk = -1; dk <= 1; dk++) for (let di = -1; di <= 1; di++) {
+        const ii = i + di, kk = k + dk;
+        if (ii < 0 || kk < 0 || ii >= nx || kk >= nz) continue;
+        const r = kk * nx + ii;
+        if (g[r] && comp[r] < 0) { comp[r] = nc; stack.push(r); }
+      }
+    }
+    nc++;
+  }
+  // boundary edges with the solid on one consistent side (corner lattice (nx+1) x (nz+1)), per region AND per 8 m
+  // chunk (a city block traced whole is a 300-corner polygon: the car's contact test is quadratic in the corners),
+  // linked into loops
+  const CH = Math.max(1, Math.round(8 / cell));
+  const label = (i, k) => (Math.floor(k / CH) * 4096 + Math.floor(i / CH)) * 65536 + comp[k * nx + i];
+  const solid = (i, k) => i >= 0 && k >= 0 && i < nx && k < nz && g[k * nx + i] === 1;
+  const edges = new Map();            // label -> Map(from corner -> [to corners])
+  const W = nx + 1;
+  const addE = (lab, a, b) => { let m = edges.get(lab); if (!m) edges.set(lab, (m = new Map())); let l = m.get(a); if (!l) m.set(a, (l = [])); l.push(b); };
+  for (let k = 0; k <= nz; k++) for (let i = 0; i <= nx; i++) {
+    if (i < nx) {                         // horizontal edge (i,k)-(i+1,k): cell (i,k-1) above it, (i,k) below
+      const up = solid(i, k - 1), dn = solid(i, k), lu = up ? label(i, k - 1) : -1, ld = dn ? label(i, k) : -1;
+      if (lu !== ld) { if (dn) addE(ld, k * W + i + 1, k * W + i); if (up) addE(lu, k * W + i, k * W + i + 1); }
+    }
+    if (k < nz) {                         // vertical edge (i,k)-(i,k+1): cell (i-1,k) left of it, (i,k) right
+      const lf = solid(i - 1, k), rt = solid(i, k), ll = lf ? label(i - 1, k) : -1, lr = rt ? label(i, k) : -1;
+      if (ll !== lr) { if (rt) addE(lr, k * W + i, (k + 1) * W + i); if (lf) addE(ll, (k + 1) * W + i, k * W + i); }
+    }
+  }
+  const rings = new Map();
+  const px = (c) => x0 + (c % W) * cell, pz = (c) => z0 + Math.floor(c / W) * cell;
+  for (const [lab, next] of edges) {
+    for (const [start, l0] of next) {
+      while (l0.length) {
+        let a = start, b = l0.pop();
+        const pts = [[px(a), pz(a)]];
+        let guard = 0;
+        while (b !== start && guard++ < 1e6) {
+          pts.push([px(b), pz(b)]);
+          const l = next.get(b);
+          if (!l || !l.length) break;
+          // at a saddle (two ways on) take the sharpest turn to the same side every time: keeps diagonal regions apart
+          let pick = 0;
+          if (l.length > 1) {
+            const dxi = px(b) - px(a), dzi = pz(b) - pz(a);
+            let best = -Infinity;
+            l.forEach((n, j) => { const cr = dxi * (pz(n) - pz(b)) - dzi * (px(n) - px(b)); if (cr > best) { best = cr; pick = j; } });
+          }
+          a = b; b = l.splice(pick, 1)[0];
+        }
+        if (pts.length < 4) continue;
+        const simp = simplifyRing(pts, tol);
+        if (simp.length >= 3) { let r = rings.get(lab); if (!r) rings.set(lab, (r = [])); r.push(simp); }
+      }
+    }
+  }
+  const polys = [];
+  for (const r of rings.values()) polys.push({ rings: r, kind: KIND.building });
+  return { polys, walls, regions: nc };
+}
+
+/** Douglas-Peucker on a closed ring (split at the corner farthest from the first point). */
+function simplifyRing(pts, tol) {
+  const n = pts.length;
+  let far = 0, fd = -1;
+  for (let i = 1; i < n; i++) { const d = (pts[i][0] - pts[0][0]) ** 2 + (pts[i][1] - pts[0][1]) ** 2; if (d > fd) { fd = d; far = i; } }
+  const keep = new Uint8Array(n); keep[0] = keep[far] = 1;
+  const stack = [[0, far], [far, n]];
+  while (stack.length) {
+    const [a, b] = stack.pop();
+    const [ax, az] = pts[a], [bx, bz] = pts[b % n], dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz;
+    let m = -1, md = tol * tol;
+    for (let i = a + 1; i < b; i++) {
+      const [qx, qz] = pts[i % n];
+      const t = L2 ? Math.max(0, Math.min(1, ((qx - ax) * dx + (qz - az) * dz) / L2)) : 0;
+      const d = (qx - ax - t * dx) ** 2 + (qz - az - t * dz) ** 2;
+      if (d > md) { md = d; m = i; }
+    }
+    if (m >= 0) { keep[m % n] = 1; stack.push([a, m], [m, b]); }
+  }
+  return pts.filter((_, i) => keep[i]);
 }
 
 /**
  * The drivable surface over the carved terrain: for every 1 m grid point under a road / sidewalk / island top
- * triangle, how far (cm, 0..255) that surface is above hm.y. Vertical faces (kerbs) have no area and are skipped.
+ * triangle, how far (cm) that surface is above hm.y, in TWO layers (Uint16, 65535 = none): `delta` the top surface,
+ * `delta2` the highest one more than 1.5 m under it (the street under a road bridge / an overpass deck: until
+ * 2026-11-13 one Uint8 layer clamped at 2.55 m sent cars under the Ring's decks 2.55 m into the air and onto the deck
+ * from the street below; docs/collisions/README.md). Vertical faces (kerbs) have no area and are skipped.
  */
 export function driveGround(hm, parts) {
   const { x0, z0, cols, rows, step } = hm.h, Y = hm.y;
-  const top = new Float32Array(cols * rows).fill(-1e9);
+  const top = new Float32Array(cols * rows).fill(-1e9), low = new Float32Array(cols * rows).fill(-1e9);
   for (const part of Object.values(parts)) {
     if (!part?.index) continue;
     const P = part.position, I = part.index;
@@ -401,23 +553,36 @@ export function driveGround(hm, parts) {
           const l2 = ((cz - az) * (px - cx) + (ax - cx) * (pz - cz)) / det;
           const l3 = 1 - l1 - l2;
           if (l1 < -1e-6 || l2 < -1e-6 || l3 < -1e-6) continue;
-          const y = l1 * P[a + 1] + l2 * P[b + 1] + l3 * P[c + 1], q = r * cols + k;
-          if (y > top[q]) top[q] = y;
+          const y = l1 * P[a + 1] + l2 * P[b + 1] + l3 * P[c + 1], q = r * cols + k, tq = top[q];
+          if (y > tq + 1.5) { low[q] = tq; top[q] = y; }
+          else if (y > tq) top[q] = y;
+          else if (y < tq - 1.5 && y > low[q]) low[q] = y;
         }
       }
     }
   }
-  const delta = new Uint8Array(cols * rows);
-  for (let q = 0; q < delta.length; q++) if (top[q] > -1e8) delta[q] = Math.max(0, Math.min(255, Math.round((top[q] - Y[q]) * 100)));
-  return { delta };
+  const delta = new Uint16Array(cols * rows), delta2 = new Uint16Array(cols * rows).fill(65535);
+  for (let q = 0; q < delta.length; q++) {
+    if (top[q] > -1e8) delta[q] = Math.max(0, Math.min(65534, Math.round((top[q] - Y[q]) * 100)));
+    if (low[q] > -1e8 && top[q] - low[q] > 1.5) delta2[q] = Math.max(0, Math.min(65534, Math.round((low[q] - Y[q]) * 100)));
+  }
+  return { delta, delta2 };
 }
 
-/** Height of the drivable surface at (x, z) (bilinear over the 1 m grid): hm = the tile's Heightmap, delta from driveGround. */
-export function driveHeight(hm, delta, x, z) {
+/** Height of the drivable surface at (x, z) (bilinear over the 1 m grid): hm = the tile's Heightmap, delta from
+ *  driveGround (or the { delta, delta2 } object). near = the car's height: where the grid has two layers (a street under
+ *  a deck) each corner takes the layer nearer to it. */
+export function driveHeight(hm, delta, x, z, near = null) {
+  const d2 = delta?.delta2, d1 = delta?.delta ?? delta;
   const h = hm.h, Y = hm.y;
   const c = Math.min(Math.max((x - h.x0) / h.step, 0), h.cols - 1), r = Math.min(Math.max((z - h.z0) / h.step, 0), h.rows - 1);
   const c0 = Math.min(Math.floor(c), h.cols - 2), r0 = Math.min(Math.floor(r), h.rows - 2);
   const fc = c - c0, fr = r - r0, i = r0 * h.cols + c0, j = i + h.cols;
-  const v = (k) => Y[k] + delta[k] * 0.01;
+  const v = (k) => {
+    const a = Y[k] + d1[k] * 0.01;
+    if (!d2 || near == null || d2[k] === 65535) return a;
+    const b = Y[k] + d2[k] * 0.01;
+    return Math.abs(b - near) < Math.abs(a - near) ? b : a;
+  };
   return (v(i) * (1 - fc) + v(i + 1) * fc) * (1 - fr) + (v(j) * (1 - fc) + v(j + 1) * fc) * fr;
 }

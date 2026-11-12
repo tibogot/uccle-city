@@ -4,7 +4,8 @@ async () => {
   const list = (window.__runList || m.tiles.map((t) => t.name));
   const prev = window.__runAll;
   const st = window.__runAll = { list, i: 0, results: prev?.results || {}, errors: {}, t0: performance.now(), running: true };
-  if (!viewer.getThird()) { await viewer.thirdPerson(); }
+  window.__rafOrig ??= window.requestAnimationFrame;
+  window.requestAnimationFrame = (cb) => setTimeout(() => cb(performance.now()), 0);   // a background tab throttles rAF: the tile build's frame slices
   viewer.pause(true);
   const compact = (r) => ({
     tile: r.tile, ms: r.ms,
@@ -21,9 +22,7 @@ async () => {
         if (st.results[name]) continue;
         for (let k = 0; k < 240 && !viewer.world.tiles.some((t) => t.name === name); k++) await new Promise((r) => setTimeout(r, 500));
         if (!viewer.world.tiles.some((t) => t.name === name)) throw new Error('tile did not load');
-        // the heroes' / bridges' models of this tile (they load in the background) and the third-person colliders
-        const th = viewer.getThird();
-        for (let k = 0; k < 60; k++) { const n = th.world.sources.length; if (n >= 5) break; await new Promise((r) => setTimeout(r, 500)); }
+        // the landmarks' colliders (heroColliders.js polls every 2 s); collisionTest waits for the on-foot world itself
         await new Promise((r) => setTimeout(r, 3000));
         const r = await viewer.collisionTest(name, {});
         st.results[name] = compact(r);

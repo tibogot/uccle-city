@@ -398,6 +398,7 @@ export function driveRoutes({ scene, tile, driver, truth, G, maxRoads = Infinity
       let err = want - c.heading; while (err > Math.PI) err -= 2 * Math.PI; while (err < -Math.PI) err += 2 * Math.PI;
       const steer = Math.max(-1, Math.min(1, err * 2.2));
       const throttle = c.speed < speed * (1 - Math.min(0.6, Math.abs(err))) ? 0.7 : 0;
+      driver.groundHint = c.y;                     // the drive surface's layer nearest the car (a street under a deck)
       stepCar(c, { throttle, steer, handbrake: false }, dt, env, HANDLING);
       // passed through a drawn solid: the car box (shrunk 0.2 m) over car-band truth cells
       const cs = Math.cos(c.heading), sn = Math.sin(c.heading);
@@ -430,6 +431,7 @@ export function driveRoutes({ scene, tile, driver, truth, G, maxRoads = Infinity
     }
     R.km += t * speed / 1000;
   }
+  driver.groundHint = null;
   R.km = +R.km.toFixed(2);
   return R;
 }

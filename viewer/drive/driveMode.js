@@ -95,7 +95,7 @@ export class Driver {
       const dk = this.world.decks?.length ? this.world.deckY(x, z) : null;          // a hero road bridge's deck
       if (dk != null) return dk;
       const t = this.world.at(x, z);
-      return t.drive ? driveHeight(t.hm, t.drive.ground.delta, x, z) : t.hm.surface(x, z) + 0.12;
+      return t.drive ? driveHeight(t.hm, t.drive.ground, x, z, this.groundHint ?? (this.on && this.state ? this.state.y : null)) : t.hm.surface(x, z) + 0.12;
     };
     this.sets = (x, z, r) => {
       const out = this._sets ||= [];
@@ -162,6 +162,7 @@ export class Driver {
   reset() {
     const s = this.startPose;
     this.state = createCarState(s.x, s.z, s.heading);
+    this.state.y = NaN;                                   // (no layer hint yet: the top surface)
     this.state.y = this.ground(s.x, s.z);
     this.chase.reset();
   }
