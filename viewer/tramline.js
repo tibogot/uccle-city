@@ -8,9 +8,14 @@
 // tram whose modules follow the curve independently. The shapes are densified to 2 m and snapped onto
 // the OSM tram tracks of every loaded tile (GTFS shapes run ~0.6 m off them).
 //
-// The trams are the scripted STIB T3000 (tools/blender/tram.py, viewer/tramModel.js: 5 sections + bellows, bogies,
-// pantograph, LODs, the trip's headsign on the LED displays; approved in the Tram Lab, labs/tram-lab.html).
-// ?tram=box: the old box trams (also the fallback when the model fails to load).
+// The trams are the scripted STIB T3000, second pass (tools/blender/tram2.py, viewer/tram2Model.js: 5 sections + bent
+// bellows, bogies, pantograph on the wire, interior, doors that open, LODs, the trip's headsign on the LED displays;
+// Tram Lab, labs/tram-lab.html). ?tram=v1: the first model (tools/blender/tram.py, viewer/tramModel.js); ?tram=box:
+// the old box trams (also the fallback when a model fails to load).
+//
+// Stops: the GTFS feed gives arrival = departure at every stop, so each hop starts with a dwell taken from its own
+// time (a quarter of it, 6-18 s): the tram stands, opens the doors on the platform side (nearest OSM platform of a
+// loaded tile; right-hand side when none), closes them, then accelerates; its tail lights brighten while it brakes.
 //
 // Clock: Brussels local time now, or ?clock=HH:MM; ?timescale=N runs it N times faster. The day type
 // (weekday / Saturday / Sunday) comes from the date; the timetable is that of the feed's sample day.
@@ -18,7 +23,8 @@ import * as THREE from "three/webgpu";
 import { attribute, mix, float, vec3, color, uniform } from "three/tsl";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { env } from "./lighting.js";
-import { loadTramModel, createTramFleet, tramPose } from "./tramModel.js";
+import * as tramV1 from "./tramModel.js";
+import * as tramV2 from "./tram2Model.js";
 
 const MOD_L = 6.4, GAP = 0.25, MODS = 5, WIDTH = 2.3, FLOOR = 0.35, H = 3.25, MAX_TRAMS = 40;
 
@@ -117,6 +123,7 @@ export async function createTramLine(url, scene, ground) {
   };
   const snapTileNow = async (feats, b) => {
     sliceT = performance.now();
+    for (const l of feats.lines || []) if (l.kind === "platform") for (let k = 1; k < l.line.length; k++) platSegs.push([...l.line[k - 1], ...l.line[k]]);
     const tracks = (feats.lines || []).filter((l) => l.kind === "tram").map((l) => l.line);
     boxes.push(b);
     tracks.forEach((l) => { const li = lineCount++; for (let k = 1; k < l.length; k++) {
@@ -196,7 +203,9 @@ export async function createTramLine(url, scene, ground) {
   mat.emissiveNode = col.mul(lit).mul(mix(float(0.6), float(2.5), env.uNight))
     .add(color(0xffe2b0).mul(isGlass).mul(env.uNight).mul(0.18));                   // lit saloon at night
   const params = new URLSearchParams(location.search);
-  const model = params.get("tram") !== "box" ? await loadTramModel().catch((e) => { console.warn("tram model:", e.message); return null; }) : null;
+  const TM = params.get("tram") === "v1" ? tramV1 : tramV2;
+  const { createTramFleet, tramPose } = TM;
+  const model = params.get("tram") !== "box" ? await TM.loadTramModel().catch((e) => { console.warn("tram model:", e.message); return null; }) : null;
   let fleet = null, cabs = null, mids = null;
   if (model) {
     model.sign.setRows([...new Set(doc.trips.map((t) => t.head))], doc.line);
@@ -218,18 +227,63 @@ export async function createTramLine(url, scene, ground) {
   // between two stops: accelerate at ACC, cruise, brake at ACC (a T3000 does ~1.1 m/s²), so the speed never jumps;
   // a hop too short for that profile falls back to a smoothstep (also continuous speed)
   const ACC = 1.0;
+  const mo = { brake: 0 };                                          // travel()'s side result: braking now (0 / 1)
   const travel = (D, T, t) => {
+    mo.brake = 0;
     const disc = T * T - 4 * D / ACC;
     if (D <= 0 || T <= 0) return 0;
-    if (disc <= 0) { const f = Math.min(1, Math.max(0, t / T)); return D * f * f * (3 - 2 * f); }
+    if (disc <= 0) { const f = Math.min(1, Math.max(0, t / T)); mo.brake = f > 0.5 && f < 1 ? 1 : 0; return D * f * f * (3 - 2 * f); }
     const v = ACC * (T - Math.sqrt(disc)) / 2, ta = v / ACC;
     if (t <= 0) return 0;
     if (t < ta) return 0.5 * ACC * t * t;
     if (t < T - ta) return 0.5 * ACC * ta * ta + v * (t - ta);
-    if (t < T) return D - 0.5 * ACC * (T - t) ** 2;
+    if (t < T) { mo.brake = 1; return D - 0.5 * ACC * (T - t) ** 2; }
     return D;
   };
+  // the dwell at the start of each hop (s) and the doors' opening over it (0..1: open 1-3.5 s in, closed 0.5 s before)
+  const dwellOf = (hop) => Math.max(6, Math.min(18, hop * 0.25));
+  const doorAt = (t, dw) => Math.max(0, Math.min(1, (t - 1) / 2.5, (dw - 0.5 - t) / 2.5));
+  /** trip state at clock time tt: { d, doors (0..1), stop (index or -1), brake } */
+  const st8 = { d: 0, doors: 0, stop: -1, brake: 0 };
+  const tripState = (t, tt) => {
+    const st = t.stops;
+    st8.d = st[0][0]; st8.doors = 0; st8.stop = -1; st8.brake = 0;
+    for (let i = 0; i < st.length - 1; i++) {
+      const [d0, , dep0] = st[i], [d1, arr1] = st[i + 1];
+      if (tt < st[i][1]) break;
+      if (tt <= dep0) { st8.d = d0; break; }                         // standing at stop i (GTFS: never, arr = dep)
+      if (tt <= arr1) {
+        // the dwell never squeezes the run below what ACC allows (2 * sqrt(D / ACC)): no smoothstep fallback, no > ACC
+        const hop = Math.max(1, arr1 - dep0), dw = Math.max(0, Math.min(dwellOf(hop), hop - 2 * Math.sqrt(Math.max(0, d1 - d0) / ACC) - 2)), te = tt - dep0;
+        if (te < dw) { st8.d = d0; st8.doors = dw >= 6 ? doorAt(te, dw) : 0; st8.stop = i; }
+        else { st8.d = d0 + travel(d1 - d0, hop - dw, te - dw); st8.brake = mo.brake; }
+        break;
+      }
+      st8.d = d1;
+    }
+    return st8;
+  };
+  // platform side per (shape, stop): the nearest OSM platform segment of a loaded tile beside the stopped tram;
+  // +1 = right of the direction of travel, -1 = left; unknown until a tile with platforms there is loaded (right)
+  const platSegs = [], sideCache = new Map();
+  const platformSide = (t, i) => {
+    const key = t.shape + ":" + i;
+    let v = sideCache.get(key);
+    if (v !== undefined) return v;
+    const s = shapes[t.shape], d = t.stops[i][0] - 16;              // the middle of the stopped tram
+    const [x, z, h] = at(s, d), tx = Math.cos(h), tz = -Math.sin(h);
+    let best = 49, side = 0;
+    for (const [ax, az, bx, bz] of platSegs) {
+      const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1e-9;
+      const u = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)), px = ax + dx * u, pz = az + dz * u;
+      const d2 = (px - x) ** 2 + (pz - z) ** 2;
+      if (d2 < best) { best = d2; side = (-tz) * (px - x) + tx * (pz - z) > 0 ? 1 : -1; }
+    }
+    if (side) sideCache.set(key, side);
+    return side || 1;
+  };
   const M = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1), v = new THREE.Vector3();
+  const doorsLR = [0, 0];
   const near = { x: 0, z: 0, r: 1800 };
   let running = 0;
 
@@ -255,21 +309,16 @@ export async function createTramLine(url, scene, ground) {
       const st = t.stops, first = st[0][2], last = st[st.length - 1][1];
       const tt = T >= first && T <= last ? T : Tn >= first && Tn <= last ? Tn : -1;
       if (tt < 0) continue;
-      let d = st[0][0];
-      for (let i = 0; i < st.length - 1; i++) {
-        const [d0, , dep0] = st[i], [d1, arr1] = st[i + 1];
-        if (tt < st[i][1]) break;
-        if (tt <= dep0) { d = d0; break; }                              // standing at stop i
-        if (tt <= arr1) { d = d0 + travel(d1 - d0, Math.max(1, arr1 - dep0), tt - dep0); break; }
-        d = d1;
-      }
+      const { d, doors: dOpen, stop, brake } = tripState(t, tt);
       const [x, z] = at(shapes[t.shape], d);
       running++;
       if ((x - near.x) ** 2 + (z - near.z) ** 2 > near.r * near.r || s.cab >= MAX_TRAMS * 2) continue;
       if (fleet) {
         const shape = shapes[t.shape];
         tramPose(model.layout, (q) => at(shape, q), d, pose);
-        fleet.add(pose, railTop, { sign: model.sign.index[t.head] ?? 0 });
+        doorsLR[0] = doorsLR[1] = 0;
+        if (dOpen > 0) doorsLR[platformSide(t, stop) > 0 ? 0 : 1] = dOpen;
+        fleet.add(pose, railTop, { sign: model.sign.index[t.head] ?? 0, doors: doorsLR, brake });
         s.cab += 2;
       } else placeTrip(t, s, d);
     }
@@ -288,16 +337,9 @@ export async function createTramLine(url, scene, ground) {
       const st = t.stops, first = st[0][2], last = st[st.length - 1][1];
       const tt = T >= first && T <= last ? T : Tn >= first && Tn <= last ? Tn : -1;
       if (tt < 0) continue;
-      let d = st[0][0];
-      for (let i = 0; i < st.length - 1; i++) {
-        const [d0, , dep0] = st[i], [d1, arr1] = st[i + 1];
-        if (tt < st[i][1]) break;
-        if (tt <= dep0) { d = d0; break; }
-        if (tt <= arr1) { d = d0 + travel(d1 - d0, Math.max(1, arr1 - dep0), tt - dep0); break; }
-        d = d1;
-      }
+      const { d, doors, brake } = tripState(t, tt);
       const [x, z, yaw] = at(shapes[t.shape], d);
-      out.push({ trip: t.id ?? t.head, d, x, z, yaw, T: tt });
+      out.push({ trip: t.id ?? t.head, d, x, z, yaw, T: tt, doors, brake });
     }
     return out;
   };

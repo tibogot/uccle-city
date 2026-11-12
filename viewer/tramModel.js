@@ -33,7 +33,7 @@ export const TRAM_LODS = [
 export const PIECES = ["Cab", "Susp", "Centre", "Bellows", "Bogie", "Panto"];
 const PER_TRAM = { Cab: 2, Susp: 2, Centre: 1, Bellows: 4, Bogie: 3, Panto: 1 };
 const KINDS = { Paint: 0, Glass: 1, Trim: 2, Emissive: 3 };
-const LED = [160, 19];
+export const LED = [160, 19];
 
 /** Live look controls (uniforms: no recompiles). */
 export const tramLook = {
@@ -172,7 +172,7 @@ function simplifyWelded(g, want) {
 
 /** The LED destination atlas: one row of 160 x 19 px per headsign ("92 Fort-Jaco"), white on black (the shader
  *  makes it amber dots). setRows(list) redraws it (the city passes the line's real headsigns). */
-function makeSignAtlas(heads, line = "92") {
+export function makeSignAtlas(heads, line = "92") {
   const canvas = document.createElement("canvas");
   const tex = new THREE.CanvasTexture(canvas);
   tex.magFilter = tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false;
