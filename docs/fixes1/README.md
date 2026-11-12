@@ -113,7 +113,21 @@ rakes would cover it, see Left).
 - **Landmark buttresses**: the upper stage stands on the weathering cap (its soffit was coplanar with the cap's), one
   buttress per spot.
 
-AUDIT_TABLE_HERE
+### Mesh checker, 4 tiles, before (0f94123) -> after, Saint-Job solid hidden in both (blocking; z-fight = coplanar / depth / crossing)
+
+| tile | details+walls blocking | z-fight | flipped | details+roofs blocking | z-fight | leak (details+roofs) | walls+roofs blocking |
+|---|---|---|---|---|---|---|---|
+| I6 | 77,999 -> 2,965 | 13,607 / 410 / 482 -> 1,080 / 264 / 262 | 62,136 -> 0 | 76,212 -> 3,764 | 11,285 / 214 / 133 -> 664 / 69 / 89 | 542 -> 1,138 | 3,172 (unchanged) |
+| H6 | 55,616 -> 1,984 | 9,814 / 372 / 179 -> 955 / 187 / 101 | 44,524 -> 0 | 54,134 -> 2,563 | 7,927 / 199 / 62 -> 673 / 32 / 52 | 391 -> 787 | 1,806 |
+| E5 | 87,094 -> 3,040 | 13,452 / 461 / 362 -> 1,529 / 229 / 188 | 71,714 -> 2 | 83,466 -> 3,428 | 9,793 / 200 / 121 -> 1,090 / 59 / 109 | 565 -> 1,193 | 2,171 |
+| F2 | 81,904 -> 2,868 | 12,824 / 407 / 256 -> 1,376 / 232 / 150 | 67,402 -> 0 | 78,991 -> 3,378 | 9,597 / 132 / 69 -> 1,074 / 49 / 68 | 565 -> 987 | 2,348 |
+
+Blocking items -96 %, coplanar -89 to -94 %, flipped gone. NOT 0 blocking: what is left is listed under "Left". The
+`leak` count on details+roofs went UP: with the eaves board gone over the street cornices, the slit between the
+cornice's top and the roof edge counts as a leak, but the checker counts what lies behind it as see-through because it
+hits a back face, and the city draws walls and roofs DoubleSide, so in the city a solid surface is seen there, not the
+sky. The walls+roofs group (UrbIS's own solids) was not touched: 2.2k bentflat from the 32 deg smoothing + 311
+coplanar party walls on I6.
 
 Flicker test (`debug/shots.js flicker`: 24 frames, strafe 0.6 mm, updaters frozen; the before build served from a
 scratch worktree of 0f94123, the same tile and view): Rue du Ham eaves close-up 256 -> 191 ppm (a second after-run
@@ -174,4 +188,4 @@ crawling dots came back: lower on every run). Seen too: the far end (1.2-1.5 km)
 - Shadow cascades for the aerial views; the visual proof of the adaptive kernel.
 - Garage placement (shader bay + CR42L in the pipeline); the far forest's grey fade target.
 - GPU cost: not measured (2-3 agents on the GPU: frames at 78-126 ms GPU in this session, no meaningful A/B). The
-  detail mesh draws 7 % fewer triangles on I6 (101k -> 93k in the details) and is front-side only now.
+  detail mesh has fewer triangles (I6 details 15k fewer: 120.9k -> 106.0k with the walls) and is drawn front-side only.
