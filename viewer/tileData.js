@@ -97,9 +97,7 @@ export const onRoof = (g, x, z) => {
 };
 
 /** Drop the UrbIS solids a scripted model replaces (entry.hide = BU_IDs, e.g. the Saint-Job church, or solid ids for
- *  the solids that have no BU_ID, e.g. the Château de Wolvendael's 537523). */
-/** Drop the UrbIS solids a scripted model replaces (entry.hide = BU_IDs, e.g. the Saint-Job church, or solid ids,
- *  e.g. the Observatory's: some of its solids share a BU_ID with others, one has none). */
+ *  solids with no BU_ID or one shared with others, e.g. the Château de Wolvendael's 537523, the Observatory's). */
 function hideBuildings(bDoc, hide) {
   if (!hide?.length) return;
   const h = new Set(hide);
