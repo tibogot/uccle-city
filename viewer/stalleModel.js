@@ -25,6 +25,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { env } from "./lighting.js";
 import { bumpNormal } from "./tslkit.js";
+import { libSource } from "./materials/libSwitch.js";
 
 /** the slots the GLB uses (one primitive = one draw call each per LOD) */
 export const ST_SLOTS = ["sandstone_rubble", "stone_white", "stone_blue", "brick_red_brussels", "slate", "zinc_roof", "wood_frame_dark",
@@ -52,7 +53,7 @@ export function slateFade(dist, lod0Fade) {
 // ------------------------------------------------------------------------------------------------ material source
 // THE ONE LINE: "temp" = the temporary TSL materials below; "./materials/library.js" = the shared library
 // (createMaterial(name, { mapping: "uv" })) or any module exporting getMaterial(name) / materials[name].
-const SOURCE = "temp";
+const SOURCE = libSource("stalle", "./materials/shipped.js");   // 2026-11-13: the library by default (?libmat=0: temp)
 
 /** Live look controls (uniforms: no recompiles) */
 export const stLook = { aoStrength: uniform(1.0), aoDirect: uniform(0.6), weather: uniform(1.0), moss: uniform(1.0), glow: uniform(0.35) };

@@ -22,6 +22,7 @@ import {
 import { env } from "../lighting.js";
 import { pieceKeep } from "./kitFade.js";
 import { paintedGlass } from "../facades.js";
+import { libSource } from "../materials/libSwitch.js";
 
 export const KIT_SLOTS = ["stone_white", "stone_blue", "brick_red_brussels", "brick_yellow", "wood_frame_white", "wood_frame_dark",
   "glass_window", "cast_iron_green", "painted_metal_white", "zinc_roof",
@@ -31,8 +32,14 @@ export const KIT_SLOTS = ["stone_white", "stone_blue", "brick_red_brussels", "br
   "slate", "brick_dark", "render_white", "copper_patina", "glass_stained", "metal_anodised", "enamel_blue"];
 /** THE ADAPTER TABLE: kit slot -> look name (a KIT_SLOTS / library name) */
 export const SLOT_TABLE = Object.fromEntries(KIT_SLOTS.map((s) => [s, s]));
-// THE ONE LINE: "temp" | "../materials/library.js"
-const SOURCE = "temp";
+// THE ONE LINE: "temp" | "../materials/library.js" (2026-11-13: the library by default; ?libmat=0 or ?libmat=-kit: temp).
+// With the library, each slot whose name has a SHIPPED set (viewer/materials/textures/scans.json: brick, stone, slate,
+// render, copper) takes it (library.js scanLook: hex-tiled, its normal map on the wall's frame); the other slots (frames,
+// glass, iron, zinc, stained glass, anodised metal, enamel) keep the stand-ins below.
+const SOURCE = libSource("kit", "../materials/shipped.js");
+
+/** the slots that take the library's shipped set (see kitOpaqueMaterial: the texture-binding budget) */
+export const KIT_LIB = ["brick_red_brussels", "brick_yellow", "stone_white", "stone_blue", "render_white", "slate"];
 
 /** live look controls (uniforms: no recompile) */
 export const kitLook = { aoStrength: uniform(1.0), aoDirect: uniform(0.45), aoGamma: uniform(0.7), weather: uniform(1.0), roomGlass: uniform(1.0),
@@ -44,7 +51,9 @@ export const kitLook = { aoStrength: uniform(1.0), aoDirect: uniform(0.45), aoGa
   //   thinFar: the town hall's region-width filter (models/townhall/NOTES.md polish 2b): a part narrower than ~1 pixel
   //   shades like the wall it sits on (normal bent to the wall's) and its albedo / roughness tend to the coverage-weighted
   //   mean, so a glazing bar or a 6 mm bevel does not sparkle; patterns: box-filtered (Mr.doob's filteredPulse).
-  specAA: uniform(1.0), specAAVar: uniform(0.25), specAAMax: uniform(0.18), thinFar: uniform(1.0) };
+  specAA: uniform(1.0), specAAVar: uniform(0.25), specAAMax: uniform(0.18), thinFar: uniform(1.0),
+  // (2026-11-13) the library sets' normal-map strength on the kit (0 = flat, for A/B)
+  libNormal: uniform(1.0) };
 
 let lib = null;
 export async function loadKitMaterialSource() {
@@ -159,14 +168,26 @@ export function kitOpaqueMaterial(lod, opts = {}) {
   // the building's variants: the same named slots, swapped per instance
   const eff = select(slot.equal(0).and(b1.greaterThan(0.5)), float(1),
     select(slot.equal(4).and(b2.greaterThan(0.5)), float(5), select(slot.equal(2).and(b4.greaterThan(0.5)), float(3), slot))).toVar();
+  // the library's shipped sets per slot name (when SOURCE is the library and the set is loaded), else the stand-in
+  // (at most 6 sets = 12 textures: the kit's one opaque shader also binds 4 of its own and WebGPU's default limit is
+  // 16 sampled textures per stage; copper_patina and brick_dark (rare round-3 slots) keep their stand-ins)
+  const libLook = (name) => (lib && opts.lib !== false && KIT_LIB.includes(name) ? lib.scanLook?.(name) ?? null : null);
+  const libLooks = KIT_SLOTS.map((s) => libLook(SLOT_TABLE[s]));
   const looks = KIT_SLOTS.map((s) => LOOKS[SLOT_TABLE[s]] ?? LOOKS.stone_white);
   const st = kitUV().toVar();
+  const anyLib = libLooks.some(Boolean);
+  // derivatives of the uv in UNIFORM control flow (the looks run in per-slot branches; WGSL forbids them there)
+  const dst = anyLib ? vec4(st.dFdx(), st.dFdy()).toVar() : null;
+  const fwst = anyLib ? fwidth(st.x).add(fwidth(st.y)).mul(0.6).add(0.00005).toVar() : null;
+  const nrm = vec2(0).toVar();
   const out = Fn(() => {
     const col = vec3(0).toVar(), r = float(0.8).toVar(), mt = float(0).toVar();
     const pick = opts.only != null ? float(KIT_SLOTS.indexOf(opts.only)) : eff;
     let chain = null;
     looks.forEach((look, i) => {
-      const body = () => { const L = look(st); col.assign(L.col); r.assign(L.rough); mt.assign(L.metal ?? float(0)); };
+      const body = libLooks[i]
+        ? () => { const L = libLooks[i](st, { dx: dst.xy, dy: dst.zw, fw: fwst }); col.assign(L.col.mul(L.ao)); r.assign(L.rough); mt.assign(L.metal); nrm.assign(L.n.mul(kitLook.libNormal)); }
+        : () => { const L = look(st); col.assign(L.col); r.assign(L.rough); mt.assign(L.metal ?? float(0)); };
       chain = chain ? chain.ElseIf(pick.equal(i), body) : If(pick.equal(i), body);
     });
     return vec4(col, r);
@@ -180,7 +201,15 @@ export function kitOpaqueMaterial(lod, opts = {}) {
   m.colorNode = out.rgb;
   m.roughnessNode = out.a;
   m.metalnessNode = metal;
-  return finish(m, lod, opts);
+  finish(m, lod, opts);
+  if (anyLib) {
+    // the shipped set's normal map on the face frame: u along the wall (local x = (nz, 0, -nx)), v up
+    const J = attribute("aKitJ", "vec4");
+    const tW = vec3(J.y, 0, J.x.negate()), bW = vec3(0, 1, 0);
+    const off = cameraViewMatrix.mul(vec4(tW.mul(nrm.x).add(bW.mul(nrm.y)), 0)).xyz;
+    m.normalNode = normalize(m.normalNode.add(off));
+  }
+  return m;
 }
 
 /** THE KIT GLASS for LOD `lod`: the painted window's room, curtains, night lights and sky (facades.js paintedGlass)

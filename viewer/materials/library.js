@@ -67,10 +67,10 @@ export const DEFS = {
   brick_red_brussels: { ...mason, label: "Red brick (Brussels)", scan: true, unit: 0.065,
     params: { color: "#8c4b3a", color2: "#62301f", mortar: "#9e978b", course: [0.065, 0.04, 0.12, 0.001], length: [0.21, 0.12, 0.32, 0.001], joint: [0.01, 0.002, 0.025, 0.0005], recess: [0.004, 0, 0.015, 0.0005], burnt: [0.08, 0, 0.5, 0.01] },
     surface: brick },
-  brick_yellow: { ...mason, label: "Yellow brick", unit: 0.065,
+  brick_yellow: { ...mason, label: "Yellow brick", scan: true, unit: 0.065,
     params: { color: "#b8955e", color2: "#957444", mortar: "#a8a194", course: [0.065, 0.04, 0.12, 0.001], length: [0.21, 0.12, 0.32, 0.001], joint: [0.01, 0.002, 0.025, 0.0005], recess: [0.004, 0, 0.015, 0.0005], burnt: [0.03, 0, 0.5, 0.01] },
     surface: brick },
-  brick_dark: { ...mason, label: "Dark brick (clinker)", unit: 0.065,
+  brick_dark: { ...mason, label: "Dark brick (clinker)", scan: true, unit: 0.065,
     params: { color: "#4a2c25", color2: "#2e211e", mortar: "#6e6a63", course: [0.065, 0.04, 0.12, 0.001], length: [0.21, 0.12, 0.32, 0.001], joint: [0.01, 0.002, 0.025, 0.0005], recess: [0.003, 0, 0.015, 0.0005], burnt: [0.25, 0, 0.6, 0.01] },
     surface: brick },
   mortar: { kind: "masonry", damp: true, salt: true, streaks: true, label: "Lime mortar", unit: 0.01,
@@ -81,7 +81,7 @@ export const DEFS = {
   stone_blue: { ...mason, salt: false, label: "Blue stone (petit granit)", scan: true, unit: 0.25,
     params: { color: "#41454b", color2: "#7d8287", course: [0.25, 0.1, 1.0, 0.005], length: [1.0, 0.3, 2.5, 0.01], joint: [0.004, 0.0, 0.012, 0.0005], fossils: [0.5, 0, 1, 0.01], weathered: [0.35, 0, 1, 0.01] },
     surface: stoneBlue },
-  render_white: { kind: "render", damp: true, salt: false, streaks: true, label: "Render, white", unit: 0.02,
+  render_white: { kind: "render", damp: true, salt: false, streaks: true, label: "Render, white", scan: true, unit: 0.02,
     params: { color: "#e0dcd2", color2: "#b9b4aa", cracks: [0.2, 0, 1, 0.01] }, surface: render },
   concrete_white: { kind: "render", damp: true, salt: false, streaks: true, label: "Concrete, white (cast)", unit: 0.02,
     params: { color: "#d6d3cb", color2: "#b5b1a8", cracks: [0.1, 0, 1, 0.01] }, surface: render },
@@ -95,7 +95,7 @@ export const DEFS = {
   roof_tiles_flat_dark: { kind: "roof", label: "Roof tiles, flat dark", unit: 0.25,
     params: { color: "#35373b", color2: "#3d3a35", course: [0.26, 0.15, 0.4, 0.005], length: [0.24, 0.15, 0.4, 0.005], joint: [0.004, 0.001, 0.01, 0.0005], lap: [0.014, 0, 0.025, 0.0005] },
     surface: slate },
-  roof_tiles_red: { kind: "roof", label: "Roof tiles, red (Flemish pantiles)", unit: 0.22,
+  roof_tiles_red: { kind: "roof", label: "Roof tiles, red (Flemish pantiles)", scan: true, unit: 0.22,
     params: { color: "#99492f", color2: "#6e3424", course: [0.3, 0.2, 0.4, 0.005], length: [0.22, 0.16, 0.3, 0.005], roll: [0.03, 0, 0.05, 0.001] },
     surface: pantiles },
   zinc_roof: { kind: "metalroof", label: "Zinc roof (standing seam)", unit: 0.45, streaks: true, scanMetal: 0.35,
@@ -571,7 +571,7 @@ function seamLayer(c, s) {
 }
 
 // ------------------------------------------------------------------------------------------------ frames, mapping
-function cotangentFrame(N, P, st) {
+export function cotangentFrame(N, P, st) {
   const dp1 = P.dFdx(), dp2 = P.dFdy(), duv1 = st.dFdx(), duv2 = st.dFdy();
   const dp2perp = cross(dp2, N), dp1perp = cross(N, dp1);
   const T = dp2perp.mul(duv1.x).add(dp1perp.mul(duv2.x));
@@ -708,12 +708,17 @@ function surfaceFor(name, variant, ctx, projs) {
 export function createMaterial(name, opts = {}) {
   const def = DEFS[name];
   if (!def) throw new Error(`[materials] unknown material ${name}`);
-  let variant = opts.variant ?? "proc";
+  // the DEFAULT variant is the SHIPPED pick (2026-11-13: textures/scans.json, the best of procedural / CC0 scan /
+  // texture factory per material, tools/texturefactory/promote.py): "scan" whenever the shipped set is loaded
+  // (loadScans(renderer) before creating materials), else the live procedural. The Material Lab asks explicitly.
+  let variant = opts.variant ?? (SCANS[name] ? "scan" : "proc");
   const scanData = opts.scan ?? SCANS[name];
   if (variant !== "proc" && !scanData) variant = "proc";
   if (variant === "hybrid") variant = "scan";
   const mapping = opts.mapping ?? "world";
   const U = opts.look ?? makeLook(name);
+  // the shipped set's own default tint toward the library colour (factory sets: 0, their colour is the target)
+  if (!opts.look && variant !== "proc" && scanData?.meta?.tint != null) U.scanTint.value = scanData.meta.tint;
   const m = new THREE.MeshStandardNodeMaterial({ side: opts.side ?? THREE.FrontSide });
   const P = positionWorld, N = normalWorldGeometry;
   const k = U.scale;
@@ -751,6 +756,36 @@ export function createMaterial(name, opts = {}) {
   m.name = `lib:${name}:${variant}:${mapping}${variant !== "proc" ? ":" + (scanData.meta.id ?? "shipped") : ""}`;
   Object.assign(m.userData, { look: U, libName: name, variant, mapping, shared: true, scanId: variant !== "proc" ? (scanData.meta.id ?? "shipped") : null });
   return m;
+}
+
+/**
+ * A SHIPPED set as a plain look for packed consumers that evaluate several slots in one material (the façade kit):
+ * look(st, d) with st = metres (u along the face, v up) and d = { dx, dy, fw } = dFdx(st), dFdy(st), fwidth in metres,
+ * taken by the caller in UNIFORM control flow (the look may run inside a per-slot branch: WGSL forbids derivatives
+ * there). Returns { col, rough, ao, n } (n = tangent-space normal x, y in the u / v frame); the same hex-tiled sample,
+ * far fade and tint as the "scan" variant, without finish()'s weathering (the consumer has its own). null when the
+ * material has no shipped set loaded (loadScans).
+ */
+export function scanLook(name) {
+  const S = SCANS[name];
+  if (!S) return null;
+  const U = makeLook(name);
+  if (S.meta.tint != null) U.scanTint.value = S.meta.tint;
+  const size = float(S.meta.size_m);
+  const structured = !!STRUCTURED_MAT[name];
+  const lat = structured ? (S.meta.lattice ?? [1, 2]) : null;
+  const mean = vec3(...S.meta.mean_albedo_linear);
+  return (st, d) => {
+    const inv = float(1).div(size);
+    const { A, R, n } = hexSample(S.albedo, S.nra, st.mul(inv), { lattice: lat, rotate: structured || NO_ROTATE[name] ? 0 : 1, rate: 1,
+      tone: structured ? 0.07 : 0.04, dx: d.dx.mul(inv), dy: d.dy.mul(inv) });
+    const tint = mix(vec3(1), U.color.div(mean.max(0.004)), U.scanTint);
+    const far = smoothstep(size.mul(0.03), size.mul(0.12), d.fw);
+    const col = mix(A.rgb, mean, far).mul(tint);
+    const rough = mix(R.b, float(S.meta.mean_roughness), far);
+    const ao = mix(R.a, float(1), far.mul(0.5));
+    return { col, rough, ao, n: n.mul(float(1).sub(far)), metal: float(DEFS[name].scanMetal ?? 0) };
+  };
 }
 
 /** Set one parameter (number or colour hex / THREE.Color). */

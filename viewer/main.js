@@ -565,6 +565,12 @@ async function main() {
   renderer.shadowMap.enabled = true;
   document.body.prepend(renderer.domElement);
   await renderer.init();
+  // the material library's SHIPPED textures (viewer/materials/textures/scans.json: the default look of every library
+  // material, docs/TEXTURE_FACTORY.md) load in parallel with the boot; awaited before the first consumer (the façade
+  // kit, the landmarks, the bridges) creates its materials. ?libmat=0: none (every consumer on its own temporary looks)
+  const libTex = params.get("libmat") === "0" ? null : Promise.all([import("./materials/scans.js"), import("./materials/shipped.js")]).then(([m, sh]) => m.loadScans(renderer, undefined, { skip: sh.GROUND_HOLD }))
+    .then((S) => { log(`material library: ${Object.keys(S).length} shipped texture sets`); return S; })
+    .catch((e) => log(`material library textures failed: ${e.message}`));
   const backend = renderer.backend.isWebGPUBackend ? "WebGPU" : "WebGL2 (fallback)";
   log(`renderer: ${backend}`);
 
@@ -645,6 +651,7 @@ async function main() {
       }
     }).catch((e) => log(`Saint-Job model failed (${e.message}): the UrbIS solid is hidden, reload with ?stjob=0`));
   }
+  await libTex;                                                    // the library's textures before its first consumer
   await cityKit.start({ scene, updaters, log });                   // ?kit=1: the façade kit (before the first tile and the warm-up)
   // the Chapelle de Stalle + its interior cell (tools/blender/stalle*.py, viewer/stalleCity.js) behind ?stalle=1
   if (params.get("stalle") !== "0") await addStalle({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, getView: () => ({ camera, lighting }), getThird: () => third });
