@@ -29,6 +29,7 @@ Stairs paused until the owner's Mixamo clips are in `data/raw/animations/mixamo/
 **QUIET-MACHINE CHECK (coordinator, 2026-11-12, owner's GPU project closed; median frame deltas):** weather: rain +0.07-0.10 ms, wetness full +0.42-0.46 / lite ~0, snow flakes +0.13, layer +0.27, all snow +0.62-0.66 (budget 1.0); foliage front garden +0.20-0.39 ms (4 views; noisy estimate was ~1.5); pedestrians 300 banded GPU +0.33-0.46 ms, CPU 0.39 ms (Mr.doob's crowd CPU 0.89 ms). All within targets except full wetness (use the lite path far).
 
 **OWNER VERDICTS:**
+- 2026-11-12 Material lab (in progress): brick_red_brussels: SCAN CLEARLY WINS. Procedural: eye-hurting jitter (fine diagonal 'firing' streaks alias + derivative bump outlines crawl). Hybrid: near scan and far procedural look too different -> need a better far solution for scans (anti-tiling for scans: stochastic / hex-tile texture sampling, macro variation, detail fade; or a procedural far version tuned to the scan's mean colour + variation).
 - 2026-11-12 Façade kit: "nice, we'll need more pieces (optimized)"; issues: bright flickering lines along doors (light through gaps), aliased shimmering edges, saw-tooth shadows in the lab. -> round 3 running (seal gaps + checker leak test, specular AA, the city's lighting in the lab, more Uccle pieces); then merge, then the clean-buildings pass.
 
 **OWNER REVIEW LIST, added 2026-11-10 (on top of the 11 earlier pages):**
