@@ -268,7 +268,7 @@ function addTrees(group, f, inTile, treeGround) {
 let tramLine = null;       // real STIB line 92 on its timetable (tramline.js)
 const updaters = [];
 // The railway (?trains=1, Train Lab first): tracks per tile, hero bridges, SNCB trains on the real timetable (viewer/rail/)
-const TRAINS = params.get("trains") === "1";
+const TRAINS = params.get("trains") !== "0";
 const railP = TRAINS ? import("./rail/railway.js").then(async (m) => ({ m, doc: await m.loadRail() })).catch((e) => { log(`railway: ${e.message}`); return null; }) : null;
 let falconsReady = null, falconsOn = true;   // the Saint-Job peregrines (viewer/falcons.js), once loaded       // per-frame updates (tree LOD, lamp lights) of every loaded tile
 
@@ -640,29 +640,29 @@ async function main() {
   }
   await cityKit.start({ scene, updaters, log });                   // ?kit=1: the façade kit (before the first tile and the warm-up)
   // the Chapelle de Stalle + its interior cell (tools/blender/stalle*.py, viewer/stalleCity.js) behind ?stalle=1
-  if (params.get("stalle") === "1") await addStalle({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, getView: () => ({ camera, lighting }), getThird: () => third });
+  if (params.get("stalle") !== "0") await addStalle({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, getView: () => ({ camera, lighting }), getThird: () => third });
   // The Uccle town hall (tools/blender/townhall.py, viewer/townhallCity.js) in place of its UrbIS solid, behind
   // ?townhall=1 for now (its BU_ID joins HIDE_BU_IDS before the first tile is built)
-  if (params.get("townhall") === "1") await addTownHall({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
+  if (params.get("townhall") !== "0") await addTownHall({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
   // The Villa van Buuren (tools/blender/vanbuuren.py, viewer/vanbuurenCity.js) in place of UrbIS solid 550409 only,
   // behind ?vanbuuren=1 for now
-  if (params.get("vanbuuren") === "1") await addVanBuuren({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer });
+  if (params.get("vanbuuren") !== "0") await addVanBuuren({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer });
   // The Château de Wolvendael (tools/blender/wolvendael_chateau.py, viewer/wolvendaelCity.js) in place of UrbIS solids
   // 537523 + 538880, and its pond (viewer/water/), behind ?wolvendael=1 for now
-  if (params.get("wolvendael") === "1") await addWolvendael({ scene, updaters, hide: HIDE_BU_IDS, ponds: PONDS, world, manifest, log, compiler: () => compileFor, renderer, lighting });
+  if (params.get("wolvendael") !== "0") await addWolvendael({ scene, updaters, hide: HIDE_BU_IDS, ponds: PONDS, world, manifest, log, compiler: () => compileFor, renderer, lighting });
   // The police station, Rue Rouge 17 (tools/blender/police_rouge.py, viewer/policeCity.js) in place of UrbIS solids 528055 +
   // 528772 (BU 1674458), with its yard, behind ?police=1 for now
-  if (params.get("police") === "1") await addPolice({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer });
+  if (params.get("police") !== "0") await addPolice({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer });
   // The Uccle-Calevoet station building (tools/blender/calevoet_station.py, viewer/calevoetCity.js) in place of UrbIS
   // solid 534568, behind ?calevoet=1 for now
-  if (params.get("calevoet") === "1") await addCalevoet({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer });
+  if (params.get("calevoet") !== "0") await addCalevoet({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer });
   // the Eglise Saint-Pierre (tools/blender/stpierre.py, viewer/stpierreCity.js) behind ?stpierre=1
-  if (params.get("stpierre") === "1") await addStPierre({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
+  if (params.get("stpierre") !== "0") await addStPierre({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
   // The Royal Observatory (tools/blender/observatory.py, viewer/observatoryCity.js) in place of its UrbIS solids,
   // behind ?observatory=1 for now (its solids join HIDE_BU_IDS before the first tile is built)
-  if (params.get("observatory") === "1") await addObservatory({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
+  if (params.get("observatory") !== "0") await addObservatory({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
   // flags on the town hall balcony (viewer/flagsCity.js), behind ?flags=1 (needs ?townhall=1); in the background
-  if (params.get("flags") === "1") addFlags({ scene, updaters, renderer, compiler: () => compileFor, log, params }).catch((e) => log(`flags failed: ${e.message}`));
+  if (params.get("flags") !== "0") addFlags({ scene, updaters, renderer, compiler: () => compileFor, log, params }).catch((e) => log(`flags failed: ${e.message}`));
   const T0 = await loadTile(entry, { layers, contourOn, verbose: true });
   world.tiles.push(T0);
   const { hm, roads, net } = T0;
@@ -1036,7 +1036,7 @@ async function main() {
     } catch (e) { log(`dev panel: ${e.message}`); }
   }
   // ?map=1: the minimap (bottom left) and the full map (M) with click-to-teleport (viewer/map/, docs/MAP.md)
-  if (params.get("map") === "1") {
+  if (params.get("map") !== "0") {
     const mode = () => (third?.on ? "third" : flyer.on ? "fly" : driver.on ? "drive" : walker.on ? "walk" : "orbit");
     const dir = new THREE.Vector3();
     const getPlayer = () => {

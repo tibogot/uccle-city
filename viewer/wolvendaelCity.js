@@ -18,7 +18,7 @@ import { openParallelPipelines } from "../vendor/engine/parallelPipelines.js";
 import { precompile } from "./warmup.js";
 import { Heightmap } from "./heightmap.js";
 import { pondBedGrid } from "./water/pondBed.js";
-import { createPond, POND_LAYER, buildReflectionTrees } from "./water/pondWater.js";
+import { createPond, POND_LAYER, REFL_MRT, buildReflectionTrees } from "./water/pondWater.js";
 
 /** the pond's measured description (site.json "pond"): the same object goes to the tiles (the carve) and the water */
 export function wolvendaelPond(site) {
@@ -113,7 +113,7 @@ export async function addWolvendael({ scene, updaters, hide, ponds, world, manif
     const toReflection = (o) => {
       if (o.layers.isEnabled(POND_LAYER) || pending.has(o)) return;
       pending.add(o);
-      precompile(renderer, [o], camC, scene, { target: pond.refl.rt, mrt: null }).then(() => pond.addReflected(o), () => pond.addReflected(o));
+      precompile(renderer, [o], camC, scene, { target: pond.refl.rt, mrt: REFL_MRT }).then(() => pond.addReflected(o), () => pond.addReflected(o));
     };
     const scanTiles = () => {
       // (the sky dome is added by the lighting after this module starts: looked up here)
@@ -140,7 +140,7 @@ export async function addWolvendael({ scene, updaters, hide, ponds, world, manif
     const allOn = levels.map(() => true);
     for (const f of [1, 0.5]) {
       setLodFades(levels, allOn, levels.map(() => f));
-      await precompile(renderer, [root, proxies, pond.reeds].filter(Boolean), camC, scene, { target: pond.refl.rt, mrt: null });
+      await precompile(renderer, [root, proxies, pond.reeds].filter(Boolean), camC, scene, { target: pond.refl.rt, mrt: REFL_MRT });
     }
     pond.addReflected(root);
     const tComp = performance.now() - tc;

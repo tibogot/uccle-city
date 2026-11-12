@@ -23,7 +23,7 @@ const HEROES = [
 const INTERIOR = BU(1786120);
 
 export const cityKit = {
-  on: qs.get("kit") === "1",
+  on: qs.get("kit") !== "0",
   exclude: [...HEROES, ...(qs.get("interior") === "1" ? [INTERIOR] : [])],
   field: null,
   async start({ scene, updaters, log = console.log }) {

@@ -23,12 +23,16 @@
 import * as THREE from "three/webgpu";
 import {
   uniform, texture, uv, vec2, vec3, vec4, float, Fn, positionWorld, positionLocal, normalWorld, cameraPosition, normalize, dot, clamp, pow,
-  mix, smoothstep, length, max, min, abs, fract, floor, sin, time, mrt, screenUV, reflect, cameraViewMatrix, attribute, instanceIndex, step,
+  mix, smoothstep, length, max, min, abs, fract, floor, sin, time, mrt, output, screenUV, reflect, cameraViewMatrix, attribute, instanceIndex, step,
 } from "three/tsl";
 import { getWaterWaveTexture } from "../../vendor/slop-water/waveTexture.js";
 import { env } from "../lighting.js";
 
 export const POND_LAYER = 9;
+// The reflection pass draws with an MRT holding only the colour: with NO MRT (setMRT(null)), a material that carries
+// its own mrtNode (the château's noSSR metal / glass: { metalRough }) compiled to a fragment shader with an EMPTY
+// output struct (WGSL error, the material invisible in the reflection and its pipeline failing every frame).
+export const REFL_MRT = mrt({ output });
 
 const lin = (hex) => { const c = new THREE.Color(hex); return vec3(c.r, c.g, c.b); };
 const hash = (i) => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
@@ -50,7 +54,7 @@ export class PlanarReflection {
   constructor(renderer, { scale = 0.5, layer = POND_LAYER } = {}) {
     this.renderer = renderer; this.scale = scale;
     this.rt = new THREE.RenderTarget(2, 2, { type: THREE.HalfFloatType, depthBuffer: true });
-    this.rt.texture.name = "pond-reflection";
+    this.rt.texture.name = "output";               // = REFL_MRT's key (three matches MRT outputs to textures by name)
     this.camera = new THREE.PerspectiveCamera();
     this.camera.layers.set(layer);
     this.renders = 0; this.lastMs = 0;
@@ -95,7 +99,7 @@ export class PlanarReflection {
     const prevRT = r.getRenderTarget(), prevMRT = r.getMRT(), prevAuto = r.autoClear;
     const t0 = performance.now();
     const prevAlpha = r.getClearAlpha(); r.getClearColor(_col);
-    r.setMRT(null); r.setRenderTarget(this.rt); r.autoClear = true; r.setClearColor(0x000000, 0);
+    r.setMRT(REFL_MRT); r.setRenderTarget(this.rt); r.autoClear = true; r.setClearColor(0x000000, 0);
     r.render(scene, vc);
     r.setMRT(prevMRT); r.setRenderTarget(prevRT); r.autoClear = prevAuto; r.setClearColor(_col, prevAlpha);
     this.lastMs = performance.now() - t0;
