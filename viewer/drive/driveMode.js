@@ -118,7 +118,8 @@ export class Driver {
       return col.flags;
     };
     this.extra = [];   // collider sets no tile carries (hero models: the Saint-Job front steps)
-    this.env = createCarEnv({ sets: this.sets, ground: this.ground, handling: HANDLING, waters: () => this.world.waters });
+    this.ledges = !/[?&]colfix=0/.test(location.search);       // ?colfix=0: the car climbs any step (as before the audit)
+    this.env = createCarEnv({ sets: this.sets, ground: this.ground, handling: HANDLING, waters: () => this.world.waters, ledges: this.ledges });
     this.camNear = [];
     this.insideWall = (x, z) => pointInBuilding(this.camNear, x, z);
     this.hud = document.createElement("div");

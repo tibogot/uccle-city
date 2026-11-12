@@ -433,7 +433,7 @@ export function driveRoutes({ scene, tile, driver, truth, G, maxRoads = Infinity
           if (!any) break;
         }
         // a ledge over MAX_STEP (carEnv.js): a road wall the car does not climb
-        if (Number.isFinite(st.y) && ledgeContact(st, body, ground, contact)) {
+        if (driver.ledges !== false && Number.isFinite(st.y) && ledgeContact(st, body, ground, contact)) {
           st.x += contact.nx * contact.depth; st.z += contact.nz * contact.depth; hitStep = true;
           const vn = -(Math.sin(st.heading) * st.speed * contact.nx + Math.cos(st.heading) * st.speed * contact.nz);
           if (vn > 0) st.speed *= 0.5;

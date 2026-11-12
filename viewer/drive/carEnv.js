@@ -27,7 +27,7 @@ const LEDGE_PTS = [[1, 1], [1, -1], [-1, 1], [-1, -1], [0, 1], [0, -1], [1, 0], 
  * sets(x, z, r) -> array of collider sets (one per tile) that may hold items within r of (x, z)
  * ground(x, z) -> drivable height
  */
-export function createCarEnv({ sets, ground, handling, waters = () => null }) {
+export function createCarEnv({ sets, ground, handling, waters = () => null, ledges = true }) {
   const near = [];
   const contact = { nx: 0, nz: 0, depth: 0, kind: 0 };
   const body = { hx: BODY.hx, hz: BODY.hz, cos: 1, sin: 0 };
@@ -64,7 +64,7 @@ export function createCarEnv({ sets, ground, handling, waters = () => null }) {
         }
         if (!any) break;
       }
-      if (Number.isFinite(c.y) && ledgeContact(c, body, ground, contact)) {
+      if (ledges && Number.isFinite(c.y) && ledgeContact(c, body, ground, contact)) {
         c.x += contact.nx * contact.depth; c.z += contact.nz * contact.depth;
         hit(c, contact.nx, contact.nz, contact.kind, handling);
         env.contacts++;
