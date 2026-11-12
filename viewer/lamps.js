@@ -179,13 +179,23 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true, p
   // the lantern: the Blender lamp's globe hangs 1.05 m out at ~6 m, the old one 0.72 m at 4.55 m
   const REACH = MODEL ? 1.05 : 0.72, HEADY = MODEL ? 5.95 : 4.55;
   const lamp = sites.map((s) => new THREE.Vector3(s.x - Math.sin(s.yaw) * REACH, s.y + HEADY, s.z - Math.cos(s.yaw) * REACH));
+  const nearD = new Float64Array(POOL), nearI = new Int32Array(POOL);
   const update = (camPos) => {
     relod?.(camPos);
     if (!lights.length) return;
     const night = env.uNight.value;
     if (night < 0.05) { for (const l of lights) l.intensity = 0; return; }
-    const order = lamp.map((p, i) => [p.distanceToSquared(camPos), i]).sort((a, b) => a[0] - b[0]);
-    lights.forEach((l, k) => { const p = lamp[order[k]?.[1] ?? 0]; l.position.copy(p); l.intensity = 55 * night; });   // (the lamp light map lights the ground: these add shape to cars, trees, walls)
+    // the POOL nearest lamps: a partial insertion selection into preallocated arrays (no per-frame allocation or
+    // full sort); the same lamps as sorting every lamp by distance
+    nearD.fill(Infinity); nearI.fill(0);
+    for (let i = 0; i < lamp.length; i++) {
+      const d = lamp[i].distanceToSquared(camPos);
+      if (d >= nearD[POOL - 1]) continue;
+      let k = POOL - 1;
+      while (k > 0 && nearD[k - 1] > d) { nearD[k] = nearD[k - 1]; nearI[k] = nearI[k - 1]; k--; }
+      nearD[k] = d; nearI[k] = i;
+    }
+    for (let k = 0; k < lights.length; k++) { lights[k].position.copy(lamp[nearI[k]]); lights[k].intensity = 55 * night; }   // (the lamp light map lights the ground: these add shape to cars, trees, walls)
   };
   return { group, count: sites.length, update, heads: lamp.map((p) => ({ x: p.x, z: p.z })) };
 }
