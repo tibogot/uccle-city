@@ -96,13 +96,17 @@ def main():
         print("nothing to compare")
         return
     sheet = np.hstack([np.hstack([c, np.ones((c.shape[0], 6, 3))]) for c in cols])
-    sheet = (sheet * 255).astype(np.uint8)
+    sheet = (np.clip(sheet, 0, 1) * 255).astype(np.uint8)          # (cubic overshoot would wrap)
     head = np.full((34, sheet.shape[1], 3), 255, np.uint8)
     for i, l in enumerate(labels):
         cv2.putText(head, l, (8 + i * 426, 23), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 0), 1, cv2.LINE_AA)
     sheet = np.vstack([head, sheet])
     os.makedirs(os.path.dirname(out), exist_ok=True)
-    cv2.imwrite(out, cv2.cvtColor(sheet, cv2.COLOR_RGB2BGR))
+    if out.endswith(".jpg"):          # docs copies: smaller
+        sheet = cv2.resize(sheet, None, fx=0.6, fy=0.6, interpolation=cv2.INTER_AREA)
+        cv2.imwrite(out, cv2.cvtColor(sheet, cv2.COLOR_RGB2BGR), [cv2.IMWRITE_JPEG_QUALITY, 82])
+    else:
+        cv2.imwrite(out, cv2.cvtColor(sheet, cv2.COLOR_RGB2BGR))
     print(out, f"rows: {crop} m crop (lit) | 3 x 3 m (lit, tiled) | {crop} m albedo")
 
 

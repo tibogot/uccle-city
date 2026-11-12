@@ -181,8 +181,8 @@ def birch(T, P):
     return col, h, rough
 
 
-PLANE = dict(cell=0.075, jig=0.45, old=0.42, mid=0.22, fresh=0.14, old_a="#6f6c50", old_b="#8a8061",
-             mid_a="#9a9576", mid_b="#a8a07c", new_a="#cdc6a4", new_b="#ddd5b1", fresh_col="#c6c582")
+PLANE = dict(cell=0.09, jig=0.35, old=0.3, mid=0.2, fresh=0.14, old_a="#7b7a68", old_b="#8f8a72",
+             mid_a="#a9a78e", mid_b="#b5b195", new_a="#d9d5bd", new_b="#e6e1c8", fresh_col="#d2d39a")
 BEECH = dict(color="#9c9c95", dark="#5d5d58", eyes=3, algae=0.35, lichen=0.12)
 LIME = dict(cell=0.04, stretch=5.0, fis_w=0.004, depth=0.006, ridge_a="#6f665a", ridge_b="#857b6c", fis_col="#2f2a24", algae=0.25)
 MAPLE = dict(cell=0.025, stretch=6.0, fis_w=0.0025, depth=0.004, ridge_a="#6c6862", ridge_b="#7d7870", fis_col="#2d2a27", algae=0.2)
