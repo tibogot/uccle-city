@@ -16,8 +16,13 @@ the fixed lamp-light pool (no more long freeze), the FALCON FLIGHT as the fly mo
  proxies, pigeons on the Place; `?falcon=old` = old flight). **Lab-only, merged:** night lights, sound,
 weather + seasons, foliage, pedestrians, street life, car impostors, police car (branch), Material / Tree labs.
 
-**Running (agents):** collisions + joins audit (`claude/audit-collide`) · fixes1 (`claude/fixes1`: tram on slopes, clean-buildings
-pass, garage door, grainy far forest).
+**Running (agents):** collisions + joins audit (`claude/audit-collide`).
+
+**Merged 2026-11-13: fixes1:** tram on one smooth track profile + a bridge deck over the L26 cutting (`?trackprofile=0` old),
+clean-buildings pass (facade details -96 % blocking, no eaves gutter line, faces wound right), garage door in the kit (not
+placed), far forest softer, adaptive shadow filter. Left: buildings audit not at 0, dotted gable-top line, cascaded
+shadows, garage placement (UrbIS CR42L), grey veil over the far woods at 1.2-1.5 km, road humps under the rails, GPU cost
+unmeasured (quiet-GPU audit).
 
 **Next, in order:**
 1. Falcon in the city, left (docs/falcons/CITY_RESUME.md): a real-time foreground run on a quiet GPU, trees as obstacles,
