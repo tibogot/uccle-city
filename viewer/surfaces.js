@@ -31,7 +31,7 @@ import { ROAD_TYPES, LANE_TYPES } from "../vendor/roads/roadCrossSection.js";
 /** pipeline/build_surfaces.py CLASS */
 export const SURF_CLASS = { roadway: 0, tramRoad: 1, tramSite: 2, parking: 3, square: 4, sidewalk: 5, median: 6, path: 7, ramp: 8, pit: 9 };
 export const KERB = 0.13;          // sidewalk / square kerb face (m)
-export const MEDIAN_KERB = 0.15;   // islands a touch taller
+export const MEDIAN_KERB = 0.13;   // islands (round 4: = KERB; at 15 cm they met 13 cm sidewalks with a 2 cm open step)
 // ramp (a dropped kerb, build_surfaces.py): its height comes from the distance to the kerb (rampRise); RAISE is its
 // mean, for the walker and the lamps
 // pit: the soil of a tree pit (raster only: the walker and the tree stand on it), PIT_SINK under the paving

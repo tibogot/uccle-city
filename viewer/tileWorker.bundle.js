@@ -5876,7 +5876,7 @@ function surfaceAttribute(net, part) {
 // viewer/surfaces.js
 var SURF_CLASS = { roadway: 0, tramRoad: 1, tramSite: 2, parking: 3, square: 4, sidewalk: 5, median: 6, path: 7, ramp: 8, pit: 9 };
 var KERB = 0.13;
-var MEDIAN_KERB = 0.15;
+var MEDIAN_KERB = 0.13;
 var PIT_SINK = 0.04;
 var RAISE = [0, 0, 0, 0, KERB, KERB, MEDIAN_KERB, 0, 0.07, KERB - PIT_SINK];
 var RAMP_LOW = 0.02;

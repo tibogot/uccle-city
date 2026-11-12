@@ -276,7 +276,7 @@ const TRAINS = params.get("trains") !== "0";
 const railP = TRAINS ? import("./rail/railway.js").then(async (m) => ({ m, doc: await m.loadRail() })).catch((e) => { log(`railway: ${e.message}`); return null; }) : null;
 // ?traffic=1: the moving traffic (viewer/traffic/cityTraffic.js). Each full tile's lane graph is kept here until the
 // traffic exists, then added / removed with its tile.
-const TRAFFIC = params.get("traffic") === "1";
+const TRAFFIC = params.get("traffic") !== "0";   // round 4: on by default (?traffic=0 off)
 const trafficTiles = new Map();
 let cityTraffic = null;
 let falconsReady = null, falconsOn = true;   // the Saint-Job peregrines (viewer/falcons.js), once loaded       // per-frame updates (tree LOD, lamp lights) of every loaded tile
