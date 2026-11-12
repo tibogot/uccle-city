@@ -410,6 +410,14 @@ export class Lighting {
     x.normalize();
     y.crossVectors(z, x);
     const texel = (2 * box) / this.sun.shadow.mapSize.x;
+    // THE STAIR-STEPPED SHADOW EDGES (owner, 2026-11-11; docs/fixes1/README.md): three r187's PCF is 5 Vogel taps of a
+    // hardware 2x2 compare, `radius` texels wide (default 1). At street level a texel is 3.9 cm (box 80 m) and the
+    // edge is clean; from the orbit / fly views the box grows to 380 m and a texel to 18.6 cm, and a 1-texel kernel
+    // shows the texels as steps. The kernel grows with the texel (1 texel at <= 4 cm, 2.25 texels at >= 14 cm): a
+    // wider penumbra in metres only where the steps were, eased (no jump when the box changes size). A uniform: no
+    // recompile.
+    const rWant = this.radiusAdapt === false ? 1 : THREE.MathUtils.clamp(1 + (texel - 0.04) / 0.08, 1, 2.25);   // (radiusAdapt = false: A/B)
+    this.sun.shadow.radius = dt > 0 ? damp(this.sun.shadow.radius, rWant, 0.5, dt) : rWant;
     const px = focus.dot(x), py = focus.dot(y);
     const f = this._lf ??= new THREE.Vector3();
     f.copy(focus).addScaledVector(x, Math.round(px / texel) * texel - px).addScaledVector(y, Math.round(py / texel) * texel - py);
