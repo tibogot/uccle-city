@@ -1,0 +1,7 @@
+[
+ { "check": "bentflat", "at": [-17.773, 1.775, 5.825], "radius": 0.3, "why": "LOD1 only (>= 16 m): 3.6 deg on the closed south END wall of the cliff block (outside the face, hidden by the terrain in the city)" },
+ { "check": "bentflat", "at": [7.652, 2.948, 11.995], "radius": 0.3, "why": "LOD1 only: the closed BACK wall (lab z 12, behind the plateau, never seen)" },
+ { "check": "bentflat", "at": [3.022, 5.003, 11.225], "radius": 0.3, "why": "LOD2 only (>= 40 m): the back edge of the plateau, behind the exedra" },
+ { "check": "leak", "at": [12, 3.304, 9.31], "radius": 0.3, "why": "LOD2 only (>= 40 m): a hairline at a chunk cut on the plateau behind the crest (lab z > 9), not visible from the pond or the paths" },
+ { "check": "leak", "at": [-4, 4.643, 9.601], "radius": 0.3, "why": "LOD2 only (>= 40 m): same, chunk cut on the plateau behind the exedra" }
+]

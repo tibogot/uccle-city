@@ -1,0 +1,4694 @@
+{
+ "summary": {
+  "triangles": 1514,
+  "vertices_welded": 859,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 269,
+  "counts": {
+   "sliver": 269,
+   "backtoback": 15,
+   "seam": 74
+  },
+  "ms": 28
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0.000027850735932588577,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.02,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "pg_climb_lod2",
+   "slot": "playground",
+   "triangles": 1514,
+   "maxDistance": 160
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.64,
+     1.897,
+     0.642
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 264,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.642,
+     0.903,
+     0.64
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 264,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.64,
+     0.903,
+     0.558
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 264,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.642,
+     1.897,
+     0.56
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 264,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.558,
+     0.903,
+     0.56
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 264,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.56,
+     1.897,
+     0.558
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 264,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.56,
+     0.903,
+     0.642
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 264,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.558,
+     1.897,
+     0.64
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 264,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.645,
+     1.897,
+     0.612
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.645,
+     0.903,
+     0.588
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.588,
+     1.897,
+     0.645
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.612,
+     0.903,
+     0.645
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.612,
+     1.897,
+     0.555
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.588,
+     0.903,
+     0.555
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.555,
+     1.897,
+     0.588
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.555,
+     0.903,
+     0.612
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.64,
+     0.736,
+     -0.558
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 219,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.642,
+     1.564,
+     -0.56
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 219,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.64,
+     1.564,
+     -0.642
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 219,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.642,
+     0.736,
+     -0.64
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 219,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.558,
+     1.564,
+     -0.64
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 219,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.56,
+     0.736,
+     -0.642
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 219,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.56,
+     1.564,
+     -0.558
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 219,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.558,
+     0.736,
+     -0.56
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 219,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.56,
+     0.736,
+     0.642
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 219,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.558,
+     1.564,
+     0.64
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 219,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.56,
+     0.736,
+     0.558
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 219,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.558,
+     1.564,
+     0.56
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 219,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.644,
+     1.564,
+     0.561
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 405,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.642,
+     0.736,
+     0.558
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 219,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.639,
+     1.564,
+     0.556
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 406,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.64,
+     0.736,
+     0.642
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 219,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.642,
+     1.564,
+     0.64
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 219,
+    "longest": 2.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.56,
+     0.903,
+     -0.558
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 264,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.558,
+     1.897,
+     -0.56
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 264,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.56,
+     0.903,
+     -0.642
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 264,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.558,
+     1.897,
+     -0.64
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 264,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.642,
+     1.897,
+     -0.64
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 264,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.64,
+     0.903,
+     -0.642
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 264,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.64,
+     0.903,
+     -0.558
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 264,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.642,
+     1.897,
+     -0.56
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 264,
+    "longest": 2.984
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.555,
+     1.897,
+     -0.588
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.555,
+     0.903,
+     -0.612
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.612,
+     1.897,
+     -0.555
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.588,
+     0.903,
+     -0.555
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.588,
+     1.897,
+     -0.645
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.612,
+     0.903,
+     -0.645
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.645,
+     1.897,
+     -0.612
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.645,
+     0.903,
+     -0.588
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 40,
+    "longest": 2.985
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.471,
+     0.444
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.473,
+     0.442
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.499,
+     0.444
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.497,
+     0.442
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.471,
+     0.546
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.473,
+     0.548
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.499,
+     0.546
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.497,
+     0.548
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.489,
+     0.549
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.481,
+     0.549
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.489,
+     0.441
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.481,
+     0.441
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.471,
+     0.324
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.473,
+     0.322
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.499,
+     0.324
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.497,
+     0.322
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.471,
+     0.426
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.473,
+     0.428
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.499,
+     0.426
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.497,
+     0.428
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.489,
+     0.429
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.481,
+     0.429
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.489,
+     0.321
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.481,
+     0.321
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.471,
+     0.204
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.473,
+     0.202
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.499,
+     0.204
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.497,
+     0.202
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.471,
+     0.306
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.473,
+     0.308
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.499,
+     0.306
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.497,
+     0.308
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.489,
+     0.309
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.481,
+     0.309
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.489,
+     0.201
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.481,
+     0.201
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.471,
+     0.084
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.473,
+     0.082
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.499,
+     0.084
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.497,
+     0.082
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.471,
+     0.186
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.473,
+     0.188
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.499,
+     0.186
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.497,
+     0.188
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.489,
+     0.189
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.481,
+     0.189
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.489,
+     0.081
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.481,
+     0.081
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.471,
+     -0.036
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.473,
+     -0.038
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.499,
+     -0.036
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.497,
+     -0.038
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.471,
+     0.066
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.473,
+     0.068
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.499,
+     0.066
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.497,
+     0.068
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.489,
+     0.069
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.481,
+     0.069
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.489,
+     -0.039
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.481,
+     -0.039
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.471,
+     -0.156
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.473,
+     -0.158
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.499,
+     -0.156
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.497,
+     -0.158
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.471,
+     -0.054
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.473,
+     -0.052
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.499,
+     -0.054
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.497,
+     -0.052
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.489,
+     -0.051
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.481,
+     -0.051
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.489,
+     -0.159
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.481,
+     -0.159
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.471,
+     -0.276
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.473,
+     -0.278
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.499,
+     -0.276
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.497,
+     -0.278
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.471,
+     -0.174
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.473,
+     -0.172
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.499,
+     -0.174
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.497,
+     -0.172
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.489,
+     -0.171
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.481,
+     -0.171
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.489,
+     -0.279
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.481,
+     -0.279
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.471,
+     -0.396
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.473,
+     -0.398
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.499,
+     -0.396
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.497,
+     -0.398
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.471,
+     -0.294
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.473,
+     -0.292
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.499,
+     -0.294
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.497,
+     -0.292
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.489,
+     -0.291
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.481,
+     -0.291
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.489,
+     -0.399
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.481,
+     -0.399
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.471,
+     -0.516
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.473,
+     -0.518
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.499,
+     -0.516
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.497,
+     -0.518
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.471,
+     -0.414
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.473,
+     -0.412
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.499,
+     -0.414
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.497,
+     -0.412
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.489,
+     -0.411
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.481,
+     -0.411
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.489,
+     -0.519
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.481,
+     -0.519
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.473,
+     -0.548
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.499,
+     -0.546
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.497,
+     -0.548
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.473,
+     -0.532
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.499,
+     -0.534
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.497,
+     -0.532
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 195,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.471,
+     -0.543
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 76,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.471,
+     -0.537
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 76,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.489,
+     -0.531
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.481,
+     -0.531
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.5,
+     -0.542
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 110,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.5,
+     -0.538
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 110,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.184,
+     1.489,
+     -0.549
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.184,
+     1.481,
+     -0.549
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 50,
+    "longest": 1.102
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.387,
+     0.618
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 140,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.389,
+     0.62
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 140,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.473,
+     0.618
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 140,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.471,
+     0.62
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 140,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.471,
+     0.579
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 140,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.473,
+     0.581
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 140,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.387,
+     0.581
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 140,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.389,
+     0.579
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 140,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.387,
+     -0.581
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 140,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.389,
+     -0.579
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 140,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.473,
+     -0.581
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 140,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.471,
+     -0.579
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 140,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.471,
+     -0.62
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 140,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.473,
+     -0.618
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 140,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     1.387,
+     -0.618
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 140,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     1.389,
+     -0.62
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 140,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.582,
+     1.383,
+     0.19
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 135,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.58,
+     1.385,
+     -0.19
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 135,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.582,
+     1.469,
+     -0.19
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 134,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.58,
+     1.467,
+     0.19
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 134,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.62,
+     1.467,
+     -0.19
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 134,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.618,
+     1.469,
+     0.19
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 134,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.618,
+     1.383,
+     -0.19
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 135,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.62,
+     1.385,
+     0.19
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 135,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.618,
+     1.383,
+     0.19
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 135,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.62,
+     1.385,
+     -0.19
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 135,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.618,
+     1.469,
+     -0.19
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 134,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.62,
+     1.467,
+     0.19
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 134,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.58,
+     1.467,
+     -0.19
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 134,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.582,
+     1.469,
+     0.19
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 134,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.582,
+     1.383,
+     -0.19
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 135,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.58,
+     1.385,
+     0.19
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 135,
+    "longest": 1.141
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.05,
+     2.487,
+     -0.077
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 49,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.064,
+     1.993,
+     -0.074
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 49,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.076,
+     1.993,
+     -0.045
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 49,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.067,
+     1.993,
+     -0.03
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 49,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.059,
+     2.487,
+     -0.025
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 49,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.021,
+     1.993,
+     -0.055
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 95,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.026,
+     2.487,
+     -0.064
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 49,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.036,
+     1.993,
+     -0.074
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 49,
+    "longest": 1.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.262,
+     2.98,
+     -0.188
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 179,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.155,
+     2.978,
+     0.098
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 179,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.16,
+     2.956,
+     0.091
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 179,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.259,
+     2.957,
+     -0.193
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 179,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.25,
+     2.987,
+     -0.206
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 179,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.169,
+     2.986,
+     0.078
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 179,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.246,
+     2.962,
+     -0.212
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 179,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.173,
+     2.965,
+     0.073
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 179,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.258,
+     2.985,
+     -0.194
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 84,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.163,
+     2.987,
+     0.087
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 84,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.245,
+     2.973,
+     -0.213
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 84,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.171,
+     2.979,
+     0.074
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 84,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.165,
+     2.956,
+     0.084
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 84,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.25,
+     2.958,
+     -0.206
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 84,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.156,
+     2.964,
+     0.097
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 84,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.262,
+     2.97,
+     -0.188
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 84,
+    "longest": 1.518
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.358,
+     0.248,
+     1.52
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 59,
+    "longest": 0.538
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.358,
+     0.295,
+     1.56
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 42,
+    "longest": 0.585
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.358,
+     0.592,
+     1.273
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 41,
+    "longest": 0.441
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.362,
+     0.716,
+     1.183
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 40,
+    "longest": 0.562
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.358,
+     1.013,
+     1.043
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 73,
+    "longest": 0.884
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.362,
+     1.179,
+     0.85
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 46,
+    "longest": 0.645
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.362,
+     1.257,
+     0.868
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 73,
+    "longest": 1.016
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.362,
+     0.295,
+     1.56
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 42,
+    "longest": 0.585
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.358,
+     0.689,
+     1.277
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 64,
+    "longest": 0.563
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.362,
+     0.958,
+     1.083
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 86,
+    "longest": 1.207
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.358,
+     0.883,
+     1.063
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 107,
+    "longest": 0.972
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.362,
+     1.054,
+     0.94
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 69,
+    "longest": 0.972
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.358,
+     1.285,
+     0.848
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 46,
+    "longest": 0.645
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.447,
+     3.064,
+     -0.602
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 44,
+    "longest": 0.362
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.424,
+     3.134,
+     -0.296
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 52,
+    "longest": 0.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.119,
+     0.386,
+     1.445
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 72,
+    "longest": 0.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.547,
+     0.587,
+     -0.615
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 86,
+    "longest": 1.28
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.163,
+     1.498,
+     -0.62
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 66,
+    "longest": 0.98
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.17,
+     1.495,
+     -0.615
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 60,
+    "longest": 1.001
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.548,
+     1.013,
+     -0.617
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 86,
+    "longest": 1.28
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.545,
+     0.579,
+     -0.612
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 124,
+    "longest": 1.301
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.163,
+     0.102,
+     -0.617
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 66,
+    "longest": 0.98
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.163,
+     0.103,
+     -0.612
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 139,
+    "longest": 0.98
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.163,
+     1.498,
+     -0.626
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 138,
+    "longest": 0.98
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.547,
+     1.013,
+     -0.628
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 181,
+    "longest": 1.28
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.548,
+     0.587,
+     -0.623
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 86,
+    "longest": 1.28
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.163,
+     0.102,
+     -0.623
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 66,
+    "longest": 0.98
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.545,
+     1.02,
+     -0.628
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 124,
+    "longest": 1.301
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.548,
+     0.587,
+     -0.626
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 181,
+    "longest": 1.28
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.548,
+     1.013,
+     -0.62
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 86,
+    "longest": 1.28
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.534,
+     1.03,
+     -0.611
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 41,
+    "longest": 1.331
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.169,
+     1.488,
+     -0.611
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 66,
+    "longest": 1.04
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.538,
+     1.019,
+     -0.611
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 85,
+    "longest": 1.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.17,
+     0.105,
+     -0.628
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 96,
+    "longest": 1.001
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.538,
+     0.581,
+     -0.63
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 85,
+    "longest": 1.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.169,
+     0.112,
+     -0.63
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 66,
+    "longest": 1.04
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.534,
+     0.57,
+     -0.63
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 41,
+    "longest": 1.331
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.666,
+     0.63,
+     0.353
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 84,
+    "longest": 0.582
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.652,
+     0.92,
+     -0.127
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 93,
+    "longest": 0.581
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.652,
+     0.63,
+     -0.367
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 93,
+    "longest": 0.581
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.649,
+     0.63,
+     -0.356
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 42,
+    "longest": 0.581
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.66,
+     0.63,
+     -0.353
+    ],
+    "part": "pg_climb_lod2/playground",
+    "aspect": 60,
+    "longest": 0.581
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.042,
+     1.5,
+     -0.03
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "area": 0.00005
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.061,
+     1.5,
+     -0.031
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "area": 0.00026
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.05,
+     1.5,
+     -0.07
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "area": 0.00039
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.054,
+     1.5,
+     -0.06
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "area": 0.00043
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.025,
+     1.5,
+     -0.058
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "area": 0.00004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.032,
+     1.5,
+     -0.058
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "area": 0.00006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.231,
+     0.243,
+     -0.632
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "area": 0.00282
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.4,
+     0.532,
+     -0.631
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "area": 0.0024
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.319,
+     0.804,
+     -0.631
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "area": 0.00248
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.221,
+     1.07,
+     -0.631
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "area": 0.00259
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.185,
+     1.37,
+     -0.63
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "area": 0.00121
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.162,
+     1.347,
+     -0.63
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "area": 0.00252
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.081,
+     0.393,
+     -0.63
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "area": 0.00244
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.251,
+     0.658,
+     -0.63
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "area": 0.00266
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.057,
+     0.422,
+     -0.648
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "area": 0.00018
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.524,
+     1.469,
+     -0.622
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 2.38,
+    "pieces": 37,
+    "min_angle_deg": 32.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.662,
+     1.21,
+     -0.12
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.15,
+    "pieces": 36,
+    "min_angle_deg": 47.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.662,
+     0.92,
+     -0.36
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.15,
+    "pieces": 36,
+    "min_angle_deg": 47.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.645,
+     0.329,
+     -0.131
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.15,
+    "pieces": 35,
+    "min_angle_deg": 55.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.645,
+     0.909,
+     0.349
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.15,
+    "pieces": 34,
+    "min_angle_deg": 55.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.645,
+     0.619,
+     0.109
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.15,
+    "pieces": 34,
+    "min_angle_deg": 55.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.047,
+     2.962,
+     -0.076
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.24,
+    "pieces": 32,
+    "min_angle_deg": 30.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.643,
+     1.21,
+     0.12
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.15,
+    "pieces": 30,
+    "min_angle_deg": 55.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.646,
+     0.627,
+     -0.36
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.14,
+    "pieces": 30,
+    "min_angle_deg": 47.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.678,
+     0.329,
+     0.349
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.15,
+    "pieces": 29,
+    "min_angle_deg": 55.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.663,
+     0.62,
+     0.349
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.14,
+    "pieces": 29,
+    "min_angle_deg": 51.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.652,
+     0.339,
+     0.12
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.14,
+    "pieces": 28,
+    "min_angle_deg": 55.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.649,
+     0.916,
+     -0.123
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.15,
+    "pieces": 27,
+    "min_angle_deg": 47.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.662,
+     0.63,
+     -0.6
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.08,
+    "pieces": 24,
+    "min_angle_deg": 49.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.667,
+     0.05,
+     0.12
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.08,
+    "pieces": 23,
+    "min_angle_deg": 48
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.662,
+     1.5,
+     0.12
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.08,
+    "pieces": 22,
+    "min_angle_deg": 48.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.643,
+     0.34,
+     -0.6
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.08,
+    "pieces": 22,
+    "min_angle_deg": 48.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.669,
+     0.92,
+     -0.6
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.08,
+    "pieces": 22,
+    "min_angle_deg": 46.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.678,
+     0.619,
+     0.589
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.08,
+    "pieces": 21,
+    "min_angle_deg": 48.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.634,
+     0.05,
+     -0.36
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.08,
+    "pieces": 21,
+    "min_angle_deg": 45.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.668,
+     1.199,
+     -0.589
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.08,
+    "pieces": 21,
+    "min_angle_deg": 47.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.671,
+     0.055,
+     0.355
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.08,
+    "pieces": 20,
+    "min_angle_deg": 45.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.643,
+     1.5,
+     0.36
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.08,
+    "pieces": 20,
+    "min_angle_deg": 47.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.669,
+     1.5,
+     -0.12
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.08,
+    "pieces": 20,
+    "min_angle_deg": 46.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.668,
+     1.49,
+     -0.37
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.08,
+    "pieces": 20,
+    "min_angle_deg": 47.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.641,
+     0.061,
+     -0.59
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 19,
+    "min_angle_deg": 46
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.617,
+     1.381,
+     0.555
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.26,
+    "pieces": 18,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.555,
+     1.385,
+     0.583
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.26,
+    "pieces": 18,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.583,
+     1.381,
+     -0.555
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.26,
+    "pieces": 18,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.555,
+     1.385,
+     -0.617
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.26,
+    "pieces": 18,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.555,
+     1.385,
+     0.604
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.26,
+    "pieces": 18,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.583,
+     1.381,
+     0.555
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.26,
+    "pieces": 18,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.555,
+     1.385,
+     -0.583
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.26,
+    "pieces": 18,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.608,
+     1.381,
+     -0.555
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.26,
+    "pieces": 18,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.671,
+     0.335,
+     0.594
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.08,
+    "pieces": 18,
+    "min_angle_deg": 45.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.642,
+     0.04,
+     -0.56
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.13,
+    "pieces": 17,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.645,
+     1.415,
+     -0.601
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.87,
+    "pieces": 17,
+    "min_angle_deg": 45.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.655,
+     0.056,
+     0.594
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 17,
+    "min_angle_deg": 48.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.645,
+     1.199,
+     0.589
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.08,
+    "pieces": 17,
+    "min_angle_deg": 45.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.65,
+     1.489,
+     -0.589
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 17,
+    "min_angle_deg": 48.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.645,
+     1.199,
+     0.562
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.14,
+    "pieces": 16,
+    "min_angle_deg": 44.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.644,
+     1.49,
+     0.561
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.13,
+    "pieces": 16,
+    "min_angle_deg": 45.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.636,
+     1.494,
+     0.594
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 45.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.658,
+     0.058,
+     -0.127
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.07,
+    "pieces": 15,
+    "min_angle_deg": 48.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.654,
+     0.918,
+     0.597
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.07,
+    "pieces": 14,
+    "min_angle_deg": 49.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.645,
+     1.063,
+     0.597
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.98,
+    "pieces": 13,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.641,
+     0.619,
+     -0.131
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.01,
+    "pieces": 13,
+    "min_angle_deg": 48.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.641,
+     0.329,
+     -0.371
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.01,
+    "pieces": 12,
+    "min_angle_deg": 48.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.679,
+     1.199,
+     -0.371
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.01,
+    "pieces": 12,
+    "min_angle_deg": 57.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.641,
+     1.199,
+     0.349
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.01,
+    "pieces": 11,
+    "min_angle_deg": 56.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.641,
+     0.909,
+     0.109
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.01,
+    "pieces": 11,
+    "min_angle_deg": 56.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.353,
+     0.172,
+     1.599
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 10,
+    "min_angle_deg": 89.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.353,
+     0.015,
+     1.716
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 10,
+    "min_angle_deg": 89.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.353,
+     0.169,
+     1.594
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 10,
+    "min_angle_deg": 89.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.642,
+     0.339,
+     -0.56
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 9,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.642,
+     1.499,
+     -0.56
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.1,
+    "pieces": 9,
+    "min_angle_deg": 45.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.353,
+     0.369,
+     1.464
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 9,
+    "min_angle_deg": 89.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.353,
+     0.633,
+     1.267
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.08,
+    "pieces": 9,
+    "min_angle_deg": 89.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.353,
+     1.219,
+     0.839
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.08,
+    "pieces": 9,
+    "min_angle_deg": 89.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.353,
+     0.023,
+     1.708
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 8,
+    "min_angle_deg": 89.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.059,
+     1.5,
+     -0.055
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.14,
+    "pieces": 7,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.075,
+     2.979,
+     -0.037
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.07,
+    "pieces": 7,
+    "min_angle_deg": 17.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.353,
+     0.916,
+     1.065
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.08,
+    "pieces": 7,
+    "min_angle_deg": 89.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.353,
+     1.228,
+     0.836
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 7,
+    "min_angle_deg": 89.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.353,
+     0.391,
+     1.449
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.08,
+    "pieces": 7,
+    "min_angle_deg": 89.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.353,
+     0.633,
+     1.264
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 7,
+    "min_angle_deg": 89.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.353,
+     0.919,
+     1.058
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 7,
+    "min_angle_deg": 89.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.193,
+     1.387,
+     -0.63
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.07,
+    "pieces": 6,
+    "min_angle_deg": 33.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.038,
+     1.5,
+     -0.035
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 4,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.368,
+     0.812,
+     -0.63
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.02,
+    "pieces": 4,
+    "min_angle_deg": 34
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.376,
+     0.491,
+     -0.63
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.02,
+    "pieces": 3,
+    "min_angle_deg": 8.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.264,
+     1.075,
+     -0.63
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.02,
+    "pieces": 3,
+    "min_angle_deg": 18.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.122,
+     0.391,
+     -0.63
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.03,
+    "pieces": 3,
+    "min_angle_deg": 31.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.139,
+     0.939,
+     -0.63
+    ],
+    "parts": [
+     "pg_climb_lod2/playground",
+     "pg_climb_lod2/playground"
+    ],
+    "length_m": 0.17,
+    "pieces": 3,
+    "min_angle_deg": 10
+   }
+  ]
+ },
+ "file": "playgroundkit.glb"
+}

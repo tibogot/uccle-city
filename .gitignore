@@ -37,3 +37,6 @@ docs/saint-pierre/side_*
 models/observatory/*.raw.glb
 docs/observatory/side_*.jpg
 models/observatory_before/
+models/parkkit/*.raw.glb
+models/parkkit/previews/
+models/parkkit/cc0_test/

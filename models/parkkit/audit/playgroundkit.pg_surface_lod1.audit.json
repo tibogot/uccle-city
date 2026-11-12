@@ -1,0 +1,402 @@
+{
+ "summary": {
+  "triangles": 170,
+  "vertices_welded": 100,
+  "open_edges": 28,
+  "rays": 4736,
+  "blocking": 0,
+  "warnings": 28,
+  "counts": {
+   "sliver": 28
+  },
+  "ms": 9
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0.000027850735932588577,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.02,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "pg_surface_lod1",
+   "slot": "playground",
+   "triangles": 170,
+   "maxDistance": 55
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.999,
+     0.015,
+     -0.517
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.997,
+     0.02,
+     0.517
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.992,
+     0.029,
+     -0.516
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.099
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.989,
+     0.032,
+     0.517
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.099
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.98,
+     0.037,
+     -0.516
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.098
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.975,
+     0.039,
+     0.516
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.097
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.517,
+     0.015,
+     -1.999
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.517,
+     0.02,
+     -1.997
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.516,
+     0.029,
+     -1.992
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.099
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.517,
+     0.032,
+     -1.989
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.099
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.516,
+     0.037,
+     -1.98
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.098
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.516,
+     0.039,
+     -1.975
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.097
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.999,
+     0.015,
+     0.517
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.997,
+     0.02,
+     -0.517
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.992,
+     0.029,
+     0.516
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.099
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.989,
+     0.032,
+     -0.517
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.099
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.98,
+     0.037,
+     0.516
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.098
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.975,
+     0.039,
+     -0.516
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.097
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.517,
+     0.015,
+     1.999
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.517,
+     0.02,
+     1.997
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.516,
+     0.029,
+     1.992
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.099
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.517,
+     0.032,
+     1.989
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.099
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.516,
+     0.037,
+     1.98
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.098
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.516,
+     0.039,
+     1.975
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 200,
+    "longest": 3.097
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2,
+     -0.007,
+     -0.517
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 62,
+    "longest": 3.1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.517,
+     -0.007,
+     -2
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 62,
+    "longest": 3.1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2,
+     -0.007,
+     0.517
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 62,
+    "longest": 3.1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.517,
+     -0.007,
+     2
+    ],
+    "part": "pg_surface_lod1/playground",
+    "aspect": 62,
+    "longest": 3.1
+   }
+  ]
+ },
+ "file": "playgroundkit.glb"
+}
