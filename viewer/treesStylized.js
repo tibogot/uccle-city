@@ -15,6 +15,7 @@ import { branchShape } from "../vendor/stylized-trees/branchTree.js";
 import { bumpNormal } from "./tslkit.js";
 import { bakeTreeImpostors, impostorMaterial, impostorField, IMPOSTOR_START, IMP } from "./impostors.js";
 import { SMOOTH, lodEye, keepBand, rampTo } from "./lodFade.js";
+import { useTreeKit, startTreeKit } from "./treeKitCity.js";
 
 // Far LOD: octahedral impostors past IMPOSTOR_START (viewer/impostors.js) with ?impostors=1. OFF by
 // default since 2026-11-04: side by side from Saint-Job (zoomed on 150-400 m) the real LOD 1 / LOD 2
@@ -26,6 +27,8 @@ import { SMOOTH, lodEye, keepBand, rampTo } from "./lodFade.js";
 // (which had no trees at all: a whole tile of trees popped in at ~500 m when it was streamed in full).
 // ?impostors=0: off (the real LOD 2 out to 900 m, no trees on far tiles).
 const useImpostors = SMOOTH ? !/[?&]impostors=0/.test(location.search) : /[?&]impostors=1/.test(location.search);
+// ?impkit=1 (2026-11-12): the far LOD through the impostor kit (viewer/treeKitCity.js, docs/CITY_TREES.md §1): one
+// draw for every far tree of every tile, no crawling dots. The street trees only (the labs keep their own).
 let renderer = null;
 /** The trees' shadow range (live: dev panel "Smoothness"): shadows fade out over [end - band, end] (m, view camera). */
 export const TREE_SHADOW = { end: uniform(+(new URLSearchParams(location.search).get("treeshadowend") ?? 120)), band: uniform(40) };
@@ -226,6 +229,8 @@ export function makeSpecies(def) {
   const VARIANT_HEIGHT = [];
   const shared = {};
   let PARAMS = null, impMat = null, impMatFar = null, impBake = null;
+  const kitMode = useImpostors && useTreeKit && def.id === "street";
+  let kit = null;
   // the vendor's variant per tree (stylizedTrees.js: rng(i * 7919 + 13) -> floor(x * variants)), the
   // impostor must draw the same variant
   const variantOfIndex = (i) => { let s = (i * 7919 + 13) >>> 0; s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return Math.floor((s / 4294967296) * VARIANTS); };
@@ -276,7 +281,10 @@ export function makeSpecies(def) {
       for (const m of new Set([shared.trunkMat, shared.trunkFar])) m.maskShadowNode = m.maskNode ? m.maskNode.and(keepSh()) : keepSh();
     }
     if (!useImpostors) IMP.start.value = 900;   // no impostors: LOD 2 fades out at 900 m (was a hard cut)
-    if (useImpostors && renderer) {
+    if (kitMode && renderer) {
+      kit = startTreeKit(renderer, shared, PARAMS.leafMask, VARIANTS);
+      window.__treeKit = kit;
+    } else if (useImpostors && renderer) {
       const t1 = performance.now();
       shared.U.lodScale.value = 0;                // the bake draws LOD 0 as built (no morph toward the bake camera)
       const bake = bakeTreeImpostors(renderer, shared, VARIANTS, PARAMS.leafMask);
@@ -309,6 +317,14 @@ export function makeSpecies(def) {
    *  distance (null without impostors). Returns { mesh, update(cameraPos) }. */
   function buildFarField(trees, ground, inTile) {
     calibrate();
+    if (kit) {
+      const placements = treePlacements(trees, ground, inTile);
+      if (!placements.length) return null;
+      const release = kit.register(placements, variantOfIndex, "lite");
+      const mesh = new THREE.Group();
+      mesh.name = "tree-kit-far-tile";
+      return { mesh, update() {}, count: placements.length, dispose: release };
+    }
     if (!impMatFar) return null;
     const placements = treePlacements(trees, ground, inTile);
     if (!placements.length) return null;
@@ -330,6 +346,9 @@ export function makeSpecies(def) {
     const f = createStylizedTrees({ scene: holder, trees: placements, shared, variants: VARIANTS, params: opts.variantOf ? { ...P, variantOf } : P });
     const imp = impMat ? impostorField(placements, placements.map((_, i) => variantOf(i)), impMat) : null;
     if (imp) holder.add(imp.mesh);
+    // the kit: this tile's far trees join the one city field (released when main.js disposes the tile: it calls
+    // dispose() on every object of the tile)
+    if (kit) { const release = kit.register(placements, variantOf, "full"); holder.dispose = release; }
     // per-tile culling: the vendor turns frustum culling off (its instances span a whole forest); here
     // every mesh of the tile gets the tile's trees' bounding sphere
     if (placements.length) {
@@ -393,7 +412,7 @@ export function makeSpecies(def) {
       imp?.update(p);
       for (const [o, d] of twins) d.count = o.count;
     };
-    const dispose = () => { f.dispose(); holder.removeFromParent(); imp?.mesh.geometry.dispose(); };
+    const dispose = () => { f.dispose(); holder.removeFromParent(); imp?.mesh.geometry.dispose(); holder.dispose?.(); holder.dispose = null; };
     return { group: holder, update, count: placements.length, field: f, imp, placements, dispose };
   }
 

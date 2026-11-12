@@ -36,6 +36,7 @@ import { Driver, tileDrive } from "./drive/driveMode.js";
 import { addLamps } from "./lampLight.js";
 import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, dropFadeVariant } from "./lodFade.js";
 import { buildFarTreeField } from "./treesStylized.js";
+import { treeKit } from "./treeKitCity.js";
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -360,7 +361,7 @@ async function loadLiteTile(entry, group) {
   const textures = [];
   if (entry.files.ortho) {
     const tex = await texLoader.loadAsync(new URL(entry.files.ortho, DATA).href).catch(() => null);
-    if (tex) { tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4; tm.map = tex; tm.color.set(0xffffff); textures.push(tex); }
+    if (tex) { tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4; tm.map = tex; tm.color.set(0xffffff); textures.push(tex); treeKit()?.noteGround(tex.image); }
   }
   g.add(new THREE.Mesh(tg, tm));
   const bg = new THREE.BufferGeometry();
@@ -385,7 +386,7 @@ async function loadLiteTile(entry, group) {
     name: entry.name,
     group: g,
     dispose: () => {
-      if (trees) { const i = updaters.indexOf(trees.update); if (i >= 0) updaters.splice(i, 1); }
+      if (trees) { const i = updaters.indexOf(trees.update); if (i >= 0) updaters.splice(i, 1); trees.dispose?.(); }
       g.traverse((o) => { o.geometry?.dispose(); if (o.material) dropMat(o.material); });
       for (const t of textures) t.dispose();
       g.removeFromParent();
@@ -904,14 +905,19 @@ async function main() {
     if (far > ring) await stream(true);
     // ?interior=1: the interior cell's materials compile under the cover too (stand-in meshes with its exact
     // attribute layouts; the cell streaming in later then builds no shader: viewer/interior/interiorModel.js)
+    // ?impkit=1: the far trees' atlas is baked (a grid row per frame) and their field is in the scene before the warm-up
+    const tk = treeKit();
+    if (tk) { await tk.ready; scene.add(tk.group); updaters.push(tk.update); tk.update(camera.position, camera); }
     const interiorWarm = params.get("interior") === "1" ? await import("./interior/interiorModel.js").then((m) => m.interiorWarmup()).catch(() => null) : null;
     if (interiorWarm) scene.add(interiorWarm);
     const w = await warmBoot(renderer, scene, bootPipes);
     interiorWarm?.removeFromParent();
     fader.hold = false;
+    if (tk) tk.hold = false;
     log(`warm-up: ${w.ms} ms, ${w.warmed} drawables, ${w.parallel} pipelines compiled in parallel, ${w.late} after`);
   }
   $("cover").classList.add("gone");
+  { const tk = treeKit(); if (tk && !tk.group.parent) tk.ready.then(() => { scene.add(tk.group); updaters.push(tk.update); tk.hold = false; }); }   // (?warmup=0)
   const loading = (async () => { while (await stream()); })();   // initial fill around the start tile
   busy = loading.finally(() => { busy = null; });
   setInterval(() => { if (!busy) busy = stream().finally(() => { busy = null; }); }, 1000);
