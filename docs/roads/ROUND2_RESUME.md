@@ -32,3 +32,11 @@ See the end of this note.
   (moving), `lab.flicker(...)`; compose with `tools/road_audit/compose2.py` and `compose_spots.py`.
 - Next: see ROUND2.md "What remains": ramp ring snapping in build_surfaces.py, a cheaper ramp mesh, the T-junction
   metric's layer filter, the BM legend when it arrives.
+
+## Round 3 (2026-11-12, evening)
+Report: `docs/roads/ROUND3.md` (per-point clean / not clean). Checker: `docs/roads/audit/r3before` (6c70e37) vs
+`r3after`. Images: `docs/roads/round3/` (after/, sheets/, pairs/ = before (6c70e37) | after round 3, glyphs_sheet.jpg).
+Open items, in order: concrete open steps (median bands, forecourt seams), the triangle budget (+20 %: the curve
+refinement), GPU +5-7 % (concrete shader), J1 kerb flicker near the SE zebra, C19 gaps at paved islands, lane kinks at
+tight connectors, the dark line in J1's NE sidewalk. Run the checker from the worktree root (a relative
+`--import ./tools/road_audit/register.mjs` fails from another cwd).
