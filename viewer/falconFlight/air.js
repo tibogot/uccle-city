@@ -75,6 +75,7 @@ export class AirField {
   /** smoothed obstacle height (bilinear) */
   hs(x, z) {
     const g = this.grid; if (!g) return 0;
+    if (x < g.x0 || z < g.z0 || x > g.x0 + (g.nx - 1) * g.step || z > g.z0 + (g.nz - 1) * g.step) return this.floor(x, z);   // beyond: the raw floor
     const fx = clamp((x - g.x0) / g.step, 0, g.nx - 1.001), fz = clamp((z - g.z0) / g.step, 0, g.nz - 1.001);
     const i = fx | 0, j = fz | 0, u = fx - i, v = fz - j, d = g.data, k = j * g.nx + i;
     return (d[k] * (1 - u) + d[k + 1] * u) * (1 - v) + (d[k + g.nx] * (1 - u) + d[k + g.nx + 1] * u) * v;

@@ -70,11 +70,15 @@ export class FalconCamera {
       const dist = (1.55 + 0.9 * smooth(V, 4, 18) - 0.35 * smooth(V, 40, 90)) * span * P.dist * (o.zoom ?? 1);
       const up = (0.3 + 0.1 * smooth(V, 30, 90)) * span * (o.zoom ?? 1);
       _t.copy(b.pos).addScaledVector(D, -dist).addScaledVector(_u, up);
-      const floor = o.floor ? o.floor(_t.x, _t.z) + 0.6 : -1e9;
-      if (_t.y < floor) _t.y = floor;
+      // never inside a roof: lifted over it (and then the view tips down, so the bird stays in the frame)
+      const floor = o.floor ? Math.max(o.floor(_t.x, _t.z), o.floor((_t.x + b.pos.x) / 2, (_t.z + b.pos.z) / 2)) + 0.8 : -1e9;
+      const raised = Math.max(0, floor - _t.y);
+      if (raised > 0) _t.y = floor;
       if (!this.inited) this.pos.copy(_t);
       this.pos.lerp(_t, 1 - Math.exp(-(6 + V * 0.12) * dt));
-      this.look.copy(b.pos).addScaledVector(D, 4 * span).addScaledVector(_u, 0.12 * span);
+      this.raised = (this.raised ?? 0) + (raised - (this.raised ?? 0)) * (1 - Math.exp(-6 * dt));
+      this.look.copy(b.pos).addScaledVector(D, 4 * span / (1 + this.raised * 0.5)).addScaledVector(_u, 0.12 * span);
+      this.look.y -= this.raised * 0.6;
       this.roll += ((o.perched ? 0 : b.phi * 0.33) - this.roll) * (1 - Math.exp(-4 * dt));
     }
     this.inited = true;

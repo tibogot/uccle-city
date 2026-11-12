@@ -21,6 +21,8 @@ import { loadStJob, STJOB_LODS, STJOB_BU_ID } from "../stjobModel.js";
 const DATA = new URL("../../data/tiles/", import.meta.url);
 export const PLACE = { x: 1153.1, z: 540.1 };           // Place de Saint-Job (viewer/main.js walk start on I6)
 const RING = ["H5", "I5", "J5", "H6", "I6", "J6", "H7", "I7", "J7"];
+// the outer ring (far LOD only: the town to the horizon from a stoop's height, 2 draws a tile)
+const OUTER = ["G4", "H4", "I4", "J4", "K4", "G5", "K5", "G6", "K6", "G7", "K7", "G8", "H8", "I8", "J8", "K8"];
 
 let worker = null, reqId = 0;
 const pending = new Map();
@@ -62,11 +64,11 @@ export function churchTop(x, z) {
   return h;
 }
 
-export async function loadCityWorld({ renderer, scene, lighting, log = () => {}, facades = true, trees = true } = {}) {
+export async function loadCityWorld({ renderer, scene, lighting, log = () => {}, facades = true, trees = true, outer = true } = {}) {
   const t0 = performance.now();
   setTreeRenderer(renderer); setTreeLighting(lighting);
   const manifest = await getJSON("manifest.json");
-  const entries = RING.map((n) => manifest.tiles.find((t) => t.name === n)).filter((e) => e && e.status === "built");
+  const entries = [...RING, ...(outer ? OUTER : [])].map((n) => manifest.tiles.find((t) => t.name === n)).filter((e) => e && e.status === "built");
   const group = new THREE.Group(); group.name = "falcon-city"; scene.add(group);
   const texLoader = new THREE.TextureLoader();
   const liteMat = new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.85 });
@@ -138,8 +140,10 @@ export async function loadCityWorld({ renderer, scene, lighting, log = () => {},
     const bbuf = entry.name === "I6" || entry.name === "I5" ? await getBin(entry.files.buildingsBin) : null;
     tiles.push({ name: entry.name, b, hm, roofs, bDoc, bbuf, feats });
   }));
-  tiles.sort((a, c) => RING.indexOf(a.name) - RING.indexOf(c.name));
-  const at = (x, z) => tiles.find((t) => x >= t.b.x0 && x < t.b.x1 && z >= t.b.z0 && z < t.b.z1) || tiles[4] || tiles[0];
+  const ALL = [...RING, ...OUTER];
+  tiles.sort((a, c) => ALL.indexOf(a.name) - ALL.indexOf(c.name));
+  const home = tiles.find((t) => t.name === "I6") || tiles[0];
+  const at = (x, z) => (x >= home.b.x0 && x < home.b.x1 && z >= home.b.z0 && z < home.b.z1 ? home : tiles.find((t) => x >= t.b.x0 && x < t.b.x1 && z >= t.b.z0 && z < t.b.z1) || home);
   const roofAt = (t, x, z) => {
     const rf = t.roofs, i = Math.floor((x - rf.x0) / rf.step), j = Math.floor((z - rf.z0) / rf.step);
     return i >= 0 && j >= 0 && i < rf.nx && j < rf.nz ? rf.data[j * rf.nx + i] : 0;
@@ -171,7 +175,8 @@ export async function loadCityWorld({ renderer, scene, lighting, log = () => {},
 
 /** the obstacle field for the updrafts: max(ground, roofs, church) on a 4 m grid, box-blurred twice over +-12 m */
 function liftGrid(world, step = 4, rad = 3) {
-  const { x0, x1, z0, z1 } = world.bounds;
+  const inner = world.tiles.filter((t) => RING.includes(t.name));
+  const x0 = Math.min(...inner.map((t) => t.b.x0)), x1 = Math.max(...inner.map((t) => t.b.x1)), z0 = Math.min(...inner.map((t) => t.b.z0)), z1 = Math.max(...inner.map((t) => t.b.z1));
   const nx = Math.ceil((x1 - x0) / step) + 1, nz = Math.ceil((z1 - z0) / step) + 1;
   let a = new Float32Array(nx * nz);
   for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
@@ -200,7 +205,7 @@ function liftGrid(world, step = 4, rad = 3) {
 function thermalSources(world) {
   const out = [{ x: PLACE.x - 6, z: PLACE.z + 4, heat: 1.0, radius: 24, name: "Place de Saint-Job" }];
   const HEAT = { pitch: 0.85, playground: 0.8, grass: 0.7, park: 0.65, meadow: 0.7, garden: 0.55, recreation_ground: 0.75, wood: 0.35, scrub: 0.5, farmland: 0.7 };
-  for (const t of world.tiles) for (const a of t.feats.areas || []) {
+  for (const t of world.tiles.filter((q) => RING.includes(q.name))) for (const a of t.feats.areas || []) {
     const heat = HEAT[a.kind]; if (!heat || !a.rings?.[0]) continue;
     const r = a.rings[0];
     let A = 0, cx = 0, cz = 0;
