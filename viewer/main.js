@@ -793,7 +793,7 @@ async function main() {
   const tsel = $("timeSel");
   for (const k of Object.keys(PRESETS)) tsel.add(new Option(k, k, false, k === timeId));
   tsel.onchange = () => { lighting.apply(tsel.value); pipe?.look(tsel.value); };
-  renderer.setAnimationLoop(() => {
+  const mainLoop = () => {
     if (flyer.on) focus.set(flyer.x, flyer.pos.y, flyer.z).addScaledVector(camera.getWorldDirection(fwd).setY(0).normalize(), 60);
     else if (walker.on || driver.on) focus.copy(camera.position).addScaledVector(camera.getWorldDirection(fwd).setY(0).normalize(), 45);
     else focus.copy(controls.target);
@@ -818,7 +818,8 @@ async function main() {
         `cam x ${camera.position.x.toFixed(0)} z ${camera.position.z.toFixed(0)} y ${camera.position.y.toFixed(1)} m TAW` +
         (tramLine ? `\n${tramLine.info().split(". Source")[0]}` : "");
     }
-  });
+  };
+  renderer.setAnimationLoop(mainLoop);
   // Streaming: full-detail tiles within `ring` of the tile under the player (?ring=, default 1),
   // far-LOD tiles out to `far` (?far=, default 3, 0 = none). Hysteresis of one tile for unloading.
   // One full tile per step (nearest first), then up to two lite tiles. Checked every second.
@@ -956,7 +957,7 @@ async function main() {
     return { total: sumAudits(list), tiles: list };
   };
   window.viewer = { auditColliders, tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
-    world, fader, stateAt, freeze: (on) => { stateFreeze = !!on; },
+    world, fader, stateAt, freeze: (on) => { stateFreeze = !!on; }, pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop),
     renderFrame: () => { if (!stateFreeze) { lodEye.value.copy(camera.position); for (const u of updaters) u(camera.position, camera); } renderFrame(); } };
 }
 
