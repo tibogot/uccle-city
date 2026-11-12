@@ -47,10 +47,11 @@ export async function flicker({ frames = 24, move = "strafe", step = 0.0006 } = 
   const v = window.viewer;
   const { flickerTest } = await import("/labs/flickerTest.js");
   v.pause(true);
+  v.freeze(true);                                   // no updaters between frames (trains, cars, wind): a still scene
   try {
     const r = await flickerTest({ renderFrame: v.renderFrame, canvas: v.renderer.domElement, camera: v.camera, controls: v.controls, frames, move, step });
     return { blink: r.blink, ppm: r.ppm, worst: (r.clusters ?? []).slice(0, 3) };
-  } finally { v.pause(false); }
+  } finally { v.freeze(false); v.pause(false); }
 }
 
 /** camera at p looking at t (world, m) */
