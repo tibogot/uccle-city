@@ -4,9 +4,9 @@
  "urbis": "ROB 879",
  "line": "L26",
  "road": "Rue de Verrewinkel",
- "triangles": 34073,
- "triangles_bridge": 31411,
- "triangles_foot": 2662,
+ "triangles": 34111,
+ "triangles_bridge": 31425,
+ "triangles_foot": 2686,
  "materials": [
   "brick_red_brussels",
   "stone_blue",
@@ -54,7 +54,9 @@
   "parapet_inner": 2.1,
   "parapet_top": 1.17,
   "fold": 17.2,
-  "flare": 0.8
+  "flare": 0.8,
+  "apron_se": 0.0,
+  "skirt": 1.2
  },
  "footprint": [
   [

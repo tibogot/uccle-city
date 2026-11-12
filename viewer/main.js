@@ -1128,7 +1128,10 @@ async function main() {
     const list = world.tiles.filter((t) => t.drive && t.drawn && (!names || names.includes(t.name))).map((t) => auditTile(t));
     return { total: sumAudits(list), tiles: list };
   };
-  window.viewer = { auditColliders, tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
+  /** The JOINS check (viewer/contactAudit.js, tools/mesh_audit/contact.js): a hero / bridge ("bridge-verrewinkel") or a
+   *  tile's roads ("roads:F7") against the generated ground of the loaded tiles. */
+  const contactAudit = async (what, options) => (await import("./contactAudit.js")).contactAudit({ scene, world }, what, options);
+  window.viewer = { auditColliders, contactAudit, tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
     world, fader, stateAt, freeze: (on) => { stateFreeze = !!on; }, pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop),
     renderFrame: () => { if (!stateFreeze) { lodEye.value.copy(camera.position); for (const u of updaters) u(camera.position, camera); } renderFrame(); } };
 }

@@ -89,6 +89,65 @@ function bridgeRings(doc, heroes) {
 }
 
 // ------------------------------------------------------------------------------------------------ terrain
+/**
+ * ABUTMENT FILL (the JOINS rule, docs/collisions/README.md): a hero ROAD bridge meets the city's ground at its ends. The
+ * DTM there is the top of the cutting's slope (the LiDAR ground falls away beside the abutments), so the street the road
+ * engine draws on it dropped 0.4-0.7 m right past the deck's end, and the deck's tongue (under the street) and the
+ * footbridge's landings stood over a void. The ground is raised (never lowered), BEFORE the roads are built (they sample
+ * it), on every grid given (the tile worker passes the drawn grid first, then the road engine's original grid):
+ *   - under the deck's tongues past each end and the footbridge's landings: 6 cm under their tops (their concrete skirts /
+ *     landing seats, tools/blender/roadBridge.py, go 1.2-1.7 m down: the earth meets a wall, never a gap);
+ *   - the street's approach: the bridge's road level carried 2 m past each end on the deck's grade, then easing back to
+ *     the DTM at 8 % over at most 12 m, across the street (deck width + 3 m);
+ *   - around these: a 1:1.5 earth slope.
+ */
+export function abutmentFill(heroes, grids, hdr) {
+  const { x0, z0, cols, rows, step } = hdr;
+  let moved = 0;
+  for (const h of (heroes || []).filter((q) => q.kind === "road_over_rail").map(heroFrame)) {
+    const d = h.deck, f = h.foot, apron = d.apron_se ?? 0;
+    const r = (X) => { const xc = Math.max(d.x0, Math.min(d.x1, X)); return d.road_ends[0] + (xc - d.x0) * (d.road_ends[1] - d.road_ends[0]) / (d.x1 - d.x0) + (X - xc) * d.grade; };
+    const wHalf = (X) => Math.min(d.parapet_inner + 0.9, d.parapet_inner + d.flare * Math.max(0, (Math.abs(X) - d.fold) / (d.x1 - d.fold)));   // roadBridge.py tw()
+    const zones = [];                                          // { xa, xb, ya(X), yb(X), top(X) }: ground = top - 0.06 inside
+    const xe1 = d.x1 + (apron ? 2.5 : 0.6), xe0 = d.x0 - 0.6;
+    const tongue = (X) => r(X) - 0.03 - (X > d.x1 ? apron * (X - d.x1) / 2.5 : 0);
+    zones.push({ xa: d.x1, xb: xe1, ya: (X) => -wHalf(X), yb: wHalf, top: tongue }, { xa: xe0, xb: d.x0, ya: (X) => -wHalf(X), yb: wHalf, top: tongue });
+    if (f) {
+      const fw = (X) => (X >= f.x_flare ? f.w : f.w + (f.w_nw - f.w) * (f.x_flare - X) / (f.x_flare - f.x0));
+      const ftop = (X) => r(X) - f.top_under_road;
+      zones.push({ xa: d.x1, xb: f.x1, ya: (X) => f.y_inner - fw(X), yb: () => f.y_inner, top: ftop }, { xa: f.x0, xb: d.x0, ya: (X) => f.y_inner - fw(X), yb: () => f.y_inner, top: ftop });
+    }
+    // the street's approach (raised only where the DTM is lower: the fill takes the max)
+    const APP = 12, EASE = 0.08, AW = d.width / 2 + 3;
+    const appr = (X) => r(X) + 0.06 - EASE * Math.max(0, Math.abs(X) - Math.abs(X > 0 ? d.x1 : d.x0) - 2);
+    zones.push({ xa: d.x1, xb: d.x1 + APP, ya: () => -AW, yb: () => AW, top: appr }, { xa: d.x0 - APP, xb: d.x0, ya: () => -AW, yb: () => AW, top: appr });
+    const R = APP + 8;
+    const bx = ringBox(h.ring);
+    const c0 = Math.max(0, Math.floor((bx.x0 - R - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((bx.x1 + R - x0) / step));
+    const r0 = Math.max(0, Math.floor((bx.z0 - R - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((bx.z1 + R - z0) / step));
+    for (let rr = r0; rr <= r1; rr++) for (let c = c0; c <= c1; c++) {
+      const [X, Yb] = h.toLocal(x0 + c * step, z0 + rr * step);
+      if (X > d.x0 && X < d.x1) continue;                     // the cutting under the deck stays as it is
+      let inside = -Infinity, around = -Infinity;
+      for (const zn of zones) {
+        const xc = Math.max(zn.xa, Math.min(zn.xb, X)), ya = zn.ya(xc), yb = zn.yb(xc), yc = Math.max(ya, Math.min(yb, Yb));
+        const out = Math.hypot(X - xc, Yb - yc), t = zn.top(xc) - 0.06;
+        if (out < 1e-6) inside = Math.max(inside, t);
+        else around = Math.max(around, t - out / 1.5);
+      }
+      // under a tongue / landing the ground stays under its top (the lowest zone there wins); the approach only raises
+      const under = zones.slice(0, f ? 4 : 2).some((zn) => { const xc = Math.max(zn.xa, Math.min(zn.xb, X)); return xc === X && Yb >= zn.ya(X) && Yb <= zn.yb(X); });
+      let fill = Math.max(inside, around);
+      if (under && grids.length) fill = Math.min(fill, ...zones.slice(0, f ? 4 : 2).filter((zn) => X >= zn.xa && X <= zn.xb && Yb >= zn.ya(X) && Yb <= zn.yb(X)).map((zn) => zn.top(X) - 0.06));
+      const k = rr * cols + c;
+      // grids[0] = the drawn terrain: kept under the tongues / landings; the others (the road engine's ground): the
+      // street's level (the street is drawn over the tongue, which sits 3 cm under it)
+      grids.forEach((G, gi) => { const v = gi === 0 ? fill : Math.max(inside, around); if (G[k] < v) { G[k] = v; moved++; } });
+    }
+  }
+  return moved;
+}
+
 /** In place on Y (cols x rows heights). Returns { moved, dirty: Int32Array of changed cells }. */
 export function carveGrid(doc, Y, hdr, bounds, heroes = []) {
   const { x0, z0, cols, rows, step } = hdr;

@@ -1,25 +1,25 @@
 {
  "summary": {
-  "triangles": 5725,
-  "vertices_welded": 4341,
-  "open_edges": 3379,
-  "rays": 289184,
-  "blocking": 534,
-  "warnings": 792,
+  "triangles": 5761,
+  "vertices_welded": 4367,
+  "open_edges": 3399,
+  "rays": 322610,
+  "blocking": 535,
+  "warnings": 800,
   "counts": {
-   "sliver": 487,
+   "sliver": 488,
    "nonmanifold": 229,
    "winding": 32,
    "backtoback": 335,
    "crossing": 13,
    "coplanar": 26,
    "depth": 6,
-   "seam": 719,
-   "tjunction": 44,
-   "leak": 489,
-   "opening": 189
+   "seam": 744,
+   "tjunction": 51,
+   "leak": 490,
+   "opening": 193
   },
-  "ms": 2660
+  "ms": 2099
  },
  "options": {
   "weld": 0.0001,
@@ -82,13 +82,19 @@
   {
    "name": "verrewinkel",
    "slot": "paving_concrete",
-   "triangles": 22,
+   "triangles": 17,
+   "maxDistance": 2000
+  },
+  {
+   "name": "verrewinkel",
+   "slot": "concrete",
+   "triangles": 16,
    "maxDistance": 2000
   },
   {
    "name": "verrewinkel_foot",
    "slot": "concrete",
-   "triangles": 56,
+   "triangles": 81,
    "maxDistance": 2000
   },
   {
@@ -4658,44 +4664,8 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -5.933,
-     7.203,
-     1.867
-    ],
-    "part": "verrewinkel/paving_concrete",
-    "aspect": 111,
-    "longest": 40.348
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -6.483,
-     7.186,
-     -1.2
-    ],
-    "part": "verrewinkel/paving_concrete",
-    "aspect": 309,
-    "longest": 40.348
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -6.283,
-     7.283,
-     -1.8
-    ],
-    "part": "verrewinkel/paving_concrete",
-    "aspect": 42,
-    "longest": 36.104
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     5.733,
-     7.87,
+     -5.733,
+     7.31,
      -1.5
     ],
     "part": "verrewinkel/paving_concrete",
@@ -4706,37 +4676,73 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     6.617,
-     7.85,
+     -5.733,
+     7.2,
+     1.867
+    ],
+    "part": "verrewinkel/paving_concrete",
+    "aspect": 112,
+    "longest": 40.947
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     6.283,
+     7.79,
+     -1.2
+    ],
+    "part": "verrewinkel/paving_concrete",
+    "aspect": 219,
+    "longest": 40.946
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     6.283,
+     7.897,
+     -1.8
+    ],
+    "part": "verrewinkel/paving_concrete",
+    "aspect": 42,
+    "longest": 36.104
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     6.817,
+     7.847,
      1.983
     ],
     "part": "verrewinkel/paving_concrete",
     "aspect": 110,
-    "longest": 37.091
+    "longest": 37.69
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     6.617,
-     7.87,
+     -6.817,
+     7.213,
      -1.2
     ],
     "part": "verrewinkel/paving_concrete",
-    "aspect": 306,
-    "longest": 38.74
+    "aspect": 314,
+    "longest": 39.353
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -7.333,
-     6.285,
+     6.833,
+     6.977,
      2.56
     ],
     "part": "verrewinkel_foot/concrete",
     "aspect": 50,
-    "longest": 42.551
+    "longest": 42.601
    },
    {
     "check": "sliver",
@@ -4754,9 +4760,21 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -15.667,
-     6.494,
-     9.443
+     -18.583,
+     6.352,
+     10.177
+    ],
+    "part": "verrewinkel_foot/concrete",
+    "aspect": 60,
+    "longest": 9.032
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -18.583,
+     6.402,
+     10.427
     ],
     "part": "verrewinkel_foot/concrete",
     "aspect": 60,
@@ -4778,13 +4796,13 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     9.75,
-     7.736,
+     -1.5,
+     7.187,
      8.71
     ],
     "part": "verrewinkel_foot/concrete",
     "aspect": 226,
-    "longest": 33.798
+    "longest": 33.79
    },
    {
     "check": "sliver",
@@ -4802,13 +4820,13 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     6.833,
-     7.261,
+     -7.333,
+     6.568,
      2.56
     ],
     "part": "verrewinkel_foot/concrete",
     "aspect": 50,
-    "longest": 42.551
+    "longest": 42.601
    },
    {
     "check": "sliver",
@@ -4826,6 +4844,18 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
+     -1.5,
+     7.12,
+     8.96
+    ],
+    "part": "verrewinkel_foot/concrete",
+    "aspect": 68,
+    "longest": 33.818
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
      9.75,
      7.453,
      8.96
@@ -4838,25 +4868,25 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -18.583,
-     6.402,
-     10.177
+     -15.667,
+     6.544,
+     9.443
     ],
     "part": "verrewinkel_foot/concrete",
     "aspect": 60,
-    "longest": 9.041
+    "longest": 9.032
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -1.5,
-     7.237,
+     9.75,
+     7.786,
      8.71
     ],
     "part": "verrewinkel_foot/concrete",
     "aspect": 226,
-    "longest": 33.798
+    "longest": 33.79
    },
    {
     "check": "sliver",
@@ -4874,18 +4904,6 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -1.5,
-     7.12,
-     8.96
-    ],
-    "part": "verrewinkel_foot/concrete",
-    "aspect": 68,
-    "longest": 33.818
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
      -6.984,
      2.524,
      6.459
@@ -4893,18 +4911,6 @@
     "part": "verrewinkel_foot/painted_metal_white",
     "aspect": 44,
     "longest": 5.98
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -6.955,
-     2.498,
-     6.563
-    ],
-    "part": "verrewinkel_foot/painted_metal_white",
-    "aspect": 44,
-    "longest": 5.981
    }
   ],
   "nonmanifold": [
@@ -8595,20 +8601,6 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     18.408,
-     9.254,
-     -2.569
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "area": 0.06695
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
      18.933,
      9.282,
      -2.687
@@ -8618,6 +8610,20 @@
      "verrewinkel/stone_blue"
     ],
     "area": 0.10114
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     18.408,
+     9.254,
+     -2.569
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "area": 0.06695
    },
    {
     "check": "backtoback",
@@ -13416,6 +13422,22 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     -21.48,
+     5.31,
+     6.989
+    ],
+    "parts": [
+     "verrewinkel_foot/concrete",
+     "verrewinkel_foot/concrete"
+    ],
+    "length_m": 18.67,
+    "pieces": 17,
+    "min_angle_deg": 33.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      -6.549,
      0.851,
      5.524
@@ -13448,9 +13470,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -4.817,
-     6.125,
-     3.855
+     -4.65,
+     6.133,
+     3.808
     ],
     "parts": [
      "verrewinkel_foot/concrete",
@@ -13496,9 +13518,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -6.186,
+     -6.003,
      0.851,
-     5.475
+     5.464
     ],
     "parts": [
      "verrewinkel_foot/concrete",
@@ -13512,9 +13534,25 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -7.742,
-     5.982,
-     3.807
+     19.878,
+     5.736,
+     3.217
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel_foot/concrete"
+    ],
+    "length_m": 4.87,
+    "pieces": 14,
+    "min_angle_deg": 88.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -7.881,
+     5.975,
+     3.847
     ],
     "parts": [
      "verrewinkel_foot/concrete",
@@ -13523,22 +13561,6 @@
     "length_m": 0.82,
     "pieces": 14,
     "min_angle_deg": 69.9
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -7.907,
-     5.974,
-     7.527
-    ],
-    "parts": [
-     "verrewinkel_foot/concrete",
-     "verrewinkel_foot/painted_metal_white"
-    ],
-    "length_m": 0.84,
-    "pieces": 14,
-    "min_angle_deg": 69.2
    },
    {
     "check": "seam",
@@ -13587,6 +13609,22 @@
     "length_m": 0.85,
     "pieces": 14,
     "min_angle_deg": 66
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -7.907,
+     5.974,
+     7.527
+    ],
+    "parts": [
+     "verrewinkel_foot/concrete",
+     "verrewinkel_foot/painted_metal_white"
+    ],
+    "length_m": 0.84,
+    "pieces": 14,
+    "min_angle_deg": 69.2
    },
    {
     "check": "seam",
@@ -13672,9 +13710,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     4.589,
-     6.584,
-     3.894
+     4.608,
+     6.585,
+     3.862
     ],
     "parts": [
      "verrewinkel_foot/concrete",
@@ -13720,9 +13758,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     6.513,
+     6.432,
      1.883,
-     5.453
+     5.426
     ],
     "parts": [
      "verrewinkel_foot/concrete",
@@ -13768,9 +13806,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -19.332,
-     7.422,
-     -2.708
+     -19.278,
+     7.423,
+     -2.891
     ],
     "parts": [
      "verrewinkel/brick_red_brussels",
@@ -13779,6 +13817,22 @@
     "length_m": 0.26,
     "pieces": 12,
     "min_angle_deg": 15.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     19.82,
+     7.329,
+     5.737
+    ],
+    "parts": [
+     "verrewinkel_foot/concrete",
+     "verrewinkel_foot/concrete"
+    ],
+    "length_m": 15.6,
+    "pieces": 12,
+    "min_angle_deg": 31
    },
    {
     "check": "seam",
@@ -13848,15 +13902,15 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     19.346,
-     7.305,
-     3.316
+     -19.802,
+     5.392,
+     3.327
     ],
     "parts": [
      "verrewinkel/brick_red_brussels",
      "verrewinkel_foot/concrete"
     ],
-    "length_m": 2.42,
+    "length_m": 2.43,
     "pieces": 10,
     "min_angle_deg": 87.1
    },
@@ -13912,8 +13966,8 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     17.397,
-     7.246,
+     17.398,
+     7.599,
      2.56
     ],
     "parts": [
@@ -13960,9 +14014,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     8.59,
-     8.889,
-     -2.071
+     8.587,
+     8.959,
+     -2.105
     ],
     "parts": [
      "verrewinkel/brick_red_brussels",
@@ -14024,22 +14078,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -19.802,
-     5.392,
-     3.327
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel_foot/concrete"
-    ],
-    "length_m": 2.43,
-    "pieces": 8,
-    "min_angle_deg": 87.1
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      -19.829,
      6.241,
      3.327
@@ -14049,6 +14087,22 @@
      "verrewinkel_foot/resin_terracotta"
     ],
     "length_m": 2.43,
+    "pieces": 8,
+    "min_angle_deg": 87.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     19.346,
+     7.305,
+     3.316
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel_foot/concrete"
+    ],
+    "length_m": 2.42,
     "pieces": 8,
     "min_angle_deg": 87.1
    },
@@ -14104,6 +14158,38 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     -19.873,
+     5.389,
+     2.904
+    ],
+    "parts": [
+     "verrewinkel/concrete",
+     "verrewinkel_foot/concrete"
+    ],
+    "length_m": 1.9,
+    "pieces": 8,
+    "min_angle_deg": 87.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     19.85,
+     6.56,
+     2.6
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel_foot/concrete"
+    ],
+    "length_m": 3.1,
+    "pieces": 7,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      3.814,
      7.046,
      2.468
@@ -14136,22 +14222,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     19.305,
-     8.474,
-     -2.72
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/paving_concrete"
-    ],
-    "length_m": 0.8,
-    "pieces": 7,
-    "min_angle_deg": 81.3
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      14.746,
      9.258,
      -2.081
@@ -14168,9 +14238,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -6.129,
-     8.292,
-     2.444
+     -6.128,
+     8.279,
+     2.464
     ],
     "parts": [
      "verrewinkel/brick_red_brussels",
@@ -14184,17 +14254,17 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -14.062,
-     6.523,
-     9.29
+     19.874,
+     7.331,
+     2.904
     ],
     "parts": [
-     "verrewinkel_foot/concrete",
-     "verrewinkel_foot/resin_terracotta"
+     "verrewinkel/concrete",
+     "verrewinkel_foot/concrete"
     ],
-    "length_m": 75.45,
+    "length_m": 1.9,
     "pieces": 7,
-    "min_angle_deg": 55.4
+    "min_angle_deg": 87.2
    },
    {
     "check": "seam",
@@ -14291,22 +14361,6 @@
     "length_m": 0.82,
     "pieces": 6,
     "min_angle_deg": 85.5
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     19.553,
-     8.507,
-     2.715
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/paving_concrete"
-    ],
-    "length_m": 0.81,
-    "pieces": 6,
-    "min_angle_deg": 81.1
    },
    {
     "check": "seam",
@@ -14456,17 +14510,33 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     19.85,
-     7.33,
-     2.681
+     19.864,
+     7.436,
+     2.902
     ],
     "parts": [
-     "verrewinkel/brick_red_brussels",
+     "verrewinkel/concrete",
      "verrewinkel_foot/concrete"
     ],
-    "length_m": 1.59,
-    "pieces": 5,
-    "min_angle_deg": 87.2
+    "length_m": 1.24,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -14.062,
+     6.523,
+     9.29
+    ],
+    "parts": [
+     "verrewinkel_foot/concrete",
+     "verrewinkel_foot/resin_terracotta"
+    ],
+    "length_m": 69.19,
+    "pieces": 6,
+    "min_angle_deg": 89.3
    },
    {
     "check": "seam",
@@ -14504,38 +14574,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -4.235,
-     6.646,
-     2.56
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel_foot/concrete"
-    ],
-    "length_m": 0.05,
-    "pieces": 5,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     3.725,
-     7.035,
-     2.56
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel_foot/concrete"
-    ],
-    "length_m": 0.05,
-    "pieces": 5,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      19.277,
      9.49,
      -2.72
@@ -14547,6 +14585,22 @@
     "length_m": 0.16,
     "pieces": 5,
     "min_angle_deg": 52.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     19.553,
+     8.506,
+     2.715
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/paving_concrete"
+    ],
+    "length_m": 0.81,
+    "pieces": 5,
+    "min_angle_deg": 83.9
    },
    {
     "check": "seam",
@@ -14664,9 +14718,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     9.829,
-     8.973,
-     2.541
+     9.841,
+     9.047,
+     2.474
     ],
     "parts": [
      "verrewinkel/brick_red_brussels",
@@ -14675,6 +14729,22 @@
     "length_m": 0.07,
     "pieces": 5,
     "min_angle_deg": 20.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -20.45,
+     5.418,
+     2.919
+    ],
+    "parts": [
+     "verrewinkel/concrete",
+     "verrewinkel_foot/concrete"
+    ],
+    "length_m": 0.84,
+    "pieces": 5,
+    "min_angle_deg": 80.5
    },
    {
     "check": "seam",
@@ -14723,6 +14793,38 @@
     "length_m": 8.63,
     "pieces": 4,
     "min_angle_deg": 88.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -19.85,
+     5.406,
+     2.56
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel_foot/concrete"
+    ],
+    "length_m": 1.59,
+    "pieces": 4,
+    "min_angle_deg": 87.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     19.85,
+     7.33,
+     2.947
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel_foot/concrete"
+    ],
+    "length_m": 1.59,
+    "pieces": 4,
+    "min_angle_deg": 87.2
    },
    {
     "check": "seam",
@@ -15304,6 +15406,22 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     -4.235,
+     6.646,
+     2.56
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel_foot/concrete"
+    ],
+    "length_m": 0.05,
+    "pieces": 4,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      -2.243,
      6.746,
      2.56
@@ -15379,6 +15497,22 @@
     "length_m": 0.01,
     "pieces": 4,
     "min_angle_deg": 89.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     3.725,
+     7.035,
+     2.56
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel_foot/concrete"
+    ],
+    "length_m": 0.05,
+    "pieces": 4,
+    "min_angle_deg": 90
    },
    {
     "check": "seam",
@@ -15528,6 +15662,22 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     19.338,
+     8.477,
+     -2.72
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/paving_concrete"
+    ],
+    "length_m": 0.68,
+    "pieces": 4,
+    "min_angle_deg": 86
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      19.274,
      9.349,
      -2.911
@@ -15545,22 +15695,6 @@
     "severity": "info",
     "at": [
      19.282,
-     9.36,
-     2.885
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "length_m": 0.29,
-    "pieces": 4,
-    "min_angle_deg": 16.8
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     19.282,
      9.536,
      2.769
     ],
@@ -15571,6 +15705,22 @@
     "length_m": 0.13,
     "pieces": 4,
     "min_angle_deg": 46.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     19.282,
+     9.36,
+     2.885
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "length_m": 0.29,
+    "pieces": 4,
+    "min_angle_deg": 16.8
    },
    {
     "check": "seam",
@@ -15640,9 +15790,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -13.519,
-     7.739,
-     2.038
+     -13.526,
+     7.86,
+     2.096
     ],
     "parts": [
      "verrewinkel/brick_red_brussels",
@@ -15816,22 +15966,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -5.903,
-     6.402,
-     -2.398
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "length_m": 0.5,
-    "pieces": 4,
-    "min_angle_deg": 89.5
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      -5.902,
      6.244,
      -2.397
@@ -15843,6 +15977,22 @@
     "length_m": 0.34,
     "pieces": 4,
     "min_angle_deg": 80.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -5.903,
+     6.402,
+     -2.398
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "length_m": 0.5,
+    "pieces": 4,
+    "min_angle_deg": 89.5
    },
    {
     "check": "seam",
@@ -16024,6 +16174,22 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     16.114,
+     7.477,
+     2.399
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "length_m": 0.5,
+    "pieces": 4,
+    "min_angle_deg": 89.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      16.066,
      7.318,
      2.398
@@ -16040,17 +16206,17 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     16.114,
-     7.477,
-     2.399
+     19.82,
+     7.339,
+     3.291
     ],
     "parts": [
      "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
+     "verrewinkel_foot/concrete"
     ],
-    "length_m": 0.5,
+    "length_m": 1.76,
     "pieces": 4,
-    "min_angle_deg": 89.6
+    "min_angle_deg": 73.2
    },
    {
     "check": "seam",
@@ -16072,9 +16238,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -2.449,
-     8.361,
-     -2.565
+     -2.447,
+     8.377,
+     -2.561
     ],
     "parts": [
      "verrewinkel/brick_red_brussels",
@@ -16088,9 +16254,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     4.914,
-     8.646,
-     -2.036
+     4.923,
+     8.754,
+     -2.07
     ],
     "parts": [
      "verrewinkel/brick_red_brussels",
@@ -16121,8 +16287,8 @@
     "severity": "info",
     "at": [
      11.071,
-     9.115,
-     2.146
+     9.073,
+     2.096
     ],
     "parts": [
      "verrewinkel/brick_red_brussels",
@@ -16136,9 +16302,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -13.519,
-     7.782,
-     -2.563
+     -13.527,
+     7.837,
+     -2.554
     ],
     "parts": [
      "verrewinkel/brick_red_brussels",
@@ -16152,8 +16318,8 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     9.789,
-     7.051,
+     -9.789,
+     6.095,
      2.56
     ],
     "parts": [
@@ -16162,47 +16328,31 @@
     ],
     "length_m": 0.34,
     "pieces": 4,
-    "min_angle_deg": 18.8
+    "min_angle_deg": 18.5
    },
    {
     "check": "seam",
     "severity": "info",
     "at": [
-     -18.678,
-     6.447,
-     10.371
+     20.08,
+     8.191,
+     2.938
     ],
     "parts": [
-     "verrewinkel_foot/concrete",
-     "verrewinkel_foot/painted_metal_white"
+     "verrewinkel/concrete",
+     "verrewinkel_foot/resin_terracotta"
     ],
-    "length_m": 0.15,
+    "length_m": 1.05,
     "pieces": 4,
-    "min_angle_deg": 83.4
+    "min_angle_deg": 87.2
    },
    {
     "check": "seam",
     "severity": "info",
     "at": [
-     -17.404,
+     -17.402,
      6.51,
-     10.028
-    ],
-    "parts": [
-     "verrewinkel_foot/concrete",
-     "verrewinkel_foot/painted_metal_white"
-    ],
-    "length_m": 0.15,
-    "pieces": 4,
-    "min_angle_deg": 83.4
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -16.131,
-     6.572,
-     9.684
+     10.019
     ],
     "parts": [
      "verrewinkel_foot/concrete",
@@ -16355,22 +16505,6 @@
     "length_m": 0.99,
     "pieces": 3,
     "min_angle_deg": 89.6
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -19.85,
-     5.798,
-     2.56
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel_foot/concrete"
-    ],
-    "length_m": 1.59,
-    "pieces": 3,
-    "min_angle_deg": 87.2
    },
    {
     "check": "seam",
@@ -16728,9 +16862,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -2.463,
-     8.357,
-     2.537
+     -2.47,
+     8.417,
+     2.504
     ],
     "parts": [
      "verrewinkel/brick_red_brussels",
@@ -17128,22 +17262,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     0.056,
-     6.535,
-     -2.394
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "length_m": 0.34,
-    "pieces": 3,
-    "min_angle_deg": 75.5
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      0.174,
      6.699,
      -2.397
@@ -17155,6 +17273,22 @@
     "length_m": 0.5,
     "pieces": 3,
     "min_angle_deg": 88.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.056,
+     6.535,
+     -2.394
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "length_m": 0.34,
+    "pieces": 3,
+    "min_angle_deg": 75.5
    },
    {
     "check": "seam",
@@ -17208,22 +17342,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     2.024,
-     6.789,
-     -2.397
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "length_m": 0.5,
-    "pieces": 3,
-    "min_angle_deg": 89.2
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      1.996,
      6.629,
      -2.395
@@ -17235,6 +17353,22 @@
     "length_m": 0.34,
     "pieces": 3,
     "min_angle_deg": 75.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     2.024,
+     6.789,
+     -2.397
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "length_m": 0.5,
+    "pieces": 3,
+    "min_angle_deg": 89.2
    },
    {
     "check": "seam",
@@ -17368,22 +17502,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     7.78,
-     6.928,
-     -2.397
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "length_m": 0.14,
-    "pieces": 3,
-    "min_angle_deg": 89.7
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      7.716,
      7.237,
      -2.4
@@ -17395,6 +17513,22 @@
     "length_m": 0.5,
     "pieces": 3,
     "min_angle_deg": 89.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     7.78,
+     6.928,
+     -2.397
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "length_m": 0.14,
+    "pieces": 3,
+    "min_angle_deg": 89.7
    },
    {
     "check": "seam",
@@ -17448,22 +17582,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     11.892,
-     7.113,
-     -2.389
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "length_m": 0.34,
-    "pieces": 3,
-    "min_angle_deg": 75.7
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      11.693,
      7.261,
      -2.381
@@ -17475,6 +17593,22 @@
     "length_m": 0.5,
     "pieces": 3,
     "min_angle_deg": 89.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     11.892,
+     7.113,
+     -2.389
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "length_m": 0.34,
+    "pieces": 3,
+    "min_angle_deg": 75.7
    },
    {
     "check": "seam",
@@ -17496,22 +17630,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     16.03,
-     7.315,
-     -2.396
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "length_m": 0.34,
-    "pieces": 3,
-    "min_angle_deg": 80.7
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      16.127,
      7.478,
      -2.398
@@ -17523,6 +17641,22 @@
     "length_m": 0.5,
     "pieces": 3,
     "min_angle_deg": 89.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     16.03,
+     7.315,
+     -2.396
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "length_m": 0.34,
+    "pieces": 3,
+    "min_angle_deg": 80.7
    },
    {
     "check": "seam",
@@ -17688,22 +17822,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -12.17,
-     6.265,
-     2.397
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "length_m": 0.5,
-    "pieces": 3,
-    "min_angle_deg": 88.9
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      -11.924,
      6.107,
      2.395
@@ -17731,6 +17849,22 @@
     "length_m": 0.34,
     "pieces": 3,
     "min_angle_deg": 75.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -12.17,
+     6.265,
+     2.397
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "length_m": 0.5,
+    "pieces": 3,
+    "min_angle_deg": 88.9
    },
    {
     "check": "seam",
@@ -17928,22 +18062,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -5.925,
-     6.4,
-     2.397
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "length_m": 0.5,
-    "pieces": 3,
-    "min_angle_deg": 89.4
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      -5.887,
      6.243,
      2.396
@@ -17955,6 +18073,22 @@
     "length_m": 0.34,
     "pieces": 3,
     "min_angle_deg": 88.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -5.925,
+     6.4,
+     2.397
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/stone_blue"
+    ],
+    "length_m": 0.5,
+    "pieces": 3,
+    "min_angle_deg": 89.4
    },
    {
     "check": "seam",
@@ -18456,31 +18590,47 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -9.789,
-     6.095,
+     -6.15,
+     6.375,
      2.56
     ],
     "parts": [
      "verrewinkel/stone_blue",
      "verrewinkel_foot/concrete"
     ],
-    "length_m": 0.34,
+    "length_m": 0.07,
     "pieces": 3,
-    "min_angle_deg": 18.5
+    "min_angle_deg": 90
    },
    {
     "check": "seam",
     "severity": "info",
     "at": [
-     -4.114,
-     6.659,
+     -4.24,
+     6.586,
      2.56
     ],
     "parts": [
      "verrewinkel/stone_blue",
      "verrewinkel_foot/concrete"
     ],
-    "length_m": 0.5,
+    "length_m": 0.15,
+    "pieces": 3,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -3.72,
+     6.527,
+     2.56
+    ],
+    "parts": [
+     "verrewinkel/stone_blue",
+     "verrewinkel_foot/concrete"
+    ],
+    "length_m": 0.15,
     "pieces": 3,
     "min_angle_deg": 90
    },
@@ -18489,7 +18639,7 @@
     "severity": "info",
     "at": [
      -2.25,
-     6.671,
+     6.631,
      2.56
     ],
     "parts": [
@@ -18505,7 +18655,7 @@
     "severity": "info",
     "at": [
      -1.73,
-     6.673,
+     6.644,
      2.56
     ],
     "parts": [
@@ -18521,7 +18671,7 @@
     "severity": "info",
     "at": [
      -0.26,
-     6.749,
+     6.748,
      2.56
     ],
     "parts": [
@@ -18537,7 +18687,7 @@
     "severity": "info",
     "at": [
      0.26,
-     6.751,
+     6.761,
      2.56
     ],
     "parts": [
@@ -18553,7 +18703,7 @@
     "severity": "info",
     "at": [
      1.73,
-     6.826,
+     6.866,
      2.56
     ],
     "parts": [
@@ -18569,7 +18719,7 @@
     "severity": "info",
     "at": [
      2.25,
-     6.828,
+     6.867,
      2.56
     ],
     "parts": [
@@ -18584,24 +18734,8 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     3.72,
-     6.975,
-     2.56
-    ],
-    "parts": [
-     "verrewinkel/stone_blue",
-     "verrewinkel_foot/concrete"
-    ],
-    "length_m": 0.15,
-    "pieces": 3,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     7.833,
-     6.968,
+     9.789,
+     7.051,
      2.56
     ],
     "parts": [
@@ -18610,7 +18744,7 @@
     ],
     "length_m": 0.34,
     "pieces": 3,
-    "min_angle_deg": 12.2
+    "min_angle_deg": 18.8
    },
    {
     "check": "seam",
@@ -18627,6 +18761,54 @@
     "length_m": 0.34,
     "pieces": 3,
     "min_angle_deg": 12.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -20.069,
+     6.229,
+     2.937
+    ],
+    "parts": [
+     "verrewinkel/concrete",
+     "verrewinkel_foot/resin_terracotta"
+    ],
+    "length_m": 1.05,
+    "pieces": 3,
+    "min_angle_deg": 87.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -19.85,
+     6.216,
+     -2.9
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/concrete"
+    ],
+    "length_m": 1.17,
+    "pieces": 2,
+    "min_angle_deg": 80.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     19.85,
+     7.512,
+     2.9
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/concrete"
+    ],
+    "length_m": 1.17,
+    "pieces": 2,
+    "min_angle_deg": 80.5
    },
    {
     "check": "seam",
@@ -19000,6 +19182,38 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     -19.88,
+     5.92,
+     -2.905
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/concrete"
+    ],
+    "length_m": 1.2,
+    "pieces": 2,
+    "min_angle_deg": 80.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -19.889,
+     5.981,
+     2.906
+    ],
+    "parts": [
+     "verrewinkel/brick_red_brussels",
+     "verrewinkel/concrete"
+    ],
+    "length_m": 1.3,
+    "pieces": 2,
+    "min_angle_deg": 81.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      -19.318,
      7.587,
      2.709
@@ -19193,8 +19407,8 @@
     "severity": "info",
     "at": [
      -14.769,
-     7.886,
-     -2.2
+     7.808,
+     -2.543
     ],
     "parts": [
      "verrewinkel/brick_red_brussels",
@@ -19601,214 +19815,6 @@
      "verrewinkel/stone_blue"
     ],
     "length_m": 0.42,
-    "pieces": 2,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     8.767,
-     8.788,
-     2.1
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "length_m": 0.2,
-    "pieces": 2,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -16.1,
-     5.82,
-     -2.397
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "length_m": 0.13,
-    "pieces": 2,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -16.18,
-     5.99,
-     -2.399
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "length_m": 0.15,
-    "pieces": 2,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -16.072,
-     5.905,
-     -2.398
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "length_m": 0.34,
-    "pieces": 2,
-    "min_angle_deg": 89.3
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -14.19,
-     6.087,
-     -2.399
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "length_m": 0.15,
-    "pieces": 2,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -14.082,
-     6.002,
-     -2.398
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "length_m": 0.34,
-    "pieces": 2,
-    "min_angle_deg": 89.4
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -10.13,
-     6.12,
-     -2.396
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "length_m": 0.13,
-    "pieces": 2,
-    "min_angle_deg": 89.9
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -2.25,
-     6.67,
-     -2.399
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "length_m": 0.15,
-    "pieces": 2,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -8.14,
-     6.151,
-     -2.396
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "length_m": 0.13,
-    "pieces": 2,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -7.7,
-     6.393,
-     -2.399
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "length_m": 0.15,
-    "pieces": 2,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -4.16,
-     6.432,
-     -2.397
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "length_m": 0.12,
-    "pieces": 2,
-    "min_angle_deg": 89.6
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -4.132,
-     6.488,
-     -2.398
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "length_m": 0.34,
-    "pieces": 2,
-    "min_angle_deg": 89.4
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.8,
-     6.43,
-     -2.397
-    ],
-    "parts": [
-     "verrewinkel/brick_red_brussels",
-     "verrewinkel/stone_blue"
-    ],
-    "length_m": 0.13,
     "pieces": 2,
     "min_angle_deg": 90
    }
@@ -20291,12 +20297,89 @@
     "check": "tjunction",
     "severity": "warn",
     "at": [
-     -21.5,
-     6.159,
-     10.91
+     -19.85,
+     6.46,
+     2.9
     ],
-    "part": "verrewinkel_foot/resin_terracotta",
-    "edge_m": 8.6
+    "part": "verrewinkel/concrete",
+    "edge_m": 1.3
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -19.85,
+     6.46,
+     -2.9
+    ],
+    "part": "verrewinkel/concrete",
+    "edge_m": 1.2
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -20.45,
+     6.46,
+     -1.2
+    ],
+    "part": "verrewinkel/concrete",
+    "edge_m": 4.75
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     19.85,
+     8.4,
+     2.9
+    ],
+    "part": "verrewinkel/concrete",
+    "edge_m": 1.3
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     19.85,
+     8.4,
+     -2.9
+    ],
+    "part": "verrewinkel/concrete",
+    "edge_m": 1.2
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -20.45,
+     6.46,
+     1.75
+    ],
+    "part": "verrewinkel/concrete",
+    "edge_m": 1.22
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     20.45,
+     8.4,
+     1.75
+    ],
+    "part": "verrewinkel/concrete",
+    "edge_m": 1.22
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     20.45,
+     8.4,
+     -1.2
+    ],
+    "part": "verrewinkel/concrete",
+    "edge_m": 4.75
    }
   ],
   "leak": [
@@ -29986,47 +30069,47 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     22.35,
-     8.072,
-     1.701
+     19.932,
+     8.436,
+     -2.87
     ],
-    "part": "verrewinkel/asphalt",
+    "part": "verrewinkel/paving_concrete",
     "facing": [
-     0.14,
-     0.99,
+     0.07,
+     1,
      0
     ],
-    "edge_m": 2.95
+    "edge_m": 1.653
    },
    {
     "check": "opening",
     "severity": "info",
     "at": [
      -20.45,
-     6.46,
-     1.701
+     6.41,
+     1.75
     ],
-    "part": "verrewinkel/asphalt",
+    "part": "verrewinkel/concrete",
     "facing": [
-     -0.05,
-     1,
+     -1,
+     0,
      0
     ],
-    "edge_m": 2.95
+    "edge_m": 1.2
    },
    {
     "check": "opening",
     "severity": "info",
     "at": [
-     -20,
-     6.482,
+     20,
+     8.423,
      -2.925
     ],
-    "part": "verrewinkel/paving_concrete",
+    "part": "verrewinkel/concrete",
     "facing": [
-     -0.05,
-     1,
-     0
+     -0.16,
+     0,
+     -0.99
     ],
     "edge_m": 0.609
    },
@@ -30034,65 +30117,113 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     22.302,
-     8.078,
-     -3
+     20.45,
+     8.35,
+     1.75
     ],
-    "part": "verrewinkel/paving_concrete",
+    "part": "verrewinkel/concrete",
     "facing": [
-     0.13,
-     0.99,
+     1,
+     0,
      0
     ],
-    "edge_m": 1.261
+    "edge_m": 1.2
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -20,
+     5.283,
+     2.925
+    ],
+    "part": "verrewinkel/concrete",
+    "facing": [
+     0.16,
+     0,
+     0.99
+    ],
+    "edge_m": 0.609
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -20,
+     5.283,
+     -2.925
+    ],
+    "part": "verrewinkel/concrete",
+    "facing": [
+     0.16,
+     0,
+     -0.99
+    ],
+    "edge_m": 0.609
    },
    {
     "check": "opening",
     "severity": "info",
     "at": [
      -20.45,
-     6.464,
-     1.798
+     5.26,
+     2.567
     ],
-    "part": "verrewinkel/paving_concrete",
+    "part": "verrewinkel/concrete",
     "facing": [
-     -0.06,
-     0.99,
-     -0.08
+     -1,
+     0,
+     0
     ],
-    "edge_m": 1.254
+    "edge_m": 1.25
    },
    {
     "check": "opening",
     "severity": "info",
     "at": [
-     22.35,
-     8.076,
-     1.798
+     -20.45,
+     5.26,
+     1.701
     ],
-    "part": "verrewinkel/paving_concrete",
+    "part": "verrewinkel/concrete",
     "facing": [
-     0.13,
-     0.99,
-     -0.08
+     -1,
+     0,
+     0
     ],
-    "edge_m": 1.254
+    "edge_m": 4.75
    },
    {
     "check": "opening",
     "severity": "info",
     "at": [
-     19.994,
-     8.408,
-     -2.912
+     20,
+     7.222,
+     -2.925
     ],
-    "part": "verrewinkel/paving_concrete",
+    "part": "verrewinkel/concrete",
     "facing": [
-     0.15,
-     0.99,
-     -0.02
+     -0.16,
+     0,
+     -0.99
     ],
-    "edge_m": 1.269
+    "edge_m": 0.609
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     20.45,
+     7.2,
+     2.567
+    ],
+    "part": "verrewinkel/concrete",
+    "facing": [
+     1,
+     0,
+     0
+    ],
+    "edge_m": 1.25
    },
    {
     "check": "opening",
@@ -30105,6 +30236,22 @@
     "part": "verrewinkel_foot/concrete",
     "facing": [
      1,
+     0,
+     0
+    ],
+    "edge_m": 0.25
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -21.5,
+     6.159,
+     11.118
+    ],
+    "part": "verrewinkel_foot/concrete",
+    "facing": [
+     -1,
      0,
      0
     ],

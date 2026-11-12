@@ -15,7 +15,7 @@ import { buildDriveData } from "./drive/colliders.js";
 import { prepareSurfaces, fitRoadWidths, buildSurfaceRoads } from "./surfaces.js";
 import { smoothPolyline } from "./track.js";
 import { kitCollector } from "./facadeKit/placement.js";
-import { prepRail, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround } from "./rail/railData.js";
+import { prepRail, abutmentFill, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround } from "./rail/railData.js";
 
 let railP = null;
 /** ?trains=1: rail.json + the hero bridges' notes, fetched once per worker */
@@ -141,6 +141,8 @@ export async function buildTileData(entry, base) {
   const ov = await overrides(base);
   for (const r of roads.roads) { const s = ov.roadSurface?.[r.id]; if (s) (r.meta ??= {}).surface = s; }
   const hm = new Heightmap(tHdr, tBuf);
+  // the ground at the hero road bridges' ends up to their decks, before the roads sample it (railData.js abutmentFill)
+  if (rail) await step("abutment fill", () => abutmentFill(rail.heroes, [hm.y, hm.orig], tHdr));
   // ?trains=1: the hero road bridges' decks are the road's ground over the cutting (viewer/rail/railData.js roadDeckGround)
   const roadGround = rail ? roadDeckGround(rail.heroes, hm.ground) : hm.ground;
   // measured surfaces first, then the engine's lane stacks fitted into the measured kerb-to-kerb widths
