@@ -248,7 +248,7 @@ function applyWet() { wet.uWet.value = P.wet ? P.wetness : 0; wet.uPuddle.value 
 applyWet();
 
 let lastNight = 0;
-function glareLamp(g, l, k) { glare.write(g, l.hx, l.hy, l.hz, 0.9, 1.6 * k, 1.25 * k, 0.8 * k); return g + 1; }
+function glareLamp(g, l, k) { glare.write(g, l.hx, l.hy, l.hz, 0.45, 1.6 * k, 1.25 * k, 0.8 * k); return g + 1; }
 function updateLights(dt) {
   placeCars(); placeTram();
   const n = env.uNight.value;
@@ -267,8 +267,8 @@ function updateLights(dt) {
       for (let i = 0; i < night.carCount; i++) {
         const o = i * CAR.STRIDE, f = D[o + CAR.FADE] * k;
         if (f <= 0) continue;
-        glare.write(g++, D[o], D[o + 1], D[o + 2], 0.55, 1.6 * f, 1.55 * f, 1.45 * f, D[o + 3], D[o + 4], D[o + 5]);
-        glare.write(g++, D[o + 6] + D[o + 3] * 0.55, D[o + 7] + 0.15, D[o + 8] + D[o + 5] * 0.55, 0.32, 1.2 * f, 0.05 * f, 0.03 * f);
+        glare.write(g++, D[o], D[o + 1], D[o + 2], 0.35, 1.6 * f, 1.55 * f, 1.45 * f, D[o + 3], D[o + 4], D[o + 5]);
+        glare.write(g++, D[o + 6] + D[o + 3] * 0.55, D[o + 7] + 0.15, D[o + 8] + D[o + 5] * 0.55, 0.22, 1.2 * f, 0.05 * f, 0.03 * f);
       }
       const T = night.tram;
       if (T.on) glare.write(g++, T.hx, 1.15, T.hz, 0.7, 1.6 * k, 1.55 * k, 1.45 * k, T.fx, -0.03, T.fz);

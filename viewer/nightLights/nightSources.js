@@ -25,7 +25,7 @@ export const nightParams = {
   lamps: true, windows: true, shops: true, signs: true, headlights: true, rear: true, tram: true,
   cones: 'wet only',       // the beams in damp air: 'on' / 'wet only' / 'off' (~0.3 ms when on: additive overdraw)
   lampI: 110, lampRange: 16, lampUp: 0.3, lampBatwing: 0.35,
-  windowI: 9, windowRange: 9, shopI: 24, shopRange: 12, signI: 6, signRange: 5, rearRange: 4.5, headI: 1000, headRange: 34, headCone: 0.55, rearI: 1.6, tramI: 900, tramSaloon: 7,
+  windowI: 14, windowRange: 9, shopI: 24, shopRange: 12, signI: 6, signRange: 5, rearRange: 4.5, headI: 1000, headRange: 34, headCone: 0.55, rearI: 1.6, tramI: 900, tramSaloon: 7,
   near0: 40, near1: 60,       // m: static lights real up to near0, gone at near1 (the ground map + wall spill beyond)
   coneDensity: 0.025,     // dry air: a hint; x2.5 when the street is wet (damp air, spray)
 };

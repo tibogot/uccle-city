@@ -4,6 +4,94 @@ Lab: `labs/night-lab.html` (port 8829: http://localhost:8829/labs/night-lab.html
 No city file changed: new modules in `viewer/nightLights/`, a lab card in `labs/index.html`, `labs/flickerTest.js`
 copied from `claude/stalle` (commit eebd3d6).
 
+## ROUND 2 (2026-11-12): the budget met, every light of the street lit
+
+Owner's rule followed: three r187 checked first (ClusteredLighting: kept and extended; `material.lightMap` needs a UV2
+layout per mesh and one map per mesh, light probes are ambient only, ShadowNode untouched; three has no depth
+pre-pass switch), and Mr.doob's slop-newyork (pools + cutoff fade, storefront interior). Own TSL only where needed.
+
+1. **Tighter cluster assignment** (`nightLighting.js` `_create` = three r187's, MIT, with one change): each light may
+   carry up to 4 culling planes (view space, a `maxLights x 4` texture written on the CPU each frame); a cluster gets
+   the light only if its box touches the bounding sphere AND is not wholly outside one plane.
+   - LOW BEAM: the wedge under the cut-off (top plane rising 3.5 %, back plane, two side planes at the cone angle):
+     everything above the lamp's height - facades, car bodies, the sky - no longer lists the headlights.
+   - APERTURE (windows, shop fronts): the pyramid from the light through the opening.
+   Also in the fragment loop: low beams reject anything above the cut-off before fetching more data.
+2. **Ground light map** (`groundLight.js`): every lamp (lantern profile), every LIT WINDOW ON EVERY FLOOR (287, was 82
+   ground-floor ones), every shop front and sign baked once into two RGBA16F layers over the street (0.25 m texels,
+   2240 x 144, ~2.6 MB each; 79 ms in JS - in the city: the tile worker), with the SAME formulas as the loop. Ground
+   materials (road, setts, sidewalk, kerb, lawn) add albedo / pi x map and SKIP those lights in the loop (decided per
+   material at build time, a flag in the light's range); when the street is wet they still loop them for the
+   specular only (the streaks). The static kinds are real pool lights only within 40-60 m (walls, cars, trees,
+   hedges); beyond, walls and hedges read the map at their foot fading up the wall (`addSpill`), complementary by
+   distance. Scales: lamps+signs and windows+shops layers follow the night factor and the panel toggles; changing an
+   intensity re-bakes (150 ms debounce).
+3. **Headlights capped**: the 12 nearest cars' low beams and rear lights are real (full BRDF); every other car's road
+   pool is drawn each frame into the map's dynamic layer (a 0.5 m half-float render target, additive ground quads
+   evaluating the same `lowBeamK()` TSL function) with weight 1 - (its real weight): when a car leaves the pool its
+   real light fades out exactly as its map pool fades in (diffuse identical; only the specular glint fades).
+4. **Far glare cards** (`glare.js`, GTA V's distant lights): one additive billboard per lamp head, car front (brighter
+   when the beam faces you), car rear, tram front; fade in 30-90 m (nearer: the emissive glass + bloom), at least
+   ~2.5 px, energy spread when held at a pixel size. They light nothing (the map does the far ground).
+5. **Depth pre-pass** (lab switch "depth pre-pass (test)", `?prepass=1`): depth-only scene into the post chain's
+   target, then the real pass without clear, shadows drawn once. Measured: **no gain** (scene -0.07 / 0 ms; lights
+   0.52 with vs 0.46 without, paired runs): three r187 already sorts opaque objects front to back and our loop is cheap
+   per listed light now. Kept off.
+6. **Shop rooms**: shop glass shows a room behind it by interior mapping (`shopRoom` in `nightStreet.js`, adapted
+   from slop-newyork's storefront interior, MIT): back / side walls of shelves with goods, a counter 1.3 m in that
+   parallax-shifts against the shelves, a tiled floor, ceiling light panels; detail fades to the room's mean colour
+   before it gets sub-pixel (the flicker test caught it at 818 ppm before the fade, 54-81 ppm after).
+7. **Upper-floor windows** spill too (pool: 40 nearest real, culled to their pyramid; all of them on the ground map).
+
+### Before / after (lights on minus lights off, ms GPU; 1280 x 800; NVIDIA Lovelace; NOISY - the owner was running
+### another GPU project: per mode the 10th percentile of blocks of 6 frames alternating on / off, and the median)
+
+| | lights handled | real (clustered) | all on | headlights | lamps | windows + shops | rear + signs |
+|---|---|---|---|---|---|---|---|
+| round 1, default | 120 | 120 | 0.92 / 1.25 | 0.33 / 0.52 | 0.20 / 0.20 | 0.26 / 0.26 | 0.07 / 0.00 |
+| round 1, `?traffic=26` | 143 | 143 | 0.92 / 0.92 | 0.52 / 0.59 | 0.20 / 0.20 | 0.33 / 0.26 | 0.13 / 0.07 |
+| round 2, planes only | 121 | 121 | 0.79 / 1.18 | 0.26 / 0.39 | 0.26 / 0.20 | 0.20 / 0.20 | 0.07 / 0.33 |
+| **round 2, default** | ~460 (all 26 lamps, 287 windows, 23 shops + signs, 64 car lights, tram) | 89 | **0.59 / 0.66** | 0.20 / 0.20 | 0.07 / 0.07 | 0.13 / 0.20 | 0.07 / 0.13 |
+| round 2, default, wet (+ beams, + ground specular loop) | same | 89 | 0.72 / 0.85 | | | | |
+| **round 2, ~150 real** (`?traffic=26&pools=lamps:30,windows:60,heads:24,rear:24,shops:10,signs:8`) | ~500 | 134 | **0.72 / 0.85** | 0.33 / 0.46 | 0.20 / 0.13 | 0.33 / 0.33 | 0.00 / 0.07 |
+
+"Off" = the pool, ground-map layers, dynamic pools, glare cards and cone beams all off (the lamps' 2 shadow maps stop
+updating); scene ~1.8-2.1 ms p10. Timestamps are quantised (~0.066 ms) and runs of the same build differ by about
++-0.15 ms on p10 and more on medians: read the table as "round 2 roughly halves the cost of round 1 while lighting
+four times as many sources", not to the 0.01 ms. **Target <= 1.0 ms for ~150 lights: met** (0.72 / 0.85 ms with 134
+real clustered lights + ~370 baked / map / glare sources; 0.59 / 0.66 ms default).
+
+CPU: the whole light update incl. the far cars' map quads **15 us** per frame (`lab.cpuTest(20000)`); no per-frame
+allocation on our path by code review (the planes use a method, not a closure). Bake: 79 ms once (main thread in the
+lab).
+
+### Re-verification (round 2)
+- Strips (`docs/night/round2/strip_drive.png`, `strip_walk.png`, `strip_fly.png`): largest frame-to-frame weight
+  change of any source: drive 0.037, walk 0.011, fly 0.016 (1.0 = a pop), 0 jumps > 0.1. Larger than round 1 (0.018)
+  because the static lights now fade over the 40-60 m band, still a fade over > 25 frames. Looked at every frame: no
+  popping; the tram passes alongside in the drive strip. (The walk strip's first frame still has the eye adaptation
+  settling.)
+- Flicker test (street view): dry strafe 65 ppm, wet strafe 81 / 54 ppm (two runs), wet fixed 0. Clusters: car chrome /
+  number plates / glass edges and the tram's edges under a sub-pixel move; the shop rooms are clean after the detail
+  fade (they were 818 ppm before it). Round 1 was 20-23 ppm with no tram and no shop rooms in view.
+- Images: `docs/night/round2/dry_street.png`, `wet_street.png`, `gardens.png`, `flicker_wet_fixed.png`,
+  `flicker_wet_strafe.png`.
+
+### Weak points after round 2
+- Window spill on the lawns is faint (dark grass albedo 0.05; window 14 cd): visible on the hedges more than the grass.
+- Walls beyond 60 m get the map only at their foot (no window-to-facade light far away); cars and trees beyond 60 m get
+  no static light at all (they are small there).
+- Far headlights light only the ground (map), not other cars / walls; their specular glint on a wet road is only
+  for the 12 real ones.
+- The map is baked in the main thread (79 ms) and covers one rectangle: the city needs it per tile in the worker.
+- Glare cards are round blobs (no streaks / star); the shop rooms are generic (one layout, random goods colours).
+- Flicker is up a little (car / tram edges in view, 54-81 ppm).
+- Port incident: my first "before" server took port 8830, which another worktree's server (the Police Lab) was
+  already using (Windows let both bind); I stopped mine within a minute and moved to 8869. If the Police Lab served odd
+  files at about that time, that was me.
+
+# ROUND 1 (2026-11-11)
+
 ## What is in the lab
 
 A test street of the Uccle kind (`viewer/nightLights/nightStreet.js`, all procedural): 2 x ~60 row houses (brick per
@@ -82,7 +170,7 @@ Cost by kind (toggle A/B, `?traffic=26&pools=heads:16,rear:12`): headlights (16)
 ~0.15 over its empty-list cost. Full BRDF vs diffuse-only for ALL lights: 0.13 ms (the loop, not the BRDF, is the cost).
 Tile 16 / 64 px and 16 slices: no gain over 32 px / 24.
 
-**Target "<= 1.0 ms with ~150 lights": NOT met.** ~1.0-1.6 ms for ~120 lights; ~2 ms at ~145. What would close it (in
+**Round 1: target "<= 1.0 ms with ~150 lights" not met (round 2 meets it, see the top).** ~1.0-1.6 ms for ~120 lights; ~2 ms at ~145. What would close it (in
 order): (1) a ground light map: the road / sidewalk (most of the pixels) sums the pool lights' DIFFUSE light from a
 small camera-centred world-space texture rendered each frame (a 256^2 pass), and only non-ground surfaces + the wet
 specular loop over the clusters; (2) far light LOD: beyond ~60 m headlights and lamps become pool sprites / decals on the

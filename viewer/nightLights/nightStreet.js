@@ -75,7 +75,11 @@ const shopRoom = Fn(([U, sz, n, seed, light]) => {
   const onSide = step(tx, min(ty, D)), onH = step(ty, min(tx, D));
   const ceil = onH.mul(step(0, dy)), flo = onH.mul(float(1).sub(step(0, dy)));
   const back = float(1).sub(max(onSide, onH));
-  const fw = fwidth(px).add(fwidth(py)).add(0.003);
+  // pixel footprint: on the glass (continuous, unlike px / py across the room's wall seams), grown with the depth
+  // behind it; fine detail fades to its mean before it gets sub-pixel (the flicker test caught the goods sparkling)
+  const fwG = fwidth(U.x).add(fwidth(U.y)).add(0.0005);
+  const fw = fwG.mul(float(1).add(depth.mul(0.6)));
+  const detail = float(1).sub(smoothstep(0.03, 0.09, fw));
   // along the walls: shelves of goods (back wall: x, side walls: depth)
   const along = select(back.greaterThan(0.5), px, depth.mul(1.4));
   const shelfY = py.div(0.5);
@@ -92,9 +96,10 @@ const shopRoom = Fn(([U, sz, n, seed, light]) => {
   // the counter: a plane 1.3 m in, 0.9 m high, over the left two thirds
   const cx = U.x.add(dx.mul(1.3)), cy = U.y.add(dy.mul(1.3));
   const counter = band(cy, -0.4, 0.75, fw).mul(band(cx, w.mul(0.08), w.mul(0.62), fw)).mul(step(1.3, depth));
-  const room = mix(stocked, vec3(0.32, 0.24, 0.17), counter.mul(0.9));
+  const mean = mix(mix(wall, vec3(0.55, 0.47, 0.4), float(0.45).mul(float(1).sub(onH))), floorCol.mul(0.8), flo);
+  const room = mix(mean, mix(stocked, vec3(0.32, 0.24, 0.17), counter.mul(0.9)), detail);
   // ceiling light panels
-  const panel = band(px, w.mul(0.2), w.mul(0.8), fw).mul(band(fract(depth.div(1.2)), 0.35, 0.65, fw.div(1.2))).mul(ceil);
+  const panel = band(px, w.mul(0.2), w.mul(0.8), fw).mul(band(fract(depth.div(1.2)), 0.35, 0.65, fw.div(1.2).add(0.05))).mul(ceil).mul(mix(float(0.3), float(1), detail));
   const shade = mix(float(0.55), float(1), smoothstep(0.0, 0.6, min(px, w.sub(px)))).mul(mix(float(1), float(0.7), depth.div(D)));
   return vec4(mix(room.mul(light).mul(shade), light.mul(3.0), panel), panel);
 });
