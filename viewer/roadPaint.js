@@ -222,14 +222,15 @@ export function concreteMaterial({ framed = false } = {}) {
     const isF = band(kind, 3), f = uv(), g = attribute("aUv2", "vec2"), wB = attribute("aFrameW", "float");
     // kerb frame (station, distance) near the kerb; the polygon's own straight frame where the sidewalk is wide or the
     // kerb bends tightly (aFrameW 1): two patterns cross-faded over the vertices, no hard seam (viewer/surfaces.js)
+    // round 4 (cost): the surfaces pick ONE frame per triangle (aFrameW 0 or 1, viewer/surfaces.js round 3), so the
+    // two tile patterns are not both evaluated and cross-faded: one courses() with the chosen coordinates
     blend = wB.mul(isF);
-    ta = mix(x, f.x, isF); tb = mix(z, f.y, isF);
+    const kx = mix(x, f.x, isF), kz = mix(z, f.y, isF);
+    ta = mix(kx, g.x, blend); tb = mix(kz, g.y, blend);
     const band15 = float(1).sub(smoothstep(float(0.15).sub(fw), float(0.15).add(fw), f.y));   // kerb band, AA edge
     kind = mix(kind, band15, isF);                            // framed: kerb band (1) within 15 cm of the kerb, else slab (0)
-    var tilesB = courses(g.x, g.y, 0.3, 0.3, float(0.006), float(2.0), fw);
   }
-  const tilesA = courses(ta, tb, 0.3, 0.3, float(0.006), float(2.0), fw);
-  const tiles = framed ? { joint: mix(tilesA.joint, tilesB.joint, blend), tone: mix(tilesA.tone, tilesB.tone, blend) } : tilesA;
+  const tiles = courses(ta, tb, 0.3, 0.3, float(0.006), float(2.0), fw);
   // framed slabs a touch darker and greyer (they read washed out in a low sun next to the asphalt and the houses)
   const sA = framed ? vec3(0.175, 0.172, 0.165) : vec3(0.24, 0.235, 0.225), sB = framed ? vec3(0.235, 0.228, 0.215) : vec3(0.32, 0.31, 0.295);
   const blot = n3(x.mul(0.6), z.mul(0.6), 8.0);               // low-frequency wear: keeps far sidewalks from going flat
@@ -237,21 +238,25 @@ export function concreteMaterial({ framed = false } = {}) {
   // kerbs: Belgian blue stone (petit granit), dark blue-grey with fossil speckle
   const kerb = vec3(0.075, 0.082, 0.095).add(grain.mul(0.012)).add(n3(x.mul(37.0), P.y.mul(37.0), z.mul(37.0)).mul(0.01));
   // roundabout apron: red-brown setts
-  const ap = courses(x, z, 0.12, 0.12, float(0.012), float(4.0), fw);
-  const apron = mix(mix(vec3(0.16, 0.07, 0.045), vec3(0.24, 0.11, 0.07), ap.tone), vec3(0.05, 0.03, 0.02), ap.joint);
+  // (round 4, cost: the measured surfaces have no apron; the engine's roundabout aprons outside UrbIS keep their setts
+  // only with the unframed material)
+  let apron = vec3(0.2, 0.09, 0.058);
+  if (!framed) { const ap = courses(x, z, 0.12, 0.12, float(0.012), float(4.0), fw); apron = mix(mix(vec3(0.16, 0.07, 0.045), vec3(0.24, 0.11, 0.07), ap.tone), vec3(0.05, 0.03, 0.02), ap.joint); }
   const isKerb = band(kind, 1), isApron = band(kind, 2);
   // round 2: Belgian blue-stone kerbstones ~1 m long, butt joints (uv.x = the station along the kerb on the face and on
   // the sidewalk's painted 15 cm band, viewer/surfaces.js), AA'd with the world footprint, faded far away; each stone a
   // touch different
-  const ks = uv().x, kd = abs(fract(ks.div(KERB_STONE).add(0.5)).sub(0.5)).mul(KERB_STONE);
-  // (round 3: joints and arris fade out while still several pixels wide: a 3 mm line under a 5 mm footprint blinked at
-  // the kerb in the flicker test)
-  const kJoint = float(1).sub(smoothstep(float(0.003), float(0.003).add(fw), kd)).mul(float(1).sub(smoothstep(float(0.002), float(0.008), fw)));
-  const stoneTone = hash(floor(ks.div(KERB_STONE)).add(17.0)).sub(0.5).mul(0.012);
-  // the top arris: a 12 mm worn, lighter band on the kerb FACE (uv.y = metres down from the top there; on the band
-  // painted on the sidewalk uv.y is the distance from the kerb, so the first 12 mm of the band light up the same way)
-  const arris = float(1).sub(smoothstep(float(0.008), float(0.016), uv().y)).mul(float(1).sub(smoothstep(float(0.0015), float(0.005), fw)));
-  const kerbStone = mix(mix(kerb.add(stoneTone), kerb.mul(1.9), arris.mul(0.6)), vec3(0.03, 0.032, 0.036), kJoint);
+  // round 4 (kerb shimmer): joints and arris are BOX-FILTERED over their own uv footprint (tslkit filteredPulse /
+  // boxCoverage, Mr.doob's slop-newyork): at any distance they cover exactly their area share (a 6 mm joint per 1 m
+  // stone = 0.6 %), so nothing blinks; no hand-tuned fade. Far away, where the whole 13 cm face is a pixel or two, the
+  // face's colour goes to the mean of the asphalt and paving round it, so its sub-pixel edges carry little contrast
+  const ks = uv().x, fwU = fwidth(ks).add(0.0005), fwV = fwidth(uv().y).add(0.0005);
+  const kJoint = filteredPulse(ks.div(KERB_STONE).add(0.003 / KERB_STONE), float(0), float(0.006 / KERB_STONE), fwU.div(KERB_STONE));
+  const stoneTone = hash(floor(ks.div(KERB_STONE)).add(17.0)).sub(0.5).mul(0.012).mul(float(1).sub(smoothstep(float(0.05), float(0.3), fwU)));
+  const arris = boxCoverage(uv().y, float(0), float(0.012), fwV.mul(0.5));
+  const fwFace = fwidth(P.y).add(fw);
+  const kerbFar = smoothstep(float(0.02), float(0.08), fwFace);
+  const kerbStone = mix(mix(mix(kerb.add(stoneTone), kerb.mul(1.9), arris.mul(0.6)), vec3(0.03, 0.032, 0.036), kJoint), vec3(0.11, 0.11, 0.108), kerbFar.mul(0.7));
   m.colorNode = mix(mix(slab, framed ? kerbStone : kerb, isKerb), apron, isApron);
   // framed (?roads=surface): honed blue stone, rougher, so a kerb face toward a low sun does not flare white
   m.roughnessNode = mix(mix(mix(float(framed ? 0.92 : 0.88), float(0.95), tiles.joint), float(framed ? 0.82 : 0.6), isKerb), float(0.8), isApron);

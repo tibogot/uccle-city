@@ -5886,6 +5886,7 @@ var RAMP_EDGE = 0.5;
 var PAVE_EDGE = 2.5;
 var SKIP_HIDDEN_BASE = false;
 var SPLIT_BENDS = false;
+var RAMP_LINE_CUTS = false;
 var PART = ["asphalt", "asphalt", "asphalt", "asphalt", "square", "concrete", "grass", "concrete", "concrete", "pits"];
 var OVERLAY = [1, 1, 0, 1, 0, 0, 0, 0, 0, 0];
 var COVER = OVERLAY.map((o, c) => o || RAISE[c] > 0 ? 1 : 0);
@@ -6191,6 +6192,7 @@ function taperSteps(surf) {
   surf._tapered = { steps: move.size };
   return surf._tapered;
 }
+var CURVE_ERR_EDGE = 0.03;
 var CURVE_ERR = 0.015;
 function smoothCurves(surf) {
   if (surf._curved) return surf._curved;
@@ -6210,8 +6212,10 @@ function smoothCurves(surf) {
     const B1 = L2(A1, A2, t0, t2), B2 = L2(A2, A3, t1, t3);
     return L2(B1, B2, t1, t2);
   };
+  const nK = (surf.kerbs || []).length;
   const lines = [...surf.kerbs || [], ...(surf.edges || []).map((e) => e.line)];
-  for (const l of lines) {
+  for (let li = 0; li < lines.length; li++) {
+    const l = lines[li], ERR = li < nK ? CURVE_ERR : CURVE_ERR_EDGE;
     const n = l.length;
     if (n < 3) continue;
     const curve = l.map((p, k) => {
@@ -6225,7 +6229,7 @@ function smoothCurves(surf) {
       maxTurnBefore = Math.max(maxTurnBefore, tb);
       const a = l[k], b = l[k + 1], p0 = curve[k] && k > 0 ? l[k - 1] : [2 * a[0] - b[0], 2 * a[1] - b[1]], p3 = curve[k + 1] && k + 2 < n ? l[k + 2] : [2 * b[0] - a[0], 2 * b[1] - a[1]];
       const radius = (k2) => curve[k2] ? Math.min(D(l[Math.max(0, k2 - 1)], l[k2]), D(l[k2], l[Math.min(n - 1, k2 + 1)])) / (curve[k2] * Math.PI / 180) : Infinity;
-      const R = Math.min(radius(k), radius(k + 1)), piece = Math.max(0.25, Math.sqrt(8 * R * CURVE_ERR));
+      const R = Math.min(radius(k), radius(k + 1)), piece = Math.max(0.25, Math.sqrt(8 * R * ERR));
       const m = Math.min(40, Math.ceil(D(a, b) / piece));
       if (m < 2) continue;
       const pts = [];
@@ -6263,10 +6267,83 @@ function smoothCurves(surf) {
   surf._curved = { edges: ins.size, points: added, maxTurnBefore: Math.round(maxTurnBefore) };
   return surf._curved;
 }
+function rampKerbPoints(surf) {
+  if (surf._rampPts) return surf._rampPts;
+  const key = (p) => `${Math.round(p[0] * 100)},${Math.round(p[1] * 100)}`;
+  const D = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const segD2 = (p, a, b) => {
+    const dx = b[0] - a[0], dz = b[1] - a[1], l2 = dx * dx + dz * dz || 1e-12, t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / l2));
+    return Math.hypot(p[0] - a[0] - dx * t, p[1] - a[1] - dz * t);
+  };
+  const onKerb = (p) => (surf.kerbs || []).some((l) => {
+    for (let k = 1; k < l.length; k++) if (segD2(p, l[k - 1], l[k]) < 0.05) return true;
+    return false;
+  });
+  const ins = /* @__PURE__ */ new Map();
+  let n = 0;
+  for (const q of surf.surfaces) {
+    if (q.c !== 8) continue;
+    const r = q.rings[0];
+    const kerbEdge = [];
+    for (let k = 0; k < r.length; k++) {
+      const a = r[k], b = r[(k + 1) % r.length];
+      if (onKerb([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2])) kerbEdge.push([a, b]);
+    }
+    if (!kerbEdge.length) continue;
+    const L2 = kerbEdge.reduce((t, [a, b]) => t + D(a, b), 0);
+    if (L2 < 0.9) continue;
+    const W = Math.min(RAMP_WING, L2 / 3);
+    for (const target of [W, L2 - W]) {
+      let acc = 0;
+      for (const [a, b] of kerbEdge) {
+        const l = D(a, b);
+        if (target > acc + 0.05 && target < acc + l - 0.05) {
+          const t = (target - acc) / l, p = [Math.round((a[0] + (b[0] - a[0]) * t) * 100) / 100, Math.round((a[1] + (b[1] - a[1]) * t) * 100) / 100];
+          const k1 = `${key(a)}|${key(b)}`, k2 = `${key(b)}|${key(a)}`;
+          if (ins.has(k2)) {
+            ins.get(k2).push(p);
+            ins.get(k2).sort((u, v) => D(b, u) - D(b, v));
+          } else {
+            const lst = ins.get(k1) || [];
+            lst.push(p);
+            lst.sort((u, v) => D(a, u) - D(a, v));
+            ins.set(k1, lst);
+          }
+          n++;
+          break;
+        }
+        acc += l;
+      }
+    }
+  }
+  const refine = (r, closed) => {
+    const out = [];
+    for (let i = 0; i < r.length; i++) {
+      out.push(r[i]);
+      if (!closed && i === r.length - 1) break;
+      const a = r[i], b = r[(i + 1) % r.length];
+      const f = ins.get(`${key(a)}|${key(b)}`);
+      if (f) {
+        for (const p of f) out.push([p[0], p[1]]);
+        continue;
+      }
+      const g = ins.get(`${key(b)}|${key(a)}`);
+      if (g) for (let j = g.length - 1; j >= 0; j--) out.push([g[j][0], g[j][1]]);
+    }
+    return out;
+  };
+  if (ins.size) {
+    for (const q of surf.surfaces) q.rings = q.rings.map((r) => refine(r, true));
+    if (surf.kerbs) surf.kerbs = surf.kerbs.map((l) => refine(l, false));
+  }
+  surf._rampPts = { points: n };
+  return surf._rampPts;
+}
 function prepareSurfaces(surf, ground, bounds, trees = null) {
   const t0 = (globalThis.performance ?? Date).now();
   const tapered = taperSteps(surf);
   const curved = smoothCurves(surf);
+  const rampPts = rampKerbPoints(surf);
   const G2 = ground;
   const base = [];
   const halves = /* @__PURE__ */ new Map();
@@ -6625,7 +6702,10 @@ function prepareSurfaces(surf, ground, bounds, trees = null) {
     base.length = 0;
     for (const b of keep) base.push(b);
     halves.clear();
-    base.forEach((b, i) => push(halves, b.hk, i));
+    base.forEach((b, i) => {
+      push(halves, b.hk, i);
+      if (b.hk2 !== void 0) push(halves, b.hk2, i);
+    });
     for (const P of pits) {
       const ins = P.o - P.w, R2 = Math.ceil(P.o / GRID) + 1, ci = Math.floor((P.x - bounds.x0) / GRID), cj = Math.floor((P.z - bounds.z0) / GRID);
       for (let j = cj - R2; j <= cj + R2; j++) for (let i = ci - R2; i <= ci + R2; i++) {
@@ -6685,7 +6765,7 @@ function prepareSurfaces(surf, ground, bounds, trees = null) {
       for (const q of pieces) for (let k = 1; k + 1 < q.length; k++) if (Math.abs(area2(q[0], q[k], q[k + 1])) > 1e-7) out.push({ ...b, a: q[0], b: q[k], c: q[k + 1] });
     };
     for (const b of base) {
-      if (b.cls === SURF_CLASS.ramp) {
+      if (b.cls === SURF_CLASS.ramp && RAMP_LINE_CUTS) {
         any = true;
         lineCut(b);
       } else if (SPLIT_BENDS && b.cls === SURF_CLASS.sidewalk && bends(b)) {
@@ -6697,7 +6777,10 @@ function prepareSurfaces(surf, ground, bounds, trees = null) {
       base.length = 0;
       for (const b of out) base.push(b);
       halves.clear();
-      base.forEach((b, i) => push(halves, b.hk, i));
+      base.forEach((b, i) => {
+        push(halves, b.hk, i);
+        if (b.hk2 !== void 0) push(halves, b.hk2, i);
+      });
     }
   }
   const host = /* @__PURE__ */ new Map();
@@ -7351,6 +7434,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     return pts;
   };
   let kerbLen = 0;
+  const triAtKerbs = C.idx.length;
   for (let li = 0; li < surf.kerbs.length; li++) {
     const line = surf.kerbs[li];
     const pts = [];
@@ -7359,7 +7443,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       if (q) {
         const L2 = Math.hypot(p[0] - q[0], p[1] - q[1]), mx = (p[0] + q[0]) / 2, mz = (p[1] + q[1]) / 2, nx = -(p[1] - q[1]) / (L2 || 1), nz = (p[0] - q[0]) / (L2 || 1);
         const ramp = [1, -1].some((sg) => prep.classAt(mx + nx * 0.3 * sg, mz + nz * 0.3 * sg) === SURF_CLASS.ramp);
-        if (ramp && L2 > 0.6) {
+        if (RAMP_LINE_CUTS && ramp && L2 > 0.6) {
           const n = Math.ceil(L2 / 0.5);
           for (let k = 1; k < n; k++) pts.push([q[0] + (p[0] - q[0]) * k / n, q[1] + (p[1] - q[1]) * k / n]);
         }
@@ -7407,6 +7491,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       prev = cur;
     }
   }
+  const kerbTris = (C.idx.length - triAtKerbs) / 3;
   const T2 = out.pits;
   for (const P of prep.pits || []) {
     const { o, w } = P, iw = o - w;
@@ -7476,8 +7561,9 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     }
   }
   let skirtsInWalls = 0;
+  const triAtSkirts = C.idx.length;
   for (const e of surf.edges) {
-    const pts = densify(e.line);
+    const pts = e.line;
     let pb = null, pt = null;
     for (let k = 0; k < pts.length; k++) {
       const [x, z] = pts[k];
@@ -7490,7 +7576,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
         r = q ? riseAt(q.cls, x, z) : KERB;
       }
       const y = H(x, z);
-      const bot = C.vert(x, y - SKIRT_DOWN, z, right, x, z, { aKind: KIND3.slab }), top = C.vert(x, y + r, z, right, x, z, { aKind: KIND3.slab });
+      const bot = C.vert(x, y - SKIRT_DOWN, z, right, x, z, { aKind: KIND3.slab }), top = C.vert(x, y + r - 6e-3, z, right, x, z, { aKind: KIND3.slab });
       if (pb !== null) {
         const mx = (x + pts[k - 1][0]) / 2, mz = (z + pts[k - 1][1]) / 2;
         if (!onBuilding(mx + right[0] * 0.4, mz + right[2] * 0.4)) {
@@ -7502,6 +7588,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       pt = top;
     }
   }
+  const skirtTris = (C.idx.length - triAtSkirts) / 3;
   const parts = {};
   for (const [name, p] of Object.entries(out)) if (p.count) parts[name] = p.finish(name === "asphalt" ? "aSurf" : null);
   const seq = (n) => Uint32Array.from({ length: n }, (_, i) => i);
@@ -7520,6 +7607,8 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     overlayCutAtStreetEdge: cutAtEdge,
     keptEngineTris: keptTris,
     droppedEngineTris: droppedTris,
+    kerbTris,
+    skirtTris,
     foldDropped,
     linesCutAtCrossings: linesCut,
     baseHiddenUnderLayer: baseHidden,
@@ -8087,7 +8176,7 @@ function sharrow(x, z, dir, chevrons = true) {
   };
   const out = [];
   const ring2 = (cu, cv, r, w) => {
-    const K = 14;
+    const K = 10;
     for (let k = 0; k < K; k++) {
       const a0 = k / K * Math.PI * 2, a1 = (k + 1) / K * Math.PI * 2;
       out.push(bar(cu + Math.cos(a0) * r, cv + Math.sin(a0) * r, cu + Math.cos(a1) * r, cv + Math.sin(a1) * r, w));
