@@ -36,6 +36,7 @@ import { Driver, tileDrive } from "./drive/driveMode.js";
 import { addLamps } from "./lampLight.js";
 import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, dropFadeVariant } from "./lodFade.js";
 import { buildFarTreeField } from "./treesStylized.js";
+import { cityKit } from "./facadeKit/cityKit.js";
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -332,7 +333,8 @@ const HIDE_BU_IDS = params.get("stjob") !== "0" ? [STJOB_BU_ID] : [];
 const ROAD_SURFACES = params.get("roads") !== "engine";
 /** CPU data for a tile: from the worker, or on the main thread (?worker=0, or if the worker fails). */
 function tileData(entry, lite = false) {
-  entry = { ...entry, hide: HIDE_BU_IDS, surface: ROAD_SURFACES, pits: params.get("pits") !== "0" };   // ?pits=0: no tree pits (A/B)
+  entry = { ...entry, hide: HIDE_BU_IDS, surface: ROAD_SURFACES, pits: params.get("pits") !== "0",   // ?pits=0: no tree pits (A/B)
+    kit: cityKit.on && !lite, kitExclude: cityKit.exclude };                                         // ?kit=1: the façade kit (viewer/facadeKit/)
   const local = () => import("./tileData.js").then((m) => (lite ? m.buildLiteData : m.buildTileData)(entry, DATA.href));
   if (!tileWorker) return local();
   return new Promise((resolve, reject) => {
@@ -476,7 +478,9 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   if (fadeIn) { const tc = performance.now(); await preCompile(Object.values(own), true); mark += performance.now() - tc; }   // shaders + fading copies built before it shows (not counted as a slice)
   for (const u of ups) updaters.push(u);
   for (const g of Object.values(own)) if (fadeIn) { g.visible = true; fader.fade(g, +1); }
+  cityKit.addTile(entry.name, B.kit, B.kitWalls, !fadeIn);       // ?kit=1: its kit fades in with it
   const dispose = () => {
+    cityKit.removeTile(entry.name);
     for (const u of ups) { const i = updaters.indexOf(u); if (i >= 0) updaters.splice(i, 1); }
     for (const g of Object.values(own)) {
       g.traverse((o) => { if (!o.geometry?.userData?.shared) o.geometry?.dispose(); for (const m of [].concat(o.material || [])) dropMat(m); o.dispose?.(); });
@@ -605,6 +609,7 @@ async function main() {
       }
     }).catch((e) => log(`Saint-Job model failed (${e.message}): the UrbIS solid is hidden, reload with ?stjob=0`));
   }
+  await cityKit.start({ scene, updaters, log });                   // ?kit=1: the façade kit (before the first tile and the warm-up)
   // The Uccle town hall (tools/blender/townhall.py, viewer/townhallCity.js) in place of its UrbIS solid, behind
   // ?townhall=1 for now (its BU_ID joins HIDE_BU_IDS before the first tile is built)
   if (params.get("townhall") === "1") await addTownHall({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });

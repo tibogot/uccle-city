@@ -483,14 +483,14 @@ function sampleAlignment(al, s0, s1, o = {}) {
     for (const b of o.breaks) if (b > s0 && b < s1) stations.push(b);
   }
   stations.sort((p, q) => p - q);
-  const S = [];
-  for (const v of stations) if (!S.length || v - S[S.length - 1] > 1e-4) S.push(v);
-  if (S.length === 1) S.push(Math.min(al.length, s0 + 1e-3));
-  const N = S.length;
+  const S2 = [];
+  for (const v of stations) if (!S2.length || v - S2[S2.length - 1] > 1e-4) S2.push(v);
+  if (S2.length === 1) S2.push(Math.min(al.length, s0 + 1e-3));
+  const N = S2.length;
   const out = { s: new Float64Array(N), x: new Float64Array(N), z: new Float64Array(N), th: new Float64Array(N), k: new Float64Array(N) };
   for (let i = 0; i < N; i++) {
-    const e = evalAlignment(al, S[i]);
-    out.s[i] = S[i];
+    const e = evalAlignment(al, S2[i]);
+    out.s[i] = S2[i];
     out.x[i] = e.x;
     out.z[i] = e.z;
     out.th[i] = e.th;
@@ -1763,9 +1763,9 @@ function buildBlocks(nodes, roads, opts = {}) {
     const own = new Set(b.roads);
     for (const rr of roads) {
       if (own.has(rr.id) || !rr.smp) continue;
-      const S = rr.smp;
-      for (let i = 0; i < S.s.length; i++) {
-        const x = S.x[i], z = S.z[i];
+      const S2 = rr.smp;
+      for (let i = 0; i < S2.s.length; i++) {
+        const x = S2.x[i], z = S2.z[i];
         if (x < x0 || x > x1 || z < z0 || z > z1) continue;
         if (pointInPolygon(x, z, b.poly)) return false;
       }
@@ -2460,9 +2460,9 @@ function buildRoadNetwork(data, opts = {}) {
   const grid = new SegmentGrid(32);
   const foot = new SegmentGrid(32);
   for (const rr of roads) {
-    const S = rr.smp, F = rr.footMid;
-    for (let i = 1; i < S.s.length; i++) {
-      grid.add(S.x[i - 1], S.z[i - 1], S.x[i], S.z[i], { rr, i });
+    const S2 = rr.smp, F = rr.footMid;
+    for (let i = 1; i < S2.s.length; i++) {
+      grid.add(S2.x[i - 1], S2.z[i - 1], S2.x[i], S2.z[i], { rr, i });
       foot.add(F[i - 1][0], F[i - 1][1], F[i][0], F[i][1], { rr, i });
     }
   }
@@ -2478,18 +2478,18 @@ function buildRoadNetwork(data, opts = {}) {
   };
   const crossings = [];
   for (const rr of roads) {
-    const S = rr.smp;
-    for (let i = 1; i < S.s.length; i++) {
-      const mx = (S.x[i - 1] + S.x[i]) / 2, mz = (S.z[i - 1] + S.z[i]) / 2;
-      const hl = Math.hypot(S.x[i] - S.x[i - 1], S.z[i] - S.z[i - 1]) / 2;
+    const S2 = rr.smp;
+    for (let i = 1; i < S2.s.length; i++) {
+      const mx = (S2.x[i - 1] + S2.x[i]) / 2, mz = (S2.z[i - 1] + S2.z[i]) / 2;
+      const hl = Math.hypot(S2.x[i] - S2.x[i - 1], S2.z[i] - S2.z[i - 1]) / 2;
       for (const it of grid.query(mx, mz, hl + 1)) {
         const other = it.data.rr;
         if (other.id <= rr.id) continue;
-        const hit = segIntersect(S.x[i - 1], S.z[i - 1], S.x[i], S.z[i], it.ax, it.az, it.bx, it.bz);
+        const hit = segIntersect(S2.x[i - 1], S2.z[i - 1], S2.x[i], S2.z[i], it.ax, it.az, it.bx, it.bz);
         if (!hit) continue;
         if (sharedNear(rr, other, hit.x, hit.z, 4)) continue;
         if (crossings.some((c) => c.a === rr && c.b === other && Math.hypot(c.x - hit.x, c.z - hit.z) < 3)) continue;
-        const sA = S.s[i - 1] + (S.s[i] - S.s[i - 1]) * hit.t;
+        const sA = S2.s[i - 1] + (S2.s[i] - S2.s[i - 1]) * hit.t;
         const OS = other.smp, j = it.data.i;
         const sB = OS.s[j - 1] + (OS.s[j] - OS.s[j - 1]) * hit.u;
         const yA = profileAt(rr.prof, sA).y, yB = profileAt(other.prof, sB).y;
@@ -2526,8 +2526,8 @@ function buildRoadNetwork(data, opts = {}) {
   if (!opts.fast) {
     const reported = /* @__PURE__ */ new Set();
     for (const rr of roads) {
-      const S = rr.smp, F = rr.footMid;
-      for (let i = 0; i < S.s.length; i += 2) {
+      const S2 = rr.smp, F = rr.footMid;
+      for (let i = 0; i < S2.s.length; i += 2) {
         const hwA = rr.halfW[i];
         let worst = null;
         for (const it of foot.query(F[i][0], F[i][1], hwA + 30)) {
@@ -2540,13 +2540,13 @@ function buildRoadNetwork(data, opts = {}) {
           const hwB = other.halfW[j - 1] + (other.halfW[j] - other.halfW[j - 1]) * t;
           const need = hwA + hwB - 0.6;
           if (d2 >= need * need) continue;
-          if (sharedNear(rr, other, S.x[i], S.z[i], hwA + hwB + 6)) continue;
-          if (crossings.some((c) => (c.a === rr || c.b === rr) && (c.a === other || c.b === other) && Math.hypot(c.x - S.x[i], c.z - S.z[i]) < need * 2.2 + 6)) continue;
+          if (sharedNear(rr, other, S2.x[i], S2.z[i], hwA + hwB + 6)) continue;
+          if (crossings.some((c) => (c.a === rr || c.b === rr) && (c.a === other || c.b === other) && Math.hypot(c.x - S2.x[i], c.z - S2.z[i]) < need * 2.2 + 6)) continue;
           const OS = other.smp;
           const sB = OS.s[j - 1] + (OS.s[j] - OS.s[j - 1]) * t;
-          const dy = Math.abs(profileAt(rr.prof, S.s[i]).y - profileAt(other.prof, sB).y);
+          const dy = Math.abs(profileAt(rr.prof, S2.s[i]).y - profileAt(other.prof, sB).y);
           if (dy >= CLEARANCE + DECK) continue;
-          worst = { key, x: S.x[i], z: S.z[i], other };
+          worst = { key, x: S2.x[i], z: S2.z[i], other };
           break;
         }
         if (worst) {
@@ -2861,8 +2861,8 @@ function locate(result, grid, x, z) {
   }
   if (!best) return null;
   const rr = best.it.data.rr, i = best.it.data.i;
-  const S = rr.smp;
-  const s = S.s[i - 1] + (S.s[i] - S.s[i - 1]) * best.t;
+  const S2 = rr.smp;
+  const s = S2.s[i - 1] + (S2.s[i] - S2.s[i - 1]) * best.t;
   const e = evalAlignment(rr.al, s);
   const lat = (x - e.x) * Math.sin(e.th) - (z - e.z) * Math.cos(e.th);
   const lay = layoutAt(rr.stack, s, rr.L);
@@ -3922,33 +3922,33 @@ function sameSense(a, b) {
   return A * B > 0 && Math.abs(B) < Math.abs(A);
 }
 function asphaltRows(rr, extra) {
-  const S = rr.smp, N = S.s.length;
+  const S2 = rr.smp, N = S2.s.length;
   const rows = [];
-  const fromSample = (i) => ({ s: S.s[i], x: S.x[i], z: S.z[i], th: S.th[i], k: S.k[i], lay: rr.lays[i] });
-  const stations = [...new Set(extra.filter((s) => s > S.s[0] + 0.05 && s < S.s[N - 1] - 0.05))].sort((a, b) => a - b);
+  const fromSample = (i) => ({ s: S2.s[i], x: S2.x[i], z: S2.z[i], th: S2.th[i], k: S2.k[i], lay: rr.lays[i] });
+  const stations = [...new Set(extra.filter((s) => s > S2.s[0] + 0.05 && s < S2.s[N - 1] - 0.05))].sort((a, b) => a - b);
   let e = 0;
   for (let i = 0; i < N; i++) {
-    while (e < stations.length && stations[e] < S.s[i] - 0.05) {
+    while (e < stations.length && stations[e] < S2.s[i] - 0.05) {
       const st = stations[e++];
       if (i === 0) continue;
-      const f = (st - S.s[i - 1]) / (S.s[i] - S.s[i - 1]);
+      const f = (st - S2.s[i - 1]) / (S2.s[i] - S2.s[i - 1]);
       const a = rr.lays[i - 1], b = rr.lays[i];
       const lerpSide = (side) => a[side].map((la, k) => {
         const lb = b[side][k];
         const w = la.w + (lb.w - la.w) * f;
         return { ...la, w, tIn: la.tIn + (lb.tIn - la.tIn) * f, tOut: la.tOut + (lb.tOut - la.tOut) * f, present: w > 0.05 };
       });
-      const dth = Math.atan2(Math.sin(S.th[i] - S.th[i - 1]), Math.cos(S.th[i] - S.th[i - 1]));
+      const dth = Math.atan2(Math.sin(S2.th[i] - S2.th[i - 1]), Math.cos(S2.th[i] - S2.th[i - 1]));
       rows.push({
         s: st,
-        x: S.x[i - 1] + (S.x[i] - S.x[i - 1]) * f,
-        z: S.z[i - 1] + (S.z[i] - S.z[i - 1]) * f,
-        th: S.th[i - 1] + dth * f,
-        k: S.k[i - 1] + (S.k[i] - S.k[i - 1]) * f,
+        x: S2.x[i - 1] + (S2.x[i] - S2.x[i - 1]) * f,
+        z: S2.z[i - 1] + (S2.z[i] - S2.z[i - 1]) * f,
+        th: S2.th[i - 1] + dth * f,
+        k: S2.k[i - 1] + (S2.k[i] - S2.k[i - 1]) * f,
         lay: { cw: a.cw + (b.cw - a.cw) * f, left: lerpSide("left"), right: lerpSide("right") }
       });
     }
-    while (e < stations.length && Math.abs(stations[e] - S.s[i]) <= 0.05) e++;
+    while (e < stations.length && Math.abs(stations[e] - S2.s[i]) <= 0.05) e++;
     rows.push(fromSample(i));
   }
   for (const r of rows) {
@@ -3963,27 +3963,27 @@ function asphaltRows(rr, extra) {
 }
 var rowY = (r, t) => r.y + surfaceOffset(r.f, t);
 function buildRoad(rr, parts, o, ctx) {
-  const S = rr.smp;
-  if (!S || S.s.length < 2) return;
-  const N = S.s.length;
+  const S2 = rr.smp;
+  if (!S2 || S2.s.length < 2) return;
+  const N = S2.s.length;
   const lays = rr.lays;
   const y = new Float64Array(N), g = new Float64Array(N);
   const lx = new Float64Array(N), lz = new Float64Array(N);
   const frames = new Array(N);
   for (let i = 0; i < N; i++) {
-    const p = profileAt(rr.prof, S.s[i]);
+    const p = profileAt(rr.prof, S2.s[i]);
     y[i] = p.y;
     g[i] = p.g;
-    lx[i] = Math.sin(S.th[i]);
-    lz[i] = -Math.cos(S.th[i]);
-    frames[i] = surfaceFrame(rr, S.s[i], S.th[i], S.k[i], lays[i]);
+    lx[i] = Math.sin(S2.th[i]);
+    lz[i] = -Math.cos(S2.th[i]);
+    frames[i] = surfaceFrame(rr, S2.s[i], S2.th[i], S2.k[i], lays[i]);
   }
   const Y = (i, t) => y[i] + surfaceOffset(frames[i], t);
   const upAcross = (i, ta, tb) => {
     const w = tb - ta;
-    return slopeNormal(g[i], S.th[i], Math.abs(w) > 0.01 ? (Y(i, tb) - Y(i, ta)) / w : 0);
+    return slopeNormal(g[i], S2.th[i], Math.abs(w) > 0.01 ? (Y(i, tb) - Y(i, ta)) / w : 0);
   };
-  const at = (i, t) => [S.x[i] + lx[i] * t, S.z[i] + lz[i] * t];
+  const at = (i, t) => [S2.x[i] + lx[i] * t, S2.z[i] + lz[i] * t];
   const phase = hashPhase(rr.id);
   const deck = { aPiece: [phase, 0], aEdges: [0, 0, 0, 0], aMark: [0, 0, 0, 0] };
   const zone = ctx.atlas?.zones.get(rr.id) || {};
@@ -4078,8 +4078,8 @@ function buildRoad(rr, parts, o, ctx) {
     for (let i = 0; i < N; i++) {
       const n = ups[i] = upAcross(i, tA(i), tB(i));
       const a = at(i, tA(i)), b = at(i, tB(i));
-      ia[i] = part.vert(a[0], Y(i, tA(i)) + lift, a[1], n, S.s[i], tA(i), exA);
-      ib[i] = part.vert(b[0], Y(i, tB(i)) + lift, b[1], n, S.s[i], tB(i), exB);
+      ia[i] = part.vert(a[0], Y(i, tA(i)) + lift, a[1], n, S2.s[i], tA(i), exA);
+      ib[i] = part.vert(b[0], Y(i, tB(i)) + lift, b[1], n, S2.s[i], tB(i), exB);
     }
     for (let i = 0; i + 1 < N; i++) {
       if (Math.abs(tB(i) - tA(i)) < 0.01 && Math.abs(tB(i + 1) - tA(i + 1)) < 0.01) continue;
@@ -4091,7 +4091,7 @@ function buildRoad(rr, parts, o, ctx) {
     for (let i = 0; i < N; i++) {
       const p = at(i, t(i));
       const base = Y(i, t(i));
-      P.push({ x: p[0], z: p[1], yb: base + yb, yt: base + yt, u: S.s[i] });
+      P.push({ x: p[0], z: p[1], yb: base + yb, yt: base + yt, u: S2.s[i] });
     }
     wall(part, P, {
       out: (i) => [outwardSign * lx[i], outwardSign * lz[i]],
@@ -4191,13 +4191,13 @@ function buildRoad(rr, parts, o, ctx) {
     const yAt = (p) => {
       let best = 0, bd = Infinity;
       for (let i = 0; i < N; i++) {
-        const d = (S.x[i] - p[0]) ** 2 + (S.z[i] - p[1]) ** 2;
+        const d = (S2.x[i] - p[0]) ** 2 + (S2.z[i] - p[1]) ** 2;
         if (d < bd) {
           bd = d;
           best = i;
         }
       }
-      return Y(best, (p[0] - S.x[best]) * lx[best] + (p[1] - S.z[best]) * lz[best]);
+      return Y(best, (p[0] - S2.x[best]) * lx[best] + (p[1] - S2.z[best]) * lz[best]);
     };
     island(parts, rr.center.poly, o, { yAt, height: o.medianHeight, grass: ck === "raised", solid: true });
   }
@@ -4560,7 +4560,8 @@ function beam(D, P0, P1, w, h, col) {
   quad(at(P0, hw * 0.6, hi), at(P1, hw * 0.6, hi), at(P1, hw, lo), at(P0, hw, lo), n1);
   quad(at(P0, -hw, lo), at(P1, -hw, lo), at(P1, -hw * 0.6, hi), at(P0, -hw * 0.6, hi), n2);
 }
-function analyseBuildings(doc, buf, roads, feats) {
+function analyseBuildings(doc, buf, roads, feats, opts = {}) {
+  const kit = opts.kit || null;
   const dv = new DataView(buf);
   const V = dv.getUint32(0, true), T2 = dv.getUint32(4, true);
   const P = new Float32Array(buf, 8, V * 3);
@@ -4619,6 +4620,7 @@ function analyseBuildings(doc, buf, roads, feats) {
     return best < STREET_REACH;
   };
   const W = { position: [], normal: [], aWall: [], aBld: [], aFN: [] };
+  const WK = { position: [], normal: [], aWall: [], aBld: [], aFN: [], aKit: [] };
   const shops = new Grid(40);
   for (const p of feats?.points || []) if (p.kind === "shop") {
     p.used = false;
@@ -4693,7 +4695,8 @@ function analyseBuildings(doc, buf, roads, feats) {
       }
     }
     const ownRing = b.footprint[0];
-    for (const f of fl.filter((q) => !q.dead)) {
+    const live = fl.filter((q) => !q.dead);
+    for (const f of live) {
       {
         let mx = 0, mz = 0, k = 0;
         for (const { p } of f.tris) for (const q of p) {
@@ -4719,15 +4722,21 @@ function analyseBuildings(doc, buf, roads, feats) {
         n++;
         top = Math.max(top, q[1]);
       }
-      const faceEaves = landmark ? top - base : eaves;
       cx /= n;
       cz /= n;
       const width = u1 - u0;
       const ob = width > 0.3 ? otherAt(cx + f.nx * PARTY_PROBE, cz + f.nz * PARTY_PROBE, bi) : -1;
       const sameBld = ob >= 0 && b.attrs?.BU_ID && doc.buildings[ob].attrs?.BU_ID === b.attrs.BU_ID;
       const partyH = ob < 0 ? 0 : sameBld || landmark ? Math.max(0.01, roofAt(ob, cx + f.nx * PARTY_PROBE, cz + f.nz * PARTY_PROBE) - base) : 999;
-      const party = partyH > 0 ? 1 : 0;
       const street = partyH < 999 && facesStreet(cx, cz, f.nx, f.nz) ? 1 : 0;
+      f.pre = { tx, tz, u0, u1, cx, cz, top, width, partyH, street };
+    }
+    let doorFace = null;
+    for (const f of live) if (f.pre.street && f.pre.width >= 1.6 && (!doorFace || f.pre.width > doorFace.pre.width)) doorFace = f;
+    for (const f of live) {
+      const { tx, tz, u0, u1, cx, cz, top, width, partyH, street } = f.pre;
+      const faceEaves = landmark ? top - base : eaves;
+      const party = partyH > 0 ? 1 : 0;
       stats.faces++;
       stats.party += party;
       stats.street += street;
@@ -4780,8 +4789,8 @@ function analyseBuildings(doc, buf, roads, feats) {
         const nbL = Math.max(1, Math.floor(width / 3.6 + 0.5)), bwL = width / nbL;
         let q0 = f.tris[0].p[0];
         const uq = q0[0] * tx + q0[2] * tz - u0;
-        for (let k = 0; k <= nbL; k++) {
-          const uu = Math.min(width - 0.35, Math.max(0.35, k * bwL)) - uq;
+        for (let k2 = 0; k2 <= nbL; k2++) {
+          const uu = Math.min(width - 0.35, Math.max(0.35, k2 * bwL)) - uq;
           const cxk = q0[0] + tx * uu, czk = q0[2] + tz * uu;
           const hw = 0.4, A = [cxk - tx * hw, 0, czk - tz * hw], B = [cxk + tx * hw, 0, czk + tz * hw];
           const h1 = base + faceH * 0.55, h2 = base + faceH * 0.85;
@@ -4805,20 +4814,45 @@ function analyseBuildings(doc, buf, roads, feats) {
           const cA = [A2[0] - tx * 0.06 + f.nx * 0.06, 0, A2[2] - tz * 0.06 + f.nz * 0.06];
           const cB = [B2[0] + tx * 0.06 + f.nx * 0.06, 0, B2[2] + tz * 0.06 + f.nz * 0.06];
           box(D, cA, cB, top2 + 0.1, 0.14, 0.72, -f.nx, -f.nz, [0.42, 0.41, 0.39]);
-          for (const k of [-0.2, 0.2]) {
-            const px = cxq + tx * k - f.nx * 0, pz = czq + tz * k - f.nz * 0;
+          for (const k2 of [-0.2, 0.2]) {
+            const px = cxq + tx * k2 - f.nx * 0, pz = czq + tz * k2 - f.nz * 0;
             box(D, [px - tx * 0.09, 0, pz - tz * 0.09], [px + tx * 0.09, 0, pz + tz * 0.09], top2 + 0.42, 0.32, 0.18, f.nx, f.nz, [0.33, 0.13, 0.07]);
           }
           stats.chimneys++;
         }
       }
+      const k = kit ? kit.face({
+        key,
+        building: b,
+        doorFace: f === doorFace,
+        wallStyle: style,
+        landmark: !!landmark,
+        rnd,
+        width,
+        eaves: faceEaves,
+        partyH,
+        street,
+        roofAt: (x, z) => roofAt(bi, x, z),
+        shopU,
+        shopW,
+        base,
+        top,
+        nx: f.nx,
+        nz: f.nz,
+        tx,
+        tz,
+        u0,
+        tris: f.tris
+      }) : null;
+      const T3 = k?.on ? WK : W;
       for (const { p, n: nn, src } of f.tris) for (const q of p) {
-        W.position.push(q[0], q[1], q[2]);
+        T3.position.push(q[0], q[1], q[2]);
         const sn = src ? smooth(src, q) : nn;
-        W.normal.push(sn[0], sn[1], sn[2]);
-        W.aWall.push(q[0] * tx + q[2] * tz - u0, width, q[1] - base, faceEaves);
-        W.aBld.push(style, partyH, street, rnd);
-        W.aFN.push(f.nx, f.nz, shopU, shopW);
+        T3.normal.push(sn[0], sn[1], sn[2]);
+        T3.aWall.push(q[0] * tx + q[2] * tz - u0, width, q[1] - base, faceEaves);
+        T3.aBld.push(style, partyH, street, rnd);
+        T3.aFN.push(f.nx, f.nz, shopU, shopW);
+        if (T3 === WK) WK.aKit.push(1, k.rise, k.doorless, k.french);
       }
     }
     {
@@ -4872,7 +4906,15 @@ function analyseBuildings(doc, buf, roads, feats) {
   });
   const f32 = (a) => new Float32Array(a);
   return {
-    walls: { position: f32(W.position), normal: f32(W.normal), aWall: f32(W.aWall), aBld: f32(W.aBld), aFN: f32(W.aFN) },
+    walls: {
+      position: f32(W.position),
+      normal: f32(W.normal),
+      aWall: f32(W.aWall),
+      aBld: f32(W.aBld),
+      aFN: f32(W.aFN),
+      kit: kit ? { position: f32(WK.position), normal: f32(WK.normal), aWall: f32(WK.aWall), aBld: f32(WK.aBld), aFN: f32(WK.aFN), aKit: f32(WK.aKit) } : null
+    },
+    kit: kit ? kit.finish() : null,
     details: { position: f32(D.position), normal: f32(D.normal), aCol: f32(D.color) },
     roofs: { position: f32(R.position), normal: f32(R.normal), aRoof: f32(R.aRoof), aRoofCol: f32(R.aRoofCol) },
     stats: { ...stats, triangles: T2, vertices: V }
@@ -5872,7 +5914,7 @@ function placePits(trees, classAt, nearKerb, surf, bounds) {
 }
 function prepareSurfaces(surf, ground, bounds, trees = null) {
   const t0 = (globalThis.performance ?? Date).now();
-  const G = ground;
+  const G2 = ground;
   const base = [];
   const halves = /* @__PURE__ */ new Map();
   const coverArea = /* @__PURE__ */ new Map();
@@ -5968,7 +6010,7 @@ function prepareSurfaces(surf, ground, bounds, trees = null) {
     for (let dx = -CELL2 + 0.5; dx < CELL2; dx += 1) for (let dz = -CELL2 + 0.5; dz < CELL2; dz += 1) {
       const x = cx + dx, z = cz + dz;
       if (classAt(x, z) < 0) continue;
-      const w = (1 - Math.abs(dx) / CELL2) * (1 - Math.abs(dz) / CELL2), y = G(x, z);
+      const w = (1 - Math.abs(dx) / CELL2) * (1 - Math.abs(dz) / CELL2), y = G2(x, z);
       sw += w;
       sx += w * dx;
       sz += w * dz;
@@ -5980,7 +6022,7 @@ function prepareSurfaces(surf, ground, bounds, trees = null) {
       szy += w * dz * y;
       n++;
     }
-    if (n === (2 * CELL2) ** 2 || n < 6) return G(cx, cz);
+    if (n === (2 * CELL2) ** 2 || n < 6) return G2(cx, cz);
     const det3 = (a, b, c, d, e, f, g, h, k) => a * (e * k - f * h) - b * (d * k - f * g) + c * (d * h - e * g);
     const D = det3(sw, sx, sz, sx, sxx, sxz, sz, sxz, szz);
     if (Math.abs(D) < 1e-9) return sy / sw;
@@ -6123,7 +6165,7 @@ function prepareSurfaces(surf, ground, bounds, trees = null) {
   return {
     pits,
     surf,
-    G,
+    G: G2,
     H,
     nrmAt,
     rampRise,
@@ -6504,7 +6546,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
   };
   let keptSide = 0;
   for (const name of ["concrete", "grass"]) {
-    const S = built[name], SP = S.position, SI = S.index, dst = out[name];
+    const S2 = built[name], SP = S2.position, SI = S2.index, dst = out[name];
     for (let t = 0; t < SI.length; t += 3) {
       const vs = [SI[t], SI[t + 1], SI[t + 2]];
       const cx = (SP[vs[0] * 3] + SP[vs[1] * 3] + SP[vs[2] * 3]) / 3, cz = (SP[vs[0] * 3 + 2] + SP[vs[1] * 3 + 2] + SP[vs[2] * 3 + 2]) / 3;
@@ -6515,10 +6557,10 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
         SP[v * 3],
         SP[v * 3 + 1],
         SP[v * 3 + 2],
-        [S.normal[v * 3], S.normal[v * 3 + 1], S.normal[v * 3 + 2]],
-        S.uv[v * 2],
-        S.uv[v * 2 + 1],
-        name === "concrete" ? { aKind: S.attributes.aKind.array[v] } : null
+        [S2.normal[v * 3], S2.normal[v * 3 + 1], S2.normal[v * 3 + 2]],
+        S2.uv[v * 2],
+        S2.uv[v * 2 + 1],
+        name === "concrete" ? { aKind: S2.attributes.aKind.array[v] } : null
       ));
       dst.idx.push(idx[0], idx[1], idx[2]);
       keptSide++;
@@ -6750,6 +6792,433 @@ function smoothPolyline(line, { bend = 0.5, straight = 4, corner = 50 } = {}) {
   return out;
 }
 
+// viewer/interior/facadeWindows.js
+var G = 3.4;
+var S = 3;
+var PIER = 0.55;
+var FRAME = 0.07;
+function faceOpenings(f) {
+  const out = [];
+  if (f.landmark || f.partyH >= 999 || f.width < 1.6 || f.eaves < 2.8) return out;
+  const usable = Math.max(f.width - PIER * 2, 1e-3);
+  const nb = Math.max(Math.floor(usable / 2.6 + 0.5), 1);
+  const bw = usable / nb;
+  const ww = Math.min(1.2, bw * 0.52);
+  const rq = Math.floor(f.rnd * 4096 + 0.5) / 4096;
+  const doorBay = Math.floor(rq * nb);
+  for (let fl = 0; ; fl++) {
+    const up = fl > 0, sh = up ? S : G;
+    const y0 = up ? G + (fl - 1) * S : 0;
+    const ya = up ? 0.29 : 0.27, yb = up ? 0.79 : 0.77;
+    const winTop = y0 + yb * sh;
+    if (y0 > f.eaves) break;
+    if (f.eaves < winTop + 0.35) break;
+    for (let k = 0; k < nb; k++) {
+      const door = !!f.street && !up && k === doorBay;
+      const half = door ? 0.55 : ww / 2;
+      const uc = PIER + bw * (k + 0.5);
+      const h0 = door ? 0 : y0 + ya * sh, h1 = door ? 0.72 * G : winTop;
+      if (f.partyH > 0 && h0 < f.partyH + 0.3) continue;
+      if (f.shop > 0.5 && !up) {
+        const shopW = f.shop - 10 * Math.floor(f.shop / 10), su = f.shopU ?? 0;
+        if (Math.abs(uc - su) < shopW / 2 + half) continue;
+      }
+      const o = {
+        kind: door ? "door" : "window",
+        bay: k,
+        floor: fl,
+        u0: uc - half,
+        u1: uc + half,
+        h0,
+        h1,
+        frame: FRAME,
+        mullion: !door && ww >= 0.95,
+        transom: door ? FRAME + 0.78 * (0.72 * G - 2 * FRAME) : y0 + (ya + FRAME / sh + 0.7 * (yb - ya - 2 * FRAME / sh)) * sh
+      };
+      if (!door) o.sill = { u0: o.u0 - 0.06, u1: o.u1 + 0.06, h0: h0 - 0.08, h1: h0 };
+      out.push(o);
+    }
+  }
+  return out;
+}
+
+// viewer/facadeKit/placement.js
+var STRIDE = 14;
+var FRENCH_SILL = 0.06;
+var VARIANT = { BLUE: 1, DARK: 2, YELLOW: 4 };
+var WINDOW_RISE = 0.13;
+var MAX_H = 16;
+var JOIN = 0.15;
+var BAND_Y = 3.4;
+function h01(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
+  return (h >>> 0) % 1000003 / 1000003;
+}
+function inTri(u, h, a, b, c) {
+  const det = (b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1]);
+  if (Math.abs(det) < 1e-9) return null;
+  const l1 = ((b[1] - c[1]) * (u - c[0]) + (c[0] - b[0]) * (h - c[1])) / det;
+  const l2 = ((c[1] - a[1]) * (u - c[0]) + (a[0] - c[0]) * (h - c[1])) / det;
+  const l3 = 1 - l1 - l2;
+  if (l1 < -1e-4 || l2 < -1e-4 || l3 < -1e-4) return null;
+  return l1 * a[2] + l2 * b[2] + l3 * c[2];
+}
+function kitCollector(opts = {}) {
+  const exclude = opts.exclude || /* @__PURE__ */ new Set(), only = opts.only || null;
+  const out = {};
+  const runs = [];
+  const stats = { faces: 0, skipped: 0, openings: 0, why: {} };
+  const widths = [];
+  let F = [0, 0, 0, 0];
+  const put = (piece, x, y, z, nx, nz, w, h, variant, seed) => (out[piece] ??= []).push(x, y, z, nx, nz, w, h, variant, seed, 0, F[0], F[1], F[2], F[3]);
+  const allRuns = [];
+  const putRun = (piece, A, B, y, nx, nz, variant, seed) => {
+    const lx = nz, lz = -nx;
+    const [L2, R] = A[0] * lx + A[1] * lz <= B[0] * lx + B[1] * lz ? [A, B] : [B, A];
+    allRuns.push({ piece, L: [...L2], R: [...R], y, nx, nz, variant, seed, mL: 0, mR: 0, jL: false, jR: false });
+  };
+  const styleOf = /* @__PURE__ */ new Map();
+  function buildingStyle(key, wallStyle2, rq) {
+    let s = styleOf.get(key);
+    if (s) return s;
+    const brick = wallStyle2 <= 2.5;
+    const r = h01(key + "|kit"), r2 = h01(key + "|kit2"), r3 = h01(key + "|kit3");
+    const win = brick && r < 0.55 ? "winB" : "winA";
+    let variant = 0;
+    if (win === "winA" && brick && r2 < 0.4) variant |= VARIANT.BLUE;
+    if ((rq * 7 % 1 + 1) % 1 >= 0.8) variant |= VARIANT.DARK;
+    if (Math.abs(wallStyle2 - 2) < 0.5) variant |= VARIANT.YELLOW;
+    const yellow = Math.abs(wallStyle2 - 2) < 0.5, render = !brick;
+    const doors = render ? [["doorB", 0.28], ["doorDeco", 0.26], ["doorModern", 0.24], ["doorA", 0.12], ["doorNouveau", 0.1]] : yellow ? [["doorDeco", 0.34], ["doorA", 0.24], ["doorB", 0.18], ["doorModern", 0.14], ["doorNouveau", 0.1]] : [["doorA", 0.4], ["doorB", 0.2], ["doorNouveau", 0.16], ["doorDeco", 0.14], ["doorModern", 0.1]];
+    let acc = 0, door = doors[0][0];
+    for (const [d, p] of doors) {
+      acc += p;
+      if (r3 < acc) {
+        door = d;
+        break;
+      }
+    }
+    const balcony = h01(key + "|bal") < 0.35;
+    s = {
+      win,
+      variant,
+      door,
+      soup: h01(key + "|soup") < 0.6,
+      balcony,
+      bay: balcony && h01(key + "|bay") < 0.4,
+      // a bay window (oriel) instead of the French window
+      stained: win === "winA" && h01(key + "|stain") < 0.4,
+      // window C (leaded transom) on the ground floor
+      shutters: render && h01(key + "|shut") < 0.35,
+      // villas / rendered houses
+      band: h01(key + "|band") < 0.5,
+      dormer: h01(key + "|dorm") < 0.5,
+      modillions: h01(key + "|mod") < 0.6,
+      seed: h01(key + "|seed")
+    };
+    styleOf.set(key, s);
+    return s;
+  }
+  function face(f) {
+    const off = { on: 0, rise: 0, doorless: 0, french: 0 };
+    if (!f.street || f.landmark || f.partyH >= 999 || f.wallStyle > 4.5 || f.building.height > MAX_H) return off;
+    if (exclude.has(f.key) || only && !only.has(f.key)) return off;
+    if (f.width < 2.2 || f.eaves < 2.8) return off;
+    const fr = Math.fround;
+    const rnd = fr(f.rnd);
+    const doorStreet = f.street && f.doorFace !== false ? 1 : 0;
+    const ops = faceOpenings({ width: fr(f.width), eaves: fr(f.eaves), partyH: fr(f.partyH), street: doorStreet, rnd, landmark: false, shop: fr(f.shopW), shopU: fr(f.shopU) });
+    const S2 = buildingStyle(f.key, f.wallStyle, Math.floor(rnd * 4096 + 0.5) / 4096);
+    const rise = S2.win === "winB" ? WINDOW_RISE : 0;
+    let frCode = 0;
+    const nb0 = Math.max(...ops.map((o) => o.bay), 0) + 1, bw0 = (f.width - 1.1) / nb0;
+    if (S2.balcony) {
+      const f1 = ops.filter((o) => o.floor === 1 && o.kind === "window");
+      if (f1.length) {
+        const o = f1.reduce((b, q) => Math.abs(q.bay - (nb0 - 1) / 2) < Math.abs(b.bay - (nb0 - 1) / 2) ? q : b);
+        if (S2.bay && bw0 >= o.u1 - o.u0 + 1 && f.eaves - o.h1 > 1) o.kind = "bay";
+        else {
+          o.kind = "french";
+          o.h0 = 3.4 + FRENCH_SILL;
+          frCode = o.bay + 1 + 16 * o.floor;
+        }
+      }
+    }
+    const T2 = f.tris.map(({ p }) => p.map((q) => [q[0] * f.tx + q[2] * f.tz - f.u0, q[1] - f.base, q[0] * f.nx + q[2] * f.nz]));
+    const depthAt = (u, h) => {
+      for (const [a, b, c] of T2) {
+        const d = inTri(u, h, a, b, c);
+        if (d !== null) return d;
+      }
+      return null;
+    };
+    const placed = [];
+    for (const o of ops) {
+      const top = o.h1 + (o.kind === "window" ? rise : 0) + (o.kind === "bay" ? 0.62 : 0);
+      const pts = [[o.u0 + 0.01, o.h0 + 0.01], [o.u1 - 0.01, o.h0 + 0.01], [o.u0 + 0.01, top - 0.01], [o.u1 - 0.01, top - 0.01], [(o.u0 + o.u1) / 2, (o.h0 + top) / 2]];
+      if (o.kind === "door") {
+        pts[0][1] = 0.05;
+        pts[1][1] = 0.05;
+      }
+      if (o.kind === "bay") {
+        pts[0][0] -= 0.6;
+        pts[2][0] -= 0.6;
+        pts[1][0] += 0.6;
+        pts[3][0] += 0.6;
+        pts[0][1] -= 0.65;
+        pts[1][1] -= 0.65;
+      }
+      const onFace = pts.map(([u, h]) => depthAt(u, h) !== null);
+      if (!onFace.some(Boolean)) {
+        stats.offFace = (stats.offFace || 0) + 1;
+        continue;
+      }
+      for (let i = 0; i < pts.length; i++) if (!onFace[i]) {
+        stats.skipped++;
+        const w = `${o.kind}${o.floor} pt${i}`;
+        stats.why[w] = (stats.why[w] || 0) + 1;
+        if (opts.debug && !stats.sample) stats.sample = { key: f.key, pt: pts[i], o, width: f.width, T: T2.map((t) => t.map((q) => q.map((v) => +v.toFixed(2)))) };
+        return off;
+      }
+      placed.push({ o, d: depthAt((o.u0 + o.u1) / 2, (o.h0 + o.h1) / 2) });
+    }
+    stats.faces++;
+    F = [f.u0, fr(f.width), f.base, rnd + 2 * doorStreet + 4 * frCode];
+    const W = (u, d) => [f.tx * (f.u0 + u) + f.nx * d, f.tz * (f.u0 + u) + f.nz * d];
+    const seed = S2.seed;
+    const gaps = [];
+    if (f.shopW > 0.5) {
+      const sw = f.shopW - 10 * Math.floor(f.shopW / 10);
+      gaps.push([f.shopU - sw / 2 - 0.2, f.shopU + sw / 2 + 0.2]);
+    }
+    const nb = Math.max(...placed.map((q) => q.o.bay), 0) + 1;
+    let french = 0;
+    for (const { o, d } of placed) {
+      stats.openings++;
+      const uc = (o.u0 + o.u1) / 2, w = o.u1 - o.u0, h = o.h1 - o.h0;
+      const [x, z] = W(uc, d);
+      const y = f.base + o.h0;
+      if (o.kind === "door") {
+        put(S2.door, x, y, z, f.nx, f.nz, w, h, S2.variant, seed);
+        const sur = { doorA: 0.24, doorNouveau: 0.29, doorDeco: 0.18, doorModern: 0.1 }[S2.door] ?? 0.17;
+        gaps.push([uc - w / 2 - sur, uc + w / 2 + sur]);
+        const up = uc - (w / 2 + sur + 0.16);
+        if (depthAt(up - 0.09, 1.7) !== null && depthAt(up + 0.09, 1.86) !== null) {
+          const [px, pz] = W(up, depthAt(up, 1.78));
+          put("numPlate", px, f.base + 1.72, pz, f.nx, f.nz, 0.16, 0.12, 0, seed);
+        }
+        if (opts.ground) {
+          const g = opts.ground(x + f.nx * 0.6, z + f.nz * 0.6);
+          const n = Math.max(0, Math.min(3, Math.round((f.base - g) / 0.17)));
+          for (let k = 1; k <= n; k++) {
+            const top = f.base - 0.17 * (k - 1) - 0.06;
+            const gk = Math.max(opts.ground(x + f.nx * (0.3 * k + 0.15) - f.nz * 0.5, z + f.nz * (0.3 * k + 0.15) + f.nx * 0.5), opts.ground(x + f.nx * (0.3 * k + 0.15) + f.nz * 0.5, z + f.nz * (0.3 * k + 0.15) - f.nx * 0.5));
+            if (top < gk + 0.04) {
+              stats.stepsDropped = (stats.stepsDropped || 0) + n - k + 1;
+              break;
+            }
+            put("step", x + f.nx * 0.3 * k, top, z + f.nz * 0.3 * k, f.nx, f.nz, 1.5, 0.17, 0, seed);
+          }
+        }
+        continue;
+      }
+      widths.push(Math.round(w * 100) / 100);
+      if (o.kind === "bay") {
+        put("bay", x, y, z, f.nx, f.nz, w, h, 0, seed);
+        continue;
+      }
+      if (o.kind === "french") {
+        put("frenchWin", x, y, z, f.nx, f.nz, w, h, S2.variant & VARIANT.DARK, seed);
+        put((h01(f.key + "|balk") < 0.5 ? "balcony" : "balconnet") + (w < 1.1 ? "P" : ""), x, y, z, f.nx, f.nz, w, h, 0, seed);
+        french = o.bay + 1 + 16 * o.floor;
+        if (f.eaves - o.h1 > 1.12) put("hood", x, y, z, f.nx, f.nz, w, h, S2.variant & VARIANT.BLUE, seed);
+        continue;
+      }
+      const win = S2.stained && o.floor === 0 ? "winC" : S2.win;
+      put(win, x, y, z, f.nx, f.nz, w, h, S2.variant, seed);
+      put("sill", x, y, z, f.nx, f.nz, w, h, 0, seed);
+      if (S2.shutters && win !== "winB" && bw0 - w >= 2 * 0.8 && depthAt(o.u0 - 0.8, o.h0 + 0.2) !== null && depthAt(o.u1 + 0.8, o.h1 - 0.2) !== null)
+        put("shutter", x, y, z, f.nx, f.nz, w, h, S2.variant & VARIANT.DARK, seed);
+      if (win !== "winB" && f.eaves - o.h1 > 1.12) put("hood", x, y, z, f.nx, f.nz, w, h, S2.variant, seed);
+      if (o.floor === 0 && S2.soup) {
+        put("soup", x, f.base, z, f.nx, f.nz, 0.9, 0.55, 0, seed);
+        gaps.push([uc - 0.46, uc + 0.46]);
+      }
+    }
+    let foot = Infinity;
+    for (const { p } of f.tris) for (const q of p) foot = Math.min(foot, q[1]);
+    const seen = /* @__PURE__ */ new Set();
+    for (const { p } of f.tris) for (let e = 0; e < 3; e++) {
+      const A = p[e], B = p[(e + 1) % 3];
+      if (Math.abs(A[1] - B[1]) > 0.05) continue;
+      const L2 = Math.hypot(B[0] - A[0], B[2] - A[2]);
+      const k = [A[0], A[2], B[0], B[2]].map((v) => Math.round(v * 20)).sort().join() + "|" + Math.round(A[1] * 20);
+      if (L2 < 0.6 || seen.has(k)) continue;
+      seen.add(k);
+      const atTop = Math.abs(A[1] - f.top) < 0.08, atFoot = Math.abs(A[1] - foot) < 0.08 && foot <= f.base + 0.05;
+      if (!atTop && !atFoot) continue;
+      let ua = A[0] * f.tx + A[2] * f.tz - f.u0, ub = B[0] * f.tx + B[2] * f.tz - f.u0;
+      if (ua > ub) [ua, ub] = [ub, ua];
+      const d = (A[0] + B[0]) / 2 * f.nx + (A[2] + B[2]) / 2 * f.nz;
+      if (atTop && f.top - f.base > 4.5) {
+        putRun("cornice", W(ua, d), W(ub, d), A[1], f.nx, f.nz, 0, seed);
+        if (S2.modillions && ub - ua > 1.2) {
+          const n = Math.max(2, Math.round((ub - ua - 0.5) / 0.55) + 1);
+          for (let i = 0; i < n; i++) {
+            const [mx, mz] = W(ua + 0.25 + (ub - ua - 0.5) * i / (n - 1), d);
+            put("modillion", mx, A[1], mz, f.nx, f.nz, 0.1, 0.2, 0, seed);
+          }
+        }
+      }
+      if (atFoot) {
+        let segs = [[ua, ub]];
+        for (const [g0, g1] of gaps) segs = segs.flatMap(([s0, s1]) => g1 <= s0 || g0 >= s1 ? [[s0, s1]] : [[s0, g0], [g1, s1]].filter(([q0, q1]) => q1 - q0 > 0.15));
+        for (const [s0, s1] of segs) putRun("plinth", W(s0, d), W(s1, d), f.base, f.nx, f.nz, 0, seed);
+      }
+    }
+    if (S2.band && f.eaves > BAND_Y + 2.4) {
+      const hb = BAND_Y - 0.07;
+      let segs = [];
+      for (const [a, b, c] of T2) {
+        const xs = [];
+        for (const [p, q] of [[a, b], [b, c], [c, a]]) if ((p[1] - hb) * (q[1] - hb) < 0) xs.push(p[0] + (hb - p[1]) / (q[1] - p[1]) * (q[0] - p[0]));
+        if (xs.length === 2) segs.push([Math.min(...xs), Math.max(...xs)]);
+      }
+      segs.sort((p, q) => p[0] - q[0]);
+      const merged = [];
+      for (const sg of segs) {
+        const l = merged[merged.length - 1];
+        if (l && sg[0] <= l[1] + 0.01) l[1] = Math.max(l[1], sg[1]);
+        else merged.push([...sg]);
+      }
+      let parts = merged.filter(([p, q]) => q - p > 0.6);
+      for (const { o } of placed) if (o.kind === "french" || o.kind === "bay") {
+        const g0 = o.u0 - (o.kind === "bay" ? 0.6 : 0.5), g1 = o.u1 + (o.kind === "bay" ? 0.6 : 0.5);
+        parts = parts.flatMap(([s0, s1]) => g1 <= s0 || g0 >= s1 ? [[s0, s1]] : [[s0, g0], [g1, s1]].filter(([q0, q1]) => q1 - q0 > 0.3));
+      }
+      for (const [s0, s1] of parts) {
+        const dd = depthAt((s0 + s1) / 2, hb);
+        if (dd !== null) putRun("band", W(s0, dd), W(s1, dd), f.base + BAND_Y, f.nx, f.nz, 0, seed);
+      }
+    }
+    if (S2.dormer && f.roofAt && f.width >= 4.5 && f.top - f.base > 4.5) {
+      const um = f.width / 2, dm = depthAt(um, f.top - f.base - 0.3);
+      if (dm !== null) {
+        const [x, z] = W(um, dm);
+        const r1 = f.roofAt(x - f.nx * 0.6, z - f.nz * 0.6), r2 = f.roofAt(x - f.nx * 1.6, z - f.nz * 1.6);
+        if (r1 > f.top + 0.25 && r2 - r1 > 0.58 && r2 > f.top + 1) put("dormer", x, f.top, z, f.nx, f.nz, 1.1, 1.45, 0, seed);
+      }
+    }
+    return { on: 1, rise, doorless: f.street && !doorStreet ? 1 : 0, french };
+  }
+  function joinRuns() {
+    const ends = [];
+    allRuns.forEach((r, i) => {
+      ends.push({ r, i, side: "L" });
+      ends.push({ r, i, side: "R" });
+    });
+    const grid = /* @__PURE__ */ new Map(), cell = (x, z) => `${Math.floor(x / JOIN)},${Math.floor(z / JOIN)}`;
+    for (const e of ends) {
+      const p = e.r[e.side];
+      const k = cell(p[0], p[1]);
+      if (!grid.has(k)) grid.set(k, []);
+      grid.get(k).push(e);
+    }
+    const dirOut = (r, side) => {
+      const lx = r.nz, lz = -r.nx;
+      return side === "R" ? [lx, lz] : [-lx, -lz];
+    };
+    let joins = 0, free = 0;
+    for (const e of ends) {
+      if (e.r["j" + e.side]) continue;
+      const p = e.r[e.side];
+      let best = null, bd = JOIN;
+      const cx = Math.floor(p[0] / JOIN), cz = Math.floor(p[1] / JOIN);
+      for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (const o of grid.get(`${cx + a},${cz + b}`) || []) {
+        if (o.i === e.i || o.r.piece !== e.r.piece || o.r["j" + o.side] || Math.abs(o.r.y - e.r.y) > 0.1) continue;
+        if (o.r.nx * e.r.nx + o.r.nz * e.r.nz < -0.5) continue;
+        const q = o.r[o.side], d = Math.hypot(q[0] - p[0], q[1] - p[1]);
+        if (d < bd) {
+          bd = d;
+          best = o;
+        }
+      }
+      if (!best) continue;
+      const A = e.r, B = best.r, dA = dirOut(A, e.side), dB = dirOut(B, best.side);
+      const pa = A[e.side], pb = B[best.side];
+      const den = dA[0] * dB[1] - dA[1] * dB[0];
+      let C = [(pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2];
+      if (Math.abs(den) > 0.05) {
+        const t = ((pb[0] - pa[0]) * dB[1] - (pb[1] - pa[1]) * dB[0]) / den;
+        const Ci = [pa[0] + dA[0] * t, pa[1] + dA[1] * t];
+        if (Math.hypot(Ci[0] - C[0], Ci[1] - C[1]) < JOIN) C = Ci;
+      }
+      const Nb = [dA[0] - dB[0], dA[1] - dB[1]], nl = Math.hypot(...Nb) || 1;
+      Nb[0] /= nl;
+      Nb[1] /= nl;
+      const mOf = (r, d) => {
+        const den2 = d[0] * Nb[0] + d[1] * Nb[1];
+        return Math.abs(den2) < 0.2 ? 0 : -(r.nx * Nb[0] + r.nz * Nb[1]) / den2;
+      };
+      const mA = mOf(A, dA), mB = mOf(B, dB);
+      if (Math.abs(mA) > 2.5 || Math.abs(mB) > 2.5) continue;
+      A[e.side] = [...C];
+      B[best.side] = [...C];
+      A["m" + e.side] = mA;
+      B["m" + best.side] = mB;
+      A["j" + e.side] = true;
+      B["j" + best.side] = true;
+      joins++;
+    }
+    for (const r of allRuns) {
+      const lx = r.nz, lz = -r.nx;
+      for (const side of ["L", "R"]) if (!r["j" + side]) {
+        const k = side === "L" ? 2e-3 : -2e-3;
+        r[side][0] += lx * k;
+        r[side][1] += lz * k;
+        free++;
+      }
+      const len = (r.R[0] - r.L[0]) * lx + (r.R[1] - r.L[1]) * lz;
+      if (len < 0.3) continue;
+      const cx = (r.L[0] + r.R[0]) / 2, cz = (r.L[1] + r.R[1]) / 2;
+      (out[r.piece] ??= []).push(cx, r.y, cz, r.nx, r.nz, len, 0.6, r.variant, r.seed, r.mL, r.mR, 0, 0, 0);
+      if (r.piece === "cornice") runs.push({ key: "", a: r.L, b: r.R, nx: r.nx, nz: r.nz, y: r.y, seed: r.seed });
+    }
+    stats.runJoins = joins;
+    stats.runFree = free;
+  }
+  function corners() {
+    const byKey = /* @__PURE__ */ new Map();
+    for (const r of runs) {
+      if (!byKey.has(r.key)) byKey.set(r.key, []);
+      byKey.get(r.key).push(r);
+    }
+    for (const list of byKey.values()) for (let i = 0; i < list.length; i++) for (let j = 0; j < list.length; j++) {
+      if (i === j) continue;
+      const A = list[i], B = list[j];
+      if (Math.abs(A.y - B.y) > 0.1) continue;
+      const cosang = A.nx * B.nx + A.nz * B.nz;
+      if (Math.abs(cosang) > 0.35) continue;
+      for (const pa of [A.a, A.b]) for (const pb of [B.a, B.b]) {
+        if (Math.hypot(pa[0] - pb[0], pa[1] - pb[1]) > 0.12) continue;
+        const ob = pb === B.a ? B.b : B.a, oa = pa === A.a ? A.b : A.a;
+        if ((ob[0] - pa[0]) * A.nx + (ob[1] - pa[1]) * A.nz > -0.2) continue;
+        const ex = A.nz, ez = -A.nx, dir = (pa[0] - oa[0]) * ex + (pa[1] - oa[1]) * ez;
+        if (dir <= 0) continue;
+        put("cornCorner", pa[0], A.y, pa[1], A.nx, A.nz, 1, 0.6, 0, A.seed);
+      }
+    }
+  }
+  function finish() {
+    joinRuns();
+    const pieces = {};
+    for (const [k, v] of Object.entries(out)) pieces[k] = new Float32Array(v);
+    return { pieces, stride: STRIDE, faces: stats.faces, skipped: stats.skipped, openings: stats.openings, widths, runJoins: stats.runJoins, runFree: stats.runFree };
+  }
+  return { face, finish, stats };
+}
+
 // viewer/tileData.js
 var CARVE = 0.12;
 var TERRAIN_ERROR = 0.05;
@@ -6875,14 +7344,14 @@ async function buildTileData(entry, base) {
     const parts = {};
     let carvedCells = 0, triangles = 0, surfaceStats = null, surfaceData = null;
     if (surf) {
-      const S = buildSurfaceRoads(prep, built, surfaceAttribute(net, built.asphalt), roads, (x, z) => onRoof(roofs, x, z));
-      for (const c of S.carve) carvedCells += hm.carve(c.position, c.index, CARVE);
-      for (const [name, part] of Object.entries(S.parts)) {
+      const S2 = buildSurfaceRoads(prep, built, surfaceAttribute(net, built.asphalt), roads, (x, z) => onRoof(roofs, x, z));
+      for (const c of S2.carve) carvedCells += hm.carve(c.position, c.index, CARVE);
+      for (const [name, part] of Object.entries(S2.parts)) {
         parts[name] = { position: part.position, normal: part.normal, uv: part.uv, attributes: part.attributes, index: part.index, aSurf: part.extra };
         triangles += part.index.length / 3;
       }
-      surfaceStats = { ...S.stats, widthFit };
-      surfaceData = { grid: S.grid, kerbs: S.kerbs, bollards: S.bollards };
+      surfaceStats = { ...S2.stats, widthFit };
+      surfaceData = { grid: S2.grid, kerbs: S2.kerbs, bollards: S2.bollards };
     }
     for (const name of surf ? [] : ["asphalt", "concrete", "grass"]) {
       const part = built[name];
@@ -6937,7 +7406,8 @@ async function buildTileData(entry, base) {
   });
   const drive = await step("drive colliders", () => buildDriveData({ bDoc, net, feats, hm, parts: road.parts, bounds }));
   hideBuildings(bDoc, entry.hide);
-  const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats));
+  const kit = entry.kit ? kitCollector({ exclude: new Set(entry.kitExclude || []), ground: (x, z) => hm.ground(x, z) }) : null;
+  const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit }));
   const cover = await step("land cover", () => landCoverData(feats, bounds));
   return {
     name: entry.name,
@@ -6968,16 +7438,16 @@ async function buildLiteData(entry, base) {
   };
   const [tHdr, tBuf, bDoc, bBuf] = await Promise.all([get(F.terrainHeader), get(F.terrain, true), get(F.buildings), get(F.buildingsBin, true)]);
   const hm = new Heightmap(tHdr, tBuf);
-  const { x0, z0, cols, rows, step } = hm.h, S = 4;
-  const c2 = Math.floor((cols - 1) / S) + 1, r2 = Math.floor((rows - 1) / S) + 1;
+  const { x0, z0, cols, rows, step } = hm.h, S2 = 4;
+  const c2 = Math.floor((cols - 1) / S2) + 1, r2 = Math.floor((rows - 1) / S2) + 1;
   const pos = new Float32Array(c2 * r2 * 3), nrm = new Float32Array(c2 * r2 * 3), uv = new Float32Array(c2 * r2 * 2);
   const W = (cols - 1) * step, H = (rows - 1) * step;
   for (let r = 0; r < r2; r++) for (let c = 0; c < c2; c++) {
-    const k = r * c2 + c, x = x0 + c * S * step, z = z0 + r * S * step;
+    const k = r * c2 + c, x = x0 + c * S2 * step, z = z0 + r * S2 * step;
     pos[k * 3] = x;
     pos[k * 3 + 1] = hm.ground(x, z) - 0.3;
     pos[k * 3 + 2] = z;
-    const hx = (hm.ground(x + S, z) - hm.ground(x - S, z)) / (2 * S), hz = (hm.ground(x, z + S) - hm.ground(x, z - S)) / (2 * S), L2 = Math.hypot(hx, 1, hz);
+    const hx = (hm.ground(x + S2, z) - hm.ground(x - S2, z)) / (2 * S2), hz = (hm.ground(x, z + S2) - hm.ground(x, z - S2)) / (2 * S2), L2 = Math.hypot(hx, 1, hz);
     nrm[k * 3] = -hx / L2;
     nrm[k * 3 + 1] = 1 / L2;
     nrm[k * 3 + 2] = -hz / L2;

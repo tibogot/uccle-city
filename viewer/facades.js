@@ -25,7 +25,7 @@
 import * as THREE from "three/webgpu";
 import {
   Fn, If, attribute, positionWorld, normalWorld, cameraPosition, color, float, vec2, vec3, vec4, mix, step, smoothstep, floor, fract,
-  abs, min, max, clamp, fwidth, sin, sign, dot, normalize, length, pow, atan, normalView, mrt, roughness,
+  abs, min, max, clamp, fwidth, sin, sign, dot, normalize, length, pow, atan, normalView, mrt, roughness, mod,
 } from "three/tsl";
 import { lampLight } from "./lampLight.js";
 import { hash2D, noise2D, bumpNormal, filteredPulse } from "./tslkit.js";
@@ -34,6 +34,8 @@ import { n3, band, courses } from "./roadPaint.js";
 
 import { analyseBuildings } from "./facadeGeom.js";
 import { houseCut, cutOpacity } from "./interior/cut.js";
+import { kitShows, wallKitFade } from "./facadeKit/kitFade.js";
+import { FRENCH_SILL } from "./facadeKit/placement.js";
 export { analyseBuildings };
 
 const C = (r, g, b) => vec3(r, g, b);
@@ -117,7 +119,59 @@ const interiorRoom = Fn(([gx, gy, winUV, cellId, bayW, storeyH, seed, litProb, f
   return vec4(col.mul(warm).mul(mix(float(0.85), float(1.35), lit)), litRoom.mul(emit));
 });
 
-export function wallMaterial() {
+/**
+ * THE PAINTED WINDOW'S GLASS at this pixel, for the façade kit's glass panes (viewer/facadeKit/kitMaterials.js): the
+ * same window grid, room (interior mapping), curtains / lace, lit rooms at night, dirt and sky reflection as
+ * wallMaterial() paints, from the face the pane sits on, so the kit's windows hand over to the painted ones invisibly.
+ * u, h: the pixel's façade coordinates (m along the face from its left end, m above the base); fw: the face width;
+ * street: 1 if the face has the door; rnd: the building hash (aBld.w); frCode: the kit's French window (aKit.w).
+ * -> { col, emissive, rough }  (KEEP IN SYNC with wallMaterial below)
+ */
+export function paintedGlass({ u, h, fw, street, rnd: rndIn, frCode }) {
+  const P = positionWorld;
+  const rnd = floor(rndIn.mul(4096.0).add(0.5)).div(4096.0).toVar();
+  const pier = float(0.55);
+  const usable = max(fw.sub(pier.mul(2)), float(0.001));
+  const nb = max(floor(usable.div(2.6).add(0.5)), float(1)).toVar();
+  const bw = usable.div(nb).toVar();
+  const gx = u.sub(pier).div(bw).toVar();
+  const G = float(3.4), S = float(3.0);
+  const up = step(G, h);
+  const gy = mix(h.div(G), h.sub(G).div(S).add(1.0), up).toVar();
+  const storeyH = mix(G, S, up);
+  const fwx = fwidth(gx).toVar(), fwy = fwidth(gy).toVar();
+  const ww = min(float(1.2), bw.mul(0.52));
+  const xa = float(0.5).sub(ww.div(bw).mul(0.5)).toVar(), xb = float(1).sub(xa).toVar();
+  const ya = mix(float(0.27), float(0.29), up).toVar(), yb = mix(float(0.77), float(0.79), up).toVar();
+  const fl = floor(gy);
+  const doorBay = floor(rnd.mul(nb));
+  const isDoor = street.mul(step(abs(floor(gx).sub(doorBay)), 0.5)).mul(float(1).sub(up)).toVar();
+  const isFr = step(0.5, frCode).mul(step(abs(floor(gx).sub(mod(frCode.sub(1), 16.0))), 0.5)).mul(step(abs(fl.sub(floor(frCode.sub(1).div(16.0)))), 0.5));
+  const dxa = float(0.5).sub(float(0.55).div(bw)), dxb = float(1).sub(dxa);
+  const wxa = mix(xa, dxa, isDoor), wxb = mix(xb, dxb, isDoor);
+  const wya = mix(mix(ya, float(FRENCH_SILL).div(storeyH), isFr), float(0.0), isDoor), wyb = mix(yb, float(0.72), isDoor);
+  const fX = float(0.07).div(bw), fY = float(0.07).div(storeyH);
+  const gxa = wxa.add(fX), gxb = wxb.sub(fX), gya = wya.add(fY), gyb = wyb.sub(fY);
+  const wu = clamp(fract(gx).sub(gxa).div(gxb.sub(gxa)), 0.0, 1.0).toVar();
+  const wv = clamp(fract(gy).sub(gya).div(gyb.sub(gya)), 0.0, 1.0).toVar();
+  const view = normalize(cameraPosition.sub(P));
+  const fres = pow(float(1).sub(abs(dot(view, normalWorld))), 2.0).mul(0.52).add(0.08).toVar();
+  const cellId = vec2(floor(gx), floor(gy));
+  const litProb = float(0.55).mul(0.62);
+  const drapeFootprint = fwidth(wu);
+  const room = interiorRoom(gx, gy, vec2(wu, wv), cellId, bw, storeyH, rnd.mul(100.0), litProb, vec2(fwx, fwy), drapeFootprint).toVar();
+  const dirt = float(0.4).add(smoothstep(0.25, 0.0, wv).mul(0.2));
+  const sky = mix(vec3(env.uSkyHorizon), vec3(env.uSkyTop), clamp(view.y.negate().mul(2.0).add(0.4), 0.0, 1.0));
+  let col = mix(room.rgb.mul(C(0.71, 0.78, 0.75)), C(0.05, 0.06, 0.065), dirt.mul(0.3));
+  col = mix(col, sky.mul(0.7), fres);
+  const emissive = room.rgb.mul(room.a).mul(float(1).sub(fres.mul(0.82))).mul(env.uInteriorGlow).mul(0.76);
+  return { col, emissive, rough: mix(float(0.2), float(0.4), dirt.sub(0.4).mul(2.5)) };
+}
+
+/** opts.kit: the material of the FAÇADE KIT's faces (viewer/facadeKit/): the same painted façade, with the openings the
+ *  kit's pieces fill (aKit = (on, arch rise): window B's segmental head reaches `rise` m over the painted head) cut
+ *  where the kit draws (kitFade.js: the same dithered split as the pieces, so a pixel shows one or the other). */
+export function wallMaterial(opts = {}) {
   const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, side: THREE.DoubleSide });   // some UrbIS faces are wound inward: never cull them
   const P = positionWorld;
   const wall = attribute("aWall", "vec4"), bld = attribute("aBld", "vec4");
@@ -153,10 +207,14 @@ export function wallMaterial() {
     .mul(step(0.0, gx)).mul(step(gx, nb)).toVar();
   // the front door replaces one ground-floor window on a street face
   const doorBay = floor(rnd.mul(nb));
-  const isDoor = street.mul(step(abs(floor(gx).sub(doorBay)), 0.5)).mul(float(1).sub(up)).mul(ok).toVar();
+  // the kit's faces (aKit): z = 1 no door on this face (the house's door is on its widest street face: a window here),
+  // w = the French window's bay + 1 + 16 x storey (its opening runs down to the storey's floor + FRENCH_SILL)
+  const kitA = opts.kit ? attribute("aKit", "vec4") : null;
+  const isDoor = street.mul(step(abs(floor(gx).sub(doorBay)), 0.5)).mul(float(1).sub(up)).mul(ok).mul(kitA ? float(1).sub(kitA.z) : float(1)).toVar();
+  const isFr = kitA ? step(0.5, kitA.w).mul(step(abs(floor(gx).sub(mod(kitA.w.sub(1), 16.0))), 0.5)).mul(step(abs(fl.sub(floor(kitA.w.sub(1).div(16.0)))), 0.5)).mul(ok).toVar() : float(0);
   const dxa = float(0.5).sub(float(0.55).div(bw)), dxb = float(1).sub(dxa);
   const wxa = mix(xa, dxa, isDoor), wxb = mix(xb, dxb, isDoor);
-  const wya = mix(ya, float(0.0), isDoor), wyb = mix(yb, float(0.72), isDoor);
+  const wya = mix(mix(ya, float(FRENCH_SILL).div(storeyH), isFr), float(0.0), isDoor), wyb = mix(yb, float(0.72), isDoor);
   const cx = filteredPulse(gx, wxa, wxb, fwx), cy = filteredPulse(gy, wya, wyb, fwy);
   const opening = cx.mul(cy).mul(ok).toVar();                                    // whole opening (frame + glass)
   // frame 7 cm, glass inside; a mullion and a transom
@@ -199,8 +257,8 @@ export function wallMaterial() {
   // sills (blue stone) under every window, a shadow beneath them, lit top
   const sillX = filteredPulse(gx, wxa.sub(float(0.06).div(bw)), wxb.add(float(0.06).div(bw)), fwx);
   const sillY = filteredPulse(gy, wya.sub(float(0.08).div(storeyH)), wya, fwy);
-  const sill = sillX.mul(sillY).mul(ok).mul(float(1).sub(isDoor)).toVar();
-  const underSill = sillX.mul(filteredPulse(gy, wya.sub(float(0.3).div(storeyH)), wya.sub(float(0.08).div(storeyH)), fwy)).mul(ok).mul(float(1).sub(isDoor));
+  const sill = sillX.mul(sillY).mul(ok).mul(float(1).sub(isDoor)).mul(float(1).sub(isFr)).toVar();
+  const underSill = sillX.mul(filteredPulse(gy, wya.sub(float(0.3).div(storeyH)), wya.sub(float(0.08).div(storeyH)), fwy)).mul(ok).mul(float(1).sub(isDoor)).mul(float(1).sub(isFr));
   col = mix(col, C(0.16, 0.165, 0.17).add(env.uSunColor.mul(0.04)), sill);
   col = col.mul(float(1).sub(underSill.mul(0.25)));
   height = height.add(sill.mul(0.04));
@@ -399,6 +457,18 @@ export function wallMaterial() {
   // an interior cell is loaded (?interior=1): its house's openings are holes, its real windows and door show
   // (viewer/interior/cut.js; compiled in only then)
   if (houseCut.enabled) m.maskNode = cutOpacity(opening.mul(notShop)).greaterThan(0.5);
+  if (opts.kit && opts.cut !== false) {
+    // window B's segmental head over the painted opening: R = (hw^2 + rise^2) / (2 rise), y(x) = sqrt(R^2 - x^2) - (R - rise)
+    const rise = kitA.y, hwW = ww.mul(0.5);
+    const xm = fract(gx).sub(0.5).mul(bw);
+    const Rr = hwW.mul(hwW).add(rise.mul(rise)).div(rise.mul(2).max(1e-4));
+    const yArch = Rr.mul(Rr).sub(xm.mul(xm)).max(0).sqrt().sub(Rr.sub(rise));
+    const above = h.sub(winTopAbs);
+    const arch = step(0.0001, rise).mul(step(abs(xm), hwW)).mul(step(0.0, above)).mul(step(above, yArch)).mul(ok).mul(float(1).sub(isDoor)).mul(float(1).sub(isFr));
+    const cut = max(step(0.5, opening.mul(notShop)), arch).mul(kitA.x);
+    const kitHole = cut.greaterThan(0.5).and(kitShows(wallKitFade));
+    m.maskNode = m.maskNode ? m.maskNode.and(kitHole.not()) : kitHole.not();
+  }
   return m;
 }
 
@@ -460,8 +530,21 @@ export function buildingMeshes(doc, buf, roads, feats, pre) {
   const meshes = [mk(a.walls, [["aWall", 4], ["aBld", 4], ["aFN", 4]], MATS.wall, "buildings-walls"),
     mk(a.roofs, [["aRoof", 4], ["aRoofCol", 3]], MATS.roof, "buildings-roofs")];
   if (a.details.position.length) meshes.push(mk(a.details, [["aCol", 3]], detailMat, "buildings-details"));
+  // the façade kit's faces (?kit=1): their own mesh, so only they pay for the cut (a discard costs early-z)
+  let kitWalls = null;
+  if (a.walls.kit?.position.length) {
+    MATS.wallKit ??= Object.assign(wallMaterial({ kit: true }), { name: "walls (kit)" });
+    MATS.wallKit.userData.shared = true;
+    kitWalls = mk(a.walls.kit, [["aWall", 4], ["aBld", 4], ["aFN", 4], ["aKit", 4]], MATS.wallKit, "buildings-walls-kit");
+    // out of the kit's reach the plain wall material draws them (no discard, early-z back): kitField.js swaps
+    // (the far one: same painted façade, no discard)
+    MATS.wallKitFar ??= Object.assign(wallMaterial({ kit: true, cut: false }), { name: "walls (kit, far)" });
+    MATS.wallKitFar.userData.shared = true;
+    kitWalls.userData.cutMat = MATS.wallKit; kitWalls.userData.plainMat = MATS.wallKitFar;
+    meshes.push(kitWalls);
+  }
   return {
-    meshes,
+    meshes, kitWalls, kit: a.kit,
     stats: a.stats, triangles: a.stats.triangles, vertices: a.stats.vertices,
   };
 }
