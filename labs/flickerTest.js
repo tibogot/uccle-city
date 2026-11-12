@@ -1,5 +1,3 @@
-// COPIED AS-IS from branch claude/stalle (labs/flickerTest.js, eebd3d6) for the Impostor Lab's jitter meter
-// (labs/jitterMeter.js builds on its flip rule). Keep in sync by hand until claude/stalle is merged.
 // THE FLICKER TEST (shared by the labs; the runtime half of the mesh audit, tools/mesh_audit/README.md).
 // Renders N consecutive frames from a camera that is FIXED or moves very slowly (sub-pixel steps: dolly / strafe /
 // orbit), with the lab's animation frozen, and diffs consecutive frames: a pixel "blinks" when its luminance jumps up

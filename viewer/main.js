@@ -12,6 +12,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { buildLamps, setLampModel } from "./lamps.js";
 import { loadLampModel } from "./lampModel.js";
 import { loadStJob, STJOB_LODS, STJOB_BU_ID, stjobColliders } from "./stjobModel.js";
+import { addStalle } from "./stalleCity.js";
 import { addTownHall } from "./townhallCity.js";
 import { buildFurniture } from "./furniture.js";
 import { buildTram } from "./tram.js";
@@ -610,6 +611,8 @@ async function main() {
     }).catch((e) => log(`Saint-Job model failed (${e.message}): the UrbIS solid is hidden, reload with ?stjob=0`));
   }
   await cityKit.start({ scene, updaters, log });                   // ?kit=1: the façade kit (before the first tile and the warm-up)
+  // the Chapelle de Stalle + its interior cell (tools/blender/stalle*.py, viewer/stalleCity.js) behind ?stalle=1
+  if (params.get("stalle") === "1") await addStalle({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, getView: () => ({ camera, lighting }), getThird: () => third });
   // The Uccle town hall (tools/blender/townhall.py, viewer/townhallCity.js) in place of its UrbIS solid, behind
   // ?townhall=1 for now (its BU_ID joins HIDE_BU_IDS before the first tile is built)
   if (params.get("townhall") === "1") await addTownHall({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });

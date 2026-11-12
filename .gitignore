@@ -9,6 +9,13 @@ node_modules/
 models/interior/*/interior.raw.glb
 models/interior/*/interior.pack.glb
 models/facadekit/src/
+models/stalle/*.raw.glb
+docs/stalle/side_*
 models/townhall/*.raw.glb
 docs/townhall/side_*
 models/townhall/townhall_lod1_bake.bin
+models/stalle/_before/
+models/stalle/statue_raw.json
+models/stalle/audit/*.json
+!models/stalle/audit/*.allow.json
+models/stalle/stalle.audit.raw.glb
