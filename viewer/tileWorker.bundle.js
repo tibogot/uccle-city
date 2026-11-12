@@ -7297,7 +7297,7 @@ var onRoof = (g, x, z) => {
 function hideBuildings(bDoc, hide) {
   if (!hide?.length) return;
   const h = new Set(hide);
-  bDoc.buildings = bDoc.buildings.filter((b) => !h.has(b.attrs?.BU_ID));
+  bDoc.buildings = bDoc.buildings.filter((b) => !h.has(b.attrs?.BU_ID) && !h.has(b.id));
 }
 async function buildTileData(entry, base) {
   const times = {};

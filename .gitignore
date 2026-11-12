@@ -34,3 +34,6 @@ models/calevoet_station/calevoet_lod1_bake.bin
 docs/calevoet/side_*
 models/stpierre/*.raw.glb
 docs/saint-pierre/side_*
+models/observatory/*.raw.glb
+docs/observatory/side_*.jpg
+models/observatory_before/
