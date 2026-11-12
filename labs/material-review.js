@@ -20,7 +20,7 @@ import { loadScans, loadManifest, loadCandidate, SCANS, CANDS } from "../viewer/
 import { flickerTest } from "./flickerTest.js";
 
 const qp = new URLSearchParams(location.search);
-const SIDEBAR = 300, TOP = 76;
+const SIDEBAR = 300, TOP = 96;
 
 // ------------------------------------------------------------------------------------------------ DOM
 const css = `
@@ -37,7 +37,7 @@ const css = `
 #rv-top .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
 #rv-top button, #rv-verdict button { background: #2b313b; color: #e6e9ee; border: 1px solid #3c4450; border-radius: 5px; padding: 3px 9px; font: inherit; cursor: pointer; }
 #rv-top button.on { background: #2f5d9a; border-color: #4f86cf; } #rv-top button:hover { background: #36404d; }
-#rv-top .lab { color: #8d98a6; margin: 0 2px 0 8px; } #rv-help { color: #b9c3cf; font-size: 12px; }
+#rv-top .lab { color: #8d98a6; margin: 0 2px 0 8px; } #rv-help { color: #b9c3cf; font-size: 11.5px; line-height: 1.3; }
 #rv-tiles { position: fixed; left: ${SIDEBAR}px; right: 0; top: ${TOP}px; bottom: 0; pointer-events: none; z-index: 2; }
 .rv-tile { position: absolute; box-sizing: border-box; border: 1px solid rgba(0,0,0,.6); }
 .rv-tile.chosen { border: 3px solid #3ddc84; }
@@ -52,8 +52,9 @@ const css = `
 #rv-verdict { margin: 8px 12px 12px; padding: 8px; background: #1b1f26; border-radius: 6px; }
 #rv-verdict textarea { width: 100%; box-sizing: border-box; height: 54px; background: #262b33; color: #e6e9ee; border: 1px solid #3c4450; border-radius: 4px; font: 12px system-ui; }
 #rv-verdict .chosen { color: #3ddc84; font-weight: 600; }
-#rv-status { position: fixed; right: 10px; bottom: 8px; z-index: 3; background: rgba(14,16,20,.85); padding: 3px 8px; border-radius: 4px; font: 11px ui-monospace, monospace; color: #b9c3cf; pointer-events: none; }
-.upanel { top: ${TOP + 8}px !important; max-height: calc(100vh - ${TOP + 16}px) !important; width: 290px !important; }
+#rv-status { position: fixed; right: 10px; top: 46px; z-index: 3; background: rgba(14,16,20,.85); padding: 3px 8px; border-radius: 4px; font: 11px ui-monospace, monospace; color: #b9c3cf; pointer-events: none; }
+.upanel { top: auto !important; bottom: 0 !important; left: 0 !important; right: auto !important; border-radius: 0 !important; max-height: calc(100vh - 120px) !important; width: ${SIDEBAR}px !important; z-index: 4 !important; }
+#rv-list { padding-bottom: 44px; }
 `;
 document.head.append(Object.assign(document.createElement("style"), { textContent: css }));
 document.body.insertAdjacentHTML("beforeend", `
@@ -115,7 +116,9 @@ const WALL = new THREE.Mesh(new THREE.PlaneGeometry(800, 300).translate(0, 150, 
 const FLOOR = new THREE.Mesh(new THREE.PlaneGeometry(800, 800).rotateX(-Math.PI / 2), null);
 const ROOF = new THREE.Mesh(new THREE.PlaneGeometry(800, 400).translate(0, 200, 0).rotateX(-Math.PI / 2 + THREE.MathUtils.degToRad(40)), null);
 const GROUND_PLAIN = new THREE.Mesh(new THREE.PlaneGeometry(800, 400).rotateX(-Math.PI / 2).translate(0, 0, 200), new THREE.MeshStandardNodeMaterial({ color: 0x55524c, roughness: 0.95 }));
-for (const m of [WALL, FLOOR, ROOF, GROUND_PLAIN]) { m.receiveShadow = true; m.visible = false; scene.add(m); }
+// (buildings) a plain ground around the town hall (its own forecourt / steps sit on it)
+const BLD_GROUND = new THREE.Mesh(new THREE.CircleGeometry(1500, 48).rotateX(-Math.PI / 2), new THREE.MeshStandardNodeMaterial({ color: 0x5d5a52, roughness: 0.95 }));
+for (const m of [WALL, FLOOR, ROOF, GROUND_PLAIN, BLD_GROUND]) { m.receiveShadow = true; m.visible = false; scene.add(m); }
 const surfOf = (name) => {
   const k = DEFS[name].kind;
   return k === "ground" ? "floor" : k === "roof" || k === "metalroof" ? "roof" : "wall";
@@ -147,6 +150,9 @@ function poseCam(cam, kind, d, s = 0) {
 $status.textContent = "loading scans…";
 await loadScans(renderer).catch((e) => console.warn("[review] shipped scans failed:", e));
 const manifest = await loadManifest();
+// ?before=1: the procedural materials as they were before the 2026-11-12 shimmer fix (viewer/materials/_before/, a
+// local copy of 0dd5655, not committed): for the before / after shimmer numbers
+const BEFORE = qp.get("before") === "1" ? await import("../viewer/materials/_before/library.js").catch(() => null) : null;
 const getJSON = (u) => fetch(u, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
 const costs = (await getJSON("../viewer/materials/costs.json")) ?? { materials: {} };
 const shopping = (await getJSON("../tools/textures/megascans.json")) ?? {};
@@ -157,6 +163,7 @@ const saveVerdicts = () => { try { localStorage.setItem(LS, JSON.stringify(verdi
 /** the versions of a material: procedural first, then its candidates (shipped scan, CC0, Megascans) */
 function versions(name) {
   const out = [{ id: "proc", kind: "proc", name: "Procedural", source: "library (TSL)", licence: "ours" }];
+  if (BEFORE) out.push({ id: "proc_before", kind: "proc", name: "Procedural BEFORE the fix", source: "0dd5655", licence: "ours" });
   for (const c of manifest.materials?.[name] ?? []) out.push(c);
   if (!(manifest.materials?.[name] ?? []).some((c) => c.current) && SCANS[name]) out.splice(1, 0, { ...SCANS[name].meta, id: "shipped", kind: "cc0", name: SCANS[name].meta.id, current: true });
   return out;
@@ -188,6 +195,7 @@ function lookFor(name, id) {
 async function materialFor(name, v) {
   const k = `${name}|${v.id}`;
   if (mats[k]) return mats[k];
+  if (v.id === "proc_before") return (mats[k] = BEFORE.createMaterial(name, { mapping: "world" }));
   let opts = { mapping: "world", look: lookFor(name, v.id) };
   if (v.id !== "proc") {
     const scan = v.id === "shipped" ? SCANS[name] : await loadCandidate(renderer, v.id).catch((e) => { console.warn(e); return null; });
@@ -289,7 +297,7 @@ function layoutTiles() {
       const chosen = verdicts[S.material]?.choice === v.id;
       if (chosen) el.classList.add("chosen");
       const cst = costs.materials?.[S.material]?.[v.id];
-      const sz = v.kind === "proc" ? "0 MB textures" : `${mb(v.albedo_ktx2_bytes, v.nra_ktx2_bytes)} MB download${v.size_m ? ` · ${v.size_m} m/repeat` : ""}`;
+      const sz = v.kind === "proc" ? "0 MB textures" : `${v.albedo_ktx2_bytes ? mb(v.albedo_ktx2_bytes, v.nra_ktx2_bytes) : mb(v.albedo_webp_bytes, v.nra_webp_bytes) + " (WebP)"} MB download${v.size_m ? ` · ${v.size_m} m/repeat` : ""}`;
       const lic = v.kind === "megascans" ? `<span class="rv-b m">Megascans: licence check before public</span>` : v.kind === "cc0" ? `<span class="rv-b s">CC0 ${v.source ?? ""}</span>` : `<span class="rv-b p">procedural</span>`;
       el.innerHTML = `<div class="rv-tl"><div class="t"><b>${String.fromCharCode(65 + t.col)} · ${v.name ?? v.id}</b>${v.current ? " (shipped)" : ""}<div class="d">${lic} ${r === 0 ? `${sz}${cst?.gpu_ms != null ? ` · ${cst.gpu_ms.toFixed(2)} ms` : ""}${v.note ? ` · ${v.note}` : ""}` : ""}</div></div></div>
         <div class="rv-tb">${r === rows.length - 1 ? `<button class="${chosen ? "on" : ""}" data-choose="${v.id}">${chosen ? "✓ chosen" : "choose this"}</button>` : ""}<span class="sh" data-sh>${shText(v.id, d)}</span></div><div class="rv-dist">${d} m</div>`;
@@ -318,8 +326,7 @@ async function buildTownhall() {
   const mk = () => { const root = new THREE.Group(); root.position.copy(model.placement.position); root.rotation.y = model.placement.rotationY; root.add(model.make(0)); scene.add(root); root.visible = false; return root; };
   const A = mk(), B = mk();
   const FRM = model.notes.measured.frame, RC = Math.cos(FRM.rotation_rad), RS = Math.sin(FRM.rotation_rad);
-  const box = new THREE.Box3().setFromObject(A.children[0].parent ?? A, true);
-  A.updateMatrixWorld(true); box.setFromObject(A);
+  const box = model.boundsWorld;
   th = { model, A, B, centre: box.getCenter(new THREE.Vector3()), size: box.getSize(new THREE.Vector3()), east: new THREE.Vector3(RC, 0, RS) };
   await applyTownhallLibrary();
   return th;
@@ -349,15 +356,22 @@ async function buildStreet() {
     }
     return cache[k];
   });
+  // the city's shaders write an extra MRT target for the post chain (facades.js metalRough); this lab renders without
+  // the post chain, so drop it (it only feeds SSR)
+  street.group.traverse((o) => { if (o.isMesh && o.material?.mrtNode) { o.material.mrtNode = null; o.material.needsUpdate = true; } });
   scene.add(street.group); street.group.visible = false;
   return street;
 }
 function poseBuilding(cam, d, s = 0) {
   if (S.view === "townhall") {
-    const c = th.centre, dist = Math.max(d, 12) + th.size.x * 0.0;
+    // in front of the east façade (the main front, photo 3557's side), d m from it, slightly to the south
+    const c = th.centre, ground = th.model.placement.position.y, dist = Math.max(d, 10);
     const side = new THREE.Vector3(-th.east.z, 0, th.east.x);
-    cam.position.copy(c).addScaledVector(th.east, dist + 10).addScaledVector(side, dist * 0.25 + s); cam.position.y = c.y - th.size.y * 0.3 + Math.max(1.6, dist * 0.18);
-    cam.lookAt(c.x + side.x * s, c.y - th.size.y * 0.15, c.z + side.z * s);
+    const facadeX = th.size.x / 2;                                  // the box's half-depth along east (roughly)
+    cam.position.copy(c).addScaledVector(th.east, Math.abs(facadeX) * 0.5 + dist).addScaledVector(side, dist * 0.3 + s);
+    cam.position.y = ground + 1.7 + dist * 0.12;
+    const look = c.clone().addScaledVector(side, s); look.y = ground + 6 + dist * 0.08;
+    cam.lookAt(look);
   } else {
     const dist = Math.max(d, 8);
     cam.position.set(-1 + s + dist * 0.15, 1.7 + dist * 0.25, 4 + dist); cam.lookAt(-1.5 + s, 3.5, 0);
@@ -385,24 +399,25 @@ let strafeT0 = performance.now();
 const tileMats = new Map();
 async function prepareTiles() {
   if (S.view !== "wall") return;
-  for (const t of tiles) tileMats.set(t, await materialFor(S.material, t.ver));
+  for (const t of tiles) tileMats.set(`${S.material}|${t.ver.id}`, await materialFor(S.material, t.ver));
   markDirty();
 }
 function drawTile(t, s) {
   const dpr = renderer.getPixelRatio();
-  const y = innerHeight - (t.y + t.h);
+  const y = t.y;                                          // WebGPU: viewport / scissor y from the top
   renderer.setViewport(t.x, y, t.w, t.h); renderer.setScissor(t.x, y, t.w, t.h);
-  for (const m of [WALL, FLOOR, ROOF, GROUND_PLAIN]) m.visible = false;
+  for (const m of [WALL, FLOOR, ROOF, GROUND_PLAIN, BLD_GROUND]) m.visible = false;
   if (th) { th.A.visible = th.B.visible = false; }
   if (street) street.group.visible = false;
   if (S.view === "wall") {
     const kind = surfOf(S.material), mesh = kind === "wall" ? WALL : kind === "floor" ? FLOOR : ROOF;
-    const m = tileMats.get(t); if (!m) return;
+    const m = tileMats.get(`${S.material}|${t.ver.id}`); if (!m) return;
     mesh.material = m; mesh.visible = true; if (kind === "wall") GROUND_PLAIN.visible = true;
     poseCam(t.cam, kind, t.d, s * t.d);
     lamp.position.set(t.cam.position.x, kind === "wall" ? Math.max(4, t.d * 0.3) : 4, kind === "wall" ? Math.min(3, t.d) : 2);
   } else if (S.view === "townhall" && th) {
     (t.ver.id === "A" ? th.A : th.B).visible = true;
+    BLD_GROUND.position.set(th.centre.x, th.model.placement.position.y - 0.3, th.centre.z); BLD_GROUND.visible = true;
     poseBuilding(t.cam, t.d, s * t.d);
   } else if (S.view === "street" && street) {
     street.group.visible = true; street.show(t.ver.id === "A" ? "city today" : "library");
@@ -435,15 +450,18 @@ renderer.setAnimationLoop(() => {
 });
 
 // ------------------------------------------------------------------------------------------------ shimmer meter
-async function measureShimmer() {
+// the meter: 24 frames, the cameras strafing ~1.4 px per frame (a slow walk), a pixel "blinks" when its luminance
+// jumps up then down (or down then up) by > 0.04 twice or more: aliasing / crawling, not the smooth slide of detail
+const SHIM = { step: 0.0025, threshold: 0.04, frames: 24 };
+async function measureShimmer(o = {}) {
+  Object.assign(SHIM, o);
   if (S.view !== "wall") { $status.textContent = "shimmer: on the test-surface view"; return; }
   $status.textContent = "measuring shimmer (24 frames)…";
   const wasStrafe = S.strafe; S.strafe = false;
   const dpr = renderer.getPixelRatio();
   const regions = tiles.map((t) => [t.x * dpr + 4, t.y * dpr + 30, (t.x + t.w) * dpr - 4, (t.y + t.h) * dpr - 30]);
-  // a sub-pixel strafe per frame: 0.0006 x the distance (about a third of a pixel at these fields of view)
-  const r = await flickerTest({ renderFrame: () => frame(curS), canvas: renderer.domElement, camera: null, frames: 24, move: "strafe", regions, noHeat: true,
-    pose: (f) => { curS = f * 0.0006; } });
+  const r = await flickerTest({ renderFrame: () => frame(curS), canvas: renderer.domElement, camera: null, frames: SHIM.frames, move: "strafe", regions, noHeat: true,
+    threshold: SHIM.threshold, pose: (f) => { curS = f * SHIM.step; } });
   tiles.forEach((t, i) => { shimmer[`${S.material}|${t.ver.id}|${t.d}`] = r.perRegion[i].ppm; });
   S.strafe = wasStrafe;
   layoutTiles();
@@ -571,4 +589,4 @@ addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); la
 setLight(S.light);
 drawList(); drawVerdict();
 await refresh();
-window.lab = { renderer, scene, S, tiles, verdicts, costs, shimmer, measureShimmer, benchMaterial, benchAll, versions, selectMaterial, refresh, frame, setLight, looks, mats, gpu };
+window.lab = { get th() { return th; }, renderer, scene, S, tiles, verdicts, costs, shimmer, measureShimmer, benchMaterial, benchAll, versions, selectMaterial, refresh, frame, setLight, looks, mats, gpu };
