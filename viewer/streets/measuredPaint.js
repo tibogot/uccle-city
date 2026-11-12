@@ -465,7 +465,7 @@ function sharrow(x, z, dir, chevrons = true) {
     return { kind: "solid", poly, frame: null };
   };
   const out = [];
-  const ring = (cu, cv, r, w) => { const K = 14; for (let k = 0; k < K; k++) { const a0 = (k / K) * Math.PI * 2, a1 = ((k + 1) / K) * Math.PI * 2; out.push(bar(cu + Math.cos(a0) * r, cv + Math.sin(a0) * r, cu + Math.cos(a1) * r, cv + Math.sin(a1) * r, w)); } };
+  const ring = (cu, cv, r, w) => { const K = 10; /* round 4: 10 bars a wheel, 14 before (decal cost) */ for (let k = 0; k < K; k++) { const a0 = (k / K) * Math.PI * 2, a1 = ((k + 1) / K) * Math.PI * 2; out.push(bar(cu + Math.cos(a0) * r, cv + Math.sin(a0) * r, cu + Math.cos(a1) * r, cv + Math.sin(a1) * r, w)); } };
   ring(-0.9, 0, 0.32, 0.07); ring(0.3, 0, 0.32, 0.07);           // wheels (u along the travel direction)
   out.push(bar(-0.9, 0, -0.45, 0.02, 0.07), bar(-0.45, 0.02, 0.3, 0, 0.07), bar(-0.9, 0, -0.25, -0.02, 0.07), bar(-0.25, -0.02, -0.45, 0.02, 0.07));
   out.push(bar(-0.25, -0.02, 0.3, 0, 0.07), bar(-0.5, 0.02, -0.55, 0.12, 0.07), bar(0.25, 0, 0.12, 0.2, 0.07));

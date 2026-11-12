@@ -8,7 +8,7 @@
 // Paint comes from a uniform (one car) or a per-instance attribute "paint" (parked cars). LODs are made here at load by
 // meshoptimizer (absolute error in metres; colour seams are open borders, so the simplifier keeps them as borders).
 import * as THREE from "three/webgpu";
-import { attribute, color, float, select, uniform, screenCoordinate, vec2 } from "three/tsl";
+import { attribute, color, float, select, uniform, screenCoordinate, vec2, vec3, cos, sin, positionLocal, smoothstep, mod } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { lodMesh, lodOpts } from "./carLod.js";
@@ -94,7 +94,7 @@ export const packLook = { glass: uniform(1), glassOpacity: uniform(0.76), clearc
  * an InstancedBufferAttribute). lights: { head, tail, brake } uniforms (carModel.js carLights), optional.
  */
 export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = null, rich = false, crossFade = false,
-  clearcoat = rich, seeThrough = rich } = {}) {
+  clearcoat = rich, seeThrough = rich, motion = null } = {}) {
   // rich (our faceted family): vertex-colour lamps; clearcoat: a physical material for a light clear coat on the paint
   // mask only; seeThrough: alpha-to-coverage glass + a light glass shadow. The city's far LODs switch both off (cost).
   const m = clearcoat ? new THREE.MeshPhysicalNodeMaterial({ roughness: 0.6, metalness: 0 }) : new THREE.MeshStandardNodeMaterial({ roughness: 0.6, metalness: 0 });
@@ -127,6 +127,29 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
     const tail = select(isTail, lights.tail.mul(1.2).add(lights.brake ? lights.brake.mul(5) : float(0)), float(0));
     // rich: the lamp's own vertex colour glows (white lamps, amber taxi sign); packs: a fixed warm white
     m.emissiveNode = (rich ? vc.mul(1.15) : color(0xfff1dc)).mul(head).add(color(0xff1408).mul(tail));
+  }
+  if (motion) {
+    // THE MOVING TRAFFIC (viewer/traffic/trafficFleet.js): per-instance attribute "motion" = (wheel spin, front-wheel
+    // steer, light bits, heading); per-vertex "wheel" = (wheel centre, 1 front / 2 rear / 0 body). The wheels roll and
+    // steer in the vertex shader: the offset of each wheel vertex, rotated into the car's heading, is added after the
+    // instance transform (the car's pitch is left out of that small offset). Normals stay (faceted tyres: invisible).
+    const W = attribute("wheel", "vec4"), Mo = attribute("motion", "vec4"), p0 = attribute("position", "vec3");
+    const rel = p0.sub(W.xyz), cs = cos(Mo.x), sn = sin(Mo.x);
+    const r1 = vec3(rel.x, rel.y.mul(cs).sub(rel.z.mul(sn)), rel.y.mul(sn).add(rel.z.mul(cs)));          // roll about the axle
+    const st = select(W.w.lessThan(1.5), Mo.y, float(0)), cst = cos(st), sst = sin(st);
+    const r2 = vec3(r1.x.mul(cst).add(r1.z.mul(sst)), r1.y, r1.z.mul(cst).sub(r1.x.mul(sst)));          // steer (front)
+    const dl = select(W.w.greaterThan(0.5), r2.sub(rel), vec3(0, 0, 0)), ch = cos(Mo.w), sh = sin(Mo.w);
+    m.positionNode = positionLocal.add(vec3(dl.x.mul(ch).add(dl.z.mul(sh)), dl.y, dl.z.mul(ch).sub(dl.x.mul(sh))));
+    // lights: bits of motion.z: 1 brake, 2 head (forced), 4 left indicator, 8 right indicator, 16 reversing
+    const bit = (k) => mod(Mo.z.div(k).floor(), 2);
+    const night = smoothstep(0.3, 0.6, motion.night);
+    const headOn = night.max(bit(2)), blink = mod(motion.time.mul(1.5), 1).lessThan(0.5);
+    const px = p0.x, outer = px.abs().greaterThan(0.55);
+    const ind = select(px.greaterThan(0), bit(4), bit(8)).mul(select(blink.and(outer).and(isHead.or(isTail)), float(1), float(0)));
+    const head = select(isHead, headOn.mul(5), float(0));
+    const tail = select(isTail, night.mul(1.2).add(bit(1).mul(5)), float(0));
+    const rev = select(isTail.and(outer.not()), bit(16).mul(4), float(0));
+    m.emissiveNode = vc.mul(1.15).mul(head).add(color(0xff1408).mul(tail)).add(color(0xffffff).mul(rev)).add(color(0xff8a00).mul(ind.mul(6)));
   }
   if (crossFade) {
     // dithered LOD cross-fade (instanced fleets): per-instance attribute lodFade in [0, 2]. 0..1 = the outgoing LOD,

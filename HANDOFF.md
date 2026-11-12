@@ -71,6 +71,14 @@ cost and weak points `docs/TRAINS.md` (round 2 section: worker carve + rail mesh
 and `... am08.py -- models/rail [--preview <dir>]`.
 Road bridges over the line: `tools/blender/roadBridge.py -- verrewinkel models/rail` (the Rue de Verrewinkel bridge + the
 2022 footbridge, branch claude/verrewinkel; docs/TRAINS.md "Rue de Verrewinkel", models/rail/verrewinkel_NOTES.md).
+## Moving traffic (branch claude/traffic)
+
+`?traffic=1` (city) and `labs/traffic-lab.html`: cars on the road engine's lane graph (built per tile in the worker,
+snapped onto the measured carriageway), IDM following, the OSM traffic lights on the shared cycle the signal heads now
+show (`viewer/traffic/signals.js`), priorité de droite / give way / stop from OSM, parking pull-out and park-in, the
+player's car, the walker and trams as obstacles, traffic cars as drive / walker colliders. Faceted family through the
+parked fleet's machinery with rolling, steering wheels and lights. Method, frames, cost and weak points:
+`docs/TRAFFIC.md`. `&trafficdebug=1` draws the lane graph.
 
 ## The Saint-Job falcons (branch claude/falcons)
 

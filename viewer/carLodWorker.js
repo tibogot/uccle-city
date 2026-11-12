@@ -18,10 +18,10 @@ onmessage = async (e) => {
         const parts = car.parts.map((p) => {
           const o = lodOpts(S, L, p.name), key = `${p.mesh.id}|${o.error}`;
           if (!done.has(key)) done.set(key, lodMesh(p.mesh, o, MeshoptSimplifier));
-          return { mesh: done.get(key), pos: p.pos };
+          return { mesh: done.get(key), pos: p.pos, name: p.name };
         });
         const m = mergeMeshes(parts);
-        transfer.push(m.P.buffer, m.N.buffer, m.C.buffer, m.K.buffer, m.I.buffer);
+        transfer.push(m.P.buffer, m.N.buffer, m.C.buffer, m.K.buffer, m.I.buffer, m.W.buffer);
         return m;
       }),
     }));

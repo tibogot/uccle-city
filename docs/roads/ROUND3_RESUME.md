@@ -40,3 +40,8 @@ Open items, in order: concrete open steps (median bands, forecourt seams), the t
 refinement), GPU +5-7 % (concrete shader), J1 kerb flicker near the SE zebra, C19 gaps at paved islands, lane kinks at
 tight connectors, the dark line in J1's NE sidewalk. Run the checker from the worktree root (a relative
 `--import ./tools/road_audit/register.mjs` fails from another cwd).
+
+## Round 4 (2026-11-13)
+Report `docs/roads/ROUND4.md`. Merged foundation (b9e6fe3) and claude/traffic; traffic on by default. Open: GPU A/B on
+a quiet GPU (A = foundation 0f94123, B = this branch; tools/serve_nocache.py per worktree), the library ground
+materials (item 3), sidewalk / forecourt steps, kerb gaps, Edith Cavell's centre line, tight connectors, J1 dark line.
