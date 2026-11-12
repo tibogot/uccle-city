@@ -1,18 +1,18 @@
 # Kit audit: doorA.small LOD0
 
-4,252 triangles, 2,258 welded vertices, 99 open edges, 21,944 rays, 161 ms.
+3,964 triangles, 2,114 welded vertices, 99 open edges, 20,408 rays, 158 ms.
 
-**0 blocking**, 753 warnings. Clean (no blocking item).
+**0 blocking**, 711 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
 | near | warn | 4 |
-| sliver | warn | 740 |
+| sliver | warn | 696 |
 | nonmanifold | warn | 3 |
-| tjunction | warn | 6 |
-| seam | info | 151 |
+| tjunction | warn | 8 |
+| seam | info | 160 |
 | opening | info | 10 |
-| backtoback | info | 126 |
+| backtoback | info | 164 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
@@ -25,26 +25,18 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.43, 2.79, 0.06 | doorA.lod0/stone_blue + doorA.lod0/zinc_roof | 2.51 | 977 | 0.7 | 32 | 0.24 | false | 0 + 1 + 0.07 |
 | -0.29, 2.79, 0.09 | doorA.lod0/stone_blue + doorA.lod0/zinc_roof | 2.51 | 1224.9 | 0.7 | 32 | 0.24 | false | 0 + 1 + 0.07 |
 
-## sliver (warn, 740)
+## sliver (warn, 696)
 
 | at | part | aspect | longest |
 |---|---|---|---|
-| -0.74, 1.63, 0.00 | doorA.lod0/stone_blue | 433 | 1.989 |
-| -0.75, 1.63, 0.00 | doorA.lod0/stone_blue | 433 | 1.989 |
 | -0.74, 0.97, 0.05 | doorA.lod0/stone_blue | 433 | 1.989 |
 | -0.75, 0.97, 0.05 | doorA.lod0/stone_blue | 433 | 1.989 |
-| -0.56, 0.97, 0.00 | doorA.lod0/stone_blue | 433 | 1.989 |
-| -0.55, 0.97, 0.00 | doorA.lod0/stone_blue | 433 | 1.989 |
 | -0.56, 1.63, 0.05 | doorA.lod0/stone_blue | 433 | 1.989 |
 | -0.55, 1.63, 0.05 | doorA.lod0/stone_blue | 433 | 1.989 |
-| -0.75, 0.97, 0.02 | doorA.lod0/stone_blue | 46 | 1.99 |
-| -0.55, 1.63, 0.02 | doorA.lod0/stone_blue | 46 | 1.99 |
-| -0.76, 0.20, 0.00 | doorA.lod0/stone_blue | 46 | 0.284 |
-| -0.77, 0.20, 0.00 | doorA.lod0/stone_blue | 46 | 0.284 |
+| -0.75, 0.97, 0.02 | doorA.lod0/stone_blue | 41 | 1.99 |
+| -0.55, 1.63, 0.02 | doorA.lod0/stone_blue | 41 | 1.99 |
 | -0.76, 0.10, 0.07 | doorA.lod0/stone_blue | 46 | 0.284 |
 | -0.77, 0.10, 0.07 | doorA.lod0/stone_blue | 46 | 0.284 |
-| -0.56, 0.10, 0.00 | doorA.lod0/stone_blue | 46 | 0.284 |
-| -0.55, 0.10, 0.00 | doorA.lod0/stone_blue | 46 | 0.284 |
 | -0.56, 0.20, 0.07 | doorA.lod0/stone_blue | 46 | 0.284 |
 | -0.55, 0.20, 0.07 | doorA.lod0/stone_blue | 46 | 0.284 |
 | -0.72, 1.55, 0.05 | doorA.lod0/stone_blue | 739 | 1.697 |
@@ -57,20 +49,28 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.58, 1.55, 0.06 | doorA.lod0/stone_blue | 739 | 1.697 |
 | -0.72, 0.99, 0.06 | doorA.lod0/stone_blue | 283 | 1.697 |
 | -0.58, 1.55, 0.06 | doorA.lod0/stone_blue | 283 | 1.697 |
-| 0.56, 1.63, 0.00 | doorA.lod0/stone_blue | 433 | 1.989 |
-| 0.55, 1.63, 0.00 | doorA.lod0/stone_blue | 433 | 1.989 |
 | 0.56, 0.97, 0.05 | doorA.lod0/stone_blue | 433 | 1.989 |
 | 0.55, 0.97, 0.05 | doorA.lod0/stone_blue | 433 | 1.989 |
-| 0.74, 0.97, 0.00 | doorA.lod0/stone_blue | 433 | 1.989 |
-| 0.75, 0.97, 0.00 | doorA.lod0/stone_blue | 433 | 1.989 |
 | 0.74, 1.63, 0.05 | doorA.lod0/stone_blue | 433 | 1.989 |
 | 0.75, 1.63, 0.05 | doorA.lod0/stone_blue | 433 | 1.989 |
-| 0.55, 0.97, 0.02 | doorA.lod0/stone_blue | 46 | 1.99 |
-| 0.75, 1.63, 0.02 | doorA.lod0/stone_blue | 46 | 1.99 |
-| 0.56, 0.20, 0.00 | doorA.lod0/stone_blue | 46 | 0.284 |
-| 0.55, 0.20, 0.00 | doorA.lod0/stone_blue | 46 | 0.284 |
+| 0.55, 0.97, 0.02 | doorA.lod0/stone_blue | 41 | 1.99 |
+| 0.75, 1.63, 0.02 | doorA.lod0/stone_blue | 41 | 1.99 |
+| 0.56, 0.10, 0.07 | doorA.lod0/stone_blue | 46 | 0.284 |
+| 0.55, 0.10, 0.07 | doorA.lod0/stone_blue | 46 | 0.284 |
+| 0.76, 0.20, 0.07 | doorA.lod0/stone_blue | 46 | 0.284 |
+| 0.77, 0.20, 0.07 | doorA.lod0/stone_blue | 46 | 0.284 |
+| 0.58, 1.55, 0.05 | doorA.lod0/stone_blue | 739 | 1.697 |
+| 0.58, 1.55, 0.05 | doorA.lod0/stone_blue | 739 | 1.697 |
+| 0.58, 0.99, 0.06 | doorA.lod0/stone_blue | 739 | 1.697 |
+| 0.58, 0.99, 0.06 | doorA.lod0/stone_blue | 739 | 1.697 |
+| 0.72, 0.99, 0.05 | doorA.lod0/stone_blue | 739 | 1.697 |
+| 0.72, 0.99, 0.05 | doorA.lod0/stone_blue | 739 | 1.697 |
+| 0.72, 1.55, 0.06 | doorA.lod0/stone_blue | 739 | 1.697 |
+| 0.72, 1.55, 0.06 | doorA.lod0/stone_blue | 739 | 1.697 |
+| 0.58, 0.99, 0.06 | doorA.lod0/stone_blue | 283 | 1.697 |
+| 0.72, 1.55, 0.06 | doorA.lod0/stone_blue | 283 | 1.697 |
 
-(700 more in the JSON)
+(656 more in the JSON)
 
 ## nonmanifold (warn, 3)
 
@@ -80,10 +80,12 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.83, 2.64, 0.01 | doorA.lod0/stone_blue | 3 |
 | 0.00, 2.64, 0.02 | doorA.lod0/stone_blue | 3 |
 
-## tjunction (warn, 6)
+## tjunction (warn, 8)
 
 | at | part | edge_m |
 |---|---|---|
+| 0.55, 0.01, 0.00 | doorA.lod0/stone_blue | 2.425 |
+| -0.55, 0.01, 0.00 | doorA.lod0/stone_blue | 2.425 |
 | 0.83, 2.79, -0.01 | doorA.lod0/stone_blue | 0.15 |
 | -0.83, 2.79, -0.01 | doorA.lod0/stone_blue | 0.15 |
 | -0.55, -0.00, 0.00 | wall/wall | 5.2 |
@@ -91,7 +93,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.55, -0.00, 0.00 | wall/wall | 1.2 |
 | 0.55, -0.00, 0.00 | wall/wall | 5.2 |
 
-## seam (info, 151)
+## seam (info, 160)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -136,7 +138,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.36, 0.68, -0.19 | doorA.lod0/wood_frame_dark + doorA.lod0/wood_frame_dark | 0.64 | 14 | 90 |
 | -0.42, 1.89, -0.19 | doorA.lod0/wood_frame_dark + doorA.lod0/cast_iron_green | 0.02 | 14 | 31.9 |
 
-(111 more in the JSON)
+(120 more in the JSON)
 
 ## opening (info, 10)
 
@@ -153,7 +155,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -3.00, -0.06, -0.45 | ground/ground | 0 + 1 + 0 | 3.5 |
 | 3.00, -0.06, 2.95 | ground/ground | 0 + 1 + 0 | 3.5 |
 
-## backtoback (info, 126)
+## backtoback (info, 164)
 
 | at | parts | area |
 |---|---|---|
@@ -165,37 +167,37 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.50, 2.42, -0.19 | doorA.lod0/stone_blue + doorA.lod0/wood_frame_dark | 0.00231 |
 | -0.09, 2.42, -0.21 | doorA.lod0/stone_blue + doorA.lod0/wood_frame_dark | 0.03044 |
 | -0.05, 2.42, -0.18 | doorA.lod0/stone_blue + doorA.lod0/wood_frame_dark | 0.01371 |
-| -0.68, 1.63, 0.00 | doorA.lod0/stone_blue + wall/wall | 0.18698 |
-| -0.64, 0.30, 0.02 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00201 |
-| -0.58, 0.30, 0.03 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00159 |
-| -0.68, 2.30, 0.01 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00227 |
-| -0.72, 2.30, 0.03 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.0014 |
-| -0.69, 0.20, 0.00 | doorA.lod0/stone_blue + wall/wall | 0.02897 |
-| -0.63, 0.00, 0.03 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00531 |
-| -0.71, 0.30, 0.03 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00271 |
-| -0.69, 2.34, 0.00 | doorA.lod0/stone_blue + wall/wall | 0.00438 |
-| -0.59, 2.30, 0.03 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00277 |
-| -0.69, 2.36, 0.02 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.003 |
-| -0.73, 2.36, 0.04 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00198 |
-| -0.70, 2.40, 0.00 | doorA.lod0/stone_blue + wall/wall | 0.0042 |
-| -0.59, 2.36, 0.04 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00352 |
-| -0.68, 2.42, 0.02 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00524 |
-| 0.62, 1.63, 0.00 | doorA.lod0/stone_blue + wall/wall | 0.18698 |
-| 0.68, 0.30, 0.02 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00244 |
-| 0.72, 0.30, 0.03 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00124 |
-| 0.64, 2.30, 0.01 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00195 |
-| 0.58, 2.30, 0.03 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00164 |
-| 0.63, 0.20, 0.00 | doorA.lod0/stone_blue + wall/wall | 0.02897 |
-| 0.65, 0.00, 0.02 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.0026 |
-| 0.59, 0.30, 0.03 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00297 |
-| 0.62, 2.34, 0.00 | doorA.lod0/stone_blue + wall/wall | 0.00438 |
-| 0.71, 2.30, 0.03 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00258 |
-| 0.65, 2.36, 0.02 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.0026 |
-| 0.59, 2.36, 0.04 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00228 |
-| 0.63, 2.40, 0.00 | doorA.lod0/stone_blue + wall/wall | 0.0042 |
-| 0.73, 2.36, 0.04 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00328 |
-| 0.64, 2.42, 0.03 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00486 |
-| 0.61, 2.42, 0.04 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00041 |
-| -0.66, 2.54, 0.00 | doorA.lod0/stone_blue + wall/wall | 0.04322 |
+| -0.62, 2.30, 0.00 | doorA.lod0/stone_blue + wall/wall | 0.0006 |
+| -0.65, 0.30, 0.01 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00251 |
+| -0.58, 0.30, 0.03 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00199 |
+| -0.65, 2.30, 0.01 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00284 |
+| -0.72, 2.30, 0.03 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00177 |
+| -0.63, 0.29, 0.00 | doorA.lod0/stone_blue + wall/wall | 0.00088 |
+| -0.63, 0.00, 0.02 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00603 |
+| -0.71, 0.30, 0.03 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00295 |
+| -0.56, 2.34, 0.00 | doorA.lod0/stone_blue + wall/wall | 0.00024 |
+| -0.59, 2.30, 0.03 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00303 |
+| -0.66, 2.36, 0.01 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00371 |
+| -0.73, 2.36, 0.03 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00246 |
+| -0.56, 2.40, 0.00 | doorA.lod0/stone_blue + wall/wall | 0.0003 |
+| -0.60, 2.36, 0.04 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.0039 |
+| -0.66, 2.42, 0.00 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.0006 |
+| -0.70, 2.42, 0.02 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00593 |
+| 0.68, 2.30, 0.00 | doorA.lod0/stone_blue + wall/wall | 0.0006 |
+| 0.66, 0.30, 0.01 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00303 |
+| 0.72, 0.30, 0.03 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00158 |
+| 0.65, 2.30, 0.01 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00245 |
+| 0.59, 2.30, 0.03 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00205 |
+| 0.66, 0.29, 0.00 | doorA.lod0/stone_blue + wall/wall | 0.00088 |
+| 0.65, 0.00, 0.01 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00295 |
+| 0.60, 0.30, 0.03 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00326 |
+| 0.76, 2.34, 0.00 | doorA.lod0/stone_blue + wall/wall | 0.00024 |
+| 0.71, 2.30, 0.03 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00281 |
+| 0.66, 2.36, 0.01 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00323 |
+| 0.59, 2.36, 0.03 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00282 |
+| 0.77, 2.40, 0.00 | doorA.lod0/stone_blue + wall/wall | 0.0003 |
+| 0.73, 2.36, 0.03 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.0036 |
+| 0.64, 2.42, 0.02 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00609 |
+| 0.61, 2.42, 0.04 | doorA.lod0/stone_blue + doorA.lod0/stone_blue | 0.00044 |
 
-(86 more in the JSON)
+(124 more in the JSON)

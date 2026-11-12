@@ -1,21 +1,21 @@
 # Kit audit: winA_shutters.small LOD0
 
-4,578 triangles, 2,508 welded vertices, 129 open edges, 16,422 rays, 177 ms.
+4,258 triangles, 2,364 welded vertices, 129 open edges, 16,422 rays, 174 ms.
 
-**0 blocking**, 1095 warnings. Clean (no blocking item).
+**0 blocking**, 1015 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| sliver | warn | 1078 |
+| sliver | warn | 998 |
 | nonmanifold | warn | 13 |
 | tjunction | warn | 4 |
 | seam | info | 256 |
 | opening | info | 13 |
-| backtoback | info | 168 |
+| backtoback | info | 248 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## sliver (warn, 1078)
+## sliver (warn, 998)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -60,7 +60,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.59, 1.13, 0.06 | winA.lod0/stone_white | 191 | 1.696 |
 | 0.60, 1.13, 0.07 | winA.lod0/stone_white | 192 | 1.702 |
 
-(1038 more in the JSON)
+(958 more in the JSON)
 
 ## nonmanifold (warn, 13)
 
@@ -71,14 +71,14 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.00, 0.07, -0.13 | winA.lod0/wood_frame_white | 3 |
 | 0.00, 0.55, -0.15 | winA.lod0/wood_frame_white | 3 |
 | 0.00, 0.55, -0.11 | winA.lod0/wood_frame_white | 3 |
-| -1.17, 1.56, 0.02 | shutter.lod0/wood_frame_white | 4 |
-| -0.71, 0.01, 0.02 | shutter.lod0/wood_frame_white | 4 |
-| -0.71, 1.56, 0.02 | shutter.lod0/wood_frame_white | 4 |
-| -1.17, 0.01, 0.02 | shutter.lod0/wood_frame_white | 4 |
-| 0.71, 1.56, 0.02 | shutter.lod0/wood_frame_white | 4 |
-| 0.71, 0.01, 0.02 | shutter.lod0/wood_frame_white | 4 |
-| 1.17, 0.01, 0.02 | shutter.lod0/wood_frame_white | 4 |
-| 1.17, 1.56, 0.02 | shutter.lod0/wood_frame_white | 4 |
+| -1.17, 1.56, 0.01 | shutter.lod0/wood_frame_white | 4 |
+| -0.71, 0.01, 0.01 | shutter.lod0/wood_frame_white | 4 |
+| -0.71, 1.56, 0.01 | shutter.lod0/wood_frame_white | 4 |
+| -1.17, 0.01, 0.01 | shutter.lod0/wood_frame_white | 4 |
+| 0.71, 1.56, 0.01 | shutter.lod0/wood_frame_white | 4 |
+| 1.17, 0.01, 0.01 | shutter.lod0/wood_frame_white | 4 |
+| 1.17, 1.56, 0.01 | shutter.lod0/wood_frame_white | 4 |
+| 0.71, 0.01, 0.01 | shutter.lod0/wood_frame_white | 4 |
 
 ## tjunction (warn, 4)
 
@@ -96,8 +96,6 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.05, 1.56, 0.01 | winA.lod0/stone_white + winA.lod0/stone_white | 0.71 | 88 | 86.7 |
 | -0.47, 0.00, -0.01 | winA.lod0/stone_white + sill.lod0/stone_blue | 0.68 | 65 | 7.1 |
 | 0.01, 0.08, -0.09 | winA.lod0/wood_frame_white + winA.lod0/wood_frame_white | 0.07 | 30 | 48.3 |
-| -0.71, 0.75, 0.00 | shutter.lod0/wood_frame_white + shutter.lod0/wood_frame_white | 0.3 | 30 | 38.8 |
-| 1.17, 0.75, 0.00 | shutter.lod0/wood_frame_white + shutter.lod0/wood_frame_white | 0.54 | 30 | 38.8 |
 | -0.01, 0.08, -0.11 | winA.lod0/wood_frame_white + winA.lod0/wood_frame_white | 0.07 | 28 | 48.3 |
 | -0.03, 1.56, 0.09 | winA.lod0/stone_white + winA.lod0/stone_white | 0.7 | 26 | 67.4 |
 | 0.40, 1.03, -0.16 | winA.lod0/wood_frame_white + winA.lod0/wood_frame_white | 0.25 | 26 | 45 |
@@ -109,8 +107,6 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.03, 0.56, -0.14 | winA.lod0/wood_frame_white + winA.lod0/wood_frame_white | 0.09 | 26 | 18.3 |
 | 0.03, 0.57, -0.15 | winA.lod0/wood_frame_white + winA.lod0/wood_frame_white | 0.09 | 26 | 18.3 |
 | 0.35, 0.56, -0.14 | winA.lod0/wood_frame_white + winA.lod0/wood_frame_white | 0.09 | 26 | 27.9 |
-| -1.17, 0.75, 0.00 | shutter.lod0/wood_frame_white + shutter.lod0/wood_frame_white | 0.18 | 26 | 45 |
-| 0.71, 0.75, 0.00 | shutter.lod0/wood_frame_white + shutter.lod0/wood_frame_white | 0.18 | 26 | 45 |
 | -0.40, 1.03, -0.10 | winA.lod0/wood_frame_white + winA.lod0/wood_frame_white | 0.25 | 24 | 45 |
 | -0.00, 0.07, -0.11 | winA.lod0/wood_frame_white + winA.lod0/wood_frame_white | 1.91 | 24 | 33.6 |
 | 0.00, 0.07, -0.11 | winA.lod0/wood_frame_white + winA.lod0/wood_frame_white | 1.91 | 24 | 33.6 |
@@ -130,9 +126,13 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.12, 1.10, -0.13 | winA.lod0/wood_frame_white + winA.lod0/wood_frame_white | 0.42 | 14 | 14.5 |
 | -0.12, 1.10, -0.13 | winA.lod0/wood_frame_white + winA.lod0/wood_frame_white | 0.42 | 14 | 14.5 |
 | 0.13, 1.10, -0.13 | winA.lod0/wood_frame_white + winA.lod0/wood_frame_white | 0.42 | 14 | 14.5 |
+| 1.18, 0.01, 0.00 | shutter.lod0/wood_frame_white + wall/wall | 3.22 | 14 | 90 |
+| 0.72, 0.01, 0.00 | shutter.lod0/wood_frame_white + wall/wall | 1.09 | 14 | 90 |
 | -0.13, 1.10, -0.13 | winA.lod0/wood_frame_white + winA.lod0/wood_frame_white | 0.42 | 13 | 14.5 |
-| -1.17, 0.13, 0.01 | shutter.lod0/wood_frame_white + shutter.lod0/wood_frame_white | 0.12 | 12 | 67.5 |
-| -1.17, 0.17, 0.01 | shutter.lod0/wood_frame_white + shutter.lod0/wood_frame_white | 0.12 | 12 | 67.5 |
+| -1.23, 0.01, 0.00 | shutter.lod0/wood_frame_white + wall/wall | 3.22 | 12 | 90 |
+| -0.71, 0.01, 0.00 | shutter.lod0/wood_frame_white + wall/wall | 3.22 | 12 | 90 |
+| -1.17, 1.49, 0.00 | shutter.lod0/wood_frame_white + wall/wall | 1.07 | 12 | 90 |
+| -1.17, 0.01, 0.00 | shutter.lod0/wood_frame_white + wall/wall | 1.09 | 12 | 90 |
 
 (216 more in the JSON)
 
@@ -154,7 +154,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.42, 4.00, 0.00 | wall/wall | 0 + 0 + 1 | 0.936 |
 | 0.52, 4.00, 0.00 | wall/wall | 0 + 0 + 1 | 2.532 |
 
-## backtoback (info, 168)
+## backtoback (info, 248)
 
 | at | parts | area |
 |---|---|---|
@@ -199,4 +199,4 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.01, 1.03, -0.14 | winA.lod0/wood_frame_white + winA.lod0/wood_frame_white | 0.00013 |
 | 0.01, 1.03, -0.14 | winA.lod0/wood_frame_white + winA.lod0/wood_frame_white | 0.00041 |
 
-(128 more in the JSON)
+(208 more in the JSON)

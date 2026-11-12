@@ -46,56 +46,6 @@
  "lods": 2,
  "layout": "per piece x LOD x kind (opaque | glass): planar p3f n3f uv2f k4u8n w4u8n, k.w = uv flags + 4 x slot index, w = (sqrt(region width / 4 m), run end flag, 0, 0)",
  "pieces": {
-  "shutter": {
-   "kind": "window",
-   "ref": [
-    1.2,
-    1.6
-   ],
-   "occ": "wall",
-   "rise": 0,
-   "slice": "window",
-   "slots": [
-    "wood_frame_white",
-    "cast_iron_green"
-   ],
-   "lods": [
-    {
-     "opaque": {
-      "vOff": 0,
-      "vCount": 4255,
-      "iOff": 170200,
-      "iCount": 5496,
-      "i32": false
-     }
-    },
-    {
-     "opaque": {
-      "vOff": 181192,
-      "vCount": 1088,
-      "iOff": 224712,
-      "iCount": 1656,
-      "i32": false
-     }
-    }
-   ],
-   "tris": [
-    1832,
-    552
-   ],
-   "bounds": [
-    [
-     -1.406999945640564,
-     0.009999999776482582,
-     0
-    ],
-    [
-     1.406999945640564,
-     1.600000023841858,
-     0.04500000178813934
-    ]
-   ]
-  },
   "winA": {
    "kind": "window",
    "ref": [
@@ -113,32 +63,32 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 228024,
+      "vOff": 0,
       "vCount": 6585,
-      "iOff": 491424,
+      "iOff": 263400,
       "iCount": 7986,
       "i32": false
      },
      "glass": {
-      "vOff": 507396,
+      "vOff": 279372,
       "vCount": 28,
-      "iOff": 508516,
+      "iOff": 280492,
       "iCount": 42,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 508600,
+      "vOff": 280576,
       "vCount": 504,
-      "iOff": 528760,
+      "iOff": 300736,
       "iCount": 846,
       "i32": false
      },
      "glass": {
-      "vOff": 530452,
+      "vOff": 302428,
       "vCount": 28,
-      "iOff": 531572,
+      "iOff": 303548,
       "iCount": 42,
       "i32": false
      }
@@ -177,18 +127,18 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 531656,
+      "vOff": 303632,
       "vCount": 881,
-      "iOff": 566896,
+      "iOff": 338872,
       "iCount": 1092,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 569080,
+      "vOff": 341056,
       "vCount": 158,
-      "iOff": 575400,
+      "iOff": 347376,
       "iCount": 246,
       "i32": false
      }
@@ -228,39 +178,39 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 575892,
-      "vCount": 12297,
-      "iOff": 1067772,
-      "iCount": 14244,
+      "vOff": 347868,
+      "vCount": 10454,
+      "iOff": 766028,
+      "iCount": 12540,
       "i32": false
      },
      "glass": {
-      "vOff": 1096260,
-      "vCount": 31,
-      "iOff": 1097500,
+      "vOff": 791108,
+      "vCount": 30,
+      "iOff": 792308,
       "iCount": 51,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 1097604,
+      "vOff": 792412,
       "vCount": 571,
-      "iOff": 1120444,
+      "iOff": 815252,
       "iCount": 1098,
       "i32": false
      },
      "glass": {
-      "vOff": 1122640,
+      "vOff": 817448,
       "vCount": 23,
-      "iOff": 1123560,
+      "iOff": 818368,
       "iCount": 51,
       "i32": false
      }
     }
    ],
    "tris": [
-    4765,
+    4197,
     383
    ],
    "bounds": [
@@ -291,18 +241,18 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 1123664,
+      "vOff": 818472,
       "vCount": 153,
-      "iOff": 1129784,
+      "iOff": 824592,
       "iCount": 186,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 1130156,
+      "vOff": 824964,
       "vCount": 37,
-      "iOff": 1131636,
+      "iOff": 826444,
       "iCount": 54,
       "i32": false
      }
@@ -342,18 +292,18 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 1131744,
+      "vOff": 826552,
       "vCount": 896,
-      "iOff": 1167584,
+      "iOff": 862392,
       "iCount": 1290,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 1170164,
+      "vOff": 864972,
       "vCount": 336,
-      "iOff": 1183604,
+      "iOff": 878412,
       "iCount": 546,
       "i32": false
      }
@@ -396,39 +346,39 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 1184696,
-      "vCount": 10452,
-      "iOff": 1602776,
-      "iCount": 12720,
+      "vOff": 879504,
+      "vCount": 9613,
+      "iOff": 1264024,
+      "iCount": 11856,
       "i32": false
      },
      "glass": {
-      "vOff": 1628216,
+      "vOff": 1287736,
       "vCount": 4,
-      "iOff": 1628376,
+      "iOff": 1287896,
       "iCount": 6,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 1628388,
+      "vOff": 1287908,
       "vCount": 1128,
-      "iOff": 1673508,
+      "iOff": 1333028,
       "iCount": 1926,
       "i32": false
      },
      "glass": {
-      "vOff": 1677360,
+      "vOff": 1336880,
       "vCount": 4,
-      "iOff": 1677520,
+      "iOff": 1337040,
       "iCount": 6,
       "i32": false
      }
     }
    ],
    "tris": [
-    4242,
+    3954,
     644
    ],
    "bounds": [
@@ -463,32 +413,32 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 1677532,
+      "vOff": 1337052,
       "vCount": 6242,
-      "iOff": 1927212,
+      "iOff": 1586732,
       "iCount": 7356,
       "i32": false
      },
      "glass": {
-      "vOff": 1941924,
+      "vOff": 1601444,
       "vCount": 20,
-      "iOff": 1942724,
+      "iOff": 1602244,
       "iCount": 30,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 1942784,
+      "vOff": 1602304,
       "vCount": 490,
-      "iOff": 1962384,
+      "iOff": 1621904,
       "iCount": 780,
       "i32": false
      },
      "glass": {
-      "vOff": 1963944,
+      "vOff": 1623464,
       "vCount": 20,
-      "iOff": 1964744,
+      "iOff": 1624264,
       "iCount": 30,
       "i32": false
      }
@@ -527,18 +477,18 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 1964804,
+      "vOff": 1624324,
       "vCount": 307,
-      "iOff": 1977084,
+      "iOff": 1636604,
       "iCount": 426,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 1977936,
+      "vOff": 1637456,
       "vCount": 104,
-      "iOff": 1982096,
+      "iOff": 1641616,
       "iCount": 168,
       "i32": false
      }
@@ -576,18 +526,18 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 1982432,
+      "vOff": 1641952,
       "vCount": 681,
-      "iOff": 2009672,
+      "iOff": 1669192,
       "iCount": 960,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 2011592,
+      "vOff": 1671112,
       "vCount": 108,
-      "iOff": 2015912,
+      "iOff": 1675432,
       "iCount": 186,
       "i32": false
      }
@@ -625,18 +575,18 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 2016284,
+      "vOff": 1675804,
       "vCount": 84,
-      "iOff": 2019644,
+      "iOff": 1679164,
       "iCount": 102,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 2019848,
+      "vOff": 1679368,
       "vCount": 20,
-      "iOff": 2020648,
+      "iOff": 1680168,
       "iCount": 30,
       "i32": false
      }
@@ -674,18 +624,18 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 2020708,
+      "vOff": 1680228,
       "vCount": 89,
-      "iOff": 2024268,
+      "iOff": 1683788,
       "iCount": 114,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 2024496,
+      "vOff": 1684016,
       "vCount": 34,
-      "iOff": 2025856,
+      "iOff": 1685376,
       "iCount": 54,
       "i32": false
      }
@@ -724,18 +674,18 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 2025964,
+      "vOff": 1685484,
       "vCount": 9630,
-      "iOff": 2411164,
+      "iOff": 2070684,
       "iCount": 11898,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 2434960,
+      "vOff": 2094480,
       "vCount": 1505,
-      "iOff": 2495160,
+      "iOff": 2154680,
       "iCount": 2340,
       "i32": false
      }
@@ -774,18 +724,18 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 2499840,
+      "vOff": 2159360,
       "vCount": 7780,
-      "iOff": 2811040,
+      "iOff": 2470560,
       "iCount": 9630,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 2830300,
+      "vOff": 2489820,
       "vCount": 1295,
-      "iOff": 2882100,
+      "iOff": 2541620,
       "iCount": 1998,
       "i32": false
      }
@@ -824,18 +774,18 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 2886096,
+      "vOff": 2545616,
       "vCount": 11116,
-      "iOff": 3330736,
+      "iOff": 2990256,
       "iCount": 13986,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 3358708,
+      "vOff": 3018228,
       "vCount": 2129,
-      "iOff": 3443868,
+      "iOff": 3103388,
       "iCount": 3702,
       "i32": false
      }
@@ -874,18 +824,18 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 3451272,
+      "vOff": 3110792,
       "vCount": 9106,
-      "iOff": 3815512,
+      "iOff": 3475032,
       "iCount": 11394,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 3838300,
+      "vOff": 3497820,
       "vCount": 1871,
-      "iOff": 3913140,
+      "iOff": 3572660,
       "iCount": 3306,
       "i32": false
      }
@@ -926,32 +876,32 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 3919752,
+      "vOff": 3579272,
       "vCount": 7800,
-      "iOff": 4231752,
+      "iOff": 3891272,
       "iCount": 9450,
       "i32": false
      },
      "glass": {
-      "vOff": 4250652,
+      "vOff": 3910172,
       "vCount": 28,
-      "iOff": 4251772,
+      "iOff": 3911292,
       "iCount": 42,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 4251856,
+      "vOff": 3911376,
       "vCount": 602,
-      "iOff": 4275936,
+      "iOff": 3935456,
       "iCount": 1014,
       "i32": false
      },
      "glass": {
-      "vOff": 4277964,
+      "vOff": 3937484,
       "vCount": 28,
-      "iOff": 4279084,
+      "iOff": 3938604,
       "iCount": 42,
       "i32": false
      }
@@ -989,18 +939,18 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 4279168,
+      "vOff": 3938688,
       "vCount": 132,
-      "iOff": 4284448,
+      "iOff": 3943968,
       "iCount": 174,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 4284796,
+      "vOff": 3944316,
       "vCount": 26,
-      "iOff": 4285836,
+      "iOff": 3945356,
       "iCount": 42,
       "i32": false
      }
@@ -1042,39 +992,39 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 4285920,
-      "vCount": 7099,
-      "iOff": 4569880,
-      "iCount": 9174,
+      "vOff": 3945440,
+      "vCount": 6882,
+      "iOff": 4220720,
+      "iCount": 8982,
       "i32": false
      },
      "glass": {
-      "vOff": 4588228,
+      "vOff": 4238684,
       "vCount": 8,
-      "iOff": 4588548,
+      "iOff": 4239004,
       "iCount": 12,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 4588572,
+      "vOff": 4239028,
       "vCount": 818,
-      "iOff": 4621292,
+      "iOff": 4271748,
       "iCount": 1482,
       "i32": false
      },
      "glass": {
-      "vOff": 4624256,
+      "vOff": 4274712,
       "vCount": 8,
-      "iOff": 4624576,
+      "iOff": 4275032,
       "iCount": 12,
       "i32": false
      }
     }
    ],
    "tris": [
-    3062,
+    2998,
     498
    ],
    "bounds": [
@@ -1110,39 +1060,39 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 4624600,
-      "vCount": 5431,
-      "iOff": 4841840,
-      "iCount": 6732,
+      "vOff": 4275056,
+      "vCount": 5147,
+      "iOff": 4480936,
+      "iCount": 6444,
       "i32": false
      },
      "glass": {
-      "vOff": 4855304,
+      "vOff": 4493824,
       "vCount": 16,
-      "iOff": 4855944,
+      "iOff": 4494464,
       "iCount": 24,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 4855992,
+      "vOff": 4494512,
       "vCount": 886,
-      "iOff": 4891432,
+      "iOff": 4529952,
       "iCount": 1452,
       "i32": false
      },
      "glass": {
-      "vOff": 4894336,
+      "vOff": 4532856,
       "vCount": 16,
-      "iOff": 4894976,
+      "iOff": 4533496,
       "iCount": 24,
       "i32": false
      }
     }
    ],
    "tris": [
-    2252,
+    2156,
     492
    ],
    "bounds": [
@@ -1177,32 +1127,32 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 4895024,
+      "vOff": 4533544,
       "vCount": 4654,
-      "iOff": 5081184,
+      "iOff": 4719704,
       "iCount": 5664,
       "i32": false
      },
      "glass": {
-      "vOff": 5092512,
+      "vOff": 4731032,
       "vCount": 8,
-      "iOff": 5092832,
+      "iOff": 4731352,
       "iCount": 12,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 5092856,
+      "vOff": 4731376,
       "vCount": 392,
-      "iOff": 5108536,
+      "iOff": 4747056,
       "iCount": 618,
       "i32": false
      },
      "glass": {
-      "vOff": 5109772,
+      "vOff": 4748292,
       "vCount": 8,
-      "iOff": 5110092,
+      "iOff": 4748612,
       "iCount": 12,
       "i32": false
      }
@@ -1243,25 +1193,25 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 5110116,
-      "vCount": 4757,
-      "iOff": 5300396,
-      "iCount": 5994,
+      "vOff": 4748636,
+      "vCount": 4662,
+      "iOff": 4935116,
+      "iCount": 5898,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 5312384,
+      "vOff": 4946912,
       "vCount": 60,
-      "iOff": 5314784,
+      "iOff": 4949312,
       "iCount": 90,
       "i32": false
      }
     }
    ],
    "tris": [
-    1998,
+    1966,
     30
    ],
    "bounds": [
@@ -1295,32 +1245,32 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 5314964,
+      "vOff": 4949492,
       "vCount": 6546,
-      "iOff": 5576804,
+      "iOff": 5211332,
       "iCount": 8004,
       "i32": false
      },
      "glass": {
-      "vOff": 5592812,
+      "vOff": 5227340,
       "vCount": 16,
-      "iOff": 5593452,
+      "iOff": 5227980,
       "iCount": 24,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 5593500,
+      "vOff": 5228028,
       "vCount": 516,
-      "iOff": 5614140,
+      "iOff": 5248668,
       "iCount": 864,
       "i32": false
      },
      "glass": {
-      "vOff": 5615868,
+      "vOff": 5250396,
       "vCount": 16,
-      "iOff": 5616508,
+      "iOff": 5251036,
       "iCount": 24,
       "i32": false
      }
@@ -1343,6 +1293,56 @@
     ]
    ]
   },
+  "shutter": {
+   "kind": "window",
+   "ref": [
+    1.2,
+    1.6
+   ],
+   "occ": "wall",
+   "rise": 0,
+   "slice": "window",
+   "slots": [
+    "wood_frame_white",
+    "cast_iron_green"
+   ],
+   "lods": [
+    {
+     "opaque": {
+      "vOff": 5251084,
+      "vCount": 3387,
+      "iOff": 5386564,
+      "iCount": 4536,
+      "i32": false
+     }
+    },
+    {
+     "opaque": {
+      "vOff": 5395636,
+      "vCount": 1088,
+      "iOff": 5439156,
+      "iCount": 1656,
+      "i32": false
+     }
+    }
+   ],
+   "tris": [
+    1512,
+    552
+   ],
+   "bounds": [
+    [
+     -1.406999945640564,
+     0.009999999776482582,
+     0
+    ],
+    [
+     1.406999945640564,
+     1.600000023841858,
+     0.04500000178813934
+    ]
+   ]
+  },
   "bay": {
    "kind": "window",
    "ref": [
@@ -1361,39 +1361,39 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 5616556,
-      "vCount": 5958,
-      "iOff": 5854876,
-      "iCount": 7026,
+      "vOff": 5442468,
+      "vCount": 5775,
+      "iOff": 5673468,
+      "iCount": 6834,
       "i32": false
      },
      "glass": {
-      "vOff": 5868928,
+      "vOff": 5687136,
       "vCount": 24,
-      "iOff": 5869888,
+      "iOff": 5688096,
       "iCount": 36,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 5869960,
+      "vOff": 5688168,
       "vCount": 802,
-      "iOff": 5902040,
+      "iOff": 5720248,
       "iCount": 1404,
       "i32": false
      },
      "glass": {
-      "vOff": 5904848,
+      "vOff": 5723056,
       "vCount": 24,
-      "iOff": 5905808,
+      "iOff": 5724016,
       "iCount": 36,
       "i32": false
      }
     }
    ],
    "tris": [
-    2354,
+    2290,
     480
    ],
    "bounds": [
@@ -1427,18 +1427,18 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 5905880,
+      "vOff": 5724088,
       "vCount": 2046,
-      "iOff": 5987720,
+      "iOff": 5805928,
       "iCount": 2406,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 5992532,
+      "vOff": 5810740,
       "vCount": 120,
-      "iOff": 5997332,
+      "iOff": 5815540,
       "iCount": 204,
       "i32": false
      }
@@ -1477,25 +1477,25 @@
    "lods": [
     {
      "opaque": {
-      "vOff": 5997740,
-      "vCount": 393,
-      "iOff": 6013460,
-      "iCount": 492,
+      "vOff": 5815948,
+      "vCount": 296,
+      "iOff": 5827788,
+      "iCount": 396,
       "i32": false
      }
     },
     {
      "opaque": {
-      "vOff": 6014444,
+      "vOff": 5828580,
       "vCount": 24,
-      "iOff": 6015404,
+      "iOff": 5829540,
       "iCount": 36,
       "i32": false
      }
     }
    ],
    "tris": [
-    164,
+    132,
     12
    ],
    "bounds": [
@@ -1512,5 +1512,5 @@
    ]
   }
  },
- "bytes": 6015476
+ "bytes": 5829612
 }

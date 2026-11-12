@@ -1,6 +1,6 @@
 # Kit audit: cornice.straight LOD1
 
-114 triangles, 64 welded vertices, 18 open edges, 12,768 rays, 4 ms.
+114 triangles, 64 welded vertices, 18 open edges, 12,768 rays, 7 ms.
 
 **0 blocking**, 40 warnings. Clean (no blocking item).
 

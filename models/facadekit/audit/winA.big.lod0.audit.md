@@ -1,6 +1,6 @@
 # Kit audit: winA.big LOD0
 
-3,110 triangles, 1,676 welded vertices, 138 open edges, 18,162 rays, 125 ms.
+3,110 triangles, 1,676 welded vertices, 138 open edges, 18,162 rays, 137 ms.
 
 **0 blocking**, 786 warnings. Clean (no blocking item).
 

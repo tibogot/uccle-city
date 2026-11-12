@@ -1,3 +1,9 @@
+# Façade kit round 3: DONE 2026-11-12 (this file is historical; see docs/facadekit/README.md "Round 3")
+
+The specular AA build error was `transformNormalByViewMatrix()` (r187) inside the IBL's getTextureLevel / getUV
+contexts: the wall normal is now `cameraViewMatrix x vec4(n, 0)`; SAA is on. Baked rebuild, lab check, flicker test,
+GPU and docs done.
+
 # Façade kit round 3: resume notes (WIP, stopped 2026-11-12 on the owner's shutdown)
 
 Branch `claude/facade-kit`, worktree `.claude/worktrees/agent-a511811fc16efd9dd`, lab `labs/kit-lab.html` (port 8806).

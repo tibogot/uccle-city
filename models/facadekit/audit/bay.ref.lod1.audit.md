@@ -1,6 +1,6 @@
 # Kit audit: bay.ref LOD1
 
-488 triangles, 302 welded vertices, 64 open edges, 13,960 rays, 21 ms.
+488 triangles, 302 welded vertices, 64 open edges, 13,960 rays, 28 ms.
 
 **0 blocking**, 21 warnings. Clean (no blocking item).
 

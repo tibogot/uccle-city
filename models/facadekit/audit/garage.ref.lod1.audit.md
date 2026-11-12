@@ -1,6 +1,6 @@
 # Kit audit: garage.ref LOD1
 
-40 triangles, 38 welded vertices, 26 open edges, 19,936 rays, 6 ms.
+40 triangles, 38 welded vertices, 26 open edges, 19,936 rays, 8 ms.
 
 **0 blocking**, 8 warnings. Clean (no blocking item).
 

@@ -4,6 +4,70 @@ Premium Blender pieces placed by rules on the UrbIS street façades, exactly whe
 (viewer/facades.js) paints its windows and doors; within ~115 m the pieces draw, beyond they dither back to the painted
 façade. Lab: `labs/kit-lab.html` (`?mode=row` for real I6 houses). City: `viewer/index.html?tile=I6&kit=1&view=stjob`.
 
+## Round 3 (2026-11-12): sealed, anti-aliased, more pieces
+
+Owner's review of round 2: "the kit is nice; we will need more pieces, as long as everything stays very optimized";
+close up while moving: thin BRIGHT LINES along a door and its frame, ALIASED / shimmering edges, SAW-TOOTH shadows in
+the lab.
+
+| Item | What changed | Result |
+|---|---|---|
+| 1. gaps | every piece through the shared mesh checker (`tools/mesh_audit/`, copied from `claude/stalle` a3d14ab) with `tools/facadekit/auditKit.mjs`: the PACKED kit as the city draws it (groups that stand together, the wall with the opening cut and NOTHING behind it: in the city the building's inside is culled back faces, so any slit shows daylight), LOD0 (to 28 m) and LOD1 (to 115 m), 3 opening sizes (9-slice), runs at outside / inside / straight joins. Fixed in `tools/blender/facadeKit.py`: surrounds start on the wall plane at the opening edge and share their vertices with the reveal lining (was a 4 mm overlap), the casements meet at x = 0 under a full-height astragal (was a 4 mm slit at the meeting stiles), panes tucked 4 mm into their members, no frame bottom / reveal bottom buried under door thresholds, window B's frame one mitred sweep, bricks / quoins / door surround stacked without shared faces, closed handrail section, plain railings (`balconyP` / `balconnetP`) under 1.1 m, blocks standing on the wall keep their BACK edges sharp (a bevel there was a 6 mm groove against the wall that blinked) | 3558 blocking items before (round 2 kit) -> **0 blocking on every group, both LODs, every size, leak included**; reports in `models/facadekit/audit/` |
+| 2. LOD1 | every piece has a scripted FAR variant (no bevels, beads, bolections, knobs; coarser profiles) = its LOD1 source, then meshoptimizer gently (3 mm cap, LockBorder; 8-10 mm on solid mouldings). Round 2 simplified LOD0 by 15 mm: closed parts shrank and opened slits | 0 blocking at LOD1 too; some LOD1s grew (balcony 566 -> 1234 tris) |
+| 3. normals | made in `packKit.mjs` per LOD: angle-limited (32 deg) area x angle weighted smoothing, clamped 14.5 deg off the face (no streaks), flat regions flat (no bentflat) | 0 streak / bentflat |
+| 4. aliasing | `kitMaterials.js`: (a) SPECULAR AA, the Tokuyoshi & Kaplanyan kernel as Filament's normalFiltering / Unreal's: sigma^2 = 0.25 x (dn/dx^2 + dn/dy^2) of the shading normal, alpha^2 += min(2 sigma^2, 0.18); on top of three r187's own `getGeometryRoughness` (it adds max abs(dFdx / dFdy normalViewGeometry) to the perceptual roughness inside `getRoughness`); (b) the town hall's REGION-WIDTH filter: the packer writes each face's region width (faces joined through < 50 deg turns, the middle principal extent) into `aKitW.x`; once a pixel is wider (0.6 -> 1.6 x) the part shades with the wall's normal and its albedo tends to its covered share; (c) Mr.doob's `filteredPulse` (slop-newyork js/tsl-materials.js, MIT) box-filters the joints, speckle, grain, leaded lights, the number plate's border; per-unit colour jitter fades to its mean below a pixel. Mr.doob has no specular AA of his own: he relies on three's geometric roughness and filters his procedural patterns, so (a) is ours | live switches in the lab panel "Anti-aliasing" |
+| 5. corners | cornices, plinths and the new string course are continuous MITRED strips: the end rings of a run shear by z x tan(turn / 2) in the vertex shader (`sliceDelta`), `placement.js joinRuns` joins run ends of the same piece tile-wide (corners, adjoining houses) on their common corner; free ends stop 2 mm short; the 4 mm-overlap corner piece is gone. Arched heads bend onto the true arch of the stretched width (the city cuts that circle) | I6: 230 run joins; no run end cap in the next wall's plane (the city's own cornice flicker cause, docs/CITY_MESH_AUDIT.md: not touched here) |
+| 6. lab | the city's shadow box size for the view (main.js orbit formula) instead of a fixed 40 m, gallery walls are closed blocks with the opening cut in the front only (no dark room plane: leaks show as in the city), every new piece, a mitred cornice + string course corner, a dormer on a roof, the flicker test (`labs/flickerTest.js`) and the AA switches in the panel | the saw-tooth came from the single-plane walls and the smaller box; see the screenshots |
+| 7. pieces | doorNouveau (curved glazing under an arched rail, whiplash ironwork, crossettes), doorDeco (stepped surround and crown, chevron grille, sunburst fanlight), doorModern (1960s aluminium, side light with the LETTER SLOT and bell plate), garage (sectional, ribbed; built, NOT placed: the façade shader has no garage openings), winC (window A with a leaded stained-glass transom: slot glass_stained), shutter (louvred, folded open), bay (canted oriel, sealed inside), dormer (zinc, over the cornice, only where the roof rises >= 30 deg behind the eaves: `roofAt` from facadeGeom), band (string course), numPlate (blank Brussels enamel plate; the figures come from streetlife) | I6: 40 Nouveau, 52 Deco, 50 1960s doors, 249 winC, 39 shutter pairs, 18 bays, 79 dormers, 103 string-course runs, 282 number plates |
+
+New slots (appended; library names where the library has them): slate, brick_dark, render_white, copper_patina; kit-only
+looks: glass_stained, metal_anodised, enamel_blue. kit.json version 3 (a 4th vertex block `aKitW`).
+
+### Round 3 verification
+
+**Flicker test** (`labs/flickerTest.js`, 24 frames, strafe 0.6 mm / dolly 2 mm per frame, golden hour, lab row mode =
+real I6 walls with the openings cut and nothing behind), the SAME door A and first-floor window A in both builds: round
+2 (d63cca9, served from a separate worktree) vs round 3. Blinking pixels counted on the piece itself (the full-frame
+counts are dominated by the painted French-window glass behind the balconies, `facades.js paintedGlass`, ~15k px in both
+builds: not the kit):
+
+| view | round 2 | round 3 |
+|---|---|---|
+| door A, strafe | 77 | 60 |
+| door A, dolly | 8 | 23 |
+| window A, strafe | 348 | 303 |
+| window A, dolly | 40 | 49 |
+
+The vertical blinking line along the door's pilaster / reveal (the owner's "thin bright lines") is gone after the last
+fix (back edges of blocks on the wall kept sharp): `round3_flicker_door_*_before / _after.jpg`. What still blinks: the
+fanlight's 12 mm iron bars in front of the bright glass and a few dots on frame arrises (geometric coverage, below the
+thin-part filter's 0.6 px threshold) and the neighbouring window B's arch soffit at the frame edge. Dolly counts are
+small and noisy (8 -> 23, 40 -> 49).
+
+**GPU** (city `?tile=I6&kit=1`, kit toggled inside the page, 3 alternations per view, p50 ms; `tools/facadekit/abInPage.js`).
+The owner's other tabs were open and the GPU was busy: the aerial view has NO kit drawn and still moved -0.7 .. +1.4 ms.
+These are noise-limited:
+
+| run | street | avenue | close-up | aerial (no kit: noise) |
+|---|---|---|---|---|
+| 1 | +1.77 (17-19 ms frames: contention) | +3.82 (one 16 ms outlier) | +1.86 | +0.74 |
+| 2 | +0.74 | +1.27 | +1.27 | +1.39 |
+| 3 | -0.39 | -0.30 | +0.18 | -0.74 |
+
+Draws at street level +80-83 (round 2: +50): 62 kit meshes in use (more piece types; each type with instances in range =
+1 opaque + 1 glass draw per LOD). Kit triangles drawn 341-410k (round 2 320-403k). A quiet-machine A/B is still needed;
+the per-slot multi-draw (or merging the rare piece types into shared meshes) is the next optimisation.
+
+**Images**: `round3_lab_doors.jpg`, `round3_lab_windows.jpg`, `round3_lab_mitred_corner.jpg`, `round3_lab_corner_dormer.jpg`
+(midday, city shadows), `round3_city_street_strip.jpg` (walking the street east of Place de Saint-Job, `?kit=1`),
+`round3_lab_row_strip.jpg`, `wip/blender_*.png` (Cycles previews of every piece, baked).
+
+**Weak points**: the lab's 2.9 cm shadow texels still show stair steps under the cornice (that is the city's shadow
+setup itself, now the same in both: the clean-buildings pass in docs/TODO.md); garage doors are not placed; the number
+plates are blank; LOD1 of the balconies grew to 1.1-1.2k triangles to stay leak-free; 62 kit meshes at street level;
+the painted French-window glass blinks under motion (facades.js); doors on sloping streets still start at the façade
+base (DTM bank in front, see the strip).
+
 ## Round 2 (2026-11-06)
 
 | Item | What changed | Result |

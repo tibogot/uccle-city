@@ -1,6 +1,6 @@
 # Kit audit: frenchBalconnet.big LOD1
 
-1,462 triangles, 846 welded vertices, 85 open edges, 14,616 rays, 41 ms.
+1,462 triangles, 846 welded vertices, 85 open edges, 14,616 rays, 47 ms.
 
 **0 blocking**, 175 warnings. Clean (no blocking item).
 

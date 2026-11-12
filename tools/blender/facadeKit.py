@@ -107,8 +107,15 @@ def bbox(x0, x1, y0, y1, z0, z1, r=0.006, seg=2, faces_skip=()):
         v.co = V(((x0 + x1) / 2 + v.co.x * (x1 - x0), (y0 + y1) / 2 + v.co.y * (y1 - y0), (z0 + z1) / 2 + v.co.z * (z1 - z0)))
     r = 0.0 if FAR else min(r, (x1 - x0) * 0.45, (y1 - y0) * 0.45, (z1 - z0) * 0.45)
     if r > 0.0005:
-        bmesh.ops.bevel(bm, geom=list(bm.edges), offset=r, segments=seg, profile=0.5, affect="EDGES", clamp_overlap=True)
+        bmesh.ops.bevel(bm, geom=back_sharp(bm, z0), offset=r, segments=seg, profile=0.5, affect="EDGES", clamp_overlap=True)
     return bm
+
+def back_sharp(bm, z0):
+    """(round 3) a block standing ON the wall plane (z0 = 0) keeps its back edges sharp: a bevel there left a 6 mm V-groove
+    between the block and the wall / the reveal lining, a sub-pixel dark line that blinked along door surrounds in the
+    flicker test; the visible edges keep their bevels"""
+    if abs(z0) > 1e-6: return list(bm.edges)
+    return [e for e in bm.edges if not (abs(e.verts[0].co.z - z0) < 1e-6 and abs(e.verts[1].co.z - z0) < 1e-6)]
 
 def wedge(pts2d, z0, z1, r=0.005, seg=2):
     """a prism: polygon pts2d (x, y, counter-clockwise) extruded z0..z1, bevelled"""
@@ -122,7 +129,7 @@ def wedge(pts2d, z0, z1, r=0.005, seg=2):
         bm.faces.new((vs0[i], vs0[j], vs1[j], vs1[i]))
     bm.normal_update()
     if r > 0.0005 and not FAR:
-        bmesh.ops.bevel(bm, geom=list(bm.edges), offset=r, segments=seg, profile=0.5, affect="EDGES", clamp_overlap=True)
+        bmesh.ops.bevel(bm, geom=back_sharp(bm, z0), offset=r, segments=seg, profile=0.5, affect="EDGES", clamp_overlap=True)
     return bm
 
 def cyl(r, y0, y1, seg=10, x=0.0, z=0.0, axis="y"):
@@ -1129,9 +1136,9 @@ def shutter():
         z0, z1 = 0.0, 0.032
         P.bm(bbox(a, a + 0.06, 0.01, H, z0, z1, 0.004), "wood_frame_white")       # (from 1 cm up: clear of the sill's top)
         P.bm(bbox(b - 0.06, b, 0.01, H, z0, z1, 0.004), "wood_frame_white")
-        P.bm(bbox(a + 0.06 - OV(), b - 0.06 + OV(), H - 0.08, H, z0, z1, 0.004), "wood_frame_white")
-        P.bm(bbox(a + 0.06 - OV(), b - 0.06 + OV(), 0.01, 0.1, z0, z1, 0.004), "wood_frame_white")
-        P.bm(bbox(a + 0.06 - OV(), b - 0.06 + OV(), H * 0.48, H * 0.48 + 0.07, z0, z1, 0.004), "wood_frame_white")
+        P.bm(bbox(a + 0.06, b - 0.06, H - 0.08, H, z0, z1, 0.004), "wood_frame_white")
+        P.bm(bbox(a + 0.06, b - 0.06, 0.01, 0.1, z0, z1, 0.004), "wood_frame_white")
+        P.bm(bbox(a + 0.06, b - 0.06, H * 0.48, H * 0.48 + 0.07, z0, z1, 0.004), "wood_frame_white")
         # slats: tilted boards between the stiles, their ends inside the stiles
         for (ya, yb) in ((0.1, H * 0.48), (H * 0.48 + 0.07, H - 0.08)):
             n = max(3, int((yb - ya) / (0.07 if FAR else 0.045)))

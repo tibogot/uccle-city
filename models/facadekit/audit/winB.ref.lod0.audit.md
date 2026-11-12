@@ -1,44 +1,36 @@
 # Kit audit: winB.ref LOD0
 
-4,879 triangles, 2,678 welded vertices, 159 open edges, 16,936 rays, 292 ms.
+4,311 triangles, 2,394 welded vertices, 159 open edges, 16,936 rays, 290 ms.
 
-**0 blocking**, 372 warnings. Clean (no blocking item).
+**0 blocking**, 364 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| sliver | warn | 362 |
+| sliver | warn | 354 |
 | nonmanifold | warn | 4 |
 | tjunction | warn | 6 |
-| seam | info | 133 |
-| opening | info | 44 |
-| backtoback | info | 331 |
+| seam | info | 190 |
+| opening | info | 43 |
+| backtoback | info | 605 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## sliver (warn, 362)
+## sliver (warn, 354)
 
 | at | part | aspect | longest |
 |---|---|---|---|
-| -0.71, 1.62, 0.00 | winB.lod0/brick_red_brussels | 111 | 0.255 |
-| -0.71, 1.62, 0.00 | winB.lod0/brick_red_brussels | 109 | 0.251 |
 | -0.71, 1.71, 0.01 | winB.lod0/brick_red_brussels | 113 | 0.26 |
 | -0.71, 1.70, 0.01 | winB.lod0/brick_red_brussels | 111 | 0.255 |
-| -0.71, 1.71, 0.00 | winB.lod0/brick_red_brussels | 130 | 0.26 |
-| 0.71, 1.71, 0.00 | winB.lod0/brick_red_brussels | 113 | 0.26 |
-| 0.71, 1.70, 0.00 | winB.lod0/brick_red_brussels | 111 | 0.255 |
+| -0.71, 1.71, 0.00 | winB.lod0/brick_red_brussels | 52 | 0.26 |
 | 0.71, 1.62, 0.01 | winB.lod0/brick_red_brussels | 111 | 0.255 |
 | 0.71, 1.62, 0.01 | winB.lod0/brick_red_brussels | 109 | 0.251 |
-| 0.71, 1.62, 0.00 | winB.lod0/brick_red_brussels | 130 | 0.26 |
-| -0.71, 1.71, 0.00 | winB.lod0/brick_red_brussels | 113 | 0.26 |
-| -0.71, 1.70, 0.00 | winB.lod0/brick_red_brussels | 111 | 0.255 |
+| 0.71, 1.62, 0.00 | winB.lod0/brick_red_brussels | 52 | 0.26 |
 | -0.71, 1.62, 0.01 | winB.lod0/brick_red_brussels | 111 | 0.255 |
 | -0.71, 1.62, 0.01 | winB.lod0/brick_red_brussels | 109 | 0.251 |
-| -0.71, 1.62, 0.00 | winB.lod0/brick_red_brussels | 130 | 0.26 |
-| 0.71, 1.62, 0.00 | winB.lod0/brick_red_brussels | 111 | 0.255 |
-| 0.71, 1.62, 0.00 | winB.lod0/brick_red_brussels | 109 | 0.251 |
+| -0.71, 1.62, 0.00 | winB.lod0/brick_red_brussels | 52 | 0.26 |
 | 0.71, 1.71, 0.01 | winB.lod0/brick_red_brussels | 113 | 0.26 |
 | 0.71, 1.70, 0.01 | winB.lod0/brick_red_brussels | 111 | 0.255 |
-| 0.71, 1.71, 0.00 | winB.lod0/brick_red_brussels | 130 | 0.26 |
+| 0.71, 1.71, 0.00 | winB.lod0/brick_red_brussels | 52 | 0.26 |
 | 0.18, 0.07, -0.17 | winB.lod0/wood_frame_white | 275 | 1.054 |
 | 0.18, 0.07, -0.17 | winB.lod0/wood_frame_white | 275 | 1.054 |
 | -0.18, 0.07, -0.11 | winB.lod0/wood_frame_white | 275 | 1.054 |
@@ -59,8 +51,16 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.59, 0.53, -0.11 | winB.lod0/wood_frame_white | 141 | 1.595 |
 | 0.54, 1.04, -0.11 | winB.lod0/wood_frame_white | 138 | 1.559 |
 | 0.60, 1.06, -0.12 | winB.lod0/wood_frame_white | 141 | 1.6 |
+| -0.53, 0.72, -0.17 | winB.lod0/wood_frame_white | 255 | 0.975 |
+| -0.53, 0.72, -0.17 | winB.lod0/wood_frame_white | 255 | 0.975 |
+| -0.53, 0.40, -0.12 | winB.lod0/wood_frame_white | 255 | 0.975 |
+| -0.53, 0.40, -0.12 | winB.lod0/wood_frame_white | 255 | 0.975 |
+| -0.48, 0.40, -0.17 | winB.lod0/wood_frame_white | 255 | 0.975 |
+| -0.48, 0.40, -0.17 | winB.lod0/wood_frame_white | 255 | 0.975 |
+| -0.48, 0.72, -0.12 | winB.lod0/wood_frame_white | 255 | 0.975 |
+| -0.48, 0.72, -0.12 | winB.lod0/wood_frame_white | 255 | 0.975 |
 
-(322 more in the JSON)
+(314 more in the JSON)
 
 ## nonmanifold (warn, 4)
 
@@ -75,14 +75,14 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 | at | part | edge_m |
 |---|---|---|
-| 0.60, 0.00, 0.00 | winB.lod0/brick_red_brussels | 1.604 |
-| -0.60, 0.00, 0.00 | winB.lod0/brick_red_brussels | 1.604 |
+| 0.60, 0.01, 0.00 | winB.lod0/brick_red_brussels | 1.604 |
+| -0.60, 0.01, 0.00 | winB.lod0/brick_red_brussels | 1.604 |
 | -0.60, -0.00, 0.00 | wall/wall | 5.2 |
 | -0.60, -0.00, 0.00 | wall/wall | 1.2 |
 | 0.60, -0.00, 0.00 | wall/wall | 1.2 |
 | 0.60, -0.00, 0.00 | wall/wall | 5.2 |
 
-## seam (info, 133)
+## seam (info, 190)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -109,27 +109,27 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.48, 1.05, -0.17 | winB.lod0/wood_frame_white + winB.lod0/wood_frame_white | 0.18 | 20 | 44.7 |
 | -0.21, 1.13, -0.14 | winB.lod0/wood_frame_white + winB.lod0/glass_window | 1.03 | 16 | 90 |
 | 0.19, 1.13, -0.14 | winB.lod0/wood_frame_white + winB.lod0/glass_window | 1.03 | 15 | 90 |
-| -0.51, 1.64, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.53 | 10 | 45 |
-| -0.48, 1.00, -0.15 | winB.lod0/wood_frame_white + winB.lod0/glass_window | 0.43 | 10 | 90 |
-| -0.48, 0.15, -0.15 | winB.lod0/wood_frame_white + winB.lod0/glass_window | 0.43 | 10 | 90 |
-| 0.05, 1.00, -0.15 | winB.lod0/wood_frame_white + winB.lod0/glass_window | 0.43 | 10 | 90 |
-| 0.05, 0.15, -0.15 | winB.lod0/wood_frame_white + winB.lod0/glass_window | 0.43 | 10 | 90 |
-| -0.51, 1.82, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.54 | 8 | 45 |
-| -0.36, 1.69, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.54 | 8 | 45 |
-| -0.31, 1.70, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.54 | 8 | 45 |
-| -0.22, 1.72, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.54 | 8 | 45 |
-| -0.10, 1.73, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.54 | 8 | 45 |
-| -0.03, 1.84, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.54 | 8 | 45 |
-| 0.05, 1.84, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.54 | 8 | 45 |
-| 0.20, 1.72, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.54 | 8 | 45 |
-| 0.28, 1.81, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.54 | 8 | 45 |
-| 0.36, 1.80, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.54 | 8 | 45 |
-| 0.43, 1.78, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.54 | 8 | 45 |
-| 0.49, 1.69, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.53 | 8 | 45 |
+| -0.53, 1.63, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.51 | 12 | 90 |
+| -0.53, 1.86, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.56 | 12 | 90 |
+| -0.45, 1.88, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.56 | 12 | 90 |
+| -0.20, 1.93, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.56 | 12 | 90 |
+| 0.38, 1.90, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.56 | 12 | 90 |
+| 0.46, 1.88, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.56 | 12 | 90 |
+| -0.71, 1.79, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.66 | 12 | 90 |
+| 0.71, 1.53, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.66 | 12 | 90 |
+| -0.37, 1.90, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.54 | 11 | 90 |
+| -0.28, 1.92, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.54 | 11 | 90 |
+| -0.04, 1.94, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.54 | 11 | 90 |
+| 0.21, 1.93, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.54 | 11 | 90 |
+| 0.30, 1.92, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.54 | 11 | 90 |
+| -0.12, 1.94, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.55 | 10 | 90 |
+| 0.05, 1.94, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.55 | 10 | 90 |
+| 0.13, 1.94, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.56 | 10 | 90 |
+| 0.54, 1.85, 0.00 | winB.lod0/brick_red_brussels + wall/wall | 0.51 | 10 | 90 |
 
-(93 more in the JSON)
+(150 more in the JSON)
 
-## opening (info, 44)
+## opening (info, 43)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -146,9 +146,8 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.35, 1.69, -0.22 | winB.lod0/brick_red_brussels | -0.24 + -0.97 + 0 | 0.103 |
 | 0.45, 1.66, -0.22 | winB.lod0/brick_red_brussels | -0.31 + -0.95 + 0 | 0.105 |
 | 0.55, 1.62, -0.22 | winB.lod0/brick_red_brussels | -0.38 + -0.93 + 0 | 0.108 |
-| -0.60, -0.01, -0.17 | winB.lod0/brick_red_brussels | 0 + 1 + 0.04 | 0.22 |
 | 0.60, 0.05, -0.22 | winB.lod0/brick_red_brussels | -1 + 0 + 0 | 1.604 |
-| 0.60, -0.01, -0.17 | winB.lod0/brick_red_brussels | 0 + 1 + 0.04 | 0.22 |
+| -0.55, -0.00, -0.22 | winB.lod0/brick_red_brussels | 0 + 1 + 0.04 | 1.2 |
 | -0.60, 0.05, -0.17 | winB.lod0/wood_frame_white | -1 + 0 + 0 | 1.6 |
 | -0.34, 1.69, -0.17 | winB.lod0/wood_frame_white | -0.24 + 0.97 + 0 | 0.077 |
 | -0.27, 1.70, -0.17 | winB.lod0/wood_frame_white | -0.19 + 0.98 + 0 | 0.077 |
@@ -173,10 +172,11 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.15, 4.00, 0.00 | wall/wall | 0 + 0 + 1 | 0.1 |
 | 0.25, 4.00, 0.00 | wall/wall | 0 + 0 + 1 | 0.1 |
 | 0.35, 4.00, 0.00 | wall/wall | 0 + 0 + 1 | 0.1 |
+| 0.45, 4.00, 0.00 | wall/wall | 0 + 0 + 1 | 0.1 |
 
-(4 more in the JSON)
+(3 more in the JSON)
 
-## backtoback (info, 331)
+## backtoback (info, 605)
 
 | at | parts | area |
 |---|---|---|
@@ -221,4 +221,4 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.35, 1.69, -0.16 | winB.lod0/brick_red_brussels + winB.lod0/wood_frame_white | 0.00154 |
 | 0.43, 1.67, -0.13 | winB.lod0/brick_red_brussels + winB.lod0/wood_frame_white | 0.00127 |
 
-(291 more in the JSON)
+(565 more in the JSON)

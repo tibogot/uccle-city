@@ -1,6 +1,6 @@
 # Kit audit: plinth.inside LOD1
 
-24 triangles, 18 welded vertices, 12 open edges, 8,608 rays, 1 ms.
+24 triangles, 18 welded vertices, 12 open edges, 8,608 rays, 3 ms.
 
 **0 blocking**, 7 warnings. Clean (no blocking item).
 

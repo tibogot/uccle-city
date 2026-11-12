@@ -1,6 +1,6 @@
 # Kit audit: doorB.ref LOD0
 
-2,472 triangles, 1,330 welded vertices, 97 open edges, 21,252 rays, 138 ms.
+2,472 triangles, 1,330 welded vertices, 97 open edges, 21,252 rays, 173 ms.
 
 **0 blocking**, 527 warnings. Clean (no blocking item).
 

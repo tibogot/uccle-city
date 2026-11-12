@@ -1,6 +1,6 @@
 # Kit audit: winA_shutters.big LOD1
 
-874 triangles, 566 welded vertices, 66 open edges, 15,606 rays, 32 ms.
+874 triangles, 566 welded vertices, 66 open edges, 15,606 rays, 35 ms.
 
 **0 blocking**, 212 warnings. Clean (no blocking item).
 

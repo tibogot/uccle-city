@@ -1,21 +1,21 @@
 # Kit audit: doorDeco.big LOD0
 
-2,262 triangles, 1,228 welded vertices, 45 open edges, 19,488 rays, 74 ms.
+2,166 triangles, 1,180 welded vertices, 45 open edges, 19,488 rays, 73 ms.
 
-**0 blocking**, 419 warnings. Clean (no blocking item).
+**0 blocking**, 395 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| sliver | warn | 414 |
+| sliver | warn | 390 |
 | nonmanifold | warn | 1 |
 | tjunction | warn | 4 |
 | seam | info | 96 |
 | opening | info | 9 |
-| backtoback | info | 85 |
+| backtoback | info | 97 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## sliver (warn, 414)
+## sliver (warn, 390)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -34,33 +34,33 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.65, 1.72, 0.04 | doorDeco.lod0/stone_white | 129 | 2.583 |
 | 0.69, 1.74, 0.03 | doorDeco.lod0/stone_white | 44 | 2.643 |
 | 0.71, 1.76, 0.02 | doorDeco.lod0/stone_white | 78 | 2.643 |
-| 0.22, 2.73, 0.00 | doorDeco.lod0/stone_white | 435 | 1.332 |
-| 0.22, 2.73, 0.00 | doorDeco.lod0/stone_white | 435 | 1.332 |
 | -0.22, 2.73, 0.06 | doorDeco.lod0/stone_white | 435 | 1.332 |
 | -0.22, 2.73, 0.06 | doorDeco.lod0/stone_white | 435 | 1.332 |
-| -0.22, 2.64, 0.00 | doorDeco.lod0/stone_white | 435 | 1.332 |
-| -0.22, 2.64, 0.00 | doorDeco.lod0/stone_white | 435 | 1.332 |
 | 0.22, 2.64, 0.06 | doorDeco.lod0/stone_white | 435 | 1.332 |
 | 0.22, 2.64, 0.06 | doorDeco.lod0/stone_white | 435 | 1.332 |
-| 0.14, 2.80, 0.00 | doorDeco.lod0/stone_white | 278 | 0.852 |
-| 0.14, 2.80, 0.00 | doorDeco.lod0/stone_white | 278 | 0.852 |
 | -0.14, 2.80, 0.05 | doorDeco.lod0/stone_white | 278 | 0.852 |
 | -0.14, 2.80, 0.05 | doorDeco.lod0/stone_white | 278 | 0.852 |
-| -0.14, 2.73, 0.00 | doorDeco.lod0/stone_white | 278 | 0.852 |
-| -0.14, 2.73, 0.00 | doorDeco.lod0/stone_white | 278 | 0.852 |
 | 0.14, 2.73, 0.05 | doorDeco.lod0/stone_white | 278 | 0.852 |
 | 0.14, 2.73, 0.05 | doorDeco.lod0/stone_white | 278 | 0.852 |
-| 0.07, 2.85, 0.00 | doorDeco.lod0/stone_white | 148 | 0.452 |
-| 0.07, 2.85, 0.00 | doorDeco.lod0/stone_white | 148 | 0.452 |
 | -0.07, 2.85, 0.04 | doorDeco.lod0/stone_white | 148 | 0.452 |
 | -0.07, 2.85, 0.04 | doorDeco.lod0/stone_white | 148 | 0.452 |
-| -0.07, 2.80, 0.00 | doorDeco.lod0/stone_white | 148 | 0.452 |
-| -0.07, 2.80, 0.00 | doorDeco.lod0/stone_white | 148 | 0.452 |
 | 0.07, 2.80, 0.04 | doorDeco.lod0/stone_white | 148 | 0.452 |
 | 0.07, 2.80, 0.04 | doorDeco.lod0/stone_white | 148 | 0.452 |
 | -0.58, 1.67, 0.07 | doorDeco.lod0/stone_white | 51 | 2.533 |
+| -0.60, 1.68, 0.06 | doorDeco.lod0/stone_white | 127 | 2.533 |
+| -0.63, 1.70, 0.05 | doorDeco.lod0/stone_white | 52 | 2.583 |
+| -0.65, 1.72, 0.04 | doorDeco.lod0/stone_white | 129 | 2.583 |
+| -0.69, 1.74, 0.03 | doorDeco.lod0/stone_white | 44 | 2.643 |
+| -0.71, 1.76, 0.01 | doorDeco.lod0/stone_white | 78 | 2.643 |
+| 0.20, 2.53, 0.06 | doorDeco.lod0/stone_white | 60 | 1.2 |
+| 0.22, 2.58, 0.04 | doorDeco.lod0/stone_white | 65 | 1.3 |
+| 0.24, 2.64, 0.01 | doorDeco.lod0/stone_white | 42 | 1.42 |
+| 0.57, 0.82, 0.07 | doorDeco.lod0/stone_white | 50 | 2.483 |
+| 0.60, 0.84, 0.06 | doorDeco.lod0/stone_white | 127 | 2.533 |
+| 0.62, 0.84, 0.05 | doorDeco.lod0/stone_white | 51 | 2.533 |
+| 0.65, 0.86, 0.04 | doorDeco.lod0/stone_white | 129 | 2.583 |
 
-(374 more in the JSON)
+(350 more in the JSON)
 
 ## nonmanifold (warn, 1)
 
@@ -96,11 +96,13 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.38, 1.85, -0.19 | doorDeco.lod0/wood_frame_dark + doorDeco.lod0/wood_frame_dark | 0.29 | 20 | 44.3 |
 | -0.00, 2.00, -0.15 | doorDeco.lod0/metal_anodised + doorDeco.lod0/metal_anodised | 0.05 | 16 | 80.8 |
 | 0.30, 0.11, -0.14 | doorDeco.lod0/wood_frame_dark + doorDeco.lod0/wood_frame_dark | 1.46 | 15 | 67.5 |
+| -0.43, 2.73, 0.00 | doorDeco.lod0/stone_white + wall/wall | 1.85 | 14 | 90 |
 | 0.43, 1.03, -0.14 | doorDeco.lod0/wood_frame_dark + doorDeco.lod0/painted_metal_white | 0.07 | 14 | 90 |
 | 0.05, 1.97, -0.16 | doorDeco.lod0/metal_anodised + doorDeco.lod0/metal_anodised | 0.05 | 14 | 84.7 |
 | 0.04, 1.99, -0.16 | doorDeco.lod0/metal_anodised + doorDeco.lod0/metal_anodised | 0.05 | 14 | 83.4 |
 | -0.04, 1.99, -0.16 | doorDeco.lod0/metal_anodised + doorDeco.lod0/metal_anodised | 0.05 | 14 | 83.4 |
 | -0.05, 1.97, -0.16 | doorDeco.lod0/metal_anodised + doorDeco.lod0/metal_anodised | 0.05 | 14 | 84.7 |
+| -0.23, 2.80, 0.00 | doorDeco.lod0/stone_white + wall/wall | 1.01 | 12 | 90 |
 | -0.72, -0.06, 0.00 | doorDeco.lod0/stone_blue + wall/wall | 0.39 | 12 | 90 |
 | 0.72, -0.01, 0.00 | doorDeco.lod0/stone_blue + wall/wall | 0.39 | 12 | 90 |
 | -0.47, 2.40, -0.17 | doorDeco.lod0/wood_frame_dark + doorDeco.lod0/glass_window | 0.96 | 12 | 90 |
@@ -116,8 +118,6 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.55, 1.03, -0.20 | doorDeco.lod0/stone_white + doorDeco.lod0/wood_frame_dark | 5.33 | 10 | 22.5 |
 | 0.55, 0.01, -0.17 | doorDeco.lod0/stone_white + doorDeco.lod0/wood_frame_dark | 5.33 | 10 | 22.5 |
 | 0.27, 2.40, -0.16 | doorDeco.lod0/wood_frame_dark + doorDeco.lod0/metal_anodised | 0.05 | 10 | 60.1 |
-| -0.43, 2.73, 0.03 | doorDeco.lod0/stone_white + doorDeco.lod0/stone_white | 3.49 | 8 | 22.5 |
-| -0.23, 2.80, 0.02 | doorDeco.lod0/stone_white + doorDeco.lod0/stone_white | 1.87 | 8 | 22.5 |
 | -0.47, 0.01, -0.17 | doorDeco.lod0/wood_frame_dark + doorDeco.lod0/wood_frame_dark | 3.87 | 8 | 22.2 |
 | -0.47, 2.22, -0.16 | doorDeco.lod0/wood_frame_dark + doorDeco.lod0/metal_anodised | 0.05 | 8 | 59.7 |
 | 0.47, 0.01, -0.17 | doorDeco.lod0/wood_frame_dark + doorDeco.lod0/wood_frame_dark | 3.87 | 8 | 22.2 |
@@ -138,7 +138,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -3.00, -0.06, -0.45 | ground/ground | 0 + 1 + 0 | 3.5 |
 | 3.00, -0.06, 2.95 | ground/ground | 0 + 1 + 0 | 3.5 |
 
-## backtoback (info, 85)
+## backtoback (info, 97)
 
 | at | parts | area |
 |---|---|---|
@@ -150,22 +150,18 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.50, 2.48, -0.16 | doorDeco.lod0/stone_white + doorDeco.lod0/wood_frame_dark | 0.00211 |
 | -0.07, 2.48, -0.18 | doorDeco.lod0/stone_white + doorDeco.lod0/wood_frame_dark | 0.03012 |
 | -0.03, 2.48, -0.15 | doorDeco.lod0/stone_white + doorDeco.lod0/wood_frame_dark | 0.01471 |
-| 0.06, 2.64, 0.02 | doorDeco.lod0/stone_white + doorDeco.lod0/stone_white | 0.01298 |
-| -0.44, 2.64, 0.02 | doorDeco.lod0/stone_white + doorDeco.lod0/stone_white | 0.00866 |
-| -0.61, 2.69, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.0091 |
-| 0.08, 2.71, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.0343 |
-| -0.47, 2.69, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.0108 |
-| 0.59, 2.72, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.00041 |
-| 0.32, 2.64, 0.01 | doorDeco.lod0/stone_white + doorDeco.lod0/stone_white | 0.013 |
-| 0.01, 2.73, 0.01 | doorDeco.lod0/stone_white + doorDeco.lod0/stone_white | 0.01187 |
-| -0.30, 2.73, 0.03 | doorDeco.lod0/stone_white + doorDeco.lod0/stone_white | 0.01028 |
-| -0.09, 2.77, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.02146 |
-| -0.38, 2.77, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.00495 |
-| 0.30, 2.73, 0.03 | doorDeco.lod0/stone_white + doorDeco.lod0/stone_white | 0.00603 |
-| 0.07, 2.80, 0.01 | doorDeco.lod0/stone_white + doorDeco.lod0/stone_white | 0.00519 |
-| -0.16, 2.80, 0.03 | doorDeco.lod0/stone_white + doorDeco.lod0/stone_white | 0.0043 |
-| -0.07, 2.83, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.00949 |
-| 0.17, 2.80, 0.02 | doorDeco.lod0/stone_white + doorDeco.lod0/stone_white | 0.00204 |
+| 0.03, 2.64, 0.02 | doorDeco.lod0/stone_white + doorDeco.lod0/stone_white | 0.01176 |
+| -0.43, 2.64, 0.02 | doorDeco.lod0/stone_white + doorDeco.lod0/stone_white | 0.0107 |
+| 0.67, 2.70, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.00018 |
+| 0.26, 2.64, 0.01 | doorDeco.lod0/stone_white + doorDeco.lod0/stone_white | 0.0175 |
+| 0.12, 2.73, 0.01 | doorDeco.lod0/stone_white + doorDeco.lod0/stone_white | 0.01288 |
+| -0.31, 2.73, 0.02 | doorDeco.lod0/stone_white + doorDeco.lod0/stone_white | 0.01097 |
+| 0.43, 2.77, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.00014 |
+| 0.30, 2.73, 0.03 | doorDeco.lod0/stone_white + doorDeco.lod0/stone_white | 0.00671 |
+| 0.07, 2.80, 0.01 | doorDeco.lod0/stone_white + doorDeco.lod0/stone_white | 0.00576 |
+| -0.16, 2.80, 0.01 | doorDeco.lod0/stone_white + doorDeco.lod0/stone_white | 0.00464 |
+| 0.23, 2.83, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.0001 |
+| 0.16, 2.80, 0.02 | doorDeco.lod0/stone_white + doorDeco.lod0/stone_white | 0.00238 |
 | -0.55, 2.15, -0.20 | doorDeco.lod0/stone_white + doorDeco.lod0/wood_frame_dark | 0.00302 |
 | -0.55, 2.06, -0.16 | doorDeco.lod0/stone_white + doorDeco.lod0/wood_frame_dark | 0.0454 |
 | 0.55, 1.48, -0.18 | doorDeco.lod0/stone_white + doorDeco.lod0/wood_frame_dark | 0.07727 |
@@ -174,13 +170,17 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.33, 2.48, -0.17 | doorDeco.lod0/stone_white + doorDeco.lod0/wood_frame_dark | 0.01597 |
 | 0.50, 2.48, -0.18 | doorDeco.lod0/stone_white + doorDeco.lod0/wood_frame_dark | 0.00211 |
 | 0.52, 2.48, -0.16 | doorDeco.lod0/stone_white + doorDeco.lod0/wood_frame_dark | 0.00211 |
-| -0.59, 2.65, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.00041 |
-| 0.06, 2.67, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.04374 |
-| -0.49, 2.65, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.00136 |
-| 0.61, 2.68, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.0091 |
-| 0.02, 2.73, 0.04 | doorDeco.lod0/stone_white + doorDeco.lod0/stone_white | 0.00761 |
-| 0.03, 2.75, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.02628 |
-| -0.39, 2.73, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.00014 |
-| 0.01, 2.80, 0.03 | doorDeco.lod0/stone_white + doorDeco.lod0/stone_white | 0.00293 |
+| -0.67, 2.70, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.00016 |
+| -0.61, 2.69, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.00999 |
+| 0.08, 2.71, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.03761 |
+| -0.47, 2.69, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.01189 |
+| 0.59, 2.73, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.00045 |
+| -0.67, 2.67, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.00018 |
+| 0.67, 2.67, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.00016 |
+| -0.59, 2.64, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.00045 |
+| 0.06, 2.66, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.04805 |
+| -0.49, 2.65, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.00145 |
+| 0.61, 2.68, 0.00 | doorDeco.lod0/stone_white + wall/wall | 0.00999 |
+| -0.09, 2.73, 0.04 | doorDeco.lod0/stone_white + doorDeco.lod0/stone_white | 0.00862 |
 
-(45 more in the JSON)
+(57 more in the JSON)

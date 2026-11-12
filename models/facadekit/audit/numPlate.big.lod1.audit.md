@@ -1,6 +1,6 @@
 # Kit audit: numPlate.big LOD1
 
-14 triangles, 12 welded vertices, 4 open edges, 7,168 rays, 1 ms.
+14 triangles, 12 welded vertices, 4 open edges, 7,168 rays, 2 ms.
 
 **0 blocking**, 0 warnings. Clean (no blocking item).
 

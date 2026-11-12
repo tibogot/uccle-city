@@ -1,6 +1,6 @@
 # Kit audit: doorModern.ref LOD0
 
-1,902 triangles, 986 welded vertices, 37 open edges, 19,216 rays, 75 ms.
+1,902 triangles, 986 welded vertices, 37 open edges, 19,216 rays, 86 ms.
 
 **0 blocking**, 369 warnings. Clean (no blocking item).
 

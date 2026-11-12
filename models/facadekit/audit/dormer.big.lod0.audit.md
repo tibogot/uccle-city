@@ -1,6 +1,6 @@
 # Kit audit: dormer.big LOD0
 
-806 triangles, 412 welded vertices, 25 open edges, 9,264 rays, 28 ms.
+806 triangles, 412 welded vertices, 25 open edges, 9,264 rays, 31 ms.
 
 **0 blocking**, 158 warnings. Clean (no blocking item).
 

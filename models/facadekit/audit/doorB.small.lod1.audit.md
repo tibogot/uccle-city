@@ -1,6 +1,6 @@
 # Kit audit: doorB.small LOD1
 
-280 triangles, 202 welded vertices, 58 open edges, 19,852 rays, 11 ms.
+280 triangles, 202 welded vertices, 58 open edges, 19,852 rays, 13 ms.
 
 **0 blocking**, 28 warnings. Clean (no blocking item).
 

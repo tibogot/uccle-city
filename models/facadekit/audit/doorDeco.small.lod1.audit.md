@@ -1,6 +1,6 @@
 # Kit audit: doorDeco.small LOD1
 
-502 triangles, 326 welded vertices, 46 open edges, 19,792 rays, 15 ms.
+502 triangles, 326 welded vertices, 46 open edges, 19,792 rays, 26 ms.
 
 **0 blocking**, 72 warnings. Clean (no blocking item).
 

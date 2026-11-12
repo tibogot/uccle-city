@@ -1,6 +1,6 @@
 # Kit audit: band.straight LOD1
 
-30 triangles, 19 welded vertices, 10 open edges, 7,272 rays, 1 ms.
+30 triangles, 19 welded vertices, 10 open edges, 7,272 rays, 2 ms.
 
 **0 blocking**, 18 warnings. Clean (no blocking item).
 

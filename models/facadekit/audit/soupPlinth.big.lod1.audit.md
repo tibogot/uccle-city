@@ -1,6 +1,6 @@
 # Kit audit: soupPlinth.big LOD1
 
-206 triangles, 140 welded vertices, 28 open edges, 16,256 rays, 7 ms.
+206 triangles, 140 welded vertices, 28 open edges, 16,256 rays, 8 ms.
 
 **0 blocking**, 4 warnings. Clean (no blocking item).
 

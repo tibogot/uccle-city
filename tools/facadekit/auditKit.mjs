@@ -19,8 +19,9 @@ const SIZES = arg("--size", "all");
 const SET = {};
 for (let i = 0; i < process.argv.length; i++) if (process.argv[i] === "--set") { const [k, v] = process.argv[i + 1].split("="); SET[k] = JSON.parse(v); }
 const NOFAIL = process.argv.includes("--no-fail");
-const json = JSON.parse(fs.readFileSync("models/facadekit/kit.json"));
-const binB = fs.readFileSync("models/facadekit/kit.bin");
+const KITDIR = arg("--kit", "models/facadekit");
+const json = JSON.parse(fs.readFileSync(KITDIR + "/kit.json"));
+const binB = fs.readFileSync(KITDIR + "/kit.bin");
 const bin = binB.buffer.slice(binB.byteOffset, binB.byteOffset + binB.byteLength);
 const SL = json.slice;
 const LOD_RANGE = [28 + 4, 115 + 4];

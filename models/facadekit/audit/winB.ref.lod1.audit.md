@@ -1,6 +1,6 @@
 # Kit audit: winB.ref LOD1
 
-453 triangles, 294 welded vertices, 119 open edges, 14,324 rays, 24 ms.
+453 triangles, 294 welded vertices, 119 open edges, 14,324 rays, 26 ms.
 
 **0 blocking**, 40 warnings. Clean (no blocking item).
 

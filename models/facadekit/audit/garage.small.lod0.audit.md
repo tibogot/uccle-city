@@ -1,43 +1,35 @@
 # Kit audit: garage.small LOD0
 
-2,008 triangles, 1,062 welded vertices, 26 open edges, 19,680 rays, 54 ms.
+1,976 triangles, 1,046 welded vertices, 26 open edges, 19,680 rays, 61 ms.
 
-**0 blocking**, 488 warnings. Clean (no blocking item).
+**0 blocking**, 480 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| sliver | warn | 484 |
+| sliver | warn | 476 |
 | tjunction | warn | 4 |
-| seam | info | 39 |
+| seam | info | 40 |
 | opening | info | 11 |
-| backtoback | info | 42 |
+| backtoback | info | 46 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## sliver (warn, 484)
+## sliver (warn, 476)
 
 | at | part | aspect | longest |
 |---|---|---|---|
-| 0.35, 2.31, 0.00 | garage.lod0/stone_white | 457 | 2.1 |
-| 0.35, 2.32, 0.00 | garage.lod0/stone_white | 457 | 2.1 |
 | -0.35, 2.31, 0.03 | garage.lod0/stone_white | 457 | 2.1 |
 | -0.35, 2.32, 0.03 | garage.lod0/stone_white | 457 | 2.1 |
-| -0.35, 2.10, 0.00 | garage.lod0/stone_white | 457 | 2.1 |
-| -0.35, 2.10, 0.00 | garage.lod0/stone_white | 457 | 2.1 |
 | 0.35, 2.10, 0.03 | garage.lod0/stone_white | 457 | 2.1 |
 | 0.35, 2.10, 0.03 | garage.lod0/stone_white | 457 | 2.1 |
-| 0.35, 2.10, 0.01 | garage.lod0/stone_white | 117 | 2.1 |
-| -0.35, 2.32, 0.01 | garage.lod0/stone_white | 117 | 2.1 |
-| -0.35, 2.32, 0.00 | garage.lod0/stone_white | 457 | 2.1 |
-| -0.35, 2.32, 0.01 | garage.lod0/stone_white | 457 | 2.1 |
+| 0.35, 2.10, 0.01 | garage.lod0/stone_white | 88 | 2.1 |
+| -0.35, 2.32, 0.01 | garage.lod0/stone_white | 88 | 2.1 |
 | 0.35, 2.32, 0.03 | garage.lod0/stone_white | 457 | 2.1 |
 | 0.35, 2.32, 0.03 | garage.lod0/stone_white | 457 | 2.1 |
-| 0.35, 2.10, 0.00 | garage.lod0/stone_white | 457 | 2.1 |
-| 0.35, 2.10, 0.01 | garage.lod0/stone_white | 457 | 2.1 |
 | -0.35, 2.10, 0.03 | garage.lod0/stone_white | 457 | 2.1 |
 | -0.35, 2.10, 0.03 | garage.lod0/stone_white | 457 | 2.1 |
-| -0.35, 2.10, 0.02 | garage.lod0/stone_white | 117 | 2.1 |
-| 0.35, 2.32, 0.02 | garage.lod0/stone_white | 117 | 2.1 |
+| -0.35, 2.10, 0.02 | garage.lod0/stone_white | 88 | 2.1 |
+| 0.35, 2.32, 0.02 | garage.lod0/stone_white | 88 | 2.1 |
 | -0.94, 0.35, -0.12 | garage.lod0/painted_metal_white | 165 | 0.505 |
 | -0.94, 0.35, -0.12 | garage.lod0/painted_metal_white | 165 | 0.505 |
 | -0.94, 0.18, -0.08 | garage.lod0/painted_metal_white | 165 | 0.505 |
@@ -58,8 +50,16 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.31, 0.53, -0.10 | garage.lod0/painted_metal_white | 58 | 1.868 |
 | -0.31, 0.01, -0.11 | garage.lod0/painted_metal_white | 67 | 1.876 |
 | 0.31, 0.00, -0.11 | garage.lod0/painted_metal_white | 67 | 1.876 |
+| -0.31, 0.01, -0.12 | garage.lod0/painted_metal_white | 156 | 1.876 |
+| 0.31, 0.01, -0.09 | garage.lod0/painted_metal_white | 156 | 1.876 |
+| 0.30, 0.15, -0.09 | garage.lod0/painted_metal_white | 787 | 1.806 |
+| 0.30, 0.15, -0.09 | garage.lod0/painted_metal_white | 787 | 1.806 |
+| -0.30, 0.15, -0.07 | garage.lod0/painted_metal_white | 787 | 1.806 |
+| -0.30, 0.15, -0.08 | garage.lod0/painted_metal_white | 787 | 1.806 |
+| -0.30, 0.14, -0.09 | garage.lod0/painted_metal_white | 787 | 1.806 |
+| -0.30, 0.13, -0.09 | garage.lod0/painted_metal_white | 787 | 1.806 |
 
-(444 more in the JSON)
+(436 more in the JSON)
 
 ## tjunction (warn, 4)
 
@@ -70,7 +70,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.94, -0.00, 0.00 | wall/wall | 1.2 |
 | 0.94, -0.00, 0.00 | wall/wall | 5.2 |
 
-## seam (info, 39)
+## seam (info, 40)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -95,6 +95,8 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.94, 0.54, -0.11 | garage.lod0/painted_metal_white + garage.lod0/render_white | 0.16 | 16 | 90 |
 | -0.94, 1.06, -0.11 | garage.lod0/painted_metal_white + garage.lod0/render_white | 0.16 | 16 | 90 |
 | -0.94, 1.59, -0.11 | garage.lod0/painted_metal_white + garage.lod0/render_white | 0.16 | 16 | 90 |
+| -1.05, 2.10, 0.00 | garage.lod0/stone_white + wall/wall | 0.45 | 7 | 90 |
+| 0.99, 2.10, 0.00 | garage.lod0/stone_white + wall/wall | 0.45 | 7 | 90 |
 | -0.93, 0.01, -0.10 | garage.lod0/painted_metal_white + garage.lod0/painted_metal_white | 3.78 | 7 | 22.5 |
 | -0.93, 0.53, -0.10 | garage.lod0/painted_metal_white + garage.lod0/painted_metal_white | 3.78 | 7 | 22.5 |
 | -0.93, 0.54, -0.10 | garage.lod0/painted_metal_white + garage.lod0/painted_metal_white | 3.78 | 7 | 22.5 |
@@ -102,14 +104,13 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.93, 1.06, -0.10 | garage.lod0/painted_metal_white + garage.lod0/painted_metal_white | 3.78 | 7 | 22.5 |
 | -0.93, 1.57, -0.10 | garage.lod0/painted_metal_white + garage.lod0/painted_metal_white | 3.78 | 7 | 22.5 |
 | -0.93, 1.59, -0.10 | garage.lod0/painted_metal_white + garage.lod0/painted_metal_white | 3.78 | 7 | 22.5 |
-| 0.10, 2.31, 0.00 | garage.lod0/stone_white + wall/wall | 3.74 | 4 | 22.5 |
 | -0.94, 0.00, -0.11 | garage.lod0/painted_metal_white + ground/ground | 3.81 | 4 | 90 |
 | -0.94, 0.00, -0.06 | garage.lod0/render_white + ground/ground | 0.24 | 4 | 90 |
-| -0.99, 2.31, 0.00 | garage.lod0/stone_white + wall/wall | 0.44 | 3 | 22.5 |
-| 0.99, 2.31, 0.00 | garage.lod0/stone_white + wall/wall | 0.44 | 3 | 22.5 |
+| 0.00, 2.10, 0.00 | garage.lod0/stone_white + wall/wall | 3.74 | 3 | 90 |
 | -1.73, 0.00, 0.00 | wall/wall + ground/ground | 2.06 | 3 | 90 |
 | 0.94, -0.00, 0.00 | garage.lod0/render_white + wall/wall | 0.01 | 2 | 90 |
 | 2.21, 0.00, 0.00 | wall/wall + ground/ground | 2.06 | 2 | 90 |
+| 0.00, 2.10, 0.00 | garage.lod0/stone_white + garage.lod0/render_white | 1.87 | 1 | 90 |
 | 0.94, 1.05, 0.00 | garage.lod0/render_white + wall/wall | 2.1 | 1 | 90 |
 | -0.94, 1.05, 0.00 | garage.lod0/render_white + wall/wall | 2.1 | 1 | 90 |
 | 0.00, 0.00, 0.00 | wall/wall + ground/ground | 1.87 | 1 | 90 |
@@ -130,18 +131,22 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -4.00, 0.00, -0.45 | ground/ground | 0 + 1 + 0 | 3.5 |
 | 4.00, 0.00, 2.95 | ground/ground | 0 + 1 + 0 | 3.5 |
 
-## backtoback (info, 42)
+## backtoback (info, 46)
 
 | at | parts | area |
 |---|---|---|
-| -0.99, 2.21, 0.00 | garage.lod0/stone_white + wall/wall | 0.02307 |
-| 0.06, 2.26, 0.00 | garage.lod0/stone_white + wall/wall | 0.17229 |
-| -0.88, 2.22, 0.00 | garage.lod0/stone_white + wall/wall | 0.0224 |
-| 0.97, 2.31, 0.00 | garage.lod0/stone_white + wall/wall | 0.00064 |
-| -0.97, 2.11, 0.00 | garage.lod0/stone_white + wall/wall | 0.00064 |
-| 0.01, 2.16, 0.00 | garage.lod0/stone_white + wall/wall | 0.19454 |
-| -0.93, 2.11, 0.00 | garage.lod0/stone_white + wall/wall | 0.00015 |
-| 0.99, 2.21, 0.00 | garage.lod0/stone_white + wall/wall | 0.02307 |
+| 1.05, 2.25, 0.00 | garage.lod0/stone_white + wall/wall | 0.00066 |
+| -1.05, 2.25, 0.00 | garage.lod0/stone_white + wall/wall | 0.00062 |
+| -0.99, 2.21, 0.00 | garage.lod0/stone_white + wall/wall | 0.0244 |
+| 0.06, 2.27, 0.00 | garage.lod0/stone_white + wall/wall | 0.18216 |
+| -0.88, 2.22, 0.00 | garage.lod0/stone_white + wall/wall | 0.02377 |
+| 0.97, 2.32, 0.00 | garage.lod0/stone_white + wall/wall | 0.00068 |
+| -1.05, 2.17, 0.00 | garage.lod0/stone_white + wall/wall | 0.00066 |
+| 1.05, 2.17, 0.00 | garage.lod0/stone_white + wall/wall | 0.00062 |
+| -0.97, 2.10, 0.00 | garage.lod0/stone_white + wall/wall | 0.00068 |
+| 0.00, 2.15, 0.00 | garage.lod0/stone_white + wall/wall | 0.20584 |
+| -0.93, 2.11, 0.00 | garage.lod0/stone_white + wall/wall | 0.00008 |
+| 0.99, 2.21, 0.00 | garage.lod0/stone_white + wall/wall | 0.0244 |
 | -0.15, 0.01, -0.11 | garage.lod0/painted_metal_white + garage.lod0/painted_metal_white | 0.01026 |
 | 0.56, 0.01, -0.10 | garage.lod0/painted_metal_white + garage.lod0/painted_metal_white | 0.01776 |
 | 0.15, 0.53, -0.11 | garage.lod0/painted_metal_white + garage.lod0/painted_metal_white | 0.01026 |
@@ -170,9 +175,5 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.40, 0.53, -0.10 | garage.lod0/painted_metal_white + garage.lod0/painted_metal_white | 0.00787 |
 | -0.31, 0.00, -0.10 | garage.lod0/painted_metal_white + ground/ground | 0.02626 |
 | -0.40, 0.54, -0.10 | garage.lod0/painted_metal_white + garage.lod0/painted_metal_white | 0.00787 |
-| 0.40, 1.05, -0.10 | garage.lod0/painted_metal_white + garage.lod0/painted_metal_white | 0.00787 |
-| -0.40, 1.06, -0.10 | garage.lod0/painted_metal_white + garage.lod0/painted_metal_white | 0.00787 |
-| 0.40, 1.57, -0.10 | garage.lod0/painted_metal_white + garage.lod0/painted_metal_white | 0.00787 |
-| -0.40, 1.59, -0.10 | garage.lod0/painted_metal_white + garage.lod0/painted_metal_white | 0.00787 |
 
-(2 more in the JSON)
+(6 more in the JSON)

@@ -1,6 +1,6 @@
 # Kit audit: band.inside LOD0
 
-120 triangles, 54 welded vertices, 12 open edges, 9,536 rays, 3 ms.
+120 triangles, 54 welded vertices, 12 open edges, 9,536 rays, 5 ms.
 
 **0 blocking**, 85 warnings. Clean (no blocking item).
 
