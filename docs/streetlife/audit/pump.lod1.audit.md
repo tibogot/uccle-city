@@ -1,6 +1,6 @@
 # Mesh audit: pump lod1
 
-852 triangles, 464 welded vertices, 0 open edges, 0 rays, 34 ms.
+852 triangles, 464 welded vertices, 0 open edges, 0 rays, 28 ms.
 
 **0 blocking**, 126 warnings. Clean (no blocking item).
 

@@ -1,6 +1,6 @@
 # Mesh audit: pole lod0
 
-768 triangles, 388 welded vertices, 0 open edges, 0 rays, 68 ms.
+768 triangles, 388 welded vertices, 0 open edges, 0 rays, 70 ms.
 
 **0 blocking**, 32 warnings. Clean (no blocking item).
 

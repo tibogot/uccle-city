@@ -1,6 +1,6 @@
 # Mesh audit: post lod0
 
-672 triangles, 340 welded vertices, 0 open edges, 0 rays, 68 ms.
+672 triangles, 340 welded vertices, 0 open edges, 0 rays, 62 ms.
 
 **0 blocking**, 28 warnings. Clean (no blocking item).
 

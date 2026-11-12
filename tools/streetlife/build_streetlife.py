@@ -289,8 +289,11 @@ class Facades:
             px, pz = ax + tx * u, az + tz * u
             ox, oz = px + nx * 1.2, pz + nz * 1.2
             yb = max(min(self.T.floor_y(ox, oz), s["base"] + 1.5), s["base"] - 0.5)
+            # the sidewalk in front: from the wall to the kerb, along the normal (wall -> road centreline - half the carriageway)
+            nr = self.T.nearest_road(px + nx * 0.5, pz + nz * 0.5, STREET_REACH)
+            side = r2(max(0.0, nr[0] + 0.5 - nr[2]["half"])) if nr else None
             return {"si": int(si), "bu": s["bu"], "x": r2(px), "z": r2(pz), "nx": round(nx, 4), "nz": round(nz, 4), "w": r2(w), "y": r2(yb),
-                    "edgeL": r2(L), "u": r2(u), "eaves": r2(s["eaves"]), "street": rr["name"], "dist": r2(score)}
+                    "edgeL": r2(L), "u": r2(u), "eaves": r2(s["eaves"]), "street": rr["name"], "dist": r2(score), "side": side}
         return None
 
     @staticmethod
@@ -445,6 +448,8 @@ def build_tile(name: str, src) -> dict:
                "x": r2(x), "z": r2(z)}
         if pname:
             rec["name"] = pname
+        if t.get("outdoor_seating"):
+            rec["seating"] = t["outdoor_seating"]
         if t.get("brand") and t.get("brand") != pname:
             rec["brand"] = t["brand"]
         h = parse_hours(t.get("opening_hours"))

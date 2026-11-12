@@ -1,6 +1,6 @@
 # Mesh audit: bubble lod0
 
-1,634 triangles, 831 welded vertices, 14 open edges, 364 rays, 88 ms.
+1,634 triangles, 831 welded vertices, 14 open edges, 364 rays, 78 ms.
 
 **0 blocking**, 0 warnings. Clean (no blocking item).
 

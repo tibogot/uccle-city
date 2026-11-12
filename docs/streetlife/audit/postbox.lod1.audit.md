@@ -1,6 +1,6 @@
 # Mesh audit: postbox lod1
 
-222 triangles, 122 welded vertices, 4 open edges, 512 rays, 6 ms.
+222 triangles, 122 welded vertices, 4 open edges, 512 rays, 7 ms.
 
 **0 blocking**, 24 warnings. Clean (no blocking item).
 

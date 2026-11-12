@@ -1,6 +1,6 @@
 # Mesh audit: chair lod1
 
-180 triangles, 110 welded vertices, 0 open edges, 0 rays, 4 ms.
+180 triangles, 110 welded vertices, 0 open edges, 0 rays, 6 ms.
 
 **0 blocking**, 4 warnings. Clean (no blocking item).
 

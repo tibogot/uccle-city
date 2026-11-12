@@ -1,6 +1,6 @@
 # Mesh audit: column lod1
 
-190 triangles, 98 welded vertices, 0 open edges, 0 rays, 5 ms.
+190 triangles, 98 welded vertices, 0 open edges, 0 rays, 6 ms.
 
 **0 blocking**, 20 warnings. Clean (no blocking item).
 

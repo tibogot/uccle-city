@@ -105,17 +105,17 @@ function parasol(lod = 0) {
   return g;
 }
 
-/** pharmacy cross: double-sided green lightbox cross 0.8 m, on a wall bracket (wall at z = 0, the cross at z = 0.75) */
+/** pharmacy cross: double-sided green lightbox cross 0.8 m projecting from the wall on a bracket (wall at z = 0, the arm
+ *  along +z, the cross's faces look along +-x: up and down the street) */
 function cross() {
   const g = new Geo();
   const t = 0.26, L = 0.8, d = 0.12, zc = 0.78, yc = 0;
-  g.box(0, yc, zc, t, L, d, S.pharmacy_green, 0.02);
-  g.box(-(L + t) / 4, yc, zc, (L - t) / 2, t, d - 0.002, S.pharmacy_green, 0.02);
-  g.box((L + t) / 4, yc, zc, (L - t) / 2, t, d - 0.002, S.pharmacy_green, 0.02);
-  // bracket: wall plate + arm + a frame edge
+  g.box(0, yc, zc, d, L, t, S.pharmacy_green, 0.02);
+  g.box(0, yc, zc - (L + t) / 4, d - 0.002, t, (L - t) / 2, S.pharmacy_green, 0.02);
+  g.box(0, yc, zc + (L + t) / 4, d - 0.002, t, (L - t) / 2, S.pharmacy_green, 0.02);
+  // bracket: wall plate + arm (it ends in the cross's inner arm)
   g.box(0, yc, 0.015, 0.16, 0.3, 0.03, S.steel_dark, 0.006);
-  g.box(0, yc, 0.21, 0.05, 0.05, 0.36, S.steel_dark, 0.008);
-  g.box(0, yc, 0.39 + 0.0, 0.18, 0.06, 0.02, S.steel_dark, 0.005);
+  g.box(0, yc, 0.205, 0.05, 0.05, 0.35, S.steel_dark, 0.008);
   return g;
 }
 

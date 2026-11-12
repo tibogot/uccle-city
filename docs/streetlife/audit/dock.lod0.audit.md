@@ -1,6 +1,6 @@
 # Mesh audit: dock lod0
 
-600 triangles, 307 welded vertices, 0 open edges, 0 rays, 42 ms.
+600 triangles, 307 welded vertices, 0 open edges, 0 rays, 51 ms.
 
 **0 blocking**, 0 warnings. Clean (no blocking item).
 

@@ -1,6 +1,6 @@
 # Mesh audit: chute lod1
 
-480 triangles, 247 welded vertices, 0 open edges, 0 rays, 16 ms.
+480 triangles, 247 welded vertices, 0 open edges, 0 rays, 15 ms.
 
 **0 blocking**, 24 warnings. Clean (no blocking item).
 
