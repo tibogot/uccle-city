@@ -457,6 +457,27 @@ falcon, labs (Bird, Lamp), the dev panel.
       trees (branch skeletons already exist), winter sun path (Firmament `?day=` ~350), low sun, frost /
       wet roads, falling snow. Switchable by date or a preset.
 
+## 7c. Weather + seasons lab (branch claude/weather, docs/WEATHER.md)
+- [x] Research (docs/WEATHER_RESEARCH.md); lab labs/weather-lab.html with rain, wet / puddles / ripples, fog + mist,
+      falling snow, volumetric snow (drifts, rounded eaves, footprints, tyre tracks, slush), seasons, live weather.
+- [ ] Owner review of the lab (rain at night, snowstorm, deep snow + sun, autumn, live weather).
+- [ ] City wiring: one `Weather` + `weatherize()` in the ground / facade / roof / car material factories, the overhead
+      map + snow layer as a sliding window round the camera (shape pass in a worker), weather fog as scene.fogNode,
+      dev-panel "Weather" folder (presets + live toggle), the date slider driving `season.js`.
+- [x] Far-tile variant of weatherize: `lite: true` (round 2, ~0-0.1 ms measured); wire it to the far tiles.
+- [ ] Trees: claude/foliage reads `viewer/seasons/season.js` (leaf colour / autumn / density per leaf, fall).
+- [x] Side-by-side with real photos (round 2: data/raw/weather_refs/compare_*.jpg, findings in docs/WEATHER.md).
+- [ ] Night: the cloud deck's orange city glow in Firmament itself (the lab fakes it with a hemisphere light).
+- [x] Puddle ripples + SSR flicker near the camera: ripple normals filtered by their pixel footprint + specular AA
+      roughness (polish 2026-11-11, docs/WEATHER.md "Polish"); puddle region 0 ppm over 8 samples (was up to 102).
+- [x] Thin-snow holes follow the ground texture (sett joints, grass tufts: `weatherize({ ground })`), the layer gives
+      way below ~2 cm (polish 2026-11-11). Lawn mid-distance patches still a little blobby (tuft noise).
+- [ ] Trampled sidewalk snow, snow on rails / fences, tracks in thin snow on the materials.
+- [x] Snow on branches / evergreens (hooks), sill caps, icicles + drips, salted roads (round 2).
+- [ ] Snow sliding off steep roofs; finer layer near the camera (2 cascades: 6 cm near, 25 cm far).
+- [ ] Rain: drips from eaves and gutters, wet glass close-up (normal-mapped drops), thunder / lightning (sound lab).
+- [ ] GPU numbers on a quiet machine (another lab ran during the 2026-11-11 rounds).
+
 ## 8. Game / app
 - [x] Driving (branch claude/drive): Car Lab + drive mode, arcade car on the drivable-surface grid, footprint / island /
       trunk / lamp colliders per tile (viewer/drive/, `?view=drive`). Next: parked cars and trams as colliders (oriented

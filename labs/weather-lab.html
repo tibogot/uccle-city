@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weather Lab</title>
+<link rel="icon" href="../viewer/favicon.svg" type="image/svg+xml">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #8e9aa6; font: 13px/1.4 system-ui, sans-serif; }
+  canvas { display: block; }
+  #info { position: fixed; left: 10px; bottom: 10px; max-width: 560px; padding: 8px 10px; border-radius: 6px;
+          background: rgba(20, 24, 30, .78); color: #dfe4ea; font: 12px/1.35 ui-monospace, monospace; white-space: pre-wrap; }
+  #title { position: fixed; left: 10px; top: 10px; padding: 6px 10px; border-radius: 6px; background: rgba(20, 24, 30, .78); color: #e6e9ee; }
+  #title a { color: #9cc4ff; }
+  #credit { position: fixed; right: 340px; bottom: 6px; color: #dfe4ea; font: 11px system-ui; text-shadow: 0 1px 2px #000; }
+  #credit a { color: #cfe0ff; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.tsl.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/",
+    "three/src/": "https://cdn.jsdelivr.net/npm/three@0.187.0/src/",
+    "meshoptimizer/simplifier": "https://cdn.jsdelivr.net/npm/meshoptimizer@1.2.0/meshopt_simplifier.js"
+  }
+}
+</script>
+</head>
+<body>
+<div id="title"><b>Weather + Seasons Lab</b> — rain, wet streets, fog, snow with depth, the year in Uccle · <a href="./">all labs</a></div>
+<div id="info">loading…</div>
+<div id="credit"></div>
+<script type="module" src="./weather-lab.js"></script>
+</body>
+</html>
