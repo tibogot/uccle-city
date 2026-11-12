@@ -18,7 +18,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from common import DATA, RAW, all_tiles
+from common import DATA, RAW, TILES, all_tiles
 
 RAW_DSM = RAW / "urbis" / "dsm"
 
@@ -71,6 +71,9 @@ def main():
     for t in tiles:
         if (RAW_DSM.exists() and any(RAW_DSM.rglob("*.tif"))) and step(["build_trees.py", "--tile", t]):
             failed.append(f"{t}:trees")
+        # trees on the measured carriageway (LiDAR crown peaks over the road) -> onto the sidewalk, or dropped
+        if (TILES / t / "surfaces.json").exists() and step(["filter_road_trees.py", "--tile", t]):
+            failed.append(f"{t}:roadtrees")
         if not a.skip_buildings:
             if step(["build_roofcolors.py", "--tile", t]):          # orthophoto 2024 via WMS (cached in data/raw/ortho)
                 failed.append(f"{t}:roofcolors")

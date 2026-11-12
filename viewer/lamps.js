@@ -92,16 +92,22 @@ function farLampMats() {
 
 /** `place(site)` (?roads=surface, viewer/streetFit.js): moves a site onto the measured sidewalk or drops it (null);
  *  `lift(x, z)`: the measured surface height above the road there. */
-export function buildLamps(roads, ground, bounds, { lights: withLights = true, place = null, lift = null } = {}) {
+/** The lamps the city draws: lampSites, each moved by `place` (or dropped), closer than 6 m to a kept one dropped.
+ *  The drive colliders (viewer/drive/driveMode.js tileDrive) use the same list. */
+export function placedLampSites(roads, bounds, place = null) {
   let sites = lampSites(roads, bounds);
   if (place) {
     const kept = [];
     for (const s of sites.map(place)) if (s && !kept.some((q) => (q.x - s.x) ** 2 + (q.z - s.z) ** 2 < 36)) kept.push(s);
     sites = kept;
   }
+  return sites;
+}
+export function buildLamps(roads, ground, bounds, { lights: withLights = true, place = null, lift = null } = {}) {
+  const sites = placedLampSites(roads, bounds, place);
   const group = new THREE.Group();
   group.name = "street-lamps";
-  if (!sites.length) return { group, count: 0, update() {}, heads: [] };
+  if (!sites.length) return { group, count: 0, update() {}, heads: [], sites };
 
   const postMat = new THREE.MeshStandardNodeMaterial({ color: 0x1d2420, roughness: 0.45, metalness: 0.6 });
   const glassMat = new THREE.MeshStandardNodeMaterial({ roughness: 0.15 });
@@ -187,5 +193,5 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true, p
     const order = lamp.map((p, i) => [p.distanceToSquared(camPos), i]).sort((a, b) => a[0] - b[0]);
     lights.forEach((l, k) => { const p = lamp[order[k]?.[1] ?? 0]; l.position.copy(p); l.intensity = 55 * night; });   // (the lamp light map lights the ground: these add shape to cars, trees, walls)
   };
-  return { group, count: sites.length, update, heads: lamp.map((p) => ({ x: p.x, z: p.z })) };
+  return { group, count: sites.length, update, heads: lamp.map((p) => ({ x: p.x, z: p.z })), sites };
 }

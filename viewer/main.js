@@ -253,6 +253,8 @@ function addTrees(group, f, inTile, treeGround) {
     : buildStylizedTreeField(f.trees || [], treeGround, inTile);
   group.add(T.group);
   group.userData.update = T.update || null;
+  // what is drawn (the drive colliders' audit, viewer/drive/colliderAudit.js)
+  group.userData.treesDrawn = T.placements ? T.placements.map((p) => ({ x: p[0], z: p[1] })) : (f.trees || []).filter((t) => inTile(t.x, t.z)).map((t) => ({ x: t.x, z: t.z }));
   log(`trees: ${T.count} (LiDAR canopy peaks + OSM)` + (T.sizes ? `, species heights ${T.sizes.map((z) => z.h.toFixed(1)).join("/")} m` : ""));
 }
 
@@ -332,7 +334,7 @@ const HIDE_BU_IDS = params.get("stjob") !== "0" ? [STJOB_BU_ID] : [];
 const ROAD_SURFACES = params.get("roads") !== "engine";
 /** CPU data for a tile: from the worker, or on the main thread (?worker=0, or if the worker fails). */
 function tileData(entry, lite = false) {
-  entry = { ...entry, hide: HIDE_BU_IDS, surface: ROAD_SURFACES, pits: params.get("pits") !== "0" };   // ?pits=0: no tree pits (A/B)
+  entry = { ...entry, hide: HIDE_BU_IDS, surface: ROAD_SURFACES, pits: params.get("pits") !== "0", driveLegacy: params.get("drivecol") === "legacy" };   // ?pits=0: no tree pits (A/B); ?drivecol=legacy: the drive colliders before the audit
   const local = () => import("./tileData.js").then((m) => (lite ? m.buildLiteData : m.buildTileData)(entry, DATA.href));
   if (!tileWorker) return local();
   return new Promise((resolve, reject) => {
@@ -487,7 +489,10 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   await frame("show");
   tramLine?.snapTile(entry.name, feats, bounds);
   await frame("tram line snap");
-  const drive = tileDrive(d.drive, roads, bounds);
+  const bxyz = d.road.surfaceData?.bollards || [];
+  const drawn = { trees: fo.userData.treesDrawn || [], lamps: lamps.sites || [], bollards: Array.from({ length: bxyz.length / 3 }, (_, i) => ({ x: bxyz[i * 3], z: bxyz[i * 3 + 2] })),
+    hiddenBuildings: d.drive?.counts?.hidden || 0 };
+  const drive = tileDrive(d.drive, roads, bounds, drawn);
   frame("drive colliders");
   log(`tile ${entry.name}: main-thread work ${busy.toFixed(0)} ms, longest slice ${longest.toFixed(0)} ms (${worst}); slices over 4 ms: ${slices.join(", ") || "none"}; ${tileWorker ? "CPU build in the worker" : "CPU build ALSO on the main thread"}`);
   // roof heights (m TAW, 0 = none) for fly-mode collision: the max of the 2 m cells around the point, so the bird
@@ -503,7 +508,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     }
     return h;
   };
-  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt, drive, lift: fit?.lift, groups: Object.values(own) };
+  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt, drive, drawn, lift: fit?.lift, groups: Object.values(own) };
 }
 
 // ------------------------------------------------------------------ main
@@ -938,7 +943,13 @@ async function main() {
     for (const u of updaters) u(pos, camera);
     lighting.update(pos.y, world.surface(pos.x, pos.z), f, h, dtS);
   };
-  window.viewer = { tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
+  /** The drive colliders of the loaded tiles against what is drawn (viewer/drive/colliderAudit.js): per tile + total. */
+  const auditColliders = async (names = null) => {
+    const { auditTile, sumAudits } = await import("./drive/colliderAudit.js");
+    const list = world.tiles.filter((t) => t.drive && t.drawn && (!names || names.includes(t.name))).map((t) => auditTile(t));
+    return { total: sumAudits(list), tiles: list };
+  };
+  window.viewer = { auditColliders, tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
     world, fader, stateAt, freeze: (on) => { stateFreeze = !!on; },
     renderFrame: () => { if (!stateFreeze) { lodEye.value.copy(camera.position); for (const u of updaters) u(camera.position, camera); } renderFrame(); } };
 }

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Collider Audit</title>
+<style>
+  :root { --bg: #f4f5f7; --fg: #1d232b; --muted: #66707c; --line: #d6dbe1; --bad: #c62828; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #15191e; --fg: #e5e9ee; --muted: #8f9aa6; --line: #2c333c; --bad: #ff6b6b; } }
+  body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg); font: 13px/1.45 system-ui, sans-serif; }
+  h1 { font-size: 17px; margin: 0 0 4px; } p { color: var(--muted); margin: 0 0 12px; max-width: 900px; }
+  table { border-collapse: collapse; font: 12px ui-monospace, monospace; }
+  td, th { border-bottom: 1px solid var(--line); padding: 3px 8px; text-align: right; } th { text-align: left; } td:first-child { text-align: left; }
+  .bad { color: var(--bad); font-weight: 600; } #status { margin: 8px 0; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+  "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+  "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.tsl.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/",
+  "three/src/": "https://cdn.jsdelivr.net/npm/three@0.187.0/src/",
+  "meshoptimizer/simplifier": "https://cdn.jsdelivr.net/npm/meshoptimizer@1.2.0/meshopt_simplifier.js"
+} }
+</script>
+</head>
+<body>
+<h1>Drive collider audit</h1>
+<p>Every tile through the tile worker (the city's own build), then every car collider against what the city draws there,
+and the reverse. <code>?mode=after|before</code> (before = <code>?drivecol=legacy</code>: the colliders as they were),
+<code>?tiles=I6,J6</code> (default: all built tiles). The result is also in <code>window.audit</code>.
+Same code as the city's <code>viewer.auditColliders()</code> (viewer/drive/colliderAudit.js).</p>
+<div id="status">…</div>
+<div id="out"></div>
+<script type="module">
+import { Heightmap } from "../viewer/heightmap.js";
+import { streetFit } from "../viewer/streetFit.js";
+import { placedLampSites } from "../viewer/lamps.js";
+import { tileDrive } from "../viewer/drive/driveMode.js";
+import { auditTile, sumAudits } from "../viewer/drive/colliderAudit.js";
+
+const qp = new URLSearchParams(location.search), legacy = qp.get("mode") === "before";
+const DATA = new URL("../data/tiles/", location.href);
+const manifest = await fetch(new URL("manifest.json", DATA)).then((r) => r.json());
+const only = qp.get("tiles")?.toUpperCase().split(",");
+const tiles = manifest.tiles.filter((t) => t.status !== "missing" && (!only || only.includes(t.name)));
+const worker = new Worker(new URL("../viewer/tileWorker.bundle.js", location.href), { type: "module" });
+let id = 0;
+const pending = new Map();
+worker.onmessage = (e) => { const p = pending.get(e.data.id); pending.delete(e.data.id); e.data.error ? p.reject(new Error(e.data.error)) : p.resolve(e.data.r); };
+const build = (entry) => new Promise((resolve, reject) => { const k = ++id; pending.set(k, { resolve, reject });
+  worker.postMessage({ id: k, entry: { ...entry, surface: true, pits: true, driveLegacy: legacy }, base: DATA.href, lite: false }); });
+const $s = document.getElementById("status"), results = [];
+const t0 = performance.now();
+for (const [i, entry] of tiles.entries()) {
+  $s.textContent = `${legacy ? "before" : "after"}: tile ${entry.name} (${i + 1} / ${tiles.length}) …`;
+  try {
+    const d = await build(entry);
+    const hm = Heightmap.from(d.hdr, d.y, d.orig);
+    const b = { x0: entry.bounds.x[0], x1: entry.bounds.x[1], z0: entry.bounds.z[0], z1: entry.bounds.z[1] };
+    const fit = d.road.surfaceData ? streetFit(d.road.surfaceData) : null;
+    const inTile = (x, z) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1;
+    const bx = d.road.surfaceData?.bollards || [];
+    // what main.js draws: the features' trees in the tile, the placed lamps, the surveyed bollards
+    const drawn = { trees: (d.feats.trees || []).filter((t) => inTile(t.x, t.z)).map((t) => ({ x: t.x, z: t.z })),
+      lamps: placedLampSites(d.roads, b, fit?.placeLamp), bollards: fit ? Array.from({ length: bx.length / 3 }, (_, k) => ({ x: bx[k * 3], z: bx[k * 3 + 2] })) : [],
+      hiddenBuildings: d.drive.counts.hidden || 0 };
+    const drive = tileDrive(d.drive, d.roads, b, legacy ? null : drawn);
+    const r = auditTile({ name: entry.name, bounds: b, hm, drive, drawn });
+    delete r.ids;
+    r.counts = drive.counts;
+    results.push(r);
+  } catch (e) { results.push({ tile: entry.name, error: String(e) }); }
+}
+const ok = results.filter((r) => !r.error), total = sumAudits(ok);
+window.audit = { mode: legacy ? "before" : "after", total, tiles: results, ms: Math.round(performance.now() - t0) };
+$s.textContent = `${window.audit.mode}: ${ok.length} tiles in ${(window.audit.ms / 1000).toFixed(0)} s` + (results.length > ok.length ? `, ${results.length - ok.length} failed` : "");
+const reasons = [...new Set(ok.flatMap((r) => Object.keys(r.invisible)))], missing = [...new Set(ok.flatMap((r) => Object.keys(r.missing)))];
+const row = (name, r) => `<tr><td>${name}</td>${reasons.map((k) => `<td class="${r.invisible[k] && !k.includes("kept") ? "bad" : ""}">${r.invisible[k] || ""}</td>`).join("")}${missing.map((k) => `<td>${r.missing[k] || ""}</td>`).join("")}</tr>`;
+document.getElementById("out").innerHTML = `<table><tr><th>tile</th>${reasons.map((k) => `<th>no visible object:<br>${k}</th>`).join("")}${missing.map((k) => `<th>drawn, no collider:<br>${k}</th>`).join("")}</tr>
+${row("TOTAL", total)}${ok.map((r) => row(r.tile, r)).join("")}</table>`;
+</script>
+</body>
+</html>
