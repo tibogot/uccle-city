@@ -15,8 +15,10 @@ const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 
 export class FalconInput {
-  constructor(dom, { invert = false } = {}) {
-    this.dom = dom; this.invert = invert;
+  /** enabled: false = no key / mouse is read (the city: only while flying); skip: key codes left to the page (the city:
+   *  M = its map, H = its photo mode) */
+  constructor(dom, { invert = false, enabled = true, skip = [] } = {}) {
+    this.dom = dom; this.invert = invert; this.enabled = enabled; this.skip = new Set(skip);
     this.C = new FlightControls();
     this.keys = new Set();
     this.mouseAim = true; this.aim = { yaw: 0, pitch: 0, set: false };
@@ -26,7 +28,7 @@ export class FalconInput {
     this.talons = false; this.device = "keyboard";
     this.pad = null; this.touch = null; this.script = null;   // script: a function (t) -> controls (the verification runs)
     addEventListener("keydown", (e) => {
-      if (e.target?.closest?.(".upanel")) return;
+      if (!this.enabled || this.skip.has(e.code) || e.target?.closest?.(".upanel") || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName || "")) return;
       this.keys.add(e.code); this.device = "keyboard";
       const once = { KeyE: "land", KeyF: "strike", KeyV: "camera", KeyR: "reset", KeyH: "help", KeyM: "aim" }[e.code];
       if (once && !e.repeat) this.actions.add(once);
@@ -35,20 +37,30 @@ export class FalconInput {
     });
     addEventListener("keyup", (e) => this.keys.delete(e.code));
     addEventListener("blur", () => this.keys.clear());
-    dom.addEventListener("click", () => { if (this.mouseAim && !this.touch?.on && dom.requestPointerLock) dom.requestPointerLock(); });
+    dom.addEventListener("click", () => { if (this.enabled && this.mouseAim && !this.touch?.on && dom.requestPointerLock) dom.requestPointerLock(); });
     document.addEventListener("pointerlockchange", () => { this.mouse.locked = document.pointerLockElement === dom; });
     addEventListener("mousemove", (e) => {
-      if (!this.mouse.locked) return;
+      if (!this.enabled || !this.mouse.locked) return;
       this.device = "mouse";
       this.aim.yaw -= e.movementX * 0.0022; this.aim.pitch = clamp(this.aim.pitch - e.movementY * 0.0022, -1.5, 1.2);
     });
     dom.addEventListener("mousedown", (e) => { if (!this.mouse.locked) return; if (e.button === 0) this.mouse.flap = true; if (e.button === 2) this.mouse.tuck = true; });
     addEventListener("mouseup", (e) => { if (e.button === 0) this.mouse.flap = false; if (e.button === 2) this.mouse.tuck = false; });
     dom.addEventListener("contextmenu", (e) => e.preventDefault());
-    dom.addEventListener("wheel", (e) => { this.zoom = clamp(this.zoom * (e.deltaY > 0 ? 1.1 : 0.9), 0.5, 3); e.preventDefault(); }, { passive: false });
+    dom.addEventListener("wheel", (e) => { if (!this.enabled) return; this.zoom = clamp(this.zoom * (e.deltaY > 0 ? 1.1 : 0.9), 0.5, 3); e.preventDefault(); }, { passive: false });
     addEventListener("gamepadconnected", () => { this.device = "gamepad"; });
-    if (matchMedia("(pointer: coarse)").matches || /[?&]touch=1/.test(location.search)) this.buildTouch();
-    addEventListener("pointerdown", (e) => { if (e.pointerType === "touch" && !this.touch) this.buildTouch(); });
+    if (matchMedia("(pointer: coarse)").matches || /[?&]touch=1/.test(location.search)) { this.buildTouch(); if (!enabled) this.touch.el.style.display = "none"; }
+    addEventListener("pointerdown", (e) => { if (this.enabled && e.pointerType === "touch" && !this.touch) this.buildTouch(); });
+  }
+
+  /** on / off (the city's fly mode): off lets go of every key, the pointer lock and the touch controls */
+  setEnabled(v) {
+    this.enabled = v;
+    if (!v) {
+      this.keys.clear(); this.actions.clear(); this.mouse.flap = this.mouse.tuck = false;
+      if (document.pointerLockElement === this.dom) document.exitPointerLock?.();
+    }
+    if (this.touch) this.touch.el.style.display = v ? "" : "none";
   }
 
   /** the falcon's state to steer the mouse aim against: { heading, gamma } */

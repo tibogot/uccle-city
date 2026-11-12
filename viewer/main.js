@@ -40,6 +40,7 @@ import { buildStylizedTreeField, setTreeLighting, setTreeRenderer } from "./tree
 import { openBootPipelines, warmBoot, precompile } from "./warmup.js";
 import { buildPlazas, loadOverrides } from "./plazas.js";
 import { Flyer } from "./flight.js";
+import { CityFlyer } from "./falconFlight/cityFlyer.js";
 import { Driver, tileDrive } from "./drive/driveMode.js";
 import { addLamps } from "./lampLight.js";
 import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, dropFadeVariant } from "./lodFade.js";
@@ -548,7 +549,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     }
     return h;
   };
-  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt, drive, drawn, lift: fit?.lift, groups: Object.values(own) };
+  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt, roofs: rf, drive, drawn, lift: fit?.lift, groups: Object.values(own) };
 }
 
 // ------------------------------------------------------------------ main
@@ -758,13 +759,19 @@ async function main() {
   if (!start) $("btnWalk").disabled = true;
   const yawP = params.get("yaw");                                        // ?yaw=deg: walk facing (0 = -z / north-ish, 90 = -x)
   const walk = () => { if (!start) return; if (third?.on) third.stop(); flyer.stop(); driver.stop(); controls.enabled = false; walker.start(start.x, start.z, yawP != null ? +yawP * Math.PI / 180 : start.yaw); };
-  // fly mode (viewer/flight.js): a bird from above Place de Saint-Job (or the walk start), heading the walk's way
-  const flyer = new Flyer(camera, renderer.domElement, scene, world);
+  // fly mode: the falcon flight (viewer/falconFlight/cityFlyer.js: the flight model, the air, the pigeons, the strike, in
+  // the streaming city; docs/FALCON_FLIGHT.md "In the city"); ?falcon=old: the old arcade flight (viewer/flight.js)
+  const OLD_FLIGHT = params.get("falcon") === "old";
+  let openParallelFly = null;
+  const flyer = OLD_FLIGHT ? new Flyer(camera, renderer.domElement, scene, world)
+    : new CityFlyer(camera, renderer.domElement, scene, world, { manifest, base: DATA, hide: HIDE_BU_IDS, log, params, lighting, renderer, compiler: () => compileFor,
+      openParallel: renderer.backend?.isWebGPUBackend ? (...a) => (openParallelFly ? openParallelFly(...a) : null) : null });
+  if (!OLD_FLIGHT) { import("../vendor/engine/parallelPipelines.js").then((m) => { openParallelFly = m.openParallelPipelines; }); updaters.push((camPos) => flyer.tick(camPos)); }
   window.__flyer = flyer;
   let flyerGltf = null;
   // the bird model: models/bird/bird.glb (the owner's, with its animations), or ?bird=<url>; the placeholder
   // stays when there is none. ?birdscale= if the model is not in metres, ?birdfwd=+z|-z|+x|-x for its nose axis.
-  (async () => {
+  if (OLD_FLIGHT) (async () => {
     const dir = new URL("../models/bird/", import.meta.url).href;
     const cfg0 = await fetch(dir + "bird.json").then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
     const url = params.get("bird") || dir + (cfg0.model || "bird.glb");
@@ -799,11 +806,12 @@ async function main() {
   const fly = async () => {
     if (third?.on) third.stop(); walker.on = false; driver.stop(); controls.enabled = false;
     // (at boot, ?view=fly: wait up to 15 s for the family and the bird to load)
-    for (let i = 0; i < 150 && (!falconsReady || !flyerGltf) && params.get("falcons") !== "0" && params.get("flystart") !== "spire"; i++) await new Promise((r) => setTimeout(r, 100));
+    for (let i = 0; i < 150 && (!falconsReady || (OLD_FLIGHT && !flyerGltf)) && params.get("falcons") !== "0" && params.get("flystart") !== "spire"; i++) await new Promise((r) => setTimeout(r, 100));
+    if (!OLD_FLIGHT) await flyer.ready.catch(() => {});
     // the intro plays in view: not under the boot cover
     for (let i = 0; i < 600 && !document.getElementById("cover")?.classList.contains("gone"); i++) await new Promise((r) => setTimeout(r, 100));
     const fam = falconsReady;
-    if (fam && params.get("flystart") !== "spire" && flyerGltf) {
+    if (fam && params.get("flystart") !== "spire" && (flyerGltf || !OLD_FLIGHT)) {
       const { FALCON_SIZES } = await import("./falcons.js");
       const sp = fam.spots.hop, L = fam.perch.ledge;
       const scrape = fam.toWorld(fam.nestPoint(sp.pos.x, sp.pos.y, sp.pos.z));
