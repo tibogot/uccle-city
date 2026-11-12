@@ -336,7 +336,7 @@ function cleanRing(ring) {
  *  - lamps and bollards: added on the main thread from the drawn lists (driveMode.js tileDrive).
  * legacy = true: the old sets (every engine island, every footprint) for the audit's "before".
  */
-export function buildDriveData({ bDoc, bBuf = null, net, feats, hm, parts, bounds, surf = null, legacy = false }) {
+export function buildDriveData({ bDoc, bBuf = null, net, feats, hm, parts, bounds, surf = null, legacy = false, walls = [] }) {
   const polys = [], circles = [];
   const ground = driveGround(hm, parts);
   let overhead = 0, islands = 0, islandsHidden = 0, medianIslands = 0, fromWalls = null;
@@ -372,6 +372,8 @@ export function buildDriveData({ bDoc, bBuf = null, net, feats, hm, parts, bound
   const medians = [];
   for (const s of surf?.surfaces || []) if (s.c === 6 && s.rings?.[0]?.length >= 3 && inTile(s.rings[0])) medians.push(s.rings.map(cleanRing).filter((r) => r.length >= 3));
   if (!legacy) for (const m of medians) if (raisedShare(hm, ground.delta, m) >= 0.5) { polys.push({ rings: m, kind: KIND.island }); medianIslands++; }
+  // other drawn walls at car height the worker knows (the rail platforms' edges: tileData.js)
+  if (!legacy) for (const ring of walls) if (ring.length >= 3 && inTile(ring)) polys.push({ rings: [cleanRing(ring)], kind: KIND.wall });
   // tree trunks: a bit wider for tall trees (the stylized trunks scale with the LiDAR height)
   for (const t of feats.trees || []) {
     if (t.x < bounds.x0 || t.x > bounds.x1 || t.z < bounds.z0 || t.z > bounds.z1) continue;

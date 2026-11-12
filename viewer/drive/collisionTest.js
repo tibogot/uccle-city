@@ -342,6 +342,7 @@ export function driveRoutes({ scene, tile, driver, truth, G, maxRoads = Infinity
   const top = ctxTop ?? drawnGround(scene, tile);
   const R = { routes: 0, km: 0, contacts: 0, invisibleHits: 0, passThrough: 0, fell: 0, floated: 0, stuck: 0, items: [] };
   const colIds = new Map();
+  let hitStep = false;               // a collider held the car this frame (then an overlap with a drawn solid is contact, not a pass)
   const near = [], contact = { nx: 0, nz: 0, depth: 0, kind: 0 }, body = { hx: BODY.hx, hz: BODY.hz, cos: 1, sin: 0 };
   const item = (kind, x, z, extra = {}) => { if (R.items.length < 400 && !R.items.some((q) => q.kind === kind && Math.hypot(q.x - x, q.z - z) < 3)) R.items.push({ kind, x: +x.toFixed(1), z: +z.toFixed(1), ...extra }); };
   const b = tile.bounds, inT = (x, z) => x > b.x0 + 1 && x < b.x1 - 1 && z > b.z0 + 1 && z < b.z1 - 1;
@@ -368,15 +369,34 @@ export function driveRoutes({ scene, tile, driver, truth, G, maxRoads = Infinity
             const su = Math.abs(nx * body.cos - nz * body.sin) * body.hx + Math.abs(nx * body.sin + nz * body.cos) * body.hz;
             // the touching point: a post / trunk / lamp: its centre; a polygon: the contact plane at the car's centre line
             const it = near[k + 1], cl = near[k], isC = it >= cl.P;
-            const px = isC ? cl.circ[(it - cl.P) * 3] : st.x + nx * su, pz = isC ? cl.circ[(it - cl.P) * 3 + 1] : st.z + nz * su;
+            let px = isC ? cl.circ[(it - cl.P) * 3] : st.x + nx * su, pz = isC ? cl.circ[(it - cl.P) * 3 + 1] : st.z + nz * su;
+            if (!isC) {                             // a polygon: its outline's point nearest to the car's centre
+              let bd = Infinity;
+              for (let r = cl.polyRing[it]; r < cl.polyRing[it + 1]; r++) for (let i = cl.ringStart[r], j = cl.ringStart[r + 1] - 1; i < cl.ringStart[r + 1]; j = i++) {
+                const ax = cl.pts[j * 2], az = cl.pts[j * 2 + 1], ex = cl.pts[i * 2] - ax, ez = cl.pts[i * 2 + 1] - az, L2 = ex * ex + ez * ez || 1e-9;
+                const t = Math.max(0, Math.min(1, ((st.x - ax) * ex + (st.z - az) * ez) / L2)), qx = ax + ex * t, qz = az + ez * t, d = (qx - st.x) ** 2 + (qz - st.z) ** 2;
+                if (d < bd) { bd = d; px = qx; pz = qz; }
+              }
+            }
+            hitStep = true;
             st.x += contact.nx * contact.depth; st.z += contact.nz * contact.depth;
             if (!colIds.has(near[k])) colIds.set(near[k], colIds.size);
             const key = colIds.get(near[k]) + ":" + near[k + 1];
             if (!touched.has(key)) {                                   // one event per collider item and route
               touched.add(key); R.contacts++;
               const i = G.idx(px, pz);
+              // a polygon: the nearest drawn solid to the car's touching side (its perimeter samples facing -n)
+              let dmin = i >= 0 ? Dt[i] : 0;
+              if (!isC) {
+                for (let u = -body.hx; u <= body.hx + 1e-6; u += 0.3) for (let w = -body.hz; w <= body.hz + 1e-6; w += 0.3) {
+                  if (Math.abs(u) < body.hx - 0.01 && Math.abs(w) < body.hz - 0.01) continue;           // the perimeter only
+                  const qx = st.x + u * body.cos + w * body.sin, qz = st.z - u * body.sin + w * body.cos;
+                  if ((qx - st.x) * nx + (qz - st.z) * nz < su - 0.35) continue;                         // the touching side
+                  const j = G.idx(qx, qz); if (j >= 0) dmin = Math.min(dmin, Dt[j]);
+                }
+              }
               if (contact.kind === KIND.island) R.kerbIslands = (R.kerbIslands || 0) + 1;      // a raised kerb island: stopped as designed
-              else if (i >= 0 && Dt[i] > 0.6) { R.invisibleHits++; item("invisible hit", px, pz, { collider: KIND_NAME[contact.kind] }); }
+              else if (i >= 0 && dmin > 0.6) { R.invisibleHits++; item("invisible hit", px, pz, { collider: KIND_NAME[contact.kind] }); }
             }
             // the hit response (carPhysics.hit), simplified: lose the speed into the obstacle
             const vn = -(Math.sin(st.heading) * st.speed * contact.nx + Math.cos(st.heading) * st.speed * contact.nz);
@@ -398,16 +418,17 @@ export function driveRoutes({ scene, tile, driver, truth, G, maxRoads = Infinity
       let err = want - c.heading; while (err > Math.PI) err -= 2 * Math.PI; while (err < -Math.PI) err += 2 * Math.PI;
       const steer = Math.max(-1, Math.min(1, err * 2.2));
       const throttle = c.speed < speed * (1 - Math.min(0.6, Math.abs(err))) ? 0.7 : 0;
+      hitStep = false;
       driver.groundHint = c.y;                     // the drive surface's layer nearest the car (a street under a deck)
       stepCar(c, { throttle, steer, handbrake: false }, dt, env, HANDLING);
-      // passed through a drawn solid: the car box (shrunk 0.2 m) over car-band truth cells
+      // passed through a drawn solid: the car box (shrunk 0.35 m: the truth cells are 0.25 m) over car-band truth cells
       const cs = Math.cos(c.heading), sn = Math.sin(c.heading);
       let hitSrc = 0;
-      for (let u = -BODY.hx + 0.2; u <= BODY.hx - 0.2 + 1e-6 && !hitSrc; u += 0.35) for (let w = -BODY.hz + 0.2; w <= BODY.hz - 0.2 + 1e-6; w += 0.35) {
+      for (let u = -BODY.hx + 0.35; u <= BODY.hx - 0.35 + 1e-6 && !hitSrc; u += 0.3) for (let w = -BODY.hz + 0.35; w <= BODY.hz - 0.35 + 1e-6; w += 0.3) {
         const x = c.x + u * cs + w * sn, z = c.z - u * sn + w * cs, i = G.idx(x, z);
         if (i >= 0 && truth[i]) { hitSrc = truth[i]; break; }
       }
-      if (hitSrc) { const key = `${Math.round(c.x / 3)},${Math.round(c.z / 3)}`; if (!passed.has(key)) { passed.add(key); R.passThrough++; item("passed through", c.x, c.z, { drawn: SRC_NAME[hitSrc] }); } }
+      if (hitSrc && !hitStep) { const key = `${Math.round(c.x / 3)},${Math.round(c.z / 3)}`; if (!passed.has(key)) { passed.add(key); R.passThrough++; item("passed through", c.x, c.z, { drawn: SRC_NAME[hitSrc] }); } }
       if (step % 15 === 0) {
         const y = top(c.x, c.z, c.y);
         if (y != null && y - c.y > 0.3) { R.fell++; item("under the drawn surface", c.x, c.z, { by: +(y - c.y).toFixed(2) }); }

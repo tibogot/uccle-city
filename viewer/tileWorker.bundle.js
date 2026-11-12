@@ -5793,7 +5793,7 @@ function cleanRing(ring2) {
   }
   return out;
 }
-function buildDriveData({ bDoc, bBuf = null, net, feats, hm, parts, bounds, surf = null, legacy = false }) {
+function buildDriveData({ bDoc, bBuf = null, net, feats, hm, parts, bounds, surf = null, legacy = false, walls = [] }) {
   const polys = [], circles = [];
   const ground = driveGround(hm, parts);
   let overhead = 0, islands = 0, islandsHidden = 0, medianIslands = 0, fromWalls = null;
@@ -5837,6 +5837,9 @@ function buildDriveData({ bDoc, bBuf = null, net, feats, hm, parts, bounds, surf
       polys.push({ rings: m, kind: KIND2.island });
       medianIslands++;
     }
+  }
+  if (!legacy) {
+    for (const ring2 of walls) if (ring2.length >= 3 && inTile(ring2)) polys.push({ rings: [cleanRing(ring2)], kind: KIND2.wall });
   }
   for (const t of feats.trees || []) {
     if (t.x < bounds.x0 || t.x > bounds.x1 || t.z < bounds.z0 || t.z > bounds.z1) continue;
@@ -5923,63 +5926,68 @@ function buildingBlocks(bDoc, bBuf, height, bounds, { margin = 30, cell = 0.25, 
     }
     nc++;
   }
+  const CH = Math.max(1, Math.round(8 / cell));
+  const label = (i, k) => (Math.floor(k / CH) * 4096 + Math.floor(i / CH)) * 65536 + comp[k * nx + i];
   const solid = (i, k) => i >= 0 && k >= 0 && i < nx && k < nz && g[k * nx + i] === 1;
-  const next = /* @__PURE__ */ new Map(), owner = /* @__PURE__ */ new Map();
-  const W = nx + 1, key = (a, b) => a * 4194304 + b;
-  const addE = (a, b, c) => {
-    let l = next.get(a);
-    if (!l) next.set(a, l = []);
+  const edges = /* @__PURE__ */ new Map();
+  const W = nx + 1;
+  const addE = (lab, a, b) => {
+    let m = edges.get(lab);
+    if (!m) edges.set(lab, m = /* @__PURE__ */ new Map());
+    let l = m.get(a);
+    if (!l) m.set(a, l = []);
     l.push(b);
-    owner.set(key(a, b), c);
   };
   for (let k = 0; k <= nz; k++) for (let i = 0; i <= nx; i++) {
     if (i < nx) {
-      const up = solid(i, k - 1), dn = solid(i, k);
-      if (up !== dn) {
-        if (dn) addE(k * W + i + 1, k * W + i, comp[k * nx + i]);
-        else addE(k * W + i, k * W + i + 1, comp[(k - 1) * nx + i]);
+      const up = solid(i, k - 1), dn = solid(i, k), lu = up ? label(i, k - 1) : -1, ld = dn ? label(i, k) : -1;
+      if (lu !== ld) {
+        if (dn) addE(ld, k * W + i + 1, k * W + i);
+        if (up) addE(lu, k * W + i, k * W + i + 1);
       }
     }
     if (k < nz) {
-      const lf = solid(i - 1, k), rt = solid(i, k);
-      if (lf !== rt) {
-        if (rt) addE(k * W + i, (k + 1) * W + i, comp[k * nx + i]);
-        else addE((k + 1) * W + i, k * W + i, comp[k * nx + i - 1]);
+      const lf = solid(i - 1, k), rt = solid(i, k), ll = lf ? label(i - 1, k) : -1, lr = rt ? label(i, k) : -1;
+      if (ll !== lr) {
+        if (rt) addE(lr, k * W + i, (k + 1) * W + i);
+        if (lf) addE(ll, (k + 1) * W + i, k * W + i);
       }
     }
   }
   const rings = /* @__PURE__ */ new Map();
   const px = (c) => x0 + c % W * cell, pz = (c) => z0 + Math.floor(c / W) * cell;
-  for (const [start, l0] of next) {
-    while (l0.length) {
-      let a = start, b = l0.pop();
-      const c = owner.get(key(a, b)), pts = [[px(a), pz(a)]];
-      let guard = 0;
-      while (b !== start && guard++ < 4e6) {
-        pts.push([px(b), pz(b)]);
-        const l = next.get(b);
-        if (!l || !l.length) break;
-        let pick = 0;
-        if (l.length > 1) {
-          const dxi = px(b) - px(a), dzi = pz(b) - pz(a);
-          let best = -Infinity;
-          l.forEach((n, j) => {
-            const cr = dxi * (pz(n) - pz(b)) - dzi * (px(n) - px(b));
-            if (cr > best) {
-              best = cr;
-              pick = j;
-            }
-          });
+  for (const [lab, next] of edges) {
+    for (const [start, l0] of next) {
+      while (l0.length) {
+        let a = start, b = l0.pop();
+        const pts = [[px(a), pz(a)]];
+        let guard = 0;
+        while (b !== start && guard++ < 1e6) {
+          pts.push([px(b), pz(b)]);
+          const l = next.get(b);
+          if (!l || !l.length) break;
+          let pick = 0;
+          if (l.length > 1) {
+            const dxi = px(b) - px(a), dzi = pz(b) - pz(a);
+            let best = -Infinity;
+            l.forEach((n, j) => {
+              const cr = dxi * (pz(n) - pz(b)) - dzi * (px(n) - px(b));
+              if (cr > best) {
+                best = cr;
+                pick = j;
+              }
+            });
+          }
+          a = b;
+          b = l.splice(pick, 1)[0];
         }
-        a = b;
-        b = l.splice(pick, 1)[0];
-      }
-      if (pts.length < 4) continue;
-      const simp = simplifyRing(pts, tol);
-      if (simp.length >= 3) {
-        let r = rings.get(c);
-        if (!r) rings.set(c, r = []);
-        r.push(simp);
+        if (pts.length < 4) continue;
+        const simp = simplifyRing(pts, tol);
+        if (simp.length >= 3) {
+          let r = rings.get(lab);
+          if (!r) rings.set(lab, r = []);
+          r.push(simp);
+        }
       }
     }
   }
@@ -8443,7 +8451,18 @@ async function buildTileData(entry, base) {
   const nb = bDoc.buildings.length;
   const keep = entry.driveKeepHidden ? { buildings: bDoc.buildings.slice() } : null;
   hideBuildings(bDoc, entry.hide);
-  const drive = await step("drive colliders", () => buildDriveData({ bDoc: keep || bDoc, bBuf: keep ? null : bBuf, net, feats, hm, parts: road.parts, bounds, surf, legacy: !!entry.driveLegacy }));
+  const drive = await step("drive colliders", () => buildDriveData({
+    bDoc: keep || bDoc,
+    bBuf: keep ? null : bBuf,
+    net,
+    feats,
+    hm,
+    parts: road.parts,
+    bounds,
+    surf,
+    legacy: !!entry.driveLegacy,
+    walls: keep ? [] : (rail?.doc.platforms || []).map((p) => p.ring)
+  }));
   drive.counts.hidden = nb - bDoc.buildings.length;
   const kit = entry.kit ? kitCollector({ exclude: new Set(entry.kitExclude || []), ground: (x, z) => hm.ground(x, z) }) : null;
   const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit }));
