@@ -113,22 +113,43 @@ function meshDefects(name, part, inTile, add, opts = {}) {
   const repV = new Map();
   for (const [v, id] of wid) if (!repV.has(id)) repV.set(id, v);
   for (const [id, v] of repV) { const k = gk(P[v * 3], P[v * 3 + 2]); const l = grid.get(k); if (l) l.push(id); else grid.set(k, [id]); }
+  // round 3: cracks are between TOP surfaces only (a kerb face, a skirt or a pit's inner face meets a top along a
+  // crease by design): open edges and vertices of steep triangles are left out
+  const topTri = new Set();
+  for (const t of M.tris) {
+    const A = V3(P, I[t]), B = V3(P, I[t + 1]), C = V3(P, I[t + 2]);
+    const ux = B[0] - A[0], uy = B[1] - A[1], uz = B[2] - A[2], vx = C[0] - A[0], vy = C[1] - A[1], vz = C[2] - A[2];
+    const ny = uz * vx - ux * vz, l = Math.hypot(uy * vz - uz * vy, ny, ux * vy - uy * vx);
+    if (l > 1e-12 && Math.abs(ny / l) > 0.7) topTri.add(t);
+  }
+  const topVert = new Set();
+  for (const t of topTri) for (let c = 0; c < 3; c++) topVert.add(wid.get(I[t + c]));
   const openEdges = [];
-  for (const [k, e] of E) if (e.n === 1) openEdges.push(e);
+  for (const [k, e] of E) if (e.n === 1 && topTri.has(e.t)) openEdges.push(e);
   for (const e of openEdges) {
     const A = V3(P, e.va), B = V3(P, e.vb), L = Math.hypot(B[0] - A[0], B[2] - A[2]);
     if (L < 0.01) continue;
     const ia = wid.get(e.va), ib = wid.get(e.vb);
     const x0 = Math.floor(Math.min(A[0], B[0]) / G), x1 = Math.floor(Math.max(A[0], B[0]) / G), z0 = Math.floor(Math.min(A[2], B[2]) / G), z1 = Math.floor(Math.max(A[2], B[2]) / G);
     for (let i = x0; i <= x1; i++) for (let j = z0; j <= z1; j++) for (const id of grid.get(`${i},${j}`) || []) {
-      if (id === ia || id === ib) continue;
+      if (id === ia || id === ib || !topVert.has(id)) continue;
       const v = repV.get(id), x = P[v * 3], y = P[v * 3 + 1], z = P[v * 3 + 2];
       const t = ((x - A[0]) * (B[0] - A[0]) + (z - A[2]) * (B[2] - A[2])) / (L * L);
       if (t < 0.02 || t > 0.98) continue;
       const d = Math.hypot(A[0] + (B[0] - A[0]) * t - x, A[2] + (B[2] - A[2]) * t - z);
       if (d > 0.002) continue;
       const ye = A[1] + (B[1] - A[1]) * t;
-      if (Math.abs(y - ye) > 0.05) continue;                  // a kerb top over a road edge: a different surface
+      if (Math.abs(y - ye) > 0.005) continue;                 // more than 5 mm apart: a step (closed by a face or not: the step check below), not a hairline crack
+      // round 3 (a real gate): only within ONE layer. The asphalt part stacks the measured base (H - 1 cm) and the
+      // engine layer (H + 6 mm + 1.5 mm tiers): a base vertex on an engine edge is 1.6 cm apart by design, and
+      // two engine tiers 1.5 mm apart over the base show the same asphalt through any gap
+      if (opts.H) {
+        const lv = (yy, xx, zz) => yy - opts.H(xx, zz) < 0 ? 0 : 1, la = lv(y, x, z), lb = lv(ye, x, z);
+        if (la !== lb) continue;
+        // engine layer over the base: its steps up to DEV 8 mm + 3 tiers 4.5 mm show the base asphalt 1.6 cm below, no
+        // crack (the base is always drawn under it)
+        if (name === "asphalt" && la === 1 && Math.abs(y - ye) < 0.0125) continue;
+      }
       st.tjunction++;
       add("C18", Math.abs(y - ye) > 0.002 ? "error" : "warn", x, z, `${name}: T-junction crack (vertex on an open edge, ${(Math.abs(y - ye) * 1000).toFixed(1)} mm off)`, { kind: `${name}-tj` });
     }
@@ -341,7 +362,7 @@ export function roundTwoChecks({ rd, inv, prep, surf, markings, inTile, add: add
   // ---- C17 / C18 / C20 / C21 meshes
   for (const [name, part] of Object.entries(rd.parts)) {
     if (!part?.index?.length) continue;
-    S.mesh[name] = meshDefects(name, part, inTile, add, { uv: name === "concrete", steps: name === "concrete" || name === "square" || name === "asphalt" });
+    S.mesh[name] = meshDefects(name, part, inTile, add, { uv: name === "concrete", steps: name === "concrete" || name === "square" || name === "asphalt", H: name === "asphalt" ? prep?.H : null });
   }
   // asphalt pieces whose shade differs (per-piece tone in roadPaint asphaltMaterial: tone + patches depend on aPiece)
   const A = rd.parts.asphalt;
@@ -410,14 +431,18 @@ export function roundTwoChecks({ rd, inv, prep, surf, markings, inTile, add: add
       const a = l[k - 1], b = l[k], c = l[k + 1];
       if (!inTile(b[0], b[1])) continue;
       const la = Math.hypot(b[0] - a[0], b[1] - a[1]), lc = Math.hypot(c[0] - b[0], c[1] - b[1]);
-      if (la > 12 || lc > 12 || la < 1e-3 || lc < 1e-3) continue;
+      if (la < 1e-3 || lc < 1e-3) continue;
       const ux = b[0] - a[0], uz = b[1] - a[1], vx = c[0] - b[0], vz = c[1] - b[1];
       const tr = Math.abs(Math.atan2(ux * vz - uz * vx, ux * vx + uz * vz)) * 180 / Math.PI;
-      if (tr < 0.5 || tr > 60) continue;
+      if (tr < 1 || tr > 60) continue;
       S.curves.vertices++;
-      const sag = Math.min(la, lc) / 2 * Math.tan((tr * Math.PI / 180) / 2) * 100;     // cm, the arc through them vs the chords
-      if (tr > 2.5) { S.curves.faceted++; S.curves.maxTurn = Math.max(S.curves.maxTurn, tr); S.curves.maxChordErrCm = Math.max(S.curves.maxChordErrCm, sag);
-        if (tr > 5) add("C23", "warn", b[0], b[1], `faceted curve: the kerb / edge turns ${tr.toFixed(0)}° at one vertex (chord error ~${sag.toFixed(1)} cm)`, { kind: "facet" }); }
+      // chord error: the circle through a, b, c (radius R = |ac| / (2 sin turn)) against its chords: sagitta of the
+      // longer chord, l² / 8R
+      const lm = Math.min(la, lc), Rr = lm / (tr * Math.PI / 180);     // the arc the vertex turns on, over its shorter piece
+      const sag = (lm * lm) / (8 * Rr) * 100;
+      S.curves.maxTurn = Math.max(S.curves.maxTurn, tr);
+      if (sag > 2) { S.curves.faceted++; S.curves.maxChordErrCm = Math.max(S.curves.maxChordErrCm, sag);
+        add("C23", "warn", b[0], b[1], `faceted curve: chord error ${sag.toFixed(1)} cm (turn ${tr.toFixed(0)}°, pieces ${la.toFixed(1)} / ${lc.toFixed(1)} m)`, { kind: "facet" }); }
     }
     S.curves.maxTurn = r2(S.curves.maxTurn); S.curves.maxChordErrCm = r2(S.curves.maxChordErrCm);
   }

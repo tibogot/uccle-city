@@ -246,7 +246,10 @@ export function concreteMaterial({ framed = false } = {}) {
   const ks = uv().x, kd = abs(fract(ks.div(KERB_STONE).add(0.5)).sub(0.5)).mul(KERB_STONE);
   const kJoint = float(1).sub(smoothstep(float(0.003), float(0.003).add(fw), kd)).mul(float(1).sub(smoothstep(float(0.02), float(0.1), fw)));
   const stoneTone = hash(floor(ks.div(KERB_STONE)).add(17.0)).sub(0.5).mul(0.012);
-  const kerbStone = mix(kerb.add(stoneTone), vec3(0.03, 0.032, 0.036), kJoint);
+  // the top arris: a 12 mm worn, lighter band on the kerb FACE (uv.y = metres down from the top there; on the band
+  // painted on the sidewalk uv.y is the distance from the kerb, so the first 12 mm of the band light up the same way)
+  const arris = float(1).sub(smoothstep(float(0.008), float(0.016), uv().y)).mul(float(1).sub(smoothstep(float(0.02), float(0.08), fw)));
+  const kerbStone = mix(mix(kerb.add(stoneTone), kerb.mul(1.9), arris.mul(0.6)), vec3(0.03, 0.032, 0.036), kJoint);
   m.colorNode = mix(mix(slab, framed ? kerbStone : kerb, isKerb), apron, isApron);
   // framed (?roads=surface): honed blue stone, rougher, so a kerb face toward a low sun does not flare white
   m.roughnessNode = mix(mix(mix(float(framed ? 0.92 : 0.88), float(0.95), tiles.joint), float(framed ? 0.82 : 0.6), isKerb), float(0.8), isApron);

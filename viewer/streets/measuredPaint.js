@@ -391,10 +391,25 @@ export function afterNetworkV2(net, ctx, surf) {
   // roads only (the inventory covers those). The surfaces (S*: hatched / coloured areas) need the legend: not drawn.
   inv.symbols ??= [];
   let glyphs = 0;
+  // round 3 (checked against the orthophoto at Alsemberg / Brugmann, glyphs 7 m above): only the arrows (P01 straight,
+  // P04 turn) are drawn as surveyed. The bicycle (P09) is surveyed as its OUTER outline only (the wheels' holes are
+  // lost), so it read as two blobs: the symbol is drawn instead as the Belgian bicycle pictogram (ring wheels, frame)
+  // at the surveyed place and heading, 1.6 m long like the survey's. The other types (P53 "U", P19 / P08 fragments
+  // of a few cm², P10, P13) have no legend and no clear photo: not drawn
   for (const g of markings?.bm?.polys || []) {
-    if (!/^P/.test(g.type || "") || g.poly.length < 3) continue;
+    if (!/^P(01|04|09)$/.test(g.type || "") || g.poly.length < 3) continue;
     const c = g.poly.reduce((a, q) => [a[0] + q[0] / g.poly.length, a[1] + q[1] / g.poly.length], [0, 0]);
     if (!near(c[0], c[1]) || !MARKABLE.has(cls(c[0], c[1]))) continue;
+    if (g.type === "P09") {
+      // heading = the outline's long axis (principal component)
+      let sxx = 0, szz = 0, sxz = 0;
+      for (const [x, z] of g.poly) { const dx = x - c[0], dz = z - c[1]; sxx += dx * dx; szz += dz * dz; sxz += dx * dz; }
+      const th = 0.5 * Math.atan2(2 * sxz, sxx - szz);
+      items.push(...sharrow(c[0] + Math.cos(th) * 0.3, c[1] + Math.sin(th) * 0.3, th, false));
+      inv.symbols.push({ id: g.id, src: "bm", kind: "glyph:P09", x: c[0], z: c[1] });
+      glyphs++;
+      continue;
+    }
     const flat = g.poly.flat(), tri = earcut(flat, null, 2);
     let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
     for (const [x, z] of g.poly) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
@@ -441,7 +456,7 @@ function lineItem(kind, p, q, dx, dz, w) {
 }
 
 /** The Belgian shared-lane symbol: a bicycle (two wheels, a frame) and two chevrons ahead, ~1.0 x 2.6 m. */
-function sharrow(x, z, dir) {
+function sharrow(x, z, dir, chevrons = true) {
   const fx = Math.cos(dir), fz = Math.sin(dir), lx = -fz, lz = fx;
   const P = (u, v) => [x + fx * u + lx * v, z + fz * u + lz * v];
   const bar = (u0, v0, u1, v1, w) => {
@@ -454,7 +469,7 @@ function sharrow(x, z, dir) {
   ring(-0.9, 0, 0.32, 0.07); ring(0.3, 0, 0.32, 0.07);           // wheels (u along the travel direction)
   out.push(bar(-0.9, 0, -0.45, 0.02, 0.07), bar(-0.45, 0.02, 0.3, 0, 0.07), bar(-0.9, 0, -0.25, -0.02, 0.07), bar(-0.25, -0.02, -0.45, 0.02, 0.07));
   out.push(bar(-0.25, -0.02, 0.3, 0, 0.07), bar(-0.5, 0.02, -0.55, 0.12, 0.07), bar(0.25, 0, 0.12, 0.2, 0.07));
-  for (const u of [0.95, 1.35]) out.push(bar(u, -0.45, u + 0.35, 0, 0.12), bar(u + 0.35, 0, u, 0.45, 0.12));   // chevrons
+  if (chevrons) for (const u of [0.95, 1.35]) out.push(bar(u, -0.45, u + 0.35, 0, 0.12), bar(u + 0.35, 0, u, 0.45, 0.12));   // chevrons
   return out;
 }
 
