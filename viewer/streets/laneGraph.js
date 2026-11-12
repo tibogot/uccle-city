@@ -144,7 +144,8 @@ export function refineLaneGraph(net, prep, inventory) {
       }
     }
     P = unloop(P, st);
-    if (prep) P = keepOnCarriage(P, st);
+    // (simple stacks only: two lanes of one direction pushed to the same clear place crossed each other)
+    if (prep && kind) P = keepOnCarriage(P, st);
     P = smooth(P, 3);
     endMove.set(p.id, { a: [P[0][0] - a0[0], P[0][1] - a0[1]], b: [P[P.length - 1][0] - b0[0], P[P.length - 1][1] - b0[1]] });
     p.pts = P;

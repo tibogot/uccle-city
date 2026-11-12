@@ -6345,7 +6345,7 @@ function prepareSurfaces(surf, ground, bounds, trees = null) {
     const k = nearKerb(x, z, R.li);
     if (!k) return KERB;
     const d = Math.max(0, k.d), along = Math.max(0, Math.min(1, Math.min(k.s - R.s0, R.s1 - k.s) / R.W));
-    const low = (1 - Math.min(1, d / RAMP_DEPTH)) * along;
+    const low = (1 - Math.min(1, d / (RAMP_DEPTH * 0.85))) * along;
     return KERB - (KERB - RAMP_LOW) * low;
   };
   const rampCuts = (R) => {
@@ -7187,9 +7187,10 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
   for (const P of prep.pits || []) {
     const { o, w } = P, iw = o - w;
     const X = (u, v) => [P.x + P.tx * u - P.tz * v, P.z + P.tz * u + P.tx * v];
+    const hc = H(P.x, P.z), gx = (H(P.x + 1, P.z) - H(P.x - 1, P.z)) / 2, gz = (H(P.x, P.z + 1) - H(P.x, P.z - 1)) / 2;
     const top = (u, v) => {
       const [x, z] = X(u, v);
-      return H(x, z) + P.raise;
+      return hc + gx * (x - P.x) + gz * (z - P.z) + P.raise;
     };
     const dirW = (du, dv) => [P.tx * du - P.tz * dv, 0, P.tz * du + P.tx * dv];
     const slab = (u0, u1, v0, v1, alongU) => {
@@ -8125,7 +8126,7 @@ function refineLaneGraph(net, prep, inventory) {
       }
     }
     P = unloop(P, st);
-    if (prep) P = keepOnCarriage(P, st);
+    if (prep && kind) P = keepOnCarriage(P, st);
     P = smooth(P, 3);
     endMove.set(p.id, { a: [P[0][0] - a0[0], P[0][1] - a0[1]], b: [P[P.length - 1][0] - b0[0], P[P.length - 1][1] - b0[1]] });
     p.pts = P;

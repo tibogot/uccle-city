@@ -695,7 +695,9 @@ export function prepareSurfaces(surf, ground, bounds, trees = null) {
     const k = nearKerb(x, z, R.li);
     if (!k) return KERB;
     const d = Math.max(0, k.d), along = Math.max(0, Math.min(1, Math.min(k.s - R.s0, R.s1 - k.s) / R.W));
-    const low = (1 - Math.min(1, d / RAMP_DEPTH)) * along;
+    // (full height from 0.85 RAMP_DEPTH: the ramp's back edge is drawn a few cm either side of 1 m, and anything under
+    // KERB there left a 2-5 mm crack against the sidewalk)
+    const low = (1 - Math.min(1, d / (RAMP_DEPTH * 0.85))) * along;
     return KERB - (KERB - RAMP_LOW) * low;
   };
   /** the two wing cut lines of a ramp, as [ax, az, bx, bz] world lines (long enough to cross the whole ramp) */
@@ -1431,7 +1433,10 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
   for (const P of prep.pits || []) {
     const { o, w } = P, iw = o - w;
     const X = (u, v) => [P.x + P.tx * u - P.tz * v, P.z + P.tz * u + P.tx * v];
-    const top = (u, v) => { const [x, z] = X(u, v); return H(x, z) + P.raise; };
+    // (round 3: one plane per pit, H's tangent plane at its centre: its slabs crossed H's creases and their butt joints
+    // opened 2-5 mm cracks; the outer skirt hides the mm against the paving round it)
+    const hc = H(P.x, P.z), gx = (H(P.x + 1, P.z) - H(P.x - 1, P.z)) / 2, gz = (H(P.x, P.z + 1) - H(P.x, P.z - 1)) / 2;
+    const top = (u, v) => { const [x, z] = X(u, v); return hc + gx * (x - P.x) + gz * (z - P.z) + P.raise; };
     const dirW = (du, dv) => [P.tx * du - P.tz * dv, 0, P.tz * du + P.tx * dv];
     const slab = (u0, u1, v0, v1, alongU) => {
       // top: uv.x = metres along the slab, uv.y = metres to its far end (the shader draws the joints at both ends)
