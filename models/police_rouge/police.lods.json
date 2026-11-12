@@ -1,0 +1,12 @@
+{
+ "Police_lod2": {
+  "from": "Police_far",
+  "sourceTris": 6348,
+  "tris": 3351,
+  "crossIslandTris": 1295,
+  "aoBakedOnLevel": false,
+  "addedVertices": 7271
+ },
+ "glbBytes": 874992,
+ "rawBytes": 2489400
+}

@@ -1,0 +1,261 @@
+{
+ "asset": "Commissariat de police d'Uccle, Rue Rouge 17 (tools/blender/police_rouge.py)",
+ "triangles_lod0": 19716,
+ "triangles_far": 6348,
+ "triangles_per_slot_lod0": {
+  "brick_yellow": 1220,
+  "brick_red_brussels": 122,
+  "concrete_white": 696,
+  "stone_blue": 990,
+  "painted_metal_white": 4376,
+  "alu_anthracite": 524,
+  "glass_window": 570,
+  "screen_fabric": 38,
+  "roof_membrane": 20,
+  "solar_panel": 140,
+  "galvanised_steel": 3828,
+  "cast_iron_green": 5664,
+  "rubble_stone": 100,
+  "hedge": 108,
+  "signage": 492,
+  "flag_fabric": 828
+ },
+ "triangles_per_slot_far": {
+  "brick_yellow": 1220,
+  "brick_red_brussels": 122,
+  "concrete_white": 664,
+  "stone_blue": 590,
+  "painted_metal_white": 844,
+  "alu_anthracite": 88,
+  "glass_window": 570,
+  "screen_fabric": 38,
+  "roof_membrane": 20,
+  "solar_panel": 24,
+  "galvanised_steel": 872,
+  "cast_iron_green": 752,
+  "rubble_stone": 100,
+  "hedge": 108,
+  "signage": 108,
+  "flag_fabric": 228
+ },
+ "slots": [
+  "brick_yellow",
+  "brick_red_brussels",
+  "concrete_white",
+  "stone_blue",
+  "painted_metal_white",
+  "alu_anthracite",
+  "glass_window",
+  "screen_fabric",
+  "roof_membrane",
+  "solar_panel",
+  "galvanised_steel",
+  "cast_iron_green",
+  "rubble_stone",
+  "hedge",
+  "signage",
+  "flag_fabric"
+ ],
+ "codes": {
+  "COLOR_0.r": "code / 16 + 1/32",
+  "COLOR_0.g": "per-vertex AO of the thin faces (1 elsewhere)",
+  "COLOR_0.b": "sqrt(width of the flat region / 4 m)",
+  "names": [
+   "plain",
+   "joint",
+   "reveal",
+   "sill",
+   "band",
+   "cornice",
+   "plinth",
+   "frame",
+   "bar",
+   "pane",
+   "panel",
+   "text",
+   "flag_be",
+   "flag_eu",
+   "hazard",
+   "red"
+  ]
+ },
+ "uv": {
+  "TEXCOORD_0": "world metres per face: walls (along, m TAW - 40), flat parts (u, -w); sign text faces: the lettering atlas (row 0 v 0..0.5 POLICE / POLITIE, row 1 v 0.5..0.75 the gate plate); flags: 0..1 (hoist -> fly, bottom -> top)",
+  "TEXCOORD_1": "AO lightmap (thin faces: u > 0.994, AO 1)"
+ },
+ "lightmap": {
+  "px": 2048,
+  "split_v": 0.8,
+  "lod0_px_per_m": 20.2,
+  "far_px_per_m": 10.4,
+  "thin_faces_vertex_ao": [
+   7407,
+   1121
+  ],
+  "lightmapped_faces_with_texels": {
+   "lod0": [
+    2647,
+    2647
+   ],
+   "far": [
+    2117,
+    2117
+   ]
+  }
+ },
+ "frame": "glTF Y up; three.js local (u, m TAW - OY, w); node at the city position of the frame origin, rotation.y = -rotation",
+ "placement": {
+  "city_local_position": [
+   -514.182,
+   40.0,
+   -340.015
+  ],
+  "rotation_y_rad": 0.586023,
+  "hides_solids": [
+   "https://databrussels.be/id/buildingsolid/528055",
+   "https://databrussels.be/id/buildingsolid/528772"
+  ],
+  "hides_bu_ids": [
+   "https://databrussels.be/id/building/1674458"
+  ]
+ },
+ "bounds_city": {
+  "x": [
+   -531.0,
+   -480.5
+  ],
+  "z": [
+   -371.8,
+   -319.2
+  ],
+  "y": [
+   46.5,
+   59.7
+  ]
+ },
+ "measured": {
+  "footprint_squared": [
+   [
+    14.59,
+    -14.0
+   ],
+   [
+    14.59,
+    0.52
+   ],
+   [
+    5.32,
+    0.52
+   ],
+   [
+    5.32,
+    12.6
+   ],
+   [
+    -4.8,
+    12.6
+   ],
+   [
+    -4.8,
+    -1.55
+   ],
+   [
+    -0.65,
+    -1.55
+   ],
+   [
+    -0.65,
+    -14.0
+   ]
+  ],
+  "link": [
+   [
+    -0.65,
+    -3.78
+   ],
+   [
+    -0.65,
+    -1.55
+   ],
+   [
+    -4.8,
+    -1.55
+   ],
+   [
+    -4.8,
+    2.4
+   ],
+   [
+    -6.55,
+    2.4
+   ],
+   [
+    -6.55,
+    -3.78
+   ]
+  ],
+  "levels_taw": {
+   "gf": 47.85,
+   "f1": 51.35,
+   "f2": 54.8,
+   "plinth_top": 48.25,
+   "band": [
+    51.2,
+    51.35
+   ],
+   "gf_sill": 48.55,
+   "gf_head": 50.55,
+   "up_sill": {
+    "1": 52.15,
+    "2": 55.45
+   },
+   "up_head": {
+    "1": 54.05,
+    "2": 57.35
+   },
+   "wall_top": 58.3,
+   "cornice_top": 58.9,
+   "deck": 58.62,
+   "link_top": 50.98
+  }
+ },
+ "yard": {
+  "wall_u": [
+   26.1,
+   26.55
+  ],
+  "gate_s_w": [
+   9.6,
+   14.9
+  ],
+  "gate_n_w": [
+   -18.5,
+   -15.3
+  ],
+  "wall_runs_w": [
+   [
+    -20.4,
+    -18.5
+   ],
+   [
+    -15.3,
+    9.6
+   ],
+   [
+    14.9,
+    20.6
+   ]
+  ],
+  "hedge": [
+   25.05,
+   25.95,
+   -15.0,
+   9.4
+  ],
+  "note": "the yard's paving and markings are drawn by the viewer (viewer/policeYard.js) on the city's own ground"
+ },
+ "estimated": "wing B's south face, both backs, wing A's north face and the link (no view: the counted rhythm), the levels (+-15 cm), the window joinery's sections, the screens' positions (as seen in April 2024), the gate leaf's parked place, the hedge's height, the flagpoles' exact places, the roof hatch",
+ "landmarks": {
+  "roof_deck": 58.62
+ }
+}
