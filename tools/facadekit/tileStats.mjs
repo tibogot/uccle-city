@@ -20,7 +20,7 @@ const styles = {};
 for (const b of doc.buildings) { const s = wallStyle(hash01(String(b.attrs?.BU_ID ?? b.id) + "s"), b.height); styles[s] = (styles[s] || 0) + 1; }
 console.log("wall styles", styles);
 if (a.kit) {
-  console.log("kit faces", a.kit.faces, "skipped", a.kit.skipped);
+  console.log("kit faces", a.kit.faces, "skipped", a.kit.skipped, "run joins", a.kit.runJoins, "free run ends", a.kit.runFree);
   for (const [k, v] of Object.entries(a.kit.pieces)) console.log(`  ${k.padEnd(14)} ${v.length / a.kit.stride}`);
   const ww = {};
   for (const w of a.kit.widths) ww[w] = (ww[w] || 0) + 1;

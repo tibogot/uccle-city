@@ -377,7 +377,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         }
       }
       // the façade kit takes this face? (street faces of eligible buildings, every opening on the wall)
-      const k = kit ? kit.face({ key, building: b, doorFace: f === doorFace, wallStyle: style, landmark: !!landmark, rnd, width, eaves: faceEaves, partyH, street,
+      const k = kit ? kit.face({ key, building: b, doorFace: f === doorFace, wallStyle: style, landmark: !!landmark, rnd, width, eaves: faceEaves, partyH, street, roofAt: (x, z) => roofAt(bi, x, z),
         shopU, shopW, base, top, nx: f.nx, nz: f.nz, tx, tz, u0, tris: f.tris }) : null;
       const T = k?.on ? WK : W;
       for (const { p, n: nn, src } of f.tris) for (const q of p) {

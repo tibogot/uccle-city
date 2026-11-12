@@ -35,9 +35,10 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
       const pos = new Float32Array(bin, o, n * 3); o += n * 12;
       const nrm = new Float32Array(bin, o, n * 3); o += n * 12;
       const uv = new Float32Array(bin, o, n * 2); o += n * 8;
-      const kv = new Uint8Array(bin, o, n * 4);
+      const kv = new Uint8Array(bin, o, n * 4); o += n * 4;
+      const kw = new Uint8Array(bin, o, n * 4);                   // (round 3) region width, run end flag, arch rise
       const idx = s.i32 ? new Uint32Array(bin, s.iOff, s.iCount) : new Uint16Array(bin, s.iOff, s.iCount);
-      return [kind, { attrs: { position: new THREE.BufferAttribute(pos, 3), normal: new THREE.BufferAttribute(nrm, 3), uv: new THREE.BufferAttribute(uv, 2), aKitV: new THREE.BufferAttribute(kv, 4, true) },
+      return [kind, { attrs: { position: new THREE.BufferAttribute(pos, 3), normal: new THREE.BufferAttribute(nrm, 3), uv: new THREE.BufferAttribute(uv, 2), aKitV: new THREE.BufferAttribute(kv, 4, true), aKitW: new THREE.BufferAttribute(kw, 4, true) },
         index: new THREE.BufferAttribute(idx, 1), tris: s.iCount / 3 }];
     })));
   }
@@ -89,16 +90,21 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
   const pieceInfo = {};
   for (const [name, p] of Object.entries(json.pieces)) {
     const mode = p.slice || p.kind;
-    const refOf = { window: json.ref.window, door: json.ref.door, french: json.ref.french, frenchX: json.ref.french };
+    const refOf = { window: json.ref.window, door: json.ref.door, french: json.ref.french, frenchX: json.ref.french, garage: json.ref.garage };
     pieceInfo[name] = { mode, ref: refOf[mode] ?? p.ref, slots: p.slots, run: mode === "run" };
   }
-  const stretch = (info, w, h, out) => {
-    if (info.mode === "window" || info.mode === "door" || info.mode === "french" || info.mode === "frenchX") {
+  const stretch = (info, w, h, out, arr = null, i = 0) => {
+    if (info.mode === "window" || info.mode === "door" || info.mode === "french" || info.mode === "frenchX" || info.mode === "garage") {
       const [Wr, Hr] = info.ref;
       out[0] = (w / 2 - SL.x) / (Wr / 2 - SL.x); out[1] = (w - Wr) / 2;
       out[2] = (h - SL.bottom - SL.top) / (Hr - SL.bottom - SL.top); out[3] = h - Hr;
       if (info.mode === "frenchX") { out[2] = 1; out[3] = 0; }
-    } else if (info.run) { out[0] = w / info.ref[0]; out[1] = 0; out[2] = 1; out[3] = 0; }
+    } else if (info.run) {
+      // a run: x scales, its END rings (slice class +-1) move with the ends and take the MITRES (aKitI.z / .w = tan of half
+      // the turn to the next run at the left / right end: + outside corner, - inside; placement.js puts them in the
+      // instance's spare (left) and its F[0] (right))
+      out[0] = w / info.ref[0]; out[1] = (w - info.ref[0]) / 2; out[2] = arr ? arr[i + 9] : 0; out[3] = arr ? arr[i + 10] : 0;
+    }
     else { out[0] = 1; out[1] = 0; out[2] = 1; out[3] = 0; }
   };
 
@@ -130,7 +136,7 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
         const key = Math.floor(x / CELL) * 100003 + Math.floor(z / CELL);
         let c = cells.get(key);
         if (!c) { c = { x: (Math.floor(x / CELL) + 0.5) * CELL, z: (Math.floor(z / CELL) + 0.5) * CELL, items: [], y0: 1e9, y1: -1e9 }; cells.set(key, c); }
-        const s = new Float32Array(4); stretch(info, arr[i + 5], arr[i + 6], s);
+        const s = new Float32Array(4); stretch(info, arr[i + 5], arr[i + 6], s, arr, i);
         c.items.push({ arr, i, r: info.run ? arr[i + 5] / 2 : 1.5, s, t: targetsOf(piece) });
         c.y0 = Math.min(c.y0, arr[i + 1] - 1); c.y1 = Math.max(c.y1, arr[i + 1] + 4);
       }

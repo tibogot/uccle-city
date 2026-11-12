@@ -4832,6 +4832,7 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         eaves: faceEaves,
         partyH,
         street,
+        roofAt: (x, z) => roofAt(bi, x, z),
         shopU,
         shopW,
         base,
@@ -6847,6 +6848,8 @@ var FRENCH_SILL = 0.06;
 var VARIANT = { BLUE: 1, DARK: 2, YELLOW: 4 };
 var WINDOW_RISE = 0.13;
 var MAX_H = 16;
+var JOIN = 0.15;
+var BAND_Y = 3.4;
 function h01(str) {
   let h = 2166136261;
   for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
@@ -6869,6 +6872,12 @@ function kitCollector(opts = {}) {
   const widths = [];
   let F = [0, 0, 0, 0];
   const put = (piece, x, y, z, nx, nz, w, h, variant, seed) => (out[piece] ??= []).push(x, y, z, nx, nz, w, h, variant, seed, 0, F[0], F[1], F[2], F[3]);
+  const allRuns = [];
+  const putRun = (piece, A, B, y, nx, nz, variant, seed) => {
+    const lx = nz, lz = -nx;
+    const [L2, R] = A[0] * lx + A[1] * lz <= B[0] * lx + B[1] * lz ? [A, B] : [B, A];
+    allRuns.push({ piece, L: [...L2], R: [...R], y, nx, nz, variant, seed, mL: 0, mR: 0, jL: false, jR: false });
+  };
   const styleOf = /* @__PURE__ */ new Map();
   function buildingStyle(key, wallStyle2, rq) {
     let s = styleOf.get(key);
@@ -6880,12 +6889,31 @@ function kitCollector(opts = {}) {
     if (win === "winA" && brick && r2 < 0.4) variant |= VARIANT.BLUE;
     if ((rq * 7 % 1 + 1) % 1 >= 0.8) variant |= VARIANT.DARK;
     if (Math.abs(wallStyle2 - 2) < 0.5) variant |= VARIANT.YELLOW;
+    const yellow = Math.abs(wallStyle2 - 2) < 0.5, render = !brick;
+    const doors = render ? [["doorB", 0.28], ["doorDeco", 0.26], ["doorModern", 0.24], ["doorA", 0.12], ["doorNouveau", 0.1]] : yellow ? [["doorDeco", 0.34], ["doorA", 0.24], ["doorB", 0.18], ["doorModern", 0.14], ["doorNouveau", 0.1]] : [["doorA", 0.4], ["doorB", 0.2], ["doorNouveau", 0.16], ["doorDeco", 0.14], ["doorModern", 0.1]];
+    let acc = 0, door = doors[0][0];
+    for (const [d, p] of doors) {
+      acc += p;
+      if (r3 < acc) {
+        door = d;
+        break;
+      }
+    }
+    const balcony = h01(key + "|bal") < 0.35;
     s = {
       win,
       variant,
-      door: r3 < 0.62 ? "doorA" : "doorB",
+      door,
       soup: h01(key + "|soup") < 0.6,
-      balcony: h01(key + "|bal") < 0.35,
+      balcony,
+      bay: balcony && h01(key + "|bay") < 0.4,
+      // a bay window (oriel) instead of the French window
+      stained: win === "winA" && h01(key + "|stain") < 0.4,
+      // window C (leaded transom) on the ground floor
+      shutters: render && h01(key + "|shut") < 0.35,
+      // villas / rendered houses
+      band: h01(key + "|band") < 0.5,
+      dormer: h01(key + "|dorm") < 0.5,
       modillions: h01(key + "|mod") < 0.6,
       seed: h01(key + "|seed")
     };
@@ -6904,14 +6932,17 @@ function kitCollector(opts = {}) {
     const S2 = buildingStyle(f.key, f.wallStyle, Math.floor(rnd * 4096 + 0.5) / 4096);
     const rise = S2.win === "winB" ? WINDOW_RISE : 0;
     let frCode = 0;
+    const nb0 = Math.max(...ops.map((o) => o.bay), 0) + 1, bw0 = (f.width - 1.1) / nb0;
     if (S2.balcony) {
       const f1 = ops.filter((o) => o.floor === 1 && o.kind === "window");
-      const nb0 = Math.max(...ops.map((o) => o.bay), 0) + 1;
       if (f1.length) {
         const o = f1.reduce((b, q) => Math.abs(q.bay - (nb0 - 1) / 2) < Math.abs(b.bay - (nb0 - 1) / 2) ? q : b);
-        o.kind = "french";
-        o.h0 = 3.4 + FRENCH_SILL;
-        frCode = o.bay + 1 + 16 * o.floor;
+        if (S2.bay && bw0 >= o.u1 - o.u0 + 1 && f.eaves - o.h1 > 1) o.kind = "bay";
+        else {
+          o.kind = "french";
+          o.h0 = 3.4 + FRENCH_SILL;
+          frCode = o.bay + 1 + 16 * o.floor;
+        }
       }
     }
     const T2 = f.tris.map(({ p }) => p.map((q) => [q[0] * f.tx + q[2] * f.tz - f.u0, q[1] - f.base, q[0] * f.nx + q[2] * f.nz]));
@@ -6924,11 +6955,19 @@ function kitCollector(opts = {}) {
     };
     const placed = [];
     for (const o of ops) {
-      const top = o.h1 + (o.kind === "window" ? rise : 0);
+      const top = o.h1 + (o.kind === "window" ? rise : 0) + (o.kind === "bay" ? 0.62 : 0);
       const pts = [[o.u0 + 0.01, o.h0 + 0.01], [o.u1 - 0.01, o.h0 + 0.01], [o.u0 + 0.01, top - 0.01], [o.u1 - 0.01, top - 0.01], [(o.u0 + o.u1) / 2, (o.h0 + top) / 2]];
       if (o.kind === "door") {
         pts[0][1] = 0.05;
         pts[1][1] = 0.05;
+      }
+      if (o.kind === "bay") {
+        pts[0][0] -= 0.6;
+        pts[2][0] -= 0.6;
+        pts[1][0] += 0.6;
+        pts[3][0] += 0.6;
+        pts[0][1] -= 0.65;
+        pts[1][1] -= 0.65;
       }
       const onFace = pts.map(([u, h]) => depthAt(u, h) !== null);
       if (!onFace.some(Boolean)) {
@@ -6962,7 +7001,13 @@ function kitCollector(opts = {}) {
       const y = f.base + o.h0;
       if (o.kind === "door") {
         put(S2.door, x, y, z, f.nx, f.nz, w, h, S2.variant, seed);
-        gaps.push([uc - w / 2 - (S2.door === "doorA" ? 0.24 : 0.17), uc + w / 2 + (S2.door === "doorA" ? 0.24 : 0.17)]);
+        const sur = { doorA: 0.24, doorNouveau: 0.29, doorDeco: 0.18, doorModern: 0.1 }[S2.door] ?? 0.17;
+        gaps.push([uc - w / 2 - sur, uc + w / 2 + sur]);
+        const up = uc - (w / 2 + sur + 0.16);
+        if (depthAt(up - 0.09, 1.7) !== null && depthAt(up + 0.09, 1.86) !== null) {
+          const [px, pz] = W(up, depthAt(up, 1.78));
+          put("numPlate", px, f.base + 1.72, pz, f.nx, f.nz, 0.16, 0.12, 0, seed);
+        }
         if (opts.ground) {
           const g = opts.ground(x + f.nx * 0.6, z + f.nz * 0.6);
           const n = Math.max(0, Math.min(3, Math.round((f.base - g) / 0.17)));
@@ -6979,16 +7024,23 @@ function kitCollector(opts = {}) {
         continue;
       }
       widths.push(Math.round(w * 100) / 100);
+      if (o.kind === "bay") {
+        put("bay", x, y, z, f.nx, f.nz, w, h, 0, seed);
+        continue;
+      }
       if (o.kind === "french") {
         put("frenchWin", x, y, z, f.nx, f.nz, w, h, S2.variant & VARIANT.DARK, seed);
-        put(h01(f.key + "|balk") < 0.5 ? "balcony" : "balconnet", x, y, z, f.nx, f.nz, w, h, 0, seed);
+        put((h01(f.key + "|balk") < 0.5 ? "balcony" : "balconnet") + (w < 1.1 ? "P" : ""), x, y, z, f.nx, f.nz, w, h, 0, seed);
         french = o.bay + 1 + 16 * o.floor;
         if (f.eaves - o.h1 > 1.12) put("hood", x, y, z, f.nx, f.nz, w, h, S2.variant & VARIANT.BLUE, seed);
         continue;
       }
-      put(S2.win, x, y, z, f.nx, f.nz, w, h, S2.variant, seed);
+      const win = S2.stained && o.floor === 0 ? "winC" : S2.win;
+      put(win, x, y, z, f.nx, f.nz, w, h, S2.variant, seed);
       put("sill", x, y, z, f.nx, f.nz, w, h, 0, seed);
-      if (S2.win === "winA" && f.eaves - o.h1 > 1.12) put("hood", x, y, z, f.nx, f.nz, w, h, S2.variant, seed);
+      if (S2.shutters && win !== "winB" && bw0 - w >= 2 * 0.8 && depthAt(o.u0 - 0.8, o.h0 + 0.2) !== null && depthAt(o.u1 + 0.8, o.h1 - 0.2) !== null)
+        put("shutter", x, y, z, f.nx, f.nz, w, h, S2.variant & VARIANT.DARK, seed);
+      if (win !== "winB" && f.eaves - o.h1 > 1.12) put("hood", x, y, z, f.nx, f.nz, w, h, S2.variant, seed);
       if (o.floor === 0 && S2.soup) {
         put("soup", x, f.base, z, f.nx, f.nz, 0.9, 0.55, 0, seed);
         gaps.push([uc - 0.46, uc + 0.46]);
@@ -7010,9 +7062,7 @@ function kitCollector(opts = {}) {
       if (ua > ub) [ua, ub] = [ub, ua];
       const d = (A[0] + B[0]) / 2 * f.nx + (A[2] + B[2]) / 2 * f.nz;
       if (atTop && f.top - f.base > 4.5) {
-        const [x, z] = W((ua + ub) / 2, d);
-        put("cornice", x, A[1], z, f.nx, f.nz, ub - ua, 0.6, 0, seed);
-        runs.push({ key: f.key, a: W(ua, d), b: W(ub, d), nx: f.nx, nz: f.nz, y: A[1], seed });
+        putRun("cornice", W(ua, d), W(ub, d), A[1], f.nx, f.nz, 0, seed);
         if (S2.modillions && ub - ua > 1.2) {
           const n = Math.max(2, Math.round((ub - ua - 0.5) / 0.55) + 1);
           for (let i = 0; i < n; i++) {
@@ -7024,13 +7074,119 @@ function kitCollector(opts = {}) {
       if (atFoot) {
         let segs = [[ua, ub]];
         for (const [g0, g1] of gaps) segs = segs.flatMap(([s0, s1]) => g1 <= s0 || g0 >= s1 ? [[s0, s1]] : [[s0, g0], [g1, s1]].filter(([q0, q1]) => q1 - q0 > 0.15));
-        for (const [s0, s1] of segs) {
-          const [x, z] = W((s0 + s1) / 2, d);
-          put("plinth", x, f.base, z, f.nx, f.nz, s1 - s0, 0.6, 0, seed);
-        }
+        for (const [s0, s1] of segs) putRun("plinth", W(s0, d), W(s1, d), f.base, f.nx, f.nz, 0, seed);
+      }
+    }
+    if (S2.band && f.eaves > BAND_Y + 2.4) {
+      const hb = BAND_Y - 0.07;
+      let segs = [];
+      for (const [a, b, c] of T2) {
+        const xs = [];
+        for (const [p, q] of [[a, b], [b, c], [c, a]]) if ((p[1] - hb) * (q[1] - hb) < 0) xs.push(p[0] + (hb - p[1]) / (q[1] - p[1]) * (q[0] - p[0]));
+        if (xs.length === 2) segs.push([Math.min(...xs), Math.max(...xs)]);
+      }
+      segs.sort((p, q) => p[0] - q[0]);
+      const merged = [];
+      for (const sg of segs) {
+        const l = merged[merged.length - 1];
+        if (l && sg[0] <= l[1] + 0.01) l[1] = Math.max(l[1], sg[1]);
+        else merged.push([...sg]);
+      }
+      let parts = merged.filter(([p, q]) => q - p > 0.6);
+      for (const { o } of placed) if (o.kind === "french" || o.kind === "bay") {
+        const g0 = o.u0 - (o.kind === "bay" ? 0.6 : 0.5), g1 = o.u1 + (o.kind === "bay" ? 0.6 : 0.5);
+        parts = parts.flatMap(([s0, s1]) => g1 <= s0 || g0 >= s1 ? [[s0, s1]] : [[s0, g0], [g1, s1]].filter(([q0, q1]) => q1 - q0 > 0.3));
+      }
+      for (const [s0, s1] of parts) {
+        const dd = depthAt((s0 + s1) / 2, hb);
+        if (dd !== null) putRun("band", W(s0, dd), W(s1, dd), f.base + BAND_Y, f.nx, f.nz, 0, seed);
+      }
+    }
+    if (S2.dormer && f.roofAt && f.width >= 4.5 && f.top - f.base > 4.5) {
+      const um = f.width / 2, dm = depthAt(um, f.top - f.base - 0.3);
+      if (dm !== null) {
+        const [x, z] = W(um, dm);
+        const r1 = f.roofAt(x - f.nx * 0.6, z - f.nz * 0.6), r2 = f.roofAt(x - f.nx * 1.6, z - f.nz * 1.6);
+        if (r1 > f.top + 0.25 && r2 - r1 > 0.58 && r2 > f.top + 1) put("dormer", x, f.top, z, f.nx, f.nz, 1.1, 1.45, 0, seed);
       }
     }
     return { on: 1, rise, doorless: f.street && !doorStreet ? 1 : 0, french };
+  }
+  function joinRuns() {
+    const ends = [];
+    allRuns.forEach((r, i) => {
+      ends.push({ r, i, side: "L" });
+      ends.push({ r, i, side: "R" });
+    });
+    const grid = /* @__PURE__ */ new Map(), cell = (x, z) => `${Math.floor(x / JOIN)},${Math.floor(z / JOIN)}`;
+    for (const e of ends) {
+      const p = e.r[e.side];
+      const k = cell(p[0], p[1]);
+      if (!grid.has(k)) grid.set(k, []);
+      grid.get(k).push(e);
+    }
+    const dirOut = (r, side) => {
+      const lx = r.nz, lz = -r.nx;
+      return side === "R" ? [lx, lz] : [-lx, -lz];
+    };
+    let joins = 0, free = 0;
+    for (const e of ends) {
+      if (e.r["j" + e.side]) continue;
+      const p = e.r[e.side];
+      let best = null, bd = JOIN;
+      const cx = Math.floor(p[0] / JOIN), cz = Math.floor(p[1] / JOIN);
+      for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (const o of grid.get(`${cx + a},${cz + b}`) || []) {
+        if (o.i === e.i || o.r.piece !== e.r.piece || o.r["j" + o.side] || Math.abs(o.r.y - e.r.y) > 0.1) continue;
+        if (o.r.nx * e.r.nx + o.r.nz * e.r.nz < -0.5) continue;
+        const q = o.r[o.side], d = Math.hypot(q[0] - p[0], q[1] - p[1]);
+        if (d < bd) {
+          bd = d;
+          best = o;
+        }
+      }
+      if (!best) continue;
+      const A = e.r, B = best.r, dA = dirOut(A, e.side), dB = dirOut(B, best.side);
+      const pa = A[e.side], pb = B[best.side];
+      const den = dA[0] * dB[1] - dA[1] * dB[0];
+      let C = [(pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2];
+      if (Math.abs(den) > 0.05) {
+        const t = ((pb[0] - pa[0]) * dB[1] - (pb[1] - pa[1]) * dB[0]) / den;
+        const Ci = [pa[0] + dA[0] * t, pa[1] + dA[1] * t];
+        if (Math.hypot(Ci[0] - C[0], Ci[1] - C[1]) < JOIN) C = Ci;
+      }
+      const Nb = [dA[0] - dB[0], dA[1] - dB[1]], nl = Math.hypot(...Nb) || 1;
+      Nb[0] /= nl;
+      Nb[1] /= nl;
+      const mOf = (r, d) => {
+        const den2 = d[0] * Nb[0] + d[1] * Nb[1];
+        return Math.abs(den2) < 0.2 ? 0 : -(r.nx * Nb[0] + r.nz * Nb[1]) / den2;
+      };
+      const mA = mOf(A, dA), mB = mOf(B, dB);
+      if (Math.abs(mA) > 2.5 || Math.abs(mB) > 2.5) continue;
+      A[e.side] = [...C];
+      B[best.side] = [...C];
+      A["m" + e.side] = mA;
+      B["m" + best.side] = mB;
+      A["j" + e.side] = true;
+      B["j" + best.side] = true;
+      joins++;
+    }
+    for (const r of allRuns) {
+      const lx = r.nz, lz = -r.nx;
+      for (const side of ["L", "R"]) if (!r["j" + side]) {
+        const k = side === "L" ? 2e-3 : -2e-3;
+        r[side][0] += lx * k;
+        r[side][1] += lz * k;
+        free++;
+      }
+      const len = (r.R[0] - r.L[0]) * lx + (r.R[1] - r.L[1]) * lz;
+      if (len < 0.3) continue;
+      const cx = (r.L[0] + r.R[0]) / 2, cz = (r.L[1] + r.R[1]) / 2;
+      (out[r.piece] ??= []).push(cx, r.y, cz, r.nx, r.nz, len, 0.6, r.variant, r.seed, r.mL, r.mR, 0, 0, 0);
+      if (r.piece === "cornice") runs.push({ key: "", a: r.L, b: r.R, nx: r.nx, nz: r.nz, y: r.y, seed: r.seed });
+    }
+    stats.runJoins = joins;
+    stats.runFree = free;
   }
   function corners() {
     const byKey = /* @__PURE__ */ new Map();
@@ -7055,10 +7211,10 @@ function kitCollector(opts = {}) {
     }
   }
   function finish() {
-    corners();
+    joinRuns();
     const pieces = {};
     for (const [k, v] of Object.entries(out)) pieces[k] = new Float32Array(v);
-    return { pieces, stride: STRIDE, faces: stats.faces, skipped: stats.skipped, openings: stats.openings, widths };
+    return { pieces, stride: STRIDE, faces: stats.faces, skipped: stats.skipped, openings: stats.openings, widths, runJoins: stats.runJoins, runFree: stats.runFree };
   }
   return { face, finish, stats };
 }
