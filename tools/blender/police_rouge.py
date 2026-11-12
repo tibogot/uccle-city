@@ -1120,5 +1120,5 @@ if PREVIEWS:
     sun_dir((-0.07, 0.98, -0.16))
     look("grazing_front_windows", P(19.0, -9.0, 53.0), P(14.6, -4.0, 54.0), lens=30)
     look("grazing_cornice_corner", P(18.5, 3.5, 56.5), P(14.6, -1.0, 57.8), lens=28)
-    sun_dir((0.98, 0.07, -0.16))
+    sun_dir((-0.98, 0.17, -0.16))
     look("grazing_entrance", P(11.0, 6.5, 49.2), P(10.0, 0.5, 49.4), lens=24)

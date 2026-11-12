@@ -1,6 +1,6 @@
 # Mesh audit (packed): police.lod2
 
-3,351 triangles, 3,711 welded vertices, 2,953 open edges, 837,524 rays, 2502 ms.
+3,351 triangles, 3,711 welded vertices, 2,953 open edges, 837,524 rays, 2656 ms.
 
 **13 blocking**, 462 warnings. NOT CLEAN.
 

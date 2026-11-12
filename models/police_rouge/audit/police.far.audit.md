@@ -1,6 +1,6 @@
 # Mesh audit (before pack): police.far
 
-6,348 triangles, 6,127 welded vertices, 4,848 open edges, 655,148 rays, 1358 ms.
+6,348 triangles, 6,127 welded vertices, 4,848 open edges, 655,148 rays, 1465 ms.
 
 **0 blocking**, 1374 warnings. Clean (no blocking item).
 

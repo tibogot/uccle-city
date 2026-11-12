@@ -155,7 +155,8 @@ box (its frame): LOD0 < 90 m (+-15), LOD1 < 400 m (+-40); the cars 60 (+-10) and
   the red-brown base of wing B all match; the cornice reads a little thinner than on Street View.
 - Cycles previews: docs/police/preview_street_north.png, preview_entrance.png, preview_aerial.png; GRAZING light
   (Cycles): preview_grazing_front_windows.png, preview_grazing_cornice_corner.png (flat walls clean, sills / reveals /
-  cornice cast crisp shadows; preview_grazing_entrance.png missed its sun: unlit, kept for the record); lab (WebGPU):
+  cornice cast crisp shadows), preview_grazing_entrance.png (a 9 deg sun from the street along the step: the band, the
+  CCTV arm and the mullions cast clean shadows, the wall stays flat); lab (WebGPU):
   docs/police/lab_grazing_front.png (a 9 deg sun skimming wing A's front: no streak), lab_entrance_corner.png.
 - Moving through the bands (lab, neighbours hidden): docs/police/lab_lod0_band_moving.png (31 -> 104 m: L0, L0+L1),
   lab_lod1_band_moving.png (299 -> 479 m: L1, L1+L2, L2): no pop seen.
