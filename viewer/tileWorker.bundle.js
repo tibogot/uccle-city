@@ -4661,14 +4661,13 @@ function emitStrips(D, S2, stats) {
   const r = (v, k) => Math.round(v * k);
   const cu = /* @__PURE__ */ new Map();
   for (const s of S2) if (s.kind === "cu") for (const [x, z] of [[s.ax, s.az], [s.bx, s.bz]]) cu.set(`${r(x, 20)},${r(z, 20)}`, s);
-  for (const s of S2) if (s.kind === "eb" || s.kind === "gu") {
+  const onCornice = (s) => {
     const c = cu.get(`${r(s.ax, 20)},${r(s.az, 20)}`) || cu.get(`${r(s.bx, 20)},${r(s.bz, 20)}`);
-    if (c && c.nx * s.nx + c.nz * s.nz > 0.99) {
-      s.nx = c.nx;
-      s.nz = c.nz;
-      stats.stripSnapped = (stats.stripSnapped || 0) + 1;
-    }
-  }
+    return c && c.nx * s.nx + c.nz * s.nz > 0.99;
+  };
+  const before = S2.length;
+  for (let i = S2.length - 1; i >= 0; i--) if ((S2[i].kind === "eb" || S2[i].kind === "gu") && onCornice(S2[i])) S2.splice(i, 1);
+  stats.eavesOnCornice = before - S2.length;
   const groups = /* @__PURE__ */ new Map(), sec = /* @__PURE__ */ new Map();
   for (const s of S2) {
     const k = `${s.kind}|${r(s.y, 100)}|${r(s.h, 100)}|${r(s.d, 100)}|${r(s.off, 100)}`;
@@ -5150,7 +5149,7 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           if (n[1] > 0.2 && n[1] < 0.97 && Math.abs(A2[1] - B[1]) < 0.05 && C2[1] > A2[1] + 0.3) {
             const hl = Math.hypot(n[0], n[2]) || 1, ox = n[0] / hl, oz = n[2] / hl;
             addStrip(SD, "eb", A2, B, A2[1] + 0.03, 0.1, 0.32, ox, oz, [rc[0] * 0.8, rc[1] * 0.8, rc[2] * 0.8]);
-            addStrip(SD, "gu", A2, B, A2[1] - 0.05, 0.12, 0.13, ox, oz, [0.3, 0.31, 0.32], 0.26);
+            addStrip(SD, "gu", A2, B, A2[1] - 0.05, 0.12, 0.13, ox, oz, [0.2, 0.205, 0.21], 0.26);
             stats.eaves = (stats.eaves || 0) + 1;
           }
           continue;

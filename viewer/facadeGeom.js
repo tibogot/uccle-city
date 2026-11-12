@@ -139,14 +139,20 @@ function addStrip(S, kind, A, B, yTop, h, depth, nx, nz, col, off = 0) {
 export const _dbg = { strips: null };
 function emitStrips(D, S, stats) {
   const r = (v, k) => Math.round(v * k);
-  // an eaves board / gutter along a wall top that carries a cornice takes the wall's normal (the roof's downhill
-  // direction is a few degrees off it): their end caps are then parallel to the cornice's, a few mm apart, never crossing
+  // THE OWNER'S "BLUE LINE + BLACK LINE" along the wall tops (2026-11-11): the hanging zinc gutter (a 13 cm strip whose
+  // top and front catch the sky: a thin pale-blue line from any distance) over the dark eaves board, on every eave,
+  // also over the street cornices. A Brussels terrace has no hanging gutter on its street front: the gutter is in the
+  // cornice (corniche), the roof's eave sits on it. So where the wall top carries a cornice (both ends on a cornice
+  // strip's ends, parallel), the eaves board and the gutter are left out; elsewhere (rear fronts, villas) they stay.
   const cu = new Map();
   for (const s of S) if (s.kind === "cu") for (const [x, z] of [[s.ax, s.az], [s.bx, s.bz]]) cu.set(`${r(x, 20)},${r(z, 20)}`, s);
-  for (const s of S) if (s.kind === "eb" || s.kind === "gu") {
+  const onCornice = (s) => {
     const c = cu.get(`${r(s.ax, 20)},${r(s.az, 20)}`) || cu.get(`${r(s.bx, 20)},${r(s.bz, 20)}`);
-    if (c && c.nx * s.nx + c.nz * s.nz > 0.99) { s.nx = c.nx; s.nz = c.nz; stats.stripSnapped = (stats.stripSnapped || 0) + 1; }
-  }
+    return c && c.nx * s.nx + c.nz * s.nz > 0.99;
+  };
+  const before = S.length;
+  for (let i = S.length - 1; i >= 0; i--) if ((S[i].kind === "eb" || S[i].kind === "gu") && onCornice(S[i])) S.splice(i, 1);
+  stats.eavesOnCornice = before - S.length;
   // 1. merge collinear pieces of one strip (same kind, section, plane): union of their spans along t
   // (tolerant: normals within 2.5 deg, planes within 3 cm, spans overlapping or touching: UrbIS gives the same edge to
   // two adjoining solids a few mm / a fraction of a degree apart; exact keys left those as overlapping twins)
@@ -571,7 +577,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           if (n[1] > 0.2 && n[1] < 0.97 && Math.abs(A[1] - B[1]) < 0.05 && C[1] > A[1] + 0.3) {
             const hl = Math.hypot(n[0], n[2]) || 1, ox = n[0] / hl, oz = n[2] / hl;   // downhill, outward
             addStrip(SD, "eb", A, B, A[1] + 0.03, 0.1, 0.32, ox, oz, [rc[0] * 0.8, rc[1] * 0.8, rc[2] * 0.8]);
-            addStrip(SD, "gu", A, B, A[1] - 0.05, 0.12, 0.13, ox, oz, [0.3, 0.31, 0.32], 0.26);    // the gutter, 26 cm out
+            addStrip(SD, "gu", A, B, A[1] - 0.05, 0.12, 0.13, ox, oz, [0.2, 0.205, 0.21], 0.26);    // the gutter, 26 cm out (weathered zinc)
             stats.eaves = (stats.eaves || 0) + 1;
           }
           continue;
