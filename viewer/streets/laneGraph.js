@@ -156,6 +156,10 @@ export function refineLaneGraph(net, prep, inventory) {
         const f = (k) => Math.min(k, P.length - 1 - k) / 3;           // the ends stay on their lanes
         P = P.map((q, k) => { const dx = node.x - q[0], dz = node.z - q[1], L = Math.hypot(dx, dz) || 1, d = env[k] * Math.min(1, f(k)); return [q[0] + (dx / L) * d, q[1] + (dz / L) * d]; });
         P = smooth(P, 4); st.pulledIn = (st.pulledIn || 0) + 1;
+        // no turn tighter than a car can drive (R >= 4 m, 14°/m): smooth on until it holds (ends fixed)
+        P = resample(P, 0.5);
+        const maxTurn = (Q) => { let m = 0; for (let k = 1; k + 1 < Q.length; k++) { const h0 = Math.atan2(Q[k][1] - Q[k - 1][1], Q[k][0] - Q[k - 1][0]), h1 = Math.atan2(Q[k + 1][1] - Q[k][1], Q[k + 1][0] - Q[k][0]); m = Math.max(m, Math.abs(Math.atan2(Math.sin(h1 - h0), Math.cos(h1 - h0))) / 0.5); } return (m * 180) / Math.PI; };
+        for (let r = 0; r < 40 && maxTurn(P) > 14; r++) P = smooth(P, 1);
       }
     }
     p.pts = P;
