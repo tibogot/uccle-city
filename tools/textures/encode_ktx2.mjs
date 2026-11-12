@@ -36,8 +36,10 @@ if (cand) {
     }
     const data = new Uint8Array(fs.readFileSync(path.join(WORK, f)));
     const t0 = Date.now();
+    // review candidates: fast UASTC (level 1, no RDO: ~10x quicker, ~20 % bigger files); the owner's picks are
+    // re-encoded with RDO when promoted (node encode_ktx2.mjs <material>)
     const ktx = await encodeToKTX2(data, {
-      isUASTC: true, uastcLDRQualityLevel: 2, needSupercompression: true, enableRDO: true, rdoQualityLevel: role === "albedo" ? 1.0 : 0.5,
+      isUASTC: true, uastcLDRQualityLevel: 1, needSupercompression: true, enableRDO: false,
       generateMipmap: true, isKTX2File: true, isPerceptual: role === "albedo", isSetKTX2SRGBTransferFunc: role === "albedo",
       imageDecoder: async () => ({ width: info.width, height: info.height, data }),
     });
