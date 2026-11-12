@@ -22,6 +22,7 @@ import { lineCode } from "../../vendor/roads/mesh/laneRoadMesh.js";
 import { markingStyle } from "../../vendor/roads/roadMarkings.js";
 import { hashPhase } from "../roadData.js";
 import { approachSpan } from "./inventory.js";
+import earcut from "three/src/extras/lib/earcut.js";
 
 export const PAINT_LIFT = 0.02;      // decal paint above H (the engine layer is LIFT 6 mm + tiers + DEV 12 mm at most)
 const MARKABLE = new Set([0, 1, 3]);  // roadway / junction, tram-shared roadway, parking
@@ -201,7 +202,13 @@ export function afterNetworkV2(net, ctx, surf) {
   //    outline unless the bars are clear (s >= PHOTO_YES): the OSM nodes on every way a long diagonal crossing passes
   //    (tram tracks, both carriageways) are that crossing, not more crossings.
   //  - a band overlapping one already drawn (bm, then topo, then osm) is the same crossing.
-  const photoNo = (c) => !!c.photo && c.photo.s < PHOTO_NO && (c.photo.veg ?? 0) < 0.15;
+  // the photo's best bar score: the whole outline (f) or its 2.4 m windows (wm: cars, a bus, a shadow spoil a window,
+  // not the crossing); e = the score with the bars along the road axis (the direction a zebra's bars must have)
+  const best = (c) => Math.max(c.photo.f ?? c.photo.s, c.photo.wm ?? 0);
+  // absent only when the photo can tell (no trees, not in deep shadow: lum > 0.3) and shows no bars on the outline,
+  // its windows, nor the outline grown by 3 m (d: an outline 1-3 m off its paint is the same crossing). Calibrated on a
+  // contact sheet of the records a looser rule dropped (docs/roads/ROUND2.md)
+  const photoNo = (c) => !!c.photo && best(c) < PHOTO_NO && (c.photo.veg ?? 0) < 0.15 && (c.photo.d ?? 0) < 0.55 && (c.photo.lum ?? 1) > 0.3;
   const keptMeasured = (markings?.crossings || []).filter((c) => c.poly && near(c.c[0], c.c[1]) && !photoNo(c));
   const measuredPolys = keptMeasured.map((c) => hull(c.poly));
   const ringD = (x, z, ring) => { if (pip(x, z, ring)) return 0; let d = Infinity; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) d = Math.min(d, segD(x, z, ring[j][0], ring[j][1], ring[i][0], ring[i][1])); return d; };
@@ -211,9 +218,9 @@ export function afterNetworkV2(net, ctx, surf) {
   const xlist = [...(markings?.crossings || [])].sort((a, b) => (ORDER[a.src] ?? 3) - (ORDER[b.src] ?? 3));
   for (const c of xlist) {
     if (!near(c.c[0], c.c[1])) continue;
-    if (photoNo(c) && (c.poly || c.photo.s < PHOTO_OSM)) { inv.stats.crossingsPhotoDropped++; continue; }
-    if (!c.poly && c.photo && c.photo.s < PHOTO_OSM && (c.photo.veg ?? 0) < 0.15) { inv.stats.crossingsPhotoDropped++; continue; }
-    if (!c.poly && !(c.photo && c.photo.s >= PHOTO_YES) && measuredPolys.some((m) => ringD(c.c[0], c.c[1], m) < OSM_NEAR)) { inv.stats.crossingsOsmNear++; continue; }
+    if (photoNo(c)) { inv.stats.crossingsPhotoDropped++; continue; }
+    if (!c.poly && c.photo && best(c) < PHOTO_OSM && (c.photo.veg ?? 0) < 0.15 && (c.photo.lum ?? 1) > 0.3) { inv.stats.crossingsPhotoDropped++; continue; }
+    if (!c.poly && !(c.photo && (c.photo.e ?? 0) >= PHOTO_YES) && measuredPolys.some((m) => ringD(c.c[0], c.c[1], m) < OSM_NEAR)) { inv.stats.crossingsOsmNear++; continue; }
     let poly = c.poly, along = c.along, axis = c.axis;
     const ax = Math.cos(axis), az = Math.sin(axis), bx = -az, bz = ax;
     if (!poly) {
@@ -378,6 +385,29 @@ export function afterNetworkV2(net, ctx, surf) {
         node: n.id, road: a.road.id, end: a.end, controller });
     }
   }
+
+  // ---- round 2: the Brussels Mobility inventory's painted GLYPHS (polygon types P*: arrows P01 / P04, bicycle P09,
+  // pictograms P13 / P53, chevrons P10, ...), drawn as surveyed, solid white: they ARE the paint's outline. Regional
+  // roads only (the inventory covers those). The surfaces (S*: hatched / coloured areas) need the legend: not drawn.
+  inv.symbols ??= [];
+  let glyphs = 0;
+  for (const g of markings?.bm?.polys || []) {
+    if (!/^P/.test(g.type || "") || g.poly.length < 3) continue;
+    const c = g.poly.reduce((a, q) => [a[0] + q[0] / g.poly.length, a[1] + q[1] / g.poly.length], [0, 0]);
+    if (!near(c[0], c[1]) || !MARKABLE.has(cls(c[0], c[1]))) continue;
+    const flat = g.poly.flat(), tri = earcut(flat, null, 2);
+    let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+    for (const [x, z] of g.poly) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+    const F = { o: [x0 - 0.05, z0 - 0.05], a: [1, 0], b: [0, 1], u0: 0, u1: x1 - x0 + 0.1, v0: 0, vLen: z1 - z0 + 0.1 };
+    for (let k = 0; k < tri.length; k += 3) {
+      const t3 = [0, 1, 2].map((m) => [flat[tri[k + m] * 2], flat[tri[k + m] * 2 + 1]]);
+      if (Math.abs(area2(t3)) < 1e-6) continue;
+      items.push({ kind: "solid", poly: t3, frame: F });
+    }
+    inv.symbols.push({ id: g.id, src: "bm", kind: `glyph:${g.type}`, x: c[0], z: c[1] });
+    glyphs++;
+  }
+  ctx.stats.bmGlyphs = glyphs;
 
   // ---- sharrows: a bike symbol + chevrons in the outer traffic lane every SHARROW_STEP m
   for (const rr of net.roads) {

@@ -230,7 +230,7 @@ export function roundTwoChecks({ rd, inv, prep, surf, markings, inTile, add: add
   for (const c of xs) {
     const m = byId.get(c.id);
     if (m && m.photo === undefined && photo) m.photo = photo(m);     // older markings.json: score it here
-    if (m?.photo && m.photo.s < 0.4 && m.photo.veg < 0.15) { S.crossings.photoDenied++; add("C14", "error", c.c[0], c.c[1], `crossing ${c.id} drawn where the 2024 orthophoto shows no bars (score ${m.photo.s})`, { kind: "photo" }); }
+    if (m?.photo && Math.max(m.photo.f ?? m.photo.s, m.photo.wm ?? 0) < 0.4 && m.photo.veg < 0.15 && (m.photo.d ?? 0) < 0.55 && (m.photo.lum ?? 1) > 0.3) { S.crossings.photoDenied++; add("C14", "error", c.c[0], c.c[1], `crossing ${c.id} drawn where the 2024 orthophoto shows no bars (score ${Math.max(m.photo.f ?? m.photo.s, m.photo.wm ?? 0)})`, { kind: "photo" }); }
     if (c.vSpan && c.across != null && m?.across && c.across < 0.6 * m.across && c.across < m.across - 2.5) { S.crossings.clipped++; add("C14", "warn", c.c[0], c.c[1], `crossing ${c.id} drawn ${c.across.toFixed(1)} m of its measured ${m.across.toFixed(1)} m (clipped by a kerb)`, { kind: "clip" }); }
   }
   // ---- C15 paint across crossings: the asphalt as drawn (its line codes aEdges.zw at the vertices inside a crossing,

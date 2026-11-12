@@ -70,7 +70,7 @@ export function orthoSampler(T) {
    * over the profile's spread (1 ~ clean bars). Returns { score, th (the bars' normal: the direction ACROSS the
    * stripes, radians), period, contrast (p90 - p10 of the grey), veg (share of green samples: trees over the road) }.
    */
-  const stripeScan = (poly) => {
+  const stripeScan = (poly, thExp = null, only = false) => {
     const pip = (x, z) => { let ins = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [xi, zi] = poly[i], [xj, zj] = poly[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) ins = !ins; } return ins; };
     let xa = Infinity, xb = -Infinity, za = Infinity, zb = -Infinity;
     for (const [x, z] of poly) { xa = Math.min(xa, x); xb = Math.max(xb, x); za = Math.min(za, z); zb = Math.max(zb, z); }
@@ -89,9 +89,10 @@ export function orthoSampler(T) {
     gs.sort((a, b) => a - b);
     const contrast = gs[Math.floor(n * 0.9)] - gs[Math.floor(n * 0.1)];
     const cx = (xa + xb) / 2, cz = (za + zb) / 2, BIN = 0.05;
-    let best = { score: 0, th: 0, period: 1 };
+    let best = { score: 0, th: 0, period: 1 }, exp = 0;
     for (let deg = 0; deg < 180; deg += 3) {
       const th = (deg * Math.PI) / 180, dx = Math.cos(th), dz = Math.sin(th);
+      if (only && thExp != null) { let d = Math.abs(th - thExp) % Math.PI; d = Math.min(d, Math.PI - d); if (d > 0.21) continue; }
       const sum = new Map(), cnt = new Map();
       for (let i = 0; i < S.length; i += 3) {
         const b = Math.round(((S[i] - cx) * dx + (S[i + 1] - cz) * dz) / BIN);
@@ -108,20 +109,21 @@ export function orthoSampler(T) {
         for (const [v, g] of prof) { const a = (2 * Math.PI * v) / period; re += (g - mean) * Math.cos(a); im += (g - mean) * Math.sin(a); }
         const sc = (2 * Math.hypot(re, im)) / prof.length / (sd * Math.SQRT2);
         if (sc > best.score) best = { score: sc, th, period };
+        if (thExp != null) { let d = Math.abs(th - thExp) % Math.PI; d = Math.min(d, Math.PI - d); if (d < 0.44) exp = Math.max(exp, sc); }
       }
     }
-    return { score: Math.round(best.score * 100) / 100, th: best.th, period: Math.round(best.period * 100) / 100, contrast: Math.round(contrast * 100) / 100, veg: Math.round((veg / n) * 100) / 100, n };
+    return { score: Math.round(best.score * 100) / 100, exp: Math.round(exp * 100) / 100, th: best.th, period: Math.round(best.period * 100) / 100, contrast: Math.round(contrast * 100) / 100, veg: Math.round((veg / n) * 100) / 100, n };
   };
   /** Windowed stripe scan: 2.4 x 2.4 m windows on a 1.2 m lattice inside the outline, each scanned on its own (cars, a bus,
    *  a shadow or a tram rail spoil a window, not the crossing). Returns { score: the 75th percentile of the windows'
    *  scores, good: share of windows >= 0.5, windows, th (median direction of the good windows) } or null. */
-  const stripeWindows = (poly) => {
+  const stripeWindows = (poly, skip = null) => {
     const pip = (x, z) => { let ins = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [xi, zi] = poly[i], [xj, zj] = poly[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) ins = !ins; } return ins; };
     let xa = Infinity, xb = -Infinity, za = Infinity, zb = -Infinity;
     for (const [x, z] of poly) { xa = Math.min(xa, x); xb = Math.max(xb, x); za = Math.min(za, z); zb = Math.max(zb, z); }
     const W = [];
     for (let x = xa + 1.2; x <= xb - 1.0; x += 1.2) for (let z = za + 1.2; z <= zb - 1.0; z += 1.2) {
-      if (!pip(x, z)) continue;
+      if (!pip(x, z) || (skip && skip(x, z))) continue;
       const win = [[x - 1.2, z - 1.2], [x + 1.2, z - 1.2], [x + 1.2, z + 1.2], [x - 1.2, z + 1.2]];
       const clip = win.every(([a, b]) => pip(a, b)) ? win : null;       // whole windows only
       if (!clip) continue;
@@ -140,16 +142,29 @@ export function orthoSampler(T) {
 /** pipeline/verify_crossings.mjs: the photo record of one crossing (BM / Topo outline, or a band round an OSM node) */
 const OSM_BAND = [3.5, 6.0];       // along x across (m): the outline scanned around an OSM node
 
-export function photoOf(o, c) {
+export function photoOf(o, c, others = []) {
   let poly = c.poly;
   if (!poly) {
     const ax = Math.cos(c.axis), az = Math.sin(c.axis), bx = -az, bz = ax, [x, z] = c.c, [A, B] = OSM_BAND;
     poly = [[-A / 2, -B / 2], [A / 2, -B / 2], [A / 2, B / 2], [-A / 2, B / 2]].map(([u, v]) => [x + ax * u + bx * v, z + az * u + bz * v]);
   }
-  const full = o.stripeScan(poly);
+  // the bars run along the road: the profile's direction across them is the road axis + 90°
+  const full = o.stripeScan(poly, ((c.axis + Math.PI / 2) % Math.PI + Math.PI) % Math.PI);
   if (!full) return null;
   const win = o.stripeWindows(poly);
   const useW = win && win.windows >= 4;
-  return { s: useW ? win.score : full.score, w: useW ? win.windows : 1, th: Math.round(((useW && win.th != null ? win.th : full.th) % Math.PI) * 1000) / 1000, veg: full.veg };
+  // round 2 calibration (a contact sheet of the 103 records the first rule dropped: most had bars 1-3 m beside the
+  // outline or lay in deep shadow): the outline grown by 3 m is scanned too (d = its windows' score), and the mean
+  // grey (lum) tells deep shadow, where the photo cannot tell
+  let cx = 0, cz = 0; for (const q of poly) { cx += q[0] / poly.length; cz += q[1] / poly.length; }
+  const grown = poly.map(([x, z]) => { const dx = x - cx, dz = z - cz, L = Math.hypot(dx, dz) || 1; return [x + (dx / L) * 3, z + (dz / L) * 3]; });
+  // (windows on ANOTHER crossing's outline, grown 1.5 m, are skipped: a neighbour's bars are not this one's)
+  const pipR = (x, z, r) => { let ins = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) ins = !ins; } return ins; };
+  const near = others.map((q) => { let ax = 0, az = 0; for (const p of q) { ax += p[0] / q.length; az += p[1] / q.length; } return q.map(([x, z]) => { const dx = x - ax, dz = z - az, L = Math.hypot(dx, dz) || 1; return [x + (dx / L) * 1.5, z + (dz / L) * 1.5]; }); });
+  const gw = o.stripeWindows(grown, near.length ? (x, z) => near.some((q) => pipR(x, z, q)) : null);
+  let lum = 0, n = 0;
+  for (let i = 0; i < 40; i++) { const t = i / 40, a = poly[i % poly.length], b = poly[(i + 1) % poly.length]; const g = o.at(cx + (a[0] + (b[0] - a[0]) * t - cx) * 0.5, cz + (a[1] + (b[1] - a[1]) * t - cz) * 0.5); if (g != null) { lum += g; n++; } }
+  return { s: useW ? win.score : full.score, e: full.exp, f: full.score, wm: win ? win.score : null, d: gw ? gw.score : null, lum: n ? Math.round((lum / n) * 100) / 100 : null,
+    w: useW ? win.windows : 1, th: Math.round(((useW && win.th != null ? win.th : full.th) % Math.PI) * 1000) / 1000, veg: full.veg };
 }
 

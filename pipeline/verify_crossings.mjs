@@ -26,7 +26,9 @@ for (const T of tiles) {
   let n = 0;
   for (const c of m.crossings) {
     const o = ortho(tileAt(c.c[0], c.c[1]) || T);
-    c.photo = o ? photoOf(o, c) : null;
+    const band = (q) => { const ax = Math.cos(q.axis), az = Math.sin(q.axis), bx = -az, bz = ax, [x, z] = q.c; return [[-1.75, -3], [1.75, -3], [1.75, 3], [-1.75, 3]].map(([u, v]) => [x + ax * u + bx * v, z + az * u + bz * v]); };
+    const others = m.crossings.filter((q) => q !== c && Math.hypot(q.c[0] - c.c[0], q.c[1] - c.c[1]) < 25).map((q) => q.poly || band(q));
+    c.photo = o ? photoOf(o, c, others) : null;
     n++;
   }
   writeFileSync(f, JSON.stringify(m));

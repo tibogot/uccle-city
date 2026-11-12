@@ -17,6 +17,8 @@ import { roofGrid, onRoof } from "../viewer/tileData.js";
 import { paintInventory } from "../viewer/streets/inventory.js";
 import { asphaltMaterial, concreteMaterial, vergeMaterial, paintMaterial } from "../viewer/roadPaint.js";
 import { cobbleMaterial, pitMaterial } from "../viewer/cobbles.js";
+import { frameStrip } from "./frameStrip.js";
+import { flickerTest } from "./flickerTest.js";
 
 const qp = new URLSearchParams(location.search);
 const $info = document.getElementById("info"), $note = document.getElementById("note"), $city = document.getElementById("city");
@@ -349,4 +351,21 @@ window.lab = {
     return r.ok ? `${name} ${blob.size}` : `failed ${r.status}`;
   },
   cur: () => cur,
+  /** a moving frame strip (labs/frameStrip.js) from A to B (world [x, z], eye height h over the road), posted to the sink */
+  async strip(name, A, B, { seconds = 3, h = 1.6, shots = 8, cols = 4, look = 12, sink = "http://127.0.0.1:8817/save", title = name } = {}) {
+    const dx = B[0] - A[0], dz = B[1] - A[1], L = Math.hypot(dx, dz) || 1;
+    const r = await frameStrip({ renderFrame: () => { controls.update(); lighting.update?.(camera.position.y, cur?.y ?? 0, controls.target, 120); renderer.render(scene, camera); },
+      canvas: renderer.domElement, camera, controls, seconds, fps: 60, shots, cols, cellW: 480, title,
+      path: (t) => { const x = A[0] + dx * t, z = A[1] + dz * t, tx = x + (dx / L) * look, tz = z + (dz / L) * look; return { pos: [x, this.y(x, z) + h, z], target: [tx, this.y(tx, tz) + h * 0.6, tz] }; },
+      label: (t) => `${(L * t).toFixed(0)} m` });
+    const blob = await fetch(r.url).then((q) => q.blob());
+    await fetch(`${sink}?path=${encodeURIComponent(name)}`, { method: "POST", body: blob });
+    return { name, labels: r.labels.length, speed: `${(L / seconds).toFixed(1)} m/s` };
+  },
+  /** the flicker test (labs/flickerTest.js) from the current camera: blinking pixels while it moves very slowly */
+  async flicker(name, { frames = 24, move = "strafe", step = 0.002, sink = "http://127.0.0.1:8817/save" } = {}) {
+    const r = await flickerTest({ renderFrame: () => renderer.render(scene, camera), canvas: renderer.domElement, camera, controls, frames, move, step });
+    if (r.heatURL) { const blob = await fetch(r.heatURL).then((q) => q.blob()); await fetch(`${sink}?path=${encodeURIComponent(name)}`, { method: "POST", body: blob }); }
+    return { name, blink: r.blink, ppm: r.ppm, clusters: (r.clusters || []).slice(0, 5) };
+  },
 };

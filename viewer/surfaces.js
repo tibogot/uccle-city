@@ -1074,9 +1074,12 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
     const li = sidewalkKerb.get(si), k = li !== undefined && A2 > 0 ? prep.nearKerb(sx / A2, sz / A2, li) || prep.nearKerb(sx / A2, sz / A2) : null;
     straight.set(si, k ? [k.tx, k.tz] : [1, 0]);
   }
+  // round 2: a median (island) the orthophoto shows paved (green share < 25 %: pipeline/photo_surfaces.mjs) is paving,
+  // not grass (Square Georges Marlow's corners, most of the islands: 145 of 191)
+  const partName = (s, cls) => (cls === SURF_CLASS.median && s.photo && s.photo.veg < 0.25 ? "concrete" : PART[cls]);
   const sst = (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
   for (const b of base) {
-    const s = surf.surfaces[b.si], cls = b.cls, part = out[PART[cls]];
+    const s = surf.surfaces[b.si], cls = b.cls, pname = partName(s, cls), part = out[pname];
     const pts = [b.a, b.b, b.c];
     let uvs = pts.map((p) => [p[0], p[1]]), frame = -1, uv2 = uvs, fw = [0, 0, 0];
     if (paved(cls)) {
@@ -1104,8 +1107,8 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
       const th = ((s.course ?? 0) * Math.PI) / 180, c = Math.cos(th), sn = Math.sin(th);
       uvs = pts.map((p) => [p[0] * c + p[1] * sn, -p[0] * sn + p[1] * c]);    // setts rows along the square
     }
-    const exOfV = (q) => (PART[cls] === "asphalt" ? { aPiece: [hashPhase(s.id || String(b.si)), 0], aSurf: nameSurf.get(s.name) || BASE_SURF[cls] }
-      : PART[cls] === "concrete" ? { aKind: frame >= 0 ? KIND.framed : KIND.slab, aUv2: uv2[q], aFrameW: fw[q] } : null);
+    const exOfV = (q) => (pname === "asphalt" ? { aPiece: [hashPhase(s.id || String(b.si)), 0], aSurf: nameSurf.get(s.name) || BASE_SURF[cls] }
+      : pname === "concrete" ? { aKind: frame >= 0 ? KIND.framed : KIND.slab, aUv2: uv2[q], aFrameW: fw[q] } : null);
     const idx = pts.map((p, q) =>
       part.keyed(`${paved(cls) ? hostOf(b.si) : b.si}|${frame}|${Math.round(p[0] * 1000)}|${Math.round(p[1] * 1000)}`, () => part.vert(p[0], H(p[0], p[1]) + riseAt(cls, p[0], p[1]) - (OVERLAY[cls] ? BASE_DROP : 0), p[1], nrmAt(p[0], p[1]), uvs[q][0], uvs[q][1], exOfV(q))));
     part.tri(idx[0], idx[1], idx[2], UP);
