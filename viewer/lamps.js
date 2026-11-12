@@ -169,33 +169,45 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true, p
   }
   if (lampPoolsOn) pool.visible = false;   // the lamp light map lights the ground itself (lampLight.js)
 
-  // a few real lights on the nearest lamps at night
-  const lights = [];
-  const usePool = withLights && !/[?&]lamplights=0/.test(location.search);
-  if (usePool) for (let i = 0; i < POOL; i++) {
-    const l = new THREE.PointLight(0xffc27a, 0, 18, 2);
-    lights.push(l); group.add(l);
-  }
+  // the lamp heads join the city-wide registry; the few real lights (lampLightPool below) follow the nearest ones.
+  // The lights themselves are NOT per tile any more: a tile adding / removing point lights changed the scene's light
+  // count, which rebuilds EVERY lit material at once (70 render pipelines created synchronously: the multi-second
+  // freeze when the first tile unloaded while driving / flying, measured 2026-11-13)
   // the lantern: the Blender lamp's globe hangs 1.05 m out at ~6 m, the old one 0.72 m at 4.55 m
   const REACH = MODEL ? 1.05 : 0.72, HEADY = MODEL ? 5.95 : 4.55;
   const lamp = sites.map((s) => new THREE.Vector3(s.x - Math.sin(s.yaw) * REACH, s.y + HEADY, s.z - Math.cos(s.yaw) * REACH));
-  const nearD = new Float64Array(POOL), nearI = new Int32Array(POOL);
-  const update = (camPos) => {
-    relod?.(camPos);
-    if (!lights.length) return;
+  const key = {};
+  if (withLights) HEADS.set(key, lamp);
+  const update = (camPos) => { relod?.(camPos); };
+  const release = () => HEADS.delete(key);
+  return { group, count: sites.length, update, release, heads: lamp.map((p) => ({ x: p.x, z: p.z })) };
+}
+
+
+// ---------------------------------------------------------------- the city's lamp lights (one pool, never changes)
+// Every loaded tile's lamp heads (HEADS); POOL point lights created ONCE, in the scene for the whole session, moved to
+// the nearest heads at night (intensity 0 by day). The light COUNT never changes at runtime: three rebuilds every lit
+// material when it does. Same rule for any future light (night spots, police beacons): a fixed pool, never add/remove.
+const HEADS = new Map();
+let poolLights = null;
+export function lampLightPool(scene) {
+  if (poolLights || /[?&]lamplights=0/.test(location.search)) return () => {};
+  poolLights = [];
+  for (let i = 0; i < POOL; i++) { const l = new THREE.PointLight(0xffc27a, 0, 18, 2); l.name = `lamp-light-${i}`; poolLights.push(l); scene.add(l); }
+  const nearD = new Float64Array(POOL), nearP = new Array(POOL).fill(null);
+  return (camPos) => {
     const night = env.uNight.value;
-    if (night < 0.05) { for (const l of lights) l.intensity = 0; return; }
-    // the POOL nearest lamps: a partial insertion selection into preallocated arrays (no per-frame allocation or
-    // full sort); the same lamps as sorting every lamp by distance
-    nearD.fill(Infinity); nearI.fill(0);
-    for (let i = 0; i < lamp.length; i++) {
+    if (night < 0.05) { for (const l of poolLights) l.intensity = 0; return; }
+    // the POOL nearest heads of all loaded tiles: a partial insertion selection (no per-frame allocation or sort)
+    nearD.fill(Infinity); nearP.fill(null);
+    for (const lamp of HEADS.values()) for (let i = 0; i < lamp.length; i++) {
       const d = lamp[i].distanceToSquared(camPos);
       if (d >= nearD[POOL - 1]) continue;
       let k = POOL - 1;
-      while (k > 0 && nearD[k - 1] > d) { nearD[k] = nearD[k - 1]; nearI[k] = nearI[k - 1]; k--; }
-      nearD[k] = d; nearI[k] = i;
+      while (k > 0 && nearD[k - 1] > d) { nearD[k] = nearD[k - 1]; nearP[k] = nearP[k - 1]; k--; }
+      nearD[k] = d; nearP[k] = lamp[i];
     }
-    for (let k = 0; k < lights.length; k++) { lights[k].position.copy(lamp[nearI[k]]); lights[k].intensity = 55 * night; }   // (the lamp light map lights the ground: these add shape to cars, trees, walls)
+    // (the lamp light map lights the ground: these add shape to cars, trees, walls)
+    for (let k = 0; k < POOL; k++) { const l = poolLights[k]; if (nearP[k]) { l.position.copy(nearP[k]); l.intensity = 55 * night; } else l.intensity = 0; }
   };
-  return { group, count: sites.length, update, heads: lamp.map((p) => ({ x: p.x, z: p.z })) };
 }
