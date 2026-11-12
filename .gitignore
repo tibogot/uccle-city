@@ -40,3 +40,4 @@ models/observatory_before/
 models/parkkit/*.raw.glb
 models/parkkit/previews/
 models/parkkit/cc0_test/
+models/foliage/plants.raw.glb
