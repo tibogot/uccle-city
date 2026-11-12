@@ -1,0 +1,27 @@
+{
+ "tiles": 120,
+ "counts": {
+  "atm": 3,
+  "bakery": 21,
+  "bank": 16,
+  "bar": 10,
+  "cafe": 15,
+  "civic": 11,
+  "fastfood": 21,
+  "fuel": 17,
+  "glass": 22,
+  "hotel": 1,
+  "named": 524,
+  "numbers": 19287,
+  "pharmacy": 17,
+  "plates": 2155,
+  "post": 2,
+  "postboxes": 83,
+  "restaurant": 84,
+  "school": 31,
+  "shop": 288,
+  "stops": 278,
+  "supermarket": 17,
+  "villo": 27
+ }
+}
