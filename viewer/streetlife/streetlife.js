@@ -157,7 +157,7 @@ function windowMaterial() {
   m.colorNode = vec3(0.015, 0.016, 0.018);
   m.roughnessNode = float(0.06);
   m.metalnessNode = float(0);
-  m.emissiveNode = r.color.mul(mix(float(0.42), float(1.1), U.night)).mul(r.glow.mul(0.3).add(0.75)).mul(U.glow);
+  m.emissiveNode = r.color.mul(mix(float(0.42), float(0.6), U.night)).mul(r.glow.mul(0.3).add(0.75)).mul(U.glow);
   m.name = "streetlife-window";
   return m;
 }

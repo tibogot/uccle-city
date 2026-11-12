@@ -228,7 +228,7 @@ class Tile:
                     party += 1
             if party >= 2:
                 continue
-            nr = self.nearest_road(mx + nx * 0.5, mz + nz * 0.5, STREET_REACH)
+            nr = self.nearest_road(mx + nx * 0.5, mz + nz * 0.5, STREET_REACH, named=True)
             if not nr:
                 continue
             d, ln, rr = nr
@@ -236,6 +236,10 @@ class Tile:
             vx, vz = qp.x - mx, qp.y - mz
             vl = math.hypot(vx, vz) or 1
             if (vx * nx + vz * nz) / vl < 0.5:
+                continue
+            # the view from the wall to that street must be open: no other building in between
+            sight = LineString([(mx + nx * 0.6, mz + nz * 0.6), (qp.x, qp.y)])
+            if any(j != si and self.solids[j]["poly"].intersects(sight) for j in self.tree.query(sight)):
                 continue
             out.append((ax, az, bx, bz, nx, nz, L, d, rr))
         del area2
@@ -250,7 +254,7 @@ class Facades:
         self.T = T
         self.used = {}           # (si, edge index) -> [(u0, u1)]
 
-    def candidates(self, x, z, bu=None, reach=20.0):
+    def candidates(self, x, z, bu=None, reach=20.0, street=None):
         T = self.T
         p = Point(x, z)
         out = []
@@ -264,13 +268,13 @@ class Facades:
                 d = LineString([(ax, az), (bx, bz)]).distance(p)
                 if d > reach:
                     continue
-                score = d + (0 if inside else 4.0) + 0.02 * rd
+                score = d + (0 if inside else 4.0) + 0.08 * rd + (0 if not street or (rr["name"] or "").startswith(street) else 25.0)
                 out.append((score, si, ei, e))
         out.sort(key=lambda c: (c[0], c[1], c[2]))
         return out
 
-    def attach(self, x, z, want_w, bu=None, reach=20.0, occupy=True):
-        for score, si, ei, e in self.candidates(x, z, bu, reach):
+    def attach(self, x, z, want_w, bu=None, reach=20.0, occupy=True, street=None):
+        for score, si, ei, e in self.candidates(x, z, bu, reach, street):
             ax, az, bx, bz, nx, nz, L, rd, rr = e
             tx, tz = (bx - ax) / L, (bz - az) / L
             u = (x - ax) * tx + (z - az) * tz
@@ -295,6 +299,37 @@ class Facades:
             return {"si": int(si), "bu": s["bu"], "x": r2(px), "z": r2(pz), "nx": round(nx, 4), "nz": round(nz, 4), "w": r2(w), "y": r2(yb),
                     "edgeL": r2(L), "u": r2(u), "eaves": r2(s["eaves"]), "street": rr["name"], "dist": r2(score), "side": side}
         return None
+
+    def nearest_wall(self, x, z, bu, reach=12.0):
+        """the nearest outer (not party) footprint edge of building bu to (x, z), whatever it faces"""
+        T, p, best = self.T, Point(x, z), None
+        for si in T.tree.query(p.buffer(reach)):
+            s = T.solids[si]
+            if s["bu"] != bu:
+                continue
+            ring = s["ring"][:-1] if s["ring"][0] == s["ring"][-1] else s["ring"]
+            for k in range(len(ring)):
+                (ax, az), (bx, bz) = ring[k], ring[(k + 1) % len(ring)]
+                L = math.hypot(bx - ax, bz - az)
+                if L < 1.0:
+                    continue
+                tx, tz = (bx - ax) / L, (bz - az) / L
+                nx, nz = tz, -tx
+                mx, mz = (ax + bx) / 2, (az + bz) / 2
+                if s["poly"].contains(Point(mx + nx * 0.3, mz + nz * 0.3)):
+                    nx, nz = -nx, -nz
+                q = Point(mx + nx * 0.4, mz + nz * 0.4)
+                if any(j != si and T.solids[j]["poly"].contains(q) for j in T.tree.query(q)):
+                    continue
+                d = LineString([(ax, az), (bx, bz)]).distance(p)
+                if d <= reach and (best is None or d < best[0]):
+                    u = min(max((x - ax) * tx + (z - az) * tz, 0.4), L - 0.4)
+                    best = (d, ax + tx * u, az + tz * u, nx, nz, s)
+        if not best:
+            return None
+        d, px, pz, nx, nz, s = best
+        yb = max(min(T.floor_y(px + nx, pz + nz), s["base"] + 1.5), s["base"] - 0.5)
+        return {"x": r2(px), "z": r2(pz), "nx": round(nx, 4), "nz": round(nz, 4), "y": r2(yb)}
 
     @staticmethod
     def _fit(u, w, L, taken):
@@ -504,7 +539,7 @@ def build_tile(name: str, src) -> dict:
             out["pois"].append(rec)
             continue
         want = SHOP_MAX_W if kind in ("supermarket", "restaurant", "bank") else 5.5
-        fa = F.attach(x, z, want)
+        fa = F.attach(x, z, want, street=t.get("addr:street"))      # the POI's own street (OSM addr:street) wins
         if not fa:
             skipped(f"{kind}: no free street façade within 20 m")
             continue
@@ -556,8 +591,10 @@ def build_tile(name: str, src) -> dict:
             fa = F.attach(x, z, 0.3, bu=bu, reach=12.0, occupy=False) if bu else None
             if not fa:
                 fa = F.attach(x, z, 0.3, reach=6.0, occupy=False)
+            if not fa and bu:
+                fa = F.nearest_wall(x, z, bu)      # set back from the street (villas, courtyards): its nearest outer wall
             if not fa:
-                skipped("number: no street façade of its building")
+                skipped("number: its building is not among the tile's solids (outside the study area) or no outer wall within 12 m (address points, box numbers included)")
                 continue
             key = (a["POLICENUM"], round(fa["x"]), round(fa["z"]))
             if key in seen:

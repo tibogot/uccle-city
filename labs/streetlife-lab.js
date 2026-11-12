@@ -117,16 +117,24 @@ function streetPath(kind) {
   let mx = 0, mz = 0; for (const p of P) { mx += p.face.x; mz += p.face.z; } mx /= P.length; mz /= P.length;
   let sxx = 0, sxz = 0, szz = 0; for (const p of P) { const dx = p.face.x - mx, dz = p.face.z - mz; sxx += dx * dx; sxz += dx * dz; szz += dz * dz; }
   const a = 0.5 * Math.atan2(2 * sxz, sxx - szz), ax = Math.cos(a), az = Math.sin(a);
+  // one side of the street only (the side with the most shops): the walk stays on its sidewalk
+  const side = (p) => Math.sign(p.face.nx * -az + p.face.nz * ax);
+  const major = P.filter((p) => side(p) > 0).length >= P.length / 2 ? 1 : -1;
+  for (let i = P.length - 1; i >= 0; i--) if (side(P[i]) !== major) P.splice(i, 1);
   P.sort((p, q) => (p.face.x * ax + p.face.z * az) - (q.face.x * ax + q.face.z * az));
   const off = kind === "drive" ? 5.5 : 2.4, eye = kind === "drive" ? 1.25 : 1.65;
   const pts = [];
   for (const p of P) {
-    const s = kind === "drive" ? Math.min(off, (p.face.side ?? 3) + 1.8) : Math.min(off, Math.max(1.4, (p.face.side ?? 3) * 0.55));
+    const s = kind === "drive" ? Math.min(off, (p.face.side ?? 3) + 1.8) : Math.max(2.4, Math.min(4, (p.face.side ?? 3) * 0.6));
     const x = p.face.x + p.face.nx * s, z = p.face.z + p.face.nz * s;
     if (pts.length && Math.hypot(pts.at(-1).x - x, pts.at(-1).z - z) < 6) continue;
     pts.push(new THREE.Vector3(x, groundAt(x, z) + eye + 0.13, z));
   }
-  return pts.length >= 2 ? new THREE.CatmullRomCurve3(pts, false, "centripetal") : null;
+  if (pts.length < 2) return null;
+  const c = new THREE.CatmullRomCurve3(pts, false, "centripetal");
+  let nx = 0, nz = 0; for (const p of P) { nx += p.face.nx; nz += p.face.nz; }
+  c.userData = { toShops: new THREE.Vector3(-nx, 0, -nz).normalize() };
+  return c;
 }
 const paths = { walk: streetPath("walk"), drive: streetPath("drive") };
 let ride = null;                            // { curve, t, speed }
@@ -135,6 +143,8 @@ function startRide(kind) {
   ride = { curve: c, u: 0, speed: kind === "drive" ? 8.3 : 1.4, len: c.getLength(), kind };   // 30 km/h, 5 km/h
   controls.enabled = false;
 }
+/** put the ride at a fraction u of its path (frame strips) */
+function rideAt(kind, u) { startRide(kind); if (ride) { ride.u = u; rideStep(0); } }
 function rideStep(dt) {
   if (!ride) return;
   ride.u += (ride.speed * dt) / ride.len;
@@ -143,9 +153,8 @@ function rideStep(dt) {
   camera.position.copy(p);
   // look ahead, turned ~35 deg toward the shops
   const fwd = q.clone().sub(p).setY(0).normalize();
-  const look = p.clone().addScaledVector(fwd, 10);
-  const near = docs.flatMap((d) => d.pois).filter((x) => x.face).reduce((b, x) => { const dd = Math.hypot(x.face.x - p.x, x.face.z - p.z); return !b || dd < b.d ? { d: dd, x } : b; }, null);
-  if (near) look.lerp(new THREE.Vector3(near.x.face.x, p.y + 1.2, near.x.face.z), 0.45);
+  const look = p.clone().addScaledVector(fwd, 10).addScaledVector(ride.curve.userData.toShops, ride.kind === "drive" ? 5 : 3.5);
+  look.y = p.y + 0.6;
   camera.lookAt(look); controls.target.copy(look);
 }
 
@@ -259,7 +268,7 @@ async function flicker(move = "strafe", frames = 24, step = 0.0006) {
   showHeat(r);
   return r;
 }
-window.lab = { viewPoi, renderer, scene, camera, controls, SL, streetUniforms, lighting, bench, flicker, startRide, goHome, gpu, S, tileStats, paths, docs, cityMs };
+window.lab = { viewPoi, rideAt, renderer, scene, camera, controls, SL, streetUniforms, lighting, bench, flicker, startRide, goHome, gpu, S, tileStats, paths, docs, cityMs };
 
 let last = performance.now(), frames = 0, fpsAcc = 0, fpsN = 0, fps = 0;
 renderer.setAnimationLoop(() => {

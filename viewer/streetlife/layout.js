@@ -26,8 +26,9 @@ const PAINT = [[0.012, 0.035, 0.022], [0.06, 0.012, 0.014], [0.012, 0.018, 0.05]
 const INK_ON_DARK = [[0.85, 0.8, 0.66], [0.9, 0.9, 0.88], [0.62, 0.45, 0.16]];
 const INK_ON_LIGHT = [[0.02, 0.02, 0.02], [0.05, 0.03, 0.02]];
 const CANVAS = [[0.32, 0.03, 0.03], [0.03, 0.12, 0.05], [0.04, 0.05, 0.13], [0.55, 0.5, 0.38], [0.06, 0.06, 0.06]];
-// Brussels street plate: white letters + border on dark blue enamel (checked against Street View, look only)
-const PLATE_BLUE = [0.006, 0.02, 0.09], WHITE = [0.86, 0.86, 0.84];
+// Uccle street plate: white letters + white border on a mid blue enamel (checked against a Wikimedia Commons photo of an
+// Uccle plate, look only; the real ones also carry a small "Uccle - Ukkel" line and the street type small: TODO)
+const PLATE_BLUE = [0.012, 0.06, 0.26], WHITE = [0.86, 0.86, 0.84];
 const AWNING_KINDS = new Set(["cafe", "bar", "restaurant", "bakery", "fastfood"]);
 const AWNING_CATS = new Set(["greengrocer", "butcher", "florist", "deli", "cheese", "pastry", "chocolate", "ice_cream", "seafood", "wine", "coffee"]);
 const PROJECT_KINDS = new Set(["cafe", "bar", "restaurant", "hotel", "bakery", "bank", "fastfood"]);
@@ -138,7 +139,7 @@ export function layoutTile(doc, measure) {
     // fascia with the real name (backlit letters)
     const lab = p.name ? label([p.name], pick(["shopSans", "shopSerif", "shopHumanist", "shopItalic"], id, "f")) : null;
     if (p.name) used.names.push(p.name);
-    box(add(base, X, 0, Y, fasciaY + 0.3, Z, 0.07), X, Y, Z, W + 0.3, 0.6, 0.14, { board: paint, ink, inkGlow: 1.4 * lit, lab, pad: 0.16, rough: 0.45, kind: 2 });
+    box(add(base, X, 0, Y, fasciaY + 0.3, Z, 0.07), X, Y, Z, W + 0.1, 0.6, 0.14, { board: paint, ink, inkGlow: 1.4 * lit, lab, pad: 0.16, rough: 0.45, kind: 2 });
     night.signs.push(...add(base, X, 0, Y, fasciaY + 0.3, Z, 0.5));
     // awning (food and fresh shops), the name on its valance
     const awn = AWNING_KINDS.has(p.kind) || AWNING_CATS.has(p.cat);
@@ -217,7 +218,7 @@ export function layoutTile(doc, measure) {
     const brand = s.name || s.brand;
     const blab = brand ? label([brand], "brand") : null;
     if (brand) used.fuel.push(brand);
-    box(add(c, X, 0, UP, 5.35, Z, 0), X, UP, Z, 12, 0.75, 8, { board: [0.78, 0.78, 0.76], ink: [0.03, 0.03, 0.035], inkGlow: 0.8, lab: blab, pad: 0.12, sides: 1, rough: 0.4, kind: 4 });
+    box(add(c, X, 0, UP, 5.35, Z, 0), X, UP, Z, 12, 0.75, 8, { board: [0.78, 0.78, 0.76], ink: [0.03, 0.03, 0.035], inkGlow: 0.8, lab: blab, pad: 0.04, sides: 1, rough: 0.4, kind: 4 });
     // the long sides carry the name; the short ends too (a second box face pair along X)
     for (const e of [-1, 1]) {        // the short ends: a thin name panel on each (faces +-X)
       const EX = e > 0 ? [-Z[0], 0, -Z[2]] : Z, EZ = e > 0 ? X : [-X[0], 0, -X[2]];
