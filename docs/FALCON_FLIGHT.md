@@ -1,4 +1,4 @@
-# Falcon flight (branch claude/falcon-flight, LAB ONLY)
+# Falcon flight (the lab, and the city's fly mode)
 
 Flying as a peregrine over Saint-Job, built **next to** today's fly mode (`viewer/flight.js`, `viewer/falcons.js`
 untouched) so the city can adopt it later. Lab: `labs/falcon-flight-lab.html` (port 8833 when served from the
@@ -161,9 +161,115 @@ noise" is honest. 200 x ~110 triangles = 22k triangles, one draw; gulls one draw
 - The pigeon mesh is crude up close (flat pale wings, the bars faint): it is made to be read at 10-100 m.
 - Sound: no positional wing sound for the pigeons in flight (only take-off clatter), no falcon calls except the catch.
 
-## How the city could adopt it
+## How the city could adopt it (done: see "In the city")
 
 `viewer/main.js` would build `FalconFlight` + `AirField` (grid from the loaded tiles' roof grids + `world.heightAt`,
 thermal sources from the tiles' features), `FalconBird` instead of `Flyer.setModel`, and keep `Flyer.startFromNest`'s
 intro (hand over at its launch speed with `FalconFlight.launch(..., air)`). Pigeons need roosts from the loaded
 tiles (`cityWorld.js roosts()` works per tile). Nothing in the city is changed by this branch.
+
+## In the city (branch claude/falcon-city, 2026-11-12)
+
+The city's **Fly** button / `?view=fly` / the dev panel's "fly the falcon" now fly this model in the REAL streaming
+city (all landmarks, roads, trees, traffic). `?falcon=old` keeps the old arcade flight (`viewer/flight.js`) for
+comparison. Resume note: `docs/falcons/CITY_RESUME.md`.
+
+| file | what |
+|---|---|
+| `viewer/falconFlight/cityFlyer.js` | `CityFlyer`: the same face to `main.js` as the old `Flyer` (`on, x, z, pos, yaw, start, startFromNest, stop, update, onExit`); inside: FalconGame + FalconBird + FalconCamera + FalconInput + FalconAudio + Pigeons + ThermalHints, the nest intro, the HUD (our own style) and a "Falcon flight" panel (`viewer/panelUI.js`, closed, shown only while flying) |
+| `viewer/falconFlight/cityStream.js` | `CityFalconWorld`, the streaming world adapter: `floor / ground / roof / churchFloor / proxyAt / liftGrid / thermals / roosts` from the city's loaded tiles (`world.tiles`: `hm`, `roofs`, `feats`) |
+| `viewer/falconFlight/falconWorker.js` | a plain module worker: the pigeons' roof-ridge roosts (the tiles' `buildings.json` + `.bin`) and the landmarks' height rasters |
+| `viewer/falconFlight/church.js` | the church proxy + the Place (split out of `cityWorld.js`, no loader imports) |
+| `debug/falconCityFlight.js` | the verification: scripted flights stepped at 60 Hz through `viewer.step(dt)`, the device hook, long tasks, collision checks, contact sheets |
+
+`main.js` changes (small): the tile object carries its raw roof grid (`roofs: rf`); the flyer is a `CityFlyer` unless
+`?falcon=old` (the old bird glTF is then not loaded); `fly()` waits for `flyer.ready`; an updater runs `flyer.tick`
+(the pigeons in every mode); `viewer.step(dt)` runs one frame of the loop with a fixed dt (the loop body is
+`stepLoop`).
+
+**The world adapter** (`cityStream.js`):
+- `floor(x, z)` = max(the tile's DTM, its 2 m roof grid, the Saint-Job church proxy, the landmark proxies, the road
+  bridge decks `world.deckY`). The city's roof grid keeps the UrbIS solids the hero models replace, with their flat
+  top over the whole footprint (Saint-Job's = the spire's height over the nave): inside the church's 34 m the cells at
+  that envelope's top are dropped (the proxy rules there); inside each landmark's footprint (dilated 2 m) the roof grid
+  gives way to the landmark's proxy, plus any cell at the envelope's top in its box.
+- **Landmark proxies**: a 1 m height raster of each landmark's own drawn mesh (its lowest LOD, world space): the town
+  hall, the Observatory, Saint-Pierre, Stalle, the Villa van Buuren, the Château de Wolvendael, the police station,
+  Calevoet station and the three bridges (Saint-Job and Calevoet railway bridges, the Verrewinkel road bridge). Main
+  thread 0.2-3.8 ms each (copying the vertices), the raster in the worker. Heightfields: the bird cannot fly UNDER a
+  bridge arch (solid from the deck down), and never goes through one.
+- **The lift grid follows the falcon**: an 800 m window (4 m, 201 x 201), sampled (max of 2 x 2 m) and box-blurred
+  twice +-12 m (running sums), in slices of 1.5 ms a frame; rebuilt when the falcon is 140 m off its centre or the
+  loaded tiles / proxies changed (at most every 3 s), swapped in when complete. A build: 10-17 slices (0.1-0.4 s at
+  60 fps); the arrays are recycled. `floor()` costs 0.1 us.
+- **Thermals**: a fixed pool of 12 slots in the AirField (the gulls are per slot): the Place de Saint-Job + the OSM
+  pitches / parks / grass / gardens of the loaded tiles, the nearest within 1.5 km, re-checked every second; a slot
+  changes source only when its own is over 1 km from the falcon.
+- **Roosts / perches**: the ridges round the Place (worker: 4,792 points within 170 m, the hero solids left out), the
+  church's wing ridges and drum cornice, the Place's setts on the city's walking surface (`world.walkY`); perches = the
+  family's church perches + every 4th ridge point.
+
+**The intro**: the old fly mode's nest start (scrape, the hop onto the arch's ledge, the look out, the launch on a
+Hermite path; Space skips), replayed with `FalconBird` at life size (1.0 m) and the old intro camera; at the end of the
+launch `FalconGame.start` takes over at the launch's speed (13.2 m/s), path angle (-11 deg) and heading, the chase
+camera continuing from the intro's. The size grows to the readable span (2.0 m, `?falconsize=`, the panel) with the
+height, as in the lab.
+
+**Pigeons**: 150 (`?pigeons=`) on 4,959 roosts round the Place; simulated and drawn whenever the camera is within
+700 m of the Place in ANY mode (walk, drive...), fleeing only the falcon.
+
+**HUD / input**: bottom right in panelUI's colours: airspeed, height, air, stamina bar, target, score, the aim /
+target / perch rings, messages. Keys as in the lab except M (the city's map) and H (photo mode); mouse aim by clicking
+the view (pointer lock), off in the panel. The input is OFF outside fly mode (no key, pointer lock or touch control
+reaches it); Esc leaves to the close-up (as the old fly mode).
+
+**Rules kept**: no light added; every new material compiled before it shows (`warm()`: the page's precompile into the
+scene pass + one parked draw of the bird inside a parallel-pipeline window for its shadow pass; the bird / hints /
+streaks are in the scene before the boot warm-up, so the boot compiles them too).
+
+### Verification (2026-11-12, `debug/falconCityFlight.js`, strips in `docs/falcons/city/`)
+
+The tab is a background tab (Chrome gives it 1 rAF / s), so every run is STEPPED: `viewer.step(1/60)` = the whole
+city frame (lighting, the flight, the fades, every updater, the render), then `device.queue.onSubmittedWorkDone()`:
+"frame ms" below = main thread + GPU of that frame, at 60 Hz of game time. The device hook wraps
+`GPUDevice.prototype.createRenderPipeline` / `...Async` (the 2026-11-13 freeze diagnosis).
+
+| run | strip | result |
+|---|---|---|
+| intro | `strip_intro.jpg` | scrape -> ledge -> launch -> hand-over at 13.2 m/s, -11 deg |
+| stoop | `strip_stoop.jpg` | 650 m, tucked: **79 m/s** at 11 s, pull-out bottom 100 m over the Place |
+| thermal | `strip_thermal.jpg` | midday, the Place's column held on: 54 -> 98 m over the ground in 55 s (+0.8 m/s), air +1.5..2.1 m/s |
+| roof-skim | `strip_skim.jpg` | 4 m over the highest roof ahead, 15-22 m/s, 25 s: minimum clearance 2.9 m, never under a roof |
+| strike | `strip_strike.jpg` | proportional navigation on the flock: caught at **41 m/s** on the 3rd attack (the lab: ~1 in 6) |
+| perch on the church | `strip_church.jpg` | E at 24 m from the spire's cross: the flare, perched on the cross |
+| land on a ridge | `strip_ridge.jpg` | onto a roof ridge 60-120 m from the Place (an approach clearing the roofs by 3 m) |
+| fly far | `strip_far.jpg` | 3.3 km east across I6 -> M6: 22 tile loads / unloads under the falcon, lift grid rebuilt ~40 times |
+| landmarks | `landmarks.jpg` | level flights 6 m under the top of the town hall, Observatory, Stalle, Calevoet bridge: a wall hit on the drawn mesh each time, **0 frames inside a proxy** (Saint-Pierre: the line missed the spire) |
+| modes | `modes_exit.jpg` | fly -> Esc (orbit; HUD, bird, hints, streaks, panel hidden; input off, no pointer lock, FOV back to 55) -> E / F / V / R ignored -> walk (pigeons on the Place) -> drive -> Esc -> fly again (the intro again); `?falcon=old` is still the old Flyer |
+
+Every run: **0 synchronous render pipelines** mid-flight (and 0 async: nothing new compiled), **0 frames with the
+bird under the floor** (the minimum clearance in free flight is 0.35 m = the bird's radius, at a touch-down).
+
+**CPU** (per frame, the flight's own parts, median / p99 / max over 600 frames): total 0.1-0.3 / 0.5-2.3 / 1.8-3.3 ms
+(game 0.1, pigeons 0.1-0.2 (max 1.8), hints < 0.1, camera < 0.1, the lift-grid slice within its 1.5 ms budget; the
+worst slice measured 1.7-7.2 ms (a GC landing in it). One 288 ms outlier in the first far flight, before the arrays
+were recycled, while the city's tile streaming was disposing tiles; the second far flight's worst slice: 1.7 ms.
+Long tasks > 50 ms seen during the runs all came while tiles streamed (the city's tile build), never in a frame where
+the flight's own CPU went over 3.3 ms.
+
+**Frame time** (stepped, CPU + GPU), the second far flight, 7,200 frames: p50 8.9, p95 12.3, p99 17.1 ms; histogram
+< 8 ms: 1,389, 8-16.7: 5,732, 16.7-25: 58, 25-33: 12, 33-50: 4, > 50: 5 (tile loads). Earlier runs with the other
+agents' tabs busy: p50 16-34 ms - the GPU is SHARED with two other agents' city tabs, so GPU numbers are noisy. The
+A/B of the bird + pigeons + hints (perched on the cross, 3 rounds x 240 frames): GPU p50 on 2.36 / 1.44 / 1.38, off
+1.97 / 1.57 / 1.44 ms: **below the noise** (as in the lab).
+
+### Weak points / left (city)
+
+- Trees are not obstacles (the falcon flies through crowns). Bridges are solid under their arches (heightfields).
+- A ridge perch can face a chimney (the façade kit's chimneys are not in the UrbIS ridges).
+- The chase camera can clip the bird's wing when it is lifted over a roof right beside the bird (the lab's rule).
+- Only the Place de Saint-Job has pigeons (other squares: the same worker job round another point).
+- The stoop from 650 m shows the edge of the far-LOD ring (`?far=3`).
+- Measured stepped in a background tab: a foreground real-time run (and a performance trace attributing the
+  streaming long tasks) is still to do on a quiet GPU.
+- Thermals only from OSM land cover (as the lab); the weather's wind is not hooked (`air.setWeatherWind`).
