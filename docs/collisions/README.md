@@ -31,7 +31,7 @@ The owner's two rules:
    in the city collision world) along both sidewalks of every road. Reported: hits on things with no drawn object
    within 0.6 m (`invisible hit`), the body over drawn solid cells (`passed through`), the body's height against the
    DRAWN surface under it (0.5 m raster of the terrain / road / deck / landmark meshes, two layers: `under` / `over the
-   drawn surface`), `stuck on nothing drawn` (no progress for 4 s with nothing drawn within 0.6 m; stopped against a
+   drawn surface`, 0.3 m for the car, 0.4 m on foot: a kerb in the 0.5 m cell), `stuck on nothing drawn` (no progress for 4 s with nothing drawn within 0.6 m; stopped against a
    drawn object or a kerb island = the autopilot's line, counted as `blocked`, not a defect).
 
 ### The contact check (tools/mesh_audit/contact.js)

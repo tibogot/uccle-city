@@ -503,8 +503,9 @@ export function walkRoutes({ scene, tile, truth, G, makeController, walkY, maxRo
       }
       if (step % 30 === 0) {
         const y = top(ctl.pos[0], ctl.pos[2], ctl.pos[1]);
-        if (y != null && y - ctl.pos[1] > 0.25) { R.fell++; item("under the drawn surface", ctl.pos[0], ctl.pos[2], { by: +(y - ctl.pos[1]).toFixed(2) }); }
-        else if (y != null && ctl.pos[1] - y > 0.25 && ctl.grounded) { R.floated++; item("over the drawn surface", ctl.pos[0], ctl.pos[2], { by: +(ctl.pos[1] - y).toFixed(2) }); }
+        // 0.4 m: a kerb (<= 25 cm) in the 0.5 m raster cell of the drawn surface is not a fall / float
+        if (y != null && y - ctl.pos[1] > 0.4) { R.fell++; item("under the drawn surface", ctl.pos[0], ctl.pos[2], { by: +(y - ctl.pos[1]).toFixed(2) }); }
+        else if (y != null && ctl.pos[1] - y > 0.4 && ctl.grounded) { R.floated++; item("over the drawn surface", ctl.pos[0], ctl.pos[2], { by: +(ctl.pos[1] - y).toFixed(2) }); }
         if (ctl.pos[1] < walkY(ctl.pos[0], ctl.pos[2]) - 3) { R.fell++; item("fell", ctl.pos[0], ctl.pos[2]); break; }
       }
       const d = Math.hypot(path[path.length - 1][0] - ctl.pos[0], path[path.length - 1][1] - ctl.pos[2]) + (path.length - wp) * 1.5;
