@@ -198,7 +198,7 @@ function liftGrid(world, step = 4, rad = 3) {
 
 /** where thermals rise: the Place de Saint-Job (setts in the sun: the strongest), OSM open areas near Saint-Job */
 function thermalSources(world) {
-  const out = [{ x: PLACE.x - 6, z: PLACE.z + 4, heat: 1.0, radius: 20, name: "Place de Saint-Job" }];
+  const out = [{ x: PLACE.x - 6, z: PLACE.z + 4, heat: 1.0, radius: 24, name: "Place de Saint-Job" }];
   const HEAT = { pitch: 0.85, playground: 0.8, grass: 0.7, park: 0.65, meadow: 0.7, garden: 0.55, recreation_ground: 0.75, wood: 0.35, scrub: 0.5, farmland: 0.7 };
   for (const t of world.tiles) for (const a of t.feats.areas || []) {
     const heat = HEAT[a.kind]; if (!heat || !a.rings?.[0]) continue;

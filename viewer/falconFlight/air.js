@@ -11,7 +11,7 @@
 //             the sun's elevation, the cloud and the surface; the core radius grows with height, a weak ring of sink
 //             around it, the column leans downwind (a bubble rising at w drifts U h / w), fading toward the top of the
 //             mixed layer (Allen 2006, NASA Dryden: docs/FALCON_FLIGHT_RESEARCH.md).
-//   updrafts  w = k U . grad(h) on the city's obstacle field (max(DTM, roofs), smoothed over ~12 m: a row of façades
+//   updrafts  w = 1.2 U . grad(h) on the city's obstacle field (max(DTM, roofs), smoothed over ~12 m: a row of façades
 //             across the wind is a ridge), strongest just above the windward edge, fading over ~25 m of height; the
 //             lee side sinks (40 % of it).
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
@@ -51,7 +51,8 @@ export class AirField {
     for (const th of this.thermals) {
       const period = th.life + th.rest, s = ((t / period + th.phase) % 1) * period;
       th.env = s < th.life ? smooth(s, 0, 40) * (1 - smooth(s, th.life - 45, th.life)) : 0;
-      th.w = 3.4 * th.heat * sun * th.env * P.thermals;          // core updraft, m/s
+      if (th.forced) th.env = 1;                                // the lab: a column held on
+      th.w = 4.2 * th.heat * sun * th.env * P.thermals;          // core updraft, m/s
       th.top = P.zi * (0.45 + 0.55 * sun);
       th.climb = Math.max(th.w, 0.8);
     }
@@ -61,14 +62,15 @@ export class AirField {
   /** centre of a thermal column at height y (leaning downwind), and its radius there */
   thermalCentre(th, y, out = { x: 0, z: 0, R: 0 }) {
     const h = Math.max(0, y - th.ground);
-    const lean = Math.min(h / th.climb, 120);               // seconds a bubble took to rise this far (capped)
+    // seconds a bubble took to rise this far (capped); the air inside the column rises ~twice the core's mean speed
+    const lean = Math.min(h / (2 * th.climb), 60);
     out.x = th.x + this.U.x * lean * this.windFactor(h); out.z = th.z + this.U.z * lean * this.windFactor(h);
     out.R = th.R0 + 0.07 * h;
     return out;
   }
 
-  /** the log wind profile: speed factor at h m above the ground (1 at 10 m, z0 = 1 m) */
-  windFactor(h) { return clamp(Math.log(Math.max(h, 1.5)) / Math.log(10), 0.25, 2.4); }
+  /** the log wind profile: speed factor at h m above the smoothed roofs / ground (1 at 10 m, z0 = 1 m, displaced 3 m) */
+  windFactor(h) { return clamp(Math.log(Math.max(h, 0) + 3) / Math.log(13), 0.4, 2.4); }   // (+3 m: the canopy's displacement)
 
   /** smoothed obstacle height (bilinear) */
   hs(x, z) {
@@ -85,13 +87,15 @@ export class AirField {
     const gx = (this.hs(x + e, z) - this.hs(x - e, z)) / (2 * e), gz = (this.hs(x, z + e) - this.hs(x, z - e)) / (2 * e);
     const dz = y - this.hs(x, z);
     if (dz < -2) return 0;                                   // inside / below the smoothed obstacle: no lift
-    let w = 0.85 * (Ux * gx + Uz * gz);
+    let w = 1.2 * (Ux * gx + Uz * gz);                      // ~0.5 U over a row of houses' windward edge
     if (w < 0) w *= 0.4;
     return w * Math.exp(-Math.max(0, dz) / 25) * this.params.ridge;
   }
 
   sample(x, y, z, t, out) {
-    const P = this.params, fl = this.floor(x, z), h = Math.max(0, y - fl);
+    // the wind's height: over the SMOOTHED obstacles (the urban canopy), not the 2 m roof grid (a roof edge would be
+    // a 4 m/s step of shear)
+    const P = this.params, fl = this.grid ? this.hs(x, z) : this.floor(x, z), h = Math.max(0, y - fl);
     // gusts: speed and direction wobble with time and place
     const ph = x * 0.011 + z * 0.017;
     const g = P.gust * (0.55 * Math.sin(0.29 * t + ph) + 0.3 * Math.sin(0.71 * t + 1.7 * ph + 1.3) + 0.15 * Math.sin(1.93 * t + 3.1 * ph + 0.4));

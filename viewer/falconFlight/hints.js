@@ -23,7 +23,7 @@ export class ThermalHints {
     g.setAttribute("iPos", this.aPos); g.setAttribute("iDir", this.aDir); g.setAttribute("iAnim", this.aAnim);
     g.setAttribute("iTint", new THREE.InstancedBufferAttribute(tint, 3));
     this.birds = new THREE.Mesh(g, pigeonMaterial()); this.birds.frustumCulled = false; this.birds.name = "thermal-gulls";
-    this.state = Array.from({ length: n }, (_, i) => ({ a: Math.random() * 6.28, h: 40 + Math.random() * 140, dir: i % 2 ? 1 : -1, r: 0.45 + Math.random() * 0.35, flapT: Math.random() * 8, ph: Math.random() * 6 }));
+    this.state = Array.from({ length: n }, (_, i) => ({ a: Math.random() * 6.28, h: 30 + Math.random() * 90, dir: i % 2 ? 1 : -1, r: 0.45 + Math.random() * 0.35, flapT: Math.random() * 8, ph: Math.random() * 6 }));
     // dust / leaves
     this.dustN = dust;
     const leaf = new THREE.PlaneGeometry(0.07, 0.05);
@@ -43,7 +43,7 @@ export class ThermalHints {
       const on = th.w > 0.6;
       if (!on) { A[q + 3] = 0; continue; }
       s.h += dt * Math.max(0.4, th.w * 0.7);
-      if (s.h > th.top * 0.7) s.h = 40 + Math.random() * 40;
+      if (s.h > Math.min(th.top * 0.5, 260)) s.h = 30 + Math.random() * 30;
       air.thermalCentre(th, th.ground + s.h, C);
       const R = C.R * s.r, w = s.dir * 10 / Math.max(R, 6);           // ~10 m/s round the circle
       s.a += w * dt;

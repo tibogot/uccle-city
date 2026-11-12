@@ -84,12 +84,14 @@ export class FalconFlight {
   }
 
   /** start in free flight: position, heading (rad), airspeed, path angle */
-  launch(x, y, z, heading, speed = 14, gamma = 0) {
+  launch(x, y, z, heading, speed = 14, gamma = 0, air = null) {
     Object.assign(this.pos, { x, y, z });
     this.heading = heading; this.gamma = gamma; this.phi = 0; this.V = speed;
     const c = Math.cos(gamma);
-    Object.assign(this.vel, { x: -Math.sin(heading) * c * speed, y: Math.sin(gamma) * speed, z: -Math.cos(heading) * c * speed });
-    Object.assign(this.va, this.vel);
+    Object.assign(this.va, { x: -Math.sin(heading) * c * speed, y: Math.sin(gamma) * speed, z: -Math.cos(heading) * c * speed });
+    // the ground velocity = the airspeed along the heading + the wind there (the bird starts in balance with the air)
+    const w = air ? air.sample(x, y, z, this.t, { x: 0, y: 0, z: 0 }) : { x: 0, y: 0, z: 0 };
+    Object.assign(this.vel, { x: this.va.x + w.x, y: this.va.y, z: this.va.z + w.z });
     this.stun = 0; this.contact = null;
   }
 
@@ -125,7 +127,8 @@ export class FalconFlight {
     let ux = 0 * ez - rz * ey, uy = rz * ex - rx * ez, uz = rx * ey - 0 * ex;
     const ul = Math.hypot(ux, uy, uz) || 1; ux /= ul; uy /= ul; uz /= ul;
     // ---- bank: toward the command at the configuration's roll rate; let go = level (a little slower)
-    const phiCmd = stunned ? 0 : clamp(C.roll, -1, 1) * P.bankMax;
+    // (the forgiving stall: a stalled bird levels its wings and lowers its nose by itself: no spin, no spiral)
+    const phiCmd = stunned ? 0 : clamp(C.roll, -1, 1) * P.bankMax * (1 - 0.75 * this.stall);
     const rate = w.roll * (Math.abs(phiCmd) > Math.abs(this.phi) ? 1 : 0.8) * clamp(V / 10, 0.35, 1);
     this.phi += clamp(phiCmd - this.phi, -rate * dt, rate * dt);
     const cphi = Math.cos(this.phi), sphi = Math.sin(this.phi);
@@ -134,6 +137,7 @@ export class FalconFlight {
     const cg = Math.cos(this.gamma);
     const hold = cg / Math.max(Math.cos(this.phi), 0.25);
     let u = stunned ? 0.15 : clamp(C.pitch, -1, 1);
+    if (this.stall > 0) u = Math.min(u, 0.6 - 1.6 * this.stall);
     if (u < 0 && this.gamma < -1.2) u *= smooth(this.gamma, -1.45, -1.2);   // no outside loop past the vertical dive
     if (u > 0 && this.gamma > 1.2) u *= smooth(-this.gamma, -1.45, -1.2);    // no loop over the top
     // pulling asks for more g the faster the bird goes (the stoop's pull-out uses up to nMax)

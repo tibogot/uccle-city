@@ -56,7 +56,7 @@ export class FalconGame {
 
   /** free flight from a point (heading rad, speed m/s, path angle rad) */
   start(x, y, z, heading, speed = 14, gamma = 0) {
-    this.f.launch(x, y, z, heading, speed, gamma);
+    this.f.launch(x, y, z, heading, speed, gamma, this.air);
     this.mode = "fly"; this.perch = null; this.landing = null;
     this.input.syncAim(heading, gamma);
   }
@@ -108,7 +108,7 @@ export class FalconGame {
   takeoff() {
     const p = this.perch; if (!p) return;
     const h = p.yaw;
-    this.f.launch(p.pos.x - Math.sin(h) * 0.4, p.pos.y + 0.3, p.pos.z - Math.cos(h) * 0.4, h, 6, -0.25);
+    this.f.launch(p.pos.x - Math.sin(h) * 0.4, p.pos.y + 0.3, p.pos.z - Math.cos(h) * 0.4, h, 6, -0.25, this.air);
     this.f.stamina = Math.max(this.f.stamina, 0.3);
     this.mode = "fly"; this.perch = null; this.takeoffT = 0.9;
     this.say("take-off: a drop and three wingbeats");
@@ -156,7 +156,7 @@ export class FalconGame {
       this.cpu.flight = this.cpu.flight * 0.95 + (performance.now() - t1) * 0.05;
       const c = f.contact;
       if (c) {
-        if (c.land) {
+        if (c.land || (c.speed < 4 && c.ny > 0.7)) {
           const yaw = f.heading;
           this.perchOn({ name: "roof", pos: new THREE.Vector3(c.x, c.y - 0.35, c.z), yaw, roof: true });
           this.say("touched down");
@@ -198,7 +198,8 @@ export class FalconGame {
     // keep a target while it stays ahead, else pick a new one
     let i = this.target;
     if (i >= 0 && P.state[i] === 3) i = -1;
-    if (i >= 0) { P.pos(i, this._v); const dx = this._v.x - f.pos.x, dy = this._v.y - f.pos.y, dz = this._v.z - f.pos.z, d = Math.hypot(dx, dy, dz); if (d > 200 || (dx * vx + dy * vy + dz * vz) / (d * Math.max(f.V, 1)) < 0.2) i = -1; }
+    if (i >= 0 && !this.lockTarget) { P.pos(i, this._v); const dx = this._v.x - f.pos.x, dy = this._v.y - f.pos.y, dz = this._v.z - f.pos.z, d = Math.hypot(dx, dy, dz); if (d > 200 || (dx * vx + dy * vy + dz * vz) / (d * Math.max(f.V, 1)) < 0.2) i = -1; }
+    if (i < 0) this.lockTarget = false;
     if (i < 0) i = P.target(f.pos.x, f.pos.y, f.pos.z, vx, vy, vz, 180, 0.45);
     this.target = i;
     this.window = null;
@@ -208,7 +209,7 @@ export class FalconGame {
     const rvx = vx - this._w.x, rvy = vy - this._w.y, rvz = vz - this._w.z;
     const closing = (rvx * dx + rvy * dy + rvz * dz) / d;
     const angle = Math.acos(clamp((vx * dx + vy * dy + vz * dz) / (d * Math.max(f.V, 0.1)), -1, 1));
-    const reach = 0.55 + 0.25 * this.span;                 // the talons' reach (m) at the drawn size
+    const reach = 0.8 + 0.6 * this.span;                   // the strike's reach (m): the talons + the drawn size's slack
     const ok = closing > 8 && angle < 0.61;
     this.window = { i, d, closing, angle, ok, near: d < 12, reach, tti: closing > 0 ? d / closing : Infinity };
     // the catch: within reach this frame or crossing it (fast birds pass the target between frames)

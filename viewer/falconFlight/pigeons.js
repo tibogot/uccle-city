@@ -269,7 +269,7 @@ export class Pigeons {
         ax += hx / hl * P.home * 3; ay += hy / hl * P.home * 2; az += hz / hl * P.home * 3;
         // flee: stronger the closer (HoPE: the escape grows with closeness), a jink when it is about to strike
         if (df < P.flee) {
-          const k = (1 - df / P.flee) ** 2 * 26;
+          const k = (1 - df / P.flee) ** 2 * 16;              // up to ~1.6 g of escape
           ax += dfx / df * k; ay += (dfy / df) * k * 0.6 + k * 0.15; az += dfz / df * k;
           this.alarm[i] = Math.max(this.alarm[i], 1 - df / P.flee);
           if (df < 7 && this.jink[i] <= 0) { this.jink[i] = 0.6; const side = Math.random() < 0.5 ? -1 : 1; v[o] += -v[o + 2] / 3 * side; v[o + 2] += v[o] / 3 * side; v[o + 1] -= 3; }

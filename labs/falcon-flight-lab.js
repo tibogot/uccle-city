@@ -60,7 +60,7 @@ game.size.readable = SIZE;
 const famW = (k) => fam.toWorld(fam.perch[k].pos.clone());
 const START = {
   "over the Place (60 m)": () => game.start(PLACE.x + 120, world.ground(PLACE.x, PLACE.z) + 60, PLACE.z + 80, Math.atan2(120, 80), 14),
-  "high above Saint-Job (650 m)": () => game.start(PLACE.x + 300, world.ground(PLACE.x, PLACE.z) + 650, PLACE.z + 250, Math.atan2(300, 250), 15),
+  "high above Saint-Job (700 m)": () => game.start(PLACE.x + 300, world.ground(PLACE.x, PLACE.z) + 700, PLACE.z + 250, Math.atan2(300, 250), 15),
   "on the spire cross": () => game.perchOn(game.perches.find((p) => p.name === "cross")),
   "on the eyrie's ledge": () => game.perchOn(game.perches.find((p) => p.name === "ledge")),
 };
@@ -69,6 +69,20 @@ game.reset = () => { input.script = null; START["over the Place (60 m)"](); };
 // ------------------------------------------------------------------------------------------------ verification scenarios (autopilots)
 // each sets the scene up and gives the input a script: (f) -> controls. They fly the real model (no shortcuts).
 const steer = (f, hT, gT, bankMax = 1) => ({ roll: clamp(-wrap(hT - f.heading) * 2.2, -bankMax, bankMax), pitch: clamp((gT - f.gamma) * 3.5, -1, 1) });
+/** the controls that make the falcon accelerate by (ax, ay, az) m/s^2 perpendicular to its path (fly-by-wire inverse of
+ *  flightModel.js: the lift vector = the wanted acceleration + gravity's part across the path -> bank + load factor) */
+function steerAccel(f, ax, ay, az) {
+  const V = Math.max(f.V, 1), ex = f.va.x / V, ey = f.va.y / V, ez = f.va.z / V;
+  let lx = ax, ly = ay + G, lz = az;
+  const k = lx * ex + ly * ey + lz * ez; lx -= k * ex; ly -= k * ey; lz -= k * ez;     // across the path only
+  const hx = -Math.sin(f.heading), hz = -Math.cos(f.heading), rx = -hz, rz = hx;
+  const ux = -rz * ey, uy = rz * ex - rx * ez, uz = rx * ey, ul = Math.hypot(ux, uy, uz) || 1;
+  const phi = Math.atan2(lx * rx + lz * rz, (lx * ux + ly * uy + lz * uz) / ul);
+  const n = Math.hypot(lx, ly, lz) / G;
+  const hold = Math.cos(f.gamma) / Math.max(Math.cos(f.phi), 0.25);
+  const pullG = 3.6 + (7 - 1 - 3.6) * THREE.MathUtils.smoothstep(f.V, 25, 60);
+  return { roll: clamp(phi / (80 * Math.PI / 180), -1, 1), pitch: clamp(n > hold ? (n - hold) / pullG : (n - hold) / 2, -1, 1) };
+}
 function bestRidge() {
   // the strongest line of updraft near the Place for the current wind: w at 7 m over the smoothed obstacles, summed
   // over +-40 m along the crosswind, the façade rows within 450 m
@@ -76,7 +90,7 @@ function bestRidge() {
   let best = null;
   for (let x = PLACE.x - 450; x < PLACE.x + 450; x += 6) for (let z = PLACE.z - 450; z < PLACE.z + 450; z += 6) {
     let s = 0;
-    for (let k = -40; k <= 40; k += 8) { const X = x + cx * k, Z = z + cz * k; s += air.ridgeLift(X, air.hs(X, Z) + 7, Z, U.x * 1.5, U.z * 1.5); }
+    for (let k = -60; k <= 60; k += 10) { const X = x + cx * k, Z = z + cz * k; s += Math.min(air.ridgeLift(X, air.hs(X, Z) + 10, Z, U.x * 1.2, U.z * 1.2), 3); }
     if (!best || s > best.s) best = { s, x, z };
   }
   best.heading = Math.atan2(-cx, -cz);
@@ -89,65 +103,97 @@ const SCEN = {
     const th = air.thermals[0]; th.forced = true;
     air.update(game.t);
     const C = air.thermalCentre(th, th.ground + 60);
-    game.start(C.x + 30, th.ground + 55, C.z, 0, 13);
+    game.start(C.x + 16, th.ground + 55, C.z, 0, 13);
     input.script = (f) => {
       const c = air.thermalCentre(th, f.pos.y);
       const dx = c.x - f.pos.x, dz = c.z - f.pos.z, d = Math.hypot(dx, dz), rx = dx / d, rz = dz / d;
-      const R0 = c.R * 0.55;
-      const tx = -rz + rx * (d - R0) / R0 * 0.9, tz = rx + rz * (d - R0) / R0 * 0.9;
-      return { ...steer(f, Math.atan2(-tx, -tz), 0, 0.6), fold: 0, flap: 0, brake: 0 };
+      const R0 = Math.max(c.R * 0.62, 17);
+      const k = Math.max(-1.2, Math.min(1.2, (d - R0) / R0 * 1.6)), tx = -rz + rx * k, tz = rx + rz * k;
+      return { ...steer(f, Math.atan2(-tx, -tz), clamp((f.V - 12.5) * 0.06, -0.15, 0), 0.56), fold: 0, flap: 0, brake: 0 };
     };
     return "the Place's thermal: circling in the core";
   },
   ridge() {
-    // a 7 m/s wind; the best row of façades across it; along it at ~8 m over the smoothed roofs, seeking the lift
+    // a 7 m/s wind; the best row of façades across it (bestRidge); the falcon beats up and down it as a ridge-soaring
+    // glider does (to one end, a turn, back), holding 12 m/s and NOT its height: the updraft does that
     air.setWind(7, +(qp.get("windfrom") ?? 240)); air.params.thermals = 0;
-    const r = bestRidge();
-    game.start(r.x, air.hs(r.x, r.z) + 9, r.z, r.heading, 13);
-    const h0 = r.heading;
+    const r = bestRidge(), cx = -Math.sin(r.heading), cz = -Math.cos(r.heading);
+    const U = air.U, Ul = Math.hypot(U.x, U.z) || 1, ux = U.x / Ul, uz = U.z / Ul;
+    const end = (s) => ({ x: r.x + cx * 60 * s - ux * 6, z: r.z + cz * 60 * s - uz * 6 });   // a little upwind of the line
+    let leg = 1;
+    const A = end(-1);
+    game.start(A.x, air.hs(A.x, A.z) + 13, A.z, r.heading, 14);
+    lab.ridgeLine = { r, a: end(-1), b: end(1) };
     input.script = (f) => {
-      const hx = -Math.sin(f.heading), hz = -Math.cos(f.heading), rx = -hz, rz = hx, t = game.t, o = { x: 0, y: 0, z: 0 };
-      const L = air.sample(f.pos.x - rx * 8, f.pos.y, f.pos.z - rz * 8, t, o).y, R = air.sample(f.pos.x + rx * 8, f.pos.y, f.pos.z + rz * 8, t, o).y;
-      const hT = h0 + clamp((L - R) * 0.25, -0.5, 0.5);
-      const want = air.hs(f.pos.x, f.pos.z) + 9;
-      return { ...steer(f, hT, clamp((want - f.pos.y) * 0.04, -0.25, 0.25), 0.5), fold: 0, flap: 0 };
+      let T = end(leg);
+      if (Math.hypot(T.x - f.pos.x, T.z - f.pos.z) < 12) { leg = -leg; T = end(leg); }
+      // clear what is ahead (a taller block on the line: over it, flapping if slow)
+      let ahead = 0;
+      const hx = -Math.sin(f.heading), hz = -Math.cos(f.heading);
+      for (let d = 0; d <= 50; d += 10) ahead = Math.max(ahead, world.floor(f.pos.x + hx * d, f.pos.z + hz * d));
+      const low = ahead + 6 - f.pos.y;
+      const st = steer(f, Math.atan2(-(T.x - f.pos.x), -(T.z - f.pos.z)), low > 0 ? clamp(low * 0.05, 0, 0.35) : clamp((f.V - 14) * 0.05, -0.2, 0.12), 0.45);
+      return { roll: st.roll * 0.7, pitch: st.pitch, fold: 0, flap: low > 0 && f.V < 13 ? 1 : 0 };
     };
     return `ridge lift along the façades (wind ${air.params.wind} m/s from ${air.params.windFrom} deg), line strength ${r.s.toFixed(1)}`;
   },
   stoop() {
     // 650 m up, 15 m/s, tuck and dive at the Place (~60-70 deg), pull out with the wings half open
     air.setWind(3, 240);
-    const y0 = world.ground(PLACE.x, PLACE.z) + 650;
-    game.start(PLACE.x + 260, y0, PLACE.z + 200, Math.atan2(260, 200), 15, -0.2);
-    let pulling = false;
+    const y0 = world.ground(PLACE.x, PLACE.z) + 720;
+    game.start(PLACE.x + 120, y0, PLACE.z + 95, Math.atan2(120, 95), 15, -0.2);
+    let pulling = false, out = false;
     input.script = (f) => {
       const dx = PLACE.x - f.pos.x, dz = PLACE.z - f.pos.z, dy = world.ground(PLACE.x, PLACE.z) + 40 - f.pos.y, dh = Math.hypot(dx, dz);
       const agl = f.pos.y - world.floor(f.pos.x, f.pos.z);
       if (!pulling && agl < f.V * f.V / (5.5 * G) + 35) pulling = true;
+      if (pulling && f.gamma > 0.35) out = true;
+      if (out) return { pitch: f.gamma > 0.1 ? -0.4 : 0, roll: 0, fold: 0, flap: 0 };   // the throw-up spent: level off
       if (pulling) return { pitch: 1, roll: 0, fold: 0.5, flap: 0 };
       return { ...steer(f, Math.atan2(-dx, -dz), Math.atan2(dy, dh) - 0.08), fold: 1, flap: 0 };
     };
-    return "the stoop: 650 m, tucked, at the Place";
+    return "the stoop: 720 m, tucked, at the Place";
   },
   catch() {
-    // a stoop at a flying pigeon: pursuit with lead (proportional to the time to go), talons in the last 0.6 s
+    // a strike on the flock over the Place: the falcon comes in 95 m above and 170 m behind a pigeon of the flock
+    // (a ~30 deg stoop, 35-45 m/s at the intercept, as a real attack from that height), proportional navigation, talons
+    // out in the last 0.6 s, the pull-out kept possible (the next 1.5 s of path stays above V^2 / 6 g of height)
     air.setWind(3, 240);
-    for (let i = 0; i < pigeons.max; i++) if (pigeons.state[i] === 0 && Math.random() < 0.5) pigeons.takeoff(i, PLACE.x, 0, PLACE.z);
-    const y0 = world.ground(PLACE.x, PLACE.z) + 330;
-    game.start(PLACE.x + 180, y0, PLACE.z + 140, Math.atan2(180, 140), 16, -0.3);
+    for (let i = 0; i < pigeons.max; i++) if (pigeons.state[i] === 0 && Math.random() < 0.6) pigeons.takeoff(i, PLACE.x, 0, PLACE.z);
+    lab.advance(4);                                                            // the flock settles into its circuit
     const p = { x: 0, y: 0, z: 0 }, v = { x: 0, y: 0, z: 0 };
-    let tgt = -1, after = 0;
+    // the quarry: a flying pigeon of the flock, low over the Place; the falcon 150 m above it and 150 m behind
+    let tgt = -1, after = 0, bd = Infinity;
+    for (let i = 0; i < pigeons.max; i++) {
+      if (!pigeons.flying(i)) continue;
+      pigeons.pos(i, p); const h = p.y - world.floor(p.x, p.z), d = Math.hypot(p.x - PLACE.x, p.z - PLACE.z);
+      if (h > 25 && h < 80 && d < bd) { bd = d; tgt = i; }
+    }
+    pigeons.pos(Math.max(tgt, 0), p); pigeons.vel(Math.max(tgt, 0), v);
+    const vl = Math.hypot(v.x, v.z) || 1;
+    game.start(p.x - v.x / vl * 130, p.y + 80, p.z - v.z / vl * 130, Math.atan2(v.x / vl, v.z / vl) + Math.PI, 24, -0.5);
     input.script = (f) => {
-      if (game.score.catches) { after += 1 / 60; return { pitch: after < 3 ? 0.8 : 0, roll: 0, fold: 0, flap: after > 1 && after < 4 ? 1 : 0 }; }
-      if (tgt < 0 || pigeons.state[tgt] === 3) { tgt = pigeons.target(f.pos.x, f.pos.y, f.pos.z, f.vel.x, f.vel.y, f.vel.z, 400, 1.2); game.target = tgt; }
+      if (game.score.catches) { after += 1 / 60; return { pitch: after < 1.5 && f.gamma < 0.3 ? 0.25 : f.gamma > 0.35 ? -0.3 : 0, roll: 0, fold: 0, flap: after > 0.5 && after < 4 ? 1 : 0 }; }
+      if (tgt < 0 || pigeons.state[tgt] === 3) tgt = pigeons.target(f.pos.x, f.pos.y, f.pos.z, f.vel.x, f.vel.y, f.vel.z, 400, 1.2);
+      game.target = tgt; game.lockTarget = true;
       if (tgt < 0) return { pitch: -0.3, fold: 0.5 };
       pigeons.pos(tgt, p); pigeons.vel(tgt, v);
       const d = Math.hypot(p.x - f.pos.x, p.y - f.pos.y, p.z - f.pos.z), tgo = d / Math.max(f.V, 10);
-      const ax = p.x + v.x * tgo - f.pos.x, ay = p.y + v.y * tgo - f.pos.y, az = p.z + v.z * tgo - f.pos.z;
-      const agl = f.pos.y - world.floor(f.pos.x, f.pos.z);
+      let fl = 0;                                                               // the highest solid on the next 1.5 s of path
+      for (let q = 0; q <= 1.5; q += 0.25) fl = Math.max(fl, world.floor(f.pos.x + f.vel.x * q, f.pos.z + f.vel.z * q));
+      const agl = f.pos.y - fl;
       input.talons = tgo < 0.6;
-      if (agl < 12 && f.vel.y < 0) return { pitch: 1, roll: 0, fold: 0.5 };
-      return { ...steer(f, Math.atan2(-ax, -az), Math.atan2(ay, Math.hypot(ax, az))), fold: d > 60 ? 1 : 0.55, flap: 0 };
+      // proportional navigation (as peregrines: Mills et al. 2018, N ~ 3): a = N (LOS rate x the falcon's velocity)
+      const Rx = p.x - f.pos.x, Ry = p.y - f.pos.y, Rz = p.z - f.pos.z, R2 = Rx * Rx + Ry * Ry + Rz * Rz;
+      const Vx = v.x - f.vel.x, Vy = v.y - f.vel.y, Vz = v.z - f.vel.z;
+      const Ox = (Ry * Vz - Rz * Vy) / R2, Oy = (Rz * Vx - Rx * Vz) / R2, Oz = (Rx * Vy - Ry * Vx) / R2;
+      const N = 3.5;
+      let ax = N * (Oy * f.vel.z - Oz * f.vel.y), ay = N * (Oz * f.vel.x - Ox * f.vel.z), az = N * (Ox * f.vel.y - Oy * f.vel.x);
+      // far out: pure pursuit added (turn the path toward the line of sight)
+      if (d > 60) { const e = Math.sqrt(R2), k = 1.5 * f.V; ax += (Rx / e - f.va.x / f.V) * k; ay += (Ry / e - f.va.y / f.V) * k; az += (Rz / e - f.va.z / f.V) * k; }
+      const st = steerAccel(f, ax, ay, az);
+      if (f.vel.y < 0 && agl < f.V * f.V / (6 * G) * (-f.vel.y / f.V) + 10) { st.pitch = 1; st.roll *= 0.3; }   // keep the pull-out possible
+      return { ...st, fold: d > 70 ? 1 : 0.55, flap: 0 };
     };
     return "a strike: stoop on a pigeon of the flock";
   },
@@ -326,12 +372,11 @@ async function bench(rounds = 4) {
 
 const cpuAcc = { flight: [], pigeons: [], hints: [], game: [] };
 let last = performance.now(), frames = 0, fpsAcc = 0, fpsN = 0, fps = 0;
-const lab = { paused: false };
+const lab = { paused: false, grabs: [], grabNext: null };
 /** one simulation step (dt s): the game, the pigeons, the hints, the family, the air, the camera */
 function step(dt) {
   const t = game.t;
   air.params.sunElev = Math.asin(clamp(lighting.sunDir.y, -1, 1)) * 57.3;
-  for (const th of air.thermals) if (th.forced) th.phase = 0.2 - (t / (th.life + th.rest)) % 1;   // a forced column stays mid-life
   air.update(t);
   const c0 = performance.now();
   game.update(dt, camera);
@@ -366,6 +411,8 @@ renderer.setAnimationLoop(() => {
   lighting.update(camera.position.y, world.ground(camera.position.x, camera.position.z), game.pos, clamp(game.agl * 1.6 + 90, 90, 380), dt);
   if (S.post) pipe.render(hazeHook); else renderer.render(scene, camera);
   pipe.setExposureFactor(lighting.adapt(dt));
+  // frame grabs for the verification strips (lab.grabNext = label: the canvas right after this frame's render)
+  if (lab.grabNext) { lab.grabs.push({ label: lab.grabNext, hud: $hud.textContent, url: renderer.domElement.toDataURL("image/jpeg", 0.85) }); lab.grabNext = null; }
   sampleGpu();
   if (++frames % 6 === 1) {
     hud();
