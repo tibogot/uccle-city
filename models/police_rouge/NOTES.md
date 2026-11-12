@@ -88,3 +88,98 @@ THE YARD AND ITS CLOSURE (ortho + Street View):
   yellow-fluorescent pattern), 2 bays by wing B (u 6.5..11). Marked lines white.
 - ESTIMATED: the gate leaf's parked position, the inner galvanised fence along the pedestrian lane (seen, position by
   eye), heights of the fence and gates (by eye), the bins.
+
+## Pipeline (2026-11-12)
+```
+python tools/police_measure.py [--dump] [--yard]          # site.json (frame, solids, roof, equipment, ground, yard profiles), site_dtm.* (1 s)
+python tools/police_ortho_frame.py <out.png> [u0 u1 w0 w1] # the 8 cm ortho crop in the building frame with a metre grid (reading positions)
+"C:/Program Files/Blender Foundation/Blender 5.0/blender.exe" --factory-startup -b -P tools/blender/police_rouge.py -- models/police_rouge [--no-bake] [--previews] [--fast]
+node tools/police_pack.mjs models/police_rouge/police.raw.glb models/police_rouge/police.glb   # audit (stops on blocking), LOD2, meshopt
+```
+Blender ~30 s with the AO bake (2048 px, 96 samples, the UrbIS neighbours within 45 m as occluders), ~70 s with the
+previews (docs/police/preview_*.png, incl. three grazing-light renders); pack ~15 s (mostly the audits). The kit is the
+Wolvendael one (tools/blender/wolvendael_kit.py: builder, frames, boxes, lathes, sweeps), imported as is.
+Viewer: `viewer/policeModel.js` (loader, slot table, temporary TSL materials, AO, anti-sparkle, the LOD distance to the
+building's own box, the lettering atlas), `viewer/policeYard.js` (the yard: asphalt + markings on the city's ground, JS),
+`viewer/policeCars.js` (5 parked patrol cars: the faceted car family in a police livery), `viewer/policeCity.js`
+(`?police=1`), `labs/police-lab.html` (Police Lab), `debug/policeFlight.js` (city flight + GPU A/B).
+
+## Model (what is geometry)
+- Walls as quad grids round the openings (no fans), zones: blue-stone plinth to 48.25, the ground storey (red-brown brick
+  on wing B's street and south faces), the concrete band 51.20-51.35 (proud 2.5 cm, swept round the plan with mitres),
+  the upper storeys to the cornice soffit 58.30. Reveals 13 cm (brick), the wall's hole 3 cm under each sill top (no slit).
+- Windows: white frames (ring 6.8 cm, mullions / transom 8.5 cm, glazing beads back to the glass 4.5 cm behind), three
+  lights over a low row (upper floors 1.90 m, ground floor 1.35 m with two lights), precast sills (sloped top, front,
+  underside, lugs into the jambs), exterior roller screens (guides on the jambs, the bottom bar, the beige fabric lowered
+  as seen); the stair window (1.0 x 5.8 m, a white spandrel at the half-landing); the public entrance (anthracite
+  aluminium screen 7.4 m, two pairs of glass doors with push bars, a transom, a blue-stone step), 4 door units.
+- The corner pier (blue stone, proud 4 cm on both faces up to the band), the blade sign (blue, POLICE / POLITIE
+  lettering from a canvas atlas: no emblem), the memorial plaque, 4 CCTV cameras on arms.
+- The cornice: a 0.6 m concrete fascia slab 0.355 m proud with chamfered edges, its top the coping, the parapet's inside
+  down to the bitumen deck at 58.62 (cells of the rectilinear plan: no fans).
+- Roof: 68 solar modules in 12 tilted rows (a 4 cm module slab, rails, feet, ballast trays), the rooflight, the
+  ventilation box with louvres, 2 AC condensers with fan discs, 3 vent pipes with cowls, the red cabinet, a roof hatch
+  (ESTIMATED). The link: a brick box with a door, a coping and a deck (ESTIMATED).
+- Yard closure: the rubble wall (2.5 m segments following the sidewalk + 0.82 m, blue-stone copings, gate piers with
+  caps), the green welded-mesh fence (posts every ~2.5 m, double rails, 4 mm wires every 5 cm: real geometry on LOD0,
+  rails only on the far variant), the hedge (a chamfered box, 1.5 m), the galvanised sliding gate parked open south of
+  the vehicle gate (bars every 12 cm, the ground rail, the guide post), the two-leaf green north gate (closed), the "no
+  entry except service vehicles" disc + plate (lettering in the atlas), 4 yellow-black bollards, 3 flagpoles (tapered,
+  ball) with the Belgian and European flags hanging in a light breeze (cloth with folds, two sheets + hems).
+- Triangles per slot LOD0: cast_iron_green 5.7k (the fence wires), painted_metal_white 4.4k, galvanised 3.8k, brick
+  1.2k, stone 1.0k, flags 0.8k, concrete 0.7k, glass 0.6k, alu 0.5k, signage 0.5k, the rest < 0.2k each.
+  Lightmap LOD0 20.2 px/m, far 10.4 px/m, EVERY lightmapped face has texels (2647/2647, 2117/2117); 7.4k thin faces
+  take vertex AO.
+
+## Mesh audit (tools/mesh_audit)
+- Raw, before the pack: LOD0 **0 blocking** (19,716 tris; warnings: 6.6k slivers = fence wires / rails / long strips,
+  728 T-junctions, 12 non-manifold), far **0 blocking** (6,348). Two rounds (the solar feet and ballast trays' bottoms on
+  the deck; the wall runs' end caps flush with the gate piers; a CCTV arm flush with its housing; the screen guides'
+  bottoms crossing the sills' slope; the wall's hole edge right at the sill top = slits; the flag sheets' open edges;
+  the sign disc's open rim; a 12-sided sign post).
+- Packed (report only): LOD0 0, LOD1 0, LOD2 13 (meshopt collapses: 3 crossings, 2 depth, 8 slits at sill / gate-pier
+  ends; LOD2 only beyond ~440 m, the station < 40 px wide there).
+
+## LODs
+LOD0 19,716 tris / 16 draws; LOD1 (scripted far variant) 6,348 / 16; LOD2 (meshopt of LOD1, target 2.5k, 0.12 m stop)
+3,351 / 16. The yard: 6,032 tris / 1 draw, at every distance (no pop). Patrol cars: 5 cars, near (pack LOD1) 21,985
+tris, far (pack LOD3) 1,538, ~30 draws near (one mesh per part: see weak points). Switch by distance to the BUILDING's
+box (its frame): LOD0 < 90 m (+-15), LOD1 < 400 m (+-40); the cars 60 (+-10) and gone 260-340 m. GLB 0.83 MB (raw
+2.4 MB), AO PNG 1.6 MB (5.3 MB GPU).
+
+## Verification (this machine, one Chrome tab of mine; another WebGPU tab, a "Night Lights Lab" on port 8829, ran during
+## the second half: GPU numbers are NOISY, +-0.1-0.2 ms)
+- No photo side-by-side: the only street-level references are look-only (Street View); the lab's "street view n° ..."
+  viewpoints stand near those panoramas and were compared BY EYE: window counts and places, the blank halves, the
+  stepped corner, the stair strip, the corner pier, the blade sign, the flags, the wall / fence / hedge, the open gate,
+  the red-brown base of wing B all match; the cornice reads a little thinner than on Street View.
+- Cycles previews: docs/police/preview_street_north.png, preview_entrance.png, preview_aerial.png; GRAZING light
+  (Cycles): preview_grazing_front_windows.png, preview_grazing_cornice_corner.png (flat walls clean, sills / reveals /
+  cornice cast crisp shadows; preview_grazing_entrance.png missed its sun: unlit, kept for the record); lab (WebGPU):
+  docs/police/lab_grazing_front.png (a 9 deg sun skimming wing A's front: no streak), lab_entrance_corner.png.
+- Moving through the bands (lab, neighbours hidden): docs/police/lab_lod0_band_moving.png (31 -> 104 m: L0, L0+L1),
+  lab_lod1_band_moving.png (299 -> 479 m: L1, L1+L2, L2): no pop seen.
+- Flicker (lab, 24 frames): street view n° 2 at 21 m: fixed 0 / strafe 25 / dolly 14 ppm; 95 m: 0 / 9 / 10 ppm
+  (docs/police/lab_flicker_95m_dolly.png).
+- GPU, lab bench (median whole frame, + = the part, 3 interleaved cycles): street view n° 2: L0 +0.07 / L1 -0.07 / L2
+  -0.07, yard 0; the gate view: +0.20 / +0.13 / +0.13; 95 m: +0.26 / +0.07 / +0.07, yard -0.13; 500 m: 0 / +0.07 /
+  +0.13 (all within the noise: the station hides what is behind it).
+- GPU, city (debug/policeFlight.js bench, station + yard + cars on / off, 4 cycles): 33 m +0.13 ms, 114 m +0.07, 449 m
+  -0.06 (noise).
+- City flight (900 m -> 40 m -> orbit -> 900 m, 24 s, twice): run 1 1440 frames, median 16.7, p99 16.9, worst 17.3 ms,
+  none > 25; run 2 1438 frames, median 16.7, p99 16.9, ONE 50 ms frame at 22.4 s (~450 m, no long task, the other tab
+  running); coverage 1.000 and the right material (opaque / fading copy) in every frame of both runs; the cars too.
+- Load (city): GLB + AO 517-633 ms; shaders 7.7 s in the city's background queue + 1.9-2.1 s shadow warm, before
+  anything shows. City renders: docs/police/city_street_rue_rouge.png, city_aerial_with_wolvendael.png (ring=1).
+
+## Still weak
+- No free photo: the facades are the look-only Street View read by eye (no solved pose, no overlay); the back faces,
+  wing B's south face, wing A's north face and the link are ESTIMATED; the levels +-15 cm.
+- The entrance's glazing has no canopy (none seen) and no interior behind the glass (dark offices + reflection only).
+- The yard reads navy in the lab's shade (sky light on a grey albedo; not SSR: switched off, no change); the city looks right.
+- The patrol cars: one mesh per part (~30 draws for 5 cars near): instance them per type (carFleet style) if a game
+  needs more; the livery has no lettering; the van's Battenburg follows the same 0.40-0.86 m band as the cars.
+- The yard markings come from the ortho by eye (bays, lane, hatching); the inner galvanised fence along the pedestrian
+  lane (seen) is NOT modelled; the bins and the bike rack are not modelled.
+- The sliding gate's parked place is a guess (south, partly over the neighbour's garden line).
+- Packed LOD2: 13 audit items (> 440 m).

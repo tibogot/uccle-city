@@ -349,7 +349,8 @@ const TEMP = {
       return base.mul(mix(float(1), float(0.86), under)).mul(mix(float(1), float(0.95), isC(cd, C.sill)));
     })();
     m.normalNode = relief(0.025, 8.0);
-    return m;
+    // (no screen-space reflection: the sloped sill tops read sky-blue in the reveals' shade with it)
+    return noSSR(m);
   },
   stone_blue() {
     // pale bush-hammered blue stone (the plinth, the corner pier, steps, copings); the plinth a little darker at its foot
@@ -360,7 +361,7 @@ const TEMP = {
       const t = mix(tool, float(0.5), smoothstep(0.4, 1.0, length(fwidth(w.mul(55.0)))));
       return mix(lin(0x8e908e), lin(0x9d9e9a), blk).mul(float(0.9).add(t.mul(0.14)));
     })();
-    return std({ colorNode: col, roughnessNode: float(0.82), metalnessNode: float(0) });
+    return noSSR(std({ colorNode: col, roughnessNode: float(0.82), metalnessNode: float(0) }));
   },
   painted_metal_white() { return std({ colorNode: lin(0xedede8), roughnessNode: float(0.4), metalnessNode: float(0) }); },
   alu_anthracite() { return noSSR(std({ colorNode: lin(0x3a3f44), roughnessNode: float(0.42), metalnessNode: float(0.35) })); },

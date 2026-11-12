@@ -7,7 +7,7 @@
 // frame (u toward Rue Rouge, w south-east along it; site.json frame).
 //   const yard = buildPoliceYard({ site, groundAt });  scene.add(yard.mesh)
 import * as THREE from "three/webgpu";
-import { uv, texture, vec2, vec3, float, floor, fract, mix, smoothstep, length, fwidth, Fn, dot, positionWorld } from "three/tsl";
+import { uv, texture, vec2, vec3, float, floor, fract, mix, smoothstep, length, fwidth, Fn, dot, positionWorld, mrt, roughness } from "three/tsl";
 
 // the yard outline in the frame (u, w): the north yard, the strip behind wing A, the south yard, the gate's mouth
 const OUTLINE = [[0.3, -18.4], [26.1, -18.4], [26.1, 9.6], [26.6, 9.6], [26.6, 14.9], [26.1, 14.9], [26.1, 16.6], [-4.8, 16.6],
@@ -127,6 +127,8 @@ export function buildPoliceYard({ site, groundAt, lift = 0.06, step = 0.5 }) {
     const worn = vnoise(p.mul(3.0)).mul(0.35).add(0.65);
     return mix(asph, lin(0xd9d8d2), mk.mul(worn));
   })();
+  // (no screen-space reflection: the rough asphalt in the building's shade read navy blue with it)
+  m.mrtNode = mrt({ metalRough: vec3(0, roughness, float(1)) });
   m.side = THREE.DoubleSide;           // (the skirts are thin and seen from both sides)
   const mesh = new THREE.Mesh(g, m);
   mesh.name = "police-yard"; mesh.receiveShadow = true; mesh.castShadow = false;

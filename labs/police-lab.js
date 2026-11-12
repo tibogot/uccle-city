@@ -151,7 +151,7 @@ const VIEWS = {
   "blade sign + cornice (close-up)": { pos: [19.0, 3.0, 52.5], target: [14.8, -0.1, 52.4], fov: 40 },
   "roof (solar rows, plant)": { pos: [28.0, 22.0, 72.0], target: [5.0, -2.0, 58.8], fov: 45 },
   "back (ESTIMATED faces)": { pos: [-14.0, 26.0, 55.0], target: [2.0, 4.0, 53.0], fov: 50 },
-  "grazing: wing A front": { pos: [19.0, -9.0, 53.0], target: [14.6, -4.0, 54.0], fov: 45, grazing: [-0.07, 0.16, 0.98] },
+  "grazing: wing A front": { pos: [19.0, -9.0, 53.0], target: [14.6, -4.0, 54.0], fov: 45, grazing: [0.07, 0.16, 0.98] },
   "grazing: the entrance face": { pos: [11.0, 6.5, 49.2], target: [10.0, 0.5, 49.4], fov: 55, grazing: [0.98, 0.16, 0.17] },
   "LOD0 band (95 m)": { pos: [90.0, 30.0, 58.0], target: [8.0, 0.0, 53.0], fov: 35 },
   "far (500 m)": { pos: [420.0, 260.0, 130.0], target: [8.0, 0.0, 53.0], fov: 25 },
