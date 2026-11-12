@@ -1,8 +1,27 @@
 // The car's world for stepCar (carPhysics.js): the ground, and collisions against the collider sets (colliders.js)
 // near the car. Candidates are gathered ONCE per frame from the 48 m cells round the car (radius = car + the distance
 // it can travel this frame + a margin); the 120 Hz substeps then only test those.
-import { gather, itemContact } from "./colliders.js";
+import { gather, itemContact, KIND } from "./colliders.js";
 import { BODY, hit } from "./carPhysics.js";
+
+/** The highest step a car climbs (m): a kerb (15-25 cm) is ridden up, a road wall, a retaining wall or a raised
+ *  platform's edge over this is a wall (docs/collisions/README.md: until 2026-11-13 the car climbed any height the
+ *  drive surface stepped by, e.g. the 0.6-1 m walls of the road engine's raised roads). */
+export const MAX_STEP = 0.5;
+/** Ledge contact: the drive surface under the car's perimeter more than MAX_STEP over the surface under its centre.
+ *  contact <- the push away from the ledge (the mean direction from the high points to the centre). */
+export function ledgeContact(c, body, ground, contact) {
+  let sx = 0, sz = 0, n = 0;
+  for (const [u, w] of LEDGE_PTS) {
+    const x = c.x + u * body.hx * body.cos + w * body.hz * body.sin, z = c.z - u * body.hx * body.sin + w * body.hz * body.cos;
+    if (ground(x, z) - c.y > MAX_STEP) { sx += c.x - x; sz += c.z - z; n++; }
+  }
+  if (!n) return false;
+  const L = Math.hypot(sx, sz) || 1;
+  contact.nx = sx / L; contact.nz = sz / L; contact.depth = 0.06; contact.kind = KIND.wall;
+  return true;
+}
+const LEDGE_PTS = [[1, 1], [1, -1], [-1, 1], [-1, -1], [0, 1], [0, -1], [1, 0], [-1, 0]];
 
 /**
  * sets(x, z, r) -> array of collider sets (one per tile) that may hold items within r of (x, z)
@@ -44,6 +63,11 @@ export function createCarEnv({ sets, ground, handling, waters = () => null }) {
           env.contacts++; any = true;
         }
         if (!any) break;
+      }
+      if (Number.isFinite(c.y) && ledgeContact(c, body, ground, contact)) {
+        c.x += contact.nx * contact.depth; c.z += contact.nz * contact.depth;
+        hit(c, contact.nx, contact.nz, contact.kind, handling);
+        env.contacts++;
       }
     },
   };

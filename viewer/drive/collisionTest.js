@@ -4,7 +4,7 @@
 //   const r = await viewer.collisionTest("E4", { drive: true, walk: true })
 //
 // 1. TRUTH: every solid thing drawn in the tile, rasterised on a 0.25 m plan grid in two height bands over the ground
-//    (car: 0.30-1.30 m over the drive surface; person: 0.45-1.80 m over the walking surface): building walls / details /
+//    (car: 0.30-1.30 m over the drive surface, road walls from 0.55 m; person: 0.28-1.80 m over the walking surface: the body steps 0.25 m): building walls / details /
 //    the facade kit, every landmark's and bridge's LOD0 (yards, fences, walls, steps, parapets), street furniture
 //    (signals, stop poles, benches, bike racks, shelters), tram poles and shelters, rail masts and platforms; the drawn
 //    trees (trunks), lamps and bollards (their placed points) and the parked cars (their boxes). Leaves, wires, lights,
@@ -25,11 +25,13 @@
 import * as THREE from "three/webgpu";
 import { createCarState, stepCar, HANDLING, BODY } from "./carPhysics.js";
 import { gather, itemContact, KIND } from "./colliders.js";
+import { ledgeContact } from "./carEnv.js";
 
 const CELL = 0.25;
-const BAND = { car: [0.30, 1.30], walk: [0.45, 1.80] };
+// walk from 0.28 m: the body steps up 0.25 m (controller stepHeight), anything taller stops it
+const BAND = { car: [0.30, 1.30], walk: [0.28, 1.80] };
 const KIND_NAME = Object.fromEntries(Object.entries(KIND).map(([k, v]) => [v, k]));
-export const SRC = { building: 1, hero: 2, bridge: 3, furniture: 4, tree: 5, lamp: 6, bollard: 7, car: 8, rail: 9, tram: 10, kit: 11 };
+export const SRC = { building: 1, hero: 2, bridge: 3, furniture: 4, tree: 5, lamp: 6, bollard: 7, car: 8, rail: 9, tram: 10, kit: 11, road: 12 };
 const SRC_NAME = Object.fromEntries(Object.entries(SRC).map(([k, v]) => [v, k]));
 export const HEROES = ["stjob", "townhall", "stalle", "vanbuuren", "wolvendael", "police", "calevoet", "stpierre", "observatory",
   "bridge-verrewinkel", "bridge-stjob", "bridge-calevoet"];
@@ -43,9 +45,19 @@ function makeGrid(b) {
 }
 
 /** Ground heights on a 1 m lattice (fast band tests). */
-function groundLattice(b, fn) {
-  const nx = Math.ceil(b.x1 - b.x0) + 2, nz = Math.ceil(b.z1 - b.z0) + 2, a = new Float32Array(nx * nz);
+function groundLattice(b, fn, lowest = false) {
+  const nx = Math.ceil(b.x1 - b.x0) + 2, nz = Math.ceil(b.z1 - b.z0) + 2;
+  let a = new Float32Array(nx * nz);
   for (let k = 0; k < nz; k++) for (let i = 0; i < nx; i++) a[k * nx + i] = fn(b.x0 + i, b.z0 + k);
+  if (lowest) {                       // the lowest ground within 1 m: a wall rising from its lower side (a platform's edge)
+    const m = new Float32Array(nx * nz);
+    for (let k = 0; k < nz; k++) for (let i = 0; i < nx; i++) {
+      let v = Infinity;
+      for (let dk = -1; dk <= 1; dk++) for (let di = -1; di <= 1; di++) { const ii = i + di, kk = k + dk; if (ii >= 0 && kk >= 0 && ii < nx && kk < nz) v = Math.min(v, a[kk * nx + ii]); }
+      m[k * nx + i] = v;
+    }
+    a = m;
+  }
   return (x, z) => { const i = Math.min(nx - 1, Math.max(0, Math.round(x - b.x0))), k = Math.min(nz - 1, Math.max(0, Math.round(z - b.z0))); return a[k * nx + i]; };
 }
 
@@ -61,21 +73,28 @@ function solidMesh(o) {
  * The truth: drawn solid cells per band. Returns { car: Uint8Array (source code per cell, 0 = none), walk: same }.
  * scene, tile (world.tiles entry), carGround(x, z), walkGround(x, z).
  */
-export function drawnSolids(scene, tile, carGround, walkGround) {
+export function drawnSolids(scene, tile, carGround, walkGround, tiles = [tile]) {
   const b = tile.bounds, G = makeGrid(b);
   const car = new Uint8Array(G.nx * G.nz), walk = new Uint8Array(G.nx * G.nz);
-  const gC = groundLattice(b, carGround), gW = groundLattice(b, walkGround);
+  const gC = groundLattice(b, carGround, true), gW = groundLattice(b, walkGround, true);
   let gmin = Infinity, gmax = -Infinity;
   for (let x = b.x0; x <= b.x1; x += 8) for (let z = b.z0; z <= b.z1; z += 8) { const g = gC(x, z); gmin = Math.min(gmin, g); gmax = Math.max(gmax, g); }
   gmin -= 3; gmax += 4;
   const mark = (x, y, z, src) => {
     const i = G.idx(x, z); if (i < 0) return;
-    const c = y - gC(x, z); if (c >= BAND.car[0] && c <= BAND.car[1] && car[i] < 255) car[i] = src;
+    // a road wall under 0.55 m is a kerb the car rides up (the drive surface steps): solid for the car only above
+    const c = y - gC(x, z); if (c >= (wallsOnly ? 0.55 : BAND.car[0]) && c <= BAND.car[1] && car[i] < 255) car[i] = src;
     const w = y - gW(x, z); if (w >= BAND.walk[0] && w <= BAND.walk[1]) walk[i] = src;
   };
   const S = 0.12;
+  let wallsOnly = false;
   const tri = (ax, ay, az, bx, by, bz, cx, cy, cz, src) => {
     if (Math.max(ay, by, cy) < gmin || Math.min(ay, by, cy) > gmax) return;
+    if (wallsOnly) {
+      const ux = bx - ax, uy = by - ay, uz = bz - az, wx = cx - ax, wy = cy - ay, wz = cz - az;
+      const ny = uz * wx - ux * wz, L = Math.hypot(uy * wz - uz * wy, ny, ux * wy - uy * wx);
+      if (!(L > 0) || Math.abs(ny) / L > 0.5) return;
+    }
     if (Math.max(ax, bx, cx) < b.x0 || Math.min(ax, bx, cx) > b.x1 || Math.max(az, bz, cz) < b.z0 || Math.min(az, bz, cz) > b.z1) return;
     const l1 = Math.hypot(bx - ax, by - ay, bz - az), l2 = Math.hypot(cx - ax, cy - ay, cz - az);
     const n1 = Math.max(1, Math.ceil(l1 / S)), n2 = Math.max(1, Math.ceil(l2 / S));
@@ -107,7 +126,13 @@ export function drawnSolids(scene, tile, carGround, walkGround) {
   };
   scene.updateMatrixWorld(true);
   // buildings (walls, details) and the facade kit
-  scene.getObjectByName(`${tile.name}-buildings`)?.traverse((o) => { if (o.isMesh && !/roof/.test(o.name)) mesh(o, /kit/.test(o.name) ? SRC.kit : SRC.building); });
+  // every loaded tile's (a neighbour's walls, trees and cars cross the edge; what lies outside the grid is skipped)
+  for (const T of tiles) scene.getObjectByName(`${T.name}-buildings`)?.traverse((o) => { if (o.isMesh && !/roof/.test(o.name)) mesh(o, /kit/.test(o.name) ? SRC.kit : SRC.building); });
+  // the road meshes' WALLS (a raised road's side, a tall kerb or island wall: their faces over the band; kerbs of
+  // 15-25 cm are under it), not their surfaces
+  wallsOnly = true;
+  for (const T of tiles) scene.getObjectByName(`${T.name}-roads`)?.traverse((o) => mesh(o, SRC.road));
+  wallsOnly = false;
   // landmarks and bridges: their LOD0
   for (const h of HEROES) {
     const r = scene.getObjectByName(h); if (!r) continue;
@@ -117,8 +142,7 @@ export function drawnSolids(scene, tile, carGround, walkGround) {
     l0.traverse((o) => mesh(o, h.startsWith("bridge") ? SRC.bridge : SRC.hero));
   }
   // features: furniture, tram poles / shelters, rail masts / platforms; parked cars as boxes
-  const feats = scene.getObjectByName(`${tile.name}-features`);
-  feats?.traverse((o) => {
+  for (const T of tiles) scene.getObjectByName(`${T.name}-features`)?.traverse((o) => {
     if (!o.isMesh) return;
     const n = o.name || "", p = o.parent?.name || "";
     if (/^furniture-/.test(n)) mesh(o, SRC.furniture);
@@ -136,9 +160,11 @@ export function drawnSolids(scene, tile, carGround, walkGround) {
       }
     }
   });
-  for (const t of tile.drawn?.trees || []) disc(t.x, t.z, 0.22, SRC.tree);
-  for (const l of tile.drawn?.lamps || []) disc(l.x, l.z, 0.12, SRC.lamp);
-  for (const q of tile.drawn?.bollards || []) disc(q.x, q.z, 0.09, SRC.bollard);
+  for (const T of tiles) {
+    for (const t of T.drawn?.trees || []) disc(t.x, t.z, 0.22, SRC.tree);
+    for (const l of T.drawn?.lamps || []) disc(l.x, l.z, 0.12, SRC.lamp);
+    for (const q of T.drawn?.bollards || []) disc(q.x, q.z, 0.09, SRC.bollard);
+  }
   return { G, car, walk };
 }
 
@@ -230,7 +256,8 @@ export function staticCompare(G, truth, colCells) {
   };
   // islands are kerbs (15-25 cm, under the car band): colliderAudit.js checks them against the drawn raised surface
   const invisible = clusters(G, (i) => edge(i) && Dt[i] > 0.5 && colCells[i] - 1 !== KIND.island, (i) => KIND_NAME[colCells[i] - 1], 3);
-  const missing = clusters(G, (i) => truth[i] && Dc[i] > 0.4, (i) => SRC_NAME[truth[i]], 2);
+  // road walls are not polygons: the ledge rule (carEnv.js MAX_STEP) stops the car at them; the routes check that
+  const missing = clusters(G, (i) => truth[i] && truth[i] !== SRC.road && Dc[i] > 0.4, (i) => SRC_NAME[truth[i]], 2);
   return { invisible, missing, Dt, Dc };
 }
 
@@ -310,7 +337,7 @@ function drawnGround(scene, tile) {
       for (const [k, T] of [[0, A], [1, B], [2, Cc]]) { v.fromBufferAttribute(P, I ? I.getX(q + k) : q + k).applyMatrix4(mw); T[0] = v.x; T[1] = v.y; T[2] = v.z; }
       const ux = B[0] - A[0], uy = B[1] - A[1], uz = B[2] - A[2], wx = Cc[0] - A[0], wy = Cc[1] - A[1], wz = Cc[2] - A[2];
       const ny = uz * wx - ux * wz, L = Math.hypot(uy * wz - uz * wy, ny, ux * wy - uy * wx);
-      if (!(L > 0) || Math.abs(ny) / L < 0.3) continue;                   // walls, kerb faces
+      if (!(L > 0) || ny / L < 0.3) continue;                              // walls, kerb faces, soffits (down faces)
       const x0 = Math.min(A[0], B[0], Cc[0]), x1 = Math.max(A[0], B[0], Cc[0]), z0 = Math.min(A[2], B[2], Cc[2]), z1 = Math.max(A[2], B[2], Cc[2]);
       if (x1 < b.x0 || x0 > b.x1 || z1 < b.z0 || z0 > b.z1) continue;
       const det = (B[2] - Cc[2]) * (A[0] - Cc[0]) + (Cc[0] - B[0]) * (A[2] - Cc[2]);
@@ -405,6 +432,19 @@ export function driveRoutes({ scene, tile, driver, truth, G, maxRoads = Infinity
           }
           if (!any) break;
         }
+        // a ledge over MAX_STEP (carEnv.js): a road wall the car does not climb
+        if (Number.isFinite(st.y) && ledgeContact(st, body, ground, contact)) {
+          st.x += contact.nx * contact.depth; st.z += contact.nz * contact.depth; hitStep = true;
+          const vn = -(Math.sin(st.heading) * st.speed * contact.nx + Math.cos(st.heading) * st.speed * contact.nz);
+          if (vn > 0) st.speed *= 0.5;
+          const key = `ledge:${Math.round(st.x / 3)},${Math.round(st.z / 3)}`;
+          if (!touched.has(key)) {
+            touched.add(key); R.contacts++; R.ledges = (R.ledges || 0) + 1;
+            let dmin = Infinity;
+            for (const [u, w] of [[1, 1], [1, -1], [-1, 1], [-1, -1], [0, 1], [0, -1], [1, 0], [-1, 0]]) { const j = G.idx(st.x + u * body.hx * body.cos + w * body.hz * body.sin, st.z - u * body.hx * body.sin + w * body.hz * body.cos); if (j >= 0) dmin = Math.min(dmin, Dt[j]); }
+            if (dmin > 0.6) { R.invisibleHits++; item("invisible hit", st.x, st.z, { collider: "ledge" }); }
+          }
+        }
       },
     };
     let wp = 1, still = 0, lastProg = 0, t = 0;
@@ -420,13 +460,15 @@ export function driveRoutes({ scene, tile, driver, truth, G, maxRoads = Infinity
       const throttle = c.speed < speed * (1 - Math.min(0.6, Math.abs(err))) ? 0.7 : 0;
       hitStep = false;
       driver.groundHint = c.y;                     // the drive surface's layer nearest the car (a street under a deck)
+      const y0 = c.y;
       stepCar(c, { throttle, steer, handbrake: false }, dt, env, HANDLING);
+      const climbed = c.y - y0 > 0.45;              // up a road wall (the drive surface stepped): a pass only then
       // passed through a drawn solid: the car box (shrunk 0.35 m: the truth cells are 0.25 m) over car-band truth cells
       const cs = Math.cos(c.heading), sn = Math.sin(c.heading);
       let hitSrc = 0;
       for (let u = -BODY.hx + 0.35; u <= BODY.hx - 0.35 + 1e-6 && !hitSrc; u += 0.3) for (let w = -BODY.hz + 0.35; w <= BODY.hz - 0.35 + 1e-6; w += 0.3) {
         const x = c.x + u * cs + w * sn, z = c.z - u * sn + w * cs, i = G.idx(x, z);
-        if (i >= 0 && truth[i]) { hitSrc = truth[i]; break; }
+        if (i >= 0 && truth[i] && (truth[i] !== SRC.road || climbed)) { hitSrc = truth[i]; break; }
       }
       if (hitSrc && !hitStep) { const key = `${Math.round(c.x / 3)},${Math.round(c.z / 3)}`; if (!passed.has(key)) { passed.add(key); R.passThrough++; item("passed through", c.x, c.z, { drawn: SRC_NAME[hitSrc] }); } }
       if (step % 15 === 0) {
@@ -499,7 +541,7 @@ export function walkRoutes({ scene, tile, truth, G, makeController, walkY, maxRo
       for (let k = 0; k < ctl.dbgN; k++) if (ctl.dbg[k * 7 + 6] === 1) held = true;
       if (!held) for (const [ox, oz] of [[0, 0]]) {
         const i = G.idx(ctl.pos[0] + ox, ctl.pos[2] + oz);
-        if (i >= 0 && truth[i]) { const key = `${Math.round(ctl.pos[0] / 2)},${Math.round(ctl.pos[2] / 2)}`; if (!passed.has(key)) { passed.add(key); R.passThrough++; item("passed through", ctl.pos[0], ctl.pos[2], { drawn: SRC_NAME[truth[i]] }); } break; }
+        if (i >= 0 && truth[i] && truth[i] !== SRC.road) { const key = `${Math.round(ctl.pos[0] / 2)},${Math.round(ctl.pos[2] / 2)}`; if (!passed.has(key)) { passed.add(key); R.passThrough++; item("passed through", ctl.pos[0], ctl.pos[2], { drawn: SRC_NAME[truth[i]] }); } break; }
       }
       if (step % 30 === 0) {
         const y = top(ctl.pos[0], ctl.pos[2], ctl.pos[1]);
@@ -531,7 +573,7 @@ export async function collisionTest(ctx, name, opts = {}) {
   const tile = world.tiles.find((t) => t.name === name);
   if (!tile) throw new Error(`tile ${name} not loaded`);
   const t0 = performance.now();
-  const T = drawnSolids(scene, tile, driver.ground, (x, z) => world.walkY(x, z));
+  const T = drawnSolids(scene, tile, driver.ground, (x, z) => world.walkY(x, z), world.tiles);
   const sets = driver.sets((tile.bounds.x0 + tile.bounds.x1) / 2, (tile.bounds.z0 + tile.bounds.z1) / 2, 400);
   const C = colliderCells(T.G, sets);
   const S = staticCompare(T.G, T.car, C);
