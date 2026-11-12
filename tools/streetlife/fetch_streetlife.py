@@ -32,7 +32,7 @@ sys.path.insert(0, str(ROOT / "pipeline"))
 from common import LAT_MAX, LAT_MIN, LON_MAX, LON_MIN, all_tiles, local_to_l72, tile_bounds  # noqa: E402
 
 UA = {"User-Agent": "uccle-city-pipeline/0.1 (street-life extract)"}
-OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"]
+OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://overpass.kumi.systems/api/interpreter"]
 MOBILITY = ("https://data-mobility.irisnet.be/geoserver/ows?service=WFS&version=2.0.0&request=GetFeature"
             "&typeNames={layer}&outputFormat=application/json&srsName=EPSG:31370&bbox={e0},{n0},{e1},{n1},EPSG:31370")
 URBIS = ("https://geoservices-urbis.irisnet.be/geoserver/urbisvector/wfs?service=WFS&version=2.0.0&request=GetFeature"
@@ -150,7 +150,7 @@ def fetch_addresses(d: Path, force: bool):
             print(f"addresses {t}: NOT fetched ({err})", file=sys.stderr)
             continue
         slim = [{"e": round(ft["geometry"]["coordinates"][0], 2), "n": round(ft["geometry"]["coordinates"][1], 2),
-                 **{k2: ft["properties"].get(k2) for k2 in ("POLICENUM", "BOXNUMBER", "STRNAMEFRE", "STRNAMEDUT", "BU_ID", "CARTOANGLE", "INSPIRE_ID", "ZIPCODE")}}
+                 **{k2: ft["properties"].get(k2) for k2 in ("POLICENUM", "BOXNUMBER", "STRNAMEFRE", "STRNAMEDUT", "BU_ID", "CARTOANGLE", "INSPIRE_ID", "ZIPCODE", "MUNNAMEFRE", "MUNNAMEDUT")}}
                 for ft in feats if ft.get("geometry")]
         f.write_text(json.dumps({"tile": t, "source": "UrbIS AddressNumbers (urbisvector WFS)", "fetched": time.strftime("%Y-%m-%d"), "features": slim}), encoding="utf-8")
         print(f"addresses {t} ({k + 1}/{len(tiles)}): {len(feats)}", file=sys.stderr)

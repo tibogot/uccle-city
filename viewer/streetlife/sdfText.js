@@ -44,7 +44,43 @@ function context(w, h) {
 }
 
 /** Measure a label: { w, h, px } (px = the font size used, smaller when the widest line would pass MAX_W). */
+/** Street-plate layouts drawn as ONE label (no separate decals: no z-fighting). Uccle plates (Wikimedia Commons photo,
+ *  look only): the street type small top-left (FR) and bottom-right (NL), the commune small top-right, the name big.
+ *  "plateUccle": lines = [frType, big name, nlType, commune]; "plateTwo": lines = [FR name, NL name, commune]. */
+const PLATE = { small: 24, big: 60, two: 42, font: "{w} {px}px Arial, Helvetica, sans-serif", pad: RADIUS + 10 };
+function plateMeasure(lines, kind) {
+  const c = context(64, 64), f = (w, px) => { c.font = PLATE.font.replace("{w}", w).replace("{px}", px); c.letterSpacing = "0px"; };
+  const W = (t, w, px) => { if (!t) return 0; f(w, px); return c.measureText(t).width; };
+  let w, h;
+  if (kind === "plateUccle") {
+    const [ft, big, nt, com] = lines;
+    w = Math.max(W(big, 700, PLATE.big) + 2 * PLATE.pad + 20, W(ft, 600, PLATE.small) + W(com, 600, PLATE.small) + 2 * PLATE.pad + 40, W(nt, 600, PLATE.small) * 2 + 2 * PLATE.pad);
+    h = 144;
+  } else {
+    const [fr, nl, com] = lines;
+    w = Math.max(W(fr, 700, PLATE.two), W(nl, 700, PLATE.two)) + 2 * PLATE.pad + 20;
+    w = Math.max(w, W(com, 600, PLATE.small) * 2 + 2 * PLATE.pad);
+    h = 156;
+  }
+  return { w: Math.min(MAX_W, Math.ceil(w)), h, px: PLATE.big, ink: w };
+}
+function plateDraw(c, lines, kind, w, h) {
+  const f = (wt, px) => { c.font = PLATE.font.replace("{w}", wt).replace("{px}", px); c.letterSpacing = "0px"; };
+  const L = PLATE.pad, R = w - PLATE.pad;
+  if (kind === "plateUccle") {
+    const [ft, big, nt, com] = lines;
+    f(600, PLATE.small); c.textAlign = "left"; if (ft) c.fillText(ft, L, 34);
+    c.textAlign = "right"; if (com) c.fillText(com, R, 34); if (nt) c.fillText(nt, R, h - 14);
+    f(700, PLATE.big); c.textAlign = "center"; c.fillText(big, w / 2, 98);
+  } else {
+    const [fr, nl, com] = lines;
+    f(600, PLATE.small); c.textAlign = "right"; if (com) c.fillText(com, R, 32);
+    f(700, PLATE.two); c.textAlign = "center"; c.fillText(fr, w / 2, 86); if (nl) c.fillText(nl, w / 2, 138);
+  }
+}
+
 export function measureLabel(lines, styleName) {
+  if (styleName === "plateUccle" || styleName === "plateTwo") return plateMeasure(lines, styleName);
   const st = STYLES[styleName] || STYLES.shopSans;
   const c = context(64, 64);
   let px = st.px, wide = 0;
@@ -90,7 +126,8 @@ export function labelSDF(lines, styleName, m = measureLabel(lines, styleName)) {
   c.textAlign = "center";
   c.textBaseline = "alphabetic";
   // one baseline per line: the cap height (~0.72 em) centred in the row, the same for every label of a style
-  lines.forEach((l, i) => c.fillText(l, w / 2, i * ROW + ROW / 2 + px * 0.36));
+  if (styleName === "plateUccle" || styleName === "plateTwo") plateDraw(c, lines, styleName, w, h);
+  else lines.forEach((l, i) => c.fillText(l, w / 2, i * ROW + ROW / 2 + px * 0.36));
   const img = c.getImageData(0, 0, w, h).data;
   const n = w * h, outer = new Float64Array(n), inner = new Float64Array(n);
   for (let i = 0; i < n; i++) {

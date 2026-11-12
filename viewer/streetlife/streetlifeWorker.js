@@ -32,11 +32,11 @@ self.onmessage = async (e) => {
     const boxes = cat(L.boxes, BOX_STRIDE), windows = cat(L.windows, WIN_STRIDE), glass = cat(L.glass, GLASS_STRIDE);
     const props = {};
     for (const [k, v] of Object.entries(L.props)) if (v.length) props[k] = new Float32Array(v);
-    const night = { shops: new Float32Array(L.night.shops), signs: new Float32Array(L.night.signs) };
+    const night = { shops: new Float32Array(L.night.shops), signs: new Float32Array(L.night.signs), spots: new Float32Array(L.night.spots) };
     times.total = performance.now() - t0;
     const out = { id, tile, boxes, windows, glass, props, labels, labelData: data, night, used: L.used, counts: doc.counts, sources: doc.sources, skipped: doc.skipped, times,
       strides: { box: BOX_STRIDE, win: WIN_STRIDE, glass: GLASS_STRIDE, prop: PROP_STRIDE } };
-    self.postMessage(out, [boxes.buffer, windows.buffer, glass.buffer, data.buffer, night.shops.buffer, night.signs.buffer, ...Object.values(props).map((a) => a.buffer)]);
+    self.postMessage(out, [boxes.buffer, windows.buffer, glass.buffer, data.buffer, night.shops.buffer, night.signs.buffer, night.spots.buffer, ...Object.values(props).map((a) => a.buffer)]);
   } catch (err) {
     self.postMessage({ id, tile, error: String(err?.stack || err) });
   }

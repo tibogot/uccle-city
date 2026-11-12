@@ -1,6 +1,6 @@
 # Mesh audit: parasol lod1
 
-250 triangles, 148 welded vertices, 32 open edges, 6,400 rays, 9 ms.
+250 triangles, 148 welded vertices, 32 open edges, 6,400 rays, 11 ms.
 
 **0 blocking**, 14 warnings. Clean (no blocking item).
 

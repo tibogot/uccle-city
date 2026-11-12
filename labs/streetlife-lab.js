@@ -104,7 +104,7 @@ if (site === "stjob") {               // the scripted church instead of its UrbI
 
 // ------------------------------------------------------------------------------------------------ the street-life layer
 say("street life: kits + worker…");
-const SL = await StreetLife.create(scene);
+const SL = await StreetLife.create(scene, { atlasFull: qp.get("atlas") === "full" });
 const tileStats = [];
 for (const t of SITE.tiles) tileStats.push(await SL.addTile(t));
 console.log("[streetlife lab] tiles", tileStats);
@@ -269,8 +269,28 @@ async function flicker(move = "strafe", frames = 24, step = 0.0006) {
   showHeat(r);
   return r;
 }
-window.lab = { viewPoi, rideAt, renderer, scene, camera, controls, SL, streetUniforms, lighting, bench, flicker, startRide, goHome, gpu, S, tileStats, paths, docs, cityMs };
+/** the atlas upload cost: render time of the frame right after a tile's labels were added (the GPU upload + mips
+ *  happen in that render call), minus a normal frame's; repeated for the A/B (?atlas=full = whole-atlas re-upload) */
+let uploadNote = "";
+async function measureUpload(tile = "J6", rounds = 3) {
+  const res = [];
+  for (let k = 0; k < rounds; k++) {
+    SL.removeTile(tile);
+    await new Promise((r) => setTimeout(r, 400));
+    const normal = [];
+    for (let i = 0; i < 20; i++) { const t = performance.now(); renderOnce(); normal.push(performance.now() - t); await new Promise((r) => requestAnimationFrame(r)); }
+    await SL.addTile(tile);
+    const t = performance.now(); renderOnce(); const first = performance.now() - t;
+    res.push({ first: +first.toFixed(2), normal: +median(normal).toFixed(2), bytes: SL.atlas.uploads.at(-1).bytes });
+  }
+  uploadNote = ` · atlas upload ${qp.get("atlas") === "full" ? "FULL" : "per page"}: first frame +${median(res.map((r) => r.first - r.normal)).toFixed(1)} ms CPU (${(res[0].bytes / 1048576).toFixed(0)} MB)`;
+  console.log("[streetlife lab] upload", res, uploadNote);
+  return { res, note: uploadNote };
+}
+let renderOnce = () => {};
+window.lab = { measureUpload, renderOnce: () => renderOnce(), viewPoi, rideAt, renderer, scene, camera, controls, SL, streetUniforms, lighting, bench, flicker, startRide, goHome, gpu, S, tileStats, paths, docs, cityMs };
 
+renderOnce = () => { lodEye.value.copy(camera.position); SL.update(camera); if (S.post) pipe.render(hazeHook); else renderer.render(scene, camera); };
 let last = performance.now(), frames = 0, fpsAcc = 0, fpsN = 0, fps = 0;
 renderer.setAnimationLoop(() => {
   if (freeze) return;
@@ -292,7 +312,7 @@ renderer.setAnimationLoop(() => {
     S.stats = `${fps.toFixed(0)} fps · GPU ${gpu.avg.toFixed(2)} ms · ${r.drawCalls ?? r.calls} draws`;
     const ts = tileStats.map((s) => `${s.tile}: worker ${s.worker.total} ms (layout ${s.worker.layout}, sdf ${s.worker.sdf}), main ${s.mainMs} ms; ${s.boxes} boxes, ${s.windows} windows, ${Object.entries(s.props).map(([k, v]) => `${v} ${k}`).join(" ")}; ${s.labels} labels`).join("\n");
     $info.textContent = `${backend} · ${S.stats} · street life: ${SL.visibleMeshes}/${SL.meshes.length} meshes drawn, ${(SL.triangles / 1000).toFixed(0)}k tris\n` +
-      `${SITE.label} · city tiles ${cityMs.toFixed(0)} ms · kits ${SL.kitMs.toFixed(0)} ms · atlas ${(SL.atlas.pack.used * 100).toFixed(0)} % of ${SL.atlas.W}² (${SL.atlas.full} labels did not fit)\n${ts}\n` +
+      `${SITE.label} · city tiles ${cityMs.toFixed(0)} ms · kits ${SL.kitMs.toFixed(0)} ms · atlas ${SL.atlas.pages - SL.atlas.free.length}/${SL.atlas.pages} pages of ${SL.atlas.W}² (${SL.atlas.full} labels did not fit)${uploadNote}\n${ts}\n` +
       `GPU A/B: ${S.bench}\nflicker: ${S.flicker}\ncam ${camera.position.toArray().map((v) => v.toFixed(1)).join(",")},${controls.target.toArray().map((v) => v.toFixed(1)).join(",")}`;
   }
 });

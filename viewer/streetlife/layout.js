@@ -22,9 +22,13 @@ export function hash01(str) {
 const pick = (arr, id, salt = "") => arr[Math.floor(hash01(id + salt) * arr.length) % arr.length];
 
 // neutral shopfront paints (linear rgb), inks, canvas
-const PAINT = [[0.012, 0.035, 0.022], [0.06, 0.012, 0.014], [0.012, 0.018, 0.05], [0.012, 0.012, 0.013], [0.32, 0.29, 0.22], [0.09, 0.09, 0.085], [0.025, 0.045, 0.06]];
-const INK_ON_DARK = [[0.85, 0.8, 0.66], [0.9, 0.9, 0.88], [0.62, 0.45, 0.16]];
-const INK_ON_LIGHT = [[0.02, 0.02, 0.02], [0.05, 0.03, 0.02]];
+const PAINT = [[0.012, 0.035, 0.022], [0.06, 0.012, 0.014], [0.012, 0.018, 0.05], [0.012, 0.012, 0.013], [0.32, 0.29, 0.22], [0.09, 0.09, 0.085], [0.025, 0.045, 0.06],
+  [0.78, 0.77, 0.73], [0.62, 0.55, 0.42], [0.5, 0.52, 0.5]];
+const INK_ON_DARK = [[0.95, 0.92, 0.82], [0.97, 0.97, 0.95], [0.8, 0.58, 0.2]];
+const INK_ON_LIGHT = [[0.012, 0.012, 0.014], [0.05, 0.012, 0.01], [0.01, 0.025, 0.07]];
+const lum = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+/** the sign treatments real fronts have: backlit letters, gooseneck spotlights on a painted board, a lit lightbox */
+const SIGN = ["backlit", "backlit", "backlit", "spots", "spots", "lightbox"];
 const CANVAS = [[0.32, 0.03, 0.03], [0.03, 0.12, 0.05], [0.04, 0.05, 0.13], [0.55, 0.5, 0.38], [0.06, 0.06, 0.06]];
 // Uccle street plate: white letters + white border on a mid blue enamel (checked against a Wikimedia Commons photo of an
 // Uccle plate, look only; the real ones also carry a small "Uccle - Ukkel" line and the street type small: TODO)
@@ -33,7 +37,7 @@ const AWNING_KINDS = new Set(["cafe", "bar", "restaurant", "bakery", "fastfood"]
 const AWNING_CATS = new Set(["greengrocer", "butcher", "florist", "deli", "cheese", "pastry", "chocolate", "ice_cream", "seafood", "wine", "coffee"]);
 const PROJECT_KINDS = new Set(["cafe", "bar", "restaurant", "hotel", "bakery", "bank", "fastfood"]);
 const TERRACE_KINDS = new Set(["cafe", "bar", "restaurant"]);
-const KIT_KINDS = ["pump", "column", "table", "chair", "parasol", "cross", "postbox", "bubble", "chute", "pole", "post", "dock"];
+const KIT_KINDS = ["pump", "column", "table", "chair", "parasol", "cross", "postbox", "bubble", "chute", "pole", "post", "dock", "spot"];
 
 /** lit at night? From the opening hours when they parse (open after 19:00 on some day), else yes */
 function litAtNight(p) {
@@ -53,11 +57,11 @@ function twoLines(s, maxChars = 13) {
 export function layoutTile(doc, measure) {
   const boxes = [], windows = [], glass = [], labels = [], labelIdx = new Map();
   const props = Object.fromEntries(KIT_KINDS.map((k) => [k, []]));
-  const night = { shops: [], signs: [] };
+  const night = { shops: [], signs: [], spots: [] };
   const used = { names: [], plates: [], numbers: [], stops: [], fuel: [] };
 
   const label = (lines, style) => {
-    lines = lines.filter((l) => l && String(l).trim()).map(String);
+    lines = style === "plateUccle" || style === "plateTwo" ? lines.map((l) => String(l ?? "")) : lines.filter((l) => l && String(l).trim()).map(String);
     if (!lines.length) return { i: -1 };
     const key = style + "\u0001" + lines.join("\u0002");
     if (!labelIdx.has(key)) { const m = measure(lines, style); labelIdx.set(key, labels.length); labels.push({ key, lines, style, w: m.w, h: m.h }); }
@@ -65,20 +69,21 @@ export function layoutTile(doc, measure) {
     return { i, aspect: L.w / L.h, lines: lines.length };
   };
   /** a box: origin o (its CENTRE), basis X Y Z (unit, right-handed), size; text { lab, fit } on the front (+Z) face */
-  const box = (o, X, Y, Z, sx, sy, sz, { board = [0.5, 0.5, 0.5], boardGlow = 0, ink = WHITE, inkGlow = 0, lab = null, pad = 0.12, sides = 0, border = 0, rough = 0.6, metal = 0, kind = 0 } = {}) => {
+  const box = (o, X, Y, Z, sx, sy, sz, { board = [0.5, 0.5, 0.5], boardGlow = 0, ink = WHITE, inkGlow = 0, lab = null, pad = 0.12, sides = 0, border = 0, rough = 0.6, metal = 0, kind = 0, fill = 0, cy = 0.5, padX = null } = {}) => {
     const b = new Float32Array(BOX_STRIDE);
     b.set([X[0] * sx, X[1] * sx, X[2] * sx, 0, Y[0] * sy, Y[1] * sy, Y[2] * sy, 0, Z[0] * sz, Z[1] * sz, Z[2] * sz, 0, o[0], o[1], o[2], 1], 0);
     // text box: the label's aspect fitted in the face minus a padding (fraction of the smaller side), centred
     let li = -1, hx = 0, hy = 0;
     if (lab && lab.i >= 0) {
       li = lab.i;
-      const padM = Math.min(sx, sy) * pad, aw = Math.max(0.01, sx - 2 * padM), ah = Math.max(0.01, sy - 2 * padM);
+      const padM = Math.min(sx, sy) * pad, aw = Math.max(0.01, sx - 2 * (padX ?? padM)), ah = fill ? sy * fill : Math.max(0.01, sy - 2 * padM);
+      // fill: the label ROW is fill x the face height (a row's cap height is ~0.45 of it), shrunk only when too wide
       let tw = aw, th = aw / lab.aspect;
       if (th > ah) { th = ah; tw = ah * lab.aspect; }
       hx = tw / sx / 2; hy = th / sy / 2;
     }
     b[16] = li;
-    b.set([0.5, 0.5, hx, hy], 17);
+    b.set([0, cy, hx, hy], 17);                         // x: the atlas page (set by the main thread)
     b.set([...board, boardGlow], 21);
     b.set([...ink, inkGlow], 25);
     b.set([sx, sy, sz, border], 29);
@@ -102,7 +107,11 @@ export function layoutTile(doc, measure) {
     const id = p.id, W = f.w, lit = litAtNight(p);
     const lowFloor = f.eaves - f.y < 4.0;
     const fasciaY = lowFloor ? 2.55 : 3.0;            // bottom of the fascia board above the sidewalk
-    const paint = pick(PAINT, id, "p"), lightPaint = paint[0] > 0.2;
+    const FH = lowFloor ? 0.68 : 0.8;                 // fascia height: Brussels fronts carry 25-40 cm letters
+    const sign = pick(SIGN, id, "s");
+    let paint = pick(PAINT, id, "p");
+    if (sign === "lightbox") paint = [0.86, 0.86, 0.84];
+    const lightPaint = lum(paint) > 0.18;                 // contrast: dark letters on a light board, light on dark
     const ink = lightPaint ? pick(INK_ON_LIGHT, id, "i") : pick(INK_ON_DARK, id, "i");
     if (p.kind === "atm") {
       box(add(base, X, 0, Y, 1.3, Z, 0.05), X, Y, Z, 0.62, 0.95, 0.1, { board: [0.05, 0.055, 0.06], rough: 0.35, metal: 0.6 });
@@ -121,11 +130,11 @@ export function layoutTile(doc, measure) {
     const H = fasciaY - 0.05, riser = 0.42;
     box(add(base, X, 0, Y, riser / 2, Z, 0.05), X, Y, Z, W, riser, 0.1, { board: paint, rough: 0.5 });
     for (const s of [-1, 1]) box(add(base, X, s * (W / 2 - 0.07), Y, H / 2, Z, 0.06), X, Y, Z, 0.14, H, 0.12, { board: paint, rough: 0.5 });
-    box(add(base, X, 0, Y, H - 0.07, Z, 0.06), X, Y, Z, W, 0.14, 0.12, { board: paint, rough: 0.5 });
+    box(add(base, X, 0, Y, H - 0.07, Z, 0.06), X, Y, Z, W - 0.28, 0.14, 0.12, { board: paint, rough: 0.5 });   // between the jambs (no coplanar overlap)
     const doorAt = (hash01(id + "d") < 0.5 ? -1 : 1) * (W / 2 - 0.14 - 0.55);
     if (W > 3) {
       box(add(base, X, doorAt - 0.6 * Math.sign(doorAt), Y, H / 2, Z, 0.05), X, Y, Z, 0.07, H - 0.1, 0.1, { board: paint, rough: 0.5 });
-      box(add(base, X, doorAt, Y, H - 0.5, Z, 0.05), X, Y, Z, 1.2, 0.06, 0.1, { board: paint, rough: 0.5 });       // the door's transom bar
+      box(add(base, X, doorAt, Y, H - 0.5, Z, 0.05), X, Y, Z, 1.2, 0.06, 0.08, { board: paint, rough: 0.5 });       // the door's transom bar
     }
     // the window: from the riser to the head, between the jambs, 4 cm behind their front
     {
@@ -139,8 +148,18 @@ export function layoutTile(doc, measure) {
     // fascia with the real name (backlit letters)
     const lab = p.name ? label([p.name], pick(["shopSans", "shopSerif", "shopHumanist", "shopItalic"], id, "f")) : null;
     if (p.name) used.names.push(p.name);
-    box(add(base, X, 0, Y, fasciaY + 0.3, Z, 0.07), X, Y, Z, W + 0.1, 0.6, 0.14, { board: paint, ink, inkGlow: 1.4 * lit, lab, pad: 0.16, rough: 0.45, kind: 2 });
-    night.signs.push(...add(base, X, 0, Y, fasciaY + 0.3, Z, 0.5));
+    // spots: no light of their own in the lab: the board and letters get the wash of the goosenecks at night (0.35)
+    const inkGlow = sign === "backlit" ? 1.6 * lit : sign === "spots" ? 0.35 * lit : 0, boardGlow = sign === "lightbox" ? 1.1 * lit : sign === "spots" ? 0.35 * lit : 0;
+    box(add(base, X, 0, Y, fasciaY + FH / 2, Z, 0.07), X, Y, Z, W + 0.1, FH, 0.14, { board: paint, ink, inkGlow, boardGlow, lab, fill: 1.22, padX: 0.18, rough: 0.45, kind: 2 });
+    if (sign === "spots" && !lowFloor) {
+      // gooseneck spotlights over the board (2 or 3 by width), aimed down at it: the kit "spot"; the night lab's spots
+      const k = W > 4.5 ? 3 : 2;
+      for (let i = 0; i < k; i++) {
+        const o = add(base, X, (i - (k - 1) / 2) * (W / k), Y, fasciaY + FH + 0.06, Z, 0);
+        prop("spot", o[0], o[1], o[2], yawTo(f.nx, f.nz));
+        night.spots.push(...add(o, X, 0, Y, 0.1, Z, 0.55));
+      }
+    } else night.signs.push(...add(base, X, 0, Y, fasciaY + FH / 2, Z, 0.5));
     // awning (food and fresh shops), the name on its valance
     const awn = AWNING_KINDS.has(p.kind) || AWNING_CATS.has(p.cat);
     if (awn && !lowFloor) {
@@ -187,10 +206,11 @@ export function layoutTile(doc, measure) {
       box(add(base, X, ax, Y, 1.42, Z, 0.112), X, Y, Z, 0.34, 0.24, 0.01, { board: [0.06, 0.16, 0.2], boardGlow: 1.2, rough: 0.15 });
     }
     // terrace: tables + chairs (+ parasols on a wide sidewalk) in front of cafés and restaurants that have the room
-    const seat = p.seating === "yes" || (p.seating !== "no" && TERRACE_KINDS.has(p.kind) && (f.side ?? 0) >= 4.0);
-    if (seat && f.side && f.side >= 3.0) {
-      const n = Math.max(1, Math.floor((W - 0.4) / 1.7)), depthRoom = Math.min(f.side - 1.4, 3.2);
-      const rows = depthRoom >= 2.6 ? 2 : 1;
+    const usable = Math.min((f.pave ?? 0) - 1.5, 3.2);       // paved depth in front minus a 1.5 m passage
+    const seat = p.seating !== "no" && (p.seating === "yes" || TERRACE_KINDS.has(p.kind)) && usable >= 1.2;
+    if (seat) {
+      const n = Math.max(1, Math.floor((W - 0.4) / 1.7));
+      const rows = usable >= 2.6 ? 2 : 1;
       for (let r = 0; r < rows; r++) for (let k = 0; k < n; k++) {
         const ux = -W / 2 + 0.2 + (k + 0.5) * ((W - 0.4) / n), zz = 0.9 + r * 1.35;
         const o = add(base, X, ux, Y, 0, Z, zz);
@@ -200,7 +220,7 @@ export function layoutTile(doc, measure) {
           prop("chair", c[0], c[1], c[2], yawTo(X[0] * -s, X[2] * -s) + Math.PI);    // facing the table
         }
       }
-      if (f.side >= 4.5 && p.kind !== "fastfood") for (let k = 0; k < n; k += 2) {
+      if (usable >= 2.6 && p.kind !== "fastfood") for (let k = 0; k < n; k += 2) {
         const ux = -W / 2 + 0.2 + (k + 0.5) * ((W - 0.4) / n), o = add(base, X, ux, Y, 0, Z, 0.9 + (rows - 1) * 0.67);
         prop("parasol", o[0], o[1], o[2], hash01(id + k) * 6.28, pick(CANVAS, id, "c"), 1);
       }
@@ -310,18 +330,17 @@ export function layoutTile(doc, measure) {
 
   // ------------------------------------------------------------------------------------------ street plates
   for (const p of doc.plates) {
-    const lines = p.nl ? [p.fr, p.nl] : [p.fr];
-    const lab = label(lines, "plate");
     used.plates.push(p.fr);
-    const h = lines.length > 1 ? 0.36 : 0.22, w = Math.max(0.5, Math.min(1.25, h * lab.aspect * 0.84));
-    if (p.mount === "wall") {
-      const { X, Z } = frameOf(p.nx, p.nz);
-      box([p.x + Z[0] * 0.012, p.y, p.z + Z[2] * 0.012], X, UP, Z, w, h, 0.02, { board: PLATE_BLUE, ink: WHITE, lab, pad: 0.1, border: 0.012, rough: 0.25, kind: 6 });
-    } else {
-      prop("post", p.x, p.y, p.z, 0);
-      const { X, Z } = frameOf(p.nx, p.nz);
-      box([p.x + Z[0] * 0.04, p.y + 2.6, p.z + Z[2] * 0.04], X, UP, Z, w, h, 0.025, { board: PLATE_BLUE, ink: WHITE, lab, pad: 0.1, border: 0.012, sides: 1, rough: 0.25, kind: 6 });
-    }
+    // the whole plate layout is one label (sdfText.js plateUccle / plateTwo): one box, no decals
+    const uccle = !!p.big;
+    const lab = uccle ? label([p.frType, p.big, p.nlType, p.commune || ""], "plateUccle") : label([p.fr, p.nl || "", p.commune || ""], "plateTwo");
+    const h = uccle ? 0.3 : 0.36;
+    const w = Math.max(0.45, Math.min(1.4, h * lab.aspect));
+    const post = p.mount !== "wall";
+    if (post) prop("post", p.x, p.y, p.z, 0);
+    const { X, Z } = frameOf(p.nx, p.nz);
+    const c = post ? [p.x + Z[0] * 0.04, p.y + 2.6, p.z + Z[2] * 0.04] : [p.x + Z[0] * 0.003, p.y, p.z + Z[2] * 0.003];   // enamel: 6 mm thick, 2 cm off the wall (in the real wall plane)
+    box(c, X, UP, Z, w, h, post ? 0.012 : 0.006, { board: PLATE_BLUE, ink: WHITE, lab, pad: 0, padX: 0.0, fill: 1.0, border: 0.012, sides: post ? 1 : 0, rough: 0.25, kind: 6 });
   }
   // ------------------------------------------------------------------------------------------ house numbers
   for (const nb of doc.numbers) {
@@ -329,7 +348,7 @@ export function layoutTile(doc, measure) {
     const lab = label([nb.n], "number");
     used.numbers.push(nb.n);
     const h = 0.15, w = Math.max(0.15, Math.min(0.42, h * lab.aspect * 0.8));
-    box([nb.x + Z[0] * 0.008, nb.y + 2.25, nb.z + Z[2] * 0.008], X, UP, Z, w, h, 0.012, { board: PLATE_BLUE, ink: WHITE, lab, pad: 0.12, border: 0.006, rough: 0.25, kind: 7 });
+    box([nb.x + Z[0] * 0.007, nb.y + 2.25, nb.z + Z[2] * 0.007], X, UP, Z, w, h, 0.005, { board: PLATE_BLUE, ink: WHITE, lab, pad: 0.12, border: 0.006, rough: 0.25, kind: 7 });
   }
   return { boxes, props, windows, glass, labels, night, used };
 }

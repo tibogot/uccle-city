@@ -1,6 +1,6 @@
 # Mesh audit: table lod0
 
-504 triangles, 255 welded vertices, 0 open edges, 0 rays, 21 ms.
+504 triangles, 255 welded vertices, 0 open edges, 0 rays, 27 ms.
 
 **0 blocking**, 40 warnings. Clean (no blocking item).
 

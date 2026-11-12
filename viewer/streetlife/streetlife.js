@@ -30,34 +30,52 @@ export const streetUniforms = {
 };
 
 // ------------------------------------------------------------------------------------------------ the shared atlas
+/** ONE text atlas for every tile, as PAGES: a DataArrayTexture of `pages` layers of W x W (R8 signed distance, mipmapped).
+ *  A tile packs its labels into pages of its own (shelf packer per page) and uploads ONLY those layers
+ *  (texture.addLayerUpdate: a W x W sub-upload, 4 MB at 2048², instead of the whole atlas); removeTile frees them.
+ *  ?atlas=full (lab) re-uploads every layer, the round-1 behaviour, to measure the difference. */
 export class TextAtlas {
-  constructor(W = 4096, H = 4096) {
-    this.W = W; this.H = H;
-    this.data = new Uint8Array(W * H);
-    this.tex = new THREE.DataTexture(this.data, W, H, THREE.RedFormat, THREE.UnsignedByteType);
-    Object.assign(this.tex, { minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter, generateMipmaps: true, anisotropy: 8, flipY: false });
+  constructor(W = 2048, pages = 12, { full = false } = {}) {
+    this.W = W; this.H = W; this.pages = pages; this.fullUpload = full;
+    this.data = new Uint8Array(W * W * pages);
+    this.tex = new THREE.DataArrayTexture(this.data, W, W, pages);
+    Object.assign(this.tex, { format: THREE.RedFormat, type: THREE.UnsignedByteType, minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter, generateMipmaps: true, anisotropy: 8, flipY: false });
     this.tex.colorSpace = THREE.NoColorSpace;
-    this.pack = new ShelfPacker(W, H);
-    this.rects = new Map();       // key -> [u0, v0, u1, v1]
+    this.free = Array.from({ length: pages }, (_, i) => i);
     this.full = 0;
+    this.uploads = [];          // { tile, layers, bytes }
   }
-  /** add a worker's labels (w, h, off into data); returns their rects in the order given */
-  add(labels, data) {
-    const out = [];
-    for (const l of labels) {
-      let r = this.rects.get(l.key);
-      if (!r) {
-        const at = this.pack.add(l.w, l.h);
-        if (!at) { this.full++; out.push(null); continue; }
-        for (let y = 0; y < l.h; y++) this.data.set(data.subarray(l.off + y * l.w, l.off + (y + 1) * l.w), (at.y + y) * this.W + at.x);
-        r = [(at.x + 0.5) / this.W, (at.y + 0.5) / this.H, (at.x + l.w - 0.5) / this.W, (at.y + l.h - 0.5) / this.H];
-        this.rects.set(l.key, r);
-      }
-      out.push(r);
+  get used() { return 1 - this.free.length / this.pages; }
+  /** pack a tile's labels into new pages; returns { rects: [u0, v0, u1, v1, page] per label, pages } */
+  addTile(tile, labels, data) {
+    const own = [], rects = [];
+    let packer = null, page = -1;
+    const next = () => {
+      if (!this.free.length) return false;
+      page = this.free.shift(); own.push(page);
+      packer = new ShelfPacker(this.W, this.H);
+      this.data.fill(0, page * this.W * this.H, (page + 1) * this.W * this.H);
+      return true;
+    };
+    // tallest first packs better; the order of rects follows the input
+    const order = labels.map((l, i) => i).sort((i, j) => labels[j].h - labels[i].h || labels[j].w - labels[i].w);
+    const out = new Array(labels.length).fill(null);
+    for (const i of order) {
+      const l = labels[i];
+      let at = packer ? packer.add(l.w, l.h) : null;
+      if (!at) { if (!next()) { this.full++; continue; } at = packer.add(l.w, l.h); if (!at) { this.full++; continue; } }
+      const base = page * this.W * this.H;
+      for (let y = 0; y < l.h; y++) this.data.set(data.subarray(l.off + y * l.w, l.off + (y + 1) * l.w), base + (at.y + y) * this.W + at.x);
+      out[i] = [(at.x + 0.5) / this.W, (at.y + 0.5) / this.H, (at.x + l.w - 0.5) / this.W, (at.y + l.h - 0.5) / this.H, page];
     }
+    if (this.fullUpload) this.tex.clearLayerUpdates?.();
+    else for (const pg of own) this.tex.addLayerUpdate(pg);
     this.tex.needsUpdate = true;
-    return out;
+    this.uploads.push({ tile, layers: own.slice(), bytes: (this.fullUpload ? this.pages : own.length) * this.W * this.H });
+    rects.push(...out);
+    return { rects, pages: own };
   }
+  removeTile(pages) { for (const pg of pages) if (!this.free.includes(pg)) this.free.push(pg); }
 }
 
 // ------------------------------------------------------------------------------------------------ the textured box
@@ -93,12 +111,12 @@ function boxMaterial(atlas) {
   const face = attribute("face", "float"), fu = uv();
   const front = step(0.5, face).mul(step(face, 1.5)), back = step(1.5, face);
   const textFace = max(front, back.mul(step(0.5, iMisc.x))).mul(step(0, iRect.x));
-  const tuv = fu.sub(iBox.xy.sub(iBox.zw)).div(iBox.zw.mul(2).max(1e-4));
+  const tuv = fu.sub(vec2(0.5, iBox.y).sub(iBox.zw)).div(iBox.zw.mul(2).max(1e-4));     // iBox.x = the atlas page
   const inside = step(0, tuv.x).mul(step(tuv.x, 1)).mul(step(0, tuv.y)).mul(step(tuv.y, 1));
   const tc = clamp(tuv, 0, 1);
   const auv = vec2(mix(iRect.x, iRect.z, tc.x), mix(iRect.w, iRect.y, tc.y));
   // sampled unconditionally (derivatives need uniform control flow); masked afterwards
-  const d = texture(atlas.tex, auv).r;
+  const d = texture(atlas.tex, auv).depth(iBox.x.add(0.5).toInt()).r;
   const fp = fwidth(auv.mul(vec2(atlas.W, atlas.H)));
   const tp = max(fp.x, fp.y);                                         // atlas texels per screen pixel
   const aa = clamp(fwidth(d).mul(0.8), 0.004, 0.35);
@@ -111,7 +129,9 @@ function boxMaterial(atlas) {
   // edges: a fake 8 mm chamfer (darker rim) and the enamel border line of plates (iSize.w m wide, inset by half of it)
   const ex = min(fu.x, float(1).sub(fu.x)).mul(iSize.x), ey = min(fu.y, float(1).sub(fu.y)).mul(iSize.y);
   const e = min(ex, ey), fe = fwidth(e).max(1e-5);
-  const rim = mix(float(0.78), float(1), smoothstep(0, float(0.008).max(fe), e)).mul(max(front, back)).add(float(1).sub(max(front, back)));
+  const decal = step(7.5, iMisc.w).mul(step(iMisc.w, 8.5));            // kind 8: the small words on a plate (no rim of their own)
+  const faceTB = max(front, back).mul(float(1).sub(decal));
+  const rim = mix(float(0.78), float(1), smoothstep(0, float(0.008).max(fe), e)).mul(faceTB).add(float(1).sub(faceTB));
   const bw = iSize.w;
   const border = smoothstep(bw.mul(0.5).sub(fe), bw.mul(0.5).add(fe), e).mul(float(1).sub(smoothstep(bw.mul(1.5).sub(fe), bw.mul(1.5).add(fe), e)))
     .mul(step(0.0001, bw)).mul(max(front, back.mul(step(0.5, iMisc.x))));
@@ -121,7 +141,8 @@ function boxMaterial(atlas) {
   m.metalnessNode = iMisc.z;
   const glowBoard = iBoard.rgb.mul(iBoard.a).mul(float(1).sub(inkMix));
   const glowInk = iInk.rgb.mul(iInk.a).mul(inkA);
-  m.emissiveNode = glowBoard.add(glowInk).mul(max(U.night, step(0.5, iBoard.a).mul(0.12))).mul(U.glow);
+  // lit signs glow a little by day too (backlit letters and lightboxes read brighter than paint in daylight)
+  m.emissiveNode = glowBoard.mul(max(U.night, step(0.5, iBoard.a).mul(0.14))).add(glowInk.mul(max(U.night, step(0.5, iInk.a).mul(0.22)))).mul(U.glow);
   m.name = "streetlife-box";
   return m;
 }
@@ -154,10 +175,11 @@ function windowMaterial() {
   const iWin = attribute("iWin", "vec4"), fu = uv();
   const r4 = shopInterior(fu.x.mul(iWin.x), fu.y.mul(iWin.y), iWin.x, iWin.y, normalWorld, iWin.z, iWin.w.mul(mix(0.55, 1, U.night)));
   const r = { color: r4.xyz, glow: r4.w };
-  m.colorNode = vec3(0.015, 0.016, 0.018);
-  m.roughnessNode = float(0.06);
+  m.colorNode = vec3(0.004, 0.0045, 0.005);            // the glass itself: almost black, so what shows is the
+  m.roughnessNode = float(0.02);                        // interior (emissive) + the street mirrored (IBL + SSR)
+  m.specularIntensityNode = float(1);
   m.metalnessNode = float(0);
-  m.emissiveNode = r.color.mul(mix(float(0.42), float(0.6), U.night)).mul(r.glow.mul(0.3).add(0.75)).mul(U.glow);
+  m.emissiveNode = r.color.mul(mix(float(0.5), float(0.6), U.night)).mul(r.glow.mul(0.3).add(0.75)).mul(U.glow);
   m.name = "streetlife-window";
   return m;
 }
@@ -175,11 +197,11 @@ export class StreetLife {
     await s._kits();
     return s;
   }
-  constructor(scene, { base = new URL("../../data/streetlife/", import.meta.url), atlasSize = 4096, shadows = true } = {}) {
+  constructor(scene, { base = new URL("../../data/streetlife/", import.meta.url), atlasSize = 2048, atlasPages = 12, atlasFull = false, shadows = true } = {}) {
     this.scene = scene; this.base = base; this.shadows = shadows;
     this.group = new THREE.Group(); this.group.name = "streetlife";
     scene.add(this.group);
-    this.atlas = new TextAtlas(atlasSize, atlasSize);
+    this.atlas = new TextAtlas(atlasSize, atlasPages, { full: atlasFull });
     this.boxGeo = boxGeometry();
     this.boxMat = boxMaterial(this.atlas);
     this.winMat = windowMaterial();
@@ -223,7 +245,7 @@ export class StreetLife {
     const t0 = performance.now();
     const r = await this._work(tile);
     const tm = performance.now();
-    const rects = this.atlas.add(r.labels, r.labelData);
+    const { rects, pages } = this.atlas.addTile(tile, r.labels, r.labelData);
     const g = new THREE.Group(); g.name = `streetlife-${tile}`;
     const meshes = [];
     // ---- boxes
@@ -237,8 +259,9 @@ export class StreetLife {
         const o = i * S;
         mesh.instanceMatrix.array.set(r.boxes.subarray(o, o + 16), i * 16);
         const li = r.boxes[o + 16], rc = li >= 0 ? rects[li] : null;
-        iRect.set(rc || [-1, -1, -1, -1], i * 4);
+        iRect.set(rc ? rc.slice(0, 4) : [-1, -1, -1, -1], i * 4);
         iBox.set(r.boxes.subarray(o + 17, o + 21), i * 4);
+        iBox[i * 4] = rc ? rc[4] : 0;
         iBoard.set(r.boxes.subarray(o + 21, o + 25), i * 4);
         iInk.set(r.boxes.subarray(o + 25, o + 29), i * 4);
         iSize.set(r.boxes.subarray(o + 29, o + 33), i * 4);
@@ -306,10 +329,10 @@ export class StreetLife {
     this.meshes.push(...meshes);
     const stats = {
       tile, worker: Object.fromEntries(Object.entries(r.times).map(([k, v]) => [k, +v.toFixed(1)])), mainMs: +(performance.now() - tm).toFixed(1), totalMs: +(performance.now() - t0).toFixed(1),
-      boxes: nb, windows: nw, glass: ng, props: propCounts, labels: r.labels.length, labelBytes: r.labelData.length, atlasUsed: +this.atlas.pack.used.toFixed(3), atlasFull: this.atlas.full,
+      boxes: nb, windows: nw, glass: ng, props: propCounts, labels: r.labels.length, labelBytes: r.labelData.length, atlasPages: pages, atlasUsed: +this.atlas.used.toFixed(3), atlasFull: this.atlas.full,
       counts: r.counts, skipped: r.skipped, used: r.used, sources: r.sources, draws: meshes.length,
     };
-    this.tiles.set(tile, { group: g, meshes, night: r.night, stats });
+    this.tiles.set(tile, { group: g, meshes, night: r.night, stats, pages });
     return stats;
   }
   /** per frame: hide the meshes whose whole extent is past their range (cheap: a sphere test per mesh) */
@@ -327,8 +350,8 @@ export class StreetLife {
   }
   /** the night-lights hook: shop-window and sign light positions of every loaded tile (flat x, y, z arrays) */
   nightSources() {
-    const out = { shops: { x: [], y: [], z: [] }, signs: { x: [], y: [], z: [] } };
-    for (const t of this.tiles.values()) for (const k of ["shops", "signs"]) {
+    const out = { shops: { x: [], y: [], z: [] }, signs: { x: [], y: [], z: [] }, spots: { x: [], y: [], z: [] } };
+    for (const t of this.tiles.values()) for (const k of ["shops", "signs", "spots"]) {
       const a = t.night[k];
       for (let i = 0; i < a.length; i += 3) { out[k].x.push(a[i]); out[k].y.push(a[i + 1]); out[k].z.push(a[i + 2]); }
     }
@@ -339,6 +362,7 @@ export class StreetLife {
     if (!t) return;
     for (const m of t.meshes) { m.geometry.dispose(); const i = this.meshes.indexOf(m); if (i >= 0) this.meshes.splice(i, 1); }
     t.group.removeFromParent();
+    this.atlas.removeTile(t.pages);
     this.tiles.delete(tile);
   }
   get triangles() {

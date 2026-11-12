@@ -6,7 +6,7 @@ import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 
 const CREASE = Math.cos(25 * Math.PI / 180);   // below the checker's 30 deg streak spread
 /** per-kind target error (m) of LOD1: what still reads at its LOD1 range */
-const ERROR = { pump: 0.006, column: 0.01, table: 0.006, chair: 0.006, parasol: 0.006, cross: 0.008, postbox: 0.004, bubble: 0.015, chute: 0.005, pole: 0.006, post: 0.006, dock: 0.004 };
+const ERROR = { pump: 0.006, column: 0.01, table: 0.006, chair: 0.006, parasol: 0.006, cross: 0.008, postbox: 0.004, bubble: 0.015, chute: 0.005, pole: 0.006, post: 0.006, dock: 0.004, spot: 0.004 };
 
 export async function simplifyKit(a, kind = "") {
   await MeshoptSimplifier.ready;

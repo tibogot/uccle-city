@@ -92,13 +92,46 @@ FUEL_GRADES = [("fuel:diesel", "Diesel"), ("fuel:octane_95", "95"), ("fuel:e10",
                ("fuel:lpg", "LPG"), ("fuel:cng", "CNG"), ("fuel:adblue", "AdBlue")]
 
 
+FR_TYPE = re.compile(r"^((?:Vieille |Petite |Grande |Vieux |Nouvelle )?(?:Rue|Avenue|Chaussée|Place|Square|Drève|Chemin|Clos|Allée|Boulevard|Parvis|Sentier|"
+                     r"Venelle|Montagne|Carré|Rond-Point|Impasse|Quai|Cité|Galerie|Passage|Rampe|Pont|Plateau|Champ|Jardin|Domaine|Parc|Hameau|"
+                     r"Ruelle|Voie|Promenade|Escalier|Dreve|Vallon|Val|Bois|Cour|Esplanade))\s+((?:de la |de l'|du |des |de |d'|à la |au |aux )?)(.+)$", re.I)
+NL_TYPE = re.compile(r"^(.+?)[\s-]?(straat|laan|steenweg|plein|dreef|weg|pad|steeg|berg|blok|square|hof|park|gaarde|wegel|baan|kaai|brug|dries|veld|"
+                     r"tuin|kouter|vest|singel|gang|doorgang|galerij|rondpunt|hoek|lei|markt|voorplein|dal|bos|esplanade|wandeling|trap|helling|"
+                     r"kruispunt|erf|domein)$", re.I)
+
+
+def norm_name(s):
+    import unicodedata
+    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode().lower().replace("-", " ").replace(" ", "").strip()
+    return re.sub(r"(se|s)$", "", s)
+
+
+def plate_parts(fr, nl):
+    """the Uccle plate layout: when the FR and NL names share their proper part ('Carré Peeters' / 'Peetersblok'), the
+    type words go small (FR top-left, NL bottom-right) and the name big once; else both full names. From the data only."""
+    if not fr or not nl:
+        return None
+    mf, mn = FR_TYPE.match(fr), NL_TYPE.match(nl)
+    if not mf or not mn:
+        return None
+    ftype = (mf.group(1) + " " + mf.group(2)).strip()
+    fname, nname, ntype = mf.group(3).strip(), mn.group(1).strip(" -"), mn.group(2)
+    if norm_name(fname) != norm_name(nname):
+        return None
+    return {"frType": ftype, "big": fname, "nlType": ntype}
+
+
 def split_name(name: str):
     """OSM Brussels names are 'FR - NL' (same text twice when the name is the same in both): (fr, nl or None)."""
     if not name:
         return None, None
     parts = [p.strip() for p in re.split(r"\s+-\s+", name) if p.strip()]
     if len(parts) == 2:
-        return parts[0], parts[1]
+        a, b = parts
+        # OSM mostly writes "FR - NL", sometimes "NL - FR" (Paul Gilsonlaan - Avenue Paul Gilson): put French first
+        if NL_TYPE.match(a) and FR_TYPE.match(b) and not FR_TYPE.match(a):
+            a, b = b, a
+        return a, b
     return name.strip(), None
 
 
@@ -126,8 +159,14 @@ class Tile:
             if poly.is_empty or poly.geom_type != "Polygon":
                 continue
             self.solids.append({"ring": [tuple(p) for p in ring], "poly": poly, "bu": (b.get("attrs") or {}).get("BU_ID") or b["id"],
-                                "base": b["base"], "top": b["top"], "eaves": b.get("eaves") or b["top"], "landmark": bool((b.get("attrs") or {}).get("_landmark"))})
+                                "base": b["base"], "top": b["top"], "eaves": b.get("eaves") or b["top"], "landmark": bool((b.get("attrs") or {}).get("_landmark")),
+                                "walls": b["walls"]})
         self.tree = STRtree([s["poly"] for s in self.solids])
+        # the UrbIS wall triangles (buildings.bin, CONTRACT 5.2): where the real wall stands vs the footprint edge
+        buf = (d / "buildings.bin").read_bytes()
+        V, Tn = np.frombuffer(buf, dtype="<u4", count=2)
+        self.P = np.frombuffer(buf, dtype="<f4", count=int(V) * 3, offset=8).reshape(-1, 3)
+        self.I = np.frombuffer(buf, dtype="<u4", count=int(Tn) * 3, offset=8 + int(V) * 12).reshape(-1, 3)
         rd = json.loads((d / "roads.json").read_text(encoding="utf-8"))
         N = {n["id"]: n for n in rd["nodes"]}
         self.roads, segs = [], []
@@ -181,6 +220,53 @@ class Tile:
             if poly.contains(p):
                 return h
         return 0.0
+
+    def wall_offset(self, si, ax, az, tx, tz, nx, nz, u0, u1, y0):
+        """signed distance (m, + = outward) of the solid's real wall plane from its footprint edge over [u0, u1] along the
+        edge and the ground floor (y0 .. y0 + 3.5): the area-weighted mean over the wall triangles that face the same way"""
+        w = self.solids[si]["walls"]
+        tri = self.P[self.I[w["first"]:w["first"] + w["count"]]]          # (n, 3, 3)
+        if not len(tri):
+            return 0.0, nx, nz
+        e1, e2 = tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0]
+        n = np.cross(e1, e2)
+        nl = np.linalg.norm(n, axis=1) + 1e-12
+        area = nl / 2
+        h = np.hypot(n[:, 0], n[:, 2]) + 1e-12
+        facing = (n[:, 0] * nx + n[:, 2] * nz) / h
+        c = tri.mean(axis=1)
+        along = (c[:, 0] - ax) * tx + (c[:, 2] - az) * tz
+        off = (c[:, 0] - ax) * nx + (c[:, 2] - az) * nz
+        ylo, yhi = tri[:, :, 1].min(axis=1), tri[:, :, 1].max(axis=1)
+        m = (facing > 0.94) & (np.abs(n[:, 1]) / nl < 0.3) & (along > u0 - 0.5) & (along < u1 + 0.5) & (np.abs(off) < 1.5) \
+            & (ylo < y0 + 3.5) & (yhi > y0) & (area > 1e-4)
+        if not m.any():
+            return 0.0, nx, nz
+        # the real wall's own horizontal normal (area-weighted): plates and fronts lie IN the wall plane, not across it
+        hn = n[m][:, [0, 2]] / h[m][:, None]
+        mn = (hn * area[m][:, None]).sum(axis=0)
+        mn = mn / (np.hypot(*mn) or 1)
+        if mn[0] * nx + mn[1] * nz < 0.94:
+            mn = np.array([nx, nz])
+        return float(np.clip((off[m] * area[m]).sum() / area[m].sum(), -1.5, 1.5)), float(mn[0]), float(mn[1])
+
+    def pave(self, x, z, nx, nz, start=0.0, reach=10.0):
+        """measured paving (UrbIS sidewalk / square surfaces, not medians) in front of (x, z) along (nx, nz): the depth (m)
+        of the first continuous paved run starting within 0.8 m of the wall; 0 when there is none (grass, gardens)"""
+        if not self.rtree:
+            return 0.0
+        d, run0 = start + 0.1, None
+        while d <= reach:
+            q = Point(x + nx * d, z + nz * d)
+            paved = any(self.raised[i][1] < 0.14 and self.raised[i][0].contains(q) for i in self.rtree.query(q))
+            if paved and run0 is None:
+                if d > start + 0.8:
+                    return 0.0
+                run0 = d
+            if not paved and run0 is not None:
+                return round(d - run0, 2)
+            d += 0.2
+        return round(d - run0, 2) if run0 is not None else 0.0
 
     def floor_y(self, x, z):
         """the walking surface at (x, z): DTM + the kerb lift where a sidewalk is measured"""
@@ -293,11 +379,17 @@ class Facades:
             px, pz = ax + tx * u, az + tz * u
             ox, oz = px + nx * 1.2, pz + nz * 1.2
             yb = max(min(self.T.floor_y(ox, oz), s["base"] + 1.5), s["base"] - 0.5)
+            # onto the real wall plane (UrbIS wall triangles), not the footprint edge: no floating shopfront
+            wo, nx, nz = self.T.wall_offset(si, ax, az, tx, tz, nx, nz, u - w / 2, u + w / 2, yb) if occupy else (0.0, nx, nz)
+            px, pz = px + nx * wo, pz + nz * wo
             # the sidewalk in front: from the wall to the kerb, along the normal (wall -> road centreline - half the carriageway)
             nr = self.T.nearest_road(px + nx * 0.5, pz + nz * 0.5, STREET_REACH)
             side = r2(max(0.0, nr[0] + 0.5 - nr[2]["half"])) if nr else None
+            # measured paving in front (terraces go there and nowhere else): the least of three samples across the front
+            pave = min(self.T.pave(px + tx * k * w * 0.4, pz + tz * k * w * 0.4, nx, nz) for k in (-1, 0, 1)) if occupy else None
             return {"si": int(si), "bu": s["bu"], "x": r2(px), "z": r2(pz), "nx": round(nx, 4), "nz": round(nz, 4), "w": r2(w), "y": r2(yb),
-                    "edgeL": r2(L), "u": r2(u), "eaves": r2(s["eaves"]), "street": rr["name"], "dist": r2(score), "side": side}
+                    "edgeL": r2(L), "u": r2(u), "eaves": r2(s["eaves"]), "street": rr["name"], "dist": r2(score), "side": side,
+                    "wallOffset": r2(wo), "pave": pave}
         return None
 
     def nearest_wall(self, x, z, bu, reach=12.0):
@@ -648,11 +740,11 @@ def build_tile(name: str, src) -> dict:
                     if max(da, db) < 1.0:
                         continue
                     if da < db:
-                        u = max(0.5, -da + 1.2) if da < 0 else 0.5
-                        u = min(u, L - 0.5); px, pz = ax + tx * u, az + tz * u
+                        u = max(min(0.9, L / 2), -da + 1.2) if da < 0 else min(0.9, L / 2)   # the plate (up to 1.3 m) clear of the corner
+                        u = min(u, L - min(0.9, L / 2)); px, pz = ax + tx * u, az + tz * u
                     else:
-                        u = max(0.5, -db + 1.2) if db < 0 else 0.5
-                        u = min(u, L - 0.5); px, pz = bx - tx * u, bz - tz * u
+                        u = max(min(0.9, L / 2), -db + 1.2) if db < 0 else min(0.9, L / 2)
+                        u = min(u, L - min(0.9, L / 2)); px, pz = bx - tx * u, bz - tz * u
                     along = (px - jx) * dx + (pz - jz) * dz
                     if along < 0 or along > 24:
                         continue
@@ -663,6 +755,8 @@ def build_tile(name: str, src) -> dict:
             for side in sorted(best):
                 sc, px, pz, nx, nz, s = best[side]
                 yb = T.floor_y(px + nx * 1.0, pz + nz * 1.0)
+                wo, nx, nz = T.wall_offset(T.solids.index(s), px + nz * 1.0, pz - nx * 1.0, -nz, nx, nx, nz, 0.0, 2.0, yb + 1.5)
+                px, pz = px + nx * wo, pz + nz * wo
                 out["plates"].append({"name": nm, "fr": fr, "nl": nl, "x": r2(px + nx * 0.02), "z": r2(pz + nz * 0.02), "y": r2(yb + 2.7),
                                       "nx": round(nx, 4), "nz": round(nz, 4), "mount": "wall", "jx": r2(jx), "jz": r2(jz)})
             if not best:
@@ -672,8 +766,23 @@ def build_tile(name: str, src) -> dict:
                 out["plates"].append({"name": nm, "fr": fr, "nl": nl, "x": r2(px), "z": r2(pz), "y": r2(T.floor_y(px, pz)), "nx": round(-dz, 4), "nz": round(dx, 4),
                                       "tx": round(dx, 4), "tz": round(dz, 4), "mount": "post", "jx": r2(jx), "jz": r2(jz)})
             placed.append({"name": nm, "jx": jx, "jz": jz})
+    # the plate's commune line: from the UrbIS address points of the same street nearest the plate (the data's own words)
+    addrs = []
+    if af.exists():
+        for a in json.loads(af.read_text(encoding="utf-8"))["features"]:
+            if a.get("MUNNAMEFRE"):
+                ax2, az2 = l72_to_local(a["e"], a["n"])
+                addrs.append((ax2, az2, a.get("STRNAMEFRE"), a["MUNNAMEFRE"], a.get("MUNNAMEDUT")))
     for p in out["plates"]:
         del p["jx"], p["jz"]
+        parts = plate_parts(p["fr"], p["nl"])
+        if parts:
+            p.update(parts)
+        cand = [a for a in addrs if a[2] == p["fr"]] or addrs
+        if cand:
+            a = min(cand, key=lambda a: (a[0] - p["x"]) ** 2 + (a[1] - p["z"]) ** 2)
+            if (a[0] - p["x"]) ** 2 + (a[1] - p["z"]) ** 2 < 300 ** 2:
+                p["commune"] = a[3] if not a[4] or a[4] == a[3] else f"{a[3]} - {a[4]}"
 
     # ---- counts + timing
     from collections import Counter

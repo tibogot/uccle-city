@@ -189,6 +189,18 @@ function dock() {
   return g;
 }
 
+/** gooseneck spotlight over a shop fascia: wall plate, an arm curving out and down, a cone head with a warm lens (aimed
+ *  back at the board below it); the wall at z = 0, mounted at the fascia's top edge */
+function spot() {
+  const g = new Geo();
+  g.box(0, 0.0, 0.012, 0.09, 0.12, 0.024, S.steel_dark, 0.006);
+  g.tube([[0, 0, 0.024], [0, 0.08, 0.2], [0, 0.14, 0.42], [0, 0.11, 0.55]], 0.012, S.steel_dark, 14);
+  // the head: a cone (lathe) tilted to look down and back at the board
+  g.at(0, 0.1, 0.58, 0, 2.35).lathe(0, 0, 0, [[0.0, -0.02], [0.03, -0.02], [0.055, 0.06], [0.06, 0.13], [0.052, 0.13], [0.052, 0.12]], S.steel_dark, 18, [1, 3, 4]).reset();
+  g.at(0, 0.1, 0.58, 0, 2.35).disc(0, 0.12, 0, 0.052, S.warm_light, 18, true).reset();
+  return g;
+}
+
 /** the kit: kind -> { build, lod: [switch m, end m] } (LOD1 = meshoptimizer simplify of LOD0, made by the caller) */
 export const KITS = {
   pump: { build: pump, lod: [45, 260], shadow: true },
@@ -203,4 +215,5 @@ export const KITS = {
   pole: { build: pole, lod: [40, 220], shadow: true },
   post: { build: post, lod: [40, 220], shadow: true },
   dock: { build: dock, lod: [30, 150], shadow: true },
+  spot: { build: spot, lod: [25, 140], shadow: false },
 };
