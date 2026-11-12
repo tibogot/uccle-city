@@ -1,22 +1,23 @@
 # fixes1 resume notes
 
 Branch `claude/fixes1`, worktree `.claude/worktrees/fixes1`, server `python %TEMP%/uccle_nocache_server.py 8843 <worktree>`.
-Write-up: `docs/fixes1/README.md`.
+Write-up with all numbers and images: `docs/fixes1/README.md`. Both jobs built, waiting for the owner.
 
-## State
+## How to re-check
 
-- Job 1 (tram on ramps): DONE, see README. Rebuild the profile after any change to the tram tracks or the DTM:
-  `node tools/build_tram_profile.mjs` (50 s). Check: `const m = await import("/debug/tramStrip.js");
-  await m.jointCheck(tripId, d0, d1)`; strips: `m.strip({ clock, seconds, view: "side"|"chase", at: [x, z] })` or a
-  fixed `cam` / `look`.
-- Job 2 (clean buildings): in progress. Node audit of the generator: `node tools/mesh_audit/cityBuildings.mjs I6
-  [--group details+walls] [--json out.json --items 4000 --debug]`.
+- Tram: `node tools/build_tram_profile.mjs` (after a change to the tram tracks / DTM); in the city
+  `const m = await import("/debug/tramStrip.js"); await m.jointCheck(tripId, d0, d1)`; strips `m.strip({...})`.
+  `?trackprofile=0` = the old behaviour.
+- Buildings: `node tools/mesh_audit/cityBuildings.mjs I6 H6 E5 F2`; after editing viewer/facadeGeom.js rebuild the
+  worker bundle `node tools/build_worker.mjs` (the worktree's tools/worker/node_modules is a junction to the main
+  checkout's). In the city: `const s = await import("/debug/shots.js"); await s.shot({pos, target, fov})`,
+  `await s.flicker({...})`.
+- A background Chrome tab has no requestAnimationFrame: open the city with an initScript that maps rAF to setTimeout,
+  or the tree kit never bakes and the animation loop never runs (debug harnesses render by hand).
+- Shadows: `viewer.lighting.radiusAdapt = false` = the old 1-texel kernel. Forest: `__treeKit.view.farBias.value = 0`.
 
-## Baseline (before job 2), tile I6, Node runner (same numbers as the browser audit of 2026-11-10/11)
+## Next (see README "Left")
 
-| group | tris | blocking | coplanar | depth | crossing | flipped | leak |
-|---|---|---|---|---|---|---|---|
-| walls+roofs | 31,543 | 3,667 | 315 | 17 | 42 | 0 | 12 |
-| details+walls | 127,527 | 86,003 | 14,709 | 454 | 1,009 | 68,262 | 320 |
-| details+roofs | 118,436 | 84,347 | 12,302 | 254 | 716 | 68,262 | 585 |
-| details alone | 107,210 | 81,660 | 12,129 | 241 | 631 | 68,262 | 299 |
+Verge strip on gable rakes; shadow cascades for aerial views + a clean visual proof on a quiet GPU with frozen weather;
+garage placement (CR42L -> features -> facadeGeom bay -> facades.js paint / cut -> placement.js); the far forest's grey
+fade target; the remaining audit categories.

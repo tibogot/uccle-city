@@ -76,3 +76,102 @@ there for it.) CPU: `tramLine.update` 0.06-0.1 ms for 19 running trams.
 - 321 m of line 92 along the commune's north edge (G1/F1, z -2000..-1704) has no OSM track in our data (outside the
   study polygon): no rails drawn there, the tram follows the smoothed road.
 - The deck is generic concrete (no Blender hero); the terrain under its two ends was not re-shaped (the DTM abutments).
+
+## Job 2: the clean-buildings pass
+
+All in the tile worker's façade generator (`viewer/facadeGeom.js`, bundle rebuilt) unless said otherwise. The proof
+tool is new: `node tools/mesh_audit/cityBuildings.mjs <tiles> [--group ...] [--json f --items N --debug]` runs the
+worker's own `analyseBuildings` on the committed tile data in Node and audits the meshes drawn together
+(walls+roofs, details+walls, details+roofs), hiding the Saint-Job solid as the city does (`--all` keeps it).
+
+### (a) + (b) the BLUE line along the wall tops and the BLACK line under it
+
+Reproduced on Rue du Ham (I6, x 1208 z 634) close up: it is not a crack. Every roof eave got a hanging zinc GUTTER
+(a 13 cm box 26 cm out, colour 0.30 grey) over a dark EAVES BOARD (roof colour x 0.8), also over the street cornices
+and the façade kit's cornice. The gutter's top and front catch the sky (a pale-blue line from any distance), the board
+under it reads black (`img/buildings_eaves_gutters_before_top_after_bottom.jpg`). A Brussels terrace has its gutter
+inside the cornice. Fix: where the wall top carries a cornice, no eaves board and no hanging gutter
+(`emitStrips`: 1,508 strips left out on I6); elsewhere (rear fronts, villas, gables) they stay, the gutter in weathered
+zinc (0.20). Also found on the way: the roof rakes show a dotted bright line at gable tops where wall and roof
+triangles meet in T-junctions (88 `tjunction` on I6 walls+roofs): NOT fixed (UrbIS topology; a verge strip along the
+rakes would cover it, see Left).
+
+### (d) the façade flicker (docs/CITY_MESH_AUDIT.md triage), fixed at the source
+
+- **Strip details** (cornice upper / lower, eaves board, gutter) are no longer boxes emitted per edge: `addStrip`
+  collects them for the whole tile, `emitStrips` MERGES collinear pieces of one strip (normals within 2.5 deg, planes
+  within 3 cm: UrbIS gives one edge to two adjoining solids a few mm apart, and one box per roof triangle edge), MITRES
+  the ends that meet another strip of the same kind and section (each corner = where the two strips' own offset lines
+  meet: inside and outside corners, adjoining houses; no end cap), and sets free end caps back per kind (2 / 4 / 6 /
+  8 mm: never in the next wall's plane, never in another strip's cap plane). I6: 4,934 strips drawn, 306 collinear pieces merged, 668 mitred joints.
+- **Winding**: every detail quad is wound by its normal (`pushQuad`): `flipped` 68,262 -> 0; the detail material is
+  FrontSide now (shadows still both sides).
+- **Ridge / hip beams**: flat normals per face (their faked "rounded" normals were 5.4k `bentflat` once the winding
+  was right), end caps, ends at a junction stop short under a small closed apex block (one per junction), free ends
+  4 mm inside the gable's plane (their caps were IN it: 2.6k coplanar items).
+- **Chimneys**: one stack per party wall (both neighbours built it: coincident boxes; I6 450 stacks, 205 twins dropped), closed boxes (stack, cap, pots).
+- **Landmark buttresses**: the upper stage stands on the weathering cap (its soffit was coplanar with the cap's), one
+  buttress per spot.
+
+AUDIT_TABLE_HERE
+
+Flicker test (`debug/shots.js flicker`: 24 frames, strafe 0.6 mm, updaters frozen; the before build served from a
+scratch worktree of 0f94123, the same tile and view): Rue du Ham eaves close-up 256 -> 191 ppm (a second after-run
+after the gutter change: 201 ppm); the aerial view over the terrace 103 -> 100 ppm. Heat maps
+`img/flicker_eaves_before.jpg` / `_after.jpg`. Fly-over strip: `img/buildings_flyover_after.jpg` (no popping, no
+blinking cornices). Street view before / after: `img/buildings_street_before_top_after_bottom.jpg` (the light
+differs between the two runs: live clouds), eaves `img/buildings_eaves_before.jpg` / `_after_step1.jpg` (step 1 =
+before the gutter change), `img/buildings_eaves_gutters_before_top_after_bottom.jpg` (gutter change).
+
+### (c) the stair-stepped shadow edges
+
+three r187's PCF (`ShadowFilterNode`) is 5 Vogel taps of a hardware 2x2 compare, IGN-rotated, `radius` texels wide
+(default 1). Our sun map is 4096 px over a box that follows the view (`lighting.js`): 80 m half at street level (3.9 cm
+texels: clean), but 200-380 m half in the orbit / fly views (9.8-18.6 cm texels): a 1-texel kernel shows the texels
+as steps. Mr.doob's slop-newyork uses 2 cascades of 2048 px (docs/SLOP_NEWYORK_AUDIT.md); ours fades instead of
+cascading (docs/SMOOTH_LOD.md). Fix (`lighting.js`): the kernel radius follows the texel, 1 at <= 4 cm up to 2.25 at
+>= 14 cm, eased over 0.5 s (a uniform: no recompile; `viewer.lighting.radiusAdapt = false` for A/B). Flicker test on
+two aerial views, adaptive vs radius 1: 324 vs 320 ppm and 558 vs 540 ppm (within noise: the rotated taps do not add
+blinking). Images `img/shadow_high_radius1.jpg` / `_adaptive.jpg`: NOT a clean proof, the sun-lit / shadowed areas
+differ between the two captures (the shadow box was still settling / clouds), so the visual comparison is pending on
+a quiet machine with frozen weather. The real fix for aerial shadows is cascades (2 x 2048 like slop-newyork) with the
+fade kept: left.
+
+### (e) the garage door (a sub-agent did the Blender work; docs/facadekit/README.md "Garage door (fixes1)")
+
+Rebuilt as an insulated SECTIONAL door (4 tongue-and-groove sections with shadow joints and a pressed rib, aluminium
+bottom rail, folded steel jamb lining with a rounded nose, rubber seals at the sides / head / bottom, blue-stone lintel
+with a drip groove, blue-stone threshold, handle set in the band that never stretches), scripted FAR variant = LOD1,
+meshoptimizer LODs in `packKit.mjs`. Named slots only: new `garage_steel` (shader weathering: per-building colour white
+/ anthracite / brown / green, embossed speckle, road grime on the bottom 45 cm, a rust streak under the lock) and
+`rubber_black` (`viewer/facadeKit/kitMaterials.js`). Triangles LOD0 / LOD1 1,966 / 30 -> 1,136 / 236 (the old LOD1
+lost its whole leaf beyond 28 m: painted_metal_white is dropped at LOD1). `auditKit.mjs`: 0 blocking, 3 sizes x 2
+LODs, whole kit still 0. Images `docs/facadekit/wip/garage_before.png`, `garage_after.png`,
+`garage_after_closeup.png`, `garage_lab.jpg`. PLACEMENT not done (it needs the façade shader to paint / cut a garage
+bay): data found = UrbIS Topo CR42L driveways (I6: 59 segments lying on a building wall, 34 of them 2.2-3.2 m wide);
+OSM is too sparse (12 entrance=garage in the commune). Plan in docs/facadekit/README.md.
+
+### (f) the grainy far forest (orbit view, 1-2 km)
+
+Looked at from 1.5 km up the H8-H9 woods (`img/forest_orbit_before.jpg` / `_after.jpg`, crop
+`img/forest_far_bias_before_after.jpg`). Cause: the impostor kit samples its atlas at lodBias -1 everywhere (measured
+as the crispest match to the mesh LODs at the 400 m hand-over); past ~700 m a crown is a few pixels and that crisp
+mip reads as per-pixel light / dark grain (leaf texels + the a2c coverage). Not the shadows (receiveShadow off changed
+nothing). Fix (`viewer/impostorKit/material.js`): the bias ramps by +1 from 700 to 1,100 m (`view.farBias`, `farFrom`,
+`farTo` uniforms); the hand-over at 400 m is untouched. Jitter meter (`labs/cityJitter.js`, far-tree pixels), same view,
+two alternating rounds: strafe blinking 0.37 % -> 0.27 %, d2 16.0 -> 14.5; orbit 1.01 % -> 0.94 %, d2 20.5 -> 19.5 (no
+crawling dots came back: lower on every run). Seen too: the far end (1.2-1.5 km) fades the crowns into a grey-blue
+"ground" colour that reads as a veil band over the woods, and no trees are drawn past 1.5 km: left.
+
+### Left (job 2)
+
+- The remaining audit items (table above): mostly UrbIS's own topology on walls / roofs (bentflat from the 32 deg
+  smoothing of adjoining wall facets, T-junctions, party walls drawn twice back to back), strips of two solids whose
+  outlines overlap at an angle (a fan: two cornices leaving one corner 20 deg apart), a cornice on a wall whose
+  outward test failed (it faces inward under an outward eave), the kit's own cornice in front of the box cornice
+  (kept for the far LOD), and leaks counted against back faces that the city draws (walls / roofs are DoubleSide).
+- A verge strip along the gable rakes to cover the wall / roof T-junction line.
+- Shadow cascades for the aerial views; the visual proof of the adaptive kernel.
+- Garage placement (shader bay + CR42L in the pipeline); the far forest's grey fade target.
+- GPU cost: not measured (2-3 agents on the GPU: frames at 78-126 ms GPU in this session, no meaningful A/B). The
+  detail mesh draws 7 % fewer triangles on I6 (101k -> 93k in the details) and is front-side only now.
