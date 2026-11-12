@@ -103,6 +103,12 @@ Premium Blender pieces (tools/blender/facadeKit.py: windows A/B, sill, hood, sou
 corner + modillions, plinth, balcony) placed in the tile worker exactly on the painted window grid, the walls cut their
 openings, dithered fades to the painted façade beyond ~115 m. Lab `labs/kit-lab.html`; method, numbers, weak points and
 next piece sets: `docs/facadekit/README.md`.
+## Pedestrians (branch claude/pedestrians, lab only)
+
+Pedestrian Lab `labs/pedestrian-lab.html`: Mr.doob's people (`vendor/slop-ped/`, MIT, unchanged), gait baked from his
+rig (`node tools/peds/bakeGait.mjs` -> `models/pedestrians/clips.*`), banded crowd in `viewer/pedestrians/` (live rig
+< 18 m, bone table on the GPU to 250 m, three mesh LODs with dithered fades), sim + meters. Results, weak points:
+`docs/PEDESTRIANS.md`; next steps: `docs/PEDESTRIANS_RESUME.md`. Nothing in the city yet.
 
 ## Rules that still hold
 
