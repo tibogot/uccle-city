@@ -1,0 +1,67 @@
+# Performance + optimisation audit: the plan (prepared 2026-11-13, run on a QUIET GPU)
+
+Owner: "as soon as we make it a game it has to run smoothly with no lags"; "check Mr.doob or anywhere anything that
+could make the best perf". This is the plan; nothing here is measured yet unless it says so.
+
+## 0. How we measure (or the numbers are worthless)
+
+- **Quiet machine:** no agent running, ONE Chrome tab (other WebGPU tabs, even in the background, skew GPU time; a
+  background tab is throttled to ~1 fps, so the tab under test must be in front).
+- **Scripted, repeatable paths:** the 85 s flight I6 -> E4 (`window.viewer` camera script, see the freeze
+  diagnosis 2026-11-13), a street-level drive through Saint-Job + Alsemberg, a walk on the Place, the orbit overview.
+- **What to record per path:** frame-time histogram (p50 / p95 / p99 / max), frames > 33 ms while moving (target 0),
+  long tasks > 50 ms with their cause, GPU ms per pass (scene, shadow, post: `renderer.resolveTimestampsAsync`),
+  draw calls, triangles, GPU memory, render pipelines created synchronously mid-frame (hook on
+  `GPUDevice.prototype.createRenderPipeline` vs `...Async`: target 0 after boot).
+- **A/B:** alternating rounds (A B A B ...), at least 4, report the spread; a change under the spread is "no change".
+- **Two machines:** this GPU + a mid-range one (`?ring=1` default, `?ring=2`).
+- **Budgets:** 60 fps at street level on this GPU (16.6 ms), 30 fps floor on mid-range; boot to first frame < 10 s;
+  no frame over 33 ms while driving / flying, ever.
+
+## 1. Stalls first (what the owner feels)
+
+| # | Item | Known so far | Approach |
+|---|---|---|---|
+| 1.1 | Long freeze while driving / flying | FIXED 2026-11-13 (lamp lights per tile changed the light count -> ~72 sync pipelines). | Keep the device hook as a regression test in the flight script. |
+| 1.2 | `ShadowMaterial_730` re-created synchronously every ~20 s | seen 4x in one flight | Find the variant that toggles (an object switching side / instancing / a cache eviction); create once. |
+| 1.3 | Boot long tasks 3.2 s + 4.1 s | seen 2026-11-13 | Trace boot; split / move to the worker / precompile in parallel (Mr.doob: 16 parallel `compileAsync` + one shadow warm-up frame, `js/main.js:608-674`). |
+| 1.4 | Tile streaming slices (trees ~147-350 ms, parked cars 52 ms, rails, furniture) | tile logs | Build in the worker as typed arrays; main thread only wraps buffers; slice to < 4 ms. |
+| 1.5 | Hero shaders 12-40 s in the background | async, not a freeze | Fewer unique materials (shared library slots); prove no hero material compiles synchronously on first view. |
+| 1.6 | GC pauses | unknown | Allocation profile on the flight; preallocate per-frame arrays (as done for the lamp pool). |
+
+## 2. GPU time (biggest pass first: measure the per-pass split before touching anything)
+
+| # | Idea | Source | Expected | Notes |
+|---|---|---|---|---|
+| 2.1 | Sun shadow: 2048 px tiles, far 220 m, altitude growth capped | Mr.doob `c8a904d` (`js/lighting.js:192-195`, "56 % less shadow texel fill") | big on the shadow pass | We have it behind `?sunlight=1` (smallfixes): make the default if the A/B agrees. |
+| 2.2 | Small things don't cast sun shadows (kerbs, bollards, small kit pieces, markings) | `c8a904d` (`js/city-grid.js:1595`) | shadow pass | Check each: kerb shadow is invisible at the sun angles we use. |
+| 2.3 | Skip faded-out detail with a branch instead of computing it and multiplying by zero | Mr.doob `91dc313` (roads), `95e455c` (sidewalks / kerbs), `f3635e7` (interior raycast only on glazed pixels) | fragment cost on roads / sidewalks / facades | Our new kerb joints and paving pattern (roads round 3, +0.3-0.4 ms) are the first target. |
+| 2.4 | Per-part shader branching instead of one shader doing every part | `ab33d1b` | fragment cost | Facade kit's single shader (also blocked by the 16-texture limit). |
+| 2.5 | Bloom at 0.35 resolution | `c8a904d` (`js/post-processing.js:50`) | post pass | Check our post chain (AO / SSR / bloom) resolutions one by one. |
+| 2.6 | One shared terrain / ground material for all tiles (bounds as uniforms) | our TODO | fewer pipelines + draws | |
+| 2.7 | The clouds look blocky at street level | seen 2026-11-13 | quality (+ maybe cost) | Firmament cloud resolution / upsampling. |
+
+## 3. CPU + draw calls
+
+| # | Idea | Source | Expected | Notes |
+|---|---|---|---|---|
+| 3.1 | `scene.matrixWorldAutoUpdate = false`, only moving roots updated | Mr.doob `js/main.js:206-215, 727-728` | -0.3-1 ms CPU (estimate, SLOP audit) | Streaming: update a tile's root once when it lands. MISSING in ours. |
+| 3.2 | Chunk + cull big instanced sets by cell (trees, markings, lamps, cars, kit pieces) | Mr.doob `e35c06c` (cell-hierarchical tree culling), `997185d` (road markings), `c8a904d` thresholds (32 instances / radius 800 / 8k instance-tris) | fewer vertices + CPU | Our tree impostor kit is one draw for 60-120k instances: check what it costs off-screen. |
+| 3.3 | **InstancedMesh2** (agargaro, MIT): per-instance frustum culling, BVH, LOD + shadow LOD, sorting | github.com/agargaro/instanced-mesh | draws + vertices | **WebGPU / TSL support NOT confirmed** (the author said in 2025 it was pending; a 2026 thread still asks for TSL access to the instance matrix). Test in a lab first; if it doesn't run on WebGPURenderer, take the IDEAS (BVH culling + shadow LOD) into our own cell culling, or three's `BatchedMesh` (per-object culling, multi-draw). |
+| 3.4 | Facade kit: 62 street-level meshes / +80 draws -> merge rare piece types, per-slot multi-draw | fixes / kit notes | draws | |
+| 3.5 | Instance matrices as vertex attributes, static usage, update ranges | Mr.doob `21f71bd` | have (cars, tram, trees) | Check the new systems (kit, tree kit, flags, pedestrians later) do the same. |
+| 3.6 | Fixed pools (lights, cars, pedestrians) with a degenerate instance so pipelines exist | Mr.doob + our 2026-11-13 freeze | stalls | Rule: never add / remove lights at runtime. |
+| 3.7 | Roads: triangles +20 % after round 3 | roads round 4 (running) | vertices | distance LOD for kerb / ramp detail, flat far roads. |
+
+## 4. Memory + download
+
+GPU memory budget per ring, texture sets (9 shipped = 24 MB GPU, 17 MB download), KTX2 everywhere, LOD GLBs with
+meshopt, unload by distance with hysteresis, a loading indicator. Vercel: what the first visit downloads.
+
+## 5. Order of work
+
+1. Measure the baseline (section 0) on the quiet machine: all paths, per-pass GPU, stall list.
+2. Stalls (section 1) until no frame > 33 ms while moving.
+3. The biggest GPU pass from the split (section 2), one change at a time with A/B.
+4. CPU / draws (section 3); InstancedMesh2 WebGPU test in a lab.
+5. A mid-range GPU run; a written result table (before / after per item) in `docs/perf/AUDIT.md`.
