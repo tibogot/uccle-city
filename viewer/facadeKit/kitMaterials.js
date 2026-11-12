@@ -17,7 +17,7 @@ import * as THREE from "three/webgpu";
 import {
   Fn, If, attribute, uv, positionWorld, positionLocal, positionGeometry, normalWorld, cameraPosition, vec2, vec3, vec4, float, floor,
   fract, mix, step, smoothstep, clamp, abs, sin, dot, max, min, mod, pow, normalize, uniform, mrt, roughness, round, select, fwidth,
-  sqrt, length, dFdx, dFdy, transformNormalByViewMatrix, normalViewGeometry,
+  sqrt, length, dFdx, dFdy, normalViewGeometry, cameraViewMatrix,
 } from "three/tsl";
 import { env } from "../lighting.js";
 import { pieceKeep } from "./kitFade.js";
@@ -131,14 +131,14 @@ function finish(m, lod, opts, { glass = false } = {}) {
     m.aoNode = m.aoNode ? m.aoNode.mul(aoK) : aoK;
     // sub-pixel parts: shade like the wall (the piece's +z) and fade to their coverage (the town hall's anti-sparkle)
     const th = thinPart(W);
-    const wallN = transformNormalByViewMatrix(vec3(J.x, 0, J.y));
+    // (cameraViewMatrix x vec4(n, 0): r187's transformNormalByViewMatrix() is undefined inside the IBL's getTextureLevel /
+    // getUV contexts, where the roughness / normal graph gets built: 'getNodeType of undefined' on every kit mesh)
+    const wallN = cameraViewMatrix.mul(vec4(J.x, 0, J.y, 0)).xyz.normalize();
     const nBent = mix(normalViewGeometry, wallN, th.k).normalize();
     m.normalNode = nBent;
     m.colorNode = m.colorNode.mul(mix(float(1), aoK, kitLook.aoDirect)).mul(th.cover);
     // the geometric specular AA on the bent normal (its screen-space variance)
-    // WIP: specularAA() fails to build in the lab's MRT / scene pass (TSL 'getNodeType of undefined', even on a plain
-    // render of the scene) though it compiles in isolation: OFF until fixed (?saa=1 to try; docs/FACADE_KIT_RESUME.md)
-    if (/[?&]saa=1/.test(globalThis.location?.search || "")) m.roughnessNode = specularAA(m.roughnessNode, nBent);
+    m.roughnessNode = specularAA(m.roughnessNode, nBent);
   }
   if (!opts.raw) m.maskNode = opts.lab ? null : pieceKeep(lod, J.w);
   m.userData.shared = true;

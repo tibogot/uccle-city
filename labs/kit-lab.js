@@ -78,7 +78,7 @@ const SLOTS = [   // [label, pieces [name, dy, w, h, variant extra, dx], hole {w
 ];
 // the gallery's x per slot (some are wider)
 const SX = [];
-{ let x = 0; SLOTS.forEach((sl, i) => { const extra = sl[3] || 0; if (i) x += extra / 2; SX.push(x); x += GAP + extra / 2; }); }
+{ let x = 0; SLOTS.forEach((sl, i) => { const extra = sl[3] || 0; if (i) x += extra / 2; if (sl[0].startsWith("dormer")) x += 1.2; SX.push(x); x += GAP + extra / 2; }); }   // (clear of the mitred corner's side run)
 const S = {
   mode: qp.get("mode") === "row" ? "row" : "gallery", lod: ["0", "1"].includes(qp.get("lod")) ? qp.get("lod") : "auto", wire: false,
   ao: true, aoStrength: 1, aoDirect: kitLook.aoDirect.value, blue: false, dark: false, yellow: false, labels: true, post: qp.get("fx") !== "0",
@@ -109,7 +109,7 @@ function galleryData() {
     const L = Math.hypot(B[0] - A[0], B[1] - A[1]);
     (pieces[piece] ??= []).push((A[0] + B[0]) / 2, y, (A[1] + B[1]) / 2, nx, nz, L, 0.6, 0, 0.4, mL, mR, 0, 0, 0);
   };
-  for (const [piece, y] of [["cornice", GY + 4.0], ["band", GY + 3.4]]) {
+  for (const [piece, y] of [["cornice", GY + 4.0], ["band", GY + 2.6]]) {   // (the band lower than in a house: seen apart from the frieze)
     run(piece, [x0b + 0.002, 0], [cx, 0], y, 0, 1, 0, 1);              // along the front (+x), outside corner at its right end
     run(piece, [cx, 0], [cx, -2.4], y, 1, 0, 1, 0);                    // round the corner, along the side wall (normal +x)
   }

@@ -1136,8 +1136,9 @@ def shutter():
         for (ya, yb) in ((0.1, H * 0.48), (H * 0.48 + 0.07, H - 0.08)):
             n = max(3, int((yb - ya) / (0.07 if FAR else 0.045)))
             for k in range(n):
-                y = ya + (yb - ya) * (k + 0.5) / n
-                q = [(0.004, y - 0.016), (0.026, y + 0.006), (0.026, y + 0.016), (0.004, y - 0.006)]
+                y = ya + 0.027 + (yb - ya - 0.054) * (k + 0.5) / n      # the end slats clear of the rails (no face in a rail's end plane)
+                # 5.2 cm boards at 45 deg, 4.5 cm apart: they overlap seen from the front (no wall seen between them)
+                q = [(0.004, y - 0.026), (0.026, y + 0.016), (0.026, y + 0.026), (0.004, y - 0.016)]
                 bm = wedge([(zz, yy) for zz, yy in q], 0, 1, r=0.0)
                 # wedge builds in (x, y) extruded along z: rotate so the profile lies in (z, y) and the extrusion along x
                 for v in bm.verts:
