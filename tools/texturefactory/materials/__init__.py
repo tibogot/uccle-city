@@ -1,7 +1,7 @@
 """All texture-factory materials: REGISTRY[material] = {size_m, module, variants: {name: {seed, lattice, note, build}}}"""
 import importlib
 
-MODULES = ["bricks", "ground", "walls", "roofs"]
+MODULES = ["bricks", "ground", "walls", "roofs", "bark", "leaves"]
 
 REGISTRY = {}
 for _m in MODULES:

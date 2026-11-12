@@ -1,6 +1,6 @@
 """Offline comparison sheet: a generated set next to CC0 scan candidates, same physical scale, same light.
 
-    python -I tools/texturefactory/sheet.py <material> [--crop 0.6] [--res 1k|2k] [--out path.png]
+    python -E -P tools/texturefactory/sheet.py <material> [--crop 0.6] [--res 1k|2k] [--out path.png]
 
 Each column = one texture set (generated variants first, then the material's CC0 candidates from
 viewer/materials/candidates.json, read from the scan candidates' 1K WebP in viewer/materials/textures/ or from the

@@ -3,7 +3,7 @@ viewer/materials/candidates.json (ids tf_*), never touching the other entries (t
 tools/textures/candidates.py, which keeps unknown entries and sorts them after its own). Idempotent: run it again
 after a merge conflict in candidates.json (take the other side, then re-run this).
 
-    python -I tools/texturefactory/register.py [--res 1k,2k] [--remove]
+    python -E -P tools/texturefactory/register.py [--res 1k,a_2k] [--remove]     (default: every 1K set + the 2K of variant a)
 
 Only sets whose files exist (WebP or KTX2) are registered. Tree sets (category "tree") are not lab candidates: they
 stay in generated.json only (the Tree Textures lab reads them from there).
@@ -23,7 +23,7 @@ KEYS = ("id", "source", "name", "licence", "kind", "url", "size_m", "px", "note"
 
 
 def main():
-    res = sys.argv[sys.argv.index("--res") + 1].split(",") if "--res" in sys.argv else ["1k", "2k"]
+    res = sys.argv[sys.argv.index("--res") + 1].split(",") if "--res" in sys.argv else ["1k", "a_2k"]
     remove = "--remove" in sys.argv
     gen = json.load(open(os.path.join(OUT_WEB, "generated.json")))
     raw = open(CAND, encoding="utf8").read()

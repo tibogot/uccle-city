@@ -1,8 +1,8 @@
 """PROCEDURAL TEXTURE FACTORY: scripted, offline generators -> tileable PBR sets baked like scans (docs/TEXTURE_FACTORY.md).
 
-    python -I tools/texturefactory/build.py [material[:variant] ...] [--size 2048] [--quick] [--list]
-    cd tools/texturefactory && npm install && node encode.mjs          # KTX2 (UASTC + zstd) of what build wrote
-    python -I tools/texturefactory/register.py                         # add / refresh the entries in candidates.json
+    python -E -P tools/texturefactory/build.py [material[:variant] ...] [--size 2048] [--quick] [--list]
+    python -E -P tools/texturefactory/encode.py [--2k] [filter ...]       # KTX2 (UASTC + zstd, KTX-Software's ktx.exe)
+    python -E -P tools/texturefactory/register.py                         # add / refresh the entries in candidates.json
 
 Writes per material / variant: 2K sources to data/raw/texfactory/out/<mat>/<variant>/ (git-ignored), WebP fallbacks
 (1K + 2K) to viewer/materials/generated/<mat>/<variant>/ (git-ignored, like the scan candidates), raw RGBA for the
@@ -42,6 +42,12 @@ def main():
             if sel and mat not in sel and f"{mat}:{var}" not in sel:
                 continue
             t0 = time.time()
+            if d.get("kind") == "leaf":                  # leaf sprays: their own writer (coverage mips, seasons)
+                ents = v["build"](1024 if not quick else 512, v["seed"], quick)
+                if not quick:
+                    man.update(ents)
+                    json.dump(dict(sorted(man.items())), open(MANIFEST, "w"), indent=1)
+                continue
             T = Tex(size, d["size_m"], v["seed"])
             maps = v["build"](T)
             meta = {"material": mat, "variant": var, "seed": v["seed"], "size_m": d["size_m"], "note": v["note"],
@@ -60,7 +66,7 @@ def main():
             for tag, e in entries.items():
                 cid = f"tf_{mat}_{var}_{tag}"
                 old = man.get(cid, {})
-                man[cid] = {"material": mat, "source": "texfactory", "id": cid, "name": f"Factory {mat.split('_')[0]} {var} {tag.upper()}",
+                man[cid] = {"material": mat, "category": d.get("category", "surface"), "source": "texfactory", "id": cid, "name": f"Factory {mat.split('_')[0]} {var} {tag.upper()}",
                             "licence": "CC0 (generated)", "kind": "cc0", "variant": var, "seed": v["seed"],
                             "size_m": d["size_m"], "lattice": v.get("lattice"), "note": f"generated: {v['note']}",
                             "url": f"tools/texturefactory (materials/{REGISTRY[mat]['module']}.py, seed {v['seed']})",

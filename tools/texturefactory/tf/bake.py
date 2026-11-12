@@ -3,7 +3,7 @@ material library reads, exactly like a scan (tools/textures/process_textures.py)
 
   data/raw/texfactory/out/<mat>/<variant>/   2K sources (git-ignored): albedo.png (sRGB), normal.png (OpenGL),
                                              rough.png, ao.png, height.png (16 bit, range in meta.json), preview.png
-  data/raw/texfactory/_work/<id>_<role>.rgba raw RGBA for the KTX2 encoder (tools/texturefactory/encode.mjs)
+  data/raw/texfactory/_work/<id>_<role>.png  RGBA PNG for the KTX2 encoder (tools/texturefactory/encode.py)
   viewer/materials/generated/<mat>/<variant>/<mat>_<res>_albedo.webp + _nra.webp   WebP fallback (git-ignored)
      nra = R,G normal x,y (OpenGL, +y up) + B roughness + A ambient occlusion (linear), like the scans
 """
@@ -107,8 +107,8 @@ def write(mat, variant, maps, meta, sizes=(1024, 2048), webp=True):
         e = {"px": R, "files": f"generated/{mat}/{variant}/{base}"}
         for role, im in (("albedo", np.dstack([alb, np.full((R, R), 255, np.uint8)])), ("nra", nra)):
             key = f"tf_{mat}_{variant}_{tag}_{role}"
-            raw = os.path.join(WORK, key + ".rgba")
-            open(raw, "wb").write(np.ascontiguousarray(im).tobytes())
+            raw = os.path.join(WORK, key + ".png")
+            cv2.imwrite(raw, cv2.cvtColor(np.ascontiguousarray(im), cv2.COLOR_RGBA2BGRA))
             json.dump({"width": R, "height": R, "out": os.path.join(web, f"{base}_{role}.ktx2"), "role": role,
                        "mat": mat, "variant": variant, "tag": tag}, open(raw + ".json", "w"))
             if webp:

@@ -70,7 +70,7 @@ class Tex:
     # -------------------------------------------------------------------------------------------- cellular
     def worley(self, cell_m, k, jitter=0.9, aniso=(1.0, 1.0)):
         """Periodic Worley: F1, F2 distances (m) and the id of the nearest point. cell_m = mean spacing.
-        aniso stretches the cells (x, y)."""
+        aniso stretches the cells (x, y): the grid AND the distance metric (long straight-sided cells)."""
         gx = max(1, int(round(self.size / (cell_m * aniso[0]))))
         gy = max(1, int(round(self.size / (cell_m * aniso[1]))))
         rng = self.child(k)
@@ -88,7 +88,7 @@ class Tex:
                 wx, wy = ix % gx, iy % gy
                 px = (ix + jx[wy, wx]) * cw
                 py = (iy + jy[wy, wx]) * ch
-                d = np.sqrt((self.xx - px) ** 2 + (self.yy - py) ** 2).astype(f32)
+                d = np.sqrt(((self.xx - px) / aniso[0]) ** 2 + ((self.yy - py) / aniso[1]) ** 2).astype(f32)
                 nid = wy * gx + wx
                 closer = d < F1
                 F2 = np.where(closer, F1, np.minimum(F2, d))

@@ -1,7 +1,0 @@
-{
-  "name": "uccle-texturefactory",
-  "private": true,
-  "type": "module",
-  "description": "KTX2 encoding of the texture factory's generated sets (encode.mjs)",
-  "dependencies": { "ktx2-encoder": "0.6.0" }
-}
