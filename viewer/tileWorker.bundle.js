@@ -5660,7 +5660,7 @@ var RAMP_DEPTH = 1;
 var RAMP_WING = 0.45;
 var RAMP_GRID = 0.6;
 var RAMP_EDGE = 0.5;
-var PAVE_EDGE = 2;
+var PAVE_EDGE = 1.5;
 var PART = ["asphalt", "asphalt", "asphalt", "asphalt", "square", "concrete", "grass", "concrete", "concrete", "pits"];
 var OVERLAY = [1, 1, 0, 1, 0, 0, 0, 0, 0, 0];
 var COVER = OVERLAY.map((o, c) => o || RAISE[c] > 0 ? 1 : 0);
@@ -5675,6 +5675,7 @@ var BASE_DROP = 0.01;
 var DEV = [-0.014, 8e-3];
 var BAND = 0.15;
 var BAND_LIFT = 4e-3;
+var CHAMFER = 0.012;
 var KERB_DOWN = 0.03;
 var SKIRT_DOWN = 0.2;
 var KIND3 = { slab: 0, curb: 1, framed: 3 };
@@ -5933,9 +5934,80 @@ function taperSteps(surf) {
   surf._tapered = { steps: move.size };
   return surf._tapered;
 }
+var CURVE_DEG = 3;
+function smoothCurves(surf) {
+  if (surf._curved) return surf._curved;
+  const key = (p) => `${Math.round(p[0] * 100)},${Math.round(p[1] * 100)}`;
+  const ins = /* @__PURE__ */ new Map();
+  let added = 0, maxTurnBefore = 0;
+  const turnAt = (a, b, c) => {
+    const ux = b[0] - a[0], uz = b[1] - a[1], vx = c[0] - b[0], vz = c[1] - b[1];
+    return Math.abs(Math.atan2(ux * vz - uz * vx, ux * vx + uz * vz)) * 180 / Math.PI;
+  };
+  const D = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const cr = (p0, p1, p2, p3, t) => {
+    const al = 0.5, d01 = Math.pow(Math.max(D(p0, p1), 1e-4), al), d12 = Math.pow(Math.max(D(p1, p2), 1e-4), al), d23 = Math.pow(Math.max(D(p2, p3), 1e-4), al);
+    const t0 = 0, t1 = d01, t2 = t1 + d12, t3 = t2 + d23, u = t1 + (t2 - t1) * t;
+    const L2 = (a, b, ta, tb) => [0, 1].map((k) => ((tb - u) * a[k] + (u - ta) * b[k]) / (tb - ta));
+    const A1 = L2(p0, p1, t0, t1), A2 = L2(p1, p2, t1, t2), A3 = L2(p2, p3, t2, t3);
+    const B1 = L2(A1, A2, t0, t2), B2 = L2(A2, A3, t1, t3);
+    return L2(B1, B2, t1, t2);
+  };
+  const lines = [...surf.kerbs || [], ...(surf.edges || []).map((e) => e.line)];
+  for (const l of lines) {
+    const n = l.length;
+    if (n < 3) continue;
+    const curve = l.map((p, k) => {
+      if (k === 0 || k === n - 1) return 0;
+      const t = turnAt(l[k - 1], p, l[k + 1]);
+      return t >= 3 && t <= 60 && D(l[k - 1], p) < 12 && D(p, l[k + 1]) < 12 ? t : 0;
+    });
+    for (let k = 0; k + 1 < n; k++) {
+      const tb = Math.max(curve[k], curve[k + 1]);
+      if (!tb) continue;
+      maxTurnBefore = Math.max(maxTurnBefore, tb);
+      const a = l[k], b = l[k + 1], p0 = curve[k] && k > 0 ? l[k - 1] : [2 * a[0] - b[0], 2 * a[1] - b[1]], p3 = curve[k + 1] && k + 2 < n ? l[k + 2] : [2 * b[0] - a[0], 2 * b[1] - a[1]];
+      const m = Math.min(12, Math.ceil(tb / CURVE_DEG), Math.max(1, Math.floor(D(a, b) / 0.3)));
+      if (m < 2) continue;
+      const pts = [];
+      for (let i = 1; i < m; i++) pts.push(cr(p0, a, b, p3, i / m));
+      const kab = `${key(a)}|${key(b)}`;
+      if (!ins.has(kab) && !ins.has(`${key(b)}|${key(a)}`)) {
+        ins.set(kab, pts);
+        added += pts.length;
+      }
+    }
+  }
+  const refine = (r, closed) => {
+    const out = [];
+    const N = r.length;
+    for (let i = 0; i < N; i++) {
+      out.push(r[i]);
+      if (!closed && i === N - 1) break;
+      const a = r[i], b = r[(i + 1) % N];
+      const f = ins.get(`${key(a)}|${key(b)}`);
+      if (f) {
+        for (const p of f) out.push([p[0], p[1]]);
+        continue;
+      }
+      const g = ins.get(`${key(b)}|${key(a)}`);
+      if (g) for (let j = g.length - 1; j >= 0; j--) out.push([g[j][0], g[j][1]]);
+    }
+    return out;
+  };
+  if (ins.size) {
+    for (const q of surf.surfaces) q.rings = q.rings.map((r) => refine(r, true));
+    if (surf.kerbs) surf.kerbs = surf.kerbs.map((l) => refine(l, false));
+    for (const e of surf.edges || []) e.line = refine(e.line, false);
+    if (surf.flanks) surf.flanks = surf.flanks.map((l) => refine(l, false));
+  }
+  surf._curved = { edges: ins.size, points: added, maxTurnBefore: Math.round(maxTurnBefore) };
+  return surf._curved;
+}
 function prepareSurfaces(surf, ground, bounds, trees = null) {
   const t0 = (globalThis.performance ?? Date).now();
   const tapered = taperSteps(surf);
+  const curved = smoothCurves(surf);
   const G = ground;
   const base = [];
   const halves = /* @__PURE__ */ new Map();
@@ -5951,6 +6023,10 @@ function prepareSurfaces(surf, ground, bounds, trees = null) {
   };
   for (const s of surf.surfaces) if (s.c === SURF_CLASS.tramSite && s.photo?.look === "asphalt") {
     s.c = SURF_CLASS.tramRoad;
+    s.photoLook = true;
+  }
+  for (const s of surf.surfaces) if (s.c === SURF_CLASS.median && s.photo && s.photo.veg < 0.25) {
+    s.c = SURF_CLASS.sidewalk;
     s.photoLook = true;
   }
   surf.surfaces.forEach((s, si2) => {
@@ -6151,17 +6227,19 @@ function prepareSurfaces(surf, ground, bounds, trees = null) {
   });
   const nearKerbIn = (LINES, SEGS) => (x, z, only = -1) => {
     let best = null, bd = 16 * 16;
-    const i0 = Math.floor(x / 8), j0 = Math.floor(z / 8), seen = /* @__PURE__ */ new Set();
-    for (let di = -2; di <= 2; di++) for (let dj = -2; dj <= 2; dj++) for (const [li, k] of SEGS.get(cellKey(i0 + di, j0 + dj)) || []) {
-      if (only >= 0 && li !== only || seen.has(li * 1e6 + k)) continue;
-      seen.add(li * 1e6 + k);
-      const L2 = LINES[li], [ax, az] = L2.pts[k - 1], [bx, bz] = L2.pts[k], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1e-12;
-      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)), px = ax + dx * t, pz = az + dz * t;
-      const d2 = (x - px) ** 2 + (z - pz) ** 2;
-      if (d2 < bd) {
-        bd = d2;
-        const l = Math.sqrt(l2), tx = dx / l, tz = dz / l;
-        best = { li, s: L2.cum[k - 1] + t * l, d: (x - px) * -tz + (z - pz) * tx, x: px, z: pz, tx, tz, kap: L2.kap[k - 1] };
+    const i0 = Math.floor(x / 8), j0 = Math.floor(z / 8);
+    for (let ring2 = 1; ring2 <= 2; ring2++) for (let di = -ring2; di <= ring2; di++) for (let dj = -ring2; dj <= ring2; dj++) {
+      if (ring2 === 2 && (Math.abs(di) < 2 && Math.abs(dj) < 2 || bd <= 64)) continue;
+      for (const [li, k] of SEGS.get(cellKey(i0 + di, j0 + dj)) || []) {
+        if (only >= 0 && li !== only) continue;
+        const L2 = LINES[li], [ax, az] = L2.pts[k - 1], [bx, bz] = L2.pts[k], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1e-12;
+        const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)), px = ax + dx * t, pz = az + dz * t;
+        const d2 = (x - px) ** 2 + (z - pz) ** 2;
+        if (d2 < bd) {
+          bd = d2;
+          const l = Math.sqrt(l2), tx = dx / l, tz = dz / l;
+          best = { li, s: L2.cum[k - 1] + t * l, d: (x - px) * -tz + (z - pz) * tx, x: px, z: pz, tx, tz, kap: L2.kap[k - 1] };
+        }
       }
     }
     return best;
@@ -6178,10 +6256,16 @@ function prepareSurfaces(surf, ground, bounds, trees = null) {
     return v;
   };
   const fsegs = /* @__PURE__ */ new Map();
-  for (const l of surf.flanks || []) for (let k = 1; k < l.length; k++) {
-    const [ax, az] = l[k - 1], [bx, bz] = l[k];
-    for (let i = Math.floor(Math.min(ax, bx) / 4); i <= Math.floor(Math.max(ax, bx) / 4); i++)
-      for (let j = Math.floor(Math.min(az, bz) / 4); j <= Math.floor(Math.max(az, bz) / 4); j++) push(fsegs, cellKey(i, j), [ax, az, bx, bz]);
+  for (const q of surf.surfaces) {
+    if (q.c !== SURF_CLASS.ramp) continue;
+    const r = q.rings[0];
+    for (let k = 0; k < r.length; k++) {
+      const [ax, az] = r[k], [bx, bz] = r[(k + 1) % r.length];
+      const kb = nearKerb((ax + bx) / 2, (az + bz) / 2);
+      if (kb && Math.abs(kb.d) < 0.1) continue;
+      for (let i = Math.floor(Math.min(ax, bx) / 4); i <= Math.floor(Math.max(ax, bx) / 4); i++)
+        for (let j = Math.floor(Math.min(az, bz) / 4); j <= Math.floor(Math.max(az, bz) / 4); j++) push(fsegs, cellKey(i, j), [ax, az, bx, bz]);
+    }
   }
   const flankDist = (x, z) => {
     let d = Infinity;
@@ -6247,22 +6331,22 @@ function prepareSurfaces(surf, ground, bounds, trees = null) {
   }
   {
     const out = [];
-    const split = (b, depth) => {
+    const split = (b, depth, lim = limit(b)) => {
       const P = [b.a, b.b, b.c];
       const L2 = [[b.a, b.b], [b.b, b.c], [b.c, b.a]].map(([p2, q2]) => Math.hypot(q2[0] - p2[0], q2[1] - p2[1]));
       let k;
       if (false) {
       } else {
         const m = Math.max(...L2);
-        if (m <= limit(b) || depth > 8) {
+        if (m <= lim || depth > 8) {
           out.push(b);
           return;
         }
         k = L2.indexOf(m);
       }
       const p = P[k], q = P[(k + 1) % 3], r = P[(k + 2) % 3], mid = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
-      split({ ...b, a: p, b: mid, c: r }, depth + 1);
-      split({ ...b, a: mid, b: q, c: r }, depth + 1);
+      split({ ...b, a: p, b: mid, c: r }, depth + 1, lim);
+      split({ ...b, a: mid, b: q, c: r }, depth + 1, lim);
     };
     let any = false;
     const cen = (b) => [(b.a[0] + b.b[0] + b.c[0]) / 3, (b.a[1] + b.b[1] + b.c[1]) / 3];
@@ -6294,7 +6378,7 @@ function prepareSurfaces(surf, ground, bounds, trees = null) {
         const A = area2(b.a, b.b, b.c);
         if (A < 0) [b.b, b.c] = [b.c, b.b];
         gridCut(b);
-      } else if (b.cls === SURF_CLASS.sidewalk) {
+      } else if (b.cls === SURF_CLASS.sidewalk && bends(b)) {
         any = true;
         split(b, 0);
       } else out.push(b);
@@ -6344,6 +6428,7 @@ function prepareSurfaces(surf, ground, bounds, trees = null) {
     inside,
     fallbacks,
     tapered,
+    curved,
     streetCorners: street.size,
     ms: Math.round((globalThis.performance ?? Date).now() - t0)
   };
@@ -6921,7 +7006,8 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     return pts;
   };
   let kerbLen = 0;
-  for (const line of surf.kerbs) {
+  for (let li = 0; li < surf.kerbs.length; li++) {
+    const line = surf.kerbs[li];
     const pts = [];
     for (const p of densify(line)) {
       const q = pts[pts.length - 1];
@@ -6956,15 +7042,21 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     for (let k = 0; k < pts.length; k++) {
       const [x, z] = pts[k], y = H(x, z), right = [-nl[k][0], 0, -nl[k][1]];
       const bx = x + nl[k][0] * BAND, bz = z + nl[k][1] * BAND, n = nrmAt(x, z);
+      const ks = prep.nearKerbUV(x, z, li), st = ks ? ks.s : 0;
+      const tilt = [right[0] * 0.7071, 0.7071, right[2] * 0.7071], ch = Math.min(CHAMFER, Math.max(0, rise[k] - 5e-3));
       const cur = {
-        bot: C.vert(x, y - KERB_DOWN, z, right, x, z, ex),
-        top: C.vert(x, y + rise[k], z, right, x, z, ex),
-        bo: C.vert(x, y + rise[k] + BAND_LIFT, z, n, x, z, ex),
-        bi: C.vert(bx, H(bx, bz) + rise[k] + BAND_LIFT, bz, n, bx, bz, ex)
+        bot: C.vert(x, y - KERB_DOWN, z, right, st, 0, ex),
+        chR: C.vert(x, y + rise[k] - ch, z, right, st, KERB_DOWN + rise[k] - ch, ex),
+        chT: C.vert(x, y + rise[k] - ch, z, tilt, st, KERB_DOWN + rise[k] - ch, ex),
+        top: C.vert(x, y + rise[k], z, tilt, st, KERB_DOWN + rise[k], ex),
+        bo: C.vert(x, y + rise[k] + BAND_LIFT, z, n, st, 0, ex),
+        bi: C.vert(bx, H(bx, bz) + rise[k] + BAND_LIFT, bz, n, st, BAND, ex)
       };
       if (prev) {
-        C.tri(prev.bot, cur.bot, cur.top, right);
-        C.tri(prev.bot, cur.top, prev.top, right);
+        C.tri(prev.bot, cur.bot, cur.chR, right);
+        C.tri(prev.bot, cur.chR, prev.chR, right);
+        C.tri(prev.chT, cur.chT, cur.top, right);
+        C.tri(prev.chT, cur.top, prev.top, right);
         const banded = (c) => c === SURF_CLASS.square || c === SURF_CLASS.median;
         if (banded(upCls[k]) || banded(upCls[k - 1])) {
           C.tri(prev.bo, cur.bo, cur.bi, UP2);

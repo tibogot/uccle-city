@@ -400,6 +400,27 @@ export function roundTwoChecks({ rd, inv, prep, surf, markings, inTile, add: add
       if (!kerbNear(x, z, 0.75)) { S.kerbs.gap++; add("C19", "error", x, z, `kerb gap: ${["roadway", "tram road", "tram site", "parking", "square", "sidewalk", "median"][c]} meets the carriageway with no kerb`, { kind: "gap" }); }
     }
   }
+  // ---- C23 curves: kerbs and outer street edges as drawn (after the road stage's refinement): a vertex of a curved run
+  // (turning 3-60° between pieces < 12 m) that turns more than 2.5° is a visible facet; the chord error of its two
+  // pieces (sagitta of the turn over the shorter piece) is reported too
+  if (surf) {
+    S.curves = { vertices: 0, faceted: 0, maxTurn: 0, maxChordErrCm: 0 };
+    const lines = [...(surf.kerbs || []), ...(surf.edges || []).map((e) => e.line)];
+    for (const l of lines) for (let k = 1; k + 1 < l.length; k++) {
+      const a = l[k - 1], b = l[k], c = l[k + 1];
+      if (!inTile(b[0], b[1])) continue;
+      const la = Math.hypot(b[0] - a[0], b[1] - a[1]), lc = Math.hypot(c[0] - b[0], c[1] - b[1]);
+      if (la > 12 || lc > 12 || la < 1e-3 || lc < 1e-3) continue;
+      const ux = b[0] - a[0], uz = b[1] - a[1], vx = c[0] - b[0], vz = c[1] - b[1];
+      const tr = Math.abs(Math.atan2(ux * vz - uz * vx, ux * vx + uz * vz)) * 180 / Math.PI;
+      if (tr < 0.5 || tr > 60) continue;
+      S.curves.vertices++;
+      const sag = Math.min(la, lc) / 2 * Math.tan((tr * Math.PI / 180) / 2) * 100;     // cm, the arc through them vs the chords
+      if (tr > 2.5) { S.curves.faceted++; S.curves.maxTurn = Math.max(S.curves.maxTurn, tr); S.curves.maxChordErrCm = Math.max(S.curves.maxChordErrCm, sag);
+        if (tr > 5) add("C23", "warn", b[0], b[1], `faceted curve: the kerb / edge turns ${tr.toFixed(0)}° at one vertex (chord error ~${sag.toFixed(1)} cm)`, { kind: "facet" }); }
+    }
+    S.curves.maxTurn = r2(S.curves.maxTurn); S.curves.maxChordErrCm = r2(S.curves.maxChordErrCm);
+  }
   return S;
 }
 

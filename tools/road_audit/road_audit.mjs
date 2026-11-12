@@ -31,7 +31,7 @@ const NO_ORTHO = flag("--no-ortho"), QUIET = flag("--quiet"), ALL = flag("--all"
 const TILES = ALL ? allTiles() : argv.map((t) => t.toUpperCase());
 if (!TILES.length) { console.error("usage: road_audit.mjs [--paint v1|v2] [--label L] T... | --all"); process.exit(2); }
 const BLOCKING = new Set(["C1", "C2", "C3", "C4", "C5", "C8", "C9", "C14", "C15", "C16", "C18", "C19", "C20", "C21", "C22"]);
-const CHECKS = ["C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20", "C21", "C22"];
+const CHECKS = ["C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20", "C21", "C22", "C23"];
 const TITLE = {
   C1: "zebra on one arm", C2: "zebra square and full", C3: "stop line before the junction", C4: "paint on the carriageway",
   C5: "paint = evidence", C6: "lanes on the street", C7: "hold points = painted lines", C8: "curve continuity",
@@ -39,7 +39,7 @@ const TITLE = {
   C14: "one crossing per real crossing (no duplicates, photo agrees, not clipped)", C15: "paint not across crossings / not doubled",
   C16: "stop line spans its approach, square, no stray dashes", C17: "no sliver triangles", C18: "no cracks (T-junctions, open steps)",
   C19: "kerbs: no notches, no gaps", C20: "paving uv continuous", C21: "shading: no normal jumps, no per-piece tone seams",
-  C22: "lane graph: smooth, centred, clear of kerbs, no crossings",
+  C22: "lane graph: smooth, centred, clear of kerbs, no crossings", C23: "curves smooth (kerbs, edges: turn per vertex, chord error)",
 };
 
 // ---------------------------------------------------------------- OSM tags of the ways (evidence for C5)

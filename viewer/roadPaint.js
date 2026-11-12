@@ -208,6 +208,7 @@ export function paintMaterial() {
 /** `framed` (viewer/surfaces.js, ?roads=surface): aKind 3 = a sidewalk slab whose uv is (station along the nearest
  *  kerb, metres from it), so the tiles run along the street in one continuous pattern, and the first 15 cm from
  *  the kerb is painted as the blue-stone kerb band. */
+const KERB_STONE = 1.0;            // m: kerbstone length
 export function concreteMaterial({ framed = false } = {}) {
   const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   const P = positionWorld, x = P.x, z = P.z;
@@ -239,7 +240,14 @@ export function concreteMaterial({ framed = false } = {}) {
   const ap = courses(x, z, 0.12, 0.12, float(0.012), float(4.0), fw);
   const apron = mix(mix(vec3(0.16, 0.07, 0.045), vec3(0.24, 0.11, 0.07), ap.tone), vec3(0.05, 0.03, 0.02), ap.joint);
   const isKerb = band(kind, 1), isApron = band(kind, 2);
-  m.colorNode = mix(mix(slab, kerb, isKerb), apron, isApron);
+  // round 2: Belgian blue-stone kerbstones ~1 m long, butt joints (uv.x = the station along the kerb on the face and on
+  // the sidewalk's painted 15 cm band, viewer/surfaces.js), AA'd with the world footprint, faded far away; each stone a
+  // touch different
+  const ks = uv().x, kd = abs(fract(ks.div(KERB_STONE).add(0.5)).sub(0.5)).mul(KERB_STONE);
+  const kJoint = float(1).sub(smoothstep(float(0.003), float(0.003).add(fw), kd)).mul(float(1).sub(smoothstep(float(0.02), float(0.1), fw)));
+  const stoneTone = hash(floor(ks.div(KERB_STONE)).add(17.0)).sub(0.5).mul(0.012);
+  const kerbStone = mix(kerb.add(stoneTone), vec3(0.03, 0.032, 0.036), kJoint);
+  m.colorNode = mix(mix(slab, framed ? kerbStone : kerb, isKerb), apron, isApron);
   // framed (?roads=surface): honed blue stone, rougher, so a kerb face toward a low sun does not flare white
   m.roughnessNode = mix(mix(mix(float(framed ? 0.92 : 0.88), float(0.95), tiles.joint), float(framed ? 0.82 : 0.6), isKerb), float(0.8), isApron);
   return addLampLight(m);
