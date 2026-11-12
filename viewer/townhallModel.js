@@ -25,6 +25,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { env } from "./lighting.js";
 import { fadeVariant, SMOOTH } from "./lodFade.js";
+import { libSource } from "./materials/libSwitch.js";
 
 /** the slots the GLB uses (one primitive = one draw call each per LOD) */
 export const TH_SLOTS = ["brick_red_brussels", "stone_white", "stone_blue", "slate", "zinc_roof", "wood_frame_white", "wood_frame_dark",
@@ -46,7 +47,7 @@ export const TH_LOD_AO = [1, 0.55, 1];
 // THE ONE LINE: "temp" = the temporary TSL materials below; when viewer/materials/ (the Material Lab's library) lands,
 // set it to "./materials/library.js" (createMaterial(name, { mapping: "uv" })) or any module exporting getMaterial(name)
 // or materials[name].
-const SOURCE = "temp";
+const SOURCE = libSource("townhall", "./materials/shipped.js");   // 2026-11-13: the library by default (?libmat=0: temp)
 
 /** Live look controls (uniforms: no recompiles) */
 export const thLook = { aoStrength: uniform(1.0), aoDirect: uniform(0.55), weather: uniform(1.0), thinFar: uniform(1.0) };

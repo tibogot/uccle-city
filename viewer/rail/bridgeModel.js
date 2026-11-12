@@ -18,6 +18,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { hash2D, noise2D, filteredPulse, bumpNormal } from "../tslkit.js";
 import { SMOOTH, fadeVariant, fadeProxies } from "../lodFade.js";
+import { libOn } from "../materials/libSwitch.js";
 
 export const BRIDGE_LODS = [
   { ratio: 1, until: 140 },
@@ -244,7 +245,7 @@ async function loadAO(url) {
 // ------------------------------------------------------------------------------------------------ materials by slot
 let library;          // undefined: not tried; null: absent (foundation); else the module
 export async function materialFor(slot, aoTex) {
-  if (library === undefined) library = await import("../materials/library.js").catch(() => null);
+  if (library === undefined) library = libOn("bridges") ? await import("../materials/shipped.js").catch(() => null) : null;
   const ao = texture(aoTex, uv(1)).r;
   const aoK = mix(float(1), ao, 0.95);
   if (library?.DEFS?.[slot]) {

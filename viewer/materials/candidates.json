@@ -361,7 +361,7 @@
     "nra_ktx2_bytes": 1200638,
     "variant": "a",
     "seed": 21,
-    "current": false
+    "current": true
    },
    {
     "id": "tf_brick_yellow_a_2k",
@@ -603,7 +603,7 @@
     "nra_ktx2_bytes": 1195406,
     "variant": "a",
     "seed": 31,
-    "current": false
+    "current": true
    },
    {
     "id": "tf_brick_dark_a_2k",
@@ -1006,8 +1006,8 @@
     "size_m": 2,
     "size_native_m": 2,
     "px": 1024,
-    "note": "cur",
-    "current": true,
+    "note": "cur (shipped until 2026-11-13)",
+    "current": false,
     "mean_albedo_linear": [
      0.1675,
      0.1317,
@@ -1019,7 +1019,7 @@
      0,
      10
     ],
-    "files": "textures/stone_blue",
+    "files": "textures/cand/ph_granite_tile_04",
     "albedo_webp_bytes": 336502,
     "nra_webp_bytes": 419354,
     "albedo_ktx2_bytes": 1254359,
@@ -1110,7 +1110,7 @@
     "nra_ktx2_bytes": 1092889,
     "variant": "a",
     "seed": 81,
-    "current": false
+    "current": true
    },
    {
     "id": "tf_stone_blue_a_2k",
@@ -1349,7 +1349,7 @@
     "nra_ktx2_bytes": 1136209,
     "variant": "a",
     "seed": 91,
-    "current": false
+    "current": true
    },
    {
     "id": "tf_render_white_a_2k",
@@ -1534,8 +1534,8 @@
     "size_m": 3,
     "size_native_m": 3,
     "px": 1024,
-    "note": "cur",
-    "current": true,
+    "note": "cur (shipped until 2026-11-13)",
+    "current": false,
     "mean_albedo_linear": [
      0.2966,
      0.2532,
@@ -1547,7 +1547,7 @@
      0,
      26
     ],
-    "files": "textures/slate",
+    "files": "textures/cand/ph_roof_slates_02",
     "albedo_webp_bytes": 279010,
     "nra_webp_bytes": 955946,
     "albedo_ktx2_bytes": 1295163,
@@ -1761,7 +1761,7 @@
     "nra_ktx2_bytes": 1110995,
     "variant": "c",
     "seed": 103,
-    "current": false
+    "current": true
    }
   ],
   "roof_tiles_red": [
@@ -1834,7 +1834,7 @@
     "size_native_m": 2.9,
     "px": 1024,
     "note": "pantile, dirty",
-    "current": false,
+    "current": true,
     "mean_albedo_linear": [
      0.2431,
      0.1059,
@@ -2804,8 +2804,8 @@
     "size_m": 1.85,
     "size_native_m": 1.8500001430511475,
     "px": 1024,
-    "note": "cur",
-    "current": true,
+    "note": "cur (shipped until 2026-11-13)",
+    "current": false,
     "mean_albedo_linear": [
      0.1449,
      0.1027,
@@ -2817,7 +2817,7 @@
      16,
      64
     ],
-    "files": "textures/paving_concrete",
+    "files": "textures/cand/ph_concrete_tiles",
     "albedo_webp_bytes": 292998,
     "nra_webp_bytes": 959572,
     "albedo_ktx2_bytes": 1223070,
@@ -2911,7 +2911,7 @@
     "nra_ktx2_bytes": 1156326,
     "variant": "a",
     "seed": 61,
-    "current": false
+    "current": true
    },
    {
     "id": "tf_paving_concrete_a_2k",
@@ -3016,8 +3016,8 @@
     "size_m": 3,
     "size_native_m": 3.000000238418579,
     "px": 1024,
-    "note": "cur",
-    "current": true,
+    "note": "cur (shipped until 2026-11-13)",
+    "current": false,
     "mean_albedo_linear": [
      0.1121,
      0.1103,
@@ -3029,7 +3029,7 @@
      0,
      3
     ],
-    "files": "textures/asphalt",
+    "files": "textures/cand/ph_asphalt_02",
     "albedo_webp_bytes": 453394,
     "nra_webp_bytes": 1241048,
     "albedo_ktx2_bytes": 1331544,
@@ -3147,7 +3147,7 @@
     "nra_ktx2_bytes": 1242916,
     "variant": "a",
     "seed": 41,
-    "current": false
+    "current": true
    },
    {
     "id": "tf_asphalt_a_2k",

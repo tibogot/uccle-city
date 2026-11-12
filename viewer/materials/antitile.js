@@ -29,7 +29,8 @@ const SQ3x2 = 2 * Math.sqrt(3);
  */
 export function hexSample(albedoTex, nraTex, st, opts = {}) {
   const { lattice = null, rotate = lattice ? 0 : 1, rate = 1, contrast = 0.6, exp = 7, tone = 0.06 } = opts;
-  const dx = st.dFdx(), dy = st.dFdy();
+  // (opts.dx / dy: derivatives taken by the caller in uniform control flow, for a sample inside a branch: WGSL)
+  const dx = opts.dx ?? st.dFdx(), dy = opts.dy ?? st.dFdy();
   // the triangle grid (Mikkelsen's TriangleGrid)
   const g = st.mul(SQ3x2 * rate);
   const sk = vec2(g.x.sub(g.y.mul(0.57735027)), g.y.mul(1.15470054));

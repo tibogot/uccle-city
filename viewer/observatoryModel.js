@@ -22,6 +22,7 @@ import {
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { env } from "./lighting.js";
+import { libSource } from "./materials/libSwitch.js";
 
 export const OBS_SLOTS = ["brick_red_brussels", "stone_white", "stone_blue", "copper_patina", "painted_metal_white", "zinc_roof", "slate",
   "render_white", "wood_frame_white", "glass_window", "cast_iron_green", "gravel_path", "lawn_edge"];
@@ -33,7 +34,7 @@ export const OBS_LODS = [{ until: 150, band: 22 }, { until: 520, band: 60 }, { u
 // ------------------------------------------------------------------------------------------------ material source
 // THE ONE LINE: "temp" = the temporary TSL materials below; when viewer/materials/ (the Material Lab's library) lands,
 // set it to "./materials/index.js" (a module exporting getMaterial(name) or materials[name] -> a NodeMaterial).
-const SOURCE = "temp";
+const SOURCE = libSource("observatory", "./materials/shipped.js");   // 2026-11-13: the library by default (?libmat=0: temp)
 
 /** Live look controls (uniforms: no recompiles) */
 export const obsLook = { aoStrength: uniform(1.0), aoDirect: uniform(0.5), weather: uniform(1.0) };

@@ -196,7 +196,7 @@ async function materialFor(name, v) {
   const k = `${name}|${v.id}`;
   if (mats[k]) return mats[k];
   if (v.id === "proc_before") return (mats[k] = BEFORE.createMaterial(name, { mapping: "world" }));
-  let opts = { mapping: "world", look: lookFor(name, v.id) };
+  let opts = { mapping: "world", look: lookFor(name, v.id), variant: "proc" };   // (explicit: the library's default is now the shipped scan)
   if (v.id !== "proc") {
     const scan = v.id === "shipped" ? SCANS[name] : await loadCandidate(renderer, v.id).catch((e) => { console.warn(e); return null; });
     if (!scan) return null;
@@ -353,7 +353,7 @@ async function buildStreet() {
     const k = `${n}|${mapping}|${v.id}`;
     if (!cache[k]) {
       const scan = v.id === "proc" ? null : v.id === "shipped" ? SCANS[n] : CANDS[v.id];
-      cache[k] = createMaterial(n, scan ? { mapping, variant: "scan", scan, look: lookFor(n, v.id), varAttr: undefined } : { mapping, look: lookFor(n, "proc") });
+      cache[k] = createMaterial(n, scan ? { mapping, variant: "scan", scan, look: lookFor(n, v.id), varAttr: undefined } : { mapping, look: lookFor(n, "proc"), variant: "proc" });
     }
     return cache[k];
   });

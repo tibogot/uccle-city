@@ -24,6 +24,7 @@ import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { env } from "./lighting.js";
 import { bumpNormal } from "./tslkit.js";
 import { fadeVariant, SMOOTH } from "./lodFade.js";
+import { libSource } from "./materials/libSwitch.js";
 
 /** the slots the GLB uses (one primitive = one draw call each per LOD) */
 export const SP_SLOTS = ["brick_red_brussels", "stone_white", "stone_blue", "slate", "copper_brown", "copper_patina", "zinc_roof",
@@ -44,7 +45,7 @@ const GROUND = 49.8;                           // the parvis (m TAW): splash, da
 // ------------------------------------------------------------------------------------------------ material source
 // THE ONE LINE: "temp" = the temporary TSL materials below; "./materials/library.js" = the shared library
 // (createMaterial(name, { mapping: "uv" })) or any module exporting getMaterial(name) / materials[name].
-const SOURCE = "temp";
+const SOURCE = libSource("stpierre", "./materials/shipped.js");   // 2026-11-13: the library by default (?libmat=0: temp)
 
 /** Live look controls (uniforms: no recompiles) */
 export const spLook = { aoStrength: uniform(1.0), aoDirect: uniform(0.6), weather: uniform(1.0), moss: uniform(1.0), glow: uniform(0.35) };
