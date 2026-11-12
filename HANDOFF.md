@@ -5,7 +5,14 @@
 Read this first when resuming (with Claude or by hand). Rendering and performance plan: `docs/RENDER_PLAN.md`; what we learned from slop-newyork, game-engine-v1 and three r187: `docs/RESEARCH.md`. Details are in `docs/PLAN.md`
 (roadmap and history) and `docs/CONTRACT.md` (data format, v0.7).
 
-## State on 2026-11-12: many systems built as labs, waiting for the owner's review
+## State on 2026-11-13
+
+Almost everything below is now MERGED and ON in the city (see `docs/TODO.md` "CURRENT STATE" and `docs/MERGE_PLAN.md`).
+New rules: JOINS (no gap where a model meets city ground), a FIXED light count (pools only: changing the number of
+lights recompiles every material = a multi-second freeze), code conflicts resolved by hand. Local server:
+`python %TEMP%/uccle_nocache_server.py <port> <worktree>` (queue 128).
+
+## State on 2026-11-12 (history): many systems built as labs, waiting for the owner's review
 
 `claude/foundation` (main, last pushed to Vercel at aa07f5f) has the town hall hero merged (`?townhall=1`). Almost
 everything else lives on its own branch / worktree (`.claude/worktrees/<name>`), lab first, NOT merged. The owner reviews
