@@ -16,8 +16,8 @@ tile D6), the whole range in one solid.
 - Photos: Wikimedia Commons, full-size originals in `data/raw/refs/calevoet/full/` (git-ignored; SOURCES.md, full.json =
   urls, sizes, sha1 checked against the API): c00 c01 c02 (Stratoswift 2018-09-01, Sony HX80, CC BY-SA 4.0), c03 (window
   detail, 2019), c04 c05 (Stratoswift 2024-03-04, RX100 V, CC BY 4.0), c06 c07 (Japplemedia 2021, iPhone, the south end
-  from the street / platform), c08 (2007, older state: brown tiles, glazed bay, brick main gable), c09 (Rudolphous 2008,
-  the main block near-frontal), c10 c11 (2019). References only, never shipped.
+  from the street / platform), c08 (Peter Van den Bossche 2007, CC BY-SA 2.0: older state: brown tiles, glazed bay, brick main gable), c09 (Smiley.toerist 2008, CC BY-SA 3.0,
+  the main block near-frontal), c10 c11 c12 (Smiley.toerist 2019), c13 c14 (Stratoswift 2018-19), c15 (2008). References only, never shipped.
 - Look-only (not stored, not traced): Google Street View from the Dieweg (2014) up the car-park lane: the car-park side.
 - Measured: UrbIS 3D solids + DSM / DTM 2021 0.5 m (CC0): `tools/calevoet_measure.py` -> `site.json`, `site_dtm.*`.
 
@@ -103,3 +103,53 @@ NORTH END: the north pavilion's gable (c01) + the flat wing's end face (w -4.0..
 
 ## Still to settle by the side-by-sides
 The canopy columns' u; the north end's heights (c01's weakest corner); the car-park side.
+
+## Pipeline (2026-11-12)
+```
+python tools/calevoet_measure.py [--dump]                   # site.json, site_dtm.*
+python tools/calevoet_photopose.py [--measure] [--undistort] [--check] [c04.jpg ...]   # picks in tools/calevoet_picks.json
+"C:/Program Files/Blender Foundation/Blender 5.0/blender.exe" --factory-startup -b -P tools/blender/calevoet_station.py -- models/calevoet_station [--no-bake] [--previews] [--checker]
+node tools/calevoet_pack.mjs models/calevoet_station/calevoet.raw.glb models/calevoet_station/calevoet.glb 3500   # audit, LOD2, meshopt
+python tools/calevoet_sidebyside.py <lab screenshot> c04.jpg docs/calevoet/side_c04_lab.jpg                         # (git-ignored)
+```
+Blender ~37 s with the AO bake (2048 px), ~2 min with previews; pack ~25 s. Kit: tools/blender/wolvendael_kit.py
+(imported unchanged). Viewer: viewer/calevoetModel.js (loader, slots, temporary TSL materials, AO, anti-sparkle, LOD
+fades), viewer/calevoetCity.js (?calevoet=1), labs/calevoet-lab.html (Station Lab), debug/calevoetFlight.js.
+
+## Model
+Slots (no colour baked): brick_painted_white, stone_blue, slate, zinc_roof, terracotta, wood_frame_dark, paint_grey_dark,
+cast_iron_dark, glass_window. UV0 metres (walls: along / m TAW - 40), AO in UV1 (LOD0 27.9 px/m, far 14.7 px/m; 7.4k
+thin faces with vertex AO). Walls as quad grids, segmental heads with spandrel strips split at every grid cut (no T
+slits), labels with ears and end caps, corbelled cornices with corner modes (out / in / cut: no coplanar caps), step faces
+between the parts, round parts 16-sided flat (gutters, rolls, pipes), columns 16-sided smooth.
+LOD0 22,886 tris / 9 draws; LOD1 (scripted far) 10,858 / 9; LOD2 (meshopt of LOD1) 3,528 / 9. Switch LOD0 < 80 m (+-15),
+LOD1 < 350 m (+-35). GLB 1.01 MB (raw 2.9 MB), AO PNG 1.4 MB (5.3 MB GPU).
+
+## Mesh audit (tools/mesh_audit)
+Raw before the pack: LOD0 **0 blocking**, far **0 blocking** (six rounds: label caps, cornice / plinth corners, the
+string course's drip, head rings dipping under the jamb tops, slate hanging through the verge, the link roof's end on the
+pavilion's gable, canopy beams crossing the sheet, downpipe slits, the tile eave's open edge). Packed (report only): LOD0
+1 (a leak after quantization), LOD1 0, LOD2 125 (meshopt collapses; LOD2 only beyond ~385 m).
+
+## Verification (2026-11-12; one Chrome tab; other agents' WebGPU tabs ran: GPU numbers noisy)
+- Side-by-sides at the solved poses (git-ignored, they hold the photos): docs/calevoet/side_c04_lab.jpg, side_c00_lab.jpg,
+  side_c01_lab.jpg, side_c09_lab.jpg. The model lands on the photos' outlines (gables, ridges, chimneys, the bay, the
+  canopy line, the window axes). Differences: the photos' graffiti and overhead line not modelled; c01 shows the
+  north pavilion's gable greener (ivy) and the flat wing's cornice slightly lower.
+- Previews: docs/calevoet/preview_*.png (Cycles, incl. grazing light on the main block and the south gable: flat walls
+  clean, labels and sills cast crisp shadows); lab close-up docs/calevoet/lab_grazing_main.jpg.
+- Moving through the LOD0/1 band: docs/calevoet/lab_lod0_band_moving.jpg (17 -> 98 m): no pop seen.
+- City flight (debug/calevoetFlight.js, 900 -> 40 m -> orbit -> 900 m, 24 s), two runs: coverage 1.000 every frame, the
+  right material every frame, no long task; median 16.7 ms, p99 33.4 / 33.5, worst 33.6 / 50 ms (the 33 ms frames are
+  vsync halving under the other tabs' load, seen through the whole run, not at hand-overs).
+- GPU (lab bench, 4 interleaved cycles, noisy): c04 view +1.11 ms (L0 = L1 = L2: the medians hit the timer floor);
+  canopy close-up L0 +2.29 / L1 +2.10 / L2 +1.97 ms. City at the c04 pose: station on/off -0.46 ms (within noise: it
+  hides the UrbIS solid; the 5 pairs spread 6.8-8.4 ms).
+- Load in the city: GLB+AO 241 ms; shaders 5.0 s in the background queue + 0.57 s shadow warm before it shows.
+
+## Still weak
+- The car-park side and the north half's openings are ESTIMATED (Street View look-only); the north pavilion's gable is
+  ivy-covered in the photos (plain wall modelled).
+- Canopy columns' u +-0.7 m (three photos disagree on their depth); no clock, signs, graffiti, overhead line equipment.
+- Temporary materials: the painted brick's flaking is procedural, the photos show it on the south gable mostly.
+- Packed LOD2: 125 audit items (> 385 m only); packed LOD0: 1 leak after quantization.

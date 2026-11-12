@@ -14,6 +14,7 @@ import { loadLampModel } from "./lampModel.js";
 import { loadStJob, STJOB_LODS, STJOB_BU_ID, stjobColliders } from "./stjobModel.js";
 import { addTownHall } from "./townhallCity.js";
 import { addWolvendael } from "./wolvendaelCity.js";
+import { addCalevoet } from "./calevoetCity.js";
 import { buildFurniture } from "./furniture.js";
 import { buildTram } from "./tram.js";
 import { buildCars } from "./cars.js";
@@ -614,6 +615,9 @@ async function main() {
   // The Château de Wolvendael (tools/blender/wolvendael_chateau.py, viewer/wolvendaelCity.js) in place of UrbIS solids
   // 537523 + 538880, and its pond (viewer/water/), behind ?wolvendael=1 for now
   if (params.get("wolvendael") === "1") await addWolvendael({ scene, updaters, hide: HIDE_BU_IDS, ponds: PONDS, world, manifest, log, compiler: () => compileFor, renderer, lighting });
+  // The Uccle-Calevoet station building (tools/blender/calevoet_station.py, viewer/calevoetCity.js) in place of UrbIS
+  // solid 534568, behind ?calevoet=1 for now
+  if (params.get("calevoet") === "1") await addCalevoet({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer });
   const T0 = await loadTile(entry, { layers, contourOn, verbose: true });
   world.tiles.push(T0);
   const { hm, roads, net } = T0;

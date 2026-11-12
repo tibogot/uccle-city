@@ -322,3 +322,11 @@ Replace the left HUD with a collapsible, tabbed panel (lil-gui folders, state in
 - [ ] README: update for the worker build (`node tools/build_worker.mjs`) and new URL params.
 - [ ] CONTRACT: document `data/transit/*.json`, features `shop` points and `platform` lines.
 - [ ] Tests: road check in CI, a headless screenshot smoke test.
+
+## Calevoet station (branch claude/nekkersgat, 2026-11-12)
+- [ ] Owner review: Station Lab (labs/calevoet-lab.html) + city ?calevoet=1; side-by-sides docs/calevoet/side_*_lab.jpg (local only).
+- [ ] Car-park side: a free photo (or the owner's) to replace the ESTIMATED openings; the north pavilion's gable under the ivy.
+- [ ] Canopy columns' positions from a frontal photo; the station clock and signs; overhead line masts (procedural).
+- [ ] Packed LOD2 audit items (125, > 385 m) and the packed LOD0 leak.
+- [ ] Materials Lab: brick_painted_white, paint_grey_dark, cast_iron_dark proposed for the library.
+- [ ] Moulin du Nekkersgat: not modelled (models/nekkersgat/NOTES.md: one usable photo, the wheel and courtyard never seen); needs photos of the courtyard side and the 2013 wheel.
