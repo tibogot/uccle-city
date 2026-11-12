@@ -29,13 +29,29 @@ import { DataTexture, FloatType, RGBAFormat, LightsNode } from "three/webgpu";
 import {
   Fn, Loop, If, Break, int, float, vec3, vec4, ivec2, ivec4, textureLoad, positionView, cameraViewMatrix, dot, cross, normalize,
   smoothstep, max, min, abs, exp, sqrt, clamp, select, uniform, normalView, BRDF_Lambert, diffuseContribution,
-  instancedArray, pow, log, instanceIndex, screenCoordinate, mix, step, BRDF_GGX, specularColorBlended, specularF90,
+  instancedArray, pow, log, instanceIndex, screenCoordinate, mix, step, BRDF_GGX, specularColorBlended, specularF90, roughness,
 } from "three/tsl";
 import { ClusteredLighting } from "three/addons/lighting/ClusteredLighting.js";
 import ClusteredLightsNode from "three/addons/tsl/lighting/ClusteredLightsNode.js";
 
+/** The low-beam pattern (profile 1) for unit light->surface direction f, unit beam axis, unit world up (any one space),
+ *  cosA = dot(f, axis), aim = cut-off height on the oncoming side (sine, -0.012), kink = slope of the 15 deg kink on the
+ *  kerb side (0.268; 0 = symmetric). Shared by the cluster loop and the far-headlight ground layer (groundLight.js). */
+export function lowBeamK(f, axis, upV, cosA, aim, kink) {
+  const right = normalize(cross(axis, upV));
+  const x = dot(f, right).div(max(cosA, 0.2));                 // lateral tangent (+ = kerb side)
+  const y = dot(f, upV);                                       // sine of the elevation above the horizon
+  const cut = aim.add(clamp(x, 0, 0.12).mul(kink));
+  const below = float(1).sub(smoothstep(cut.sub(0.003), cut.add(0.004), y));
+  // hot band just under the cut-off (the far road), a dim wide foreground (a real low beam keeps the road right in front
+  // of the car dim, or the eye adapts to it and the distance goes black)
+  const hot = exp(x.sub(0.03).div(0.2).pow2().negate()).mul(exp(y.sub(cut).add(0.02).div(0.035).pow2().negate()));
+  const spread = exp(x.div(0.6).pow2().negate()).mul(smoothstep(-0.35, -0.04, y).mul(0.25).add(0.04));
+  return below.mul(hot.mul(1.4).add(spread));
+}
+
 /** live switches (uniforms: no rebuild) */
-export const nightLook = { uDiffuseOnly: uniform(0) };
+export const nightLook = { uDiffuseOnly: uniform(0), uWet: uniform(0) };
 
 export const PROFILE = { PLAIN: 0, LOWBEAM: 1, LANTERN: 2, APERTURE: 3 };
 
@@ -45,7 +61,7 @@ export const S = {
   DX: 8, DY: 9, DZ: 10, CONE: 11, PEN: 12,                    // beam direction (unit, light -> target), cos(outer), cos(inner)
   PROF: 13, P1: 14, P2: 15, P3: 16, P4: 17,                   // profile + its parameters
   W: 18,                                                      // weight (fade) 0..1: 0 = not drawn
-  FLAGS: 19,                                                  // 1 = diffuse only (a soft source)
+  FLAGS: 19,                                                  // +1 diffuse only (a soft source), +2 baked in the ground map
   STRIDE: 20,
 };
 
@@ -83,7 +99,9 @@ export class LightPool {
     d[o + 13] = p; d[o + 14] = p1; d[o + 15] = p2; d[o + 16] = p3; d[o + 17] = p4;
   }
   weight(i, w) { this.data[i * S.STRIDE + S.W] = w; }
-  diffuseOnly(i, on) { this.data[i * S.STRIDE + S.FLAGS] = on ? 1 : 0; }
+  diffuseOnly(i, on) { const o = i * S.STRIDE + S.FLAGS, f = this.data[o]; this.data[o] = (f >= 2 ? 2 : 0) + (on ? 1 : 0); }
+  /** this light is also in the ground light map (groundLight.js): ground materials skip it in the loop */
+  baked(i, on) { const o = i * S.STRIDE + S.FLAGS, f = this.data[o]; this.data[o] = (f % 2) + (on ? 2 : 0); }
 }
 
 const ROW = { POS: 0, COLOR: 1, SPOT: 2, BOUNDS: 3 };   // three's rows (its compute reads BOUNDS)
@@ -131,7 +149,7 @@ class NightLightsNode extends ClusteredLightsNode {
       // saves two matrix products per light
       const x = D[o], y = D[o + 1], z = D[o + 2], ax = D[o + 8], ay = D[o + 9], az = D[o + 10];
       T[ROW.POS * line + q] = m[0] * x + m[4] * y + m[8] * z + m[12]; T[ROW.POS * line + q + 1] = m[1] * x + m[5] * y + m[9] * z + m[13];
-      T[ROW.POS * line + q + 2] = m[2] * x + m[6] * y + m[10] * z + m[14]; T[ROW.POS * line + q + 3] = D[o + S.PROF] === PROFILE.LOWBEAM ? -D[o + 3] : D[o + 3];   // < 0: a low beam
+      T[ROW.POS * line + q + 2] = m[2] * x + m[6] * y + m[10] * z + m[14]; T[ROW.POS * line + q + 3] = D[o + S.PROF] === PROFILE.LOWBEAM ? -D[o + 3] : D[o + S.FLAGS] >= 2 ? D[o + 3] + 10000 : D[o + 3];   // < 0: a low beam; > 5000: baked
       T[ROW.COLOR * line + q] = D[o + 4] * w; T[ROW.COLOR * line + q + 1] = D[o + 5] * w; T[ROW.COLOR * line + q + 2] = D[o + 6] * w; T[ROW.COLOR * line + q + 3] = D[o + 7];
       T[ROW.SPOT * line + q] = m[0] * ax + m[4] * ay + m[8] * az; T[ROW.SPOT * line + q + 1] = m[1] * ax + m[5] * ay + m[9] * az;
       T[ROW.SPOT * line + q + 2] = m[2] * ax + m[6] * ay + m[10] * az; T[ROW.SPOT * line + q + 3] = D[o + 11];
@@ -281,6 +299,7 @@ class NightLightsNode extends ClusteredLightsNode {
     reflected.directSpecular.toStack();
     LightsNode.prototype.setupLights.call(this, builder, lightNodes);     // sun, moon, shadowed spots
     const tex = this._lightsTexture, extra = this._extra;
+    const ground = builder.material?.userData?.groundLight === true;        // reads groundLight.js' map
     Fn(() => {
       const upV = normalize(cameraViewMatrix.mul(vec4(0, 1, 0, 0)).xyz).toVar();
       // the cluster's list is ivec4 chunks: one storage load per 4 lights (three's loop reloads the chunk per light)
@@ -303,8 +322,12 @@ class NightLightsNode extends ClusteredLightsNode {
         // a fragment that the light reaches (a cluster lists every light whose bounding sphere touches it: most fail)
         const A = select(j.equal(0), A0, select(j.equal(1), A1, select(j.equal(2), A2, A3))).toVar();
         const Lv = A.xyz.sub(positionView).toVar();             // fragment -> light (view space)
-        const d2 = dot(Lv, Lv).toVar(), range = abs(A.w);
-        If(d2.lessThan(range.mul(range)), () => {
+        const baked = A.w.greaterThan(5000);
+        const d2 = dot(Lv, Lv).toVar(), range = select(baked, A.w.sub(10000), abs(A.w)).toVar();
+        // a ground material (road, sidewalk, lawn) has the baked lights' diffuse in its light map: skip them, unless
+        // the street is wet (then their specular only: the streaks)
+        const skip = ground ? baked.and(nightLook.uWet.lessThan(0.02)) : null;
+        If(ground ? d2.lessThan(range.mul(range)).and(skip.not()) : d2.lessThan(range.mul(range)), () => {
           const C = textureLoad(tex, ivec2(idx, ROW.SPOT)).toVar();
           const d = sqrt(d2);
           const L = Lv.div(max(d, 1e-4)).toVar();               // unit, fragment -> light
@@ -321,16 +344,7 @@ class NightLightsNode extends ClusteredLightsNode {
             const k = float(1).toVar();
             // 1 LOW BEAM: x = lateral tangent (+ = kerb side), y = sine of the elevation above the horizon
             If(prof.greaterThan(0.5).and(prof.lessThan(1.5)), () => {
-              const right = normalize(cross(axis, upV));
-              const x = dot(f, right).div(max(cosA, 0.2));
-              const y = dot(f, upV);
-              const cut = E0.y.add(clamp(x, 0, 0.12).mul(E0.z));   // aim (-0.012) + 15 deg kink on the kerb side
-              const below = float(1).sub(smoothstep(cut.sub(0.003), cut.add(0.004), y));
-              // hot band just under the cut-off (the far road), a dim wide foreground (a real low beam keeps the road
-              // right in front of the car dim, or the eye adapts to it and the distance goes black)
-              const hot = exp(x.sub(0.03).div(0.2).pow2().negate()).mul(exp(y.sub(cut).add(0.02).div(0.035).pow2().negate()));
-              const spread = exp(x.div(0.6).pow2().negate()).mul(smoothstep(-0.35, -0.04, y).mul(0.25).add(0.04));
-              k.assign(below.mul(hot.mul(1.4).add(spread)));
+              k.assign(lowBeamK(f, axis, upV, cosA, E0.y, E0.z));
             });
             // 2 LANTERN: c = cos from nadir; up share E0.y, batwing E0.z
             If(prof.greaterThan(1.5).and(prof.lessThan(2.5)), () => {
@@ -356,11 +370,22 @@ class NightLightsNode extends ClusteredLightsNode {
             // soft sources (windows, shop fronts, signs, rear lights: flag E1.z) light the DIFFUSE term only: Lambert,
             // no GGX / clear coat (their glossy reflections come from SSR of the lit glass); lamps and headlights keep
             // the full BRDF (the long specular streaks on a wet road)
-            If(E1.z.greaterThan(0.5).or(nightLook.uDiffuseOnly.greaterThan(0.5)), () => {
-              reflected.directDiffuse.addAssign(max(dot(normalView, L), 0).mul(lc).mul(BRDF_Lambert({ diffuseColor: diffuseContribution })));
-            }).Else(() => {
-              builder.lightsNode.setupDirectLight(builder, this, { lightDirection: L, lightColor: lc });
-            });
+            const irr = max(dot(normalView, L), 0).mul(lc);
+            const bakedHere = ground ? baked : null;
+            const shade = () => {
+              If(E1.z.mod(2).greaterThan(0.5).or(nightLook.uDiffuseOnly.greaterThan(0.5)), () => {
+                reflected.directDiffuse.addAssign(irr.mul(BRDF_Lambert({ diffuseColor: diffuseContribution })));
+              }).Else(() => {
+                builder.lightsNode.setupDirectLight(builder, this, { lightDirection: L, lightColor: lc });
+              });
+            };
+            if (ground) {
+              If(bakedHere, () => {          // wet ground, a baked light: specular only (its diffuse is in the map)
+                If(E1.z.mod(2).lessThan(0.5), () => {
+                  reflected.directSpecular.addAssign(irr.mul(BRDF_GGX({ lightDirection: L, f0: specularColorBlended, f90: specularF90, roughness })));
+                });
+              }).Else(shade);
+            } else shade();
           });
         });
       });

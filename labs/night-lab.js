@@ -21,7 +21,8 @@ import { pickType } from "../viewer/carFleet.js";
 import { LightPool, NightLighting, nightLook } from "../viewer/nightLights/nightLighting.js";
 import { NightSources, CAR, nightParams } from "../viewer/nightLights/nightSources.js";
 import { createCones, coneLook } from "../viewer/nightLights/lightCones.js";
-import { buildStreet, wet, X, Z } from "../viewer/nightLights/nightStreet.js";
+import { buildStreet, wet, X, Z, WALK_Y } from "../viewer/nightLights/nightStreet.js";
+import { GroundLight } from "../viewer/nightLights/groundLight.js";
 import { smooth01 } from "../viewer/nightLights/lightSelect.js";
 import { flickerTest, showHeat } from "./flickerTest.js";
 
@@ -49,7 +50,10 @@ const hour = qp.get("hour"); if (hour) lighting.hourOverride = +hour;
 
 // ------------------------------------------------------------------------------------------------ the street
 const lampModel = await loadLampModel();
-const street = buildStreet(lampModel);
+// the ground light map (?groundmap=0: everything in the cluster loop, as round 1)
+const useGround = qp.get("groundmap") !== "0";
+const ground = useGround ? new GroundLight({ groundY: (x, z) => (Math.abs(z) < Z.kerb ? 0 : WALK_Y) }) : null;
+const street = buildStreet(lampModel, { ground });
 scene.add(street.group);
 
 // soft shadows: the K nearest lamps also carry a real shadowed spot light (cross-faded, lightSelect.js ShadowLamps)
@@ -66,7 +70,10 @@ const cones = createCones(96);
 scene.add(cones.mesh);
 // ?pools=heads:16,lamps:24 overrides the pool sizes (nightSources.js)
 const sizes = Object.fromEntries((qp.get("pools") || "").split(",").filter(Boolean).map((kv) => { const [k, v] = kv.split(":"); return [k, +v]; }));
-const night = new NightSources(pool, street, { cars: 128, shadowLights, cones, sizes });
+const night = new NightSources(pool, street, { cars: 128, shadowLights, cones, sizes, ground });
+if (ground) { ground.createDynamic(128); ground.bakeStatic(street.sources, nightParams); }
+let rebakeT = 0;
+const rebake = () => { if (!ground) return; clearTimeout(rebakeT); rebakeT = setTimeout(() => ground.bakeStatic(street.sources, nightParams), 150); };
 
 // ------------------------------------------------------------------------------------------------ cars
 const PAINTS = [0x0d0e10, 0x0d0e10, 0x1a1c1f, 0x34383d, 0x4a4e53, 0x8f959c, 0x9ea4ab, 0xb8bcc0, 0xe8e8e4, 0xdcdcd6, 0x1d3f6e, 0x2e5a8a, 0x8a1414, 0x24483a, 0x6b5a48];
@@ -223,7 +230,14 @@ function updateLights(dt) {
   lastNight = n;
   coneLook.uDensity.value = nightParams.coneDensity * (P.wet ? 2.5 : 1);
   cones.mesh.visible = nightParams.cones !== "off" && pool.enabled;
-  night.update(camera.position, dt, P.master * smooth01((n - 0.15) / 0.5), P.wet);
+  const scale = P.master * smooth01((n - 0.15) / 0.5);
+  night.update(camera.position, dt, scale, P.wet);
+  nightLook.uWet.value = wet.uWet.value;
+  if (ground) {
+    const on = pool.enabled ? 1 : 0, np = nightParams;
+    ground.uA.value = scale * on * (np.lamps ? 1 : 0); ground.uB.value = scale * on * (np.windows || np.shops ? 1 : 0); ground.uDyn.value = on;
+    ground.renderDynamic(renderer, pool.enabled ? night.dynCount : 0);
+  }
 }
 function frame(dt) {
   if (!sim.frozen && !P.paused) stepSim(dt);
@@ -351,12 +365,12 @@ const fl = ui.addFolder("Lights");
 fl.add(P, "master", 0, 2, 0.01).name("all lights x");
 for (const k of ["lamps", "windows", "shops", "signs", "headlights", "rear", "tram"]) fl.add(nightParams, k);
 fl.add(nightParams, "cones", ["on", "wet only", "off"]).name("beams (cones)");
-fl.add(nightParams, "lampI", 0, 400, 1).name("lamp cd");
-fl.add(nightParams, "lampUp", 0, 1, 0.01).name("lamp up share");
-fl.add(nightParams, "lampBatwing", 0, 2, 0.01).name("lamp batwing");
-fl.add(nightParams, "windowI", 0, 60, 0.5).name("window cd");
-fl.add(nightParams, "shopI", 0, 150, 1).name("shop cd");
-fl.add(nightParams, "signI", 0, 40, 0.5).name("sign cd");
+fl.add(nightParams, "lampI", 0, 400, 1).name("lamp cd").onChange(rebake);
+fl.add(nightParams, "lampUp", 0, 1, 0.01).name("lamp up share").onChange(rebake);
+fl.add(nightParams, "lampBatwing", 0, 2, 0.01).name("lamp batwing").onChange(rebake);
+fl.add(nightParams, "windowI", 0, 60, 0.5).name("window cd").onChange(rebake);
+fl.add(nightParams, "shopI", 0, 150, 1).name("shop cd").onChange(rebake);
+fl.add(nightParams, "signI", 0, 40, 0.5).name("sign cd").onChange(rebake);
 fl.add(nightParams, "headI", 0, 4000, 10).name("headlight cd");
 fl.add(nightParams, "rearI", 0, 10, 0.1).name("rear light cd");
 fl.add(nightParams, "coneDensity", 0, 0.3, 0.005).name("beam haze");
@@ -385,7 +399,7 @@ function heat(on) {
   scene.overrideMaterial = on ? heatMat : null;
   P.post = !on;
 }
-window.lab = { nightLook, heat, cones, shadowLights, frame, renderer, scene, camera, controls, pool, night, nightParams, P, VIEW, sim, cars, tramS, street, bench, cpuTest, strip, flicker, gpu, wet, lighting,
+window.lab = { ground, nightLook, heat, cones, shadowLights, frame, renderer, scene, camera, controls, pool, night, nightParams, P, VIEW, sim, cars, tramS, street, bench, cpuTest, strip, flicker, gpu, wet, lighting,
   setView(pos, tgt) { VIEW.mode = "orbit"; P.view = "orbit"; camera.position.set(...pos); controls.target.set(...tgt); controls.update(); } };
 
 const c = street.counts;

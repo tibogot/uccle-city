@@ -53,7 +53,8 @@ export function wetSurface(m, { porosity = 0.5, puddles = true, floor: isFloor =
 const box = (w, h, d, x, y, z) => new THREE.BoxGeometry(w, h, d).translate(x, y + h / 2, z);
 
 /** -> { group, sources: { lamps, windows, shops, signs }, parkSlots, trees } */
-export function buildStreet(lampModel, { seed = 7 } = {}) {
+export function buildStreet(lampModel, { seed = 7, ground = null } = {}) {
+  const G = (m) => (ground ? ground.addToGround(m) : m);     // ground materials read the ground light map (groundLight.js)
   const R = rng(seed);
   const group = new THREE.Group(); group.name = "night-street";
   const L = X.half * 2 + 160;
@@ -61,7 +62,7 @@ export function buildStreet(lampModel, { seed = 7 } = {}) {
   // ---------------------------------------------------------------- ground: asphalt, setts, kerbs, sidewalks, gardens
   const asphalt = new THREE.MeshStandardNodeMaterial({ roughness: 0.86, metalness: 0 });
   asphalt.colorNode = vec3(0.075, 0.075, 0.08).mul(noise2D(positionWorld.xz.mul(1.7)).mul(0.25).add(0.88)).mul(noise2D(positionWorld.xz.mul(0.13)).mul(0.2).add(0.9));
-  wetSurface(asphalt, { porosity: 0.55 });
+  G(wetSurface(asphalt, { porosity: 0.55 }));
   const setts = new THREE.MeshStandardNodeMaterial({ roughness: 0.78 });
   {
     const p = positionWorld.xz.div(vec2(0.14, 0.11)), w = fwidth(p.x).add(fwidth(p.y));
@@ -70,19 +71,19 @@ export function buildStreet(lampModel, { seed = 7 } = {}) {
     const tone = hash2D(vec2(floor(jx), row)).mul(0.25).add(0.75);
     setts.colorNode = mix(vec3(0.05, 0.048, 0.045), vec3(0.2, 0.19, 0.175).mul(tone), joint);
   }
-  wetSurface(setts, { porosity: 0.35 });
+  G(wetSurface(setts, { porosity: 0.35 }));
   const slabs = new THREE.MeshStandardNodeMaterial({ roughness: 0.8 });
   {
     const p = positionWorld.xz.div(0.3), w = fwidth(p.x).add(fwidth(p.y));
     const j = filteredPulse(p.x, 0.03, 0.97, w).mul(filteredPulse(p.y, 0.03, 0.97, w));
     slabs.colorNode = vec3(0.34, 0.33, 0.31).mul(mix(float(0.7), hash2D(floor(p)).mul(0.12).add(0.94), j));
   }
-  wetSurface(slabs, { porosity: 0.5 });
+  G(wetSurface(slabs, { porosity: 0.5 }));
   const kerbM = new THREE.MeshStandardNodeMaterial({ color: 0x6d6b66, roughness: 0.6 });
-  wetSurface(kerbM, { porosity: 0.3, puddles: false });
+  G(wetSurface(kerbM, { porosity: 0.3, puddles: false }));
   const grass = new THREE.MeshStandardNodeMaterial({ roughness: 0.95 });
   grass.colorNode = vec3(0.05, 0.09, 0.03).mul(noise2D(positionWorld.xz.mul(2.3)).mul(0.5).add(0.75));
-  wetSurface(grass, { porosity: 0.25, puddles: false });
+  G(wetSurface(grass, { porosity: 0.25, puddles: false }));
   const steel = new THREE.MeshStandardNodeMaterial({ color: 0x8c8a86, roughness: 0.28, metalness: 0.9 });
   const add = (geo, mat, shadow = true) => { const o = new THREE.Mesh(geo, mat); o.receiveShadow = true; o.castShadow = false; group.add(o); return o; };
   const plane = (x0, x1, z0, z1, y, mat) => add(new THREE.PlaneGeometry(x1 - x0, z1 - z0).rotateX(-Math.PI / 2).translate((x0 + x1) / 2, y, (z0 + z1) / 2), mat);
@@ -121,6 +122,7 @@ export function buildStreet(lampModel, { seed = 7 } = {}) {
     brick.colorNode = bk;
   }
   wetSurface(brick, { porosity: 0.4, puddles: false, floor: false });
+  ground?.addSpill(brick);
   const roofM = new THREE.MeshStandardNodeMaterial({ color: 0x2b2a2e, roughness: 0.6 });
   const bodies = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0), brick, hn);
   const roofGeo = (() => {                       // a pitched roof prism, ridge along x, unit size
@@ -173,8 +175,8 @@ export function buildStreet(lampModel, { seed = 7 } = {}) {
         const c = tv ? COOL : WARM[Math.floor(R() * WARM.length)], b = lit ? 0.6 + R() * 0.7 : 0;
         const o = { x, y: y0, z: zf, w: 1.1, h: 1.55, kind: 0, lit: c.map((v) => v * b), side: hs.side };
         openings.push(o);
-        // the ground floor's lit windows light the garden / sidewalk (upper ones: mostly the facade below and the far side)
-        if (lit && f === 0) windows.push({ x, y: y0 + 0.78, z: zf, hw: 0.55, hh: 0.78, side: hs.side, col: c, b });
+        // every lit window spills light (round 2: the upper floors too: their pyramid of light is culled tightly)
+        if (lit) windows.push({ x, y: y0 + 0.78, z: zf, hw: 0.55, hh: 0.78, side: hs.side, col: c, b, floor: f });
       }
     }
   }
@@ -245,6 +247,7 @@ export function buildStreet(lampModel, { seed = 7 } = {}) {
   // ---------------------------------------------------------------- hedges, trees
   const hedgeM = new THREE.MeshStandardNodeMaterial({ roughness: 0.9 });
   hedgeM.colorNode = vec3(0.03, 0.06, 0.025).mul(noise2D(positionWorld.xy.mul(5).add(positionWorld.zz)).mul(0.6).add(0.7));
+  ground?.addSpill(hedgeM, 2);
   const hedges = [];
   for (const hs of houses) if (hs.side < 0) { const gate = (hs.x0 + hs.x1) / 2 + 1.2; hedges.push([hs.x0 + 0.1, gate - 0.6], [gate + 0.6, hs.x1 - 0.1]); }
   const hedgeMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0), hedgeM, hedges.length);

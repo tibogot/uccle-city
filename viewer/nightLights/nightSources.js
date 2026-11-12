@@ -26,6 +26,7 @@ export const nightParams = {
   cones: 'wet only',       // the beams in damp air: 'on' / 'wet only' / 'off' (~0.3 ms when on: additive overdraw)
   lampI: 110, lampRange: 16, lampUp: 0.3, lampBatwing: 0.35,
   windowI: 9, windowRange: 9, shopI: 24, shopRange: 12, signI: 6, signRange: 5, rearRange: 4.5, headI: 1000, headRange: 34, headCone: 0.55, rearI: 1.6, tramI: 900, tramSaloon: 7,
+  near0: 40, near1: 60,       // m: static lights real up to near0, gone at near1 (the ground map + wall spill beyond)
   coneDensity: 0.025,     // dry air: a hint; x2.5 when the street is wet (damp air, spray)
 };
 const LAMP_RGB = [1.0, 0.78, 0.52], HEAD_RGB = [1.0, 0.97, 0.92], REAR_RGB = [1.0, 0.04, 0.02], SALOON_RGB = [0.82, 0.9, 1.0];
@@ -37,16 +38,19 @@ class Track {          // per-source weight history: the largest frame-to-frame 
 }
 
 export class NightSources {
-  constructor(pool, street, { cars = 64, shadowLights = [], cones = null, sizes = {} } = {}) {
-    const N = { lamps: 40, windows: 32, shops: 10, signs: 8, heads: 40, rear: 32, ...sizes };
-    this.pool = pool; this.cones = cones; this.N = N;
+  constructor(pool, street, { cars = 64, shadowLights = [], cones = null, sizes = {}, ground = null } = {}) {
+    // round 2: the static kinds only near the camera (the ground light map has them all), the 12 nearest cars' lights
+    // real (the others' pools in the map's dynamic layer)
+    const N = { lamps: 24, windows: 40, shops: 8, signs: 6, heads: 12, rear: 12, ...sizes };
+    this.pool = pool; this.cones = cones; this.N = N; this.ground = ground;
+    this.realHead = new Float32Array(cars); this.realRear = new Float32Array(cars);
     const S = street.sources;
     this.src = S;
     this.grid = {};
     for (const k of ["lamps", "windows", "shops", "signs"]) this.grid[k] = new StaticSources(S[k].x, S[k].y, S[k].z, 32);
     this.sel = {
-      lamps: new NearestN(N.lamps, 220), windows: new NearestN(N.windows, 110), shops: new NearestN(N.shops, 130),
-      signs: new NearestN(N.signs, 110), heads: new NearestN(N.heads, 230), rear: new NearestN(N.rear, 120),
+      lamps: new NearestN(N.lamps, 70), windows: new NearestN(N.windows, 70), shops: new NearestN(N.shops, 70),
+      signs: new NearestN(N.signs, 70), heads: new NearestN(N.heads, 230), rear: new NearestN(N.rear, 120),
     };
     this.base = {};
     for (const k of ["lamps", "windows", "shops", "signs", "heads", "rear"]) this.base[k] = pool.reserve(N[k]);
@@ -77,10 +81,10 @@ export class NightSources {
       const I = p.lampI;
       for (let k = 0; k < this.N.lamps; k++) {
         if (k >= sel.count) { P.weight(b + k, 0); continue; }
-        const id = sel.i[k], w = sel.weight(k);
+        const id = sel.i[k], w = sel.weight(k) * this.nearFade(sel.d[k]);
         tr.cur[id] = w;
         P.set(b + k, S.x[id], S.y[id], S.z[id], p.lampRange, LAMP_RGB[0] * I, LAMP_RGB[1] * I, LAMP_RGB[2] * I, w * (1 - this.shadow.blend(id)), 0.22);
-        P.omni(b + k); P.profile(b + k, PROFILE.LANTERN, p.lampUp, p.lampBatwing);
+        P.omni(b + k); P.profile(b + k, PROFILE.LANTERN, p.lampUp, p.lampBatwing); P.baked(b + k, !!this.ground);
         if (C && this.conesOn && w > 0.01) C.write(cone++, S.x[id], S.y[id] - 0.1, S.z[id], 0, -1, 0, S.y[id] - 0.1, 3.4, LAMP_RGB[0] * w, LAMP_RGB[1] * w, LAMP_RGB[2] * w);
       }
       tr.end();
@@ -107,8 +111,8 @@ export class NightSources {
       for (let k = 0; k < this.N.signs; k++) {
         if (k >= sel.count) { P.weight(b + k, 0); continue; }
         const id = sel.i[k], s = L[id], out = s.side < 0 ? 1 : -1, I = p.signI;
-        P.set(b + k, S.x[id], S.y[id] - 0.1, S.z[id] + out * 0.7, p.signRange, s.col[0] * I, s.col[1] * I, s.col[2] * I, sel.weight(k), 0.4);
-        P.omni(b + k); P.profile(b + k, PROFILE.PLAIN); P.diffuseOnly(b + k, true);
+        P.set(b + k, S.x[id], S.y[id] - 0.1, S.z[id] + out * 0.7, p.signRange, s.col[0] * I, s.col[1] * I, s.col[2] * I, sel.weight(k) * this.nearFade(sel.d[k]), 0.4);
+        P.omni(b + k); P.profile(b + k, PROFILE.PLAIN); P.diffuseOnly(b + k, true); P.baked(b + k, !!this.ground);
       }
       this.stats.signs = sel.count;
     }
@@ -124,11 +128,12 @@ export class NightSources {
       }
       sh.end(); sr.end();
       th.begin(); trr.begin();
-      const bh = this.base.heads, br = this.base.rear;
+      const bh = this.base.heads, br = this.base.rear, RH = this.realHead, RR = this.realRear;
+      RH.fill(0); RR.fill(0);
       for (let k = 0; k < this.N.heads; k++) {
         if (k >= sh.count) { P.weight(bh + k, 0); continue; }
         const i = sh.i[k], o = i * CAR.STRIDE, w = sh.weight(k) * D[o + CAR.FADE] * D[o + CAR.HEAD], I = p.headI;
-        th.cur[i] = w;
+        th.cur[i] = w; RH[i] = sh.weight(k);
         P.set(bh + k, D[o], D[o + 1], D[o + 2], p.headRange, HEAD_RGB[0] * I, HEAD_RGB[1] * I, HEAD_RGB[2] * I, w, 0.15);
         P.spot(bh + k, D[o + 3], D[o + 4], D[o + 5], p.headCone, p.headCone * 0.3);
         P.profile(bh + k, PROFILE.LOWBEAM, -0.012, 0.268);
@@ -137,12 +142,26 @@ export class NightSources {
       for (let k = 0; k < this.N.rear; k++) {
         if (k >= sr.count) { P.weight(br + k, 0); continue; }
         const i = sr.i[k], o = i * CAR.STRIDE, w = sr.weight(k) * D[o + CAR.FADE] * D[o + CAR.TAIL], I = p.rearI * D[o + CAR.TAIL];
-        trr.cur[i] = w;
+        trr.cur[i] = w; RR[i] = sr.weight(k);
         P.set(br + k, D[o + 6], D[o + 7], D[o + 8], p.rearRange, REAR_RGB[0] * I, REAR_RGB[1] * I, REAR_RGB[2] * I, w, 0.35);
         P.omni(br + k); P.profile(br + k, PROFILE.PLAIN); P.diffuseOnly(br + k, true);
       }
       th.end(); trr.end();
       this.stats.heads = sh.count; this.stats.rear = sr.count;
+      // the far cars: their road pools in the ground map's dynamic layer, with the complement of the real weight
+      let q = 0;
+      const G = this.ground;
+      if (G?.dyn) {
+        const max = G.dyn.max;
+        for (let i = 0; i < n && q < max - 1; i++) {
+          const o = i * CAR.STRIDE, f = D[o + CAR.FADE] * scale;
+          if (f <= 0) continue;
+          const wh = (1 - RH[i]) * f * D[o + CAR.HEAD] * (p.headlights ? 1 : 0), wr = (1 - RR[i]) * f * D[o + CAR.TAIL] * (p.rear ? 1 : 0);
+          if (wh > 0.001) { const I = p.headI * wh; G.writeDyn(q++, 0, D[o], D[o + 1], D[o + 2], D[o + 3], D[o + 4], D[o + 5], p.headRange, HEAD_RGB[0] * I, HEAD_RGB[1] * I, HEAD_RGB[2] * I); }
+          if (wr > 0.001) { const I = p.rearI * D[o + CAR.TAIL] * wr; G.writeDyn(q++, 1, D[o + 6], D[o + 7], D[o + 8], 0, -1, 0, p.rearRange, REAR_RGB[0] * I, REAR_RGB[1] * I, REAR_RGB[2] * I); }
+        }
+      }
+      this.dynCount = q;
     }
     // ---- the tram: fixed slots, faded with the distance
     {
@@ -170,17 +189,20 @@ export class NightSources {
     this.ms = performance.now() - t0;
   }
 
+  /** the static kinds' real lights fade out between near0 and near1 m (beyond: the ground light map only) */
+  nearFade(d) { const p = nightParams; return this.ground ? 1 - smooth01((d - p.near0) / (p.near1 - p.near0)) : 1; }
+
   aperture(kind, on, I, depth, range, mullion) {
     const P = this.pool, sel = this.sel[kind], S = this.src[kind], L = S.list, b = this.base[kind], tr = this.track[kind];
     sel.begin(); if (on) this.grid[kind].query(this.cx, this.cy, this.cz, sel.maxDist, sel); sel.end();
     tr?.begin();
     for (let k = 0; k < this.N[kind]; k++) {
       if (k >= sel.count) { P.weight(b + k, 0); continue; }
-      const id = sel.i[k], s = L[id], out = s.side < 0 ? 1 : -1, w = sel.weight(k), g = I * (s.b ?? 1);
+      const id = sel.i[k], s = L[id], out = s.side < 0 ? 1 : -1, w = sel.weight(k) * this.nearFade(sel.d[k]), g = I * (s.b ?? 1);
       if (tr) tr.cur[id] = w;
       P.set(b + k, S.x[id], S.y[id], S.z[id] - out * depth, range + depth, s.col[0] * g, s.col[1] * g, s.col[2] * g, w, 0.35);
       P.spot(b + k, 0, 0, out, 1.25, 0.95);
-      P.profile(b + k, PROFILE.APERTURE, s.hw, s.hh, depth, mullion); P.diffuseOnly(b + k, true);
+      P.profile(b + k, PROFILE.APERTURE, s.hw, s.hh, depth, mullion); P.diffuseOnly(b + k, true); P.baked(b + k, !!this.ground);
     }
     tr?.end();
     this.stats[kind] = sel.count;
