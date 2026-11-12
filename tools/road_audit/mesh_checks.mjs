@@ -313,6 +313,31 @@ export function roundTwoChecks({ rd, inv, prep, surf, markings, inTile, add: add
       }
     }
   }
+  // paint under (or within 3 mm of) the asphalt it lies on: hidden or z-fighting. Decal triangle centroids against the
+  // asphalt part's triangles there (the highest one)
+  if (PP && rd.parts.asphalt) {
+    const A = rd.parts.asphalt, AP = A.position, AI = A.index, g = new Map();
+    for (let k = 0; k < AI.length; k += 3) {
+      const xs = [AP[AI[k] * 3], AP[AI[k + 1] * 3], AP[AI[k + 2] * 3]], zs = [AP[AI[k] * 3 + 2], AP[AI[k + 1] * 3 + 2], AP[AI[k + 2] * 3 + 2]];
+      for (let i = Math.floor(Math.min(...xs) / 2); i <= Math.floor(Math.max(...xs) / 2); i++) for (let j = Math.floor(Math.min(...zs) / 2); j <= Math.floor(Math.max(...zs) / 2); j++) { const key = `${i},${j}`; const l = g.get(key); if (l) l.push(k); else g.set(key, [k]); }
+    }
+    const P = PP.position, I = PP.index;
+    S.paint.hidden = 0;
+    for (let k = 0; k < I.length; k += 3) {
+      const x = (P[I[k] * 3] + P[I[k + 1] * 3] + P[I[k + 2] * 3]) / 3, y = (P[I[k] * 3 + 1] + P[I[k + 1] * 3 + 1] + P[I[k + 2] * 3 + 1]) / 3, z = (P[I[k] * 3 + 2] + P[I[k + 1] * 3 + 2] + P[I[k + 2] * 3 + 2]) / 3;
+      if (!inTile(x, z)) continue;
+      let top = -Infinity;
+      for (const a of g.get(`${Math.floor(x / 2)},${Math.floor(z / 2)}`) || []) {
+        const A0 = [AP[AI[a] * 3], AP[AI[a] * 3 + 1], AP[AI[a] * 3 + 2]], A1 = [AP[AI[a + 1] * 3], AP[AI[a + 1] * 3 + 1], AP[AI[a + 1] * 3 + 2]], A2 = [AP[AI[a + 2] * 3], AP[AI[a + 2] * 3 + 1], AP[AI[a + 2] * 3 + 2]];
+        const d = (A1[2] - A2[2]) * (A0[0] - A2[0]) + (A2[0] - A1[0]) * (A0[2] - A2[2]);
+        if (Math.abs(d) < 1e-12) continue;
+        const w0 = ((A1[2] - A2[2]) * (x - A2[0]) + (A2[0] - A1[0]) * (z - A2[2])) / d, w1 = ((A2[2] - A0[2]) * (x - A2[0]) + (A0[0] - A2[0]) * (z - A2[2])) / d, w2 = 1 - w0 - w1;
+        if (w0 < -1e-6 || w1 < -1e-6 || w2 < -1e-6) continue;
+        top = Math.max(top, w0 * A0[1] + w1 * A1[1] + w2 * A2[1]);
+      }
+      if (top > y - 0.003) { S.paint.hidden++; add("C15", "error", x, z, `paint ${top > y ? "under" : "within 3 mm of"} the asphalt (${((top - y) * 1000).toFixed(1)} mm): hidden or z-fighting`, { kind: "hidden" }); }
+    }
+  }
   // ---- C17 / C18 / C20 / C21 meshes
   for (const [name, part] of Object.entries(rd.parts)) {
     if (!part?.index?.length) continue;

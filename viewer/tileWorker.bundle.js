@@ -5672,7 +5672,7 @@ var LIFT = 6e-3;
 var TIER = 15e-4;
 var MAX_TIER = 3;
 var BASE_DROP = 0.01;
-var DEV = [-0.014, 0.012];
+var DEV = [-0.014, 8e-3];
 var BAND = 0.15;
 var BAND_LIFT = 4e-3;
 var KERB_DOWN = 0.03;
@@ -6685,7 +6685,8 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     const P2 = vs.map((v) => [EP[v * 3], EP[v * 3 + 2]]);
     const cx = (P2[0][0] + P2[1][0] + P2[2][0]) / 3, cz = (P2[0][1] + P2[1][1] + P2[2][1]) / 3;
     if (!mapped.has(phaseOf(vs[0]))) {
-      if (!inTile(cx, cz) || baseAt(cx, cz) || onBuilding(cx, cz)) {
+      const probe = [...P2, [(P2[0][0] + P2[1][0]) / 2, (P2[0][1] + P2[1][1]) / 2], [(P2[1][0] + P2[2][0]) / 2, (P2[1][1] + P2[2][1]) / 2], [(P2[2][0] + P2[0][0]) / 2, (P2[2][1] + P2[0][1]) / 2], [cx, cz]];
+      if (!inTile(cx, cz) || probe.some(([x, z]) => baseAt(x, z)) || onBuilding(cx, cz)) {
         droppedTris++;
         continue;
       }
@@ -6720,9 +6721,38 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     if (hits.length) cutAtEdge++;
     const cutParts = splitByCuts(poly);
     if (cutParts.length > 1 || cutParts[0].inside) {
+      const hv = P2.map((q) => H(q[0], q[1]));
       for (const cp of cutParts) {
         zeroLines = cp.inside;
-        emitPlane(cp.poly, vs, P2);
+        const xs2 = cp.poly.map((q) => q[0]), zs2 = cp.poly.map((q) => q[1]), pcs = [];
+        for (let i = Math.floor(Math.min(...xs2) / CELL2); i <= Math.floor(Math.max(...xs2) / CELL2); i++)
+          for (let j = Math.floor(Math.min(...zs2) / CELL2); j <= Math.floor(Math.max(...zs2) / CELL2); j++) for (let h = 0; h < 2; h++) {
+            const q = clipHalfCell(cp.poly, i, j, h);
+            if (q.length >= 3 && Math.abs(ringArea(q)) > 1e-6) pcs.push(q);
+          }
+        let fine = true;
+        const all = [];
+        {
+          const xa = P2.map((q) => q[0]), za = P2.map((q) => q[1]);
+          for (let i = Math.floor(Math.min(...xa) / CELL2); i <= Math.floor(Math.max(...xa) / CELL2); i++)
+            for (let j = Math.floor(Math.min(...za) / CELL2); j <= Math.floor(Math.max(...za) / CELL2); j++) for (let h = 0; h < 2; h++) {
+              const q = clipHalfCell(P2, i, j, h);
+              if (q.length >= 3 && Math.abs(ringArea(q)) > 1e-6) all.push(q);
+            }
+        }
+        if (all.length > 1) for (const q of all) {
+          for (const r of q) {
+            const w = bary(r, P2[0], P2[1], P2[2]);
+            const dev = w ? w[0] * hv[0] + w[1] * hv[1] + w[2] * hv[2] - H(r[0], r[1]) : 0;
+            if (dev < DEV[0] || dev > DEV[1]) {
+              fine = false;
+              break;
+            }
+          }
+          if (!fine) break;
+        }
+        if (fine) emitPlane(cp.poly, vs, P2);
+        else for (const q of pcs) emit(q, vs, P2);
         zeroLines = false;
       }
       overlayWhole++;
@@ -7086,7 +7116,7 @@ function approachSpan(arm) {
 }
 
 // viewer/streets/measuredPaint.js
-var PAINT_LIFT = 0.02;
+var PAINT_LIFT = 0.022;
 var MARKABLE = /* @__PURE__ */ new Set([0, 1, 3]);
 var CARRIAGE2 = /* @__PURE__ */ new Set([0, 1, 2, 3]);
 var RESIDENTIAL = /* @__PURE__ */ new Set(["local", "oneWay", "alley"]);

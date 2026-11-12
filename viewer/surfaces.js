@@ -65,7 +65,7 @@ const LIFT = 0.006;                // engine marking layer above the measured ba
 // (the far tiles carry no roads); 3 tiers + DEV stay under the paint decal (viewer/streets/measuredPaint.js PAINT_LIFT).
 const TIER = 0.0015, MAX_TIER = 3;
 const BASE_DROP = 0.01;            // the measured roadway base sits this far under H, the engine layer LIFT above it
-const DEV = [-0.014, 0.012];       // so an uncut engine triangle may sit this far below / above H and stay on top
+const DEV = [-0.014, 0.008];       // so an uncut engine triangle may sit this far below / above H and stay on top (round 2: 12 -> 8 mm: LIFT 6 + 3 tiers 4.5 + DEV must stay 3 mm under the paint decal, PAINT_LIFT 22 mm)
 const BAND = 0.15;                 // kerb-stone band on top of the kerb
 const BAND_LIFT = 0.004;
 const KERB_DOWN = 0.03;            // kerb face starts this far under the roadway (no crack)
@@ -992,7 +992,10 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
     const P2 = vs.map((v) => [EP[v * 3], EP[v * 3 + 2]]);
     const cx = (P2[0][0] + P2[1][0] + P2[2][0]) / 3, cz = (P2[0][1] + P2[1][1] + P2[2][1]) / 3;
     if (!mapped.has(phaseOf(vs[0]))) {
-      if (!inTile(cx, cz) || baseAt(cx, cz) || onBuilding(cx, cz)) { droppedTris++; continue; }
+      // round 2: not over the measured street anywhere (corners, edge middles, centre): such a triangle kept its own
+      // engine heights and lay up to 15 cm over the measured roadway and its paint (Alsemberg / Brugmann)
+      const probe = [...P2, [(P2[0][0] + P2[1][0]) / 2, (P2[0][1] + P2[1][1]) / 2], [(P2[1][0] + P2[2][0]) / 2, (P2[1][1] + P2[2][1]) / 2], [(P2[2][0] + P2[0][0]) / 2, (P2[2][1] + P2[0][1]) / 2], [cx, cz]];
+      if (!inTile(cx, cz) || probe.some(([x, z]) => baseAt(x, z)) || onBuilding(cx, cz)) { droppedTris++; continue; }
       const w3 = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
       const up = lift ? liftOf(vs[0]) - LIFT : 0;     // unmapped engine road: as built, + its tier where it overlaps
       const idx = vs.map((v, q) => A.vert(EP[v * 3], EP[v * 3 + 1] + up, EP[v * 3 + 2], [E.normal[v * 3], E.normal[v * 3 + 1], E.normal[v * 3 + 2]], E.uv[v * 2], E.uv[v * 2 + 1], exOf(vs, w3[q])));
@@ -1015,7 +1018,29 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
     if (cutParts.length > 1 || cutParts[0].inside) {
       // split by a crossing: every part on the plane through H at the triangle's corners (as an uncut triangle), the
       // parts inside with no line codes
-      for (const cp of cutParts) { zeroLines = cp.inside; emitPlane(cp.poly, vs, P2); zeroLines = false; }
+      // (each part drawn as an uncut one would be: on the triangle's plane when that stays within DEV of H at every
+      // crease it spans, else cut at the creases. Drawn on the plane always, a part could rise over the paint decal)
+      const hv = P2.map((q) => H(q[0], q[1]));
+      for (const cp of cutParts) {
+        zeroLines = cp.inside;
+        const xs2 = cp.poly.map((q) => q[0]), zs2 = cp.poly.map((q) => q[1]), pcs = [];
+        for (let i = Math.floor(Math.min(...xs2) / CELL); i <= Math.floor(Math.max(...xs2) / CELL); i++)
+          for (let j = Math.floor(Math.min(...zs2) / CELL); j <= Math.floor(Math.max(...zs2) / CELL); j++) for (let h = 0; h < 2; h++) {
+            const q = clipHalfCell(cp.poly, i, j, h);
+            if (q.length >= 3 && Math.abs(ringArea(q)) > 1e-6) pcs.push(q);
+          }
+        // (the plane is the WHOLE triangle's: check every crease the whole triangle spans, as the uncut case does)
+        let fine = true;
+        const all = [];
+        { const xa = P2.map((q) => q[0]), za = P2.map((q) => q[1]);
+          for (let i = Math.floor(Math.min(...xa) / CELL); i <= Math.floor(Math.max(...xa) / CELL); i++)
+            for (let j = Math.floor(Math.min(...za) / CELL); j <= Math.floor(Math.max(...za) / CELL); j++) for (let h = 0; h < 2; h++) {
+              const q = clipHalfCell(P2, i, j, h); if (q.length >= 3 && Math.abs(ringArea(q)) > 1e-6) all.push(q);
+            } }
+        if (all.length > 1) for (const q of all) { for (const r of q) { const w = bary(r, P2[0], P2[1], P2[2]); const dev = w ? w[0] * hv[0] + w[1] * hv[1] + w[2] * hv[2] - H(r[0], r[1]) : 0; if (dev < DEV[0] || dev > DEV[1]) { fine = false; break; } } if (!fine) break; }
+        if (fine) emitPlane(cp.poly, vs, P2); else for (const q of pcs) emit(q, vs, P2);
+        zeroLines = false;
+      }
       overlayWhole++;
       continue;
     }

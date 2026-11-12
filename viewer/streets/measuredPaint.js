@@ -24,7 +24,7 @@ import { hashPhase } from "../roadData.js";
 import { approachSpan } from "./inventory.js";
 import earcut from "three/src/extras/lib/earcut.js";
 
-export const PAINT_LIFT = 0.02;      // decal paint above H (the engine layer is LIFT 6 mm + tiers + DEV 12 mm at most)
+export const PAINT_LIFT = 0.022;     // decal paint above H (the engine layer is LIFT 6 mm + 3 tiers 4.5 mm + DEV 8 mm = 18.5 mm at most: 3.5 mm clear)
 const MARKABLE = new Set([0, 1, 3]);  // roadway / junction, tram-shared roadway, parking
 const CARRIAGE = new Set([0, 1, 2, 3]);
 const RESIDENTIAL = new Set(["local", "oneWay", "alley"]);
