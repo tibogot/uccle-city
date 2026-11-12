@@ -906,19 +906,18 @@ async function main() {
     if (far > ring) await stream(true);
     // ?interior=1: the interior cell's materials compile under the cover too (stand-in meshes with its exact
     // attribute layouts; the cell streaming in later then builds no shader: viewer/interior/interiorModel.js)
-    // ?impkit=1: the far trees' atlas is baked (a grid row per frame) and their field is in the scene before the warm-up
-    const tk = treeKit();
-    if (tk) { await tk.ready; scene.add(tk.group); updaters.push(tk.update); tk.update(camera.position, camera); }
     const interiorWarm = params.get("interior") === "1" ? await import("./interior/interiorModel.js").then((m) => m.interiorWarmup()).catch(() => null) : null;
     if (interiorWarm) scene.add(interiorWarm);
     const w = await warmBoot(renderer, scene, bootPipes);
     interiorWarm?.removeFromParent();
     fader.hold = false;
-    if (tk) tk.hold = false;
     log(`warm-up: ${w.ms} ms, ${w.warmed} drawables, ${w.parallel} pipelines compiled in parallel, ${w.late} after`);
   }
   $("cover").classList.add("gone");
-  { const tk = treeKit(); if (tk && !tk.group.parent) tk.ready.then(() => { scene.add(tk.group); updaters.push(tk.update); tk.hold = false; }); }   // (?warmup=0)
+  // ?impkit=1: the far trees' atlas bakes in the background (a grid row per frame; under the boot cover, where the
+  // tiles build without frames, it doubled the boot: 12 -> 28 s). When it is ready its shaders compile off the frame,
+  // then every far tree dithers in over the tile fade (viewer/treeKitCity.js show)
+  { const tk = treeKit(); if (tk) tk.ready.then(async () => { await tk.show(scene, (o) => (compileFor ? compileFor([o]) : renderer.compileAsync(o, camera, scene))); updaters.push(tk.update); }); }
   const loading = (async () => { while (await stream()); })();   // initial fill around the start tile
   busy = loading.finally(() => { busy = null; });
   setInterval(() => { if (!busy) busy = stream().finally(() => { busy = null; }); }, 1000);

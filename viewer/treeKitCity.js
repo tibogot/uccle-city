@@ -132,6 +132,17 @@ export function startTreeKit(renderer, shared, leafMask, variants) {
     if (camera && renderer) K.updateView(view, camera, renderer);
     if (dirty || (n && pos.distanceToSquared(lastSortEye) > 250 * 250)) rebuild(pos);
   };
+  /** Into the scene once the atlas is ready: compile (compile(group) -> Promise) first, then every tile registered
+   *  so far dithers in from now (the boot ones too: none were drawn before). */
+  kit.show = async (scene, compile) => {
+    kit.update(lastSortEye.x === Infinity ? new THREE.Vector3() : lastSortEye, null);
+    try { await compile(group); } catch (e) { console.warn("[tree kit] precompile:", e); }
+    const t = performance.now() / 1000;
+    for (const e of entries.values()) e.born = t;
+    kit.hold = false;
+    dirty = true;
+    scene.add(group);
+  };
   /** The far fade's target: the mean colour of the far tiles' orthophotos (linear), a running mean over the tiles. */
   let groundN = 0;
   const acc = [0, 0, 0];
