@@ -20,7 +20,7 @@ import {
   cameraPosition, uv, transformNormalToView, normalGeometry, positionGeometry,
 } from "three/tsl";
 import { applyAlphaCutout } from "../vendor/stylized-trees/alphaCutout.js";
-import { treeTint } from "../vendor/stylized-trees/stylizedTrees.js";
+import { treeTint, leafAtlasNodes, leafAtlasNormal } from "../vendor/stylized-trees/stylizedTrees.js";
 
 import { lodEye, keepBand, rampTo } from "./lodFade.js";
 
@@ -67,12 +67,19 @@ export function bakeTreeImpostors(renderer, shared, variants, leafMask) {
   // are the shading inputs, not the lit colour
   const U = shared.U;
   const card = attribute("card", "vec4"), spin = attribute("cardSpin", "vec3");
-  const mask = texture(leafMask, card.xy.mul(0.5).add(0.5)).r;
+  const maskT = texture(leafMask, card.xy.mul(0.5).add(0.5));
+  // (vendor CHANGES #16: a species with a leaf-spray texture bakes ITS shapes, colour variation and normals, as its
+  // leaves draw them; without one (the street trees, the procedural masks) nothing here changes)
+  const atlas = shared.leafAtlas ? leafAtlasNodes(shared.leafAtlas, card.xy.mul(0.5).add(0.5)) : null;
+  const mask = atlas ? atlas.alpha : maskT.r;
   const hA = card.w, aoA = card.z;
-  const leafAlbedo = mix(U.bottom, U.top, smoothstep(0.0, 1.0, hA)).mul(mix(float(1), aoA, U.aoColor));
+  // (the leaf's own tone from the mask's .g, as the leaves: vendor CHANGES #12; 0 for the street trees)
+  const tone = atlas ? atlas.variation : float(1).add(maskT.g.sub(0.5).mul(2).mul(U.leafTone ?? float(0)));
+  const leafAlbedo = mix(U.bottom, U.top, smoothstep(0.0, 1.0, hA)).mul(mix(float(1), aoA, U.aoColor)).mul(tone);
   // the pad-dome normal (the leaves' normalNode, in tree space): the card's centre normal leaned out by
   // the corner (corner = world position - card centre, the bake instance being the identity)
-  const leafN = normalize(normalGeometry.add(positionWorld.sub(positionGeometry).mul(spin.z).mul(0.7)));
+  const leafDome = normalize(normalGeometry.add(positionWorld.sub(positionGeometry).mul(spin.z).mul(0.7)));
+  const leafN = atlas ? leafAtlasNormal(leafDome, atlas.nCard, shared.leafAtlas.normalK ?? 1) : leafDome;
   const basic = (outputNode, positionNode) => {
     const m = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide });
     m.positionNode = positionNode;
@@ -121,14 +128,21 @@ export function bakeTreeImpostors(renderer, shared, variants, leafMask) {
     barkMesh.frustumCulled = false;
     scene.add(leafMesh, barkMesh);
     // bounding sphere: bark + card centres grown by the biggest card
+    // (the leaves reach about a card's half size past its centre (round masks): the margin from the species' own
+    // biggest card. The street trees' (<= 1.48 m) keep the 1.4 m they were baked with (their atlas is unchanged); the
+    // plane's reach 1.7 m and were cut at the cell's edge: black blocks around far crowns, tree lab 2026-11-06)
+    const cs = g.leaves.attributes.cardSpin;
+    let half = 0;
+    for (let i = 0; i < cs.count; i++) half = Math.max(half, Math.hypot(cs.getX(i), cs.getY(i)));
+    const margin = half > 1.5 ? half + 0.1 : 1.4;
     const box = new THREE.Box3();
     g.leaves.computeBoundingBox(); g.trunk.computeBoundingBox();
-    box.copy(g.leaves.boundingBox).expandByScalar(1.6).union(g.trunk.boundingBox);
+    box.copy(g.leaves.boundingBox).expandByScalar(Math.max(1.6, margin)).union(g.trunk.boundingBox);
     // the box's centre, but the radius from the vertices (the box's own sphere reaches into its empty
     // corners: ~11 m against ~8 m, a third of every cell wasted)
     const sph = new THREE.Sphere(box.getCenter(new THREE.Vector3()), 0);
     const P = new THREE.Vector3(), lp = g.leaves.attributes.position, tp = g.trunk.attributes.position;
-    for (let i = 0; i < lp.count; i++) sph.radius = Math.max(sph.radius, P.fromBufferAttribute(lp, i).distanceTo(sph.center) + 1.4);
+    for (let i = 0; i < lp.count; i++) sph.radius = Math.max(sph.radius, P.fromBufferAttribute(lp, i).distanceTo(sph.center) + margin);
     for (let i = 0; i < tp.count; i++) sph.radius = Math.max(sph.radius, P.fromBufferAttribute(tp, i).distanceTo(sph.center));
     const R = sph.radius;
     spheres.push(new THREE.Vector4(sph.center.x, sph.center.y, sph.center.z, R));
@@ -162,7 +176,7 @@ export function bakeTreeImpostors(renderer, shared, variants, leafMask) {
 }
 
 /** The impostor material (one for every tile): view-blended octahedral frames, relit live. */
-export function impostorMaterial(bake, U, { nearFade = true } = {}) {
+export function impostorMaterial(bake, U, { nearFade = true, alphaBoost = 0.3 } = {}) {
   const m = new THREE.MeshStandardNodeMaterial({ roughness: 0.9, metalness: 0, side: THREE.FrontSide });
   const data = attribute("impData", "vec4");                  // per instance: yaw, scale, variant, -
   const origin = attribute("impPos", "vec3");                  // per instance: the tree's foot (world)
@@ -239,7 +253,10 @@ export function impostorMaterial(bake, U, { nearFade = true } = {}) {
   // (clamped: fwidth can be infinite where a view's uv jumps, and 0 x inf = NaN read as opaque)
   const fw = F[0].at.mul(ATL).fwidth();
   const mipLod = clamp(max(fw.x, fw.y).max(1e-6).log2(), 0.0, 6.0);
-  const alpha = saturate(max(alphaW.div(max(wsum, 1e-4)), alphaU).mul(mipLod.mul(0.3).add(1)));
+  // (alphaBoost: 0.3 per mip level for the street trees; a species whose crowns fill their cell (the plane) takes
+  // less: with 0.3 the far mips' blur over the whole cell turned whole quads opaque and dark, rectangles over a
+  // forest at 400-550 m (tree lab 2026-11-06))
+  const alpha = saturate(max(alphaW.div(max(wsum, 1e-4)), alphaU).mul(mipLod.mul(alphaBoost).add(1)));
   const inv = float(1).div(max(alphaW, 1e-4));
   const albedo = col.mul(inv), nTree = normalize(nrm.mul(inv).mul(2).sub(1)), flg = flag.mul(inv);
   const leaf = step(0.4, flg), ao = mix(float(1), saturate(flg.sub(0.5).mul(2)), leaf);

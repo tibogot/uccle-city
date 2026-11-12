@@ -60,6 +60,10 @@ export const STYLIZED_TREE_DEFAULTS = {
   windSpeed: 1.1,
   /** the bark (linear RGB) */
   trunkColor: [0.16, 0.1, 0.06],
+  /** [uccle-city CHANGES.md #12] per-leaf tone from the leaf mask's .g (0.5 = neutral): albedo x (1 + (g - 0.5) x 2 x leafTone) */
+  leafTone: 0,
+  /** [uccle-city CHANGES.md #14] the wind's direction (x, z in the world; the slow sway leans along it) */
+  windDir: [1, 0],
 };
 
 // ------------------------------------------------------------------ seeded random
@@ -103,7 +107,7 @@ export function roundCrown(r) {
 
 function buildTree(seed, lod, shape = roundCrown) {
   const r = rng(seed);
-  const { crown, rad, clumps, limbs, cards: cardsByLod, cardScale = 1, trunk: trunkOf, cardCorners } = shape(r, lod);
+  const { crown, rad, clumps, limbs, cards: cardsByLod, cardScale = 1, trunk: trunkOf, cardCorners, aoOverhead = 0.8, aoFloor = 0, crownNormal = 0.3 } = shape(r, lod, seed);   // [uccle-city CHANGES.md #13] + the seed (a species picks its form per variant)
   // [uccle-city CHANGES.md #6] a shape may give the card's outline (unit corners, convex, fan-triangulated)
   const CORNERS = cardCorners ?? [[-1, -1], [1, -1], [1, 1], [-1, 1]];
 
@@ -139,16 +143,17 @@ function buildTree(seed, lod, shape = roundCrown) {
       // shading normal at the centre: the clump's sphere, a little of the crown's ellipsoid
       const nc = p.clone().sub(c).normalize();
       const ne = p.clone().sub(crown).divide(rad).normalize();
-      const nn = nc.multiplyScalar(0.7).addScaledVector(ne, 0.3).normalize();
+      const nn = nc.multiplyScalar(1 - crownNormal).addScaledVector(ne, crownNormal).normalize();   // [uccle-city CHANGES.md #15] crownNormal
       // occlusion: depth in the clump x height in the crown x clumps overhead
       const depth = Math.min(1, p.distanceTo(c) / cr);
       let a = (0.4 + 0.6 * smooth01((depth - 0.2) / 0.8)) * (0.5 + 0.5 * smooth01((p.y - yLo) / (yHi - yLo)));
       for (let j = 0; j < clumps.length - 1; j++) {
         if (j === ci) continue;
         const o = clumps[j];
-        if (o.c.y > p.y + 0.4 && Math.hypot(o.c.x - p.x, o.c.z - p.z) < o.r) a *= 0.8;
+        if (o.c.y > p.y + 0.4 && Math.hypot(o.c.x - p.x, o.c.z - p.z) < o.r) a *= aoOverhead;   // [#15] (0.8)
       }
       if (core) a *= 0.6;
+      a = Math.max(a, aoFloor);   // [uccle-city CHANGES.md #15]
       a *= 0.92 + r() * 0.12; // a little value spread per card
       const s = cr * (0.8 + r() * 0.3) * sizeK; // half size
       const spin = r() * Math.PI * 2, cs = Math.cos(spin), sn = Math.sin(spin);
@@ -248,6 +253,34 @@ export function lodMorph(U) {
   return { d, t1: ramp(U.lod1, U.morph1), t2: ramp(U.lod2, U.morph2) };
 }
 
+/** [uccle-city CHANGES.md #16] An optional LEAF-SPRAY TEXTURE on the cards (params.leafAtlas, default none: the
+ *  leaf mask path is untouched). atlas = { albedo: RGB colour + A coverage, normal: RG = the normal's x, y in the
+ *  card's frame (OpenGL, +y = image up), B = thickness; mean: the spray's mean linear albedo; variation (1): how much
+ *  of the spray's own colour variation around its mean multiplies the species' palette; normalK (1): the strength of
+ *  the spray's normals over the clump's dome; transK (1): the thickness' weight in the light through the leaves }.
+ *  The species keeps its palette (top / bottom colours, tint, occlusion): the spray brings the leaf shapes, each
+ *  leaf's colour, veins, its own normals and the light through it. Used by the leaves and the impostor bake. */
+export function leafAtlasNodes(atlas, uvNode) {
+  const a = texture(atlas.albedo, uvNode), n = texture(atlas.normal, uvNode);
+  const mean = vec3(...(atlas.mean ?? [0.1, 0.15, 0.05]));
+  const variation = mix(vec3(1, 1, 1), a.rgb.div(max(mean, vec3(1e-3, 1e-3, 1e-3))), float(atlas.variation ?? 1));
+  // the normal in the card's frame; texel rows run DOWN the card (v = 0 at the image's top, as the masks): +y in the
+  // image is -v, so the card's "down" axis gets -y
+  const nx = n.r.mul(2).sub(1), ny = n.g.mul(2).sub(1);
+  const nz = saturate(float(1).sub(nx.mul(nx)).sub(ny.mul(ny))).sqrt();
+  return { alpha: a.a, variation, nCard: vec3(nx, ny.negate(), nz), thick: n.b, meanThick: float(atlas.meanThick ?? 0.3) };
+}
+/** [#16] The spray's normal over the clump's dome normal (tree space): the card's u / v axes are the camera-facing
+ *  corner axes (the view's right / up turned by the card's spin, back into the tree's space by its turn). */
+export function leafAtlasNormal(nTree, nCard, k = 1) {
+  const V = cameraViewMatrix, spin = attribute("cardSpin", "vec4"), xf = attribute("treeXf", "vec3");
+  const right = vec3(V.element(0).x, V.element(1).x, V.element(2).x), up = vec3(V.element(0).y, V.element(1).y, V.element(2).y);
+  const s = normalize(vec2(spin.x, spin.y));
+  const toTree = (w) => vec3(xf.x.mul(w.x).sub(xf.y.mul(w.z)), w.y, xf.y.mul(w.x).add(xf.x.mul(w.z)));
+  const tu = toTree(right.mul(s.x).add(up.mul(s.y))), tv = toTree(up.mul(s.x).sub(right.mul(s.y)));
+  return normalize(tu.mul(nCard.x.mul(k)).add(tv.mul(nCard.y.mul(k))).add(nTree.mul(nCard.z)));
+}
+
 function makeLeafMaterial(P, U) {
   const leafTex = P.leafMask ?? loadLeafMask();   // [uccle-city CHANGES.md #2]
   const m = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, roughness: 0.9, metalness: 0 });
@@ -255,6 +288,7 @@ function makeLeafMaterial(P, U) {
   const spin = attribute("cardSpin", "vec4");
   const unit = card.xy, aoA = card.z, hA = card.w, invR = spin.z;
   const tex = texture(leafTex, unit.mul(0.5).add(0.5));
+  const atlas = P.leafAtlas ? leafAtlasNodes(P.leafAtlas, unit.mul(0.5).add(0.5)) : null;   // [#16]
   // [uccle-city CHANGES.md #8] the card's size along the LOD morph: kept cards grow toward the old LOD sizes,
   // cards the next LOD drops shrink to nothing before it (rank in cardSpin.w)
   const { t1, t2 } = lodMorph(U);
@@ -293,7 +327,10 @@ function makeLeafMaterial(P, U) {
   const sway = Fn(() => {
     const ph = hash(instanceIndex.add(5)).mul(6.283);
     const t = time.mul(U.windSpeed);
-    const big = vec3(sin(t.add(ph)), 0, cos(t.mul(0.7).add(ph)).mul(0.6));
+    // [uccle-city CHANGES.md #14] the slow sway leans along the wind (world x, z: since #5 the sway is added in the
+    // world, after toWorld), with a smaller sideways swing
+    const wd = vec3(U.windDir.x, 0, U.windDir.y);
+    const big = wd.mul(sin(t.add(ph)).mul(0.5).add(0.6)).add(vec3(wd.z.negate(), 0, wd.x).mul(cos(t.mul(0.7).add(ph)).mul(0.35)));
     const cph = positionLocal.x.mul(0.9).add(positionLocal.z.mul(1.3)).add(positionLocal.y.mul(0.7));
     const small = vec3(sin(t.mul(3.1).add(cph)), sin(t.mul(2.3).add(cph.mul(1.7))).mul(0.5), cos(t.mul(2.7).add(cph)));
     return big.mul(0.7).add(small.mul(0.3)).mul(U.windAmp).mul(hA.mul(0.7).add(0.3));
@@ -308,14 +345,17 @@ function makeLeafMaterial(P, U) {
   // [uccle-city CHANGES.md #7] the tint from the tree's own turn and scale (treeXf), not instanceIndex:
   // the same tree keeps its tint in every LOD mesh and in Uccle's impostors
   const tint = treeTint(xf, U.tintVar);
+  // [uccle-city CHANGES.md #12] the leaf's own tone (mask .g; a RedFormat mask reads 0 there: leafTone 0 = off)
+  // ([#16] a leaf-spray texture brings each leaf's colour instead: no tone)
+  const tone = atlas ? atlas.variation : float(1).add(tex.g.sub(0.5).mul(2).mul(U.leafTone));
   const leafBase = Fn(() => {
     const base = mix(U.bottom, U.top, smoothstep(0.0, 1.0, hA));
-    return base.mul(tint).mul(mix(float(1), aoA, U.aoColor));
+    return base.mul(tint).mul(mix(float(1), aoA, U.aoColor)).mul(tone);
   });
   m.colorNode = leafBase();
   // the leaf shape: smooth edges with MSAA, the hard cut in the shadow map (without the shadow
   // mask each card cast its whole square: the crown's shadow was a hard-edged slab)
-  applyAlphaCutout(m, tex.r, { threshold: 0.5, coverage: P.alphaToCoverage });
+  applyAlphaCutout(m, atlas ? atlas.alpha : tex.r, { threshold: 0.5, coverage: P.alphaToCoverage });
   // The cards face the camera here and the sun in the shadow pass, so a card's corners reach up to
   // its half size toward or away from the sun and it shadowed ITSELF in stripes. The shadow is
   // looked up at the card's CENTRE (a little toward the sun): one value per card, and clumps still
@@ -329,15 +369,19 @@ function makeLeafMaterial(P, U) {
   // (from the raw attribute, in the tree's space, turned into the world here: normalNode is not
   // instanced for us)
   m.normalNode = Fn(() => {
-    const nTree = normalize(attribute("normal", "vec3").add(cornerTree.mul(invR).mul(0.7)));
+    const nDome = normalize(attribute("normal", "vec3").add(cornerTree.mul(invR).mul(0.7)));
+    const nTree = atlas ? leafAtlasNormal(nDome, atlas.nCard, P.leafAtlas.normalK ?? 1) : nDome;   // [#16]
     return transformNormalToView(toWorld(nTree)).normalize();
   })();
   // light through the leaves: looking toward the sun, outer leaves glow, the core does not
+  // ([#16] with a spray texture, thin blades let more through than veins, petioles and twigs; the mean is kept)
+  const through = atlas ? mix(float(1), float(1).sub(atlas.thick).div(float(1).sub(atlas.meanThick)), float(P.leafAtlas.transK ?? 1)) : null;
   m.emissiveNode = Fn(() => {
     const V = normalize(positionWorld.sub(cameraPosition));
     const back = pow(saturate(dot(V, U.sunDir)), 4.0);
     const glow = U.transColor.mul(U.sunColor).mul(back).mul(aoA.mul(aoA)).mul(U.translucency);
-    return glow.add(leafBase().mul(U.fillColor).mul(U.fill).mul(aoA.mul(0.5).add(0.5)));
+    const glowT = through ? glow.mul(through) : glow;   // [#16]
+    return glowT.add(leafBase().mul(U.fillColor).mul(U.fill).mul(aoA.mul(0.5).add(0.5)));
   })();
   return m;
 }
@@ -388,6 +432,8 @@ export function createStylizedTrees({ scene, trees, variants = 3, params = {}, s
     lod1: uniform(P.lodDist), lod2: uniform(P.farDist),
     morph1: uniform(P.morph1 ?? 0), morph2: uniform(P.morph2 ?? 0),
     lodScale: uniform(1),
+    leafTone: uniform(P.leafTone ?? 0),                              // [#12]
+    windDir: uniform(new THREE.Vector2(...(P.windDir ?? [1, 0]))),   // [#14]
   };
   const leafMat = makeLeafMaterial(P, U);
   const trunkMat = makeTrunkMaterial(U, P);
@@ -403,6 +449,7 @@ export function createStylizedTrees({ scene, trees, variants = 3, params = {}, s
     trunkFar.maskNode = P.farMask(d);
   }
   if (shared) Object.assign(shared, { U, leafMat, trunkMat, leafFar, trunkFar, geoms: new Map() });
+  if (shared && P.leafAtlas) shared.leafAtlas = P.leafAtlas;   // [#16] (the impostor bake reads it)
   return build(U, leafMat, trunkMat, leafFar, trunkFar);
 
   function createWithShared() {
@@ -427,7 +474,7 @@ export function createStylizedTrees({ scene, trees, variants = 3, params = {}, s
       let g;
       if (shared) {
         const key = `${v}:${lod}`;
-        if (!shared.geoms.has(key)) shared.geoms.set(key, buildTree(1000 + v * 97, lod, P.shape ?? roundCrown));
+        if (!shared.geoms.has(key)) shared.geoms.set(key, buildTree((P.seed ?? 1000) + v * 97, lod, P.shape ?? roundCrown));
         const base = shared.geoms.get(key), wrap = (src) => {
           const w = new THREE.BufferGeometry();
           for (const a of Object.keys(src.attributes)) w.setAttribute(a, src.attributes[a]);
@@ -437,7 +484,7 @@ export function createStylizedTrees({ scene, trees, variants = 3, params = {}, s
           return w;
         };
         g = { leaves: wrap(base.leaves), trunk: wrap(base.trunk) };
-      } else g = buildTree(1000 + v * 97, lod, P.shape ?? roundCrown);
+      } else g = buildTree((P.seed ?? 1000) + v * 97, lod, P.shape ?? roundCrown);
       const mk = (geo, mat) => {
         const im = new THREE.InstancedMesh(geo, mat, cap);
         im.count = 0;
@@ -462,7 +509,8 @@ export function createStylizedTrees({ scene, trees, variants = 3, params = {}, s
       kinds.push({ v, lod, leaves: mk(g.leaves, lod === 2 ? leafFar : leafMat), trunk: mk(g.trunk, lod === 2 ? trunkFar : trunkMat), xfAttr, posAttr });
     }
   }
-  const variantOf = trees.map((_, i) => Math.floor(rng(i * 7919 + 13)() * variants));
+  // [uccle-city CHANGES.md #13] params.variantOf(i) may pick a tree's variant (default: the hash of its index)
+  const variantOf = trees.map((_, i) => P.variantOf ? P.variantOf(i) : Math.floor(rng(i * 7919 + 13)() * variants));
   const mats = trees.map(([x, z, y, rot, s]) => {
     const m = new THREE.Matrix4().makeRotationY(rot);
     m.scale(new THREE.Vector3(s, s, s));
@@ -518,6 +566,8 @@ export function createStylizedTrees({ scene, trees, variants = 3, params = {}, s
     U.fill.value = P.fill;
     U.windAmp.value = P.windAmp;
     U.windSpeed.value = P.windSpeed;
+    U.leafTone.value = P.leafTone ?? 0;                                // [#12]
+    if (P.windDir) U.windDir.value.set(P.windDir[0], P.windDir[1]);   // [#14]
     U.fillColor.value.set(P.fillColor);
     U.lod1.value = P.lodDist; U.lod2.value = P.farDist;               // [#8]
     U.morph1.value = P.morph1 ?? 0; U.morph2.value = P.morph2 ?? 0;

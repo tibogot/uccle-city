@@ -47,3 +47,25 @@
    nothing. Before, every re-bucket (each 5 m of camera motion) uploaded every buffer of every loaded tile whole
    (capacity >= 1025, #4): ~30 MB and 15-25 ms of `writeBuffer` in one frame while walking (measured with
    `debug/moveTest.js`). Same draws, same data.
+12. **Leaf tone channel** (Uccle tree lab, 2026-11-06): `params.leafTone` (uniform `U.leafTone`, default 0 = off): the
+   leaf albedo is multiplied by `1 + (mask.g - 0.5) x 2 x leafTone`, so a species' leaf mask can carry each leaf's
+   own tone and its veins in .g (a RedFormat mask reads 0 there; with leafTone 0 nothing changes). The impostor
+   bake (viewer/impostors.js) applies the same term.
+13. **Variant per tree, seed** (tree lab): `params.variantOf(i)` picks tree i's variant (default: the hash of its index,
+   as before); `params.seed` replaces the built trees' base seed 1000, and `shape(r, lod, seed)` gets the seed (a species picks a form per variant).
+14. **Wind direction** (tree lab): `params.windDir` [x, z] (uniform `U.windDir`): the slow sway leans along it with a
+   smaller sideways swing (before: a fixed x / z sway). The sway is added in the world (since #5). Only with
+   `windAmp` > 0 (0 in the city: no change there).
+15. **Crown occlusion and normal per shape** (tree lab): a shape may return `aoOverhead` (the occlusion factor per clump
+   overhead, default 0.8), `aoFloor` (the lowest occlusion, default 0) and `crownNormal` (the crown ellipsoid's share in
+   a card's shading normal, default 0.3). With ~100 small pads (the plane) 0.8 per overlapping pad turned the lower
+   crown black (0.8^10); the defaults keep the street trees as they were.
+16. **Leaf-spray texture** (tree textures lab, 2026-11-06): `params.leafAtlas` (default none: the leaf-mask path is
+   unchanged, the street trees, the plane and the beech of the tree lab and the city draw exactly as before) =
+   `{ albedo (RGB + coverage A), normal (RG = the normal in the card's frame, B = thickness), mean, meanThick,
+   variation, normalK, transK }`. With it the cards cut on its alpha (coverage-preserving mips made offline), the
+   species' palette is multiplied by the spray's colour around its mean (`variation`; no leaf tone), the clump's dome
+   normal is bent by the spray's normal (`leafAtlasNormal`: the card's u / v axes are the camera-facing corner axes
+   turned by its spin), and the light through the leaves follows 1 - thickness (mean kept). Exported helpers
+   `leafAtlasNodes(atlas, uv)` and `leafAtlasNormal(nTree, nCard, k)` are used by Uccle's impostor bake
+   (viewer/impostors.js) so the impostors are baked from the textured leaves; `shared.leafAtlas` is set when present.
