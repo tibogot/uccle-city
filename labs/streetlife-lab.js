@@ -26,6 +26,7 @@ const $info = document.getElementById("info"), $names = document.getElementById(
 const SITES = {
   stjob: { label: "Place de Saint-Job (I5 + I6)", tiles: ["I6", "I5"], home: "Botanea", street: /Saint-Job|Prince de Ligne|Carsoel/ },
   fortjaco: { label: "Chaussée de Waterloo, Fort-Jaco (J6)", tiles: ["J6"], home: "Neuhaus", street: /Waterloo/ },
+  alsemberg: { label: "Chaussée d'Alsemberg / Xavier De Bue / Parvis Saint-Pierre (E4)", tiles: ["E4"], home: "Etam", street: /Alsemberg|Xavier De Bue/ },
 };
 const site = SITES[qp.get("site")] ? qp.get("site") : "stjob";
 const SITE = SITES[site];
