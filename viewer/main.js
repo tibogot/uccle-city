@@ -292,10 +292,26 @@ class Walker {
       drag = [e.clientX, e.clientY];
     });
   }
-  start(x, z, yaw) { this.on = true; this.yaw = yaw; this.pitch = -0.05; this.x = x; this.z = z; }
+  /** Walk mode collides like the third-person body (docs/collisions/README.md): the same capsule controller in the same
+   *  city collision world (viewer/character/cityHook.js cityCollision), the camera at its eyes. Until it is ready (the
+   *  first second) it glides on the ground as before. */
+  start(x, z, yaw) {
+    this.on = true; this.yaw = yaw; this.pitch = -0.05; this.x = x; this.z = z;
+    this.ctl = null;
+    const token = this.token = {};
+    (this.collision ??= import("./character/cityHook.js").then((m) => m.cityCollision({ scene: this.scene, world: this.hm, log })))
+      .then(async ({ cw }) => {
+        const { CharacterController, FixedStepper } = await import("./character/controller.js");
+        if (this.token !== token || !this.on) return;
+        const y = this.hm.walkY(this.x, this.z), top = y + 3, t = cw.ray(this.x, top, this.z, 0, -1, 0, 6);
+        const c = new CharacterController(cw);
+        c.teleport(this.x, (t < Infinity ? top - t : y) + 0.05, this.z, this.yaw);
+        this.ctl = c; this.stepper = new FixedStepper(120); this.cw = cw;
+      }).catch((e) => log(`walk collisions: ${e.message}`));
+  }
   update(dt) {
     if (!this.on) return;
-    const k = this.keys, sp = (k.has("ShiftLeft") || k.has("ShiftRight") ? 12 : 4) * dt;
+    const k = this.keys, run = k.has("ShiftLeft") || k.has("ShiftRight"), sp = (run ? 12 : 4) * dt;
     const fx = -Math.sin(this.yaw), fz = -Math.cos(this.yaw);
     let mx = 0, mz = 0;
     if (k.has("KeyW") || k.has("ArrowUp")) { mx += fx; mz += fz; }
@@ -303,10 +319,19 @@ class Walker {
     if (k.has("KeyA") || k.has("ArrowLeft")) { mx += fz; mz -= fx; }
     if (k.has("KeyD") || k.has("ArrowRight")) { mx -= fz; mz += fx; }
     const l = Math.hypot(mx, mz);
-    if (l) { this.x += mx / l * sp; this.z += mz / l * sp; }
+    let eyeY;
+    if (this.ctl) {
+      const c = this.ctl;
+      c.input.x = l ? mx / l : 0; c.input.z = l ? mz / l : 0; c.input.run = run; c.input.jump = k.has("Space");
+      this.stepper.advance(Math.min(dt, 0.1), (h) => c.step(h));
+      this.x = c.pos[0]; this.z = c.pos[2]; eyeY = c.pos[1] + c.stepOffset + EYE;
+    } else {
+      if (l) { this.x += mx / l * sp; this.z += mz / l * sp; }
+      eyeY = (this.hm.walkY ? this.hm.walkY(this.x, this.z) : this.hm.surface(this.x, this.z) + CARVE) + EYE;
+    }
     const { x0, z0, x1, z1 } = this.hm.h;
     this.x = Math.min(Math.max(this.x, x0), x1); this.z = Math.min(Math.max(this.z, z0), z1);
-    this.camera.position.set(this.x, (this.hm.walkY ? this.hm.walkY(this.x, this.z) : this.hm.surface(this.x, this.z) + CARVE) + EYE, this.z);
+    this.camera.position.set(this.x, eyeY, this.z);
     this.camera.rotation.set(this.pitch, this.yaw, 0, "YXZ");
   }
 }
@@ -522,7 +547,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const bxyz = d.road.surfaceData?.bollards || [];
   const drawn = { trees: fo.userData.treesDrawn || [], lamps: lamps.sites || [], bollards: Array.from({ length: bxyz.length / 3 }, (_, i) => ({ x: bxyz[i * 3], z: bxyz[i * 3 + 2] })),
     hiddenBuildings: d.drive?.counts?.hidden || 0 };
-  const drive = tileDrive(d.drive, roads, bounds, drawn);
+  const drive = tileDrive(d.drive, roads, bounds, drawn, own.features);
   frame("drive colliders");
   log(`tile ${entry.name}: main-thread work ${busy.toFixed(0)} ms, longest slice ${longest.toFixed(0)} ms (${worst}); slices over 4 ms: ${slices.join(", ") || "none"}; ${tileWorker ? "CPU build in the worker" : "CPU build ALSO on the main thread"}`);
   // roof heights (m TAW, 0 = none) for fly-mode collision: the max of the 2 m cells around the point, so the bird
@@ -692,17 +717,13 @@ async function main() {
   if (TRAINS) {
     const rail = await railP;
     if (rail) {
-      const { loadBridge, placeBridge, warmBridge, deckHeightFn, roadBridgeColliders, BRIDGES } = await import("./rail/bridgeModel.js");
+      const { loadBridge, placeBridge, warmBridge, deckHeightFn, BRIDGES } = await import("./rail/bridgeModel.js");
       const { openParallelPipelines } = await import("../vendor/engine/parallelPipelines.js");
       for (const name of BRIDGES) {
         loadBridge(name).then(async (b) => {
           const pb = placeBridge(b, { smooth: SMOOTH });
           // a road bridge: its deck carries walk / drive heights, its parapets block the car
-          if (b.info.kind === "road_over_rail") {
-            world.decks.push(deckHeightFn(b.info));
-            const cols = roadBridgeColliders(b.info);
-            if (window.__driver) window.__driver.addStatic(cols); else (window.__pendingStatics ??= []).push(cols);
-          }
+          if (b.info.kind === "road_over_rail") world.decks.push(deckHeightFn(b.info));     // its parapets: viewer/heroColliders.js
           // shaders (+ fading copies) and the shadow pass built before it shows (nothing compiled on a frame)
           const tw = performance.now();
           for (let i = 0; i < 200 && !compileFor && params.get("precompile") !== "0"; i++) await new Promise((r) => setTimeout(r, 100));
@@ -741,6 +762,8 @@ async function main() {
   controls.enableDamping = true;
   controls.maxPolarAngle = Math.PI * 0.495;
   const walker = new Walker(camera, renderer.domElement, world);
+  walker.scene = scene;
+  world.hide = HIDE_BU_IDS;                // the UrbIS solids the landmarks replace (out of the colliders on foot too)
   const atP = params.get("at")?.split(",").map(Number);
   const start = atP?.length === 2 ? roadStart(roads, atP[0], atP[1], bounds)
     : TILE === "I6" ? roadStart(roads, 1153.1, 540.1, bounds) : roadStart(roads, cx, cz, bounds);   // ?at=, else Place de Saint-Job on I6
@@ -811,10 +834,10 @@ async function main() {
   // drive mode (viewer/drive/): the hatchback on a street near Saint-Job church (the fly start), ?at=x,z elsewhere
   const driver = new Driver(camera, renderer.domElement, scene, world);
   window.__driver = driver;
-  if (params.get("stjob") !== "0") loadStJob().then((m) => driver.addStatic(stjobColliders(m.placement))).catch(() => {});   // the church's front steps
-  if (HIDE_BU_IDS.length) loadStJob().then((m) => driver.addStatic(stjobColliders(m.placement))).catch(() => {});   // the church's front steps
-  for (const cols of window.__pendingStatics ?? []) driver.addStatic(cols);                                           // hero road bridges' parapets
-  window.__pendingStatics = [];
+  // every landmark / bridge collides by its own LOD0 (car blocks + character triangles), built once its tiles are in
+  // (viewer/heroColliders.js; replaces the hand-made Saint-Job steps and road-bridge parapet rings)
+  const heroCols = (await import("./heroColliders.js")).createHeroColliders({ scene, world, manifest, driver, log });
+  window.__heroCols = heroCols;
   const drive = () => {
     // from where the player is (walk / third person / fly): the nearest road of the tile there; else ?at=x,z or Saint-Job
     const here = third?.on ? [third.tp.x, third.tp.z] : walker.on ? [walker.x, walker.z] : flyer.on ? [flyer.x, flyer.z] : null;
@@ -1136,9 +1159,11 @@ async function main() {
   const collisionTest = async (name, opts = {}) => {
     const m = await import("./drive/collisionTest.js");
     let makeController = null;
-    if (opts.walk !== false && third?.world) {
+    if (opts.walk !== false) {
       const { CharacterController } = await import("./character/controller.js");
-      makeController = (x, y, z) => { const c = new CharacterController(third.world); c.teleport(x, y, z); return c; };
+      const col = await (await import("./character/cityHook.js")).cityCollision({ scene, world, log });
+      for (let i = 0; i < 300 && !col.ready(name); i++) await new Promise((r) => setTimeout(r, 200));
+      makeController = (x, y, z) => { const c = new CharacterController(col.cw); c.teleport(x, y, z); return c; };
     }
     return m.collisionTest({ scene, world, driver, makeController }, name, opts);
   };

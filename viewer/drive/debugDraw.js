@@ -7,7 +7,7 @@ import * as THREE from "three/webgpu";
 import { gather, KIND } from "./colliders.js";
 import { BODY } from "./carPhysics.js";
 
-const COLORS = { [KIND.building]: [1, 0.85, 0.2], [KIND.island]: [0.2, 0.9, 1], [KIND.tree]: [0.3, 1, 0.3], [KIND.lamp]: [1, 0.3, 1], [KIND.post]: [1, 0.55, 0.1], [KIND.wall]: [0.7, 0.7, 1] };
+const COLORS = { [KIND.building]: [1, 0.85, 0.2], [KIND.island]: [0.2, 0.9, 1], [KIND.tree]: [0.3, 1, 0.3], [KIND.lamp]: [1, 0.3, 1], [KIND.post]: [1, 0.55, 0.1], [KIND.wall]: [0.7, 0.7, 1], [KIND.car]: [1, 1, 1], [KIND.furniture]: [0.9, 0.6, 1] };
 const BAD = [1, 0.1, 0.1];
 const css = (c) => `rgb(${c.map((v) => Math.round(v * 255)).join(",")})`;
 const MAX = 60000;

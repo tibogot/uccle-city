@@ -67,7 +67,6 @@ export function auditTile(tile) {
     else if (k === KIND.lamp && !lamps(x, z, 0.5)) bad(name, x, z, "lamp: no lamp drawn", col.P + i);
     else if (k === KIND.post && !bolls(x, z, 0.3)) bad(name, x, z, "post: no bollard drawn", col.P + i);
   }
-  if (D.hiddenBuildings) R.invisible["building: hidden solid (hero model drawn instead: kept)"] = D.hiddenBuildings;
   // the reverse: drawn, no collider
   const circ = [];
   for (let i = 0; i < col.C; i++) circ.push({ x: col.circ[i * 3], z: col.circ[i * 3 + 1], k: col.ckind[i] });

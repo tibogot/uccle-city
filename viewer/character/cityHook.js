@@ -27,18 +27,30 @@ const KIND = (m) => {
   if (/bollard/i.test(n)) return "post";
   if (n === "furniture-shelter" || (parent === "tram" && !n)) return "mesh";
   if (n === "parked-cars") return "prop";
-  if (n === "tram-poles") return "pole";
+  if (n === "tram-poles" || n === "rail-masts") return "pole";
   if (/^furniture-(bench|stopPole|signal|bikes)$/.test(n)) return "post";
   return null;
 };
 
-export async function startThirdPerson({ scene, camera, renderer, controls, world, start, setView, log = console.log }) {
-  const qp = new URLSearchParams(location.search);
+let shared = null;
+/**
+ * THE CITY'S COLLISION WORLD for the body on foot: one per page, shared by walk mode (first person) and third person
+ * (docs/collisions/README.md: until 2026-11-13 walk mode had no collision at all). Tiles streamed in / out are picked up
+ * once a second; every landmark / bridge adds its LOD0 triangles (viewer/heroColliders.js), and the UrbIS solids they
+ * replace (world.hide) are left out of the footprint prisms.
+ */
+export function cityCollision({ scene, world, log = console.log }) {
+  return (shared ??= buildCityCollision({ scene, world, log }));
+}
+
+async function buildCityCollision({ scene, world, log }) {
   const manifest = await (await fetch(new URL("manifest.json", DATA))).json();
   const cw = new CollisionWorld();
   const tiles = world.tiles;
+  const heroes = new Map();                          // landmark / bridge name -> its TriBVH (in cw)
   const heightAt = (x, z) => {                       // allocation-free tile lookup
-    if (world.decks?.length) { const d = world.deckY(x, z); if (d != null) return d; }      // hero road-bridge decks
+    // the road bridge's deck until its own triangles are in (then the terrain under it is the cutting, as drawn)
+    if (world.decks?.length && !heroes.has("bridge-verrewinkel")) { const d = world.deckY(x, z); if (d != null) return d; }
     for (let i = 0; i < tiles.length; i++) { const b = tiles[i].bounds; if (x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1) return tiles[i].hm.surface(x, z); }
     return tiles[0].hm.surface(x, z);
   };
@@ -138,7 +150,7 @@ export async function startThirdPerson({ scene, camera, renderer, controls, worl
     const id = ++reqId;
     const r = await new Promise((resolve, reject) => {
       pending.set(id, { resolve, reject });
-      worker.postMessage({ id, positions: g.positions, buildingsUrl: new URL(entry.files.buildings, DATA).href, props: g.props, posts: g.posts }, [g.positions.buffer]);
+      worker.postMessage({ id, positions: g.positions, buildingsUrl: new URL(entry.files.buildings, DATA).href, props: g.props, posts: g.posts, hide: world.hide || [] }, [g.positions.buffer]);
     }).catch((e) => { log(`third person: tile ${t.name} colliders failed: ${e.message}`); return null; });
     if (!r || !tiles.includes(t)) { built.delete(t.name); return; }        // failed / unloaded meanwhile
     const bvh = TriBVH.fromData(r.bvh); bvh.tag = 3;
@@ -155,7 +167,30 @@ export async function startThirdPerson({ scene, camera, renderer, controls, worl
     for (const [name, s] of built) if (s !== "pending" && !tiles.includes(s.tile)) { for (const x of s.sets) cw.remove(x); built.delete(name); }
   }
   await sync();
-  let timer = setInterval(sync, 1000);
+  setInterval(sync, 1000);
+  // the landmarks' and bridges' own triangles (built in the collider worker, no hitch)
+  const addHero = async (name, tris) => {
+    if (heroes.has(name)) return;
+    heroes.set(name, null);
+    const id = ++reqId;
+    const r = await new Promise((resolve, reject) => { pending.set(id, { resolve, reject }); worker.postMessage({ id, positions: tris.slice(), only: "bvh" }); })
+      .catch((e) => { log(`collisions: ${name} triangles failed: ${e.message}`); return null; });
+    if (!r) { heroes.delete(name); return; }
+    const bvh = TriBVH.fromData(r.bvh); bvh.tag = 6;
+    cw.add(bvh); heroes.set(name, bvh);
+    log(`collisions on foot: ${name} by its LOD0, ${r.bvh.count} triangles (worker BVH ${r.ms.bvh} ms)`);
+  };
+  for (let i = 0; i < 100 && !window.__heroCols; i++) await new Promise((r) => setTimeout(r, 100));
+  window.__heroCols?.onTriangles((name, tris) => addHero(name, tris));
+  /** Are the tile's colliders in, and every landmark / bridge whose car colliders are built (heroColliders.js) in too? */
+  const ready = (name) => { const b = built.get(name); if (!b || b === "pending") return false; for (const n of window.__heroCols?.done.keys() ?? []) if (!heroes.get(n)) return false; return true; };
+  return { cw, sync, heroes, heightAt, ready };
+}
+
+export async function startThirdPerson({ scene, camera, renderer, controls, world, start, setView, log = console.log }) {
+  const qp = new URLSearchParams(location.search);
+  const { cw } = await cityCollision({ scene, world, log });
+  const heightAt = (x, z) => world.walkY(x, z);
 
   const tp = new ThirdPerson({ scene, camera, dom: renderer.domElement, world: cw });
   const near0 = camera.near;
@@ -177,7 +212,6 @@ export async function startThirdPerson({ scene, camera, renderer, controls, worl
       controls.enabled = false;
       if (api.last) tp.start(api.last[0], api.last[1] + 0.05, api.last[2], api.last[3]);
       else place(start?.x ?? controls.target.x, start?.z ?? controls.target.z, start?.yaw != null ? start.yaw + Math.PI : 0);
-      if (!timer) timer = setInterval(sync, 1000);
       hud.style.display = "";
     },
     update(dt) {
@@ -194,7 +228,7 @@ export async function startThirdPerson({ scene, camera, renderer, controls, worl
       if (!api.on) return;
       api.on = false;
       api.last = [tp.ctl.pos[0], tp.ctl.pos[1], tp.ctl.pos[2], tp.ctl.yaw];
-      tp.stop(); clearInterval(timer); timer = null; hud.style.display = "none";
+      tp.stop(); hud.style.display = "none";
       camera.near = near0; camera.updateProjectionMatrix();
       controls.enabled = true;
     },

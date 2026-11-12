@@ -5662,7 +5662,7 @@ var MeshoptSimplifier = (function() {
 
 // viewer/drive/colliders.js
 var CELL = 48;
-var KIND2 = { building: 0, island: 1, tree: 2, lamp: 3, post: 4, wall: 5 };
+var KIND2 = { building: 0, island: 1, tree: 2, lamp: 3, post: 4, wall: 5, car: 6, furniture: 7 };
 function buildColliders(polys, circles, bounds) {
   let nv = 0, nr = 0;
   for (const p of polys) for (const r2 of p.rings) {
@@ -8240,9 +8240,9 @@ async function buildTileData(entry, base) {
     const [idx] = MeshoptSimplifier.simplify(terrain.idx, terrain.pos, 3, 0, TERRAIN_ERROR, ["LockBorder", "ErrorAbsolute"]);
     terrain.idx = idx;
   });
-  const drive = await step("drive colliders", () => buildDriveData({ bDoc, net, feats, hm, parts: road.parts, bounds, surf, legacy: !!entry.driveLegacy }));
   const nb = bDoc.buildings.length;
   hideBuildings(bDoc, entry.hide);
+  const drive = await step("drive colliders", () => buildDriveData({ bDoc, net, feats, hm, parts: road.parts, bounds, surf, legacy: !!entry.driveLegacy }));
   drive.counts.hidden = nb - bDoc.buildings.length;
   const kit = entry.kit ? kitCollector({ exclude: new Set(entry.kitExclude || []), ground: (x, z) => hm.ground(x, z) }) : null;
   const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit }));

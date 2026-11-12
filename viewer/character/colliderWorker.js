@@ -7,14 +7,17 @@ import { TriBVH } from "./bvh.js";
 import { PrismSet } from "./prisms.js";
 
 onmessage = async (e) => {
-  const { id, positions, buildingsUrl, posts, props } = e.data;
+  const { id, positions, buildingsUrl, posts, props, hide = [], only } = e.data;
   try {
     const t0 = performance.now();
     const bvh = new TriBVH(positions).toData();
     const t1 = performance.now();
+    if (only === "bvh") { postMessage({ id, bvh, ms: { bvh: +(t1 - t0).toFixed(1) } }, TriBVH.transferList(bvh)); return; }
+    const hidden = new Set(hide);          // the UrbIS solids a landmark replaces: it collides by its own triangles
     const doc = await (await fetch(buildingsUrl)).json();
     const polys = [];
     for (const b of doc.buildings) {
+      if (hidden.has(b.attrs?.BU_ID) || hidden.has(b.id)) continue;
       const rings = (b.footprint || []).filter((r) => r.length >= 3);
       if (rings.length) polys.push({ rings, base: (+b.base || 0) - 3, top: +b.top || 1e4, id: b.attrs?.BU_ID || b.id });
     }

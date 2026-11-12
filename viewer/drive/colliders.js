@@ -15,7 +15,7 @@
 // Sidewalk kerbs are NOT walls: the road engine says "kerbs to sidewalks are climbed"; they are in the ground grid.
 
 export const CELL = 48;
-export const KIND = { building: 0, island: 1, tree: 2, lamp: 3, post: 4, wall: 5 };
+export const KIND = { building: 0, island: 1, tree: 2, lamp: 3, post: 4, wall: 5, car: 6, furniture: 7 };
 
 /**
  * Build a collider set from plain lists.
@@ -81,6 +81,23 @@ export function addCircles(col, circles) {
   circles.forEach((q, i) => { circ[(n0 + i) * 3] = q.x; circ[(n0 + i) * 3 + 1] = q.z; circ[(n0 + i) * 3 + 2] = q.r; ckind[n0 + i] = q.kind ?? KIND.post; });
   col.circ = circ; col.ckind = ckind;
   return indexCells(col);
+}
+
+/** A new set with more polygons and circles (the drawn street furniture and parked cars, added on the main thread). */
+export function extendColliders(col, polys, circles) {
+  const old = [];
+  for (let p = 0; p < col.P; p++) {
+    const rings = [];
+    for (let r = col.polyRing[p]; r < col.polyRing[p + 1]; r++) {
+      const ring = [];
+      for (let i = col.ringStart[r]; i < col.ringStart[r + 1]; i++) ring.push([col.pts[i * 2], col.pts[i * 2 + 1]]);
+      rings.push(ring);
+    }
+    old.push({ rings, kind: col.pkind[p], top: col.ptop[p], base: col.pbase[p] });
+  }
+  const oc = [];
+  for (let c = 0; c < col.C; c++) oc.push({ x: col.circ[c * 3], z: col.circ[c * 3 + 1], r: col.circ[c * 3 + 2], kind: col.ckind[c] });
+  return buildColliders(old.concat(polys), oc.concat(circles), col.bounds);
 }
 
 /** Items (ids: < col.P a polygon, else a circle) of every cell within r of (x, z), each once, into out. */

@@ -218,11 +218,13 @@ export async function buildTileData(entry, base) {
     const [idx] = MeshoptSimplifier.simplify(terrain.idx, terrain.pos, 3, 0, TERRAIN_ERROR, ["LockBorder", "ErrorAbsolute"]);
     terrain.idx = idx;
   });
-  // drive colliders too: a replaced solid's footprint is the hero model's footprint (Saint-Job church)
-  const drive = await step("drive colliders", () => buildDriveData({ bDoc, net, feats, hm, parts: road.parts, bounds, surf, legacy: !!entry.driveLegacy }));   // drive mode (viewer/drive/)
+  // drive colliders: NOT the solids a scripted model replaces (the model collides by its own geometry,
+  // viewer/heroColliders.js: its footprint corners blocked where the model has a porch or a recess, and missed its
+  // steps, yard walls, fences and parapets)
   const nb = bDoc.buildings.length;
   hideBuildings(bDoc, entry.hide);
-  drive.counts.hidden = nb - bDoc.buildings.length;     // solids a hero model replaces (their footprint still collides)
+  const drive = await step("drive colliders", () => buildDriveData({ bDoc, net, feats, hm, parts: road.parts, bounds, surf, legacy: !!entry.driveLegacy }));   // drive mode (viewer/drive/)
+  drive.counts.hidden = nb - bDoc.buildings.length;     // solids a hero model replaces (it collides by its own LOD0)
   // ?kit=1: the façade kit's placement (viewer/facadeKit/placement.js) runs inside the analysis, here in the worker;
   // entry.kitExclude = BU_IDs a hero model or the interior pilot replaces
   const kit = entry.kit ? kitCollector({ exclude: new Set(entry.kitExclude || []), ground: (x, z) => hm.ground(x, z) }) : null;
