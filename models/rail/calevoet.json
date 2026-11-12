@@ -1,0 +1,81 @@
+{
+ "asset": "railway bridge 'calevoet' (tools/blender/railBridge.py)",
+ "urbis": "bridge/687",
+ "line": "L124",
+ "road": "Chauss\u00e9e de Saint-Job / Rue du Ch\u00e2teau d'Or",
+ "triangles": 29104,
+ "materials": [
+  "brick_red_brussels",
+  "stone_blue",
+  "concrete",
+  "painted_metal_white",
+  "brick_yellow"
+ ],
+ "frame": "glTF Y up; +x = along the track (city direction theta), -z = Blender +Y; origin = UrbIS polygon centre at road level",
+ "placement": {
+  "city_local_position": [
+   -1124.72,
+   39.64,
+   1123.19
+  ],
+  "rotation_y_rad": -1.4172073526193956
+ },
+ "deck": {
+  "length": 82.2,
+  "width": 9.5,
+  "railTop": 14.95,
+  "ballastFloor": 14.33,
+  "parapetInner": 4.3,
+  "parapetTop": 15.43
+ },
+ "openings": [
+  {
+   "x0": -38.9,
+   "x1": -25.9,
+   "kind": "round",
+   "spring": 6.55,
+   "ring": 0.72,
+   "main": true,
+   "floor": null
+  },
+  {
+   "x0": -22.7,
+   "x1": -9.7,
+   "kind": "round",
+   "spring": 6.55,
+   "ring": 0.72,
+   "main": true,
+   "floor": null
+  },
+  {
+   "x0": -6.5,
+   "x1": 6.5,
+   "kind": "round",
+   "spring": 6.55,
+   "ring": 0.72,
+   "main": true,
+   "floor": null
+  },
+  {
+   "x0": 9.7,
+   "x1": 22.7,
+   "kind": "round",
+   "spring": 6.55,
+   "ring": 0.72,
+   "main": true,
+   "floor": null
+  },
+  {
+   "x0": 25.9,
+   "x1": 38.9,
+   "kind": "round",
+   "spring": 6.55,
+   "ring": 0.72,
+   "main": true,
+   "floor": null
+  }
+ ],
+ "skew_dx_per_dy": -0.0,
+ "measured": "UrbIS Land cover Bridges polygon (length, width, axis), OSM road axis + UrbIS street surfaces (clear width), DTM 2021 (road level), rail.json (rail top)",
+ "estimated": "arch rise / springing, pilaster / arcade / cornice / parapet dimensions, stone counts: from the Wikimedia Commons photos"
+}

@@ -266,6 +266,9 @@ function addTrees(group, f, inTile, treeGround) {
 
 let tramLine = null;       // real STIB line 92 on its timetable (tramline.js)
 const updaters = [];
+// The railway (?trains=1, Train Lab first): tracks per tile, hero bridges, SNCB trains on the real timetable (viewer/rail/)
+const TRAINS = params.get("trains") === "1";
+const railP = TRAINS ? import("./rail/railway.js").then(async (m) => ({ m, doc: await m.loadRail() })).catch((e) => { log(`railway: ${e.message}`); return null; }) : null;
 let falconsReady = null, falconsOn = true;   // the Saint-Job peregrines (viewer/falcons.js), once loaded       // per-frame updates (tree LOD, lamp lights) of every loaded tile
 
 // ------------------------------------------------------------------ walk mode
@@ -345,6 +348,7 @@ function tileData(entry, lite = false) {
   entry = { ...entry, hide: HIDE_BU_IDS, surface: ROAD_SURFACES, pits: params.get("pits") !== "0",   // ?pits=0: no tree pits (A/B)
     kit: cityKit.on && !lite, kitExclude: cityKit.exclude };                                         // ?kit=1: the façade kit (viewer/facadeKit/)
   entry = { ...entry, hide: HIDE_BU_IDS, ponds: PONDS, surface: ROAD_SURFACES, pits: params.get("pits") !== "0" };   // ?pits=0: no tree pits (A/B)
+  entry = { ...entry, hide: HIDE_BU_IDS, surface: ROAD_SURFACES, pits: params.get("pits") !== "0", rail: TRAINS };   // ?pits=0: no tree pits (A/B)
   const local = () => import("./tileData.js").then((m) => (lite ? m.buildLiteData : m.buildTileData)(entry, DATA.href));
   if (!tileWorker) return local();
   return new Promise((resolve, reject) => {
@@ -424,6 +428,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     if (verbose || fader.hold) { mark = performance.now(); return Promise.resolve(); }   // under the boot cover: no frame to keep smooth
     return new Promise((r) => requestAnimationFrame(() => { mark = performance.now(); r(); })); };   // spread GPU-side work over frames
   const { roads, feats } = d;
+
   const hm = Heightmap.from(d.hdr, d.y, d.orig);
   const ni = d.netInfo;
   say(`tile ${entry.name} built ${tileWorker ? "in the worker" : "on the main thread"}: ${Object.entries(d.times).map(([k, v]) => `${k} ${v} ms`).join(", ")}`);
@@ -436,6 +441,15 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   await frame("roads");
   const terr = terrainMesh(d.terrain, contourOn, feats, bounds, d.cover);
   own.terrain.add(terr);
+  if (d.rail && railP) {       // ?trains=1: carved + built in the tile worker (viewer/rail/railData.js), wrapped here
+    await frame("terrain mesh");
+    const rail = await railP;
+    const rt = rail.m.railTileMeshes(d.rail);
+    if (rt.group.children.length) own.features.add(rt.group);
+    const st = rt.stats;
+    await frame("railway");
+    if (st.km || st.treesDropped) say(`railway (worker): ${st.km} km of track, ${st.sleepers} sleepers, ${st.masts} masts, ${st.platforms || 0} platforms, ${st.decks || 0} decks, ${st.tris} triangles; ${st.carved} terrain cells carved / filled, ${st.treesDropped} LiDAR trees dropped`);
+  }
   // squares OSM leaves out (data/overrides.json); with measured surfaces the UrbIS squares replace them
   const plazas = ss ? { count: 0 } : buildPlazas(await loadOverrides(DATA), bounds, (x, z) => hm.ground(x, z));
   if (plazas.count) own.roads.add(plazas.group);
@@ -566,8 +580,12 @@ async function main() {
     at(x, z) { return this.tiles.find((t) => x >= t.bounds.x0 && x <= t.bounds.x1 && z >= t.bounds.z0 && z <= t.bounds.z1) || this.tiles[0]; },
     surface(x, z) { return this.at(x, z).hm.surface(x, z); },
     ground(x, z) { return this.at(x, z).hm.ground(x, z); },
-    /** where feet stand: the road level, plus the kerb height on measured sidewalks / squares (?roads=surface) */
-    walkY(x, z) { const t = this.at(x, z); return t.hm.surface(x, z) + CARVE + (t.lift ? t.lift(x, z) : 0); },
+    /** hero road-bridge decks (viewer/rail/bridgeModel.js deckHeightFn): (x, z) -> m TAW or null off them */
+    decks: [],
+    deckY(x, z) { for (const f of this.decks) { const y = f(x, z); if (y != null) return y; } return null; },
+    /** where feet stand: the road level, plus the kerb height on measured sidewalks / squares (?roads=surface); on a
+     *  hero road bridge its deck (the terrain there is the cutting under it) */
+    walkY(x, z) { const d = this.decks.length ? this.deckY(x, z) : null; if (d != null) return d; const t = this.at(x, z); return t.hm.surface(x, z) + CARVE + (t.lift ? t.lift(x, z) : 0); },
     /** the highest solid here: ground or a roof (fly-mode collision) */
     heightAt(x, z) { const t = this.at(x, z); return Math.max(t.hm.surface(x, z), t.roofAt ? t.roofAt(x, z) : 0); },
     get h() {
@@ -654,6 +672,47 @@ async function main() {
       log(tramLine.info());
     } catch (e) { log(`tram line: ${e.message}`); }
   }
+  if (TRAINS) {
+    const rail = await railP;
+    if (rail) {
+      const { loadBridge, placeBridge, warmBridge, deckHeightFn, roadBridgeColliders, BRIDGES } = await import("./rail/bridgeModel.js");
+      const { openParallelPipelines } = await import("../vendor/engine/parallelPipelines.js");
+      for (const name of BRIDGES) {
+        loadBridge(name).then(async (b) => {
+          const pb = placeBridge(b, { smooth: SMOOTH });
+          // a road bridge: its deck carries walk / drive heights, its parapets block the car
+          if (b.info.kind === "road_over_rail") {
+            world.decks.push(deckHeightFn(b.info));
+            const cols = roadBridgeColliders(b.info);
+            if (window.__driver) window.__driver.addStatic(cols); else (window.__pendingStatics ??= []).push(cols);
+          }
+          // shaders (+ fading copies) and the shadow pass built before it shows (nothing compiled on a frame)
+          const tw = performance.now();
+          for (let i = 0; i < 200 && !compileFor && params.get("precompile") !== "0"; i++) await new Promise((r) => setTimeout(r, 100));
+          const warm = await warmBridge(pb, { compile: compileFor, renderer, scene, openParallel: renderer.backend?.isWebGPUBackend ? openParallelPipelines : null }).catch((e) => ({ ms: performance.now() - tw, err: e.message }));
+          scene.add(pb.group);
+          window.__bridges ??= {}; window.__bridges[name] = { b, pb, warm };
+          const p = b.placement.position;
+          const home = manifest.tiles.find((t) => p.x >= t.bounds.x[0] && p.x < t.bounds.x[1] && p.z >= t.bounds.z[0] && p.z < t.bounds.z[1])?.name;
+          let n = 0;
+          updaters.push((camPos) => {
+            pb.update(camPos);
+            if (n++ % 30) return;
+            pb.group.visible = world.tiles.some((t) => t.name === home) || !!scene.getObjectByName(`${home}-lite`);
+          });
+          log(`${b.info.kind === "road_over_rail" ? "road bridge" : "railway bridge"} ${name} (${b.info.urbis}, ${b.info.kind === "road_over_rail" ? `${b.info.road} over ${b.info.line}` : `${b.info.line} over ${b.info.road}`}): LODs ${b.lods.map((l) => Math.round(l.tris)).join(" / ")} triangles; warmed in ${Math.round(warm.ms)} ms${warm.err ? ` (${warm.err})` : ""}`);
+        }).catch((e) => log(`bridge ${name}: ${e.message}`));
+      }
+      try {
+        const { createTrains } = await import("./rail/trains.js");
+        const trains = await createTrains({ rail: rail.doc, parent: scene, clock: tramLine ? () => tramLine.clockSecs : null });
+        updaters.push((camPos, cam) => trains.update(camPos, cam));
+        trains.update(new THREE.Vector3(cx, 0, cz));
+        window.__trains = trains;
+        log(trains.info());
+      } catch (e) { log(`trains: ${e.message}`); }
+    }
+  }
   const cy = hm.ground(cx, cz);
 
   // UI
@@ -736,6 +795,9 @@ async function main() {
   const driver = new Driver(camera, renderer.domElement, scene, world);
   window.__driver = driver;
   if (params.get("stjob") !== "0") loadStJob().then((m) => driver.addStatic(stjobColliders(m.placement))).catch(() => {});   // the church's front steps
+  if (HIDE_BU_IDS.length) loadStJob().then((m) => driver.addStatic(stjobColliders(m.placement))).catch(() => {});   // the church's front steps
+  for (const cols of window.__pendingStatics ?? []) driver.addStatic(cols);                                           // hero road bridges' parapets
+  window.__pendingStatics = [];
   const drive = () => {
     const [px, pz] = atP?.length === 2 ? atP : [1201.6, 549.3];
     const s = roadStart(roads, px, pz, bounds) || start;

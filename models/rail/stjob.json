@@ -1,0 +1,64 @@
+{
+ "asset": "railway bridge 'stjob' (tools/blender/railBridge.py)",
+ "urbis": "bridge/692",
+ "line": "L26",
+ "road": "Chauss\u00e9e de Saint-Job",
+ "triangles": 49373,
+ "materials": [
+  "brick_red_brussels",
+  "stone_blue",
+  "concrete",
+  "painted_metal_white",
+  "brick_yellow"
+ ],
+ "frame": "glTF Y up; +x = along the track (city direction theta), -z = Blender +Y; origin = UrbIS polygon centre at road level",
+ "placement": {
+  "city_local_position": [
+   417.42,
+   59.8,
+   791.08
+  ],
+  "rotation_y_rad": -2.6462682118738026
+ },
+ "deck": {
+  "length": 63.65,
+  "width": 8.7,
+  "railTop": 9.96,
+  "ballastFloor": 9.34,
+  "parapetInner": 3.93,
+  "parapetTop": 10.71
+ },
+ "openings": [
+  {
+   "x0": -13.22,
+   "x1": 6.839,
+   "kind": "segment",
+   "rise": 5.3,
+   "spring": 2.3,
+   "ring": 0.72,
+   "main": true,
+   "floor": 0.0
+  },
+  {
+   "x0": -21.52,
+   "x1": -16.52,
+   "kind": "round",
+   "spring": 1.4,
+   "ring": 0.5,
+   "main": false,
+   "floor": 0.35
+  },
+  {
+   "x0": 10.139,
+   "x1": 15.139,
+   "kind": "round",
+   "spring": 1.4,
+   "ring": 0.5,
+   "main": false,
+   "floor": 0.35
+  }
+ ],
+ "skew_dx_per_dy": -1.4292,
+ "measured": "UrbIS Land cover Bridges polygon (length, width, axis), OSM road axis + UrbIS street surfaces (clear width), DTM 2021 (road level), rail.json (rail top)",
+ "estimated": "arch rise / springing, pilaster / arcade / cornice / parapet dimensions, stone counts: from the Wikimedia Commons photos"
+}

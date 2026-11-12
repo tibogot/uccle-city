@@ -15,6 +15,14 @@ import { buildDriveData } from "./drive/colliders.js";
 import { prepareSurfaces, fitRoadWidths, buildSurfaceRoads } from "./surfaces.js";
 import { smoothPolyline } from "./track.js";
 import { kitCollector } from "./facadeKit/placement.js";
+import { prepRail, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround } from "./rail/railData.js";
+
+let railP = null;
+/** ?trains=1: rail.json + the hero bridges' notes, fetched once per worker */
+const railDocs = (base) => (railP ??= Promise.all([
+  fetch(new URL("../rail/rail.json", base)).then((r) => r.json()).then(prepRail),
+  Promise.all(["stjob", "calevoet", "verrewinkel"].map((n) => fetch(new URL(`../../models/rail/${n}.json`, base)).then((r) => (r.ok ? r.json() : null)).catch(() => null))).then((a) => a.filter(Boolean)),
+]).then(([doc, heroes]) => ({ doc, heroes })));
 
 export const CARVE = 0.12;         // terrain is pushed this far under any road surface
 // The 1 m terrain grid is 500k triangles a tile (half the scene); seen from above, 1 m triangles cover
@@ -117,16 +125,28 @@ export async function buildTileData(entry, base) {
   ]));
   // the OSM tram tracks as smooth curves (viewer/track.js): rails, wires, platforms and the trams all follow them
   for (const l of feats.lines || []) if (l.kind === "tram") l.line = smoothPolyline(l.line);
+  // ?trains=1 (viewer/rail/): no LiDAR "trees" on rail bridge decks, platforms or the ballast; the line's verges as
+  // undergrowth in the land cover
+  const rail = entry.rail ? await step("rail fetch", () => railDocs(base)) : null;
+  let railDropped = 0;
+  if (rail) {
+    const clear = railKeepClear(rail.doc, bounds, rail.heroes), n = feats.trees?.length || 0;
+    if (n) feats.trees = feats.trees.filter((t) => !clear(t.x, t.z));
+    railDropped = n - (feats.trees?.length || 0);
+    feats.railVerges = railVerges(rail.doc, bounds);
+  }
   // ?roads=surface: the measured UrbIS street surfaces of this tile (surfaces.json), when the tile has them
   const surf = entry.surface && F.surfaces ? await step("fetch surfaces", () => get(F.surfaces)) : null;
   // hand corrections (data/overrides.json): road surfaces OSM gets wrong (Place de Saint-Job is setts)
   const ov = await overrides(base);
   for (const r of roads.roads) { const s = ov.roadSurface?.[r.id]; if (s) (r.meta ??= {}).surface = s; }
   const hm = new Heightmap(tHdr, tBuf);
+  // ?trains=1: the hero road bridges' decks are the road's ground over the cutting (viewer/rail/railData.js roadDeckGround)
+  const roadGround = rail ? roadDeckGround(rail.heroes, hm.ground) : hm.ground;
   // measured surfaces first, then the engine's lane stacks fitted into the measured kerb-to-kerb widths
-  const prep = surf ? await step("surfaces + width fit", () => prepareSurfaces(surf, hm.ground, bounds, entry.pits === false ? null : feats.trees)) : null;   // trees: their pits
+  const prep = surf ? await step("surfaces + width fit", () => prepareSurfaces(surf, roadGround, bounds, entry.pits === false ? null : feats.trees)) : null;   // trees: their pits
   const widthFit = prep ? fitRoadWidths(roads, prep) : null;
-  const net = await step("buildRoadNetwork", () => buildRoadNetwork(roads, { ground: hm.ground }));
+  const net = await step("buildRoadNetwork", () => buildRoadNetwork(roads, { ground: roadGround }));
   const errors = net.issues.filter((i) => i.level === "error");
   const byCode = {};
   for (const i of errors) byCode[i.code] = (byCode[i.code] || 0) + 1;
@@ -182,6 +202,14 @@ export async function buildTileData(entry, base) {
   // (and their OSM water areas leave the land-cover mask: the ground under the pond is the bank / bed, the water is the pond's own surface)
   if (entry.ponds?.length) { const ids = new Set(entry.ponds.map((p) => p.osm).filter(Boolean)); feats.areas = (feats.areas || []).filter((a) => !ids.has(a.id)); }
   if (entry.ponds?.length) await step("pond beds", () => carvePonds(hm, entry.ponds.filter((p) => p.ring.some(([x, z]) => x >= x0 - 5 && x <= x1 + 5 && z >= z0 - 5 && z <= z1 + 5))));
+  // ?trains=1: the terrain under the ballast / platforms / hero arches, the fills at viaduct ends; then the tile's rail
+  // geometry as typed arrays (viewer/rail/railData.js; the main thread only wraps them in buffers)
+  let railOut = null;
+  if (rail) {
+    const c = await step("rail carve", () => carveGrid(rail.doc, hm.y, tHdr, bounds, rail.heroes));
+    railOut = await step("rail meshes", () => railTileData(rail.doc, bounds, rail.heroes));
+    railOut.stats.carved = c.moved; railOut.stats.treesDropped = railDropped;
+  }
   const terrain = await step("terrain grid", () => terrainArrays(hm));
   await step("terrain simplify", async () => {
     await MeshoptSimplifier.ready;
@@ -197,7 +225,7 @@ export async function buildTileData(entry, base) {
   const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit }));
   const cover = await step("land cover", () => landCoverData(feats, bounds));
   return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs, drive,
-    netInfo, road, terrain, buildings, cover, times };
+    netInfo, road, terrain, buildings, cover, times, rail: railOut };
 }
 
 // ---------------------------------------------------------------- far level of detail
