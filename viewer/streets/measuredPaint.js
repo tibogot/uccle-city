@@ -269,8 +269,26 @@ export function afterNetworkV2(net, ctx, surf) {
   // ---- stop and give-way lines: measured first
   const measuredOn = new Set();
   for (const s of markings?.stops || []) {
-    const L = s.line;
-    if (L.length < 2 || !near(L[0][0], L[0][1])) continue;
+    const L0 = s.line;
+    if (L0.length < 2 || !near(L0[0][0], L0[0][1])) continue;
+    // round 2: one straight line per surveyed record (Topo digitises some as 2-3 pieces at slightly different angles:
+    // the owner's crooked, misaligned dashes), its kerb end carried on to the measured kerb (0.3 m short) when the
+    // survey stops less than 3.5 m before it: a stop line spans its approach
+    let p = L0[0], q = L0[L0.length - 1];
+    {
+      const len0 = Math.hypot(q[0] - p[0], q[1] - p[1]);
+      if (len0 > 0.3) {
+        const ux = (q[0] - p[0]) / len0, uz = (q[1] - p[1]) / len0;
+        const kq = ray(q[0], q[1], ux, uz, 6), kp = ray(p[0], p[1], -ux, -uz, 6);
+        if (kq != null && kq > 0.35 && kq < 3.5 && (kp == null || kq <= kp)) q = [q[0] + ux * (kq - 0.3), q[1] + uz * (kq - 0.3)];
+        else if (kp != null && kp > 0.35 && kp < 3.5) p = [p[0] - ux * (kp - 0.3), p[1] - uz * (kp - 0.3)];
+        if (kq != null && kp != null && kq < 3.5 && kp < 3.5 && kq + kp + len0 < 7.5) {      // a one-way approach: kerb to kerb
+          if (Math.hypot(q[0] - L0[L0.length - 1][0], q[1] - L0[L0.length - 1][1]) < 0.01 && kq > 0.35) q = [q[0] + ux * (kq - 0.3), q[1] + uz * (kq - 0.3)];
+          if (Math.hypot(p[0] - L0[0][0], p[1] - L0[0][1]) < 0.01 && kp > 0.35) p = [p[0] - ux * (kp - 0.3), p[1] - uz * (kp - 0.3)];
+        }
+      }
+    }
+    const L = [p, q];
     for (let i = 1; i < L.length; i++) {
       const [p, q] = [L[i - 1], L[i]], len = Math.hypot(q[0] - p[0], q[1] - p[1]);
       if (len < 0.3) continue;

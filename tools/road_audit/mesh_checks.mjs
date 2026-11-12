@@ -233,18 +233,32 @@ export function roundTwoChecks({ rd, inv, prep, surf, markings, inTile, add: add
     if (m?.photo && m.photo.s < 0.4 && m.photo.veg < 0.15) { S.crossings.photoDenied++; add("C14", "error", c.c[0], c.c[1], `crossing ${c.id} drawn where the 2024 orthophoto shows no bars (score ${m.photo.s})`, { kind: "photo" }); }
     if (c.vSpan && c.across != null && m?.across && c.across < 0.6 * m.across && c.across < m.across - 2.5) { S.crossings.clipped++; add("C14", "warn", c.c[0], c.c[1], `crossing ${c.id} drawn ${c.across.toFixed(1)} m of its measured ${m.across.toFixed(1)} m (clipped by a kerb)`, { kind: "clip" }); }
   }
-  // ---- C15 paint across crossings
-  for (const l of inv.lanes) {
-    const pts = l.pts;
-    for (let k = 1; k < pts.length; k++) {
-      const a = pts[k - 1], b = pts[k], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
-      for (let d = 0; d <= L; d += 0.5) {
-        const x = a[0] + (b[0] - a[0]) * (d / (L || 1)), z = a[1] + (b[1] - a[1]) * (d / (L || 1));
-        if (!inTile(x, z)) continue;
-        const hit = xs.find((c, i) => Math.abs(c.c[0] - x) < 20 && Math.abs(c.c[1] - z) < 20 && pip(x, z, H[i]));
-        if (hit) { S.paint.laneInCrossing++; add("C15", "error", x, z, `${l.kind} line of ${l.road} runs through crossing ${hit.id}`, { kind: "laneX" }); break; }
+  // ---- C15 paint across crossings: the asphalt as drawn (its line codes aEdges.zw at the vertices inside a crossing,
+  // with the vertex on the line: |t - line t| < 0.25 m)
+  const AS = rd.parts.asphalt;
+  if (AS?.attributes?.aEdges) {
+    const P = AS.position, UV = AS.uv, Ed = AS.attributes.aEdges.array, I = AS.index;
+    const used = new Set();
+    for (let k = 0; k < I.length; k++) used.add(I[k]);
+    const hitBy = new Map();
+    for (const v of used) {
+      const x = P[v * 3], z = P[v * 3 + 2];
+      if (!inTile(x, z)) continue;
+      const tt = UV[v * 2 + 1];
+      const on = (Ed[v * 4 + 2] >= 1 && Math.abs(tt - Ed[v * 4]) < 0.25) || (Ed[v * 4 + 3] >= 1 && Math.abs(tt - Ed[v * 4 + 1]) < 0.25);
+      if (!on) continue;
+      for (let i = 0; i < xs.length; i++) {
+        if (Math.abs(xs[i].c[0] - x) > 20 || Math.abs(xs[i].c[1] - z) > 20) continue;
+        // 0.5 m inside the outline (its edge vertices carry the line up to the zebra)
+        const c = xs[i].c, sx = c[0] + (x - c[0]) * 1.0, sz = c[1] + (z - c[1]) * 1.0;
+        if (!pip(sx, sz, H[i])) continue;
+        let edgeD = Infinity; const R = H[i];
+        for (let a = 0, b = R.length - 1; a < R.length; b = a++) edgeD = Math.min(edgeD, segD(x, z, R[b][0], R[b][1], R[a][0], R[a][1]));
+        if (edgeD < 0.5) continue;
+        if (!hitBy.has(i)) { hitBy.set(i, [x, z]); }
       }
     }
+    for (const [i, [x, z]] of hitBy) { S.paint.laneInCrossing++; add("C15", "error", x, z, `a lane line runs through crossing ${xs[i].id}`, { kind: "laneX" }); }
   }
   for (const s of inv.stops) {
     if (s.ring) continue;
@@ -257,7 +271,7 @@ export function roundTwoChecks({ rd, inv, prep, surf, markings, inTile, add: add
       if (hit) { S.paint.stopOnCrossing++; add("C15", "error", mx, mz, `${s.kind} line ${s.id} lies on crossing ${xs[i].id}`, { kind: "stopX" }); break; }
     }
     // ---- C16 stop line spans its approach
-    if (L < 2.0) { S.stops.stray++; add("C16", "error", mx, mz, `${s.kind} line ${s.id} only ${L.toFixed(1)} m long (a stray dash)`, { kind: "stray" }); continue; }
+    if (L < 2.0) { S.stops.stray++; add("C16", s.src === "topo" ? "warn" : "error", mx, mz, `${s.kind} line ${s.id} only ${L.toFixed(1)} m long (a stray dash)`, { kind: "stray" }); continue; }
     if (prep) {
       const ux = (q[0] - p[0]) / L, uz = (q[1] - p[1]) / L;
       // the approach: from the line's ends, how far to the kerb each way along the line
@@ -271,7 +285,7 @@ export function roundTwoChecks({ rd, inv, prep, surf, markings, inTile, add: add
     if (arm) {
       const th = Math.atan2(q[1] - p[1], q[0] - p[0]);
       let d = Math.abs(th - (arm.th + Math.PI / 2)) % Math.PI; d = Math.min(d, Math.PI - d);
-      if (deg(d) > 10) { S.stops.offSquare++; add("C16", "error", mx, mz, `${s.kind} line ${s.id} ${deg(d).toFixed(0)}° off square to its lanes`, { kind: "square" }); }
+      if (deg(d) > 10) { S.stops.offSquare++; add("C16", s.src === "topo" ? "warn" : "error", mx, mz, `${s.kind} line ${s.id} ${deg(d).toFixed(0)}° off square to its lanes`, { kind: "square" }); }
     }
   }
   // decal over decal (paint items drawn twice: two crossings, a stop line on a zebra)
@@ -291,7 +305,7 @@ export function roundTwoChecks({ rd, inv, prep, surf, markings, inTile, add: add
       for (let a = 0; a < l.length; a++) for (let b = a + 1; b < l.length; b++) {
         const A = tri(l[a]), B = tri(l[b]);
         const o = clipConvex(A, B);
-        if (o.length < 3 || Math.abs(area2(o)) < 0.01) continue;
+        if (o.length < 3 || Math.abs(area2(o)) < 0.05) continue;     // (a glyph's own bars touch: < 5 cm²... 0.05 m² = two marks)
         // pieces of ONE item never overlap (they are cut from it); an overlap is two items
         S.paint.decalOverlap++;
         const [x, z] = o[0];
@@ -322,13 +336,26 @@ export function roundTwoChecks({ rd, inv, prep, surf, markings, inTile, add: add
   // ---- C19 kerbs: notches and gaps
   if (surf && prep) {
     const kerbs = surf.kerbs || [];
-    for (const l of kerbs) for (let k = 1; k + 1 < l.length; k++) {
-      const a = l[k - 1], b = l[k], c = l[k + 1];
-      if (!inTile(b[0], b[1])) continue;
-      const u = [b[0] - a[0], b[1] - a[1]], v = [c[0] - b[0], c[1] - b[1]], lu = Math.hypot(...u), lv = Math.hypot(...v);
-      if (lu < 1e-3 || lv < 1e-3) continue;
-      const ang = deg(Math.acos(Math.max(-1, Math.min(1, (u[0] * v[0] + u[1] * v[1]) / (lu * lv)))));
-      if (ang > 45 && Math.min(lu, lv) < 1.5) { S.kerbs.notch++; add("C19", "error", b[0], b[1], `kerb notch: turns ${ang.toFixed(0)}° between pieces ${lu.toFixed(2)} / ${lv.toFixed(2)} m`, { kind: "notch" }); }
+    // a notch / step: two corners (> 50°) at most 3 m apart along the kerb, with only small turns between them, away
+    // from the kerb's ends (a kerb ending into a wall is not a notch)
+    const angf = (a, b, c) => { const ux = b[0] - a[0], uz = b[1] - a[1], vx = c[0] - b[0], vz = c[1] - b[1]; return Math.atan2(ux * vz - uz * vx, ux * vx + uz * vz); };
+    for (const l of kerbs) {
+      const cum = [0];
+      for (let k = 1; k < l.length; k++) cum.push(cum[k - 1] + Math.hypot(l[k][0] - l[k - 1][0], l[k][1] - l[k - 1][1]));
+      const tr = l.map((p, k) => (k === 0 || k === l.length - 1 ? 0 : angf(l[k - 1], p, l[k + 1])));
+      const cs = [];
+      for (let k = 1; k + 1 < l.length; k++) if (Math.abs(tr[k]) > 0.87 && cum[k] > 1.0 && cum[l.length - 1] - cum[k] > 1.0) cs.push(k);
+      for (let c = 0; c + 1 < cs.length; c++) {
+        const kb = cs[c], kc = cs[c + 1], gap = cum[kc] - cum[kb];
+        if (gap > 3) continue;
+        let small = true;
+        for (let k = kb + 1; k < kc; k++) if (Math.abs(tr[k]) > 0.21) small = false;
+        if (!small) continue;
+        const b = l[kb];
+        if (!inTile(b[0], b[1])) continue;
+        S.kerbs.notch++;
+        add("C19", "error", b[0], b[1], `kerb ${Math.sign(tr[kb]) === Math.sign(tr[kc]) ? "notch" : "step"}: corners of ${deg(Math.abs(tr[kb])).toFixed(0)}° and ${deg(Math.abs(tr[kc])).toFixed(0)}° ${gap.toFixed(2)} m apart`, { kind: "notch" });
+      }
     }
     // gaps: raster cells of a raised class next to a carriage cell with no kerb line within 0.6 m
     const segs = new Map();
@@ -397,10 +424,11 @@ export function laneGraphChecks({ net, prep, inTile, add: add0 }) {
       const nx0 = -(R[k][1] - R[k - 2][1]), nz0 = R[k][0] - R[k - 2][0], nl0 = Math.hypot(nx0, nz0) || 1;
       if (prep && p.kind === "lane" && CARRIAGE.has(cls(x, z)) && lanesOf(p)) {
         const ray = (sg) => { for (let d = 0.1; d < 15; d += 0.1) if (!CARRIAGE.has(cls(x + (sg * nx0 / nl0) * d, z + (sg * nz0 / nl0) * d))) return d; return null; };
-        const dl = ray(1), dr = ray(-1);     // (nx0, nz0) = left of travel
+        const dr = ray(1), dl = ray(-1);     // (nx0, nz0) = right of travel (x east, z south)
         if (dl != null && dr != null) {
           const W = dl + dr, n = lanesOf(p);
-          const err = n.oneWay ? Math.abs(dr - W / 2) : Math.abs(dr - W / 4);
+          // (a two-way street under 5 m is too narrow to split into two lanes: no centre to keep)
+          const err = !n.oneWay && W < 5.0 ? 0 : n.oneWay ? Math.abs(dr - W / 2) : Math.abs(dr - W / 4);
           if (err > 1.0) { st.offCentre++; add("C22", "warn", x, z, `lane path ${p.id} ${err.toFixed(1)} m off its lane centre (carriageway ${W.toFixed(1)} m)`, { kind: "centre" }); }
         }
       }
@@ -414,9 +442,10 @@ export function laneGraphChecks({ net, prep, inTile, add: add0 }) {
         }
       }
     }
-    st.maxTurnPerM = Math.max(st.maxTurnPerM, worst);
+    if (p.turn !== "uturn") st.maxTurnPerM = Math.max(st.maxTurnPerM, worst);
     // > 20°/m is a kink (a 3 m radius turn is 19°/m); at junction turns the engine's arcs stay under ~12°/m
-    if (worst > 20 && at) { st.kinkPaths++; add("C22", "error", at[0], at[1], `lane path ${p.id} kinks ${worst.toFixed(0)}°/m`, { kind: "kink" }); }
+    // (a U-turn connector at a dead end turns 180° in a few metres by design)
+    if (worst > 20 && at && p.turn !== "uturn") { st.kinkPaths++; add("C22", "error", at[0], at[1], `lane path ${p.id} kinks ${worst.toFixed(0)}°/m`, { kind: "kink" }); }
     for (let k = 1; k < R.length; k++) segs.push({ p, a: R[k - 1], b: R[k], from: p.from, to: p.to });
   }
   // lanes crossing: two paths' segments intersecting where the paths do not share a start or an end node (merges and

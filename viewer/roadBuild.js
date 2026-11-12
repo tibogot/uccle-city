@@ -14,6 +14,7 @@ import { buildLaneRoadMesh } from "../vendor/roads/mesh/laneRoadMesh.js";
 import { surfaceAttribute, hashPhase } from "./roadData.js";
 import { prepareSurfaces, fitRoadWidths, buildSurfaceRoads } from "./surfaces.js";
 import { preparePaintV2, afterNetworkV2, unpaintParking, paintMeshV2 } from "./streets/measuredPaint.js";
+import { refineLaneGraph } from "./streets/laneGraph.js";
 
 export const CARVE = 0.12;         // terrain is pushed this far under any road surface
 
@@ -70,6 +71,9 @@ export function buildRoadData(o) {
   lap("buildRoadNetwork");
   const pv = v2 ? afterNetworkV2(net, ctx, surf) : null;
   if (v2) lap("measured paint");
+  // round 2: the lane graph traffic drives on, repaired (loops, centring, smoothing, hold points at the paint)
+  const laneGraph = v2 ? refineLaneGraph(net, prep, pv.inventory) : null;
+  if (v2) { pv.inventory.stats.laneGraph = laneGraph; lap("lane graph"); }
   const errors = net.issues.filter((i) => i.level === "error");
   const byCode = {};
   for (const i of errors) byCode[i.code] = (byCode[i.code] || 0) + 1;
@@ -89,7 +93,8 @@ export function buildRoadData(o) {
   let carvedCells = 0, triangles = 0, surfaceStats = null, surfaceData = null;
   if (surf) {
     // measured surfaces + the engine's markings clipped to them (viewer/surfaces.js)
-    const S = buildSurfaceRoads(prep, built, surfaceAttribute(net, built.asphalt), roads, onBuilding, priority ? { priority, dropFolds: true } : {});
+    const lineCuts = v2 ? pv.inventory.crossings.filter((c) => c.poly).map((c) => c.poly) : null;
+    const S = buildSurfaceRoads(prep, built, surfaceAttribute(net, built.asphalt), roads, onBuilding, priority ? { priority, dropFolds: true, lineCuts } : {});
     for (const c of S.carve) carvedCells += hm.carve(c.position, c.index, CARVE);
     for (const [name, part] of Object.entries(S.parts)) {
       parts[name] = { position: part.position, normal: part.normal, uv: part.uv, attributes: part.attributes, index: part.index, aSurf: part.extra };

@@ -258,8 +258,72 @@ function placePits(trees, classAt, nearKerb, surf, bounds) {
   return out;
 }
 
+/**
+ * Round 2 (the owner's narrowing): UrbIS draws a kerb extension / a narrowing as a STEP, two right angles a short
+ * piece apart (a rectangular notch in the sidewalk and a sharp protruding corner, with the road's lines running into
+ * it). Built, they are tapers. A step (two opposite turns > 50° joined by a piece 0.15-3 m long, between two near
+ * parallel kerb runs > 1.5 m) becomes a taper: its first corner B moves back along the run before it by
+ * TAPER x the step (at most 60 % of that run, 1-6 m). B is moved in EVERY ring, kerb, edge and flank that has it
+ * (one vertex, shared), so the roadway and the sidewalk stay exactly complementary. Only vertices shared by at most
+ * two rings are moved (a third polygon at the corner, a ramp or a crossing, keeps it). In place, once per surf.
+ */
+const TAPER = 2.5;
+export function taperSteps(surf) {
+  if (surf._tapered) return surf._tapered;
+  const key = (p) => `${Math.round(p[0] * 100)},${Math.round(p[1] * 100)}`;
+  const rings = new Map();
+  for (const q of surf.surfaces) for (const r of q.rings) for (const p of r) rings.set(key(p), (rings.get(key(p)) || 0) + 1);
+  const move = new Map();
+  const ang = (a, b, c) => { const ux = b[0] - a[0], uz = b[1] - a[1], vx = c[0] - b[0], vz = c[1] - b[1]; return Math.atan2(ux * vz - uz * vx, ux * vx + uz * vz); };
+  const D = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+  for (const l of surf.kerbs || []) {
+    // corners: vertices turning > 50°; the step's two corners may have small turns (< 12°) between them
+    const cum = [0];
+    for (let k = 1; k < l.length; k++) cum.push(cum[k - 1] + D(l[k - 1], l[k]));
+    const turn = l.map((p, k) => (k === 0 || k === l.length - 1 ? 0 : ang(l[k - 1], p, l[k + 1])));
+    const corners = [];
+    for (let k = 1; k + 1 < l.length; k++) if (Math.abs(turn[k]) > 0.87) corners.push(k);
+    for (let c = 0; c + 1 < corners.length; c++) {
+      const kb = corners[c], kc = corners[c + 1];
+      if (Math.sign(turn[kb]) === Math.sign(turn[kc])) continue;
+      let small = true;
+      for (let k = kb + 1; k < kc; k++) if (Math.abs(turn[k]) > 0.21) small = false;
+      const bc = cum[kc] - cum[kb];
+      if (!small || bc < 0.15 || bc > 3) continue;
+      // the runs before and after: back to the previous corner / on to the next one (at least 1.5 m)
+      const ka = c > 0 ? corners[c - 1] : 0, kd = c + 2 < corners.length ? corners[c + 2] : l.length - 1;
+      const ab = cum[kb] - cum[ka], cd = cum[kd] - cum[kc];
+      if (ab < 1.5 || cd < 1.5) continue;
+      const A = l[kb - 1], B = l[kb], C = l[kc], Dd = l[kc + 1];
+      if (Math.abs(ang(A, B, [B[0] + Dd[0] - C[0], B[1] + Dd[1] - C[1]])) > 0.52) continue;   // runs within 30° of parallel
+      if ((rings.get(key(B)) || 0) > 2 || move.has(key(B))) continue;
+      // B moves back along the run before it, over straight pieces only (it stays on the old kerb line)
+      const seg = D(A, B), Lt = Math.max(1, Math.min(TAPER * bc, 0.6 * ab, 6, seg - 0.05));
+      if (Lt < 0.5 || seg < 1.0) continue;
+      move.set(key(B), [B[0] + (A[0] - B[0]) / seg * Lt, B[1] + (A[1] - B[1]) / seg * Lt]);
+      // the small vertices between the corners go on the new diagonal B'..C
+      const nb = move.get(key(B));
+      for (let k = kb + 1; k < kc; k++) {
+        if ((rings.get(key(l[k])) || 0) > 2) continue;
+        const f = (cum[k] - cum[kb]) / bc;
+        move.set(key(l[k]), [nb[0] + (C[0] - nb[0]) * f, nb[1] + (C[1] - nb[1]) * f]);
+      }
+    }
+  }
+  const fix = (r) => { for (let i = 0; i < r.length; i++) { const m = move.get(key(r[i])); if (m) r[i] = [m[0], m[1]]; } };
+  if (move.size) {
+    for (const q of surf.surfaces) for (const r of q.rings) fix(r);
+    for (const l of surf.kerbs || []) fix(l);
+    for (const e of surf.edges || []) fix(e.line);
+    for (const l of surf.flanks || []) fix(l);
+  }
+  surf._tapered = { steps: move.size };
+  return surf._tapered;
+}
+
 export function prepareSurfaces(surf, ground, bounds, trees = null) {
   const t0 = (globalThis.performance ?? Date).now();
+  const tapered = taperSteps(surf);
   const G = ground;
   const base = [];                       // { cls, si, a, b, c, hk }
   const halves = new Map();              // halfKey -> base indices
@@ -615,7 +679,7 @@ export function prepareSurfaces(surf, ground, bounds, trees = null) {
     });
   }
   return { pits, host, flankDist, surf, G, H, nrmAt, rampRise, riseAt, base, halves, coverArea, convexCover, baseAt, classAt, grid: { data: grid, nx, nz, x0: bounds.x0, z0: bounds.z0, step: GRID },
-    nearKerb, nearKerbUV, bounds, inside, fallbacks, streetCorners: street.size, ms: Math.round((globalThis.performance ?? Date).now() - t0) };
+    nearKerb, nearKerbUV, bounds, inside, fallbacks, tapered, streetCorners: street.size, ms: Math.round((globalThis.performance ?? Date).now() - t0) };
 }
 
 // ---------------------------------------------------------------- 2. lane stacks fitted to the measured width
@@ -841,6 +905,38 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
   let foldDropped = 0;
   const liftOf = (v) => (lift ? LIFT + (lift.get(phaseOf(v)) || 0) * TIER : LIFT);
   const keptEngine = [];
+  // round 2: no lane line through a crossing. The pieces of engine triangles inside a drawn crossing (opts.lineCuts,
+  // convex outlines) get their line codes zeroed (aEdges.zw), so the lines stop at the zebra, mid-block too
+  let zeroLines = false;
+  const exOfZ = (vs, w) => { const ex = exOf(vs, w); if (zeroLines) { ex.aEdges = [ex.aEdges[0], ex.aEdges[1], 0, 0]; } return ex; };
+  const cuts = (opts.lineCuts || []).map((c) => { const r = ringArea(c) < 0 ? c.slice().reverse() : c; let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const [x, z] of r) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); } return { r, x0, x1, z0, z1 }; });
+  let linesCut = 0;
+  /** poly split by the crossing outlines: [{ poly, inside }] */
+  const splitByCuts = (poly) => {
+    let parts = [{ poly, inside: false }];
+    if (!cuts.length) return parts;
+    const xs = poly.map((q) => q[0]), zs = poly.map((q) => q[1]);
+    const bx0 = Math.min(...xs), bx1 = Math.max(...xs), bz0 = Math.min(...zs), bz1 = Math.max(...zs);
+    for (const C of cuts) {
+      if (C.x1 < bx0 || C.x0 > bx1 || C.z1 < bz0 || C.z0 > bz1) continue;
+      const next = [];
+      for (const pt of parts) {
+        if (pt.inside) { next.push(pt); continue; }
+        let inside = pt.poly;
+        const outs = [];
+        for (let e = 0; e < C.r.length && inside.length >= 3; e++) {
+          const [ax, az] = C.r[e], [bx, bz] = C.r[(e + 1) % C.r.length];
+          const o = clipHalf(inside, ax, az, bx, bz, -1);
+          if (o.length >= 3 && Math.abs(ringArea(o)) > 1e-6) outs.push(o);
+          inside = clipHalf(inside, ax, az, bx, bz, 1);
+        }
+        if (inside.length >= 3 && Math.abs(ringArea(inside)) > 1e-6) { next.push({ poly: inside, inside: true }); for (const o of outs) next.push({ poly: o, inside: false }); linesCut++; }
+        else next.push(pt);
+      }
+      parts = next;
+    }
+    return parts;
+  };
   const emit = (poly, vs, P2) => {     // a convex piece of engine triangle vs, LIFT above H
     const idx = [];
     for (const q of poly) {
@@ -848,7 +944,7 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
       if (!we) return;
       const u = we[0] * E.uv[vs[0] * 2] + we[1] * E.uv[vs[1] * 2] + we[2] * E.uv[vs[2] * 2];
       const v = we[0] * E.uv[vs[0] * 2 + 1] + we[1] * E.uv[vs[1] * 2 + 1] + we[2] * E.uv[vs[2] * 2 + 1];
-      const ex = exOf(vs, we);
+      const ex = exOfZ(vs, we);
       const key = `o${Math.round(q[0] * 1000)},${Math.round(q[1] * 1000)},${Math.round(u * 1000)},${Math.round(v * 1000)},${ex.aPiece[0].toFixed(2)},${ex.aEdges.map((e) => e.toFixed(3)).join()},${ex.aMark.map((e) => e.toFixed(4)).join()},${ex.aLateral.toFixed(3)}`;
       idx.push(A.keyed(key, () => A.vert(q[0], H(q[0], q[1]) + liftOf(vs[0]), q[1], nrmAt(q[0], q[1]), u, v, ex)));
     }
@@ -886,7 +982,7 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
       if (!we) return;
       const u = we[0] * E.uv[vs[0] * 2] + we[1] * E.uv[vs[1] * 2] + we[2] * E.uv[vs[2] * 2];
       const v = we[0] * E.uv[vs[0] * 2 + 1] + we[1] * E.uv[vs[1] * 2 + 1] + we[2] * E.uv[vs[2] * 2 + 1];
-      idx.push(A.vert(q[0], we[0] * hv[0] + we[1] * hv[1] + we[2] * hv[2] + liftOf(vs[0]), q[1], nrmAt(q[0], q[1]), u, v, exOf(vs, we)));
+      idx.push(A.vert(q[0], we[0] * hv[0] + we[1] * hv[1] + we[2] * hv[2] + liftOf(vs[0]), q[1], nrmAt(q[0], q[1]), u, v, exOfZ(vs, we)));
     }
     for (let k = 1; k + 1 < idx.length; k++) if (A.tri(idx[0], idx[k], idx[k + 1], UP, true)) overlayTris++;
   };
@@ -915,6 +1011,14 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
       poly = clipHalf(poly, bounds.x0, bounds.z1, bounds.x0, bounds.z0, 1); poly = clipHalf(poly, bounds.x1, bounds.z0, bounds.x1, bounds.z1, 1); }
     if (poly.length < 3 || Math.abs(ringArea(poly)) < 1e-5) { droppedTris++; continue; }
     if (hits.length) cutAtEdge++;
+    const cutParts = splitByCuts(poly);
+    if (cutParts.length > 1 || cutParts[0].inside) {
+      // split by a crossing: every part on the plane through H at the triangle's corners (as an uncut triangle), the
+      // parts inside with no line codes
+      for (const cp of cutParts) { zeroLines = cp.inside; emitPlane(cp.poly, vs, P2); zeroLines = false; }
+      overlayWhole++;
+      continue;
+    }
     // drawn uncut when its own plane stays within DEV of H at every crease it spans, else cut at the creases
     const xs = poly.map((q) => q[0]), zs = poly.map((q) => q[1]);
     const pieces = [];
@@ -1201,7 +1305,7 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
   const bollards = (surf.bollards || []).filter(([x, z]) => inTile(x, z)).map(([x, z]) => { const c = prep.classAt(x, z); return [x, H(x, z) + (c >= 0 ? riseAt(c, x, z) : 0), z]; });
   const stats = {
     surfaces: surf.surfaces.length, baseTris: base.length, overlayTris, overlayWhole, overlayCutAtCreases: devFail, overlayCutAtStreetEdge: cutAtEdge, keptEngineTris: keptTris, droppedEngineTris: droppedTris,
-    foldDropped,
+    foldDropped, linesCutAtCrossings: linesCut,
     liftTiers: lift ? { pieces: lift.size, overlapping: [...lift.values()].filter((t) => t > 0).length, max: Math.max(0, ...lift.values()) } : null,
     keptSideTris: keptSide, kerbLength: Math.round(kerbLen), mappedPieces: mapped.size, unmappedPieces: tally.size - mapped.size,
     unframedSidewalkTris: unframed, cutFallbacks: prep.fallbacks, bollards: bollards.length, treePits: (prep.pits || []).length,
