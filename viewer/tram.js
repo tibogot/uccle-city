@@ -7,7 +7,7 @@
 // Pole spacing, heights and widths are typical STIB values, not surveyed. Everything is instanced or
 // merged: 4 draw calls for the whole tile.
 import * as THREE from "three/webgpu";
-import { attribute } from "three/tsl";
+import { attribute, uv, vec3, color, mix, mx_noise_float } from "three/tsl";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { MODELS } from "./furniture.js";
 
@@ -23,28 +23,132 @@ function densify(line, step) {
   return out;
 }
 
-export function buildTram(feats, surface, bounds) {
+// ---- the tram BRIDGE decks (OSM tram ways with bridge=yes; the only one in Uccle: over the L26 cutting next to
+// Saint-Job station). The DTM is bare earth, so before 2026-11-13 the tram dived 8 m into the railway cutting there.
+// The deck follows the tracks' profile (viewer/trackProfile.js: interpolated between the bridge's ends, vertical
+// curves); one closed slab per track (top, soffit, both sides, end caps) reaching the midline to the other track of the
+// bridge, a solid parapet on the free sides. Flat faces, uv in metres, one shared material.
+const DECK = { half: 2.15, depth: 0.95, parapetW: 0.32, parapetH: 1.05 };
+let deckMat = null;
+function deckMaterial() {
+  if (deckMat) return deckMat;
+  const m = new THREE.MeshStandardNodeMaterial({ roughness: 0.88, metalness: 0 });
+  const p = uv();
+  const n = mx_noise_float(vec3(p.x.mul(0.7), p.y.mul(0.7), 0)).mul(0.5).add(0.5), fine = mx_noise_float(vec3(p.x.mul(9), p.y.mul(9), 3));
+  m.colorNode = mix(color(0x8a867f), color(0x9d988f), n).mul(fine.mul(0.04).add(1));
+  m.name = "tram-bridge-concrete"; m.userData.shared = true;
+  return (deckMat = m);
+}
+function buildDecks(tram, prof, surface, inB) {
+  const bridges = tram.filter((l) => l.tags?.bridge === "yes");
+  if (!bridges.length || !prof) return null;                     // (?trackprofile=0: the old city, no deck)
+  const lines = bridges.map((l) => densify(l.line, 1));
+  const P = [], N = [], U = [];
+  const tri = (a, b, c, ua, ub, uc) => {
+    const e1 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], e2 = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+    let nx = e1[1] * e2[2] - e1[2] * e2[1], ny = e1[2] * e2[0] - e1[0] * e2[2], nz = e1[0] * e2[1] - e1[1] * e2[0];
+    const L = Math.hypot(nx, ny, nz) || 1; nx /= L; ny /= L; nz /= L;
+    P.push(...a, ...b, ...c); N.push(nx, ny, nz, nx, ny, nz, nx, ny, nz); U.push(...ua, ...ub, ...uc);
+  };
+  let n = 0;
+  lines.forEach((d, li) => {
+    if (d.length < 2) return;
+    // per point: centre, tangent, left normal, top, half-widths [left, right] (to the midline of a neighbouring track)
+    const S = d.map(([x, z], i) => {
+      const a = d[Math.max(0, i - 1)], b = d[Math.min(d.length - 1, i + 1)], L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+      const tx = (b[0] - a[0]) / L, tz = (b[1] - a[1]) / L, nx = tz, nz = -tx;      // side 0 = +n, side 1 = -n
+      const hw = [DECK.half, DECK.half];
+      lines.forEach((o, lo) => {
+        if (lo === li) return;
+        for (const [qx, qz] of o) {
+          const along = (qx - x) * tx + (qz - z) * tz, across = (qx - x) * nx + (qz - z) * nz;
+          if (Math.abs(along) > 1.5 || Math.abs(across) > 2 * DECK.half + 0.5) continue;
+          const k = across > 0 ? 0 : 1;
+          hw[k] = Math.min(hw[k], Math.abs(across) / 2);
+        }
+      });
+      const y = prof?.y(x, z, 1.5) ?? surface(x, z);
+      return { x, z, tx, tz, nx, nz, y, hw, s: 0 };
+    });
+    for (let i = 1; i < S.length; i++) S[i].s = S[i - 1].s + Math.hypot(S[i].x - S[i - 1].x, S[i].z - S[i - 1].z);
+    // a point on the left (side 0) / right (side 1) edge, dy above the top, `inset` m in from the edge
+    const edge = (q, side, dy = 0, inset = 0) => { const w = side === 0 ? q.hw[0] - inset : -(q.hw[1] - inset); return [q.x + q.nx * w, q.y + dy, q.z + q.nz * w]; };
+    const par = (q, side) => q.hw[side] >= DECK.half - 1e-6;          // a free side carries a parapet
+    for (let i = 1; i < S.length; i++) {
+      const A = S[i - 1], B = S[i];
+      if (!inB((A.x + B.x) / 2, (A.z + B.z) / 2)) continue;
+      n++;
+      const sa = A.s, sb = B.s, D = DECK.depth;
+      // top faces up, soffit down (orientation fixed below by the expected normal)
+      face(edge(A, 0), edge(B, 0), edge(B, 1), edge(A, 1), [0, 1, 0], [sa, A.hw[0]], [sb, B.hw[0]], [sb, -B.hw[1]], [sa, -A.hw[1]]);
+      face(edge(A, 0, -D), edge(B, 0, -D), edge(B, 1, -D), edge(A, 1, -D), [0, -1, 0], [sa, A.hw[0]], [sb, B.hw[0]], [sb, -B.hw[1]], [sa, -A.hw[1]]);
+      for (const side of [0, 1]) {
+        const top = par(A, side) && par(B, side) ? DECK.parapetH : 0, sg = side === 0 ? 1 : -1;
+        const out = [A.nx * sg, 0, A.nz * sg], inn = [-out[0], 0, -out[2]];
+        // the side face, from the soffit to the top (or to the parapet's top)
+        face(edge(A, side, -D), edge(B, side, -D), edge(B, side, top), edge(A, side, top), out, [sa, -D], [sb, -D], [sb, top], [sa, top]);
+        if (!top) continue;
+        // the parapet: its top and its inner face (it stands on the deck: no bottom)
+        const W = DECK.parapetW;
+        face(edge(A, side, top), edge(B, side, top), edge(B, side, top, W), edge(A, side, top, W), [0, 1, 0], [sa, 0], [sb, 0], [sb, W], [sa, W]);
+        face(edge(A, side, 0, W), edge(B, side, 0, W), edge(B, side, top, W), edge(A, side, top, W), inn, [sa, 0], [sb, 0], [sb, top], [sa, top]);
+      }
+    }
+    // end caps (closed slab: no slit to see the cutting through), facing out of the deck
+    for (const [q, dir] of [[S[0], -1], [S[S.length - 1], 1]]) {
+      if (!inB(q.x, q.z)) continue;
+      const D = DECK.depth, W = DECK.parapetW, o = [q.tx * dir, 0, q.tz * dir];
+      const uvOf = (p) => [(p[0] - q.x) * q.nx + (p[2] - q.z) * q.nz, p[1] - q.y];
+      const cap = (a, b, c, e) => face(a, b, c, e, o, uvOf(a), uvOf(b), uvOf(c), uvOf(e));
+      cap(edge(q, 0, -D), edge(q, 1, -D), edge(q, 1, 0), edge(q, 0, 0));                 // the slab
+      for (const side of [0, 1]) if (par(q, side)) cap(edge(q, side, 0), edge(q, side, 0, W), edge(q, side, DECK.parapetH, W), edge(q, side, DECK.parapetH));
+    }
+  });
+  if (!P.length) return null;
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(P, 3));
+  g.setAttribute("normal", new THREE.Float32BufferAttribute(N, 3));
+  g.setAttribute("uv", new THREE.Float32BufferAttribute(U, 2));
+  const m = new THREE.Mesh(g, deckMaterial());
+  m.castShadow = m.receiveShadow = true; m.name = "tram-bridge-deck";
+  return { mesh: m, segments: n };
+  /** a quad wound so its geometric normal faces `want` (flat normal), uv per corner */
+  function face(p0, p1, p2, p3, want, u0, u1, u2, u3) {
+    const e1 = [p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]], e2 = [p2[0] - p0[0], p2[1] - p0[1], p2[2] - p0[2]];
+    const c = [e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]];
+    if (c[0] * want[0] + c[1] * want[1] + c[2] * want[2] >= 0) { tri(p0, p1, p2, u0, u1, u2); tri(p0, p2, p3, u0, u2, u3); }
+    else { tri(p0, p2, p1, u0, u2, u1); tri(p0, p3, p2, u0, u3, u2); }
+  }
+}
+
+/** surface(x, z): the road top; prof (viewer/trackProfile.js, optional): the tracks' smooth rail-top profile (the wire
+ *  hangs WIRE_H over it, the bridge deck carries it) */
+export function buildTram(feats, surface, bounds, prof = null) {
   const group = new THREE.Group();
   group.name = "tram";
   const inB = (x, z) => x >= bounds.x0 && x <= bounds.x1 && z >= bounds.z0 && z <= bounds.z1;
   const tram = (feats.lines || []).filter((l) => l.kind === "tram");
+  const trackY = (x, z) => prof?.y(x, z, 2.5) ?? surface(x, z);
+  const deck = buildDecks(tram, prof, surface, inB);
+  if (deck) group.add(deck.mesh);
   const steel = new THREE.MeshStandardNodeMaterial({ color: 0x3b4044, roughness: 0.5, metalness: 0.7 });
 
   // ---- contact wire: thin instanced cylinders, one per 4 m segment
   const segs = [], poles = [];
   for (const l of tram) {
+    const onBridge = l.tags?.bridge === "yes";                      // no poles on the bridge deck (they stand at its ends)
     const d = densify(l.line, 4);
     let acc = 0;
     for (let i = 1; i < d.length; i++) {
       const [ax, az] = d[i - 1], [bx, bz] = d[i];
       const L = Math.hypot(bx - ax, bz - az);
-      if (inB((ax + bx) / 2, (az + bz) / 2)) segs.push([ax, surface(ax, az) + WIRE_H, az, bx, surface(bx, bz) + WIRE_H, bz]);
+      if (inB((ax + bx) / 2, (az + bz) / 2)) segs.push([ax, trackY(ax, az) + WIRE_H, az, bx, trackY(bx, bz) + WIRE_H, bz]);
       acc += L;
       if (acc >= POLE_STEP) {
         acc = 0;
         const nx = -(bz - az) / L, nz = (bx - ax) / L;
         const px = bx + nx * POLE_OFF, pz = bz + nz * POLE_OFF;
-        if (inB(px, pz) && !poles.some((p) => (p.x - px) ** 2 + (p.z - pz) ** 2 < 64)) poles.push({ x: px, z: pz, yaw: Math.atan2(nx, nz) });
+        if (!onBridge && inB(px, pz) && !poles.some((p) => (p.x - px) ** 2 + (p.z - pz) ** 2 < 64)) poles.push({ x: px, z: pz, yaw: Math.atan2(nx, nz) });
       }
     }
   }
@@ -143,5 +247,5 @@ export function buildTram(feats, surface, bounds) {
     sm.computeBoundingSphere();
     group.add(sm);
   }
-  return { group, counts: { wireSegments: segs.length, poles: poles.length, platforms: plat.length, shelters: shelters.length } };
+  return { group, counts: { deckSegments: deck?.segments || 0, wireSegments: segs.length, poles: poles.length, platforms: plat.length, shelters: shelters.length } };
 }

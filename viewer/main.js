@@ -30,6 +30,7 @@ import { cobbleMaterial, pitMaterial } from "./cobbles.js";
 import { landCoverTexture, groundMaterial } from "./ground.js";
 import { Heightmap } from "./heightmap.js";
 import { createTramLine } from "./tramline.js";
+import { loadTrackProfile } from "./trackProfile.js";
 import { asphaltMaterial, concreteMaterial, vergeMaterial, paintMaterial } from "./roadPaint.js";
 import { buildingMeshes as facadeMeshes } from "./facades.js";
 import { Lighting, PRESETS } from "./lighting.js";
@@ -206,6 +207,18 @@ function railMaterial() {
   return m;
 }
 
+/** the road's lift over the bare-earth DTM at (x, z), for trackProfile.railTop: this tile's grid inside it (it is not in
+ *  the world yet while it is built), else the loaded tile there, else null; bridge = the track profile stands > 0.3 m over the DTM */
+function roadOffFor(hm, inTile) {
+  return (x, z) => {
+    const tl = inTile(x, z) ? null : worldRef?.tiles.find((q) => x >= q.bounds.x0 && x <= q.bounds.x1 && z >= q.bounds.z0 && z <= q.bounds.z1);
+    const h = inTile(x, z) ? hm : tl?.hm;
+    if (!h) return null;                                 // not loaded: unknown (never a clamped edge sample)
+    const g = h.ground(x, z), t = trackProf?.y(x, z, 2.5);
+    return { off: h.surface(x, z) + CARVE - g, bridge: t != null && t - g > 0.3 };
+  };
+}
+
 /** `treeGround(x, z)`: where a trunk stands (?roads=surface: on the measured paving / in its pit's soil) */
 function featureObjects(f, hm, bounds, railLift = 0.012, treeGround = (x, z) => hm.surface(x, z)) {
   const group = new THREE.Group();
@@ -221,8 +234,10 @@ function featureObjects(f, hm, bounds, railLift = 0.012, treeGround = (x, z) => 
     // side -1 / +1: the strip runs from the gauge side (lip) outward
     const o0 = side * (GAUGE / 2 - RAIL_LIP - RAIL_GROOVE), o1 = o0 + side * W;
     for (let k = 0; k + 1 < pts.length; k++) {
-      const q = [pts[k], pts[k + 1]].map(([x, z, nx, nz]) => [[x + nx * o0, z + nz * o0], [x + nx * o1, z + nz * o1]]);
-      const y = (p) => hm.surface(p[0], p[1]) + CARVE + railLift;
+      const q = [pts[k], pts[k + 1]].map(([x, z, nx, nz, top]) => [[x + nx * o0, z + nz * o0, top], [x + nx * o1, z + nz * o1, top]]);
+      // rail top: the track's smooth vertical profile (viewer/trackProfile.js railTop: vertical curves, bridge decks, the
+      // road's smoothed lift), never below the road it is set in (its cross fall, local bumps of a few cm)
+      const y = (p) => { const g = hm.surface(p[0], p[1]) + CARVE; return (p[2] == null ? g : Math.max(g, p[2])) + railLift; };
       const [a0, a1] = q[0], [b0, b1] = q[1];
       for (const [p, v] of [[a0, 0], [b0, 0], [a1, 1], [a1, 1], [b0, 0], [b1, 1]]) { pos.push(p[0], y(p), p[1]); uvs.push(0, v); nrm.push(0, 1, 0); }
     }
@@ -238,7 +253,7 @@ function featureObjects(f, hm, bounds, railLift = 0.012, treeGround = (x, z) => 
     const pts = dense.filter(([x, z]) => inTile(x, z)).map(([x, z], i, arr) => {
       const p = arr[Math.max(0, i - 1)], q = arr[Math.min(arr.length - 1, i + 1)];
       const dx = q[0] - p[0], dz = q[1] - p[1], L = Math.hypot(dx, dz) || 1;
-      return [x, z, -dz / L, dx / L];
+      return [x, z, -dz / L, dx / L, trackProf ? trackProf.railTop(x, z, roadOffFor(hm, inTile)) : null];
     });
     if (pts.length < 2) continue;
     for (const side of [-1, 1]) ribbon(pts, side);
@@ -271,6 +286,8 @@ function addTrees(group, f, inTile, treeGround) {
 }
 
 let tramLine = null;       // real STIB line 92 on its timetable (tramline.js)
+// the tram tracks' smooth rail-top profile (tools/build_tram_profile.mjs): rails, wire, bridge deck, trams (viewer/trackProfile.js)
+let trackProf = null, worldRef = null;
 const updaters = [];
 // The railway (?trains=1, Train Lab first): tracks per tile, hero bridges, SNCB trains on the real timetable (viewer/rail/)
 const TRAINS = params.get("trains") !== "0";
@@ -492,7 +509,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const furn = buildFurniture(feats, roads, (x, z) => hm.ground(x, z), bounds);
   own.features.add(furn.group);
   await frame("furniture");
-  const tram = buildTram(feats, (x, z) => hm.surface(x, z) + CARVE, bounds);
+  const tram = buildTram(feats, (x, z) => hm.surface(x, z) + CARVE, bounds, trackProf);
   own.features.add(tram.group);
   await frame("tram");
   // parked cars from the parking lanes as OSM / the type default has them (before the width fit, which drops lanes the
@@ -619,6 +636,8 @@ async function main() {
       return { x0: Math.min(...b.map((q) => q.x0)), z0: Math.min(...b.map((q) => q.z0)), x1: Math.max(...b.map((q) => q.x1)), z1: Math.max(...b.map((q) => q.z1)) };
     },
   };
+  worldRef = world;
+
   if (params.get("lampmodel") !== "0") setLampModel(await loadLampModel());   // the Blender lamp (?lampmodel=0: the old cylinders)
   // The Saint-Job church (tools/blender/stjob.py, viewer/stjobModel.js) in place of its UrbIS solid (HIDE_BU_IDS);
   // ?stjob=0: the UrbIS solid. One model, three LODs by distance to the octagon; shown while its tile is loaded
@@ -689,12 +708,14 @@ async function main() {
   if (params.get("observatory") !== "0") await addObservatory({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
   // flags on the town hall balcony (viewer/flagsCity.js), behind ?flags=1 (needs ?townhall=1); in the background
   if (params.get("flags") !== "0") addFlags({ scene, updaters, renderer, compiler: () => compileFor, log, params }).catch((e) => log(`flags failed: ${e.message}`));
+  // the tram tracks' smooth vertical profile, before the first tile's rails (?trackprofile=0: the old per-point ground)
+  if (params.get("trackprofile") !== "0") trackProf = await loadTrackProfile(new URL("../data/transit/tram_profile.json", import.meta.url)).catch((e) => { log(`tram profile: ${e.message}`); return null; });
   const T0 = await loadTile(entry, { layers, contourOn, verbose: true });
   world.tiles.push(T0);
   const { hm, roads, net } = T0;
   if (params.get("trams") !== "0") {
     try {
-      tramLine = await createTramLine(new URL("../data/transit/stib-92.json", import.meta.url), scene, (x, z) => world.surface(x, z) + CARVE);
+      tramLine = await createTramLine(new URL("../data/transit/stib-92.json", import.meta.url), scene, (x, z) => world.surface(x, z) + CARVE, trackProf, roadOffFor(world.tiles[0].hm, () => false));
       for (const t of world.tiles) tramLine.snapTile(t.name, t.feats, t.bounds);
       updaters.push(tramLine.update);
       tramLine.update(new THREE.Vector3(cx, 0, cz));

@@ -38,7 +38,9 @@ os.makedirs(OUT, exist_ok=True)
 SLOTS = ["stone_white", "stone_blue", "brick_red_brussels", "brick_yellow", "wood_frame_white", "wood_frame_dark",
          "glass_window", "cast_iron_green", "painted_metal_white", "zinc_roof",
          # round 3 (keep the order: the slot index travels per vertex; viewer/facadeKit/kitMaterials.js KIT_SLOTS)
-         "slate", "brick_dark", "render_white", "copper_patina", "glass_stained", "metal_anodised", "enamel_blue"]
+         "slate", "brick_dark", "render_white", "copper_patina", "glass_stained", "metal_anodised", "enamel_blue",
+         # fixes1 (the garage door): painted stucco steel (colour per building, weathering in the shader), rubber seals
+         "garage_steel", "rubber_black"]
 # the reference openings (m) and the 9-slice bands (keep in sync with tools/facadekit/packKit.mjs and viewer/facadeKit/)
 REF = {"window": (1.2, 1.6), "door": (1.1, 2.448), "french": (1.2, 2.3), "garage": (2.4, 2.1)}
 SLICE_X, SLICE_B, SLICE_T = 0.25, 0.30, 0.35
@@ -54,6 +56,7 @@ PREVIEW_COL = {
     "glass_window": (0.02, 0.025, 0.03), "cast_iron_green": (0.02, 0.05, 0.03), "painted_metal_white": (0.8, 0.8, 0.78),
     "zinc_roof": (0.35, 0.37, 0.38), "slate": (0.07, 0.08, 0.09), "brick_dark": (0.12, 0.06, 0.04), "render_white": (0.7, 0.68, 0.62),
     "copper_patina": (0.2, 0.4, 0.33), "glass_stained": (0.3, 0.2, 0.05), "metal_anodised": (0.45, 0.43, 0.38), "enamel_blue": (0.02, 0.06, 0.25),
+    "garage_steel": (0.74, 0.74, 0.72), "rubber_black": (0.018, 0.018, 0.02),
 }
 MATS = {}
 for s in SLOTS:
@@ -62,6 +65,7 @@ for s in SLOTS:
     b.inputs["Base Color"].default_value = (*PREVIEW_COL[s], 1)
     b.inputs["Roughness"].default_value = 0.08 if s == "glass_window" else (0.45 if "wood" in s or "metal" in s or "iron" in s else 0.8)
     if s == "glass_window": b.inputs["Metallic"].default_value = 0.0
+    if s == "garage_steel": b.inputs["Roughness"].default_value = 0.42
     MATS[s] = m
 WALLMAT = bpy.data.materials.new("wall"); WALLMAT.use_nodes = True
 WALLMAT.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.3, 0.12, 0.08, 1)
@@ -1090,28 +1094,110 @@ def doorModern():
     P.bm(bbox(-hw - 0.08, hw + 0.08, -0.06, 0.0, -0.16, 0.18, 0.006), "stone_blue")      # threshold
     return P, {"kind": "door", "ref": REF["door"], "occ": "opening"}
 
+def garage_lining_profile(D):
+    """THE GARAGE FRAME's section (a, b): a = outward from the opening edge (negative = into the opening), b = proud of
+    the wall (negative = into the reveal). A folded steel jamb lining: a face flange 55 mm on the wall (its back 4 mm in
+    the wall, a rounded nose over the cut edge), the lining leaf 12 mm thick down the whole reveal, and at the back the
+    frame's STOP LIP 50 mm into the opening (the leaf runs behind it)."""
+    nq = 1 if FAR else 4
+    p = [(0.055, -0.004), (0.055, 0.004)]
+    p += [(0.051, 0.008)] if not FAR else [(0.055, 0.008)]
+    p += [(0.0, 0.008)]
+    p += [(-0.012 * math.sin(t), -0.004 + 0.012 * math.cos(t)) for t in [math.pi / 2 * k / nq for k in range(1, nq + 1)]]   # the nose
+    p += [(-0.012, -D)]
+    if FAR: p += [(-0.062, -D)]
+    else: p += [(-0.058, -D), (-0.0608, -D - 0.0012), (-0.062, -D - 0.004)]                                         # the lip's rounded edge
+    p += [(-0.062, -D - 0.006), (0.0, -D - 0.006), (0.0, -0.004)]
+    return p + [p[0]]                     # (sweep does not close a profile: the first point again = a closed solid)
+
+def garage_seal_profile(D):
+    """the frame's RUBBER SEAL (sides + head): a bulb 10 mm proud of the stop lip's edge, pressed on the leaf's face (its
+    back 1.5 mm into the leaf, its front 2 mm into the lip)"""
+    nq = 1 if FAR else 3
+    p = [(-0.05, -D - 0.0175), (-0.05, -D - 0.004), (-0.064, -D - 0.004)]
+    p += [(-0.064 - 0.008 * math.sin(t), -D - 0.012 + 0.008 * math.cos(t)) for t in [math.pi / 2 * k / nq for k in range(1, nq + 1)]]
+    p += [(-0.072, -D - 0.0175)]
+    return p + [p[0]]
+
+def garage_section(P, yb, yt, zf, x0, x1, bottom=False, top=False, rib=True, slot="garage_steel"):
+    """ONE SECTION of the sectional door: a 42 mm insulated steel sandwich panel extruded along x, its section (y, z):
+    the bottom edge the SOCKET of the tongue-and-groove joint (r 6 mm), the top edge the rounded TONGUE (r 10 mm): with
+    the next section on it the two rounds make the joint's shadow line (16 mm wide, 10 mm deep; the faces then meet,
+    no slit); a pressed M-rib (30 mm, 5 mm deep) in the middle of the face. FAR: chamfers, no rib."""
+    zb = zf - 0.042
+    nq = 1 if FAR else 4
+    rb = 0.004 if bottom else 0.006
+    rt = 0.004 if top else 0.010
+    p = [(yb, zb), (yb, zf - rb)]
+    p += [(yb + rb - rb * math.cos(t), zf - rb + rb * math.sin(t)) for t in [math.pi / 2 * k / nq for k in range(1, nq + 1)]]
+    if rib and not FAR:
+        ym, n = (yb + yt) / 2, 8
+        p += [(ym - 0.015 + 0.03 * s / n, zf - 0.005 * (0.5 - 0.5 * math.cos(2 * math.pi * s / n))) for s in range(n + 1)]
+    p += [(yt - rt + rt * math.sin(t), zf - rt + rt * math.cos(t)) for t in [math.pi / 2 * k / nq for k in range(0, nq + 1)]]
+    p += [(yt, zb), (yb, zb)]                  # closed (the back face too: no open edge)
+    extrude_x(P, p, x0, x1, slot)
+
 @piece
 def garage():
-    """A SECTIONAL GARAGE DOOR (1960-1980 houses): a stone lintel and thin jamb linings, four ribbed steel panels (painted),
-    their joints as shadow grooves, a handle; reference opening 2.4 x 2.1 m (stretches by 9-slice)."""
-    W, H = 2.4, 2.1; hw = W / 2
+    """THE GARAGE DOOR (fixes1, 2026-11-12): an insulated SECTIONAL door, the type on most Uccle / Brussels 1950-1980 houses
+    and villas with the garage in the ground floor today (the original up-and-over doors have mostly been replaced; the
+    sectional's horizontal joints also stretch cleanly with the 9-slice, vertical ribs would not). Reference opening
+    2.4 x 2.1 m:
+      - the opening's FRAME: a folded steel jamb lining down the 22 cm reveal (face flange with a rounded nose over the
+        wall's cut edge, a stop lip at the back) with a rubber bulb seal along the sides and the head (the top seal);
+      - a BLUE-STONE LINTEL (petit granit), 22 cm, 4 cm proud, a drip groove in its soffit, a weathered top;
+      - a BLUE-STONE THRESHOLD plate 15 mm over the ground, under the leaf, rounded nose;
+      - the LEAF: 4 x 42 mm insulated steel sections (slot garage_steel: painted stucco steel, colour per building, grime
+        at the foot and a rust streak under the lock in the shader), rounded tongue-and-groove joints that cast a shadow
+        line, a pressed M-rib each, an aluminium bottom rail on a rubber bottom seal (slot rubber_black);
+      - the HANDLE in the right-hand rigid 9-slice band (it never stretches): a rosette, a pull handle (bow) and a lock
+        cylinder.
+    Hinges and rollers are on the inside face (behind the stop lip): not visible from the street, so not modelled."""
+    W, H = REF["garage"]; hw = W / 2
+    D = 0.22                                   # the reveal (wall) depth
     P = Part()
-    reveal(P, W, H, 0.12, "render_white", bottom=False)
-    P.bm(bbox(-hw - 0.12, hw + 0.12, H, H + 0.22, 0.0, 0.03, 0.006), "stone_white")      # lintel
-    zp = -0.08
+    path = [V((-hw, -0.004, 0)), V((-hw, H, 0)), V((hw, H, 0)), V((hw, -0.004, 0))]
+    sweep(P, garage_lining_profile(D), path, (0, 0, 1), slot="garage_steel")          # the frame / jamb lining
+    sweep(P, garage_seal_profile(D), path, (0, 0, 1), slot="rubber_black")            # side + head seals
+    # the lintel: blue stone, its back 8 mm in the wall (the lining's flange back is at 4 mm: never the same plane)
+    nq = 1 if FAR else 3
+    lp = [(H, -0.008)]
+    lp += [(H, 0.022), (H + 0.008, 0.022), (H + 0.008, 0.03), (H, 0.03)] if not FAR else []                  # the drip groove
+    lp += [(H, 0.034)] + [(H + 0.006 - 0.006 * math.cos(t), 0.034 + 0.006 * math.sin(t)) for t in [math.pi / 2 * k / nq for k in range(1, nq + 1)]]
+    lp += [(H + 0.205, 0.04), (H + 0.22, 0.028), (H + 0.22, -0.008), (H, -0.008)]                              # weathered top; closed
+    extrude_x(P, lp, -hw - 0.2, hw + 0.2, "stone_blue")
+    # the threshold plate (blue stone), 15 mm over the ground, from behind the leaf to 10 cm out
+    ys = 0.015
+    P.bm(bbox(-hw - 0.08, hw + 0.08, -0.04, ys, -D - 0.08, 0.10, 0.008), "stone_blue")
+    # the leaf: rubber bottom seal (2 mm into the threshold), aluminium bottom rail, 4 sections
+    zf = -D - 0.016
+    lx0, lx1 = -hw + 0.025, hw - 0.025          # 37 mm behind the stop lip each side
+    sp = [(ys - 0.002, zf - 0.034), (ys - 0.002, zf - 0.01)]
+    sp += [(ys + 0.004 - 0.006 * math.cos(t), zf - 0.01 + 0.006 * math.sin(t)) for t in [math.pi / 2 * k / nq for k in range(1, nq + 1)]]
+    sp += [(ys + 0.009, zf - 0.004), (ys + 0.009, zf - 0.012), (ys + 0.014, zf - 0.012), (ys + 0.014, zf - 0.034), sp[0]]   # (its top in the rail, set back from the rail's face)
+    extrude_x(P, sp, lx0 + 0.004, lx1 - 0.004, "rubber_black")      # its ends 4 mm inside the rail's (no shared end plane)
+    yr0, yr1 = ys + 0.012, ys + 0.04
+    rp = [(yr0, zf - 0.04), (yr0, zf - 0.006), (yr0 + 0.003, zf - 0.003), (yr1, zf - 0.003), (yr1, zf - 0.04)] if not FAR else [(yr0, zf - 0.04), (yr0, zf - 0.003), (yr1, zf - 0.003), (yr1, zf - 0.04)]
+    extrude_x(P, rp + [rp[0]], lx0, lx1, "metal_anodised")
     n = 4
-    ph = H / n
+    yp0, yp1 = yr1, H - 0.02
+    ph = (yp1 - yp0) / n
     for k in range(n):
-        ya, yb = k * ph, (k + 1) * ph
-        # a panel: its body, a recessed joint at its top (the next panel's bottom tongue sits in it)
-        P.bm(bbox(-hw - OV(), hw + OV(), ya + 0.012, yb, zp - 0.04, zp, 0.004), "painted_metal_white")
-        P.bm(bbox(-hw - OV(), hw + OV(), ya, ya + 0.012, zp - 0.04, zp - 0.012, 0.0), "painted_metal_white")   # the joint (set back)
-        if not FAR:
-            for q in range(1, 4):   # ribs (pressed horizontal ribs, proud 6 mm)
-                yr = ya + 0.012 + (ph - 0.012) * q / 4
-                P.bm(bbox(-hw + 0.03, hw - 0.03, yr - 0.008, yr + 0.008, zp - 0.01, zp + 0.006, 0.003), "painted_metal_white")
-    P.bm(bbox(-0.09, 0.09, 0.42, 0.46, zp - 0.002, zp + 0.025, 0.004), "metal_anodised")      # handle
-    return P, {"kind": "garage", "ref": (W, H), "occ": "opening", "slice": "garage"}
+        garage_section(P, yp0 + k * ph, yp0 + (k + 1) * ph, zf, lx0, lx1, bottom=(k == 0), top=(k == n - 1))
+    if not FAR:
+        # the handle set, right-hand side (x > W / 2 - SLICE_X: rigid), on the second section under its rib
+        hx = hw - 0.205
+        P.bm(bbox(hx - 0.024, hx + 0.024, 0.6, 0.78, zf - 0.002, zf + 0.008, 0.004), "metal_anodised")          # rosette
+        r, zh = 0.012, zf + 0.036
+        bow = [V((hx, 0.618, zf + 0.004)), V((hx, 0.618, zh - r))]
+        bow += [V((hx, 0.618 + r - r * math.cos(t), zh - r + r * math.sin(t))) for t in [math.pi / 2 * k / 4 for k in range(1, 5)]]
+        bow += [V((hx, 0.712 - r + r * math.sin(t), zh - r + r * math.cos(t))) for t in [math.pi / 2 * k / 4 for k in range(0, 5)]]
+        bow += [V((hx, 0.712, zf + 0.004))]
+        sec = [(0.008 * math.cos(2 * math.pi * k / 10), 0.008 * math.sin(2 * math.pi * k / 10)) for k in range(11)]   # closed ring
+        sweep(P, sec, bow, (1, 0, 0), slot="metal_anodised")                                                   # the pull handle (bow)
+        P.bm(cyl(0.016, zf + 0.008, zf + 0.0115, seg=16, x=hx, z=0.752, axis="z"), "metal_anodised")          # lock escutcheon ring
+        P.bm(cyl(0.0095, zf + 0.0115, zf + 0.0155, seg=12, x=hx, z=0.752, axis="z"), "metal_anodised")        # lock cylinder
+    return P, {"kind": "garage", "ref": (W, H), "occ": "opening", "slice": "garage", "closeup": True}
 
 @piece
 def winC():
@@ -1313,6 +1399,7 @@ def occluders(meta):
         plane([(-hw, -1.5, 0), (hw, -1.5, 0), (hw, 0, 0), (-hw, 0, 0)], "wb")
         plane([(-3, -1.5, -2.5), (3, -1.5, -2.5), (3, H + 3, -2.5), (-3, H + 3, -2.5)], "room")
         if meta["kind"] == "door": plane([(-3, -0.06 - 0.0, 3), (3, -0.06, 3), (3, -0.06, -1), (-3, -0.06, -1)][::-1], "street")
+        if meta["kind"] == "garage": plane([(-4, 0.0, 4), (4, 0.0, 4), (4, 0.0, -1), (-4, 0.0, -1)][::-1], "street")   # the drive at the opening's foot
     elif occ in ("wall", "plinth", "eaves", "ground", "corner"):
         plane([(-4, -2, 0), (4, -2, 0), (4, 3, 0), (-4, 3, 0)], "wall")
         if occ in ("ground", "plinth"): plane([(-4, -0.0, 4), (4, -0.0, 4), (4, -0.0, -0.01), (-4, -0.0, -0.01)][::-1], "ground")
@@ -1357,8 +1444,9 @@ def export(obj, used, meta, name):
             d["p"] += [p.x, p.y, p.z]; d["n"] += [n.x, n.y, n.z]; d["uv"] += list(uv); d["ao"].append(aod[li])
     return per
 
-def preview(obj, meta, path):
-    """a Cycles still of the piece on a plain wall, 3/4 view"""
+def preview(obj, meta, path, close=False):
+    """a Cycles still of the piece on a plain wall, 3/4 view; close: a close-up of the piece's right-hand jamb at grazing
+    light (the sun nearly in the wall's plane, from above: every joint, rib and arris throws its shadow)"""
     W, H = meta["ref"]
     cam = bpy.data.cameras.new("cam"); co = bpy.data.objects.new("cam", cam); scn.collection.objects.link(co)
     cam.lens = 50
@@ -1374,11 +1462,13 @@ def preview(obj, meta, path):
         f = (to - frm).normalized(); r = f.cross(V((0, 1, 0))).normalized(); u = r.cross(f)
         M = Matrix(((r.x, u.x, -f.x, frm.x), (r.y, u.y, -f.y, frm.y), (r.z, u.z, -f.z, frm.z), (0, 0, 0, 1)))
         o.matrix_world = M
+    if close:
+        tgt = V((W / 2 - 0.3, 0.62, -0.18)); eye = tgt + V((-0.5, 0.22, 0.84)).normalized() * 1.7
     look(co, eye, tgt)
     scn.camera = co
     sun = bpy.data.lights.new("sun", "SUN"); sun.energy = 3.2; sun.angle = 0.04
     so = bpy.data.objects.new("sun", sun); scn.collection.objects.link(so)
-    look(so, V((-1.0, 1.6, 1.4)), V((0, 0, 0)))
+    look(so, V((-0.35, 1.6, 0.22)) if close else V((-1.0, 1.6, 1.4)), V((0, 0, 0)))
     w = scn.world; w.use_nodes = True
     bg = w.node_tree.nodes["Background"]; bg.inputs["Color"].default_value = (0.42, 0.5, 0.62, 1); bg.inputs["Strength"].default_value = 0.9
     scn.render.engine = "CYCLES"; scn.cycles.samples = 48; scn.cycles.use_denoising = True
@@ -1414,6 +1504,7 @@ for name0, fn, far in JOBS:
     if PREV and not far:
         os.makedirs(PREV, exist_ok=True)
         preview(obj, meta, os.path.abspath(os.path.join(PREV, f"blender_{name}.png")))
+        if meta.get("closeup"): preview(obj, meta, os.path.abspath(os.path.join(PREV, f"blender_{name}_closeup.png")), close=True)
     for o in occ: bpy.data.objects.remove(o, do_unlink=True)
     entry = {**meta, "slots": {}}
     for s, d in per.items():

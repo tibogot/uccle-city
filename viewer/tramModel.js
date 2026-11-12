@@ -258,33 +258,62 @@ function makeMaterial(sign) {
 const dirOf = (h) => [Math.cos(h), -Math.sin(h)];        // heading (three: yaw about +y, +x forward) -> (x, z) direction
 /** All pieces of one tram whose nose is at distance d along at(s): fills `out` = [{ piece, x, z, yaw, flip }] (yaw =
  *  the piece's rotation about +y; flip: turned 180 deg, i.e. the rear cab / section 4; lead: the cab in front, with
- *  white headlights - the other shows red tail lights; leadRear: the tram runs the other way, cab 5 leads). */
-export function tramPose(layout, at, d, out = [], leadRear = false) {
+ *  white headlights - the other shows red tail lights; leadRear: the tram runs the other way, cab 5 leads).
+ *  yAt(s) (optional): the rail-top height (as the fleet's ground()) at distance s along the track (viewer/trackProfile.js: a smooth vertical
+ *  profile). Then every piece also gets y (its origin's height) and pitch (radians, + = nose up), worked out like the
+ *  real vehicle (docs/fixes1/README.md): each BOGIE stands on the rails (height and grade of the track under it), each
+ *  section with a bogie (cabs, centre) is carried by it and lies along the track's grade there, each SUSPENDED section
+ *  hangs between its neighbours' articulation points, the bellows sit on the hinge between two sections. Sections
+ *  share their articulation points in 3D: no gap, no overlap, no kink beyond the vertical curve itself. */
+export function tramPose(layout, at, d, out = [], leadRear = false, yAt = null) {
   out.length = 0;
   const M = layout.modules, mods = [];
+  const grade = (s) => (yAt(s + 1) - yAt(s - 1)) / 2;               // dy / ds over the bogie's wheelbase scale
   for (let i = 0; i < M.length; i++) {
     const m = M[i];
     if (m.bogie == null) { mods.push(null); continue; }
-    const [bx, bz, h] = at(d - (m.front + m.bogie));
+    const sb = d - (m.front + m.bogie);
+    const [bx, bz, h] = at(sb);
     const [dx, dz] = dirOf(h), c = m.bogie - m.length / 2;          // centre ahead of the bogie
     const ox = bx + dx * c, oz = bz + dz * c;
-    mods.push({ ox, oz, h, L: m.length, fx: ox + dx * m.length / 2, fz: oz + dz * m.length / 2, rx: ox - dx * m.length / 2, rz: oz - dz * m.length / 2 });
-    out.push({ piece: "Bogie", x: bx, z: bz, yaw: h, flip: false });
+    const mod = { ox, oz, h, L: m.length, fx: ox + dx * m.length / 2, fz: oz + dz * m.length / 2, rx: ox - dx * m.length / 2, rz: oz - dz * m.length / 2 };
+    const bogie = { piece: "Bogie", x: bx, z: bz, yaw: h, flip: false };
+    if (yAt) {
+      const yb = yAt(sb), g = grade(sb), sp = g / Math.sqrt(1 + g * g);
+      mod.pitch = Math.atan(g); mod.oy = yb + c * sp; mod.fy = mod.oy + sp * m.length / 2; mod.ry = mod.oy - sp * m.length / 2;
+      bogie.y = yb; bogie.pitch = mod.pitch;
+    }
+    mods.push(mod);
+    out.push(bogie);
   }
   for (let i = 0; i < M.length; i++) {
     if (mods[i]) continue;
     const a = mods[i - 1], b = mods[i + 1];
     const ox = (a.rx + b.fx) / 2, oz = (a.rz + b.fz) / 2, h = Math.atan2(-(a.rz - b.fz), a.rx - b.fx);
     mods[i] = { ox, oz, h, L: M[i].length, fx: a.rx, fz: a.rz, rx: b.fx, rz: b.fz };
+    if (yAt) {
+      const run = Math.hypot(a.rx - b.fx, a.rz - b.fz) || 1;
+      Object.assign(mods[i], { oy: (a.ry + b.fy) / 2, fy: a.ry, ry: b.fy, pitch: Math.atan2(a.ry - b.fy, run) });
+    }
   }
   for (let i = 0; i < M.length; i++) {
     const p = mods[i], m = M[i];
-    out.push({ piece: m.piece, x: p.ox, z: p.oz, yaw: p.h + (m.flip ? Math.PI : 0), flip: m.flip, lead: leadRear ? i === M.length - 1 : i === 0 });
-    if (m.panto != null) { const [dx, dz] = dirOf(p.h); out.push({ piece: "Panto", x: p.ox + dx * m.panto, z: p.oz + dz * m.panto, yaw: p.h, flip: false }); }
+    // a flipped piece (turned 180 deg about +y) sees the grade the other way: its own pitch is the opposite
+    const piece = { piece: m.piece, x: p.ox, z: p.oz, yaw: p.h + (m.flip ? Math.PI : 0), flip: m.flip, lead: leadRear ? i === M.length - 1 : i === 0 };
+    if (yAt) { piece.y = p.oy; piece.pitch = m.flip ? -p.pitch : p.pitch; }
+    out.push(piece);
+    if (m.panto != null) {
+      const [dx, dz] = dirOf(p.h), pp = { piece: "Panto", x: p.ox + dx * m.panto, z: p.oz + dz * m.panto, yaw: p.h, flip: false };
+      // on its section's roof (follows the section's pitch), kept vertical under the wire
+      if (yAt) { pp.y = p.oy + Math.sin(p.pitch) * m.panto; pp.pitch = 0; }
+      out.push(pp);
+    }
     if (i < M.length - 1) {                                          // the bellows at the pivot, on the bisector
       const q = mods[i + 1];
       let dh = q.h - p.h; dh = Math.atan2(Math.sin(dh), Math.cos(dh));
-      out.push({ piece: "Bellows", x: (p.rx + q.fx) / 2, z: (p.rz + q.fz) / 2, yaw: p.h + dh / 2, flip: false, angle: dh });
+      const bel = { piece: "Bellows", x: (p.rx + q.fx) / 2, z: (p.rz + q.fz) / 2, yaw: p.h + dh / 2, flip: false, angle: dh };
+      if (yAt) { bel.y = (p.ry + q.fy) / 2; bel.pitch = (p.pitch + q.pitch) / 2; }
+      out.push(bel);
     }
   }
   return out;
@@ -318,7 +347,7 @@ export function createTramFleet(model, parent, maxTrams = 40) {
     }
     meshes.push(row);
   }
-  const M = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1), v = new THREE.Vector3();
+  const M = new THREE.Matrix4(), q = new THREE.Quaternion(), qp = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), zAx = new THREE.Vector3(0, 0, 1), one = new THREE.Vector3(1, 1, 1), v = new THREE.Vector3();
   const frustum = new THREE.Frustum(), sphere = new THREE.Sphere(), pm = new THREE.Matrix4();
   let cam = null, eye = null, lodScale = 1, forced = -1;
   const stats = { trams: 0, perLod: [0, 0, 0], culled: 0 };
@@ -367,7 +396,8 @@ export function createTramFleet(model, parent, maxTrams = 40) {
           const r = row[p.piece];
           if (!r || r.n >= r.mesh.instanceMatrix.count) continue;
           q.setFromAxisAngle(up, p.yaw);
-          M.compose(v.set(p.x, ground(p.x, p.z), p.z), q, one);
+          if (p.pitch) { qp.setFromAxisAngle(zAx, p.pitch); q.multiply(qp); }
+          M.compose(v.set(p.x, p.y != null ? p.y : ground(p.x, p.z), p.z), q, one);
           r.mesh.setMatrixAt(r.n, M);
           r.inst.array.set([p.lead ? 1 : 0, sign, p.angle || 0, fade], r.n * 4);
           r.n++;

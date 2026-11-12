@@ -39,7 +39,12 @@ export function makeView({ lodBias = -1, gain = 1 } = {}) {
   // |Laplacian| over the crowns 308 vs 319 on the row of 50, 320 vs 314 over the forest; 230 at bias 0) at about half
   // the mesh's jitter. gain 1 (coverage = alpha around the cut): the crowns as bright as the mesh's against the sky
   // (94.3 vs 93.7 mean; gain 4 was 8 % darker: the mesh's far leaves let the sky through), jitter unchanged.
-  return { p11: uniform(1.9), viewH: uniform(800), lodBias: uniform(lodBias), hideMask: uniform(0), gain: uniform(gain), cutoff: uniform(0.5),
+  // farBias (fixes1, the owner's "grainy far forest" from the orbit view at 1-2 km): -1 keeps the crowns' breakup crisp
+  // at the hand-over (400 m) but past ~700 m, where a crown is a few pixels, it reads as per-pixel grain (light / dark
+  // leaf texels, a2c coverage); the bias ramps by +farBias from farFrom to farTo m (eye distance). City orbit view, 1.2
+  // km band, jitter meter (labs/cityJitter.js) strafe: blinking 1.17 % -> 0.59 %, d2 24.0 -> 19.6 with +1.
+  return { p11: uniform(1.9), viewH: uniform(800), lodBias: uniform(lodBias), farBias: uniform(1), farFrom: uniform(700), farTo: uniform(1100),
+    hideMask: uniform(0), gain: uniform(gain), cutoff: uniform(0.5),
     /** near ring (PDO, parallax) < ringSplit <= far ring (no depth out: early-z kept) */ ringSplit: uniform(600) };
 }
 
@@ -124,7 +129,7 @@ export function impostorMaterials(atlas, o) {
   const vW = vertexStage(weights);
   const vC01 = vertexStage(vec4(cells[0], cells[1] ?? vec2(0)));
   // texels per pixel at this distance -> the mip level
-  const lod = clamp(log2(max(float(IN).mul(dEye).div(Rw.mul(V.p11).mul(V.viewH)), 1e-4)).add(V.lodBias), 0, atlas.maxLevel);
+  const lod = clamp(log2(max(float(IN).mul(dEye).div(Rw.mul(V.p11).mul(V.viewH)), 1e-4)).add(V.lodBias).add(V.farBias.mul(smoothstep(V.farFrom, V.farTo, dEye))), 0, atlas.maxLevel);
   const vC2 = vertexStage(vec4(cells[2] ?? vec2(0), variant.add(0.5), sph.w));
   const vMisc = vertexStage(vec4(lod, dEye, scl, 0));
   const vCentre = vertexStage(centreW);

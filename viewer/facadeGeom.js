@@ -87,19 +87,24 @@ function triOf(P, I, t) {
  * @param roads roads.json (for street-facing walls)
  * @returns { walls: {position, normal, aWall, aBld}, roofs: {position, normal, aRoof}, stats }
  */
+/** Push a quad p0 p1 p2 p3 with the flat normal n, WOUND so its geometric normal faces n (front-side culling works:
+ *  docs/CITY_MESH_AUDIT.md found 68k detail triangles wound against their normal, hidden by DoubleSide). */
+function pushQuad(D, p0, p1, p2, p3, n, col) {
+  const ux = p1[0] - p0[0], uy = p1[1] - p0[1], uz = p1[2] - p0[2], vx = p2[0] - p0[0], vy = p2[1] - p0[1], vz = p2[2] - p0[2];
+  const cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx;
+  const order = cx * n[0] + cy * n[1] + cz * n[2] >= 0 ? [p0, p1, p2, p0, p2, p3] : [p0, p2, p1, p0, p3, p2];
+  for (const q of order) { D.position.push(q[0], q[1], q[2]); D.normal.push(n[0], n[1], n[2]); D.color.push(col[0], col[1], col[2]); }
+}
+
 /** Push a box that sticks out of a wall: the wall segment A->B (xz), extruded `depth` along the outward
  *  normal (nx, nz), from yTop - height to yTop. Flat normals, one colour. The back (inside the wall) is skipped. */
-function box(D, A, B, yTop, height, depth, nx, nz, col) {
+function box(D, A, B, yTop, height, depth, nx, nz, col, closed = false) {
   if (height <= 0.01) return;
   const y0 = yTop - height, y1 = yTop;
   const ax = A[0], az = A[2], bx = B[0], bz = B[2];
   const ox = nx * depth, oz = nz * depth;
   let tx = bx - ax, tz = bz - az; const tl = Math.hypot(tx, tz) || 1; tx /= tl; tz /= tl;
-  const quad = (p0, p1, p2, p3, n) => {
-    for (const q of [p0, p1, p2, p0, p2, p3]) {
-      D.position.push(q[0], q[1], q[2]); D.normal.push(n[0], n[1], n[2]); D.color.push(col[0], col[1], col[2]);
-    }
-  };
+  const quad = (p0, p1, p2, p3, n) => pushQuad(D, p0, p1, p2, p3, n, col);
   const a0 = [ax, y0, az], b0 = [bx, y0, bz], a1 = [ax, y1, az], b1 = [bx, y1, bz];
   const A0 = [ax + ox, y0, az + oz], B0 = [bx + ox, y0, bz + oz], A1 = [ax + ox, y1, az + oz], B1 = [bx + ox, y1, bz + oz];
   quad(A0, B0, B1, A1, [nx, 0, nz]);           // front
@@ -107,28 +112,178 @@ function box(D, A, B, yTop, height, depth, nx, nz, col) {
   quad(a0, b0, B0, A0, [0, -1, 0]);            // soffit
   quad(a0, A0, A1, a1, [-tx, 0, -tz]);         // end at A
   quad(b0, b1, B1, B0, [tx, 0, tz]);           // end at B
+  if (closed) quad(a0, b0, b1, a1, [-nx, 0, -nz]);   // the back (a box standing free: chimney stacks, caps, pots)
+}
+
+// ---------------------------------------------------------------- strip details (cornices, eaves boards, gutters)
+// docs/CITY_MESH_AUDIT.md "Triage" + docs/fixes1/README.md: the boxes of these strips were the façade flicker: square end
+// caps at a corner lying in the next wall's plane, the corner square covered by both segments' boxes (two coplanar tops /
+// soffits), collinear pieces of one eave (one box per roof triangle edge) and duplicate edges overlapping. Now every strip
+// is collected for the whole tile first, then: collinear pieces of one strip are MERGED (union of their spans), strip ends
+// that meet another strip of the same kind and section are MITRED on the bisector (no end cap, no overlap: inside and
+// outside corners, adjoining houses), free ends get their end cap SET BACK a few mm per kind (never in the plane of the
+// next wall nor of another strip's cap). Every face is wound by its normal (front-side culling).
+const STRIP_SETBACK = { eb: 0.002, cu: 0.004, cl: 0.006, gu: 0.008, xx: 0.004 };
+
+/** a strip along A -> B (xz; any order), its section from yTop - h to yTop, from `off` to `off + depth` along the
+ *  outward normal (nx, nz) */
+function addStrip(S, kind, A, B, yTop, h, depth, nx, nz, col, off = 0) {
+  if (h <= 0.01) return;
+  const tx = -nz, tz = nx;                                      // along, left to right seen from outside
+  let ax = A[0], az = A[2], bx = B[0], bz = B[2];
+  if ((bx - ax) * tx + (bz - az) * tz < 0) [ax, az, bx, bz] = [bx, bz, ax, az];
+  if (Math.hypot(bx - ax, bz - az) < 0.05) return;
+  S.push({ kind, ax, az, bx, bz, y: yTop, h, d: depth, off, nx, nz, col });
+}
+
+export const _dbg = { strips: null };
+function emitStrips(D, S, stats) {
+  const r = (v, k) => Math.round(v * k);
+  // THE OWNER'S "BLUE LINE + BLACK LINE" along the wall tops (2026-11-11): the hanging zinc gutter (a 13 cm strip whose
+  // top and front catch the sky: a thin pale-blue line from any distance) over the dark eaves board, on every eave,
+  // also over the street cornices. A Brussels terrace has no hanging gutter on its street front: the gutter is in the
+  // cornice (corniche), the roof's eave sits on it. So where the wall top carries a cornice (both ends on a cornice
+  // strip's ends, parallel), the eaves board and the gutter are left out; elsewhere (rear fronts, villas) they stay.
+  const cu = new Map();
+  for (const s of S) if (s.kind === "cu") for (const [x, z] of [[s.ax, s.az], [s.bx, s.bz]]) cu.set(`${r(x, 20)},${r(z, 20)}`, s);
+  const onCornice = (s) => {
+    const c = cu.get(`${r(s.ax, 20)},${r(s.az, 20)}`) || cu.get(`${r(s.bx, 20)},${r(s.bz, 20)}`);
+    return c && c.nx * s.nx + c.nz * s.nz > 0.99;
+  };
+  const before = S.length;
+  for (let i = S.length - 1; i >= 0; i--) if ((S[i].kind === "eb" || S[i].kind === "gu") && onCornice(S[i])) S.splice(i, 1);
+  stats.eavesOnCornice = before - S.length;
+  // 1. merge collinear pieces of one strip (same kind, section, plane): union of their spans along t
+  // (tolerant: normals within 2.5 deg, planes within 3 cm, spans overlapping or touching: UrbIS gives the same edge to
+  // two adjoining solids a few mm / a fraction of a degree apart; exact keys left those as overlapping twins)
+  const groups = new Map(), sec = new Map();
+  for (const s of S) {
+    const k = `${s.kind}|${r(s.y, 100)}|${r(s.h, 100)}|${r(s.d, 100)}|${r(s.off, 100)}`;
+    if (!sec.has(k)) sec.set(k, []);
+    sec.get(k).push(s);
+  }
+  let gid = 0;
+  for (const list of sec.values()) {
+    const cl = [];                                                 // clusters: { nx, nz, pl, u0, u1, items, cx, cz }
+    const near = new Map(), ck = (x, z) => `${Math.floor(x / 8)},${Math.floor(z / 8)}`;
+    for (const s of list) {
+      const pl = s.ax * s.nx + s.az * s.nz, tx = -s.nz, tz = s.nx;
+      const u0 = s.ax * tx + s.az * tz, u1 = s.bx * tx + s.bz * tz, mx = (s.ax + s.bx) / 2, mz = (s.az + s.bz) / 2;
+      let hit = null;
+      for (let i = -1; i <= 1 && !hit; i++) for (let j = -1; j <= 1 && !hit; j++) for (const c of near.get(`${Math.floor(mx / 8) + i},${Math.floor(mz / 8) + j}`) || []) {
+        if (c.nx * s.nx + c.nz * s.nz < 0.999) continue;
+        if (Math.abs(s.ax * c.nx + s.az * c.nz - c.pl) > 0.03 || Math.abs(s.bx * c.nx + s.bz * c.nz - c.pl) > 0.03) continue;
+        const v0 = s.ax * -c.nz + s.az * c.nx, v1 = s.bx * -c.nz + s.bz * c.nx;
+        if (Math.min(v0, v1) > c.u1 + 0.02 || Math.max(v0, v1) < c.u0 - 0.02) continue;
+        hit = c; break;
+      }
+      if (hit) { const v0 = s.ax * -hit.nz + s.az * hit.nx, v1 = s.bx * -hit.nz + s.bz * hit.nx; hit.u0 = Math.min(hit.u0, v0, v1); hit.u1 = Math.max(hit.u1, v0, v1); hit.items.push(s); continue; }
+      const c = { nx: s.nx, nz: s.nz, pl, u0, u1, items: [s] };
+      cl.push(c);
+      for (const [x, z] of [[s.ax, s.az], [mx, mz], [s.bx, s.bz]]) { const k = ck(x, z); if (!near.has(k)) near.set(k, []); if (!near.get(k).includes(c)) near.get(k).push(c); }
+    }
+    for (const c of cl) groups.set(gid++, c.items);
+  }
+  const merged = [];
+  for (const g of groups.values()) {
+    const s0 = g[0], tx = -s0.nz, tz = s0.nx, pl = s0.ax * s0.nx + s0.az * s0.nz;
+    const iv = g.map((s) => [s.ax * tx + s.az * tz, s.bx * tx + s.bz * tz, s]).sort((a, b) => a[0] - b[0]);
+    let cur = null;
+    const flush = () => { if (!cur) return; merged.push({ ...cur.s, ax: tx * cur.u0 + s0.nx * pl, az: tz * cur.u0 + s0.nz * pl, bx: tx * cur.u1 + s0.nx * pl, bz: tz * cur.u1 + s0.nz * pl }); };
+    for (const [u0, u1, s] of iv) {
+      if (cur && u0 <= cur.u1 + 0.02) { if (u1 > cur.u1) cur.u1 = u1; stats.stripMerged++; continue; }
+      flush(); cur = { u0, u1, s };
+    }
+    flush();
+  }
+  // 2. ends: key by position (5 cm) + kind + section; exactly two ends of different strips there -> a mitred joint
+  const ends = new Map();
+  const ek = (s, x, z) => `${s.kind}|${r(s.y, 50)}|${r(s.h, 100)}|${r(s.d, 100)}|${r(s.off, 100)}|${r(x, 20)}|${r(z, 20)}`;
+  merged.forEach((s) => {
+    s.mA = s.mB = null;
+    for (const [e, x, z] of [["A", s.ax, s.az], ["B", s.bx, s.bz]]) { const k = ek(s, x, z); if (!ends.has(k)) ends.set(k, []); ends.get(k).push([s, e]); }
+  });
+  for (const list of ends.values()) {
+    if (list.length !== 2 || list[0][0] === list[1][0]) continue;
+    const [[s1, e1], [s2, e2]] = list, c = s1.nx * s2.nx + s1.nz * s2.nz;
+    if (1 + c < 0.15) continue;                                   // a hairpin: leave both ends free
+    // the mitre: each corner (back, front) = where the two strips' own offset lines meet, so every face stays in its
+    // strip's plane; near-parallel strips (not merged: planes a few cm apart) keep their own square end
+    const det = s1.nx * s2.nz - s1.nz * s2.nx;
+    if (Math.abs(det) < 0.05) { s1["m" + e1] = s2["m" + e2] = { flat: true }; stats.stripJoins++; continue; }
+    const p1 = s1.ax * s1.nx + s1.az * s1.nz, p2 = s2.ax * s2.nx + s2.az * s2.nz;
+    const meet = (o) => { const c1 = p1 + o, c2 = p2 + o; return [(c1 * s2.nz - c2 * s1.nz) / det, (s1.nx * c2 - s2.nx * c1) / det]; };
+    const m = { back: meet(s1.off), front: meet(s1.off + s1.d) };
+    // a mitre point far from the joint (very sharp turns) is worse than an end cap
+    const V = e1 === "A" ? [s1.ax, s1.az] : [s1.bx, s1.bz];
+    if (Math.hypot(m.front[0] - V[0], m.front[1] - V[1]) > 3 * (s1.off + s1.d) + 0.1) continue;
+    s1["m" + e1] = s2["m" + e2] = m;
+    stats.stripJoins++;
+  }
+  // 3. faces
+  for (const s of merged) {
+    const tx = -s.nz, tz = s.nx, y0 = s.y - s.h, y1 = s.y, n = [s.nx, 0, s.nz], col = s.col;
+    const sb = STRIP_SETBACK[s.kind] ?? 0.004;
+    const corner = (e) => {                                       // [back xz, front xz] at end e
+      const m = s["m" + e];
+      if (m && !m.flat) return [m.back, m.front];
+      const sg = e === "A" ? 1 : -1, k = m ? 0 : sb, x = (e === "A" ? s.ax : s.bx) + tx * k * sg, z = (e === "A" ? s.az : s.bz) + tz * k * sg;
+      return [[x + s.nx * s.off, z + s.nz * s.off], [x + s.nx * (s.off + s.d), z + s.nz * (s.off + s.d)]];
+    };
+    const [bA, fA] = corner("A"), [bB, fB] = corner("B");
+    const P = (q, y) => [q[0], y, q[1]];
+    pushQuad(D, P(fA, y0), P(fB, y0), P(fB, y1), P(fA, y1), n, col);                 // front
+    pushQuad(D, P(bA, y1), P(fA, y1), P(fB, y1), P(bB, y1), [0, 1, 0], col);         // top
+    pushQuad(D, P(bA, y0), P(bB, y0), P(fB, y0), P(fA, y0), [0, -1, 0], col);        // soffit
+    if (s.off > 0) pushQuad(D, P(bA, y0), P(bA, y1), P(bB, y1), P(bB, y0), [-s.nx, 0, -s.nz], col);   // back (off the wall)
+    if (!s.mA) pushQuad(D, P(bA, y0), P(fA, y0), P(fA, y1), P(bA, y1), [-tx, 0, -tz], col);           // free end caps
+    if (!s.mB) pushQuad(D, P(bB, y0), P(bB, y1), P(fB, y1), P(fB, y0), [tx, 0, tz], col);
+  }
+  stats.strips = merged.length; _dbg.strips = merged;
 }
 
 /** Push a capping beam along a 3D roof edge P0->P1 (ridge tiles, hip ribs): a square-ish section of width w
  *  and height h sitting on the edge, oriented by the edge direction. Top and both sides only. */
-function beam(D, P0, P1, w, h, col) {
+function beam(D, P0, P1, w, h, col, end0 = "cap", end1 = "cap") {
   let dx = P1[0] - P0[0], dy = P1[1] - P0[1], dz = P1[2] - P0[2];
   const L = Math.hypot(dx, dy, dz); if (L < 0.3) return;
   dx /= L; dy /= L; dz /= L;
   let sx = -dz, sz = dx; const sl = Math.hypot(sx, sz) || 1; sx /= sl; sz /= sl;   // horizontal, across the edge
   const ux = -sz * dy, uy = sz * dx - sx * dz, uz = sx * dy;                        // up' = s x d
-  const at = (P, a, b) => [P[0] + sx * a + ux * b, P[1] + uy * b, P[2] + sz * a + uz * b];
   const hw = w / 2, lo = -h * 0.35, hi = h * 0.65;
-  const quad = (p0, p1, p2, p3, n) => {
-    for (const q of [p0, p1, p2, p0, p2, p3]) {
-      D.position.push(q[0], q[1], q[2]); D.normal.push(n[0], n[1], n[2]); D.color.push(col[0], col[1], col[2]);
-    }
+  // ends at a junction of non-collinear beams stop short (the apex block covers the joint): no overlapping tops
+  // a free end (a gable) stops 4 mm inside the gable wall's plane: its cap was IN that plane (2.6k z-fight items on I6)
+  const inset = (e) => (e === "junction" ? hw * 1.1 : e === "cap" ? 0.004 : 0);
+  const i0 = inset(end0), i1 = inset(end1);
+  if (L - i0 - i1 < 0.1) return;
+  const Q0 = [P0[0] + dx * i0, P0[1] + dy * i0, P0[2] + dz * i0], Q1 = [P1[0] - dx * i1, P1[1] - dy * i1, P1[2] - dz * i1];
+  const at = (P, a, b) => [P[0] + sx * a + ux * b, P[1] + uy * b, P[2] + sz * a + uz * b];
+  // a quad with its own FLAT normal (the face's plane, wound outward from the beam's axis): no bent normals on flat faces
+  const flat = (p0, p1, p2, p3, hint) => {
+    const ax = p1[0] - p0[0], ay = p1[1] - p0[1], az = p1[2] - p0[2], bx = p3[0] - p0[0], by = p3[1] - p0[1], bz = p3[2] - p0[2];
+    let nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx;
+    const l = Math.hypot(nx, ny, nz) || 1; nx /= l; ny /= l; nz /= l;
+    if (nx * hint[0] + ny * hint[1] + nz * hint[2] < 0) { nx = -nx; ny = -ny; nz = -nz; }
+    pushQuad(D, p0, p1, p2, p3, [nx, ny, nz], col);
   };
-  // rounded look from three faces: top, and two sloped shoulders
-  quad(at(P0, -hw * 0.6, hi), at(P1, -hw * 0.6, hi), at(P1, hw * 0.6, hi), at(P0, hw * 0.6, hi), [ux, uy, uz]);
-  const n1 = [ux * 0.6 + sx * 0.8, uy * 0.6, uz * 0.6 + sz * 0.8], n2 = [ux * 0.6 - sx * 0.8, uy * 0.6, uz * 0.6 - sz * 0.8];
-  quad(at(P0, hw * 0.6, hi), at(P1, hw * 0.6, hi), at(P1, hw, lo), at(P0, hw, lo), n1);
-  quad(at(P0, -hw, lo), at(P1, -hw, lo), at(P1, -hw * 0.6, hi), at(P0, -hw * 0.6, hi), n2);
+  // three faces: top, and two sloped shoulders (the bottom sits on the roof)
+  const s1 = [ux * 0.6 + sx * 0.8, uy * 0.6, uz * 0.6 + sz * 0.8], s2 = [ux * 0.6 - sx * 0.8, uy * 0.6, uz * 0.6 - sz * 0.8];
+  flat(at(Q0, -hw * 0.6, hi), at(Q1, -hw * 0.6, hi), at(Q1, hw * 0.6, hi), at(Q0, hw * 0.6, hi), [ux, uy, uz]);
+  flat(at(Q0, hw * 0.6, hi), at(Q1, hw * 0.6, hi), at(Q1, hw, lo), at(Q0, hw, lo), s1);
+  flat(at(Q0, -hw, lo), at(Q1, -hw, lo), at(Q1, -hw * 0.6, hi), at(Q0, -hw * 0.6, hi), s2);
+  // end caps (a free end, a junction): the section's pentagon as two quads, facing out along the axis
+  for (const [Q, sg, e] of [[Q0, -1, end0], [Q1, 1, end1]]) {
+    if (e === "open") continue;
+    const o = [dx * sg, dy * sg, dz * sg];
+    flat(at(Q, -hw, lo), at(Q, hw, lo), at(Q, hw * 0.6, hi), at(Q, -hw * 0.6, hi), o);
+  }
+}
+
+/** a small closed block over a junction of ridge / hip beams (the beams stop short of it) */
+function apexBlock(D, P, w, h, dirX, dirZ, col) {
+  const hw = w * 0.62, l = Math.hypot(dirX, dirZ) || 1, ax = dirX / l, az = dirZ / l;
+  const A = [P[0] - ax * hw - az * hw, 0, P[2] - az * hw + ax * hw], B = [P[0] + ax * hw - az * hw, 0, P[2] + az * hw + ax * hw];
+  box(D, A, B, P[1] + h * 0.65 + 0.015, h + 0.015, 2 * hw, az, -ax, col, true);
 }
 
 /** opts.kit: a façade-kit collector (viewer/facadeKit/placement.js kitCollector): every wall face is offered to it;
@@ -202,8 +357,10 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
   const PAINT = [[0.03, 0.09, 0.06], [0.2, 0.035, 0.045], [0.03, 0.05, 0.13], [0.025, 0.025, 0.025]];
   const AWNING = new Set(["cafe", "restaurant", "bar", "pub", "bakery", "ice_cream", "butcher", "greengrocer", "pastry", "chocolate"]);
   const D = { position: [], normal: [], color: [] };                             // detail geometry
+  const SD = [];                                                                 // strip details, emitted mitred at the end (emitStrips)
+  const chimneysAt = [], buttressAt = [], apexAt = [];                                        // one stack per party wall, one buttress per spot
   const R = { position: [], normal: [], aRoof: [], aRoofCol: [] };
-  const stats = { faces: 0, party: 0, street: 0, cornices: 0, buttresses: 0, ridges: 0, chimneys: 0, shops: 0 };
+  const stats = { faces: 0, party: 0, street: 0, cornices: 0, buttresses: 0, ridges: 0, chimneys: 0, shops: 0, strips: 0, stripMerged: 0, stripJoins: 0, chimneysShared: 0 };
   doc.buildings.forEach((b, bi) => {
     const base = b.base, eaves = (b.eaves ?? b.top) - base;
     const key = String(b.attrs?.BU_ID ?? b.id);
@@ -333,8 +490,8 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           seen.add(key);
           const col = landmark ? [0.5, 0.47, 0.42] : style >= 3 ? [0.6, 0.58, 0.54] : [0.52, 0.5, 0.46];
           // two-step moulding: a deep top course and a shallower one under it
-          box(D, A, B, top - 0.02, 0.16, landmark ? 0.32 : 0.22, f.nx, f.nz, col);
-          box(D, A, B, top - 0.18, 0.12, landmark ? 0.18 : 0.12, f.nx, f.nz, col.map((c) => c * 0.93));
+          addStrip(SD, "cu", A, B, top - 0.02, 0.16, landmark ? 0.32 : 0.22, f.nx, f.nz, col);
+          addStrip(SD, "cl", A, B, top - 0.18, 0.12, landmark ? 0.18 : 0.12, f.nx, f.nz, col.map((c) => c * 0.93));
           stats.cornices++;
         }
       }
@@ -347,9 +504,12 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           const cxk = q0[0] + tx * uu, czk = q0[2] + tz * uu;
           const hw = 0.4, A = [cxk - tx * hw, 0, czk - tz * hw], B = [cxk + tx * hw, 0, czk + tz * hw];
           const h1 = base + faceH * 0.55, h2 = base + faceH * 0.85;
+          // one buttress per spot (two faces of one wall would both put one there: overlapping boxes)
+          if (buttressAt.some(([x, z, y]) => Math.hypot(x - cxk, z - czk) < 0.9 && Math.abs(y - h1) < 1)) continue;
+          buttressAt.push([cxk, czk, h1]);
           box(D, A, B, h1, h1 - base + 0.3, 0.55, f.nx, f.nz, [0.5, 0.47, 0.41]);      // lower stage, deep
-          box(D, A, B, h2, h2 - h1, 0.32, f.nx, f.nz, [0.52, 0.49, 0.43]);              // upper stage, set back
           box(D, A, B, h1 + 0.12, 0.12, 0.62, f.nx, f.nz, [0.44, 0.42, 0.38]);           // weathering cap
+          box(D, A, B, h2, h2 - h1 - 0.12, 0.32, f.nx, f.nz, [0.52, 0.49, 0.43]);       // upper stage, set back, on the cap
           stats.buttresses++;
         }
       }
@@ -363,17 +523,22 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           const cxq = hq[0] + tx * um, czq = hq[2] + tz * um;
           const hw = 0.45, A = [cxq - tx * hw, 0, czq - tz * hw], B = [cxq + tx * hw, 0, czq + tz * hw];
           const top = hq[1] + 1.1, brick = style <= 2 ? [0.2, 0.085, 0.055] : [0.24, 0.11, 0.07];
-          // straddles the party wall (half on each side) so both neighbours agree
+          // straddles the party wall (half on each side); both neighbours would build it: the first one does, closed
+          const shared = chimneysAt.some(([x, z]) => Math.hypot(x - cxq, z - czq) < 1.0);
+          if (shared) stats.chimneysShared++;
+          else chimneysAt.push([cxq, czq, top]);
+          if (!shared) {
           const A2 = [A[0] + f.nx * 0.3, 0, A[2] + f.nz * 0.3], B2 = [B[0] + f.nx * 0.3, 0, B[2] + f.nz * 0.3];
-          box(D, A2, B2, top, 2.4, 0.6, -f.nx, -f.nz, brick);
+          box(D, A2, B2, top, 2.4, 0.6, -f.nx, -f.nz, brick, true);
           const cA = [A2[0] - tx * 0.06 + f.nx * 0.06, 0, A2[2] - tz * 0.06 + f.nz * 0.06];
           const cB = [B2[0] + tx * 0.06 + f.nx * 0.06, 0, B2[2] + tz * 0.06 + f.nz * 0.06];
-          box(D, cA, cB, top + 0.1, 0.14, 0.72, -f.nx, -f.nz, [0.42, 0.41, 0.39]);   // stone cap
+          box(D, cA, cB, top + 0.1, 0.14, 0.72, -f.nx, -f.nz, [0.42, 0.41, 0.39], true);   // stone cap
           for (const k of [-0.2, 0.2]) {                                            // two clay pots
             const px = cxq + tx * k - f.nx * 0.0, pz = czq + tz * k - f.nz * 0.0;
-            box(D, [px - tx * 0.09, 0, pz - tz * 0.09], [px + tx * 0.09, 0, pz + tz * 0.09], top + 0.42, 0.32, 0.18, f.nx, f.nz, [0.33, 0.13, 0.07]);
+            box(D, [px - tx * 0.09, 0, pz - tz * 0.09], [px + tx * 0.09, 0, pz + tz * 0.09], top + 0.42, 0.32, 0.18, f.nx, f.nz, [0.33, 0.13, 0.07], true);
           }
           stats.chimneys++;
+          }
         }
       }
       // the façade kit takes this face? (street faces of eligible buildings, every opening on the wall)
@@ -403,6 +568,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         }
       }
       const capCol = landmark ? [0.47, 0.45, 0.4] : [rc[0] * 0.72, rc[1] * 0.72, rc[2] * 0.72];
+      const beams = [];
       for (const list of edges.values()) {
         // eaves: a roof edge with no other roof face, horizontal, the low edge of a pitched slope ->
         // the roof oversails the wall by 30 cm, with a zinc gutter under its lip
@@ -410,9 +576,8 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           const { tri, A, B, C } = list[0], n = tri.n[1] < 0 ? tri.n.map((v) => -v) : tri.n;
           if (n[1] > 0.2 && n[1] < 0.97 && Math.abs(A[1] - B[1]) < 0.05 && C[1] > A[1] + 0.3) {
             const hl = Math.hypot(n[0], n[2]) || 1, ox = n[0] / hl, oz = n[2] / hl;   // downhill, outward
-            box(D, A, B, A[1] + 0.03, 0.1, 0.32, ox, oz, [rc[0] * 0.8, rc[1] * 0.8, rc[2] * 0.8]);
-            const gA = [A[0] + ox * 0.26, 0, A[2] + oz * 0.26], gB = [B[0] + ox * 0.26, 0, B[2] + oz * 0.26];
-            box(D, gA, gB, A[1] - 0.05, 0.12, 0.13, ox, oz, [0.3, 0.31, 0.32]);
+            addStrip(SD, "eb", A, B, A[1] + 0.03, 0.1, 0.32, ox, oz, [rc[0] * 0.8, rc[1] * 0.8, rc[2] * 0.8]);
+            addStrip(SD, "gu", A, B, A[1] - 0.05, 0.12, 0.13, ox, oz, [0.2, 0.205, 0.21], 0.26);    // the gutter, 26 cm out (weathered zinc)
             stats.eaves = (stats.eaves || 0) + 1;
           }
           continue;
@@ -423,8 +588,29 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         if (n1[1] < 0.15 || n2[1] < 0.15) continue;                                         // not a roof slope
         const C = e2.C, A = e1.A;                                                           // convex: e2's far corner below e1's plane
         if ((C[0] - A[0]) * n1[0] + (C[1] - A[1]) * n1[1] + (C[2] - A[2]) * n1[2] > -0.02) continue;
-        beam(D, e1.A, e1.B, landmark ? 0.34 : 0.26, landmark ? 0.2 : 0.14, capCol);
+        beams.push([e1.A, e1.B]);
         stats.ridges++;
+      }
+      // the beams' ends: shared by two collinear beams = open (one continuous ridge), by a junction = stop short + an
+      // apex block, free = an end cap
+      const ends = new Map();
+      for (const [P, Q] of beams) for (const [X, Y] of [[P, Q], [Q, P]]) { const k = kv(X); if (!ends.has(k)) ends.set(k, []); ends.get(k).push([X, Y]); }
+      const kind = (X) => {
+        const l = ends.get(kv(X));
+        if (l.length === 1) return "cap";
+        if (l.length === 2) {
+          const d = l.map(([a, b]) => { const v = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], n = Math.hypot(...v) || 1; return v.map((c) => c / n); });
+          if (d[0][0] * d[1][0] + d[0][1] * d[1][1] + d[0][2] * d[1][2] < -0.995) return "open";
+        }
+        return "junction";
+      };
+      const w = landmark ? 0.34 : 0.26, h = landmark ? 0.2 : 0.14;
+      for (const [P, Q] of beams) beam(D, P, Q, w, h, capCol, kind(P), kind(Q));
+      for (const l of ends.values()) if (l.length >= 2 && kind(l[0][0]) === "junction") {
+        const [X, Y] = l[0];
+        if (apexAt.some((q) => Math.hypot(q[0] - X[0], q[1] - X[1], q[2] - X[2]) < w)) continue;     // one block per junction
+        apexAt.push(X);
+        apexBlock(D, X, w, h, Y[0] - X[0], Y[2] - X[2], capCol);
       }
     }
     // --- roofs: slope-aligned coordinates, smoothed shading normals, real colour
@@ -443,6 +629,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       }
     }
   });
+  emitStrips(D, SD, stats);
   const f32 = (a) => new Float32Array(a);
   return {
     walls: { position: f32(W.position), normal: f32(W.normal), aWall: f32(W.aWall), aBld: f32(W.aBld), aFN: f32(W.aFN),

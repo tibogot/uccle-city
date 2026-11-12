@@ -14,8 +14,9 @@
 //     glass shadow; the saloon lit at night (ceiling coves, lining glow);
 //   - in the vertex stage: plug doors that open (COLOR_0 leaf code x aInst2 open amounts), the bellows bent between
 //     the two module headings (aInst.z = joint angle), no extra draws;
-//   - placement: tramPose (tramModel.js) + per-piece pitch on slopes (modules follow the ground at both ends; the
-//     pantograph stays vertical under the wire, its head at the contact wire height);
+//   - placement: tramPose (tramModel.js) with the track's vertical profile (viewer/trackProfile.js): bogies on the rails,
+//     sections hinged at the articulations like the real vehicle (without a profile: per-piece pitch from the ground at
+//     both ends of each piece); the pantograph stays vertical under the wire, its head at the contact wire height;
 //   - the LED destination displays (front, rear, sides) from the shared atlas (tramModel.js makeSignAtlas).
 import * as THREE from "three/webgpu";
 import {
@@ -371,6 +372,7 @@ export function createTramFleet(model, parent, maxTrams = 40) {
       // heights and pitch once per piece (both LODs of a cross-fade use them)
       placed.length = 0;
       for (const p of pose) {
+        if (p.y != null) { placed.push(p.y, p.pitch || 0); continue; }      // tramPose(..., yAt): hinged on the track profile
         const h = HALF[p.piece] || 0;
         if (!h) { placed.push(ground(p.x, p.z), 0); continue; }
         const dx = Math.cos(p.yaw) * h, dz = -Math.sin(p.yaw) * h;
