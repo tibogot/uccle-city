@@ -123,6 +123,7 @@ export function impostorMaterials(atlas, o) {
   const vMisc = vertexStage(vec4(lod, dEye, scl, 0));
   const vCentre = vertexStage(centreW);
   const seed = footSeed(ipos);
+  const tintV = vertexStage(attribute("ikTint", "vec3"));
   const anchor = anchorOf(F, ipos, scl);
 
   // ---------------------------------------------------------------------------------------- fragment
@@ -187,7 +188,7 @@ export function impostorMaterials(atlas, o) {
   // ---------------------------------------------------------------------------------------- the two materials
   const colour = new THREE.MeshStandardNodeMaterial({ roughness: 0.9, metalness: 0, side: THREE.FrontSide });
   colour.positionNode = positionNode;
-  o.shade({ m: colour, albedo, nW, aux: auxN.w, far: farK, inst: { cy, sy, scl, seed }, alpha });
+  o.shade({ m: colour, albedo, nW, aux: auxN.w, far: farK, inst: { cy, sy, scl, seed, tint: tintV }, alpha });
   if (depthNode) colour.depthNode = depthNode;
   colour.receivedShadowPositionNode = pdo ? Xw : positionWorld;
   colour.depthWrite = false;

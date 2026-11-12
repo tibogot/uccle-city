@@ -247,11 +247,12 @@ const SCENES = {
   row50: { label: "a row of 50 street trees, 300-1500 m" },
   forest: { label: "forest patch, ~2,000 LiDAR trees (M8)" },
   far: { label: "far forest: every LiDAR tree within 1.6 km (cost)" },
-  cars: { label: "300 cars (later)", later: true },
+  cars: { label: "300 parked cars (impostor-cars.js)", page: "?scene=cars" },
   building: { label: "a hero building (later)", later: true },
   rock: { label: "a rock (later)", later: true },
 };
 async function buildScene(id) {
+  if (SCENES[id]?.page) { location.search = SCENES[id].page; return; }
   if (SCENES[id]?.later) { S.result = `${SCENES[id].label}: slot only (docs/TODO.md)`; return; }
   disposeWorld();
   const w = { id, groups: [], grounds: [], focus: new THREE.Vector3(), eye: new THREE.Vector3() };

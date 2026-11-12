@@ -23,8 +23,22 @@ export const TYPES = {
     material: { blend: "bary3", parallax: 1, pdo: true, alpha: "a2c-ramp", card: "octagon", far: "ground" } },
 };
 
-/** The far fade's target: what the ground under the trees looks like (albedo, linear). */
-export const FAR = { ground: uniform(new THREE.Color(0.11, 0.13, 0.07)) };
+/** The far fade's target: what the ground under the trees looks like (albedo, linear); `road`: under the cars. */
+export const FAR = { ground: uniform(new THREE.Color(0.11, 0.13, 0.07)), road: uniform(new THREE.Color(0.045, 0.045, 0.048)) };
+
+/**
+ * The parked cars' lighting on the baked inputs (sources/fleetCars.js): viewer/drive/carPacks.js packMaterial's far
+ * material (MeshStandard, opaque glass, no clear coat; the city's LOD 2-3). colour = albedo (everything but the paint)
+ * + aux (the paint's shade) x inst.tint (the paint, linear). far in [0, 1]: fade into the road (FAR.road).
+ */
+export const carShade = ({ m, albedo, nW, aux, far, inst }) => {
+  const paint = saturate(aux.mul(2.5));      // ~ the paint's share of the texel (its shade is 0.4-1 on the bodies)
+  m.colorNode = mix(albedo.add(inst.tint.mul(aux)), vec3(FAR.road), far);
+  // packMaterial (rich): paint 0.34 / 0.25, the rest ~0.62 / 0 (glass, chrome and rubber are sub-pixel here)
+  m.roughnessNode = mix(mix(float(0.62), float(0.34), paint), float(0.9), far);
+  m.metalnessNode = mix(float(0), float(0.25), paint).mul(float(1).sub(far));
+  m.normalNode = transformNormalToView(normalize(mix(nW, vec3(0, 1, 0), far))).normalize();
+};
 
 /**
  * The stylized trees' leaf lighting on the baked inputs (viewer/impostors.js:244-258 / the vendor's makeLeafMaterial):

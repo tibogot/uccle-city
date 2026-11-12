@@ -3,7 +3,8 @@
 // so the CPU never re-buckets while the camera moves (today's impostors re-bucket every 5 m, viewer/impostors.js:336).
 // The card is the variant's 8-vertex cut-out octagon (6 triangles) or a quad.
 // Instance data: ikPos (foot, world), ikData (yaw, scale, variant, band: a small integer the lab uses to hide groups
-// for the jitter meter's masks; 0 in the city).
+// for the jitter meter's masks; 0 in the city), ikTint (rgb, linear, default 1: a per-instance colour the type's
+// shade may use, e.g. a car's paint).
 // Depth pre-pass (cut-out + coverage + hand-over dither + depth out) then the lit pass on EQUAL depth: each covered
 // sample shaded once (the leaves' scheme, viewer/treesStylized.js:173-206). Both drawn after the opaque city
 // (renderOrder 1 / 2): far trees are mostly hidden behind houses at street level and the depth test rejects them.
@@ -27,13 +28,15 @@ export function impostorField(mats, placements, { card = "octagon", name = "impo
   }
   const pos = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3);
   const data = new THREE.InstancedBufferAttribute(new Float32Array(cap * 4), 4);
+  const tint = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3).fill(1), 3);
   for (let i = 0; i < n; i++) {
     const p = placements[i];
     pos.array.set([p.x, p.y, p.z], i * 3);
     data.array.set([p.yaw, p.scale, p.variant, p.band ?? 0], i * 4);
+    if (p.tint) tint.array.set(p.tint, i * 3);
   }
-  pos.setUsage(THREE.StaticDrawUsage); data.setUsage(THREE.StaticDrawUsage);
-  geo.setAttribute("ikPos", pos); geo.setAttribute("ikData", data);
+  pos.setUsage(THREE.StaticDrawUsage); data.setUsage(THREE.StaticDrawUsage); tint.setUsage(THREE.StaticDrawUsage);
+  geo.setAttribute("ikPos", pos); geo.setAttribute("ikData", data); geo.setAttribute("ikTint", tint);
   const colour = new THREE.InstancedMesh(geo, mats.colour, cap);
   const depth = new THREE.InstancedMesh(geo, mats.depth, cap);
   depth.instanceMatrix = colour.instanceMatrix;
@@ -62,12 +65,16 @@ export function impostorField(mats, placements, { card = "octagon", name = "impo
   // front-to-back order (by distance to a point): the pre-pass discards (coverage), so the GPU tests depth early but
   // writes it late; cards drawn nearest first let the hidden ones behind fail the early test before shading.
   // Measured in the lab's far forest (83k trees): see docs/IMPOSTOR_KIT.md. Call again when the camera moved far.
-  const order = new Uint32Array(n), keyD = new Float32Array(n), src = { pos: pos.array.slice(0, n * 3), data: data.array.slice(0, n * 4) };
+  const order = new Uint32Array(n), keyD = new Float32Array(n), src = { pos: pos.array.slice(0, n * 3), data: data.array.slice(0, n * 4), tint: tint.array.slice(0, n * 3) };
   const sort = (eye) => {
     for (let i = 0; i < n; i++) { order[i] = i; keyD[i] = (src.pos[i * 3] - eye.x) ** 2 + (src.pos[i * 3 + 1] - eye.y) ** 2 + (src.pos[i * 3 + 2] - eye.z) ** 2; }
     order.sort((a, b) => keyD[a] - keyD[b]);
-    for (let k = 0; k < n; k++) { const i = order[k]; pos.array.set(src.pos.subarray(i * 3, i * 3 + 3), k * 3); data.array.set(src.data.subarray(i * 4, i * 4 + 4), k * 4); }
-    pos.needsUpdate = data.needsUpdate = true;
+    for (let k = 0; k < n; k++) {
+      const i = order[k];
+      pos.array.set(src.pos.subarray(i * 3, i * 3 + 3), k * 3); data.array.set(src.data.subarray(i * 4, i * 4 + 4), k * 4);
+      tint.array.set(src.tint.subarray(i * 3, i * 3 + 3), k * 3);
+    }
+    pos.needsUpdate = data.needsUpdate = tint.needsUpdate = true;
   };
   return {
     group, colour, depth, count: n, sort,

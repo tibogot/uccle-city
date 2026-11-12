@@ -24,7 +24,8 @@
     "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
     "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
     "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.tsl.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/",
+    "meshoptimizer/simplifier": "https://cdn.jsdelivr.net/npm/meshoptimizer@1.2.0/meshopt_simplifier.js"
   }
 }
 </script>
@@ -34,6 +35,9 @@
 <canvas id="atlas" width="512" height="512"></canvas>
 <div id="overlay"><img alt=""><div></div></div>
 <div id="info">loading…</div>
-<script type="module" src="./impostor-lab.js"></script>
+<script type="module">
+  // ?scene=cars: the parked-car scene (impostor-cars.js, phase 4); every other scene: the trees (impostor-lab.js)
+  import(new URLSearchParams(location.search).get("scene") === "cars" ? "./impostor-cars.js" : "./impostor-lab.js");
+</script>
 </body>
 </html>
