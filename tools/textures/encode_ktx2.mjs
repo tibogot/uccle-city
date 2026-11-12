@@ -24,14 +24,14 @@ if (cand) {
   const cpath = path.join(ROOT, "viewer", "materials", "candidates.json");
   const cman = JSON.parse(fs.readFileSync(cpath, "utf8"));
   const byId = {};
-  for (const list of Object.values(cman.materials)) for (const c of list) byId[c.id] = c;
+  for (const list of Object.values(cman.materials)) for (const c of list) (byId[c.id] ??= []).push(c);   // one candidate may serve two materials
   for (const f of fs.readdirSync(WORK).filter((f) => f.startsWith("cand_") && f.endsWith(".rgba"))) {
     const m = f.match(/^cand_(.+)_(albedo|nra)\.rgba$/); if (!m) continue;
     const [, id, role] = m;
     if (only.length && !only.includes(id)) continue;
     const info = JSON.parse(fs.readFileSync(path.join(WORK, f + ".json"), "utf8"));
     if (fs.existsSync(info.out) && fs.statSync(info.out).mtimeMs > fs.statSync(path.join(WORK, f)).mtimeMs) {
-      if (byId[id]) byId[id][`${role}_ktx2_bytes`] = fs.statSync(info.out).size;
+      for (const c of byId[id] ?? []) c[`${role}_ktx2_bytes`] = fs.statSync(info.out).size;
       continue;
     }
     const data = new Uint8Array(fs.readFileSync(path.join(WORK, f)));
@@ -45,7 +45,7 @@ if (cand) {
     });
     fs.mkdirSync(path.dirname(info.out), { recursive: true });
     fs.writeFileSync(info.out, ktx);
-    if (byId[id]) byId[id][`${role}_ktx2_bytes`] = ktx.length;
+    for (const c of byId[id] ?? []) c[`${role}_ktx2_bytes`] = ktx.length;
     console.log(`${id}_${role}.ktx2  ${(ktx.length / 1024).toFixed(0)} KB  ${Date.now() - t0} ms`);
   }
   fs.writeFileSync(cpath, JSON.stringify(cman, null, 1));

@@ -720,7 +720,9 @@
     ],
     "files": "textures/cand/ph_painted_plaster_wall",
     "albedo_webp_bytes": 171750,
-    "nra_webp_bytes": 749456
+    "nra_webp_bytes": 749456,
+    "albedo_ktx2_bytes": 1111365,
+    "nra_ktx2_bytes": 1073924
    }
   ],
   "render_painted": [

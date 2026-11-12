@@ -68,9 +68,27 @@ export function loadScans(renderer, format = fmt()) {
   })());
 }
 
-/** The candidates manifest (viewer/materials/candidates.json): { materials: { mat: [candidate, ...] } }. */
+/** The candidates manifest (viewer/materials/candidates.json): { materials: { mat: [candidate, ...] } }, plus the
+ *  texture factory's sets (claude/texfactory: viewer/materials/generated.json, scans.json format, source "texfactory")
+ *  when that file exists, merged in as kind "generated" (badge G). candidates.json itself is never rewritten here. */
 export async function loadManifest() {
-  return (candMan ??= await fetch(ROOT + "candidates.json", { cache: "no-store" }).then((r) => (r.ok ? r.json() : { materials: {} })).catch(() => ({ materials: {} })));
+  if (candMan) return candMan;
+  const get = (u) => fetch(ROOT + u, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  const [man, gen] = await Promise.all([get("candidates.json"), get("generated.json")]);
+  candMan = man ?? { materials: {} };
+  candMan.materials ??= {};
+  for (const [mat, val] of Object.entries(gen?.materials ?? gen ?? {})) {
+    if (!val || typeof val !== "object" || mat === "about") continue;
+    // one entry, a list, or { variant: entry }
+    const list = Array.isArray(val) ? val : val.size_m || val.mean_albedo_linear ? [val] : Object.entries(val).map(([v, e]) => ({ variant: v, ...e }));
+    for (const e of list) {
+      const variant = e.variant ?? e.id ?? "default";
+      const id = `gen_${mat}_${variant}`.replace(/[^A-Za-z0-9_]/g, "_");
+      (candMan.materials[mat] ??= []).push({ ...e, id, kind: "generated", source: e.source ?? "texfactory", licence: e.licence ?? "ours (generated)",
+        name: e.name ?? `Generated · ${variant}`, files: e.files ?? `generated/${mat}/${variant}/${mat}` });
+    }
+  }
+  return candMan;
 }
 
 /** Load one candidate's maps (once). Rejects when its files aren't there (not built / Megascans not dropped in). */
