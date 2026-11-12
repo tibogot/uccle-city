@@ -28,6 +28,9 @@ Stairs paused until the owner's Mixamo clips are in `data/raw/animations/mixamo/
 
 **QUIET-MACHINE CHECK (coordinator, 2026-11-12, owner's GPU project closed; median frame deltas):** weather: rain +0.07-0.10 ms, wetness full +0.42-0.46 / lite ~0, snow flakes +0.13, layer +0.27, all snow +0.62-0.66 (budget 1.0); foliage front garden +0.20-0.39 ms (4 views; noisy estimate was ~1.5); pedestrians 300 banded GPU +0.33-0.46 ms, CPU 0.39 ms (Mr.doob's crowd CPU 0.89 ms). All within targets except full wetness (use the lite path far).
 
+**OWNER VERDICTS:**
+- 2026-11-12 Façade kit: "nice, we'll need more pieces (optimized)"; issues: bright flickering lines along doors (light through gaps), aliased shimmering edges, saw-tooth shadows in the lab. -> round 3 running (seal gaps + checker leak test, specular AA, the city's lighting in the lab, more Uccle pieces); then merge, then the clean-buildings pass.
+
 **OWNER REVIEW LIST, added 2026-11-10 (on top of the 11 earlier pages):**
 - [ ] Chapelle de Stalle rounds 3-5 (`claude/stalle`, port 8802: http://localhost:8802/labs/stalle-lab.html, city ?tile=D5&stalle=1): checker 0, front matches c00, interior moulded; open: north-aisle blotches, statue (decision), slates +0.3 ms (decision). Merge behind ?stalle=1 when OK (brings tools/mesh_audit to main).
 - [ ] Villa van Buuren (`claude/vanbuuren`, port 8818: http://localhost:8818/labs/vanbuuren-lab.html, city ?vanbuuren=1&tile=G2&at=302.6,-1229.6): shape matches the photos; look round (brick orange, white concrete, frames, glass, NW roof) next.
