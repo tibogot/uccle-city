@@ -9,18 +9,19 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 ## CURRENT STATE (2026-11-13) — read this first
 
 **In the city by default** (claude/foundation, NOT pushed to Vercel; `?x=0` turns one off): measured roads v2
-(rounds 1-3), the facade kit, the material library (best set per material), every landmark (Saint-Job, town hall +
+(rounds 1-4, traffic on the lane graph), the facade kit, the material library (best set per material), every landmark (Saint-Job, town hall +
 flags, Stalle, Van Buuren, Wolvendael + pond, police, Calevoet, Saint-Pierre, Observatory), trains + 3 hero bridges,
 tram 92 v2, falcons, city trees off the roads + the tree impostor kit, colliders from what is drawn, the minimap,
-the fixed lamp-light pool (no more long freeze). **Lab-only, merged:** falcon flight game, night lights, sound,
+the fixed lamp-light pool (no more long freeze), the FALCON FLIGHT as the fly mode (2026-11-13: streaming world, landmark
+ proxies, pigeons on the Place; `?falcon=old` = old flight). **Lab-only, merged:** night lights, sound,
 weather + seasons, foliage, pedestrians, street life, car impostors, police car (branch), Material / Tree labs.
 
 **Running (agents):** collisions + joins audit (`claude/audit-collide`) · fixes1 (`claude/fixes1`: tram on slopes, clean-buildings
 pass, garage door, grainy far forest).
 
 **Next, in order:**
-1. Falcon flight game in the city's fly mode (needs a streaming world adapter: floor / lift grid / thermals / roosts
-   following the falcon; FALCON_FLIGHT.md "How the city could adopt it") — next free agent.
+1. Falcon in the city, left (docs/falcons/CITY_RESUME.md): a real-time foreground run on a quiet GPU, trees as obstacles,
+   fly under bridge arches, pigeons beyond the Place, ridge perch facing a chimney, chase camera clipping the wing, the far-ring edge on a 650 m dive, weather wind, Saint-Pierre spire hit untested.
 2. PERFORMANCE AUDIT on a quiet GPU (plan: docs/perf/AUDIT_PLAN.md): shadow pipeline re-created every ~20 s, boot long
    tasks, tile-streaming stutter, draw calls (InstancedMesh2 / BatchedMesh / kit batching / one ground material), blocky
    clouds, mid-range GPU run, re-measure everything measured on a shared GPU.
