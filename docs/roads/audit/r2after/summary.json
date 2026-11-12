@@ -222,13 +222,13 @@
   },
   "C17": {
    "error": 0,
-   "warn": 272704,
+   "warn": 268872,
    "review": 0,
    "info": 0
   },
   "C18": {
    "error": 111619,
-   "warn": 161982,
+   "warn": 148811,
    "review": 0,
    "info": 0
   },
@@ -239,7 +239,7 @@
    "info": 0
   },
   "C20": {
-   "error": 128,
+   "error": 125,
    "warn": 0,
    "review": 0,
    "info": 0
@@ -263,7 +263,7 @@
    "info": 0
   }
  },
- "blocking": 142408,
+ "blocking": 142405,
  "inventory": {
   "crossings": {
    "bm": 1260,
@@ -614,13 +614,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3907,
+     "warn": 3850,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1323,
-     "warn": 2099,
+     "error": 1327,
+     "warn": 1852,
      "review": 0,
      "info": 0
     },
@@ -661,15 +661,15 @@
     "roadsLeavingStreet": 10,
     "coplanarPairs": 459,
     "coplanarAreaM2": 19.42,
-    "triangles": 124761,
-    "buildMs": 2105,
+    "triangles": 108771,
+    "buildMs": 1638,
     "times": {
-     "surfaces + width fit": 407,
-     "buildRoadNetwork": 238,
-     "measured paint": 7,
-     "lane graph": 63,
-     "road meshes + carve": 1378,
-     "paint decal": 12
+     "surfaces + width fit": 292,
+     "buildRoadNetwork": 147,
+     "measured paint": 4,
+     "lane graph": 40,
+     "road meshes + carve": 1141,
+     "paint decal": 14
     },
     "widthFit": {
      "fitted": 17,
@@ -713,10 +713,10 @@
        "normalJump": 15
       },
       "concrete": {
-       "tris": 84945,
-       "sliver": 4266,
-       "tjunction": 10292,
-       "step": 85,
+       "tris": 68955,
+       "sliver": 3256,
+       "tjunction": 7525,
+       "step": 66,
        "uvShear": 5,
        "normalJump": 0
       },
@@ -872,13 +872,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 5200,
+     "warn": 5117,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 2249,
-     "warn": 3693,
+     "error": 2281,
+     "warn": 3321,
      "review": 0,
      "info": 0
     },
@@ -919,15 +919,15 @@
     "roadsLeavingStreet": 22,
     "coplanarPairs": 195,
     "coplanarAreaM2": 36.04,
-    "triangles": 188455,
-    "buildMs": 10119,
+    "triangles": 160161,
+    "buildMs": 2220,
     "times": {
-     "surfaces + width fit": 1986,
-     "buildRoadNetwork": 646,
-     "measured paint": 50,
-     "lane graph": 194,
-     "road meshes + carve": 7143,
-     "paint decal": 101
+     "surfaces + width fit": 439,
+     "buildRoadNetwork": 174,
+     "measured paint": 16,
+     "lane graph": 70,
+     "road meshes + carve": 1493,
+     "paint decal": 28
     },
     "widthFit": {
      "fitted": 22,
@@ -971,10 +971,10 @@
        "normalJump": 9
       },
       "concrete": {
-       "tris": 127524,
-       "sliver": 8266,
-       "tjunction": 22273,
-       "step": 156,
+       "tris": 99232,
+       "sliver": 6076,
+       "tjunction": 17369,
+       "step": 134,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -1138,13 +1138,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 4515,
+     "warn": 4468,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1604,
-     "warn": 2673,
+     "error": 1633,
+     "warn": 2382,
      "review": 0,
      "info": 0
     },
@@ -1185,15 +1185,15 @@
     "roadsLeavingStreet": 23,
     "coplanarPairs": 1946,
     "coplanarAreaM2": 59.86,
-    "triangles": 159993,
-    "buildMs": 7110,
+    "triangles": 142436,
+    "buildMs": 1719,
     "times": {
-     "surfaces + width fit": 1353,
-     "buildRoadNetwork": 361,
-     "measured paint": 30,
-     "lane graph": 108,
-     "road meshes + carve": 5094,
-     "paint decal": 164
+     "surfaces + width fit": 305,
+     "buildRoadNetwork": 97,
+     "measured paint": 7,
+     "lane graph": 33,
+     "road meshes + carve": 1218,
+     "paint decal": 59
     },
     "widthFit": {
      "fitted": 14,
@@ -1236,10 +1236,10 @@
        "normalJump": 116
       },
       "concrete": {
-       "tris": 99199,
-       "sliver": 5275,
-       "tjunction": 14841,
-       "step": 88,
+       "tris": 81642,
+       "sliver": 4056,
+       "tjunction": 11189,
+       "step": 93,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -1403,13 +1403,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3397,
+     "warn": 3252,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1794,
-     "warn": 2445,
+     "error": 1800,
+     "warn": 2260,
      "review": 0,
      "info": 0
     },
@@ -1450,15 +1450,15 @@
     "roadsLeavingStreet": 15,
     "coplanarPairs": 748,
     "coplanarAreaM2": 45.69,
-    "triangles": 128048,
-    "buildMs": 5411,
+    "triangles": 111214,
+    "buildMs": 1524,
     "times": {
-     "surfaces + width fit": 919,
-     "buildRoadNetwork": 395,
-     "measured paint": 23,
-     "lane graph": 114,
-     "road meshes + carve": 3898,
-     "paint decal": 61
+     "surfaces + width fit": 304,
+     "buildRoadNetwork": 124,
+     "measured paint": 3,
+     "lane graph": 33,
+     "road meshes + carve": 1008,
+     "paint decal": 52
     },
     "widthFit": {
      "fitted": 22,
@@ -1501,10 +1501,10 @@
        "normalJump": 0
       },
       "concrete": {
-       "tris": 86555,
-       "sliver": 4459,
-       "tjunction": 13605,
-       "step": 114,
+       "tris": 69721,
+       "sliver": 3285,
+       "tjunction": 10460,
+       "step": 111,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -1652,13 +1652,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 4402,
+     "warn": 4249,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 2503,
-     "warn": 3452,
+     "error": 2470,
+     "warn": 3246,
      "review": 0,
      "info": 0
     },
@@ -1699,15 +1699,15 @@
     "roadsLeavingStreet": 12,
     "coplanarPairs": 313,
     "coplanarAreaM2": 7.9,
-    "triangles": 173378,
-    "buildMs": 6798,
+    "triangles": 149186,
+    "buildMs": 1707,
     "times": {
-     "surfaces + width fit": 1321,
-     "buildRoadNetwork": 392,
-     "measured paint": 26,
-     "lane graph": 120,
-     "road meshes + carve": 4902,
-     "paint decal": 38
+     "surfaces + width fit": 313,
+     "buildRoadNetwork": 103,
+     "measured paint": 5,
+     "lane graph": 29,
+     "road meshes + carve": 1247,
+     "paint decal": 9
     },
     "widthFit": {
      "fitted": 26,
@@ -1750,10 +1750,10 @@
        "normalJump": 0
       },
       "concrete": {
-       "tris": 121685,
-       "sliver": 6703,
-       "tjunction": 20985,
-       "step": 140,
+       "tris": 97493,
+       "sliver": 5033,
+       "tjunction": 16275,
+       "step": 88,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -1909,13 +1909,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3354,
+     "warn": 3289,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1778,
-     "warn": 2236,
+     "error": 1791,
+     "warn": 2015,
      "review": 0,
      "info": 0
     },
@@ -1956,15 +1956,15 @@
     "roadsLeavingStreet": 18,
     "coplanarPairs": 374,
     "coplanarAreaM2": 40.65,
-    "triangles": 144659,
-    "buildMs": 5914,
+    "triangles": 127079,
+    "buildMs": 1490,
     "times": {
-     "surfaces + width fit": 1047,
-     "buildRoadNetwork": 508,
-     "measured paint": 43,
-     "lane graph": 81,
-     "road meshes + carve": 4048,
-     "paint decal": 187
+     "surfaces + width fit": 261,
+     "buildRoadNetwork": 110,
+     "measured paint": 13,
+     "lane graph": 21,
+     "road meshes + carve": 1027,
+     "paint decal": 58
     },
     "widthFit": {
      "fitted": 17,
@@ -2007,10 +2007,10 @@
        "normalJump": 8
       },
       "concrete": {
-       "tris": 90466,
-       "sliver": 4482,
-       "tjunction": 15886,
-       "step": 71,
+       "tris": 72886,
+       "sliver": 3343,
+       "tjunction": 12373,
+       "step": 61,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -2158,13 +2158,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 4030,
+     "warn": 3978,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1722,
-     "warn": 2485,
+     "error": 1704,
+     "warn": 2207,
      "review": 0,
      "info": 0
     },
@@ -2205,15 +2205,15 @@
     "roadsLeavingStreet": 11,
     "coplanarPairs": 420,
     "coplanarAreaM2": 22.71,
-    "triangles": 148672,
-    "buildMs": 7373,
+    "triangles": 126467,
+    "buildMs": 1683,
     "times": {
-     "surfaces + width fit": 1229,
-     "buildRoadNetwork": 688,
-     "measured paint": 2,
-     "lane graph": 89,
-     "road meshes + carve": 5240,
-     "paint decal": 125
+     "surfaces + width fit": 335,
+     "buildRoadNetwork": 165,
+     "measured paint": 1,
+     "lane graph": 21,
+     "road meshes + carve": 1156,
+     "paint decal": 6
     },
     "widthFit": {
      "fitted": 19,
@@ -2256,10 +2256,10 @@
        "normalJump": 287
       },
       "concrete": {
-       "tris": 112150,
-       "sliver": 6554,
-       "tjunction": 17820,
-       "step": 122,
+       "tris": 89945,
+       "sliver": 5185,
+       "tjunction": 13650,
+       "step": 91,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -2399,13 +2399,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3261,
+     "warn": 3197,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1858,
-     "warn": 2449,
+     "error": 1867,
+     "warn": 2300,
      "review": 0,
      "info": 0
     },
@@ -2446,15 +2446,15 @@
     "roadsLeavingStreet": 6,
     "coplanarPairs": 141,
     "coplanarAreaM2": 5.45,
-    "triangles": 139941,
-    "buildMs": 5815,
+    "triangles": 120488,
+    "buildMs": 1627,
     "times": {
-     "surfaces + width fit": 974,
-     "buildRoadNetwork": 564,
-     "measured paint": 23,
-     "lane graph": 63,
-     "road meshes + carve": 4146,
-     "paint decal": 45
+     "surfaces + width fit": 237,
+     "buildRoadNetwork": 148,
+     "measured paint": 6,
+     "lane graph": 18,
+     "road meshes + carve": 1203,
+     "paint decal": 15
     },
     "widthFit": {
      "fitted": 21,
@@ -2498,11 +2498,11 @@
        "normalJump": 42
       },
       "concrete": {
-       "tris": 100105,
-       "sliver": 5242,
-       "tjunction": 18296,
-       "step": 181,
-       "uvShear": 9,
+       "tris": 80652,
+       "sliver": 4067,
+       "tjunction": 14432,
+       "step": 151,
+       "uvShear": 6,
        "normalJump": 0
       },
       "pits": {
@@ -2649,13 +2649,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 4730,
+     "warn": 4669,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1821,
-     "warn": 3436,
+     "error": 1839,
+     "warn": 3106,
      "review": 0,
      "info": 0
     },
@@ -2696,15 +2696,15 @@
     "roadsLeavingStreet": 24,
     "coplanarPairs": 434,
     "coplanarAreaM2": 7.76,
-    "triangles": 167064,
-    "buildMs": 6402,
+    "triangles": 148677,
+    "buildMs": 1703,
     "times": {
-     "surfaces + width fit": 1333,
-     "buildRoadNetwork": 460,
-     "measured paint": 58,
-     "lane graph": 68,
-     "road meshes + carve": 4394,
-     "paint decal": 90
+     "surfaces + width fit": 358,
+     "buildRoadNetwork": 124,
+     "measured paint": 11,
+     "lane graph": 23,
+     "road meshes + carve": 1155,
+     "paint decal": 32
     },
     "widthFit": {
      "fitted": 27,
@@ -2747,10 +2747,10 @@
        "normalJump": 117
       },
       "concrete": {
-       "tris": 104442,
-       "sliver": 6589,
-       "tjunction": 13740,
-       "step": 156,
+       "tris": 86055,
+       "sliver": 5252,
+       "tjunction": 10141,
+       "step": 134,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -2898,13 +2898,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2609,
+     "warn": 2569,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1166,
-     "warn": 2373,
+     "error": 1162,
+     "warn": 2232,
      "review": 0,
      "info": 0
     },
@@ -2945,15 +2945,15 @@
     "roadsLeavingStreet": 7,
     "coplanarPairs": 240,
     "coplanarAreaM2": 5.64,
-    "triangles": 99396,
-    "buildMs": 4360,
+    "triangles": 88481,
+    "buildMs": 1068,
     "times": {
-     "surfaces + width fit": 847,
-     "buildRoadNetwork": 472,
-     "measured paint": 16,
-     "lane graph": 60,
-     "road meshes + carve": 2865,
-     "paint decal": 100
+     "surfaces + width fit": 230,
+     "buildRoadNetwork": 134,
+     "measured paint": 5,
+     "lane graph": 16,
+     "road meshes + carve": 655,
+     "paint decal": 29
     },
     "widthFit": {
      "fitted": 9,
@@ -2996,10 +2996,10 @@
        "normalJump": 42
       },
       "concrete": {
-       "tris": 64316,
-       "sliver": 3484,
-       "tjunction": 10540,
-       "step": 103,
+       "tris": 53401,
+       "sliver": 2726,
+       "tjunction": 8102,
+       "step": 80,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -3155,13 +3155,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3568,
+     "warn": 3513,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1461,
-     "warn": 2274,
+     "error": 1451,
+     "warn": 2096,
      "review": 0,
      "info": 0
     },
@@ -3202,15 +3202,15 @@
     "roadsLeavingStreet": 8,
     "coplanarPairs": 1093,
     "coplanarAreaM2": 32.28,
-    "triangles": 137329,
-    "buildMs": 1846,
+    "triangles": 121458,
+    "buildMs": 1242,
     "times": {
-     "surfaces + width fit": 291,
-     "buildRoadNetwork": 153,
-     "measured paint": 10,
-     "lane graph": 31,
-     "road meshes + carve": 1328,
-     "paint decal": 32
+     "surfaces + width fit": 202,
+     "buildRoadNetwork": 104,
+     "measured paint": 7,
+     "lane graph": 23,
+     "road meshes + carve": 878,
+     "paint decal": 28
     },
     "widthFit": {
      "fitted": 19,
@@ -3253,10 +3253,10 @@
        "normalJump": 143
       },
       "concrete": {
-       "tris": 90540,
-       "sliver": 4955,
-       "tjunction": 12751,
-       "step": 222,
+       "tris": 74672,
+       "sliver": 3929,
+       "tjunction": 9809,
+       "step": 156,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -3404,13 +3404,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3341,
+     "warn": 3223,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1814,
-     "warn": 2495,
+     "error": 1829,
+     "warn": 2329,
      "review": 0,
      "info": 0
     },
@@ -3451,15 +3451,15 @@
     "roadsLeavingStreet": 14,
     "coplanarPairs": 90,
     "coplanarAreaM2": 1.99,
-    "triangles": 141888,
-    "buildMs": 1900,
+    "triangles": 121620,
+    "buildMs": 1325,
     "times": {
-     "surfaces + width fit": 384,
-     "buildRoadNetwork": 112,
-     "measured paint": 11,
-     "lane graph": 19,
-     "road meshes + carve": 1332,
-     "paint decal": 41
+     "surfaces + width fit": 278,
+     "buildRoadNetwork": 93,
+     "measured paint": 9,
+     "lane graph": 17,
+     "road meshes + carve": 896,
+     "paint decal": 33
     },
     "widthFit": {
      "fitted": 11,
@@ -3501,10 +3501,10 @@
        "normalJump": 86
       },
       "concrete": {
-       "tris": 99627,
-       "sliver": 5614,
-       "tjunction": 19231,
-       "step": 91,
+       "tris": 79359,
+       "sliver": 4112,
+       "tjunction": 15357,
+       "step": 69,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -3657,8 +3657,8 @@
      "info": 0
     },
     "C18": {
-     "error": 335,
-     "warn": 337,
+     "error": 338,
+     "warn": 321,
      "review": 0,
      "info": 0
     },
@@ -3699,15 +3699,15 @@
     "roadsLeavingStreet": 2,
     "coplanarPairs": 4,
     "coplanarAreaM2": 0.91,
-    "triangles": 34422,
-    "buildMs": 724,
+    "triangles": 34172,
+    "buildMs": 657,
     "times": {
-     "surfaces + width fit": 199,
-     "buildRoadNetwork": 71,
+     "surfaces + width fit": 209,
+     "buildRoadNetwork": 51,
      "measured paint": 1,
-     "lane graph": 29,
-     "road meshes + carve": 419,
-     "paint decal": 5
+     "lane graph": 27,
+     "road meshes + carve": 361,
+     "paint decal": 9
     },
     "widthFit": {
      "fitted": 3,
@@ -3750,9 +3750,9 @@
        "normalJump": 0
       },
       "concrete": {
-       "tris": 21717,
-       "sliver": 403,
-       "tjunction": 429,
+       "tris": 21467,
+       "sliver": 394,
+       "tjunction": 345,
        "step": 0,
        "uvShear": 0,
        "normalJump": 0
@@ -3901,13 +3901,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 4435,
+     "warn": 4393,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1507,
-     "warn": 2782,
+     "error": 1510,
+     "warn": 2503,
      "review": 0,
      "info": 0
     },
@@ -3948,15 +3948,15 @@
     "roadsLeavingStreet": 13,
     "coplanarPairs": 1697,
     "coplanarAreaM2": 39.53,
-    "triangles": 136861,
-    "buildMs": 7858,
+    "triangles": 122170,
+    "buildMs": 1497,
     "times": {
-     "surfaces + width fit": 1386,
-     "buildRoadNetwork": 796,
-     "measured paint": 4,
-     "lane graph": 122,
-     "road meshes + carve": 5490,
-     "paint decal": 61
+     "surfaces + width fit": 305,
+     "buildRoadNetwork": 176,
+     "measured paint": 1,
+     "lane graph": 24,
+     "road meshes + carve": 983,
+     "paint decal": 7
     },
     "widthFit": {
      "fitted": 29,
@@ -4000,10 +4000,10 @@
        "normalJump": 169
       },
       "concrete": {
-       "tris": 90146,
-       "sliver": 6515,
-       "tjunction": 10439,
-       "step": 138,
+       "tris": 75455,
+       "sliver": 5294,
+       "tjunction": 7537,
+       "step": 103,
        "uvShear": 1,
        "normalJump": 0
       },
@@ -4151,13 +4151,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2961,
+     "warn": 2911,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1634,
-     "warn": 2386,
+     "error": 1596,
+     "warn": 2191,
      "review": 0,
      "info": 0
     },
@@ -4198,15 +4198,15 @@
     "roadsLeavingStreet": 17,
     "coplanarPairs": 306,
     "coplanarAreaM2": 12.32,
-    "triangles": 127483,
-    "buildMs": 5435,
+    "triangles": 107952,
+    "buildMs": 1412,
     "times": {
-     "surfaces + width fit": 816,
-     "buildRoadNetwork": 516,
-     "measured paint": 11,
-     "lane graph": 101,
-     "road meshes + carve": 3959,
-     "paint decal": 31
+     "surfaces + width fit": 262,
+     "buildRoadNetwork": 136,
+     "measured paint": 3,
+     "lane graph": 28,
+     "road meshes + carve": 973,
+     "paint decal": 9
     },
     "widthFit": {
      "fitted": 12,
@@ -4249,10 +4249,10 @@
        "normalJump": 32
       },
       "concrete": {
-       "tris": 92857,
-       "sliver": 4435,
-       "tjunction": 15396,
-       "step": 143,
+       "tris": 73326,
+       "sliver": 3364,
+       "tjunction": 11917,
+       "step": 102,
        "uvShear": 0,
        "normalJump": 1
       },
@@ -4408,13 +4408,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3293,
+     "warn": 3193,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1593,
-     "warn": 2423,
+     "error": 1602,
+     "warn": 2171,
      "review": 0,
      "info": 0
     },
@@ -4455,15 +4455,15 @@
     "roadsLeavingStreet": 17,
     "coplanarPairs": 579,
     "coplanarAreaM2": 13.36,
-    "triangles": 122262,
-    "buildMs": 8181,
+    "triangles": 105950,
+    "buildMs": 1383,
     "times": {
-     "surfaces + width fit": 1123,
-     "buildRoadNetwork": 524,
-     "measured paint": 33,
-     "lane graph": 101,
-     "road meshes + carve": 6342,
-     "paint decal": 60
+     "surfaces + width fit": 290,
+     "buildRoadNetwork": 110,
+     "measured paint": 4,
+     "lane graph": 18,
+     "road meshes + carve": 945,
+     "paint decal": 16
     },
     "widthFit": {
      "fitted": 8,
@@ -4506,10 +4506,10 @@
        "normalJump": 121
       },
       "concrete": {
-       "tris": 83738,
-       "sliver": 5520,
-       "tjunction": 13165,
-       "step": 278,
+       "tris": 67426,
+       "sliver": 4179,
+       "tjunction": 9605,
+       "step": 201,
        "uvShear": 2,
        "normalJump": 0
       },
@@ -4665,13 +4665,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 4254,
+     "warn": 4174,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1790,
-     "warn": 3220,
+     "error": 1772,
+     "warn": 2934,
      "review": 0,
      "info": 0
     },
@@ -4712,15 +4712,15 @@
     "roadsLeavingStreet": 19,
     "coplanarPairs": 839,
     "coplanarAreaM2": 24.31,
-    "triangles": 151103,
-    "buildMs": 7589,
+    "triangles": 131146,
+    "buildMs": 1705,
     "times": {
-     "surfaces + width fit": 1109,
-     "buildRoadNetwork": 1121,
-     "measured paint": 44,
-     "lane graph": 91,
-     "road meshes + carve": 5134,
-     "paint decal": 90
+     "surfaces + width fit": 315,
+     "buildRoadNetwork": 166,
+     "measured paint": 6,
+     "lane graph": 21,
+     "road meshes + carve": 1172,
+     "paint decal": 24
     },
     "widthFit": {
      "fitted": 15,
@@ -4763,10 +4763,10 @@
        "normalJump": 91
       },
       "concrete": {
-       "tris": 99944,
-       "sliver": 6506,
-       "tjunction": 14859,
-       "step": 207,
+       "tris": 79989,
+       "sliver": 5059,
+       "tjunction": 11153,
+       "step": 142,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -4922,13 +4922,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2084,
+     "warn": 2069,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 650,
-     "warn": 1222,
+     "error": 651,
+     "warn": 1158,
      "review": 0,
      "info": 0
     },
@@ -4969,15 +4969,15 @@
     "roadsLeavingStreet": 6,
     "coplanarPairs": 208,
     "coplanarAreaM2": 3.06,
-    "triangles": 78723,
-    "buildMs": 3490,
+    "triangles": 73538,
+    "buildMs": 877,
     "times": {
-     "surfaces + width fit": 426,
-     "buildRoadNetwork": 636,
-     "measured paint": 20,
-     "lane graph": 74,
-     "road meshes + carve": 2217,
-     "paint decal": 116
+     "surfaces + width fit": 98,
+     "buildRoadNetwork": 163,
+     "measured paint": 7,
+     "lane graph": 20,
+     "road meshes + carve": 558,
+     "paint decal": 31
     },
     "widthFit": {
      "fitted": 7,
@@ -5020,10 +5020,10 @@
        "normalJump": 654
       },
       "concrete": {
-       "tris": 47593,
-       "sliver": 2567,
-       "tjunction": 4668,
-       "step": 119,
+       "tris": 42408,
+       "sliver": 2170,
+       "tjunction": 3647,
+       "step": 101,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -5171,13 +5171,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3502,
+     "warn": 3452,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1680,
-     "warn": 2487,
+     "error": 1699,
+     "warn": 2275,
      "review": 0,
      "info": 0
     },
@@ -5218,15 +5218,15 @@
     "roadsLeavingStreet": 16,
     "coplanarPairs": 341,
     "coplanarAreaM2": 12.76,
-    "triangles": 150593,
-    "buildMs": 7258,
+    "triangles": 129279,
+    "buildMs": 1454,
     "times": {
-     "surfaces + width fit": 1011,
-     "buildRoadNetwork": 738,
-     "measured paint": 58,
-     "lane graph": 102,
-     "road meshes + carve": 5218,
-     "paint decal": 132
+     "surfaces + width fit": 222,
+     "buildRoadNetwork": 162,
+     "measured paint": 10,
+     "lane graph": 19,
+     "road meshes + carve": 1001,
+     "paint decal": 40
     },
     "widthFit": {
      "fitted": 18,
@@ -5269,10 +5269,10 @@
        "normalJump": 40
       },
       "concrete": {
-       "tris": 102997,
-       "sliver": 6268,
-       "tjunction": 17699,
-       "step": 118,
+       "tris": 81683,
+       "sliver": 4903,
+       "tjunction": 13921,
+       "step": 99,
        "uvShear": 5,
        "normalJump": 0
       },
@@ -5420,13 +5420,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2748,
+     "warn": 2699,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1346,
-     "warn": 1947,
+     "error": 1324,
+     "warn": 1797,
      "review": 0,
      "info": 0
     },
@@ -5437,7 +5437,7 @@
      "info": 0
     },
     "C20": {
-     "error": 5,
+     "error": 6,
      "warn": 0,
      "review": 0,
      "info": 0
@@ -5467,15 +5467,15 @@
     "roadsLeavingStreet": 10,
     "coplanarPairs": 101,
     "coplanarAreaM2": 6.2,
-    "triangles": 109589,
-    "buildMs": 4302,
+    "triangles": 98011,
+    "buildMs": 1112,
     "times": {
-     "surfaces + width fit": 672,
-     "buildRoadNetwork": 349,
-     "measured paint": 21,
-     "lane graph": 77,
-     "road meshes + carve": 3065,
-     "paint decal": 118
+     "surfaces + width fit": 195,
+     "buildRoadNetwork": 102,
+     "measured paint": 7,
+     "lane graph": 21,
+     "road meshes + carve": 755,
+     "paint decal": 33
     },
     "widthFit": {
      "fitted": 9,
@@ -5518,11 +5518,11 @@
        "normalJump": 230
       },
       "concrete": {
-       "tris": 71300,
-       "sliver": 4005,
-       "tjunction": 10353,
-       "step": 138,
-       "uvShear": 12,
+       "tris": 59722,
+       "sliver": 3146,
+       "tjunction": 7840,
+       "step": 102,
+       "uvShear": 9,
        "normalJump": 0
       },
       "grass": {
@@ -5677,13 +5677,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2362,
+     "warn": 2336,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 807,
-     "warn": 1156,
+     "error": 810,
+     "warn": 1081,
      "review": 0,
      "info": 0
     },
@@ -5724,15 +5724,15 @@
     "roadsLeavingStreet": 8,
     "coplanarPairs": 299,
     "coplanarAreaM2": 10.24,
-    "triangles": 81035,
-    "buildMs": 3803,
+    "triangles": 74919,
+    "buildMs": 904,
     "times": {
-     "surfaces + width fit": 550,
-     "buildRoadNetwork": 338,
-     "measured paint": 35,
-     "lane graph": 87,
-     "road meshes + carve": 2559,
-     "paint decal": 235
+     "surfaces + width fit": 153,
+     "buildRoadNetwork": 75,
+     "measured paint": 8,
+     "lane graph": 18,
+     "road meshes + carve": 623,
+     "paint decal": 27
     },
     "widthFit": {
      "fitted": 9,
@@ -5775,10 +5775,10 @@
        "normalJump": 64
       },
       "concrete": {
-       "tris": 47433,
-       "sliver": 2578,
-       "tjunction": 5188,
-       "step": 72,
+       "tris": 41317,
+       "sliver": 2161,
+       "tjunction": 3989,
+       "step": 58,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -5926,13 +5926,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 5023,
+     "warn": 4929,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1830,
-     "warn": 2749,
+     "error": 1871,
+     "warn": 2380,
      "review": 0,
      "info": 0
     },
@@ -5973,15 +5973,15 @@
     "roadsLeavingStreet": 36,
     "coplanarPairs": 905,
     "coplanarAreaM2": 15.99,
-    "triangles": 185579,
-    "buildMs": 7834,
+    "triangles": 155552,
+    "buildMs": 1903,
     "times": {
-     "surfaces + width fit": 1315,
-     "buildRoadNetwork": 969,
-     "measured paint": 21,
-     "lane graph": 77,
-     "road meshes + carve": 5389,
-     "paint decal": 64
+     "surfaces + width fit": 357,
+     "buildRoadNetwork": 241,
+     "measured paint": 6,
+     "lane graph": 21,
+     "road meshes + carve": 1259,
+     "paint decal": 18
     },
     "widthFit": {
      "fitted": 23,
@@ -6024,10 +6024,10 @@
        "normalJump": 227
       },
       "concrete": {
-       "tris": 138452,
-       "sliver": 9776,
-       "tjunction": 23866,
-       "step": 297,
+       "tris": 108425,
+       "sliver": 7273,
+       "tjunction": 18363,
+       "step": 235,
        "uvShear": 5,
        "normalJump": 0
       },
@@ -6191,13 +6191,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2876,
+     "warn": 2839,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1274,
-     "warn": 1982,
+     "error": 1281,
+     "warn": 1814,
      "review": 0,
      "info": 0
     },
@@ -6238,15 +6238,15 @@
     "roadsLeavingStreet": 12,
     "coplanarPairs": 1250,
     "coplanarAreaM2": 19.98,
-    "triangles": 103207,
-    "buildMs": 5359,
+    "triangles": 89118,
+    "buildMs": 1500,
     "times": {
-     "surfaces + width fit": 920,
-     "buildRoadNetwork": 804,
+     "surfaces + width fit": 278,
+     "buildRoadNetwork": 249,
      "measured paint": 1,
-     "lane graph": 75,
-     "road meshes + carve": 3547,
-     "paint decal": 12
+     "lane graph": 24,
+     "road meshes + carve": 943,
+     "paint decal": 5
     },
     "widthFit": {
      "fitted": 17,
@@ -6290,10 +6290,10 @@
        "normalJump": 186
       },
       "concrete": {
-       "tris": 75934,
-       "sliver": 4785,
-       "tjunction": 11664,
-       "step": 223,
+       "tris": 61845,
+       "sliver": 3758,
+       "tjunction": 8732,
+       "step": 193,
        "uvShear": 10,
        "normalJump": 0
       },
@@ -6449,13 +6449,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 4179,
+     "warn": 4122,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1710,
-     "warn": 2614,
+     "error": 1714,
+     "warn": 2396,
      "review": 0,
      "info": 0
     },
@@ -6496,15 +6496,15 @@
     "roadsLeavingStreet": 20,
     "coplanarPairs": 732,
     "coplanarAreaM2": 21.88,
-    "triangles": 147069,
-    "buildMs": 6289,
+    "triangles": 129471,
+    "buildMs": 1534,
     "times": {
-     "surfaces + width fit": 921,
-     "buildRoadNetwork": 653,
-     "measured paint": 10,
-     "lane graph": 105,
-     "road meshes + carve": 4575,
-     "paint decal": 25
+     "surfaces + width fit": 261,
+     "buildRoadNetwork": 166,
+     "measured paint": 3,
+     "lane graph": 26,
+     "road meshes + carve": 1071,
+     "paint decal": 7
     },
     "widthFit": {
      "fitted": 20,
@@ -6547,11 +6547,11 @@
        "normalJump": 180
       },
       "concrete": {
-       "tris": 101556,
-       "sliver": 6029,
-       "tjunction": 15729,
-       "step": 288,
-       "uvShear": 18,
+       "tris": 83958,
+       "sliver": 4774,
+       "tjunction": 12269,
+       "step": 232,
+       "uvShear": 16,
        "normalJump": 1
       },
       "grass": {
@@ -6714,13 +6714,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 5765,
+     "warn": 5655,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 2681,
-     "warn": 3650,
+     "error": 2687,
+     "warn": 3331,
      "review": 0,
      "info": 0
     },
@@ -6761,15 +6761,15 @@
     "roadsLeavingStreet": 36,
     "coplanarPairs": 3273,
     "coplanarAreaM2": 221.31,
-    "triangles": 234704,
-    "buildMs": 8563,
+    "triangles": 202359,
+    "buildMs": 1991,
     "times": {
-     "surfaces + width fit": 1316,
-     "buildRoadNetwork": 475,
-     "measured paint": 59,
-     "lane graph": 92,
-     "road meshes + carve": 6441,
-     "paint decal": 179
+     "surfaces + width fit": 333,
+     "buildRoadNetwork": 122,
+     "measured paint": 17,
+     "lane graph": 24,
+     "road meshes + carve": 1446,
+     "paint decal": 48
     },
     "widthFit": {
      "fitted": 27,
@@ -6813,11 +6813,11 @@
        "normalJump": 191
       },
       "concrete": {
-       "tris": 154394,
-       "sliver": 9145,
-       "tjunction": 30515,
-       "step": 123,
-       "uvShear": 18,
+       "tris": 122049,
+       "sliver": 7006,
+       "tjunction": 24100,
+       "step": 113,
+       "uvShear": 14,
        "normalJump": 0
       },
       "grass": {
@@ -6980,13 +6980,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3614,
+     "warn": 3572,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1203,
-     "warn": 1659,
+     "error": 1204,
+     "warn": 1547,
      "review": 0,
      "info": 0
     },
@@ -7027,15 +7027,15 @@
     "roadsLeavingStreet": 17,
     "coplanarPairs": 289,
     "coplanarAreaM2": 9.92,
-    "triangles": 103404,
-    "buildMs": 4810,
+    "triangles": 92557,
+    "buildMs": 1249,
     "times": {
-     "surfaces + width fit": 908,
-     "buildRoadNetwork": 580,
-     "measured paint": 24,
-     "lane graph": 82,
-     "road meshes + carve": 3197,
-     "paint decal": 20
+     "surfaces + width fit": 215,
+     "buildRoadNetwork": 132,
+     "measured paint": 4,
+     "lane graph": 41,
+     "road meshes + carve": 848,
+     "paint decal": 9
     },
     "widthFit": {
      "fitted": 12,
@@ -7079,10 +7079,10 @@
        "normalJump": 106
       },
       "concrete": {
-       "tris": 71451,
-       "sliver": 3909,
-       "tjunction": 9406,
-       "step": 144,
+       "tris": 60598,
+       "sliver": 3173,
+       "tjunction": 7221,
+       "step": 110,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -7246,13 +7246,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2831,
+     "warn": 2803,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1031,
-     "warn": 1295,
+     "error": 1032,
+     "warn": 1214,
      "review": 0,
      "info": 0
     },
@@ -7293,15 +7293,15 @@
     "roadsLeavingStreet": 10,
     "coplanarPairs": 1138,
     "coplanarAreaM2": 21.04,
-    "triangles": 79627,
-    "buildMs": 4734,
+    "triangles": 71149,
+    "buildMs": 984,
     "times": {
-     "surfaces + width fit": 761,
-     "buildRoadNetwork": 1035,
+     "surfaces + width fit": 132,
+     "buildRoadNetwork": 228,
      "measured paint": 0,
-     "lane graph": 80,
-     "road meshes + carve": 2848,
-     "paint decal": 11
+     "lane graph": 21,
+     "road meshes + carve": 599,
+     "paint decal": 4
     },
     "widthFit": {
      "fitted": 11,
@@ -7343,10 +7343,10 @@
        "normalJump": 244
       },
       "concrete": {
-       "tris": 57164,
-       "sliver": 3422,
-       "tjunction": 7872,
-       "step": 82,
+       "tris": 48686,
+       "sliver": 2925,
+       "tjunction": 6150,
+       "step": 65,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -7502,13 +7502,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2814,
+     "warn": 2764,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1535,
-     "warn": 2389,
+     "error": 1517,
+     "warn": 2312,
      "review": 0,
      "info": 0
     },
@@ -7549,15 +7549,15 @@
     "roadsLeavingStreet": 8,
     "coplanarPairs": 742,
     "coplanarAreaM2": 17.47,
-    "triangles": 96491,
-    "buildMs": 4698,
+    "triangles": 86485,
+    "buildMs": 1142,
     "times": {
-     "surfaces + width fit": 899,
-     "buildRoadNetwork": 906,
-     "measured paint": 5,
-     "lane graph": 80,
-     "road meshes + carve": 2797,
-     "paint decal": 12
+     "surfaces + width fit": 234,
+     "buildRoadNetwork": 168,
+     "measured paint": 1,
+     "lane graph": 24,
+     "road meshes + carve": 712,
+     "paint decal": 4
     },
     "widthFit": {
      "fitted": 12,
@@ -7601,10 +7601,10 @@
        "normalJump": 203
       },
       "concrete": {
-       "tris": 66139,
-       "sliver": 3647,
-       "tjunction": 11492,
-       "step": 91,
+       "tris": 56147,
+       "sliver": 2914,
+       "tjunction": 9282,
+       "step": 54,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -7768,13 +7768,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2160,
+     "warn": 2136,
      "review": 0,
      "info": 0
     },
     "C18": {
      "error": 576,
-     "warn": 842,
+     "warn": 772,
      "review": 0,
      "info": 0
     },
@@ -7815,15 +7815,15 @@
     "roadsLeavingStreet": 10,
     "coplanarPairs": 270,
     "coplanarAreaM2": 2.5,
-    "triangles": 65800,
-    "buildMs": 3670,
+    "triangles": 60326,
+    "buildMs": 953,
     "times": {
-     "surfaces + width fit": 920,
-     "buildRoadNetwork": 517,
-     "measured paint": 2,
-     "lane graph": 68,
-     "road meshes + carve": 2152,
-     "paint decal": 12
+     "surfaces + width fit": 211,
+     "buildRoadNetwork": 134,
+     "measured paint": 0,
+     "lane graph": 22,
+     "road meshes + carve": 581,
+     "paint decal": 4
     },
     "widthFit": {
      "fitted": 4,
@@ -7866,10 +7866,10 @@
        "normalJump": 363
       },
       "concrete": {
-       "tris": 44618,
-       "sliver": 2528,
-       "tjunction": 4949,
-       "step": 38,
+       "tris": 39144,
+       "sliver": 2192,
+       "tjunction": 3791,
+       "step": 33,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -8025,13 +8025,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3357,
+     "warn": 3286,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1290,
-     "warn": 1786,
+     "error": 1307,
+     "warn": 1590,
      "review": 0,
      "info": 0
     },
@@ -8072,15 +8072,15 @@
     "roadsLeavingStreet": 7,
     "coplanarPairs": 615,
     "coplanarAreaM2": 16.21,
-    "triangles": 121307,
-    "buildMs": 5718,
+    "triangles": 105719,
+    "buildMs": 1193,
     "times": {
-     "surfaces + width fit": 959,
-     "buildRoadNetwork": 463,
-     "measured paint": 27,
-     "lane graph": 66,
-     "road meshes + carve": 4092,
-     "paint decal": 112
+     "surfaces + width fit": 212,
+     "buildRoadNetwork": 125,
+     "measured paint": 6,
+     "lane graph": 18,
+     "road meshes + carve": 804,
+     "paint decal": 28
     },
     "widthFit": {
      "fitted": 22,
@@ -8122,10 +8122,10 @@
        "normalJump": 286
       },
       "concrete": {
-       "tris": 85352,
-       "sliver": 5415,
-       "tjunction": 11864,
-       "step": 258,
+       "tris": 69764,
+       "sliver": 4315,
+       "tjunction": 8984,
+       "step": 212,
        "uvShear": 3,
        "normalJump": 0
       },
@@ -8273,13 +8273,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1945,
+     "warn": 1931,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 457,
-     "warn": 798,
+     "error": 456,
+     "warn": 735,
      "review": 0,
      "info": 0
     },
@@ -8320,15 +8320,15 @@
     "roadsLeavingStreet": 5,
     "coplanarPairs": 136,
     "coplanarAreaM2": 1.57,
-    "triangles": 52097,
-    "buildMs": 2363,
+    "triangles": 49439,
+    "buildMs": 562,
     "times": {
-     "surfaces + width fit": 716,
-     "buildRoadNetwork": 120,
-     "measured paint": 14,
-     "lane graph": 44,
-     "road meshes + carve": 1443,
-     "paint decal": 27
+     "surfaces + width fit": 132,
+     "buildRoadNetwork": 31,
+     "measured paint": 4,
+     "lane graph": 11,
+     "road meshes + carve": 376,
+     "paint decal": 9
     },
     "widthFit": {
      "fitted": 6,
@@ -8371,10 +8371,10 @@
        "normalJump": 1
       },
       "concrete": {
-       "tris": 32416,
-       "sliver": 1350,
-       "tjunction": 1971,
-       "step": 9,
+       "tris": 29758,
+       "sliver": 1164,
+       "tjunction": 1438,
+       "step": 5,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -8530,13 +8530,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1970,
+     "warn": 1962,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 148,
-     "warn": 253,
+     "error": 147,
+     "warn": 236,
      "review": 0,
      "info": 0
     },
@@ -8577,15 +8577,15 @@
     "roadsLeavingStreet": 5,
     "coplanarPairs": 196,
     "coplanarAreaM2": 4.14,
-    "triangles": 35179,
-    "buildMs": 2701,
+    "triangles": 34475,
+    "buildMs": 640,
     "times": {
-     "surfaces + width fit": 136,
-     "buildRoadNetwork": 667,
-     "measured paint": 3,
-     "lane graph": 63,
-     "road meshes + carve": 1826,
-     "paint decal": 6
+     "surfaces + width fit": 24,
+     "buildRoadNetwork": 166,
+     "measured paint": 0,
+     "lane graph": 18,
+     "road meshes + carve": 431,
+     "paint decal": 2
     },
     "widthFit": {
      "fitted": 3,
@@ -8628,10 +8628,10 @@
        "normalJump": 409
       },
       "concrete": {
-       "tris": 24716,
-       "sliver": 2244,
-       "tjunction": 625,
-       "step": 14,
+       "tris": 24012,
+       "sliver": 2208,
+       "tjunction": 497,
+       "step": 13,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -8771,13 +8771,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3279,
+     "warn": 3257,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 812,
-     "warn": 1567,
+     "error": 815,
+     "warn": 1411,
      "review": 0,
      "info": 0
     },
@@ -8788,7 +8788,7 @@
      "info": 0
     },
     "C20": {
-     "error": 8,
+     "error": 7,
      "warn": 0,
      "review": 0,
      "info": 0
@@ -8818,15 +8818,15 @@
     "roadsLeavingStreet": 9,
     "coplanarPairs": 716,
     "coplanarAreaM2": 87.92,
-    "triangles": 81009,
-    "buildMs": 5850,
+    "triangles": 72369,
+    "buildMs": 1089,
     "times": {
-     "surfaces + width fit": 645,
-     "buildRoadNetwork": 444,
-     "measured paint": 14,
-     "lane graph": 119,
-     "road meshes + carve": 4514,
-     "paint decal": 114
+     "surfaces + width fit": 157,
+     "buildRoadNetwork": 113,
+     "measured paint": 4,
+     "lane graph": 34,
+     "road meshes + carve": 766,
+     "paint decal": 16
     },
     "widthFit": {
      "fitted": 7,
@@ -8870,11 +8870,11 @@
        "normalJump": 292
       },
       "concrete": {
-       "tris": 55191,
-       "sliver": 4212,
-       "tjunction": 6769,
-       "step": 55,
-       "uvShear": 11,
+       "tris": 46551,
+       "sliver": 3582,
+       "tjunction": 5050,
+       "step": 37,
+       "uvShear": 12,
        "normalJump": 0
       },
       "grass": {
@@ -9029,13 +9029,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 4264,
+     "warn": 4204,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1804,
-     "warn": 2615,
+     "error": 1810,
+     "warn": 2400,
      "review": 0,
      "info": 0
     },
@@ -9076,15 +9076,15 @@
     "roadsLeavingStreet": 16,
     "coplanarPairs": 3939,
     "coplanarAreaM2": 688.04,
-    "triangles": 149318,
-    "buildMs": 6903,
+    "triangles": 128856,
+    "buildMs": 1706,
     "times": {
-     "surfaces + width fit": 1083,
-     "buildRoadNetwork": 854,
-     "measured paint": 15,
-     "lane graph": 126,
-     "road meshes + carve": 4776,
-     "paint decal": 49
+     "surfaces + width fit": 303,
+     "buildRoadNetwork": 224,
+     "measured paint": 4,
+     "lane graph": 34,
+     "road meshes + carve": 1125,
+     "paint decal": 15
     },
     "widthFit": {
      "fitted": 14,
@@ -9127,10 +9127,10 @@
        "normalJump": 198
       },
       "concrete": {
-       "tris": 106241,
-       "sliver": 6980,
-       "tjunction": 17235,
-       "step": 150,
+       "tris": 85775,
+       "sliver": 5359,
+       "tjunction": 13226,
+       "step": 128,
        "uvShear": 0,
        "normalJump": 1
       },
@@ -9278,13 +9278,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 4211,
+     "warn": 4163,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1839,
-     "warn": 2611,
+     "error": 1843,
+     "warn": 2378,
      "review": 0,
      "info": 0
     },
@@ -9325,15 +9325,15 @@
     "roadsLeavingStreet": 17,
     "coplanarPairs": 3803,
     "coplanarAreaM2": 72.4,
-    "triangles": 154684,
-    "buildMs": 6670,
+    "triangles": 134716,
+    "buildMs": 1844,
     "times": {
-     "surfaces + width fit": 978,
-     "buildRoadNetwork": 582,
-     "measured paint": 26,
-     "lane graph": 91,
-     "road meshes + carve": 4900,
-     "paint decal": 92
+     "surfaces + width fit": 322,
+     "buildRoadNetwork": 204,
+     "measured paint": 13,
+     "lane graph": 31,
+     "road meshes + carve": 1245,
+     "paint decal": 28
     },
     "widthFit": {
      "fitted": 20,
@@ -9377,10 +9377,10 @@
        "normalJump": 132
       },
       "concrete": {
-       "tris": 103603,
-       "sliver": 6495,
-       "tjunction": 17769,
-       "step": 239,
+       "tris": 83638,
+       "sliver": 5104,
+       "tjunction": 13459,
+       "step": 186,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -9528,13 +9528,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3058,
+     "warn": 3011,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1603,
-     "warn": 1860,
+     "error": 1598,
+     "warn": 1704,
      "review": 0,
      "info": 0
     },
@@ -9575,15 +9575,15 @@
     "roadsLeavingStreet": 12,
     "coplanarPairs": 289,
     "coplanarAreaM2": 7.06,
-    "triangles": 118918,
-    "buildMs": 5581,
+    "triangles": 102153,
+    "buildMs": 1410,
     "times": {
-     "surfaces + width fit": 890,
-     "buildRoadNetwork": 480,
-     "measured paint": 14,
-     "lane graph": 94,
-     "road meshes + carve": 4051,
-     "paint decal": 52
+     "surfaces + width fit": 258,
+     "buildRoadNetwork": 136,
+     "measured paint": 3,
+     "lane graph": 27,
+     "road meshes + carve": 930,
+     "paint decal": 57
     },
     "widthFit": {
      "fitted": 11,
@@ -9626,10 +9626,10 @@
        "normalJump": 1
       },
       "concrete": {
-       "tris": 85874,
-       "sliver": 4887,
-       "tjunction": 14892,
-       "step": 138,
+       "tris": 69107,
+       "sliver": 3922,
+       "tjunction": 11312,
+       "step": 100,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -9777,13 +9777,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3672,
+     "warn": 3617,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1811,
-     "warn": 2013,
+     "error": 1812,
+     "warn": 1872,
      "review": 0,
      "info": 0
     },
@@ -9824,15 +9824,15 @@
     "roadsLeavingStreet": 12,
     "coplanarPairs": 522,
     "coplanarAreaM2": 10.58,
-    "triangles": 135761,
-    "buildMs": 4985,
+    "triangles": 115667,
+    "buildMs": 1147,
     "times": {
-     "surfaces + width fit": 929,
-     "buildRoadNetwork": 475,
-     "measured paint": 8,
-     "lane graph": 73,
-     "road meshes + carve": 3477,
-     "paint decal": 25
+     "surfaces + width fit": 232,
+     "buildRoadNetwork": 124,
+     "measured paint": 1,
+     "lane graph": 20,
+     "road meshes + carve": 764,
+     "paint decal": 7
     },
     "widthFit": {
      "fitted": 23,
@@ -9875,10 +9875,10 @@
        "normalJump": 0
       },
       "concrete": {
-       "tris": 99836,
-       "sliver": 6267,
-       "tjunction": 20079,
-       "step": 155,
+       "tris": 79742,
+       "sliver": 4665,
+       "tjunction": 15728,
+       "step": 124,
        "uvShear": 6,
        "normalJump": 0
       },
@@ -10026,13 +10026,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3394,
+     "warn": 3341,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1399,
-     "warn": 2149,
+     "error": 1397,
+     "warn": 1976,
      "review": 0,
      "info": 0
     },
@@ -10073,15 +10073,15 @@
     "roadsLeavingStreet": 11,
     "coplanarPairs": 127,
     "coplanarAreaM2": 4.86,
-    "triangles": 113652,
-    "buildMs": 4779,
+    "triangles": 99247,
+    "buildMs": 1248,
     "times": {
-     "surfaces + width fit": 807,
-     "buildRoadNetwork": 613,
-     "measured paint": 2,
-     "lane graph": 82,
-     "road meshes + carve": 3259,
-     "paint decal": 16
+     "surfaces + width fit": 214,
+     "buildRoadNetwork": 222,
+     "measured paint": 1,
+     "lane graph": 23,
+     "road meshes + carve": 783,
+     "paint decal": 6
     },
     "widthFit": {
      "fitted": 16,
@@ -10124,10 +10124,10 @@
        "normalJump": 285
       },
       "concrete": {
-       "tris": 82377,
-       "sliver": 5586,
-       "tjunction": 12830,
-       "step": 120,
+       "tris": 67972,
+       "sliver": 4482,
+       "tjunction": 9861,
+       "step": 88,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -10283,13 +10283,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3733,
+     "warn": 3690,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1529,
-     "warn": 2349,
+     "error": 1524,
+     "warn": 2187,
      "review": 0,
      "info": 0
     },
@@ -10330,15 +10330,15 @@
     "roadsLeavingStreet": 9,
     "coplanarPairs": 461,
     "coplanarAreaM2": 29.14,
-    "triangles": 122876,
-    "buildMs": 5141,
+    "triangles": 107576,
+    "buildMs": 1356,
     "times": {
-     "surfaces + width fit": 897,
-     "buildRoadNetwork": 662,
-     "measured paint": 4,
-     "lane graph": 94,
-     "road meshes + carve": 3449,
-     "paint decal": 35
+     "surfaces + width fit": 243,
+     "buildRoadNetwork": 176,
+     "measured paint": 1,
+     "lane graph": 24,
+     "road meshes + carve": 899,
+     "paint decal": 11
     },
     "widthFit": {
      "fitted": 14,
@@ -10382,10 +10382,10 @@
        "normalJump": 327
       },
       "concrete": {
-       "tris": 86568,
-       "sliver": 6061,
-       "tjunction": 13451,
-       "step": 118,
+       "tris": 71270,
+       "sliver": 4843,
+       "tjunction": 10284,
+       "step": 89,
        "uvShear": 4,
        "normalJump": 0
       },
@@ -10541,13 +10541,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2243,
+     "warn": 2214,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1085,
-     "warn": 1399,
+     "error": 1089,
+     "warn": 1301,
      "review": 0,
      "info": 0
     },
@@ -10588,15 +10588,15 @@
     "roadsLeavingStreet": 5,
     "coplanarPairs": 136,
     "coplanarAreaM2": 4.25,
-    "triangles": 87895,
-    "buildMs": 4446,
+    "triangles": 77655,
+    "buildMs": 1007,
     "times": {
-     "surfaces + width fit": 740,
-     "buildRoadNetwork": 503,
-     "measured paint": 5,
-     "lane graph": 75,
-     "road meshes + carve": 3097,
-     "paint decal": 26
+     "surfaces + width fit": 183,
+     "buildRoadNetwork": 121,
+     "measured paint": 1,
+     "lane graph": 17,
+     "road meshes + carve": 679,
+     "paint decal": 6
     },
     "widthFit": {
      "fitted": 7,
@@ -10639,10 +10639,10 @@
        "normalJump": 189
       },
       "concrete": {
-       "tris": 63256,
-       "sliver": 3365,
-       "tjunction": 9359,
-       "step": 107,
+       "tris": 53016,
+       "sliver": 2764,
+       "tjunction": 7169,
+       "step": 97,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -10798,13 +10798,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3434,
+     "warn": 3363,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1607,
-     "warn": 2279,
+     "error": 1605,
+     "warn": 2098,
      "review": 0,
      "info": 0
     },
@@ -10845,15 +10845,15 @@
     "roadsLeavingStreet": 13,
     "coplanarPairs": 340,
     "coplanarAreaM2": 18.33,
-    "triangles": 126279,
-    "buildMs": 4983,
+    "triangles": 110177,
+    "buildMs": 1243,
     "times": {
-     "surfaces + width fit": 927,
-     "buildRoadNetwork": 622,
-     "measured paint": 31,
-     "lane graph": 65,
-     "road meshes + carve": 3200,
-     "paint decal": 137
+     "surfaces + width fit": 238,
+     "buildRoadNetwork": 163,
+     "measured paint": 8,
+     "lane graph": 18,
+     "road meshes + carve": 783,
+     "paint decal": 33
     },
     "widthFit": {
      "fitted": 14,
@@ -10895,10 +10895,10 @@
        "normalJump": 57
       },
       "concrete": {
-       "tris": 84677,
-       "sliver": 5347,
-       "tjunction": 15090,
-       "step": 181,
+       "tris": 68575,
+       "sliver": 4043,
+       "tjunction": 11695,
+       "step": 134,
        "uvShear": 1,
        "normalJump": 0
       },
@@ -11046,13 +11046,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1275,
+     "warn": 1265,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 872,
-     "warn": 1138,
+     "error": 867,
+     "warn": 1090,
      "review": 0,
      "info": 0
     },
@@ -11093,15 +11093,15 @@
     "roadsLeavingStreet": 5,
     "coplanarPairs": 265,
     "coplanarAreaM2": 3.68,
-    "triangles": 43561,
-    "buildMs": 2466,
+    "triangles": 40259,
+    "buildMs": 500,
     "times": {
-     "surfaces + width fit": 471,
-     "buildRoadNetwork": 212,
-     "measured paint": 9,
-     "lane graph": 82,
-     "road meshes + carve": 1678,
-     "paint decal": 15
+     "surfaces + width fit": 95,
+     "buildRoadNetwork": 31,
+     "measured paint": 1,
+     "lane graph": 11,
+     "road meshes + carve": 355,
+     "paint decal": 5
     },
     "widthFit": {
      "fitted": 5,
@@ -11143,10 +11143,10 @@
        "normalJump": 0
       },
       "concrete": {
-       "tris": 24763,
-       "sliver": 1458,
-       "tjunction": 3201,
-       "step": 18,
+       "tris": 21461,
+       "sliver": 1145,
+       "tjunction": 2497,
+       "step": 10,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -11294,13 +11294,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 820,
+     "warn": 813,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 232,
-     "warn": 232,
+     "error": 233,
+     "warn": 208,
      "review": 0,
      "info": 0
     },
@@ -11311,7 +11311,7 @@
      "info": 0
     },
     "C20": {
-     "error": 8,
+     "error": 5,
      "warn": 0,
      "review": 0,
      "info": 0
@@ -11341,15 +11341,15 @@
     "roadsLeavingStreet": 1,
     "coplanarPairs": 5,
     "coplanarAreaM2": 0,
-    "triangles": 26855,
-    "buildMs": 1375,
+    "triangles": 25606,
+    "buildMs": 332,
     "times": {
-     "surfaces + width fit": 310,
-     "buildRoadNetwork": 84,
-     "measured paint": 2,
-     "lane graph": 40,
-     "road meshes + carve": 912,
-     "paint decal": 26
+     "surfaces + width fit": 67,
+     "buildRoadNetwork": 20,
+     "measured paint": 1,
+     "lane graph": 10,
+     "road meshes + carve": 231,
+     "paint decal": 3
     },
     "widthFit": {
      "fitted": 4,
@@ -11391,11 +11391,11 @@
        "normalJump": 12
       },
       "concrete": {
-       "tris": 16200,
-       "sliver": 405,
-       "tjunction": 812,
-       "step": 12,
-       "uvShear": 13,
+       "tris": 14951,
+       "sliver": 309,
+       "tjunction": 607,
+       "step": 11,
+       "uvShear": 6,
        "normalJump": 0
       },
       "pits": {
@@ -11542,13 +11542,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3153,
+     "warn": 3129,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 986,
-     "warn": 1661,
+     "error": 995,
+     "warn": 1552,
      "review": 0,
      "info": 0
     },
@@ -11589,15 +11589,15 @@
     "roadsLeavingStreet": 23,
     "coplanarPairs": 1857,
     "coplanarAreaM2": 84.58,
-    "triangles": 105773,
-    "buildMs": 4417,
+    "triangles": 92701,
+    "buildMs": 1050,
     "times": {
-     "surfaces + width fit": 709,
-     "buildRoadNetwork": 282,
-     "measured paint": 16,
-     "lane graph": 67,
-     "road meshes + carve": 3259,
-     "paint decal": 83
+     "surfaces + width fit": 213,
+     "buildRoadNetwork": 73,
+     "measured paint": 4,
+     "lane graph": 17,
+     "road meshes + carve": 717,
+     "paint decal": 26
     },
     "widthFit": {
      "fitted": 9,
@@ -11640,10 +11640,10 @@
        "normalJump": 165
       },
       "concrete": {
-       "tris": 68366,
-       "sliver": 5114,
-       "tjunction": 10036,
-       "step": 85,
+       "tris": 55294,
+       "sliver": 3969,
+       "tjunction": 7844,
+       "step": 66,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -11799,13 +11799,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 4025,
+     "warn": 4013,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1581,
-     "warn": 1732,
+     "error": 1595,
+     "warn": 1599,
      "review": 0,
      "info": 0
     },
@@ -11846,15 +11846,15 @@
     "roadsLeavingStreet": 15,
     "coplanarPairs": 5939,
     "coplanarAreaM2": 515.94,
-    "triangles": 147555,
-    "buildMs": 6089,
+    "triangles": 129311,
+    "buildMs": 1354,
     "times": {
-     "surfaces + width fit": 790,
-     "buildRoadNetwork": 748,
-     "measured paint": 7,
-     "lane graph": 93,
-     "road meshes + carve": 4427,
-     "paint decal": 25
+     "surfaces + width fit": 182,
+     "buildRoadNetwork": 167,
+     "measured paint": 1,
+     "lane graph": 23,
+     "road meshes + carve": 975,
+     "paint decal": 7
     },
     "widthFit": {
      "fitted": 11,
@@ -11897,11 +11897,11 @@
        "normalJump": 470
       },
       "concrete": {
-       "tris": 106181,
-       "sliver": 6259,
-       "tjunction": 18895,
-       "step": 96,
-       "uvShear": 3,
+       "tris": 87937,
+       "sliver": 5154,
+       "tjunction": 15201,
+       "step": 86,
+       "uvShear": 2,
        "normalJump": 0
       },
       "square": {
@@ -12056,13 +12056,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3496,
+     "warn": 3462,
      "review": 0,
      "info": 0
     },
     "C18": {
      "error": 647,
-     "warn": 865,
+     "warn": 803,
      "review": 0,
      "info": 0
     },
@@ -12103,15 +12103,15 @@
     "roadsLeavingStreet": 7,
     "coplanarPairs": 2369,
     "coplanarAreaM2": 60.5,
-    "triangles": 80263,
-    "buildMs": 5361,
+    "triangles": 75250,
+    "buildMs": 1157,
     "times": {
-     "surfaces + width fit": 417,
-     "buildRoadNetwork": 1148,
-     "measured paint": 1,
-     "lane graph": 84,
-     "road meshes + carve": 3700,
-     "paint decal": 12
+     "surfaces + width fit": 96,
+     "buildRoadNetwork": 270,
+     "measured paint": 0,
+     "lane graph": 25,
+     "road meshes + carve": 762,
+     "paint decal": 4
     },
     "widthFit": {
      "fitted": 9,
@@ -12155,10 +12155,10 @@
        "normalJump": 814
       },
       "concrete": {
-       "tris": 56423,
-       "sliver": 4636,
-       "tjunction": 4386,
-       "step": 36,
+       "tris": 51410,
+       "sliver": 4271,
+       "tjunction": 3288,
+       "step": 35,
        "uvShear": 2,
        "normalJump": 0
       },
@@ -12306,13 +12306,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2777,
+     "warn": 2735,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1240,
-     "warn": 1818,
+     "error": 1218,
+     "warn": 1666,
      "review": 0,
      "info": 0
     },
@@ -12353,15 +12353,15 @@
     "roadsLeavingStreet": 6,
     "coplanarPairs": 169,
     "coplanarAreaM2": 5.48,
-    "triangles": 94513,
-    "buildMs": 5071,
+    "triangles": 82301,
+    "buildMs": 1152,
     "times": {
-     "surfaces + width fit": 827,
-     "buildRoadNetwork": 631,
-     "measured paint": 6,
-     "lane graph": 121,
-     "road meshes + carve": 3468,
-     "paint decal": 20
+     "surfaces + width fit": 214,
+     "buildRoadNetwork": 145,
+     "measured paint": 0,
+     "lane graph": 22,
+     "road meshes + carve": 764,
+     "paint decal": 5
     },
     "widthFit": {
      "fitted": 18,
@@ -12403,10 +12403,10 @@
        "normalJump": 302
       },
       "concrete": {
-       "tris": 69187,
-       "sliver": 3906,
-       "tjunction": 10667,
-       "step": 171,
+       "tris": 56977,
+       "sliver": 3197,
+       "tjunction": 8137,
+       "step": 120,
        "uvShear": 5,
        "normalJump": 1
       },
@@ -12554,13 +12554,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 4079,
+     "warn": 4043,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1251,
-     "warn": 2302,
+     "error": 1246,
+     "warn": 2037,
      "review": 0,
      "info": 0
     },
@@ -12601,15 +12601,15 @@
     "roadsLeavingStreet": 19,
     "coplanarPairs": 1518,
     "coplanarAreaM2": 101.94,
-    "triangles": 142557,
-    "buildMs": 6178,
+    "triangles": 128105,
+    "buildMs": 1434,
     "times": {
-     "surfaces + width fit": 977,
-     "buildRoadNetwork": 919,
-     "measured paint": 45,
-     "lane graph": 106,
-     "road meshes + carve": 3929,
-     "paint decal": 202
+     "surfaces + width fit": 211,
+     "buildRoadNetwork": 229,
+     "measured paint": 11,
+     "lane graph": 24,
+     "road meshes + carve": 898,
+     "paint decal": 59
     },
     "widthFit": {
      "fitted": 22,
@@ -12652,10 +12652,10 @@
        "normalJump": 403
       },
       "concrete": {
-       "tris": 83231,
-       "sliver": 5161,
-       "tjunction": 10094,
-       "step": 155,
+       "tris": 68779,
+       "sliver": 4148,
+       "tjunction": 7406,
+       "step": 121,
        "uvShear": 2,
        "normalJump": 2
       },
@@ -12811,13 +12811,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3077,
+     "warn": 3036,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1525,
-     "warn": 1795,
+     "error": 1504,
+     "warn": 1667,
      "review": 0,
      "info": 0
     },
@@ -12858,15 +12858,15 @@
     "roadsLeavingStreet": 10,
     "coplanarPairs": 685,
     "coplanarAreaM2": 36.99,
-    "triangles": 110600,
-    "buildMs": 6197,
+    "triangles": 96322,
+    "buildMs": 1375,
     "times": {
-     "surfaces + width fit": 1111,
-     "buildRoadNetwork": 967,
-     "measured paint": 4,
-     "lane graph": 135,
-     "road meshes + carve": 3958,
-     "paint decal": 21
+     "surfaces + width fit": 255,
+     "buildRoadNetwork": 202,
+     "measured paint": 1,
+     "lane graph": 29,
+     "road meshes + carve": 882,
+     "paint decal": 6
     },
     "widthFit": {
      "fitted": 15,
@@ -12910,10 +12910,10 @@
        "normalJump": 108
       },
       "concrete": {
-       "tris": 78575,
-       "sliver": 4629,
-       "tjunction": 13062,
-       "step": 188,
+       "tris": 64297,
+       "sliver": 3656,
+       "tjunction": 9906,
+       "step": 140,
        "uvShear": 2,
        "normalJump": 0
       },
@@ -13061,13 +13061,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2907,
+     "warn": 2883,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1443,
-     "warn": 1642,
+     "error": 1441,
+     "warn": 1494,
      "review": 0,
      "info": 0
     },
@@ -13108,15 +13108,15 @@
     "roadsLeavingStreet": 14,
     "coplanarPairs": 1268,
     "coplanarAreaM2": 37.01,
-    "triangles": 100966,
-    "buildMs": 5651,
+    "triangles": 89236,
+    "buildMs": 1123,
     "times": {
-     "surfaces + width fit": 832,
-     "buildRoadNetwork": 845,
-     "measured paint": 4,
-     "lane graph": 82,
-     "road meshes + carve": 3873,
-     "paint decal": 16
+     "surfaces + width fit": 182,
+     "buildRoadNetwork": 195,
+     "measured paint": 2,
+     "lane graph": 20,
+     "road meshes + carve": 718,
+     "paint decal": 6
     },
     "widthFit": {
      "fitted": 21,
@@ -13159,10 +13159,10 @@
        "normalJump": 233
       },
       "concrete": {
-       "tris": 70779,
-       "sliver": 4153,
-       "tjunction": 9992,
-       "step": 146,
+       "tris": 59060,
+       "sliver": 3408,
+       "tjunction": 7501,
+       "step": 105,
        "uvShear": 2,
        "normalJump": 1
       },
@@ -13318,13 +13318,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3196,
+     "warn": 3140,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1410,
-     "warn": 1798,
+     "error": 1404,
+     "warn": 1668,
      "review": 0,
      "info": 0
     },
@@ -13365,15 +13365,15 @@
     "roadsLeavingStreet": 9,
     "coplanarPairs": 840,
     "coplanarAreaM2": 8.26,
-    "triangles": 103761,
-    "buildMs": 4892,
+    "triangles": 88998,
+    "buildMs": 1134,
     "times": {
-     "surfaces + width fit": 1101,
-     "buildRoadNetwork": 525,
-     "measured paint": 4,
-     "lane graph": 105,
-     "road meshes + carve": 3144,
-     "paint decal": 13
+     "surfaces + width fit": 235,
+     "buildRoadNetwork": 110,
+     "measured paint": 1,
+     "lane graph": 25,
+     "road meshes + carve": 759,
+     "paint decal": 4
     },
     "widthFit": {
      "fitted": 13,
@@ -13417,11 +13417,11 @@
        "normalJump": 126
       },
       "concrete": {
-       "tris": 75798,
-       "sliver": 5118,
-       "tjunction": 12194,
-       "step": 197,
-       "uvShear": 19,
+       "tris": 61035,
+       "sliver": 4056,
+       "tjunction": 9149,
+       "step": 141,
+       "uvShear": 17,
        "normalJump": 0
       },
       "grass": {
@@ -13576,13 +13576,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2509,
+     "warn": 2455,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1108,
-     "warn": 1699,
+     "error": 1097,
+     "warn": 1520,
      "review": 0,
      "info": 0
     },
@@ -13623,15 +13623,15 @@
     "roadsLeavingStreet": 12,
     "coplanarPairs": 95,
     "coplanarAreaM2": 2.14,
-    "triangles": 93424,
-    "buildMs": 5095,
+    "triangles": 80108,
+    "buildMs": 1051,
     "times": {
-     "surfaces + width fit": 885,
-     "buildRoadNetwork": 663,
-     "measured paint": 8,
-     "lane graph": 85,
-     "road meshes + carve": 3427,
-     "paint decal": 27
+     "surfaces + width fit": 207,
+     "buildRoadNetwork": 147,
+     "measured paint": 1,
+     "lane graph": 19,
+     "road meshes + carve": 669,
+     "paint decal": 8
     },
     "widthFit": {
      "fitted": 9,
@@ -13675,10 +13675,10 @@
        "normalJump": 62
       },
       "concrete": {
-       "tris": 67575,
-       "sliver": 3834,
-       "tjunction": 10226,
-       "step": 188,
+       "tris": 54260,
+       "sliver": 2937,
+       "tjunction": 7641,
+       "step": 143,
        "uvShear": 1,
        "normalJump": 0
       },
@@ -13834,13 +13834,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 4046,
+     "warn": 3985,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1975,
-     "warn": 2961,
+     "error": 1973,
+     "warn": 2726,
      "review": 0,
      "info": 0
     },
@@ -13881,15 +13881,15 @@
     "roadsLeavingStreet": 8,
     "coplanarPairs": 1350,
     "coplanarAreaM2": 39.79,
-    "triangles": 143190,
-    "buildMs": 6398,
+    "triangles": 123464,
+    "buildMs": 1530,
     "times": {
-     "surfaces + width fit": 1300,
-     "buildRoadNetwork": 583,
-     "measured paint": 6,
-     "lane graph": 81,
-     "road meshes + carve": 4411,
-     "paint decal": 16
+     "surfaces + width fit": 352,
+     "buildRoadNetwork": 149,
+     "measured paint": 2,
+     "lane graph": 25,
+     "road meshes + carve": 996,
+     "paint decal": 6
     },
     "widthFit": {
      "fitted": 27,
@@ -13931,10 +13931,10 @@
        "normalJump": 0
       },
       "concrete": {
-       "tris": 101100,
-       "sliver": 7130,
-       "tjunction": 17658,
-       "step": 190,
+       "tris": 81388,
+       "sliver": 5531,
+       "tjunction": 13369,
+       "step": 141,
        "uvShear": 5,
        "normalJump": 0
       },
@@ -14090,13 +14090,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2069,
+     "warn": 2027,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 957,
-     "warn": 1182,
+     "error": 945,
+     "warn": 1115,
      "review": 0,
      "info": 0
     },
@@ -14137,15 +14137,15 @@
     "roadsLeavingStreet": 5,
     "coplanarPairs": 97,
     "coplanarAreaM2": 37.58,
-    "triangles": 75869,
-    "buildMs": 3124,
+    "triangles": 66541,
+    "buildMs": 785,
     "times": {
-     "surfaces + width fit": 435,
-     "buildRoadNetwork": 312,
-     "measured paint": 19,
-     "lane graph": 104,
-     "road meshes + carve": 2220,
-     "paint decal": 35
+     "surfaces + width fit": 114,
+     "buildRoadNetwork": 84,
+     "measured paint": 2,
+     "lane graph": 24,
+     "road meshes + carve": 549,
+     "paint decal": 10
     },
     "widthFit": {
      "fitted": 13,
@@ -14188,10 +14188,10 @@
        "normalJump": 157
       },
       "concrete": {
-       "tris": 54442,
-       "sliver": 2884,
-       "tjunction": 9744,
-       "step": 119,
+       "tris": 45116,
+       "sliver": 2322,
+       "tjunction": 7678,
+       "step": 92,
        "uvShear": 0,
        "normalJump": 1
       },
@@ -14347,13 +14347,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1173,
+     "warn": 1148,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 772,
-     "warn": 975,
+     "error": 767,
+     "warn": 957,
      "review": 0,
      "info": 0
     },
@@ -14394,15 +14394,15 @@
     "roadsLeavingStreet": 5,
     "coplanarPairs": 114,
     "coplanarAreaM2": 2.27,
-    "triangles": 44826,
-    "buildMs": 1925,
+    "triangles": 41988,
+    "buildMs": 472,
     "times": {
-     "surfaces + width fit": 283,
-     "buildRoadNetwork": 177,
-     "measured paint": 1,
-     "lane graph": 44,
-     "road meshes + carve": 1405,
-     "paint decal": 14
+     "surfaces + width fit": 68,
+     "buildRoadNetwork": 42,
+     "measured paint": 0,
+     "lane graph": 13,
+     "road meshes + carve": 346,
+     "paint decal": 3
     },
     "widthFit": {
      "fitted": 6,
@@ -14444,10 +14444,10 @@
        "normalJump": 119
       },
       "concrete": {
-       "tris": 27166,
-       "sliver": 1008,
-       "tjunction": 3435,
-       "step": 52,
+       "tris": 24328,
+       "sliver": 853,
+       "tjunction": 2779,
+       "step": 47,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -14643,14 +14643,14 @@
     "coplanarPairs": 5,
     "coplanarAreaM2": 0,
     "triangles": 11671,
-    "buildMs": 615,
+    "buildMs": 136,
     "times": {
-     "surfaces + width fit": 144,
-     "buildRoadNetwork": 36,
-     "measured paint": 1,
-     "lane graph": 20,
-     "road meshes + carve": 404,
-     "paint decal": 10
+     "surfaces + width fit": 33,
+     "buildRoadNetwork": 8,
+     "measured paint": 0,
+     "lane graph": 6,
+     "road meshes + carve": 87,
+     "paint decal": 3
     },
     "widthFit": {
      "fitted": 2,
@@ -14880,13 +14880,13 @@
     "coplanarPairs": 0,
     "coplanarAreaM2": 0,
     "triangles": 3714,
-    "buildMs": 231,
+    "buildMs": 42,
     "times": {
-     "surfaces + width fit": 83,
-     "buildRoadNetwork": 10,
+     "surfaces + width fit": 16,
+     "buildRoadNetwork": 2,
      "measured paint": 0,
-     "lane graph": 4,
-     "road meshes + carve": 134,
+     "lane graph": 2,
+     "road meshes + carve": 22,
      "paint decal": 0
     },
     "widthFit": {
@@ -15061,13 +15061,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1064,
+     "warn": 1062,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 271,
-     "warn": 288,
+     "error": 278,
+     "warn": 249,
      "review": 0,
      "info": 0
     },
@@ -15108,14 +15108,14 @@
     "roadsLeavingStreet": 3,
     "coplanarPairs": 6,
     "coplanarAreaM2": 0,
-    "triangles": 29399,
-    "buildMs": 1950,
+    "triangles": 27147,
+    "buildMs": 452,
     "times": {
-     "surfaces + width fit": 415,
-     "buildRoadNetwork": 115,
+     "surfaces + width fit": 119,
+     "buildRoadNetwork": 30,
      "measured paint": 0,
-     "lane graph": 36,
-     "road meshes + carve": 1384,
+     "lane graph": 10,
+     "road meshes + carve": 293,
      "paint decal": 0
     },
     "widthFit": {
@@ -15158,10 +15158,10 @@
        "normalJump": 0
       },
       "concrete": {
-       "tris": 19537,
-       "sliver": 1081,
-       "tjunction": 1788,
-       "step": 12,
+       "tris": 17285,
+       "sliver": 874,
+       "tjunction": 1346,
+       "step": 11,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -15301,13 +15301,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3321,
+     "warn": 3294,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 485,
-     "warn": 857,
+     "error": 491,
+     "warn": 738,
      "review": 0,
      "info": 0
     },
@@ -15348,14 +15348,14 @@
     "roadsLeavingStreet": 6,
     "coplanarPairs": 548,
     "coplanarAreaM2": 60.03,
-    "triangles": 66547,
-    "buildMs": 3719,
+    "triangles": 61270,
+    "buildMs": 964,
     "times": {
-     "surfaces + width fit": 574,
-     "buildRoadNetwork": 541,
+     "surfaces + width fit": 126,
+     "buildRoadNetwork": 134,
      "measured paint": 0,
-     "lane graph": 61,
-     "road meshes + carve": 2541,
+     "lane graph": 18,
+     "road meshes + carve": 686,
      "paint decal": 0
     },
     "widthFit": {
@@ -15399,10 +15399,10 @@
        "normalJump": 462
       },
       "concrete": {
-       "tris": 50027,
-       "sliver": 4874,
-       "tjunction": 3446,
-       "step": 19,
+       "tris": 44750,
+       "sliver": 4425,
+       "tjunction": 2457,
+       "step": 14,
        "uvShear": 2,
        "normalJump": 2
       },
@@ -15550,13 +15550,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 4144,
+     "warn": 4064,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1272,
-     "warn": 3088,
+     "error": 1296,
+     "warn": 2727,
      "review": 0,
      "info": 0
     },
@@ -15597,15 +15597,15 @@
     "roadsLeavingStreet": 19,
     "coplanarPairs": 329,
     "coplanarAreaM2": 14.9,
-    "triangles": 128203,
-    "buildMs": 5492,
+    "triangles": 111028,
+    "buildMs": 1498,
     "times": {
-     "surfaces + width fit": 1239,
-     "buildRoadNetwork": 582,
-     "measured paint": 3,
-     "lane graph": 71,
-     "road meshes + carve": 3568,
-     "paint decal": 29
+     "surfaces + width fit": 318,
+     "buildRoadNetwork": 187,
+     "measured paint": 1,
+     "lane graph": 19,
+     "road meshes + carve": 962,
+     "paint decal": 10
     },
     "widthFit": {
      "fitted": 21,
@@ -15648,10 +15648,10 @@
        "normalJump": 134
       },
       "concrete": {
-       "tris": 90532,
-       "sliver": 6828,
-       "tjunction": 12039,
-       "step": 66,
+       "tris": 73357,
+       "sliver": 5322,
+       "tjunction": 8520,
+       "step": 49,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -15799,13 +15799,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3744,
+     "warn": 3676,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1148,
-     "warn": 1819,
+     "error": 1152,
+     "warn": 1639,
      "review": 0,
      "info": 0
     },
@@ -15846,15 +15846,15 @@
     "roadsLeavingStreet": 15,
     "coplanarPairs": 7527,
     "coplanarAreaM2": 426.46,
-    "triangles": 117141,
-    "buildMs": 6491,
+    "triangles": 107063,
+    "buildMs": 2373,
     "times": {
-     "surfaces + width fit": 729,
-     "buildRoadNetwork": 847,
-     "measured paint": 39,
-     "lane graph": 91,
-     "road meshes + carve": 4706,
-     "paint decal": 79
+     "surfaces + width fit": 340,
+     "buildRoadNetwork": 396,
+     "measured paint": 18,
+     "lane graph": 47,
+     "road meshes + carve": 1533,
+     "paint decal": 39
     },
     "widthFit": {
      "fitted": 15,
@@ -15897,10 +15897,10 @@
        "normalJump": 278
       },
       "concrete": {
-       "tris": 68182,
-       "sliver": 4232,
-       "tjunction": 8678,
-       "step": 102,
+       "tris": 58104,
+       "sliver": 3512,
+       "tjunction": 6431,
+       "step": 75,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -16048,13 +16048,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2477,
+     "warn": 2434,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1215,
-     "warn": 1357,
+     "error": 1212,
+     "warn": 1275,
      "review": 0,
      "info": 0
     },
@@ -16095,15 +16095,15 @@
     "roadsLeavingStreet": 14,
     "coplanarPairs": 2464,
     "coplanarAreaM2": 262.91,
-    "triangles": 90625,
-    "buildMs": 4144,
+    "triangles": 78085,
+    "buildMs": 1202,
     "times": {
-     "surfaces + width fit": 609,
-     "buildRoadNetwork": 636,
-     "measured paint": 1,
-     "lane graph": 78,
-     "road meshes + carve": 2808,
-     "paint decal": 11
+     "surfaces + width fit": 169,
+     "buildRoadNetwork": 180,
+     "measured paint": 0,
+     "lane graph": 29,
+     "road meshes + carve": 820,
+     "paint decal": 4
     },
     "widthFit": {
      "fitted": 10,
@@ -16147,10 +16147,10 @@
        "normalJump": 21
       },
       "concrete": {
-       "tris": 67076,
-       "sliver": 4020,
-       "tjunction": 13082,
-       "step": 87,
+       "tris": 54527,
+       "sliver": 3213,
+       "tjunction": 10527,
+       "step": 67,
        "uvShear": 3,
        "normalJump": 0
       },
@@ -16298,13 +16298,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1963,
+     "warn": 1956,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 933,
-     "warn": 940,
+     "error": 944,
+     "warn": 852,
      "review": 0,
      "info": 0
     },
@@ -16345,15 +16345,15 @@
     "roadsLeavingStreet": 9,
     "coplanarPairs": 15,
     "coplanarAreaM2": 2.21,
-    "triangles": 54565,
-    "buildMs": 3178,
+    "triangles": 50133,
+    "buildMs": 729,
     "times": {
-     "surfaces + width fit": 461,
-     "buildRoadNetwork": 422,
-     "measured paint": 2,
-     "lane graph": 75,
-     "road meshes + carve": 2205,
-     "paint decal": 13
+     "surfaces + width fit": 119,
+     "buildRoadNetwork": 104,
+     "measured paint": 0,
+     "lane graph": 21,
+     "road meshes + carve": 480,
+     "paint decal": 5
     },
     "widthFit": {
      "fitted": 15,
@@ -16396,10 +16396,10 @@
        "normalJump": 135
       },
       "concrete": {
-       "tris": 33447,
-       "sliver": 1735,
-       "tjunction": 2989,
-       "step": 49,
+       "tris": 29015,
+       "sliver": 1453,
+       "tjunction": 2228,
+       "step": 41,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -16555,13 +16555,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1025,
+     "warn": 1026,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 620,
-     "warn": 518,
+     "error": 612,
+     "warn": 476,
      "review": 0,
      "info": 0
     },
@@ -16602,14 +16602,14 @@
     "roadsLeavingStreet": 4,
     "coplanarPairs": 9,
     "coplanarAreaM2": 1.37,
-    "triangles": 30814,
-    "buildMs": 1895,
+    "triangles": 28266,
+    "buildMs": 397,
     "times": {
-     "surfaces + width fit": 444,
-     "buildRoadNetwork": 95,
+     "surfaces + width fit": 83,
+     "buildRoadNetwork": 22,
      "measured paint": 0,
-     "lane graph": 57,
-     "road meshes + carve": 1299,
+     "lane graph": 14,
+     "road meshes + carve": 279,
      "paint decal": 0
     },
     "widthFit": {
@@ -16651,10 +16651,10 @@
        "normalJump": 9
       },
       "concrete": {
-       "tris": 17948,
-       "sliver": 992,
-       "tjunction": 1795,
-       "step": 152,
+       "tris": 15400,
+       "sliver": 775,
+       "tjunction": 1271,
+       "step": 107,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -16794,13 +16794,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2160,
+     "warn": 2121,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1084,
-     "warn": 1524,
+     "error": 1082,
+     "warn": 1397,
      "review": 0,
      "info": 0
     },
@@ -16841,15 +16841,15 @@
     "roadsLeavingStreet": 10,
     "coplanarPairs": 27,
     "coplanarAreaM2": 1.52,
-    "triangles": 80958,
-    "buildMs": 3659,
+    "triangles": 69348,
+    "buildMs": 831,
     "times": {
-     "surfaces + width fit": 834,
-     "buildRoadNetwork": 145,
-     "measured paint": 1,
-     "lane graph": 40,
-     "road meshes + carve": 2620,
-     "paint decal": 19
+     "surfaces + width fit": 195,
+     "buildRoadNetwork": 34,
+     "measured paint": 0,
+     "lane graph": 12,
+     "road meshes + carve": 585,
+     "paint decal": 5
     },
     "widthFit": {
      "fitted": 12,
@@ -16891,10 +16891,10 @@
        "normalJump": 0
       },
       "concrete": {
-       "tris": 59541,
-       "sliver": 4048,
-       "tjunction": 9932,
-       "step": 173,
+       "tris": 47931,
+       "sliver": 3182,
+       "tjunction": 7607,
+       "step": 149,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -17050,13 +17050,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1943,
+     "warn": 1915,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 916,
-     "warn": 1202,
+     "error": 910,
+     "warn": 1115,
      "review": 0,
      "info": 0
     },
@@ -17097,14 +17097,14 @@
     "roadsLeavingStreet": 8,
     "coplanarPairs": 9,
     "coplanarAreaM2": 0,
-    "triangles": 69309,
-    "buildMs": 3780,
+    "triangles": 61198,
+    "buildMs": 911,
     "times": {
-     "surfaces + width fit": 737,
-     "buildRoadNetwork": 336,
+     "surfaces + width fit": 191,
+     "buildRoadNetwork": 89,
      "measured paint": 0,
-     "lane graph": 49,
-     "road meshes + carve": 2659,
+     "lane graph": 17,
+     "road meshes + carve": 614,
      "paint decal": 0
     },
     "widthFit": {
@@ -17147,10 +17147,10 @@
        "normalJump": 291
       },
       "concrete": {
-       "tris": 49815,
-       "sliver": 3241,
-       "tjunction": 7497,
-       "step": 118,
+       "tris": 41709,
+       "sliver": 2615,
+       "tjunction": 5751,
+       "step": 100,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -17298,13 +17298,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 4067,
+     "warn": 4019,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 2095,
-     "warn": 2691,
+     "error": 2092,
+     "warn": 2502,
      "review": 0,
      "info": 0
     },
@@ -17345,15 +17345,15 @@
     "roadsLeavingStreet": 14,
     "coplanarPairs": 370,
     "coplanarAreaM2": 22.51,
-    "triangles": 159827,
-    "buildMs": 6629,
+    "triangles": 137355,
+    "buildMs": 1531,
     "times": {
-     "surfaces + width fit": 1218,
-     "buildRoadNetwork": 312,
-     "measured paint": 61,
-     "lane graph": 109,
-     "road meshes + carve": 4858,
-     "paint decal": 72
+     "surfaces + width fit": 273,
+     "buildRoadNetwork": 71,
+     "measured paint": 8,
+     "lane graph": 20,
+     "road meshes + carve": 1136,
+     "paint decal": 23
     },
     "widthFit": {
      "fitted": 24,
@@ -17396,10 +17396,10 @@
        "normalJump": 5
       },
       "concrete": {
-       "tris": 113717,
-       "sliver": 7208,
-       "tjunction": 21430,
-       "step": 178,
+       "tris": 91245,
+       "sliver": 5621,
+       "tjunction": 16416,
+       "step": 134,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -17547,13 +17547,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1221,
+     "warn": 1204,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 502,
-     "warn": 566,
+     "error": 512,
+     "warn": 509,
      "review": 0,
      "info": 0
     },
@@ -17594,15 +17594,15 @@
     "roadsLeavingStreet": 4,
     "coplanarPairs": 25,
     "coplanarAreaM2": 0,
-    "triangles": 41710,
-    "buildMs": 2664,
+    "triangles": 37058,
+    "buildMs": 628,
     "times": {
-     "surfaces + width fit": 295,
-     "buildRoadNetwork": 374,
-     "measured paint": 1,
-     "lane graph": 70,
-     "road meshes + carve": 1893,
-     "paint decal": 30
+     "surfaces + width fit": 74,
+     "buildRoadNetwork": 96,
+     "measured paint": 0,
+     "lane graph": 18,
+     "road meshes + carve": 437,
+     "paint decal": 3
     },
     "widthFit": {
      "fitted": 6,
@@ -17643,10 +17643,10 @@
        "normalJump": 52
       },
       "concrete": {
-       "tris": 28975,
-       "sliver": 1621,
-       "tjunction": 4190,
-       "step": 37,
+       "tris": 24331,
+       "sliver": 1327,
+       "tjunction": 3184,
+       "step": 33,
        "uvShear": 1,
        "normalJump": 0
       },
@@ -17786,13 +17786,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1051,
+     "warn": 1047,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 534,
-     "warn": 1260,
+     "error": 540,
+     "warn": 1171,
      "review": 0,
      "info": 0
     },
@@ -17833,15 +17833,15 @@
     "roadsLeavingStreet": 2,
     "coplanarPairs": 19,
     "coplanarAreaM2": 0,
-    "triangles": 42078,
-    "buildMs": 2129,
+    "triangles": 37835,
+    "buildMs": 460,
     "times": {
-     "surfaces + width fit": 336,
-     "buildRoadNetwork": 138,
-     "measured paint": 2,
-     "lane graph": 33,
-     "road meshes + carve": 1605,
-     "paint decal": 14
+     "surfaces + width fit": 95,
+     "buildRoadNetwork": 34,
+     "measured paint": 0,
+     "lane graph": 9,
+     "road meshes + carve": 317,
+     "paint decal": 4
     },
     "widthFit": {
      "fitted": 5,
@@ -17883,10 +17883,10 @@
        "normalJump": 9
       },
       "concrete": {
-       "tris": 24814,
-       "sliver": 972,
-       "tjunction": 2979,
-       "step": 6,
+       "tris": 20571,
+       "sliver": 712,
+       "tjunction": 2300,
+       "step": 7,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -18082,13 +18082,13 @@
     "coplanarPairs": 0,
     "coplanarAreaM2": 0,
     "triangles": 9833,
-    "buildMs": 287,
+    "buildMs": 76,
     "times": {
-     "surfaces + width fit": 145,
+     "surfaces + width fit": 45,
      "buildRoadNetwork": 0,
      "measured paint": 0,
      "lane graph": 0,
-     "road meshes + carve": 142,
+     "road meshes + carve": 32,
      "paint decal": 0
     },
     "widthFit": {
@@ -18311,13 +18311,13 @@
     "coplanarPairs": 0,
     "coplanarAreaM2": 0,
     "triangles": 6937,
-    "buildMs": 241,
+    "buildMs": 57,
     "times": {
-     "surfaces + width fit": 146,
+     "surfaces + width fit": 37,
      "buildRoadNetwork": 0,
      "measured paint": 0,
      "lane graph": 0,
-     "road meshes + carve": 95,
+     "road meshes + carve": 21,
      "paint decal": 0
     },
     "widthFit": {
@@ -18492,13 +18492,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2126,
+     "warn": 2125,
      "review": 0,
      "info": 0
     },
     "C18": {
      "error": 58,
-     "warn": 186,
+     "warn": 185,
      "review": 0,
      "info": 0
     },
@@ -18539,14 +18539,14 @@
     "roadsLeavingStreet": 0,
     "coplanarPairs": 139,
     "coplanarAreaM2": 9.18,
-    "triangles": 24981,
-    "buildMs": 2488,
+    "triangles": 24897,
+    "buildMs": 639,
     "times": {
-     "surfaces + width fit": 90,
-     "buildRoadNetwork": 483,
+     "surfaces + width fit": 22,
+     "buildRoadNetwork": 115,
      "measured paint": 0,
-     "lane graph": 43,
-     "road meshes + carve": 1871,
+     "lane graph": 13,
+     "road meshes + carve": 489,
      "paint decal": 0
     },
     "widthFit": {
@@ -18589,9 +18589,9 @@
        "normalJump": 322
       },
       "concrete": {
-       "tris": 18051,
-       "sliver": 2668,
-       "tjunction": 50,
+       "tris": 17967,
+       "sliver": 2663,
+       "tjunction": 44,
        "step": 9,
        "uvShear": 0,
        "normalJump": 2
@@ -18724,13 +18724,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3164,
+     "warn": 3114,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1211,
-     "warn": 1670,
+     "error": 1218,
+     "warn": 1538,
      "review": 0,
      "info": 0
     },
@@ -18771,15 +18771,15 @@
     "roadsLeavingStreet": 7,
     "coplanarPairs": 648,
     "coplanarAreaM2": 12.07,
-    "triangles": 105274,
-    "buildMs": 5503,
+    "triangles": 93843,
+    "buildMs": 1360,
     "times": {
-     "surfaces + width fit": 848,
-     "buildRoadNetwork": 865,
-     "measured paint": 15,
-     "lane graph": 80,
-     "road meshes + carve": 3652,
-     "paint decal": 43
+     "surfaces + width fit": 214,
+     "buildRoadNetwork": 220,
+     "measured paint": 3,
+     "lane graph": 23,
+     "road meshes + carve": 887,
+     "paint decal": 13
     },
     "widthFit": {
      "fitted": 20,
@@ -18822,10 +18822,10 @@
        "normalJump": 340
       },
       "concrete": {
-       "tris": 72834,
-       "sliver": 4392,
-       "tjunction": 9954,
-       "step": 87,
+       "tris": 61404,
+       "sliver": 3685,
+       "tjunction": 7512,
+       "step": 71,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -18973,13 +18973,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3488,
+     "warn": 3437,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1504,
-     "warn": 1862,
+     "error": 1499,
+     "warn": 1727,
      "review": 0,
      "info": 0
     },
@@ -19020,15 +19020,15 @@
     "roadsLeavingStreet": 13,
     "coplanarPairs": 422,
     "coplanarAreaM2": 10.65,
-    "triangles": 114448,
-    "buildMs": 4623,
+    "triangles": 102996,
+    "buildMs": 1189,
     "times": {
-     "surfaces + width fit": 1047,
-     "buildRoadNetwork": 304,
-     "measured paint": 5,
-     "lane graph": 85,
-     "road meshes + carve": 3157,
-     "paint decal": 26
+     "surfaces + width fit": 293,
+     "buildRoadNetwork": 75,
+     "measured paint": 1,
+     "lane graph": 21,
+     "road meshes + carve": 793,
+     "paint decal": 6
     },
     "widthFit": {
      "fitted": 27,
@@ -19071,10 +19071,10 @@
        "normalJump": 91
       },
       "concrete": {
-       "tris": 75861,
-       "sliver": 3657,
-       "tjunction": 9050,
-       "step": 103,
+       "tris": 64409,
+       "sliver": 2896,
+       "tjunction": 6710,
+       "step": 75,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -19222,13 +19222,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2692,
+     "warn": 2671,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1028,
-     "warn": 1749,
+     "error": 1016,
+     "warn": 1569,
      "review": 0,
      "info": 0
     },
@@ -19269,15 +19269,15 @@
     "roadsLeavingStreet": 9,
     "coplanarPairs": 96,
     "coplanarAreaM2": 3.21,
-    "triangles": 85429,
-    "buildMs": 4592,
+    "triangles": 74857,
+    "buildMs": 987,
     "times": {
-     "surfaces + width fit": 898,
-     "buildRoadNetwork": 589,
-     "measured paint": 1,
-     "lane graph": 88,
-     "road meshes + carve": 3001,
-     "paint decal": 14
+     "surfaces + width fit": 221,
+     "buildRoadNetwork": 144,
+     "measured paint": 0,
+     "lane graph": 16,
+     "road meshes + carve": 602,
+     "paint decal": 4
     },
     "widthFit": {
      "fitted": 9,
@@ -19320,10 +19320,10 @@
        "normalJump": 44
       },
       "concrete": {
-       "tris": 60739,
-       "sliver": 4572,
-       "tjunction": 8446,
-       "step": 139,
+       "tris": 50167,
+       "sliver": 3595,
+       "tjunction": 6050,
+       "step": 95,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -19479,13 +19479,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2456,
+     "warn": 2417,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 831,
-     "warn": 1588,
+     "error": 837,
+     "warn": 1346,
      "review": 0,
      "info": 0
     },
@@ -19526,15 +19526,15 @@
     "roadsLeavingStreet": 13,
     "coplanarPairs": 105,
     "coplanarAreaM2": 12.12,
-    "triangles": 73800,
-    "buildMs": 4175,
+    "triangles": 63638,
+    "buildMs": 1041,
     "times": {
-     "surfaces + width fit": 630,
-     "buildRoadNetwork": 567,
-     "measured paint": 2,
-     "lane graph": 142,
-     "road meshes + carve": 2821,
-     "paint decal": 13
+     "surfaces + width fit": 158,
+     "buildRoadNetwork": 127,
+     "measured paint": 0,
+     "lane graph": 23,
+     "road meshes + carve": 728,
+     "paint decal": 6
     },
     "widthFit": {
      "fitted": 16,
@@ -19577,10 +19577,10 @@
        "normalJump": 131
       },
       "concrete": {
-       "tris": 51600,
-       "sliver": 3555,
-       "tjunction": 5799,
-       "step": 82,
+       "tris": 41439,
+       "sliver": 2715,
+       "tjunction": 3916,
+       "step": 64,
        "uvShear": 1,
        "normalJump": 2
       },
@@ -19736,13 +19736,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1387,
+     "warn": 1388,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 810,
-     "warn": 354,
+     "error": 807,
+     "warn": 358,
      "review": 0,
      "info": 0
     },
@@ -19783,15 +19783,15 @@
     "roadsLeavingStreet": 6,
     "coplanarPairs": 122,
     "coplanarAreaM2": 5.38,
-    "triangles": 30026,
-    "buildMs": 1995,
+    "triangles": 29144,
+    "buildMs": 534,
     "times": {
-     "surfaces + width fit": 175,
-     "buildRoadNetwork": 329,
+     "surfaces + width fit": 59,
+     "buildRoadNetwork": 99,
      "measured paint": 0,
-     "lane graph": 81,
-     "road meshes + carve": 1396,
-     "paint decal": 14
+     "lane graph": 28,
+     "road meshes + carve": 346,
+     "paint decal": 2
     },
     "widthFit": {
      "fitted": 16,
@@ -19833,10 +19833,10 @@
        "normalJump": 148
       },
       "concrete": {
-       "tris": 16563,
-       "sliver": 989,
-       "tjunction": 1117,
-       "step": 16,
+       "tris": 15681,
+       "sliver": 968,
+       "tjunction": 882,
+       "step": 14,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -19976,13 +19976,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1843,
+     "warn": 1829,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1067,
-     "warn": 1499,
+     "error": 1060,
+     "warn": 1416,
      "review": 0,
      "info": 0
     },
@@ -20023,15 +20023,15 @@
     "roadsLeavingStreet": 6,
     "coplanarPairs": 571,
     "coplanarAreaM2": 70.87,
-    "triangles": 73557,
-    "buildMs": 3163,
+    "triangles": 65359,
+    "buildMs": 1028,
     "times": {
-     "surfaces + width fit": 683,
-     "buildRoadNetwork": 201,
-     "measured paint": 4,
-     "lane graph": 94,
-     "road meshes + carve": 2161,
-     "paint decal": 20
+     "surfaces + width fit": 216,
+     "buildRoadNetwork": 62,
+     "measured paint": 1,
+     "lane graph": 26,
+     "road meshes + carve": 716,
+     "paint decal": 7
     },
     "widthFit": {
      "fitted": 10,
@@ -20074,10 +20074,10 @@
        "normalJump": 0
       },
       "concrete": {
-       "tris": 48990,
-       "sliver": 2421,
-       "tjunction": 8358,
-       "step": 79,
+       "tris": 40792,
+       "sliver": 1926,
+       "tjunction": 6451,
+       "step": 68,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -20225,13 +20225,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2007,
+     "warn": 1988,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 738,
-     "warn": 1114,
+     "error": 734,
+     "warn": 981,
      "review": 0,
      "info": 0
     },
@@ -20272,14 +20272,14 @@
     "roadsLeavingStreet": 4,
     "coplanarPairs": 5785,
     "coplanarAreaM2": 575.13,
-    "triangles": 70311,
-    "buildMs": 3509,
+    "triangles": 63229,
+    "buildMs": 1109,
     "times": {
-     "surfaces + width fit": 691,
-     "buildRoadNetwork": 207,
+     "surfaces + width fit": 250,
+     "buildRoadNetwork": 69,
      "measured paint": 0,
-     "lane graph": 64,
-     "road meshes + carve": 2547,
+     "lane graph": 22,
+     "road meshes + carve": 767,
      "paint decal": 0
     },
     "widthFit": {
@@ -20322,10 +20322,10 @@
        "normalJump": 0
       },
       "concrete": {
-       "tris": 45184,
-       "sliver": 2317,
-       "tjunction": 5695,
-       "step": 51,
+       "tris": 38102,
+       "sliver": 1877,
+       "tjunction": 4306,
+       "step": 39,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -20473,13 +20473,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1661,
+     "warn": 1618,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1158,
-     "warn": 1333,
+     "error": 1161,
+     "warn": 1317,
      "review": 0,
      "info": 0
     },
@@ -20520,15 +20520,15 @@
     "roadsLeavingStreet": 4,
     "coplanarPairs": 75,
     "coplanarAreaM2": 1.67,
-    "triangles": 69300,
-    "buildMs": 2938,
+    "triangles": 60940,
+    "buildMs": 967,
     "times": {
-     "surfaces + width fit": 512,
-     "buildRoadNetwork": 139,
-     "measured paint": 2,
-     "lane graph": 65,
-     "road meshes + carve": 2205,
-     "paint decal": 15
+     "surfaces + width fit": 205,
+     "buildRoadNetwork": 62,
+     "measured paint": 1,
+     "lane graph": 20,
+     "road meshes + carve": 675,
+     "paint decal": 4
     },
     "widthFit": {
      "fitted": 9,
@@ -20568,10 +20568,10 @@
        "normalJump": 0
       },
       "concrete": {
-       "tris": 47565,
-       "sliver": 2559,
-       "tjunction": 9008,
-       "step": 43,
+       "tris": 39205,
+       "sliver": 1993,
+       "tjunction": 7135,
+       "step": 42,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -20719,13 +20719,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2356,
+     "warn": 2302,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1204,
-     "warn": 2310,
+     "error": 1203,
+     "warn": 1959,
      "review": 0,
      "info": 0
     },
@@ -20766,15 +20766,15 @@
     "roadsLeavingStreet": 7,
     "coplanarPairs": 140,
     "coplanarAreaM2": 0.82,
-    "triangles": 104655,
-    "buildMs": 4347,
+    "triangles": 84399,
+    "buildMs": 1504,
     "times": {
-     "surfaces + width fit": 857,
-     "buildRoadNetwork": 237,
-     "measured paint": 17,
-     "lane graph": 55,
-     "road meshes + carve": 3120,
-     "paint decal": 62
+     "surfaces + width fit": 291,
+     "buildRoadNetwork": 77,
+     "measured paint": 4,
+     "lane graph": 16,
+     "road meshes + carve": 1089,
+     "paint decal": 27
     },
     "widthFit": {
      "fitted": 13,
@@ -20816,11 +20816,11 @@
        "normalJump": 76
       },
       "concrete": {
-       "tris": 75184,
-       "sliver": 5718,
-       "tjunction": 12197,
-       "step": 86,
-       "uvShear": 48,
+       "tris": 54930,
+       "sliver": 4038,
+       "tjunction": 8827,
+       "step": 62,
+       "uvShear": 43,
        "normalJump": 0
       },
       "pits": {
@@ -20967,13 +20967,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 962,
+     "warn": 940,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 395,
-     "warn": 803,
+     "error": 392,
+     "warn": 799,
      "review": 0,
      "info": 0
     },
@@ -21014,15 +21014,15 @@
     "roadsLeavingStreet": 0,
     "coplanarPairs": 63,
     "coplanarAreaM2": 0.03,
-    "triangles": 28903,
-    "buildMs": 1414,
+    "triangles": 28021,
+    "buildMs": 320,
     "times": {
-     "surfaces + width fit": 209,
-     "buildRoadNetwork": 132,
-     "measured paint": 2,
-     "lane graph": 42,
-     "road meshes + carve": 1019,
-     "paint decal": 10
+     "surfaces + width fit": 50,
+     "buildRoadNetwork": 28,
+     "measured paint": 0,
+     "lane graph": 8,
+     "road meshes + carve": 229,
+     "paint decal": 4
     },
     "widthFit": {
      "fitted": 4,
@@ -21064,10 +21064,10 @@
        "normalJump": 165
       },
       "concrete": {
-       "tris": 17375,
-       "sliver": 795,
-       "tjunction": 1776,
-       "step": 11,
+       "tris": 16493,
+       "sliver": 746,
+       "tjunction": 1594,
+       "step": 9,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -21263,13 +21263,13 @@
     "coplanarPairs": 0,
     "coplanarAreaM2": 0,
     "triangles": 4995,
-    "buildMs": 191,
+    "buildMs": 43,
     "times": {
-     "surfaces + width fit": 88,
+     "surfaces + width fit": 21,
      "buildRoadNetwork": 0,
      "measured paint": 0,
      "lane graph": 0,
-     "road meshes + carve": 103,
+     "road meshes + carve": 22,
      "paint decal": 0
     },
     "widthFit": {
@@ -21492,13 +21492,13 @@
     "coplanarPairs": 0,
     "coplanarAreaM2": 0,
     "triangles": 5231,
-    "buildMs": 209,
+    "buildMs": 62,
     "times": {
-     "surfaces + width fit": 138,
+     "surfaces + width fit": 43,
      "buildRoadNetwork": 0,
      "measured paint": 0,
      "lane graph": 0,
-     "road meshes + carve": 70,
+     "road meshes + carve": 19,
      "paint decal": 0
     },
     "widthFit": {
@@ -21673,13 +21673,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2146,
+     "warn": 2134,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 203,
-     "warn": 316,
+     "error": 207,
+     "warn": 299,
      "review": 0,
      "info": 0
     },
@@ -21720,15 +21720,15 @@
     "roadsLeavingStreet": 3,
     "coplanarPairs": 97,
     "coplanarAreaM2": 4.47,
-    "triangles": 33053,
-    "buildMs": 2744,
+    "triangles": 31039,
+    "buildMs": 1139,
     "times": {
-     "surfaces + width fit": 259,
-     "buildRoadNetwork": 459,
-     "measured paint": 3,
-     "lane graph": 46,
-     "road meshes + carve": 1965,
-     "paint decal": 12
+     "surfaces + width fit": 59,
+     "buildRoadNetwork": 153,
+     "measured paint": 1,
+     "lane graph": 20,
+     "road meshes + carve": 900,
+     "paint decal": 6
     },
     "widthFit": {
      "fitted": 1,
@@ -21771,10 +21771,10 @@
        "normalJump": 291
       },
       "concrete": {
-       "tris": 22788,
-       "sliver": 2573,
-       "tjunction": 1642,
-       "step": 42,
+       "tris": 20774,
+       "sliver": 2438,
+       "tjunction": 1260,
+       "step": 36,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -21922,13 +21922,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1821,
+     "warn": 1801,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 680,
-     "warn": 881,
+     "error": 684,
+     "warn": 809,
      "review": 0,
      "info": 0
     },
@@ -21969,15 +21969,15 @@
     "roadsLeavingStreet": 5,
     "coplanarPairs": 247,
     "coplanarAreaM2": 5.66,
-    "triangles": 57484,
-    "buildMs": 2971,
+    "triangles": 51449,
+    "buildMs": 1225,
     "times": {
-     "surfaces + width fit": 442,
-     "buildRoadNetwork": 242,
-     "measured paint": 1,
-     "lane graph": 68,
-     "road meshes + carve": 2206,
-     "paint decal": 11
+     "surfaces + width fit": 416,
+     "buildRoadNetwork": 88,
+     "measured paint": 0,
+     "lane graph": 24,
+     "road meshes + carve": 694,
+     "paint decal": 4
     },
     "widthFit": {
      "fitted": 9,
@@ -22020,10 +22020,10 @@
        "normalJump": 65
       },
       "concrete": {
-       "tris": 39802,
-       "sliver": 2366,
-       "tjunction": 4889,
-       "step": 95,
+       "tris": 33767,
+       "sliver": 1978,
+       "tjunction": 3662,
+       "step": 72,
        "uvShear": 4,
        "normalJump": 0
       },
@@ -22171,13 +22171,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 3097,
+     "warn": 3044,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1089,
-     "warn": 2327,
+     "error": 1087,
+     "warn": 2141,
      "review": 0,
      "info": 0
     },
@@ -22218,15 +22218,15 @@
     "roadsLeavingStreet": 29,
     "coplanarPairs": 430,
     "coplanarAreaM2": 10.33,
-    "triangles": 97301,
-    "buildMs": 1449,
+    "triangles": 85557,
+    "buildMs": 1227,
     "times": {
-     "surfaces + width fit": 324,
-     "buildRoadNetwork": 104,
+     "surfaces + width fit": 264,
+     "buildRoadNetwork": 101,
      "measured paint": 1,
-     "lane graph": 15,
-     "road meshes + carve": 1000,
-     "paint decal": 4
+     "lane graph": 16,
+     "road meshes + carve": 841,
+     "paint decal": 5
     },
     "widthFit": {
      "fitted": 3,
@@ -22269,10 +22269,10 @@
        "normalJump": 79
       },
       "concrete": {
-       "tris": 66875,
-       "sliver": 5166,
-       "tjunction": 8438,
-       "step": 55,
+       "tris": 55131,
+       "sliver": 4129,
+       "tjunction": 5974,
+       "step": 38,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -22420,13 +22420,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 4489,
+     "warn": 4475,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1403,
-     "warn": 3039,
+     "error": 1421,
+     "warn": 2766,
      "review": 0,
      "info": 0
     },
@@ -22467,14 +22467,14 @@
     "roadsLeavingStreet": 15,
     "coplanarPairs": 2534,
     "coplanarAreaM2": 13.94,
-    "triangles": 127355,
-    "buildMs": 1759,
+    "triangles": 117065,
+    "buildMs": 1554,
     "times": {
-     "surfaces + width fit": 347,
-     "buildRoadNetwork": 196,
-     "measured paint": 1,
-     "lane graph": 31,
-     "road meshes + carve": 1179,
+     "surfaces + width fit": 341,
+     "buildRoadNetwork": 212,
+     "measured paint": 0,
+     "lane graph": 32,
+     "road meshes + carve": 962,
      "paint decal": 6
     },
     "widthFit": {
@@ -22518,10 +22518,10 @@
        "normalJump": 128
       },
       "concrete": {
-       "tris": 79758,
-       "sliver": 5727,
-       "tjunction": 7088,
-       "step": 221,
+       "tris": 69468,
+       "sliver": 4831,
+       "tjunction": 5070,
+       "step": 190,
        "uvShear": 10,
        "normalJump": 0
       },
@@ -22685,13 +22685,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2119,
+     "warn": 2104,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 644,
-     "warn": 760,
+     "error": 645,
+     "warn": 724,
      "review": 0,
      "info": 0
     },
@@ -22732,14 +22732,14 @@
     "roadsLeavingStreet": 5,
     "coplanarPairs": 498,
     "coplanarAreaM2": 12.66,
-    "triangles": 56301,
-    "buildMs": 770,
+    "triangles": 53031,
+    "buildMs": 789,
     "times": {
-     "surfaces + width fit": 139,
-     "buildRoadNetwork": 78,
+     "surfaces + width fit": 160,
+     "buildRoadNetwork": 76,
      "measured paint": 1,
      "lane graph": 23,
-     "road meshes + carve": 525,
+     "road meshes + carve": 526,
      "paint decal": 3
     },
     "widthFit": {
@@ -22783,10 +22783,10 @@
        "normalJump": 178
       },
       "concrete": {
-       "tris": 36802,
-       "sliver": 2412,
-       "tjunction": 3124,
-       "step": 49,
+       "tris": 33532,
+       "sliver": 2186,
+       "tjunction": 2388,
+       "step": 44,
        "uvShear": 0,
        "normalJump": 2
       },
@@ -22934,13 +22934,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1055,
+     "warn": 1033,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 564,
-     "warn": 778,
+     "error": 575,
+     "warn": 730,
      "review": 0,
      "info": 0
     },
@@ -22981,14 +22981,14 @@
     "roadsLeavingStreet": 4,
     "coplanarPairs": 162,
     "coplanarAreaM2": 1.54,
-    "triangles": 36664,
-    "buildMs": 533,
+    "triangles": 32815,
+    "buildMs": 643,
     "times": {
-     "surfaces + width fit": 113,
-     "buildRoadNetwork": 31,
+     "surfaces + width fit": 146,
+     "buildRoadNetwork": 50,
      "measured paint": 0,
-     "lane graph": 14,
-     "road meshes + carve": 372,
+     "lane graph": 18,
+     "road meshes + carve": 425,
      "paint decal": 3
     },
     "widthFit": {
@@ -23032,10 +23032,10 @@
        "normalJump": 0
       },
       "concrete": {
-       "tris": 24370,
-       "sliver": 1150,
-       "tjunction": 3816,
-       "step": 23,
+       "tris": 20521,
+       "sliver": 929,
+       "tjunction": 2971,
+       "step": 25,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -23183,13 +23183,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1367,
+     "warn": 1341,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 901,
-     "warn": 1121,
+     "error": 888,
+     "warn": 1079,
      "review": 0,
      "info": 0
     },
@@ -23230,15 +23230,15 @@
     "roadsLeavingStreet": 2,
     "coplanarPairs": 83,
     "coplanarAreaM2": 1.25,
-    "triangles": 52448,
-    "buildMs": 681,
+    "triangles": 47784,
+    "buildMs": 645,
     "times": {
-     "surfaces + width fit": 120,
-     "buildRoadNetwork": 47,
+     "surfaces + width fit": 131,
+     "buildRoadNetwork": 49,
      "measured paint": 1,
-     "lane graph": 17,
-     "road meshes + carve": 490,
-     "paint decal": 6
+     "lane graph": 19,
+     "road meshes + carve": 439,
+     "paint decal": 7
     },
     "widthFit": {
      "fitted": 11,
@@ -23278,10 +23278,10 @@
        "normalJump": 0
       },
       "concrete": {
-       "tris": 33662,
-       "sliver": 1428,
-       "tjunction": 5125,
-       "step": 52,
+       "tris": 28998,
+       "sliver": 1166,
+       "tjunction": 4111,
+       "step": 36,
        "uvShear": 3,
        "normalJump": 0
       },
@@ -23429,13 +23429,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1145,
+     "warn": 1116,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 829,
-     "warn": 1257,
+     "error": 830,
+     "warn": 1219,
      "review": 0,
      "info": 0
     },
@@ -23476,14 +23476,14 @@
     "roadsLeavingStreet": 2,
     "coplanarPairs": 46,
     "coplanarAreaM2": 1.53,
-    "triangles": 53348,
-    "buildMs": 649,
+    "triangles": 48188,
+    "buildMs": 540,
     "times": {
-     "surfaces + width fit": 128,
-     "buildRoadNetwork": 32,
+     "surfaces + width fit": 105,
+     "buildRoadNetwork": 26,
      "measured paint": 0,
-     "lane graph": 14,
-     "road meshes + carve": 470,
+     "lane graph": 13,
+     "road meshes + carve": 391,
      "paint decal": 5
     },
     "widthFit": {
@@ -23524,10 +23524,10 @@
        "normalJump": 0
       },
       "concrete": {
-       "tris": 33995,
-       "sliver": 1484,
-       "tjunction": 5519,
-       "step": 55,
+       "tris": 28835,
+       "sliver": 1174,
+       "tjunction": 4455,
+       "step": 49,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -23675,13 +23675,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1421,
+     "warn": 1386,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 900,
-     "warn": 1341,
+     "error": 893,
+     "warn": 1313,
      "review": 0,
      "info": 0
     },
@@ -23722,15 +23722,15 @@
     "roadsLeavingStreet": 1,
     "coplanarPairs": 54,
     "coplanarAreaM2": 0.53,
-    "triangles": 60777,
-    "buildMs": 679,
+    "triangles": 54338,
+    "buildMs": 664,
     "times": {
-     "surfaces + width fit": 143,
-     "buildRoadNetwork": 24,
-     "measured paint": 4,
-     "lane graph": 11,
-     "road meshes + carve": 490,
-     "paint decal": 7
+     "surfaces + width fit": 131,
+     "buildRoadNetwork": 22,
+     "measured paint": 3,
+     "lane graph": 12,
+     "road meshes + carve": 488,
+     "paint decal": 8
     },
     "widthFit": {
      "fitted": 8,
@@ -23772,10 +23772,10 @@
        "normalJump": 0
       },
       "concrete": {
-       "tris": 39227,
-       "sliver": 1718,
-       "tjunction": 7289,
-       "step": 48,
+       "tris": 32789,
+       "sliver": 1323,
+       "tjunction": 5834,
+       "step": 37,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -23923,13 +23923,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 576,
+     "warn": 578,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 386,
-     "warn": 614,
+     "error": 385,
+     "warn": 611,
      "review": 0,
      "info": 0
     },
@@ -23970,14 +23970,14 @@
     "roadsLeavingStreet": 0,
     "coplanarPairs": 18,
     "coplanarAreaM2": 0,
-    "triangles": 16609,
-    "buildMs": 169,
+    "triangles": 16284,
+    "buildMs": 181,
     "times": {
-     "surfaces + width fit": 47,
-     "buildRoadNetwork": 5,
+     "surfaces + width fit": 50,
+     "buildRoadNetwork": 3,
      "measured paint": 0,
-     "lane graph": 4,
-     "road meshes + carve": 110,
+     "lane graph": 5,
+     "road meshes + carve": 121,
      "paint decal": 3
     },
     "widthFit": {
@@ -24018,10 +24018,10 @@
        "normalJump": 0
       },
       "concrete": {
-       "tris": 8396,
-       "sliver": 178,
-       "tjunction": 775,
-       "step": 7,
+       "tris": 8071,
+       "sliver": 159,
+       "tjunction": 719,
+       "step": 8,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -24217,13 +24217,13 @@
     "coplanarPairs": 0,
     "coplanarAreaM2": 0,
     "triangles": 1173,
-    "buildMs": 27,
+    "buildMs": 30,
     "times": {
-     "surfaces + width fit": 7,
+     "surfaces + width fit": 6,
      "buildRoadNetwork": 1,
      "measured paint": 0,
      "lane graph": 1,
-     "road meshes + carve": 18,
+     "road meshes + carve": 22,
      "paint decal": 0
     },
     "widthFit": {
@@ -24446,13 +24446,13 @@
     "coplanarPairs": 0,
     "coplanarAreaM2": 0,
     "triangles": 3295,
-    "buildMs": 34,
+    "buildMs": 36,
     "times": {
-     "surfaces + width fit": 19,
+     "surfaces + width fit": 24,
      "buildRoadNetwork": 0,
      "measured paint": 0,
      "lane graph": 0,
-     "road meshes + carve": 15,
+     "road meshes + carve": 12,
      "paint decal": 0
     },
     "widthFit": {
@@ -24675,13 +24675,13 @@
     "coplanarPairs": 7,
     "coplanarAreaM2": 0.07,
     "triangles": 9589,
-    "buildMs": 73,
+    "buildMs": 63,
     "times": {
-     "surfaces + width fit": 42,
+     "surfaces + width fit": 36,
      "buildRoadNetwork": 0,
      "measured paint": 0,
      "lane graph": 0,
-     "road meshes + carve": 31,
+     "road meshes + carve": 27,
      "paint decal": 0
     },
     "widthFit": {
@@ -24856,13 +24856,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2524,
+     "warn": 2517,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 368,
-     "warn": 464,
+     "error": 355,
+     "warn": 426,
      "review": 0,
      "info": 0
     },
@@ -24903,15 +24903,15 @@
     "roadsLeavingStreet": 1,
     "coplanarPairs": 57,
     "coplanarAreaM2": 1.46,
-    "triangles": 45296,
-    "buildMs": 929,
+    "triangles": 42472,
+    "buildMs": 803,
     "times": {
-     "surfaces + width fit": 78,
-     "buildRoadNetwork": 136,
+     "surfaces + width fit": 67,
+     "buildRoadNetwork": 124,
      "measured paint": 0,
-     "lane graph": 17,
-     "road meshes + carve": 696,
-     "paint decal": 2
+     "lane graph": 16,
+     "road meshes + carve": 594,
+     "paint decal": 1
     },
     "widthFit": {
      "fitted": 3,
@@ -24954,10 +24954,10 @@
        "normalJump": 396
       },
       "concrete": {
-       "tris": 33964,
-       "sliver": 3375,
-       "tjunction": 2682,
-       "step": 133,
+       "tris": 31140,
+       "sliver": 3140,
+       "tjunction": 2058,
+       "step": 88,
        "uvShear": 1,
        "normalJump": 5
       },
@@ -25113,13 +25113,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2656,
+     "warn": 2644,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 593,
-     "warn": 1177,
+     "error": 597,
+     "warn": 1076,
      "review": 0,
      "info": 0
     },
@@ -25160,15 +25160,15 @@
     "roadsLeavingStreet": 9,
     "coplanarPairs": 98,
     "coplanarAreaM2": 2.87,
-    "triangles": 62543,
-    "buildMs": 1220,
+    "triangles": 56960,
+    "buildMs": 1021,
     "times": {
-     "surfaces + width fit": 179,
-     "buildRoadNetwork": 121,
-     "measured paint": 0,
-     "lane graph": 19,
-     "road meshes + carve": 897,
-     "paint decal": 4
+     "surfaces + width fit": 160,
+     "buildRoadNetwork": 115,
+     "measured paint": 1,
+     "lane graph": 17,
+     "road meshes + carve": 725,
+     "paint decal": 3
     },
     "widthFit": {
      "fitted": 6,
@@ -25211,10 +25211,10 @@
        "normalJump": 279
       },
       "concrete": {
-       "tris": 43392,
-       "sliver": 3738,
-       "tjunction": 4710,
-       "step": 89,
+       "tris": 37809,
+       "sliver": 3302,
+       "tjunction": 3373,
+       "step": 69,
        "uvShear": 0,
        "normalJump": 1
       },
@@ -25370,13 +25370,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 807,
+     "warn": 797,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 239,
-     "warn": 314,
+     "error": 237,
+     "warn": 296,
      "review": 0,
      "info": 0
     },
@@ -25417,14 +25417,14 @@
     "roadsLeavingStreet": 2,
     "coplanarPairs": 62,
     "coplanarAreaM2": 1.07,
-    "triangles": 20867,
-    "buildMs": 395,
+    "triangles": 19419,
+    "buildMs": 408,
     "times": {
-     "surfaces + width fit": 50,
-     "buildRoadNetwork": 39,
+     "surfaces + width fit": 70,
+     "buildRoadNetwork": 43,
      "measured paint": 0,
-     "lane graph": 11,
-     "road meshes + carve": 293,
+     "lane graph": 12,
+     "road meshes + carve": 280,
      "paint decal": 2
     },
     "widthFit": {
@@ -25468,10 +25468,10 @@
        "normalJump": 115
       },
       "concrete": {
-       "tris": 13818,
-       "sliver": 1007,
-       "tjunction": 1071,
-       "step": 22,
+       "tris": 12370,
+       "sliver": 888,
+       "tjunction": 814,
+       "step": 14,
        "uvShear": 2,
        "normalJump": 0
       },
@@ -25619,13 +25619,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1665,
+     "warn": 1659,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 616,
-     "warn": 751,
+     "error": 603,
+     "warn": 675,
      "review": 0,
      "info": 0
     },
@@ -25666,14 +25666,14 @@
     "roadsLeavingStreet": 5,
     "coplanarPairs": 25,
     "coplanarAreaM2": 0.33,
-    "triangles": 47008,
-    "buildMs": 735,
+    "triangles": 42820,
+    "buildMs": 628,
     "times": {
-     "surfaces + width fit": 152,
-     "buildRoadNetwork": 51,
+     "surfaces + width fit": 130,
+     "buildRoadNetwork": 55,
      "measured paint": 0,
      "lane graph": 10,
-     "road meshes + carve": 518,
+     "road meshes + carve": 431,
      "paint decal": 2
     },
     "widthFit": {
@@ -25717,10 +25717,10 @@
        "normalJump": 140
       },
       "concrete": {
-       "tris": 31965,
-       "sliver": 2493,
-       "tjunction": 3926,
-       "step": 356,
+       "tris": 27777,
+       "sliver": 2122,
+       "tjunction": 2895,
+       "step": 212,
        "uvShear": 1,
        "normalJump": 0
       },
@@ -25868,13 +25868,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1301,
+     "warn": 1293,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 463,
-     "warn": 657,
+     "error": 466,
+     "warn": 599,
      "review": 0,
      "info": 0
     },
@@ -25915,14 +25915,14 @@
     "roadsLeavingStreet": 6,
     "coplanarPairs": 30,
     "coplanarAreaM2": 0.48,
-    "triangles": 38046,
-    "buildMs": 595,
+    "triangles": 34121,
+    "buildMs": 551,
     "times": {
-     "surfaces + width fit": 115,
-     "buildRoadNetwork": 66,
+     "surfaces + width fit": 105,
+     "buildRoadNetwork": 58,
      "measured paint": 0,
-     "lane graph": 10,
-     "road meshes + carve": 405,
+     "lane graph": 12,
+     "road meshes + carve": 376,
      "paint decal": 0
     },
     "widthFit": {
@@ -25964,10 +25964,10 @@
        "normalJump": 48
       },
       "concrete": {
-       "tris": 26607,
-       "sliver": 2042,
-       "tjunction": 3213,
-       "step": 42,
+       "tris": 22682,
+       "sliver": 1735,
+       "tjunction": 2396,
+       "step": 34,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -26115,13 +26115,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 2052,
+     "warn": 2014,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 1112,
-     "warn": 1473,
+     "error": 1078,
+     "warn": 1408,
      "review": 0,
      "info": 0
     },
@@ -26162,15 +26162,15 @@
     "roadsLeavingStreet": 2,
     "coplanarPairs": 176,
     "coplanarAreaM2": 2.9,
-    "triangles": 81182,
-    "buildMs": 1087,
+    "triangles": 72876,
+    "buildMs": 843,
     "times": {
-     "surfaces + width fit": 306,
-     "buildRoadNetwork": 55,
+     "surfaces + width fit": 193,
+     "buildRoadNetwork": 47,
      "measured paint": 0,
-     "lane graph": 14,
-     "road meshes + carve": 708,
-     "paint decal": 4
+     "lane graph": 13,
+     "road meshes + carve": 586,
+     "paint decal": 3
     },
     "widthFit": {
      "fitted": 15,
@@ -26209,10 +26209,10 @@
        "normalJump": 9
       },
       "concrete": {
-       "tris": 54494,
-       "sliver": 2584,
-       "tjunction": 9344,
-       "step": 108,
+       "tris": 46188,
+       "sliver": 2082,
+       "tjunction": 7482,
+       "step": 68,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -26352,13 +26352,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1115,
+     "warn": 1082,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 683,
-     "warn": 893,
+     "error": 678,
+     "warn": 863,
      "review": 0,
      "info": 0
     },
@@ -26399,14 +26399,14 @@
     "roadsLeavingStreet": 4,
     "coplanarPairs": 5,
     "coplanarAreaM2": 0,
-    "triangles": 56427,
-    "buildMs": 676,
+    "triangles": 51053,
+    "buildMs": 536,
     "times": {
-     "surfaces + width fit": 195,
-     "buildRoadNetwork": 17,
+     "surfaces + width fit": 114,
+     "buildRoadNetwork": 14,
      "measured paint": 0,
-     "lane graph": 16,
-     "road meshes + carve": 448,
+     "lane graph": 12,
+     "road meshes + carve": 395,
      "paint decal": 0
     },
     "widthFit": {
@@ -26446,10 +26446,10 @@
        "normalJump": 0
       },
       "concrete": {
-       "tris": 37208,
-       "sliver": 1224,
-       "tjunction": 6785,
-       "step": 74,
+       "tris": 31834,
+       "sliver": 962,
+       "tjunction": 5469,
+       "step": 67,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -26589,13 +26589,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1325,
+     "warn": 1321,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 622,
-     "warn": 808,
+     "error": 624,
+     "warn": 768,
      "review": 0,
      "info": 0
     },
@@ -26636,15 +26636,15 @@
     "roadsLeavingStreet": 6,
     "coplanarPairs": 166,
     "coplanarAreaM2": 3.44,
-    "triangles": 49128,
-    "buildMs": 687,
+    "triangles": 45583,
+    "buildMs": 573,
     "times": {
-     "surfaces + width fit": 191,
+     "surfaces + width fit": 109,
      "buildRoadNetwork": 33,
-     "measured paint": 3,
+     "measured paint": 2,
      "lane graph": 10,
-     "road meshes + carve": 445,
-     "paint decal": 5
+     "road meshes + carve": 416,
+     "paint decal": 3
     },
     "widthFit": {
      "fitted": 7,
@@ -26687,10 +26687,10 @@
        "normalJump": 91
       },
       "concrete": {
-       "tris": 30731,
-       "sliver": 1474,
-       "tjunction": 3515,
-       "step": 37,
+       "tris": 27186,
+       "sliver": 1265,
+       "tjunction": 2791,
+       "step": 34,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -26838,12 +26838,12 @@
     },
     "C17": {
      "error": 0,
-     "warn": 383,
+     "warn": 381,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 491,
+     "error": 492,
      "warn": 177,
      "review": 0,
      "info": 0
@@ -26885,15 +26885,15 @@
     "roadsLeavingStreet": 3,
     "coplanarPairs": 51,
     "coplanarAreaM2": 1.87,
-    "triangles": 11398,
-    "buildMs": 215,
+    "triangles": 11184,
+    "buildMs": 201,
     "times": {
-     "surfaces + width fit": 43,
+     "surfaces + width fit": 25,
      "buildRoadNetwork": 5,
-     "measured paint": 2,
-     "lane graph": 5,
-     "road meshes + carve": 154,
-     "paint decal": 5
+     "measured paint": 1,
+     "lane graph": 10,
+     "road meshes + carve": 156,
+     "paint decal": 3
     },
     "widthFit": {
      "fitted": 2,
@@ -26935,10 +26935,10 @@
        "normalJump": 0
       },
       "concrete": {
-       "tris": 4105,
-       "sliver": 127,
-       "tjunction": 233,
-       "step": 0,
+       "tris": 3891,
+       "sliver": 107,
+       "tjunction": 191,
+       "step": 1,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -27091,8 +27091,8 @@
      "info": 0
     },
     "C18": {
-     "error": 358,
-     "warn": 112,
+     "error": 359,
+     "warn": 111,
      "review": 0,
      "info": 0
     },
@@ -27133,14 +27133,14 @@
     "roadsLeavingStreet": 0,
     "coplanarPairs": 13,
     "coplanarAreaM2": 0,
-    "triangles": 9584,
-    "buildMs": 187,
+    "triangles": 9582,
+    "buildMs": 222,
     "times": {
-     "surfaces + width fit": 38,
-     "buildRoadNetwork": 12,
-     "measured paint": 0,
-     "lane graph": 7,
-     "road meshes + carve": 127,
+     "surfaces + width fit": 39,
+     "buildRoadNetwork": 18,
+     "measured paint": 1,
+     "lane graph": 11,
+     "road meshes + carve": 151,
      "paint decal": 2
     },
     "widthFit": {
@@ -27183,9 +27183,9 @@
        "normalJump": 0
       },
       "concrete": {
-       "tris": 3339,
+       "tris": 3337,
        "sliver": 32,
-       "tjunction": 49,
+       "tjunction": 47,
        "step": 0,
        "uvShear": 0,
        "normalJump": 0
@@ -27382,13 +27382,13 @@
     "coplanarPairs": 1,
     "coplanarAreaM2": 0,
     "triangles": 1793,
-    "buildMs": 53,
+    "buildMs": 50,
     "times": {
-     "surfaces + width fit": 16,
-     "buildRoadNetwork": 3,
+     "surfaces + width fit": 11,
+     "buildRoadNetwork": 1,
      "measured paint": 0,
-     "lane graph": 5,
-     "road meshes + carve": 29,
+     "lane graph": 4,
+     "road meshes + carve": 34,
      "paint decal": 0
     },
     "widthFit": {
@@ -27611,13 +27611,13 @@
     "coplanarPairs": 0,
     "coplanarAreaM2": 0,
     "triangles": 3738,
-    "buildMs": 44,
+    "buildMs": 64,
     "times": {
-     "surfaces + width fit": 25,
+     "surfaces + width fit": 32,
      "buildRoadNetwork": 1,
      "measured paint": 0,
      "lane graph": 0,
-     "road meshes + carve": 18,
+     "road meshes + carve": 31,
      "paint decal": 0
     },
     "widthFit": {
@@ -27840,13 +27840,13 @@
     "coplanarPairs": 0,
     "coplanarAreaM2": 0,
     "triangles": 112,
-    "buildMs": 86,
+    "buildMs": 108,
     "times": {
      "surfaces + width fit": 0,
-     "buildRoadNetwork": 16,
+     "buildRoadNetwork": 21,
      "measured paint": 0,
-     "lane graph": 6,
-     "road meshes + carve": 63,
+     "lane graph": 10,
+     "road meshes + carve": 77,
      "paint decal": 0
     },
     "widthFit": {
@@ -28021,13 +28021,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 730,
+     "warn": 731,
      "review": 0,
      "info": 0
     },
     "C18": {
      "error": 77,
-     "warn": 83,
+     "warn": 77,
      "review": 0,
      "info": 0
     },
@@ -28068,14 +28068,14 @@
     "roadsLeavingStreet": 0,
     "coplanarPairs": 11,
     "coplanarAreaM2": 0,
-    "triangles": 13659,
-    "buildMs": 390,
+    "triangles": 13491,
+    "buildMs": 454,
     "times": {
-     "surfaces + width fit": 16,
-     "buildRoadNetwork": 57,
+     "surfaces + width fit": 17,
+     "buildRoadNetwork": 61,
      "measured paint": 0,
-     "lane graph": 10,
-     "road meshes + carve": 308,
+     "lane graph": 12,
+     "road meshes + carve": 364,
      "paint decal": 0
     },
     "widthFit": {
@@ -28115,10 +28115,10 @@
        "normalJump": 466
       },
       "concrete": {
-       "tris": 7311,
-       "sliver": 820,
-       "tjunction": 184,
-       "step": 3,
+       "tris": 7147,
+       "sliver": 812,
+       "tjunction": 142,
+       "step": 1,
        "uvShear": 0,
        "normalJump": 0
       }
@@ -28250,13 +28250,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1067,
+     "warn": 1063,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 365,
-     "warn": 246,
+     "error": 357,
+     "warn": 236,
      "review": 0,
      "info": 0
     },
@@ -28297,15 +28297,15 @@
     "roadsLeavingStreet": 1,
     "coplanarPairs": 24,
     "coplanarAreaM2": 0.07,
-    "triangles": 23567,
-    "buildMs": 463,
+    "triangles": 21720,
+    "buildMs": 655,
     "times": {
-     "surfaces + width fit": 49,
-     "buildRoadNetwork": 57,
+     "surfaces + width fit": 175,
+     "buildRoadNetwork": 71,
      "measured paint": 0,
-     "lane graph": 12,
-     "road meshes + carve": 343,
-     "paint decal": 1
+     "lane graph": 14,
+     "road meshes + carve": 393,
+     "paint decal": 2
     },
     "widthFit": {
      "fitted": 3,
@@ -28346,10 +28346,10 @@
        "normalJump": 206
       },
       "concrete": {
-       "tris": 15111,
-       "sliver": 1076,
-       "tjunction": 2189,
-       "step": 27,
+       "tris": 13264,
+       "sliver": 990,
+       "tjunction": 1759,
+       "step": 19,
        "uvShear": 2,
        "normalJump": 1
       },
@@ -28489,13 +28489,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1449,
+     "warn": 1423,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 562,
-     "warn": 673,
+     "error": 569,
+     "warn": 618,
      "review": 0,
      "info": 0
     },
@@ -28536,15 +28536,15 @@
     "roadsLeavingStreet": 5,
     "coplanarPairs": 1544,
     "coplanarAreaM2": 317.55,
-    "triangles": 46550,
-    "buildMs": 741,
+    "triangles": 42251,
+    "buildMs": 792,
     "times": {
-     "surfaces + width fit": 134,
-     "buildRoadNetwork": 53,
-     "measured paint": 1,
-     "lane graph": 18,
-     "road meshes + carve": 531,
-     "paint decal": 3
+     "surfaces + width fit": 182,
+     "buildRoadNetwork": 49,
+     "measured paint": 5,
+     "lane graph": 12,
+     "road meshes + carve": 536,
+     "paint decal": 7
     },
     "widthFit": {
      "fitted": 6,
@@ -28587,10 +28587,10 @@
        "normalJump": 73
       },
       "concrete": {
-       "tris": 29964,
-       "sliver": 1790,
-       "tjunction": 4194,
-       "step": 18,
+       "tris": 25665,
+       "sliver": 1448,
+       "tjunction": 3315,
+       "step": 19,
        "uvShear": 0,
        "normalJump": 0
       },
@@ -28744,7 +28744,7 @@
     },
     "C18": {
      "error": 157,
-     "warn": 32,
+     "warn": 30,
      "review": 0,
      "info": 0
     },
@@ -28785,14 +28785,14 @@
     "roadsLeavingStreet": 0,
     "coplanarPairs": 9,
     "coplanarAreaM2": 0,
-    "triangles": 3803,
-    "buildMs": 86,
+    "triangles": 3786,
+    "buildMs": 89,
     "times": {
-     "surfaces + width fit": 12,
-     "buildRoadNetwork": 4,
+     "surfaces + width fit": 13,
+     "buildRoadNetwork": 3,
      "measured paint": 0,
-     "lane graph": 10,
-     "road meshes + carve": 60,
+     "lane graph": 7,
+     "road meshes + carve": 66,
      "paint decal": 0
     },
     "widthFit": {
@@ -28834,9 +28834,9 @@
        "normalJump": 0
       },
       "concrete": {
-       "tris": 935,
+       "tris": 918,
        "sliver": 5,
-       "tjunction": 11,
+       "tjunction": 8,
        "step": 0,
        "uvShear": 0,
        "normalJump": 0
@@ -29017,13 +29017,13 @@
     "coplanarPairs": 0,
     "coplanarAreaM2": 0,
     "triangles": 2648,
-    "buildMs": 73,
+    "buildMs": 102,
     "times": {
-     "surfaces + width fit": 26,
-     "buildRoadNetwork": 2,
+     "surfaces + width fit": 49,
+     "buildRoadNetwork": 6,
      "measured paint": 0,
-     "lane graph": 1,
-     "road meshes + carve": 43,
+     "lane graph": 2,
+     "road meshes + carve": 44,
      "paint decal": 0
     },
     "widthFit": {
@@ -29250,12 +29250,12 @@
     "triangles": 6866,
     "buildMs": 141,
     "times": {
-     "surfaces + width fit": 37,
+     "surfaces + width fit": 41,
      "buildRoadNetwork": 2,
      "measured paint": 0,
      "lane graph": 8,
-     "road meshes + carve": 93,
-     "paint decal": 1
+     "road meshes + carve": 88,
+     "paint decal": 2
     },
     "widthFit": {
      "fitted": 1,
@@ -29485,13 +29485,13 @@
     "coplanarPairs": 0,
     "coplanarAreaM2": 0,
     "triangles": 4711,
-    "buildMs": 95,
+    "buildMs": 139,
     "times": {
-     "surfaces + width fit": 16,
-     "buildRoadNetwork": 3,
+     "surfaces + width fit": 23,
+     "buildRoadNetwork": 7,
      "measured paint": 0,
-     "lane graph": 1,
-     "road meshes + carve": 74,
+     "lane graph": 2,
+     "road meshes + carve": 106,
      "paint decal": 1
     },
     "widthFit": {
@@ -29666,13 +29666,13 @@
     },
     "C17": {
      "error": 0,
-     "warn": 1147,
+     "warn": 1146,
      "review": 0,
      "info": 0
     },
     "C18": {
-     "error": 203,
-     "warn": 111,
+     "error": 202,
+     "warn": 112,
      "review": 0,
      "info": 0
     },
@@ -29713,14 +29713,14 @@
     "roadsLeavingStreet": 0,
     "coplanarPairs": 56,
     "coplanarAreaM2": 3.13,
-    "triangles": 15725,
-    "buildMs": 347,
+    "triangles": 15692,
+    "buildMs": 357,
     "times": {
-     "surfaces + width fit": 34,
-     "buildRoadNetwork": 26,
+     "surfaces + width fit": 41,
+     "buildRoadNetwork": 29,
      "measured paint": 0,
-     "lane graph": 7,
-     "road meshes + carve": 280,
+     "lane graph": 6,
+     "road meshes + carve": 281,
      "paint decal": 1
     },
     "widthFit": {
@@ -29761,9 +29761,9 @@
        "normalJump": 271
       },
       "concrete": {
-       "tris": 9603,
-       "sliver": 1231,
-       "tjunction": 75,
+       "tris": 9570,
+       "sliver": 1225,
+       "tjunction": 47,
        "step": 3,
        "uvShear": 0,
        "normalJump": 0
@@ -29952,13 +29952,13 @@
     "coplanarPairs": 0,
     "coplanarAreaM2": 0,
     "triangles": 2094,
-    "buildMs": 37,
+    "buildMs": 41,
     "times": {
-     "surfaces + width fit": 14,
+     "surfaces + width fit": 19,
      "buildRoadNetwork": 1,
      "measured paint": 0,
      "lane graph": 1,
-     "road meshes + carve": 21,
+     "road meshes + carve": 20,
      "paint decal": 0
     },
     "widthFit": {
@@ -30183,13 +30183,13 @@
     "coplanarPairs": 0,
     "coplanarAreaM2": 0,
     "triangles": 1315,
-    "buildMs": 17,
+    "buildMs": 86,
     "times": {
-     "surfaces + width fit": 6,
+     "surfaces + width fit": 77,
      "buildRoadNetwork": 0,
      "measured paint": 0,
      "lane graph": 0,
-     "road meshes + carve": 10,
+     "road meshes + carve": 9,
      "paint decal": 0
     },
     "widthFit": {
@@ -30265,5 +30265,5 @@
    }
   }
  },
- "generated": "2026-11-12T19:09:56.818Z"
+ "generated": "2026-11-12T19:34:56.520Z"
 }

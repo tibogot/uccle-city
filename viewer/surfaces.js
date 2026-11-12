@@ -1209,7 +1209,10 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
         // (a wide forecourt, where two kerbs' frames meet) or outside a tight bend (|d| x curvature large)
         const [tx, tz] = straight.get(hostOf(b.si)) || [1, 0];
         uv2 = pts.map((p) => [p[0] * tx + p[1] * tz, -p[0] * tz + p[1] * tx]);
-        fw = ks.map((k) => Math.max(sst(2.5, 4.5, Math.abs(k.d)), sst(0.12, 0.3, Math.abs(k.d * k.kap))));
+        // (round 2: the kerb frame kept further: on the smoothed kerb a corner spreads its curvature, and the cross-fade
+        // to the straight frame showed two patterns at once over whole corners. Tiles fanning round a corner is how they
+        // are laid)
+        fw = ks.map((k) => Math.max(sst(4, 6, Math.abs(k.d)), sst(0.35, 0.6, Math.abs(k.d * k.kap))));
       } else unframed++;
     } else if (cls === SURF_CLASS.square) {
       const th = ((s.course ?? 0) * Math.PI) / 180, c = Math.cos(th), sn = Math.sin(th);

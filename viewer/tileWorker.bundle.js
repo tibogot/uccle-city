@@ -6926,7 +6926,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
         frame = li;
         const [tx, tz] = straight.get(hostOf(b.si)) || [1, 0];
         uv2 = pts.map((p) => [p[0] * tx + p[1] * tz, -p[0] * tz + p[1] * tx]);
-        fw = ks.map((k) => Math.max(sst(2.5, 4.5, Math.abs(k.d)), sst(0.12, 0.3, Math.abs(k.d * k.kap))));
+        fw = ks.map((k) => Math.max(sst(4, 6, Math.abs(k.d)), sst(0.35, 0.6, Math.abs(k.d * k.kap))));
       } else unframed++;
     } else if (cls === SURF_CLASS.square) {
       const th = (s.course ?? 0) * Math.PI / 180, c = Math.cos(th), sn = Math.sin(th);

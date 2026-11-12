@@ -19,4 +19,16 @@ junctions right, then the city. Full report: `docs/roads/ROUND2.md`.
 - `pipeline/verify_crossings.mjs`: the 2024 orthophoto score of every crossing record (`photo` in markings.json).
 
 ## Next
-See ROUND2.md "Remaining".
+See the end of this note.
+
+## State at the end of the round (2026-11-12)
+- All fixes 1-14 of ROUND2.md are in, plus the lane graph (`viewer/streets/laneGraph.js`), curves and kerbstones.
+- Final numbers: `docs/roads/audit/r2before` vs `r2after` (run both with the same checker: copy
+  tools/road_audit/{road_audit,mesh_checks,ortho}.mjs into the rb_before worktree first).
+- Pipeline steps after build_markings / build_surfaces: `node ../../pipeline/verify_crossings.mjs` and
+  `node ../../pipeline/photo_surfaces.mjs` (run from tools/road_audit so jpeg-js resolves), then
+  `node tools/build_worker.mjs`.
+- Captures: scratchpad `cap_one.js` (junction views), `cap_spots.js` (owner spots, curves, lanes), `cap_strips.js`
+  (moving), `lab.flicker(...)`; compose with `tools/road_audit/compose2.py` and `compose_spots.py`.
+- Next: see ROUND2.md "What remains": ramp ring snapping in build_surfaces.py, a cheaper ramp mesh, the T-junction
+  metric's layer filter, the BM legend when it arrives.
