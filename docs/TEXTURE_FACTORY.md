@@ -101,6 +101,82 @@ review from this worktree, where they are built.
 
 See "Verdicts" below for which wins.
 
-## Verdicts
+## Verdicts (my read of the lab renders and sheets; the owner decides in the lab)
 
-See the final report section in this file (filled after the review renders) and docs/TODO.md.
+Lab conditions: same wall / floor / roof, same sun, rows at 1 / 10 / 50 m, scan tint 0 for all.
+
+| Material | Factory vs best CC0 scan | Why |
+|---|---|---|
+| stone_blue | **factory wins clearly** | The CC0 "granite" scans are brown. The factory set is real petit granit: blue-grey, drafted margin, bush-hammered field, crinoids, veins. |
+| slate | **factory wins** | The shipped roof_slates_02 reads as beige wooden shingles. The factory slates are blue-black with lapped tails and relief (the owner's "slates read flat" note). |
+| paving_concrete | **factory wins** | The shipped concrete_tiles is a brown parquet-like pattern. The factory set is the grey Brussels 30 cm tile with joints, chamfers, gum and stains. |
+| brick_dark | **factory wins on identity** | Purple-brown clinker with part-glazed bricks; the CC0 "dark" bricks are olive / khaki. The scans still have richer surface detail. |
+| asphalt | **tie** (factory ≈ scan; both far above the old procedural) | Porphyry chips in a worn binder. Reads like acg_Asphalt015 / asphalt_02 at 1 and 10 m, with 3 variants (new / aged / pale). |
+| brick_yellow | **tie** | The factory buff colour is closer to Uccle; Bricks105 has more natural surface detail. |
+| render_white | **tie** | Comparable to Plaster002. |
+| brick_red_brussels | **scan narrowly wins near**, tie at 10-50 m | ph_red_brick (the owner's pick) has softer, more irregular mortar and a real fired-clay surface at 1 m. The factory set has the right Brussels colours and the cross bond, but its bricks are still a little too clean and regular up close. |
+| stone_white | **scan wins on surface**, factory on colour | The factory set is the right cream white stone, but its face grain is too uniform and the joints too faint. |
+| cobbles | **scan wins** | Factory setts read too regular and a little blue. The scan's worn, rounded, irregular setts are more convincing. |
+| roof_tiles_red | **scan wins clearly** | At 10 m the factory pantiles read as corrugated sheet: the rolls run on without a strong course break. Needs per-tile nose shadow and offset. |
+
+Old procedural (live TSL) vs the factory: on every material the baked set is cleaner (no crawling, the
+anti-tiled scan path) and more detailed per unit. This is the owner's original complaint, now addressed by the
+pipeline.
+
+Trees (`docs/img/texfactory/trees_sheet.jpg`):
+- Barks: oak, lime and maple read as real fissured bark. Beech is the right smooth silver-grey; its branch-scar eyes
+  are too few and repeat visibly on a 1 m tile. Plane reads as camouflage, but the CC0 Bark009 is still more natural
+  (its fine flaking texture). Birch and horse chestnut are weak (birch speckled instead of lenticel bands; chestnut
+  scales too small and uniform).
+- Leaf sprays: legible species shapes (plane, beech, lime, maple; horse chestnut compound), 3 seasons. Coverage is
+  0.32-0.39, which matches the lab's 0.37-0.43. They keep their mass at 24 px.
+- Not yet checked inside the Tree Textures lab (it lives on claude/foundation; this branch is from claude/materials).
+
+## Cost
+
+Texture memory and download, per set (generated.json):
+
+| Set | GPU memory (BC7 / ASTC, 2 maps + mips) | Download (KTX2 UASTC + zstd) |
+|---|---|---|
+| Factory 1K | 2.67 MB | 1.41-2.36 MB (mean 1.88) |
+| Factory 2K | 10.67 MB | 4.83-8.77 MB (mean 6.61) |
+| CC0 scan 1K, for comparison | 2.67 MB | 2.33 MB mean (68 candidates) |
+| Leaf spray 1K (one season + the shared normal) | 2.67 MB | 0.76-0.94 MB |
+| Each extra season | 1.33 MB | ~0.4 MB |
+| Old procedural | 0 MB | 0 MB |
+
+**GPU per pixel.** A factory set goes through exactly the same shader as a scan (`variant: "scan"`: 3 hex taps x
+2 maps + the live layers), so its cost per pixel is the scan's. The library's quiet-GPU table in MATERIALS.md gives
+for brick: proc 2.69 ms, scan 2.42 ms per full 2.7 Mpx screen, so the scan path is about 0.3 ms cheaper than the
+live procedural one.
+
+My bench (lab "cost", full-screen wall 1400 x 900, alternating rounds, 2026-11-13) was **not on a quiet GPU**: the
+owner's other WebGPU tabs were active, and the lab tab was throttled to 1 fps behind them. Readings, ms over a plain
+material:
+
+| Material | procedural | scan | factory 1K | factory 2K |
+|---|---|---|---|---|
+| brick_red (2 rounds) | 2.03 / 2.03 | 1.51 / 1.44 | 1.57 / 2.69 | 2.56 / 1.18 |
+| asphalt (last round) | 1.83 | 1.38 | 2.10 | 1.18 |
+
+The scan and factory columns differ only by noise (the same shader and texture format; 1K and 2K swap places
+between rounds). The one stable signal is the one MATERIALS.md already gives: textured is cheaper per pixel than
+the live procedural.
+- To re-measure on a quiet GPU: lab → cost ⟳ on a material with only that tab open.
+- Perf note for the owner: baked sets cost **less GPU time per frame** than live procedural and the same as scans.
+  The price is **memory and download**: 2.7 MB GPU and ~1.9 MB download per 1K material; 2K is 4x the memory (10.7
+  MB) and ~3.5x the download. Ship 1K by default, 2K only where the owner sees the difference up close.
+
+## Weak points / next
+
+- Brick (red): too clean and regular at 1 m. Add mortar irregularity (slope-blur smears onto the faces), fewer
+  pockmarks, uneven firing gradients per brick, occasional replaced bricks / repointed patches.
+- Cobbles: too regular. Add irregular sett plan shapes (split faces), varied wear, darker sand joints, less blue.
+- roof_tiles_red: needs the course break (nose shadow, per-tile offsets / tilt) so it stops reading as corrugated.
+- stone_white: grain too uniform, joints too faint. Needs crust / gypsum blackening patterns and sharper joints.
+- Tree barks: plane needs the fine flaking edges of Bark009; birch and horse chestnut need a rework; beech eyes vary
+  per tile only (1 m repeat).
+- Leaves: no Tree Textures lab check yet (merge or cherry-pick into claude/tree-textures / foundation and plug in as
+  `params.leafAtlas`).
+- 2K sets were made for variant a only (KTX2). Every variant has 2K sources and WebP.
+- The bench needs a quiet GPU.

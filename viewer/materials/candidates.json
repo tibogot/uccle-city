@@ -2896,17 +2896,17 @@
      6
     ],
     "mean_albedo_linear": [
-     0.2457,
-     0.2301,
-     0.2016
+     0.2506,
+     0.2348,
+     0.2055
     ],
     "mean_roughness": 0.863,
-    "lum_std": 0.188,
+    "lum_std": 0.175,
     "files": "generated/paving_concrete/a/paving_concrete_1k",
-    "albedo_webp_bytes": 226746,
-    "nra_webp_bytes": 2485262,
-    "albedo_ktx2_bytes": 873080,
-    "nra_ktx2_bytes": 1202396,
+    "albedo_webp_bytes": 158580,
+    "nra_webp_bytes": 2122890,
+    "albedo_ktx2_bytes": 692036,
+    "nra_ktx2_bytes": 1156326,
     "variant": "a",
     "seed": 61,
     "current": false
@@ -2926,17 +2926,17 @@
      6
     ],
     "mean_albedo_linear": [
-     0.2457,
-     0.2301,
-     0.2016
+     0.2506,
+     0.2348,
+     0.2055
     ],
     "mean_roughness": 0.863,
-    "lum_std": 0.188,
+    "lum_std": 0.175,
     "files": "generated/paving_concrete/a/paving_concrete_2k",
-    "albedo_webp_bytes": 717792,
-    "nra_webp_bytes": 8482334,
-    "albedo_ktx2_bytes": 2913795,
-    "nra_ktx2_bytes": 4653663,
+    "albedo_webp_bytes": 483066,
+    "nra_webp_bytes": 7204976,
+    "albedo_ktx2_bytes": 2361917,
+    "nra_ktx2_bytes": 4541409,
     "variant": "a",
     "seed": 61,
     "current": false
@@ -2956,17 +2956,17 @@
      6
     ],
     "mean_albedo_linear": [
-     0.2981,
-     0.2771,
-     0.242
+     0.3078,
+     0.2861,
+     0.2496
     ],
     "mean_roughness": 0.863,
-    "lum_std": 0.193,
+    "lum_std": 0.176,
     "files": "generated/paving_concrete/b/paving_concrete_1k",
-    "albedo_webp_bytes": 252364,
-    "nra_webp_bytes": 2470546,
-    "albedo_ktx2_bytes": 909737,
-    "nra_ktx2_bytes": 1199344,
+    "albedo_webp_bytes": 161496,
+    "nra_webp_bytes": 2135528,
+    "albedo_ktx2_bytes": 705146,
+    "nra_ktx2_bytes": 1154737,
     "variant": "b",
     "seed": 62,
     "current": false
@@ -2986,17 +2986,17 @@
      6
     ],
     "mean_albedo_linear": [
-     0.1946,
-     0.181,
-     0.1589
+     0.1947,
+     0.1811,
+     0.1587
     ],
     "mean_roughness": 0.863,
-    "lum_std": 0.202,
+    "lum_std": 0.187,
     "files": "generated/paving_concrete/c/paving_concrete_1k",
-    "albedo_webp_bytes": 238218,
-    "nra_webp_bytes": 2532952,
-    "albedo_ktx2_bytes": 924112,
-    "nra_ktx2_bytes": 1213274,
+    "albedo_webp_bytes": 187882,
+    "nra_webp_bytes": 2145134,
+    "albedo_ktx2_bytes": 783412,
+    "nra_ktx2_bytes": 1160300,
     "variant": "c",
     "seed": 63,
     "current": false

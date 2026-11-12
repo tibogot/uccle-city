@@ -154,6 +154,7 @@ def paving(T, P):
     cn = T.noise(0.02, 2, octaves=2)
     corner = smoothstep(0.8, 1.0, np.minimum(np.abs(lx) / hx, 1) * np.minimum(np.abs(ly) / hy, 1))
     chip = smoothstep(0.0, 0.3, cn - 1.6 + 1.2 * corner + 0.4 * pu(1) * P.get("chips", 0.5)) * 0.02
+    chip = chip * smoothstep(-0.028, -0.014, U["d"])               # chips only along the edges (no holes mid-tile)
     d = U["d"] + T.noise(0.01, 3) * 0.0006 + chip
     inside = smoothstep(0.0006, -0.0006, d)
     cham = P.get("chamfer", 0.004)
@@ -161,14 +162,14 @@ def paving(T, P):
     edge = -cham * (1 - t) * 0.8
     settle = pu(2, "normal") * 0.0015 + pu(3, "normal") * 0.004 * lx + pu(4, "normal") * 0.004 * ly   # rocked tiles
     # exposed fine aggregate (washed surface) + cement skin
-    ag = stones(T, 0.0035, 5, presence=0.55, dome_m=0.00035, flat=0.7)
+    ag = stones(T, 0.003, 5, presence=0.4, dome_m=0.00025, flat=0.7)
     surf = T.noise(0.01, 6, octaves=3) * 0.0002 + ag["height"]
     h_t = edge + settle + surf - smoothstep(0.0, 0.004, chip) * 0.003
     h = lerp(np.full_like(d, -0.006) + T.noise(0.003, 7) * 0.0005, h_t, inside)
     base = hexcol(P["color"])
     col = base * np.exp(pu(5, "normal") * P.get("tile_sd", 0.07))[..., None]
     col = col * (1 + T.noise(0.06, 8, octaves=4)[..., None] * 0.07 + T.noise(0.004, 9, octaves=2)[..., None] * 0.05)
-    agc = palette_pick(ag["rnd"], [(hexcol("#8f8a82"), 3), (hexcol("#6d6964"), 2), (hexcol("#a8a298"), 1), (hexcol("#5b5a58"), 1)])
+    agc = palette_pick(ag["rnd"], [(hexcol("#948f86"), 3), (hexcol("#7d7972"), 2), (hexcol("#aba59b"), 2), (hexcol("#6a6865"), 0.5)])
     col = lerp(col, agc, ag["mask"] * P.get("agg_show", 0.55))
     # stains: dark spills, rust spot, chewing gum (flat pale grey-black discs)
     stain = smoothstep(0.9, 2.2, T.noise(0.25, 10, octaves=3)) * P.get("stains", 0.4)
@@ -187,7 +188,7 @@ def paving(T, P):
 
 
 PAVING = dict(tiles=6, joint=0.004, chamfer=0.004, color="#8b877f", tile_sd=0.07, chips=0.5, stains=0.4, gum=0.12,
-              agg_show=0.5)
+              agg_show=0.35)
 
 
 def make_paving(extra=None):

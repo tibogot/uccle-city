@@ -1693,6 +1693,7 @@
  },
  "tf_paving_concrete_a_1k": {
   "material": "paving_concrete",
+  "category": "surface",
   "source": "texfactory",
   "id": "tf_paving_concrete_a_1k",
   "name": "Factory paving a 1K",
@@ -1708,21 +1709,22 @@
   "note": "generated: Brussels grey 30 cm tiles, gum, stains",
   "url": "tools/texturefactory (materials/ground.py, seed 61)",
   "mean_albedo_linear": [
-   0.2457,
-   0.2301,
-   0.2016
+   0.2506,
+   0.2348,
+   0.2055
   ],
   "mean_roughness": 0.863,
-  "lum_std": 0.188,
+  "lum_std": 0.175,
   "px": 1024,
   "files": "generated/paving_concrete/a/paving_concrete_1k",
-  "albedo_webp_bytes": 226746,
-  "nra_webp_bytes": 2485262,
-  "albedo_ktx2_bytes": 873080,
-  "nra_ktx2_bytes": 1202396
+  "albedo_webp_bytes": 158580,
+  "nra_webp_bytes": 2122890,
+  "albedo_ktx2_bytes": 692036,
+  "nra_ktx2_bytes": 1156326
  },
  "tf_paving_concrete_a_2k": {
   "material": "paving_concrete",
+  "category": "surface",
   "source": "texfactory",
   "id": "tf_paving_concrete_a_2k",
   "name": "Factory paving a 2K",
@@ -1738,21 +1740,22 @@
   "note": "generated: Brussels grey 30 cm tiles, gum, stains",
   "url": "tools/texturefactory (materials/ground.py, seed 61)",
   "mean_albedo_linear": [
-   0.2457,
-   0.2301,
-   0.2016
+   0.2506,
+   0.2348,
+   0.2055
   ],
   "mean_roughness": 0.863,
-  "lum_std": 0.188,
+  "lum_std": 0.175,
   "px": 2048,
   "files": "generated/paving_concrete/a/paving_concrete_2k",
-  "albedo_webp_bytes": 717792,
-  "nra_webp_bytes": 8482334,
-  "albedo_ktx2_bytes": 2913795,
-  "nra_ktx2_bytes": 4653663
+  "albedo_webp_bytes": 483066,
+  "nra_webp_bytes": 7204976,
+  "albedo_ktx2_bytes": 2361917,
+  "nra_ktx2_bytes": 4541409
  },
  "tf_paving_concrete_b_1k": {
   "material": "paving_concrete",
+  "category": "surface",
   "source": "texfactory",
   "id": "tf_paving_concrete_b_1k",
   "name": "Factory paving b 1K",
@@ -1768,21 +1771,22 @@
   "note": "generated: newer, lighter, cleaner",
   "url": "tools/texturefactory (materials/ground.py, seed 62)",
   "mean_albedo_linear": [
-   0.2981,
-   0.2771,
-   0.242
+   0.3078,
+   0.2861,
+   0.2496
   ],
   "mean_roughness": 0.863,
-  "lum_std": 0.193,
+  "lum_std": 0.176,
   "px": 1024,
   "files": "generated/paving_concrete/b/paving_concrete_1k",
-  "albedo_webp_bytes": 252364,
-  "nra_webp_bytes": 2470546,
-  "albedo_ktx2_bytes": 909737,
-  "nra_ktx2_bytes": 1199344
+  "albedo_webp_bytes": 161496,
+  "nra_webp_bytes": 2135528,
+  "albedo_ktx2_bytes": 705146,
+  "nra_ktx2_bytes": 1154737
  },
  "tf_paving_concrete_b_2k": {
   "material": "paving_concrete",
+  "category": "surface",
   "source": "texfactory",
   "id": "tf_paving_concrete_b_2k",
   "name": "Factory paving b 2K",
@@ -1798,19 +1802,20 @@
   "note": "generated: newer, lighter, cleaner",
   "url": "tools/texturefactory (materials/ground.py, seed 62)",
   "mean_albedo_linear": [
-   0.2981,
-   0.2771,
-   0.242
+   0.3078,
+   0.2861,
+   0.2496
   ],
   "mean_roughness": 0.863,
-  "lum_std": 0.193,
+  "lum_std": 0.176,
   "px": 2048,
   "files": "generated/paving_concrete/b/paving_concrete_2k",
-  "albedo_webp_bytes": 824458,
-  "nra_webp_bytes": 8442316
+  "albedo_webp_bytes": 484414,
+  "nra_webp_bytes": 7190596
  },
  "tf_paving_concrete_c_1k": {
   "material": "paving_concrete",
+  "category": "surface",
   "source": "texfactory",
   "id": "tf_paving_concrete_c_1k",
   "name": "Factory paving c 1K",
@@ -1826,21 +1831,22 @@
   "note": "generated: old, darker, chipped, more gum",
   "url": "tools/texturefactory (materials/ground.py, seed 63)",
   "mean_albedo_linear": [
-   0.1946,
-   0.181,
-   0.1589
+   0.1947,
+   0.1811,
+   0.1587
   ],
   "mean_roughness": 0.863,
-  "lum_std": 0.202,
+  "lum_std": 0.187,
   "px": 1024,
   "files": "generated/paving_concrete/c/paving_concrete_1k",
-  "albedo_webp_bytes": 238218,
-  "nra_webp_bytes": 2532952,
-  "albedo_ktx2_bytes": 924112,
-  "nra_ktx2_bytes": 1213274
+  "albedo_webp_bytes": 187882,
+  "nra_webp_bytes": 2145134,
+  "albedo_ktx2_bytes": 783412,
+  "nra_ktx2_bytes": 1160300
  },
  "tf_paving_concrete_c_2k": {
   "material": "paving_concrete",
+  "category": "surface",
   "source": "texfactory",
   "id": "tf_paving_concrete_c_2k",
   "name": "Factory paving c 2K",
@@ -1856,16 +1862,16 @@
   "note": "generated: old, darker, chipped, more gum",
   "url": "tools/texturefactory (materials/ground.py, seed 63)",
   "mean_albedo_linear": [
-   0.1946,
-   0.181,
-   0.1589
+   0.1947,
+   0.1811,
+   0.1587
   ],
   "mean_roughness": 0.863,
-  "lum_std": 0.202,
+  "lum_std": 0.187,
   "px": 2048,
   "files": "generated/paving_concrete/c/paving_concrete_2k",
-  "albedo_webp_bytes": 785628,
-  "nra_webp_bytes": 8618648
+  "albedo_webp_bytes": 628192,
+  "nra_webp_bytes": 7268514
  },
  "tf_render_white_a_1k": {
   "material": "render_white",

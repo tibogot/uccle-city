@@ -243,6 +243,14 @@ read-only (copy into `vendor/` with ORIGIN.md); measure GPU ms before / after (s
 - [ ] Owner: pick variant + parameters per material in `labs/material-lab.html`, download `choices.json`, commit it as `viewer/materials/choices.json`.
 - [ ] Then the integration steps of `docs/MATERIALS.md` (hero assets first, then ground, façades, roofs).
 
+## Texture factory (branch claude/texfactory, 2026-11-13; docs/TEXTURE_FACTORY.md)
+
+- [ ] Owner: review the factory sets in the Material Lab (versions "Factory <family> <variant> 1K/2K", badge "CC0 texfactory"; serve the claude/texfactory worktree, its generated files are local) next to the scans. Clear factory wins in my read: stone_blue, slate, paving_concrete, brick_dark; ties: asphalt, brick_yellow, render_white; scans still win: brick_red (near), stone_white (surface), cobbles, roof_tiles_red.
+- [ ] Factory round 2: brick_red mortar irregularity + fewer pockmarks; cobbles less regular; pantile course break (reads as corrugated at 10 m); stone_white crust + sharper joints.
+- [ ] Trees: plug the factory barks (scan format) and leaf sprays (params.leafAtlas, 3 seasons) into the Tree Textures lab (claude/foundation) and compare live; rework birch / horse chestnut bark, plane flake edges.
+- [ ] Re-measure GPU cost (lab cost button) on a quiet GPU: the 2026-11-13 numbers were taken behind other WebGPU tabs.
+- [ ] After a merge conflict in viewer/materials/candidates.json: take the other side, run `python -E -P tools/texturefactory/register.py`.
+
 ## STIB tram model (approved by the owner 2026-11-04, merged)
 - [x] T3000 (line 92's stock) scripted in Blender (`tools/blender/tram.py`), loader / LODs / placement `viewer/tramModel.js`,
       Tram Lab (`labs/tram-lab.html`), in the city by default (tramline.js; `?tram=box` = the old boxes). Per tram: LOD0 15.9k, LOD1 5.7k, LOD2 1.35k triangles.
