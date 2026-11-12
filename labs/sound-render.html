@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sound Renders</title>
+<link rel="icon" href="../viewer/favicon.svg" type="image/svg+xml">
+<style>
+  body { margin: 0; padding: 16px; background: #15181c; color: #e6e9ee; font: 13px/1.45 system-ui, sans-serif; }
+  table { border-collapse: collapse; } td, th { padding: 3px 8px; border-bottom: 1px solid #2b3038; text-align: left; vertical-align: top; }
+  audio { height: 28px; } a { color: #8fb8ff; } .muted { color: #9aa3ad; }
+</style>
+</head>
+<body>
+<h2>Sound Lab: offline renders</h2>
+<p class="muted">Each scenario runs the Sound Lab's engine in an OfflineAudioContext (24 kHz). Click to render and listen in the page;
+<code>?run=all</code> renders all; <code>&amp;save=PORT</code> also POSTs each WAV to a local save server (dev tool). <a href="sound-lab.html">Sound Lab</a> · <a href="./">all labs</a></p>
+<table id="t"><tr><th>scenario</th><th>what</th><th>listen</th><th>cost</th></tr></table>
+<script type="module">
+import { SCENARIOS, renderScenario, encodeWav } from "../viewer/audio/renders.js";
+const q = new URLSearchParams(location.search), save = q.get("save"), run = q.get("run");
+const t = document.getElementById("t"); window.__renderResults = {};
+async function go(name, row) {
+  row.cells[3].textContent = "rendering…";
+  const r = await renderScenario(name);
+  const { blob, peak } = encodeWav(r.buffer, r.stereo);
+  const a = document.createElement("audio"); a.controls = true; a.src = URL.createObjectURL(blob); row.cells[2].replaceChildren(a);
+  const info = { dur: r.dur, buildMs: +r.buildMs.toFixed(1), renderMs: +r.renderMs.toFixed(1), realtimeFactor: +(r.dur * 1000 / r.renderMs).toFixed(1), controlMsAvg: +r.controlMsAvg.toFixed(3), maxVoices: r.maxVoices, peak: +peak.toFixed(3) };
+  row.cells[3].textContent = `${info.renderMs} ms for ${r.dur} s (x${info.realtimeFactor}), build ${info.buildMs} ms, control ${info.controlMsAvg} ms, ${r.maxVoices} voices, peak ${info.peak}`;
+  window.__renderResults[name] = info;
+  if (save) await fetch(`http://127.0.0.1:${save}/save?name=${name}.wav`, { method: "POST", body: blob });
+}
+const rows = {};
+for (const [name, sc] of Object.entries(SCENARIOS)) {
+  const row = t.insertRow(); row.insertCell().innerHTML = `<a href="#">${name}</a>`; row.insertCell().textContent = sc.note; row.insertCell(); row.insertCell();
+  row.cells[0].firstChild.onclick = (e) => { e.preventDefault(); go(name, row); };
+  rows[name] = row;
+}
+if (run) { (async () => { for (const n of run === "all" ? Object.keys(SCENARIOS) : run.split(",")) { try { await go(n, rows[n]); } catch (e) { rows[n].cells[3].textContent = "ERROR " + e.message; window.__renderResults[n] = { error: e.message + " " + e.stack }; } } window.__renderDone = true; })(); }
+</script>
+</body>
+</html>

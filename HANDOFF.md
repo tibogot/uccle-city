@@ -83,6 +83,12 @@ adapter table, ONE-line `SOURCE` switch to the library; new slot `copper_brown`)
 `?stpierre=1` (hides BU_ID 1594643), lab `labs/saint-pierre-lab.html` (photo viewpoints from `tools/stpierre_photopose.py`
 with overlays, LOD switch, slot swap, day/night, benchmark, a scripted LOD flight). Method, numbers, what is estimated:
 `models/stpierre/NOTES.md`; history, sources: `docs/saint-pierre/RESEARCH.md`. Interior: not enough references yet.
+## Sound (branch claude/sound, lab only)
+
+Procedural city sound with the Web Audio API, no audio files (after Mr.doob's slop-newyork audio, copied in
+`vendor/slop-sound/`). Lab `labs/sound-lab.html` (walkable scene, a panel per sound, mixer, costs), offline renders
+`labs/sound-render.html` and `docs/sound/renders/*.wav`; code `viewer/audio/`; method, costs, what to listen for and
+weak points: `docs/SOUND.md`. Not in the city yet (TODO section 6).
 
 ## Interiors (branch claude/interior, pilot)
 
