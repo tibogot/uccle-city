@@ -1,0 +1,12 @@
+{
+ "Station_lod2": {
+  "from": "Station_far",
+  "sourceTris": 10858,
+  "tris": 3528,
+  "crossIslandTris": 2274,
+  "aoBakedOnLevel": false,
+  "addedVertices": 7945
+ },
+ "glbBytes": 1060416,
+ "rawBytes": 2930196
+}
