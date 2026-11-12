@@ -354,6 +354,7 @@ window.lab = {
   /** a moving frame strip (labs/frameStrip.js) from A to B (world [x, z], eye height h over the road), posted to the sink */
   async strip(name, A, B, { seconds = 3, h = 1.6, shots = 8, cols = 4, look = 12, sink = "http://127.0.0.1:8817/save", title = name } = {}) {
     const dx = B[0] - A[0], dz = B[1] - A[1], L = Math.hypot(dx, dz) || 1;
+    camera.up.set(0, 1, 0);
     const r = await frameStrip({ renderFrame: () => { controls.update(); lighting.update?.(camera.position.y, cur?.y ?? 0, controls.target, 120); renderer.render(scene, camera); },
       canvas: renderer.domElement, camera, controls, seconds, fps: 60, shots, cols, cellW: 480, title,
       path: (t) => { const x = A[0] + dx * t, z = A[1] + dz * t, tx = x + (dx / L) * look, tz = z + (dz / L) * look; return { pos: [x, this.y(x, z) + h, z], target: [tx, this.y(tx, tz) + h * 0.6, tz] }; },

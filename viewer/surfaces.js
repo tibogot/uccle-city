@@ -39,11 +39,11 @@ export const PIT_SINK = 0.04;
 export const RAISE = [0, 0, 0, 0, KERB, KERB, MEDIAN_KERB, 0, 0.07, KERB - PIT_SINK];
 export const RAMP_LOW = 0.02, RAMP_DEPTH = 1.0;   // a dropped kerb: 2 cm at the kerb, the full KERB 1 m behind it
 export const RAMP_WING = 0.45;     // m: and the full KERB again at its sides (sloped wings into the sidewalk)
-const RAMP_GRID = 0.6;             // m: the warped part of a ramp is cut on this grid
+const RAMP_GRID = 1.0;             // m: the warped part of a ramp is cut on this grid
 const RAMP_EDGE = 0.5;             // m: ramp triangles are split to this so the warped surface is smooth
 // m: sidewalk triangles too (round 2): their paving uv is the kerb frame at the vertices, interpolated linearly; over
 // a 6 m triangle on a curve that bent the rows into a visible kink line
-const PAVE_EDGE = 1.5;
+const PAVE_EDGE = 2.5;
 // squares: their own part and material (viewer/cobbles.js: old irregular setts), one more draw where there is a square
 const PART = ["asphalt", "asphalt", "asphalt", "asphalt", "square", "concrete", "grass", "concrete", "concrete", "pits"];
 /** low classes the engine's markings may lie on (not tram sites or paths) */
