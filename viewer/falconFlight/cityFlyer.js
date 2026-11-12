@@ -33,7 +33,7 @@ const PIGEON_RANGE = 700;              // pigeons drawn / simulated while the ca
 const LIFE = 1.0;                      // the juvenile's span at life size (m): viewer/falcons.js FALCON_SIZES.juvenile
 
 const CSS = `
-.fhud { position: fixed; right: 10px; bottom: 10px; z-index: 3; padding: 9px 12px; border-radius: 8px; min-width: 290px;
+.fhud { position: fixed; right: 340px; bottom: 10px; z-index: 3; padding: 9px 12px; border-radius: 8px; min-width: 290px;
   background: rgba(20, 24, 30, .78); color: #e6e9ee; font: 12px/1.4 ui-monospace, monospace; white-space: pre;
   box-shadow: 0 4px 18px rgba(0,0,0,.3); pointer-events: none; display: none; }
 .fhud b { color: #9cc4ff; font-weight: 600; }
@@ -177,20 +177,20 @@ export class CityFlyer {
     this.lastSync = -1;
   }
   /** free flight from (x, z), heading yaw (rad, the old Flyer's convention: forward = -sin, -cos), height y (m TAW;
-   *  default 45 m over the floor) */
-  async start(x, z, yaw, y = null) {
-    await this.ready;
+   *  default 45 m over the floor), airspeed (m/s), path angle (rad) */
+  start(x, z, yaw, y = null, speed = 14, gamma = 0) {
+    if (!this.game) return this.ready.then(() => this.start(x, z, yaw, y, speed, gamma));
     this.intro = null;
     this.begin();
     const yy = y ?? this.w.floor(x, z) + 45;
-    this.game.start(x, yy, z, yaw, 14, 0);
+    this.game.start(x, yy, z, yaw, speed, gamma);
     this.game.span = this.size;
     this.fcam.inited = false;
     this.pos.set(x, yy, z);
   }
   /** THE NEST START (as viewer/flight.js): nest = { scrape, ledge: Vector3 (world), out: Vector3 (horizontal) } */
-  async startFromNest(nest) {
-    await this.ready;
+  startFromNest(nest) {
+    if (!this.game) return this.ready.then(() => this.startFromNest(nest));
     this.begin();
     const out = nest.out.clone().setY(0).normalize();
     this.intro = { t: 0, ...nest, out, s: 0.92, heading: Math.atan2(-out.x, -out.z), w: { perch: 1 } };
@@ -262,7 +262,7 @@ export class CityFlyer {
     const k = THREE.MathUtils.smoothstep(I.t, T_HOP, T_GO);
     const want = this.introCam(k);
     if (I.t > T_GO) want.copy(this.pos).addScaledVector(I.out, -1.6 * I.s).add(new THREE.Vector3(0, 0.5 * I.s, 0));
-    this.introCamPos.lerp(want, 1 - Math.exp(-(I.t > T_GO ? 5 : 3) * dt));
+    this.introCamPos.lerp(want, 1 - Math.exp(-(I.t > T_GO ? 9 : 3) * dt));
     this.introLook.lerp(this.pos.clone().addScaledVector(I.out, 3).add(new THREE.Vector3(0, 0.15 - 0.6 * k, 0)), 1 - Math.exp(-4 * dt));
     this.camera.position.copy(this.introCamPos); this.camera.up.set(0, 1, 0); this.camera.lookAt(this.introLook);
     if (Math.abs(this.camera.fov - 58) > 0.01) { this.fovCity ??= this.camera.fov; this.camera.fov = 58; this.camera.updateProjectionMatrix(); }

@@ -947,12 +947,14 @@ async function main() {
   const tsel = $("timeSel");
   for (const k of Object.keys(PRESETS)) tsel.add(new Option(k, k, false, k === timeId));
   tsel.onchange = () => { lighting.apply(tsel.value); pipe?.look(tsel.value); };
-  const mainLoop = () => {
+  // stepLoop(dt): one frame of the loop with a fixed dt (debug/falconCityFlight.js steps it when the tab's frames are
+  // throttled); the animation loop passes nothing
+  const stepLoop = (dtFixed = null) => {
     if (flyer.on) focus.set(flyer.x, flyer.pos.y, flyer.z).addScaledVector(camera.getWorldDirection(fwd).setY(0).normalize(), 60);
     else if (walker.on || driver.on) focus.copy(camera.position).addScaledVector(camera.getWorldDirection(fwd).setY(0).normalize(), 45);
     else focus.copy(controls.target);
     const half = flyer.on ? THREE.MathUtils.clamp((flyer.pos.y - world.surface(flyer.x, flyer.z)) * 1.6 + 90, 90, 380)   : walker.on || driver.on ? 80 : THREE.MathUtils.clamp(camera.position.distanceTo(controls.target) * 0.9, 60, 380);
-    const now = performance.now(), dt = Math.min((now - last) / 1000, 0.1);
+    const now = performance.now(), dt = dtFixed ?? Math.min((now - last) / 1000, 0.1);
     last = now;
     if (!stateFreeze) lighting.update(camera.position.y, world.surface(camera.position.x, camera.position.z), focus, half, dt);
     fpsAcc += dt; fpsN++;
@@ -974,6 +976,7 @@ async function main() {
         (tramLine ? `\n${tramLine.info().split(". Source")[0]}` : "");
     }
   };
+  const mainLoop = () => stepLoop();
   renderer.setAnimationLoop(mainLoop);
   // Streaming: full-detail tiles within `ring` of the tile under the player (?ring=, default 1),
   // far-LOD tiles out to `far` (?far=, default 3, 0 = none). Hysteresis of one tile for unloading.
@@ -1172,7 +1175,7 @@ async function main() {
     return { total: sumAudits(list), tiles: list };
   };
   window.viewer = { auditColliders, tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
-    world, fader, stateAt, freeze: (on) => { stateFreeze = !!on; }, pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop),
+    world, fader, stateAt, step: (dt) => stepLoop(dt), freeze: (on) => { stateFreeze = !!on; }, pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop),
     renderFrame: () => { if (!stateFreeze) { lodEye.value.copy(camera.position); for (const u of updaters) u(camera.position, camera); } renderFrame(); } };
 }
 
