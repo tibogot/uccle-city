@@ -217,8 +217,10 @@ export async function buildTileData(entry, base) {
     terrain.idx = idx;
   });
   // drive colliders too: a replaced solid's footprint is the hero model's footprint (Saint-Job church)
-  const drive = await step("drive colliders", () => buildDriveData({ bDoc, net, feats, hm, parts: road.parts, bounds }));   // drive mode (viewer/drive/)
+  const drive = await step("drive colliders", () => buildDriveData({ bDoc, net, feats, hm, parts: road.parts, bounds, surf, legacy: !!entry.driveLegacy }));   // drive mode (viewer/drive/)
+  const nb = bDoc.buildings.length;
   hideBuildings(bDoc, entry.hide);
+  drive.counts.hidden = nb - bDoc.buildings.length;     // solids a hero model replaces (their footprint still collides)
   // ?kit=1: the façade kit's placement (viewer/facadeKit/placement.js) runs inside the analysis, here in the worker;
   // entry.kitExclude = BU_IDs a hero model or the interior pilot replaces
   const kit = entry.kit ? kitCollector({ exclude: new Set(entry.kitExclude || []), ground: (x, z) => hm.ground(x, z) }) : null;

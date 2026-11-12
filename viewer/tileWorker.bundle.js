@@ -5670,7 +5670,7 @@ function buildColliders(polys, circles, bounds) {
     nr++;
   }
   const pts = new Float32Array(nv * 2), ringStart = new Uint32Array(nr + 1), polyRing = new Uint32Array(polys.length + 1);
-  const pbox = new Float32Array(polys.length * 4), pkind = new Uint8Array(polys.length), ptop = new Float32Array(polys.length);
+  const pbox = new Float32Array(polys.length * 4), pkind = new Uint8Array(polys.length), ptop = new Float32Array(polys.length), pbase = new Float32Array(polys.length);
   let v = 0, r = 0;
   polys.forEach((p, i) => {
     polyRing[i] = r;
@@ -5693,6 +5693,7 @@ function buildColliders(polys, circles, bounds) {
     pbox[i * 4 + 3] = d;
     pkind[i] = p.kind ?? KIND2.building;
     ptop[i] = p.top ?? 1e4;
+    pbase[i] = p.base ?? -1e4;
   });
   ringStart[nr] = v;
   polyRing[polys.length] = r;
@@ -5703,7 +5704,7 @@ function buildColliders(polys, circles, bounds) {
     circ[i * 3 + 2] = q.r;
     ckind[i] = q.kind ?? KIND2.post;
   });
-  const col = { cell: CELL, bounds, pts, ringStart, polyRing, pbox, pkind, ptop, circ, ckind };
+  const col = { cell: CELL, bounds, pts, ringStart, polyRing, pbox, pkind, ptop, pbase, circ, ckind };
   indexCells(col);
   return col;
 }
@@ -5733,6 +5734,53 @@ function indexCells(col) {
   col.stamp = 0;
   return col;
 }
+var CAR_CLEAR = 2.2;
+var RAISED = 20;
+function inRings(rings, x, z) {
+  let inside3 = false;
+  for (const ring2 of rings) for (let i = 0, j = ring2.length - 1; i < ring2.length; j = i++) {
+    const [ax, az] = ring2[i], [bx, bz] = ring2[j];
+    if (az > z !== bz > z && x < ax + (bx - ax) * (z - az) / (bz - az)) inside3 = !inside3;
+  }
+  return inside3;
+}
+function samplesIn(rings, step = 1) {
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (const [x, z] of rings[0]) {
+    x0 = Math.min(x0, x);
+    x1 = Math.max(x1, x);
+    z0 = Math.min(z0, z);
+    z1 = Math.max(z1, z);
+  }
+  const s = Math.max(step, Math.sqrt((x1 - x0) * (z1 - z0) / 400));
+  const out = [];
+  for (let x = x0 + s / 2; x < x1; x += s) for (let z = z0 + s / 2; z < z1; z += s) if (inRings(rings, x, z)) out.push([x, z]);
+  if (!out.length) {
+    let cx = 0, cz = 0;
+    for (const [x, z] of rings[0]) {
+      cx += x;
+      cz += z;
+    }
+    out.push([cx / rings[0].length, cz / rings[0].length]);
+  }
+  return out;
+}
+function deckAt(hm, delta, x, z) {
+  const h = hm.h, c = Math.round((x - h.x0) / h.step), r = Math.round((z - h.z0) / h.step);
+  return c >= 0 && r >= 0 && c < h.cols && r < h.rows ? delta[r * h.cols + c] : 0;
+}
+function raisedShare(hm, delta, rings) {
+  const s = samplesIn(rings);
+  let n = 0;
+  for (const [x, z] of s) if (deckAt(hm, delta, x, z) >= RAISED) n++;
+  return n / s.length;
+}
+function clearanceUnder(hm, rings, base) {
+  let g = -Infinity;
+  for (const [x, z] of rings[0]) g = Math.max(g, hm.ground(x, z));
+  for (const [x, z] of samplesIn(rings, 2)) g = Math.max(g, hm.ground(x, z));
+  return base - g;
+}
 function cleanRing(ring2) {
   const out = [];
   for (const p of ring2) {
@@ -5745,29 +5793,45 @@ function cleanRing(ring2) {
   }
   return out;
 }
-function buildDriveData({ bDoc, net, feats, hm, parts, bounds }) {
+function buildDriveData({ bDoc, net, feats, hm, parts, bounds, surf = null, legacy = false }) {
   const polys = [], circles = [];
+  const ground = driveGround(hm, parts);
+  let overhead = 0, islands = 0, islandsHidden = 0, medianIslands = 0;
   for (const bd of bDoc.buildings) {
     const rings = (bd.footprint || []).map(cleanRing).filter((r) => r.length >= 3);
-    if (rings.length) polys.push({ rings, kind: KIND2.building, top: +bd.top || 1e4 });
+    if (!rings.length) continue;
+    const base = bd.base != null ? +bd.base : -1e4;
+    if (!legacy && base > -1e3 && clearanceUnder(hm, rings, base) > CAR_CLEAR) {
+      overhead++;
+      continue;
+    }
+    polys.push({ rings, kind: KIND2.building, top: +bd.top || 1e4, base });
   }
   const inTile = (ring2) => ring2.some(([x, z]) => x >= bounds.x0 - 5 && x <= bounds.x1 + 5 && z >= bounds.z0 - 5 && z <= bounds.z1 + 5);
-  let islands = 0;
+  const island2 = (r) => {
+    if (r.length < 3 || !inTile(r)) return;
+    if (!legacy && raisedShare(hm, ground.delta, [r]) < 0.5) {
+      islandsHidden++;
+      return;
+    }
+    polys.push({ rings: [r], kind: KIND2.island });
+    islands++;
+  };
   for (const node of net.nodes || []) for (const isl of node.islands || []) {
     if (isl.kind !== "raised" && isl.kind !== "grass") continue;
-    const r = cleanRing(isl.poly || []);
-    if (r.length >= 3 && inTile(r)) {
-      polys.push({ rings: [r], kind: KIND2.island });
-      islands++;
-    }
+    island2(cleanRing(isl.poly || []));
   }
   for (const rr of net.roads || []) {
     const ck = rr.stack?.center?.kind;
     if (!rr.center?.poly || ck !== "raised" && ck !== "barrier") continue;
-    const r = cleanRing(rr.center.poly);
-    if (r.length >= 3 && inTile(r)) {
-      polys.push({ rings: [r], kind: KIND2.island });
-      islands++;
+    island2(cleanRing(rr.center.poly));
+  }
+  const medians = [];
+  for (const s of surf?.surfaces || []) if (s.c === 6 && s.rings?.[0]?.length >= 3 && inTile(s.rings[0])) medians.push(s.rings.map(cleanRing).filter((r) => r.length >= 3));
+  if (!legacy) {
+    for (const m of medians) if (raisedShare(hm, ground.delta, m) >= 0.5) {
+      polys.push({ rings: m, kind: KIND2.island });
+      medianIslands++;
     }
   }
   for (const t of feats.trees || []) {
@@ -5775,7 +5839,7 @@ function buildDriveData({ bDoc, net, feats, hm, parts, bounds }) {
     circles.push({ x: t.x, z: t.z, r: Math.min(0.5, Math.max(0.22, 0.16 + 0.012 * (t.height || 10))), kind: KIND2.tree });
   }
   const col = buildColliders(polys, circles, bounds);
-  return { col, ground: driveGround(hm, parts), counts: { buildings: bDoc.buildings.length, islands, trees: circles.length } };
+  return { col, medians, ground, legacy, counts: { buildings: bDoc.buildings.length - overhead, overhead, islands, islandsHidden, medianIslands, trees: circles.length } };
 }
 function driveGround(hm, parts) {
   const { x0, z0, cols, rows, step } = hm.h, Y = hm.y;
@@ -8121,8 +8185,10 @@ async function buildTileData(entry, base) {
     const [idx] = MeshoptSimplifier.simplify(terrain.idx, terrain.pos, 3, 0, TERRAIN_ERROR, ["LockBorder", "ErrorAbsolute"]);
     terrain.idx = idx;
   });
-  const drive = await step("drive colliders", () => buildDriveData({ bDoc, net, feats, hm, parts: road.parts, bounds }));
+  const drive = await step("drive colliders", () => buildDriveData({ bDoc, net, feats, hm, parts: road.parts, bounds, surf, legacy: !!entry.driveLegacy }));
+  const nb = bDoc.buildings.length;
   hideBuildings(bDoc, entry.hide);
+  drive.counts.hidden = nb - bDoc.buildings.length;
   const kit = entry.kit ? kitCollector({ exclude: new Set(entry.kitExclude || []), ground: (x, z) => hm.ground(x, z) }) : null;
   const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit }));
   const cover = await step("land cover", () => landCoverData(feats, bounds));

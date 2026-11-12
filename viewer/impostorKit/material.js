@@ -28,7 +28,7 @@ import {
   cross, dot, max, step, smoothstep, saturate, sqrt, select, log2, pow, mod, cameraPosition, positionWorld,
   cameraProjectionMatrix, cameraViewMatrix, vertexStage, fwidth,
 } from "three/tsl";
-import { lodEye } from "../lodFade.js";
+import { lodEye, ditherNoise } from "../lodFade.js";
 import { triangleTSL, decodeTSL, basisTSL } from "./octa.js";
 import { octDecode } from "./bake.js";
 import { fadeNoise, impostorKeep, farT, anchorOf, footSeed } from "./fade.js";
@@ -59,6 +59,10 @@ export function makeView({ lodBias = -1, gain = 1 } = {}) {
  *   colourDepth "equal" | "lequal"  (the colour pass's depth test against the pre-pass)
  *   ring      "all" | "near" | "far": draw only the instances nearer / farther than view.ringSplit (field.js:
  *             a near-ring material with depth out + parallax and a cheap far-ring one, research 3.2.9)
+ *   solo      (the city) instances whose ikData.w (band) is >= 32 have no mesh to hand over from (a far-LOD tile
+ *             whose full tile is not loaded): drawn from 0 m, no hand-over dither
+ *   appear    (the city) { now: uniform (s), seconds }: ikTint.x holds the instance's appear time (s; types whose
+ *             shade ignores inst.tint); a streamed-in instance dithers in over `seconds` (lodFade.js's screen IGN)
  */
 export function impostorMaterials(atlas, o) {
   const F = o.fade, V = o.view;
@@ -76,8 +80,10 @@ export function impostorMaterials(atlas, o) {
   const centreW = ipos.add(turn(sph.xyz).mul(scl));
   const Rw = sph.w.mul(scl);
   const dEye = centreW.sub(lodEye).length();
-  const lo = nearFade ? F.start.sub(F.band) : float(-1);
-  const hidden = mod(floor(V.hideMask.div(pow(2, band))), 2).greaterThan(0.5);
+  const solo = o.solo ? band.greaterThanEqual(31.5) : null;
+  let lo = nearFade ? F.start.sub(F.band) : float(-1);
+  if (solo && nearFade) lo = select(solo, float(-1), lo);
+  const hidden = o.solo ? mod(floor(V.hideMask.div(pow(2, band.min(30)))), 2).greaterThan(0.5).and(solo.not()) : mod(floor(V.hideMask.div(pow(2, band))), 2).greaterThan(0.5);
   let visible = dEye.greaterThanEqual(lo).and(dEye.lessThanEqual(F.end)).and(hidden.not());
   // rings: the same instances drawn by two materials, split at V.ringSplit (an instance is in exactly one)
   if (o.ring === "near") visible = visible.and(dEye.lessThan(V.ringSplit));
@@ -182,7 +188,13 @@ export function impostorMaterials(atlas, o) {
   const opacity = alphaMode === "cutout" ? alpha : Fn(() => { Discard(coverage.lessThanEqual(0)); return coverage; })();
 
   // fades
-  const keepNear = nearFade ? impostorKeep(F, vMisc.y, fadeNoise(F, anchor, seed)) : null;
+  let keepNear = nearFade ? impostorKeep(F, vMisc.y, fadeNoise(F, anchor, seed)) : null;
+  if (keepNear && solo) keepNear = vertexStage(select(solo, float(1), float(0))).greaterThan(0.5).or(keepNear);
+  if (o.appear) {
+    const t = saturate(o.appear.now.sub(tintV.x).div(o.appear.seconds));
+    const keepIn = ditherNoise().lessThan(t.mul(t).mul(float(3).sub(t.mul(2))));
+    keepNear = keepNear ? keepNear.and(keepIn) : keepIn;
+  }
   const farK = o.far === "none" ? float(0) : farT(F, vMisc.y);
 
   // ---------------------------------------------------------------------------------------- the two materials
