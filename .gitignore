@@ -32,3 +32,5 @@ models/police_rouge/police_lod1_*.bin
 models/calevoet_station/calevoet.raw.glb
 models/calevoet_station/calevoet_lod1_bake.bin
 docs/calevoet/side_*
+models/stpierre/*.raw.glb
+docs/saint-pierre/side_*
