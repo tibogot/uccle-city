@@ -1,3 +1,5 @@
+> **2026-11-13: resumed and finished** (KTX2 all encoded, costs.json, Megascans list, docs/MATERIALS.md round 3, CREDITS, TODO). Kept for the history; the current state is docs/MATERIALS.md "Round 3".
+
 # Materials round 3: RESUME NOTE (stopped 2026-11-12, the owner shut the computer down)
 
 Branch `claude/materials` (worktree `.claude/worktrees/agent-a6a4e87d025603104`, lab on port 8809:

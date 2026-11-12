@@ -1,7 +1,3 @@
-// COPIED from claude/stalle labs/flickerTest.js (eebd3d6, 2026-11-12) for the Material Lab's shimmer meter; additions
-// (backward compatible): `pose(f)` (the caller moves its own cameras: several tiles with several cameras),
-// `regions` ([[x0, y0, x1, y1], ...] canvas px) -> r.perRegion = [{ blink, ppm }], and `noHeat` (skip the heat-map PNG).
-// Keep in sync with the original when it changes (merge: take theirs + these three options).
 // THE FLICKER TEST (shared by the labs; the runtime half of the mesh audit, tools/mesh_audit/README.md).
 // Renders N consecutive frames from a camera that is FIXED or moves very slowly (sub-pixel steps: dolly / strafe /
 // orbit), with the lab's animation frozen, and diffs consecutive frames: a pixel "blinks" when its luminance jumps up
@@ -17,18 +13,17 @@
 
 const lum = (d, i) => (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255;
 
-export async function flickerTest({ renderFrame, canvas, camera, controls = null, frames = 24, move = "fixed", step = 0.0006, threshold = 0.06, minFlips = 2, settle = 3, region = null, pose: poseFn = null, regions = null, noHeat = false }) {
+export async function flickerTest({ renderFrame, canvas, camera, controls = null, frames = 24, move = "fixed", step = 0.0006, threshold = 0.06, minFlips = 2, settle = 3, region = null }) {
   const W = canvas.width, H = canvas.height;
   const c2 = new OffscreenCanvas(W, H), x2 = c2.getContext("2d", { willReadFrequently: true });
-  const p0 = camera ? camera.position.clone() : null, t0 = controls ? controls.target.clone() : null, q0 = camera ? camera.quaternion.clone() : null;
-  const fwd = camera ? camera.getWorldDirection(camera.position.clone().set(0, 0, 0)).clone() : null;
-  const right = fwd ? fwd.clone().cross(camera.up).normalize() : null, up = fwd ? right.clone().cross(fwd).normalize() : null;
-  const dir = !fwd ? null : move === "dolly" ? fwd : move === "strafe" ? right : move === "rise" ? up : null;
+  const p0 = camera.position.clone(), t0 = controls ? controls.target.clone() : null, q0 = camera.quaternion.clone();
+  const fwd = camera.getWorldDirection(camera.position.clone().set(0, 0, 0)).clone();
+  const right = fwd.clone().cross(camera.up).normalize(), up = right.clone().cross(fwd).normalize();
+  const dir = move === "dolly" ? fwd : move === "strafe" ? right : move === "rise" ? up : null;
   let prev = null, prevD = null;
   const flips = new Uint16Array(W * H), amp = new Float32Array(W * H);
   let last = null;
   const pose = (f) => {
-    if (poseFn) { poseFn(f); return; }
     if (move === "orbit" && controls) {
       const a = step * f, c = Math.cos(a), s = Math.sin(a), o = p0.clone().sub(t0);
       camera.position.set(t0.x + o.x * c - o.z * s, p0.y, t0.z + o.x * s + o.z * c); camera.lookAt(t0);
@@ -56,13 +51,6 @@ export async function flickerTest({ renderFrame, canvas, camera, controls = null
     await new Promise((r) => setTimeout(r, 0));
   }
   pose(0); if (controls && t0) controls.target.copy(t0);
-  const perRegion = (regions || []).map(([x0, y0, x1, y1]) => {
-    let n = 0;
-    for (let y = Math.max(0, y0 | 0); y < Math.min(H, y1); y++) for (let x = Math.max(0, x0 | 0); x < Math.min(W, x1); x++) if (flips[y * W + x] >= minFlips) n++;
-    const area = Math.max(1, (Math.min(W, x1) - x0) * (Math.min(H, y1) - y0));
-    return { blink: n, ppm: Math.round(n / area * 1e6) };
-  });
-  if (noHeat) return { move, frames, step, threshold, W, H, perRegion };
   // results: blinking pixels, clusters on a 16 px grid
   let blink = 0;
   const G = 16, gw = Math.ceil(W / G), gh = Math.ceil(H / G), grid = new Uint32Array(gw * gh);
@@ -86,7 +74,7 @@ export async function flickerTest({ renderFrame, canvas, camera, controls = null
   x2.fillText(`flicker test: ${move} ${frames} frames, step ${step}, threshold ${threshold}: ${blink} blinking px (${(blink / (W * H) * 1e6).toFixed(0)} ppm)`, 12, H - 14);
   const blob = await c2.convertToBlob({ type: "image/png" });
   const heatURL = URL.createObjectURL(blob);
-  return { move, frames, step, threshold, W, H, blink, ppm: Math.round(blink / (W * H) * 1e6), clusters: cells.slice(0, 20), heatURL, perRegion };
+  return { move, frames, step, threshold, W, H, blink, ppm: Math.round(blink / (W * H) * 1e6), clusters: cells.slice(0, 20), heatURL };
 }
 
 /** the heat map over the page (click to close) */

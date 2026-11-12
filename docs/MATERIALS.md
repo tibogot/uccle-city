@@ -2,7 +2,124 @@
 
 One set of named, parameterised TSL node materials for the city, the hero buildings (Royal Observatory on
 `claude/observatory`, Saint-Job) and the future façade kit. Lab: `labs/material-lab.html`. Status: **proposal** — the
-city does not use it yet; the owner picks variants and parameters in the lab first (`viewer/materials/choices.json`).
+city does not use it yet; the owner picks a version per material in the review lab (verdicts ->
+`viewer/materials/verdicts.json`; the old `choices.json` path still works at `?old=1`).
+
+## Round 3 (2026-11-12 / 13): review lab, scans with anti-tiling, shimmer fix, candidates
+
+**Strategy (owner, 2026-11-12): LAYERING, realistic first.** A scan base (CC0 now; Megascans after the licence check;
+the texture factory's generated sets from `claude/texfactory`) with anti-tiling, plus procedural layers where
+procedural is strong: weathering (dirt at the wall base, rain streaks under sills, moss on north / up faces, damp,
+salt), per-building tone (`varAttr`), per-tile tone, edge wear, and the weather hooks (`weatherOpts(name)` for
+claude/weather's `weatherize()`). Fully procedural only where a photo can't work (per-building paint colour) and as the
+far / fallback layer. Asphalt: scan base + procedural repair patches, sealed cracks, wet low spots (`wet`).
+
+### The review lab (`labs/material-lab.html`; the first lab stays at `?old=1`)
+
+- LEFT: every material with badges: **P** procedural, **S n** CC0 scans, **G n** generated sets (texfactory,
+  `viewer/materials/generated.json` when present), **M n** Megascans dropped in / **M? n** on the shopping list,
+  GPU ms (from `viewer/materials/costs.json`), the verdict (✓ choice, needs work). Above the list: the verdict box
+  (needs work, note, download verdicts.json; saved in this browser).
+- CENTRE: 2-4 versions side by side (pick which in "Tune / versions shown", bottom left), the SAME wall (roof slope /
+  floor for roof and ground materials), light and camera; rows = distance stops 1 / 10 / 50 / 200 m (up to 3 rows).
+- TOOLBAR: view (test surface / **town hall**: A today's temporary materials vs B the library's picks per slot /
+  **street**: A the city's shaders vs B the library), light sun / shade / overcast / night, STRAFE (slow sideways move:
+  crawling shows), SHIMMER (the flicker test per tile, ppm), cost (bench this material).
+- Under each tile: **choose this**. Choice + parameters go into verdicts.json; commit it as
+  `viewer/materials/verdicts.json` (the lab loads it; the building views use the choices).
+- Redraws only when something changes (or while strafing): costs nothing while the owner reads.
+
+### Shimmer fix (shared `patterns.js`, all procedural materials)
+
+Cause of the owner's "fine diagonal firing streaks": the value-noise hash `fract(sin(dot(p, k)) * 43758)` of world
+coordinates x 60: `sin()` of ~1e5 loses its precision on GPUs and the hash collapses to a function of `dot(p, k)`,
+i.e. diagonal stripes that swim. Now: a sin-free hash (Hoskins) of lattice ids wrapped mod 1024; every fine noise
+fades by ITS OWN frequency (`fadeF`: gone before a period spans 3 px); joints box-filtered over >= 1.5 px and softened
+by the joint's own width; the units' relief is ANALYTIC (`pillow`, `lap`, `seams`, cobble domes: a slope from the
+unit's edge distance -> a world surface gradient), not screen-space derivatives of a height (the crawling outlines).
+Reference: Mr.doob's slop-newyork tsl-materials.js (filteredPulse, boxCoverage; ">= 2 px ramps, relief fades before
+it shrinks to pixels").
+
+Shimmer meter (`labs/flickerTest.js`, copied from claude/stalle with per-tile regions): 24 frames, cameras strafing
+~1.4 px per frame, a pixel blinks when its luminance reverses by > 0.04 twice. brick_red_brussels, sun:
+
+| | 1 m | 10 m | 50 m |
+|---|---|---|---|
+| procedural BEFORE (0dd5655, `?before=1` with a local uncommitted copy) | 19 952 ppm | **69 926 ppm** | 0 |
+| procedural AFTER | 22 140 ppm | **64 ppm** | 0 |
+| scan (Red Brick, hex-tiled) | 3 060 ppm | 64 ppm | 0 |
+
+At 1 m the meter also counts real thin detail sliding past (rain-streak lines inside bricks): compare at >= 10 m. A
+sub-pixel strafe (0.0006 x distance) reads 0 everywhere: too gentle to separate them.
+
+### Anti-tiling for scans (`viewer/materials/antitile.js`), replaces the hybrid
+
+Mikkelsen 2022 hex-tiling (after Heitz & Neyret 2018): a triangle grid, each vertex owns a hex tile of the texture
+with its own offset, 3 taps per map with explicit gradients, weights sharpened by the texture's luminance. Structured
+scans (bricks, ashlar, slates, setts, tiles) get no rotation and vertical offsets snapped to pairs of courses (the
+lattice is measured by `candidates.py` from the AO map's spectrum), so bed joints stay on the same lines; isotropic
+scans get free offsets + rotation; a +-4-7 % tone per tile = the per-unit variation layer. The scan fades to its mean
+colour only once a whole repeat is < ~8 px (the mips already average it). "hybrid" now means this anti-tiled scan.
+Brick scans are rescaled to a 7.5 cm course (Uccle brick + joint); `scanScale` still scales.
+
+### Candidates (CC0), generated sets, Megascans
+
+`tools/textures/candidates.py fetch | process | megascans` + `encode_ktx2.mjs --cand`: 69 CC0 candidates (Poly Haven,
+ambientCG) for 23 materials, 1K, KTX2 UASTC (fast, no RDO, for review; re-encode the picks with RDO) + WebP; binaries
+in `viewer/materials/textures/cand/` (git-ignored, rebuilt by the tool); the list in `viewer/materials/candidates.json`
+(committed; additive: the texture factory's `viewer/materials/generated.json` is merged at load, never written into
+it). Sources and licences: CREDITS.md.
+
+**Megascans**: shopping list with Fab links, scan areas and priorities in `docs/materials/MEGASCANS_LIST.md` (40
+surfaces for the library + 29 decals / other-lab surfaces / 3D assets; `tools/textures/megascans.json` maps the
+download folders to materials). The owner downloads the free texture sets into `data/raw/megascans/<folder>/`
+(git-ignored) and runs `candidates.py megascans`.
+**Licence question:** Megascans are under the Fab Standard License (Personal / Professional), not CC0. A web build
+serves its texture files to every visitor (they can be downloaded): check the Fab terms for that case before anything
+Megascans ships publicly. **CC0 stays the default for the public site** until the owner has checked.
+
+### New library materials (the heroes)
+
+`roof_tiles_flat_dark` (slate surface, flat tiles), `concrete_white` (render surface), `rockwork_concrete` (cement
+rocaille: strata, crevices), `lead_roof` (rolls, matte). Existing slot names unchanged.
+
+### Cost per version (2026-11-13, `viewer/materials/costs.json`)
+
+GPU ms per full-screen test surface (1280 x 720, DPR 1) over a plain MeshStandardNodeMaterial; download MB (KTX2) in
+brackets; every scan is 2.67 MB on the GPU (BC7 / ASTC, 2 maps 1024² + mips). **Noisy**: the owner's Chrome had
+another WebGPU lab open; round 2 (bricks, asphalt, re-measured at the end) reads ~2x round 1, and later materials in
+round 1 drift up. Compare versions of one material within a round only. What holds in both rounds: the hex-tiled
+scans cost the same as or 0.1-0.3 ms less than the procedural version per full screen (6 texture taps vs the
+pattern maths).
+
+| Material | ms per version (round 1 / round 2) |
+|---|---|
+| brick_red_brussels | procedural 0.66 / 1.51 · Red Brick 0.39 / 1.31 (2.37 MB) · Brick Wall 006 0.39 / 1.31 (2.59 MB) · Brick Wall 001 0.46 / 1.25 (2.57 MB) · Bricks 085 0.39 / 1.25 (2.57 MB) |
+| brick_yellow | procedural 0.79 / 1.51 · Bricks 105 0.66 / 1.18 (2.47 MB) · Bricks 016 0.66 / 1.18 (2.29 MB) · Yellow Brick 0.46 / 1.51 (2.55 MB) |
+| brick_dark | procedural 0.52 / 1.51 · Bricks 055 0.52 / 1.25 (2.37 MB) · Bricks 057 0.72 / 1.25 (2.4 MB) · Dark Brick Wall 0.72 / 1.25 (2.56 MB) · Bricks 056 0.66 / 1.25 (2.37 MB) |
+| asphalt | procedural 0.59 / 1.57 · Asphalt 02 0.59 / 1.38 (2.56 MB) · Asphalt 04 0.52 / 1.57 (2.18 MB) · Asphalt 015 0.52 / 1.44 (2.07 MB) · Asphalt 020 S 0.26 / 1.31 (2.57 MB) |
+| mortar | procedural 0.33 · Grey Plaster 0.66 (2.5 MB) · Plaster 001 0.79 (2.3 MB) |
+| stone_white | procedural 0.85 · Sandstone Blocks 08 0.72 (1.54 MB) · Bricks 008 0.72 (2.32 MB) · Bricks 024 0.72 (2.58 MB) · White Sandstone Bricks 03 0.33 (2.52 MB) |
+| stone_blue | procedural 0.79 · Granite Tile 04 0.26 (2.23 MB) · Stone Tile Wall 0.66 (2.12 MB) · Stone Wall 02 0.52 (2.29 MB) |
+| render_white | procedural 0.72 · Plaster 002 0.39 (2.41 MB) · Plaster 004 0.46 (2.36 MB) · White Stucco 0.46 (1.93 MB) · Painted Plaster Wall 0.66 (2.08 MB) |
+| render_painted | procedural 0.66 · Painted Plaster Wall 0.52 (2.08 MB) · Beige Wall 002 0.52 (2.17 MB) · Plaster 007 0.20 (2.5 MB) |
+| concrete_white | procedural 0.79 · Concrete 034 0.59 (2.14 MB) · Concrete 046 0.72 (2.28 MB) · Concrete Wall 008 0.85 (1.48 MB) |
+| rockwork_concrete | procedural 0.72 · Rock 030 0.66 (2.58 MB) · Rock 023 0.33 (2.56 MB) |
+| slate | procedural 0.66 · Roof Slates 02 0.39 (2.51 MB) · Roof Slates 03 0.39 (2.33 MB) · Roofing Tiles 003 0.39 (2.48 MB) · Grey Roof Tiles 02 0.39 (2.44 MB) |
+| roof_tiles_red | procedural 0.20 · Clay Roof Tiles 02 0.26 (2.53 MB) · Clay Roof Tiles 03 0.59 (2.55 MB) · Roofing Tiles 014 B 0.59 (2.37 MB) · Roofing Tiles 007 0.59 (2.42 MB) |
+| roof_tiles_flat_dark | procedural 0.72 · Roofing Tiles 013 A 0.59 (1.95 MB) · Roofing Tiles 009 0.20 (2.33 MB) · Grey Roof 01 0.33 (2.51 MB) |
+| zinc_roof | procedural 0.72 · Metal 032 0.52 (1.71 MB) · Metal 049 C 0.72 (1.83 MB) |
+| lead_roof | procedural 0.52 · Metal 046 B 0.46 (2.21 MB) · Metal 055 A 0.33 (2.18 MB) |
+| copper_patina | procedural 0.85 · Metal 058 C 0.59 (2.18 MB) · Metal 058 B 0.52 (2.26 MB) |
+| painted_metal_white | procedural 0.72 · Painted Metal 012 0.46 (2.39 MB) · Painted Metal 010 0.33 (2.4 MB) · Metal 016 0.39 (2.43 MB) |
+| cast_iron_green | procedural 0.39 · Green Metal Rust 0.46 (1.99 MB) · Painted Metal 006 1.05 (2.6 MB) |
+| wood_frame_white | procedural 1.11 · Wood 049 0.98 (2.17 MB) · Plywood 0.79 (2.3 MB) |
+| wood_frame_dark | procedural 0.39 · Wood 051 1.05 (2.12 MB) · Wood 060 0.20 (2.54 MB) |
+| glass_window | procedural 0.98 |
+| cobbles | procedural 1.31 · Cobblestone Floor 08 1.25 (2.52 MB) · Cobblestone Floor 03 0.92 (2.53 MB) · Cobblestone Square 1.05 (2.55 MB) · Paving Stones 070 0.98 (2.62 MB) |
+| paving_concrete | procedural 1.51 · Concrete Tiles 1.05 (2.2 MB) · Concrete Pavement 0.98 (2.44 MB) · Concrete Pavement 03 1.11 (2.23 MB) |
+| gravel_path | procedural 1.57 |
+| lawn_edge | procedural 1.51 |
 
 ## Files
 
@@ -10,7 +127,11 @@ city does not use it yet; the owner picks variants and parameters in the lab fir
 |---|---|
 | `viewer/materials/library.js` | `createMaterial(name, opts)`, `DEFS`, `MATERIAL_NAMES`, `SCAN_MATERIALS`, `paramSpec`, `setParam`, `applyChoice`, `readParams`, `createLook`, `meanColour`, `splitAt` |
 | `viewer/materials/patterns.js` | AA pattern helpers: `bond` (running-bond courses), `cells` (jittered Worley setts / gravel), `seams`, `streakNoise`, `woodGrain`, `isoLine`, `farK` / `bumpK` (footprint fades) |
-| `viewer/materials/scans.js` | `loadScans(renderer)`: the CC0 scans as KTX2 (UASTC, BC7/ASTC on the GPU) or WebP (`?scans=webp`) |
+| `viewer/materials/scans.js` | `loadScans(renderer)` (shipped scans), `loadManifest()` (candidates.json + generated.json), `loadCandidate(renderer, id)`; KTX2 (UASTC, BC7/ASTC on the GPU) or WebP (`?scans=webp`) |
+| `viewer/materials/antitile.js` | `hexSample()`: hex-tile anti-tiling of a scan (structured / isotropic) |
+| `viewer/materials/candidates.json`, `costs.json` | the candidate scans per material; GPU / texture cost per version |
+| `labs/material-review.js`, `labs/flickerTest.js` | the review lab; the shimmer meter (copy of claude/stalle's) |
+| `tools/textures/candidates.py`, `megascans.json` | candidates fetch / process / Megascans import; Megascans folder -> material |
 | `viewer/materials/textures/` | `<mat>_albedo.ktx2/.webp`, `<mat>_nra.ktx2/.webp` (normal x,y + roughness + AO), `scans.json` (source, size per repeat, mean colour) |
 | `tools/textures/` | `fetch_textures.py` -> `process_textures.py` -> `encode_ktx2.mjs` (`cd tools/textures && npm install`) |
 
@@ -77,7 +198,7 @@ hard switch anywhere: the far look is the integral of the near one.
 | `gravel_path` | dolomite park path: stones, fines, trodden lines | color, color2, stone | proc |
 | `lawn_edge` | lawn with a trodden, bare edge (`edgeNode` = m from the edge) | color, color2, soil, edge | proc |
 
-## Variants and cost
+## Variants and cost (round 2, 2026-11-05: "hybrid" here = scan near + procedural far, replaced by the anti-tiled scan in round 3)
 
 Measured in the lab ("bench ALL materials"): full-screen 30 x 30 m wall, 1500 x 800 canvas at DPR 1, post chain off,
 GPU ms per frame over a plain `MeshStandardNodeMaterial` (WebGPU timestamp queries, median of ~2 s). Shader size =

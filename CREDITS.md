@@ -43,6 +43,13 @@ the check dates are in `pipeline/sources.json`.
   Its data can lag: the extract used for G4 has `timestamp_osm_base`
   2026-06-01T08:52:28Z, five months before the fetch.
 
+## Textures (CC0)
+
+- `models/parkkit/detail_rock_surface_nor_1k.jpg`: the normal map of **"Rock Surface"** by Poly Haven
+  (https://polyhaven.com/a/rock_surface), **CC0 1.0**. Used as a close-up DETAIL normal (rough concrete) on the park
+  rock kit (viewer/parkKit.js; no colour taken from it). Source files and the tested-but-not-shipped scan
+  ("Namaqualand Cliff 02", Dario Barresi / Rico Cilliers, CC0) are listed in data/raw/cc0/polyhaven/SOURCES.md.
+
 ## Code and libraries
 
 | Component | Licence | Notes |
@@ -58,6 +65,9 @@ the check dates are in `pipeline/sources.json`.
 | mapbox-earcut (Python) | ISC | pipeline (triangulates 3D faces) |
 | scipy | BSD-3 | pipeline (tree peaks in the canopy height model) |
 | mrdoob/slop-newyork (techniques and adapted code in `viewer/lighting.js`, `post.js`, `tslkit.js`, `facades.js` interiors, `trees.js` approach) | MIT, © 2026 Mr.doob | Notice kept in `viewer/tslkit.js`; source credited in each file header. |
+| mrdoob/slop-newyork pedestrians (`vendor/slop-ped/pedestrians.js`: bodies, clothes shader, GPU skinning, `PersonRig` gait), commit `536a907c`; the crowd's baked clips (`models/pedestrians/clips.*`) are generated from that gait code by `tools/peds/bakeGait.mjs` | MIT, © 2026 Mr.doob | `vendor/slop-ped/LICENSE` and `ORIGIN.md`. Used by `viewer/pedestrians/` and `labs/pedestrian-lab.html`. No third-party animation clips (no Mixamo, no UAL yet) |
+| Brussels bench (`models/furniture/brussels_furniture.glb`, piece `bench`) | ours (scripted: `claude/furniture` `tools/blender/furniture.py`) | Copied from the furniture branch for the Pedestrian Lab's benches; keep one copy when the branches merge |
+| Quaternius **Universal Animation Library** (Standard, free tier; https://quaternius.com/packs/universalanimationlibrary.html, downloaded from https://quaternius.itch.io/universal-animation-library on 2026-11-11, raw in `data/raw/characters/ual1/`, git-ignored) | **CC0 1.0** (License.txt in the pack) | Clips Sitting_Idle_Loop, Sitting_Talking_Loop, Idle_Talking_Loop retargeted onto the crowd skeleton by `tools/peds/bakeGait.mjs` into `models/pedestrians/clips.bin` (sit, sitTalk, talk) |
 | mrdoob/slop-newyork tree system (`vendor/slop-trees/`: `trees.js`, `building-collision.js`, tree material), commit `737b7691` | MIT, © Mr.doob | `vendor/slop-trees/LICENSE` and `ORIGIN.md`. Used by `viewer/treesSlop.js` |
 
 ## Material scans (CC0, Material Lab and viewer/materials/)
@@ -81,6 +91,79 @@ All CC0 (public domain, no attribution required); credited anyway. Downloaded an
 
 Poly Haven licence: https://polyhaven.com/license (CC0). ambientCG licence: https://docs.ambientcg.com/license/ (CC0).
 No AI-generated maps, no web-search images.
+
+### Candidates for the Material Lab review (2026-11-12)
+
+Fetched by `tools/textures/candidates.py` (same pipeline; 1K, KTX2 + WebP into `viewer/materials/textures/cand/`,
+git-ignored and rebuilt by the tool; only the owner's picks get committed). All CC0.
+
+| Library material | Asset | Source | Licence |
+|---|---|---|---|
+| brick_red_brussels | Brick Wall 006 (`brick_wall_006`), Jan Burghardt | https://polyhaven.com/a/brick_wall_006 | CC0 |
+| brick_red_brussels | Brick Wall 001 (`brick_wall_001`), Rob Tuytel, Dimitrios Savva | https://polyhaven.com/a/brick_wall_001 | CC0 |
+| brick_red_brussels | Bricks 085 (`Bricks085`) | https://ambientcg.com/view?id=Bricks085 | CC0 |
+| brick_yellow | Bricks 105 (`Bricks105`) | https://ambientcg.com/view?id=Bricks105 | CC0 |
+| brick_yellow | Bricks 016 (`Bricks016`) | https://ambientcg.com/view?id=Bricks016 | CC0 |
+| brick_yellow | Yellow Brick (`yellow_brick`), Rob Tuytel | https://polyhaven.com/a/yellow_brick | CC0 |
+| brick_dark | Bricks 055 (`Bricks055`) | https://ambientcg.com/view?id=Bricks055 | CC0 |
+| brick_dark | Bricks 057 (`Bricks057`) | https://ambientcg.com/view?id=Bricks057 | CC0 |
+| brick_dark | Dark Brick Wall (`dark_brick_wall`), Dario Barresi, Dimitrios Savva | https://polyhaven.com/a/dark_brick_wall | CC0 |
+| brick_dark | Bricks 056 (`Bricks056`) | https://ambientcg.com/view?id=Bricks056 | CC0 |
+| mortar | Grey Plaster (`grey_plaster`), Rob Tuytel | https://polyhaven.com/a/grey_plaster | CC0 |
+| mortar | Plaster 001 (`Plaster001`) | https://ambientcg.com/view?id=Plaster001 | CC0 |
+| stone_white | Bricks 008 (`Bricks008`) | https://ambientcg.com/view?id=Bricks008 | CC0 |
+| stone_white | Bricks 024 (`Bricks024`) | https://ambientcg.com/view?id=Bricks024 | CC0 |
+| stone_white | White Sandstone Bricks 03 (`white_sandstone_bricks_03`), Rob Tuytel | https://polyhaven.com/a/white_sandstone_bricks_03 | CC0 |
+| stone_blue | Stone Tile Wall (`stone_tile_wall`), Charlotte Baglioni | https://polyhaven.com/a/stone_tile_wall | CC0 |
+| stone_blue | Stone Wall 02 (`stone_wall_02`), Dario Barresi, Charlotte Baglioni | https://polyhaven.com/a/stone_wall_02 | CC0 |
+| render_white | Plaster 002 (`Plaster002`) | https://ambientcg.com/view?id=Plaster002 | CC0 |
+| render_white | Plaster 004 (`Plaster004`) | https://ambientcg.com/view?id=Plaster004 | CC0 |
+| render_white | White Stucco (`white_stucco`), Amal Kumar | https://polyhaven.com/a/white_stucco | CC0 |
+| render_white | Painted Plaster Wall (`painted_plaster_wall`), Amal Kumar | https://polyhaven.com/a/painted_plaster_wall | CC0 |
+| render_painted | Painted Plaster Wall (`painted_plaster_wall`), Amal Kumar | https://polyhaven.com/a/painted_plaster_wall | CC0 |
+| render_painted | Beige Wall 002 (`beige_wall_002`), Dimitrios Savva, Rico Cilliers | https://polyhaven.com/a/beige_wall_002 | CC0 |
+| render_painted | Plaster 007 (`Plaster007`) | https://ambientcg.com/view?id=Plaster007 | CC0 |
+| slate | Roof Slates 03 (`roof_slates_03`), Rob Tuytel | https://polyhaven.com/a/roof_slates_03 | CC0 |
+| slate | Roofing Tiles 003 (`RoofingTiles003`) | https://ambientcg.com/view?id=RoofingTiles003 | CC0 |
+| slate | Grey Roof Tiles 02 (`grey_roof_tiles_02`), Rob Tuytel | https://polyhaven.com/a/grey_roof_tiles_02 | CC0 |
+| roof_tiles_red | Clay Roof Tiles 02 (`clay_roof_tiles_02`), Amal Kumar | https://polyhaven.com/a/clay_roof_tiles_02 | CC0 |
+| roof_tiles_red | Clay Roof Tiles 03 (`clay_roof_tiles_03`), Amal Kumar | https://polyhaven.com/a/clay_roof_tiles_03 | CC0 |
+| roof_tiles_red | Roofing Tiles 014 B (`RoofingTiles014B`) | https://ambientcg.com/view?id=RoofingTiles014B | CC0 |
+| roof_tiles_red | Roofing Tiles 007 (`RoofingTiles007`) | https://ambientcg.com/view?id=RoofingTiles007 | CC0 |
+| roof_tiles_flat_dark | Roofing Tiles 013 A (`RoofingTiles013A`) | https://ambientcg.com/view?id=RoofingTiles013A | CC0 |
+| roof_tiles_flat_dark | Roofing Tiles 009 (`RoofingTiles009`) | https://ambientcg.com/view?id=RoofingTiles009 | CC0 |
+| roof_tiles_flat_dark | Grey Roof 01 (`grey_roof_01`), Rob Tuytel | https://polyhaven.com/a/grey_roof_01 | CC0 |
+| zinc_roof | Metal 032 (`Metal032`) | https://ambientcg.com/view?id=Metal032 | CC0 |
+| zinc_roof | Metal 049 C (`Metal049C`) | https://ambientcg.com/view?id=Metal049C | CC0 |
+| lead_roof | Metal 046 B (`Metal046B`) | https://ambientcg.com/view?id=Metal046B | CC0 |
+| lead_roof | Metal 055 A (`Metal055A`) | https://ambientcg.com/view?id=Metal055A | CC0 |
+| copper_patina | Metal 058 B (`Metal058B`) | https://ambientcg.com/view?id=Metal058B | CC0 |
+| painted_metal_white | Painted Metal 012 (`PaintedMetal012`) | https://ambientcg.com/view?id=PaintedMetal012 | CC0 |
+| painted_metal_white | Painted Metal 010 (`PaintedMetal010`) | https://ambientcg.com/view?id=PaintedMetal010 | CC0 |
+| painted_metal_white | Metal 016 (`Metal016`) | https://ambientcg.com/view?id=Metal016 | CC0 |
+| cast_iron_green | Green Metal Rust (`green_metal_rust`), Rob Tuytel | https://polyhaven.com/a/green_metal_rust | CC0 |
+| cast_iron_green | Painted Metal 006 (`PaintedMetal006`) | https://ambientcg.com/view?id=PaintedMetal006 | CC0 |
+| wood_frame_white | Wood 049 (`Wood049`) | https://ambientcg.com/view?id=Wood049 | CC0 |
+| wood_frame_white | Plywood (`plywood`), Rob Tuytel | https://polyhaven.com/a/plywood | CC0 |
+| wood_frame_dark | Wood 051 (`Wood051`) | https://ambientcg.com/view?id=Wood051 | CC0 |
+| wood_frame_dark | Wood 060 (`Wood060`) | https://ambientcg.com/view?id=Wood060 | CC0 |
+| cobbles | Cobblestone Floor 03 (`cobblestone_floor_03`), Rob Tuytel | https://polyhaven.com/a/cobblestone_floor_03 | CC0 |
+| cobbles | Cobblestone Square (`cobblestone_square`), Rob Tuytel | https://polyhaven.com/a/cobblestone_square | CC0 |
+| cobbles | Paving Stones 070 (`PavingStones070`) | https://ambientcg.com/view?id=PavingStones070 | CC0 |
+| paving_concrete | Concrete Pavement (`concrete_pavement`), Charlotte Baglioni | https://polyhaven.com/a/concrete_pavement | CC0 |
+| paving_concrete | Concrete Pavement 03 (`concrete_pavement_03`), Charlotte Baglioni | https://polyhaven.com/a/concrete_pavement_03 | CC0 |
+| asphalt | Asphalt 04 (`asphalt_04`), Jenelle van Heerden, Sergej Majboroda | https://polyhaven.com/a/asphalt_04 | CC0 |
+| asphalt | Asphalt 015 (`Asphalt015`) | https://ambientcg.com/view?id=Asphalt015 | CC0 |
+| asphalt | Asphalt 020 S (`Asphalt020S`) | https://ambientcg.com/view?id=Asphalt020S | CC0 |
+| concrete_white | Concrete 034 (`Concrete034`) | https://ambientcg.com/view?id=Concrete034 | CC0 |
+| concrete_white | Concrete 046 (`Concrete046`) | https://ambientcg.com/view?id=Concrete046 | CC0 |
+| concrete_white | Concrete Wall 008 (`concrete_wall_008`), Dario Barresi, Charlotte Baglioni | https://polyhaven.com/a/concrete_wall_008 | CC0 |
+| rockwork_concrete | Rock 030 (`Rock030`) | https://ambientcg.com/view?id=Rock030 | CC0 |
+| rockwork_concrete | Rock 023 (`Rock023`) | https://ambientcg.com/view?id=Rock023 | CC0 |
+
+Quixel Megascans (Fab Standard License, NOT CC0) are NOT in the repo: the owner downloads them into
+`data/raw/megascans/` (git-ignored) for the lab only; see docs/materials/MEGASCANS_LIST.md.
+
 
 ## 3D models (CC0 packs, Car Lab comparison)
 
@@ -121,6 +204,17 @@ three.js's example Soldier.glb (Mixamo, not shippable; it was only loaded by URL
 |---|---|---|
 | STIB-MIVB GTFS static feed (line 92 shapes, stops, timetable), via the Belgian Mobility open-data platform, data.belgianmobility.io | CC BY 4.0 | **Source: STIB-MIVB – Open Data – 20261026** (GTFS 2_24_20261026_010708). Raw feed in `data/raw/gtfs/` (not committed); derived `data/transit/stib-92.json` by `pipeline/build_transit.py`. Shown in the viewer's log. |
 
+| NMBS/SNCB GTFS static feed (feed_version 2026-11-05), via the Belgian National Access Point transportdata.be | SNCB standard licence for timetable re-use (free; agreement to be accepted with gtfs@sncb.be before publishing, see docs/trains/RESEARCH.md) | Raw feed `data/raw/gtfs/sncb.zip` (not committed); derived `data/transit/sncb-uccle.json` by `pipeline/build_trains.py`, credited in the viewer log. Track geometry: OpenStreetMap (ODbL); bridges / tunnels / DTM: UrbIS (CC0). |
+
+## Railway reference photos (docs/trains/compare/*.jpg only, never shipped with the viewer)
+
+Wikimedia Commons photos beside our renders (credited in each image); originals in `data/raw/refs/trains/` (not committed,
+SOURCES.json has the pages): Stratoswift (CC BY-SA 4.0; one CC BY 4.0): "Chaussée de Saint-Job, viaduc ferroviaire ..." (x4),
+"Calevoet Viaduc - Soir", "AM 08049 - S1 1966 - Uccle-Calevoet - 27 mars 2025", "AM 08579 - S19 - Saint-Job - 24-07-2025",
+"AM 08573 / 08558 ... Uccle-Calevoet", "Gare de Calevoet et train 4 mars 2024", "Gare de Saint-Job (nouveau pont) 11 novembre 2024",
+"AM 08176 + 08206 - IC 4011 - Saint-Job"; Sjenghai (CC BY-SA 4.0): "Uccle-Ukkel - Infrabel ligne-lijn 26 + AM-MS86 ...",
+"Infrabel ligne-lijn 124 - ... Gare d'Uccle Stalle ..."; Japplemedia (CC BY 4.0): "Station Sint-Job 2025".
+
 ## Build tools
 
 | Tool | Licence | Use |
@@ -143,3 +237,36 @@ credited in each image. The originals stay in `data/raw/refs/falcons/` (git-igno
 | Falco peregrinus -England -flying-8.jpg | Steve Childs | CC BY 2.0 |
 | Faucon pelerin ND reims 1530624.jpg | G.Garitan | CC BY-SA 4.0 |
 
+
+## Tree textures (tree textures lab only: `labs/tree-textures-lab.html`, not in the city)
+
+Raw downloads in `data/raw/textures/trees/<source>/<id>/` (git-ignored, read as data only) by
+`tools/textures/fetch_tree_textures.py`; processed by `tools/textures/process_tree_textures.py` into KTX2 (Basis UASTC
++ zstd, 1024 px) in `viewer/trees/textures/` (manifest `tree_textures.json`).
+
+| Asset | Source | Licence | Used as |
+|---|---|---|---|
+| **Bark009** (camouflage bark), https://ambientcg.com/view?id=Bark009 | ambientCG (Lennart Demes) | **CC0 1.0** | plane bark, option B |
+| **Bark Platanus** (`bark_platanus`), https://polyhaven.com/a/bark_platanus | Poly Haven | **CC0 1.0** | plane: old dark foot (B2) and alt (B3) |
+| **Chinese Hackberry Bark** (`chinese_hackberry_bark`), https://polyhaven.com/a/chinese_hackberry_bark | Poly Haven | **CC0 1.0** | beech bark, option B |
+| **Bark005**, https://ambientcg.com/view?id=Bark005 | ambientCG | **CC0 1.0** | beech: mossy foot (B2) and alt (B3) |
+| **LeafSet010** (green maple leaves), https://ambientcg.com/view?id=LeafSet010 | ambientCG | **CC0 1.0** | the scanned leaves of the plane's spray (leaves C), baked by `tools/blender/leafAtlas.py --scan` |
+| **LeafSet024** (round leaves), https://ambientcg.com/view?id=LeafSet024 | ambientCG | **CC0 1.0** | the scanned leaves of the beech's spray (leaves C) |
+
+The modelled leaf sprays (leaves B: `leaf_plane`, `leaf_beech`) are ours, generated by `tools/blender/leafAtlas.py`.
+CC0 needs no credit; credited voluntarily: "Poly Haven (polyhaven.com), CC0", "ambientCG (ambientcg.com), CC0".
+
+**Quixel Megascans** (slot C / D in the lab): not used. Under the Fab Standard License (NOT CC0): if the owner adds
+them they stay local and lab-only (`data/raw/textures/trees/megascans/`), never committed raw or redistributed.
+
+Reference photos for `docs/trees/textures/*.jpg` (Wikimedia Commons, in the composites only, never shipped with the
+viewer; list in `data/raw/refs/trees/textures/SOURCES.json` by `tools/textures/fetch_tree_refs.py`). A composite with a
+CC BY-SA photo is shared under the same licence.
+
+| File | Author | Licence |
+|---|---|---|
+| Siemianowice Platanus × hispanica bark.jpg | Adrian Tync | CC BY-SA 4.0 |
+| Platanus acerifolia leaves (1).jpg | Fanghong | CC BY 2.5 |
+| Fagus sylvatica (bark)1.JPG | Fraxinus Croat | CC BY-SA 3.0 |
+| Fagus sylvatica trunk TK 2022-04-30 2.jpg | T. Kebert | CC BY-SA 4.0 |
+| Fagus sylvatica TK 2021-05-22 1.jpg | T. Kebert | CC BY-SA 4.0 |

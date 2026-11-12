@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Park Kit Lab</title>
+<link rel="icon" href="../viewer/favicon.svg" type="image/svg+xml">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #8e9aa6; font: 13px/1.4 system-ui, sans-serif; }
+  canvas { display: block; }
+  #info { position: fixed; left: 10px; bottom: 10px; max-width: 720px; padding: 8px 10px; border-radius: 6px;
+          background: rgba(20, 24, 30, .78); color: #dfe4ea; font: 12px/1.35 ui-monospace, monospace; white-space: pre-wrap; z-index: 2; }
+  #title { position: fixed; left: 10px; top: 10px; padding: 6px 10px; border-radius: 6px; background: rgba(20, 24, 30, .78);
+           color: #e6e9ee; z-index: 2; max-width: calc(100vw - 360px); }
+  #title a { color: #9cc4ff; }
+  #page { position: fixed; inset: 0; overflow-y: auto; background: #15181c; color: #e6e9ee; z-index: 4; display: none; padding: 24px 16px; box-sizing: border-box; }
+  #page main { max-width: 1100px; margin: 0 auto; }
+  #page h2 { margin: 0 0 4px; font-size: 20px; } #page h3 { margin: 22px 0 6px; font-size: 15px; color: #9cc4ff; }
+  #page p { color: #b8c2cc; margin: 4px 0; max-width: 800px; }
+  #page figure { margin: 10px 0 18px; } #page img { width: 100%; border-radius: 8px; display: block; }
+  #page figcaption { color: #9aa3ad; font-size: 13px; margin-top: 4px; }
+  #page table { border-collapse: collapse; font: 12px ui-monospace, monospace; margin: 6px 0 12px; }
+  #page td, #page th { border-bottom: 1px solid #2b3038; padding: 3px 10px 3px 0; text-align: left; }
+  #page button { position: sticky; top: 0; float: right; padding: 6px 12px; border-radius: 6px; border: 1px solid #3f4855; background: #2f3743; color: #e6e9ee; cursor: pointer; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.tsl.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/",
+    "three/src/": "https://cdn.jsdelivr.net/npm/three@0.187.0/src/",
+    "meshoptimizer/simplifier": "https://cdn.jsdelivr.net/npm/meshoptimizer@1.2.0/meshopt_simplifier.js"
+  }
+}
+</script>
+</head>
+<body>
+<div id="title"><b>Park Kit Lab</b> — reusable rockwork ("rocaille") and playground kits, first for the Parc de la Sauvagère · <a href="./">all labs</a> · <a href="#" id="pageLink">what the city shows there today</a></div>
+<div id="page"></div>
+<div id="info">loading…</div>
+<script type="module" src="./park-kit-lab.js"></script>
+</body>
+</html>

@@ -31,7 +31,7 @@ const css = `
 .rv-mat:hover { background: #1d2128; } .rv-mat.on { background: #243046; }
 .rv-mat .nm { font-weight: 600; } .rv-mat .lb { color: #8d98a6; font-size: 11px; }
 .rv-b { display: inline-block; padding: 0 5px; margin: 2px 3px 0 0; border-radius: 3px; font: 600 10.5px/16px system-ui; background: #2d333c; color: #c9d1db; }
-.rv-b.p { background: #3a3550; } .rv-b.s { background: #24486b; } .rv-b.m { background: #6b4a12; color: #ffe2a8; } .rv-b.mq { background: #3b3220; color: #c9b58a; }
+.rv-b.p { background: #3a3550; } .rv-b.g { background: #2f5a3a; color: #d4f5dc; } .rv-b.s { background: #24486b; } .rv-b.m { background: #6b4a12; color: #ffe2a8; } .rv-b.mq { background: #3b3220; color: #c9b58a; }
 .rv-b.ok { background: #1f6b3a; color: #d8ffe4; } .rv-b.nw { background: #7a2a2a; color: #ffd9d9; } .rv-b.ms { background: #1d2a33; color: #9fc3d9; }
 #rv-top { position: fixed; left: ${SIDEBAR}px; right: 0; top: 0; height: ${TOP}px; background: #14171c; border-bottom: 1px solid #2a2f37; z-index: 3; padding: 6px 10px; box-sizing: border-box; }
 #rv-top .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
@@ -207,11 +207,12 @@ async function materialFor(name, v) {
 
 // ------------------------------------------------------------------------------------------------ list
 function badges(name) {
-  const vs = versions(name), sc = vs.filter((v) => v.kind === "cc0").length, mg = vs.filter((v) => v.kind === "megascans").length;
+  const vs = versions(name), sc = vs.filter((v) => v.kind === "cc0").length, mg = vs.filter((v) => v.kind === "megascans").length, gn = vs.filter((v) => v.kind === "generated").length;
   const want = megaWanted(name).length, vd = verdicts[name];
   const c = costs.materials?.[name];
   let h = `<span class="rv-b p" title="procedural version">P</span>`;
   if (sc) h += `<span class="rv-b s" title="CC0 scans (Poly Haven / ambientCG)">S ${sc}</span>`;
+  if (gn) h += `<span class="rv-b g" title="generated texture sets (texture factory, claude/texfactory)">G ${gn}</span>`;
   if (mg) h += `<span class="rv-b m" title="Megascans dropped in: licence check before public">M ${mg}</span>`;
   else if (want) h += `<span class="rv-b mq" title="Megascans on the shopping list, not downloaded yet">M? ${want}</span>`;
   if (c?.proc?.gpu_ms != null) h += `<span class="rv-b ms" title="GPU ms per full-screen wall over a plain material (procedural / best scan)">${c.proc.gpu_ms.toFixed(2)}${bestScanMs(c)}</span>`;
@@ -298,7 +299,7 @@ function layoutTiles() {
       if (chosen) el.classList.add("chosen");
       const cst = costs.materials?.[S.material]?.[v.id];
       const sz = v.kind === "proc" ? "0 MB textures" : `${v.albedo_ktx2_bytes ? mb(v.albedo_ktx2_bytes, v.nra_ktx2_bytes) : mb(v.albedo_webp_bytes, v.nra_webp_bytes) + " (WebP)"} MB download${v.size_m ? ` · ${v.size_m} m/repeat` : ""}`;
-      const lic = v.kind === "megascans" ? `<span class="rv-b m">Megascans: licence check before public</span>` : v.kind === "cc0" ? `<span class="rv-b s">CC0 ${v.source ?? ""}</span>` : `<span class="rv-b p">procedural</span>`;
+      const lic = v.kind === "megascans" ? `<span class="rv-b m">Megascans: licence check before public</span>` : v.kind === "generated" ? `<span class="rv-b g">generated (texture factory)</span>` : v.kind === "cc0" ? `<span class="rv-b s">CC0 ${v.source ?? ""}</span>` : `<span class="rv-b p">procedural</span>`;
       el.innerHTML = `<div class="rv-tl"><div class="t"><b>${String.fromCharCode(65 + t.col)} · ${v.name ?? v.id}</b>${v.current ? " (shipped)" : ""}<div class="d">${lic} ${r === 0 ? `${sz}${cst?.gpu_ms != null ? ` · ${cst.gpu_ms.toFixed(2)} ms` : ""}${v.note ? ` · ${v.note}` : ""}` : ""}</div></div></div>
         <div class="rv-tb">${r === rows.length - 1 ? `<button class="${chosen ? "on" : ""}" data-choose="${v.id}">${chosen ? "✓ chosen" : "choose this"}</button>` : ""}<span class="sh" data-sh>${shText(v.id, d)}</span></div><div class="rv-dist">${d} m</div>`;
       const btn = el.querySelector("[data-choose]");
@@ -484,6 +485,7 @@ function sampleGpu() {
 let benching = false;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const plain = new THREE.MeshStandardNodeMaterial({ color: 0x777777, roughness: 0.8 });
+const BENCH = { frames: 75, runs: 3 };    // lab.BENCH.frames / runs: shorter runs when the GPU is shared
 async function measureFull(material, kind) {
   const cam = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.05, 6000);
   const mesh = kind === "wall" ? WALL : kind === "floor" ? FLOOR : ROOF;
@@ -497,9 +499,9 @@ async function measureFull(material, kind) {
   };
   await renderer.compileAsync(scene, cam).catch(() => {});
   let best = Infinity;
-  const loop = () => new Promise((res) => { let n = 0; const tick = () => { run(); sampleGpu(); if (++n < 75) requestAnimationFrame(tick); else res(); }; requestAnimationFrame(tick); });
+  const loop = () => new Promise((res) => { let n = 0; const tick = () => { run(); sampleGpu(); if (++n < BENCH.frames) requestAnimationFrame(tick); else res(); }; requestAnimationFrame(tick); });
   await loop();
-  for (let k = 0; k < 3; k++) {
+  for (let k = 0; k < BENCH.runs; k++) {
     gpu.samples.length = 0; await loop();
     const s = gpu.samples.slice(2).sort((a, b) => a - b);
     if (s.length >= 3) best = Math.min(best, s[Math.floor(s.length / 2)]);
@@ -553,7 +555,7 @@ function buildVersionPicker() {
   const vs = versions(S.material), on = S.shown[S.material] ?? [];
   for (const v of vs) {
     const o = { [v.id]: on.includes(v.id) };
-    fsel.add(o, v.id).name(`${v.kind === "proc" ? "P" : v.kind === "megascans" ? "M" : "S"} · ${v.name ?? v.id}`).onChange((x) => {
+    fsel.add(o, v.id).name(`${v.kind === "proc" ? "P" : v.kind === "megascans" ? "M" : v.kind === "generated" ? "G" : "S"} · ${v.name ?? v.id}`).onChange((x) => {
       let ids = S.shown[S.material] ?? [];
       ids = x ? [...ids, v.id].slice(-4) : ids.filter((i) => i !== v.id);
       if (!ids.length) ids = [v.id];
@@ -589,4 +591,4 @@ addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); la
 setLight(S.light);
 drawList(); drawVerdict();
 await refresh();
-window.lab = { get th() { return th; }, renderer, scene, S, tiles, verdicts, costs, shimmer, measureShimmer, benchMaterial, benchAll, versions, selectMaterial, refresh, frame, setLight, looks, mats, gpu };
+window.lab = { BENCH, get th() { return th; }, renderer, scene, S, tiles, verdicts, costs, shimmer, measureShimmer, benchMaterial, benchAll, versions, selectMaterial, refresh, frame, setLight, looks, mats, gpu };

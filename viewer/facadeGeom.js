@@ -131,7 +131,11 @@ function beam(D, P0, P1, w, h, col) {
   quad(at(P0, -hw, lo), at(P1, -hw, lo), at(P1, -hw * 0.6, hi), at(P0, -hw * 0.6, hi), n2);
 }
 
-export function analyseBuildings(doc, buf, roads, feats) {
+/** opts.kit: a façade-kit collector (viewer/facadeKit/placement.js kitCollector): every wall face is offered to it;
+ *  the faces it takes go to walls.kit (a separate mesh: its material cuts the openings the kit's pieces fill, aKit =
+ *  (on, arch rise)) and the result gets kit = collector.finish(). */
+export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
+  const kit = opts.kit || null;
   const dv = new DataView(buf);
   const V = dv.getUint32(0, true), T = dv.getUint32(4, true);
   const P = new Float32Array(buf, 8, V * 3);
@@ -191,6 +195,7 @@ export function analyseBuildings(doc, buf, roads, feats) {
   };
 
   const W = { position: [], normal: [], aWall: [], aBld: [], aFN: [] };
+  const WK = { position: [], normal: [], aWall: [], aBld: [], aFN: [], aKit: [] };   // the kit's faces
   // OSM shops (features.json points kind "shop") -> a shopfront on the nearest street face
   const shops = new Grid(40);
   for (const p of feats?.points || []) if (p.kind === "shop") { p.used = false; shops.add(p.x, p.z, p.x, p.z, p); }
@@ -248,7 +253,10 @@ export function analyseBuildings(doc, buf, roads, feats) {
       }
     }
     const ownRing = b.footprint[0];
-    for (const f of fl.filter((q) => !q.dead)) {
+    const live = fl.filter((q) => !q.dead);
+    // first pass: orientation, extent, party wall, street (the second pass needs every face's: the kit gives a corner
+    // house ONE front door, on its widest street face)
+    for (const f of live) {
       // outward: a point 0.5 m along the normal must be outside the building's own footprint
       {
         let mx = 0, mz = 0, k = 0;
@@ -262,8 +270,6 @@ export function analyseBuildings(doc, buf, roads, feats) {
         const u = q[0] * tx + q[2] * tz;
         u0 = Math.min(u0, u); u1 = Math.max(u1, u); cx += q[0]; cz += q[2]; n++; top = Math.max(top, q[1]);
       }
-      // landmarks: windows sized to each wall's own top (a church's LoD2 walls stop low; drums and towers are separate faces)
-      const faceEaves = landmark ? top - base : eaves;
       cx /= n; cz /= n;
       const width = u1 - u0;
       // party wall: blank below this height above base. Separate houses: the whole wall (property line);
@@ -271,8 +277,17 @@ export function analyseBuildings(doc, buf, roads, feats) {
       const ob = width > 0.3 ? otherAt(cx + f.nx * PARTY_PROBE, cz + f.nz * PARTY_PROBE, bi) : -1;
       const sameBld = ob >= 0 && b.attrs?.BU_ID && doc.buildings[ob].attrs?.BU_ID === b.attrs.BU_ID;
       const partyH = ob < 0 ? 0 : (sameBld || landmark) ? Math.max(0.01, roofAt(ob, cx + f.nx * PARTY_PROBE, cz + f.nz * PARTY_PROBE) - base) : 999;
-      const party = partyH > 0 ? 1 : 0;
       const street = partyH < 999 && facesStreet(cx, cz, f.nx, f.nz) ? 1 : 0;
+      f.pre = { tx, tz, u0, u1, cx, cz, top, width, partyH, street };
+    }
+    // the widest street face carries the front door (the kit only: the painted façade keeps a door per street face)
+    let doorFace = null;
+    for (const f of live) if (f.pre.street && f.pre.width >= 1.6 && (!doorFace || f.pre.width > doorFace.pre.width)) doorFace = f;
+    for (const f of live) {
+      const { tx, tz, u0, u1, cx, cz, top, width, partyH, street } = f.pre;
+      // landmarks: windows sized to each wall's own top (a church's LoD2 walls stop low; drums and towers are separate faces)
+      const faceEaves = landmark ? top - base : eaves;
+      const party = partyH > 0 ? 1 : 0;
       stats.faces++; stats.party += party; stats.street += street;
       // shopfront: an unused shop point inside this building (or up to 6 m in front of the face), within the face's span
       let shopU = 0, shopW = 0;
@@ -361,13 +376,18 @@ export function analyseBuildings(doc, buf, roads, feats) {
           stats.chimneys++;
         }
       }
+      // the façade kit takes this face? (street faces of eligible buildings, every opening on the wall)
+      const k = kit ? kit.face({ key, building: b, doorFace: f === doorFace, wallStyle: style, landmark: !!landmark, rnd, width, eaves: faceEaves, partyH, street, roofAt: (x, z) => roofAt(bi, x, z),
+        shopU, shopW, base, top, nx: f.nx, nz: f.nz, tx, tz, u0, tris: f.tris }) : null;
+      const T = k?.on ? WK : W;
       for (const { p, n: nn, src } of f.tris) for (const q of p) {
-        W.position.push(q[0], q[1], q[2]);
+        T.position.push(q[0], q[1], q[2]);
         const sn = src ? smooth(src, q) : nn;
-        W.normal.push(sn[0], sn[1], sn[2]);
-        W.aWall.push(q[0] * tx + q[2] * tz - u0, width, q[1] - base, faceEaves);
-        W.aBld.push(style, partyH, street, rnd);
-        W.aFN.push(f.nx, f.nz, shopU, shopW);                                    // outward normal (xz), shopfront centre / width + 10 * paint
+        T.normal.push(sn[0], sn[1], sn[2]);
+        T.aWall.push(q[0] * tx + q[2] * tz - u0, width, q[1] - base, faceEaves);
+        T.aBld.push(style, partyH, street, rnd);
+        T.aFN.push(f.nx, f.nz, shopU, shopW);                                    // outward normal (xz), shopfront centre / width + 10 * paint
+        if (T === WK) WK.aKit.push(1, k.rise, k.doorless, k.french);
       }
     }
     // --- ridge tiles and hip ribs: convex roof edges shared by two roof faces that meet at > 12°
@@ -425,7 +445,9 @@ export function analyseBuildings(doc, buf, roads, feats) {
   });
   const f32 = (a) => new Float32Array(a);
   return {
-    walls: { position: f32(W.position), normal: f32(W.normal), aWall: f32(W.aWall), aBld: f32(W.aBld), aFN: f32(W.aFN) },
+    walls: { position: f32(W.position), normal: f32(W.normal), aWall: f32(W.aWall), aBld: f32(W.aBld), aFN: f32(W.aFN),
+      kit: kit ? { position: f32(WK.position), normal: f32(WK.normal), aWall: f32(WK.aWall), aBld: f32(WK.aBld), aFN: f32(WK.aFN), aKit: f32(WK.aKit) } : null },
+    kit: kit ? kit.finish() : null,
     details: { position: f32(D.position), normal: f32(D.normal), aCol: f32(D.color) },
     roofs: { position: f32(R.position), normal: f32(R.normal), aRoof: f32(R.aRoof), aRoofCol: f32(R.aRoofCol) },
     stats: { ...stats, triangles: T, vertices: V },

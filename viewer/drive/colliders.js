@@ -25,7 +25,7 @@ export function buildColliders(polys, circles, bounds) {
   let nv = 0, nr = 0;
   for (const p of polys) for (const r of p.rings) { nv += r.length; nr++; }
   const pts = new Float32Array(nv * 2), ringStart = new Uint32Array(nr + 1), polyRing = new Uint32Array(polys.length + 1);
-  const pbox = new Float32Array(polys.length * 4), pkind = new Uint8Array(polys.length), ptop = new Float32Array(polys.length);
+  const pbox = new Float32Array(polys.length * 4), pkind = new Uint8Array(polys.length), ptop = new Float32Array(polys.length), pbase = new Float32Array(polys.length);
   let v = 0, r = 0;
   polys.forEach((p, i) => {
     polyRing[i] = r;
@@ -35,12 +35,12 @@ export function buildColliders(polys, circles, bounds) {
       for (const [x, z] of ring) { pts[v * 2] = x; pts[v * 2 + 1] = z; v++; if (x < a) a = x; if (x > c) c = x; if (z < b) b = z; if (z > d) d = z; }
     }
     pbox[i * 4] = a; pbox[i * 4 + 1] = b; pbox[i * 4 + 2] = c; pbox[i * 4 + 3] = d;
-    pkind[i] = p.kind ?? KIND.building; ptop[i] = p.top ?? 1e4;
+    pkind[i] = p.kind ?? KIND.building; ptop[i] = p.top ?? 1e4; pbase[i] = p.base ?? -1e4;
   });
   ringStart[nr] = v; polyRing[polys.length] = r;
   const circ = new Float32Array(circles.length * 3), ckind = new Uint8Array(circles.length);
   circles.forEach((q, i) => { circ[i * 3] = q.x; circ[i * 3 + 1] = q.z; circ[i * 3 + 2] = q.r; ckind[i] = q.kind ?? KIND.post; });
-  const col = { cell: CELL, bounds, pts, ringStart, polyRing, pbox, pkind, ptop, circ, ckind };
+  const col = { cell: CELL, bounds, pts, ringStart, polyRing, pbox, pkind, ptop, pbase, circ, ckind };
   indexCells(col);
   return col;
 }
@@ -249,6 +249,50 @@ export function pointInBuilding(list, x, z) {
   return false;
 }
 
+// ---------------------------------------------------------------- what is drawn there (also colliderAudit.js)
+
+export const CAR_CLEAR = 2.2;      // m: a solid whose base is this far over the ground everywhere under it is overhead
+export const RAISED = 20;          // cm above the carved terrain: a sidewalk / median deck (the road deck is CARVE = 12 cm)
+export function inRings(rings, x, z) {
+  let inside = false;
+  for (const ring of rings) for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [ax, az] = ring[i], [bx, bz] = ring[j];
+    if ((az > z) !== (bz > z) && x < ax + (bx - ax) * (z - az) / (bz - az)) inside = !inside;
+  }
+  return inside;
+}
+/** Points on a `step` grid inside the rings (at least the vertices' centroid). */
+export function samplesIn(rings, step = 1) {
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (const [x, z] of rings[0]) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+  const s = Math.max(step, Math.sqrt(((x1 - x0) * (z1 - z0)) / 400));      // at most ~400 samples
+  const out = [];
+  for (let x = x0 + s / 2; x < x1; x += s) for (let z = z0 + s / 2; z < z1; z += s) if (inRings(rings, x, z)) out.push([x, z]);
+  if (!out.length) { let cx = 0, cz = 0; for (const [x, z] of rings[0]) { cx += x; cz += z; } out.push([cx / rings[0].length, cz / rings[0].length]); }
+  return out;
+}
+
+/** The drawn deck height over the carved terrain (cm) at (x, z): the drive ground grid (colliders.js driveGround). */
+export function deckAt(hm, delta, x, z) {
+  const h = hm.h, c = Math.round((x - h.x0) / h.step), r = Math.round((z - h.z0) / h.step);
+  return c >= 0 && r >= 0 && c < h.cols && r < h.rows ? delta[r * h.cols + c] : 0;
+}
+/** Is the drawn surface inside these rings raised (kerbed)? share of samples >= RAISED cm */
+export function raisedShare(hm, delta, rings) {
+  const s = samplesIn(rings);
+  let n = 0;
+  for (const [x, z] of s) if (deckAt(hm, delta, x, z) >= RAISED) n++;
+  return n / s.length;
+}
+/** The clearance under a building solid: its base minus the highest ground under its footprint (vertices + inside). */
+export function clearanceUnder(hm, rings, base) {
+  let g = -Infinity;
+  for (const [x, z] of rings[0]) g = Math.max(g, hm.ground(x, z));
+  for (const [x, z] of samplesIn(rings, 2)) g = Math.max(g, hm.ground(x, z));
+  return base - g;
+}
+
+
 // ---------------------------------------------------------------- the city: per tile, in the worker
 
 /** Ring list of a footprint polygon, closing duplicate dropped. */
@@ -262,35 +306,57 @@ function cleanRing(ring) {
 /**
  * The drive data of one tile (tileData.js calls this): colliders + the drivable-surface grid.
  * bDoc: buildings.json; net: the road network (buildRoadNetwork); feats: features.json; hm: the Heightmap AFTER the
- * road carve; parts: the road mesh parts { asphalt, concrete, grass } with { position, index } (clipped to the tile).
+ * road carve; parts: the DRAWN road mesh parts { asphalt, concrete, grass, ... } with { position, index } (clipped to
+ * the tile); surf: surfaces.json (the measured street) or null.
+ * Every collider stands for something drawn (docs/CITY_TREES.md §3, colliderAudit.js checks it):
+ *  - buildings: the footprints, except solids whose base is over CAR_CLEAR above the ground everywhere under them
+ *    (an upper-floor overhang, a passage, a bridge: nothing at car height);
+ *  - islands: the engine's raised islands / medians ONLY where the drawn surface there is raised (with measured
+ *    surfaces the engine's islands are mostly not drawn: they were invisible walls), plus the measured medians
+ *    (class 6, drawn raised and kerbed);
+ *  - trees: features.json trees in the tile (the list the tree fields draw; trees on the carriageway are moved or
+ *    dropped in the pipeline, pipeline/filter_road_trees.py);
+ *  - lamps and bollards: added on the main thread from the drawn lists (driveMode.js tileDrive).
+ * legacy = true: the old sets (every engine island, every footprint) for the audit's "before".
  */
-export function buildDriveData({ bDoc, net, feats, hm, parts, bounds }) {
+export function buildDriveData({ bDoc, net, feats, hm, parts, bounds, surf = null, legacy = false }) {
   const polys = [], circles = [];
+  const ground = driveGround(hm, parts);
+  let overhead = 0, islands = 0, islandsHidden = 0, medianIslands = 0;
   for (const bd of bDoc.buildings) {
     const rings = (bd.footprint || []).map(cleanRing).filter((r) => r.length >= 3);
-    if (rings.length) polys.push({ rings, kind: KIND.building, top: +bd.top || 1e4 });
+    if (!rings.length) continue;
+    const base = bd.base != null ? +bd.base : -1e4;
+    if (!legacy && base > -1e3 && clearanceUnder(hm, rings, base) > CAR_CLEAR) { overhead++; continue; }
+    polys.push({ rings, kind: KIND.building, top: +bd.top || 1e4, base });
   }
   // raised kerb islands (the road engine builds a 0.5 m collision wall round them: MESH_DEFAULTS.islandWall)
   const inTile = (ring) => ring.some(([x, z]) => x >= bounds.x0 - 5 && x <= bounds.x1 + 5 && z >= bounds.z0 - 5 && z <= bounds.z1 + 5);
-  let islands = 0;
+  const island = (r) => {
+    if (r.length < 3 || !inTile(r)) return;
+    if (!legacy && raisedShare(hm, ground.delta, [r]) < 0.5) { islandsHidden++; return; }
+    polys.push({ rings: [r], kind: KIND.island }); islands++;
+  };
   for (const node of net.nodes || []) for (const isl of node.islands || []) {
     if (isl.kind !== "raised" && isl.kind !== "grass") continue;
-    const r = cleanRing(isl.poly || []);
-    if (r.length >= 3 && inTile(r)) { polys.push({ rings: [r], kind: KIND.island }); islands++; }
+    island(cleanRing(isl.poly || []));
   }
   for (const rr of net.roads || []) {
     const ck = rr.stack?.center?.kind;
     if (!rr.center?.poly || (ck !== "raised" && ck !== "barrier")) continue;
-    const r = cleanRing(rr.center.poly);
-    if (r.length >= 3 && inTile(r)) { polys.push({ rings: [r], kind: KIND.island }); islands++; }
+    island(cleanRing(rr.center.poly));
   }
+  // the measured medians (surfaces.json class 6: drawn raised and kerbed by viewer/surfaces.js)
+  const medians = [];
+  for (const s of surf?.surfaces || []) if (s.c === 6 && s.rings?.[0]?.length >= 3 && inTile(s.rings[0])) medians.push(s.rings.map(cleanRing).filter((r) => r.length >= 3));
+  if (!legacy) for (const m of medians) if (raisedShare(hm, ground.delta, m) >= 0.5) { polys.push({ rings: m, kind: KIND.island }); medianIslands++; }
   // tree trunks: a bit wider for tall trees (the stylized trunks scale with the LiDAR height)
   for (const t of feats.trees || []) {
     if (t.x < bounds.x0 || t.x > bounds.x1 || t.z < bounds.z0 || t.z > bounds.z1) continue;
     circles.push({ x: t.x, z: t.z, r: Math.min(0.5, Math.max(0.22, 0.16 + 0.012 * (t.height || 10))), kind: KIND.tree });
   }
   const col = buildColliders(polys, circles, bounds);
-  return { col, ground: driveGround(hm, parts), counts: { buildings: bDoc.buildings.length, islands, trees: circles.length } };
+  return { col, medians, ground, legacy, counts: { buildings: bDoc.buildings.length - overhead, overhead, islands, islandsHidden, medianIslands, trees: circles.length } };
 }
 
 /**

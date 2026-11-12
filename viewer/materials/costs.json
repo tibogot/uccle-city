@@ -1,0 +1,677 @@
+{
+ "about": "GPU ms per full-screen test surface (1280x720 canvas, DPR 1) over a plain MeshStandardNodeMaterial (WebGPU timestamps, lowest of 2 medians of 40 frames). Round 1: all materials; round 2 (gpu_ms_round2): bricks + asphalt again at the end. The two rounds differ up to 2x (the owner's Chrome had another WebGPU lab open; GPU clocks): compare versions of ONE material within one round only. tex_gpu_mb = BC7/ASTC on the GPU, dl_mb = KTX2 download.",
+ "date": "2026-11-13",
+ "canvas": [
+  1280,
+  720
+ ],
+ "materials": {
+  "brick_red_brussels": {
+   "proc": {
+    "gpu_ms": 0.655,
+    "frame_ms": 0.852,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0,
+    "gpu_ms_round2": 1.507
+   },
+   "ph_red_brick": {
+    "gpu_ms": 0.393,
+    "frame_ms": 0.59,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.37,
+    "gpu_ms_round2": 1.311
+   },
+   "ph_brick_wall_006": {
+    "gpu_ms": 0.393,
+    "frame_ms": 0.59,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.59,
+    "gpu_ms_round2": 1.311
+   },
+   "ph_brick_wall_001": {
+    "gpu_ms": 0.459,
+    "frame_ms": 0.655,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.57,
+    "gpu_ms_round2": 1.245
+   },
+   "acg_Bricks085": {
+    "gpu_ms": 0.393,
+    "frame_ms": 0.59,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.57,
+    "gpu_ms_round2": 1.245
+   },
+   "_plain_ms": 0.197
+  },
+  "brick_yellow": {
+   "proc": {
+    "gpu_ms": 0.786,
+    "frame_ms": 1.049,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0,
+    "gpu_ms_round2": 1.507
+   },
+   "acg_Bricks105": {
+    "gpu_ms": 0.655,
+    "frame_ms": 0.918,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.47,
+    "gpu_ms_round2": 1.18
+   },
+   "acg_Bricks016": {
+    "gpu_ms": 0.655,
+    "frame_ms": 0.918,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.29,
+    "gpu_ms_round2": 1.18
+   },
+   "ph_yellow_brick": {
+    "gpu_ms": 0.459,
+    "frame_ms": 0.721,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.55,
+    "gpu_ms_round2": 1.507
+   },
+   "_plain_ms": 0.262
+  },
+  "brick_dark": {
+   "proc": {
+    "gpu_ms": 0.524,
+    "frame_ms": 0.786,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0,
+    "gpu_ms_round2": 1.507
+   },
+   "acg_Bricks055": {
+    "gpu_ms": 0.524,
+    "frame_ms": 0.786,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.37,
+    "gpu_ms_round2": 1.245
+   },
+   "acg_Bricks057": {
+    "gpu_ms": 0.721,
+    "frame_ms": 0.983,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.4,
+    "gpu_ms_round2": 1.245
+   },
+   "ph_dark_brick_wall": {
+    "gpu_ms": 0.721,
+    "frame_ms": 0.983,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.56,
+    "gpu_ms_round2": 1.245
+   },
+   "acg_Bricks056": {
+    "gpu_ms": 0.655,
+    "frame_ms": 0.918,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.37,
+    "gpu_ms_round2": 1.245
+   },
+   "_plain_ms": 0.262
+  },
+  "asphalt": {
+   "proc": {
+    "gpu_ms": 0.59,
+    "frame_ms": 0.852,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0,
+    "gpu_ms_round2": 1.573
+   },
+   "ph_asphalt_02": {
+    "gpu_ms": 0.59,
+    "frame_ms": 0.852,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.56,
+    "gpu_ms_round2": 1.376
+   },
+   "ph_asphalt_04": {
+    "gpu_ms": 0.524,
+    "frame_ms": 0.786,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.18,
+    "gpu_ms_round2": 1.573
+   },
+   "acg_Asphalt015": {
+    "gpu_ms": 0.524,
+    "frame_ms": 0.786,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.07,
+    "gpu_ms_round2": 1.442
+   },
+   "acg_Asphalt020S": {
+    "gpu_ms": 0.262,
+    "frame_ms": 0.524,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.57,
+    "gpu_ms_round2": 1.311
+   },
+   "_plain_ms": 0.262
+  },
+  "mortar": {
+   "proc": {
+    "gpu_ms": 0.328,
+    "frame_ms": 0.524,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0
+   },
+   "ph_grey_plaster": {
+    "gpu_ms": 0.655,
+    "frame_ms": 0.852,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.5
+   },
+   "acg_Plaster001": {
+    "gpu_ms": 0.786,
+    "frame_ms": 0.983,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.3
+   },
+   "_plain_ms": 0.197
+  },
+  "stone_white": {
+   "proc": {
+    "gpu_ms": 0.852,
+    "frame_ms": 1.114,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0
+   },
+   "ph_sandstone_blocks_08": {
+    "gpu_ms": 0.721,
+    "frame_ms": 0.983,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 1.54
+   },
+   "acg_Bricks008": {
+    "gpu_ms": 0.721,
+    "frame_ms": 0.983,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.32
+   },
+   "acg_Bricks024": {
+    "gpu_ms": 0.721,
+    "frame_ms": 0.983,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.58
+   },
+   "ph_white_sandstone_bricks_03": {
+    "gpu_ms": 0.328,
+    "frame_ms": 0.59,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.52
+   },
+   "_plain_ms": 0.262
+  },
+  "stone_blue": {
+   "proc": {
+    "gpu_ms": 0.786,
+    "frame_ms": 0.983,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0
+   },
+   "ph_granite_tile_04": {
+    "gpu_ms": 0.262,
+    "frame_ms": 0.459,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.23
+   },
+   "ph_stone_tile_wall": {
+    "gpu_ms": 0.655,
+    "frame_ms": 0.852,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.12
+   },
+   "ph_stone_wall_02": {
+    "gpu_ms": 0.524,
+    "frame_ms": 0.721,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.29
+   },
+   "_plain_ms": 0.197
+  },
+  "render_white": {
+   "proc": {
+    "gpu_ms": 0.721,
+    "frame_ms": 0.983,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0
+   },
+   "acg_Plaster002": {
+    "gpu_ms": 0.393,
+    "frame_ms": 0.655,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.41
+   },
+   "acg_Plaster004": {
+    "gpu_ms": 0.459,
+    "frame_ms": 0.721,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.36
+   },
+   "ph_white_stucco": {
+    "gpu_ms": 0.459,
+    "frame_ms": 0.721,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 1.93
+   },
+   "ph_painted_plaster_wall": {
+    "gpu_ms": 0.655,
+    "frame_ms": 0.918,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.08
+   },
+   "_plain_ms": 0.262
+  },
+  "render_painted": {
+   "proc": {
+    "gpu_ms": 0.655,
+    "frame_ms": 0.918,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0
+   },
+   "ph_painted_plaster_wall": {
+    "gpu_ms": 0.524,
+    "frame_ms": 0.786,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.08
+   },
+   "ph_beige_wall_002": {
+    "gpu_ms": 0.524,
+    "frame_ms": 0.786,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.17
+   },
+   "acg_Plaster007": {
+    "gpu_ms": 0.197,
+    "frame_ms": 0.459,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.5
+   },
+   "_plain_ms": 0.262
+  },
+  "concrete_white": {
+   "proc": {
+    "gpu_ms": 0.786,
+    "frame_ms": 0.983,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0
+   },
+   "acg_Concrete034": {
+    "gpu_ms": 0.59,
+    "frame_ms": 0.786,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.14
+   },
+   "acg_Concrete046": {
+    "gpu_ms": 0.721,
+    "frame_ms": 0.918,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.28
+   },
+   "ph_concrete_wall_008": {
+    "gpu_ms": 0.852,
+    "frame_ms": 1.049,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 1.48
+   },
+   "_plain_ms": 0.197
+  },
+  "rockwork_concrete": {
+   "proc": {
+    "gpu_ms": 0.721,
+    "frame_ms": 0.983,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0
+   },
+   "acg_Rock030": {
+    "gpu_ms": 0.655,
+    "frame_ms": 0.918,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.58
+   },
+   "acg_Rock023": {
+    "gpu_ms": 0.328,
+    "frame_ms": 0.59,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.56
+   },
+   "_plain_ms": 0.262
+  },
+  "slate": {
+   "proc": {
+    "gpu_ms": 0.655,
+    "frame_ms": 0.918,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0
+   },
+   "ph_roof_slates_02": {
+    "gpu_ms": 0.393,
+    "frame_ms": 0.655,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.51
+   },
+   "ph_roof_slates_03": {
+    "gpu_ms": 0.393,
+    "frame_ms": 0.655,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.33
+   },
+   "acg_RoofingTiles003": {
+    "gpu_ms": 0.393,
+    "frame_ms": 0.655,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.48
+   },
+   "ph_grey_roof_tiles_02": {
+    "gpu_ms": 0.393,
+    "frame_ms": 0.655,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.44
+   },
+   "_plain_ms": 0.262
+  },
+  "roof_tiles_red": {
+   "proc": {
+    "gpu_ms": 0.197,
+    "frame_ms": 0.459,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0
+   },
+   "ph_clay_roof_tiles_02": {
+    "gpu_ms": 0.262,
+    "frame_ms": 0.524,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.53
+   },
+   "ph_clay_roof_tiles_03": {
+    "gpu_ms": 0.59,
+    "frame_ms": 0.852,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.55
+   },
+   "acg_RoofingTiles014B": {
+    "gpu_ms": 0.59,
+    "frame_ms": 0.852,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.37
+   },
+   "acg_RoofingTiles007": {
+    "gpu_ms": 0.59,
+    "frame_ms": 0.852,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.42
+   },
+   "_plain_ms": 0.262
+  },
+  "roof_tiles_flat_dark": {
+   "proc": {
+    "gpu_ms": 0.721,
+    "frame_ms": 0.983,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0
+   },
+   "acg_RoofingTiles013A": {
+    "gpu_ms": 0.59,
+    "frame_ms": 0.852,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 1.95
+   },
+   "acg_RoofingTiles009": {
+    "gpu_ms": 0.197,
+    "frame_ms": 0.459,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.33
+   },
+   "ph_grey_roof_01": {
+    "gpu_ms": 0.328,
+    "frame_ms": 0.59,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.51
+   },
+   "_plain_ms": 0.262
+  },
+  "zinc_roof": {
+   "proc": {
+    "gpu_ms": 0.721,
+    "frame_ms": 0.983,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0
+   },
+   "acg_Metal032": {
+    "gpu_ms": 0.524,
+    "frame_ms": 0.786,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 1.71
+   },
+   "acg_Metal049C": {
+    "gpu_ms": 0.721,
+    "frame_ms": 0.983,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 1.83
+   },
+   "_plain_ms": 0.262
+  },
+  "lead_roof": {
+   "proc": {
+    "gpu_ms": 0.524,
+    "frame_ms": 0.786,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0
+   },
+   "acg_Metal046B": {
+    "gpu_ms": 0.459,
+    "frame_ms": 0.721,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.21
+   },
+   "acg_Metal055A": {
+    "gpu_ms": 0.328,
+    "frame_ms": 0.59,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.18
+   },
+   "_plain_ms": 0.262
+  },
+  "copper_patina": {
+   "proc": {
+    "gpu_ms": 0.852,
+    "frame_ms": 1.049,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0
+   },
+   "acg_Metal058C": {
+    "gpu_ms": 0.59,
+    "frame_ms": 0.786,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.18
+   },
+   "acg_Metal058B": {
+    "gpu_ms": 0.524,
+    "frame_ms": 0.721,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.26
+   },
+   "_plain_ms": 0.197
+  },
+  "painted_metal_white": {
+   "proc": {
+    "gpu_ms": 0.721,
+    "frame_ms": 0.983,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0
+   },
+   "acg_PaintedMetal012": {
+    "gpu_ms": 0.459,
+    "frame_ms": 0.721,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.39
+   },
+   "acg_PaintedMetal010": {
+    "gpu_ms": 0.328,
+    "frame_ms": 0.59,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.4
+   },
+   "acg_Metal016": {
+    "gpu_ms": 0.393,
+    "frame_ms": 0.655,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.43
+   },
+   "_plain_ms": 0.262
+  },
+  "cast_iron_green": {
+   "proc": {
+    "gpu_ms": 0.393,
+    "frame_ms": 0.655,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0
+   },
+   "ph_green_metal_rust": {
+    "gpu_ms": 0.459,
+    "frame_ms": 0.721,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 1.99
+   },
+   "acg_PaintedMetal006": {
+    "gpu_ms": 1.049,
+    "frame_ms": 1.311,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.6
+   },
+   "_plain_ms": 0.262
+  },
+  "wood_frame_white": {
+   "proc": {
+    "gpu_ms": 1.114,
+    "frame_ms": 1.376,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0
+   },
+   "acg_Wood049": {
+    "gpu_ms": 0.983,
+    "frame_ms": 1.245,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.17
+   },
+   "ph_plywood": {
+    "gpu_ms": 0.786,
+    "frame_ms": 1.049,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.3
+   },
+   "_plain_ms": 0.262
+  },
+  "wood_frame_dark": {
+   "proc": {
+    "gpu_ms": 0.393,
+    "frame_ms": 0.59,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0
+   },
+   "acg_Wood051": {
+    "gpu_ms": 1.049,
+    "frame_ms": 1.245,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.12
+   },
+   "acg_Wood060": {
+    "gpu_ms": 0.197,
+    "frame_ms": 0.393,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.54
+   },
+   "_plain_ms": 0.197
+  },
+  "glass_window": {
+   "proc": {
+    "gpu_ms": 0.983,
+    "frame_ms": 1.18,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0
+   },
+   "_plain_ms": 0.197
+  },
+  "cobbles": {
+   "proc": {
+    "gpu_ms": 1.311,
+    "frame_ms": 1.573,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0
+   },
+   "ph_cobblestone_floor_08": {
+    "gpu_ms": 1.245,
+    "frame_ms": 1.507,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.52
+   },
+   "ph_cobblestone_floor_03": {
+    "gpu_ms": 0.918,
+    "frame_ms": 1.18,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.53
+   },
+   "ph_cobblestone_square": {
+    "gpu_ms": 1.049,
+    "frame_ms": 1.311,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.55
+   },
+   "acg_PavingStones070": {
+    "gpu_ms": 0.983,
+    "frame_ms": 1.245,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.62
+   },
+   "_plain_ms": 0.262
+  },
+  "paving_concrete": {
+   "proc": {
+    "gpu_ms": 1.507,
+    "frame_ms": 1.638,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0
+   },
+   "ph_concrete_tiles": {
+    "gpu_ms": 1.049,
+    "frame_ms": 1.18,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.2
+   },
+   "ph_concrete_pavement": {
+    "gpu_ms": 0.983,
+    "frame_ms": 1.114,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.44
+   },
+   "ph_concrete_pavement_03": {
+    "gpu_ms": 1.114,
+    "frame_ms": 1.245,
+    "tex_gpu_mb": 2.67,
+    "dl_mb": 2.23
+   },
+   "_plain_ms": 0.131
+  },
+  "gravel_path": {
+   "proc": {
+    "gpu_ms": 1.573,
+    "frame_ms": 1.704,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0
+   },
+   "_plain_ms": 0.131
+  },
+  "lawn_edge": {
+   "proc": {
+    "gpu_ms": 1.507,
+    "frame_ms": 1.638,
+    "tex_gpu_mb": 0,
+    "dl_mb": 0
+   },
+   "_plain_ms": 0.131
+  }
+ }
+}

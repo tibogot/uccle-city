@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Falcon Flight Lab</title>
+<link rel="icon" href="../viewer/favicon.svg" type="image/svg+xml">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #8e9aa6; font: 13px/1.4 system-ui, sans-serif; }
+  canvas { display: block; }
+  #title { position: fixed; left: 10px; top: 10px; padding: 6px 10px; border-radius: 6px; background: rgba(20, 24, 30, .72); color: #e6e9ee; z-index: 2; max-width: calc(100vw - 360px); }
+  #title a { color: #9cc4ff; }
+  #hud { position: fixed; left: 10px; bottom: 10px; padding: 8px 10px; border-radius: 6px; background: rgba(20, 24, 30, .7); color: #e6e9ee;
+         font: 12px/1.35 ui-monospace, monospace; z-index: 2; white-space: pre; min-width: 300px; }
+  #hud .bar { display: inline-block; height: 8px; width: 120px; background: rgba(255,255,255,.15); border-radius: 4px; vertical-align: middle; overflow: hidden; }
+  #hud .bar i { display: block; height: 100%; background: #7fd18b; }
+  #trace { position: fixed; left: 10px; bottom: 165px; width: 340px; height: 110px; border-radius: 6px; background: rgba(20, 24, 30, .6); z-index: 2; }
+  #msg { position: fixed; left: 50%; top: 18%; transform: translateX(-50%); color: #fff; font: 600 16px/1.4 system-ui; text-shadow: 0 1px 4px rgba(0,0,0,.7); z-index: 2; text-align: center; pointer-events: none; }
+  #help { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); background: rgba(20, 24, 30, .9); color: #e6e9ee; padding: 14px 18px; border-radius: 10px;
+          font: 13px/1.5 system-ui; z-index: 5; max-width: 560px; display: none; }
+  #help b { color: #9cc4ff; }
+  .ring { position: fixed; border: 2px solid rgba(255,255,255,.85); border-radius: 50%; pointer-events: none; z-index: 2; transform: translate(-50%, -50%); display: none; }
+  #aim { width: 26px; height: 26px; border-color: rgba(255, 255, 255, .6); }
+  #tgt { width: 34px; height: 34px; }
+  #tgt.ok { border-color: #6fe08a; } #tgt.near { border-width: 3px; }
+  #perch { width: 30px; height: 30px; border-style: dashed; border-color: #ffd36a; border-radius: 4px; }
+  #loading { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font: 15px system-ui; background: #5c6873; z-index: 6; }
+  @media (max-width: 700px) { #title { max-width: calc(100vw - 32px); font-size: 12px; } #trace { display: none; } }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.tsl.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/",
+    "three/src/": "https://cdn.jsdelivr.net/npm/three@0.187.0/src/",
+    "meshoptimizer/simplifier": "https://cdn.jsdelivr.net/npm/meshoptimizer@1.2.0/meshopt_simplifier.js"
+  }
+}
+</script>
+</head>
+<body>
+<div id="loading">loading Saint-Job…</div>
+<div id="title"><b>Falcon Flight Lab</b> — fly as a peregrine over Saint-Job: lift and drag, thermals, updrafts off the façades, the stoop, pigeons, the strike, perching · <b>H</b> help · <a href="./">all labs</a></div>
+<canvas id="trace" width="680" height="220"></canvas>
+<div id="hud"></div>
+<div id="msg"></div>
+<div id="aim" class="ring"></div><div id="tgt" class="ring"></div><div id="perch" class="ring"></div>
+<div id="help">
+<b>Keyboard</b>: W / S nose down / up · A / D bank (up to 80°) · <b>Space</b> flap · <b>Shift</b> tuck (the stoop) · <b>C</b> half fold (fast glide) · <b>Q</b> flare ·
+<b>F</b> talons (strike) · <b>E</b> land on the perch in reach / take off · <b>V</b> chase / head camera · <b>M</b> mouse aim · <b>R</b> reset · <b>H</b> this help<br>
+<b>Mouse</b>: click the view (pointer lock), the mouse aims and the falcon steers to the ring; left button flap, right button tuck, wheel camera distance<br>
+<b>Gamepad</b>: left stick fly · RT flap · LT fold (half = diamond, full = tuck) · A land / take off · X talons · B flare · Y camera · right stick look<br>
+<b>Touch</b>: left thumb stick · FLAP · DIVE · TALONS · LAND · CAM<br><br>
+Climb in a thermal (gulls circling, dust rising: the Place and the parks, in the sun) or ride the updraft along the façades facing the wind, get high, tuck and stoop on a pigeon (the ring turns green when the catch window is open), carry it back to the eyrie's ledge in the belfry.
+</div>
+<script type="module" src="./falcon-flight-lab.js"></script>
+</body>
+</html>

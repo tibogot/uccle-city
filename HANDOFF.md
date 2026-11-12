@@ -51,6 +51,20 @@ The car: one loader, `viewer/drive/carModel.js loadCarModel(spec)` (`scripted` =
 `quaternius:<id>` = CC0 packs via `viewer/drive/carPacks.js`); `?car=<spec>` or `__driver.setCar(spec)`; `fitBody`
 sizes the physics box to the model. Packs: `node tools/cars/convertPacks.mjs` (raw packs in data/raw/cars/, see CREDITS).
 
+## Trains (branch claude/trains, `?trains=1`)
+
+The SNCB railway of Uccle: L124, L26 and the L26/5 chord from OSM fitted to the LiDAR DTM (`pipeline/build_rail.py` ->
+`data/rail/rail.json`), drawn per tile (`viewer/rail/railway.js`: ballast, rails, sleepers, catenary, platforms, decks; the
+terrain carved under the ballast), the hero bridges over Chaussee de Saint-Job and the Viaduc de Calevoet
+(`tools/blender/railBridge.py`, `viewer/rail/bridgeModel.js`, named material slots), the AM08 Desiro (`tools/blender/am08.py`,
+`viewer/rail/trainModel.js`), 334 trains a weekday on the real SNCB GTFS (`pipeline/build_trains.py` ->
+`data/transit/sncb-uccle.json`, `viewer/rail/trains.js`; live feed hook `setSource`). Lab `labs/train-lab.html`; details,
+cost and weak points `docs/TRAINS.md` (round 2 section: worker carve + rail meshes, Calevoet 5 arches, AM08 front / bogies, perf, frame sequences); research and sources `docs/trains/RESEARCH.md`. Rebuild: `python pipeline/build_rail.py`,
+`python pipeline/build_trains.py` (GTFS: the curl in its header), Blender `--factory-startup -b -P tools/blender/railBridge.py -- stjob|calevoet models/rail [--preview <dir>]`
+and `... am08.py -- models/rail [--preview <dir>]`.
+Road bridges over the line: `tools/blender/roadBridge.py -- verrewinkel models/rail` (the Rue de Verrewinkel bridge + the
+2022 footbridge, branch claude/verrewinkel; docs/TRAINS.md "Rue de Verrewinkel", models/rail/verrewinkel_NOTES.md).
+
 ## The Saint-Job falcons (branch claude/falcons)
 
 A peregrine family at the church, on by default (`?falcons=0` = none): the eyrie behind the falcons' louvred arch
@@ -60,12 +74,41 @@ fly-mode rig (`viewer/falcons.js`, baked Perch / Sit poses). Fly mode now starts
 flight; `?flystart=spire` = the old start, `?birdskin=adult` = the old plumage). Lab `labs/falcon-lab.html`; method,
 cost (GPU within noise, ~0.1-0.17 ms CPU), reference comparisons and weak points: `docs/FALCONS.md`.
 
+## Église Saint-Pierre (branch claude/saint-pierre)
+
+The Uccle-Centre church as a scripted hero (exterior): `tools/stpierre_measure.py` (UrbIS solid 546128 + DSM/DTM, two
+sheets mosaicked) → `tools/blender/stpierre.py` (+ `stpierre_common.py`, the generic Stalle kit) → `tools/hero_pack.mjs`
+(meshopt LODs; the Stalle packer with `--name`) → `models/stpierre/`. Viewer `viewer/stpierreModel.js` (named slots,
+adapter table, ONE-line `SOURCE` switch to the library; new slot `copper_brown`), city `viewer/stpierreCity.js` behind
+`?stpierre=1` (hides BU_ID 1594643), lab `labs/saint-pierre-lab.html` (photo viewpoints from `tools/stpierre_photopose.py`
+with overlays, LOD switch, slot swap, day/night, benchmark, a scripted LOD flight). Method, numbers, what is estimated:
+`models/stpierre/NOTES.md`; history, sources: `docs/saint-pierre/RESEARCH.md`. Interior: not enough references yet.
+## Sound (branch claude/sound, lab only)
+
+Procedural city sound with the Web Audio API, no audio files (after Mr.doob's slop-newyork audio, copied in
+`vendor/slop-sound/`). Lab `labs/sound-lab.html` (walkable scene, a panel per sound, mixer, costs), offline renders
+`labs/sound-render.html` and `docs/sound/renders/*.wav`; code `viewer/audio/`; method, costs, what to listen for and
+weak points: `docs/SOUND.md`. Not in the city yet (TODO section 6).
+
 ## Interiors (branch claude/interior, pilot)
 
 The first interior cell: a terraced house near Place de Saint-Job (UrbIS 1786120). Lab `labs/interior-lab.html`, city
 `?interior=1` (tile I6; streams in within 40 m). Method (spec from the city's own façade analysis, Blender build + Cycles
 bakes, per-corner light on pieces, ambient-cube probes, façade/terrain cut, portal, character hooks): `docs/INTERIOR.md`;
 status and re-run commands: `docs/interior/STATUS.md`.
+
+## Façade kit (branch claude/facade-kit, pilot, behind `?kit=1`)
+
+Premium Blender pieces (tools/blender/facadeKit.py: windows A/B, sill, hood, soupirail, doors A/B, steps, cornice +
+corner + modillions, plinth, balcony) placed in the tile worker exactly on the painted window grid, the walls cut their
+openings, dithered fades to the painted façade beyond ~115 m. Lab `labs/kit-lab.html`; method, numbers, weak points and
+next piece sets: `docs/facadekit/README.md`.
+## Pedestrians (branch claude/pedestrians, lab only)
+
+Pedestrian Lab `labs/pedestrian-lab.html`: Mr.doob's people (`vendor/slop-ped/`, MIT, unchanged), gait baked from his
+rig (`node tools/peds/bakeGait.mjs` -> `models/pedestrians/clips.*`), banded crowd in `viewer/pedestrians/` (live rig
+< 18 m, bone table on the GPU to 250 m, three mesh LODs with dithered fades), sim + meters. Results, weak points:
+`docs/PEDESTRIANS.md`; next steps: `docs/PEDESTRIANS_RESUME.md`. Nothing in the city yet.
 
 ## Rules that still hold
 
@@ -98,6 +141,8 @@ Debug. "Copy link to this view" puts the state + camera in `?dev=`. H = photo mo
 ## Labs
 
 `labs/` (open `/labs/`): one page per asset or system, to look at it on its own before it goes into the city
+(the owner's game-engine-v1 practice). Bird, Lamp, Tram, Church, Car and Capsule labs done; Tree and Material labs planned. New assets get a
+lab first, then go into the city. Capsule Lab: the third-person character (`viewer/character/`: controller, camera, collision, CC0 Quaternius character with foot IK; the "Third person" button / `?view=third` in the city, `?char=capsule|hoodie|casual`). Tram Lab: the STIB T3000, second pass (`tools/blender/tram2.py`, `viewer/tram2Model.js`, branch `claude/tram2`; research, before/after, perf: `docs/tram2/RESEARCH.md`); in the city by default (`?tram=v1` = the first model, `tools/blender/tram.py` / `viewer/tramModel.js`; `?tram=box` = the old boxes). Trams dwell at stops and open the doors on the platform side. Dev server that never serves stale JS: `python tools/serve_nocache.py 8791`.
 (the owner's game-engine-v1 practice). Bird, Lamp, Tram, Church, Car, Capsule and Material labs done; Tree lab planned. Material Lab (`labs/material-lab.html`, branch claude/materials): the shared material library `viewer/materials/` (22 named TSL materials, procedural / CC0 scan KTX2 / hybrid), docs `docs/MATERIALS.md`; the city does not use it yet (owner picks, then the integration steps there). New assets get a
 lab first, then go into the city. Capsule Lab: the third-person character (`viewer/character/`: controller, camera, collision, CC0 Quaternius character with foot IK; the "Third person" button / `?view=third` in the city, `?char=capsule|hoodie|casual`). Tram Lab: the STIB T3000 (`tools/blender/tram.py`, `viewer/tramModel.js`); in the city by default (`?tram=box` = the old boxes).
 Car Lab (`labs/car-lab.html`): the driving model drive mode uses on a test ground (walls, courtyards, kerb island,
@@ -127,7 +172,7 @@ an attribute (`simplifyLoose`), Prune from LOD2; the street fleet cross-fades LO
 python3 -m http.server 8765        # from the repo root
 open http://localhost:8765/viewer/index.html?tile=I6   # Saint-Job (was G4)
 ```
-Useful URL params: `roads=engine` (the road engine's guessed carriageways / sidewalks instead of the measured UrbIS street surfaces, which are the DEFAULT since 2026-11-05 on all 120 tiles: viewer/surfaces.js, pipeline/build_surfaces.py, docs/ROADS_RESEARCH.md), `far=0..6` (far-LOD ring), `clock=HH:MM`, `timescale=N`, `trams=0`, `tram=box` (the old box trams instead of the Blender T3000), `worker=0`, `tile=A1..O12` (120 tiles of all Uccle; Saint-Job = I6, the old G4), `ring=0|1|2` (neighbour tiles), `yaw=deg` (walk facing), `view=stjob|walk`, `at=x,z`, `cam=x,z,height`,
+Useful URL params: `roads=engine` (the road engine's guessed carriageways / sidewalks instead of the measured UrbIS street surfaces, which are the DEFAULT since 2026-11-05 on all 120 tiles: viewer/surfaces.js, pipeline/build_surfaces.py, docs/ROADS_RESEARCH.md), `far=0..6` (far-LOD ring), `clock=HH:MM`, `timescale=N`, `trams=0`, `tram=v1|box` (the first Blender T3000 / the old box trams instead of the v2 T3000), `worker=0`, `tile=A1..O12` (120 tiles of all Uccle; Saint-Job = I6, the old G4), `ring=0|1|2` (neighbour tiles), `yaw=deg` (walk facing), `view=stjob|walk`, `at=x,z`, `cam=x,z,height`,
 `view=drive` (drive mode: a car on a street near Saint-Job, or the road nearest `at=x,z`), `drivedebug=1` (draw the drive colliders), `car=faceted:<id>|scripted|kenney:<id>|quaternius:<id>` (the drive-mode car), `time=golden|midday|overcast|twilight|night`, `fx=0` (no post effects), `trees=slop` (slop-newyork trees), `trees=simple`
 (old leaf-card trees), `sunlight=1` (cascaded shadows), `warmup=0` (no boot shader warm-up), `log=0` (dev log collapsed), `gpu=0` (no GPU timing). Use Chrome/Edge with WebGPU for real
 speed; headless screenshots use the slower WebGL2 fallback.

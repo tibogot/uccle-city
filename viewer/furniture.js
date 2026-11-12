@@ -104,6 +104,7 @@ export function buildFurniture(feats, roads, ground, bounds) {
   };
   for (const p of feats.points || []) {
     const t = p.tags || {};
+    if (+(t.layer || 0) > 0) continue;                 // on a bridge deck (layer 1): the ground here is under it; a hero bridge carries its own
     const nr = nearestRoad(roads, N, p.x, p.z);
     if (!nr || nr.d > 30) continue;
     if (p.kind === "bus_stop") {

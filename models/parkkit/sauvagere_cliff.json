@@ -1,0 +1,476 @@
+{
+ "asset": "Parc de la Sauvagere: the concrete rockwork cliff as one scripted hero surface (tools/blender/sauvagereCliff.py)",
+ "pieces": {
+  "cliff_c0": {
+   "slots": [
+    "rockwork_concrete"
+   ],
+   "triangles_raw": 26344,
+   "size_m": [
+    6.06,
+    16.06,
+    7.18
+   ]
+  },
+  "cliff_c1": {
+   "slots": [
+    "rockwork_concrete"
+   ],
+   "triangles_raw": 15924,
+   "size_m": [
+    4,
+    16.07,
+    6.84
+   ]
+  },
+  "cliff_c2": {
+   "slots": [
+    "rockwork_concrete"
+   ],
+   "triangles_raw": 16502,
+   "size_m": [
+    4,
+    16.05,
+    6.46
+   ]
+  },
+  "cliff_c3": {
+   "slots": [
+    "rockwork_concrete"
+   ],
+   "triangles_raw": 15303,
+   "size_m": [
+    4,
+    16.23,
+    6.13
+   ]
+  },
+  "cliff_c4": {
+   "slots": [
+    "rockwork_concrete"
+   ],
+   "triangles_raw": 14725,
+   "size_m": [
+    4,
+    16.05,
+    6.29
+   ]
+  },
+  "cliff_c5": {
+   "slots": [
+    "rockwork_concrete"
+   ],
+   "triangles_raw": 14715,
+   "size_m": [
+    4,
+    16.06,
+    6.83
+   ]
+  },
+  "cliff_c6": {
+   "slots": [
+    "rockwork_concrete"
+   ],
+   "triangles_raw": 16760,
+   "size_m": [
+    4,
+    16.05,
+    6.34
+   ]
+  },
+  "cliff_c7": {
+   "slots": [
+    "rockwork_concrete"
+   ],
+   "triangles_raw": 23751,
+   "size_m": [
+    6.01,
+    16.03,
+    6.1
+   ]
+  }
+ },
+ "sculpt_triangles": 1852644,
+ "cells": 153,
+ "slots": {
+  "rockwork_concrete": "the 1910 cement rockwork (grey-brown weathered concrete); its MOSS layer (named 'moss') by the mask in COLOR_0.g"
+ },
+ "attributes": {
+  "COLOR_0": "r cavity, g MOSS mask (up-facing ledges), b convexity",
+  "TEXCOORD_0": "metres",
+  "TEXCOORD_1": "the cliff's own atlas (full): AO + tangent normals"
+ },
+ "frame": "the LAB frame of models/parkkit/sauvagere_site.json (water y 0, the pond toward -z); instances at identity",
+ "lods": {
+  "cliff_c7": {
+   "lods": [
+    {
+     "node": "cliff_c7_lod0",
+     "triangles": 14271,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.004,
+     "vertex_ao": false
+    },
+    {
+     "node": "cliff_c7_lod1",
+     "triangles": 7129,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.025,
+     "vertex_ao": true
+    },
+    {
+     "node": "cliff_c7_lod2",
+     "triangles": 4107,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.049,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    16,
+    40,
+    260
+   ]
+  },
+  "cliff_c0": {
+   "lods": [
+    {
+     "node": "cliff_c0_lod0",
+     "triangles": 16888,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.0034,
+     "vertex_ao": false
+    },
+    {
+     "node": "cliff_c0_lod1",
+     "triangles": 8208,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.025,
+     "vertex_ao": true
+    },
+    {
+     "node": "cliff_c0_lod2",
+     "triangles": 3508,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.07,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    16,
+    40,
+    260
+   ]
+  },
+  "cliff_c1": {
+   "lods": [
+    {
+     "node": "cliff_c1_lod0",
+     "triangles": 11074,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.004,
+     "vertex_ao": false
+    },
+    {
+     "node": "cliff_c1_lod1",
+     "triangles": 6324,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.025,
+     "vertex_ao": true
+    },
+    {
+     "node": "cliff_c1_lod2",
+     "triangles": 3656,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.049,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    16,
+    40,
+    260
+   ]
+  },
+  "cliff_c2": {
+   "lods": [
+    {
+     "node": "cliff_c2_lod0",
+     "triangles": 11958,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.004,
+     "vertex_ao": false
+    },
+    {
+     "node": "cliff_c2_lod1",
+     "triangles": 7034,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.025,
+     "vertex_ao": true
+    },
+    {
+     "node": "cliff_c2_lod2",
+     "triangles": 2982,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.07,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    16,
+    40,
+    260
+   ]
+  },
+  "cliff_c3": {
+   "lods": [
+    {
+     "node": "cliff_c3_lod0",
+     "triangles": 9875,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.004,
+     "vertex_ao": false
+    },
+    {
+     "node": "cliff_c3_lod1",
+     "triangles": 5415,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.025,
+     "vertex_ao": true
+    },
+    {
+     "node": "cliff_c3_lod2",
+     "triangles": 3167,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.049,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    16,
+    40,
+    260
+   ]
+  },
+  "cliff_c4": {
+   "lods": [
+    {
+     "node": "cliff_c4_lod0",
+     "triangles": 10101,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.0028,
+     "vertex_ao": false
+    },
+    {
+     "node": "cliff_c4_lod1",
+     "triangles": 4573,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.025,
+     "vertex_ao": true
+    },
+    {
+     "node": "cliff_c4_lod2",
+     "triangles": 2741,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.049,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    16,
+    40,
+    260
+   ]
+  },
+  "cliff_c5": {
+   "lods": [
+    {
+     "node": "cliff_c5_lod0",
+     "triangles": 8767,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.004,
+     "vertex_ao": false
+    },
+    {
+     "node": "cliff_c5_lod1",
+     "triangles": 4705,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.025,
+     "vertex_ao": true
+    },
+    {
+     "node": "cliff_c5_lod2",
+     "triangles": 2091,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.07,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    16,
+    40,
+    260
+   ]
+  },
+  "cliff_c6": {
+   "lods": [
+    {
+     "node": "cliff_c6_lod0",
+     "triangles": 9706,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.0046,
+     "vertex_ao": false
+    },
+    {
+     "node": "cliff_c6_lod1",
+     "triangles": 5866,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.025,
+     "vertex_ao": true
+    },
+    {
+     "node": "cliff_c6_lod2",
+     "triangles": 2890,
+     "draws": 1,
+     "slots": [
+      "rockwork_concrete"
+     ],
+     "error_m": 0.059500000000000004,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    16,
+    40,
+    260
+   ]
+  }
+ },
+ "glb_bytes": 2318732,
+ "slot_order": [
+  "wood_stained",
+  "wood_log",
+  "wood_bench",
+  "steel_galvanised",
+  "steel_painted_red",
+  "steel_painted_green",
+  "hpl_panel",
+  "hdpe_green",
+  "hdpe_red",
+  "rope_grey",
+  "rubber_black",
+  "stainless_steel",
+  "surface_rubber",
+  "sand"
+ ],
+ "lod_ranges_m": {
+  "note": "each LOD's band END (camera distance); dithered cross-fades over the last 15 % of a band",
+  "bands": [
+   16,
+   40,
+   260
+  ]
+ },
+ "audit": {
+  "all_lod0": {
+   "blocking": 0,
+   "warnings": 197,
+   "counts": {
+    "sliver": 195,
+    "degenerate": 2,
+    "opening": 10
+   }
+  },
+  "all_lod1": {
+   "blocking": 0,
+   "warnings": 61,
+   "counts": {
+    "sliver": 59,
+    "seam": 1,
+    "tjunction": 2,
+    "opening": 10
+   }
+  },
+  "all_lod2": {
+   "blocking": 0,
+   "warnings": 72,
+   "counts": {
+    "sliver": 69,
+    "nonmanifold": 1,
+    "backtoback": 3,
+    "seam": 2,
+    "tjunction": 2,
+    "opening": 8
+   }
+  }
+ }
+}

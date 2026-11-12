@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Map Lab</title>
+<link rel="icon" href="../viewer/favicon.svg" type="image/svg+xml">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; font: 13px/1.4 system-ui, sans-serif; }
+  body { background: linear-gradient(#9ec3e6 0%, #cfe0ee 55%, #8d9a7e 55.2%, #6f7d63 100%); }
+  body.night { background: linear-gradient(#05080e 0%, #141c2b 55%, #1a1f1a 55.2%, #0d100d 100%); }
+  body.dusk { background: linear-gradient(#2a3557 0%, #f0a36b 55%, #4b4a3c 55.2%, #2c2c24 100%); }
+  #title { position: fixed; left: 10px; top: 10px; padding: 6px 10px; border-radius: 6px; background: rgba(20, 24, 30, .78); color: #e6e9ee; max-width: calc(100vw - 360px); }
+  #title a { color: #9cc4ff; }
+  #view { position: fixed; left: 50%; top: 42%; transform: translate(-50%, -50%); text-align: center; color: rgba(255,255,255,.92);
+          text-shadow: 0 1px 3px rgba(0,0,0,.6); font: 600 15px/1.4 system-ui, sans-serif; pointer-events: none; }
+  #view small { display: block; font-weight: 400; font-size: 12px; opacity: .85; }
+  @media (max-width: 640px) { #title { max-width: calc(100vw - 20px); font-size: 12px; } .upanel { top: auto !important; bottom: 8px; max-height: 40vh !important; width: 260px !important; } }
+</style>
+</head>
+<body>
+<div id="title"><b>Map Lab</b> — minimap + full map (M) on a player moving along real Uccle streets · <a href="./">all labs</a> · <a href="../viewer/index.html?map=1&view=walk&at=1153,540">in the city (?map=1)</a></div>
+<div id="view">loading…</div>
+<script type="module" src="./map-lab.js"></script>
+</body>
+</html>

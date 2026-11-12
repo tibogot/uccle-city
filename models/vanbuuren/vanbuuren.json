@@ -1,0 +1,182 @@
+{
+ "asset": "Villa van Buuren, Avenue Leo Errera 41 (tools/blender/vanbuuren.py)",
+ "triangles_lod0": 108838,
+ "triangles_lod0_main": 16414,
+ "triangles_lod0_courses": 92424,
+ "triangles_far": 3815,
+ "triangles_per_slot_lod0": {
+  "roof_tiles_flat_dark": 12112,
+  "stone_blue": 56,
+  "brick_orange_amsterdam": 85642,
+  "wood_frame_white": 1980,
+  "brick_pattern": 3074,
+  "metal_green_veranda": 140,
+  "concrete_white": 1628,
+  "glass_window": 476,
+  "zinc_gutter": 478,
+  "wood_varnished": 3098,
+  "glass_leaded": 112,
+  "oak_door": 42
+ },
+ "triangles_per_slot_far": {
+  "brick_orange_amsterdam": 924,
+  "brick_pattern": 39,
+  "concrete_white": 1000,
+  "roof_tiles_flat_dark": 222,
+  "wood_varnished": 846,
+  "wood_frame_white": 304,
+  "glass_window": 96,
+  "glass_leaded": 6,
+  "oak_door": 10,
+  "metal_green_veranda": 140,
+  "zinc_gutter": 172,
+  "stone_blue": 56
+ },
+ "slots": [
+  "brick_orange_amsterdam",
+  "brick_pattern",
+  "concrete_white",
+  "roof_tiles_flat_dark",
+  "wood_varnished",
+  "wood_frame_white",
+  "glass_window",
+  "glass_leaded",
+  "oak_door",
+  "metal_green_veranda",
+  "zinc_gutter",
+  "stone_blue"
+ ],
+ "codes": {
+  "COLOR_0.r": "code / 16 + 1/32",
+  "COLOR_0.g": "per-vertex AO of the thin faces (1 elsewhere)",
+  "COLOR_0.b": "sqrt(width of the flat region / 4 m)",
+  "names": [
+   "plain",
+   "course",
+   "joint",
+   "reveal",
+   "lattice",
+   "sill",
+   "soffit",
+   "drip",
+   "frame",
+   "bar",
+   "pane",
+   "lead",
+   "panel",
+   "ridge",
+   "coping",
+   "interior"
+  ]
+ },
+ "uv": {
+  "TEXCOORD_0": "world metres per face: walls (along, up from 90 m TAW: the courses' levels), roofs (along the eave, up the slope)",
+  "TEXCOORD_1": "AO lightmap (thin faces: u > 0.994, AO 1)"
+ },
+ "brick": {
+  "course_m": 0.0625,
+  "bed_joint_m": 0.0125,
+  "groove_m": 0.013,
+  "course_base_taw": 90.0
+ },
+ "tiles": {
+  "gauge_m": 0.11,
+  "thick_m": 0.012
+ },
+ "lightmap": {
+  "px": 2048,
+  "split_v": 0.86,
+  "lod0_px_per_m": [
+   25.7,
+   34.9
+  ],
+  "far_px_per_m": 11.9,
+  "thin_faces_vertex_ao": [
+   29723,
+   236
+  ]
+ },
+ "frame": "glTF Y up; three.js local (u, m TAW - OY, w); node at the city position of the frame origin, rotation.y = -rotation",
+ "placement": {
+  "city_local_position": [
+   302.604,
+   90.0,
+   -1229.568
+  ],
+  "rotation_y_rad": 0.138688,
+  "hides_solids": [
+   "https://databrussels.be/id/buildingsolid/550409"
+  ],
+  "hides_bu_ids": [
+   "https://databrussels.be/id/building/1776799"
+  ]
+ },
+ "bounds_city": {
+  "x": [
+   286.7,
+   313.1
+  ],
+  "z": [
+   -1242.1,
+   -1215.3
+  ],
+  "y": [
+   92.8,
+   107.4
+  ]
+ },
+ "measured": {
+  "frame": {
+   "city": "city local: x = L72 E - 148643, z = 165394 - N; heights m TAW",
+   "origin_city": [
+    302.604,
+    -1229.568
+   ],
+   "rotation_rad": -0.138688,
+   "rotation_deg": -7.946,
+   "axes": "u = (cos r, sin r) in city (x, z): ~east; w = (-sin r, cos r): ~south"
+  },
+  "roof": {
+   "A": {
+    "c": 0.65,
+    "h": 106.85,
+    "t": 1.6
+   },
+   "B": {
+    "c": 3.7,
+    "h": 106.8,
+    "t": 1.57
+   },
+   "C": {
+    "c": -1.35,
+    "h": 105.6,
+    "t": 1.483
+   },
+   "D": {
+    "h": 104.85,
+    "u0": -3.4,
+    "u1": 2.1,
+    "te": 1.57,
+    "tw": 2.0
+   }
+  },
+  "levels_taw": {
+   "ground_floor": 95.45,
+   "first_floor": 98.75,
+   "eave_line": 101.65
+  },
+  "planes": {
+   "U_S": 5.75,
+   "U_BAY": 6.5,
+   "U_N": 5.3,
+   "U_PORCH": 7.6,
+   "U_CANOPY": 8.92,
+   "U_NWING": 6.27,
+   "W_A": 8.45,
+   "U_B_W": -5.65,
+   "U_C_W": -7.0
+  },
+  "photo_measured_openings": 17
+ },
+ "estimated": "the north side (against 509389), the NW wing and its veranda (plan from UrbIS, the rest from v06 / v01 from far), the east bay's ground floor, the south-east ground floor, the lattice pattern, the leaded patterns, the bays' depths"
+}

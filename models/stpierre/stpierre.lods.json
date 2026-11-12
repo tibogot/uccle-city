@@ -1,0 +1,14 @@
+{
+ "StPierre_lod1": {
+  "from": "StPierre",
+  "sourceTris": 30922,
+  "tris": 12489
+ },
+ "StPierre_lod2": {
+  "from": "StPierre_far",
+  "sourceTris": 4089,
+  "tris": 1671
+ },
+ "glbBytes": 1053480,
+ "rawBytes": 3114720
+}

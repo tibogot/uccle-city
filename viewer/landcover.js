@@ -25,6 +25,17 @@ export function landCoverData(feats, bounds) {
     g.fill("evenodd");
     areas++;
   }
+  // the railway's verges (?trains=1): cuttings and embankments are scrub / young woodland in Uccle, not lawn
+  if (feats.railVerges?.length) {
+    g.strokeStyle = "rgba(225,0,0,1)";
+    g.lineCap = g.lineJoin = "round";
+    g.lineWidth = 30;
+    for (const l of feats.railVerges) {
+      g.beginPath();
+      l.forEach(([x, z], i) => (i ? g.lineTo(px(x), pz(z)) : g.moveTo(px(x), pz(z))));
+      g.stroke();
+    }
+  }
   g.strokeStyle = "rgba(0,255,0,1)";
   g.lineCap = g.lineJoin = "round";
   for (const l of feats.lines || []) {

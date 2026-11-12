@@ -12,16 +12,23 @@ import { addCircles, buildColliders, driveHeight, gather, pointInBuilding, KIND 
 import { createCarEnv } from "./carEnv.js";
 import { ChaseCamera } from "./chaseCamera.js";
 import { ColliderDebug } from "./debugDraw.js";
+import { auditTile } from "./colliderAudit.js";
 import { DriveKeys } from "./input.js";
 import { lampSites } from "../lamps.js";
 import { env as lightEnv } from "../lighting.js";
 
-/** Main thread, once per loaded tile: the worker's drive data + the tile's lamp posts. */
-export function tileDrive(drive, roads, bounds) {
+/** Main thread, once per loaded tile: the worker's drive data + the tile's lamp posts and bollards, from the lists the
+ *  city DRAWS (drawn = { lamps: lamps.js placedLampSites, bollards: [{x, z}] }: the lamps moved onto the measured
+ *  sidewalk, the surveyed bollards). Before 2026-11-12 the posts came from lampSites, where the lamps stood BEFORE
+ *  they were moved onto the sidewalk: ~90 % of them were invisible posts, many in the carriageway
+ *  (docs/CITY_TREES.md §3). No drawn list (or a legacy drive set): the old lampSites posts. */
+export function tileDrive(drive, roads, bounds, drawn = null) {
   if (!drive) return null;
-  const lamps = lampSites(roads, bounds).map((p) => ({ x: p.x, z: p.z, r: 0.2, kind: KIND.lamp }));
-  addCircles(drive.col, lamps);
-  drive.counts.lamps = lamps.length;
+  const old = !drawn || drive.legacy;
+  const lamps = (old ? lampSites(roads, bounds) : drawn.lamps).map((p) => ({ x: p.x, z: p.z, r: 0.2, kind: KIND.lamp }));
+  const posts = old ? [] : (drawn.bollards || []).map((p) => ({ x: p.x, z: p.z, r: 0.1, kind: KIND.post }));
+  addCircles(drive.col, [...lamps, ...posts]);
+  drive.counts.lamps = lamps.length; drive.counts.posts = posts.length;
   return drive;
 }
 
@@ -37,6 +44,8 @@ export class Driver {
       else if (k === "KeyG") this.debug.visible = !this.debug.visible; else if (k === "Escape") this.onExit?.();
     } });
     this.ground = (x, z) => {
+      const dk = this.world.decks?.length ? this.world.deckY(x, z) : null;          // a hero road bridge's deck
+      if (dk != null) return dk;
       const t = this.world.at(x, z);
       return t.drive ? driveHeight(t.hm, t.drive.ground.delta, x, z) : t.hm.surface(x, z) + 0.12;
     };
@@ -52,6 +61,13 @@ export class Driver {
         if (x + r >= b.x0 && x - r <= b.x1 && z + r >= b.z0 && z - r <= b.z1) out.push(col);
       }
       return out;
+    };
+    // the debug view's "no visible object" flags: the audit of the collider's tile, once per tile (colliderAudit.js)
+    this.flagsOf = (col) => {
+      if (col.flags !== undefined) return col.flags;
+      const t = this.world.tiles.find((w) => w.drive?.col === col);
+      col.flags = t?.drawn ? auditTile(t).ids : null;
+      return col.flags;
     };
     this.extra = [];   // collider sets no tile carries (hero models: the Saint-Job front steps)
     this.env = createCarEnv({ sets: this.sets, ground: this.ground, handling: HANDLING });
@@ -119,7 +135,7 @@ export class Driver {
     this.camNear.length = 0;
     for (const col of this.sets(c.x, c.z, 14)) gather(col, c.x, c.z, 14, this.camNear);
     this.chase.update(c, dt, this.ground, this.insideWall);
-    this.debug.update(this.sets, this.ground, c, this.env.contacts > 0);
+    this.debug.update(this.sets, this.ground, c, this.env.contacts > 0, 40, this.flagsOf);
     this.ms = this.ms * 0.95 + (performance.now() - t0) * 0.05;
     if ((this._hudN = (this._hudN || 0) + 1) % 6 === 0)
       this.hud.innerHTML = `${(Math.abs(c.speed) * 3.6).toFixed(0)} <small style="font-size:12px;color:#b8c2cc;font-weight:400">km/h${c.speed < -0.2 ? " R" : ""} · C camera · G colliders · R reset</small>`;

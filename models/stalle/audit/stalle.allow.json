@@ -1,0 +1,22 @@
+[
+ {
+  "check": "coplanar",
+  "at": [
+   -0.062,
+   37.809,
+   0.151
+  ],
+  "radius": 0.03,
+  "why": "statue: the meshopt-simplified robe folds onto itself (0.7 cm2 at 4.7 deg: a pinched crease the simplifier left, both triangles are the figure's surface 30 mm inside a fold, facing the wall), seen from >= 3 m below"
+ },
+ {
+  "check": "coplanar",
+  "at": [
+   -0.168,
+   38.152,
+   0.192
+  ],
+  "radius": 0.05,
+  "why": "far statue (LOD1/2, 900 triangles, seen from >= 66 m): a simplified fold of the arm over the robe, 5 cm2 at 3 deg = under a tenth of a pixel at 80 m"
+ }
+]

@@ -1,0 +1,156 @@
+{
+ "name": "Moulin du Nekkersgat (Nekkersgatmolen), Rue Keyenbempt, Uccle",
+ "sources": "UrbIS 3D BuildingSolids + DSM/DTM 2021 0.5 m (CC0); photos: data/raw/refs/nekkersgat/SOURCES.md",
+ "frame": {
+  "origin_city": [
+   -1836.528,
+   815.787
+  ],
+  "rotation_rad": 0.447234,
+  "note": "u along rotation, w perpendicular (city x/z rotated)"
+ },
+ "solids": [
+  {
+   "id": "https://databrussels.be/id/buildingsolid/518200",
+   "solid": "518200",
+   "bu": "https://databrussels.be/id/building/1724691",
+   "footprint": [
+    [
+     -1851.15,
+     812.21
+    ],
+    [
+     -1842.1,
+     816.72
+    ],
+    [
+     -1843.53,
+     819.49
+    ],
+    [
+     -1839.67,
+     821.48
+    ],
+    [
+     -1838.36,
+     818.55
+    ],
+    [
+     -1833.63,
+     820.65
+    ],
+    [
+     -1830.33,
+     812.15
+    ],
+    [
+     -1830.19,
+     811.89
+    ],
+    [
+     -1829.58,
+     812.2
+    ],
+    [
+     -1826.34,
+     805.86
+    ],
+    [
+     -1811.96,
+     813.2
+    ],
+    [
+     -1815.05,
+     819.15
+    ],
+    [
+     -1823.14,
+     815.16
+    ],
+    [
+     -1829.7,
+     832.06
+    ],
+    [
+     -1834.43,
+     830.73
+    ],
+    [
+     -1837.14,
+     829.69
+    ],
+    [
+     -1837.0,
+     829.32
+    ],
+    [
+     -1841.95,
+     827.42
+    ],
+    [
+     -1855.43,
+     820.17
+    ]
+   ],
+   "base": 31.07,
+   "eaves": 35.86,
+   "top": 43.4,
+   "dsm": {
+    "p50": 40.1,
+    "p90": 41.97,
+    "max": 43.18,
+    "n": 5832
+   },
+   "ground_around": {
+    "min": 31.01,
+    "p50": 33.37,
+    "max": 38.23
+   }
+  },
+  {
+   "id": "https://databrussels.be/id/buildingsolid/516481",
+   "solid": "516481",
+   "bu": "https://databrussels.be/id/building/1714545",
+   "footprint": [
+    [
+     -1844.17,
+     800.07
+    ],
+    [
+     -1839.61,
+     802.44
+    ],
+    [
+     -1842.2,
+     806.62
+    ],
+    [
+     -1844.36,
+     805.45
+    ],
+    [
+     -1845.05,
+     806.55
+    ],
+    [
+     -1847.12,
+     805.45
+    ]
+   ],
+   "base": 33.54,
+   "eaves": 36.57,
+   "top": 39.5,
+   "dsm": {
+    "p50": 38.25,
+    "p90": 39.03,
+    "max": 39.23,
+    "n": 277
+   },
+   "ground_around": {
+    "min": 33.44,
+    "p50": 35.54,
+    "max": 37.35
+   }
+  }
+ ]
+}

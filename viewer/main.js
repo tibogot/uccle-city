@@ -9,10 +9,18 @@ import {
   color, float, uniform, positionWorld, normalWorld, fract, min, fwidth, smoothstep, mix, abs, uv, vec3,
 } from "three/tsl";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { buildLamps, setLampModel } from "./lamps.js";
+import { buildLamps, setLampModel, lampLightPool } from "./lamps.js";
 import { loadLampModel } from "./lampModel.js";
 import { loadStJob, STJOB_LODS, STJOB_BU_ID, stjobColliders } from "./stjobModel.js";
+import { addStalle } from "./stalleCity.js";
 import { addTownHall } from "./townhallCity.js";
+import { addVanBuuren } from "./vanbuurenCity.js";
+import { addWolvendael } from "./wolvendaelCity.js";
+import { addPolice } from "./policeCity.js";
+import { addCalevoet } from "./calevoetCity.js";
+import { addStPierre } from "./stpierreCity.js";
+import { addObservatory } from "./observatoryCity.js";
+import { addFlags } from "./flagsCity.js";
 import { buildFurniture } from "./furniture.js";
 import { buildTram } from "./tram.js";
 import { buildCars } from "./cars.js";
@@ -36,6 +44,8 @@ import { Driver, tileDrive } from "./drive/driveMode.js";
 import { addLamps } from "./lampLight.js";
 import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, dropFadeVariant } from "./lodFade.js";
 import { buildFarTreeField } from "./treesStylized.js";
+import { cityKit } from "./facadeKit/cityKit.js";
+import { treeKit } from "./treeKitCity.js";
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -253,11 +263,16 @@ function addTrees(group, f, inTile, treeGround) {
     : buildStylizedTreeField(f.trees || [], treeGround, inTile);
   group.add(T.group);
   group.userData.update = T.update || null;
+  // what is drawn (the drive colliders' audit, viewer/drive/colliderAudit.js)
+  group.userData.treesDrawn = T.placements ? T.placements.map((p) => ({ x: p[0], z: p[1] })) : (f.trees || []).filter((t) => inTile(t.x, t.z)).map((t) => ({ x: t.x, z: t.z }));
   log(`trees: ${T.count} (LiDAR canopy peaks + OSM)` + (T.sizes ? `, species heights ${T.sizes.map((z) => z.h.toFixed(1)).join("/")} m` : ""));
 }
 
 let tramLine = null;       // real STIB line 92 on its timetable (tramline.js)
 const updaters = [];
+// The railway (?trains=1, Train Lab first): tracks per tile, hero bridges, SNCB trains on the real timetable (viewer/rail/)
+const TRAINS = params.get("trains") !== "0";
+const railP = TRAINS ? import("./rail/railway.js").then(async (m) => ({ m, doc: await m.loadRail() })).catch((e) => { log(`railway: ${e.message}`); return null; }) : null;
 let falconsReady = null, falconsOn = true;   // the Saint-Job peregrines (viewer/falcons.js), once loaded       // per-frame updates (tree LOD, lamp lights) of every loaded tile
 
 // ------------------------------------------------------------------ walk mode
@@ -327,12 +342,16 @@ if (params.get("worker") !== "0") {
 }
 /** UrbIS solids replaced by a scripted model (the Saint-Job church): not drawn, kept in the roof grid. */
 const HIDE_BU_IDS = params.get("stjob") !== "0" ? [STJOB_BU_ID] : [];
+/** Park ponds whose bed the tiles carve (viewer/water/pondBed.js; the Wolvendael pond with ?wolvendael=1). */
+const PONDS = [];
 /** Tiles that have surfaces.json draw the measured UrbIS street surfaces (viewer/surfaces.js), the default since
  *  2026-11-05; ?roads=engine: the road engine's own guessed carriageways, sidewalks and kerbs, as before. */
 const ROAD_SURFACES = params.get("roads") !== "engine";
 /** CPU data for a tile: from the worker, or on the main thread (?worker=0, or if the worker fails). */
 function tileData(entry, lite = false) {
-  entry = { ...entry, hide: HIDE_BU_IDS, surface: ROAD_SURFACES, pits: params.get("pits") !== "0" };   // ?pits=0: no tree pits (A/B)
+  entry = { ...entry, hide: HIDE_BU_IDS, ponds: PONDS, surface: ROAD_SURFACES, pits: params.get("pits") !== "0",   // ?pits=0: no tree pits (A/B)
+    kit: cityKit.on && !lite, kitExclude: cityKit.exclude,                                           // the façade kit (viewer/facadeKit/), ?kit=0 off
+    rail: TRAINS, driveLegacy: params.get("drivecol") === "legacy" };                                // ?drivecol=legacy: the drive colliders before the audit
   const local = () => import("./tileData.js").then((m) => (lite ? m.buildLiteData : m.buildTileData)(entry, DATA.href));
   if (!tileWorker) return local();
   return new Promise((resolve, reject) => {
@@ -358,7 +377,7 @@ async function loadLiteTile(entry, group) {
   const textures = [];
   if (entry.files.ortho) {
     const tex = await texLoader.loadAsync(new URL(entry.files.ortho, DATA).href).catch(() => null);
-    if (tex) { tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4; tm.map = tex; tm.color.set(0xffffff); textures.push(tex); }
+    if (tex) { tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4; tm.map = tex; tm.color.set(0xffffff); textures.push(tex); treeKit()?.noteGround(tex.image); }
   }
   g.add(new THREE.Mesh(tg, tm));
   const bg = new THREE.BufferGeometry();
@@ -383,7 +402,7 @@ async function loadLiteTile(entry, group) {
     name: entry.name,
     group: g,
     dispose: () => {
-      if (trees) { const i = updaters.indexOf(trees.update); if (i >= 0) updaters.splice(i, 1); }
+      if (trees) { const i = updaters.indexOf(trees.update); if (i >= 0) updaters.splice(i, 1); trees.dispose?.(); }
       g.traverse((o) => { o.geometry?.dispose(); if (o.material) dropMat(o.material); });
       for (const t of textures) t.dispose();
       g.removeFromParent();
@@ -412,6 +431,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     if (verbose || fader.hold) { mark = performance.now(); return Promise.resolve(); }   // under the boot cover: no frame to keep smooth
     return new Promise((r) => requestAnimationFrame(() => { mark = performance.now(); r(); })); };   // spread GPU-side work over frames
   const { roads, feats } = d;
+
   const hm = Heightmap.from(d.hdr, d.y, d.orig);
   const ni = d.netInfo;
   say(`tile ${entry.name} built ${tileWorker ? "in the worker" : "on the main thread"}: ${Object.entries(d.times).map(([k, v]) => `${k} ${v} ms`).join(", ")}`);
@@ -424,6 +444,15 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   await frame("roads");
   const terr = terrainMesh(d.terrain, contourOn, feats, bounds, d.cover);
   own.terrain.add(terr);
+  if (d.rail && railP) {       // ?trains=1: carved + built in the tile worker (viewer/rail/railData.js), wrapped here
+    await frame("terrain mesh");
+    const rail = await railP;
+    const rt = rail.m.railTileMeshes(d.rail);
+    if (rt.group.children.length) own.features.add(rt.group);
+    const st = rt.stats;
+    await frame("railway");
+    if (st.km || st.treesDropped) say(`railway (worker): ${st.km} km of track, ${st.sleepers} sleepers, ${st.masts} masts, ${st.platforms || 0} platforms, ${st.decks || 0} decks, ${st.tris} triangles; ${st.carved} terrain cells carved / filled, ${st.treesDropped} LiDAR trees dropped`);
+  }
   // squares OSM leaves out (data/overrides.json); with measured surfaces the UrbIS squares replace them
   const plazas = ss ? { count: 0 } : buildPlazas(await loadOverrides(DATA), bounds, (x, z) => hm.ground(x, z));
   if (plazas.count) own.roads.add(plazas.group);
@@ -445,7 +474,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   if (fo.userData.update) ups.push(fo.userData.update);
   await frame("trees");
   // ?roads=surface: lamps, parked cars, the walker and the bollards on the measured street (viewer/streetFit.js)
-  const lamps = buildLamps(roads, (x, z) => hm.ground(x, z), bounds, { lights: verbose, place: fit?.placeLamp, lift: fit?.lift });   // point lights: main tile only
+  const lamps = buildLamps(roads, (x, z) => hm.ground(x, z), bounds, { place: fit?.placeLamp, lift: fit?.lift });   // its heads join the city lamp-light pool (lampLightPool)
   own.features.add(lamps.group);
   ups.push(lamps.update);
   await frame("lamps");
@@ -476,7 +505,10 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   if (fadeIn) { const tc = performance.now(); await preCompile(Object.values(own), true); mark += performance.now() - tc; }   // shaders + fading copies built before it shows (not counted as a slice)
   for (const u of ups) updaters.push(u);
   for (const g of Object.values(own)) if (fadeIn) { g.visible = true; fader.fade(g, +1); }
+  cityKit.addTile(entry.name, B.kit, B.kitWalls, !fadeIn);       // ?kit=1: its kit fades in with it
   const dispose = () => {
+    cityKit.removeTile(entry.name);
+    lamps.release();                                // its lamp heads leave the light pool (the lights stay)
     for (const u of ups) { const i = updaters.indexOf(u); if (i >= 0) updaters.splice(i, 1); }
     for (const g of Object.values(own)) {
       g.traverse((o) => { if (!o.geometry?.userData?.shared) o.geometry?.dispose(); for (const m of [].concat(o.material || [])) dropMat(m); o.dispose?.(); });
@@ -487,7 +519,10 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   await frame("show");
   tramLine?.snapTile(entry.name, feats, bounds);
   await frame("tram line snap");
-  const drive = tileDrive(d.drive, roads, bounds);
+  const bxyz = d.road.surfaceData?.bollards || [];
+  const drawn = { trees: fo.userData.treesDrawn || [], lamps: lamps.sites || [], bollards: Array.from({ length: bxyz.length / 3 }, (_, i) => ({ x: bxyz[i * 3], z: bxyz[i * 3 + 2] })),
+    hiddenBuildings: d.drive?.counts?.hidden || 0 };
+  const drive = tileDrive(d.drive, roads, bounds, drawn);
   frame("drive colliders");
   log(`tile ${entry.name}: main-thread work ${busy.toFixed(0)} ms, longest slice ${longest.toFixed(0)} ms (${worst}); slices over 4 ms: ${slices.join(", ") || "none"}; ${tileWorker ? "CPU build in the worker" : "CPU build ALSO on the main thread"}`);
   // roof heights (m TAW, 0 = none) for fly-mode collision: the max of the 2 m cells around the point, so the bird
@@ -503,7 +538,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     }
     return h;
   };
-  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt, drive, lift: fit?.lift, groups: Object.values(own) };
+  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt, drive, drawn, lift: fit?.lift, groups: Object.values(own) };
 }
 
 // ------------------------------------------------------------------ main
@@ -546,14 +581,19 @@ async function main() {
   for (const g of Object.values(layers)) scene.add(g);
   // the parked cars of every tile, as one fleet (viewer/carFleet.js; ?cars=box: the old box cars per tile)
   if (params.get("cars") !== "box") { scene.add(carFleet.group); updaters.push(carFleet.update); carFleet.setRenderer(renderer, scene); }
+  updaters.push(lampLightPool(scene));               // the city's lamp lights: ONE fixed pool for the session (light count never changes)
   // the world: the main tile now, its neighbours streamed in after the first frame (?ring=0|1|2)
   const world = {
     tiles: [],
     at(x, z) { return this.tiles.find((t) => x >= t.bounds.x0 && x <= t.bounds.x1 && z >= t.bounds.z0 && z <= t.bounds.z1) || this.tiles[0]; },
     surface(x, z) { return this.at(x, z).hm.surface(x, z); },
     ground(x, z) { return this.at(x, z).hm.ground(x, z); },
-    /** where feet stand: the road level, plus the kerb height on measured sidewalks / squares (?roads=surface) */
-    walkY(x, z) { const t = this.at(x, z); return t.hm.surface(x, z) + CARVE + (t.lift ? t.lift(x, z) : 0); },
+    /** hero road-bridge decks (viewer/rail/bridgeModel.js deckHeightFn): (x, z) -> m TAW or null off them */
+    decks: [],
+    deckY(x, z) { for (const f of this.decks) { const y = f(x, z); if (y != null) return y; } return null; },
+    /** where feet stand: the road level, plus the kerb height on measured sidewalks / squares (?roads=surface); on a
+     *  hero road bridge its deck (the terrain there is the cutting under it) */
+    walkY(x, z) { const d = this.decks.length ? this.deckY(x, z) : null; if (d != null) return d; const t = this.at(x, z); return t.hm.surface(x, z) + CARVE + (t.lift ? t.lift(x, z) : 0); },
     /** the highest solid here: ground or a roof (fly-mode collision) */
     heightAt(x, z) { const t = this.at(x, z); return Math.max(t.hm.surface(x, z), t.roofAt ? t.roofAt(x, z) : 0); },
     get h() {
@@ -605,9 +645,31 @@ async function main() {
       }
     }).catch((e) => log(`Saint-Job model failed (${e.message}): the UrbIS solid is hidden, reload with ?stjob=0`));
   }
+  await cityKit.start({ scene, updaters, log });                   // ?kit=1: the façade kit (before the first tile and the warm-up)
+  // the Chapelle de Stalle + its interior cell (tools/blender/stalle*.py, viewer/stalleCity.js) behind ?stalle=1
+  if (params.get("stalle") !== "0") await addStalle({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, getView: () => ({ camera, lighting }), getThird: () => third });
   // The Uccle town hall (tools/blender/townhall.py, viewer/townhallCity.js) in place of its UrbIS solid, behind
   // ?townhall=1 for now (its BU_ID joins HIDE_BU_IDS before the first tile is built)
-  if (params.get("townhall") === "1") await addTownHall({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
+  if (params.get("townhall") !== "0") await addTownHall({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
+  // The Villa van Buuren (tools/blender/vanbuuren.py, viewer/vanbuurenCity.js) in place of UrbIS solid 550409 only,
+  // behind ?vanbuuren=1 for now
+  if (params.get("vanbuuren") !== "0") await addVanBuuren({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer });
+  // The Château de Wolvendael (tools/blender/wolvendael_chateau.py, viewer/wolvendaelCity.js) in place of UrbIS solids
+  // 537523 + 538880, and its pond (viewer/water/), behind ?wolvendael=1 for now
+  if (params.get("wolvendael") !== "0") await addWolvendael({ scene, updaters, hide: HIDE_BU_IDS, ponds: PONDS, world, manifest, log, compiler: () => compileFor, renderer, lighting });
+  // The police station, Rue Rouge 17 (tools/blender/police_rouge.py, viewer/policeCity.js) in place of UrbIS solids 528055 +
+  // 528772 (BU 1674458), with its yard, behind ?police=1 for now
+  if (params.get("police") !== "0") await addPolice({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer });
+  // The Uccle-Calevoet station building (tools/blender/calevoet_station.py, viewer/calevoetCity.js) in place of UrbIS
+  // solid 534568, behind ?calevoet=1 for now
+  if (params.get("calevoet") !== "0") await addCalevoet({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer });
+  // the Eglise Saint-Pierre (tools/blender/stpierre.py, viewer/stpierreCity.js) behind ?stpierre=1
+  if (params.get("stpierre") !== "0") await addStPierre({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
+  // The Royal Observatory (tools/blender/observatory.py, viewer/observatoryCity.js) in place of its UrbIS solids,
+  // behind ?observatory=1 for now (its solids join HIDE_BU_IDS before the first tile is built)
+  if (params.get("observatory") !== "0") await addObservatory({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
+  // flags on the town hall balcony (viewer/flagsCity.js), behind ?flags=1 (needs ?townhall=1); in the background
+  if (params.get("flags") !== "0") addFlags({ scene, updaters, renderer, compiler: () => compileFor, log, params }).catch((e) => log(`flags failed: ${e.message}`));
   const T0 = await loadTile(entry, { layers, contourOn, verbose: true });
   world.tiles.push(T0);
   const { hm, roads, net } = T0;
@@ -619,6 +681,47 @@ async function main() {
       tramLine.update(new THREE.Vector3(cx, 0, cz));
       log(tramLine.info());
     } catch (e) { log(`tram line: ${e.message}`); }
+  }
+  if (TRAINS) {
+    const rail = await railP;
+    if (rail) {
+      const { loadBridge, placeBridge, warmBridge, deckHeightFn, roadBridgeColliders, BRIDGES } = await import("./rail/bridgeModel.js");
+      const { openParallelPipelines } = await import("../vendor/engine/parallelPipelines.js");
+      for (const name of BRIDGES) {
+        loadBridge(name).then(async (b) => {
+          const pb = placeBridge(b, { smooth: SMOOTH });
+          // a road bridge: its deck carries walk / drive heights, its parapets block the car
+          if (b.info.kind === "road_over_rail") {
+            world.decks.push(deckHeightFn(b.info));
+            const cols = roadBridgeColliders(b.info);
+            if (window.__driver) window.__driver.addStatic(cols); else (window.__pendingStatics ??= []).push(cols);
+          }
+          // shaders (+ fading copies) and the shadow pass built before it shows (nothing compiled on a frame)
+          const tw = performance.now();
+          for (let i = 0; i < 200 && !compileFor && params.get("precompile") !== "0"; i++) await new Promise((r) => setTimeout(r, 100));
+          const warm = await warmBridge(pb, { compile: compileFor, renderer, scene, openParallel: renderer.backend?.isWebGPUBackend ? openParallelPipelines : null }).catch((e) => ({ ms: performance.now() - tw, err: e.message }));
+          scene.add(pb.group);
+          window.__bridges ??= {}; window.__bridges[name] = { b, pb, warm };
+          const p = b.placement.position;
+          const home = manifest.tiles.find((t) => p.x >= t.bounds.x[0] && p.x < t.bounds.x[1] && p.z >= t.bounds.z[0] && p.z < t.bounds.z[1])?.name;
+          let n = 0;
+          updaters.push((camPos) => {
+            pb.update(camPos);
+            if (n++ % 30) return;
+            pb.group.visible = world.tiles.some((t) => t.name === home) || !!scene.getObjectByName(`${home}-lite`);
+          });
+          log(`${b.info.kind === "road_over_rail" ? "road bridge" : "railway bridge"} ${name} (${b.info.urbis}, ${b.info.kind === "road_over_rail" ? `${b.info.road} over ${b.info.line}` : `${b.info.line} over ${b.info.road}`}): LODs ${b.lods.map((l) => Math.round(l.tris)).join(" / ")} triangles; warmed in ${Math.round(warm.ms)} ms${warm.err ? ` (${warm.err})` : ""}`);
+        }).catch((e) => log(`bridge ${name}: ${e.message}`));
+      }
+      try {
+        const { createTrains } = await import("./rail/trains.js");
+        const trains = await createTrains({ rail: rail.doc, parent: scene, clock: tramLine ? () => tramLine.clockSecs : null });
+        updaters.push((camPos, cam) => trains.update(camPos, cam));
+        trains.update(new THREE.Vector3(cx, 0, cz));
+        window.__trains = trains;
+        log(trains.info());
+      } catch (e) { log(`trains: ${e.message}`); }
+    }
   }
   const cy = hm.ground(cx, cz);
 
@@ -701,14 +804,20 @@ async function main() {
   // drive mode (viewer/drive/): the hatchback on a street near Saint-Job church (the fly start), ?at=x,z elsewhere
   const driver = new Driver(camera, renderer.domElement, scene, world);
   window.__driver = driver;
+  if (params.get("stjob") !== "0") loadStJob().then((m) => driver.addStatic(stjobColliders(m.placement))).catch(() => {});   // the church's front steps
   if (HIDE_BU_IDS.length) loadStJob().then((m) => driver.addStatic(stjobColliders(m.placement))).catch(() => {});   // the church's front steps
+  for (const cols of window.__pendingStatics ?? []) driver.addStatic(cols);                                           // hero road bridges' parapets
+  window.__pendingStatics = [];
   const drive = () => {
-    const [px, pz] = atP?.length === 2 ? atP : [1201.6, 549.3];
-    const s = roadStart(roads, px, pz, bounds) || start;
+    // from where the player is (walk / third person / fly): the nearest road of the tile there; else ?at=x,z or Saint-Job
+    const here = third?.on ? [third.tp.x, third.tp.z] : walker.on ? [walker.x, walker.z] : flyer.on ? [flyer.x, flyer.z] : null;
+    const T = here && world.tiles.find((t) => here[0] >= t.bounds.x0 && here[0] <= t.bounds.x1 && here[1] >= t.bounds.z0 && here[1] <= t.bounds.z1);
+    const [px, pz] = T ? here : atP?.length === 2 ? atP : [1201.6, 549.3];
+    const s = (T ? roadStart(T.roads, px, pz, T.bounds) : roadStart(roads, px, pz, bounds)) || start;
     if (!s) return;
     if (third?.on) third.stop(); walker.on = false; flyer.stop(); controls.enabled = false;
     let h = s.yaw + Math.PI;                                       // walk yaw -> car heading (forward = sin h, cos h)
-    if (TILE === "I6" && !atP && Math.sin(h) * (1153 - s.x) + Math.cos(h) * (540 - s.z) < 0) h += Math.PI;   // face the church
+    if (TILE === "I6" && !atP && !T && Math.sin(h) * (1153 - s.x) + Math.cos(h) * (540 - s.z) < 0) h += Math.PI;   // face the church
     driver.start(s.x - Math.cos(h) * 1.6, s.z + Math.sin(h) * 1.6, h);   // keep right
   };
   driver.onExit = () => setView("stjob");
@@ -781,13 +890,14 @@ async function main() {
   if (params.get("precompile") !== "0") compileFor = (roots) => precompile(renderer, roots, camera, scene, { target: pipe?.passTarget ?? null, mrt: pipe?.passMRT ?? null });   // ?precompile=0: A/B
   else { renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = lighting.exposureScale; }
   const focus = new THREE.Vector3(), fwd = new THREE.Vector3();
+  let mapHook = null;                      // ?map=1: the minimap + full map (viewer/map/cityMap.js), set below
   const hazeHook = lighting.firmament ? (rt, d, size) => lighting.hazeHook(rt, d, size) : null;   // ?haze=0: off
   const dev = { haze: params.get("haze") !== "0" };    // live switches (the dev panel)
   const renderFrame = () => (pipe ? pipe.render(dev.haze ? hazeHook : null) : renderer.render(scene, camera));
   const tsel = $("timeSel");
   for (const k of Object.keys(PRESETS)) tsel.add(new Option(k, k, false, k === timeId));
   tsel.onchange = () => { lighting.apply(tsel.value); pipe?.look(tsel.value); };
-  renderer.setAnimationLoop(() => {
+  const mainLoop = () => {
     if (flyer.on) focus.set(flyer.x, flyer.pos.y, flyer.z).addScaledVector(camera.getWorldDirection(fwd).setY(0).normalize(), 60);
     else if (walker.on || driver.on) focus.copy(camera.position).addScaledVector(camera.getWorldDirection(fwd).setY(0).normalize(), 45);
     else focus.copy(controls.target);
@@ -799,6 +909,7 @@ async function main() {
     if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
     if (third?.on) third.update(dt); else if (flyer.on) flyer.update(dt); else if (driver.on) driver.update(dt); else if (walker.on) walker.update(dt); else controls.update();
     fader.update(dt);
+    mapHook?.update(dt);
     if (!stateFreeze) { lodEye.value.copy(camera.position); for (const u of updaters) u(camera.position, camera); }
     renderFrame();
     if (pipe && lighting.firmament) pipe.setExposureFactor(lighting.adapt(dt));
@@ -812,7 +923,8 @@ async function main() {
         `cam x ${camera.position.x.toFixed(0)} z ${camera.position.z.toFixed(0)} y ${camera.position.y.toFixed(1)} m TAW` +
         (tramLine ? `\n${tramLine.info().split(". Source")[0]}` : "");
     }
-  });
+  };
+  renderer.setAnimationLoop(mainLoop);
   // Streaming: full-detail tiles within `ring` of the tile under the player (?ring=, default 1),
   // far-LOD tiles out to `far` (?far=, default 3, 0 = none). Hysteresis of one tile for unloading.
   // One full tile per step (nearest first), then up to two lite tiles. Checked every second.
@@ -826,6 +938,7 @@ async function main() {
   const lite = new Map();                 // name -> lite tile
   const pending = new Set();
   let busy = null, firstLite = !!bootPipes;
+  let streamJump = false;                 // a map teleport: tiles left behind go at once (no far-tile hand-over first)
   /** Fade a tile's groups out, then dispose it (at once with ?tilefade=0). */
   const retire = async (groups, dispose) => {
     if (!TILE_FADE) { dispose(); return; }
@@ -850,7 +963,7 @@ async function main() {
       if (t !== here && dist(byName(t.name)) > ring + 1.01 && world.tiles.length > 1) {
         world.tiles.splice(world.tiles.indexOf(t), 1);
         // smooth LOD: its far tile first, then the full one fades out over it (no hole, no pop)
-        if (TILE_FADE && far > ring && dist(byName(t.name)) <= far + 0.01 && !lite.has(t.name) && !pending.has(t.name)) {
+        if (TILE_FADE && !streamJump && far > ring && dist(byName(t.name)) <= far + 0.01 && !lite.has(t.name) && !pending.has(t.name)) {
           pending.add(t.name);
           try { const l = await loadLiteTile(byName(t.name), liteGroup); lite.set(t.name, l); fader.fade(l.group, +1); } catch (e) { log(`far tile ${t.name} failed: ${e.message}`); }
           pending.delete(t.name);
@@ -907,6 +1020,10 @@ async function main() {
     log(`warm-up: ${w.ms} ms, ${w.warmed} drawables, ${w.parallel} pipelines compiled in parallel, ${w.late} after`);
   }
   $("cover").classList.add("gone");
+  // ?impkit=1: the far trees' atlas bakes in the background (a grid row per frame; under the boot cover, where the
+  // tiles build without frames, it doubled the boot: 12 -> 28 s). When it is ready its shaders compile off the frame,
+  // then every far tree dithers in over the tile fade (viewer/treeKitCity.js show)
+  { const tk = treeKit(); if (tk) tk.ready.then(async () => { await tk.show(scene, (o) => (compileFor ? compileFor([o]) : renderer.compileAsync(o, camera, scene))); updaters.push(tk.update); }); }
   const loading = (async () => { while (await stream()); })();   // initial fill around the start tile
   busy = loading.finally(() => { busy = null; });
   setInterval(() => { if (!busy) busy = stream().finally(() => { busy = null; }); }, 1000);
@@ -930,6 +1047,66 @@ async function main() {
       createDevPanel({ renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, drive, thirdPerson, driver, getThird: () => third, getTram: () => tramLine, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log, fader });
     } catch (e) { log(`dev panel: ${e.message}`); }
   }
+  // ?map=1: the minimap (bottom left) and the full map (M) with click-to-teleport (viewer/map/, docs/MAP.md)
+  if (params.get("map") !== "0") {
+    const mode = () => (third?.on ? "third" : flyer.on ? "fly" : driver.on ? "drive" : walker.on ? "walk" : "orbit");
+    const dir = new THREE.Vector3();
+    const getPlayer = () => {
+      const m = mode();
+      camera.getWorldDirection(dir);
+      const bear = Math.atan2(dir.x, -dir.z);                          // radians clockwise from north (-z)
+      let x, z, heading, y;
+      if (m === "third") { x = third.tp.x; z = third.tp.z; y = third.tp.y; heading = Math.PI - third.tp.ctl.yaw; }
+      else if (m === "fly") { x = flyer.x; z = flyer.z; y = flyer.pos.y; heading = -flyer.yaw; }
+      else if (m === "drive") { x = driver.x; z = driver.z; y = driver.state?.y ?? 0; heading = Math.PI - (driver.state?.heading ?? 0); }
+      else if (m === "walk") { x = walker.x; z = walker.z; y = camera.position.y; heading = -walker.yaw; }
+      else { x = controls.target.x; z = controls.target.z; y = camera.position.y; heading = bear; }
+      const fov = 2 * Math.atan(Math.tan(camera.fov * Math.PI / 360) * camera.aspect);
+      return { x, z, heading, bear, mode: m, alt: y - world.surface(x, z), fov };
+    };
+    // teleport: park the camera over the target (orbit), let the streaming load the tile under it (the orbit target
+    // drives the streaming), then start the same mode there, facing along the street (the side nearest the old heading)
+    const teleport = async ({ x, z, yaw: dirAng }) => {
+      const t0 = performance.now();
+      const entry = manifest.tiles.find((t) => t.status !== "missing" && x >= t.bounds.x[0] && x < t.bounds.x[1] && z >= t.bounds.z[0] && z < t.bounds.z[1]);
+      if (!entry) throw new Error("outside the built tiles");
+      const before = getPlayer();
+      let b = Math.atan2(Math.cos(dirAng), -Math.sin(dirAng));       // the street's bearing
+      if (Math.abs(Math.atan2(Math.sin(b - before.heading), Math.cos(b - before.heading))) > Math.PI / 2) b += Math.PI;
+      const m = before.mode;
+      if (third?.on) third.stop(); walker.on = false; flyer.stop(); driver.stop(); controls.enabled = true;
+      const loaded = world.tiles.some((t) => t.name === entry.name);
+      const [, hmax] = entry.counts?.terrainMinMax || [60, 100];
+      controls.target.set(x, hmax, z);
+      camera.position.set(x - Math.sin(b) * 160, hmax + 140, z + Math.cos(b) * 160);
+      controls.update();
+      lighting.snapNext = true;
+      streamJump = true;
+      while (!world.tiles.some((t) => t.name === entry.name)) {
+        if (!busy) busy = (async () => { while (await stream()); })().finally(() => { busy = null; });
+        await Promise.race([busy, new Promise((r) => setTimeout(r, 150))]);
+      }
+      streamJump = false;
+      const tTile = performance.now() - t0;
+      if (m === "walk") walker.start(x, z, -b);
+      else if (m === "fly") { controls.enabled = false; flyer.start(x, z, -b, world.surface(x, z) + 45); }
+      else if (m === "drive") { controls.enabled = false; await driver.start(x, z, Math.PI - b); }
+      else if (m === "third") {
+        controls.enabled = false;
+        third.last = [x, world.walkY(x, z) + 0.6, z, Math.PI - b];
+        third.resume();
+        // its colliders for the new tile are built a moment later (cityHook sync): hold it in place until the ground is there
+        const top = world.heightAt(x, z) + 40;
+        for (let i = 0; i < 80 && !(third.world.ray(x, top, z, 0, -1, 0, 80) < Infinity); i++) { third.tp.start(x, world.walkY(x, z) + 0.6, z, Math.PI - b); await new Promise((r) => setTimeout(r, 100)); }
+        const hit = third.world.ray(x, top, z, 0, -1, 0, 80);
+        third.tp.start(x, (hit < Infinity ? top - hit : world.walkY(x, z)) + 0.05, z, Math.PI - b);
+      } else { const y = world.surface(x, z); controls.target.set(x, y, z); camera.position.set(x - Math.sin(b) * 110, y + 70, z + Math.cos(b) * 110); controls.update(); }
+      lighting.snapNext = true;
+      return { ms: performance.now() - t0, tileMs: +tTile.toFixed(0), tile: entry.name, loaded: !loaded, mode: m };
+    };
+    import("./map/cityMap.js").then((mm) => mm.startCityMap({ getPlayer, teleport, getTrams: () => tramLine?.positions() ?? null, log })).then((h) => { mapHook = h; window.__map = h; })
+      .catch((e) => log(`map: ${e.message}`));
+  }
   // stateAt(pos, focus, half, dt): the smoothness harness (docs/SMOOTH_LOD.md): every LOD, fade and the shadow box
   // as if the camera were at `pos` (looking at `focus`), while the view camera stays where it is; freeze(true)
   // keeps the animation loop from resetting it. Frames rendered that way show only what the LOD state changes.
@@ -938,8 +1115,14 @@ async function main() {
     for (const u of updaters) u(pos, camera);
     lighting.update(pos.y, world.surface(pos.x, pos.z), f, h, dtS);
   };
-  window.viewer = { tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
-    world, fader, stateAt, freeze: (on) => { stateFreeze = !!on; },
+  /** The drive colliders of the loaded tiles against what is drawn (viewer/drive/colliderAudit.js): per tile + total. */
+  const auditColliders = async (names = null) => {
+    const { auditTile, sumAudits } = await import("./drive/colliderAudit.js");
+    const list = world.tiles.filter((t) => t.drive && t.drawn && (!names || names.includes(t.name))).map((t) => auditTile(t));
+    return { total: sumAudits(list), tiles: list };
+  };
+  window.viewer = { auditColliders, tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
+    world, fader, stateAt, freeze: (on) => { stateFreeze = !!on; }, pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop),
     renderFrame: () => { if (!stateFreeze) { lodEye.value.copy(camera.position); for (const u of updaters) u(camera.position, camera); } renderFrame(); } };
 }
 

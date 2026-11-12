@@ -1,0 +1,242 @@
+{
+ "brick_red_brussels__red_brick_facade_e7b91cca": {
+  "material": "brick_red_brussels",
+  "url": "https://www.fab.com/listings/e7b91cca-bd0c-4fc4-98cb-b0e4281b9687",
+  "name": "Red Brick Facade",
+  "priority": "must"
+ },
+ "brick_red_brussels__red_brick_wall_7d5b8684": {
+  "material": "brick_red_brussels",
+  "url": "https://www.fab.com/listings/7d5b8684-bd22-44a6-892d-b2c2d872a248",
+  "name": "Red Brick Wall",
+  "priority": "must"
+ },
+ "brick_red_brussels__red_brick_facade_b26f585b": {
+  "material": "brick_red_brussels",
+  "url": "https://www.fab.com/listings/b26f585b-bfff-4a76-acec-fbc1b9e3f0d5",
+  "name": "Red Brick Facade",
+  "priority": "nice"
+ },
+ "brick_red_brussels__red_brick_wall_cf487eca": {
+  "material": "brick_red_brussels",
+  "url": "https://www.fab.com/listings/cf487eca-f17a-4538-a3f9-b5bc16e5219f",
+  "name": "Red Brick Wall",
+  "priority": "nice"
+ },
+ "brick_yellow__yellow_brick_wall_dc21cb59": {
+  "material": "brick_yellow",
+  "url": "https://www.fab.com/listings/dc21cb59-5b7d-4cca-b3f5-486d127682de",
+  "name": "Yellow Brick Wall",
+  "priority": "must"
+ },
+ "brick_yellow__building_wall_brick_yellow_ed3fa86b": {
+  "material": "brick_yellow",
+  "url": "https://www.fab.com/listings/ed3fa86b-712b-480a-9e03-f2973fb54ff4",
+  "name": "Building Wall Brick Yellow",
+  "priority": "must"
+ },
+ "brick_yellow__brick_wall_435e5222": {
+  "material": "brick_yellow",
+  "url": "https://www.fab.com/listings/435e5222-e8a3-4da8-9de0-3137f272e448",
+  "name": "Brick Wall",
+  "priority": "nice"
+ },
+ "brick_dark__dark_brick_wall_07e361af": {
+  "material": "brick_dark",
+  "url": "https://www.fab.com/listings/07e361af-ee6d-45fd-9d33-1dc70cabf152",
+  "name": "Dark Brick Wall",
+  "priority": "must"
+ },
+ "brick_dark__dark_brick_wall_6c322b51": {
+  "material": "brick_dark",
+  "url": "https://www.fab.com/listings/6c322b51-b1ea-4ab9-b8d3-06467ac85e62",
+  "name": "Dark Brick Wall",
+  "priority": "must"
+ },
+ "brick_dark__dark_brick_facade_0c35a43d": {
+  "material": "brick_dark",
+  "url": "https://www.fab.com/listings/0c35a43d-0283-4632-a168-88d41eaf3bd6",
+  "name": "Dark Brick Facade",
+  "priority": "nice"
+ },
+ "mortar__brick_mortar_3e3e9381": {
+  "material": "mortar",
+  "url": "https://www.fab.com/listings/3e3e9381-54e2-4f14-bf18-35d491136cea",
+  "name": "Brick Mortar",
+  "priority": "nice"
+ },
+ "stone_white__roman_limestone_wall_d8e4cf18": {
+  "material": "stone_white",
+  "url": "https://www.fab.com/listings/d8e4cf18-01f7-4e5c-bc6a-be51f317905c",
+  "name": "Roman Limestone Wall",
+  "priority": "must"
+ },
+ "stone_blue__granite_paving_slabs_d60b7f69": {
+  "material": "stone_blue",
+  "url": "https://www.fab.com/listings/d60b7f69-775b-4f96-bef1-911a895d7bd3",
+  "name": "Granite Paving Slabs",
+  "priority": "must"
+ },
+ "stone_blue__rough_granite_tiles_ec8fad77": {
+  "material": "stone_blue",
+  "url": "https://www.fab.com/listings/ec8fad77-de80-4025-aad0-bda45d1cfbff",
+  "name": "Rough Granite Tiles",
+  "priority": "nice"
+ },
+ "render_white__stucco_facade_a78c4b5c": {
+  "material": "render_white",
+  "url": "https://www.fab.com/listings/a78c4b5c-d316-49e1-85d7-172695270472",
+  "name": "Stucco Facade",
+  "priority": "must"
+ },
+ "render_white__plaster_facade_ab53a9c0": {
+  "material": "render_white",
+  "url": "https://www.fab.com/listings/ab53a9c0-01c2-4464-a7c8-c9016881a02a",
+  "name": "Plaster Facade",
+  "priority": "nice"
+ },
+ "render_painted__plaster_wall_c8abaad6": {
+  "material": "render_painted",
+  "url": "https://www.fab.com/listings/c8abaad6-05d4-4351-b537-7318df677968",
+  "name": "Plaster Wall",
+  "priority": "must"
+ },
+ "render_painted__worn_painted_plaster_wall_f4517fee": {
+  "material": "render_painted",
+  "url": "https://www.fab.com/listings/f4517fee-1586-43e4-ac83-cb0a7e8ed054",
+  "name": "Worn Painted Plaster Wall",
+  "priority": "nice"
+ },
+ "slate__slate_roof_8f0ee5ce": {
+  "material": "slate",
+  "url": "https://www.fab.com/listings/8f0ee5ce-6d6c-4b41-8bcd-73d31a4a32f7",
+  "name": "Slate Roof",
+  "priority": "must"
+ },
+ "slate__slate_roof_80f621a1": {
+  "material": "slate",
+  "url": "https://www.fab.com/listings/80f621a1-5f42-40e0-9f66-59e48e3aed92",
+  "name": "Slate Roof",
+  "priority": "nice"
+ },
+ "roof_tiles_red__red_roof_tiles_9303c8fc": {
+  "material": "roof_tiles_red",
+  "url": "https://www.fab.com/listings/9303c8fc-27ac-4681-ba19-8538254c09ec",
+  "name": "Red Roof Tiles",
+  "priority": "must"
+ },
+ "roof_tiles_red__roof_tiles_00bb3bd0": {
+  "material": "roof_tiles_red",
+  "url": "https://www.fab.com/listings/00bb3bd0-a789-4e51-a034-20f3a494e7be",
+  "name": "Roof Tiles",
+  "priority": "nice"
+ },
+ "roof_tiles_flat_dark__roof_tiles_96b8ae5a": {
+  "material": "roof_tiles_flat_dark",
+  "url": "https://www.fab.com/listings/96b8ae5a-3ab7-4055-80c9-fc358f428996",
+  "name": "Roof Tiles",
+  "priority": "must"
+ },
+ "roof_tiles_flat_dark__roof_tiles_72d4f34a": {
+  "material": "roof_tiles_flat_dark",
+  "url": "https://www.fab.com/listings/72d4f34a-9623-4791-bafd-2acea8d0d645",
+  "name": "Roof Tiles",
+  "priority": "nice"
+ },
+ "zinc_roof__zinc_oxide_4e4c84b7": {
+  "material": "zinc_roof",
+  "url": "https://www.fab.com/listings/4e4c84b7-f8bf-482d-828e-c44ea35bcf41",
+  "name": "Zinc Oxide",
+  "priority": "must"
+ },
+ "lead_roof__metal_sheet_b76003d4": {
+  "material": "lead_roof",
+  "url": "https://www.fab.com/listings/b76003d4-eb35-43fc-8d3d-ffa43d2dce7a",
+  "name": "Metal Sheet",
+  "priority": "nice"
+ },
+ "copper_patina__oxidized_copper_sheet_64bc6f0d": {
+  "material": "copper_patina",
+  "url": "https://www.fab.com/listings/64bc6f0d-cdd7-4579-aef2-a4b4a6f08146",
+  "name": "Oxidized Copper Sheet",
+  "priority": "must"
+ },
+ "painted_metal_white__scratched_painted_metal_sheet_0afb84e6": {
+  "material": "painted_metal_white",
+  "url": "https://www.fab.com/listings/0afb84e6-4ac4-4580-a617-23804b98b3aa",
+  "name": "Scratched Painted Metal Sheet",
+  "priority": "must"
+ },
+ "cast_iron_green__painted_metal_sheet_0d9c3130": {
+  "material": "cast_iron_green",
+  "url": "https://www.fab.com/listings/0d9c3130-a796-4e2f-a444-706f69420663",
+  "name": "Painted Metal Sheet",
+  "priority": "nice"
+ },
+ "wood_frame_white__painted_wooden_planks_f2da81a8": {
+  "material": "wood_frame_white",
+  "url": "https://www.fab.com/listings/f2da81a8-1b76-41b2-88d0-966c350204d2",
+  "name": "Painted Wooden Planks",
+  "priority": "nice"
+ },
+ "wood_frame_dark__wooden_planks_f5e6aefd": {
+  "material": "wood_frame_dark",
+  "url": "https://www.fab.com/listings/f5e6aefd-6be5-4941-9fe0-720f0265897e",
+  "name": "Wooden Planks",
+  "priority": "nice"
+ },
+ "cobbles__cobblestone_9cd1d969": {
+  "material": "cobbles",
+  "url": "https://www.fab.com/listings/9cd1d969-e039-4f26-81bb-6314980d5476",
+  "name": "Cobblestone",
+  "priority": "must"
+ },
+ "cobbles__cobblestone_c156689a": {
+  "material": "cobbles",
+  "url": "https://www.fab.com/listings/c156689a-7686-4a90-9433-a18267a136bd",
+  "name": "Cobblestone",
+  "priority": "nice"
+ },
+ "paving_concrete__grey_concrete_tiles_8f5d9f11": {
+  "material": "paving_concrete",
+  "url": "https://www.fab.com/listings/8f5d9f11-8552-487f-be01-f94881695136",
+  "name": "Grey Concrete Tiles",
+  "priority": "must"
+ },
+ "paving_concrete__grey_concrete_tiles_8b618f18": {
+  "material": "paving_concrete",
+  "url": "https://www.fab.com/listings/8b618f18-ca0b-430e-81b9-5b0f12b54539",
+  "name": "Grey Concrete Tiles",
+  "priority": "nice"
+ },
+ "asphalt__asphalt_road_fc52e5d3": {
+  "material": "asphalt",
+  "url": "https://www.fab.com/listings/fc52e5d3-8c95-4e0e-af45-0763cbd3ffd9",
+  "name": "Asphalt Road",
+  "priority": "must"
+ },
+ "asphalt__asphalt_road_673d4ee4": {
+  "material": "asphalt",
+  "url": "https://www.fab.com/listings/673d4ee4-db90-47a6-8520-38bcb8a43b24",
+  "name": "Asphalt Road",
+  "priority": "nice"
+ },
+ "concrete_white__concrete_wall_5fc74d73": {
+  "material": "concrete_white",
+  "url": "https://www.fab.com/listings/5fc74d73-8736-4cb6-9715-9337a171afac",
+  "name": "Concrete Wall",
+  "priority": "must"
+ },
+ "rockwork_concrete__rock_cliff_6ae483ea": {
+  "material": "rockwork_concrete",
+  "url": "https://www.fab.com/listings/6ae483ea-1395-452a-8cbe-a75591a24583",
+  "name": "Rock Cliff",
+  "priority": "must"
+ },
+ "rockwork_concrete__rock_cliff_b027a87b": {
+  "material": "rockwork_concrete",
+  "url": "https://www.fab.com/listings/b027a87b-e230-4a69-a44e-5ecd50e7e4e2",
+  "name": "Rock Cliff",
+  "priority": "nice"
+ }
+}

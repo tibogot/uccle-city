@@ -38,6 +38,7 @@ export async function startThirdPerson({ scene, camera, renderer, controls, worl
   const cw = new CollisionWorld();
   const tiles = world.tiles;
   const heightAt = (x, z) => {                       // allocation-free tile lookup
+    if (world.decks?.length) { const d = world.deckY(x, z); if (d != null) return d; }      // hero road-bridge decks
     for (let i = 0; i < tiles.length; i++) { const b = tiles[i].bounds; if (x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1) return tiles[i].hm.surface(x, z); }
     return tiles[0].hm.surface(x, z);
   };
@@ -122,7 +123,9 @@ export async function startThirdPerson({ scene, camera, renderer, controls, worl
       const g = t.hm.surface(x, z);
       posts.circles.push({ x, z, r: Math.min(0.4, Math.max(0.18, 0.12 + 0.01 * (tr.height || 10))), base: g - 2, top: g + 6 });
     }
-    for (const l of lampSites(t.roads, t.bounds)) { const g = t.hm.surface(l.x, l.z); posts.circles.push({ x: l.x, z: l.z, r: 0.12, base: g - 2, top: g + 6 }); }
+    // the lamps where the city DRAWS them (moved onto the measured sidewalk: main.js tile.drawn), not where lampSites
+    // first puts them (invisible posts, docs/CITY_TREES.md §3)
+    for (const l of t.drawn?.lamps ?? lampSites(t.roads, t.bounds)) { const g = t.hm.surface(l.x, l.z); posts.circles.push({ x: l.x, z: l.z, r: 0.12, base: g - 2, top: g + 6 }); }
     busy += performance.now() - slice;
     return { positions, props, posts, busy };
   }

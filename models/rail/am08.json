@@ -1,0 +1,72 @@
+{
+ "length": 79.91,
+ "width": 2.86,
+ "height": 4.15,
+ "wire": 5.5,
+ "wheelR": 0.425,
+ "wheelbase": 2.6,
+ "cars": [
+  {
+   "piece": "EndCar",
+   "front": 0.0,
+   "length": 27.3,
+   "flip": false,
+   "bogies": [
+    5.6,
+    23.0
+   ]
+  },
+  {
+   "piece": "MidCar",
+   "front": 27.3,
+   "length": 25.31,
+   "flip": false,
+   "bogies": [
+    31.155,
+    48.754999999999995
+   ],
+   "panto": 6.654999999999999
+  },
+  {
+   "piece": "EndCar",
+   "front": 52.61,
+   "length": 27.3,
+   "flip": true,
+   "bogies": [
+    56.910000000000004,
+    74.31
+   ]
+  }
+ ],
+ "gangways": [
+  27.3,
+  52.61
+ ],
+ "tris": {
+  "EndCar": 28148,
+  "MidCar": 23568,
+  "Bogie": 5316,
+  "Gangway": 396,
+  "Panto": 476,
+  "EndCar_far": 7532,
+  "MidCar_far": 4564,
+  "Bogie_far": 1340
+ },
+ "measured": "length over couplers 79.91 m, 3 cars B-B + 2-2 + B-B, standard gauge (loco-info.com; SNCB)",
+ "estimated": "car lengths 27.30 / 25.31 / 27.30 m, width 2.86 m, roof 4.15 m, door sill 0.96 m, window / door positions, bogie centres, nose shape, livery colours (from Wikimedia Commons photos 2019-2025), wheel 0.85 m, wheelbase 2.60 m",
+ "slots": [
+  "paint_body",
+  "paint_cab",
+  "paint_door",
+  "paint_skirt",
+  "paint_grey",
+  "paint_roof",
+  "rubber",
+  "glass",
+  "metal_dark",
+  "lamp_white",
+  "lamp_red",
+  "display",
+  "interior"
+ ]
+}

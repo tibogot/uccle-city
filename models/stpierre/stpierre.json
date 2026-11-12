@@ -1,0 +1,439 @@
+{
+ "asset": "Eglise Saint-Pierre d'Uccle, Parvis Saint-Pierre (tools/blender/stpierre.py)",
+ "triangles_lod0": 30922,
+ "triangles_far": 4089,
+ "triangles_per_slot_lod0": {
+  "brick_red_brussels": 723,
+  "stone_white": 17506,
+  "stone_blue": 1694,
+  "slate": 50,
+  "copper_brown": 1932,
+  "copper_patina": 2566,
+  "zinc_roof": 187,
+  "wood_frame_dark": 1499,
+  "glass_window": 343,
+  "cast_iron_green": 4422
+ },
+ "triangles_per_slot_far": {
+  "brick_red_brussels": 713,
+  "stone_white": 2313,
+  "stone_blue": 146,
+  "slate": 50,
+  "copper_brown": 168,
+  "copper_patina": 66,
+  "zinc_roof": 23,
+  "wood_frame_dark": 282,
+  "glass_window": 288,
+  "cast_iron_green": 40
+ },
+ "slots": [
+  "brick_red_brussels",
+  "stone_white",
+  "stone_blue",
+  "slate",
+  "copper_brown",
+  "copper_patina",
+  "zinc_roof",
+  "wood_frame_dark",
+  "glass_window",
+  "cast_iron_green"
+ ],
+ "codes": {
+  "COLOR_0.r": "code / 16 + 1/32",
+  "COLOR_0.g": "per-vertex AO of the thin faces (1 elsewhere)",
+  "names": [
+   "plain",
+   "coping",
+   "surround",
+   "cornice",
+   "plinth",
+   "band",
+   "sill",
+   "sculpture",
+   "ridge",
+   "louvre",
+   "gutter",
+   "gilt",
+   "door",
+   "dial",
+   "quoin",
+   "lead"
+  ]
+ },
+ "new_slot_names": {
+  "copper_brown": "copper sheet in its brown (not yet green) state: the dome, re-covered 2013-14 (photos c11, Arter 2014); not in the shared library yet (falls back to the temporary material whatever SOURCE says)"
+ },
+ "uv": {
+  "TEXCOORD_0": "world metres, per face (walls u along / v up; swept parts path x profile)",
+  "TEXCOORD_1": "AO lightmap (thin faces: u > 0.994, AO 1)"
+ },
+ "lightmap": {
+  "px": 3072,
+  "split_v": [
+   0.86,
+   1.0
+  ],
+  "lod0_px_per_m": 23.9,
+  "far_px_per_m": 10.5,
+  "thin_faces_vertex_ao": [
+   8758,
+   115
+  ]
+ },
+ "frame": "glTF Y up; three.js local (u, m TAW - OY, w); node at the city position of the frame origin, height OY, rotation.y = -rotation",
+ "placement": {
+  "city_local_position": [
+   -708.86,
+   50.0,
+   -492.5
+  ],
+  "rotation_y_rad": 0.26383,
+  "hides_solids": [
+   "https://databrussels.be/id/buildingsolid/546128"
+  ],
+  "hides_bu_ids": [
+   "https://databrussels.be/id/building/1594643"
+  ],
+  "church_bu_id": "https://databrussels.be/id/building/1594643"
+ },
+ "bounds_city": {
+  "x": [
+   -716.9,
+   -657.8
+  ],
+  "z": [
+   -529.3,
+   -477.9
+  ],
+  "y": [
+   48.4,
+   84.0
+  ]
+ },
+ "measured": {
+  "frame": {
+   "city": "city local: x = L72 E - 148643, z = 165394 - N; heights m TAW",
+   "origin_city": [
+    -708.86,
+    -492.5
+   ],
+   "rotation_rad": -0.26383,
+   "rotation_deg": -15.116,
+   "axes": "u = (cos r, sin r) in city (x, z): along the church axis, west front -> chevet; w = (-sin r, cos r): the south side"
+  },
+  "roof_dsm": {
+   "nave_ridge": {
+    "p10": 65.92,
+    "p50": 67.52,
+    "p90": 67.78,
+    "max": 67.88
+   },
+   "south_eave": {
+    "p10": 54.01,
+    "p50": 59.46,
+    "p90": 59.66,
+    "max": 60.16
+   },
+   "north_valley": {
+    "p10": 59.42,
+    "p50": 59.93,
+    "p90": 60.17,
+    "max": 60.64
+   },
+   "aisle4_ridge": {
+    "p10": 54.1,
+    "p50": 63.36,
+    "p90": 63.49,
+    "max": 63.61
+   },
+   "tower_top": {
+    "p10": 78.54,
+    "p50": 79.11,
+    "p90": 80.33,
+    "max": 81.74
+   },
+   "annex_east": {
+    "p10": 49.01,
+    "p50": 49.16,
+    "p90": 49.77,
+    "max": 50.89
+   }
+  },
+  "ground_taw": {
+   "west": {
+    "min": 49.59,
+    "max": 50.19,
+    "mean": 49.84
+   },
+   "east": {
+    "min": 48.86,
+    "max": 49.33,
+    "mean": 49.08
+   },
+   "north": {
+    "min": 49.32,
+    "max": 49.98,
+    "mean": 49.72
+   },
+   "south": {
+    "min": 48.9,
+    "max": 49.78,
+    "mean": 49.43
+   },
+   "door": {
+    "min": 49.74,
+    "max": 49.85,
+    "mean": 49.78
+   }
+  },
+  "footprint_local": {
+   "church": [
+    [
+     5.94,
+     -9.82
+    ],
+    [
+     5.91,
+     -16.29
+    ],
+    [
+     6.39,
+     -16.3
+    ],
+    [
+     6.39,
+     -17.23
+    ],
+    [
+     26.7,
+     -17.31
+    ],
+    [
+     26.57,
+     -18.33
+    ],
+    [
+     26.71,
+     -18.81
+    ],
+    [
+     27.5,
+     -19.05
+    ],
+    [
+     27.5,
+     -19.65
+    ],
+    [
+     30.73,
+     -19.81
+    ],
+    [
+     29.98,
+     -22.22
+    ],
+    [
+     38.33,
+     -24.82
+    ],
+    [
+     48.84,
+     8.82
+    ],
+    [
+     40.58,
+     14.52
+    ],
+    [
+     33.32,
+     14.56
+    ],
+    [
+     33.3,
+     9.69
+    ],
+    [
+     32.3,
+     9.69
+    ],
+    [
+     32.29,
+     9.44
+    ],
+    [
+     21.57,
+     9.5
+    ],
+    [
+     21.58,
+     12.03
+    ],
+    [
+     21.18,
+     12.32
+    ],
+    [
+     18.16,
+     12.33
+    ],
+    [
+     17.83,
+     11.87
+    ],
+    [
+     17.81,
+     9.52
+    ],
+    [
+     7.53,
+     9.59
+    ],
+    [
+     7.52,
+     9.85
+    ],
+    [
+     6.26,
+     9.85
+    ],
+    [
+     6.25,
+     9.53
+    ],
+    [
+     1.34,
+     9.56
+    ],
+    [
+     1.33,
+     9.76
+    ],
+    [
+     -0.0,
+     9.78
+    ],
+    [
+     -0.0,
+     8.61
+    ],
+    [
+     -0.35,
+     8.61
+    ],
+    [
+     -0.45,
+     7.87
+    ],
+    [
+     -0.32,
+     7.85
+    ],
+    [
+     -0.5,
+     4.06
+    ],
+    [
+     -0.56,
+     4.06
+    ],
+    [
+     -0.63,
+     -4.2
+    ],
+    [
+     -0.28,
+     -4.21
+    ],
+    [
+     -0.31,
+     -8.48
+    ],
+    [
+     0.01,
+     -8.5
+    ],
+    [
+     -0.0,
+     -9.78
+    ]
+   ]
+  }
+ },
+ "levels_taw": {
+  "ground_front": 49.85,
+  "plinth": 51.5,
+  "cornice": [
+   60.42,
+   60.83
+  ],
+  "upper_register": [
+   65.93,
+   66.34
+  ],
+  "attic": 67.1,
+  "tower_string": [
+   73.58,
+   73.88
+  ],
+  "tower_top": [
+   75.06,
+   75.46
+  ],
+  "dome_top": 79.6,
+  "ridge": 67.7,
+  "eave": 59.3,
+  "portal": [
+   50.3,
+   56.65,
+   58.699999999999996
+  ],
+  "fourth_nave": [
+   59.0,
+   63.5
+  ],
+  "annexes": 54.0
+ },
+ "plan": {
+  "axis_w": -0.07,
+  "front_half": 9.78,
+  "central_bay": 4.13,
+  "side_bays_to": 8.45,
+  "tower": [
+   3.25,
+   3.05,
+   0.85
+  ],
+  "nave_bays": [
+   7.53,
+   4.954,
+   5
+  ],
+  "east_wall": 40.3,
+  "apse": [
+   [
+    40.3,
+    6.3
+   ],
+   [
+    43.5,
+    2.6
+   ]
+  ],
+  "fourth_nave": {
+   "u0": 5.9,
+   "u1": 40.3,
+   "w_out": -17.3,
+   "ridge_w": -12.4,
+   "ridge": 63.5,
+   "eave": 59.0,
+   "corn": 59.05
+  },
+  "porch": {
+   "u0": 17.81,
+   "u1": 21.58,
+   "w1": 12.33,
+   "corn": 54.8
+  }
+ },
+ "estimated": "the east end (main block's east wall, the apse's walls and windows), the annexes' walls and windows, the north-east block's roof, the fourth nave's north wall (4 bays with the south side's window type), the porch's sides and door, the window over the porch, the dial sizes on the N / E / S faces, the cartouche and the urns (stylised), the wall thicknesses"
+}
