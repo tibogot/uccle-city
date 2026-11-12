@@ -58,6 +58,15 @@ could make the best perf". This is the plan; nothing here is measured yet unless
 GPU memory budget per ring, texture sets (9 shipped = 24 MB GPU, 17 MB download), KTX2 everywhere, LOD GLBs with
 meshopt, unload by distance with hysteresis, a loading indicator. Vercel: what the first visit downloads.
 
+## 4b. The Perf Lab (owner 2026-11-13: test techniques cleverly, not by piling things into the city)
+
+`labs/perf-lab.html`: one real tile's instanced content (its trees, lamps, parked cars, facade-kit pieces) loaded once,
+the same scripted camera paths (drive, fly, turn on the spot), and switchable options per system: today's per-tile
+culling / cell culling (Mr.doob's approach, our own code) / InstancedMesh2 1.0 beta (if it runs on r187). Per option:
+GPU ms main + shadow pass, CPU ms, draws, vertices, in alternating rounds. The lab narrows the choice; the winner is
+then checked ONCE in the real city with the scripted flight + drive (shadow distance and post costs only show there).
+New tricks found later are tested there first.
+
 ## 5. Order of work
 
 1. Measure the baseline (section 0) on the quiet machine: all paths, per-pass GPU, stall list.
