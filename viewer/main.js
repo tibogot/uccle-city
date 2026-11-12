@@ -20,6 +20,7 @@ import { addPolice } from "./policeCity.js";
 import { addCalevoet } from "./calevoetCity.js";
 import { addStPierre } from "./stpierreCity.js";
 import { addObservatory } from "./observatoryCity.js";
+import { addFlags } from "./flagsCity.js";
 import { buildFurniture } from "./furniture.js";
 import { buildTram } from "./tram.js";
 import { buildCars } from "./cars.js";
@@ -660,6 +661,8 @@ async function main() {
   // The Royal Observatory (tools/blender/observatory.py, viewer/observatoryCity.js) in place of its UrbIS solids,
   // behind ?observatory=1 for now (its solids join HIDE_BU_IDS before the first tile is built)
   if (params.get("observatory") === "1") await addObservatory({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
+  // flags on the town hall balcony (viewer/flagsCity.js), behind ?flags=1 (needs ?townhall=1); in the background
+  if (params.get("flags") === "1") addFlags({ scene, updaters, renderer, compiler: () => compileFor, log, params }).catch((e) => log(`flags failed: ${e.message}`));
   const T0 = await loadTile(entry, { layers, contourOn, verbose: true });
   world.tiles.push(T0);
   const { hm, roads, net } = T0;
