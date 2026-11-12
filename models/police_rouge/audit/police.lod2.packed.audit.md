@@ -1,19 +1,19 @@
 # Mesh audit (packed): police.lod2
 
-3,351 triangles, 3,711 welded vertices, 2,953 open edges, 837,524 rays, 2656 ms.
+3,351 triangles, 3,710 welded vertices, 2,951 open edges, 838,134 rays, 2789 ms.
 
-**13 blocking**, 462 warnings. NOT CLEAN.
+**13 blocking**, 459 warnings. NOT CLEAN.
 
 | check | severity | count |
 |---|---|---|
 | depth | block | 2 |
 | crossing | block | 3 |
 | leak | block | 8 |
-| sliver | warn | 286 |
+| sliver | warn | 283 |
 | nonmanifold | warn | 12 |
 | tjunction | warn | 164 |
 | seam | info | 200 |
-| opening | info | 924 |
+| opening | info | 921 |
 | backtoback | info | 198 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
@@ -46,7 +46,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 26.08, 48.00, 16.65 | Police_lod2/stone_blue | 4 | -0.9 + -0.44 + 0.02 | 5.501 |
 | 26.10, 47.58, -20.35 | Police_lod2/rubble_stone | 4 | -1 + 0 + 0 | 1.7 |
 
-## sliver (warn, 286)
+## sliver (warn, 283)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -91,7 +91,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.82, 58.30, -4.33 | Police_lod2/concrete_white | 41 | 15.23 |
 | 14.70, 58.30, -9.28 | Police_lod2/concrete_white | 41 | 14.86 |
 
-(246 more in the JSON)
+(243 more in the JSON)
 
 ## nonmanifold (warn, 12)
 
@@ -204,7 +204,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (160 more in the JSON)
 
-## opening (info, 924)
+## opening (info, 921)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -249,7 +249,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 6.25, 47.85, 0.52 | Police_lod2/stone_blue | 0 + 0 + 1 | 7.4 |
 | 5.37, 47.43, 0.52 | Police_lod2/stone_blue | 0 + 0 + 1 | 8.65 |
 
-(884 more in the JSON)
+(881 more in the JSON)
 
 ## backtoback (info, 198)
 

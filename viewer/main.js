@@ -1131,7 +1131,18 @@ async function main() {
   /** The JOINS check (viewer/contactAudit.js, tools/mesh_audit/contact.js): a hero / bridge ("bridge-verrewinkel") or a
    *  tile's roads ("roads:F7") against the generated ground of the loaded tiles. */
   const contactAudit = async (what, options) => (await import("./contactAudit.js")).contactAudit({ scene, world }, what, options);
-  window.viewer = { auditColliders, contactAudit, tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
+  /** The collision test of a loaded tile (viewer/drive/collisionTest.js): drawn solids vs the car colliders (static, every
+   *  cell) + scripted drive and walk routes. The walk routes use the third-person collision world when it is running. */
+  const collisionTest = async (name, opts = {}) => {
+    const m = await import("./drive/collisionTest.js");
+    let makeController = null;
+    if (opts.walk !== false && third?.world) {
+      const { CharacterController } = await import("./character/controller.js");
+      makeController = (x, y, z) => { const c = new CharacterController(third.world); c.teleport(x, y, z); return c; };
+    }
+    return m.collisionTest({ scene, world, driver, makeController }, name, opts);
+  };
+  window.viewer = { auditColliders, contactAudit, collisionTest, thirdPerson: () => thirdPerson(), getThird: () => third, tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
     world, fader, stateAt, freeze: (on) => { stateFreeze = !!on; }, pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop),
     renderFrame: () => { if (!stateFreeze) { lodEye.value.copy(camera.position); for (const u of updaters) u(camera.position, camera); } renderFrame(); } };
 }

@@ -3,7 +3,7 @@
   "triangles": 6348,
   "vertices_welded": 6127,
   "open_edges": 4848,
-  "rays": 654708,
+  "rays": 655362,
   "blocking": 0,
   "warnings": 1372,
   "counts": {
@@ -12,9 +12,9 @@
    "backtoback": 145,
    "seam": 353,
    "tjunction": 596,
-   "opening": 846
+   "opening": 841
   },
-  "ms": 1575
+  "ms": 1508
  },
  "options": {
   "weld": 0.0001,

@@ -1,6 +1,6 @@
 # Mesh audit (before pack): police.lod0
 
-19,716 triangles, 16,719 welded vertices, 13,204 open edges, 1,138,974 rays, 4704 ms.
+19,716 triangles, 16,719 welded vertices, 13,204 open edges, 1,139,586 rays, 4457 ms.
 
 **0 blocking**, 7408 warnings. Clean (no blocking item).
 
@@ -10,7 +10,7 @@
 | nonmanifold | warn | 12 |
 | tjunction | warn | 728 |
 | seam | info | 1750 |
-| opening | info | 1144 |
+| opening | info | 1139 |
 | backtoback | info | 677 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
@@ -173,7 +173,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (1710 more in the JSON)
 
-## opening (info, 1144)
+## opening (info, 1139)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -218,7 +218,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 5.71, 47.43, 0.52 | Police/stone_blue | 0 + 0 + 1 | 0.55 |
 | 6.25, 47.43, 0.52 | Police/stone_blue | 0 + 0 + 1 | 0.45 |
 
-(1104 more in the JSON)
+(1099 more in the JSON)
 
 ## backtoback (info, 677)
 

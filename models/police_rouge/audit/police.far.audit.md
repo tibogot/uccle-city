@@ -1,6 +1,6 @@
 # Mesh audit (before pack): police.far
 
-6,348 triangles, 6,127 welded vertices, 4,848 open edges, 655,148 rays, 1465 ms.
+6,348 triangles, 6,127 welded vertices, 4,848 open edges, 655,760 rays, 1323 ms.
 
 **0 blocking**, 1374 warnings. Clean (no blocking item).
 
@@ -10,7 +10,7 @@
 | nonmanifold | warn | 12 |
 | tjunction | warn | 596 |
 | seam | info | 345 |
-| opening | info | 846 |
+| opening | info | 841 |
 | backtoback | info | 145 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
@@ -173,7 +173,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (305 more in the JSON)
 
-## opening (info, 846)
+## opening (info, 841)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -218,7 +218,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 5.71, 47.43, 0.52 | Police_far/stone_blue | 0 + 0 + 1 | 0.55 |
 | 6.25, 47.43, 0.52 | Police_far/stone_blue | 0 + 0 + 1 | 0.45 |
 
-(806 more in the JSON)
+(801 more in the JSON)
 
 ## backtoback (info, 145)
 

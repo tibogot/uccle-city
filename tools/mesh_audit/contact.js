@@ -18,7 +18,9 @@
 //   floating  (BLOCK) the first surface under it is the GROUND, 2 cm < gap <= slit (0.3 m): a plinth, a skirt, a
 //             slab edge hovering over the street / bank: you see a slit
 //   overhang  (BLOCK) an OPEN edge of a level face (n.y > 0.9: a slab, a deck, a tread) with nothing (model or ground)
-//             within slit under it: a paper-thin slab sticking out over a gap (the owner's Verrewinkel spot)
+//             within slit under it, at street level (ground within `band` round it): a paper-thin slab sticking out
+//             over a gap (the owner's Verrewinkel spot); roofs / cornices high up are not joins
+//   thin bottom rims (a down face narrower than `thin`: rails, bars, slats, a fence's bottom rail) are skipped
 //   opening   (info)  the ground slit < gap <= zone (1.5 m) under a model edge: an arch or a deck over a bank, a bench;
 //             usually design, listed for review
 //   a model part over the model itself (a railing's bottom bar over its deck) is design, not a join: not listed; other
@@ -35,6 +37,8 @@ export const CONTACT_DEFAULTS = {
   slit: 0.3,          // m: a model edge this close over the ground (and nothing of the model under it) is a visible slit (block)
   zone: 1.5,          // m: up to this, a higher gap over the ground is listed as an "opening" (info: an arch over a bank)
   buryDepth: 30,      // m: a ground face this far above the sample (seen from below) buries it
+  thin: 0.12,         // m: a bottom rim whose down face is narrower than this across the edge is a rail / bar (skipped)
+  band: 1.0,          // m: an overhang counts only with the street / ground within this, vertically and round it
   boxed: 0.6,         // m: a sample with something this close on 5 of its 6 axis rays is hidden (inside masonry)
   cluster: 0.6,       // m: samples closer than this are one item
   minLength: 0.15,    // m: shorter items are noise (a sliver's corner)
@@ -218,11 +222,17 @@ export function auditContact(model, ground, options = {}) {
     const A = [M.v[b + c * 3], M.v[b + c * 3 + 1], M.v[b + c * 3 + 2]], c2 = (c + 1) % 3, B = [M.v[b + c2 * 3], M.v[b + c2 * 3 + 1], M.v[b + c2 * 3 + 2]];
     const L = Math.hypot(B[0] - A[0], B[1] - A[1], B[2] - A[2]);
     if (L < 0.05) continue;
+    if (Math.abs(B[1] - A[1]) / L > 0.7) continue;            // a steep edge (a seam up a corner): its foot is another edge's
     skipSet.clear();
     for (const vv of [vid[t * 3], vid[t * 3 + 1], vid[t * 3 + 2]]) for (const s of vtris.get(vv)) skipSet.add(s);
     // the rim's other face (bottom rim): its 1-ring too
     const n = Math.max(1, Math.round((L - 0.04) / O.step));
     const level = M.nrm[t * 3 + 1] > 0.9;
+    // the face's inward direction (in its plane, across the edge, toward its third corner)
+    const c3 = (c + 2) % 3, Cx = M.v[b + c3 * 3], Cy = M.v[b + c3 * 3 + 1], Cz = M.v[b + c3 * 3 + 2];
+    const ex = (B[0] - A[0]) / L, ey = (B[1] - A[1]) / L, ez = (B[2] - A[2]) / L, wx = Cx - A[0], wy = Cy - A[1], wz = Cz - A[2], we = wx * ex + wy * ey + wz * ez;
+    let ix = wx - ex * we, iy = wy - ey * we, iz = wz - ez * we;
+    const il = Math.hypot(ix, iy, iz) || 1; ix /= il; iy /= il; iz /= il;
     for (let s = 0; s <= n; s++) {
       const f = (0.02 + (L - 0.04) * s / n) / L;
       const px = A[0] + (B[0] - A[0]) * f, py = A[1] + (B[1] - A[1]) * f, pz = A[2] + (B[2] - A[2]) * f;
@@ -264,11 +274,45 @@ export function auditContact(model, ground, options = {}) {
       }
       if (O.trace && Math.hypot(px - O.trace[0], py - O.trace[1], pz - O.trace[2]) < 0.3) O.traceOut.push({ p: [px, py, pz], back, near, up, upN, dn, dnN, drop, rays: AXES.map(([dx, dy, dz]) => { const h = gm.ray(px, py, pz, dx, dy, dz, 20, (tt) => skipSet.has(tt)); const hg = gg.ray(px, py, pz, dx, dy, dz, 20); return [h && +h.t.toFixed(3), h && [...M.nrm.subarray(h.tri * 3, h.tri * 3 + 3)].map((v) => +v.toFixed(2)), hg && +hg.t.toFixed(3)]; }) });
       if (back >= 3 || near >= 5) continue;
+      // a THIN part's underside (a rail, a bar, a bench slat, a fence's bottom rail): its down face is narrower than
+      // `thin` across the edge; it stands on posts by design, not a join
+      if (kind === 1) {
+        const qx = px + ix * O.thin, qz = pz + iz * O.thin, qy = py + iy * O.thin;
+        let wide = false;
+        for (const tt of gm.column(qx, qz)) {
+          if (M.nrm[tt * 3 + 1] > -0.5) continue;
+          const y = triYAt(M.v, tt * 9, qx, qz);
+          if (!Number.isNaN(y) && Math.abs(y - qy) < 0.06) { wide = true; break; }
+        }
+        if (!wide) continue;
+      }
       checked++;
       // floating: the first thing under it is the GROUND, within zone (a model part over its own deck, e.g. a railing's
       // bottom bar, is the model's design, not a join); overhang: nothing (model or ground) within zone under a slab rim
       const below = Math.min(drop, dn);
-      const what = level && kind === 0 && below > O.slit ? "overhang"
+      // the gap itself must be visible: its middle (half way down to the ground) is not inside the model (a sill tucked
+      // into a hollow building shell over the terrain that runs on under the footprint)
+      if (drop < dn && drop <= O.zone) {
+        const gy = py - drop / 2;
+        let gb = 0;
+        for (const [dx, dy, dz] of AXES) {
+          let h = gm.ray(px, gy, pz, dx, dy, dz, 30), S = M;
+          const hg = gg.ray(px, gy, pz, dx, dy, dz, h ? h.t : 30);
+          if (hg) { h = hg; S = G; }
+          if (h && S.nrm[h.tri * 3] * dx + S.nrm[h.tri * 3 + 1] * dy + S.nrm[h.tri * 3 + 2] * dz > 0) gb++;
+        }
+        if (gb >= 3) continue;
+      }
+      // overhang only at street level: some ground within `band` (vertically) within `band` round the edge (a roof's or a
+      // cornice's edge high over the street is not a join)
+      let street = false;
+      if (level && kind === 0 && below > O.slit) {
+        for (const [ox, oz] of [[0, 0], [O.band, 0], [-O.band, 0], [0, O.band], [0, -O.band]]) {
+          for (const tt of gg.column(px + ox, pz + oz)) { const y = triYAt(G.v, tt * 9, px + ox, pz + oz); if (!Number.isNaN(y) && Math.abs(y - py) <= O.band) { street = true; break; } }
+          if (street) break;
+        }
+      }
+      const what = street ? "overhang"
         : drop < dn && drop <= O.slit ? "floating"
         : drop < dn && drop <= O.zone ? "opening" : null;
       if (dn < drop) drop = dn;
