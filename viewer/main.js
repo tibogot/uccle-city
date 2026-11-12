@@ -568,7 +568,7 @@ async function main() {
   // the material library's SHIPPED textures (viewer/materials/textures/scans.json: the default look of every library
   // material, docs/TEXTURE_FACTORY.md) load in parallel with the boot; awaited before the first consumer (the façade
   // kit, the landmarks, the bridges) creates its materials. ?libmat=0: none (every consumer on its own temporary looks)
-  const libTex = params.get("libmat") === "0" ? null : import("./materials/scans.js").then((m) => m.loadScans(renderer))
+  const libTex = params.get("libmat") === "0" ? null : Promise.all([import("./materials/scans.js"), import("./materials/shipped.js")]).then(([m, sh]) => m.loadScans(renderer, undefined, { skip: sh.GROUND_HOLD }))
     .then((S) => { log(`material library: ${Object.keys(S).length} shipped texture sets`); return S; })
     .catch((e) => log(`material library textures failed: ${e.message}`));
   const backend = renderer.backend.isWebGPUBackend ? "WebGPU" : "WebGL2 (fallback)";

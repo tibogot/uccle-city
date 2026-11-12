@@ -180,3 +180,83 @@ the live procedural.
   `params.leafAtlas`).
 - 2K sets were made for variant a only (KTX2). Every variant has 2K sources and WebP.
 - The bench needs a quiet GPU.
+
+
+## Shipped defaults (owner's decision 2026-11-13)
+
+The best-looking version of each material is the library's **default** and the city uses it. The Material Lab stays
+for fine-tuning and for adding Megascans later. Ties go to the factory: real Brussels scale and colour, and CC0.
+
+`tools/texturefactory/promote.py`:
+- copies the pick's **1K KTX2 + WebP** into `viewer/materials/textures/<mat>_{albedo,nra}.*`, committed like the
+  shipped scans (a fresh checkout or Vercel has them);
+- writes its `scans.json` entry: source, lattice, mean colour, bytes and a default `tint` (0 for the factory sets,
+  whose own colour is the target; 0.35 for the CC0 scans);
+- marks it `current` in candidates.json. A previously shipped scan is restored from git into `textures/cand/` and
+  stays reviewable.
+
+`library.js createMaterial()` now defaults to `variant: "scan"` whenever the shipped set is loaded. The Material Lab
+asks for "proc" explicitly.
+
+| Material | Default (shipped) | Variant / why | Image |
+|---|---|---|---|
+| stone_blue | **factory** `tf_stone_blue_a` | bush-hammered field + 2 cm drafted margin: the Brussels plinth / sill finish (b = honed, c = weathered pale) | `docs/img/texfactory/choice_stone_blue.jpg` |
+| slate | **factory** `tf_slate_c` | regular, dark Belgian slate: a and b mix in odd brown slates that read as a pattern in the 3 m tile | `choice_slate.jpg` |
+| paving_concrete | **factory** `tf_paving_concrete_a` | grey 30 cm tiles with gum and stains (rebuilt: chips only on the edges, no holes mid-tile) | `choice_paving_concrete.jpg` |
+| brick_dark | **factory** `tf_brick_dark_a` | purple-brown clinker, part glazed, grey joints | `choice_brick_dark.jpg` |
+| brick_yellow | **factory** `tf_brick_yellow_a` | buff stretcher bond, grey lime joints. Looked again at 1 / 10 / 50 m: still a tie with Bricks105 (more natural surface) but closer to Uccle's buff; factory per the rule | `choice_brick_yellow.jpg` |
+| asphalt | **factory** `tf_asphalt_a` | aged Brussels asphalt with porphyry chips. Not used by the city yet (roads switch later) | `choice_asphalt.jpg` |
+| render_white | **factory** `tf_render_white_a` | white-washed lime render. In the city façades its relief is halved (it read as rough stucco under a low sun) | `choice_render_white.jpg` |
+| roof_tiles_red | **CC0 scan** acg_RoofingTiles014B (new) | the Flemish pantile scan: dirty red pantiles in courses. The factory pantiles read as corrugated sheet | `choice_roof_tiles_red.jpg` |
+| brick_red_brussels | **CC0 scan** ph red_brick (kept) | the owner's earlier pick | `choice_brick_red_brussels.jpg` |
+| stone_white | **CC0 scan** ph sandstone_blocks_08 (kept) | the scan's real surface wins (the factory one is the better colour, but its grain is too uniform) | `choice_stone_white.jpg` |
+| cobbles | **CC0 scan** ph cobblestone_floor_08 (kept) | the scan's worn setts win | `choice_cobbles.jpg` |
+| copper_patina | **CC0 scan** Metal058C (kept) | no factory set | — |
+
+## City switch (2026-11-13)
+
+**How it works.**
+- `main.js` loads the shipped sets once at boot: `loadScans`, in parallel, awaited before the first consumer. It
+  skips the held ground sets: 9 sets, **24 MB GPU (BC7), 17.2 MB download**.
+- Consumers take the library through **`viewer/materials/shipped.js`**, the city's view of it:
+  - `createMaterial` / `getMaterial` / `DEFS` answer only for names **with a shipped set**, so every other slot
+    keeps the consumer's own look. The library's live procedural versions were judged worse (2026-11-12).
+  - The ground names (asphalt, paving_concrete, cobbles) are **held** (`GROUND_HOLD`) until the roads switch.
+- A/B switch (`viewer/materials/libSwitch.js`): `?libmat=0` (all temporary), `?libmat=kit,townhall` (only those),
+  `?libmat=-stalle` (all but). A consumer that regresses goes into `OFF`; none is in it today.
+- No road / sidewalk / kerb / paint code was touched: roadBuild.js, roadPaint.js, cobbles.js and streets/ are as
+  they were.
+
+**Per consumer.** Each was measured one at a time: one page with only that consumer on the library
+(`?libmat=<consumer>`), its library meshes swapped live to its own temporary materials (`debug/libAB.js`).
+- Images: before / after at street level and ~50 m, `docs/img/texfactory/city/<consumer>_{street,far}_ab.jpg`.
+- Flicker test: `labs/flickerTest.js`, 20 frames, strafe 0.6 mm, updaters frozen, both states in the same page.
+- GPU: 4 alternating rounds of 30 frames rendered back to back, median per round; "b - a" = library minus own.
+
+**GPU noise.** The GPU was shared with the roads agent's city and lab tabs, and my tab ran rAF at 1 fps behind them
+(hence frames rendered back to back). Frames were 5-11 ms, except the kit page: 33 ms frames under heavy contention.
+Read differences under ~0.3 ms as zero.
+
+| Consumer | Library slots now (shipped) | Kept on its own look | GPU b - a (ms, 4 rounds: spread) | Flicker own → library (ppm) | Verdict |
+|---|---|---|---|---|---|
+| façade kit (THE ONE LINE: `libSource("kit", ...)`) | brick_red, brick_yellow, stone_white, stone_blue, render_white, slate (`scanLook`, 6 sets) | frames, glass, iron, zinc, stained glass, anodised metal, enamel, **copper_patina, brick_dark** (WebGPU's 16-textures-per-stage budget: the kit's single opaque shader already binds 4) | unresolved: page loads 9.5 → 12.8 / 10.4, in-page -1.6 (-9.2 .. +1.6) under the 33 ms contention | 5383 → 5362 (a balcony railing, both) | ON: warmer real stone surrounds, plinths |
+| Stalle | stone_white, stone_blue, brick_red, slate (+ cobbles before the hold) | the rest | +0.05 (-0.33 .. +0.27) | 44 → 86 (tiny) | ON |
+| town hall | brick_red, stone_white, stone_blue, slate | zinc, frames, glass, iron, cobbles (held) | -0.10 (-0.20 .. 0) | 104 → 114 | ON |
+| police | brick_yellow, brick_red, stone_blue | the rest | -0.10 (-0.59 .. +0.26) | 88 → 88 | ON (the view shows the station only partly) |
+| Calevoet station | stone_blue, slate | painted brick, zinc, terracotta, frames, iron, glass | +0.03 (-0.06 .. +0.19) | 74 → 74 | ON |
+| Saint-Pierre | brick_red, stone_white, stone_blue, slate, copper_patina | copper_brown, zinc, frames, glass, iron | +0.07 (-0.07 .. +0.26) | 365 → 365 | ON |
+| Wolvendael | stone_white, stone_blue, slate | lime render, zinc, frames, terracotta, glass | +0.06 (-0.13 .. +0.26) | 103 → 103 | ON |
+| Van Buuren | stone_blue (2 meshes) | its own bricks, concrete, flat tiles, wood, glass, metals | -0.77 (-2.55 .. +0.07): noise | 153 → 153 | ON |
+| Observatory (`getMaterial` added to shipped.js for its contract) | brick_red, stone_white, stone_blue, copper_patina, slate | painted metal, zinc, frames, glass, iron, gravel, lawn | **+0.52 (+0.39 .. +0.79)**, consistent: the campus is all brick / stone in that view | 63 → 78 | ON; the copper domes now show a real patina |
+| hero bridges (`libOn("bridges")`) | brick_red, stone_blue, brick_yellow | concrete, painted metal, glazing; the Verrewinkel deck's asphalt / paving (held) | page loads: 10.0-10.4 → 10.2-11.2 (~+0.4, noisy) | 245 → 1204 **not from the materials**: swapping the library materials for a plain one left it at 1195; the blinking cluster is the trees at the left (wind) | ON |
+| procedural façades `facades.js` (walls + roofs, via `viewer/facadeLib.js`; facadeGeom.js untouched) | walls: brick_red (style 0), brick_dark (1), brick_yellow (2), render_white scaled to white / cream / grey (3-5); roofs: roof_tiles_red / slate detail on each roof's orthophoto colour | landmark style 6 (procedural ashlar), windows, rooms, doors, shops, sills, plinth, cornice | -0.10 (-0.33 .. +0.13) | street 3498 → 3591 (railings, both); 50 m 51 → 51 | ON: brick reads as brick from 30-50 m (the procedural courses had faded to flat colour) |
+
+**What stayed as it was, and why.**
+- The ground everywhere (asphalt, sidewalks, setts, hero forecourts, the bridge deck): the road switch comes after
+  claude/roads2 merges (TODO).
+- Every slot without a shipped baked set (wood, glass, iron, zinc, painted metal, terracotta, Van Buuren's own
+  bricks, ...): the consumers' own looks are better than the library's procedural versions.
+- The kit's copper_patina and brick_dark slots: the texture-binding budget. Next step: a per-slot draw, or a raised
+  `maxSampledTexturesPerShaderStage`, which this adapter supports at 48.
+- `facades.js` landmark style 6.
+- No consumer was put back on its own materials: none got worse in colour, scale or shimmer in these views.

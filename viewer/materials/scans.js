@@ -58,10 +58,11 @@ async function loadPair(renderer, url, meta, format = fmt()) {
 }
 
 /** Load every shipped scan once. format: "ktx2" | "webp". Returns the SCANS map. */
-export function loadScans(renderer, format = fmt()) {
+export function loadScans(renderer, format = fmt(), { skip = [] } = {}) {
   return (ready ??= (async () => {
     manifest = await fetch(BASE + "scans.json").then((r) => r.json());
-    await Promise.all(Object.entries(manifest).map(async ([mat, meta]) => {
+    // (skip: names the caller will not use, e.g. the city's ground sets held until the roads switch)
+    await Promise.all(Object.entries(manifest).filter(([mat]) => !skip.includes(mat)).map(async ([mat, meta]) => {
       SCANS[mat] = await loadPair(renderer, `${BASE}${mat}`, meta, format);
     }));
     return SCANS;
