@@ -118,7 +118,7 @@ const SQ3x2 = 2 * Math.sqrt(3);
 const HEX = 1.3;                  // m: hex tile size of the anti-tiling grid (about one lawn repeat)
 // the cover weights' and the macro tone's noise as ONE small texture (3 taps instead of 6 value noises of sin hashes:
 // cheaper per pixel): 256 x 256, four independent tileable value noises (16 cells per period), mipmapped
-const noiseTex = (() => {
+export const noiseTex = (() => {
   const N = 256, C = 16, d = new Uint8Array(N * N * 4);
   let seed = 7;
   const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
