@@ -261,13 +261,13 @@ function scenarios(F) {
         if (!best || score > best.score) best = { r, pts, L, score };
       }
       if (!best) throw new Error("no street");
-      const pts = best.pts, y0 = (x, z) => w.ground(x, z) + 7;
+      const pts = best.pts, y0 = (x, z) => w.ground(x, z) + 8;
       const h0 = Math.atan2(-(pts[1][0] - pts[0][0]), -(pts[1][1] - pts[0][1]));
       fl.start(pts[0][0], pts[0][1], h0, y0(pts[0][0], pts[0][1]), 13, 0);
       let k = 1;
       F.pick = { name: best.r.meta?.name, L: best.L, n: pts.length };
       return { seconds: Math.min(25, best.L / 13), note: `low along ${best.r.meta?.name || "a street"} (7 m up, under the roofs): the chase camera beside the façades`, script: (f) => {
-        while (k < pts.length - 1 && Math.hypot(pts[k][0] - f.pos.x, pts[k][1] - f.pos.z) < 12) k++;
+        while (k < pts.length - 1 && Math.hypot(pts[k][0] - f.pos.x, pts[k][1] - f.pos.z) < 18) k++;
         const [tx, tz] = pts[k];
         const st = steer(f, Math.atan2(-(tx - f.pos.x), -(tz - f.pos.z)), 0, 0.9);
         return { ...st, pitch: clamp((y0(f.pos.x, f.pos.z) - f.pos.y) * 0.15 - f.gamma * 1.5, -1, 1), flap: f.V < 12 ? 1 : 0, fold: 0 };
@@ -309,6 +309,8 @@ export async function run(name, { grabs = 8, seconds = null, cellW = 400, arg } 
   { const g = fl.game; g.messages.length = 0; for (const k in g.score) g.score[k] = 0; g.f.extraMass = 0; fl.bird.drop(); g.trace.length = 0; fl.handover = null; }
   const S = scenarios(F)[name](arg);
   const dur = seconds ?? S.seconds, n = Math.round(dur * 60);
+  // (perched / landed: the script's flap would take off again at once: none then)
+  if (S.script) { const sc = S.script; S.script = (f, t) => (fl.game.mode === "perch" ? { pitch: 0, roll: 0, flap: 0, fold: 0 } : sc(f, t)); }
   fl.input.script = name === "intro" ? null : S.script;
   if (name === "intro") fl._introScript = S.script;
   const long = [];

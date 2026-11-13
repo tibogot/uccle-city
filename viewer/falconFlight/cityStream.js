@@ -134,7 +134,7 @@ export class CityFalconWorld {
    *  a bridge) }. outer: the crowns' whole volume is solid (the camera: never inside the leaves). One shared object. */
   column(x, z, y, outer = false) {
     const o = this._col;
-    o.ceil = Infinity; o.brush = 0; o.tree = null; o.open = false;
+    o.ceil = Infinity; o.brush = 0; o.tree = null; o.ceilTree = null; o.open = false;
     const t = this.tileAt(x, z) || this.nearest(x, z);
     let h = t ? t.hm.ground(x, z) : 0;
     const r = this.roof(x, z); if (r > h) h = r;
@@ -146,7 +146,7 @@ export class CityFalconWorld {
       const k = j * p.nx + i, v = p.data[k];
       if (v < -1e8) continue;
       // a bridge's arch: its lowest surface well over the ground here, the bird under it
-      if (p.low) { const u = p.low[k]; if (u > h + 2.5 && y < u) { if (u < o.ceil) o.ceil = u; o.open = true; continue; } }
+      if (p.low) { const u = p.low[k]; if (u > h + 2.5 && y < u) { if (u < o.ceil) { o.ceil = u; o.ceilTree = null; } o.open = true; continue; } }
       if (v > h) h = v;
     }
     if (this.city.decks?.length && !(o.open && y < o.ceil)) { const d = this.city.deckY(x, z); if (d != null && d > h) h = d; }
@@ -168,7 +168,7 @@ export class CityFalconWorld {
         if (s2 >= 1) continue;
         const hv = Rv * cv * Math.sqrt(1 - s2), lo = cy - hv, hi = cy + hv;
         if (y >= lo) { if (hi > h) { h = hi; o.tree = td.idx[k]; o.treeTile = td; } }
-        else if (lo < o.ceil) o.ceil = lo;
+        else if (lo < o.ceil) { o.ceil = lo; o.ceilTree = td.idx[k]; }
       }
     }
     o.floor = h;

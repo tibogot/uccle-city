@@ -221,19 +221,26 @@ export class FalconFlight {
     const len = Math.hypot(dx, dy, dz);
     const steps = Math.max(1, Math.ceil(len / 0.4));
     const C = world.column ? world : null;
-    let prevF = C ? C.column(px, pz, py).floor : world.floor(px, pz);
+    let prevF, prevC = Infinity;
+    if (C) { const c = C.column(px, pz, py); prevF = c.floor; prevC = c.ceil; } else prevF = world.floor(px, pz);
     for (let s = 1; s <= steps; s++) {
       const t = s / steps;
       const x = px + dx * t, y = py + dy * t, z = pz + dz * t;
-      let f, ceil = Infinity, hitTree = null;
-      if (C) { const c = C.column(x, z, y); f = c.floor; ceil = c.ceil; hitTree = c.tree; } else f = world.floor(x, z);
-      if (y >= f + R && y <= ceil - R) { prevF = f; continue; }
+      let f, ceil = Infinity, hitTree = null, ceilTree = null;
+      if (C) { const c = C.column(x, z, y); f = c.floor; ceil = c.ceil; hitTree = c.tree; ceilTree = c.ceilTree ?? null; } else f = world.floor(x, z);
+      if (y >= f + R && y <= ceil - R) { prevF = f; prevC = ceil; continue; }
       // contact: which kind?
       const t0 = (s - 1) / steps, x0 = px + dx * t0, z0 = pz + dz * t0, y0 = py + dy * t0;
       let nx, ny, nz, wall = false, under = false;
-      if (y >= f + R) {
-        // a ceiling (an arch, a crown's underside): pushed down under it, normal down
-        nx = 0; ny = -1; nz = 0; under = true;
+      if (y >= f + R && ceil < prevC - 1) {
+        // a ceiling that came down across the path (flying level into the low side of a crown, an arch's spandrel):
+        // the side of a solid, a wall
+        const hl = Math.hypot(dx, dz) || 1;
+        nx = -dx / hl; ny = 0; nz = -dz / hl; wall = true; hitTree = ceilTree;
+        this.pos.x = x0; this.pos.y = y0; this.pos.z = z0;
+      } else if (y >= f + R) {
+        // a ceiling (an arch, a crown's underside) risen into from below: pushed down under it, normal down
+        nx = 0; ny = -1; nz = 0; under = true; hitTree = ceilTree;
         this.pos.x = x; this.pos.z = z; this.pos.y = Math.max(f + R, ceil - R);
       } else
       if (f - prevF > 1.0 && y0 < f + R - 0.05) {
