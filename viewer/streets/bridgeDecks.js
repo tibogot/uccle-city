@@ -153,17 +153,20 @@ export function deckMesh(d) {
   return { position: new Float32Array(P), normal: new Float32Array(N), color: new Float32Array(C) };
 }
 
-/** the parapets as thin rings [[x, z], ...] (the car's walls: viewer/drive/colliders.js walls) */
+/** the parapets as thin walls for the car (viewer/drive/colliders.js walls): one { ring: [[x, z], ...], top, base } per
+ *  SLAB.step piece and side, top = the coping, base = the slab's underside (colliders.js heightClear: a car on the
+ *  street under the bridge passes under them) */
 export function parapetRings(d) {
   const [s0, s1] = d.span, steps = Math.max(1, Math.ceil((s1 - s0) / SLAB.step));
   const S = [];
   for (let k = 0; k <= steps; k++) S.push(at(d, s0 + (s1 - s0) * k / steps));
-  const ring = (sg) => {
-    const outer = S.map((q) => [q.x + q.tz * sg * d.half, q.z - q.tx * sg * d.half]);
-    const inner = S.map((q) => [q.x + q.tz * sg * (d.half - SLAB.parapetW), q.z - q.tx * sg * (d.half - SLAB.parapetW)]);
-    return [...outer, ...inner.reverse()];
-  };
-  return [ring(1), ring(-1)];
+  const off = (q, o) => [q.x + q.tz * o, q.z - q.tx * o];
+  const out = [];
+  for (const sg of [1, -1]) for (let k = 0; k < steps; k++) {
+    const a = S[k], b = S[k + 1], o = sg * d.half, i = sg * (d.half - SLAB.parapetW);
+    out.push({ ring: [off(a, o), off(b, o), off(b, i), off(a, i)], top: Math.max(a.y, b.y) - SLAB.sink + SLAB.parapetH, base: Math.min(a.y, b.y) - SLAB.sink - SLAB.depth });
+  }
+  return out;
 }
 
 /** the bridge decks of a roads.json document, and the road stage's ground with them */

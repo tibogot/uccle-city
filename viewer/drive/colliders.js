@@ -248,6 +248,17 @@ function circleBoxContact(col, c, x, z, body, contact) {
   return true;
 }
 
+/** CAR_H: the car's height (m) for the vertical test below. */
+export const CAR_H = 1.6;
+/** Is polygon `id` of `col` clear of a car standing at height y (its wheels)? A wall with a known extent (a rail
+ *  platform's top, a fence's, a bridge parapet's top and its slab's underside: `top` / `base` in buildColliders) does not
+ *  stop a car on a deck over it, nor one on the street under it. Until 2026-11-13 every collider was an infinitely tall
+ *  2D wall: the platforms of Moensberg and Linkebeek stations stopped cars on the road bridges over them (Rue du
+ *  Bourdon, Avenue des Hospices: docs/collisions/DRIVE_FIX.md). Items with no extent (1e4 / -1e4) always collide. */
+export function heightClear(col, id, y) {
+  return id < col.P && col.pkind[id] === KIND.wall && Number.isFinite(y) && (y >= col.ptop[id] - 0.05 || y + CAR_H < col.pbase[id]);
+}
+
 /** Contact of the car body with item `id` of `col`. body = { hx, hz, cos, sin }. */
 export function itemContact(col, id, x, z, body, contact) {
   contact.kind = id < col.P ? col.pkind[id] : col.ckind[id - col.P];
@@ -373,7 +384,11 @@ export function buildDriveData({ bDoc, bBuf = null, net, feats, hm, parts, bound
   for (const s of surf?.surfaces || []) if (s.c === 6 && s.rings?.[0]?.length >= 3 && inTile(s.rings[0])) medians.push(s.rings.map(cleanRing).filter((r) => r.length >= 3));
   if (!legacy) for (const m of medians) if (raisedShare(hm, ground.delta, m) >= 0.5) { polys.push({ rings: m, kind: KIND.island }); medianIslands++; }
   // other drawn walls at car height the worker knows (the rail platforms' edges: tileData.js)
-  if (!legacy) for (const ring of walls) if (ring.length >= 3 && inTile(ring)) polys.push({ rings: [cleanRing(ring)], kind: KIND.wall });
+  // (a wall is a ring, or { ring, top, base }: its vertical extent, heightClear)
+  if (!legacy) for (const w of walls) {
+    const ring = Array.isArray(w) ? w : w.ring;
+    if (ring.length >= 3 && inTile(ring)) polys.push({ rings: [cleanRing(ring)], kind: KIND.wall, top: w.top, base: w.base });
+  }
   // tree trunks: a bit wider for tall trees (the stylized trunks scale with the LiDAR height)
   for (const t of feats.trees || []) {
     if (t.x < bounds.x0 || t.x > bounds.x1 || t.z < bounds.z0 || t.z > bounds.z1) continue;

@@ -1779,8 +1779,9 @@ function buildDriveData({ bDoc, bBuf = null, net, feats, hm, parts, bounds, surf
       medianIslands++;
     }
   }
-  if (!legacy) {
-    for (const ring2 of walls) if (ring2.length >= 3 && inTile(ring2)) polys.push({ rings: [cleanRing(ring2)], kind: KIND2.wall });
+  if (!legacy) for (const w of walls) {
+    const ring2 = Array.isArray(w) ? w : w.ring;
+    if (ring2.length >= 3 && inTile(ring2)) polys.push({ rings: [cleanRing(ring2)], kind: KIND2.wall, top: w.top, base: w.base });
   }
   for (const t of feats.trees || []) {
     if (t.x < bounds.x0 || t.x > bounds.x1 || t.z < bounds.z0 || t.z > bounds.z1) continue;
@@ -9442,7 +9443,49 @@ function relevelRoads(net, ground, noData = null) {
     st.roads++;
   }
   st.maxMove = Math.round(st.maxMove * 100) / 100;
+  dropLifts(net, ground, noData, fixedRoad, st);
   return st;
+}
+var LIFT_TOL = 1;
+var STEEP_GRADE = 0.32;
+function dropLifts(net, ground, noData, fixedRoad, st) {
+  st.lifted = 0;
+  st.maxLift = 0;
+  for (const rr of net.roads || []) {
+    const P = rr.prof;
+    if (!P || P.mode !== "terrain" || fixedRoad(rr) || !rr.al || !rr.surf) continue;
+    let lift = 0;
+    for (let i = 0; i < P.s.length; i++) {
+      const d = P.y[i] - P.ground[i];
+      if (d <= LIFT_TOL) continue;
+      if (noData) {
+        const e = evalAlignment(rr.al, P.s[i]);
+        if (noData(e.x, e.z)) continue;
+      }
+      lift = Math.max(lift, d);
+    }
+    if (lift <= LIFT_TOL) continue;
+    const { armA: aA, armB: aB, L: L2, type } = rr;
+    const ya = planeY(rr.A, aA.ox, aA.oz), yb = planeY(rr.B, aB.ox, aB.oz);
+    const groundAt = (s) => {
+      const e = evalAlignment(rr.al, s), y = profileAt(P, s).y;
+      return noData && noData(e.x, e.z) ? y : Math.min(y, ground(e.x, e.z));
+    };
+    const np = buildProfile(rr.src, L2, { ya, yb, fixed: pinnedProfile(rr) }, groundAt, Math.max(type.maxGrade, STEEP_GRADE));
+    for (let i = 0; i < np.s.length; i++) {
+      const e = evalAlignment(rr.al, np.s[i]);
+      np.ground[i] = ground(e.x, e.z);
+    }
+    rr.prof = np;
+    st.lifted++;
+    if (lift > st.maxLift) {
+      st.maxLift = Math.round(lift * 100) / 100;
+      st.maxLiftAt = (() => {
+        const e = evalAlignment(rr.al, L2 / 2);
+        return [Math.round(e.x), Math.round(e.z)];
+      })();
+    }
+  }
 }
 
 // viewer/roadBuild.js
@@ -9512,7 +9555,7 @@ function buildRoadData(o) {
     const h = hm.h;
     return x < h.x0 || z < h.z0 || x > h.x0 + (h.cols - 1) * h.step || z > h.z0 + (h.rows - 1) * h.step;
   };
-  const levels = relevelRoads(net, ground, (x, z) => offGrid(x, z) || hm.h.min != null && hm.ground(x, z) <= hm.h.min + 0.02);
+  const levels = relevelRoads(net, ground, o.noData ?? ((x, z) => offGrid(x, z) || hm.h.min != null && hm.ground(x, z) <= hm.h.min + 0.02));
   const pv = v2 ? afterNetworkV2(net, ctx, surf) : null;
   if (v2) lap("measured paint");
   const laneGraph = v2 ? refineLaneGraph(net, prep, pv.inventory) : null;
@@ -9740,12 +9783,13 @@ function parapetRings(d) {
   const [s0, s1] = d.span, steps = Math.max(1, Math.ceil((s1 - s0) / SLAB.step));
   const S2 = [];
   for (let k = 0; k <= steps; k++) S2.push(at(d, s0 + (s1 - s0) * k / steps));
-  const ring2 = (sg) => {
-    const outer = S2.map((q) => [q.x + q.tz * sg * d.half, q.z - q.tx * sg * d.half]);
-    const inner = S2.map((q) => [q.x + q.tz * sg * (d.half - SLAB.parapetW), q.z - q.tx * sg * (d.half - SLAB.parapetW)]);
-    return [...outer, ...inner.reverse()];
-  };
-  return [ring2(1), ring2(-1)];
+  const off = (q, o) => [q.x + q.tz * o, q.z - q.tx * o];
+  const out = [];
+  for (const sg of [1, -1]) for (let k = 0; k < steps; k++) {
+    const a = S2[k], b = S2[k + 1], o = sg * d.half, i = sg * (d.half - SLAB.parapetW);
+    out.push({ ring: [off(a, o), off(b, o), off(b, i), off(a, i)], top: Math.max(a.y, b.y) - SLAB.sink + SLAB.parapetH, base: Math.min(a.y, b.y) - SLAB.sink - SLAB.depth });
+  }
+  return out;
 }
 function bridgeDecks(roadsDoc, ground, keep = () => true) {
   const decks = bridgeDescriptors(roadsDoc, ground).filter(keep);
@@ -11764,6 +11808,44 @@ function hideBuildings(bDoc, hide) {
   const h = new Set(hide);
   bDoc.buildings = bDoc.buildings.filter((b) => !h.has(b.attrs?.BU_ID) && !h.has(b.id));
 }
+async function paddedGround(entry, base, hm) {
+  const name = entry.name, L2 = name.charCodeAt(0) - entry.i, N = parseInt(name.slice(1), 10) - entry.j;
+  const v = entry.files.terrain.split("?")[1] || "";
+  const h = hm.h, S2 = (h.cols - 1) * h.step;
+  const grids = (await Promise.all([[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]].map(async ([di, dj]) => {
+    const n = String.fromCharCode(L2 + entry.i + di) + (N + entry.j + dj);
+    try {
+      const [hr, br] = await Promise.all([fetch(new URL(`${n}/terrain.json${v ? "?" + v : ""}`, base)), fetch(new URL(`${n}/terrain.u16${v ? "?" + v : ""}`, base))]);
+      if (!hr.ok || !br.ok) return null;
+      const hdr = await hr.json(), raw = new Uint16Array(await br.arrayBuffer());
+      return Math.abs(hdr.x0 - (h.x0 + di * S2)) < 1e-3 && Math.abs(hdr.z0 - (h.z0 + dj * S2)) < 1e-3 && raw.length === hdr.cols * hdr.rows ? { hdr, raw } : null;
+    } catch {
+      return null;
+    }
+  }))).filter(Boolean);
+  if (!grids.length) return null;
+  const inOwn = (x, z) => x >= h.x0 && z >= h.z0 && x <= h.x0 + S2 && z <= h.z0 + (h.rows - 1) * h.step;
+  const sampleN = (x, z) => {
+    for (const { hdr, raw } of grids) {
+      const c = (x - hdr.x0) / hdr.step, r = (z - hdr.z0) / hdr.step;
+      if (c < 0 || r < 0 || c > hdr.cols - 1 || r > hdr.rows - 1) continue;
+      const c0 = Math.min(Math.floor(c), hdr.cols - 2), r0 = Math.min(Math.floor(r), hdr.rows - 2), fc = c - c0, fr = r - r0, i = r0 * hdr.cols + c0;
+      const a = raw[i], b = raw[i + 1], cc = raw[i + hdr.cols], d = raw[i + hdr.cols + 1];
+      if (a === hdr.nodata || b === hdr.nodata || cc === hdr.nodata || d === hdr.nodata) return NaN;
+      return ((a * (1 - fc) + b * fc) * (1 - fr) + (cc * (1 - fc) + d * fc) * fr) / 100;
+    }
+    return NaN;
+  };
+  return {
+    neighbours: grids.length,
+    ground: (x, z) => {
+      if (inOwn(x, z)) return hm.ground(x, z);
+      const y = sampleN(x, z);
+      return Number.isNaN(y) ? hm.ground(x, z) : y;
+    },
+    noData: (x, z) => inOwn(x, z) ? h.min != null && hm.ground(x, z) <= h.min + 0.02 : Number.isNaN(sampleN(x, z))
+  };
+}
 async function buildTileData(entry, base) {
   const times = {};
   const step = async (k, f) => {
@@ -11816,7 +11898,9 @@ async function buildTileData(entry, base) {
     const m = d.pts[Math.floor(d.pts.length / 2)];
     return Number.isNaN(heroDeck(m[0], m[1]));
   });
-  const roadGround = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(hm.ground)) : osmBridges.wrap(hm.ground);
+  const pad = entry.padRoads === false ? null : await step("neighbour ground", () => paddedGround(entry, base, hm));
+  const baseGround = pad ? pad.ground : hm.ground;
+  const roadGround = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
   const rd = await step("roads", () => buildRoadData({
     roads,
     surf,
@@ -11825,6 +11909,7 @@ async function buildTileData(entry, base) {
     bounds,
     paint,
     ground: roadGround,
+    noData: pad?.noData,
     levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees,
     onBuilding: (x, z) => onRoof(roofs, x, z)
@@ -11874,7 +11959,13 @@ async function buildTileData(entry, base) {
     bounds,
     surf,
     legacy: !!entry.driveLegacy,
-    walls: keep ? [] : [...(rail?.doc.platforms || []).map((p) => p.ring), ...osmBridges.decks.flatMap(parapetRings), ...fences?.rings || []]
+    // the walls with their vertical extent (colliders.js heightClear): a car on a road bridge over a station's platform
+    // or the line's fence passes over them
+    walls: keep ? [] : [
+      ...(rail?.doc.platforms || []).map((p) => ({ ring: p.ring, top: p.top })),
+      ...osmBridges.decks.flatMap(parapetRings),
+      ...(fences?.rings || []).map((ring2) => ({ ring: ring2, top: Math.max(...ring2.map(([x, z]) => hm.surface(x, z))) + FENCE_H }))
+    ]
   }));
   if (rail && !keep && entry.railFix) drive.counts.railSurface = await step("rail drive surface", () => railDriveSurface(rail.doc, hm, drive.ground, bounds, rail.heroes));
   if (fences) drive.counts.railFences = fences.rings.length;

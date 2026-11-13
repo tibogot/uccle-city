@@ -24,7 +24,7 @@
 // Cells, items and routes are in city metres. Pure main-thread JS; a tile takes a few seconds.
 import * as THREE from "three/webgpu";
 import { createCarState, stepCar, HANDLING, BODY } from "./carPhysics.js";
-import { gather, itemContact, KIND } from "./colliders.js";
+import { gather, itemContact, heightClear, KIND } from "./colliders.js";
 import { ledgeContact } from "./carEnv.js";
 
 const CELL = 0.25;
@@ -395,7 +395,18 @@ export function driveRoutes({ scene, tile, driver, truth, G, maxRoads = Infinity
   for (const L of lines) for (const dir of [1, -1]) {
     road = `${L.id} ${L.type}`;
     const center = dir > 0 ? L.pts : L.pts.slice().reverse();
-    const path = resample(offsetLine(center, L.lane), 2).filter(([x, z]) => inT(x, z));
+    let path = resample(offsetLine(center, L.lane), 2).filter(([x, z]) => inT(x, z));
+    // a route that STARTS inside a solid (an alley that runs into a building, a passage the UrbIS solid closes: the
+    // drawn wall is at the footprint, the car would be spawned inside it and pushed about by the collider's inner
+    // chunk edges, read as "invisible hits"): start where the car stands clear (a player arrives from outside)
+    for (let k = 0; k + 1 < path.length; k++) {
+      body.cos = Math.cos(Math.atan2(path[k + 1][0] - path[k][0], path[k + 1][1] - path[k][1])); body.sin = Math.sin(Math.atan2(path[k + 1][0] - path[k][0], path[k + 1][1] - path[k][1]));
+      near.length = 0;
+      for (const col of sets(path[k][0], path[k][1], 4)) gather(col, path[k][0], path[k][1], 4, near);
+      let inside = false;
+      for (let q = 0; q < near.length && !inside; q += 2) if (near[q + 1] < near[q].P && near[q].pkind[near[q + 1]] === KIND.building && itemContact(near[q], near[q + 1], path[k][0], path[k][1], body, contact)) inside = true;
+      if (!inside) { if (k) { R.startsInside = (R.startsInside || 0) + 1; path = path.slice(k); } break; }
+    }
     if (path.length < 4) continue;
     R.routes++;
     const touched = new Set(), passed = new Set();
@@ -410,6 +421,7 @@ export function driveRoutes({ scene, tile, driver, truth, G, maxRoads = Infinity
         for (let pass = 0; pass < 2; pass++) {
           let any = false;
           for (let k = 0; k < near.length; k += 2) {
+            if (heightClear(near[k], near[k + 1], st.y)) continue;               // as carEnv.js: over / under the wall
             if (!itemContact(near[k], near[k + 1], st.x, st.z, body, contact)) continue;
             // the touching point: the car's support point against the normal
             const nx = -contact.nx, nz = -contact.nz;

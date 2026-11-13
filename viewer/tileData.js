@@ -13,7 +13,7 @@ import { buildRoadData, applyRoadOverrides, CARVE } from "./roadBuild.js";
 import { bridgeDecks, deckMesh, parapetRings } from "./streets/bridgeDecks.js";
 import { smoothPolyline } from "./track.js";
 import { kitCollector } from "./facadeKit/placement.js";
-import { prepRail, heroBridgeNames, abutmentFill, underpassCut, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins, railDriveSurface, railFences, fenceMesh } from "./rail/railData.js";
+import { prepRail, heroBridgeNames, abutmentFill, underpassCut, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins, railDriveSurface, railFences, fenceMesh, FENCE_H } from "./rail/railData.js";
 import { buildTrafficGraph } from "./traffic/trafficGraph.js";
 import { grassTypeData } from "./grass/grassTypes.js";
 
@@ -116,6 +116,48 @@ function hideBuildings(bDoc, hide) {
   bDoc.buildings = bDoc.buildings.filter((b) => !h.has(b.attrs?.BU_ID) && !h.has(b.id));
 }
 
+/**
+ * THE GROUND PAST THE TILE'S EDGE for the road stage (docs/collisions/DRIVE_FIX.md). roads.json holds every road within
+ * 150 m of the tile, but the tile's height grid stops at its edge and Heightmap.sample CLAMPS beyond it: a junction
+ * across the edge was fitted to a flat continuation of the edge row, the grade rule carried that height back into the
+ * tile, and the level pass skipped it as "no data" (Rue de la Brasserie 3.4 m over the ground at C9 / D9, Kleindalstraat
+ * 7.5 m at the E10 / F10 corner, seams between neighbours' roads). Here the 8 neighbours' DTM grids (terrain.u16, raw:
+ * no data stays no data) answer outside the own grid; a point no grid covers keeps the clamp and is "no data".
+ * Returns { ground(x, z), noData(x, z) } or null when no neighbour exists.
+ */
+async function paddedGround(entry, base, hm) {
+  const name = entry.name, L = name.charCodeAt(0) - entry.i, N = parseInt(name.slice(1), 10) - entry.j;
+  const v = (entry.files.terrain.split("?")[1] || "");
+  const h = hm.h, S = (h.cols - 1) * h.step;
+  const grids = (await Promise.all([[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]].map(async ([di, dj]) => {
+    const n = String.fromCharCode(L + entry.i + di) + (N + entry.j + dj);
+    try {
+      const [hr, br] = await Promise.all([fetch(new URL(`${n}/terrain.json${v ? "?" + v : ""}`, base)), fetch(new URL(`${n}/terrain.u16${v ? "?" + v : ""}`, base))]);
+      if (!hr.ok || !br.ok) return null;
+      const hdr = await hr.json(), raw = new Uint16Array(await br.arrayBuffer());
+      return Math.abs(hdr.x0 - (h.x0 + di * S)) < 1e-3 && Math.abs(hdr.z0 - (h.z0 + dj * S)) < 1e-3 && raw.length === hdr.cols * hdr.rows ? { hdr, raw } : null;
+    } catch { return null; }
+  }))).filter(Boolean);
+  if (!grids.length) return null;
+  const inOwn = (x, z) => x >= h.x0 && z >= h.z0 && x <= h.x0 + S && z <= h.z0 + (h.rows - 1) * h.step;
+  const sampleN = (x, z) => {
+    for (const { hdr, raw } of grids) {
+      const c = (x - hdr.x0) / hdr.step, r = (z - hdr.z0) / hdr.step;
+      if (c < 0 || r < 0 || c > hdr.cols - 1 || r > hdr.rows - 1) continue;
+      const c0 = Math.min(Math.floor(c), hdr.cols - 2), r0 = Math.min(Math.floor(r), hdr.rows - 2), fc = c - c0, fr = r - r0, i = r0 * hdr.cols + c0;
+      const a = raw[i], b = raw[i + 1], cc = raw[i + hdr.cols], d = raw[i + hdr.cols + 1];
+      if (a === hdr.nodata || b === hdr.nodata || cc === hdr.nodata || d === hdr.nodata) return NaN;
+      return ((a * (1 - fc) + b * fc) * (1 - fr) + (cc * (1 - fc) + d * fc) * fr) / 100;
+    }
+    return NaN;
+  };
+  return {
+    neighbours: grids.length,
+    ground: (x, z) => { if (inOwn(x, z)) return hm.ground(x, z); const y = sampleN(x, z); return Number.isNaN(y) ? hm.ground(x, z) : y; },
+    noData: (x, z) => (inOwn(x, z) ? h.min != null && hm.ground(x, z) <= h.min + 0.02 : Number.isNaN(sampleN(x, z))),
+  };
+}
+
 /** Build all CPU-side data for one manifest entry (entry.hide: BU_IDs not to draw). `base` = URL of data/tiles/. */
 export async function buildTileData(entry, base) {
   const times = {};
@@ -170,8 +212,11 @@ export async function buildTileData(entry, base) {
   const onGrid = (p) => p[0] >= hh.x0 && p[0] <= gx1 && p[1] >= hh.z0 && p[1] <= gz1;
   const osmBridges = bridgeDecks(roads, hm.ground, (d) => onGrid(d.pts[0]) && onGrid(d.pts[d.pts.length - 1]));
   osmBridges.decks = osmBridges.decks.filter((d) => { const m = d.pts[Math.floor(d.pts.length / 2)]; return Number.isNaN(heroDeck(m[0], m[1])); });
-  const roadGround = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(hm.ground)) : osmBridges.wrap(hm.ground);
-  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, levelPins: rail ? roadDeckPins(rail.heroes) : null,
+  // the ground past the tile's edge from the neighbours' grids (paddedGround; ?padroads=0: the clamp, as before)
+  const pad = entry.padRoads === false ? null : await step("neighbour ground", () => paddedGround(entry, base, hm));
+  const baseGround = pad ? pad.ground : hm.ground;
+  const roadGround = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
+  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z) }));
   Object.assign(times, rd.times);
   const { netInfo } = rd;
@@ -210,7 +255,10 @@ export async function buildTileData(entry, base) {
   // not over a tunnel, broken at road crossings), and below the line's own surface in the drive grid (rail top, shoulders)
   const fences = rail && !keep && entry.railFix ? await step("rail fences", () => railFences(rail.doc, bounds, rail.heroes, roads, hm.ground)) : null;
   const drive = await step("drive colliders", () => buildDriveData({ bDoc: keep || bDoc, bBuf: keep ? null : bBuf, net, feats, hm, parts: road.parts, bounds, surf, legacy: !!entry.driveLegacy,
-    walls: keep ? [] : [...(rail?.doc.platforms || []).map((p) => p.ring), ...osmBridges.decks.flatMap(parapetRings), ...(fences?.rings || [])] }));   // + the road bridges' parapets          // rail platforms: 0.76 m walls for the car   // drive mode (viewer/drive/)
+    // the walls with their vertical extent (colliders.js heightClear): a car on a road bridge over a station's platform
+    // or the line's fence passes over them
+    walls: keep ? [] : [...(rail?.doc.platforms || []).map((p) => ({ ring: p.ring, top: p.top })), ...osmBridges.decks.flatMap(parapetRings),
+      ...(fences?.rings || []).map((ring) => ({ ring, top: Math.max(...ring.map(([x, z]) => hm.surface(x, z))) + FENCE_H }))] }));   // + the road bridges' parapets          // rail platforms: 0.76 m walls for the car   // drive mode (viewer/drive/)
   if (rail && !keep && entry.railFix) drive.counts.railSurface = await step("rail drive surface", () => railDriveSurface(rail.doc, hm, drive.ground, bounds, rail.heroes));
   if (fences) drive.counts.railFences = fences.rings.length;
   // the tram platforms (drawn by viewer/tram.js 25 cm over the road) in the drive surface: the car rides up their kerb

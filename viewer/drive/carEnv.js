@@ -1,7 +1,7 @@
 // The car's world for stepCar (carPhysics.js): the ground, and collisions against the collider sets (colliders.js)
 // near the car. Candidates are gathered ONCE per frame from the 48 m cells round the car (radius = car + the distance
 // it can travel this frame + a margin); the 120 Hz substeps then only test those.
-import { gather, itemContact, KIND } from "./colliders.js";
+import { gather, itemContact, heightClear, KIND } from "./colliders.js";
 import { BODY, hit } from "./carPhysics.js";
 
 /** The highest step a car climbs (m): a kerb (15-25 cm) is ridden up, a road wall, a retaining wall or a raised
@@ -63,6 +63,7 @@ export function createCarEnv({ sets, ground, handling, waters = () => null, ledg
       for (let pass = 0; pass < 2; pass++) {      // a second pass settles a push from one wall into another
         let any = false;
         for (let k = 0; k < near.length; k += 2) {
+          if (heightClear(near[k], near[k + 1], c.y)) continue;                  // a platform / fence / parapet over or under the car
           if (!itemContact(near[k], near[k + 1], c.x, c.z, body, contact)) continue;
           c.x += contact.nx * contact.depth; c.z += contact.nz * contact.depth;
           hit(c, contact.nx, contact.nz, contact.kind, handling);

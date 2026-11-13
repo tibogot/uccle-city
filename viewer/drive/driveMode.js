@@ -96,9 +96,12 @@ export class Driver {
       const near = this.groundHint ?? (this.on && this.state ? this.state.y : null);
       const t = this.world.at(x, z);
       const g = t.drive ? driveHeight(t.hm, t.drive.ground, x, z, near) : t.hm.surface(x, z) + 0.12;
-      // the deck, unless the car is on a surface under it (a street passing under the bridge): the layer nearest the
+      // the deck and the road drawn with it (the OSM decks' road runs on or just through the slab, e.g. 0.3 m under it
+      // on the Chaussée de Waterloo, 0.4 m over it on Avenue des Hospices): the higher of the two is the surface; a
+      // surface far under the deck (a street passing under the bridge) when the car is on it: the layer nearest the
       // car, as driveHeight does for the grid's two layers (before 2026-11-13 the deck always won)
       if (dk == null) return g;
+      if (Math.abs(g - dk) < 1.5) return Math.max(g, dk);
       return Number.isFinite(near) && Math.abs(g - near) + 1 < Math.abs(dk - near) ? g : dk;
     };
     this.sets = (x, z, r) => {
