@@ -98,7 +98,13 @@ outward at build time (footprint winding / normal vs the building's inside), the
 missing wall). Gains: the sun shadow pass (26-40 % of the GPU) stops drawing back faces; correct lighting on inverted
 faces; the checker sees real holes again. Also check main.js:200's DoubleSide overlay.
 
-**PAUSED (agents):** GRASS LAB (`claude/grass`, port 8849, started 2026-11-13 ~07:15; PAUSED ~07:40 at 89e5dde, design
+**GRASS MERGED (2026-11-13, fdab0c0; `?grass=1`, default OFF until the owner says on):** docs/GRASS.md. Compute +
+3 indirect LODs, types from OSM / surfaces, field bake, sun-side lighting, seasons, push API. City D8 lawn +0.47-0.81 ms
+GPU (YELLOW preflight). Coordinator check: D8 walk 60 fps, lawn + shadows, clean edge at walls, console clean; grass off
+= no cost. Left: blade-tip shimmer 1,013-1,114 ppm vs 286 without (single pixels at the tips: needs tip AA / fade);
+grass-type painting 38 ms per tile on the main thread -> the worker; landmarks as grass solids; flower meshes; wire
+the car / walker / falcon into the push field; re-measure on GREEN.
+**(was) PAUSED (agents):** GRASS LAB (`claude/grass`, port 8849, started 2026-11-13 ~07:15; PAUSED ~07:40 at 89e5dde, design
 settled + OSM grass kinds + the per-tile grass-type map written, nothing rendered yet; resume from docs/GRASS_RESUME.md
 on the branch): our own grass (Revo / engine
 Hybrid as references), `labs/grass-lab.html` with a front-garden street, Wolvendael lawn, a roadside verge; types from
