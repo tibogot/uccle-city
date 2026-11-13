@@ -48,7 +48,15 @@ OSM kind (park / garden / pitch); no WebP fallback; grass-blade shimmer in the n
 orthophoto colour (lighting.js groundAlbedo #686c67, `?skyground=old`): grey-green haze instead of brown; still a flat plane; (2) later, with the Flemish DTM job: a coarse
 "horizon ring" landscape (~20 km, 25-50 m heights + a low-res colour image) around the city. Sky + clouds rework later.
 
-**BUG (owner, 2026-11-13, live after the push): in drive mode the CAR FALLS THROUGH THE BRIDGE at the Saint-Job train
+**FIXED 2026-11-13 (afternoon): the car / walker no longer fall at the Saint-Job station bridge.** Cause: the DTM is bare
+earth and only the hero bridges had a deck; every OSM road bridge (13 in Uccle: Carsoel, Waterloo, Merlo, Chênaie,
+Tilleuls, Hospices...) followed the cutting. Now viewer/streets/bridgeDecks.js: a deck per OSM road bridge (road ground,
+world deck for walk / car, a drawn full-width slab with parapets = car walls; the tram-only deck skipped under a road
+deck). H6 drive + walk routes: 0 falls. Still open from the list below: the railway is not fenced for cars elsewhere,
+the ballast is not a drive surface, rails are not bumps (items 2-4); the decks are plain concrete (no paint / kerbs on
+them yet). The test's "over the drawn surface" reads the deck's underside (constant 0.93 m): a checker blind spot.
+
+**WAS (owner, 2026-11-13, live after the push): in drive mode the CAR FALLS THROUGH THE BRIDGE at the Saint-Job train
 station instead of driving on it.** Suspects: the drive surface on a deck (collisions audit: two-layer drive surface;
 roads round 5: roadDeckPins / terrain weld; trains: the deck height function `world.deckY`), or the tram-only bridge
 deck over the L26 cutting (fixes1) being driven onto. Reproduce there, check `viewer.collisionTest` on that tile.
