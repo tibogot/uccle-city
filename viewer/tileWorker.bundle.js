@@ -9322,7 +9322,11 @@ function relevelRoads(net, ground, noData = null) {
     }
     return false;
   };
-  const fixedRoad = (rr) => (rr.bridges || []).some((sp) => realSpan(rr, sp)) || (rr.tunnels || []).some((sp) => realSpan(rr, sp)) || rr.prof?.mode && rr.prof.mode !== "terrain";
+  const osmStructure = (rr) => {
+    const m = rr.src?.meta;
+    return !!(m && (m.bridge || m.tunnel || m.layer));
+  };
+  const fixedRoad = (rr) => osmStructure(rr) && ((rr.bridges || []).some((sp) => realSpan(rr, sp)) || (rr.tunnels || []).some((sp) => realSpan(rr, sp))) || rr.prof?.mode && rr.prof.mode !== "terrain";
   const moved = /* @__PURE__ */ new Set();
   for (const node of net.nodes) {
     if (node.src?.y != null || !node.arms?.length) continue;

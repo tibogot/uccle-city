@@ -11,8 +11,8 @@
  "nodata": 65535,
  "min": 43.79,
  "max": 79.91,
- "nodataCount": 83256,
- "source": "urbis-dtm",
+ "nodataCount": 0,
+ "source": "urbis-dtm+dhmv2",
  "inputs": [
   {
    "file": "DTM_31370_TIFF_147162_20211009_50/UrbDTM_2021_147162.tif",
@@ -22,5 +22,17 @@
    ],
    "crs": "EPSG:31370"
   }
- ]
+ ],
+ "fill": {
+  "source": "DHMV II DTM 1 m (Digitaal Vlaanderen)",
+  "file": "dhmv/tiles/D10.tif",
+  "cells": 83256,
+  "feather": 12.0,
+  "seamResidual": {
+   "cells": 4230,
+   "mean": 0.01,
+   "median": 0.011,
+   "maxAbs": 2.692
+  }
+ }
 }
