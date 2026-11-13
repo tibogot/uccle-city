@@ -25,8 +25,10 @@ eased (p10 radius 2.4 -> 4.0 m; 1,756 connectors still < 5 m, E4 roundabout ring
 (D10 1.27 -> 0.14 m), terrain welded up to road edges (edges > 30 cm over ground 183.5 -> 12.5 km; terrain tris +4-14 %,
 worker +60-140 ms/tile), Verrewinkel SE 0.15 -> 0.01 m, Edith Cavell centre line removed (data/overrides.json).
 With the turn smoothing: I6 sharp joins 90 -> 10. KERB GAPS re-counted 2026-11-13 evening (tools/road_audit, C19
-gap): I6 1, E4 2, H5 / D10 / G10 0 (the 163 of round 4 is stale: later rounds closed them); left: the 3 spots (I6
-1416, 901; E4 -632, -254). BRIDGE DECK PAINT: not needed, the road stage draws its own surface + paint on the OSM
+gap): I6 1, E4 2, H5 / D10 / G10 0 (the 163 of round 4 is stale: later rounds closed them); the 3 spots (I6 1416, 901
+bulb-out tip; E4 -632, -254 sidewalk wedge tip) LOOKED AT: the kerb runs round both, checker false alarms at acute
+corners (C19 samples 0.75 m). SEEN THERE (E4 -634, -256): the two recycling bins stand on BLACK SQUARES (a missing
+texture / decal under them?) - to check. Walker on the ballast: fine (walk Y = carved + 12 cm = 6 cm OVER the crest). BRIDGE DECK PAINT: not needed, the road stage draws its own surface + paint on the OSM
 decks (Carsoel seen from above: lane lines, tram rails, parapets). Left: the BRUSSELS REGION BORDER (no DTM on the
 Flemish side: D10 / E10 flat plain 5-10 m low, roads floating 10-20 m, a hole near (-1020, 2930): needs a Flemish DEM or
 clipping at the border); D10 (-1018, 2722) 3 m earth wall needs a retaining wall; G10 (481.5, 2751.3) one ledge;
@@ -63,7 +65,7 @@ cutting (none on bridges, over a tunnel (DTM > 3 m above the rail), between pair
 road's half width + 2 m: level crossings and road bridges stay open), DRAWN as a welded-mesh fence (railway.js fence
 material: posts 2.5 m, filtered wires, alpha-to-coverage; one strip per tile). I5 / H6 drive routes identical with
 and without (I5 52 routes 1 old fall, H6 47 routes 0 falls). Rails as bumps: not done (1 m grid; the car rides the
-rail top instead). The walker still stands 6 cm under the crest (walk Y = carved terrain). The decks are plain concrete (no paint / kerbs on
+rail top instead). The decks are plain concrete (no paint / kerbs on
 them yet). The test's "over the drawn surface" reads the deck's underside (constant 0.93 m): a checker blind spot.
 
 **WAS (owner, 2026-11-13, live after the push): in drive mode the CAR FALLS THROUGH THE BRIDGE at the Saint-Job train
