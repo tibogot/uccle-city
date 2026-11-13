@@ -10,7 +10,7 @@ import { auditContact } from "../tools/mesh_audit/contact.js";
 
 export const HEROES = ["stjob", "townhall", "stalle", "vanbuuren", "wolvendael", "police", "calevoet", "stpierre", "observatory",
   "bridge-verrewinkel", "bridge-stjob", "bridge-calevoet",
-  "bridge-ruestalle"];
+  "bridge-ruestalle", "bridge-engeland", "bridge-engeland_chord", "bridge-bigarreaux", "bridge-kauwberg", "bridge-linkebeek"];
 
 const meshParts = (root, name, filter = null) => {
   const out = [];

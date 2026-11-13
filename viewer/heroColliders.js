@@ -15,7 +15,7 @@ import { KIND } from "./drive/colliders.js";
 
 export const HERO_ROOTS = ["stjob", "townhall", "stalle", "vanbuuren", "wolvendael", "police", "calevoet", "stpierre", "observatory",
   "bridge-verrewinkel", "bridge-stjob", "bridge-calevoet",
-  "bridge-ruestalle"];
+  "bridge-ruestalle", "bridge-engeland", "bridge-engeland_chord", "bridge-bigarreaux", "bridge-kauwberg", "bridge-linkebeek"];
 const CELL = 0.25, STEP = 0.12, BAND = [0.30, 1.30];
 
 /** Not a collider: cloth, foliage cards, glow / light cones, decals. */

@@ -19,7 +19,7 @@ import earcut from "three/src/extras/lib/earcut.js";
 /** The hero railway / road bridges (models/rail/<name>.json + .glb): round 1, and round 2 (docs/trains/BRIDGES_ROUND2.md),
  *  the latter switched off with ?bridges2=0 (the track crosses those gaps on its ballast alone, as before). */
 export const HERO_BRIDGES = ["stjob", "calevoet", "verrewinkel"];
-export const HERO_BRIDGES2 = ["ruestalle"];
+export const HERO_BRIDGES2 = ["ruestalle", "engeland", "engeland_chord", "bigarreaux", "kauwberg", "linkebeek"];
 export const heroBridgeNames = (round2 = true) => (round2 ? HERO_BRIDGES.concat(HERO_BRIDGES2) : HERO_BRIDGES.slice());
 
 export const GAUGE = 1.435, RAIL_C = GAUGE / 2 + 0.036;      // rail centre lines (head 72 mm)
@@ -176,6 +176,41 @@ export function abutmentFill(heroes, grids, hdr) {
       // grids[0] = the drawn terrain: kept under the tongues / landings; the others (the road engine's ground): the
       // street's level (the street is drawn over the tongue, which sits 3 cm under it)
       grids.forEach((G, gi) => { const v = gi === 0 ? fill : Math.max(inside, around); if (G[k] < v) { G[k] = v; moved++; } });
+    }
+  }
+  return moved;
+}
+
+/**
+ * UNDERPASS CUT (round 2 street bridges, tools/blender/railBridge.py "underpass"): the LiDAR DTM interpolates the ground
+ * THROUGH a narrow rail underpass (its deck and the embankment hide the street), so the road engine drew Rue Engeland,
+ * Rue des Bigarreaux... climbing 5 m over the embankment. Between two measured road points a, b beyond the hump ([x, z,
+ * y]), the ground is LOWERED (never raised) to the road's level, linear from a to b, over a corridor of half width hw,
+ * then a 1:1 bank up to the ground (at most 7 m out). Runs BEFORE the roads are built (they sample it), on every grid
+ * given (the drawn terrain and the road engine's original). Returns the number of cells moved.
+ */
+export function underpassCut(heroes, grids, hdr) {
+  const { x0, z0, cols, rows, step } = hdr, BANK = 7;
+  // the banks stop at the bridges' footprints: inside the masonry (beside the opening, under the deck) the ground stays
+  // the embankment's (the drive surface under the deck; nothing hollow behind the face walls)
+  const rings = (heroes || []).filter((h) => h.underpass || h.style).map((h) => ringBox(heroFrame(h).ring));
+  const inBridge = (x, z) => rings.some((b) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && inRing(b.ring, x, z));
+  let moved = 0;
+  for (const h of heroes || []) {
+    const u = h.underpass;
+    if (!u) continue;
+    const [ax, az, ay] = u.a, [bx, bz, by] = u.b, dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz;
+    const c0 = Math.max(0, Math.floor((Math.min(ax, bx) - u.hw - BANK - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(ax, bx) + u.hw + BANK - x0) / step));
+    const r0 = Math.max(0, Math.floor((Math.min(az, bz) - u.hw - BANK - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(az, bz) + u.hw + BANK - z0) / step));
+    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+      const px = x0 + c * step, pz = z0 + r * step;
+      const t = ((px - ax) * dx + (pz - az) * dz) / L2;
+      if (t < 0 || t > 1) continue;                                   // the ends: the DTM is the road there already
+      const d = Math.hypot(px - ax - dx * t, pz - az - dz * t) - u.hw;
+      if (d > BANK || (d > 0 && inBridge(px, pz))) continue;
+      const target = ay + (by - ay) * t - 0.02 + Math.max(0, d);       // 2 cm under the road's level (the road is drawn on it)
+      const k = r * cols + c;
+      for (const G of grids) if (G[k] > target) { G[k] = target; moved++; }
     }
   }
   return moved;

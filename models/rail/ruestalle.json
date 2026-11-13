@@ -60,6 +60,7 @@
   }
  ],
  "skew_dx_per_dy": 0.0,
+ "style": "viaduct",
  "measured": "UrbIS Land cover Bridges polygon (length, width, axis), OSM road axis + UrbIS street surfaces (clear width), DTM 2021 (road level), rail.json (rail top)",
  "estimated": "arch rise / springing, pilaster / arcade / cornice / parapet dimensions, stone counts: from the Wikimedia Commons photos"
 }

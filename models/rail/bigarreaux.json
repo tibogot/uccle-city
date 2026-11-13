@@ -1,0 +1,63 @@
+{
+ "asset": "railway bridge 'bigarreaux' (tools/blender/railBridge.py)",
+ "urbis": "bridge/688",
+ "line": "L124",
+ "road": "Rue des Bigarreaux",
+ "triangles": 2884,
+ "materials": [
+  "brick_red_brussels",
+  "stone_blue",
+  "concrete",
+  "painted_metal_white",
+  "brick_yellow",
+  "painted_metal_grey",
+  "wire_mesh_grey"
+ ],
+ "frame": "glTF Y up; +x = along the track (city direction theta), -z = Blender +Y; origin = UrbIS polygon centre at road level",
+ "placement": {
+  "city_local_position": [
+   -1105.51,
+   55.52,
+   1636.32
+  ],
+  "rotation_y_rad": -1.7505652397503124
+ },
+ "deck": {
+  "length": 17.2,
+  "width": 9.4,
+  "railTop": 6.28,
+  "ballastFloor": 5.66,
+  "parapetInner": 4.35,
+  "parapetTop": 6.8
+ },
+ "openings": [
+  {
+   "x0": -0.497,
+   "x1": 4.103,
+   "kind": "round",
+   "rise": 2.3,
+   "spring": 2.1,
+   "ring": 0.36,
+   "main": true,
+   "floor": null,
+   "mat": "brick"
+  }
+ ],
+ "skew_dx_per_dy": 0.0,
+ "style": "street",
+ "underpass": {
+  "a": [
+   -1113.65,
+   1636.6,
+   55.35
+  ],
+  "b": [
+   -1097.94,
+   1639.6,
+   55.72
+  ],
+  "hw": 2.9
+ },
+ "measured": "UrbIS Land cover Bridges polygon (length, width, axis), OSM road axis + UrbIS street surfaces (clear width), DTM 2021 (road level), rail.json (rail top)",
+ "estimated": "arch rise / springing, pilaster / arcade / cornice / parapet dimensions, stone counts: from the Wikimedia Commons photos"
+}
