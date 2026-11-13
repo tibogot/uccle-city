@@ -9,6 +9,7 @@ import { analyseBuildings, hash01 } from "../../viewer/facadeGeom.js";
 import { faceOpenings } from "../../viewer/interior/facadeWindows.js";
 
 const tile = process.argv[2];
+const KIT_MAX_H = 16;                               // = viewer/facadeKit/placement.js MAX_H (not exported)
 if (!tile) throw new Error("usage: node tools/gardens/faces.mjs <tile>");
 const dir = new URL(`../../data/tiles/${tile}/`, import.meta.url);
 const rd = (f) => fs.readFileSync(new URL(f, dir));
@@ -30,7 +31,11 @@ const kit = {
     const off = (cx * f.nx + cz * f.nz);                              // the wall plane: x * nx + z * nz = off
     const at = (u) => { const uu = f.u0 + u; return [f.tx * uu + f.nx * off, f.tz * uu + f.nz * off]; };
     let door = null;
-    if (f.street && f.doorFace) {
+    // the painted façade (facades.js) draws a door on EVERY street face; with the façade kit (placement.js face(): kit
+    // faces = street, not landmark / party, wall style <= 4, height <= MAX_H, width >= 2.2, eaves >= 2.8) only the
+    // widest street face keeps one. So: the door face always, the other street faces when the kit leaves them painted
+    const kitFace = !f.landmark && f.partyH < 999 && f.wallStyle <= 4.5 && f.building.height <= KIT_MAX_H && f.width >= 2.2 && f.eaves >= 2.8;
+    if (f.street && (f.doorFace || !kitFace)) {
       const o = faceOpenings({ width: f.width, eaves: f.eaves, partyH: f.partyH, street: 1, rnd, landmark: f.landmark, shop: f.shopW, shopU: f.shopU }).find((q) => q.kind === "door");
       if (o) { const u = (o.u0 + o.u1) / 2, [x, z] = at(u); door = { x: +x.toFixed(2), z: +z.toFixed(2), u: +u.toFixed(2), w: +(o.u1 - o.u0).toFixed(2) }; }
     }

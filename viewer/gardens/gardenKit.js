@@ -194,11 +194,12 @@ const rnd01 = (x, z) => { let h = Math.imul(Math.round(x * 100) | 0, 73856093) ^
  * stand: { wall: [mat16...], pillar: [...], gate: [...] } (collision stand-ins: unit boxes), counts }.
  * Segments: [x0, y0, z0, x1, y1, z1, style, wallH]; pillars: [x, y, z, yaw, h, style]; gates: [x, y, z, yaw, w, kind, open, style].
  */
-export function gardenInstances(doc) {
+export function gardenInstances(doc, groundAt = null, { hedgeFronts = true } = {}) {
   const L = Object.fromEntries(PIECES.map((p) => [p, []]));
   const SW = [], SP = [], SG = [];
   const styles = doc.styles || [];
-  const segs = doc.segs || [];
+  const segs = groundAt ? settle(doc, groundAt) : (doc.segs || []);
+  const pillars = groundAt ? settlePillars(doc, groundAt) : (doc.pillars || []);
   const push = (arr, m, v) => { for (let k = 0; k < 16; k++) arr.push(m[k]); arr.push(v[0], v[1], v[2], v[3]); };
   // mitres: consecutive segments of one run that share an end (to 2 cm) and turn < 70 deg overlap by w/2 tan(a/2)
   const ext = new Float32Array(segs.length * 2);
@@ -247,14 +248,17 @@ export function gardenInstances(doc) {
     const H = top + railH;
     if (H > 0.05) for (let k = 0; k < 16; k++) SW.push(shear(x0, y0, z0, dx, dy, dz, H)[k]);
   });
-  for (const p of doc.pillars || []) {
+  // (a hedge front without its hedge would be lone gate pillars: none of it then)
+  for (const p of pillars) {
     const [x, y, z, yaw, h, s] = p, st = styles[s] || {}, v = styleVar(st, rnd01(x, z));
+    if (!hedgeFronts && st.kind === "hedge") continue;
     push(L.pillar, rot(x, y, z, yaw, 1, h, 1), v);
     push(L.pcap, rot(x, y + h, z, yaw, 1, 1, 1), v);
     for (let k = 0; k < 16; k++) SP.push(rot(x, y, z, yaw, PILLAR_W, h + 0.12, PILLAR_W)[k]);
   }
   for (const gt of doc.gates || []) {
     const [x, y, z, yaw, w, kind, open, s] = gt, st = styles[s] || {};
+    if (!hedgeFronts && st.kind === "hedge") continue;
     const type = RAILS[st.rail >= 0 ? st.rail : 0], v = styleVar(st, rnd01(x, z));
     const H = st.kind === "rail" ? Math.max(1.0, (st.wallH || 0) + CAP_T + (st.railH || 0)) : st.kind === "wall" ? Math.max(1.0, Math.min(1.8, (st.wallH || 0) + CAP_T + 0.1)) : 1.1;
     if (kind === 0) {
@@ -275,7 +279,49 @@ export function gardenInstances(doc) {
     const sorted = sortCells(a);
     inst[k] = sorted.a; cells[k] = sorted.cells;
   }
-  return { inst, cells, stand: { wall: SW, pillar: SP, gate: SG }, counts: Object.fromEntries(Object.entries(inst).map(([k, a]) => [k, a.length / STRIDE])) };
+  return { inst, cells, settled: { styles, segs, pillars }, stand: { wall: SW, pillar: SP, gate: SG }, counts: Object.fromEntries(Object.entries(inst).map(([k, a]) => [k, a.length / STRIDE])) };
+}
+
+/**
+ * JOINS on the DRAWN ground (the placement used the DTM + the measured kerb lift; the city carves its terrain under the
+ * roads): every segment end goes down until the footing (0.6 x the wall height, or the bars' 3 cm) reaches the lower of
+ * the two sides everywhere along the segment (sampled every 0.5 m); a vertex two segments share takes the larger drop
+ * (the base line stays continuous); the wall grows by the drop (its top stays). Returns new segment arrays.
+ */
+function settle(doc, G) {
+  const segs = doc.segs || [], styles = doc.styles || [];
+  const key = (x, z) => `${Math.round(x * 50)},${Math.round(z * 50)}`, drop = new Map();
+  const need = segs.map((g) => {
+    const st = styles[g[6]] || {}, h = g[7], foot = h > 0.01 ? 0.6 * h : 0.03 * (st.railH || 1);
+    const dx = g[3] - g[0], dz = g[5] - g[2], Lh = Math.hypot(dx, dz) || 1e-6, nx = -dz / Lh, nz = dx / Lh;
+    const n = Math.max(2, Math.ceil(Lh / 0.5) + 1);
+    let d0 = 0, d1 = 0, grow = 0;
+    for (let k = 0; k < n; k++) {
+      const f = k / (n - 1), x = g[0] + dx * f, z = g[2] + dz * f, y = g[1] + (g[4] - g[1]) * f;
+      const ga = G(x + nx * 0.18, z + nz * 0.18), gb = G(x - nx * 0.18, z - nz * 0.18), lo = Math.min(ga, gb);
+      if (h > 0.01) grow = Math.max(grow, Math.max(ga, gb) + 0.05 - (y + h + CAP_T));      // the garden over the coping: retain it
+      const over = y - foot - lo + 0.02;
+      if (over > 0) { d0 = Math.max(d0, over * (f < 0.5 ? 1 : (1 - f) * 2)); d1 = Math.max(d1, over * (f > 0.5 ? 1 : f * 2)); if (f === 0.5) { d0 = Math.max(d0, over); d1 = Math.max(d1, over); } }
+    }
+    for (const [x, z, d] of [[g[0], g[2], d0], [g[3], g[5], d1]]) { const k = key(x, z); drop.set(k, Math.max(drop.get(k) || 0, d)); }
+    return grow;
+  });
+  return segs.map((g, i) => {
+    const a = drop.get(key(g[0], g[2])) || 0, b = drop.get(key(g[3], g[5])) || 0;
+    const up = Math.max(0, need[i]);
+    if (!a && !b && !up) return g;
+    const m = Math.max(a, b), h = g[7] + up;
+    // a railing straight on the ground has no wall to grow: its footing is the bars' 3 cm, lowered with the base
+    return [g[0], g[1] - a, g[2], g[3], g[4] - b, g[5], g[6], h > 0.01 ? h + m : h];
+  });
+}
+function settlePillars(doc, G) {
+  return (doc.pillars || []).map((p) => {
+    const [x, y, z, yaw, h, s] = p;
+    let lo = Infinity; for (const [ox, oz] of [[0.18, 0.18], [-0.18, 0.18], [0.18, -0.18], [-0.18, -0.18]]) lo = Math.min(lo, G(x + ox, z + oz));
+    const over = y - 0.4 * h - lo + 0.02;
+    return over > 0 ? [x, y - over, z, yaw, h + over, s] : p;
+  });
 }
 
 /** instances sorted into 50 m cells (a pool skips a whole cell beyond its range): { a, cells: [{ x, z, r, a, b }] } */
@@ -309,7 +355,10 @@ export class GardenPool {
       for (const a of Object.keys(geo.attributes)) g.setAttribute(a, geo.attributes[a]);
       g.setIndex(geo.index);
       const m = new THREE.InstancedMesh(g, mats.opaque[k], 1);
-      m.count = 0; m.visible = false; m.castShadow = k < 2; m.receiveShadow = true; m.frustumCulled = true;
+      // shadows: the walls / pillars from LOD0 + 1, the ironwork from LOD0 only (its shadow dithers out across the 0-1
+      // hand-over: no far shadows for thin bars)
+      m.castShadow = /^(rail|gate|cargate)_/.test(piece.name) ? k === 0 : k < 2;
+      m.count = 0; m.visible = false; m.receiveShadow = true; m.frustumCulled = true;
       m.boundingSphere = new THREE.Sphere(); m.name = `gardens-${piece.name}-lod${k}`;
       group.add(m); this.meshes.push(m);
       return m;

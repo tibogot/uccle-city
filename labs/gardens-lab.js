@@ -158,7 +158,7 @@ const slopeCtl = gui.add(P, "slope", 0, 0.12, 0.005).name("street slope").onChan
 gui.add(P, "hedges").name("hedges (foliage)").onChange(rebuild);
 gui.add(P, "houses").onChange(rebuild);
 gui.add(P, "night").onChange(applyNight);
-gui.add(P, "shadows").onChange((v) => { for (const p of pools) p.lod.forEach((m, k) => { m.castShadow = v && k < 2; }); });
+gui.add(P, "shadows").onChange((v) => { for (const p of pools) p.lod.forEach((m, k) => { m.castShadow = v && (/^(rail|gate|cargate)_/.test(p.piece.name) ? k === 0 : k < 2); }); });
 gui.add(P, "wireframe").onChange((v) => { for (const m of kit.mats.opaque) m.wireframe = v; });
 const views = {
   "street view": [[18, 1.7, 9], [24, 0.6, -3]], "railing + gate": [[2.5, 1.3, -0.6], [2.0, 0.8, -3.2]], "hedge behind": [[10, 1.5, 1.2], [10.5, 0.9, -3]],
@@ -172,6 +172,7 @@ if (qp.get("layout") === "lod") P.layout = "LOD row";
 if (qp.get("slope")) { P.slope = +qp.get("slope"); slopeCtl.updateDisplay(); }
 if (qp.get("night") === "1") P.night = true;
 if (qp.get("hedges") === "0") P.hedges = false;
+for (const c of gui.controllersRecursive?.() || []) c.updateDisplay?.();
 applyNight();
 rebuild();
 setView(qp.get("view") || "street view");

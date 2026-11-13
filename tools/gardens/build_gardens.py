@@ -528,7 +528,10 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
             dom = pick(mix, h01(street or bu, "street-kind" + ("v" if villa else "t")))
             kind = dom if (street and h01(bu, "follow") < 0.6) else pick(mix, h01(bu, "kind"))
             seed = (street + "|dom") if (street and kind == dom and h01(bu, "same-look") < 0.65) else bu
+            gap = gardens[r["fi"]]
+            if gap < 2.5 and kind in ("railhedge", "hedge"): kind = "rail" if kind == "railhedge" else "wall"   # no hedge in a 1-2.5 m strip
             st = make_style(kind, seed, villa)
+            if st["hedge"] and gap < 4.0: st["hedgeH"] = min(st["hedgeH"], 1.3)
         if st["kind"] == "open":
             stats["open_fronts"] += 1
             out_gardens.append({"bu": bu, "gap": r2(gardens[r["fi"]]), "len": r2(L), "kind": "open"})
