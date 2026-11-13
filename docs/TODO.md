@@ -66,6 +66,12 @@ windows: Mr.doob's filteredPulse / boxCoverage (as roads round 4 kerbs: 45 -> 4 
 specular AA (Tokuyoshi-Kaplanyan, as on the facade kit), library textures' mips + anisotropy; (4) optional TRAA (three
 r187 TRAANode) in a lab only if no ghosting; (5) the flicker test before / after on that wall.
 
+**DOUBLE-SIDED BUILDINGS (owner question 2026-11-13):** the UrbIS walls + roofs (facades.js:176, :484) are DoubleSide
+("some UrbIS faces are wound inward"); details, kit and heroes are front-only. Fix: orient every wall / roof face
+outward at build time (footprint winding / normal vs the building's inside), then FrontSide + the mesh checker (no
+missing wall). Gains: the sun shadow pass (26-40 % of the GPU) stops drawing back faces; correct lighting on inverted
+faces; the checker sees real holes again. Also check main.js:200's DoubleSide overlay.
+
 **PAUSED (agents):** GRASS LAB (`claude/grass`, port 8849, started 2026-11-13 ~07:15; PAUSED ~07:40 at 89e5dde, design
 settled + OSM grass kinds + the per-tile grass-type map written, nothing rendered yet; resume from docs/GRASS_RESUME.md
 on the branch): our own grass (Revo / engine
