@@ -1,0 +1,314 @@
+{
+ "asset": "Eglise Notre-Dame du Rosaire, Uccle (tools/blender/rosaire.py)",
+ "triangles_lod0": 10256,
+ "triangles_far": 3150,
+ "triangles_per_slot_lod0": {
+  "rubble_stone": 5422,
+  "stone_blue": 2521,
+  "slate": 395,
+  "zinc_roof": 12,
+  "wood_frame_dark": 1234,
+  "glass_window": 316,
+  "cast_iron_green": 356
+ },
+ "triangles_per_slot_far": {
+  "rubble_stone": 1640,
+  "stone_blue": 617,
+  "slate": 395,
+  "zinc_roof": 2,
+  "wood_frame_dark": 94,
+  "glass_window": 222,
+  "cast_iron_green": 180
+ },
+ "slots": [
+  "rubble_stone",
+  "stone_blue",
+  "slate",
+  "zinc_roof",
+  "wood_frame_dark",
+  "glass_window",
+  "cast_iron_green"
+ ],
+ "codes": {
+  "COLOR_0.r": "code / 16 + 1/32",
+  "COLOR_0.g": "per-vertex AO of the thin faces (1 elsewhere)",
+  "names": [
+   "plain",
+   "coping",
+   "surround",
+   "cornice",
+   "plinth",
+   "band",
+   "sill",
+   "sculpture",
+   "ridge",
+   "louvre",
+   "gutter",
+   "gilt",
+   "door",
+   "mosaic",
+   "frame",
+   "lead"
+  ]
+ },
+ "new_slot_names": {
+  "rubble_stone": "coursed rubble sandstone in brick-sized courses, grey-ochre (the 1930s church); the police station uses the same slot name"
+ },
+ "uv": {
+  "TEXCOORD_0": "world metres, per face",
+  "TEXCOORD_1": "AO lightmap (thin faces: u > 0.994, AO 1)"
+ },
+ "lightmap": {
+  "px": 2048,
+  "split_v": [
+   0.86,
+   1.0
+  ],
+  "lod0_px_per_m": 13.5,
+  "far_px_per_m": 6.0
+ },
+ "frame": "glTF Y up; three.js local (u, m TAW - OY, w); node at the city position of the frame origin, height OY, rotation.y = -rotation",
+ "placement": {
+  "city_local_position": [
+   1278.743,
+   50.0,
+   -1253.985
+  ],
+  "rotation_y_rad": -1.329068,
+  "hides_solids": [
+   "https://databrussels.be/id/buildingsolid/542948"
+  ],
+  "hides_bu_ids": [
+   "https://databrussels.be/id/building/1720868"
+  ],
+  "church_bu_id": "https://databrussels.be/id/building/1720868"
+ },
+ "bounds_city": {
+  "x": [
+   1266.5,
+   1311.5
+  ],
+  "z": [
+   -1261.7,
+   -1192.2
+  ],
+  "y": [
+   100.5,
+   153.2
+  ]
+ },
+ "measured": {
+  "frame": {
+   "city": "city local: x = L72 E - 148643, z = 165394 - N; heights m TAW",
+   "origin_city": [
+    1278.743,
+    -1253.985
+   ],
+   "rotation_rad": 1.329068,
+   "rotation_deg": 76.15,
+   "axes": "u = (cos r, sin r) in city (x, z): along the nave, north front -> south apse; w = (-sin r, cos r): the west side"
+  },
+  "footprint_osm": [
+   [
+    -0.767,
+    11.532
+   ],
+   [
+    -0.778,
+    6.978
+   ],
+   [
+    -0.104,
+    6.984
+   ],
+   [
+    0.109,
+    -6.843
+   ],
+   [
+    0.048,
+    -7.337
+   ],
+   [
+    -2.887,
+    -7.189
+   ],
+   [
+    -2.8,
+    -14.006
+   ],
+   [
+    3.834,
+    -14.004
+   ],
+   [
+    3.861,
+    -13.554
+   ],
+   [
+    7.585,
+    -13.558
+   ],
+   [
+    7.623,
+    -11.016
+   ],
+   [
+    44.625,
+    -10.952
+   ],
+   [
+    44.595,
+    -18.683
+   ],
+   [
+    59.101,
+    -18.642
+   ],
+   [
+    59.112,
+    -9.02
+   ],
+   [
+    53.452,
+    -9.022
+   ],
+   [
+    53.454,
+    -7.868
+   ],
+   [
+    56.432,
+    -7.025
+   ],
+   [
+    59.247,
+    -4.269
+   ],
+   [
+    60.361,
+    -0.009
+   ],
+   [
+    59.236,
+    4.091
+   ],
+   [
+    56.255,
+    7.261
+   ],
+   [
+    53.953,
+    7.863
+   ],
+   [
+    51.884,
+    8.398
+   ],
+   [
+    48.046,
+    8.395
+   ],
+   [
+    48.052,
+    10.604
+   ],
+   [
+    45.026,
+    10.751
+   ],
+   [
+    45.032,
+    11.006
+   ],
+   [
+    3.775,
+    11.003
+   ],
+   [
+    3.78,
+    11.542
+   ]
+  ],
+  "solid_top": {
+   "h": 151.14,
+   "uw": [
+    0.38,
+    -10.73
+   ]
+  },
+  "dsm_peaks": {
+   "tower": {
+    "max": 150.98,
+    "at": [
+     0.48,
+     -10.63
+    ]
+   }
+  },
+  "roof_dsm": {
+   "nave_ridge": {
+    "p10": 127.4,
+    "p50": 127.94,
+    "p90": 128.06,
+    "max": 128.18
+   },
+   "nave": {
+    "p10": 118.48,
+    "p50": 122.47,
+    "p90": 127.13,
+    "max": 128.18
+   }
+  },
+  "ground_taw": {
+   "front": {
+    "min": 102.22,
+    "max": 103.19,
+    "mean": 102.73
+   },
+   "porch": {
+    "min": 102.04,
+    "max": 103.08,
+    "mean": 102.42
+   },
+   "west": {
+    "min": 102.22,
+    "max": 103.0,
+    "mean": 102.6
+   },
+   "east": {
+    "min": 101.59,
+    "max": 105.96,
+    "mean": 104.08
+   },
+   "south": {
+    "min": 103.88,
+    "max": 104.16,
+    "mean": 104.05
+   }
+  }
+ },
+ "levels_taw": {
+  "ground_front": 102.4,
+  "floor": 103.8,
+  "eave": 117.0,
+  "ridge": 128.2,
+  "cross_gable_apex": 120.5,
+  "tower": {
+   "shaft_top": 136.9,
+   "turrets": 139.6,
+   "eave": 141.7,
+   "apex": 151.1
+  },
+  "small_tower": [
+   124.8,
+   131.1
+  ],
+  "apse": [
+   113.6,
+   124.3
+  ],
+  "annex": 108.0
+ },
+ "estimated": "the west side's windows (as the east side's), the apse's windows, the annex's openings, the tower's lower slit windows and the back faces of both towers, the front's window heights and portal sizes (frontal photo at ~42 px/m, calibrated on the floor and the gable apex), the tympana (plain blue stone, the reliefs not modelled), wall thicknesses (reveals 0.35-0.4 m)"
+}

@@ -11,12 +11,12 @@ station, the police station.
 | name | footprint | note |
 |---|---|---|
 | Saint-Augustin, Altitude Cent (FOREST, just over the border) | ~1,470 m² | **built** (branch claude/augustin): docs/landmarks/AUGUSTIN.md, `?augustin=0` = without |
-| Notre-Dame du Rosaire (Q3580420) | ~1,410 m² | largest church in Uccle without a model |
+| Notre-Dame du Rosaire (Q3580420) | ~1,410 m² | DONE 2026-11-13 (branch claude/churches2, `?rosaire=0`; docs/landmarks/CHURCHES2.md) |
 | Sacré-Cœur (Q62570896) | ~1,140 m² | |
 | Saint-Paul (Q3583482) | ~765 m² | |
 | Saint-Marc (Q62570700) | ~745 m² | |
 | Saint-Joseph | ~455 m² | |
-| Russian Orthodox church of Saint-Job (Q4505050) | ~200 m² | small but iconic (onion domes) |
+| Russian Orthodox church of Saint-Job (Q4505050) | ~200 m² | DONE 2026-11-13 (branch claude/churches2, `?russian=0`; docs/landmarks/CHURCHES2.md) |
 | Chapelle Hauwaert | ~15 m² | wayside chapel (street-furniture scale) |
 
 ## Castles and manors (no model yet)

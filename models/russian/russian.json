@@ -1,0 +1,529 @@
+{
+ "asset": "Russian Orthodox church of Saint-Job, Avenue De Fre 19 (tools/blender/russian.py)",
+ "triangles_lod0": 30075,
+ "triangles_far": 4577,
+ "triangles_per_slot_lod0": {
+  "brick_painted_white": 20524,
+  "stone_blue": 72,
+  "copper_brown": 7166,
+  "zinc_roof": 518,
+  "wood_frame_dark": 549,
+  "glass_window": 459,
+  "cast_iron_green": 787
+ },
+ "triangles_per_slot_far": {
+  "brick_painted_white": 1980,
+  "stone_blue": 72,
+  "copper_brown": 1786,
+  "zinc_roof": 104,
+  "wood_frame_dark": 65,
+  "glass_window": 179,
+  "cast_iron_green": 391
+ },
+ "slots": [
+  "brick_painted_white",
+  "stone_blue",
+  "copper_brown",
+  "zinc_roof",
+  "wood_frame_dark",
+  "glass_window",
+  "cast_iron_green"
+ ],
+ "codes": {
+  "COLOR_0.r": "code / 16 + 1/32",
+  "COLOR_0.g": "per-vertex AO of the thin faces (1 elsewhere)",
+  "names": [
+   "plain",
+   "coping",
+   "surround",
+   "cornice",
+   "plinth",
+   "band",
+   "sill",
+   "sculpture",
+   "ridge",
+   "louvre",
+   "gutter",
+   "gilt",
+   "door",
+   "mosaic",
+   "frame",
+   "lead"
+  ]
+ },
+ "new_slot_names": {
+  "brick_painted_white": "brick under thick white paint (the church's walls, photos 2015-2017: the coursing reads through the paint); not in the shared library yet",
+  "copper_brown": "copper sheet in its dark brown state (the onions and the hoods since the 2010s re-covering; green-painted before: Luc Viatour, Napoleon Vier 2005); shared with Saint-Pierre"
+ },
+ "uv": {
+  "TEXCOORD_0": "world metres, per face",
+  "TEXCOORD_1": "AO lightmap (thin faces: u > 0.994, AO 1)"
+ },
+ "lightmap": {
+  "px": 2048,
+  "split_v": [
+   0.86,
+   1.0
+  ],
+  "lod0_px_per_m": 22.5,
+  "far_px_per_m": 10.6
+ },
+ "frame": "glTF Y up; three.js local (u, m TAW - OY, w); node at the city position of the frame origin, height OY, rotation.y = -rotation",
+ "placement": {
+  "city_local_position": [
+   -353.755,
+   50.0,
+   -467.795
+  ],
+  "rotation_y_rad": -0.543988,
+  "hides_solids": [
+   "https://databrussels.be/id/buildingsolid/544400"
+  ],
+  "hides_bu_ids": [
+   "https://databrussels.be/id/building/1692242"
+  ],
+  "church_bu_id": "https://databrussels.be/id/building/1692242"
+ },
+ "bounds_city": {
+  "x": [
+   -364.0,
+   -329.9
+  ],
+  "z": [
+   -474.5,
+   -442.1
+  ],
+  "y": [
+   47.6,
+   75.7
+  ]
+ },
+ "measured": {
+  "frame": {
+   "city": "city local: x = L72 E - 148643, z = 165394 - N; heights m TAW",
+   "origin_city": [
+    -353.755,
+    -467.795
+   ],
+   "rotation_rad": 0.543988,
+   "rotation_deg": 31.168,
+   "axes": "u = (cos r, sin r) in city (x, z): along the church axis, west front -> apse; w = (-sin r, cos r): the south side"
+  },
+  "footprint_osm": [
+   [
+    15.117,
+    9.347
+   ],
+   [
+    15.233,
+    7.484
+   ],
+   [
+    13.311,
+    5.761
+   ],
+   [
+    0.006,
+    5.77
+   ],
+   [
+    -0.001,
+    -5.769
+   ],
+   [
+    12.834,
+    -5.78
+   ],
+   [
+    12.844,
+    -4.032
+   ],
+   [
+    13.637,
+    -3.756
+   ],
+   [
+    14.441,
+    -3.476
+   ],
+   [
+    15.117,
+    -3.053
+   ],
+   [
+    15.698,
+    -2.364
+   ],
+   [
+    16.132,
+    -1.508
+   ],
+   [
+    16.376,
+    -0.642
+   ],
+   [
+    16.402,
+    0.421
+   ],
+   [
+    16.369,
+    0.558
+   ],
+   [
+    16.506,
+    0.58
+   ],
+   [
+    19.853,
+    3.366
+   ],
+   [
+    19.76,
+    3.539
+   ],
+   [
+    16.575,
+    9.091
+   ]
+  ],
+  "dome": {
+   "axis_uw": [
+    6.041,
+    0.123
+   ],
+   "drum_top_radius": 2.51,
+   "rings": [
+    [
+     60.790000915527344,
+     5.539,
+     8.275,
+     9.223
+    ],
+    [
+     61.220001220703125,
+     7.745,
+     7.792,
+     7.793
+    ],
+    [
+     61.290000915527344,
+     7.905,
+     7.925,
+     7.927
+    ],
+    [
+     61.31999969482422,
+     7.745,
+     7.745,
+     7.746
+    ],
+    [
+     61.33000183105469,
+     7.905,
+     7.905,
+     7.906
+    ],
+    [
+     61.36000061035156,
+     5.389,
+     6.573,
+     8.499
+    ],
+    [
+     61.400001525878906,
+     5.997,
+     6.954,
+     8.581
+    ],
+    [
+     61.790000915527344,
+     5.239,
+     6.214,
+     8.016
+    ],
+    [
+     61.81999969482422,
+     5.89,
+     6.838,
+     8.19
+    ],
+    [
+     61.959999084472656,
+     4.76,
+     6.783,
+     7.906
+    ],
+    [
+     62.20000076293945,
+     6.735,
+     6.774,
+     6.775
+    ],
+    [
+     62.279998779296875,
+     6.873,
+     6.888,
+     6.889
+    ],
+    [
+     62.310001373291016,
+     6.735,
+     6.736,
+     6.736
+    ],
+    [
+     62.31999969482422,
+     6.735,
+     6.736,
+     6.874
+    ],
+    [
+     62.560001373291016,
+     5.256,
+     6.064,
+     7.353
+    ],
+    [
+     62.56999969482422,
+     4.632,
+     5.584,
+     7.228
+    ],
+    [
+     62.9900016784668,
+     4.503,
+     5.852,
+     7.025
+    ],
+    [
+     63.130001068115234,
+     4.003,
+     5.86,
+     6.874
+    ],
+    [
+     63.439998626708984,
+     5.725,
+     5.726,
+     5.726
+    ],
+    [
+     63.45000076293945,
+     5.772,
+     5.773,
+     5.773
+    ],
+    [
+     63.54999923706055,
+     5.842,
+     5.869,
+     5.87
+    ],
+    [
+     63.650001525878906,
+     5.725,
+     5.726,
+     5.726
+    ],
+    [
+     63.65999984741211,
+     5.842,
+     5.842,
+     5.844
+    ],
+    [
+     63.709999084472656,
+     4.524,
+     5.33,
+     6.395
+    ],
+    [
+     63.72999954223633,
+     3.903,
+     4.791,
+     6.265
+    ],
+    [
+     64.1500015258789,
+     4.44,
+     5.183,
+     6.115
+    ],
+    [
+     64.16000366210938,
+     3.78,
+     4.528,
+     5.884
+    ],
+    [
+     64.30000305175781,
+     2.493,
+     4.413,
+     5.844
+    ],
+    [
+     66.87000274658203,
+     16.326,
+     16.326,
+     16.326
+    ],
+    [
+     68.52999877929688,
+     2.509,
+     2.51,
+     2.511
+    ],
+    [
+     68.87999725341797,
+     2.467,
+     2.468,
+     2.469
+    ],
+    [
+     69.44000244140625,
+     2.338,
+     2.339,
+     2.34
+    ],
+    [
+     69.87000274658203,
+     2.123,
+     2.124,
+     2.125
+    ],
+    [
+     70.23999786376953,
+     1.833,
+     1.835,
+     1.836
+    ],
+    [
+     70.55000305175781,
+     1.488,
+     1.49,
+     1.493
+    ],
+    [
+     70.80000305175781,
+     1.105,
+     1.108,
+     1.111
+    ],
+    [
+     71.11000061035156,
+     0.755,
+     0.758,
+     0.762
+    ],
+    [
+     71.45999908447266,
+     0.449,
+     0.453,
+     0.457
+    ],
+    [
+     71.8499984741211,
+     0.195,
+     0.2,
+     0.204
+    ],
+    [
+     72.41999816894531,
+     0.001,
+     0.001,
+     0.001
+    ]
+   ]
+  },
+  "belfry": {
+   "axis_uw": [
+    17.169,
+    12.069
+   ],
+   "eaves_r": [
+    3.2,
+    3.54
+   ]
+  },
+  "dsm_peaks": {
+   "dome": {
+    "max": 73.5,
+    "at": [
+     6.94,
+     0.12
+    ]
+   },
+   "belfry": {
+    "max": 66.49,
+    "at": [
+     17.17,
+     12.17
+    ]
+   }
+  },
+  "ground_taw": {
+   "west": {
+    "min": 48.18,
+    "max": 48.39,
+    "mean": 48.29
+   },
+   "door": {
+    "min": 48.17,
+    "max": 48.39,
+    "mean": 48.29
+   },
+   "north": {
+    "min": 48.22,
+    "max": 48.67,
+    "mean": 48.43
+   },
+   "south": {
+    "min": 48.52,
+    "max": 48.75,
+    "mean": 48.64
+   },
+   "east": {
+    "min": 48.72,
+    "max": 49.03,
+    "mean": 48.9
+   },
+   "belfry": {
+    "min": 49.13,
+    "max": 49.41,
+    "mean": 49.27
+   }
+  }
+ },
+ "levels_taw": {
+  "ground_front": 48.3,
+  "floor": 49.1,
+  "cornice": [
+   60.3,
+   61.2
+  ],
+  "tier1_spring": 61.25,
+  "tier2_spring": 63.6,
+  "drum_top": 68.53,
+  "onion_top": 73.25,
+  "apse": [
+   56.45,
+   58.2
+  ],
+  "link": 52.21,
+  "annex": [
+   57.97,
+   59.89
+  ],
+  "belfry": {
+   "band": 56.55,
+   "stage": [
+    56.85,
+    59.75
+   ],
+   "eave": 60.28,
+   "apex": 66.87
+  }
+ },
+ "estimated": "the north and south walls' windows (the front's slits + a tall round-headed window in the middle bay), the apse's windows, the annex's windows and its hidden corner, the link's door, the belfry's lower shaft and its small windows, the cross sizes, the onion's profile between the drum top (UrbIS) and the apex (DSM + photo proportions), the wall thicknesses (reveals 0.3 m)"
+}
