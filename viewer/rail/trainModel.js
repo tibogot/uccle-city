@@ -275,7 +275,7 @@ export function createTrainFleet(model, parent, maxUnits = 24) {
     },
     end() {
       for (const row of meshes) for (const r of Object.values(row)) {
-        r.mesh.count = r.n;
+        r.mesh.count = r.n; r.mesh.visible = r.n > 0;     // (an empty instanced mesh still costs a draw per pass)
         if (r.n) { r.mesh.instanceMatrix.clearUpdateRanges(); r.mesh.instanceMatrix.addUpdateRange(0, r.n * 16); r.mesh.instanceMatrix.needsUpdate = true;
           r.inst.clearUpdateRanges(); r.inst.addUpdateRange(0, r.n * 4); r.inst.needsUpdate = true; }
       }

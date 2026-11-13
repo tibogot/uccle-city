@@ -333,7 +333,7 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
       } else placeTrip(t, s, d);
     }
     if (fleet) { fleet.end(); return; }
-    cabs.count = s.cab; mids.count = s.mid;
+    cabs.count = s.cab; mids.count = s.mid; cabs.visible = s.cab > 0; mids.visible = s.mid > 0;
     cabs.instanceMatrix.needsUpdate = mids.instanceMatrix.needsUpdate = true;
   };
   const info = () => {

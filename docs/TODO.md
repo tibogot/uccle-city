@@ -16,6 +16,10 @@ the fixed lamp-light pool (no more long freeze), the FALCON FLIGHT as the fly mo
  proxies, pigeons on the Place; `?falcon=old` = old flight). **Lab-only, merged:** night lights, sound,
 weather + seasons, foliage, pedestrians, street life, car impostors, police car (branch), Material / Tree labs.
 
+**Owner 2026-11-13 (seen in the city):** traffic cars TURN in a blocky way at some corners (not a smooth arc): check the
+lane-graph turn connectors + the car's heading interpolation after the perf audit (roads round 4 note: "tight lane
+connectors").
+
 **Running (agents):** none (2026-11-13 01:45): the GPU is quiet -> the PERFORMANCE AUDIT (`debug/perfRun.js` ready).
 
 **Merged 2026-11-13: collisions + joins audit round 1:** colliders from what is drawn (car pass-throughs 32,041 -> 0 over

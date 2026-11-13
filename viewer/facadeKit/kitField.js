@@ -197,6 +197,7 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
     let drawn = 0, used = 0, tris = 0;
     for (const e of meshes.values()) {
       const g = e.mesh.geometry;
+      e.mesh.visible = e.n > 0;                     // (an empty instanced mesh still costs a draw per pass)
       if (e.mesh.count !== e.n || e.n) {
         e.mesh.count = e.n;
         if (e.n) {

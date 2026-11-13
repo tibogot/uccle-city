@@ -95,6 +95,28 @@ draws in all). `scene.updateMatrixWorld` costs 0.7 ms a frame (1,934 objects; Mr
 would save most of it). The frames at exactly 33.3 ms are frames that just missed the 16.7 ms deadline: the main thread
 is close to its budget on every frame, so any extra slice (a tile landing, GC) tips it over.
 
+## Step 2: empty draws (2026-11-13, same session)
+
+**Draws per frame at street level (Rue du Ham):** 806 = scene 353 + shadow 265 + the rest. Of the 806, **358 drew
+nothing**: instanced meshes with `count = 0` still cost a draw (and its CPU) in every pass. Mostly the city trees (54
+meshes a tile: 6 species x 3 distance bands x leaves / depth twin / bark, most of them empty at any moment), then the
+lamps' LOD meshes, the facade kit's meshes in the shadow pass, trains and trams not in view.
+
+**Fix:** `visible = count > 0` where the count is set: `treesStylized.js` (after each field update), `lamps.js`,
+`facadeKit/kitField.js`, `rail/trainModel.js`, `tramModel.js`, `tram2Model.js`, `tramline.js`. Draws 806 -> **439** per
+frame for the same picture. 0 synchronous pipelines in the runs (showing a mesh for the first time did not build a
+shader mid-frame: the materials are shared and already built).
+
+| path (2 rounds) | frames > 33 ms: baseline | after the upload fix | after the empty-draw fix |
+|---|---|---|---|
+| flight | 196 / 371 | 231 / 141 | **45 / 70** |
+| stjob | 96 / 53 | 99 / 143 | **55 / 16** |
+| alsemberg | 155 / 788 | 210 / 264 | **65 / 223** |
+| sum | 1,659 | 1,088 | **474** (-71 %) |
+
+p99 is now ~17 ms on half the runs (33 ms before). GPU unchanged (6-10 ms p50). The 180-500 ms spikes when tiles
+stream are still there (the GPU-process stall, next).
+
 ### Next, in order (updated)
 
 1. **CPU per draw (the main thread's biggest item):** fewer draws: no sun shadow from small things (kerbs, bollards,

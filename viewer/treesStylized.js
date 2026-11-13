@@ -394,6 +394,11 @@ export function makeSpecies(def) {
       o.add(d);
       twins.push([o, d]);
     });
+    // an instanced mesh with count 0 still costs a draw (and its CPU) in every pass: 54 meshes a tile (6 species x 3
+    // bands x leaves / depth twin / bark), most of them empty at any moment -> hidden while empty (perf audit 2026-11-13:
+    // 358 of 806 draws a frame drew nothing)
+    const insts = [];
+    holder.traverse((o) => { if (o.isInstancedMesh) insts.push(o); });
     // live params / stats for tuning (the dev panel's Smoothness folder, the console); fields of disposed tiles
     // (no longer under a Scene) are dropped here, they were kept forever before
     const inScene = (o) => { while (o.parent) o = o.parent; return o.isScene; };
@@ -417,6 +422,7 @@ export function makeSpecies(def) {
       f.update(cam, light);
       imp?.update(p);
       for (const [o, d] of twins) d.count = o.count;
+      for (const o of insts) o.visible = o.count > 0;
     };
     const dispose = () => { f.dispose(); holder.removeFromParent(); imp?.mesh.geometry.dispose(); holder.dispose?.(); holder.dispose = null; };
     return { group: holder, update, count: placements.length, field: f, imp, placements, dispose };

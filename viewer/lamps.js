@@ -168,6 +168,7 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true, p
         m.iron.setMatrixAt(n, mats[i]); m.glass.setMatrixAt(n, mats[i]);
       }
       for (const m of lodMeshes) for (const im of [m.iron, m.glass]) {      // only the instances in use
+        im.visible = im.count > 0;                                          // (an empty instanced mesh still costs a draw per pass)
         if (!im.count) continue;
         im.instanceMatrix.clearUpdateRanges(); im.instanceMatrix.addUpdateRange(0, im.count * 16); im.instanceMatrix.needsUpdate = true;
       }
