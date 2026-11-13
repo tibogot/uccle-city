@@ -42,6 +42,7 @@ import { GrassPush } from "./grassPush.js";
 const CELL = 0.045;                       // m: the finest candidate grid
 const TOP = 3;                           // levels 0..3
 const LOD_SEG = [5, 3, 1];
+const D0_LONG = 8.5;                      // m: the full-density radius of the longest grass (a lawn's is 6 m)
 // the textured ground's mean colours (viewer/materials/textures/ground/ground.json, linear): lawn, rough, dry
 const LAWN = vec3(0.1283, 0.1626, 0.0349), ROUGH = vec3(0.0608, 0.1097, 0.0228), DRY = vec3(0.2384, 0.221, 0.0793);
 
@@ -175,7 +176,7 @@ export class Grass {
         // the rank against the most generous density any type could have here (d0 of a meadow): most far candidates
         // of the fine levels end here, before any memory read
         const r0 = hash(seed.add(2)).mul(hi - lo).add(lo);
-        const d0max = U.d0.mul(10);
+        const d0max = U.d0.mul(D0_LONG);
         const pMax = min(float(1), d0max.div(max(dxz, 0.05)).mul(d0max.div(max(dxz, 0.05))));
         If(owned.greaterThan(0.5).and(dxz.lessThan(U.rmax)).and(pMax.greaterThan(r0)).and(roughIn), () => {
           const f = F.sample(xz);
@@ -185,7 +186,7 @@ export class Grass {
             const len = f.len;
             const root = vec3(xz.x, f.y, xz.y);
             const d = max(length(root.sub(u.cam)), 0.05);
-            const d0 = mix(float(6), float(10), len).mul(U.d0);
+            const d0 = mix(float(6), float(D0_LONG), len).mul(U.d0);       // long grass: fewer, broader blades (8.5 m, was 10: -23 % blades, same cover)
             const rEnd = min(mix(float(20), float(46), sqrt(len)).mul(U.reach), U.rmax);
             const pd = min(float(1), d0.div(d).mul(d0.div(d)));
             const p = pd.mul(float(1).sub(smoothstep(rEnd.mul(0.55), rEnd, d)));
@@ -370,7 +371,7 @@ export class Grass {
 
   /** dispatch sizes per level from the reach (no shader rebuild: counts are uniforms) */
   sizeLevels() {
-    const d0max = 10 * grassU.d0.value, rmax = grassU.rmax.value;
+    const d0max = D0_LONG * grassU.d0.value, rmax = grassU.rmax.value;
     this.levelR = [];
     for (let k = 0; k <= TOP; k++) {
       const R = Math.min(rmax, k === TOP ? rmax : 2 * d0max * (1 << k));
