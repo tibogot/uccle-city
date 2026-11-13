@@ -52,6 +52,31 @@ if (cand) {
   process.exit(0);
 }
 
+// --ground: the terrain's cover textures (tools/textures/ground_textures.py build: _work/ground_<cover>_<role>.rgba ->
+// viewer/materials/textures/ground/<cover>_<role>.ktx2, sizes into ground/ground.json); shipped, so UASTC + RDO
+if (args.includes("--ground")) {
+  const gpath = path.join(OUT, "ground", "ground.json");
+  const gman = JSON.parse(fs.readFileSync(gpath, "utf8"));
+  for (const l of gman.layers) {
+    for (const role of ["albedo", "nra"]) {
+      const raw = path.join(WORK, `ground_${l.cover}_${role}.rgba`);
+      const { width, height } = JSON.parse(fs.readFileSync(raw + ".json", "utf8"));
+      const data = new Uint8Array(fs.readFileSync(raw));
+      const t0 = Date.now();
+      const ktx = await encodeToKTX2(data, {
+        isUASTC: true, uastcLDRQualityLevel: 2, needSupercompression: true, enableRDO: true, rdoQualityLevel: role === "albedo" ? 1.0 : 0.5,
+        generateMipmap: true, isKTX2File: true, isPerceptual: role === "albedo", isSetKTX2SRGBTransferFunc: role === "albedo",
+        imageDecoder: async () => ({ width, height, data }),
+      });
+      fs.writeFileSync(path.join(OUT, "ground", `${l.cover}_${role}.ktx2`), ktx);
+      l[`${role}_ktx2_bytes`] = ktx.length;
+      console.log(`ground/${l.cover}_${role}.ktx2  ${(ktx.length / 1024).toFixed(0)} KB  ${Date.now() - t0} ms`);
+    }
+  }
+  fs.writeFileSync(gpath, JSON.stringify(gman, null, 1));
+  process.exit(0);
+}
+
 for (const mat of Object.keys(manifest)) {
   if (only.length && !only.includes(mat)) continue;
   for (const role of ["albedo", "nra"]) {
