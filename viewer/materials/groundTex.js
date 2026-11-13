@@ -8,10 +8,9 @@
 //   const G = await loadGroundTextures(renderer)   -> { albedo, nra, layers: [{cover, size_m, mean_albedo_linear...}], bytesGPU }
 // null when the files or the transcoder fail (the ground then keeps its procedural look).
 import * as THREE from "three/webgpu";
-import { KTX2Loader } from "three/addons/loaders/KTX2Loader.js";
+import { ktxLoader } from "./scans.js";
 
 const BASE = new URL("./textures/ground/", import.meta.url).href;
-const TRANSCODER = "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/libs/basis/";
 let ready = null;
 
 export const groundTexOn = !/[?&]groundtex=0/.test(location.search);
@@ -25,12 +24,10 @@ export function loadGroundTextures(renderer) {
 async function build(renderer) {
   const t0 = performance.now();
   const man = await fetch(BASE + "ground.json").then((r) => { if (!r.ok) throw new Error(`ground.json HTTP ${r.status}`); return r.json(); });
-  const ktx = new KTX2Loader().setTranscoderPath(TRANSCODER);
-  ktx.detectSupport(renderer);
+  const ktx = ktxLoader(renderer);                      // the library's loader (one transcoder per page)
   const layers = man.layers.slice().sort((a, b) => a.layer - b.layer);
   const load = (role) => Promise.all(layers.map((l) => ktx.loadAsync(`${BASE}${l.cover}_${role}.ktx2`)));
   const [alb, nra] = await Promise.all([load("albedo"), load("nra")]);
-  ktx.dispose();
   const pack = (list, srgb) => {
     const t0 = list[0], n = list.length;
     for (const t of list) {

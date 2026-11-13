@@ -15,8 +15,9 @@
 // flavours) pick the TWO strongest layers (the third's weight subtracted, so a swap is continuous), blended by height
 // (each scan's luminance over its mean: gravel shows through thin grass first). Anti-tiling: Mikkelsen hex-tiling (as
 // the library's antitile.js) with free offsets, rotation and a +-6 % tone per hex, one grid shared by both layers;
-// macro tone noise at 8 / 40 m. Far: blends to the tile's ORTHOPHOTO (the far-LOD tiles' look) over 220-480 m, so the
-// full -> far hand-over has no colour jump. 3 hex taps x 2 layers x 2 maps = 12 texture reads (explicit gradients).
+// macro tone noise at 8 / 40 m. Far: blends to the tile's ORTHOPHOTO (the far-LOD tiles' look) over 250-550 m, so the
+// full -> far hand-over has no colour jump. Texture reads (explicit gradients, branches): 2 per pixel for one cover
+// near a hex centre, up to 12 in the blend zones between hex tiles and covers, none past the orthophoto hand-over.
 import * as THREE from "three/webgpu";
 import { Fn, If, float, int, vec2, vec3, vec4, color, mix, smoothstep, positionWorld, normalWorld, normalView, texture, uv, clamp, max, uniform, uniformArray,
   cameraPosition, cameraViewMatrix, length, floor, fract, dot, pow, cos, sin, select, normalize } from "three/tsl";
@@ -107,7 +108,7 @@ export function setGroundTextures(G) {
     // per-cover tone over the scan (set on screen against Brussels: the sunlit beech litter read orange, 2026-11-13)
     tone: uniformArray(L.map((l) => new THREE.Vector3(...(TONE[l.cover] || [1, 1, 1]))), "vec3"),
     // live tuning (viewer.groundLook()): ortho blend band (m), normal strength, macro tone, grass flavour shares
-    uOrthoNear: uniform(220), uOrthoFar: uniform(480), uNormal: uniform(1.0), uMacro: uniform(1.0), uRough: uniform(0.5), uDry: uniform(0.3),
+    uOrthoNear: uniform(250), uOrthoFar: uniform(550), uNormal: uniform(1.0), uMacro: uniform(1.0), uRough: uniform(0.5), uDry: uniform(0.3),
   };
 }
 export const groundLook = () => shared;
