@@ -23,6 +23,8 @@ export const wind = {
   uSpeed: uniform(4),
   uGust: uniform(0.6),
   uStrength: uniform(0.3),       // mean lean fraction at this speed
+  uScale: uniform(1),            // gust-front size: x 1 = fronts ~40 m apart (> 1: smaller fronts); the Grass Field Lab tunes it
+  uRate: uniform(1),             // gust-front travel speed (x the wind speed x 0.6 / 0.8)
   /** per frame (CPU: a handful of uniform writes) */
   update(dt) {
     if (!this.frozen) this.uTime.value += dt;
@@ -39,9 +41,9 @@ export const wind = {
 /** TSL: the wind at world xz -> vec3(bend x, bend z, gust 0..1). Vertex or compute stage (explicit level 0). */
 export const windAt = Fn(([xz]) => {
   // gust fronts ~40 m apart travel at ~0.6 x the wind speed (what you see crossing a field), a finer ~12 m ripple at 0.8
-  const scroll = wind.uDir.mul(wind.uSpeed).mul(wind.uTime);
-  const a = noiseAt(xz.sub(scroll.mul(0.6)), 1 / 160, true).r;
-  const b = noiseAt(xz.sub(scroll.mul(0.8)).add(vec2(37.0, 11.0)), 1 / 48, true).g;
+  const scroll = wind.uDir.mul(wind.uSpeed).mul(wind.uTime).mul(wind.uRate);
+  const a = noiseAt(xz.sub(scroll.mul(0.6)), wind.uScale.div(160), true).r;
+  const b = noiseAt(xz.sub(scroll.mul(0.8)).add(vec2(37.0, 11.0)), wind.uScale.div(48), true).g;
   const g = clamp(a.mul(0.7).add(b.mul(0.3)), 0, 1);
   // strength between gusts: (1 - gust) of the mean, up to (1 + gust) inside a front
   const k = mix(float(1), g.mul(2), wind.uGust);
