@@ -20,6 +20,7 @@ import { addPolice } from "./policeCity.js";
 import { addCalevoet } from "./calevoetCity.js";
 import { addStPierre } from "./stpierreCity.js";
 import { addRussian } from "./russianCity.js";
+import { addRosaire } from "./rosaireCity.js";
 import { addObservatory } from "./observatoryCity.js";
 import { addFlags } from "./flagsCity.js";
 import { buildFurniture, updateSignals } from "./furniture.js";
@@ -856,6 +857,8 @@ async function main() {
   if (params.get("stpierre") !== "0") await addStPierre({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
   // the Russian Orthodox church of Saint-Job (tools/blender/russian.py, viewer/russianCity.js); ?russian=0 = the UrbIS solid
   if (params.get("russian") !== "0") await addRussian({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
+  // the Eglise Notre-Dame du Rosaire (tools/blender/rosaire.py, viewer/rosaireCity.js); ?rosaire=0 = the UrbIS solid
+  if (params.get("rosaire") !== "0") await addRosaire({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
   // The Royal Observatory (tools/blender/observatory.py, viewer/observatoryCity.js) in place of its UrbIS solids,
   // behind ?observatory=1 for now (its solids join HIDE_BU_IDS before the first tile is built)
   if (params.get("observatory") !== "0") await addObservatory({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });

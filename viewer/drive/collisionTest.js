@@ -33,7 +33,7 @@ const BAND = { car: [0.30, 1.30], walk: [0.28, 1.80] };
 const KIND_NAME = Object.fromEntries(Object.entries(KIND).map(([k, v]) => [v, k]));
 export const SRC = { building: 1, hero: 2, bridge: 3, furniture: 4, tree: 5, lamp: 6, bollard: 7, car: 8, rail: 9, tram: 10, kit: 11, road: 12 };
 const SRC_NAME = Object.fromEntries(Object.entries(SRC).map(([k, v]) => [v, k]));
-export const HEROES = ["stjob", "townhall", "stalle", "vanbuuren", "wolvendael", "police", "calevoet", "stpierre", "observatory", "russian",
+export const HEROES = ["stjob", "townhall", "stalle", "vanbuuren", "wolvendael", "police", "calevoet", "stpierre", "observatory", "russian", "rosaire",
   "bridge-verrewinkel", "bridge-stjob", "bridge-calevoet",
   "bridge-ruestalle", "bridge-engeland", "bridge-engeland_chord", "bridge-bigarreaux", "bridge-kauwberg", "bridge-linkebeek"];
 

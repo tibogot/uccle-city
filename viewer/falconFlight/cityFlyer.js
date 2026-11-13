@@ -154,7 +154,7 @@ export class CityFlyer {
     for (let i = 0; i < 300 && !window.__falcons; i++) await new Promise((r) => setTimeout(r, 200));
     if (window.__falcons) this.setFamily(window.__falcons);
     // the landmarks' height proxies, from their own lowest LOD, one at a time as they load
-    const heroes = ["townhall", "observatory", "stpierre", "stalle", "vanbuuren", "wolvendael", "police", "calevoet", "russian"];
+    const heroes = ["townhall", "observatory", "stpierre", "stalle", "vanbuuren", "wolvendael", "police", "calevoet", "russian", "rosaire"];
     const done = new Set();
     for (let round = 0; round < 120 && done.size < heroes.length + 3; round++) {
       for (const h of heroes) {

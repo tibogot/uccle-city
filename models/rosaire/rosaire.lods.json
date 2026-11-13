@@ -1,0 +1,14 @@
+{
+ "Rosaire_lod1": {
+  "from": "Rosaire",
+  "sourceTris": 10256,
+  "tris": 6232
+ },
+ "Rosaire_lod2": {
+  "from": "Rosaire_far",
+  "sourceTris": 3150,
+  "tris": 1555
+ },
+ "glbBytes": 475804,
+ "rawBytes": 1265396
+}
