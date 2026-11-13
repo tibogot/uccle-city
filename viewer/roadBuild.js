@@ -14,7 +14,7 @@ import { buildLaneRoadMesh } from "../vendor/roads/mesh/laneRoadMesh.js";
 import { surfaceAttribute, hashPhase } from "./roadData.js";
 import { prepareSurfaces, fitRoadWidths, buildSurfaceRoads } from "./surfaces.js";
 import { preparePaintV2, afterNetworkV2, unpaintParking, paintMeshV2 } from "./streets/measuredPaint.js";
-import { refineLaneGraph } from "./streets/laneGraph.js";
+import { refineLaneGraph, joinLaneGraph } from "./streets/laneGraph.js";
 
 export const CARVE = 0.12;         // terrain is pushed this far under any road surface
 
@@ -70,11 +70,14 @@ export function buildRoadData(o) {
   lap("surfaces + width fit");
   const net = buildRoadNetwork(roads, { ground });
   lap("buildRoadNetwork");
+  // round 5: every lane-graph "next" link joins paths that touch (the engine's connectors start on the arm's straight
+  // frame line, its lanes end on the bent alignment: gaps up to 92 m), on every tile (v1 too: traffic drives on it)
+  const laneJoins = joinLaneGraph(net);
   const pv = v2 ? afterNetworkV2(net, ctx, surf) : null;
   if (v2) lap("measured paint");
   // round 2: the lane graph traffic drives on, repaired (loops, centring, smoothing, hold points at the paint)
   const laneGraph = v2 ? refineLaneGraph(net, prep, pv.inventory) : null;
-  if (v2) { pv.inventory.stats.laneGraph = laneGraph; lap("lane graph"); }
+  if (v2) { pv.inventory.stats.laneGraph = laneGraph; pv.inventory.stats.laneJoins = laneJoins; lap("lane graph"); }
   const errors = net.issues.filter((i) => i.level === "error");
   const byCode = {};
   for (const i of errors) byCode[i.code] = (byCode[i.code] || 0) + 1;

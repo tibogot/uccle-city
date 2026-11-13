@@ -24,6 +24,7 @@
 // place to wait when there is one.
 import { cumulative } from "../../vendor/roads/roadMath.js";
 import { nearestRoad, phaseOfDir } from "./signals.js";
+import { joinLaneGraph } from "../streets/laneGraph.js";
 
 const TURN = { straight: 0, left: 1, right: 2, uturn: 3, ring: 4 };
 export const CTRL = { none: 0, signal: 1, stop: 2, yield: 3, priority: 4 };
@@ -151,7 +152,10 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null) {
   const t0 = performance.now();
   const raw = net.graph.paths.filter((p) => p.len > 0.2 && p.pts.length >= 2);
   const fitStats = { points: 0, moved: 0, maxShift: 0 };
-  const src = roundKinks(grid ? fitToSurface(raw, grid, fitStats) : raw);
+  const fitted = grid ? fitToSurface(raw, grid, fitStats) : raw;
+  // round 5: fitToSurface moves each lane on its own; lane-to-lane joins (continuations) are closed again
+  if (grid) fitStats.rejoined = joinLaneGraph({ graph: { paths: fitted, byId: new Map(fitted.map((p) => [p.id, p])) } }).gapsBefore;
+  const src = roundKinks(fitted);
   const idx = new Map(src.map((p, i) => [p.id, i]));
   const P = src.length;
   let nPts = 0;
