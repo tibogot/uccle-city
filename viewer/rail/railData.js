@@ -75,6 +75,33 @@ export function roadDeckGround(heroes, ground) {
   };
 }
 
+/**
+ * Roads round 5: the street's carriageway at a hero road bridge's ends, ON the deck's level. The measured street's
+ * height field (viewer/surfaces.js, least-squares planes over 6 m cells) cannot follow the deck end exactly: at
+ * Verrewinkel's SE end the street sat 0.1-0.2 m under the deck on its SW half (a step at the joint). Returns null (no
+ * hero road bridge) or (x, z) -> [y, w]: the deck's road level carried on with its grade past the end, and the weight
+ * (1 at the end, 0 END_PIN m past it and 1 m outside the kerb lines) to blend the street's height toward it.
+ */
+export function roadDeckPins(heroes) {
+  const decks = (heroes || []).filter((h) => h.kind === "road_over_rail").map((h) => ({ f: heroFrame(h), d: h.deck }));
+  if (!decks.length) return null;
+  const END_PIN = 6, smooth = (t) => t * t * (3 - 2 * t);
+  return (x, z) => {
+    for (const { f, d } of decks) {
+      const [X, Y] = f.toLocal(x, z);
+      if (X >= d.x0 && X <= d.x1) continue;
+      const past = X > d.x1 ? X - d.x1 : d.x0 - X;
+      if (past >= END_PIN) continue;
+      const out = Math.max(0, d.kerb_sw - Y, Y - d.kerb_ne);
+      if (out >= 1) continue;
+      const g = (d.road_ends[1] - d.road_ends[0]) / (d.x1 - d.x0);
+      const y = X > d.x1 ? d.road_ends[1] + g * past : d.road_ends[0] - g * past;
+      return [y, smooth(1 - past / END_PIN) * (1 - out)];
+    }
+    return null;
+  };
+}
+
 /** the rail bridge footprints: the hero models' (they may run beyond UrbIS), else the UrbIS RAB polygons */
 function bridgeRings(doc, heroes) {
   const hs = (heroes || []).map(heroFrame);

@@ -12,7 +12,7 @@ import { texture, uniform, float, vec3, uv, positionWorld, mix, smoothstep } fro
 import { Panel } from "../viewer/panelUI.js";
 import { Lighting } from "../viewer/lighting.js";
 import { Heightmap } from "../viewer/heightmap.js";
-import { buildRoadData } from "../viewer/roadBuild.js";
+import { buildRoadData, applyRoadOverrides } from "../viewer/roadBuild.js";
 import { roofGrid, onRoof } from "../viewer/tileData.js";
 import { paintInventory } from "../viewer/streets/inventory.js";
 import { asphaltMaterial, concreteMaterial, vergeMaterial, paintMaterial } from "../viewer/roadPaint.js";
@@ -76,7 +76,7 @@ async function tileRoads(T, paint) {
   const [hdr, buf, roads, surf, feats, bDoc, markings, ov] = await Promise.all([getJ(F.terrainHeader), getJ(F.terrain, true),
     v1Roads ? Promise.resolve(v1Roads) : getJ(F.roads), F.surfaces ? getJ(F.surfaces) : null, getJ(F.features), getJ(F.buildings),
     F.markings ? getJ(F.markings) : null, fetch("../data/overrides.json").then((r) => (r.ok ? r.json() : {})).catch(() => ({}))]);
-  for (const r of roads.roads) { const s = ov.roadSurface?.[r.id]; if (s) (r.meta ??= {}).surface = s; }
+  applyRoadOverrides(roads, ov);
   const hm = new Heightmap(hdr, buf);
   const roofs = roofGrid(bDoc, b);
   const rd = buildRoadData({ roads, surf, markings: paint === "v2" ? markings : null, hm, bounds: b, paint, trees: feats.trees, keep: true, onBuilding: (x, z) => onRoof(roofs, x, z) });

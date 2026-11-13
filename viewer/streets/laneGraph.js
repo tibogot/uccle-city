@@ -68,10 +68,105 @@ function smooth(P, passes = 3) {
   return P;
 }
 
+// ---------------------------------------------------------------- round 5: every "next" link joins paths that touch
+// The engine (read-only) starts a junction connector at armPoint(arm, arm.trim, t): the arm's STRAIGHT frame line from
+// the node, while the lane piece ends at station s = trim along the road's fitted ALIGNMENT. Where the alignment bends
+// inside the trim (big junctions, radius-clamped bends, "road-swallowed" roads whose trim is longer than the road)
+// the two are metres apart: I6 48 links 0.4-19 m, E4 170 links up to 92 m; a car following one jumped. And at
+// continuation / split nodes the engine links lane to lane (lateralLinks: no geometry) between lanes up to 2.6 m apart
+// sideways. Fixed here, on the engine's output, before the rest of the refinement:
+//   - a junction connector (straight / left / right) whose ends are off its lanes is rebuilt as the engine builds one
+//     (a cubic with ~0.56 x the tangent-intersection handles, a circle-like arc) from the real end of its entry lane
+//     (its last direction) to the real start of its exit lane (its first direction);
+//   - ring / u-turn connectors (an arc of their own in the middle), and any connector off by less than 1 m, keep their
+//     shape and take the end offsets, faded along their length;
+//   - a lane-to-lane link with a gap bends the end of the entry lane (it has one next) or the start of the exit lane
+//     (it has one prev) onto the other over up to 12 m; a link where neither can move without tearing another link
+//     is dropped when the entry lane has another, touching, next; else it is kept and counted (stats.joinLeft).
+const JOIN_EPS = 0.05;
+const dist2 = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+function dirOver(P, fromEnd, back = 3) {
+  // unit direction of the last (fromEnd) or first `back` m of P, in travel direction
+  const n = P.length;
+  if (fromEnd) { let k = n - 2; while (k > 0 && dist2(P[k], P[n - 1]) < back) k--; const dx = P[n - 1][0] - P[k][0], dz = P[n - 1][1] - P[k][1], L = Math.hypot(dx, dz) || 1; return [dx / L, dz / L]; }
+  let k = 1; while (k < n - 1 && dist2(P[k], P[0]) < back) k++;
+  const dx = P[k][0] - P[0][0], dz = P[k][1] - P[0][1], L = Math.hypot(dx, dz) || 1; return [dx / L, dz / L];
+}
+function cubicJoin(p0, d0, p3, d3) {
+  const D = dist2(p0, p3);
+  // tangent lines p0 + d0 u and p3 - d3 v
+  const den = d0[0] * -d3[1] - d0[1] * -d3[0], wx = p3[0] - p0[0], wz = p3[1] - p0[1];
+  let u = D / 3, v = D / 3;
+  if (Math.abs(den) > 1e-9) {
+    const hu = (wx * -d3[1] - wz * -d3[0]) / den, hv = (wx * d0[1] - wz * d0[0]) / den;
+    if (hu > 0.2 && hv > 0.2 && hu < D * 3 && hv < D * 3) { u = hu * 0.56; v = hv * 0.56; }
+  }
+  const p1 = [p0[0] + d0[0] * u, p0[1] + d0[1] * u], p2 = [p3[0] - d3[0] * v, p3[1] - d3[1] * v];
+  const n = Math.max(6, Math.ceil(D / 2)), out = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n, s = 1 - t, a = s * s * s, b = 3 * s * s * t, c = 3 * s * t * t, e = t * t * t;
+    out.push([a * p0[0] + b * p1[0] + c * p2[0] + e * p3[0], a * p0[1] + b * p1[1] + c * p2[1] + e * p3[1]]);
+  }
+  return out;
+}
+/** Move the last (atEnd) or first points of P by (dx, dz), faded to 0 over `reach` m. */
+function bendEnd(P, atEnd, dx, dz, reach) {
+  const c = cumulative(P), L = c[c.length - 1], R = Math.min(reach, L * 0.5) || 1;
+  return P.map((q, k) => {
+    const s = atEnd ? L - c[k] : c[k], f = s >= R ? 0 : 0.5 + 0.5 * Math.cos((Math.PI * s) / R);
+    return [q[0] + dx * f, q[1] + dz * f, ...q.slice(2)];
+  });
+}
+export function joinLaneGraph(net) {
+  const st = { links: 0, gapsBefore: 0, maxGapBefore: 0, rebuilt: 0, faded: 0, laneBent: 0, dropped: 0, joinLeft: 0 };
+  if (!net?.graph) return st;
+  const by = net.graph.byId, paths = net.graph.paths;
+  const gap = (a, b) => dist2(a.pts[a.pts.length - 1], b.pts[0]);
+  for (const a of paths) for (const id of a.next) { const b = by.get(id); if (!b) continue; st.links++; const d = gap(a, b); if (d > JOIN_EPS) { st.gapsBefore++; st.maxGapBefore = Math.max(st.maxGapBefore, d); } }
+  const reset = (p) => { p.cum = cumulative(p.pts); const L0 = p.len; p.len = p.cum[p.cum.length - 1]; if (p.stop && L0 > 0) p.stop.at = Math.max(0, Math.min(p.len, p.stop.at + (p.len - L0))); };
+  // 1. lane -> lane links (continuations, splits): bend one side onto the other
+  for (const a of paths) {
+    if (a.kind !== "lane") continue;
+    for (const id of [...a.next]) {
+      const b = by.get(id); if (!b || b.kind !== "lane") continue;
+      const E = a.pts[a.pts.length - 1], S = b.pts[0], d = dist2(E, S);
+      if (d <= JOIN_EPS) continue;
+      if (a.next.length === 1) { a.pts = bendEnd(a.pts, true, S[0] - E[0], S[1] - E[1], 12); reset(a); st.laneBent++; }
+      else if (b.prev.length === 1) { b.pts = bendEnd(b.pts, false, E[0] - S[0], E[1] - S[1], 12); reset(b); st.laneBent++; }
+      else if (a.next.some((o) => o !== id && gap(a, by.get(o)) <= JOIN_EPS)) {
+        a.next = a.next.filter((o) => o !== id); b.prev = b.prev.filter((o) => o !== a.id); st.dropped++;
+      } else st.joinLeft++;
+    }
+  }
+  // 2. connectors: rebuilt (junction turns) or end-shifted (ring, u-turn) onto their lanes
+  for (const c of paths) {
+    if (c.kind !== "connector") continue;
+    const a = by.get(c.prev[0]), b = by.get(c.next[0]);
+    const E = a ? a.pts[a.pts.length - 1] : c.pts[0], S = b ? b.pts[0] : c.pts[c.pts.length - 1];
+    const d0 = dist2(E, c.pts[0]), d1 = dist2(S, c.pts[c.pts.length - 1]);
+    if (d0 <= JOIN_EPS && d1 <= JOIN_EPS) continue;
+    if (Math.max(d0, d1) < 1 || c.turn === "ring" || c.turn === "uturn" || !a || !b || a.pts.length < 2 || b.pts.length < 2) {
+      const s0 = [E[0] - c.pts[0][0], E[1] - c.pts[0][1]], s1 = [S[0] - c.pts[c.pts.length - 1][0], S[1] - c.pts[c.pts.length - 1][1]];
+      const cc = cumulative(c.pts), L = cc[cc.length - 1] || 1;
+      c.pts = c.pts.map((q, k) => { const f = cc[k] / L; return [q[0] + s0[0] * (1 - f) + s1[0] * f, q[1] + s0[1] * (1 - f) + s1[1] * f]; });
+      st.faded++;
+    } else {
+      c.pts = cubicJoin([E[0], E[1]], dirOver(a.pts, true), [S[0], S[1]], dirOver(b.pts, false));
+      st.rebuilt++;
+    }
+    reset(c);
+  }
+  return st;
+}
+
 export function refineLaneGraph(net, prep, inventory) {
   const st = { paths: 0, loops: 0, cusps: 0, centred: 0, centredPts: 0, holds: 0 };
   if (!net?.graph) return st;
-  const cls = (x, z) => (prep ? prep.classAt(x, z) : -1);
+  // round 5: off the class raster (it covers the tile's core square only; the graph reaches 150 m beyond) nothing is
+  // known: count it as carriageway, so junctions on the tile edge are not pulled out of shape toward their centre
+  const RG = prep?.grid;
+  const offRaster = (x, z) => !RG || x < RG.x0 || z < RG.z0 || x >= RG.x0 + RG.nx * RG.step || z >= RG.z0 + RG.nz * RG.step;
+  const cls = (x, z) => (prep ? (offRaster(x, z) ? 0 : prep.classAt(x, z)) : -1);
   const roadById = new Map(net.roads.map((r) => [r.id, r]));
   const nodeById = new Map(net.nodes.map((n) => [n.id, n]));
   const simple = (p) => {
@@ -205,6 +300,8 @@ export function refineLaneGraph(net, prep, inventory) {
     p.pts = P; p.cum = cumulative(P); p.len = p.cum[p.cum.length - 1];
     if (p.stop && L0 > 0 && !p.stop.line) p.stop.at = Math.max(0, p.stop.at * (p.len / L0));
   }
+  // ---- the moves above (centring, keep-on-carriage, smoothing) are per path: lane-to-lane joins drift apart again
+  st.rejoined = joinLaneGraph(net).gapsBefore;
   // ---- hold points at the painted lines
   if (inventory?.stops?.length) {
     // a lane that ends at a junction holds at the painted line its last 30 m cross (the line extended 0.5 m at each
@@ -228,5 +325,125 @@ export function refineLaneGraph(net, prep, inventory) {
       st.holds++;
     }
   }
+  // ---- round 5: no junction turn tighter than a car turns (R >= 5 m)
+  Object.assign(st, widenTightTurns(net, cls));
+  return st;
+}
+
+/** Tightest radius of polyline P over chords of `span` m (three points span apart along it). */
+export function tightestRadius(P, span = 1.5) {
+  const c = cumulative(P);
+  let m = Infinity;
+  for (let k = 0, a = 0, b = 0; k < P.length; k++) {
+    while (a < k && c[k] - c[a + 1] >= span) a++;
+    while (b < P.length - 1 && c[b] - c[k] < span) b++;
+    if (c[k] - c[a] < span * 0.6 || c[b] - c[k] < span * 0.6) continue;
+    const [ax, az] = P[a], [kx, kz] = P[k], [bx, bz] = P[b];
+    const A = Math.hypot(kx - ax, kz - az), B = Math.hypot(bx - kx, bz - kz), C = Math.hypot(bx - ax, bz - az);
+    const cr = Math.abs((kx - ax) * (bz - az) - (kz - az) * (bx - ax));
+    if (cr > 1e-9) m = Math.min(m, (A * B * C) / (2 * cr));
+  }
+  return m;
+}
+/** P cut at distance d along it: the part before d, or the part after it when `after`. */
+function cutAt(P, d, after) {
+  const c = cumulative(P);
+  let k = 1; while (k < P.length - 1 && c[k] < d) k++;
+  const f = Math.max(0, Math.min(1, (d - c[k - 1]) / Math.max(1e-9, c[k] - c[k - 1])));
+  const q = [P[k - 1][0] + (P[k][0] - P[k - 1][0]) * f, P[k - 1][1] + (P[k][1] - P[k - 1][1]) * f];
+  return after ? [q, ...P.slice(f >= 1 - 1e-6 ? k + 1 : k)] : [...P.slice(0, f <= 1e-6 ? k - 1 : k), q];
+}
+
+/**
+ * TIGHT TURNS (roads round 4 leftover; owner 2026-11-13 "blocky turns"): the engine starts every junction connector at
+ * its arm's trim station, so where a side street's lanes run right up to the crossing road (a small trim, an oblique
+ * arm) a left / right turn has to happen in 3-7 m: radii of 0.8-2 m, a car pivots. A real car (turning circle ~10-11 m
+ * kerb to kerb) starts the turn earlier. Here the turn starts earlier: the entry lane's end and / or the exit lane's
+ * start are cut back 1 m at a time (every connector at that lane end is rebuilt from the new point, as the engine
+ * builds them) until the turn's tightest radius is >= RMIN, while
+ *   - a lane keeps at least max(3 m, 40 %) of its length and a cut is at most CUT_MAX m,
+ *   - an approach never ends before its hold point at a painted stop / give-way line (+ 0.6 m),
+ *   - no rebuilt connector has more points off the measured carriageway than before,
+ *   - no connector at that lane end gets tighter.
+ * U-turns and roundabout rings keep their own shape.
+ */
+const RMIN = 5, CUT_STEP = 1, CUT_MAX = 8;
+export function widenTightTurns(net, cls = null) {
+  const st = { tightBefore: 0, tightAfter: 0, laneCuts: 0, cutMetres: 0 };
+  if (!net?.graph) return st;
+  const by = net.graph.byId;
+  const turning = (c) => c.kind === "connector" && (c.turn === "left" || c.turn === "right" || c.turn === "straight");
+  const cons = net.graph.paths.filter((c) => turning(c) && c.prev.length === 1 && c.next.length === 1 &&
+    by.get(c.prev[0])?.kind === "lane" && by.get(c.next[0])?.kind === "lane");
+  const offCount = (P) => { if (!cls) return 0; let n = 0; for (const q of P) { const k = cls(q[0], q[1]); if (!(k >= 0 && k <= 3)) n++; } return n; };
+  const cur = new Map(cons.map((c) => [c, c.pts]));
+  const rad = new Map(cons.map((c) => [c, tightestRadius(c.pts)]));
+  st.tightBefore = cons.filter((c) => rad.get(c) < RMIN).length;
+  const cut = new Map();           // "laneId|b" (entry lane, cut at its end) / "laneId|a" (exit lane, at its start) -> m
+  // the room left for one more cut at end e of lane p: both its cuts together leave max(3 m, 40 %) of it, and an
+  // approach keeps its painted hold point
+  const budget = (p, e) => {
+    const L = p.len, other = cut.get(`${p.id}|${e === "b" ? "a" : "b"}`) || 0;
+    let mx = Math.min(CUT_MAX, L - Math.max(3, 0.4 * L) - other);
+    if (e === "b" && p.stop?.line) mx = Math.min(mx, L - (p.stop.at + 0.6));
+    return Math.max(0, mx);
+  };
+  const lanePts = (p) => {
+    let P = p.pts;
+    const da = cut.get(`${p.id}|a`) || 0, db = cut.get(`${p.id}|b`) || 0;
+    if (db) P = cutAt(P, p.len - db, false);
+    if (da) P = cutAt(P, da, true);
+    return P;
+  };
+  const build = (c) => {
+    const A = lanePts(by.get(c.prev[0])), B = lanePts(by.get(c.next[0]));
+    return resample(cubicJoin(A[A.length - 1], dirOver(A, true), B[0], dirOver(B, false)), 0.5);
+  };
+  const atEnd = new Map();         // lane end key -> the connectors that start / end there
+  for (const c of cons) for (const k of [`${c.prev[0]}|b`, `${c.next[0]}|a`]) { if (!atEnd.has(k)) atEnd.set(k, []); atEnd.get(k).push(c); }
+  for (let it = 0; it < CUT_MAX / CUT_STEP; it++) {
+    let changed = false;
+    for (const c of cons) {
+      if (rad.get(c) >= RMIN) continue;
+      const ka = `${c.prev[0]}|b`, kb = `${c.next[0]}|a`;
+      let best = null;
+      for (const keys of [[ka], [kb], [ka, kb]]) {
+        const ok = keys.every((k) => { const [id, e] = k.split("|"); return (cut.get(k) || 0) + CUT_STEP <= budget(by.get(id), e) + 1e-6; });
+        if (!ok) continue;
+        for (const k of keys) cut.set(k, (cut.get(k) || 0) + CUT_STEP);
+        const affected = new Set(keys.flatMap((k) => atEnd.get(k)));
+        const trial = new Map();
+        let fine = true, gain = 0;
+        for (const x of affected) {
+          const P = build(x), r = tightestRadius(P), r0 = rad.get(x);
+          if (r < Math.min(r0, RMIN) - 0.05 || offCount(P) > offCount(cur.get(x))) { fine = false; break; }
+          gain += Math.min(r, RMIN) - Math.min(r0, RMIN);
+          trial.set(x, [P, r]);
+        }
+        for (const k of keys) cut.set(k, cut.get(k) - CUT_STEP);
+        if (fine && gain > 0.05 && (!best || gain > best.gain)) best = { keys, trial, gain };
+      }
+      if (!best) continue;
+      for (const k of best.keys) cut.set(k, (cut.get(k) || 0) + CUT_STEP);
+      for (const [x, [P, r]] of best.trial) { cur.set(x, P); rad.set(x, r); }
+      changed = true;
+    }
+    if (!changed) break;
+  }
+  // apply: the lanes cut, their connectors rebuilt
+  const cutLanes = new Set();
+  for (const [k, d] of cut) if (d) { cutLanes.add(k.split("|")[0]); st.laneCuts++; st.cutMetres += d; }
+  for (const id of cutLanes) {
+    const p = by.get(id), da = cut.get(`${id}|a`) || 0;
+    p.pts = lanePts(p);
+    p.cum = cumulative(p.pts); p.len = p.cum[p.cum.length - 1];
+    if (p.stop) p.stop.at = Math.max(0, Math.min(p.stop.at - da, p.len - 0.3));
+  }
+  for (const c of cons) {
+    if (cur.get(c) === c.pts) continue;
+    c.pts = cur.get(c); c.cum = cumulative(c.pts); c.len = c.cum[c.cum.length - 1];
+  }
+  st.tightAfter = cons.filter((c) => rad.get(c) < RMIN).length;
+  st.cutMetres = Math.round(st.cutMetres);
   return st;
 }

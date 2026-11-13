@@ -9,10 +9,10 @@ import { analyseBuildings, hash01, wallStyle } from "./facadeGeom.js";
 import { landCoverData } from "./landcover.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { buildDriveData } from "./drive/colliders.js";
-import { buildRoadData, CARVE } from "./roadBuild.js";
+import { buildRoadData, applyRoadOverrides, CARVE } from "./roadBuild.js";
 import { smoothPolyline } from "./track.js";
 import { kitCollector } from "./facadeKit/placement.js";
-import { prepRail, abutmentFill, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround } from "./rail/railData.js";
+import { prepRail, abutmentFill, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins } from "./rail/railData.js";
 import { buildTrafficGraph } from "./traffic/trafficGraph.js";
 
 let railP = null;
@@ -138,7 +138,7 @@ export async function buildTileData(entry, base) {
   const surf = entry.surface && F.surfaces ? await step("fetch surfaces", () => get(F.surfaces)) : null;
   // hand corrections (data/overrides.json): road surfaces OSM gets wrong (Place de Saint-Job is setts)
   const ov = await overrides(base);
-  for (const r of roads.roads) { const s = ov.roadSurface?.[r.id]; if (s) (r.meta ??= {}).surface = s; }
+  applyRoadOverrides(roads, ov);
   const hm = new Heightmap(tHdr, tBuf);
   // measured markings (pipeline/build_markings.py): crossings, stop lines, lines, OSM crossing / control nodes
   const paint = entry.paint || PAINT;
@@ -150,7 +150,7 @@ export async function buildTileData(entry, base) {
   // the ground at the hero road bridges' ends up to their decks, before the roads sample it (railData.js abutmentFill)
   if (rail) await step("abutment fill", () => abutmentFill(rail.heroes, [hm.y, hm.orig], tHdr));
   const roadGround = rail ? roadDeckGround(rail.heroes, hm.ground) : hm.ground;
-  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround,
+  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z) }));
   Object.assign(times, rd.times);
   const { netInfo } = rd;

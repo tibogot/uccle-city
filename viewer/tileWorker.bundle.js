@@ -187,6 +187,71 @@ var Heightmap = class _Heightmap {
     this.y = out;
     return n;
   }
+  /**
+   * JOINS (roads round 5): where a road / sidewalk edge stands over the terrain (a raised road, a sidewalk over a
+   * lawn), the terrain beside it comes up to meet it: a flat shoulder at the edge's height - SHOULDER out to 1.5 m, then
+   * a bank down at `slope` (m per m) to the natural ground, at most `reach` m out; under a surface the terrain comes up
+   * to `depth` under it (the carve's depth). Only raises. Skipped where the rise would exceed maxRise (a structure: decks, overpasses) or where skip(x, z)
+   * (no DTM data, bridge decks). meshes: [{ position, index }]. Returns the number of cells raised.
+   */
+  weld(meshes, { slope = 0.7, reach = 4, maxRise = 2, depth = 0.12, skip = null } = {}) {
+    const { x0, z0, cols, rows, step } = this.h;
+    const SHOULDER = 0.01, Y = this.y;
+    const top = new Float32Array(cols * rows).fill(-Infinity);
+    for (const { position, index } of meshes) for (let t = 0; t < index.length; t += 3) {
+      const a = index[t] * 3, b = index[t + 1] * 3, c = index[t + 2] * 3;
+      const ax = position[a], az = position[a + 2], bx = position[b], bz = position[b + 2], cx = position[c], cz = position[c + 2];
+      const det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+      if (Math.abs(det) < 1e-9) continue;
+      const ay = position[a + 1], ux = bx - ax, uy = position[b + 1] - ay, uz = bz - az, vx = cx - ax, vy = position[c + 1] - ay, vz = cz - az;
+      const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+      if (Math.abs(ny) < 0.6 * Math.hypot(nx, ny, nz)) continue;
+      const c0 = Math.max(0, Math.ceil((Math.min(ax, bx, cx) - x0) / step)), c1 = Math.min(cols - 1, Math.floor((Math.max(ax, bx, cx) - x0) / step));
+      const r0 = Math.max(0, Math.ceil((Math.min(az, bz, cz) - z0) / step)), r1 = Math.min(rows - 1, Math.floor((Math.max(az, bz, cz) - z0) / step));
+      for (let r = r0; r <= r1; r++) for (let cc = c0; cc <= c1; cc++) {
+        const px = x0 + cc * step, pz = z0 + r * step;
+        const l1 = ((bz - cz) * (px - cx) + (cx - bx) * (pz - cz)) / det, l2 = ((cz - az) * (px - cx) + (ax - cx) * (pz - cz)) / det, l3 = 1 - l1 - l2;
+        if (l1 < -1e-6 || l2 < -1e-6 || l3 < -1e-6) continue;
+        const y = l1 * position[a + 1] + l2 * position[b + 1] + l3 * position[c + 1], k = r * cols + cc;
+        if (y > top[k]) top[k] = y;
+      }
+    }
+    const R = Math.ceil(reach / step), want = new Float32Array(cols * rows).fill(-Infinity);
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const k = r * cols + c;
+      if (top[k] === -Infinity) continue;
+      let edge = false;
+      for (let dr = -1; dr <= 1 && !edge; dr++) for (let dc = -1; dc <= 1; dc++) {
+        const rr = r + dr, cc = c + dc;
+        if (rr >= 0 && cc >= 0 && rr < rows && cc < cols && top[rr * cols + cc] === -Infinity) {
+          edge = true;
+          break;
+        }
+      }
+      if (!edge) continue;
+      const yTop = top[k];
+      for (let dr = -R; dr <= R; dr++) for (let dc = -R; dc <= R; dc++) {
+        const rr = r + dr, cc = c + dc;
+        if (rr < 0 || cc < 0 || rr >= rows || cc >= cols) continue;
+        const kk = rr * cols + cc;
+        if (top[kk] !== -Infinity) continue;
+        const d = Math.hypot(dr, dc) * step;
+        if (d > reach) continue;
+        const v = yTop - SHOULDER - slope * Math.max(0, d - 1.5);
+        if (v > want[kk]) want[kk] = v;
+      }
+    }
+    let n = 0;
+    for (let k = 0; k < Y.length; k++) {
+      const v = top[k] !== -Infinity ? top[k] - depth : want[k];
+      if (v === -Infinity || v <= Y[k]) continue;
+      if (v - this.orig[k] > maxRise) continue;
+      if (skip && skip(x0 + k % cols * step, z0 + Math.floor(k / cols) * step)) continue;
+      Y[k] = v;
+      n++;
+    }
+    return n;
+  }
 };
 
 // viewer/facadeGeom.js
@@ -4393,8 +4458,8 @@ function buildRoadNetwork(data, opts = {}) {
         if (!m.kinds.size) continue;
         if (m.arm.approach.length < 2 && !m.lane.turn) continue;
         const rr = m.arm.road;
-        const dist2 = (m.arm.stopStation ?? m.arm.trim) + 4;
-        const s = m.arm.end === "a" ? dist2 : rr.L - dist2;
+        const dist3 = (m.arm.stopStation ?? m.arm.trim) + 4;
+        const s = m.arm.end === "a" ? dist3 : rr.L - dist3;
         if (s < rr.s0 || s > rr.s1) continue;
         const e = evalAlignment(rr.al, s);
         const lay = layoutAt(rr.stack, s, rr.L);
@@ -8772,10 +8837,118 @@ function smooth2(P, passes = 3) {
   }
   return P;
 }
+var JOIN_EPS = 0.05;
+var dist2 = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+function dirOver(P, fromEnd, back = 3) {
+  const n = P.length;
+  if (fromEnd) {
+    let k2 = n - 2;
+    while (k2 > 0 && dist2(P[k2], P[n - 1]) < back) k2--;
+    const dx2 = P[n - 1][0] - P[k2][0], dz2 = P[n - 1][1] - P[k2][1], L3 = Math.hypot(dx2, dz2) || 1;
+    return [dx2 / L3, dz2 / L3];
+  }
+  let k = 1;
+  while (k < n - 1 && dist2(P[k], P[0]) < back) k++;
+  const dx = P[k][0] - P[0][0], dz = P[k][1] - P[0][1], L2 = Math.hypot(dx, dz) || 1;
+  return [dx / L2, dz / L2];
+}
+function cubicJoin(p0, d0, p3, d3) {
+  const D = dist2(p0, p3);
+  const den = d0[0] * -d3[1] - d0[1] * -d3[0], wx = p3[0] - p0[0], wz = p3[1] - p0[1];
+  let u = D / 3, v = D / 3;
+  if (Math.abs(den) > 1e-9) {
+    const hu = (wx * -d3[1] - wz * -d3[0]) / den, hv = (wx * d0[1] - wz * d0[0]) / den;
+    if (hu > 0.2 && hv > 0.2 && hu < D * 3 && hv < D * 3) {
+      u = hu * 0.56;
+      v = hv * 0.56;
+    }
+  }
+  const p1 = [p0[0] + d0[0] * u, p0[1] + d0[1] * u], p2 = [p3[0] - d3[0] * v, p3[1] - d3[1] * v];
+  const n = Math.max(6, Math.ceil(D / 2)), out = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n, s = 1 - t, a = s * s * s, b = 3 * s * s * t, c = 3 * s * t * t, e = t * t * t;
+    out.push([a * p0[0] + b * p1[0] + c * p2[0] + e * p3[0], a * p0[1] + b * p1[1] + c * p2[1] + e * p3[1]]);
+  }
+  return out;
+}
+function bendEnd(P, atEnd, dx, dz, reach) {
+  const c = cumulative2(P), L2 = c[c.length - 1], R = Math.min(reach, L2 * 0.5) || 1;
+  return P.map((q, k) => {
+    const s = atEnd ? L2 - c[k] : c[k], f = s >= R ? 0 : 0.5 + 0.5 * Math.cos(Math.PI * s / R);
+    return [q[0] + dx * f, q[1] + dz * f, ...q.slice(2)];
+  });
+}
+function joinLaneGraph(net) {
+  const st = { links: 0, gapsBefore: 0, maxGapBefore: 0, rebuilt: 0, faded: 0, laneBent: 0, dropped: 0, joinLeft: 0 };
+  if (!net?.graph) return st;
+  const by = net.graph.byId, paths = net.graph.paths;
+  const gap = (a, b) => dist2(a.pts[a.pts.length - 1], b.pts[0]);
+  for (const a of paths) for (const id of a.next) {
+    const b = by.get(id);
+    if (!b) continue;
+    st.links++;
+    const d = gap(a, b);
+    if (d > JOIN_EPS) {
+      st.gapsBefore++;
+      st.maxGapBefore = Math.max(st.maxGapBefore, d);
+    }
+  }
+  const reset = (p) => {
+    p.cum = cumulative2(p.pts);
+    const L0 = p.len;
+    p.len = p.cum[p.cum.length - 1];
+    if (p.stop && L0 > 0) p.stop.at = Math.max(0, Math.min(p.len, p.stop.at + (p.len - L0)));
+  };
+  for (const a of paths) {
+    if (a.kind !== "lane") continue;
+    for (const id of [...a.next]) {
+      const b = by.get(id);
+      if (!b || b.kind !== "lane") continue;
+      const E = a.pts[a.pts.length - 1], S2 = b.pts[0], d = dist2(E, S2);
+      if (d <= JOIN_EPS) continue;
+      if (a.next.length === 1) {
+        a.pts = bendEnd(a.pts, true, S2[0] - E[0], S2[1] - E[1], 12);
+        reset(a);
+        st.laneBent++;
+      } else if (b.prev.length === 1) {
+        b.pts = bendEnd(b.pts, false, E[0] - S2[0], E[1] - S2[1], 12);
+        reset(b);
+        st.laneBent++;
+      } else if (a.next.some((o) => o !== id && gap(a, by.get(o)) <= JOIN_EPS)) {
+        a.next = a.next.filter((o) => o !== id);
+        b.prev = b.prev.filter((o) => o !== a.id);
+        st.dropped++;
+      } else st.joinLeft++;
+    }
+  }
+  for (const c of paths) {
+    if (c.kind !== "connector") continue;
+    const a = by.get(c.prev[0]), b = by.get(c.next[0]);
+    const E = a ? a.pts[a.pts.length - 1] : c.pts[0], S2 = b ? b.pts[0] : c.pts[c.pts.length - 1];
+    const d0 = dist2(E, c.pts[0]), d1 = dist2(S2, c.pts[c.pts.length - 1]);
+    if (d0 <= JOIN_EPS && d1 <= JOIN_EPS) continue;
+    if (Math.max(d0, d1) < 1 || c.turn === "ring" || c.turn === "uturn" || !a || !b || a.pts.length < 2 || b.pts.length < 2) {
+      const s0 = [E[0] - c.pts[0][0], E[1] - c.pts[0][1]], s1 = [S2[0] - c.pts[c.pts.length - 1][0], S2[1] - c.pts[c.pts.length - 1][1]];
+      const cc = cumulative2(c.pts), L2 = cc[cc.length - 1] || 1;
+      c.pts = c.pts.map((q, k) => {
+        const f = cc[k] / L2;
+        return [q[0] + s0[0] * (1 - f) + s1[0] * f, q[1] + s0[1] * (1 - f) + s1[1] * f];
+      });
+      st.faded++;
+    } else {
+      c.pts = cubicJoin([E[0], E[1]], dirOver(a.pts, true), [S2[0], S2[1]], dirOver(b.pts, false));
+      st.rebuilt++;
+    }
+    reset(c);
+  }
+  return st;
+}
 function refineLaneGraph(net, prep, inventory) {
   const st = { paths: 0, loops: 0, cusps: 0, centred: 0, centredPts: 0, holds: 0 };
   if (!net?.graph) return st;
-  const cls = (x, z) => prep ? prep.classAt(x, z) : -1;
+  const RG = prep?.grid;
+  const offRaster = (x, z) => !RG || x < RG.x0 || z < RG.z0 || x >= RG.x0 + RG.nx * RG.step || z >= RG.z0 + RG.nz * RG.step;
+  const cls = (x, z) => prep ? offRaster(x, z) ? 0 : prep.classAt(x, z) : -1;
   const roadById = new Map(net.roads.map((r) => [r.id, r]));
   const nodeById = new Map(net.nodes.map((n) => [n.id, n]));
   const simple = (p) => {
@@ -8957,6 +9130,7 @@ function refineLaneGraph(net, prep, inventory) {
     p.len = p.cum[p.cum.length - 1];
     if (p.stop && L0 > 0 && !p.stop.line) p.stop.at = Math.max(0, p.stop.at * (p.len / L0));
   }
+  st.rejoined = joinLaneGraph(net).gapsBefore;
   if (inventory?.stops?.length) {
     const ends = /* @__PURE__ */ new Map();
     for (const s of inventory.stops) {
@@ -8985,6 +9159,216 @@ function refineLaneGraph(net, prep, inventory) {
       st.holds++;
     }
   }
+  Object.assign(st, widenTightTurns(net, cls));
+  return st;
+}
+function tightestRadius(P, span = 1.5) {
+  const c = cumulative2(P);
+  let m = Infinity;
+  for (let k = 0, a = 0, b = 0; k < P.length; k++) {
+    while (a < k && c[k] - c[a + 1] >= span) a++;
+    while (b < P.length - 1 && c[b] - c[k] < span) b++;
+    if (c[k] - c[a] < span * 0.6 || c[b] - c[k] < span * 0.6) continue;
+    const [ax, az] = P[a], [kx, kz] = P[k], [bx, bz] = P[b];
+    const A = Math.hypot(kx - ax, kz - az), B = Math.hypot(bx - kx, bz - kz), C = Math.hypot(bx - ax, bz - az);
+    const cr = Math.abs((kx - ax) * (bz - az) - (kz - az) * (bx - ax));
+    if (cr > 1e-9) m = Math.min(m, A * B * C / (2 * cr));
+  }
+  return m;
+}
+function cutAt(P, d, after) {
+  const c = cumulative2(P);
+  let k = 1;
+  while (k < P.length - 1 && c[k] < d) k++;
+  const f = Math.max(0, Math.min(1, (d - c[k - 1]) / Math.max(1e-9, c[k] - c[k - 1])));
+  const q = [P[k - 1][0] + (P[k][0] - P[k - 1][0]) * f, P[k - 1][1] + (P[k][1] - P[k - 1][1]) * f];
+  return after ? [q, ...P.slice(f >= 1 - 1e-6 ? k + 1 : k)] : [...P.slice(0, f <= 1e-6 ? k - 1 : k), q];
+}
+var RMIN = 5;
+var CUT_STEP = 1;
+var CUT_MAX = 8;
+function widenTightTurns(net, cls = null) {
+  const st = { tightBefore: 0, tightAfter: 0, laneCuts: 0, cutMetres: 0 };
+  if (!net?.graph) return st;
+  const by = net.graph.byId;
+  const turning = (c) => c.kind === "connector" && (c.turn === "left" || c.turn === "right" || c.turn === "straight");
+  const cons = net.graph.paths.filter((c) => turning(c) && c.prev.length === 1 && c.next.length === 1 && by.get(c.prev[0])?.kind === "lane" && by.get(c.next[0])?.kind === "lane");
+  const offCount = (P) => {
+    if (!cls) return 0;
+    let n = 0;
+    for (const q of P) {
+      const k = cls(q[0], q[1]);
+      if (!(k >= 0 && k <= 3)) n++;
+    }
+    return n;
+  };
+  const cur = new Map(cons.map((c) => [c, c.pts]));
+  const rad = new Map(cons.map((c) => [c, tightestRadius(c.pts)]));
+  st.tightBefore = cons.filter((c) => rad.get(c) < RMIN).length;
+  const cut = /* @__PURE__ */ new Map();
+  const budget = (p, e) => {
+    const L2 = p.len, other = cut.get(`${p.id}|${e === "b" ? "a" : "b"}`) || 0;
+    let mx = Math.min(CUT_MAX, L2 - Math.max(3, 0.4 * L2) - other);
+    if (e === "b" && p.stop?.line) mx = Math.min(mx, L2 - (p.stop.at + 0.6));
+    return Math.max(0, mx);
+  };
+  const lanePts = (p) => {
+    let P = p.pts;
+    const da = cut.get(`${p.id}|a`) || 0, db = cut.get(`${p.id}|b`) || 0;
+    if (db) P = cutAt(P, p.len - db, false);
+    if (da) P = cutAt(P, da, true);
+    return P;
+  };
+  const build = (c) => {
+    const A = lanePts(by.get(c.prev[0])), B = lanePts(by.get(c.next[0]));
+    return resample(cubicJoin(A[A.length - 1], dirOver(A, true), B[0], dirOver(B, false)), 0.5);
+  };
+  const atEnd = /* @__PURE__ */ new Map();
+  for (const c of cons) for (const k of [`${c.prev[0]}|b`, `${c.next[0]}|a`]) {
+    if (!atEnd.has(k)) atEnd.set(k, []);
+    atEnd.get(k).push(c);
+  }
+  for (let it = 0; it < CUT_MAX / CUT_STEP; it++) {
+    let changed = false;
+    for (const c of cons) {
+      if (rad.get(c) >= RMIN) continue;
+      const ka = `${c.prev[0]}|b`, kb = `${c.next[0]}|a`;
+      let best = null;
+      for (const keys of [[ka], [kb], [ka, kb]]) {
+        const ok = keys.every((k) => {
+          const [id, e] = k.split("|");
+          return (cut.get(k) || 0) + CUT_STEP <= budget(by.get(id), e) + 1e-6;
+        });
+        if (!ok) continue;
+        for (const k of keys) cut.set(k, (cut.get(k) || 0) + CUT_STEP);
+        const affected = new Set(keys.flatMap((k) => atEnd.get(k)));
+        const trial = /* @__PURE__ */ new Map();
+        let fine = true, gain = 0;
+        for (const x of affected) {
+          const P = build(x), r = tightestRadius(P), r0 = rad.get(x);
+          if (r < Math.min(r0, RMIN) - 0.05 || offCount(P) > offCount(cur.get(x))) {
+            fine = false;
+            break;
+          }
+          gain += Math.min(r, RMIN) - Math.min(r0, RMIN);
+          trial.set(x, [P, r]);
+        }
+        for (const k of keys) cut.set(k, cut.get(k) - CUT_STEP);
+        if (fine && gain > 0.05 && (!best || gain > best.gain)) best = { keys, trial, gain };
+      }
+      if (!best) continue;
+      for (const k of best.keys) cut.set(k, (cut.get(k) || 0) + CUT_STEP);
+      for (const [x, [P, r]] of best.trial) {
+        cur.set(x, P);
+        rad.set(x, r);
+      }
+      changed = true;
+    }
+    if (!changed) break;
+  }
+  const cutLanes = /* @__PURE__ */ new Set();
+  for (const [k, d] of cut) if (d) {
+    cutLanes.add(k.split("|")[0]);
+    st.laneCuts++;
+    st.cutMetres += d;
+  }
+  for (const id of cutLanes) {
+    const p = by.get(id), da = cut.get(`${id}|a`) || 0;
+    p.pts = lanePts(p);
+    p.cum = cumulative2(p.pts);
+    p.len = p.cum[p.cum.length - 1];
+    if (p.stop) p.stop.at = Math.max(0, Math.min(p.stop.at - da, p.len - 0.3));
+  }
+  for (const c of cons) {
+    if (cur.get(c) === c.pts) continue;
+    c.pts = cur.get(c);
+    c.cum = cumulative2(c.pts);
+    c.len = c.cum[c.cum.length - 1];
+  }
+  st.tightAfter = cons.filter((c) => rad.get(c) < RMIN).length;
+  st.cutMetres = Math.round(st.cutMetres);
+  return st;
+}
+
+// viewer/streets/roadLevels.js
+var MOVE_TOL = 0.2;
+var RMS_MAX = 0.5;
+var MOVE_MAX = 3;
+function fittedY(node, ground, noData) {
+  const R = node.reach || 6, pts = [[0, 0]];
+  for (const [f, cnt] of [[0.35, 8], [0.7, 12], [1, 16]]) for (let k = 0; k < cnt; k++) {
+    const a = k / cnt * Math.PI * 2;
+    pts.push([Math.cos(a) * R * f, Math.sin(a) * R * f]);
+  }
+  let s = 0;
+  const ys = pts.map(([dx, dz]) => ground(node.x + dx, node.z + dz));
+  if (noData && pts.some(([dx, dz]) => noData(node.x + dx, node.z + dz))) return null;
+  for (const y of ys) s += y;
+  const y0 = s / ys.length, gx = node.plane?.gx ?? 0, gz = node.plane?.gz ?? 0;
+  let e = 0;
+  pts.forEach(([dx, dz], k) => {
+    e += (ys[k] - (y0 + gx * dx + gz * dz)) ** 2;
+  });
+  return { y: y0, rms: Math.sqrt(e / ys.length) };
+}
+function relevelRoads(net, ground, noData = null) {
+  const st = { nodes: 0, maxMove: 0, roads: 0, skippedStructure: 0 };
+  if (!net?.nodes) return st;
+  const realSpan = (rr, sp) => {
+    if (!noData) return true;
+    for (let s = sp.s0; s <= sp.s1; s += 2) {
+      const e = evalAlignment(rr.al, s);
+      if (!noData(e.x, e.z)) return true;
+    }
+    return false;
+  };
+  const fixedRoad = (rr) => (rr.bridges || []).some((sp) => realSpan(rr, sp)) || (rr.tunnels || []).some((sp) => realSpan(rr, sp)) || rr.prof?.mode && rr.prof.mode !== "terrain";
+  const moved = /* @__PURE__ */ new Set();
+  for (const node of net.nodes) {
+    if (node.src?.y != null || !node.arms?.length) continue;
+    const fit = fittedY(node, ground, noData);
+    if (fit == null) {
+      st.skippedNoData = (st.skippedNoData || 0) + 1;
+      continue;
+    }
+    if (fit.rms > RMS_MAX) {
+      st.skippedRough = (st.skippedRough || 0) + 1;
+      continue;
+    }
+    const y0 = fit.y, d = node.y - y0;
+    if (Math.abs(d) <= MOVE_TOL) continue;
+    if (Math.abs(d) > MOVE_MAX) {
+      st.skippedBig = (st.skippedBig || 0) + 1;
+      continue;
+    }
+    if (node.arms.some((a) => fixedRoad(a.road))) {
+      st.skippedStructure++;
+      continue;
+    }
+    node.y = y0;
+    moved.add(node);
+    st.nodes++;
+    if (Math.abs(d) > st.maxMove) {
+      st.maxMove = Math.abs(d);
+      st.maxAt = [Math.round(node.x), Math.round(node.z)];
+    }
+  }
+  for (const rr of net.roads) {
+    if (!moved.has(rr.A) && !moved.has(rr.B)) continue;
+    const { armA: aA, armB: aB, al, L: L2, type } = rr;
+    const ya = planeY(rr.A, aA.ox, aA.oz), yb = planeY(rr.B, aB.ox, aB.oz);
+    const free = Math.max(1, L2 - (rr.surf?.A.pin ?? 0) - (rr.surf?.B.pin ?? 0));
+    const need = Math.abs(yb - ya) / free / (0.92 * 0.9);
+    const grade = Math.max(type.maxGrade, need);
+    const groundAt = (s) => {
+      const e = evalAlignment(al, s);
+      return ground(e.x, e.z);
+    };
+    rr.prof = buildProfile(rr.src, L2, { ya, yb, fixed: pinnedProfile(rr) }, groundAt, grade);
+    blendProfileEnds(rr);
+    st.roads++;
+  }
+  st.maxMove = Math.round(st.maxMove * 100) / 100;
   return st;
 }
 
@@ -9025,6 +9409,14 @@ function compactAtlas(at) {
     stats: { regions: at.stats?.regions, bytes: d8.length, bytesBefore: at.data.length }
   };
 }
+function applyRoadOverrides(roads, ov) {
+  for (const r of roads.roads) {
+    const s = ov?.roadSurface?.[r.id];
+    if (s) (r.meta ??= {}).surface = s;
+    const way = /^r(\d+)_/.exec(r.id)?.[1], c = way ? ov?.centreLine?.[way] : null;
+    if (c === "none" && r.lanes) r.lanes = { ...r.lanes, center: { ...r.lanes.center || {}, kind: "none" } };
+  }
+}
 function buildRoadData(o) {
   const { roads, surf, hm, bounds, onBuilding = () => false } = o;
   const times = {};
@@ -9042,17 +9434,24 @@ function buildRoadData(o) {
   lap("surfaces + width fit");
   const net = buildRoadNetwork(roads, { ground });
   lap("buildRoadNetwork");
+  const laneJoins = joinLaneGraph(net);
+  const offGrid = (x, z) => {
+    const h = hm.h;
+    return x < h.x0 || z < h.z0 || x > h.x0 + (h.cols - 1) * h.step || z > h.z0 + (h.rows - 1) * h.step;
+  };
+  const levels = relevelRoads(net, ground, (x, z) => offGrid(x, z) || hm.h.min != null && hm.ground(x, z) <= hm.h.min + 0.02);
   const pv = v2 ? afterNetworkV2(net, ctx, surf) : null;
   if (v2) lap("measured paint");
   const laneGraph = v2 ? refineLaneGraph(net, prep, pv.inventory) : null;
   if (v2) {
     pv.inventory.stats.laneGraph = laneGraph;
+    pv.inventory.stats.laneJoins = laneJoins;
     lap("lane graph");
   }
   const errors = net.issues.filter((i) => i.level === "error");
   const byCode = {};
   for (const i of errors) byCode[i.code] = (byCode[i.code] || 0) + 1;
-  const netInfo = { roads: net.roads.length, nodes: net.nodes.length, errors: errors.length, byCode, warnings: net.issues.length - errors.length };
+  const netInfo = { levels, roads: net.roads.length, nodes: net.nodes.length, errors: errors.length, byCode, warnings: net.issues.length - errors.length };
   const built = buildLaneRoadMesh(net, { markings: true });
   if (v2) pv.inventory.stats.parkingVerticesUnpainted = unpaintParking(built, ctx);
   let priority = null;
@@ -9064,10 +9463,19 @@ function buildRoadData(o) {
   }
   const parts = {};
   let carvedCells = 0, triangles = 0, surfaceStats = null, surfaceData = null;
+  const welds = [];
   if (surf) {
     const lineCuts = v2 ? pv.inventory.crossings.filter((c) => c.poly).map((c) => c.poly) : null;
+    if (o.levelPins) {
+      const H0 = prep.H, pin = o.levelPins;
+      prep.H = (x, z) => {
+        const h = H0(x, z), p = pin(x, z);
+        return p ? h + (p[0] - h) * p[1] : h;
+      };
+    }
     const S2 = buildSurfaceRoads(prep, built, surfaceAttribute(net, built.asphalt), roads, onBuilding, priority ? { priority, dropFolds: true, lineCuts } : {});
     for (const c of S2.carve) carvedCells += hm.carve(c.position, c.index, CARVE);
+    for (const part of Object.values(S2.parts)) welds.push({ position: part.position, index: part.index });
     for (const [name, part] of Object.entries(S2.parts)) {
       parts[name] = { position: part.position, normal: part.normal, uv: part.uv, attributes: part.attributes, index: part.index, aSurf: part.extra };
       triangles += part.index.length / 3;
@@ -9080,6 +9488,7 @@ function buildRoadData(o) {
     if (!part.vertexCount) continue;
     const index = clipToTile(part, bounds);
     carvedCells += hm.carve(part.position, index, CARVE);
+    welds.push({ position: part.position, index });
     const attributes = {};
     for (const [k, a] of Object.entries(part.attributes)) attributes[k] = { array: a.array, itemSize: a.itemSize };
     parts[name] = {
@@ -9092,8 +9501,12 @@ function buildRoadData(o) {
     };
     triangles += index.length / 3;
   }
-  const atlas = compactAtlas(built.atlas);
   lap("road meshes + carve");
+  const noDTM = hm.h?.min != null ? (x, z) => hm.ground(x, z) <= hm.h.min + 0.02 : () => false;
+  const weldSkip = (x, z) => noDTM(x, z) || ground !== hm.ground && Math.abs(ground(x, z) - hm.ground(x, z)) > 0.3;
+  const weldedCells = hm.weld ? hm.weld(welds, { skip: weldSkip }) : 0;
+  const atlas = compactAtlas(built.atlas);
+  lap("terrain weld");
   if (v2) {
     const paintPart = paintMeshV2(pv.items, prep, bounds);
     if (paintPart) {
@@ -9102,7 +9515,7 @@ function buildRoadData(o) {
     }
     lap("paint decal");
   }
-  const out = { parts, atlas, carvedCells, triangles, surfaceStats, surfaceData, netInfo, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1" };
+  const out = { parts, atlas, carvedCells, weldedCells, triangles, surfaceStats, surfaceData, netInfo, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1" };
   if (o.keep) Object.assign(out, { prep, built });
   return out;
 }
@@ -9651,6 +10064,25 @@ function roadDeckGround(heroes, ground) {
       return road(X);
     }
     return ground(x, z);
+  };
+}
+function roadDeckPins(heroes) {
+  const decks = (heroes || []).filter((h) => h.kind === "road_over_rail").map((h) => ({ f: heroFrame(h), d: h.deck }));
+  if (!decks.length) return null;
+  const END_PIN = 6, smooth3 = (t) => t * t * (3 - 2 * t);
+  return (x, z) => {
+    for (const { f, d } of decks) {
+      const [X, Y] = f.toLocal(x, z);
+      if (X >= d.x0 && X <= d.x1) continue;
+      const past = X > d.x1 ? X - d.x1 : d.x0 - X;
+      if (past >= END_PIN) continue;
+      const out = Math.max(0, d.kerb_sw - Y, Y - d.kerb_ne);
+      if (out >= 1) continue;
+      const g = (d.road_ends[1] - d.road_ends[0]) / (d.x1 - d.x0);
+      const y = X > d.x1 ? d.road_ends[1] + g * past : d.road_ends[0] - g * past;
+      return [y, smooth3(1 - past / END_PIN) * (1 - out)];
+    }
+    return null;
   };
 }
 function bridgeRings(doc, heroes) {
@@ -10307,24 +10739,24 @@ function roundKinks(paths) {
     }
     if (mx * 180 / Math.PI > KINK_DEG) kink[n] = 1;
   }
-  const dist2 = new Float32Array(M).fill(Infinity), queue = [];
+  const dist3 = new Float32Array(M).fill(Infinity), queue = [];
   for (let n = 0; n < M; n++) if (kink[n]) {
-    dist2[n] = 0;
+    dist3[n] = 0;
     queue.push(n);
   }
   if (!queue.length) return paths;
   for (let h = 0; h < queue.length; h++) {
     const n = queue[h];
     for (const m of ins[n].concat(outs[n])) {
-      const d = dist2[n] + Math.hypot(x[m] - x[n], z[m] - z[n]);
-      if (d <= KINK_REACH && d < dist2[m]) {
-        dist2[m] = d;
+      const d = dist3[n] + Math.hypot(x[m] - x[n], z[m] - z[n]);
+      if (d <= KINK_REACH && d < dist3[m]) {
+        dist3[m] = d;
         queue.push(m);
       }
     }
   }
   const free = [];
-  for (let n = 0; n < M; n++) if (dist2[n] <= KINK_REACH && ins[n].length && outs[n].length) free.push(n);
+  for (let n = 0; n < M; n++) if (dist3[n] <= KINK_REACH && ins[n].length && outs[n].length) free.push(n);
   let X = Float64Array.from(x), Z = Float64Array.from(z);
   for (let it = 0; it < KINK_ITER; it++) {
     const nX = X.slice(), nZ = Z.slice();
@@ -10362,7 +10794,9 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null) {
   const t0 = performance.now();
   const raw = net.graph.paths.filter((p) => p.len > 0.2 && p.pts.length >= 2);
   const fitStats = { points: 0, moved: 0, maxShift: 0 };
-  const src = roundKinks(grid ? fitToSurface(raw, grid, fitStats) : raw);
+  const fitted = grid ? fitToSurface(raw, grid, fitStats) : raw;
+  if (grid) fitStats.rejoined = joinLaneGraph({ graph: { paths: fitted, byId: new Map(fitted.map((p) => [p.id, p])) } }).gapsBefore;
+  const src = roundKinks(fitted);
   const idx = new Map(src.map((p, i) => [p.id, i]));
   const P = src.length;
   let nPts = 0;
@@ -10819,10 +11253,7 @@ async function buildTileData(entry, base) {
   }
   const surf = entry.surface && F.surfaces ? await step("fetch surfaces", () => get(F.surfaces)) : null;
   const ov = await overrides(base);
-  for (const r of roads.roads) {
-    const s = ov.roadSurface?.[r.id];
-    if (s) (r.meta ??= {}).surface = s;
-  }
+  applyRoadOverrides(roads, ov);
   const hm = new Heightmap(tHdr, tBuf);
   const paint = entry.paint || PAINT;
   const markings = F.markings && paint === "v2" ? await step("fetch markings", () => get(F.markings).catch(() => null)) : null;
@@ -10837,6 +11268,7 @@ async function buildTileData(entry, base) {
     bounds,
     paint,
     ground: roadGround,
+    levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees,
     onBuilding: (x, z) => onRoof(roofs, x, z)
   }));
