@@ -1014,7 +1014,10 @@ async function main() {
       const cam = params.get("cam")?.split(",").map(Number);           // ?cam=x,z,height-above-ground
       if (cam?.length === 3) camera.position.set(cam[0], hm.surface(cam[0], cam[1]) + cam[2], cam[1]);
       else camera.position.set(x + 70, y + 45, z + 110);
-      controls.target.set(x, y + (cam?.length === 3 ? 12 : 0), z);
+      // the target 12 m up (a church's body) unless the camera stands at eye level (<= 3 m): then no higher than the
+      // camera, or the orbit's polar limit lifts the camera to the target's height (a grass view at 1.7 m ended 16 m up)
+      const eye = cam?.length === 3 && cam[2] <= 3;
+      controls.target.set(x, eye ? Math.min(y + cam[2], camera.position.y - 0.05) : y + (cam?.length === 3 ? 12 : 0), z);
     },
   };
   let third = null;                       // the third-person character (?view=third), see below
