@@ -244,3 +244,8 @@ All by `debug/gpuAB.js alternate`, 6 rounds, the two variants switched live in o
 Lead found: **~1.3 ms of GPU compute every frame** in the city with grass off (renderer.backend.timestampQueryPool
 .compute): find which system dispatches it (pigeons? water? wind? flags?) and whether it can skip idle frames.
 The lab's +1.25 ms for a meadow (measured RED) is not confirmed in the city.
+Lead followed: the ~1.3 ms of compute a frame is (almost all) the **Firmament volumetric clouds** (vendor/firmament/
+firmamentClouds.js: trace + resolve every frame, cloud shadow / panorama passes): compute 1.24-1.27 ms at the default
+`resolutionScale` 1, 1.13 at 0.75, 0.96 at 0.5 (live in the page, look not judged): the resolution only buys ~0.3 ms;
+the rest is the fixed passes. For the sky and clouds rework (owner: later): a cheaper cloud path (update the fixed
+passes every N frames, a lower trace lattice far from the sun, or baked cloud layers when the camera is low).
