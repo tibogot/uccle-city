@@ -4,104 +4,103 @@
  "stats": {
   "banks": 30,
   "banks_sunk_uphill": 5,
-  "bench_backless": 13,
-  "bench_direction_tag": 7,
-  "bench_kept_blocked": 22,
+  "bench_backless": 8,
+  "bench_direction_tag": 6,
+  "bench_kept_blocked": 13,
   "bench_metal": 16,
-  "bench_moved": 34,
+  "bench_moved": 26,
   "bench_moved_m_max": 2.32,
-  "bench_park": 258,
-  "bench_street": 55,
-  "bench_sunk_uphill": 6,
-  "benches": 326,
-  "bike_rows": 181,
-  "bike_rows_across": 89,
-  "bike_rows_along": 56,
+  "bench_park": 165,
+  "bench_street": 42,
+  "bench_sunk_uphill": 2,
+  "benches": 215,
+  "bike_rows": 120,
+  "bike_rows_across": 53,
+  "bike_rows_along": 46,
   "bike_rows_blocked": 2,
-  "bike_rows_free": 38,
-  "bike_rows_no_room": 29,
-  "bikes_not_drawn_floor": 4,
-  "bikes_not_drawn_wall_loops": 6,
-  "bins": 538,
-  "bins_bench": 192,
-  "bins_bench_blocked": 21,
-  "bins_main_narrow": 314,
-  "bins_main_road": 225,
+  "bike_rows_free": 23,
+  "bike_rows_no_room": 22,
+  "bikes_not_drawn_wall_loops": 3,
+  "bins": 413,
+  "bins_bench": 129,
+  "bins_bench_blocked": 14,
+  "bins_main_narrow": 319,
+  "bins_main_road": 183,
   "bins_skip_tram_platform": 95,
-  "bins_square": 13,
-  "bins_square_short": 15,
-  "bins_stop": 108,
-  "bins_stop_blocked": 24,
+  "bins_square": 10,
+  "bins_square_short": 18,
+  "bins_stop": 91,
+  "bins_stop_blocked": 41,
   "bins_stop_no_room": 51,
-  "boxes": 97,
-  "boxes_free": 3,
-  "boxes_lane": 72,
-  "boxes_no_room": 23,
-  "boxes_sidewalk": 22,
+  "boxes": 69,
+  "boxes_free": 1,
+  "boxes_lane": 52,
+  "boxes_no_room": 21,
+  "boxes_sidewalk": 16,
   "boxes_try_tram": 15,
   "glass_off_sidewalk": 9,
   "glass_on_sidewalk": 6,
   "glass_sites": 15,
   "glass_underground_kept_streetlife": 7,
-  "hoops": 581,
-  "hoops_dropped": 30,
-  "hoops_no_room": 107,
-  "hoops_wanted": 718
+  "hoops": 367,
+  "hoops_dropped": 27,
+  "hoops_no_room": 80,
+  "hoops_wanted": 474
  },
  "perTile": {
   "D1": {
-   "benches": 16,
+   "benches": 0,
    "hoops": 0,
-   "boxes": 5,
-   "bins": 15,
+   "boxes": 1,
+   "bins": 0,
    "banks": 0
   },
   "E1": {
-   "benches": 8,
-   "hoops": 53,
-   "boxes": 16,
-   "bins": 13,
+   "benches": 0,
+   "hoops": 6,
+   "boxes": 9,
+   "bins": 1,
    "banks": 0
   },
   "F1": {
-   "benches": 19,
-   "hoops": 41,
-   "boxes": 6,
-   "bins": 10,
+   "benches": 0,
+   "hoops": 18,
+   "boxes": 1,
+   "bins": 2,
    "banks": 0
   },
   "G1": {
    "benches": 0,
-   "hoops": 37,
-   "boxes": 4,
-   "bins": 7,
+   "hoops": 20,
+   "boxes": 3,
+   "bins": 2,
    "banks": 0
   },
   "H1": {
    "benches": 6,
    "hoops": 32,
-   "boxes": 5,
-   "bins": 7,
+   "boxes": 4,
+   "bins": 5,
    "banks": 0
   },
   "I1": {
    "benches": 0,
-   "hoops": 32,
+   "hoops": 23,
    "boxes": 5,
-   "bins": 5,
+   "bins": 2,
    "banks": 0
   },
   "D2": {
-   "benches": 1,
-   "hoops": 8,
-   "boxes": 5,
-   "bins": 4,
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 0,
    "banks": 2
   },
   "E2": {
    "benches": 8,
    "hoops": 13,
-   "boxes": 5,
+   "boxes": 3,
    "bins": 11,
    "banks": 0
   },
@@ -130,27 +129,27 @@
    "benches": 0,
    "hoops": 6,
    "boxes": 2,
-   "bins": 9,
+   "bins": 5,
    "banks": 0
   },
   "J2": {
-   "benches": 10,
-   "hoops": 22,
+   "benches": 0,
+   "hoops": 0,
    "boxes": 0,
-   "bins": 11,
+   "bins": 1,
    "banks": 0
   },
   "C3": {
    "benches": 2,
    "hoops": 0,
    "boxes": 0,
-   "bins": 10,
+   "bins": 6,
    "banks": 2
   },
   "D3": {
    "benches": 4,
    "hoops": 8,
-   "boxes": 3,
+   "boxes": 2,
    "bins": 3,
    "banks": 0
   },
@@ -190,24 +189,24 @@
    "banks": 0
   },
   "J3": {
-   "benches": 3,
+   "benches": 1,
    "hoops": 0,
    "boxes": 0,
-   "bins": 7,
+   "bins": 3,
    "banks": 2
   },
   "B4": {
-   "benches": 8,
-   "hoops": 21,
+   "benches": 0,
+   "hoops": 0,
    "boxes": 0,
-   "bins": 7,
+   "bins": 1,
    "banks": 0
   },
   "C4": {
-   "benches": 5,
-   "hoops": 18,
+   "benches": 4,
+   "hoops": 14,
    "boxes": 1,
-   "bins": 5,
+   "bins": 4,
    "banks": 0
   },
   "D4": {
@@ -260,24 +259,24 @@
    "banks": 0
   },
   "K4": {
-   "benches": 6,
-   "hoops": 8,
+   "benches": 0,
+   "hoops": 0,
    "boxes": 0,
-   "bins": 11,
+   "bins": 1,
    "banks": 0
   },
   "A5": {
    "benches": 0,
-   "hoops": 8,
+   "hoops": 0,
    "boxes": 0,
-   "bins": 2,
+   "bins": 0,
    "banks": 2
   },
   "B5": {
    "benches": 7,
-   "hoops": 7,
+   "hoops": 0,
    "boxes": 0,
-   "bins": 11,
+   "bins": 10,
    "banks": 0
   },
   "C5": {
@@ -340,35 +339,35 @@
    "benches": 0,
    "hoops": 0,
    "boxes": 0,
-   "bins": 5,
+   "bins": 4,
    "banks": 0
   },
   "L5": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 1,
+   "banks": 0
+  },
+  "M5": {
+   "benches": 1,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 5,
+   "banks": 0
+  },
+  "N5": {
    "benches": 1,
    "hoops": 0,
    "boxes": 0,
    "bins": 3,
    "banks": 0
   },
-  "M5": {
-   "benches": 1,
-   "hoops": 5,
-   "boxes": 0,
-   "bins": 9,
-   "banks": 0
-  },
-  "N5": {
-   "benches": 6,
-   "hoops": 7,
-   "boxes": 0,
-   "bins": 5,
-   "banks": 0
-  },
   "B6": {
-   "benches": 8,
-   "hoops": 3,
-   "boxes": 1,
-   "bins": 7,
+   "benches": 2,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 2,
    "banks": 4
   },
   "C6": {
@@ -449,17 +448,17 @@
    "banks": 0
   },
   "N6": {
-   "benches": 4,
+   "benches": 1,
    "hoops": 0,
    "boxes": 0,
-   "bins": 4,
+   "bins": 1,
    "banks": 0
   },
   "B7": {
-   "benches": 7,
-   "hoops": 9,
+   "benches": 0,
+   "hoops": 0,
    "boxes": 0,
-   "bins": 5,
+   "bins": 1,
    "banks": 0
   },
   "C7": {
@@ -530,13 +529,6 @@
    "hoops": 0,
    "boxes": 0,
    "bins": 1,
-   "banks": 0
-  },
-  "B8": {
-   "benches": 7,
-   "hoops": 6,
-   "boxes": 1,
-   "bins": 6,
    "banks": 0
   },
   "C8": {
@@ -610,10 +602,10 @@
    "banks": 0
   },
   "C9": {
-   "benches": 2,
+   "benches": 1,
    "hoops": 0,
    "boxes": 0,
-   "bins": 2,
+   "bins": 1,
    "banks": 0
   },
   "D9": {
@@ -680,24 +672,24 @@
    "banks": 0
   },
   "O9": {
-   "benches": 2,
+   "benches": 1,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 1,
+   "banks": 0
+  },
+  "D10": {
+   "benches": 0,
    "hoops": 0,
    "boxes": 0,
    "bins": 2,
    "banks": 0
   },
-  "D10": {
-   "benches": 3,
+  "E10": {
+   "benches": 0,
    "hoops": 0,
    "boxes": 0,
    "bins": 5,
-   "banks": 0
-  },
-  "E10": {
-   "benches": 6,
-   "hoops": 10,
-   "boxes": 0,
-   "bins": 7,
    "banks": 2
   },
   "F10": {

@@ -54,7 +54,7 @@ ROOT = HERE.parent.parent
 sys.path.insert(0, str(ROOT / "pipeline"))
 sys.path.insert(0, str(ROOT / "tools" / "streetlife"))
 sys.path.insert(0, str(ROOT / "tools" / "stops"))
-from common import TILES, all_tiles, wgs_to_local  # noqa: E402
+from common import TILES, all_tiles, wgs_to_local, study_polygon_local  # noqa: E402
 from build_streetlife import Tile, heading_to_road  # noqa: E402
 from build_stops import Street, SHELTER, PANEL, MAIN, NOT_ROAD, h01  # noqa: E402
 
@@ -338,7 +338,13 @@ def place_box(F: Furn, e, out, stats, t_, n_, d, rr, k):
 
 
 # ------------------------------------------------------------------------------------------------ bins
+STUDY = None
+
+
 def bin_ok(F: Furn, cx, cz, yaw, piece, need_walk=True, others=None, min_d=15.0):
+    global STUDY
+    STUDY = STUDY or study_polygon_local().buffer(-1.0)
+    if not STUDY.contains(Point(cx, cz)): return None                  # (outside Uccle no buildings are drawn)
     S = F.S
     fp = FOOT[piece]
     poly = foot_poly(S, cx, cz, yaw, fp)
@@ -487,11 +493,13 @@ def osm_sources(raw: Path):
     area = json.loads((raw / "osm" / "area.json").read_text(encoding="utf-8"))["elements"]
     nodes = {e["id"]: e for e in area if e["type"] == "node"}
     benches, bikes, parks = [], [], []
+    study = study_polygon_local()                    # the drawn city (the tiles' features are clipped to it too)
     for e in area:
         t = e.get("tags") or {}
         if e["type"] == "node" and t.get("amenity") in ("bench", "bicycle_parking"):
             if t.get("access") == "private" or t.get("indoor") == "yes" or t.get("level") not in (None, "0"): continue
             x, z = wgs_to_local(e["lon"], e["lat"])
+            if not study.contains(Point(float(x), float(z))): continue
             rec = {"id": e["id"], "x": float(x), "z": float(z), "tags": t}
             (benches if t["amenity"] == "bench" else bikes).append(rec)
         if e["type"] == "way" and t.get("leisure") == "park":
