@@ -37,9 +37,18 @@ Parc de Wolvendael (2 nearest drawn), Saint-Pierre tower collision, ridge perche
 up (needs lighting.js: sky below the horizon in the fog colour, or a wider far ring while high); the street test's
 autopilot cuts a corner; a real-time foreground run on a quiet GPU; the city has no running Weather yet.
 
-**Running (agents, 2026-11-13 ~05:00):** ground textures (`claude/groundtex`,
-port 8848: real CC0 scans for lawn / verge / forest floor / gravel / soil / sand on the terrain instead of the procedural
-noise ground (owner: "the grass looks kind of bad"), anti-tiling, one shared material, `?groundtex=0` = old).
+**Merged 2026-11-13: GROUND TEXTURES** (docs/materials/GROUND.md): 7 CC0 scans (ambientCG / Poly Haven: lawn, rough,
+dry, beech litter, gravel, soil, sand) in 2 KTX2 arrays (18 MB), hex anti-tiling, height blend between covers, far blend
+to the orthophoto, one shared shader; `?groundtex=0` = procedural. Left: COST at street level +0.3-0.5 ms where two
+covers meet (lawn alone +0.14; target <= +0.2: cuts listed in GROUND.md); the road engine's own VERGE strips and park
+FOOTWAY meshes are still procedural (roadPaint.js: the flat bright verge seen from a car); grass type by noise, not by
+OSM kind (park / garden / pitch); no WebP fallback; grass-blade shimmer in the nearest 2-4 m (the Grass Lab will cover it).
+
+**Proposed 2026-11-13, waiting for the owner:** the brown band under the horizon from 500 m up -> (1) sky shader: below
+the horizon fade into the haze colour (small, lighting / Firmament); (2) later, with the Flemish DTM job: a coarse
+"horizon ring" landscape (~20 km, 25-50 m heights + a low-res colour image) around the city. Sky + clouds rework later.
+
+**Running (agents):** none (2026-11-13 ~06:45).
 
 **Decided 2026-11-13 (owner): OUR OWN GRASS for the city, after the ground textures merge.** Examples to learn from, not
 to copy: alezen9/revo-realms (MIT: compute + wrap tile + indirect draws, ~1.28 M blades), game-engine-v1's Revo port
