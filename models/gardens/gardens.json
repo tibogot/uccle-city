@@ -1,0 +1,325 @@
+{
+ "asset": "Front-garden kit, ironwork: railings, pedestrian gates, driveway gate leaves (tools/blender/gardenKit.py)",
+ "pieces": {
+  "rail_spear_lod0": {
+   "slots": [
+    "iron_paint",
+    "iron_tip"
+   ],
+   "triangles": 1616,
+   "size_m": [
+    1.017,
+    0.027,
+    1.031
+   ]
+  },
+  "gate_spear_lod0": {
+   "slots": [
+    "iron_paint",
+    "iron_tip",
+    "steel_dark"
+   ],
+   "triangles": 2294,
+   "size_m": [
+    1.0,
+    0.096,
+    1.166
+   ]
+  },
+  "cargate_spear_lod0": {
+   "slots": [
+    "iron_paint",
+    "iron_tip",
+    "steel_dark"
+   ],
+   "triangles": 3496,
+   "size_m": [
+    1.6,
+    0.096,
+    1.426
+   ]
+  },
+  "rail_flat_lod0": {
+   "slots": [
+    "iron_paint"
+   ],
+   "triangles": 640,
+   "size_m": [
+    1.0,
+    0.05,
+    1.03
+   ]
+  },
+  "gate_flat_lod0": {
+   "slots": [
+    "iron_paint",
+    "steel_dark"
+   ],
+   "triangles": 1060,
+   "size_m": [
+    0.996,
+    0.096,
+    1.14
+   ]
+  },
+  "cargate_flat_lod0": {
+   "slots": [
+    "iron_paint",
+    "steel_dark"
+   ],
+   "triangles": 1572,
+   "size_m": [
+    1.596,
+    0.096,
+    1.4
+   ]
+  },
+  "rail_rings_lod0": {
+   "slots": [
+    "iron_paint"
+   ],
+   "triangles": 2208,
+   "size_m": [
+    1.007,
+    0.03,
+    1.035
+   ]
+  },
+  "gate_rings_lod0": {
+   "slots": [
+    "iron_paint",
+    "steel_dark"
+   ],
+   "triangles": 2168,
+   "size_m": [
+    0.996,
+    0.096,
+    1.14
+   ]
+  },
+  "cargate_rings_lod0": {
+   "slots": [
+    "iron_paint",
+    "steel_dark"
+   ],
+   "triangles": 3580,
+   "size_m": [
+    1.596,
+    0.096,
+    1.4
+   ]
+  },
+  "rail_spear_lod1": {
+   "slots": [
+    "iron_paint",
+    "iron_tip"
+   ],
+   "triangles": 416,
+   "size_m": [
+    1.016,
+    0.018,
+    1.027
+   ]
+  },
+  "gate_spear_lod1": {
+   "slots": [
+    "iron_paint",
+    "iron_tip",
+    "steel_dark"
+   ],
+   "triangles": 570,
+   "size_m": [
+    0.997,
+    0.096,
+    1.162
+   ]
+  },
+  "cargate_spear_lod1": {
+   "slots": [
+    "iron_paint",
+    "iron_tip",
+    "steel_dark"
+   ],
+   "triangles": 872,
+   "size_m": [
+    1.597,
+    0.096,
+    1.422
+   ]
+  },
+  "rail_flat_lod1": {
+   "slots": [
+    "iron_paint"
+   ],
+   "triangles": 304,
+   "size_m": [
+    1.0,
+    0.05,
+    1.03
+   ]
+  },
+  "gate_flat_lod1": {
+   "slots": [
+    "iron_paint",
+    "steel_dark"
+   ],
+   "triangles": 388,
+   "size_m": [
+    0.994,
+    0.096,
+    1.14
+   ]
+  },
+  "cargate_flat_lod1": {
+   "slots": [
+    "iron_paint",
+    "steel_dark"
+   ],
+   "triangles": 588,
+   "size_m": [
+    1.594,
+    0.096,
+    1.4
+   ]
+  },
+  "rail_rings_lod1": {
+   "slots": [
+    "iron_paint"
+   ],
+   "triangles": 832,
+   "size_m": [
+    1.007,
+    0.03,
+    1.035
+   ]
+  },
+  "gate_rings_lod1": {
+   "slots": [
+    "iron_paint",
+    "steel_dark"
+   ],
+   "triangles": 752,
+   "size_m": [
+    0.994,
+    0.096,
+    1.14
+   ]
+  },
+  "cargate_rings_lod1": {
+   "slots": [
+    "iron_paint",
+    "steel_dark"
+   ],
+   "triangles": 1244,
+   "size_m": [
+    1.594,
+    0.096,
+    1.4
+   ]
+  },
+  "rail_spear_lod2": {
+   "slots": [
+    "iron_paint"
+   ],
+   "triangles": 80,
+   "size_m": [
+    1.008,
+    0.016,
+    0.945
+   ]
+  },
+  "gate_spear_lod2": {
+   "slots": [
+    "iron_paint"
+   ],
+   "triangles": 144,
+   "size_m": [
+    0.97,
+    0.04,
+    1.08
+   ]
+  },
+  "cargate_spear_lod2": {
+   "slots": [
+    "iron_paint",
+    "steel_dark"
+   ],
+   "triangles": 240,
+   "size_m": [
+    1.57,
+    0.057,
+    1.34
+   ]
+  },
+  "rail_flat_lod2": {
+   "slots": [
+    "iron_paint"
+   ],
+   "triangles": 80,
+   "size_m": [
+    1.0,
+    0.05,
+    1.03
+   ]
+  },
+  "gate_flat_lod2": {
+   "slots": [
+    "iron_paint"
+   ],
+   "triangles": 96,
+   "size_m": [
+    0.97,
+    0.05,
+    1.14
+   ]
+  },
+  "cargate_flat_lod2": {
+   "slots": [
+    "iron_paint",
+    "steel_dark"
+   ],
+   "triangles": 160,
+   "size_m": [
+    1.57,
+    0.062,
+    1.4
+   ]
+  },
+  "rail_rings_lod2": {
+   "slots": [
+    "iron_paint"
+   ],
+   "triangles": 96,
+   "size_m": [
+    1.007,
+    0.03,
+    1.035
+   ]
+  },
+  "gate_rings_lod2": {
+   "slots": [
+    "iron_paint"
+   ],
+   "triangles": 96,
+   "size_m": [
+    0.97,
+    0.04,
+    1.14
+   ]
+  },
+  "cargate_rings_lod2": {
+   "slots": [
+    "iron_paint",
+    "steel_dark"
+   ],
+   "triangles": 152,
+   "size_m": [
+    1.57,
+    0.057,
+    1.4
+   ]
+  }
+ },
+ "frame": "glTF Y up; railings: a 1 m module x 0..1, y 0 = the coping top; gates: x 0 = the hinge, y 0 = the ground; street side = +Z (three.js)",
+ "ao": "COLOR_0 (Cycles AO per vertex, on a coping / the ground)"
+}

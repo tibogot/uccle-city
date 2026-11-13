@@ -53,6 +53,7 @@ import { treeKit } from "./treeKitCity.js";
 import { cityStreetLife } from "./streetlife/cityStreetLife.js";
 import { cityStops } from "./stops/cityStops.js";
 import { cityFurniture } from "./furniture2/cityFurniture.js";
+import { cityGardens } from "./gardens/cityGardens.js";
 import { deckHeight } from "./streets/bridgeDecks.js";
 import { cityGrass } from "./grass/cityGrass.js";
 
@@ -564,6 +565,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const streetLifeP = cityStreetLife.tile(entry.name, own.features);
   const stopsP = cityStops.fetchTile(entry.name);       // the STIB stops and ad panels (viewer/stops/cityStops.js), ?stops=old off
   const furnP = cityFurniture.fetchTile(entry.name);    // benches, bike hoops / boxes, bins, glass banks (viewer/furniture2/), ?furniture=old off
+  const gardensP = cityGardens.fetchTile(entry.name);   // front-garden walls, railings, gates, hedges (viewer/gardens/), ?gardens=0 off
   // the orthophoto for the textured ground's far blend (docs/materials/GROUND.md), fetched alongside the tile data
   const orthoP = groundLook() && F.ortho ? texLoader.loadAsync(new URL(F.ortho, DATA).href).then((t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; }).catch(() => null) : null;
   const d = await tileData(entry);
@@ -641,6 +643,8 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   own.features.add(tram.group);
   const stopCounts = cityStops.addTile(entry.name, stopsDoc, own.features, { shelters: tram.shelterSites });
   const furnCounts = cityFurniture.addTile(entry.name, furnDoc, own.features);
+  const gardenCounts = cityGardens.addTile(entry.name, await gardensP, own.features, (x, z) => hm.surface(x, z));
+  if (gardenCounts) say(`gardens: ${Object.entries(gardenCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/gardens, viewer/gardens)`);
   if (furnCounts) say(`furniture2: ${Object.entries(furnCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/furniture, viewer/furniture2)`);
   if (stopCounts) say(`stops: ${stopCounts.pole} STIB poles, ${stopCounts.shelter} shelters (incl. tram platforms), ${stopCounts.adpanel} ad panels (data/stops, viewer/stops)`);
   await frame("tram");
@@ -670,6 +674,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     removeBridgeDecks(d.bridgeDecks);
     cityKit.removeTile(entry.name);
     cityFurniture.removeTile(entry.name);           // its instances leave the furniture pools
+    cityGardens.removeTile(entry.name);             // its instances leave the garden pools (stand-ins and hedges go with the groups)
     cityStops.removeTile(entry.name);               // its instances leave the stop pools (its stand-ins go with the groups below)
     cityStreetLife.removeTile(entry.name);          // its atlas pages and pooled props (its meshes go with the groups below)
     cityGrass.removeTile(entry.name);               // ?grass=1: out of the grass field
@@ -834,6 +839,7 @@ async function main() {
   await cityKit.start({ scene, updaters, log });                   // ?kit=1: the façade kit (before the first tile and the warm-up)
   await cityStreetLife.start({ scene, updaters, log });            // the street life (shop names, plates, numbers, stops), ?streetlife=0 off
   await cityFurniture.start({ scene, updaters, log });             // benches, bike hoops / boxes, bins, glass banks (viewer/furniture2/), ?furniture=old off
+  await cityGardens.start({ scene, updaters, log });               // front-garden walls, railings, gates, hedges (viewer/gardens/), ?gardens=0 off
   await cityStops.start({ scene, updaters, log });                 // the STIB shelters / poles and the ad panels (viewer/stops/), ?stops=old off
   // the Chapelle de Stalle + its interior cell (tools/blender/stalle*.py, viewer/stalleCity.js) behind ?stalle=1
   if (params.get("stalle") !== "0") await addStalle({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, getView: () => ({ camera, lighting }), getThird: () => third });
