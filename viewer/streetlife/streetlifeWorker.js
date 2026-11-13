@@ -14,12 +14,14 @@ export const BOX_IB = 28, WIN_IB = 8;
 export const rangeOf = (sx, sy, sz) => { const s = [Math.abs(sx), Math.abs(sy), Math.abs(sz)].sort((a, b) => a - b); return Math.max(70, Math.min(600, 350 * s[1])); };
 
 self.onmessage = async (e) => {
-  const { id, url, tile, pageW, pageH, stopsUrl } = e.data;
+  const { id, url, tile, pageW, pageH, stopsUrl, noBubbles } = e.data;
   const t0 = performance.now(), times = {};
   try {
     const r = await fetch(url);
     if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
     const doc = await r.json();
+    // furniture kit 2 (viewer/furniture2/) draws the overground glass banks: this layer keeps the underground chutes only
+    if (noBubbles && doc.glass) doc.glass = doc.glass.filter((g) => g.underground);
     times.fetch = performance.now() - t0;
     let t = performance.now();
     // the STIB stops kit's data (viewer/stops/): its text is laid out here; none for the tile = no stop text (and no old poles)

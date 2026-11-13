@@ -51,6 +51,7 @@ import { cityKit } from "./facadeKit/cityKit.js";
 import { treeKit } from "./treeKitCity.js";
 import { cityStreetLife } from "./streetlife/cityStreetLife.js";
 import { cityStops } from "./stops/cityStops.js";
+import { cityFurniture } from "./furniture2/cityFurniture.js";
 import { deckHeight } from "./streets/bridgeDecks.js";
 import { cityGrass } from "./grass/cityGrass.js";
 
@@ -561,6 +562,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // the street-life layer (viewer/streetlife/cityStreetLife.js) builds in its own worker meanwhile, into the features group
   const streetLifeP = cityStreetLife.tile(entry.name, own.features);
   const stopsP = cityStops.fetchTile(entry.name);       // the STIB stops and ad panels (viewer/stops/cityStops.js), ?stops=old off
+  const furnP = cityFurniture.fetchTile(entry.name);    // benches, bike hoops / boxes, bins, glass banks (viewer/furniture2/), ?furniture=old off
   // the orthophoto for the textured ground's far blend (docs/materials/GROUND.md), fetched alongside the tile data
   const orthoP = groundLook() && F.ortho ? texLoader.loadAsync(new URL(F.ortho, DATA).href).then((t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; }).catch(() => null) : null;
   const d = await tileData(entry);
@@ -616,8 +618,8 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   if (fo.userData.update) ups.push(fo.userData.update);
   await frame("trees");
   // ?roads=surface: lamps, parked cars, the walker and the bollards on the measured street (viewer/streetFit.js)
-  const stopsDoc = await stopsP;
-  const lamps = buildLamps(roads, (x, z) => hm.ground(x, z), bounds, { place: cityStops.keepLampsClear(fit?.placeLamp, stopsDoc), lift: fit?.lift });   // its heads join the city lamp-light pool (lampLightPool)
+  const stopsDoc = await stopsP, furnDoc = await furnP;
+  const lamps = buildLamps(roads, (x, z) => hm.ground(x, z), bounds, { place: cityFurniture.keepLampsClear(cityStops.keepLampsClear(fit?.placeLamp, stopsDoc), furnDoc), lift: fit?.lift });   // its heads join the city lamp-light pool (lampLightPool)
   own.features.add(lamps.group);
   ups.push(lamps.update);
   await frame("lamps");
@@ -625,7 +627,9 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   await frame("lamp light map");
   // (the street-life layer draws the STIB stops from the Brussels Mobility data: not the OSM bus-stop poles too)
   // (and with the stops kit on, viewer/stops/ draws them: furniture.js keeps its placeholder poles for ?stops=old)
-  const furnFeats = (cityStreetLife.on && cityStreetLife.layer) || cityStops.on ? { ...feats, points: (feats.points || []).filter((p) => p.kind !== "bus_stop") } : feats;
+  // (with furniture kit 2 on, viewer/furniture2/ draws the benches and bike parkings: furniture.js keeps them for ?furniture=old)
+  const dropKinds = new Set([...((cityStreetLife.on && cityStreetLife.layer) || cityStops.on ? ["bus_stop"] : []), ...(cityFurniture.on && cityFurniture.kit ? ["bench", "bicycle_parking"] : [])]);
+  const furnFeats = dropKinds.size ? { ...feats, points: (feats.points || []).filter((p) => !dropKinds.has(p.kind)) } : feats;
   const furn = buildFurniture(furnFeats, roads, (x, z) => hm.ground(x, z), bounds);
   own.features.add(furn.group);
   await frame("furniture");
@@ -635,12 +639,14 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const tram = buildTram(feats, (x, z) => hm.surface(x, z) + CARVE, bounds, trackProf, onRoadDeck, { shelterSites: cityStops.on });
   own.features.add(tram.group);
   const stopCounts = cityStops.addTile(entry.name, stopsDoc, own.features, { shelters: tram.shelterSites });
+  const furnCounts = cityFurniture.addTile(entry.name, furnDoc, own.features);
+  if (furnCounts) say(`furniture2: ${Object.entries(furnCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/furniture, viewer/furniture2)`);
   if (stopCounts) say(`stops: ${stopCounts.pole} STIB poles, ${stopCounts.shelter} shelters (incl. tram platforms), ${stopCounts.adpanel} ad panels (data/stops, viewer/stops)`);
   await frame("tram");
   // parked cars from the parking lanes as OSM / the type default has them (before the width fit, which drops lanes the
   // measured street is too narrow for), then each one against the measured kerb if it fits there wholly
   const carRoads = fit ? { ...roads, roads: roads.roads.map((r) => (r.meta?.widthFit ? { ...r, lanes: r.meta.unfitLanes ?? undefined } : r)) } : roads;
-  const cars = buildCars(carRoads, feats, (x, z) => hm.surface(x, z) + CARVE, bounds, { place: fit?.placeCar });
+  const cars = buildCars(carRoads, feats, (x, z) => hm.surface(x, z) + CARVE, bounds, { place: cityFurniture.keepCarsClear(fit?.placeCar, furnDoc) });
   await frame("parked cars");
   const bollards = fit ? buildBollards(d.road.surfaceData.bollards) : null;
   if (bollards) own.features.add(bollards);
@@ -662,6 +668,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const dispose = () => {
     removeBridgeDecks(d.bridgeDecks);
     cityKit.removeTile(entry.name);
+    cityFurniture.removeTile(entry.name);           // its instances leave the furniture pools
     cityStops.removeTile(entry.name);               // its instances leave the stop pools (its stand-ins go with the groups below)
     cityStreetLife.removeTile(entry.name);          // its atlas pages and pooled props (its meshes go with the groups below)
     cityGrass.removeTile(entry.name);               // ?grass=1: out of the grass field
@@ -825,6 +832,7 @@ async function main() {
   await libTex;                                                    // the library's textures before its first consumer
   await cityKit.start({ scene, updaters, log });                   // ?kit=1: the façade kit (before the first tile and the warm-up)
   await cityStreetLife.start({ scene, updaters, log });            // the street life (shop names, plates, numbers, stops), ?streetlife=0 off
+  await cityFurniture.start({ scene, updaters, log });             // benches, bike hoops / boxes, bins, glass banks (viewer/furniture2/), ?furniture=old off
   await cityStops.start({ scene, updaters, log });                 // the STIB shelters / poles and the ad panels (viewer/stops/), ?stops=old off
   // the Chapelle de Stalle + its interior cell (tools/blender/stalle*.py, viewer/stalleCity.js) behind ?stalle=1
   if (params.get("stalle") !== "0") await addStalle({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, getView: () => ({ camera, lighting }), getThird: () => third });
