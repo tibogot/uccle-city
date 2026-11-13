@@ -27,6 +27,7 @@ import { FalconAudio } from "./falconAudio.js";
 import { FalconGame } from "./falconGame.js";
 import { G } from "./flightModel.js";
 import { STREET } from "../treesStylized.js";
+import { wx } from "../weather/weatherState.js";
 
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const ease = (c, t, r, dt) => c + (t - c) * (1 - Math.exp(-r * dt));
@@ -303,7 +304,7 @@ export class CityFlyer {
     // the air: the sun from the city's lighting, the thermal pool refreshed round the falcon every second
     if (this.opts.lighting?.sunDir) air.params.sunElev = Math.asin(clamp(this.opts.lighting.sunDir.y, -1, 1)) * 57.3;
     const fx = this.intro ? this.pos.x : f.pos.x, fz = this.intro ? this.pos.z : f.pos.z;
-    if (g.t - this.lastSync > 1 || this.lastSync < 0) { w.syncThermals(air, fx, fz); this.lastSync = g.t; }
+    if (g.t - this.lastSync > 1 || this.lastSync < 0) { w.syncThermals(air, fx, fz); this.syncWeather(); this.lastSync = g.t; }
     air.update(g.t);
     const t1 = performance.now();
     w.updateLift(fx, fz, air, 1.5);
@@ -337,6 +338,22 @@ export class CityFlyer {
     this.hudFrame();
     c.total = performance.now() - t0;
     this.cpu.frames.push({ ...c }); if (this.cpu.frames.length > 600) this.cpu.frames.shift();
+  }
+
+  /** THE WEATHER (viewer/weather/weatherState.js): when the city runs one (opts.weather or window.__weather, a Weather
+   *  whose update() fills the shared `wx` uniforms), the air takes its wind (wx.uWind: the 10 m wind, the way the air
+   *  moves; gusts, the height profile and the updrafts stay the air's own) and its cloud (thermals: the sun's heating
+   *  under the cloud; rain = overcast); without one, the air's own wind (the panel's sliders). Checked every second. */
+  syncWeather() {
+    const W = this.opts.weather ?? window.__weather ?? null, air = this.air;
+    if (W && this.weather !== W) { air.setWeatherWind(wx.uWind); this.weather = W; this.cloud0 ??= air.params.cloud; this.log("falcon flight: the wind and cloud from the city's weather"); }
+    else if (!W && this.weather) { air.setWeatherWind(null); air.setWind(); air.params.cloud = this.cloud0 ?? air.params.cloud; this.weather = null; }
+    if (W) {
+      const I = W.input || {};
+      air.params.cloud = Math.min(1, Math.max(I.cloud ?? air.params.cloud, (I.rain ?? 0) > 0.2 || (I.snow ?? 0) > 0.1 ? 0.95 : 0));
+      air.params.wind = Math.hypot(wx.uWind.value.x, wx.uWind.value.y);
+      air.params.windFrom = ((Math.atan2(-wx.uWind.value.x, wx.uWind.value.y) * 180 / Math.PI) + 360) % 360;
+    }
   }
 
   // ---------------------------------------------------------------------------------------------- HUD, panel
