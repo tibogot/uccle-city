@@ -54,7 +54,9 @@ function kindOf(a, kinds) {
   return KIND[a.kind] ? a.kind : null;
 }
 
-const rgba = (v) => `rgba(${v.map((x) => Math.round(x * 255)).join(",")},1)`;
+// two canvases: RGB = density, length, dry (alpha stays 1, so nothing is premultiplied away); R of the second = flowers
+const rgb = (v) => `rgb(${Math.round(v[0] * 255)},${Math.round(v[1] * 255)},${Math.round(v[2] * 255)})`;
+const fl = (v) => `rgb(${Math.round(v[3] * 255)},0,0)`;
 
 /**
  * @param feats    features.json of the tile (areas, trees)
@@ -65,23 +67,30 @@ const rgba = (v) => `rgba(${v.map((x) => Math.round(x * 255)).join(",")},1)`;
  */
 export function grassTypeData(feats, bounds, { kinds = null, surfaces = null } = {}) {
   const W = Math.round(bounds.x1 - bounds.x0), H = Math.round(bounds.z1 - bounds.z0);
-  const cv = new OffscreenCanvas(W, H), g = cv.getContext("2d", { willReadFrequently: true });
+  const cv = new OffscreenCanvas(W, H), g1 = cv.getContext("2d", { willReadFrequently: true });
+  const cv2 = new OffscreenCanvas(W, H), g2 = cv2.getContext("2d", { willReadFrequently: true });
   const px = (x) => x - bounds.x0, pz = (z) => z - bounds.z0;
-  const path = (rings) => { g.beginPath(); for (const ring of rings) { ring.forEach(([x, z], i) => (i ? g.lineTo(px(x), pz(z)) : g.moveTo(px(x), pz(z)))); g.closePath(); } };
+  // both canvases take every operation (g.fillStyle = v sets the pair from one [d, l, dry, flowers] value)
+  const g = {
+    set fillStyle(v) { g1.fillStyle = rgb(v); g2.fillStyle = fl(v); }, set strokeStyle(v) { g1.strokeStyle = rgb(v); g2.strokeStyle = fl(v); },
+    set lineWidth(v) { g1.lineWidth = g2.lineWidth = v; }, set lineJoin(v) { g1.lineJoin = g2.lineJoin = v; },
+    fillRect: (...a) => { g1.fillRect(...a); g2.fillRect(...a); }, fill: (r) => { g1.fill(r); g2.fill(r); }, stroke: () => { g1.stroke(); g2.stroke(); },
+  };
+  const path = (rings) => { for (const c of [g1, g2]) { c.beginPath(); for (const ring of rings) { ring.forEach(([x, z], i) => (i ? c.lineTo(px(x), pz(z)) : c.moveTo(px(x), pz(z)))); c.closePath(); } } };
   const stats = { areas: {}, verges: 0, crowns: 0 };
   // default: a mown garden lawn
-  g.fillStyle = rgba([1, 0.06, 0, 0]);
+  g.fillStyle = [1, 0.06, 0, 0];
   g.fillRect(0, 0, W, H);
   // roadside verges: the terrain beside a carriageway (stroked first: any mapped area painted after wins)
   if (surfaces?.surfaces?.length) {
-    g.strokeStyle = rgba([0.9, 0.62, 0.55, 0.12]);
+    g.strokeStyle = [0.9, 0.62, 0.55, 0.12];
     g.lineWidth = VERGE_W * 2; g.lineJoin = "round";
     for (const s of surfaces.surfaces) {
       if (s.c !== 0 && s.c !== 1 && s.c !== 3) continue;      // roadway, tram roadway, parking
       path(s.rings); g.stroke(); stats.verges++;
     }
     // ... but not across a sidewalk: a sidewalk + 0.6 m behind it is a garden's edge again
-    g.strokeStyle = g.fillStyle = rgba([1, 0.06, 0, 0]);
+    g.strokeStyle = [1, 0.06, 0, 0]; g.fillStyle = [1, 0.06, 0, 0];
     g.lineWidth = 1.2;
     for (const s of surfaces.surfaces) {
       if (s.c !== 5) continue;
@@ -99,11 +108,11 @@ export function grassTypeData(feats, bounds, { kinds = null, surfaces = null } =
   for (const k of ORDER) {
     const list = byKind.get(k);
     if (!list) continue;
-    g.fillStyle = rgba(KIND[k]);
+    g.fillStyle = KIND[k];
     for (const a of list) { path(a.rings || []); g.fill("evenodd"); }
     stats.areas[k] = list.length;
   }
-  const img = g.getImageData(0, 0, W, H).data;
+  const img = g1.getImageData(0, 0, W, H).data, img2 = g2.getImageData(0, 0, W, H).data;
   // tree crowns: thinner grass, fewer flowers, a little longer (unmown round the trunk) in parks and meadows
   const shade = new Float32Array(W * H);
   for (const t of feats.trees || []) {
@@ -125,7 +134,7 @@ export function grassTypeData(feats, bounds, { kinds = null, surfaces = null } =
     data[k * 4] = Math.round(img[k * 4] * (1 - 0.55 * s));
     data[k * 4 + 1] = img[k * 4 + 1];
     data[k * 4 + 2] = img[k * 4 + 2];
-    data[k * 4 + 3] = Math.round(img[k * 4 + 3] * (1 - 0.7 * s));
+    data[k * 4 + 3] = Math.round(img2[k * 4] * (1 - 0.7 * s));
   }
   return { data, W, H, stats };
 }
