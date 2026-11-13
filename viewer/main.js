@@ -20,6 +20,7 @@ import { addPolice } from "./policeCity.js";
 import { addCalevoet } from "./calevoetCity.js";
 import { addStPierre } from "./stpierreCity.js";
 import { addObservatory } from "./observatoryCity.js";
+import { addAugustin } from "./augustinCity.js";
 import { addFlags } from "./flagsCity.js";
 import { buildFurniture, updateSignals } from "./furniture.js";
 import { buildTram } from "./tram.js";
@@ -848,6 +849,9 @@ async function main() {
   // The Royal Observatory (tools/blender/observatory.py, viewer/observatoryCity.js) in place of its UrbIS solids,
   // behind ?observatory=1 for now (its solids join HIDE_BU_IDS before the first tile is built)
   if (params.get("observatory") !== "0") await addObservatory({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
+  // The Eglise Saint-Augustin at Altitude Cent (Forest, just north of Uccle: tools/blender/augustin.py,
+  // viewer/augustinCity.js), the skyline landmark; its UrbIS solid is not in the tiles (outside Uccle), nothing hidden
+  if (params.get("augustin") !== "0") await addAugustin({ scene, updaters, world, manifest, log, compiler: () => compileFor });
   // flags on the town hall balcony (viewer/flagsCity.js), behind ?flags=1 (needs ?townhall=1); in the background
   if (params.get("flags") !== "0") addFlags({ scene, updaters, renderer, compiler: () => compileFor, log, params }).catch((e) => log(`flags failed: ${e.message}`));
   // the tram tracks' smooth vertical profile, before the first tile's rails (?trackprofile=0: the old per-point ground)

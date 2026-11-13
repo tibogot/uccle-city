@@ -3,9 +3,9 @@ reinforced concrete, Art Deco; a Greek-cross plan under a 54 m central tower): b
 from MEASURED data + photos.
 
     "C:/Program Files/Blender Foundation/Blender 5.0/blender.exe" --factory-startup -b -P tools/blender/augustin.py -- models/augustin [--no-bake] [--previews] [--fast]
-      models/augustin/augustin.raw.glb  node "Augustin" (LOD0) + "Augustin_far" (the scripted far variant); one primitive
+      models/augustin/augustin.raw.glb  nodes "Augustin" (LOD0), "Augustin_far" (LOD1), "Augustin_xfar" (LOD2): all scripted; one primitive
                                         per NAMED material slot (SLOTS)
-      models/augustin/augustin_ao.png   ambient occlusion (Cycles) in TEXCOORD_1 (LOD0 in v 0..AO_SPLIT, far above)
+      models/augustin/augustin_ao.png   ambient occlusion (Cycles) in TEXCOORD_1 (LOD0 v 0..0.78, far, very far above)
       models/augustin/augustin.json     measurements, slots, codes, placement, counts, what is estimated
       docs/landmarks/augustin/preview_*.png   Cycles renders (--previews)
 
@@ -36,7 +36,7 @@ ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 OUT = os.path.abspath(ARGS[0] if ARGS and not ARGS[0].startswith("--") else "models/augustin")
 BAKE = "--no-bake" not in ARGS
 PREVIEWS = "--previews" in ARGS
-AO_PX = 2048
+AO_PX = 3072                    # LOD0 ~20 px/m (2048 gave 14)
 PREV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "docs", "landmarks", "augustin")
 T0 = time.time()
 SITE, _g, _gd = SC.load_site(OUT)
@@ -49,7 +49,8 @@ CODES = ["plain", "pilaster", "coping", "band", "sill", "reveal", "louvre", "rel
          "step", "rail", "lead", "soffit"]
 (C_PLAIN, C_PIL, C_COPING, C_BAND, C_SILL, C_REVEAL, C_LOUVRE, C_RELIEF, C_PLINTH, C_MULL, C_DOOR, C_CROSS, C_STEP, C_RAIL,
  C_LEAD, C_SOFFIT) = range(16)
-FAR = lambda: K.FAR
+FAR = lambda: bool(K.FAR)
+XFAR = lambda: K.FAR == 2           # the very-far variant (LOD2): shallow reveals, no mullions / slats
 HB = 100.2                     # walls go this far down (the DTM round the walls: 101.56-102.29; the Place 100.3 at 30-45 m)
 PLINTH_TOP = 102.55            # the rubble-stone plinth band (photos: a darker stone base, ~0.3-0.9 m over the sloping ground)
 
@@ -98,7 +99,7 @@ def mirror_u(loop): return [(-u, w) for u, w in loop][::-1]
 def mirror_w(loop): return [(u, -w) for u, w in loop][::-1]
 
 def build_plan(far):
-    step = math.radians(5.0 if far else 2.5)
+    step = math.radians(10.0 if far == 2 else 5.0 if far else 2.5)
     parts = []
     def part(name, loops, top, bottom=HB, no_top=False, roof_holes=(), coping="std", tags=(), no_bottom=False):
         parts.append(dict(name=name, loops=[ccw(l) for l in loops], top=top, bottom=bottom, no_top=no_top, no_bottom=no_bottom,
@@ -114,7 +115,7 @@ def build_plan(far):
     for su in (1, -1):
         for sw in (1, -1):
             q = [(0.6, 0.75), (3.02, 0.75), (3.02, 1.25), (2.78, 1.25), (2.78, 1.72)] + \
-                arc((2.28, 1.72), 0.5, 0.0, math.pi / 2, step=math.radians(5.0))[1:] + [(1.8, 2.22), (1.8, 2.4), (0.6, 2.4)]
+                arc((2.28, 1.72), 0.5, 0.0, math.pi / 2, step=math.radians(15.0 if far == 2 else 5.0))[1:] + [(1.8, 2.22), (1.8, 2.4), (0.6, 2.4)]
             lantern_a.append([(su * u, sw * w) for u, w in q])
     part("core", [rect_uw(-TC, -TC, TC, TC)], TOPS["core"], roof_holes=lantern_a, tags=("tower",))
     for s in (1, -1):
@@ -127,7 +128,7 @@ def build_plan(far):
         part(f"lantern_w{s:+d}", [rect_uw(-1.8, min(s * 1.25, s * 2.4), 1.8, max(s * 1.25, s * 2.4))], TOPS["larm_w"], bottom=L_A_TOP, tags=("lantern",), coping=None)
     for su in (1, -1):
         for sw in (1, -1):
-            q = [(1.8, 1.25), (2.78, 1.25), (2.78, 1.72)] + arc((2.28, 1.72), 0.5, 0.0, math.pi / 2, step=math.radians(5.0))[1:] + [(1.8, 2.22)]
+            q = [(1.8, 1.25), (2.78, 1.25), (2.78, 1.72)] + arc((2.28, 1.72), 0.5, 0.0, math.pi / 2, step=math.radians(15.0 if far == 2 else 5.0))[1:] + [(1.8, 2.22)]
             part(f"post{su:+d}{sw:+d}", [[(su * u, sw * w) for u, w in q]], TOPS["post"], bottom=L_A_TOP, tags=("lantern",))
     part("pedestal", [cross_plan(1.0, 0.38)], TOPS["pedestal"], bottom=TOPS["larm_u"], roof_holes=[rect_uw(-0.38, -0.38, 0.38, 0.38)], tags=("lantern",), no_bottom=True)
     part("shaft", [rect_uw(-0.38, -0.38, 0.38, 0.38)], TOPS["cross"], bottom=TOPS["pedestal"], tags=("cross",), coping=None, no_bottom=True)
@@ -290,6 +291,9 @@ def wall_grid(fr, s0, s1, v0, v1, holes, mat=CONC, code=C_PLAIN, d=0.0, extra=()
 def opening(fr, h, depth, kind="glass", mull=(0, 0), sides=(True, True), d0=0.0, mat=CONC):
     """the reveal of a rectangular hole h = (s0, v0, s1, v1) from d0 to d0 - depth, and what fills it at the back"""
     s0, v0, s1, v1 = h
+    if XFAR():
+        depth = min(depth, 0.15)
+        if kind == "louvre": kind = "dark"
     db = d0 - depth
     K.B.new_group()
     # sill (facing up), head soffit (facing down), jambs (facing in)
@@ -470,6 +474,7 @@ def curved_opening(c, r, aa, ab, win, depth, jamb_a, jamb_b):
     """one facet (angles aa..ab) of a window in a curved wall, in polar terms so the facets of the reveal, the glass and
     the transoms share their edges exactly (no cracks): sill, head, glass at r - depth, jambs at the window's ends"""
     w0, w1, hs, hh, mull = win
+    if XFAR(): depth = min(depth, 0.15)
     rd = r - depth
     K.B.new_group()
     face_dir([Qp(c, r, aa, hs), Qp(c, r, ab, hs), Qp(c, rd, ab, hs), Qp(c, rd, aa, hs)], Z, CONC, C_REVEAL)
@@ -920,8 +925,12 @@ print(f"LOD0: {len(B_MAIN.f)} faces in {time.time() - T0:.1f}s")
 K.B = SC.Builder(); K.FAR = True
 build_all()
 B_FAR = K.B
-K.FAR = False
 print(f"far: {len(B_FAR.f)} faces")
+K.B = SC.Builder(); K.FAR = 2
+build_all()
+B_XFAR = K.B
+K.FAR = False
+print(f"very far: {len(B_XFAR.f)} faces")
 
 # ------------------------------------------------------------------------------------------------ mesh
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -929,9 +938,11 @@ scn = bpy.context.scene
 mats = []
 for name in SLOTS:
     m = bpy.data.materials.new(name); m.use_nodes = True; mats.append(m)
-AO_SPLIT = 0.86
-obj, ntri, per_slot, thin0 = SC.make_object(scn, mats, SLOTS, "Augustin", B_MAIN, 0.0, AO_SPLIT, AO_PX)
-far, ntri_far, per_slot_far, thin1 = SC.make_object(scn, mats, SLOTS, "Augustin_far", B_FAR, AO_SPLIT + 0.005, 1.0, AO_PX)
+AO_SPLIT = (0.78, 0.925)                # LOD0 v 0..0.78, far 0.785..0.92, very far 0.925..1
+obj, ntri, per_slot, thin0 = SC.make_object(scn, mats, SLOTS, "Augustin", B_MAIN, 0.0, AO_SPLIT[0], AO_PX)
+far, ntri_far, per_slot_far, thin1 = SC.make_object(scn, mats, SLOTS, "Augustin_far", B_FAR, AO_SPLIT[0] + 0.005, AO_SPLIT[1] - 0.005, AO_PX)
+xfar, ntri_xfar, per_slot_xfar, thin2 = SC.make_object(scn, mats, SLOTS, "Augustin_xfar", B_XFAR, AO_SPLIT[1], 1.0, AO_PX)
+xfar.data.set_sharp_from_angle(angle=math.radians(0.5))      # LOD2: flat shading (10 deg arc facets; no smoothed normals at > 600 m)
 print(f"uv done {time.time() - T0:.1f}s")
 
 # ------------------------------------------------------------------------------------------------ ground (bake occluder + previews)
@@ -997,7 +1008,7 @@ if BAKE:
     scn.cycles.samples = 96 if "--fast" not in ARGS else 24
     scn.render.threads_mode = "FIXED"; scn.render.threads = max(1, (os.cpu_count() or 4) - 2)   # leave the other agent some CPU
     t = time.time()
-    objs = [obj, far]
+    objs = [obj, far, xfar]
     for i, target in enumerate(objs):
         for o in objs: o.hide_render = o is not target
         for o in scn.objects: o.select_set(False)
@@ -1005,7 +1016,7 @@ if BAKE:
         bpy.ops.object.bake(type="AO", uv_layer="Lightmap", margin=3, use_clear=(i == 0))
     print(f"AO bake {time.time() - t:.1f}s")
     t = time.time()
-    for target, th in ((obj, thin0), (far, thin1)):
+    for target, th in ((obj, thin0), (far, thin1), (xfar, thin2)):
         for o in objs: o.hide_render = o is not target
         vertex_ao(target, th)
     for o in objs: o.hide_render = False
@@ -1025,7 +1036,7 @@ else:
 for m in mats:
     if "AO" in m.node_tree.nodes: m.node_tree.nodes.remove(m.node_tree.nodes["AO"])
 for o in scn.objects: o.select_set(False)
-for o in (obj, far): o.select_set(True)
+for o in (obj, far, xfar): o.select_set(True)
 bpy.context.view_layer.objects.active = obj
 glb = os.path.join(OUT, "augustin.raw.glb")
 bpy.ops.export_scene.gltf(filepath=glb, export_format="GLB", use_selection=True, export_yup=True, export_apply=True,
@@ -1038,12 +1049,13 @@ corners = [G.city(u, -y) for u in (min(bx), max(bx)) for y in (min(by), max(by))
 S_ = SITE["solid"]
 info = {
     "asset": "Eglise Saint-Augustin, Place de l'Altitude Cent, Forest (tools/blender/augustin.py)",
-    "triangles_lod0": ntri, "triangles_far": ntri_far, "triangles_per_slot_lod0": per_slot, "triangles_per_slot_far": per_slot_far,
+    "triangles_lod0": ntri, "triangles_far": ntri_far, "triangles_very_far": ntri_xfar, "triangles_per_slot_very_far": per_slot_xfar,
+    "levels": {"LOD0": "Augustin", "LOD1": "Augustin_far (the scripted far variant, NOT simplified: meshopt LODs streak, tools/mesh_audit/HEROES_REPORT.md)", "LOD2": "Augustin_xfar (scripted: shallow reveals, no mullions / slats / plinth)"}, "triangles_per_slot_lod0": per_slot, "triangles_per_slot_far": per_slot_far,
     "slots": SLOTS, "codes": {"COLOR_0.r": "code / 16 + 1/32", "COLOR_0.g": "per-vertex AO of the thin faces (1 elsewhere)", "names": CODES},
     "new_slot_names": {"roof_bitumen": "flat roofs: bituminous felt / roofing membrane on the concrete decks (not in the shared library: temporary material)"},
     "uv": {"TEXCOORD_0": "world metres, per face (walls u along / v up; curved walls arc length; swept parts path x profile)", "TEXCOORD_1": "AO lightmap (thin faces: u > 0.994, AO 1)"},
-    "lightmap": {"px": AO_PX, "split_v": [AO_SPLIT, 1.0], "lod0_px_per_m": round(obj["px_per_m"], 1), "far_px_per_m": round(far["px_per_m"], 1),
-                 "thin_faces_vertex_ao": [obj["thin"], far["thin"]]},
+    "lightmap": {"px": AO_PX, "split_v": AO_SPLIT, "lod0_px_per_m": round(obj["px_per_m"], 1), "far_px_per_m": round(far["px_per_m"], 1), "very_far_px_per_m": round(xfar["px_per_m"], 1),
+                 "thin_faces_vertex_ao": [obj["thin"], far["thin"], xfar["thin"]]},
     "frame": "glTF Y up; three.js local (u, m TAW - OY, w); node at the city position of the frame origin, height OY, rotation.y = -rotation",
     "placement": {"city_local_position": [G.ox, OY, G.oz], "rotation_y_rad": -G.rot, "hides_solids": [], "hides_bu_ids": [],
                   "replaces": f"UrbIS solid {S_['id']} ({S_['bu']}): NOT in the city tiles (Forest, outside Uccle: the tiles keep Uccle's buildings only), so nothing is hidden"},
@@ -1072,7 +1084,7 @@ if PREVIEWS:
         mul.inputs[6].default_value = (*cols[m.name], 1); nt.links.new(tex.outputs["Color"], mul.inputs[7])
         nt.links.new(mul.outputs[2], bsdf.inputs["Base Color"])
         bsdf.inputs["Roughness"].default_value = 0.1 if m.name == "glass_window" else 0.85
-    far.hide_render = True
+    far.hide_render = True; xfar.hide_render = True
     sun = bpy.data.lights.new("Sun", "SUN"); sun.energy = 4.0; sun.angle = math.radians(1.5)
     so = bpy.data.objects.new("Sun", sun); scn.collection.objects.link(so)
     so.rotation_euler = (math.radians(50), 0, math.radians(130))
