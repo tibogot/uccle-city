@@ -59,23 +59,23 @@ export const grassU = {
   wideLong: uniform(0.0075),              // extra blade width (m) of the longest grass (x len^1.5)
   seedHeads: uniform(0.2),               // share of long-grass blades carrying a seed head
   sheen: uniform(0.22),                  // wind sheen: a gust bends long grass and shows its paler side
-  tipFade: uniform(0.55),
-  covBias: uniform(1.25),                // coverage of a floored row x this (a little fuller far field than the exact share)                // coverage taken off the last ~12 % of a blade (a soft tip, not a cut end)
+  tipFade: uniform(0.55),                // ?grasscov=1: coverage taken off the last ~12 % of a blade (a soft tip, not a cut end)
+  covBias: uniform(1.25),                // ?grasscov=1: coverage of a floored row x this (a little fuller far field than the exact share)
   lod0: uniform(7), lod1: uniform(18),
   height: uniform(1),                    // global height (season growth)
   dry: uniform(0),                       // season: summer drought 0..1 on top of the types' own dryness
   frost: uniform(0),                     // season: hoar frost on the tips 0..1
   tint: uniform(new THREE.Color(1, 1, 1)),   // season tint (olive winter, fresh spring)
   tip: uniform(1.1), root: uniform(0.32), // brightness root (AO) -> tip, over the ground's mean colour
-  conv: uniform(1),
-  flat: uniform(0.78),                    // lighting normal: share of 'up' (Hybrid: flat lighting reads as one field)                      // converge to the ground colour with distance (debug: 0 = off)
+  conv: uniform(1),                      // converge to the ground colour with distance (debug: 0 = off)
+  flat: uniform(0.78),                   // lighting normal: share of 'up' (Hybrid: flat lighting reads as one field)
   debugLod: uniform(0),
 };
 
 const P0 = () => attribute("position", "vec3");
 
-// a strip of `seg` quads up to a FLAT tip (not a point): the vertex stage holds every row at >= minPixels wide and
-// fades the extra width out as coverage (alpha to coverage), so a tip never shrinks below a pixel and blinks
+// a strip of `seg` quads up to a FLAT tip (not a point): the vertex stage holds every row at >= minPixels wide, so a
+// tip never shrinks below a pixel and blinks (?grasscov=1 also fades the extra width out as MSAA coverage)
 function bladeGeometry(seg) {
   const pos = [], idx = [];
   for (let s = 0; s <= seg; s++) { const y = s / seg; pos.push(-0.5, y, 0, 0.5, y, 0); }
@@ -94,9 +94,11 @@ export class Grass {
    *  left out (the lamp light map lights the grass at night): each extra light is evaluated by every blade fragment */
   /** opts.lambert: Lambert blades (no specular: ~45 % cheaper in the city, but a backlit lawn loses the sheen that
    *  reads as light through the blades); default: the low / medium presets, or ?grasslambert=1 */
-  constructor(renderer, { preset = "high", lights: lightList = null, lambert = /[?&]grasslambert=1/.test(location.search) || preset === "low" || preset === "medium" } = {}) {
+  constructor(renderer, { preset = "high", lights: lightList = null, lambert = /[?&]grasslambert=1/.test(location.search) || preset === "low" || preset === "medium",
+    coverage = /[?&]grasscov=1/.test(location.search) } = {}) {
     this.renderer = renderer;
     this.lambert = lambert;
+    this.coverage = coverage;
     this.lightList = lightList;
     this.field = new GrassField(renderer);
     this.push = new GrassPush();
@@ -129,7 +131,9 @@ export class Grass {
     const L = { l, cap, base, geom, n: l * 5 + 1 };
     // Standard: its specular lobe at grazing backlight is what makes a lawn glow into a low sun; Lambert is the cheap one
     const mat = this.lambert ? new THREE.MeshLambertNodeMaterial({ side: THREE.DoubleSide }) : new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, roughness: 0.85, metalness: 0 });
-    mat.alphaToCoverage = true;          // the pixel-floored rows fade as MSAA coverage (no sorting, no blending)
+    // ?grasscov=1: the pixel-floored rows fade as MSAA coverage (alpha to coverage). OFF by default: it turns the
+    // early depth test into a late one, +1.2 ms in a meadow (lab G7) for ~15 % less shimmer than the floor alone
+    mat.alphaToCoverage = this.coverage;
     this.bladeNodes(mat, L);
     if (this.lightList) mat.lightsNode = lights(this.lightList);
     mat.name = `grass-lod${l}`;
@@ -307,12 +311,12 @@ export class Grass {
     const headSize = rnd(17).mul(0.018).add(0.022).mul(float(1).sub(smoothstep(10, 32, dist).mul(0.6)));
     const wFlower = W.mul(0.28).add(headSize.mul(smoothstep(0.84, 0.95, h).sub(smoothstep(0.985, 1, h).mul(0.45))));
     const wTrue = select(isFlower, wFlower, wLeaf);
-    // SHIMMER: every row at least minPixels wide on screen; the width added is paid back as coverage (alpha to
-    // coverage over the MSAA samples), so a far or thin tip covers what it really covers instead of blinking in and out
+    // SHIMMER: every row (the tip too: it is flat, not a point) at least minPixels wide on screen, so a far or thin tip
+    // never shrinks below a pixel and blinks in and out; with ?grasscov=1 the width added is paid back as coverage
     const wPx = grassU.minPixels.mul(dist).div(grassU.pixelScale);
     const wDraw = max(wTrue, wPx);
     const tipSoft = float(1).sub(select(kind.equal(0), smoothstep(0.86, 1, h).mul(grassU.tipFade), float(0)));
-    mat.opacityNode = varying(clamp(wTrue.div(wDraw).mul(grassU.covBias).mul(tipSoft), 0, 1), "v_grA");
+    if (this.coverage) mat.opacityNode = varying(clamp(wTrue.div(wDraw).mul(grassU.covBias).mul(tipSoft), 0, 1), "v_grA");
     const p = root.add(vec3(lv.x.mul(prof).mul(Hc), h.mul(Hc).mul(drop), lv.y.mul(prof).mul(Hc))).add(sideV.mul(side.mul(wDraw)));
     mat.positionNode = p;
     // lighting normal: mostly up (the field reads like the ground it fades into), a little of the blade's face, rounded
