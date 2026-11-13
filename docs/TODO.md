@@ -29,9 +29,15 @@ Flemish side: D10 / E10 flat plain 5-10 m low, roads floating 10-20 m, a hole ne
 clipping at the border); D10 (-1018, 2722) 3 m earth wall needs a retaining wall; G10 (481.5, 2751.3) one ledge;
 engine-only roads 5-12 cm over the ground; a few lanes still have one sharp vertex (I5 103 deg, I7 74 deg).
 
-**Running (agents, 2026-11-13 ~05:00):** falcon round 2
-(`claude/falcon2`, port 8847: PAUSED for memory after item 1 (trees as obstacles + tree perches, done, WIP d46bd3b);
-next: arches, camera clipping, weather wind, more pigeon flocks; RESUMED ~06:00) · ground textures (`claude/groundtex`,
+**Merged 2026-11-13: FALCON ROUND 2** (docs/FALCON_FLIGHT.md "In the city", docs/falcons/city2/): tree crowns are
+obstacles (hit / brush / perch on crowns), flying under the Saint-Job / Calevoet / Verrewinkel arches, chase camera never
+hides the bird, weather wind hook (`window.__weather`), pigeon flocks at Place Jean Vander Elst, Parvis Saint-Pierre,
+Parc de Wolvendael (2 nearest drawn), Saint-Pierre tower collision, ridge perches off the chimney ends, fog thickens
+120-400 m up; flight CPU median 0.2 ms, 0 pipelines mid-flight. Left: the brown band below the horizon seen 500-650 m
+up (needs lighting.js: sky below the horizon in the fog colour, or a wider far ring while high); the street test's
+autopilot cuts a corner; a real-time foreground run on a quiet GPU; the city has no running Weather yet.
+
+**Running (agents, 2026-11-13 ~05:00):** ground textures (`claude/groundtex`,
 port 8848: real CC0 scans for lawn / verge / forest floor / gravel / soil / sand on the terrain instead of the procedural
 noise ground (owner: "the grass looks kind of bad"), anti-tiling, one shared material, `?groundtex=0` = old).
 
