@@ -1148,6 +1148,23 @@ async function main() {
   liteGroup.name = "far-lod";
   scene.add(liteGroup);
   const lite = new Map();                 // name -> lite tile
+  // ?horizon=1 (docs/HORIZON.md, opt-in): the real landscape round Uccle (32 km, one static mesh) under / beyond the
+  // tiles, cut per pixel by the drawn tiles' fades (viewer/horizon.js); the camera's far plane goes out to 20 km for it
+  if (params.get("horizon") === "1") {
+    try {
+      const hz = await (await import("./horizon.js")).createHorizon({ scene });
+      camera.far = Math.max(camera.far, 20000); camera.updateProjectionMatrix();
+      const hzTiles = [];
+      updaters.push(() => {
+        hzTiles.length = 0;
+        for (const t of world.tiles) if (t.groups?.[0]) hzTiles.push({ name: t.name, group: t.groups[0] });
+        for (const [n, l] of lite) hzTiles.push({ name: n, group: l.group });
+        hz.update(hzTiles);
+      });
+      window.__horizon = hz;
+      log(hz.info());
+    } catch (e) { log(`horizon: ${e.message}`); }
+  }
   const pending = new Set();
   let busy = null, firstLite = !!bootPipes;
   let streamJump = false;                 // a map teleport: tiles left behind go at once (no far-tile hand-over first)
