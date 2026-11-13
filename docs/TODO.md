@@ -27,6 +27,16 @@ next: arches, camera clipping, weather wind, more pigeon flocks; RESUMED ~06:00)
 port 8848: real CC0 scans for lawn / verge / forest floor / gravel / soil / sand on the terrain instead of the procedural
 noise ground (owner: "the grass looks kind of bad"), anti-tiling, one shared material, `?groundtex=0` = old).
 
+**Decided 2026-11-13 (owner): OUR OWN GRASS for the city, after the ground textures merge.** Examples to learn from, not
+to copy: alezen9/revo-realms (MIT: compute + wrap tile + indirect draws, ~1.28 M blades), game-engine-v1's Revo port
+(`v3/render/grass/revoGrassSystem.js`: painted density, push field) and Hybrid grass (`hybridGrassSystem.js`: measured
+~3x cheaper than per-vertex grass, 6 draws vs ~400), the off-road game's "fluffy" Revo meadow look. Ours: the Hybrid /
+Revo engine room + the fluffy density + Uccle-specific types from land cover (mown lawn, park grass, dry verge, meadow
+with flowers, sparse under trees), clean edges at kerbs / paths / walls, tree shadows, night, seasons, push field (car,
+walker, falcon), blades thinning into the ground textures with no popping. Budget <= 1 ms on the RTX 4050 at street
+level (quiet machine, preflight green). Grass Lab first (front-garden street, park, verge), then the city. Engine files
+copied unchanged into vendor/engine if reused (engine stays read-only); MIT credit for Revo.
+
 **Merged 2026-11-13: STREET LIFE IN THE CITY** (`?streetlife=0` off): 524 real shop names, windows, awnings, pharmacy
 crosses, fuel stations, STIB stops, Villo, bpost, street plates, house numbers; own worker, city-wide prop pools, +11-16
 draws at street level, emissive at night. Left: shopfronts sink on sloping streets (Esso Fort-Jaco), some house numbers
