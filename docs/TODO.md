@@ -77,6 +77,11 @@ ground is the carved terrain under the ballast, not the ballast top (drive surfa
 (4) rails are not obstacles / bumps for the car. Test every bridge (Saint-Job, Calevoet, Verrewinkel, the tram deck)
 from both directions, not only this one.
 
+**ALIASING part 2 (2026-11-13 evening):** far view (1223, 125, 650 -> 1153, 80, 540) heat map: the blinking pixels
+are TREE FOLIAGE and the Saint-Job church's white stone bands (hard step in stjobModel.js), not the façades. Church
+bands box-filtered (filteredPulse, `?bandaa=0` = before): church region 131 / 130 -> 40 / 44 ppm, full frame ~415 ->
+~240. Geometric specular AA on walls / roofs TRIED and DROPPED: full frame 239 / 242 with vs 237 / 244 without, houses
+100 / 95 vs 98 / 102 (no gain, so no cost added). Left: tree foliage shimmer far away (the biggest share now).
 **ALIASING FIXED, part 1 (2026-11-13, 620d31e): relief heights box-filtered over 3 px in facades.js (the bump normal no longer flips per pixel); flicker 199/203 -> 40/41 ppm on the test view; `?relief=1px` = before. Left: the kit walls' hard discard edge (maskNode step(0.5, opening)) if it shows; brick normal-map shimmer far away (specular AA); glazing bars (barX / barY) not footprint-filtered.**
 **ALIASING DIAGNOSED (2026-11-13 afternoon, Rue du Ham I6 brick building, oblique 4-6 m view, kit on vs ?kit=0
 identical):** the scene pass HAS 4x MSAA (renderer.samples 4, post.js sceneRT); those windows are PAINTED by the facade

@@ -15,6 +15,7 @@ import {
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { env } from "./lighting.js";
+import { filteredPulse } from "./tslkit.js";
 
 // LOD targets (triangles for the whole church) and the distances (m, camera to the octagon) they are used up to
 export const STJOB_LODS = [
@@ -192,7 +193,9 @@ function makeMaterials(aoTex) {
     const sand = mix(lin(0x8d8c84), lin(0x7c7a70), sh).mul(mix(float(0.8), float(1), stoneJ));   // the plinth: grey sandstone
     // bands by height (pattern 1: 15 cm every 1.10 m from the plinth up; 2: every third only)
     const bpos = y.sub(0.9).div(1.1), bi = floor(bpos);
-    const inBand = step(fract(bpos), 0.136).mul(step(0.0, y.sub(0.9)));
+    // box-filtered over the pixel (a hard step made every band edge jump from pixel to pixel far away: the flicker test's
+    // dots along the bands, 2026-11-13); ?bandaa=0 = before
+    const inBand = (/[?&]bandaa=0/.test(location.search) ? step(fract(bpos), 0.136) : filteredPulse(bpos, float(0), float(0.136), fwidth(bpos))).mul(step(0.0, y.sub(0.9)));
     const bandOn = select(band.equal(2), step(mod(bi, 3), 0.5), select(band.equal(1), float(1), float(0)));
     const isBrick = is(0);
     const bandK = inBand.mul(bandOn).mul(isBrick).mul(L.bandStrength);
