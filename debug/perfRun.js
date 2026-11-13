@@ -42,6 +42,30 @@ if (!S.hooked && window.GPUDevice) {
   try { new PerformanceObserver((l) => { for (const e of l.getEntries()) S.long.push([e.startTime, e.duration]); }).observe({ type: "longtask", buffered: true }); } catch (e) {}
 }
 
+// ---- pass names: r187 tags each render "r:<call in frame>:<context id>:f<frame>" (backend.updateTimeStampUID) and
+// hands the inspector (uid, scene, camera, renderTarget) at its start: name each uid from those
+const passName = (S.passName ||= new Map());
+export function namePasses(V = window.viewer) {
+  const ins = V?.renderer?.inspector;
+  if (!ins || ins.__perfNamed) return;
+  ins.__perfNamed = true;
+  const begin = ins.beginRender.bind(ins);
+  ins.beginRender = (uid, scene, camera, rt) => {
+    const key = String(uid).replace(/:f\d+$/, "");
+    if (!passName.has(key)) {
+      const out = rt ? (rt.texture?.name || rt.name || (rt.isRenderTarget ? `rt${rt.width}x${rt.height}` : "rt")) : "screen";
+      let kind;
+      if (camera === V.camera) kind = "scene";
+      else if (camera?.isOrthographicCamera && scene?.isScene && camera !== V.camera) kind = "shadow";
+      else if (!scene?.isScene) kind = "post";
+      else kind = scene?.name || "other";
+      passName.set(key, `${kind}:${out}${camera?.name ? "@" + camera.name : ""}`);
+    }
+    return begin(uid, scene, camera, rt);
+  };
+}
+const labelOf = (k) => passName.get(k) || k;
+
 function pathLength(pts) { let L = 0; for (let i = 1; i < pts.length; i++) L += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); return L; }
 function along(pts, d) {   // point + heading at distance d along the polyline
   for (let i = 1; i < pts.length; i++) {
@@ -81,6 +105,7 @@ export async function run(name, { settle = 8 } = {}) {
   const p = typeof name === "string" ? PATHS[name] : name;
   if (!p) throw new Error(`unknown path ${name}; one of ${Object.keys(PATHS).join(", ")}`);
   const dur = p.seconds ?? pathLength(p.pts) / p.speed;
+  namePasses(V);
   // orbit mode, our hand on the camera: the orbit controls' own update (clamps, damping) is held off for the run
   V.setView("overview");
   const c = V.controls, cam = V.camera, upd = c.update;
@@ -108,9 +133,8 @@ export async function run(name, { settle = 8 } = {}) {
         if (now - gpuT > 250) {
           gpuT = now;
           const ps = V.gpuPasses();
-          // keys are r187's render-context uids ("r:<context>:<n>", stable within one page load, unnamed): rank and
-          // compare within a session; naming them shadow / scene / post is audit step 1
-          if (ps) { nPass++; for (const [k, ms] of ps) passes[k] = (passes[k] || 0) + ms; }
+          // keys: r187's uids "r:<call>:<context>" named by namePasses() (scene / shadow / post: its output)
+          if (ps) { nPass++; for (const [k, ms] of ps) { const n = labelOf(k); passes[n] = (passes[n] || 0) + ms; } }
           const r = V.renderer.info.render; draws.push(r.drawCalls ?? r.calls); tris.push(r.triangles);
         }
         if (t >= dur) return done();
