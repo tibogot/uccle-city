@@ -112,7 +112,8 @@ tiles in the city (65 bakes).
 
 ## 5. Light, night, seasons, wind, push
 
-- `MeshStandardNodeMaterial`, double sided:
+- `MeshStandardNodeMaterial` (Lambert with `?grasslambert=1` and the low / medium presets), double sided, taking
+  only the sun and the hemisphere light in the city (`lightsNode`):
   - the city's sun and sky;
   - **the sun's shadow map** (receives the shadows of trees and buildings; casts none);
   - the city's fog;
@@ -143,18 +144,35 @@ timestamps (render + compute), A/B in alternating rounds, 1280x720 at DPR 1.5 in
 - RED at other times: the coordinator's city tab was rendering (GPU busy 21-57 % at rest). Those numbers are
   marked "(noisy)" below.
 
-| Scene (lab, preset high) | Blades drawn (LOD0 / 1 / 2) | GPU grass on - off | Preflight |
-|---|---|---|---|
-| Wolvendael lawn F4, golden, standing | 6.2k / 17.7k / 8.8k (6 cm cells) | **+0.26 ms** (pairs 0.13-0.79) | YELLOW |
-| Front gardens D8, golden, standing | 9.3k / 15.3k / 2.0k (6 cm cells) | **+0.13 ms** (pairs -0.26-0.26) | YELLOW |
-| Rue Zandbeek verge C8, parked car | 2.6k / 10.4k / 2.2k | **+0.07 ms** | YELLOW |
-| Rue Zandbeek, driving 30 km/h | 2.0k / 5.9k / 1.6k | **+0.20 ms** | YELLOW |
-| First try (before the dispatch box), F4, coordinator rendering | 9.2k / 18.4k / 7.6k | +1.57 ms (noisy) | RED |
-| City `?grass=1`, D8 lawn (9 tiles + far ring), coordinator rendering | 17.4k / 31.7k / 5.4k (4.5 cm cells) | +0.41 ms (-0.85..+1.57, noisy) | RED |
+Final grid (4.5 cm cells), lab, Standard material, all lights (lab), YELLOW, coordinator's tab parked:
 
-The denser final grid (4.5 cm cells, about 1.8x the candidates) was re-measured only in the city run above, which
-was noisy: **to re-run on a quiet machine.** Compute timestamps alone are quantized by Chrome (65.5 µs steps), so
-only the on / off total is used.
+| Scene (lab) | Preset | Blades drawn (LOD0 / 1 / 2) | GPU grass on - off (pairs) |
+|---|---|---|---|
+| Wolvendael lawn F4, golden, standing | high | 16.9k / 32.3k / 13.5k | **+0.59 ms** (0.59-0.92) |
+| Wolvendael lawn F4 | low | 7.7k / 7.7k / 0.3k | **+0.26 ms** (0.00-0.46) |
+| Front gardens D8, golden, standing | ultra / high / medium / low | 59k / 47k / 28k / 13k in all | +0.66 / **+0.20** / +0.13 / +0.20 ms (noisy pairs, -0.5..+1.3) |
+| Rue Zandbeek verge C8, parked car | high | 4.8k / 18.3k / 3.9k | **+0.20 ms** (-0.07-0.39) |
+| Rue Zandbeek, driving 30 km/h | high | 0 / 2.4k / 1.3k | +0.07 ms (-0.33-0.46) |
+
+City `?grass=1`, D8 lawn at 1.6 m (Rue des Griottes, 9 full tiles + far ring, 1280x720), `debug/gpuAB.js alternate`,
+6 rounds:
+
+| City variant | Blades | GPU grass on - off |
+|---|---|---|
+| Standard, all lights; coordinator's tab rendering (RED) | 54.5k | +0.41 ms (-0.85..+1.57), +1.24 ms (0.92..2.16): noisy, not counted |
+| Standard, all the city's lights (its lamp light pool too), tab parked | 54.5k | +0.81 ms (0.46..1.18) |
+| Standard, **sun + hemisphere only** (`lightsNode`), tab parked | 54.5k | +0.78 ms (0.39..1.37); a later, steadier run: **+0.47 ms (0.40..0.53)** |
+| Lambert, sun + hemisphere (`?grasslambert=1`, presets low / medium) | 54.5k | **+0.43 ms** (0.13..0.66) |
+
+**Within the ~1 ms budget at street level.** The cost is the blade fragments: compute on its own is within noise
+(the "compute only" mode equals "off"). In the city most of it comes from the lights every fragment evaluates. The
+blades now take only the sun and the sky (`lights([sun, hemi])`); at night the lamp light map lights them.
+Lambert is ~45 % cheaper but loses the grazing specular that makes a lawn glow into a low sun (black stubble
+backlit), so Standard stays the default for high / ultra.
+
+0 synchronous pipelines in the lab drive (68 at the lab's warm-up), and 0 during a 41 s city flight at street level
+across 3 newly streamed tiles (65 field bakes). Field re-bake: ~0.7 ms CPU after the first (31-36 ms with its shader
+build).
 
 Presets (`?preset=`, `grass.setPreset()`: uniforms only, no shader rebuild; the buffer caps are fixed at
 construction): `low` (density 0.55, reach 0.6, 28 m), `medium` (0.8, 0.8, 38 m), `high` (1, 1, 48 m, default),
@@ -188,11 +206,11 @@ Download: 13 KB (osm_grass.json); the city fetches each tile's surfaces.json onc
 | `season_winter_20jan_frost.jpeg`, `season_summer_3aug_dry.jpeg` | the season hook |
 | `strip_park_walk.jpeg`, `strip_verge_drive.jpeg` | moving frame strips |
 | `flicker_garden_strafe_heat.jpeg` | shimmer heat map |
-| `city_D8_grass1.jpeg` | the city with `?grass=1` (D8, Rue des Griottes) |
+| `city_D8_grass1.jpeg` / `city_D8_grass0.jpeg` | the city with `?grass=1` / without (D8, Rue des Griottes; the `_grass0` shot was taken with the Lambert test build, no difference without grass) |
 
 ## 8. What's left
 
-- A quiet-machine re-measure of the final grid: lab scenes x presets, and the city A/B at street level and from a car.
+- A re-measure on a fresh machine (preflight GREEN: free memory stayed at 2-3 GB, YELLOW at best): the lab x presets, the city from a car and at golden hour / night.
 - City: wire the pushers (`driver` wheels, `walker` feet, the falcon landing).
 - Move `grassTypeData` (38 ms per tile on the main thread) and the surfaces.json fetch into the tile worker.
 - Landmark models (Saint-Job, the Observatory, ...) are not yet solids in the field (the UrbIS solid they replace is

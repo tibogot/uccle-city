@@ -728,7 +728,7 @@ async function main() {
     },
   };
   worldRef = world;
-  await cityGrass.start({ scene, renderer, updaters, world, log });   // ?grass=1 (default off): our grass, docs/GRASS.md
+  await cityGrass.start({ scene, renderer, updaters, world, lighting, log });   // ?grass=1 (default off): our grass, docs/GRASS.md
 
   if (params.get("lampmodel") !== "0") setLampModel(await loadLampModel());   // the Blender lamp (?lampmodel=0: the old cylinders)
   // The Saint-Job church (tools/blender/stjob.py, viewer/stjobModel.js) in place of its UrbIS solid (HIDE_BU_IDS);

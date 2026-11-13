@@ -29,7 +29,7 @@ import * as THREE from "three/webgpu";
 import {
   Fn, If, uniform, float, int, uint, vec2, vec3, vec4, instanceIndex, instancedArray, storage, atomicAdd, atomicStore, atomicLoad,
   hash, smoothstep, mix, clamp, max, min, abs, sqrt, length, normalize, cross, dot, cos, sin, cameraPosition, cameraViewMatrix,
-  varying, select, floor, pow, attribute, sign, PI2, texture, atan, time,
+  varying, select, floor, pow, attribute, sign, PI2, texture, atan, time, lights,
 } from "three/tsl";
 import { windAt, wind } from "../foliage/wind.js";
 import { noiseTex } from "../ground.js";
@@ -85,8 +85,14 @@ export class Grass {
   /** renderer: WebGPURenderer (WebGPU backend); opts.preset */
   static supported(renderer) { return !!renderer?.backend?.isWebGPUBackend; }
 
-  constructor(renderer, { preset = "high" } = {}) {
+  /** opts.lights: the lights the blades take (e.g. [sun, hemisphere]): the city's pooled lamp point / spot lights are
+   *  left out (the lamp light map lights the grass at night): each extra light is evaluated by every blade fragment */
+  /** opts.lambert: Lambert blades (no specular: ~45 % cheaper in the city, but a backlit lawn loses the sheen that
+   *  reads as light through the blades); default: the low / medium presets, or ?grasslambert=1 */
+  constructor(renderer, { preset = "high", lights: lightList = null, lambert = /[?&]grasslambert=1/.test(location.search) || preset === "low" || preset === "medium" } = {}) {
     this.renderer = renderer;
+    this.lambert = lambert;
+    this.lightList = lightList;
     this.field = new GrassField(renderer);
     this.push = new GrassPush();
     this.group = new THREE.Group(); this.group.name = "grass";
@@ -116,8 +122,10 @@ export class Grass {
     this.indirect.array[l * 5] = geom.index.count;
     geom.setIndirect(this.indirect, l * 5 * 4);
     const L = { l, cap, base, geom, n: l * 5 + 1 };
-    const mat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, roughness: 0.85, metalness: 0 });
+    // Standard: its specular lobe at grazing backlight is what makes a lawn glow into a low sun; Lambert is the cheap one
+    const mat = this.lambert ? new THREE.MeshLambertNodeMaterial({ side: THREE.DoubleSide }) : new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, roughness: 0.85, metalness: 0 });
     this.bladeNodes(mat, L);
+    if (this.lightList) mat.lightsNode = lights(this.lightList);
     mat.name = `grass-lod${l}`;
     L.mesh = new THREE.Mesh(geom, mat);
     L.mesh.frustumCulled = false; L.mesh.castShadow = false; L.mesh.receiveShadow = true;
@@ -308,7 +316,7 @@ export class Grass {
     const dbg = [vec3(1.6, 0.5, 0.5), vec3(0.5, 1.6, 0.5), vec3(0.5, 0.5, 1.8)][L.l];
     col = mix(col, col.mul(dbg), grassU.debugLod);
     mat.colorNode = varying(col, "v_grC");
-    mat.roughnessNode = float(0.82);
+    if (!this.lambert) mat.roughnessNode = float(0.82);
     addLampLight(mat);
   }
 

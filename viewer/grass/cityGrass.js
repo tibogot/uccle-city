@@ -13,11 +13,11 @@ export const cityGrass = {
   grass: null,
   kinds: null,
   /** before the first tile (so the first frames, under the boot cover, build its shaders) */
-  async start({ scene, renderer, updaters, world, log = () => {} }) {
+  async start({ scene, renderer, updaters, world, lighting = null, log = () => {} }) {
     if (!this.on) return;
     if (!Grass.supported(renderer)) { log("grass: needs WebGPU (the textured ground alone)"); this.on = false; return; }
     this.kinds = await fetch(new URL("../../data/grass/osm_grass.json", import.meta.url)).then((r) => r.json()).then((d) => d.kinds).catch(() => null);
-    const g = new Grass(renderer, { preset: params.get("grasspreset") || "high" });
+    const g = new Grass(renderer, { preset: params.get("grasspreset") || "high", lights: lighting ? [lighting.sun, lighting.hemi].filter(Boolean) : null });
     g.groundAt = (x, z) => (world.tiles.length ? world.ground(x, z) : 0);
     scene.add(g.group);
     this.grass = g;
