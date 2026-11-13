@@ -12,7 +12,7 @@ import { buildDriveData } from "./drive/colliders.js";
 import { buildRoadData, CARVE } from "./roadBuild.js";
 import { smoothPolyline } from "./track.js";
 import { kitCollector } from "./facadeKit/placement.js";
-import { prepRail, abutmentFill, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround } from "./rail/railData.js";
+import { prepRail, abutmentFill, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins } from "./rail/railData.js";
 import { buildTrafficGraph } from "./traffic/trafficGraph.js";
 
 let railP = null;
@@ -141,7 +141,7 @@ export async function buildTileData(entry, base) {
   // the ground at the hero road bridges' ends up to their decks, before the roads sample it (railData.js abutmentFill)
   if (rail) await step("abutment fill", () => abutmentFill(rail.heroes, [hm.y, hm.orig], tHdr));
   const roadGround = rail ? roadDeckGround(rail.heroes, hm.ground) : hm.ground;
-  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround,
+  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z) }));
   Object.assign(times, rd.times);
   const { netInfo } = rd;

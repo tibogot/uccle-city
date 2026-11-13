@@ -187,6 +187,71 @@ var Heightmap = class _Heightmap {
     this.y = out;
     return n;
   }
+  /**
+   * JOINS (roads round 5): where a road / sidewalk edge stands over the terrain (a raised road, a sidewalk over a
+   * lawn), the terrain beside it comes up to meet it: a flat shoulder at the edge's height - SHOULDER out to 1.5 m, then
+   * a bank down at `slope` (m per m) to the natural ground, at most `reach` m out; under a surface the terrain comes up
+   * to `depth` under it (the carve's depth). Only raises. Skipped where the rise would exceed maxRise (a structure: decks, overpasses) or where skip(x, z)
+   * (no DTM data, bridge decks). meshes: [{ position, index }]. Returns the number of cells raised.
+   */
+  weld(meshes, { slope = 0.7, reach = 4, maxRise = 2, depth = 0.12, skip = null } = {}) {
+    const { x0, z0, cols, rows, step } = this.h;
+    const SHOULDER = 0.01, Y = this.y;
+    const top = new Float32Array(cols * rows).fill(-Infinity);
+    for (const { position, index } of meshes) for (let t = 0; t < index.length; t += 3) {
+      const a = index[t] * 3, b = index[t + 1] * 3, c = index[t + 2] * 3;
+      const ax = position[a], az = position[a + 2], bx = position[b], bz = position[b + 2], cx = position[c], cz = position[c + 2];
+      const det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+      if (Math.abs(det) < 1e-9) continue;
+      const ay = position[a + 1], ux = bx - ax, uy = position[b + 1] - ay, uz = bz - az, vx = cx - ax, vy = position[c + 1] - ay, vz = cz - az;
+      const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+      if (Math.abs(ny) < 0.6 * Math.hypot(nx, ny, nz)) continue;
+      const c0 = Math.max(0, Math.ceil((Math.min(ax, bx, cx) - x0) / step)), c1 = Math.min(cols - 1, Math.floor((Math.max(ax, bx, cx) - x0) / step));
+      const r0 = Math.max(0, Math.ceil((Math.min(az, bz, cz) - z0) / step)), r1 = Math.min(rows - 1, Math.floor((Math.max(az, bz, cz) - z0) / step));
+      for (let r = r0; r <= r1; r++) for (let cc = c0; cc <= c1; cc++) {
+        const px = x0 + cc * step, pz = z0 + r * step;
+        const l1 = ((bz - cz) * (px - cx) + (cx - bx) * (pz - cz)) / det, l2 = ((cz - az) * (px - cx) + (ax - cx) * (pz - cz)) / det, l3 = 1 - l1 - l2;
+        if (l1 < -1e-6 || l2 < -1e-6 || l3 < -1e-6) continue;
+        const y = l1 * position[a + 1] + l2 * position[b + 1] + l3 * position[c + 1], k = r * cols + cc;
+        if (y > top[k]) top[k] = y;
+      }
+    }
+    const R = Math.ceil(reach / step), want = new Float32Array(cols * rows).fill(-Infinity);
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const k = r * cols + c;
+      if (top[k] === -Infinity) continue;
+      let edge = false;
+      for (let dr = -1; dr <= 1 && !edge; dr++) for (let dc = -1; dc <= 1; dc++) {
+        const rr = r + dr, cc = c + dc;
+        if (rr >= 0 && cc >= 0 && rr < rows && cc < cols && top[rr * cols + cc] === -Infinity) {
+          edge = true;
+          break;
+        }
+      }
+      if (!edge) continue;
+      const yTop = top[k];
+      for (let dr = -R; dr <= R; dr++) for (let dc = -R; dc <= R; dc++) {
+        const rr = r + dr, cc = c + dc;
+        if (rr < 0 || cc < 0 || rr >= rows || cc >= cols) continue;
+        const kk = rr * cols + cc;
+        if (top[kk] !== -Infinity) continue;
+        const d = Math.hypot(dr, dc) * step;
+        if (d > reach) continue;
+        const v = yTop - SHOULDER - slope * Math.max(0, d - 1.5);
+        if (v > want[kk]) want[kk] = v;
+      }
+    }
+    let n = 0;
+    for (let k = 0; k < Y.length; k++) {
+      const v = top[k] !== -Infinity ? top[k] - depth : want[k];
+      if (v === -Infinity || v <= Y[k]) continue;
+      if (v - this.orig[k] > maxRise) continue;
+      if (skip && skip(x0 + k % cols * step, z0 + Math.floor(k / cols) * step)) continue;
+      Y[k] = v;
+      n++;
+    }
+    return n;
+  }
 };
 
 // viewer/facadeGeom.js
@@ -9206,6 +9271,88 @@ function widenTightTurns(net, cls = null) {
   return st;
 }
 
+// viewer/streets/roadLevels.js
+var MOVE_TOL = 0.2;
+var RMS_MAX = 0.5;
+var MOVE_MAX = 1.6;
+function fittedY(node, ground, noData) {
+  const R = node.reach || 6, pts = [[0, 0]];
+  for (const [f, cnt] of [[0.35, 8], [0.7, 12], [1, 16]]) for (let k = 0; k < cnt; k++) {
+    const a = k / cnt * Math.PI * 2;
+    pts.push([Math.cos(a) * R * f, Math.sin(a) * R * f]);
+  }
+  let s = 0;
+  const ys = pts.map(([dx, dz]) => ground(node.x + dx, node.z + dz));
+  if (noData && pts.some(([dx, dz]) => noData(node.x + dx, node.z + dz))) return null;
+  for (const y of ys) s += y;
+  const y0 = s / ys.length, gx = node.plane?.gx ?? 0, gz = node.plane?.gz ?? 0;
+  let e = 0;
+  pts.forEach(([dx, dz], k) => {
+    e += (ys[k] - (y0 + gx * dx + gz * dz)) ** 2;
+  });
+  return { y: y0, rms: Math.sqrt(e / ys.length) };
+}
+function relevelRoads(net, ground, noData = null) {
+  const st = { nodes: 0, maxMove: 0, roads: 0, skippedStructure: 0 };
+  if (!net?.nodes) return st;
+  const realSpan = (rr, sp) => {
+    if (!noData) return true;
+    for (let s = sp.s0; s <= sp.s1; s += 2) {
+      const e = evalAlignment(rr.al, s);
+      if (!noData(e.x, e.z)) return true;
+    }
+    return false;
+  };
+  const fixedRoad = (rr) => (rr.bridges || []).some((sp) => realSpan(rr, sp)) || (rr.tunnels || []).some((sp) => realSpan(rr, sp)) || rr.prof?.mode && rr.prof.mode !== "terrain";
+  const moved = /* @__PURE__ */ new Set();
+  for (const node of net.nodes) {
+    if (node.src?.y != null || !node.arms?.length) continue;
+    const fit = fittedY(node, ground, noData);
+    if (fit == null) {
+      st.skippedNoData = (st.skippedNoData || 0) + 1;
+      continue;
+    }
+    if (fit.rms > RMS_MAX) {
+      st.skippedRough = (st.skippedRough || 0) + 1;
+      continue;
+    }
+    const y0 = fit.y, d = node.y - y0;
+    if (Math.abs(d) <= MOVE_TOL) continue;
+    if (Math.abs(d) > MOVE_MAX) {
+      st.skippedBig = (st.skippedBig || 0) + 1;
+      continue;
+    }
+    if (node.arms.some((a) => fixedRoad(a.road))) {
+      st.skippedStructure++;
+      continue;
+    }
+    node.y = y0;
+    moved.add(node);
+    st.nodes++;
+    if (Math.abs(d) > st.maxMove) {
+      st.maxMove = Math.abs(d);
+      st.maxAt = [Math.round(node.x), Math.round(node.z)];
+    }
+  }
+  for (const rr of net.roads) {
+    if (!moved.has(rr.A) && !moved.has(rr.B)) continue;
+    const { armA: aA, armB: aB, al, L: L2, type } = rr;
+    const ya = planeY(rr.A, aA.ox, aA.oz), yb = planeY(rr.B, aB.ox, aB.oz);
+    const free = Math.max(1, L2 - (rr.surf?.A.pin ?? 0) - (rr.surf?.B.pin ?? 0));
+    const need = Math.abs(yb - ya) / free / (0.92 * 0.9);
+    const grade = Math.max(type.maxGrade, need);
+    const groundAt = (s) => {
+      const e = evalAlignment(al, s);
+      return ground(e.x, e.z);
+    };
+    rr.prof = buildProfile(rr.src, L2, { ya, yb, fixed: pinnedProfile(rr) }, groundAt, grade);
+    blendProfileEnds(rr);
+    st.roads++;
+  }
+  st.maxMove = Math.round(st.maxMove * 100) / 100;
+  return st;
+}
+
 // viewer/roadBuild.js
 var CARVE = 0.12;
 var now3 = () => (globalThis.performance ?? Date).now();
@@ -9261,6 +9408,11 @@ function buildRoadData(o) {
   const net = buildRoadNetwork(roads, { ground });
   lap("buildRoadNetwork");
   const laneJoins = joinLaneGraph(net);
+  const offGrid = (x, z) => {
+    const h = hm.h;
+    return x < h.x0 || z < h.z0 || x > h.x0 + (h.cols - 1) * h.step || z > h.z0 + (h.rows - 1) * h.step;
+  };
+  const levels = relevelRoads(net, ground, (x, z) => offGrid(x, z) || hm.h.min != null && hm.ground(x, z) <= hm.h.min + 0.02);
   const pv = v2 ? afterNetworkV2(net, ctx, surf) : null;
   if (v2) lap("measured paint");
   const laneGraph = v2 ? refineLaneGraph(net, prep, pv.inventory) : null;
@@ -9272,7 +9424,7 @@ function buildRoadData(o) {
   const errors = net.issues.filter((i) => i.level === "error");
   const byCode = {};
   for (const i of errors) byCode[i.code] = (byCode[i.code] || 0) + 1;
-  const netInfo = { roads: net.roads.length, nodes: net.nodes.length, errors: errors.length, byCode, warnings: net.issues.length - errors.length };
+  const netInfo = { levels, roads: net.roads.length, nodes: net.nodes.length, errors: errors.length, byCode, warnings: net.issues.length - errors.length };
   const built = buildLaneRoadMesh(net, { markings: true });
   if (v2) pv.inventory.stats.parkingVerticesUnpainted = unpaintParking(built, ctx);
   let priority = null;
@@ -9284,10 +9436,19 @@ function buildRoadData(o) {
   }
   const parts = {};
   let carvedCells = 0, triangles = 0, surfaceStats = null, surfaceData = null;
+  const welds = [];
   if (surf) {
     const lineCuts = v2 ? pv.inventory.crossings.filter((c) => c.poly).map((c) => c.poly) : null;
+    if (o.levelPins) {
+      const H0 = prep.H, pin = o.levelPins;
+      prep.H = (x, z) => {
+        const h = H0(x, z), p = pin(x, z);
+        return p ? h + (p[0] - h) * p[1] : h;
+      };
+    }
     const S2 = buildSurfaceRoads(prep, built, surfaceAttribute(net, built.asphalt), roads, onBuilding, priority ? { priority, dropFolds: true, lineCuts } : {});
     for (const c of S2.carve) carvedCells += hm.carve(c.position, c.index, CARVE);
+    for (const part of Object.values(S2.parts)) welds.push({ position: part.position, index: part.index });
     for (const [name, part] of Object.entries(S2.parts)) {
       parts[name] = { position: part.position, normal: part.normal, uv: part.uv, attributes: part.attributes, index: part.index, aSurf: part.extra };
       triangles += part.index.length / 3;
@@ -9300,6 +9461,7 @@ function buildRoadData(o) {
     if (!part.vertexCount) continue;
     const index = clipToTile(part, bounds);
     carvedCells += hm.carve(part.position, index, CARVE);
+    welds.push({ position: part.position, index });
     const attributes = {};
     for (const [k, a] of Object.entries(part.attributes)) attributes[k] = { array: a.array, itemSize: a.itemSize };
     parts[name] = {
@@ -9312,8 +9474,12 @@ function buildRoadData(o) {
     };
     triangles += index.length / 3;
   }
-  const atlas = compactAtlas(built.atlas);
   lap("road meshes + carve");
+  const noDTM = hm.h?.min != null ? (x, z) => hm.ground(x, z) <= hm.h.min + 0.02 : () => false;
+  const weldSkip = (x, z) => noDTM(x, z) || ground !== hm.ground && Math.abs(ground(x, z) - hm.ground(x, z)) > 0.3;
+  const weldedCells = hm.weld ? hm.weld(welds, { skip: weldSkip }) : 0;
+  const atlas = compactAtlas(built.atlas);
+  lap("terrain weld");
   if (v2) {
     const paintPart = paintMeshV2(pv.items, prep, bounds);
     if (paintPart) {
@@ -9322,7 +9488,7 @@ function buildRoadData(o) {
     }
     lap("paint decal");
   }
-  const out = { parts, atlas, carvedCells, triangles, surfaceStats, surfaceData, netInfo, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1" };
+  const out = { parts, atlas, carvedCells, weldedCells, triangles, surfaceStats, surfaceData, netInfo, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1" };
   if (o.keep) Object.assign(out, { prep, built });
   return out;
 }
@@ -9871,6 +10037,25 @@ function roadDeckGround(heroes, ground) {
       return road(X);
     }
     return ground(x, z);
+  };
+}
+function roadDeckPins(heroes) {
+  const decks = (heroes || []).filter((h) => h.kind === "road_over_rail").map((h) => ({ f: heroFrame(h), d: h.deck }));
+  if (!decks.length) return null;
+  const END_PIN = 6, smooth3 = (t) => t * t * (3 - 2 * t);
+  return (x, z) => {
+    for (const { f, d } of decks) {
+      const [X, Y] = f.toLocal(x, z);
+      if (X >= d.x0 && X <= d.x1) continue;
+      const past = X > d.x1 ? X - d.x1 : d.x0 - X;
+      if (past >= END_PIN) continue;
+      const out = Math.max(0, d.kerb_sw - Y, Y - d.kerb_ne);
+      if (out >= 1) continue;
+      const g = (d.road_ends[1] - d.road_ends[0]) / (d.x1 - d.x0);
+      const y = X > d.x1 ? d.road_ends[1] + g * past : d.road_ends[0] - g * past;
+      return [y, smooth3(1 - past / END_PIN) * (1 - out)];
+    }
+    return null;
   };
 }
 function bridgeRings(doc, heroes) {
@@ -11053,6 +11238,7 @@ async function buildTileData(entry, base) {
     bounds,
     paint,
     ground: roadGround,
+    levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees,
     onBuilding: (x, z) => onRoof(roofs, x, z)
   }));

@@ -15,6 +15,7 @@ import { surfaceAttribute, hashPhase } from "./roadData.js";
 import { prepareSurfaces, fitRoadWidths, buildSurfaceRoads } from "./surfaces.js";
 import { preparePaintV2, afterNetworkV2, unpaintParking, paintMeshV2 } from "./streets/measuredPaint.js";
 import { refineLaneGraph, joinLaneGraph } from "./streets/laneGraph.js";
+import { relevelRoads } from "./streets/roadLevels.js";
 
 export const CARVE = 0.12;         // terrain is pushed this far under any road surface
 
@@ -73,6 +74,10 @@ export function buildRoadData(o) {
   // round 5: every lane-graph "next" link joins paths that touch (the engine's connectors start on the arm's straight
   // frame line, its lanes end on the bent alignment: gaps up to 92 m), on every tile (v1 too: traffic drives on it)
   const laneJoins = joinLaneGraph(net);
+  // round 5: junctions the engine's grade rule lifted / sank off the measured ground go back to it (D10 floated 1.4 m)
+  // (no DTM: outside the Brussels region the grid holds its lowest value; off the tile's grid it is clamped to its edge)
+  const offGrid = (x, z) => { const h = hm.h; return x < h.x0 || z < h.z0 || x > h.x0 + (h.cols - 1) * h.step || z > h.z0 + (h.rows - 1) * h.step; };
+  const levels = relevelRoads(net, ground, (x, z) => offGrid(x, z) || (hm.h.min != null && hm.ground(x, z) <= hm.h.min + 0.02));
   const pv = v2 ? afterNetworkV2(net, ctx, surf) : null;
   if (v2) lap("measured paint");
   // round 2: the lane graph traffic drives on, repaired (loops, centring, smoothing, hold points at the paint)
@@ -81,7 +86,7 @@ export function buildRoadData(o) {
   const errors = net.issues.filter((i) => i.level === "error");
   const byCode = {};
   for (const i of errors) byCode[i.code] = (byCode[i.code] || 0) + 1;
-  const netInfo = { roads: net.roads.length, nodes: net.nodes.length, errors: errors.length, byCode, warnings: net.issues.length - errors.length };
+  const netInfo = { levels, roads: net.roads.length, nodes: net.nodes.length, errors: errors.length, byCode, warnings: net.issues.length - errors.length };
 
   const built = buildLaneRoadMesh(net, { markings: true });
   if (v2) pv.inventory.stats.parkingVerticesUnpainted = unpaintParking(built, ctx);
@@ -95,11 +100,20 @@ export function buildRoadData(o) {
   }
   const parts = {};
   let carvedCells = 0, triangles = 0, surfaceStats = null, surfaceData = null;
+  const welds = [];                  // the road meshes the terrain is welded to (JOINS, after the carve)
   if (surf) {
     // measured surfaces + the engine's markings clipped to them (viewer/surfaces.js)
     const lineCuts = v2 ? pv.inventory.crossings.filter((c) => c.poly).map((c) => c.poly) : null;
+    // round 5: o.levelPins (x, z) -> [y, w] | null: levels the measured street must meet exactly (a hero road bridge's
+    // deck ends, viewer/rail/railData.js roadDeckPins): the street's height field blended toward them
+    if (o.levelPins) {
+      const H0 = prep.H, pin = o.levelPins;
+      prep.H = (x, z) => { const h = H0(x, z), p = pin(x, z); return p ? h + (p[0] - h) * p[1] : h; };
+    }
     const S = buildSurfaceRoads(prep, built, surfaceAttribute(net, built.asphalt), roads, onBuilding, priority ? { priority, dropFolds: true, lineCuts } : {});
     for (const c of S.carve) carvedCells += hm.carve(c.position, c.index, CARVE);
+    // (the weld meets the DRAWN surfaces: a sidewalk is its kerb height above the carve's base)
+    for (const part of Object.values(S.parts)) welds.push({ position: part.position, index: part.index });
     for (const [name, part] of Object.entries(S.parts)) {
       parts[name] = { position: part.position, normal: part.normal, uv: part.uv, attributes: part.attributes, index: part.index, aSurf: part.extra };
       triangles += part.index.length / 3;
@@ -112,21 +126,28 @@ export function buildRoadData(o) {
     if (!part.vertexCount) continue;
     const index = clipToTile(part, bounds);
     carvedCells += hm.carve(part.position, index, CARVE);
+    welds.push({ position: part.position, index });
     const attributes = {};
     for (const [k, a] of Object.entries(part.attributes)) attributes[k] = { array: a.array, itemSize: a.itemSize };
     parts[name] = { position: part.position, normal: part.normal, uv: part.uv, attributes, index,
       aSurf: name === "asphalt" ? surfaceAttribute(net, part) : null };
     triangles += index.length / 3;
   }
-  const atlas = compactAtlas(built.atlas);
+  // round 5, JOINS: where a road or sidewalk edge stands over the terrain the ground comes up to it (a shoulder and a
+  // bank), not where the DTM has no data, not under the hero bridges' decks (o.ground there is the deck, not the DTM)
   lap("road meshes + carve");
+  const noDTM = hm.h?.min != null ? (x, z) => hm.ground(x, z) <= hm.h.min + 0.02 : () => false;
+  const weldSkip = (x, z) => noDTM(x, z) || (ground !== hm.ground && Math.abs(ground(x, z) - hm.ground(x, z)) > 0.3);
+  const weldedCells = hm.weld ? hm.weld(welds, { skip: weldSkip }) : 0;
+  const atlas = compactAtlas(built.atlas);
+  lap("terrain weld");
   if (v2) {
     // the measured paint as its own decal mesh (one draw, viewer/roadPaint.js paintMaterial)
     const paintPart = paintMeshV2(pv.items, prep, bounds);
     if (paintPart) { parts.paint = paintPart; triangles += paintPart.index.length / 3; }
     lap("paint decal");
   }
-  const out = { parts, atlas, carvedCells, triangles, surfaceStats, surfaceData, netInfo, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1" };
+  const out = { parts, atlas, carvedCells, weldedCells, triangles, surfaceStats, surfaceData, netInfo, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1" };
   if (o.keep) Object.assign(out, { prep, built });
   return out;
 }
