@@ -229,6 +229,17 @@ export function wallMaterial(opts = {}) {
   const bars = max(barX, barY).mul(float(1).sub(isDoor)).mul(near.mul(0.7).add(0.3));
   const glass = glassBox.mul(float(1).sub(bars)).toVar();
   const frame = opening.sub(glassBox).add(glassBox.mul(bars)).max(0).toVar();
+  // RELIEF OVER A WIDER FOOTPRINT (owner 2026-11-13: stair-stepped bright outlines round the painted windows at grazing
+  // angles). The wall's normal comes from screen-space derivatives of its height (bumpNormal); a 12 cm reveal / 4 cm
+  // sill / 3 cm frame step inside ONE pixel tilted it almost into the wall plane along every edge, lit or dark per 2x2
+  // pixel quad: an aliased line MSAA cannot smooth (a shading edge, not a geometry edge). The colours keep their exact
+  // 1-pixel edges; the HEIGHTS of the same shapes are box-filtered over RELIEF_PX pixels, so the tilt spreads (and
+  // weakens) over a few pixels. (The roofs below solved the same thing with a ramp: "a step tilts the bump normal".)
+  const RELIEF_PX = /[?&]relief=1px/.test(location.search) ? 1.0 : 3.0;          // ?relief=1px: before (A/B)
+  const fwxR = fwx.mul(RELIEF_PX), fwyR = fwy.mul(RELIEF_PX);
+  const openingR = filteredPulse(gx, wxa, wxb, fwxR).mul(filteredPulse(gy, wya, wyb, fwyR)).mul(ok).toVar();
+  const glassBoxR = filteredPulse(gx, gxa, gxb, fwxR).mul(filteredPulse(gy, gya, gyb, fwyR)).mul(ok);
+  const frameR = openingR.sub(glassBoxR).add(glassBoxR.mul(bars)).max(0).toVar();
 
   // ---- wall surface by style, with relief heights
   const brick = courses(h, u, 0.0675, 0.23, float(0.01), rnd.mul(97.0));
@@ -250,15 +261,16 @@ export function wallMaterial(opts = {}) {
   if (wl) col = wl.col;
   // relief: domed bricks, recessed openings, protruding sills / plinth / cornice (metres)
   let height = wl ? float(0) : isBrick.mul(float(1).sub(brick.joint)).mul(0.0045);
-  height = height.sub(opening.mul(0.12));                                        // reveal: the opening sits 12 cm back
-  const aaH = fwidth(h).add(0.002);
+  height = height.sub(openingR.mul(0.12));                                       // reveal: the opening sits 12 cm back
+  const aaH = fwidth(h).add(0.002), aaHR = fwidth(h).mul(RELIEF_PX).add(0.002);
   const plinth = float(1).sub(smoothstep(float(0.5).sub(aaH), float(0.5).add(aaH), h)).toVar();
   col = mix(col, C(0.075, 0.08, 0.09).add(grain.mul(0.01)), plinth);
-  height = height.add(plinth.mul(0.03));
-  const corn = smoothstep(eh.sub(0.42).sub(aaH), eh.sub(0.42).add(aaH), h).mul(float(1).sub(smoothstep(eh.sub(0.12).sub(aaH), eh.sub(0.12).add(aaH), h)))
-    .mul(step(float(4.5), eh)).mul(float(1).sub(party)).toVar();
+  height = height.add(float(1).sub(smoothstep(float(0.5).sub(aaHR), float(0.5).add(aaHR), h)).mul(0.03));
+  const band2 = (lo, hi, a) => smoothstep(lo.sub(a), lo.add(a), h).mul(float(1).sub(smoothstep(hi.sub(a), hi.add(a), h)));
+  const cornOn = step(float(4.5), eh).mul(float(1).sub(party));
+  const corn = band2(eh.sub(0.42), eh.sub(0.12), aaH).mul(cornOn).toVar();
   col = mix(col, C(0.55, 0.53, 0.49), corn.mul(0.85));
-  height = height.add(corn.mul(0.05));
+  height = height.add(band2(eh.sub(0.42), eh.sub(0.12), aaHR).mul(cornOn).mul(0.05));
   // sills (blue stone) under every window, a shadow beneath them, lit top
   const sillX = filteredPulse(gx, wxa.sub(float(0.06).div(bw)), wxb.add(float(0.06).div(bw)), fwx);
   const sillY = filteredPulse(gy, wya.sub(float(0.08).div(storeyH)), wya, fwy);
@@ -266,7 +278,9 @@ export function wallMaterial(opts = {}) {
   const underSill = sillX.mul(filteredPulse(gy, wya.sub(float(0.3).div(storeyH)), wya.sub(float(0.08).div(storeyH)), fwy)).mul(ok).mul(float(1).sub(isDoor)).mul(float(1).sub(isFr));
   col = mix(col, C(0.16, 0.165, 0.17).add(env.uSunColor.mul(0.04)), sill);
   col = col.mul(float(1).sub(underSill.mul(0.25)));
-  height = height.add(sill.mul(0.04));
+  const sillR = filteredPulse(gx, wxa.sub(float(0.06).div(bw)), wxb.add(float(0.06).div(bw)), fwxR)
+    .mul(filteredPulse(gy, wya.sub(float(0.08).div(storeyH)), wya, fwyR)).mul(ok).mul(float(1).sub(isDoor)).mul(float(1).sub(isFr));
+  height = height.add(sillR.mul(0.04));
   // reveal shadows on the wall just inside the opening: lintel (top) and jambs
   const revealTop = smoothstep(gyb.sub(float(0.12).div(storeyH)), gyb, fract(gy)).mul(glassBox);
   const revealSide = max(smoothstep(gxa.add(float(0.1).div(bw)), gxa, fract(gx)), smoothstep(gxb.sub(float(0.1).div(bw)), gxb, fract(gx))).mul(glassBox);
@@ -331,7 +345,7 @@ export function wallMaterial(opts = {}) {
   col = mix(col, glassCol, glassPart);
   col = mix(col, doorCol, doorPart);
   col = mix(col, shopCol, isShop);
-  height = height.add(frame.mul(0.03).mul(notShop)).sub(shopGlass.mul(0.08).mul(near));
+  height = height.add(frameR.mul(0.03).mul(notShop)).sub(shopGlass.mul(0.08).mul(near));
 
   // ---- landmarks: ashlar stone, tall round-arched stained-glass windows, a portal
   const ash = courses(h, u, 0.32, 0.62, float(0.012), rnd.mul(31.0));
