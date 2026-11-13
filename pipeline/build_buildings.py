@@ -270,6 +270,8 @@ def build(tile, src, id_field=None, height_field=None, layer=None):
                     continue
                 if abs(n[1]) < WALL_NY:
                     fc = np.mean(f[0], axis=0)
+                    # a first guess only: wrong on concave houses (an L's inner-corner walls face the centre);
+                    # tools/orient_buildings.mjs fixes every triangle afterwards (run it after this step)
                     if (fc[0] - cx) * n[0] + (fc[2] - cz) * n[2] < 0:   # make walls face away from the centre
                         f = [r[::-1] for r in f]
                         n = (-n[0], -n[1], -n[2])

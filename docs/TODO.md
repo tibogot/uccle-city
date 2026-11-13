@@ -81,7 +81,18 @@ windows: Mr.doob's filteredPulse / boxCoverage (as roads round 4 kerbs: 45 -> 4 
 specular AA (Tokuyoshi-Kaplanyan, as on the facade kit), library textures' mips + anisotropy; (4) optional TRAA (three
 r187 TRAANode) in a lab only if no ghosting; (5) the flicker test before / after on that wall.
 
-**DOUBLE-SIDED BUILDINGS (owner question 2026-11-13):** the UrbIS walls + roofs (facades.js:176, :484) are DoubleSide
+**DOUBLE-SIDED BUILDINGS: DONE (2026-11-13).** Cause: pipeline/build_buildings.py turned walls "away from the
+centre" (wrong on every concave house) and every roof up. tools/orient_buildings.mjs (ray parity against the
+building's own mesh, ahead vs behind, 3 jittered lines; undecided walls by the footprint) re-wound 85,211 of 788,136
+wall and 4,123 of 441,337 roof triangles in all 120 buildings.bin (idempotent: a 2nd run flips 0); manifest re-stamped.
+Walls + roofs FrontSide, shadowSide FrontSide (r187 casts a FrontSide material's BACK faces, and the solids have no
+floor: holes); `?bldside=double` = before. Checked: L-house I6 (1096, 747) old vs new identical, sunlit brick no acne,
+console clean. GPU gain to measure on a GREEN preflight (perf follow-ups). main.js:201 DoubleSide = tram rail strips,
+left. Re-run the tool after any build_buildings.py run.
+**SAINT-JOB CHURCH STAIRS (owner, 2026-11-13):** the character walked THROUGH the entrance stairs instead of up them
+(last seen before today). Check after the character-physics work (owner's other chat): the stairs as walk steps /
+colliders in the hero model's collision.
+**(was) DOUBLE-SIDED BUILDINGS (owner question 2026-11-13):** the UrbIS walls + roofs (facades.js:176, :484) are DoubleSide
 ("some UrbIS faces are wound inward"); details, kit and heroes are front-only. Fix: orient every wall / roof face
 outward at build time (footprint winding / normal vs the building's inside), then FrontSide + the mesh checker (no
 missing wall). Gains: the sun shadow pass (26-40 % of the GPU) stops drawing back faces; correct lighting on inverted

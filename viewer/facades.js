@@ -172,8 +172,20 @@ export function paintedGlass({ u, h, fw, street, rnd: rndIn, frCode }) {
 /** opts.kit: the material of the FAÇADE KIT's faces (viewer/facadeKit/): the same painted façade, with the openings the
  *  kit's pieces fill (aKit = (on, arch rise): window B's segmental head reaches `rise` m over the painted head) cut
  *  where the kit draws (kitFade.js: the same dithered split as the pieces, so a pixel shows one or the other). */
+/** Walls and roofs: front faces only. Every UrbIS triangle is wound outward since 2026-11-13 (tools/orient_buildings.mjs;
+ *  85k walls + 4k roofs were inward). The shadow pass casts the FRONT faces too: r187 would cast a FrontSide material's
+ *  BACK faces, and the solids have no floor (pipeline/build_buildings.py keeps it as the footprint only), so the
+ *  sun-facing roof would be culled and the shadow would get a hole; the front faces close the silhouette, and they are
+ *  the faces the DoubleSide pass already resolved to, at half the cost. ?bldside=double = before. */
+const BLD_SIDE = /[?&]bldside=double/.test(location.search) ? THREE.DoubleSide : THREE.FrontSide;
+function bldMaterial() {
+  const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, side: BLD_SIDE });
+  m.shadowSide = BLD_SIDE;
+  return m;
+}
+
 export function wallMaterial(opts = {}) {
-  const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, side: THREE.DoubleSide });   // some UrbIS faces are wound inward: never cull them
+  const m = bldMaterial();
   const P = positionWorld;
   const wall = attribute("aWall", "vec4"), bld = attribute("aBld", "vec4");
   const u = wall.x, fw = wall.y, h = wall.z, eh = wall.w;
@@ -495,7 +507,7 @@ export function wallMaterial(opts = {}) {
 }
 
 export function roofMaterial() {
-  const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, side: THREE.DoubleSide });   // some UrbIS faces are wound inward: never cull them
+  const m = bldMaterial();
   const P = positionWorld;
   const r = attribute("aRoof", "vec4"), base = attribute("aRoofCol", "vec3");
   const u = r.x, v = r.y, flat = r.z, style = r.w;
