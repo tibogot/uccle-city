@@ -24,7 +24,7 @@ For the landmark list: 34 places of worship, 15 historic castles, 6 manors.
 
 ## The kits to build, in order (premium Blender, named material slots, LOD0-2, one draw per slot, instanced)
 
-1. **STIB stops**: the current Brussels bus / tram shelter (glass, the integrated lit ad panel = the "billboard" of
+1. **STIB stops** (DONE on claude/stops: `docs/assets/STOPS.md`, with the free ad panel of kit 2): the current Brussels bus / tram shelter (glass, the integrated lit ad panel = the "billboard" of
    most streets, bench, the STIB totem with line numbers and stop name as SDF text from GTFS), the stop pole for
    unsheltered stops, tram platform furniture. 332 + 304 placements from OSM / GTFS stops. Night: the ad panel and
    totem glow through the existing emissive slots (no lights: fixed light count).
