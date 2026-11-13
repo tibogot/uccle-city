@@ -1,0 +1,10 @@
+{
+ "source": "UrbIS DSM 2021 (CC0), sheet 147167, 0.5 m, bilinear, resampled on the building frame",
+ "u0": -32.0,
+ "w0": -32.0,
+ "step": 0.5,
+ "cols": 129,
+ "rows": 129,
+ "base": 100.0,
+ "encoding": "u16le, centimetres above 100 m TAW, row-major (w rows, u columns)"
+}

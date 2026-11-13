@@ -48,3 +48,5 @@ viewer/materials/textures/cand/
 tools/road_audit/node_modules/
 docs/roads/audit/*/*.json
 !docs/roads/audit/*/summary.json
+models/augustin/*.raw.glb
+models/augustin/audit/**/*.json

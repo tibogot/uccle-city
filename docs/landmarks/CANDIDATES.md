@@ -10,7 +10,7 @@ station, the police station.
 
 | name | footprint | note |
 |---|---|---|
-| Saint-Augustin, Altitude Cent (FOREST, just over the border) | large | owner's pick: concrete Art Deco landmark on the skyline from the north of Uccle |
+| Saint-Augustin, Altitude Cent (FOREST, just over the border) | ~1,470 m² | **built** (branch claude/augustin): docs/landmarks/AUGUSTIN.md, `?augustin=0` = without |
 | Notre-Dame du Rosaire (Q3580420) | ~1,410 m² | largest church in Uccle without a model |
 | Sacré-Cœur (Q62570896) | ~1,140 m² | |
 | Saint-Paul (Q3583482) | ~765 m² | |
