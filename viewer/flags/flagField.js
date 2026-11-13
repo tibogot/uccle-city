@@ -90,8 +90,8 @@ export class BakedFlags {
     g.setIndex(new THREE.BufferAttribute(grid.index, 1));
     this.pose = new Float32Array(capacity * 4);       // x, y, z, yaw
     this.extra = new Float32Array(capacity * 4);      // phase (0..1), scale, -, -
-    this.poseAttr = new THREE.InstancedBufferAttribute(this.pose, 4); this.poseAttr.setUsage(THREE.DynamicDrawUsage);
-    this.extraAttr = new THREE.InstancedBufferAttribute(this.extra, 4); this.extraAttr.setUsage(THREE.DynamicDrawUsage);
+    this.poseAttr = new THREE.InstancedBufferAttribute(this.pose, 4);
+    this.extraAttr = new THREE.InstancedBufferAttribute(this.extra, 4);
     g.setAttribute("aPose", this.poseAttr); g.setAttribute("aExtra", this.extraAttr);
     g.instanceCount = 0;
     this.geometry = g; this.capacity = capacity;
@@ -200,8 +200,8 @@ export class LiveFlag {
     const c = this.cloth, n = c.count;
     const g = new THREE.BufferGeometry();
     this.posArr = new Float32Array(n * 3); this.nrmArr = new Float32Array(n * 3); this._n64 = new Float64Array(n * 3);
-    g.setAttribute("position", new THREE.BufferAttribute(this.posArr, 3).setUsage(THREE.DynamicDrawUsage));
-    g.setAttribute("normal", new THREE.BufferAttribute(this.nrmArr, 3).setUsage(THREE.DynamicDrawUsage));
+    g.setAttribute("position", new THREE.BufferAttribute(this.posArr, 3));
+    g.setAttribute("normal", new THREE.BufferAttribute(this.nrmArr, 3));
     g.setAttribute("uv", new THREE.BufferAttribute(c.uv, 2));
     g.setIndex(new THREE.BufferAttribute(c.index, 1));
     g.boundingSphere = new THREE.Sphere(new THREE.Vector3(), Math.hypot(c.width, c.height) * 1.2);

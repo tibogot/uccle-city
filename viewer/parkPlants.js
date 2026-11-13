@@ -97,7 +97,7 @@ export class PlantField {
     for (const [kind, list] of Object.entries(this.kinds)) {
       const im = new THREE.InstancedMesh(PLANT_KINDS[kind](), this.material, Math.max(1, list.length));
       im.castShadow = false; im.receiveShadow = true; im.frustumCulled = false; im.count = 0; im.name = `plants ${kind}`;
-      im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      // static usage: uploaded on needsUpdate only (three r187 re-uploads a DynamicDrawUsage buffer WHOLE in every render pass)
       this.group.add(im); this.meshes[kind] = im;
     }
   }

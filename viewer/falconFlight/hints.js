@@ -17,7 +17,7 @@ export class ThermalHints {
     const g = new THREE.InstancedBufferGeometry();
     for (const k of Object.keys(base.attributes)) g.setAttribute(k, base.attributes[k]);
     g.instanceCount = n;
-    const mk = (s) => { const a = new THREE.InstancedBufferAttribute(new Float32Array(n * s), s); a.setUsage(THREE.DynamicDrawUsage); return a; };
+    const mk = (s) => { const a = new THREE.InstancedBufferAttribute(new Float32Array(n * s), s); return a; };
     this.aPos = mk(4); this.aDir = mk(4); this.aAnim = mk(4);
     const tint = new Float32Array(n * 3); for (let i = 0; i < n; i++) tint.set(i % 4 === 3 ? [0.55, 0.55, 0.58] : [2.0, 2.0, 2.0], i * 3);   // gulls white, the odd crow-grey
     g.setAttribute("iPos", this.aPos); g.setAttribute("iDir", this.aDir); g.setAttribute("iAnim", this.aAnim);

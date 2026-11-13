@@ -23,7 +23,7 @@ export class FalconCamera {
     this.N = N; this.sp = new Float32Array(N * 3);
     for (let i = 0; i < N * 3; i++) this.sp[i] = (Math.random() - 0.5) * 50;
     const g = new THREE.BufferGeometry();
-    this.sPos = new THREE.BufferAttribute(new Float32Array(N * 6), 3); this.sPos.setUsage(THREE.DynamicDrawUsage);
+    this.sPos = new THREE.BufferAttribute(new Float32Array(N * 6), 3);
     const a = new Float32Array(N * 2); for (let i = 0; i < N; i++) { a[i * 2] = 0; a[i * 2 + 1] = 1; }
     g.setAttribute("position", this.sPos); g.setAttribute("aEnd", new THREE.BufferAttribute(a, 1));
     this.streakOpacity = uniform(0);

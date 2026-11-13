@@ -123,9 +123,9 @@ export class Pigeons {
     const g = new THREE.InstancedBufferGeometry();
     for (const k of Object.keys(base.attributes)) g.setAttribute(k, base.attributes[k]);
     g.instanceCount = n;
-    this.aPos = new THREE.InstancedBufferAttribute(new Float32Array(n * 4), 4); this.aPos.setUsage(THREE.DynamicDrawUsage);
-    this.aDir = new THREE.InstancedBufferAttribute(new Float32Array(n * 4), 4); this.aDir.setUsage(THREE.DynamicDrawUsage);
-    this.aAnim = new THREE.InstancedBufferAttribute(new Float32Array(n * 4), 4); this.aAnim.setUsage(THREE.DynamicDrawUsage);
+    this.aPos = new THREE.InstancedBufferAttribute(new Float32Array(n * 4), 4);
+    this.aDir = new THREE.InstancedBufferAttribute(new Float32Array(n * 4), 4);
+    this.aAnim = new THREE.InstancedBufferAttribute(new Float32Array(n * 4), 4);
     const tint = new Float32Array(n * 3);
     const MORPH = [[1, 1, 1], [1, 1, 1], [1, 1, 1], [0.78, 0.76, 0.8], [0.55, 0.52, 0.55], [1.25, 1.22, 1.18], [1.05, 0.95, 0.9], [0.9, 0.92, 1.0]];
     for (let i = 0; i < n; i++) { const t = MORPH[(i * 7 + 3) % MORPH.length]; const j = 0.92 + 0.16 * ((i * 0.618) % 1); tint.set([t[0] * j, t[1] * j, t[2] * j], i * 3); }

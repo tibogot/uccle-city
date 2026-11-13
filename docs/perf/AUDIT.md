@@ -62,7 +62,50 @@ flight, 5,155 at the end of the session (to check: more tiles held, or a leak).
    20 s after the cover (each a possible hitch).
 7. **Heap 1.2-1.4 GB with ~800 MB swings:** large garbage-collection work; find what allocates per frame / per tile.
 
-### Next, in order
+## Step 1: the streaming stall + per-frame CPU (2026-11-13, same session)
+
+**Trace of a fast 30 s flight over 9 tiles** (`scratchpad/trace_stream.json.gz`, analysed with a small script): the
+worst frame (333 ms) is ONE 333 ms task in the **GPU process** (`CrGpuMain`), not on the page's main thread; the main
+thread had no task over 83 ms. No sub-events in the trace (default categories).
+
+**Not shader compiles:** a 35 s flight into unloaded tiles created **0** render pipelines (sync or async) and still had
+283 ms and 150 ms frames.
+
+**Found and fixed: buffers re-uploaded in every render pass.** three r187 (`Attributes.update`) uploads a buffer when
+`data.version < attribute.version || attribute.usage === DynamicDrawUsage`: a DynamicDrawUsage buffer goes up WHOLE in
+every render pass of every frame, changed or not (the car fleet, trams and trees already avoid it, with that comment).
+Newer systems still used it: the facade kit (aKitI / aKitJ / aKitF / aVar + instance matrices, 47 meshes), the park kit
+and plants, the pigeons, the falcon's hints and camera streaks, the flags. All of them already set `needsUpdate` (+ update
+ranges) when they write, so DynamicDrawUsage is dropped there (7 files; the two debug-draw helpers keep it).
+
+| | before | after |
+|---|---|---|
+| uploads per frame, moving at street level | 200 calls, **857 KB** (kit: 164 calls, 664 KB) | 112 calls, **56 KB** |
+| uploads per frame, standing still | ~166 calls, ~730 KB (44 MB/s) | 31 calls, **41 KB** |
+
+The kit still rebuckets every few frames when nothing moves (25 small uploads per frame standing still): to look at.
+
+**Stutter after the fix (2 rounds, frames > 33 ms):** flight 196 / 371 -> 231 / 141, stjob 96 / 53 -> 99 / 143,
+Alsemberg 155 / 788 -> 210 / 264. **No clear change: within the spread between rounds.** The uploads were waste (main
+thread + GPU-process copies every frame) and are gone, but they were not the cause of the stutter.
+
+**Where the main thread's frame goes (street level, 1,238 frames):** the animation loop takes p50 **8.6 ms**, p90 11,
+p99 19, max 194; three's own `render()` CPU is most of it (28 render calls a frame: scene, shadow, post passes; ~800
+draws in all). `scene.updateMatrixWorld` costs 0.7 ms a frame (1,934 objects; Mr.doob's `matrixWorldAutoUpdate = false`
+would save most of it). The frames at exactly 33.3 ms are frames that just missed the 16.7 ms deadline: the main thread
+is close to its budget on every frame, so any extra slice (a tile landing, GC) tips it over.
+
+### Next, in order (updated)
+
+1. **CPU per draw (the main thread's biggest item):** fewer draws: no sun shadow from small things (kerbs, bollards,
+   kit pieces, markings: fewer shadow draws), r187 `BundleGroup` for static tile content (records the draws once),
+   cell culling of instanced sets, merging the kit's 47 meshes, `matrixWorldAutoUpdate = false` (-0.6 ms).
+2. **The GPU-process stalls when tiles stream** (150-450 ms): trace again with the `gpu` / `dawn` categories to see what
+   the GPU process does (buffer creation + uploads of a tile's meshes, texture uploads, destroys); spread a tile's
+   uploads over several frames.
+3. Sun shadow GPU A/B (2.1, 2.2), startup (1.3), heap (1.6).
+
+### Next, in order (baseline)
 
 1. Trace the streaming stall (teleport + fast flight) with a Performance trace: what the main thread and the GPU
    process do in the 200-300 ms frames and in the multi-second stall.

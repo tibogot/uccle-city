@@ -56,11 +56,11 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
     const arrays = {};
     for (const a of ["aKitI", "aKitJ", "aKitF", "aVar"]) {
       arrays[a] = new Float32Array(cap * 4);
-      geom.setAttribute(a, new THREE.InstancedBufferAttribute(arrays[a], 4).setUsage(THREE.DynamicDrawUsage));
+      geom.setAttribute(a, new THREE.InstancedBufferAttribute(arrays[a], 4));
     }
     geom.userData.shared = true;
     const mesh = new THREE.InstancedMesh(geom, matFor(kind, lod), cap);
-    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    // static usage: uploaded on needsUpdate only (three r187 re-uploads a DynamicDrawUsage buffer WHOLE in every render pass)
     mesh.count = 0;
     mesh.frustumCulled = false;
     mesh.castShadow = lod === 0 && kind === "opaque";

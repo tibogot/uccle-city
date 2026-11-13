@@ -366,14 +366,14 @@ export class KitField {
       const P = this.kit.pieces[piece], cap = list.length;
       const lods = P.lods.map((prims) => {
         const mk = (fade) => {
-          const attr = fade ? new THREE.InstancedBufferAttribute(new Float32Array(cap), 1).setUsage(THREE.DynamicDrawUsage) : null;
+          const attr = fade ? new THREE.InstancedBufferAttribute(new Float32Array(cap), 1) : null;
           const meshes = prims.map(({ slot, geometry }) => {
             const vertexAo = !geometry.attributes.uv1;
             const s = this.slotOverride[slot] ?? slot;
             let mat = this.kit.slotMaterial(s, vertexAo);
             if (fade) mat = fadeCopy(mat, attr);
             const im = new THREE.InstancedMesh(geometry, mat, cap);
-            im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+            // static usage: uploaded on needsUpdate only (three r187 re-uploads a DynamicDrawUsage buffer WHOLE in every render pass)
             im.count = 0; im.frustumCulled = false; im.visible = false;
             im.castShadow = this.castShadow; im.receiveShadow = this.receiveShadow;
             im.name = `${piece} ${slot}${fade ? " fade" : ""}`;
@@ -391,7 +391,7 @@ export class KitField {
         const SL = P.lods[P.lods.length - 1];        // the shadow is cast by the LAST LOD's mesh (LOD2) for LOD0 and LOD1
         proxy = { meshes: SL.map(({ geometry }) => {
           const im = new THREE.InstancedMesh(geometry, this.kit.slotMaterial(SL[0].slot, !geometry.attributes.uv1), cap);
-          im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); im.count = 0; im.frustumCulled = false; im.visible = false;
+          im.count = 0; im.frustumCulled = false; im.visible = false;
           im.castShadow = true; im.receiveShadow = false; im.layers.set(SHADOW_LAYER); im.name = `${piece} shadow proxy`;
           this.group.add(im); this.meshes.push(im); return im;
         }), buf: new Float32Array(cap * 16), n: 0 };
