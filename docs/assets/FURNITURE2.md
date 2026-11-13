@@ -36,7 +36,7 @@ benches and bike racks at the OSM points, the street life's glass bubbles, no bi
   Small pieces cast no shadow at LOD2 (their shadow dithers out with LOD1); the bike box and glass bank keep it.
 - Night: nothing glows, no light added (fixed light count).
 
-## Placement (`tools/furniture/build_furniture.py` → `data/furniture/<T>.json`, 98 files + `summary.json`, ~350 KB)
+## Placement (`tools/furniture/build_furniture.py` → `data/furniture/<T>.json`, 98 files + `summary.json`, ~430 KB)
 
 ```
 C:/Users/tibog/Downloads/venv/Scripts/python.exe tools/furniture/build_furniture.py --all --raw <main checkout>/data/raw
