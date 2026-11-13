@@ -141,6 +141,35 @@ of writes). The spikes are rare now: 59 frames > 33 ms in 60 s of fast flight (1
 heap allocation under ~900 MB of churn a minute, the transfer ring for `writeBuffer` (Chrome copies small writes
 through a shared ring; 17 MB/s of them), or a tree-impostor bake (render-to-texture) landing with a tile.
 
+## Step 4: startup (2026-11-13, same session): tried, reverted
+
+**Where the boot goes (Performance trace of a load):** one 7.1 s main-thread task (traced; 3.2 s + 2.6 s untraced) =
+`warmBoot`'s forced frames (vendor `warmGamePipelines`): `renderFrame` -> three `render` -> `renderObject` -> TSL
+`build`: every node material of ~700 drawables built SYNCHRONOUSLY in the first frames. Plus the hero colliders
+(`heroColliders.js carBlockers`, 0.4 s), the first tile's tree field + drive colliders (0.24 s), GLTF parsing.
+
+**Tried (one load each, same machine, ?ring=1&far=1):**
+
+| boot | cover lifts | longest task before it | sync pipelines in the 15 s after |
+|---|---|---|---|
+| today | 17.9 s (14.4 s in the baseline session) | 5.2 s | 5 |
+| whole scene through `precompile()` (async compileAsync) with the frames paused, then warmBoot | 25.9 s | 0.87 s | 15 |
+| `compileFor` created before the landmarks + first tile (camera + pipeline moved up) | 17.5 s | 3.5 s | 25 |
+| both | 22.5 s | 0.85 s | 15 |
+
+The async route (three's `compileAsync`, sliced every ~8 ms) is ~2x slower in total than the synchronous build (12 s vs
+7.5 s for the same scene), so it removes the long tasks under the cover but adds 5-8 s; under the cover a long task
+is not felt as a stutter. Nothing kept (main.js reverted).
+
+**What would really cut it (to decide):**
+- **Fewer unique shaders:** ~700 drawables -> ~300-400 render pipelines + their node builds. Shared library materials
+  instead of per-model / per-tile ones, fewer fade variants (lodFade fadeVariant doubles materials), one terrain
+  material for all tiles (AUDIT_PLAN 2.6).
+- **Show the city earlier:** lift the cover once the start tile and the materials in view are built, and let the
+  rest (far tiles, landmarks out of view) compile async behind the visible frames (the async route is then a gain,
+  it runs while the player already looks around). Perceived startup ~8-10 s, at the price of possible pop-in of
+  far content in the first seconds (to check with the no-popping rule).
+
 ### Next, in order (updated)
 
 1. **CPU per draw (the main thread's biggest item):** fewer draws: no sun shadow from small things (kerbs, bollards,
