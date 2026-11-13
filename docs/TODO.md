@@ -23,7 +23,9 @@ connectors"). FIXED 2026-11-13 (trafficGraph.js roundKinks: the lane network smo
 **Running (agents, 2026-11-13 ~05:00):** roads round 5 (`claude/roads5`, port 8845: lane next-links that jump, tight
 connectors, the 70 road ledges incl. D10 / G10 / Verrewinkel SE, Edith Cavell centre line, kerb gaps) · falcon round 2
 (`claude/falcon2`, port 8847: PAUSED for memory after item 1 (trees as obstacles + tree perches, done, WIP d46bd3b);
-next: arches, camera clipping, weather wind, more pigeon flocks; resume with a message).
+next: arches, camera clipping, weather wind, more pigeon flocks; RESUMED ~06:00) · ground textures (`claude/groundtex`,
+port 8848: real CC0 scans for lawn / verge / forest floor / gravel / soil / sand on the terrain instead of the procedural
+noise ground (owner: "the grass looks kind of bad"), anti-tiling, one shared material, `?groundtex=0` = old).
 
 **Merged 2026-11-13: STREET LIFE IN THE CITY** (`?streetlife=0` off): 524 real shop names, windows, awnings, pharmacy
 crosses, fuel stations, STIB stops, Villo, bpost, street plates, house numbers; own worker, city-wide prop pools, +11-16
