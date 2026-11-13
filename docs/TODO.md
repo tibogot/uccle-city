@@ -21,9 +21,15 @@ lane-graph turn connectors + the car's heading interpolation after the perf audi
 connectors"). FIXED 2026-11-13 (trafficGraph.js roundKinks: the lane network smoothed as one graph around sharp vertices / joins; I6: sharpest vertex 162 -> 40 deg, joins > 30 deg 90 -> 43, of which only 16 at joins that really touch). Owner: look at a daytime turn. FOUND: 48 "next" links on I6 (73 on H5) join a lane end to a path starting 3.6-19 m away (a car following one jumps): roads-engine lane graph, for the roads work. Turn radii down to 1.5-2 m on a few connectors (u-turns / tight corners).
 
 **Running (agents, 2026-11-13 ~05:00):** roads round 5 (`claude/roads5`, port 8845: lane next-links that jump, tight
-connectors, the 70 road ledges incl. D10 / G10 / Verrewinkel SE, Edith Cavell centre line, kerb gaps) · street life in
-the city (`claude/streetlife-city`, port 8846: shop names, plates, numbers, `?streetlife=0`) · falcon round 2
-(`claude/falcon2`, port 8847: trees as obstacles, under arches, camera clipping, weather wind, more pigeon flocks).
+connectors, the 70 road ledges incl. D10 / G10 / Verrewinkel SE, Edith Cavell centre line, kerb gaps) · falcon round 2
+(`claude/falcon2`, port 8847: PAUSED for memory after item 1 (trees as obstacles + tree perches, done, WIP d46bd3b);
+next: arches, camera clipping, weather wind, more pigeon flocks; resume with a message).
+
+**Merged 2026-11-13: STREET LIFE IN THE CITY** (`?streetlife=0` off): 524 real shop names, windows, awnings, pharmacy
+crosses, fuel stations, STIB stops, Villo, bpost, street plates, house numbers; own worker, city-wide prop pools, +11-16
+draws at street level, emissive at night. Left: shopfronts sink on sloping streets (Esso Fort-Jaco), some house numbers
+behind shop windows, one wall opening for several shops; perf A/B with `?streetlife=0` on a quiet machine; licences
+(Brussels Mobility WFS, UrbIS addresses, OSM: show "© OpenStreetMap contributors", re-fetch from overpass-api.de).
 Perf audit paused (machine worn: timings drifted); resume on a fresh machine (docs/perf/AUDIT.md "Next").
 
 **Merged 2026-11-13: collisions + joins audit round 1:** colliders from what is drawn (car pass-throughs 32,041 -> 0 over
