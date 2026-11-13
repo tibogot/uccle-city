@@ -225,6 +225,9 @@ export class CityFlyer {
     for (const r of this.rings) r.style.display = "none";
     this.panel?.domElement.style.setProperty("display", "none");
     if (this.audio) { const on = this.audio.on; this.audio.on = false; this.audio.update(0.016, { V: 0, phi: 0, fold: 0, lift: 0, downstroke: false, flapLevel: 0 }, this.camera); this.audio.on = on; }
+    // the city's own fog back
+    const L = this.opts.lighting;
+    if (L?.uFogDensity && this._fog) { if (L.uFogDensity.value === this._fog.set) L.uFogDensity.value = this._fog.base; this._fog = null; }
     // the camera's field of view back to the city's
     if (this.fovCity) { this.camera.fov = this.fovCity; this.camera.updateProjectionMatrix(); }
   }
@@ -376,6 +379,7 @@ export class CityFlyer {
       return;
     }
     g.update(dt, this.camera);
+    this.highFog();
     const t3 = performance.now();
     this.pos.set(f.pos.x, f.pos.y, f.pos.z);
     this.ambient(this.camera.position, dt);
@@ -395,6 +399,30 @@ export class CityFlyer {
     this.hudFrame();
     c.total = performance.now() - t0;
     this.cpu.frames.push({ ...c }); if (this.cpu.frames.length > 600) this.cpu.frames.shift();
+  }
+
+  /** HAZE WHILE HIGH: from a few hundred metres up the far-LOD ring's edge shows ((far + 0.5) tiles round the tile
+   *  under the falcon, ?far=; nothing beyond). The city's aerial fog (viewer/lighting.js: 1 - exp(-tau^2), tau =
+   *  density x distance x the mean of the height falloff along the ray) is thickened so it reaches 85 % at that edge,
+   *  eased in from 120 to 400 m over the ground; a uniform (no shader change), the city's own value back on exit or
+   *  when the city sets its own (a time-of-day change). */
+  highFog() {
+    const L = this.opts.lighting, cam = this.camera.position;
+    if (!L?.uFogDensity || this.params.get("highfog") === "0") return;
+    const u = L.uFogDensity;
+    if (!this._fog || u.value !== this._fog.set) this._fog = { base: u.value, set: u.value };
+    const T = 500, ring = Math.max(0, Math.min(2, +(this.params.get("ring") ?? 1))), far = Math.max(ring, Math.min(6, +(this.params.get("far") ?? 3)));
+    const fx = this.game.f.pos.x, fz = this.game.f.pos.z;
+    const tcx = (Math.floor(fx / T) + 0.5) * T, tcz = (Math.floor(fz / T) + 0.5) * T;
+    const D = Math.max(200, (far + 0.5) * T - Math.max(Math.abs(cam.x - tcx), Math.abs(cam.z - tcz)));
+    const g = this.w.ground(cam.x, cam.z), h = cam.y - g;
+    const H = L.uFogHeight?.value ?? 900, F0 = L.uFogFloor?.value ?? 40;
+    const ya = Math.max(g - F0, 0), yb = Math.max(cam.y - F0, 0), dy = yb - ya;
+    const mean = Math.abs(dy) > 1 ? (Math.exp(-ya / H) - Math.exp(-yb / H)) * H / dy : Math.exp(-ya / H);
+    const need = 1.377 / (D * mean);                             // 1 - exp(-1.377^2) = 0.85
+    const k = clamp((h - 120) / 280, 0, 1), e = k * k * (3 - 2 * k);
+    const want = this._fog.base + Math.max(0, need - this._fog.base) * e;
+    u.value = this._fog.set = u.value + (want - u.value) * 0.05;   // eased (a stoop drops 600 m in 10 s)
   }
 
   /** THE WEATHER (viewer/weather/weatherState.js): when the city runs one (opts.weather or window.__weather, a Weather
