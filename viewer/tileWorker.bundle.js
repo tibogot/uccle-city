@@ -537,7 +537,9 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
   const W = { position: [], normal: [], aWall: [], aBld: [], aFN: [] };
   const WK = { position: [], normal: [], aWall: [], aBld: [], aFN: [], aKit: [] };
   const shops = new Grid(40);
-  for (const p of feats?.points || []) if (p.kind === "shop") {
+  const fronts = opts.fronts ? new Grid(40) : null;
+  if (fronts) for (const q of opts.fronts) fronts.add(q.x, q.z, q.x, q.z, q);
+  else for (const p of feats?.points || []) if (p.kind === "shop") {
     p.used = false;
     shops.add(p.x, p.z, p.x, p.z, p);
   }
@@ -658,7 +660,24 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       stats.party += party;
       stats.street += street;
       let shopU = 0, shopW = 0;
-      if (street && !landmark && width > 3.2) {
+      if (fronts && !landmark) {
+        let lo = Infinity, hi = -Infinity;
+        for (const q of fronts.near(cx, cz, width / 2 + 8)) {
+          if (q.nx * f.nx + q.nz * f.nz < 0.8) continue;
+          if (Math.abs((q.x - cx) * f.nx + (q.z - cz) * f.nz) > 0.6) continue;
+          const uu = q.x * tx + q.z * tz;
+          if (uu < u0 - 0.5 || uu > u1 + 0.5) continue;
+          lo = Math.min(lo, uu - q.w / 2 - 0.1);
+          hi = Math.max(hi, uu + q.w / 2 + 0.1);
+        }
+        lo = Math.max(lo, u0);
+        hi = Math.min(hi, u1);
+        if (hi - lo > 0.5) {
+          shopU = (lo + hi) / 2 - u0;
+          shopW = Math.min(hi - lo, 9.9);
+          stats.shops++;
+        }
+      } else if (street && !landmark && width > 3.2) {
         let best = null;
         for (const sp of shops.near(cx, cz, width / 2 + 12)) {
           if (sp.used) continue;
@@ -10719,6 +10738,12 @@ function terrainArrays(hm) {
   }
   return { pos, nrm, idx };
 }
+async function streetlifeFronts(base, name) {
+  const r = await fetch(new URL(`../streetlife/${name}.json`, base)).catch(() => null);
+  if (!r?.ok) return null;
+  const doc = await r.json();
+  return (doc.pois || []).filter((p) => p.face && !["atm", "school", "civic"].includes(p.kind)).map(({ face: f }) => ({ x: f.x, z: f.z, nx: f.nx, nz: f.nz, w: f.w }));
+}
 var overridesP = null;
 var overrides = (base) => overridesP ??= fetch(new URL("../overrides.json", base)).then((r) => r.ok ? r.json() : {}).catch(() => ({}));
 var ROOF_STEP = 2;
@@ -10863,7 +10888,8 @@ async function buildTileData(entry, base) {
   }));
   drive.counts.hidden = nb - bDoc.buildings.length;
   const kit = entry.kit ? kitCollector({ exclude: new Set(entry.kitExclude || []), ground: (x, z) => hm.ground(x, z) }) : null;
-  const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit }));
+  const fronts = entry.streetlife ? await step("street-life fronts", () => streetlifeFronts(base, entry.name)) : null;
+  const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts }));
   const cover = await step("land cover", () => landCoverData(feats, bounds));
   return {
     name: entry.name,

@@ -353,7 +353,12 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
   const WK = { position: [], normal: [], aWall: [], aBld: [], aFN: [], aKit: [] };   // the kit's faces
   // OSM shops (features.json points kind "shop") -> a shopfront on the nearest street face
   const shops = new Grid(40);
-  for (const p of feats?.points || []) if (p.kind === "shop") { p.used = false; shops.add(p.x, p.z, p.x, p.z, p); }
+  // opts.fronts (the street-life layer is on, viewer/streetlife/): ITS shopfronts (data/streetlife/<T>.json pois[].face:
+  // centre on the wall, normal, width) replace the OSM shop points: the wall shader and the facade kit leave their
+  // ground-floor openings out exactly there, and this file draws no fascia / awning of its own (the layer has them)
+  const fronts = opts.fronts ? new Grid(40) : null;
+  if (fronts) for (const q of opts.fronts) fronts.add(q.x, q.z, q.x, q.z, q);
+  else for (const p of feats?.points || []) if (p.kind === "shop") { p.used = false; shops.add(p.x, p.z, p.x, p.z, p); }
   const PAINT = [[0.03, 0.09, 0.06], [0.2, 0.035, 0.045], [0.03, 0.05, 0.13], [0.025, 0.025, 0.025]];
   const AWNING = new Set(["cafe", "restaurant", "bar", "pub", "bakery", "ice_cream", "butcher", "greengrocer", "pastry", "chocolate"]);
   const D = { position: [], normal: [], color: [] };                             // detail geometry
@@ -448,7 +453,20 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       stats.faces++; stats.party += party; stats.street += street;
       // shopfront: an unused shop point inside this building (or up to 6 m in front of the face), within the face's span
       let shopU = 0, shopW = 0;
-      if (street && !landmark && width > 3.2) {
+      if (fronts && !landmark) {
+        // every street-life front on this wall plane (within 0.6 m of it, facing the same way, inside its span):
+        // one slot for all of them (the face carries one shop span), from the first one's left to the last one's right
+        let lo = Infinity, hi = -Infinity;
+        for (const q of fronts.near(cx, cz, width / 2 + 8)) {
+          if (q.nx * f.nx + q.nz * f.nz < 0.8) continue;
+          if (Math.abs((q.x - cx) * f.nx + (q.z - cz) * f.nz) > 0.6) continue;
+          const uu = q.x * tx + q.z * tz;
+          if (uu < u0 - 0.5 || uu > u1 + 0.5) continue;
+          lo = Math.min(lo, uu - q.w / 2 - 0.1); hi = Math.max(hi, uu + q.w / 2 + 0.1);
+        }
+        lo = Math.max(lo, u0); hi = Math.min(hi, u1);
+        if (hi - lo > 0.5) { shopU = (lo + hi) / 2 - u0; shopW = Math.min(hi - lo, 9.9); stats.shops++; }
+      } else if (street && !landmark && width > 3.2) {
         let best = null;
         for (const sp of shops.near(cx, cz, width / 2 + 12)) {
           if (sp.used) continue;
