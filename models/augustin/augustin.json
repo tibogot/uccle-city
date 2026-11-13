@@ -1,0 +1,211 @@
+{
+ "asset": "Eglise Saint-Augustin, Place de l'Altitude Cent, Forest (tools/blender/augustin.py)",
+ "triangles_lod0": 26047,
+ "triangles_far": 7749,
+ "triangles_very_far": 5852,
+ "triangles_per_slot_very_far": {
+  "concrete_white": 5322,
+  "roof_bitumen": 322,
+  "glass_window": 178,
+  "cast_iron_green": 24,
+  "wood_frame_dark": 6
+ },
+ "levels": {
+  "LOD0": "Augustin",
+  "LOD1": "Augustin_far (the scripted far variant, NOT simplified: meshopt LODs streak, tools/mesh_audit/HEROES_REPORT.md)",
+  "LOD2": "Augustin_xfar (scripted: shallow reveals, no mullions / slats / plinth)"
+ },
+ "triangles_per_slot_lod0": {
+  "concrete_white": 22494,
+  "stone_blue": 1816,
+  "roof_bitumen": 671,
+  "glass_window": 320,
+  "cast_iron_green": 536,
+  "wood_frame_dark": 210
+ },
+ "triangles_per_slot_far": {
+  "concrete_white": 6974,
+  "roof_bitumen": 505,
+  "glass_window": 240,
+  "cast_iron_green": 24,
+  "wood_frame_dark": 6
+ },
+ "slots": [
+  "concrete_white",
+  "stone_blue",
+  "roof_bitumen",
+  "glass_window",
+  "cast_iron_green",
+  "wood_frame_dark"
+ ],
+ "codes": {
+  "COLOR_0.r": "code / 16 + 1/32",
+  "COLOR_0.g": "per-vertex AO of the thin faces (1 elsewhere)",
+  "names": [
+   "plain",
+   "pilaster",
+   "coping",
+   "band",
+   "sill",
+   "reveal",
+   "louvre",
+   "relief",
+   "plinth",
+   "mullion",
+   "door",
+   "cross",
+   "step",
+   "rail",
+   "lead",
+   "soffit"
+  ]
+ },
+ "new_slot_names": {
+  "roof_bitumen": "flat roofs: bituminous felt / roofing membrane on the concrete decks (not in the shared library: temporary material)"
+ },
+ "uv": {
+  "TEXCOORD_0": "world metres, per face (walls u along / v up; curved walls arc length; swept parts path x profile)",
+  "TEXCOORD_1": "AO lightmap (thin faces: u > 0.994, AO 1)"
+ },
+ "lightmap": {
+  "px": 3072,
+  "split_v": [
+   0.78,
+   0.925
+  ],
+  "lod0_px_per_m": 20.5,
+  "far_px_per_m": 9.8,
+  "very_far_px_per_m": 7.3,
+  "thin_faces_vertex_ao": [
+   4535,
+   344,
+   32
+  ]
+ },
+ "frame": "glTF Y up; three.js local (u, m TAW - OY, w); node at the city position of the frame origin, height OY, rotation.y = -rotation",
+ "placement": {
+  "city_local_position": [
+   -896.267,
+   100.0,
+   -1961.184
+  ],
+  "rotation_y_rad": -4.301652,
+  "hides_solids": [],
+  "hides_bu_ids": [],
+  "replaces": "UrbIS solid https://databrussels.be/id/buildingsolid/514999 (https://databrussels.be/id/building/1732283): NOT in the city tiles (Forest, outside Uccle: the tiles keep Uccle's buildings only), so nothing is hidden"
+ },
+ "bounds_city": {
+  "x": [
+   -930.9,
+   -864.1
+  ],
+  "z": [
+   -1998.9,
+   -1929.1
+  ],
+  "y": [
+   100.2,
+   154.7
+  ]
+ },
+ "measured": {
+  "frame": {
+   "city": "city local: x = L72 E - 148643, z = 165394 - N; heights m TAW",
+   "origin_city": [
+    -896.267,
+    -1961.184
+   ],
+   "rotation_rad": 4.301652,
+   "rotation_deg": 246.467,
+   "axes": "u = (cos r, sin r) in city (x, z): from the tower axis towards the entrance arm; w = (-sin r, cos r)"
+  },
+  "solid": {
+   "id": "https://databrussels.be/id/buildingsolid/514999",
+   "bu": "https://databrussels.be/id/building/1732283",
+   "base": 100.46,
+   "top": 154.7
+  },
+  "dsm": {
+   "tower_body": {
+    "p10": 132.29,
+    "p50": 139.32,
+    "p90": 148.74,
+    "max": 154.32
+   },
+   "tower_core": {
+    "p10": 149.38,
+    "p50": 151.12,
+    "p90": 153.49,
+    "max": 154.32
+   }
+  },
+  "ground_taw": {
+   "ring_min": 100.32,
+   "ring_max": 101.92,
+   "ring_mean": 100.96,
+   "foot_min": 101.56,
+   "foot_max": 102.29,
+   "foot_mean": 101.84,
+   "solid_base": 100.46
+  },
+  "tops_taw": {
+   "porch": 106.36,
+   "side": 108.8,
+   "wing": 113.24,
+   "cp": 116.43,
+   "transept": 116.85,
+   "drum": 117.15,
+   "arm": 117.75,
+   "crossing": 120.4,
+   "shoulder": 132.71,
+   "pier": 139.06,
+   "core": 139.5,
+   "post": 147.87,
+   "larm_w": 148.68,
+   "larm_u": 148.88,
+   "pedestal": 150.46,
+   "cross": 154.7
+  },
+  "plan": {
+   "entrance_arm_half": 5.45,
+   "crossing_half": 6.37,
+   "apse_arm_half": 5.71,
+   "transept_half": 5.5,
+   "fronts_u": [
+    -22.57,
+    -18.5
+   ],
+   "transept_fronts_w": [
+    18.86,
+    23.05
+   ],
+   "wing_circle": [
+    [
+     7.4,
+     7.6
+    ],
+    9.13
+   ],
+   "drum": [
+    19.5,
+    5.71
+   ],
+   "ambulatory": [
+    19.35,
+    10.69
+   ],
+   "tower": {
+    "core_half": 3.76,
+    "piers": [
+     5.56,
+     2.57
+    ],
+    "shoulders": [
+     3.17,
+     5.36
+    ]
+   }
+  }
+ },
+ "estimated": "all openings (sizes, heights, counts: from the photos), the pilasters, bands, reliefs (the cross panels, the winged relief), the louvres, the lantern's open stage height (144.3) and its fins, the cross arms (span 2.6 m at 152.75-153.5), the floor level (101.9), the plinth top (102.55), the porch doors and steps, the railing; the symmetrisation of the solid (<= 0.3 m)"
+}

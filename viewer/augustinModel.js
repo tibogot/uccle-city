@@ -230,7 +230,7 @@ const TEMP = {
       return vec4(mix(glass, lin(0x45453f), lead), lead);
     })();
     const m = std({ colorNode: out.xyz, roughnessNode: mix(float(0.15), float(0.6), out.w), metalnessNode: float(0) });
-    m.emissiveNode = mix(lin(0xffc27a), lin(0xd9b0ff), hash2(floor(uv(0).div(0.32)))).mul(float(1).sub(out.w)).mul(env.uNight).mul(auLook.glow);
+    m.emissiveNode = lin(0xffbf72).mul(float(0.7).add(hash2(floor(uv(0).div(0.32))).mul(0.5))).mul(float(1).sub(out.w)).mul(env.uNight).mul(auLook.glow);   // warm interior light, per-pane strength
     m.mrtNode = mrt({ metalRough: vec3(0, float(0.6), float(0)) });       // no SSR on the glass (cheap sky term above)
     return m;
   },

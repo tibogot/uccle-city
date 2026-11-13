@@ -81,5 +81,65 @@ Text: fr.wikipedia "Église Saint-Augustin de Bruxelles" (dates, architects, con
 - **Colour**: the photos show a cream / ivory paint, greyed, flaking in patches (c11): the temporary concrete material
   follows that (pour lines, rain streaks, flaked patches, grime at the foot).
 
-## Numbers
-(filled below by the city checks)
+## Levels of detail
+All three levels are SCRIPTED in Blender (no meshopt simplification: the project's audit found every meshopt LOD1
+streaks, `tools/mesh_audit/HEROES_REPORT.md`): LOD0 `Augustin` (everything), LOD1 `Augustin_far` (no mullions, slats,
+corbels, ribs, railing, plinth; 5° arc facets; simple copings), LOD2 `Augustin_xfar` (also shallow reveals, louvres as
+dark panels, 10° arc facets, flat shading). Switch distances to the building's box: LOD0 < 150 m (± 25 m dithered band),
+LOD1 < 600 m (± 70 m), LOD2 beyond (to the 6 km far plane). Packed with `tools/hero_pack.mjs --nolod` (meshopt
+compression + quantization only).
+
+## Checks (2026-11-13)
+- **Mesh audit** (tools/mesh_audit, ranges = each band's end: 175 / 670 / 6000 m): raw LOD0 26,047 tris **0 blocking**,
+  LOD1 7,749 **0**, LOD2 5,852 **0**; the packed (quantized) file: the same three **0 / 0 / 0**. Warnings left: slivers
+  (long thin quads of the coping / band sweeps and the curved facets' rows), T-junctions at sharp corners, open edges at
+  real openings (the lantern's open stage), back-to-back faces (pilaster / relief backs against walls, hidden).
+  How it got to 0: band and coping profiles start 1.2 cm inside the wall (no face on the wall plane), flat-topped
+  profiles (no shallow slopes smoothing into flat faces), curved walls split on the same rows at every facet and at
+  tangent joins (no T-junctions where the surface goes on flat), the corner piers end exactly on the wing circle,
+  split points computed on the edge itself, collinear vertices removed from sweep paths, one plinth chain round the
+  whole outline.
+- **Contact (JOINS)**, in the city: `await viewer.contactAudit("augustin")`: 26,047 model triangles against E1's terrain
+  and road meshes: **0 floating, 0 overhang, 0 blocking**. The walls go down to 100.2 (the ground is 101.56-102.29 at the
+  walls), the steps' feet 0.4 m into the ground, the downpipes 0.3 m.
+- **Colliders** (viewer/heroColliders.js, from LOD0, `augustin` added to HERO_ROOTS): 26,047 triangles for walk / third
+  person, 386 car blocks; built once E1 is in. Also added to the collision test's and the fly mode's landmark lists.
+- **LOD hand-overs while moving** (`debug/augustinFlight.js`, 1200 m → 25 m → 1200 m, 15 s each way, geometric speed):
+  2nd run (tiles streamed): 1800 frames, median 16.7 ms, p99 19.0 ms, **0 frames > 34 ms**, 8 visibility switches,
+  **0 pops**; states 001@1187 → 011@669 → 010@530 → 110@175 → 100@124 → 110@125 → 010@175 → 011@531 → 001@670. The first
+  run had p99 51 ms / 38 frames > 34 ms while the 1.2 km flight streamed tiles in (city streaming, not the model) and one
+  "pop" that is the start teleport.
+- Streaming: GLB + AO decoded in workers (load 115-250 ms); shaders built in the background through the precompile
+  queue (15-27 s wall time during the city's own boot, the model hidden until done); no error in the console.
+
+## Cost (city, renderer.info, model on minus off at the same view; main + shadow passes)
+| view | level | draws | triangles |
+|---|---|---|---|
+| on the Place, 48 m | LOD0 | +11 | +51,774 |
+| north Uccle roofs, 432 m | LOD1 | +7 | +15,256 |
+| 815 m | LOD2 | +11 | +11,528 |
+GPU ms: **not measured**. `tools/perf/preflight.ps1` said **RED** (GPU 81 % busy at rest, power cap / thermal, Chrome
+6.1 GB): another agent (street furniture) was rendering on the same laptop. Measure with `debug/gpuAB.js` alternate
+(scene.add / remove `window.augustin.root`) on a GREEN machine.
+
+## Model sizes
+`augustin.glb` 0.86 MB (meshopt; raw 2.64 MB), `augustin_ao.png` 3072² (GPU 12.6 MB R8 + mips; LOD0 20.5 px/m, LOD1
+9.8, LOD2 7.3), `augustin.json` (slots, codes, placement, levels, measured / estimated). Blender ~3 min with the AO bake
+(96 samples, CPU, threads = cores - 2) and six previews; pack 2 s; audits 15 s.
+
+## Materials
+Slots: `concrete_white` (temporary TSL: cream paint over concrete, two-scale mottling, formwork lifts every 1.12 m, rain
+streaks stronger on the weather sides, flaked patches of grey concrete, grime at the foot, darker ledge tops; the cross
+glows white at night), `stone_blue` (the library's shipped scan when on; temporary: the rubble plinth + blue-stone steps),
+`roof_bitumen` (**new name**: felt strips), `glass_window` (diamond-leaded tinted panes, sky fresnel, warm light at night),
+`cast_iron_green` (railing, downpipes, near-black louvre screens), `wood_frame_dark` (doors). COLOR_0.r codes: plain,
+pilaster, coping, band, sill, reveal, louvre, relief, plinth, mullion, door, cross, step, rail, lead, soffit.
+
+## Weak points / next
+- The Place's island is drawn by the road engine as a paved disc; the real church stands on a lawn with paths (ground
+  dressing for the island: a roads / plazas job, not this model's).
+- Forest's buildings are not in the tiles (Uccle only): the church stands alone north of the border.
+- Not modelled: the Passion relief cycle on the west part (a plain panel over the door), the interior, the porches'
+  shallow sloping roofs (ours flat), the wings' lower small windows (c17), the stained-glass designs (procedural pattern).
+- Openings are estimated from photos (no measured elevations); a photo-pose overlay (as Saint-Pierre's) would tighten them.
+- GPU cost to measure on a GREEN machine.
