@@ -342,7 +342,7 @@ renderer.setAnimationLoop(() => {
     S.stats = `${fps.toFixed(0)} fps · GPU ${gpu.avg.toFixed(2)} ms · ${r.drawCalls ?? r.calls} draws`;
     const ts = tileStats.map((s) => `${s.tile}: worker ${s.worker.total} ms (layout ${s.worker.layout}, sdf ${s.worker.sdf}), main ${s.mainMs} ms; ${s.boxes} boxes, ${s.windows} windows, ${Object.entries(s.props).map(([k, v]) => `${v} ${k}`).join(" ")}; ${s.labels} labels`).join("\n");
     $info.textContent = `${backend} · ${S.stats} · street life: ${SL.visibleMeshes}/${SL.meshes.length} meshes drawn, ${(SL.triangles / 1000).toFixed(0)}k tris\n` +
-      `${SITE.label} · city tiles ${cityMs.toFixed(0)} ms · kits ${SL.kitMs.toFixed(0)} ms · atlas ${SL.atlas.pages - SL.atlas.free.length}/${SL.atlas.pages} pages of ${SL.atlas.W}² (${SL.atlas.full} labels did not fit)${uploadNote}\n${ts}\n` +
+      `${SITE.label} · city tiles ${cityMs.toFixed(0)} ms · kits ${SL.kitMs.toFixed(0)} ms · atlas ${SL.atlas.pages - SL.atlas.free.length}/${SL.atlas.pages} pages of ${SL.atlas.W}x${SL.atlas.H} (${SL.atlas.full} labels did not fit)${uploadNote}\n${ts}\n` +
       `GPU A/B: ${S.bench}\nflicker: ${S.flicker}\ncam ${camera.position.toArray().map((v) => v.toFixed(1)).join(",")},${controls.target.toArray().map((v) => v.toFixed(1)).join(",")}`;
   }
 });

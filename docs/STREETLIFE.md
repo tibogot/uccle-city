@@ -1,5 +1,7 @@
 # Street life / wayfinding layer (branch claude/streetlife, LAB ONLY)
 
+**Now in the city too (on by default, `?streetlife=0` off): see docs/streetlife/CITY.md.**
+
 Goal (owner, 2026-11-12, TODO "Street life / wayfinding lab"): make Uccle recognisable from real data: shops with their
 real names on the fronts, fuel stations, pharmacies, cafés with terraces, STIB stops, Villo, bpost boxes, glass bubbles,
 bilingual FR/NL street plates, house numbers. Brand names as text only, never a logo; never an invented name.
