@@ -3,7 +3,13 @@
 Reads every raster under data/raw/urbis/dtm/ (GeoTIFF, ASCII grid, XYZ, IMG, VRT), reprojects
 to EPSG:31370 if needed, and resamples bilinearly onto the tile's 1 m, 501 x 501 corner grid.
 
-    python pipeline/build_terrain.py --tile G4 [--src data/raw/urbis/dtm]
+REGION BORDER: past the Brussels region border the UrbIS DTM has no data. Where data/raw/dhmv/tiles/<T>.tif
+exists (pipeline/fetch_dhmv.py: the Flemish DTM, DHMV II 1 m, on the same grid + a margin) those cells are filled
+from it. The UrbIS values are never changed (building bases, rail, trees stay valid); the Flemish values get the
+local UrbIS - DHMV difference along the seam (smoothed), faded out over FEATHER m into Flanders, so the seam has no
+step. The seam work runs on the tile + PAD grid so both sides of a tile edge get the same values.
+
+    python pipeline/build_terrain.py --tile G4 [--src data/raw/urbis/dtm] [--fill data/raw/dhmv/tiles | --no-fill]
 """
 from __future__ import annotations
 
@@ -22,24 +28,26 @@ from common import CONTRACT, L72_PROJ4, ORIGIN_E, ORIGIN_N, RAW, TERRAIN_STEP, T
 
 EXTS = {".tif", ".tiff", ".asc", ".xyz", ".img", ".vrt", ".bil", ".flt"}
 NODATA = 65535
+FILL_DIR = RAW / "dhmv" / "tiles"
+PAD = 32             # margin (m) the seam work sees around the tile; fetch_dhmv.py fetches the same margin
+FEATHER = 12.0       # the seam correction fades to 0 over this many metres into the filled area
+SMOOTH = 4           # box half-width (m) of the seam residual smoothing (the per-cell difference is ~5 cm noise)
 
 
 def find_rasters(src: Path):
     return sorted(p for p in src.rglob("*") if p.suffix.lower() in EXTS and p.is_file())
 
 
-def build(tile: str, src: Path):
+def urbis_grid(src: Path, e_w: float, n_n: float, n: int):
+    """UrbIS DTM resampled onto the n x n, 1 m grid whose (0, 0) corner is L72 (e_w, n_n). NaN = no data."""
     files = find_rasters(src)
     if not files:
         raise SystemExit(f"no DTM raster under {src} (see pipeline/sources.json 'dtm')")
-    x0, z0, _, _ = tile_bounds(tile)
-    n = int(round(TILE / TERRAIN_STEP)) + 1
-    e_w = ORIGIN_E + x0                  # easting of column 0
-    n_n = ORIGIN_N - z0                  # northing of row 0 (tile's north edge)
     half = TERRAIN_STEP / 2
     dst_transform = from_origin(e_w - half, n_n + half, TERRAIN_STEP, TERRAIN_STEP)
     l72 = RioCRS.from_proj4(L72_PROJ4)
-    dst_bounds = (e_w - half, n_n - TILE - half, e_w + TILE + half, n_n + half)
+    size = (n - 1) * TERRAIN_STEP
+    dst_bounds = (e_w - half, n_n - size - half, e_w + size + half, n_n + half)
 
     out = np.full((n, n), np.nan, dtype=np.float64)
     used = []
@@ -48,8 +56,7 @@ def build(tile: str, src: Path):
         with rasterio.open(f) as ds:
             src_crs = ds.crs
             if src_crs is None:
-                print(f"  {f.name}: no CRS in file, assuming EPSG:31370", file=sys.stderr)
-                src_crs = RioCRS.from_epsg(31370)
+                src_crs = RioCRS.from_epsg(31370)      # the UrbIS GeoTIFFs carry no CRS tag (CONTRACT)
             same = src_crs.to_epsg() == 31370
             b = ds.bounds if same else transform_bounds(src_crs, l72, *ds.bounds)
             if b[2] < dst_bounds[0] or b[0] > dst_bounds[2] or b[3] < dst_bounds[1] or b[1] > dst_bounds[3]:
@@ -88,7 +95,81 @@ def build(tile: str, src: Path):
                   resampling=Resampling.bilinear)
         fill = np.isnan(out) & ~np.isnan(tmp)
         out[fill] = tmp[fill]
-    if not used:
+    return out, used
+
+
+def fill_grid(path: Path, e_w: float, n_n: float, n: int):
+    """The DHMV tile file on the same grid (its pixel centres are whole L72 metres: a plain window read)."""
+    with rasterio.open(path) as ds:
+        t = ds.transform
+        c0 = (e_w - (t.c + t.a / 2)) / t.a
+        r0 = (n_n - (t.f + t.e / 2)) / t.e
+        if abs(c0 - round(c0)) > 1e-6 or abs(r0 - round(r0)) > 1e-6 or abs(t.a - TERRAIN_STEP) > 1e-9:
+            raise SystemExit(f"{path.name}: not on the 1 m grid (re-run fetch_dhmv.py --force)")
+        c0, r0 = int(round(c0)), int(round(r0))
+        if c0 < 0 or r0 < 0 or c0 + n > ds.width or r0 + n > ds.height:
+            raise SystemExit(f"{path.name}: does not cover the tile + margin (re-run fetch_dhmv.py --force)")
+        a = ds.read(1, window=((r0, r0 + n), (c0, c0 + n))).astype(np.float64)
+        if ds.nodata is not None:
+            a[a == ds.nodata] = np.nan
+        a[a < -1000] = np.nan
+    return a
+
+
+def box_sum(a: np.ndarray, r: int):
+    """Sum over a (2r+1)^2 window around each cell (zero outside), via a summed-area table."""
+    k = 2 * r + 1
+    s = np.zeros((a.shape[0] + k, a.shape[1] + k))
+    s[1:, 1:] = np.pad(a, r).cumsum(0).cumsum(1)
+    return s[k:, k:] - s[:-k, k:] - s[k:, :-k] + s[:-k, :-k]
+
+
+def seam_fill(b: np.ndarray, f: np.ndarray):
+    """Fill the NaNs of b (UrbIS) from f (DHMV) with the seam correction. Returns (grid, stats)."""
+    from scipy.ndimage import distance_transform_edt
+    have_b = ~np.isnan(b)
+    both = have_b & ~np.isnan(f)
+    need = ~have_b & ~np.isnan(f)
+    st = {}
+    out = b.copy()
+    if not need.any():
+        return out, st
+    # the residual on the UrbIS cells along the seam (within SMOOTH + 2 m of a cell to fill), box-smoothed
+    near = both & (distance_transform_edt(~need) <= SMOOTH + 2)
+    res = np.where(near, b - f, 0.0)
+    w = near.astype(np.float64)
+    num, den = box_sum(res, SMOOTH), box_sum(w, SMOOTH)
+    corr = np.zeros_like(b)
+    if near.any():
+        st = {"cells": int(near.sum()), "mean": round(float(res[near].mean()), 3),
+              "median": round(float(np.median(res[near])), 3), "maxAbs": round(float(np.abs(res[near]).max()), 3)}
+        with np.errstate(invalid="ignore", divide="ignore"):
+            rs = num / den
+        # each filled cell: the smoothed residual at its nearest seam cell, faded out over FEATHER
+        dist, (ri, ci) = distance_transform_edt(~near, return_indices=True)
+        corr = np.nan_to_num(rs[ri, ci]) * np.clip(1 - dist / FEATHER, 0, 1)
+    out[need] = f[need] + corr[need]
+    return out, st
+
+
+def build(tile: str, src: Path, fill_dir: Path | None = FILL_DIR):
+    x0, z0, _, _ = tile_bounds(tile)
+    n = int(round(TILE / TERRAIN_STEP)) + 1
+    e_w = ORIGIN_E + x0                  # easting of column 0
+    n_n = ORIGIN_N - z0                  # northing of row 0 (tile's north edge)
+    fpath = fill_dir / f"{tile}.tif" if fill_dir else None
+    fill_info = None
+    if fpath and fpath.exists():
+        P = int(round(PAD / TERRAIN_STEP))
+        big, used = urbis_grid(src, e_w - PAD, n_n + PAD, n + 2 * P)
+        before = np.isnan(big[P:P + n, P:P + n]).sum()
+        big, seam = seam_fill(big, fill_grid(fpath, e_w - PAD, n_n + PAD, n + 2 * P))
+        out = big[P:P + n, P:P + n].copy()
+        fill_info = {"source": "DHMV II DTM 1 m (Digitaal Vlaanderen)", "file": f"dhmv/tiles/{fpath.name}",
+                     "cells": int(before - np.isnan(out).sum()), "feather": FEATHER, "seamResidual": seam}
+    else:
+        out, used = urbis_grid(src, e_w, n_n, n)
+    if not used and not fill_info:
         raise SystemExit(f"no DTM raster under {src} covers tile {tile}")
 
     valid = ~np.isnan(out)
@@ -105,7 +186,9 @@ def build(tile: str, src: Path):
     hdr = {"contract": CONTRACT, "tile": tile, "x0": x0, "z0": z0, "size": TILE, "step": TERRAIN_STEP,
            "cols": n, "rows": n, "encoding": "u16le-cm", "nodata": NODATA,
            "min": round(lo, 2), "max": round(hi, 2), "nodataCount": int((~valid).sum()),
-           "source": "urbis-dtm", "inputs": used}
+           "source": "urbis-dtm+dhmv2" if fill_info else "urbis-dtm", "inputs": used}
+    if fill_info:
+        hdr["fill"] = fill_info
     write_json(tdir / "terrain.json", hdr, indent=1)
     return hdr
 
@@ -114,9 +197,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tile", required=True)
     ap.add_argument("--src", type=Path, default=RAW / "urbis" / "dtm")
+    ap.add_argument("--fill", type=Path, default=FILL_DIR, help="DHMV tiles (fetch_dhmv.py) for cells past the region border")
+    ap.add_argument("--no-fill", action="store_true")
     args = ap.parse_args()
-    hdr = build(args.tile.upper(), args.src)
-    print(f"terrain {hdr['tile']}: {hdr['min']}..{hdr['max']} m, nodata {hdr['nodataCount']}, from {[u['file'] for u in hdr['inputs']]}", file=sys.stderr)
+    hdr = build(args.tile.upper(), args.src, None if args.no_fill else args.fill)
+    fill = hdr.get("fill")
+    extra = f", filled {fill['cells']} cells from DHMV (seam {fill['seamResidual']})" if fill else ""
+    print(f"terrain {hdr['tile']}: {hdr['min']}..{hdr['max']} m, nodata {hdr['nodataCount']}{extra}", file=sys.stderr)
 
 
 if __name__ == "__main__":

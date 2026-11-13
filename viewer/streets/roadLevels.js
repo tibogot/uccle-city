@@ -47,7 +47,12 @@ export function relevelRoads(net, ground, noData = null) {
     for (let s = sp.s0; s <= sp.s1; s += 2) { const e = evalAlignment(rr.al, s); if (!noData(e.x, e.z)) return true; }
     return false;
   };
-  const fixedRoad = (rr) => (rr.bridges || []).some((sp) => realSpan(rr, sp)) || (rr.tunnels || []).some((sp) => realSpan(rr, sp)) ||
+  // HORIZON / region border (docs/HORIZON.md): only a structure OSM tags (bridge / tunnel / layer) is kept. The engine
+  // also marks a "bridge" wherever its grade limit holds a profile > 3 m over the DTM (a steep street, a sunken lane in
+  // Linkebeek): that is the lift this pass undoes, not a structure (D10 Rue de la Brasserie went 1.5-2.6 m up once the
+  // Flemish DTM gave its lower end real ground).
+  const osmStructure = (rr) => { const m = rr.src?.meta; return !!(m && (m.bridge || m.tunnel || m.layer)); };
+  const fixedRoad = (rr) => (osmStructure(rr) && ((rr.bridges || []).some((sp) => realSpan(rr, sp)) || (rr.tunnels || []).some((sp) => realSpan(rr, sp)))) ||
     (rr.prof?.mode && rr.prof.mode !== "terrain");
   const moved = new Set();
   for (const node of net.nodes) {

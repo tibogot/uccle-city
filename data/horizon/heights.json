@@ -1,0 +1,52 @@
+{
+ "grid": {
+  "x0": -15240.0,
+  "z0": -15000.0,
+  "size": 32000.0,
+  "step": 20.0,
+  "cols": 1601,
+  "rows": 1601,
+  "encoding": "u16le-cm",
+  "base": -100.0
+ },
+ "inner": {
+  "x0": -4000.0,
+  "z0": -3000.0,
+  "x1": 5500.0,
+  "z1": 5000.0,
+  "px": 5.0,
+  "w": 1900,
+  "h": 1600
+ },
+ "outer": {
+  "x0": -15240.0,
+  "z0": -15000.0,
+  "x1": 16760.0,
+  "z1": 17000.0,
+  "w": 2048,
+  "h": 2048
+ },
+ "heights": {
+  "overlapCells": 2394807,
+  "gloMinusDhmvMedianAll": -0.74,
+  "gloMinusDhmvMedianOpen": -1.17,
+  "openCells": 1852898,
+  "gloFilledCells": 168394,
+  "stillNoData": 0
+ },
+ "colour": {
+  "inner": {
+   "coverage": 1.0
+  },
+  "outer": {
+   "coverage": 1.0
+  }
+ },
+ "sources": {
+  "dhmv": "Digitaal Hoogtemodel Vlaanderen II, DTM 1 m (Digitaal Vlaanderen, Modellicentie Gratis Hergebruik), WCS 10 m -> tent 20 m",
+  "glo30": "Copernicus DEM GLO-30 (DSM, EGM2008; (c) DLR e.V. 2010-2014 and (c) Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA)",
+  "orthoBxl": "UrbIS Ortho2024NS (paradigm.brussels, CC0)",
+  "orthoVl": "Orthofotomozaiek middenschalig winteropnamen 2025 OMWRGB25VL (Digitaal Vlaanderen), colour-matched",
+  "orthoWal": "SPW Orthophotos 2021 (CC BY 4.0)"
+ }
+}

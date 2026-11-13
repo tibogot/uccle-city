@@ -29,9 +29,9 @@ gap): I6 1, E4 2, H5 / D10 / G10 0 (the 163 of round 4 is stale: later rounds cl
 bulb-out tip; E4 -632, -254 sidewalk wedge tip) LOOKED AT: the kerb runs round both, checker false alarms at acute
 corners (C19 samples 0.75 m). SEEN THERE (E4 -634, -256): the two recycling bins stand on BLACK SQUARES (a missing
 texture / decal under them?) - to check. Walker on the ballast: fine (walk Y = carved + 12 cm = 6 cm OVER the crest). BRIDGE DECK PAINT: not needed, the road stage draws its own surface + paint on the OSM
-decks (Carsoel seen from above: lane lines, tram rails, parapets). Left: the BRUSSELS REGION BORDER (no DTM on the
-Flemish side: D10 / E10 flat plain 5-10 m low, roads floating 10-20 m, a hole near (-1020, 2930): needs a Flemish DEM or
-clipping at the border); D10 (-1018, 2722) 3 m earth wall needs a retaining wall; G10 (481.5, 2751.3) one ledge;
+decks (Carsoel seen from above: lane lines, tram rails, parapets). Left: the BRUSSELS REGION BORDER (DONE on
+claude/horizon 2026-11-13, docs/HORIZON.md: the Flemish DTM DHMV II fills the 20 border tiles, roads > 5 m over the
+terrain 23,136 -> 2,574 vertices; left: the Linkebeek sunken lanes E10 / F10 and two D10 junctions, road engine grade rule); D10 (-1018, 2722) 3 m earth wall needs a retaining wall; G10 (481.5, 2751.3) one ledge;
 engine-only roads 5-12 cm over the ground; a few lanes still have one sharp vertex (I5 103 deg, I7 74 deg).
 
 **Merged 2026-11-13: FALCON ROUND 2** (docs/FALCON_FLIGHT.md "In the city", docs/falcons/city2/): tree crowns are
@@ -50,8 +50,8 @@ FOOTWAY meshes are still procedural (roadPaint.js: the flat bright verge seen fr
 OSM kind (park / garden / pitch); no WebP fallback; grass-blade shimmer in the nearest 2-4 m (the Grass Lab will cover it).
 
 **Brown band under the horizon from 500 m up:** (1) DONE 2026-11-13: the sky's floor beyond the city now has Uccle's mean
-orthophoto colour (lighting.js groundAlbedo #686c67, `?skyground=old`): grey-green haze instead of brown; still a flat plane; (2) later, with the Flemish DTM job: a coarse
-"horizon ring" landscape (~20 km, 25-50 m heights + a low-res colour image) around the city. Sky + clouds rework later.
+orthophoto colour (lighting.js groundAlbedo #686c67, `?skyground=old`): grey-green haze instead of brown; still a flat plane; (2) BUILT on claude/horizon (2026-11-13, `?horizon=1`, off by default, docs/HORIZON.md): a 32 km
+"horizon ring" landscape (20 m heights from DHMV II + Copernicus GLO-30, orthophoto colour, one mesh, dithered hand-over to the tiles); GPU cost to re-measure on a quiet GPU. Sky + clouds rework later.
 
 **FIXED 2026-11-13 (afternoon): the car / walker no longer fall at the Saint-Job station bridge.** Cause: the DTM is bare
 earth and only the hero bridges had a deck; every OSM road bridge (13 in Uccle: Carsoel, Waterloo, Merlo, Chênaie,
