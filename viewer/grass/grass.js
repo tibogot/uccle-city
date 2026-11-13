@@ -42,6 +42,7 @@ import { GrassPush } from "./grassPush.js";
 const CELL = 0.045;                       // m: the finest candidate grid
 const TOP = 3;                           // levels 0..3
 const LOD_SEG = [5, 3, 1];
+const D0_LONG = 8.5;                      // m: the full-density radius of the longest grass (a lawn's is 6 m)
 // the textured ground's mean colours (viewer/materials/textures/ground/ground.json, linear): lawn, rough, dry
 const LAWN = vec3(0.1283, 0.1626, 0.0349), ROUGH = vec3(0.0608, 0.1097, 0.0228), DRY = vec3(0.2384, 0.221, 0.0793);
 
@@ -55,26 +56,31 @@ export const PRESETS = {
 /** shared uniforms (live tuning from a lab panel) */
 export const grassU = {
   density: uniform(1), d0: uniform(1), reach: uniform(1), rmax: uniform(48), maxWiden: uniform(2.6),
-  minPixels: uniform(0.9), pixelScale: uniform(500),
+  minPixels: uniform(1.0), pixelScale: uniform(500),
+  wideLong: uniform(0.0075),              // extra blade width (m) of the longest grass (x len^1.5)
+  seedHeads: uniform(0.2),               // share of long-grass blades carrying a seed head
+  sheen: uniform(0.22),                  // wind sheen: a gust bends long grass and shows its paler side
+  tipFade: uniform(0.55),                // ?grasscov=1: coverage taken off the last ~12 % of a blade (a soft tip, not a cut end)
+  covBias: uniform(1.25),                // ?grasscov=1: coverage of a floored row x this (a little fuller far field than the exact share)
   lod0: uniform(7), lod1: uniform(18),
   height: uniform(1),                    // global height (season growth)
   dry: uniform(0),                       // season: summer drought 0..1 on top of the types' own dryness
   frost: uniform(0),                     // season: hoar frost on the tips 0..1
   tint: uniform(new THREE.Color(1, 1, 1)),   // season tint (olive winter, fresh spring)
   tip: uniform(1.1), root: uniform(0.32), // brightness root (AO) -> tip, over the ground's mean colour
-  conv: uniform(1),
-  flat: uniform(0.78),                    // lighting normal: share of 'up' (Hybrid: flat lighting reads as one field)                      // converge to the ground colour with distance (debug: 0 = off)
+  conv: uniform(1),                      // converge to the ground colour with distance (debug: 0 = off)
+  flat: uniform(0.78),                   // lighting normal: share of 'up' (Hybrid: flat lighting reads as one field)
   debugLod: uniform(0),
 };
 
 const P0 = () => attribute("position", "vec3");
 
+// a strip of `seg` quads up to a FLAT tip (not a point): the vertex stage holds every row at >= minPixels wide, so a
+// tip never shrinks below a pixel and blinks (?grasscov=1 also fades the extra width out as MSAA coverage)
 function bladeGeometry(seg) {
   const pos = [], idx = [];
-  for (let s = 0; s < seg; s++) { const y = s / seg; pos.push(-0.5, y, 0, 0.5, y, 0); }
-  pos.push(0, 1, 0);
-  for (let s = 0; s < seg - 1; s++) { const a = s * 2; idx.push(a, a + 1, a + 3, a, a + 3, a + 2); }
-  const l = (seg - 1) * 2; idx.push(l, l + 1, seg * 2);
+  for (let s = 0; s <= seg; s++) { const y = s / seg; pos.push(-0.5, y, 0, 0.5, y, 0); }
+  for (let s = 0; s < seg; s++) { const a = s * 2; idx.push(a, a + 1, a + 3, a, a + 3, a + 2); }
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
   g.setIndex(idx);
@@ -89,9 +95,11 @@ export class Grass {
    *  left out (the lamp light map lights the grass at night): each extra light is evaluated by every blade fragment */
   /** opts.lambert: Lambert blades (no specular: ~45 % cheaper in the city, but a backlit lawn loses the sheen that
    *  reads as light through the blades); default: the low / medium presets, or ?grasslambert=1 */
-  constructor(renderer, { preset = "high", lights: lightList = null, lambert = /[?&]grasslambert=1/.test(location.search) || preset === "low" || preset === "medium" } = {}) {
+  constructor(renderer, { preset = "high", lights: lightList = null, lambert = /[?&]grasslambert=1/.test(location.search) || preset === "low" || preset === "medium",
+    coverage = /[?&]grasscov=1/.test(location.search) } = {}) {
     this.renderer = renderer;
     this.lambert = lambert;
+    this.coverage = coverage;
     this.lightList = lightList;
     this.field = new GrassField(renderer);
     this.push = new GrassPush();
@@ -124,6 +132,9 @@ export class Grass {
     const L = { l, cap, base, geom, n: l * 5 + 1 };
     // Standard: its specular lobe at grazing backlight is what makes a lawn glow into a low sun; Lambert is the cheap one
     const mat = this.lambert ? new THREE.MeshLambertNodeMaterial({ side: THREE.DoubleSide }) : new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, roughness: 0.85, metalness: 0 });
+    // ?grasscov=1: the pixel-floored rows fade as MSAA coverage (alpha to coverage). OFF by default: it turns the
+    // early depth test into a late one, +1.2 ms in a meadow (lab G7) for ~15 % less shimmer than the floor alone
+    mat.alphaToCoverage = this.coverage;
     this.bladeNodes(mat, L);
     if (this.lightList) mat.lightsNode = lights(this.lightList);
     mat.name = `grass-lod${l}`;
@@ -165,7 +176,7 @@ export class Grass {
         // the rank against the most generous density any type could have here (d0 of a meadow): most far candidates
         // of the fine levels end here, before any memory read
         const r0 = hash(seed.add(2)).mul(hi - lo).add(lo);
-        const d0max = U.d0.mul(10);
+        const d0max = U.d0.mul(D0_LONG);
         const pMax = min(float(1), d0max.div(max(dxz, 0.05)).mul(d0max.div(max(dxz, 0.05))));
         If(owned.greaterThan(0.5).and(dxz.lessThan(U.rmax)).and(pMax.greaterThan(r0)).and(roughIn), () => {
           const f = F.sample(xz);
@@ -175,7 +186,7 @@ export class Grass {
             const len = f.len;
             const root = vec3(xz.x, f.y, xz.y);
             const d = max(length(root.sub(u.cam)), 0.05);
-            const d0 = mix(float(6), float(10), len).mul(U.d0);
+            const d0 = mix(float(6), float(D0_LONG), len).mul(U.d0);       // long grass: fewer, broader blades (8.5 m, was 10: -23 % blades, same cover)
             const rEnd = min(mix(float(20), float(46), sqrt(len)).mul(U.reach), U.rmax);
             const pd = min(float(1), d0.div(d).mul(d0.div(d)));
             const p = pd.mul(float(1).sub(smoothstep(rEnd.mul(0.55), rEnd, d)));
@@ -194,8 +205,10 @@ export class Grass {
                 const mg = H.add(0.3).mul(1.5);
                 If(abs(clip.x).lessThan(clip.w.add(mg)).and(abs(clip.y).lessThan(clip.w.add(mg))).and(clip.w.greaterThan(mg.negate())), () => {
                   const widen = clamp(float(1).div(sqrt(max(pd, 0.01))), 1, U.maxWiden);
-                  const W0 = float(0.005).add(len.mul(0.002)).mul(hash(seed.add(7)).mul(0.5).add(0.75)).mul(widen);
-                  const W = max(W0, U.minPixels.mul(d).div(U.pixelScale)).mul(min(grow.mul(3), 1));
+                  // the TRUE width (the pixel floor is the vertex stage's, per row, paid back as coverage): long grass gets
+                  // broad blades (one blade stands for a tuft of real leaves): a meadow reads full, not as a few hairs
+                  const W0 = float(0.005).add(pow(len, float(1.5)).mul(U.wideLong)).mul(hash(seed.add(7)).mul(0.5).add(0.75)).mul(widen);
+                  const W = W0.mul(min(grow.mul(3), 1));
                   // facing: own, pulled toward the clump's; turned toward the camera when edge-on
                   let yaw = mix(rY, cl.p.z, clumpK).mul(PI2);
                   const toCam = u.cam.xz.sub(xz), tcl = max(length(toCam), 1e-3);
@@ -218,7 +231,11 @@ export class Grass {
                   const rough = smoothstep(0.45, 0.8, nA.r);
                   let fc = mix(mix(LAWN, ROUGH, rough.mul(0.8)), DRY, f.dry.mul(0.6));
                   fc = fc.mul(nB.b.sub(0.5).mul(0.16).add(nA.g.sub(0.5).mul(0.22)).add(1));
-                  const flower = select(hash(seed.add(9)).lessThan(f.flowers.mul(0.05)), float(2), float(0));
+                  // what the blade carries on top: 2 = a wildflower, 4 = a grass seed head (long grass: Yorkshire fog,
+                  // false oat, cocksfoot ... the soft panicles that make a June-July meadow look fluffy)
+                  const hf = hash(seed.add(9));
+                  const flower = select(hf.lessThan(f.flowers.mul(0.025)), float(2),
+                    select(hf.greaterThan(float(1).sub(smoothstep(0.5, 0.9, len).mul(U.seedHeads))), float(4), float(0)));
                   const dl = d.mul(hash(seed.add(10)).mul(0.3).add(0.85));          // dithered hand-over: no line where the LOD changes
                   const lodSel = select(dl.lessThan(U.lod0), int(0), select(dl.lessThan(U.lod1), int(1), int(2)));
                   const seedF = float(seed.bitAnd(uint(0xffffff)));
@@ -229,7 +246,7 @@ export class Grass {
                         const o = slot.add(uint(L.base)).mul(4);
                         data.element(o).assign(vec4(root, seedF));
                         data.element(o.add(1)).assign(vec4(H, W, yaw, len.add(flower)));
-                        data.element(o.add(2)).assign(vec4(lean, crush, d.add(floor(cl.p.y.mul(0.36).add(0.82).mul(100)).mul(1000))));
+                        data.element(o.add(2)).assign(vec4(lean, crush.add(floor(w.z.mul(63)).mul(2)), d.add(floor(cl.p.y.mul(0.36).add(0.82).mul(100)).mul(1000))));
                         data.element(o.add(3)).assign(vec4(fc, f.dry));
                       });
                     });
@@ -266,25 +283,42 @@ export class Grass {
     const o = instanceIndex.add(uint(L.base)).mul(4);
     const a = this.data.element(o), b = this.data.element(o.add(1)), c = this.data.element(o.add(2)), dd = this.data.element(o.add(3));
     const root = a.xyz, seed = uint(a.w);
-    const H = b.x, W = b.y, yaw = b.z, isFlower = b.w.greaterThanEqual(2), len = b.w.sub(select(isFlower, float(2), float(0)));
-    const lean = c.xy, crush = c.z;
+    const H = b.x, W = b.y, yaw = b.z, kind = floor(b.w.div(2)), len = b.w.sub(kind.mul(2));
+    const isFlower = kind.equal(1), isSeed = kind.equal(2);
+    const lean = c.xy, gq = floor(c.z.div(2)), crush = c.z.sub(gq.mul(2)), gust = gq.div(63);
     const cpk = floor(c.w.div(1000)), dist = c.w.sub(cpk.mul(1000)), cshade = mix(float(1), cpk.div(100), clamp(len.mul(2).add(0.4), 0, 1));
     const fc = dd.xyz, dry = dd.w;
-    const h = P0().y, side = P0().x;
+    const side = P0().x;
+    // a flower's rows crowd to the top (1 - (1 - h)^2.5): its last rows make a small round head, not a long coloured leaf
+    const h = select(isFlower, float(1).sub(pow(float(1).sub(P0().y), float(2.5))), P0().y);
     const rnd = (k) => hash(seed.add(uint(k)));
     const sideV = vec3(cos(yaw), 0, sin(yaw));
     // flutter (vertex, cheap): along the wind, tip-weighted, more in long grass
     const ph = rnd(11).mul(PI2);
     const fl = sin(wind.uTime.mul(2.3).add(ph)).mul(0.05).add(sin(wind.uTime.mul(4.1).add(ph.mul(1.7))).mul(0.02)).mul(len.mul(0.8).add(0.2)).mul(wind.uStrength.mul(2).add(0.2));
-    const lv = lean.add(vec2(wind.uDir.x, wind.uDir.y).mul(fl));
+    // a seed head nods: its stalk leans further than the leaves
+    const lv = lean.mul(select(isSeed, float(1.3), float(1))).add(vec2(wind.uDir.x, wind.uDir.y).mul(fl));
     const lm = min(length(lv), 0.97);
     const prof = h.mul(h);
     const drop = float(1).sub(lm.mul(lm).mul(0.5).mul(h));
-    const Hc = H.mul(mix(float(1), float(0.3), crush));
-    // taper; a flower's top swells into a small head
+    // a seed-head stalk stands above the leaves
+    const Hc = H.mul(mix(float(1), float(0.3), crush)).mul(select(isSeed, float(1.15), float(1)));
+    // width profile: a leaf tapers to a narrow (not pointed) tip; a flower's top swells into a round head; a seed head
+    // is a thin stalk carrying a soft spindle (the panicle) over its top third
     const taper = float(1).sub(pow(max(h, 0.001), float(1.5)).mul(0.85));
-    const head = select(isFlower, smoothstep(0.7, 0.95, h).mul(4.5), float(0));
-    const p = root.add(vec3(lv.x.mul(prof).mul(Hc), h.mul(Hc).mul(drop), lv.y.mul(prof).mul(Hc))).add(sideV.mul(side.mul(W).mul(taper.add(head))));
+    const seedW = float(0.32).add(smoothstep(0.6, 0.8, h).mul(1.1)).sub(smoothstep(0.84, 1, h).mul(0.9));
+    const wLeaf = W.mul(select(isSeed, seedW, taper));
+    // a flower: a thin stem and a head of 2-4 cm (absolute: a buttercup is a buttercup on any blade)
+    const headSize = rnd(17).mul(0.018).add(0.022).mul(float(1).sub(smoothstep(10, 32, dist).mul(0.6)));
+    const wFlower = W.mul(0.28).add(headSize.mul(smoothstep(0.84, 0.95, h).sub(smoothstep(0.985, 1, h).mul(0.45))));
+    const wTrue = select(isFlower, wFlower, wLeaf);
+    // SHIMMER: every row (the tip too: it is flat, not a point) at least minPixels wide on screen, so a far or thin tip
+    // never shrinks below a pixel and blinks in and out; with ?grasscov=1 the width added is paid back as coverage
+    const wPx = grassU.minPixels.mul(dist).div(grassU.pixelScale);
+    const wDraw = max(wTrue, wPx);
+    const tipSoft = float(1).sub(select(kind.equal(0), smoothstep(0.86, 1, h).mul(grassU.tipFade), float(0)));
+    if (this.coverage) mat.opacityNode = varying(clamp(wTrue.div(wDraw).mul(grassU.covBias).mul(tipSoft), 0, 1), "v_grA");
+    const p = root.add(vec3(lv.x.mul(prof).mul(Hc), h.mul(Hc).mul(drop), lv.y.mul(prof).mul(Hc))).add(sideV.mul(side.mul(wDraw)));
     mat.positionNode = p;
     // lighting normal: mostly up (the field reads like the ground it fades into), a little of the blade's face, rounded
     const tang = normalize(vec3(lv.x.mul(h.mul(2)), drop, lv.y.mul(h.mul(2))));
@@ -309,7 +343,15 @@ export class Grass {
     // a flower head: buttercup yellow, oxeye white, clover pink, knapweed purple
     const sp = rnd(14);
     const petal = select(sp.lessThan(0.4), vec3(0.85, 0.62, 0.03), select(sp.lessThan(0.7), vec3(0.82, 0.82, 0.76), select(sp.lessThan(0.88), vec3(0.6, 0.27, 0.42), vec3(0.36, 0.2, 0.55))));
-    col = select(isFlower.and(h.greaterThan(0.72)), petal, col);
+    col = select(isFlower.and(h.greaterThan(0.9)), petal, col);
+    // a seed head: the soft panicles of a meadow in early summer, pale straw / pinkish grey (Yorkshire fog) / purplish
+    // brown, a little lighter at the top; ripening toward straw with the summer's drought
+    const sh = rnd(16);
+    const panicle = mix(select(sh.lessThan(0.45), vec3(0.27, 0.27, 0.15), select(sh.lessThan(0.8), vec3(0.33, 0.29, 0.17), vec3(0.27, 0.2, 0.15))),
+      vec3(0.4, 0.34, 0.19), clamp(dry.add(grassU.dry), 0, 1).mul(0.6)).mul(h.mul(0.35).add(0.75));
+    col = select(isSeed.and(h.greaterThan(0.6)), panicle, col);
+    // wind sheen: a gust front bends long grass and shows its paler side, a wave you see crossing the meadow
+    col = col.mul(float(1).add(grassU.sheen.mul(smoothstep(0.45, 0.9, gust)).mul(h).mul(len)));
     // far: converge to the ground's colour, so the last blades sinking into it change the picture little
     const cv = smoothstep(5, 30, dist).mul(grassU.conv).mul(0.8);
     col = mix(col, fc.mul(1.02), cv);
@@ -329,7 +371,7 @@ export class Grass {
 
   /** dispatch sizes per level from the reach (no shader rebuild: counts are uniforms) */
   sizeLevels() {
-    const d0max = 10 * grassU.d0.value, rmax = grassU.rmax.value;
+    const d0max = D0_LONG * grassU.d0.value, rmax = grassU.rmax.value;
     this.levelR = [];
     for (let k = 0; k <= TOP; k++) {
       const R = Math.min(rmax, k === TOP ? rmax : 2 * d0max * (1 << k));

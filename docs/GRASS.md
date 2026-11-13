@@ -18,7 +18,7 @@ in 3 indirect draws. The CPU only writes a few uniforms (0.1-0.2 ms a frame, mea
 | `viewer/grass/grassPush.js` | the PUSH FIELD (car wheels, walker, falcon landing lay the grass down; it stands back up) |
 | `viewer/grass/cityGrass.js` | the city hook (`?grass=1`) |
 | `tools/grass/build_osm_grass.mjs` -> `data/grass/osm_grass.json` | OSM kinds the tile features fold away: 78 meadows, grassland, heath, 13 village greens, pitch surface + sport |
-| `labs/grass-lab.html/.js` | the lab: real tiles (D8, F4, C8) with the city's terrain, textured ground, measured streets, UrbIS buildings, trees, lamps, light, post chain |
+| `labs/grass-lab.html/.js` | the lab: real tiles (D8, F4, C8, G7 `?scene=meadow`) with the city's terrain, textured ground, measured streets, UrbIS buildings, trees, lamps, light, post chain |
 
 ## 2. What came from where
 
@@ -76,7 +76,7 @@ in 3 indirect draws. The CPU only writes a few uniforms (0.1-0.2 ms a frame, mea
 | OSM `landuse=grass` (public greens, roundabouts, embankments) | 0.42, a little dry | 16-22 cm |
 | terrain within 1.7 m of a measured carriageway / parking (UrbIS surfaces.json), not across a sidewalk | **roadside verge** (0.62), dry 0.55 | 25-35 cm |
 | traffic islands / medians (the road mesh's "grass" part) | mown verge (0.22) | ~10 cm |
-| OSM meadow (`landuse=meadow`, 78 in Uccle), `natural=grassland` / `heath`, orchard | **meadow with wildflowers** (0.75-1) | 35-55 cm |
+| OSM meadow (`landuse=meadow`, 78 in Uccle), `natural=grassland` / `heath`, orchard | **meadow with wildflowers and seed heads** (0.75-1, dry 0.15 / 0.25) | 35-55 cm, seed stalks +15 % |
 | OSM `scrub`, the soft edge of a wood (land-cover mask R) | long rough (0.8) | ~40 cm |
 | under LiDAR / OSM tree crowns (crown radius) | density x 0.45, fewer flowers | |
 | pitch: tennis clay, hockey turf, asphalt, sand ...; playground sand, paths, water, steep banks, inside woods | **no grass** | |
@@ -87,7 +87,10 @@ On top of that, the bake reads the textured ground's own noise (ground.js `noise
 - its worn spots leave bare soil.
 
 So the blades follow the scans under them.
-Flowers: 5 % of a meadow's blades carry a head (buttercup yellow, oxeye white, clover pink, knapweed purple).
+Flowers: 2.5 % of a meadow's blades are a thin stem with a round 2-4 cm head (buttercup yellow, oxeye white, clover
+pink, knapweed purple); 20 % of the long grass's blades carry a seed head (§8.1).
+
+**Inside woods:** an OSM grass / meadow area drawn inside a wood polygon is a clearing (`landcover.js`, §8.4).
 
 ## 4. Clean edges, exact heights: the FIELD
 
@@ -131,7 +134,7 @@ tiles in the city (65 bakes).
   - Blades lean away from a pusher (turned toward its motion) and flatten to 30 %, then recover with a 3.5 s time
     constant. A pusher more than 0.4 m above the ground does nothing.
   - The stamp pass is skipped entirely when nothing has pushed for 14 s.
-  - The lab's drive puts the car's 4 wheels in. The city hook does not wire the car / walker / falcon yet (next step).
+  - The lab's drive puts the car's 4 wheels in; in the city the car's wheels and the walker push (§8.6), the falcon not yet.
 
 ## 6. Budget and measurements
 
@@ -205,19 +208,119 @@ Download: 13 KB (osm_grass.json); the city fetches each tile's surfaces.json onc
 | `park_F4_lod_tint.jpeg` | the three LODs tinted (red 5 segments < ~7 m, green 3 < ~18 m, blue 1 beyond) |
 | `season_winter_20jan_frost.jpeg`, `season_summer_3aug_dry.jpeg` | the season hook |
 | `strip_park_walk.jpeg`, `strip_verge_drive.jpeg` | moving frame strips |
-| `flicker_garden_strafe_heat.jpeg` | shimmer heat map |
+| `flicker_garden_strafe_heat.jpeg` | shimmer heat map (round 1) |
+| `flicker_garden_low_before.jpeg` / `_after.jpeg` | shimmer heat map, garden low view, before / after round 2 |
+| `meadow_G7_*.jpeg`, `city_G7_kauwberg_meadow.jpeg`, `city_G9_meadow.jpeg` | round 2: the meadows (§8) |
 | `city_D8_grass1.jpeg` / `city_D8_grass0.jpeg` | the city with `?grass=1` / without (D8, Rue des Griottes; the `_grass0` shot was taken with the Lambert test build, no difference without grass) |
 
-## 8. What's left
+## 8. Round 2 (branch `claude/grass2`, 2026-11-13)
+
+### 8.1 Fluffy meadows (`grass.js`)
+Looked at game-engine-v1's off-road grass (`games/stylized-lab/cliffTopGrass.js` -> `v3/render/grass/revoGrassSystem.js`,
+read only, nothing copied): what makes it read full is broad blades (7 cm x 1.1 m there), a strong dark-root to bright-tip
+ramp, a big per-blade brightness scatter and a wind tint. Ours now (all per blade in compute or per vertex, no texture,
+no alpha):
+- **Broad long grass:** width = 5 mm + len^1.5 x 7.5 mm (`grassU.wideLong`): a meadow blade is ~1.25 cm (one blade
+  stands for a tuft), a lawn's is unchanged. With the 1/sqrt(p) widening, the long grass's full-density radius dropped
+  from 10 to 8.5 m (`D0_LONG`): -23 % meadow blades (125k -> 98k at G7) for the same cover.
+- **Seed heads:** `grassU.seedHeads` (0.2) of the long-grass blades are a thin stalk 15 % above the leaves, leaning 30 %
+  more (it nods), with a soft spindle over its top third, straw / green-straw / reddish brown, ripening with the drought.
+- **Flowers:** a thin stem and a ROUND head of 2-4 cm (absolute, not the blade's width): the flower's rows crowd to the
+  top (h' = 1 - (1 - h)^2.5) so its last rows make a small head; the head shrinks 60 % from 10 to 32 m (no confetti
+  band). 2.5 % of a meadow's blades (was 5 %).
+- **Wind sheen:** a gust front (the wind field's gust, packed in the blade data with the push crush) brightens bent long
+  grass by up to `grassU.sheen` (22 %) toward the tip: waves you see crossing the meadow.
+- Meadow / grassland types less straw-dry (0.15 / 0.25, were 0.3 / 0.4): green with straw, not hay.
+
+Images: `meadow_G7_golden_before.jpeg` (round 1: thin blades, coloured-leaf flowers) / `meadow_G7_golden_after.jpeg`,
+`meadow_G7_midday_after.jpeg`, `meadow_G7_closeup_midday.jpeg`; in the city `city_G7_kauwberg_meadow.jpeg`,
+`city_G9_meadow.jpeg`.
+
+### 8.2 Blade-tip shimmer
+The blades ended in a POINT: the last rows went sub-pixel and blinked in and out under a sub-pixel move. Now:
+- the blade strip ends in a **flat tip** (one more row; LOD2 is a quad, not a triangle);
+- the **pixel floor is per row, in the vertex stage** (`minPixels` 1.0 x distance / pixel scale), not on the base width
+  in compute: no row, tip included, is ever thinner than a pixel. The compute stores the true width.
+- `?grasscov=1` (constructor option `coverage`) pays the added width back as MSAA coverage (alpha to coverage) plus a
+  soft tip. **Off by default:** alpha to coverage turns the early depth test into a late one: +1.2 ms in the G7 meadow
+  (A/B in one page load: +1.57 ms on every LOD vs +0.39 ms off; on LOD1-2 only still ~+1 ms) for ~15 % less shimmer
+  than the floor alone. Free in the garden (+0.20 vs +0.26 ms).
+
+Flicker test (lab, 1280x720, DPR 1, strafe 24 frames, step 0.0006, threshold 0.06; the same views before and after;
+"off" = the same frame without grass; each "on" run twice, identical):
+
+| View (lab) | Before | After (default) | After, `?grasscov=1` | Grass off |
+|---|---|---|---|---|
+| garden D8 home (golden) | 1,515 | **438** | 355 | 282 |
+| garden D8 low, 1.0 m, toward the wall (`flicker_garden_low_before/_after.jpeg`) | 3,274 | **411** | 350 | 343 |
+| garden D8 near, 1.65 m | 2,760 | **949** | 561 | 166 |
+| meadow G7 home (golden) | 14,000 | **854** (1,123 before the 8.5 m radius) | 956 | 301 |
+| meadow G7 near | 9,076 | **1,796** | 1,786 | 1,430 |
+
+(Round 1's 1,013-1,114 ppm was another garden view; these views were measured before and after in this round.) What
+still blinks in the garden is mostly the trees' leaf cards (the heat map's clusters) and the far lawn's 1 px tips.
+
+### 8.3 GPU cost (lab, Standard material, golden, 1280x720, `lab.bench()`: 6 alternating on / off pairs)
+Preflight **YELLOW** (power cap / SW thermal limit flagged, free memory 3.6 GB, GPU load at rest 5 %, the coordinator's
+tab parked); the old and the new code measured back to back in the same window:
+
+| Scene | Old (round 1) | New (round 2) |
+|---|---|---|
+| meadow G7, standing in it (125k / 98k blades) | +1.31 ms (1.11-2.16) | **+1.25 ms** (0.98-1.84) |
+| garden D8 home | +0.26 ms (0.13-0.39) | **+0.19 / +0.46 ms** (two runs) |
+
+The meadow costs no more than before for the fuller look; standing inside a meadow stays the worst case (> 1 ms: every
+pixel below the horizon is blades). With the coordinator's tab rendering (RED) the same pairs read +2.0 / +2.6 ms.
+
+### 8.4 The meadow under the woods (G7, `osm:w96769197`)
+**What OSM says:** the Kauwberg is ONE `landuse=forest` + `leisure=nature_reserve` polygon (`osm:w16396691`, operator
+Bruxelles Environnement) drawn round the whole reserve; its 4 meadows (`landuse=meadow`, `source=Bing`: w96769197 of
+5.3 ha, w96823598, w96823599, w96823601, w96823602) are separate polygons inside it (49 of the G7 meadow's 50 nodes lie
+inside the forest polygon). On the OSM map the meadow is drawn over the forest: a clearing.
+**Why it showed forest floor:** `viewer/landcover.js` painted the wood (R) under everything inside the forest polygon;
+the grass field grows no grass inside woods (R > 0.6) and the ground shows litter. The trees are real: 64 LiDAR crowns
+(`urbis-chm`, 3-20 m, mostly 5-8 m bushes and hedgerow trees) inside its 5.3 ha; none are invented.
+**Fix (the OSM rendering rule):** the more specific area wins: no wood (R) under a features area of kind `grass`
+(landuse grass / meadow / village_green). 28 clearings in Uccle get their grass and ground back: the Kauwberg's meadows
+(G6-H8), the Avijl (H6-H7), Keyenbempt (C6-C7), Verrewinkel (H9), Kinsendael (E8), the meadows inside wood relation
+r10031575 (F8, G8-G9: the 2.8 ha one at x 320, z 2035 was round 1's test spot), the Sonian Forest edge (L6, L11, M11).
+
+### 8.5 Verified links
+Eye-level orbit views (a `?cam=` height <= 3 m now keeps the target at eye level, 8.6); `tile=` makes the boot tile the
+one the camera stands on (the camera's ground comes from the boot tile's heightmap):
+- **Kauwberg meadow** (G7): `viewer/index.html?grass=1&tile=G7&at=205,1095&cam=232,1062,1.7&view=stjob&time=golden`:
+  counts [15570, 61399, 46008] (before the 8.5 m radius), `city_G7_kauwberg_meadow.jpeg`.
+- **Meadow at G9** (round 1's test spot): `viewer/index.html?grass=1&tile=G9&at=352,2070&cam=320,2035,1.7&view=stjob&time=golden`:
+  counts [13694, 64681, 46611], `city_G9_meadow.jpeg`.
+- Walk mode (`view=walk`) lands on the nearest road: from the Kauwberg that is Avenue de la Chênaie in the wood.
+
+**Round 1's G9 orbit test, [0, 0, 31170]:** not a grass bug. (1) The orbit target was 12 m up and OrbitControls' polar
+limit (89 deg) lifted the 2.2 m camera to the target's height; (2) without `tile=G9` the camera's ground came from the
+boot tile's (I6) heightmap; (3) the spot was a meadow under a wood polygon (8.4).
+
+### 8.6 City hook and shared files
+- `viewer/main.js` views.stjob: a `?cam=` height <= 3 m keeps the orbit target no higher than the camera (church links
+  with a higher camera keep the +12 m target).
+- **Types in the worker:** `tileData.js` builds the grass types raster when `entry.grass` (set by `main.js` when
+  `?grass=1`): 40 ms in the worker instead of the main thread, from the surfaces.json the worker already fetches (the
+  grass no longer fetches it a second time; with `?roads=engine` the roads still get none) and osm_grass.json fetched
+  once per worker. The main thread keeps the old path when there is no worker.
+- **Push:** `cityGrass.pushFrame`: the driver's 4 wheels (pushers 0-3, 0.4 m) and the walker (4, 0.32 m), a few uniform
+  writes a frame, cleared once when they stop (`main.js` sets `cityGrass.pushers = { driver, walker }`).
+
+## 9. What's left
 
 - A re-measure on a fresh machine (preflight GREEN: free memory stayed at 2-3 GB, YELLOW at best): the lab x presets, the city from a car and at golden hour / night.
-- City: wire the pushers (`driver` wheels, `walker` feet, the falcon landing).
-- Move `grassTypeData` (38 ms per tile on the main thread) and the surfaces.json fetch into the tile worker.
+- City: the falcon landing and the third-person character as pushers (the car's wheels and the walker are done).
 - Landmark models (Saint-Job, the Observatory, ...) are not yet solids in the field (the UrbIS solid they replace is
   hidden): grass can grow under their floors (unseen) and at their outer foot.
 - A real translucency term needs the shadow factor (an emissive glow would also glow in shade); the sun-facing
   normal gives most of it.
-- Flowers are blade-tip heads; proper flower meshes (the foliage lab's) would read better in meadows close up.
+- Flowers are round heads on a stem now; proper flower meshes (the foliage lab's) would read better close up. Seed heads
+  are a spindle shape, not a real panicle.
+- Standing inside a meadow costs ~1.25 ms GPU (over the ~1 ms budget): the next lever is fewer LOD1 blades in long
+  grass (LOD1 = 48k of the 98k) or a shorter `lod1` for long grass.
+- Alpha to coverage (`?grasscov=1`) would take the near-lawn shimmer from 949 to 561 ppm but costs a late depth test.
 - Verges are found by distance to the carriageway: a garden directly behind a carriageway with no mapped sidewalk
   reads as a verge.
 - The night: the lamp light map lights blades like the ground, but blades are not darker in the pools' shadows.

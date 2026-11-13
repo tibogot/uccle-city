@@ -15,8 +15,12 @@ import { smoothPolyline } from "./track.js";
 import { kitCollector } from "./facadeKit/placement.js";
 import { prepRail, abutmentFill, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins, railDriveSurface, railFences, fenceMesh } from "./rail/railData.js";
 import { buildTrafficGraph } from "./traffic/trafficGraph.js";
+import { grassTypeData } from "./grass/grassTypes.js";
 
 let railP = null;
+let grassKindsP = null;
+/** ?grass=1: data/grass/osm_grass.json (the OSM grass kinds features.json folds away), fetched once per worker */
+const grassKinds = (base) => (grassKindsP ||= fetch(new URL("../grass/osm_grass.json", base)).then((r) => r.json()).then((d) => d.kinds).catch(() => null));
 /** ?trains=1: rail.json + the hero bridges' notes, fetched once per worker */
 const railDocs = (base) => (railP ??= Promise.all([
   fetch(new URL("../rail/rail.json", base)).then((r) => r.json()).then(prepRail),
@@ -136,7 +140,11 @@ export async function buildTileData(entry, base) {
     feats.railVerges = railVerges(rail.doc, bounds);
   }
   // ?roads=surface: the measured UrbIS street surfaces of this tile (surfaces.json), when the tile has them
-  const surf = entry.surface && F.surfaces ? await step("fetch surfaces", () => get(F.surfaces)) : null;
+  const surfDoc = (entry.surface || entry.grass) && F.surfaces ? await step("fetch surfaces", () => get(F.surfaces)) : null;
+  const surf = entry.surface ? surfDoc : null;
+  // ?grass=1: the tile's grass TYPES raster (viewer/grass/grassTypes.js, ~40 ms of canvas work): here, off the main thread.
+  // Before the road stage, which may adjust the surfaces in place; the verges read the measured carriageways as fetched.
+  const grassTypes = entry.grass ? await step("grass types", async () => grassTypeData(feats, { x0, x1, z0, z1 }, { kinds: await grassKinds(base), surfaces: surfDoc })) : null;
   // hand corrections (data/overrides.json): road surfaces OSM gets wrong (Place de Saint-Job is setts)
   const ov = await overrides(base);
   applyRoadOverrides(roads, ov);
@@ -214,7 +222,7 @@ export async function buildTileData(entry, base) {
   const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts }));
   const cover = await step("land cover", () => landCoverData(feats, bounds));
   return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs, drive,
-    netInfo, road, terrain, buildings, cover, traffic, times, rail: railOut,
+    netInfo, road, terrain, buildings, cover, traffic, times, rail: railOut, grassTypes,
     bridgeDecks: osmBridges.decks.map((d) => ({ ...d, mesh: deckMesh(d) })) };   // OSM road bridges: heights for walk / car + their drawn deck
 }
 
