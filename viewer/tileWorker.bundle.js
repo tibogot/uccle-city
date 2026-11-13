@@ -11417,6 +11417,8 @@ function fitToSurface(paths, G2, st) {
 
 // viewer/grass/grassTypes.js
 var VERGE_W = 1.7;
+var LAWN = [1, 0.06, 0, 0];
+var ROADSIDE_VERGE = [0.9, 0.62, 0.55, 0.12];
 var KIND4 = {
   garden: [1, 0.04, 0, 0],
   park: [1, 0.28, 0.05, 0.04],
@@ -11495,10 +11497,10 @@ function grassTypeData(feats, bounds, { kinds = null, surfaces = null } = {}) {
     }
   };
   const stats = { areas: {}, verges: 0, crowns: 0 };
-  g.fillStyle = [1, 0.06, 0, 0];
+  g.fillStyle = LAWN;
   g.fillRect(0, 0, W, H);
   if (surfaces?.surfaces?.length) {
-    g.strokeStyle = [0.9, 0.62, 0.55, 0.12];
+    g.strokeStyle = ROADSIDE_VERGE;
     g.lineWidth = VERGE_W * 2;
     g.lineJoin = "round";
     for (const s of surfaces.surfaces) {
@@ -11507,8 +11509,8 @@ function grassTypeData(feats, bounds, { kinds = null, surfaces = null } = {}) {
       g.stroke();
       stats.verges++;
     }
-    g.strokeStyle = [1, 0.06, 0, 0];
-    g.fillStyle = [1, 0.06, 0, 0];
+    g.strokeStyle = LAWN;
+    g.fillStyle = LAWN;
     g.lineWidth = 1.2;
     for (const s of surfaces.surfaces) {
       if (s.c !== 5) continue;
