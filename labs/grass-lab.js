@@ -4,6 +4,7 @@
 //   garden  D8, the villa streets east of Avenue de Beersel: front gardens between houses, kerbs, sidewalks
 //   park    F4, the Wolvendael park lawns (the slope under the château, the big trees)
 //   verge   D8, Rue du Bourdon from a car: the roadside verges of Uccle's south
+//   meadow  G7, the Kauwberg's big meadow (5.3 ha, osm:w96769197): long grass, seed heads, wildflowers
 // ?time=golden|midday|night|..., ?preset=low|medium|high|ultra, ?grass=0 (the textured ground alone), ?cam=x,y,z,tx,ty,tz
 // window.lab: bench(), strip(), flicker(), pipelines(), counts(), go(view) ...
 import * as THREE from "three/webgpu";
@@ -34,6 +35,7 @@ const SCENES = {
   garden: { label: "Front gardens, D8 (villa streets off Avenue de Beersel)", tiles: ["D8"], home: [-1100, 1850], street: /Beersel|Arbrisseau|Mirabelles|Griottes|Bigarreaux/ },
   park: { label: "Wolvendael park lawns, F4", tiles: ["F4"], home: [-455, -135], street: null },
   verge: { label: "Rue Zandbeek verges from a car, C8 (Kauwberg)", tiles: ["C8"], home: [-1635, 1641], street: /Zandbeek/, startRide: ["drive", 0.74] },
+  meadow: { label: "Kauwberg meadow, G7 (OSM landuse=meadow inside the reserve's wood)", tiles: ["G7"], home: [232, 1062], look: [185, 1100], street: null },
 };
 const sceneId = SCENES[qp.get("scene")] ? qp.get("scene") : "garden";
 const SC = SCENES[sceneId];
@@ -241,9 +243,9 @@ function rideStep(dt) {
 function goHome(eye = 1.65) {
   ride = null; controls.enabled = true;
   if (SC.startRide && startRide(...SC.startRide)) { ride.speed = 0; return; }   // parked on the ride (a car on the verge road)
-  const [x, z] = SC.home;
+  const [x, z] = SC.home, [tx, tz] = SC.look || [x + 10, z + 6];
   camera.position.set(x, groundAt(x, z) + eye, z);
-  controls.target.set(x + 10, groundAt(x + 10, z + 6) + 0.2, z + 6); controls.update();
+  controls.target.set(tx, groundAt(tx, tz) + 0.2, tz); controls.update();
 }
 
 // ------------------------------------------------------------------------------------------------ panel
