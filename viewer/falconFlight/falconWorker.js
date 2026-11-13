@@ -2,7 +2,8 @@
 // task on the main thread, off it.
 //   ridges  the pigeons' roof-ridge roosts round a square: the city's buildings.json + buildings.bin of the tiles
 //           there (the same files the tile worker reads), the roof-part edges whose two ends are at the building's top,
-//           a point every 1.1 m (as cityWorld.js roosts() in the lab) -> Float32Array [x, y, z, yaw] per point
+//           a point every 1.1 m (as cityWorld.js roosts() in the lab), 1.5 m off the ridge's ends (the chimneys stand
+//           there) -> Float32Array [x, y, z, yaw] per point
 //   raster  a landmark's height proxy from its own drawn mesh (world-space triangles of its lowest LOD): the highest
 //           surface per cell (1 m): cell centres inside each triangle (interpolated height) + every triangle edge
 //           sampled each half cell (walls, railings, spires: the thin parts), -1e9 where nothing is; with `under`
@@ -31,9 +32,11 @@ async function ridges({ tiles, place, R }) {
         if (ya < top - 0.35 || yc < top - 0.35) continue;
         const key = a < c ? a * 4294967296 + c : c * 4294967296 + a; if (seen.has(key)) continue; seen.add(key);
         const ax = P[a * 3], az = P[a * 3 + 2], cx = P[c * 3], cz = P[c * 3 + 2], L = Math.hypot(cx - ax, cz - az);
-        if (L < 1.2) continue;
+        if (L < 3.2) continue;
         const yaw = Math.atan2(-(cz - az), (cx - ax));                 // facing across the ridge
-        for (let s = 0.4; s < L - 0.3; s += 1.1) {
+        // 1.5 m off the ridge's ends: the façade kit's chimney stacks stand there (viewer/facadeGeom.js: on the party
+        // walls, at the gable's highest point, 0.9 m wide), so no roost / perch faces into one
+        for (let s = 1.5; s < L - 1.5; s += 1.1) {
           const k = s / L, x = ax + (cx - ax) * k, z = az + (cz - az) * k;
           if (!near(x, z, place, R)) continue;
           out.push(x, ya + (yc - ya) * k + 0.02, z, yaw + ((out.length / 4) % 2 ? Math.PI : 0));

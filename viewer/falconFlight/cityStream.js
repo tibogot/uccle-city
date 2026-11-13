@@ -355,13 +355,31 @@ export class CityFalconWorld {
 
   // ---------------------------------------------------------------------------------------------- roosts
   /** the roof-ridge roosts round the Place (worker), then the church's and the setts once the Place's tile is in */
-  async loadRoosts({ R = 170 } = {}) {
-    const near = this.manifest.tiles.filter((t) => t.status === "built" && Math.max(t.bounds.x[0] - PLACE.x, 0, PLACE.x - t.bounds.x[1]) < R + 40 && Math.max(t.bounds.z[0] - PLACE.z, 0, PLACE.z - t.bounds.z[1]) < R + 40);
+  async loadRoosts({ R = 170, at = PLACE } = {}) {
+    const near = this.manifest.tiles.filter((t) => t.status === "built" && Math.max(t.bounds.x[0] - at.x, 0, at.x - t.bounds.x[1]) < R + 40 && Math.max(t.bounds.z[0] - at.z, 0, at.z - t.bounds.z[1]) < R + 40);
     const tiles = near.map((t) => ({ json: new URL(t.files.buildings, this.base).href, bin: new URL(t.files.buildingsBin, this.base).href, hide: this.hide }));
-    const f = await work({ kind: "ridges", tiles, place: PLACE, R });
+    const f = await work({ kind: "ridges", tiles, place: at, R });
     const out = [];
     for (let i = 0; i < f.length; i += 4) out.push({ x: f[i], y: f[i + 1], z: f[i + 2], yaw: f[i + 3], kind: "ridge" });
-    this.ridges = out;
+    if (at === PLACE) this.ridges = out;
+    return out;
+  }
+  /** another square's roosts (needs its tile and trees): the ridges round it (worker), the tops of the trees' crowns
+   *  within R (a point at the top of each, the crowns the falcon can perch on too), its paving / lawn (the city's
+   *  walking surface, off the roofs and the crowns' footprints) */
+  squareRoosts(sq, ridges, R = 120) {
+    const out = [...ridges];
+    for (const q of this.treePerches(sq.x, sq.z, R)) for (let k = 0; k < 3; k++) {
+      const a = k * 2.1 + q.pos.x * 0.37;
+      out.push({ x: q.pos.x + Math.cos(a) * 1.2, y: q.pos.y + 0.2, z: q.pos.z + Math.sin(a) * 1.2, yaw: a * 2.3, kind: "tree" });
+    }
+    for (let i = 0; i < 60; i++) {
+      const a = (i * 2.399963) % (Math.PI * 2), r = 4 + Math.sqrt(i / 60) * (sq.r ?? 18);
+      const x = sq.x + Math.cos(a) * r, z = sq.z + Math.sin(a) * r;
+      if (this.roof(x, z) > 0 || this.column(x, z, 1e4, true).floor > this.ground(x, z) + 1.5) continue;
+      const y = this.city.walkY ? this.city.walkY(x, z) : this.ground(x, z);
+      out.push({ x, y: y + 0.01, z, yaw: a * 3.1, kind: "ground" });
+    }
     return out;
   }
   /** all roosts (needs the church and the Place's tile): ridges + the church's wing ridges / drum cornice + the setts */

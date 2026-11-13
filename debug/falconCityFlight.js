@@ -94,9 +94,13 @@ function scenarios(F) {
         return { roll: clamp(-wrap(-Math.PI / 2 - 0.15 - f.heading) * 2, -0.5, 0.5), pitch: clamp(err * 0.12 - f.gamma * 1.5, -1, 1), flap: f.V < 18 || err > 3 ? 1 : 0, fold: f.V > 24 ? 0.4 : 0 };
       } };
     },
-    strike() {
+    strike(square) {
+      // (square: the start of another square's name: its flock; default the Place de Saint-Job's)
       air.setWind(3, 240);
-      const p = { x: 0, y: 0, z: 0 }, v = { x: 0, y: 0, z: 0 }, pg = fl.pigeons;
+      const p = { x: 0, y: 0, z: 0 }, v = { x: 0, y: 0, z: 0 }, pg = square ? fl.flocks.find((q) => q.square.name.startsWith(square)) : fl.pigeons;
+      if (!pg) throw new Error(`no flock at ${square}`);
+      const P = pg.square;
+      fl.lockFlock = pg; F.after = () => { fl.lockFlock = null; };
       for (let i = 0; i < pg.max; i++) if (pg.state[i] === 0 && Math.random() < 0.6) pg.takeoff(i, P.x, 0, P.z);
       for (let i = 0; i < 240; i++) pg.update(1 / 60, i / 60, null);
       let tgt = -1, bd = Infinity;
@@ -374,7 +378,7 @@ export async function run(name, { grabs = 8, seconds = null, cellW = 400, arg } 
     if (S.done?.(i / 60)) break;
     await new Promise((r) => setTimeout(r, 0));
   }
-  S.after?.();
+  S.after?.(); F.after?.();
   fl.input.script = null; fl.input.talons = false;
   v.pause(false);
   obs?.disconnect();
@@ -411,7 +415,12 @@ export async function goto(x, z, { maxS = 90 } = {}) {
   await fl.ready;
   fl.stop(); v.controls.enabled = false;
   fl.start(x, z, 0, w.floor(x, z) + 90, 13, 0);
-  fl.input.script = (f) => ({ roll: 0.35, pitch: clamp((x - x) + (w.floor(x, z) + 90 - f.pos.y) * 0.05 - f.gamma, -1, 1), flap: f.V < 12 ? 1 : 0, fold: 0 });
+  // circling over the point: toward it when over 40 m off, else along the circle
+  fl.input.script = (f) => {
+    const dx = x - f.pos.x, dz = z - f.pos.z, d = Math.hypot(dx, dz);
+    const h = d > 40 ? Math.atan2(-dx, -dz) : Math.atan2(-dz, dx);
+    return { ...steer(f, h, 0, 0.6), pitch: clamp((w.floor(x, z) + 90 - f.pos.y) * 0.05 - f.gamma, -1, 1), flap: f.V < 12 ? 1 : 0, fold: 0 };
+  };
   v.pause(true);
   const t0 = performance.now();
   try {

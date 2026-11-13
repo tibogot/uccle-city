@@ -31,7 +31,15 @@ import { wx } from "../weather/weatherState.js";
 
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const ease = (c, t, r, dt) => c + (t - c) * (1 - Math.exp(-r * dt));
-const PIGEON_RANGE = 700;              // pigeons drawn / simulated while the camera is this close to the Place
+const PIGEON_RANGE = 700;              // a flock is drawn / simulated while the camera is this close to its square
+const PIGEON_FLOCKS = 2;               // at most this many flocks at once (the nearest)
+// other squares with a flock (besides the Place de Saint-Job): real places of the city's own data (OSM ways named
+// so in data/tiles/*/roads.json: their points' mean; the park: the OSM park polygon's area centroid, data/map/map.json)
+const SQUARES = [
+  { name: "Place Jean Vander Elst", x: -1125, z: -505, r: 22 },     // the town hall's square
+  { name: "Parvis Saint-Pierre", x: -701, z: -498, r: 14 },          // before the Saint-Pierre church
+  { name: "Parc de Wolvendael", x: -402, z: -91, r: 30 },            // the park's lawns
+];
 const LIFE = 1.0;                      // the juvenile's span at life size (m): viewer/falcons.js FALCON_SIZES.juvenile
 
 const CSS = `
@@ -63,6 +71,8 @@ export class CityFlyer {
     this.pos = new THREE.Vector3();
     this.intro = null; this.introHold = false;
     this.cpu = { frames: [], last: {} };            // per-frame CPU (ms) of each part, the last 600 frames
+    this.flocks = [];                               // the pigeons of every square built so far (Saint-Job first)
+    this.squares = SQUARES.map((q) => ({ ...q, state: "new" }));
     this.size = +(this.params.get("falconsize") ?? 2.0);
     addEventListener("keydown", (e) => { if (!this.on) return; if (e.code === "Escape") this.onExit?.(); });
     this.ready = this.init().catch((e) => { this.log(`falcon flight: ${e.message}`); console.error(e); throw e; });
@@ -131,6 +141,8 @@ export class CityFlyer {
       const roosts = w.buildRoosts();
       const n = +(this.params.get("pigeons") ?? 150);
       this.pigeons = new Pigeons({ world: w, roosts, home: PLACE, count: n, scale: 1.4 });
+      this.pigeons.square = { name: "Place de Saint-Job", x: PLACE.x, z: PLACE.z };
+      this.flocks.push(this.pigeons);
       this.pigeons.mesh.visible = false;
       this.scene.add(this.pigeons.mesh);
       await this.warm([this.pigeons.mesh]);
@@ -278,21 +290,66 @@ export class CityFlyer {
     const now = performance.now(), dt = Math.min((now - (this._tickT ?? now)) / 1000, 0.05);
     this._tickT = now;
     // the loaded tiles' tree crowns (a worker job per new tile), ready before a flight
-    if (this.w && now - (this._treeT ?? 0) > 2000) { this._treeT = now; this.w.syncTrees(); }
+    if (this.w && now - (this._treeT ?? 0) > 2000) { this._treeT = now; this.w.syncTrees(); this.syncSquares(camPos); }
     if (!this.on && this.game) this.ambient(camPos, dt);
   }
+  /** the other squares' flocks: built (the ridges in the worker, the roosts, the mesh warmed) once the camera is within
+   *  900 m of the square and its tile and trees are in; kept afterwards (a mesh of 200 instances, hidden when far) */
+  syncSquares(camPos) {
+    const w = this.w;
+    if (!this.game || this.params.get("squares") === "0") return;
+    for (const sq of this.squares) {
+      if (sq.state !== "new" || Math.hypot(camPos.x - sq.x, camPos.z - sq.z) > 900) continue;
+      const t = w.tileAt(sq.x, sq.z);
+      if (!t || !w.trees.get(t)) continue;
+      sq.state = "building";
+      (async () => {
+        const t0 = performance.now();
+        const ridges = await w.loadRoosts({ at: sq, R: 120 });
+        const roosts = w.squareRoosts(sq, ridges);
+        const n = Math.min(+(this.params.get("pigeons2") ?? 75), Math.floor(roosts.length * 0.6));
+        if (n < 10) { sq.state = "none"; this.log(`falcon flight: ${sq.name}: ${roosts.length} roosts only, no flock`); return; }
+        const P = new Pigeons({ world: w, roosts, home: sq, count: n, scale: 1.4 });
+        P.square = sq;
+        P.flockHomes = [{ x: sq.x, z: sq.z, r: 45, h: 28, w: 0.12 }, { x: sq.x + 25, z: sq.z - 30, r: 38, h: 40, w: -0.14 }];
+        P.mesh.visible = false;
+        this.scene.add(P.mesh);
+        await this.warm([P.mesh]);
+        this.flocks.push(P);
+        sq.state = "ready";
+        const k = {}; for (const r of roosts) k[r.kind] = (k[r.kind] || 0) + 1;
+        this.log(`falcon flight: ${n} pigeons at ${sq.name} on ${roosts.length} roosts (${Object.entries(k).map(([a, b]) => `${b} ${a}`).join(", ")}) in ${(performance.now() - t0).toFixed(0)} ms`);
+      })().catch((e) => { sq.state = "none"; this.log(`falcon flight: ${sq.name} pigeons ${e.message}`); });
+    }
+  }
   ambient(camPos, dt) {
-    const P = this.pigeons;
-    if (!P) return;
-    const near = Math.hypot(camPos.x - PLACE.x, camPos.z - PLACE.z) < PIGEON_RANGE && !!this.w.tileAt(PLACE.x, PLACE.z);
-    P.mesh.visible = near && (this.panelState?.pigeons ?? true);
-    if (!near) return;
+    if (!this.flocks.length) return;
     const t0 = performance.now();
-    const f = this.game.f, flying = this.on && !this.intro;
+    const f = this.game.f, flying = this.on && !this.intro, show = this.panelState?.pigeons ?? true;
+    // the flocks near the camera (their square's tile in), the nearest PIGEON_FLOCKS of them: drawn and simulated
+    const act = this._act ??= [];
+    act.length = 0;
+    for (const P of this.flocks) {
+      const d = Math.hypot(camPos.x - P.square.x, camPos.z - P.square.z);
+      P.camD = d;
+      if (d < PIGEON_RANGE && this.w.tileAt(P.square.x, P.square.z)) act.push(P);
+    }
+    act.sort((a, b) => a.camD - b.camD);
+    if (act.length > PIGEON_FLOCKS) act.length = PIGEON_FLOCKS;
+    for (const P of this.flocks) P.mesh.visible = show && act.includes(P);
+    // the falcon hunts the flock nearest to it (a new flock: a new target)
+    if (flying && act.length) {
+      // (lockFlock: a scripted run pins the flock it hunts, debug/falconCityFlight.js)
+      let best = act.includes(this.lockFlock) ? this.lockFlock : act[0], bd = best === this.lockFlock ? -1 : Infinity;
+      if (bd > 0) for (const P of act) { const d = Math.hypot(f.pos.x - P.square.x, f.pos.z - P.square.z); if (d < bd) { bd = d; best = P; } }
+      if (this.game.pigeons !== best) { this.game.pigeons = best; this.game.target = -1; this.game.window = null; }
+    }
     // the threat: the falcon (in fly mode), else none (far away)
     this.tAmb = (this.tAmb ?? 0) + dt;
-    P.update(dt * this.game.timeScale, this.tAmb, flying ? { x: f.pos.x, y: f.pos.y, z: f.pos.z, speed: f.V, stoop: f.fold > 0.7 } : { x: 1e6, y: 0, z: 1e6, speed: 0, stoop: false });
-    for (const e of P.events.splice(0)) if (e.kind === "burst" && this.on && this.audio) this.audio.pigeonBurst(e.x, e.y, e.z, e.n);
+    for (const P of act) {
+      P.update(dt * this.game.timeScale, this.tAmb, flying ? { x: f.pos.x, y: f.pos.y, z: f.pos.z, speed: f.V, stoop: f.fold > 0.7 } : { x: 1e6, y: 0, z: 1e6, speed: 0, stoop: false });
+      for (const e of P.events.splice(0)) if (e.kind === "burst" && this.on && this.audio) this.audio.pigeonBurst(e.x, e.y, e.z, e.n);
+    }
     this.cpu.last.pigeons = performance.now() - t0;
   }
 
@@ -392,7 +449,7 @@ F talons · E land · V camera · click: mouse aim · Esc out</span>`;
     this.msg.innerHTML = g.messages.filter((m) => g.t - m.t < 4).map((m) => m.s).join("<br>");
     const [aimEl, tgtEl, perchEl] = this.rings;
     if (this._aim && inp.mouseAim && inp.mouse.locked && g.mode === "fly") this.ring(aimEl, this.camera.position.clone().addScaledVector(this._aim, 50), true); else aimEl.style.display = "none";
-    if (win && g.mode === "fly" && this.pigeons) { const p = this.pigeons.pos(win.i, {}); this.ring(tgtEl, new THREE.Vector3(p.x, p.y, p.z), true); tgtEl.className = `fring tgt${win.ok ? " ok" : ""}${win.near ? " near" : ""}`; } else tgtEl.style.display = "none";
+    if (win && g.mode === "fly" && g.pigeons) { const p = g.pigeons.pos(win.i, {}); this.ring(tgtEl, new THREE.Vector3(p.x, p.y, p.z), true); tgtEl.className = `fring tgt${win.ok ? " ok" : ""}${win.near ? " near" : ""}`; } else tgtEl.style.display = "none";
     const q = g.mode === "fly" ? g.perchInReach() : null;
     this.ring(perchEl, q ? q.pos : this.pos, !!q);
   }
