@@ -44,8 +44,8 @@ covers meet (lawn alone +0.14; target <= +0.2: cuts listed in GROUND.md); the ro
 FOOTWAY meshes are still procedural (roadPaint.js: the flat bright verge seen from a car); grass type by noise, not by
 OSM kind (park / garden / pitch); no WebP fallback; grass-blade shimmer in the nearest 2-4 m (the Grass Lab will cover it).
 
-**Proposed 2026-11-13, waiting for the owner:** the brown band under the horizon from 500 m up -> (1) sky shader: below
-the horizon fade into the haze colour (small, lighting / Firmament); (2) later, with the Flemish DTM job: a coarse
+**Brown band under the horizon from 500 m up:** (1) DONE 2026-11-13: the sky's floor beyond the city now has Uccle's mean
+orthophoto colour (lighting.js groundAlbedo #686c67, `?skyground=old`): grey-green haze instead of brown; still a flat plane; (2) later, with the Flemish DTM job: a coarse
 "horizon ring" landscape (~20 km, 25-50 m heights + a low-res colour image) around the city. Sky + clouds rework later.
 
 **Running (agents):** none (2026-11-13 ~06:45).
