@@ -20,7 +20,11 @@ weather + seasons, foliage, pedestrians, street life, car impostors, police car 
 lane-graph turn connectors + the car's heading interpolation after the perf audit (roads round 4 note: "tight lane
 connectors"). FIXED 2026-11-13 (trafficGraph.js roundKinks: the lane network smoothed as one graph around sharp vertices / joins; I6: sharpest vertex 162 -> 40 deg, joins > 30 deg 90 -> 43, of which only 16 at joins that really touch). Owner: look at a daytime turn. FOUND: 48 "next" links on I6 (73 on H5) join a lane end to a path starting 3.6-19 m away (a car following one jumps): roads-engine lane graph, for the roads work. Turn radii down to 1.5-2 m on a few connectors (u-turns / tight corners).
 
-**Running (agents):** none (2026-11-13 01:45): the GPU is quiet -> the PERFORMANCE AUDIT (`debug/perfRun.js` ready).
+**Running (agents, 2026-11-13 ~05:00):** roads round 5 (`claude/roads5`, port 8845: lane next-links that jump, tight
+connectors, the 70 road ledges incl. D10 / G10 / Verrewinkel SE, Edith Cavell centre line, kerb gaps) · street life in
+the city (`claude/streetlife-city`, port 8846: shop names, plates, numbers, `?streetlife=0`) · falcon round 2
+(`claude/falcon2`, port 8847: trees as obstacles, under arches, camera clipping, weather wind, more pigeon flocks).
+Perf audit paused (machine worn: timings drifted); resume on a fresh machine (docs/perf/AUDIT.md "Next").
 
 **Merged 2026-11-13: collisions + joins audit round 1:** colliders from what is drawn (car pass-throughs 32,041 -> 0 over
 120 tiles; drawn things with no collider 21,016 -> 512; invisible walls 1,085 -> 254), landmarks + bridges collide by their
