@@ -566,7 +566,11 @@ export function walkRoutes({ scene, tile, truth, G, makeController, walkY, maxRo
       if (d < best - 0.2) { best = d; still = 0; } else still += dt;
       if (still > 4) {
         let dmin = Infinity;
-        for (let u = -0.6; u <= 0.6; u += 0.15) for (let w = -0.6; w <= 0.6; w += 0.15) { const i = G.idx(ctl.pos[0] + u, ctl.pos[2] + w); if (i >= 0) dmin = Math.min(dmin, Dt[i]); }
+        for (let u = -0.6; u <= 0.6; u += 0.15) for (let w = -0.6; w <= 0.6; w += 0.15) {
+          const i = G.idx(ctl.pos[0] + u, ctl.pos[2] + w); if (i >= 0) dmin = Math.min(dmin, Dt[i]);
+          const gy = top(ctl.pos[0] + u, ctl.pos[2] + w, ctl.pos[1] + 0.5);
+          if (gy != null && gy - ctl.pos[1] > 0.25) dmin = 0;                 // against a steep drawn bank / a raised edge
+        }
         if (dmin > 0.6) { R.stuck++; item("stuck on nothing drawn", ctl.pos[0], ctl.pos[2]); } else R.blocked = (R.blocked || 0) + 1;
         break;
       }
