@@ -112,6 +112,7 @@ Walls + roofs FrontSide, shadowSide FrontSide (r187 casts a FrontSide material's
 floor: holes); `?bldside=double` = before. Checked: L-house I6 (1096, 747) old vs new identical, sunlit brick no acne,
 console clean. GPU gain to measure on a GREEN preflight (perf follow-ups). main.js:201 DoubleSide = tram rail strips,
 left. Re-run the tool after any build_buildings.py run.
+**KAUWBERG UNDERPASS COBBLES (seen 2026-11-13 evening, docs/trains/compare/r2_kauwberg_city_after.jpg):** the cobbled street under the new Kauwberg rail bridge rides up the banks in a jagged saw-tooth (the road surface follows the bank instead of stopping at a kerb / wall). Pre-existing (before the bridge too), now very visible: roads round (surface clip at the underpass walls). Also from the horizon round: Linkebeek sunken lanes held 8-9 m up by the 12 % grade limit, two D10 junctions 1.5-1.8 m up, tile N-S edge rows 3-9 cm (up to ~1 m steep) apart.
 **SAINT-JOB CHURCH STAIRS (owner, 2026-11-13):** the character walked THROUGH the entrance stairs instead of up them
 (last seen before today). Check after the character-physics work (owner's other chat): the stairs as walk steps /
 colliders in the hero model's collision.
