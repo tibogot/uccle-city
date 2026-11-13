@@ -1175,7 +1175,11 @@ async function main() {
       const { CharacterController } = await import("./character/controller.js");
       const col = await (await import("./character/cityHook.js")).cityCollision({ scene, world, log });
       for (let i = 0; i < 300 && !col.ready(name); i++) await new Promise((r) => setTimeout(r, 200));
-      makeController = (x, y, z) => { const c = new CharacterController(col.cw); c.teleport(x, y, z); return c; };
+      makeController = (x, y, z) => {
+        const c = new CharacterController(col.cw);
+        if (y == null) { const top = world.walkY(x, z) + 3, t = col.cw.ray(x, top, z, 0, -1, 0, 40); y = (t < Infinity ? top - t : world.walkY(x, z)) + 0.05; }
+        c.teleport(x, y, z); return c;
+      };
     }
     return m.collisionTest({ scene, world, driver, makeController }, name, opts);
   };

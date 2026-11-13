@@ -524,7 +524,7 @@ export function walkRoutes({ scene, tile, truth, G, makeController, walkY, maxRo
     if (path.length < 4) continue;
     R.routes++;
     const touched = new Set(), passed = new Set();
-    const ctl = makeController(path[0][0], walkY(path[0][0], path[0][1]) + 0.05, path[0][1]);
+    const ctl = makeController(path[0][0], null, path[0][1]);       // (placed on the highest surface there, as third person's place())
     let wp = 1, still = 0, best = Infinity, t = 0;
     const dt = 1 / 60;
     for (let step = 0; step < 20000; step++) {
@@ -542,6 +542,9 @@ export function walkRoutes({ scene, tile, truth, G, makeController, walkY, maxRo
         if (touched.has(key)) continue;
         touched.add(key); R.contacts++;
         const i = G.idx(ctl.dbg[o], ctl.dbg[o + 2]);
+        // the drawn ground itself rising there (a steep bank, a raised road's edge): visible, not an invisible wall
+        const gy = top(ctl.dbg[o], ctl.dbg[o + 2], ctl.dbg[o + 1]);
+        if (gy != null && gy - ctl.pos[1] > 0.25) { R.slopes = (R.slopes || 0) + 1; continue; }
         if (i >= 0 && Dt[i] > 0.6) { R.invisibleHits++; item("invisible hit", ctl.dbg[o], ctl.dbg[o + 2]); }
       }
       // passed through: the body's centre on a drawn solid while nothing holds it (no wall contact this step; a body
