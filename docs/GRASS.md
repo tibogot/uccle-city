@@ -324,3 +324,49 @@ boot tile's (I6) heightmap; (3) the spot was a meadow under a wood polygon (8.4)
 - Verges are found by distance to the carriageway: a garden directly behind a carriageway with no mapped sidewalk
   reads as a verge.
 - The night: the lamp light map lights blades like the ground, but blades are not darker in the pools' shadows.
+
+## 10. The Grass Field Lab (`labs/grass-field.html`, branch `claude/grass-field-lab`)
+
+The city's grass alone on a gently rolling 600 m test field (a lab showcase ground, not Uccle data): the city's textured
+ground (`ground.js`, land cover all grass, no orthophoto), the city's sky / sun / fog / post chain (`lighting.js`,
+`post.js`), one `Grass` built as `cityGrass.js` builds it (sun + sky lights, the quality preset at construction). Loads in
+~5 s. The field is one grass type, or a type with a patch of another (an edge, `mix`). Orbit, walk (WASD + drag, eye
+1.7 m, Shift runs; the walker pushes the grass as in the city) and preset views (eye level, low grazing 35 cm, 20 m up,
+backlit golden hour, the patch's edge). Read-out: fps, GPU ms (renderer timestamps, render + compute), blades per LOD,
+compute threads, field bakes.
+
+**Live vs rebuild.** Everything is live (uniforms) except:
+- type values, field type, patch: the types raster is repainted and the field re-baked (a few ms, no shader build);
+- `hills x`: the ground mesh is rebuilt (instant);
+- quality preset: reloads the page (`?preset=`: the blade buffer caps and Lambert vs Standard are fixed at construction, as
+  in the city; the settings survive the reload).
+
+**Settings** live in the URL hash (`#s=...`) and localStorage (`grassFieldLab.v1`); "Reset" returns to the city's
+defaults (read from the code at load). **"Copy settings"** copies a JSON of only what differs from the city's defaults:
+
+| JSON key | Goes to (city code) |
+|---|---|
+| `grassU.<name>` | `viewer/grass/grass.js`, `export const grassU = { ... }`: the `uniform(...)` / `col(r, g, b)` default of that name (colours are linear RGB, as written there) |
+| `preset.{density, d0, reach, rmax}` (+ `name`) | `viewer/grass/grass.js` `PRESETS[name]` (the quality preset the lab ran; the city uses `high` unless `?grasspreset=`) |
+| `types.<id>` = `[density, length, dry, flowers]` | `lawn` -> `grassTypes.js` `LAWN`; `verge` -> `grassTypes.js` `ROADSIDE_VERGE`; `island` -> `grassField.js` `ISLAND_VERGE`; any other id -> `grassTypes.js` `KIND.<id>`. **Then rebuild the worker bundle** (`node tools/build_worker.mjs`): the city builds the types raster in the tile worker |
+| `wind.{speed, direction, gust}` | `viewer/foliage/wind.js` `wind.speed / direction / gust` |
+| `wind.{gustSize, gustSpeed}` | `viewer/foliage/wind.js` `uScale` / `uRate` |
+| `ground.{groundRough, groundDry}` | `viewer/ground.js` `setGroundTextures`: `uRough` / `uDry` (they change the textured ground too) |
+| `season.*` | not defaults: the lab's override of what the day of year drives (`grass.syncSeason()` in `grass.js`); retune `syncSeason` if wanted |
+| `lab.*` | the lab's own state (type shown, mix, time, hour, day, view): nothing to apply |
+
+What the per-type values do: the types raster carries only density, length, dryness and flowers per type. Everything else
+follows the LENGTH: blade height = `hBase + len^hPow x hLong` (x `hVar` spread, x season), width = `wBase + len^1.5 x
+wideLong`, and the clumping, clump size, rest lean, wind lean, full-density radius and reach are mixed from a "lawn" value
+(length 0) to a "long" value (length 1). Seed heads grow on long grass (`seedHeads` x smoothstep(0.5, 0.9, len)); a
+flower is `flowerShare` x the type's flowers. The blades' mid colour is the textured ground's mean colour under them
+(`colLawn` / `colRough` / `colDry`, from ground.json), darkened to `root` and brightened to `tip`.
+
+**Default-neutral (2026-11-13).** The constants were moved into `grassU` (`grass.js`), `wind.uScale / uRate`
+(`wind.js`), `LAWN / ROADSIDE_VERGE / KIND` exported (`grassTypes.js`), `ISLAND_VERGE` (`grassField.js`) with the same
+values. Lab captures (`labs/grass-lab.html`, 1280x720, wind time fixed, same view) before / after: G7 meadow midday
+mean |diff| 1.16 / 255 in the lower half, 0.013 % of pixels > 8, max 13, against 0.81 / 0.008 % / 14 between two runs
+of the SAME code (sky and haze noise); D8 garden golden 0.24 / 0 % / 5. `fieldlab_neutral_meadow_G7_before.jpeg` /
+`_after.jpeg`. The worker bundle needs no rebuild (its copy of `grassTypes.js` paints the same values).
+
+Images: `fieldlab_meadow_backlit_golden.jpeg`, `fieldlab_park_meadow_patch_midday.jpeg`.
