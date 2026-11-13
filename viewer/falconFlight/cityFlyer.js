@@ -26,10 +26,20 @@ import { FalconCamera } from "./falconCamera.js";
 import { FalconAudio } from "./falconAudio.js";
 import { FalconGame } from "./falconGame.js";
 import { G } from "./flightModel.js";
+import { STREET } from "../treesStylized.js";
+import { wx } from "../weather/weatherState.js";
 
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const ease = (c, t, r, dt) => c + (t - c) * (1 - Math.exp(-r * dt));
-const PIGEON_RANGE = 700;              // pigeons drawn / simulated while the camera is this close to the Place
+const PIGEON_RANGE = 700;              // a flock is drawn / simulated while the camera is this close to its square
+const PIGEON_FLOCKS = 2;               // at most this many flocks at once (the nearest)
+// other squares with a flock (besides the Place de Saint-Job): real places of the city's own data (OSM ways named
+// so in data/tiles/*/roads.json: their points' mean; the park: the OSM park polygon's area centroid, data/map/map.json)
+const SQUARES = [
+  { name: "Place Jean Vander Elst", x: -1125, z: -505, r: 22 },     // the town hall's square
+  { name: "Parvis Saint-Pierre", x: -701, z: -498, r: 14 },          // before the Saint-Pierre church
+  { name: "Parc de Wolvendael", x: -402, z: -91, r: 30 },            // the park's lawns
+];
 const LIFE = 1.0;                      // the juvenile's span at life size (m): viewer/falcons.js FALCON_SIZES.juvenile
 
 const CSS = `
@@ -61,6 +71,8 @@ export class CityFlyer {
     this.pos = new THREE.Vector3();
     this.intro = null; this.introHold = false;
     this.cpu = { frames: [], last: {} };            // per-frame CPU (ms) of each part, the last 600 frames
+    this.flocks = [];                               // the pigeons of every square built so far (Saint-Job first)
+    this.squares = SQUARES.map((q) => ({ ...q, state: "new" }));
     this.size = +(this.params.get("falconsize") ?? 2.0);
     addEventListener("keydown", (e) => { if (!this.on) return; if (e.code === "Escape") this.onExit?.(); });
     this.ready = this.init().catch((e) => { this.log(`falcon flight: ${e.message}`); console.error(e); throw e; });
@@ -73,6 +85,7 @@ export class CityFlyer {
   async init() {
     const t0 = performance.now(), P = this.params;
     const w = this.w = new CityFalconWorld({ city: this.city, manifest: this.opts.manifest, base: this.opts.base, hide: this.opts.hide || [], log: this.log });
+    w.treeDims = () => (this.treeDims ??= measureTrees(this.params.get("trees")));
     // the air: a fixed pool of thermal slots (cityStream.js fills them round the falcon)
     const slots = Array.from({ length: 12 }, () => ({ x: 1e6, z: 1e6, heat: 0, radius: 18, ground: 0 }));
     this.air = new AirField({ grid: null, floor: (x, z) => w.floor(x, z), sources: slots });
@@ -128,6 +141,8 @@ export class CityFlyer {
       const roosts = w.buildRoosts();
       const n = +(this.params.get("pigeons") ?? 150);
       this.pigeons = new Pigeons({ world: w, roosts, home: PLACE, count: n, scale: 1.4 });
+      this.pigeons.square = { name: "Place de Saint-Job", x: PLACE.x, z: PLACE.z };
+      this.flocks.push(this.pigeons);
       this.pigeons.mesh.visible = false;
       this.scene.add(this.pigeons.mesh);
       await this.warm([this.pigeons.mesh]);
@@ -150,7 +165,7 @@ export class CityFlyer {
       for (const [name, b] of Object.entries(window.__bridges || {})) {
         if (done.has(`bridge:${name}`) || !b.pb?.levels?.length) continue;
         done.add(`bridge:${name}`);
-        await w.addProxy(`bridge ${name}`, b.pb.levels[b.pb.levels.length - 1], { mask: false }).catch((e) => this.log(`falcon flight: bridge ${name} proxy ${e.message}`));
+        await w.addProxy(`bridge ${name}`, b.pb.levels[b.pb.levels.length - 1], { mask: false, under: true }).catch((e) => this.log(`falcon flight: bridge ${name} proxy ${e.message}`));
       }
       await new Promise((r) => setTimeout(r, 1000));
     }
@@ -210,6 +225,9 @@ export class CityFlyer {
     for (const r of this.rings) r.style.display = "none";
     this.panel?.domElement.style.setProperty("display", "none");
     if (this.audio) { const on = this.audio.on; this.audio.on = false; this.audio.update(0.016, { V: 0, phi: 0, fold: 0, lift: 0, downstroke: false, flapLevel: 0 }, this.camera); this.audio.on = on; }
+    // the city's own fog back
+    const L = this.opts.lighting;
+    if (L?.uFogDensity && this._fog) { if (L.uFogDensity.value === this._fog.set) L.uFogDensity.value = this._fog.base; this._fog = null; }
     // the camera's field of view back to the city's
     if (this.fovCity) { this.camera.fov = this.fovCity; this.camera.updateProjectionMatrix(); }
   }
@@ -274,20 +292,67 @@ export class CityFlyer {
   tick(camPos) {
     const now = performance.now(), dt = Math.min((now - (this._tickT ?? now)) / 1000, 0.05);
     this._tickT = now;
+    // the loaded tiles' tree crowns (a worker job per new tile), ready before a flight
+    if (this.w && now - (this._treeT ?? 0) > 2000) { this._treeT = now; this.w.syncTrees(); this.syncSquares(camPos); }
     if (!this.on && this.game) this.ambient(camPos, dt);
   }
+  /** the other squares' flocks: built (the ridges in the worker, the roosts, the mesh warmed) once the camera is within
+   *  900 m of the square and its tile and trees are in; kept afterwards (a mesh of 200 instances, hidden when far) */
+  syncSquares(camPos) {
+    const w = this.w;
+    if (!this.game || this.params.get("squares") === "0") return;
+    for (const sq of this.squares) {
+      if (sq.state !== "new" || Math.hypot(camPos.x - sq.x, camPos.z - sq.z) > 900) continue;
+      const t = w.tileAt(sq.x, sq.z);
+      if (!t || !w.trees.get(t)) continue;
+      sq.state = "building";
+      (async () => {
+        const t0 = performance.now();
+        const ridges = await w.loadRoosts({ at: sq, R: 120 });
+        const roosts = w.squareRoosts(sq, ridges);
+        const n = Math.min(+(this.params.get("pigeons2") ?? 75), Math.floor(roosts.length * 0.6));
+        if (n < 10) { sq.state = "none"; this.log(`falcon flight: ${sq.name}: ${roosts.length} roosts only, no flock`); return; }
+        const P = new Pigeons({ world: w, roosts, home: sq, count: n, scale: 1.4 });
+        P.square = sq;
+        P.flockHomes = [{ x: sq.x, z: sq.z, r: 45, h: 28, w: 0.12 }, { x: sq.x + 25, z: sq.z - 30, r: 38, h: 40, w: -0.14 }];
+        P.mesh.visible = false;
+        this.scene.add(P.mesh);
+        await this.warm([P.mesh]);
+        this.flocks.push(P);
+        sq.state = "ready";
+        const k = {}; for (const r of roosts) k[r.kind] = (k[r.kind] || 0) + 1;
+        this.log(`falcon flight: ${n} pigeons at ${sq.name} on ${roosts.length} roosts (${Object.entries(k).map(([a, b]) => `${b} ${a}`).join(", ")}) in ${(performance.now() - t0).toFixed(0)} ms`);
+      })().catch((e) => { sq.state = "none"; this.log(`falcon flight: ${sq.name} pigeons ${e.message}`); });
+    }
+  }
   ambient(camPos, dt) {
-    const P = this.pigeons;
-    if (!P) return;
-    const near = Math.hypot(camPos.x - PLACE.x, camPos.z - PLACE.z) < PIGEON_RANGE && !!this.w.tileAt(PLACE.x, PLACE.z);
-    P.mesh.visible = near && (this.panelState?.pigeons ?? true);
-    if (!near) return;
+    if (!this.flocks.length) return;
     const t0 = performance.now();
-    const f = this.game.f, flying = this.on && !this.intro;
+    const f = this.game.f, flying = this.on && !this.intro, show = this.panelState?.pigeons ?? true;
+    // the flocks near the camera (their square's tile in), the nearest PIGEON_FLOCKS of them: drawn and simulated
+    const act = this._act ??= [];
+    act.length = 0;
+    for (const P of this.flocks) {
+      const d = Math.hypot(camPos.x - P.square.x, camPos.z - P.square.z);
+      P.camD = d;
+      if (d < PIGEON_RANGE && this.w.tileAt(P.square.x, P.square.z)) act.push(P);
+    }
+    act.sort((a, b) => a.camD - b.camD);
+    if (act.length > PIGEON_FLOCKS) act.length = PIGEON_FLOCKS;
+    for (const P of this.flocks) P.mesh.visible = show && act.includes(P);
+    // the falcon hunts the flock nearest to it (a new flock: a new target)
+    if (flying && act.length) {
+      // (lockFlock: a scripted run pins the flock it hunts, debug/falconCityFlight.js)
+      let best = act.includes(this.lockFlock) ? this.lockFlock : act[0], bd = best === this.lockFlock ? -1 : Infinity;
+      if (bd > 0) for (const P of act) { const d = Math.hypot(f.pos.x - P.square.x, f.pos.z - P.square.z); if (d < bd) { bd = d; best = P; } }
+      if (this.game.pigeons !== best) { this.game.pigeons = best; this.game.target = -1; this.game.window = null; }
+    }
     // the threat: the falcon (in fly mode), else none (far away)
     this.tAmb = (this.tAmb ?? 0) + dt;
-    P.update(dt * this.game.timeScale, this.tAmb, flying ? { x: f.pos.x, y: f.pos.y, z: f.pos.z, speed: f.V, stoop: f.fold > 0.7 } : { x: 1e6, y: 0, z: 1e6, speed: 0, stoop: false });
-    for (const e of P.events.splice(0)) if (e.kind === "burst" && this.on && this.audio) this.audio.pigeonBurst(e.x, e.y, e.z, e.n);
+    for (const P of act) {
+      P.update(dt * this.game.timeScale, this.tAmb, flying ? { x: f.pos.x, y: f.pos.y, z: f.pos.z, speed: f.V, stoop: f.fold > 0.7 } : { x: 1e6, y: 0, z: 1e6, speed: 0, stoop: false });
+      for (const e of P.events.splice(0)) if (e.kind === "burst" && this.on && this.audio) this.audio.pigeonBurst(e.x, e.y, e.z, e.n);
+    }
     this.cpu.last.pigeons = performance.now() - t0;
   }
 
@@ -299,7 +364,7 @@ export class CityFlyer {
     // the air: the sun from the city's lighting, the thermal pool refreshed round the falcon every second
     if (this.opts.lighting?.sunDir) air.params.sunElev = Math.asin(clamp(this.opts.lighting.sunDir.y, -1, 1)) * 57.3;
     const fx = this.intro ? this.pos.x : f.pos.x, fz = this.intro ? this.pos.z : f.pos.z;
-    if (g.t - this.lastSync > 1 || this.lastSync < 0) { w.syncThermals(air, fx, fz); this.lastSync = g.t; }
+    if (g.t - this.lastSync > 1 || this.lastSync < 0) { w.syncThermals(air, fx, fz); this.syncWeather(); this.lastSync = g.t; }
     air.update(g.t);
     const t1 = performance.now();
     w.updateLift(fx, fz, air, 1.5);
@@ -314,6 +379,7 @@ export class CityFlyer {
       return;
     }
     g.update(dt, this.camera);
+    this.highFog();
     const t3 = performance.now();
     this.pos.set(f.pos.x, f.pos.y, f.pos.z);
     this.ambient(this.camera.position, dt);
@@ -326,13 +392,53 @@ export class CityFlyer {
     const aim = inp.mouseAim && inp.mouse.locked && g.mode === "fly" ? (this._aim ??= new THREE.Vector3()).set(-Math.sin(inp.aim.yaw) * Math.cos(inp.aim.pitch), Math.sin(inp.aim.pitch), -Math.cos(inp.aim.yaw) * Math.cos(inp.aim.pitch)) : null;
     this.fovCity ??= this.camera.fov;
     this.fcam.update(dt, { pos: g.pos, va: f.va, V: g.mode === "fly" ? f.V : Math.max(f.V, 0.1), phi: f.phi, heading: f.heading, gamma: f.gamma, span: g.span, stun: f.stun, liftRate: f.lift },
-      { aim, look: inp.look, zoom: inp.zoom, perched: g.mode === "perch", perchYaw: g.perch?.yaw ?? 0, floor: (x, z) => w.floor(x, z) });
+      { aim, look: inp.look, zoom: inp.zoom, perched: g.mode === "perch", perchYaw: g.perch?.yaw ?? 0, floor: (x, z) => w.floor(x, z), col: (this._colFn ??= (x, z) => w.column(x, z, this.game.f.pos.y, true)), sight: (this._sightFn ??= (x, z) => w.column(x, z, this.game.f.pos.y).floor) });
     this.audio?.update(dt, { V: g.mode === "fly" ? f.V : 0, phi: f.phi, fold: f.fold, lift: f.lift, downstroke: this.bird.downstroke, flapLevel: f.flapLevel }, this.camera);
     const t6 = performance.now();
     c.game = t3 - t2; c.hints = t5 - t4; c.camera = t6 - t5;
     this.hudFrame();
     c.total = performance.now() - t0;
     this.cpu.frames.push({ ...c }); if (this.cpu.frames.length > 600) this.cpu.frames.shift();
+  }
+
+  /** HAZE WHILE HIGH: from a few hundred metres up the far-LOD ring's edge shows ((far + 0.5) tiles round the tile
+   *  under the falcon, ?far=; nothing beyond). The city's aerial fog (viewer/lighting.js: 1 - exp(-tau^2), tau =
+   *  density x distance x the mean of the height falloff along the ray) is thickened so it reaches 85 % at that edge,
+   *  eased in from 120 to 400 m over the ground; a uniform (no shader change), the city's own value back on exit or
+   *  when the city sets its own (a time-of-day change). */
+  highFog() {
+    const L = this.opts.lighting, cam = this.camera.position;
+    if (!L?.uFogDensity || this.params.get("highfog") === "0") return;
+    const u = L.uFogDensity;
+    if (!this._fog || u.value !== this._fog.set) this._fog = { base: u.value, set: u.value };
+    const T = 500, ring = Math.max(0, Math.min(2, +(this.params.get("ring") ?? 1))), far = Math.max(ring, Math.min(6, +(this.params.get("far") ?? 3)));
+    const fx = this.game.f.pos.x, fz = this.game.f.pos.z;
+    const tcx = (Math.floor(fx / T) + 0.5) * T, tcz = (Math.floor(fz / T) + 0.5) * T;
+    const D = Math.max(200, (far + 0.5) * T - Math.max(Math.abs(cam.x - tcx), Math.abs(cam.z - tcz)));
+    const g = this.w.ground(cam.x, cam.z), h = cam.y - g;
+    const H = L.uFogHeight?.value ?? 900, F0 = L.uFogFloor?.value ?? 40;
+    const ya = Math.max(g - F0, 0), yb = Math.max(cam.y - F0, 0), dy = yb - ya;
+    const mean = Math.abs(dy) > 1 ? (Math.exp(-ya / H) - Math.exp(-yb / H)) * H / dy : Math.exp(-ya / H);
+    const need = 1.377 / (D * mean);                             // 1 - exp(-1.377^2) = 0.85
+    const k = clamp((h - 120) / 280, 0, 1), e = k * k * (3 - 2 * k);
+    const want = this._fog.base + Math.max(0, need - this._fog.base) * e;
+    u.value = this._fog.set = u.value + (want - u.value) * 0.05;   // eased (a stoop drops 600 m in 10 s)
+  }
+
+  /** THE WEATHER (viewer/weather/weatherState.js): when the city runs one (opts.weather or window.__weather, a Weather
+   *  whose update() fills the shared `wx` uniforms), the air takes its wind (wx.uWind: the 10 m wind, the way the air
+   *  moves; gusts, the height profile and the updrafts stay the air's own) and its cloud (thermals: the sun's heating
+   *  under the cloud; rain = overcast); without one, the air's own wind (the panel's sliders). Checked every second. */
+  syncWeather() {
+    const W = this.opts.weather ?? window.__weather ?? null, air = this.air;
+    if (W && this.weather !== W) { air.setWeatherWind(wx.uWind); this.weather = W; this.cloud0 ??= air.params.cloud; this.log("falcon flight: the wind and cloud from the city's weather"); }
+    else if (!W && this.weather) { air.setWeatherWind(null); air.setWind(); air.params.cloud = this.cloud0 ?? air.params.cloud; this.weather = null; }
+    if (W) {
+      const I = W.input || {};
+      air.params.cloud = Math.min(1, Math.max(I.cloud ?? air.params.cloud, (I.rain ?? 0) > 0.2 || (I.snow ?? 0) > 0.1 ? 0.95 : 0));
+      air.params.wind = Math.hypot(wx.uWind.value.x, wx.uWind.value.y);
+      air.params.windFrom = ((Math.atan2(-wx.uWind.value.x, wx.uWind.value.y) * 180 / Math.PI) + 360) % 360;
+    }
   }
 
   // ---------------------------------------------------------------------------------------------- HUD, panel
@@ -371,7 +477,7 @@ F talons · E land · V camera · click: mouse aim · Esc out</span>`;
     this.msg.innerHTML = g.messages.filter((m) => g.t - m.t < 4).map((m) => m.s).join("<br>");
     const [aimEl, tgtEl, perchEl] = this.rings;
     if (this._aim && inp.mouseAim && inp.mouse.locked && g.mode === "fly") this.ring(aimEl, this.camera.position.clone().addScaledVector(this._aim, 50), true); else aimEl.style.display = "none";
-    if (win && g.mode === "fly" && this.pigeons) { const p = this.pigeons.pos(win.i, {}); this.ring(tgtEl, new THREE.Vector3(p.x, p.y, p.z), true); tgtEl.className = `fring tgt${win.ok ? " ok" : ""}${win.near ? " near" : ""}`; } else tgtEl.style.display = "none";
+    if (win && g.mode === "fly" && g.pigeons) { const p = g.pigeons.pos(win.i, {}); this.ring(tgtEl, new THREE.Vector3(p.x, p.y, p.z), true); tgtEl.className = `fring tgt${win.ok ? " ok" : ""}${win.near ? " near" : ""}`; } else tgtEl.style.display = "none";
     const q = g.mode === "fly" ? g.perchInReach() : null;
     this.ring(perchEl, q ? q.pos : this.pos, !!q);
   }
@@ -412,4 +518,31 @@ F talons · E land · V camera · click: mouse aim · Esc out</span>`;
     return out;
   }
   cpuSummary() { const s = this.cpuStats(); return `total ${s.total?.p50 ?? "-"} (p99 ${s.total?.p99 ?? "-"}) · lift ${s.lift?.p50 ?? "-"}`; }
+}
+
+/** the drawn street trees' crowns per variant, at scale 1 (viewer/treesStylized.js STREET's built LOD 0): the leaf cards'
+ *  centroid (off the trunk), their 95th-percentile radius + half a card, the 5-95 % height band + half a card, the trunk's
+ *  radius at 1-2.5 m. null until the species is built (the first tile's trees); ?trees=slop / simple: a generic crown. */
+function measureTrees(mode) {
+  if (mode === "slop" || mode === "simple") return { V: new Float32Array([0, 0, 8.2, 4.5, 3.0, 0.4]), nVar: 1, H: 12 };
+  const geoms = STREET.shared.geoms;
+  if (!geoms?.size) return null;
+  const V = [];
+  for (let v = 0; v < STREET.variants; v++) {
+    const g = geoms.get(`${v}:0`);
+    if (!g) return null;
+    const P = g.leaves.attributes.position, n = P.count;
+    let cx = 0, cz = 0;
+    for (let i = 0; i < n; i++) { cx += P.getX(i); cz += P.getZ(i); }
+    cx /= n; cz /= n;
+    const r = new Float32Array(n), y = new Float32Array(n);
+    for (let i = 0; i < n; i++) { r[i] = Math.hypot(P.getX(i) - cx, P.getZ(i) - cz); y[i] = P.getY(i); }
+    r.sort(); y.sort();
+    const T = g.trunk.attributes.position;
+    let tr = 0.3;
+    for (let i = 0; i < T.count; i++) { const ty = T.getY(i); if (ty > 1 && ty < 2.5) tr = Math.max(tr, Math.hypot(T.getX(i), T.getZ(i))); }
+    const y05 = y[Math.floor(n * 0.05)], y95 = y[Math.floor(n * 0.95)];
+    V.push(cx, cz, (y05 + y95) / 2, r[Math.floor(n * 0.95)] + 0.5, (y95 - y05) / 2 + 0.6, tr);
+  }
+  return { V: new Float32Array(V), nVar: STREET.variants, H: STREET.naturalHeight };
 }

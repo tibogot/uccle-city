@@ -42,3 +42,26 @@ behaviour). `viewer/falconFlight/cityWorld.js`: the church proxy moved to `churc
 4. Bridge arches: a "ceiling" (two-level floor) so the falcon can fly under them.
 5. The weather's wind (`air.setWeatherWind(weather.uWind)`) once the weather is in the city.
 6. Docs/TODO.md line "Falcon flight game in the city's fly mode" -> done when merged.
+
+## Round 2 (branch `claude/falcon2`, worktree `.claude/worktrees/falcon2`, server :8847): done 2026-11-13
+
+Write-up: `docs/FALCON_FLIGHT.md` "Round 2". Sheets: `docs/falcons/city2/` (.jpeg).
+
+- Trees are obstacles (worker crown grids per tile, `column(x, z, y)`: floor + ceiling + leaf brush; hits, brushing,
+  flying under crowns, perching on crowns).
+- Under the bridges' arches (Saint-Job, Calevoet, Verrewinkel: proxies keep their underside).
+- Chase camera: min distance to the bird, line of sight to the bird and its wingtips, ceilings, never in the leaves.
+- Weather wind / cloud hook (`wx.uWind` when `window.__weather` / `opts.weather` is a running Weather).
+- Pigeons at Place Jean Vander Elst, Parvis Saint-Pierre, Parc de Wolvendael (75 each, the 2 nearest flocks drawn).
+- Saint-Pierre tower hit; ridge perches 1.5 m off ridge ends (chimneys); haze while high (fog uniform).
+- Files: only `viewer/falconFlight/*` and `debug/falconCityFlight.js` (+ docs). No main.js / tileData.js change.
+
+Re-run: `const F = await import("/debug/falconCityFlight.js"); await F.goto(x, z); const r = await F.run("bridge", { arg:
+"calevoet" }); F.sheet(r)` (runs: treeHit, treeBrush, treeUnder, treePerch, bridge, spire, street, strike(square)).
+
+## Next
+
+1. The sky's lower half beyond the last far tile at 500-650 m up: `viewer/lighting.js` (sky under the horizon in the
+   fog colour) or a wider far ring while flying high (main.js streaming).
+2. A foreground real-time run on a quiet GPU (frame histogram, a trace over the streaming long tasks).
+3. Trees in the lift grid (updrafts off rows of crowns); a Weather instance in the city (the hook is ready).

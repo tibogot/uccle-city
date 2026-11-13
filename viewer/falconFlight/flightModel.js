@@ -33,6 +33,7 @@ export const FALCON = {
   thrust: 0.42,                  // g: peak flapping thrust at zero airspeed (fades to 0 at vFlap)
   vFlap: 30,                     // m/s: beyond this, flapping adds nothing
   stamina: { drain: 0.075, regen: 0.035, perchRegen: 0.25, low: 0.15 },   // per second
+  brushDrag: 2.5,                     // 1/s at the full depth of a crown's leaves (world.column brush 0..1): brushing through
   pull: 3.6, push: 2.0,          // g asked above / below the path-holding load at full pitch input (pull grows to nMax - 1 by 60 m/s)
   trim: [13, 20], trimGain: 2.2, // m/s: hands-off speeds, spread / half folded (the tuck has none: it holds the dive)
 };
@@ -188,6 +189,17 @@ export class FalconFlight {
     this.V = V; this.lift = this.air.y;
     this.va.x = vax; this.va.y = vay; this.va.z = vaz;
     if (world) this.collide(px, py, pz, world);
+    // the leaves: brushing through a crown's soft shell (world.column: the city) slows the bird (a drag that grows with
+    // the depth; the dense core is a hit, in collide)
+    this.brush = 0;
+    if (world?.column) {
+      const b = world.column(this.pos.x, this.pos.z, this.pos.y).brush;
+      if (b > 0) {
+        const k = Math.exp(-P.brushDrag * b * dt);
+        this.vel.x *= k; this.vel.y *= k; this.vel.z *= k;
+        this.brush = b; this.brushT = this.t;
+      }
+    }
     if (this.pos.y > 1400) { this.pos.y = 1400; if (this.vel.y > 0) this.vel.y = 0; }
   }
 
@@ -199,21 +211,38 @@ export class FalconFlight {
    * the bird hit a façade, normal = against the motion, horizontal) or a SLOPE (the floor's gradient). A soft, slow,
    * level touch-down is a landing (contact.land = true: the game perches the bird there); a hard one stuns it for a
    * moment (the wings open by themselves, then control comes back).
+   * A world with column(x, z, y) (the city: cityStream.js) is a solid AT A HEIGHT: the floor under the bird and a
+   * CEILING over it (a bridge's arch, a tree crown's underside), so it can fly under them; rising into a ceiling is a
+   * hit from below (normal down). The lab's world (floor only) is a heightfield as before.
    */
   collide(px, py, pz, world) {
     const R = 0.35;
     const dx = this.pos.x - px, dy = this.pos.y - py, dz = this.pos.z - pz;
     const len = Math.hypot(dx, dy, dz);
     const steps = Math.max(1, Math.ceil(len / 0.4));
-    let prevF = world.floor(px, pz);
+    const C = world.column ? world : null;
+    let prevF, prevC = Infinity;
+    if (C) { const c = C.column(px, pz, py); prevF = c.floor; prevC = c.ceil; } else prevF = world.floor(px, pz);
     for (let s = 1; s <= steps; s++) {
       const t = s / steps;
       const x = px + dx * t, y = py + dy * t, z = pz + dz * t;
-      const f = world.floor(x, z);
-      if (y >= f + R) { prevF = f; continue; }
+      let f, ceil = Infinity, hitTree = null, ceilTree = null;
+      if (C) { const c = C.column(x, z, y); f = c.floor; ceil = c.ceil; hitTree = c.tree; ceilTree = c.ceilTree ?? null; } else f = world.floor(x, z);
+      if (y >= f + R && y <= ceil - R) { prevF = f; prevC = ceil; continue; }
       // contact: which kind?
       const t0 = (s - 1) / steps, x0 = px + dx * t0, z0 = pz + dz * t0, y0 = py + dy * t0;
-      let nx, ny, nz, wall = false;
+      let nx, ny, nz, wall = false, under = false;
+      if (y >= f + R && ceil < prevC - 1) {
+        // a ceiling that came down across the path (flying level into the low side of a crown, an arch's spandrel):
+        // the side of a solid, a wall
+        const hl = Math.hypot(dx, dz) || 1;
+        nx = -dx / hl; ny = 0; nz = -dz / hl; wall = true; hitTree = ceilTree;
+        this.pos.x = x0; this.pos.y = y0; this.pos.z = z0;
+      } else if (y >= f + R) {
+        // a ceiling (an arch, a crown's underside) risen into from below: pushed down under it, normal down
+        nx = 0; ny = -1; nz = 0; under = true; hitTree = ceilTree;
+        this.pos.x = x; this.pos.z = z; this.pos.y = Math.max(f + R, ceil - R);
+      } else
       if (f - prevF > 1.0 && y0 < f + R - 0.05) {
         // a façade: stop at the last free point, normal against the horizontal motion
         const hl = Math.hypot(dx, dz) || 1;
@@ -221,7 +250,8 @@ export class FalconFlight {
         this.pos.x = x0; this.pos.y = y0; this.pos.z = z0;
       } else {
         const e = 0.8;
-        const gx = (world.floor(x + e, z) - world.floor(x - e, z)) / (2 * e), gz = (world.floor(x, z + e) - world.floor(x, z - e)) / (2 * e);
+        const fl = C ? (a, b) => C.column(a, b, y).floor : (a, b) => world.floor(a, b);
+        const gx = (fl(x + e, z) - fl(x - e, z)) / (2 * e), gz = (fl(x, z + e) - fl(x, z - e)) / (2 * e);
         const gl = Math.hypot(gx, 1, gz);
         nx = -gx / gl; ny = 1 / gl; nz = -gz / gl;
         if (ny < 0.35) { const hl = Math.hypot(nx, nz) || 1; nx /= hl; nz /= hl; ny = 0; wall = true; this.pos.x = x0; this.pos.z = z0; this.pos.y = Math.max(y0, y); }
@@ -229,7 +259,7 @@ export class FalconFlight {
       }
       const vn = this.vel.x * nx + this.vel.y * ny + this.vel.z * nz;
       const speed = Math.hypot(this.vel.x, this.vel.y, this.vel.z);
-      const land = !wall && ny > 0.85 && -vn < 4.5 && speed < 13;
+      const land = !wall && !under && ny > 0.85 && -vn < 4.5 && speed < 13;
       if (vn < 0) {
         const rest = land ? 0 : 0.3, fric = land ? 0.5 : wall ? 0.55 : 0.8;
         // tangential part kept (scaled), normal part reflected
@@ -240,7 +270,7 @@ export class FalconFlight {
       }
       const hard = -vn > 9 || (wall && -vn > 6);
       if (hard) { this.stun = 0.9; this.stamina = Math.max(0, this.stamina - 0.15); }
-      this.contact = { t: this.t, x: this.pos.x, y: this.pos.y, z: this.pos.z, nx, ny, nz, vn: -vn, speed, wall, land, hard };
+      this.contact = { t: this.t, x: this.pos.x, y: this.pos.y, z: this.pos.z, nx, ny, nz, vn: -vn, speed, wall, land, hard, under, tree: hitTree };
       return;
     }
   }

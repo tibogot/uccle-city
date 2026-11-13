@@ -82,13 +82,17 @@ export class FalconGame {
     if (f.V > 24) return null;
     let best = null, bd = 28;
     const hx = -Math.sin(f.heading), hz = -Math.cos(f.heading);
-    for (const q of this.perches) {
+    const test = (q) => {
       const dx = q.pos.x - p.x, dy = q.pos.y - p.y, dz = q.pos.z - p.z, d = Math.hypot(dx, dy, dz);
-      if (d > bd || d < 1.5) continue;
+      if (d > bd || d < 1.5) return;
       const c = (dx * hx + dz * hz) / Math.max(Math.hypot(dx, dz), 0.1);
-      if (c < 0.35 || dy > 8 || dy < -18) continue;
+      if (c < 0.35 || dy > 8 || dy < -18) return;
       bd = d; best = q;
-    }
+    };
+    for (const q of this.perches) test(q);
+    // the tops of the trees' crowns (the city: cityStream.js treePerches), facing the way the bird comes in
+    if (this.world.treePerches) for (const q of this.world.treePerches(p.x, p.z, 28)) test(q);
+    if (best?.tree) best.yaw = f.heading;
     return best;
   }
 
@@ -102,7 +106,7 @@ export class FalconGame {
     const v1 = face.clone().multiplyScalar(0.8).add(new THREE.Vector3(0, -0.6, 0));
     this.landing = { q, p0, v0, v1, T, t: 0, yaw0: f.heading };
     this.mode = "land";
-    this.say(`landing on ${q.church ? `the ${q.name === "ledge" ? "eyrie's ledge" : q.name}` : "a roof ridge"}: the flare`);
+    this.say(`landing on ${q.church ? `the ${q.name === "ledge" ? "eyrie's ledge" : q.name}` : q.tree ? "a tree's crown" : "a roof ridge"}: the flare`);
   }
 
   takeoff() {
@@ -157,20 +161,23 @@ export class FalconGame {
       const c = f.contact;
       if (c) {
         if (c.land || (c.speed < 4 && c.ny > 0.7)) {
-          const yaw = f.heading;
-          this.perchOn({ name: "roof", pos: new THREE.Vector3(c.x, c.y - 0.35, c.z), yaw, roof: true });
-          this.say("touched down");
-        } else if (c.hard) { this.say(`hit ${c.wall ? "a wall" : "the ground"} at ${c.vn.toFixed(0)} m/s: stunned`); this.audio?.thud(true); }
+          const yaw = f.heading, tree = c.tree != null;
+          this.perchOn({ name: tree ? "tree" : "roof", pos: new THREE.Vector3(c.x, c.y - 0.35, c.z), yaw, roof: !tree, tree });
+          this.say(tree ? "touched down on a tree's crown" : "touched down");
+        } else if (c.hard) { this.say(`hit ${c.tree != null ? "a tree" : c.under ? "the underside" : c.wall ? "a wall" : "the ground"} at ${c.vn.toFixed(0)} m/s: stunned`); this.audio?.thud(true); }
         else this.audio?.thud(false);
         f.contact = null;
       }
       if (inp.take("land")) { const q = this.perchInReach(); if (q) this.beginLanding(q); else this.say("no perch in reach (ahead, < 28 m, under 24 m/s)"); }
+      // brushing through leaves (the city's trees): said once per crown
+      if (f.brush > 0.05 && (!this._brushT || this.t - this._brushT > 1.5)) { this.say("through the leaves"); this.audio?.leaves?.(); }
+      if (f.brush > 0.05) this._brushT = this.t;
       this.score.maxSpeed = Math.max(this.score.maxSpeed, f.V);
       this.strike(dt, inp);
     }
     inp.take("strike");
     // ---- the bird (size: the readable size in the air, life size near the perches and the ground)
-    const fl = this.world.floor(f.pos.x, f.pos.z), agl = f.pos.y - fl;
+    const fl = this.world.floorAt ? this.world.floorAt(f.pos.x, f.pos.z, f.pos.y) : this.world.floor(f.pos.x, f.pos.z), agl = f.pos.y - fl;
     const wantSpan = this.mode === "fly" ? this.size.life + (this.size.readable - this.size.life) * smooth(agl, 6, 30) : this.size.life;
     this.span += (wantSpan - this.span) * (1 - Math.exp(-2.5 * dtReal));
     this.bird.setSpan(this.span);

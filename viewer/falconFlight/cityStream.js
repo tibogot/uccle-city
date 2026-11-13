@@ -16,7 +16,16 @@
 //                  when its own is over 1 km from the falcon (no column vanishes in view).
 //   roosts         the pigeons' roosts round the Place: roof ridges (falconWorker.js, from the tiles' buildings.bin), the
 //                  church's wing ridges and drum cornice, the Place's setts (on the city's walking surface).
+//   column(x, z, y) the solid AT A HEIGHT (the falcon's own collision, viewer/falconFlight/flightModel.js): the floor
+//                  under y and the ceiling over it, so the bird can fly UNDER the bridges' arches (the bridge proxies
+//                  keep their lowest surface per cell too: where it is 2.5 m over the ground the arch is open) and under
+//                  the trees' crowns, and the brush of the leaves. The trees: every drawn street tree of the loaded tiles
+//                  (the tile's own placements: viewer/treesStylized.js variant, turn, scale), an ellipsoid crown from the
+//                  drawn variant's leaf cards with a DENSE CORE (60 % of the radius, 85 % of the height: a hit, the bird
+//                  can land on top) inside a soft shell (brushing through: drag), and the trunk; built per tile in the
+//                  worker (an 8 m bucket grid), so a query is a handful of trees.
 // Where no full tile is loaded (the falcon outran the streaming) the nearest tile's edge stands in (clamped).
+import { Vector3 } from "three/webgpu";
 import { PLACE, churchTop } from "./church.js";
 
 const HEAT = { pitch: 0.85, playground: 0.8, grass: 0.7, park: 0.65, meadow: 0.7, garden: 0.55, recreation_ground: 0.75, wood: 0.35, scrub: 0.5, farmland: 0.7 };
@@ -47,6 +56,12 @@ export class CityFalconWorld {
     this._t = null;
     this._feat = new WeakMap();
     this.cpu = { lift: 0 };
+    this.trees = new Map();        // tile -> tree crowns (worker), null while building
+    this.treeList = [];            // the loaded tiles' tree grids
+    this.treeDims = null;          // () => { V, nVar, H }: the drawn variants' crowns (cityFlyer.js measures them)
+    this.treeStats = { tiles: 0, trees: 0, lastMs: 0 };
+    this._col = { floor: 0, ceil: Infinity, brush: 0, tree: null, open: false };
+    this._near = [];
   }
   get tiles() { return this.city.tiles; }
 
@@ -114,6 +129,101 @@ export class CityFalconWorld {
     return h;
   }
 
+  /** the solid at height y: { floor (the highest surface under the bird), ceil (the lowest over it: an arch, a crown's
+   *  underside; Infinity), brush (0..1: how deep in a crown's leaves), tree (the crown it stands on / in), open (under
+   *  a bridge) }. outer: the crowns' whole volume is solid (the camera: never inside the leaves). One shared object. */
+  column(x, z, y, outer = false) {
+    const o = this._col;
+    o.ceil = Infinity; o.brush = 0; o.tree = null; o.ceilTree = null; o.open = false;
+    const t = this.tileAt(x, z) || this.nearest(x, z);
+    let h = t ? t.hm.ground(x, z) : 0;
+    const r = this.roof(x, z); if (r > h) h = r;
+    const c = this.churchFloor(x, z); if (c > h) h = c;
+    for (const p of this.proxies) {
+      if (x < p.bx0 || x > p.bx1 || z < p.bz0 || z > p.bz1) continue;
+      const i = Math.floor((x - p.x0) / p.step), j = Math.floor((z - p.z0) / p.step);
+      if (i < 0 || j < 0 || i >= p.nx || j >= p.nz) continue;
+      const k = j * p.nx + i, v = p.data[k];
+      if (v < -1e8) continue;
+      // a bridge's arch: its lowest surface well over the ground here, the bird under it
+      if (p.low) { const u = p.low[k]; if (u > h + 2.5 && y < u) { if (u < o.ceil) { o.ceil = u; o.ceilTree = null; } o.open = true; continue; } }
+      if (v > h) h = v;
+    }
+    if (this.city.decks?.length && !(o.open && y < o.ceil)) { const d = this.city.deckY(x, z); if (d != null && d > h) h = d; }
+    // the trees' crowns and trunks
+    const cf = outer ? 1 : 0.6, cv = outer ? 1 : 0.85;
+    for (const td of this.treeList) {
+      const ci = Math.floor((x - td.x0) / td.cell), cj = Math.floor((z - td.z0) / td.cell);
+      if (ci < 0 || cj < 0 || ci >= td.nx || cj >= td.nz) continue;
+      const q = cj * td.nx + ci, T = td.T;
+      for (let k = td.start[q], e = td.start[q + 1]; k < e; k++) {
+        const b = td.idx[k] * 8, cy = T[b + 2], Rh = T[b + 3], Rv = T[b + 4];
+        const tx = x - T[b + 5], tz = z - T[b + 6], tr = T[b + 7];
+        if (tx * tx + tz * tz < tr * tr && cy > h) { h = cy; o.tree = td.idx[k]; o.treeTile = td; }   // the trunk (up into the crown)
+        const dx = x - T[b], dz = z - T[b + 1], d2 = dx * dx + dz * dz;
+        if (d2 >= Rh * Rh) continue;
+        const dy = (y - cy) / Rv, q2 = d2 / (Rh * Rh) + dy * dy;
+        if (q2 < 1 && 1 - Math.sqrt(q2) > o.brush) o.brush = 1 - Math.sqrt(q2);
+        const a = Rh * cf, s2 = d2 / (a * a);
+        if (s2 >= 1) continue;
+        const hv = Rv * cv * Math.sqrt(1 - s2), lo = cy - hv, hi = cy + hv;
+        if (y >= lo) { if (hi > h) { h = hi; o.tree = td.idx[k]; o.treeTile = td; } }
+        else if (lo < o.ceil) { o.ceil = lo; o.ceilTree = td.idx[k]; }
+      }
+    }
+    o.floor = h;
+    return o;
+  }
+  /** the floor under height y (column().floor) */
+  floorAt(x, z, y) { return this.column(x, z, y).floor; }
+
+  // ---------------------------------------------------------------------------------------------- the trees
+  /** the loaded tiles' tree crowns: a worker job per new tile (call every second or so) */
+  syncTrees() {
+    const tiles = this.city.tiles;
+    for (const [t] of this.trees) if (!tiles.includes(t)) this.trees.delete(t);
+    const dims = this.treeDims?.();
+    if (dims) for (const t of tiles) {
+      if (this.trees.has(t) || !t.feats?.trees) continue;
+      this.trees.set(t, null);
+      const b = t.bounds, list = t.feats.trees.filter((q) => q.x >= b.x0 && q.x <= b.x1 && q.z >= b.z0 && q.z <= b.z1);
+      const pts = new Float32Array(list.length * 4);
+      list.forEach((q, i) => pts.set([q.x, q.z, q.y ?? t.hm.ground(q.x, q.z), q.height ?? 9], i * 4));
+      const t0 = performance.now();
+      work({ kind: "trees", pts, V: dims.V, nVar: dims.nVar, H: dims.H, x0: b.x0, z0: b.z0, x1: b.x1, z1: b.z1 }, [pts.buffer]).then((r) => {
+        if (!this.trees.has(t)) return;
+        r.name = t.name; this.trees.set(t, r);
+        this.treeList = [...this.trees.values()].filter(Boolean);
+        this.treeStats = { tiles: this.treeList.length, trees: this.treeList.reduce((n, d) => n + d.n, 0), lastMs: performance.now() - t0 };
+      }).catch((e) => this.log(`falcon flight: trees ${t.name}: ${e.message}`));
+    }
+    const list = [...this.trees.values()].filter(Boolean);
+    if (list.length !== this.treeList.length) this.treeList = list;
+  }
+  /** the crowns' tops within R of (x, z) as perches ({ name: "tree", pos, yaw, tree }) (one shared array) */
+  treePerches(x, z, R = 28) {
+    const out = this._near; out.length = 0;
+    for (const td of this.treeList) {
+      const i0 = Math.max(0, Math.floor((x - R - td.x0) / td.cell)), i1 = Math.min(td.nx - 1, Math.floor((x + R - td.x0) / td.cell));
+      const j0 = Math.max(0, Math.floor((z - R - td.z0) / td.cell)), j1 = Math.min(td.nz - 1, Math.floor((z + R - td.z0) / td.cell));
+      if (i0 > i1 || j0 > j1) continue;
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+        const q = j * td.nx + i;
+        for (let k = td.start[q]; k < td.start[q + 1]; k++) {
+          const n = td.idx[k], b = n * 8, cx = td.T[b], cz = td.T[b + 1];
+          // a tree in several cells: only from the cell its crown centre is in
+          if (Math.floor((cx - td.x0) / td.cell) !== i || Math.floor((cz - td.z0) / td.cell) !== j) continue;
+          if ((cx - x) ** 2 + (cz - z) ** 2 > R * R) continue;
+          td.perch ??= new Map();
+          let p = td.perch.get(n);
+          if (!p) td.perch.set(n, (p = { name: "tree", pos: new Vector3(cx, td.T[b + 2] + td.T[b + 4] * 0.85, cz), yaw: 0, tree: true }));
+          out.push(p);
+        }
+      }
+    }
+    return out;
+  }
+
   /** the Saint-Job church (viewer/stjobModel.js placement: position, rotationY) */
   setChurch(placement) {
     const p = placement.position, a = placement.rotationY;
@@ -123,7 +233,7 @@ export class CityFalconWorld {
 
   /** a landmark's height proxy from its drawn mesh (root: an Object3D in the scene; mask: its footprint overrides the
    *  roof grid's envelope). Main thread: the world positions of its triangles (timed); the raster in the worker. */
-  async addProxy(name, root, { mask = true } = {}) {
+  async addProxy(name, root, { mask = true, under = false } = {}) {
     const t0 = performance.now();
     root.updateMatrixWorld(true);
     const parts = [];
@@ -149,7 +259,7 @@ export class CityFalconWorld {
       }
     }
     const mainMs = performance.now() - t0;
-    const r = await work({ kind: "raster", pos: pos.subarray(0, k), step: 1 }, [pos.buffer]);
+    const r = await work({ kind: "raster", pos: pos.subarray(0, k), step: 1, under }, [pos.buffer]);
     Object.assign(r, { name, mask, bx0: r.x0, bz0: r.z0, bx1: r.x0 + r.nx * r.step, bz1: r.z0 + r.nz * r.step, env: mask ? undefined : 0 });
     if (mask) r.env = undefined;
     this.proxies.push(r);
@@ -245,13 +355,31 @@ export class CityFalconWorld {
 
   // ---------------------------------------------------------------------------------------------- roosts
   /** the roof-ridge roosts round the Place (worker), then the church's and the setts once the Place's tile is in */
-  async loadRoosts({ R = 170 } = {}) {
-    const near = this.manifest.tiles.filter((t) => t.status === "built" && Math.max(t.bounds.x[0] - PLACE.x, 0, PLACE.x - t.bounds.x[1]) < R + 40 && Math.max(t.bounds.z[0] - PLACE.z, 0, PLACE.z - t.bounds.z[1]) < R + 40);
+  async loadRoosts({ R = 170, at = PLACE } = {}) {
+    const near = this.manifest.tiles.filter((t) => t.status === "built" && Math.max(t.bounds.x[0] - at.x, 0, at.x - t.bounds.x[1]) < R + 40 && Math.max(t.bounds.z[0] - at.z, 0, at.z - t.bounds.z[1]) < R + 40);
     const tiles = near.map((t) => ({ json: new URL(t.files.buildings, this.base).href, bin: new URL(t.files.buildingsBin, this.base).href, hide: this.hide }));
-    const f = await work({ kind: "ridges", tiles, place: PLACE, R });
+    const f = await work({ kind: "ridges", tiles, place: at, R });
     const out = [];
     for (let i = 0; i < f.length; i += 4) out.push({ x: f[i], y: f[i + 1], z: f[i + 2], yaw: f[i + 3], kind: "ridge" });
-    this.ridges = out;
+    if (at === PLACE) this.ridges = out;
+    return out;
+  }
+  /** another square's roosts (needs its tile and trees): the ridges round it (worker), the tops of the trees' crowns
+   *  within R (a point at the top of each, the crowns the falcon can perch on too), its paving / lawn (the city's
+   *  walking surface, off the roofs and the crowns' footprints) */
+  squareRoosts(sq, ridges, R = 120) {
+    const out = [...ridges];
+    for (const q of this.treePerches(sq.x, sq.z, R)) for (let k = 0; k < 3; k++) {
+      const a = k * 2.1 + q.pos.x * 0.37;
+      out.push({ x: q.pos.x + Math.cos(a) * 1.2, y: q.pos.y + 0.2, z: q.pos.z + Math.sin(a) * 1.2, yaw: a * 2.3, kind: "tree" });
+    }
+    for (let i = 0; i < 60; i++) {
+      const a = (i * 2.399963) % (Math.PI * 2), r = 4 + Math.sqrt(i / 60) * (sq.r ?? 18);
+      const x = sq.x + Math.cos(a) * r, z = sq.z + Math.sin(a) * r;
+      if (this.roof(x, z) > 0 || this.column(x, z, 1e4, true).floor > this.ground(x, z) + 1.5) continue;
+      const y = this.city.walkY ? this.city.walkY(x, z) : this.ground(x, z);
+      out.push({ x, y: y + 0.01, z, yaw: a * 3.1, kind: "ground" });
+    }
     return out;
   }
   /** all roosts (needs the church and the Place's tile): ridges + the church's wing ridges / drum cornice + the setts */
