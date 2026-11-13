@@ -263,13 +263,84 @@ agents' tabs busy: p50 16-34 ms - the GPU is SHARED with two other agents' city 
 A/B of the bird + pigeons + hints (perched on the cross, 3 rounds x 240 frames): GPU p50 on 2.36 / 1.44 / 1.38, off
 1.97 / 1.57 / 1.44 ms: **below the noise** (as in the lab).
 
+### Round 2 (branch claude/falcon2, 2026-11-13): trees, arches, camera, weather, more squares
+
+Sheets in `docs/falcons/city2/` (stepped in a background tab as round 1; driver `debug/falconCityFlight.js`, new runs
+`treeHit / treeBrush / treeUnder / treePerch / bridge (stjob | calevoet | verrewinkel) / spire / street`, `strike` takes
+a square, `goto(x, z)` flies there until its tile is in).
+
+**The solid at a height** (`cityStream.js column(x, z, y)` -> `{ floor, ceil, brush, tree, open }`): the floor under the
+bird AND a ceiling over it. `flightModel.js collide` uses it when the world has it (the lab keeps its heightfield):
+rising into a ceiling = a hit from below (normal down), a ceiling that comes down across the path (the side of a crown,
+an arch's spandrel) = a wall. `floor(x, z)` (the lift grid, the pigeons) is unchanged (bridges solid, no trees). One
+column query: 0.45-0.52 us.
+
+- **Trees** (`falconWorker.js` job `trees`, `syncTrees()` every 2 s from `tick`): every tree the city draws, with the
+  drawn variant / turn / scale (`treesStylized.js`'s own placement rules: the vendor's variant hash of the index, the
+  turn hash, scale = LiDAR height / natural height clamped 0.3-1.8); per variant the crown is measured from the built
+  LOD 0's leaf cards (centroid off the trunk, 95th-percentile radius + 0.5 m, 5-95 % height band + 0.6 m) and the trunk's
+  radius; in the worker, per tile, an 8 m bucket grid (main thread 0.1-0.4 ms per tile to pack ~1,800 trees; 21,374
+  trees on 9 tiles in the far flight). A crown = an ellipsoid with a DENSE CORE (60 % of its radius, 85 % of its
+  height): a hit ("hit a tree", stunned above 6-9 m/s), the bird can land on its top; the shell round it = leaves: a drag
+  (2.5 /s at full depth, `FALCON.brushDrag`), "through the leaves" + a rustle (`falconAudio.leaves()`); the trunk up to
+  the crown's centre. Under the crowns the bird flies free. **Perching on trees**: the crowns' tops are perches for E
+  (`treePerches()` near the bird, in `perchInReach`); a soft touch-down on a crown perches "tree".
+  Runs: `tree_hit` (centre height, 12 m/s: leaves at 4.4 s, "hit a tree at 10 m/s" at 4.6 s), `tree_brush` (0.8 of the
+  radius: 38 frames of brush, depth 0.17, no contact), `tree_under` (1.4 m under a crown, 3 m beside the trunk: no
+  contact, no brush, min clearance 4.7 m), `tree_perch` (E at 24 m: "landing on a tree's crown", perched "tree").
+- **Bridges** (raster job `under: true`): the bridge proxies keep their LOWEST surface per cell too (`p.low`); where it
+  is 2.5 m over the ground and the bird is under it, the cell is open (and the decks of `world.deckY` with it). Runs (a
+  line through the opening's centre at mid-height, the clear direction searched every 5 deg): `bridge_stjob` (6.4 m
+  clear, 94 frames under the arch, head room min 4.7 m), `bridge_calevoet` (12.2 m, 56 frames, 2.1 m),
+  `bridge_verrewinkel` (along the L26 under the Rue de Verrewinkel deck: 5.4 m, 74 frames, 3.6 m): 0 contacts, 0 frames
+  inside a solid.
+- **Chase camera** (`falconCamera.js`): floor AND ceiling at the bird's height (`o.col`: the crowns whole, so never in
+  the leaves; under an arch it stays under it); `keepClear()`: the lens never closer than 0.62 span + 0.45 m to the bird
+  (a hard radial limit after the easing), and the line of sight to the bird's centre and both wingtips (roofs, the
+  crowns' dense cores) stays clear: in along the line, else over the bird when that spot is free. The fix is an offset
+  on the eased position: taken at once when it grows, eased off when it shrinks unless the eased spot would hide the
+  bird. Runs: skim 1,500 frames 0 occluded (min distance 3.8 m); far 4,200 frames 0; bridges / trees 0 (min 1.44 m after
+  a tree hit = the limit); street (`camera_street`, Montagne de Saint-Job 8 m up; the autopilot hits a façade at 1.4 s):
+  6 occluded frames, all while the bird is against the wall.
+- **Weather wind** (`cityFlyer.syncWeather`, every second): when the city runs a `Weather` (`opts.weather` or
+  `window.__weather`; its `update()` fills `wx` in `viewer/weather/weatherState.js`), the air takes `wx.uWind` (the 10 m
+  wind; gusts / profile / updrafts stay the air's) and its cloud (rain / snow = overcast: weak thermals); without one,
+  the air's own wind (the panel). Checked: snowstorm (9 m/s from 50 deg): air U (-6.89, 5.79), the bird's drift
+  (-11.7, 9.0) m/s at 60 m; heavy rain (6 m/s from 220 deg): (3.86, -4.60), drift (7.6, -7.7); weather gone: the own
+  wind back. The city has no `Weather` instance today: this is the hook.
+- **Pigeons at more squares** (real places of our data: the OSM ways `Place Jean Vander Elst` (the town hall's square,
+  -1125, -505) and `Parvis Saint-Pierre` (-701, -498) in `data/tiles/*/roads.json`, the OSM park polygon `Parc de
+  Wolvendael` (area centroid -402, -91, `data/map/map.json`)): 75 pigeons each (`?pigeons2=`, `?squares=0` off), built
+  once the camera is within 900 m and the square's tile and trees are in: ridges (the worker job round the square,
+  120 m), the crowns' tops, the paving / lawn (off roofs and crowns). Roosts: Saint-Pierre 2,547 ridge + 357 tree + 18
+  ground; Vander Elst 2,099 + 183 + 44; Wolvendael 0 + 1,221 + 27. Budget: the 2 nearest flocks within 700 m are drawn
+  and simulated (pigeons CPU p50 0.2-0.4 ms with two flocks flushed, max 2.1 ms); the falcon hunts the flock nearest to
+  it. Sheet `pigeons_squares` (a strike at the Parvis: the flock flushes, closest pass 3.1 m, no catch in 14 s).
+- **Saint-Pierre** (`spire_stpierre`): level 6 m under the proxy's top (its tower and bulb, 18 m2 at that height) at
+  15 m/s: "hit a wall at 15 m/s: stunned", 0 frames inside.
+- **Chimneys**: ridge roosts / perches 1.5 m off each ridge end (`falconWorker.js ridges`: the façade kit's stacks stand
+  on the party walls at the gable's top = a ridge end); edges under 3.2 m give none (Saint-Job: 3,149 roosts, 746 ridge
+  perches; `ridge_perch`).
+- **Haze while high** (`cityFlyer.highFog`): the city's fog density uniform (`lighting.uFogDensity`, no shader change)
+  thickened so the fog reaches 85 % at the far ring's edge, eased in from 120 to 400 m over the ground, the city's value
+  back on exit (or when the city changes it). Stoop from 650 m: 0.00025 -> 0.0032 with ?far=1; the tiles fade into the
+  haze (`stoop_haze`, `stoop_haze_far3`). LEFT: beyond the last tile the SKY's lower half (SkyMesh, brown, not fogged)
+  still shows as a band at 500-650 m up, even with the default ?far=3. The fix is in `viewer/lighting.js` (the sky under
+  the horizon in the fog colour) or a wider far ring while high (main.js streaming): not done (shared files).
+
+**CPU** (the flight's own parts, per frame, the last 600 frames): far flight 70 s (10 tile changes, 16 lift builds):
+total p50 0.2 / p99 1.7 / max 1.9 ms, game 0.1, camera < 0.1 (p99 0.2); tree / bridge / camera runs p50 0.2-0.3, p99
+0.4-2.3, max <= 3.1 ms (one 8-11 ms max in two runs right after a reload, while the boot compiled). 0 synchronous and 0
+async render pipelines in every run. GPU times not measured (shared GPU).
+
 ### Weak points / left (city)
 
-- Trees are not obstacles (the falcon flies through crowns). Bridges are solid under their arches (heightfields).
-- A ridge perch can face a chimney (the façade kit's chimneys are not in the UrbIS ridges).
-- The chase camera can clip the bird's wing when it is lifted over a roof right beside the bird (the lab's rule).
-- Only the Place de Saint-Job has pigeons (other squares: the same worker job round another point).
-- The stoop from 650 m shows the edge of the far-LOD ring (`?far=3`).
-- Measured stepped in a background tab: a foreground real-time run (and a performance trace attributing the
-  streaming long tasks) is still to do on a quiet GPU.
-- Thermals only from OSM land cover (as the lab); the weather's wind is not hooked (`air.setWeatherWind`).
+- The sky's lower half shows beyond the last far tile from 500-650 m up (see "Haze while high").
+- The tree crowns are ellipsoids from the drawn variant's cards: a branch sticking out of one is not solid; the trees
+  are not in the lift grid (no updraft off a row of crowns).
+- Strikes at the new squares' flocks came within 3 m but caught none in the runs (the autopilot's guidance; the
+  Place's flock was caught on the 3rd attack in round 1).
+- The street autopilot (`street`) cuts a corner into a façade in the narrow Montagne de Saint-Job.
+- Measured stepped in a background tab: a foreground real-time run (and a performance trace attributing the streaming
+  long tasks) is still to do on a quiet GPU.
+- Thermals only from OSM land cover (as the lab); the city has no Weather instance yet (the hook is ready).
