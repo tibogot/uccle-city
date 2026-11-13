@@ -105,7 +105,7 @@ if (site === "stjob") {               // the scripted church instead of its UrbI
 
 // ------------------------------------------------------------------------------------------------ the street-life layer
 say("street life: kits + worker…");
-const SL = await StreetLife.create(scene, { atlasFull: qp.get("atlas") === "full" });
+const SL = await StreetLife.create(scene);
 const tileStats = [];
 for (const t of SITE.tiles) tileStats.push(await SL.addTile(t));
 console.log("[streetlife lab] tiles", tileStats);

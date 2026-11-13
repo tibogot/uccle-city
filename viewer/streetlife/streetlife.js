@@ -4,19 +4,21 @@
 //
 // Draws per tile: ONE instanced textured box for every boxy thing and ALL the text (fascias, frames, projecting signs,
 // awnings, plates, numbers, the fuel canopy + pylon, stop flags, shelters, the Villo terminal), one for the shop windows
-// (parallax interior, vendor/slop-street), one for shelter glass, and 2 per prop kind present (LOD0 / LOD1, dithered
-// cross-fade, viewer/lodFade.js). Text: ONE shared signed-distance atlas (sdfText.js), crisp when magnified, faded by
-// distance (textNear .. textFar) and by footprint before the letters turn sub-pixel (no sparkle). Night: every glow is
+// (parallax interior, vendor/slop-street), one for shelter glass; none of them casts a shadow. The prop kits are NOT per
+// tile: one pool per kind and LOD for the whole layer (PropPool), filled with the loaded tiles' instances near the
+// camera (dithered LOD cross-fade, viewer/lodFade.js). Small boxes shrink away past ~350 x their size (no pop, nothing
+// drawn beyond). Text: ONE shared signed-distance atlas (sdfText.js), crisp when magnified, faded by distance
+// (textNear .. textFar) and by footprint before the letters turn sub-pixel (no sparkle). Night: every glow is
 // x streetUniforms.night (the hook for the night lights lab: nightSources() gives the shop and sign light positions).
+// City hookup: docs/streetlife/CITY.md.
 import * as THREE from "three/webgpu";
 import {
   attribute, uniform, uniformArray, texture, vec2, vec3, vec4, float, uv, positionWorld, normalWorld, smoothstep, mix, fwidth,
-  max, min, clamp, step, select, length, abs,
+  max, min, clamp, step, select, length, abs, positionLocal,
 } from "three/tsl";
-import { lodEye, keepBand } from "../lodFade.js";
+import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
 import { SLOTS, KITS } from "./kits.js";
 import { simplifyKit } from "./kitLod.js";
-import { ShelfPacker } from "./sdfText.js";
 import { shopInterior } from "../../vendor/slop-street/shopInterior.js";
 
 export const streetUniforms = {
@@ -30,15 +32,15 @@ export const streetUniforms = {
 };
 
 // ------------------------------------------------------------------------------------------------ the shared atlas
-/** ONE text atlas for every tile, as PAGES: a DataArrayTexture of `pages` layers of W x W (R8 signed distance, mipmapped).
- *  A tile packs its labels into pages of its own (shelf packer per page) and uploads ONLY those layers
- *  (texture.addLayerUpdate: a W x W sub-upload, 4 MB at 2048², instead of the whole atlas); removeTile frees them.
- *  ?atlas=full (lab) re-uploads every layer, the round-1 behaviour, to measure the difference. */
+/** ONE text atlas for every tile, as PAGES: a DataArrayTexture of `pages` layers of W x H (R8 signed distance, mipmapped).
+ *  The worker packs a tile's labels into pages of its own; addTile copies them into free layers and uploads ONLY those
+ *  (texture.addLayerUpdate: a W x H sub-upload, 2 MB at 2048 x 1024, instead of the whole atlas); removeTile frees them.
+ *  City: 2048 x 1024 x 16 (32 MB + mips): a tile uses 1-2 layers; only the tiles near the camera keep theirs (StreetLife._place). */
 export class TextAtlas {
-  constructor(W = 2048, pages = 12, { full = false } = {}) {
-    this.W = W; this.H = W; this.pages = pages; this.fullUpload = full;
-    this.data = new Uint8Array(W * W * pages);
-    this.tex = new THREE.DataArrayTexture(this.data, W, W, pages);
+  constructor(W = 2048, H = 1024, pages = 16) {
+    this.W = W; this.H = H; this.pages = pages;
+    this.data = new Uint8Array(W * H * pages);
+    this.tex = new THREE.DataArrayTexture(this.data, W, H, pages);
     Object.assign(this.tex, { format: THREE.RedFormat, type: THREE.UnsignedByteType, minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter, generateMipmaps: true, anisotropy: 8, flipY: false });
     this.tex.colorSpace = THREE.NoColorSpace;
     this.free = Array.from({ length: pages }, (_, i) => i);
@@ -46,37 +48,27 @@ export class TextAtlas {
     this.uploads = [];          // { tile, layers, bytes }
   }
   get used() { return 1 - this.free.length / this.pages; }
-  /** pack a tile's labels into new pages; returns { rects: [u0, v0, u1, v1, page] per label, pages } */
-  addTile(tile, labels, data) {
-    const own = [], rects = [];
-    let packer = null, page = -1;
-    const next = () => {
-      if (!this.free.length) return false;
-      page = this.free.shift(); own.push(page);
-      packer = new ShelfPacker(this.W, this.H);
-      this.data.fill(0, page * this.W * this.H, (page + 1) * this.W * this.H);
-      return true;
-    };
-    // tallest first packs better; the order of rects follows the input
-    const order = labels.map((l, i) => i).sort((i, j) => labels[j].h - labels[i].h || labels[j].w - labels[i].w);
-    const out = new Array(labels.length).fill(null);
-    for (const i of order) {
-      const l = labels[i];
-      let at = packer ? packer.add(l.w, l.h) : null;
-      if (!at) { if (!next()) { this.full++; continue; } at = packer.add(l.w, l.h); if (!at) { this.full++; continue; } }
-      const base = page * this.W * this.H;
-      for (let y = 0; y < l.h; y++) this.data.set(data.subarray(l.off + y * l.w, l.off + (y + 1) * l.w), base + (at.y + y) * this.W + at.x);
-      out[i] = [(at.x + 0.5) / this.W, (at.y + 0.5) / this.H, (at.x + l.w - 0.5) / this.W, (at.y + l.h - 0.5) / this.H, page];
+  /** copy a tile's n packed pages (Uint8Array n x W x H) into free layers; returns the layer of each local page (-1:
+   *  no room: that page's labels show blank boards) */
+  addTile(tile, n, pagesData) {
+    const map = [];
+    const S = this.W * this.H;
+    for (let k = 0; k < n; k++) {
+      if (!this.free.length) { this.full++; map.push(-1); continue; }
+      const pg = this.free.shift();
+      this.data.set(pagesData.subarray(k * S, (k + 1) * S), pg * S);
+      this.tex.addLayerUpdate(pg);
+      map.push(pg);
     }
-    if (this.fullUpload) this.tex.clearLayerUpdates?.();
-    else for (const pg of own) this.tex.addLayerUpdate(pg);
-    this.tex.needsUpdate = true;
-    this.uploads.push({ tile, layers: own.slice(), bytes: (this.fullUpload ? this.pages : own.length) * this.W * this.H });
-    rects.push(...out);
-    return { rects, pages: own };
+    if (map.some((p) => p >= 0)) this.tex.needsUpdate = true;
+    this.uploads.push({ tile, layers: map.filter((p) => p >= 0), bytes: map.filter((p) => p >= 0).length * S });
+    return map;
   }
-  removeTile(pages) { for (const pg of pages) if (!this.free.includes(pg)) this.free.push(pg); }
+  removeTile(pages) { for (const pg of pages) if (pg >= 0 && !this.free.includes(pg)) this.free.push(pg); }
 }
+
+/** 1 near, 0 past the range c.w (from 75 % of it), by the VIEW camera's distance to the instance centre c.xyz */
+const shrinkAt = (c) => smoothstep(c.w, c.w.mul(0.75), length(c.xyz.sub(lodEye)));
 
 // ------------------------------------------------------------------------------------------------ the textured box
 /** unit box centred at 0, uv per face; attribute face: 1 = front (+z), 2 = back (-z, uv mirrored so text reads), 0 = sides */
@@ -107,7 +99,10 @@ function boxMaterial(atlas) {
   const U = streetUniforms;
   const m = new THREE.MeshStandardNodeMaterial();
   const iRect = attribute("iRect", "vec4"), iBox = attribute("iBox", "vec4"), iBoard = attribute("iBoard", "vec4"), iInk = attribute("iInk", "vec4");
-  const iSize = attribute("iSize", "vec4"), iMisc = attribute("iMisc", "vec4");
+  const iSize = attribute("iSize", "vec4"), iMisc = attribute("iMisc", "vec4"), iCen = attribute("iCen", "vec4");
+  // distance LOD without a pop: past 75 % of its range (iCen.w, ~350 x its middle size) a box shrinks to its centre,
+  // sub-pixel by then (no discard: early-z stays on; nothing is drawn of it beyond the range)
+  m.positionNode = positionLocal.mul(shrinkAt(iCen));
   const face = attribute("face", "float"), fu = uv();
   const front = step(0.5, face).mul(step(face, 1.5)), back = step(1.5, face);
   const textFace = max(front, back.mul(step(0.5, iMisc.x))).mul(step(0, iRect.x));
@@ -144,28 +139,34 @@ function boxMaterial(atlas) {
   // lit signs glow a little by day too (backlit letters and lightboxes read brighter than paint in daylight)
   m.emissiveNode = glowBoard.mul(max(U.night, step(0.5, iBoard.a).mul(0.14))).add(glowInk.mul(max(U.night, step(0.5, iInk.a).mul(0.22)))).mul(U.glow);
   m.name = "streetlife-box";
+  m.userData.shared = true;
   return m;
 }
 
 // ------------------------------------------------------------------------------------------------ props
 const slotA = uniformArray(SLOTS.map((s) => new THREE.Vector4(s[1][0], s[1][1], s[1][2], s[2])), "vec4");
 const slotB = uniformArray(SLOTS.map((s) => new THREE.Vector4(s[3], s[4], s[5], 0)), "vec4");
-function propMaterial(band, lod) {
+function propMaterial(lod) {
   const U = streetUniforms;
   const m = new THREE.MeshStandardNodeMaterial();
   const idx = attribute("slot", "float").add(0.5).toInt();
-  const A = slotA.element(idx), B = slotB.element(idx), tint = attribute("iTint", "vec4");
+  const A = slotA.element(idx), B = slotB.element(idx), tint = attribute("iTint", "vec4"), band = attribute("iBand", "vec4");
   const base = mix(A.xyz, tint.xyz, tint.w.mul(B.z));
   m.colorNode = base;
   m.roughnessNode = A.w;
   m.metalnessNode = B.x;
   m.emissiveNode = base.mul(B.y).mul(max(U.night, float(0.08))).mul(U.glow);
-  // LOD band: LOD0 keeps n >= t (t: 0 -> 1 across the switch), LOD1 keeps e <= n < t (e: 0 -> 1 across the range end)
+  // LOD band (iBand.x = switch, .y = range end, per instance: ONE material per LOD for every kind): LOD0 keeps n >= t
+  // (t: 0 -> 1 across the switch), LOD1 keeps e <= n < t (e: 0 -> 1 across the range end); iBand.z = its tile's fade
+  // (lodFade.js objectFade: 0..1 fading in keeps n < f, 2..3 fading out keeps n >= f - 2, 1 = whole)
   const dist = length(positionWorld.sub(lodEye));
-  const t = smoothstep(band.s.mul(0.9), band.s.mul(1.1), dist), e = smoothstep(band.e.mul(0.9), band.e, dist);
-  m.maskNode = lod === 0 ? keepBand(t, float(1.01)) : keepBand(e, t);
+  const t = smoothstep(band.x.mul(0.9), band.x.mul(1.1), dist), e = smoothstep(band.y.mul(0.9), band.y, dist);
+  const n = ditherNoise(), f = band.z;
+  const tileKeep = select(f.greaterThan(1.5), n.greaterThanEqual(f.sub(2)), n.lessThan(f));
+  m.maskNode = (lod === 0 ? keepBand(t, float(1.01), n) : keepBand(e, t, n)).and(tileKeep);
   m.maskShadowNode = m.maskNode;
   m.name = `streetlife-prop-lod${lod}`;
+  m.userData.shared = true; m.userData.noFade = true;     // (its per-instance iBand.z carries the tile fade)
   return m;
 }
 
@@ -180,42 +181,128 @@ function windowMaterial() {
   m.specularIntensityNode = float(1);
   m.metalnessNode = float(0);
   m.emissiveNode = r.color.mul(mix(float(0.5), float(0.6), U.night)).mul(r.glow.mul(0.3).add(0.75)).mul(U.glow);
+  m.positionNode = positionLocal.mul(shrinkAt(attribute("iWinC", "vec4")));
   m.name = "streetlife-window";
+  m.userData.shared = true;
   return m;
 }
 
 function glassMaterial() {
   const m = new THREE.MeshStandardNodeMaterial({ transparent: true, depthWrite: false, color: 0xcfd8dc, roughness: 0.05, metalness: 0, opacity: 0.16 });
+  m.positionNode = positionLocal.mul(shrinkAt(attribute("iCen", "vec4")));
   m.name = "streetlife-glass";
+  m.userData.shared = true;
   return m;
 }
 
 // ------------------------------------------------------------------------------------------------ the layer
+const BOX_IB = 28, WIN_IB = 8;                         // = streetlifeWorker.js BOX_IB / WIN_IB
+const BOX_ATTRS = ["iRect", "iBox", "iBoard", "iInk", "iSize", "iMisc", "iCen"];
+/** past this (m, the camera to the nearest point of a tile mesh's box) every instance in it has shrunk away: not drawn */
+const MESH_RANGE = { boxes: 600, windows: 600, glass: 250 };
+/** a tile's text pages stay in the atlas while the camera is this close to its boxes (m) */
+const TEXT_KEEP = 400;
+
+/** PROPS (kits): ONE pool per kind and LOD for the whole city, not one mesh per tile (draws: the kinds near the camera,
+ *  not tiles x kinds). Every ~4 m of camera travel (and every frame while a tile fades) the instances of the loaded
+ *  tiles within the kind's LOD range are gathered into the pool's buffers (static usage, needsUpdate + update range,
+ *  never DynamicDrawUsage: r187 re-uploads those whole in every pass); a pool with nothing to draw is not visible (an
+ *  instanced mesh with count 0 still costs a draw per pass). */
+class PropPool {
+  constructor(kind, K, group, shadows, mats) {
+    this.kind = kind; this.K = K; this.cap = 0; this.meshes = [];
+    for (let lod = 0; lod < 2; lod++) {
+      const geo = K.lods[lod].clone();
+      const mesh = new THREE.InstancedMesh(geo, mats[lod], 1);
+      mesh.count = 0; mesh.visible = false;
+      mesh.castShadow = shadows && K.shadow; mesh.receiveShadow = true;
+      mesh.name = `streetlife-${kind}-lod${lod}`;
+      mesh.boundingSphere = new THREE.Sphere();
+      group.add(mesh); this.meshes.push(mesh);
+    }
+    this.r = K.lods[0].boundingSphere.radius;
+    this.grow(64);
+  }
+  grow(n) {
+    if (n <= this.cap) return;
+    this.cap = Math.max(n, this.cap * 2);
+    for (const mesh of this.meshes) {
+      mesh.instanceMatrix = new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 16), 16);
+      mesh.geometry.setAttribute("iTint", new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 4), 4));
+      mesh.geometry.setAttribute("iBand", new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 4), 4));
+    }
+  }
+  /** gather the instances of `tiles` (records with .props[kind] = Float32Array of x y z yaw r g b amt, .fade) near c */
+  gather(tiles, c, margin) {
+    const K = this.K, s = K.lod[0], e = K.lod[1];
+    const lim = [[0, s * 1.1 + margin], [Math.max(0, s * 0.9 - margin), e + margin]];
+    let total = 0;
+    for (const t of tiles) total += (t.props[this.kind]?.length || 0) / 8;
+    this.grow(total);
+    for (let lod = 0; lod < 2; lod++) {
+      const mesh = this.meshes[lod], M = mesh.instanceMatrix.array, T = mesh.geometry.attributes.iTint.array, B = mesh.geometry.attributes.iBand.array;
+      const [d0, d1] = lim[lod];
+      let n = 0, sx = 0, sy = 0, sz = 0, x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+      for (const t of tiles) {
+        const a = t.props[this.kind]; if (!a) continue;
+        for (let o = 0; o < a.length; o += 8) {
+          const x = a[o], y = a[o + 1], z = a[o + 2];
+          const d = Math.hypot(x - c.x, y - c.y, z - c.z);
+          if (d < d0 || d > d1) continue;
+          const yaw = a[o + 3], cs = Math.cos(yaw), sn = Math.sin(yaw), k = n * 16;
+          // rotation about +y by yaw (three's makeRotationY), then the translation; column-major
+          M[k] = cs; M[k + 1] = 0; M[k + 2] = -sn; M[k + 3] = 0; M[k + 4] = 0; M[k + 5] = 1; M[k + 6] = 0; M[k + 7] = 0;
+          M[k + 8] = sn; M[k + 9] = 0; M[k + 10] = cs; M[k + 11] = 0; M[k + 12] = x; M[k + 13] = y; M[k + 14] = z; M[k + 15] = 1;
+          T[n * 4] = a[o + 4]; T[n * 4 + 1] = a[o + 5]; T[n * 4 + 2] = a[o + 6]; T[n * 4 + 3] = a[o + 7];
+          B[n * 4] = s; B[n * 4 + 1] = e; B[n * 4 + 2] = t.fade; B[n * 4 + 3] = 0;
+          x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); z0 = Math.min(z0, z); z1 = Math.max(z1, z);
+          n++;
+        }
+      }
+      mesh.count = n; mesh.visible = n > 0;
+      if (!n) continue;
+      mesh.boundingSphere.center.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+      mesh.boundingSphere.radius = Math.hypot(x1 - x0, y1 - y0, z1 - z0) / 2 + this.r;
+      for (const [att, w] of [[mesh.instanceMatrix, 16], [mesh.geometry.attributes.iTint, 4], [mesh.geometry.attributes.iBand, 4]]) {
+        att.clearUpdateRanges(); att.addUpdateRange(0, n * w); att.needsUpdate = true;
+      }
+    }
+  }
+}
+
 export class StreetLife {
   static async create(scene, opts = {}) {
     const s = new StreetLife(scene, opts);
     await s._kits();
     return s;
   }
-  constructor(scene, { base = new URL("../../data/streetlife/", import.meta.url), atlasSize = 2048, atlasPages = 12, atlasFull = false, shadows = true } = {}) {
-    this.scene = scene; this.base = base; this.shadows = shadows;
+  /** opts: base (data/streetlife/), the atlas (pageW x pageH x atlasPages), propShadows (the kits' own shadow flags;
+   *  the signs, plates, numbers, frames and windows never cast one) */
+  constructor(scene, { base = new URL("../../data/streetlife/", import.meta.url), pageW = 2048, pageH = 1024, atlasPages = 16, propShadows = true } = {}) {
+    this.scene = scene; this.base = base; this.propShadows = propShadows;
     this.group = new THREE.Group(); this.group.name = "streetlife";
     scene.add(this.group);
-    this.atlas = new TextAtlas(atlasSize, atlasPages, { full: atlasFull });
+    this.atlas = new TextAtlas(pageW, pageH, atlasPages);
     this.boxGeo = boxGeometry();
     this.boxMat = boxMaterial(this.atlas);
     this.winMat = windowMaterial();
     this.glassMat = glassMaterial();
-    this.planeGeo = new THREE.PlaneGeometry(1, 1).translate(0, 0, 0);
+    this.planeGeo = new THREE.PlaneGeometry(1, 1);
     this.tiles = new Map();
     this.worker = new Worker(new URL("./streetlifeWorker.js", import.meta.url), { type: "module" });
     this.req = new Map(); this.reqId = 0;
     this.worker.onmessage = (e) => { const p = this.req.get(e.data.id); this.req.delete(e.data.id); e.data.error ? p.reject(new Error(e.data.error)) : p.resolve(e.data); };
-    this.meshes = [];
+    this.tileMeshes = [];
+    this.pools = [];
+    this.last = new THREE.Vector3(1e9, 0, 0);
+    this.dirty = true;
   }
+  /** every mesh of the layer: the tiles' (boxes, windows, glass) and the prop pools' */
+  get meshes() { return [...this.tileMeshes, ...this.pools.flatMap((p) => p.meshes)]; }
   async _kits() {
     const t0 = performance.now();
     this.kit = {};
+    this.propMats = [propMaterial(0), propMaterial(1)];
     for (const [kind, k] of Object.entries(KITS)) {
       const a0 = k.build(0).arrays(), a1 = await simplifyKit(k.build(1).arrays(), kind);
       const geo = (a) => {
@@ -227,8 +314,8 @@ export class StreetLife {
         g.computeBoundingSphere();
         return g;
       };
-      const band = { s: uniform(k.lod[0]), e: uniform(k.lod[1]) };
-      this.kit[kind] = { lods: [geo(a0), geo(a1)], tris: [a0.index.length / 3, a1.index.length / 3], band, mats: [propMaterial(band, 0), propMaterial(band, 1)], shadow: k.shadow, end: k.lod[1] };
+      this.kit[kind] = { lods: [geo(a0), geo(a1)], tris: [a0.index.length / 3, a1.index.length / 3], lod: k.lod, shadow: k.shadow };
+      this.pools.push(new PropPool(kind, this.kit[kind], this.group, this.propShadows, this.propMats));
     }
     this.kitMs = performance.now() - t0;
   }
@@ -236,116 +323,135 @@ export class StreetLife {
     return new Promise((resolve, reject) => {
       const id = ++this.reqId;
       this.req.set(id, { resolve, reject });
-      this.worker.postMessage({ id, tile, url: new URL(`${tile}.json`, this.base).href });
+      this.worker.postMessage({ id, tile, url: new URL(`${tile}.json`, this.base).href, pageW: this.atlas.W, pageH: this.atlas.H });
     });
   }
-  /** build one tile's layer; resolves to its stats (worker times, counts, draws) */
-  async addTile(tile) {
+  /** build one tile's layer into `parent` (the city: the tile's own features group, so it fades and is disposed with
+   *  the tile; then call removeTile too, for the atlas pages and the pools); resolves to its stats */
+  async addTile(tile, parent = this.group) {
     if (this.tiles.has(tile)) return this.tiles.get(tile).stats;
     const t0 = performance.now();
     const r = await this._work(tile);
     const tm = performance.now();
-    const { rects, pages } = this.atlas.addTile(tile, r.labels, r.labelData);
     const g = new THREE.Group(); g.name = `streetlife-${tile}`;
     const meshes = [];
-    // ---- boxes
-    const nb = r.boxes.length / r.strides.box;
-    if (nb) {
-      const geo = this.boxGeo.clone();
-      const S = r.strides.box, A = (n) => new Float32Array(nb * n);
-      const iRect = A(4), iBox = A(4), iBoard = A(4), iInk = A(4), iSize = A(4), iMisc = A(4);
-      const mesh = new THREE.InstancedMesh(geo, this.boxMat, nb);
-      for (let i = 0; i < nb; i++) {
-        const o = i * S;
-        mesh.instanceMatrix.array.set(r.boxes.subarray(o, o + 16), i * 16);
-        const li = r.boxes[o + 16], rc = li >= 0 ? rects[li] : null;
-        iRect.set(rc ? rc.slice(0, 4) : [-1, -1, -1, -1], i * 4);
-        iBox.set(r.boxes.subarray(o + 17, o + 21), i * 4);
-        iBox[i * 4] = rc ? rc[4] : 0;
-        iBoard.set(r.boxes.subarray(o + 21, o + 25), i * 4);
-        iInk.set(r.boxes.subarray(o + 25, o + 29), i * 4);
-        iSize.set(r.boxes.subarray(o + 29, o + 33), i * 4);
-        iMisc.set(r.boxes.subarray(o + 33, o + 37), i * 4);
-      }
-      // one interleaved instance buffer (WebGPU allows 8 vertex buffers per pipeline)
-      const IB = new Float32Array(nb * 24);
-      [iRect, iBox, iBoard, iInk, iSize, iMisc].forEach((v, k) => { for (let i = 0; i < nb; i++) IB.set(v.subarray(i * 4, i * 4 + 4), i * 24 + k * 4); });
-      const ib = new THREE.InstancedInterleavedBuffer(IB, 24);
-      ["iRect", "iBox", "iBoard", "iInk", "iSize", "iMisc"].forEach((k, j) => geo.setAttribute(k, new THREE.InterleavedBufferAttribute(ib, 4, j * 4)));
+    const finish = (mesh, kind) => {
       mesh.instanceMatrix.needsUpdate = true;
-      mesh.computeBoundingSphere();
-      mesh.castShadow = this.shadows; mesh.receiveShadow = true;
-      mesh.name = `streetlife-boxes-${tile}`;
-      mesh.userData.end = 420;
+      mesh.computeBoundingBox(); mesh.computeBoundingSphere();
+      mesh.castShadow = false; mesh.receiveShadow = true;
+      mesh.name = `streetlife-${kind}-${tile}`; mesh.userData.range = MESH_RANGE[kind];
       g.add(mesh); meshes.push(mesh);
+    };
+    // ---- boxes: every sign, plate, number, frame, canopy, shelter (no shadows: signs and plates cast none)
+    let ib = null, text = null;
+    if (r.nb) {
+      const IB = r.boxIB;
+      // the labelled boxes' rect + LOCAL page (kept: the tile's text pages can leave the atlas and come back)
+      const idx = [];
+      for (let i = 0; i < r.nb; i++) if (IB[i * BOX_IB] >= 0) idx.push(i);
+      text = { idx: Uint32Array.from(idx), rect: new Float32Array(idx.length * 5) };
+      idx.forEach((i, k) => { text.rect.set(IB.subarray(i * BOX_IB, i * BOX_IB + 5), k * 5); IB.fill(-1, i * BOX_IB, i * BOX_IB + 4); IB[i * BOX_IB + 4] = 0; });
+      const geo = this.boxGeo.clone();
+      ib = new THREE.InstancedInterleavedBuffer(IB, BOX_IB);
+      BOX_ATTRS.forEach((k, j) => geo.setAttribute(k, new THREE.InterleavedBufferAttribute(ib, 4, j * 4)));
+      const mesh = new THREE.InstancedMesh(geo, this.boxMat, r.nb);
+      mesh.instanceMatrix = new THREE.InstancedBufferAttribute(r.boxMtx, 16);
+      finish(mesh, "boxes");
     }
     // ---- shop windows
-    const nw = r.windows.length / r.strides.win;
-    if (nw) {
-      const geo = this.planeGeo.clone(), iWin = new Float32Array(nw * 4);
-      const mesh = new THREE.InstancedMesh(geo, this.winMat, nw);
-      for (let i = 0; i < nw; i++) { mesh.instanceMatrix.array.set(r.windows.subarray(i * 20, i * 20 + 16), i * 16); iWin.set(r.windows.subarray(i * 20 + 16, i * 20 + 20), i * 4); }
-      geo.setAttribute("iWin", new THREE.InstancedBufferAttribute(iWin, 4));
-      mesh.instanceMatrix.needsUpdate = true; mesh.computeBoundingSphere();
-      mesh.receiveShadow = true; mesh.name = `streetlife-windows-${tile}`; mesh.userData.end = 600;
-      g.add(mesh); meshes.push(mesh);
+    if (r.nw) {
+      const geo = this.planeGeo.clone();
+      const ib = new THREE.InstancedInterleavedBuffer(r.winIB, WIN_IB);
+      geo.setAttribute("iWin", new THREE.InterleavedBufferAttribute(ib, 4, 0));
+      geo.setAttribute("iWinC", new THREE.InterleavedBufferAttribute(ib, 4, 4));
+      const mesh = new THREE.InstancedMesh(geo, this.winMat, r.nw);
+      mesh.instanceMatrix = new THREE.InstancedBufferAttribute(r.winMtx, 16);
+      finish(mesh, "windows");
     }
     // ---- shelter glass
-    const ng = r.glass.length / r.strides.glass;
-    if (ng) {
-      const mesh = new THREE.InstancedMesh(this.boxGeo, this.glassMat, ng);
-      for (let i = 0; i < ng; i++) mesh.instanceMatrix.array.set(r.glass.subarray(i * 16, i * 16 + 16), i * 16);
-      mesh.instanceMatrix.needsUpdate = true; mesh.computeBoundingSphere();
-      mesh.name = `streetlife-glass-${tile}`; mesh.userData.end = 250; mesh.renderOrder = 2;
-      g.add(mesh); meshes.push(mesh);
+    if (r.ng) {
+      const geo = this.boxGeo.clone();
+      geo.setAttribute("iCen", new THREE.InstancedBufferAttribute(r.glassCen, 4));
+      const mesh = new THREE.InstancedMesh(geo, this.glassMat, r.ng);
+      mesh.instanceMatrix = new THREE.InstancedBufferAttribute(r.glassMtx, 16);
+      mesh.renderOrder = 2;
+      finish(mesh, "glass");
     }
-    // ---- props: LOD0 + LOD1 per kind, the same instances
-    const propCounts = {};
-    for (const [kind, arr] of Object.entries(r.props)) {
-      const K = this.kit[kind], n = arr.length / r.strides.prop;
-      propCounts[kind] = n;
-      const mtx = new Float32Array(n * 16), tint = new Float32Array(n * 4), M = new THREE.Matrix4(), q = new THREE.Quaternion(), Yax = new THREE.Vector3(0, 1, 0);
-      for (let i = 0; i < n; i++) {
-        const o = i * 8;
-        q.setFromAxisAngle(Yax, arr[o + 3]);
-        M.compose(new THREE.Vector3(arr[o], arr[o + 1], arr[o + 2]), q, new THREE.Vector3(1, 1, 1));
-        mtx.set(M.elements, i * 16);
-        tint.set(arr.subarray(o + 4, o + 8), i * 4);
-      }
-      const im = new THREE.InstancedBufferAttribute(mtx, 16), it = new THREE.InstancedBufferAttribute(tint, 4);
-      for (let lod = 0; lod < 2; lod++) {
-        const geo = K.lods[lod].clone();
-        geo.setAttribute("iTint", it);
-        const mesh = new THREE.InstancedMesh(geo, K.mats[lod], n);
-        mesh.instanceMatrix = im;
-        mesh.computeBoundingSphere();
-        mesh.castShadow = this.shadows && K.shadow; mesh.receiveShadow = true;
-        mesh.name = `streetlife-${kind}-lod${lod}-${tile}`;
-        mesh.userData.end = K.end * 1.05; mesh.userData.near = lod === 1 ? K.band.s.value * 0.85 : 0;
-        g.add(mesh); meshes.push(mesh);
-      }
-    }
-    this.group.add(g);
-    this.meshes.push(...meshes);
+    parent.add(g);
+    this.tileMeshes.push(...meshes);
+    const propCounts = Object.fromEntries(Object.entries(r.props).map(([k, a]) => [k, a.length / 8]));
     const stats = {
-      tile, worker: Object.fromEntries(Object.entries(r.times).map(([k, v]) => [k, +v.toFixed(1)])), mainMs: +(performance.now() - tm).toFixed(1), totalMs: +(performance.now() - t0).toFixed(1),
-      boxes: nb, windows: nw, glass: ng, props: propCounts, labels: r.labels.length, labelBytes: r.labelData.length, atlasPages: pages, atlasUsed: +this.atlas.used.toFixed(3), atlasFull: this.atlas.full,
+      tile, worker: Object.fromEntries(Object.entries(r.times).map(([k, v]) => [k, +v.toFixed(1)])), mainMs: +(performance.now() - tm).toFixed(2), totalMs: +(performance.now() - t0).toFixed(1),
+      boxes: r.nb, windows: r.nw, glass: r.ng, props: propCounts, labels: r.labels, labelBytes: r.labelBytes, atlasPages: [], atlasUsed: +this.atlas.used.toFixed(3), atlasFull: this.atlas.full, dropped: r.dropped,
       counts: r.counts, skipped: r.skipped, used: r.used, sources: r.sources, draws: meshes.length,
     };
-    this.tiles.set(tile, { group: g, meshes, night: r.night, stats, pages });
+    const rec = { name: tile, group: g, meshes, night: r.night, stats, pages: null, nPages: r.nPages, pagesData: r.pages, ib, text, box: meshes[0]?.boundingBox ?? null, props: r.props, fade: 1 };
+    this.tiles.set(tile, rec);
+    this._place(rec, true);
+    stats.atlasPages = rec.pages || []; stats.atlasUsed = +this.atlas.used.toFixed(3);
+    stats.mainMs = +(performance.now() - tm).toFixed(2);
+    this.dirty = true;
     return stats;
   }
-  /** per frame: hide the meshes whose whole extent is past their range (cheap: a sphere test per mesh) */
+  /** TEXT PAGES: a tile's labels are in the atlas while it is within TEXT_KEEP m of the camera (its text shows from
+   *  84 m in); when the atlas is full, the pages of the farthest tile beyond that go (its text is long faded out there;
+   *  its boards would show blank, never another tile's words: their rects are cleared) and come back from the CPU copy
+   *  when it is near again (a 2 MB layer upload + the box buffer, 64 KB) */
+  _place(t, now = false) {
+    if (t.pages || !t.nPages || !t.text) return;
+    const c = this.last.x < 1e8 ? this.last : null;
+    const dist = (q) => (q.box && c ? q.box.distanceToPoint(c) : 0);
+    if (!now && dist(t) > TEXT_KEEP) return;
+    while (this.atlas.free.length < t.nPages) {
+      let far = null;
+      for (const q of this.tiles.values()) if (q !== t && q.pages && dist(q) > TEXT_KEEP && (!far || dist(q) > dist(far))) far = q;
+      if (!far) break;
+      this._evict(far);
+    }
+    if (this.atlas.free.length < t.nPages) return;           // no room: blank boards until there is (its rects stay -1)
+    const map = this.atlas.addTile(t.name, t.nPages, t.pagesData);
+    t.pages = map;
+    const IB = t.ib.array, { idx, rect } = t.text;
+    for (let k = 0; k < idx.length; k++) {
+      const o = idx[k] * BOX_IB;
+      IB.set(rect.subarray(k * 5, k * 5 + 4), o);
+      IB[o + 4] = map[rect[k * 5 + 4]];
+    }
+    t.ib.needsUpdate = true;
+  }
+  _evict(t) {
+    if (!t.pages) return;
+    this.atlas.removeTile(t.pages);
+    t.pages = null;
+    const IB = t.ib.array;
+    for (const i of t.text.idx) { IB.fill(-1, i * BOX_IB, i * BOX_IB + 4); IB[i * BOX_IB + 4] = 0; }
+    t.ib.needsUpdate = true;
+    this.evictions = (this.evictions || 0) + 1;
+  }
+  /** per frame: tile meshes past their range are not drawn (every instance in them has shrunk away); the prop pools are
+   *  re-gathered every 4 m of travel, or every frame while a tile fades (its fade rides in the pools' iBand.z) */
   update(camera) {
     const c = camera.position;
     let visible = 0;
-    for (const m of this.meshes) {
-      const s = m.boundingSphere;
-      if (!s) continue;
-      const d = c.distanceTo(s.center);
-      m.visible = d - s.radius < m.userData.end && d + s.radius > (m.userData.near || 0);
+    for (const m of this.tileMeshes) {
+      m.visible = m.boundingBox.distanceToPoint(c) < m.userData.range;
       if (m.visible) visible++;
     }
+    let fading = false;
+    for (const t of this.tiles.values()) {
+      const f = t.group.userData.fade ?? 1;
+      if (f !== t.fade) { t.fade = f; fading = true; }
+    }
+    if (this.dirty || fading || c.distanceToSquared(this.last) > 16) {
+      const t0 = performance.now();
+      const tiles = [];
+      for (const t of this.tiles.values()) if (t.group.parent && t.group.parent.visible !== false) tiles.push(t);
+      for (const p of this.pools) p.gather(tiles, c, 4);
+      this.last.copy(c); this.dirty = false;
+      this.gatherMs = performance.now() - t0;
+      for (const t of this.tiles.values()) if (!t.pages) this._place(t);
+    }
+    for (const p of this.pools) for (const m of p.meshes) if (m.visible) visible++;
     this.visibleMeshes = visible;
   }
   /** the night-lights hook: shop-window and sign light positions of every loaded tile (flat x, y, z arrays) */
@@ -357,13 +463,19 @@ export class StreetLife {
     }
     return out;
   }
-  removeTile(tile) {
+  /** free a tile's atlas pages and take its props out of the pools; its meshes are disposed here unless `disposed`
+   *  (the city disposes them with the tile's groups) */
+  removeTile(tile, disposed = false) {
     const t = this.tiles.get(tile);
     if (!t) return;
-    for (const m of t.meshes) { m.geometry.dispose(); const i = this.meshes.indexOf(m); if (i >= 0) this.meshes.splice(i, 1); }
+    for (const m of t.meshes) {
+      if (!disposed) m.geometry.dispose();
+      const i = this.tileMeshes.indexOf(m); if (i >= 0) this.tileMeshes.splice(i, 1);
+    }
     t.group.removeFromParent();
-    this.atlas.removeTile(t.pages);
+    if (t.pages) this.atlas.removeTile(t.pages);
     this.tiles.delete(tile);
+    this.dirty = true;
   }
   get triangles() {
     let n = 0;

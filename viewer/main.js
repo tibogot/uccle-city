@@ -48,6 +48,7 @@ import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, dropFadeVariant } f
 import { buildFarTreeField } from "./treesStylized.js";
 import { cityKit } from "./facadeKit/cityKit.js";
 import { treeKit } from "./treeKitCity.js";
+import { cityStreetLife } from "./streetlife/cityStreetLife.js";
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -424,6 +425,7 @@ const PAINT_PARAM = ["v1", "v2"].includes(params.get("paint")) ? params.get("pai
 function tileData(entry, lite = false) {
   entry = { ...entry, hide: HIDE_BU_IDS, ponds: PONDS, surface: ROAD_SURFACES, pits: params.get("pits") !== "0",   // ?pits=0: no tree pits (A/B)
     kit: cityKit.on && !lite, kitExclude: cityKit.exclude,                                           // the façade kit (viewer/facadeKit/), ?kit=0 off
+    streetlife: cityStreetLife.on && !lite,                                                          // the street life's shopfronts (viewer/streetlife/), ?streetlife=0 off
     rail: TRAINS, driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
     paint: PAINT_PARAM };                                                                            // ?paint=v1: the road engine's own markings (A/B)
   const key = `${entry.name}|${lite ? 1 : 0}`;
@@ -513,6 +515,8 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   if (fadeIn) for (const g of Object.values(own)) g.visible = false;
   const ups = [];
   const t0 = performance.now();
+  // the street-life layer (viewer/streetlife/cityStreetLife.js) builds in its own worker meanwhile, into the features group
+  const streetLifeP = cityStreetLife.tile(entry.name, own.features);
   const d = await tileData(entry);
   let busy = 0, longest = 0, mark = performance.now(), worst = "";
   const slices = [];
@@ -569,7 +573,9 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   await frame("lamps");
   addLamps(entry.name, lamps.heads);                 // every lamp lights the street (viewer/lampLight.js)
   await frame("lamp light map");
-  const furn = buildFurniture(feats, roads, (x, z) => hm.ground(x, z), bounds);
+  // (the street-life layer draws the STIB stops from the Brussels Mobility data: not the OSM bus-stop poles too)
+  const furnFeats = cityStreetLife.on && cityStreetLife.layer ? { ...feats, points: (feats.points || []).filter((p) => p.kind !== "bus_stop") } : feats;
+  const furn = buildFurniture(furnFeats, roads, (x, z) => hm.ground(x, z), bounds);
   own.features.add(furn.group);
   await frame("furniture");
   const tram = buildTram(feats, (x, z) => hm.surface(x, z) + CARVE, bounds, trackProf);
@@ -591,12 +597,15 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   say(`buildings: ${d.buildingCount} (${B.triangles} triangles), roads: ${d.road.triangles} triangles in tile, terrain cells carved: ${d.road.carvedCells}; tile ready in ${(performance.now() - t0).toFixed(0)} ms`);
 
   await frame("bollards");
+  const sl = await streetLifeP;
+  if (sl) say(`street life: ${sl.boxes} boxes, ${sl.windows} windows, ${Object.values(sl.props).reduce((a, b) => a + b, 0)} props, ${sl.labels} labels in ${sl.atlasPages.length} atlas page(s); worker ${sl.worker.total} ms, main thread ${sl.mainMs} ms`);
   if (fadeIn) { const tc = performance.now(); await preCompile(Object.values(own), true); mark += performance.now() - tc; }   // shaders + fading copies built before it shows (not counted as a slice)
   for (const u of ups) updaters.push(u);
   for (const g of Object.values(own)) if (fadeIn) { g.visible = true; fader.fade(g, +1); }
   cityKit.addTile(entry.name, B.kit, B.kitWalls, !fadeIn);       // ?kit=1: its kit fades in with it
   const dispose = () => {
     cityKit.removeTile(entry.name);
+    cityStreetLife.removeTile(entry.name);          // its atlas pages and pooled props (its meshes go with the groups below)
     lamps.release();                                // its lamp heads leave the light pool (the lights stay)
     for (const u of ups) { const i = updaters.indexOf(u); if (i >= 0) updaters.splice(i, 1); }
     for (const g of Object.values(own)) {
@@ -755,6 +764,7 @@ async function main() {
   }
   await libTex;                                                    // the library's textures before its first consumer
   await cityKit.start({ scene, updaters, log });                   // ?kit=1: the façade kit (before the first tile and the warm-up)
+  await cityStreetLife.start({ scene, updaters, log });            // the street life (shop names, plates, numbers, stops), ?streetlife=0 off
   // the Chapelle de Stalle + its interior cell (tools/blender/stalle*.py, viewer/stalleCity.js) behind ?stalle=1
   if (params.get("stalle") !== "0") await addStalle({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, getView: () => ({ camera, lighting }), getThird: () => third });
   // The Uccle town hall (tools/blender/townhall.py, viewer/townhallCity.js) in place of its UrbIS solid, behind
