@@ -80,7 +80,7 @@ export function loadFurnitureKit(base = new URL("../../", import.meta.url)) {
       const lod0 = mainGeometry(raw[p]);
       const lods = [lod0, weldedSimplify(lod0, b.err[0], ao), weldedSimplify(lod0, b.err[1], ao)];
       for (const g of lods) { g.computeBoundingSphere(); g.computeBoundingBox(); g.userData.shared = true; }
-      pieces[p] = { name: p, lods, standin: standin(lods[1]), tris: lods.map((g) => g.index.count / 3), band: b };
+      pieces[p] = { name: p, lods, standin: standin(lods[1], p === "bikebox" ? 0.7 : null), tris: lods.map((g) => g.index.count / 3), band: b };
     }
     const mats = materials(ao.tex);
     return { pieces, mats, aoTex: ao.tex, loadMs: performance.now() - t0 };
@@ -173,11 +173,17 @@ function weldedSimplify(g, err, ao) {
 }
 
 /** what the collision side reads (viewer/drive, viewer/character, the collision test): LOD1's triangles, clipped to the
- *  ground (the legs' 0.3 m below the origin are not part of what you bump into) */
-function standin(lod1) {
+ *  ground (the legs' 0.3 m below the origin are not part of what you bump into); `fill` (m): a horizontal plate over the
+ *  whole footprint at that height (the bike box is a closed shell taller than the car slices: its inside is solid too) */
+function standin(lod1, fill = null) {
   const A = lod1.attributes.position.array, I = lod1.index.array;
-  const P = new Float32Array(I.length * 3);
+  const P = new Float32Array(I.length * 3 + (fill != null ? 18 : 0));
   for (let k = 0; k < I.length; k++) { P[3 * k] = A[3 * I[k]]; P[3 * k + 1] = Math.max(-0.02, A[3 * I[k] + 1]); P[3 * k + 2] = A[3 * I[k] + 2]; }
+  if (fill != null) {
+    lod1.computeBoundingBox();
+    const b = lod1.boundingBox, x0 = b.min.x + 0.03, x1 = b.max.x - 0.03, z0 = b.min.z + 0.03, z1 = b.max.z - 0.03;
+    P.set([x0, fill, z0, x0, fill, z1, x1, fill, z1, x0, fill, z0, x1, fill, z1, x1, fill, z0], I.length * 3);
+  }
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.BufferAttribute(P, 3));
   g.computeVertexNormals(); g.computeBoundingBox(); g.computeBoundingSphere();
