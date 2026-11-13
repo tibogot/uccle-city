@@ -10,6 +10,7 @@ import { landCoverData } from "./landcover.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { buildDriveData } from "./drive/colliders.js";
 import { buildRoadData, applyRoadOverrides, CARVE } from "./roadBuild.js";
+import { bridgeDecks, deckMesh, parapetRings } from "./streets/bridgeDecks.js";
 import { smoothPolyline } from "./track.js";
 import { kitCollector } from "./facadeKit/placement.js";
 import { prepRail, abutmentFill, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins } from "./rail/railData.js";
@@ -149,7 +150,17 @@ export async function buildTileData(entry, base) {
   // ?trains=1: the hero road bridges' decks are the road's ground over the cutting (viewer/rail/railData.js roadDeckGround)
   // the ground at the hero road bridges' ends up to their decks, before the roads sample it (railData.js abutmentFill)
   if (rail) await step("abutment fill", () => abutmentFill(rail.heroes, [hm.y, hm.orig], tHdr));
-  const roadGround = rail ? roadDeckGround(rail.heroes, hm.ground) : hm.ground;
+  // every other road bridge (OSM bridge=yes: Carsoel at Saint-Job station, Waterloo, Merlo, Chênaie, Tilleuls...): a deck
+  // between its ends instead of the bare-earth DTM's cutting (viewer/streets/bridgeDecks.js); the hero decks win where
+  // they are (Verrewinkel), and their OSM road is left out of the page's world decks
+  const heroDeck = rail ? roadDeckGround(rail.heroes, () => NaN) : () => NaN;
+  // only bridges whose deck (both extended ends) lies on THIS tile's height grid: outside it the grid clamps to its edge
+  // and the ends' heights would be wrong (the tile whose grid holds the bridge carries it)
+  const hh = hm.h, gx1 = hh.x0 + (hh.cols - 1) * hh.step, gz1 = hh.z0 + (hh.rows - 1) * hh.step;
+  const onGrid = (p) => p[0] >= hh.x0 && p[0] <= gx1 && p[1] >= hh.z0 && p[1] <= gz1;
+  const osmBridges = bridgeDecks(roads, hm.ground, (d) => onGrid(d.pts[0]) && onGrid(d.pts[d.pts.length - 1]));
+  osmBridges.decks = osmBridges.decks.filter((d) => { const m = d.pts[Math.floor(d.pts.length / 2)]; return Number.isNaN(heroDeck(m[0], m[1])); });
+  const roadGround = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(hm.ground)) : osmBridges.wrap(hm.ground);
   const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z) }));
   Object.assign(times, rd.times);
@@ -186,7 +197,7 @@ export async function buildTileData(entry, base) {
   const keep = entry.driveKeepHidden ? { buildings: bDoc.buildings.slice() } : null;      // ?colfix=0: the old way
   hideBuildings(bDoc, entry.hide);
   const drive = await step("drive colliders", () => buildDriveData({ bDoc: keep || bDoc, bBuf: keep ? null : bBuf, net, feats, hm, parts: road.parts, bounds, surf, legacy: !!entry.driveLegacy,
-    walls: keep ? [] : (rail?.doc.platforms || []).map((p) => p.ring) }));          // rail platforms: 0.76 m walls for the car   // drive mode (viewer/drive/)
+    walls: keep ? [] : [...(rail?.doc.platforms || []).map((p) => p.ring), ...osmBridges.decks.flatMap(parapetRings)] }));   // + the road bridges' parapets          // rail platforms: 0.76 m walls for the car   // drive mode (viewer/drive/)
   drive.counts.hidden = nb - bDoc.buildings.length;     // solids a hero model replaces (it collides by its own LOD0)
   // ?kit=1: the façade kit's placement (viewer/facadeKit/placement.js) runs inside the analysis, here in the worker;
   // entry.kitExclude = BU_IDs a hero model or the interior pilot replaces
@@ -197,7 +208,8 @@ export async function buildTileData(entry, base) {
   const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts }));
   const cover = await step("land cover", () => landCoverData(feats, bounds));
   return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs, drive,
-    netInfo, road, terrain, buildings, cover, traffic, times, rail: railOut };
+    netInfo, road, terrain, buildings, cover, traffic, times, rail: railOut,
+    bridgeDecks: osmBridges.decks.map((d) => ({ ...d, mesh: deckMesh(d) })) };   // OSM road bridges: heights for walk / car + their drawn deck
 }
 
 // ---------------------------------------------------------------- far level of detail

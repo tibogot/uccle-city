@@ -50,6 +50,7 @@ import { buildFarTreeField } from "./treesStylized.js";
 import { cityKit } from "./facadeKit/cityKit.js";
 import { treeKit } from "./treeKitCity.js";
 import { cityStreetLife } from "./streetlife/cityStreetLife.js";
+import { deckHeight } from "./streets/bridgeDecks.js";
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -294,6 +295,38 @@ function addTrees(group, f, inTile, treeGround) {
 let tramLine = null;       // real STIB line 92 on its timetable (tramline.js)
 // the tram tracks' smooth rail-top profile (tools/build_tram_profile.mjs): rails, wire, bridge deck, trams (viewer/trackProfile.js)
 let trackProf = null, worldRef = null;
+// OSM road-bridge decks (viewer/streets/bridgeDecks.js) for walk / third person / the car: world.decks, one per bridge
+// (a bridge is in every tile whose roads.json buffer reaches it: counted, removed with its last tile)
+const bridgeDeckRefs = new Map();     // road id -> { fn, n }
+function addBridgeDecks(decks, hm) {
+  for (const d of decks || []) {
+    let e = bridgeDeckRefs.get(d.id);
+    if (!e) { e = { fn: deckHeight(d, (x, z) => hm.ground(x, z)), n: 0 }; bridgeDeckRefs.set(d.id, e); worldRef?.decks.push(e.fn); }
+    e.n++;
+  }
+}
+let bridgeDeckMat = null;
+function bridgeDeckMesh(bd) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(bd.mesh.position, 3));
+  g.setAttribute("normal", new THREE.BufferAttribute(bd.mesh.normal, 3));
+  g.setAttribute("color", new THREE.BufferAttribute(bd.mesh.color, 3));
+  g.computeBoundingSphere();
+  bridgeDeckMat ??= Object.assign(new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.88, metalness: 0, side: THREE.DoubleSide }), { name: "road-bridge-deck" });
+  bridgeDeckMat.userData.shared = true;
+  const m = new THREE.Mesh(g, bridgeDeckMat);
+  m.name = `road-bridge-deck ${bd.name}`; m.castShadow = m.receiveShadow = true;
+  return m;
+}
+function removeBridgeDecks(decks) {
+  for (const d of decks || []) {
+    const e = bridgeDeckRefs.get(d.id);
+    if (!e || --e.n > 0) continue;
+    bridgeDeckRefs.delete(d.id);
+    const i = worldRef?.decks.indexOf(e.fn) ?? -1;
+    if (i >= 0) worldRef.decks.splice(i, 1);
+  }
+}
 const updaters = [];
 // The railway (?trains=1, Train Lab first): tracks per tile, hero bridges, SNCB trains on the real timetable (viewer/rail/)
 const TRAINS = params.get("trains") !== "0";
@@ -533,6 +566,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const { roads, feats } = d;
 
   const hm = Heightmap.from(d.hdr, d.y, d.orig);
+  addBridgeDecks(d.bridgeDecks, hm);
   const ni = d.netInfo;
   say(`tile ${entry.name} built ${tileWorker ? "in the worker" : "on the main thread"}: ${Object.entries(d.times).map(([k, v]) => `${k} ${v} ms`).join(", ")}`);
   say(`road engine: ${ni.roads} roads, ${ni.nodes} nodes, ${ni.errors} errors ${JSON.stringify(ni.byCode)}, ${ni.warnings} warnings/info`);
@@ -585,7 +619,10 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const furn = buildFurniture(furnFeats, roads, (x, z) => hm.ground(x, z), bounds);
   own.features.add(furn.group);
   await frame("furniture");
-  const tram = buildTram(feats, (x, z) => hm.surface(x, z) + CARVE, bounds, trackProf);
+  // the OSM road bridges' decks this tile carries (viewer/streets/bridgeDecks.js): drawn here, walked / driven via world.decks
+  for (const bd of d.bridgeDecks || []) own.roads.add(bridgeDeckMesh(bd));
+  const onRoadDeck = (x, z) => { for (const e of bridgeDeckRefs.values()) if (e.fn(x, z) != null) return true; return false; };
+  const tram = buildTram(feats, (x, z) => hm.surface(x, z) + CARVE, bounds, trackProf, onRoadDeck);
   own.features.add(tram.group);
   await frame("tram");
   // parked cars from the parking lanes as OSM / the type default has them (before the width fit, which drops lanes the
@@ -611,6 +648,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   for (const g of Object.values(own)) if (fadeIn) { g.visible = true; fader.fade(g, +1); }
   cityKit.addTile(entry.name, B.kit, B.kitWalls, !fadeIn);       // ?kit=1: its kit fades in with it
   const dispose = () => {
+    removeBridgeDecks(d.bridgeDecks);
     cityKit.removeTile(entry.name);
     cityStreetLife.removeTile(entry.name);          // its atlas pages and pooled props (its meshes go with the groups below)
     lamps.release();                                // its lamp heads leave the light pool (the lights stay)

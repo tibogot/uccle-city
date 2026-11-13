@@ -39,8 +39,11 @@ function deckMaterial() {
   m.name = "tram-bridge-concrete"; m.userData.shared = true;
   return (deckMat = m);
 }
-function buildDecks(tram, prof, surface, inB) {
-  const bridges = tram.filter((l) => l.tags?.bridge === "yes");
+function buildDecks(tram, prof, surface, inB, onRoadDeck = null) {
+  // a tram bridge that is also a ROAD bridge (Carsoel at Saint-Job station): the road's full-width deck carries the tracks
+  // (viewer/streets/bridgeDecks.js, drawn by main.js); a second, track-wide deck here would only fight it
+  const mid = (l) => l.line[Math.floor(l.line.length / 2)];
+  const bridges = tram.filter((l) => l.tags?.bridge === "yes" && !(onRoadDeck && l.line?.length && onRoadDeck(mid(l)[0], mid(l)[1])));
   if (!bridges.length || !prof) return null;                     // (?trackprofile=0: the old city, no deck)
   const lines = bridges.map((l) => densify(l.line, 1));
   const P = [], N = [], U = [];
@@ -123,13 +126,13 @@ function buildDecks(tram, prof, surface, inB) {
 
 /** surface(x, z): the road top; prof (viewer/trackProfile.js, optional): the tracks' smooth rail-top profile (the wire
  *  hangs WIRE_H over it, the bridge deck carries it) */
-export function buildTram(feats, surface, bounds, prof = null) {
+export function buildTram(feats, surface, bounds, prof = null, onRoadDeck = null) {
   const group = new THREE.Group();
   group.name = "tram";
   const inB = (x, z) => x >= bounds.x0 && x <= bounds.x1 && z >= bounds.z0 && z <= bounds.z1;
   const tram = (feats.lines || []).filter((l) => l.kind === "tram");
   const trackY = (x, z) => prof?.y(x, z, 2.5) ?? surface(x, z);
-  const deck = buildDecks(tram, prof, surface, inB);
+  const deck = buildDecks(tram, prof, surface, inB, onRoadDeck);
   if (deck) group.add(deck.mesh);
   const steel = new THREE.MeshStandardNodeMaterial({ color: 0x3b4044, roughness: 0.5, metalness: 0.7 });
 
