@@ -48,3 +48,9 @@ viewer/materials/textures/cand/
 tools/road_audit/node_modules/
 docs/roads/audit/*/*.json
 !docs/roads/audit/*/summary.json
+models/russian/*.raw.glb
+models/russian/audit/*.json
+!models/russian/audit/*.allow.json
+models/rosaire/*.raw.glb
+models/rosaire/audit/*.json
+!models/rosaire/audit/*.allow.json
