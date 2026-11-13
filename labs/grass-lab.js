@@ -352,7 +352,7 @@ async function bench(rounds = 6, secs = 2.5) {
 }
 async function flicker(move = "strafe", frames = 24, step = 0.0006) {
   freeze = true;
-  const r = await flickerTest({ renderFrame: () => renderFrame(1 / 60), canvas: renderer.domElement, camera, controls, frames, move, step });
+  const r = await flickerTest({ renderFrame: () => renderFrame(0), canvas: renderer.domElement, camera, controls, frames, move, step });
   freeze = false;
   S.flicker = `${move}: ${r.blink} px blinking (${r.ppm} ppm)`;
   showHeat(r);
@@ -367,7 +367,8 @@ async function strip(kind = "walk", { u = 0.1, n = 6, every = 20, cols = 3, scal
   cv.width = w * cols; cv.height = h * Math.ceil(n / cols);
   const g = cv.getContext("2d");
   for (let i = 0; i < n; i++) {
-    for (let s = 0; s < every; s++) { renderFrame(1 / 60); await renderer.backend.device.queue.onSubmittedWorkDone(); }
+    for (let s = 0; s < every - 1; s++) { renderFrame(1 / 60); await renderer.backend.device.queue.onSubmittedWorkDone(); }
+    renderFrame(1 / 60);                       // the captured frame: copied in the same task (the canvas is only valid until presented)
     g.drawImage(renderer.domElement, (i % cols) * w, Math.floor(i / cols) * h, w, h);
     g.fillStyle = "#fff"; g.font = "14px monospace"; g.fillText(`${kind} +${(i * every / 60).toFixed(2)} s`, (i % cols) * w + 8, Math.floor(i / cols) * h + 18);
   }

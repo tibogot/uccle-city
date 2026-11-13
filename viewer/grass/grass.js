@@ -34,6 +34,7 @@ import {
 import { windAt, wind } from "../foliage/wind.js";
 import { noiseTex } from "../ground.js";
 import { addLampLight } from "../lampLight.js";
+import { env } from "../lighting.js";
 import { season } from "../seasons/season.js";
 import { GrassField } from "./grassField.js";
 import { GrassPush } from "./grassPush.js";
@@ -210,7 +211,8 @@ export class Grass {
                   let fc = mix(mix(LAWN, ROUGH, rough.mul(0.8)), DRY, f.dry.mul(0.6));
                   fc = fc.mul(nB.b.sub(0.5).mul(0.16).add(nA.g.sub(0.5).mul(0.22)).add(1));
                   const flower = select(hash(seed.add(9)).lessThan(f.flowers.mul(0.05)), float(2), float(0));
-                  const lodSel = select(d.lessThan(U.lod0), int(0), select(d.lessThan(U.lod1), int(1), int(2)));
+                  const dl = d.mul(hash(seed.add(10)).mul(0.3).add(0.85));          // dithered hand-over: no line where the LOD changes
+                  const lodSel = select(dl.lessThan(U.lod0), int(0), select(dl.lessThan(U.lod1), int(1), int(2)));
                   const seedF = float(seed.bitAnd(uint(0xffffff)));
                   for (const L of lods) {
                     If(lodSel.equal(L.l), () => {
@@ -280,7 +282,8 @@ export class Grass {
     const tang = normalize(vec3(lv.x.mul(h.mul(2)), drop, lv.y.mul(h.mul(2))));
     const toCam = cameraPosition.sub(root);
     let nf = normalize(cross(sideV, tang));
-    nf = nf.mul(sign(dot(nf, toCam)).add(0.001));
+    // a thin blade is lit through: its face turned to the SUN (not to the camera), so a backlit lawn is not black stubble
+    nf = nf.mul(sign(dot(nf, env.uSunDir)).add(0.001));
     const nW = normalize(mix(normalize(nf.add(sideV.mul(side.mul(1.2)))), vec3(0, 1, 0), grassU.flat));
     mat.normalNode = normalize(cameraViewMatrix.mul(vec4(varying(nW, "v_grN"), 0)).xyz);
     // colour: the ground's mean colour, darker at the root (the thatch), brighter / yellower at the tip, per blade
@@ -288,7 +291,7 @@ export class Grass {
     const grad = mix(grassU.root.mul(mix(float(1), float(0.8), len)), grassU.tip, pow(max(h, 0.001), float(0.85)));
     const shade = rnd(15).mul(0.4).add(0.78).mul(cshade);                // per blade x per clump (Hybrid: 0.82..1.18)
     let col = fc.mul(grad).mul(shade).mul(vec3(r1.sub(0.5).mul(0.22).add(1), 1, float(1).sub(r1.sub(0.5).mul(0.3))));
-    col = col.mul(mix(vec3(1), vec3(1.12, 1.06, 0.78), h.mul(0.6)));
+    col = col.mul(mix(vec3(1), vec3(1.05, 1.05, 0.84), h.mul(0.6)));
     col = col.mul(vec3(grassU.tint));
     // dry / straw blades (verges, summer drought)
     const dryAmt = clamp(dry.add(grassU.dry.mul(0.6)).mul(1.4).sub(r2.mul(0.8)), 0, 1);
@@ -392,6 +395,6 @@ export class Grass {
     const winter = Math.max(1 - sm(60, 110, day), sm(310, 345, day));
     grassU.tint.value.setRGB(1 + 0.08 * winter, 1 - 0.1 * winter, 1 - 0.05 * winter);
     grassU.height.value = 0.8 + 0.2 * sm(90, 140, day) * (1 - sm(290, 330, day));
-    grassU.frost.value = Math.max(0, Math.min(1, (3.5 - (info?.temp ?? 10)) / 3));
+    grassU.frost.value = Math.max(0, Math.min(1, (5 - (info?.temp ?? 10)) / 3));      // monthly mean < 5 C: hoar frost (a morning look; the weather can drive it later)
   }
 }
