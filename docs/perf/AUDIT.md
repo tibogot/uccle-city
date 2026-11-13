@@ -114,7 +114,11 @@ shader mid-frame: the materials are shared and already built).
 | alsemberg | 155 / 788 | 210 / 264 | **65 / 223** |
 | sum | 1,659 | 1,088 | **474** (-71 %) |
 
-p99 is now ~17 ms on half the runs (33 ms before). GPU unchanged (6-10 ms p50). The 180-500 ms spikes when tiles
+p99 is now ~17 ms on half the runs (33 ms before). GPU unchanged (6-10 ms p50). **The page's main-thread loop did NOT
+get faster** (street level p50 8.6 -> 9.2 ms, p90 11 -> 13: noise): the gain is on Chrome's side, the GPU process gets
+half the draw commands and almost no re-uploads, so frames are presented on time. That fits step 1: the stalls live in
+the GPU process. Remaining draws: scene 267 (city trees 108 = one per tile x species x band), shadow ~125 (small
+things ~25: little left to gain there). The 180-500 ms spikes when tiles
 stream are still there (the GPU-process stall, next).
 
 ### Next, in order (updated)
