@@ -1,6 +1,6 @@
 # Mesh audit: ruestalle.glb
 
-12,632 triangles, 6,752 welded vertices, 600 open edges, 118,272 rays, 1436 ms.
+12,632 triangles, 6,752 welded vertices, 600 open edges, 118,272 rays, 1337 ms.
 
 **0 blocking**, 2266 warnings. Clean (no blocking item).
 

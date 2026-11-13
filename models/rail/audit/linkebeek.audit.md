@@ -1,6 +1,6 @@
 # Mesh audit: linkebeek.glb
 
-2,844 triangles, 1,552 welded vertices, 176 open edges, 30,688 rays, 245 ms.
+2,844 triangles, 1,552 welded vertices, 176 open edges, 30,688 rays, 267 ms.
 
 **0 blocking**, 682 warnings. Clean (no blocking item).
 

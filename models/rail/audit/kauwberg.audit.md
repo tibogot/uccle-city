@@ -1,6 +1,6 @@
 # Mesh audit: kauwberg.glb
 
-3,284 triangles, 1,736 welded vertices, 192 open edges, 32,064 rays, 318 ms.
+3,284 triangles, 1,736 welded vertices, 192 open edges, 32,064 rays, 427 ms.
 
 **0 blocking**, 652 warnings. Clean (no blocking item).
 

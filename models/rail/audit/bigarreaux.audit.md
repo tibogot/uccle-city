@@ -1,6 +1,6 @@
 # Mesh audit: bigarreaux.glb
 
-2,884 triangles, 1,504 welded vertices, 176 open edges, 31,552 rays, 303 ms.
+2,884 triangles, 1,504 welded vertices, 176 open edges, 31,552 rays, 257 ms.
 
 **0 blocking**, 640 warnings. Clean (no blocking item).
 

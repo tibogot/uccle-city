@@ -1,6 +1,6 @@
 # Mesh audit: engeland.glb
 
-4,556 triangles, 2,416 welded vertices, 176 open edges, 80,256 rays, 483 ms.
+4,556 triangles, 2,416 welded vertices, 176 open edges, 80,256 rays, 587 ms.
 
 **0 blocking**, 1284 warnings. Clean (no blocking item).
 

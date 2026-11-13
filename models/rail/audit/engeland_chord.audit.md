@@ -1,6 +1,6 @@
 # Mesh audit: engeland_chord.glb
 
-4,318 triangles, 2,434 welded vertices, 352 open edges, 77,376 rays, 1198 ms.
+4,318 triangles, 2,434 welded vertices, 352 open edges, 77,376 rays, 844 ms.
 
 **0 blocking**, 678 warnings. Clean (no blocking item).
 

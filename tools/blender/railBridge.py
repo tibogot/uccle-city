@@ -115,7 +115,7 @@ BRIDGES = {
         "style": "street",
         "opens": [{"kind": "round", "span": 4.6, "spring": 2.1, "ring": 0.36, "mat": "brick"}],   # [E] one lane + two narrow sidewalks
         "top": "fascia", "parapet": 6.68, "coping": 0.12, "parapet_t": 0.35, "cornice": 6.0,
-        "underpass": {"a": [-1113.65, 1636.6, 55.35], "b": [-1097.94, 1639.6, 55.72], "hw": 2.9},
+        "underpass": {"a": [-1113.65, 1636.6, 55.35], "b": [-1097.94, 1639.6, 55.72], "hw": 3.6},   # the E sidewalk is wide
         "ends": None,
         "views": {"bigarreaux_e": ((1.8, 18.0, 1.6), (1.8, 0.0, 3.5), 24.0), "bigarreaux_w": ((1.8, -18.0, 1.6), (1.8, 0.0, 3.5), 24.0)},
     },
@@ -1002,7 +1002,7 @@ def ground_z(X, Yb):
     return loc.z if hit else 0.0
 
 # ------------------------------------------------------------------------------------------------ AO bake into UV1
-AO_PX = 2048
+AO_PX = 2048 if STYLE != "street" else 1024        # the small underpasses (3-5k triangles): 1024 is 4 MB less GPU memory each
 scn.render.engine = "CYCLES"; scn.cycles.device = "CPU"
 if scn.world is None: scn.world = bpy.data.worlds.new("World")
 scn.world.light_settings.distance = 6.0
