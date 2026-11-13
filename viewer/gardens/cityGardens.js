@@ -1,5 +1,5 @@
 // FRONT GARDENS IN THE CITY (docs/assets/GARDENS.md): low brick walls with copings, railings, pillars with caps, gates,
-// hedges behind the railings, between each house and the measured sidewalk. On by default; ?gardens=0 = none (the city as
+// hedges behind the railings, between each house and the measured sidewalk. OFF by default for now: ?gardens=1 on (the city as
 // before); ?gardenhedges=1 = with the hedges (opt-in until the foliage city hookup: their cost, docs/assets/GARDENS.md).
 //
 //   - data: data/gardens/<T>.json (tools/gardens/build_gardens.py): runs along the property line (the measured sidewalk's
@@ -21,7 +21,7 @@ const DATA = new URL("../../data/gardens/", import.meta.url);
 const HEDGE_FAR = 260;                     // a tile's hedges hide when the camera is this far from all of them
 
 export const cityGardens = {
-  on: qs.get("gardens") !== "0",
+  on: qs.get("gardens") === "1",          // OFF by default until the look check, mesh audit, the sidewalk-to-wall lawn gap and a GREEN GPU measure are done (coordinator, 2026-11-13); ?gardens=1 on
   hedges: qs.get("gardenhedges") === "1",     // opt-in: ~100-200 k triangles and up to 10 draws a tile (docs/assets/GARDENS.md)
   kit: null, pools: [], tiles: new Map(), group: null, stand: null,
   last: new THREE.Vector3(1e9, 0, 0), dirty: true, gatherMs: 0, tWind: 0,
@@ -35,7 +35,7 @@ export const cityGardens = {
     for (const p of PIECES) this.pools.push(new GardenPool(this.kit.pieces[p], this.kit.mats, this.group));
     updaters.push((eye, cam) => this.update(cam));
     window.__gardens = this;
-    log(`gardens: on (?gardens=0 off, ?gardenhedges=1 with the hedges), kit ${PIECES.length} pieces x 3 LODs, ${Math.round(performance.now() - t0)} ms`);
+    log(`gardens: on (?gardens=1; ?gardenhedges=1 with the hedges), kit ${PIECES.length} pieces x 3 LODs, ${Math.round(performance.now() - t0)} ms`);
     return this;
   },
   fetchTile(name) {

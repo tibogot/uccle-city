@@ -565,7 +565,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const streetLifeP = cityStreetLife.tile(entry.name, own.features);
   const stopsP = cityStops.fetchTile(entry.name);       // the STIB stops and ad panels (viewer/stops/cityStops.js), ?stops=old off
   const furnP = cityFurniture.fetchTile(entry.name);    // benches, bike hoops / boxes, bins, glass banks (viewer/furniture2/), ?furniture=old off
-  const gardensP = cityGardens.fetchTile(entry.name);   // front-garden walls, railings, gates, hedges (viewer/gardens/), ?gardens=0 off
+  const gardensP = cityGardens.fetchTile(entry.name);   // front-garden walls, railings, gates, hedges (viewer/gardens/), ?gardens=1 on (off by default)
   // the orthophoto for the textured ground's far blend (docs/materials/GROUND.md), fetched alongside the tile data
   const orthoP = groundLook() && F.ortho ? texLoader.loadAsync(new URL(F.ortho, DATA).href).then((t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; }).catch(() => null) : null;
   const d = await tileData(entry);
@@ -839,7 +839,7 @@ async function main() {
   await cityKit.start({ scene, updaters, log });                   // ?kit=1: the façade kit (before the first tile and the warm-up)
   await cityStreetLife.start({ scene, updaters, log });            // the street life (shop names, plates, numbers, stops), ?streetlife=0 off
   await cityFurniture.start({ scene, updaters, log });             // benches, bike hoops / boxes, bins, glass banks (viewer/furniture2/), ?furniture=old off
-  await cityGardens.start({ scene, updaters, log });               // front-garden walls, railings, gates, hedges (viewer/gardens/), ?gardens=0 off
+  await cityGardens.start({ scene, updaters, log });               // front-garden walls, railings, gates, hedges (viewer/gardens/), ?gardens=1 on (off by default)
   await cityStops.start({ scene, updaters, log });                 // the STIB shelters / poles and the ad panels (viewer/stops/), ?stops=old off
   // the Chapelle de Stalle + its interior cell (tools/blender/stalle*.py, viewer/stalleCity.js) behind ?stalle=1
   if (params.get("stalle") !== "0") await addStalle({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, getView: () => ({ camera, lighting }), getThird: () => third });
