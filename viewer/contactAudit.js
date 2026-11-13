@@ -9,7 +9,8 @@ import { partFromBufferGeometry } from "../tools/mesh_audit/audit.js";
 import { auditContact } from "../tools/mesh_audit/contact.js";
 
 export const HEROES = ["stjob", "townhall", "stalle", "vanbuuren", "wolvendael", "police", "calevoet", "stpierre", "observatory",
-  "bridge-verrewinkel", "bridge-stjob", "bridge-calevoet"];
+  "bridge-verrewinkel", "bridge-stjob", "bridge-calevoet",
+  "bridge-ruestalle"];
 
 const meshParts = (root, name, filter = null) => {
   const out = [];

@@ -331,6 +331,7 @@ function removeBridgeDecks(decks) {
 const updaters = [];
 // The railway (?trains=1, Train Lab first): tracks per tile, hero bridges, SNCB trains on the real timetable (viewer/rail/)
 const TRAINS = params.get("trains") !== "0";
+const BRIDGES2 = params.get("bridges2") !== "0";        // ?bridges2=0: no round-2 hero bridges (docs/trains/BRIDGES_ROUND2.md): the track crosses those gaps on its ballast
 const railP = TRAINS ? import("./rail/railway.js").then(async (m) => ({ m, doc: await m.loadRail() })).catch((e) => { log(`railway: ${e.message}`); return null; }) : null;
 // ?traffic=1: the moving traffic (viewer/traffic/cityTraffic.js). Each full tile's lane graph is kept here until the
 // traffic exists, then added / removed with its tile.
@@ -466,7 +467,7 @@ function tileData(entry, lite = false) {
     kit: cityKit.on && !lite, kitExclude: cityKit.exclude,                                           // the façade kit (viewer/facadeKit/), ?kit=0 off
     streetlife: cityStreetLife.on && !lite,                                                          // the street life's shopfronts (viewer/streetlife/), ?streetlife=0 off
     grass: cityGrass.on && !lite,                                                                    // ?grass=1: the grass types raster, built in the worker
-    rail: TRAINS, railFix: params.get("railcar") !== "0", driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
+    rail: TRAINS, bridges2: BRIDGES2, railFix: params.get("railcar") !== "0", driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
     paint: PAINT_PARAM };                                                                            // ?paint=v1: the road engine's own markings (A/B)
   const key = `${entry.name}|${lite ? 1 : 0}`;
   const pre = tilePrefetch.get(key);
@@ -859,7 +860,8 @@ async function main() {
   if (TRAINS) {
     const rail = await railP;
     if (rail) {
-      const { loadBridge, placeBridge, warmBridge, deckHeightFn, BRIDGES } = await import("./rail/bridgeModel.js");
+      const { loadBridge, placeBridge, warmBridge, deckHeightFn } = await import("./rail/bridgeModel.js");
+      const BRIDGES = (await import("./rail/railData.js")).heroBridgeNames(BRIDGES2);
       const { openParallelPipelines } = await import("../vendor/engine/parallelPipelines.js");
       for (const name of BRIDGES) {
         loadBridge(name).then(async (b) => {

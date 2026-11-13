@@ -16,6 +16,12 @@
 // (the 2022 footbridge beside Verrewinkel's) and the arches' springing / rise, for the wires.
 import earcut from "three/src/extras/lib/earcut.js";
 
+/** The hero railway / road bridges (models/rail/<name>.json + .glb): round 1, and round 2 (docs/trains/BRIDGES_ROUND2.md),
+ *  the latter switched off with ?bridges2=0 (the track crosses those gaps on its ballast alone, as before). */
+export const HERO_BRIDGES = ["stjob", "calevoet", "verrewinkel"];
+export const HERO_BRIDGES2 = ["ruestalle"];
+export const heroBridgeNames = (round2 = true) => (round2 ? HERO_BRIDGES.concat(HERO_BRIDGES2) : HERO_BRIDGES.slice());
+
 export const GAUGE = 1.435, RAIL_C = GAUGE / 2 + 0.036;      // rail centre lines (head 72 mm)
 export const CREST = -0.19, BED = -0.55;                      // ballast crest / shoulder foot below the rail top (m)
 export const CREST_HW = 1.65, FOOT_HW = 2.25, CORRIDOR = 2.5;

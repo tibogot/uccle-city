@@ -13,7 +13,7 @@ import { buildRoadData, applyRoadOverrides, CARVE } from "./roadBuild.js";
 import { bridgeDecks, deckMesh, parapetRings } from "./streets/bridgeDecks.js";
 import { smoothPolyline } from "./track.js";
 import { kitCollector } from "./facadeKit/placement.js";
-import { prepRail, abutmentFill, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins, railDriveSurface, railFences, fenceMesh } from "./rail/railData.js";
+import { prepRail, heroBridgeNames, abutmentFill, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins, railDriveSurface, railFences, fenceMesh } from "./rail/railData.js";
 import { buildTrafficGraph } from "./traffic/trafficGraph.js";
 import { grassTypeData } from "./grass/grassTypes.js";
 
@@ -22,9 +22,9 @@ let grassKindsP = null;
 /** ?grass=1: data/grass/osm_grass.json (the OSM grass kinds features.json folds away), fetched once per worker */
 const grassKinds = (base) => (grassKindsP ||= fetch(new URL("../grass/osm_grass.json", base)).then((r) => r.json()).then((d) => d.kinds).catch(() => null));
 /** ?trains=1: rail.json + the hero bridges' notes, fetched once per worker */
-const railDocs = (base) => (railP ??= Promise.all([
+const railDocs = (base, round2 = true) => (railP ??= Promise.all([
   fetch(new URL("../rail/rail.json", base)).then((r) => r.json()).then(prepRail),
-  Promise.all(["stjob", "calevoet", "verrewinkel"].map((n) => fetch(new URL(`../../models/rail/${n}.json`, base)).then((r) => (r.ok ? r.json() : null)).catch(() => null))).then((a) => a.filter(Boolean)),
+  Promise.all(heroBridgeNames(round2).map((n) => fetch(new URL(`../../models/rail/${n}.json`, base)).then((r) => (r.ok ? r.json() : null)).catch(() => null))).then((a) => a.filter(Boolean)),
 ]).then(([doc, heroes]) => ({ doc, heroes })));
 
 export { CARVE };                  // terrain is pushed this far under any road surface (viewer/roadBuild.js)
@@ -131,7 +131,7 @@ export async function buildTileData(entry, base) {
   for (const l of feats.lines || []) if (l.kind === "tram") l.line = smoothPolyline(l.line);
   // ?trains=1 (viewer/rail/): no LiDAR "trees" on rail bridge decks, platforms or the ballast; the line's verges as
   // undergrowth in the land cover
-  const rail = entry.rail ? await step("rail fetch", () => railDocs(base)) : null;
+  const rail = entry.rail ? await step("rail fetch", () => railDocs(base, entry.bridges2 !== false)) : null;
   let railDropped = 0;
   if (rail) {
     const clear = railKeepClear(rail.doc, bounds, rail.heroes), n = feats.trees?.length || 0;

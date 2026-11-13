@@ -34,7 +34,8 @@ const KIND_NAME = Object.fromEntries(Object.entries(KIND).map(([k, v]) => [v, k]
 export const SRC = { building: 1, hero: 2, bridge: 3, furniture: 4, tree: 5, lamp: 6, bollard: 7, car: 8, rail: 9, tram: 10, kit: 11, road: 12 };
 const SRC_NAME = Object.fromEntries(Object.entries(SRC).map(([k, v]) => [v, k]));
 export const HEROES = ["stjob", "townhall", "stalle", "vanbuuren", "wolvendael", "police", "calevoet", "stpierre", "observatory",
-  "bridge-verrewinkel", "bridge-stjob", "bridge-calevoet"];
+  "bridge-verrewinkel", "bridge-stjob", "bridge-calevoet",
+  "bridge-ruestalle"];
 
 /** A plan grid over the tile bounds. */
 function makeGrid(b) {

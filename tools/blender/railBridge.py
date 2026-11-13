@@ -75,6 +75,31 @@ BRIDGES = {
         "ends": "quoin",
         "views": {"calevoet_viaduct": ((0.0, 42.0, 1.4), (0.0, 0.0, 8.0), 24.0)},
     },
+    # ROUND 2 (docs/trains/BRIDGES_ROUND2.md). L124 over Rue de Stalle (primary road + trams), UrbIS bridge/686: a red brick
+    # viaduct of THREE equal round arches on tall piers (Street View 2024, looked at only: the road and the trams pass the
+    # middle arch, the side arches open over the embankment slopes), each pier carrying a flat brick pilaster strip from the
+    # footing to a pier head that rises through the parapet, a thin blue-stone impost band where the arches spring, the
+    # arch rings plain brick rowlocks (no stone), a stone string course just over the crowns under a low brick parapet with
+    # a stone coping, and on it a modern safety fence (galvanised posts, welded-mesh panels). The UrbIS polygon's notches are
+    # the pilasters: piers at |X| 8.1-10.5, the abutments' two pilasters at |X| 26.6-29.0 and 31.9-34.3.
+    "ruestalle": {
+        "urbis": "bridge/686", "line": "L124", "road": "Rue de Stalle",
+        "centre": (-1489.0, 276.26), "theta": 64.05, "length": 68.6, "width": 9.4,         # [M] UrbIS polygon 68.6 x 9.4 (+ pilasters)
+        "road_level": 31.80, "rail_top": 49.59,                                            # [M] DTM 2021 at the crossing, rail.json
+        "road_dir": 154.05, "road_cross": (-1489.0, 276.26), "road_clear": None,          # [M] OSM crosses at 85 deg; built square (the polygon's piers face each other)
+        "arches": {"n": 3, "span": 16.2, "pier": 2.4, "spring": 8.3, "ring": 0.36},        # [M] spans / piers: polygon notches; [E] springing: semicircles under the string course
+        "cornice": 17.55, "parapet": 18.45, "coping": 0.16, "parapet_t": 0.40,             # [E] Street View: string course over the crowns, parapet ~0.9 m
+        "style": "viaduct",
+        "end_pilasters": [(28.3, 2.3), (33.1, 2.4)],                                       # [M] |X|, width (polygon notches; the first kept clear of the arch ring)
+        "pier_strip": 1.5, "pilaster_proj": 0.30, "pier_head": 1.45,                       # [E] the heads rise through the parapet to the fence top
+        "fence": {"h": 1.45, "post": 2.5},                                                # [E] welded-mesh panels between posts
+        "ends": None,
+        "views": {
+            "ruestalle_ne": ((2.0, 40.0, 1.6), (2.0, 0.0, 9.0), 24.0),
+            "ruestalle_sw": ((-2.0, -40.0, 1.6), (-2.0, 0.0, 9.0), 24.0),
+            "ruestalle_far": ((-30.0, 75.0, 3.0), (0.0, 0.0, 9.0), 30.0),
+        },
+    },
 }
 B = BRIDGES[NAME]
 L, W = B["length"], B["width"]
@@ -99,8 +124,9 @@ SKEW = dirB.x / dirB.y if abs(dirB.y) > 1e-3 else 0.0      # dX / dY along the r
 X_ROAD = to_local(*B["road_cross"])[0] - SKEW * to_local(*B["road_cross"])[1]   # road axis at Y = 0
 print(f"{NAME}: L {L} W {W} rail {H_RAIL:.2f} m over the road; skew dX/dY {SKEW:.3f} ({math.degrees(math.atan(abs(SKEW))):.1f} deg); road at X {X_ROAD:.2f}")
 
-MAT_NAMES = ["brick_red_brussels", "stone_blue", "concrete", "painted_metal_white", "brick_yellow"]
-BR, ST, CO, PM, BY = 0, 1, 2, 3, 4
+MAT_NAMES = ["brick_red_brussels", "stone_blue", "concrete", "painted_metal_white", "brick_yellow", "painted_metal_grey", "wire_mesh_grey"]
+BR, ST, CO, PM, BY, PG, WM = 0, 1, 2, 3, 4, 5, 6
+STYLE = B.get("style")
 
 
 # ------------------------------------------------------------------------------------------------ geometry builder
@@ -296,7 +322,7 @@ def face_frame(sgn):
 CORN = B["cornice"]
 # cornice: a moulded stone string course along the whole face (ogee + fillet), profile in (out, up)
 CORNICE = [(0.0, -0.32), (0.06, -0.32), (0.06, -0.26), (0.10, -0.22), (0.13, -0.15), (0.15, -0.08), (0.20, -0.06), (0.22, 0.0), (0.0, 0.0)]
-for sgn in (1, -1):
+for sgn in ((1, -1) if STYLE != "viaduct" else ()):
     u, v, w = face_frame(sgn)
     for k in range(len(CORNICE)):
         a, b = CORNICE[k], CORNICE[(k + 1) % len(CORNICE)]
@@ -410,13 +436,91 @@ def calevoet_piers(sgn, dx):
     DET.box(on_face(sgn, 0, 0.05, CORN + 0.1), (L, 0.12, 0.28), ST)
 
 
+
+def viaduct_arch(sgn, o, info):
+    """Rue de Stalle: a plain brick rowlock ring (0.36 m) 7 cm proud of the spandrel, an outer header course 3.5 cm proud
+    round it (the stepped edge Street View shows), the intrados plain. Both stop short of the pier strips (clean mesh: no
+    shallow crossing), the ring's soffit 1 cm off the vault's."""
+    cx, cz, R, a = info
+    ring = o["ring"]; n = 44
+    arc = lambda r: [(cx - r * math.cos(math.pi * k / n), cz + r * math.sin(math.pi * k / n)) for k in range(n + 1)]
+    y0 = sgn * (W / 2 - 0.02)
+    ring_band(arc(R + 0.01), arc(R + ring), y0, sgn * 0.09, BR)
+    ring_band(arc(R + ring), arc(R + ring + 0.07), y0, sgn * 0.055, BR)
+
+
+def ring_band(inner, outer, y0, depth, mat):
+    """An arch band (inner / outer arcs of equal count, in x z) from the plane Y = y0 out by depth: its caps as QUADS between
+    the two arcs (a fan / ear-clipped thin annulus gives overlapping slivers), the curved sides, the two springer ends."""
+    P = lambda pts, y: [Vector((x, y, z)) for x, z in pts]
+    iB, oB, iF, oF = P(inner, y0), P(outer, y0), P(inner, y0 + depth), P(outer, y0 + depth)
+    out = depth > 0
+    DET.quad_strip(iF, oF, mat, flip=out)          # front cap
+    # no back cap: it lies 2 cm inside the wall (clean mesh: hidden backs are left out)
+    DET.quad_strip(iB, iF, mat, flip=out)          # soffit side
+    DET.quad_strip(oB, oF, mat, flip=not out)      # extrados side
+    for k in (0, -1):                              # the two ends
+        q = [iB[k], oB[k], oF[k], iF[k]]
+        DET.poly(q if (k == 0) == out else q[::-1], mat)
+
+
+def viaduct_piers(sgn):
+    """Rue de Stalle: per pier a brick pilaster strip from the footing to a capped head over the coping, a blue-stone
+    plinth and an impost band at the springing (across the pier face, returning into the soffit); the abutments' two
+    pilasters; the stone string course along the face over the crowns."""
+    arches = sorted(OPS, key=lambda o: o["x0"])
+    zs = arches[0]["spring"]; pp = B["pilaster_proj"]
+    strips = [((arches[k]["x1"] + arches[k + 1]["x0"]) / 2, B["pier_strip"]) for k in range(len(arches) - 1)]
+    for xa, w in B.get("end_pilasters", []):
+        strips += [(-xa, w), (xa, w)]
+    head = TOP + B["coping"] + B["pier_head"]
+    for xm, w in strips:
+        # (CLEAN MESH: no two boxes share a face plane where they overlap - backs, tops and ends are staggered by >= 1 cm)
+        xm_c = max(-L / 2 + w / 2 + 0.02, min(L / 2 - w / 2 - 0.02, xm))          # the end pilaster stops 2 cm short of the end wall
+        if xm_c != xm: w = w - 2 * abs(xm_c - xm); xm = xm_c
+        zt = TOP - 0.12
+        DET.box(on_face(sgn, xm, (pp - 0.05) / 2, (FOUND + zt) / 2), (w, pp + 0.05, zt - FOUND), BR)                 # back -0.05
+        # two corbelled courses widening the strip under the string course (the pier head's footing)
+        for j, (dw, dp) in enumerate(((0.16, 0.06), (0.32, 0.11))):
+            bk = 0.035 - 0.01 * j
+            DET.box(on_face(sgn, xm, (pp + dp - bk) / 2, CORN - 0.55 + j * 0.22), (w + dw, pp + dp + bk, 0.22), BR)   # backs -0.035 / -0.025
+        # the head over the coping: thickened through the parapet, a stone cap with a weathered (sloped) top
+        hb = TOP - 0.25
+        DET.box(on_face(sgn, xm, (pp + 0.02 - PT - 0.02) / 2, (hb + head) / 2), (w + 0.1, PT + 0.02 + pp + 0.02, head - hb), BR)
+        c = on_face(sgn, xm, (pp + 0.02 - PT - 0.02) / 2, head + 0.07)
+        DET.box(c, (w + 0.26, PT + pp + 0.2, 0.14), ST)
+        DET.box(c + Vector((0, 0, 0.11)), (w + 0.06, PT + pp, 0.08), ST)
+        # blue-stone plinth: 0.75 m over the ground line, chamfered course on top
+        DET.box(on_face(sgn, xm, (pp + 0.06 - 0.015) / 2, (FOUND + 0.75) / 2), (w + 0.14, pp + 0.06 + 0.015, 0.75 - FOUND), ST)
+        DET.box(on_face(sgn, xm, (pp + 0.03 - 0.012) / 2, 0.8), (w + 0.08, pp + 0.03 + 0.012, 0.1), ST)
+    # impost bands: a stone course 0.32 m high at the springing, across every pier face, 6 cm proud
+    for k in range(len(arches) - 1):
+        xa, xb = arches[k]["x1"], arches[k + 1]["x0"]
+        DET.box(on_face(sgn, (xa + xb) / 2, 0.03, zs - 0.16), (xb - xa + 0.10, 0.06 + 0.04 - 0.008, 0.32), ST)
+    for o in (arches[0], arches[-1]):                       # the abutments' side of the outer arches
+        xe = o["x0"] if o is arches[0] else o["x1"]
+        sx = -1 if o is arches[0] else 1
+        DET.box(on_face(sgn, xe + sx * 0.6, 0.03, zs - 0.16), (1.2 + 0.10, 0.092, 0.32), ST)
+    # string course: a stone band 0.3 m high, 12 cm proud, a drip under it
+    DET.box(on_face(sgn, 0, 0.06, CORN - 0.15), (L - 0.03, 0.12 + 0.04, 0.3), ST)
+    DET.box(on_face(sgn, 0, 0.095, CORN - 0.33), (L - 0.05, 0.07, 0.06), ST)
+
+
+def viaduct_impost_soffit():
+    """The impost band returns into the arch soffits (both piers' sides): a stone course 4 cm proud of the vault's wall."""
+    arches = sorted(OPS, key=lambda o: o["x0"])
+    zs = arches[0]["spring"]
+    for o in arches:
+        for xe, sx in ((o["x0"], 1), (o["x1"], -1)):
+            DET.box((xe + sx * 0.02, 0, zs - 0.165), (0.08, W + 0.04, 0.30), ST)       # 1 cm inside the face band's top / bottom
+
 ops_sorted = sorted(OPS, key=lambda o: o["x0"])
 for sgn in (1, -1):
     dx = SKEW * sgn * W / 2
     for o in OPS:
         pts, info = curve_of(o, dx)
         ring = o["ring"]
-        outer = voussoirs(sgn, o, info, ring, 11 if o["main"] and o["kind"] == "segment" else (9 if o["main"] else 7)) if NAME != "calevoet" else None
+        outer = voussoirs(sgn, o, info, ring, 11 if o["main"] and o["kind"] == "segment" else (9 if o["main"] else 7)) if NAME != "calevoet" and not STYLE else None
         if o["main"] and o["kind"] == "segment":
             # hood moulding along the extrados, down the pilasters' sides, into the scrolls
             hood = [(p.x, p.z + 0.0) for p in outer]
@@ -438,6 +542,8 @@ for sgn in (1, -1):
                 scroll(sgn, hx, zb, side=-side)
         if NAME == "calevoet":
             calevoet_arch(sgn, o, info, dx)
+        elif STYLE == "viaduct":
+            viaduct_arch(sgn, o, info)
     # pilasters (St-Job): quoined, a stone base, a stone capital block at the arcade, a cap above the parapet
     if "pilaster" in B:
         p = B["pilaster"]
@@ -522,6 +628,8 @@ for sgn in (1, -1):
 
     if NAME == "calevoet":
         calevoet_piers(sgn, dx)
+    elif STYLE == "viaduct":
+        viaduct_piers(sgn)
 
 # railing (Calevoet): painted steel posts + two rails on the coping, both sides
 if B.get("railing"):
@@ -535,13 +643,41 @@ if B.get("railing"):
         for zr in (zb + hR, zb + hR * 0.5, zb + 0.12):
             FINE.box((0, yc, zr), (L - 0.2, 0.05, 0.05), PM)
 
+# fence (Rue de Stalle): galvanised posts every ~2.5 m on the coping between the pier heads, a top rail, welded-mesh
+# panels (the wire_mesh_grey slot draws the wires: alpha-to-coverage), both sides
+if B.get("fence"):
+    fh = B["fence"]["h"]; zb = TOP + B["coping"]
+    heads = []
+    if STYLE == "viaduct":
+        arches = sorted(OPS, key=lambda o: o["x0"])
+        heads = [((arches[k]["x1"] + arches[k + 1]["x0"]) / 2, B["pier_strip"]) for k in range(len(arches) - 1)]
+        for xa, w in B.get("end_pilasters", []): heads += [(-xa, w), (xa, w)]
+    gaps, cur = [], -L / 2
+    for lo, hi in sorted((x - w / 2 - 0.05, x + w / 2 + 0.05) for x, w in heads):
+        if lo > cur: gaps.append((cur, lo))
+        cur = max(cur, hi)
+    if cur < L / 2: gaps.append((cur, L / 2))
+    for sgn in (1, -1):
+        yc = sgn * (W / 2 - PT / 2 + 0.06)
+        for a, b in gaps:
+            if b - a < 0.6: continue
+            n = max(1, round((b - a) / B["fence"]["post"]))
+            for k in range(n + 1):
+                FINE.box((a + 0.05 + k * (b - a - 0.1) / n, yc, zb + (fh + 0.03) / 2), (0.07, 0.07, fh + 0.03), PG)    # post tops 3 cm over the rail
+            a, b = max(a, -L / 2 + 0.03), min(b, L / 2 - 0.03)
+            FINE.box(((a + b) / 2, yc, zb + fh - 0.03), (b - a, 0.06, 0.06), PG)
+            FINE.box(((a + b) / 2, yc, zb + 0.08), (b - a, 0.05, 0.05), PG)
+            FINE.box(((a + b) / 2, yc, zb + 0.08 + (fh - 0.11) / 2), (b - a - 0.02, 0.012, fh - 0.17), WM)
+if STYLE == "viaduct":
+    viaduct_impost_soffit()
 
 # ------------------------------------------------------------------------------------------------ build, bevel, UVs
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scn = bpy.context.scene
 mats = []
 PREVIEW_COL = {"brick_red_brussels": (0.33, 0.12, 0.075), "stone_blue": (0.42, 0.43, 0.44), "concrete": (0.35, 0.34, 0.32),
-               "painted_metal_white": (0.75, 0.75, 0.73), "brick_yellow": (0.55, 0.40, 0.24)}
+               "painted_metal_white": (0.75, 0.75, 0.73), "brick_yellow": (0.55, 0.40, 0.24),
+               "painted_metal_grey": (0.42, 0.44, 0.45), "wire_mesh_grey": (0.5, 0.52, 0.53)}
 for nm in MAT_NAMES:
     m = bpy.data.materials.new(nm); m.use_nodes = True
     m.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (*PREVIEW_COL[nm], 1)
@@ -572,7 +708,7 @@ def make(name, mb, bevel):
 
 
 print("faces before bevel: mass", len(MASS.f), "details", len(DET.f), "fine", len(FINE.f))
-parts = [make("mass", MASS, 0.025), make("details", DET, 0.012)]
+parts = [make("mass", MASS, 0.025 if not STYLE else 0.0), make("details", DET, 0.012)]   # STYLE: the rings / bands cover the mass edges (a bevel there splits the vault strips into n-gons: bent normals)
 if FINE.f: parts.append(make("fine", FINE, 0.0))
 for oo in scn.objects: oo.select_set(False)
 for o in parts: o.select_set(True)
@@ -582,6 +718,17 @@ obj = parts[0]; obj.name = NAME
 me = obj.data
 me.shade_smooth()
 me.set_sharp_from_angle(angle=math.radians(35))
+if STYLE:
+    # CLEAN SHADING (no bad shading from topology): a face is smooth only on a CURVED surface (a neighbour at 0.5-12 deg, the tessellation of a curve,
+    # not a bevel step, and no coplanar neighbour: vault strips, ring sides); every planar wall / box face keeps its face normal
+    bm = bmesh.new(); bm.from_mesh(me)
+    for f in bm.faces:
+        angs = [e.calc_face_angle(0) for e in f.edges if len(e.link_faces) == 2]
+        f.smooth = bool(angs) and min(angs) > math.radians(0.5) and any(a < math.radians(12) for a in angs)
+    for e in bm.edges:
+        lf = e.link_faces
+        e.smooth = len(lf) == 2 and lf[0].smooth and lf[1].smooth and e.calc_face_angle(0) < math.radians(12)
+    bm.to_mesh(me); bm.free()
 me.validate()
 ntri = sum(len(p.vertices) - 2 for p in me.polygons)
 print(f"{NAME}: {ntri} triangles, {len(me.vertices)} vertices, {time.time() - T0:.1f}s")
@@ -753,6 +900,7 @@ sun.data.energy = 3.5; sun.rotation_euler = (math.radians(55), 0, math.radians(-
 scn.cycles.samples = 64; scn.cycles.use_denoising = True
 scn.render.resolution_x, scn.render.resolution_y = 1200, 800
 scn.view_settings.view_transform = "AgX"
+if STYLE: scn.view_settings.exposure = -0.8          # round 2 previews: the sun at 3.5 washed the brick out
 cam = bpy.data.objects.new("cam", bpy.data.cameras.new("cam")); scn.collection.objects.link(cam); scn.camera = cam
 for vname, (loc, look, lens) in B["views"].items():
     cam.location = Vector((loc[0], loc[1], ground_z(loc[0], loc[1]) + loc[2])); cam.data.lens = lens
