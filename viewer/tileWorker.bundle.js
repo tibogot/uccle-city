@@ -1017,10 +1017,24 @@ function landCoverData(feats, bounds) {
     wg.fill("evenodd");
   }
   const wimg = wg.getImageData(0, 0, W, H).data;
+  const cc = new OffscreenCanvas(W, H), cg = cc.getContext("2d");
+  cg.fillStyle = "#fff";
+  let clear = 0;
+  for (const a of feats.areas || []) {
+    if (a.kind !== "grass") continue;
+    cg.beginPath();
+    for (const ring2 of a.rings || []) {
+      ring2.forEach(([x, z], i) => i ? cg.lineTo(px(x), pz(z)) : cg.moveTo(px(x), pz(z)));
+      cg.closePath();
+    }
+    cg.fill("evenodd");
+    clear++;
+  }
+  const cimg = clear ? cg.getImageData(0, 0, W, H).data : null;
   const data = new Uint8Array(W * H * 4);
   for (let i = 0; i < W * H; i++) {
     const a = img[i * 4 + 3] / 255 || 1;
-    data[i * 4] = Math.min(255, img[i * 4] / a);
+    data[i * 4] = Math.min(255, img[i * 4] / a) * (cimg ? 1 - cimg[i * 4] / 255 : 1);
     data[i * 4 + 1] = Math.min(255, img[i * 4 + 1] / a);
     data[i * 4 + 2] = Math.min(255, img[i * 4 + 2] / a);
     data[i * 4 + 3] = wimg[i * 4];
