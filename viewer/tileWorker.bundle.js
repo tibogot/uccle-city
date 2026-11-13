@@ -2009,12 +2009,67 @@ function driveGround(hm, parts) {
       }
     }
   }
+  const fill = [];
+  for (let r = 1; r < rows - 1; r++) for (let k = 1; k < cols - 1; k++) {
+    const q = r * cols + k;
+    if (top[q] > -1e8) continue;
+    const has = (o) => top[q + o] > -1e8;
+    if (!(has(-1) && has(1) || has(-cols) && has(cols))) continue;
+    let n = 0, s = 0, lo = Infinity, hi = -Infinity;
+    for (const o of [-cols - 1, -cols, -cols + 1, -1, 1, cols - 1, cols, cols + 1]) if (has(o)) {
+      const y = top[q + o];
+      n++;
+      s += y;
+      lo = Math.min(lo, y);
+      hi = Math.max(hi, y);
+    }
+    if (n >= 6 && hi - lo < 0.5) fill.push(q, s / n);
+  }
+  for (let i = 0; i < fill.length; i += 2) top[fill[i]] = fill[i + 1];
   const delta = new Uint16Array(cols * rows), delta2 = new Uint16Array(cols * rows).fill(65535);
   for (let q = 0; q < delta.length; q++) {
     if (top[q] > -1e8) delta[q] = Math.max(0, Math.min(65534, Math.round((top[q] - Y[q]) * 100)));
     if (low[q] > -1e8 && top[q] - low[q] > 1.5) delta2[q] = Math.max(0, Math.min(65534, Math.round((low[q] - Y[q]) * 100)));
   }
   return { delta, delta2 };
+}
+var TRAM_PLATFORM = { W: 2.6, H: 0.25, step: 2 };
+var isTramPlatform = (l) => l.kind === "platform" && (l.tags?.tram === "yes" || l.tags?.railway === "platform");
+function densifyLine(line, step) {
+  const out = [];
+  for (let k = 1; k < line.length; k++) {
+    const [ax, az] = line[k - 1], [bx, bz] = line[k];
+    const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / step));
+    for (let s = k === 1 ? 0 : 1; s <= n; s++) out.push([ax + (bx - ax) * s / n, az + (bz - az) * s / n]);
+  }
+  return out;
+}
+function tramPlatformSurface(feats, hm, ground, bounds, carve) {
+  const { x0, z0, cols, rows, step } = hm.h, Y = hm.y, D = ground.delta, { W, H } = TRAM_PLATFORM, hw = W / 2;
+  let raised = 0;
+  for (const l of feats.lines || []) {
+    if (!isTramPlatform(l)) continue;
+    const d = densifyLine(l.line, TRAM_PLATFORM.step);
+    for (let i = 1; i < d.length; i++) {
+      const [ax, az] = d[i - 1], [bx, bz] = d[i];
+      if (Math.max(ax, bx) < bounds.x0 - 3 || Math.min(ax, bx) > bounds.x1 + 3 || Math.max(az, bz) < bounds.z0 - 3 || Math.min(az, bz) > bounds.z1 + 3) continue;
+      const ya = hm.surface(ax, az) + carve + H, yb = hm.surface(bx, bz) + carve + H;
+      const c0 = Math.max(0, Math.ceil((Math.min(ax, bx) - hw - x0) / step)), c1 = Math.min(cols - 1, Math.floor((Math.max(ax, bx) + hw - x0) / step));
+      const r0 = Math.max(0, Math.ceil((Math.min(az, bz) - hw - z0) / step)), r1 = Math.min(rows - 1, Math.floor((Math.max(az, bz) + hw - z0) / step));
+      const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1e-9;
+      for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+        const px = x0 + c * step, pz = z0 + r * step;
+        const u = ((px - ax) * dx + (pz - az) * dz) / L2;
+        if (u < 0 || u > 1) continue;
+        if (Math.abs((px - ax) * dz - (pz - az) * dx) / Math.sqrt(L2) > hw) continue;
+        const k = r * cols + c, cm = Math.round((ya + (yb - ya) * u - Y[k]) * 100);
+        if (cm <= D[k] || cm > 400) continue;
+        D[k] = cm;
+        raised++;
+      }
+    }
+  }
+  return raised;
 }
 function driveHeight(hm, delta, x, z, near = null) {
   const d2 = delta?.delta2, d1 = delta?.delta ?? delta;
@@ -9565,8 +9620,8 @@ function bridgeDescriptors(roadsDoc, ground) {
     const line = centreLine(r, nodes);
     if (!line) continue;
     const ext = (p, q) => {
-      const dx = p[0] - q[0], dz = p[1] - q[1], L2 = Math.hypot(dx, dz) || 1;
-      return [p[0] + dx / L2 * EXT, p[1] + dz / L2 * EXT];
+      const dx = p[0] - q[0], dz = p[1] - q[1], L3 = Math.hypot(dx, dz) || 1;
+      return [p[0] + dx / L3 * EXT, p[1] + dz / L3 * EXT];
     };
     const pts = [ext(line[0], line[1]), ...line, ext(line[line.length - 1], line[line.length - 2])];
     const cum = [0];
@@ -9580,7 +9635,7 @@ function bridgeDescriptors(roadsDoc, ground) {
       z1 = Math.max(z1, z);
     }
     const { half, carr } = widths(r);
-    out.push({
+    const d = {
       id: r.id,
       name: r.meta?.name || "",
       tram: !!r.meta?.tram,
@@ -9592,11 +9647,23 @@ function bridgeDescriptors(roadsDoc, ground) {
       carr,
       span: [EXT, cum[cum.length - 1] - EXT],
       box: [x0 - half, z0 - half, x1 + half, z1 + half]
-    });
+    };
+    const L2 = cum[cum.length - 1] || 1, n = Math.max(1, Math.ceil(L2 / PROF));
+    d.prof = [];
+    for (let k = 0; k <= n; k++) {
+      const sk = L2 * k / n, line2 = h0 + (h1 - h0) * (sk / L2);
+      if (sk < d.span[0] || sk > d.span[1]) {
+        d.prof.push(line2);
+        continue;
+      }
+      const q = at(d, sk);
+      d.prof.push(Math.max(line2, ground(q.x, q.z)));
+    }
+    out.push(d);
   }
   return out;
 }
-function deckHeight(d, ground) {
+function deckHeight(d, ground, { drawn = false } = {}) {
   const L2 = d.cum[d.cum.length - 1] || 1;
   return (x, z) => {
     if (x < d.box[0] || z < d.box[1] || x > d.box[2] || z > d.box[3]) return null;
@@ -9611,17 +9678,24 @@ function deckHeight(d, ground) {
         s = d.cum[i - 1] + t * Math.sqrt(l2);
       }
     }
-    if (best > d.half) return null;
-    const deck = d.h0 + (d.h1 - d.h0) * (s / L2);
-    return Math.max(ground(x, z), deck);
+    if (best > d.half || drawn && (s < d.span[0] || s > d.span[1])) return null;
+    const deck = profY(d, s);
+    return deck > ground(x, z) ? deck : null;
   };
+}
+var PROF = 1;
+function profY(d, s) {
+  const L2 = d.cum[d.cum.length - 1] || 1;
+  if (!d.prof) return d.h0 + (d.h1 - d.h0) * (s / L2);
+  const n = d.prof.length - 1, f = Math.max(0, Math.min(n, s / L2 * n)), i = Math.min(n - 1, Math.floor(f));
+  return n < 1 ? d.prof[0] : d.prof[i] + (d.prof[i + 1] - d.prof[i]) * (f - i);
 }
 function at(d, s) {
   const L2 = d.cum[d.cum.length - 1] || 1;
   let i = 1;
   while (i < d.pts.length - 1 && d.cum[i] < s) i++;
   const [ax, az] = d.pts[i - 1], [bx, bz] = d.pts[i], seg = d.cum[i] - d.cum[i - 1] || 1, t = Math.max(0, Math.min(1, (s - d.cum[i - 1]) / seg));
-  return { x: ax + (bx - ax) * t, z: az + (bz - az) * t, tx: (bx - ax) / seg, tz: (bz - az) / seg, y: d.h0 + (d.h1 - d.h0) * (s / L2) };
+  return { x: ax + (bx - ax) * t, z: az + (bz - az) * t, tx: (bx - ax) / seg, tz: (bz - az) / seg, y: profY(d, s) };
 }
 function deckMesh(d) {
   const P = [], N = [], C = [];
@@ -9632,7 +9706,12 @@ function deckMesh(d) {
       C.push(c[0], c[1], c[2]);
     }
   };
-  const quad = (n, c, a, b, cc, dd) => push2(n, c, a, b, cc, a, cc, dd);
+  const quad = (n, c, a, b, cc, dd) => {
+    const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], wx = cc[0] - a[0], wy = cc[1] - a[1], wz = cc[2] - a[2];
+    const gx = uy * wz - uz * wy, gy = uz * wx - ux * wz, gz = ux * wy - uy * wx;
+    if (gx * n[0] + gy * n[1] + gz * n[2] < 0) push2(n, c, a, cc, b, a, dd, cc);
+    else push2(n, c, a, b, cc, a, cc, dd);
+  };
   const [s0, s1] = d.span, steps = Math.max(1, Math.ceil((s1 - s0) / SLAB.step));
   const S2 = [];
   for (let k = 0; k <= steps; k++) S2.push(at(d, s0 + (s1 - s0) * k / steps));
@@ -11799,6 +11878,7 @@ async function buildTileData(entry, base) {
   }));
   if (rail && !keep && entry.railFix) drive.counts.railSurface = await step("rail drive surface", () => railDriveSurface(rail.doc, hm, drive.ground, bounds, rail.heroes));
   if (fences) drive.counts.railFences = fences.rings.length;
+  if (!keep) drive.counts.tramPlatforms = tramPlatformSurface(feats, hm, drive.ground, bounds, CARVE);
   if (fences && railOut) railOut.fences = fenceMesh(fences.lines, hm.surface);
   drive.counts.hidden = nb - bDoc.buildings.length;
   const kit = entry.kit ? kitCollector({ exclude: new Set(entry.kitExclude || []), ground: (x, z) => hm.ground(x, z) }) : null;

@@ -8,7 +8,7 @@ import { Heightmap } from "./heightmap.js";
 import { analyseBuildings, hash01, wallStyle } from "./facadeGeom.js";
 import { landCoverData } from "./landcover.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
-import { buildDriveData } from "./drive/colliders.js";
+import { buildDriveData, tramPlatformSurface } from "./drive/colliders.js";
 import { buildRoadData, applyRoadOverrides, CARVE } from "./roadBuild.js";
 import { bridgeDecks, deckMesh, parapetRings } from "./streets/bridgeDecks.js";
 import { smoothPolyline } from "./track.js";
@@ -213,6 +213,9 @@ export async function buildTileData(entry, base) {
     walls: keep ? [] : [...(rail?.doc.platforms || []).map((p) => p.ring), ...osmBridges.decks.flatMap(parapetRings), ...(fences?.rings || [])] }));   // + the road bridges' parapets          // rail platforms: 0.76 m walls for the car   // drive mode (viewer/drive/)
   if (rail && !keep && entry.railFix) drive.counts.railSurface = await step("rail drive surface", () => railDriveSurface(rail.doc, hm, drive.ground, bounds, rail.heroes));
   if (fences) drive.counts.railFences = fences.rings.length;
+  // the tram platforms (drawn by viewer/tram.js 25 cm over the road) in the drive surface: the car rides up their kerb
+  // instead of sinking into the slab (docs/collisions/DRIVE_FIX.md); ?colfix=0 keeps the old surface
+  if (!keep) drive.counts.tramPlatforms = tramPlatformSurface(feats, hm, drive.ground, bounds, CARVE);
   if (fences && railOut) railOut.fences = fenceMesh(fences.lines, hm.surface);        // drawn: viewer/rail/railway.js
   drive.counts.hidden = nb - bDoc.buildings.length;     // solids a hero model replaces (it collides by its own LOD0)
   // ?kit=1: the façade kit's placement (viewer/facadeKit/placement.js) runs inside the analysis, here in the worker;

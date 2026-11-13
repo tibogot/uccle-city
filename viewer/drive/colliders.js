@@ -570,12 +570,76 @@ export function driveGround(hm, parts) {
       }
     }
   }
+  // CRACKS: a node no surface triangle covers, with surface on both sides of it (N and S, or E and W) and on at least 6
+  // of its 8 neighbours, at one level (spread < 0.5 m), is a seam between two road pieces the 1 m grid fell into, not
+  // a hole the car fits in: it takes their mean. Until 2026-11-13 the terrain under it (up to 3.3 m down under a raised
+  // road: Rue de la Brasserie, C9; Avenue des Hospices, E10) made a pit in the drive surface the car dropped into and
+  // could not climb out of (docs/collisions/DRIVE_FIX.md).
+  const fill = [];
+  for (let r = 1; r < rows - 1; r++) for (let k = 1; k < cols - 1; k++) {
+    const q = r * cols + k;
+    if (top[q] > -1e8) continue;
+    const has = (o) => top[q + o] > -1e8;
+    if (!((has(-1) && has(1)) || (has(-cols) && has(cols)))) continue;
+    let n = 0, s = 0, lo = Infinity, hi = -Infinity;
+    for (const o of [-cols - 1, -cols, -cols + 1, -1, 1, cols - 1, cols, cols + 1]) if (has(o)) { const y = top[q + o]; n++; s += y; lo = Math.min(lo, y); hi = Math.max(hi, y); }
+    if (n >= 6 && hi - lo < 0.5) fill.push(q, s / n);
+  }
+  for (let i = 0; i < fill.length; i += 2) top[fill[i]] = fill[i + 1];
   const delta = new Uint16Array(cols * rows), delta2 = new Uint16Array(cols * rows).fill(65535);
   for (let q = 0; q < delta.length; q++) {
     if (top[q] > -1e8) delta[q] = Math.max(0, Math.min(65534, Math.round((top[q] - Y[q]) * 100)));
     if (low[q] > -1e8 && top[q] - low[q] > 1.5) delta2[q] = Math.max(0, Math.min(65534, Math.round((low[q] - Y[q]) * 100)));
   }
   return { delta, delta2 };
+}
+
+/** The tram platforms viewer/tram.js draws (OSM `platform` lines tagged tram=yes or railway=platform): a slab W wide,
+ *  H over the road top (hm.surface + CARVE), per 2 m segment of the line. Shared here (pure data) so the tile worker can
+ *  put them in the drive surface. */
+export const TRAM_PLATFORM = { W: 2.6, H: 0.25, step: 2 };
+export const isTramPlatform = (l) => l.kind === "platform" && (l.tags?.tram === "yes" || l.tags?.railway === "platform");
+export function densifyLine(line, step) {
+  const out = [];
+  for (let k = 1; k < line.length; k++) {
+    const [ax, az] = line[k - 1], [bx, bz] = line[k];
+    const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / step));
+    for (let s = k === 1 ? 0 : 1; s <= n; s++) out.push([ax + (bx - ax) * s / n, az + (bz - az) * s / n]);
+  }
+  return out;
+}
+
+/**
+ * TRAM PLATFORMS IN THE DRIVE SURFACE (docs/collisions/DRIVE_FIX.md): the platforms are drawn 25 cm over the road
+ * (several OSM platforms lie over the outer half of a lane: Lancaster on Avenue Carsoel, H5), but the drive grid did
+ * not know them: the car sank 0.3-0.45 m into the slab. Now the platform's top is in the grid like a sidewalk's: the
+ * car rides up its 25 cm kerb (MAX_STEP 0.5) as it rides up any kerb. Never lowers the grid. carve = CARVE.
+ */
+export function tramPlatformSurface(feats, hm, ground, bounds, carve) {
+  const { x0, z0, cols, rows, step } = hm.h, Y = hm.y, D = ground.delta, { W, H } = TRAM_PLATFORM, hw = W / 2;
+  let raised = 0;
+  for (const l of feats.lines || []) {
+    if (!isTramPlatform(l)) continue;
+    const d = densifyLine(l.line, TRAM_PLATFORM.step);
+    for (let i = 1; i < d.length; i++) {
+      const [ax, az] = d[i - 1], [bx, bz] = d[i];
+      if (Math.max(ax, bx) < bounds.x0 - 3 || Math.min(ax, bx) > bounds.x1 + 3 || Math.max(az, bz) < bounds.z0 - 3 || Math.min(az, bz) > bounds.z1 + 3) continue;
+      const ya = hm.surface(ax, az) + carve + H, yb = hm.surface(bx, bz) + carve + H;
+      const c0 = Math.max(0, Math.ceil((Math.min(ax, bx) - hw - x0) / step)), c1 = Math.min(cols - 1, Math.floor((Math.max(ax, bx) + hw - x0) / step));
+      const r0 = Math.max(0, Math.ceil((Math.min(az, bz) - hw - z0) / step)), r1 = Math.min(rows - 1, Math.floor((Math.max(az, bz) + hw - z0) / step));
+      const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1e-9;
+      for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+        const px = x0 + c * step, pz = z0 + r * step;
+        const u = ((px - ax) * dx + (pz - az) * dz) / L2;
+        if (u < 0 || u > 1) continue;                                   // the drawn slab is one rectangle per segment
+        if (Math.abs((px - ax) * dz - (pz - az) * dx) / Math.sqrt(L2) > hw) continue;
+        const k = r * cols + c, cm = Math.round((ya + (yb - ya) * u - Y[k]) * 100);
+        if (cm <= D[k] || cm > 400) continue;
+        D[k] = cm; raised++;
+      }
+    }
+  }
+  return raised;
 }
 
 /** Height of the drivable surface at (x, z) (bilinear over the 1 m grid): hm = the tile's Heightmap, delta from

@@ -92,10 +92,14 @@ export class Driver {
       else if (k === "KeyG") this.debug.visible = !this.debug.visible; else if (k === "Escape") this.onExit?.();
     } });
     this.ground = (x, z) => {
-      const dk = this.world.decks?.length ? this.world.deckY(x, z) : null;          // a hero road bridge's deck
-      if (dk != null) return dk;
+      const dk = this.world.decks?.length ? this.world.deckY(x, z) : null;          // a road bridge's deck (hero or OSM)
+      const near = this.groundHint ?? (this.on && this.state ? this.state.y : null);
       const t = this.world.at(x, z);
-      return t.drive ? driveHeight(t.hm, t.drive.ground, x, z, this.groundHint ?? (this.on && this.state ? this.state.y : null)) : t.hm.surface(x, z) + 0.12;
+      const g = t.drive ? driveHeight(t.hm, t.drive.ground, x, z, near) : t.hm.surface(x, z) + 0.12;
+      // the deck, unless the car is on a surface under it (a street passing under the bridge): the layer nearest the
+      // car, as driveHeight does for the grid's two layers (before 2026-11-13 the deck always won)
+      if (dk == null) return g;
+      return Number.isFinite(near) && Math.abs(g - near) + 1 < Math.abs(dk - near) ? g : dk;
     };
     this.sets = (x, z, r) => {
       const out = this._sets ||= [];

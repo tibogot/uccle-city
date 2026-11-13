@@ -77,7 +77,7 @@ function solidMesh(o) {
 export function drawnSolids(scene, tile, carGround, walkGround, tiles = [tile]) {
   const b = tile.bounds, G = makeGrid(b);
   const car = new Uint8Array(G.nx * G.nz), walk = new Uint8Array(G.nx * G.nz);
-  const gC = groundLattice(b, carGround, true), gW = groundLattice(b, walkGround, true);
+  const gC = groundLattice(b, carGround, true), gW = groundLattice(b, walkGround, true), gC0 = groundLattice(b, carGround);
   let gmin = Infinity, gmax = -Infinity;
   for (let x = b.x0; x <= b.x1; x += 8) for (let z = b.z0; z <= b.z1; z += 8) { const g = gC(x, z); gmin = Math.min(gmin, g); gmax = Math.max(gmax, g); }
   gmin -= 3; gmax += 4;
@@ -85,6 +85,9 @@ export function drawnSolids(scene, tile, carGround, walkGround, tiles = [tile]) 
     const i = G.idx(x, z); if (i < 0) return;
     // a road wall under 0.55 m is a kerb the car rides up (the drive surface steps): solid for the car only above
     const c = y - gC(x, z); if (c >= (wallsOnly ? 0.55 : BAND.car[0]) && c <= BAND.car[1] && car[i] < 255) car[i] = src;
+    // a road's wall also counts from its UPPER side: a bridge deck's parapet stands over the deck, while the lowest
+    // ground within 1 m of its outer face is the street / cutting metres below (it was never in the band)
+    else if (wallsOnly) { const c0 = y - gC0(x, z); if (c0 >= 0.55 && c0 <= BAND.car[1]) car[i] = src; }
     const w = y - gW(x, z); if (w >= BAND.walk[0] && w <= BAND.walk[1]) walk[i] = src;
   };
   const S = 0.12;
@@ -378,9 +381,19 @@ export function driveRoutes({ scene, tile, driver, truth, G, maxRoads = Infinity
   const colIds = new Map();
   let hitStep = false;               // a collider held the car this frame (then an overlap with a drawn solid is contact, not a pass)
   const near = [], contact = { nx: 0, nz: 0, depth: 0, kind: 0 }, body = { hx: BODY.hx, hz: BODY.hz, cos: 1, sin: 0 };
-  const item = (kind, x, z, extra = {}) => { if (R.items.length < 400 && !R.items.some((q) => q.kind === kind && Math.hypot(q.x - x, q.z - z) < 3)) R.items.push({ kind, x: +x.toFixed(1), z: +z.toFixed(1), ...extra }); };
+  let road = null;
+  const item = (kind, x, z, extra = {}) => { if (R.items.length < 400 && !R.items.some((q) => q.kind === kind && Math.hypot(q.x - x, q.z - z) < 3)) R.items.push({ kind, x: +x.toFixed(1), z: +z.toFixed(1), road, ...extra }); };
   const b = tile.bounds, inT = (x, z) => x > b.x0 + 1 && x < b.x1 - 1 && z > b.z0 + 1 && z < b.z1 - 1;
+  // does the DRAWN surface step up there too (a bank, a raised road's edge, a wall of the terrain)? Then a ledge the car
+  // stops at is visible, not an invisible wall (the walk routes have the same rule). The drawn surface at (qx, qz) is
+  // taken as the layer nearest the drive surface there; "steps" = more than MAX_STEP over the car's own drawn surface.
+  const drawnStep = (qx, qz, cy) => {
+    const gq = ground(qx, qz), dq = top(qx, qz, gq), dc = top(st0.x, st0.z, cy);
+    return dq != null && dc != null && Math.abs(dq - gq) < 0.3 && dq - dc > 0.5;
+  };
+  const st0 = { x: 0, z: 0 };
   for (const L of lines) for (const dir of [1, -1]) {
+    road = `${L.id} ${L.type}`;
     const center = dir > 0 ? L.pts : L.pts.slice().reverse();
     const path = resample(offsetLine(center, L.lane), 2).filter(([x, z]) => inT(x, z));
     if (path.length < 4) continue;
@@ -450,14 +463,16 @@ export function driveRoutes({ scene, tile, driver, truth, G, maxRoads = Infinity
             touched.add(key); R.contacts++; R.ledges = (R.ledges || 0) + 1;
             // a STEP (the surface jumps: a road wall, an open road edge over the terrain) or a SLOPE (a steep bank: the
             // terrain is drawn, the car just cannot climb it): half way out the surface has risen less than a third
-            let dmin = Infinity, step = false;
+            let dmin = Infinity, step = false, drawn = false;
+            st0.x = st.x; st0.z = st.z;
             for (const [u, w] of [[1, 1], [1, -1], [-1, 1], [-1, -1], [0, 1], [0, -1], [1, 0], [-1, 0]]) {
               const qx = st.x + u * body.hx * body.cos + w * body.hz * body.sin, qz = st.z - u * body.hx * body.sin + w * body.hz * body.cos;
               const j = G.idx(qx, qz); if (j >= 0) dmin = Math.min(dmin, Dt[j]);
               const rise = ground(qx, qz) - st.y;
-              if (rise > 0.5 && ground((qx + st.x) / 2, (qz + st.z) / 2) - st.y < rise / 3) step = true;
+              if (rise > 0.5 && ground((qx + st.x) / 2, (qz + st.z) / 2) - st.y < rise / 3) { step = true; if (drawnStep(qx, qz, st.y)) drawn = true; }
             }
             if (!step) R.slopes = (R.slopes || 0) + 1;
+            else if (drawn) R.drawnSteps = (R.drawnSteps || 0) + 1;              // the drawn surface steps there too: visible
             else if (dmin > 0.6) { R.invisibleHits++; item("invisible hit", st.x, st.z, { collider: "ledge" }); }
           }
         }
@@ -502,7 +517,12 @@ export function driveRoutes({ scene, tile, driver, truth, G, maxRoads = Infinity
         for (const col of sets(c.x, c.z, 4)) gather(col, c.x, c.z, 4, isl);
         let byIsland = false;
         for (let k = 0; k < isl.length; k += 2) if (isl[k + 1] < isl[k].P && isl[k].pkind[isl[k + 1]] === KIND.island) byIsland = true;
-        if (dmin > 0.6 && !byIsland) { R.stuck++; item("stuck on nothing drawn", c.x, c.z); } else R.blocked = (R.blocked || 0) + 1;
+        // against a drawn bank / raised edge (the drawn surface within 0.6 m of the car rises more than MAX_STEP over the
+        // drawn surface under it, as on foot): visible, the autopilot's line ran into it
+        st0.x = c.x; st0.z = c.z;
+        let bank = false;
+        for (let u = -BODY.hx - 0.6; u <= BODY.hx + 0.6 && !bank; u += 0.3) for (let w = -BODY.hz - 0.6; w <= BODY.hz + 0.6; w += 0.3) { if (drawnStep(c.x + u * cs + w * sn, c.z - u * sn + w * cs, c.y)) { bank = true; break; } }
+        if (dmin > 0.6 && !byIsland && !bank) { R.stuck++; item("stuck on nothing drawn", c.x, c.z); } else R.blocked = (R.blocked || 0) + 1;
         break;
       }
       if (wp >= path.length - 1 && Math.hypot(path[wp][0] - c.x, path[wp][1] - c.z) < 3) break;

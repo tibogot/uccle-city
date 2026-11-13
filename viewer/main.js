@@ -306,7 +306,7 @@ const bridgeDeckRefs = new Map();     // road id -> { fn, n }
 function addBridgeDecks(decks, hm) {
   for (const d of decks || []) {
     let e = bridgeDeckRefs.get(d.id);
-    if (!e) { e = { fn: deckHeight(d, (x, z) => hm.ground(x, z)), n: 0 }; bridgeDeckRefs.set(d.id, e); worldRef?.decks.push(e.fn); }
+    if (!e) { e = { fn: deckHeight(d, (x, z) => hm.ground(x, z), { drawn: true }), n: 0 }; bridgeDeckRefs.set(d.id, e); worldRef?.decks.push(e.fn); }
     e.n++;
   }
 }
@@ -772,7 +772,18 @@ async function main() {
   // the world: the main tile now, its neighbours streamed in after the first frame (?ring=0|1|2)
   const world = {
     tiles: [],
-    at(x, z) { return this.tiles.find((t) => x >= t.bounds.x0 && x <= t.bounds.x1 && z >= t.bounds.z0 && z <= t.bounds.z1) || this.tiles[0]; },
+    // off every loaded tile (a neighbour still streaming in, the edge of the built map): the NEAREST tile, whose grid
+    // clamps to its edge there. Until 2026-11-13 it was tiles[0], any tile: its clamped edge could be 30 m off, a wall
+    // or a cliff for the car and the walker at a tile edge (docs/collisions/DRIVE_FIX.md)
+    at(x, z) {
+      let best = null, bd = Infinity;
+      for (const t of this.tiles) {
+        const b = t.bounds, d = Math.max(b.x0 - x, x - b.x1, 0) + Math.max(b.z0 - z, z - b.z1, 0);
+        if (d === 0) return t;
+        if (d < bd) { bd = d; best = t; }
+      }
+      return best || this.tiles[0];
+    },
     surface(x, z) { return this.at(x, z).hm.surface(x, z); },
     ground(x, z) { return this.at(x, z).hm.ground(x, z); },
     /** hero road-bridge decks (viewer/rail/bridgeModel.js deckHeightFn): (x, z) -> m TAW or null off them */
