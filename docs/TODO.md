@@ -48,6 +48,11 @@ OSM kind (park / garden / pitch); no WebP fallback; grass-blade shimmer in the n
 orthophoto colour (lighting.js groundAlbedo #686c67, `?skyground=old`): grey-green haze instead of brown; still a flat plane; (2) later, with the Flemish DTM job: a coarse
 "horizon ring" landscape (~20 km, 25-50 m heights + a low-res colour image) around the city. Sky + clouds rework later.
 
+**BUG (owner, 2026-11-13, live after the push): in drive mode the CAR FALLS THROUGH THE BRIDGE at the Saint-Job train
+station instead of driving on it.** Suspects: the drive surface on a deck (collisions audit: two-layer drive surface;
+roads round 5: roadDeckPins / terrain weld; trains: the deck height function `world.deckY`), or the tram-only bridge
+deck over the L26 cutting (fixes1) being driven onto. Reproduce there, check `viewer.collisionTest` on that tile.
+
 **Running (agents):** GRASS LAB (`claude/grass`, port 8849, started 2026-11-13 ~07:15): our own grass (Revo / engine
 Hybrid as references), `labs/grass-lab.html` with a front-garden street, Wolvendael lawn, a roadside verge; types from
 land cover, clean edges, shadows, night, seasons, push field, no popping; <= 1 ms at street level (preflight); city hook
