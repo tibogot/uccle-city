@@ -78,7 +78,7 @@ def poster_case(P, PP, cx, cy, z0, width, height, depth):
     and the poster recessed 16 mm (behind glass: the poster slot is glossy). Faces look along +-X. Returns the poster
     window (w, h) and centre z."""
     core = depth - 0.04
-    span(P, FRAME, cx - core / 2, cx + core / 2, cy - width / 2, cy + width / 2, z0, z0 + height, 0.012, Zv, 3)
+    span(P, FRAME, cx - core / 2, cx + core / 2, cy - width / 2, cy + width / 2, z0, z0 + height, 0.012, Zv)
     fb = 0.085
     ww, wh = width - 2 * fb, height - 2 * fb                   # the window in the frame
     zc = z0 + height / 2
@@ -92,10 +92,11 @@ def poster_case(P, PP, cx, cy, z0, width, height, depth):
         span(P, FRAME, xa, xb, cy - width / 2 + fb + 0.001, cy + width / 2 - fb - 0.001, z0, z0 + fb, 0.006, Y)
         # a thin black gasket inside the frame window (where the glass sits)
         g = 0.012
-        span(P, DARK, xb - s * 0.006 - 0.003, xb - s * 0.006 + 0.003, cy - ww / 2, cy - ww / 2 + g, zc - wh / 2, zc + wh / 2, 0.0, Zv)
-        span(P, DARK, xb - s * 0.006 - 0.003, xb - s * 0.006 + 0.003, cy + ww / 2 - g, cy + ww / 2, zc - wh / 2, zc + wh / 2, 0.0, Zv)
-        span(P, DARK, xb - s * 0.006 - 0.003, xb - s * 0.006 + 0.003, cy - ww / 2 + g, cy + ww / 2 - g, zc + wh / 2 - g, zc + wh / 2, 0.0, Y)
-        span(P, DARK, xb - s * 0.006 - 0.003, xb - s * 0.006 + 0.003, cy - ww / 2 + g, cy + ww / 2 - g, zc - wh / 2, zc - wh / 2 + g, 0.0, Y)
+        gx = x0 + s * 0.011                                     # the gasket: 11 mm out from the core, 6 mm thick (inside the bars' 20 mm)
+        span(P, DARK, gx - 0.003, gx + 0.003, cy - ww / 2, cy - ww / 2 + g, zc - wh / 2, zc + wh / 2, 0.0, Zv)
+        span(P, DARK, gx - 0.003, gx + 0.003, cy + ww / 2 - g, cy + ww / 2, zc - wh / 2, zc + wh / 2, 0.0, Zv)
+        span(P, DARK, gx - 0.003, gx + 0.003, cy - ww / 2 + g, cy + ww / 2 - g, zc + wh / 2 - g, zc + wh / 2, 0.0, Y)
+        span(P, DARK, gx - 0.003, gx + 0.003, cy - ww / 2 + g, cy + ww / 2 - g, zc - wh / 2, zc - wh / 2 + g, 0.0, Y)
         # the light margin (the lit white back of the case round the poster), 3 mm off the core face
         lm = 0.03
         bm = bmesh.new()
@@ -125,7 +126,9 @@ def glass_pane(G, x0, x1, y0, y1, z0, z1):
 
 
 def finish(P, posters, glass, name):
-    o = P.to_object()
+    # every bevel step (2-4 segments: 22-45 deg) its own flat facet: flat faces stay flat and the long bevel strips carry no
+    # diverging corner normals (mesh_audit streak / bentflat); the 20-24 sided tubes (15-18 deg) stay smooth
+    o = P.to_object(smooth_angle=20)
     extra = []
     if posters:
         bm = bmesh.new()
@@ -168,10 +171,10 @@ def shelter():
     pw = 0.08
     # posts: three along the back, one at the open end's front corner (80 x 80 mm, 8 mm bevel), into the ground
     for x in (-1.66, 0.1, 1.86):
-        span(P, FRAME, x - pw / 2, x + pw / 2, YB - pw / 2, YB + pw / 2, -SINK, ROOF - 0.12, 0.008, Zv, 3)
-    span(P, FRAME, 1.86 - pw / 2, 1.86 + pw / 2, YF - pw / 2, YF + pw / 2, -SINK, ROOF - 0.12, 0.008, Zv, 3)
+        span(P, FRAME, x - pw / 2, x + pw / 2, YB - pw / 2, YB + pw / 2, -SINK, ROOF - 0.12, 0.008, Zv)
+    span(P, FRAME, 1.86 - pw / 2, 1.86 + pw / 2, YF - pw / 2, YF + pw / 2, -SINK, ROOF - 0.12, 0.008, Zv)
     # roof: a 120 mm slab with a 10 mm bevel, overhanging the front; a dark drip groove under its edge; the LED strip
-    span(P, FRAME, -L / 2 - 0.05, L / 2 + 0.05, -0.80, YB + 0.13, ROOF - 0.12, ROOF, 0.012, X, 3)
+    span(P, FRAME, -L / 2 - 0.05, L / 2 + 0.05, -0.80, YB + 0.13, ROOF - 0.12, ROOF, 0.012, X)
     span(P, DARK, -L / 2 + 0.03, L / 2 - 0.03, -0.74, -0.71, ROOF - 0.128, ROOF - 0.119, 0.0, X)
     span(P, LIGHT, -1.45, 1.75, 0.05, 0.13, ROOF - 0.126, ROOF - 0.119, 0.0, X)
     # back wall: two glass panes in thin frames (top / bottom rails 50 mm, 4 mm bevel) between the posts
@@ -180,8 +183,8 @@ def shelter():
         span(P, FRAME, xa + 0.001, xb - 0.001, YB - 0.025, YB + 0.025, ROOF - 0.20, ROOF - 0.15, 0.004, X)
         glass_pane(G, xa + 0.002, xb - 0.002, YB - 0.005, YB + 0.005, 0.152, ROOF - 0.202)
         # a black gasket line where the glass meets the rails
-        span(P, DARK, xa + 0.002, xb - 0.002, YB - 0.008, YB + 0.008, 0.150, 0.158, 0.0, X)
-        span(P, DARK, xa + 0.002, xb - 0.002, YB - 0.008, YB + 0.008, ROOF - 0.208, ROOF - 0.200, 0.0, X)
+        span(P, DARK, xa + 0.002, xb - 0.002, YB - 0.012, YB + 0.012, 0.150, 0.158, 0.0, X)
+        span(P, DARK, xa + 0.002, xb - 0.002, YB - 0.012, YB + 0.012, ROOF - 0.208, ROOF - 0.200, 0.0, X)
     # the open end's windbreak: a half-depth pane from the back post toward the front, framed top and bottom
     ye = -0.05
     span(P, FRAME, 1.86 - 0.025, 1.86 + 0.025, ye, YB - pw / 2 - 0.001, 0.10, 0.15, 0.004, Y)
@@ -219,7 +222,7 @@ def pole():
     P.add_bm(bm_cyl(0.05, 0.05, 20, 0.008), POLE, Zv, M((0, 0, 0.0)))                  # ground collar
     fx, fy, fz = FLAG
     z0 = POLE_TOP
-    span(P, POLE, -fx / 2, fx / 2, -fy / 2, fy / 2, z0, z0 + fz, 0.012, Zv, 3)          # the flag body
+    span(P, POLE, -fx / 2, fx / 2, -fy / 2, fy / 2, z0, z0 + fz, 0.012, Zv)          # the flag body
     for s in (1, -1):
         xa, xb = (fx / 2 - 0.001, fx / 2 + 0.003) if s > 0 else (-fx / 2 - 0.003, -fx / 2 + 0.001)
         span(P, RED, xa, xb, -fy / 2 + 0.025, fy / 2 - 0.025, z0 + fz - 0.205, z0 + fz - 0.025, 0.002, Y)    # header band
@@ -233,7 +236,7 @@ def pole():
     for z in (cz0 + 0.08, cz1 - 0.08):
         P.add_bm(bm_cyl(r + 0.006, 0.05, 20, 0.004), FRAME, Zv, M((0, 0, z - 0.025)))
         span(P, FRAME, -0.02, 0.02, r, r + 0.03, z - 0.02, z + 0.02, 0.004, Y)
-    span(P, POLE, -0.20, 0.20, r + 0.03, r + 0.10, cz0, cz1, 0.01, Zv, 3)
+    span(P, POLE, -0.20, 0.20, r + 0.03, r + 0.10, cz0, cz1, 0.01, Zv)
     span(P, DARK, -0.17, 0.17, r + 0.099, r + 0.102, cz0 + 0.03, cz1 - 0.03, 0.0, Zv)
     span(P, WHITE, -0.155, 0.155, r + 0.101, r + 0.104, cz0 + 0.045, cz1 - 0.045, 0.0, Zv)            # the printed timetable
     glass_pane(G, -0.17, 0.17, r + 0.106, r + 0.110, cz0 + 0.03, cz1 - 0.03)
@@ -246,10 +249,10 @@ def adpanel():
     w, h, d, z0 = 1.40, 2.16, 0.17, 0.42
     poster_case(P, PP, 0, 0, z0, w, h, d)
     # crowned cap: a slab a little wider than the case, its top edges rounded
-    span(P, FRAME, -d / 2 - 0.015, d / 2 + 0.015, -w / 2 - 0.015, w / 2 + 0.015, z0 + h, z0 + h + 0.06, 0.022, Y, 4)
+    span(P, FRAME, -d / 2 - 0.015, d / 2 + 0.015, -w / 2 - 0.015, w / 2 + 0.015, z0 + h, z0 + h + 0.06, 0.022, Y)
     # foot pillar (into the ground) and a cover collar where it meets the case
-    span(P, FRAME, -0.06, 0.06, -0.20, 0.20, -SINK, z0, 0.01, Zv, 3)
-    span(P, FRAME, -d / 2, d / 2, -0.30, 0.30, z0 - 0.05, z0, 0.01, Y, 3)
+    span(P, FRAME, -0.06, 0.06, -0.20, 0.20, -SINK, z0 - 0.025, 0.01, Zv)
+    span(P, FRAME, -d / 2, d / 2, -0.30, 0.30, z0 - 0.05, z0, 0.01, Y)
     return finish(P, PP, G, "adpanel")
 
 
@@ -280,6 +283,7 @@ json.dump(info, open(os.path.join(OUT, "stibstops.json"), "w"), indent=1)
 
 if PREVIEWS:
     if scn.world is None: scn.world = bpy.data.worlds.new("World")
+    scn.render.image_settings.color_mode = "RGB"                    # (the AO bake left it on BW)
     so, cam = K.preview_setup(ao_img, sun_elev=34, sun_az=210)
     for m, col in ((GLASS, (0.9, 0.95, 0.96)), (POSTER, (0.75, 0.32, 0.12))):      # (no lightmap on these: plain preview shaders)
         nt = m.node_tree; b = nt.nodes["Principled BSDF"]

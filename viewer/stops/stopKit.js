@@ -238,7 +238,7 @@ function materials(aoTex, posterTex) {
     poster.colorNode = t.mul(0.85);
     poster.roughnessNode = float(0.12);
     poster.metalnessNode = float(0);
-    poster.emissiveNode = t.mul(mix(float(0.22), float(1.9), night));
+    poster.emissiveNode = t.mul(mix(float(0.22), float(0.75), night));      // (1.9 blew out under the city's night exposure)
     poster.maskNode = lodKeep(3, attribute("iBand", "vec4"));
     poster.name = "stops-poster";
     poster.userData.shared = true; poster.userData.noFade = true;
