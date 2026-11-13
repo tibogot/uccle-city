@@ -25,7 +25,7 @@ const DATA = new URL("../../data/tiles/", import.meta.url);
 const KIND = (m) => {
   const n = m.name || "", parent = m.parent?.name || "";
   if (/bollard/i.test(n)) return "post";
-  if (n === "furniture-shelter" || (parent === "tram" && !n)) return "mesh";
+  if (n === "furniture-shelter" || n === "furniture-adpanel" || (parent === "tram" && !n)) return "mesh";   // (stops kit: viewer/stops/cityStops.js stand-ins)
   if (n === "parked-cars") return "prop";
   if (n === "tram-poles" || n === "rail-masts") return "pole";
   if (/^furniture-(bench|stopPole|signal|bikes)$/.test(n)) return "post";

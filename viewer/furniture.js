@@ -34,7 +34,9 @@ function part(g, col, em, x, y, z, rx = 0, ry = 0) {
 const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 const cyl = (r, h, s = 8) => new THREE.CylinderGeometry(r, r, h, s);
 
-// local frame: +x along the street, -z toward the road, origin on the sidewalk at ground level
+// local frame: +x along the street, -z toward the road, origin on the sidewalk at ground level.
+// stopPole / shelter: the PLACEHOLDERS, drawn only with ?stops=old (and ?streetlife=0); the STIB stops kit
+// (viewer/stops/, tools/blender/stibStops.py) replaces them by default (main.js filters the bus stops out of here)
 export const MODELS = {
   stopPole: () => mergeGeometries([
     part(cyl(0.045, 3.0), C.steel, 0, 0, 1.5, 0),
