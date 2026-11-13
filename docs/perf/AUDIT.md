@@ -226,3 +226,21 @@ NOT YET A MEASURED WIN: with two agents sharing the machine, the time to nine fu
 the first tile waits ~30 s for the startup shader warm-up (293 pipelines) whatever the worker does, so the worker
 build is not today's bottleneck. Re-measure on a quiet machine (preflight GREEN) before turning it on by default;
 the next startup lever is the warm-up itself.
+
+## Step 7: tonight's features measured on a GREEN machine (2026-11-13, ~20:50; no agent running)
+
+`tools/perf/preflight.ps1` GREEN (GPU 12 % at rest, 6.1 GB free, no power / thermal cap; my tab parked during the
+check); page check at the reference URL YELLOW only for "no baseline yet" (bootMs 16.6 s, GPU 13.1 ms p50, 399 draws).
+All by `debug/gpuAB.js alternate`, 6 rounds, the two variants switched live in one page.
+
+| what | view | off / before | on / after | difference |
+|---|---|---|---|---|
+| one-sided buildings (FrontSide + shadowSide FrontSide) vs DoubleSide | reference overview | 13.11 ms | 12.84 ms | **-0.26 ms** (-2 %; -0.53 .. +0.26) |
+| horizon ring `?horizon=1` (+ far 20 km) | reference overview | 13.71 | 13.75 | +0.04 (noise) |
+| horizon ring | 500 m up, looking south (the falcon view) | 8.45 (steady rounds) | 9.76 | **+1.3 ms**: over the 0.2 ms target: stays opt-in; next: coarser mesh / cheaper material |
+| city grass `?grass=1`, standing in the Kauwberg meadow (96k blades) | render timestamps | 12.73 .. 13.35 | 12.57 .. 12.67 | **~0** (on is not slower: the blades hide ground pixels) |
+| same, compute timestamps | | 1.16 .. 1.34 | 1.19 .. 1.39 | **~0**: the 1.3 ms of compute a frame is NOT the grass |
+
+Lead found: **~1.3 ms of GPU compute every frame** in the city with grass off (renderer.backend.timestampQueryPool
+.compute): find which system dispatches it (pigeons? water? wind? flags?) and whether it can skip idle frames.
+The lab's +1.25 ms for a meadow (measured RED) is not confirmed in the city.
