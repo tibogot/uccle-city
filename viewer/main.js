@@ -465,6 +465,7 @@ function tileData(entry, lite = false) {
   entry = { ...entry, hide: HIDE_BU_IDS, ponds: PONDS, surface: ROAD_SURFACES, pits: params.get("pits") !== "0",   // ?pits=0: no tree pits (A/B)
     kit: cityKit.on && !lite, kitExclude: cityKit.exclude,                                           // the façade kit (viewer/facadeKit/), ?kit=0 off
     streetlife: cityStreetLife.on && !lite,                                                          // the street life's shopfronts (viewer/streetlife/), ?streetlife=0 off
+    grass: cityGrass.on && !lite,                                                                    // ?grass=1: the grass types raster, built in the worker
     rail: TRAINS, driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
     paint: PAINT_PARAM };                                                                            // ?paint=v1: the road engine's own markings (A/B)
   const key = `${entry.name}|${lite ? 1 : 0}`;
@@ -597,7 +598,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   say(`façades: ${B.stats.faces} wall faces, ${B.stats.party} party walls, ${B.stats.street} facing a street; details: ${B.stats.cornices} cornices, ${B.stats.buttresses} buttresses, ${B.stats.ridges} ridge/hip caps, ${B.stats.chimneys} chimneys, ${B.stats.eaves || 0} eaves, ${B.stats.shops} shopfronts (OSM shops)`);
   own.buildings.add(...B.meshes);
   // ?grass=1: our grass (viewer/grass/) reads this tile's terrain, street surfaces and buildings (docs/GRASS.md)
-  if (cityGrass.on) { await cityGrass.addTile(entry, DATA, { terrain: terr, roads: R.meshes, buildings: B.meshes, feats, bounds, cover: terr.userData.textures[0] }); await frame("grass field"); }
+  if (cityGrass.on) { await cityGrass.addTile(entry, DATA, { terrain: terr, roads: R.meshes, buildings: B.meshes, feats, bounds, cover: terr.userData.textures[0], types: d.grassTypes }); await frame("grass field"); }
   await frame("buildings");
   // rails 1.2 cm above the road; with ?roads=surface 2 cm above H (the engine's markings layer sits up to 1.8 cm above it)
   // ?roads=surface: lamps, parked cars, the walker, the trees and the bollards on the measured street (viewer/streetFit.js)
@@ -985,6 +986,7 @@ async function main() {
   // drive mode (viewer/drive/): the hatchback on a street near Saint-Job church (the fly start), ?at=x,z elsewhere
   const driver = new Driver(camera, renderer.domElement, scene, world);
   window.__driver = driver;
+  cityGrass.pushers = { driver, walker };          // ?grass=1: the car's wheels and the walker lay the grass down
   // every landmark / bridge collides by its own LOD0 (car blocks + character triangles), built once its tiles are in
   // (viewer/heroColliders.js; replaces the hand-made Saint-Job steps and road-bridge parapet rings)
   if (COLFIX) window.__heroCols = (await import("./heroColliders.js")).createHeroColliders({ scene, world, manifest, driver, log });

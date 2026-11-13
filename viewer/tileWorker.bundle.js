@@ -648,8 +648,8 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       if (!faces.has(k)) faces.set(k, { tris: [], nx: nx / h, nz: nz / h });
       faces.get(k).tris.push({ p, n: tri.n, src: tri });
     }
-    const fl = [...faces.values()];
-    for (const f of fl) {
+    const fl2 = [...faces.values()];
+    for (const f of fl2) {
       const tx = -f.nz, tz = f.nx;
       let u0 = Infinity, u1 = -Infinity, dd = 0, k = 0;
       for (const { p } of f.tris) for (const q of p) {
@@ -663,11 +663,11 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       f.u1 = u1;
       f.d = dd / k;
     }
-    for (let i = 0; i < fl.length; i++) {
-      const a = fl[i];
+    for (let i = 0; i < fl2.length; i++) {
+      const a = fl2[i];
       if (a.dead) continue;
-      for (let j = i + 1; j < fl.length; j++) {
-        const c = fl[j];
+      for (let j = i + 1; j < fl2.length; j++) {
+        const c = fl2[j];
         if (c.dead) continue;
         if (a.nx * c.nx + a.nz * c.nz < 0.9985 || Math.abs(a.d - c.d) > 0.3) continue;
         if (c.u0 > a.u1 + 0.15 || a.u0 > c.u1 + 0.15) continue;
@@ -679,7 +679,7 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       }
     }
     const ownRing = b.footprint[0];
-    const live = fl.filter((q) => !q.dead);
+    const live = fl2.filter((q) => !q.dead);
     for (const f of live) {
       {
         let mx = 0, mz = 0, k = 0;
@@ -3116,11 +3116,11 @@ function buildRoundaboutGeometry(node, arms) {
     const j = (i + 1) % n;
     const a = arms[i], b = arms[j];
     const gap = n === 1 ? Math.PI * 2 : wrap2Pi(b.th - a.th);
-    const chain = (rad, fr, fl, tR, tL, isCurb) => {
+    const chain = (rad, fr, fl2, tR, tL, isCurb) => {
       const pts = [armPoint(a, a.trim, tR)];
       if (fr) pts.push(...fr.pts);
-      if (fr && fl) {
-        let sweep = wrap2Pi(fl.angle - fr.angle);
+      if (fr && fl2) {
+        let sweep = wrap2Pi(fl2.angle - fr.angle);
         if (sweep > gap + 0.35) {
           if (isCurb && !node.issues.some((q) => q.code === "ring-crowded")) {
             node.issues.push({ level: "error", code: "ring-crowded", msg: "Roundabout entries overlap \u2014 spread the roads or enlarge the ring", x: node.x, z: node.z, nodeId: node.id });
@@ -3128,7 +3128,7 @@ function buildRoundaboutGeometry(node, arms) {
           sweep = 0;
         }
         pts.push(...arcPoints(node.x, node.z, rad, fr.angle, fr.angle + sweep, 0.08));
-        pts.push(...fl.pts.slice().reverse());
+        pts.push(...fl2.pts.slice().reverse());
       }
       pts.push(armPoint(b, b.trim, tL));
       return pts;
@@ -5745,14 +5745,14 @@ function sectionLines(rr, lay, s, style) {
     out[side] = lines;
   }
   const cKind = rr.stack.center.kind;
-  const fl = first.left, fr = first.right;
-  const aL = fl != null ? lay.left[fl] : null, aR = fr != null ? lay.right[fr] : null;
+  const fl2 = first.left, fr = first.right;
+  const aL = fl2 != null ? lay.left[fl2] : null, aR = fr != null ? lay.right[fr] : null;
   if (lay.cw < 0.3) {
     const code = codeOf(centerKind(aL, aR, cKind));
     const t = ((aL ? aL.tIn : lay.cw / 2) + (aR ? aR.tIn : -lay.cw / 2)) / 2;
     if (aL) {
-      out.left[fl].inT = t;
-      out.left[fl].inCode = code;
+      out.left[fl2].inT = t;
+      out.left[fl2].inCode = code;
     }
     if (aR) {
       out.right[fr].inT = t;
@@ -5764,8 +5764,8 @@ function sectionLines(rr, lay, s, style) {
     const code = codeOf(kind);
     const tl = aL ? aL.tIn : lay.cw / 2, tr = aR ? aR.tIn : -lay.cw / 2;
     if (aL) {
-      out.left[fl].inT = tl;
-      out.left[fl].inCode = code;
+      out.left[fl2].inT = tl;
+      out.left[fl2].inCode = code;
     }
     if (aR) {
       out.right[fr].inT = tr;
@@ -6158,7 +6158,7 @@ function buildRoad(rr, parts, o, ctx) {
   for (const side of ["left", "right"]) {
     const sg = side === "left" ? 1 : -1;
     const lanes = rr.stack.sides[side];
-    const kindOf = (b) => {
+    const kindOf2 = (b) => {
       if (b < 0) return raisedCenter ? "raised" : "asphalt";
       if (b >= lanes.length) return "none";
       return LANE_TYPES[lanes[b].type]?.carriage ? "asphalt" : "raised";
@@ -6167,7 +6167,7 @@ function buildRoad(rr, parts, o, ctx) {
       const L2 = (i) => lays[i][side][b];
       const tIn = (i) => L2(i).tIn, tOut = (i) => L2(i).tOut;
       const empty = (k) => L2(k).w < 0.01 && L2(k + 1).w < 0.01;
-      if (kindOf(b) === "asphalt") {
+      if (kindOf2(b) === "asphalt") {
         const drive = !!LANE_TYPES[lane.type]?.drive;
         const R = (k) => rows[k].lay[side][b];
         asphaltStrip(
@@ -6178,15 +6178,15 @@ function buildRoad(rr, parts, o, ctx) {
           lane.type === "parking",
           (k) => R(k).w
         );
-        if (kindOf(b + 1) === "none") {
+        if (kindOf2(b + 1) === "none") {
           edgeWall(parts.asphalt, tOut, sg, -o.skirt, 0, 0, { ...deck, aLateral: 0 }, empty);
         }
         return;
       }
       const H = o.curbHeight;
       const curb = { aKind: CONCRETE_KIND.curb };
-      const curbIn = kindOf(b - 1) === "asphalt";
-      const curbOut = kindOf(b + 1) === "asphalt";
+      const curbIn = kindOf2(b - 1) === "asphalt";
+      const curbOut = kindOf2(b + 1) === "asphalt";
       let topIn = tIn, topOut = tOut;
       if (curbIn) {
         edgeWall(parts.concrete, tIn, -sg, 0, H, o.bevel, curb, empty);
@@ -6195,7 +6195,7 @@ function buildRoad(rr, parts, o, ctx) {
       if (curbOut) {
         edgeWall(parts.concrete, tOut, sg, 0, H, o.bevel, curb, empty);
         topOut = (i) => tOut(i) - sg * o.bevel;
-      } else if (kindOf(b + 1) === "none") {
+      } else if (kindOf2(b + 1) === "none") {
         edgeWall(parts.concrete, tOut, sg, -o.skirt, H, 0, { aKind: CONCRETE_KIND.slab }, empty);
       }
       if (lane.type === "verge") {
@@ -8381,8 +8381,8 @@ function afterNetworkV2(net, ctx, surf) {
   inv.stats.crossingsPhotoDropped = 0;
   inv.stats.crossingsOsmNear = 0;
   inv.stats.crossingsOverlap = 0;
-  const ORDER = { bm: 0, topo: 1, osm: 2 };
-  const xlist = [...markings?.crossings || []].sort((a, b) => (ORDER[a.src] ?? 3) - (ORDER[b.src] ?? 3));
+  const ORDER2 = { bm: 0, topo: 1, osm: 2 };
+  const xlist = [...markings?.crossings || []].sort((a, b) => (ORDER2[a.src] ?? 3) - (ORDER2[b.src] ?? 3));
   for (const c of xlist) {
     if (!near(c.c[0], c.c[1])) continue;
     if (photoNo(c)) {
@@ -8732,7 +8732,7 @@ function paintMeshV2(items, prep, bounds) {
       }
   });
   const tile = [[bounds.x0, bounds.z0], [bounds.x1, bounds.z0], [bounds.x1, bounds.z1], [bounds.x0, bounds.z1]];
-  const KIND4 = { solid: 0, zebra: 1, teeth: 2 };
+  const KIND5 = { solid: 0, zebra: 1, teeth: 2 };
   for (const it of items) {
     let poly = clipConvex(it.poly, tile);
     if (poly.length < 3) continue;
@@ -8744,7 +8744,7 @@ function paintMeshV2(items, prep, bounds) {
       F = { o: p0, a: [ax / La, az / La], b: [bx / Lb, bz / Lb], u0: 0, u1: La, v0: 0, vLen: Lb };
     }
     const uvOf = (p) => [(p[0] - F.o[0]) * F.a[0] + (p[1] - F.o[1]) * F.a[1] - F.u0, (p[0] - F.o[0]) * F.b[0] + (p[1] - F.o[1]) * F.b[1] - F.v0];
-    const kind = KIND4[it.kind] ?? 0;
+    const kind = KIND5[it.kind] ?? 0;
     const ext = [F.u1 - F.u0, F.vLen ?? (2 * F.n - 1) * STRIPE];
     for (let gi = Math.floor(Math.min(...xs) / 4); gi <= Math.floor(Math.max(...xs) / 4); gi++)
       for (let gj = Math.floor(Math.min(...zs) / 4); gj <= Math.floor(Math.max(...zs) / 4); gj++) {
@@ -9724,9 +9724,9 @@ function faceOpenings(f) {
   const ww = Math.min(1.2, bw * 0.52);
   const rq = Math.floor(f.rnd * 4096 + 0.5) / 4096;
   const doorBay = Math.floor(rq * nb);
-  for (let fl = 0; ; fl++) {
-    const up = fl > 0, sh = up ? S : G;
-    const y0 = up ? G + (fl - 1) * S : 0;
+  for (let fl2 = 0; ; fl2++) {
+    const up = fl2 > 0, sh = up ? S : G;
+    const y0 = up ? G + (fl2 - 1) * S : 0;
     const ya = up ? 0.29 : 0.27, yb = up ? 0.79 : 0.77;
     const winTop = y0 + yb * sh;
     if (y0 > f.eaves) break;
@@ -9744,7 +9744,7 @@ function faceOpenings(f) {
       const o = {
         kind: door ? "door" : "window",
         bay: k,
-        floor: fl,
+        floor: fl2,
         u0: uc - half,
         u1: uc + half,
         h0,
@@ -11293,8 +11293,155 @@ function fitToSurface(paths, G2, st) {
   });
 }
 
+// viewer/grass/grassTypes.js
+var VERGE_W = 1.7;
+var KIND4 = {
+  garden: [1, 0.04, 0, 0],
+  park: [1, 0.28, 0.05, 0.04],
+  grass: [1, 0.42, 0.25, 0.08],
+  // landuse=grass in Uccle: public greens, roundabouts, embankments
+  village_green: [1, 0.3, 0.05, 0.15],
+  cemetery: [0.85, 0.14, 0.1, 0],
+  scrub: [0.6, 0.8, 0.4, 0.05],
+  dog_park: [0.8, 0.2, 0.3, 0],
+  orchard: [1, 0.7, 0.2, 0.5],
+  meadow: [1, 1, 0.15, 1],
+  grassland: [1, 0.95, 0.25, 0.8],
+  heath: [0.8, 0.75, 0.55, 0.3],
+  pitchGrass: [1, 0, 0, 0],
+  none: [0, 0, 0, 0]
+};
+var ORDER = ["cemetery", "garden", "park", "village_green", "grass", "dog_park", "scrub", "orchard", "heath", "grassland", "meadow", "pitchGrass", "none"];
+var GRASS_SPORTS = /^(soccer|football|rugby|rugby_union|gaelic_games|cricket|)$/;
+function kindOf(a, kinds) {
+  const k = kinds?.[a.id];
+  if (k) {
+    if (k.startsWith("pitch:")) {
+      const [, surf, sport] = k.split(":");
+      if (surf === "grass") return "pitchGrass";
+      if (surf === "unknown" && GRASS_SPORTS.test(sport)) return "pitchGrass";
+      return "none";
+    }
+    if (KIND4[k]) return k;
+  }
+  if (a.kind === "pitch") return "none";
+  if (a.kind === "playground") return null;
+  return KIND4[a.kind] ? a.kind : null;
+}
+var rgb = (v) => `rgb(${Math.round(v[0] * 255)},${Math.round(v[1] * 255)},${Math.round(v[2] * 255)})`;
+var fl = (v) => `rgb(${Math.round(v[3] * 255)},0,0)`;
+function grassTypeData(feats, bounds, { kinds = null, surfaces = null } = {}) {
+  const W = Math.round(bounds.x1 - bounds.x0), H = Math.round(bounds.z1 - bounds.z0);
+  const cv = new OffscreenCanvas(W, H), g1 = cv.getContext("2d", { willReadFrequently: true });
+  const cv2 = new OffscreenCanvas(W, H), g2 = cv2.getContext("2d", { willReadFrequently: true });
+  const px = (x) => x - bounds.x0, pz = (z) => z - bounds.z0;
+  const g = {
+    set fillStyle(v) {
+      g1.fillStyle = rgb(v);
+      g2.fillStyle = fl(v);
+    },
+    set strokeStyle(v) {
+      g1.strokeStyle = rgb(v);
+      g2.strokeStyle = fl(v);
+    },
+    set lineWidth(v) {
+      g1.lineWidth = g2.lineWidth = v;
+    },
+    set lineJoin(v) {
+      g1.lineJoin = g2.lineJoin = v;
+    },
+    fillRect: (...a) => {
+      g1.fillRect(...a);
+      g2.fillRect(...a);
+    },
+    fill: (r) => {
+      g1.fill(r);
+      g2.fill(r);
+    },
+    stroke: () => {
+      g1.stroke();
+      g2.stroke();
+    }
+  };
+  const path = (rings) => {
+    for (const c of [g1, g2]) {
+      c.beginPath();
+      for (const ring2 of rings) {
+        ring2.forEach(([x, z], i) => i ? c.lineTo(px(x), pz(z)) : c.moveTo(px(x), pz(z)));
+        c.closePath();
+      }
+    }
+  };
+  const stats = { areas: {}, verges: 0, crowns: 0 };
+  g.fillStyle = [1, 0.06, 0, 0];
+  g.fillRect(0, 0, W, H);
+  if (surfaces?.surfaces?.length) {
+    g.strokeStyle = [0.9, 0.62, 0.55, 0.12];
+    g.lineWidth = VERGE_W * 2;
+    g.lineJoin = "round";
+    for (const s of surfaces.surfaces) {
+      if (s.c !== 0 && s.c !== 1 && s.c !== 3) continue;
+      path(s.rings);
+      g.stroke();
+      stats.verges++;
+    }
+    g.strokeStyle = [1, 0.06, 0, 0];
+    g.fillStyle = [1, 0.06, 0, 0];
+    g.lineWidth = 1.2;
+    for (const s of surfaces.surfaces) {
+      if (s.c !== 5) continue;
+      path(s.rings);
+      g.fill();
+      g.stroke();
+    }
+  }
+  const byKind = /* @__PURE__ */ new Map();
+  for (const a of feats.areas || []) {
+    const k = kindOf(a, kinds);
+    if (!k) continue;
+    if (!byKind.has(k)) byKind.set(k, []);
+    byKind.get(k).push(a);
+  }
+  for (const k of ORDER) {
+    const list = byKind.get(k);
+    if (!list) continue;
+    g.fillStyle = KIND4[k];
+    for (const a of list) {
+      path(a.rings || []);
+      g.fill("evenodd");
+    }
+    stats.areas[k] = list.length;
+  }
+  const img = g1.getImageData(0, 0, W, H).data, img2 = g2.getImageData(0, 0, W, H).data;
+  const shade = new Float32Array(W * H);
+  for (const t of feats.trees || []) {
+    const r = Math.min(9, Math.max(1.5, (t.crown || 4) * 0.85)), cx = px(t.x), cz = pz(t.z);
+    if (cx < -r || cz < -r || cx > W + r || cz > H + r) continue;
+    stats.crowns++;
+    for (let j = Math.max(0, Math.floor(cz - r)); j <= Math.min(H - 1, Math.ceil(cz + r)); j++)
+      for (let i = Math.max(0, Math.floor(cx - r)); i <= Math.min(W - 1, Math.ceil(cx + r)); i++) {
+        const d = Math.hypot(i + 0.5 - cx, j + 0.5 - cz) / r;
+        if (d >= 1) continue;
+        const s = 1 - d * d;
+        const k = j * W + i;
+        shade[k] = Math.max(shade[k], s);
+      }
+  }
+  const data = new Uint8Array(W * H * 4);
+  for (let k = 0; k < W * H; k++) {
+    const s = shade[k];
+    data[k * 4] = Math.round(img[k * 4] * (1 - 0.55 * s));
+    data[k * 4 + 1] = img[k * 4 + 1];
+    data[k * 4 + 2] = img[k * 4 + 2];
+    data[k * 4 + 3] = Math.round(img2[k * 4] * (1 - 0.7 * s));
+  }
+  return { data, W, H, stats };
+}
+
 // viewer/tileData.js
 var railP = null;
+var grassKindsP = null;
+var grassKinds = (base) => grassKindsP ||= fetch(new URL("../grass/osm_grass.json", base)).then((r) => r.json()).then((d) => d.kinds).catch(() => null);
 var railDocs = (base) => railP ??= Promise.all([
   fetch(new URL("../rail/rail.json", base)).then((r) => r.json()).then(prepRail),
   Promise.all(["stjob", "calevoet", "verrewinkel"].map((n) => fetch(new URL(`../../models/rail/${n}.json`, base)).then((r) => r.ok ? r.json() : null).catch(() => null))).then((a) => a.filter(Boolean))
@@ -11408,7 +11555,9 @@ async function buildTileData(entry, base) {
     railDropped = n - (feats.trees?.length || 0);
     feats.railVerges = railVerges(rail.doc, bounds);
   }
-  const surf = entry.surface && F.surfaces ? await step("fetch surfaces", () => get(F.surfaces)) : null;
+  const surfDoc = (entry.surface || entry.grass) && F.surfaces ? await step("fetch surfaces", () => get(F.surfaces)) : null;
+  const surf = entry.surface ? surfDoc : null;
+  const grassTypes = entry.grass ? await step("grass types", async () => grassTypeData(feats, { x0, x1, z0, z1 }, { kinds: await grassKinds(base), surfaces: surfDoc })) : null;
   const ov = await overrides(base);
   applyRoadOverrides(roads, ov);
   const hm = new Heightmap(tHdr, tBuf);
@@ -11507,6 +11656,7 @@ async function buildTileData(entry, base) {
     traffic,
     times,
     rail: railOut,
+    grassTypes,
     bridgeDecks: osmBridges.decks.map((d) => ({ ...d, mesh: deckMesh(d) }))
   };
 }
