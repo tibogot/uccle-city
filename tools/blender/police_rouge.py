@@ -605,7 +605,9 @@ def hedge(far):
     n = 10
     for k in range(n):
         a, b = w0 + (w1 - w0) * k / n, w0 + (w1 - w0) * (k + 1) / n
-        ga, gb = ground(u0, a) - 0.15, ground(u0, b) - 0.15
+        # sunk 0.45 m under the LOWER of its two sides (the street falls across it: the far side floated 0.15-0.28 m in
+        # the city, docs/collisions/README.md JOINS)
+        ga, gb = min(ground(u0, a), ground(u1, a)) - 0.45, min(ground(u0, b), ground(u1, b)) - 0.45
         prof = [(u0, None), (u0, top - ch), (u0 + ch, top), (u1 - ch, top), (u1, top - ch), (u1, None)]
         for j in range(len(prof) - 1):
             (ua, ha), (ub, hb) = prof[j], prof[j + 1]
@@ -616,7 +618,7 @@ def hedge(far):
             out = Vector((mid_u - (u0 + u1) / 2, 0, (mid_h - (top - 0.6)) * 0.8))
             face_dir(pts, out, HEDGE, C_PLAIN)
     for (ww, sg) in ((w0, -1), (w1, 1)):
-        g = ground(u0, ww) - 0.15
+        g = min(ground(u0, ww), ground(u1, ww)) - 0.45
         pts = [P(u0, ww, g), P(u1, ww, g), P(u1, ww, top - ch), P(u1 - ch, ww, top), P(u0 + ch, ww, top), P(u0, ww, top - ch)]
         face_dir(pts, Vector((0, -sg, 0)), HEDGE, C_PLAIN)
 

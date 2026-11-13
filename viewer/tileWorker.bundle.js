@@ -1505,7 +1505,7 @@ var MeshoptSimplifier = (function() {
 
 // viewer/drive/colliders.js
 var CELL = 48;
-var KIND2 = { building: 0, island: 1, tree: 2, lamp: 3, post: 4, wall: 5 };
+var KIND2 = { building: 0, island: 1, tree: 2, lamp: 3, post: 4, wall: 5, car: 6, furniture: 7 };
 function buildColliders(polys, circles, bounds) {
   let nv = 0, nr = 0;
   for (const p of polys) for (const r2 of p.rings) {
@@ -1636,11 +1636,15 @@ function cleanRing(ring2) {
   }
   return out;
 }
-function buildDriveData({ bDoc, net, feats, hm, parts, bounds, surf = null, legacy = false }) {
+function buildDriveData({ bDoc, bBuf = null, net, feats, hm, parts, bounds, surf = null, legacy = false, walls = [] }) {
   const polys = [], circles = [];
   const ground = driveGround(hm, parts);
-  let overhead = 0, islands = 0, islandsHidden = 0, medianIslands = 0;
-  for (const bd of bDoc.buildings) {
+  let overhead = 0, islands = 0, islandsHidden = 0, medianIslands = 0, fromWalls = null;
+  if (bBuf && !legacy) {
+    fromWalls = buildingBlocks(bDoc, bBuf, (x, z) => driveHeight(hm, ground, x, z), bounds);
+    polys.push(...fromWalls.polys);
+  }
+  if (!fromWalls) for (const bd of bDoc.buildings) {
     const rings = (bd.footprint || []).map(cleanRing).filter((r) => r.length >= 3);
     if (!rings.length) continue;
     const base = bd.base != null ? +bd.base : -1e4;
@@ -1677,16 +1681,208 @@ function buildDriveData({ bDoc, net, feats, hm, parts, bounds, surf = null, lega
       medianIslands++;
     }
   }
+  if (!legacy) {
+    for (const ring2 of walls) if (ring2.length >= 3 && inTile(ring2)) polys.push({ rings: [cleanRing(ring2)], kind: KIND2.wall });
+  }
   for (const t of feats.trees || []) {
     if (t.x < bounds.x0 || t.x > bounds.x1 || t.z < bounds.z0 || t.z > bounds.z1) continue;
     circles.push({ x: t.x, z: t.z, r: Math.min(0.5, Math.max(0.22, 0.16 + 0.012 * (t.height || 10))), kind: KIND2.tree });
   }
   const col = buildColliders(polys, circles, bounds);
-  return { col, medians, ground, legacy, counts: { buildings: bDoc.buildings.length - overhead, overhead, islands, islandsHidden, medianIslands, trees: circles.length } };
+  return { col, medians, ground, legacy, counts: { buildings: fromWalls ? fromWalls.polys.length : bDoc.buildings.length - overhead, overhead, buildingRegions: fromWalls?.regions, islands, islandsHidden, medianIslands, trees: circles.length } };
+}
+function buildingBlocks(bDoc, bBuf, height, bounds, { margin = 30, cell = 0.25, step = 0.12, band = [0.3, 1.3], tol = 0.15 } = {}) {
+  const dv = new DataView(bBuf), V = dv.getUint32(0, true), T2 = dv.getUint32(4, true);
+  const P = new Float32Array(bBuf, 8, V * 3), I = new Uint32Array(bBuf, 8 + V * 12, T2 * 3);
+  const x0 = bounds.x0 - margin, z0 = bounds.z0 - margin;
+  const nx = Math.ceil((bounds.x1 + margin - x0) / cell), nz = Math.ceil((bounds.z1 + margin - z0) / cell);
+  const g = new Uint8Array(nx * nz);
+  const lx = Math.ceil(nx * cell) + 2, lz = Math.ceil(nz * cell) + 2, L2 = new Float32Array(lx * lz);
+  for (let k = 0; k < lz; k++) for (let i = 0; i < lx; i++) L2[k * lx + i] = height(x0 + i, z0 + k);
+  const Lm = new Float32Array(lx * lz);
+  for (let k = 0; k < lz; k++) for (let i = 0; i < lx; i++) {
+    let v = Infinity;
+    for (let dk = -1; dk <= 1; dk++) for (let di = -1; di <= 1; di++) {
+      const ii = i + di, kk = k + dk;
+      if (ii >= 0 && kk >= 0 && ii < lx && kk < lz) v = Math.min(v, L2[kk * lx + ii]);
+    }
+    Lm[k * lx + i] = v;
+  }
+  const gAt = (x, z) => Lm[Math.min(lz - 1, Math.max(0, Math.round(z - z0))) * lx + Math.min(lx - 1, Math.max(0, Math.round(x - x0)))];
+  let walls = 0;
+  for (const b of bDoc.buildings) {
+    for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) {
+      const a = I[t * 3] * 3, c = I[t * 3 + 1] * 3, d = I[t * 3 + 2] * 3;
+      const ax = P[a], ay = P[a + 1], az = P[a + 2], bx = P[c], by = P[c + 1], bz = P[c + 2], cx = P[d], cy = P[d + 1], cz = P[d + 2];
+      if (Math.max(ax, bx, cx) < x0 || Math.min(ax, bx, cx) > x0 + nx * cell || Math.max(az, bz, cz) < z0 || Math.min(az, bz, cz) > z0 + nz * cell) continue;
+      const gm = gAt((ax + bx + cx) / 3, (az + bz + cz) / 3);
+      if (Math.min(ay, by, cy) > gm + band[1] + 2 || Math.max(ay, by, cy) < gm + band[0] - 2) continue;
+      walls++;
+      const n1 = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay, bz - az) / step)), n2 = Math.max(1, Math.ceil(Math.hypot(cx - ax, cy - ay, cz - az) / step));
+      for (let i = 0; i <= n1; i++) for (let j = 0; j <= n2; j++) {
+        let u = i / n1, w = j / n2;
+        if (u + w > 1) {
+          if (u + w > 1 + 1 / Math.max(n1, n2)) continue;
+          const s = u + w;
+          u /= s;
+          w /= s;
+        }
+        const x = ax + (bx - ax) * u + (cx - ax) * w, y = ay + (by - ay) * u + (cy - ay) * w, z = az + (bz - az) * u + (cz - az) * w;
+        const h = y - gAt(x, z);
+        if (h < band[0] || h > band[1]) continue;
+        const ci = Math.floor((x - x0) / cell), ck = Math.floor((z - z0) / cell);
+        if (ci >= 0 && ck >= 0 && ci < nx && ck < nz) g[ck * nx + ci] = 1;
+      }
+    }
+  }
+  const out = new Uint8Array(nx * nz), stack = [];
+  const push2 = (q) => {
+    if (!g[q] && !out[q]) {
+      out[q] = 1;
+      stack.push(q);
+    }
+  };
+  for (let i = 0; i < nx; i++) {
+    push2(i);
+    push2((nz - 1) * nx + i);
+  }
+  for (let k = 0; k < nz; k++) {
+    push2(k * nx);
+    push2(k * nx + nx - 1);
+  }
+  while (stack.length) {
+    const q = stack.pop(), i = q % nx, k = (q - i) / nx;
+    if (i > 0) push2(q - 1);
+    if (i < nx - 1) push2(q + 1);
+    if (k > 0) push2(q - nx);
+    if (k < nz - 1) push2(q + nx);
+  }
+  for (let q = 0; q < g.length; q++) if (!out[q]) g[q] = 1;
+  const comp = new Int32Array(nx * nz).fill(-1);
+  let nc = 0;
+  for (let s = 0; s < g.length; s++) {
+    if (!g[s] || comp[s] >= 0) continue;
+    comp[s] = nc;
+    stack.push(s);
+    while (stack.length) {
+      const q = stack.pop(), i = q % nx, k = (q - i) / nx;
+      for (let dk = -1; dk <= 1; dk++) for (let di = -1; di <= 1; di++) {
+        const ii = i + di, kk = k + dk;
+        if (ii < 0 || kk < 0 || ii >= nx || kk >= nz) continue;
+        const r = kk * nx + ii;
+        if (g[r] && comp[r] < 0) {
+          comp[r] = nc;
+          stack.push(r);
+        }
+      }
+    }
+    nc++;
+  }
+  const CH = Math.max(1, Math.round(8 / cell));
+  const label = (i, k) => (Math.floor(k / CH) * 4096 + Math.floor(i / CH)) * 65536 + comp[k * nx + i];
+  const solid = (i, k) => i >= 0 && k >= 0 && i < nx && k < nz && g[k * nx + i] === 1;
+  const edges = /* @__PURE__ */ new Map();
+  const W = nx + 1;
+  const addE = (lab, a, b) => {
+    let m = edges.get(lab);
+    if (!m) edges.set(lab, m = /* @__PURE__ */ new Map());
+    let l = m.get(a);
+    if (!l) m.set(a, l = []);
+    l.push(b);
+  };
+  for (let k = 0; k <= nz; k++) for (let i = 0; i <= nx; i++) {
+    if (i < nx) {
+      const up = solid(i, k - 1), dn = solid(i, k), lu = up ? label(i, k - 1) : -1, ld = dn ? label(i, k) : -1;
+      if (lu !== ld) {
+        if (dn) addE(ld, k * W + i + 1, k * W + i);
+        if (up) addE(lu, k * W + i, k * W + i + 1);
+      }
+    }
+    if (k < nz) {
+      const lf = solid(i - 1, k), rt = solid(i, k), ll = lf ? label(i - 1, k) : -1, lr = rt ? label(i, k) : -1;
+      if (ll !== lr) {
+        if (rt) addE(lr, k * W + i, (k + 1) * W + i);
+        if (lf) addE(ll, (k + 1) * W + i, k * W + i);
+      }
+    }
+  }
+  const rings = /* @__PURE__ */ new Map();
+  const px = (c) => x0 + c % W * cell, pz = (c) => z0 + Math.floor(c / W) * cell;
+  for (const [lab, next] of edges) {
+    for (const [start, l0] of next) {
+      while (l0.length) {
+        let a = start, b = l0.pop();
+        const pts = [[px(a), pz(a)]];
+        let guard = 0;
+        while (b !== start && guard++ < 1e6) {
+          pts.push([px(b), pz(b)]);
+          const l = next.get(b);
+          if (!l || !l.length) break;
+          let pick = 0;
+          if (l.length > 1) {
+            const dxi = px(b) - px(a), dzi = pz(b) - pz(a);
+            let best = -Infinity;
+            l.forEach((n, j) => {
+              const cr = dxi * (pz(n) - pz(b)) - dzi * (px(n) - px(b));
+              if (cr > best) {
+                best = cr;
+                pick = j;
+              }
+            });
+          }
+          a = b;
+          b = l.splice(pick, 1)[0];
+        }
+        if (pts.length < 4) continue;
+        const simp = simplifyRing(pts, tol);
+        if (simp.length >= 3) {
+          let r = rings.get(lab);
+          if (!r) rings.set(lab, r = []);
+          r.push(simp);
+        }
+      }
+    }
+  }
+  const polys = [];
+  for (const r of rings.values()) polys.push({ rings: r, kind: KIND2.building });
+  return { polys, walls, regions: nc };
+}
+function simplifyRing(pts, tol) {
+  const n = pts.length;
+  let far = 0, fd = -1;
+  for (let i = 1; i < n; i++) {
+    const d = (pts[i][0] - pts[0][0]) ** 2 + (pts[i][1] - pts[0][1]) ** 2;
+    if (d > fd) {
+      fd = d;
+      far = i;
+    }
+  }
+  const keep = new Uint8Array(n);
+  keep[0] = keep[far] = 1;
+  const stack = [[0, far], [far, n]];
+  while (stack.length) {
+    const [a, b] = stack.pop();
+    const [ax, az] = pts[a], [bx, bz] = pts[b % n], dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz;
+    let m = -1, md = tol * tol;
+    for (let i = a + 1; i < b; i++) {
+      const [qx, qz] = pts[i % n];
+      const t = L2 ? Math.max(0, Math.min(1, ((qx - ax) * dx + (qz - az) * dz) / L2)) : 0;
+      const d = (qx - ax - t * dx) ** 2 + (qz - az - t * dz) ** 2;
+      if (d > md) {
+        md = d;
+        m = i;
+      }
+    }
+    if (m >= 0) {
+      keep[m % n] = 1;
+      stack.push([a, m], [m, b]);
+    }
+  }
+  return pts.filter((_, i) => keep[i]);
 }
 function driveGround(hm, parts) {
   const { x0, z0, cols, rows, step } = hm.h, Y = hm.y;
-  const top = new Float32Array(cols * rows).fill(-1e9);
+  const top = new Float32Array(cols * rows).fill(-1e9), low = new Float32Array(cols * rows).fill(-1e9);
   for (const part of Object.values(parts)) {
     if (!part?.index) continue;
     const P = part.position, I = part.index;
@@ -1705,15 +1901,36 @@ function driveGround(hm, parts) {
           const l2 = ((cz - az) * (px - cx) + (ax - cx) * (pz - cz)) / det;
           const l3 = 1 - l1 - l2;
           if (l1 < -1e-6 || l2 < -1e-6 || l3 < -1e-6) continue;
-          const y = l1 * P[a + 1] + l2 * P[b + 1] + l3 * P[c + 1], q = r * cols + k;
-          if (y > top[q]) top[q] = y;
+          const y = l1 * P[a + 1] + l2 * P[b + 1] + l3 * P[c + 1], q = r * cols + k, tq = top[q];
+          if (y > tq + 1.5) {
+            low[q] = tq;
+            top[q] = y;
+          } else if (y > tq) top[q] = y;
+          else if (y < tq - 1.5 && y > low[q]) low[q] = y;
         }
       }
     }
   }
-  const delta = new Uint8Array(cols * rows);
-  for (let q = 0; q < delta.length; q++) if (top[q] > -1e8) delta[q] = Math.max(0, Math.min(255, Math.round((top[q] - Y[q]) * 100)));
-  return { delta };
+  const delta = new Uint16Array(cols * rows), delta2 = new Uint16Array(cols * rows).fill(65535);
+  for (let q = 0; q < delta.length; q++) {
+    if (top[q] > -1e8) delta[q] = Math.max(0, Math.min(65534, Math.round((top[q] - Y[q]) * 100)));
+    if (low[q] > -1e8 && top[q] - low[q] > 1.5) delta2[q] = Math.max(0, Math.min(65534, Math.round((low[q] - Y[q]) * 100)));
+  }
+  return { delta, delta2 };
+}
+function driveHeight(hm, delta, x, z, near = null) {
+  const d2 = delta?.delta2, d1 = delta?.delta ?? delta;
+  const h = hm.h, Y = hm.y;
+  const c = Math.min(Math.max((x - h.x0) / h.step, 0), h.cols - 1), r = Math.min(Math.max((z - h.z0) / h.step, 0), h.rows - 1);
+  const c0 = Math.min(Math.floor(c), h.cols - 2), r0 = Math.min(Math.floor(r), h.rows - 2);
+  const fc = c - c0, fr = r - r0, i = r0 * h.cols + c0, j = i + h.cols;
+  const v = (k) => {
+    const a = Y[k] + d1[k] * 0.01;
+    if (!d2 || near == null || d2[k] === 65535) return a;
+    const b = Y[k] + d2[k] * 0.01;
+    return Math.abs(b - near) < Math.abs(a - near) ? b : a;
+  };
+  return (v(i) * (1 - fc) + v(i + 1) * fc) * (1 - fr) + (v(j) * (1 - fc) + v(j + 1) * fc) * fr;
 }
 
 // vendor/roads/roadMath.js
@@ -9428,6 +9645,60 @@ function bridgeRings(doc, heroes) {
   }
   return rings.map(ringBox);
 }
+function abutmentFill(heroes, grids, hdr) {
+  const { x0, z0, cols, rows, step } = hdr;
+  let moved = 0;
+  for (const h of (heroes || []).filter((q) => q.kind === "road_over_rail").map(heroFrame)) {
+    const d = h.deck, f = h.foot, apron = d.apron_se ?? 0;
+    const r = (X) => {
+      const xc = Math.max(d.x0, Math.min(d.x1, X));
+      return d.road_ends[0] + (xc - d.x0) * (d.road_ends[1] - d.road_ends[0]) / (d.x1 - d.x0) + (X - xc) * d.grade;
+    };
+    const wHalf = (X) => Math.min(d.parapet_inner + 0.9, d.parapet_inner + d.flare * Math.max(0, (Math.abs(X) - d.fold) / (d.x1 - d.fold)));
+    const zones = [];
+    const xe1 = d.x1 + (apron ? 2.5 : 0.6), xe0 = d.x0 - 0.6;
+    const tongue = (X) => r(X) - 0.03 - (X > d.x1 ? apron * (X - d.x1) / 2.5 : 0);
+    zones.push({ xa: d.x1, xb: xe1, ya: (X) => -wHalf(X), yb: wHalf, top: tongue }, { xa: xe0, xb: d.x0, ya: (X) => -wHalf(X), yb: wHalf, top: tongue });
+    if (f) {
+      const fw = (X) => X >= f.x_flare ? f.w : f.w + (f.w_nw - f.w) * (f.x_flare - X) / (f.x_flare - f.x0);
+      const ftop = (X) => r(X) - f.top_under_road;
+      zones.push({ xa: d.x1, xb: f.x1, ya: (X) => f.y_inner - fw(X), yb: () => f.y_inner, top: ftop }, { xa: f.x0, xb: d.x0, ya: (X) => f.y_inner - fw(X), yb: () => f.y_inner, top: ftop });
+    }
+    const APP = 12, EASE = 0.08, AW = d.width / 2 + 3;
+    const appr = (X) => r(X) + 0.06 - EASE * Math.max(0, Math.abs(X) - Math.abs(X > 0 ? d.x1 : d.x0) - 2);
+    zones.push({ xa: d.x1, xb: d.x1 + APP, ya: () => -AW, yb: () => AW, top: appr }, { xa: d.x0 - APP, xb: d.x0, ya: () => -AW, yb: () => AW, top: appr });
+    const R = APP + 8;
+    const bx = ringBox(h.ring);
+    const c0 = Math.max(0, Math.floor((bx.x0 - R - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((bx.x1 + R - x0) / step));
+    const r0 = Math.max(0, Math.floor((bx.z0 - R - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((bx.z1 + R - z0) / step));
+    for (let rr = r0; rr <= r1; rr++) for (let c = c0; c <= c1; c++) {
+      const [X, Yb] = h.toLocal(x0 + c * step, z0 + rr * step);
+      if (X > d.x0 && X < d.x1) continue;
+      let inside3 = -Infinity, around = -Infinity;
+      for (const zn of zones) {
+        const xc = Math.max(zn.xa, Math.min(zn.xb, X)), ya = zn.ya(xc), yb = zn.yb(xc), yc = Math.max(ya, Math.min(yb, Yb));
+        const out = Math.hypot(X - xc, Yb - yc), t = zn.top(xc) - 0.06;
+        if (out < 1e-6) inside3 = Math.max(inside3, t);
+        else around = Math.max(around, t - out / 1.5);
+      }
+      const under = zones.slice(0, f ? 4 : 2).some((zn) => {
+        const xc = Math.max(zn.xa, Math.min(zn.xb, X));
+        return xc === X && Yb >= zn.ya(X) && Yb <= zn.yb(X);
+      });
+      let fill = Math.max(inside3, around);
+      if (under && grids.length) fill = Math.min(fill, ...zones.slice(0, f ? 4 : 2).filter((zn) => X >= zn.xa && X <= zn.xb && Yb >= zn.ya(X) && Yb <= zn.yb(X)).map((zn) => zn.top(X) - 0.06));
+      const k = rr * cols + c;
+      grids.forEach((G2, gi) => {
+        const v = gi === 0 ? fill : Math.max(inside3, around);
+        if (G2[k] < v) {
+          G2[k] = v;
+          moved++;
+        }
+      });
+    }
+  }
+  return moved;
+}
 function carveGrid(doc, Y, hdr, bounds, heroes = []) {
   const { x0, z0, cols, rows, step } = hdr;
   let moved = 0;
@@ -10424,6 +10695,7 @@ async function buildTileData(entry, base) {
   const paint = entry.paint || PAINT;
   const markings = F.markings && paint === "v2" ? await step("fetch markings", () => get(F.markings).catch(() => null)) : null;
   const roofs = await step("roof grid", () => roofGrid(bDoc, bounds));
+  if (rail) await step("abutment fill", () => abutmentFill(rail.heroes, [hm.y, hm.orig], tHdr));
   const roadGround = rail ? roadDeckGround(rail.heroes, hm.ground) : hm.ground;
   const rd = await step("roads", () => buildRoadData({
     roads,
@@ -10467,9 +10739,21 @@ async function buildTileData(entry, base) {
     const [idx] = MeshoptSimplifier.simplify(terrain.idx, terrain.pos, 3, 0, TERRAIN_ERROR, ["LockBorder", "ErrorAbsolute"]);
     terrain.idx = idx;
   });
-  const drive = await step("drive colliders", () => buildDriveData({ bDoc, net, feats, hm, parts: road.parts, bounds, surf, legacy: !!entry.driveLegacy }));
   const nb = bDoc.buildings.length;
+  const keep = entry.driveKeepHidden ? { buildings: bDoc.buildings.slice() } : null;
   hideBuildings(bDoc, entry.hide);
+  const drive = await step("drive colliders", () => buildDriveData({
+    bDoc: keep || bDoc,
+    bBuf: keep ? null : bBuf,
+    net,
+    feats,
+    hm,
+    parts: road.parts,
+    bounds,
+    surf,
+    legacy: !!entry.driveLegacy,
+    walls: keep ? [] : (rail?.doc.platforms || []).map((p) => p.ring)
+  }));
   drive.counts.hidden = nb - bDoc.buildings.length;
   const kit = entry.kit ? kitCollector({ exclude: new Set(entry.kitExclude || []), ground: (x, z) => hm.ground(x, z) }) : null;
   const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit }));

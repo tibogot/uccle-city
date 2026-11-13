@@ -1,21 +1,21 @@
 # Mesh audit: verrewinkel LOD0 ({"until":140})
 
-34,073 triangles, 18,723 welded vertices, 3,773 open edges, 238,746 rays, 3777 ms.
+34,111 triangles, 18,747 welded vertices, 3,779 open edges, 238,138 rays, 2740 ms.
 
-**0 blocking**, 3430 warnings. Clean (no blocking item).
+**0 blocking**, 3432 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| sliver | warn | 2106 |
+| sliver | warn | 2102 |
 | nonmanifold | warn | 1212 |
-| tjunction | warn | 112 |
-| seam | info | 1123 |
-| opening | info | 14 |
+| tjunction | warn | 118 |
+| seam | info | 1146 |
+| opening | info | 16 |
 | backtoback | info | 1010 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## sliver (warn, 2106)
+## sliver (warn, 2102)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -60,7 +60,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -19.27, 1.55, -2.72 | verrewinkel/brick_red_brussels | 556 | 9.429 |
 | -19.28, 1.55, -3.32 | verrewinkel/brick_red_brussels | 556 | 9.429 |
 
-(2066 more in the JSON)
+(2062 more in the JSON)
 
 ## nonmanifold (warn, 1212)
 
@@ -109,7 +109,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (1172 more in the JSON)
 
-## tjunction (warn, 112)
+## tjunction (warn, 118)
 
 | at | part | edge_m |
 |---|---|---|
@@ -154,9 +154,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -4.15, 6.49, 2.38 | verrewinkel/stone_blue | 0.497 |
 | -2.16, 6.58, 2.38 | verrewinkel/stone_blue | 0.497 |
 
-(72 more in the JSON)
+(78 more in the JSON)
 
-## seam (info, 1123)
+## seam (info, 1146)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -169,9 +169,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -20.89, 6.19, 10.75 | verrewinkel_foot/concrete + verrewinkel_foot/resin_terracotta | 42.82 | 68 | 89.3 |
 | -3.73, 7.11, 2.50 | verrewinkel/brick_red_brussels + verrewinkel_fine/brick_red_brussels | 2.85 | 51 | 90 |
 | -3.07, 7.43, -2.50 | verrewinkel/brick_red_brussels + verrewinkel_fine/brick_red_brussels | 2.85 | 51 | 90 |
-| -7.75, 5.98, 3.81 | verrewinkel_foot/concrete + verrewinkel_foot/painted_metal_white | 0.88 | 50 | 69.2 |
+| -7.68, 5.99, 3.85 | verrewinkel_foot/concrete + verrewinkel_foot/painted_metal_white | 0.88 | 50 | 69.2 |
 | -7.65, 5.99, 7.60 | verrewinkel_foot/concrete + verrewinkel_foot/painted_metal_white | 0.88 | 50 | 69.2 |
-| 4.78, 6.59, 3.82 | verrewinkel_foot/concrete + verrewinkel_foot/painted_metal_white | 0.88 | 50 | 67.6 |
+| 4.82, 6.60, 3.85 | verrewinkel_foot/concrete + verrewinkel_foot/painted_metal_white | 0.88 | 50 | 67.6 |
 | 4.86, 6.60, 7.54 | verrewinkel_foot/concrete + verrewinkel_foot/painted_metal_white | 0.88 | 50 | 67.6 |
 | -6.55, 0.85, 5.50 | verrewinkel_foot/concrete + verrewinkel_foot/painted_metal_white | 0.88 | 50 | 67.7 |
 | -6.19, 0.85, 5.86 | verrewinkel_foot/concrete + verrewinkel_foot/painted_metal_white | 0.88 | 50 | 68.3 |
@@ -185,7 +185,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 9.57, 7.86, -2.50 | verrewinkel/brick_red_brussels + verrewinkel_fine/brick_red_brussels | 2.85 | 49 | 90 |
 | -11.63, 6.77, -2.50 | verrewinkel/brick_red_brussels + verrewinkel_fine/brick_red_brussels | 2.85 | 49 | 90 |
 | -9.64, 6.87, -2.50 | verrewinkel/brick_red_brussels + verrewinkel_fine/brick_red_brussels | 2.85 | 49 | 90 |
-| 7.58, 7.76, -2.50 | verrewinkel/brick_red_brussels + verrewinkel_fine/brick_red_brussels | 2.85 | 49 | 90 |
+| 7.63, 7.73, -2.50 | verrewinkel/brick_red_brussels + verrewinkel_fine/brick_red_brussels | 2.85 | 49 | 90 |
 | -7.65, 6.97, -2.50 | verrewinkel/brick_red_brussels + verrewinkel_fine/brick_red_brussels | 2.85 | 49 | 90 |
 | -5.66, 7.06, -2.50 | verrewinkel/brick_red_brussels + verrewinkel_fine/brick_red_brussels | 2.85 | 49 | 90 |
 | -1.40, 7.44, 2.50 | verrewinkel/brick_red_brussels + verrewinkel_fine/brick_red_brussels | 2.85 | 49 | 90 |
@@ -199,26 +199,28 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 5.65, 7.62, 2.50 | verrewinkel/brick_red_brussels + verrewinkel_fine/brick_red_brussels | 2.85 | 49 | 90 |
 | 0.43, 7.45, -2.50 | verrewinkel/brick_red_brussels + verrewinkel_fine/brick_red_brussels | 2.85 | 48 | 90 |
 | 0.43, 7.45, 2.50 | verrewinkel/brick_red_brussels + verrewinkel_fine/brick_red_brussels | 2.85 | 48 | 90 |
-| -4.67, 6.13, 3.80 | verrewinkel_foot/concrete + verrewinkel_foot/painted_metal_white | 0.89 | 48 | 66.2 |
+| -4.61, 6.13, 3.84 | verrewinkel_foot/concrete + verrewinkel_foot/painted_metal_white | 0.89 | 48 | 66.2 |
 
-(1083 more in the JSON)
+(1106 more in the JSON)
 
-## opening (info, 14)
+## opening (info, 16)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
-| -20.45, 6.46, -1.15 | verrewinkel/asphalt | -0.05 + 1 + 0 | 2.95 |
-| 22.35, 8.07, 1.70 | verrewinkel/asphalt | 0.13 + 0.99 + 0 | 2.95 |
-| -20.00, 6.48, -2.92 | verrewinkel/paving_concrete | -0.05 + 1 + 0 | 0.609 |
-| -20.45, 6.46, -1.27 | verrewinkel/paving_concrete | -0.05 + 1 + 0 | 0.15 |
-| -20.45, 6.48, 1.80 | verrewinkel/paving_concrete | -0.06 + 1 + -0.06 | 1.253 |
-| 22.30, 8.18, 3.00 | verrewinkel/paving_concrete | 0.13 + 0.99 + -0.06 | 1.261 |
 | -20.45, 6.47, 1.75 | verrewinkel/paving_concrete | 0 + 0 + -1 | 0.02 |
-| 19.99, 8.41, -2.91 | verrewinkel/paving_concrete | 0.15 + 0.99 + 0 | 1.269 |
-| 22.35, 8.07, -1.40 | verrewinkel/paving_concrete | 0.13 + 0.99 + 0 | 1.65 |
-| 22.35, 8.07, -1.27 | verrewinkel/paving_concrete | 0.13 + 0.99 + 0 | 0.15 |
-| 22.35, 8.17, 2.95 | verrewinkel/paving_concrete | 0.13 + 0.99 + -0.06 | 1.253 |
-| 22.35, 8.08, 1.75 | verrewinkel/paving_concrete | 0 + 0 + -1 | 0.02 |
+| 20.45, 8.41, 1.75 | verrewinkel/paving_concrete | 0 + 0 + -1 | 0.02 |
+| -20.45, 6.41, 1.75 | verrewinkel/concrete | -1 + 0 + 0 | 1.2 |
+| 20.45, 8.35, 1.75 | verrewinkel/concrete | 1 + 0 + 0 | 1.2 |
+| 20.45, 7.20, -1.27 | verrewinkel/concrete | 1 + 0 + 0 | 0.15 |
+| 20.45, 7.20, -1.40 | verrewinkel/concrete | 1 + 0 + 0 | 1.65 |
+| -20.00, 5.28, 2.92 | verrewinkel/concrete | 0.16 + 0 + 0.99 | 0.609 |
+| -20.00, 5.28, -2.92 | verrewinkel/concrete | 0.16 + 0 + -0.99 | 0.609 |
+| -20.45, 5.26, 2.57 | verrewinkel/concrete | -1 + 0 + 0 | 1.25 |
+| -20.45, 5.26, 1.70 | verrewinkel/concrete | -1 + 0 + 0 | 2.95 |
+| -20.45, 5.26, -1.27 | verrewinkel/concrete | -1 + 0 + 0 | 0.15 |
+| -20.45, 5.26, -1.40 | verrewinkel/concrete | -1 + 0 + 0 | 1.65 |
+| 20.00, 7.22, -2.92 | verrewinkel/concrete | -0.16 + 0 + -0.99 | 0.609 |
+| 20.45, 7.20, 2.57 | verrewinkel/concrete | 1 + 0 + 0 | 1.25 |
 | 21.00, 8.24, 8.75 | verrewinkel_foot/concrete | 1 + 0 + 0 | 0.25 |
 | -21.50, 6.16, 11.12 | verrewinkel_foot/concrete | -1 + 0 + 0 | 0.25 |
 
@@ -265,6 +267,6 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -19.25, 7.42, -2.95 | verrewinkel/brick_red_brussels + verrewinkel/stone_blue | 0.00233 |
 | -18.54, 7.45, -2.79 | verrewinkel/brick_red_brussels + verrewinkel/stone_blue | 0.12049 |
 | -18.21, 7.47, -2.71 | verrewinkel/brick_red_brussels + verrewinkel/stone_blue | 0.00087 |
-| -18.20, 7.47, -2.71 | verrewinkel/brick_red_brussels + verrewinkel/stone_blue | 0.00086 |
+| -18.22, 7.47, -2.71 | verrewinkel/brick_red_brussels + verrewinkel/stone_blue | 0.00212 |
 
 (970 more in the JSON)

@@ -1,23 +1,23 @@
 {
  "summary": {
   "triangles": 3351,
-  "vertices_welded": 3711,
-  "open_edges": 2953,
-  "rays": 837524,
+  "vertices_welded": 3710,
+  "open_edges": 2951,
+  "rays": 838134,
   "blocking": 13,
-  "warnings": 462,
+  "warnings": 459,
   "counts": {
-   "sliver": 286,
+   "sliver": 283,
    "nonmanifold": 12,
    "depth": 2,
    "crossing": 3,
    "backtoback": 198,
    "seam": 200,
    "tjunction": 164,
-   "opening": 924,
+   "opening": 921,
    "leak": 8
   },
-  "ms": 2656
+  "ms": 2789
  },
  "options": {
   "weld": 0.0001,
@@ -3510,45 +3510,9 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     25.17,
-     48.89,
-     -10.933
-    ],
-    "part": "Police_lod2/hedge",
-    "aspect": 48,
-    "longest": 12.203
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     25.89,
-     48.83,
-     -10.933
-    ],
-    "part": "Police_lod2/hedge",
-    "aspect": 48,
-    "longest": 12.203
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
      25.11,
      48.83,
-     -2.8
-    ],
-    "part": "Police_lod2/hedge",
-    "aspect": 96,
-    "longest": 24.4
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     25.83,
-     48.89,
-     -5.24
+     -6.867
     ],
     "part": "Police_lod2/hedge",
     "aspect": 67,
@@ -3558,25 +3522,13 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     25.05,
-     47.609,
-     2.08
-    ],
-    "part": "Police_lod2/hedge",
-    "aspect": 43,
-    "longest": 12.328
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
      25.17,
      48.89,
-     5.333
+     1.267
     ],
     "part": "Police_lod2/hedge",
-    "aspect": 48,
-    "longest": 12.203
+    "aspect": 67,
+    "longest": 17.08
    },
    {
     "check": "sliver",
@@ -3584,11 +3536,23 @@
     "at": [
      25.89,
      48.83,
-     2.893
+     4.52
     ],
     "part": "Police_lod2/hedge",
-    "aspect": 48,
-    "longest": 12.2
+    "aspect": 57,
+    "longest": 14.642
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     25.83,
+     48.89,
+     -1.173
+    ],
+    "part": "Police_lod2/hedge",
+    "aspect": 67,
+    "longest": 17.08
    }
   ],
   "nonmanifold": [

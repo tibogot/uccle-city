@@ -44,7 +44,7 @@ BRIDGES = {
         "urbis": "ROB 879", "line": "L26", "road": "Rue de Verrewinkel",
         "centre": (-268.81, 1308.28), "dir": (28.2, 26.2), "floor": 70.30,                 # [M] UrbIS centroid, OSM axis, DTM floor
         "ends": (-19.85, 19.85), "road_ends": (76.79, 78.73),                               # [M] polygon ends, city terrain there
-        "fold": 17.2, "flare": 0.80, "apron_se": 0.45,                                                        # [M] UrbIS: the wings flare 0.8 m over 2.65 m
+        "fold": 17.2, "flare": 0.80, "apron_se": 0.0,   # apron dropped 2026-11-13: the city fills the street up to the deck (railData.js abutmentFill)                                                        # [M] UrbIS: the wings flare 0.8 m over 2.65 m
         "y_upper": 2.50, "y_lower": 2.38, "y_inner": 2.10,                                  # [M] +-2.46 UrbIS; corbel 0.12 [P/E]; parapet 0.40 [E]
         "kerb_ne": 1.20, "kerb_sw": -1.75,                                                  # [M] UrbIS level +1 strips (NE sidewalk, SW strip)
         "coping_bottom": 0.90, "coping_h": 0.27, "coping_w": 0.56, "coping_block": 1.25,    # over the road [P courses / L]
@@ -380,6 +380,33 @@ for i in range(len(XS) - 1):
         DECK.poly([(xa, KNE, rd(xa)), (xb, KNE, rd(xb)), (xb, KNE, rd(xb) + 0.13 * sw_drop(xb)), (xa, KNE, rd(xa) + 0.13 * sw_drop(xa))], PV, (0, -1, 0))
     DECK.poly([(xa, KSW, rd(xa)), (xb, KSW, rd(xb)), (xb, KSW, rd(xb) + 0.02), (xa, KSW, rd(xa) + 0.02)], PV, (0, 1, 0))
 
+# the deck's TONGUES past the ends (under the city's street): a concrete skirt down from their free edges (the two sides
+# past the end piers and the far end), so where the city's ground is lower than the tongue you see a kerb-like wall, never
+# an open slab edge over a void (the owner's JOINS rule, docs/collisions/README.md; the city fills the bank up to it:
+# viewer/rail/railData.js carveGrid "abutment fill")
+SKIRT = 1.2
+def tw(x): return min(face_y(x, YI), YI + 0.9)    # the deck strips' half width (deck_strip clamps to both)
+def deck_top(x, y, ym=None):                   # ym: a point of the strip meant (the kerb lines belong to two strips)
+    ym = y if ym is None else ym
+    if ym >= KNE: return rd(x) + 0.13 * sw_drop(x)
+    if ym <= KSW: return rd(x) + 0.10 + (0.02 - 0.10) * (y - (-tw(x))) / (KSW + tw(x))
+    return rd(x)
+for sx in (-1, 1):
+    xs_t = [x for x in XS if sx * x >= XB - 1e-6]
+    xs_t.sort(key=lambda x: sx * x)
+    for sg in (-1, 1):
+        for xa, xb in zip(xs_t, xs_t[1:]):
+            ya, yb = sg * tw(xa), sg * tw(xb)
+            q = [(xa, ya, deck_top(xa, ya)), (xb, yb, deck_top(xb, yb)), (xb, yb, rd(xb) - SKIRT), (xa, ya, rd(xa) - SKIRT)]
+            DECK.poly(q if sg * sx > 0 else q[::-1], CO, (0, sg, 0))
+    xe = xs_t[-1]
+    w = tw(xe)
+    ys = sorted({-w, KSW, KNE, KNE + 0.15, w})
+    for ya, yb in zip(ys, ys[1:]):
+        ym = (ya + yb) / 2
+        q = [(xe, ya, deck_top(xe, ya, ym)), (xe, yb, deck_top(xe, yb, ym)), (xe, yb, rd(xe) - SKIRT), (xe, ya, rd(xe) - SKIRT)]
+        DECK.poly(q if sx < 0 else q[::-1], CO, (sx, 0, 0))
+
 # ------------------------------------------------------------------------------------------------ details: arch rings, consoles
 def polar_uv(cx, cz, pts_in, pts_out):
     """rowlock rings: u = radial (brick length), v = along the arc (courses)"""
@@ -565,6 +592,13 @@ for i in range(len(FXS) - 1):
 for i, sx in ((0, -1), (-1, 1)):
     x = FXS[i]; y = YF0 - fw(x)
     FOOT.poly([(x, y, ftop(x)), (x, y + UP_W, ftop(x)), (x, y + UP_W, ftop(x) + UP_H), (x, y, ftop(x) + UP_H)], CO, (sx, 0, 0))
+# landing seats: a concrete block under each end of the deck, down into the bank (no gap under the deck where the
+# city's ground is lower than its soffit; the city fills the bank up to the landing: railData.js "abutment fill")
+for xe, sx in ((FB["x0"], 1), (FB["x1"], -1)):
+    xa, xb = sorted((xe, xe + sx * 1.2))
+    wv = fw(xe) - 0.30
+    zt = max(ftop(xa), ftop(xb)) - D + 0.05
+    FOOT.box(((xa + xb) / 2, YF0 - 0.02 - wv / 2, zt - 0.85), (xb - xa - 0.04, wv - 0.04, 1.7), CO)
 LEAN = math.radians(12)
 n_fin = int((FB["x1"] - FB["x0"] - 0.6) / 1.25)
 for k in range(n_fin + 1):
@@ -868,7 +902,7 @@ info = {
     "deck": {"length": XB - XA, "width": 2 * (YU + 0.06), "x0": XA, "x1": XB,
              "road_ends": list(B["road_ends"]), "grade": round(GRADE, 5), "kerb_ne": KNE, "kerb_sw": B["kerb_sw"],
              "sidewalk_ne": 0.13, "strip_sw": [0.10, 0.02], "parapet_inner": YI, "parapet_top": B["coping_bottom"] + CH,
-             "fold": FOLD, "flare": FLARE},
+             "fold": FOLD, "flare": FLARE, "apron_se": APRON, "skirt": SKIRT},
     "footprint": [[XA - 0.5, -(YF0 * -1 + FB["w_nw"] + 0.5)], [XB + 0.5, -(YF0 * -1 + FB["w"] + 0.5)], [XB + 0.5, YU + FLARE + 0.5], [XA - 0.5, YU + FLARE + 0.5]],
     "foot": {"x0": FB["x0"], "x1": FB["x1"], "y_inner": YF0, "w": FB["w"], "w_nw": FB["w_nw"], "x_flare": FB["x_flare"], "top_under_road": FB["top_under_road"]},
     "openings": [{"name": o["name"], "x0": o["x0"], "x1": o["x1"], "spring": round(o["spring"], 3), "crown": round(o["crown"], 3),

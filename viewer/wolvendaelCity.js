@@ -69,6 +69,8 @@ export async function addWolvendael({ scene, updaters, hide, ponds, world, manif
     const [hdr, buf] = await Promise.all([fetch(new URL(tileOf.files.terrainHeader, DATA)).then((r) => r.json()), fetch(new URL(tileOf.files.terrain, DATA)).then((r) => r.arrayBuffer())]);
     const hm = new Heightmap(hdr, buf);
     const bed = pondBedGrid(pondDesc, hm.ground);
+    // the water's depth for drive mode (viewer/drive/carEnv.js: the car wades in and bogs down, no wall at the shore)
+    (world.waters ??= []).push({ x0: bed.x0, z0: bed.z0, x1: bed.x0 + (bed.cols - 1) * bed.step, z1: bed.z0 + (bed.rows - 1) * bed.step, depthAt: bed.depthAt });
     return createPond({ pond: pondDesc, bed, renderer });
   })();
 

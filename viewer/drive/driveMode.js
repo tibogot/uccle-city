@@ -8,13 +8,14 @@
 import * as THREE from "three/webgpu";
 import { loadCarModel, createCar, carLights, fitBody } from "./carModel.js";
 import { HANDLING, createCarState, stepCar } from "./carPhysics.js";
-import { addCircles, buildColliders, driveHeight, gather, pointInBuilding, KIND } from "./colliders.js";
+import { addCircles, buildColliders, driveHeight, extendColliders, gather, pointInBuilding, KIND } from "./colliders.js";
 import { createCarEnv } from "./carEnv.js";
 import { ChaseCamera } from "./chaseCamera.js";
 import { ColliderDebug } from "./debugDraw.js";
 import { auditTile } from "./colliderAudit.js";
 import { DriveKeys } from "./input.js";
 import { lampSites } from "../lamps.js";
+import { carBlockersSync } from "../heroColliders.js";
 import { env as lightEnv } from "../lighting.js";
 
 /** Main thread, once per loaded tile: the worker's drive data + the tile's lamp posts and bollards, from the lists the
@@ -22,14 +23,61 @@ import { env as lightEnv } from "../lighting.js";
  *  sidewalk, the surveyed bollards). Before 2026-11-12 the posts came from lampSites, where the lamps stood BEFORE
  *  they were moved onto the sidewalk: ~90 % of them were invisible posts, many in the carriageway
  *  (docs/CITY_TREES.md §3). No drawn list (or a legacy drive set): the old lampSites posts. */
-export function tileDrive(drive, roads, bounds, drawn = null) {
+export function tileDrive(drive, roads, bounds, drawn = null, features = null) {
   if (!drive) return null;
   const old = !drawn || drive.legacy;
   const lamps = (old ? lampSites(roads, bounds) : drawn.lamps).map((p) => ({ x: p.x, z: p.z, r: 0.2, kind: KIND.lamp }));
   const posts = old ? [] : (drawn.bollards || []).map((p) => ({ x: p.x, z: p.z, r: 0.1, kind: KIND.post }));
   addCircles(drive.col, [...lamps, ...posts]);
   drive.counts.lamps = lamps.length; drive.counts.posts = posts.length;
+  if (features && !old) {
+    const f = featureColliders(features, bounds);
+    drive.col = extendColliders(drive.col, f.polys, f.circles);
+    Object.assign(drive.counts, f.counts);
+  }
   return drive;
+}
+
+/**
+ * What else the tile DRAWS at car height (docs/collisions/README.md: until 2026-11-13 the car went through them): the
+ * parked cars (their oriented boxes, the ones the fleet draws), the street furniture (signals and stop poles as posts,
+ * benches / bike racks / bus and tram shelters as oriented boxes), the tram poles and the rail masts (posts at their
+ * foot). From the features group's instanced meshes, by name (the same ones viewer/character/cityHook.js uses).
+ */
+export function featureColliders(features, bounds) {
+  const polys = [], circles = [], counts = { cars: 0, furniture: 0, poles: 0 };
+  const M = new THREE.Matrix4(), W = new THREE.Matrix4(), v = new THREE.Vector3(), o = new THREE.Vector3();
+  const inT = (x, z) => x >= bounds.x0 && x <= bounds.x1 && z >= bounds.z0 && z <= bounds.z1;
+  features.updateMatrixWorld(true);
+  features.traverse((m) => {
+    if (!m.isInstancedMesh) return;
+    const n = m.name || "", p = m.parent?.name || "";
+    const kind = n === "parked-cars" ? "car" : /^furniture-(stopPole|signal)$/.test(n) || n === "tram-poles" || n === "rail-masts" ? "pole"
+      : /^furniture-(bench|bikes|shelter)$/.test(n) || (p === "tram" && !n) ? "box" : null;
+    if (!kind) return;
+    if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
+    const bb = m.geometry.boundingBox;
+    for (let i = 0; i < m.count; i++) {
+      m.getMatrixAt(i, M); W.multiplyMatrices(m.matrixWorld, M);
+      o.set(0, 0, 0).applyMatrix4(W);
+      if (!inT(o.x, o.z)) continue;
+      if (kind === "pole") { circles.push({ x: o.x, z: o.z, r: n === "tram-poles" || n === "rail-masts" ? 0.15 : 0.08, kind: KIND.furniture }); counts.poles++; continue; }
+      if (kind === "car") {
+        const ring = [[bb.min.x, bb.min.z], [bb.max.x, bb.min.z], [bb.max.x, bb.max.z], [bb.min.x, bb.max.z]].map(([x, z]) => { v.set(x, bb.min.y, z).applyMatrix4(W); return [v.x, v.z]; });
+        polys.push({ rings: [ring], kind: KIND.car }); counts.cars++;
+        continue;
+      }
+      // benches, bike racks, shelters: what they draw at car height (a shelter's roof overhangs its posts and glass;
+      // a bike rack is hoops, not a box), sliced like the landmarks (viewer/heroColliders.js)
+      const P = m.geometry.attributes.position, I = m.geometry.index, cnt = I ? I.count : P.count, T = new Float32Array(cnt * 3);
+      for (let q = 0; q < cnt; q++) { v.fromBufferAttribute(P, I ? I.getX(q) : q).applyMatrix4(W); T[q * 3] = v.x; T[q * 3 + 1] = v.y; T[q * 3 + 2] = v.z; }
+      v.set(0, bb.min.y, 0).applyMatrix4(W);
+      const base = v.y;
+      for (const pq of carBlockersSync(T, () => base, { kind: KIND.furniture })) polys.push(pq);
+      counts.furniture++;
+    }
+  });
+  return { polys, circles, counts };
 }
 
 export class Driver {
@@ -47,7 +95,7 @@ export class Driver {
       const dk = this.world.decks?.length ? this.world.deckY(x, z) : null;          // a hero road bridge's deck
       if (dk != null) return dk;
       const t = this.world.at(x, z);
-      return t.drive ? driveHeight(t.hm, t.drive.ground.delta, x, z) : t.hm.surface(x, z) + 0.12;
+      return t.drive ? driveHeight(t.hm, t.drive.ground, x, z, this.groundHint ?? (this.on && this.state ? this.state.y : null)) : t.hm.surface(x, z) + 0.12;
     };
     this.sets = (x, z, r) => {
       const out = this._sets ||= [];
@@ -70,7 +118,8 @@ export class Driver {
       return col.flags;
     };
     this.extra = [];   // collider sets no tile carries (hero models: the Saint-Job front steps)
-    this.env = createCarEnv({ sets: this.sets, ground: this.ground, handling: HANDLING });
+    this.ledges = !/[?&]colfix=0/.test(location.search);       // ?colfix=0: the car climbs any step (as before the audit)
+    this.env = createCarEnv({ sets: this.sets, ground: this.ground, handling: HANDLING, waters: () => this.world.waters, ledges: this.ledges });
     this.camNear = [];
     this.insideWall = (x, z) => pointInBuilding(this.camNear, x, z);
     this.hud = document.createElement("div");
@@ -85,8 +134,11 @@ export class Driver {
     if (!polys?.length) return;
     let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
     for (const p of polys) for (const r of p.rings) for (const [x, z] of r) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
-    this.extra.push(buildColliders(polys, [], { x0, x1, z0, z1 }));
+    const set = buildColliders(polys, [], { x0, x1, z0, z1 });
+    this.extra.push(set);
+    return set;
   }
+  removeStatic(set) { const i = this.extra.indexOf(set); if (i >= 0) this.extra.splice(i, 1); }
 
   /** Swap the car model (carModel.js loadCarModel spec: "scripted", "kenney:sedan", "quaternius:car_a" ...). */
   async setCar(spec) {
@@ -111,6 +163,7 @@ export class Driver {
   reset() {
     const s = this.startPose;
     this.state = createCarState(s.x, s.z, s.heading);
+    this.state.y = NaN;                                   // (no layer hint yet: the top surface)
     this.state.y = this.ground(s.x, s.z);
     this.chase.reset();
   }

@@ -316,10 +316,27 @@ class Walker {
       drag = [e.clientX, e.clientY];
     });
   }
-  start(x, z, yaw) { this.on = true; this.yaw = yaw; this.pitch = -0.05; this.x = x; this.z = z; }
+  /** Walk mode collides like the third-person body (docs/collisions/README.md): the same capsule controller in the same
+   *  city collision world (viewer/character/cityHook.js cityCollision), the camera at its eyes. Until it is ready (the
+   *  first second) it glides on the ground as before. */
+  start(x, z, yaw) {
+    this.on = true; this.yaw = yaw; this.pitch = -0.05; this.x = x; this.z = z;
+    this.ctl = null;
+    if (!COLFIX) return;                  // ?colfix=0: the old walk (no collision)
+    const token = this.token = {};
+    (this.collision ??= import("./character/cityHook.js").then((m) => m.cityCollision({ scene: this.scene, world: this.hm, log })))
+      .then(async ({ cw }) => {
+        const { CharacterController, FixedStepper } = await import("./character/controller.js");
+        if (this.token !== token || !this.on) return;
+        const y = this.hm.walkY(this.x, this.z), top = y + 3, t = cw.ray(this.x, top, this.z, 0, -1, 0, 6);
+        const c = new CharacterController(cw);
+        c.teleport(this.x, (t < Infinity ? top - t : y) + 0.05, this.z, this.yaw);
+        this.ctl = c; this.stepper = new FixedStepper(120); this.cw = cw;
+      }).catch((e) => log(`walk collisions: ${e.message}`));
+  }
   update(dt) {
     if (!this.on) return;
-    const k = this.keys, sp = (k.has("ShiftLeft") || k.has("ShiftRight") ? 12 : 4) * dt;
+    const k = this.keys, run = k.has("ShiftLeft") || k.has("ShiftRight"), sp = (run ? 12 : 4) * dt;
     const fx = -Math.sin(this.yaw), fz = -Math.cos(this.yaw);
     let mx = 0, mz = 0;
     if (k.has("KeyW") || k.has("ArrowUp")) { mx += fx; mz += fz; }
@@ -327,10 +344,19 @@ class Walker {
     if (k.has("KeyA") || k.has("ArrowLeft")) { mx += fz; mz -= fx; }
     if (k.has("KeyD") || k.has("ArrowRight")) { mx -= fz; mz += fx; }
     const l = Math.hypot(mx, mz);
-    if (l) { this.x += mx / l * sp; this.z += mz / l * sp; }
+    let eyeY;
+    if (this.ctl) {
+      const c = this.ctl;
+      c.input.x = l ? mx / l : 0; c.input.z = l ? mz / l : 0; c.input.run = run; c.input.jump = k.has("Space");
+      this.stepper.advance(Math.min(dt, 0.1), (h) => c.step(h));
+      this.x = c.pos[0]; this.z = c.pos[2]; eyeY = c.pos[1] + c.stepOffset + EYE;
+    } else {
+      if (l) { this.x += mx / l * sp; this.z += mz / l * sp; }
+      eyeY = (this.hm.walkY ? this.hm.walkY(this.x, this.z) : this.hm.surface(this.x, this.z) + CARVE) + EYE;
+    }
     const { x0, z0, x1, z1 } = this.hm.h;
     this.x = Math.min(Math.max(this.x, x0), x1); this.z = Math.min(Math.max(this.z, z0), z1);
-    this.camera.position.set(this.x, (this.hm.walkY ? this.hm.walkY(this.x, this.z) : this.hm.surface(this.x, this.z) + CARVE) + EYE, this.z);
+    this.camera.position.set(this.x, eyeY, this.z);
     this.camera.rotation.set(this.pitch, this.yaw, 0, "YXZ");
   }
 }
@@ -366,6 +392,10 @@ if (params.get("worker") !== "0") {
 }
 /** UrbIS solids replaced by a scripted model (the Saint-Job church): not drawn, kept in the roof grid. */
 const HIDE_BU_IDS = params.get("stjob") !== "0" ? [STJOB_BU_ID] : [];
+/** ?colfix=0: the colliders as before the collisions audit (docs/collisions/README.md): no parked cars / furniture /
+ *  poles for the car, the UrbIS footprints of the replaced solids + the hand-made Saint-Job steps and bridge parapets
+ *  instead of the landmarks' own geometry, walk mode without collision. For A/B and the "before" runs. */
+const COLFIX = params.get("colfix") !== "0";
 /** Park ponds whose bed the tiles carve (viewer/water/pondBed.js; the Wolvendael pond with ?wolvendael=1). */
 const PONDS = [];
 /** Tiles that have surfaces.json draw the measured UrbIS street surfaces (viewer/surfaces.js), the default since
@@ -376,8 +406,8 @@ const PAINT_PARAM = ["v1", "v2"].includes(params.get("paint")) ? params.get("pai
 function tileData(entry, lite = false) {
   entry = { ...entry, hide: HIDE_BU_IDS, ponds: PONDS, surface: ROAD_SURFACES, pits: params.get("pits") !== "0",   // ?pits=0: no tree pits (A/B)
     kit: cityKit.on && !lite, kitExclude: cityKit.exclude,                                           // the façade kit (viewer/facadeKit/), ?kit=0 off
-    rail: TRAINS, driveLegacy: params.get("drivecol") === "legacy",
-    paint: PAINT_PARAM };                                                                            // ?paint=v1: the road engine's own markings (A/B)                                // ?drivecol=legacy: the drive colliders before the audit
+    rail: TRAINS, driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
+    paint: PAINT_PARAM };                                                                            // ?paint=v1: the road engine's own markings (A/B)
   const local = () => import("./tileData.js").then((m) => (lite ? m.buildLiteData : m.buildTileData)(entry, DATA.href));
   if (!tileWorker) return local();
   return new Promise((resolve, reject) => {
@@ -550,7 +580,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const bxyz = d.road.surfaceData?.bollards || [];
   const drawn = { trees: fo.userData.treesDrawn || [], lamps: lamps.sites || [], bollards: Array.from({ length: bxyz.length / 3 }, (_, i) => ({ x: bxyz[i * 3], z: bxyz[i * 3 + 2] })),
     hiddenBuildings: d.drive?.counts?.hidden || 0 };
-  const drive = tileDrive(d.drive, roads, bounds, drawn);
+  const drive = tileDrive(d.drive, roads, bounds, drawn, COLFIX ? own.features : null);
   frame("drive colliders");
   log(`tile ${entry.name}: main-thread work ${busy.toFixed(0)} ms, longest slice ${longest.toFixed(0)} ms (${worst}); slices over 4 ms: ${slices.join(", ") || "none"}; ${tileWorker ? "CPU build in the worker" : "CPU build ALSO on the main thread"}`);
   // roof heights (m TAW, 0 = none) for fly-mode collision: the max of the 2 m cells around the point, so the bird
@@ -725,16 +755,15 @@ async function main() {
   if (TRAINS) {
     const rail = await railP;
     if (rail) {
-      const { loadBridge, placeBridge, warmBridge, deckHeightFn, roadBridgeColliders, BRIDGES } = await import("./rail/bridgeModel.js");
+      const { loadBridge, placeBridge, warmBridge, deckHeightFn, BRIDGES } = await import("./rail/bridgeModel.js");
       const { openParallelPipelines } = await import("../vendor/engine/parallelPipelines.js");
       for (const name of BRIDGES) {
         loadBridge(name).then(async (b) => {
           const pb = placeBridge(b, { smooth: SMOOTH });
           // a road bridge: its deck carries walk / drive heights, its parapets block the car
           if (b.info.kind === "road_over_rail") {
-            world.decks.push(deckHeightFn(b.info));
-            const cols = roadBridgeColliders(b.info);
-            if (window.__driver) window.__driver.addStatic(cols); else (window.__pendingStatics ??= []).push(cols);
+            world.decks.push(deckHeightFn(b.info));     // its parapets: viewer/heroColliders.js (?colfix=0: the old hand-made rings)
+            if (!COLFIX) { const cols = (await import("./rail/bridgeModel.js")).roadBridgeColliders(b.info); if (window.__driver) window.__driver.addStatic(cols); else (window.__pendingStatics ??= []).push(cols); }
           }
           // shaders (+ fading copies) and the shadow pass built before it shows (nothing compiled on a frame)
           const tw = performance.now();
@@ -774,6 +803,8 @@ async function main() {
   controls.enableDamping = true;
   controls.maxPolarAngle = Math.PI * 0.495;
   const walker = new Walker(camera, renderer.domElement, world);
+  walker.scene = scene;
+  world.hide = COLFIX ? HIDE_BU_IDS : [];  // the UrbIS solids the landmarks replace (out of the colliders on foot too)
   const atP = params.get("at")?.split(",").map(Number);
   const start = atP?.length === 2 ? roadStart(roads, atP[0], atP[1], bounds)
     : TILE === "I6" ? roadStart(roads, 1153.1, 540.1, bounds) : roadStart(roads, cx, cz, bounds);   // ?at=, else Place de Saint-Job on I6
@@ -851,10 +882,14 @@ async function main() {
   // drive mode (viewer/drive/): the hatchback on a street near Saint-Job church (the fly start), ?at=x,z elsewhere
   const driver = new Driver(camera, renderer.domElement, scene, world);
   window.__driver = driver;
-  if (params.get("stjob") !== "0") loadStJob().then((m) => driver.addStatic(stjobColliders(m.placement))).catch(() => {});   // the church's front steps
-  if (HIDE_BU_IDS.length) loadStJob().then((m) => driver.addStatic(stjobColliders(m.placement))).catch(() => {});   // the church's front steps
-  for (const cols of window.__pendingStatics ?? []) driver.addStatic(cols);                                           // hero road bridges' parapets
-  window.__pendingStatics = [];
+  // every landmark / bridge collides by its own LOD0 (car blocks + character triangles), built once its tiles are in
+  // (viewer/heroColliders.js; replaces the hand-made Saint-Job steps and road-bridge parapet rings)
+  if (COLFIX) window.__heroCols = (await import("./heroColliders.js")).createHeroColliders({ scene, world, manifest, driver, log });
+  else {
+    if (params.get("stjob") !== "0") loadStJob().then((m) => driver.addStatic(stjobColliders(m.placement))).catch(() => {});
+    for (const cols of window.__pendingStatics ?? []) driver.addStatic(cols);
+    window.__pendingStatics = [];
+  }
   const drive = () => {
     // from where the player is (walk / third person / fly): the nearest road of the tile there; else ?at=x,z or Saint-Job
     const here = third?.on ? [third.tp.x, third.tp.z] : walker.on ? [walker.x, walker.z] : flyer.on ? [flyer.x, flyer.z] : null;
@@ -1195,7 +1230,27 @@ async function main() {
     const list = world.tiles.filter((t) => t.drive && t.drawn && (!names || names.includes(t.name))).map((t) => auditTile(t));
     return { total: sumAudits(list), tiles: list };
   };
-  window.viewer = { auditColliders, tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
+  /** The JOINS check (viewer/contactAudit.js, tools/mesh_audit/contact.js): a hero / bridge ("bridge-verrewinkel") or a
+   *  tile's roads ("roads:F7") against the generated ground of the loaded tiles. */
+  const contactAudit = async (what, options) => (await import("./contactAudit.js")).contactAudit({ scene, world }, what, options);
+  /** The collision test of a loaded tile (viewer/drive/collisionTest.js): drawn solids vs the car colliders (static, every
+   *  cell) + scripted drive and walk routes. The walk routes use the third-person collision world when it is running. */
+  const collisionTest = async (name, opts = {}) => {
+    const m = await import("./drive/collisionTest.js");
+    let makeController = null;
+    if (opts.walk !== false) {
+      const { CharacterController } = await import("./character/controller.js");
+      const col = await (await import("./character/cityHook.js")).cityCollision({ scene, world, log });
+      for (let i = 0; i < 300 && !col.ready(name); i++) await new Promise((r) => setTimeout(r, 200));
+      makeController = (x, y, z) => {
+        const c = new CharacterController(col.cw);
+        if (y == null) { const top = world.walkY(x, z) + 3, t = col.cw.ray(x, top, z, 0, -1, 0, 40); y = (t < Infinity ? top - t : world.walkY(x, z)) + 0.05; }
+        c.teleport(x, y, z); return c;
+      };
+    }
+    return m.collisionTest({ scene, world, driver, makeController }, name, opts);
+  };
+  window.viewer = { auditColliders, contactAudit, collisionTest, thirdPerson: () => thirdPerson(), getThird: () => third, tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
     world, fader, stateAt, step: (dt) => stepLoop(dt), freeze: (on) => { stateFreeze = !!on; }, pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop),
     renderFrame: () => { if (!stateFreeze) { lodEye.value.copy(camera.position); for (const u of updaters) u(camera.position, camera); } renderFrame(); } };
 }

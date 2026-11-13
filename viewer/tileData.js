@@ -12,7 +12,7 @@ import { buildDriveData } from "./drive/colliders.js";
 import { buildRoadData, CARVE } from "./roadBuild.js";
 import { smoothPolyline } from "./track.js";
 import { kitCollector } from "./facadeKit/placement.js";
-import { prepRail, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround } from "./rail/railData.js";
+import { prepRail, abutmentFill, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround } from "./rail/railData.js";
 import { buildTrafficGraph } from "./traffic/trafficGraph.js";
 
 let railP = null;
@@ -138,6 +138,8 @@ export async function buildTileData(entry, base) {
   const roofs = await step("roof grid", () => roofGrid(bDoc, bounds));
   // the road stage (viewer/roadBuild.js, shared with the Road Checker and the Road Lab)
   // ?trains=1: the hero road bridges' decks are the road's ground over the cutting (viewer/rail/railData.js roadDeckGround)
+  // the ground at the hero road bridges' ends up to their decks, before the roads sample it (railData.js abutmentFill)
+  if (rail) await step("abutment fill", () => abutmentFill(rail.heroes, [hm.y, hm.orig], tHdr));
   const roadGround = rail ? roadDeckGround(rail.heroes, hm.ground) : hm.ground;
   const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround,
     trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z) }));
@@ -168,11 +170,15 @@ export async function buildTileData(entry, base) {
     const [idx] = MeshoptSimplifier.simplify(terrain.idx, terrain.pos, 3, 0, TERRAIN_ERROR, ["LockBorder", "ErrorAbsolute"]);
     terrain.idx = idx;
   });
-  // drive colliders too: a replaced solid's footprint is the hero model's footprint (Saint-Job church)
-  const drive = await step("drive colliders", () => buildDriveData({ bDoc, net, feats, hm, parts: road.parts, bounds, surf, legacy: !!entry.driveLegacy }));   // drive mode (viewer/drive/)
+  // drive colliders: NOT the solids a scripted model replaces (the model collides by its own geometry,
+  // viewer/heroColliders.js: its footprint corners blocked where the model has a porch or a recess, and missed its
+  // steps, yard walls, fences and parapets)
   const nb = bDoc.buildings.length;
+  const keep = entry.driveKeepHidden ? { buildings: bDoc.buildings.slice() } : null;      // ?colfix=0: the old way
   hideBuildings(bDoc, entry.hide);
-  drive.counts.hidden = nb - bDoc.buildings.length;     // solids a hero model replaces (their footprint still collides)
+  const drive = await step("drive colliders", () => buildDriveData({ bDoc: keep || bDoc, bBuf: keep ? null : bBuf, net, feats, hm, parts: road.parts, bounds, surf, legacy: !!entry.driveLegacy,
+    walls: keep ? [] : (rail?.doc.platforms || []).map((p) => p.ring) }));          // rail platforms: 0.76 m walls for the car   // drive mode (viewer/drive/)
+  drive.counts.hidden = nb - bDoc.buildings.length;     // solids a hero model replaces (it collides by its own LOD0)
   // ?kit=1: the façade kit's placement (viewer/facadeKit/placement.js) runs inside the analysis, here in the worker;
   // entry.kitExclude = BU_IDs a hero model or the interior pilot replaces
   const kit = entry.kit ? kitCollector({ exclude: new Set(entry.kitExclude || []), ground: (x, z) => hm.ground(x, z) }) : null;
