@@ -121,6 +121,26 @@ the GPU process. Remaining draws: scene 267 (city trees 108 = one per tile x spe
 things ~25: little left to gain there). The 180-500 ms spikes when tiles
 stream are still there (the GPU-process stall, next).
 
+## Step 3: the tile-streaming spikes (2026-11-13, same session)
+
+**Method:** every WebGPU call the page makes, logged per frame (an init script wrapping `GPUQueue.writeBuffer /
+writeTexture / submit`, `GPUDevice.createBuffer / createTexture`, `GPUBuffer.destroy`), over a 60 s flight across fresh
+tiles, then the spikes (> 90 ms) against the work sent in the 3 frames and the 1 s before them.
+
+**Per second while flying:** 17 MB of buffer writes (a normal frame: ~390 `writeBuffer`s, ~370 KB: per-object uniforms),
+8 MB of new buffers, 5.7 MB destroyed, 3.4 MB of texture uploads, ~37 queue submits a frame. Over the 60 s: 6,549 buffers
+created (555 MB), 3,912 destroyed (351 MB), 34 textures (132 MB).
+
+**No link between the spikes and that work:** the busiest second (185 MB of buffers destroyed as tiles unloaded) had no
+spike; the two spikes of that run (273 ms, 361 ms) followed ordinary seconds (31 MB of buffers + an 11 MB texture; 26 MB
+of writes). The spikes are rare now: 59 frames > 33 ms in 60 s of fast flight (1.7 %), 2-5 spikes a minute.
+
+**Not solved:** what the GPU process does in those 270-360 ms needs a trace WITH the GPU categories (`gpu`, `dawn`,
+`disabled-by-default-gpu.dawn`), which the DevTools MCP trace can't select: a separate Chrome started with
+`--trace-startup=<categories>` (or chrome://tracing by hand) is the way. Suspects: Dawn's D3D12 resource residency /
+heap allocation under ~900 MB of churn a minute, the transfer ring for `writeBuffer` (Chrome copies small writes
+through a shared ring; 17 MB/s of them), or a tree-impostor bake (render-to-texture) landing with a tile.
+
 ### Next, in order (updated)
 
 1. **CPU per draw (the main thread's biggest item):** fewer draws: no sun shadow from small things (kerbs, bollards,
