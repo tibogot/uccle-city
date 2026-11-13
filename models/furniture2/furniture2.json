@@ -1,0 +1,115 @@
+{
+ "asset": "Street furniture kit 2: benches, bike hoop, bike box, bins, glass bank (tools/blender/streetFurniture.py)",
+ "pieces": {
+  "bench_street": {
+   "slots": [
+    "frame_dark",
+    "wood_slat",
+    "galvanised"
+   ],
+   "triangles": 1764,
+   "size_m": [
+    1.8,
+    0.555,
+    1.165
+   ]
+  },
+  "bench_park": {
+   "slots": [
+    "cast_green",
+    "wood_slat",
+    "galvanised"
+   ],
+   "triangles": 5572,
+   "size_m": [
+    1.9,
+    0.649,
+    1.192
+   ]
+  },
+  "bench_backless": {
+   "slots": [
+    "frame_dark",
+    "wood_slat",
+    "galvanised"
+   ],
+   "triangles": 2172,
+   "size_m": [
+    1.8,
+    0.47,
+    0.776
+   ]
+  },
+  "hoop": {
+   "slots": [
+    "hoop_grey"
+   ],
+   "triangles": 1380,
+   "size_m": [
+    0.792,
+    0.092,
+    1.124
+   ]
+  },
+  "bikebox": {
+   "slots": [
+    "box_shell",
+    "rubber_black",
+    "alu_panel",
+    "galvanised",
+    "white_plate"
+   ],
+   "triangles": 3780,
+   "size_m": [
+    1.982,
+    2.154,
+    1.662
+   ]
+  },
+  "bin_round": {
+   "slots": [
+    "bin_green",
+    "bin_band",
+    "rubber_black"
+   ],
+   "triangles": 4128,
+   "size_m": [
+    0.503,
+    0.503,
+    1.295
+   ]
+  },
+  "bin_column": {
+   "slots": [
+    "bin_green",
+    "rubber_black",
+    "galvanised",
+    "frame_dark"
+   ],
+   "triangles": 2074,
+   "size_m": [
+    0.38,
+    0.418,
+    1.264
+   ]
+  },
+  "glassbank": {
+   "slots": [
+    "galvanised",
+    "bank_hull",
+    "bank_ring",
+    "rubber_black",
+    "white_plate",
+    "bank_bay",
+    "bank_ring_mid"
+   ],
+   "triangles": 4218,
+   "size_m": [
+    1.66,
+    0.96,
+    1.885
+   ]
+  }
+ },
+ "frame": "glTF Y up, origin = footprint centre on the ground, road side = -Y (Blender) = +Z (three.js); legs 0.3 m below"
+}
