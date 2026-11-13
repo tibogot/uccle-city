@@ -313,6 +313,124 @@ export function railKeepClear(doc, bounds, heroes = []) {
   };
 }
 
+// ------------------------------------------------------------------------------------------------ the car on the line
+// (owner, 2026-11-13: "see car going inside ground in the train rail"). carveGrid leaves the terrain 6 cm under the
+// ballast crest and the rail heads stand 19 cm over it, so a car on the line sat ~25 cm low with the rails through its
+// wheels. Two fixes, both for drive mode (viewer/drive/): the line's own surface in the drive grid, and fences.
+
+const ON_RAIL = 0.02;          // m under the rail top: the car rides on the rails between the crests (a 1 m grid)
+/** Raise the drive grid (colliders.js driveGround: cm over the carved terrain) to the line's surface where a track is
+ *  on the ground (not on a bridge: the road under it keeps its own ground): rail top over the crest, the ballast
+ *  shoulder down to the bed. Never lowers (a level crossing's road stays). Returns the number of cells raised. */
+export function railDriveSurface(doc, hm, ground, bounds, heroes = []) {
+  const { x0, z0, cols, rows, step } = hm.h, Y = hm.y, D = ground.delta;
+  const rings = bridgeRings(doc, heroes);
+  const onBridge = (x, z) => { for (const b of rings) if (x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && inRing(b.ring, x, z)) return true; return false; };
+  let raised = 0;
+  for (const t of tracksIn(doc, bounds, FOOT_HW + 1)) {
+    if (t.bridge) continue;
+    const P = t.pts;
+    for (let i = 1; i < P.length; i++) {
+      const a = P[i - 1], b = P[i];
+      const c0 = Math.max(0, Math.floor((Math.min(a[0], b[0]) - FOOT_HW - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(a[0], b[0]) + FOOT_HW - x0) / step));
+      const r0 = Math.max(0, Math.floor((Math.min(a[2], b[2]) - FOOT_HW - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(a[2], b[2]) + FOOT_HW - z0) / step));
+      if (c0 > c1 || r0 > r1) continue;
+      const dx = b[0] - a[0], dz = b[2] - a[2], L2 = dx * dx + dz * dz || 1e-9;
+      for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+        const px = x0 + c * step, pz = z0 + r * step;
+        const u = Math.max(0, Math.min(1, ((px - a[0]) * dx + (pz - a[2]) * dz) / L2));
+        const d = Math.hypot(px - a[0] - dx * u, pz - a[2] - dz * u);
+        if (d > FOOT_HW) continue;
+        const rt = a[1] + (b[1] - a[1]) * u;
+        const target = d < CREST_HW ? rt - ON_RAIL : rt - ON_RAIL + (rt + BED - (rt - ON_RAIL)) * (d - CREST_HW) / (FOOT_HW - CREST_HW);
+        const k = r * cols + c, cm = Math.round((target - Y[k]) * 100);
+        if (cm <= D[k] || cm > 400 || onBridge(px, pz)) continue;        // never lower; > 4 m over the grid: not this line's ground
+        D[k] = cm; raised++;
+      }
+    }
+  }
+  return raised;
+}
+
+const FENCE = 3.2, FENCE_STEP = 2, FENCE_W = 0.12;
+/** The line's fences for the car: thin wall rings [[x, z], ...] FENCE m either side of each track where it runs on the
+ *  ground or in a cutting; none on bridges (roads pass under), none where the real ground is over 3 m above the rail top
+ *  (a tunnel or a covered box: the streets above), none within 3 m of another track (between the tracks of a pair),
+ *  inside a platform, or near a road crossing the line (a level crossing or a road bridge over it).
+ *  orig(x, z) = the uncarved DTM; roadsDoc = roads.json. */
+export function railFences(doc, bounds, heroes, roadsDoc, orig) {
+  const rings = bridgeRings(doc, heroes).concat(doc.platforms.map((p) => ringBox(p.ring)));
+  const inAny = (x, z) => { for (const b of rings) if (x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && inRing(b.ring, x, z)) return true; return false; };
+  const tracks = tracksIn(doc, bounds, FENCE + 4);
+  // road centre lines near the line (every highway: a car may come from any of them), with a half width
+  const nodes = new Map((roadsDoc?.nodes || []).map((n) => [n.id, n]));
+  const segs = [];
+  for (const r of roadsDoc?.roads || []) {
+    const hw = r.meta?.highway;
+    if (hw === "footway" || hw === "path" || hw === "steps" || hw === "cycleway" || hw === "pedestrian" || hw === "bridleway") continue;
+    const side = (a) => (a || []).reduce((s, l) => s + (+l.width || 0), 0);
+    const half = Math.max(3, side(r.lanes?.left), side(r.lanes?.right)) + 2;
+    const pts = [nodes.get(r.a), ...(r.pts || []), nodes.get(r.b)].filter(Boolean);
+    for (let i = 1; i < pts.length; i++) segs.push([pts[i - 1].x, pts[i - 1].z, pts[i].x, pts[i].z, half]);
+  }
+  const segD = (x, z, s) => { const dx = s[2] - s[0], dz = s[3] - s[1], L2 = dx * dx + dz * dz || 1e-9, u = Math.max(0, Math.min(1, ((x - s[0]) * dx + (z - s[1]) * dz) / L2)); return Math.hypot(x - s[0] - dx * u, z - s[1] - dz * u); };
+  const nearRoad = (x, z) => { for (const s of segs) if (segD(x, z, s) < s[4]) return true; return false; };
+  const nearOther = (x, z, t) => {
+    for (const o of tracks) {
+      if (o === t || x < o.box.x0 - 4 || x > o.box.x1 + 4 || z < o.box.z0 - 4 || z > o.box.z1 + 4) continue;
+      for (let i = 1; i < o.pts.length; i++) if (segD(x, z, [o.pts[i - 1][0], o.pts[i - 1][2], o.pts[i][0], o.pts[i][2]]) < 3) return true;
+    }
+    return false;
+  };
+  const m = 4, inTile = (x, z) => x >= bounds.x0 - m && x <= bounds.x1 + m && z >= bounds.z0 - m && z <= bounds.z1 + m;
+  const out = [], lines = [];
+  let posts = 0;
+  for (const t of tracks) {
+    if (t.bridge) continue;
+    const F = frames(t);
+    for (const sd of [-1, 1]) {
+      let run = [];
+      const flush = () => {
+        if (run.length >= 2) {
+          const a = run.map((q) => [q[0] + q[2] * FENCE_W / 2, q[1] + q[3] * FENCE_W / 2]);
+          const b = run.map((q) => [q[0] - q[2] * FENCE_W / 2, q[1] - q[3] * FENCE_W / 2]).reverse();
+          out.push([...a, ...b]);
+          lines.push(run);
+        }
+        run = [];
+      };
+      for (let s = 0; s <= t.len + 1e-6; s += FENCE_STEP) {
+        const f = sample(F, Math.min(s, t.len));
+        const x = f.x + f.nx * sd * FENCE, z = f.z + f.nz * sd * FENCE;
+        const ok = inTile(x, z) && !inAny(x, z) && !inAny(f.x, f.z) && orig(x, z) - f.y < 3 && !nearOther(x, z, t) && !nearRoad(x, z);
+        if (ok) { run.push([x, z, f.nx * sd, f.nz * sd]); posts++; } else flush();
+      }
+      flush();
+    }
+  }
+  return { rings: out, lines, posts };
+}
+
+export const FENCE_H = 1.8;
+/** The fences as one drawable strip per tile (the welded-mesh panels and posts are the shader's: viewer/rail/railway.js
+ *  fence material): a vertical quad strip per run from 0.1 m under `surface` (the carved ground) to FENCE_H over it.
+ *  aS = metres along the run (posts every 2.5 m), aH = metres over the ground. Non-indexed triangles. */
+export function fenceMesh(lines, surface) {
+  const P = [], N = [], S = [], H = [];
+  for (const run of lines) {
+    let s = 0;
+    for (let i = 1; i < run.length; i++) {
+      const [ax, az, nx, nz] = run[i - 1], [bx, bz, mx, mz] = run[i];
+      const L = Math.hypot(bx - ax, bz - az), ya = surface(ax, az), yb = surface(bx, bz);
+      const n = [(nx + mx) / 2, 0, (nz + mz) / 2], nl = Math.hypot(n[0], n[2]) || 1;
+      const v = [[ax, ya - 0.1, az, s, -0.1], [bx, yb - 0.1, bz, s + L, -0.1], [bx, yb + FENCE_H, bz, s + L, FENCE_H], [ax, ya + FENCE_H, az, s, FENCE_H]];
+      for (const k of [0, 1, 2, 0, 2, 3]) { const q = v[k]; P.push(q[0], q[1], q[2]); N.push(n[0] / nl, 0, n[2] / nl); S.push(q[3]); H.push(q[4]); }
+      s += L;
+    }
+  }
+  return P.length ? { position: Float32Array.from(P), normal: Float32Array.from(N), aS: Float32Array.from(S), aH: Float32Array.from(H) } : null;
+}
+
 /** The verges of the line (cuttings and embankments): polylines of the drawn tracks inside the tile, for the land cover
  *  (painted as undergrowth instead of grass / bare earth) */
 export function railVerges(doc, bounds) {

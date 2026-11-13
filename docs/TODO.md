@@ -52,8 +52,15 @@ orthophoto colour (lighting.js groundAlbedo #686c67, `?skyground=old`): grey-gre
 earth and only the hero bridges had a deck; every OSM road bridge (13 in Uccle: Carsoel, Waterloo, Merlo, Chênaie,
 Tilleuls, Hospices...) followed the cutting. Now viewer/streets/bridgeDecks.js: a deck per OSM road bridge (road ground,
 world deck for walk / car, a drawn full-width slab with parapets = car walls; the tram-only deck skipped under a road
-deck). H6 drive + walk routes: 0 falls. Still open from the list below: the railway is not fenced for cars elsewhere,
-the ballast is not a drive surface, rails are not bumps (items 2-4); the decks are plain concrete (no paint / kerbs on
+deck). H6 drive + walk routes: 0 falls. RAILWAY FOR CARS DONE (2026-11-13 evening, `?railcar=0` = before):
+viewer/rail/railData.js railDriveSurface: the drive grid on the line = rail top - 2 cm over the crest, the ballast
+shoulder down to the bed (never lowers a road; not on bridges): 1,762 / 1,812 track points within 5 cm of the rail top
+(was ~25 cm under, rails through the wheels); railFences: car walls 3.2 m out where the line is on the ground / in a
+cutting (none on bridges, over a tunnel (DTM > 3 m above the rail), between paired tracks, in platforms, or within a
+road's half width + 2 m: level crossings and road bridges stay open), DRAWN as a welded-mesh fence (railway.js fence
+material: posts 2.5 m, filtered wires, alpha-to-coverage; one strip per tile). I5 / H6 drive routes identical with
+and without (I5 52 routes 1 old fall, H6 47 routes 0 falls). Rails as bumps: not done (1 m grid; the car rides the
+rail top instead). The walker still stands 6 cm under the crest (walk Y = carved terrain). The decks are plain concrete (no paint / kerbs on
 them yet). The test's "over the drawn surface" reads the deck's underside (constant 0.93 m): a checker blind spot.
 
 **WAS (owner, 2026-11-13, live after the push): in drive mode the CAR FALLS THROUGH THE BRIDGE at the Saint-Job train

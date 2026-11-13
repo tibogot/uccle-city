@@ -13,7 +13,7 @@ import { buildRoadData, applyRoadOverrides, CARVE } from "./roadBuild.js";
 import { bridgeDecks, deckMesh, parapetRings } from "./streets/bridgeDecks.js";
 import { smoothPolyline } from "./track.js";
 import { kitCollector } from "./facadeKit/placement.js";
-import { prepRail, abutmentFill, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins } from "./rail/railData.js";
+import { prepRail, abutmentFill, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins, railDriveSurface, railFences, fenceMesh } from "./rail/railData.js";
 import { buildTrafficGraph } from "./traffic/trafficGraph.js";
 
 let railP = null;
@@ -196,8 +196,14 @@ export async function buildTileData(entry, base) {
   const nb = bDoc.buildings.length;
   const keep = entry.driveKeepHidden ? { buildings: bDoc.buildings.slice() } : null;      // ?colfix=0: the old way
   hideBuildings(bDoc, entry.hide);
+  // the railway for the car (viewer/rail/railData.js): fences along the line where it runs on the ground (not on bridges,
+  // not over a tunnel, broken at road crossings), and below the line's own surface in the drive grid (rail top, shoulders)
+  const fences = rail && !keep && entry.railFix ? await step("rail fences", () => railFences(rail.doc, bounds, rail.heroes, roads, hm.ground)) : null;
   const drive = await step("drive colliders", () => buildDriveData({ bDoc: keep || bDoc, bBuf: keep ? null : bBuf, net, feats, hm, parts: road.parts, bounds, surf, legacy: !!entry.driveLegacy,
-    walls: keep ? [] : [...(rail?.doc.platforms || []).map((p) => p.ring), ...osmBridges.decks.flatMap(parapetRings)] }));   // + the road bridges' parapets          // rail platforms: 0.76 m walls for the car   // drive mode (viewer/drive/)
+    walls: keep ? [] : [...(rail?.doc.platforms || []).map((p) => p.ring), ...osmBridges.decks.flatMap(parapetRings), ...(fences?.rings || [])] }));   // + the road bridges' parapets          // rail platforms: 0.76 m walls for the car   // drive mode (viewer/drive/)
+  if (rail && !keep && entry.railFix) drive.counts.railSurface = await step("rail drive surface", () => railDriveSurface(rail.doc, hm, drive.ground, bounds, rail.heroes));
+  if (fences) drive.counts.railFences = fences.rings.length;
+  if (fences && railOut) railOut.fences = fenceMesh(fences.lines, hm.surface);        // drawn: viewer/rail/railway.js
   drive.counts.hidden = nb - bDoc.buildings.length;     // solids a hero model replaces (it collides by its own LOD0)
   // ?kit=1: the façade kit's placement (viewer/facadeKit/placement.js) runs inside the analysis, here in the worker;
   // entry.kitExclude = BU_IDs a hero model or the interior pilot replaces

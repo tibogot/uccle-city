@@ -23,7 +23,7 @@ import {
 import { hash2D, noise2D, filteredPulse } from "../tslkit.js";
 import { SMOOTH, ditherNoise, lodEye } from "../lodFade.js";
 
-import { prepRail, carveGrid, railTileData, SLEEPER_STEP, SLEEPER_FAR, RAIL_C, WIRE_H, MESSENGER_H, MAST_OFF } from "./railData.js";
+import { prepRail, carveGrid, railTileData, SLEEPER_STEP, SLEEPER_FAR, RAIL_C, WIRE_H, MESSENGER_H, MAST_OFF, FENCE_H } from "./railData.js";
 export { GAUGE, RAIL_C, CREST, BED } from "./railData.js";
 
 let docP = null;
@@ -131,7 +131,23 @@ export function railMaterials() {
     col = mix(col, color(0xd9b21c), step(1.45, e).mul(step(e, 1.55)));
     platform.colorNode = col;
   }
-  mats = { ballast, rails, sleepers, steel, wire, concrete, platform };
+  // line fence (railData.js railFences / fenceMesh): Infrabel's welded-mesh panels, RAL 6005 green, posts every 2.5 m, a
+  // top rail. Everything is box-filtered over the pixel (filteredPulse), so a 4 mm wire far away is a faint, steady
+  // coverage instead of shimmering pixels; coverage -> alpha-to-coverage (MSAA), no blending, no sorting.
+  const fence = new THREE.MeshStandardNodeMaterial({ roughness: 0.6, metalness: 0.2, side: THREE.DoubleSide, alphaToCoverage: true });
+  {
+    const s = attribute("aS", "float"), h = attribute("aH", "float");
+    const fs = fwidth(s).max(1e-4), fh = fwidth(h).max(1e-4);
+    const post = filteredPulse(s.div(2.5), float(0), float(0.06 / 2.5), fs.div(2.5));
+    const vWire = filteredPulse(s.div(0.2), float(0), float(0.005 / 0.2), fs.div(0.2));
+    const hWire = filteredPulse(h.div(0.05), float(0), float(0.005 / 0.05), fh.div(0.05));
+    const panel = step(0.05, h).mul(step(h, 1.72));                                   // the mesh: 5 cm over the ground to the rail
+    const rail = filteredPulse(h.div(FENCE_H), float(1.72 / FENCE_H), float(1), fh.div(FENCE_H));
+    const cov = clamp(max(max(post, rail), max(vWire, hWire).mul(panel)), 0, 1);
+    fence.colorNode = color(0x173b2c);
+    fence.opacityNode = cov;
+  }
+  mats = { ballast, rails, sleepers, steel, wire, concrete, platform, fence };
   for (const m of Object.values(mats)) m.userData.shared = true;
   return mats;
 }
@@ -168,6 +184,11 @@ export function railTileMeshes(data) {
     const mesh = new THREE.Mesh(geo({ position: [w.position, 3], normal: [nrm, 3], aTan: [w.aTan, 3], aSide: [w.aSide, 1], aR: [w.aR, 1] }, w.index), M.wire);
     mesh.name = "rail-wires"; mesh.frustumCulled = false;     // the expansion moves vertices outside the bounding sphere
     group.add(mesh);
+  }
+  if (data.fences) {
+    const f = data.fences;
+    const m = new THREE.Mesh(geo({ position: [f.position, 3], normal: [f.normal, 3], aS: [f.aS, 1], aH: [f.aH, 1] }), M.fence);
+    m.receiveShadow = true; m.name = "rail-fences"; group.add(m);
   }
   if (data.platforms) {
     const p = data.platforms;
