@@ -5,6 +5,28 @@
 Read this first when resuming (with Claude or by hand). Rendering and performance plan: `docs/RENDER_PLAN.md`; what we learned from slop-newyork, game-engine-v1 and three r187: `docs/RESEARCH.md`. Details are in `docs/PLAN.md`
 (roadmap and history) and `docs/CONTRACT.md` (data format, v0.7).
 
+## State on 2026-11-13, morning (read this first)
+
+`claude/foundation` (NOT pushed to Vercel since aa07f5f; the owner decides when) has, ON by default: every landmark,
+trains + bridges, roads v2 rounds 1-5 (lane graph without gaps, roads on the terrain, smoothed turns), traffic, the
+facade kit, the material library, city trees + impostor kit, collisions from what is drawn (+ walk collision), the
+falcon flight as fly mode, STREET LIFE (524 real shop names, plates, numbers, stops; `?streetlife=0`), the data credits
+on screen (`docs/DATA_LICENCES.md`). Running at the time of writing: falcon round 2 (`claude/falcon2`, port 8847) and
+ground textures (`claude/groundtex`, port 8848).
+
+Performance (docs/perf/AUDIT.md, AUDIT_PLAN.md, PREFLIGHT.md): draws 806 -> 439, uploads 857 -> 56 KB a frame, slow
+frames -71 %. Rules now binding (also in agent briefs): never `THREE.DynamicDrawUsage` (r187 re-uploads it whole every
+pass); hide instanced meshes whose count is 0; fixed light count; measure only after the preflight says GREEN
+(`tools/perf/preflight.ps1` + `debug/preflight.js`; the laptop is 16 GB and was swapping), runner `debug/perfRun.js`.
+Opt-in experiments, not default: `?workers=3` (tile-worker pool), `?bootprefetch=1`, `?earlyshow=1`, `?bootprecompile`.
+Debug: `window.__trafficTiles` (lane graphs), `window.__coverAt` (boot time), `viewer.step(dt)`.
+
+Next (TODO "CURRENT STATE"): merge falcon2 + groundtex; our own grass (Grass Lab, Revo / engine Hybrid as references);
+the Brussels region border (Flemish DTM, see DATA_LICENCES.md); kerb gaps; perf follow-ups on a fresh machine (worker
+pool's 7.5 s freeze, tile cache, faster tile builds, GPU-process trace); city hookups (night lights, sound, foliage,
+pedestrians, weather). Old worktrees: 17 merged clean ones removed 2026-11-13; ~20 remain that hold git-IGNORED files
+(raw-data copies, .blend sources, generated textures): copy the unique files to the main checkout before removing them.
+
 ## State on 2026-11-13
 
 Almost everything below is now MERGED and ON in the city (see `docs/TODO.md` "CURRENT STATE" and `docs/MERGE_PLAN.md`).
