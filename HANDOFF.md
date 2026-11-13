@@ -7,7 +7,7 @@ Read this first when resuming (with Claude or by hand). Rendering and performanc
 
 ## State on 2026-11-13, morning (read this first)
 
-`claude/foundation` (NOT pushed to Vercel since aa07f5f; the owner decides when) has, ON by default: every landmark,
+`claude/foundation` (PUSHED 2026-11-13 at 54f3816: Vercel deploys this branch; there is no separate `main`) has, ON by default: every landmark,
 trains + bridges, roads v2 rounds 1-5 (lane graph without gaps, roads on the terrain, smoothed turns), traffic, the
 facade kit, the material library, city trees + impostor kit, collisions from what is drawn (+ walk collision), the
 falcon flight as fly mode, STREET LIFE (524 real shop names, plates, numbers, stops; `?streetlife=0`), the data credits

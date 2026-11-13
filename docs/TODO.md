@@ -99,9 +99,9 @@ unmeasured (quiet-GPU audit).
 
 **Waiting on the owner:** Sauvagère + Nekkersgat photos; Megascans download + Fab licence check; Brussels Mobility
 email (marking legend); SNCB GTFS agreement (FORM SENT by the owner 2026-11-13, waiting for SNCB's answer); listen to
-the sound renders; when to push to Vercel (backup pushed 2026-11-13: `backup/foundation-2026-11-13` = 786b177 on GitHub;
-the live branch `claude/foundation` is still aa07f5f: publish after the falcon2 + groundtex merges and the pre-push checks:
-download size, fresh-load test).
+the sound renders. PUBLISHED 2026-11-13: `claude/foundation` pushed aa07f5f -> 54f3816 (Vercel deploys it) after the
+checks (largest file 6 MB, 389 MB deployed in all, a fresh load fetches nothing from the folders .vercelignore leaves out,
+console clean); the owner checks the live site. Backup branch `backup/foundation-2026-11-13` = the same.
 
 **Rules learned this week:** JOINS (no open edge / gap where a model meets city ground); a FIXED light count (pools,
 never add / remove lights at runtime); merges of shared files are checked line by line (keep-both stacked three tile
