@@ -1,6 +1,6 @@
 # Mesh audit: furniture2.glb
 
-5,572 triangles, 2,856 welded vertices, 0 open edges, 0 rays, 460 ms.
+5,572 triangles, 2,856 welded vertices, 0 open edges, 0 rays, 480 ms.
 
 **0 blocking**, 242 warnings. Clean (no blocking item).
 

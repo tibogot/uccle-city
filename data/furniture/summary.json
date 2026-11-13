@@ -3,6 +3,7 @@
  "tiles": 120,
  "stats": {
   "banks": 30,
+  "banks_sunk_uphill": 5,
   "bench_backless": 13,
   "bench_direction_tag": 7,
   "bench_kept_blocked": 22,
@@ -11,6 +12,7 @@
   "bench_moved_m_max": 2.32,
   "bench_park": 258,
   "bench_street": 55,
+  "bench_sunk_uphill": 6,
   "benches": 326,
   "bike_rows": 181,
   "bike_rows_across": 89,

@@ -487,7 +487,7 @@ def bin_column():
     for k in range(7):
         x = -0.105 + k * 0.035
         span(P, GREEN, x - 0.008, x + 0.008, yc - d / 2 - 0.006, yc - d / 2 + 0.004, z0 + 0.05, z1 - 0.24, 0.003, Zv)
-    P.add_bm(prism([(x * 1.04, yc + (y - yc) * 1.06) for x, y in out], 0.0, z0), GREEN, Zv)
+    P.add_bm(prism([(x * 1.04, yc + (y - yc) * 1.06) for x, y in out], -0.15, z0), GREEN, Zv)
     # the hood: a slab sloping down to the front, overhanging 4 cm, on the back plate
     hood = M((0, yc + 0.02, z1 + 0.055), (math.radians(9), 0, 0))
     P.add_bm(bm_box(w + 0.04, d + 0.15, 0.035, 0.008, 2), GREEN, X, hood)
@@ -503,7 +503,7 @@ def bin_column():
 def glassbank():
     P = Part("glassbank")
     D = 0.86
-    span(P, GALV, -0.83, 0.83, -0.48, 0.48, -0.02, 0.08, 0.006, X)                                     # the skid
+    span(P, GALV, -0.83, 0.83, -0.48, 0.48, -SINK, 0.08, 0.006, X)                                     # the skid (a skirt into the ground: JOINS)
     for y in (-0.47, 0.47): span(P, GALV, -0.83, 0.83, y - 0.01, y + 0.01, 0.08, 0.1, 0.003, X)          # skid lips
     bays = ((-0.545, 0.53, 1.25, HULL, RING), (0.0, 0.55, 1.45, BAY, RING_MID), (0.545, 0.53, 1.25, HULL, RING))
     for x, w, h, mat, ring in bays:

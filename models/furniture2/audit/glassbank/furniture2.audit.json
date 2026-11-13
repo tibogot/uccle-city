@@ -5,14 +5,14 @@
   "open_edges": 96,
   "rays": 3072,
   "blocking": 0,
-  "warnings": 476,
+  "warnings": 492,
   "counts": {
-   "sliver": 344,
+   "sliver": 360,
    "backtoback": 306,
    "near": 132,
    "seam": 32
   },
-  "ms": 339
+  "ms": 403
  },
  "options": {
   "weld": 0.0001,
@@ -104,7 +104,7 @@
     "severity": "warn",
     "at": [
      -0.825,
-     -0.019,
+     -0.299,
      0.158
     ],
     "part": "glassbank/galvanised",
@@ -116,7 +116,7 @@
     "severity": "warn",
     "at": [
      -0.827,
-     -0.019,
+     -0.299,
      -0.158
     ],
     "part": "glassbank/galvanised",
@@ -128,7 +128,7 @@
     "severity": "warn",
     "at": [
      -0.829,
-     -0.017,
+     -0.297,
      0.158
     ],
     "part": "glassbank/galvanised",
@@ -140,12 +140,60 @@
     "severity": "warn",
     "at": [
      -0.829,
-     -0.015,
+     -0.295,
      -0.158
     ],
     "part": "glassbank/galvanised",
     "aspect": 206,
     "longest": 0.948
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.825,
+     -0.049,
+     0.479
+    ],
+    "part": "glassbank/galvanised",
+    "aspect": 80,
+    "longest": 0.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.827,
+     -0.171,
+     0.479
+    ],
+    "part": "glassbank/galvanised",
+    "aspect": 80,
+    "longest": 0.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.829,
+     -0.049,
+     0.477
+    ],
+    "part": "glassbank/galvanised",
+    "aspect": 80,
+    "longest": 0.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.829,
+     -0.171,
+     0.475
+    ],
+    "part": "glassbank/galvanised",
+    "aspect": 80,
+    "longest": 0.368
    },
    {
     "check": "sliver",
@@ -199,8 +247,56 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
+     -0.825,
+     -0.171,
+     -0.479
+    ],
+    "part": "glassbank/galvanised",
+    "aspect": 80,
+    "longest": 0.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.827,
+     -0.049,
+     -0.479
+    ],
+    "part": "glassbank/galvanised",
+    "aspect": 80,
+    "longest": 0.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.829,
+     -0.171,
+     -0.477
+    ],
+    "part": "glassbank/galvanised",
+    "aspect": 80,
+    "longest": 0.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.829,
+     -0.049,
+     -0.475
+    ],
+    "part": "glassbank/galvanised",
+    "aspect": 80,
+    "longest": 0.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
      -0.275,
-     -0.019,
+     -0.299,
      -0.475
     ],
     "part": "glassbank/galvanised",
@@ -212,7 +308,7 @@
     "severity": "warn",
     "at": [
      0.275,
-     -0.019,
+     -0.299,
      -0.477
     ],
     "part": "glassbank/galvanised",
@@ -224,7 +320,7 @@
     "severity": "warn",
     "at": [
      -0.275,
-     -0.017,
+     -0.297,
      -0.479
     ],
     "part": "glassbank/galvanised",
@@ -236,7 +332,7 @@
     "severity": "warn",
     "at": [
      0.275,
-     -0.015,
+     -0.295,
      -0.479
     ],
     "part": "glassbank/galvanised",
@@ -295,8 +391,56 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
+     0.829,
+     -0.171,
+     -0.475
+    ],
+    "part": "glassbank/galvanised",
+    "aspect": 80,
+    "longest": 0.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.829,
+     -0.049,
+     -0.477
+    ],
+    "part": "glassbank/galvanised",
+    "aspect": 80,
+    "longest": 0.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.827,
+     -0.171,
+     -0.479
+    ],
+    "part": "glassbank/galvanised",
+    "aspect": 80,
+    "longest": 0.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
      0.825,
-     -0.019,
+     -0.049,
+     -0.479
+    ],
+    "part": "glassbank/galvanised",
+    "aspect": 80,
+    "longest": 0.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.825,
+     -0.299,
      -0.158
     ],
     "part": "glassbank/galvanised",
@@ -308,7 +452,7 @@
     "severity": "warn",
     "at": [
      0.827,
-     -0.019,
+     -0.299,
      0.158
     ],
     "part": "glassbank/galvanised",
@@ -320,7 +464,7 @@
     "severity": "warn",
     "at": [
      0.829,
-     -0.017,
+     -0.297,
      -0.158
     ],
     "part": "glassbank/galvanised",
@@ -332,7 +476,7 @@
     "severity": "warn",
     "at": [
      0.829,
-     -0.015,
+     -0.295,
      0.158
     ],
     "part": "glassbank/galvanised",
@@ -391,8 +535,56 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
+     0.825,
+     -0.171,
+     0.479
+    ],
+    "part": "glassbank/galvanised",
+    "aspect": 80,
+    "longest": 0.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.827,
+     -0.049,
+     0.479
+    ],
+    "part": "glassbank/galvanised",
+    "aspect": 80,
+    "longest": 0.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.829,
+     -0.171,
+     0.477
+    ],
+    "part": "glassbank/galvanised",
+    "aspect": 80,
+    "longest": 0.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.829,
+     -0.049,
+     0.475
+    ],
+    "part": "glassbank/galvanised",
+    "aspect": 80,
+    "longest": 0.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
      0.275,
-     -0.019,
+     -0.299,
      0.475
     ],
     "part": "glassbank/galvanised",
@@ -404,7 +596,7 @@
     "severity": "warn",
     "at": [
      -0.275,
-     -0.019,
+     -0.299,
      0.477
     ],
     "part": "glassbank/galvanised",
@@ -416,7 +608,7 @@
     "severity": "warn",
     "at": [
      0.275,
-     -0.017,
+     -0.297,
      0.479
     ],
     "part": "glassbank/galvanised",
@@ -428,7 +620,7 @@
     "severity": "warn",
     "at": [
      -0.275,
-     -0.015,
+     -0.295,
      0.479
     ],
     "part": "glassbank/galvanised",
@@ -11785,8 +11977,8 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -0.594,
-     0.976,
+     -0.584,
+     1.188,
      0.43
     ],
     "parts": [
@@ -11817,8 +12009,8 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     0.496,
-     0.976,
+     0.658,
+     1.097,
      0.43
     ],
     "parts": [
@@ -11865,8 +12057,8 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -0.098,
-     1.221,
+     -0.085,
+     1.203,
      0.43
     ],
     "parts": [

@@ -1,6 +1,6 @@
 # Mesh audit: furniture2.glb
 
-2,074 triangles, 1,076 welded vertices, 0 open edges, 0 rays, 191 ms.
+2,074 triangles, 1,076 welded vertices, 0 open edges, 0 rays, 230 ms.
 
 **0 blocking**, 299 warnings. Clean (no blocking item).
 
@@ -90,7 +90,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.03, 0.66, 0.13 | bin_column/bin_green + bin_column/bin_green | 0.68 | 36 | 90 |
 | 0.15, 0.66, 0.10 | bin_column/bin_green + bin_column/bin_green | 0.1 | 36 | 67.5 |
 | 0.15, 0.74, -0.06 | bin_column/bin_green + bin_column/galvanised | 0.13 | 33 | 81.6 |
-| -0.03, 0.02, -0.09 | bin_column/bin_green + bin_column/frame_dark | 0.25 | 28 | 90 |
+| -0.03, -0.09, -0.09 | bin_column/bin_green + bin_column/frame_dark | 0.55 | 28 | 90 |
 | 0.17, 0.66, 0.11 | bin_column/bin_green + bin_column/bin_green | 0.37 | 26 | 22.5 |
 | -0.06, 0.11, 0.18 | bin_column/bin_green + bin_column/bin_green | 1.05 | 26 | 90 |
 | -0.04, 0.11, 0.18 | bin_column/bin_green + bin_column/bin_green | 1.05 | 26 | 90 |

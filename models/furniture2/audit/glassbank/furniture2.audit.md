@@ -1,13 +1,13 @@
 # Mesh audit: furniture2.glb
 
-4,218 triangles, 2,208 welded vertices, 96 open edges, 3,072 rays, 339 ms.
+4,218 triangles, 2,208 welded vertices, 96 open edges, 3,072 rays, 403 ms.
 
-**0 blocking**, 476 warnings. Clean (no blocking item).
+**0 blocking**, 492 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
 | near | warn | 132 |
-| sliver | warn | 344 |
+| sliver | warn | 360 |
 | seam | info | 32 |
 | backtoback | info | 306 |
 
@@ -60,52 +60,52 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (92 more in the JSON)
 
-## sliver (warn, 344)
+## sliver (warn, 360)
 
 | at | part | aspect | longest |
 |---|---|---|---|
-| -0.82, -0.02, 0.16 | glassbank/galvanised | 206 | 0.948 |
-| -0.83, -0.02, -0.16 | glassbank/galvanised | 206 | 0.948 |
-| -0.83, -0.02, 0.16 | glassbank/galvanised | 206 | 0.948 |
-| -0.83, -0.01, -0.16 | glassbank/galvanised | 206 | 0.948 |
+| -0.82, -0.30, 0.16 | glassbank/galvanised | 206 | 0.948 |
+| -0.83, -0.30, -0.16 | glassbank/galvanised | 206 | 0.948 |
+| -0.83, -0.30, 0.16 | glassbank/galvanised | 206 | 0.948 |
+| -0.83, -0.29, -0.16 | glassbank/galvanised | 206 | 0.948 |
+| -0.82, -0.05, 0.48 | glassbank/galvanised | 80 | 0.368 |
+| -0.83, -0.17, 0.48 | glassbank/galvanised | 80 | 0.368 |
+| -0.83, -0.05, 0.48 | glassbank/galvanised | 80 | 0.368 |
+| -0.83, -0.17, 0.47 | glassbank/galvanised | 80 | 0.368 |
 | -0.82, 0.08, -0.16 | glassbank/galvanised | 206 | 0.948 |
 | -0.83, 0.08, 0.16 | glassbank/galvanised | 206 | 0.948 |
 | -0.83, 0.08, -0.16 | glassbank/galvanised | 206 | 0.948 |
 | -0.83, 0.07, 0.16 | glassbank/galvanised | 206 | 0.948 |
-| -0.28, -0.02, -0.47 | glassbank/galvanised | 359 | 1.648 |
-| 0.28, -0.02, -0.48 | glassbank/galvanised | 359 | 1.648 |
-| -0.28, -0.02, -0.48 | glassbank/galvanised | 359 | 1.648 |
-| 0.28, -0.01, -0.48 | glassbank/galvanised | 359 | 1.648 |
+| -0.82, -0.17, -0.48 | glassbank/galvanised | 80 | 0.368 |
+| -0.83, -0.05, -0.48 | glassbank/galvanised | 80 | 0.368 |
+| -0.83, -0.17, -0.48 | glassbank/galvanised | 80 | 0.368 |
+| -0.83, -0.05, -0.47 | glassbank/galvanised | 80 | 0.368 |
+| -0.28, -0.30, -0.47 | glassbank/galvanised | 359 | 1.648 |
+| 0.28, -0.30, -0.48 | glassbank/galvanised | 359 | 1.648 |
+| -0.28, -0.30, -0.48 | glassbank/galvanised | 359 | 1.648 |
+| 0.28, -0.29, -0.48 | glassbank/galvanised | 359 | 1.648 |
 | 0.28, 0.08, -0.47 | glassbank/galvanised | 359 | 1.648 |
 | -0.28, 0.08, -0.48 | glassbank/galvanised | 359 | 1.648 |
 | 0.28, 0.08, -0.48 | glassbank/galvanised | 359 | 1.648 |
 | -0.28, 0.07, -0.48 | glassbank/galvanised | 359 | 1.648 |
-| 0.82, -0.02, -0.16 | glassbank/galvanised | 206 | 0.948 |
-| 0.83, -0.02, 0.16 | glassbank/galvanised | 206 | 0.948 |
-| 0.83, -0.02, -0.16 | glassbank/galvanised | 206 | 0.948 |
-| 0.83, -0.01, 0.16 | glassbank/galvanised | 206 | 0.948 |
+| 0.83, -0.17, -0.47 | glassbank/galvanised | 80 | 0.368 |
+| 0.83, -0.05, -0.48 | glassbank/galvanised | 80 | 0.368 |
+| 0.83, -0.17, -0.48 | glassbank/galvanised | 80 | 0.368 |
+| 0.82, -0.05, -0.48 | glassbank/galvanised | 80 | 0.368 |
+| 0.82, -0.30, -0.16 | glassbank/galvanised | 206 | 0.948 |
+| 0.83, -0.30, 0.16 | glassbank/galvanised | 206 | 0.948 |
+| 0.83, -0.30, -0.16 | glassbank/galvanised | 206 | 0.948 |
+| 0.83, -0.29, 0.16 | glassbank/galvanised | 206 | 0.948 |
 | 0.82, 0.08, 0.16 | glassbank/galvanised | 206 | 0.948 |
 | 0.83, 0.08, -0.16 | glassbank/galvanised | 206 | 0.948 |
 | 0.83, 0.08, 0.16 | glassbank/galvanised | 206 | 0.948 |
 | 0.83, 0.07, -0.16 | glassbank/galvanised | 206 | 0.948 |
-| 0.28, -0.02, 0.47 | glassbank/galvanised | 359 | 1.648 |
-| -0.28, -0.02, 0.48 | glassbank/galvanised | 359 | 1.648 |
-| 0.28, -0.02, 0.48 | glassbank/galvanised | 359 | 1.648 |
-| -0.28, -0.01, 0.48 | glassbank/galvanised | 359 | 1.648 |
-| -0.28, 0.08, 0.47 | glassbank/galvanised | 359 | 1.648 |
-| 0.28, 0.08, 0.48 | glassbank/galvanised | 359 | 1.648 |
-| -0.28, 0.08, 0.48 | glassbank/galvanised | 359 | 1.648 |
-| 0.28, 0.07, 0.48 | glassbank/galvanised | 359 | 1.648 |
-| -0.28, 0.08, 0.46 | glassbank/galvanised | 720 | 1.654 |
-| 0.28, 0.08, 0.46 | glassbank/galvanised | 720 | 1.654 |
-| -0.28, 0.08, 0.46 | glassbank/galvanised | 720 | 1.654 |
-| 0.28, 0.08, 0.46 | glassbank/galvanised | 720 | 1.654 |
-| 0.28, 0.10, 0.46 | glassbank/galvanised | 720 | 1.654 |
-| -0.28, 0.10, 0.46 | glassbank/galvanised | 720 | 1.654 |
-| 0.28, 0.10, 0.46 | glassbank/galvanised | 720 | 1.654 |
-| -0.28, 0.10, 0.46 | glassbank/galvanised | 720 | 1.654 |
+| 0.82, -0.17, 0.48 | glassbank/galvanised | 80 | 0.368 |
+| 0.83, -0.05, 0.48 | glassbank/galvanised | 80 | 0.368 |
+| 0.83, -0.17, 0.48 | glassbank/galvanised | 80 | 0.368 |
+| 0.83, -0.05, 0.47 | glassbank/galvanised | 80 | 0.368 |
 
-(304 more in the JSON)
+(320 more in the JSON)
 
 ## seam (info, 32)
 
@@ -117,12 +117,12 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.47, 1.09, 0.44 | glassbank/bank_ring + glassbank/rubber_black | 2.35 | 192 | 11.2 |
 | 0.62, 1.09, 0.44 | glassbank/bank_ring + glassbank/rubber_black | 2.35 | 192 | 11.2 |
 | 0.07, 1.29, 0.44 | glassbank/rubber_black + glassbank/bank_ring_mid | 2.35 | 192 | 11.2 |
-| -0.59, 0.98, 0.43 | glassbank/bank_hull + glassbank/bank_ring | 1.19 | 128 | 90 |
+| -0.58, 1.19, 0.43 | glassbank/bank_hull + glassbank/bank_ring | 1.19 | 128 | 90 |
 | -0.58, 1.14, 0.43 | glassbank/bank_hull + glassbank/rubber_black | 0.88 | 128 | 90 |
-| 0.50, 0.98, 0.43 | glassbank/bank_hull + glassbank/bank_ring | 1.19 | 128 | 90 |
+| 0.66, 1.10, 0.43 | glassbank/bank_hull + glassbank/bank_ring | 1.19 | 128 | 90 |
 | 0.62, 1.09, 0.43 | glassbank/bank_hull + glassbank/rubber_black | 0.88 | 128 | 90 |
 | 0.07, 1.29, 0.43 | glassbank/rubber_black + glassbank/bank_bay | 0.88 | 128 | 90 |
-| -0.10, 1.22, 0.43 | glassbank/bank_bay + glassbank/bank_ring_mid | 1.19 | 128 | 90 |
+| -0.09, 1.20, 0.43 | glassbank/bank_bay + glassbank/bank_ring_mid | 1.19 | 128 | 90 |
 | 0.01, 1.85, 0.04 | glassbank/galvanised + glassbank/galvanised | 0.14 | 64 | 68.1 |
 | 0.01, 1.85, -0.06 | glassbank/galvanised + glassbank/galvanised | 0.14 | 64 | 68.1 |
 | -0.07, 1.58, 0.04 | glassbank/galvanised + glassbank/bank_bay | 0.15 | 48 | 85.4 |

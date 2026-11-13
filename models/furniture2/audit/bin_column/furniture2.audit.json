@@ -13,7 +13,7 @@
    "near": 3,
    "seam": 31
   },
-  "ms": 191
+  "ms": 230
  },
  "options": {
   "weld": 0.0001,
@@ -4375,14 +4375,14 @@
     "severity": "info",
     "at": [
      -0.03,
-     0.018,
+     -0.087,
      -0.093
     ],
     "parts": [
      "bin_column/bin_green",
      "bin_column/frame_dark"
     ],
-    "length_m": 0.25,
+    "length_m": 0.55,
     "pieces": 28,
     "min_angle_deg": 90
    },

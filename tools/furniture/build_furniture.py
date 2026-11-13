@@ -223,6 +223,8 @@ def place_benches(F: Furn, nodes, out, stats):
         if placed is None:
             cx, cz, yw = cands[0]
             y, drop = F.height(cx, cz, yw, fp)
+            if drop > MAX_DROP:                      # never a floating foot: the downhill legs reach 0.3 m down, the uphill
+                y = y - drop + MAX_DROP; drop = MAX_DROP; stats["bench_sunk_uphill"] += 1     # ones go deeper into the ground
             placed = (cx, cz, yw, y, drop, foot_poly(S, cx, cz, yw, fp))
             stats["bench_kept_blocked"] += 1
         cx, cz, yw, y, drop, poly = placed
@@ -469,6 +471,7 @@ def place_glass(F: Furn, name, out, stats):
             best = (pair, [foot_poly(F.S, px, pz, yaw, FOOT["glassbank"]) for px, pz in pair])
         for k, ((px, pz), poly) in enumerate(zip(*best)):
             y, drop = F.height(px, pz, yaw, FOOT["glassbank"], bury=0.0)
+            if drop > MAX_DROP: y = y - drop + MAX_DROP; drop = MAX_DROP; stats["banks_sunk_uphill"] += 1
             out["banks"].append({"x": r2(px), "y": r2(y), "z": r2(pz), "yaw": r4(yaw), "var": k, "id": g["id"]})
             F.blocks.append(("bank", poly))
             stats["banks"] += 1
