@@ -131,6 +131,17 @@ const C = Object.fromEntries(RU_CODES.map((n, i) => [n, i]));
 const std = (o) => Object.assign(new THREE.MeshStandardNodeMaterial(), o);
 const noSSR = (m) => { m.mrtNode = mrt({ metalRough: vec3(0, float(1), float(0)) }); return m; };
 
+/** weathering outside the pattern Fn (normalWorld inside a Fn shared by the colour and the normal breaks the WGSL):
+ *  splash grime at the foot, faint streaks under ledges on the walls, ledge tops a touch greyer */
+function weather(col) {
+  const P = positionWorld;
+  const up = clamp(normalWorld.y, 0, 1);
+  const low = smoothstep(GROUND + 1.0, GROUND, P.y);
+  const n = vnoise(vec2(P.x.add(P.z).mul(0.9), P.y.mul(0.7)));
+  const streak = smoothstep(0.66, 0.92, n).mul(float(1).sub(up)).mul(0.07);
+  return col.mul(float(1).sub(streak.add(low.mul(0.1)).mul(ruLook.weather))).mul(mix(float(1), float(0.9), up.mul(0.5).mul(ruLook.weather)));
+}
+
 const TEMP = {
   /** BRICK UNDER THICK WHITE PAINT (photos 2015-2017: the coursing reads through, a soft off-white, faint grime at the
    *  foot and under the cornice): stretcher bond 0.22 x 0.065 courses with shallow, softened joints; mouldings and
@@ -146,18 +157,11 @@ const TEMP = {
       const e = min(min(fu, float(1).sub(fu)).mul(0.22), min(fv, float(1).sub(fv)).mul(0.065)).toVar();
       const joint = float(1).sub(smoothstep(0.004, float(0.004).add(max(fw.mul(1.5), 0.004)), e)).mul(float(1).sub(smoothstep(0.004, 0.02, fw))).mul(coursed).toVar();
       const brick = hash2(vec2(floor(cu), row)).toVar();
-      const P = positionWorld;
-      const n = vnoise(vec2(P.x.add(P.z).mul(0.9), P.y.mul(0.7))).toVar();
-      let col = mix(lin(0xe9e8e2), lin(0xdedcd3), n.mul(0.7)).mul(float(0.97).add(brick.mul(0.04).mul(coursed)));
-      col = mix(col, lin(0xc9c5bb), joint.mul(0.55));
-      // weather: splash grime at the foot, faint streaks under ledges on the walls, ledge tops a touch greyer
-      const up = clamp(normalWorld.y, 0, 1).toVar();
-      const low = smoothstep(GROUND + 1.0, GROUND, P.y).toVar();
-      const streak = smoothstep(0.66, 0.92, n).mul(float(1).sub(up)).mul(0.07);
-      col = col.mul(float(1).sub(streak.add(low.mul(0.1)).mul(ruLook.weather))).mul(mix(float(1), float(0.9), up.mul(0.5).mul(ruLook.weather)));
+      const n = vnoise(w.mul(vec2(0.9, 0.7))).toVar();
+      const col = mix(mix(lin(0xe9e8e2), lin(0xdedcd3), n.mul(0.7)).mul(float(0.97).add(brick.mul(0.04).mul(coursed))), lin(0xc9c5bb), joint.mul(0.55));
       return vec4(col, joint);
     })();
-    return std({ colorNode: out.xyz, roughnessNode: float(0.82), metalnessNode: float(0), normalNode: bumpNormal(out.w.mul(-0.0015)) });
+    return std({ colorNode: weather(out.xyz), roughnessNode: float(0.82), metalnessNode: float(0), normalNode: bumpNormal(out.w.mul(-0.0015)) });
   },
   /** the onions, the hoods, the belfry's tent: dark brown copper sheet (photos 2015-2017), seams a little brighter */
   copper_brown: () => {
@@ -177,7 +181,6 @@ const TEMP = {
       const gilt = isC(cd, C.gilt).toVar(), mos = isC(cd, C.mosaic).toVar();
       const w = uv(0).toVar();
       const t = hash2(floor(w.mul(55.0))).toVar();
-      const P = positionWorld;
       const gold = mix(lin(0xb88a2c), lin(0xe0b24a), t);
       // the figure: an oval of deep red-brown with a blue patch, centred in the tympanum (world-space blob from UV0)
       const fx = fract(w.x.mul(0.5)).sub(0.5).abs();

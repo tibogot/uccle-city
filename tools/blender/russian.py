@@ -992,7 +992,7 @@ if PREVIEWS:
         cam.rotation_euler = (tg - cam.location).to_track_quat("-Z", "Y").to_euler()
         cam_d.lens = lens
         scn.render.resolution_x, scn.render.resolution_y = res
-        os.makedirs(PREV, exist_ok=True); scn.render.filepath = os.path.join(PREV, f"russian_{name}.png")
+        os.makedirs(PREV, exist_ok=True); scn.render.image_settings.file_format = "JPEG"; scn.render.image_settings.quality = 88; scn.render.filepath = os.path.join(PREV, f"russian_{name}.jpg")
         t = time.time(); bpy.ops.render.render(write_still=True); print("render", name, f"{time.time() - t:.0f}s")
     only = [a.split("=")[1] for a in ARGS if a.startswith("--views=")]
     views = {"west": ((-22.0, 0.3, 49.9), (0.0, 0.3, 60.0), 24, (800, 1000)),

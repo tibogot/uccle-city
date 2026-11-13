@@ -1,0 +1,14 @@
+{
+ "Russian_lod1": {
+  "from": "Russian",
+  "sourceTris": 30075,
+  "tris": 12036
+ },
+ "Russian_lod2": {
+  "from": "Russian_far",
+  "sourceTris": 4577,
+  "tris": 1801
+ },
+ "glbBytes": 1002360,
+ "rawBytes": 3008020
+}
