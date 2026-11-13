@@ -67,6 +67,12 @@ ground is the carved terrain under the ballast, not the ballast top (drive surfa
 (4) rails are not obstacles / bumps for the car. Test every bridge (Saint-Job, Calevoet, Verrewinkel, the tram deck)
 from both directions, not only this one.
 
+**ALIASING DIAGNOSED (2026-11-13 afternoon, Rue du Ham I6 brick building, oblique 4-6 m view, kit on vs ?kit=0
+identical):** the scene pass HAS 4x MSAA (renderer.samples 4, post.js sceneRT); those windows are PAINTED by the facade
+shader (facades.js), not kit geometry, so MSAA cannot smooth their frame outlines: stair-steps at grazing angles. The
+dashed bright line under the sill shows in both modes (a thin edge at a grazing angle). Brick scan fine up close. FIX
+NEXT: box-filtered (filteredPulse / boxCoverage, Mr.doob) frame / mullion / sill lines in facades.js's painted windows,
+specular AA on the wall + sill, then the flicker test on this view (cam (1179.1, 81.4, 553.3) -> (1175.9, 82.8, 549.8)).
 **ALIASING on facades (owner screenshot 2026-11-13, "do it when I'm back"):** jagged window-frame edges + sparkly
 brick mortar / a bright thin line on the sill. Plan: (1) diagnose: painted window (facades.js) or kit geometry? is the
 scene pass MSAA (post.js sceneRT samples = renderer.samples) really resolving through the MRT chain? (2) painted frames /
