@@ -54,7 +54,14 @@ function twoLines(s, maxChars = 13) {
   return best < 0 ? [s] : [s.slice(0, best), s.slice(best + 1)];
 }
 
-export function layoutTile(doc, measure) {
+/** sRGB "#rrggbb" -> linear rgb (the GTFS line colours) */
+const linHex = (h) => [1, 3, 5].map((i) => Math.pow(parseInt(h.slice(i, i + 2), 16) / 255, 2.2));
+
+/** stopsDoc: data/stops/<T>.json (tools/stops/build_stops.py) when the STIB stops kit is on (viewer/stops/): the poles,
+ *  shelters and panels are the kit's (viewer/stops/cityStops.js); this layer adds their TEXT only (the stop name and the
+ *  line numbers in their GTFS colours on both faces of the pole flag, the name on the shelter's roof board). null: the
+ *  old stop poles, flags and box shelters (?stops=old). */
+export function layoutTile(doc, measure, stopsDoc = null) {
   const boxes = [], windows = [], glass = [], labels = [], labelIdx = new Map();
   const props = Object.fromEntries(KIT_KINDS.map((k) => [k, []]));
   const night = { shops: [], signs: [], spots: [] };
@@ -263,8 +270,31 @@ export function layoutTile(doc, measure) {
     });
   }
 
-  // ------------------------------------------------------------------------------------------ STIB stops
-  for (const s of doc.stops) {
+  // ------------------------------------------------------------------------------------------ STIB stops (the kit's text)
+  // frame of a kit piece at yaw: local x -> (cos, 0, -sin), local z (the road side) -> (sin, 0, cos)
+  for (const s of stopsDoc?.stops || []) {
+    used.stops.push(s.fr);
+    const P = s.pole, cs = Math.cos(P.yaw), sn = Math.sin(P.yaw), Xl = [cs, 0, -sn], Zl = [sn, 0, cs];
+    const FX = [-Zl[0], 0, -Zl[2]], FZ = Xl;                       // the flag's faces look along local +-x (along the street)
+    const o = [P.x, P.y, P.z];
+    const names = s.nl && s.nl !== s.fr ? [s.fr, s.nl] : [s.fr];
+    // the flag's white panel (tools/blender/stibStops.py: 0.51 x 0.55 m, its faces 33 mm off the axis): the name on top
+    box(add(o, FX, 0, UP, 3.07, FZ, 0), FX, UP, FZ, 0.51, 0.25, 0.069, { board: [0.86, 0.86, 0.84], ink: [0.02, 0.02, 0.025], lab: label(names, "stop"), pad: 0.06, sides: 1, rough: 0.4 });
+    // the line numbers in their own colours, up to 4 a row, 2 rows
+    const L = s.lines.slice(0, 8);
+    L.forEach((ln, i) => {
+      const row = i >> 2, nr = Math.min(4, L.length - row * 4), col = i & 3;
+      box(add(o, FX, (col - (nr - 1) / 2) * 0.12, UP, 2.865 - row * 0.105, FZ, 0), FX, UP, FZ, 0.105, 0.085, 0.071,
+        { board: linHex(ln.bg), ink: linHex(ln.fg), lab: label([ln.n], "line"), pad: 0.1, sides: 1, rough: 0.35 });
+    });
+    if (s.shelter) {
+      const S = s.shelter, c2 = Math.cos(S.yaw), s2 = Math.sin(S.yaw), X2 = [c2, 0, -s2], Z2 = [s2, 0, c2];
+      // the name board hung under the roof's front edge, readable from the road and from inside
+      box(add([S.x, S.y, S.z], X2, 0.55, UP, 2.19, Z2, 0.74), X2, UP, Z2, 1.5, 0.2, 0.02, { board: [0.86, 0.86, 0.84], boardGlow: 0.35, ink: [0.02, 0.02, 0.025], lab: label([s.fr], "stop"), pad: 0.1, sides: 1, rough: 0.4 });
+    }
+  }
+  // ------------------------------------------------------------------------------------------ STIB stops (old: ?stops=old)
+  for (const s of stopsDoc ? [] : doc.stops) {
     const d = [s.tx, 0, s.tz], n = [s.nx, 0, s.nz];
     const o = [s.x, s.y, s.z];
     prop("pole", o[0], o[1], o[2], 0);

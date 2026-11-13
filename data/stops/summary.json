@@ -1,0 +1,632 @@
+{
+ "contract": "stops-0.1",
+ "tiles": 120,
+ "stats": {
+  "drop_max": 0.39,
+  "lines_differ": 94,
+  "lines_gtfs": 257,
+  "lines_wfs": 21,
+  "panel_across": 74,
+  "panel_along": 70,
+  "panel_blocked_crossing": 10,
+  "panel_blocked_driveway": 2,
+  "panel_blocked_furniture": 1,
+  "panel_blocked_slope": 4,
+  "panel_blocked_tree": 58,
+  "panel_near_stop": 31,
+  "panel_spacing": 568,
+  "panels": 144,
+  "poles_on_platform": 95,
+  "shelter_back": 5,
+  "shelter_blocked": 1,
+  "shelter_no_room": 20,
+  "shelter_on_tram_platform": 5,
+  "shelter_open": 80,
+  "shelter_try_slope": 10,
+  "sheltered": 106,
+  "shelters": 85,
+  "stops": 278
+ },
+ "perTile": {
+  "D1": {
+   "stops": 6,
+   "shelters": 6,
+   "panels": 3
+  },
+  "E1": {
+   "stops": 10,
+   "shelters": 6,
+   "panels": 4
+  },
+  "F1": {
+   "stops": 6,
+   "shelters": 0,
+   "panels": 4
+  },
+  "G1": {
+   "stops": 4,
+   "shelters": 3,
+   "panels": 2
+  },
+  "H1": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 3
+  },
+  "I1": {
+   "stops": 4,
+   "shelters": 0,
+   "panels": 2
+  },
+  "D2": {
+   "stops": 2,
+   "shelters": 2,
+   "panels": 0
+  },
+  "E2": {
+   "stops": 6,
+   "shelters": 0,
+   "panels": 2
+  },
+  "F2": {
+   "stops": 2,
+   "shelters": 0,
+   "panels": 2
+  },
+  "G2": {
+   "stops": 8,
+   "shelters": 0,
+   "panels": 0
+  },
+  "H2": {
+   "stops": 9,
+   "shelters": 3,
+   "panels": 2
+  },
+  "I2": {
+   "stops": 6,
+   "shelters": 2,
+   "panels": 2
+  },
+  "J2": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "C3": {
+   "stops": 5,
+   "shelters": 1,
+   "panels": 2
+  },
+  "D3": {
+   "stops": 2,
+   "shelters": 1,
+   "panels": 0
+  },
+  "E3": {
+   "stops": 11,
+   "shelters": 1,
+   "panels": 3
+  },
+  "F3": {
+   "stops": 4,
+   "shelters": 1,
+   "panels": 4
+  },
+  "G3": {
+   "stops": 2,
+   "shelters": 0,
+   "panels": 3
+  },
+  "H3": {
+   "stops": 7,
+   "shelters": 6,
+   "panels": 4
+  },
+  "I3": {
+   "stops": 4,
+   "shelters": 3,
+   "panels": 2
+  },
+  "J3": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 3
+  },
+  "B4": {
+   "stops": 6,
+   "shelters": 1,
+   "panels": 4
+  },
+  "C4": {
+   "stops": 3,
+   "shelters": 0,
+   "panels": 2
+  },
+  "D4": {
+   "stops": 1,
+   "shelters": 1,
+   "panels": 0
+  },
+  "E4": {
+   "stops": 15,
+   "shelters": 1,
+   "panels": 4
+  },
+  "F4": {
+   "stops": 4,
+   "shelters": 1,
+   "panels": 0
+  },
+  "G4": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "H4": {
+   "stops": 3,
+   "shelters": 3,
+   "panels": 3
+  },
+  "I4": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "J4": {
+   "stops": 4,
+   "shelters": 3,
+   "panels": 2
+  },
+  "K4": {
+   "stops": 2,
+   "shelters": 1,
+   "panels": 1
+  },
+  "A5": {
+   "stops": 4,
+   "shelters": 4,
+   "panels": 1
+  },
+  "B5": {
+   "stops": 11,
+   "shelters": 1,
+   "panels": 3
+  },
+  "C5": {
+   "stops": 6,
+   "shelters": 0,
+   "panels": 1
+  },
+  "D5": {
+   "stops": 4,
+   "shelters": 0,
+   "panels": 4
+  },
+  "E5": {
+   "stops": 4,
+   "shelters": 0,
+   "panels": 2
+  },
+  "F5": {
+   "stops": 5,
+   "shelters": 0,
+   "panels": 3
+  },
+  "G5": {
+   "stops": 4,
+   "shelters": 1,
+   "panels": 3
+  },
+  "H5": {
+   "stops": 2,
+   "shelters": 1,
+   "panels": 3
+  },
+  "I5": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 1
+  },
+  "J5": {
+   "stops": 2,
+   "shelters": 1,
+   "panels": 2
+  },
+  "K5": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 2
+  },
+  "L5": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 1
+  },
+  "M5": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 5
+  },
+  "N5": {
+   "stops": 2,
+   "shelters": 0,
+   "panels": 3
+  },
+  "B6": {
+   "stops": 5,
+   "shelters": 0,
+   "panels": 2
+  },
+  "C6": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "D6": {
+   "stops": 9,
+   "shelters": 0,
+   "panels": 2
+  },
+  "E6": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 3
+  },
+  "F6": {
+   "stops": 4,
+   "shelters": 2,
+   "panels": 2
+  },
+  "G6": {
+   "stops": 2,
+   "shelters": 0,
+   "panels": 2
+  },
+  "H6": {
+   "stops": 6,
+   "shelters": 4,
+   "panels": 2
+  },
+  "I6": {
+   "stops": 10,
+   "shelters": 2,
+   "panels": 1
+  },
+  "J6": {
+   "stops": 2,
+   "shelters": 1,
+   "panels": 2
+  },
+  "K6": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 1
+  },
+  "L6": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "M6": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "N6": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "B7": {
+   "stops": 4,
+   "shelters": 0,
+   "panels": 0
+  },
+  "C7": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 2
+  },
+  "D7": {
+   "stops": 9,
+   "shelters": 1,
+   "panels": 3
+  },
+  "E7": {
+   "stops": 2,
+   "shelters": 0,
+   "panels": 1
+  },
+  "F7": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "G7": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "H7": {
+   "stops": 2,
+   "shelters": 1,
+   "panels": 1
+  },
+  "I7": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "J7": {
+   "stops": 7,
+   "shelters": 2,
+   "panels": 3
+  },
+  "K7": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "L7": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 2
+  },
+  "M7": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "N7": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "B8": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "C8": {
+   "stops": 1,
+   "shelters": 0,
+   "panels": 1
+  },
+  "D8": {
+   "stops": 4,
+   "shelters": 0,
+   "panels": 0
+  },
+  "E8": {
+   "stops": 2,
+   "shelters": 2,
+   "panels": 0
+  },
+  "F8": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "G8": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "H8": {
+   "stops": 2,
+   "shelters": 0,
+   "panels": 1
+  },
+  "I8": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "J8": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "K8": {
+   "stops": 3,
+   "shelters": 3,
+   "panels": 1
+  },
+  "L8": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 1
+  },
+  "M8": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "N8": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "C9": {
+   "stops": 1,
+   "shelters": 0,
+   "panels": 0
+  },
+  "D9": {
+   "stops": 3,
+   "shelters": 1,
+   "panels": 0
+  },
+  "E9": {
+   "stops": 3,
+   "shelters": 3,
+   "panels": 0
+  },
+  "F9": {
+   "stops": 2,
+   "shelters": 2,
+   "panels": 0
+  },
+  "G9": {
+   "stops": 2,
+   "shelters": 1,
+   "panels": 4
+  },
+  "H9": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "I9": {
+   "stops": 2,
+   "shelters": 0,
+   "panels": 0
+  },
+  "J9": {
+   "stops": 2,
+   "shelters": 0,
+   "panels": 0
+  },
+  "K9": {
+   "stops": 1,
+   "shelters": 0,
+   "panels": 3
+  },
+  "L9": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "M9": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "N9": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "O9": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "D10": {
+   "stops": 2,
+   "shelters": 1,
+   "panels": 0
+  },
+  "E10": {
+   "stops": 6,
+   "shelters": 5,
+   "panels": 2
+  },
+  "F10": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 2
+  },
+  "G10": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "H10": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "I10": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "J10": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "K10": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 1
+  },
+  "L10": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 1
+  },
+  "M10": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "N10": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "O10": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "H11": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "I11": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "J11": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "K11": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 1
+  },
+  "L11": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "M11": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "N11": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "O11": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "K12": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "L12": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  },
+  "M12": {
+   "stops": 0,
+   "shelters": 0,
+   "panels": 0
+  }
+ }
+}

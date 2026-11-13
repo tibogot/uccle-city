@@ -24,7 +24,8 @@ export const cityStreetLife = {
     if (!this.on) return null;
     const t0 = performance.now();
     try {
-      this.layer = await StreetLife.create(scene);
+      // (the STIB stops kit, viewer/stops/, on unless ?stops=old: this layer then draws the stops' text only)
+      this.layer = await StreetLife.create(scene, { stopsBase: qs.get("stops") !== "old" ? new URL("../../data/stops/", import.meta.url) : null });
     } catch (e) { log(`street life: start failed (${e.message})`); this.on = false; return null; }
     updaters.push((eye, cam) => { streetUniforms.night.value = env.uNight.value; this.layer.update(cam); });
     log(`street life: on (?streetlife=0 off), ${this.layer.pools.length} prop pools, atlas ${this.layer.atlas.pages} pages of ${this.layer.atlas.W}x${this.layer.atlas.H}, ${Math.round(performance.now() - t0)} ms`);

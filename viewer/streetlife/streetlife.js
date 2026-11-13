@@ -278,8 +278,9 @@ export class StreetLife {
   }
   /** opts: base (data/streetlife/), the atlas (pageW x pageH x atlasPages), propShadows (the kits' own shadow flags;
    *  the signs, plates, numbers, frames and windows never cast one) */
-  constructor(scene, { base = new URL("../../data/streetlife/", import.meta.url), pageW = 2048, pageH = 1024, atlasPages = 16, propShadows = true } = {}) {
+  constructor(scene, { base = new URL("../../data/streetlife/", import.meta.url), pageW = 2048, pageH = 1024, atlasPages = 16, propShadows = true, stopsBase = null } = {}) {
     this.scene = scene; this.base = base; this.propShadows = propShadows;
+    this.stopsBase = stopsBase;          // data/stops/ when the STIB stops kit is on (viewer/stops/): the stops' text only
     this.group = new THREE.Group(); this.group.name = "streetlife";
     scene.add(this.group);
     this.atlas = new TextAtlas(pageW, pageH, atlasPages);
@@ -323,7 +324,7 @@ export class StreetLife {
     return new Promise((resolve, reject) => {
       const id = ++this.reqId;
       this.req.set(id, { resolve, reject });
-      this.worker.postMessage({ id, tile, url: new URL(`${tile}.json`, this.base).href, pageW: this.atlas.W, pageH: this.atlas.H });
+      this.worker.postMessage({ id, tile, url: new URL(`${tile}.json`, this.base).href, pageW: this.atlas.W, pageH: this.atlas.H, stopsUrl: this.stopsBase ? new URL(`${tile}.json`, this.stopsBase).href : null });
     });
   }
   /** build one tile's layer into `parent` (the city: the tile's own features group, so it fades and is disposed with

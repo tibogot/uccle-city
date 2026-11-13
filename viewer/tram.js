@@ -126,7 +126,9 @@ function buildDecks(tram, prof, surface, inB, onRoadDeck = null) {
 
 /** surface(x, z): the road top; prof (viewer/trackProfile.js, optional): the tracks' smooth rail-top profile (the wire
  *  hangs WIRE_H over it, the bridge deck carries it) */
-export function buildTram(feats, surface, bounds, prof = null, onRoadDeck = null) {
+/** opts.shelterSites: the platform shelters are NOT drawn here but returned as sites ({x, y, z, yaw}, +z toward the
+ *  track) for the STIB stops kit (viewer/stops/cityStops.js); false: the placeholder shelter mesh (?stops=old) */
+export function buildTram(feats, surface, bounds, prof = null, onRoadDeck = null, opts = {}) {
   const group = new THREE.Group();
   group.name = "tram";
   const inB = (x, z) => x >= bounds.x0 && x <= bounds.x1 && z >= bounds.z0 && z <= bounds.z1;
@@ -241,7 +243,8 @@ export function buildTram(feats, surface, bounds, prof = null, onRoadDeck = null
   };
   mkMesh(slab, new THREE.MeshStandardNodeMaterial({ color: 0x8d8c88, roughness: 0.85, side: THREE.DoubleSide }), "tram-platforms");
   mkMesh(edge, new THREE.MeshStandardNodeMaterial({ color: 0xc9c6bd, roughness: 0.7, side: THREE.DoubleSide }), "tram-platform-edges");
-  if (shelters.length) {
+  const shelterSites = opts.shelterSites ? shelters.map((s, i) => ({ x: s.x, y: s.y, z: s.z, yaw: s.yaw - Math.PI, posters: [(i * 3 + 2) % 8, (i * 5 + 4) % 8] })) : null;
+  if (shelters.length && !shelterSites) {
     const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.4, metalness: 0.2 });
     mat.colorNode = attribute("aCol", "vec3");
     const sm = new THREE.InstancedMesh(MODELS.shelter(), mat, shelters.length);
@@ -250,5 +253,5 @@ export function buildTram(feats, surface, bounds, prof = null, onRoadDeck = null
     sm.computeBoundingSphere();
     group.add(sm);
   }
-  return { group, counts: { deckSegments: deck?.segments || 0, wireSegments: segs.length, poles: poles.length, platforms: plat.length, shelters: shelters.length } };
+  return { group, shelterSites, counts: { deckSegments: deck?.segments || 0, wireSegments: segs.length, poles: poles.length, platforms: plat.length, shelters: shelters.length } };
 }

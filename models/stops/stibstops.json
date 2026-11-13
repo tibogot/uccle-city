@@ -1,0 +1,93 @@
+{
+ "asset": "STIB stops kit: shelter, pole, free-standing ad panel (tools/blender/stibStops.py)",
+ "pieces": {
+  "shelter": {
+   "slots": [
+    "frame_anthracite",
+    "rubber_black",
+    "light_strip",
+    "steel_brushed"
+   ],
+   "triangles": 3964,
+   "size_m": [
+    4.0,
+    1.55,
+    2.92
+   ]
+  },
+  "pole": {
+   "slots": [
+    "pole_grey",
+    "stib_red",
+    "white_panel",
+    "frame_anthracite",
+    "rubber_black"
+   ],
+   "triangles": 1996,
+   "size_m": [
+    0.4,
+    0.56,
+    3.94
+   ]
+  },
+  "adpanel": {
+   "slots": [
+    "frame_anthracite",
+    "rubber_black",
+    "light_strip"
+   ],
+   "triangles": 1408,
+   "size_m": [
+    0.2,
+    1.43,
+    3.14
+   ]
+  },
+  "shelter__poster": {
+   "slots": [
+    "poster"
+   ],
+   "triangles": 4,
+   "size_m": [
+    0.128,
+    1.106,
+    1.904
+   ]
+  },
+  "shelter__glass": {
+   "slots": [
+    "glass"
+   ],
+   "triangles": 36,
+   "size_m": [
+    3.483,
+    0.674,
+    2.066
+   ]
+  },
+  "pole__glass": {
+   "slots": [
+    "glass"
+   ],
+   "triangles": 12,
+   "size_m": [
+    0.34,
+    0.004,
+    0.54
+   ]
+  },
+  "adpanel__poster": {
+   "slots": [
+    "poster"
+   ],
+   "triangles": 4,
+   "size_m": [
+    0.138,
+    1.146,
+    1.906
+   ]
+  }
+ },
+ "frame": "glTF Y up, origin = footprint centre on the ground, road side = -Y (Blender) = +Z (three.js); legs 0.5 m below",
+ "poster_uv": "UV0 u 0..1 = face +X, 1..2 = face -X, v 0 = poster bottom (glTF: v flipped, 0 = top)"
+}
