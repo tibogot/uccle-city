@@ -33,7 +33,7 @@ const $info = document.getElementById("info");
 const SCENES = {
   garden: { label: "Front gardens, D8 (villa streets off Avenue de Beersel)", tiles: ["D8"], home: [-1100, 1850], street: /Beersel|Arbrisseau|Mirabelles|Griottes|Bigarreaux/ },
   park: { label: "Wolvendael park lawns, F4", tiles: ["F4"], home: [-455, -135], street: null },
-  verge: { label: "Rue du Bourdon verges from a car, D8", tiles: ["D8"], home: [-1205, 2000], street: /Bourdon/ },
+  verge: { label: "Rue Zandbeek verges from a car, C8 (Kauwberg)", tiles: ["C8"], home: [-1635, 1641], street: /Zandbeek/, startRide: ["drive", 0.74] },
 };
 const sceneId = SCENES[qp.get("scene")] ? qp.get("scene") : "garden";
 const SC = SCENES[sceneId];
@@ -76,7 +76,7 @@ tileWorker.onmessage = (e) => { const p = pending.get(e.data.id); pending.delete
 const tileData = (entry) => new Promise((resolve, reject) => { const id = ++reqId; pending.set(id, { resolve, reject }); tileWorker.postMessage({ id, entry: { ...entry, hide: [], surface: true, pits: true }, base: DATA.href, lite: false }); });
 const shared = new Map();
 const sharedMat = (k, f) => { if (!shared.has(k)) shared.set(k, f()); return shared.get(k); };
-const hms = [], cityRoads = [], updaters = [], tileFeats = [];
+const hms = [], cityRoads = [], updaters = [], tileFeats = [], tileTypes = [];
 const cityGroup = new THREE.Group(); scene.add(cityGroup);
 const grassOn = qp.get("grass") !== "0" && Grass.supported(renderer);
 const grass = grassOn ? new Grass(renderer, { preset: qp.get("preset") || "high" }) : null;
@@ -133,6 +133,7 @@ async function loadCityTile(name) {
     const tt = performance.now();
     const types = grassTypeData(d.feats, bounds, { kinds, surfaces });
     const typeMs = performance.now() - tt;
+    tileTypes.push({ name, bounds, types });
     grass.field.addTile(name, { terrain, grass: roadMeshes.filter((m) => m.name === "roads-grass"), solids: [...roadMeshes.filter((m) => m.name !== "roads-grass"), ...B.meshes],
       trunks: trunkDiscs(d.feats, bounds), cover: cover.tex, types, bounds });
     console.log("[grass lab] types", name, types.stats, `${typeMs.toFixed(1)} ms`);
@@ -174,7 +175,12 @@ function streetPath(re, kind) {
       segs.splice(i, 1); grew = true; break;
     }
   }
-  const off = kind === "drive" ? -1.7 : -5.2, eye = kind === "drive" ? 1.25 : 1.65;
+  const off = (kind === "drive" ? 1.0 : 4.6) * (SC.offScale ?? 1), eye = kind === "drive" ? 1.25 : 1.65;
+  // only the stretch inside the loaded tiles (the longest run, 30 m in from the tile edge)
+  const inside = ([x, z]) => hms.some((t) => x > t.bounds.x0 + 30 && x < t.bounds.x1 - 30 && z > t.bounds.z0 + 30 && z < t.bounds.z1 - 30);
+  let run = [], bestRun = [];
+  for (const q of chain) { if (inside(q)) { run.push(q); if (run.length > bestRun.length) bestRun = run; } else run = []; }
+  chain = bestRun;
   const pts = [];
   for (let i = 0; i < chain.length; i++) {
     const a = chain[Math.max(0, i - 1)], b = chain[Math.min(chain.length - 1, i + 1)], L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
@@ -219,7 +225,7 @@ function rideStep(dt) {
   camera.position.set(p.x, surfaceAt(p.x, p.z) + eye + (ride.kind === "drive" ? CARVE : 0), p.z);
   const fwd = q.clone().sub(p).setY(0).normalize();
   const side = new THREE.Vector3(fwd.z, 0, -fwd.x);              // right
-  const look = camera.position.clone().addScaledVector(fwd, 12).addScaledVector(side, ride.kind === "drive" ? 3 : 2);
+  const look = camera.position.clone().addScaledVector(fwd, 12).addScaledVector(side, ride.kind === "drive" ? 0.8 : 1.5);
   look.y = camera.position.y - 1.0;
   camera.lookAt(look); controls.target.copy(look);
   if (grass && ride.kind === "drive") {
@@ -234,6 +240,7 @@ function rideStep(dt) {
 }
 function goHome(eye = 1.65) {
   ride = null; controls.enabled = true;
+  if (SC.startRide && startRide(...SC.startRide)) { ride.speed = 0; return; }   // parked on the ride (a car on the verge road)
   const [x, z] = SC.home;
   camera.position.set(x, groundAt(x, z) + eye, z);
   controls.target.set(x + 10, groundAt(x + 10, z + 6) + 0.2, z + 6); controls.update();
@@ -373,5 +380,5 @@ const go = (x, y, z, tx, ty, tz) => { ride = null; controls.enabled = true; came
 const goGround = (x, z, eye, tx, tz, ty = 0.3) => go(x, groundAt(x, z) + eye, z, tx, groundAt(tx, tz) + ty, tz);
 const step = async (n = 1) => { for (let i = 0; i < n; i++) renderFrame(1 / 60); await renderer.backend.device.queue.onSubmittedWorkDone(); };
 window.lab = { renderer, scene, camera, controls, grass, grassU, lighting, pipe, bench, flicker, strip, hideStrip, go, goGround, goHome, startRide, step,
-  pipes, gpu, S, paths, groundAt, surfaceAt, setFreeze: (v) => { freeze = v; }, cityMs, wind, setDay };
+  pipes, gpu, S, paths, tileTypes, cityRoads, groundAt, surfaceAt, setFreeze: (v) => { freeze = v; }, cityMs, wind, setDay };
 say(`${SC.label} ready`);

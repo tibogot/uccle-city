@@ -60,11 +60,13 @@ export class GrassPush {
   }
   clear(i) { this.u.P[i].value.set(0, -1e5, 0, 0); this.u.V[i].value.set(0, 0, 0, 0); this.live[i] = false; }
 
+  /** the stamp pass to run this frame, or null: nothing pushed for 4 recover times (all back up: no work at all) */
   frame(camPos, dt) {
     const { N, cell } = PUSH;
+    this.idle = this.live.some((x) => x) ? 0 : (this.idle ?? 1e9) + dt;
     this.u.base.value.set(Math.floor(camPos.x / cell) - N / 2, Math.floor(camPos.z / cell) - N / 2);
     this.u.dt.value = dt;
-    return this.stamp;
+    return this.idle > 4 * this.u.recover.value ? null : this.stamp;
   }
 
   /** TSL (compute): the push at world xz -> vec4(dirX, dirZ, amount, 0) (0 outside the window / stale) */

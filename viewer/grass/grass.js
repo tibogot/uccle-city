@@ -38,7 +38,7 @@ import { season } from "../seasons/season.js";
 import { GrassField } from "./grassField.js";
 import { GrassPush } from "./grassPush.js";
 
-const CELL = 0.06;                       // m: the finest candidate grid
+const CELL = 0.045;                       // m: the finest candidate grid
 const TOP = 3;                           // levels 0..3
 const LOD_SEG = [5, 3, 1];
 // the textured ground's mean colours (viewer/materials/textures/ground/ground.json, linear): lawn, rough, dry
@@ -60,9 +60,9 @@ export const grassU = {
   dry: uniform(0),                       // season: summer drought 0..1 on top of the types' own dryness
   frost: uniform(0),                     // season: hoar frost on the tips 0..1
   tint: uniform(new THREE.Color(1, 1, 1)),   // season tint (olive winter, fresh spring)
-  tip: uniform(1.18), root: uniform(0.42), // brightness root (AO) -> tip, over the ground's mean colour
+  tip: uniform(1.1), root: uniform(0.32), // brightness root (AO) -> tip, over the ground's mean colour
   conv: uniform(1),
-  flat: uniform(0.9),                    // lighting normal: share of 'up' (Hybrid: flat lighting reads as one field)                      // converge to the ground colour with distance (debug: 0 = off)
+  flat: uniform(0.78),                    // lighting normal: share of 'up' (Hybrid: flat lighting reads as one field)                      // converge to the ground colour with distance (debug: 0 = off)
   debugLod: uniform(0),
 };
 
@@ -153,7 +153,12 @@ export class Grass {
         // cheap tests first, no memory reads: owned, inside the reach, roughly in the frustum at the camera's ground
         const rc = u.vp.mul(vec4(xz.x, u.groundY, xz.y, 1));
         const roughIn = abs(rc.x).lessThan(rc.w.add(3)).and(abs(rc.y).lessThan(rc.w.add(14))).and(rc.w.greaterThan(-4));
-        If(owned.greaterThan(0.5).and(dxz.lessThan(U.rmax)).and(roughIn), () => {
+        // the rank against the most generous density any type could have here (d0 of a meadow): most far candidates
+        // of the fine levels end here, before any memory read
+        const r0 = hash(seed.add(2)).mul(hi - lo).add(lo);
+        const d0max = U.d0.mul(10);
+        const pMax = min(float(1), d0max.div(max(dxz, 0.05)).mul(d0max.div(max(dxz, 0.05))));
+        If(owned.greaterThan(0.5).and(dxz.lessThan(U.rmax)).and(pMax.greaterThan(r0)).and(roughIn), () => {
           const f = F.sample(xz);
           const r2 = hash(seed.add(3));
           const keepCover = f.dens.mul(U.density).sub(r2);
@@ -165,7 +170,7 @@ export class Grass {
             const rEnd = min(mix(float(20), float(46), sqrt(len)).mul(U.reach), U.rmax);
             const pd = min(float(1), d0.div(d).mul(d0.div(d)));
             const p = pd.mul(float(1).sub(smoothstep(rEnd.mul(0.55), rEnd, d)));
-            const r = hash(seed.add(2)).mul(hi - lo).add(lo);
+            const r = r0;
             If(p.greaterThan(r), () => {
               const grow = smoothstep(0, 0.35, float(1).sub(r.div(p))).mul(smoothstep(0, 0.12, keepCover));
               // blade shape: type height x own random x clump
@@ -214,7 +219,7 @@ export class Grass {
                         const o = slot.add(uint(L.base)).mul(4);
                         data.element(o).assign(vec4(root, seedF));
                         data.element(o.add(1)).assign(vec4(H, W, yaw, len.add(flower)));
-                        data.element(o.add(2)).assign(vec4(lean, crush, d));
+                        data.element(o.add(2)).assign(vec4(lean, crush, d.add(floor(cl.p.y.mul(0.36).add(0.82).mul(100)).mul(1000))));
                         data.element(o.add(3)).assign(vec4(fc, f.dry));
                       });
                     });
@@ -252,7 +257,8 @@ export class Grass {
     const a = this.data.element(o), b = this.data.element(o.add(1)), c = this.data.element(o.add(2)), dd = this.data.element(o.add(3));
     const root = a.xyz, seed = uint(a.w);
     const H = b.x, W = b.y, yaw = b.z, isFlower = b.w.greaterThanEqual(2), len = b.w.sub(select(isFlower, float(2), float(0)));
-    const lean = c.xy, crush = c.z, dist = c.w;
+    const lean = c.xy, crush = c.z;
+    const cpk = floor(c.w.div(1000)), dist = c.w.sub(cpk.mul(1000)), cshade = mix(float(1), cpk.div(100), clamp(len.mul(2).add(0.4), 0, 1));
     const fc = dd.xyz, dry = dd.w;
     const h = P0().y, side = P0().x;
     const rnd = (k) => hash(seed.add(uint(k)));
@@ -280,7 +286,8 @@ export class Grass {
     // colour: the ground's mean colour, darker at the root (the thatch), brighter / yellower at the tip, per blade
     const r1 = rnd(12), r2 = rnd(13);
     const grad = mix(grassU.root.mul(mix(float(1), float(0.8), len)), grassU.tip, pow(max(h, 0.001), float(0.85)));
-    let col = fc.mul(grad).mul(vec3(r1.sub(0.5).mul(0.22).add(1), 1, float(1).sub(r1.sub(0.5).mul(0.3))));
+    const shade = rnd(15).mul(0.4).add(0.78).mul(cshade);                // per blade x per clump (Hybrid: 0.82..1.18)
+    let col = fc.mul(grad).mul(shade).mul(vec3(r1.sub(0.5).mul(0.22).add(1), 1, float(1).sub(r1.sub(0.5).mul(0.3))));
     col = col.mul(mix(vec3(1), vec3(1.12, 1.06, 0.78), h.mul(0.6)));
     col = col.mul(vec3(grassU.tint));
     // dry / straw blades (verges, summer drought)
@@ -318,8 +325,7 @@ export class Grass {
       const step = CELL * (1 << k);
       const side = Math.ceil((2 * R) / step) + 2;
       this.levelR.push({ R, step, side });
-      this.levelU[k].side.value = side;
-      this.levels[k].count = side * side;
+
     }
   }
 
@@ -336,13 +342,32 @@ export class Grass {
     this.u.groundY.value = gy;
     this.u.vp.value.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     grassU.pixelScale.value = camera.projectionMatrix.elements[5] * this.renderer.domElement.height * 0.5;
+    // per level: only the part of its square the view can see (the horizontal sector of the view, plus 3 m round the
+    // camera), as an axis-aligned box of cells: ~4x fewer candidate threads than the whole square
+    const e = camera.matrixWorld.elements, fx = -e[8], fy = -e[9], fz = -e[10];
+    const hl = Math.hypot(fx, fz), pitchDown = Math.atan2(-fy, hl);
+    const half = Math.atan(Math.tan((camera.fov * Math.PI) / 360) * camera.aspect) + 0.25;
+    const yaw = Math.atan2(fz, fx);
+    let ndisp = 0;
     for (let k = 0; k <= TOP; k++) {
-      const { step, side } = this.levelR[k];
-      // first cell index: a multiple of the level's stride, centred on the camera
+      const { R, step } = this.levelR[k];
+      let x0 = cam.x - 3, x1 = cam.x + 3, z0 = cam.z - 3, z1 = cam.z + 3;
+      if (pitchDown > 0.9 || hl < 1e-3) { x0 = cam.x - R; x1 = cam.x + R; z0 = cam.z - R; z1 = cam.z + R; }
+      else for (let a = -half; a <= half + 1e-6; a += half / 4) {
+        const x = cam.x + Math.cos(yaw + a) * R, z = cam.z + Math.sin(yaw + a) * R;
+        x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z);
+      }
       const s = 1 << k;
-      this.levelU[k].base.value.set(Math.floor(cam.x / step) * s - (side >> 1) * s, Math.floor(cam.z / step) * s - (side >> 1) * s);
+      const i0 = Math.floor(x0 / step), i1 = Math.ceil(x1 / step), j0 = Math.floor(z0 / step), j1 = Math.ceil(z1 / step);
+      const sx = i1 - i0 + 1, sz = j1 - j0 + 1;
+      this.levelU[k].base.value.set(i0 * s, j0 * s);
+      this.levelU[k].side.value = sx;
+      this.levels[k].count = sx * sz;
+      ndisp += sx * sz;
     }
-    return [this.push.frame(cam, dt), this.reset, ...this.levels, this.clamp];
+    this.threads = ndisp;
+    const ps = this.push.frame(cam, dt);
+    return [...(ps ? [ps] : []), this.reset, ...this.levels, this.clamp];
   }
 
   update(camera, dt) {
