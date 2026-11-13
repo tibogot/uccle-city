@@ -41,7 +41,7 @@ For the landmark list: 34 places of worship, 15 historic castles, 6 manors.
 6. **Edges and gates**: bollard family (exists: check), lift gates (137), cycle barriers (55), park gates (335 gates:
    many are private garden gates, see the front-garden kit).
 7. **Front gardens** (from the buildings proposal): low brick walls, railings, gates, pillars with caps, hedges behind
-   railings, garage ramps; placed from the footprint-to-sidewalk gap per house.
+   railings, garage ramps; placed from the footprint-to-sidewalk gap per house. **Built 2026-11-13 (branch claude/gardens): `docs/assets/GARDENS.md`.**
 8. **Small items**: parking meters ("horodateurs"), EV chargers, Cambio car-sharing marks, fire hydrant plates,
    drinking fountains (13), post boxes (exists), phone boxes (none left), playground sets (62; the park kit exists).
 

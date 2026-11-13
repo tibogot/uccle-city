@@ -74,7 +74,7 @@ function smoothLine(pts, step = 0.33) {
 }
 
 /** the clipped section: [n, y, nn, ny] (offset across, height, outward normal), for half width w, height H */
-function section(w, H) {
+function section(w, H, split = 0.16) {
   const r = Math.min(0.14, w * 0.35, H * 0.3), wt = w * 0.9;      // top narrower (battered sides), rounded corners
   const P = [];
   P.push([-w, -0.08, -1, 0], [-w * 0.96, H * 0.4, -1, 0.05]);
@@ -85,17 +85,17 @@ function section(w, H) {
   // denser: every segment longer than 12 cm split (the bulges need vertices to live on)
   const out = [P[0]];
   for (let k = 1; k < P.length; k++) {
-    const a = P[k - 1], b = P[k], L = Math.hypot(b[0] - a[0], b[1] - a[1]), m = Math.max(1, Math.ceil(L / 0.16));
+    const a = P[k - 1], b = P[k], L = Math.hypot(b[0] - a[0], b[1] - a[1]), m = Math.max(1, Math.ceil(L / split));
     for (let j = 1; j <= m; j++) { const t = j / m; out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t, a[3] + (b[3] - a[3]) * t]); }
   }
   return out;
 }
 
 /** one run -> { pos, nrm, uv, idx } appended to `G`, plus card samples appended to `C` */
-function buildRun(run, groundAt, G, C, seed) {
-  const pts = smoothLine(run.points);
+function buildRun(run, groundAt, G, C, seed, opts = {}) {
+  const pts = smoothLine(run.points, opts.step ?? 0.33);
   if (pts.length < 2) return;
-  const w = run.width / 2, H = run.height, sec = section(w, H), S = sec.length, sp = SP[run.species];
+  const w = run.width / 2, H = run.height, sec = section(w, H, opts.split ?? 0.16), S = sec.length, sp = SP[run.species];
   // section arc length (v)
   const vlen = [0]; for (let k = 1; k < S; k++) vlen.push(vlen[k - 1] + Math.hypot(sec[k][0] - sec[k - 1][0], sec[k][1] - sec[k - 1][1]));
   // rings: rounded ends = 3 extra rings each side shrinking
@@ -146,7 +146,7 @@ function buildRun(run, groundAt, G, C, seed) {
   }
   // cards: on the surface of the main rings (not the caps' tips), density per m²
   const area = s * vlen[S - 1];
-  const count = Math.round(area * sp.dens * 0.85);
+  const count = Math.round(area * sp.dens * 0.85 * (opts.cards ?? 1));
   let h = seed * 9973;
   const rnd = () => { h = Math.imul(h ^ (h >>> 15), 2246822507) + 0x9e3779b9 | 0; return ((h >>> 0) / 4294967296); };
   for (let c = 0; c < count; c++) {
@@ -226,7 +226,9 @@ function speciesMaterials(name) {
 }
 
 /** Build every hedge run: { group, stats }. `groundAt(x, z)` = the ground height the hedges stand on. */
-export function buildHedges(runs, groundAt) {
+/** opts (the front gardens' city hedges, viewer/gardens/cityGardens.js): { step: ring spacing (m, 0.33), split: section
+ *  point spacing (m, 0.16), cards: card density factor (1) } */
+export function buildHedges(runs, groundAt, opts = {}) {
   const group = new THREE.Group(); group.name = "hedges";
   const stats = { runs: runs.length, metres: 0, tris: 0, cards: 0, draws: 0, bySpecies: {} };
   const quad = new THREE.PlaneGeometry(1, 1);
@@ -234,7 +236,7 @@ export function buildHedges(runs, groundAt) {
     const mine = runs.filter((r) => r.species === name);
     if (!mine.length) continue;
     const G = { pos: [], nrm: [], uv: [], idx: [] }, C = { pos: [], nrm: [], rnd: [] };
-    mine.forEach((r, i) => { buildRun(r, groundAt, G, C, Math.floor((r.points[0][0] * 31 + r.points[0][1] * 17) * 10) + i); stats.metres += r.points.length * 0.5; });
+    mine.forEach((r, i) => { buildRun(r, groundAt, G, C, Math.floor((r.points[0][0] * 31 + r.points[0][1] * 17) * 10) + i, opts); stats.metres += r.points.length * 0.5; });
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.Float32BufferAttribute(G.pos, 3));
     g.setAttribute("normal", new THREE.Float32BufferAttribute(G.nrm, 3));
