@@ -8336,15 +8336,15 @@ function afterNetworkV2(net, ctx, surf) {
       ctx.stats.engineGlyphsStripped = (ctx.stats.engineGlyphsStripped || 0) + nm;
       n.markings = (n.markings || []).filter((m) => m.tag === "zebra");
     }
-    const drop = [];
+    const drop2 = [];
     for (const a of n.arms) {
       if (a.control !== "signal" && a.control !== "stop" || a.stopStation == null || !a.approach?.length) continue;
       const [tIn, tOut] = approachSpan(a), w = a.control === "stop" ? 0.5 : 0.35;
-      drop.push(rect2(a, a.stopStation, a.stopStation + w, tIn, tOut));
+      drop2.push(rect2(a, a.stopStation, a.stopStation + w, tIn, tOut));
     }
-    if (drop.length) {
+    if (drop2.length) {
       const before = n.markings.length;
-      n.markings = n.markings.filter((m) => !(m.kind === "poly" && !m.tag && drop.some((d) => same(m.pts, d))));
+      n.markings = n.markings.filter((m) => !(m.kind === "poly" && !m.tag && drop2.some((d) => same(m.pts, d))));
       ctx.stats.engineStopsStripped += before - n.markings.length;
     }
   }
@@ -9228,8 +9228,8 @@ function widenTightTurns(net, cls = null) {
   };
   const lanePts = (p) => {
     let P = p.pts;
-    const da = cut.get(`${p.id}|a`) || 0, db = cut.get(`${p.id}|b`) || 0;
-    if (db) P = cutAt(P, p.len - db, false);
+    const da = cut.get(`${p.id}|a`) || 0, db2 = cut.get(`${p.id}|b`) || 0;
+    if (db2) P = cutAt(P, p.len - db2, false);
     if (da) P = cutAt(P, da, true);
     return P;
   };
@@ -11879,11 +11879,190 @@ function transferables(obj, out = /* @__PURE__ */ new Set()) {
   return out;
 }
 
+// viewer/tileCache.js
+var DB = "uccle-tiles";
+var STORE = "tiles";
+var META = "meta";
+var VERSION = 1;
+var LIMIT = 600 * 1048576;
+var dbP = null;
+function db() {
+  const open = (v) => new Promise((res) => {
+    try {
+      const q = indexedDB.open(DB, v);
+      q.onupgradeneeded = () => {
+        for (const s of [STORE, META]) if (!q.result.objectStoreNames.contains(s)) q.result.createObjectStore(s, { keyPath: "key" });
+      };
+      q.onsuccess = () => {
+        const d = q.result;
+        if ([STORE, META].every((s) => d.objectStoreNames.contains(s))) return res(d);
+        const next = d.version + 1;
+        d.close();
+        open(next).then(res);
+      };
+      q.onerror = () => res(null);
+      q.onblocked = () => res(null);
+    } catch {
+      res(null);
+    }
+  });
+  return dbP ||= new Promise((res) => {
+    try {
+      const q = indexedDB.open(DB);
+      q.onsuccess = () => {
+        const v = Math.max(VERSION, q.result.version);
+        q.result.close();
+        open(v).then(res);
+      };
+      q.onerror = () => res(null);
+    } catch {
+      res(null);
+    }
+  });
+}
+var req = (r) => new Promise((res, rej) => {
+  r.onsuccess = () => res(r.result);
+  r.onerror = () => rej(r.error);
+});
+function hash(s) {
+  let a = 2166136261, b = 16777619 ^ 2654435769;
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    a = Math.imul(a ^ c, 16777619);
+    b = Math.imul(b ^ c, 16777623);
+  }
+  return (a >>> 0).toString(16).padStart(8, "0") + (b >>> 0).toString(16).padStart(8, "0");
+}
+var codeP = null;
+var codeHash = () => codeP ||= fetch(self.location.href, { cache: "no-cache" }).then((r) => r.text()).then(hash).catch(() => null);
+function cacheKey(entry, lite, base, code) {
+  const { cache, ...e } = entry;
+  return hash(JSON.stringify({ e, lite: !!lite, base, code }));
+}
+var tagOf = (r) => r.headers.get("etag") || r.headers.get("last-modified") || null;
+var stamped = (url) => /[?&]v=/.test(url);
+var recording = /* @__PURE__ */ new Set();
+var everFetched = /* @__PURE__ */ new Map();
+var realFetch = self.fetch.bind(self);
+self.fetch = async (input, init) => {
+  const r = await realFetch(input, init);
+  {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.href : input?.url;
+    if (!url) return r;
+    if (!stamped(url)) {
+      everFetched.set(url, tagOf(r));
+      for (const deps of recording) deps.set(url, tagOf(r));
+    }
+  }
+  return r;
+};
+async function cacheGet(entry, lite, base) {
+  if (entry.cache !== true) return null;
+  try {
+    const [d, code] = await Promise.all([db(), codeHash()]);
+    if (!d || !code) return null;
+    const key = cacheKey(entry, lite, base, code);
+    const meta = await req(d.transaction(META).objectStore(META).get(key));
+    if (!meta) {
+      say(entry, lite, "miss (not cached)", key);
+      return null;
+    }
+    for (const [url, tag] of meta.deps) {
+      const r = await realFetch(url, { method: "HEAD", cache: "no-cache" }).catch(() => null);
+      if (!r || !r.ok || tagOf(r) !== tag) {
+        say(entry, lite, `miss (${url} changed: ${tag} -> ${r && tagOf(r)})`);
+        drop(d, [key]);
+        return null;
+      }
+    }
+    const rec = await req(d.transaction(STORE).objectStore(STORE).get(key));
+    if (!rec) {
+      drop(d, [key]);
+      return null;
+    }
+    d.transaction(META, "readwrite").objectStore(META).put({ ...meta, at: Date.now() });
+    return rec.r;
+  } catch (e) {
+    say(entry, lite, "miss (error " + (e?.message || e) + ")");
+    return null;
+  }
+}
+var DEBUG = false;
+function say(entry, lite, msg, key = "") {
+  if (DEBUG) console.log(`[tilecache] ${entry.name}${lite ? " (far)" : ""}: ${msg} ${key}`);
+}
+async function cached(entry, lite, base, build) {
+  const hit = await cacheGet(entry, lite, base);
+  if (hit) {
+    hit.times = { ...hit.times || {}, cache: true };
+    return hit;
+  }
+  const deps = /* @__PURE__ */ new Map();
+  recording.add(deps);
+  let r;
+  try {
+    r = await build();
+  } finally {
+    recording.delete(deps);
+  }
+  for (const [u, tg] of everFetched) if (!deps.has(u)) deps.set(u, tg);
+  if (entry.cache === true) await cachePut(entry, lite, base, r, deps).catch(() => {
+  });
+  return r;
+}
+function byteSize(o, seen = /* @__PURE__ */ new Set()) {
+  if (!o || typeof o !== "object" || seen.has(o)) return 0;
+  seen.add(o);
+  if (ArrayBuffer.isView(o)) return o.byteLength;
+  if (o instanceof ArrayBuffer) return o.byteLength;
+  let n = 0;
+  for (const v of Array.isArray(o) ? o : Object.values(o)) n += byteSize(v, seen);
+  return n;
+}
+async function cachePut(entry, lite, base, r, deps) {
+  if ([...deps.values()].some((t) => t == null)) {
+    say(entry, lite, "not stored: a file without ETag / Last-Modified: " + [...deps].filter(([, t]) => t == null).map(([u]) => u).join(", "));
+    return;
+  }
+  const [d, code] = await Promise.all([db(), codeHash()]);
+  if (!d || !code) return;
+  const key = cacheKey(entry, lite, base, code), bytes = byteSize(r);
+  const tx = d.transaction([STORE, META], "readwrite");
+  tx.objectStore(STORE).put({ key, r });
+  tx.objectStore(META).put({ key, name: entry.name, lite: !!lite, at: Date.now(), bytes, deps: [...deps.entries()] });
+  await done(tx);
+  const all = (await req(d.transaction(META).objectStore(META).getAll())).sort((a, b) => a.at - b.at);
+  let total = all.reduce((n, x) => n + (x.bytes || 0), 0);
+  const out = [];
+  for (const x of all) {
+    if (total <= LIMIT) break;
+    if (x.key === key) continue;
+    out.push(x.key);
+    total -= x.bytes || 0;
+  }
+  if (out.length) drop(d, out);
+}
+var done = (tx) => new Promise((res) => {
+  tx.oncomplete = res;
+  tx.onerror = res;
+  tx.onabort = res;
+});
+function drop(d, keys) {
+  try {
+    const tx = d.transaction([STORE, META], "readwrite");
+    for (const k of keys) {
+      tx.objectStore(STORE).delete(k);
+      tx.objectStore(META).delete(k);
+    }
+  } catch {
+  }
+}
+
 // viewer/tileWorker.js
 self.onmessage = async (e) => {
   const { id, entry, base, lite } = e.data;
   try {
-    const r = await (lite ? buildLiteData : buildTileData)(entry, base);
+    const r = await cached(entry, lite, base, () => (lite ? buildLiteData : buildTileData)(entry, base));
     self.postMessage({ id, r }, [...transferables(r)]);
   } catch (err) {
     self.postMessage({ id, error: String(err?.stack || err) });

@@ -212,3 +212,17 @@ a second visit skips the worker build entirely.
 3. Sun shadow A/B (AUDIT_PLAN 2.1, 2.2).
 4. Startup: parallel pre-compile (AUDIT_PLAN 1.3) + the 15 late synchronous pipelines.
 5. Heap: allocation profile; geometries 1,664 -> 5,155.
+
+## Step 6: a cache of built tiles (2026-11-13 evening): built, OPT-IN (`?tilecache=1`)
+
+`viewer/tileCache.js`, inside the tile worker: a built tile (full: ~37 MB of typed arrays) kept in IndexedDB. Measured
+on I6: build 3,007 ms in the worker, IndexedDB write 76 ms, read back 40 ms. Never stale: the key holds the tile entry
+(its files carry the manifest's ?v= stamp, every option flag), lite / full, the data base and a hash of the worker's
+own code; every unstamped file the worker fetched (rail.json, overrides.json, hero notes, street life, osm_grass...)
+is stored with its ETag / Last-Modified and re-checked (HEAD) on a hit. Cap 600 MB, least recently used out.
+Verified: a reload with `?tilecache=1` reads the tiles back (`cache true` in the tile's build log), a stray database
+without stores is repaired, no console errors; with it off nothing is stored.
+NOT YET A MEASURED WIN: with two agents sharing the machine, the time to nine full tiles was 162 s cold vs 150 s warm;
+the first tile waits ~30 s for the startup shader warm-up (293 pipelines) whatever the worker does, so the worker
+build is not today's bottleneck. Re-measure on a quiet machine (preflight GREEN) before turning it on by default;
+the next startup lever is the warm-up itself.
