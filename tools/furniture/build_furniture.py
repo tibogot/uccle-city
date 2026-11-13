@@ -35,7 +35,7 @@ Rules (local frame of every piece: x along the kerb, +z = the road side, yaw = a
             driveways, crossings (2 m), the STIB furniture, benches, hoops, boxes.
   glass     the street-life glass-container sites (OSM, Bruxelles-Propreté, data/streetlife/<T>.json glass, not the
             underground ones): a white-glass bank + a coloured-glass bank side by side along the kerb, mouths to the
-            walkway
+            walkway (on a sidewalk) or to the street (on a verge / green)
   height    the walking surface (DTM + the measured kerb lift) under the footprint's corners: the piece stands at the
             highest corner minus 3 cm (never below the mean); legs / posts run 0.3 m below the origin; a drop > 0.27 m
             is rejected (slid / dropped / noted)
@@ -454,7 +454,11 @@ def place_glass(F: Furn, name, out, stats):
     for g in json.loads(sl.read_text(encoding="utf-8")).get("glass", []):
         if g.get("underground"): stats["glass_underground_kept_streetlife"] += 1; continue
         nx, nz = g["nx"], g["nz"]                                            # streetlife: the outward normal (toward the street)
-        yaw = math.atan2(nx, nz) + math.pi                                  # mouths (local +z) away from the street
+        # on the sidewalk: the mouths (local +z) to the walkway, away from the kerb; off it (a verge, a green): toward the
+        # street, where people come from
+        on_walk = F.S.walkable(g["x"], g["z"])
+        yaw = math.atan2(nx, nz) + (math.pi if on_walk else 0.0)
+        stats["glass_on_sidewalk" if on_walk else "glass_off_sidewalk"] += 1
         tx, tz = nz, -nx
         best = None
         for b in (0, 0.3, -0.3, 0.6):

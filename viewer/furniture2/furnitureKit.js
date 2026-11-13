@@ -42,14 +42,15 @@ export const SLOTS = [
 ];
 const SLOT = Object.fromEntries(SLOTS.map((s, i) => [s[0], i]));
 export const PIECES = ["bench_street", "bench_park", "bench_backless", "hoop", "bikebox", "bin_round", "bin_column", "glassbank"];
-/** LOD bands (m): [switch 0 -> 1, switch 1 -> 2, end]; err = meshopt absolute error per LOD; shadow2 = LOD2 casts */
+/** LOD bands (m): [switch 0 -> 1, switch 1 -> 2, end]; err = meshopt absolute error per LOD; shadow2 = LOD2 casts;
+ *  crease = the normal-smoothing angle of LOD1 / 2 (default 25 deg) */
 export const BANDS = {
   bench_street: { lod: [25, 70, 220], err: [0.004, 0.02], shadow2: false },
   bench_park: { lod: [25, 70, 220], err: [0.004, 0.02], shadow2: false },
   bench_backless: { lod: [25, 70, 220], err: [0.004, 0.02], shadow2: false },
-  hoop: { lod: [18, 50, 140], err: [0.003, 0.012], shadow2: false },
+  hoop: { lod: [18, 50, 140], err: [0.003, 0.012], shadow2: false, crease: 45 },
   bikebox: { lod: [35, 110, 350], err: [0.008, 0.03], shadow2: true },
-  bin_round: { lod: [20, 60, 180], err: [0.006, 0.02], shadow2: false },
+  bin_round: { lod: [20, 60, 180], err: [0.008, 0.025], shadow2: false, crease: 50 },
   bin_column: { lod: [20, 60, 180], err: [0.004, 0.02], shadow2: false },
   glassbank: { lod: [35, 110, 320], err: [0.006, 0.03], shadow2: true },
 };
@@ -78,7 +79,7 @@ export function loadFurnitureKit(base = new URL("../../", import.meta.url)) {
       if (!raw[p]) throw new Error(`furniture kit: piece ${p} missing`);
       const b = BANDS[p];
       const lod0 = mainGeometry(raw[p]);
-      const lods = [lod0, weldedSimplify(lod0, b.err[0], ao), weldedSimplify(lod0, b.err[1], ao)];
+      const lods = [lod0, weldedSimplify(lod0, b.err[0], ao, b.crease), weldedSimplify(lod0, b.err[1], ao, b.crease)];
       for (const g of lods) { g.computeBoundingSphere(); g.computeBoundingBox(); g.userData.shared = true; }
       pieces[p] = { name: p, lods, standin: standin(lods[1], p === "bikebox" ? 0.7 : null), tris: lods.map((g) => g.index.count / 3), band: b };
     }
@@ -132,14 +133,26 @@ function mainGeometry(prims) {
 }
 
 /** LOD1 / LOD2: weld by position + slot, simplify, rebuild crease-aware normals (25 deg), AO per vertex (slot + ao * 0.99) */
-function weldedSimplify(g, err, ao) {
+function weldedSimplify(g, err, ao, creaseDeg = 25) {
   const P = g.attributes.position.array, S = g.attributes.slot.array, UV = g.attributes.uv1.array, n = S.length;
   const key = new Map(), remap = new Uint32Array(n), wp = [], wslot = [], aoSum = [], aoN = [];
   for (let i = 0; i < n; i++) {
     const k = `${Math.round(P[3 * i] * 2000)},${Math.round(P[3 * i + 1] * 2000)},${Math.round(P[3 * i + 2] * 2000)},${S[i]}`;
     let j = key.get(k);
     if (j === undefined) { j = wslot.length; key.set(k, j); wp.push(P[3 * i], P[3 * i + 1], P[3 * i + 2]); wslot.push(S[i]); aoSum.push(0); aoN.push(0); }
-    remap[i] = j; aoSum[j] += ao.at(UV[2 * i], UV[2 * i + 1]); aoN[j]++;
+    remap[i] = j;
+  }
+  // the AO per welded vertex: sampled at its triangles' lightmap CENTROIDS, area-weighted (a corner's own texel sits
+  // on the island's edge, in the bake's dark margin: sampled there, LOD1 came out darker than LOD0)
+  {
+    const GI = g.index.array;
+    for (let t = 0; t < GI.length; t += 3) {
+      const a = GI[t], b = GI[t + 1], c = GI[t + 2];
+      const v = ao.at((UV[2 * a] + UV[2 * b] + UV[2 * c]) / 3, (UV[2 * a + 1] + UV[2 * b + 1] + UV[2 * c + 1]) / 3);
+      const ux = P[3 * b] - P[3 * a], uy = P[3 * b + 1] - P[3 * a + 1], uz = P[3 * b + 2] - P[3 * a + 2], vx = P[3 * c] - P[3 * a], vy = P[3 * c + 1] - P[3 * a + 1], vz = P[3 * c + 2] - P[3 * a + 2];
+      const w = Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx) + 1e-9;
+      for (const k of [a, b, c]) { aoSum[remap[k]] += v * w; aoN[remap[k]] += w; }
+    }
   }
   const I0 = Uint32Array.from(g.index.array, (i) => remap[i]), pos = new Float32Array(wp);
   const [I] = MeshoptSimplifier.simplify(I0, pos, 3, 0, err, ["ErrorAbsolute", "Prune"]);
@@ -152,7 +165,7 @@ function weldedSimplify(g, err, ao) {
     fn[3 * t] = nx / l; fn[3 * t + 1] = ny / l; fn[3 * t + 2] = nz / l; fa[t] = l / 2;
     for (let k = 0; k < 3; k++) { const key2 = pk(I[3 * t + k]); if (!around.has(key2)) around.set(key2, []); around.get(key2).push(t); }
   }
-  const crease = Math.cos(25 * Math.PI / 180);
+  const crease = Math.cos(creaseDeg * Math.PI / 180);       // (round pieces: wider, their simplified sides meet at 30+ deg)
   const OP = new Float32Array(T * 9), ON = new Float32Array(T * 9), OS = new Float32Array(T * 3);
   for (let t = 0; t < T; t++) for (let k = 0; k < 3; k++) {
     const v = I[3 * t + k], o = 3 * t + k;
@@ -163,7 +176,7 @@ function weldedSimplify(g, err, ao) {
     }
     const l = Math.hypot(nx, ny, nz) || 1;
     ON[3 * o] = nx / l; ON[3 * o + 1] = ny / l; ON[3 * o + 2] = nz / l;
-    OS[o] = wslot[v] + 0.99 * Math.min(1, aoSum[v] / aoN[v]) * 0.999;
+    OS[o] = wslot[v] + 0.99 * Math.min(1, aoN[v] ? aoSum[v] / aoN[v] : 1) * 0.999;
   }
   const out = new THREE.BufferGeometry();
   out.setAttribute("position", new THREE.BufferAttribute(OP, 3)); out.setAttribute("normal", new THREE.BufferAttribute(ON, 3));

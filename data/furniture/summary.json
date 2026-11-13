@@ -39,6 +39,8 @@
   "boxes_no_room": 23,
   "boxes_sidewalk": 22,
   "boxes_try_tram": 15,
+  "glass_off_sidewalk": 9,
+  "glass_on_sidewalk": 6,
   "glass_sites": 15,
   "glass_underground_kept_streetlife": 7,
   "hoops": 581,

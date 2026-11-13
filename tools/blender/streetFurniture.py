@@ -330,10 +330,10 @@ def hoop():
         a = math.pi / 2 - math.pi / 2 * k / 9
         pts.append(Vector((w / 2 - r + r * math.cos(a), 0, h - r + r * math.sin(a))))
     pts += [Vector((w / 2, 0, h - r)), Vector((w / 2, 0, 0.0)), Vector((w / 2, 0, -SINK))]
-    P.add_bm(bm_tube_path(pts, 0.024, 20), HOOP, Zv)
+    P.add_bm(bm_tube_path(pts, 0.024, 14), HOOP, Zv)                            # 14 sides (25.7 deg): smooth below 35 deg
     for x in (-w / 2, w / 2):                                                  # ground collars (paving cut-outs)
-        P.add_bm(annulus(0.026, 0.046, 0.012, 24), HOOP, Zv, M((x, 0, -0.004)))
-    return finish(P, "hoop")
+        P.add_bm(annulus(0.026, 0.046, 0.012, 14), HOOP, Zv, M((x, 0, -0.004)))
+    return P.to_object(smooth_angle=35)
 
 
 # ------------------------------------------------------------------------------------------------ bike box
