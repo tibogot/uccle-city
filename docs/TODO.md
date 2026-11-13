@@ -16,7 +16,16 @@ the fixed lamp-light pool (no more long freeze), the FALCON FLIGHT as the fly mo
  proxies, pigeons on the Place; `?falcon=old` = old flight). **Lab-only, merged:** night lights, sound,
 weather + seasons, foliage, pedestrians, street life, car impostors, police car (branch), Material / Tree labs.
 
-**Running (agents):** collisions + joins audit (`claude/audit-collide`).
+**Running (agents):** none (2026-11-13 01:45): the GPU is quiet -> the PERFORMANCE AUDIT (`debug/perfRun.js` ready).
+
+**Merged 2026-11-13: collisions + joins audit round 1:** colliders from what is drawn (car pass-throughs 32,041 -> 0 over
+120 tiles; drawn things with no collider 21,016 -> 512; invisible walls 1,085 -> 254), landmarks + bridges collide by their
+own model, walk mode has collision (one world with third person), cars refuse steps > 0.5 m, no floating under overpasses,
+pond slows the car, JOINS check `viewer.contactAudit(...)`, Verrewinkel ends closed (`?colfix=0` = before). Left: JOINS
+on Saint-Job + Calevoet bridges, Observatory, Van Buuren, Calevoet station, Stalle, and roads on all 120 tiles
+(`docs/collisions/roadsrun.js`); 70 road ledges for the roads work (`docs/collisions/road_ledges.txt`: D10 road floating
+1.4 m at (-1265, 2663), G10 sidewalk 0.43 m over the lawn at (148, 2677), Verrewinkel SE still 0.1-0.2 m low); 391 small
+detail clusters without a collider; the walker wades onto the pond bed; +0.5-1.2 s worker time per tile.
 
 **Merged 2026-11-13: fixes1:** tram on one smooth track profile + a bridge deck over the L26 cutting (`?trackprofile=0` old),
 clean-buildings pass (facade details -96 % blocking, no eaves gutter line, faces wound right), garage door in the kit (not
