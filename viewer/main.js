@@ -27,7 +27,8 @@ import { buildCars } from "./cars.js";
 import { carFleet } from "./carFleet.js";
 import { streetFit, buildBollards } from "./streetFit.js";
 import { cobbleMaterial, pitMaterial } from "./cobbles.js";
-import { landCoverTexture, groundMaterial } from "./ground.js";
+import { landCoverTexture, groundMaterial, proceduralGround, setGroundTextures, groundLook } from "./ground.js";
+import { loadGroundTextures } from "./materials/groundTex.js";
 import { Heightmap } from "./heightmap.js";
 import { createTramLine } from "./tramline.js";
 import { loadTrackProfile } from "./trackProfile.js";
@@ -90,7 +91,7 @@ const getBin = async (p) => { const r = await fetch(new URL(p, DATA)); if (!r.ok
 
 // ------------------------------------------------------------------ terrain grid
 
-function terrainMesh(t, contourOn, feats, bounds, coverData) {
+function terrainMesh(t, contourOn, feats, bounds, coverData, ortho) {
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.BufferAttribute(t.pos, 3));
   g.setAttribute("normal", new THREE.BufferAttribute(t.nrm, 3));
@@ -105,11 +106,15 @@ function terrainMesh(t, contourOn, feats, bounds, coverData) {
   };
   const lines = mix(line(1, 1.0).mul(0.35), float(0.8), line(5, 1.4));
   const cover = landCoverTexture(feats, bounds, coverData);
-  const m = groundMaterial(cover, bounds, (col) => mix(col, color(0x2b2418), lines.mul(contourOn)));
+  cover.ortho = ortho;            // the tile's orthophoto: the textured ground's far colour (the far-LOD tiles' own)
+  const contour = (col) => mix(col, color(0x2b2418), lines.mul(contourOn));
+  const m = groundMaterial(cover, bounds, contour);
   const mesh = new THREE.Mesh(g, m);
+  // (A/B, viewer.groundAB(): the procedural ground built lazily on the same mask)
+  mesh.userData.groundAB = () => (mesh.userData.groundProc ??= proceduralGround(cover, bounds, contour));
   mesh.receiveShadow = true;
   mesh.name = "terrain";
-  mesh.userData.textures = [cover.tex];
+  mesh.userData.textures = ortho ? [cover.tex, ortho] : [cover.tex];
   return mesh;
 }
 
@@ -517,6 +522,8 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const t0 = performance.now();
   // the street-life layer (viewer/streetlife/cityStreetLife.js) builds in its own worker meanwhile, into the features group
   const streetLifeP = cityStreetLife.tile(entry.name, own.features);
+  // the orthophoto for the textured ground's far blend (docs/materials/GROUND.md), fetched alongside the tile data
+  const orthoP = groundLook() && F.ortho ? texLoader.loadAsync(new URL(F.ortho, DATA).href).then((t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; }).catch(() => null) : null;
   const d = await tileData(entry);
   let busy = 0, longest = 0, mark = performance.now(), worst = "";
   const slices = [];
@@ -535,7 +542,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const R = roadMeshes(d.road);
   own.roads.add(...R.meshes);
   await frame("roads");
-  const terr = terrainMesh(d.terrain, contourOn, feats, bounds, d.cover);
+  const terr = terrainMesh(d.terrain, contourOn, feats, bounds, d.cover, await orthoP);
   own.terrain.add(terr);
   if (d.rail && railP) {       // ?trains=1: carved + built in the tile worker (viewer/rail/railData.js), wrapped here
     await frame("terrain mesh");
@@ -791,6 +798,8 @@ async function main() {
   if (params.get("flags") !== "0") addFlags({ scene, updaters, renderer, compiler: () => compileFor, log, params }).catch((e) => log(`flags failed: ${e.message}`));
   // the tram tracks' smooth vertical profile, before the first tile's rails (?trackprofile=0: the old per-point ground)
   if (params.get("trackprofile") !== "0") trackProf = await loadTrackProfile(new URL("../data/transit/tram_profile.json", import.meta.url)).catch((e) => { log(`tram profile: ${e.message}`); return null; });
+  // the ground's cover textures (viewer/materials/groundTex.js; ?groundtex=0: the procedural ground), before the first tile
+  setGroundTextures(await loadGroundTextures(renderer));
   const T0 = await loadTile(entry, { layers, contourOn, verbose: true });
   world.tiles.push(T0);
   const { hm, roads, net } = T0;
@@ -1308,7 +1317,9 @@ async function main() {
     return m.collisionTest({ scene, world, driver, makeController }, name, opts);
   };
   window.viewer = { auditColliders, contactAudit, collisionTest, thirdPerson: () => thirdPerson(), getThird: () => third, tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
-    world, fader, stateAt, step: (dt) => stepLoop(dt), freeze: (on) => { stateFreeze = !!on; }, pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop),
+    world, fader, stateAt, groundLook,
+    // A/B of the ground: on = textured (default), off = the procedural ground, swapped on every full tile's terrain
+    groundAB: (on) => { for (const g of layers.terrain.children) g.traverse((o) => { if (!o.userData.groundAB) return; o.userData.groundTex ??= o.material; o.material = on ? o.userData.groundTex : o.userData.groundAB(); }); }, step: (dt) => stepLoop(dt), freeze: (on) => { stateFreeze = !!on; }, pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop),
     renderFrame: () => { if (!stateFreeze) { lodEye.value.copy(camera.position); for (const u of updaters) u(camera.position, camera); } renderFrame(); } };
 }
 

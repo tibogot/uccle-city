@@ -1,0 +1,162 @@
+{
+ "about": "Ground textures per land cover (tools/textures/ground_textures.py): layer = index in the albedo / nra texture arrays (viewer/materials/groundTex.js); size_m = metres per repeat. CC0 sources, docs/materials/GROUND.md.",
+ "px": 1024,
+ "layers": [
+  {
+   "cover": "lawn",
+   "layer": 0,
+   "source": "ambientcg",
+   "asset": "Grass004",
+   "name": "Grass 004",
+   "licence": "CC0",
+   "url": "https://ambientcg.com/view?id=Grass004",
+   "authors": null,
+   "size_m": 1.4,
+   "px": 1024,
+   "note": "dense short garden lawn",
+   "mean_albedo_linear": [
+    0.1283,
+    0.1626,
+    0.0349
+   ],
+   "mean_roughness": 0.263,
+   "lum_std": 0.45,
+   "albedo_ktx2_bytes": 1380607,
+   "nra_ktx2_bytes": 1387890
+  },
+  {
+   "cover": "rough",
+   "layer": 1,
+   "source": "ambientcg",
+   "asset": "Grass001",
+   "name": "Grass 001",
+   "licence": "CC0",
+   "url": "https://ambientcg.com/view?id=Grass001",
+   "authors": null,
+   "size_m": 1.4,
+   "px": 1024,
+   "note": "dark dense",
+   "mean_albedo_linear": [
+    0.0608,
+    0.1097,
+    0.0228
+   ],
+   "mean_roughness": 0.544,
+   "lum_std": 0.334,
+   "albedo_ktx2_bytes": 1361796,
+   "nra_ktx2_bytes": 1384462
+  },
+  {
+   "cover": "dry",
+   "layer": 2,
+   "source": "ambientcg",
+   "asset": "Ground003",
+   "name": "Ground 003",
+   "licence": "CC0",
+   "url": "https://ambientcg.com/view?id=Ground003",
+   "authors": null,
+   "size_m": 2,
+   "px": 1024,
+   "note": "grass and dirt",
+   "mean_albedo_linear": [
+    0.2384,
+    0.221,
+    0.0793
+   ],
+   "mean_roughness": 0.684,
+   "lum_std": 0.467,
+   "albedo_ktx2_bytes": 1386577,
+   "nra_ktx2_bytes": 1334553
+  },
+  {
+   "cover": "forest",
+   "layer": 3,
+   "source": "polyhaven",
+   "asset": "forest_leaves_02",
+   "name": "Forest Leaves 02",
+   "licence": "CC0",
+   "url": "https://polyhaven.com/a/forest_leaves_02",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "size_m": 3.001,
+   "px": 1024,
+   "note": "leaf litter",
+   "mean_albedo_linear": [
+    0.2958,
+    0.1786,
+    0.0574
+   ],
+   "mean_roughness": 0.933,
+   "lum_std": 0.567,
+   "albedo_ktx2_bytes": 1398686,
+   "nra_ktx2_bytes": 1398390
+  },
+  {
+   "cover": "gravel",
+   "layer": 4,
+   "source": "ambientcg",
+   "asset": "Gravel037",
+   "name": "Gravel 037",
+   "licence": "CC0",
+   "url": "https://ambientcg.com/view?id=Gravel037",
+   "authors": null,
+   "size_m": 2,
+   "px": 1024,
+   "note": "beige clean",
+   "mean_albedo_linear": [
+    0.6156,
+    0.5264,
+    0.3601
+   ],
+   "mean_roughness": 0.449,
+   "lum_std": 0.248,
+   "albedo_ktx2_bytes": 1397718,
+   "nra_ktx2_bytes": 1366350
+  },
+  {
+   "cover": "soil",
+   "layer": 5,
+   "source": "ambientcg",
+   "asset": "Ground048",
+   "name": "Ground 048",
+   "licence": "CC0",
+   "url": "https://ambientcg.com/view?id=Ground048",
+   "authors": null,
+   "size_m": 1.4,
+   "px": 1024,
+   "note": "brown soil",
+   "mean_albedo_linear": [
+    0.1049,
+    0.0564,
+    0.0378
+   ],
+   "mean_roughness": 0.669,
+   "lum_std": 0.73,
+   "albedo_ktx2_bytes": 1365987,
+   "nra_ktx2_bytes": 1364304
+  },
+  {
+   "cover": "sand",
+   "layer": 6,
+   "source": "ambientcg",
+   "asset": "Ground054",
+   "name": "Ground 054",
+   "licence": "CC0",
+   "url": "https://ambientcg.com/view?id=Ground054",
+   "authors": null,
+   "size_m": 3.5,
+   "px": 1024,
+   "note": "beach sand, mud",
+   "mean_albedo_linear": [
+    0.3332,
+    0.2588,
+    0.1563
+   ],
+   "mean_roughness": 0.665,
+   "lum_std": 0.142,
+   "albedo_ktx2_bytes": 1265838,
+   "nra_ktx2_bytes": 1325566
+  }
+ ]
+}

@@ -21,7 +21,7 @@ let manifest = null, ktx = null, ready = null, candMan = null;
 const pending = {};
 const fmt = () => new URLSearchParams(location.search).get("scans") || "ktx2";
 
-function ktxLoader(renderer) {
+export function ktxLoader(renderer) {   // (shared: groundTex.js too; one KTX2Loader per page)
   if (!ktx) { ktx = new KTX2Loader().setTranscoderPath(TRANSCODER); ktx.detectSupport(renderer); }
   return ktx;
 }

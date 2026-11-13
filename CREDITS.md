@@ -94,6 +94,21 @@ All CC0 (public domain, no attribution required); credited anyway. Downloaded an
 Poly Haven licence: https://polyhaven.com/license (CC0). ambientCG licence: https://docs.ambientcg.com/license/ (CC0).
 No AI-generated maps, no web-search images.
 
+### Ground textures (the terrain's land covers, 2026-11-13, docs/materials/GROUND.md)
+
+Fetched by `tools/textures/ground_textures.py` (same pipeline), 1024 px KTX2 (UASTC + RDO) committed in
+`viewer/materials/textures/ground/`. All CC0.
+
+| Cover | Asset | Source | Licence |
+|---|---|---|---|
+| lawn | Grass 004 (`Grass004`) | https://ambientcg.com/view?id=Grass004 | CC0 |
+| rough | Grass 001 (`Grass001`) | https://ambientcg.com/view?id=Grass001 | CC0 |
+| dry | Ground 003 (`Ground003`) | https://ambientcg.com/view?id=Ground003 | CC0 |
+| forest | Forest Leaves 02 (`forest_leaves_02`), Rob Tuytel | https://polyhaven.com/a/forest_leaves_02 | CC0 |
+| gravel | Gravel 037 (`Gravel037`) | https://ambientcg.com/view?id=Gravel037 | CC0 |
+| soil | Ground 048 (`Ground048`) | https://ambientcg.com/view?id=Ground048 | CC0 |
+| sand | Ground 054 (`Ground054`) | https://ambientcg.com/view?id=Ground054 | CC0 |
+
 ### Candidates for the Material Lab review (2026-11-12)
 
 Fetched by `tools/textures/candidates.py` (same pipeline; 1K, KTX2 + WebP into `viewer/materials/textures/cand/`,
