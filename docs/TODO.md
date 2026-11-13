@@ -105,7 +105,7 @@ GPU (YELLOW preflight). Coordinator check: D8 walk 60 fps, lawn + shadows, clean
 grass-type painting 38 ms per tile on the main thread -> the worker; landmarks as grass solids; flower meshes; wire
 the car / walker / falcon into the push field; re-measure on GREEN. CHECK: Uccle's biggest OSM meadow (G7, osm:w96769197,
 5.3 ha, centre ~210, 1179) shows forest floor + trees, no grass (woods polygon over it, or the meadow loses to woods);
-G9 meadow (Avenue Dolez, ~352, 2070) does grow grass. Owner wants a "nice fluffy grass field" to try: give him one
+G9 meadow (Avenue Dolez, ~352, 2070) does grow grass. Owner wants a "nice fluffy grass field" to try: give the owner one
 verified meadow / park link (walk mode lands on the nearest road, so pick a road beside the field).
 **(was) PAUSED (agents):** GRASS LAB (`claude/grass`, port 8849, started 2026-11-13 ~07:15; PAUSED ~07:40 at 89e5dde, design
 settled + OSM grass kinds + the per-tile grass-type map written, nothing rendered yet; resume from docs/GRASS_RESUME.md
