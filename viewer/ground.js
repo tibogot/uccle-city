@@ -18,7 +18,7 @@
 // macro tone noise at 8 / 40 m. Far: blends to the tile's ORTHOPHOTO (the far-LOD tiles' look) over 220-480 m, so the
 // full -> far hand-over has no colour jump. 3 hex taps x 2 layers x 2 maps = 12 texture reads (explicit gradients).
 import * as THREE from "three/webgpu";
-import { Fn, float, int, vec2, vec3, vec4, color, mix, smoothstep, positionWorld, normalWorld, normalView, texture, uv, clamp, max, uniform, uniformArray,
+import { Fn, If, float, int, vec2, vec3, vec4, color, mix, smoothstep, positionWorld, normalWorld, normalView, texture, uv, clamp, max, uniform, uniformArray,
   cameraPosition, cameraViewMatrix, length, floor, fract, dot, pow, cos, sin, select, normalize } from "three/tsl";
 import { hash22 } from "./materials/antitile.js";
 import { addLampLight } from "./lampLight.js";
@@ -100,6 +100,7 @@ export function setGroundTextures(G) {
   const L = G.layers;
   const lumOf = (l) => 0.2126 * l.mean_albedo_linear[0] + 0.7152 * l.mean_albedo_linear[1] + 0.0722 * l.mean_albedo_linear[2];
   shared = {
+    G,
     invSize: uniformArray(L.map((l) => 1 / l.size_m)),
     invLum: uniformArray(L.map((l) => 0.5 / Math.max(0.02, lumOf(l)))),
     idx: Object.fromEntries(L.map((l) => [l.cover, l.layer])),
@@ -114,6 +115,28 @@ export const groundLook = () => shared;
 const TONE = { forest: [0.52, 0.6, 0.62], dry: [0.92, 0.95, 0.95], gravel: [0.92, 0.92, 0.92] };
 const SQ3x2 = 2 * Math.sqrt(3);
 const HEX = 1.3;                  // m: hex tile size of the anti-tiling grid (about one lawn repeat)
+// the cover weights' and the macro tone's noise as ONE small texture (3 taps instead of 6 value noises of sin hashes:
+// cheaper per pixel): 256 x 256, four independent tileable value noises (16 cells per period), mipmapped
+const noiseTex = (() => {
+  const N = 256, C = 16, d = new Uint8Array(N * N * 4);
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+  for (let ch = 0; ch < 4; ch++) {
+    const lat = Array.from({ length: C * C }, rnd);
+    const at = (i, j) => lat[((j + C) % C) * C + ((i + C) % C)];
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const fx = (x / N) * C, fy = (y / N) * C, ix = Math.floor(fx), iy = Math.floor(fy);
+      let u = fx - ix, v = fy - iy; u = u * u * (3 - 2 * u); v = v * v * (3 - 2 * v);
+      const a = at(ix, iy) + (at(ix + 1, iy) - at(ix, iy)) * u, b = at(ix, iy + 1) + (at(ix + 1, iy + 1) - at(ix, iy + 1)) * u;
+      d[(y * N + x) * 4 + ch] = Math.round((a + (b - a) * v) * 255);
+    }
+  }
+  const t = new THREE.DataTexture(d, N, N, THREE.RGBAFormat);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter;
+  t.generateMipmaps = true; t.needsUpdate = true;
+  return t;
+})();
 const placeholder = new THREE.DataTexture(new Uint8Array([128, 128, 128, 255]), 1, 1);
 placeholder.needsUpdate = true;
 
@@ -124,101 +147,141 @@ function texturedGround(cover, bounds, contour) {
   const uInvSize = uniform(new THREE.Vector2(1 / (bounds.x1 - bounds.x0), 1 / (bounds.z1 - bounds.z0)));
   const uOrtho = uniform(cover.ortho ? 1 : 0);
   const muv = vec2(P.x, P.z).sub(uOrigin).mul(uInvSize);
-  const mk = texture(cover.tex, muv);
-  const xz = vec2(P.x, P.z);
-  const dist = length(cameraPosition.sub(P));
-
-  // ---- cover weights (the procedural ground's mixing order: grass < wood < sand < path; steep -> soil; water last)
-  const n1 = noise2D(xz.mul(0.025)), n2 = noise2D(xz.mul(0.09).add(17.3)), n3 = noise2D(xz.mul(0.31).add(5.1));
-  const wood = mk.r, path = mk.g, sand = mk.b;
   const one = float(1);
-  const grassW = one.sub(wood).mul(one.sub(sand)).mul(one.sub(path));
-  const slope = smoothstep(float(0.9), float(0.72), normalWorld.y).mul(one.sub(path)).mul(one.sub(wood.mul(0.95)));
-  // grass flavours: rough (darker, denser: unmown park corners, long verges) in ~40 m patches; dry / worn (thin grass
-  // over soil) in ~10 m patches; a few bare worn spots
-  const rough = smoothstep(0.45, 0.8, n1).mul(S.uRough.mul(2).min(1));
-  const dry = smoothstep(0.6, 0.95, n2.mul(0.7).add(n3.mul(0.3))).mul(S.uDry.mul(2).min(1));
-  const worn = smoothstep(0.8, 0.95, noise2D(xz.mul(0.07).add(3.3))).mul(smoothstep(0.55, 0.8, n3)).mul(0.5);
-  const flat = one.sub(slope);
-  // the mask's partial woodland (scrub 0.67, the railway's verges 0.88, the soft edge of a wood) is rough grass under
-  // the litter: brambles and long grass at wood edges and on the cuttings, full litter only inside a real wood
-  const litter = smoothstep(0.9, 0.99, wood);
-  const woodW = wood.mul(one.sub(sand)).mul(one.sub(path)).mul(flat);
-  const w = [];
-  w[I.lawn] = grassW.mul(one.sub(rough)).mul(one.sub(dry)).mul(one.sub(worn)).mul(flat);
-  w[I.rough] = grassW.mul(rough).mul(one.sub(dry)).mul(one.sub(worn)).mul(flat).add(woodW.mul(one.sub(litter)));
-  w[I.dry] = grassW.mul(dry).mul(one.sub(worn)).mul(flat);
-  w[I.forest] = woodW.mul(litter);
-  w[I.sand] = sand.mul(one.sub(path)).mul(flat);
-  w[I.gravel] = path;
-  w[I.soil] = grassW.mul(worn).mul(flat).add(slope);
-  // ---- the two strongest layers (the third's weight subtracted: no jump where the 2nd and 3rd swap)
-  const N = w.length;
-  let b1 = w[0], i1 = float(0);
-  for (let j = 1; j < N; j++) { i1 = select(w[j].greaterThan(b1), float(j), i1); b1 = max(b1, w[j]); }
-  i1 = i1.toVar(); b1 = b1.toVar();
-  const not1 = w.map((x, j) => select(i1.equal(float(j)), float(-1), x));
-  let b2 = not1[0], i2 = float(0);
-  for (let j = 1; j < N; j++) { i2 = select(not1[j].greaterThan(b2), float(j), i2); b2 = max(b2, not1[j]); }
-  i2 = i2.toVar(); b2 = b2.toVar();
-  let b3 = float(0);
-  for (let j = 0; j < N; j++) b3 = max(b3, select(i1.equal(float(j)).or(i2.equal(float(j))), float(0), w[j]));
-  const kMix = b2.sub(b3).max(0).div(b1.sub(b3).add(b2.sub(b3)).max(1e-4)).toVar();
-  const L1 = int(i1), L2 = int(i2);
-  const inv1 = S.invSize.element(L1), inv2 = S.invSize.element(L2);
-  const il1 = S.invLum.element(L1), il2 = S.invLum.element(L2);
+  const dist = length(cameraPosition.sub(P));
+  // outputs of the textured part (only computed nearer than the orthophoto hand-over)
+  const mkV = vec4(0).toVar("gMask"), farV = float(0).toVar("gFar"), colV = vec3(0.2).toVar("gCol"), nrmV = vec2(0).toVar("gNrm"), raV = vec2(0.8, 1).toVar("gRA");
+  const ground = Fn(() => {
+    // everything with implicit derivatives FIRST, in uniform control flow (WGSL): the mask, the uv gradients
+    mkV.assign(texture(cover.tex, muv));
+    colV.assign(vec3(0.2)); nrmV.assign(vec2(0)); raV.assign(vec2(0.8, 1));     // declared HERE, not inside the If
+    // (a node used in two blocks must be assigned BEFORE the blocks: TSL emits its assignment in the first block that
+    // uses it, so the other block would read it unassigned)
+    const xz = vec2(0).toVar(), st = vec2(0).toVar(), dx = vec2(0).toVar(), dy = vec2(0).toVar();
+    xz.assign(vec2(P.x, P.z));
+    st.assign(vec2(P.x, P.z.negate()));                      // the texture frame (x, -z): the OpenGL normal's +y = north
+    dx.assign(st.dFdx()); dy.assign(st.dFdy());
+    // noise at ~40 m (R n1, G macro), ~11 m (R n2, G worn, B macro), ~3 m (R n3): periods 640 / 176 / 51 m
+    const nzA = vec4(0).toVar(), nzB = vec4(0).toVar(), nzC = vec4(0).toVar();
+    nzA.assign(texture(noiseTex, xz.div(640))); nzB.assign(texture(noiseTex, xz.div(176).add(0.37))); nzC.assign(texture(noiseTex, xz.div(51).add(0.71)));
+    const mk = mkV;
+    // ---- far: the tile's orthophoto (the far-LOD tiles' colour), no relief
+    const orthoTex = texture(cover.ortho || placeholder, vec2(muv.x, one.sub(muv.y)));
+    farV.assign(smoothstep(S.uOrthoNear, S.uOrthoFar, dist).mul(uOrtho).mul(one.sub(mk.a)));
+    const far = farV;
+    If(far.lessThan(0.999), () => {
+      // ---- cover weights (the procedural ground's mixing order: grass < wood < sand < path; steep -> soil; water last)
+      const n1 = nzA.r, n2 = nzB.r, n3 = nzC.r;
+      const wood = mk.r, path = mk.g, sand = mk.b;
+      const grassW = one.sub(wood).mul(one.sub(sand)).mul(one.sub(path));
+      const slope = smoothstep(float(0.9), float(0.72), normalWorld.y).mul(one.sub(path)).mul(one.sub(wood.mul(0.95)));
+      // grass flavours: rough (darker, denser: unmown park corners, long verges) in ~40 m patches; dry / worn (thin grass
+      // over soil) in ~10 m patches; a few bare worn spots
+      const rough = smoothstep(0.45, 0.8, n1).mul(S.uRough.mul(2).min(1));
+      const dry = smoothstep(0.6, 0.95, n2.mul(0.7).add(n3.mul(0.3))).mul(S.uDry.mul(2).min(1));
+      const worn = smoothstep(0.8, 0.95, nzB.g).mul(smoothstep(0.55, 0.8, n3)).mul(0.5);
+      const flat = one.sub(slope);
+      // the mask's partial woodland (scrub 0.67, the railway's verges 0.88, the soft edge of a wood) is rough grass under
+      // the litter: brambles and long grass at wood edges and on the cuttings, full litter only inside a real wood
+      const litter = smoothstep(0.9, 0.99, wood);
+      const woodW = wood.mul(one.sub(sand)).mul(one.sub(path)).mul(flat);
+      const w = [];
+      w[I.lawn] = grassW.mul(one.sub(rough)).mul(one.sub(dry)).mul(one.sub(worn)).mul(flat);
+      w[I.rough] = grassW.mul(rough).mul(one.sub(dry)).mul(one.sub(worn)).mul(flat).add(woodW.mul(one.sub(litter)));
+      w[I.dry] = grassW.mul(dry).mul(one.sub(worn)).mul(flat);
+      w[I.forest] = woodW.mul(litter);
+      w[I.sand] = sand.mul(one.sub(path)).mul(flat);
+      w[I.gravel] = path;
+      w[I.soil] = grassW.mul(worn).mul(flat).add(slope);
+      // ---- the two strongest layers (the third's weight subtracted: no jump where the 2nd and 3rd swap)
+      const N = w.length;
+      let b1 = w[0], i1 = float(0);
+      for (let j = 1; j < N; j++) { i1 = select(w[j].greaterThan(b1), float(j), i1); b1 = max(b1, w[j]); }
+      i1 = i1.toVar(); b1 = b1.toVar();
+      const not1 = w.map((x, j) => select(i1.equal(float(j)), float(-1), x));
+      let b2 = not1[0], i2 = float(0);
+      for (let j = 1; j < N; j++) { i2 = select(not1[j].greaterThan(b2), float(j), i2); b2 = max(b2, not1[j]); }
+      i2 = i2.toVar(); b2 = b2.toVar();
+      let b3 = float(0);
+      for (let j = 0; j < N; j++) b3 = max(b3, select(i1.equal(float(j)).or(i2.equal(float(j))), float(0), w[j]));
+      const kMix = float(0).toVar(), L1 = int(0).toVar(), L2 = int(0).toVar();
+      kMix.assign(b2.sub(b3).max(0).div(b1.sub(b3).add(b2.sub(b3)).max(1e-4)));
+      L1.assign(int(i1)); L2.assign(int(i2));
+      const inv1 = float(0).toVar(), inv2 = float(0).toVar(), il1 = float(0).toVar(), il2 = float(0).toVar();
+      inv1.assign(S.invSize.element(L1)); inv2.assign(S.invSize.element(L2));
+      il1.assign(S.invLum.element(L1)); il2.assign(S.invLum.element(L2));
 
-  // ---- hex tiling (Mikkelsen 2022, as antitile.js): texture frame (x, -z), so the OpenGL normal's +y = north
-  const st = vec2(P.x, P.z.negate());
-  const dx = st.dFdx(), dy = st.dFdy();
-  const g = st.mul(SQ3x2 / HEX);
-  const sk = vec2(g.x.sub(g.y.mul(0.57735027)), g.y.mul(1.15470054));
-  const base = floor(sk), f = fract(sk);
-  const tz = one.sub(f.x).sub(f.y);
-  const s = max(float(0), tz.negate()).ceil().min(1);
-  const s2 = s.mul(2).sub(1);
-  const wt = [tz.negate().mul(s2), s.sub(f.y.mul(s2)), s.sub(f.x.mul(s2))];
-  const verts = [base.add(vec2(s, s)), base.add(vec2(s, one.sub(s))), base.add(vec2(one.sub(s), s))];
-  const lw = vec3(0.299, 0.587, 0.114);
-  const taps = verts.map((v) => {
-    const cen = vec2(v.x.add(v.y.mul(0.5)), v.y.mul(1 / 1.15470054)).mul(HEX / SQ3x2);
-    const h = hash22(v), h2 = hash22(v.add(vec2(71, 113)));
-    const a = h2.x.sub(0.5).mul(2 * Math.PI), cs = cos(a), sn = sin(a);
-    const rot = (u) => vec2(u.x.mul(cs).sub(u.y.mul(sn)), u.x.mul(sn).add(u.y.mul(cs)));
-    const pr = rot(st.sub(cen)).add(cen), gx = rot(dx), gy = rot(dy);
-    const samp = (L, inv) => {
-      const q = pr.mul(inv).add(h), ga = gx.mul(inv), gb = gy.mul(inv);
-      return [texture(GT.albedo, q).depth(L).grad(ga, gb), texture(GT.nra, q).depth(L).grad(ga, gb)];
-    };
-    const [A1, R1] = samp(L1, inv1), [A2, R2] = samp(L2, inv2);
-    // height blend of the two layers: the brighter (relative to its own mean) shows through first
-    const hgt1 = dot(A1.rgb, lw).mul(il1), hgt2 = dot(A2.rgb, lw).mul(il2);
-    const k = clamp(kMix.add(hgt2.sub(hgt1).mul(kMix.mul(one.sub(kMix)).mul(2.4))), 0, 1);
-    const A = mix(A1, A2, k), R = mix(R1, R2, k);
-    // the normal was sampled in the rotated frame: rotate x,y back
-    const nx = R.r.mul(2).sub(1), ny = R.g.mul(2).sub(1);
-    const n = vec2(nx.mul(cs).add(ny.mul(sn)), ny.mul(cs).sub(nx.mul(sn)));
-    const t = h2.y.sub(0.5).mul(0.12).add(1);
-    return { A, R, n, t };
+      // ---- hex tiling (Mikkelsen 2022, as antitile.js): texture frame (x, -z), so the OpenGL normal's +y = north
+      const g = st.mul(SQ3x2 / HEX);
+      const sk = vec2(g.x.sub(g.y.mul(0.57735027)), g.y.mul(1.15470054));
+      const base = floor(sk), f = fract(sk);
+      const tz = one.sub(f.x).sub(f.y);
+      const s = max(float(0), tz.negate()).ceil().min(1);
+      const s2 = s.mul(2).sub(1);
+      const wt = [tz.negate().mul(s2), s.sub(f.y.mul(s2)), s.sub(f.x.mul(s2))];
+      const verts = [vec2(0).toVar(), vec2(0).toVar(), vec2(0).toVar()];
+      verts[0].assign(base.add(vec2(s, s))); verts[1].assign(base.add(vec2(s, one.sub(s)))); verts[2].assign(base.add(vec2(one.sub(s), s)));
+      const lw = vec3(0.299, 0.587, 0.114);
+      const tone = vec3(1).toVar();
+      tone.assign(mix(S.tone.element(L1), S.tone.element(L2), kMix));
+      // one hex tile's sample of the two covers (the second only where it has a share)
+      const tapAt = (v) => {
+        const cen = vec2(v.x.add(v.y.mul(0.5)), v.y.mul(1 / 1.15470054)).mul(HEX / SQ3x2);
+        const h = hash22(v), h2 = hash22(v.add(vec2(71, 113)));
+        const a = h2.x.sub(0.5).mul(2 * Math.PI), cs = cos(a), sn = sin(a);
+        const rot = (u) => vec2(u.x.mul(cs).sub(u.y.mul(sn)), u.x.mul(sn).add(u.y.mul(cs)));
+        const pr = rot(st.sub(cen)).add(cen), gx = rot(dx), gy = rot(dy);
+        const samp = (L, inv) => {
+          const q = pr.mul(inv).add(h), ga = gx.mul(inv), gb = gy.mul(inv);
+          return [texture(GT.albedo, q).depth(L).grad(ga, gb), texture(GT.nra, q).depth(L).grad(ga, gb)];
+        };
+        const [a1, r1] = samp(L1, inv1);
+        const A1 = vec4(0).toVar(), R1 = vec4(0).toVar(), A2 = vec4(0).toVar(), R2 = vec4(0).toVar();
+        A1.assign(a1); R1.assign(r1); A2.assign(A1); R2.assign(R1);
+        If(kMix.greaterThan(0.002), () => { const [a2, r2] = samp(L2, inv2); A2.assign(a2); R2.assign(r2); });
+        // height blend of the two covers: the brighter (relative to its own mean) shows through first
+        const hgt1 = dot(A1.rgb, lw).mul(il1), hgt2 = dot(A2.rgb, lw).mul(il2);
+        const k = clamp(kMix.add(hgt2.sub(hgt1).mul(kMix.mul(one.sub(kMix)).mul(2.4))), 0, 1);
+        const A = mix(A1, A2, k), R = mix(R1, R2, k);
+        // the normal was sampled in the rotated frame: rotate x,y back
+        const nx = R.r.mul(2).sub(1), ny = R.g.mul(2).sub(1);
+        const n = vec2(nx.mul(cs).add(ny.mul(sn)), ny.mul(cs).sub(nx.mul(sn)));
+        const t = h2.y.sub(0.5).mul(0.12).add(1);
+        return { A, R, n, t };
+      };
+      const put = (col, n, ra) => { colV.assign(col.mul(tone)); nrmV.assign(n); raV.assign(ra); };
+      // the sharpened hex weights decide first: near a hex centre ONE tile owns the pixel (most pixels): one tap per
+      // map; only the blend zones between tiles take all three (Mikkelsen's luminance-weighted blend)
+      const gw = [float(0).toVar(), float(0).toVar(), float(0).toVar()];
+      wt.forEach((x, i) => gw[i].assign(pow(clamp(x, 0, 1), float(7))));
+      const gs = gw[0].add(gw[1]).add(gw[2]).max(1e-6);
+      const g0 = gw[0].div(gs), g1 = gw[1].div(gs), g2 = gw[2].div(gs);
+      const gmax = max(g0, max(g1, g2));
+      const thr = mix(float(0.96), float(0.3), smoothstep(0.03, 0.07, max(length(dx), length(dy))));
+      If(gmax.greaterThan(thr), () => {
+        const vSel = select(g0.greaterThanEqual(gmax), verts[0], select(g1.greaterThanEqual(gmax), verts[1], verts[2]));
+        const tp = tapAt(vSel);
+        put(tp.A.rgb.mul(tp.t), tp.n, vec2(tp.R.b, tp.R.a));
+      }).Else(() => {
+        const taps = verts.map(tapAt);
+        const W = taps.map((tp, i) => mix(one, dot(tp.A.rgb, lw), 0.6).mul(gw[i]));
+        const sum = W[0].add(W[1]).add(W[2]).max(1e-6);
+        const kk = W.map((x) => x.div(sum));
+        const blend = (fn) => taps.map((tp, i) => fn(tp).mul(kk[i])).reduce((a, b) => a.add(b));
+        put(blend((tp) => tp.A.rgb.mul(tp.t)), blend((tp) => tp.n), blend((tp) => vec2(tp.R.b, tp.R.a)));
+      });
+    });
+    // ---- macro tone (what the mips can't carry: garden-scale variation, read from a car and from the air)
+    const m1 = nzB.b, m2 = nzA.g;
+    const macro = m1.sub(0.5).mul(0.16).add(m2.sub(0.5).mul(0.22)).mul(S.uMacro);
+    let col = colV.mul(macro.add(1));
+    col = mix(col, color(0x1c2a2c), mk.a);                    // water (the ponds' own surface draws over it)
+
+    col = mix(col, orthoTex.rgb, far);
+    return col;
   });
-  const W = taps.map((tp, i) => mix(one, dot(tp.A.rgb, lw), 0.6).mul(pow(clamp(wt[i], 0, 1), float(7))));
-  const sum = W[0].add(W[1]).add(W[2]).max(1e-6);
-  const kk = W.map((x) => x.div(sum));
-  const blend = (fn) => fn(taps[0]).mul(kk[0]).add(fn(taps[1]).mul(kk[1])).add(fn(taps[2]).mul(kk[2]));
-  let col = blend((tp) => tp.A.rgb.mul(tp.t)).mul(mix(S.tone.element(L1), S.tone.element(L2), kMix));
-  const nrm = blend((tp) => tp.n);
-  const ra = blend((tp) => vec2(tp.R.b, tp.R.a));
-
-  // ---- macro tone (what the mips can't carry: garden-scale variation, read from a car and from the air)
-  const m1 = noise2D(xz.mul(0.12).add(9.1)), m2 = noise2D(xz.mul(0.023).add(41.7));
-  const macro = m1.sub(0.5).mul(0.16).add(m2.sub(0.5).mul(0.22)).mul(S.uMacro);
-  col = col.mul(macro.add(1));
-  col = mix(col, color(0x1c2a2c), mk.a);                    // water (the ponds' own surface draws over it)
-
-  // ---- far: the tile's orthophoto (the far-LOD tiles' colour), no relief
-  const orthoTex = texture(cover.ortho || placeholder, vec2(muv.x, one.sub(muv.y)));
-  const far = smoothstep(S.uOrthoNear, S.uOrthoFar, dist).mul(uOrtho).mul(one.sub(mk.a));
-  col = mix(col, orthoTex.rgb, far);
+  const mk = mkV, far = farV, nrm = nrmV, ra = raV;
+  let col = ground();
   col = contour ? contour(col) : col;
 
   const m = new THREE.MeshStandardNodeMaterial({ metalness: 0 });
