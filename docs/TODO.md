@@ -59,6 +59,13 @@ ground is the carved terrain under the ballast, not the ballast top (drive surfa
 (4) rails are not obstacles / bumps for the car. Test every bridge (Saint-Job, Calevoet, Verrewinkel, the tram deck)
 from both directions, not only this one.
 
+**ALIASING on facades (owner screenshot 2026-11-13, "do it when I'm back"):** jagged window-frame edges + sparkly
+brick mortar / a bright thin line on the sill. Plan: (1) diagnose: painted window (facades.js) or kit geometry? is the
+scene pass MSAA (post.js sceneRT samples = renderer.samples) really resolving through the MRT chain? (2) painted frames /
+windows: Mr.doob's filteredPulse / boxCoverage (as roads round 4 kerbs: 45 -> 4 px); (3) brick mortar / highlights:
+specular AA (Tokuyoshi-Kaplanyan, as on the facade kit), library textures' mips + anisotropy; (4) optional TRAA (three
+r187 TRAANode) in a lab only if no ghosting; (5) the flicker test before / after on that wall.
+
 **PAUSED (agents):** GRASS LAB (`claude/grass`, port 8849, started 2026-11-13 ~07:15; PAUSED ~07:40 at 89e5dde, design
 settled + OSM grass kinds + the per-tile grass-type map written, nothing rendered yet; resume from docs/GRASS_RESUME.md
 on the branch): our own grass (Revo / engine
