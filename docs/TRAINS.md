@@ -196,7 +196,7 @@ Notes, measures, counts, what is estimated: `models/rail/verrewinkel_NOTES.md`; 
   in front of the Saint-Job north side arch (visible in the bridge sheets), and the Calevoet embankment ends are coarse.
 - **Roads over the line** (Carsoel, Waterloo, Chênaie, Verrewinkel, Merlo, Tilleuls...) are plain concrete slabs at the
   DTM height, no parapets, and the road surface on them is the terrain (UrbIS level +1 surfaces are not drawn).
-- Other rail bridges (Rue de Stalle 17 m high, Kauwberg, Rue de Linkebeek, Engeland, Moensberg crossings) are not modelled:
+- Round 2 (branch claude/bridges2, docs/trains/BRIDGES_ROUND2.md Results): Rue de Stalle, Engeland (L26 + chord), Bigarreaux, Kauwberg and Rue de Linkebeek are heroes now (?bridges2=0 = without). Still not modelled (Chemin du Puits, the Moensberg crossings):
   the track crosses the gap on its ballast ribbon with nothing under it.
 - Platforms are bare (no Calevoet / Stalle station canopies with cast-iron columns, no station buildings, signs,
   lighting); shelters are boxes. Masts are generic H-columns with one cantilever type (Infrabel uses portals too).

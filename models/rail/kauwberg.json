@@ -56,7 +56,7 @@
    858.2,
    63.84
   ],
-  "hw": 3.6
+  "hw": 4.45
  },
  "measured": "UrbIS Land cover Bridges polygon (length, width, axis), OSM road axis + UrbIS street surfaces (clear width), DTM 2021 (road level), rail.json (rail top)",
  "estimated": "arch rise / springing, pilaster / arcade / cornice / parapet dimensions, stone counts: from the Wikimedia Commons photos"

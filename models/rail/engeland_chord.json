@@ -56,6 +56,19 @@
  ],
  "skew_dx_per_dy": -0.0,
  "style": "street",
+ "underpass": {
+  "a": [
+   -697.32,
+   1790.97,
+   61.02
+  ],
+  "b": [
+   -707.98,
+   1780.42,
+   60.86
+  ],
+  "hw": 2.95
+ },
  "measured": "UrbIS Land cover Bridges polygon (length, width, axis), OSM road axis + UrbIS street surfaces (clear width), DTM 2021 (road level), rail.json (rail top)",
  "estimated": "arch rise / springing, pilaster / arcade / cornice / parapet dimensions, stone counts: from the Wikimedia Commons photos"
 }

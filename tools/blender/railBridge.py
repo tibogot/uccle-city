@@ -129,7 +129,7 @@ BRIDGES = {
         "top": "parapet", "parapet": 6.80, "coping": 0.15, "parapet_t": 0.40, "cornice": 5.95,
         "buttresses": [(7.15, 2.7, 0.45)],                                                 # [M] polygon: |X| 5.8-8.5, 0.4-1.0 m proud
         "railing": "posts",
-        "underpass": {"a": [278.55, 880.2, 63.97], "b": [267.05, 858.2, 63.84], "hw": 3.6},
+        "underpass": {"a": [278.55, 880.2, 63.97], "b": [267.05, 858.2, 63.84], "hw": 4.45},     # the half span + 0.15 (the cut never stops inside an opening)
         "ends": None,
         "views": {"kauwberg_n": ((-0.2, 18.0, 1.6), (-0.2, 0.0, 3.5), 24.0), "kauwberg_s": ((-0.2, -18.0, 1.6), (-0.2, 0.0, 3.5), 24.0)},
     },
@@ -157,7 +157,7 @@ BRIDGES = {
         "style": "street",
         "opens": [{"kind": "round", "span": 4.8, "spring": 2.0, "ring": 0.36, "mat": "brick"}],   # [E] the 3.90 m sign: crown 4.4 m
         "top": "fascia", "parapet": 6.42, "coping": 0.12, "parapet_t": 0.35, "cornice": 5.6,
-        "underpass": {"a": [-680.80, 1805.43, 61.27], "b": [-706.34, 1780.07, 60.88], "hw": 2.7},   # on the UrbIS street line
+        "underpass": {"a": [-680.80, 1805.43, 61.27], "b": [-706.34, 1780.07, 60.88], "hw": 2.95},  # on the UrbIS street line; >= the chord's half span + 0.15
         "ends": None,
         "views": {"engeland_se": ((5.0, -22.0, 1.6), (5.0, 0.0, 3.5), 24.0), "engeland_nw": ((5.0, 22.0, 1.6), (5.0, 0.0, 3.5), 24.0)},
     },
@@ -171,6 +171,7 @@ BRIDGES = {
                   {"kind": "round", "span": 1.6, "spring": 1.0, "ring": 0.24, "mat": "brick", "dx": -5.2}],   # [E] the small arch NE of the road
         "top": "parapet", "parapet": 9.45, "coping": 0.15, "parapet_t": 0.40, "cornice": 8.6,
         "railing": "posts",
+        "underpass": {"a": [-697.32, 1790.97, 61.02], "b": [-707.98, 1780.42, 60.86], "hw": 2.95},   # its own, on its opening (the street bends 1.4 m between the two)
         "ends": None,
         "views": {"chord_nw": ((3.6, 20.0, 1.6), (3.6, 0.0, 4.0), 24.0), "chord_se": ((3.6, -20.0, 1.6), (3.6, 0.0, 4.0), 24.0)},
     },
