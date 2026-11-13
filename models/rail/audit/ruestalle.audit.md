@@ -1,21 +1,20 @@
 # Mesh audit: ruestalle.glb
 
-12,624 triangles, 6,752 welded vertices, 604 open edges, 125,192 rays, 1016 ms.
+12,632 triangles, 6,752 welded vertices, 600 open edges, 118,272 rays, 1436 ms.
 
-**0 blocking**, 2264 warnings. Clean (no blocking item).
+**0 blocking**, 2266 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| sliver | warn | 1722 |
-| tjunction | warn | 2 |
+| sliver | warn | 1726 |
 | degenerate | warn | 540 |
-| seam | info | 585 |
-| opening | info | 18 |
+| seam | info | 568 |
+| opening | info | 12 |
 | backtoback | info | 1588 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## sliver (warn, 1722)
+## sliver (warn, 1726)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -60,14 +59,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 24.63, 17.02, 4.70 | ruestalle/brick_red_brussels | 67 | 15.052 |
 | -24.10, 17.07, 4.70 | ruestalle/brick_red_brussels | 112 | 15.833 |
 
-(1682 more in the JSON)
-
-## tjunction (warn, 2)
-
-| at | part | edge_m |
-|---|---|---|
-| -34.30, 18.45, -4.30 | ruestalle/brick_red_brussels | 9.4 |
-| 34.30, 18.45, -4.30 | ruestalle/brick_red_brussels | 9.4 |
+(1686 more in the JSON)
 
 ## degenerate (warn, 540)
 
@@ -116,7 +108,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (500 more in the JSON)
 
-## seam (info, 585)
+## seam (info, 568)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -129,8 +121,10 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -34.28, 17.26, -4.70 | ruestalle/brick_red_brussels + ruestalle/stone_blue | 137.71 | 90 | 90 |
 | -34.28, 17.26, 4.70 | ruestalle/brick_red_brussels + ruestalle/stone_blue | 137.71 | 90 | 90 |
 | -34.06, 17.11, 4.70 | ruestalle/brick_red_brussels + ruestalle/brick_red_brussels | 5.58 | 38 | 90 |
+| -34.30, 18.20, 4.70 | ruestalle/brick_red_brussels + ruestalle/brick_red_brussels | 5.79 | 37 | 45 |
 | -34.24, 16.89, -4.70 | ruestalle/brick_red_brussels + ruestalle/brick_red_brussels | 5.44 | 36 | 90 |
 | -34.06, 17.11, -4.70 | ruestalle/brick_red_brussels + ruestalle/brick_red_brussels | 5.58 | 36 | 90 |
+| -34.30, 18.20, -4.70 | ruestalle/brick_red_brussels + ruestalle/brick_red_brussels | 5.79 | 36 | 45 |
 | 33.80, 17.11, -4.70 | ruestalle/brick_red_brussels + ruestalle/brick_red_brussels | 5.58 | 36 | 90 |
 | -10.05, 16.89, -4.68 | ruestalle/brick_red_brussels + ruestalle/brick_red_brussels | 4.72 | 36 | 90 |
 | -10.05, 17.11, -4.69 | ruestalle/brick_red_brussels + ruestalle/brick_red_brussels | 4.68 | 36 | 90 |
@@ -158,19 +152,13 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 31.90, 17.12, 4.67 | ruestalle/brick_red_brussels + ruestalle/brick_red_brussels | 6.4 | 36 | 90 |
 | -10.09, 18.45, -4.28 | ruestalle/brick_red_brussels + ruestalle/stone_blue | 5.34 | 36 | 90 |
 | 8.51, 18.45, -4.28 | ruestalle/brick_red_brussels + ruestalle/stone_blue | 5.34 | 36 | 90 |
-| -29.49, 18.45, -4.28 | ruestalle/brick_red_brussels + ruestalle/stone_blue | 6.94 | 36 | 90 |
-| 27.11, 18.45, -4.28 | ruestalle/brick_red_brussels + ruestalle/stone_blue | 6.94 | 36 | 90 |
 
-(545 more in the JSON)
+(528 more in the JSON)
 
-## opening (info, 18)
+## opening (info, 12)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
-| -34.30, 18.11, -4.30 | ruestalle/brick_red_brussels | 0 + 0 + 1 | 1.28 |
-| 34.30, 17.42, -4.30 | ruestalle/brick_red_brussels | 0 + 0 + 1 | 1.28 |
-| -34.30, 18.11, 4.30 | ruestalle/brick_red_brussels | 0 + 0 + -1 | 1.28 |
-| 34.30, 17.42, 4.30 | ruestalle/brick_red_brussels | 0 + 0 + -1 | 1.28 |
 | -26.78, 8.30, -4.68 | ruestalle/brick_red_brussels | 0 + -1 + 0 | 0.338 |
 | -10.42, 8.30, -4.68 | ruestalle/brick_red_brussels | 0 + -1 + 0 | 0.338 |
 | -8.18, 8.30, -4.68 | ruestalle/brick_red_brussels | 0 + -1 + 0 | 0.338 |
@@ -183,8 +171,6 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 8.18, 8.30, 4.68 | ruestalle/brick_red_brussels | 0 + -1 + 0 | 0.338 |
 | 10.42, 8.30, 4.68 | ruestalle/brick_red_brussels | 0 + -1 + 0 | 0.338 |
 | 26.78, 8.30, 4.68 | ruestalle/brick_red_brussels | 0 + -1 + 0 | 0.338 |
-| 34.30, 17.17, -4.25 | ruestalle/concrete | 0 + 1 + 0 | 8.6 |
-| -34.30, 17.17, -4.25 | ruestalle/concrete | 0 + 1 + 0 | 8.6 |
 
 ## backtoback (info, 1588)
 

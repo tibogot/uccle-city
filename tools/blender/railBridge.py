@@ -297,7 +297,11 @@ for o in OPS:
 PT = B["parapet_t"]
 for sx in (-1, 1):
     X = sx * L / 2
-    MASS.npoly([(X, -W / 2, FOUND), (X, W / 2, FOUND), (X, W / 2, TOP), (X, -W / 2, TOP)], BR, (sx, 0, 0))
+    # the end walls stop at the trough floor between the parapets: the track runs on onto the embankment over them (a
+    # full-height end wall stood 0.6-1.3 m out of the ballast where the embankment is the track bed: Rue de Stalle)
+    yi = W / 2 - B["parapet_t"]
+    MASS.npoly([(X, -W / 2, FOUND), (X, W / 2, FOUND), (X, W / 2, TOP), (X, yi, TOP), (X, yi, H_RAIL - 0.62), (X, -yi, H_RAIL - 0.62),
+                (X, -yi, TOP), (X, -W / 2, TOP)], BR, (sx, 0, 0))
 for sgn in (1, -1):
     yo, yi = sgn * W / 2, sgn * (W / 2 - PT)
     MASS.npoly([(-L / 2, yi, DECK), (L / 2, yi, DECK), (L / 2, yi, TOP), (-L / 2, yi, TOP)], BR, (0, -sgn, 0))   # parapet inner face
