@@ -382,13 +382,12 @@ export class StreetLife {
     const propCounts = Object.fromEntries(Object.entries(r.props).map(([k, a]) => [k, a.length / 8]));
     const stats = {
       tile, worker: Object.fromEntries(Object.entries(r.times).map(([k, v]) => [k, +v.toFixed(1)])), mainMs: +(performance.now() - tm).toFixed(2), totalMs: +(performance.now() - t0).toFixed(1),
-      boxes: r.nb, windows: r.nw, glass: r.ng, props: propCounts, labels: r.labels, labelBytes: r.labelBytes, atlasPages: [], atlasUsed: +this.atlas.used.toFixed(3), atlasFull: this.atlas.full, dropped: r.dropped,
+      boxes: r.nb, windows: r.nw, glass: r.ng, props: propCounts, labels: r.labels, labelBytes: r.labelBytes, atlasPages: [], labelPages: r.nPages, atlasUsed: +this.atlas.used.toFixed(3), atlasFull: this.atlas.full, dropped: r.dropped,
       counts: r.counts, skipped: r.skipped, used: r.used, sources: r.sources, draws: meshes.length,
     };
     const rec = { name: tile, group: g, meshes, night: r.night, stats, pages: null, nPages: r.nPages, pagesData: r.pages, ib, text, box: meshes[0]?.boundingBox ?? null, props: r.props, fade: 1 };
     this.tiles.set(tile, rec);
-    this._place(rec, true);
-    stats.atlasPages = rec.pages || []; stats.atlasUsed = +this.atlas.used.toFixed(3);
+    // its text pages go into the atlas from update() (a slice of its own: ~1 ms for the copy), once it is near
     stats.mainMs = +(performance.now() - tm).toFixed(2);
     this.dirty = true;
     return stats;
@@ -397,18 +396,17 @@ export class StreetLife {
    *  84 m in); when the atlas is full, the pages of the farthest tile beyond that go (its text is long faded out there;
    *  its boards would show blank, never another tile's words: their rects are cleared) and come back from the CPU copy
    *  when it is near again (a 2 MB layer upload + the box buffer, 64 KB) */
-  _place(t, now = false) {
-    if (t.pages || !t.nPages || !t.text) return;
-    const c = this.last.x < 1e8 ? this.last : null;
-    const dist = (q) => (q.box && c ? q.box.distanceToPoint(c) : 0);
-    if (!now && dist(t) > TEXT_KEEP) return;
+  _place(t, c) {
+    if (t.pages || !t.nPages || !t.text) return false;
+    const dist = (q) => (q.box ? q.box.distanceToPoint(c) : 0);
+    if (dist(t) > TEXT_KEEP) return false;
     while (this.atlas.free.length < t.nPages) {
       let far = null;
       for (const q of this.tiles.values()) if (q !== t && q.pages && dist(q) > TEXT_KEEP && (!far || dist(q) > dist(far))) far = q;
       if (!far) break;
       this._evict(far);
     }
-    if (this.atlas.free.length < t.nPages) return;           // no room: blank boards until there is (its rects stay -1)
+    if (this.atlas.free.length < t.nPages) return false;     // no room: blank boards until there is (its rects stay -1)
     const map = this.atlas.addTile(t.name, t.nPages, t.pagesData);
     t.pages = map;
     const IB = t.ib.array, { idx, rect } = t.text;
@@ -418,6 +416,8 @@ export class StreetLife {
       IB[o + 4] = map[rect[k * 5 + 4]];
     }
     t.ib.needsUpdate = true;
+    t.stats.atlasPages = map;
+    return true;
   }
   _evict(t) {
     if (!t.pages) return;
@@ -449,8 +449,8 @@ export class StreetLife {
       for (const p of this.pools) p.gather(tiles, c, 4);
       this.last.copy(c); this.dirty = false;
       this.gatherMs = performance.now() - t0;
-      for (const t of this.tiles.values()) if (!t.pages) this._place(t);
     }
+    for (const t of this.tiles.values()) if (!t.pages && t.nPages && this._place(t, c)) break;   // one tile's text pages per frame
     for (const p of this.pools) for (const m of p.meshes) if (m.visible) visible++;
     this.visibleMeshes = visible;
   }

@@ -598,7 +598,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
 
   await frame("bollards");
   const sl = await streetLifeP;
-  if (sl) say(`street life: ${sl.boxes} boxes, ${sl.windows} windows, ${Object.values(sl.props).reduce((a, b) => a + b, 0)} props, ${sl.labels} labels in ${sl.atlasPages.length} atlas page(s); worker ${sl.worker.total} ms, main thread ${sl.mainMs} ms`);
+  if (sl) say(`street life: ${sl.boxes} boxes, ${sl.windows} windows, ${Object.values(sl.props).reduce((a, b) => a + b, 0)} props, ${sl.labels} labels (${sl.labelPages} atlas page(s)); worker ${sl.worker.total} ms, main thread ${sl.mainMs} ms`);
   if (fadeIn) { const tc = performance.now(); await preCompile(Object.values(own), true); mark += performance.now() - tc; }   // shaders + fading copies built before it shows (not counted as a slice)
   for (const u of ups) updaters.push(u);
   for (const g of Object.values(own)) if (fadeIn) { g.visible = true; fader.fade(g, +1); }
