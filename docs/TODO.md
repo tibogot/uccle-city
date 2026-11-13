@@ -53,7 +53,9 @@ station instead of driving on it.** Suspects: the drive surface on a deck (colli
 roads round 5: roadDeckPins / terrain weld; trains: the deck height function `world.deckY`), or the tram-only bridge
 deck over the L26 cutting (fixes1) being driven onto. Reproduce there, check `viewer.collisionTest` on that tile.
 
-**Running (agents):** GRASS LAB (`claude/grass`, port 8849, started 2026-11-13 ~07:15): our own grass (Revo / engine
+**PAUSED (agents):** GRASS LAB (`claude/grass`, port 8849, started 2026-11-13 ~07:15; PAUSED ~07:40 at 89e5dde, design
+settled + OSM grass kinds + the per-tile grass-type map written, nothing rendered yet; resume from docs/GRASS_RESUME.md
+on the branch): our own grass (Revo / engine
 Hybrid as references), `labs/grass-lab.html` with a front-garden street, Wolvendael lawn, a roadside verge; types from
 land cover, clean edges, shadows, night, seasons, push field, no popping; <= 1 ms at street level (preflight); city hook
 `?grass=1` opt-in only if the budget holds.
