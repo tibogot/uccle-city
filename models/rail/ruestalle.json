@@ -1,0 +1,66 @@
+{
+ "asset": "railway bridge 'ruestalle' (tools/blender/railBridge.py)",
+ "urbis": "bridge/686",
+ "line": "L124",
+ "road": "Rue de Stalle",
+ "triangles": 12632,
+ "materials": [
+  "brick_red_brussels",
+  "stone_blue",
+  "concrete",
+  "painted_metal_white",
+  "brick_yellow",
+  "painted_metal_grey",
+  "wire_mesh_grey"
+ ],
+ "frame": "glTF Y up; +x = along the track (city direction theta), -z = Blender +Y; origin = UrbIS polygon centre at road level",
+ "placement": {
+  "city_local_position": [
+   -1489.0,
+   31.8,
+   276.26
+  ],
+  "rotation_y_rad": -1.117883385902368
+ },
+ "deck": {
+  "length": 68.6,
+  "width": 9.4,
+  "railTop": 17.79,
+  "ballastFloor": 17.17,
+  "parapetInner": 4.3,
+  "parapetTop": 18.61
+ },
+ "openings": [
+  {
+   "x0": -26.7,
+   "x1": -10.5,
+   "kind": "round",
+   "spring": 8.3,
+   "ring": 0.36,
+   "main": true,
+   "floor": null
+  },
+  {
+   "x0": -8.1,
+   "x1": 8.1,
+   "kind": "round",
+   "spring": 8.3,
+   "ring": 0.36,
+   "main": true,
+   "floor": null
+  },
+  {
+   "x0": 10.5,
+   "x1": 26.7,
+   "kind": "round",
+   "spring": 8.3,
+   "ring": 0.36,
+   "main": true,
+   "floor": null
+  }
+ ],
+ "skew_dx_per_dy": 0.0,
+ "style": "viaduct",
+ "measured": "UrbIS Land cover Bridges polygon (length, width, axis), OSM road axis + UrbIS street surfaces (clear width), DTM 2021 (road level), rail.json (rail top)",
+ "estimated": "arch rise / springing, pilaster / arcade / cornice / parapet dimensions, stone counts: from the Wikimedia Commons photos"
+}

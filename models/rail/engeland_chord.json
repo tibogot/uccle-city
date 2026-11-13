@@ -1,0 +1,74 @@
+{
+ "asset": "railway bridge 'engeland_chord' (tools/blender/railBridge.py)",
+ "urbis": "bridge/695",
+ "line": "L26/5",
+ "road": "Rue Engeland",
+ "triangles": 4318,
+ "materials": [
+  "brick_red_brussels",
+  "stone_blue",
+  "concrete",
+  "painted_metal_white",
+  "brick_yellow",
+  "painted_metal_grey",
+  "wire_mesh_grey"
+ ],
+ "frame": "glTF Y up; +x = along the track (city direction theta), -z = Blender +Y; origin = UrbIS polygon centre at road level",
+ "placement": {
+  "city_local_position": [
+   -701.4,
+   60.98,
+   1786.57
+  ],
+  "rotation_y_rad": -2.3509585024363617
+ },
+ "deck": {
+  "length": 61.8,
+  "width": 6.2,
+  "railTop": 8.68,
+  "ballastFloor": 8.06,
+  "parapetInner": 2.7,
+  "parapetTop": 9.6
+ },
+ "openings": [
+  {
+   "x0": -2.545,
+   "x1": 3.055,
+   "kind": "segment",
+   "rise": 2.0,
+   "spring": 2.4,
+   "ring": 0.5,
+   "main": true,
+   "floor": null,
+   "mat": "concrete"
+  },
+  {
+   "x0": -5.745,
+   "x1": -4.145,
+   "kind": "round",
+   "rise": 0.8,
+   "spring": 1.0,
+   "ring": 0.24,
+   "main": false,
+   "floor": null,
+   "mat": "brick"
+  }
+ ],
+ "skew_dx_per_dy": -0.0,
+ "style": "street",
+ "underpass": {
+  "a": [
+   -697.32,
+   1790.97,
+   61.02
+  ],
+  "b": [
+   -707.98,
+   1780.42,
+   60.86
+  ],
+  "hw": 2.95
+ },
+ "measured": "UrbIS Land cover Bridges polygon (length, width, axis), OSM road axis + UrbIS street surfaces (clear width), DTM 2021 (road level), rail.json (rail top)",
+ "estimated": "arch rise / springing, pilaster / arcade / cornice / parapet dimensions, stone counts: from the Wikimedia Commons photos"
+}

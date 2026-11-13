@@ -10142,6 +10142,9 @@ function kitCollector(opts = {}) {
 }
 
 // viewer/rail/railData.js
+var HERO_BRIDGES = ["stjob", "calevoet", "verrewinkel"];
+var HERO_BRIDGES2 = ["ruestalle", "engeland", "engeland_chord", "bigarreaux", "kauwberg", "linkebeek"];
+var heroBridgeNames = (round2 = true) => round2 ? HERO_BRIDGES.concat(HERO_BRIDGES2) : HERO_BRIDGES.slice();
 var GAUGE = 1.435;
 var RAIL_C = GAUGE / 2 + 0.036;
 var CREST = -0.19;
@@ -10311,6 +10314,33 @@ function abutmentFill(heroes, grids, hdr) {
   }
   return moved;
 }
+function underpassCut(heroes, grids, hdr) {
+  const { x0, z0, cols, rows, step } = hdr, BANK = 7;
+  const rings = (heroes || []).filter((h) => h.underpass || h.style).map((h) => ringBox(heroFrame(h).ring));
+  const inBridge = (x, z) => rings.some((b) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && inRing(b.ring, x, z));
+  let moved = 0;
+  for (const h of heroes || []) {
+    const u = h.underpass;
+    if (!u) continue;
+    const [ax, az, ay] = u.a, [bx, bz, by] = u.b, dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz;
+    const c0 = Math.max(0, Math.floor((Math.min(ax, bx) - u.hw - BANK - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(ax, bx) + u.hw + BANK - x0) / step));
+    const r0 = Math.max(0, Math.floor((Math.min(az, bz) - u.hw - BANK - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(az, bz) + u.hw + BANK - z0) / step));
+    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+      const px = x0 + c * step, pz = z0 + r * step;
+      const t = ((px - ax) * dx + (pz - az) * dz) / L2;
+      if (t < 0 || t > 1) continue;
+      const d = Math.hypot(px - ax - dx * t, pz - az - dz * t) - u.hw;
+      if (d > BANK || d > 0 && inBridge(px, pz)) continue;
+      const target = ay + (by - ay) * t - 0.02 + Math.max(0, d);
+      const k = r * cols + c;
+      for (const G2 of grids) if (G2[k] > target) {
+        G2[k] = target;
+        moved++;
+      }
+    }
+  }
+  return moved;
+}
 function carveGrid(doc, Y, hdr, bounds, heroes = []) {
   const { x0, z0, cols, rows, step } = hdr;
   let moved = 0;
@@ -10451,8 +10481,13 @@ function railKeepClear(doc, bounds, heroes = []) {
         }
     }
   }
+  const cuts = (heroes || []).filter((h) => h.underpass).map((h) => h.underpass);
   return (x, z) => {
     for (const b of rings) if (x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && inRing(b.ring, x, z)) return true;
+    for (const { a: [ax, az], b: [bx, bz], hw } of cuts) {
+      const dx = bx - ax, dz = bz - az, t = ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz);
+      if (t >= 0 && t <= 1 && Math.hypot(x - ax - dx * t, z - az - dz * t) < hw + 2) return true;
+    }
     for (const [ax, az, bx, bz] of cell.get(key(Math.floor(x / 8), Math.floor(z / 8))) || []) {
       const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1e-9, u = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2));
       if ((x - ax - dx * u) ** 2 + (z - az - dz * u) ** 2 < 3.2 * 3.2) return true;
@@ -11570,9 +11605,9 @@ function grassTypeData(feats, bounds, { kinds = null, surfaces = null } = {}) {
 var railP = null;
 var grassKindsP = null;
 var grassKinds = (base) => grassKindsP ||= fetch(new URL("../grass/osm_grass.json", base)).then((r) => r.json()).then((d) => d.kinds).catch(() => null);
-var railDocs = (base) => railP ??= Promise.all([
+var railDocs = (base, round2 = true) => railP ??= Promise.all([
   fetch(new URL("../rail/rail.json", base)).then((r) => r.json()).then(prepRail),
-  Promise.all(["stjob", "calevoet", "verrewinkel"].map((n) => fetch(new URL(`../../models/rail/${n}.json`, base)).then((r) => r.ok ? r.json() : null).catch(() => null))).then((a) => a.filter(Boolean))
+  Promise.all(heroBridgeNames(round2).map((n) => fetch(new URL(`../../models/rail/${n}.json`, base)).then((r) => r.ok ? r.json() : null).catch(() => null))).then((a) => a.filter(Boolean))
 ]).then(([doc, heroes]) => ({ doc, heroes }));
 var TERRAIN_ERROR = 0.05;
 var PAINT = "v2";
@@ -11675,7 +11710,7 @@ async function buildTileData(entry, base) {
     get(F.features)
   ]));
   for (const l of feats.lines || []) if (l.kind === "tram") l.line = smoothPolyline(l.line);
-  const rail = entry.rail ? await step("rail fetch", () => railDocs(base)) : null;
+  const rail = entry.rail ? await step("rail fetch", () => railDocs(base, entry.bridges2 !== false)) : null;
   let railDropped = 0;
   if (rail) {
     const clear = railKeepClear(rail.doc, bounds, rail.heroes), n = feats.trees?.length || 0;
@@ -11693,6 +11728,7 @@ async function buildTileData(entry, base) {
   const markings = F.markings && paint === "v2" ? await step("fetch markings", () => get(F.markings).catch(() => null)) : null;
   const roofs = await step("roof grid", () => roofGrid(bDoc, bounds));
   if (rail) await step("abutment fill", () => abutmentFill(rail.heroes, [hm.y, hm.orig], tHdr));
+  if (rail) await step("underpass cut", () => underpassCut(rail.heroes, [hm.y, hm.orig], tHdr));
   const heroDeck = rail ? roadDeckGround(rail.heroes, () => NaN) : () => NaN;
   const hh = hm.h, gx1 = hh.x0 + (hh.cols - 1) * hh.step, gz1 = hh.z0 + (hh.rows - 1) * hh.step;
   const onGrid = (p) => p[0] >= hh.x0 && p[0] <= gx1 && p[1] >= hh.z0 && p[1] <= gz1;

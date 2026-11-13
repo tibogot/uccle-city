@@ -75,6 +75,106 @@ BRIDGES = {
         "ends": "quoin",
         "views": {"calevoet_viaduct": ((0.0, 42.0, 1.4), (0.0, 0.0, 8.0), 24.0)},
     },
+    # ROUND 2 (docs/trains/BRIDGES_ROUND2.md). L124 over Rue de Stalle (primary road + trams), UrbIS bridge/686: a red brick
+    # viaduct of THREE equal round arches on tall piers (Street View 2024, looked at only: the road and the trams pass the
+    # middle arch, the side arches open over the embankment slopes), each pier carrying a flat brick pilaster strip from the
+    # footing to a pier head that rises through the parapet, a thin blue-stone impost band where the arches spring, the
+    # arch rings plain brick rowlocks (no stone), a stone string course just over the crowns under a low brick parapet with
+    # a stone coping, and on it a modern safety fence (galvanised posts, welded-mesh panels). The UrbIS polygon's notches are
+    # the pilasters: piers at |X| 8.1-10.5, the abutments' two pilasters at |X| 26.6-29.0 and 31.9-34.3.
+    "ruestalle": {
+        "urbis": "bridge/686", "line": "L124", "road": "Rue de Stalle",
+        "centre": (-1489.0, 276.26), "theta": 64.05, "length": 68.6, "width": 9.4,         # [M] UrbIS polygon 68.6 x 9.4 (+ pilasters)
+        "road_level": 31.80, "rail_top": 49.59,                                            # [M] DTM 2021 at the crossing, rail.json
+        "road_dir": 154.05, "road_cross": (-1489.0, 276.26), "road_clear": None,          # [M] OSM crosses at 85 deg; built square (the polygon's piers face each other)
+        "arches": {"n": 3, "span": 16.2, "pier": 2.4, "spring": 8.3, "ring": 0.36},        # [M] spans / piers: polygon notches; [E] springing: semicircles under the string course
+        "cornice": 17.55, "parapet": 18.45, "coping": 0.16, "parapet_t": 0.40,             # [E] Street View: string course over the crowns, parapet ~0.9 m
+        "style": "viaduct",
+        "end_pilasters": [(28.3, 2.3), (33.1, 2.4)],                                       # [M] |X|, width (polygon notches; the first kept clear of the arch ring)
+        "pier_strip": 1.5, "pilaster_proj": 0.30, "pier_head": 1.45,                       # [E] the heads rise through the parapet to the fence top
+        "fence": {"h": 1.45, "post": 2.5},                                                # [E] welded-mesh panels between posts
+        "ends": None,
+        "views": {
+            "ruestalle_ne": ((2.0, 40.0, 1.6), (2.0, 0.0, 9.0), 24.0),
+            "ruestalle_sw": ((-2.0, -40.0, 1.6), (-2.0, 0.0, 9.0), 24.0),
+            "ruestalle_far": ((-30.0, 75.0, 3.0), (0.0, 0.0, 9.0), 30.0),
+        },
+    },
+
+    # ROUND 2, the street underpasses (one family, Street View looked at only): a brick barrel vault through the embankment
+    # under a brick face; above it either a precast concrete FASCIA (panels over a lintel beam: the decks widened in
+    # concrete, Bigarreaux and Engeland L26), a concrete CAPPING beam with a lattice railing (Rue de Linkebeek) or a brick
+    # PARAPET with a stone string course and coping and a post-and-rail railing (Kauwberg). The road under them was built
+    # on the DTM's embankment hump (the LiDAR ground interpolates through the underpass): "underpass" cuts the ground to the
+    # road's level between two measured road points beyond the hump (railData.js underpassCut, before the roads are built).
+    "bigarreaux": {
+        "urbis": "bridge/688", "line": "L124", "road": "Rue des Bigarreaux",
+        "centre": (-1105.51, 1636.32), "theta": 100.3, "length": 17.2, "width": 9.4,        # [M] UrbIS polygon 17.2 x 9.4
+        "road_level": 55.52, "rail_top": 61.80,                                            # [M] DTM beyond the hump (lerp at the axis), rail.json
+        "road_dir": 190.3, "road_cross": (-1105.8, 1638.1), "road_clear": None,           # [M] OSM crosses at 90.5 deg
+        "style": "street",
+        "opens": [{"kind": "round", "span": 4.6, "spring": 2.1, "ring": 0.36, "mat": "brick"}],   # [E] one lane + two narrow sidewalks
+        "top": "fascia", "parapet": 6.68, "coping": 0.12, "parapet_t": 0.35, "cornice": 6.0,
+        "underpass": {"a": [-1113.65, 1636.6, 55.35], "b": [-1097.94, 1639.6, 55.72], "hw": 3.6},   # the E sidewalk is wide
+        "ends": None,
+        "views": {"bigarreaux_e": ((1.8, 18.0, 1.6), (1.8, 0.0, 3.5), 24.0), "bigarreaux_w": ((1.8, -18.0, 1.6), (1.8, 0.0, 3.5), 24.0)},
+    },
+    "kauwberg": {
+        "urbis": "bridge/691", "line": "L26", "road": "Kauwberg",
+        "centre": (272.55, 869.29), "theta": 152.4, "length": 17.0, "width": 8.4,            # [M] UrbIS polygon 17.0 x 8.4 (+ the end buttresses)
+        "road_level": 63.90, "rail_top": 69.94,
+        "road_dir": 242.4, "road_cross": (272.8, 869.2), "road_clear": None,              # [M] OSM crosses at 88.9 deg
+        "style": "street",
+        "opens": [{"kind": "segment", "span": 8.6, "rise": 2.4, "spring": 2.0, "ring": 0.44, "mat": "brick"}],   # [M] span: polygon narrowing; [E] rise
+        "top": "parapet", "parapet": 6.80, "coping": 0.15, "parapet_t": 0.40, "cornice": 5.95,
+        "buttresses": [(7.15, 2.7, 0.45)],                                                 # [M] polygon: |X| 5.8-8.5, 0.4-1.0 m proud
+        "railing": "posts",
+        "underpass": {"a": [278.55, 880.2, 63.97], "b": [267.05, 858.2, 63.84], "hw": 4.45},     # the half span + 0.15 (the cut never stops inside an opening)
+        "ends": None,
+        "views": {"kauwberg_n": ((-0.2, 18.0, 1.6), (-0.2, 0.0, 3.5), 24.0), "kauwberg_s": ((-0.2, -18.0, 1.6), (-0.2, 0.0, 3.5), 24.0)},
+    },
+    "linkebeek": {
+        "urbis": "bridge/706", "line": "L26", "road": "Rue de Linkebeek",
+        "centre": (-1327.57, 2304.32), "theta": 146.2, "length": 15.0, "width": 8.4,         # [M] UrbIS polygon 15.0 x 8.4
+        "road_level": 56.45, "rail_top": 63.47,
+        "road_dir": 236.2, "road_cross": (-1329.8, 2305.8), "road_clear": None,           # [M] OSM crosses at 87.6 deg
+        "style": "street",
+        "opens": [{"kind": "round", "span": 5.2, "spring": 2.7, "ring": 0.36, "mat": "brick"}],   # [E] one lane, a stilted round arch
+        "top": "cap", "parapet": 7.47, "coping": 0.10, "parapet_t": 0.40, "cornice": 6.72,
+        "railing": "lattice",
+        "underpass": {"a": [-1326.25, 2310.64, 56.57], "b": [-1333.35, 2300.96, 56.33], "hw": 2.9},
+        "ends": None,
+        "views": {"linkebeek_ne": ((2.7, 16.0, 1.6), (2.7, 0.0, 4.0), 24.0), "linkebeek_sw": ((2.7, -16.0, 1.6), (2.7, 0.0, 4.0), 24.0)},
+    },
+    # Rue Engeland: two structures side by side (Street View 2024): the four tracks of L26 + L26/5 on a brick vault under a
+    # concrete deck (fascia panels on a lintel both sides, 3.90 m height limit), and NW of it the chord's own bridge, a brick
+    # face with a wide segmental arch ringed in concrete and a small round arch beside it, a railing on the parapet.
+    "engeland": {
+        "urbis": "bridge/694", "line": "L26 + L26/5", "road": "Rue Engeland",
+        "centre": (-690.54, 1795.46), "theta": 130.2, "length": 61.4, "width": 14.4,         # [M] UrbIS polygon 61.4 x 14.5
+        "road_level": 61.12, "rail_top": 67.39,
+        "road_dir": 220.2, "road_cross": (-690.70, 1795.65), "road_clear": None,          # [M] the UrbIS carriageway (OSM's line runs 5 m off it here)
+        "style": "street",
+        "opens": [{"kind": "round", "span": 4.8, "spring": 2.0, "ring": 0.36, "mat": "brick"}],   # [E] the 3.90 m sign: crown 4.4 m
+        "top": "fascia", "parapet": 6.42, "coping": 0.12, "parapet_t": 0.35, "cornice": 5.6,
+        "underpass": {"a": [-680.80, 1805.43, 61.27], "b": [-706.34, 1780.07, 60.88], "hw": 2.95},  # on the UrbIS street line; >= the chord's half span + 0.15
+        "ends": None,
+        "views": {"engeland_se": ((5.0, -22.0, 1.6), (5.0, 0.0, 3.5), 24.0), "engeland_nw": ((5.0, 22.0, 1.6), (5.0, 0.0, 3.5), 24.0)},
+    },
+    "engeland_chord": {
+        "urbis": "bridge/695", "line": "L26/5", "road": "Rue Engeland",
+        "centre": (-701.40, 1786.57), "theta": 134.7, "length": 61.8, "width": 6.2,          # [M] UrbIS polygon 61.8 x 6.2
+        "road_level": 60.98, "rail_top": 69.66,
+        "road_dir": 224.7, "road_cross": (-701.58, 1786.75), "road_clear": None,          # [M] the UrbIS carriageway (not OSM's line)
+        "style": "street",
+        "opens": [{"kind": "segment", "span": 5.6, "rise": 2.0, "spring": 2.4, "ring": 0.5, "mat": "concrete"},
+                  {"kind": "round", "span": 1.6, "spring": 1.0, "ring": 0.24, "mat": "brick", "dx": -5.2}],   # [E] the small arch NE of the road
+        "top": "parapet", "parapet": 9.45, "coping": 0.15, "parapet_t": 0.40, "cornice": 8.6,
+        "railing": "posts",
+        "underpass": {"a": [-697.32, 1790.97, 61.02], "b": [-707.98, 1780.42, 60.86], "hw": 2.95},   # its own, on its opening (the street bends 1.4 m between the two)
+        "ends": None,
+        "views": {"chord_nw": ((3.6, 20.0, 1.6), (3.6, 0.0, 4.0), 24.0), "chord_se": ((3.6, -20.0, 1.6), (3.6, 0.0, 4.0), 24.0)},
+    },
 }
 B = BRIDGES[NAME]
 L, W = B["length"], B["width"]
@@ -99,8 +199,9 @@ SKEW = dirB.x / dirB.y if abs(dirB.y) > 1e-3 else 0.0      # dX / dY along the r
 X_ROAD = to_local(*B["road_cross"])[0] - SKEW * to_local(*B["road_cross"])[1]   # road axis at Y = 0
 print(f"{NAME}: L {L} W {W} rail {H_RAIL:.2f} m over the road; skew dX/dY {SKEW:.3f} ({math.degrees(math.atan(abs(SKEW))):.1f} deg); road at X {X_ROAD:.2f}")
 
-MAT_NAMES = ["brick_red_brussels", "stone_blue", "concrete", "painted_metal_white", "brick_yellow"]
-BR, ST, CO, PM, BY = 0, 1, 2, 3, 4
+MAT_NAMES = ["brick_red_brussels", "stone_blue", "concrete", "painted_metal_white", "brick_yellow", "painted_metal_grey", "wire_mesh_grey"]
+BR, ST, CO, PM, BY, PG, WM = 0, 1, 2, 3, 4, 5, 6
+STYLE = B.get("style")
 
 
 # ------------------------------------------------------------------------------------------------ geometry builder
@@ -226,6 +327,11 @@ def openings():
         for k in range(n):
             x0 = X_ROAD - total / 2 + k * (a["span"] + a["pier"])
             ops.append({"x0": x0, "x1": x0 + a["span"], "kind": "round", "spring": a["spring"], "ring": a.get("ring", 0.62), "main": True, "floor": None})
+    if "opens" in B:                       # street underpasses: the road's opening (+ small side arches), centred on the road
+        for o in B["opens"]:
+            xc = X_ROAD + o.get("dx", 0.0)
+            ops.append({"x0": xc - o["span"] / 2, "x1": xc + o["span"] / 2, "kind": o["kind"], "rise": o.get("rise", o["span"] / 2),
+                        "spring": o["spring"], "ring": o["ring"], "main": "dx" not in o, "floor": None, "mat": o.get("mat", "brick")})
     return ops
 
 
@@ -271,7 +377,11 @@ for o in OPS:
 PT = B["parapet_t"]
 for sx in (-1, 1):
     X = sx * L / 2
-    MASS.npoly([(X, -W / 2, FOUND), (X, W / 2, FOUND), (X, W / 2, TOP), (X, -W / 2, TOP)], BR, (sx, 0, 0))
+    # the end walls stop at the trough floor between the parapets: the track runs on onto the embankment over them (a
+    # full-height end wall stood 0.6-1.3 m out of the ballast where the embankment is the track bed: Rue de Stalle)
+    yi = W / 2 - B["parapet_t"]
+    MASS.npoly([(X, -W / 2, FOUND), (X, W / 2, FOUND), (X, W / 2, TOP), (X, yi, TOP), (X, yi, H_RAIL - 0.62), (X, -yi, H_RAIL - 0.62),
+                (X, -yi, TOP), (X, -W / 2, TOP)], BR, (sx, 0, 0))
 for sgn in (1, -1):
     yo, yi = sgn * W / 2, sgn * (W / 2 - PT)
     MASS.npoly([(-L / 2, yi, DECK), (L / 2, yi, DECK), (L / 2, yi, TOP), (-L / 2, yi, TOP)], BR, (0, -sgn, 0))   # parapet inner face
@@ -281,7 +391,7 @@ MASS.npoly([(-L / 2, -(W / 2 - PT), DECK), (L / 2, -(W / 2 - PT), DECK), (L / 2,
 CP = B["coping"]
 for sgn in (1, -1):
     yc = sgn * (W / 2 - PT / 2)
-    DET.box((0, yc, TOP + CP / 2), (L + 0.1, PT + 0.10, CP), ST)
+    DET.box((0, yc, TOP + CP / 2), (L + 0.1, PT + 0.10, CP), CO if B.get("top") in ("fascia", "cap") else ST)
 
 # ------------------------------------------------------------------------------------------------ details on each face
 def on_face(sgn, x, d, z):
@@ -296,7 +406,7 @@ def face_frame(sgn):
 CORN = B["cornice"]
 # cornice: a moulded stone string course along the whole face (ogee + fillet), profile in (out, up)
 CORNICE = [(0.0, -0.32), (0.06, -0.32), (0.06, -0.26), (0.10, -0.22), (0.13, -0.15), (0.15, -0.08), (0.20, -0.06), (0.22, 0.0), (0.0, 0.0)]
-for sgn in (1, -1):
+for sgn in ((1, -1) if not STYLE else ()):
     u, v, w = face_frame(sgn)
     for k in range(len(CORNICE)):
         a, b = CORNICE[k], CORNICE[(k + 1) % len(CORNICE)]
@@ -410,14 +520,175 @@ def calevoet_piers(sgn, dx):
     DET.box(on_face(sgn, 0, 0.05, CORN + 0.1), (L, 0.12, 0.28), ST)
 
 
+
+def viaduct_arch(sgn, o, info):
+    """Rue de Stalle: a plain brick rowlock ring (0.36 m) 7 cm proud of the spandrel, an outer header course 3.5 cm proud
+    round it (the stepped edge Street View shows), the intrados plain. Both stop short of the pier strips (clean mesh: no
+    shallow crossing), the ring's soffit 1 cm off the vault's."""
+    cx, cz, R, a = info
+    ring = o["ring"]; n = 44
+    arc = lambda r: [(cx - r * math.cos(math.pi * k / n), cz + r * math.sin(math.pi * k / n)) for k in range(n + 1)]
+    y0 = sgn * (W / 2 - 0.02)
+    ring_band(arc(R + 0.01), arc(R + ring), y0, sgn * 0.09, BR)
+    ring_band(arc(R + ring), arc(R + ring + 0.07), y0, sgn * 0.055, BR)
+
+
+def ring_band(inner, outer, y0, depth, mat):
+    """An arch band (inner / outer arcs of equal count, in x z) from the plane Y = y0 out by depth: its caps as QUADS between
+    the two arcs (a fan / ear-clipped thin annulus gives overlapping slivers), the curved sides, the two springer ends."""
+    P = lambda pts, y: [Vector((x, y, z)) for x, z in pts]
+    iB, oB, iF, oF = P(inner, y0), P(outer, y0), P(inner, y0 + depth), P(outer, y0 + depth)
+    out = depth > 0
+    DET.quad_strip(iF, oF, mat, flip=out)          # front cap
+    # no back cap: it lies 2 cm inside the wall (clean mesh: hidden backs are left out)
+    DET.quad_strip(iB, iF, mat, flip=out)          # soffit side
+    DET.quad_strip(oB, oF, mat, flip=not out)      # extrados side
+    for k in (0, -1):                              # the two ends
+        q = [iB[k], oB[k], oF[k], iF[k]]
+        DET.poly(q if (k == 0) == out else q[::-1], mat)
+
+
+def viaduct_piers(sgn):
+    """Rue de Stalle: per pier a brick pilaster strip from the footing to a capped head over the coping, a blue-stone
+    plinth and an impost band at the springing (across the pier face, returning into the soffit); the abutments' two
+    pilasters; the stone string course along the face over the crowns."""
+    arches = sorted(OPS, key=lambda o: o["x0"])
+    zs = arches[0]["spring"]; pp = B["pilaster_proj"]
+    strips = [((arches[k]["x1"] + arches[k + 1]["x0"]) / 2, B["pier_strip"]) for k in range(len(arches) - 1)]
+    for xa, w in B.get("end_pilasters", []):
+        strips += [(-xa, w), (xa, w)]
+    head = TOP + B["coping"] + B["pier_head"]
+    for xm, w in strips:
+        # (CLEAN MESH: no two boxes share a face plane where they overlap - backs, tops and ends are staggered by >= 1 cm)
+        xm_c = max(-L / 2 + w / 2 + 0.02, min(L / 2 - w / 2 - 0.02, xm))          # the end pilaster stops 2 cm short of the end wall
+        if xm_c != xm: w = w - 2 * abs(xm_c - xm); xm = xm_c
+        zt = TOP - 0.12
+        DET.box(on_face(sgn, xm, (pp - 0.05) / 2, (FOUND + zt) / 2), (w, pp + 0.05, zt - FOUND), BR)                 # back -0.05
+        # two corbelled courses widening the strip under the string course (the pier head's footing)
+        for j, (dw, dp) in enumerate(((0.16, 0.06), (0.32, 0.11))):
+            bk = 0.035 - 0.01 * j
+            DET.box(on_face(sgn, xm, (pp + dp - bk) / 2, CORN - 0.55 + j * 0.22), (w + dw, pp + dp + bk, 0.22), BR)   # backs -0.035 / -0.025
+        # the head over the coping: thickened through the parapet, a stone cap with a weathered (sloped) top
+        hb = TOP - 0.25
+        DET.box(on_face(sgn, xm, (pp + 0.02 - PT - 0.02) / 2, (hb + head) / 2), (w + 0.1, PT + 0.02 + pp + 0.02, head - hb), BR)
+        c = on_face(sgn, xm, (pp + 0.02 - PT - 0.02) / 2, head + 0.07)
+        DET.box(c, (w + 0.26, PT + pp + 0.2, 0.14), ST)
+        DET.box(c + Vector((0, 0, 0.11)), (w + 0.06, PT + pp, 0.08), ST)
+        # blue-stone plinth: 0.75 m over the ground line, chamfered course on top
+        DET.box(on_face(sgn, xm, (pp + 0.06 - 0.015) / 2, (FOUND + 0.75) / 2), (w + 0.14, pp + 0.06 + 0.015, 0.75 - FOUND), ST)
+        DET.box(on_face(sgn, xm, (pp + 0.03 - 0.012) / 2, 0.8), (w + 0.08, pp + 0.03 + 0.012, 0.1), ST)
+    # impost bands: a stone course 0.32 m high at the springing, across every pier face, 6 cm proud
+    for k in range(len(arches) - 1):
+        xa, xb = arches[k]["x1"], arches[k + 1]["x0"]
+        DET.box(on_face(sgn, (xa + xb) / 2, 0.03, zs - 0.16), (xb - xa + 0.10, 0.06 + 0.04 - 0.008, 0.32), ST)
+    for o in (arches[0], arches[-1]):                       # the abutments' side of the outer arches
+        xe = o["x0"] if o is arches[0] else o["x1"]
+        sx = -1 if o is arches[0] else 1
+        DET.box(on_face(sgn, xe + sx * 0.6, 0.03, zs - 0.16), (1.2 + 0.10, 0.092, 0.32), ST)
+    # string course: a stone band 0.3 m high, 12 cm proud, a drip under it
+    DET.box(on_face(sgn, 0, 0.06, CORN - 0.15), (L - 0.03, 0.12 + 0.04, 0.3), ST)
+    DET.box(on_face(sgn, 0, 0.095, CORN - 0.33), (L - 0.05, 0.07, 0.06), ST)
+
+
+def viaduct_impost_soffit():
+    """The impost band returns into the arch soffits (both piers' sides): a stone course 4 cm proud of the vault's wall."""
+    arches = sorted(OPS, key=lambda o: o["x0"])
+    zs = arches[0]["spring"]
+    for o in arches:
+        for xe, sx in ((o["x0"], 1), (o["x1"], -1)):
+            DET.box((xe + sx * 0.02, 0, zs - 0.165), (0.08, W + 0.04, 0.30), ST)       # 1 cm inside the face band's top / bottom
+
+
+def street_ring(sgn, o, info):
+    """The arch ring on a face: brick rowlocks + a header course (as the viaduct), or a concrete ring (Engeland chord)."""
+    cx, cz, R, a = info
+    ring = o["ring"]; y0 = sgn * (W / 2 - 0.02)
+    if o["kind"] == "segment":
+        n = 40
+        arc = lambda r: [(cx + r * math.sin(-a + 2 * a * k / n), cz + r * math.cos(-a + 2 * a * k / n)) for k in range(n + 1)]
+    else:
+        n = 36
+        arc = lambda r: [(cx - r * math.cos(math.pi * k / n), cz + r * math.sin(math.pi * k / n)) for k in range(n + 1)]
+    if o.get("mat") == "concrete":
+        ring_band(arc(R + 0.01), arc(R + ring), y0, sgn * 0.12, CO)
+    else:
+        ring_band(arc(R + 0.01), arc(R + ring), y0, sgn * 0.08, BR)
+        ring_band(arc(R + ring), arc(R + ring + 0.07), y0, sgn * 0.05, BR)
+
+
+def street_face(sgn):
+    """Above the arch: the fascia (lintel + precast panels on a backing), the capping beam, or the brick parapet's string
+    course; the end buttresses; a blue-stone plinth course at the road along the face."""
+    top = B.get("top")
+    main = [o for o in OPS if o["main"]][0]
+    crown = main["spring"] + main.get("rise", (main["x1"] - main["x0"]) / 2) + main["ring"] + 0.07
+    Lc = L - 0.04
+    if top == "fascia":
+        z0 = crown + 0.06
+        DET.box(on_face(sgn, 0, (0.28 - 0.05) / 2, z0 + 0.225), (Lc, 0.28 + 0.05, 0.45), CO)                       # lintel beam
+        DET.box(on_face(sgn, 0, (0.10 - 0.04) / 2, (z0 + 0.45 + TOP + 0.06) / 2), (Lc - 0.02, 0.10 + 0.04, TOP + 0.06 - z0 - 0.45), CO)   # backing
+        pw = 2.4; n = max(1, round(Lc / pw)); pw = Lc / n
+        for k in range(n):
+            xa = -Lc / 2 + k * pw + 0.0125; xb = xa + pw - 0.025
+            DET.box(on_face(sgn, (xa + xb) / 2, (0.21 - 0.03) / 2, (z0 + 0.47 + TOP + 0.04) / 2), (xb - xa, 0.21 + 0.03, TOP + 0.04 - z0 - 0.47), CO)
+    elif top == "cap":
+        zc = B["cornice"]
+        DET.box(on_face(sgn, 0, (0.14 - 0.04) / 2, (zc + TOP + 0.03) / 2), (Lc, 0.14 + 0.04, TOP + 0.03 - zc), CO)
+        DET.box(on_face(sgn, 0, (0.17 - 0.015) / 2, zc + 0.012), (Lc - 0.02, 0.17 + 0.015, 0.06), CO)               # drip nose
+    else:
+        DET.box(on_face(sgn, 0, 0.06, CORN - 0.15), (Lc, 0.12 + 0.04, 0.3), ST)
+        DET.box(on_face(sgn, 0, 0.095, CORN - 0.33), (Lc - 0.02, 0.07, 0.06), ST)
+    # plinth: a blue-stone course along the face at the road (between the openings), 0.45 m over the road
+    xs = [-L / 2 + 0.02] + [v for o in sorted(OPS, key=lambda o: o["x0"]) for v in (o["x0"], o["x1"])] + [L / 2 - 0.02]
+    for xa, xb in zip(xs[0::2], xs[1::2]):
+        if xb - xa > 0.3:
+            DET.box(on_face(sgn, (xa + xb) / 2, (0.05 - 0.02) / 2, (FOUND + 0.45) / 2), (xb - xa - 0.01, 0.05 + 0.02, 0.45 - FOUND), ST)
+    for xb, w, pr in B.get("buttresses", []):
+        for sx in (-1, 1):
+            x = sx * min(xb, L / 2 - w / 2 - 0.035)
+            DET.box(on_face(sgn, x, (pr - 0.05) / 2, (FOUND + TOP) / 2), (w, pr + 0.05, TOP - FOUND), BR)
+            DET.box(on_face(sgn, x, (pr + 0.06 - PT - 0.02) / 2, TOP + CP + 0.09), (w + 0.12, pr + 0.06 + PT + 0.02, 0.18), ST)
+            DET.box(on_face(sgn, x, (pr + 0.06 - 0.035) / 2, 0.25), (w + 0.1, pr + 0.06 + 0.035, 0.5), ST)
+
+
+def street_railing():
+    """Post-and-rail (two rails) or lattice (X diagonals between the rails) railings on the parapets' copings."""
+    kind = B.get("railing")
+    if not kind: return
+    zb = TOP + CP; h = 1.05 if kind == "posts" else 1.1
+    clear = [(sx * min(xb, L / 2 - w / 2 - 0.02), w + 0.2) for xb, w, pr in B.get("buttresses", []) for sx in (-1, 1)]
+    a0, a1 = -L / 2 + 0.05, L / 2 - 0.05
+    gaps, cur = [], a0
+    for lo, hi in sorted((x - w / 2, x + w / 2) for x, w in clear):
+        if lo > cur: gaps.append((cur, lo))
+        cur = max(cur, hi)
+    if cur < a1: gaps.append((cur, a1))
+    for sgn in (1, -1):
+        yc = sgn * (W / 2 - PT / 2 + 0.05)
+        for a, b in gaps:
+            if b - a < 0.8: continue
+            n = max(1, round((b - a) / (1.8 if kind == "posts" else 2.0)))
+            for k in range(n + 1):
+                FINE.box((a + 0.04 + k * (b - a - 0.08) / n, yc, zb + (h + 0.03) / 2), (0.06, 0.06, h + 0.03), PG)
+            FINE.box(((a + b) / 2, yc, zb + h - 0.025), (b - a, 0.05, 0.05), PG)
+            FINE.box(((a + b) / 2, yc, zb + (0.45 if kind == "posts" else 0.12)), (b - a, 0.04, 0.04), PG)
+            if kind == "lattice":
+                for k in range(n):
+                    xa = a + 0.04 + k * (b - a - 0.08) / n; xb = xa + (b - a - 0.08) / n
+                    for d in (1, -1):
+                        p0 = Vector((xa + 0.04, yc, zb + 0.15 if d > 0 else zb + h - 0.05))
+                        p1 = Vector((xb - 0.04, yc, zb + h - 0.05 if d > 0 else zb + 0.15))
+                        u = (p1 - p0).normalized(); v = Vector((0, 1, 0)); w_ = u.cross(v)
+                        FINE.box((p0 + p1) / 2, ((p1 - p0).length, 0.025 + (0.004 if d > 0 else 0.0), 0.035), PG, frame=(u, v, w_))
+
 ops_sorted = sorted(OPS, key=lambda o: o["x0"])
 for sgn in (1, -1):
     dx = SKEW * sgn * W / 2
     for o in OPS:
         pts, info = curve_of(o, dx)
         ring = o["ring"]
-        outer = voussoirs(sgn, o, info, ring, 11 if o["main"] and o["kind"] == "segment" else (9 if o["main"] else 7)) if NAME != "calevoet" else None
-        if o["main"] and o["kind"] == "segment":
+        outer = voussoirs(sgn, o, info, ring, 11 if o["main"] and o["kind"] == "segment" else (9 if o["main"] else 7)) if NAME != "calevoet" and not STYLE else None
+        if o["main"] and o["kind"] == "segment" and not STYLE:
             # hood moulding along the extrados, down the pilasters' sides, into the scrolls
             hood = [(p.x, p.z + 0.0) for p in outer]
             cx, cz, R, a = info
@@ -438,6 +709,10 @@ for sgn in (1, -1):
                 scroll(sgn, hx, zb, side=-side)
         if NAME == "calevoet":
             calevoet_arch(sgn, o, info, dx)
+        elif STYLE == "viaduct":
+            viaduct_arch(sgn, o, info)
+        elif STYLE == "street":
+            street_ring(sgn, o, info)
     # pilasters (St-Job): quoined, a stone base, a stone capital block at the arcade, a cap above the parapet
     if "pilaster" in B:
         p = B["pilaster"]
@@ -522,9 +797,13 @@ for sgn in (1, -1):
 
     if NAME == "calevoet":
         calevoet_piers(sgn, dx)
+    elif STYLE == "viaduct":
+        viaduct_piers(sgn)
+    elif STYLE == "street":
+        street_face(sgn)
 
 # railing (Calevoet): painted steel posts + two rails on the coping, both sides
-if B.get("railing"):
+if B.get("railing") and not STYLE:
     hR = B["railing"]
     for sgn in (1, -1):
         yc = sgn * (W / 2 - PT / 2)
@@ -535,13 +814,43 @@ if B.get("railing"):
         for zr in (zb + hR, zb + hR * 0.5, zb + 0.12):
             FINE.box((0, yc, zr), (L - 0.2, 0.05, 0.05), PM)
 
+# fence (Rue de Stalle): galvanised posts every ~2.5 m on the coping between the pier heads, a top rail, welded-mesh
+# panels (the wire_mesh_grey slot draws the wires: alpha-to-coverage), both sides
+if B.get("fence"):
+    fh = B["fence"]["h"]; zb = TOP + B["coping"]
+    heads = []
+    if STYLE == "viaduct":
+        arches = sorted(OPS, key=lambda o: o["x0"])
+        heads = [((arches[k]["x1"] + arches[k + 1]["x0"]) / 2, B["pier_strip"]) for k in range(len(arches) - 1)]
+        for xa, w in B.get("end_pilasters", []): heads += [(-xa, w), (xa, w)]
+    gaps, cur = [], -L / 2
+    for lo, hi in sorted((x - w / 2 - 0.05, x + w / 2 + 0.05) for x, w in heads):
+        if lo > cur: gaps.append((cur, lo))
+        cur = max(cur, hi)
+    if cur < L / 2: gaps.append((cur, L / 2))
+    for sgn in (1, -1):
+        yc = sgn * (W / 2 - PT / 2 + 0.06)
+        for a, b in gaps:
+            if b - a < 0.6: continue
+            n = max(1, round((b - a) / B["fence"]["post"]))
+            for k in range(n + 1):
+                FINE.box((a + 0.05 + k * (b - a - 0.1) / n, yc, zb + (fh + 0.03) / 2), (0.07, 0.07, fh + 0.03), PG)    # post tops 3 cm over the rail
+            a, b = max(a, -L / 2 + 0.03), min(b, L / 2 - 0.03)
+            FINE.box(((a + b) / 2, yc, zb + fh - 0.03), (b - a, 0.06, 0.06), PG)
+            FINE.box(((a + b) / 2, yc, zb + 0.08), (b - a, 0.05, 0.05), PG)
+            FINE.box(((a + b) / 2, yc, zb + 0.08 + (fh - 0.11) / 2), (b - a - 0.02, 0.012, fh - 0.17), WM)
+if STYLE == "viaduct":
+    viaduct_impost_soffit()
+if STYLE == "street":
+    street_railing()
 
 # ------------------------------------------------------------------------------------------------ build, bevel, UVs
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scn = bpy.context.scene
 mats = []
 PREVIEW_COL = {"brick_red_brussels": (0.33, 0.12, 0.075), "stone_blue": (0.42, 0.43, 0.44), "concrete": (0.35, 0.34, 0.32),
-               "painted_metal_white": (0.75, 0.75, 0.73), "brick_yellow": (0.55, 0.40, 0.24)}
+               "painted_metal_white": (0.75, 0.75, 0.73), "brick_yellow": (0.55, 0.40, 0.24),
+               "painted_metal_grey": (0.42, 0.44, 0.45), "wire_mesh_grey": (0.5, 0.52, 0.53)}
 for nm in MAT_NAMES:
     m = bpy.data.materials.new(nm); m.use_nodes = True
     m.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (*PREVIEW_COL[nm], 1)
@@ -572,7 +881,7 @@ def make(name, mb, bevel):
 
 
 print("faces before bevel: mass", len(MASS.f), "details", len(DET.f), "fine", len(FINE.f))
-parts = [make("mass", MASS, 0.025), make("details", DET, 0.012)]
+parts = [make("mass", MASS, 0.025 if not STYLE else 0.0), make("details", DET, 0.012)]   # STYLE: the rings / bands cover the mass edges (a bevel there splits the vault strips into n-gons: bent normals)
 if FINE.f: parts.append(make("fine", FINE, 0.0))
 for oo in scn.objects: oo.select_set(False)
 for o in parts: o.select_set(True)
@@ -582,6 +891,17 @@ obj = parts[0]; obj.name = NAME
 me = obj.data
 me.shade_smooth()
 me.set_sharp_from_angle(angle=math.radians(35))
+if STYLE:
+    # CLEAN SHADING (no bad shading from topology): a face is smooth only on a CURVED surface (a neighbour at 0.5-12 deg, the tessellation of a curve,
+    # not a bevel step, and no coplanar neighbour: vault strips, ring sides); every planar wall / box face keeps its face normal
+    bm = bmesh.new(); bm.from_mesh(me)
+    for f in bm.faces:
+        angs = [e.calc_face_angle(0) for e in f.edges if len(e.link_faces) == 2]
+        f.smooth = bool(angs) and min(angs) > math.radians(0.5) and any(a < math.radians(12) for a in angs)
+    for e in bm.edges:
+        lf = e.link_faces
+        e.smooth = len(lf) == 2 and lf[0].smooth and lf[1].smooth and e.calc_face_angle(0) < math.radians(12)
+    bm.to_mesh(me); bm.free()
 me.validate()
 ntri = sum(len(p.vertices) - 2 for p in me.polygons)
 print(f"{NAME}: {ntri} triangles, {len(me.vertices)} vertices, {time.time() - T0:.1f}s")
@@ -628,12 +948,25 @@ def site_ground(margin=45.0):
         a = np.fromfile(os.path.join(ROOT, "data", "tiles", t["name"], "terrain.u16"), dtype="<u2").astype(np.float64).reshape(h["rows"], h["cols"]) / 100
         grids[(h["x0"], h["z0"])] = (h, a)
 
-    def H(x, z):
+    def H0(x, z):
         for (x0, z0), (h, a) in grids.items():
             if x0 <= x <= x0 + h["size"] and z0 <= z <= z0 + h["size"]:
                 c = min(int(round(x - x0)), h["cols"] - 1); r = min(int(round(z - z0)), h["rows"] - 1)
                 return a[r, c]
         return B["road_level"]
+
+    cuts = [Bq["underpass"] for Bq in BRIDGES.values() if Bq.get("underpass")]
+
+    def H(x, z):
+        """the DTM with the city's underpass cuts (viewer/rail/railData.js underpassCut, same rule): the bake's occluder"""
+        y = H0(x, z)
+        for u in cuts:
+            (ax, az, ay), (bx, bz, by) = u["a"], u["b"]
+            dx, dz = bx - ax, bz - az; t = ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz)
+            if t < 0 or t > 1: continue
+            d = math.hypot(x - ax - dx * t, z - az - dz * t) - u["hw"]
+            if d <= 7: y = min(y, ay + (by - ay) * t - 0.02 + max(0.0, d))
+        return y
     step = 1.0
     n = int(2 * R / step)
     verts, faces = [], []
@@ -670,7 +1003,7 @@ def ground_z(X, Yb):
     return loc.z if hit else 0.0
 
 # ------------------------------------------------------------------------------------------------ AO bake into UV1
-AO_PX = 2048
+AO_PX = 2048 if STYLE != "street" else 1024        # the small underpasses (3-5k triangles): 1024 is 4 MB less GPU memory each
 scn.render.engine = "CYCLES"; scn.cycles.device = "CPU"
 if scn.world is None: scn.world = bpy.data.worlds.new("World")
 scn.world.light_settings.distance = 6.0
@@ -710,6 +1043,8 @@ info = {
     "deck": {"length": L, "width": W, "railTop": round(H_RAIL, 3), "ballastFloor": round(DECK, 3), "parapetInner": round(W / 2 - PT, 3), "parapetTop": round(TOP + CP, 3)},
     "openings": [{k: (round(v, 3) if isinstance(v, float) else v) for k, v in o.items()} for o in OPS],
     "skew_dx_per_dy": round(SKEW, 4),
+    **({"style": STYLE} if STYLE else {}),
+    **({"underpass": B["underpass"]} if B.get("underpass") else {}),
     "measured": "UrbIS Land cover Bridges polygon (length, width, axis), OSM road axis + UrbIS street surfaces (clear width), DTM 2021 (road level), rail.json (rail top)",
     "estimated": "arch rise / springing, pilaster / arcade / cornice / parapet dimensions, stone counts: from the Wikimedia Commons photos",
 }
@@ -753,6 +1088,7 @@ sun.data.energy = 3.5; sun.rotation_euler = (math.radians(55), 0, math.radians(-
 scn.cycles.samples = 64; scn.cycles.use_denoising = True
 scn.render.resolution_x, scn.render.resolution_y = 1200, 800
 scn.view_settings.view_transform = "AgX"
+if STYLE: scn.view_settings.exposure = -0.8          # round 2 previews: the sun at 3.5 washed the brick out
 cam = bpy.data.objects.new("cam", bpy.data.cameras.new("cam")); scn.collection.objects.link(cam); scn.camera = cam
 for vname, (loc, look, lens) in B["views"].items():
     cam.location = Vector((loc[0], loc[1], ground_z(loc[0], loc[1]) + loc[2])); cam.data.lens = lens

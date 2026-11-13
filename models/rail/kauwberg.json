@@ -1,0 +1,63 @@
+{
+ "asset": "railway bridge 'kauwberg' (tools/blender/railBridge.py)",
+ "urbis": "bridge/691",
+ "line": "L26",
+ "road": "Kauwberg",
+ "triangles": 3284,
+ "materials": [
+  "brick_red_brussels",
+  "stone_blue",
+  "concrete",
+  "painted_metal_white",
+  "brick_yellow",
+  "painted_metal_grey",
+  "wire_mesh_grey"
+ ],
+ "frame": "glTF Y up; +x = along the track (city direction theta), -z = Blender +Y; origin = UrbIS polygon centre at road level",
+ "placement": {
+  "city_local_position": [
+   272.55,
+   63.9,
+   869.29
+  ],
+  "rotation_y_rad": -2.6598817800393584
+ },
+ "deck": {
+  "length": 17.0,
+  "width": 8.4,
+  "railTop": 6.04,
+  "ballastFloor": 5.42,
+  "parapetInner": 3.8,
+  "parapetTop": 6.95
+ },
+ "openings": [
+  {
+   "x0": -4.563,
+   "x1": 4.037,
+   "kind": "segment",
+   "rise": 2.4,
+   "spring": 2.0,
+   "ring": 0.44,
+   "main": true,
+   "floor": null,
+   "mat": "brick"
+  }
+ ],
+ "skew_dx_per_dy": -0.0,
+ "style": "street",
+ "underpass": {
+  "a": [
+   278.55,
+   880.2,
+   63.97
+  ],
+  "b": [
+   267.05,
+   858.2,
+   63.84
+  ],
+  "hw": 4.45
+ },
+ "measured": "UrbIS Land cover Bridges polygon (length, width, axis), OSM road axis + UrbIS street surfaces (clear width), DTM 2021 (road level), rail.json (rail top)",
+ "estimated": "arch rise / springing, pilaster / arcade / cornice / parapet dimensions, stone counts: from the Wikimedia Commons photos"
+}

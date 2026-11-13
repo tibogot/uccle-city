@@ -1,0 +1,63 @@
+{
+ "asset": "railway bridge 'linkebeek' (tools/blender/railBridge.py)",
+ "urbis": "bridge/706",
+ "line": "L26",
+ "road": "Rue de Linkebeek",
+ "triangles": 2844,
+ "materials": [
+  "brick_red_brussels",
+  "stone_blue",
+  "concrete",
+  "painted_metal_white",
+  "brick_yellow",
+  "painted_metal_grey",
+  "wire_mesh_grey"
+ ],
+ "frame": "glTF Y up; +x = along the track (city direction theta), -z = Blender +Y; origin = UrbIS polygon centre at road level",
+ "placement": {
+  "city_local_position": [
+   -1327.57,
+   56.45,
+   2304.32
+  ],
+  "rotation_y_rad": -2.5516713664157096
+ },
+ "deck": {
+  "length": 15.0,
+  "width": 8.4,
+  "railTop": 7.02,
+  "ballastFloor": 6.4,
+  "parapetInner": 3.8,
+  "parapetTop": 7.57
+ },
+ "openings": [
+  {
+   "x0": 0.076,
+   "x1": 5.276,
+   "kind": "round",
+   "rise": 2.6,
+   "spring": 2.7,
+   "ring": 0.36,
+   "main": true,
+   "floor": null,
+   "mat": "brick"
+  }
+ ],
+ "skew_dx_per_dy": -0.0,
+ "style": "street",
+ "underpass": {
+  "a": [
+   -1326.25,
+   2310.64,
+   56.57
+  ],
+  "b": [
+   -1333.35,
+   2300.96,
+   56.33
+  ],
+  "hw": 2.9
+ },
+ "measured": "UrbIS Land cover Bridges polygon (length, width, axis), OSM road axis + UrbIS street surfaces (clear width), DTM 2021 (road level), rail.json (rail top)",
+ "estimated": "arch rise / springing, pilaster / arcade / cornice / parapet dimensions, stone counts: from the Wikimedia Commons photos"
+}

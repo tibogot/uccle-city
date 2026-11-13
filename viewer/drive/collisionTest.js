@@ -34,7 +34,8 @@ const KIND_NAME = Object.fromEntries(Object.entries(KIND).map(([k, v]) => [v, k]
 export const SRC = { building: 1, hero: 2, bridge: 3, furniture: 4, tree: 5, lamp: 6, bollard: 7, car: 8, rail: 9, tram: 10, kit: 11, road: 12 };
 const SRC_NAME = Object.fromEntries(Object.entries(SRC).map(([k, v]) => [v, k]));
 export const HEROES = ["stjob", "townhall", "stalle", "vanbuuren", "wolvendael", "police", "calevoet", "stpierre", "observatory",
-  "bridge-verrewinkel", "bridge-stjob", "bridge-calevoet"];
+  "bridge-verrewinkel", "bridge-stjob", "bridge-calevoet",
+  "bridge-ruestalle", "bridge-engeland", "bridge-engeland_chord", "bridge-bigarreaux", "bridge-kauwberg", "bridge-linkebeek"];
 
 /** A plan grid over the tile bounds. */
 function makeGrid(b) {
@@ -313,22 +314,26 @@ function resample(pts, step) {
 }
 
 /** The DRAWN walking / driving surfaces of the tile (terrain, roads, rail ballast, tram platforms, landmark and bridge
- *  LOD0, ponds) rasterised on a 0.5 m grid, two layers per cell (the top one and the highest one more than 1.5 m under
- *  it: a bridge deck over its cutting). Returns (x, z, y) -> the drawn surface y nearest to y (or null). */
+ *  LOD0, ponds) rasterised on a 0.5 m grid, up to FOUR layers per cell, each the highest surface of a band 1.5 m deep (a
+ *  bridge deck over its cutting; a viaduct's string course, impost and arch ring over the street under its arch: with
+ *  two layers the street there was lost and a walker on it read as fallen 11 m). Returns (x, z, y) -> the drawn surface
+ *  y nearest to y (or null). */
 function drawnGround(scene, tile) {
   const b = tile.bounds, C = 0.5, nx = Math.ceil((b.x1 - b.x0) / C) + 1, nz = Math.ceil((b.z1 - b.z0) / C) + 1;
-  const top = new Float32Array(nx * nz).fill(-1e9), low = new Float32Array(nx * nz).fill(-1e9);
+  const NL = 4, lay = new Float32Array(nx * nz * NL).fill(-1e9);
   const objs = [];
   for (const n of [`${tile.name}-terrain`, `${tile.name}-roads`]) { const o = scene.getObjectByName(n); if (o) objs.push(o); }
   scene.getObjectByName(`${tile.name}-features`)?.traverse((o) => { if (o.isMesh && /^(rail-ballast|rail-platform|tram-platform)/.test(o.name)) objs.push(o); });
   for (const h of HEROES) { const r = scene.getObjectByName(h); if (r) objs.push(r.children.find((c) => /[-_]lod0$/.test(c.name)) || r); }
   scene.traverse((o) => { if (o.isMesh && /pond|water/i.test(o.name)) objs.push(o); });
   const v = new THREE.Vector3(), A = [0, 0, 0], B = [0, 0, 0], Cc = [0, 0, 0];
-  const put = (q, y) => {
-    const t = top[q];
-    if (y > t + 1.5) { low[q] = t; top[q] = y; }
-    else if (y > t) top[q] = y;
-    else if (y < t - 1.5 && y > low[q]) low[q] = y;
+  const put = (q, y) => {                // layers kept sorted, highest first; one per 1.5 m band (its highest surface)
+    const o = q * NL;
+    for (let j = 0; j < NL; j++) {
+      const t = lay[o + j];
+      if (Math.abs(y - t) <= 1.5) { if (y > t) lay[o + j] = y; return; }
+      if (y > t) { for (let m = NL - 1; m > j; m--) lay[o + m] = lay[o + m - 1]; lay[o + j] = y; return; }
+    }
   };
   for (const root of objs) root.traverse((o) => {
     if (!o.isMesh || o.isInstancedMesh || !o.geometry?.attributes?.position) return;
@@ -355,9 +360,11 @@ function drawnGround(scene, tile) {
   return (x, z, y) => {
     const i = Math.round((x - b.x0) / C), k = Math.round((z - b.z0) / C);
     if (i < 0 || k < 0 || i >= nx || k >= nz) return null;
-    const q = k * nx + i, t = top[q], l = low[q];
-    if (t < -1e8) return null;
-    return l > -1e8 && Math.abs(l - y) < Math.abs(t - y) ? l : t;
+    const o = (k * nx + i) * NL;
+    if (lay[o] < -1e8) return null;
+    let best = lay[o];
+    for (let j = 1; j < NL && lay[o + j] > -1e8; j++) if (Math.abs(lay[o + j] - y) < Math.abs(best - y)) best = lay[o + j];
+    return best;
   };
 }
 

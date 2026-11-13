@@ -1,0 +1,63 @@
+{
+ "asset": "railway bridge 'engeland' (tools/blender/railBridge.py)",
+ "urbis": "bridge/694",
+ "line": "L26 + L26/5",
+ "road": "Rue Engeland",
+ "triangles": 4556,
+ "materials": [
+  "brick_red_brussels",
+  "stone_blue",
+  "concrete",
+  "painted_metal_white",
+  "brick_yellow",
+  "painted_metal_grey",
+  "wire_mesh_grey"
+ ],
+ "frame": "glTF Y up; +x = along the track (city direction theta), -z = Blender +Y; origin = UrbIS polygon centre at road level",
+ "placement": {
+  "city_local_position": [
+   -690.54,
+   61.12,
+   1795.46
+  ],
+  "rotation_y_rad": -2.272418686096617
+ },
+ "deck": {
+  "length": 61.4,
+  "width": 14.4,
+  "railTop": 6.27,
+  "ballastFloor": 5.65,
+  "parapetInner": 6.85,
+  "parapetTop": 6.54
+ },
+ "openings": [
+  {
+   "x0": -2.152,
+   "x1": 2.648,
+   "kind": "round",
+   "rise": 2.4,
+   "spring": 2.0,
+   "ring": 0.36,
+   "main": true,
+   "floor": null,
+   "mat": "brick"
+  }
+ ],
+ "skew_dx_per_dy": -0.0,
+ "style": "street",
+ "underpass": {
+  "a": [
+   -680.8,
+   1805.43,
+   61.27
+  ],
+  "b": [
+   -706.34,
+   1780.07,
+   60.88
+  ],
+  "hw": 2.95
+ },
+ "measured": "UrbIS Land cover Bridges polygon (length, width, axis), OSM road axis + UrbIS street surfaces (clear width), DTM 2021 (road level), rail.json (rail top)",
+ "estimated": "arch rise / springing, pilaster / arcade / cornice / parapet dimensions, stone counts: from the Wikimedia Commons photos"
+}
