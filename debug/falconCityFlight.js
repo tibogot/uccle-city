@@ -43,6 +43,8 @@ function steerAccel(f, ax, ay, az) {
 function scenarios(F) {
   const fl = F.flyer, g = fl.game, w = fl.w, air = fl.air, inp = fl.input, P = w.PLACE;
   const groundP = () => w.ground(P.x, P.z);
+  // the highest solid at (x, z): roofs, landmarks, bridges AND the trees' crowns (the autopilots look ahead with it)
+  const top = (x, z) => w.column(x, z, 1e4, true).floor;
   const S1 = {
     intro() {
       const fam = window.__falcons, L = fam.perch.ledge, sp = fam.spots.hop;
@@ -87,7 +89,7 @@ function scenarios(F) {
       fl.start(x0, z0, -Math.PI / 2 - 0.15, w.floor(x0, z0) + 12, 20);
       return { seconds: 25, note: "roof-skim: ~4 m over the roofs ahead, 18-22 m/s, flapping when slow", script: (f) => {
         let ahead = 0; const hx = -Math.sin(f.heading), hz = -Math.cos(f.heading);
-        for (let d = 0; d <= 30; d += 3) ahead = Math.max(ahead, w.floor(f.pos.x + hx * d, f.pos.z + hz * d));
+        for (let d = 0; d <= 30; d += 3) ahead = Math.max(ahead, top(f.pos.x + hx * d, f.pos.z + hz * d));
         const err = ahead + 4 - f.pos.y;
         return { roll: clamp(-wrap(-Math.PI / 2 - 0.15 - f.heading) * 2, -0.5, 0.5), pitch: clamp(err * 0.12 - f.gamma * 1.5, -1, 1), flap: f.V < 18 || err > 3 ? 1 : 0, fold: f.V > 24 ? 0.4 : 0 };
       } };
@@ -135,7 +137,7 @@ function scenarios(F) {
         if (leg < legs.length - 1 && Math.hypot(legs[leg][0] - f.pos.x, legs[leg][1] - f.pos.z) < 60) leg++;
         const [tx, tz] = legs[leg];
         let ahead = 0; const hx = -Math.sin(f.heading), hz = -Math.cos(f.heading);
-        for (let d = 0; d <= 120; d += 10) ahead = Math.max(ahead, w.floor(f.pos.x + hx * d, f.pos.z + hz * d));
+        for (let d = 0; d <= 120; d += 10) ahead = Math.max(ahead, top(f.pos.x + hx * d, f.pos.z + hz * d));
         const err = ahead + 60 - f.pos.y;
         const st = steer(f, Math.atan2(-(tx - f.pos.x), -(tz - f.pos.z)), clamp(err * 0.01, -0.25, 0.2), 0.6);
         return { ...st, flap: f.V < 22 || err > 10 ? 1 : 0, fold: f.V > 30 ? 0.5 : 0 };
@@ -269,10 +271,13 @@ function scenarios(F) {
       const h0 = Math.atan2(-(pts[1][0] - pts[0][0]), -(pts[1][1] - pts[0][1]));
       fl.start(pts[0][0], pts[0][1], h0, y0(pts[0][0], pts[0][1]), 13, 0);
       let k = 1;
+      const dense = []; for (let i = 0; i + 1 < pts.length; i++) { const L = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]); for (let d = 0; d < L; d += 2) dense.push([pts[i][0] + (pts[i + 1][0] - pts[i][0]) * d / L, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * d / L]); }
+      dense.push(pts[pts.length - 1]);
       F.pick = { name: best.r.meta?.name, L: best.L, n: pts.length };
       return { seconds: Math.min(25, best.L / 13), note: `low along ${best.r.meta?.name || "a street"} (7 m up, under the roofs): the chase camera beside the façades`, script: (f) => {
-        while (k < pts.length - 1 && Math.hypot(pts[k][0] - f.pos.x, pts[k][1] - f.pos.z) < 18) k++;
-        const [tx, tz] = pts[k];
+        // a point 14 m ahead along the road's polyline (densified: no corner cut through the houses)
+        while (k < dense.length - 1 && Math.hypot(dense[k][0] - f.pos.x, dense[k][1] - f.pos.z) < 14) k++;
+        const [tx, tz] = dense[k];
         const st = steer(f, Math.atan2(-(tx - f.pos.x), -(tz - f.pos.z)), 0, 0.9);
         return { ...st, pitch: clamp((y0(f.pos.x, f.pos.z) - f.pos.y) * 0.15 - f.gamma * 1.5, -1, 1), flap: f.V < 12 ? 1 : 0, fold: 0 };
       } };
@@ -355,7 +360,7 @@ export async function run(name, { grabs = 8, seconds = null, cellW = 400, arg } 
           if (y < fl.w.column(x, z, B.y).floor) { occ = true; break; }
         }
         if (occ) { cam.occluded++; if ((cam.at ??= []).length < 12) cam.at.push([+(i / 60).toFixed(2), g.mode, +f.V.toFixed(1), f.stun > 0 ? "stun" : ""]); }
-        if (fl.fcam.clear?.pulled > 0) cam.pulled++; if (fl.fcam.clear?.over) cam.over++;
+        if (fl.fcam.clear?.pulled > 0) cam.pulled++; if (fl.fcam.clear?.over) cam.over++; if ((fl.fcam.raised ?? 0) > 0.5) cam.raised = (cam.raised ?? 0) + 1;
       }
       if (i % 6 === 0) trace.push([+(i / 60).toFixed(1), +f.V.toFixed(1), +(f.pos.y - fl0).toFixed(1), +f.pos.y.toFixed(1), g.mode, +f.lift.toFixed(2)]);
     }

@@ -8,7 +8,7 @@ import { attribute, vec3, uniform } from "three/tsl";
 
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const smooth = (x, a, b) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
-const _c = new THREE.Vector3(), _e = new THREE.Vector3(), _u = new THREE.Vector3(), _w = new THREE.Vector3(), _t = new THREE.Vector3(), _Y = new THREE.Vector3(0, 1, 0);
+const _c = new THREE.Vector3(), _q = new THREE.Vector3(), _e = new THREE.Vector3(), _u = new THREE.Vector3(), _w = new THREE.Vector3(), _t = new THREE.Vector3(), _Y = new THREE.Vector3(0, 1, 0);
 
 export class FalconCamera {
   constructor(camera, scene) {
@@ -53,6 +53,26 @@ export class FalconCamera {
     }
     return o.floor ? Math.max(o.floor(x1, z1), o.floor(x2, z2)) + 0.8 : -1e9;
   }
+  /** the line of sight from P to the bird's centre and its two wingtips (half the span to each side, level): the
+   *  fraction of the way from the bird to P that is clear (1: all; the first point under the solid + 0.25 m). The
+   *  solids that hide the bird: o.sight (the crowns' dense cores, not their leaves, else a bird brushing a crown is
+   *  hidden), else o.floor */
+  sight(b, o, span, P) {
+    const sample = o.sight || o.floor, B = b.pos;
+    if (!sample) return 1;
+    const rx = -Math.cos(b.heading) * span * 0.5, rz = Math.sin(b.heading) * span * 0.5;
+    let worst = 1;
+    for (let w = -1; w <= 1; w++) {
+      const tx = B.x + rx * w, tz = B.z + rz * w;
+      const lx = P.x - tx, ly = P.y - B.y, lz = P.z - tz;
+      for (let s = 0.15; s <= 1.001; s += 0.06) {
+        if (s >= worst) break;
+        const x = tx + lx * s, y = B.y + ly * s, z = tz + lz * s;
+        if (y < sample(x, z) + 0.25) { worst = s; break; }
+      }
+    }
+    return worst;
+  }
   /** P (a copy of the eased position) moved clear of the bird; returns P */
   keepClear(b, o, span, P) {
     const B = b.pos, minD = 0.62 * span + 0.45;
@@ -63,22 +83,8 @@ export class FalconCamera {
       const k = minD / d; P.set(B.x + dx * k, B.y + dy * k, B.z + dz * k); this.clear.lifted = minD - d;
       dx = P.x - B.x; dy = P.y - B.y; dz = P.z - B.z; d = minD;
     }
-    // (the solids that hide the bird: the crowns' dense cores, not their leaves, else a bird brushing a crown is hidden)
-    const sample = o.sight || o.floor;
-    if (!sample || o.perched) return P;
-    // the line of sight to the bird's centre and its two wingtips (half the span to each side, level): the first
-    // point under the solid (+0.25 m) along camera -> bird
-    const rx = -Math.cos(b.heading) * span * 0.5, rz = Math.sin(b.heading) * span * 0.5;
-    let worst = 1;                                    // the fraction of the way from the bird to the camera that is clear
-    for (let w = -1; w <= 1; w++) {
-      const tx = B.x + rx * w, tz = B.z + rz * w;
-      const lx = P.x - tx, ly = P.y - B.y, lz = P.z - tz;
-      for (let s = 0.15; s <= 1.001; s += 0.12) {
-        if (s >= worst) break;
-        const x = tx + lx * s, y = B.y + ly * s, z = tz + lz * s;
-        if (y < sample(x, z) + 0.25) { worst = s; break; }
-      }
-    }
+    if (o.perched) return P;
+    const worst = this.sight(b, o, span, P);
     if (worst >= 1) return P;
     // pull in along the line to the clear part; when that is closer than minD, go over the bird instead
     const keep = Math.max(worst - 0.08, 0), want = d * keep;
@@ -142,7 +148,12 @@ export class FalconCamera {
       // along that line, or over the bird when that would be too close)
       // (the fix is an offset on the eased position: taken at once when it grows, eased off when it shrinks: no pop)
       const want = this.keepClear(b, o, span, _c.copy(this.pos)).sub(this.pos);
-      if (!this.inited || want.lengthSq() >= this.fix.lengthSq()) this.fix.copy(want); else this.fix.lerp(want, 1 - Math.exp(-5 * dt));
+      if (!this.inited || want.lengthSq() >= this.fix.lengthSq()) this.fix.copy(want);
+      else {
+        // easing off, unless the eased spot would hide the bird (then the clear spot at once)
+        _w.copy(this.fix).lerp(want, 1 - Math.exp(-5 * dt));
+        if (o.perched || this.sight(b, o, span, _q.copy(this.pos).add(_w)) >= 1) this.fix.copy(_w); else this.fix.copy(want);
+      }
       this.raised = (this.raised ?? 0) + (raised - (this.raised ?? 0)) * (1 - Math.exp(-6 * dt));
       this.look.copy(b.pos).addScaledVector(D, 4 * span / (1 + this.raised * 0.5)).addScaledVector(_u, 0.12 * span);
       this.look.y -= this.raised * 0.6;
