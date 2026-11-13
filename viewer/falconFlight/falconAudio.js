@@ -113,4 +113,6 @@ export class FalconAudio {
     }
   }
   thud(hard) { if (this.ctx) this.burst(this.ctx.currentTime, { f: hard ? 120 : 260, q: 0.6, dur: hard ? 0.25 : 0.1, gain: hard ? 0.8 : 0.25, type: "lowpass" }); }
+  /** brushing through a crown's leaves: a short high rustle */
+  leaves() { if (this.ctx) this.burst(this.ctx.currentTime, { f: 3200, q: 0.5, dur: 0.35, gain: 0.3, type: "bandpass" }); }
 }

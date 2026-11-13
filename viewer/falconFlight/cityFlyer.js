@@ -26,6 +26,7 @@ import { FalconCamera } from "./falconCamera.js";
 import { FalconAudio } from "./falconAudio.js";
 import { FalconGame } from "./falconGame.js";
 import { G } from "./flightModel.js";
+import { STREET } from "../treesStylized.js";
 
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const ease = (c, t, r, dt) => c + (t - c) * (1 - Math.exp(-r * dt));
@@ -73,6 +74,7 @@ export class CityFlyer {
   async init() {
     const t0 = performance.now(), P = this.params;
     const w = this.w = new CityFalconWorld({ city: this.city, manifest: this.opts.manifest, base: this.opts.base, hide: this.opts.hide || [], log: this.log });
+    w.treeDims = () => (this.treeDims ??= measureTrees(this.params.get("trees")));
     // the air: a fixed pool of thermal slots (cityStream.js fills them round the falcon)
     const slots = Array.from({ length: 12 }, () => ({ x: 1e6, z: 1e6, heat: 0, radius: 18, ground: 0 }));
     this.air = new AirField({ grid: null, floor: (x, z) => w.floor(x, z), sources: slots });
@@ -150,7 +152,7 @@ export class CityFlyer {
       for (const [name, b] of Object.entries(window.__bridges || {})) {
         if (done.has(`bridge:${name}`) || !b.pb?.levels?.length) continue;
         done.add(`bridge:${name}`);
-        await w.addProxy(`bridge ${name}`, b.pb.levels[b.pb.levels.length - 1], { mask: false }).catch((e) => this.log(`falcon flight: bridge ${name} proxy ${e.message}`));
+        await w.addProxy(`bridge ${name}`, b.pb.levels[b.pb.levels.length - 1], { mask: false, under: true }).catch((e) => this.log(`falcon flight: bridge ${name} proxy ${e.message}`));
       }
       await new Promise((r) => setTimeout(r, 1000));
     }
@@ -274,6 +276,8 @@ export class CityFlyer {
   tick(camPos) {
     const now = performance.now(), dt = Math.min((now - (this._tickT ?? now)) / 1000, 0.05);
     this._tickT = now;
+    // the loaded tiles' tree crowns (a worker job per new tile), ready before a flight
+    if (this.w && now - (this._treeT ?? 0) > 2000) { this._treeT = now; this.w.syncTrees(); }
     if (!this.on && this.game) this.ambient(camPos, dt);
   }
   ambient(camPos, dt) {
@@ -326,7 +330,7 @@ export class CityFlyer {
     const aim = inp.mouseAim && inp.mouse.locked && g.mode === "fly" ? (this._aim ??= new THREE.Vector3()).set(-Math.sin(inp.aim.yaw) * Math.cos(inp.aim.pitch), Math.sin(inp.aim.pitch), -Math.cos(inp.aim.yaw) * Math.cos(inp.aim.pitch)) : null;
     this.fovCity ??= this.camera.fov;
     this.fcam.update(dt, { pos: g.pos, va: f.va, V: g.mode === "fly" ? f.V : Math.max(f.V, 0.1), phi: f.phi, heading: f.heading, gamma: f.gamma, span: g.span, stun: f.stun, liftRate: f.lift },
-      { aim, look: inp.look, zoom: inp.zoom, perched: g.mode === "perch", perchYaw: g.perch?.yaw ?? 0, floor: (x, z) => w.floor(x, z) });
+      { aim, look: inp.look, zoom: inp.zoom, perched: g.mode === "perch", perchYaw: g.perch?.yaw ?? 0, floor: (x, z) => w.floor(x, z), col: (this._colFn ??= (x, z) => w.column(x, z, this.game.f.pos.y, true)), sight: (this._sightFn ??= (x, z) => w.column(x, z, this.game.f.pos.y).floor) });
     this.audio?.update(dt, { V: g.mode === "fly" ? f.V : 0, phi: f.phi, fold: f.fold, lift: f.lift, downstroke: this.bird.downstroke, flapLevel: f.flapLevel }, this.camera);
     const t6 = performance.now();
     c.game = t3 - t2; c.hints = t5 - t4; c.camera = t6 - t5;
@@ -412,4 +416,31 @@ F talons · E land · V camera · click: mouse aim · Esc out</span>`;
     return out;
   }
   cpuSummary() { const s = this.cpuStats(); return `total ${s.total?.p50 ?? "-"} (p99 ${s.total?.p99 ?? "-"}) · lift ${s.lift?.p50 ?? "-"}`; }
+}
+
+/** the drawn street trees' crowns per variant, at scale 1 (viewer/treesStylized.js STREET's built LOD 0): the leaf cards'
+ *  centroid (off the trunk), their 95th-percentile radius + half a card, the 5-95 % height band + half a card, the trunk's
+ *  radius at 1-2.5 m. null until the species is built (the first tile's trees); ?trees=slop / simple: a generic crown. */
+function measureTrees(mode) {
+  if (mode === "slop" || mode === "simple") return { V: new Float32Array([0, 0, 8.2, 4.5, 3.0, 0.4]), nVar: 1, H: 12 };
+  const geoms = STREET.shared.geoms;
+  if (!geoms?.size) return null;
+  const V = [];
+  for (let v = 0; v < STREET.variants; v++) {
+    const g = geoms.get(`${v}:0`);
+    if (!g) return null;
+    const P = g.leaves.attributes.position, n = P.count;
+    let cx = 0, cz = 0;
+    for (let i = 0; i < n; i++) { cx += P.getX(i); cz += P.getZ(i); }
+    cx /= n; cz /= n;
+    const r = new Float32Array(n), y = new Float32Array(n);
+    for (let i = 0; i < n; i++) { r[i] = Math.hypot(P.getX(i) - cx, P.getZ(i) - cz); y[i] = P.getY(i); }
+    r.sort(); y.sort();
+    const T = g.trunk.attributes.position;
+    let tr = 0.3;
+    for (let i = 0; i < T.count; i++) { const ty = T.getY(i); if (ty > 1 && ty < 2.5) tr = Math.max(tr, Math.hypot(T.getX(i), T.getZ(i))); }
+    const y05 = y[Math.floor(n * 0.05)], y95 = y[Math.floor(n * 0.95)];
+    V.push(cx, cz, (y05 + y95) / 2, r[Math.floor(n * 0.95)] + 0.5, (y95 - y05) / 2 + 0.6, tr);
+  }
+  return { V: new Float32Array(V), nVar: STREET.variants, H: STREET.naturalHeight };
 }
