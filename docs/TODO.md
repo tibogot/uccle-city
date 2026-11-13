@@ -20,8 +20,16 @@ weather + seasons, foliage, pedestrians, street life, car impostors, police car 
 lane-graph turn connectors + the car's heading interpolation after the perf audit (roads round 4 note: "tight lane
 connectors"). FIXED 2026-11-13 (trafficGraph.js roundKinks: the lane network smoothed as one graph around sharp vertices / joins; I6: sharpest vertex 162 -> 40 deg, joins > 30 deg 90 -> 43, of which only 16 at joins that really touch). Owner: look at a daytime turn. FOUND: 48 "next" links on I6 (73 on H5) join a lane end to a path starting 3.6-19 m away (a car following one jumps): roads-engine lane graph, for the roads work. Turn radii down to 1.5-2 m on a few connectors (u-turns / tight corners).
 
-**Running (agents, 2026-11-13 ~05:00):** roads round 5 (`claude/roads5`, port 8845: lane next-links that jump, tight
-connectors, the 70 road ledges incl. D10 / G10 / Verrewinkel SE, Edith Cavell centre line, kerb gaps) · falcon round 2
+**Merged 2026-11-13: ROADS ROUND 5** (docs/roads/ROUND5.md): lane links all touch (6,595 gaps -> 0, 120 tiles), turns
+eased (p10 radius 2.4 -> 4.0 m; 1,756 connectors still < 5 m, E4 roundabout ring ~1.3 m), junctions back on the DTM
+(D10 1.27 -> 0.14 m), terrain welded up to road edges (edges > 30 cm over ground 183.5 -> 12.5 km; terrain tris +4-14 %,
+worker +60-140 ms/tile), Verrewinkel SE 0.15 -> 0.01 m, Edith Cavell centre line removed (data/overrides.json).
+With the turn smoothing: I6 sharp joins 90 -> 10. Left: KERB GAPS (not done); the BRUSSELS REGION BORDER (no DTM on the
+Flemish side: D10 / E10 flat plain 5-10 m low, roads floating 10-20 m, a hole near (-1020, 2930): needs a Flemish DEM or
+clipping at the border); D10 (-1018, 2722) 3 m earth wall needs a retaining wall; G10 (481.5, 2751.3) one ledge;
+engine-only roads 5-12 cm over the ground; a few lanes still have one sharp vertex (I5 103 deg, I7 74 deg).
+
+**Running (agents, 2026-11-13 ~05:00):** falcon round 2
 (`claude/falcon2`, port 8847: PAUSED for memory after item 1 (trees as obstacles + tree perches, done, WIP d46bd3b);
 next: arches, camera clipping, weather wind, more pigeon flocks; RESUMED ~06:00) · ground textures (`claude/groundtex`,
 port 8848: real CC0 scans for lawn / verge / forest floor / gravel / soil / sand on the terrain instead of the procedural
