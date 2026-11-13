@@ -18,7 +18,7 @@ weather + seasons, foliage, pedestrians, street life, car impostors, police car 
 
 **Owner 2026-11-13 (seen in the city):** traffic cars TURN in a blocky way at some corners (not a smooth arc): check the
 lane-graph turn connectors + the car's heading interpolation after the perf audit (roads round 4 note: "tight lane
-connectors").
+connectors"). FIXED 2026-11-13 (trafficGraph.js roundKinks: the lane network smoothed as one graph around sharp vertices / joins; I6: sharpest vertex 162 -> 40 deg, joins > 30 deg 90 -> 43, of which only 16 at joins that really touch). Owner: look at a daytime turn. FOUND: 48 "next" links on I6 (73 on H5) join a lane end to a path starting 3.6-19 m away (a car following one jumps): roads-engine lane graph, for the roads work. Turn radii down to 1.5-2 m on a few connectors (u-turns / tight corners).
 
 **Running (agents):** none (2026-11-13 01:45): the GPU is quiet -> the PERFORMANCE AUDIT (`debug/perfRun.js` ready).
 

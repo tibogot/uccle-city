@@ -10232,11 +10232,118 @@ function crossing(A, cA, B, cB) {
   }
   return null;
 }
+var KINK_DEG = 8;
+var KINK_REACH = 3;
+var KINK_ITER = 30;
+var JOIN_TOL = 0.05;
+function roundKinks(paths) {
+  const P = paths.length, base = new Int32Array(P + 1);
+  for (let i = 0; i < P; i++) base[i + 1] = base[i] + paths[i].pts.length;
+  const N = base[P];
+  const parent = new Int32Array(N);
+  for (let k = 0; k < N; k++) parent[k] = k;
+  const find = (k) => {
+    while (parent[k] !== k) {
+      parent[k] = parent[parent[k]];
+      k = parent[k];
+    }
+    return k;
+  };
+  const byId = new Map(paths.map((p, i) => [p.id, i]));
+  paths.forEach((p, i) => {
+    const e = p.pts[p.pts.length - 1];
+    for (const id2 of p.next || []) {
+      const j = byId.get(id2);
+      if (j == null) continue;
+      const s = paths[j].pts[0];
+      if (Math.hypot(e[0] - s[0], e[1] - s[1]) <= JOIN_TOL) parent[find(base[i + 1] - 1)] = find(base[j]);
+    }
+  });
+  const node = new Int32Array(N), x = [], z = [];
+  const id = /* @__PURE__ */ new Map();
+  for (let i = 0; i < P; i++) paths[i].pts.forEach((v, k) => {
+    const r = find(base[i] + k);
+    let n = id.get(r);
+    if (n == null) {
+      n = x.length;
+      id.set(r, n);
+      x.push(v[0]);
+      z.push(v[1]);
+    }
+    node[base[i] + k] = n;
+  });
+  const M = x.length, ins = Array.from({ length: M }, () => []), outs = Array.from({ length: M }, () => []);
+  for (let i = 0; i < P; i++) for (let k = base[i]; k + 1 < base[i + 1]; k++) {
+    const u = node[k], w = node[k + 1];
+    if (u === w) continue;
+    if (!outs[u].includes(w)) outs[u].push(w);
+    if (!ins[w].includes(u)) ins[w].push(u);
+  }
+  const kink = new Uint8Array(M);
+  for (let n = 0; n < M; n++) {
+    let mx = 0;
+    for (const u of ins[n]) for (const w of outs[n]) {
+      const h1 = Math.atan2(x[n] - x[u], z[n] - z[u]), h2 = Math.atan2(x[w] - x[n], z[w] - z[n]);
+      mx = Math.max(mx, Math.abs(Math.atan2(Math.sin(h2 - h1), Math.cos(h2 - h1))));
+    }
+    if (mx * 180 / Math.PI > KINK_DEG) kink[n] = 1;
+  }
+  const dist2 = new Float32Array(M).fill(Infinity), queue = [];
+  for (let n = 0; n < M; n++) if (kink[n]) {
+    dist2[n] = 0;
+    queue.push(n);
+  }
+  if (!queue.length) return paths;
+  for (let h = 0; h < queue.length; h++) {
+    const n = queue[h];
+    for (const m of ins[n].concat(outs[n])) {
+      const d = dist2[n] + Math.hypot(x[m] - x[n], z[m] - z[n]);
+      if (d <= KINK_REACH && d < dist2[m]) {
+        dist2[m] = d;
+        queue.push(m);
+      }
+    }
+  }
+  const free = [];
+  for (let n = 0; n < M; n++) if (dist2[n] <= KINK_REACH && ins[n].length && outs[n].length) free.push(n);
+  let X = Float64Array.from(x), Z = Float64Array.from(z);
+  for (let it = 0; it < KINK_ITER; it++) {
+    const nX = X.slice(), nZ = Z.slice();
+    for (const n of free) {
+      let sx = 0, sz = 0, c = 0;
+      for (const m of ins[n]) {
+        sx += X[m];
+        sz += Z[m];
+        c++;
+      }
+      for (const m of outs[n]) {
+        sx += X[m];
+        sz += Z[m];
+        c++;
+      }
+      nX[n] = X[n] + 0.5 * (sx / c - X[n]);
+      nZ[n] = Z[n] + 0.5 * (sz / c - Z[n]);
+    }
+    X = nX;
+    Z = nZ;
+  }
+  return paths.map((p, i) => {
+    let moved = false;
+    const q = p.pts.map((v, k) => {
+      const n = node[base[i] + k];
+      if (X[n] !== v[0] || Z[n] !== v[1]) moved = true;
+      return [X[n], Z[n], ...v.slice(2)];
+    });
+    if (!moved) return p;
+    const cum = cumulative(q);
+    return { ...p, pts: q, cum, len: cum[q.length - 1] };
+  });
+}
 function buildTrafficGraph(net, roads, feats, bounds, grid = null) {
   const t0 = performance.now();
   const raw = net.graph.paths.filter((p) => p.len > 0.2 && p.pts.length >= 2);
   const fitStats = { points: 0, moved: 0, maxShift: 0 };
-  const src = grid ? fitToSurface(raw, grid, fitStats) : raw;
+  const src = roundKinks(grid ? fitToSurface(raw, grid, fitStats) : raw);
   const idx = new Map(src.map((p, i) => [p.id, i]));
   const P = src.length;
   let nPts = 0;
