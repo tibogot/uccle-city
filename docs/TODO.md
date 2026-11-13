@@ -52,6 +52,12 @@ orthophoto colour (lighting.js groundAlbedo #686c67, `?skyground=old`): grey-gre
 station instead of driving on it.** Suspects: the drive surface on a deck (collisions audit: two-layer drive surface;
 roads round 5: roadDeckPins / terrain weld; trains: the deck height function `world.deckY`), or the tram-only bridge
 deck over the L26 cutting (fixes1) being driven onto. Reproduce there, check `viewer.collisionTest` on that tile.
+Owner's screenshot (same day): the car ends up DOWN IN THE RAILWAY CUTTING, sunk into the ballast with the rails through
+its wheels. So four things: (1) the drive surface / parapets on the bridge deck (it must not fall); (2) the railway
+must be closed to cars (fences / the cutting's banks as walls: real tracks are fenced); (3) on the track bed the car's
+ground is the carved terrain under the ballast, not the ballast top (drive surface must include ballast + platforms);
+(4) rails are not obstacles / bumps for the car. Test every bridge (Saint-Job, Calevoet, Verrewinkel, the tram deck)
+from both directions, not only this one.
 
 **PAUSED (agents):** GRASS LAB (`claude/grass`, port 8849, started 2026-11-13 ~07:15; PAUSED ~07:40 at 89e5dde, design
 settled + OSM grass kinds + the per-tile grass-type map written, nothing rendered yet; resume from docs/GRASS_RESUME.md
