@@ -204,10 +204,11 @@ function scenarios(F) {
       if (p.low[k] > g + 2.5) cells.push([x, z, g, p.low[k]]);
     }
     if (!cells.length) throw new Error(`bridge ${name}: no open cell`);
-    // the highest opening's cells (the main arch): within 1.5 m of the best clearance
+    // the opening's centre (all its cells) and its underside there (the lowest within 3 m of it)
     const best = Math.max(...cells.map((c) => c[3] - c[2]));
-    const main = cells.filter((c) => c[3] - c[2] > best - 1.5);
-    const mx = main.reduce((a, c) => a + c[0], 0) / main.length, mz = main.reduce((a, c) => a + c[1], 0) / main.length;
+    const mx = cells.reduce((q, c) => q + c[0], 0) / cells.length, mz = cells.reduce((q, c) => q + c[1], 0) / cells.length;
+    const main = cells.filter((c) => Math.hypot(c[0] - mx, c[1] - mz) < 3);
+    if (!main.length) throw new Error(`bridge ${name}: no open cell at the opening's centre`);
     return { p, cells: cells.length, main, mx, mz, g: w.ground(mx, mz), low: Math.min(...main.map((c) => c[3])), best };
   }
   Object.assign(F, { trees, arch });
@@ -230,11 +231,14 @@ function scenarios(F) {
     },
     bridge(name = "stjob") {
       const A = arch(name); F.pick = A;
-      // along the road under it: the main opening's long axis
-      let cxx = 0, czz = 0, cxz = 0; for (const [x, z] of A.main) { cxx += (x - A.mx) ** 2; czz += (z - A.mz) ** 2; cxz += (x - A.mx) * (z - A.mz); }
-      const a = 0.5 * Math.atan2(2 * cxz, cxx - czz), ux = Math.cos(a), uz = Math.sin(a);
+      // the way through: the direction (every 5 deg) whose line at mid-height through the opening stays clear (floor
+      // 1.5 m under, ceiling 1 m over, outside the arch itself) for longest on both sides
       const y = A.g + (A.low - A.g) * 0.5;
-      return { ...line(A.mx, A.mz, ux, uz, y, { back: 70, ahead: 60, speed: 12, note: `under the ${name} bridge's arch (${(A.low - A.g).toFixed(1)} m clear, at ${(y - A.g).toFixed(1)} m)` }), seconds: 11 };
+      const clearTo = (ux, uz) => { let d = 0; for (; d < 70; d += 1) { const c = w.column(A.mx + ux * d, A.mz + uz * d, y); if (c.floor > y - 1.5 || c.ceil < y + 1) break; } return d; };
+      let ux = 1, uz = 0, bestL = -1;
+      for (let k = 0; k < 36; k++) { const a = k * Math.PI / 36, x = Math.cos(a), z = Math.sin(a), L = Math.min(clearTo(x, z), clearTo(-x, -z)); if (L > bestL) { bestL = L; ux = x; uz = z; } }
+      A.through = bestL;
+      return { ...line(A.mx, A.mz, ux, uz, y, { back: Math.min(60, bestL - 2), ahead: 60, speed: 12, note: `under the ${name} bridge's arch (${(A.low - A.g).toFixed(1)} m clear, at ${(y - A.g).toFixed(1)} m)` }), seconds: 11 };
     },
     spire() {
       const p = w.proxies.find((q) => q.name === "stpierre");
@@ -320,6 +324,7 @@ export async function run(name, { grabs = 8, seconds = null, cellW = 400, arg } 
   const sync0 = hook.sync, async0 = hook.async, labels0 = hook.syncLabels.length;
   const frames = [], cpu = [], trace = [], shots = [], tiles = [];
   let minClear = Infinity, minAt = null, under = 0, contacts = 0;
+  const roofed = { frames: 0, arch: 0, minHead: Infinity };
   const cam = { minD: Infinity, occluded: 0, pulled: 0, over: 0, frames: 0 }, brush = { frames: 0, max: 0 }, hits = [];
   const every = Math.max(1, Math.floor(n / grabs)), t0 = performance.now();
   const dev = v.renderer.backend.device;
@@ -334,7 +339,8 @@ export async function run(name, { grabs = 8, seconds = null, cellW = 400, arg } 
     frames.push(c - a); cpu.push(b - a);
     const g = fl.game, f = g.f;
     if (!fl.intro) {
-      const fl0 = fl.w.floorAt(f.pos.x, f.pos.z, f.pos.y), clear = f.pos.y - fl0;
+      const cc = fl.w.column(f.pos.x, f.pos.z, f.pos.y), fl0 = cc.floor, clear = f.pos.y - fl0;
+      if (cc.ceil < Infinity && g.mode === "fly") { roofed.frames++; roofed.minHead = Math.min(roofed.minHead, +(cc.ceil - f.pos.y).toFixed(2)); if (cc.open) roofed.arch++; }
       if (g.mode === "fly" && clear < minClear) { minClear = clear; minAt = { t: +(i / 60).toFixed(2), x: +f.pos.x.toFixed(1), y: +f.pos.y.toFixed(1), z: +f.pos.z.toFixed(1), floor: +fl0.toFixed(1) }; }
       if (g.mode === "fly" && clear < 0.3) under++;
       if (f.contact) { contacts++; hits.push({ t: +(i / 60).toFixed(2), wall: f.contact.wall, under: f.contact.under, tree: f.contact.tree != null, land: f.contact.land, hard: f.contact.hard, vn: +f.contact.vn.toFixed(1), y: +f.contact.y.toFixed(1) }); }
@@ -348,7 +354,7 @@ export async function run(name, { grabs = 8, seconds = null, cellW = 400, arg } 
           const x = B.x + rx * k + (C.x - B.x - rx * k) * s2, y = B.y + (C.y - B.y) * s2, z = B.z + rz * k + (C.z - B.z - rz * k) * s2;
           if (y < fl.w.column(x, z, B.y).floor) { occ = true; break; }
         }
-        if (occ) cam.occluded++;
+        if (occ) { cam.occluded++; if ((cam.at ??= []).length < 12) cam.at.push([+(i / 60).toFixed(2), g.mode, +f.V.toFixed(1), f.stun > 0 ? "stun" : ""]); }
         if (fl.fcam.clear?.pulled > 0) cam.pulled++; if (fl.fcam.clear?.over) cam.over++;
       }
       if (i % 6 === 0) trace.push([+(i / 60).toFixed(1), +f.V.toFixed(1), +(f.pos.y - fl0).toFixed(1), +f.pos.y.toFixed(1), g.mode, +f.lift.toFixed(2)]);
@@ -358,7 +364,7 @@ export async function run(name, { grabs = 8, seconds = null, cellW = 400, arg } 
     if (i % every === 0 || i === n - 1) {
       v.renderFrame();                                   // the grab: this frame drawn again, read right after
       const g2 = fl.game, f2 = g2.f;
-      shots.push({ url: v.renderer.domElement.toDataURL("image/jpeg", 0.8), label: `${(i / 60).toFixed(1)} s  ${fl.intro ? "intro" : `${g2.mode} ${f2.V.toFixed(0)} m/s  ${(f2.pos.y - fl.w.floor(f2.pos.x, f2.pos.z)).toFixed(0)} m up`}` });
+      shots.push({ url: v.renderer.domElement.toDataURL("image/jpeg", 0.8), label: `${(i / 60).toFixed(1)} s  ${fl.intro ? "intro" : `${g2.mode} ${f2.V.toFixed(0)} m/s  ${(f2.pos.y - fl.w.floorAt(f2.pos.x, f2.pos.z, f2.pos.y)).toFixed(0)} m up`}` });
     }
     if (S.done?.(i / 60)) break;
     await new Promise((r) => setTimeout(r, 0));
@@ -375,7 +381,7 @@ export async function run(name, { grabs = 8, seconds = null, cellW = 400, arg } 
     frameMs: { p50: q(0.5), p95: q(0.95), p99: q(0.99), max: q(1) }, hist,
     cpuMs: (() => { const c2 = [...cpu].sort((x, y) => x - y); return { p50: +c2[c2.length >> 1].toFixed(2), p99: +c2[Math.floor(c2.length * 0.99)].toFixed(2), max: +c2[c2.length - 1].toFixed(2) }; })(),
     flightCpu: fl.cpuStats(), syncPipelines: hook.sync - sync0, asyncPipelines: hook.async - async0, syncLabels: hook.syncLabels.slice(labels0),
-    cam: { ...cam, minD: +cam.minD.toFixed(2) }, brush, hits, pick: F.pick ? JSON.parse(JSON.stringify(F.pick, (k, x) => (k === "td" || k === "p" || k === "main" ? undefined : typeof x === "number" ? +x.toFixed(2) : x))) : null,
+    cam: { ...cam, minD: +cam.minD.toFixed(2) }, brush, roofed, hits, pick: F.pick ? JSON.parse(JSON.stringify(F.pick, (k, x) => (k === "td" || k === "p" || k === "main" ? undefined : typeof x === "number" ? +x.toFixed(2) : x))) : null,
     longTasks: long.filter(([t]) => t >= t0), minClearance: +minClear.toFixed(2), minAt, framesUnder: under, contacts,
     score: { ...g.score }, said, mode: g.mode, perch: g.perch?.name ?? null, messages: g.messages.map((m) => m.s), tiles, trace, shots,
     handover: fl.handover ?? null, maxV: Math.max(...trace.map((r) => r[1])),
@@ -393,3 +399,24 @@ export function sheet(r, { cols = 4, title = null } = {}) {
   document.body.append(d); shown.push(d);
 }
 export function hide() { for (const d of shown.splice(0)) d.remove(); }
+
+/** fly (stepped, circling high) to (x, z) until its tile is loaded (and its trees), for the scenarios far from the start */
+export async function goto(x, z, { maxS = 90 } = {}) {
+  const v = window.viewer, fl = window.__flyer, w = fl.w;
+  await fl.ready;
+  fl.stop(); v.controls.enabled = false;
+  fl.start(x, z, 0, w.floor(x, z) + 90, 13, 0);
+  fl.input.script = (f) => ({ roll: 0.35, pitch: clamp((x - x) + (w.floor(x, z) + 90 - f.pos.y) * 0.05 - f.gamma, -1, 1), flap: f.V < 12 ? 1 : 0, fold: 0 });
+  v.pause(true);
+  const t0 = performance.now();
+  try {
+    while (performance.now() - t0 < maxS * 1000) {
+      v.step(1 / 60);
+      await v.renderer.backend.device.queue.onSubmittedWorkDone();
+      const t = w.tileAt(x, z);
+      if (t && w.trees.get(t)) break;
+      await new Promise((r) => setTimeout(r, 0));
+    }
+  } finally { v.pause(false); fl.input.script = null; }
+  return { s: +((performance.now() - t0) / 1000).toFixed(1), tile: w.tileAt(x, z)?.name ?? null, tiles: v.world.tiles.map((t) => t.name) };
+}
