@@ -1175,6 +1175,7 @@ async function main() {
     log(`warm-up: ${w.ms} ms, ${w.warmed} drawables, ${w.parallel} pipelines compiled in parallel, ${w.late} after`);
   }
   $("cover").classList.add("gone");
+  window.__coverAt = performance.now();             // (the boot time, for debug/preflight.js and perf runs)
   // ?impkit=1: the far trees' atlas bakes in the background (a grid row per frame; under the boot cover, where the
   // tiles build without frames, it doubled the boot: 12 -> 28 s). When it is ready its shaders compile off the frame,
   // then every far tree dithers in over the tile fade (viewer/treeKitCity.js show)
