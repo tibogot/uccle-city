@@ -24,7 +24,10 @@ connectors"). FIXED 2026-11-13 (trafficGraph.js roundKinks: the lane network smo
 eased (p10 radius 2.4 -> 4.0 m; 1,756 connectors still < 5 m, E4 roundabout ring ~1.3 m), junctions back on the DTM
 (D10 1.27 -> 0.14 m), terrain welded up to road edges (edges > 30 cm over ground 183.5 -> 12.5 km; terrain tris +4-14 %,
 worker +60-140 ms/tile), Verrewinkel SE 0.15 -> 0.01 m, Edith Cavell centre line removed (data/overrides.json).
-With the turn smoothing: I6 sharp joins 90 -> 10. Left: KERB GAPS (not done); the BRUSSELS REGION BORDER (no DTM on the
+With the turn smoothing: I6 sharp joins 90 -> 10. KERB GAPS re-counted 2026-11-13 evening (tools/road_audit, C19
+gap): I6 1, E4 2, H5 / D10 / G10 0 (the 163 of round 4 is stale: later rounds closed them); left: the 3 spots (I6
+1416, 901; E4 -632, -254). BRIDGE DECK PAINT: not needed, the road stage draws its own surface + paint on the OSM
+decks (Carsoel seen from above: lane lines, tram rails, parapets). Left: the BRUSSELS REGION BORDER (no DTM on the
 Flemish side: D10 / E10 flat plain 5-10 m low, roads floating 10-20 m, a hole near (-1020, 2930): needs a Flemish DEM or
 clipping at the border); D10 (-1018, 2722) 3 m earth wall needs a retaining wall; G10 (481.5, 2751.3) one ledge;
 engine-only roads 5-12 cm over the ground; a few lanes still have one sharp vertex (I5 103 deg, I7 74 deg).
