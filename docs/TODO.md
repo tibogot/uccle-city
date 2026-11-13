@@ -93,6 +93,25 @@ read-only (copy into `vendor/` with ORIGIN.md); measure GPU ms before / after (s
 - [ ] Licence: the live site does not ship the Mixamo files (git-ignored): the owner decides whether the deployed site
       serves ybot*.glb (Adobe allows use inside a game, not redistribution as files; a served GLB is fetchable).
 - [ ] The old Capsule Lab tests (T) and "measure all" still run but were tuned for the Hoodie: re-baseline for the Y Bot.
+- Notes from Daniel Holden, "Inverse Kinematics & Foot Locking" (theorangeduck.com/page/inverse-kinematics-foot-locking),
+  read 2026-11-13. It assumes flat ground (ground = 0): nothing for stairs or kerbs.
+  - [ ] Ramp fix (the "tilt the planted foot" item above): ray the ground under the heel AND under the toe separately,
+        clamp each to the ground, then turn the foot so the heel looks at the toe: the foot lies along the slope by
+        itself. Small and cheap.
+  - Rules whenever we touch the feet again (why the old IK looked weird):
+    - IK only as a small change to the clip's pose, keeping its twists and heel-toe relation;
+    - never stretch the leg past the clip's own extension (soft clamp to the input length, ~5 mm softening);
+    - never drop the hips to reach the ground ("dinosaur legs"): accept a little slide instead, as the body fit does;
+    - knee bend axis from the knee's side vector (no pole target).
+  - If a foot is ever locked again: lock the TOE, not the heel (the heel stays free to roll). Lock only when the
+    output is within lockDistance of the clip; unlock on contact end or past unlockDistance. Ease in and out with
+    inertialization over a short blend time; no snap, no rate limit.
+  - [ ] `mixamoClips.mjs` contact detection: add his toe-height check (~0.1 m) to the speed threshold (0.1-0.5 m/s),
+        then a ~5-frame majority filter at 60 Hz (no 1-frame flicker). Resample the 30 fps clips cubically, not
+        linearly, before measuring speeds (30 Hz run contacts last only 1-2 frames).
+  - [ ] Later: his offline slide-removal pass (pelvis + toes as particles, soft pull to the source, hard contact and
+        ground constraints, many iterations) could replace the hand-written repair of "Descending Stairs" and clean
+        all clips' foot slide at build time (offline cost only).
 
 ## Third-person character (Capsule Lab, branch claude/capsule; waiting for the owner)
 - [x] `viewer/character/`: kinematic capsule controller (120 Hz fixed step + interpolation, collide-and-slide, step-up
