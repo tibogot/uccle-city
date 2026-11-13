@@ -48,7 +48,10 @@ OSM kind (park / garden / pitch); no WebP fallback; grass-blade shimmer in the n
 orthophoto colour (lighting.js groundAlbedo #686c67, `?skyground=old`): grey-green haze instead of brown; still a flat plane; (2) later, with the Flemish DTM job: a coarse
 "horizon ring" landscape (~20 km, 25-50 m heights + a low-res colour image) around the city. Sky + clouds rework later.
 
-**Running (agents):** none (2026-11-13 ~06:45).
+**Running (agents):** GRASS LAB (`claude/grass`, port 8849, started 2026-11-13 ~07:15): our own grass (Revo / engine
+Hybrid as references), `labs/grass-lab.html` with a front-garden street, Wolvendael lawn, a roadside verge; types from
+land cover, clean edges, shadows, night, seasons, push field, no popping; <= 1 ms at street level (preflight); city hook
+`?grass=1` opt-in only if the budget holds.
 
 **Decided 2026-11-13 (owner): OUR OWN GRASS for the city, after the ground textures merge.** Examples to learn from, not
 to copy: alezen9/revo-realms (MIT: compute + wrap tile + indirect draws, ~1.28 M blades), game-engine-v1's Revo port
