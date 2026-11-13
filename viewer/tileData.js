@@ -9,7 +9,7 @@ import { analyseBuildings, hash01, wallStyle } from "./facadeGeom.js";
 import { landCoverData } from "./landcover.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { buildDriveData } from "./drive/colliders.js";
-import { buildRoadData, CARVE } from "./roadBuild.js";
+import { buildRoadData, applyRoadOverrides, CARVE } from "./roadBuild.js";
 import { smoothPolyline } from "./track.js";
 import { kitCollector } from "./facadeKit/placement.js";
 import { prepRail, abutmentFill, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins } from "./rail/railData.js";
@@ -129,7 +129,7 @@ export async function buildTileData(entry, base) {
   const surf = entry.surface && F.surfaces ? await step("fetch surfaces", () => get(F.surfaces)) : null;
   // hand corrections (data/overrides.json): road surfaces OSM gets wrong (Place de Saint-Job is setts)
   const ov = await overrides(base);
-  for (const r of roads.roads) { const s = ov.roadSurface?.[r.id]; if (s) (r.meta ??= {}).surface = s; }
+  applyRoadOverrides(roads, ov);
   const hm = new Heightmap(tHdr, tBuf);
   // measured markings (pipeline/build_markings.py): crossings, stop lines, lines, OSM crossing / control nodes
   const paint = entry.paint || PAINT;

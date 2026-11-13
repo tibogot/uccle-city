@@ -9390,6 +9390,14 @@ function compactAtlas(at) {
     stats: { regions: at.stats?.regions, bytes: d8.length, bytesBefore: at.data.length }
   };
 }
+function applyRoadOverrides(roads, ov) {
+  for (const r of roads.roads) {
+    const s = ov?.roadSurface?.[r.id];
+    if (s) (r.meta ??= {}).surface = s;
+    const way = /^r(\d+)_/.exec(r.id)?.[1], c = way ? ov?.centreLine?.[way] : null;
+    if (c === "none" && r.lanes) r.lanes = { ...r.lanes, center: { ...r.lanes.center || {}, kind: "none" } };
+  }
+}
 function buildRoadData(o) {
   const { roads, surf, hm, bounds, onBuilding = () => false } = o;
   const times = {};
@@ -11220,10 +11228,7 @@ async function buildTileData(entry, base) {
   }
   const surf = entry.surface && F.surfaces ? await step("fetch surfaces", () => get(F.surfaces)) : null;
   const ov = await overrides(base);
-  for (const r of roads.roads) {
-    const s = ov.roadSurface?.[r.id];
-    if (s) (r.meta ??= {}).surface = s;
-  }
+  applyRoadOverrides(roads, ov);
   const hm = new Heightmap(tHdr, tBuf);
   const paint = entry.paint || PAINT;
   const markings = F.markings && paint === "v2" ? await step("fetch markings", () => get(F.markings).catch(() => null)) : null;

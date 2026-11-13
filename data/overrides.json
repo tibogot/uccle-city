@@ -113,5 +113,11 @@
       500
     ],
     "why": "Fly mode starts just above the tip of the Saint-Job church spire (its highest vertex in G4 buildings.bin: 1201.64, 130.25, 549.25), heading over Place de Saint-Job (owner, 2026-11-04)."
+  },
+  "centreLine": {
+    "_why": "Rue Edith Cavell (OSM tertiary -> engine type 'collector') got the type's default dashed centre line; the measured-paint rule removes guessed centre lines on residential types only. The 2024 orthophoto shows no centre line along it (checked at (569, -1300), (540, -1040), (600, -760), (632, -640): parking bays on both sides, a SCHOOL legend, no line), and UrbIS Topo has none. Keys: OSM way ids (every piece rWAY_n of the way).",
+    "_source": "UrbIS orthophoto 2024 (CC0), looked at in roads round 5 (2026-11-13)",
+    "30528461": "none",
+    "27861247": "none"
   }
 }

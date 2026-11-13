@@ -48,6 +48,16 @@ function compactAtlas(at) {
     stats: { regions: at.stats?.regions, bytes: d8.length, bytesBefore: at.data.length } };
 }
 
+/** data/overrides.json hand corrections on a tile's roads.json, before the road stage: roadSurface (road id -> OSM-style
+ *  surface) and centreLine (OSM way id -> "none": no centre line where the orthophoto shows none; round 5). */
+export function applyRoadOverrides(roads, ov) {
+  for (const r of roads.roads) {
+    const s = ov?.roadSurface?.[r.id]; if (s) (r.meta ??= {}).surface = s;
+    const way = /^r(\d+)_/.exec(r.id)?.[1], c = way ? ov?.centreLine?.[way] : null;
+    if (c === "none" && r.lanes) r.lanes = { ...r.lanes, center: { ...(r.lanes.center || {}), kind: "none" } };   // (built roads carry their stack)
+  }
+}
+
 /**
  * @param {object} o
  *   roads, surf (surfaces.json or null), markings (markings.json or null), hm (Heightmap), bounds {x0,x1,z0,z1},

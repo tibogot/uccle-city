@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const imp = (p) => import(pathToFileURL(join(ROOT, p)).href);
-const { buildRoadData } = await imp("viewer/roadBuild.js");
+const { buildRoadData, applyRoadOverrides } = await imp("viewer/roadBuild.js");
 const { Heightmap } = await imp("viewer/heightmap.js");
 const { roofGrid, onRoof } = await imp("viewer/tileData.js");
 
@@ -33,7 +33,7 @@ export function loadTile(T, opts = {}) {
   const markings = existsSync(join(d, "markings.json")) ? json(join(d, "markings.json")) : null;
   const feats = json(join(d, "features.json"));
   overrides ??= existsSync(join(ROOT, "data/overrides.json")) ? json(join(ROOT, "data/overrides.json")) : {};
-  for (const r of roads.roads) { const s = overrides.roadSurface?.[r.id]; if (s) (r.meta ??= {}).surface = s; }
+  applyRoadOverrides(roads, overrides);
   const roofs = roofGrid(json(join(d, "buildings.json")), bounds);
   const paint = opts.paint || "v2";
   const t0 = performance.now();
