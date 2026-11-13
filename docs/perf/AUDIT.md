@@ -170,6 +170,30 @@ is not felt as a stutter. Nothing kept (main.js reverted).
   it runs while the player already looks around). Perceived startup ~8-10 s, at the price of possible pop-in of
   far content in the first seconds (to check with the no-popping rule).
 
+## Step 5: show the city earlier + a tile-worker pool (2026-11-13, same session): tried, all opt-in
+
+**Show earlier (`?earlyshow=1`):** the far tiles load after the cover lifts. Cover 12.5 s instead of ~17-18 s, but the
+start tile then shows ALONE in the void (the neighbour tiles also land after it), only 5 tiles after 20 s, 35 frames
+> 33 ms and two of 467 + 617 ms in the first 20 s, 31 synchronous pipelines. Worse to look at: not the default.
+
+**The bottleneck found:** a full tile takes ~3-4 s of worker CPU (roads 1.3-1.4 s, surfaces + width fit 0.5 s, drive
+colliders 0.64 s, road meshes 0.6 s, terrain simplify 0.25 s, facade analysis 0.25 s) and ONE worker built every tile
+one after another; streaming adds one full tile per step.
+
+**Tile-worker pool (`?workers=3`) + prefetch of the next wanted tiles:** the 9 tiles around the start were in 10-12 s
+sooner (32.6 vs 42.3 s; 42.0 vs 54.2 s), but one 30 s fast flight had a **7.5 s freeze** (one worker, same machine,
+minutes later: 217 ms). Boot prefetch of the start ring (`?bootprefetch=1`, with the pool): no gain, likely CPU
+contention with the landmarks loading. **Both opt-in**; the default is one worker as before.
+
+**The measurements drifted:** the same configuration went from 19.7 s to 29.9 s to the cover within ten minutes, the
+landmarks' background shaders from 12-25 s to 20-23 s: the machine was worn after hours of Chrome / GPU work. Startup and
+streaming A/B need a FRESH machine (Chrome restarted, cool), several alternating loads each.
+
+**What to do with this:** (1) re-test the pool on a fresh machine and find the 7.5 s (several tiles landing back to
+back? memory of 3 workers?): if it holds, cap the main-thread landing to one tile per N frames; (2) make the worker build
+itself faster: roads (1.3 s) and drive colliders (0.64 s) are the biggest steps; (3) cache built tile data (IndexedDB) so
+a second visit skips the worker build entirely.
+
 ### Next, in order (updated)
 
 1. **CPU per draw (the main thread's biggest item):** fewer draws: no sun shadow from small things (kerbs, bollards,

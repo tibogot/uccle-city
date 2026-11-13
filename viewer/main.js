@@ -382,15 +382,32 @@ function roadStart(data, x, z, bounds) {
 
 // ------------------------------------------------------------------ tile worker
 
+// A POOL of tile workers (perf audit 2026-11-13): a full tile takes ~3-4 s of worker CPU (roads, surfaces, colliders,
+// terrain), and one worker built them one after another: the boot and the city filling in around the player waited on
+// it. Requests go to the least busy worker; streaming prefetches the next wanted tiles (tilePrefetch below), so their
+// worker builds run in parallel while the main thread adds one tile per step. OPT-IN ?workers=3: the city filled 10-12 s
+// sooner, but one 30 s fast flight had a 7.5 s freeze (one worker: 0.2 s) on a long-running machine: test on a fresh one.
 let tileWorker = null, reqId = 0;
-const pendingReq = new Map();
+const pendingReq = new Map(), workers = [];
 if (params.get("worker") !== "0") {
-  try {
-    tileWorker = new Worker(new URL("./tileWorker.bundle.js", import.meta.url), { type: "module" });
-    tileWorker.onmessage = (e) => { const p = pendingReq.get(e.data.id); pendingReq.delete(e.data.id); e.data.error ? p.reject(new Error(e.data.error)) : p.resolve(e.data.r); };
-    tileWorker.onerror = (e) => { log(`tile worker failed (${e.message || "error"}): building tiles on the main thread`); tileWorker = null; for (const p of pendingReq.values()) p.retry(); pendingReq.clear(); };
-  } catch (e) { tileWorker = null; }
+  const n = Math.max(1, Math.min(+(params.get("workers") || 1), Math.max(1, (navigator.hardwareConcurrency || 4) - 2)));
+  for (let i = 0; i < n; i++) {
+    try {
+      const w = new Worker(new URL("./tileWorker.bundle.js", import.meta.url), { type: "module" });
+      w.busy = 0;
+      w.onmessage = (e) => { w.busy--; const p = pendingReq.get(e.data.id); pendingReq.delete(e.data.id); e.data.error ? p.reject(new Error(e.data.error)) : p.resolve(e.data.r); };
+      w.onerror = (e) => {
+        log(`tile worker failed (${e.message || "error"})`);
+        workers.splice(workers.indexOf(w), 1); tileWorker = workers[0] ?? null;
+        for (const [id, p] of pendingReq) if (p.w === w) { pendingReq.delete(id); p.retry(); }
+      };
+      workers.push(w);
+    } catch (e) { break; }
+  }
+  tileWorker = workers[0] ?? null;
 }
+/** worker builds started ahead of loadTile (key "name|lite"): stream() prefetches the next wanted tiles */
+const tilePrefetch = new Map();
 /** UrbIS solids replaced by a scripted model (the Saint-Job church): not drawn, kept in the roof grid. */
 const HIDE_BU_IDS = params.get("stjob") !== "0" ? [STJOB_BU_ID] : [];
 /** ?colfix=0: the colliders as before the collisions audit (docs/collisions/README.md): no parked cars / furniture /
@@ -409,13 +426,28 @@ function tileData(entry, lite = false) {
     kit: cityKit.on && !lite, kitExclude: cityKit.exclude,                                           // the façade kit (viewer/facadeKit/), ?kit=0 off
     rail: TRAINS, driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
     paint: PAINT_PARAM };                                                                            // ?paint=v1: the road engine's own markings (A/B)
+  const key = `${entry.name}|${lite ? 1 : 0}`;
+  const pre = tilePrefetch.get(key);
+  if (pre) { tilePrefetch.delete(key); return pre; }
   const local = () => import("./tileData.js").then((m) => (lite ? m.buildLiteData : m.buildTileData)(entry, DATA.href));
-  if (!tileWorker) return local();
+  if (!workers.length) return local();
+  const w = workers.reduce((a, b) => (b.busy < a.busy ? b : a));
   return new Promise((resolve, reject) => {
     const id = ++reqId;
-    pendingReq.set(id, { resolve, reject, retry: () => local().then(resolve, reject) });
-    tileWorker.postMessage({ id, entry, base: DATA.href, lite });
+    w.busy++;
+    pendingReq.set(id, { resolve, reject, w, retry: () => local().then(resolve, reject) });
+    w.postMessage({ id, entry, base: DATA.href, lite });
   });
+}
+/** start the worker builds of these manifest tiles now (their loadTile takes the result) */
+function prefetchTiles(entries, lite = false) {
+  for (const e of entries) {
+    const key = `${e.name}|${lite ? 1 : 0}`;
+    if (tilePrefetch.has(key)) continue;
+    const p = tileData(e, lite);
+    p.catch(() => tilePrefetch.delete(key));
+    tilePrefetch.set(key, p);
+  }
 }
 
 /** Far level of detail of a tile (tileData.js buildLiteData): orthophoto-draped 4 m terrain and
@@ -616,6 +648,14 @@ async function main() {
   const F = entry.files;
   const [x0, x1] = entry.bounds.x, [z0, z1] = entry.bounds.z;
   const bounds = { x0, x1, z0, z1 };
+  // the worker pool starts on the start tile and its ring NOW, in parallel with the landmarks loading below (their
+  // builds were one after another, after everything else, before: perf audit 2026-11-13)
+  if (workers.length > 1 && params.get("bootprefetch") === "1") {   // ?bootprefetch=1: on (A/B: no clear gain measured, likely CPU contention with the landmarks loading; test on a fresh machine)
+    const r = Math.max(0, Math.min(2, +(params.get("ring") ?? 1))), T = x1 - x0, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+    const near = manifest.tiles.filter((t) => t.status !== "missing" && Math.max(Math.abs((t.bounds.x[0] + t.bounds.x[1]) / 2 - cx), Math.abs((t.bounds.z[0] + t.bounds.z[1]) / 2 - cz)) / T <= r + 0.01)
+      .sort((a, b) => (a === entry ? -1 : b === entry ? 1 : 0));
+    prefetchTiles(near);
+  }
 
   const gpuTiming = params.get("gpu") !== "0";      // GPU ms per frame in the stats (timestamp queries; ?gpu=0 off)
   const renderer = new THREE.WebGPURenderer({ antialias: true, powerPreference: "high-performance", reversedDepthBuffer: params.get("rdepth") !== "0", trackTimestamp: gpuTiming });
@@ -1084,6 +1124,9 @@ async function main() {
     }
     for (const [n, l] of lite) if (dist(byName(n)) > far + 1.01 || world.tiles.some((w) => w.name === n)) { lite.delete(n); retire([l.group], l.dispose); }
     const want = built.filter((t) => dist(t) <= ring + 0.01 && !world.tiles.some((w) => w.name === t.name)).sort((a, b) => dist(a) - dist(b));
+    // the worker pool builds the next wanted tiles in parallel (one per worker); builds of tiles no longer wanted go
+    for (const key of [...tilePrefetch.keys()]) if (key.endsWith("|0") && !want.some((t) => `${t.name}|0` === key)) tilePrefetch.delete(key);
+    if (!liteFirst && workers.length > 1) prefetchTiles(want.filter((t) => !pending.has(t.name)).slice(0, workers.length));
     if (!liteFirst) for (const t of want) {
       if (pending.has(t.name)) continue;
       pending.add(t.name);
@@ -1118,8 +1161,10 @@ async function main() {
     // the tiles streamed under the cover hold their fade (smooth LOD): the warm-up then compiles their fading
     // copies too (lodFade.js fadeVariant); the first far tile does not fade, so its own materials compile
     fader.hold = true;
+    // ?earlyshow=1 (perf audit 2026-11-13, NOT the default): the far tiles load after the cover lifts (the reveal is ~5 s
+    // sooner, but the start tile then shows alone in the void and the first seconds stutter: measured, not kept)
     if (ring > 0) await stream();
-    if (far > ring) await stream(true);
+    if (far > ring && params.get("earlyshow") !== "1") await stream(true);
     // ?interior=1: the interior cell's materials compile under the cover too (stand-in meshes with its exact
     // attribute layouts; the cell streaming in later then builds no shader: viewer/interior/interiorModel.js)
     const interiorWarm = params.get("interior") === "1" ? await import("./interior/interiorModel.js").then((m) => m.interiorWarmup()).catch(() => null) : null;
