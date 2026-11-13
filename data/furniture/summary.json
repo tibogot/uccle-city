@@ -1,0 +1,731 @@
+{
+ "contract": "furniture2-0.1",
+ "tiles": 120,
+ "stats": {
+  "banks": 30,
+  "banks_sunk_uphill": 5,
+  "bench_backless": 8,
+  "bench_direction_tag": 6,
+  "bench_kept_blocked": 13,
+  "bench_metal": 16,
+  "bench_moved": 26,
+  "bench_moved_m_max": 2.32,
+  "bench_park": 165,
+  "bench_street": 42,
+  "bench_sunk_uphill": 2,
+  "benches": 215,
+  "bike_rows": 120,
+  "bike_rows_across": 53,
+  "bike_rows_along": 46,
+  "bike_rows_blocked": 2,
+  "bike_rows_free": 23,
+  "bike_rows_no_room": 22,
+  "bikes_not_drawn_wall_loops": 3,
+  "bins": 413,
+  "bins_bench": 129,
+  "bins_bench_blocked": 14,
+  "bins_main_narrow": 319,
+  "bins_main_road": 183,
+  "bins_skip_tram_platform": 95,
+  "bins_square": 10,
+  "bins_square_short": 18,
+  "bins_stop": 91,
+  "bins_stop_blocked": 41,
+  "bins_stop_no_room": 51,
+  "boxes": 69,
+  "boxes_free": 1,
+  "boxes_lane": 52,
+  "boxes_no_room": 21,
+  "boxes_sidewalk": 16,
+  "boxes_try_tram": 15,
+  "glass_off_sidewalk": 9,
+  "glass_on_sidewalk": 6,
+  "glass_sites": 15,
+  "glass_underground_kept_streetlife": 7,
+  "hoops": 367,
+  "hoops_dropped": 27,
+  "hoops_no_room": 80,
+  "hoops_wanted": 474
+ },
+ "perTile": {
+  "D1": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 1,
+   "bins": 0,
+   "banks": 0
+  },
+  "E1": {
+   "benches": 0,
+   "hoops": 6,
+   "boxes": 9,
+   "bins": 1,
+   "banks": 0
+  },
+  "F1": {
+   "benches": 0,
+   "hoops": 18,
+   "boxes": 1,
+   "bins": 2,
+   "banks": 0
+  },
+  "G1": {
+   "benches": 0,
+   "hoops": 20,
+   "boxes": 3,
+   "bins": 2,
+   "banks": 0
+  },
+  "H1": {
+   "benches": 6,
+   "hoops": 32,
+   "boxes": 4,
+   "bins": 5,
+   "banks": 0
+  },
+  "I1": {
+   "benches": 0,
+   "hoops": 23,
+   "boxes": 5,
+   "bins": 2,
+   "banks": 0
+  },
+  "D2": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 0,
+   "banks": 2
+  },
+  "E2": {
+   "benches": 8,
+   "hoops": 13,
+   "boxes": 3,
+   "bins": 11,
+   "banks": 0
+  },
+  "F2": {
+   "benches": 5,
+   "hoops": 18,
+   "boxes": 2,
+   "bins": 8,
+   "banks": 4
+  },
+  "G2": {
+   "benches": 9,
+   "hoops": 15,
+   "boxes": 0,
+   "bins": 8,
+   "banks": 0
+  },
+  "H2": {
+   "benches": 1,
+   "hoops": 5,
+   "boxes": 3,
+   "bins": 8,
+   "banks": 0
+  },
+  "I2": {
+   "benches": 0,
+   "hoops": 6,
+   "boxes": 2,
+   "bins": 5,
+   "banks": 0
+  },
+  "J2": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 1,
+   "banks": 0
+  },
+  "C3": {
+   "benches": 2,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 6,
+   "banks": 2
+  },
+  "D3": {
+   "benches": 4,
+   "hoops": 8,
+   "boxes": 2,
+   "bins": 3,
+   "banks": 0
+  },
+  "E3": {
+   "benches": 4,
+   "hoops": 25,
+   "boxes": 4,
+   "bins": 11,
+   "banks": 0
+  },
+  "F3": {
+   "benches": 9,
+   "hoops": 4,
+   "boxes": 1,
+   "bins": 7,
+   "banks": 2
+  },
+  "G3": {
+   "benches": 0,
+   "hoops": 7,
+   "boxes": 2,
+   "bins": 2,
+   "banks": 0
+  },
+  "H3": {
+   "benches": 1,
+   "hoops": 12,
+   "boxes": 1,
+   "bins": 10,
+   "banks": 2
+  },
+  "I3": {
+   "benches": 3,
+   "hoops": 3,
+   "boxes": 1,
+   "bins": 7,
+   "banks": 0
+  },
+  "J3": {
+   "benches": 1,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 3,
+   "banks": 2
+  },
+  "B4": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 1,
+   "banks": 0
+  },
+  "C4": {
+   "benches": 4,
+   "hoops": 14,
+   "boxes": 1,
+   "bins": 4,
+   "banks": 0
+  },
+  "D4": {
+   "benches": 4,
+   "hoops": 3,
+   "boxes": 0,
+   "bins": 4,
+   "banks": 0
+  },
+  "E4": {
+   "benches": 13,
+   "hoops": 30,
+   "boxes": 5,
+   "bins": 15,
+   "banks": 0
+  },
+  "F4": {
+   "benches": 12,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 13,
+   "banks": 0
+  },
+  "G4": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 1,
+   "bins": 0,
+   "banks": 0
+  },
+  "H4": {
+   "benches": 4,
+   "hoops": 3,
+   "boxes": 1,
+   "bins": 11,
+   "banks": 0
+  },
+  "I4": {
+   "benches": 3,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 1,
+   "banks": 0
+  },
+  "J4": {
+   "benches": 0,
+   "hoops": 3,
+   "boxes": 0,
+   "bins": 7,
+   "banks": 0
+  },
+  "K4": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 1,
+   "banks": 0
+  },
+  "A5": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 0,
+   "banks": 2
+  },
+  "B5": {
+   "benches": 7,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 10,
+   "banks": 0
+  },
+  "C5": {
+   "benches": 0,
+   "hoops": 6,
+   "boxes": 0,
+   "bins": 6,
+   "banks": 0
+  },
+  "D5": {
+   "benches": 0,
+   "hoops": 9,
+   "boxes": 0,
+   "bins": 4,
+   "banks": 2
+  },
+  "E5": {
+   "benches": 0,
+   "hoops": 3,
+   "boxes": 2,
+   "bins": 2,
+   "banks": 0
+  },
+  "F5": {
+   "benches": 22,
+   "hoops": 3,
+   "boxes": 0,
+   "bins": 13,
+   "banks": 0
+  },
+  "G5": {
+   "benches": 2,
+   "hoops": 2,
+   "boxes": 0,
+   "bins": 8,
+   "banks": 0
+  },
+  "H5": {
+   "benches": 1,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 10,
+   "banks": 0
+  },
+  "I5": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 2,
+   "banks": 0
+  },
+  "J5": {
+   "benches": 1,
+   "hoops": 0,
+   "boxes": 1,
+   "bins": 5,
+   "banks": 2
+  },
+  "K5": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 4,
+   "banks": 0
+  },
+  "L5": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 1,
+   "banks": 0
+  },
+  "M5": {
+   "benches": 1,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 5,
+   "banks": 0
+  },
+  "N5": {
+   "benches": 1,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 3,
+   "banks": 0
+  },
+  "B6": {
+   "benches": 2,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 2,
+   "banks": 4
+  },
+  "C6": {
+   "benches": 0,
+   "hoops": 3,
+   "boxes": 1,
+   "bins": 1,
+   "banks": 0
+  },
+  "D6": {
+   "benches": 11,
+   "hoops": 20,
+   "boxes": 1,
+   "bins": 13,
+   "banks": 0
+  },
+  "E6": {
+   "benches": 2,
+   "hoops": 4,
+   "boxes": 0,
+   "bins": 4,
+   "banks": 0
+  },
+  "F6": {
+   "benches": 3,
+   "hoops": 7,
+   "boxes": 1,
+   "bins": 6,
+   "banks": 0
+  },
+  "G6": {
+   "benches": 2,
+   "hoops": 0,
+   "boxes": 1,
+   "bins": 2,
+   "banks": 0
+  },
+  "H6": {
+   "benches": 2,
+   "hoops": 6,
+   "boxes": 1,
+   "bins": 8,
+   "banks": 0
+  },
+  "I6": {
+   "benches": 0,
+   "hoops": 7,
+   "boxes": 4,
+   "bins": 7,
+   "banks": 0
+  },
+  "J6": {
+   "benches": 0,
+   "hoops": 2,
+   "boxes": 0,
+   "bins": 4,
+   "banks": 0
+  },
+  "K6": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 3,
+   "banks": 0
+  },
+  "L6": {
+   "benches": 2,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 3,
+   "banks": 0
+  },
+  "M6": {
+   "benches": 2,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 2,
+   "banks": 0
+  },
+  "N6": {
+   "benches": 1,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 1,
+   "banks": 0
+  },
+  "B7": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 1,
+   "banks": 0
+  },
+  "C7": {
+   "benches": 9,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 6,
+   "banks": 0
+  },
+  "D7": {
+   "benches": 6,
+   "hoops": 8,
+   "boxes": 0,
+   "bins": 8,
+   "banks": 2
+  },
+  "E7": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 1,
+   "bins": 0,
+   "banks": 0
+  },
+  "F7": {
+   "benches": 5,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 3,
+   "banks": 0
+  },
+  "G7": {
+   "benches": 0,
+   "hoops": 3,
+   "boxes": 0,
+   "bins": 0,
+   "banks": 2
+  },
+  "H7": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 1,
+   "bins": 4,
+   "banks": 0
+  },
+  "I7": {
+   "benches": 8,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 7,
+   "banks": 0
+  },
+  "J7": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 10,
+   "banks": 0
+  },
+  "L7": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 5,
+   "banks": 0
+  },
+  "M7": {
+   "benches": 3,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 1,
+   "banks": 0
+  },
+  "C8": {
+   "benches": 3,
+   "hoops": 0,
+   "boxes": 1,
+   "bins": 3,
+   "banks": 0
+  },
+  "D8": {
+   "benches": 5,
+   "hoops": 5,
+   "boxes": 2,
+   "bins": 5,
+   "banks": 0
+  },
+  "E8": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 1,
+   "banks": 0
+  },
+  "F8": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 1,
+   "banks": 0
+  },
+  "G8": {
+   "benches": 1,
+   "hoops": 4,
+   "boxes": 0,
+   "bins": 0,
+   "banks": 0
+  },
+  "H8": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 4,
+   "banks": 0
+  },
+  "J8": {
+   "benches": 0,
+   "hoops": 4,
+   "boxes": 0,
+   "bins": 0,
+   "banks": 0
+  },
+  "K8": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 4,
+   "banks": 0
+  },
+  "L8": {
+   "benches": 1,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 6,
+   "banks": 0
+  },
+  "N8": {
+   "benches": 1,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 1,
+   "banks": 0
+  },
+  "C9": {
+   "benches": 1,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 1,
+   "banks": 0
+  },
+  "D9": {
+   "benches": 6,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 5,
+   "banks": 0
+  },
+  "E9": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 3,
+   "banks": 0
+  },
+  "F9": {
+   "benches": 4,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 7,
+   "banks": 0
+  },
+  "G9": {
+   "benches": 1,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 7,
+   "banks": 0
+  },
+  "I9": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 1,
+   "banks": 0
+  },
+  "J9": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 2,
+   "banks": 0
+  },
+  "K9": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 6,
+   "banks": 0
+  },
+  "L9": {
+   "benches": 1,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 6,
+   "banks": 0
+  },
+  "N9": {
+   "benches": 1,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 1,
+   "banks": 0
+  },
+  "O9": {
+   "benches": 1,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 1,
+   "banks": 0
+  },
+  "D10": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 2,
+   "banks": 0
+  },
+  "E10": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 5,
+   "banks": 2
+  },
+  "F10": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 3,
+   "banks": 0
+  },
+  "G10": {
+   "benches": 0,
+   "hoops": 3,
+   "boxes": 0,
+   "bins": 0,
+   "banks": 0
+  },
+  "L10": {
+   "benches": 1,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 2,
+   "banks": 0
+  },
+  "K11": {
+   "benches": 0,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 1,
+   "banks": 0
+  },
+  "M11": {
+   "benches": 2,
+   "hoops": 0,
+   "boxes": 0,
+   "bins": 2,
+   "banks": 0
+  }
+ }
+}

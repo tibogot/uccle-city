@@ -1,0 +1,3088 @@
+{
+ "summary": {
+  "triangles": 2172,
+  "vertices_welded": 1128,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 220,
+  "counts": {
+   "sliver": 220,
+   "backtoback": 10,
+   "seam": 14
+  },
+  "ms": 152
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": null,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "bench_backless",
+   "slot": "frame_dark",
+   "triangles": 1192,
+   "maxDistance": 60
+  },
+  {
+   "name": "bench_backless",
+   "slot": "wood_slat",
+   "triangles": 540,
+   "maxDistance": 60
+  },
+  {
+   "name": "bench_backless",
+   "slot": "galvanised",
+   "triangles": 440,
+   "maxDistance": 60
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.695,
+     -0.081,
+     0.219
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.696,
+     0.138,
+     0.22
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.693,
+     -0.081,
+     0.217
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.694,
+     0.138,
+     0.218
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.694,
+     -0.082,
+     0.162
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.693,
+     0.135,
+     0.163
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.696,
+     -0.082,
+     0.16
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.695,
+     0.135,
+     0.161
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.701,
+     -0.082,
+     0.16
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 109,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.699,
+     0.135,
+     0.16
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 109,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.705,
+     -0.082,
+     0.161
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.704,
+     0.135,
+     0.16
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.707,
+     -0.082,
+     0.163
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.706,
+     0.135,
+     0.162
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.706,
+     -0.081,
+     0.218
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.707,
+     0.138,
+     0.217
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.704,
+     -0.081,
+     0.22
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.705,
+     0.138,
+     0.219
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.699,
+     -0.081,
+     0.22
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 110,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.701,
+     0.138,
+     0.22
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 110,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.695,
+     0.434,
+     0.047
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 93,
+    "longest": 0.284
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.696,
+     0.435,
+     -0.047
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 93,
+    "longest": 0.284
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.693,
+     0.432,
+     0.047
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 93,
+    "longest": 0.284
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.694,
+     0.433,
+     -0.047
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 93,
+    "longest": 0.284
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.694,
+     0.377,
+     0.046
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 90,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.693,
+     0.378,
+     -0.046
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 90,
+    "longest": 0.277
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.696,
+     0.375,
+     0.046
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 90,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.695,
+     0.376,
+     -0.046
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 90,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.701,
+     0.375,
+     0.046
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 46,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.699,
+     0.375,
+     -0.046
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 46,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.705,
+     0.376,
+     0.046
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 90,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.704,
+     0.375,
+     -0.046
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 90,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.707,
+     0.378,
+     0.046
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 90,
+    "longest": 0.277
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.706,
+     0.377,
+     -0.046
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 90,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.706,
+     0.433,
+     0.047
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 93,
+    "longest": 0.284
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.707,
+     0.432,
+     -0.047
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 93,
+    "longest": 0.284
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.704,
+     0.435,
+     0.047
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 93,
+    "longest": 0.284
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.705,
+     0.434,
+     -0.047
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 93,
+    "longest": 0.284
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.699,
+     0.435,
+     0.047
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 47,
+    "longest": 0.284
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.701,
+     0.435,
+     -0.047
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 47,
+    "longest": 0.284
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.695,
+     0.138,
+     -0.219
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.696,
+     -0.081,
+     -0.22
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.693,
+     0.138,
+     -0.217
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.694,
+     -0.081,
+     -0.218
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.694,
+     0.135,
+     -0.162
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.693,
+     -0.082,
+     -0.163
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.696,
+     0.135,
+     -0.16
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.695,
+     -0.082,
+     -0.161
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.701,
+     0.135,
+     -0.16
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 109,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.699,
+     -0.082,
+     -0.16
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 109,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.705,
+     0.135,
+     -0.161
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.704,
+     -0.082,
+     -0.16
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.707,
+     0.135,
+     -0.163
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.706,
+     -0.082,
+     -0.162
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.706,
+     0.138,
+     -0.218
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.707,
+     -0.081,
+     -0.217
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.704,
+     0.138,
+     -0.22
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.705,
+     -0.081,
+     -0.219
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.699,
+     0.138,
+     -0.22
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 110,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.701,
+     -0.081,
+     -0.22
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 110,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.705,
+     -0.081,
+     0.219
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.704,
+     0.138,
+     0.22
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.707,
+     -0.081,
+     0.217
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.706,
+     0.138,
+     0.218
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.706,
+     -0.082,
+     0.162
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.707,
+     0.135,
+     0.163
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.704,
+     -0.082,
+     0.16
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.705,
+     0.135,
+     0.161
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.699,
+     -0.082,
+     0.16
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 109,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.701,
+     0.135,
+     0.16
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 109,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.695,
+     -0.082,
+     0.161
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.696,
+     0.135,
+     0.16
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.693,
+     -0.082,
+     0.163
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.694,
+     0.135,
+     0.162
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.694,
+     -0.081,
+     0.218
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.693,
+     0.138,
+     0.217
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.696,
+     -0.081,
+     0.22
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.695,
+     0.138,
+     0.219
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.701,
+     -0.081,
+     0.22
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 110,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.699,
+     0.138,
+     0.22
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 110,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.705,
+     0.434,
+     0.047
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 93,
+    "longest": 0.284
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.704,
+     0.435,
+     -0.047
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 93,
+    "longest": 0.284
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.707,
+     0.432,
+     0.047
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 93,
+    "longest": 0.284
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.706,
+     0.433,
+     -0.047
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 93,
+    "longest": 0.284
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.706,
+     0.377,
+     0.046
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 90,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.707,
+     0.378,
+     -0.046
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 90,
+    "longest": 0.277
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.704,
+     0.375,
+     0.046
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 90,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.705,
+     0.376,
+     -0.046
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 90,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.699,
+     0.375,
+     0.046
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 46,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.701,
+     0.375,
+     -0.046
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 46,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.695,
+     0.376,
+     0.046
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 90,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.696,
+     0.375,
+     -0.046
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 90,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.693,
+     0.378,
+     0.046
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 90,
+    "longest": 0.277
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.694,
+     0.377,
+     -0.046
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 90,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.694,
+     0.433,
+     0.047
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 93,
+    "longest": 0.284
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.693,
+     0.432,
+     -0.047
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 93,
+    "longest": 0.284
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.696,
+     0.435,
+     0.047
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 93,
+    "longest": 0.284
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.695,
+     0.434,
+     -0.047
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 93,
+    "longest": 0.284
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.701,
+     0.435,
+     0.047
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 47,
+    "longest": 0.284
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.699,
+     0.435,
+     -0.047
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 47,
+    "longest": 0.284
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.705,
+     0.138,
+     -0.219
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.704,
+     -0.081,
+     -0.22
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.707,
+     0.138,
+     -0.217
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.706,
+     -0.081,
+     -0.218
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.706,
+     0.135,
+     -0.162
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.707,
+     -0.082,
+     -0.163
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.704,
+     0.135,
+     -0.16
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.705,
+     -0.082,
+     -0.161
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.699,
+     0.135,
+     -0.16
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 109,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.701,
+     -0.082,
+     -0.16
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 109,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.695,
+     0.135,
+     -0.161
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.696,
+     -0.082,
+     -0.16
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.693,
+     0.135,
+     -0.163
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.694,
+     -0.082,
+     -0.162
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 213,
+    "longest": 0.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.694,
+     0.138,
+     -0.218
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.693,
+     -0.081,
+     -0.217
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.696,
+     0.138,
+     -0.22
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.695,
+     -0.081,
+     -0.219
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 215,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.701,
+     0.138,
+     -0.22
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 110,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.699,
+     -0.081,
+     -0.22
+    ],
+    "part": "bench_backless/frame_dark",
+    "aspect": 110,
+    "longest": 0.657
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.437,
+     0.141
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.438,
+     0.14
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.44,
+     0.138
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.441,
+     0.137
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.471,
+     0.141
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.47,
+     0.14
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.468,
+     0.138
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.467,
+     0.137
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.437,
+     0.207
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.438,
+     0.208
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.44,
+     0.21
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.441,
+     0.211
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.471,
+     0.207
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.47,
+     0.208
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.468,
+     0.21
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.467,
+     0.211
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.458,
+     0.211
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 78,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.45,
+     0.211
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 78,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.458,
+     0.137
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 78,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.45,
+     0.137
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 78,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.437,
+     0.054
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.438,
+     0.053
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.44,
+     0.051
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.441,
+     0.05
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.471,
+     0.054
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.47,
+     0.053
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.468,
+     0.051
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.467,
+     0.05
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.437,
+     0.12
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.438,
+     0.121
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.44,
+     0.123
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.441,
+     0.124
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.471,
+     0.12
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.47,
+     0.121
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.468,
+     0.123
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.467,
+     0.124
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.458,
+     0.124
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 78,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.45,
+     0.124
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 78,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.458,
+     0.049
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 78,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.45,
+     0.049
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 78,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.437,
+     -0.033
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.438,
+     -0.034
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.44,
+     -0.036
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.441,
+     -0.037
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.471,
+     -0.033
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.47,
+     -0.034
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.468,
+     -0.036
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.467,
+     -0.037
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.437,
+     0.033
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.438,
+     0.034
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.44,
+     0.036
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.441,
+     0.037
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.471,
+     0.033
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.47,
+     0.034
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.468,
+     0.036
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.467,
+     0.037
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.458,
+     0.038
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 78,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.45,
+     0.038
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 78,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.458,
+     -0.038
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 78,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.45,
+     -0.038
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 78,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.437,
+     -0.12
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.438,
+     -0.121
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.44,
+     -0.123
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.441,
+     -0.124
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.471,
+     -0.12
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.47,
+     -0.121
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.468,
+     -0.123
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.467,
+     -0.124
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.437,
+     -0.054
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.438,
+     -0.053
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.44,
+     -0.051
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.441,
+     -0.05
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.471,
+     -0.054
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.47,
+     -0.053
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.468,
+     -0.051
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.467,
+     -0.05
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.458,
+     -0.049
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 78,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.45,
+     -0.049
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 78,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.458,
+     -0.124
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 78,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.45,
+     -0.124
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 78,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.437,
+     -0.207
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.438,
+     -0.208
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.44,
+     -0.21
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.441,
+     -0.211
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.471,
+     -0.207
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.47,
+     -0.208
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.468,
+     -0.21
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.467,
+     -0.211
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.437,
+     -0.141
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.438,
+     -0.14
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.44,
+     -0.138
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.441,
+     -0.137
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.471,
+     -0.141
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.47,
+     -0.14
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.468,
+     -0.138
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.467,
+     -0.137
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 389,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.458,
+     -0.137
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 78,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.45,
+     -0.137
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 78,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.458,
+     -0.211
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 78,
+    "longest": 1.788
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.45,
+     -0.211
+    ],
+    "part": "bench_backless/wood_slat",
+    "aspect": 78,
+    "longest": 1.788
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.7,
+     0.472,
+     0.174
+    ],
+    "parts": [
+     "bench_backless/wood_slat",
+     "bench_backless/galvanised"
+    ],
+    "area": 0.00011
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.7,
+     0.472,
+     0.174
+    ],
+    "parts": [
+     "bench_backless/wood_slat",
+     "bench_backless/galvanised"
+    ],
+    "area": 0.00011
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.7,
+     0.472,
+     0.087
+    ],
+    "parts": [
+     "bench_backless/wood_slat",
+     "bench_backless/galvanised"
+    ],
+    "area": 0.00011
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.7,
+     0.472,
+     0.087
+    ],
+    "parts": [
+     "bench_backless/wood_slat",
+     "bench_backless/galvanised"
+    ],
+    "area": 0.00011
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.7,
+     0.472,
+     0
+    ],
+    "parts": [
+     "bench_backless/wood_slat",
+     "bench_backless/galvanised"
+    ],
+    "area": 0.00011
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.7,
+     0.472,
+     0
+    ],
+    "parts": [
+     "bench_backless/wood_slat",
+     "bench_backless/galvanised"
+    ],
+    "area": 0.00011
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.7,
+     0.472,
+     -0.087
+    ],
+    "parts": [
+     "bench_backless/wood_slat",
+     "bench_backless/galvanised"
+    ],
+    "area": 0.00011
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.7,
+     0.472,
+     -0.087
+    ],
+    "parts": [
+     "bench_backless/wood_slat",
+     "bench_backless/galvanised"
+    ],
+    "area": 0.00011
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.7,
+     0.472,
+     -0.174
+    ],
+    "parts": [
+     "bench_backless/wood_slat",
+     "bench_backless/galvanised"
+    ],
+    "area": 0.00011
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.7,
+     0.472,
+     -0.174
+    ],
+    "parts": [
+     "bench_backless/wood_slat",
+     "bench_backless/galvanised"
+    ],
+    "area": 0.00011
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.695,
+     0,
+     0.219
+    ],
+    "parts": [
+     "bench_backless/frame_dark",
+     "bench_backless/frame_dark"
+    ],
+    "length_m": 0.28,
+    "pieces": 52,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.695,
+     0,
+     -0.219
+    ],
+    "parts": [
+     "bench_backless/frame_dark",
+     "bench_backless/frame_dark"
+    ],
+    "length_m": 0.28,
+    "pieces": 52,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.705,
+     0,
+     0.219
+    ],
+    "parts": [
+     "bench_backless/frame_dark",
+     "bench_backless/frame_dark"
+    ],
+    "length_m": 0.28,
+    "pieces": 52,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.705,
+     0,
+     -0.219
+    ],
+    "parts": [
+     "bench_backless/frame_dark",
+     "bench_backless/frame_dark"
+    ],
+    "length_m": 0.28,
+    "pieces": 52,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.698,
+     0.472,
+     0.166
+    ],
+    "parts": [
+     "bench_backless/wood_slat",
+     "bench_backless/galvanised"
+    ],
+    "length_m": 0.06,
+    "pieces": 12,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.702,
+     0.472,
+     0.166
+    ],
+    "parts": [
+     "bench_backless/wood_slat",
+     "bench_backless/galvanised"
+    ],
+    "length_m": 0.06,
+    "pieces": 12,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.698,
+     0.472,
+     0.079
+    ],
+    "parts": [
+     "bench_backless/wood_slat",
+     "bench_backless/galvanised"
+    ],
+    "length_m": 0.06,
+    "pieces": 12,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.702,
+     0.472,
+     0.079
+    ],
+    "parts": [
+     "bench_backless/wood_slat",
+     "bench_backless/galvanised"
+    ],
+    "length_m": 0.06,
+    "pieces": 12,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.698,
+     0.472,
+     -0.008
+    ],
+    "parts": [
+     "bench_backless/wood_slat",
+     "bench_backless/galvanised"
+    ],
+    "length_m": 0.06,
+    "pieces": 12,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.702,
+     0.472,
+     -0.008
+    ],
+    "parts": [
+     "bench_backless/wood_slat",
+     "bench_backless/galvanised"
+    ],
+    "length_m": 0.06,
+    "pieces": 12,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.698,
+     0.472,
+     -0.095
+    ],
+    "parts": [
+     "bench_backless/wood_slat",
+     "bench_backless/galvanised"
+    ],
+    "length_m": 0.06,
+    "pieces": 12,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.702,
+     0.472,
+     -0.095
+    ],
+    "parts": [
+     "bench_backless/wood_slat",
+     "bench_backless/galvanised"
+    ],
+    "length_m": 0.06,
+    "pieces": 12,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.698,
+     0.472,
+     -0.182
+    ],
+    "parts": [
+     "bench_backless/wood_slat",
+     "bench_backless/galvanised"
+    ],
+    "length_m": 0.06,
+    "pieces": 12,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.702,
+     0.472,
+     -0.182
+    ],
+    "parts": [
+     "bench_backless/wood_slat",
+     "bench_backless/galvanised"
+    ],
+    "length_m": 0.06,
+    "pieces": 12,
+    "min_angle_deg": 90
+   }
+  ]
+ },
+ "file": "furniture2.glb"
+}

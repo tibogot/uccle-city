@@ -31,12 +31,12 @@ For the landmark list: 34 places of worship, 15 historic castles, 6 manors.
 2. **Advertising**: the free-standing lit panel (2 m², double-sided) at rule-based spots (main roads, near squares),
    the Morris column (exists: upgrade), the rare big 8 m² wall billboards. Posters: an atlas of plain generic poster
    designs we make ourselves (no real brands, no copied adverts).
-3. **Seating and bikes**: the Brussels standard bench (wood slats, cast feet) + 1-2 variants (766), the "arceau" bike
+3. **Seating and bikes** (DONE on claude/furniture2 except the Villo upgrade: `docs/assets/FURNITURE2.md`): the Brussels standard bench (wood slats, cast feet) + 1-2 variants (766), the "arceau" bike
    hoop and the covered bike box (828), Villo station (exists: upgrade).
 4. **Signals and signs**: Belgian traffic-signal heads on the white-banded post + pedestrian heads + push buttons
    (553); the Belgian sign set (give-way 436, stop, no entry, one-way, zone 30, parking...) as one atlas on one post
    mesh; the iconic Brussels bilingual street-name plates on the corner walls (from OSM street names at junctions).
-5. **Cleanliness**: Bruxelles-Propreté street bins, glass / textile bubbles (exists: upgrade), the underground
+5. **Cleanliness** (DONE on claude/furniture2 except the underground columns and textile containers: `docs/assets/FURNITURE2.md`): Bruxelles-Propreté street bins, glass / textile bubbles (exists: upgrade), the underground
    recycling columns. Rule-based placement (stops, squares, every N metres on main streets).
 6. **Edges and gates**: bollard family (exists: check), lift gates (137), cycle barriers (55), park gates (335 gates:
    many are private garden gates, see the front-garden kit).

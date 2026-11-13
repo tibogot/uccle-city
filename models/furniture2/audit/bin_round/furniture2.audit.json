@@ -1,0 +1,577 @@
+{
+ "summary": {
+  "triangles": 4128,
+  "vertices_welded": 2114,
+  "open_edges": 96,
+  "rays": 1488,
+  "blocking": 0,
+  "warnings": 48,
+  "counts": {
+   "winding": 48,
+   "seam": 1
+  },
+  "ms": 481
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": null,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "bin_round",
+   "slot": "bin_green",
+   "triangles": 3792,
+   "maxDistance": 60
+  },
+  {
+   "name": "bin_round",
+   "slot": "bin_band",
+   "triangles": 288,
+   "maxDistance": 60
+  },
+  {
+   "name": "bin_round",
+   "slot": "rubber_black",
+   "triangles": 48,
+   "maxDistance": 60
+  }
+ ],
+ "items": {
+  "winding": [
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.239,
+     0.69,
+     -0.016
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.235,
+     0.69,
+     -0.047
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.227,
+     0.69,
+     -0.077
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.215,
+     0.69,
+     -0.106
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.2,
+     0.69,
+     -0.133
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.18,
+     0.69,
+     -0.158
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.158,
+     0.69,
+     -0.18
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.133,
+     0.69,
+     -0.2
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.106,
+     0.69,
+     -0.215
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.077,
+     0.69,
+     -0.227
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.047,
+     0.69,
+     -0.235
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.69,
+     -0.239
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     0.69,
+     -0.239
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.047,
+     0.69,
+     -0.235
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.077,
+     0.69,
+     -0.227
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.106,
+     0.69,
+     -0.215
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.133,
+     0.69,
+     -0.2
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.158,
+     0.69,
+     -0.18
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.18,
+     0.69,
+     -0.158
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.2,
+     0.69,
+     -0.133
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.215,
+     0.69,
+     -0.106
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.227,
+     0.69,
+     -0.077
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.235,
+     0.69,
+     -0.047
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.239,
+     0.69,
+     -0.016
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.239,
+     0.69,
+     0.016
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.235,
+     0.69,
+     0.047
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.227,
+     0.69,
+     0.077
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.215,
+     0.69,
+     0.106
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.2,
+     0.69,
+     0.133
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.18,
+     0.69,
+     0.158
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.158,
+     0.69,
+     0.18
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.133,
+     0.69,
+     0.2
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.106,
+     0.69,
+     0.215
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.077,
+     0.69,
+     0.227
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.047,
+     0.69,
+     0.235
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     0.69,
+     0.239
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.69,
+     0.239
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.047,
+     0.69,
+     0.235
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.077,
+     0.69,
+     0.227
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.106,
+     0.69,
+     0.215
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.133,
+     0.69,
+     0.2
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.158,
+     0.69,
+     0.18
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.18,
+     0.69,
+     0.158
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.2,
+     0.69,
+     0.133
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.215,
+     0.69,
+     0.106
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.227,
+     0.69,
+     0.077
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.235,
+     0.69,
+     0.047
+    ],
+    "part": "bin_round/bin_band"
+   },
+   {
+    "check": "winding",
+    "severity": "warn",
+    "at": [
+     0.239,
+     0.69,
+     0.016
+    ],
+    "part": "bin_round/bin_band"
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.234,
+     0.756,
+     -0.03
+    ],
+    "parts": [
+     "bin_round/bin_green",
+     "bin_round/bin_band"
+    ],
+    "length_m": 1.48,
+    "pieces": 96,
+    "min_angle_deg": 48.3
+   }
+  ]
+ },
+ "file": "furniture2.glb"
+}

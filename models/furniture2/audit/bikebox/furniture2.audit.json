@@ -1,0 +1,3919 @@
+{
+ "summary": {
+  "triangles": 3780,
+  "vertices_welded": 3720,
+  "open_edges": 2756,
+  "rays": 87744,
+  "blocking": 0,
+  "warnings": 254,
+  "counts": {
+   "sliver": 252,
+   "backtoback": 34,
+   "near": 2,
+   "seam": 17
+  },
+  "ms": 404
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": null,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "bikebox",
+   "slot": "box_shell",
+   "triangles": 216,
+   "maxDistance": 60
+  },
+  {
+   "name": "bikebox",
+   "slot": "rubber_black",
+   "triangles": 1920,
+   "maxDistance": 60
+  },
+  {
+   "name": "bikebox",
+   "slot": "alu_panel",
+   "triangles": 352,
+   "maxDistance": 60
+  },
+  {
+   "name": "bikebox",
+   "slot": "galvanised",
+   "triangles": 1184,
+   "maxDistance": 60
+  },
+  {
+   "name": "bikebox",
+   "slot": "white_plate",
+   "triangles": 108,
+   "maxDistance": 60
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.017,
+     -1.048
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 48,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.003,
+     -1.049
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 48,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.058,
+     -1.048
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 47,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.044,
+     -1.048
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 47,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.095,
+     -1.031
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.083,
+     -1.04
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.135,
+     -1.022
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.121,
+     -1.022
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.168,
+     -0.999
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.159,
+     -1.01
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.205,
+     -0.981
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.191,
+     -0.985
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.233,
+     -0.952
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.226,
+     -0.964
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.264,
+     -0.926
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.252,
+     -0.933
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.285,
+     -0.891
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.281,
+     -0.905
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.31,
+     -0.859
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.299,
+     -0.868
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.322,
+     -0.821
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.322,
+     -0.835
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.34,
+     -0.783
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.331,
+     -0.795
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.343,
+     -0.744
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.345,
+     -0.758
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.352,
+     -0.703
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.346,
+     -0.716
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.346,
+     0.716
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.352,
+     0.703
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.345,
+     0.758
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.343,
+     0.744
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.331,
+     0.795
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.34,
+     0.783
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.322,
+     0.835
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.322,
+     0.821
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.299,
+     0.868
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.31,
+     0.859
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.281,
+     0.905
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.285,
+     0.891
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.252,
+     0.933
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.264,
+     0.926
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.226,
+     0.964
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.233,
+     0.952
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.191,
+     0.985
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.205,
+     0.981
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.159,
+     1.01
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.168,
+     0.999
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.121,
+     1.022
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.135,
+     1.022
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.083,
+     1.04
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.095,
+     1.031
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 45,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.044,
+     1.048
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 47,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.058,
+     1.048
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 47,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.003,
+     1.049
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 48,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.017,
+     1.048
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 48,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     0.09,
+     -1.042
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 78,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     0.09,
+     -1.033
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 78,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     0.09,
+     1.033
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 78,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     0.09,
+     1.042
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 78,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.857,
+     0.662,
+     -1.05
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 249,
+    "longest": 0.762
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.858,
+     0.408,
+     -1.051
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 249,
+    "longest": 0.762
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.859,
+     0.662,
+     -1.052
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 249,
+    "longest": 0.762
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.86,
+     0.408,
+     -1.053
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 249,
+    "longest": 0.762
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.857,
+     0.408,
+     -1.062
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 249,
+    "longest": 0.762
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.858,
+     0.662,
+     -1.061
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 249,
+    "longest": 0.762
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.859,
+     0.408,
+     -1.06
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 249,
+    "longest": 0.762
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.86,
+     0.662,
+     -1.059
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 249,
+    "longest": 0.762
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.285,
+     0.15,
+     -1.059
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 559,
+    "longest": 1.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.285,
+     0.151,
+     -1.06
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 559,
+    "longest": 1.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.285,
+     0.152,
+     -1.061
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 559,
+    "longest": 1.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.285,
+     0.153,
+     -1.062
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 559,
+    "longest": 1.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.285,
+     0.92,
+     -1.059
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 559,
+    "longest": 1.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.285,
+     0.919,
+     -1.06
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 559,
+    "longest": 1.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.285,
+     0.918,
+     -1.061
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 559,
+    "longest": 1.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.285,
+     0.917,
+     -1.062
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 559,
+    "longest": 1.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.86,
+     0.408,
+     -1.059
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 249,
+    "longest": 0.762
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.859,
+     0.662,
+     -1.06
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 249,
+    "longest": 0.762
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.858,
+     0.408,
+     -1.061
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 249,
+    "longest": 0.762
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.857,
+     0.662,
+     -1.062
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 249,
+    "longest": 0.762
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.857,
+     0.408,
+     -1.05
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 249,
+    "longest": 0.762
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.858,
+     0.662,
+     -1.051
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 249,
+    "longest": 0.762
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.859,
+     0.408,
+     -1.052
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 249,
+    "longest": 0.762
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.86,
+     0.662,
+     -1.053
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 249,
+    "longest": 0.762
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.285,
+     0.15,
+     -1.053
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 559,
+    "longest": 1.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.285,
+     0.151,
+     -1.052
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 559,
+    "longest": 1.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.285,
+     0.152,
+     -1.051
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 559,
+    "longest": 1.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.285,
+     0.153,
+     -1.05
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 559,
+    "longest": 1.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.285,
+     0.92,
+     -1.053
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 559,
+    "longest": 1.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.285,
+     0.919,
+     -1.052
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 559,
+    "longest": 1.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.285,
+     0.918,
+     -1.051
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 559,
+    "longest": 1.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.285,
+     0.917,
+     -1.05
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 559,
+    "longest": 1.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.285,
+     0.15,
+     -1.057
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 428,
+    "longest": 1.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.285,
+     0.15,
+     -1.055
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 428,
+    "longest": 1.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.86,
+     0.662,
+     -1.055
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 191,
+    "longest": 0.762
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.86,
+     0.408,
+     -1.057
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 191,
+    "longest": 0.762
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.285,
+     0.92,
+     -1.057
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 428,
+    "longest": 1.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.285,
+     0.92,
+     -1.055
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 428,
+    "longest": 1.712
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.86,
+     0.662,
+     -1.057
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 191,
+    "longest": 0.762
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.86,
+     0.408,
+     -1.055
+    ],
+    "part": "bikebox/box_shell",
+    "aspect": 191,
+    "longest": 0.762
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     0.985,
+     -1.024
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     0.998,
+     -1.024
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.025,
+     -1.021
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.038,
+     -1.018
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.063,
+     -1.013
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.076,
+     -1.009
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.101,
+     -1
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.113,
+     -0.995
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.137,
+     -0.984
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.148,
+     -0.977
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.171,
+     -0.964
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.181,
+     -0.956
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.202,
+     -0.94
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.212,
+     -0.931
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.23,
+     -0.912
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.239,
+     -0.902
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.256,
+     -0.882
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.263,
+     -0.871
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.277,
+     -0.849
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.284,
+     -0.838
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.295,
+     -0.814
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.3,
+     -0.802
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.309,
+     -0.777
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.313,
+     -0.764
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.318,
+     -0.739
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.321,
+     -0.726
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.324,
+     -0.7
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.324,
+     -0.687
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.324,
+     0.687
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.324,
+     0.7
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.321,
+     0.726
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.318,
+     0.739
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.313,
+     0.764
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.309,
+     0.777
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.3,
+     0.802
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.295,
+     0.814
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.284,
+     0.838
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.277,
+     0.849
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.263,
+     0.871
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.256,
+     0.882
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.239,
+     0.902
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.23,
+     0.912
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.212,
+     0.931
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.202,
+     0.94
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.181,
+     0.956
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.171,
+     0.964
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.148,
+     0.977
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.137,
+     0.984
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.113,
+     0.995
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.101,
+     1
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.076,
+     1.009
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.063,
+     1.013
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     1.038,
+     1.018
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     1.025,
+     1.021
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.323,
+     0.998,
+     1.024
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.323,
+     0.985,
+     1.024
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 49,
+    "longest": 1.94
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.287,
+     0.932,
+     -1.056
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 172,
+    "longest": 1.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.287,
+     0.928,
+     -1.056
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 172,
+    "longest": 1.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.287,
+     0.932,
+     -1.049
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 172,
+    "longest": 1.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.287,
+     0.928,
+     -1.049
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 172,
+    "longest": 1.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.287,
+     0.925,
+     -1.054
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 246,
+    "longest": 1.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.287,
+     0.925,
+     -1.051
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 246,
+    "longest": 1.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.287,
+     0.935,
+     -1.054
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 246,
+    "longest": 1.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.287,
+     0.935,
+     -1.051
+    ],
+    "part": "bikebox/rubber_black",
+    "aspect": 246,
+    "longest": 1.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.976,
+     0.69,
+     -1.062
+    ],
+    "part": "bikebox/alu_panel",
+    "aspect": 50,
+    "longest": 0.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.982,
+     0.39,
+     -1.062
+    ],
+    "part": "bikebox/alu_panel",
+    "aspect": 50,
+    "longest": 0.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.976,
+     0.39,
+     1.062
+    ],
+    "part": "bikebox/alu_panel",
+    "aspect": 50,
+    "longest": 0.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.982,
+     0.69,
+     1.062
+    ],
+    "part": "bikebox/alu_panel",
+    "aspect": 50,
+    "longest": 0.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.976,
+     0.09,
+     -0.354
+    ],
+    "part": "bikebox/alu_panel",
+    "aspect": 118,
+    "longest": 2.124
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.982,
+     0.09,
+     0.354
+    ],
+    "part": "bikebox/alu_panel",
+    "aspect": 118,
+    "longest": 2.124
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.982,
+     0.69,
+     -1.062
+    ],
+    "part": "bikebox/alu_panel",
+    "aspect": 50,
+    "longest": 0.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.976,
+     0.39,
+     -1.062
+    ],
+    "part": "bikebox/alu_panel",
+    "aspect": 50,
+    "longest": 0.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.982,
+     0.39,
+     1.062
+    ],
+    "part": "bikebox/alu_panel",
+    "aspect": 50,
+    "longest": 0.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.976,
+     0.69,
+     1.062
+    ],
+    "part": "bikebox/alu_panel",
+    "aspect": 50,
+    "longest": 0.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.982,
+     0.09,
+     -0.354
+    ],
+    "part": "bikebox/alu_panel",
+    "aspect": 118,
+    "longest": 2.124
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.976,
+     0.09,
+     0.354
+    ],
+    "part": "bikebox/alu_panel",
+    "aspect": 118,
+    "longest": 2.124
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.081,
+     0.801,
+     -1.086
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 79,
+    "longest": 0.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.081,
+     0.802,
+     -1.088
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 79,
+    "longest": 0.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.081,
+     0.804,
+     -1.09
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 79,
+    "longest": 0.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.081,
+     0.806,
+     -1.091
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 79,
+    "longest": 0.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.081,
+     0.829,
+     -1.086
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 79,
+    "longest": 0.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.081,
+     0.828,
+     -1.088
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 79,
+    "longest": 0.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.081,
+     0.826,
+     -1.09
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 79,
+    "longest": 0.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.081,
+     0.824,
+     -1.091
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 79,
+    "longest": 0.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.081,
+     0.801,
+     -1.068
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 79,
+    "longest": 0.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.081,
+     0.802,
+     -1.066
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 79,
+    "longest": 0.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.081,
+     0.804,
+     -1.064
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 79,
+    "longest": 0.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.081,
+     0.806,
+     -1.063
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 79,
+    "longest": 0.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.081,
+     0.829,
+     -1.068
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 79,
+    "longest": 0.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.081,
+     0.828,
+     -1.066
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 79,
+    "longest": 0.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.081,
+     0.826,
+     -1.064
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 79,
+    "longest": 0.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.081,
+     0.824,
+     -1.063
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 79,
+    "longest": 0.484
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.975,
+     0.041,
+     0.351
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 459,
+    "longest": 2.108
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.977,
+     0.041,
+     -0.351
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 459,
+    "longest": 2.108
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.979,
+     0.043,
+     0.351
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 459,
+    "longest": 2.108
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.979,
+     0.045,
+     -0.351
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 459,
+    "longest": 2.108
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.975,
+     0.087,
+     -0.351
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 459,
+    "longest": 2.108
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.977,
+     0.087,
+     0.351
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 459,
+    "longest": 2.108
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.979,
+     0.085,
+     -0.351
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 459,
+    "longest": 2.108
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.979,
+     0.083,
+     0.351
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 459,
+    "longest": 2.108
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.325,
+     0.041,
+     -1.055
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 424,
+    "longest": 1.948
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.325,
+     0.041,
+     -1.057
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 424,
+    "longest": 1.948
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.325,
+     0.043,
+     -1.059
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 424,
+    "longest": 1.948
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.325,
+     0.045,
+     -1.059
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 424,
+    "longest": 1.948
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.325,
+     0.087,
+     -1.055
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 424,
+    "longest": 1.948
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.325,
+     0.087,
+     -1.057
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 424,
+    "longest": 1.948
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.325,
+     0.085,
+     -1.059
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 424,
+    "longest": 1.948
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.325,
+     0.083,
+     -1.059
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 424,
+    "longest": 1.948
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.975,
+     0.041,
+     -0.351
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 459,
+    "longest": 2.108
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.977,
+     0.041,
+     0.351
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 459,
+    "longest": 2.108
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.979,
+     0.043,
+     -0.351
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 459,
+    "longest": 2.108
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.979,
+     0.045,
+     0.351
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 459,
+    "longest": 2.108
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.975,
+     0.087,
+     0.351
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 459,
+    "longest": 2.108
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.977,
+     0.087,
+     -0.351
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 459,
+    "longest": 2.108
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.979,
+     0.085,
+     0.351
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 459,
+    "longest": 2.108
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.979,
+     0.083,
+     -0.351
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 459,
+    "longest": 2.108
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.325,
+     0.041,
+     1.055
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 424,
+    "longest": 1.948
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.325,
+     0.041,
+     1.057
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 424,
+    "longest": 1.948
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.325,
+     0.043,
+     1.059
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 424,
+    "longest": 1.948
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.325,
+     0.045,
+     1.059
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 424,
+    "longest": 1.948
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.325,
+     0.087,
+     1.055
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 424,
+    "longest": 1.948
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.325,
+     0.087,
+     1.057
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 424,
+    "longest": 1.948
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.325,
+     0.085,
+     1.059
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 424,
+    "longest": 1.948
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.325,
+     0.083,
+     1.059
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 424,
+    "longest": 1.948
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.98,
+     0.07,
+     0.351
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 59,
+    "longest": 2.108
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.98,
+     0.058,
+     -0.351
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 59,
+    "longest": 2.108
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.325,
+     0.07,
+     1.06
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 54,
+    "longest": 1.948
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.325,
+     0.058,
+     1.06
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 54,
+    "longest": 1.948
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.325,
+     0.07,
+     -1.06
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 54,
+    "longest": 1.948
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.325,
+     0.058,
+     -1.06
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 54,
+    "longest": 1.948
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.98,
+     0.07,
+     -0.351
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 59,
+    "longest": 2.108
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.98,
+     0.058,
+     0.351
+    ],
+    "part": "bikebox/galvanised",
+    "aspect": 59,
+    "longest": 2.108
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.526,
+     0.62,
+     -1.064
+    ],
+    "part": "bikebox/white_plate",
+    "aspect": 180,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.434,
+     0.62,
+     -1.065
+    ],
+    "part": "bikebox/white_plate",
+    "aspect": 180,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.526,
+     0.621,
+     -1.066
+    ],
+    "part": "bikebox/white_plate",
+    "aspect": 180,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.434,
+     0.622,
+     -1.066
+    ],
+    "part": "bikebox/white_plate",
+    "aspect": 180,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.434,
+     0.74,
+     -1.064
+    ],
+    "part": "bikebox/white_plate",
+    "aspect": 180,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.526,
+     0.74,
+     -1.065
+    ],
+    "part": "bikebox/white_plate",
+    "aspect": 180,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.434,
+     0.739,
+     -1.066
+    ],
+    "part": "bikebox/white_plate",
+    "aspect": 180,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.526,
+     0.738,
+     -1.066
+    ],
+    "part": "bikebox/white_plate",
+    "aspect": 180,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.434,
+     0.62,
+     -1.063
+    ],
+    "part": "bikebox/white_plate",
+    "aspect": 180,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.526,
+     0.62,
+     -1.062
+    ],
+    "part": "bikebox/white_plate",
+    "aspect": 180,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.434,
+     0.621,
+     -1.061
+    ],
+    "part": "bikebox/white_plate",
+    "aspect": 180,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.526,
+     0.622,
+     -1.061
+    ],
+    "part": "bikebox/white_plate",
+    "aspect": 180,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.526,
+     0.74,
+     -1.063
+    ],
+    "part": "bikebox/white_plate",
+    "aspect": 180,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.434,
+     0.74,
+     -1.062
+    ],
+    "part": "bikebox/white_plate",
+    "aspect": 180,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.526,
+     0.739,
+     -1.061
+    ],
+    "part": "bikebox/white_plate",
+    "aspect": 180,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.434,
+     0.738,
+     -1.061
+    ],
+    "part": "bikebox/white_plate",
+    "aspect": 180,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.434,
+     0.62,
+     -1.064
+    ],
+    "part": "bikebox/white_plate",
+    "aspect": 276,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.526,
+     0.62,
+     -1.063
+    ],
+    "part": "bikebox/white_plate",
+    "aspect": 276,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.526,
+     0.74,
+     -1.064
+    ],
+    "part": "bikebox/white_plate",
+    "aspect": 276,
+    "longest": 0.276
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.434,
+     0.74,
+     -1.063
+    ],
+    "part": "bikebox/white_plate",
+    "aspect": 276,
+    "longest": 0.276
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.017,
+     0.79,
+     -1.05
+    ],
+    "parts": [
+     "bikebox/box_shell",
+     "bikebox/box_shell"
+    ],
+    "area": 0.31543
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.637,
+     0.44,
+     -1.05
+    ],
+    "parts": [
+     "bikebox/box_shell",
+     "bikebox/box_shell"
+    ],
+    "area": 0.32863
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.629,
+     0.631,
+     -1.05
+    ],
+    "parts": [
+     "bikebox/box_shell",
+     "bikebox/box_shell"
+    ],
+    "area": 0.33685
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.006,
+     0.282,
+     -1.05
+    ],
+    "parts": [
+     "bikebox/box_shell",
+     "bikebox/box_shell"
+    ],
+    "area": 0.32364
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.081,
+     0.817,
+     -1.062
+    ],
+    "parts": [
+     "bikebox/box_shell",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00339
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.081,
+     0.813,
+     -1.062
+    ],
+    "parts": [
+     "bikebox/box_shell",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00339
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.855,
+     0.04,
+     -0.943
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00017
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.827,
+     0.04,
+     -0.92
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00017
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.85,
+     0.04,
+     -0.934
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.0004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.835,
+     0.04,
+     -0.915
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00044
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.85,
+     0.04,
+     -0.943
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00017
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.827,
+     0.04,
+     -0.92
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00017
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.85,
+     0.04,
+     -0.897
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00017
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.873,
+     0.04,
+     -0.92
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00017
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.843,
+     0.04,
+     -0.927
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00083
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.857,
+     0.04,
+     -0.913
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00083
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.846,
+     0.04,
+     0.897
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00017
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.873,
+     0.04,
+     0.92
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00017
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.851,
+     0.04,
+     0.906
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.0004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.865,
+     0.04,
+     0.925
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00043
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.873,
+     0.04,
+     -0.92
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00017
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.846,
+     0.04,
+     -0.897
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00017
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.865,
+     0.04,
+     -0.925
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00043
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.851,
+     0.04,
+     -0.906
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.0004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.85,
+     0.04,
+     0.897
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00017
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.873,
+     0.04,
+     0.92
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00017
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.827,
+     0.04,
+     0.92
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00017
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.857,
+     0.04,
+     0.913
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00083
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.843,
+     0.04,
+     0.927
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00083
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.85,
+     0.04,
+     0.943
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00017
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.827,
+     0.04,
+     0.92
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00017
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.835,
+     0.04,
+     0.915
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00044
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.85,
+     0.04,
+     0.934
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.0004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.855,
+     0.04,
+     0.943
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "area": 0.00017
+   }
+  ],
+  "near": [
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.221,
+     0.811,
+     -1.062
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "separation_mm": 1,
+    "overlap_cm2": 1.1,
+    "angle_deg": 0,
+    "maxDistance": 60,
+    "need_mm": 0.46,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     1
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.219,
+     0.811,
+     -1.062
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "separation_mm": 1,
+    "overlap_cm2": 1.2,
+    "angle_deg": 0,
+    "maxDistance": 60,
+    "need_mm": 0.46,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     1
+    ]
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.97,
+     0.111,
+     -1.05
+    ],
+    "parts": [
+     "bikebox/box_shell",
+     "bikebox/alu_panel"
+    ],
+    "length_m": 4.45,
+    "pieces": 144,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.97,
+     0.105,
+     -1.05
+    ],
+    "parts": [
+     "bikebox/box_shell",
+     "bikebox/alu_panel"
+    ],
+    "length_m": 4.45,
+    "pieces": 138,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.97,
+     0.156,
+     -1.025
+    ],
+    "parts": [
+     "bikebox/rubber_black",
+     "bikebox/alu_panel"
+    ],
+    "length_m": 4.22,
+    "pieces": 114,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.97,
+     0.136,
+     -1.025
+    ],
+    "parts": [
+     "bikebox/rubber_black",
+     "bikebox/alu_panel"
+    ],
+    "length_m": 4.22,
+    "pieces": 104,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.206,
+     0.8,
+     -1.084
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "length_m": 0.12,
+    "pieces": 44,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.232,
+     0.801,
+     -1.086
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "length_m": 0.12,
+    "pieces": 41,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.482,
+     0.839,
+     -1.062
+    ],
+    "parts": [
+     "bikebox/box_shell",
+     "bikebox/rubber_black"
+    ],
+    "length_m": 0.39,
+    "pieces": 26,
+    "min_angle_deg": 27.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.618,
+     0.621,
+     -1.062
+    ],
+    "parts": [
+     "bikebox/box_shell",
+     "bikebox/white_plate"
+    ],
+    "length_m": 0.79,
+    "pieces": 24,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.83,
+     0.04,
+     -0.899
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "length_m": 0.18,
+    "pieces": 18,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.874,
+     0.04,
+     0.904
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "length_m": 0.18,
+    "pieces": 18,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.233,
+     0.783,
+     -1.062
+    ],
+    "parts": [
+     "bikebox/box_shell",
+     "bikebox/galvanised"
+    ],
+    "length_m": 0.12,
+    "pieces": 16,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.207,
+     0.783,
+     -1.062
+    ],
+    "parts": [
+     "bikebox/box_shell",
+     "bikebox/galvanised"
+    ],
+    "length_m": 0.12,
+    "pieces": 16,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.866,
+     0.04,
+     -0.896
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "length_m": 0.18,
+    "pieces": 16,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.826,
+     0.04,
+     0.904
+    ],
+    "parts": [
+     "bikebox/galvanised",
+     "bikebox/galvanised"
+    ],
+    "length_m": 0.18,
+    "pieces": 16,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.86,
+     0.931,
+     -1.05
+    ],
+    "parts": [
+     "bikebox/box_shell",
+     "bikebox/rubber_black"
+    ],
+    "length_m": 3.46,
+    "pieces": 10,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.856,
+     0.535,
+     -1.05
+    ],
+    "parts": [
+     "bikebox/box_shell",
+     "bikebox/box_shell"
+    ],
+    "length_m": 4.95,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.242,
+     0.815,
+     -1.062
+    ],
+    "parts": [
+     "bikebox/box_shell",
+     "bikebox/galvanised"
+    ],
+    "length_m": 1,
+    "pieces": 4,
+    "min_angle_deg": 22.5
+   }
+  ]
+ },
+ "file": "furniture2.glb"
+}
