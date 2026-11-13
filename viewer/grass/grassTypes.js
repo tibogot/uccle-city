@@ -18,8 +18,12 @@
 // (ground.js) vary it in the bake, so the blades follow the ground's own patches.
 
 const VERGE_W = 1.7;            // m beyond a carriageway's edge
-// [density, length, dry, flowers] per OSM kind (the painting order below decides who wins where areas overlap)
-const KIND = {
+// [density, length, dry, flowers]: the default (private gardens, the unmapped green) and the roadside verge
+export const LAWN = [1, 0.06, 0, 0];
+export const ROADSIDE_VERGE = [0.9, 0.62, 0.55, 0.12];
+// [density, length, dry, flowers] per OSM kind (the painting order below decides who wins where areas overlap).
+// Exported for the Grass Field Lab (labs/grass-field.html); its "Copy settings" JSON maps onto these tables.
+export const KIND = {
   garden: [1, 0.04, 0, 0],
   park: [1, 0.28, 0.05, 0.04],
   grass: [1, 0.42, 0.25, 0.08],               // landuse=grass in Uccle: public greens, roundabouts, embankments
@@ -79,18 +83,18 @@ export function grassTypeData(feats, bounds, { kinds = null, surfaces = null } =
   const path = (rings) => { for (const c of [g1, g2]) { c.beginPath(); for (const ring of rings) { ring.forEach(([x, z], i) => (i ? c.lineTo(px(x), pz(z)) : c.moveTo(px(x), pz(z)))); c.closePath(); } } };
   const stats = { areas: {}, verges: 0, crowns: 0 };
   // default: a mown garden lawn
-  g.fillStyle = [1, 0.06, 0, 0];
+  g.fillStyle = LAWN;
   g.fillRect(0, 0, W, H);
   // roadside verges: the terrain beside a carriageway (stroked first: any mapped area painted after wins)
   if (surfaces?.surfaces?.length) {
-    g.strokeStyle = [0.9, 0.62, 0.55, 0.12];
+    g.strokeStyle = ROADSIDE_VERGE;
     g.lineWidth = VERGE_W * 2; g.lineJoin = "round";
     for (const s of surfaces.surfaces) {
       if (s.c !== 0 && s.c !== 1 && s.c !== 3) continue;      // roadway, tram roadway, parking
       path(s.rings); g.stroke(); stats.verges++;
     }
     // ... but not across a sidewalk: a sidewalk + 0.6 m behind it is a garden's edge again
-    g.strokeStyle = [1, 0.06, 0, 0]; g.fillStyle = [1, 0.06, 0, 0];
+    g.strokeStyle = LAWN; g.fillStyle = LAWN;
     g.lineWidth = 1.2;
     for (const s of surfaces.surfaces) {
       if (s.c !== 5) continue;

@@ -29,12 +29,15 @@ function solidMaterial() {
   solidMat.name = "grass-bake:solid";
   return solidMat;
 }
+/** grass islands / medians inside the road meshes: mown verge grass [density, length, dry, flowers] (Grass Field Lab:
+ *  the "traffic island" type) */
+export const ISLAND_VERGE = [0.95, 0.22, 0.35, 0.02];
 let vergeMat = null;
 /** grass islands / medians inside the road meshes: mown verge grass */
 function vergeMaterial() {
   if (vergeMat) return vergeMat;
   vergeMat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide, fog: false });
-  vergeMat.fragmentNode = vec4(positionWorld.y, pack2(float(0.95), float(0.02)), pack2(float(0.22), float(0.35)), 1);
+  vergeMat.fragmentNode = vec4(positionWorld.y, pack2(float(ISLAND_VERGE[0]), float(ISLAND_VERGE[3])), pack2(float(ISLAND_VERGE[1]), float(ISLAND_VERGE[2])), 1);
   vergeMat.name = "grass-bake:verge";
   return vergeMat;
 }

@@ -42,9 +42,7 @@ import { GrassPush } from "./grassPush.js";
 const CELL = 0.045;                       // m: the finest candidate grid
 const TOP = 3;                           // levels 0..3
 const LOD_SEG = [5, 3, 1];
-const D0_LONG = 8.5;                      // m: the full-density radius of the longest grass (a lawn's is 6 m)
-// the textured ground's mean colours (viewer/materials/textures/ground/ground.json, linear): lawn, rough, dry
-const LAWN = vec3(0.1283, 0.1626, 0.0349), ROUGH = vec3(0.0608, 0.1097, 0.0228), DRY = vec3(0.2384, 0.221, 0.0793);
+const col = (r, g, b) => uniform(new THREE.Color(r, g, b));   // a linear RGB uniform (no colour-space conversion)
 
 export const PRESETS = {
   low:    { density: 0.55, d0: 0.7, reach: 0.6, rmax: 28, caps: [60000, 50000, 40000] },
@@ -71,7 +69,31 @@ export const grassU = {
   conv: uniform(1),                      // converge to the ground colour with distance (debug: 0 = off)
   flat: uniform(0.78),                   // lighting normal: share of 'up' (Hybrid: flat lighting reads as one field)
   debugLod: uniform(0),
+  // ---- the blade's look by LENGTH (the type's len: 0 a mown lawn .. 1 a meadow): "Lawn" values at len 0, "Long" at
+  // len 1. Uniforms so the Grass Field Lab (labs/grass-field.html) can tune them live; the defaults ARE the city's look.
+  hBase: uniform(0.055), hLong: uniform(0.47), hPow: uniform(1.6), // blade height (m) = hBase + len^hPow x hLong
+  hVar: uniform(0.7),                    // per-blade height spread (x 1 +- hVar / 2)
+  wBase: uniform(0.005), wVar: uniform(0.5), // blade width (m) = wBase + len^1.5 x wideLong, per-blade spread x 1 +- wVar / 2
+  clumpLawn: uniform(0.35), clumpLong: uniform(0.85),        // how strongly a clump leads facing, lean and height
+  clumpSizeLawn: uniform(0.22), clumpSizeLong: uniform(0.55), // clump cell size (m)
+  leanLawn: uniform(0.08), leanLong: uniform(0.42),          // rest lean (flop) without wind
+  windLawn: uniform(0.3), windLong: uniform(1.25),           // how much the wind field leans a blade
+  d0Lawn: uniform(6), d0Long: uniform(8.5),                  // m: full-density radius (long grass: fewer, broader blades)
+  reachLawn: uniform(20), reachLong: uniform(46),            // m: where the blades have all sunk into the ground
+  seedLift: uniform(0.15),               // a seed-head stalk stands this much above the leaves
+  flowerShare: uniform(0.025),           // share of blades that are a wildflower where the type's flowers = 1
+  flowerSize: uniform(1),                // x the flower head's 2.2-4 cm
+  scatter: uniform(0.4),                 // per-blade brightness spread
+  hueVar: uniform(1),                    // per-blade hue spread (x)
+  convNear: uniform(5), convFar: uniform(30), // m: the blades converge to the ground's colour between these
+  // the textured ground's mean colours (viewer/materials/textures/ground/ground.json, linear): lawn, rough, dry; the
+  // blades take these so they sit on the ground's own colour
+  colLawn: col(0.1283, 0.1626, 0.0349), colRough: col(0.0608, 0.1097, 0.0228), colDry: col(0.2384, 0.221, 0.0793),
+  straw: col(0.30, 0.25, 0.11),          // dry / straw blades
+  petal0: col(0.85, 0.62, 0.03), petal1: col(0.82, 0.82, 0.76), petal2: col(0.6, 0.27, 0.42), petal3: col(0.36, 0.2, 0.55), // buttercup, oxeye, clover, knapweed
+  seed0: col(0.27, 0.27, 0.15), seed1: col(0.33, 0.29, 0.17), seed2: col(0.27, 0.2, 0.15), seedRipe: col(0.4, 0.34, 0.19), // panicles + ripe straw
 };
+const LAWN = vec3(grassU.colLawn), ROUGH = vec3(grassU.colRough), DRY = vec3(grassU.colDry);
 
 const P0 = () => attribute("position", "vec3");
 
@@ -176,7 +198,7 @@ export class Grass {
         // the rank against the most generous density any type could have here (d0 of a meadow): most far candidates
         // of the fine levels end here, before any memory read
         const r0 = hash(seed.add(2)).mul(hi - lo).add(lo);
-        const d0max = U.d0.mul(D0_LONG);
+        const d0max = U.d0.mul(max(U.d0Lawn, U.d0Long));
         const pMax = min(float(1), d0max.div(max(dxz, 0.05)).mul(d0max.div(max(dxz, 0.05))));
         If(owned.greaterThan(0.5).and(dxz.lessThan(U.rmax)).and(pMax.greaterThan(r0)).and(roughIn), () => {
           const f = F.sample(xz);
@@ -186,8 +208,8 @@ export class Grass {
             const len = f.len;
             const root = vec3(xz.x, f.y, xz.y);
             const d = max(length(root.sub(u.cam)), 0.05);
-            const d0 = mix(float(6), float(D0_LONG), len).mul(U.d0);       // long grass: fewer, broader blades (8.5 m, was 10: -23 % blades, same cover)
-            const rEnd = min(mix(float(20), float(46), sqrt(len)).mul(U.reach), U.rmax);
+            const d0 = mix(U.d0Lawn, U.d0Long, len).mul(U.d0);       // long grass: fewer, broader blades (8.5 m, was 10: -23 % blades, same cover)
+            const rEnd = min(mix(U.reachLawn, U.reachLong, sqrt(len)).mul(U.reach), U.rmax);
             const pd = min(float(1), d0.div(d).mul(d0.div(d)));
             const p = pd.mul(float(1).sub(smoothstep(rEnd.mul(0.55), rEnd, d)));
             const r = r0;
@@ -195,10 +217,10 @@ export class Grass {
               const grow = smoothstep(0, 0.35, float(1).sub(r.div(p))).mul(smoothstep(0, 0.12, keepCover));
               // blade shape: type height x own random x clump
               const rH = hash(seed.add(4)), rY = hash(seed.add(5)), rL = hash(seed.add(6));
-              const cl = this.nearestClump(xz, mix(float(0.22), float(0.55), len));
-              const clumpK = smoothstep(0.85, 0.1, cl.dist).mul(mix(float(0.35), float(0.85), len));
-              const Hb = float(0.055).add(pow(len, float(1.6)).mul(0.47));
-              const H = Hb.mul(rH.mul(0.7).add(0.65)).mul(mix(float(1), cl.p.x.mul(0.7).add(0.65), clumpK)).mul(grow).mul(U.height);
+              const cl = this.nearestClump(xz, mix(U.clumpSizeLawn, U.clumpSizeLong, len));
+              const clumpK = smoothstep(0.85, 0.1, cl.dist).mul(mix(U.clumpLawn, U.clumpLong, len));
+              const Hb = U.hBase.add(pow(len, U.hPow).mul(U.hLong));
+              const H = Hb.mul(rH.mul(U.hVar).add(float(1).sub(U.hVar.mul(0.5)))).mul(mix(float(1), cl.p.x.mul(0.7).add(0.65), clumpK)).mul(grow).mul(U.height);
               If(H.greaterThan(0.004), () => {
                 // exact frustum (the tallest blade with its lean is < 0.8 m)
                 const clip = u.vp.mul(vec4(root.add(vec3(0, H.mul(0.5), 0)), 1));
@@ -207,7 +229,7 @@ export class Grass {
                   const widen = clamp(float(1).div(sqrt(max(pd, 0.01))), 1, U.maxWiden);
                   // the TRUE width (the pixel floor is the vertex stage's, per row, paid back as coverage): long grass gets
                   // broad blades (one blade stands for a tuft of real leaves): a meadow reads full, not as a few hairs
-                  const W0 = float(0.005).add(pow(len, float(1.5)).mul(U.wideLong)).mul(hash(seed.add(7)).mul(0.5).add(0.75)).mul(widen);
+                  const W0 = U.wBase.add(pow(len, float(1.5)).mul(U.wideLong)).mul(hash(seed.add(7)).mul(U.wVar).add(float(1).sub(U.wVar.mul(0.5)))).mul(widen);
                   const W = W0.mul(min(grow.mul(3), 1));
                   // facing: own, pulled toward the clump's; turned toward the camera when edge-on
                   let yaw = mix(rY, cl.p.z, clumpK).mul(PI2);
@@ -219,10 +241,10 @@ export class Grass {
                   yaw = yaw.add(wrap.mul(smoothstep(0.55, 1.0, edgeOn).mul(0.6)));
                   // lean: rest (clump-led, long grass flops more) + wind + push
                   const restA = mix(rL, cl.p.w, clumpK).mul(PI2);
-                  const rest = vec2(cos(restA), sin(restA)).mul(mix(float(0.08), float(0.42), len).mul(hash(seed.add(8)).mul(0.6).add(0.4)));
+                  const rest = vec2(cos(restA), sin(restA)).mul(mix(U.leanLawn, U.leanLong, len).mul(hash(seed.add(8)).mul(0.6).add(0.4)));
                   const w = windAt(xz);
                   const pu = this.push.at(xz);
-                  const lean0 = rest.add(w.xy.mul(mix(float(0.3), float(1.25), len))).add(pu.xy.mul(pu.z.mul(1.3)));
+                  const lean0 = rest.add(w.xy.mul(mix(U.windLawn, U.windLong, len))).add(pu.xy.mul(pu.z.mul(1.3)));
                   const lm = min(length(lean0), 0.95);
                   const lean = lean0.div(max(length(lean0), 1e-4)).mul(lm);
                   const crush = pu.z;
@@ -234,7 +256,7 @@ export class Grass {
                   // what the blade carries on top: 2 = a wildflower, 4 = a grass seed head (long grass: Yorkshire fog,
                   // false oat, cocksfoot ... the soft panicles that make a June-July meadow look fluffy)
                   const hf = hash(seed.add(9));
-                  const flower = select(hf.lessThan(f.flowers.mul(0.025)), float(2),
+                  const flower = select(hf.lessThan(f.flowers.mul(U.flowerShare)), float(2),
                     select(hf.greaterThan(float(1).sub(smoothstep(0.5, 0.9, len).mul(U.seedHeads))), float(4), float(0)));
                   const dl = d.mul(hash(seed.add(10)).mul(0.3).add(0.85));          // dithered hand-over: no line where the LOD changes
                   const lodSel = select(dl.lessThan(U.lod0), int(0), select(dl.lessThan(U.lod1), int(1), int(2)));
@@ -302,14 +324,14 @@ export class Grass {
     const prof = h.mul(h);
     const drop = float(1).sub(lm.mul(lm).mul(0.5).mul(h));
     // a seed-head stalk stands above the leaves
-    const Hc = H.mul(mix(float(1), float(0.3), crush)).mul(select(isSeed, float(1.15), float(1)));
+    const Hc = H.mul(mix(float(1), float(0.3), crush)).mul(select(isSeed, grassU.seedLift.add(1), float(1)));
     // width profile: a leaf tapers to a narrow (not pointed) tip; a flower's top swells into a round head; a seed head
     // is a thin stalk carrying a soft spindle (the panicle) over its top third
     const taper = float(1).sub(pow(max(h, 0.001), float(1.5)).mul(0.85));
     const seedW = float(0.32).add(smoothstep(0.6, 0.8, h).mul(1.1)).sub(smoothstep(0.84, 1, h).mul(0.9));
     const wLeaf = W.mul(select(isSeed, seedW, taper));
     // a flower: a thin stem and a head of 2-4 cm (absolute: a buttercup is a buttercup on any blade)
-    const headSize = rnd(17).mul(0.018).add(0.022).mul(float(1).sub(smoothstep(10, 32, dist).mul(0.6)));
+    const headSize = rnd(17).mul(0.018).add(0.022).mul(grassU.flowerSize).mul(float(1).sub(smoothstep(10, 32, dist).mul(0.6)));
     const wFlower = W.mul(0.28).add(headSize.mul(smoothstep(0.84, 0.95, h).sub(smoothstep(0.985, 1, h).mul(0.45))));
     const wTrue = select(isFlower, wFlower, wLeaf);
     // SHIMMER: every row (the tip too: it is flat, not a point) at least minPixels wide on screen, so a far or thin tip
@@ -331,29 +353,30 @@ export class Grass {
     // colour: the ground's mean colour, darker at the root (the thatch), brighter / yellower at the tip, per blade
     const r1 = rnd(12), r2 = rnd(13);
     const grad = mix(grassU.root.mul(mix(float(1), float(0.8), len)), grassU.tip, pow(max(h, 0.001), float(0.85)));
-    const shade = rnd(15).mul(0.4).add(0.78).mul(cshade);                // per blade x per clump (Hybrid: 0.82..1.18)
-    let col = fc.mul(grad).mul(shade).mul(vec3(r1.sub(0.5).mul(0.22).add(1), 1, float(1).sub(r1.sub(0.5).mul(0.3))));
+    const shade = rnd(15).mul(grassU.scatter).add(float(0.98).sub(grassU.scatter.mul(0.5))).mul(cshade);   // per blade x per clump (Hybrid: 0.82..1.18)
+    const hv = r1.sub(0.5).mul(grassU.hueVar);
+    let col = fc.mul(grad).mul(shade).mul(vec3(hv.mul(0.22).add(1), 1, float(1).sub(hv.mul(0.3))));
     col = col.mul(mix(vec3(1), vec3(1.05, 1.05, 0.84), h.mul(0.6)));
     col = col.mul(vec3(grassU.tint));
     // dry / straw blades (verges, summer drought)
     const dryAmt = clamp(dry.add(grassU.dry.mul(0.6)).mul(1.4).sub(r2.mul(0.8)), 0, 1);
-    col = mix(col, vec3(0.30, 0.25, 0.11).mul(h.mul(0.5).add(0.62)), dryAmt.mul(0.85));
+    col = mix(col, vec3(grassU.straw).mul(h.mul(0.5).add(0.62)), dryAmt.mul(0.85));
     // frost on the tips
     col = mix(col, vec3(0.62, 0.66, 0.7), grassU.frost.mul(smoothstep(0.3, 1, h)).mul(0.75));
     // a flower head: buttercup yellow, oxeye white, clover pink, knapweed purple
     const sp = rnd(14);
-    const petal = select(sp.lessThan(0.4), vec3(0.85, 0.62, 0.03), select(sp.lessThan(0.7), vec3(0.82, 0.82, 0.76), select(sp.lessThan(0.88), vec3(0.6, 0.27, 0.42), vec3(0.36, 0.2, 0.55))));
+    const petal = select(sp.lessThan(0.4), vec3(grassU.petal0), select(sp.lessThan(0.7), vec3(grassU.petal1), select(sp.lessThan(0.88), vec3(grassU.petal2), vec3(grassU.petal3))));
     col = select(isFlower.and(h.greaterThan(0.9)), petal, col);
     // a seed head: the soft panicles of a meadow in early summer, pale straw / pinkish grey (Yorkshire fog) / purplish
     // brown, a little lighter at the top; ripening toward straw with the summer's drought
     const sh = rnd(16);
-    const panicle = mix(select(sh.lessThan(0.45), vec3(0.27, 0.27, 0.15), select(sh.lessThan(0.8), vec3(0.33, 0.29, 0.17), vec3(0.27, 0.2, 0.15))),
-      vec3(0.4, 0.34, 0.19), clamp(dry.add(grassU.dry), 0, 1).mul(0.6)).mul(h.mul(0.35).add(0.75));
+    const panicle = mix(select(sh.lessThan(0.45), vec3(grassU.seed0), select(sh.lessThan(0.8), vec3(grassU.seed1), vec3(grassU.seed2))),
+      vec3(grassU.seedRipe), clamp(dry.add(grassU.dry), 0, 1).mul(0.6)).mul(h.mul(0.35).add(0.75));
     col = select(isSeed.and(h.greaterThan(0.6)), panicle, col);
     // wind sheen: a gust front bends long grass and shows its paler side, a wave you see crossing the meadow
     col = col.mul(float(1).add(grassU.sheen.mul(smoothstep(0.45, 0.9, gust)).mul(h).mul(len)));
     // far: converge to the ground's colour, so the last blades sinking into it change the picture little
-    const cv = smoothstep(5, 30, dist).mul(grassU.conv).mul(0.8);
+    const cv = smoothstep(grassU.convNear, grassU.convFar, dist).mul(grassU.conv).mul(0.8);
     col = mix(col, fc.mul(1.02), cv);
     const dbg = [vec3(1.6, 0.5, 0.5), vec3(0.5, 1.6, 0.5), vec3(0.5, 0.5, 1.8)][L.l];
     col = mix(col, col.mul(dbg), grassU.debugLod);
@@ -371,7 +394,7 @@ export class Grass {
 
   /** dispatch sizes per level from the reach (no shader rebuild: counts are uniforms) */
   sizeLevels() {
-    const d0max = D0_LONG * grassU.d0.value, rmax = grassU.rmax.value;
+    const d0max = Math.max(grassU.d0Lawn.value, grassU.d0Long.value) * grassU.d0.value, rmax = grassU.rmax.value;
     this.levelR = [];
     for (let k = 0; k <= TOP; k++) {
       const R = Math.min(rmax, k === TOP ? rmax : 2 * d0max * (1 << k));
