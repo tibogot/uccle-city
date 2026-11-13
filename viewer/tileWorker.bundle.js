@@ -9274,7 +9274,7 @@ function widenTightTurns(net, cls = null) {
 // viewer/streets/roadLevels.js
 var MOVE_TOL = 0.2;
 var RMS_MAX = 0.5;
-var MOVE_MAX = 1.6;
+var MOVE_MAX = 3;
 function fittedY(node, ground, noData) {
   const R = node.reach || 6, pts = [[0, 0]];
   for (const [f, cnt] of [[0.35, 8], [0.7, 12], [1, 16]]) for (let k = 0; k < cnt; k++) {

@@ -17,7 +17,7 @@ import { evalAlignment } from "../../vendor/roads/roadAlignment.js";
 
 const MOVE_TOL = 0.2;            // m: a junction the relaxation moved by more than this goes back to the ground
 const RMS_MAX = 0.5;             // m: ... unless the ground round it strays further than this from its plane
-const MOVE_MAX = 1.6;            // m: ... or the move is bigger (E10: a 3.5 m move made new steps; left as the engine made it)
+const MOVE_MAX = 3.0;            // m: ... or the move is bigger (E10: a 3.5 m move made new steps; left as the engine made it)
 
 /** The height fitNodePlane gives a node: the mean of the DTM over its centre and three rings (0.35, 0.7, 1 x reach),
  *  and how far the ground strays from the node's plane there (RMS): null where the DTM has no data. */
