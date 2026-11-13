@@ -160,12 +160,12 @@ const TEMP = {
       const e = min(min(fu, float(1).sub(fu)).mul(L), min(fv, float(1).sub(fv)).mul(0.17)).toVar();
       const joint = float(1).sub(smoothstep(0.008, float(0.008).add(max(fw.mul(1.5), 0.006)), e)).mul(float(1).sub(smoothstep(0.006, 0.03, fw))).mul(coursed).toVar();
       const h = hash2(vec2(cell, row)).toVar(), h2 = hash2(vec2(cell.add(7.0), row.mul(1.7))).toVar();
-      const s0 = mix(lin(0x8a7d66), lin(0xa89474), h);
-      const s1 = mix(s0, lin(0x6f665c), step(0.78, h2).mul(0.8));
+      const s0 = mix(lin(0x9a8a6e), lin(0xb3a07c), h);
+      const s1 = mix(s0, lin(0x7a7066), step(0.86, h2).mul(0.7));
       const stone = mix(s1, lin(0xb39566), step(0.9, h).mul(0.6));
       const grain = vnoise(w.mul(7.0)).mul(0.1).toVar();
       const col = mix(lin(0x9a8c74), stone.mul(float(0.92).add(grain)), coursed);
-      return vec4(mix(col, lin(0x6e685f), joint.mul(0.75)), joint);
+      return vec4(mix(col, lin(0x847c70), joint.mul(0.6)), joint);
     })();
     return std({ colorNode: weather(out.xyz), roughnessNode: float(0.9), metalnessNode: float(0), normalNode: bumpNormal(out.w.mul(-0.004)) });
   },
