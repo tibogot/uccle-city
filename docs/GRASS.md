@@ -348,7 +348,7 @@ defaults (read from the code at load). **"Copy settings"** copies a JSON of only
 |---|---|
 | `grassU.<name>` | `viewer/grass/grass.js`, `export const grassU = { ... }`: the `uniform(...)` / `col(r, g, b)` default of that name (colours are linear RGB, as written there) |
 | `preset.{density, d0, reach, rmax}` (+ `name`) | `viewer/grass/grass.js` `PRESETS[name]` (the quality preset the lab ran; the city uses `high` unless `?grasspreset=`) |
-| `types.<id>` = `[density, length, dry, flowers]` | `lawn` -> `grassTypes.js` `LAWN`; `verge` -> `grassTypes.js` `ROADSIDE_VERGE`; `island` -> `grassField.js` `ISLAND_VERGE`; any other id -> `grassTypes.js` `KIND.<id>`. **Then rebuild the worker bundle** (`node tools/build_worker.mjs`): the city builds the types raster in the tile worker |
+| `types.<id>` = `[density, length, dry, flowers]` | `lawn` -> `grassTypes.js` `LAWN`; `verge` -> `grassTypes.js` `ROADSIDE_VERGE`; `island` -> `grassField.js` `ISLAND_VERGE`; any other id -> `grassTypes.js` `KIND.<id>`. **Then rebuild the worker bundle** (`cd tools/worker && npm install && cd ../.. && node tools/build_worker.mjs`): the city builds the types raster in the tile worker |
 | `wind.{speed, direction, gust}` | `viewer/foliage/wind.js` `wind.speed / direction / gust` |
 | `wind.{gustSize, gustSpeed}` | `viewer/foliage/wind.js` `uScale` / `uRate` |
 | `ground.{groundRough, groundDry}` | `viewer/ground.js` `setGroundTextures`: `uRough` / `uDry` (they change the textured ground too) |
@@ -370,3 +370,7 @@ of the SAME code (sky and haze noise); D8 garden golden 0.24 / 0 % / 5. `fieldla
 `_after.jpeg`. The worker bundle needs no rebuild (its copy of `grassTypes.js` paints the same values).
 
 Images: `fieldlab_meadow_backlit_golden.jpeg`, `fieldlab_park_meadow_patch_midday.jpeg`.
+
+Cost in the field lab (1280x720, DPR 1.5, golden, eye level, preset high, 6 alternating grass on / off pairs; preflight
+**YELLOW**, another agent sharing the machine): a whole meadow field **+1.25 ms** GPU (pairs 1.11-1.31; 18.9k / 47.8k /
+35.7k blades), the same as standing in the G7 meadow (§8.3); lawn with a meadow patch 22 m ahead +1.05 ms (0.98-1.11).
