@@ -16,7 +16,7 @@ const CAR_KIND = 6;   // drive colliders: a car (hit() treats any kind the same)
 export function createCityTraffic({ scene, renderer, camera, ground, night, focus, driver, getThird, getTram, log = console.log }) {
   const T = createTraffic({ scene, renderer, camera, ground, night });
   const sim = T.sim;
-  sim.setParking(function* () { for (const r of carFleet.regs) yield* r.cars; }, (name) => T.types.findIndex((t) => t.name === name));
+  sim.setParking(function* () { for (const r of carFleet.regs) if (r.live) yield* r.cars; }, (name) => T.types.findIndex((t) => t.name === name));
   sim.onPark = (c) => carFleet.touch(c);     // (the slot's colliders follow: off while the car drives, its new type's size when one parks in)
   if (/[?&]trafficdebug=1/.test(location.search)) import("./trafficDebug.js").then(({ TrafficDebug }) => { T.debug = new TrafficDebug(scene, ground, sim.cap); });
 

@@ -178,12 +178,19 @@ class CarFleet {
     if (camera) this.camera ||= camera;
     if (!this.ready || !camera) return;
     if (this.pendingTypes?.length) { this.types[this.pendingTypes.shift()].t0 = performance.now(); this.dirty = true; }
-    // tiles that left the scene
+    // tiles that left the scene. A tile registers its cars BEFORE its group is in the scene (viewer/main.js loadTile:
+    // buildCars, then a frame, then own.features.add): until 2026-11-14 that frame dropped the registration, so every
+    // tile streamed in after the boot drew NO parked car while its collider boxes stood (the owner's "invisible cars",
+    // road fix round 3). A registration now waits for its group, and leaves only once the group has left the scene.
     const attached = (g) => { let o = g; while (o.parent) o = o.parent; return o.isScene; };
-    const before = this.regs.length;
-    this.regs = this.regs.filter((r) => attached(r.group));
-    if (this.regs.length !== before) this.dirty = true;
     const now = performance.now();
+    const before = this.regs.length;
+    this.regs = this.regs.filter((r) => {
+      const on = attached(r.group);
+      if (on && !r.live) { r.live = true; r.t0 = now; this.dirty = true; }        // in the scene: its fade-in starts now
+      return on || (!r.live && now - r.t0 < 120000);    // (a tile dropped while being built: let go after 2 min)
+    });
+    if (this.regs.length !== before) this.dirty = true;
     const fadingIn = this.regs.some((r) => now - r.t0 < FADE_IN_MS) || Object.values(this.types).some((T) => !(now - T.t0 >= FADE_IN_MS));
     camera.updateMatrixWorld();
     const moved = !this.lastCam.equals(camera.matrixWorld);
@@ -200,6 +207,7 @@ class CarFleet {
     const jumped = this.lastPos ? camPos.distanceTo(this.lastPos) > 5 : true;
     (this.lastPos ||= new THREE.Vector3()).copy(camPos);
     for (const r of this.regs) {
+      if (!r.live) continue;                             // its tile is still being built (not in the scene yet)
       const alpha = Math.min(1, (now - r.t0) / FADE_IN_MS);
       for (const c of r.cars) {
         st.cars++;
