@@ -8,7 +8,7 @@
 //    pass uses the same fade, so the shadows follow the LOD the eye sees). ?smooth=0: hard switches.
 import * as THREE from "three/webgpu";
 import { loadObservatory, OBS_LODS, OBS_SLOTS } from "./observatoryModel.js";
-import { withObjectFade, SMOOTH } from "./lodFade.js";
+import { withObjectFade, SMOOTH, settleRamp } from "./lodFade.js";
 import { liteShown } from "./liteShown.js";
 
 export async function addObservatory({ scene, updaters, hide, world, manifest, log, compiler }) {
@@ -34,7 +34,8 @@ export async function addObservatory({ scene, updaters, hide, world, manifest, l
     const tComp = performance.now() - tc;
     const homes = manifest.tiles.filter((t) => t.bounds.x[0] < m.boundsWorld.max.x && t.bounds.x[1] > m.boundsWorld.min.x &&
       t.bounds.z[0] < m.boundsWorld.max.z && t.bounds.z[1] > m.boundsWorld.min.z).map((t) => t.name);
-    const ramp = (d, k) => { const s = OBS_LODS[k].until, w = OBS_LODS[k].band; return THREE.MathUtils.smoothstep(d, s - w, s + w); };
+    const settle = [settleRamp(), settleRamp()], rampD = (d, k) => { const s = OBS_LODS[k].until, w = OBS_LODS[k].band; return THREE.MathUtils.smoothstep(d, s - w, s + w); };
+    const ramp = (d, k) => settle[k](rampD(d, k));     // (timed: lodFade.js settleRamp, ?lodsettle=0 = the band as before)
     let n = 0, home = false;
     updaters.push((camPos) => {
       if (n++ % 30 === 0) home = homes.some((h) => world.tiles.some((t) => t.name === h) || liteShown(scene, h));

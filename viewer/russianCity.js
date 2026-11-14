@@ -6,7 +6,7 @@
 // shadow pass follows). Shown while one of its tiles (F4) is loaded, full or far.
 import * as THREE from "three/webgpu";
 import { loadRussian, RU_LODS, setLodFades } from "./russianModel.js";
-import { SMOOTH, fadeProxies } from "./lodFade.js";
+import { SMOOTH, fadeProxies, settleRamp } from "./lodFade.js";
 import { liteShown } from "./liteShown.js";
 
 export async function addRussian({ scene, updaters, hide, world, manifest, log, compiler }) {
@@ -34,7 +34,8 @@ export async function addRussian({ scene, updaters, hide, world, manifest, log, 
     loading = false;
     const homes = manifest.tiles.filter((t) => t.bounds.x[0] < m.boundsWorld.max.x && t.bounds.x[1] > m.boundsWorld.min.x &&
       t.bounds.z[0] < m.boundsWorld.max.z && t.bounds.z[1] > m.boundsWorld.min.z).map((t) => t.name);
-    const ramp = (d, k) => { const s = RU_LODS[k].until, w = RU_LODS[k].band; return THREE.MathUtils.smoothstep(d, s - w, s + w); };
+    const settle = [settleRamp(), settleRamp()], rampD = (d, k) => { const s = RU_LODS[k].until, w = RU_LODS[k].band; return THREE.MathUtils.smoothstep(d, s - w, s + w); };
+    const ramp = (d, k) => settle[k](rampD(d, k));     // (timed: lodFade.js settleRamp, ?lodsettle=0 = the band as before)
     let n = 0, home = false;
     const state = { shown: [false, false, false], fades: [1, 1, 1], d: 0 };
     updaters.push((camPos) => {

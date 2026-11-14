@@ -49,7 +49,7 @@ import { Flyer } from "./flight.js";
 import { CityFlyer } from "./falconFlight/cityFlyer.js";
 import { Driver, tileDrive } from "./drive/driveMode.js";
 import { addLamps } from "./lampLight.js";
-import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, dropFadeVariant } from "./lodFade.js";
+import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, dropFadeVariant, settleRamp } from "./lodFade.js";
 import { buildFarTreeField } from "./treesStylized.js";
 import { cityKit } from "./facadeKit/cityKit.js";
 import { treeKit } from "./treeKitCity.js";
@@ -945,7 +945,8 @@ async function main() {
       const home = manifest.tiles.find((t) => p.x >= t.bounds.x[0] && p.x < t.bounds.x[1] && p.z >= t.bounds.z[0] && p.z < t.bounds.z[1])?.name;
       let n = 0;
       const BANDS = [0.15, 0.12];     // half-width of each switch's band, a share of its distance (170 m: +-25 m, 520 m: +-62 m)
-      const ramp = (d, k) => { const s = STJOB_LODS[k].until, w = s * BANDS[k]; return THREE.MathUtils.smoothstep(d, s - w, s + w); };
+      const settle = [settleRamp(), settleRamp()], rampD = (d, k) => { const s = STJOB_LODS[k].until, w = s * BANDS[k]; return THREE.MathUtils.smoothstep(d, s - w, s + w); };
+      const ramp = (d, k) => settle[k](rampD(d, k));     // (timed: lodFade.js settleRamp, ?lodsettle=0 = the band as before)
       updaters.push((camPos) => {
         if (SMOOTH) {
           const d = camPos.distanceTo(p), t1 = ramp(d, 0), t2 = ramp(d, 1);

@@ -58,7 +58,7 @@ const WARM_LAYER = 7;
 const DEBUG = qp.get("nightdebug") === "1";       // the pop metrics (per lamp / per car weight jumps): off by default (CPU)
 const SHADOW_MODE = qp.get("nightshadow") || "smart";   // "smart" (re-render on change, round 2) | "full" (every frame, round 1)
 const BUILDING = /^(buildings-|kit |facade|roof|terrain|ground|bridge|tunnel)/i;
-function tagCasters(root, warm) {
+function tagCasters(root, warm, tileCasters = null) {
   let n = 0;
   root.traverse((o) => {
     if (!o.isMesh || !o.castShadow || o.userData.__nightTag) return;
@@ -66,10 +66,19 @@ function tagCasters(root, warm) {
     if (BUILDING.test(o.name || "") || BUILDING.test(o.parent?.name || "")) return;
     let small = o.isInstancedMesh || o.isSkinnedMesh;
     if (!small) { const g = o.geometry; if (!g.boundingSphere) g.computeBoundingSphere(); small = (g.boundingSphere?.radius ?? 1e9) * o.matrixWorld.getMaxScaleOnAxis() < 12; }
-    if (small) { o.layers.enable(LAMP_SHADOW_LAYER); warm.push(o, performance.now()); n++; }
+    if (small) {
+      o.layers.enable(LAMP_SHADOW_LAYER); warm.push(o, performance.now()); n++;
+      // a TILE's instanced set (its trees, lamps, bollards...: one mesh for the whole 500 m tile, a bounding sphere the
+      // lamp's 24 m frustum always meets): remembered with its tile, gated by reach below (TILE_REACH)
+      if (tileCasters && o.isInstancedMesh) { let t = o; while (t && !/^[A-Z]\d+-/.test(t.name || "")) t = t.parent; if (t) tileCasters.push({ o, tile: t.name.split("-")[0] }); }
+    }
   });
   return n;
 }
+// perf audit 2026-11-14 (docs/perf/AUDIT.md step 11): a lamp map drew every loaded tile's instanced sets (9 tiles x 6
+// tree meshes + lamps + bollards ...: ~135 draws, ~0.5 M triangles a map). A tile's sets now stay in the lamp layer
+// only while a shadowed lamp is within REACH of that tile's square (the lamp's 26 m range + a crown). ?lampreach=0: off.
+const TILE_REACH = qp.get("lampreach") !== "0", REACH = 26 + 12;
 
 /** step 0: before renderer.init() */
 export async function installNightLighting(renderer) {
@@ -490,14 +499,18 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     if (scale > 0 && warming) warmShadows(camPos);                    // (night fell during a warm-up frame: restore first)
     if (scale > 0) {
       let refreshed = false;
+      if (TILE_REACH) gateTiles();
       for (let k = 0; k < 2; k++) {
         const L = shadowLights[k], id = night.shadow.lamp[k];
         L.shadow.autoUpdate = false;
         if (!(L.intensity > 0)) { sLamp[k] = -2; continue; }
         let go = api.shadowMode === "full" || id !== sLamp[k] || mover[k] === 1;
+        // ("alt", perf audit 2026-11-14: at most ONE lamp map a frame while things move, the two lamps alternating: a
+        // moving car's lamp shadow at 30 Hz; a lamp change still renders at once)
+        if (go && api.shadowMode === "alt" && id === sLamp[k] && (refreshed || (refreshTurn & 1) !== k) && mover[1 - k] === 1) go = false;
         // (the camera-moved refresh: one map per frame, alternating)
         if (!go && !refreshed && (refreshTurn & 1) === k && camPos.distanceToSquared(sCam[k]) > MOVE_REFRESH * MOVE_REFRESH) { go = true; refreshed = true; }
-        if (go) { L.shadow.needsUpdate = true; sLamp[k] = id; sCam[k].copy(camPos); stats.shadowRenders++; } else stats.shadowSkips++;
+        if (go) { L.shadow.needsUpdate = true; sLamp[k] = id; sCam[k].copy(camPos); stats.shadowRenders++; if (api.shadowMode === "alt") refreshed = true; } else stats.shadowSkips++;
       }
       refreshTurn++;
     } else if (lastScale <= 0 && frames >= 4) {
@@ -568,7 +581,27 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
   updaters.push(update);
   // tag the lamp-shadow casters as things arrive (tiles, fleets, landmarks): a sweep every 2 s, each mesh once
   let tagged = 0;
-  const sweep = () => { tagged += tagCasters(scene, warmList); };
+  const tileCasters = [];
+  const sweep = () => {
+    tagged += tagCasters(scene, warmList, TILE_REACH ? tileCasters : null);
+    for (let i = tileCasters.length - 1; i >= 0; i--) if (!tileCasters[i].o.parent) { tileCasters[i] = tileCasters[tileCasters.length - 1]; tileCasters.pop(); }   // (tile gone)
+  };
+  /** keep a tile's instanced sets in the lamp layer only near a shadowed lamp (both lamps: their union) */
+  const gateTiles = () => {
+    const tiles = window.viewer?.world?.tiles;
+    if (!tiles || !tileCasters.length) return;
+    const near = gateNear; near.clear();
+    for (const t of tiles) {
+      const b = t.bounds;
+      for (const L of shadowLights) {
+        if (!(L.intensity > 0)) continue;
+        const p = L.position, dx = Math.max(b.x0 - p.x, 0, p.x - b.x1), dz = Math.max(b.z0 - p.z, 0, p.z - b.z1);
+        if (dx * dx + dz * dz < REACH * REACH) { near.add(t.name); break; }
+      }
+    }
+    for (const { o, tile } of tileCasters) { if (near.has(tile)) o.layers.enable(LAMP_SHADOW_LAYER); else o.layers.disable(LAMP_SHADOW_LAYER); }
+  };
+  const gateNear = new Set();
   setInterval(sweep, 2000);
   const api = {
     master: 1,                          // (A/B in one page: 0 = every night light off, the lighting model kept)

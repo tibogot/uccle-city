@@ -11,7 +11,7 @@
 //    cell's colliders take over, the terrain is ignored inside and the character is lit by the baked probes.
 import * as THREE from "three/webgpu";
 import { loadStalle, ST_LODS, ST_SLATES, slateFade, ST_SLOTS } from "./stalleModel.js";
-import { withObjectFade, SMOOTH } from "./lodFade.js";
+import { withObjectFade, SMOOTH, settleRamp } from "./lodFade.js";
 import { liteShown } from "./liteShown.js";
 
 const FETCH_AT = 120, SHOW_AT = 40, HIDE_AT = 60;
@@ -37,7 +37,8 @@ export async function addStalle({ scene, updaters, hide, world, manifest, log, c
     const tComp = performance.now() - tc;
     const homes = manifest.tiles.filter((t) => t.bounds.x[0] < m.boundsWorld.max.x && t.bounds.x[1] > m.boundsWorld.min.x &&
       t.bounds.z[0] < m.boundsWorld.max.z && t.bounds.z[1] > m.boundsWorld.min.z).map((t) => t.name);
-    const ramp = (d, k) => { const s = ST_LODS[k].until, w = ST_LODS[k].band; return THREE.MathUtils.smoothstep(d, s - w, s + w); };
+    const settle = [settleRamp(), settleRamp()], rampD = (d, k) => { const s = ST_LODS[k].until, w = ST_LODS[k].band; return THREE.MathUtils.smoothstep(d, s - w, s + w); };
+    const ramp = (d, k) => settle[k](rampD(d, k));     // (timed: lodFade.js settleRamp, ?lodsettle=0 = the band as before)
     let n = 0, home = false;
     const inner = interior(m);
     updaters.push((camPos) => {
