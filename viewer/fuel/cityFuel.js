@@ -150,6 +150,7 @@ export const cityFuel = {
     try {
       const sum = await fetch(new URL("summary.json", DATA)).then((r) => r.json());
       this.clear = sum.stations.map((s) => s.clear).filter(Boolean);
+      this.stationTiles = new Set(sum.stations.map((s) => s.tile).filter(Boolean));   // only these tiles have a data/fuel/<T>.json
       if (renderer) await loadPavingTextures(renderer);
       this.kit = await loadFuelKit();
     } catch (e) { log(`fuel: kit failed (${e.message}), ?fuel=old`); this.on = false; return null; }
@@ -162,6 +163,7 @@ export const cityFuel = {
   },
   fetchTile(name) {
     if (!this.on) return Promise.resolve(null);
+    if (this.stationTiles && !this.stationTiles.has(name)) return Promise.resolve(null);   // no station on this tile: no request (no 404s)
     return fetch(new URL(`${name}.json`, DATA)).then((r) => (r.ok ? r.json() : null)).catch(() => null);
   },
   /** a tile's stations: their merged meshes (built in slices), slabs and collision stand-ins into `parent` (the tile's
