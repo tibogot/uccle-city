@@ -33,9 +33,11 @@ export const nightParams = {
 const LAMP_RGB = [1.0, 0.78, 0.52], HEAD_RGB = [1.0, 0.97, 0.92], REAR_RGB = [1.0, 0.04, 0.02], SALOON_RGB = [0.82, 0.9, 1.0];
 
 class Track {          // per-source weight history: the largest frame-to-frame jump (the pop detector)
-  constructor(n) { this.prev = new Float32Array(n); this.cur = new Float32Array(n); this.maxJump = 0; this.frameJump = 0; }
-  begin() { const t = this.prev; this.prev = this.cur; this.cur = t; this.cur.fill(0); }
-  end() { let m = 0; for (let i = 0; i < this.cur.length; i++) { const d = Math.abs(this.cur[i] - this.prev[i]); if (d > m) m = d; } this.frameJump = m; if (m > this.maxJump) this.maxJump = m; }
+  // on = false (the city, unless ?nightdebug=1): begin / end do nothing (the lamp track's fill + scan of its 16384 ids
+  // was most of the city's per-frame night CPU); the per-source writes into cur stay (cheap)
+  constructor(n) { this.prev = new Float32Array(n); this.cur = new Float32Array(n); this.maxJump = 0; this.frameJump = 0; this.on = true; }
+  begin() { if (!this.on) return; const t = this.prev; this.prev = this.cur; this.cur = t; this.cur.fill(0); }
+  end() { if (!this.on) return; let m = 0; for (let i = 0; i < this.cur.length; i++) { const d = Math.abs(this.cur[i] - this.prev[i]); if (d > m) m = d; } this.frameJump = m; if (m > this.maxJump) this.maxJump = m; }
 }
 
 export class NightSources {

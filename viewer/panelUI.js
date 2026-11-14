@@ -27,7 +27,7 @@ const CSS = `
   border-radius: 5px; font: inherit; cursor: pointer; text-align: left; }
 .upanel button:hover { background: #3a4452; }
 .upanel .uread { font: 11px/1.3 ui-monospace, monospace; color: #d7dde4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-@media (prefers-color-scheme: light) { .upanel { background: rgba(248, 247, 244, .95); color: #1d2228; }
+@media (prefers-color-scheme: light) { .upanel { background: rgb(248, 247, 244);   /* opaque: at .95 the night city's lit windows showed through as white streaks */ color: #1d2228; }
   .upanel .urow label { color: #4b545e; } .upanel .usec > .ustitle { color: #1f5fbf; border-top-color: rgba(0,0,0,.08); }
   .upanel input[type=number], .upanel select { background: #fff; color: #1d2228; border-color: #d4d0c8; }
   .upanel button { background: #eceae5; color: #1d2228; border-color: #d4d0c8; } .upanel button:hover { background: #e2dfd8; }

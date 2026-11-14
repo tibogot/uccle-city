@@ -876,7 +876,7 @@ async function main() {
   // the parked cars of every tile, as one fleet (viewer/carFleet.js; ?cars=box: the old box cars per tile)
   if (params.get("cars") !== "box") { scene.add(carFleet.group); updaters.push(carFleet.update); carFleet.setRenderer(renderer, scene); }
   if (!NIGHT) updaters.push(lampLightPool(scene));   // the city's lamp lights: ONE fixed pool for the session (light count never changes)
-  else cityNight = nightMod.startCityNight({ scene, renderer, updaters, log });   // ?night=1: instead, the night pool + 2 shadowed lamps (fixed, before the warm-up)
+  else cityNight = nightMod.startCityNight({ scene, renderer, updaters, groundAt: (x, z) => world.surface(x, z), log });   // ?night=1: instead, the night pool + 2 shadowed lamps (fixed, before the warm-up)
   updaters.push(updateSignals);           // the signal heads' cycle (viewer/traffic/signals.js), shared with the traffic
   // the world: the main tile now, its neighbours streamed in after the first frame (?ring=0|1|2)
   const world = {
@@ -1055,6 +1055,7 @@ async function main() {
       tramLine = await createTramLine(new URL("../data/transit/stib-92.json", import.meta.url), scene, (x, z) => world.surface(x, z) + CARVE, trackProf, roadOffFor(world.tiles[0].hm, () => false));
       for (const t of world.tiles) tramLine.snapTile(t.name, t.feats, t.bounds);
       updaters.push(tramLine.update);
+      cityNight?.setTram(tramLine);                     // ?night=1: a tram passing a shadowed lamp re-renders its shadow map
       tramLine.update(new THREE.Vector3(cx, 0, cz));
       log(tramLine.info());
     } catch (e) { log(`tram line: ${e.message}`); }
