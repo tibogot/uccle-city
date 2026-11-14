@@ -1,0 +1,203 @@
+{
+ "asset": "road tunnel 'brasserie' (tools/blender/railTunnel.py)",
+ "kind": "tunnel",
+ "name": "brasserie",
+ "road": "Rue de la Brasserie - Brouwerijstraat",
+ "osm": 775790690,
+ "line": "L26",
+ "tile": "D9",
+ "triangles": 5392,
+ "materials": [
+  "brick_red_brussels",
+  "stone_blue",
+  "concrete",
+  "painted_metal_grey",
+  "lamp_glow"
+ ],
+ "frame": "glTF Y up; +x = along the road (OSM first node -> last, city direction theta), -z = Blender +Y (the road's left); origin = the barrel's centre on its axis at road level",
+ "placement": {
+  "city_local_position": [
+   -1473.97,
+   47.039,
+   2402.7
+  ],
+  "rotation_y_rad": -0.7774266759170657
+ },
+ "deck": {
+  "length": 53.542,
+  "width": 12.4
+ },
+ "grade": 0.01047,
+ "railTop": 63.489,
+ "barrel": {
+  "length": 29.6,
+  "r": 4.27,
+  "spring": 3.2,
+  "crown": 7.47,
+  "slab": -0.05,
+  "found": -0.6
+ },
+ "portals": [
+  {
+   "X": -14.8,
+   "sign": -1,
+   "top": 9.9,
+   "wallTop": 9.68,
+   "thick": 1.9,
+   "width": 12.4
+  },
+  {
+   "X": 14.8,
+   "sign": 1,
+   "top": 9.9,
+   "wallTop": 9.68,
+   "thick": 1.9,
+   "width": 12.4
+  }
+ ],
+ "wings": [
+  {
+   "portal": 0,
+   "side": 1,
+   "p0": [
+    -14.8,
+    6.2
+   ],
+   "p1": [
+    -21.892,
+    11.741
+   ],
+   "back": [
+    0.6157,
+    0.788
+   ],
+   "top0": 7.0,
+   "top1": 1.2,
+   "thick": 0.7
+  },
+  {
+   "portal": 0,
+   "side": -1,
+   "p0": [
+    -14.8,
+    -6.2
+   ],
+   "p1": [
+    -21.488,
+    -12.222
+   ],
+   "back": [
+    0.6691,
+    -0.7431
+   ],
+   "top0": 7.0,
+   "top1": 1.2,
+   "thick": 0.7
+  },
+  {
+   "portal": 1,
+   "side": 1,
+   "p0": [
+    14.8,
+    6.2
+   ],
+   "p1": [
+    26.771,
+    7.037
+   ],
+   "back": [
+    -0.0698,
+    0.9976
+   ],
+   "top0": 7.0,
+   "top1": 1.0,
+   "thick": 0.7
+  },
+  {
+   "portal": 1,
+   "side": -1,
+   "p0": [
+    14.8,
+    -6.2
+   ],
+   "p1": [
+    26.771,
+    -7.037
+   ],
+   "back": [
+    -0.0698,
+    -0.9976
+   ],
+   "top0": 7.0,
+   "top1": 1.0,
+   "thick": 0.7
+  }
+ ],
+ "lamps": [
+  [
+   -9.5,
+   0,
+   7.167
+  ],
+  [
+   0.0,
+   0,
+   7.266
+  ],
+  [
+   9.5,
+   0,
+   7.365
+  ]
+ ],
+ "lanes": {
+  "right": [
+   {
+    "type": "driving",
+    "width": 3.0
+   },
+   {
+    "type": "sidewalk",
+    "width": 1.3
+   }
+  ],
+  "left": [
+   {
+    "type": "driving",
+    "width": 3.0
+   },
+   {
+    "type": "sidewalk",
+    "width": 1.3
+   }
+  ],
+  "center": {
+   "width": 0,
+   "kind": "line"
+  }
+ },
+ "roads": [
+  775790690,
+  775790691,
+  16403696
+ ],
+ "measured": "OSM way (axis, ends), DTM 2021 / DHMV II mosaic of the city tiles (road levels beyond the wing tips, the embankment's toe = the portal faces, the retained earth), rail.json (rail top)",
+ "estimated": "span (= the drawn lanes), springing, headwall size, ring, string course / corbel frieze, wing splay and length, lamps, guard rails: from Street View (looked at only)",
+ "streetview": {
+  "nw": [
+   50.77762,
+   4.32827,
+   133
+  ],
+  "se": [
+   50.77719,
+   4.32895,
+   313
+  ],
+  "inside": [
+   50.77743,
+   4.32857,
+   133
+  ]
+ }
+}

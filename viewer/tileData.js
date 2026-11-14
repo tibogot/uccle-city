@@ -15,6 +15,7 @@ import { smoothPolyline } from "./track.js";
 import { kitCollector } from "./facadeKit/placement.js";
 import { prepRail, heroBridgeNames, abutmentFill, underpassCut, underpassGround, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins, railDriveSurface, railFences, fenceMesh, FENCE_H } from "./rail/railData.js";
 import { buildTrafficGraph } from "./traffic/trafficGraph.js";
+import { loadTunnels, tunnelRoads, tunnelCut, tunnelRecut, tunnelGround, tunnelTrees, tunnelTerrain, tunnelSurface, tunnelFenceRings } from "./rail/tunnels.js";
 import { grassTypeData } from "./grass/grassTypes.js";
 
 let railP = null;
@@ -217,6 +218,10 @@ export async function buildTileData(entry, base) {
     railDropped = n - (feats.trees?.length || 0);
     feats.railVerges = railVerges(rail.doc, bounds);
   }
+  // the road tunnels under the Linkebeek embankments (viewer/rail/tunnels.js, docs/trains/TUNNELS.md; ?tunnels=0: none):
+  // no LiDAR "tree" in their streets; the ones over a bore moved beside it (they would stand on the street's ground, inside)
+  const tunnels = entry.tunnels !== false ? await step("tunnel fetch", () => loadTunnels(base)) : null;
+  if (tunnels?.length && feats.trees?.length) feats.trees = tunnelTrees(tunnels, feats.trees);
   // ?roads=surface: the measured UrbIS street surfaces of this tile (surfaces.json), when the tile has them
   const surfDoc = (entry.surface || entry.grass) && F.surfaces ? await step("fetch surfaces", () => get(F.surfaces)) : null;
   const surf = entry.surface ? surfDoc : null;
@@ -226,6 +231,7 @@ export async function buildTileData(entry, base) {
   // hand corrections (data/overrides.json): road surfaces OSM gets wrong (Place de Saint-Job is setts)
   const ov = await overrides(base);
   applyRoadOverrides(roads, ov);
+  if (tunnels?.length) tunnelRoads(roads, tunnels);                 // the lanes through the bores
   const hm = new Heightmap(tHdr, tBuf);
   // measured markings (pipeline/build_markings.py): crossings, stop lines, lines, OSM crossing / control nodes
   const paint = entry.paint || PAINT;
@@ -238,6 +244,8 @@ export async function buildTileData(entry, base) {
   if (rail) await step("abutment fill", () => abutmentFill(rail.heroes, [hm.y, hm.orig], tHdr));
   // the ground through the round-2 street underpasses down to the road (railData.js underpassCut; the DTM ran over them)
   if (rail) await step("underpass cut", () => underpassCut(rail.heroes, [hm.y, hm.orig], tHdr));
+  // the tunnels' cut: the road level through the approaches and the bores, the earth the walls retain (tunnels.js)
+  const tcut = tunnels?.length ? await step("tunnel cut", () => tunnelCut(tunnels, hm, tHdr)) : null;
   // every other road bridge (OSM bridge=yes: Carsoel at Saint-Job station, Waterloo, Merlo, Chênaie, Tilleuls...): a deck
   // between its ends instead of the bare-earth DTM's cutting (viewer/streets/bridgeDecks.js); the hero decks win where
   // they are (Verrewinkel), and their OSM road is left out of the page's world decks
@@ -269,7 +277,7 @@ export async function buildTileData(entry, base) {
   }
   // (+ the street level across the hero underpasses, railData.js underpassGround; ?underpasslevel=0: as before)
   const roadGround0 = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
-  const roadGround = rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0;
+  const roadGround = tunnelGround(tunnels, rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0);
   const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z) }));
   Object.assign(times, rd.times);
@@ -290,11 +298,14 @@ export async function buildTileData(entry, base) {
     railOut = await step("rail meshes", () => railTileData(rail.doc, bounds, rail.heroes));
     railOut.stats.carved = c.moved; railOut.stats.treesDropped = railDropped;
   }
+  if (tcut) tcut.recut = tunnelRecut(tcut, hm);        // the rail's embankment fill does not fill the bores again
   // the lane graph for the moving traffic (viewer/traffic/: lanes on the measured carriageway, connectors, junction
   // control from OSM, conflicts). Round 4: built on the roads2 network (rd.net, its lane graph already repaired by
   // viewer/streets/laneGraph.js) and the measured class raster
   const traffic = await step("traffic graph", () => buildTrafficGraph(net, roads, feats, bounds, road.surfaceData?.grid));
   const terrain = await step("terrain grid", () => terrainArrays(hm));
+  // the tunnels: the drawn earth over the bores (the lid) and the ground clipped at the walls (tunnels.js)
+  if (tcut) netInfo.tunnels = await step("tunnel terrain", () => tunnelTerrain(tcut, terrain, hm, rail?.doc, bounds));
   await step("terrain simplify", async () => {
     await MeshoptSimplifier.ready;
     const [idx] = MeshoptSimplifier.simplify(terrain.idx, terrain.pos, 3, 0, TERRAIN_ERROR, ["LockBorder", "ErrorAbsolute"]);
@@ -310,17 +321,18 @@ export async function buildTileData(entry, base) {
   // the railway for the car (viewer/rail/railData.js): fences along the line where it runs on the ground (not on bridges,
   // not over a tunnel, broken at road crossings), and below the line's own surface in the drive grid (rail top, shoulders)
   const fences = rail && !keep && entry.railFix ? await step("rail fences", () => railFences(rail.doc, bounds, rail.heroes, roads, hm.ground)) : null;
+  if (fences && tcut) fences.rings = tunnelFenceRings(tunnels, fences);         // no fence collider over a bore (tunnels.js)
   const drive = await step("drive colliders", () => buildDriveData({ bDoc: keep || bDoc, bBuf: keep ? null : bBuf, net, feats, hm, parts: road.parts, bounds, surf, legacy: !!entry.driveLegacy,
     // the walls with their vertical extent (colliders.js heightClear): a car on a road bridge over a station's platform
     // or the line's fence passes over them
-    walls: keep ? [] : [...(rail?.doc.platforms || []).map((p) => ({ ring: p.ring, top: p.top })), ...osmBridges.decks.flatMap(parapetRings),
+    walls: keep ? [] : [...(rail?.doc.platforms || []).map((p) => ({ ring: p.ring, top: p.top, base: p.top - 1.2 })),   // (base: a car far under it passes: Linkebeek's platforms over the Kleindalstraat bore) ...osmBridges.decks.flatMap(parapetRings),
       ...(fences?.rings || []).map((ring) => ({ ring, top: Math.max(...ring.map(([x, z]) => hm.surface(x, z))) + FENCE_H }))] }));   // + the road bridges' parapets          // rail platforms: 0.76 m walls for the car   // drive mode (viewer/drive/)
   if (rail && !keep && entry.railFix) drive.counts.railSurface = await step("rail drive surface", () => railDriveSurface(rail.doc, hm, drive.ground, bounds, rail.heroes));
   if (fences) drive.counts.railFences = fences.rings.length;
   // the tram platforms (drawn by viewer/tram.js 25 cm over the road) in the drive surface: the car rides up their kerb
   // instead of sinking into the slab (docs/collisions/DRIVE_FIX.md); ?colfix=0 keeps the old surface
   if (!keep) drive.counts.tramPlatforms = tramPlatformSurface(feats, hm, drive.ground, bounds, CARVE);
-  if (fences && railOut) railOut.fences = fenceMesh(fences.lines, hm.surface);        // drawn: viewer/rail/railway.js
+  if (fences && railOut) railOut.fences = fenceMesh(fences.lines, tunnelSurface(tcut, hm.surface));   // (over a bore: on the drawn earth)        // drawn: viewer/rail/railway.js
   drive.counts.hidden = nb - bDoc.buildings.length;     // solids a hero model replaces (it collides by its own LOD0)
   // ?kit=1: the façade kit's placement (viewer/facadeKit/placement.js) runs inside the analysis, here in the worker;
   // entry.kitExclude = BU_IDs a hero model or the interior pilot replaces

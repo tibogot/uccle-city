@@ -7,10 +7,12 @@
 // Returns { summary, items } (items: kind floating / overhang, at [x, y, z] in city metres, length, gapMax, part).
 import { partFromBufferGeometry } from "../tools/mesh_audit/audit.js";
 import { auditContact } from "../tools/mesh_audit/contact.js";
+import { TUNNEL_ROOTS } from "./rail/tunnels.js";
 
 export const HEROES = ["stjob", "townhall", "stalle", "vanbuuren", "wolvendael", "police", "calevoet", "stpierre", "observatory", "augustin", "russian", "rosaire",
   "bridge-verrewinkel", "bridge-stjob", "bridge-calevoet",
-  "bridge-ruestalle", "bridge-engeland", "bridge-engeland_chord", "bridge-bigarreaux", "bridge-kauwberg", "bridge-linkebeek"];
+  "bridge-ruestalle", "bridge-engeland", "bridge-engeland_chord", "bridge-bigarreaux", "bridge-kauwberg", "bridge-linkebeek",
+  ...TUNNEL_ROOTS];                                   // the road tunnels (viewer/rail/tunnels.js)
 
 const meshParts = (root, name, filter = null) => {
   const out = [];

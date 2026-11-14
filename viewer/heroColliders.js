@@ -12,10 +12,12 @@
 // colliderWorker.js), so nothing is doubled and no footprint corner blocks where the model has a recess or a porch.
 import * as THREE from "three/webgpu";
 import { KIND } from "./drive/colliders.js";
+import { TUNNEL_ROOTS } from "./rail/tunnels.js";
 
 export const HERO_ROOTS = ["stjob", "townhall", "stalle", "vanbuuren", "wolvendael", "police", "calevoet", "stpierre", "observatory", "augustin", "russian", "rosaire",
   "bridge-verrewinkel", "bridge-stjob", "bridge-calevoet",
-  "bridge-ruestalle", "bridge-engeland", "bridge-engeland_chord", "bridge-bigarreaux", "bridge-kauwberg", "bridge-linkebeek"];
+  "bridge-ruestalle", "bridge-engeland", "bridge-engeland_chord", "bridge-bigarreaux", "bridge-kauwberg", "bridge-linkebeek",
+  ...TUNNEL_ROOTS];                                   // the road tunnels (viewer/rail/tunnels.js)
 const CELL = 0.25, STEP = 0.12, BAND = [0.30, 1.30];
 
 /** Not a collider: cloth, foliage cards, glow / light cones, decals. */

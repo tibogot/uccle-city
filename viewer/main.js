@@ -338,7 +338,8 @@ function removeBridgeDecks(decks) {
 const updaters = [];
 // The railway (?trains=1, Train Lab first): tracks per tile, hero bridges, SNCB trains on the real timetable (viewer/rail/)
 const TRAINS = params.get("trains") !== "0";
-const BRIDGES2 = params.get("bridges2") !== "0";        // ?bridges2=0: no round-2 hero bridges (docs/trains/BRIDGES_ROUND2.md): the track crosses those gaps on its ballast
+const BRIDGES2 = params.get("bridges2") !== "0";
+const TUNNELS = params.get("tunnels") !== "0";          // ?tunnels=0: no road tunnels (docs/trains/TUNNELS.md): no model, no cut through the embankments        // ?bridges2=0: no round-2 hero bridges (docs/trains/BRIDGES_ROUND2.md): the track crosses those gaps on its ballast
 const railP = TRAINS ? import("./rail/railway.js").then(async (m) => ({ m, doc: await m.loadRail() })).catch((e) => { log(`railway: ${e.message}`); return null; }) : null;
 // ?traffic=1: the moving traffic (viewer/traffic/cityTraffic.js). Each full tile's lane graph is kept here until the
 // traffic exists, then added / removed with its tile.
@@ -476,7 +477,7 @@ function tileData(entry, lite = false) {
     grass: cityGrass.on && !lite,                                                                    // ?grass=1: the grass types raster, built in the worker
     rail: TRAINS, bridges2: BRIDGES2, railFix: params.get("railcar") !== "0", driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX, padRoads: params.get("padroads") !== "0",
     // road fix round 2 (docs/collisions/ROAD_FIX2.md): ?roughlanes=0 rough junctions left up, ?abutments=0 OSM deck ends on the bare DTM, ?underpasslevel=0 the street riding the underpass banks
-    roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", underpassLevel: params.get("underpasslevel") !== "0",         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
+    roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
     paint: PAINT_PARAM,                                                                              // ?paint=v1: the road engine's own markings (A/B)
     cache: params.get("tilecache") === "1" };                                                        // ?tilecache=1: built tiles kept in IndexedDB (viewer/tileCache.js); opt-in until measured on a quiet machine
   const key = `${entry.name}|${lite ? 1 : 0}`;
@@ -945,6 +946,12 @@ async function main() {
       } catch (e) { log(`trains: ${e.message}`); }
     }
   }
+  // the road tunnels under the Linkebeek embankments (viewer/rail/tunnelModel.js; the ground through them: the tile worker)
+  if (TUNNELS) import("./rail/tunnelModel.js").then(async ({ addTunnels }) => {
+    const { openParallelPipelines } = await import("../vendor/engine/parallelPipelines.js");
+    await addTunnels({ scene, world, manifest, updaters, compile: () => compileFor, renderer, log, smooth: SMOOTH,
+      openParallel: renderer.backend?.isWebGPUBackend ? openParallelPipelines : null });
+  }).catch((e) => log(`tunnels: ${e.message}`));
   const cy = hm.ground(cx, cz);
 
   // UI
