@@ -1,0 +1,86 @@
+{
+ "about": "Street surface layers (viewer/streets/paving.js, docs/STREET_SURFACES.md). files: relative to viewer/materials/textures/, + _albedo / _nra .ktx2. asphalt, setts and slabs are the library's shipped sets (textures/scans.json); pavers is the texture factory's tf_pavers_a (tools/texturefactory/materials/ground.py, seed 71).",
+ "layers": [
+  {
+   "layer": 0,
+   "name": "asphalt",
+   "files": "asphalt",
+   "source": "texfactory",
+   "id": "tf_asphalt_a_1k",
+   "licence": "CC0 (generated)",
+   "url": "tools/texturefactory (materials/ground.py, seed 41)",
+   "size_m": 2.0,
+   "lattice": null,
+   "mean_albedo_linear": [
+    0.0861,
+    0.0817,
+    0.0767
+   ],
+   "mean_roughness": 0.775,
+   "bytes": 2447582
+  },
+  {
+   "layer": 1,
+   "name": "setts",
+   "files": "cobbles",
+   "source": "polyhaven",
+   "id": "cobblestone_floor_08",
+   "licence": "CC0",
+   "url": "https://polyhaven.com/a/cobblestone_floor_08",
+   "size_m": 2,
+   "lattice": [
+    0,
+    10
+   ],
+   "mean_albedo_linear": [
+    0.2956,
+    0.2689,
+    0.2249
+   ],
+   "mean_roughness": 0.578,
+   "bytes": 2647178
+  },
+  {
+   "layer": 2,
+   "name": "pavers",
+   "files": "streets/pavers",
+   "source": "texfactory",
+   "id": "tf_pavers_a_1k",
+   "licence": "CC0 (generated)",
+   "url": "tools/texturefactory (materials/ground.py, seed 71)",
+   "size_m": 1.8,
+   "lattice": [
+    8,
+    16
+   ],
+   "mean_albedo_linear": [
+    0.2098,
+    0.1955,
+    0.1723
+   ],
+   "mean_roughness": 0.845,
+   "bytes": 1864937
+  },
+  {
+   "layer": 3,
+   "name": "slabs",
+   "files": "paving_concrete",
+   "source": "texfactory",
+   "id": "tf_paving_concrete_a_1k",
+   "licence": "CC0 (generated)",
+   "url": "tools/texturefactory (materials/ground.py, seed 61)",
+   "size_m": 1.8,
+   "lattice": [
+    6,
+    6
+   ],
+   "mean_albedo_linear": [
+    0.2506,
+    0.2348,
+    0.2055
+   ],
+   "mean_roughness": 0.863,
+   "bytes": 1848362
+  }
+ ]
+}
