@@ -306,7 +306,7 @@ const bridgeDeckRefs = new Map();     // road id -> { fn, n }
 function addBridgeDecks(decks, hm) {
   for (const d of decks || []) {
     let e = bridgeDeckRefs.get(d.id);
-    if (!e) { e = { fn: deckHeight(d, (x, z) => hm.ground(x, z), { drawn: true }), n: 0 }; bridgeDeckRefs.set(d.id, e); worldRef?.decks.push(e.fn); }
+    if (!e) { e = { fn: Object.assign(deckHeight(d, (x, z) => hm.ground(x, z), { drawn: true }), { osm: true }), n: 0 }; bridgeDeckRefs.set(d.id, e); worldRef?.decks.push(e.fn); }
     e.n++;
   }
 }

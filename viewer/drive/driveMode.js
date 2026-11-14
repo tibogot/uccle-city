@@ -92,16 +92,17 @@ export class Driver {
       else if (k === "KeyG") this.debug.visible = !this.debug.visible; else if (k === "Escape") this.onExit?.();
     } });
     this.ground = (x, z) => {
-      const dk = this.world.decks?.length ? this.world.deckY(x, z) : null;          // a road bridge's deck (hero or OSM)
+      let dk = null, osm = false;                                                    // a road bridge's deck (hero or OSM)
+      for (const f of this.world.decks || []) { const y = f(x, z); if (y != null) { dk = y; osm = !!f.osm; break; } }
       const near = this.groundHint ?? (this.on && this.state ? this.state.y : null);
       const t = this.world.at(x, z);
       const g = t.drive ? driveHeight(t.hm, t.drive.ground, x, z, near) : t.hm.surface(x, z) + 0.12;
-      // the deck and the road drawn with it (the OSM decks' road runs on or just through the slab, e.g. 0.3 m under it
+      // an OSM deck and the road drawn with it (the OSM decks' road runs on or just through the slab, e.g. 0.3 m under it
       // on the Chaussée de Waterloo, 0.4 m over it on Avenue des Hospices): the higher of the two is the surface; a
       // surface far under the deck (a street passing under the bridge) when the car is on it: the layer nearest the
       // car, as driveHeight does for the grid's two layers (before 2026-11-13 the deck always won)
       if (dk == null) return g;
-      if (Math.abs(g - dk) < 1.5) return Math.max(g, dk);
+      if (osm && Math.abs(g - dk) < 1.5) return Math.max(g, dk);                    // (a hero deck: its own surface)
       return Number.isFinite(near) && Math.abs(g - near) + 1 < Math.abs(dk - near) ? g : dk;
     };
     this.sets = (x, z, r) => {
