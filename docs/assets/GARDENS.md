@@ -1,8 +1,142 @@
 # Front-garden kit: walls, railings, pillars, gates, hedges (branch claude/gardens, 2026-11-13)
 
 Kit 7 "front gardens" of `docs/assets/STREET_KITS.md`, built like the furniture kits (`docs/assets/FURNITURE2.md`,
-`docs/assets/STOPS.md`). **On by default.** `?gardens=0` gives back the city as it was (house fronts meeting the sidewalk
-bare). `?gardenhedges=1` adds the hedges (opt-in, see Performance).
+`docs/assets/STOPS.md`). **On by default since round 2 (branch claude/gardens2, 2026-11-14), hedges included.**
+`?gardens=0` gives back the city without them (house fronts meeting the sidewalk bare); `?gardenhedges=0` = without the
+hedges.
+
+## Round 2 (claude/gardens2, 2026-11-14): what changed and why it can be on
+
+### 1. The lawn strip between the drawn sidewalk and the wall: cause and fix
+
+The placement data was right (the walls stand on the measured UrbIS paving edge). The strip came from how the city
+DRAWS that edge: `viewer/surfaces.js smoothCurves` refines curved kerbs and outer edges with a centripetal Catmull-Rom
+spline, and on an OUTER edge (the sidewalk's back edge, against the gardens) it also splined long STRAIGHT pieces that end
+at a corner of a much shorter piece. I6 Avenue Alphonse XIII (1434, 732): the UrbIS sidewalk's back edge is ONE 39 m chord
+after a 1.1 m corner piece; splined, it bowed up to **0.75 m into the sidewalk**, and the terrain (lawn) showed between the
+drawn paving and the wall. A J6 corner (1752, 723) lost 1.3 m the same way (a 15.6 m chord between two 50 deg turns).
+
+- `smoothCurves`: on outer edges, a piece more than 4 x longer than its neighbour across a vertex keeps its own tangent at
+  that end (the piece stays straight); real curves (drawn with similar chords) are refined as before; kerbs unchanged.
+  Tile worker bundle rebuilt (`node tools/build_worker.mjs`).
+- `tools/gardens/drawnSurfaces.mjs`: the street surfaces EXACTLY as the city draws them (`taperSteps`, `smoothCurves`,
+  `rampKerbPoints` of `viewer/surfaces.js`, bundled in memory with the worker build's esbuild); `build_gardens.py` places
+  the runs on these rings, so whatever the drawing does to an edge, the wall follows it (JOINS by construction).
+- Measured on screen (every wall segment: the first drawn paving triangle from the wall's centre line toward the street,
+  9 tiles round I6, `roads-*` meshes; the wall face is 12.5 cm from its centre line):
+
+| tile | segments | gap > 0.3 m before | after the spline fix | after the drawn-surface placement |
+|---|---|---|---|---|
+| I6 | 629 | 50 | 4 | **0** |
+| H5 | 649 | 60 (18 over 1 m) | 18 | **0** |
+| J6 | 490 | 62 | 18 | **0** |
+| I7 | 668 | 52 | 8 | 1 |
+| J7 | 1 123 | 19 | 5 | 1 |
+| I5 / J5 / H6 / H7 | 525 / 564 / 576 / 443 | 1 / 7 / 27 / 8 | 1 / 2 / 6 / 2 | 1 / 2 / 3 / 2 |
+
+  The few left (0.35-0.5 m) sit on tile borders (H6 733.9, 496.7: the H5 mesh draws that paving) or where no paving is
+  drawn within 3 m (private lanes). Screenshot: `gardens/r2_I6_alphonse_top_after.jpg` (the round-1 strip:
+  `gardens/city_I6_boulenger_sidewalk.jpg`, right).
+- Terrain: all 120 terrains were rebuilt on claude/foundation (exact resampling); the gardens' base heights come from
+  the DTM, so **all 120 tiles of `data/gardens/` were rebuilt** (3 times this round: new terrain, drawn surfaces, style
+  mix + gate widths). JOINS (`window.__gardens.contact(tile)`, now with the hedges): I6, H5, I5, J5, H6, J6, H7, I7, J7, D8:
+  **0 floating segments, 0 buried railings, 0 floating pillars, 0 floating hedge modules** (8 932 modules checked).
+
+### 2. Look check against real images (LOOK only: nothing traced, stored or shipped)
+
+Google Street View (looked at in the browser, 2026-11-14) and Wikimedia Commons photos:
+
+| where | what is really there | what the city drew (round 1) | change |
+|---|---|---|---|
+| Avenue Alphonse XIII 53 (I6, Street View 04/2024) | a clipped privet-like hedge ~1.5 m ON the sidewalk's back edge, a wooden gate; hedges and shrubs along the street | brick wall + lance railing (street's dominant style), no hedge (hedges were off) | hedges on; villa mix hedge-heavier |
+| Avenue Hippolyte Boulenger 16 (I6, Street View 06/2014) | sloping street: red-brick low walls and brick planters stepping with the slope, a grey concrete retaining wall with a planted bank behind | low klinker walls + lance railings, pillars | retaining walls already grow with the garden (416 runs); walls without railings are now likelier (wall + hedge front) |
+| Rue de Calevoet (D8, Street View 05/2009) | a green welded-mesh fence with a conifer hedge behind; rendered walls opposite | hedges (laurel) with gate pillars | matches the hedge; no mesh-fence piece yet (left to do) |
+| Avenue Brugmann 422 (F3, Street View 10/2020) | a low clipped box / privet hedge on a stone edging round an apartment block | n/a (forecourt rules) | box hedges 0.5-0.75 m kept |
+| Avenue Henri Pirenne (F3, Street View 04/2024) | a tall (~1.8 m) brick garden wall with ivy / a hedge spilling over | villa walls 0.6-1.5 m | villa walls now 0.7-1.8 m |
+| Avenue Albert Lancaster (H5; Commons, Sjenghai 2025, CC BY-SA 4.0) | villas behind clipped hedges, low brick walls with a hedge, tall ivy fences | rail / wall / hedge mix | hedge-heavier villa mix, new "low wall + hedge" front |
+| Avenue Adolphe Dupuich (Commons, charles lecompte, CC BY-SA 3.0) | villas: yew / beech hedges 1-2 m, brick walls with piers and stone caps and a hedge behind | as above | as above |
+| Avenue Brunard (Commons, Sjenghai 2026, CC BY-SA 4.0) | a rubble-stone low wall with a hedge, tall laurel / ivy hedges opposite | as above | as above (no rubble-stone wall material yet) |
+| Rue Dodonée, Avenue Beau-Séjour, Avenue Molière (terraces; Commons: GdML CC BY-SA 4.0, Sjenghai CC BY-SA 4.0, charles lecompte CC BY-SA 3.0) | shallow fronts: a low brick / stone plinth with a black wrought-iron railing (~0.8-1 m), brick piers (some with white stone ball finials), shrubs behind | low wall + railing 36 %, + hedge 16 % | kept (rail 34 %, rail + hedge 20 %); ball finials left to do |
+| Avenue du Hoef (Commons, charles lecompte, CC BY-SA 3.0) | a 1960s apartment block: a low brick wall with a clipped hedge behind | modern / wall | "low wall + hedge" front |
+| Rue Xavier De Bue (Commons, GdML, CC BY-SA 4.0) | shops on the sidewalk line: no front gardens | none (shop rule) | correct |
+
+Result (`build_gardens.py` TERRACE_MIX / VILLA_MIX): terraces rail 34 %, rail + hedge 20 %, brick wall 16 %, low wall +
+hedge 10 % (new), hedge 10 %, modern 5 %, open 5 %; villas 8 / 20 / 8 / 14 / 38 / 6 / 6 %; villa brick walls 0.7-1.8 m;
+the low wall + hedge front: a 0.3-0.6 m wall, a 1.1-1.7 m hedge 0.5 m behind it. Wall heights (0.32-0.6 m under railings
+of 0.75-1.05 m), railing types (lance bars, black / anthracite / dark green), brick piers with caps and the brick tones
+matched the photos; the photos' hedges were the big miss.
+
+### 3. Mesh audit (`tools/mesh_audit`) and the LOD hand-over
+
+- Ironwork (`node tools/mesh_audit/cli.mjs models/gardens/gardens.glb --nodes <piece>_lod<k>`, each of the 27 pieces x
+  LODs alone): round 1 had 1 516-6 188 blocking items per LOD set (coplanar side faces: the spear gates' bars doubled
+  through the top rail, the rings railing's 14 mm bars in a 14 mm rail, gate rails ending flush in the stiles = a slit).
+  Fixed in `tools/blender/gardenKit.py` (one bar through the rail, rails 20 mm deep, rails 5 mm into the stiles and the
+  stiles 5 mm past the rails), GLB rebuilt with the AO bake and previews: **0 blocking on all 27**. Warnings left:
+  slivers (bars are long and thin by nature), "near" (bars through rails, 2-3 mm).
+- JS pieces (`node tools/gardens/auditJsPieces.mjs`: wall, slab / saddle coping, pillar, pier cap, hedge, 3 LODs each):
+  **0 blocking** (the hedge body had smooth section normals over planar strips, "bentflat": now flat per strip).
+- LOD hand-over (`debug/gardensLodFlight.js`): every frame, every instance a LOD's shader band may draw must be in that
+  LOD's pool (re-gathered every 2 m with a 4 m margin; the hand-over is the dithered band). Avenue Alphonse XIII, 169 m at
+  14 m/s at eye height (659 frames, 78 re-gathers, 2.04 M instance-LOD checks) and at 30 m/s 30 m up (278 frames,
+  0.85 M checks): **0 missing (no pop)**.
+
+### 4. Hedges: instanced modules, on
+
+Round 1's city hedges were the foliage system's merged meshes (`buildHedges`): one mesh per tile per species, body +
+cards (up to 10 draws a tile, 90-200 k triangles a tile, every card of the tile drawn wherever the camera stood, a new
+material set per tile: ~+75 draws / ~400 k triangles at I6). Now `viewer/gardens/gardenHedge.js`: each run cut into
+~1 m modules of ONE unit clipped-hedge piece (battered sides, rounded top corners, closed ends; LOD0 160 / LOD1 54 / LOD2
+20 triangles; bands 30 / 90 / 300 m), sheared to the slope and scaled to the run's height and width, lumps displaced in
+the vertex stage from a noise in RUN metres (continuous over module joints), the foliage hedge's shading (clumps,
+crevices, soft holes, bump, the species colour by season, snow), the species per instance; leaf cards (64 per module,
+coverage-preserving mips, spread in world metres in the vertex stage) near only (shrink 10-18 m, band 22 m). Drawn
+through the kit's pools like everything else: **4 draws for the whole city (3 body LODs + cards) and one fixed material
+set**. JOINS: each module goes down to the lowest ground along it (0 floating). Collisions: each module a stand-in box.
+City counts: 64.5 km of hedge (round 1: 46.5 km), ~8 000 modules over the 9 tiles round I6.
+
+### 5. Cost (another agent's tab rendered the city on the same GPU all session: `tools/perf/preflight.ps1` **RED**
+(CPU 42 % busy at rest, 1.3 GB free, Chrome 7.4 GB, GPU 100 % busy at rest / power cap). A/B alternated in one page
+(`debug/gpuAB.js alternate`, 6 rounds, garden group hidden / shown), so both sides see the same load:
+
+| view | draws | triangles | GPU p50 |
+|---|---|---|---|
+| street level, Avenue Alphonse XIII (1462, 725, eye height), 9 tiles, `traffic=0&trams=0` | 537 → 573 (+36, shadows included) | 6.68 M → 6.90 M (+0.22 M) | 10.37 → 10.83 ms (+0.46, per round +0.13 .. +0.92) |
+| the same, hedges only (hidden / shown) | +6 | +52 k | +0.00 (-0.13 .. +0.13) |
+| reference view (`?ring=1&far=1&time=golden&traffic=0`, 1400 x 850) | 369 → 369 | 4.886 M → 4.886 M | nothing drawn (the overview camera is beyond every band); the 0.89 ms "difference" there is the background noise |
+
+Kit per pass at street level: 157-165 k triangles, 32 kit meshes; gather 1.5-4.7 ms every 2 m of travel (9 tiles,
+~60 k instances + 8 k hedge modules). **GPU ms on a GREEN machine: still to re-measure** (the owner's perf session).
+
+### 6. Collisions before / after (`window.viewer.collisionTest(tile, { walk: true })`, `ring=0`) and the gate walk
+
+| tile | static invisible / missing | drive contacts / passed / blocked | walk contacts / passed / fell / stuck / blocked |
+|---|---|---|---|
+| I6 `?gardens=0` | 0 / 5 | 70 / 0 / 41 | 8 / 3 / 1 / 0 / 31 |
+| I6 gardens on | 0 / 5 | 79 / 0 / 44 | 120 / 4 / 1 / 0 / 33 |
+| D8 `?gardens=0` | 360 / 13 (pre-existing) | 36 / 0 / 33 | 3 / 1 / 0 / 1 / 10 |
+| D8 gardens on | 360 / 14 | 41 / 0 / 35 | 155 / 1 / 0 / 1 / 12 |
+
+The one new I6 "passed" is a walker going through an open opening between two pillars (1035.2, 637.5 / 1036.4, 636.6):
+meant to be walkable. D8's one new static "missing" is a 0.38 m2 cell at the tile border (-1076.3, 1999.7). Walls are
+solid for the walker (contacts 8 → 120, 3 → 155) and the car; 0 invisible hits.
+
+Gate walk (`debug/gardensWalk.js run(tile)`: the third-person controller walks from 1.5 m out on the sidewalk through
+each open pedestrian gate into the garden, and at the middle of wall / railing stretches and hedges). Round 1's
+pedestrian openings were 1.1 m between the pillars' centres (0.74 m clear) and some led into a building standing right
+behind the line; now 1.3 m (0.94 m clear, a real garden gate) and no gate where a building is within 0.6 m behind the
+line (606 dropped city-wide):
+
+| tile | open gates walked through | walls / railings held | hedges held |
+|---|---|---|---|
+| D8 (villas) | **21 / 22** (the one: a LiDAR tree trunk 0.32 m behind the gate) | **60 / 60** | **54 / 54** |
+| I6 | **39 / 52** | **60 / 60** | 59 / 60 |
+
+I6's 13: 5 where the garden rises 0.9-2.4 m within 1.5 m of the line (Montagne de Saint-Job, Chaussée de Saint-Job: no
+front steps are drawn, the walker does not climb that), 2 where a pillar of the NEIGHBOURING front stands in the
+opening, 6 where the walker stops at a 10-20 cm lip at the sidewalk's back edge (the sidewalk mesh's edge face where the
+garden lies higher than the paving: the city's ground, not the gate). The one hedge a walker got through (1131.5, 864.4)
+is a 0.73 m box hedge: it stepped over the end of it. Left to do (below).
 
 ## What was built
 
@@ -17,7 +151,7 @@ bare). `?gardenhedges=1` adds the hedges (opt-in, see Performance).
 | `rail_rings` | 2208 / 832 / 96 | 22 / 60 / 150 | Blender: the Art Deco railing, square bars with a band of rings between a middle rail and the top rail, a capping bar |
 | `gate_<type>` x 3 | e.g. spear 2294 / 570 / 144 | 22 / 60 / 150 | Blender: the pedestrian gate, 1.0 m nominal leaf (scaled to the opening), tube frame, the type's infill, latch box + lever on the street side, two hinge knuckles; drawn OPEN (swung 70-100 deg into the garden) so the walker gets in at the door |
 | `cargate_<type>` x 3 | e.g. spear 3496 / 872 / 240 | 25 / 70 / 160 | Blender: one leaf of the double driveway gate (1.6 m nominal), a middle rail, a drop bolt into the ground; two leaves per closed driveway |
-| hedges | (the foliage system's) | hidden past 260 m | `viewer/foliage/hedges.js buildHedges` on runs 0.45-0.5 m behind the wall line (not a second hedge system): with `?gardenhedges=1`, a coarser body (`{ step: 0.6, split: 0.32, cards: 0.6 }`) |
+| hedges (round 1) | (the foliage system's) | hidden past 260 m | `viewer/foliage/hedges.js buildHedges` on runs 0.45-0.5 m behind the wall line (not a second hedge system): with `?gardenhedges=1`, a coarser body (`{ step: 0.6, split: 0.32, cards: 0.6 }`) |
 
 - Script: `tools/blender/gardenKit.py` → `models/gardens/gardens.glb` (1.9 MB, + `gardens.json`, `previews/`). The three
   LODs are SCRIPTED (round segments 12 / 6, lances detailed / simple / none, extra rings for AO only at LOD0 / 1): no
@@ -33,7 +167,7 @@ bare). `?gardenhedges=1` adds the hedges (opt-in, see Performance).
   faces; railing modules tile without doubled bars (bars at x = 0.125 k) and without hidden end faces.
 - Night: nothing glows, no light (fixed light count).
 
-## Placement (`tools/gardens/build_gardens.py` → `data/gardens/<T>.json`, 120 files + `summary.json`, 11 MB)
+## Placement (`tools/gardens/build_gardens.py` → `data/gardens/<T>.json`, 120 files + `summary.json`, 12 MB)
 
 ```
 node tools/gardens/faces.mjs <T>      (called by the builder: the city's own street faces and doors)
@@ -63,7 +197,7 @@ Rules:
   of, else the nearer face end (plots split half way between villas). Runs ending within ~2-3 m of each other at an
   angle get the corner point (249 mitred corners); straight neighbours meet end to end; consecutive segments that turn
   < 70 deg overlap by w/2 tan(a/2) (no wedge gap), bigger turns get a pillar.
-- **Openings**: the front door projected along the face normal onto the run: a 1.1 m opening with a pedestrian gate,
+- **Openings**: the front door projected along the face normal onto the run: a 1.3 m opening (round 2; 1.1 m in round 1) with a pedestrian gate,
   drawn open (4 110 gates; 2 713 doors fell inside a driveway and use it); driveways from CR42L (12 355), ramp hits where
   UrbIS Topo has none (26), OSM service roads crossing the run (27): pillars both sides, a closed double gate on ~55 % of
   2.2-4.6 m openings (2 548), else open (7 640).
@@ -78,9 +212,10 @@ Rules:
   city the instances are then SETTLED on the drawn ground (`gardenKit.js settle`): each segment end goes down until its
   footing reaches the lower side everywhere along it, and the wall grows where the drawn garden rises over the coping.
 
-**Counts (Uccle):** 11 466 houses with a front: 15 993 runs (7 797 railing fronts, 2 947 wall fronts, 5 249 hedge fronts,
-1 593 open lawns); **53.1 km of wall, 37.6 km of railing, 46.5 km of hedge**, 51 486 pillars, 48 594 wall segments,
-4 110 pedestrian gates (open), 2 548 closed driveway gates. Busiest tiles: J7, F9 (~650 garden faces each).
+**Counts (Uccle, round 2 build):** 16 750 runs (866 open lawns); **51.9 km of wall, 27.4 km of railing, 64.5 km of hedge**;
+3 858 pedestrian gates (open; 606 dropped where a building stands right behind the line), 2 732 closed driveway gates,
+7 839 open driveway openings, 412 retaining runs. (Round 1: 15 993 runs, 53.1 km wall, 37.6 km railing, 46.5 km hedge,
+4 110 pedestrian gates.)
 
 ## Performance
 
@@ -127,11 +262,30 @@ against the drawn ground): I6 2 291 samples, H5 2 414, D8 1 867: **0 floating, 0
 
 ## Switches
 
-- `?gardens=0`: no gardens (the city as before). `?gardenhedges=1`: with the hedges.
+- On by default. `?gardens=0`: no gardens (the city as before). `?gardenhedges=0`: without the hedges.
 - Gardens Lab: `labs/gardens-lab.html` (`?layout=lod`, `?slope=0.08`, `?view=<preset>`, `?night=1`, `?hedges=0`).
-- `window.__gardens.report()` (instances, live per LOD, gather ms, hedge cost), `.contact(tile)` (JOINS check).
+- `window.__gardens.report()` (instances, live per LOD, triangles per pass, gather ms), `.contact(tile)` (JOINS check, hedges included).
+- Checks: `debug/gardensLodFlight.js` (`fly({ path, speed, height })`: LOD pool vs band every frame),
+  `debug/gardensWalk.js` (`run(tile)`: gates / walls / hedges with the third-person controller),
+  `node tools/gardens/auditJsPieces.mjs` (mesh audit of the JS pieces), `node tools/gardens/drawnSurfaces.mjs <T>`.
 
 ## Shared files touched (for a careful merge)
+
+Round 2 (claude/gardens2):
+
+| file | change |
+|---|---|
+| `viewer/surfaces.js` | `smoothCurves`: the loop over pieces (after `const curve = ...`): `EDGE_RATIO` / `bends()`; an outer-edge piece > 4 x its neighbour keeps its tangent; `radius(k, on)` takes the bent flag. Kerbs unchanged |
+| `viewer/tileWorker.bundle.js` | rebuilt (`node tools/build_worker.mjs`): only that change (12 lines) |
+| `viewer/main.js` | two comments only (the gardens are on by default) |
+| `docs/TODO.md` | the FRONT GARDENS entry |
+
+New in round 2: `viewer/gardens/gardenHedge.js`, `tools/gardens/{drawnSurfaces.mjs,auditJsPieces.mjs}`,
+`debug/{gardensLodFlight.js,gardensWalk.js}`, `docs/assets/gardens/r2_*.jpg`. `viewer/foliage/hedges.js` is no longer used by
+the gardens (its `opts` from round 1 stay, harmless). `tools/worker`: `npm ci` there is needed for the two node tools.
+
+Round 1:
+
 
 | file | change |
 |---|---|
@@ -150,11 +304,14 @@ No tile-worker change (no bundle rebuild). New: `viewer/gardens/{gardenGeom,gard
 
 - Data: UrbIS (CC0: buildings, street surfaces, Topo CR42L driveways) via the tiles and the main checkout's raw cache;
   OpenStreetMap (ODbL: barrier ways, parking / commercial areas, shops, service roads), fetched from Overpass 2026-11-13.
-- Look: from knowledge of Brussels / Uccle front gardens (low brick walls with blue-stone copings, lance railings, brick
-  piers with stone caps, privet / beech hedges). **No photo was consulted for this round** (no Google imagery, no
-  Commons photo): a look check against Street View (LOOK only) and Commons photos is left to do (below).
+- Look (round 1): from knowledge of Brussels / Uccle front gardens. Round 2: checked against Google Street View (LOOK
+  only, nothing stored) and Wikimedia Commons photos (authors and licences in "Round 2, 2. Look check"; none is shipped).
 
 ## Screenshots (`docs/assets/gardens/`) and previews (`models/gardens/previews/`)
+
+- Round 2: `r2_I6_alphonse_top_after.jpg` (Avenue Alphonse XIII from above: the wall on the paving's back edge, no lawn
+  strip), `r2_I6_alphonse_street.jpg` (the same street at eye height), `r2_D8_calevoet_hedges.jpg` (Rue de Calevoet: the
+  instanced laurel hedges with gate pillars). Previews re-rendered with the fixed ironwork.
 
 - `city_I6_boulenger_sidewalk.jpg`: Avenue Hippolyte Boulenger from the sidewalk, low klinker walls with blue-stone
   copings and lance railings, hedges behind (`?gardenhedges=1`).
@@ -166,15 +323,15 @@ No tile-worker change (no bundle rebuild). New: `viewer/gardens/{gardenGeom,gard
 
 ## Left to do
 
-- Look check against Street View (look only) and Commons photos of Uccle streets; tune the style mix per street type.
-- Hedges are opt-in (`?gardenhedges=1`): one group per tile per species costs up to ~10 draws and 90-200 k triangles a
-  tile. The foliage city hookup should give them cells + LODs (or an instanced hedge segment with the foliage material).
-- The mesh checker (`tools/mesh_audit`) was not run on the ironwork GLB yet; LOD flight pop counter not run (the
-  hand-over is the furniture kits' dithered band, checked by eye in the LOD row).
-- In some streets a strip of lawn shows between the drawn sidewalk and the wall (the wall stands on the UrbIS edge;
-  the drawn sidewalk can stop short of it).
+- GPU ms on a GREEN machine (this round's A/B ran under a RED preflight: another agent's tab on the GPU).
+- Gates the walker cannot use: front steps where the garden rises behind the gate (I6 Montagne de Saint-Job); a
+  neighbouring front's pillar in an opening (drop it at build time); the 10-20 cm lip at the sidewalk's back edge where
+  the garden is higher (a city-ground item: the sidewalk's edge face vs the welded terrain).
+- Look: green welded-mesh panel fences (very common round villas, e.g. Rue de Calevoet) and wooden fences (OSM fences
+  are drawn as hedges); rubble-stone walls (Avenue Brunard); white stone ball finials on piers (Rue Dodonée); ivy on
+  walls and fences. Garage ramps / driveway paving are not drawn (the openings are); the driveway gates are closed boxes
+  for the car.
 - The painted façade draws a door on every street face of the buildings the façade kit does not take: those get a gate
-  too; a façade-kit house's second street face gets none (it shows a window there).
-- Garage ramps / driveway paving are not drawn (the openings are); the driveway gates are closed boxes for the car.
-- Data size (11 MB): could be compacted (integer centimetres, no per-garden list).
-- Wooden and chain-link fences (OSM) are drawn as hedges: no fence pieces yet.
+  too; a façade-kit house's second street face gets none.
+- Data size (12 MB): could be compacted (integer centimetres, no per-garden list). Gather 1.5-4.7 ms every 2 m of travel
+  with 9 tiles (CPU): could move into cells kept between gathers.
