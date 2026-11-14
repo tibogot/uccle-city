@@ -9,8 +9,8 @@
  "rows": 501,
  "encoding": "u16le-cm",
  "nodata": 65535,
- "min": 100.56,
- "max": 126.11,
+ "min": 100.57,
+ "max": 126.14,
  "nodataCount": 0,
  "source": "urbis-dtm",
  "inputs": [
@@ -20,7 +20,7 @@
     0.5,
     0.5
    ],
-   "crs": "EPSG:31370"
+   "crs": "None"
   },
   {
    "file": "DTM_31370_TIFF_153162_20211009_50/UrbDTM_2021_153162.tif",
@@ -28,7 +28,8 @@
     0.5,
     0.5
    ],
-   "crs": "EPSG:31370"
+   "crs": "None"
   }
- ]
+ ],
+ "resample": "exact-tent1m"
 }

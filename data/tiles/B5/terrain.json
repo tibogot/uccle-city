@@ -20,7 +20,7 @@
     0.5,
     0.5
    ],
-   "crs": "EPSG:31370"
+   "crs": "None"
   },
   {
    "file": "DTM_31370_TIFF_146165_20211009_50/UrbDTM_2021_146165.tif",
@@ -28,19 +28,20 @@
     0.5,
     0.5
    ],
-   "crs": "EPSG:31370"
+   "crs": "None"
   }
  ],
+ "resample": "exact-tent1m",
  "fill": {
   "source": "DHMV II DTM 1 m (Digitaal Vlaanderen)",
   "file": "dhmv/tiles/B5.tif",
-  "cells": 258,
+  "cells": 240,
   "feather": 12.0,
   "seamResidual": {
    "cells": 691,
-   "mean": 0.002,
-   "median": -0.013,
-   "maxAbs": 0.341
+   "mean": -0.002,
+   "median": -0.017,
+   "maxAbs": 0.309
   }
  }
 }

@@ -9,7 +9,7 @@
  "rows": 501,
  "encoding": "u16le-cm",
  "nodata": 65535,
- "min": 38.39,
+ "min": 38.38,
  "max": 73.2,
  "nodataCount": 0,
  "source": "urbis-dtm",
@@ -20,7 +20,8 @@
     0.5,
     0.5
    ],
-   "crs": "EPSG:31370"
+   "crs": "None"
   }
- ]
+ ],
+ "resample": "exact-tent1m"
 }

@@ -9,7 +9,7 @@
  "rows": 501,
  "encoding": "u16le-cm",
  "nodata": 65535,
- "min": 24.37,
+ "min": 24.32,
  "max": 33.61,
  "nodataCount": 0,
  "source": "urbis-dtm+dhmv2",
@@ -20,17 +20,18 @@
     0.5,
     0.5
    ],
-   "crs": "EPSG:31370"
+   "crs": "None"
   }
  ],
+ "resample": "exact-tent1m",
  "fill": {
   "source": "DHMV II DTM 1 m (Digitaal Vlaanderen)",
   "file": "dhmv/tiles/B6.tif",
-  "cells": 44509,
+  "cells": 44736,
   "feather": 12.0,
   "seamResidual": {
-   "cells": 3744,
-   "mean": 0.018,
+   "cells": 3745,
+   "mean": 0.019,
    "median": -0.007,
    "maxAbs": 0.602
   }
