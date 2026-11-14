@@ -8,18 +8,36 @@
 <style>
   html, body { margin: 0; height: 100%; background: #b9c9d6; overflow: hidden; font: 13px/1.4 system-ui, sans-serif; }
   canvas { display: block; }
-  #hud { position: fixed; top: 10px; left: 10px; background: rgba(20, 24, 30, .82); color: #e6e9ee;
-         padding: 10px 12px; border-radius: 6px; max-width: 330px; }
-  #hud h1 { font-size: 14px; margin: 0 0 6px; }
+  /* the HUD top left (viewer/devHud.js): title + tile, stats, the dev log; follows the UI theme (panelUI.js applyTheme) */
+  #hud { --bg: #171b21; --fg: #e3e7ec; --muted: #9aa5b1; --dim: #6c7783; --line: rgba(255,255,255,.08); --field: #262c35; --fline: #353d48; --logc: #f0c27a; --accent: #78aefc;
+         position: fixed; top: 8px; left: 8px; z-index: 2; background: var(--bg); color: var(--fg); padding: 8px 10px; border-radius: 10px;
+         width: 300px; box-sizing: border-box; max-height: calc(100vh - 16px); overflow: hidden; display: flex; flex-direction: column;
+         font: 12px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif; border: 1px solid var(--line); box-shadow: 0 6px 22px rgba(0,0,0,.35); }
+  :root[data-ui-theme=light] #hud { --bg: #f7f6f3; --fg: #1d2228; --muted: #4d5661; --dim: #848c96; --line: rgba(0,0,0,.08); --field: #fff; --fline: #d5d1c9; --logc: #8a5300; --accent: #1f62c4; box-shadow: 0 6px 22px rgba(0,0,0,.14); }
+  @media (prefers-color-scheme: light) { :root:not([data-ui-theme=dark]) #hud { --bg: #f7f6f3; --fg: #1d2228; --muted: #4d5661; --dim: #848c96; --line: rgba(0,0,0,.08);
+         --field: #fff; --fline: #d5d1c9; --logc: #8a5300; --accent: #1f62c4; box-shadow: 0 6px 22px rgba(0,0,0,.14); } }
+  #hud .hhead { display: flex; align-items: center; gap: 6px; flex: none; }
+  #hud h1 { font-size: 13px; font-weight: 650; margin: 0; flex: 1; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+  #hud select, #hud input[type=text] { background: var(--field); color: var(--fg); border: 1px solid var(--fline); border-radius: 5px; font: 12px system-ui, sans-serif; padding: 1px 4px; }
+  #hud .hbtn { background: none; border: 0; color: var(--muted); cursor: pointer; width: 22px; height: 22px; border-radius: 5px; padding: 0; font: 12px/1 system-ui, sans-serif; }
+  #hud .hbtn:hover { background: var(--line); color: var(--fg); }
   #hud label { display: block; white-space: nowrap; }
-  #hud button { margin: 6px 4px 0 0; }
-  #stats, #log { font: 12px/1.35 ui-monospace, monospace; white-space: pre; margin-top: 6px; color: #b8c2cc; }
-  #log { color: #f0c27a; white-space: pre-wrap; }
-  #stats { white-space: pre-wrap; }
-  #help { color: #8f9aa6; font-size: 12px; margin-top: 6px; }
-  #hud { z-index: 2; max-height: calc(100vh - 20px); overflow-y: auto; overflow-x: hidden; box-sizing: border-box; }
+  #hud button:not(.hbtn) { margin: 6px 4px 0 0; }
+  #stats { font: 11.5px/1.4 ui-monospace, Consolas, monospace; white-space: pre-wrap; margin-top: 6px; color: var(--muted); flex: none; }
   #logBox { margin-top: 6px; }
-  #logBox summary { cursor: pointer; color: #8f9aa6; font-size: 12px; }
+  #logBox summary { cursor: pointer; color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 6px; list-style: none; padding: 2px 0; }
+  #logBox summary::-webkit-details-marker { display: none; }
+  #logBox summary::before { content: "▸"; font-size: 10px; color: var(--dim); width: 10px; }
+  #logBox[open] summary::before { content: "▾"; }
+  #logBox summary .lcount { font: 11px ui-monospace, Consolas, monospace; color: var(--dim); }
+  #logBox summary input { margin-left: auto; width: 120px; }
+  #logBox:not([open]) summary input, #logBox:not([open]) summary .hbtn { display: none; }
+  #logWrap { overflow-y: auto; max-height: min(260px, calc(100vh - 200px)); margin-top: 4px; border-top: 1px solid var(--line); padding-top: 4px; scrollbar-width: thin; }
+  #log, #logView { font: 11px/1.4 ui-monospace, Consolas, monospace; color: var(--logc); white-space: pre-wrap; word-break: break-word; }
+  #help { color: var(--dim); font-size: 11.5px; margin-top: 6px; }
+  #hud.folded #stats, #hud.folded #logBox, #hud.folded #help { display: none; }
+  /* photo mode (H): every UI layer hidden but the data credits */
+  body.photo #hud, body.photo .upanel, body.photo .umap-mini, body.photo .umap-toggle, body.photo .ukeys { visibility: hidden !important; }
   /* covers the canvas while every shader is compiled (viewer/warmup.js), so the first seconds don't stutter */
   #cover { position: fixed; inset: 0; z-index: 1; display: grid; place-items: center; background: #b9c9d6;
            color: #2a3440; font-size: 15px; transition: opacity .4s; opacity: .99; }
@@ -39,7 +57,7 @@
   #loaderUi .lbar i { display: block; height: 100%; background: currentColor; transform-origin: 0 50%; transform: scaleX(0); transition: transform .5s ease-out; }
   #loaderUi .lsub { font: 12px/1.3 ui-monospace, monospace; opacity: .8; min-height: 1.3em; }
   /* with the dev panel the HUD keeps only the title, the stats and the log (the controls moved to the panel) */
-  body.devpanel #hud label, body.devpanel #hud button, body.devpanel #hud a, body.devpanel #help { display: none; }
+  body.devpanel #hud label, body.devpanel #hud button:not(.hbtn), body.devpanel #hud a, body.devpanel #help { display: none; }
   /* the data credits, always on screen (OSM's ODbL requires "© OpenStreetMap contributors" where its data shows) */
   #credits { position: fixed; bottom: 4px; left: 50%; transform: translateX(-50%); z-index: 2; font: 11px/1.3 system-ui, sans-serif;
              color: rgba(255, 255, 255, .85); text-shadow: 0 1px 2px rgba(0, 0, 0, .8); white-space: nowrap; pointer-events: none; }
@@ -62,7 +80,7 @@
 <body class="loading">
 <div id="cover">Loading Uccle…</div>
 <div id="hud">
-  <h1>Uccle 3D — <select id="tileSel"></select></h1>
+  <div class="hhead"><h1>Uccle 3D <select id="tileSel" title="boot on this tile (reloads)"></select></h1><button class="hbtn" id="hudFold" title="fold the HUD (stats + log)">▾</button></div>
   <label><input type="checkbox" data-layer="terrain" checked> terrain</label>
   <label><input type="checkbox" data-layer="buildings" checked> buildings</label>
   <label><input type="checkbox" data-layer="roads" checked> roads (road engine)</label>
@@ -71,7 +89,7 @@
   <label>time <select id="timeSel"></select></label>
   <button id="btnOrbit">Overview</button><button id="btnStJob">Close-up</button><button id="btnWalk">Walk</button><button id="btnFly">Fly</button><button id="btnDrive">Drive</button><button id="btnThird" title="Third person: a character on foot (WASD, Shift, Space; Esc back)">Third person</button> <a href="../labs/" style="color:#9cc4ff;font-size:12px">labs</a>
   <div id="stats">loading…</div>
-  <details id="logBox" open><summary>log</summary><div id="log"></div></details>
+  <details id="logBox"><summary>log <span class="lcount" id="logCount">0</span><input type="text" id="logFilter" placeholder="filter the log" spellcheck="false"><button class="hbtn" id="logCopy" title="copy the (filtered) log">⧉</button></summary><div id="logWrap"><div id="log"></div><div id="logView" hidden></div></div></details>
   <div id="help">Orbit: drag / right-drag / wheel. Walk: WASD or arrows, drag to look, Shift = run, Esc = back to orbit. Fly: W/S dive/climb, A/D bank, Space flap, Shift dive, drag to look.</div>
 </div>
 <div id="credits">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> · UrbIS © CIRB/BRIC · STIB-MIVB · SNCB/NMBS · Brussels Mobility · Digitaal Vlaanderen</div>

@@ -64,10 +64,11 @@ import { deckHeight } from "./streets/bridgeDecks.js";
 import { cityGrass } from "./grass/cityGrass.js";
 import { liteShown } from "./liteShown.js";
 import { NIGHT } from "./nightLights/nightMode.js";   // ?night=1: the clustered night lights (boot flag, docs/NIGHT_HOOKUP.md)
+import { hud, hudLog, setupHud } from "./devHud.js";   // the HUD top left: stats + the searchable dev log
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
-if (params.get("log") === "0") document.getElementById("logBox")?.removeAttribute("open");   // dev log: open by default, ?log=0 closes it
+setupHud(params);           // dev log: closed by default (it covered the view), ?log=1 opens it; the HUD folds (viewer/devHud.js)
 const TILE = (params.get("tile") || "I6").toUpperCase();    // I6 = Saint-Job (it was G4 before the grid grew to all of Uccle)
 const EYE = 1.7;            // walk-mode eye height (m)
 const CARVE = 0.12;         // terrain is pushed this far under any road surface
@@ -97,8 +98,7 @@ const preCompile = async (roots, fading) => {
 const dropMat = (m) => { if (!m.userData?.shared) { dropFadeVariant(m); m.dispose?.(); } };
 
 const $ = (id) => document.getElementById(id);
-const logLines = [];
-const log = (s) => { logLines.push(s); $("log").textContent = logLines.join("\n"); console.log(s); };
+const log = (s) => { hudLog(s); console.log(s); };    // (one text node appended to, not every line re-joined)
 /** the loading scene's readout (viewer/loader/): what the boot is doing now */
 const bootStage = (s, detail) => { try { window.__loader?.stage(s, detail); } catch { /* no loader */ } };
 const timedGlobal = async (label, fn) => { const t = performance.now(); const r = await fn(); log(`${label}: ${(performance.now() - t).toFixed(0)} ms`); return r; };
@@ -1339,7 +1339,7 @@ async function main() {
     if (pipe && lighting.firmament) pipe.setExposureFactor(lighting.adapt(dt));
     sampleGpu();
     frames++;
-    if (frames % 10 === 1) {
+    if (frames % 10 === 1 && hud.statsOn) {         // (not while the HUD is folded / hidden: no DOM write)
       const r = info.render;
       $("stats").textContent =
         `${backend}  ${fps.toFixed(0)} fps` + (gpu.avg ? `  GPU ${gpu.avg.toFixed(2)} ms (worst ${gpu.worst.toFixed(1)})` : "") + `\n` +
@@ -1542,70 +1542,71 @@ async function main() {
     for (const [uid, ms] of t) { const k = uid.replace(/:f\d+$/, ""); agg[k] = (agg[k] || 0) + ms; }
     return Object.entries(agg).sort((a, b) => b[1] - a[1]).map(([k, ms]) => [k, +ms.toFixed(3)]);
   };
+  // the player and the teleport (the minimap's click-to-teleport, the dev panel's Go to): streams the target tile in
+  const mode = () => (third?.on ? "third" : flyer.on ? "fly" : driver.on ? "drive" : walker.on ? "walk" : "orbit");
+  const dir = new THREE.Vector3();
+  const getPlayer = () => {
+    const m = mode();
+    camera.getWorldDirection(dir);
+    const bear = Math.atan2(dir.x, -dir.z);                          // radians clockwise from north (-z)
+    let x, z, heading, y;
+    if (m === "third") { x = third.tp.x; z = third.tp.z; y = third.tp.y; heading = Math.PI - third.tp.ctl.yaw; }
+    else if (m === "fly") { x = flyer.x; z = flyer.z; y = flyer.pos.y; heading = -flyer.yaw; }
+    else if (m === "drive") { x = driver.x; z = driver.z; y = driver.state?.y ?? 0; heading = Math.PI - (driver.state?.heading ?? 0); }
+    else if (m === "walk") { x = walker.x; z = walker.z; y = camera.position.y; heading = -walker.yaw; }
+    else { x = controls.target.x; z = controls.target.z; y = camera.position.y; heading = bear; }
+    const fov = 2 * Math.atan(Math.tan(camera.fov * Math.PI / 360) * camera.aspect);
+    return { x, z, heading, bear, mode: m, alt: y - world.surface(x, z), fov };
+  };
+  // teleport: park the camera over the target (orbit), let the streaming load the tile under it (the orbit target
+  // drives the streaming), then start the same mode there, facing along the street (the side nearest the old heading)
+  const teleport = async ({ x, z, yaw: dirAng, exact = false }) => {   // exact: face that way (the dev panel's places), not the street side nearest the old heading
+    const t0 = performance.now();
+    const entry = manifest.tiles.find((t) => t.status !== "missing" && x >= t.bounds.x[0] && x < t.bounds.x[1] && z >= t.bounds.z[0] && z < t.bounds.z[1]);
+    if (!entry) throw new Error("outside the built tiles");
+    const before = getPlayer();
+    let b = Math.atan2(Math.cos(dirAng), -Math.sin(dirAng));       // the street's bearing
+    if (!exact && Math.abs(Math.atan2(Math.sin(b - before.heading), Math.cos(b - before.heading))) > Math.PI / 2) b += Math.PI;
+    const m = before.mode;
+    if (third?.on) third.stop(); walker.on = false; flyer.stop(); driver.stop(); controls.enabled = true;
+    const loaded = world.tiles.some((t) => t.name === entry.name);
+    const [, hmax] = entry.counts?.terrainMinMax || [60, 100];
+    controls.target.set(x, hmax, z);
+    camera.position.set(x - Math.sin(b) * 160, hmax + 140, z + Math.cos(b) * 160);
+    controls.update();
+    lighting.snapNext = true;
+    streamJump = true;
+    while (!world.tiles.some((t) => t.name === entry.name)) {
+      if (!busy) busy = (async () => { while (await stream()); })().finally(() => { busy = null; });
+      await Promise.race([busy, new Promise((r) => setTimeout(r, 150))]);
+    }
+    streamJump = false;
+    const tTile = performance.now() - t0;
+    if (m === "walk") walker.start(x, z, -b);
+    else if (m === "fly") { controls.enabled = false; flyer.start(x, z, -b, world.surface(x, z) + 45); }
+    else if (m === "drive") { controls.enabled = false; await driver.start(x, z, Math.PI - b); }
+    else if (m === "third") {
+      controls.enabled = false;
+      third.last = [x, world.walkY(x, z) + 0.6, z, Math.PI - b];
+      third.resume();
+      // its colliders for the new tile are built a moment later (cityHook sync): hold it in place until the ground is there
+      const top = world.heightAt(x, z) + 40;
+      for (let i = 0; i < 80 && !(third.world.ray(x, top, z, 0, -1, 0, 80) < Infinity); i++) { third.tp.start(x, world.walkY(x, z) + 0.6, z, Math.PI - b); await new Promise((r) => setTimeout(r, 100)); }
+      const hit = third.world.ray(x, top, z, 0, -1, 0, 80);
+      third.tp.start(x, (hit < Infinity ? top - hit : world.walkY(x, z)) + 0.05, z, Math.PI - b);
+    } else { const y = world.surface(x, z); controls.target.set(x, y, z); camera.position.set(x - Math.sin(b) * 110, y + 70, z + Math.cos(b) * 110); controls.update(); }
+    lighting.snapNext = true;
+    return { ms: performance.now() - t0, tileMs: +tTile.toFixed(0), tile: entry.name, loaded: !loaded, mode: m };
+  };
   // the dev panel (viewer/devPanel.js; ?panel=0: the old HUD only)
   if (params.get("panel") !== "0") {
     try {
       const { createDevPanel } = await import("./devPanel.js");
-      createDevPanel({ renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, drive, thirdPerson, driver, getThird: () => third, getTram: () => tramLine, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log, fader });
+      createDevPanel({ teleport, getPlayer, manifest, getLite: () => lite, frames: () => frames, gpuPasses, renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, drive, thirdPerson, driver, getThird: () => third, getTram: () => tramLine, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log, fader });
     } catch (e) { log(`dev panel: ${e.message}`); }
   }
   // ?map=1: the minimap (bottom left) and the full map (M) with click-to-teleport (viewer/map/, docs/MAP.md)
   if (params.get("map") !== "0") {
-    const mode = () => (third?.on ? "third" : flyer.on ? "fly" : driver.on ? "drive" : walker.on ? "walk" : "orbit");
-    const dir = new THREE.Vector3();
-    const getPlayer = () => {
-      const m = mode();
-      camera.getWorldDirection(dir);
-      const bear = Math.atan2(dir.x, -dir.z);                          // radians clockwise from north (-z)
-      let x, z, heading, y;
-      if (m === "third") { x = third.tp.x; z = third.tp.z; y = third.tp.y; heading = Math.PI - third.tp.ctl.yaw; }
-      else if (m === "fly") { x = flyer.x; z = flyer.z; y = flyer.pos.y; heading = -flyer.yaw; }
-      else if (m === "drive") { x = driver.x; z = driver.z; y = driver.state?.y ?? 0; heading = Math.PI - (driver.state?.heading ?? 0); }
-      else if (m === "walk") { x = walker.x; z = walker.z; y = camera.position.y; heading = -walker.yaw; }
-      else { x = controls.target.x; z = controls.target.z; y = camera.position.y; heading = bear; }
-      const fov = 2 * Math.atan(Math.tan(camera.fov * Math.PI / 360) * camera.aspect);
-      return { x, z, heading, bear, mode: m, alt: y - world.surface(x, z), fov };
-    };
-    // teleport: park the camera over the target (orbit), let the streaming load the tile under it (the orbit target
-    // drives the streaming), then start the same mode there, facing along the street (the side nearest the old heading)
-    const teleport = async ({ x, z, yaw: dirAng }) => {
-      const t0 = performance.now();
-      const entry = manifest.tiles.find((t) => t.status !== "missing" && x >= t.bounds.x[0] && x < t.bounds.x[1] && z >= t.bounds.z[0] && z < t.bounds.z[1]);
-      if (!entry) throw new Error("outside the built tiles");
-      const before = getPlayer();
-      let b = Math.atan2(Math.cos(dirAng), -Math.sin(dirAng));       // the street's bearing
-      if (Math.abs(Math.atan2(Math.sin(b - before.heading), Math.cos(b - before.heading))) > Math.PI / 2) b += Math.PI;
-      const m = before.mode;
-      if (third?.on) third.stop(); walker.on = false; flyer.stop(); driver.stop(); controls.enabled = true;
-      const loaded = world.tiles.some((t) => t.name === entry.name);
-      const [, hmax] = entry.counts?.terrainMinMax || [60, 100];
-      controls.target.set(x, hmax, z);
-      camera.position.set(x - Math.sin(b) * 160, hmax + 140, z + Math.cos(b) * 160);
-      controls.update();
-      lighting.snapNext = true;
-      streamJump = true;
-      while (!world.tiles.some((t) => t.name === entry.name)) {
-        if (!busy) busy = (async () => { while (await stream()); })().finally(() => { busy = null; });
-        await Promise.race([busy, new Promise((r) => setTimeout(r, 150))]);
-      }
-      streamJump = false;
-      const tTile = performance.now() - t0;
-      if (m === "walk") walker.start(x, z, -b);
-      else if (m === "fly") { controls.enabled = false; flyer.start(x, z, -b, world.surface(x, z) + 45); }
-      else if (m === "drive") { controls.enabled = false; await driver.start(x, z, Math.PI - b); }
-      else if (m === "third") {
-        controls.enabled = false;
-        third.last = [x, world.walkY(x, z) + 0.6, z, Math.PI - b];
-        third.resume();
-        // its colliders for the new tile are built a moment later (cityHook sync): hold it in place until the ground is there
-        const top = world.heightAt(x, z) + 40;
-        for (let i = 0; i < 80 && !(third.world.ray(x, top, z, 0, -1, 0, 80) < Infinity); i++) { third.tp.start(x, world.walkY(x, z) + 0.6, z, Math.PI - b); await new Promise((r) => setTimeout(r, 100)); }
-        const hit = third.world.ray(x, top, z, 0, -1, 0, 80);
-        third.tp.start(x, (hit < Infinity ? top - hit : world.walkY(x, z)) + 0.05, z, Math.PI - b);
-      } else { const y = world.surface(x, z); controls.target.set(x, y, z); camera.position.set(x - Math.sin(b) * 110, y + 70, z + Math.cos(b) * 110); controls.update(); }
-      lighting.snapNext = true;
-      return { ms: performance.now() - t0, tileMs: +tTile.toFixed(0), tile: entry.name, loaded: !loaded, mode: m };
-    };
     import("./map/cityMap.js").then((mm) => mm.startCityMap({ getPlayer, teleport, getTrams: () => tramLine?.positions() ?? null, log })).then((h) => { mapHook = h; window.__map = h; })
       .catch((e) => log(`map: ${e.message}`));
   }
