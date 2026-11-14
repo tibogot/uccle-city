@@ -354,3 +354,116 @@ re-check on a GREEN machine: `D.start({ repeats: 3 })` with `?gardens=0` and the
 - Traffic (`viewer/traffic/cityTraffic.js` update): 0.5-2.6 ms in 50-95 frames of 2,700; the car fleet's bound update
   (rare 1-7 ms); the falcon flyer (rare ~1-1.5 ms). Not pools; not touched.
 - The gardens' draws (above): a BatchedMesh / multi-draw per LOD material would cut the +0.8 ms.
+
+## Step 10: startup and a loading scene (2026-11-14, branch claude/boot)
+
+**Machine: RED all session** (`tools/perf/preflight.ps1`: another agent's city tab, GPU 91 % busy at rest, CPU 30 %
+busy, 2.3 GB free). Same-machine numbers swung 2-3x between minutes (the tile worker's road step: 1.3 s to 4.7 s for
+the same tile), so every comparison below is paired (base / new alternated, minutes apart); single runs are noisy.
+
+### The harness: `debug/bootTimeline.js`
+An init script (`navigate_page({ initScript })`, loaded by a sync XHR) that records, per boot: the first GPU submit,
+the first full tile, the cover, all 9 full tiles, the far LOD done, the landmarks' "shaders ... ms" lines, the last
+SYNCHRONOUS pipeline; every render pipeline (sync / async, ms, label), every TSL node build (main.js calls
+`window.__bootHook(renderer)`: ms per build, material name; shadow builds named by their source material), the compile
+queue's jobs (`warmup.js` records them when the probe is in), downloads (resource timing), long tasks / long animation
+frames, frame gaps after the cover. `__boot.report()`.
+Cold = a fresh isolated browser context per run (empty HTTP cache), local server. A warm HTTP cache could NOT be
+measured here: the DevTools harness bypasses the HTTP cache (a `max-age=3600` file is re-transferred in full); the
+caching server for it (`tools/serve_cached.py`, the live site's vercel.json headers) is in the repo. The live site was
+measured once, cold, as it is (claude/foundation): **cover 40.8 s, first tile 20.6 s, 90 MB before the cover, last
+byte at 31 s**: there the boot is a waterfall of awaits (material library 2.4-5.8 s, kit / furniture / gardens / stops
+one after another, eleven landmarks one notes-file round trip each 7.9-12.6 s, the ground textures only asked for at
+12.7 s, the first tile at 16.3 s).
+
+### Where the boot went (base, local, cold)
+- Node builds (three building each material's TSL graph into WGSL on the main thread): **739 builds, 7.5-8.5 s**, almost
+  all in two long tasks (1.8 s at the first frames, 5.6-7.1 s in the warm-up's forced frames). Biggest: the shadow pass
+  **346 builds / 1.7 s** (r187 `_getShadowNodes` plugs every material's whole colour graph into the shadow override,
+  only to read its alpha: one shadow shader per material), the façade kit **52 builds / 1.5 s** (9 geometry attributes
+  + the instance matrix > three's 8: every kit mesh `objectSpecific`, its own build; one more mid-play whenever a mesh
+  grew), unnamed MeshStandard 55 / 0.7 s, fade copies 29 / 0.35 s.
+- Pipelines: 627 (48 sync, ~0 ms each; the rest async, median 0.6-0.7 s in the GPU process).
+- The tile worker idled from ~11 s to the cover (the next tile was asked for after it), then built one tile per step;
+  the third tile waited 4.4 s more in the compile queue behind eleven landmarks and the bridges (one serial queue).
+- Downloads locally ~2 s (not the bottleneck locally; on the live site they are).
+
+### What changed
+1. **Fewer shader builds** (always on): the façade kit binds only the per-instance attributes its shader reads (opaque
+   aKitI / aKitJ, glass + aKitF; `kitField.js`) -> the kit shares 2 builds; `warmup.js shareShadowNodes`: an opaque
+   material (no alphaTest / transparent / alphaMap / mask / castShadowNode) gives the shadow pass its vertex code only,
+   not its colour graph -> shadow builds 346 -> 179 (`?shadowshare=0`: three's own; live A/B:
+   `renderer._getShadowNodes = renderer.__shadowNodes.own`). Node builds 742 -> ~420-500, 7.5 s -> 3.5-4.8 s.
+2. **Boot order** (`main.js`): kit / street life / furniture / gardens / stops start together, the eleven landmarks
+   together (each awaits only its notes), the ground textures and tram profile from the start (`?bootorder=old`).
+3. **Worker prefetch**: as soon as the hide list is complete the worker gets the start tile and then the ring, ONE
+   build at a time (a worker runs every request it holds at once: four sent together made the first one 11.7 s), at
+   most 2 full tiles held; a **second worker builds far tiles only** (`?liteworker=0`, `?bootprefetch=0`). The hide
+   list sent to the worker is sorted (the landmarks now push in any order; the tile cache keys on it).
+4. **Early warm**: camera, sky and post pipeline are set up before the first tile; one forced frame (`warmNow`) builds
+   what is already in the scene while the worker builds the first tile (`?early=0`). Not `compileAsync`: r187 keeps at
+   most 16 pipelines in flight, the same scene took 8.5 s and blocked the queue.
+5. **Compile queue**: tiles first (`precompile(..., { first })`), the landmarks' background compiles after.
+6. **Under the cover**: the start tile + ONE full neighbour (a second full tile emits other WGSL: without it the first
+   tile after the cover waited ~4 s on 15 new pipelines) + **the whole ring as far tiles** (before: two far tiles): the
+   first view is a neighbourhood, not a tile in the void; the full ring fades in over it; the far ring now streams
+   ALONGSIDE the full tiles (it waited for all of them before). The start tile's fading copies are drawn in the
+   warm-up. `?bootlite=0`: as before.
+7. **The loading scene** (`viewer/loader/`): below.
+
+### Boot timeline, paired cold runs (local server, seconds from navigation start)
+| | base (claude/foundation) | new (claude/boot) |
+|---|---|---|
+| something on screen | blank cover | **aerial view at 0.5-1.0 s** (loader ready) |
+| first GPU submit | 5.1-6.9 | 1.5-2.1 |
+| first full tile | 5.3-7.2 | 7.1-7.5 (the worker is slower: everything else now runs alongside it) |
+| cover lifts (playable) | **19.2 / 19.3 / 23.1** | **13.6 / 15.3 / 16.0 / 16.5** (one 28.9 run, worker 3x slowed by the other agent) |
+| all 9 full tiles | 47.8 / 49.2 / 57.2 | **33.8 / 34.6 / 37.1** |
+| far LOD complete | 50.3 / 51.8 / 60.0 | 35.1 / 36.0 / 38.7 |
+| landmarks' shaders done | 28.7 / 29.9 / 35.8 | 29.0 / 29.0 / 34.4 |
+| node builds | 683-742, 7.2-8.5 s | 425-500, 3.5-4.8 s |
+| long tasks before the cover | 10.8-12.9 s, longest 6.1-7.1 s | 7.9-10.3 s, longest 1.8-2.8 s |
+| sync pipelines after the cover | 10 (~0 ms each) | 15-24 (~0 ms each, cached) |
+| frame gaps > 50 ms after the cover | 16-17 (worst 150-250 ms; 1,083 ms in an earlier run) | 18-24 (worst 500-1,100 ms) |
+| downloads | 134 MB | 136 MB (+2.7 MB the loading scene) |
+| JS heap after | 1.22-1.25 GB | 1.12-1.25 GB |
+
+`?early=0` (one run): cover 18.6 s, all 9 at 43.1 s; the first tile 2 s sooner (the early frame's pipeline compiles slow
+the worker) but a 5.0 s warm-up long task: early warm kept.
+
+### The loading scene (`viewer/loader/loader.js` + `loaderWorker.js`; `?loader=0` off)
+A slow aerial flight over the REAL Uccle: the horizon ring's data (`data/horizon/`: the region's 20 m DTM, 105 k
+triangles, and the 5 m/px orthophoto of the city + 1 km; 2.7 MB) drawn in a worker on an OffscreenCanvas with its own
+small WebGPU device (one ground draw + one sky draw, 4x MSAA, mipmapped photo, the city preset's sun / sky / haze
+colours, an ACES curve), so the boot's long tasks never freeze it. It orbits the start view's target, closing in; when
+the warm-up starts, `land(pose)` flies it onto the city's first camera; the cover then cross-fades (1.1 s) into the
+city's first frames from the same camera (checked at 50 %: the photo's roads and parks line up with the 3D streets; a
+focus pull, no pop), then the worker stops (`?loaderhold=s` keeps it, for checks). Over it: "Uccle", the boot's stage
+(main.js `bootStage`: materials, landmarks, streets, shaders, neighbourhood, "Compiling shaders (n / N)" from the
+pipelines actually done), MB downloaded, a bar. The dev HUD is hidden while loading. References: Mr.doob's
+slop-newyork has no loading scene (it streams in view); the three.js examples show a progress bar or nothing; this
+follows the game pattern of a cheap real-data flyover with an honest readout.
+**Cost:** ready 0.5-1.0 s after navigation (worker build 0.32-0.80 s), 45-60 fps during the boot on the RED machine,
+2.7 MB download, ~10 MB GPU; stopped 1.4 s after the reveal. Not separately A/B'd for boot time (no quiet machine); the
+boot numbers above include it.
+
+### Steady state (same tab, alternated loads, fixed views: GPU p50 / p95 ms, draws)
+| view | base | new |
+|---|---|---|
+| Saint-Job close-up | 8.85 / 9.90, 559 · 8.52 / 9.11, 560 | 8.65 / 9.50, 549 · 8.45 / 9.11, 552 |
+| overview | 9.04 / 9.83, 401 · 8.98 / 9.57, 393 | 9.31 / 11.01, 396 · 9.11 / 11.01, 394 |
+
+Shared shadow nodes, live A/B (4 rounds, Saint-Job): shared 9.0-10.4 vs own 8.7-10.5: no change. Steady state: the same
+within the noise (the overview p95 +1.2 ms in both new runs: re-check on a quiet GPU).
+
+### Left
+- The tile cache (`?tilecache=1`) could not be confirmed: two primed loads still built the start tile (no hit); the hide
+  list is now sorted, which should make the key stable: re-check with `tileCache.js` DEBUG = true.
+- The live site: the boot-order change targets its 16 s waterfall; measure after a deploy (cold, isolated context).
+- Frame gaps of 0.5-1.1 s in the first seconds after the reveal (no script in the long-animation-frame entries:
+  GPU-process side), and 15-24 cached sync shadow pipelines after it.
+- The landmarks still finish ~13 s after the reveal (their fade copies compile in the background queue).
+- Node builds left: ~40 unnamed MeshStandard (per-tile materials: one shared terrain / road material, AUDIT_PLAN 2.6),
+  20 kit glass builds (8 geometry attributes + instancing > 8: still per mesh), 179 shadow builds (materials with their
+  own positionNode / mask).
+- Re-measure all of this on a GREEN machine.

@@ -12,7 +12,15 @@ import { openParallelPipelines } from "../vendor/engine/parallelPipelines.js";
 import { warmGamePipelines, awaitPipelinesQuiet } from "../vendor/engine/pipelineWarmup.js";
 
 export function openBootPipelines(renderer, scene) {
-  return openParallelPipelines(renderer, scene);
+  const win = openParallelPipelines(renderer, scene);
+  // the loading scene's readout: how many of the async pipelines started in the window are done (device-level count)
+  const dev = renderer.backend?.device, f = dev?.createRenderPipelineAsync;
+  const prog = { started: 0, done: 0 };
+  if (f) {
+    dev.createRenderPipelineAsync = function (d) { prog.started++; const p = f.call(this, d); p.then(() => prog.done++, () => prog.done++); return p; };   // (kept: two counters)
+  }
+  win.progress = prog;
+  return win;
 }
 
 export async function warmBoot(renderer, scene, win) {
@@ -43,8 +51,19 @@ export async function warmBoot(renderer, scene, win) {
 //
 // All compileAsync calls of the page go through ONE queue (installCompileQueue): r187 keeps one precompile
 // state, and two calls in flight take each other's state (game-engine-v1 v3/render/serialCompile.js).
-let rawCompile = null, tail = Promise.resolve(), passFor = null;
-const enqueue = (job) => { const run = tail.then(job); tail = run.catch(() => {}); return run; };
+// Jobs run one at a time in order, except that a job queued with `first` (a streamed TILE: the player waits for it)
+// goes before every queued job without it (a landmark's background compile: measured 2026-11-14, the third tile
+// waited 4.4 s behind eleven landmarks and the bridges).
+let rawCompile = null, passFor = null, running = false;
+const jobs = [];
+const pump = () => {
+  if (running || !jobs.length) return;
+  const i = jobs.findIndex((j) => j.first);
+  const j = jobs.splice(i >= 0 ? i : 0, 1)[0];
+  running = true;
+  Promise.resolve().then(j.job).then(j.resolve, j.reject).finally(() => { running = false; pump(); });
+};
+const enqueue = (job, first = false) => new Promise((resolve, reject) => { jobs.push({ job, first, resolve, reject }); pump(); });
 export function installCompileQueue(renderer) {
   if (rawCompile) return;
   rawCompile = renderer.compileAsync.bind(renderer);
@@ -71,10 +90,14 @@ export function installCompileQueue(renderer) {
 
 /** Compile `roots` (Object3Ds, in the scene or about to be) for `camera` in `scene`, into `target`/`mrt`
  *  (the scene pass), without drawing them. Resolves when their shaders and pipelines are ready. */
-export function precompile(renderer, roots, camera, scene, { target = null, mrt = null } = {}) {
+export function precompile(renderer, roots, camera, scene, { target = null, mrt = null, first = false } = {}) {
   if (!renderer.backend?.isWebGPUBackend) return Promise.resolve();
   installCompileQueue(renderer);
+  const rec = globalThis.__boot ? { q: Math.round(performance.now()), name: [].concat(roots).map((r) => r?.name || r?.type || "?").join(",").slice(0, 60) } : null;
+  if (rec) (globalThis.__boot.jobs ||= []).push(rec);
   return enqueue(async () => {
+    if (rec) { rec.s = Math.round(performance.now()); rec.first = first; }
+    try {
     for (const root of [].concat(roots)) {
       if (!root) continue;
       const saved = [];
@@ -101,5 +124,61 @@ export function precompile(renderer, roots, camera, scene, { target = null, mrt 
       }
       try { await p; } catch (e) { console.warn("[precompile]", e); }
     }
+    } finally { if (rec) rec.e = Math.round(performance.now()); }   // (a boot probe's queue record: debug/bootTimeline.js)
+  }, first);
+}
+
+// ------------------------------------------------------------------ shadow pass: one shader for every opaque material
+// three r187 draws the sun's shadow map with ONE override material, but for any material with a colorNode or a map
+// (_getShadowNodes) it plugs that material's WHOLE colour graph into it, only to read its alpha: a new graph per
+// material, so a shadow shader build per material (346 builds, 1.7-1.8 s of the boot's main thread, measured
+// 2026-11-14) whose colour is never used: an opaque material (no alphaTest, not transparent, no alphaMap / mask /
+// castShadowNode) writes the same depth whatever its alpha. For those the colour is left out; what moves the
+// geometry (positionNode / castShadowPositionNode, depthNode) is kept, so the shadow builds are shared by every material
+// with the same geometry layout and vertex code. Materials that cut their shadow (maskShadowNode: tree cards; the
+// smooth-LOD fades' maskNode) or use alpha keep three's own path, unchanged. ?shadowshare=0: three's path for all (A/B).
+// (A material whose colorNode discards and that casts a shadow would lose that cut here: none in the city, the one
+// colour discard is the snow layer, which casts none; mark such a material userData.shadowColour = true.)
+export function shareShadowNodes(renderer) {
+  const orig = renderer._getShadowNodes;
+  if (typeof orig !== "function" || renderer.__shadowShared) return false;
+  renderer.__shadowShared = true;
+  const cache = new WeakMap();
+  renderer._getShadowNodes = function (material) {
+    const own = orig.call(this, material);
+    if (own.colorNode === null || this.shadowMap.transmitted === true || this.shadowMap.type === 3 /* VSMShadowMap */) return own;
+    if (material.alphaTest > 0 || material.transparent || material.alphaMap || material.alphaToCoverage ||
+      material.castShadowNode?.isNode || material.maskShadowNode?.isNode || material.maskNode?.isNode || material.userData?.shadowColour === true) return own;
+    let c = cache.get(material);
+    if (c === undefined || c.src !== own) { c = { src: own, out: { colorNode: null, depthNode: own.depthNode, positionNode: own.positionNode } }; cache.set(material, c); }
+    return c.out;
+  };
+  renderer.__shadowNodes = { own: orig, shared: renderer._getShadowNodes };   // live A/B: renderer._getShadowNodes = renderer.__shadowNodes.own
+  return true;
+}
+
+// ------------------------------------------------------------------ the early warm-up (before the first tile)
+/** Draw `render()` `frames` times NOW with every drawable of `scene` forced visible, one instance, never culled (as
+ *  warmBoot's frames, game-engine-v1 pipelineWarmup.js), then put everything back. Called while the tile worker builds
+ *  the first tiles (the main thread waited idle then): three builds every node material SYNCHRONOUSLY here (one long
+ *  task, under the loading scene, which draws in its own worker) and, with the boot's parallel-pipeline window open,
+ *  hands every render pipeline to the GPU process at once (compileAsync caps that at 16 in flight: 8.5 s for the same
+ *  scene, measured). Returns { drawables, ms }. */
+export function warmNow(scene, render, { frames = 1 } = {}) {
+  const t0 = performance.now();
+  const saved = [];
+  const set = (o, k, v) => { if (o[k] !== v) { saved.push([o, k, o[k]]); o[k] = v; } };
+  let n = 0;
+  scene.traverse((o) => {
+    if (!(o.isMesh || o.isPoints || o.isSprite)) return;
+    n++;
+    set(o, "visible", true);
+    for (let p = o.parent; p; p = p.parent) set(p, "visible", true);
+    set(o, "frustumCulled", false);
+    if (o.isInstancedMesh && o.count === 0) set(o, "count", 1);
+    if (o.geometry?.isInstancedBufferGeometry && o.geometry.instanceCount === 0) set(o.geometry, "instanceCount", 1);
   });
+  try { for (let i = 0; i < frames; i++) render(); }
+  finally { for (let i = saved.length - 1; i >= 0; i--) { const [o, k, v] = saved[i]; o[k] = v; } }
+  return { drawables: n, ms: Math.round(performance.now() - t0) };
 }
