@@ -160,7 +160,7 @@ def railing(kind, lod):
         for x in xs: bar(P, PAINT, x, 0, -0.03, 0.97, 0.014, 0.014, lod, (0.04, 0.12, 0.5))
         rail(P, PAINT, 0, 1.0, 0, 0.07, 0.10, 0.012, lod)
         rail(P, PAINT, 0, 1.0, 0, 0.72, 0.75, 0.012, lod)
-        rail(P, PAINT, 0, 1.0, 0, 0.95, 0.99, 0.014, lod)
+        rail(P, PAINT, 0, 1.0, 0, 0.95, 0.99, 0.02, lod)                  # (round 2: 20 mm, deeper than the 14 mm bars: no shared faces)
         rail(P, PAINT, 0, 1.0, 0, 0.985, 1.005, 0.03, lod, 0.004)          # the flat capping bar on top
         for x in xs: ring(P, x + PITCH / 2, 0, 0.85, 0.046, 0.006, lod)
     return P.to_object(smooth_angle=20)
@@ -174,32 +174,33 @@ def gate(kind, lod, car=False):
     x0, x1 = 0.02, W - 0.01                       # 2 cm hinge gap, 1 cm at the latch side (the pillar / the other leaf)
     zb, zt = 0.06, H - (0.12 if kind == "spear" else 0.0)
     # stiles (square tube) and rails
-    bar(P, PAINT, x0 + st / 2, 0, zb, zt, st, st, lod, (zb + 0.06,), cham=0.003)
-    bar(P, PAINT, x1 - st / 2, 0, zb, zt, st, st, lod, (zb + 0.06,), cham=0.003)
-    rail(P, PAINT, x0 + st, x1 - st, 0, zb, zb + 0.04, 0.03, lod, 0.003, caps=False)
+    # (round 2: the stiles 5 mm past the rails at the bottom and top: no flush caps where a rail runs into them)
+    bar(P, PAINT, x0 + st / 2, 0, zb - 0.005, zt + 0.005, st, st, lod, (zb + 0.06,), cham=0.003)
+    bar(P, PAINT, x1 - st / 2, 0, zb - 0.005, zt + 0.005, st, st, lod, (zb + 0.06,), cham=0.003)
+    ra, rb = x0 + st - 0.005, x1 - st + 0.005      # (round 2: the rails' open ends 5 mm inside the stiles: no slit)
+    rail(P, PAINT, ra, rb, 0, zb, zb + 0.04, 0.03, lod, 0.003, caps=False)
     if kind == "spear":
-        rail(P, PAINT, x0 + st, x1 - st, 0, zt - 0.04, zt, 0.03, lod, 0.003)
-        infill(P, "spear", x0 + st, x1 - st, zb + 0.03, zt - 0.02, lod)
-        # the bars run on through the top rail to lances (same as the railing)
+        rail(P, PAINT, ra, rb, 0, zt - 0.04, zt, 0.03, lod, 0.003)
+        # the bars run in ONE piece through the top rail to their lances (round 2: two overlapping bars shared faces)
         xs = []
         x = x0 + st + PITCH / 2
         while x < x1 - st - 1e-6: xs.append(x); x += PITCH
         for x in xs:
-            bar(P, PAINT, x, 0, zt - 0.03, zt + 0.06, 0.016, 0.016, lod, ())
+            bar(P, PAINT, x, 0, zb + 0.03, zt + 0.06, 0.016, 0.016, lod, (zb + 0.07, zb + 0.15))
             lance(P, x, 0, zt + 0.06, lod)
-        lance(P, x0 + st / 2, 0, zt, lod, 1.4); lance(P, x1 - st / 2, 0, zt, lod, 1.4)
+        lance(P, x0 + st / 2, 0, zt + 0.005, lod, 1.4); lance(P, x1 - st / 2, 0, zt + 0.005, lod, 1.4)
     elif kind == "flat":
-        rail(P, PAINT, x0 + st, x1 - st, 0, zt - 0.04, zt, 0.05, lod, 0.004)
+        rail(P, PAINT, ra, rb, 0, zt - 0.04, zt, 0.05, lod, 0.004)
         infill(P, "flat", x0 + st, x1 - st, zb + 0.03, zt - 0.02, lod, pitch=0.11)
     else:
-        rail(P, PAINT, x0 + st, x1 - st, 0, zt - 0.04, zt, 0.03, lod, 0.003)
+        rail(P, PAINT, ra, rb, 0, zt - 0.04, zt, 0.03, lod, 0.003)
         zm = zt - 0.27
-        rail(P, PAINT, x0 + st, x1 - st, 0, zm - 0.03, zm, 0.014, lod)
+        rail(P, PAINT, ra, rb, 0, zm - 0.03, zm, 0.02, lod)                # (20 mm: deeper than the 14 mm bars)
         xs = infill(P, "rings", x0 + st, x1 - st, zb + 0.03, zt - 0.02, lod)
         for a, b in zip(xs, xs[1:]): ring(P, (a + b) / 2, 0, zm + 0.11, 0.046, 0.006, lod)
     if car:
         zm = zb + 0.45
-        rail(P, PAINT, x0 + st, x1 - st, 0, zm, zm + 0.03, 0.03, lod, 0.003)
+        rail(P, PAINT, ra, rb, 0, zm, zm + 0.03, 0.03, lod, 0.003)
         bar(P, STEEL, x1 - 0.06, -0.03, -0.1, zb + 0.3, 0.014, 0.014, lod, ())          # the drop bolt into the ground
         if lod < 2: P.add_bm(bm_box(0.03, 0.02, 0.03, 0.003 if lod == 0 else 0.0), STEEL, Zv, M((x1 - 0.06, -0.03, zb + 0.32)))
     # hinges: two knuckles on the hinge stile

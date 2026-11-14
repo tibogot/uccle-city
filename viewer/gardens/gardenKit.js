@@ -190,7 +190,7 @@ function materials() {
 function vec4c(r, g, b) { return vec3(r, g, b); }
 
 // ------------------------------------------------------------------------------------------------ data -> instances
-const STRIDE = 20;                     // 16 (matrix, column major) + 4 (iVar)
+export const STRIDE = 24;              // 16 (matrix, column major) + 4 (iVar) + 4 (iAux: the hedges' world side direction; 0 elsewhere)
 /** a style's iVar */
 function styleVar(st, rnd) {
   return [st.brick ?? 0, st.cap === 1 ? 1 : 0, (st.paint ?? 0) + (st.gilded ? 4 : 0), rnd];
@@ -208,7 +208,7 @@ export function gardenInstances(doc, groundAt = null, { hedgeFronts = true, hedg
   const styles = doc.styles || [];
   const segs = groundAt ? settle(doc, groundAt) : (doc.segs || []);
   const pillars = groundAt ? settlePillars(doc, groundAt) : (doc.pillars || []);
-  const push = (arr, m, v) => { for (let k = 0; k < 16; k++) arr.push(m[k]); arr.push(v[0], v[1], v[2], v[3]); };
+  const push = (arr, m, v, aux = null) => { for (let k = 0; k < 16; k++) arr.push(m[k]); arr.push(v[0], v[1], v[2], v[3]); if (aux) arr.push(aux[0], aux[1], aux[2], aux[3]); else arr.push(0, 0, 0, 0); };
   // mitres: consecutive segments of one run that share an end (to 2 cm) and turn < 70 deg overlap by w/2 tan(a/2)
   const ext = new Float32Array(segs.length * 2);
   for (let i = 0; i + 1 < segs.length; i++) {
@@ -285,7 +285,7 @@ export function gardenInstances(doc, groundAt = null, { hedgeFronts = true, hedg
     const shearW = (out, x0, y0, z0, dx, dy, dz, sy, w, v) => {
       const lh = Math.hypot(dx, dz) || 1e-6;
       m.set([dx, dy, dz, 0, 0, sy, 0, 0, -dz / lh * w, 0, dx / lh * w, 0, x0, y0, z0, 1]);
-      push(out, m, v);
+      push(out, m, v, [-dz / lh, dx / lh, 0, 0]);
     };
     hedgeInstances(doc.hedges, groundAt, shearW, L.hedge);
     L.hedgecard = L.hedge;
@@ -373,7 +373,7 @@ function sortCells(a) {
  *  to draw is not visible. */
 export class GardenPool {
   constructor(piece, mats, group) {
-    this.piece = piece; this.cap = 0; this.meshes = [];
+    this.piece = piece; this.cap = 0; this.meshes = []; this.aux = piece.name === "hedge";
     this.lod = piece.lods.map((geo, k) => {
       const g = new THREE.BufferGeometry();
       for (const a of Object.keys(geo.attributes)) g.setAttribute(a, geo.attributes[a]);
@@ -398,6 +398,7 @@ export class GardenPool {
       m.instanceMatrix = new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 16), 16);
       m.geometry.setAttribute("iBand", new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 4), 4));
       m.geometry.setAttribute("iVar", new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 4), 4));
+      if (this.aux) m.geometry.setAttribute("iAux", new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 4), 4));
     }
   }
   /** tiles: [{ inst: { <piece>: Float32Array }, cells, fade }]; c = the camera position */
@@ -417,7 +418,7 @@ export class GardenPool {
     this.grow(total);
     this.lod.forEach((m, li) => {
       const d0 = Math.max(0, lims[li][0]), d1 = lims[li][1];
-      const M = m.instanceMatrix.array, B = m.geometry.attributes.iBand.array, Vv = m.geometry.attributes.iVar.array;
+      const M = m.instanceMatrix.array, B = m.geometry.attributes.iBand.array, Vv = m.geometry.attributes.iVar.array, X = this.aux ? m.geometry.attributes.iAux.array : null;
       let n = 0, x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, z0 = Infinity, z1 = -Infinity, ext = 0;
       for (let q = 0; q < live.length; q += 2) {
         const t = live[q], cl = live[q + 1], a = t.inst[kind];
@@ -433,6 +434,7 @@ export class GardenPool {
           M.set(a.subarray(o, o + 16), n * 16);
           B[n * 4] = s1; B[n * 4 + 1] = s2; B[n * 4 + 2] = end; B[n * 4 + 3] = t.fade;
           Vv[n * 4] = a[o + 16]; Vv[n * 4 + 1] = a[o + 17]; Vv[n * 4 + 2] = a[o + 18]; Vv[n * 4 + 3] = a[o + 19];
+          if (X) { X[n * 4] = a[o + 20]; X[n * 4 + 1] = a[o + 21]; X[n * 4 + 2] = a[o + 22]; X[n * 4 + 3] = a[o + 23]; }
           x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); z0 = Math.min(z0, z); z1 = Math.max(z1, z);
           ext = Math.max(ext, half);
           n++;
@@ -442,7 +444,7 @@ export class GardenPool {
       if (!n) return;
       m.boundingSphere.center.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
       m.boundingSphere.radius = Math.hypot(x1 - x0, y1 - y0, z1 - z0) / 2 + this.r + ext + 2;
-      for (const [att, w] of [[m.instanceMatrix, 16], [m.geometry.attributes.iBand, 4], [m.geometry.attributes.iVar, 4]]) {
+      for (const [att, w] of [[m.instanceMatrix, 16], [m.geometry.attributes.iBand, 4], [m.geometry.attributes.iVar, 4], ...(X ? [[m.geometry.attributes.iAux, 4]] : [])]) {
         att.clearUpdateRanges(); att.addUpdateRange(0, n * w); att.needsUpdate = true;
       }
     });

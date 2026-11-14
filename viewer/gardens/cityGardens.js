@@ -12,7 +12,7 @@
 //     (viewer/drive featureColliders), the walker / third person (viewer/character/cityHook) and the collision test read
 //     them like the furniture kits' stand-ins. The pedestrian gates are drawn OPEN: the walker gets in at the door
 import * as THREE from "three/webgpu";
-import { loadGardenKit, GardenPool, PIECES, gardenInstances, standinGeometries } from "./gardenKit.js";
+import { loadGardenKit, GardenPool, PIECES, STRIDE, gardenInstances, standinGeometries } from "./gardenKit.js";
 import { wind } from "../foliage/wind.js";
 
 const qs = new URLSearchParams(location.search);
@@ -125,7 +125,7 @@ export const cityGardens = {
     // of the hedge's two faces, every 0.5 m
     const H = t.inst.hedge;
     out.hedgeModules = 0; out.hedgeFloating = 0; out.hedgeMaxFloat = 0;
-    if (H) for (let o = 0; o < H.length; o += 20) {
+    if (H) for (let o = 0; o < H.length; o += STRIDE) {
       const x0 = H[o + 12], y0 = H[o + 13], z0 = H[o + 14], dx = H[o], dy = H[o + 1], dz = H[o + 2], h = H[o + 5];
       const wx = H[o + 8] / 2, wz = H[o + 10] / 2, L = Math.hypot(dx, dz), n = Math.max(2, Math.ceil(L / 0.5) + 1);
       out.hedgeModules++;

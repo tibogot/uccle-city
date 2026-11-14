@@ -68,32 +68,49 @@ function section(lod) {
       P = out;
     }
   }
+  // normals from the section itself (the mesh audit's bentflat rule: a flat side keeps its own face normal, the rounded
+  // corners average their two pieces): the outward normal of a piece a -> b is (-dy, dz)
+  const segN = (a, b) => { const dz = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dz, dy) || 1; return [-dy / l, dz / l]; };
   let v = 0;
-  return P.map((p, k) => { if (k) v += Math.hypot(p[0] - P[k - 1][0], p[1] - P[k - 1][1]); const l = Math.hypot(p[2], p[3]) || 1; return [p[0], p[1], p[2] / l, p[3] / l, v]; });
+  return P.map((p, k) => {
+    if (k) v += Math.hypot(p[0] - P[k - 1][0], p[1] - P[k - 1][1]);
+    const a = k > 0 ? segN(P[k - 1], p) : null, b = k + 1 < P.length ? segN(p, P[k + 1]) : null;
+    let nz = (a ? a[0] : 0) + (b ? b[0] : 0), ny = (a ? a[1] : 0) + (b ? b[1] : 0);
+    const l = Math.hypot(nz, ny) || 1;
+    return [p[0], p[1], nz / l, ny / l, v];
+  });
 }
 
-/** one body LOD: rings along x 0..1, the section swept, both ends closed (flat; the bottom closes under the ground) */
+/** one body LOD: rings along x 0..1, the section swept, both ends closed (flat; the bottom closes under the ground).
+ *  Shading normals are FLAT per section piece (each strip its own vertices: the mesh audit's bentflat rule, no smooth
+ *  normal bled over a planar strip); the lumps move every copy of a point along ONE smooth direction (attribute ld: the
+ *  average of its pieces), so the copies stay together (no crack) */
 function bodyGeometry(lod) {
   const S = section(lod), rings = lod === 0 ? 4 : lod === 1 ? 2 : 1, n = S.length;
-  const P = [], N = [], V = [], I = [];
-  for (let r = 0; r <= rings; r++) {
-    const x = r / rings;
-    for (const [z, y, nz, ny, v] of S) { P.push(x, y, z); N.push(0, ny, nz); V.push(x, v); }
-  }
-  for (let r = 0; r < rings; r++) for (let k = 0; k < n - 1; k++) {
-    const a = r * n + k, b = a + 1, c = a + n, d = c + 1;
-    I.push(a, b, c, b, d, c);
+  const P = [], N = [], V = [], D = [], I = [];
+  const segN = (a, b) => { const dz = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dz, dy) || 1; return [-dy / l, dz / l]; };
+  for (let k = 0; k < n - 1; k++) {
+    const [nz, ny] = segN(S[k], S[k + 1]), base = P.length / 3;
+    for (let r = 0; r <= rings; r++) {
+      const x = r / rings;
+      for (const q of [S[k], S[k + 1]]) { P.push(x, q[1], q[0]); N.push(0, ny, nz); V.push(x, q[4]); D.push(0, q[3], q[2]); }
+    }
+    for (let r = 0; r < rings; r++) {
+      const a = base + r * 2, b = a + 1, c = a + 2, d = c + 1;
+      I.push(a, b, c, b, d, c);
+    }
   }
   for (const [x, s] of [[0, -1], [1, 1]]) {
     const c = P.length / 3;
-    P.push(x, 0.45, 0); N.push(s, 0, 0); V.push(x, 0);
-    for (const [z, y, , , v] of S) { P.push(x, y, z); N.push(s, 0, 0); V.push(x, v); }
+    P.push(x, 0.45, 0); N.push(s, 0, 0); V.push(x, 0); D.push(0, 0, 0);
+    for (const [z, y, dz, dy, v] of S) { P.push(x, y, z); N.push(s, 0, 0); V.push(x, v); D.push(0, dy, dz); }
     for (let k = 0; k < n - 1; k++) { if (s < 0) I.push(c, c + 2 + k, c + 1 + k); else I.push(c, c + 1 + k, c + 2 + k); }
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(P, 3));
   g.setAttribute("normal", new THREE.Float32BufferAttribute(N, 3));
   g.setAttribute("hv", new THREE.Float32BufferAttribute(V, 2));
+  g.setAttribute("ld", new THREE.Float32BufferAttribute(D, 3));
   g.setIndex(I);
   g.computeBoundingBox(); g.computeBoundingSphere(); g.userData.shared = true;
   return g;
@@ -176,15 +193,20 @@ export function hedgeMaterials() {
   if (mats) return mats;
   const body = [0, 1, 2].map((lod) => {
     const m = new THREE.MeshStandardNodeMaterial({ metalness: 0 });
-    const I = inst(), hv = attribute("hv", "vec2"), pRaw = attribute("position", "vec3"), nRaw = attribute("normal", "vec3");
+    const I = inst(), hv = attribute("hv", "vec2"), pRaw = attribute("position", "vec3");
     // run metres: s along the run (continuous over the module joints), v round the section (scaled by the height)
     const side = select(pRaw.z.greaterThan(0), float(0), float(37.1));
     const u = vec2(I.s0.add(hv.x.mul(I.L)).add(side), hv.y.mul(I.H));
     if (lod < 2) {
       // lumps: soft bulges (~0.6 m) and clumps (~0.2 m) along the outward normal, none at the ground line or on the ends
       const nb = noiseAt(u, 1 / 2.4, true).b.sub(0.5).mul(2.4).add(noiseAt(u, 1 / 0.7, true).a.sub(0.5).mul(1.2));
-      const amp = uSp.element(I.spi).y.mul(nb).mul(smoothstep(0.0, 0.25, pRaw.y.mul(I.H))).mul(select(abs(nRaw.x).greaterThan(0.5), float(0), float(1)));
-      m.positionNode = positionLocal.add(normalize(normalLocal).mul(amp));
+      // (ld = the point's smooth outward direction in unit space; to world through the instance's columns: x along the
+      // run carries none, y scaled by the height, z by the width; the end caps' rim copies move with the sides)
+      const ld = attribute("ld", "vec3");
+      const amp = uSp.element(I.spi).y.mul(nb).mul(smoothstep(0.0, 0.25, pRaw.y.mul(I.H)));
+      const side = attribute("iAux", "vec4");
+      const dirW = normalize(vec3(side.x.mul(ld.z).mul(I.W), ld.y.mul(I.H), side.y.mul(ld.z).mul(I.W)).add(vec3(0, 1e-5, 0)));
+      m.positionNode = positionLocal.add(dirW.mul(amp));
     }
     const vu = varying(u, "v_hU");
     const leafC = leafColour(I.spi);
