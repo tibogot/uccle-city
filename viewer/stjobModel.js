@@ -16,6 +16,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { env } from "./lighting.js";
 import { filteredPulse } from "./tslkit.js";
+import { wxMat } from "./weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 
 // LOD targets (triangles for the whole church) and the distances (m, camera to the octagon) they are used up to
 export const STJOB_LODS = [
@@ -287,5 +288,7 @@ function makeMaterials(aoTex) {
   }
   for (const m of [masonry, roof, glass, metal]) m.userData.shared = true;
   masonry.name = "stjob masonry"; roof.name = "stjob roof"; glass.name = "stjob glass"; metal.name = "stjob metal";
+  // the weather: wet brick + rivulets, snow on the roofs and the dome, beads on the glass
+  wxMat(masonry, { porosity: 0.6, streaks: true }); wxMat(roof, { porosity: 0.25 }); wxMat(glass, { porosity: 0, glass: true, snow: false }); wxMat(metal, { porosity: 0.05 });
   return [masonry, roof, glass, metal];
 }

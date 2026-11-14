@@ -23,6 +23,7 @@ export const wx = {
   uSalt: uniform(1),            // 0..1 roads salted / ploughed (Brussels treats its main roads: black wet asphalt, slush at the kerbs)
   uIcicle: uniform(0),          // 0..1 icicle growth under eaves (cold days with snow on the roofs)
   uDrip: uniform(0),            // 0..1 drips from eaves (melting snow, or rain through the gutters)
+  uOn: uniform(0),              // 1 while any weather shows on the surfaces (the city's gated materials skip it all at 0)
 };
 
 /** Preset = inputs (+ a starting surface state, so a preset is a believable moment, not a cold start). */
@@ -124,6 +125,9 @@ export class Weather {
     // our axes: +x east, +z south. Wind from north blows toward +z.
     wx.uWind.value.set(-Math.sin(a) * I.wind, Math.cos(a) * I.wind);
     wx.uTime.value = this.time;
+    // the gate (viewer/weather/cityWeatherize.js): off only when nothing at all is left on the surfaces
+    const e = 1e-3;
+    wx.uOn.value = S.wet > e || S.puddle > e || S.depth > 1e-4 || S.slush > e || S.frost > e || wx.uRain.value > e || wx.uSnowFall.value > e ? 1 : 0;
   }
   /** Visibility (m) -> fog extinction per metre (Koschmieder: V = 3.912 / beta). */
   get fogBeta() { return 3.912 / Math.max(50, this.input.vis); }

@@ -12,6 +12,7 @@ import { attribute, color, float, select, uniform, screenCoordinate, vec2, vec3,
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { lodMesh, lodOpts } from "./carLod.js";
+import { wxMat } from "../weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 
 // ?vfix2=old: the traffic's light bits decoded as before round 2 of the visual fixes (A/B)
 const VFIX2_OLD = typeof location !== "undefined" && /[?&]vfix2=old\b/.test(location.search);
@@ -184,5 +185,5 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
   // and an mrtNode breaks the shader where no MRT is set (labs, ?fx=0: "structures must have at least one member")
   m.userData.paint = uPaint;
   m.userData.shared = true;
-  return m;
+  return wxMat(m, { porosity: 0.05, beads: true, frost: true });   // the weather: beads on the paint, snow on roofs / bonnets, frost
 }

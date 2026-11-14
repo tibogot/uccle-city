@@ -23,6 +23,7 @@ import { env } from "../lighting.js";
 import { pieceKeep, kitFades } from "./kitFade.js";
 import { paintedGlass } from "../facades.js";
 import { libSource } from "../materials/libSwitch.js";
+import { wxMat } from "../weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 
 export const KIT_SLOTS = ["stone_white", "stone_blue", "brick_red_brussels", "brick_yellow", "wood_frame_white", "wood_frame_dark",
   "glass_window", "cast_iron_green", "painted_metal_white", "zinc_roof",
@@ -212,7 +213,8 @@ export function kitOpaqueMaterial(lod, opts = {}) {
     const off = cameraViewMatrix.mul(vec4(tW.mul(nrm.x).add(bW.mul(nrm.y)), 0)).xyz;
     m.normalNode = normalize(m.normalNode.add(off));
   }
-  return m;
+  // the weather (no texture: the kit's opaque shader is near the 16 sampled-texture limit): wet, rivulets, snow on sills
+  return wxMat(m, { porosity: 0.4, streaks: true });
 }
 
 /** THE KIT GLASS for LOD `lod`: the painted window's room, curtains, night lights and sky (facades.js paintedGlass)
@@ -233,7 +235,8 @@ export function kitGlassMaterial(lod, opts = {}) {
   m.roughnessNode = mix(dark.rough, g.rough, kitLook.roomGlass);
   m.metalnessNode = float(0);
   m.mrtNode = mrt({ metalRough: vec3(0, roughness, float(0)) });   // no GTAO on glass (facades.js)
-  return finish(m, lod, opts, { glass: true });
+  finish(m, lod, opts, { glass: true });
+  return wxMat(m, { porosity: 0, glass: true, snow: false });     // the weather: beads + trails on the panes
 }
 
 // ------------------------------------------------------------------------------------------------ the looks

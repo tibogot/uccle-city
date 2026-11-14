@@ -24,6 +24,7 @@ import { addLampLight } from "./lampLight.js";
 import { filteredPulse, boxCoverage } from "./tslkit.js";
 import { pavingTextures, pavingSample, pavingNormal, regrade, LAYER } from "./streets/paving.js";
 import { hash22 } from "./materials/antitile.js";
+import { wxMat } from "./weather/cityWeatherize.js";   // the weather (viewer/weather/, docs/WEATHER.md "City hookup"): gated, ?weather=old none
 
 import { SURFACE, hashPhase, surfaceAttribute } from "./roadData.js";
 export { SURFACE, hashPhase, surfaceAttribute };
@@ -178,6 +179,8 @@ export function asphaltMaterial(atlas) {
   m.colorNode = mix(base, paintCol, paint);
   m.roughnessNode = mix(rough, float(0.62), paint);
   if (T) { m.normalNode = pavingNormal(T.n, t, s, T.nK.mul(float(1).sub(paint.mul(0.7)))); m.aoNode = mix(T.ao, float(1), paint); }
+  // weather: wet asphalt + puddles in the gutters (lane edges), salted in winter: black wet road, slush at the edges
+  { const edge = smoothstep(float(0.7), float(1.0), abs(lat)); wxMat(m, { porosity: 0.75, puddles: true, puddleBias: edge.mul(0.22), slush: true, road: true, edge, map: true }); }
   return addLampLight(m);
 }
 
@@ -257,6 +260,7 @@ export function paintMaterial() {
   m.colorNode = vec3(0.62, 0.62, 0.6);
   m.opacityNode = cov;
   m.roughnessNode = float(0.62);
+  wxMat(m, { porosity: 0.1, slush: true, road: true, edge: float(0), map: true });   // the weather: paint goes under the snow / slush with the asphalt
   return addLampLight(m);
 }
 
@@ -330,6 +334,7 @@ export function concreteMaterial({ framed = false } = {}) {
   const slabRough = TX ? TX.rough.mul(1.04).min(0.97) : mix(float(framed ? 0.92 : 0.88), float(0.95), tiles.joint);
   m.roughnessNode = mix(mix(slabRough, float(framed ? 0.82 : 0.6), isKerb), float(0.8), isApron);
   if (TX) m.normalNode = pavingNormal(TX.n, ta, tb, float(0.9).mul(float(1).sub(isKerb)).mul(float(1).sub(isApron)));
+  wxMat(m, { porosity: 0.55, puddles: true, puddleBias: float(-0.2), slush: true, frost: true, map: true });   // the weather (sidewalks, kerbs)
   return addLampLight(m);
 }
 
@@ -338,5 +343,6 @@ export function vergeMaterial() {
   const P = positionWorld;
   const a = n3(P.x.mul(0.35), P.z.mul(0.35), 1.0), b = n3(P.x.mul(4.0), P.z.mul(4.0), 2.0), c = n3(P.x.mul(23.0), P.z.mul(23.0), 5.0);
   m.colorNode = mix(vec3(0.05, 0.11, 0.025), vec3(0.1, 0.16, 0.04), a.mul(0.5).add(0.5)).add(b.mul(0.012)).add(c.mul(0.015));
+  wxMat(m, { porosity: 0.9, frost: true, map: true });   // the weather (verges)
   return addLampLight(m);
 }

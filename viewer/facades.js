@@ -37,6 +37,7 @@ import { houseCut, cutOpacity } from "./interior/cut.js";
 import { kitShows, wallKitFade } from "./facadeKit/kitFade.js";
 import { FRENCH_SILL } from "./facadeKit/placement.js";
 import { facadeLibOn, facadeWallLook, facadeRoofLook } from "./facadeLib.js";
+import { wxMat } from "./weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 export { analyseBuildings };
 
 const C = (r, g, b) => vec3(r, g, b);
@@ -567,6 +568,9 @@ export function wallMaterial(opts = {}) {
     const kitHole = cut.greaterThan(0.5).and(kitShows(wallKitFade));
     m.maskNode = m.maskNode ? m.maskNode.and(kitHole.not()) : kitHole.not();
   }
+  // the weather: wet brick / render darkens, rivulets run down the wall while it rains, beads on the painted glass,
+  // snow on the parapet tops (the facade's own glass parts stay unsoaked)
+  { const gl = clamp(glassPart.add(lmGlass).add(shopGlass), 0.0, 1.0); wxMat(m, { porosity: mix(float(0.55), float(0), gl), streaks: true, streakMask: float(1).sub(gl), glass: true, glassMask: gl }); }
   return m;
 }
 
@@ -658,12 +662,12 @@ export function roofMaterial() {
     const nPitch = rl ? normalize(normalView.add(rl.nView)) : bumpNormal(relief);
     m.normalNode = select(flat.greaterThan(0.5), bumpNormal(fr.height), nPitch);
     m.roughnessNode = mix(rl ? rl.rough : mix(float(0.62), float(0.78), clayK), fr.rough, flat);
-    return m;
+    return wxMat(m, { porosity: mix(float(0.25), float(0.4), flat) });   // the weather: wet tiles, snow on the roofs
   }
   m.colorNode = mix(rl ? rl.col : col, flatCol, flat);
   m.normalNode = rl ? normalize(normalView.add(rl.nView.mul(float(1).sub(flat)))) : bumpNormal(relief);
   m.roughnessNode = mix(rl ? rl.rough : mix(float(0.62), float(0.78), clayK), float(0.95), flat);
-  return m;
+  return wxMat(m, { porosity: mix(float(0.25), float(0.4), flat) });
 }
 
 /** Meshes for one tile. */

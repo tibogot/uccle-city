@@ -18,6 +18,7 @@ import { SMOOTH, lodEye, keepBand, rampTo } from "./lodFade.js";
 import { env } from "./lighting.js";
 import { useTreeKit, startTreeKit } from "./treeKitCity.js";
 import { frameBudget } from "./instanceStream.js";
+import { wxMat } from "./weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 
 // ---- the tree fields' re-buckets, spread over frames (docs/perf/AUDIT.md "instance pools"): within the city's
 // streaming budget a frame (viewer/instanceStream.js frameBudget, shared with the instance pools and the façade kit)
@@ -292,6 +293,10 @@ export function makeSpecies(def) {
       for (const k of ["colorNode", "normalNode", "roughnessNode"]) shared.trunkFar[k] = shared.trunkMat[k];
       shared.trunkFar.needsUpdate = true;
     }
+    // the weather (viewer/weather/cityWeatherize.js): wet bark, snow on the upper side of limbs and on the crowns' tops,
+    // plastered on the windward side of trunks; the crowns shelter the ground under them in the overhead bake
+    for (const m of new Set([shared.trunkMat, shared.trunkFar])) wxMat(m, { porosity: 0.7, snowUp: [0.12, 0.45], plaster: true });
+    for (const m of new Set([shared.leafMat, shared.leafFar])) { wxMat(m, { porosity: 0.2, snowUp: [0.45, 0.9], snowMask: float(0.8) }); m.userData.wxCanopy = true; }
     // (a streamed tile's trees fade in with the tile: lodFade.js gives them fading copies of these while it fades)
     for (const m of new Set([shared.leafMat, shared.leafFar, shared.trunkMat, shared.trunkFar])) m.userData.shared = true;
     // the trees' shadow distance fade (shadow pass only: the masks the shadow pass reads)

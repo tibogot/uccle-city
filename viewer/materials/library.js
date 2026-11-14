@@ -39,6 +39,7 @@ import { env } from "../lighting.js";
 import { SCANS } from "./scans.js";
 import { n3, n01, n2, g3, H2, farK, bumpK, bond, pillow, fadeF, cells, isoLine, seams, streakNoise, woodGrain } from "./patterns.js";
 import { hexSample } from "./antitile.js";
+import { wxMat } from "../weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 
 // ------------------------------------------------------------------------------------------------ parameters
 // [default, min, max, step] for numbers; "#hex" (sRGB) for colours. COMMON is added to every material.
@@ -755,7 +756,8 @@ export function createMaterial(name, opts = {}) {
   if (f.emissive) m.emissiveNode = f.emissive;
   m.name = `lib:${name}:${variant}:${mapping}${variant !== "proc" ? ":" + (scanData.meta.id ?? "shipped") : ""}`;
   Object.assign(m.userData, { look: U, libName: name, variant, mapping, shared: true, scanId: variant !== "proc" ? (scanData.meta.id ?? "shipped") : null });
-  return m;
+  // the weather on every library material (the landmarks, bridges): its own hints (weatherOpts below); opts.weather false: none
+  return opts.weather === false ? m : wxMat(m, weatherOpts(name));
 }
 
 /**

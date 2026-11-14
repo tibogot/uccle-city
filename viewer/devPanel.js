@@ -121,6 +121,11 @@ export function createDevPanel(ctx) {
   // the fog keeps its own copy of the settings once created (vendor/volumetric-fog: P = { ...defaults, ...params }):
   // write both, or the sliders do nothing
   const fogSet = (k, v) => { lighting.vfogParams[k] = v; if (lighting.vfog?.params) lighting.vfog.params[k] = v; };
+  // rain / snow / fog presets, live weather, the simulated surface state (viewer/weather/cityWeather.js; ?weather=old none)
+  import("./weather/cityWeather.js").then(({ cityWeather }) => {
+    const add = () => (cityWeather.weather ? cityWeather.panel(fW, setParam) : setTimeout(add, 500));
+    if (cityWeather.on) add();
+  });
   fW.add(S, "vfog").name("volumetric valley fog").onChange((v) => { lighting.vfogOn = v; setParam("vfog", v ? "1" : null); });
   fW.add(S, "fogDensity", 0.001, 0.05, 0.001).name("fog density").onChange((v) => fogSet("density", v));
   fW.add(S, "fogTop", 40, 160, 1).name("fog layer top (m TAW)").onChange((v) => fogSet("top", v));

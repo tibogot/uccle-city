@@ -27,6 +27,7 @@ import { noise2D, bumpNormal } from "./tslkit.js";
 
 import { landCoverData } from "./landcover.js";
 import { houseCut, cutOpacity } from "./interior/cut.js";
+import { wxMat } from "./weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 
 /** The mask as a texture; `pre` = landCoverData() already computed (e.g. by the tile worker). */
 export function landCoverTexture(feats, bounds, pre) {
@@ -88,6 +89,7 @@ export function proceduralGround(cover, bounds, contour) {
   m.metalnessNode = mk.a.mul(0.5);
   // an interior cell is loaded (?interior=1): no terrain inside its house (viewer/interior/cut.js)
   if (houseCut.enabled) m.maskNode = cutOpacity(float(1), -0.08).greaterThan(0.5);
+  wxMat(m, { porosity: mix(float(0.85), float(0), mk.a), frost: true, map: true });   // the weather (procedural ground)
   return addLampLight(m);
 }
 
@@ -297,6 +299,7 @@ function texturedGround(cover, bounds, contour) {
   m.normalNode = normalize(normalView.add(toView(vec3(nrm.x, 0, nrm.y.negate()).mul(nAmt))));
   if (houseCut.enabled) m.maskNode = cutOpacity(float(1), -0.08).greaterThan(0.5);
   m.name = "ground:textured";
+  wxMat(m, { porosity: mix(float(0.85), float(0), mk.a), frost: true, map: true, snowMask: one.sub(mk.a) });   // the weather: wet grass / earth, snow, frost
   m.userData.orthoOn = uOrtho;
   return addLampLight(m);
 }

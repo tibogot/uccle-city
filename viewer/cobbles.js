@@ -14,6 +14,7 @@ import { addLampLight } from "./lampLight.js";
 import { bumpNormal, noise2D, hash2D } from "./tslkit.js";
 import { n3 } from "./roadPaint.js";
 import { pavingTextures, pavingSample, pavingNormal, regrade, LAYER } from "./streets/paving.js";
+import { wxMat } from "./weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup")
 
 const SL = 0.16, SW = 0.13;           // mean stone length along the rows, width across (m)
 // per-cell random in [0, 1): the sin hash on (cell, row) modulo 1024 (large cell numbers lose float precision)
@@ -78,6 +79,7 @@ export function cobbleMaterial() {
   const cap = float(1).sub(F1.div(R).pow(2)).max(0);                    // rounded top
   const dome = cap.mul(0.006).add(smoothstep(float(0.0), float(0.03), edge).mul(0.002)).add(rx.mul(tiltX).add(rz.mul(tiltZ))).mul(bumpFade);
   m.normalNode = bumpNormal(dome);
+  wxMat(m, { porosity: 0.55, puddles: true, puddleBias: float(0.06), slush: true, ground: { lum: [0.065, 0.11] }, map: true });   // the weather (setts)
   return addLampLight(m);
 }
 
@@ -95,6 +97,7 @@ export function texturedSquare(m) {
   m.roughnessNode = S.rough.mul(1.05).min(0.97);
   m.aoNode = S.ao;
   m.normalNode = pavingNormal(S.n, f.x, f.y, float(1));
+  wxMat(m, { porosity: 0.55, puddles: true, puddleBias: float(0.06), slush: true, ground: { lum: [0.08, 0.16] }, map: true });   // the weather (squares)
   return addLampLight(m);
 }
 
@@ -125,5 +128,6 @@ export function pitMaterial() {
   const isStone = kind.greaterThan(0.5);
   m.colorNode = select(isStone, stoneCol, soil);
   m.roughnessNode = select(isStone, mix(float(0.8), float(0.95), joint), float(0.97));
+  wxMat(m, { porosity: 0.7, frost: true, map: true });   // the weather (tree pits)
   return addLampLight(m);
 }

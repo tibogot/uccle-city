@@ -311,7 +311,15 @@ export class Lighting {
     const dy = yb.sub(ya), ea = exp(ya.div(H).negate()), eb = exp(yb.div(H).negate());
     const mean = select(abs(dy).greaterThan(1.0), ea.sub(eb).mul(H).div(dy), ea);
     const tau = this.uFogDensity.mul(dist).mul(mean);
-    return fog(skyColor, float(1).sub(exp(tau.mul(tau).negate())));
+    // THE WEATHER (viewer/weather/cityWeather.js, docs/WEATHER.md "City hookup"): air extinction from the visibility
+    // (Koschmieder, beta = 3.912 / V, scale height 250 m over the valley floor) + a thin ground mist, the colour greyed
+    // under a full cloud deck. All 0 in clear weather (the fog as before); uniforms only, no shader rebuild
+    const W = (this.wxFog ??= { uBeta: uniform(0), uMist: uniform(0), uGrey: uniform(0) });
+    const meanH = (Hs) => { const a = exp(ya.div(Hs).negate()), b = exp(yb.div(Hs).negate()); return select(abs(dy).greaterThan(0.05), a.sub(b).mul(Hs).div(dy), a); };
+    const tauW = W.uBeta.mul(dist).mul(meanH(float(250))).add(W.uMist.mul(dist).mul(meanH(float(2.5))));
+    const L = skyColor.dot(vec3(0.2126, 0.7152, 0.0722));
+    const fogCol = mix(skyColor, vec3(L).mul(vec3(0.94, 0.98, 1.05)), W.uGrey);
+    return fog(fogCol, float(1).sub(exp(tau.mul(tau).add(tauW).negate())));
   }
 
   bake() {
