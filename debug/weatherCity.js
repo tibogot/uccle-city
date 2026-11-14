@@ -28,7 +28,7 @@ export async function set(name, { hour = null, seconds = 0, settle = 2500 } = {}
   return { preset: W.preset, on: W.weather && (await import("/viewer/weather/weatherState.js")).wx.uOn.value, bakes: W.stats.bakes };
 }
 export function hud(show) {
-  document.querySelectorAll("body > div, body > .upanel").forEach((d) => { if (!d.querySelector("canvas")) d.style.visibility = show ? "" : "hidden"; });
+  document.querySelectorAll("body > div, .upanel").forEach((d) => { if (!d.querySelector("canvas")) d.style.visibility = show ? "" : "hidden"; });
 }
 export const pipelines = () => { const p = V().renderer._pipelines; return { caches: p.caches.size, vertex: p.programs.vertex.size, fragment: p.programs.fragment.size, compute: p.programs.compute.size }; };
 /** cycle every preset (crossfades as the panel does), counting new pipelines and long tasks */
@@ -75,3 +75,26 @@ export async function save(name, url = "http://127.0.0.1:8891/") {
 }
 /** time of day as the panel's preset does it (lighting + the grade) */
 export function time(id) { V().lighting.apply(id); V().lighting.hourOverride = null; window.__devPanel?.pipe?.look(id); }
+/** the cost split (GPU p50 per state, interleaved rounds) in the background: window.__wxAB = { done, out } */
+export function costSplit(view = "stjob", rounds = 4) {
+  const st = (window.__wxAB = { done: false, out: null });
+  (async () => {
+    const W = await weather(), v = V();
+    const custom = (inp, s) => { W.weather.fade = null; W.preset = "custom"; Object.assign(W.weather.input, inp); Object.assign(W.weather.state, { slush: 0, frost: 0, icicle: 0, ...s }); };
+    const S = {
+      clear: async () => { W.weather.timeScale = 20; await set("clear", { settle: 1500 }); W.weather.timeScale = 0.0001; },
+      overcastDry: async () => { custom({ rain: 0, snow: 0, cloud: 1, temp: 10, vis: 15000 }, { wet: 0, puddle: 0, depth: 0 }); await wait(1500); },
+      wetNoRain: async () => { custom({ rain: 0, snow: 0, cloud: 1, temp: 10, vis: 15000 }, { wet: 0.9, puddle: 0.4, depth: 0 }); await wait(1500); },
+      rain: async () => { custom({ rain: 4, snow: 0, cloud: 1, temp: 10, vis: 15000 }, { wet: 0.9, puddle: 0.4, depth: 0 }); await wait(1500); },
+      snowCoverNoFall: async () => { custom({ rain: 0, snow: 0, cloud: 1, temp: -3, vis: 15000 }, { wet: 0, puddle: 0, depth: 0.15 }); await wait(1500); },
+      snowfall: async () => { custom({ rain: 0, snow: 1.5, cloud: 1, temp: -3, vis: 15000 }, { wet: 0, puddle: 0, depth: 0.15 }); await wait(1500); },
+    };
+    const acc = {};
+    for (let r = 0; r < rounds; r++) for (const [k, f] of Object.entries(S)) { await f(); go(view); await wait(800); v.resetGpu(); await wait(2500); const g = v.gpuStats(); (acc[k] ??= []).push(g.p50); }
+    W.weather.timeScale = 20; await set("clear", { settle: 500 });
+    const med = (a) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
+    st.out = Object.fromEntries(Object.entries(acc).map(([k, a]) => [k, { rounds: a, median: med(a), delta: +(med(a) - med(acc.clear)).toFixed(2) }]));
+    st.done = true;
+  })().catch((e) => { st.done = true; st.out = String(e); });
+  return "started";
+}
