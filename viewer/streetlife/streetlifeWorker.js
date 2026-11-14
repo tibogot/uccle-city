@@ -85,12 +85,12 @@ self.onmessage = async (e) => {
     const shopRecs = {}, colliders = {};
     for (const [k, v] of Object.entries(L.shops)) if (v.length) shopRecs[k] = new Float32Array(v);
     for (const [k, v] of Object.entries(L.colliders)) if (v.length) colliders[k] = new Float32Array(v);
-    const night = { shops: new Float32Array(L.night.shops), signs: new Float32Array(L.night.signs), spots: new Float32Array(L.night.spots) };
+    const night = { shops: new Float32Array(L.night.shops), signs: new Float32Array(L.night.signs), spots: new Float32Array(L.night.spots), lights: new Float32Array(L.night.lights || []) };
     times.buffers = performance.now() - t;
     times.total = performance.now() - t0;
     const out = { id, tile, nb, nw, ng, boxMtx, boxIB, winMtx, winIB, glassMtx, glassCen, props, shops: shopRecs, colliders, pages, nPages: packers.length, labels: sdf.length, labelBytes: sdf.reduce((a, s) => a + s.w * s.h, 0), dropped,
       night, used: L.used, counts: doc.counts, sources: doc.sources, skipped: doc.skipped, times, strides: { box: BOX_STRIDE, win: WIN_STRIDE, glass: GLASS_STRIDE, prop: PROP_STRIDE } };
-    self.postMessage(out, [boxMtx.buffer, boxIB.buffer, winMtx.buffer, winIB.buffer, glassMtx.buffer, glassCen.buffer, pages.buffer, night.shops.buffer, night.signs.buffer, night.spots.buffer, ...Object.values(props).map((a) => a.buffer), ...Object.values(shopRecs).map((a) => a.buffer), ...Object.values(colliders).map((a) => a.buffer)]);
+    self.postMessage(out, [boxMtx.buffer, boxIB.buffer, winMtx.buffer, winIB.buffer, glassMtx.buffer, glassCen.buffer, pages.buffer, night.shops.buffer, night.signs.buffer, night.spots.buffer, night.lights.buffer, ...Object.values(props).map((a) => a.buffer), ...Object.values(shopRecs).map((a) => a.buffer), ...Object.values(colliders).map((a) => a.buffer)]);
   } catch (err) {
     self.postMessage({ id, tile, error: String(err?.stack || err) });
   }

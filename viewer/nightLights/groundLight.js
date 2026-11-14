@@ -194,7 +194,9 @@ export class GroundLight {
   renderDynamic(renderer, n) {
     const D = this.dyn;
     D.mesh.count = n;
-    D.mesh.instanceMatrix.needsUpdate = D.aLamp.needsUpdate = D.aDir.needsUpdate = D.aCol.needsUpdate = true;
+    // upload only the quads in use (static buffers + update ranges, never DynamicDrawUsage: r187 re-uploads those whole
+    // in every pass); nothing at all when no quad is drawn
+    if (n > 0) for (const [a, k] of [[D.mesh.instanceMatrix, 16], [D.aLamp, 4], [D.aDir, 4], [D.aCol, 3]]) { a.clearUpdateRanges(); a.addUpdateRange(0, n * k); a.needsUpdate = true; }
     const prev = renderer.getRenderTarget(), ac = renderer.autoClear, cc = renderer.getClearColor(this._cc ??= new THREE.Color()), ca = renderer.getClearAlpha();
     renderer.setRenderTarget(this.rt);
     renderer.setClearColor(0x000000, 0);

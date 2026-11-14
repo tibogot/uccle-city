@@ -295,6 +295,9 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
   const M = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1), v = new THREE.Vector3();
   const doorsLR = [0, 0];
   const near = { x: 0, z: 0, r: 1800 };
+  // the drawn trams' front positions (x, z) this frame, for movers' checks (?night=1: the lamp shadows re-render when a
+  // tram passes a shadowed lamp): preallocated, no per-frame garbage
+  const drawn = { n: 0, xz: new Float32Array(MAX_TRAMS * 2) };
   let running = 0;
 
   const placeTrip = (t, s, d, flipCab) => {
@@ -313,6 +316,7 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
     const T = clock() % 86400, Tn = T + 86400;                          // trips can run past midnight
     near.x = camPos.x; near.z = camPos.z;
     const s = { cab: 0, mid: 0 };
+    drawn.n = 0;
     fleet?.begin(camera, camPos);
     running = 0;
     for (const t of trips) {
@@ -323,6 +327,7 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
       const [x, z] = at(shapes[t.shape], d);
       running++;
       if ((x - near.x) ** 2 + (z - near.z) ** 2 > near.r * near.r || s.cab >= MAX_TRAMS * 2) continue;
+      drawn.xz[drawn.n * 2] = x; drawn.xz[drawn.n * 2 + 1] = z; drawn.n++;
       if (fleet) {
         const shape = shapes[t.shape];
         tramPose(model.layout, (q) => at(shape, q), d, pose, false, prof ? (q) => yAlong(shape, q) : null);
@@ -358,5 +363,5 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
   // live clock (the dev panel): set the time of day (seconds) or the speed; both re-anchor, so nothing jumps but the set
   const setClock = (secs = null) => { startSecs = secs ?? brusselsNow().secs; t0 = performance.now(); };   // null: Brussels now
   const setTimescale = (k) => { startSecs = clock(); t0 = performance.now(); scale = k; };
-  return { update, snapTile, info, doc, fleet, model, positions, trackAt, railTop, railY, yAlong: (id, q) => { const t = trips.find((r) => (r.id ?? r.head) === id); return t ? yAlong(shapes[t.shape], q) : null; }, prof, setClock, setTimescale, get clockSecs() { return clock() % 86400; }, get timescale() { return scale; } };
+  return { update, snapTile, info, doc, fleet, model, positions, drawn, trackAt, railTop, railY, yAlong: (id, q) => { const t = trips.find((r) => (r.id ?? r.head) === id); return t ? yAlong(shapes[t.shape], q) : null; }, prof, setClock, setTimescale, get clockSecs() { return clock() % 86400; }, get timescale() { return scale; } };
 }

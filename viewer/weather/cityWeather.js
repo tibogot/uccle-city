@@ -41,13 +41,13 @@ if (map) setWeatherMap(map);      // before any material is built: the ground fa
 const lerp = THREE.MathUtils.lerp, sstep = THREE.MathUtils.smoothstep;
 
 export const cityWeather = {
-  on: WX_ON, map, weather: null, preset: "clear", live: false, liveInfo: "-",
+  on: WX_ON, map, weather: WX_ON ? new Weather() : null,   // (here at load: the dev panel binds it before start()) preset: "clear", live: false, liveInfo: "-",
   stats: { bakes: 0, bakeMs: 0, gpuMs: 0, shapeMs: 0, markMs: 0, solid: 0 },
   /** main.js, after the pipeline is set up (before the warm-up): build everything, compile it once */
   async start({ scene, renderer, camera, lighting, updaters, world, pipe = null, log = console.log }) {
     if (!WX_ON) return;
     const t0 = performance.now();
-    const weather = this.weather = new Weather();
+    const weather = this.weather;
     weather.timeScale = 20;                      // simulated s per real s (the panel; the lab runs x60)
     window.__weather = weather;                  // the falcon's flight reads the wind (cityFlyer.js)
     map.setRenderer(renderer);

@@ -6,8 +6,8 @@ import { shadowFade } from "./lighting.js";
 import { TREE_SHADOW, treeParams } from "./treesStylized.js";
 
 export function addSmoothnessFolder(gui, { lighting, fader }) {
-  const f = gui.addFolder("Smoothness");
-  if (!SMOOTH) { f.add({ s: "off (?smooth=0)" }, "s").name("smooth LOD"); f.close(); return f; }
+  const f = gui.addFolder("Smoothness (LOD tunables)", { id: "smooth", open: false });
+  if (!SMOOTH) { f.add({ s: "off (?smooth=0)" }, "s").name("smooth LOD"); return f; }
   const trees = () => window.__stylizedTrees || [];
   const P0 = trees()[0]?.params || {};
   const S = {
@@ -41,13 +41,13 @@ export function addSmoothnessFolder(gui, { lighting, fader }) {
   f.add(S, "shadowBox").name("shadow box / fade").listen();
   f.add(S, "treeStats").name("trees drawn").listen();
   setInterval(() => {
+    if (!f.isOpen || gui.visible === false) return;       // (read-outs only while shown: no tree walk for a closed section)
     S.shadowBox = lighting.boxHalf ? `±${lighting.boxHalf} m, fade ${lighting.fadeHalf.toFixed(0)} m, texel ${(2 * lighting.boxHalf / 4096 * 100).toFixed(1)} cm` : "-";
     let n = 0, tris = 0;
     const inScene = (o) => { while (o.parent) o = o.parent; return o.isScene; };     // (a disposed tile's field is not)
     for (const t of trees()) { if (!inScene(t.group)) continue; const s = t.stats(); n += s.trees; tris += s.tris; }
     S.treeStats = `${(tris / 1000).toFixed(0)}k triangles (${n} trees loaded)`;
   }, 500);
-  f.close();
   f.state = S;          // (the dev panel's "copy link" carries the numeric ones)
   return f;
 }

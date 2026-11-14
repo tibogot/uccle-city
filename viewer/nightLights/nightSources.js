@@ -33,17 +33,22 @@ export const nightParams = {
 const LAMP_RGB = [1.0, 0.78, 0.52], HEAD_RGB = [1.0, 0.97, 0.92], REAR_RGB = [1.0, 0.04, 0.02], SALOON_RGB = [0.82, 0.9, 1.0];
 
 class Track {          // per-source weight history: the largest frame-to-frame jump (the pop detector)
-  constructor(n) { this.prev = new Float32Array(n); this.cur = new Float32Array(n); this.maxJump = 0; this.frameJump = 0; }
-  begin() { const t = this.prev; this.prev = this.cur; this.cur = t; this.cur.fill(0); }
-  end() { let m = 0; for (let i = 0; i < this.cur.length; i++) { const d = Math.abs(this.cur[i] - this.prev[i]); if (d > m) m = d; } this.frameJump = m; if (m > this.maxJump) this.maxJump = m; }
+  // on = false (the city, unless ?nightdebug=1): begin / end do nothing (the lamp track's fill + scan of its 16384 ids
+  // was most of the city's per-frame night CPU); the per-source writes into cur stay (cheap)
+  constructor(n) { this.prev = new Float32Array(n); this.cur = new Float32Array(n); this.maxJump = 0; this.frameJump = 0; this.on = true; }
+  begin() { if (!this.on) return; const t = this.prev; this.prev = this.cur; this.cur = t; this.cur.fill(0); }
+  end() { if (!this.on) return; let m = 0; for (let i = 0; i < this.cur.length; i++) { const d = Math.abs(this.cur[i] - this.prev[i]); if (d > m) m = d; } this.frameJump = m; if (m > this.maxJump) this.maxJump = m; }
 }
 
 export class NightSources {
-  constructor(pool, street, { cars = 64, shadowLights = [], cones = null, sizes = {}, ground = null } = {}) {
+  constructor(pool, street, { cars = 64, shadowLights = [], cones = null, sizes = {}, ground = null, baked = {} } = {}) {
     // round 2: the static kinds only near the camera (the ground light map has them all), the 12 nearest cars' lights
     // real (the others' pools in the map's dynamic layer)
     const N = { lamps: 24, windows: 40, shops: 8, signs: 6, heads: 12, rear: 12, ...sizes };
     this.pool = pool; this.cones = cones; this.N = N; this.ground = ground;
+    // which kinds the ground light map holds (ground materials then skip them in the loop): all with a map (the lab);
+    // the city's map has the lamps only (cityNight.js passes { shops: false, signs: false })
+    this.bakedK = { lamps: !!ground, windows: !!ground, shops: !!ground, signs: !!ground, ...baked };
     this.realHead = new Float32Array(cars); this.realRear = new Float32Array(cars);
     const S = street.sources;
     this.src = S;
@@ -86,7 +91,7 @@ export class NightSources {
         const id = sel.i[k], w = sel.weight(k) * this.nearFade(sel.d[k]) * (F ? F[id] : 1);
         tr.cur[id] = w;
         P.set(b + k, S.x[id], S.y[id], S.z[id], p.lampRange, LAMP_RGB[0] * I, LAMP_RGB[1] * I, LAMP_RGB[2] * I, w * (1 - this.shadow.blend(id) * p.shadowShare), 0.22);
-        P.omni(b + k); P.profile(b + k, PROFILE.LANTERN, p.lampUp, p.lampBatwing); P.baked(b + k, !!this.ground);
+        P.omni(b + k); P.profile(b + k, PROFILE.LANTERN, p.lampUp, p.lampBatwing); P.baked(b + k, this.bakedK.lamps);
         if (C && this.conesOn && w > 0.01) C.write(cone++, S.x[id], S.y[id] - 0.1, S.z[id], 0, -1, 0, S.y[id] - 0.1, 3.4, LAMP_RGB[0] * w, LAMP_RGB[1] * w, LAMP_RGB[2] * w);
       }
       tr.end();
@@ -108,13 +113,15 @@ export class NightSources {
     this.aperture("shops", p.shops, p.shopI, 2.0, p.shopRange, 0.0);
     // ---- signs
     {
-      const sel = this.sel.signs, S = this.src.signs, L = S.list, b = this.base.signs;
+      const sel = this.sel.signs, S = this.src.signs, L = S.list, b = this.base.signs, F = S.fade;
       sel.begin(); if (p.signs) this.grid.signs.query(cx, cy, cz, sel.maxDist, sel); sel.end();
       for (let k = 0; k < this.N.signs; k++) {
         if (k >= sel.count) { P.weight(b + k, 0); continue; }
-        const id = sel.i[k], s = L[id], out = s.side < 0 ? 1 : -1, I = p.signI;
-        P.set(b + k, S.x[id], S.y[id] - 0.1, S.z[id] + out * 0.7, p.signRange, s.col[0] * I, s.col[1] * I, s.col[2] * I, sel.weight(k) * this.nearFade(sel.d[k]), 0.4);
-        P.omni(b + k); P.profile(b + k, PROFILE.PLAIN); P.diffuseOnly(b + k, true); P.baked(b + k, !!this.ground);
+        // (a sign with its facade normal, the city's: its position is already in front of the fascia; the lab's
+        // street: the side's +-z offset)
+        const id = sel.i[k], s = L[id], out = s.nx !== undefined ? 0 : s.side < 0 ? 1 : -1, I = p.signI;
+        P.set(b + k, S.x[id], S.y[id] - 0.1, S.z[id] + out * 0.7, p.signRange, s.col[0] * I, s.col[1] * I, s.col[2] * I, sel.weight(k) * this.nearFade(sel.d[k]) * (F ? F[id] : 1), 0.4);
+        P.omni(b + k); P.profile(b + k, PROFILE.PLAIN); P.diffuseOnly(b + k, true); P.baked(b + k, this.bakedK.signs);
       }
       this.stats.signs = sel.count;
     }
@@ -198,16 +205,18 @@ export class NightSources {
   nearFade(d) { const p = nightParams; return this.ground ? 1 - smooth01((d - p.near0) / (p.near1 - p.near0)) : 1; }
 
   aperture(kind, on, I, depth, range, mullion) {
-    const P = this.pool, sel = this.sel[kind], S = this.src[kind], L = S.list, b = this.base[kind], tr = this.track[kind];
+    const P = this.pool, sel = this.sel[kind], S = this.src[kind], L = S.list, b = this.base[kind], tr = this.track[kind], F = S.fade;
     sel.begin(); if (on) this.grid[kind].query(this.cx, this.cy, this.cz, sel.maxDist, sel); sel.end();
     tr?.begin();
     for (let k = 0; k < this.N[kind]; k++) {
       if (k >= sel.count) { P.weight(b + k, 0); continue; }
-      const id = sel.i[k], s = L[id], out = s.side < 0 ? 1 : -1, w = sel.weight(k) * this.nearFade(sel.d[k]), g = I * (s.b ?? 1);
+      const id = sel.i[k], s = L[id], w = sel.weight(k) * this.nearFade(sel.d[k]) * (F ? F[id] : 1), g = I * (s.b ?? 1);
+      // the opening's outward axis: the facade's own normal (the city's sources carry nx, nz), else the lab street's +-z
+      const ax = s.nx !== undefined ? s.nx : 0, az = s.nx !== undefined ? s.nz : s.side < 0 ? 1 : -1;
       if (tr) tr.cur[id] = w;
-      P.set(b + k, S.x[id], S.y[id], S.z[id] - out * depth, range + depth, s.col[0] * g, s.col[1] * g, s.col[2] * g, w, 0.35);
-      P.spot(b + k, 0, 0, out, 1.25, 0.95);
-      P.profile(b + k, PROFILE.APERTURE, s.hw, s.hh, depth, mullion); P.diffuseOnly(b + k, true); P.baked(b + k, !!this.ground);
+      P.set(b + k, S.x[id] - ax * depth, S.y[id], S.z[id] - az * depth, range + depth, s.col[0] * g, s.col[1] * g, s.col[2] * g, w, 0.35);
+      P.spot(b + k, ax, 0, az, 1.25, 0.95);
+      P.profile(b + k, PROFILE.APERTURE, s.hw, s.hh, depth, mullion); P.diffuseOnly(b + k, true); P.baked(b + k, this.bakedK[kind]);
     }
     tr?.end();
     this.stats[kind] = sel.count;

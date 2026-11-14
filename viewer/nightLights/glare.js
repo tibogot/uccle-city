@@ -45,7 +45,9 @@ export function createGlare(cap = 256) {
     commit(n, camera, heightPx) {
       glareLook.uPixel.value = 2 * Math.tan((camera.fov * Math.PI) / 360) / heightPx;
       mesh.count = n;
-      aPos.needsUpdate = aCol.needsUpdate = aDir.needsUpdate = true;
+      mesh.visible = n > 0;                                      // (an empty instanced mesh still costs a draw)
+      // only the cards in use are uploaded (static buffers + update ranges)
+      if (n > 0) for (const [a, k] of [[aPos, 4], [aCol, 4], [aDir, 3]]) { a.clearUpdateRanges(); a.addUpdateRange(0, n * k); a.needsUpdate = true; }
     },
   };
 }

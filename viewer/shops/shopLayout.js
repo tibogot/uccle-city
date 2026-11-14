@@ -100,6 +100,9 @@ export function layoutShop(p, f, frame, lit, env) {
     m.set([interiorType(p), gb, hash01(id + "m") < 0.5 ? 1 : 0, 0], 20);
     windows.push(m);
     night.shops.push(o[0] + Z[0] * 0.6, f.y + 1.6, o[2] + Z[2] * 0.6);
+    // ?night=1 (viewer/nightLights/cityNight.js): the lit window as a light through its opening, in the facade's own
+    // frame (light record: kind 0 = shop window, centre, outward normal, half width / height, colour; NIGHT_LIGHT_STRIDE)
+    if (lit > 0) night.lights?.push(0, o[0], o[1], o[2], Z[0], Z[2], wW / 2, wH / 2, 1.0 * lit, 0.86 * lit, 0.66 * lit);
   }
   // ---- the name on the fascia (the street life's SDF box on the fascia's sign panel)
   const style = pick(["shopSans", "shopSerif", "shopHumanist", "shopItalic"], id, "f");
@@ -124,6 +127,13 @@ export function layoutShop(p, f, frame, lit, env) {
       night.spots.push(...add(o, X, 0, Y, 0.1, Z, 0.55));
     }
   } else night.signs.push(...at(0, fasciaY + 0.35, 0.5));
+  // ?night=1: the fascia's light (kind 1, a sign: half a metre out, the colour of what glows: the letters when backlit,
+  // the board when a lightbox, the warm goosenecks' wash on the board; a painted board gives none)
+  if (lit > 0 && sign !== "paint") {
+    const c = sign === "backlit" ? ink : sign === "lightbox" ? [0.95, 0.95, 0.92] : [1.0, 0.8, 0.55], k = sign === "spots" ? 0.8 : 1;
+    const o = at(0, fasciaY + 0.35, 0.5);
+    night.lights?.push(1, o[0], o[1], o[2], Z[0], Z[2], W / 2, 0.3, c[0] * k * lit, c[1] * k * lit, c[2] * k * lit);
+  }
   // ---- awning (food and fresh shops), the name on its valance
   const awn = cf.awning ?? ((AWNING_KINDS.has(p.kind) || AWNING_CATS.has(p.cat)) && !lowFloor && hash01(id + "aw") < 0.8);
   if (awn) {
@@ -141,12 +151,14 @@ export function layoutShop(p, f, frame, lit, env) {
     const o = at(px, fasciaY + 0.45);
     prop("cross", o[0], o[1], o[2], yaw);
     night.signs.push(o[0] + Z[0] * 0.8, o[1], o[2] + Z[2] * 0.8);
+    night.lights?.push(1, o[0] + Z[0] * 0.8, o[1], o[2] + Z[2] * 0.8, Z[0], Z[2], 0.3, 0.3, 0.12, 1.0, 0.3);   // (the green cross: lit all night)
   } else if (PROJECT_KINDS.has(p.kind) && p.name && !lowFloor) {
     put("blade", px, fasciaY + 0.95, 0, 0, [0, 0, 0], 0);
     const plab = label(twoLines(p.name, 11), pick(["shopSans", "shopSerif", "shopHumanist"], id, "j"));
     const Xs = [-Z[0], 0, -Z[2]], Zs = X;
     box(at(px, fasciaY + 0.95 - 0.39, 0.55), Xs, Y, Zs, 0.66, 0.62, 0.045, { board: classic ? paint : [0.86, 0.86, 0.84], ink: classic ? ink : [0.02, 0.02, 0.025], inkGlow: 1.2 * lit, lab: plab, pad: 0.12, sides: 1, border: 0.018, rough: 0.45, kind: 3 });
     night.signs.push(...at(px, fasciaY + 0.56, 0.55));
+    if (lit > 0) { const o = at(px, fasciaY + 0.56, 0.55), c = classic ? ink : [0.95, 0.95, 0.92]; night.lights?.push(1, o[0], o[1], o[2], Z[0], Z[2], 0.33, 0.31, c[0] * 1.2 * lit, c[1] * 1.2 * lit, c[2] * 1.2 * lit); }
   }
   // ---- ATM in a bank's front (on the glass, away from the door)
   if (p.atm) {
