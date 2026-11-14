@@ -10,7 +10,7 @@
 //            materials (one per LOD) for every piece of the kit in the city
 //   variants per instance iVar = (palette mix 0..1, tone, 0, 0): the slot colour is mix(A, B, iVar.x) (metal-slatted
 //            benches, the white / coloured glass banks), x tone on the wood (weathered vs freshly oiled)
-//   LOD hand-over: per instance band (iBand: switch 0-1, switch 1-2, end, the tile's fade) and the per-pixel dither of
+//   LOD hand-over: per instance band (iBand: switch 0-1, switch 1-2, end, the tile's fade slot) and the per-pixel dither of
 //            viewer/lodFade.js (same noise in the shadow pass: no pop, no shadow snap). Small pieces cast no shadow at LOD2
 //            (their shadow dithers out with LOD1 across the 1-2 hand-over)
 //   night    nothing glows (no emissive, no light: fixed light count)
@@ -21,6 +21,10 @@ import {
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
+import { FadeSlots, StreamPool, sourceFromYaw } from "../instanceStream.js";
+
+/** the kit's tile fades (viewer/instanceStream.js): iBand.w = the instance's tile slot */
+export const furnitureFades = new FadeSlots();
 
 /** slot palette by NAME (the Blender slots): [name, [A rgb (linear), rough, metal], [B rgb, rough, metal]] */
 export const SLOTS = [
@@ -213,7 +217,7 @@ const WOOD = SLOT.wood_slat;
 function lodKeep(lod, band, n = ditherNoise()) {
   const d = length(positionWorld.sub(lodEye));
   const t1 = smoothstep(band.x.mul(0.9), band.x.mul(1.1), d), t2 = smoothstep(band.y.mul(0.9), band.y.mul(1.1), d), e = smoothstep(band.z.mul(0.85), band.z, d);
-  const f = band.w;
+  const f = furnitureFades.fade(band.w);
   const tile = select(f.greaterThan(1.5), n.greaterThanEqual(f.sub(2)), n.lessThan(f));
   const k = lod === 0 ? keepBand(t1, float(1.01), n) : lod === 1 ? keepBand(t2, t1, n) : keepBand(e, t2, n);
   return k.and(tile);
@@ -243,7 +247,7 @@ function materials(aoTex) {
     m.maskNode = lodKeep(lod, attribute("iBand", "vec4"));
     m.maskShadowNode = m.maskNode;
     m.name = `furniture2-lod${lod}`;
-    m.userData.shared = true; m.userData.noFade = true;           // (the tile fade rides in iBand.w)
+    m.userData.shared = true; m.userData.noFade = true;           // (the tile fade: its slot rides in iBand.w)
     return m;
   });
   const standin = new THREE.MeshStandardNodeMaterial({ color: 0x555555 });
@@ -253,68 +257,46 @@ function materials(aoTex) {
 }
 
 // ------------------------------------------------------------------------------------------------ the pools
-/** ONE pool per piece for the whole city: LOD0..2 instanced meshes re-filled from the loaded tiles' instances near the
- *  camera. Static buffers (needsUpdate + update ranges over the live count, never DynamicDrawUsage); a mesh with nothing
- *  to draw is not visible. Instances: Float32Array stride 8 (x y z yaw varMix tone 0 0). */
+/** a tile's instance array of one piece (x y z yaw varMix tone 0 0) as a streaming source (viewer/instanceStream.js) */
+export function furnitureSource(piece, a, slot) {
+  const [s1, s2, end] = piece.band.lod;
+  return sourceFromYaw(a, 8, piece.lods[0].boundingSphere.radius, {
+    iBand: (o, v) => { v[0] = s1; v[1] = s2; v[2] = end; v[3] = slot; },
+    iVar: (o, v) => { v[0] = a[o + 4]; v[1] = a[o + 5]; },
+  });
+}
+
+/** ONE pool per piece for the whole city: LOD0..2 instanced meshes streamed from the loaded tiles' sources near the
+ *  camera (viewer/instanceStream.js StreamPool: static buffers, update ranges over the live count, never
+ *  DynamicDrawUsage; a mesh with nothing to draw is not visible). */
 export class FurniturePool {
-  constructor(piece, mats, group) {
-    this.piece = piece; this.cap = 0; this.meshes = [];
-    const b = piece.band;
-    this.lod = piece.lods.map((geo, k) => {
+  constructor(piece, mats, group, margin = 12) {
+    this.piece = piece; this.meshes = [];
+    const b = piece.band, [s1, s2, end] = b.lod;
+    const live = [[0, s1 * 1.1], [s1 * 0.9, s2 * 1.1], [s2 * 0.9, end]];       // lodKeep's smoothstep windows
+    const spec = piece.lods.map((geo, k) => {
       const g = new THREE.BufferGeometry();
       for (const a of Object.keys(geo.attributes)) g.setAttribute(a, geo.attributes[a]);
       g.setIndex(geo.index);
       const m = new THREE.InstancedMesh(g, mats.opaque[k], 1);
-      m.count = 0; m.visible = false; m.castShadow = k < 2 || b.shadow2; m.receiveShadow = true; m.frustumCulled = true;
+      m.castShadow = k < 2 || b.shadow2; m.receiveShadow = true; m.frustumCulled = true;
       m.boundingSphere = new THREE.Sphere(); m.name = `furniture2-${piece.name}-lod${k}`;
       group.add(m); this.meshes.push(m);
-      return m;
+      return { mesh: m, l0: live[k][0], l1: live[k][1], attrs: [["instanceMatrix", "instanceMatrix", 16], ["iBand", "iBand", 4], ["iVar", "iVar", 4]] };
     });
-    this.r = piece.lods[0].boundingSphere.radius;
-    this.grow(32);
+    this.lod = this.meshes;
+    this.stream = new StreamPool(piece.name, spec, piece.lods[0].boundingSphere.radius, margin);
   }
-  grow(n) {
-    if (n <= this.cap) return;
-    this.cap = Math.max(n, this.cap * 2);
-    for (const m of this.meshes) {
-      m.instanceMatrix = new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 16), 16);
-      m.geometry.setAttribute("iBand", new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 4), 4));
-      m.geometry.setAttribute("iVar", new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 4), 4));
+  /** the labs: a synchronous gather of tiles [{ inst: { <piece>: Float32Array stride 8 } }] (fade 1: slot 0) round c */
+  gather(tiles, c) {
+    const srcs = [], k = this.piece.name;
+    for (const t of tiles) {
+      const a = t.inst[k]; if (!a) continue;
+      t.__src ||= {};
+      srcs.push({ src: (t.__src[k] ||= furnitureSource(this.piece, a, 0)) });
     }
-  }
-  /** tiles: [{ inst: { <piece>: Float32Array stride 8 }, fade }]; c = the camera position */
-  gather(tiles, c, margin = 4) {
-    const [s1, s2, end] = this.piece.band.lod, kind = this.piece.name;
-    let total = 0;
-    for (const t of tiles) total += (t.inst[kind]?.length || 0) / 8;
-    this.grow(total);
-    const lims = [[0, s1 * 1.1 + margin], [s1 * 0.9 - margin, s2 * 1.1 + margin], [s2 * 0.9 - margin, end + margin]];
-    this.lod.forEach((m, li) => {
-      const d0 = Math.max(0, lims[li][0]), d1 = lims[li][1];
-      const M = m.instanceMatrix.array, B = m.geometry.attributes.iBand.array, Vv = m.geometry.attributes.iVar.array;
-      let n = 0, x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, z0 = Infinity, z1 = -Infinity;
-      for (const t of tiles) {
-        const a = t.inst[kind]; if (!a) continue;
-        for (let o = 0; o < a.length; o += 8) {
-          const x = a[o], y = a[o + 1], z = a[o + 2], d = Math.hypot(x - c.x, y - c.y, z - c.z);
-          if (d < d0 || d > d1) continue;
-          const yaw = a[o + 3], cs = Math.cos(yaw), sn = Math.sin(yaw), k = n * 16;
-          M[k] = cs; M[k + 1] = 0; M[k + 2] = -sn; M[k + 3] = 0; M[k + 4] = 0; M[k + 5] = 1; M[k + 6] = 0; M[k + 7] = 0;
-          M[k + 8] = sn; M[k + 9] = 0; M[k + 10] = cs; M[k + 11] = 0; M[k + 12] = x; M[k + 13] = y; M[k + 14] = z; M[k + 15] = 1;
-          B[n * 4] = s1; B[n * 4 + 1] = s2; B[n * 4 + 2] = end; B[n * 4 + 3] = t.fade;
-          Vv[n * 4] = a[o + 4]; Vv[n * 4 + 1] = a[o + 5]; Vv[n * 4 + 2] = 0; Vv[n * 4 + 3] = 0;
-          x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); z0 = Math.min(z0, z); z1 = Math.max(z1, z);
-          n++;
-        }
-      }
-      m.count = n; m.visible = n > 0;
-      if (!n) return;
-      m.boundingSphere.center.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
-      m.boundingSphere.radius = Math.hypot(x1 - x0, y1 - y0, z1 - z0) / 2 + this.r;
-      for (const [att, w] of [[m.instanceMatrix, 16], [m.geometry.attributes.iBand, 4], [m.geometry.attributes.iVar, 4]]) {
-        att.clearUpdateRanges(); att.addUpdateRange(0, n * w); att.needsUpdate = true;
-      }
-    });
+    const it = this.stream.gather(srcs, c, () => false);
+    while (!it.next().done);
   }
   get drawn() { return this.meshes.filter((m) => m.visible).length; }
 }
