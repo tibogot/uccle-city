@@ -98,3 +98,22 @@ export function costSplit(view = "stjob", rounds = 4) {
   })().catch((e) => { st.done = true; st.out = String(e); });
   return "started";
 }
+/** drive n frames by hand (a background tab's rAF is throttled): viewer.step(dt) runs the whole loop, updaters included */
+export async function pump(n = 120, dt = 1 / 30) { for (let i = 0; i < n; i++) { V().step(dt); if (i % 10 === 9) await wait(0); } }
+/** a proof set at one view: every state x time, pumped (works in a background tab) */
+export async function proofSet(prefix, view, states = ["clear", "rain", "snowfall"], times = ["midday", "twilight"]) {
+  const W = await weather(), out = [];
+  hud(false);
+  for (const t of times) {
+    time(t);
+    for (const p of states) {
+      W.setPreset(p, 0);
+      if (p === "snowfall") W.weather.state.depth = 0.15;
+      go(view);
+      await pump(240);                                   // 8 s of simulated frames: the sky deck, the fades, a bake
+      out.push(await save(`${prefix}_${p === "snowfall" ? "snow" : p}_${t === "midday" ? "day" : "dusk"}.jpg`));
+    }
+  }
+  W.setPreset("clear", 0);
+  return out;
+}

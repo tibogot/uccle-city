@@ -212,3 +212,131 @@ clusters on the far snowfield at the horizon and the trunk / fir edges, not the 
 Weak (polish): lawn patches at 5-15 m are still the tuft noise (smooth blobs); the sidewalk tiles have no `ground` yet;
 the bare sett tops are clean-cut (no partial dusting); the far snowfield blinks a little at the horizon in thin snow.
 
+
+
+---
+
+# City hookup (branch claude/weather-city, 2026-11-14)
+
+The weather is IN THE CITY, on by default, clear on load (the city as before). `?weather=old` = the city before the
+hookup (no weather in any shader, no bake, nothing drawn). `?wx=clear|overcast|drizzle|rain|storm|snowfall|snow_cover|fog|live`
+starts with a weather; `?wxmap=64` (32-128 m) sizes the overhead / snow window. Dev panel, section Weather (under the
+fog controls): weather preset, time scale (simulated s per real s, default x20), live weather (Uccle, Open-Meteo, no
+key, refreshed every 15 min, CC BY 4.0), inputs (rain, snowfall, temperature, wind, cloud, visibility), the simulated
+surface state (wet, puddles, snow depth, slush), roads salted, wet darkening, snow sparkle. Rows in viewer/features.js.
+
+## The modules
+| File | What |
+|---|---|
+| `viewer/weather/cityWeather.js` | `cityWeather`: the one `Weather` (created at load; `window.__weather`: the falcon's wind), `start()` from main.js after the post pipeline, the per-frame update (an updater), presets, live, the overhead map round the camera, rain / snow / leaves, the snow layer, the sky / fog / grade coupling, `panel()` |
+| `viewer/weather/cityWeatherize.js` | `wxMat(material, opts)`: the lab's weatherize() as a UNIFORM-GATED layer, called in the material factories |
+| `debug/weatherCity.js` | views, presets, `switchTest()` (pipelines + long tasks per preset), `costSplit()` (GPU per state, in the background), `pump()` / `proofSet()` (shots from a background tab), `save()` (canvas to a local POST receiver) |
+
+Shared files touched (small, delimited): `viewer/main.js` (+4 lines: the import, and `cityWeather.start(...)` in a
+`// ---- WEATHER` block right after `await (pipeReady ?? setupPipe())`), `viewer/devPanel.js` (+3: `cityWeather.panel(fW,
+setParam)` before `switches(fW, "weather")`), `viewer/features.js` (+4 rows), `viewer/lighting.js` fogNode (+8: the
+weather's extinction / mist / grey uniforms `lighting.wxFog`, all 0 = the fog as before), `viewer/post.js` (+2: a
+`grade` getter). Material factories, one `wxMat(...)` line each, before `addLampLight`: `roadPaint.js` asphalt (setts,
+asphalt, pavers; `saltMask`: sett lanes and gravel hardly salted) / paint decals / concrete sidewalks + kerbs / verges,
+`cobbles.js` setts / squares / tree pits, `ground.js` procedural + textured terrain, `facades.js` walls (porosity 0 on
+the painted glass, rivulets on the wall, beads on the glass) + roofs, `facadeKit/kitMaterials.js` opaque + glass,
+`roofs/roofKit.js`, `drive/carPacks.js` (parked, traffic, the player's car), `treesStylized.js` (bark: plaster + snow on
+the limbs; leaf cards: snow on the crown tops, `wxCanopy` for the bake), `materials/library.js` createMaterial (every
+library material with its own `weatherOpts()`: the landmarks, bridges), `stjobModel.js`, `heros/herosGround.js`,
+`heros/herosModel.js`. The foliage family (hedges, garden plants, our grass) already reads `viewer/foliage/seasons.js`
+uSnow / uWet: the weather drives those two uniforms.
+Lab modules changed for the city (the lab keeps working): overheadMap `bake(scene, at)` re-centres (the new data and
+the new origin swap together when the worker returns) + `setRenderer`; snowLayer built in the map's local frame (the
+group follows the origin: `follow()`, chunk boxes `refit()`), `edgeFade` (the layer thins out over the window's round
+edge into the materials' flat cover), `warm()`; precipitation `warm()`, `setTrees()`; weatherState `wx.uOn`.
+
+## No shader rebuilds, ~0 cost in clear weather
+Every material is compiled once at boot WITH the weather. `wxMat` wraps the dry colour / roughness / metalness in one
+function: the inputs are snapshot at its top (`.toVar()`), then `If(wx.uOn)` (a uniform: no divergence) runs the
+weather. Inside, every effect is its own uniform-gated stage (puddles if uPuddle, ripples if uRain, rivulets if uRain,
+beads if uWet, frost if uFrost, snow if uSnowCover), plus per-pixel distance skips where the effect is sub-pixel anyway
+(ripples at footprints < 2.5 cm, rivulets < 2 cm, glass beads < 8 mm, sparkle < 11.5 mm; their derivatives come from the
+footprint: WGSL forbids fwidth in a per-pixel branch). The normal has its own gated function (the NORMAL sub-build),
+recomputing only the masks it needs.
+TSL lessons (three r187): code first built inside an `If` is emitted there, so a shared node first touched inside
+(normalView, normalWorld, a material's own vars) ends up out of scope, or never assigned, outside: the branch reads
+only snapshots + `normalWorldGeometry` / `normalViewGeometry`. `normalize(0)` = NaN made black walls (the lab's
+glass-bead normal had the same bug: fixed in surfaceWeather.js too). The colour comes out as a vec3 (the impostor bake
+reuses a leaf material's colorNode as an albedo; a vec4 broke it).
+The weather draws (rain, splashes, flakes, leaves, the snow layer) are precompiled at boot through warmup.js
+`precompile` on the scene pass's MRT target, their compute passes warmed, and one overhead bake runs at boot (its
+override-material pipelines). Measured with a hook on `renderer._pipelines.getForRender` over a full preset cycle
+(clear, overcast, drizzle, rain, storm, snowfall, snow cover, fog, clear): ONE new pipeline, a street-life box of a tile
+streaming in; none from the weather.
+
+## The overhead map in the city
+64 m round the camera, 512^2 (12.5 cm), baked only while the weather needs it (rain, snow falling, snow on the ground,
+wet), re-baked when the camera is 22 % of the window from its centre (the new centre 12 % ahead of the view) or every
+12 s (cars, streamed tiles). Before a bake one `traverseVisible` marks SOLID (opaque meshes without a custom
+positionNode: the kit's stretched pieces and anything wind-swayed are left out), CANOPY (`wxCanopy`) and ROAD
+(`wxRoad`): 0.3-0.7 ms. A bake: the three GPU passes + readbacks 170-330 ms async (no main-thread stall), the shape pass
+in the worker 90-120 ms. Moving at 10 m/s for 12 s in rain, then in snowfall: 6 bakes each, 0 long tasks, ~59 fps.
+The ground families read it (exposure: dry under cars and eaves, less snow under crowns); the "topmost" tolerance is
+0.25-0.6 m in the city (the lab's 0.06-0.3 left lawns half sheltered: blotchy snow at 15 cm).
+
+## Sky, fog, grade (as the lab)
+Blended in / out over ~3 s (`w`; at 0 everything is handed back exactly as the time preset / the panel had it):
+Firmament's cloud deck from the cloud cover (weatherBias, low stratus, haze x wet air and visibility), the key light
+x (1 - 0.88 deck); fog: Koschmieder extinction from the visibility (scale height 250 m over the valley floor) + ground
+mist (fog preset), its colour greyed under the deck; the grade toward the overcast look with saturation x 0.88 and a
+white balance that neutralises most of the horizon's tint (a full deck at golden hour read sepia; rainy Uccle is cool
+grey); urban sky glow over snow at night (the hemisphere light, intensity only: fixed light count).
+
+## Snow
+Material cover on every up-facing surface (roofs, the kit's sills, car roofs, tree limbs and crown tops, terrain,
+sidewalks, the landmarks' library materials, Saint-Job's roofs and dome), the volumetric layer over the 64 m window
+(smooth: 12.5 cm cells, blurred bases, rounded tapers at drops, drifts at wall feet, cut at cliffs; its round edge fades
+into the flat cover), salted main roads (black wet asphalt, grey slush at the kerbs), sett lanes and gravel hardly
+salted (they stay white), slush when it thaws, frost on clear cold nights. Falling flakes fade between 0.8 and 3 m
+from the lens (big cotton flakes at the lens read wrong). Icicles, ledge caps, footprints / tyre tracks: lab only.
+
+## Cost (street level, Place de Saint-Job, 1400 x 850, interleaved rounds, GPU p50 medians)
+Preflight RED all session (other agents' Chrome tabs and GPU work; frames of 40+ ms in some periods): +/- 0.3 ms; only
+runs where clear sat at 9.5-10 ms are kept.
+
+| State | Before staging | Staged |
+|---|---|---|
+| clear (gate shut) | ~0 by construction: one uniform `if` per material (`?weather=old` vs clear not A/B'd in one session) | same |
+| gate open, nothing on the surfaces | +1.3 | **+0.26** |
+| overcast, dry (sky only) | | ~0 |
+| wet, no rain (wet film, puddles, beads) | | +0.8 |
+| rain (+ drops, splashes, ripples, rivulets) | +1.75 | +1.3-1.4 |
+| snow on the ground, nothing falling (cover + layer) | | +1.4 |
+| snowfall (+ flakes) | +2.2 | +1.5-1.6 |
+
+The per-pixel distance skips came after the last clean run (the GPU was contended since): not measured. Over the
+lab's quiet-machine numbers (wetness +0.42, all snow +0.62): the city has several times the weatherized surface (every
+facade, kit, roof, terrain, landmark) at full detail. Next: the lite path (`wxMat({ lite })`) for far-LOD tiles and
+far landmarks, puddle + snow masks behind a distance branch with analytic footprints, the layer's fragment noise.
+
+## Images (docs/weather/city/: same camera per place; clear / rain / snow x day / dusk)
+`stjob_*` (Place de Saint-Job, street level), `venelle_*` (Venelle de Saint-Job: a residential sett lane with front
+gardens), `heros_*` (Square des Heros, tile E4), `stjob_snow_roofs_close.jpg`, `stjob_snow_aerial.jpg` (snow cover from
+70 m: roofs, the church dome, crowns, salted roads). The Heros set was taken before the exposure-tolerance fix (blotchy
+lawn snow) and the Heros model hookup.
+
+## Reference comparison (looked at, not stored)
+The lab's round-2 composites (Av. Churchill after snow and in snowfall at night, Av. Demey, Bosveldweg, rue des
+Fripiers in rain; Commons photos) hold in the city: salted main roads black and wet with slush at the kerbs, snow on
+sidewalks, cars, lawns and roofs (Saint-Job); thin snow patchy; snow lit everywhere at night. Rain: wet Brussels
+streets are dark with a sky sheen and lamp streaks, facades darker (matched; the first city rain read sepia at golden
+hour: fixed by the white balance under the deck). Uccle's sett lanes stay white in snow (not salted).
+
+## Weak spots / leftovers
+- GPU cost over the lab's budget (table); a GREEN re-measure of every state and of `?weather=old` vs clear.
+- Not weatherized yet: trams, trains and the bridges' own (non-library) materials, the pond, street furniture / signs /
+  stops / lamps, garden walls, far-LOD (lite) tiles, the far impostor trees (baked once, dry), the other landmarks'
+  non-library materials; the Heros steps looked dry in snow.
+- Icicles, ledge caps, footprints / tyre tracks are lab-only; the kit's sills get cover, not the volumetric layer (the
+  bake leaves out meshes with a custom positionNode); crowns are their instanced volume in the bake.
+- A new mesh type streaming in could still compile an override pipeline at its first bake (not seen).
+- Leaf crowns in snow read a little like blossom (real November snow on leafy trees is rare: the season could drop
+  them).
+- The weather's boot precompile waits behind the tiles in warmup's queue ("ready" 65-78 s after boot); the weather
+  runs before that (a preset chosen before then compiles on first use).
+- Rivulets are 3 cm procedural columns (plain up close); no drips from the eaves in the city.
