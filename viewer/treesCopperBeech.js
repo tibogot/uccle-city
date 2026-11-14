@@ -325,7 +325,8 @@ export function copperBeechDef(seedBase = 1000, tex) {
       topColor: S.topColor, bottomColor: S.bottomColor, translucencyColor: S.translucencyColor, translucency: S.translucency,
       tintVar: 0.16, crownLift: 0, fill: 0.55, fillColor: S.fillColor, aoColor: 0.2, trunkColor: [0.27, 0.27, 0.26],
       leafTone: 0, shadowLift: 2.2,
-      leafAtlas: { ...tex.leaves.atlas, normalK: 0.75, transK: 1 },
+      // (two thirds of the spray's own leaf-to-leaf colour spread: the full spread read as confetti close up)
+      leafAtlas: { ...tex.leaves.atlas, variation: 0.65, normalK: 0.75, transK: 1 },
     },
   };
 }

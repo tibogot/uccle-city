@@ -55,7 +55,7 @@ SPECIES = {
     # and greener (olive-bronze); autumn copper; winter: marcescent tan-brown leaves held on young / clipped trees
     # (a sparse spray: `winter_keep` of the leaves stay, the twigs show)
     "copperbeech": dict(shape="ovate", veins="pinnate", width=0.3, tip=0.75, taper=0.3, teeth=0.045, nteeth=8, nveins=8,
-                        vein_angle=1.0, leaf=0.135, per_twig=10, twigs=8, loose=30, petiole=0.1, zigzag=True, fold=0.35, cup=0.15,
+                        vein_angle=1.0, leaf=0.09, per_twig=15, twigs=10, loose=110, petiole=0.1, zigzag=True, fold=0.35, cup=0.15,
                         vein_tint=[1.25, 1.05, 0.95],
                         summer=[(h("#4b2026"), 3), (h("#5a2a2a"), 2), (h("#3e1c22"), 2), (h("#6a3530"), 1), (h("#4a3026"), 0.7)],
                         spring=[(h("#7e2a36"), 3), (h("#8e3540"), 2), (h("#6a2430"), 2), (h("#9a4a44"), 1)],

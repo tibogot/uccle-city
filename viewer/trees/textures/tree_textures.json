@@ -66,15 +66,15 @@
    "source": "tools/texturefactory (materials/leaves.py, seed 335)",
    "season": "summer",
    "px": 1024,
-   "coverage": 0.3248,
+   "coverage": 0.3126,
    "mean_albedo_linear": [
-    0.0639,
-    0.0219,
-    0.0193
+    0.0679,
+    0.0227,
+    0.02
    ],
-   "mean_thickness": 0.298,
-   "a_ktx2_bytes": 343334,
-   "n_ktx2_bytes": 410221,
+   "mean_thickness": 0.307,
+   "a_ktx2_bytes": 375014,
+   "n_ktx2_bytes": 433988,
    "n_file": "leaf_copperbeech_n.ktx2"
   },
   "leaf_copperbeech_spring": {
@@ -83,15 +83,15 @@
    "source": "tools/texturefactory (materials/leaves.py, seed 335)",
    "season": "spring",
    "px": 1024,
-   "coverage": 0.3248,
+   "coverage": 0.3126,
    "mean_albedo_linear": [
-    0.188,
-    0.033,
+    0.1876,
+    0.0332,
     0.0394
    ],
-   "mean_thickness": 0.298,
-   "a_ktx2_bytes": 368888,
-   "n_ktx2_bytes": 410221,
+   "mean_thickness": 0.307,
+   "a_ktx2_bytes": 395094,
+   "n_ktx2_bytes": 433988,
    "n_file": "leaf_copperbeech_n.ktx2"
   },
   "leaf_copperbeech_autumn": {
@@ -100,15 +100,15 @@
    "source": "tools/texturefactory (materials/leaves.py, seed 335)",
    "season": "autumn",
    "px": 1024,
-   "coverage": 0.3248,
+   "coverage": 0.3126,
    "mean_albedo_linear": [
-    0.1925,
-    0.0704,
-    0.0212
+    0.1955,
+    0.0717,
+    0.0218
    ],
-   "mean_thickness": 0.298,
-   "a_ktx2_bytes": 383819,
-   "n_ktx2_bytes": 410221,
+   "mean_thickness": 0.307,
+   "a_ktx2_bytes": 410073,
+   "n_ktx2_bytes": 433988,
    "n_file": "leaf_copperbeech_n.ktx2"
   },
   "leaf_copperbeech_winter": {
@@ -117,15 +117,15 @@
    "source": "tools/texturefactory (materials/leaves.py, seed 335)",
    "season": "winter",
    "px": 1024,
-   "coverage": 0.0327,
+   "coverage": 0.0338,
    "mean_albedo_linear": [
-    0.1962,
-    0.0929,
-    0.0394
+    0.1807,
+    0.0891,
+    0.042
    ],
-   "mean_thickness": 0.491,
-   "a_ktx2_bytes": 65232,
-   "n_ktx2_bytes": 410221,
+   "mean_thickness": 0.568,
+   "a_ktx2_bytes": 78872,
+   "n_ktx2_bytes": 433988,
    "n_file": "leaf_copperbeech_n.ktx2"
   }
  },

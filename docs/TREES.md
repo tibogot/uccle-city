@@ -511,8 +511,8 @@ is the chain's own, a thing to look at separately.
     blue skylight it reads cooler than the real grey-brown.
   - The forest crowns are a little too dense and too uniform in tone against the April photos (fresh, see-through
     canopy); the open-grown dome still shows its pads as lumps.
-  - Copper beech ('Atropunicea', 534 of the Uccle street beeches) is not done: a colour preset (and its own impostor
-    bake) of the same species.
+  - Copper beech ('Atropunicea'): done as its own species (2026-11-14, lab only, factory textures, seasons, the
+    impostor kit): `docs/trees/COPPER_BEECH.md`.
 - **Pollards in summer** are fine at street distance. The knuckles are coarse up close: lumpy rings, not burls.
 - **Seasons** are a hook only: near LODs only, and the atlas would need a rebake per season. **Wind** sways the whole
   crown and its cards, with no branch hierarchy, and the impostors do not sway.
