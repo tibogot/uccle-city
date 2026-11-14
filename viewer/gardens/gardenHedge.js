@@ -214,7 +214,10 @@ export function hedgeMaterials() {
     }
     const vu = varying(u, "v_hU");
     const leafC = leafColour(I.spi);
-    const n1 = noiseAt(vu, 1 / 2.2).b, n2 = noiseAt(vu, 1 / 0.55).a, n3 = noiseAt(vu.mul(1.3).add(5.1), 1 / 0.16).a;
+    // (the fine-variation channel A carries octaves down to 1/64 of a tile: at 1/0.55 and 1/0.16 m that is 9 and 2.5 mm,
+    // a pixel-sized grain that read as SPECKLE close up and crawled at the mip hand-overs when moving; a mip bias of 1.5
+    // drops that last octave: leaf-sized clumps, no grain)
+    const n1 = noiseAt(vu, 1 / 2.2).b, n2 = noiseAt(vu, 1 / 0.55).bias(1.5).a, n3 = noiseAt(vu.mul(1.3).add(5.1), 1 / 0.16).bias(1.5).a;
     const clumps = smoothstep(0.25, 0.75, n1);
     const leaves = n2.mul(0.5).add(n3.mul(0.5));
     const crev = smoothstep(0.15, 0.55, leaves);
