@@ -187,7 +187,7 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true, p
   if (withLights) HEADS.set(key, lamp);
   const update = (camPos) => { relod?.(camPos); };
   const release = () => HEADS.delete(key);
-  return { group, count: sites.length, update, release, heads: lamp.map((p) => ({ x: p.x, z: p.z })), sites };
+  return { group, count: sites.length, update, release, heads: lamp.map((p) => ({ x: p.x, y: p.y, z: p.z })), sites };   // heads: the lantern globes (y: their centre, m TAW)
 }
 
 

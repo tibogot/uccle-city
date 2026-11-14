@@ -62,6 +62,7 @@ import { cityRoofs } from "./roofs/cityRoofs.js";
 import { deckHeight } from "./streets/bridgeDecks.js";
 import { cityGrass } from "./grass/cityGrass.js";
 import { liteShown } from "./liteShown.js";
+import { NIGHT } from "./nightLights/nightMode.js";   // ?night=1: the clustered night lights (boot flag, docs/NIGHT_HOOKUP.md)
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -353,6 +354,7 @@ const TRAFFIC = params.get("traffic") !== "0";   // round 4: on by default (?tra
 const trafficTiles = new Map();
 window.__trafficTiles = trafficTiles;            // (debug: the lane graphs, for checks in the console)
 let cityTraffic = null;
+let cityNight = null;                         // ?night=1 (viewer/nightLights/cityNight.js): lamps + cars as pool lights
 let falconsReady = null, falconsOn = true;   // the Saint-Job peregrines (viewer/falcons.js), once loaded       // per-frame updates (tree LOD, lamp lights) of every loaded tile
 
 // ------------------------------------------------------------------ walk mode
@@ -710,6 +712,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   ups.push(lamps.update);
   await frame("lamps");
   addLamps(entry.name, lamps.heads);                 // every lamp lights the street (viewer/lampLight.js)
+  cityNight?.addTile(entry.name, lamps.heads);       // ?night=1: its lamps join the night pool (fading in)
   await frame("lamp light map");
   // (the street-life layer draws the STIB stops from the Brussels Mobility data: not the OSM bus-stop poles too)
   // (and with the stops kit on, viewer/stops/ draws them: furniture.js keeps its placeholder poles for ?stops=old)
@@ -768,6 +771,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     cityStreetLife.removeTile(entry.name);          // its atlas pages and pooled props (its meshes go with the groups below)
     cityGrass.removeTile(entry.name);               // ?grass=1: out of the grass field
     lamps.release();                                // its lamp heads leave the light pool (the lights stay)
+    cityNight?.removeTile(entry.name);              // ?night=1: and the night pool's registry
     for (const u of ups) { const i = updaters.indexOf(u); if (i >= 0) updaters.splice(i, 1); }
     for (const g of Object.values(own)) {
       g.traverse((o) => { if (!o.geometry?.userData?.shared) o.geometry?.dispose(); for (const m of [].concat(o.material || [])) dropMat(m); o.dispose?.(); });
@@ -833,6 +837,9 @@ async function main() {
   renderer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = true;
   document.body.prepend(renderer.domElement);
+  // ?night=1: the night lights' lighting model (the cluster loop in every lit material), set BEFORE init, never changed
+  const nightMod = NIGHT ? await import("./nightLights/cityNight.js") : null;
+  await nightMod?.installNightLighting(renderer);
   await renderer.init();
   window.__bootHook?.(renderer, THREE);              // a boot probe's hook (debug/bootTimeline.js), when one is installed
   if (params.get("shadowshare") !== "0") shareShadowNodes(renderer);   // one shadow shader per vertex code, not per material (warmup.js; ?shadowshare=0: three's own)
@@ -862,7 +869,8 @@ async function main() {
   for (const g of Object.values(layers)) scene.add(g);
   // the parked cars of every tile, as one fleet (viewer/carFleet.js; ?cars=box: the old box cars per tile)
   if (params.get("cars") !== "box") { scene.add(carFleet.group); updaters.push(carFleet.update); carFleet.setRenderer(renderer, scene); }
-  updaters.push(lampLightPool(scene));               // the city's lamp lights: ONE fixed pool for the session (light count never changes)
+  if (!NIGHT) updaters.push(lampLightPool(scene));   // the city's lamp lights: ONE fixed pool for the session (light count never changes)
+  else cityNight = nightMod.startCityNight({ scene, renderer, updaters, log });   // ?night=1: instead, the night pool + 2 shadowed lamps (fixed, before the warm-up)
   updaters.push(updateSignals);           // the signal heads' cycle (viewer/traffic/signals.js), shared with the traffic
   // the world: the main tile now, its neighbours streamed in after the first frame (?ring=0|1|2)
   const world = {
@@ -1179,6 +1187,7 @@ async function main() {
   flyer.onExit = () => setView("stjob");
   // drive mode (viewer/drive/): the hatchback on a street near Saint-Job church (the fly start), ?at=x,z elsewhere
   const driver = new Driver(camera, renderer.domElement, scene, world);
+  cityNight?.setDriver(driver);                         // ?night=1: the player's car's head / tail lights
   window.__driver = driver;
   cityGrass.pushers = { driver, walker };          // ?grass=1: the car's wheels and the walker lay the grass down
   // every landmark / bridge collides by its own LOD0 (car blocks + character triangles), built once its tiles are in
@@ -1254,6 +1263,7 @@ async function main() {
       cityTraffic = createCityTraffic({ scene, renderer, camera, ground: (x, z) => world.surface(x, z) + CARVE, night: env.uNight, focus: focusOf,
         driver, getThird: () => third, getTram: () => tramLine, log });
       for (const [n, g] of trafficTiles) cityTraffic.addTile(n, g);
+      cityNight?.setTraffic(cityTraffic);               // ?night=1: its cars' head / tail lights
       const ci = updaters.indexOf(carFleet.update);
       updaters.splice(ci >= 0 ? ci : 0, 0, cityTraffic.update);
       window.__traffic = cityTraffic;
