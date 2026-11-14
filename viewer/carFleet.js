@@ -68,6 +68,7 @@ class CarFleet {
   constructor() {
     this.group = new THREE.Group(); this.group.name = "parked-cars-fleet";
     this.regs = [];
+    this.listeners = new Set();
     this.ready = false; this.failed = null;
     this.stats = { cars: 0, drawn: 0, perLod: [0, 0, 0, 0], fading: 0, culled: 0, far: 0, draws: 0, tris: 0, pops: 0, appears: 0 };   // pops: cumulative, see update
     this.frustum = new THREE.Frustum(); this.pm = new THREE.Matrix4(); this.sphere = new THREE.Sphere(new THREE.Vector3(), 3.2);
@@ -75,8 +76,13 @@ class CarFleet {
     this.update = this.update.bind(this);
   }
   sizeOf(type) { return SIZES[type] || SIZES.hatch_c; }
-  /** Something about a car changed (hidden, type, paint, matrix): redo the batches next update. */
-  touch() { this.dirty = true; }
+  /** Something about a car changed (hidden, type, paint, matrix): redo the batches next update, and tell the collider
+   *  sets (drive, on foot) that hold a box for that car, so a collider exists exactly while its car is drawn. */
+  touch(car) { this.dirty = true; if (car) for (const f of this.listeners) f(car); }
+  /** f(car) after a parked car was hidden / shown / changed type (viewer/drive/driveMode.js, viewer/character/cityHook.js). */
+  onChange(f) { this.listeners.add(f); }
+  /** Is this parked car drawn (in the fleet, not pulled out into the traffic)? The colliders' rule. */
+  drawn(car) { return !car.hidden; }
   /** A tile's cars: [{ x, y, z, heading, type, pv }]; `group` = the tile's car group (dropped when it leaves the scene). */
   add(group, cars) {
     const M = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1), v = new THREE.Vector3();

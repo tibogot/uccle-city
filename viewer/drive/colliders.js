@@ -38,9 +38,12 @@ export function buildColliders(polys, circles, bounds) {
     pkind[i] = p.kind ?? KIND.building; ptop[i] = p.top ?? 1e4; pbase[i] = p.base ?? -1e4;
   });
   ringStart[nr] = v; polyRing[polys.length] = r;
+  // a polygon may stand for an object that is not always drawn (a parked car: viewer/cars.js, carFleet.js): `ref` is
+  // that object, and the polygon is skipped (gather) while ref.hidden, so a collider exists exactly while it is drawn
+  const pref = polys.some((p) => p.ref) ? polys.map((p) => p.ref || null) : null;
   const circ = new Float32Array(circles.length * 3), ckind = new Uint8Array(circles.length);
   circles.forEach((q, i) => { circ[i * 3] = q.x; circ[i * 3 + 1] = q.z; circ[i * 3 + 2] = q.r; ckind[i] = q.kind ?? KIND.post; });
-  const col = { cell: CELL, bounds, pts, ringStart, polyRing, pbox, pkind, ptop, pbase, circ, ckind };
+  const col = { cell: CELL, bounds, pts, ringStart, polyRing, pbox, pkind, ptop, pbase, circ, ckind, pref };
   indexCells(col);
   return col;
 }
@@ -93,11 +96,26 @@ export function extendColliders(col, polys, circles) {
       for (let i = col.ringStart[r]; i < col.ringStart[r + 1]; i++) ring.push([col.pts[i * 2], col.pts[i * 2 + 1]]);
       rings.push(ring);
     }
-    old.push({ rings, kind: col.pkind[p], top: col.ptop[p], base: col.pbase[p] });
+    old.push({ rings, kind: col.pkind[p], top: col.ptop[p], base: col.pbase[p], ref: col.pref?.[p] || null });
   }
   const oc = [];
   for (let c = 0; c < col.C; c++) oc.push({ x: col.circ[c * 3], z: col.circ[c * 3 + 1], r: col.circ[c * 3 + 2], kind: col.ckind[c] });
   return buildColliders(old.concat(polys), oc.concat(circles), col.bounds);
+}
+
+/**
+ * A referenced box polygon (a parked car) takes a new outline (4 corners): another type parked into the slot. The cell
+ * index is rebuilt only when the new box leaves the cells the old one was indexed in.
+ */
+export function setBox(col, id, ring) {
+  const s = col.ringStart[col.polyRing[id]];
+  let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity;
+  ring.forEach(([x, z], i) => { col.pts[(s + i) * 2] = x; col.pts[(s + i) * 2 + 1] = z; a = Math.min(a, x); b = Math.min(b, z); c = Math.max(c, x); d = Math.max(d, z); });
+  const q = id * 4, cl = (v, o) => Math.floor((v - o) / CELL);
+  const moved = cl(a, col.bounds.x0) !== cl(col.pbox[q], col.bounds.x0) || cl(c, col.bounds.x0) !== cl(col.pbox[q + 2], col.bounds.x0)
+    || cl(b, col.bounds.z0) !== cl(col.pbox[q + 1], col.bounds.z0) || cl(d, col.bounds.z0) !== cl(col.pbox[q + 3], col.bounds.z0);
+  col.pbox[q] = a; col.pbox[q + 1] = b; col.pbox[q + 2] = c; col.pbox[q + 3] = d;
+  if (moved) indexCells(col);
 }
 
 /** Items (ids: < col.P a polygon, else a circle) of every cell within r of (x, z), each once, into out. */
@@ -116,6 +134,7 @@ export function gather(col, x, z, r, out) {
       col.seen[id] = col.stamp;
       // cheap bounds test against the query square
       if (id < col.P) {
+        if (col.pref !== null && col.pref !== undefined && col.pref[id] !== null && col.pref[id].hidden) continue;   // not drawn now
         const q = id * 4;
         if (col.pbox[q] > x + r || col.pbox[q + 2] < x - r || col.pbox[q + 1] > z + r || col.pbox[q + 3] < z - r) continue;
       } else {

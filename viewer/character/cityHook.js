@@ -17,6 +17,8 @@
 import * as THREE from "three/webgpu";
 import { ThirdPerson, CollisionWorld, Heightfield, TriBVH, PrismSet } from "./index.js";
 import { lampSites } from "../lamps.js";
+import { carFleet } from "../carFleet.js";
+import { parkedCarRing } from "../drive/driveMode.js";
 
 const DATA = new URL("../../data/tiles/", import.meta.url);
 // instanced props by mesh name: "mesh" = its real triangles into the BVH (open shapes), "prop" = a box for body +
@@ -35,6 +37,20 @@ const KIND = (m) => {
 };
 
 let shared = null;
+carFleet.onChange((c) => {
+  const b = c.walkBox; if (!b) return;
+  const S = b.set, k = b.k;
+  S.off[k] = c.hidden ? 1 : 0;
+  if (c.hidden) return;
+  const ring = parkedCarRing(c), s0 = S.ringStart[S.polyRing[k]];
+  let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+  ring.forEach(([x, z], i) => { S.pts[(s0 + i) * 2] = x; S.pts[(s0 + i) * 2 + 1] = z; x0 = Math.min(x0, x); z0 = Math.min(z0, z); x1 = Math.max(x1, x); z1 = Math.max(z1, z); });
+  const B = S.ibox, cl = (v, o) => Math.floor((v - o) / 48);
+  const moved = cl(x0, S.gx0) !== cl(B[k * 4], S.gx0) || cl(x1, S.gx0) !== cl(B[k * 4 + 2], S.gx0) || cl(z0, S.gz0) !== cl(B[k * 4 + 1], S.gz0) || cl(z1, S.gz0) !== cl(B[k * 4 + 3], S.gz0);
+  B[k * 4] = x0; B[k * 4 + 1] = z0; B[k * 4 + 2] = x1; B[k * 4 + 3] = z1;
+  S.iy[k * 2 + 1] = S.iy[k * 2] + 0.5 + carFleet.sizeOf(c.type)[1];       // (base = the car's foot - 0.5 m)
+  if (moved) S._index();
+});
 /**
  * THE CITY'S COLLISION WORLD for the body on foot: one per page, shared by walk mode (first person) and third person
  * (docs/collisions/README.md: until 2026-11-13 walk mode had no collision at all). Tiles streamed in / out are picked up
@@ -106,7 +122,7 @@ async function buildCityCollision({ scene, world, log }) {
     const props = { polys: [], circles: [] }, posts = { polys: [], circles: [] };
     const M = new THREE.Matrix4(), W = new THREE.Matrix4(), v = new THREE.Vector3(), o = new THREE.Vector3();
     const inTile = (x, z) => x >= t.bounds.x0 && x <= t.bounds.x1 && z >= t.bounds.z0 && z <= t.bounds.z1;
-    const inst = [];
+    const inst = [], carRefs = [];
     feats?.traverse((m) => { const kd = m.isInstancedMesh && KIND(m); if (kd && kd !== "mesh") inst.push(m); });
     for (const m of inst) {
       await breathe();
@@ -126,6 +142,8 @@ async function buildCityCollision({ scene, world, log }) {
         }
         const sx = Math.hypot(ring[1][0] - ring[0][0], ring[1][1] - ring[0][1]), sz = Math.hypot(ring[2][0] - ring[1][0], ring[2][1] - ring[1][1]);
         const into = kind === "prop" ? props : posts;
+        const car = m.name === "parked-cars" ? m.userData.cars?.[i] : null;
+        if (car) carRefs.push([props.polys.length, car]);            // (a box, never a circle: >= 1.7 m)
         if (Math.max(sx, sz) < 0.3) into.circles.push({ x: o.x, z: o.z, r: Math.max(0.06, Math.max(sx, sz) / 2), base: y0 - 0.5, top: y1 });
         else into.polys.push({ rings: [ring], base: y0 - 0.5, top: y1, id: `${m.name || "tram-shelter"}#${i}` });
       }
@@ -141,7 +159,7 @@ async function buildCityCollision({ scene, world, log }) {
     // first puts them (invisible posts, docs/CITY_TREES.md §3)
     for (const l of t.drawn?.lamps ?? lampSites(t.roads, t.bounds)) { const g = t.hm.surface(l.x, l.z); posts.circles.push({ x: l.x, z: l.z, r: 0.12, base: g - 2, top: g + 6 }); }
     busy += performance.now() - slice;
-    return { positions, props, posts, busy };
+    return { positions, props, posts, busy, carRefs };
   }
 
   async function buildTile(t) {
@@ -158,6 +176,9 @@ async function buildCityCollision({ scene, world, log }) {
     const bvh = TriBVH.fromData(r.bvh); bvh.tag = 3;
     const buildings = PrismSet.fromData(r.buildings);
     const props = PrismSet.fromData(r.props); props.tag = 4;
+    // the parked cars' boxes follow their cars (road fix round 3): off while the car is pulled out into the traffic,
+    // the new type's size when another car parks into the slot (carFleet.touch -> onChange below)
+    for (const [k, c] of g.carRefs) { c.walkBox = { set: props, k }; props.off[k] = c.hidden ? 1 : 0; }
     const posts = PrismSet.fromData(r.posts); posts.tag = 5; posts.ray = false;
     const sets = [bvh, buildings, props, posts];
     for (const s of sets) cw.add(s);
