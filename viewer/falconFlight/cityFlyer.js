@@ -16,6 +16,7 @@
 import * as THREE from "three/webgpu";
 import { Panel } from "../panelUI.js";
 import { CityFalconWorld } from "./cityStream.js";
+import { FalconDebug } from "./falconDebug.js";
 import { PLACE } from "./church.js";
 import { AirField } from "./air.js";
 import { Pigeons } from "./pigeons.js";
@@ -74,7 +75,14 @@ export class CityFlyer {
     this.flocks = [];                               // the pigeons of every square built so far (Saint-Job first)
     this.squares = SQUARES.map((q) => ({ ...q, state: "new" }));
     this.size = +(this.params.get("falconsize") ?? 2.0);
-    addEventListener("keydown", (e) => { if (!this.on) return; if (e.code === "Escape") this.onExit?.(); });
+    // G: the falcon's colliders (falconDebug.js), as G shows the car's in drive mode
+    this.debug = new FalconDebug(scene);
+    if (this.params.get("falcondebug") === "1") this.debug.visible = true;
+    addEventListener("keydown", (e) => {
+      if (!this.on || e.repeat || e.target?.closest?.(".upanel") || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName || "")) return;
+      if (e.code === "Escape") this.onExit?.();
+      else if (e.code === "KeyG") this.debug.visible = !this.debug.visible;
+    });
     this.ready = this.init().catch((e) => { this.log(`falcon flight: ${e.message}`); console.error(e); throw e; });
   }
 
@@ -217,6 +225,7 @@ export class CityFlyer {
   stop() {
     if (!this.game) return;
     this.on = false; this.intro = null;
+    this.debug.lines.visible = false; this.debug.legend.style.display = "none"; this.debug.frame = 0;   // (G stays wanted for the next flight)
     this.input.setEnabled(false); this.input.script = null;
     this.bird.root.visible = false;
     this.hints.group.visible = false;
@@ -379,6 +388,7 @@ export class CityFlyer {
       return;
     }
     g.update(dt, this.camera);
+    this.debug.update(w, f);
     this.highFog();
     const t3 = performance.now();
     this.pos.set(f.pos.x, f.pos.y, f.pos.z);

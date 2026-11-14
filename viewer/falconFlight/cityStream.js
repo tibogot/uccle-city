@@ -86,6 +86,9 @@ export class CityFalconWorld {
     const t = this.tileAt(x, z); if (!t) return 0;
     let r = rawRoof(t, x, z);
     if (r <= 0) return 0;
+    // the drawn roof surface leaves the solids a model replaces out already (they are hidden before it is made): only
+    // the old flat grid keeps their envelope, which the checks below take out
+    if (t.roofs?.surf) return r;
     const ch = this.church;
     if (ch) {
       const dx = x - ch.x, dz = z - ch.z;
@@ -412,7 +415,11 @@ export class CityFalconWorld {
 }
 
 function rawRoof(t, x, z) {
-  const rf = t.roofs;
+  const rf = t.roofs, sf = rf?.surf;
+  if (sf) {                    // the drawn roof surface (viewer/tileData.js roofSurface), 1 m: what the bird sees
+    const i = Math.floor((x - sf.x0) / sf.step), j = Math.floor((z - sf.z0) / sf.step);
+    return i >= 0 && j >= 0 && i < sf.nx && j < sf.nz ? sf.data[j * sf.nx + i] / sf.q : 0;
+  }
   if (!rf) return t.roofAt ? t.roofAt(x, z) : 0;
   const i = Math.floor((x - rf.x0) / rf.step), j = Math.floor((z - rf.z0) / rf.step);
   return i >= 0 && j >= 0 && i < rf.nx && j < rf.nz ? rf.data[j * rf.nx + i] : 0;
