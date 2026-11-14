@@ -140,6 +140,8 @@ async function leg(pts, speed, place, pops = null) {
   const L = pathLength(pts), dur = L / speed;
   const frames = [], cost0 = Object.fromEntries(Object.entries(S.cost).map(([k, a]) => [k, a.length]));
   const long0 = S.long.length, loaf0 = S.loaf.length, cpu0 = S.cpu.length;
+  const forcedNow = () => Object.fromEntries([...(globalThis.__streamers || []).map((x) => [x.name, x.stats.forced]), ["facadeKit", window.__kit?.stats.forced || 0]]);
+  const forced0 = forcedNow();
   let hidden = document.visibilityState !== "visible";
   const onVis = () => { if (document.visibilityState !== "visible") hidden = true; };
   document.addEventListener("visibilitychange", onVis);
@@ -171,6 +173,7 @@ async function leg(pts, speed, place, pops = null) {
   const cpu = S.cpu.slice(cpu0).sort((a, b) => a - b);
   return {
     updaters: updaterReport(cpu0, S.cpu.length, dur),
+    forced: Object.fromEntries(Object.entries(forcedNow()).map(([k, v]) => [k, v - (forced0[k] || 0)]).filter(([, v]) => v)),   // gathers finished at once (the camera outran the margin)
     cpu: { p50: q(cpu, 0.5), p95: q(cpu, 0.95), p99: q(cpu, 0.99), max: q(cpu, 1), over12: cpu.filter((x) => x > 12).length, over16: cpu.filter((x) => x > 16.7).length },
     gpu: { p50: g.p50 != null ? +(+g.p50).toFixed(2) : null, p95: g.p95 != null ? +(+g.p95).toFixed(2) : null, max: g.max != null ? +(+g.max).toFixed(2) : null },
     valid: !hidden && med < 40, seconds: +dur.toFixed(1), frames: s.length,
@@ -220,6 +223,7 @@ export async function run({ path = "boulenger", repeats = 3, settle = 6, warmup 
     valid: legs.every((l) => l.valid), legs: legs.length,
     over33: sum((l) => l.over33), over33PerLeg: arr((l) => l.over33),
     p50: arr((l) => l.ms.p50), p95: arr((l) => l.ms.p95), p99: arr((l) => l.ms.p99), max: arr((l) => l.ms.max),
+    forced: legs.reduce((o, l) => { for (const [k, v] of Object.entries(l.forced || {})) o[k] = (o[k] || 0) + v; return o; }, {}),
     long: sum((l) => l.long), cpuP50: arr((l) => l.cpu.p50), cpuP95: arr((l) => l.cpu.p95), cpuP99: arr((l) => l.cpu.p99), cpuMax: arr((l) => l.cpu.max), cpuOver16: sum((l) => l.cpu.over16), gpuP50: arr((l) => l.gpu.p50), gpuP95: arr((l) => l.gpu.p95),
     pools: Object.fromEntries(Object.keys(S.cost).map((k) => [k, {
       max: Math.max(...legs.map((l) => l.pools[k]?.max ?? 0)), msPerS: +(sum((l) => l.pools[k]?.msPerS ?? 0) / legs.length).toFixed(2), over05: sum((l) => l.pools[k]?.over05 ?? 0),

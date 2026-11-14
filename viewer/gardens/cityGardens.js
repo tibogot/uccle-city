@@ -24,7 +24,7 @@ const qs = new URLSearchParams(location.search);
 const DATA = new URL("../../data/gardens/", import.meta.url);
 
 export const cityGardens = {
-  on: qs.get("gardens") === "1",          // OFF by default again (coordinator, 2026-11-14): driving at 14 m/s the pool gather (1.5-4.7 ms CPU every 2 m) made 31 frames > 33 ms on the return run vs 2 without; ON again once the gather is spread / off the main thread; ?gardens=1 on
+  on: qs.get("gardens") !== "0",          // ON by default again (2026-11-14, claude/gather-perf): the pools stream time-sliced (viewer/instanceStream.js; driving: gardens on = off within noise, docs/perf/AUDIT.md "instance pools"); ?gardens=0 off
   hedges: qs.get("gardenhedges") !== "0",     // round 2: instanced hedge modules through the kit's pools (gardenHedge.js), ?gardenhedges=0 off
   kit: null, pools: [], tiles: new Map(), group: null, stand: null,
   streamer: null, tWind: 0,

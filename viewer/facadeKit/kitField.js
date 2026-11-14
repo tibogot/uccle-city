@@ -298,9 +298,8 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
     let force = eye.distanceTo(last) > MARGIN * 0.9 || eye.distanceTo(jobEye) > MARGIN * 0.9;
     if (!force && fwd.lengthSq() > 0 && dirTmp.lengthSq() > 0 && fwd.dot(dirTmp) < Math.cos(CONE_MARGIN * 0.8)) force = true;
     if (force) stats.forced = (stats.forced || 0) + 1;
-    if (!force && left < 0.05) return;
     const t0 = performance.now();
-    pump(force ? Infinity : Math.min(BUDGET, left));
+    pump(force ? Infinity : Math.max(0.08, Math.min(BUDGET, left)));      // (a sliver past the budget: it must end in time)
     frameBudget.spend(performance.now() - t0);
   }
   /** a tile's kit (tileData kit result) and its kit-walls mesh (facades.js); fades in with the tile unless instant */

@@ -227,12 +227,13 @@ export class Streamer {
     if (!this.job && (this.dirty || c.distanceToSquared(this.center) > this.trigger * this.trigger)) this.start(c);
     if (!this.job) { frameBudget.left(this); return; }
     // outrun (a teleport): what is drawn no longer covers the view; finish at once
-    const lim = this.margin * 0.8, force = c.distanceTo(this.jobCenter) > lim || c.distanceTo(this.center) > lim;
+    const lim = this.margin * 0.9, force = c.distanceTo(this.jobCenter) > lim || c.distanceTo(this.center) > lim;
     if (force) this.stats.forced++;
     const left = frameBudget.left(this);
-    if (!force && left < 0.05) return;                 // (the frame's streaming budget is spent: next frame)
+    // past the frame's streaming budget a gather still moves on by a sliver (it must end before the camera outruns
+    // the margin: forcing it whole would be the spike this avoids)
     const t0 = performance.now();
-    this.pump(force ? Infinity : Math.min(this.budget, left));
+    this.pump(force ? Infinity : Math.max(0.08, Math.min(this.budget, left)));
     frameBudget.spend(performance.now() - t0);
   }
   start(c) {
