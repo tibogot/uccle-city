@@ -249,3 +249,20 @@ firmamentClouds.js: trace + resolve every frame, cloud shadow / panorama passes)
 `resolutionScale` 1, 1.13 at 0.75, 0.96 at 0.5 (live in the page, look not judged): the resolution only buys ~0.3 ms;
 the rest is the fixed passes. For the sky and clouds rework (owner: later): a cheaper cloud path (update the fixed
 passes every N frames, a lower trace lattice far from the sun, or baked cloud layers when the camera is low).
+
+## Step 8: the whole city with everything on (2026-11-14, ~01:40; no agent running; preflight YELLOW: 5 GB free)
+
+Reference overview (page check): 12.12 ms GPU, 312 draws, CPU 71.6 ms (boot 17.7 s) - was 13.11 ms / 399 draws earlier
+tonight before the new content. Four views, `debug/gpuAB.js measure` (p50 / p95 GPU ms), everything on vs the night's
+additions off (`?stops=old&furniture=old&bridges2=0&augustin=0&russian=0&rosaire=0&railcar=0`), separate page loads:
+
+| view | everything on | additions off | difference |
+|---|---|---|---|
+| Place Saint-Job, street level (stops, furniture) | 12.12 / 14.68, 500 draws, 5.01 M tris | 12.19 / 14.02, 454 draws, 4.92 M | ~0 ms, +46 draws |
+| under the Rue de Stalle viaduct (D5) | 11.60 / 12.65, 441 draws | 11.99 / 13.11, 432 draws | ~0 (noise), +9 draws |
+| Saint-Augustin, Altitude Cent (E1) | 10.49 / 12.32, 185 draws | 10.03 / 11.01, 175 draws | +0.46 ms (the church) |
+| overview | 12.85 / 14.75, 314 draws | (invalid: measured before the view settled) | - |
+
+Verdict: the night's content (stops, furniture, six rail bridges, three churches, rail fences) costs ~0-0.5 ms where it is
+seen; every view stays under 13 ms p50 / 15 ms p95 (60 fps on the RTX 4050 laptop). Not measured here: front gardens
+(off by default), grass (opt-in, ~0 ms measured), horizon (+1.3 ms from 500 m, opt-in).
