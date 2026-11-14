@@ -93,6 +93,7 @@ PAL = [
     ("sign", 2, (0.95, 0.55, 0.06)),            # taxi sign letters: amber, lit at night (head-light kind)
     ("skid", 0, (0.40, 0.41, 0.42)),            # SUV skid plates: brushed silver plastic
     ("taxi_yellow", 0, (0.80, 0.52, 0.02)),     # Brussels taxi chequer band and licence number
+    ("head_in", 2, (0.30, 0.31, 0.33)),         # head lamp inside the lens: smoked reflector (the DRL ring round it is "head")
 ]
 M = {n: i for i, (n, _, _) in enumerate(PAL)}
 MATS = []
@@ -309,16 +310,16 @@ def plate(mb, centre, tilt, facing, rng, w=0.52, h=0.11):
 def T(**k): return k
 TYPES = {
     "hatch_s": T(label="small hatchback", type="hatchback", L=4.00, W=1.74, WB=2.50, OF=0.80, RW=0.300, TW=0.185, RR=0.196,
-                 GC=0.135, HB=0.92, HN=0.73, lampH=0.15, HT=1.00, HR=1.455, bonnet=0.98, ws=0.80, back="hatch", bl=(0.05, 0.40),
+                 GC=0.135, HB=0.92, HN=0.76, lampH=0.17, HT=1.00, HR=1.455, bonnet=0.98, ws=0.80, back="hatch", bl=(0.05, 0.40),
                  doors=5, paint=(0.42, 0.03, 0.03), track=1.50),
     "hatch_c": T(label="compact hatchback", type="hatchback", L=4.30, W=1.80, WB=2.64, OF=0.90, RW=0.317, TW=0.205, RR=0.216,
-                 GC=0.14, HB=0.94, HN=0.74, HT=1.02, HR=1.455, bonnet=1.12, ws=0.82, back="hatch", bl=(0.06, 0.42),
+                 GC=0.14, HB=0.94, HN=0.77, HT=1.02, HR=1.455, bonnet=1.12, ws=0.82, back="hatch", bl=(0.06, 0.42),
                  doors=5, paint=(0.025, 0.07, 0.17), track=1.55),
     "estate": T(label="estate", type="estate", L=4.62, W=1.80, WB=2.70, OF=0.92, RW=0.317, TW=0.205, RR=0.216,
-                GC=0.14, HB=0.95, HN=0.75, HT=1.02, HR=1.47, bonnet=1.14, ws=0.84, back="estate", bl=(0.06, 0.22),
+                GC=0.14, HB=0.95, HN=0.77, HT=1.02, HR=1.47, bonnet=1.14, ws=0.84, back="estate", bl=(0.06, 0.22),
                 doors=5, quarter=True, rails=True, paint=(0.30, 0.31, 0.32), track=1.56),
     "saloon": T(label="saloon", type="sedan", L=4.72, W=1.82, WB=2.80, OF=0.95, RW=0.325, TW=0.215, RR=0.229,
-                GC=0.14, HB=0.95, HN=0.74, HT=1.00, HR=1.445, bonnet=1.18, ws=0.86, back="saloon", bl=(0.52, 1.02),
+                GC=0.14, HB=0.95, HN=0.76, HT=1.00, HR=1.445, bonnet=1.18, ws=0.86, back="saloon", bl=(0.52, 1.02),
                 doors=4, paint=(0.012, 0.013, 0.015), track=1.57),
     "suv": T(label="small SUV", type="suv", L=4.40, W=1.82, WB=2.64, OF=0.90, RW=0.345, TW=0.215, RR=0.229,
              GC=0.19, HB=1.04, HN=0.86, lampH=0.20, HT=1.12, HR=1.60, bonnet=1.10, ws=0.80, back="hatch", bl=(0.07, 0.40),
@@ -330,7 +331,7 @@ TYPES = {
                GC=0.18, HB=1.12, HN=0.98, lampH=0.22, rail=0.34, HT=1.15, HR=2.28, bonnet=0.70, ws=0.80, back="van", bl=(0.04, 0.08),
                doors="panel", clad=True, paint=(0.70, 0.70, 0.68), track=1.70),
     "taxi": T(label="Brussels taxi", type="taxi", L=4.66, W=1.80, WB=2.70, OF=0.92, RW=0.317, TW=0.205, RR=0.216,
-              GC=0.14, HB=0.95, HN=0.75, lampH=0.12, HT=1.02, HR=1.47, bonnet=1.14, ws=0.84, back="estate", bl=(0.06, 0.22),
+              GC=0.14, HB=0.95, HN=0.77, lampH=0.15, HT=1.02, HR=1.47, bonnet=1.14, ws=0.84, back="estate", bl=(0.06, 0.22),
               doors=5, quarter=True, rails=True, paint=(0.010, 0.010, 0.011), keepPaint=True, taxi=True, track=1.56),
 }
 # FASCIAS per type (generic designs). Fractions f of the half width (0 = centre, 1 = the corner); bands of the tub:
@@ -353,7 +354,7 @@ REAR = {
     "hatch_s": dict(tail=[(0.81, 1.0, ("lamp", "top"))], garnish=None, refl=(0.81, 0.93), diffuser=False, skid=False, extra=()),
     "hatch_c": dict(tail=[(0.5, 1.0, ("top",))], garnish=(0.5, "top", "housing"), refl=(0.79, 0.93), diffuser=True, skid=False, extra=()),
     "estate": dict(tail=[(0.62, 1.0, ("top",)), (0.81, 1.0, ("lamp",))], garnish=(0.62, "top", "chrome"), refl=(0.81, 0.93), diffuser=False, skid=False, extra=(0.62,)),
-    "saloon": dict(tail=[(0.42, 1.0, ("top",))], garnish=(0.42, "top", "chrome"), refl=(0.62, 0.79), diffuser=True, skid=False, extra=(0.42, 0.62)),
+    "saloon": dict(tail=[(0.42, 1.0, ("top",))], garnish=None, refl=(0.62, 0.79), diffuser=True, skid=False, extra=(0.42, 0.62)),
     "suv": dict(tail=[(0.62, 1.0, ("top",))], garnish=(0.62, "top", "housing"), refl=(0.81, 0.93), diffuser=False, skid=True, extra=(0.62,)),
     "van_c": dict(tail=[(0.81, 1.0, ("lamp", "top"))], garnish=None, refl=(0.81, 0.93), diffuser=False, skid=False, extra=()),
     "van_p": dict(tail=[(0.81, 1.0, ("bumpB", "lamp", "top"))], garnish=None, refl=(0.62, 0.79), diffuser=False, skid=False, extra=(0.62,)),
@@ -411,9 +412,9 @@ def build_car(cid, P):
         ("L1", GC + 0.13, GC + 0.075, GC + 0.15, hw - 0.028, 0.965, 0.03, 0.02),
         ("L2", GC + 0.27, GC + 0.20, GC + 0.29, hw - 0.006, 0.975, 0.0, 0.0),
         None,
-        ("L3", HN - P.get("lampH", 0.17), HB - 0.33, HT - 0.37, hw, 0.975, 0.025, 0.012),
-        ("L4", HN - 0.045, HB - 0.085, HT - 0.17, hw - 0.012, 0.97, 0.10, 0.05),
-        ("L5", HN, HB, HT, hw - 0.055, 0.96, 0.16, 0.085),
+        ("L3", HN - P.get("lampH", 0.19), HB - 0.33, HT - 0.37, hw, 0.975, 0.06 if P["back"] != "van" else 0.035, 0.012),
+        ("L4", HN - 0.045, HB - 0.085, HT - 0.17, hw - 0.012, 0.97, 0.13, 0.05),
+        ("L5", HN, HB, HT, hw - 0.055, 0.96, 0.19, 0.085),
     ]
     if van:   # boxier vans: steeper, taller fascia
         Ls[L4] = ("L4", HN - 0.05, HB - 0.09, HT - 0.20, hw - 0.012, 0.975, 0.08, 0.02)
@@ -452,6 +453,10 @@ def build_car(cid, P):
     if van: SZ += [(z_ws1 - 0.05, 0)]
     zmin_ok = max(zrear(li, 1) for li in range(NL)) + 0.05
     zmax_ok = min(zfront(li, 1) for li in range(NL)) - 0.05
+    # the lamp WRAP stations: the first / last side station sits just behind the fascia corners, so the head and tail
+    # lamps can wrap round onto the wings (the corner -> station band, 11-20 cm along the side, as on real cars)
+    z_wrapF, z_wrapR = zmax_ok - 0.002, zmin_ok + 0.002
+    SZ += [(z_wrapF, 0), (z_wrapR, 0)]
     SZ = sorted({(round(z, 4), g) for z, g in SZ if zmin_ok < z < zmax_ok}, key=lambda t: -t[0])
     # keep only one entry per z (groove flag wins)
     dd = {}
@@ -496,6 +501,16 @@ def build_car(cid, P):
     def band_mat(b, e0, e1):
         bn = BANDS[b]
         typ = e0[0] if e0[0] == e1[0] else ("S" if "S" in (e0[0], e1[0]) else e0[0])
+        if typ == "S" and e0[0] != e1[0]:
+            # the corner -> wrap-station band: head / tail lamps that reach the corner wrap round onto the wing
+            es, ee = (e0, e1) if e0[0] == "S" else (e1, e0)
+            sgn = "L" if es[3] > 0 else "R"
+            if ee[0] == "F":
+                l0, l1, lb = FA["lamp"]
+                if bn in lb and l1 >= 0.999 and not van: return M["housing"], "lamp" + sgn
+            else:
+                for (t0, t1, tb) in RE["tail"]:
+                    if bn in tb and t1 >= 0.999: return M["tail"], "tail" + sgn
         if typ == "S":
             if bn == "chin": return M["trim"], None
             if bn == "lower": return (M["trim"] if clad else M["paint"]), None
@@ -589,19 +604,21 @@ def build_car(cid, P):
         fs = tags.get("lamp" + s, [])
         inset(fs, 0.008, -0.004, M["trim"])                     # thin black surround
         inset(fs, 0.006, -0.026, M["housing"], M["housing"])    # deep housing
-        band, inner = inset(fs, 0.010, 0.006, M["chrome"], M["head"], individual=True)   # reflector facets
+        # ONE lens over the whole lamp (a region inset: no per-facet chrome rims, those were 1-2 px stripes at 20-40 m
+        # that sparkled in motion), the gloss-black housing as a 1.8 cm frame round it, the projector cups on top
+        band, inner = inset(fs, 0.018, 0.010, M["housing"], M["head"])
+        band, inner = inset(inner, 0.016, -0.003, M["head"], M["head_in"])    # the DRL ring, the smoked reflector inside
         for f in inner:
             c = f.calc_center_median()
             projector_spots.append((Vector(c), f.normal.copy(), f.calc_area()))
-        # outermost facet: amber indicator
-        if fs:
-            fo = max(fs, key=lambda f: abs(f.calc_center_median().x))
-            fo.material_index = M["amber"]
+        # (no amber facet: European lamps hide the indicator behind the clear lens; the traffic blinks the outer part)
     for s in "LR":
         fs = tags.get("tail" + s, [])
         inset(fs, 0.007, -0.003, M["trim"])
         inset(fs, 0.004, -0.012, M["tail"], M["tail"])
-        band, inner = inset(fs, 0.008, 0.005, M["tail"], M["tail_hi"], individual=True)
+        # one lens: a dark-red rim and a bright inner lens (was per-facet steps with 4-8 mm dark grooves between them:
+        # sub-pixel stripes from ~15 m, the grainy / sparkling red the owner saw)
+        band, inner = inset(fs, 0.020, 0.008, M["tail"], M["tail_hi"])
     for s in "LR":   # bumper lamps: reverse light on the left, rear fog on the right (as on European cars)
         inset(tags.get("refl" + s, []), 0.01, -0.003, M["trim"], M["reverse"] if s == "L" else M["tail"])
     inset(tags.get("garnish", []), 0.006, -0.004, M["trim"])          # gloss black tailgate garnish between the lamps
@@ -812,7 +829,7 @@ def build_car(cid, P):
         d.face([(xfl - dx, yfl - h_, zfl - w_), (xfl - dx, yfl - h_, zfl + w_), (xfl - dx, yfl + h_, zfl + w_), (xfl - dx, yfl + h_, zfl - w_)], mt, share=False, out=(-1, 0, 0))
     # projector cups in the head lamps: on the two largest reflector facets per side
     for s in (1, -1):
-        spots = sorted([p for p in projector_spots if p[0].x * s > 0], key=lambda p: -p[2])[:2]
+        spots = sorted([p for p in projector_spots if p[0].x * s > 0 and -p[1].y > 0.6], key=lambda p: -p[2])[:2]   # front-facing only
         for (cb, nb, _) in spots:
             cc = (cb.x, cb.z, -cb.y)              # Blender -> car
             nn = (nb.x, nb.z, -nb.y)
@@ -1077,6 +1094,34 @@ def build_wheel(RW, TW, RR):
     o = bpy.data.objects.new("wheel", me); scn.collection.objects.link(o)
     return o
 
+# ------------------------------------------------------------------------------------------------ shading normals
+SMOOTH_ANGLE = math.radians(35)
+def smooth_shade(o, angle=SMOOTH_ANGLE):
+    """Smooth shading with hard edges, then WEIGHTED normals (face area): the panels read as one curved sheet instead
+    of flat facets that each mirror a different bit of sky (the bright / dark bands across bonnets and doors). An edge
+    stays hard where its faces meet at more than `angle`, where the material changes (paint -> lamp, seam grooves,
+    trim), and on open borders; flat faces keep flat normals (weighted by area, keep sharp)."""
+    bm = bmesh.new(); bm.from_mesh(o.data)
+    # zero-area faces (boolean leftovers) would take a neighbour's normal at a right angle (mesh audit "bentflat")
+    bmesh.ops.dissolve_degenerate(bm, dist=1e-5, edges=bm.edges[:])
+    bm.normal_update()
+    def sliver(f):   # long thin faces stay flat: smooth corners on them streak (mesh audit "streak")
+        if len(f.verts) < 3: return True
+        L = max(e.calc_length() for e in f.edges)
+        return f.calc_area() < 1e-9 or L * L / max(f.calc_area(), 1e-12) > 12
+    FLAT = {M["under"], M["liner"]}                 # the underbody n-gon and the arch liners: flat (unseen, boolean-cut)
+    for f in bm.faces: f.smooth = f.material_index not in FLAT
+    for e in bm.edges:
+        lf = e.link_faces
+        hard = len(lf) != 2 or lf[0].material_index != lf[1].material_index or lf[0].normal.angle(lf[1].normal, 0.0) > angle             or sliver(lf[0]) or sliver(lf[1]) or lf[0].material_index in FLAT
+        e.smooth = not hard
+    bm.to_mesh(o.data); bm.free()
+    mod = o.modifiers.new("wn", "WEIGHTED_NORMAL")
+    mod.mode = "FACE_AREA"; mod.keep_sharp = True; mod.weight = 100; mod.thresh = 0.01
+    dg = bpy.context.evaluated_depsgraph_get()
+    me2 = bpy.data.meshes.new_from_object(o.evaluated_get(dg), preserve_all_data_layers=True, depsgraph=dg)
+    o.modifiers.clear(); old = o.data; o.data = me2; bpy.data.meshes.remove(old)
+
 # ------------------------------------------------------------------------------------------------ bake + export
 def bake_ao(objs, occluders_extra=()):
     """Two Cycles AO bakes per vertex: 'ao' over 0.9 m (body mass, ground, arches) and 'ao_s' over 0.22 m (contact
@@ -1107,6 +1152,7 @@ def tri_soup(objs, mirror_x=False, origin=(0, 0, 0), ao_lift=0.0):
     for o in objs:
         me = o.data
         me.calc_loop_triangles()
+        cn = me.corner_normals                                    # smooth_shade: weighted split normals
         ao = ao_of(o)
         mw = o.matrix_world
         V = [mw @ v.co for v in me.vertices]
@@ -1120,14 +1166,20 @@ def tri_soup(objs, mirror_x=False, origin=(0, 0, 0), ao_lift=0.0):
             P3 = [(p[0] - origin[0], p[1] - origin[1], p[2] - origin[2]) for p in P3]
             a, b, c = Vector(P3[0]), Vector(P3[1]), Vector(P3[2])
             nn = (b - a).cross(c - a)
-            if nn.length < 1e-12: continue
+            if nn.length < 2e-8: continue                       # zero-area (collinear n-gon corners): nothing to draw
             nn.normalize()
+            NN = []
+            for li in t.loops:
+                v = cn[li].vector; q = Vector((-v.x if mirror_x else v.x, v.z, -v.y))
+                q = q.normalized() if q.length > 1e-6 else nn
+                NN.append(q if q.dot(nn) > 0.5 else nn)   # a corner normal > 60 deg off its face (twisted n-gon pieces): flat
+            if mirror_x: NN = [NN[0], NN[2], NN[1]]
             for k in range(3):
                 occ = ao[vs[k]]
                 occ = lerp(1.0, occ, 0.92) ** 1.15
                 occ = max(occ, ao_lift)
                 if kd in (2,): occ = lerp(occ, 1.0, 0.6)          # lamps are bright inside
-                pos += P3[k]; nrm += (nn.x, nn.y, nn.z)
+                pos += P3[k]; nrm += (NN[k].x, NN[k].y, NN[k].z)
                 col += (rgb[0] * occ, rgb[1] * occ, rgb[2] * occ); kind.append(kd)
     return weld(pos, nrm, col, kind)
 
@@ -1206,6 +1258,7 @@ for cid, P in TYPES.items():
     if ONLY and cid not in ONLY: continue
     tc = time.time()
     parts, wheel, wpos, info = build_car(cid, P)
+    for o in parts + [wheel]: smooth_shade(o)
     # four wheels in place as occluders for the body bake
     wobjs = []
     for k, (x, y, z) in wpos.items():

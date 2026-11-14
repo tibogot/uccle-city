@@ -213,6 +213,12 @@ export function wallMaterial(opts = {}) {
   const xa = float(0.5).sub(ww.div(bw).mul(0.5)).toVar(), xb = float(1).sub(xa).toVar();
   const ya = mix(float(0.27), float(0.29), up).toVar(), yb = mix(float(0.77), float(0.79), up).toVar();
   const fl = floor(gy);
+  // THE STOREY'S OWN openings, box-filtered over the pixel: filteredPulse is PERIODIC, and a door (its pulse starts at
+  // the storey floor, 0) leaked the NEXT storey's door into the top pixel rows of this one: a 1-3 px row at every
+  // storey line over each door bay, lit / dark per 2x2 pixel quad by the bump: the "aliased dashed black lines" across
+  // blank walls (owner playtest 2026-11-14, item 4; only the window grid's y, x bays are legitimately periodic)
+  const yl = gy.sub(fl).toVar();
+  const pulseY = (a, b, w) => clamp(min(yl.add(w.mul(0.5)), b).sub(max(yl.sub(w.mul(0.5)), a)), 0.0, 1e3).div(max(w, 0.0001));
   const winTopAbs = mix(yb.mul(G), G.add(fl.sub(1).add(yb).mul(S)), up);
   const isLM = band(style, 6).toVar();                                          // landmark (church, chapel...)
   const ok = float(1).sub(party).mul(float(1).sub(isLM)).mul(step(float(1.6), fw)).mul(step(float(2.8), eh))
@@ -228,12 +234,12 @@ export function wallMaterial(opts = {}) {
   const dxa = float(0.5).sub(float(0.55).div(bw)), dxb = float(1).sub(dxa);
   const wxa = mix(xa, dxa, isDoor), wxb = mix(xb, dxb, isDoor);
   const wya = mix(mix(ya, float(FRENCH_SILL).div(storeyH), isFr), float(0.0), isDoor), wyb = mix(yb, float(0.72), isDoor);
-  const cx = filteredPulse(gx, wxa, wxb, fwx), cy = filteredPulse(gy, wya, wyb, fwy);
+  const cx = filteredPulse(gx, wxa, wxb, fwx), cy = pulseY(wya, wyb, fwy);
   const opening = cx.mul(cy).mul(ok).toVar();                                    // whole opening (frame + glass)
   // frame 7 cm, glass inside; a mullion and a transom
   const fX = float(0.07).div(bw), fY = float(0.07).div(storeyH);
   const gxa = wxa.add(fX), gxb = wxb.sub(fX), gya = wya.add(fY), gyb = wyb.sub(fY);
-  const glassBox = filteredPulse(gx, gxa, gxb, fwx).mul(filteredPulse(gy, gya, gyb, fwy)).mul(ok).toVar();
+  const glassBox = filteredPulse(gx, gxa, gxb, fwx).mul(pulseY(gya, gyb, fwy)).mul(ok).toVar();
   const wu = clamp(fract(gx).sub(gxa).div(gxb.sub(gxa)), 0.0, 1.0).toVar();      // 0..1 inside the glass
   const wv = clamp(fract(gy).sub(gya).div(gyb.sub(gya)), 0.0, 1.0).toVar();
   const barX = smoothstep(float(0.035).div(ww), float(0.0), abs(wu.sub(0.5))).mul(step(float(0.95), ww));
@@ -249,8 +255,8 @@ export function wallMaterial(opts = {}) {
   // weakens) over a few pixels. (The roofs below solved the same thing with a ramp: "a step tilts the bump normal".)
   const RELIEF_PX = /[?&]relief=1px/.test(location.search) ? 1.0 : 3.0;          // ?relief=1px: before (A/B)
   const fwxR = fwx.mul(RELIEF_PX), fwyR = fwy.mul(RELIEF_PX);
-  const openingR = filteredPulse(gx, wxa, wxb, fwxR).mul(filteredPulse(gy, wya, wyb, fwyR)).mul(ok).toVar();
-  const glassBoxR = filteredPulse(gx, gxa, gxb, fwxR).mul(filteredPulse(gy, gya, gyb, fwyR)).mul(ok);
+  const openingR = filteredPulse(gx, wxa, wxb, fwxR).mul(pulseY(wya, wyb, fwyR)).mul(ok).toVar();
+  const glassBoxR = filteredPulse(gx, gxa, gxb, fwxR).mul(pulseY(gya, gyb, fwyR)).mul(ok);
   const frameR = openingR.sub(glassBoxR).add(glassBoxR.mul(bars)).max(0).toVar();
 
   // ---- wall surface by style, with relief heights
@@ -271,6 +277,45 @@ export function wallMaterial(opts = {}) {
   const wl = facadeLibOn() ? facadeWallLook(u, h, style, [[0.29, 0.085, 0.05], [0.17, 0.075, 0.045], [0.4, 0.27, 0.14],
     [0.62, 0.6, 0.55], [0.56, 0.47, 0.32], [0.3, 0.29, 0.27]]) : null;
   if (wl) col = wl.col;
+  // ---- BLIND PARTY WALLS (owner playtest 2026-11-14: "they look empty"). A Brussels gable left bare above a lower
+  // neighbour is never a clean sheet: it keeps the GHOST of an older, taller neighbour (the pitched outline of its roof
+  // with the black bitumen flashing along it, the old room plaster inside it, half fallen off, a soot-dark flue strip),
+  // grey cement repair patches, and rain streaks under the coping. Separate buildings only (aBld.y = 999: the whole
+  // face is blind) and the wall above the eaves line of a face 4 m+ wide (the windowless upper walls the painted grid
+  // leaves blank: Place Saint-Job's side walls); every edge is box-filtered over the pixel (no new aliased line),
+  // low-frequency noise only.
+  const aaE = fwidth(h).add(0.002);
+  const aboveEaves = smoothstep(eh.add(0.25).sub(aaE), eh.add(0.25).add(aaE), h).mul(step(4.0, fw));
+  const blind = max(party.mul(step(998.0, bld.y)), aboveEaves).mul(float(1).sub(isLM)).toVar();
+  const boxBand = (x, a, b, w) => clamp(min(x.add(w.mul(0.5)), b).sub(max(x.sub(w.mul(0.5)), a)), 0.0, 1e3).div(w);
+  {
+    const k1 = hash2D(vec2(rnd.mul(53.0), 7.1)), k2 = hash2D(vec2(rnd.mul(71.0), 3.3)), k3 = hash2D(vec2(rnd.mul(29.0), 1.7));
+    // the ghost: 70 % of blind walls 4 m+ wide; eaves 5.2-7.6 m, a 35-45 degree pitch, the ridge mid-depth (<= 4.5 m up)
+    const ghostOn = step(0.3, k1).mul(step(4.0, fw));
+    const e1 = mix(float(5.2), float(7.6), k2), uc = fw.mul(0.5);
+    const pitch = mix(float(0.7), float(1.0), k3);
+    // one in three was a flat-roofed block (a level flashing line instead of the pitched one)
+    const yProf = mix(min(e1.add(uc.sub(abs(u.sub(uc))).mul(pitch)), e1.add(4.5)), e1.add(k2.mul(2.0)), step(0.67, k3)).toVar();
+    const d = h.sub(yProf).toVar();                                               // m above the outline (vertical)
+    const aaD = fwidth(d).add(0.002);
+    const inside = smoothstep(aaD, aaD.negate(), d).mul(ghostOn).toVar();
+    const flashing = boxBand(d, float(-0.02), float(0.07), aaD.mul(1.5)).mul(ghostOn);       // 9 cm of bitumen
+    // old room plaster (whitewash / faded distemper), fallen off in patches that show the brick; a flue strip
+    const plasterCol = mix(C(0.58, 0.55, 0.49), C(0.56, 0.47, 0.42), step(0.5, k3)).mul(n3(P.x.mul(0.9), P.y.mul(0.9), P.z.mul(0.9)).mul(0.16).add(0.92));
+    const loss = smoothstep(0.45, 0.55, noise2D(vec2(u.mul(0.9).add(rnd.mul(40.0)), h.mul(1.1))));
+    const flueU = uc.add(mix(float(-1.6), float(1.6), k1));
+    const flue = boxBand(u.sub(flueU), float(-0.25), float(0.25), fwidth(u).add(0.002)).mul(step(h, yProf.add(0.9)));
+    // brick walls: the plaster, half fallen off; rendered walls: only a weathered tint (the render went over it all)
+    let gcol = mix(mix(plasterCol, col, loss), col.mul(n3(P.x.mul(0.7), P.y.mul(0.7), P.z.mul(0.7)).mul(0.05).add(0.93)), float(1).sub(isBrick));
+    gcol = gcol.mul(float(1).sub(flue.mul(mix(float(0.1), float(0.28), isBrick))));
+    col = mix(col, gcol, inside.mul(blind));
+    col = mix(col, C(0.03, 0.03, 0.032), flashing.mul(blind).mul(0.9));
+    // cement repair patches (brick walls), rain streaks under the coping (all blind walls)
+    const patch = smoothstep(0.66, 0.7, noise2D(vec2(u.mul(0.3).add(rnd.mul(17.0)), h.mul(0.38)))).mul(isBrick).mul(float(1).sub(inside));
+    col = mix(col, C(0.36, 0.35, 0.33).mul(grain.mul(0.08).add(0.96)), patch.mul(blind).mul(0.85));
+    const streak = noise2D(vec2(u.mul(2.6).add(rnd.mul(9.0)), h.mul(0.06))).mul(smoothstep(eh.sub(5.0), eh.sub(0.3), h));
+    col = col.mul(float(1).sub(streak.mul(0.22).mul(blind)));
+  }
   // relief: domed bricks, recessed openings, protruding sills / plinth / cornice (metres)
   let height = wl ? float(0) : isBrick.mul(float(1).sub(brick.joint)).mul(0.0045);
   height = height.sub(openingR.mul(0.12));                                       // reveal: the opening sits 12 cm back
@@ -285,13 +330,13 @@ export function wallMaterial(opts = {}) {
   height = height.add(band2(eh.sub(0.42), eh.sub(0.12), aaHR).mul(cornOn).mul(0.05));
   // sills (blue stone) under every window, a shadow beneath them, lit top
   const sillX = filteredPulse(gx, wxa.sub(float(0.06).div(bw)), wxb.add(float(0.06).div(bw)), fwx);
-  const sillY = filteredPulse(gy, wya.sub(float(0.08).div(storeyH)), wya, fwy);
+  const sillY = pulseY(wya.sub(float(0.08).div(storeyH)), wya, fwy);
   const sill = sillX.mul(sillY).mul(ok).mul(float(1).sub(isDoor)).mul(float(1).sub(isFr)).toVar();
-  const underSill = sillX.mul(filteredPulse(gy, wya.sub(float(0.3).div(storeyH)), wya.sub(float(0.08).div(storeyH)), fwy)).mul(ok).mul(float(1).sub(isDoor)).mul(float(1).sub(isFr));
+  const underSill = sillX.mul(pulseY(wya.sub(float(0.3).div(storeyH)), wya.sub(float(0.08).div(storeyH)), fwy)).mul(ok).mul(float(1).sub(isDoor)).mul(float(1).sub(isFr));
   col = mix(col, C(0.16, 0.165, 0.17).add(env.uSunColor.mul(0.04)), sill);
   col = col.mul(float(1).sub(underSill.mul(0.25)));
   const sillR = filteredPulse(gx, wxa.sub(float(0.06).div(bw)), wxb.add(float(0.06).div(bw)), fwxR)
-    .mul(filteredPulse(gy, wya.sub(float(0.08).div(storeyH)), wya, fwyR)).mul(ok).mul(float(1).sub(isDoor)).mul(float(1).sub(isFr));
+    .mul(pulseY(wya.sub(float(0.08).div(storeyH)), wya, fwyR)).mul(ok).mul(float(1).sub(isDoor)).mul(float(1).sub(isFr));
   height = height.add(sillR.mul(0.04));
   // reveal shadows on the wall just inside the opening: lintel (top) and jambs
   const revealTop = smoothstep(gyb.sub(float(0.12).div(storeyH)), gyb, fract(gy)).mul(glassBox);

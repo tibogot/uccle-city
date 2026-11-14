@@ -29,6 +29,7 @@ export const SLOTS = [
   ["table_top", [0.62, 0.61, 0.57], 0.25, 0.0, 0, 0],
   ["warm_light", [1.0, 0.82, 0.58], 0.4, 0.0, 3.0, 0],
   ["lightbox", [0.86, 0.87, 0.88], 0.35, 0.0, 1.6, 1],
+  ["galvanized", [0.21, 0.215, 0.21], 0.7, 0.35, 0, 0],   // hot-dip galvanized tread plate (chute platforms): matt light grey
 ];
 export const SLOT = Object.fromEntries(SLOTS.map((s, i) => [s[0], i]));
 
@@ -154,8 +155,12 @@ function bubble() {
 /** underground container chute (a column with a mouth) */
 function chute() {
   const g = new Geo();
-  g.box(0, 0.01, 0, 1.6, 0.02, 1.6, S.steel_dark, 0.005);
-  g.cyl(0, 0.02, 0, 0.3, 1.08, S.bottle_glass, 24, 0.03);
+  // the pedestrian platform over the buried container: a galvanized tread plate (matt light grey; it was a 2 cm slab of
+  // dark polished steel that read as a BLACK SQUARE in shade) in a dark steel rim, set into the paving: both sink 4-5 cm
+  // below the origin, so a sidewalk with a 2-3 % cross-fall meets the rim, never a floating edge (the joins rule)
+  g.box(0, -0.022, 0, 1.6, 0.056, 1.6, S.steel_dark, 0.004);
+  g.box(0, -0.018, 0, 1.52, 0.06, 1.52, S.galvanized, 0.003);
+  g.cyl(0, 0.012, 0, 0.3, 1.088, S.bottle_glass, 24, 0.03);
   g.at(0, 0.9, 0.29, 0, 1.2).cyl(0, -0.02, 0, 0.1, 0.06, S.rubber, 16, 0.008).reset();
   g.cyl(0, 1.1, 0, 0.32, 0.05, S.steel_dark, 24, 0.012);
   return g;

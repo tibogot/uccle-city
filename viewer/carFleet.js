@@ -100,7 +100,7 @@ class CarFleet {
       const data = await new Promise((resolve, reject) => {
         worker.onmessage = (e) => (e.data.error ? reject(new Error(e.data.error)) : resolve(e.data));
         worker.onerror = (e) => reject(new Error(e.message || "car LOD worker failed"));
-        worker.postMessage({ id: 1, url: S.url, S: { welded: S.welded, prune: S.prune, lods: S.lods } });
+        worker.postMessage({ id: 1, url: S.url, S: { welded: S.welded, prune: S.prune, smooth: S.smooth, lods: S.lods } });
       });
       worker.terminate();
       this.lodDist = S.lods.map((l) => l.until);

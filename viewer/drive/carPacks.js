@@ -19,7 +19,8 @@ export const PACK_SOURCES = {
   // ours: tools/blender/carFaceted.py (faceted hard-surface family, baked AO, see-through tinted glass)
   faceted: { label: "Faceted (carFaceted.py)", url: new URL("../../models/cars/faceted.glb", import.meta.url).href, credit: "uccle-city, scripted",
     rich: true,        // packMaterial: clear-coat paint, see-through glass (alpha to coverage), light shadow through glass, lit sign letters
-    welded: true,      // flat faces split per normal everywhere: always simplify on the position + colour weld
+    welded: true,      // always simplify on the position + colour weld (+ normal: smooth)
+    smooth: true,      // weighted split normals (docs/VISUAL_FIXES.md): the LODs keep them instead of flat face normals
     prune: true,       // meshoptimizer Prune: islands under the error go (lug nuts, plate glyphs, wipers far away)
     // body error per LOD; wheels have their own (colour borders locked up to LOD1, free beyond: seen whole, far away)
     lods: [{ error: 0, wheel: 0, until: 22 }, { error: 0.008, wheel: 0.018, until: 55 }, { error: 0.032, wheel: 0.05, until: 130 },
