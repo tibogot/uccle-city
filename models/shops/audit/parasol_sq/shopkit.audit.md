@@ -1,33 +1,25 @@
 # Mesh audit: shopkit.glb
 
-2,484 triangles, 1,292 welded vertices, 0 open edges, 0 rays, 274 ms.
+2,484 triangles, 1,292 welded vertices, 0 open edges, 0 rays, 296 ms.
 
-**179 blocking**, 496 warnings. NOT CLEAN.
+**171 blocking**, 496 warnings. NOT CLEAN.
 
 | check | severity | count |
 |---|---|---|
-| coplanar | block | 15 |
+| coplanar | block | 7 |
 | crossing | block | 20 |
 | streak | block | 64 |
 | bentflat | block | 80 |
 | sliver | warn | 496 |
 | seam | info | 110 |
-| backtoback | info | 16 |
+| backtoback | info | 8 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## coplanar (block, 15)
+## coplanar (block, 7)
 
 | at | parts | separation_mm | overlap_cm2 | angle_deg | maxDistance | need_mm | sameComponent | normal |
 |---|---|---|---|---|---|---|---|---|
-| -0.02, 0.00, -0.00 | parasol_sq/cast_iron + parasol_sq/cast_iron | 0 | 10.2 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
-| 0.00, 0.00, -0.02 | parasol_sq/cast_iron + parasol_sq/cast_iron | 0 | 10.2 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
-| -0.00, 0.00, 0.02 | parasol_sq/cast_iron + parasol_sq/cast_iron | 0 | 10.2 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
-| 0.02, 0.00, 0.00 | parasol_sq/cast_iron + parasol_sq/cast_iron | 0 | 10.2 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
-| -0.00, 0.06, -0.02 | parasol_sq/cast_iron + parasol_sq/cast_iron | 0 | 10.2 | 0 | 120 | 0.92 | false | 0 + 1 + 0 |
-| -0.02, 0.06, 0.00 | parasol_sq/cast_iron + parasol_sq/cast_iron | 0 | 10.2 | 0 | 120 | 0.92 | false | 0 + 1 + 0 |
-| 0.02, 0.06, -0.00 | parasol_sq/cast_iron + parasol_sq/cast_iron | 0 | 10.2 | 0 | 120 | 0.92 | false | 0 + 1 + 0 |
-| 0.00, 0.06, 0.02 | parasol_sq/cast_iron + parasol_sq/cast_iron | 0 | 10.2 | 0 | 120 | 0.92 | false | 0 + 1 + 0 |
 | 0.00, 2.58, -0.02 | parasol_sq/wood + parasol_sq/canvas | 0 | 2.1 | 0 | 120 | 0.92 | false | 0 + 1 + 0 |
 | -0.02, 2.58, 0.01 | parasol_sq/wood + parasol_sq/canvas | 0 | 1.9 | 0 | 120 | 0.92 | false | 0 + 1 + 0 |
 | 0.01, 2.58, 0.02 | parasol_sq/wood + parasol_sq/canvas | 0 | 2.1 | 0 | 120 | 0.92 | false | 0 + 1 + 0 |
@@ -176,21 +168,21 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.08, 0.06, 0.13 | parasol_sq/cast_iron | 144 | 0.884 |
 | 0.13, 0.05, -0.08 | parasol_sq/cast_iron | 144 | 0.884 |
 | 0.08, 0.00, 0.13 | parasol_sq/cast_iron | 144 | 0.884 |
-| -0.13, 0.00, -0.08 | parasol_sq/cast_iron | 144 | 0.884 |
-| 0.08, 0.00, 0.13 | parasol_sq/cast_iron | 144 | 0.884 |
+| -0.13, 0.01, -0.08 | parasol_sq/cast_iron | 144 | 0.884 |
+| 0.08, 0.01, 0.13 | parasol_sq/cast_iron | 144 | 0.884 |
 | -0.13, 0.01, -0.08 | parasol_sq/cast_iron | 144 | 0.884 |
 | -0.13, 0.06, -0.08 | parasol_sq/cast_iron | 144 | 0.884 |
 | 0.08, 0.06, 0.13 | parasol_sq/cast_iron | 144 | 0.884 |
 | -0.13, 0.06, -0.08 | parasol_sq/cast_iron | 144 | 0.884 |
-| 0.08, 0.05, 0.13 | parasol_sq/cast_iron | 144 | 0.884 |
+| 0.08, 0.06, 0.13 | parasol_sq/cast_iron | 144 | 0.884 |
 | -0.08, 0.00, -0.13 | parasol_sq/cast_iron | 144 | 0.884 |
-| 0.13, 0.00, 0.08 | parasol_sq/cast_iron | 144 | 0.884 |
-| -0.08, 0.00, -0.13 | parasol_sq/cast_iron | 144 | 0.884 |
+| 0.13, 0.01, 0.08 | parasol_sq/cast_iron | 144 | 0.884 |
+| -0.08, 0.01, -0.13 | parasol_sq/cast_iron | 144 | 0.884 |
 | 0.13, 0.01, 0.08 | parasol_sq/cast_iron | 144 | 0.884 |
 | 0.13, 0.06, 0.08 | parasol_sq/cast_iron | 144 | 0.884 |
 | -0.08, 0.06, -0.13 | parasol_sq/cast_iron | 144 | 0.884 |
 | 0.13, 0.06, 0.08 | parasol_sq/cast_iron | 144 | 0.884 |
-| -0.08, 0.05, -0.13 | parasol_sq/cast_iron | 144 | 0.884 |
+| -0.08, 0.06, -0.13 | parasol_sq/cast_iron | 144 | 0.884 |
 | 0.14, 0.06, -0.07 | parasol_sq/bluestone | 63 | 0.288 |
 | 0.07, 0.06, -0.14 | parasol_sq/bluestone | 63 | 0.288 |
 | 0.14, 0.06, -0.07 | parasol_sq/bluestone | 63 | 0.288 |
@@ -211,7 +203,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.05, 0.00, -0.00 | parasol_sq/cast_iron + parasol_sq/cast_iron | 0.58 | 88 | 34 |
 | 0.00, 2.51, -0.04 | parasol_sq/wood + parasol_sq/canvas | 0.45 | 84 | 69 |
 | 0.01, 2.51, -0.02 | parasol_sq/wood + parasol_sq/canvas | 0.31 | 80 | 69 |
-| -0.03, 0.00, -0.01 | parasol_sq/cast_iron + parasol_sq/cast_iron | 0.81 | 76 | 22.5 |
+| -0.04, 0.00, -0.02 | parasol_sq/cast_iron + parasol_sq/cast_iron | 0.52 | 68 | 67.5 |
 | -1.30, 2.10, 1.30 | parasol_sq/canvas + parasol_sq/canvas | 5.23 | 68 | 15.6 |
 | 1.30, 2.10, 1.29 | parasol_sq/canvas + parasol_sq/canvas | 5.23 | 68 | 15.6 |
 | 1.29, 2.10, -1.30 | parasol_sq/canvas + parasol_sq/canvas | 5.23 | 68 | 15.6 |
@@ -224,6 +216,8 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.00, 1.78, -0.01 | parasol_sq/wood + parasol_sq/wood | 0.07 | 30 | 27 |
 | -0.01, 1.78, 0.00 | parasol_sq/wood + parasol_sq/wood | 0.07 | 30 | 27 |
 | 0.00, 1.78, 0.01 | parasol_sq/wood + parasol_sq/wood | 0.07 | 30 | 27 |
+| 0.34, 0.06, 0.29 | parasol_sq/cast_iron + parasol_sq/bluestone | 0.73 | 29 | 31.4 |
+| -0.29, 0.06, -0.34 | parasol_sq/cast_iron + parasol_sq/bluestone | 0.73 | 29 | 31.4 |
 | 0.00, 1.78, -0.00 | parasol_sq/wood + parasol_sq/wood | 0.07 | 26 | 27 |
 | -0.00, 1.78, -0.00 | parasol_sq/wood + parasol_sq/wood | 0.07 | 26 | 27 |
 | -0.00, 1.78, 0.00 | parasol_sq/wood + parasol_sq/wood | 0.07 | 26 | 27 |
@@ -244,12 +238,10 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.00, 2.45, 0.00 | parasol_sq/wood + parasol_sq/wood | 0.06 | 23 | 17.6 |
 | -0.00, 2.45, 0.00 | parasol_sq/wood + parasol_sq/wood | 0.06 | 23 | 24.4 |
 | 0.00, 2.45, 0.00 | parasol_sq/wood + parasol_sq/wood | 0.06 | 23 | 17.6 |
-| 0.00, 2.45, 0.00 | parasol_sq/wood + parasol_sq/wood | 0.06 | 23 | 24.4 |
-| -1.30, 1.96, 1.30 | parasol_sq/canvas + parasol_sq/canvas | 0.28 | 23 | 31.4 |
 
 (70 more in the JSON)
 
-## backtoback (info, 16)
+## backtoback (info, 8)
 
 | at | parts | area |
 |---|---|---|
@@ -261,14 +253,6 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.21, 0.06, 0.25 | parasol_sq/cast_iron + parasol_sq/bluestone | 0.00102 |
 | 0.27, 0.06, -0.26 | parasol_sq/cast_iron + parasol_sq/bluestone | 0.00807 |
 | 0.17, 0.06, -0.16 | parasol_sq/cast_iron + parasol_sq/bluestone | 0.00728 |
-| -0.25, 0.06, -0.21 | parasol_sq/cast_iron + parasol_sq/bluestone | 0.00102 |
-| -0.17, 0.06, -0.14 | parasol_sq/cast_iron + parasol_sq/bluestone | 0.00194 |
-| 0.16, 0.06, 0.17 | parasol_sq/cast_iron + parasol_sq/bluestone | 0.00728 |
-| 0.26, 0.06, 0.27 | parasol_sq/cast_iron + parasol_sq/bluestone | 0.00807 |
-| -0.26, 0.06, -0.27 | parasol_sq/cast_iron + parasol_sq/bluestone | 0.00807 |
-| -0.16, 0.06, -0.17 | parasol_sq/cast_iron + parasol_sq/bluestone | 0.00728 |
-| 0.17, 0.06, 0.14 | parasol_sq/cast_iron + parasol_sq/bluestone | 0.00194 |
-| 0.25, 0.06, 0.21 | parasol_sq/cast_iron + parasol_sq/bluestone | 0.00102 |
 
 
 Nodes: parasol_sq. Distances: {}. Quantum 0.000 mm. Offset 0,0,0.

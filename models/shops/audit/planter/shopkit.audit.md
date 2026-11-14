@@ -1,6 +1,6 @@
 # Mesh audit: shopkit.glb
 
-4,748 triangles, 2,406 welded vertices, 0 open edges, 0 rays, 314 ms.
+2,492 triangles, 1,278 welded vertices, 0 open edges, 0 rays, 200 ms.
 
 **288 blocking**, 332 warnings. NOT CLEAN.
 
@@ -9,7 +9,7 @@
 | streak | block | 288 |
 | sliver | warn | 332 |
 | seam | info | 31 |
-| backtoback | info | 32 |
+| backtoback | info | 34 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
@@ -111,15 +111,15 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
-| -0.20, 0.43, -0.13 | planter/soil + planter/leaf | 2.01 | 84 | 9.4 |
-| -0.23, 0.48, -0.18 | planter/wood + planter/leaf | 1.2 | 53 | 5.6 |
-| -0.16, 0.48, 0.18 | planter/wood + planter/leaf | 1.14 | 44 | 7.2 |
+| -0.40, 0.43, 0.05 | planter/soil + planter/leaf | 2.01 | 38 | 10.4 |
+| -0.16, 0.48, -0.18 | planter/wood + planter/leaf | 1.34 | 37 | 6.3 |
 | 0.50, 0.46, -0.21 | planter/wood + planter/cast_iron | 0.07 | 24 | 90 |
 | -0.52, 0.46, -0.21 | planter/wood + planter/cast_iron | 0.07 | 24 | 90 |
 | 0.50, 0.46, 0.23 | planter/wood + planter/cast_iron | 0.07 | 24 | 90 |
 | -0.52, 0.46, 0.23 | planter/wood + planter/cast_iron | 0.07 | 24 | 90 |
 | -0.48, 0.41, -0.18 | planter/wood + planter/soil | 0.79 | 22 | 67.5 |
 | 0.48, 0.43, 0.19 | planter/wood + planter/soil | 0.79 | 22 | 67.5 |
+| -0.28, 0.48, 0.18 | planter/wood + planter/leaf | 1.47 | 22 | 6.6 |
 | 0.13, 0.41, -0.19 | planter/wood + planter/soil | 1.96 | 10 | 90 |
 | -0.48, 0.42, 0.19 | planter/wood + planter/soil | 1.96 | 10 | 90 |
 | -0.50, 0.14, -0.19 | planter/wood + planter/wood | 0.48 | 9 | 22.5 |
@@ -143,7 +143,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.49, 0.46, -0.18 | planter/wood + planter/wood | 0.03 | 2 | 22.5 |
 | 0.49, 0.46, 0.18 | planter/wood + planter/wood | 0.03 | 2 | 22.5 |
 
-## backtoback (info, 32)
+## backtoback (info, 34)
 
 | at | parts | area |
 |---|---|---|
@@ -179,6 +179,8 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.49, 0.39, 0.19 | planter/wood + planter/wood | 0.00022 |
 | 0.49, 0.40, 0.19 | planter/wood + planter/wood | 0.00134 |
 | 0.48, 0.38, 0.19 | planter/wood + planter/wood | 0.00022 |
+| -0.17, 0.48, 0.18 | planter/wood + planter/leaf | 0.00035 |
+| -0.17, 0.48, 0.18 | planter/wood + planter/leaf | 0.00053 |
 
 
 Nodes: planter. Distances: {}. Quantum 0.000 mm. Offset 0,0,0.

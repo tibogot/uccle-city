@@ -487,7 +487,7 @@ def planter():
     box(P, SOIL, -L + 0.02, L - 0.02, -D + 0.02, D - 0.02, Hh - 0.05, Hh - 0.03, 0.0, X)
     # clipped hedge: a subdivided rounded box, displaced by noise (leaf clumps)
     bm = bm_box(2 * L - 0.04, 2 * D - 0.02, 0.62, 0.12, 3)
-    bmesh.ops.subdivide_edges(bm, edges=bm.edges[:], cuts=3, use_grid_fill=True)
+    bmesh.ops.subdivide_edges(bm, edges=bm.edges[:], cuts=1, use_grid_fill=True)
     random.seed(4)
     for v in bm.verts:
         p = v.co

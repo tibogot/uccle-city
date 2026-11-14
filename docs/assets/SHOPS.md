@@ -12,8 +12,9 @@ same placement). Lab: `labs/shops-lab.html` (sites Place de Saint-Job, Rue Vande
 | Place de Saint-Job, Botanea + Pizza Hut (day) | ![](shops/before_stjob_botanea_pizzahut.jpg) | ![](shops/after_stjob_botanea_pizzahut.jpg) |
 | Rue Vanderkindere, Beobank (midday) | ![](shops/before_vanderkindere_beobank.jpg) | ![](shops/after_vanderkindere_beobank.jpg) |
 
-More: `shops/after_stjob_night.jpg` (night, lit interiors and letters), `shops/after_stjob_square_terraces.jpg`,
-`shops/after_city_*.jpg` (in the city), `shops/flicker_stjob_strafe_heat.jpg` (flicker heat map).
+More: `shops/after_stjob_night.jpg` (night, lit interiors and letters), `shops/after_city_le_refuge_terrace.jpg` (Le
+Refuge's hedge terrace in the city), `shops/after_city_chez_clementine_covered_terrace.jpg` (the covered terrace under
+the pavilion), `shops/flicker_stjob_strafe_heat.jpg` (flicker heat map), kit renders in `models/shops/previews/`.
 
 ## 1. Research: the real shops (look only: Google Maps / Street View, never traced, stored or shipped)
 
@@ -66,7 +67,7 @@ LOD1 by meshoptimizer at load (welded, 4-20 mm error, crease normals, AO per ver
 | `blade` | 1004 / 340 | wrought-iron projecting-sign bracket: wall plate, top bar with a ball finial, brace, a scroll, two hooks |
 | `parasol_sq` | 2484 / 416 | 2.6 m square market parasol: cross foot with four slabs, wooden mast, runner, 8 ribs + struts, a sagging canvas with valance flaps, vent cap |
 | `table_sq` | 796 / 156 | square bistro table: laminate top, steel frame, column, cross base, levelling feet |
-| `planter` | 4748 / 162 | wooden trough (planks, corner posts, rim) with a clipped hedge (leaf mottle in the shader) |
+| `planter` | 2492 / ~160 | wooden trough (planks, corner posts, rim) with a clipped hedge (leaf mottle in the shader) |
 
 **Stretching without distortion (a 3D 9-slice).** A real front is 2-10 m wide and its fascia sits at 2.55 or 3.0 m.
 The pieces are modelled at a nominal 2.0 m width; in the vertex stage every vertex moves by a TRANSLATION only:
@@ -135,10 +136,54 @@ mast, planter) that the car (`viewer/drive/driveMode.js featureColliders`, as a 
 | Beobank (Rue Vanderkindere) | full-height aluminium glazing, glass door, ATM | modern white front (no brand colour), glass door, office interior, ATM on the glass |
 | the butcher "St-Job" | grey fascia, white lettering, grey canopy | curated modern silver front with a grey awning |
 
-## 6. Cost (this machine; the GPU is SHARED with another agent's city tab and tools/perf/preflight.ps1 is RED: no GPU
-number is claimed)
+## 6. Cost
 
-See section 6 numbers below (filled from the lab and the city runs).
+`tools/perf/preflight.ps1` was **RED** all session (GPU 83 % busy before start, 82 C, power cap, 2.3 GB free: another
+agent's city tab shares the GPU), so **no GPU millisecond is claimed**. Counts and CPU only.
+
+**Placement, the whole city (120 tiles, `layoutTile` run in Node over every data/streetlife tile):** 492 shopfronts
+(269 classic, 223 modern), 490 doors, 489 mullions, 492 risers, 65 awnings, 60 blade brackets; 492 interior-mapped
+windows (café 130, shop 90, grocery / florist 68, bakery 58, boutique 44, pharmacy 39, office 32, salon 31);
+terraces: 112 tables, 234 chairs, 15 parasols, 5 hedge planters (curated + rule).
+
+**Draws and triangles** (Shops Lab, Place de Saint-Job, renderer.info, all passes incl. shadows, `?shops=old` vs new):
+
+| view | old draws / tris | new draws / tris | shop pools drawn (of which cast shadows) |
+|---|---|---|---|
+| Botanea + Pizza Hut, 9 m | 68 / 848 k | 101 / 1085 k | 20 (12) |
+| the square, ~45 m | 70 / 848 k | 98 / 960 k | 17 (9) |
+| from above, ~130 m | 70 / 876 k | 87 / 911 k | 11 (6) |
+
+The kit draws ONE instanced mesh per piece and LOD for the whole city (streamed, `viewer/instanceStream.js`), never
+per shop: 12 pieces x 2 LODs, the two tiny ones (riser_modern, mullion) single-LOD; a pool with nothing near is
+hidden. Pieces' LOD0 / LOD1 switch at 20-40 m, end 140-420 m (dithered, the shadow pass uses the same mask: no pop,
+no shadow snap). The interior is the street life's existing window draw (one per tile; its shader is heavier: ~2
+texture reads, a ray-box and a plane intersection per pixel).
+
+**Memory:** interiors atlas KTX2 3.4 MB download -> BC7 8 MB + mips (10.7 MB GPU); the kit 1.6 MB glb + 0.27 MB AO
+(1 MB R8 + mips); per-tile instance records (12 floats each: ~500 fronts x ~4 pieces city-wide, < 0.2 MB).
+
+**CPU:** kit load + LOD build 0.38 s at start (meshoptimizer, before the first tile; the old kits 0.04 s), interiors
+0.35 s (parallel). Worker per tile: I6 178 ms (old 194), I5 97 ms (old 95): the layout is the same cost. Main
+thread per tile (addTile): I6 5.8 ms in the lab's first frames (old 3.2), I5 0.8 ms (old 1.0).
+
+**Drive-stutter harness** (`debug/driveStutter.js`, path "stjob", 14 m/s, city): with the shops ON, the street-life
+streamer (which now also streams the 12 shop pools) cost max 0.3-0.4 ms, p99 0.2 ms, 1.5-1.6 ms per second, 0 frames
+over 0.5 ms in all 4 legs (2 valid; the frame times themselves are meaningless on a RED machine: p50 33 ms). The
+`?shops=old` run for the A/B was invalidated (the tab was throttled in the background, 533 ms frames): **re-run the
+A/B on a GREEN machine** (`D.run({ repeats: 2, path: "stjob" })` with and without `?shops=old`).
+
+**Flicker test** (`labs/flickerTest.js`, Shops Lab, Botanea + Pizza Hut at 9 m, midday): strafe 50-54 px (42-45 ppm),
+dolly 24 px, far strafe 3 px. The heat map (`shops/flicker_stjob_strafe_heat.jpg`) puts ALL of it on one distant roof
+edge behind the corner building, **none on the fronts, the doors, the glass or the interiors** (the interior's mip
+level comes from the footprint on the glass: no seam lines). `?shops=old` at the same view: 4 / 8 / 3 px.
+
+**Mesh audit** (`tools/mesh_audit`, per piece, `models/shops/audit/<piece>/`): mullion, riser_modern, riser_classic,
+awning clean of coincident faces; remaining "blocking" items are (a) faces against the WALL (z = 0, facing into it:
+never seen), (b) internal faces of stacked mouldings / capitals hidden inside the solid, (c) the bevel `bentflat` /
+`streak` items on cylinders and the hedge's leaf mass. The visible ones the audit found were fixed (the head bead's
+underside shared with the capitals, the mullion's blocks, the parasol ribs crossing the canvas, the crossed cast feet
+of the parasol and table). The flicker test confirms no z-fight on the fronts.
 
 ## 7. Switches
 
@@ -150,4 +195,29 @@ See section 6 numbers below (filled from the lab and the city runs).
 
 ## 8. Shared files touched (for the merge)
 
-see the branch's report (listed at the end of this file).
+| file | change |
+|---|---|
+| `viewer/main.js` | ONE line: `cityStreetLife.start({ scene, updaters, log, renderer })` (the renderer, for the KTX2 interiors) |
+| `viewer/drive/driveMode.js` | `featureColliders` regex: `|terrace` added (terrace tables, parasols, planters as boxes for the car) |
+| `viewer/character/cityHook.js` | `KIND`: `furniture-terrace` added to the "post" list (the walker) |
+| `viewer/streetlife/streetlife.js` | shop pools on the same Streamer, the interior window material, `iWinT`, terrace colliders, **`shrinkToward`** (the shrink about the instance centre: a fix for every street-life box, window and glass) |
+| `viewer/streetlife/layout.js` | `opts.shops` -> `viewer/shops/shopLayout.js`; WIN_STRIDE 20 -> 24 |
+| `viewer/streetlife/streetlifeWorker.js` | WIN_IB 8 -> 12, the shop records + colliders, the curated terraces fetched once |
+| `viewer/streetlife/cityStreetLife.js` | `?shops=old`, the renderer |
+| `labs/streetlife-lab.js` | the Shops folder (only when `SHOPS_LAB`), the Vanderkindere site, `StreetLife.create(scene, { shops, renderer })` |
+| `labs/index.html` | the Shops Lab card |
+| `.gitignore` | `textures/shops/_work/`, `textures/shops/interiors.png` |
+
+New: `viewer/shops/` (shopKit.js, shopLayout.js, shopPieces.js, shopWindow.js), `tools/blender/shopfronts.py`,
+`tools/blender/shopInteriors.py`, `tools/shops/`, `models/shops/`, `textures/shops/`, `data/shops/terraces.json`,
+`labs/shops-lab.html`, this file and `docs/assets/shops/`. No tile-worker change (`tileWorker.bundle.js` untouched).
+
+## 9. Left / next
+
+- Two-tone fronts (a different riser colour, Espace photo's red panels), roller shutters DOWN on shops closed at night,
+  window lettering / vinyls on glass, goods on the pavement (fruit crates, flower buckets), the timber deck + white
+  railing of Miska's terrace, festoon lights; a florist room of its own (florists use the grocery room: flower
+  fridges + crates).
+- Le Refuge's terrace stands on the city's lawn (the real yard is paved): a paved patch needs the ground layer.
+- Terrace placement by rule checks the paved depth but not trees / lamp posts / stop poles in the walking strip.
+- GPU A/B on a GREEN machine (the drive-stutter A/B and the lab's GPU A/B button).

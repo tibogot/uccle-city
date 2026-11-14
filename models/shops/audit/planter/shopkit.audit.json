@@ -1,7 +1,7 @@
 {
  "summary": {
-  "triangles": 4748,
-  "vertices_welded": 2406,
+  "triangles": 2492,
+  "vertices_welded": 1278,
   "open_edges": 0,
   "rays": 0,
   "blocking": 288,
@@ -9,10 +9,10 @@
   "counts": {
    "sliver": 332,
    "streak": 288,
-   "backtoback": 32,
+   "backtoback": 34,
    "seam": 31
   },
-  "ms": 314
+  "ms": 200
  },
  "options": {
   "weld": 0.0001,
@@ -75,7 +75,7 @@
   {
    "name": "planter",
    "slot": "leaf",
-   "triangles": 3008,
+   "triangles": 752,
    "maxDistance": 120
   }
  ],
@@ -8548,6 +8548,34 @@
      "planter/wood"
     ],
     "area": 0.00022
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.171,
+     0.483,
+     0.181
+    ],
+    "parts": [
+     "planter/wood",
+     "planter/leaf"
+    ],
+    "area": 0.00035
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.172,
+     0.482,
+     0.18
+    ],
+    "parts": [
+     "planter/wood",
+     "planter/leaf"
+    ],
+    "area": 0.00053
    }
   ],
   "seam": [
@@ -8555,49 +8583,33 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -0.202,
+     -0.402,
      0.43,
-     -0.127
+     0.053
     ],
     "parts": [
      "planter/soil",
      "planter/leaf"
     ],
     "length_m": 2.01,
-    "pieces": 84,
-    "min_angle_deg": 9.4
+    "pieces": 38,
+    "min_angle_deg": 10.4
    },
    {
     "check": "seam",
     "severity": "info",
     "at": [
-     -0.229,
+     -0.162,
      0.485,
-     -0.184
+     -0.183
     ],
     "parts": [
      "planter/wood",
      "planter/leaf"
     ],
-    "length_m": 1.2,
-    "pieces": 53,
-    "min_angle_deg": 5.6
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -0.158,
-     0.485,
-     0.184
-    ],
-    "parts": [
-     "planter/wood",
-     "planter/leaf"
-    ],
-    "length_m": 1.14,
-    "pieces": 44,
-    "min_angle_deg": 7.2
+    "length_m": 1.34,
+    "pieces": 37,
+    "min_angle_deg": 6.3
    },
    {
     "check": "seam",
@@ -8694,6 +8706,22 @@
     "length_m": 0.79,
     "pieces": 22,
     "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.282,
+     0.485,
+     0.184
+    ],
+    "parts": [
+     "planter/wood",
+     "planter/leaf"
+    ],
+    "length_m": 1.47,
+    "pieces": 22,
+    "min_angle_deg": 6.6
    },
    {
     "check": "seam",

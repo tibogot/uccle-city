@@ -1,32 +1,18 @@
 # Mesh audit: shopkit.glb
 
-796 triangles, 416 welded vertices, 0 open edges, 0 rays, 53 ms.
+796 triangles, 416 welded vertices, 0 open edges, 0 rays, 50 ms.
 
-**48 blocking**, 136 warnings. NOT CLEAN.
+**40 blocking**, 136 warnings. NOT CLEAN.
 
 | check | severity | count |
 |---|---|---|
-| coplanar | block | 8 |
 | streak | block | 32 |
 | bentflat | block | 8 |
 | sliver | warn | 136 |
-| seam | info | 7 |
-| backtoback | info | 20 |
+| seam | info | 5 |
+| backtoback | info | 12 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
-
-## coplanar (block, 8)
-
-| at | parts | separation_mm | overlap_cm2 | angle_deg | maxDistance | need_mm | sameComponent | normal |
-|---|---|---|---|---|---|---|---|---|
-| -0.01, 0.01, 0.00 | table_sq/cast_iron + table_sq/cast_iron | 0 | 2.9 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
-| 0.00, 0.01, -0.01 | table_sq/cast_iron + table_sq/cast_iron | 0 | 2.9 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
-| 0.00, 0.01, 0.01 | table_sq/cast_iron + table_sq/cast_iron | 0 | 2.9 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
-| 0.01, 0.01, 0.00 | table_sq/cast_iron + table_sq/cast_iron | 0 | 2.9 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
-| -0.01, 0.05, 0.00 | table_sq/cast_iron + table_sq/cast_iron | 0 | 2.9 | 0 | 120 | 0.92 | false | 0 + 1 + 0 |
-| 0.00, 0.05, -0.01 | table_sq/cast_iron + table_sq/cast_iron | 0 | 2.9 | 0 | 120 | 0.92 | false | 0 + 1 + 0 |
-| 0.00, 0.05, 0.01 | table_sq/cast_iron + table_sq/cast_iron | 0 | 2.9 | 0 | 120 | 0.92 | false | 0 + 1 + 0 |
-| 0.01, 0.05, 0.00 | table_sq/cast_iron + table_sq/cast_iron | 0 | 2.9 | 0 | 120 | 0.92 | false | 0 + 1 + 0 |
 
 ## streak (block, 32)
 
@@ -125,19 +111,17 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (96 more in the JSON)
 
-## seam (info, 7)
+## seam (info, 5)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
-| -0.03, 0.01, 0.00 | table_sq/cast_iron + table_sq/cast_iron | 0.49 | 76 | 22.5 |
+| -0.03, 0.01, -0.00 | table_sq/cast_iron + table_sq/cast_iron | 0.32 | 68 | 67.5 |
 | 0.01, 0.69, -0.03 | table_sq/cast_iron + table_sq/cast_iron | 0.19 | 32 | 90 |
 | -0.23, 0.01, 0.20 | table_sq/cast_iron + table_sq/rubber | 0.12 | 19 | 22.5 |
 | 0.20, 0.01, -0.23 | table_sq/cast_iron + table_sq/rubber | 0.12 | 19 | 22.5 |
-| 0.20, 0.01, 0.23 | table_sq/cast_iron + table_sq/rubber | 0.12 | 19 | 22.5 |
-| -0.23, 0.01, -0.20 | table_sq/cast_iron + table_sq/rubber | 0.12 | 19 | 22.5 |
 | 0.00, 0.71, -0.33 | table_sq/table_top + table_sq/cast_iron | 2.61 | 4 | 22.5 |
 
-## backtoback (info, 20)
+## backtoback (info, 12)
 
 | at | parts | area |
 |---|---|---|
@@ -153,14 +137,6 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.22, 0.01, 0.20 | table_sq/cast_iron + table_sq/rubber | 0.00005 |
 | -0.20, 0.01, 0.21 | table_sq/cast_iron + table_sq/rubber | 0.00016 |
 | -0.21, 0.01, 0.20 | table_sq/cast_iron + table_sq/rubber | 0.00059 |
-| -0.20, 0.01, -0.22 | table_sq/cast_iron + table_sq/rubber | 0.00009 |
-| -0.22, 0.01, -0.20 | table_sq/cast_iron + table_sq/rubber | 0.00014 |
-| -0.19, 0.01, -0.20 | table_sq/cast_iron + table_sq/rubber | 0.0002 |
-| -0.20, 0.01, -0.21 | table_sq/cast_iron + table_sq/rubber | 0.00056 |
-| 0.20, 0.01, 0.19 | table_sq/cast_iron + table_sq/rubber | 0.00018 |
-| 0.20, 0.01, 0.21 | table_sq/cast_iron + table_sq/rubber | 0.00015 |
-| 0.22, 0.01, 0.20 | table_sq/cast_iron + table_sq/rubber | 0.00005 |
-| 0.21, 0.01, 0.20 | table_sq/cast_iron + table_sq/rubber | 0.0006 |
 
 
 Nodes: table_sq. Distances: {}. Quantum 0.000 mm. Offset 0,0,0.

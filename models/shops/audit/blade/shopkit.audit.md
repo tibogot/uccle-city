@@ -1,6 +1,6 @@
 # Mesh audit: shopkit.glb
 
-1,004 triangles, 520 welded vertices, 0 open edges, 0 rays, 76 ms.
+1,004 triangles, 520 welded vertices, 0 open edges, 0 rays, 80 ms.
 
 **6 blocking**, 36 warnings. NOT CLEAN.
 

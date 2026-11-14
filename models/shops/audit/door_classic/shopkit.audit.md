@@ -1,6 +1,6 @@
 # Mesh audit: shopkit.glb
 
-2,412 triangles, 1,234 welded vertices, 0 open edges, 0 rays, 202 ms.
+2,412 triangles, 1,234 welded vertices, 0 open edges, 0 rays, 225 ms.
 
 **21 blocking**, 404 warnings. NOT CLEAN.
 
@@ -116,7 +116,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.37, 0.12, 0.13 | door_classic/paint + door_classic/brass | 0.78 | 31 | 67.5 |
 | 0.37, 0.26, 0.14 | door_classic/paint + door_classic/brass | 0.78 | 28 | 67.5 |
 | -0.15, 0.93, 0.14 | door_classic/paint + door_classic/brass | 1.39 | 28 | 67.5 |
-| 0.38, 1.02, 0.17 | door_classic/brass + door_classic/brass | 0.05 | 18 | 72.1 |
+| 0.37, 1.03, 0.17 | door_classic/brass + door_classic/brass | 0.05 | 18 | 72.1 |
 | 0.37, 1.03, 0.15 | door_classic/brass + door_classic/brass | 0.05 | 16 | 90 |
 | 0.37, 1.04, 0.14 | door_classic/paint + door_classic/brass | 0.11 | 14 | 22.5 |
 | -0.50, 2.24, 0.01 | door_classic/paint + door_classic/paint | 0.72 | 10 | 22.5 |
