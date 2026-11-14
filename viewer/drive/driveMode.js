@@ -66,7 +66,7 @@ export function featureColliders(features, bounds) {
     if (!m.isInstancedMesh) return;
     const n = m.name || "", p = m.parent?.name || "";
     const kind = n === "parked-cars" ? "car" : /^furniture-(stopPole|signal)$/.test(n) || n === "tram-poles" || n === "rail-masts" ? "pole"
-      : /^furniture-(bench|bikes|shelter|adpanel|bikebox|bin|glassbank|gardenwall|gardenpillar|gardengate)$/.test(n) || (p === "tram" && !n) ? "box" : null;
+      : /^furniture-(bench|bikes|shelter|adpanel|bikebox|bin|glassbank|gardenwall|gardenpillar|gardengate|terrace)$/.test(n) || (p === "tram" && !n) ? "box" : null;
     if (!kind) return;
     if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
     const bb = m.geometry.boundingBox;

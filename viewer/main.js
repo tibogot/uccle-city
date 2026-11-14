@@ -947,7 +947,7 @@ async function main() {
   const together = (fns) => (OLD_ORDER ? fns.reduce((p, f) => p.then(f), Promise.resolve()) : Promise.all(fns.map((f) => f())));
   await together([
     () => cityKit.start({ scene, updaters, log }),                   // ?kit=1: the façade kit (before the first tile and the warm-up)
-    () => cityStreetLife.start({ scene, updaters, log }),            // the street life (shop names, plates, numbers, stops), ?streetlife=0 off
+    () => cityStreetLife.start({ scene, updaters, log, renderer }),            // the street life (shop names, plates, numbers, stops), ?streetlife=0 off
     () => cityFurniture.start({ scene, updaters, log }),             // benches, bike hoops / boxes, bins, glass banks (viewer/furniture2/), ?furniture=old off
     () => cityGardens.start({ scene, updaters, log }),               // front-garden walls, railings, gates, hedges (viewer/gardens/), on by default, ?gardens=0 off
     () => cityStops.start({ scene, updaters, log }),                 // the STIB shelters / poles and the ad panels (viewer/stops/), ?stops=old off

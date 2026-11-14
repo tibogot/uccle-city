@@ -32,7 +32,7 @@ const KIND = (m) => {
   if (n === "furniture-gardenpillar") return "post";
   if (n === "parked-cars" || n === "furniture-bikebox" || n === "furniture-glassbank") return "prop";   // (furniture kit 2: viewer/furniture2/)
   if (n === "tram-poles" || n === "rail-masts") return "pole";
-  if (/^furniture-(bench|stopPole|signal|bikes|bin)$/.test(n)) return "post";
+  if (/^furniture-(bench|stopPole|signal|bikes|bin|terrace)$/.test(n)) return "post";       // (terrace: viewer/shops/ tables, parasols, planters)
   return null;
 };
 

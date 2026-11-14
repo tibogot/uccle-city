@@ -12,7 +12,10 @@
 // colours, no logos).
 // Frame per façade POI: X = right along the wall seen from the street, Y = up, Z = the wall's outward normal.
 
-export const BOX_STRIDE = 40, PROP_STRIDE = 8, WIN_STRIDE = 20, GLASS_STRIDE = 16;
+import { layoutShop, layoutTerrace, SHOP_PIECES } from "../shops/shopLayout.js";
+
+// WIN_STRIDE: the matrix, (w, h, seed, lit), (interior type, floor below the glass, mirror, 0) (viewer/shops/shopWindow.js)
+export const BOX_STRIDE = 40, PROP_STRIDE = 8, WIN_STRIDE = 24, GLASS_STRIDE = 16;
 
 export function hash01(str) {
   let h = 2166136261;
@@ -61,7 +64,11 @@ const linHex = (h) => [1, 3, 5].map((i) => Math.pow(parseInt(h.slice(i, i + 2), 
  *  shelters and panels are the kit's (viewer/stops/cityStops.js); this layer adds their TEXT only (the stop name and the
  *  line numbers in their GTFS colours on both faces of the pole flag, the name on the shelter's roof board). null: the
  *  old stop poles, flags and box shelters (?stops=old). */
-export function layoutTile(doc, measure, stopsDoc = null) {
+export function layoutTile(doc, measure, stopsDoc = null, opts = {}) {
+  // opts.shops: the shopfront kit (viewer/shops/, on unless ?shops=old): the fronts, doors, awnings, blades and terraces
+  // as kit pieces (shops: { <piece>: [records] }), terrace colliders; opts.terraces: the curated terraces by POI id
+  const SHOPS = !!opts.shops, curated = opts.terraces || {};
+  const shops = Object.fromEntries(SHOP_PIECES.map((k) => [k, []])), colliders = { table: [], parasol: [], planter: [] };
   const boxes = [], windows = [], glass = [], labels = [], labelIdx = new Map();
   const props = Object.fromEntries(KIT_KINDS.map((k) => [k, []]));
   const night = { shops: [], signs: [], spots: [] };
@@ -131,6 +138,13 @@ export function layoutTile(doc, measure, stopsDoc = null) {
       const lab = p.name ? label(twoLines(p.name, 22), "board") : null;
       box(add(base, X, 0, Y, 2.1, Z, 0.012), X, Y, Z, 0.9, 0.42, 0.024, { board: [0.42, 0.4, 0.36], ink: [0.04, 0.04, 0.04], lab, rough: 0.7, kind: 1 });
       if (p.name) used.names.push(p.name);
+      continue;
+    }
+    if (SHOPS) {
+      const env = { box, label, prop, windows, night, used, hash01, pick, add, twoLines, yawTo, WIN_STRIDE,
+        shop: (k, ...r) => shops[k].push(...r), collide: (k, x, y, z, yaw) => colliders[k].push(x, y, z, yaw) };
+      const front = layoutShop(p, f, { X, Y, Z }, lit, env);
+      if (TERRACE_KINDS.has(p.kind) || p.seating === "yes" || curated[p.id]) layoutTerrace(p, f, { X, Y, Z }, front, curated[p.id], env);
       continue;
     }
     // shopfront: stall riser, jambs, head, door mullion; the window (parallax interior) between them
@@ -380,6 +394,6 @@ export function layoutTile(doc, measure, stopsDoc = null) {
     const h = 0.15, w = Math.max(0.15, Math.min(0.42, h * lab.aspect * 0.8));
     box([nb.x + Z[0] * 0.007, nb.y + 2.25, nb.z + Z[2] * 0.007], X, UP, Z, w, h, 0.005, { board: PLATE_BLUE, ink: WHITE, lab, pad: 0.12, border: 0.006, rough: 0.25, kind: 7 });
   }
-  return { boxes, props, windows, glass, labels, night, used };
+  return { boxes, props, windows, glass, labels, night, used, shops, colliders };
 }
 const Y3 = [0, 1, 0];

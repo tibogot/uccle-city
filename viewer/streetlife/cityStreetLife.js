@@ -20,16 +20,18 @@ export const cityStreetLife = {
   on: qs.get("streetlife") !== "0",
   layer: null,
   stats: new Map(),            // tile -> its stats (worker ms, main-thread ms, counts)
-  async start({ scene, updaters, log = console.log }) {
+  /** ?shops=old: the old flat fronts (a textured box frame, the procedural parallax window) instead of the shopfront kit */
+  shops: qs.get("shops") !== "old",
+  async start({ scene, updaters, log = console.log, renderer = null }) {
     if (!this.on) return null;
     const t0 = performance.now();
     try {
       // (the STIB stops kit, viewer/stops/, on unless ?stops=old: this layer then draws the stops' text only)
       // (furniture kit 2, viewer/furniture2/, on unless ?furniture=old: its glass banks replace the bubbles)
-      this.layer = await StreetLife.create(scene, { stopsBase: qs.get("stops") !== "old" ? new URL("../../data/stops/", import.meta.url) : null, noBubbles: qs.get("furniture") !== "old" });
+      this.layer = await StreetLife.create(scene, { stopsBase: qs.get("stops") !== "old" ? new URL("../../data/stops/", import.meta.url) : null, noBubbles: qs.get("furniture") !== "old", shops: this.shops, renderer });
     } catch (e) { log(`street life: start failed (${e.message})`); this.on = false; return null; }
     updaters.push((eye, cam) => { streetUniforms.night.value = env.uNight.value; this.layer.update(cam); });
-    log(`street life: on (?streetlife=0 off), ${this.layer.pools.length} prop pools, atlas ${this.layer.atlas.pages} pages of ${this.layer.atlas.W}x${this.layer.atlas.H}, ${Math.round(performance.now() - t0)} ms`);
+    log(`street life: on (?streetlife=0 off), shops ${this.shops ? "kit (?shops=old off)" : "old"}, ${this.layer.pools.length} prop pools, atlas ${this.layer.atlas.pages} pages of ${this.layer.atlas.W}x${this.layer.atlas.H}, ${Math.round(performance.now() - t0)} ms`);
     window.__streetlife = this;
     return this.layer;
   },

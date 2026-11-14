@@ -8,13 +8,14 @@ import { measureLabel, labelSDF, ShelfPacker } from "./sdfText.js";
 
 /** per-instance interleaved layout of the box mesh (streetlife.js boxMaterial): iRect, iBox, iBoard, iInk, iSize, iMisc,
  *  iCen (centre xyz + the distance it shrinks away at) */
-export const BOX_IB = 28, WIN_IB = 8;
+export const BOX_IB = 28, WIN_IB = 12;
 /** how far a box stays drawn (m): ~350 x its middle size (a 15 cm number 70 m, a 0.3 m plate 105 m, a 0.8 m fascia
  *  280 m, the fuel canopy 600 m); between 75 % and 100 % of it the box shrinks to its centre (sub-pixel by then: no pop) */
 export const rangeOf = (sx, sy, sz) => { const s = [Math.abs(sx), Math.abs(sy), Math.abs(sz)].sort((a, b) => a - b); return Math.max(70, Math.min(600, 350 * s[1])); };
 
+let terracesP = null;
 self.onmessage = async (e) => {
-  const { id, url, tile, pageW, pageH, stopsUrl, noBubbles } = e.data;
+  const { id, url, tile, pageW, pageH, stopsUrl, noBubbles, shops, terracesUrl } = e.data;
   const t0 = performance.now(), times = {};
   try {
     const r = await fetch(url);
@@ -26,7 +27,9 @@ self.onmessage = async (e) => {
     let t = performance.now();
     // the STIB stops kit's data (viewer/stops/): its text is laid out here; none for the tile = no stop text (and no old poles)
     const stops = stopsUrl ? (await fetch(stopsUrl).then((q) => (q.ok ? q.json() : null)).catch(() => null)) || { stops: [] } : null;
-    const L = layoutTile(doc, measureLabel, stops);
+    // the shopfront kit (viewer/shops/): its curated terraces (data/shops/terraces.json), fetched once
+    const terraces = shops && terracesUrl ? await (terracesP ??= fetch(terracesUrl).then((q) => (q.ok ? q.json() : {})).then((j) => j.terraces || {}).catch(() => ({}))) : {};
+    const L = layoutTile(doc, measureLabel, stops, { shops, terraces });
     times.layout = performance.now() - t; t = performance.now();
     // the labels' distance fields, packed into pages of pageW x pageH (local page numbers 0..n-1, tallest first)
     const sdf = L.labels.map((l) => labelSDF(l.lines, l.style, { w: l.w, h: l.h, px: measureLabel(l.lines, l.style).px }));
@@ -67,17 +70,21 @@ self.onmessage = async (e) => {
       winMtx.set(w.subarray(0, 16), i * 16);
       winIB.set(w.subarray(16, 20), i * WIN_IB);
       winIB.set([w[12], w[13], w[14], rangeOf(w[16], w[17], 0.1)], i * WIN_IB + 4);
+      winIB.set(w.subarray(20, 24), i * WIN_IB + 8);
     }
     const ng = L.glass.length, glassMtx = new Float32Array(ng * 16), glassCen = new Float32Array(ng * 4);
     for (let i = 0; i < ng; i++) { glassMtx.set(L.glass[i].subarray(0, 16), i * 16); glassCen.set([L.glass[i][12], L.glass[i][13], L.glass[i][14], 250], i * 4); }
     const props = {};
     for (const [k, v] of Object.entries(L.props)) if (v.length) props[k] = new Float32Array(v);
+    const shopRecs = {}, colliders = {};
+    for (const [k, v] of Object.entries(L.shops)) if (v.length) shopRecs[k] = new Float32Array(v);
+    for (const [k, v] of Object.entries(L.colliders)) if (v.length) colliders[k] = new Float32Array(v);
     const night = { shops: new Float32Array(L.night.shops), signs: new Float32Array(L.night.signs), spots: new Float32Array(L.night.spots) };
     times.buffers = performance.now() - t;
     times.total = performance.now() - t0;
-    const out = { id, tile, nb, nw, ng, boxMtx, boxIB, winMtx, winIB, glassMtx, glassCen, props, pages, nPages: packers.length, labels: sdf.length, labelBytes: sdf.reduce((a, s) => a + s.w * s.h, 0), dropped,
+    const out = { id, tile, nb, nw, ng, boxMtx, boxIB, winMtx, winIB, glassMtx, glassCen, props, shops: shopRecs, colliders, pages, nPages: packers.length, labels: sdf.length, labelBytes: sdf.reduce((a, s) => a + s.w * s.h, 0), dropped,
       night, used: L.used, counts: doc.counts, sources: doc.sources, skipped: doc.skipped, times, strides: { box: BOX_STRIDE, win: WIN_STRIDE, glass: GLASS_STRIDE, prop: PROP_STRIDE } };
-    self.postMessage(out, [boxMtx.buffer, boxIB.buffer, winMtx.buffer, winIB.buffer, glassMtx.buffer, glassCen.buffer, pages.buffer, night.shops.buffer, night.signs.buffer, night.spots.buffer, ...Object.values(props).map((a) => a.buffer)]);
+    self.postMessage(out, [boxMtx.buffer, boxIB.buffer, winMtx.buffer, winIB.buffer, glassMtx.buffer, glassCen.buffer, pages.buffer, night.shops.buffer, night.signs.buffer, night.spots.buffer, ...Object.values(props).map((a) => a.buffer), ...Object.values(shopRecs).map((a) => a.buffer), ...Object.values(colliders).map((a) => a.buffer)]);
   } catch (err) {
     self.postMessage({ id, tile, error: String(err?.stack || err) });
   }

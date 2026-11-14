@@ -1,0 +1,172 @@
+{
+ "asset": "Shopfront kit: classic + modern fronts, doors, mullion, awning, blade bracket, terrace (tools/blender/shopfronts.py)",
+ "pieces": {
+  "front_classic": {
+   "slots": [
+    "paint",
+    "bluestone",
+    "lead"
+   ],
+   "triangles": 3320,
+   "size_m": [
+    2.23,
+    0.375,
+    3.83
+   ]
+  },
+  "riser_classic": {
+   "slots": [
+    "bluestone",
+    "paint"
+   ],
+   "triangles": 916,
+   "size_m": [
+    2.0,
+    0.21,
+    0.86
+   ]
+  },
+  "front_modern": {
+   "slots": [
+    "bluestone",
+    "alu",
+    "rubber",
+    "steel"
+   ],
+   "triangles": 1352,
+   "size_m": [
+    2.12,
+    0.305,
+    3.535
+   ]
+  },
+  "riser_modern": {
+   "slots": [
+    "alu",
+    "rubber"
+   ],
+   "triangles": 120,
+   "size_m": [
+    2.0,
+    0.11,
+    0.07
+   ]
+  },
+  "door_classic": {
+   "slots": [
+    "bluestone",
+    "paint",
+    "brass"
+   ],
+   "triangles": 2412,
+   "size_m": [
+    1.24,
+    0.34,
+    2.65
+   ]
+  },
+  "door_modern": {
+   "slots": [
+    "bluestone",
+    "steel",
+    "alu",
+    "rubber"
+   ],
+   "triangles": 1340,
+   "size_m": [
+    1.2,
+    0.3,
+    2.78
+   ]
+  },
+  "mullion": {
+   "slots": [
+    "paint"
+   ],
+   "triangles": 244,
+   "size_m": [
+    0.09,
+    0.13,
+    1.84
+   ]
+  },
+  "awning": {
+   "slots": [
+    "alu",
+    "canvas"
+   ],
+   "triangles": 1136,
+   "size_m": [
+    2.084,
+    1.778,
+    0.82
+   ]
+  },
+  "blade": {
+   "slots": [
+    "iron"
+   ],
+   "triangles": 1004,
+   "size_m": [
+    0.12,
+    1.033,
+    0.61
+   ]
+  },
+  "parasol_sq": {
+   "slots": [
+    "cast_iron",
+    "bluestone",
+    "wood",
+    "canvas"
+   ],
+   "triangles": 2484,
+   "size_m": [
+    2.606,
+    2.606,
+    2.74
+   ]
+  },
+  "table_sq": {
+   "slots": [
+    "table_top",
+    "cast_iron",
+    "rubber"
+   ],
+   "triangles": 796,
+   "size_m": [
+    0.7,
+    0.7,
+    0.785
+   ]
+  },
+  "planter": {
+   "slots": [
+    "wood",
+    "cast_iron",
+    "soil",
+    "leaf"
+   ],
+   "triangles": 4748,
+   "size_m": [
+    1.06,
+    0.48,
+    1.114
+   ]
+  }
+ },
+ "frame": "glTF Y up, origin = the wall foot at the piece centre (awning: the fascia bottom; blade: the top bar), street = -Y (Blender) = +Z (three.js)",
+ "stretch": {
+  "W0": 2.0,
+  "HF": 2.55,
+  "YS": {
+   "front_classic": 1.6,
+   "riser_classic": 99,
+   "riser_modern": 99,
+   "front_modern": 1.6,
+   "door_classic": 2.26,
+   "door_modern": 2.26,
+   "mullion": 1.6
+  }
+ }
+}
