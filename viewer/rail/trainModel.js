@@ -13,11 +13,12 @@
 // a grade change), bogies tangent to the track, gangways on the bisector. createTrainFleet() draws any number of units
 // with InstancedMeshes per piece and LOD, dithered LOD cross-fades and a far fade-out (per-instance, aInst.w).
 import * as THREE from "three/webgpu";
-import { attribute, fract, float, vec3, vec4, mix, smoothstep, clamp, step, uniform, uniformArray, color, positionLocal, mrt, positionView } from "three/tsl";
+import { attribute, fract, float, vec3, vec4, mix, smoothstep, clamp, step, uniform, uniformArray, color, positionLocal, positionGeometry, mrt, positionView } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { env } from "../lighting.js";
 import { SMOOTH, ditherNoise } from "../lodFade.js";
+const VFIX2_OLD = typeof location !== "undefined" && /[?&]vfix2=old(&|$)/.test(location.search);
 
 export const TRAIN_LODS = [
   { until: 60 },          // round 3: 90 -> 60 m (Saint-Job bridge street view cost; the dithered hand-over still shows no jump)
@@ -121,7 +122,11 @@ function makeMaterial() {
   const paint = is(S("paint_body")).add(is(S("paint_cab"))).add(is(S("paint_door"))).add(is(S("paint_skirt")));
   const glass = is(S("glass")), lampW = is(S("lamp_white")), lampR = is(S("lamp_red")), disp = is(S("display"));
   // grime: a little darker low on the body (the photos' skirts and bogies are dull)
-  const y = positionLocal.y;
+  // the car's own height above the rail: the RAW vertex. (positionLocal on this InstancedMesh is already the instanced
+  // position, ~70-100 m TAW: the skirt grime never showed, the saloon light had no gradient, the LED rows ran along
+  // world z; docs/VISUAL_FIXES.md round 2 audit; ?vfix2=old = before)
+  const pRaw = VFIX2_OLD ? positionLocal : positionGeometry;
+  const y = pRaw.y;
   const grime = mix(float(0.8), float(1.0), smoothstep(0.5, 1.6, y)).mul(trainLook.dirt).add(float(1).sub(trainLook.dirt));
   m.colorNode = base.mul(grime);
   m.aoNode = mix(float(1), ao, mix(float(0.55), float(0.85), is(S("metal_dark")).add(is(S("interior")))));
@@ -133,7 +138,7 @@ function makeMaterial() {
   const head = lampW.mul(lead).mul(mix(float(2.0), float(12.0), night));
   const tail = lampR.mul(float(1).sub(lead)).mul(mix(float(1.5), float(6.0), night));
   const saloon = glass.mul(night).mul(trainLook.interior).mul(0.2).mul(smoothstep(1.4, 2.9, y));   // ceiling LEDs: brighter toward the top of the glass
-  const led = disp.mul(lead).mul(mix(float(0.35), float(0.9), night)).mul(step(0.45, fract(positionLocal.z.mul(9.0))).mul(0.6).add(0.4));   // LED rows, dim by day
+  const led = disp.mul(lead).mul(mix(float(0.35), float(0.9), night)).mul(step(0.45, fract(pRaw.z.mul(9.0))).mul(0.6).add(0.4));   // LED rows, dim by day
   m.emissiveNode = vec3(head.mul(trainLook.headlights)).mul(color(1.0, 0.96, 0.88))
     .add(color(1.0, 0.05, 0.03).mul(tail.mul(trainLook.headlights)))
     .add(color(1.0, 0.85, 0.65).mul(saloon))

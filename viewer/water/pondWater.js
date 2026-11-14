@@ -27,6 +27,8 @@ import {
 } from "three/tsl";
 import { getWaterWaveTexture } from "../../vendor/slop-water/waveTexture.js";
 import { env } from "../lighting.js";
+// ?vfix2=old: the reeds / lilies' near shrink as before (scaled the already-instanced position: slid toward the origin)
+const VFIX2_OLD = typeof location !== "undefined" && /[?&]vfix2=old(&|$)/.test(location.search);
 
 export const POND_LAYER = 9;
 // The reflection pass draws with an MRT holding only the colour: with NO MRT (setMRT(null)), a material that carries
@@ -285,15 +287,23 @@ function buildReeds(bed, level, uProps) {
     const p = positionLocal.toVar();
     const ph = float(instanceIndex).mul(1.37);
     const sw = sin(time.mul(1.3).add(ph)).mul(0.05).add(sin(time.mul(2.9).add(ph.mul(2.0))).mul(0.015)).mul(t.mul(t));
-    return vec3(p.x.add(sw), p.y, p.z.add(sw.mul(0.6))).mul(uProps);
+    const q = vec3(p.x.add(sw), p.y, p.z.add(sw.mul(0.6)));
+    // (three r187 instances BEFORE positionNode: positionLocal is already placed, so .mul(uProps) slid every clump
+    // toward the mesh origin in the 85-110 m band instead of shrinking it in place: shrink toward its own foot, iCen)
+    if (VFIX2_OLD) return q.mul(uProps);
+    const c = attribute("iCen", "vec3");
+    return c.add(q.sub(c).mul(uProps));
   })();
   const mesh = new THREE.InstancedMesh(g, m, sites.length);
   const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), Sv = new THREE.Vector3(), Pv = new THREE.Vector3();
+  const cen = new Float32Array(sites.length * 3);
   sites.forEach(([x, z, s, a], i) => {
     Q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), a); Sv.set(s, s * (0.85 + hash(i * 9.1) * 0.5), s);
     Pv.set(x, Math.max(level - 0.02, bed.bedAt(x, z)) - 0.05, z);
     mesh.setMatrixAt(i, M.compose(Pv, Q, Sv));
+    cen.set([Pv.x, Pv.y, Pv.z], i * 3);
   });
+  g.setAttribute("iCen", new THREE.InstancedBufferAttribute(cen, 3));
   mesh.instanceMatrix.needsUpdate = true; mesh.computeBoundingSphere();
   mesh.name = "pond-reeds"; mesh.castShadow = false; mesh.receiveShadow = true;
   return mesh;
@@ -328,12 +338,17 @@ function buildLilies(bed, level, uProps) {
   m.name = "pond-lilies";
   // (a per-instance tone through instanceColor; a TSL colour node with the vein pattern glowed under the post chain)
   m.color.set(0xffffff);
-  m.positionNode = positionLocal.mul(vec3(uProps, 1, uProps));
+  // shrink each pad about its own centre (iCen; positionLocal is already the instanced position, see the reeds)
+  const lc = attribute("iCen", "vec3");
+  m.positionNode = VFIX2_OLD ? positionLocal.mul(vec3(uProps, 1, uProps)) : lc.add(positionLocal.sub(lc).mul(vec3(uProps, 1, uProps)));
   const mesh = new THREE.InstancedMesh(g, m, sites.length);
   const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), Sv = new THREE.Vector3(), Pv = new THREE.Vector3();
+  const cen = new Float32Array(sites.length * 3);
+  g.setAttribute("iCen", new THREE.InstancedBufferAttribute(cen, 3));
   sites.forEach(([x, z, s, a], i) => {
     Q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), a); Sv.set(s, 1, s);
     mesh.setMatrixAt(i, M.compose(Pv.set(x, level + 0.006, z), Q, Sv));
+    cen.set([x, level + 0.006, z], i * 3);
     mesh.setColorAt(i, new THREE.Color().setHSL(0.26 + hash(i * 3.1) * 0.05, 0.38, 0.2 + hash(i * 5.3) * 0.08));
   });
   mesh.instanceMatrix.needsUpdate = true; mesh.computeBoundingSphere();
