@@ -170,3 +170,162 @@ hunks, each commented `?night=1`: the import; `let cityNight`; loadTile addTile 
 after lamps.release(); installNightLighting before `renderer.init()`; lampLightPool skipped / startCityNight;
 setTraffic after createCityTraffic; setDriver after `new Driver`), `lampLight.js` (flag-only branches), `lamps.js`
 (heads with y), `traffic/traffic.js` (`T.alpha`).
+
+# ROUND 2 (branch claude/night2, 2026-11-14): round 1's leftovers fixed, steps 4 and 5 - all behind `?night=1`
+
+Without `?night=1` the city is as before (one exception, not night-related: the dev panel's light theme is now opaque,
+see 1b). Debug switches: `?nightdebug=1` (the pop metric, `__night.debug`), `?nightshadow=full` (round 1's every-frame
+lamp shadows; `__night.shadowMode` live), `?nightglare=0` (no glare cards). Probes: `debug/nightSwitch.js` (the
+runtime day -> night switch: long tasks, pipelines, new render objects per pass, slow frames), `debug/nightShadowCost.js`
+(the lamp shadow passes' draws / triangles / maps per frame, smart vs full, night CPU, uploads).
+
+**Measuring conditions: preflight RED the whole session** (GPU 90-100 % busy before we start: another agent's tab
+rendering, 1 GB free RAM, power cap); the page ran at 10-20 fps with ~1 s rAF stalls and 50-330 ms long tasks every
+second even when idle. In-page GPU A/B (`gpuAB.alternate`) gave p50s of 80-90 ms: meaningless, not reported. The
+numbers below are by construction (draws, triangles, maps rendered, render objects, uploads) or CPU (inflated by the
+load: compare before / after only).
+
+## 1a. The lamp shadow passes (most of round 1's +1.05 ms)
+
+Measured first (St-Job street view, both maps every frame): **~196 draws, ~740 k triangles per frame**; trees 76 draws /
+335 k (their LOD 1 buckets 245 k: tile-wide batches of the trees 40-120 m from the camera), bollards 176 k, lamps 67 k,
+cars. Options weighed: dropping the trees loses the canopy shadows under the lamps (the most visible lamp shadows);
+dropping only the LOD 1 buckets makes a tree's lamp shadow switch on / off as it crosses 40 m (a pop); 30 Hz alternation
+makes moving car shadows step. Chosen: **a shadowed lamp stands still, so its map is re-rendered only when something in
+it changes** (cityNight.js, the shadow schedule):
+- the frame its lamp changes, and every frame a **mover** is within its reach (24 + 7 m): a traffic car (drawn pose),
+  the player's car, a tram (`tramLine.drawn`, +36 m for its length), the camera itself moving (the walker /
+  third-person character) - moving shadows are never stale;
+- when the camera has moved 2 m since its last render (the trees' cards morph with the view distance, LOD
+  re-buckets): one of the two maps per frame for that;
+- otherwise the map is kept (`shadow.autoUpdate = false`, `needsUpdate` on demand). No light is added or removed.
+
+| St-Job street view, night | maps / frame | draws / frame | k triangles / frame |
+|---|---|---|---|
+| round 1 (`?nightshadow=full`) | 2 | 195-198 | 736-740 |
+| round 2, cars waiting at the crossing under one lamp | 1 (50 % skipped) | 97-107 | 365-439 |
+| round 2, nothing moving near the 2 lamps | 0 | 0 | 0 |
+| Alsemberg drive (122 s, `debug/perfRun.js` "alsemberg", traffic all along) | 1.53 (23 % skipped) | - | - |
+
+Leftovers: on a busy street (and when driving: the player's car is always a mover) the saving is small; the cost is
+then the per-pass content (trees). Not movers: trains (rare near lamps), flags, falcons (their lamp shadows refresh
+with the camera's 2 m rule only).
+
+## 1b. The white diagonal streaks near Saint-Job church
+
+**Not a render artefact: the city seen THROUGH the dev panel.** The light-theme panel was 95 % opaque
+(`viewer/panelUI.js`): at night the church's lit lancet windows (and rose windows) behind it, near white on a black
+canvas, lifted the panel's pale grey by ~13 levels - slanted pale streaks over the "Trams / Sky / Weather" rows, exactly
+where the church's right side is in the overview. Found by: the streaks stay on the panel while the camera turns, sit
+where the lancets are behind it, vanish with the panel hidden; no other canvas / overlay; canvas alpha 1. Fixed: the
+light theme is opaque (the dark theme keeps its 0.9: dark on dark, no visible bleed). Proof:
+`round2/stjob_overview_streaks_before.jpg` (round 1: the streaks on the panel, right), `round2/stjob_overview_panel_after.jpg`.
+Seen while looking (not this): the tram rails catch the low beams as a bright specular line (real rails glint, but it
+reads too white: `round2/stjob_street_night1.jpg`) - a candidate if a street-level streak was meant.
+
+## 1c. The 0.91 car-light jump
+
+Cause (by construction): when a tile unloads, every car of that tile leaves the sim at once and each took one of the 64
+GHOST slots (fade-outs) - cars hundreds of metres away included; with all 64 busy, `toGhost` overwrote the OLDEST ghost,
+which could be a car fading out right in front of the camera: its light jumped to another car's. Fixed: only a car that
+was within CAR_R (250 m: its light data offered) gets a ghost, 128 ghosts, and when all are busy the FAINTEST one is
+reused (`stats.ghostSteal` counts it: 0 on the drive). The pop metric now separates hitch / jump frames (dt > 50 ms or
+a camera step > 2 m): during this machine's stalls the camera moves 15 m in a frame and every weight jumps.
+Drive (Alsemberg, `?nightdebug=1`): 1440 frames, 827 clean, **largest per-car weight jump 0.046, no frame over 0.1**
+(round 1: one 0.91 and 10 frames > 0.1 in 4133); 0 ghost steals; 0 sync / 0 async pipelines.
+
+## 1d. Runtime day -> night switch
+
+`debug/nightSwitch.js`, golden -> night, St-Job street view, cold page each time (~80 s after boot):
+
+| | new render objects at the switch (lamp shadow / main / sun shadow) | first two lamp shadow passes | first main pass | pipelines |
+|---|---|---|---|---|
+| round 1 | 377 in all (lamp shadow 87-180) | 25.6 + 19.6 ms | 89.7 ms | 0 |
+| round 2 | **8** / 5 / 7 | 4.7 + 4.8 ms | 15-19 ms | 0 |
+
+What was lazy: the lamp shadow passes' render objects (one per caster per light: each light has its own shadow
+material) and the dyn layer's first draw (~14 ms). Fixed: **casters are warmed BY DAY**: each newly tagged caster is
+drawn once into both lamp maps (light at intensity 0, from 350 m up, a 155 deg / 2.5 km cone, on a layer of its own
+(7) so nothing else is drawn), 4 s after it was tagged and only once it is shown (not hidden while its tile compiles,
+not on lodFade's fading material copies, not an empty instanced bucket: those made render objects the night never
+used - found by diffing the render-object chain keys); three's SpotLightShadow does not re-project when `camera.far` is
+set directly (the first warm-ups drew almost nothing: projection updated by hand). The dyn layer is drawn once (a black
+quad) at boot. The 8 left: empty traffic car batches by day. The long tasks still seen in the seconds after the switch
+are this machine's background rate (50-330 ms every ~1 s with no switch at all): re-measure on GREEN.
+
+## 1e. Night CPU
+
+| St-Job street view, night (same machine, same load) | night update ms / frame |
+|---|---|
+| round 1 | 0.30-0.42 (the round 1 doc's 0.21-0.34 on a quieter machine) |
+| round 2 | **0.18-0.22** (dyn pass 0.09, NightSources.update 0.077, lamp queries 0.008) |
+
+- the pop metric + nightSources' `Track` (fill + scan of 16384 lamp ids per frame) only with `?nightdebug=1`;
+- the dyn layer's pass at 30 Hz (it was ~0.2 ms: a whole `renderer.render`), at once on a camera jump > 40 m; its
+  origin follows the camera only when it is drawn (texture and origin always match);
+- update ranges: the dyn layer's 4 buffers (108 B per quad, ~30-60 quads: 3-6 KB at 30 Hz, was 27 KB whole every frame),
+  the glare cards' 3 (44 B per card); empty meshes hidden;
+- the car pass skips cars beyond CAR_R + 20 m (no light data, no ghost; their fade goes on). All 768 sim slots are still
+  scanned (a dead slot costs two compares: the sim keeps no alive list);
+- the dyn layer fades out between 120 and 200 m above the ground (its 320 m square's edge would show from the air), no
+  pass at all above (`groundAt` from main.js).
+
+## 1f. The night lab
+
+`labs/night-lab.html` loads and runs with round 1 + 2's shared modules: no console error, the same image and light count
+(89) as with the modules of before round 1 (checked by swapping them back in); glare cards hidden when empty with range
+uploads; the aperture / sign code takes the lab's +-z street as before (its sources carry no `nx`).
+
+## Step 4: far glare cards (glare.js)
+
+256 additive billboards: the 192 nearest lamp heads within 600 m (NearestN: the cut-off fades, no pop; the tile fade-in
+too) + the 32 nearest cars (a front card along the beam, a red rear card; the 33rd car's distance is the cut-off, faded
+the same way). Near the camera the emissive glass + bloom carry the glow (the card fades in 30 -> 90 m). The lamp cards
+are re-selected every other frame (static lights; their 600 m query was most of the glare CPU), the car cards every
+frame. Compiled off the frame (`compileAsync`) on the first update. Proof: `round2/overview_glare_cards.jpg` (far
+streets read as strings of lights). Mr.doob's slop-newyork draws its far lights the same way (sprites that light
+nothing); three.js' lensflare example is per light (too heavy for hundreds).
+
+## Step 5: shop windows and signs with real facade normals
+
+The street life's shopfront layout (`viewer/shops/shopLayout.js`) now also writes `night.lights` records (stride 11:
+kind, centre, outward normal, half width / height, colour; through the street-life worker): every LIT shop window
+(kind 0: its real glass opening, `litAtNight`) and lit sign (kind 1: the fascia - the letters' colour when backlit, the
+board's when a lightbox, the goosenecks' warm wash; the blade sign; the pharmacy's green cross, lit all night).
+cityNight.js keeps them in two registries like the lamps' (per-tile fade-in, stable ids; main.js loadTile after the
+street life resolves; removed with the tile). `nightSources.js`: the APERTURE light uses the source's own normal (the
+light 2 m inside behind the real opening, the beam along the normal; the cluster planes were already
+direction-agnostic), signs too; the city's shops / signs are NOT flagged baked (the city's ground map holds the lamps
+only: they light the ground through the loop). 8 shop + 6 sign pool slots (67 of the pool's 256 reserved). Shop cd 32
+(the lab's tuned value). Proof: `round2/shopfront_lights_off.jpg` / `round2/shopfront_lights_on.jpg` (Avenue du Prince
+de Ligne: the spill on the sidewalk and the fascias), `round2/prince_de_ligne_shops.jpg`. Against night views of Uccle
+shop streets (looked at only): the windows glow, the sidewalk catches a soft band in front - subtle, as here.
+Leftovers: `?shops=old` (the old flat fronts) writes no records (no shop lights there); tune shopI with the owner.
+
+## Step 6 (lit windows from the worker): not done
+
+Needs a CPU copy of the facade shader's lit-window hash in the tile worker (facades.js:78-83, 131-163), per window with
+its normal: next round.
+
+## Weak spots / leftovers (round 2)
+
+- GPU cost not measured (RED all session): re-run `debug/gpuAB.js alternate(master 0/1)` and
+  `debug/nightShadowCost.js compare()` on GREEN in the 4 views of perf step 8.
+- Busy streets / driving: the lamp shadows still render ~1.5 maps per frame (the movers); next lever: a cheaper caster
+  set per pass (the trees' LOD 1 buckets only within the lamp's reach).
+- The tram rails' specular line under low beams reads too white; close headlights still overexpose a pale car ahead.
+- 8 lamp-shadow render objects still made at the switch (empty traffic batches by day).
+- Seen with the defect eye, not mine: a pale irregular patch on the sidewalk at Place Saint-Job (also by day); speckled
+  far roofs in the overview; trees still very green at night; the lab's low-poly crown lit as a flat yellow block by the
+  lamp's up light.
+- Steps 6 (windows), 7 (the ground map per tile), 8 (wet, cones, trams), 9 (default on) to do.
+
+## Files touched (round 2)
+
+`viewer/nightLights/cityNight.js` (schedule, warm-up, ghosts, CPU, glare, shops / signs), `nightSources.js` (Track
+on / off, facade normals, per-source fade on shops / signs, `baked` per kind), `groundLight.js` (update ranges),
+`glare.js` (update ranges, hidden when empty); shared: `viewer/main.js` 3 lines (761: addShops after the street life;
+880: `groundAt` into startCityNight; 1059: `setTram` after the tram line), `viewer/tramline.js` (`drawn`: the drawn
+trams' fronts, preallocated), `viewer/shops/shopLayout.js` + `viewer/streetlife/layout.js` + `streetlifeWorker.js`
+(`night.lights` records), `viewer/panelUI.js` (light theme opaque). New: `debug/nightSwitch.js`,
+`debug/nightShadowCost.js`.

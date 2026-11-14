@@ -99,11 +99,12 @@ class LampRegistry {
     this.fade = new Float32Array(cap);
     this.free = new Int32Array(cap); this.nFree = cap;
     for (let i = 0; i < cap; i++) this.free[i] = cap - 1 - i;
-    this.tiles = new Map(); this.list = [];
+    this.tiles = new Map(); this.tileList = [];
+    this.list = new Array(cap).fill(null);       // per id: the source's record (shops / signs: normal, size, colour)
     this.onRelease = null;
     this.count = 0;
   }
-  addTile(name, heads, now) {
+  addTile(name, heads, now, items = null) {
     if (this.tiles.has(name) || !heads?.length) return;
     const n = Math.min(heads.length, this.nFree);
     if (n < heads.length) console.warn(`[night] lamp registry full: ${heads.length - n} lamps of ${name} left out`);
@@ -111,6 +112,7 @@ class LampRegistry {
     let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
     for (let k = 0; k < n; k++) {
       const h = heads[k], id = this.free[--this.nFree];
+      if (items) this.list[id] = items[k];
       ids[k] = id; this.x[id] = lx[k] = h.x; this.y[id] = ly[k] = h.y; this.z[id] = lz[k] = h.z; this.fade[id] = 0;
       x0 = Math.min(x0, h.x); x1 = Math.max(x1, h.x); z0 = Math.min(z0, h.z); z1 = Math.max(z1, h.z);
     }
@@ -120,15 +122,15 @@ class LampRegistry {
     const fade = this.fade;
     const adapter = { sel: null, ids, offer(s, d2) { const id = this.ids[s], f = fade[id]; if (f >= 1) this.sel.offer(id, d2); else { const d = Math.sqrt(d2) + (1 - f) * FADE_FAR; this.sel.offer(id, d * d); } } };
     const rec = { name, ids, t0: now, f: 0, grid: new StaticSources(lx, ly, lz, 32), x0, x1, z0, z1, adapter };
-    this.tiles.set(name, rec); this.list.push(rec);
+    this.tiles.set(name, rec); this.tileList.push(rec);
     this.count += n;
   }
   removeTile(name) {
     const rec = this.tiles.get(name);
     if (!rec) return;
-    this.tiles.delete(name); this.list.splice(this.list.indexOf(rec), 1);
+    this.tiles.delete(name); this.tileList.splice(this.tileList.indexOf(rec), 1);
     for (const id of rec.ids) {
-      this.x[id] = this.z[id] = 1e9; this.fade[id] = 0;
+      this.x[id] = this.z[id] = 1e9; this.fade[id] = 0; this.list[id] = null;
       this.onRelease?.(id);
       this.free[this.nFree++] = id;
     }
@@ -137,8 +139,8 @@ class LampRegistry {
   /** the tiles' fade-in, by frame time capped at 1/30 s (a long task while a tile streams in must not jump it) */
   step(dt) {
     const k = Math.min(dt, 1 / 30) / FADE_IN;
-    for (let t = 0; t < this.list.length; t++) {
-      const r = this.list[t];
+    for (let t = 0; t < this.tileList.length; t++) {
+      const r = this.tileList[t];
       if (r.f >= 1) continue;
       r.t = Math.min(1, (r.t ?? 0) + k);
       r.f = smooth01(r.t);
@@ -147,8 +149,8 @@ class LampRegistry {
   }
   /** StaticSources' query, over every tile whose box is within r */
   query(cx, cy, cz, r, sel) {
-    for (let t = 0; t < this.list.length; t++) {
-      const R = this.list[t];
+    for (let t = 0; t < this.tileList.length; t++) {
+      const R = this.tileList[t];
       if (cx < R.x0 - r || cx > R.x1 + r || cz < R.z0 - r || cz > R.z1 + r) continue;
       R.adapter.sel = sel;
       R.grid.query(cx, cy, cz, r, R.adapter);
@@ -156,6 +158,7 @@ class LampRegistry {
   }
 }
 
+const NIGHT_LIGHT_STRIDE = 11;          // kind (0 shop window, 1 sign), x y z, nx nz, half width, half height, r g b
 const EMPTY = () => ({ x: new Float32Array(0), y: new Float32Array(0), z: new Float32Array(0), list: [] });
 
 // ------------------------------------------------------------------------------------------------ the city hookup
@@ -191,7 +194,7 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
   glare.mesh.visible = false;
   scene.add(glare.mesh);
   const glareSel = new NearestN(GLARE_LAMPS, GLARE_R);
-  let glareReady = false, glareCompiling = false, gcx = 0, gcz = 0;
+  let glareReady = false, glareCompiling = false, gcx = 0, gcz = 0, glareLampsN = -1, glareScale = 0;
   const dOf = (i) => { const D = night.carData, o = i * CAR.STRIDE; return Math.hypot(D[o] - gcx, D[o + 2] - gcz); };
   const compileGlare = (cam) => {
     glareCompiling = true;
@@ -215,9 +218,15 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     finally { renderer.setRenderTarget(prev); dynMesh.count = 0; dynMesh.visible = false; dynReady = true; }
   })();
 
-  const street = { sources: { lamps, windows: EMPTY(), shops: EMPTY(), signs: EMPTY() } };
+  // step 5: the shop windows (APERTURE lights through the real opening, in the facade's own frame) and the lit signs
+  // (fascia, blade, pharmacy cross) of every loaded tile, from the street life's layout (shopLayout.js night.lights):
+  // registries like the lamps' (a tile's lights fade in, ids stable); none of them is in the ground map (the city's map
+  // holds the lamps only): they light the ground through the loop
+  const shopReg = new LampRegistry(4096), signReg = new LampRegistry(4096);
+  const street = { sources: { lamps, windows: EMPTY(), shops: shopReg, signs: signReg } };
   nightParams.shadowShare = 0.65;
-  const night = new NightSources(pool, street, { cars: CAR_CAP, shadowLights, sizes: { windows: 0, shops: 0, signs: 0 }, ground });
+  nightParams.shopI = 32;              // (the lab's tuned shop value; its default 24 left the sidewalk spill barely visible)
+  const night = new NightSources(pool, street, { cars: CAR_CAP, shadowLights, sizes: { windows: 0, shops: 8, signs: 6 }, ground, baked: { shops: false, signs: false } });
   lamps.onRelease = (id) => night.shadow.release(id);
   if (!DEBUG) for (const t of Object.values(night.track)) t.on = false;     // (the pop metric: ?nightdebug=1)
   night.tram.on = false;
@@ -349,7 +358,7 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     const t0 = performance.now(), dt = Math.min(0.1, (t0 - tLast) / 1000);
     tLast = t0; frames++;
     const n = env.uNight.value, scale = POOL_ON ? smooth01((n - 0.15) / 0.5) * api.master : 0;
-    lamps.step(dt);
+    lamps.step(dt); shopReg.step(dt); signReg.step(dt);
     // the dynamic layer fades out with the height above the ground (120 -> 200 m: its 320 m square's edge would show)
     const hAbove = groundAt ? camPos.y - groundAt(camPos.x, camPos.z) : 0;
     const dynFade = 1 - smooth01((hAbove - 120) / 80);
@@ -443,7 +452,6 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     lastCam.copy(camPos);
     night.carCount = nc;
     // ---- the pool (lamps, cars), the shadowed lamps, the far cars' ground pools (by day: once at 0, then nothing)
-    ground.recentre(camPos.x - half, camPos.z - half);
     if (scale > 0 || lastScale > 0 || frames < 4) night.update(camPos, dt, scale, false);
     lastScale = scale;
     if (dbg && scale > 0) popMetric(nc, D, dt, camPos);
@@ -452,12 +460,19 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     if (glareReady) {
       let g = 0;
       if (scale > 0) {
-        glareSel.begin(); lamps.query(camPos.x, camPos.y, camPos.z, GLARE_R, glareSel); glareSel.end();
-        const LX = lamps.x, LY = lamps.y, LZ = lamps.z, F = lamps.fade;
-        for (let k = 0; k < glareSel.count; k++) {
-          const id = glareSel.i[k], w = scale * glareSel.weight(k) * F[id];
-          if (w > 0.002) glare.write(g++, LX[id], LY[id], LZ[id], 0.45, 1.6 * w, 1.25 * w, 0.8 * w);
-        }
+        // the lamps' cards (static lights, slowly changing weights) every other frame: kept in place in between (their
+        // 600 m query is most of the glare's CPU); the cars' cards every frame, after them
+        if ((frames & 1) || glareLampsN < 0 || Math.abs(scale - glareScale) > 0.01) {
+          glareSel.begin(); lamps.query(camPos.x, camPos.y, camPos.z, GLARE_R, glareSel); glareSel.end();
+          const LX = lamps.x, LY = lamps.y, LZ = lamps.z, F = lamps.fade;
+          for (let k = 0; k < glareSel.count; k++) {
+            const id = glareSel.i[k], w = scale * glareSel.weight(k) * F[id];
+            if (w > 0.002) glare.write(g++, LX[id], LY[id], LZ[id], 0.45, 1.6 * w, 1.25 * w, 0.8 * w);
+          }
+          glareLampsN = g; glareScale = scale;
+        } else g = glareLampsN;
+      } else glareLampsN = -1;
+      if (scale > 0) {
         // (the list is nearest first: the (GLARE_CARS + 1)-th car's distance is the cut-off, faded as NearestN does)
         gcx = camPos.x; gcz = camPos.z;
         const cut = nc > GLARE_CARS ? Math.min(CAR_R, dOf(GLARE_CARS)) : CAR_R;
@@ -479,7 +494,7 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
         const L = shadowLights[k], id = night.shadow.lamp[k];
         L.shadow.autoUpdate = false;
         if (!(L.intensity > 0)) { sLamp[k] = -2; continue; }
-        let go = SHADOW_MODE === "full" || id !== sLamp[k] || mover[k] === 1;
+        let go = api.shadowMode === "full" || id !== sLamp[k] || mover[k] === 1;
         // (the camera-moved refresh: one map per frame, alternating)
         if (!go && !refreshed && (refreshTurn & 1) === k && camPos.distanceToSquared(sCam[k]) > MOVE_REFRESH * MOVE_REFRESH) { go = true; refreshed = true; }
         if (go) { L.shadow.needsUpdate = true; sLamp[k] = id; sCam[k].copy(camPos); stats.shadowRenders++; } else stats.shadowSkips++;
@@ -492,12 +507,17 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     } else for (const L of shadowLights) L.shadow.autoUpdate = frames < 4;
     nightGround.uDyn.value = scale > 0 ? dynFade : 0;
     const q = scale > 0 && dynReady && dynFade > 0 ? night.dynCount : 0;
-    if (dynReady && (q > 0 || dynLast !== 0)) {                       // (nothing to draw twice in a row: skip the pass)
+    // the far cars' pools at 30 Hz (the pass's CPU was ~0.2 ms: a whole renderer.render), at once when the camera has
+    // moved far (a jump); the layer's origin follows the camera only when it is drawn, so the texture and the origin the
+    // ground materials read always match
+    const jump = Math.abs(camPos.x - (ground.x0 + half)) > 40 || Math.abs(camPos.z - (ground.z0 + half)) > 40;
+    if (dynReady && (q > 0 || dynLast !== 0) && ((frames & 1) === 0 || jump || q === 0)) {   // (nothing to draw twice in a row: skip)
+      ground.recentre(camPos.x - half, camPos.z - half);
       dynMesh.visible = q > 0;
       ground.renderDynamic(renderer, q);
       dynLast = q;
     }
-    stats.casters = tagged; stats.lamps = lamps.count; stats.tiles = lamps.list.length; stats.cars = nc; stats.real = pool.active; stats.dyn = q; stats.dynFade = +dynFade.toFixed(2); stats.ghostSteal = ghostSteal;
+    stats.casters = tagged; stats.lamps = lamps.count; stats.tiles = lamps.tileList.length; stats.cars = nc; stats.real = pool.active; stats.dyn = q; stats.dynFade = +dynFade.toFixed(2); stats.ghostSteal = ghostSteal;
     stats.ms = performance.now() - t0; stats.msAvg = stats.msAvg * 0.95 + stats.ms * 0.05;
   };
   const popMetric = (nc, D, dt, camPos) => {
@@ -552,9 +572,22 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
   setInterval(sweep, 2000);
   const api = {
     master: 1,                          // (A/B in one page: 0 = every night light off, the lighting model kept)
+    shadowMode: SHADOW_MODE,            // (A/B in one page: "smart" / "full")
     pool, night, lamps, ground, shadowLights, stats, nightParams, glare,
     addTile: (name, heads) => lamps.addTile(name, heads, performance.now()),
-    removeTile: (name) => lamps.removeTile(name),
+    removeTile: (name) => { lamps.removeTile(name); shopReg.removeTile(name); signReg.removeTile(name); },
+    /** step 5: a tile's shop / sign lights (Float32Array records of NIGHT_LIGHT_STRIDE, shopLayout.js) */
+    addShops: (name, rec) => {
+      if (!rec?.length) return;
+      const shops = [], shopItems = [], signs = [], signItems = [];
+      for (let o = 0; o + NIGHT_LIGHT_STRIDE <= rec.length; o += NIGHT_LIGHT_STRIDE) {
+        const at = { x: rec[o + 1], y: rec[o + 2], z: rec[o + 3] }, it = { nx: rec[o + 4], nz: rec[o + 5], hw: rec[o + 6], hh: rec[o + 7], col: [rec[o + 8], rec[o + 9], rec[o + 10]], b: 1 };
+        if (rec[o] === 0) { shops.push(at); shopItems.push(it); } else { signs.push(at); signItems.push(it); }
+      }
+      const now = performance.now();
+      shopReg.addTile(name, shops, now, shopItems); signReg.addTile(name, signs, now, signItems);
+    },
+    shops: shopReg, signs: signReg,
     setTraffic: (t) => { traffic = t; },
     setDriver: (d) => { driver = d; },
     setTram: (t) => { tram = t; },
