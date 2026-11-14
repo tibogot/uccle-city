@@ -467,3 +467,150 @@ within the noise (the overview p95 +1.2 ms in both new runs: re-check on a quiet
   20 kit glass builds (8 geometry attributes + instancing > 8: still per mesh), 179 shadow builds (materials with their
   own positionNode / mask).
 - Re-measure all of this on a GREEN machine.
+
+## Step 11: the 2026-11-14 audit (today's foundation, 00d9412d + this branch claude/perf2)
+
+**Machine.** `tools/perf/preflight.ps1` first **RED**: an orphaned `find / -name NodeMaterial.js` (a dead agent shell's
+disk-wide search) burnt one core for 70+ min (CPU 34 % busy at rest); the script printed YELLOW anyway (PowerShell 5.1:
+`.Count` of ONE PSCustomObject is null, so a single FAIL was not counted: fixed, `@(...).Count`). The coordinator stopped
+it; from then **YELLOW** all session: CPU 9 % at rest, 5 GB free (warn), GPU 9-11 % at rest (the GPU process: the
+owner's own windows), port 8820 listening (an idle server, left alone); later the IDE took 0.7 of a core at times.
+Page check (`debug/preflight.js`, no baseline file yet): CPU bench 77.4 ms, fixed view GPU 8.32 ms / 366 draws at the
+start, 76.0 ms / 7.47 ms / 353 draws at the end (same band). **Every absolute number below is YELLOW**: the deltas from
+interleaved A/B (alternated live in one page, or page loads alternated D, X, Y, D ...) are the reliable part. Setup as
+the baseline: `?ring=1&far=1`, 1280 x 720 at DPR 1 (DevTools viewport emulation), one tab in front. Raw output (not
+committed, scratchpad): `suite_20261114.json`, `suite_20261114_after.json`, traces `trace_flight.json.gz` (before),
+`trace_flight2.json.gz` (after), `trace_still.json.gz`, `trace_boot.json.gz`.
+
+New helpers: `debug/featureAB.js` (hold the camera at a `places.js` place, GPU p50 / p95 + the render loop's CPU + draws /
+tris / named passes; live A/B), `debug/drawBreakdown.js` (draws and triangles per pass and per layer, `deep` drill-down),
+`debug/colliderCost.js` (the furniture collider build per loaded tile).
+
+### 11.1 The suite vs the 2026-11-13 baseline (before this branch's fixes)
+
+| path | frames > 33 ms (r1 / r2) | worst frames (ms) | main-thread long tasks | sync pipelines | GPU p50 / p95 (ms) | draws | tris (M) |
+|---|---|---|---|---|---|---|---|
+| flight | 194 / 237 (baseline 196 / 371; after step 2: 45 / 70) | 617, 567, 516 / 683, 667, 600 | 38 / 29, up to **668 ms** | 0 / 0 | 7.7 / 13.4 · 8.9 / 14.2 (6.6-7.0) | 410 / 415 (331) | 4.3 (4.0) |
+| stjob | 140 / 208 (96 / 53; 55 / 16) | **1,350**, 900, 584 / **1,400**, 600 | 27 / 29, up to 585 ms | 0 / 0 | 10.8 / 13.0 · 10.4 / 12.1 (9.4) | 572 / 547 (420) | 5.2 / 5.0 (4.7) |
+| alsemberg | 243 / 223 (155 / 788; 65 / 223) | 667, 617, 600 / 633, 617, 600 | 44 / 45, up to 674 ms | 0 / 0 | 9.8 / 12.0 · 9.5 / 10.8 (8.9 / 7.7) | 500 / 515 (350) | 4.0 / 4.1 (3.3) |
+| turn | 31 / 32 (19 / 39) | 383, 333 / 417, 300 | 11 / 8 | 0 / 0 | 7.2 / 9.2 · 7.7 / 10.6 (7.1) | 478 / 469 (300) | 3.5 / 3.4 (3.0) |
+| orbit | 12 / 22 (21 / 99) | 183 / 200 | 4 / 6 | 0 / 0 | 9.1 / 10.9 · 10.5 / 13.9 (8.7 / 9.0) | 393 / 392 (365) | 4.8 (4.5) |
+
+JS heap 1.9-4.0 GB during the paths (baseline 1.2-1.4 GB).
+
+**GPU split (round 1, share of the sampled pass time):** flight scene 51 % / sun shadow 38 % / AO 3 % / SSR 2 % / rest
+6 %; stjob 59 / 25 / 6 / 4 / 6; alsemberg 59 / 22 / 7 / 5 / 7; turn 58 / 23 / 8 / 3 / 8; orbit 81 / 6 / 4 / 2 / 7.
+Draws at Place Saint-Job, street level (`debug/drawBreakdown.js`): scene 430, sun shadow 205, post 27 per frame.
+
+**Startup (two loads with `debug/bootTimeline.js`):** cover **23.3 / 20.4 s** (baseline 14.4 s; step 10: 13.6-16.5 s on
+a RED machine); long tasks before the cover 14.2 / 13.4 s, longest 3.8 / 4.0 s; 28 / 19 synchronous pipelines after the
+cover (~0 ms each, cached); after the cover **20 / 18 long tasks, 2.9 / 2.7 s**, frame gaps > 50 ms 32 / 36 (worst
+1,083 / 683 ms); node builds 509-539, 6.9-7.6 s; heap 1.6 GB 25 s after the cover.
+
+**What got worse and why:**
+1. **Stutter: 300-1,400 ms frames while streaming (new).** A profile of the long tasks (`trace_flight.json.gz`): ~75 %
+   of every 300-850 ms task is `main.js preCompile -> lodFade.fadeProxies -> fadeVariant -> material.clone()`, and in it
+   three r187's `NodeMaterial.copy`, which deep-copies `userData` with `JSON.parse(JSON.stringify(...))`. Three
+   `userData` entries hold whole objects: `wxDry` (the weather merge: the dry colour / roughness / normal NODES of 133
+   materials, up to 20 MB of JSON each), `atlas` (the road marking atlas on every tile's asphalt material, typed arrays:
+   37 MB), `fadeOf` (a fade copy's source material, 30 MB). Node.toJSON walks the graph down to DataTextures and
+   serialises them with `Array.from` of every texel: one clone took 100-580 ms, and the heap went to 3-4 GB of garbage.
+2. **Draws +80-150 per frame on the paths**: today's merges at street level: roof kit +53-58, front gardens +24-45
+   (back on by default since step 9), shops +17-34, Héros +11, street kit +5 (table 11.2).
+3. **GPU p50 +0.4-1.4 ms**: mostly the roofs (+0.65-1.1 ms on every view), then gardens / shops (+0.3-0.5 each).
+4. **Startup 20-25 s (baseline 14.4 s)**: the long tasks are still the first frames' node builds (`trace_boot.json.gz`:
+   the 4.0 s task at 3 s is `stepLoop -> render -> getForRender -> build`, 2.3 s in `warmNow`, 1.3 s in the next
+   frame); more features = more materials. Not changed here.
+
+### 11.2 Per feature (interleaved page loads D, X, Y, D, ...: 5 default loads; GPU spread between D loads +-0.3 ms)
+
+Views: Place Saint-Job street (`places.js stjob-street`), Saint-Job from 45 m (`stjob`), a front-garden street
+(1470, 900 -> 1434, 640), the Esso Ch. de Waterloo station (J6); Square des Héros (`?tile=E4`: `heros`, `heros-steps`).
+"Cost" = default minus the `?x=old` load (GPU p50 ms; draws and triangles at the same view).
+
+| feature (switch) | view | GPU p50 cost | GPU p95 cost | draws | tris (M) | CPU / frame |
+|---|---|---|---|---|---|---|
+| roofs (`?roofs=old`, 2 loads) | street / 45 m / garden / station | **+0.85 / +1.06 / +0.65 / +1.10** | +0.9 / +0.9 / +0.4 / +1.2 | +56 / +58 / +61 / +63 | +0.45 / +0.35 / +0.54 / +0.66 | +0.5 ms |
+| - of it the kit pools (live hide, 4 rounds) | street / 45 m | +0.64 / +0.28 | +0.88 / +0.37 | +54 / +53 | +0.31 / +0.23 | +0.7 / +0.6 ms |
+| - of it the kit's shadows (live) | street / 45 m | ~0 (-0.07 / +0.08) | | +18 | +0.1 | ~0 |
+| shops (`?shops=old`) | street / 45 m | +0.46 / +0.38 | +1.1 / +0.7 | +34 / +17 | +0.13 / +0.03 | +0.6 ms |
+| front gardens (`?gardens=0`) | street / 45 m / garden | +0.33 / +0.38 / +0.13 | +0.3 / +0.7 / -1.0 | +45 / +24 / +39 | +0.14 / +0.06 / +0.15 | +0.7 ms |
+| weather, clear (`?weather=old`) | street / 45 m / station | +0.33 / +0.05 / +0.58 | +0.6 / +0.4 / +0.6 | 0 | 0 | ~0 |
+| ground fit (`?groundfit=old`) | all four | ~0 (-0.9 .. +0.05) | | 0 | +0.08 | ~0 |
+| street kit (`?streetkit=old`) | all four | ~0 (-0.5 .. 0) | | +5 | ~0 | ~0 |
+| visual fixes 2 (`?vfix2=old`) | street / 45 m | noise (+0.66 / -0.67) | | +47 / 0 | **+0.74** / +0.08 | noise |
+| petrol stations (`?fuel=old`) | station / street | ~0 (+0.05) / +0.4 | | ~0 | +0.09 | ~0 |
+| Héros (`?heros=old`, E4, 3 loads) | 55 m / foot of the steps | +0.0-0.13 / ~0 | +0.2 / +0.1 | +11 / +3-14 | +0.12 | ~0 |
+| weather presets (live, `debug/weatherCity.js costSplit`, 4 rounds, Place street) | overcast dry / wet / rain / snow cover / snowfall | +0.32 / +0.46 / +0.46 / **+1.37 / +1.31** | | | | |
+| - snow: the volumetric layer (live hide) | Place street, snow cover | **+0.72** (fragment 0.37, vertex + raster 0.35) | +0.33 | +33 | +0.28 | +0.3 ms |
+| night lights (`?night=1&time=night`, master 0 / 1 live) | Place street | **+0.98 / +1.09** | +0.7 | **+199-275** | +0.8-1.0 | +1.5-2.2 ms |
+| dev panel shown (sections closed) vs hidden | Place street | -0.02 | | 0 | 0 | -0.2 (noise) |
+| dev panel, each of the 14 sections open (2 rounds; the one outlier rechecked over 4 rounds) | Place street | within +-0.45 | | | | within +-0.3 after the recheck |
+
+Rain is +0.46 here (the merge said +1.3 on a RED machine): the staged gates and distance skips work, and the overcast
+sky (Firmament's cloud deck) is +0.32 of it. Snow is still over the lab budget (+0.62): the layer alone is +0.72.
+
+### 11.3 The top costs (a still frame at street level + the paths)
+
+1. **Main-thread long tasks while tiles stream** (300-850 ms, 30-45 a path): the JSON deep copy above. **Fixed** (11.4).
+2. **CPU per frame, ~10-12 ms at street level** (`trace_still.json.gz`): three's `renderObject` path 39 % of the main
+   thread, the sun shadow pass's `updateShadow` 11 %, `updateMatrixWorld` 3 %, the Firmament exposure meter 1.5 %; our
+   GPU timing (`sampleGpu` + `resolveTimestampsAsync`) shows as 7 % of the samples but saves only **0.16 ms** when
+   switched off live (not worth a default change). The 33.3 ms frames left are vsync misses of this loop plus jitter.
+3. **Draws**: 430 scene + 205 shadow + 27 post at the Place. The city trees are the biggest block: 108 scene + 54 shadow
+   draws (9 tiles x the species-band meshes x leaves / depth / bark), their far bark LOD **776 k triangles**.
+4. **Sun shadow pass**: 22-38 % of the GPU while moving (38 % in the flight: the box grows with altitude).
+5. **Scene pass**: 51-81 % of the GPU.
+6. **Roofs**: +0.65-1.1 ms GPU, +56 draws, +0.35-0.45 M triangles everywhere (the kit pools half of it at street level).
+7. **Night lights** (opt-in): +1 ms GPU, +200-275 draws: both lamp shadow maps re-rendered every frame where traffic moves
+   (the "smart" schedule never skipped at the Place), each drawing ~135 objects (every loaded tile's instanced sets).
+8. **Snow**: the volumetric layer +0.72 ms; the overcast sky +0.32 ms in every non-clear preset.
+9. **Startup**: ~525 node builds, 7-8 s of main thread in 3-4 long tasks (4.0 / 2.3 / 1.3 s), cover 20-25 s.
+10. **Tile landing slices**: the street-furniture car colliders 20-110 ms per tile (13.7 k garden-wall boxes for the 9
+    start tiles, each rasterised per instance), the landmark collider build in 90-120 ms slices. **Fixed** (11.4).
+
+Also: GTAO 3-8 %, SSR 2-5 % of the GPU, Firmament clouds ~1.2 ms of compute (step 7); vfix2 +0.74 M triangles at street.
+
+### 11.4 What changed (each behind a switch, rows in `viewer/features.js`)
+
+| change | switch (old) | before | after |
+|---|---|---|---|
+| **Fade copies clone without three's JSON userData copy** (`lodFade.js cloneMaterial`: the clone gets an empty userData, then a shallow copy of the source's) | `?fadeclone=old` | fast flight (40 m/s, 55 s): long tasks 604, 509, 487, 411, 322, 311 ms (24 > 50 ms), worst frame 617 ms | 334, 116, 92 ms (15), worst 333 ms; a traced rerun: longest task 123 ms, worst frame 117 ms |
+| **Street-furniture car colliders**: a box (garden walls, pillars, gates) = its plan rectangle from the instance matrix (>= 0.25 m thick, >= 0.30 m tall), the other pieces rasterised once per geometry x scale and placed by yaw + position (`drive/driveMode.js`) | `?colcache=0` | 33-76 ms per tile (9 start tiles) | **0.4-4.8 ms**; blocked area 928 vs 1,557 m2 on I6 (the old 0.25 m raster padded every thin wall; the boxes are now their true footprint, never thinner than one old cell) |
+| **Landmark collider slices** checked the clock every 16,384 triangles -> every 64 (`heroColliders.js`) | `?heroslice=old` | 90-123 ms slices (`poll -> carBlockers`) | <= 6 ms slices (as designed) |
+| **Timed landmark LOD cross-fades** (`lodFade.js settleRamp`: the band's middle, with hysteresis, picks the level; the dissolve runs 0.6 s, eased): Saint-Job church, town hall, Saint-Pierre, Saint-Augustin, Russian church, Rosaire, Stalle, Observatory, Héros, the rail bridges | `?lodsettle=0` | standing 145-195 m from Saint-Job: the church drawn twice (LOD0 + LOD1, discarding fade materials), split pixel by pixel by the static screen dither | one LOD, whole, no dither (`lodsettle_spire_170m_x4.jpg`, `lodsettle_before_170m.jpg` / `lodsettle_after_170m.jpg`); crossing the switch at 15 m/s: one 0.6 s dissolve (170.0 -> 180.5 m), monotonic, no pop; GPU at that view ~0 (7.47 vs 7.41 ms, one load each) |
+| **Night: lamp shadow maps gated by tile reach** (a tile's instanced sets stay in the lamp layer only while a shadowed lamp is within 38 m of the tile's square; `nightLights/cityNight.js`) | `?lampreach=0` | 271 draws, 1.03 M triangles a frame for the 2 lamp maps (`nightShadowCost`, full) | 220 draws, 0.88 M (the trees of 2 tiles instead of 9) |
+| Night: **"alt" lamp shadow schedule** (at most one lamp map a frame while both have movers, alternating: a moving car's lamp shadow at 30 Hz) | `?nightshadow=alt` (OPT-IN; the default stays "smart") | | -0.38..-0.46 ms GPU, -0.7..-1.0 ms CPU, -107..-131 draws (live, 3-4 rounds) |
+| Preflight verdict counted a single FAIL as none (`tools/perf/preflight.ps1`) | | a RED machine reported YELLOW | fixed |
+
+**The suite after (same session, YELLOW, 2 rounds):**
+
+| path | frames > 33 ms | worst frames (ms) | long tasks (n, longest) | sync pipelines | GPU p50 / p95 | draws | tris (M) |
+|---|---|---|---|---|---|---|---|
+| flight | 168 / 126 (was 194 / 237) | **350, 133 / 467, 100** (was 617-683) | 5 / 1, 358 ms (was 38 / 29, 668 ms) | 0 / 0 | 7.3 / 13.4 · 7.2 / 13.3 | 411 / 418 | 4.4 |
+| stjob | 85 / 98 (was 140 / 208) | **117, 67 / 50** (was 1,350 / 1,400) | 2 / 0, 111 ms (was 27 / 29) | 0 / 0 | 10.0 / 11.9 · 10.2 / 12.4 | 585 / 591 | 5.3 / 5.4 |
+| alsemberg | 281 / 224 (was 243 / 223) | 500, 83 / **67** (was 667 / 633) | 3 / 1, 75 ms (was 44 / 45) | 0 / 0 | 10.0 / 11.6 · 10.1 / 11.7 | 508 / 504 | 4.1 |
+| turn | 28 / 32 (was 31 / 32) | **83 / 67** (was 383 / 417) | 2 / 4, 70 ms | 0 / 0 | 7.2 / 9.6 · 7.1 / 9.5 | 485 / 477 | 3.6 |
+| orbit | 8 / 13 (was 12 / 22) | **33 / 33** (was 183 / 200) | 0 / 0 | 0 / 0 | 9.8 / 11.4 · 10.7 / 12.1 | 383 / 385 | 4.8 |
+
+The long stalls are gone; the frames > 33 ms left are single missed vsyncs (33.3 ms) of the ~11 ms main loop (most on
+the fast street-level Alsemberg drive). Startup after (2 loads): cover 25.2 / 21.4 s (noise: the boot itself is
+unchanged), long tasks after the cover **16 / 6 tasks, 1.65 / 0.97 s** (was 20 / 18, 2.9 / 2.7 s), frame gaps > 50 ms
+27 / 18 (was 32 / 36).
+
+### 11.5 Left / next (in order)
+
+1. **CPU per draw** (the frame's real limit on this machine): the city trees as ONE city-wide pool per species-band
+   (like the roof kit: 108 -> ~12 scene draws, 54 -> ~6 shadow draws), the roof kit's 45 meshes merged per LOD material,
+   `scene.matrixWorldAutoUpdate = false` with explicit updates (step 1: -0.6 ms).
+2. **Roofs +0.65-1.1 ms GPU**: split the rest (parapets in the wall mesh, the flat-roof membrane shader `facades.js
+   flatRoofLook`, procedural on every roof pixel) with live A/B; the kit's LOD2 band (to 480 m) is long for 1-2 px pieces.
+3. **Snow layer +0.72 ms**: chunk LOD (the outer 48 of 64 chunks at 25 cm, the seams stitched from the L / R / U / D
+   heights the vertex shader already reads: -56 % vertices), the sparkle / micro bump behind per-pixel distance branches.
+4. **Night**: make "alt" the default once the owner has seen a moving car under a lamp at 30 Hz; cull a tile's trees per
+   cell by the lamp frustum (the trees of 2 tiles are still ~36 draws a map).
+5. **Tree crown dither at mid distance**: the trees' impostor hand-over (400 m, 30-50 m band) is per instance, so the
+   timed settle above does not reach it; a still frame in the band shows the IGN split. Options: a narrower band now
+   that the impostors match the trees, or a per-instance timed fade (instance state in the gather). Not done.
+6. **Startup**: unchanged (node builds); fewer unique materials (one terrain / road material for all tiles).
+7. A GREEN re-run of every absolute number above (the deltas are interleaved; the absolutes are YELLOW).
