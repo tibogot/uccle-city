@@ -13,6 +13,9 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { lodMesh, lodOpts } from "./carLod.js";
 
+// ?vfix2=old: the traffic's light bits decoded as before round 2 of the visual fixes (A/B)
+const VFIX2_OLD = typeof location !== "undefined" && /[?&]vfix2=old\b/.test(location.search);
+
 export const PACK_SOURCES = {
   kenney: { label: "Kenney Car Kit", url: new URL("../../models/cars/kenney.glb", import.meta.url).href, credit: "Kenney (kenney.nl), CC0" },
   quaternius: { label: "Quaternius Cars Pack", url: new URL("../../models/cars/quaternius.glb", import.meta.url).href, credit: "Quaternius (quaternius.com), CC0" },
@@ -88,7 +91,10 @@ function lodGeometry(g, o) {
 
 /** Live look switches for every pack material: glass = multiplier on the glass colour (Kenney's windows are pale
  *  blue-white swatches: 1 = as designed, ~0.12 = tinted dark like the city's real cars). */
-export const packLook = { glass: uniform(1), glassOpacity: uniform(0.76), clearcoat: uniform(0.7) };
+export const packLook = { glass: uniform(1), glassOpacity: uniform(0.76), clearcoat: uniform(0.7),
+  // the traffic's lamp strengths (packMaterial motion path; docs/VISUAL_FIXES.md round 2): brake, night tail, reversing,
+  // indicators (?vfix2=old: 5 / 1.2 / 4 / 6)
+  brake: uniform(0.35), tailNight: uniform(0.4), reversing: uniform(1.8), indicator: uniform(0.5) };
 
 /**
  * The pack material. paint: a THREE.Color (one car: a uniform) or "instance" (parked cars: geometry attribute "paint",
@@ -141,16 +147,28 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
     const r2 = vec3(r1.x.mul(cst).add(r1.z.mul(sst)), r1.y, r1.z.mul(cst).sub(r1.x.mul(sst)));          // steer (front)
     const dl = select(W.w.greaterThan(0.5), r2.sub(rel), vec3(0, 0, 0)), ch = cos(Mo.w), sh = sin(Mo.w);
     m.positionNode = positionLocal.add(vec3(dl.x.mul(ch).add(dl.z.mul(sh)), dl.y, dl.z.mul(ch).sub(dl.x.mul(sh))));
-    // lights: bits of motion.z: 1 brake, 2 head (forced), 4 left indicator, 8 right indicator, 16 reversing
-    const bit = (k) => mod(Mo.z.div(k).floor(), 2);
+    // lights: bits of motion.z: 1 brake, 2 head (forced), 4 left indicator, 8 right indicator, 16 reversing.
+    // motion is per instance, but READ IN THE FRAGMENT it is an interpolated varying: 1 arrives as 0.99999 / 1.00001
+    // per pixel (like _kind above), and floor() then flipped the bits pixel by pixel: a brake-lit lens speckled
+    // half lit / half dark (white-hot vs dark red through the tone map): the "grainy tail lamps" (docs/VISUAL_FIXES.md
+    // round 2); indicators and reversing lamps the same. (0 interpolates to exactly 0: unlit cars were clean.)
+    // Round to the integer first.
+    const bits = VFIX2_OLD ? Mo.z : Mo.z.add(0.5).floor();
+    const bit = VFIX2_OLD ? (k) => mod(bits.div(k).floor(), 2) : (k) => mod(bits.add(0.5).div(k).floor(), 2);
     const night = smoothstep(0.3, 0.6, motion.night);
     const headOn = night.max(bit(2)), blink = mod(motion.time.mul(1.5), 1).lessThan(0.5);
     const px = p0.x, outer = px.abs().greaterThan(0.55);
     const ind = select(px.greaterThan(0), bit(4), bit(8)).mul(select(blink.and(outer).and(isHead.or(isTail)), float(1), float(0)));
     const head = select(isHead, headOn.mul(5), float(0));
-    const tail = select(isTail, night.mul(1.2).add(bit(1).mul(5)), float(0));
-    const rev = select(isTail.and(outer.not()), bit(16).mul(4), float(0));
-    m.emissiveNode = vc.mul(1.15).mul(head).add(color(0xff1408).mul(tail)).add(color(0xffffff).mul(rev)).add(color(0xff8a00).mul(ind.mul(6)));
+    // lamp strengths: with the lens now lit WHOLE (it was half dead pixels), the old x5 brake / x6 indicators / x1.2 night
+    // tail read as a flat cream-salmon lens: the grade's contrast + ACES turn a bright saturated red orange (measured
+    // on the lens at 10 m, golden hour: brake 0.9 -> rgb 255 149 80, 0.35 -> 255 74 45; unlit 122 17 28). Measured
+    // levels instead: by day brake 0.35 = a lit RED; at night the tail 0.4 = deep red glow (227 0 11) and the brake on
+    // top (255 ~65 35) still reads a step brighter; amber indicators 0.5 (255 151 45), reversing white 1.8.
+    const kB = VFIX2_OLD ? 5 : packLook.brake, kN = VFIX2_OLD ? 1.2 : packLook.tailNight, kR = VFIX2_OLD ? 4 : packLook.reversing, kI = VFIX2_OLD ? 6 : packLook.indicator;
+    const tail = select(isTail, night.mul(kN).add(bit(1).mul(kB)), float(0));
+    const rev = select(isTail.and(outer.not()), bit(16).mul(kR), float(0));
+    m.emissiveNode = vc.mul(1.15).mul(head).add(color(0xff1408).mul(tail)).add(color(0xffffff).mul(rev)).add(color(0xff8a00).mul(ind.mul(kI)));
   }
   if (crossFade) {
     // dithered LOD cross-fade (instanced fleets): per-instance attribute lodFade in [0, 2]. 0..1 = the outgoing LOD,

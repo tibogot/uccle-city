@@ -178,6 +178,8 @@ export function paintedGlass({ u, h, fw, street, rnd: rndIn, frCode }) {
  *  sun-facing roof would be culled and the shadow would get a hole; the front faces close the silhouette, and they are
  *  the faces the DoubleSide pass already resolved to, at half the cost. ?bldside=double = before. */
 const BLD_SIDE = /[?&]bldside=double/.test(location.search) ? THREE.DoubleSide : THREE.FrontSide;
+// ?vfix2=old: the blind walls' round-1 marks (noise-shaped plaster loss + cement patches: pale blotches), docs/VISUAL_FIXES.md
+const VFIX2_OLD = /[?&]vfix2=old(&|$)/.test(location.search);
 function bldMaterial() {
   const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, side: BLD_SIDE });
   m.shadowSide = BLD_SIDE;
@@ -302,19 +304,34 @@ export function wallMaterial(opts = {}) {
     const aaD = fwidth(d).add(0.002);
     const inside = smoothstep(aaD, aaD.negate(), d).mul(ghostOn).toVar();
     const flashing = boxBand(d, float(-0.02), float(0.07), aaD.mul(1.5)).mul(ghostOn);       // 9 cm of bitumen
-    // old room plaster (whitewash / faded distemper), fallen off in patches that show the brick; a flue strip
-    const plasterCol = mix(C(0.58, 0.55, 0.49), C(0.56, 0.47, 0.42), step(0.5, k3)).mul(n3(P.x.mul(0.9), P.y.mul(0.9), P.z.mul(0.9)).mul(0.16).add(0.92));
-    const loss = smoothstep(0.45, 0.55, noise2D(vec2(u.mul(0.9).add(rnd.mul(40.0)), h.mul(1.1))));
     const flueU = uc.add(mix(float(-1.6), float(1.6), k1));
     const flue = boxBand(u.sub(flueU), float(-0.25), float(0.25), fwidth(u).add(0.002)).mul(step(h, yProf.add(0.9)));
-    // brick walls: the plaster, half fallen off; rendered walls: only a weathered tint (the render went over it all)
-    let gcol = mix(mix(plasterCol, col, loss), col.mul(n3(P.x.mul(0.7), P.y.mul(0.7), P.z.mul(0.7)).mul(0.05).add(0.93)), float(1).sub(isBrick));
-    gcol = gcol.mul(float(1).sub(flue.mul(mix(float(0.1), float(0.28), isBrick))));
-    col = mix(col, gcol, inside.mul(blind));
-    col = mix(col, C(0.03, 0.03, 0.032), flashing.mul(blind).mul(0.9));
-    // cement repair patches (brick walls), rain streaks under the coping (all blind walls)
-    const patch = smoothstep(0.66, 0.7, noise2D(vec2(u.mul(0.3).add(rnd.mul(17.0)), h.mul(0.38)))).mul(isBrick).mul(float(1).sub(inside));
-    col = mix(col, C(0.36, 0.35, 0.33).mul(grain.mul(0.08).add(0.96)), patch.mul(blind).mul(0.85));
+    if (VFIX2_OLD) {
+      // (round 1, ?vfix2=old) old room plaster fallen off in noise-shaped patches + noise-shaped cement patches: read
+      // as large pale cloudy blotches ("camouflage") over whole brick walls
+      const plasterCol = mix(C(0.58, 0.55, 0.49), C(0.56, 0.47, 0.42), step(0.5, k3)).mul(n3(P.x.mul(0.9), P.y.mul(0.9), P.z.mul(0.9)).mul(0.16).add(0.92));
+      const loss = smoothstep(0.45, 0.55, noise2D(vec2(u.mul(0.9).add(rnd.mul(40.0)), h.mul(1.1))));
+      let gcol = mix(mix(plasterCol, col, loss), col.mul(n3(P.x.mul(0.7), P.y.mul(0.7), P.z.mul(0.7)).mul(0.05).add(0.93)), float(1).sub(isBrick));
+      gcol = gcol.mul(float(1).sub(flue.mul(mix(float(0.1), float(0.28), isBrick))));
+      col = mix(col, gcol, inside.mul(blind));
+      col = mix(col, C(0.03, 0.03, 0.032), flashing.mul(blind).mul(0.9));
+      const patch = smoothstep(0.66, 0.7, noise2D(vec2(u.mul(0.3).add(rnd.mul(17.0)), h.mul(0.38)))).mul(isBrick).mul(float(1).sub(inside));
+      col = mix(col, C(0.36, 0.35, 0.33).mul(grain.mul(0.08).add(0.96)), patch.mul(blind).mul(0.85));
+    } else {
+      // (round 2) what real Uccle gables show where a neighbour's roof once stood (Place Saint-Job, Rue du Ham: Street
+      // View, look only) is CRISP and has the outline's own shape, never cloudy blobs: brick that was sheltered for
+      // decades (cleaner, a touch lighter), a soot strip of the old flue, the flashing along the outline. Rendered walls
+      // only a slightly darker weathered tint (the render went over it all). Only on true party walls (the whole face
+      // blind): on a wall blank only ABOVE ITS OWN EAVES (detached gables, Place Saint-Job's side walls) the ghost was
+      // cut flat at the eaves line, which no real ghost is: those keep the rain streaks only. No noise-shaped plaster /
+      // cement patches. (A bitumen-coated variant was tried: a black slab at street distance, dropped.)
+      const partyWall = party.mul(step(998.0, bld.y));
+      let gcol = mix(col.mul(0.94), col.mul(vec3(1.09, 1.07, 1.06)), isBrick);
+      gcol = gcol.mul(float(1).sub(flue.mul(mix(float(0.06), float(0.18), isBrick))));
+      col = mix(col, gcol, inside.mul(blind).mul(partyWall));
+      col = mix(col, C(0.03, 0.03, 0.032), flashing.mul(blind).mul(partyWall).mul(0.9));
+    }
+    // rain streaks under the coping (all blind walls)
     const streak = noise2D(vec2(u.mul(2.6).add(rnd.mul(9.0)), h.mul(0.06))).mul(smoothstep(eh.sub(5.0), eh.sub(0.3), h));
     col = col.mul(float(1).sub(streak.mul(0.22).mul(blind)));
   }
