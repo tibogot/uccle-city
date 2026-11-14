@@ -19,15 +19,15 @@ const diff = (a, b) => { let n = 0; for (let i = 0; i < a.length; i += 4) if (Ma
 export function controls() {
   const out = [];
   for (const f of document.querySelectorAll(".upanel .usec")) {
-    const folder = f.querySelector(".ustitle span")?.textContent || "";
-    for (const el of f.querySelectorAll(".ubody > .urow, .ubody > button")) out.push({ folder, label: el.tagName === "BUTTON" ? el.textContent : el.querySelector("label").textContent, el });
+    const folder = f.querySelector(".ustitle .uname")?.textContent || "";
+    for (const el of f.querySelectorAll(".ubody > .urow, .ubody > button, .ubody > .ubtns > button")) out.push({ folder, label: el.tagName === "BUTTON" ? el.textContent : el.querySelector("label").textContent, el });
   }
   return out;
 }
 // a label, or "label#n" for the n-th control with that label (the two "  morph band (m)")
 const ctrl = (label) => {
   const [l, n = 0] = label.split("#");
-  return window.__devPanel.gui.controllersRecursive().filter((c) => (c.row?.querySelector?.("label")?.textContent ?? c.row?.querySelector?.()?.textContent) === l)[+n];
+  return window.__devPanel.gui.controllersRecursive().filter((c) => (c._label ?? c.row?.querySelector?.("label")?.textContent ?? c.row?.querySelector?.()?.textContent) === l)[+n];
 };
 
 /** Change one control, run check(), restore. `visual`: also measure the picture change. */

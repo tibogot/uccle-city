@@ -495,8 +495,8 @@ F talons · E land · V camera · click: mouse aim · Esc out</span>`;
     if (this.panel) return;
     const S = this.panelState = { wind: this.air.params.wind, windFrom: this.air.params.windFrom, thermals: 1, ridge: 1, camera: this.fcam.mode, size: this.size, mouseAim: true, invert: this.input.invert, sound: true, volume: 0.8, pigeons: true, cpu: "" };
     const ui = this.panel = new Panel({ title: "Falcon flight" });
-    ui.domElement.style.right = "336px"; ui.domElement.style.width = "270px";
-    ui.domElement.classList.add("closed"); ui.domElement.querySelector(".uhead span:last-child").textContent = "▸";
+    ui.domElement.style.right = "356px"; ui.domElement.style.width = "270px";   // (left of the dev panel, 340 px)
+    ui.setCollapsed(true, false);
     const a = ui.addFolder("Air");
     a.add(S, "wind", 0, 14, 0.1).name("wind at 10 m (m/s)").onChange((v) => this.air.setWind(v, S.windFrom));
     a.add(S, "windFrom", 0, 359, 1).name("wind from (deg)").onChange((v) => this.air.setWind(S.wind, v));
