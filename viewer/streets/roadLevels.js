@@ -17,7 +17,8 @@ import { evalAlignment } from "../../vendor/roads/roadAlignment.js";
 
 const MOVE_TOL = 0.2;            // m: a junction the relaxation moved by more than this goes back to the ground
 const RMS_MAX = 0.5;             // m: ... unless the ground round it strays further than this from its plane
-const MOVE_MAX = 3.0;            // m: ... or the move is bigger (E10: a 3.5 m move made new steps; left as the engine made it)
+const MOVE_MAX = 8.0;            // m: ... or the move is bigger (round 2: was MOVE_MAX_OLD, "a 3.5 m move made new steps" before the lifted roads came down too)
+const MOVE_MAX_OLD = 3.0;        // (?roughlanes=0)
 
 /** The height fitNodePlane gives a node: the mean of the DTM over its centre and three rings (0.35, 0.7, 1 x reach),
  *  and how far the ground strays from the node's plane there (RMS): null where the DTM has no data. */
@@ -37,10 +38,43 @@ function fittedY(node, ground, noData) {
   return { y: y0, rms: Math.sqrt(e / ys.length) };
 }
 
+// ROUGH JUNCTIONS (road fix round 2): the plane through the DTM sampled along each arm's centre line from the node out to
+// its reach (the lanes, not the banks beside them): { y, gx, gz, rms } or null (no data / a single direction). The slope
+// is capped like the engine's junction planes (fitNodePlane: 5 %; ends / continuations: the arm's grade along, 3 % across
+// is not needed here: the lanes ARE the samples).
+const MOVE_MAX_LANE = 8.0;       // m: E10's sunken-lane junctions sit 2.3-5.6 m over their lanes
+const LANE_GRADE = 0.05;
+function laneFit(node, ground, noData) {
+  const R = node.reach || 6, pts = [[0, 0]];
+  for (const a of node.arms) for (let s = 1; s <= R + 1e-6; s += 1) pts.push([Math.cos(a.th) * s, Math.sin(a.th) * s]);
+  if (pts.length < 4) return null;
+  if (noData && pts.some(([dx, dz]) => noData(node.x + dx, node.z + dz))) return null;
+  const ys = pts.map(([dx, dz]) => ground(node.x + dx, node.z + dz));
+  // least squares y = y0 + gx dx + gz dz (a small ridge on the slopes: two arms in one line leave the cross slope free)
+  let n = 0, sx = 0, sz = 0, sy = 0, sxx = 0, szz = 0, sxz = 0, sxy = 0, szy = 0;
+  pts.forEach(([dx, dz], k) => { const y = ys[k]; n++; sx += dx; sz += dz; sy += y; sxx += dx * dx; szz += dz * dz; sxz += dx * dz; sxy += dx * y; szy += dz * y; });
+  const lam = 1;
+  const M = [[n, sx, sz], [sx, sxx + lam, sxz], [sz, sxz, szz + lam]], b = [sy, sxy, szy];
+  const det = (m) => m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+  const D = det(M);
+  if (Math.abs(D) < 1e-9) return null;
+  const sol = [0, 1, 2].map((c) => det(M.map((row, r) => row.map((v, k) => (k === c ? b[r] : v)))) / D);
+  let [y0, gx, gz] = sol;
+  // how far the lanes stray from their own (uncapped) plane: a steep but even lane is a plane, a bank or a wall is not
+  let e = 0;
+  pts.forEach(([dx, dz], k) => { e += (ys[k] - (y0 + gx * dx + gz * dz)) ** 2; });
+  const g = Math.hypot(gx, gz);
+  if (g > LANE_GRADE) { gx *= LANE_GRADE / g; gz *= LANE_GRADE / g; }
+  // the level: the capped plane through the samples' mean (a steep lane leaves the plane at its middle, not its top)
+  const mx = sx / n, mz = sz / n;
+  y0 = sy / n - gx * mx - gz * mz;
+  return { y: y0, gx, gz, rms: Math.sqrt(e / n) };
+}
+
 // `noData` (optional, (x, z) -> bool): the DTM has no value there (outside the Brussels region the tile's grid holds
 // its lowest value): the engine sees a "bridge" over that fake pit, which is not a structure to keep.
-export function relevelRoads(net, ground, noData = null) {
-  const st = { nodes: 0, maxMove: 0, roads: 0, skippedStructure: 0 };
+export function relevelRoads(net, ground, noData = null, { roughLanes = true } = {}) {
+  const st = { nodes: 0, maxMove: 0, roads: 0, skippedStructure: 0, ...(globalThis.__levelsDebug ? { debug: true } : {}) };
   if (!net?.nodes) return st;
   const realSpan = (rr, sp) => {
     if (!noData) return true;
@@ -59,13 +93,22 @@ export function relevelRoads(net, ground, noData = null) {
     if (node.src?.y != null || !node.arms?.length) continue;
     const fit = fittedY(node, ground, noData);
     if (fit == null) { st.skippedNoData = (st.skippedNoData || 0) + 1; continue; }     // no DTM under it: nothing to go back to
-    // the ground round it is no plane (a cutting, a wall, a bridge's deck over a cutting): its mean is no street level
-    if (fit.rms > RMS_MAX) { st.skippedRough = (st.skippedRough || 0) + 1; continue; }
-    const y0 = fit.y, d = node.y - y0;
+    // the ground round it is no plane (a cutting, a wall, a bridge's deck over a cutting): its mean is no street level.
+    // Round 2 (docs/collisions/ROAD_FIX2.md): the lanes themselves may still be a plane (a junction at the bottom of
+    // the Linkebeek sunken lanes, its ring climbing their 2-4 m banks): the plane through the DTM along the arms' centre
+    // lines is the street level there (?roughlanes=0: skipped as before)
+    let lane = null;
+    if (fit.rms > RMS_MAX) {
+      // (junctions and continuations only: a dead end's one lane may run down a garage ramp the DTM sees, N5)
+      lane = roughLanes && node.arms.length >= 2 ? laneFit(node, ground, noData) : null;
+      if (!lane || lane.rms > RMS_MAX) { st.skippedRough = (st.skippedRough || 0) + 1; if (st.debug) (st.rough ??= []).push([node.id, Math.round(node.x), Math.round(node.z), lane && +lane.rms.toFixed(2)]); continue; }
+    }
+    const y0 = lane ? lane.y : fit.y, d = node.y - y0;
     if (Math.abs(d) <= MOVE_TOL) continue;
-    if (Math.abs(d) > MOVE_MAX) { st.skippedBig = (st.skippedBig || 0) + 1; continue; }
-    if (node.arms.some((a) => fixedRoad(a.road))) { st.skippedStructure++; continue; }
+    if (Math.abs(d) > (lane ? MOVE_MAX_LANE : roughLanes ? MOVE_MAX : MOVE_MAX_OLD)) { st.skippedBig = (st.skippedBig || 0) + 1; if (st.debug) (st.big ??= []).push([node.id, +d.toFixed(2)]); continue; }
+    if (node.arms.some((a) => fixedRoad(a.road))) { st.skippedStructure++; if (st.debug) (st.structure ??= []).push(node.id); continue; }
     node.y = y0;
+    if (lane) { node.plane = { gx: lane.gx, gz: lane.gz }; st.laneNodes = (st.laneNodes || 0) + 1; }
     moved.add(node);
     st.nodes++;
     if (Math.abs(d) > st.maxMove) { st.maxMove = Math.abs(d); st.maxAt = [Math.round(node.x), Math.round(node.z)]; }

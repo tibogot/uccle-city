@@ -169,6 +169,70 @@ export function parapetRings(d) {
   return out;
 }
 
+/** ABUTMENTS (road fix round 2, docs/collisions/ROAD_FIX2.md): the bare-earth DTM has the cutting's slope right up to
+ *  a deck's drawn end, so the slab end stood over a dip the street and the sidewalk dropped into (Rue du Bourdon, D9:
+ *  the deck 1.4 m over the ground between its end and the next junction; Chaussée de Waterloo, J5: the end node 3 m over
+ *  the DTM, the slab end 0.41 m over the sidewalk). Tapering the deck's ends (round 1) moved the step onto the slab;
+ *  here the GROUND comes up instead: over the EXT m past each drawn end (the approach, where the deck line runs from the
+ *  real ground out to the slab) and the deck's width, the grids are raised to the deck line (SLAB.sink under it: the
+ *  street is drawn on it), with a 1:1 bank beside it; only raised, never lowered, and only where the dip is an
+ *  abutment's (at most FILL_MAX under the deck line: a street passing under a deck end is not buried). In place on
+ *  every grid of `grids` (the drawn terrain and the road stage's ground), before the roads sample them. Returns cells. */
+const FILL_MAX = 5.0, BANK = FILL_MAX, UNDER = 1.5;     // UNDER: m of the fill under the slab's end (the abutment), 10 cm under its top:
+// the 1 m grid cannot hold a cliff AT the slab's end line, an oblique end cut its cells in two (Bourdon: the car between
+// two rows, one filled, one the cutting's slope 1.5 m down)
+export function deckAbutments(decks, grids, hdr) {
+  const { x0, z0, cols, rows, step } = hdr, G0 = grids[0];
+  let moved = 0;
+  for (const d of decks || []) {
+    const L = d.cum[d.cum.length - 1] || 1, W = d.half + BANK;
+    for (const [sa, sb, ua, ub, first] of [[0, d.span[0] + UNDER, d.span[0], d.span[0] + UNDER, true], [d.span[1] - UNDER, L, d.span[1] - UNDER, d.span[1], false]]) {
+      // (+ BANK m along the span beside the slab: the abutment's wing banks fall 1:1 there too, no cliff beside the deck)
+      const A = at(d, first ? sa : sa - BANK), B = at(d, first ? sb + BANK : sb);
+      const c0 = Math.max(0, Math.floor((Math.min(A.x, B.x) - W - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(A.x, B.x) + W - x0) / step));
+      const r0 = Math.max(0, Math.floor((Math.min(A.z, B.z) - W - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(A.z, B.z) + W - z0) / step));
+      const nc = c1 - c0 + 1, nr = r1 - r0 + 1;
+      if (nc <= 0 || nr <= 0) continue;                                          // (off this tile's grid)
+      const want = new Float64Array(nc * nr).fill(NaN);
+      for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+        const px = x0 + c * step, pz = z0 + r * step;
+        // nearest point of the deck's line (the whole line: a cell beside the span belongs to the span, not the approach)
+        let best = Infinity, s = 0, past = false;
+        for (let i = 1; i < d.pts.length; i++) {
+          const [ax, az] = d.pts[i - 1], [bx, bz] = d.pts[i];
+          const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
+          const t0 = ((px - ax) * dx + (pz - az) * dz) / l2, t = Math.max(0, Math.min(1, t0));
+          const dist = Math.hypot(ax + dx * t - px, az + dz * t - pz);
+          // (beyond the line's outer ends: not the approach, the ground there is the street's own)
+          if (dist < best) { best = dist; s = d.cum[i - 1] + t * Math.sqrt(l2); past = (i === 1 && t0 < 0) || (i === d.pts.length - 1 && t0 > 1); }
+        }
+        const into = first ? s - sb : sa - s;                                    // m into the span past the abutment
+        if (past || best > W || (first ? s < sa : s > sb) || into > BANK || (into > 0 && best < d.half)) continue;
+        const top = profY(d, Math.min(Math.max(s, sa), sb)) - SLAB.sink - (s > ua && s < ub ? 0.1 : 0) - Math.max(0, best - d.half) - Math.max(0, into);
+        const k = r * cols + c;
+        if (G0[k] < top && top - G0[k] <= FILL_MAX) want[(r - r0) * nc + (c - c0)] = top;
+        else if (G0[k] >= top) want[(r - r0) * nc + (c - c0)] = -Infinity;          // already up there: counts as fill
+      }
+      // no lone cells: a cell is raised only when most of its neighbours are up too (a deep cutting reaching into the
+      // approach, J5's railway under the bridge's oblique end, would otherwise get 3-4 m spikes where it is shallow)
+      // ... and no lone pits either (a cell left out among raised ones: a walker fell into a 4 m hole at Avenue des
+      // Tilleuls' east end, E9): an opening (cells with >= 6 of 8 wanted neighbours) then a closing (wanted cells with
+      // >= 4 of 8 kept neighbours)
+      const nb = (arr, i, j, test) => { let n = 0; for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+        if (!di && !dj) continue; const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < nc && jj < nr && test(arr[jj * nc + ii])) n++; } return n; };
+      const keep = new Uint8Array(nc * nr);
+      for (let j = 0; j < nr; j++) for (let i = 0; i < nc; i++) if (want[j * nc + i] > -Infinity && nb(want, i, j, (v) => !Number.isNaN(v)) >= 6) keep[j * nc + i] = 1;
+      for (let j = 0; j < nr; j++) for (let i = 0; i < nc; i++) if (!keep[j * nc + i] && want[j * nc + i] > -Infinity && nb(keep, i, j, (v) => v === 1) >= 4) keep[j * nc + i] = 2;
+      for (let j = 0; j < nr; j++) for (let i = 0; i < nc; i++) {
+        if (!keep[j * nc + i]) continue;
+        const v = want[j * nc + i], k = (r0 + j) * cols + c0 + i;
+        grids.forEach((G) => { if (G[k] < v) { G[k] = v; moved++; } });
+      }
+    }
+  }
+  return moved;
+}
+
 /** the bridge decks of a roads.json document, and the road stage's ground with them */
 export function bridgeDecks(roadsDoc, ground, keep = () => true) {
   const decks = bridgeDescriptors(roadsDoc, ground).filter(keep);

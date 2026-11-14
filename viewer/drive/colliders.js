@@ -613,7 +613,27 @@ export function driveGround(hm, parts) {
  *  H over the road top (hm.surface + CARVE), per 2 m segment of the line. Shared here (pure data) so the tile worker can
  *  put them in the drive surface. */
 export const TRAM_PLATFORM = { W: 2.6, H: 0.25, step: 2 };
-export const isTramPlatform = (l) => l.kind === "platform" && (l.tags?.tram === "yes" || l.tags?.railway === "platform");
+// (road fix round 2: tram=yes only. OSM's railway=platform without it are the railway stations' platforms, which
+// viewer/rail/ draws and collides from rail.json: Moensberg, Calevoet, Saint-Job, Uccle-Stalle, Linkebeek, Vivier d'Oie;
+// tram.js laid a 25 cm slab band round their outlines too, 1.3 m out onto the track bed)
+export const isTramPlatform = (l) => l.kind === "platform" && l.tags?.tram === "yes" && l.line?.length >= 2;
+/** A platform mapped as an AREA (a closed way: 53 of Uccle's 100 OSM tram platforms, e.g. Churchill, G2) is its polygon;
+ *  until road fix round 2 every platform was a W-wide band along its way, so an area's outline became a hollow ring band
+ *  reaching W / 2 past the platform's edge into the lane (the car rode up its kerb or stopped at it, G2). -> the ring
+ *  without its closing point, or null for a line platform. */
+export function platformRing(l) {
+  const L = l.line, a = L[0], b = L[L.length - 1];
+  if (L.length < 4 || Math.hypot(a[0] - b[0], a[1] - b[1]) > 0.01) return null;
+  return L.slice(0, -1);
+}
+export const inRing2 = (ring, x, z) => {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, zi] = ring[i], [xj, zj] = ring[j];
+    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
+  }
+  return inside;
+};
 export function densifyLine(line, step) {
   const out = [];
   for (let k = 1; k < line.length; k++) {
@@ -635,6 +655,22 @@ export function tramPlatformSurface(feats, hm, ground, bounds, carve) {
   let raised = 0;
   for (const l of feats.lines || []) {
     if (!isTramPlatform(l)) continue;
+    const ring = platformRing(l);
+    if (ring) {                                                         // an area platform: its polygon
+      let bx0 = Infinity, bz0 = Infinity, bx1 = -Infinity, bz1 = -Infinity;
+      for (const [x, z] of ring) { bx0 = Math.min(bx0, x); bz0 = Math.min(bz0, z); bx1 = Math.max(bx1, x); bz1 = Math.max(bz1, z); }
+      if (bx1 < bounds.x0 - 3 || bx0 > bounds.x1 + 3 || bz1 < bounds.z0 - 3 || bz0 > bounds.z1 + 3) continue;
+      const c0 = Math.max(0, Math.ceil((bx0 - x0) / step)), c1 = Math.min(cols - 1, Math.floor((bx1 - x0) / step));
+      const r0 = Math.max(0, Math.ceil((bz0 - z0) / step)), r1 = Math.min(rows - 1, Math.floor((bz1 - z0) / step));
+      for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+        const px = x0 + c * step, pz = z0 + r * step;
+        if (!inRing2(ring, px, pz)) continue;
+        const k = r * cols + c, cm = Math.round((hm.surface(px, pz) + carve + H - Y[k]) * 100);
+        if (cm <= D[k] || cm > 400) continue;
+        D[k] = cm; raised++;
+      }
+      continue;
+    }
     const d = densifyLine(l.line, TRAM_PLATFORM.step);
     for (let i = 1; i < d.length; i++) {
       const [ax, az] = d[i - 1], [bx, bz] = d[i];

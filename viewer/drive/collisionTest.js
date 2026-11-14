@@ -285,7 +285,8 @@ function roadLines(tile) {
       }
       if (side[nm] == null) side[nm] = o + 1.0;                                   // no sidewalk: the verge
     }
-    out.push({ id: r.id, type: r.type, pts, lane: lane ?? 1.6, walk: [side.right, -side.left] });
+    const m = r.meta || {};
+    out.push({ id: r.id, type: r.type, pts, lane: lane ?? 1.6, walk: [side.right, -side.left], passage: m.tunnel === "building_passage" || m.covered === "yes" });
   }
   return out;
 }
@@ -329,6 +330,9 @@ function drawnGround(scene, tile) {
   scene.getObjectByName(`${tile.name}-features`)?.traverse((o) => { if (o.isMesh && /^(rail-ballast|rail-platform|tram-platform)/.test(o.name)) objs.push(o); });
   for (const h of HEROES) { const r = scene.getObjectByName(h); if (r) objs.push(r.children.find((c) => /[-_]lod0$/.test(c.name)) || r); }
   scene.traverse((o) => { if (o.isMesh && /pond|water/i.test(o.name)) objs.push(o); });
+  // the OSM road-bridge decks of EVERY tile (road fix round 2: a deck crossing a tile edge is drawn by the tile holding
+  // its middle, e.g. Avenue des Tilleuls D9 / E9; its other tile's routes drive on it)
+  scene.traverse((o) => { if (o.isMesh && /^road-bridge-deck/.test(o.name) && !o.parent?.name?.startsWith(`${tile.name}-`)) objs.push(o); });
   const v = new THREE.Vector3(), A = [0, 0, 0], B = [0, 0, 0], Cc = [0, 0, 0];
   const put = (q, y) => {                // layers kept sorted, highest first; one per 1.5 m band (its highest surface)
     const o = q * NL;
@@ -399,14 +403,23 @@ export function driveRoutes({ scene, tile, driver, truth, G, maxRoads = Infinity
     // a route that STARTS inside a solid (an alley that runs into a building, a passage the UrbIS solid closes: the
     // drawn wall is at the footprint, the car would be spawned inside it and pushed about by the collider's inner
     // chunk edges, read as "invisible hits"): start where the car stands clear (a player arrives from outside)
-    for (let k = 0; k + 1 < path.length; k++) {
-      body.cos = Math.cos(Math.atan2(path[k + 1][0] - path[k][0], path[k + 1][1] - path[k][1])); body.sin = Math.sin(Math.atan2(path[k + 1][0] - path[k][0], path[k + 1][1] - path[k][1]));
+    const insideAt = (k) => {
+      const k1 = Math.min(k + 1, path.length - 1), k0 = k1 - 1;
+      const a = Math.atan2(path[k1][0] - path[k0][0], path[k1][1] - path[k0][1]);
+      body.cos = Math.cos(a); body.sin = Math.sin(a);
       near.length = 0;
       for (const col of sets(path[k][0], path[k][1], 4)) gather(col, path[k][0], path[k][1], 4, near);
-      let inside = false;
-      for (let q = 0; q < near.length && !inside; q += 2) if (near[q + 1] < near[q].P && near[q].pkind[near[q + 1]] === KIND.building && itemContact(near[q], near[q + 1], path[k][0], path[k][1], body, contact)) inside = true;
-      if (!inside) { if (k) { R.startsInside = (R.startsInside || 0) + 1; path = path.slice(k); } break; }
+      for (let q = 0; q < near.length; q += 2) if (near[q + 1] < near[q].P && near[q].pkind[near[q + 1]] === KIND.building && itemContact(near[q], near[q + 1], path[k][0], path[k][1], body, contact)) return true;
+      return false;
+    };
+    for (let k = 0; k + 1 < path.length; k++) {
+      if (!insideAt(k)) { if (k) { R.startsInside = (R.startsInside || 0) + 1; path = path.slice(k); } break; }
     }
+    // road fix round 2: and a route on an OSM building passage (tunnel=building_passage, covered=yes: D5 Chaussee
+    // d'Alsemberg's porte-cocheres) ENDS where it meets the UrbIS solid that closes the passage (the drawn facade: the
+    // solid is not cut open there, docs/collisions/ROAD_FIX2.md): the car stops at the facade, it is not driven on
+    // through the solid's inside
+    if (L.passage) for (let k = 1; k < path.length; k++) if (insideAt(k)) { R.endsInside = (R.endsInside || 0) + 1; path = path.slice(0, k); break; }
     if (path.length < 4) continue;
     R.routes++;
     const touched = new Set(), passed = new Set();

@@ -64,6 +64,32 @@ export function heroFrame(h) {
  *  The DTM under a road bridge is the railway cutting (its deck is not in the LiDAR ground); the road engine sampled it and
  *  pulled the street ends down into a 0.4-0.6 m dip at Verrewinkel's SE end. Feeding it the deck keeps the street level
  *  with the bridge's road (the hero's deck ends were taken from this ground at the polygon ends). */
+/** THE STREET THROUGH AN UNDERPASS IS LEVEL ACROSS (road fix round 2, docs/collisions/ROAD_FIX2.md): the measured
+ *  street (UrbIS: Kauwberg's polygon is 9.5-11 m wide there, the arch's opening 8.6 m) reaches past the cut's floor onto
+ *  its banks and onto the approach cutting's sides beyond the bridge, and its height field followed them: the cobbles
+ *  rode up the banks in a saw-tooth (docs/trains/compare/r2_kauwberg_city_after.jpg). For the road stage only (the drawn
+ *  terrain keeps its banks; the street's carve and weld meet them at the street's edge): within UP_EXT m before / after
+ *  each hero underpass and hw + UP_SIDE m of its axis, the ground is at most the street's level on the axis (the cut's
+ *  line between the ends, the DTM on the axis beyond them). Only lowers, by at most UP_DROP (a wall, a building: left). */
+const UP_EXT = 25, UP_SIDE = 4, UP_DROP = 4;
+export function underpassGround(heroes, ground) {
+  const ups = (heroes || []).filter((h) => h.underpass).map((h) => {
+    const [ax, az, ay] = h.underpass.a, [bx, bz, by] = h.underpass.b, L = Math.hypot(bx - ax, bz - az) || 1;
+    return { ax, az, ay, by, L, tx: (bx - ax) / L, tz: (bz - az) / L, w: h.underpass.hw + UP_SIDE };
+  });
+  if (!ups.length) return ground;
+  return (x, z) => {
+    const g = ground(x, z);
+    for (const u of ups) {
+      const dx = x - u.ax, dz = z - u.az, s = dx * u.tx + dz * u.tz;
+      if (s < -UP_EXT || s > u.L + UP_EXT || Math.abs(dx * u.tz - dz * u.tx) > u.w) continue;
+      const lvl = s >= 0 && s <= u.L ? u.ay + (u.by - u.ay) * (s / u.L) : ground(u.ax + u.tx * s, u.az + u.tz * s);
+      return g > lvl && g - lvl <= UP_DROP ? lvl : g;
+    }
+    return g;
+  };
+}
+
 export function roadDeckGround(heroes, ground) {
   const decks = (heroes || []).filter((h) => h.kind === "road_over_rail").map((h) => {
     const f = heroFrame(h), d = h.deck;
