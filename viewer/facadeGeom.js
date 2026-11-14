@@ -123,7 +123,7 @@ function box(D, A, B, yTop, height, depth, nx, nz, col, closed = false) {
 // that meet another strip of the same kind and section are MITRED on the bisector (no end cap, no overlap: inside and
 // outside corners, adjoining houses), free ends get their end cap SET BACK a few mm per kind (never in the plane of the
 // next wall nor of another strip's cap). Every face is wound by its normal (front-side culling).
-const STRIP_SETBACK = { eb: 0.002, cu: 0.004, cl: 0.006, gu: 0.008, xx: 0.004, pi: 0.003, cp: 0.005 };
+const STRIP_SETBACK = { eb: 0.002, cu: 0.004, cl: 0.006, gu: 0.008, xx: 0.004, pi: 0.012, cp: 0.016 };   // (the roof kit's parapets: a free end is often IN the plane of the next wall, which rises: 12-16 mm clear)
 
 /** a strip along A -> B (xz; any order), its section from yTop - h to yTop, from `off` to `off + depth` along the
  *  outward normal (nx, nz) */
@@ -212,7 +212,10 @@ function emitStrips(D, S, stats) {
     // the mitre: each corner (back, front) = where the two strips' own offset lines meet, so every face stays in its
     // strip's plane; near-parallel strips (not merged: planes a few cm apart) keep their own square end
     const det = s1.nx * s2.nz - s1.nz * s2.nx;
-    if (Math.abs(det) < 0.05) { s1["m" + e1] = s2["m" + e2] = { flat: true }; stats.stripJoins++; continue; }
+    // (the roof kit's parapets: UrbIS splits one wall into faces ~1 deg apart; a "flat" joint left a 4-12 mm wedge open
+    // at their outer corner: they mitre down to 0.006 deg)
+    const flatLim = s1.kind === "pi" || s1.kind === "cp" ? 1e-4 : 0.05;
+    if (Math.abs(det) < flatLim) { s1["m" + e1] = s2["m" + e2] = { flat: true }; stats.stripJoins++; continue; }
     const p1 = s1.ax * s1.nx + s1.az * s1.nz, p2 = s2.ax * s2.nx + s2.az * s2.nz;
     const meet = (o) => { const c1 = p1 + o, c2 = p2 + o; return [(c1 * s2.nz - c2 * s1.nz) / det, (s1.nx * c2 - s2.nx * c1) / det]; };
     const m = { back: meet(s1.off), front: meet(s1.off + s1.d) };
@@ -631,11 +634,60 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       for (let k = np; k < roofs.parapets.length; k++) {
         const q = roofs.parapets[k], { A, B, nx, nz, h, t } = q;
         const y = (A[1] + B[1]) / 2;
+        let face = null, rises = false;
+        const ua = A[0] * -nz + A[2] * nx, ub = B[0] * -nz + B[2] * nx, uLo = Math.min(ua, ub) + 0.05, uHi = Math.max(ua, ub) - 0.05;
+        for (const f of live) {
+          if (f.nx * nx + f.nz * nz < 0.985) continue;
+          const pd = f.tris[0].p[0][0] * f.nx + f.tris[0].p[0][2] * f.nz;
+          if (Math.abs(A[0] * f.nx + A[2] * f.nz - pd) > 0.2) continue;
+          // the building's own wall goes on up in this plane over the edge (a gable, a higher part): no parapet there
+          for (const { p } of f.tris) {
+            const q = p.map((v) => [v[0] * -nz + v[2] * nx, v[1]]);
+            for (let j = 0; j <= 6 && !rises; j++) {
+              const u = uLo + (uHi - uLo) * j / 6;
+              // the triangle's top at u (its edges crossing the vertical line u)
+              for (let e = 0; e < 3; e++) {
+                const [u0, y0] = q[e], [u1, y1] = q[(e + 1) % 3];
+                if ((u0 - u) * (u1 - u) > 0 || Math.abs(u1 - u0) < 1e-6) continue;
+                if (y0 + (y1 - y0) * (u - u0) / (u1 - u0) > y + 0.08) { rises = true; break; }
+              }
+            }
+            if (rises) break;
+          }
+          if (!face && Math.abs(f.pre.top - y) < 0.3) face = f;
+        }
+        if (rises) continue;
+        // an END where a slope of the same building comes down (its eaves board / gutter / ridge beam end there) or one
+        // of its walls rises over the edge (the parapet's end would lie in that wall's plane): stop 30 cm short
+        const conflict = (Q) => {
+          for (let k2 = 0; k2 < all.length; k2++) {
+            const tri = all[k2], wall = k2 < wallTris;
+            if (!wall && tri.n[1] > 0.97) continue;
+            if (!tri.p.some((v) => Math.abs(v[0] - Q[0]) < 0.06 && Math.abs(v[2] - Q[2]) < 0.06)) continue;
+            // a wall triangle at that corner reaching over the edge (anywhere: a sloping wall top rises away from the
+            // corner), or a sloping roof triangle meeting the corner
+            if (wall ? tri.p.some((v) => v[1] > Q[1] + 0.08) : tri.p.some((v) => Math.abs(v[1] - Q[1]) < 0.6)) return true;
+          }
+          return false;
+        };
+        const L0 = Math.hypot(B[0] - A[0], B[2] - A[2]), ex = (B[0] - A[0]) / L0, ez = (B[2] - A[2]) / L0;
+        const cA = conflict(A), cB = conflict(B);
+        if (L0 - (cA ? 0.3 : 0) - (cB ? 0.3 : 0) < 0.6) continue;
+        if (cA) q.A = [A[0] + ex * 0.3, A[1] + (B[1] - A[1]) * 0.3 / L0, A[2] + ez * 0.3];
+        if (cB) q.B = [B[0] - ex * 0.3, B[1] - (B[1] - A[1]) * 0.3 / L0, B[2] - ez * 0.3];
+        emitParapet(q);
+      }
+    }
+    function emitParapet(q) {
+      {
+        const { A, B, nx, nz, h, t } = q;
+        const y = (A[1] + B[1]) / 2;
         let face = null;
         for (const f of live) {
           if (f.nx * nx + f.nz * nz < 0.985) continue;
           const pd = f.tris[0].p[0][0] * f.nx + f.tris[0].p[0][2] * f.nz;
-          if (Math.abs(A[0] * f.nx + A[2] * f.nz - pd) < 0.2 && Math.abs(f.pre.top - y) < 0.3) { face = f; break; }
+          if (Math.abs(A[0] * f.nx + A[2] * f.nz - pd) > 0.2) continue;
+          if (Math.abs(f.pre.top - y) < 0.3) { face = f; break; }
         }
         const tx = -nz, tz = nx, u0 = face ? face.pre.u0 : 0, fw = face ? face.pre.width : Math.hypot(B[0] - A[0], B[2] - A[2]);
         const fstyle = style;
@@ -651,7 +703,8 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         }
         const top = Math.max(A[1], B[1]) + h, inner = [rc[0] * 0.85, rc[1] * 0.85, rc[2] * 0.85];
         const cope = q.cope < 0.5 ? [0.44, 0.45, 0.46] : q.cope < 0.65 ? [0.38, 0.37, 0.34] : q.cope < 0.8 ? [0.085, 0.09, 0.095] : [0.06, 0.063, 0.068];
-        addStrip(SD, "pi", A, B, top, h + 0.03, t, nx, nz, inner, -t).mask = "b";
+        // (down to 2 cm under the LOWER end: a flat roof's edge may fall a little along its length; JOINS)
+        addStrip(SD, "pi", A, B, top, top - Math.min(A[1], B[1]) + 0.02, t, nx, nz, inner, -t).mask = "b";
         addStrip(SD, "cp", A, B, top + 0.05, 0.05, t + 0.06, nx, nz, cope, -(t + 0.03)).mask = "ftsb";
         stats.parapets = (stats.parapets || 0) + 1;
       }

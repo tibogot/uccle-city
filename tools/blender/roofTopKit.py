@@ -96,6 +96,14 @@ def box(P, mat, cx, cy, cz, sx, sy, sz, bevel=0.0, segs=1, grain=X):
     P.add_bm(bm, mat, grain, M((cx, cy, cz)))
 
 
+def lid_box(P, mat, cx, cy, z0, sx, sy, sz, grain=X):
+    """a box with no bottom face (the far LODs: what stands on something never shows its underside): 10 triangles"""
+    bm = bm_box(sx, sy, sz, 0.0, 1)
+    for f in [f for f in bm.faces if f.normal.z < -0.9]: bm.faces.remove(f)
+    for f in bm.faces: f.smooth = False
+    P.add_bm(bm, mat, grain, M((cx, cy, z0 + sz / 2)))
+
+
 def slab_chamfer(sx, sy, h, ch):
     """a slab sx x sy x h (z 0..h) whose top is weathered (chamfered by ch toward the edges), with a drip line under
     the oversail (a ring of vertices 1.2 cm in)"""
@@ -120,6 +128,9 @@ def chimcap(lod):
     """unit footprint (x, y -0.5..0.5 in Blender), z 0 = the stack top: two corbelled courses (brick), the cap slab"""
     P = Part(f"chimcap_lod{lod}")
     c1, c2 = 0.035, 0.065                               # the courses oversail 3.5 / 6.5 cm (relative: the unit is scaled)
+    if lod == 2:                                        # far: the head as one open-bottom block (10 tris)
+        lid_box(P, CAP, 0, 0, 0.0, 1 + 2 * c2 + 0.08, 1 + 2 * c2 + 0.08, 0.25)
+        return P.to_object(smooth_angle=30)
     bev = 0.006 if lod == 0 else 0.0
     box(P, BRICK, 0, 0, 0.0375, 1 + 2 * c1, 1 + 2 * c1, 0.075, bev, 1)
     box(P, BRICK, 0, 0, 0.1125 + 0.0005, 1 + 2 * c2, 1 + 2 * c2, 0.074, bev, 1)
@@ -135,16 +146,16 @@ def pot(lod):
     """terracotta pot: foot at z 0 (2 cm in the cap's mortar), 0.55 m, a collar band, a rolled rim, open with a sooty
     plug inside"""
     P = Part(f"pot_lod{lod}")
-    segs = (16, 10, 6)[lod]
+    segs = (16, 8, 5)[lod]
     if lod == 0:
         prof = [(0.0, 0.0), (0.125, 0.0), (0.13, 0.06), (0.118, 0.075), (0.112, 0.4), (0.108, 0.48), (0.118, 0.5), (0.122, 0.53), (0.116, 0.55), (0.095, 0.55), (0.095, 0.42), (0.0, 0.42)]
     elif lod == 1:
-        prof = [(0.0, 0.0), (0.125, 0.0), (0.12, 0.07), (0.115, 0.27), (0.11, 0.46), (0.12, 0.53), (0.096, 0.55), (0.095, 0.45), (0.0, 0.45)]
+        prof = [(0.0, 0.0), (0.125, 0.0), (0.12, 0.07), (0.11, 0.47), (0.12, 0.53), (0.096, 0.55), (0.095, 0.46), (0.0, 0.46)]
     else:
-        prof = [(0.0, 0.0), (0.122, 0.0), (0.11, 0.55), (0.0, 0.53)]
+        prof = [(0.122, 0.0), (0.11, 0.55), (0.0, 0.53)]
     bm = lathe(prof, segs)
     P.add_bm(bm, CLAY, Zv)
-    if lod < 2:   # a sooty disc a little over the inner floor (the flue seen from above)
+    if lod == 0:   # a sooty disc a little over the inner floor (the flue seen from above)
         P.add_bm(lathe([(0.0, prof[-1][1] + 0.004), (0.09, prof[-1][1] + 0.004)][::-1], segs), SOOT, Zv)
     return P.to_object(smooth_angle=50)
 
@@ -167,9 +178,10 @@ def cowl(lod):
 def velux(lod):
     """unit 1 x 1 on the slope (Blender: x along the eave, -y = up the slope (three +z), z = the slope normal)"""
     P = Part(f"velux_lod{lod}")
-    if lod == 2:
-        box(P, ALU, 0, 0, 0.035, 1.0, 1.0, 0.11)
-        box(P, GLASS, 0, 0.02, 0.0905, 0.8, 0.74, 0.001)
+    if lod == 2:                                        # far: an open-bottom block + the pane on it (12 tris)
+        lid_box(P, ALU, 0, 0, -0.02, 1.0, 1.0, 0.11)
+        bm = bmesh.new(); vs = [bm.verts.new((x, y, 0.094)) for x, y in ((-0.4, -0.35), (0.4, -0.35), (0.4, 0.39), (-0.4, 0.39))]
+        bm.faces.new(vs); P.add_bm(bm, GLASS, X)
         return P.to_object()
     # the flashing collar, sloping from the roof (z -0.02) up to the frame (z 0.06), closed underneath
     bm = bmesh.new()
@@ -199,10 +211,10 @@ def pv(lod):
     P = Part(f"pv_lod{lod}")
     W, L, t = 1.0, 1.7, 0.035
     z0 = 0.07
-    if lod == 2:
-        box(P, PVF, 0, 0, z0 + t / 2, W, L, t)
-        box(P, PVC, 0, 0, z0 + t + 0.0005, W - 0.04, L - 0.04, 0.001)
-        box(P, STEEL, 0, 0, 0.025, W * 0.9, L * 0.8, 0.07)
+    if lod == 2:                                        # far: a block down to the roof + the glass on it (12 tris)
+        lid_box(P, PVF, 0, 0, -0.01, W, L, z0 + t + 0.01)
+        bm = bmesh.new(); vs = [bm.verts.new((x, y, z0 + t + 0.004)) for x, y in ((-W / 2 + 0.03, -L / 2 + 0.03), (W / 2 - 0.03, -L / 2 + 0.03), (W / 2 - 0.03, L / 2 - 0.03), (-W / 2 + 0.03, L / 2 - 0.03))]
+        bm.faces.new(vs); P.add_bm(bm, PVC, X)
         return P.to_object()
     f = 0.03
     bev = 0.003 if lod == 0 else 0.0
@@ -349,6 +361,14 @@ def hatch(lod):
 
 def dome(lod):
     P = Part(f"dome_lod{lod}")
+    if lod == 2:                                        # far: the upstand block + a low pyramid (14 tris)
+        lid_box(P, UPSTAND, 0, 0, -0.03, 1.04, 1.04, 0.32)
+        bm = bmesh.new(); c = [bm.verts.new((x, y, 0.29)) for x, y in ((-0.49, -0.49), (0.49, -0.49), (0.49, 0.49), (-0.49, 0.49))]
+        a = bm.verts.new((0, 0, 0.5))
+        for k in range(4): bm.faces.new([c[k], c[(k + 1) % 4], a])
+        for f in bm.faces: f.smooth = False
+        P.add_bm(bm, OPAL, Zv)
+        return P.to_object(smooth_angle=30)
     upstand(P, 1.0, 1.0, 0.25, lod)
     box(P, ALU, 0, 0, 0.27, 1.04, 1.04, 0.04, 0.006 if lod == 0 else 0.0)
     # the dome: a square-based bubble (a superellipse outline) rising 0.22 from the ring's top

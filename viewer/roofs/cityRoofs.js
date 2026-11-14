@@ -6,14 +6,16 @@
 //     ridges, parapets + copings round flat roofs (drawn with the façades), roof windows, solar arrays, flat-roof
 //     furniture; deterministic per building (BU_ID hash)
 //   - drawing: the kit (viewer/roofs/roofKit.js) as ONE pool per piece for the whole city (LOD0-2), streamed by
-//     viewer/instanceStream.js (a gather every 2 m of travel, time-sliced inside the city's streaming budget; the tile fade
+//     viewer/instanceStream.js (a gather every 4 m of travel, 14 m of margin, time-sliced inside the city's streaming budget; the tile fade
 //     is a uniform per tile slot)
 //   - collisions: the pieces' boxes are stamped into the falcon's drawn-roof grid in the worker (roofPlace.js
 //     stampRoofCols -> viewer/tileData.js roofSurface): the bird hits the stacks, parapets and roof furniture it sees (the
 //     G key draws that grid). Nothing on a roof can be reached on foot or by car.
 import * as THREE from "three/webgpu";
 import { loadRoofKit, RoofPool, PIECES, roofSources, roofFades } from "./roofKit.js";
-import { Streamer, MARGIN } from "../instanceStream.js";
+import { Streamer } from "../instanceStream.js";
+
+const ROOF_MARGIN = 14, ROOF_TRIGGER = 4;
 
 const qs = new URLSearchParams(location.search);
 
@@ -26,8 +28,11 @@ export const cityRoofs = {
     try { this.kit = await loadRoofKit(); } catch (e) { log(`roofs: kit failed (${e.message})`); this.kit = null; return null; }
     this.group = new THREE.Group(); this.group.name = "roofs";
     scene.add(this.group);
-    for (const p of PIECES) this.pools.push(new RoofPool(this.kit.pieces[p], this.kit.mats, this.group, MARGIN));
-    this.streamer = new Streamer({ name: "roofs", pools: this.pools.map((p) => p.stream), fades: roofFades, budget: 0.3 });
+    // a wider margin and trigger than the street-level pools (6 / 2 m): the roof kit's bands reach 480 m, so a gather
+    // copies many instances (~10 frames a gather on a 9-tile ring); with 6 m the camera outran it at car speed
+    // (432 forced gathers on the Saint-Job drive); 14 m / 4 m: half the gathers, none forced (docs/assets/ROOFS.md)
+    for (const p of PIECES) this.pools.push(new RoofPool(this.kit.pieces[p], this.kit.mats, this.group, ROOF_MARGIN));
+    this.streamer = new Streamer({ name: "roofs", pools: this.pools.map((p) => p.stream), fades: roofFades, budget: 0.3, margin: ROOF_MARGIN, trigger: ROOF_TRIGGER });
     updaters.push((eye, cam) => this.update(cam));
     for (const [name, t] of this.pending || []) this.addTile(name, t.kit, t.parent);
     this.pending = null;

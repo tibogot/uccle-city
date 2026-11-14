@@ -210,26 +210,33 @@ export function roofCollector(opts = {}) {
     const slopes = planes.filter((p) => !p.flat && p.area >= 4);
     stats.flatRegions += flats.length; stats.slopes += slopes.length;
     const taken = [];                                   // [x, z, radius] of what is placed on this building
-    const free = (x, z, rad) => !taken.some(([a, c, q]) => Math.hypot(a - x, c - z) < q + rad) && !stacks.some((s) => Math.hypot(s.x - x, s.z - z) < rad + Math.max(s.w, s.d) * 0.6 + 0.2);
+    // (the tile's stacks near this building only: the whole list per test cost seconds a tile)
+    let bx0 = Infinity, bz0 = Infinity, bx1 = -Infinity, bz1 = -Infinity;
+    for (const t of tris) for (const q of t.p) { bx0 = Math.min(bx0, q[0]); bx1 = Math.max(bx1, q[0]); bz0 = Math.min(bz0, q[2]); bz1 = Math.max(bz1, q[2]); }
+    const nearStacks = stacks.filter((s) => s.x > bx0 - 3 && s.x < bx1 + 3 && s.z > bz0 - 3 && s.z < bz1 + 3);
+    const free = (x, z, rad) => !taken.some(([a, c, q]) => Math.hypot(a - x, c - z) < q + rad) && !nearStacks.some((s) => Math.hypot(s.x - x, s.z - z) < rad + Math.max(s.w, s.d) * 0.6 + 0.2);
     const occupied = (x, z, y) => b.otherTop(x, z) > y + 0.25;           // a lift overrun / another solid standing there
 
     // ---- FLAT REGIONS
     const bigBlock = b.height >= 10;
-    for (const R of flats) flatRegion(R, b, r, bigBlock, taken, free, occupied);
+    // ONE parapet per building (height, thickness, coping): its regions' parapets meet and mitre at their corners
+    const big = flats.reduce((m, R) => Math.max(m, R.area), 0);
+    const pr = rng(h01(b.key + "|parapet"));
+    const par = { h: bigBlock ? 0.45 + pr() * 0.5 : big > 40 ? 0.2 + pr() * 0.3 : 0.12 + pr() * 0.2, t: bigBlock ? 0.25 : 0.18, cope: pr() };
+    for (const R of flats) flatRegion(R, b, r, bigBlock, taken, free, occupied, par);
 
     // ---- SLOPES: chimney on detached roofs, solar arrays, roof windows
     if (slopes.length) pitched(slopes, b, r, taken, free);
   }
 
   // ------------------------------------------------------------------------------------------- flat regions
-  function flatRegion(R, b, r, bigBlock, taken, free, occupied) {
+  function flatRegion(R, b, r, bigBlock, taken, free, occupied, par) {
     const y = R.y;
     // the main axis: the longest boundary edge
     let ax = 1, az = 0, best = 0;
     for (const e of R.bnd) { const L = Math.hypot(e.B[0] - e.A[0], e.B[2] - e.A[2]); if (L > best) { best = L; ax = (e.B[0] - e.A[0]) / L; az = (e.B[2] - e.A[2]) / L; } }
     // ---- parapets on the edges over a wall (nothing as high outside)
-    const ph = bigBlock ? 0.45 + r() * 0.5 : R.area > 40 ? 0.2 + r() * 0.3 : 0.12 + r() * 0.2;
-    const cope = r();                                   // coping: < 0.5 aluminium, < 0.8 concrete / blue stone, else dark metal
+    const ph = par.h, cope = par.cope;                  // coping: < 0.5 aluminium, < 0.8 concrete / blue stone, else dark metal
     if (R.area >= 8) for (const e of R.bnd) {
       const L = Math.hypot(e.B[0] - e.A[0], e.B[2] - e.A[2]);
       if (L < 0.6) continue;
@@ -245,7 +252,7 @@ export function roofCollector(opts = {}) {
         if (o > Math.min(e.A[1], e.B[1]) - 0.4) blocked++;
       }
       if (blocked >= 2) continue;
-      parapets.push({ A: e.A, B: e.B, nx, nz, h: ph, t: bigBlock ? 0.25 : 0.18, cope, key: b.key, roof: b.roofColor });
+      parapets.push({ A: e.A, B: e.B, nx, nz, h: ph, t: par.t, cope, key: b.key, roof: b.roofColor });
       stats.parapetM += L;
       cols.push(Math.min(e.A[0], e.B[0]) - 0.15, Math.min(e.A[2], e.B[2]) - 0.15, Math.max(e.A[0], e.B[0]) + 0.15, Math.max(e.A[2], e.B[2]) + 0.15, Math.max(e.A[1], e.B[1]) + ph + 0.05);
     }
@@ -257,20 +264,43 @@ export function roofCollector(opts = {}) {
     const spots = [];
     const nu = Math.floor((u1 - u0) / cs), nv = Math.floor((v1 - v0) / cs);
     if (nu * nv > 40000) return;                       // (a 1 ha roof: skip the furniture)
+    // the grid points inside the region: each triangle rasterised in the region's (u, v) frame (not every point
+    // against every triangle)
+    const inGrid = new Uint8Array((nu + 1) * (nv + 1));
+    for (const t of R.tris) {
+      const q = t.p.map((p) => [p[0] * tx + p[2] * tz, p[0] * sx + p[2] * sz]);
+      const i0 = Math.max(1, Math.ceil((Math.min(q[0][0], q[1][0], q[2][0]) - u0) / cs)), i1 = Math.min(nu - 1, Math.floor((Math.max(q[0][0], q[1][0], q[2][0]) - u0) / cs));
+      const j0 = Math.max(1, Math.ceil((Math.min(q[0][1], q[1][1], q[2][1]) - v0) / cs)), j1 = Math.min(nv - 1, Math.floor((Math.max(q[0][1], q[1][1], q[2][1]) - v0) / cs));
+      const [a, b, c] = q, det = (b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1]);
+      if (Math.abs(det) < 1e-9) continue;
+      for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) {
+        const u = u0 + i * cs, v = v0 + j * cs;
+        const l1 = ((b[1] - c[1]) * (u - c[0]) + (c[0] - b[0]) * (v - c[1])) / det, l2 = ((c[1] - a[1]) * (u - c[0]) + (a[0] - c[0]) * (v - c[1])) / det;
+        if (l1 >= -1e-5 && l2 >= -1e-5 && 1 - l1 - l2 >= -1e-5) inGrid[i * (nv + 1) + j] = 1;
+      }
+    }
+    // clearance to the edges: the boundary edges near each point (a coarse 4 m bucket of the edges)
+    const bucket = new Map(), BK = 4, bk = (x, z) => `${Math.floor(x / BK)},${Math.floor(z / BK)}`;
+    for (const e of R.bnd) {
+      const xa = Math.min(e.A[0], e.B[0]), xb = Math.max(e.A[0], e.B[0]), za = Math.min(e.A[2], e.B[2]), zb = Math.max(e.A[2], e.B[2]);
+      for (let gx = Math.floor((xa - 3) / BK); gx <= Math.floor((xb + 3) / BK); gx++) for (let gz = Math.floor((za - 3) / BK); gz <= Math.floor((zb + 3) / BK); gz++) {
+        const k = gx + "," + gz; if (!bucket.has(k)) bucket.set(k, []); bucket.get(k).push(e);
+      }
+    }
     for (let i = 1; i < nu; i++) for (let j = 1; j < nv; j++) {
+      if (!inGrid[i * (nv + 1) + j]) continue;
       const u = u0 + i * cs, v = v0 + j * cs, x = u * tx + v * sx, z = u * tz + v * sz;
-      let inside = false;
-      for (const t of R.tris) if (triY(t, x, z) !== null) { inside = true; break; }
-      if (!inside) continue;
-      let clr = Infinity;
-      for (const e of R.bnd) clr = Math.min(clr, segDist(x, z, e.A[0], e.A[2], e.B[0], e.B[2]));
+      let clr = 3;                                     // (3 m and more: as good as far)
+      for (const e of bucket.get(bk(x, z)) || []) clr = Math.min(clr, segDist(x, z, e.A[0], e.A[2], e.B[0], e.B[2]));
       if (clr < 0.6 || occupied(x, z, y)) continue;
       spots.push({ x, z, u, v, clr });
     }
     if (!spots.length) return;
+    // a random free spot with that clearance (up to 60 draws: filtering every spot against everything placed cost
+    // most of the façade analysis on big roofs)
     const pick = (need, rad) => {
-      const ok = spots.filter((s) => s.clr >= need && free(s.x, s.z, rad));
-      return ok.length ? ok[Math.floor(r() * ok.length)] : null;
+      for (let k = 0; k < 60; k++) { const sp = spots[Math.floor(r() * spots.length)]; if (sp.clr >= need && free(sp.x, sp.z, rad)) return sp; }
+      return null;
     };
     const ca = tx, sa = -tz;                            // yaw so that local +x = the region's axis (three.js: x' = (cos, 0, -sin))
     const aux = b.roofColor ? [b.roofColor[0], b.roofColor[1], b.roofColor[2], 0] : [0, 0, 0, 0];   // the upstands: the roof's colour

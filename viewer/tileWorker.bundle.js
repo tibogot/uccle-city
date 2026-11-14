@@ -361,7 +361,7 @@ function box(D, A, B, yTop, height, depth, nx, nz, col, closed = false) {
   quad(b0, b1, B1, B0, [tx, 0, tz]);
   if (closed) quad(a0, b0, b1, a1, [-nx, 0, -nz]);
 }
-var STRIP_SETBACK = { eb: 2e-3, cu: 4e-3, cl: 6e-3, gu: 8e-3, xx: 4e-3, pi: 3e-3, cp: 5e-3 };
+var STRIP_SETBACK = { eb: 2e-3, cu: 4e-3, cl: 6e-3, gu: 8e-3, xx: 4e-3, pi: 0.012, cp: 0.016 };
 function addStrip(S2, kind, A, B, yTop, h, depth, nx, nz, col, off = 0) {
   if (h <= 0.01) return {};
   const tx = -nz, tz = nx;
@@ -458,7 +458,8 @@ function emitStrips(D, S2, stats) {
     const [[s1, e1], [s2, e2]] = list, c = s1.nx * s2.nx + s1.nz * s2.nz;
     if (1 + c < 0.15) continue;
     const det = s1.nx * s2.nz - s1.nz * s2.nx;
-    if (Math.abs(det) < 0.05) {
+    const flatLim = s1.kind === "pi" || s1.kind === "cp" ? 1e-4 : 0.05;
+    if (Math.abs(det) < flatLim) {
       s1["m" + e1] = s2["m" + e2] = { flat: true };
       stats.stripJoins++;
       continue;
@@ -940,11 +941,57 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       for (let k = np; k < roofs.parapets.length; k++) {
         const q = roofs.parapets[k], { A, B, nx, nz, h, t } = q;
         const y = (A[1] + B[1]) / 2;
+        let face = null, rises = false;
+        const ua = A[0] * -nz + A[2] * nx, ub = B[0] * -nz + B[2] * nx, uLo = Math.min(ua, ub) + 0.05, uHi = Math.max(ua, ub) - 0.05;
+        for (const f of live) {
+          if (f.nx * nx + f.nz * nz < 0.985) continue;
+          const pd = f.tris[0].p[0][0] * f.nx + f.tris[0].p[0][2] * f.nz;
+          if (Math.abs(A[0] * f.nx + A[2] * f.nz - pd) > 0.2) continue;
+          for (const { p } of f.tris) {
+            const q2 = p.map((v) => [v[0] * -nz + v[2] * nx, v[1]]);
+            for (let j = 0; j <= 6 && !rises; j++) {
+              const u = uLo + (uHi - uLo) * j / 6;
+              for (let e = 0; e < 3; e++) {
+                const [u0, y0] = q2[e], [u1, y1] = q2[(e + 1) % 3];
+                if ((u0 - u) * (u1 - u) > 0 || Math.abs(u1 - u0) < 1e-6) continue;
+                if (y0 + (y1 - y0) * (u - u0) / (u1 - u0) > y + 0.08) {
+                  rises = true;
+                  break;
+                }
+              }
+            }
+            if (rises) break;
+          }
+          if (!face && Math.abs(f.pre.top - y) < 0.3) face = f;
+        }
+        if (rises) continue;
+        const conflict = (Q) => {
+          for (let k2 = 0; k2 < all.length; k2++) {
+            const tri = all[k2], wall2 = k2 < wallTris;
+            if (!wall2 && tri.n[1] > 0.97) continue;
+            if (!tri.p.some((v) => Math.abs(v[0] - Q[0]) < 0.06 && Math.abs(v[2] - Q[2]) < 0.06)) continue;
+            if (wall2 ? tri.p.some((v) => v[1] > Q[1] + 0.08) : tri.p.some((v) => Math.abs(v[1] - Q[1]) < 0.6)) return true;
+          }
+          return false;
+        };
+        const L0 = Math.hypot(B[0] - A[0], B[2] - A[2]), ex = (B[0] - A[0]) / L0, ez = (B[2] - A[2]) / L0;
+        const cA = conflict(A), cB = conflict(B);
+        if (L0 - (cA ? 0.3 : 0) - (cB ? 0.3 : 0) < 0.6) continue;
+        if (cA) q.A = [A[0] + ex * 0.3, A[1] + (B[1] - A[1]) * 0.3 / L0, A[2] + ez * 0.3];
+        if (cB) q.B = [B[0] - ex * 0.3, B[1] - (B[1] - A[1]) * 0.3 / L0, B[2] - ez * 0.3];
+        emitParapet(q);
+      }
+    }
+    function emitParapet(q) {
+      {
+        const { A, B, nx, nz, h, t } = q;
+        const y = (A[1] + B[1]) / 2;
         let face = null;
         for (const f of live) {
           if (f.nx * nx + f.nz * nz < 0.985) continue;
           const pd = f.tris[0].p[0][0] * f.nx + f.tris[0].p[0][2] * f.nz;
-          if (Math.abs(A[0] * f.nx + A[2] * f.nz - pd) < 0.2 && Math.abs(f.pre.top - y) < 0.3) {
+          if (Math.abs(A[0] * f.nx + A[2] * f.nz - pd) > 0.2) continue;
+          if (Math.abs(f.pre.top - y) < 0.3) {
             face = f;
             break;
           }
@@ -964,7 +1011,7 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         }
         const top = Math.max(A[1], B[1]) + h, inner = [rc[0] * 0.85, rc[1] * 0.85, rc[2] * 0.85];
         const cope = q.cope < 0.5 ? [0.44, 0.45, 0.46] : q.cope < 0.65 ? [0.38, 0.37, 0.34] : q.cope < 0.8 ? [0.085, 0.09, 0.095] : [0.06, 0.063, 0.068];
-        addStrip(SD, "pi", A, B, top, h + 0.03, t, nx, nz, inner, -t).mask = "b";
+        addStrip(SD, "pi", A, B, top, top - Math.min(A[1], B[1]) + 0.02, t, nx, nz, inner, -t).mask = "b";
         addStrip(SD, "cp", A, B, top + 0.05, 0.05, t + 0.06, nx, nz, cope, -(t + 0.03)).mask = "ftsb";
         stats.parapets = (stats.parapets || 0) + 1;
       }
@@ -10546,16 +10593,6 @@ function rng2(seed) {
 }
 var dishYaw = (r) => 0.2 + r() * 0.14;
 var key3 = (q) => `${Math.round(q[0] * 50)},${Math.round(q[1] * 50)},${Math.round(q[2] * 50)}`;
-function triY(t, x, z) {
-  const [a, b, c] = t.p;
-  const det = (b[2] - c[2]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[2] - c[2]);
-  if (Math.abs(det) < 1e-9) return null;
-  const l1 = ((b[2] - c[2]) * (x - c[0]) + (c[0] - b[0]) * (z - c[2])) / det;
-  const l2 = ((c[2] - a[2]) * (x - c[0]) + (a[0] - c[0]) * (z - c[2])) / det;
-  const l3 = 1 - l1 - l2;
-  if (l1 < -1e-5 || l2 < -1e-5 || l3 < -1e-5) return null;
-  return l1 * a[1] + l2 * b[1] + l3 * c[1];
-}
 function segDist(x, z, ax, az, bx, bz) {
   const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1e-12;
   const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2));
@@ -10696,13 +10733,24 @@ function roofCollector(opts = {}) {
     stats.flatRegions += flats.length;
     stats.slopes += slopes.length;
     const taken = [];
-    const free = (x, z, rad) => !taken.some(([a, c, q]) => Math.hypot(a - x, c - z) < q + rad) && !stacks.some((s) => Math.hypot(s.x - x, s.z - z) < rad + Math.max(s.w, s.d) * 0.6 + 0.2);
+    let bx0 = Infinity, bz0 = Infinity, bx1 = -Infinity, bz1 = -Infinity;
+    for (const t of tris) for (const q of t.p) {
+      bx0 = Math.min(bx0, q[0]);
+      bx1 = Math.max(bx1, q[0]);
+      bz0 = Math.min(bz0, q[2]);
+      bz1 = Math.max(bz1, q[2]);
+    }
+    const nearStacks = stacks.filter((s) => s.x > bx0 - 3 && s.x < bx1 + 3 && s.z > bz0 - 3 && s.z < bz1 + 3);
+    const free = (x, z, rad) => !taken.some(([a, c, q]) => Math.hypot(a - x, c - z) < q + rad) && !nearStacks.some((s) => Math.hypot(s.x - x, s.z - z) < rad + Math.max(s.w, s.d) * 0.6 + 0.2);
     const occupied = (x, z, y) => b.otherTop(x, z) > y + 0.25;
     const bigBlock = b.height >= 10;
-    for (const R of flats) flatRegion(R, b, r, bigBlock, taken, free, occupied);
+    const big = flats.reduce((m, R) => Math.max(m, R.area), 0);
+    const pr = rng2(h012(b.key + "|parapet"));
+    const par = { h: bigBlock ? 0.45 + pr() * 0.5 : big > 40 ? 0.2 + pr() * 0.3 : 0.12 + pr() * 0.2, t: bigBlock ? 0.25 : 0.18, cope: pr() };
+    for (const R of flats) flatRegion(R, b, r, bigBlock, taken, free, occupied, par);
     if (slopes.length) pitched(slopes, b, r, taken, free);
   }
-  function flatRegion(R, b, r, bigBlock, taken, free, occupied) {
+  function flatRegion(R, b, r, bigBlock, taken, free, occupied, par) {
     const y = R.y;
     let ax = 1, az = 0, best = 0;
     for (const e of R.bnd) {
@@ -10713,8 +10761,7 @@ function roofCollector(opts = {}) {
         az = (e.B[2] - e.A[2]) / L2;
       }
     }
-    const ph = bigBlock ? 0.45 + r() * 0.5 : R.area > 40 ? 0.2 + r() * 0.3 : 0.12 + r() * 0.2;
-    const cope = r();
+    const ph = par.h, cope = par.cope;
     if (R.area >= 8) for (const e of R.bnd) {
       const L2 = Math.hypot(e.B[0] - e.A[0], e.B[2] - e.A[2]);
       if (L2 < 0.6) continue;
@@ -10731,7 +10778,7 @@ function roofCollector(opts = {}) {
         if (o > Math.min(e.A[1], e.B[1]) - 0.4) blocked++;
       }
       if (blocked >= 2) continue;
-      parapets.push({ A: e.A, B: e.B, nx, nz, h: ph, t: bigBlock ? 0.25 : 0.18, cope, key: b.key, roof: b.roofColor });
+      parapets.push({ A: e.A, B: e.B, nx, nz, h: ph, t: par.t, cope, key: b.key, roof: b.roofColor });
       stats.parapetM += L2;
       cols.push(Math.min(e.A[0], e.B[0]) - 0.15, Math.min(e.A[2], e.B[2]) - 0.15, Math.max(e.A[0], e.B[0]) + 0.15, Math.max(e.A[2], e.B[2]) + 0.15, Math.max(e.A[1], e.B[1]) + ph + 0.05);
     }
@@ -10748,23 +10795,43 @@ function roofCollector(opts = {}) {
     const spots = [];
     const nu = Math.floor((u1 - u0) / cs), nv = Math.floor((v1 - v0) / cs);
     if (nu * nv > 4e4) return;
-    for (let i = 1; i < nu; i++) for (let j = 1; j < nv; j++) {
-      const u = u0 + i * cs, v = v0 + j * cs, x = u * tx + v * sx, z = u * tz + v * sz;
-      let inside3 = false;
-      for (const t of R.tris) if (triY(t, x, z) !== null) {
-        inside3 = true;
-        break;
+    const inGrid = new Uint8Array((nu + 1) * (nv + 1));
+    for (const t of R.tris) {
+      const q = t.p.map((p) => [p[0] * tx + p[2] * tz, p[0] * sx + p[2] * sz]);
+      const i0 = Math.max(1, Math.ceil((Math.min(q[0][0], q[1][0], q[2][0]) - u0) / cs)), i1 = Math.min(nu - 1, Math.floor((Math.max(q[0][0], q[1][0], q[2][0]) - u0) / cs));
+      const j0 = Math.max(1, Math.ceil((Math.min(q[0][1], q[1][1], q[2][1]) - v0) / cs)), j1 = Math.min(nv - 1, Math.floor((Math.max(q[0][1], q[1][1], q[2][1]) - v0) / cs));
+      const [a, b2, c] = q, det = (b2[1] - c[1]) * (a[0] - c[0]) + (c[0] - b2[0]) * (a[1] - c[1]);
+      if (Math.abs(det) < 1e-9) continue;
+      for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) {
+        const u = u0 + i * cs, v = v0 + j * cs;
+        const l1 = ((b2[1] - c[1]) * (u - c[0]) + (c[0] - b2[0]) * (v - c[1])) / det, l2 = ((c[1] - a[1]) * (u - c[0]) + (a[0] - c[0]) * (v - c[1])) / det;
+        if (l1 >= -1e-5 && l2 >= -1e-5 && 1 - l1 - l2 >= -1e-5) inGrid[i * (nv + 1) + j] = 1;
       }
-      if (!inside3) continue;
-      let clr = Infinity;
-      for (const e of R.bnd) clr = Math.min(clr, segDist(x, z, e.A[0], e.A[2], e.B[0], e.B[2]));
+    }
+    const bucket = /* @__PURE__ */ new Map(), BK = 4, bk = (x, z) => `${Math.floor(x / BK)},${Math.floor(z / BK)}`;
+    for (const e of R.bnd) {
+      const xa = Math.min(e.A[0], e.B[0]), xb = Math.max(e.A[0], e.B[0]), za = Math.min(e.A[2], e.B[2]), zb = Math.max(e.A[2], e.B[2]);
+      for (let gx = Math.floor((xa - 3) / BK); gx <= Math.floor((xb + 3) / BK); gx++) for (let gz = Math.floor((za - 3) / BK); gz <= Math.floor((zb + 3) / BK); gz++) {
+        const k = gx + "," + gz;
+        if (!bucket.has(k)) bucket.set(k, []);
+        bucket.get(k).push(e);
+      }
+    }
+    for (let i = 1; i < nu; i++) for (let j = 1; j < nv; j++) {
+      if (!inGrid[i * (nv + 1) + j]) continue;
+      const u = u0 + i * cs, v = v0 + j * cs, x = u * tx + v * sx, z = u * tz + v * sz;
+      let clr = 3;
+      for (const e of bucket.get(bk(x, z)) || []) clr = Math.min(clr, segDist(x, z, e.A[0], e.A[2], e.B[0], e.B[2]));
       if (clr < 0.6 || occupied(x, z, y)) continue;
       spots.push({ x, z, u, v, clr });
     }
     if (!spots.length) return;
     const pick = (need, rad) => {
-      const ok = spots.filter((s) => s.clr >= need && free(s.x, s.z, rad));
-      return ok.length ? ok[Math.floor(r() * ok.length)] : null;
+      for (let k = 0; k < 60; k++) {
+        const sp = spots[Math.floor(r() * spots.length)];
+        if (sp.clr >= need && free(sp.x, sp.z, rad)) return sp;
+      }
+      return null;
     };
     const ca = tx, sa = -tz;
     const aux = b.roofColor ? [b.roofColor[0], b.roofColor[1], b.roofColor[2], 0] : [0, 0, 0, 0];

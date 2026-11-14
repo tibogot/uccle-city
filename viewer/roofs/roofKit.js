@@ -25,10 +25,10 @@ export const roofFades = new FadeSlots();
 /** LOD bands (m): [switch 0 -> 1, switch 1 -> 2, end]. Chimneys and solar arrays are the roofscape seen from the air:
  *  they go far; the small flat-roof furniture ends sooner */
 export const BANDS = {
-  stack: [45, 140, 560], chimcap: [45, 140, 560], pot: [30, 90, 300], cowl: [30, 90, 260],
-  velux: [35, 110, 380], pv: [40, 140, 560], pvframe: [30, 80, 220],
-  cond: [30, 90, 300], ahu: [40, 120, 420], vent: [25, 70, 220], ventbox: [30, 90, 280], hatch: [30, 90, 300],
-  dome: [30, 90, 320], skylight: [30, 90, 300], dish: [25, 70, 240],
+  stack: [45, 140, 480], chimcap: [45, 140, 480], pot: [30, 90, 260], cowl: [30, 90, 240],
+  velux: [35, 110, 320], pv: [40, 140, 450], pvframe: [30, 80, 200],
+  cond: [30, 90, 260], ahu: [40, 120, 380], vent: [25, 70, 200], ventbox: [30, 90, 240], hatch: [30, 90, 260],
+  dome: [30, 90, 260], skylight: [30, 90, 260], dish: [25, 70, 220],
 };
 /** the slots (Blender material names) -> index in the palette shader */
 export const SLOT = { brick: 0, cap: 1, clay: 2, soot: 3, steel: 4, alu: 5, glass: 6, pv_cell: 7, pv_frame: 8, hvac: 9, grille: 10, upstand: 11, opal: 12, concrete: 13, dish: 14, rubber: 15 };
@@ -56,7 +56,7 @@ export function loadRoofKit(base = new URL("../../", import.meta.url)) {
       for (const g of lods) { g.computeBoundingSphere(); g.computeBoundingBox(); g.userData.shared = true; }
       pieces[name] = { name, lods, tris: lods.map((g) => (g.index ? g.index.count : g.attributes.position.count) / 3), band: BANDS[name] };
     };
-    add("stack", [0, 1, 2].map(() => stackGeometry()));
+    add("stack", [0, 1, 2].map((l) => stackGeometry(l)));
     for (const p of PIECES) {
       if (p === "stack") continue;
       add(p, [0, 1, 2].map((l) => { const r = raw[`${p}_lod${l}`]; if (!r) throw new Error(`roof kit: ${p}_lod${l} missing`); return mergePrims(r); }));
@@ -67,10 +67,10 @@ export function loadRoofKit(base = new URL("../../", import.meta.url)) {
 
 /** the stack: a unit box (x / z -0.5..0.5, y 0..1), four sides (the top is under the chimcap, the foot in the roof), a
  *  ring at 15 % (the flashing's AO lives on it); slot brick, AO darker toward the foot */
-function stackGeometry() {
+function stackGeometry(lod = 0) {
   const P = [], N = [], S = [], I = [];
   const sides = [[[-0.5, -0.5], [0.5, -0.5], [0, 0, -1]], [[0.5, -0.5], [0.5, 0.5], [1, 0, 0]], [[0.5, 0.5], [-0.5, 0.5], [0, 0, 1]], [[-0.5, 0.5], [-0.5, -0.5], [-1, 0, 0]]];
-  const ys = [0, 0.15, 1];
+  const ys = lod < 2 ? [0, 0.15, 1] : [0, 1];
   for (const [a, b, n] of sides) {
     const v0 = P.length / 3;
     for (const y of ys) for (const q of [a, b]) {

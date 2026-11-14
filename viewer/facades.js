@@ -583,8 +583,8 @@ function flatRoofLook(u, v, base, P, seed, near) {
   const pond = smoothstep(0.25, 0.65, n3(P.x.mul(0.18), seed.mul(7.0), P.z.mul(0.18)));
   const gran = n3(P.x.mul(35.0), P.y.mul(35.0), P.z.mul(35.0)).mul(near);
   // weathering at the roof's scale: sun-bleached and dirty areas (+-12 %), then the rolls' own tones (+-9 %)
-  const blot = n3(P.x.mul(0.06), seed.mul(5.0), P.z.mul(0.06)).add(n3(P.x.mul(0.21), 1.7, P.z.mul(0.21)).mul(0.5));
-  let bit = base.mul(blot.mul(0.12).add(1.0)).mul(rollTone.sub(0.5).mul(0.18).add(1.0)).mul(gran.mul(0.08).add(1.0));
+  const blot = n3(P.x.mul(0.045), seed.mul(5.0), P.z.mul(0.045)).add(n3(P.x.mul(0.17), 1.7, P.z.mul(0.17)).mul(0.5));
+  let bit = base.mul(blot.mul(0.2).add(1.0)).mul(rollTone.sub(0.5).mul(0.18).add(1.0)).mul(gran.mul(0.08).add(1.0));
   bit = bit.mul(float(1).add(lap.mul(0.09))).mul(float(1).sub(edge.mul(0.35))).mul(float(1).sub(endLap.mul(0.25)));
   bit = mix(bit, base.mul(mix(float(0.55), float(1.25), hash2D(cell.add(3.3)))), patch.mul(0.85));   // repairs: fresh (dark) or silvered (light)
   bit = bit.mul(float(1).sub(pond.mul(0.22)));
