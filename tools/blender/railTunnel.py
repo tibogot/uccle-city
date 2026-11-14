@@ -348,7 +348,7 @@ for p, sgn in ((0, -1), (1, 1)):
             yc = -WH / 2 + k * bayw
             w = cw if 0 < k < nbays else cw / 2
             yc = yc + (w / 2 if k == 0 else -w / 2 if k == nbays else 0)
-            D.box((X0 + sgn * fp / 2, yc, (z0f + zs) / 2 + zr0), (fp, w, zs - z0f), BR, skip=(4,) if sgn > 0 else (5,))
+            M.box((X0 + sgn * fp / 2, yc, (z0f + zs) / 2 + zr0), (fp, w, zs - z0f), BR, skip=(1, 4) if sgn > 0 else (1, 5))   # (no bevel: no slit under the panel)
         # the band's top (the frieze's upper face) and its two ends
         M.poly([Vector((X0, -WH / 2, z1f + zr0)), Vector((fx, -WH / 2, z1f + zr0)), Vector((fx, WH / 2, z1f + zr0)), Vector((X0, WH / 2, z1f + zr0))], BR, want=Z)
         for side in (1, -1):
@@ -396,7 +396,7 @@ for p, sgn in ((0, -1), (1, 1)):
         if wv.z < 0: wv = -wv
         D.box((e0 + e1) / 2 + nk * (tw / 2) + wv * (CP_T / 2), ((e1 - e0).length, tw + 2 * CP_O, CP_T), TRIM, frame=(u, nk, wv))
         # the pier at the tip: a brick block with a cap
-        pw = tw + 0.12
+        pw = tw + 0.2                                   # wider than the coping (no shared face plane)
         pc = p1 + nk * (tw / 2) + d * (pw / 2 - 0.06)
         D.box((pc.x, pc.y, (FOUND + t1 + 0.32) / 2 + z1w), (pw, pw, t1 + 0.32 - FOUND), BR, frame=(d, nk, Z))
         D.box((pc.x, pc.y, t1 + 0.32 + 0.08 + z1w), (pw + 0.12, pw + 0.12, 0.16), TRIM, frame=(d, nk, Z))
@@ -608,7 +608,7 @@ _lm.materials.append(ground.data.materials[0])
 lid_obj = bpy.data.objects.new("Lid", _lm); scn.collection.objects.link(lid_obj)
 
 # ------------------------------------------------------------------------------------------------ AO bake into UV1
-AO_PX = 2048
+AO_PX = 1024                                        # the AO is low-frequency light: 4 MB of GPU memory each, not 16
 scn.render.engine = "CYCLES"; scn.cycles.device = "CPU"
 if scn.world is None: scn.world = bpy.data.worlds.new("World")
 scn.world.light_settings.distance = 6.0

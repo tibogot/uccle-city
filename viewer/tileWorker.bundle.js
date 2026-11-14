@@ -9868,18 +9868,6 @@ function deckMesh(d) {
   }
   return { position: new Float32Array(P), normal: new Float32Array(N), color: new Float32Array(C) };
 }
-function parapetRings(d) {
-  const [s0, s1] = d.span, steps = Math.max(1, Math.ceil((s1 - s0) / SLAB.step));
-  const S2 = [];
-  for (let k = 0; k <= steps; k++) S2.push(at(d, s0 + (s1 - s0) * k / steps));
-  const off = (q, o) => [q.x + q.tz * o, q.z - q.tx * o];
-  const out = [];
-  for (const sg of [1, -1]) for (let k = 0; k < steps; k++) {
-    const a = S2[k], b = S2[k + 1], o = sg * d.half, i = sg * (d.half - SLAB.parapetW);
-    out.push({ ring: [off(a, o), off(b, o), off(b, i), off(a, i)], top: Math.max(a.y, b.y) - SLAB.sink + SLAB.parapetH, base: Math.min(a.y, b.y) - SLAB.sink - SLAB.depth });
-  }
-  return out;
-}
 var FILL_MAX = 5;
 var BANK = FILL_MAX;
 var UNDER = 1.5;
@@ -12080,6 +12068,39 @@ function tunnelTerrain(cut, terrain, hm, railDoc = null, bounds = null) {
   terrain.idx = Uint32Array.from(out);
   return { lid: lid.size, clipped, dropped, added: newPos.length / 3 };
 }
+function tunnelSurface(cut, surface) {
+  if (!cut) return surface;
+  const { x0, z0, cols, rows, step } = cut.hdr;
+  return (x, z) => {
+    const c = Math.round((x - x0) / step), r = Math.round((z - z0) / step);
+    if (c >= 0 && r >= 0 && c < cols && r < rows) {
+      const v = cut.lid.get(r * cols + c);
+      if (v !== void 0) return v;
+    }
+    return surface(x, z);
+  };
+}
+function tunnelFenceRings(tunnels, fences) {
+  const W = 0.12 / 2;
+  const over = (x, z) => (tunnels || []).some((t) => {
+    const [X, Y] = t.toLocal(x, z);
+    return Math.abs(X) <= t.L / 2 + 0.5 && Math.abs(Y) <= t.r + 1;
+  });
+  const rings = [];
+  for (const run of fences.lines) {
+    let cur = [];
+    const flush = () => {
+      if (cur.length >= 2) rings.push([...cur.map((q) => [q[0] + q[2] * W, q[1] + q[3] * W]), ...cur.map((q) => [q[0] - q[2] * W, q[1] - q[3] * W]).reverse()]);
+      cur = [];
+    };
+    for (const q of run) {
+      if (over(q[0], q[1])) flush();
+      else cur.push(q);
+    }
+    flush();
+  }
+  return rings;
+}
 
 // viewer/grass/grassTypes.js
 var VERGE_W = 1.7;
@@ -12512,6 +12533,7 @@ async function buildTileData(entry, base) {
   hideBuildings(bDoc, entry.hide);
   roofs.surf = await step("roof surface", () => roofSurface(bDoc, bBuf, bounds));
   const fences = rail && !keep && entry.railFix ? await step("rail fences", () => railFences(rail.doc, bounds, rail.heroes, roads, hm.ground)) : null;
+  if (fences && tcut) fences.rings = tunnelFenceRings(tunnels, fences);
   const drive = await step("drive colliders", () => buildDriveData({
     bDoc: keep || bDoc,
     bBuf: keep ? null : bBuf,
@@ -12525,15 +12547,15 @@ async function buildTileData(entry, base) {
     // the walls with their vertical extent (colliders.js heightClear): a car on a road bridge over a station's platform
     // or the line's fence passes over them
     walls: keep ? [] : [
-      ...(rail?.doc.platforms || []).map((p) => ({ ring: p.ring, top: p.top })),
-      ...osmBridges.decks.flatMap(parapetRings),
+      ...(rail?.doc.platforms || []).map((p) => ({ ring: p.ring, top: p.top, base: p.top - 1.2 })),
+      // (base: a car far under it passes: Linkebeek's platforms over the Kleindalstraat bore) ...osmBridges.decks.flatMap(parapetRings),
       ...(fences?.rings || []).map((ring2) => ({ ring: ring2, top: Math.max(...ring2.map(([x, z]) => hm.surface(x, z))) + FENCE_H }))
     ]
   }));
   if (rail && !keep && entry.railFix) drive.counts.railSurface = await step("rail drive surface", () => railDriveSurface(rail.doc, hm, drive.ground, bounds, rail.heroes));
   if (fences) drive.counts.railFences = fences.rings.length;
   if (!keep) drive.counts.tramPlatforms = tramPlatformSurface(feats, hm, drive.ground, bounds, CARVE);
-  if (fences && railOut) railOut.fences = fenceMesh(fences.lines, hm.surface);
+  if (fences && railOut) railOut.fences = fenceMesh(fences.lines, tunnelSurface(tcut, hm.surface));
   drive.counts.hidden = nb - bDoc.buildings.length;
   const kit = entry.kit ? kitCollector({ exclude: new Set(entry.kitExclude || []), ground: (x, z) => hm.ground(x, z) }) : null;
   const fronts = entry.streetlife ? await step("street-life fronts", () => streetlifeFronts(base, entry.name)) : null;

@@ -1,0 +1,6138 @@
+{
+ "summary": {
+  "triangles": 1946,
+  "vertices_welded": 1138,
+  "open_edges": 250,
+  "rays": 147568,
+  "blocking": 0,
+  "warnings": 334,
+  "counts": {
+   "sliver": 304,
+   "backtoback": 8,
+   "seam": 62,
+   "tjunction": 30,
+   "opening": 60
+  },
+  "ms": 465
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -1.5,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "tunnel_kleindal",
+   "slot": "brick_red_brussels",
+   "triangles": 1312,
+   "maxDistance": 120
+  },
+  {
+   "name": "tunnel_kleindal",
+   "slot": "concrete",
+   "triangles": 562,
+   "maxDistance": 120
+  },
+  {
+   "name": "tunnel_kleindal",
+   "slot": "painted_metal_grey",
+   "triangles": 60,
+   "maxDistance": 120
+  },
+  {
+   "name": "tunnel_kleindal",
+   "slot": "lamp_glow",
+   "triangles": 12,
+   "maxDistance": 120
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.866,
+     -0.379,
+     -8.105
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.094,
+     -0.376,
+     -8.243
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.039,
+     -0.376,
+     -8.846
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.178,
+     -0.379,
+     -8.618
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.436,
+     -0.376,
+     -8.792
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.664,
+     -0.379,
+     -8.93
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.491,
+     -0.376,
+     -8.189
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.352,
+     -0.379,
+     -8.417
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.494,
+     1.534,
+     -8.191
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.349,
+     1.531,
+     -8.415
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.663,
+     1.531,
+     -8.933
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.438,
+     1.534,
+     -8.789
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.181,
+     1.531,
+     -8.62
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.036,
+     1.534,
+     -8.844
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.867,
+     1.531,
+     -8.102
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.092,
+     1.534,
+     -8.246
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.943,
+     -0.374,
+     6.456
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.694,
+     -0.371,
+     6.361
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.252,
+     -0.371,
+     6.775
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.347,
+     -0.374,
+     6.526
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.666,
+     -0.371,
+     7.217
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.417,
+     -0.374,
+     7.123
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -35.108,
+     -0.371,
+     6.803
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -35.014,
+     -0.374,
+     7.052
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.255,
+     1.539,
+     6.777
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.344,
+     1.536,
+     6.525
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.944,
+     1.536,
+     6.453
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.693,
+     1.539,
+     6.365
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -35.017,
+     1.536,
+     7.054
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -35.105,
+     1.539,
+     6.802
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.416,
+     1.536,
+     7.126
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.667,
+     1.539,
+     7.214
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     35.158,
+     -0.821,
+     -7.275
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.916,
+     -0.817,
+     -7.164
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.447,
+     -0.817,
+     -7.546
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.558,
+     -0.821,
+     -7.304
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.829,
+     -0.817,
+     -8.015
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.586,
+     -0.821,
+     -7.904
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     35.298,
+     -0.817,
+     -7.633
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     35.187,
+     -0.821,
+     -7.875
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.45,
+     1.093,
+     -7.547
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.555,
+     1.089,
+     -7.302
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     35.16,
+     1.089,
+     -7.272
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.915,
+     1.093,
+     -7.167
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     35.19,
+     1.089,
+     -7.877
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     35.295,
+     1.093,
+     -7.632
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.585,
+     1.089,
+     -7.907
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.83,
+     1.093,
+     -8.012
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.029,
+     -0.815,
+     7.828
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.261,
+     -0.812,
+     7.958
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.228,
+     -0.812,
+     8.562
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.358,
+     -0.815,
+     8.33
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.624,
+     -0.812,
+     8.529
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.856,
+     -0.815,
+     8.659
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.657,
+     -0.812,
+     7.925
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.526,
+     -0.815,
+     8.157
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.66,
+     1.098,
+     7.926
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.523,
+     1.095,
+     8.156
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.854,
+     1.095,
+     8.662
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.625,
+     1.098,
+     8.526
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.361,
+     1.095,
+     8.331
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.225,
+     1.098,
+     8.561
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.03,
+     1.095,
+     7.825
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.259,
+     1.098,
+     7.961
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 57,
+    "longest": 0.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.638,
+     0.261,
+     -7.959
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.634,
+     0.894,
+     -7.96
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.324,
+     0.261,
+     -8.391
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.323,
+     0.894,
+     -8.386
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.896,
+     0.894,
+     -9.075
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.892,
+     0.261,
+     -9.076
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.206,
+     0.261,
+     -8.644
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.207,
+     0.894,
+     -8.649
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.44,
+     0.899,
+     6.269
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.436,
+     0.266,
+     6.271
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -35.2,
+     0.899,
+     6.549
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -35.198,
+     0.266,
+     6.545
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.16,
+     0.899,
+     7.029
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.162,
+     0.266,
+     7.033
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.924,
+     0.266,
+     7.307
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.92,
+     0.899,
+     7.309
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.669,
+     0.453,
+     -7.054
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.665,
+     -0.181,
+     -7.056
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     35.408,
+     0.453,
+     -7.386
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     35.406,
+     -0.181,
+     -7.382
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.337,
+     0.453,
+     -7.793
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.338,
+     -0.181,
+     -7.797
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     35.08,
+     -0.181,
+     -8.123
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     35.075,
+     0.453,
+     -8.125
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.796,
+     -0.175,
+     7.69
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.792,
+     0.458,
+     7.691
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.496,
+     -0.175,
+     8.098
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.495,
+     0.458,
+     8.093
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.093,
+     0.458,
+     8.796
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.088,
+     -0.175,
+     8.797
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.388,
+     -0.175,
+     8.389
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.39,
+     0.458,
+     8.394
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "aspect": 134,
+    "longest": 1.9
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -24.887,
+     6.686,
+     3.353
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 124,
+    "longest": 1.76
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -25.473,
+     6.689,
+     3.357
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 124,
+    "longest": 1.76
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -26.067,
+     6.689,
+     -1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 474,
+    "longest": 6.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -26.063,
+     6.686,
+     1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 474,
+    "longest": 6.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -24.887,
+     6.689,
+     -3.357
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 124,
+    "longest": 1.76
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -25.473,
+     6.686,
+     -3.353
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 124,
+    "longest": 1.76
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -24.293,
+     6.689,
+     1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 474,
+    "longest": 6.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -24.297,
+     6.686,
+     -1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 474,
+    "longest": 6.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -26.063,
+     6.859,
+     -1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 474,
+    "longest": 6.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -26.067,
+     6.856,
+     1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 474,
+    "longest": 6.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -24.887,
+     6.856,
+     3.357
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 124,
+    "longest": 1.76
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -25.473,
+     6.859,
+     3.353
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 124,
+    "longest": 1.76
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -24.293,
+     6.856,
+     -1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 474,
+    "longest": 6.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -24.297,
+     6.859,
+     1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 474,
+    "longest": 6.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -25.473,
+     6.856,
+     -3.357
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 124,
+    "longest": 1.76
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -24.887,
+     6.859,
+     -3.353
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 124,
+    "longest": 1.76
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -26.097,
+     5.625,
+     -1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 479,
+    "longest": 6.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -26.093,
+     5.621,
+     1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 479,
+    "longest": 6.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -25.983,
+     5.625,
+     1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 479,
+    "longest": 6.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -25.987,
+     5.621,
+     -1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 479,
+    "longest": 6.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -26.093,
+     5.855,
+     -1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 479,
+    "longest": 6.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -26.097,
+     5.851,
+     1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 479,
+    "longest": 6.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -25.983,
+     5.851,
+     -1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 479,
+    "longest": 6.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -25.987,
+     5.855,
+     1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 479,
+    "longest": 6.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -28.576,
+     3.586,
+     -4.847
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 683,
+    "longest": 9.655
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -31.118,
+     2.408,
+     -6.431
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 683,
+    "longest": 9.655
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.404,
+     1.225,
+     -8.434
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.528,
+     1.223,
+     -8.228
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -28.19,
+     3.589,
+     -5.467
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 683,
+    "longest": 9.655
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -30.73,
+     2.405,
+     -7.05
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 683,
+    "longest": 9.655
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -25.904,
+     4.773,
+     -3.464
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -25.778,
+     4.769,
+     -3.669
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -25.96,
+     4.93,
+     -3.499
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -25.829,
+     4.928,
+     -3.7
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -30.781,
+     2.563,
+     -7.085
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 683,
+    "longest": 9.655
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -28.245,
+     3.748,
+     -5.497
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 683,
+    "longest": 9.655
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.583,
+     1.38,
+     -8.262
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.454,
+     1.384,
+     -8.465
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -28.631,
+     3.745,
+     -4.877
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 683,
+    "longest": 9.655
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -31.169,
+     2.566,
+     -6.467
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 683,
+    "longest": 9.655
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.88,
+     1.541,
+     -8.043
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.142,
+     1.544,
+     -8.203
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.079,
+     1.544,
+     -8.895
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.239,
+     1.541,
+     -8.633
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.388,
+     1.544,
+     -8.832
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.649,
+     1.541,
+     -8.992
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.45,
+     1.544,
+     -8.14
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.291,
+     1.541,
+     -8.402
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.453,
+     1.694,
+     -8.142
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.288,
+     1.691,
+     -8.4
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.648,
+     1.691,
+     -8.995
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.389,
+     1.694,
+     -8.829
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.242,
+     1.691,
+     -8.635
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.077,
+     1.694,
+     -8.893
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -33.882,
+     1.691,
+     -8.041
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.141,
+     1.694,
+     -8.206
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -31.655,
+     2.409,
+     5.301
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 682,
+    "longest": 9.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -28.844,
+     3.591,
+     4.275
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 683,
+    "longest": 9.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -25.858,
+     4.773,
+     3.706
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -25.942,
+     4.769,
+     3.481
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -31.406,
+     2.412,
+     5.988
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 683,
+    "longest": 9.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -28.593,
+     3.588,
+     4.96
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 683,
+    "longest": 9.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.392,
+     1.23,
+     6.556
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.305,
+     1.228,
+     6.781
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -25.92,
+     4.93,
+     3.728
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -25.998,
+     4.928,
+     3.501
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -31.714,
+     2.567,
+     5.32
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 683,
+    "longest": 9.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -28.901,
+     3.749,
+     4.299
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 683,
+    "longest": 9.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.367,
+     1.385,
+     6.803
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.447,
+     1.39,
+     6.577
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -28.65,
+     3.746,
+     4.985
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 683,
+    "longest": 9.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -31.466,
+     2.57,
+     6.006
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 682,
+    "longest": 9.653
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.983,
+     1.546,
+     6.406
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.696,
+     1.549,
+     6.298
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.189,
+     1.549,
+     6.774
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.297,
+     1.546,
+     6.487
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.665,
+     1.549,
+     7.28
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.378,
+     1.546,
+     7.172
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -35.171,
+     1.549,
+     6.805
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -35.063,
+     1.546,
+     7.092
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.192,
+     1.699,
+     6.775
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.294,
+     1.696,
+     6.485
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.984,
+     1.696,
+     6.403
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.694,
+     1.699,
+     6.301
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -35.066,
+     1.696,
+     7.093
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -35.168,
+     1.699,
+     6.804
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.376,
+     1.696,
+     7.175
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -34.666,
+     1.699,
+     7.277
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     25.473,
+     6.361,
+     3.353
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 124,
+    "longest": 1.76
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     24.887,
+     6.364,
+     3.357
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 124,
+    "longest": 1.76
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     24.293,
+     6.364,
+     -1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 474,
+    "longest": 6.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     24.297,
+     6.361,
+     1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 474,
+    "longest": 6.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     25.473,
+     6.364,
+     -3.357
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 124,
+    "longest": 1.76
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     24.887,
+     6.361,
+     -3.353
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 124,
+    "longest": 1.76
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     26.067,
+     6.364,
+     1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 474,
+    "longest": 6.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     26.063,
+     6.361,
+     -1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 474,
+    "longest": 6.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     24.297,
+     6.534,
+     -1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 474,
+    "longest": 6.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     24.293,
+     6.531,
+     1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 474,
+    "longest": 6.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     25.473,
+     6.531,
+     3.357
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 124,
+    "longest": 1.76
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     24.887,
+     6.534,
+     3.353
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 124,
+    "longest": 1.76
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     26.067,
+     6.531,
+     -1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 474,
+    "longest": 6.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     26.063,
+     6.534,
+     1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 474,
+    "longest": 6.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     24.887,
+     6.531,
+     -3.357
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 124,
+    "longest": 1.76
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     25.473,
+     6.534,
+     -3.353
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 124,
+    "longest": 1.76
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     25.983,
+     5.289,
+     -1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 479,
+    "longest": 6.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     25.987,
+     5.285,
+     1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 479,
+    "longest": 6.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     26.097,
+     5.289,
+     1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 479,
+    "longest": 6.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     26.093,
+     5.285,
+     -1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 479,
+    "longest": 6.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     25.987,
+     5.519,
+     -1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 479,
+    "longest": 6.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     25.983,
+     5.515,
+     1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 479,
+    "longest": 6.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     26.097,
+     5.515,
+     -1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 479,
+    "longest": 6.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     26.093,
+     5.519,
+     1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 479,
+    "longest": 6.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     31.806,
+     1.999,
+     -5.826
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 718,
+    "longest": 10.159
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     28.921,
+     3.218,
+     -4.538
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 718,
+    "longest": 10.159
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     25.83,
+     4.437,
+     -3.695
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     25.929,
+     4.433,
+     -3.477
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     31.51,
+     2.002,
+     -6.494
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 718,
+    "longest": 10.159
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     28.623,
+     3.215,
+     -5.205
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 718,
+    "longest": 10.159
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.601,
+     0.783,
+     -7.337
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.499,
+     0.781,
+     -7.555
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     25.889,
+     4.594,
+     -3.721
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     25.982,
+     4.593,
+     -3.5
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     31.863,
+     2.158,
+     -5.848
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 718,
+    "longest": 10.159
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     28.975,
+     3.377,
+     -4.566
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 718,
+    "longest": 10.159
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.558,
+     0.939,
+     -7.581
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.654,
+     0.943,
+     -7.361
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     28.677,
+     3.374,
+     -5.233
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 718,
+    "longest": 10.159
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     31.567,
+     2.161,
+     -6.516
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 718,
+    "longest": 10.159
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     35.201,
+     1.099,
+     -7.229
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.922,
+     1.103,
+     -7.101
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.384,
+     1.103,
+     -7.54
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.511,
+     1.099,
+     -7.261
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.823,
+     1.103,
+     -8.078
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.544,
+     1.099,
+     -7.95
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     35.361,
+     1.103,
+     -7.639
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     35.233,
+     1.099,
+     -7.918
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.387,
+     1.253,
+     -7.541
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.508,
+     1.249,
+     -7.26
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     35.202,
+     1.249,
+     -7.226
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.921,
+     1.253,
+     -7.104
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     35.236,
+     1.249,
+     -7.919
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     35.358,
+     1.253,
+     -7.638
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.542,
+     1.249,
+     -7.954
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.824,
+     1.253,
+     -8.075
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     28.629,
+     3.217,
+     4.756
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 685,
+    "longest": 9.692
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     31.224,
+     2.006,
+     6.251
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 685,
+    "longest": 9.692
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.579,
+     0.789,
+     8.172
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.695,
+     0.787,
+     7.962
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     28.265,
+     3.22,
+     5.389
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 685,
+    "longest": 9.692
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     30.858,
+     2.003,
+     6.882
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 685,
+    "longest": 9.692
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     25.91,
+     4.437,
+     3.467
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     25.791,
+     4.433,
+     3.676
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     25.968,
+     4.593,
+     3.501
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     25.844,
+     4.591,
+     3.707
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     30.912,
+     2.16,
+     6.917
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 685,
+    "longest": 9.692
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     28.322,
+     3.378,
+     5.418
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 685,
+    "longest": 9.692
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.753,
+     0.943,
+     7.996
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.631,
+     0.948,
+     8.203
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 51,
+    "longest": 0.72
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     28.686,
+     3.375,
+     4.785
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 685,
+    "longest": 9.692
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     31.278,
+     2.163,
+     6.285
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 685,
+    "longest": 9.692
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.041,
+     1.105,
+     7.766
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.308,
+     1.108,
+     7.916
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.27,
+     1.108,
+     8.61
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.42,
+     1.105,
+     8.342
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.576,
+     1.108,
+     8.571
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.843,
+     1.105,
+     8.721
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.615,
+     1.108,
+     7.877
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.464,
+     1.105,
+     8.145
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.618,
+     1.258,
+     7.879
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.462,
+     1.255,
+     8.143
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.842,
+     1.255,
+     8.724
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     33.578,
+     1.258,
+     8.568
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.423,
+     1.255,
+     8.344
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.267,
+     1.258,
+     8.608
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.043,
+     1.255,
+     7.763
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     34.307,
+     1.258,
+     7.919
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 65,
+    "longest": 0.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -26.07,
+     6.799,
+     1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 42,
+    "longest": 6.702
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -26.07,
+     6.746,
+     -1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 42,
+    "longest": 6.702
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -24.29,
+     6.746,
+     -1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 42,
+    "longest": 6.702
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -24.29,
+     6.799,
+     1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 42,
+    "longest": 6.702
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -26.057,
+     5.618,
+     -1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 68,
+    "longest": 6.781
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -26.023,
+     5.618,
+     1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 68,
+    "longest": 6.781
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -26.023,
+     5.858,
+     1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 68,
+    "longest": 6.781
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -26.057,
+     5.858,
+     -1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 68,
+    "longest": 6.781
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -31.154,
+     2.511,
+     -6.45
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 60,
+    "longest": 9.656
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -28.598,
+     3.642,
+     -4.853
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 60,
+    "longest": 9.656
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -30.762,
+     2.511,
+     -7.077
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 60,
+    "longest": 9.656
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -28.206,
+     3.642,
+     -5.48
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 60,
+    "longest": 9.656
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -31.678,
+     2.465,
+     5.303
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 60,
+    "longest": 9.654
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -28.883,
+     3.694,
+     4.285
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 60,
+    "longest": 9.654
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -28.63,
+     3.694,
+     4.981
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 60,
+    "longest": 9.654
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -31.424,
+     2.465,
+     5.998
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 60,
+    "longest": 9.654
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     24.29,
+     6.474,
+     1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 42,
+    "longest": 6.702
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     24.29,
+     6.421,
+     -1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 42,
+    "longest": 6.702
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     26.07,
+     6.421,
+     -1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 42,
+    "longest": 6.702
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     26.07,
+     6.474,
+     1.117
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 42,
+    "longest": 6.702
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     26.023,
+     5.282,
+     -1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 68,
+    "longest": 6.781
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     26.057,
+     5.282,
+     1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 68,
+    "longest": 6.781
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     26.057,
+     5.522,
+     1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 68,
+    "longest": 6.781
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     26.023,
+     5.522,
+     -1.13
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 68,
+    "longest": 6.781
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     31.828,
+     2.055,
+     -5.829
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 64,
+    "longest": 10.161
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     28.958,
+     3.321,
+     -4.551
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 64,
+    "longest": 10.161
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     28.657,
+     3.321,
+     -5.228
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 64,
+    "longest": 10.161
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     31.527,
+     2.055,
+     -6.505
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 64,
+    "longest": 10.161
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     31.261,
+     2.108,
+     6.268
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 61,
+    "longest": 9.693
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     28.651,
+     3.273,
+     4.761
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 61,
+    "longest": 9.693
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     30.891,
+     2.108,
+     6.909
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 61,
+    "longest": 9.693
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     28.281,
+     3.273,
+     5.402
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "aspect": 61,
+    "longest": 9.693
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -33.797,
+     1.537,
+     -8.655
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "area": 0.32
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -33.733,
+     1.537,
+     -8.38
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "area": 0.32
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -34.808,
+     1.543,
+     6.729
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "area": 0.32
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -34.552,
+     1.543,
+     6.849
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "area": 0.32
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     35.007,
+     1.096,
+     -7.545
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "area": 0.32
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     34.743,
+     1.096,
+     -7.646
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "area": 0.32
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     33.979,
+     1.102,
+     8.38
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "area": 0.32
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     33.906,
+     1.102,
+     8.107
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "area": 0.32
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -22.009,
+     0.092,
+     -2.27
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 108.2,
+    "pieces": 94,
+    "min_angle_deg": 89.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -26,
+     5.618,
+     -2.769
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 13.2,
+    "pieces": 56,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     26,
+     5.282,
+     -2.993
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 13.2,
+    "pieces": 56,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -26,
+     6.683,
+     -3.296
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 6.6,
+    "pieces": 24,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -33.396,
+     1.241,
+     -8.335
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 1.84,
+    "pieces": 18,
+    "min_angle_deg": 68.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -34.42,
+     1.252,
+     6.306
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 1.84,
+    "pieces": 18,
+    "min_angle_deg": 68.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     34.351,
+     0.992,
+     -7.752
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 1.84,
+    "pieces": 18,
+    "min_angle_deg": 69
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     33.402,
+     0.817,
+     8.359
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 1.84,
+    "pieces": 18,
+    "min_angle_deg": 67.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -12.931,
+     2.644,
+     2.185
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/painted_metal_grey"
+    ],
+    "length_m": 1.29,
+    "pieces": 12,
+    "min_angle_deg": 71.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.069,
+     2.56,
+     2.185
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/painted_metal_grey"
+    ],
+    "length_m": 1.29,
+    "pieces": 12,
+    "min_angle_deg": 71.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     13.069,
+     2.476,
+     2.185
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/painted_metal_grey"
+    ],
+    "length_m": 1.29,
+    "pieces": 10,
+    "min_angle_deg": 71.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -25.98,
+     5.628,
+     -3.3
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 0.27,
+    "pieces": 10,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     25.98,
+     5.292,
+     3.3
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 0.27,
+    "pieces": 10,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -25.985,
+     5.623,
+     3.3
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 0.27,
+    "pieces": 8,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     25.985,
+     5.287,
+     -3.3
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 0.27,
+    "pieces": 8,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -34.443,
+     0.173,
+     6.268
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 0.11,
+    "pieces": 7,
+    "min_angle_deg": 89.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -26,
+     2.335,
+     -3.3
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/brick_red_brussels"
+    ],
+    "length_m": 2.65,
+    "pieces": 6,
+    "min_angle_deg": 58
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -26,
+     4.709,
+     3.3
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/brick_red_brussels"
+    ],
+    "length_m": 2.65,
+    "pieces": 6,
+    "min_angle_deg": 70
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -33.253,
+     -0.373,
+     -8.564
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/brick_red_brussels"
+    ],
+    "length_m": 1.68,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -34.401,
+     -0.368,
+     6.358
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/brick_red_brussels"
+    ],
+    "length_m": 1.68,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     26,
+     1.999,
+     -3.3
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/brick_red_brussels"
+    ],
+    "length_m": 2.65,
+    "pieces": 6,
+    "min_angle_deg": 66
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     26,
+     4.373,
+     3.3
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/brick_red_brussels"
+    ],
+    "length_m": 2.65,
+    "pieces": 6,
+    "min_angle_deg": 60
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     33.796,
+     -0.268,
+     7.69
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 0.1,
+    "pieces": 6,
+    "min_angle_deg": 89.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -13.055,
+     2.644,
+     2.21
+    ],
+    "parts": [
+     "tunnel_kleindal/painted_metal_grey",
+     "tunnel_kleindal/painted_metal_grey"
+    ],
+    "length_m": 0.24,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.055,
+     2.56,
+     2.21
+    ],
+    "parts": [
+     "tunnel_kleindal/painted_metal_grey",
+     "tunnel_kleindal/painted_metal_grey"
+    ],
+    "length_m": 0.24,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     12.945,
+     2.476,
+     2.21
+    ],
+    "parts": [
+     "tunnel_kleindal/painted_metal_grey",
+     "tunnel_kleindal/painted_metal_grey"
+    ],
+    "length_m": 0.24,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -33.582,
+     0.446,
+     -8.037
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/brick_red_brussels"
+    ],
+    "length_m": 1.68,
+    "pieces": 5,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -34.189,
+     0.452,
+     6.94
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/brick_red_brussels"
+    ],
+    "length_m": 1.68,
+    "pieces": 5,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     34.624,
+     -0.815,
+     -7.14
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/brick_red_brussels"
+    ],
+    "length_m": 1.63,
+    "pieces": 5,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     33.794,
+     -0.268,
+     7.8
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 9,
+    "pieces": 5,
+    "min_angle_deg": 89.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     33.433,
+     -0.809,
+     8.307
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/brick_red_brussels"
+    ],
+    "length_m": 1.63,
+    "pieces": 5,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     34.372,
+     0.004,
+     -7.706
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/brick_red_brussels"
+    ],
+    "length_m": 1.63,
+    "pieces": 4,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     33.742,
+     0.011,
+     7.77
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/brick_red_brussels"
+    ],
+    "length_m": 1.63,
+    "pieces": 4,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -33.426,
+     1.537,
+     -8.306
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 3.2,
+    "pieces": 4,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -34.304,
+     1.543,
+     6.652
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 3.2,
+    "pieces": 4,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     34.507,
+     1.096,
+     -7.427
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 3.2,
+    "pieces": 4,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     33.596,
+     1.102,
+     8.043
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 3.2,
+    "pieces": 4,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -26,
+     4.559,
+     -3.3
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/brick_red_brussels"
+    ],
+    "length_m": 1.95,
+    "pieces": 3,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -26,
+     5.918,
+     3.3
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/brick_red_brussels"
+    ],
+    "length_m": 1.95,
+    "pieces": 3,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     26,
+     4.223,
+     -3.3
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/brick_red_brussels"
+    ],
+    "length_m": 1.95,
+    "pieces": 3,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     26,
+     5.582,
+     3.3
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/brick_red_brussels"
+    ],
+    "length_m": 1.95,
+    "pieces": 3,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -33.636,
+     0.167,
+     -7.96
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 0.1,
+    "pieces": 3,
+    "min_angle_deg": 89.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     34.671,
+     -0.274,
+     -7.053
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 0.1,
+    "pieces": 3,
+    "min_angle_deg": 89.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -12.827,
+     2.42,
+     2.233
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/lamp_glow"
+    ],
+    "length_m": 0.36,
+    "pieces": 2,
+    "min_angle_deg": 78.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.173,
+     2.336,
+     2.233
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/lamp_glow"
+    ],
+    "length_m": 0.36,
+    "pieces": 2,
+    "min_angle_deg": 78.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     13.173,
+     2.252,
+     2.233
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/lamp_glow"
+    ],
+    "length_m": 0.36,
+    "pieces": 2,
+    "min_angle_deg": 78.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -25.573,
+     6.683,
+     -3.3
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 0.85,
+    "pieces": 2,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -31.07,
+     2.554,
+     5.805
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 6.57,
+    "pieces": 2,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     24.302,
+     6.357,
+     -3.3
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 0.85,
+    "pieces": 2,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     24.307,
+     6.357,
+     3.3
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 0.85,
+    "pieces": 2,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     24.3,
+     6.357,
+     -0.01
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 6.6,
+    "pieces": 2,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     26.309,
+     4.302,
+     -3.438
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 2.13,
+    "pieces": 2,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     31.19,
+     2.001,
+     6.296
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 5.8,
+    "pieces": 2,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -26,
+     4.618,
+     -3.3
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/brick_red_brussels"
+    ],
+    "length_m": 0.3,
+    "pieces": 1,
+    "min_angle_deg": 32
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -26,
+     4.618,
+     3.3
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/brick_red_brussels"
+    ],
+    "length_m": 0.3,
+    "pieces": 1,
+    "min_angle_deg": 20
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -25.575,
+     6.683,
+     3.3
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 0.85,
+    "pieces": 1,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -30.242,
+     2.642,
+     -6.682
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 7.74,
+    "pieces": 1,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -31.542,
+     2.445,
+     5.317
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 6.65,
+    "pieces": 1,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     26,
+     4.282,
+     -3.3
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/brick_red_brussels"
+    ],
+    "length_m": 0.3,
+    "pieces": 1,
+    "min_angle_deg": 24
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     26,
+     4.282,
+     3.3
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/brick_red_brussels"
+    ],
+    "length_m": 0.3,
+    "pieces": 1,
+    "min_angle_deg": 30
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     29.174,
+     2.989,
+     -5.392
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 8.02,
+    "pieces": 1,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     31.693,
+     1.621,
+     7.303
+    ],
+    "parts": [
+     "tunnel_kleindal/brick_red_brussels",
+     "tunnel_kleindal/concrete"
+    ],
+    "length_m": 4.44,
+    "pieces": 1,
+    "min_angle_deg": 90
+   }
+  ],
+  "tjunction": [
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -26,
+     4.468,
+     -3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 0.627
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -26,
+     4.768,
+     -3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 0.768
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -26,
+     4.768,
+     3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 0.768
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -26,
+     4.468,
+     3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 0.627
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -26,
+     2.118,
+     -2.61
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 1.03
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -26,
+     0.118,
+     -3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 2.55
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -26,
+     0.118,
+     3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 2.55
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -26,
+     2.118,
+     2.61
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 1.03
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -24.3,
+     4.877,
+     -3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 2.22
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -26,
+     4.65,
+     -3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 2.22
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -24.3,
+     4.877,
+     3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 2.22
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -26,
+     4.65,
+     3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 2.22
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -26,
+     0.118,
+     -3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 5.2
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -34.457,
+     0.173,
+     6.378
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 1.6
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -26,
+     0.118,
+     3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 5.2
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     26,
+     4.132,
+     -3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 0.627
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     26,
+     4.432,
+     -3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 0.768
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     26,
+     4.432,
+     3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 0.768
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     26,
+     4.132,
+     3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 0.627
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     26,
+     -0.218,
+     -3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 2.55
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     26,
+     1.782,
+     -2.61
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 1.03
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     26,
+     1.782,
+     2.61
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 1.03
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     26,
+     -0.218,
+     3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 2.55
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     24.3,
+     4.563,
+     -3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 2.22
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     26,
+     4.314,
+     -3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 2.22
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     24.3,
+     4.563,
+     3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 2.22
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     26,
+     4.314,
+     3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 2.22
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     26,
+     -0.218,
+     -3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 5.2
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     33.794,
+     -0.268,
+     7.8
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 1.6
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     26,
+     -0.218,
+     3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "edge_m": 5.2
+   }
+  ],
+  "opening": [
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -25.95,
+     -0.432,
+     -2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -22.05,
+     -0.457,
+     2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -21.95,
+     -0.458,
+     -2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -21.95,
+     -0.458,
+     2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -17.95,
+     -0.484,
+     -2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -17.95,
+     -0.484,
+     2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -13.95,
+     -0.51,
+     -2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -13.95,
+     -0.51,
+     2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -9.95,
+     -0.536,
+     -2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -9.95,
+     -0.536,
+     2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -5.95,
+     -0.562,
+     -2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -5.95,
+     -0.562,
+     2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -1.95,
+     -0.587,
+     -2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -1.95,
+     -0.587,
+     2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     2.05,
+     -0.613,
+     -2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     2.05,
+     -0.613,
+     2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     6.05,
+     -0.639,
+     -2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     6.05,
+     -0.639,
+     2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     10.05,
+     -0.665,
+     -2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     10.05,
+     -0.665,
+     2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     14.05,
+     -0.691,
+     -2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     14.05,
+     -0.691,
+     2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     18.05,
+     -0.717,
+     -2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     18.05,
+     -0.717,
+     2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     22.05,
+     -0.743,
+     -2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     22.05,
+     -0.743,
+     2.27
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -26,
+     2.118,
+     -2.659
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     -1,
+     0,
+     0
+    ],
+    "edge_m": 0.69
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -26,
+     5.468,
+     -3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     -1,
+     0,
+     0
+    ],
+    "edge_m": 1.001
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -26,
+     6.464,
+     -3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     -1,
+     0,
+     0
+    ],
+    "edge_m": 0.269
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -26,
+     6.643,
+     3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     -1,
+     0,
+     0
+    ],
+    "edge_m": 0.269
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -26,
+     6.369,
+     3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     -1,
+     0,
+     0
+    ],
+    "edge_m": 1.001
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -26,
+     2.118,
+     2.659
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     -1,
+     0,
+     0
+    ],
+    "edge_m": 0.69
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -26,
+     -0.432,
+     -2.321
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     -1,
+     0,
+     0
+    ],
+    "edge_m": 1.03
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -26,
+     -0.432,
+     2.321
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     -1,
+     0,
+     0
+    ],
+    "edge_m": 1.03
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -24.35,
+     4.457,
+     -3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 1.7
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -25.75,
+     4.466,
+     3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 1.7
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -24.3,
+     4.877,
+     3.25
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     1,
+     0,
+     0
+    ],
+    "edge_m": 6.6
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -24.3,
+     6.627,
+     3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     1,
+     0,
+     0
+    ],
+    "edge_m": 1.8
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -26.042,
+     -0.432,
+     -3.326
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     -0.53,
+     0,
+     0.85
+    ],
+    "edge_m": 9
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -25.714,
+     -0.432,
+     -3.852
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0.53,
+     0,
+     -0.85
+    ],
+    "edge_m": 9
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -25.671,
+     -0.382,
+     -3.826
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0.53,
+     0,
+     -0.85
+    ],
+    "edge_m": 5.2
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -26.047,
+     -0.432,
+     3.317
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     -0.34,
+     0,
+     -0.94
+    ],
+    "edge_m": 9
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -34.198,
+     -0.378,
+     6.944
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0.34,
+     0,
+     0.94
+    ],
+    "edge_m": 9
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     26,
+     1.782,
+     -3.251
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     1,
+     0,
+     0
+    ],
+    "edge_m": 0.69
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     26,
+     5.132,
+     -3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     1,
+     0,
+     0
+    ],
+    "edge_m": 1.001
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     26,
+     6.127,
+     -3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     1,
+     0,
+     0
+    ],
+    "edge_m": 0.269
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     26,
+     6.307,
+     3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     1,
+     0,
+     0
+    ],
+    "edge_m": 0.269
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     26,
+     6.033,
+     3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     1,
+     0,
+     0
+    ],
+    "edge_m": 1.001
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     26,
+     1.782,
+     3.251
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     1,
+     0,
+     0
+    ],
+    "edge_m": 0.69
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     25.65,
+     4.134,
+     -3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 1.7
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     24.35,
+     4.143,
+     3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 1.7
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     24.3,
+     6.313,
+     -3.3
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     -1,
+     0,
+     0
+    ],
+    "edge_m": 1.8
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     24.3,
+     4.563,
+     -3.25
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     -1,
+     0,
+     0
+    ],
+    "edge_m": 6.6
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     33.445,
+     -0.816,
+     -6.615
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0.41,
+     0,
+     0.91
+    ],
+    "edge_m": 9.5
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     34.381,
+     -0.824,
+     -7.71
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     -0.41,
+     0,
+     -0.91
+    ],
+    "edge_m": 9.5
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     33.491,
+     -0.816,
+     7.625
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     0.5,
+     0,
+     -0.87
+    ],
+    "edge_m": 9
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     25.733,
+     -0.768,
+     3.862
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     -0.5,
+     0,
+     0.87
+    ],
+    "edge_m": 9
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     25.69,
+     -0.718,
+     3.837
+    ],
+    "part": "tunnel_kleindal/brick_red_brussels",
+    "facing": [
+     -0.5,
+     0,
+     0.87
+    ],
+    "edge_m": 5.2
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -33.641,
+     0.167,
+     -7.92
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "facing": [
+     0.01,
+     1,
+     0
+    ],
+    "edge_m": 14.471
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     33.803,
+     -0.268,
+     7.65
+    ],
+    "part": "tunnel_kleindal/concrete",
+    "facing": [
+     0.01,
+     1,
+     0
+    ],
+    "edge_m": 14.99
+   }
+  ]
+ },
+ "file": "tunnel_kleindal.glb"
+}

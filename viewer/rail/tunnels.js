@@ -333,3 +333,33 @@ export function tunnelTerrain(cut, terrain, hm, railDoc = null, bounds = null) {
   terrain.idx = Uint32Array.from(out);
   return { lid: lid.size, clipped, dropped, added: newPos.length / 3 };
 }
+
+/** The ground the line's fences stand on (railData.js fenceMesh): over a bore, the drawn earth (the lid), not the
+ *  street's ground under it */
+export function tunnelSurface(cut, surface) {
+  if (!cut) return surface;
+  const { x0, z0, cols, rows, step } = cut.hdr;
+  return (x, z) => {
+    const c = Math.round((x - x0) / step), r = Math.round((z - z0) / step);
+    if (c >= 0 && r >= 0 && c < cols && r < rows) { const v = cut.lid.get(r * cols + c); if (v !== undefined) return v; }
+    return surface(x, z);
+  };
+}
+
+/** The fences' car colliders (railData.js railFences rings) broken over the bores: a wall ring has no bottom, the car
+ *  in the bore under the line was stopped by the fence 20 m over it (the drawn fence stays, on the lid) */
+export function tunnelFenceRings(tunnels, fences) {
+  const W = 0.12 / 2;                                    // railData.js FENCE_W / 2
+  const over = (x, z) => (tunnels || []).some((t) => { const [X, Y] = t.toLocal(x, z); return Math.abs(X) <= t.L / 2 + 0.5 && Math.abs(Y) <= t.r + 1.0; });
+  const rings = [];
+  for (const run of fences.lines) {
+    let cur = [];
+    const flush = () => {
+      if (cur.length >= 2) rings.push([...cur.map((q) => [q[0] + q[2] * W, q[1] + q[3] * W]), ...cur.map((q) => [q[0] - q[2] * W, q[1] - q[3] * W]).reverse()]);
+      cur = [];
+    };
+    for (const q of run) { if (over(q[0], q[1])) flush(); else cur.push(q); }
+    flush();
+  }
+  return rings;
+}
