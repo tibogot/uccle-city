@@ -26,16 +26,20 @@ const sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a)
 
 export class GroundLight {
   /** area: x0, x1, z0, z1 (m); groundY(x, z): the surface height the map is baked at */
-  constructor({ x0 = -280, x1 = 280, z0 = -22, z1 = 14, texel = 0.25, dynTexel = 0.5, groundY = () => 0 } = {}) {
-    Object.assign(this, { x0, x1, z0, z1, texel, groundY });
-    this.nx = Math.round((x1 - x0) / texel); this.nz = Math.round((z1 - z0) / texel);
-    const n = this.nx * this.nz;
-    this.accA = new Float32Array(n * 3); this.accB = new Float32Array(n * 3);
-    const mk = () => { const t = new THREE.DataTexture(new Uint16Array(n * 4), this.nx, this.nz, THREE.RGBAFormat, THREE.HalfFloatType); t.magFilter = t.minFilter = THREE.LinearFilter; t.generateMipmaps = false; return t; };
-    this.texA = mk(); this.texB = mk();
+  /** staticLayers = false (the city, cityNight.js): only the dynamic layer, into `rt` (shared with the ground
+   *  materials, nightMode.js), its area following the camera (recentre) */
+  constructor({ x0 = -280, x1 = 280, z0 = -22, z1 = 14, texel = 0.25, dynTexel = 0.5, groundY = () => 0, staticLayers = true, rt = null } = {}) {
+    Object.assign(this, { x0, x1, z0, z1, texel, groundY, dynTexel });
+    if (staticLayers) {
+      this.nx = Math.round((x1 - x0) / texel); this.nz = Math.round((z1 - z0) / texel);
+      const n = this.nx * this.nz;
+      this.accA = new Float32Array(n * 3); this.accB = new Float32Array(n * 3);
+      const mk = () => { const t = new THREE.DataTexture(new Uint16Array(n * 4), this.nx, this.nz, THREE.RGBAFormat, THREE.HalfFloatType); t.magFilter = t.minFilter = THREE.LinearFilter; t.generateMipmaps = false; return t; };
+      this.texA = mk(); this.texB = mk();
+    }
     // the dynamic layer: an ortho camera looking down at the same area
     this.dnx = Math.round((x1 - x0) / dynTexel); this.dnz = Math.round((z1 - z0) / dynTexel);
-    this.rt = new THREE.RenderTarget(this.dnx, this.dnz, { type: THREE.HalfFloatType, depthBuffer: false });
+    this.rt = rt ?? new THREE.RenderTarget(this.dnx, this.dnz, { type: THREE.HalfFloatType, depthBuffer: false });
     this.rt.texture.magFilter = this.rt.texture.minFilter = THREE.LinearFilter;
     this.cam = new THREE.OrthographicCamera(x0, x1, -z0, -z1, -50, 50);    // looking down -y: screen x = world x, screen up = world -z
     this.cam.position.set(0, 10, 0); this.cam.up.set(0, 0, -1); this.cam.lookAt(0, 0, 0);
@@ -45,6 +49,18 @@ export class GroundLight {
     this.uOrigin = uniform(new THREE.Vector2(x0, z0)); this.uInv = uniform(new THREE.Vector2(1 / (x1 - x0), 1 / (z1 - z0)));
     this.uNear0 = uniform(40); this.uNear1 = uniform(60);
     this.ms = 0;
+  }
+
+  /** move the (dynamic layer's) area to start at (x0, z0), same size, snapped to its texels (no crawl) */
+  recentre(x0, z0) {
+    const T = this.dynTexel, w = this.x1 - this.x0, h = this.z1 - this.z0;
+    x0 = Math.floor(x0 / T) * T; z0 = Math.floor(z0 / T) * T;
+    if (x0 === this.x0 && z0 === this.z0) return;
+    this.x0 = x0; this.z0 = z0; this.x1 = x0 + w; this.z1 = z0 + h;
+    this.uOrigin.value.set(x0, z0);
+    const c = this.cam;
+    c.left = this.x0; c.right = this.x1; c.top = -this.z0; c.bottom = -this.z1;
+    c.updateProjectionMatrix();
   }
 
   // ------------------------------------------------------------------------------------------------ bake (JS)

@@ -107,6 +107,11 @@ export class ShadowLamps {
   }
   wanted(l) { for (let k = 0; k < this.nw; k++) if (this.want[k] === l) return true; return false; }
   held(l) { for (let s = 0; s < this.K; s++) if (this.lamp[s] === l) return true; return false; }
+  /** lamp l is gone (its tile unloaded; its index may be reused): drop it now (city registry, cityNight.js) */
+  release(l) {
+    for (let s = 0; s < this.K; s++) if (this.lamp[s] === l) { this.lamp[s] = -1; this.b[s] = 0; }
+    if (l < this.share.length) this.share[l] = 0;
+  }
   /** the share of lamp l that its shadowed light carries (0..1) */
   blend(l) { return this.share[l]; }
 }

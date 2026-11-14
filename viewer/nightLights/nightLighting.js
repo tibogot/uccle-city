@@ -143,6 +143,10 @@ class NightLightsNode extends ClusteredLightsNode {
     }
     P.active = n;
     this._lightsCount.value = n;
+    // nothing lit this frame nor the last (by day, or no source near): the textures already say "no light" (count 0,
+    // empty slice ranges): no upload at all (~40 KB / frame saved by day)
+    if (n === 0 && this._lastCount === 0) return;
+    this._lastCount = n;
     for (let j = 0; j < n; j++) {
       const o = this._src[j] * S.STRIDE, q = j * 4, w = D[o + S.W] * k;
       // POS and SPOT go in VIEW space (three's compute reads only the BOUNDS row, in world space): the fragment loop
@@ -222,7 +226,10 @@ class NightLightsNode extends ClusteredLightsNode {
     const NZ = zSlices, grid = this._gridDimensions, NX = int(grid.x), NY = int(grid.y);
     const requiredElements = clusterCount * chunksPerCluster;
     const previousElements = this._lightIndexes !== null ? this._lightIndexes.value.array.length / 4 : 0;
-    const elements = previousElements === 0 ? Math.ceil(requiredElements * 1.5) : Math.max(requiredElements, previousElements * 2);
+    // (city: minElements sizes the storage for the largest drawing buffer up front - a full-screen window - so a resize
+    // never grows it: growing rebuilds every lit material, a freeze)
+    const floor = this.minElements && requiredElements * 4 >= this.minElements ? this.minElements : 0;    // (small targets: their own size)
+    const elements = Math.max(floor, previousElements === 0 ? Math.ceil(requiredElements * 1.5) : Math.max(requiredElements, previousElements * 2));
     if (this._compute !== null) { this.needsUpdate = true; this._compute.dispose(); this._lightIndexes.value.dispose(); }
     const lightIndexes = instancedArray(new Int32Array(elements * 4), "ivec4").setPBO(true).setName("lightIndexes");
     const getClusterBounds = (clusterIndex) => {
@@ -297,6 +304,19 @@ class NightLightsNode extends ClusteredLightsNode {
     const reflected = builder.context.reflectedLight;
     reflected.directDiffuse.toStack();
     reflected.directSpecular.toStack();
+    // a material at its sampler budget (WebGPU: 16 per stage; the city's facade kit uses 15) takes the shadowed lamps'
+    // light WITHOUT their shadow (each shadow map is one more comparison sampler): skipShadow(material) (city hook)
+    const skip = this.skipShadow?.(builder.material) === true;
+    if (skip) for (const ln of lightNodes) if (ln.light?.userData?.nightShadowLamp && !ln.__nightWrapped) {
+      ln.__nightWrapped = true;
+      const setup = ln.setup;
+      ln.setup = function (b) {
+        if (!b.object?.receiveShadow || b.lightsNode?.skipShadow?.(b.material) !== true) return setup.call(this, b);
+        const o = b.object;
+        o.receiveShadow = false;
+        try { return setup.call(this, b); } finally { o.receiveShadow = true; }
+      };
+    }
     LightsNode.prototype.setupLights.call(this, builder, lightNodes);     // sun, moon, shadowed spots
     const tex = this._lightsTexture, extra = this._extra;
     const ground = builder.material?.userData?.groundLight === true;        // reads groundLight.js' map
@@ -397,11 +417,17 @@ class NightLightsNode extends ClusteredLightsNode {
 
 /** renderer.lighting = new NightLighting(pool): ClusteredLighting whose clustered lights come from the pool. */
 export class NightLighting extends ClusteredLighting {
-  constructor(pool, { tileSize = 32, zSlices = 24, maxLightsPerCluster = 48 } = {}) {
+  /** maxPixels (optional): [w, h] of the largest drawing buffer expected (the city: the screen x pixel ratio): the
+   *  cluster storage is allocated for it at once (no growth - no material rebuild - on a resize) */
+  constructor(pool, { tileSize = 32, zSlices = 24, maxLightsPerCluster = 48, maxPixels = null } = {}) {
     super(pool.max, tileSize, zSlices, maxLightsPerCluster);
     this.pool = pool;
+    this.minElements = maxPixels ? Math.floor(maxPixels[0] / tileSize) * Math.floor(maxPixels[1] / tileSize) * zSlices * Math.ceil(maxLightsPerCluster / 4) : 0;
   }
   createNode(lights = []) {
-    return new NightLightsNode(this.pool, this.maxLights, this.tileSize, this.zSlices, this.maxLightsPerCluster).setLights(lights);
+    const node = new NightLightsNode(this.pool, this.maxLights, this.tileSize, this.zSlices, this.maxLightsPerCluster).setLights(lights);
+    node.minElements = this.minElements;
+    node.skipShadow = this.skipShadow;
+    return node;
   }
 }
