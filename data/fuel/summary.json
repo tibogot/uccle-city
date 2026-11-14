@@ -9,24 +9,23 @@
    "operator": null,
    "schemeName": "solenn",
    "type": "under",
-   "islands": 2,
+   "islands": 1,
    "canopy": null,
    "shop": null,
    "wall": {
     "bu": "https://databrussels.be/id/building/1725757",
     "u": [
-     13.73,
-     26.73
+     4.75,
+     11.25
     ],
     "out": 2.6
    },
    "notes": [],
    "counts": {
     "airstand": 1,
-    "bumper": 4,
-    "dispenser": 2,
+    "dispenser": 1,
     "fascia_sign": 1,
-    "island": 2,
+    "island": 1,
     "shopsign": 1,
     "totem": 1
    },
@@ -60,7 +59,6 @@
    ],
    "counts": {
     "bollard": 2,
-    "bumper": 2,
     "canopy_column": 1,
     "canopy_corner": 4,
     "canopy_deck": 1,
@@ -128,7 +126,6 @@
    "counts": {
     "airstand": 1,
     "bollard": 4,
-    "bumper": 2,
     "canopy_column": 1,
     "canopy_corner": 4,
     "canopy_deck": 1,
@@ -197,7 +194,6 @@
    ],
    "counts": {
     "bollard": 3,
-    "bumper": 4,
     "canopy_column": 2,
     "canopy_corner": 4,
     "canopy_deck": 1,
@@ -262,7 +258,6 @@
    ],
    "counts": {
     "bollard": 2,
-    "bumper": 2,
     "canopy_column": 1,
     "canopy_corner": 4,
     "canopy_deck": 1,
@@ -329,7 +324,6 @@
    ],
    "counts": {
     "bollard": 4,
-    "bumper": 12,
     "canopy_column": 6,
     "canopy_corner": 4,
     "canopy_deck": 1,
@@ -393,7 +387,6 @@
    ],
    "counts": {
     "bollard": 2,
-    "bumper": 4,
     "canopy_column": 2,
     "canopy_corner": 4,
     "canopy_deck": 1,
@@ -450,7 +443,6 @@
    "notes": [],
    "counts": {
     "airstand": 1,
-    "bumper": 2,
     "dispenser": 1,
     "island": 1,
     "totem": 1
@@ -489,7 +481,6 @@
    ],
    "counts": {
     "bollard": 3,
-    "bumper": 8,
     "canopy_column": 4,
     "canopy_corner": 4,
     "canopy_deck": 1,
@@ -557,7 +548,6 @@
    ],
    "counts": {
     "bollard": 2,
-    "bumper": 4,
     "canopy_column": 2,
     "canopy_corner": 4,
     "canopy_deck": 1,
@@ -616,7 +606,6 @@
    },
    "notes": [],
    "counts": {
-    "bumper": 2,
     "dispenser": 1,
     "fascia_sign": 1,
     "island": 1,
@@ -655,7 +644,6 @@
    ],
    "counts": {
     "bollard": 2,
-    "bumper": 12,
     "canopy_column": 6,
     "canopy_corner": 4,
     "canopy_deck": 1,
@@ -722,7 +710,6 @@
    "counts": {
     "airstand": 1,
     "bollard": 4,
-    "bumper": 4,
     "canopy_column": 2,
     "canopy_corner": 4,
     "canopy_deck": 1,
@@ -781,7 +768,6 @@
    "notes": [],
    "counts": {
     "airstand": 1,
-    "bumper": 2,
     "dispenser": 1,
     "fascia_sign": 1,
     "island": 1,
@@ -818,7 +804,6 @@
    ],
    "counts": {
     "bollard": 2,
-    "bumper": 2,
     "canopy_column": 1,
     "canopy_corner": 4,
     "canopy_deck": 1,
@@ -884,7 +869,6 @@
    ],
    "counts": {
     "bollard": 4,
-    "bumper": 4,
     "canopy_column": 2,
     "canopy_corner": 4,
     "canopy_deck": 1,

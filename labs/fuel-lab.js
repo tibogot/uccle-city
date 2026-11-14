@@ -8,7 +8,7 @@ import * as THREE from "three/webgpu";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { Panel as GUI } from "../viewer/panelUI.js";
-import { loadFuelKit, FuelPool, BANDS, PIECES } from "../viewer/fuel/fuelKit.js";
+import { loadFuelKit, FuelPool, BANDS, PIECES, buildStation } from "../viewer/fuel/fuelKit.js";
 import { fuelInstances, slabGeometry, forecourtMaterial } from "../viewer/fuel/cityFuel.js";
 import { loadPavingTextures } from "../viewer/streets/paving.js";
 import { lodEye } from "../viewer/lodFade.js";
@@ -61,25 +61,36 @@ async function load() {
   const w = st.canopy ? Math.max(st.canopy.w, st.canopy.d) : 12;
   camera.position.set(w * 0.9, 3.0, w * 1.1); controls.target.set(0, 2.0, 0);
 }
-function build() {
+const stationGroup = new THREE.Group(); scene.add(stationGroup);
+async function build() {
   const st = doc.stations[0];
   const scheme = P.scheme === "data" ? st.scheme : kit.brands.schemes.indexOf(P.scheme);
   const inst = fuelInstances({ stations: [{ ...st, scheme }] });
   const [ox, oy, oz] = origin;
   if (P.layout === "LOD row") {
+    stationGroup.clear();
     // the island set + a totem every 25 m along +x (the dispenser faces +-z), the canopy pieces left out
     const L = {};
     const put = (k, x, y, z, yaw, s = [1, 1, 1]) => (L[k] ||= []).push(x, y, z, yaw, ...s, scheme);
     for (let i = 0; i < 24; i++) {
       const x = i * 25;
-      put("island", x, 0, 0, 0); put("bumper", x + 2.25, 0.16, 0, 0); put("bumper", x - 2.25, 0.16, 0, Math.PI);
+      put("island", x, 0, 0, 0);
       put("dispenser", x - 0.55, 0.16, 0, 0); put("canopy_column", x + 1.65, -0.5, 0, 0, [1, 5.0, 1]); put("column_base", x + 1.65, 0.16, 0, 0);
       put("totem", x + 6, 0, 4, Math.PI / 2); put("bollard", x + 6, 0, 2.6, 0);
     }
     tiles = [{ inst: Object.fromEntries(Object.entries(L).map(([k, a]) => [k, new Float32Array(a)])) }];
   } else {
     for (const a of Object.values(inst)) for (let o = 0; o < a.length; o += 8) { a[o] -= ox; a[o + 1] -= oy; a[o + 2] -= oz; }
-    tiles = [{ inst }];
+    tiles = [];
+    // as the city draws it (viewer/fuel/cityFuel.js): the station's pieces merged, LOD0 / 1 / 2 + signs + glass
+    const geos = await buildStation(kit, inst, scheme, 0);
+    stationGroup.clear();
+    const M = kit.mats;
+    for (const [k, g] of Object.entries(geos)) {
+      const m = new THREE.Mesh(g, k === "sign" ? M.sign : k === "glass" ? M.glass : M.opaque[+k.slice(3)]);
+      m.castShadow = k.startsWith("lod"); m.receiveShadow = true; if (k === "glass") m.renderOrder = 2;
+      stationGroup.add(m);
+    }
   }
   slabGroup.clear();
   if (P.layout === "station" && st.slab) {

@@ -106,26 +106,14 @@
    "slots": [
     "concrete",
     "steel_galv",
-    "safety_yellow"
+    "safety_yellow",
+    "rubber_black"
    ],
-   "triangles": 292,
+   "triangles": 1900,
    "size_m": [
     5.012,
-    0.463,
+    1.321,
     1.312
-   ]
-  },
-  "bumper": {
-   "slots": [
-    "safety_yellow",
-    "rubber_black",
-    "steel_galv"
-   ],
-   "triangles": 804,
-   "size_m": [
-    0.16,
-    1.108,
-    1.0
    ]
   },
   "dispenser": {

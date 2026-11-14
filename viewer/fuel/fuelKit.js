@@ -60,17 +60,17 @@ const SLOT = Object.fromEntries(SLOTS.map((s, i) => [s[0], i]));
 const BRAND0 = SLOT.brand_primary;                          // brand_primary, _secondary, _accent: consecutive slots
 
 export const PIECES = ["canopy_fascia", "canopy_corner", "canopy_deck", "canopy_light", "canopy_column", "column_base", "solar", "fascia_sign",
-  "island", "bumper", "dispenser", "totem", "shopfront", "shopdoor", "shopsign", "airstand", "paypoint", "bollard", "grate", "line", "carwash"];
+  "island", "dispenser", "totem", "shopfront", "shopdoor", "shopsign", "airstand", "paypoint", "bollard", "grate", "line", "carwash"];
 const SCALED = new Set(["canopy_fascia", "canopy_deck", "canopy_column", "solar", "shopsign", "line"]);
 /** LOD bands (m): [switch 0 -> 1, switch 1 -> 2, end]; glass ends at `glass` */
 const BIG = { lod: [70, 200, 900], glass: 0, shadow: true };
 export const BANDS = {
   canopy_fascia: BIG, canopy_corner: { lod: [50, 160, 900], shadow: true }, canopy_deck: BIG, canopy_light: { lod: [40, 120, 450], shadow: false },
-  canopy_column: BIG, column_base: { lod: [30, 90, 300], shadow: true }, solar: { lod: [60, 200, 600], shadow: false }, fascia_sign: { lod: [60, 200, 900], shadow: true },
-  island: { lod: [40, 120, 400], shadow: true }, bumper: { lod: [25, 80, 250], shadow: true }, dispenser: { lod: [30, 100, 450], shadow: true },
-  totem: { lod: [60, 200, 900], shadow: true }, shopfront: { lod: [40, 130, 500], glass: 220, shadow: true }, shopdoor: { lod: [40, 130, 500], glass: 220, shadow: true },
-  shopsign: { lod: [60, 200, 700], shadow: true }, airstand: { lod: [25, 80, 250], shadow: true }, paypoint: { lod: [25, 80, 300], shadow: true },
-  bollard: { lod: [20, 60, 200], shadow: true }, grate: { lod: [20, 60, 160], shadow: false }, line: { lod: [60, 200, 300], shadow: false },
+  canopy_column: BIG, column_base: { lod: [45, 120, 300], shadow: true }, solar: { lod: [60, 200, 600], shadow: false }, fascia_sign: { lod: [60, 200, 900], shadow: true },
+  island: { lod: [45, 130, 400], shadow: true }, dispenser: { lod: [40, 110, 450], shadow: true },
+  totem: { lod: [60, 200, 900], shadow: true }, shopfront: { lod: [60, 150, 500], glass: 220, shadow: true }, shopdoor: { lod: [60, 150, 500], glass: 220, shadow: true },
+  shopsign: { lod: [60, 200, 700], shadow: true }, airstand: { lod: [40, 90, 250], shadow: true }, paypoint: { lod: [40, 90, 300], shadow: true },
+  bollard: { lod: [40, 90, 200], shadow: true }, grate: { lod: [45, 100, 160], shadow: false }, line: { lod: [60, 200, 300], shadow: false },
   carwash: { lod: [50, 160, 700], shadow: true },
 };
 const LOD_ERR = [0, 0.006, 0.025];
@@ -351,4 +351,68 @@ export class FuelPool {
     while (!it.next().done);
   }
   get drawn() { return this.meshes.filter((m) => m.visible).length; }
+}
+
+// ------------------------------------------------------------------------------------------------ one station = few draws
+/** pieces left out of a station's far LODs (sub-pixel there: their triangles would be wasted) */
+const DROP = { 1: new Set(["grate", "line"]), 2: new Set(["grate", "line", "bollard", "canopy_light", "airstand", "paypoint", "column_base", "solar"]) };
+/** the station's LOD bands (m): switch 0 -> 1, switch 1 -> 2, end; the glass ends at 220 m */
+export const STATION_BAND = [60, 180, 900];
+
+/** ONE station's pieces merged (its instances baked into world space) into: LOD0 / LOD1 / LOD2 opaque geometries, one
+ *  sign geometry and one glass geometry, each with the station's per-vertex iBand (bands + the tile's fade slot) and
+ *  iMisc (scheme). A station is then 3 draws near (opaque LOD, signs, glass) + its shadow, instead of one per piece.
+ *  Built piece by piece: `yieldEvery` ms of work at most, then a macrotask (no main-thread spike on a tile load). */
+export async function buildStation(kit, inst, scheme, slot, yieldEvery = 3) {
+  const M = new THREE.Matrix4(), N = new THREE.Matrix3(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), p = new THREE.Vector3(), s = new THREE.Vector3(), v = new THREE.Vector3();
+  const parts = { lod0: [], lod1: [], lod2: [], sign: [], glass: [] };
+  let t0 = performance.now();
+  for (const [name, a] of Object.entries(inst)) {
+    const piece = kit.pieces[name];
+    for (let o = 0; o < a.length; o += 8) {
+      q.setFromAxisAngle(up, a[o + 3]);
+      M.compose(p.set(a[o], a[o + 1], a[o + 2]), q, s.set(a[o + 4], a[o + 5], a[o + 6]));
+      N.getNormalMatrix(M);
+      for (let k = 0; k < 3; k++) if (!DROP[k]?.has(name)) parts[`lod${k}`].push([piece.lods[k], M.clone(), N.clone()]);
+      if (piece.sign) parts.sign.push([piece.sign, M.clone(), N.clone()]);
+      if (piece.glass) parts.glass.push([piece.glass, M.clone(), N.clone()]);
+    }
+  }
+  const out = {};
+  for (const [key, list] of Object.entries(parts)) {
+    if (!list.length) continue;
+    let nv = 0, ni = 0;
+    for (const [g] of list) { nv += g.attributes.position.count; ni += g.index.count; }
+    const P = new Float32Array(nv * 3), Nn = new Float32Array(nv * 3), I = new Uint32Array(ni);
+    const hasSlot = key.startsWith("lod"), hasUV1 = key === "lod0", hasUV = key === "sign";
+    const S = hasSlot ? new Float32Array(nv) : null, U1 = hasUV1 ? new Float32Array(nv * 2) : null, U = hasUV ? new Float32Array(nv * 2) : null;
+    let vo = 0, io = 0;
+    for (const [g, m, n] of list) {
+      const gp = g.attributes.position, gn = g.attributes.normal, c = gp.count;
+      for (let i = 0; i < c; i++) {
+        v.fromBufferAttribute(gp, i).applyMatrix4(m); P[(vo + i) * 3] = v.x; P[(vo + i) * 3 + 1] = v.y; P[(vo + i) * 3 + 2] = v.z;
+        v.fromBufferAttribute(gn, i).applyMatrix3(n).normalize(); Nn[(vo + i) * 3] = v.x; Nn[(vo + i) * 3 + 1] = v.y; Nn[(vo + i) * 3 + 2] = v.z;
+      }
+      if (S) S.set(g.attributes.slot.array, vo);
+      if (U1) U1.set(g.attributes.uv1.array, vo * 2);
+      if (U) U.set(g.attributes.uv.array, vo * 2);
+      const gi = g.index.array; for (let k = 0; k < gi.length; k++) I[io + k] = gi[k] + vo;
+      vo += c; io += gi.length;
+      if (performance.now() - t0 > yieldEvery) { await new Promise((r) => setTimeout(r, 0)); t0 = performance.now(); }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(P, 3)); geo.setAttribute("normal", new THREE.BufferAttribute(Nn, 3));
+    if (S) geo.setAttribute("slot", new THREE.BufferAttribute(S, 1));
+    if (U1) geo.setAttribute("uv1", new THREE.BufferAttribute(U1, 2));
+    if (U) geo.setAttribute("uv", new THREE.BufferAttribute(U, 2));
+    const [s1, s2, end] = STATION_BAND;
+    const band = new Float32Array(nv * 4), misc = new Float32Array(nv * 4);
+    for (let i = 0; i < nv; i++) { band[i * 4] = s1; band[i * 4 + 1] = s2; band[i * 4 + 2] = key === "glass" ? 220 : end; band[i * 4 + 3] = slot; misc[i * 4] = scheme; }
+    geo.setAttribute(key === "glass" ? "iBandGlass" : "iBand", new THREE.BufferAttribute(band, 4));
+    geo.setAttribute("iMisc", new THREE.BufferAttribute(misc, 4));
+    geo.setIndex(new THREE.BufferAttribute(I, 1));
+    geo.computeBoundingSphere(); geo.computeBoundingBox();
+    out[key] = geo;
+  }
+  return out;
 }

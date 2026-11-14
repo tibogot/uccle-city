@@ -348,12 +348,17 @@ def island():
         pts = [(c + s * r * math.cos(a), r * math.sin(a)) for a in [-math.pi / 2 + math.pi * k / 10 for k in range(11)]]
         if s < 0: pts = list(reversed(pts))
         prism_z(P, YELLOW, pts, IH - 0.001, IH + 0.003)
-    return finish(P, [], [], "island", smooth=30)
+    # the crash hoops at both ends, on the island's top (one draw with the island)
+    for e in (1, -1):
+        bumper(P, (e * (IL / 2 - 0.25), 0, IH + 0.003), 0.0 if e > 0 else math.pi)
+    return finish(P, [], [], "island", smooth=35)
 
 
-def bumper():
-    """a U crash hoop (76 mm tube, 0.82 m) across the island end, base plates"""
-    P = Part("bumper")
+def bumper(P=None, at=(0, 0, 0), rz=0.0):
+    """a U crash hoop (76 mm tube, 0.82 m) across the island end, base plates (into P at `at` when given)"""
+    own = P is None
+    if own: P = Part("bumper")
+    T = M(at, (0, 0, rz))
     r = 0.038
     pts = [(0, -0.42, 0.0)]
     for k in range(9):
@@ -361,14 +366,16 @@ def bumper():
         pts.append((0, -0.42 * math.cos(a) * 1.0, 0.62 + 0.2 * math.sin(a)))
     pts.append((0, 0.42, 0.0))
     path = [(0, -0.42, -0.25), (0, -0.42, 0.62)] + [(0, -0.42 * math.cos(math.pi * k / 8), 0.62 + 0.2 * math.sin(math.pi * k / 8)) for k in range(1, 8)] + [(0, 0.42, 0.62), (0, 0.42, -0.25)]
-    P.add_bm(bm_tube_path(path, r, 16), YELLOW, Zv)
+    P.add_bm(bm_tube_path(path, r, 16), YELLOW, Zv, T)
     # black bands
     for z in (0.25, 0.45):
         for y in (-0.42, 0.42):
-            P.add_bm(bm_cyl(r + 0.002, 0.08, 16, 0.0), RUBBER, Zv, M((0, y, z)))
+            P.add_bm(bm_cyl(r + 0.002, 0.08, 16, 0.0), RUBBER, Zv, T @ M((0, y, z)))
     for y in (-0.42, 0.42):
-        span(P, GALV, -0.08, 0.08, y - 0.08, y + 0.08, -0.01, 0.012, 0.004, Xv)
-    return finish(P, [], [], "bumper", smooth=35)
+        bm = bm_box(0.16, 0.16, 0.022, 0.004)
+        for f in bm.faces: f.smooth = False
+        P.add_bm(bm, GALV, Xv, T @ M((0, y, 0.001)))
+    return finish(P, [], [], "bumper", smooth=35) if own else None
 
 
 def nozzle(P, x, y_face, z, grip):
@@ -587,7 +594,7 @@ def carwash():
 
 
 BUILD = [canopy_fascia, canopy_corner, canopy_deck, canopy_light, canopy_column, column_base, solar, fascia_sign,
-         island, bumper, dispenser, totem, lambda: shopfront(False), lambda: shopfront(True), shopsign,
+         island, dispenser, totem, lambda: shopfront(False), lambda: shopfront(True), shopsign,
          airstand, paypoint, bollard, grate, line, carwash]
 # pieces scaled at run time (their AO is not baked: a unit piece's AO is meaningless once stretched)
 SCALED = {"canopy_fascia", "canopy_deck", "canopy_column", "solar", "shopsign", "line"}
@@ -686,7 +693,6 @@ if PREVIEWS:
     for n in ("island", "bumper", "dispenser", "dispenser__sign", "canopy_column", "column_base"):
         pass
     place(lib["island"], 0, 0, 0)
-    place(lib["bumper"], 2.25, 0, IH); place(lib["bumper"], -2.25, 0, IH, math.pi)
     place(lib["dispenser"], -0.55, 0, IH); place(lib["dispenser__sign"], -0.55, 0, IH)
     place(lib["canopy_column"], 1.65, 0, -0.5, 0, (1, 1, under + 0.12 + 0.5))
     place(lib["column_base"], 1.65, 0, IH)

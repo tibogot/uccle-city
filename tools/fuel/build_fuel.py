@@ -325,8 +325,6 @@ class Station:
         # (the 16 cm island kerb itself is no collider: the car / walker meet the crash hoops at its ends, the dispenser
         # and the column on it, all drawn above the kerb)
         for e in (-1, 1):
-            bx, bz = F.w(lx + e * (ISLAND[0] / 2 - 0.25), lz)
-            self.put("bumper", bx, bz, F.yaw + (0 if e > 0 else math.pi), y=top)
             ex = lx + e * (ISLAND[0] / 2 - 0.25)
             self.col.append(("hoop", F.rect(ex - 0.06, ex + 0.06, lz - 0.46, lz + 0.46), top, top + 0.82))
         cs = 1 if k % 2 == 0 else -1
@@ -586,8 +584,10 @@ class Station:
                 continue
             if any(i2 != j and T.solids[i2]["poly"].contains(Point(mx + nx * 2.5, mz + nz * 2.5)) for i2 in T.tree.query(Point(mx + nx * 2.5, mz + nz * 2.5))):
                 continue
-            tr = toward_road(T, mx, mz)
+            tr = toward_road(T, mx + nx * 0.5, mz + nz * 0.5)
             facing = (tr[0][0] * nx + tr[0][1] * nz) if tr else 0
+            if self.sv.get("street") and not (tr and tr[2] and self.sv["street"].lower() in (tr[2].get("name") or "").lower()):
+                continue                                             # (the survey names the street the pumps face)
             dpt = LineString([(ax, az), (bx, bz)]).distance(p)
             score = dpt * 0.3 - facing * 3 + kd * 0.05
             if best is None or score < best[0]:

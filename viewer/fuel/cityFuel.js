@@ -4,17 +4,19 @@
 //   - data: data/fuel/<T>.json (tools/fuel/build_fuel.py): every station of the tile on its real footprint (the canopy
 //     from the UrbIS DSM / OSM, the islands under it, the shop front on the real wall, the totem at the road), its
 //     forecourt slab (a height grid on the walking surface) and the colliders of what is drawn
-//   - drawing: the kit (viewer/fuel/fuelKit.js) as ONE pool per piece for the whole city (LOD0-2 + signs + glass),
-//     streamed by viewer/instanceStream.js (the shared frame budget, a fade slot per tile); the forecourt slab is one
-//     small mesh per station in the tile's features group (the textured concrete pavers of viewer/streets/paving.js)
+//   - drawing: each station's kit pieces (viewer/fuel/fuelKit.js) MERGED into its own meshes (buildStation: LOD0 / 1 / 2,
+//     the signs, the glass; built piece by piece in slices of <= 3 ms when its tile lands): a station near the camera is
+//     3 draws (+ its shadow) instead of one per piece (per-piece pools cost ~22 draws a station and ~2 ms of CPU a
+//     frame on the Chaussee de Waterloo); the LOD meshes are shown by camera distance (+ 8 m margin), the hand-over is
+//     the per-pixel dither of viewer/lodFade.js; the tile fade is a slot of fuelFades (iBand.w). The forecourt slab is
+//     one small mesh per station (the textured concrete pavers of viewer/streets/paving.js)
 //   - collisions: per station an InstancedMesh "furniture-fuel" (count 1, never drawn) holding the drawn pieces'
 //     prisms (columns, islands, dispensers, totem, shop front, air stand, pay terminal, wash box; the canopy deck high
 //     up): the car (viewer/drive featureColliders, "box"), the walker (viewer/character/cityHook, "mesh") and the
 //     collision test read it. The forecourt stays drivable (the slab is 3 cm over the walking surface).
 import * as THREE from "three/webgpu";
 import { float, vec2, vec3, positionWorld, mix, attribute, smoothstep } from "three/tsl";
-import { loadFuelKit, FuelPool, fuelSource, fuelFades, PIECES } from "./fuelKit.js";
-import { Streamer, MARGIN } from "../instanceStream.js";
+import { loadFuelKit, fuelFades, PIECES, buildStation, STATION_BAND } from "./fuelKit.js";
 import { pavingTextures, pavingSample, pavingNormal, regrade, LAYER, loadPavingTextures } from "../streets/paving.js";
 
 const qs = new URLSearchParams(location.search);
@@ -133,7 +135,7 @@ function inRing(r, x, z) {
 
 export const cityFuel = {
   on: qs.get("fuel") !== "old",
-  kit: null, pools: [], tiles: new Map(), group: null, streamer: null, clear: [], treesDropped: 0,
+  kit: null, tiles: new Map(), clear: [], treesDropped: 0, stats: { builds: 0, buildMs: 0 },
   /** a tile's tree list without the LiDAR "trees" the canopies themselves made (urbis-chm peaks on a canopy roof + 1 m:
    *  data/fuel/summary.json "clear"); the full tile and its far impostors both call it (no pop at the swap) */
   treesClear(trees) {
@@ -151,13 +153,10 @@ export const cityFuel = {
       if (renderer) await loadPavingTextures(renderer);
       this.kit = await loadFuelKit();
     } catch (e) { log(`fuel: kit failed (${e.message}), ?fuel=old`); this.on = false; return null; }
-    this.group = new THREE.Group(); this.group.name = "fuel";
-    scene.add(this.group);
-    for (const p of PIECES) this.pools.push(new FuelPool(this.kit.pieces[p], this.kit.mats, this.group, MARGIN));
-    this.streamer = new Streamer({ name: "fuel", pools: this.pools.map((p) => p.stream), fades: fuelFades, budget: 0.1 });
-    updaters.push((eye, cam) => this.update(cam));
+    this.renderer = renderer; this.scene = scene;
+    updaters.push((eye, cam) => { this.camera = cam; this.update(cam); });
     window.__fuel = this;
-    const tris = PIECES.reduce((s, p) => s + this.kit.pieces[p].tris[0], 0);
+    const tris = PIECES.reduce((s2, p) => s2 + this.kit.pieces[p].tris[0], 0);
     log(`fuel: on (?fuel=old for the street-life boxes), kit ${PIECES.length} pieces, ${tris} LOD0 tris, ${Math.round(performance.now() - t0)} ms`);
     return this;
   },
@@ -165,11 +164,13 @@ export const cityFuel = {
     if (!this.on) return Promise.resolve(null);
     return fetch(new URL(`${name}.json`, DATA)).then((r) => (r.ok ? r.json() : null)).catch(() => null);
   },
-  /** a tile's stations: instances into the pools, the slabs + collision stand-ins into `parent` (the tile's features group) */
+  /** a tile's stations: their merged meshes (built in slices), slabs and collision stand-ins into `parent` (the tile's
+   *  features group: disposed with it) */
   addTile(name, doc, parent) {
     if (!this.on || !this.kit || !doc?.stations?.length) return null;
-    const inst = fuelInstances(doc);
     const g = new THREE.Group(); g.name = `fuel-${name}`;
+    const slot = fuelFades.alloc();
+    const stations = [];
     const mat = forecourtMaterial();
     for (const s of doc.stations) {
       if (s.slab) {
@@ -185,10 +186,32 @@ export const cityFuel = {
         m.userData.collisionStandin = true; m.userData.station = s.id;
         g.add(m);
       }
+      const rec = { id: s.id, meshes: null, c: new THREE.Vector3(), r: 0 };
+      stations.push(rec);
+      const inst = fuelInstances({ stations: [s] });
+      const t0 = performance.now();
+      buildStation(this.kit, inst, s.scheme, slot).then((geos) => {
+        if (!this.tiles.has(name)) { for (const q of Object.values(geos)) q.dispose(); return; }
+        const M = this.kit.mats, mk = (geo, mat, nm, shadow) => {
+          const m = new THREE.Mesh(geo, mat); m.name = `fuel-${nm}-${s.id}`; m.castShadow = shadow; m.receiveShadow = true; m.visible = false;
+          m.userData.noFade = true; g.add(m); return m;
+        };
+        rec.meshes = { lod0: mk(geos.lod0, M.opaque[0], "lod0", true), lod1: mk(geos.lod1, M.opaque[1], "lod1", true), lod2: mk(geos.lod2, M.opaque[2], "lod2", true),
+          sign: geos.sign ? mk(geos.sign, M.sign, "sign", false) : null, glass: geos.glass ? mk(geos.glass, M.glass, "glass", false) : null };
+        if (rec.meshes.glass) rec.meshes.glass.renderOrder = 2;
+        rec.c.copy(geos.lod0.boundingSphere.center); rec.r = geos.lod0.boundingSphere.radius;
+        // the shared materials' pipelines built asynchronously before the station is first shown (no compile freeze)
+        if (this.renderer && this.camera && !this.compiled) {
+          const tmp = Object.values(rec.meshes).filter(Boolean);
+          for (const m of tmp) m.visible = true;
+          const done = () => { this.compiled = true; rec.ready = true; };
+          this.renderer.compileAsync(g, this.camera, this.scene).then(done, done);
+        } else rec.ready = true;
+        this.stats.builds++; this.stats.buildMs += performance.now() - t0;
+      });
     }
     parent.add(g);
-    this.tiles.set(name, { name, inst, group: g, doc });
-    this.streamer.addTile(name, g, (slot) => Object.fromEntries(PIECES.filter((k) => inst[k]).map((k) => [k, fuelSource(this.kit.pieces[k], inst[k], slot)])));
+    this.tiles.set(name, { name, group: g, doc, slot, stations, fade: -1 });
     return { stations: doc.stations.length };
   },
   removeTile(name) {
@@ -197,11 +220,26 @@ export const cityFuel = {
     t.group.removeFromParent();
     t.group.traverse((m) => { if (m.isMesh) m.geometry.dispose(); });
     this.tiles.delete(name);
-    this.streamer.removeTile(name);
+    fuelFades.set(t.slot, 0); fuelFades.release(t.slot);
   },
+  /** per frame: the tiles' fades into their slots; each station's LOD meshes shown within their band (+ 8 m) */
   update(camera) {
     if (!this.on || !this.kit) return;
-    this.streamer.update(camera);
+    const [s1, s2, end] = STATION_BAND, mg = 8, c = camera.position;
+    for (const t of this.tiles.values()) {
+      const gp = t.group.parent;
+      const f = gp && gp.visible === false ? 0 : t.group.userData.fade ?? gp?.userData.fade ?? 1;
+      if (f !== t.fade) { t.fade = f; fuelFades.set(t.slot, f); }
+      for (const st of t.stations) {
+        const m = st.meshes; if (!m || !st.ready) continue;
+        const d = c.distanceTo(st.c), near = d - st.r, far = d + st.r;
+        m.lod0.visible = near < s1 * 1.1 + mg;
+        m.lod1.visible = far > s1 * 0.9 - mg && near < s2 * 1.1 + mg;
+        m.lod2.visible = far > s2 * 0.9 - mg && near < end + mg;
+        if (m.sign) m.sign.visible = near < end + mg;
+        if (m.glass) m.glass.visible = near < 220 + mg;
+      }
+    }
   },
   /** the JOINS check of a station (tools/mesh_audit/contact.js): its pieces' LOD0 at their matrices + its slab against
    *  the loaded tiles' terrain / roads (viewer/contactAudit.js groundParts). Items below the slab (buried feet) are fine */
@@ -227,6 +265,7 @@ export const cityFuel = {
   },
   report() {
     let st = 0; for (const t of this.tiles.values()) st += t.doc.stations.length;
-    return { tiles: this.tiles.size, stations: st, drawn: this.pools.reduce((s, p) => s + p.drawn, 0), stream: { ...this.streamer.stats } };
+    let drawn = 0; for (const t of this.tiles.values()) for (const q of t.stations) if (q.meshes) for (const m of Object.values(q.meshes)) if (m?.visible) drawn++;
+    return { tiles: this.tiles.size, stations: st, drawn, builds: this.stats.builds, buildMs: +this.stats.buildMs.toFixed(1), treesDropped: this.treesDropped };
   },
 };

@@ -12,7 +12,7 @@
    "backtoback": 16,
    "seam": 4
   },
-  "ms": 8
+  "ms": 7
  },
  "options": {
   "weld": 0.0001,

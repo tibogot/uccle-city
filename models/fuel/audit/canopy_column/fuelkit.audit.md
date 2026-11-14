@@ -1,6 +1,6 @@
 # Mesh audit: fuelkit.glb
 
-60 triangles, 32 welded vertices, 0 open edges, 0 rays, 8 ms.
+60 triangles, 32 welded vertices, 0 open edges, 0 rays, 6 ms.
 
 **0 blocking**, 24 warnings. Clean (no blocking item).
 
