@@ -984,9 +984,11 @@ async function main() {
   // the tile worker starts on the start tile and its ring NOW (the hide list and the ponds are complete): it builds them
   // one after another while the main thread does the rest of the boot (it waited idle for the warm-up before)
   if (!OLD_ORDER) bootPrefetch(manifest, entry);
-  // the camera, the sky and the post pipeline now, then every shader of what is already in the scene (the kit, the
-  // street life, furniture, gardens, stops, cars, lamps, the sky; the landmarks queue theirs as they arrive) through
-  // compileAsync WHILE the worker builds the first tiles; the boot warm-up's forced frames then find them built
+  // the camera, the sky and the post pipeline now, then ONE forced frame of what is already in the scene (the kit, the
+  // street life, furniture, gardens, stops, cars, lamps, the sky; warmup.js warmNow) WHILE the worker builds the first
+  // tiles: its node builds run now (the main thread idled here) and its pipelines compile in parallel meanwhile; the
+  // boot warm-up's forced frames then find them built. (Not compileAsync: it keeps at most 16 pipelines in flight, 8.5 s
+  // for the same scene, and the compile queue waited behind it.)
   if (!OLD_ORDER && params.get("early") !== "0") pipeReady = setupPipe().then(() => {
     if (!bootPipes) return;
     bootStage("shaders");
@@ -1432,7 +1434,11 @@ async function main() {
       // solids: a few hundred ms of worker each, not 3-4 s), so the first view is the start tile in a whole
       // neighbourhood, not alone in the void; the full ring tiles then fade in over them one by one (stream(), the
       // usual far -> full hand-over). Before: one full neighbour + the two nearest far tiles under the cover.
+      // and ONE full neighbour (the worker built it right after the start tile): a second full tile emits its shared TSL
+      // functions in another order than the first (other WGSL text: new pipelines), so the warm-up must see one, or the
+      // first full tile after the cover waited ~4 s on its 15 new pipelines (measured)
       await streamBootLites();
+      if (ring > 0) await stream();
     } else {
       if (ring > 0) await stream();
       if (far > ring && params.get("earlyshow") !== "1") await stream(true);
@@ -1445,7 +1451,7 @@ async function main() {
     bootStage("warmup");
     { const d = controls.enabled ? camera.position.distanceTo(controls.target) : 60, at = camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(d).add(camera.position);
       landing = window.__loader?.land({ p: camera.position.toArray(), t: at.toArray(), fov: camera.fov }); }
-    const tick = setInterval(() => bootStage("warmup", { done: bootPipes.created - bootPipes.pending, total: bootPipes.created }), 250);
+    const tick = setInterval(() => bootStage("warmup", { done: bootPipes.progress.done, total: Math.max(1, bootPipes.progress.started) }), 250);
     // the full tiles' FADING copies (lodFade.js fadeVariant): with the ring as far tiles no full tile fades in under the
     // cover, so the start tile's copies are drawn here (stand-ins, removed after): the next full tiles then compile
     // no new pipeline (measured: the first one after the cover waited 3.3 s on 40 of them)
@@ -1464,7 +1470,7 @@ async function main() {
   $("cover").classList.add("gone");
   document.body.classList.remove("loading");
   window.__coverAt = performance.now();             // (the boot time, for debug/preflight.js and perf runs)
-  setTimeout(() => window.__loader?.finish(), 1400);
+  setTimeout(() => window.__loader?.finish(), 1400 + 1000 * +(params.get("loaderhold") || 0));   // ?loaderhold=s: keep it (hand-over checks)
   // ?impkit=1: the far trees' atlas bakes in the background (a grid row per frame; under the boot cover, where the
   // tiles build without frames, it doubled the boot: 12 -> 28 s). When it is ready its shaders compile off the frame,
   // then every far tree dithers in over the tile fade (viewer/treeKitCity.js show)

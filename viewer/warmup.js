@@ -12,7 +12,15 @@ import { openParallelPipelines } from "../vendor/engine/parallelPipelines.js";
 import { warmGamePipelines, awaitPipelinesQuiet } from "../vendor/engine/pipelineWarmup.js";
 
 export function openBootPipelines(renderer, scene) {
-  return openParallelPipelines(renderer, scene);
+  const win = openParallelPipelines(renderer, scene);
+  // the loading scene's readout: how many of the async pipelines started in the window are done (device-level count)
+  const dev = renderer.backend?.device, f = dev?.createRenderPipelineAsync;
+  const prog = { started: 0, done: 0 };
+  if (f) {
+    dev.createRenderPipelineAsync = function (d) { prog.started++; const p = f.call(this, d); p.then(() => prog.done++, () => prog.done++); return p; };   // (kept: two counters)
+  }
+  win.progress = prog;
+  return win;
 }
 
 export async function warmBoot(renderer, scene, win) {
