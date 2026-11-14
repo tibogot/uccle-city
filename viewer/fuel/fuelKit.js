@@ -39,7 +39,7 @@ export const SLOTS = [
   ["brand_secondary", [0.5, 0.5, 0.5], 0.35, 0.05, 0.12, 0],
   ["brand_accent", [0.5, 0.5, 0.5], 0.35, 0.05, 0.1, 0],
   ["led_strip", [0.95, 0.95, 0.92], 0.3, 0.0, 3.0, 0.25],
-  ["led_panel", [0.95, 0.96, 0.98], 0.3, 0.0, 2.6, 0.12],
+  ["led_panel", [0.95, 0.96, 0.98], 0.3, 0.0, 2.6, 0.5],
   ["screen", [0.06, 0.16, 0.22], 0.12, 0.0, 1.6, 0.8],
   ["rubber_black", [0.018, 0.018, 0.02], 0.7, 0.0, 0, 0],
   ["hose_black", [0.012, 0.012, 0.013], 0.5, 0.0, 0, 0],
@@ -62,6 +62,8 @@ const BRAND0 = SLOT.brand_primary;                          // brand_primary, _s
 export const PIECES = ["canopy_fascia", "canopy_corner", "canopy_deck", "canopy_light", "canopy_column", "column_base", "solar", "fascia_sign",
   "island", "dispenser", "totem", "shopfront", "shopdoor", "shopsign", "airstand", "paypoint", "bollard", "grate", "line", "carwash"];
 const SCALED = new Set(["canopy_fascia", "canopy_deck", "canopy_column", "solar", "shopsign", "line"]);
+/** pieces whose baked AO is not used: the fascia corner and the sign box hang below their origin and bake too dark */
+const NOAO = new Set(["canopy_corner", "fascia_sign"]);
 /** LOD bands (m): [switch 0 -> 1, switch 1 -> 2, end]; glass ends at `glass` */
 const BIG = { lod: [70, 200, 900], glass: 0, shadow: true };
 export const BANDS = {
@@ -102,7 +104,7 @@ export function loadFuelKit(base = new URL("../../", import.meta.url)) {
     const pieces = {};
     for (const p of PIECES) {
       if (!raw[p]) throw new Error(`fuel kit: no piece ${p}`);
-      const noAO = SCALED.has(p);
+      const noAO = SCALED.has(p) || NOAO.has(p);
       const lod0 = mainGeometry(raw[p], noAO);
       const lod1 = weldedSimplify(lod0, LOD_ERR[1], ao, noAO);
       const lod2 = weldedSimplify(lod0, LOD_ERR[2], ao, noAO);
@@ -271,7 +273,7 @@ function materials(aoTex, signTex, brands) {
     const t = texture(signTex, vec2(x, row.add(v).mul(RH / AH))).rgb;
     const led = k.greaterThan(2.5);
     sign.colorNode = t.mul(0.9);
-    sign.roughnessNode = select(led, float(0.08), float(0.3));
+    sign.roughnessNode = select(led, float(0.08), float(0.45));
     sign.metalnessNode = float(0);
     // lit signs: a little by day, more at night (the LED window's ghost segments glow a dim red)
     sign.emissiveNode = t.mul(mix(select(led, float(0.6), float(0.08)), select(led, float(1.4), float(0.85)), night));

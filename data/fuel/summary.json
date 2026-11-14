@@ -623,13 +623,13 @@
    "operator": "TotalEnergies",
    "schemeName": "tamaris",
    "type": "canopy",
-   "islands": 6,
+   "islands": 2,
    "canopy": {
     "cx": 1631.136,
     "cz": -578.872,
     "yaw": 0.0624,
     "w": 21.6,
-    "d": 20.48,
+    "d": 10.0,
     "top": 119.471,
     "h": 6.33,
     "src": "dsm",
@@ -638,44 +638,44 @@
    "shop": null,
    "wall": null,
    "notes": [
-    "canopy from the DSM: 21.6 x 20.5 m, 6.33 m high, fill 0.63",
+    "canopy from the DSM: 21.6 x 10.0 m, 6.33 m high, fill 0.63",
     "no shop wall within 8 m of the canopy",
     "car wash at OSM node 10930371708"
    ],
    "counts": {
     "bollard": 2,
-    "canopy_column": 6,
+    "canopy_column": 2,
     "canopy_corner": 4,
     "canopy_deck": 1,
     "canopy_fascia": 4,
-    "canopy_light": 42,
+    "canopy_light": 21,
     "carwash": 1,
-    "column_base": 6,
-    "dispenser": 6,
+    "column_base": 2,
+    "dispenser": 2,
     "fascia_sign": 4,
     "grate": 26,
-    "island": 6,
-    "line": 6,
+    "island": 2,
+    "line": 2,
     "totem": 1
    },
    "treesOnCanopy": 0,
    "tile": "J3",
    "clear": [
     [
-     1618.66,
-     -589.35
+     1618.98,
+     -584.12
     ],
     [
-     1642.21,
-     -590.83
+     1642.54,
+     -585.6
     ],
     [
-     1643.61,
-     -568.39
+     1643.29,
+     -573.62
     ],
     [
-     1620.06,
-     -566.92
+     1619.73,
+     -572.15
     ]
    ]
   },
