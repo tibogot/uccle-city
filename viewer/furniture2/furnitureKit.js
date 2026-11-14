@@ -21,7 +21,7 @@ import {
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
-import { FadeSlots, StreamPool, sourceFromYaw } from "../instanceStream.js";
+import { FadeSlots, StreamPool, sourceFromYaw, MARGIN } from "../instanceStream.js";
 
 /** the kit's tile fades (viewer/instanceStream.js): iBand.w = the instance's tile slot */
 export const furnitureFades = new FadeSlots();
@@ -270,7 +270,7 @@ export function furnitureSource(piece, a, slot) {
  *  camera (viewer/instanceStream.js StreamPool: static buffers, update ranges over the live count, never
  *  DynamicDrawUsage; a mesh with nothing to draw is not visible). */
 export class FurniturePool {
-  constructor(piece, mats, group, margin = 12) {
+  constructor(piece, mats, group, margin = MARGIN) {
     this.piece = piece; this.meshes = [];
     const b = piece.band, [s1, s2, end] = b.lod;
     const live = [[0, s1 * 1.1], [s1 * 0.9, s2 * 1.1], [s2 * 0.9, end]];       // lodKeep's smoothstep windows

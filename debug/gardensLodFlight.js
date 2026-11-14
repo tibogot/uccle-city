@@ -1,7 +1,7 @@
 // FRONT-GARDEN LOD FLIGHT (gardens round 2, docs/assets/GARDENS.md): moves the camera along a street at walking or
 // driving speed and checks, EVERY frame, that each garden instance a LOD's shader band may draw is in that LOD's pool
-// (viewer/gardens/gardenKit.js GardenPool, streamed by viewer/instanceStream.js: band + 12 m margin round the pool's last
-// gather centre, a gather every 3 m, time-sliced; the hand-over itself is the per-pixel dither of viewer/lodFade.js, so
+// (viewer/gardens/gardenKit.js GardenPool, streamed by viewer/instanceStream.js: band + 6 m margin round the pool's last
+// gather centre, a gather every 2 m, time-sliced; the hand-over itself is the per-pixel dither of viewer/lodFade.js, so
 // a pop = an instance whose band is live but whose LOD pool does not hold it: it would vanish or appear in one frame).
 // The check itself is debug/driveStutter.js popCheck (any streamed layer).
 //   const f = await import("/debug/gardensLodFlight.js"); await f.fly({ path: [[x0, z0], [x1, z1]], speed: 14, height: 1.7 })

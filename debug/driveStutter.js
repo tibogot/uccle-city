@@ -74,6 +74,41 @@ function hookPools() {
   }
 }
 
+// ---- every per-frame updater (viewer/main.js `updaters`, exposed as viewer.updaters): profiled WITHOUT replacing the
+// array's elements (tiles remove their updaters by identity): the array's own iterator hands out timing wrappers.
+// Grouped by the function's source (one row for the many per-tile updaters of a kind).
+function hookUpdaters() {
+  const U = window.viewer?.updaters;
+  if (!U || U.__ds) return;
+  U.__ds = true;
+  const wrap = new WeakMap(), label = new WeakMap();
+  const lab = (u) => { let l = label.get(u); if (!l) { l = (u.name && u.name !== "u" ? u.name + ": " : "") + String(u).replace(/\s+/g, " ").slice(0, 90); label.set(u, l); } return l; };
+  S.upd = new Map();          // label -> per-frame ms (summed over the label's functions in that frame)
+  let frame = -1, cur = new Map();
+  const flush = () => { for (const [l, ms] of cur) { let a = S.upd.get(l); if (!a) S.upd.set(l, (a = [])); a.push([frame, ms]); if (a.length > 40000) a.splice(0, 20000); } cur = new Map(); };
+  U[Symbol.iterator] = function* () {
+    flush(); frame = S.cpu.length;
+    for (let i = 0; i < this.length; i++) {
+      const u = this[i];
+      let w = wrap.get(u);
+      if (!w) { const l = lab(u); w = function (...a) { const t0 = performance.now(); try { return u.apply(this, a); } finally { cur.set(l, (cur.get(l) || 0) + performance.now() - t0); } }; wrap.set(u, w); }
+      yield w;
+    }
+  };
+}
+function updaterReport(f0, f1, dur) {
+  if (!S.upd) return null;
+  const out = [];
+  for (const [l, a] of S.upd) {
+    const v = a.filter((x) => x[0] >= f0 && x[0] <= f1).map((x) => x[1]);
+    if (!v.length) continue;
+    const s = v.reduce((x, y) => x + y, 0), mx = Math.max(...v);
+    if (mx < 0.3 && s / dur < 0.5) continue;
+    out.push({ fn: l, max: +mx.toFixed(2), msPerS: +(s / dur).toFixed(2), over05: v.filter((x) => x > 0.5).length });
+  }
+  return out.sort((a, b) => b.max - a.max).slice(0, 12);
+}
+
 /** POP CHECK (the streamed pools, viewer/instanceStream.js): every instance a mesh's shader may draw from the camera
  *  now (its live band, the tile not hidden) must be in that mesh's pool, i.e. within the band + margin of the pool's
  *  last gather centre; else it would appear / vanish in one frame. Tiles that landed after the pool's last commit count
@@ -135,6 +170,7 @@ async function leg(pts, speed, place, pops = null) {
   const g = V.gpuStats?.() || {};
   const cpu = S.cpu.slice(cpu0).sort((a, b) => a - b);
   return {
+    updaters: updaterReport(cpu0, S.cpu.length, dur),
     cpu: { p50: q(cpu, 0.5), p95: q(cpu, 0.95), p99: q(cpu, 0.99), max: q(cpu, 1), over12: cpu.filter((x) => x > 12).length, over16: cpu.filter((x) => x > 16.7).length },
     gpu: { p50: g.p50 != null ? +(+g.p50).toFixed(2) : null, p95: g.p95 != null ? +(+g.p95).toFixed(2) : null, max: g.max != null ? +(+g.max).toFixed(2) : null },
     valid: !hidden && med < 40, seconds: +dur.toFixed(1), frames: s.length,
@@ -153,7 +189,7 @@ export async function run({ path = "boulenger", repeats = 3, settle = 6, warmup 
   const p = typeof path === "string" ? PATHS[path] : path;
   if (!p) throw new Error(`unknown path ${path}; one of ${Object.keys(PATHS).join(", ")}`);
   const sp = speed ?? p.speed ?? 14;
-  hookPools();
+  hookPools(); hookUpdaters();
   V.setView("overview");
   const c = V.controls, cam = V.camera, upd = c.update, w = V.world;
   c.update = () => false;                          // our hand on the camera (no orbit clamps / damping)
@@ -189,6 +225,10 @@ export async function run({ path = "boulenger", repeats = 3, settle = 6, warmup 
       max: Math.max(...legs.map((l) => l.pools[k]?.max ?? 0)), msPerS: +(sum((l) => l.pools[k]?.msPerS ?? 0) / legs.length).toFixed(2), over05: sum((l) => l.pools[k]?.over05 ?? 0),
     }])),
   };
+  // the updaters worse than 0.5 ms in any frame, over all measured legs
+  const ups = new Map();
+  for (const l of legs) for (const u of l.updaters || []) { const o = ups.get(u.fn) || { fn: u.fn, max: 0, msPerS: 0, over05: 0 }; o.max = Math.max(o.max, u.max); o.msPerS += u.msPerS / legs.length; o.over05 += u.over05; ups.set(u.fn, o); }
+  out.summary.updaters = [...ups.values()].sort((a, b) => b.max - a.max).slice(0, 10).map((o) => ({ ...o, msPerS: +o.msPerS.toFixed(2) }));
   out.streams = (globalThis.__streamers || []).map((x) => ({ name: x.name, ...x.stats, ms: +x.stats.ms.toFixed(1), maxSliceMs: +x.stats.maxSliceMs.toFixed(2) }));
   last = out;
   try { localStorage.setItem("driveStutter.last", JSON.stringify(out)); } catch (e) {}

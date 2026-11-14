@@ -5,7 +5,7 @@
 //   - data: data/furniture/<T>.json (tools/furniture/build_furniture.py): the OSM benches and bike parkings on the
 //     measured sidewalk (hoop rows, parking.brussels boxes), the bins by rule, the glass banks at the street life's sites
 //   - drawing: the kit (viewer/furniture2/furnitureKit.js) as ONE pool per piece for the whole city (LOD0-2), streamed
-//     by viewer/instanceStream.js (a gather every 3 m of travel, time-sliced, 12 m margin round the bands; the tile fade
+//     by viewer/instanceStream.js (a gather every 2 m of travel, time-sliced, 6 m margin round the bands; the tile fade
 //     is a uniform per tile slot: a fading tile never re-gathers)
 //   - collisions: per tile, an InstancedMesh per piece named like the furniture the collision code reads
 //     (furniture-bench / furniture-bikes / furniture-bikebox / furniture-bin / furniture-glassbank), with LOD1's
@@ -15,7 +15,7 @@
 //     dropped); parked cars (viewer/cars.js) leave the bike boxes' parking spaces (keepCarsClear)
 import * as THREE from "three/webgpu";
 import { loadFurnitureKit, FurniturePool, PIECES, furnitureSource, furnitureFades } from "./furnitureKit.js";
-import { Streamer } from "../instanceStream.js";
+import { Streamer, MARGIN } from "../instanceStream.js";
 
 const qs = new URLSearchParams(location.search);
 const DATA = new URL("../../data/furniture/", import.meta.url);
@@ -67,8 +67,8 @@ export const cityFurniture = {
     try { this.kit = await loadFurnitureKit(); } catch (e) { log(`furniture2: kit failed (${e.message}), ?furniture=old`); this.on = false; return null; }
     this.group = new THREE.Group(); this.group.name = "furniture2";
     scene.add(this.group);
-    for (const p of PIECES) this.pools.push(new FurniturePool(this.kit.pieces[p], this.kit.mats, this.group, 12));
-    this.streamer = new Streamer({ name: "furniture2", pools: this.pools.map((p) => p.stream), fades: furnitureFades, margin: 12, trigger: 3, budget: 0.15 });
+    for (const p of PIECES) this.pools.push(new FurniturePool(this.kit.pieces[p], this.kit.mats, this.group, MARGIN));
+    this.streamer = new Streamer({ name: "furniture2", pools: this.pools.map((p) => p.stream), fades: furnitureFades, budget: 0.15 });
     updaters.push((eye, cam) => this.update(cam));
     window.__furniture2 = this;
     log(`furniture2: on (?furniture=old for the placeholders), kit ${PIECES.map((p) => `${p} ${this.kit.pieces[p].tris.join("/")}`).join(", ")} tris, ${Math.round(performance.now() - t0)} ms`);

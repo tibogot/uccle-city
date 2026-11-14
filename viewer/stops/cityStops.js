@@ -6,7 +6,7 @@
 //     tram island), its shelter where OSM says there is one (open to the road, or its back to the road on a narrow
 //     pavement), the free-standing double-sided ad panels placed by rule; + the tram platforms' shelters from tram.js
 //   - drawing: the kit (viewer/stops/stopKit.js) as ONE pool per piece for the whole city (LOD0-2 + posters + glass),
-//     streamed by viewer/instanceStream.js (a gather every 3 m of travel, time-sliced, 12 m margin round the bands; the
+//     streamed by viewer/instanceStream.js (a gather every 2 m of travel, time-sliced, 6 m margin round the bands; the
 //     tile fade is a uniform per tile slot: a fading tile never re-gathers)
 //   - collisions: per tile, an InstancedMesh per piece named like the furniture the collision code already reads
 //     (furniture-shelter / furniture-stopPole / furniture-adpanel), with LOD1's triangles + the glass at the same
@@ -18,7 +18,7 @@
 //     board are the street-life layer's SDF boxes (viewer/streetlife/layout.js reads the same data/stops/<T>.json)
 import * as THREE from "three/webgpu";
 import { loadStopKit, StopPool, stopSource, stopFades } from "./stopKit.js";
-import { Streamer } from "../instanceStream.js";
+import { Streamer, MARGIN } from "../instanceStream.js";
 
 const qs = new URLSearchParams(location.search);
 const DATA = new URL("../../data/stops/", import.meta.url);
@@ -66,8 +66,8 @@ export const cityStops = {
     try { this.kit = await loadStopKit(); } catch (e) { log(`stops: kit failed (${e.message}), ?stops=old`); this.on = false; return null; }
     this.group = new THREE.Group(); this.group.name = "stops";
     scene.add(this.group);
-    for (const p of PIECES) this.pools.push(new StopPool(this.kit.pieces[p], this.kit.mats, this.group, 12));
-    this.streamer = new Streamer({ name: "stops", pools: this.pools.map((p) => p.stream), fades: stopFades, margin: 12, trigger: 3, budget: 0.15 });
+    for (const p of PIECES) this.pools.push(new StopPool(this.kit.pieces[p], this.kit.mats, this.group, MARGIN));
+    this.streamer = new Streamer({ name: "stops", pools: this.pools.map((p) => p.stream), fades: stopFades, budget: 0.15 });
     updaters.push((eye, cam) => this.update(cam));
     window.__stops = this;
     log(`stops: on (?stops=old for the placeholders), kit ${PIECES.map((p) => `${p} ${this.kit.pieces[p].tris.join("/")}`).join(", ")} tris, ${Math.round(performance.now() - t0)} ms`);

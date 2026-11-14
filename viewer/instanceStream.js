@@ -7,8 +7,9 @@
 //     by one only in the cells that straddle a LOD band's edge; no allocation per gather (grown back arrays)
 //   - the tile fade is NOT in the instances any more: each tile has a SLOT in a small uniform array (FadeSlots) and the
 //     instances carry the slot; a tile fading in / out changes one float, never re-gathers
-//   - hysteresis: the pools hold every instance within its LOD band + `margin` (12 m); a new gather starts when the
-//     camera has moved `trigger` (3 m) from the last one's centre, or a tile came / went
+//   - hysteresis: the pools hold every instance within its LOD band + MARGIN (6 m); a new gather starts when the
+//     camera has moved TRIGGER (2 m) from the last one's centre, or a tile came / went (a gather takes 1-4 frames: the
+//     4 m between them is ~17 frames at 14 m/s; more margin costs GPU: every held instance's vertices are drawn)
 //   - time-sliced: a gather runs as a generator over frames with a per-frame budget (ms) per streamer; each pool is
 //     committed (copy into its static buffers, update range over the live count, needsUpdate) as soon as it is done.
 //     The margin covers the camera's travel while a gather runs (trigger + a few frames at car speed); if the camera
@@ -16,6 +17,9 @@
 //   - never DynamicDrawUsage (r187 re-uploads such buffers whole in every pass); a mesh with nothing to draw is hidden
 import * as THREE from "three/webgpu";
 import { uniformArray } from "three/tsl";
+
+/** the distance (m) every pool holds beyond its LOD bands; the camera travel (m) that starts a new gather */
+export const MARGIN = 6, TRIGGER = 2;
 
 // ------------------------------------------------------------------------------------------------ tile fades
 /** a uniform float per tile (its fade, lodFade.js conventions: 0..1 in, 2..3 out); slot 0 = always 1 (fallback) */
@@ -90,7 +94,7 @@ export function sourceFromYaw(a, stride, half, extras = {}) {
  * sphere's pad).
  */
 export class StreamPool {
-  constructor(key, meshes, r = 1, margin = 12) {
+  constructor(key, meshes, r = 1, margin = MARGIN) {
     this.key = key; this.r = r; this.margin = margin; this.at = new THREE.Vector3(1e9, 0, 0);
     this.meshes = meshes.map((m) => ({ ...m, d0: Math.max(0, m.l0 - margin), d1: m.l1 + margin, back: {}, n: 0, cap: 0, box: new Float64Array(6) }));
     for (const m of this.meshes) {
@@ -179,7 +183,7 @@ export class StreamPool {
  * tile whose parent is hidden draws nothing (fade 0).
  */
 export class Streamer {
-  constructor({ name, pools, fades, margin = 12, trigger = 3, budget = 0.3 }) {
+  constructor({ name, pools, fades, margin = MARGIN, trigger = TRIGGER, budget = 0.3 }) {
     Object.assign(this, { name, pools, fades, margin, trigger, budget });
     this.tiles = new Map();
     this.center = new THREE.Vector3(1e9, 0, 0);       // the displayed gather's centre

@@ -17,7 +17,7 @@ import {
   max, min, clamp, step, select, length, abs, positionLocal,
 } from "three/tsl";
 import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
-import { FadeSlots, StreamPool, Streamer, sourceFromYaw } from "../instanceStream.js";
+import { FadeSlots, StreamPool, Streamer, sourceFromYaw, MARGIN } from "../instanceStream.js";
 
 /** the props' tile fades (viewer/instanceStream.js): iBand.z = the instance's tile slot */
 export const propFades = new FadeSlots();
@@ -208,12 +208,12 @@ const MESH_RANGE = { boxes: 600, windows: 600, glass: 250 };
 const TEXT_KEEP = 400;
 
 /** PROPS (kits): ONE pool per kind and LOD for the whole city, not one mesh per tile (draws: the kinds near the camera,
- *  not tiles x kinds), streamed by viewer/instanceStream.js: a gather every 3 m of travel, time-sliced, 12 m margin round
+ *  not tiles x kinds), streamed by viewer/instanceStream.js: a gather every 2 m of travel, time-sliced, 6 m margin round
  *  the LOD bands; the tile fade is a uniform per tile slot (a fading tile never re-gathers); static buffers with update
  *  ranges (never DynamicDrawUsage: r187 re-uploads those whole in every pass); a pool with nothing to draw is not
  *  visible (an instanced mesh with count 0 still costs a draw per pass). */
 class PropPool {
-  constructor(kind, K, group, shadows, mats, margin = 12) {
+  constructor(kind, K, group, shadows, mats, margin = MARGIN) {
     this.kind = kind; this.K = K; this.meshes = [];
     const s = K.lod[0], e = K.lod[1], live = [[0, s * 1.1], [s * 0.9, e]];     // propMaterial's smoothstep windows
     const spec = [];
@@ -264,7 +264,7 @@ export class StreetLife {
     this.worker.onmessage = (e) => { const p = this.req.get(e.data.id); this.req.delete(e.data.id); e.data.error ? p.reject(new Error(e.data.error)) : p.resolve(e.data); };
     this.tileMeshes = [];
     this.pools = [];
-    this.streamer = new Streamer({ name: "streetlife", pools: [], fades: propFades, margin: 12, trigger: 3, budget: 0.15 });
+    this.streamer = new Streamer({ name: "streetlife", pools: [], fades: propFades, budget: 0.15 });
   }
   /** every mesh of the layer: the tiles' (boxes, windows, glass) and the prop pools' */
   get meshes() { return [...this.tileMeshes, ...this.pools.flatMap((p) => p.meshes)]; }

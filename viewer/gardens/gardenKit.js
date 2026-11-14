@@ -23,7 +23,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
 import { boxyPieces, SLOT, CAP_T, PILLAR_W, CAP_W } from "./gardenGeom.js";
 import { hedgeGeometries, hedgeMaterials, hedgeInstances, gardenFades } from "./gardenHedge.js";
-import { StreamPool, buildSource } from "../instanceStream.js";
+import { StreamPool, buildSource, MARGIN } from "../instanceStream.js";
 export { gardenFades };
 
 export const RAILS = ["spear", "flat", "rings"];
@@ -377,7 +377,7 @@ export function gardenSources(inst, slot) {
  *  DynamicDrawUsage; a mesh with nothing to draw is not visible). margin: the distance (m) each LOD holds beyond its band
  *  (the streamer's hysteresis). */
 export class GardenPool {
-  constructor(piece, mats, group, margin = 12) {
+  constructor(piece, mats, group, margin = MARGIN) {
     this.piece = piece; this.meshes = []; this.aux = piece.name === "hedge";
     const [s1, s2, end] = piece.band;
     // what the shaders may draw per LOD (gardenKit.js lodKeep / gardenHedge.js keep smoothstep windows); a one-LOD piece

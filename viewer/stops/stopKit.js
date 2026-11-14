@@ -21,7 +21,7 @@ import {
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
-import { FadeSlots, StreamPool, sourceFromYaw } from "../instanceStream.js";
+import { FadeSlots, StreamPool, sourceFromYaw, MARGIN } from "../instanceStream.js";
 
 /** the stops' tile fades (viewer/instanceStream.js): iBand.w = the instance's tile slot */
 export const stopFades = new FadeSlots();
@@ -280,7 +280,7 @@ export function stopSource(piece, a, slot) {
  *  ranges over the live count, never DynamicDrawUsage; a mesh with nothing to draw is not visible: count 0 still costs
  *  a draw). margin: the distance (m) each mesh holds beyond its band (the streamer's hysteresis). */
 export class StopPool {
-  constructor(piece, mats, group, margin = 12) {
+  constructor(piece, mats, group, margin = MARGIN) {
     this.piece = piece; this.meshes = [];
     const [s1, s2, end] = piece.band.lod, spec = [];
     const mk = (geo, mat, name, shadow, l0, l1, band = "iBand") => {

@@ -6,7 +6,7 @@
 //     surfaces as viewer/surfaces.js draws them, tools/gardens/drawnSurfaces.mjs) in front of every street face with a
 //     gap >= 1 m, openings at the real doors and driveways
 //   - drawing: the kit (viewer/gardens/gardenKit.js) as ONE pool per piece for the whole city (LOD0-2), streamed by
-//     viewer/instanceStream.js (a gather every 3 m of travel, time-sliced over frames with a 0.35 ms budget, 12 m of
+//     viewer/instanceStream.js (a gather every 2 m of travel, time-sliced over frames with a 0.35 ms budget, 6 m of
 //     margin round every LOD band; the tile fade is a uniform per tile slot: a fading tile never re-gathers; docs/perf/
 //     AUDIT.md "instance pools"); the hedges are the kit's instanced modules
 //     (viewer/gardens/gardenHedge.js: 3 body LODs + the near leaf cards, the same pools)
@@ -17,7 +17,7 @@
 //     walker gets in at the door
 import * as THREE from "three/webgpu";
 import { loadGardenKit, GardenPool, PIECES, gardenInstances, gardenSources, gardenFades, standinGeometries } from "./gardenKit.js";
-import { Streamer } from "../instanceStream.js";
+import { Streamer, MARGIN } from "../instanceStream.js";
 import { wind } from "../foliage/wind.js";
 
 const qs = new URLSearchParams(location.search);
@@ -35,8 +35,8 @@ export const cityGardens = {
     this.stand = standinGeometries();
     this.group = new THREE.Group(); this.group.name = "gardens";
     scene.add(this.group);
-    for (const p of PIECES) this.pools.push(new GardenPool(this.kit.pieces[p], this.kit.mats, this.group, 12));
-    this.streamer = new Streamer({ name: "gardens", pools: this.pools.map((p) => p.stream), fades: gardenFades, margin: 12, trigger: 3, budget: 0.35 });
+    for (const p of PIECES) this.pools.push(new GardenPool(this.kit.pieces[p], this.kit.mats, this.group, MARGIN));
+    this.streamer = new Streamer({ name: "gardens", pools: this.pools.map((p) => p.stream), fades: gardenFades, budget: 0.35 });
     updaters.push((eye, cam) => this.update(cam));
     window.__gardens = this;
     log(`gardens: on (?gardens=0 off; ?gardenhedges=0 without the hedges), kit ${PIECES.length} pieces, ${Math.round(performance.now() - t0)} ms`);
