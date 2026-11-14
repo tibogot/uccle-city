@@ -59,3 +59,19 @@ export async function ab(presets, rounds = 4, settle = 1500, sample = 2500) {
   const mean = (a) => a.reduce((s, x) => s + x, 0) / Math.max(1, a.length);
   return Object.fromEntries(Object.entries(acc).map(([k, a]) => [k, { mean: +mean(a).toFixed(3), median: +med(a).toFixed(3), n: a.length }]));
 }
+/** the canvas as a jpg data URL (one rendered frame, read back in the same task) */
+export async function jpg(q = 0.86) {
+  V().renderFrame();
+  const cv = V().renderer.domElement, c2 = new OffscreenCanvas(cv.width, cv.height);
+  c2.getContext("2d").drawImage(cv, 0, 0);
+  const blob = await c2.convertToBlob({ type: "image/jpeg", quality: q });
+  return await new Promise((res) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(blob); });
+}
+/** post the canvas to a local receiver (a tiny POST-to-file server on `url`) as docs/weather/city/<name> */
+export async function save(name, url = "http://127.0.0.1:8891/") {
+  const data = await jpg();
+  await fetch(url, { method: "POST", body: JSON.stringify({ name, data }) });
+  return name;
+}
+/** time of day as the panel's preset does it (lighting + the grade) */
+export function time(id) { V().lighting.apply(id); V().lighting.hourOverride = null; window.__devPanel?.pipe?.look(id); }

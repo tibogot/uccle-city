@@ -73,6 +73,8 @@ export const cityWeather = {
       const { precompile } = await import("../warmup.js");
       await precompile(renderer, group, camera, scene, { target: pipe?.passTarget ?? null, mrt: pipe?.passMRT ?? null });
     } catch (e) { log(`weather: compile ${e.message}`); }
+    // one bake now, whatever the weather: its override-material pipelines compile at boot, not on the first rain
+    if (!map.ready && !this.baking) await this.bake(camera.position, camera);
     log(`weather: ready in ${(performance.now() - t0).toFixed(0)} ms (?wx=rain|snowfall|..., ?weather=old: none), start ${this.preset}`);
   },
 

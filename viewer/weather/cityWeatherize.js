@@ -106,35 +106,36 @@ function graph(I, o, wantNormal) {
     }
   }
 
-  // ---- rivulets on walls, glass beads + trails, paint beads
-  if ((o.streaks || o.glass) && !lite) {
-    const tang = normalize(vec2(Nw.z.negate(), Nw.x).add(vec2(1e-4, 0)));
-    const a = dot(P.xz, tang);
-    const colW = float(o.glass ? 0.012 : 0.03);
+  // ---- rivulets on walls (o.streaks, 3 cm columns, a third of them running) and beads + trails on glass (o.glass,
+  // 1.2 cm columns): both on one material (the facade: its wall and its painted glass, by streakMask / glassMask)
+  const tang = normalize(vec2(Nw.z.negate(), Nw.x).add(vec2(1e-4, 0)));
+  const a = dot(P.xz, tang);
+  const runs = (colWm, speedY, share) => {
+    const colW = float(colWm);
     const ci = floor(a.div(colW)), cf = fract(a.div(colW)).sub(0.5);
     const hr = H2(vec2(ci, 3.0)), hs = H2(vec2(ci, 11.0));
-    const speed = hr.mul(0.4).add(0.15);
-    const run = fract(P.y.mul(o.glass ? 2.2 : 0.6).add(t.mul(speed)).add(hs.mul(10.0)));
-    const line = smoothstep(0.32, 0.08, abs(cf)).mul(smoothstep(0.0, 0.5, run)).mul(smoothstep(1.0, 0.85, run)).mul(step01(hr, 0.55));
+    const run = fract(P.y.mul(speedY).add(t.mul(hr.mul(0.4).add(0.15))).add(hs.mul(10.0)));
+    const line = smoothstep(0.32, 0.08, abs(cf)).mul(smoothstep(0.0, 0.5, run)).mul(smoothstep(1.0, 0.85, run)).mul(step01(hr, share));
     const fade = float(1).sub(smoothstep(colW.mul(0.25), colW.mul(0.6), fw));
-    // o.streakMask: where on this material the water runs (a node, 0..1: the facade's wall vs its glass)
-    const streak = line.mul(vert).mul(wx.uRain.mul(2).min(1)).mul(fade).mul(I.streakMask ?? float(1));
-    if (o.glass) {
-      const g = vec2(a, P.y).div(0.012), c = floor(g), f = fract(g).sub(0.5);
-      const hb = H2(c.add(vec2(5.0, 9.0))), present = smoothstep(0.75, 0.74, hb.sub(wx.uWet.mul(0.4)).add(0.3));
-      const rr = hb.mul(0.25).add(0.15);
-      const bead = smoothstep(rr, rr.sub(0.08), length(f)).mul(present).mul(wx.uWet).mul(float(1).sub(smoothstep(0.003, 0.008, fw)));
-      const drop = max(bead, streak).mul(I.glassMask ?? float(1));
-      if (!wantNormal) col = mix(col, col.mul(0.6).add(0.02), drop);
-      else {
-        const bulge = vec3(f.x.mul(-1.6), 0, f.y.mul(-1.6)).mul(drop);
-        // (the offset unnormalised: where there is no drop it is 0, and normalize(0) is NaN: black walls)
-        nView = normalize(nView.add(cameraViewMatrix.mul(vec4(tang.x.mul(bulge.x), bulge.z, tang.y.mul(bulge.x), 0)).xyz));
-      }
-    } else if (!wantNormal) {
-      col = col.mul(float(1).sub(streak.mul(0.25)));
-      rough = mix(rough, float(0.12), streak);
-      metal = mix(metal, float(0.1), streak);
+    return line.mul(vert).mul(wx.uRain.mul(2).min(1)).mul(fade);
+  };
+  if (o.streaks && !lite && !wantNormal) {
+    const streak = runs(0.03, 0.6, 0.3).mul(I.streakMask ?? float(1));
+    col = col.mul(float(1).sub(streak.mul(0.14)));
+    rough = mix(rough, float(0.18), streak);
+    metal = mix(metal, float(0.1), streak);
+  }
+  if (o.glass && !lite) {
+    const g = vec2(a, P.y).div(0.012), c = floor(g), f = fract(g).sub(0.5);
+    const hb = H2(c.add(vec2(5.0, 9.0))), present = smoothstep(0.75, 0.74, hb.sub(wx.uWet.mul(0.4)).add(0.3));
+    const rr = hb.mul(0.25).add(0.15);
+    const bead = smoothstep(rr, rr.sub(0.08), length(f)).mul(present).mul(wx.uWet).mul(float(1).sub(smoothstep(0.003, 0.008, fw)));
+    const drop = max(bead, runs(0.012, 2.2, 0.55)).mul(I.glassMask ?? float(1));
+    if (!wantNormal) col = mix(col, col.mul(0.6).add(0.02), drop);
+    else {
+      const bulge = vec3(f.x.mul(-1.6), 0, f.y.mul(-1.6)).mul(drop);
+      // (the offset unnormalised: where there is no drop it is 0, and normalize(0) is NaN: black walls)
+      nView = normalize(nView.add(cameraViewMatrix.mul(vec4(tang.x.mul(bulge.x), bulge.z, tang.y.mul(bulge.x), 0)).xyz));
     }
   }
   if (o.beads && !lite && !wantNormal) {
