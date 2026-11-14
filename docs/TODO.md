@@ -130,7 +130,12 @@ signage, our own brand look). (7) SQUARE DES HEROS done far too cheaply: make it
 make sure it works in the city with all its animations (third person: walk / run / stairs / slopes / foot IK,
 collisions), then see whether it can be swapped for another character. The other chat is still working on that branch:
 test it in a separate worktree, report what works / breaks, and do NOT modify or merge claude/character2 without the
-owner. (10) CAR FRONTS "all
+owner. (12) SNOW (owner: "it will soon snow here"): real procedural VOLUMETRIC snow in the city: smooth, never blocky
+(accumulation on roofs, ledges, cars, trees, ground; drifts; falling snow; melting / slush on roads); start from the
+existing viewer/weather/ (snowLayer.js, snowExtras.js, precipitation.js) and the weather lab; check Mr.doob / three.js
+examples and real snowy Brussels photos. (13) BLOCKY parts in the city (owner): find and smooth them. (14) HOUSES
+SUNK INTO THE GROUND (owner): find them, compare with real images / Street View, fix at the source (building bases vs
+terrain). (15) While comparing with real images: list important things we forgot to build. (10) CAR FRONTS "all
 look wrong" (screenshot: the blue faceted hatchback, faceted:hatch_c): the nose reads flat and squashed: the bonnet
 runs straight down into a shallow bumper, tiny headlights at the corners, a low flat grille, hard bright bands across
 the bonnet facets (flat shading / normals?); check the front geometry and normals (inverted or wrongly smoothed
