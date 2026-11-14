@@ -74,7 +74,11 @@ export function installCompileQueue(renderer) {
 export function precompile(renderer, roots, camera, scene, { target = null, mrt = null } = {}) {
   if (!renderer.backend?.isWebGPUBackend) return Promise.resolve();
   installCompileQueue(renderer);
+  const rec = globalThis.__boot ? { q: Math.round(performance.now()), name: [].concat(roots).map((r) => r?.name || r?.type || "?").join(",").slice(0, 60) } : null;
+  if (rec) (globalThis.__boot.jobs ||= []).push(rec);
   return enqueue(async () => {
+    if (rec) rec.s = Math.round(performance.now());
+    try {
     for (const root of [].concat(roots)) {
       if (!root) continue;
       const saved = [];
@@ -101,5 +105,35 @@ export function precompile(renderer, roots, camera, scene, { target = null, mrt 
       }
       try { await p; } catch (e) { console.warn("[precompile]", e); }
     }
+    } finally { if (rec) rec.e = Math.round(performance.now()); }   // (a boot probe's queue record: debug/bootTimeline.js)
   });
+}
+
+// ------------------------------------------------------------------ shadow pass: one shader for every opaque material
+// three r187 draws the sun's shadow map with ONE override material, but for any material with a colorNode or a map
+// (_getShadowNodes) it plugs that material's WHOLE colour graph into it, only to read its alpha: a new graph per
+// material, so a shadow shader build per material (346 builds, 1.7-1.8 s of the boot's main thread, measured
+// 2026-11-14) whose colour is never used: an opaque material (no alphaTest, not transparent, no alphaMap / mask /
+// castShadowNode) writes the same depth whatever its alpha. For those the colour is left out; what moves the
+// geometry (positionNode / castShadowPositionNode, depthNode) is kept, so the shadow builds are shared by every material
+// with the same geometry layout and vertex code. Materials that cut their shadow (maskShadowNode: tree cards; the
+// smooth-LOD fades' maskNode) or use alpha keep three's own path, unchanged. ?shadowshare=0: three's path for all (A/B).
+// (A material whose colorNode discards and that casts a shadow would lose that cut here: none in the city, the one
+// colour discard is the snow layer, which casts none; mark such a material userData.shadowColour = true.)
+export function shareShadowNodes(renderer) {
+  const orig = renderer._getShadowNodes;
+  if (typeof orig !== "function" || renderer.__shadowShared) return false;
+  renderer.__shadowShared = true;
+  const cache = new WeakMap();
+  renderer._getShadowNodes = function (material) {
+    const own = orig.call(this, material);
+    if (own.colorNode === null || this.shadowMap.transmitted === true || this.shadowMap.type === 3 /* VSMShadowMap */) return own;
+    if (material.alphaTest > 0 || material.transparent || material.alphaMap || material.alphaToCoverage ||
+      material.castShadowNode?.isNode || material.maskShadowNode?.isNode || material.maskNode?.isNode || material.userData?.shadowColour === true) return own;
+    let c = cache.get(material);
+    if (c === undefined || c.src !== own) { c = { src: own, out: { colorNode: null, depthNode: own.depthNode, positionNode: own.positionNode } }; cache.set(material, c); }
+    return c.out;
+  };
+  renderer.__shadowNodes = { own: orig, shared: renderer._getShadowNodes };   // live A/B: renderer._getShadowNodes = renderer.__shadowNodes.own
+  return true;
 }

@@ -25,6 +25,8 @@ const TURN = (8 * Math.PI) / 180, CONE_MARGIN = (25 * Math.PI) / 180;
 const fwd = new THREE.Vector3(), dirTmp = new THREE.Vector3(), dirTmp2 = new THREE.Vector3();
 let coneHalf = Math.PI;
 const KINDS = ["opaque", "glass"];
+/** the per-instance attributes each kind's material reads (kitMaterials.js): only these are bound */
+const INST_ATTRS = { opaque: ["aKitI", "aKitJ"], glass: ["aKitI", "aKitJ", "aKitF"] };
 
 export async function loadKitField({ base = new URL("../../models/facadekit/", import.meta.url).href, lab = false } = {}) {
   const [json, bin] = await Promise.all([fetch(base + "kit.json").then((r) => r.json()), fetch(base + "kit.bin").then((r) => r.arrayBuffer()), loadKitMaterialSource()]);
@@ -59,7 +61,11 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
     const arrays = {};
     for (const a of ["aKitI", "aKitJ", "aKitF", "aVar"]) {
       arrays[a] = new Float32Array(cap * 4);
-      geom.setAttribute(a, new THREE.InstancedBufferAttribute(arrays[a], 4));
+      // only the per-instance attributes this kind's shader reads go on the geometry (opaque: aKitI / aKitJ; glass: + aKitF;
+      // aVar: none yet): with <= 7 geometry attributes three r187 binds the instance matrix per object and EVERY opaque kit
+      // mesh shares ONE shader build per LOD; with more (9 before) each mesh built its own (objectSpecific): 52 builds of
+      // ~30 ms at boot, and one more mid-play whenever a mesh grew (perf audit step 10)
+      if (INST_ATTRS[kind].includes(a)) geom.setAttribute(a, new THREE.InstancedBufferAttribute(arrays[a], 4));
     }
     geom.userData.shared = true;
     const mesh = new THREE.InstancedMesh(geom, matFor(kind, lod), cap);
@@ -220,7 +226,7 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
         if (n) {
           e.M.set(e.bM.subarray(0, n * 16)); e.I.set(e.bI.subarray(0, n * 4)); e.J.set(e.bJ.subarray(0, n * 4)); e.F.set(e.bF.subarray(0, n * 4)); e.V.set(e.bV.subarray(0, n * 4));
           e.mesh.instanceMatrix.clearUpdateRanges(); e.mesh.instanceMatrix.addUpdateRange(0, n * 16); e.mesh.instanceMatrix.needsUpdate = true;
-          for (const a of ["aKitI", "aKitJ", "aKitF", "aVar"]) { const at = g.attributes[a]; at.clearUpdateRanges(); at.addUpdateRange(0, n * 4); at.needsUpdate = true; }
+          for (const a of INST_ATTRS[e.kind]) { const at = g.attributes[a]; at.clearUpdateRanges(); at.addUpdateRange(0, n * 4); at.needsUpdate = true; }
         }
       }
       if (n) { used++; drawn += n; tris += n * geo[e.piece][e.lod][e.kind].tris; }

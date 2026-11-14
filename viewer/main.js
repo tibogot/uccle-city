@@ -42,7 +42,7 @@ import { createPipeline } from "./post.js";
 import { buildTrees } from "./trees.js";
 import { buildTreeField } from "./treesSlop.js";
 import { buildStylizedTreeField, setTreeLighting, setTreeRenderer } from "./treesStylized.js";
-import { openBootPipelines, warmBoot, precompile } from "./warmup.js";
+import { openBootPipelines, warmBoot, precompile, shareShadowNodes } from "./warmup.js";
 import { buildPlazas, loadOverrides } from "./plazas.js";
 import { Flyer } from "./flight.js";
 import { CityFlyer } from "./falconFlight/cityFlyer.js";
@@ -752,6 +752,8 @@ async function main() {
   renderer.shadowMap.enabled = true;
   document.body.prepend(renderer.domElement);
   await renderer.init();
+  window.__bootHook?.(renderer, THREE);              // a boot probe's hook (debug/bootTimeline.js), when one is installed
+  if (params.get("shadowshare") !== "0") shareShadowNodes(renderer);   // one shadow shader per vertex code, not per material (warmup.js; ?shadowshare=0: three's own)
   // the material library's SHIPPED textures (viewer/materials/textures/scans.json: the default look of every library
   // material, docs/TEXTURE_FACTORY.md) load in parallel with the boot; awaited before the first consumer (the façade
   // kit, the landmarks, the bridges) creates its materials. ?libmat=0: none (every consumer on its own temporary looks)
