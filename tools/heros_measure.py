@@ -197,6 +197,11 @@ def main():
     lawns = unary_union([Polygon(r).buffer(0) for r in grass.values()])
     plat = Point(cx, cz).buffer(PLATFORM_R, 64)
     dol = parkP.difference(lawns).difference(plat)
+    # minus the two flights of steps (their footprints from tools/blender/heros.py, when it has run: heros.json)
+    hj = OUT / "heros.json"
+    if hj.exists():
+        for f in json.load(open(hj))["flights"]:
+            dol = dol.difference(Polygon(f["carve"]["ring"]).buffer(0.02))
     dolomite = []
     for p in getattr(dol, "geoms", [dol]):
         if p.geom_type == "Polygon" and p.area > 0.3:

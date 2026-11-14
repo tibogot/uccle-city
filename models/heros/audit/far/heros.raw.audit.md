@@ -1,6 +1,6 @@
 # Mesh audit: heros.raw.glb
 
-2,216 triangles, 1,393 welded vertices, 416 open edges, 85,288 rays, 267 ms.
+2,216 triangles, 1,393 welded vertices, 416 open edges, 85,288 rays, 438 ms.
 
 **0 blocking**, 211 warnings. Clean (no blocking item).
 
@@ -20,22 +20,22 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | at | part | aspect | longest |
 |---|---|---|---|
 | -0.36, 7.83, 0.21 | Heros_far/bronze_gilt | 58 | 0.471 |
-| 11.40, 0.04, -2.63 | Heros_far/cast_iron_green | 147 | 4.998 |
-| 9.86, 0.68, -2.52 | Heros_far/cast_iron_green | 147 | 4.998 |
-| 11.40, 0.04, -2.66 | Heros_far/cast_iron_green | 147 | 5.003 |
-| 9.86, 0.67, -2.54 | Heros_far/cast_iron_green | 147 | 5.003 |
-| 11.39, 0.02, -2.67 | Heros_far/cast_iron_green | 147 | 5.003 |
-| 9.86, 0.65, -2.53 | Heros_far/cast_iron_green | 147 | 5.003 |
-| 11.39, 0.01, -2.64 | Heros_far/cast_iron_green | 147 | 4.998 |
-| 9.86, 0.66, -2.51 | Heros_far/cast_iron_green | 147 | 4.998 |
-| 11.66, 0.04, 0.58 | Heros_far/cast_iron_green | 147 | 4.998 |
-| 10.12, 0.68, 0.69 | Heros_far/cast_iron_green | 147 | 4.998 |
-| 11.66, 0.04, 0.55 | Heros_far/cast_iron_green | 147 | 5.003 |
-| 10.12, 0.67, 0.67 | Heros_far/cast_iron_green | 147 | 5.003 |
-| 11.65, 0.02, 0.54 | Heros_far/cast_iron_green | 147 | 5.003 |
-| 10.12, 0.65, 0.68 | Heros_far/cast_iron_green | 147 | 5.003 |
-| 11.65, 0.01, 0.57 | Heros_far/cast_iron_green | 147 | 4.998 |
-| 10.12, 0.66, 0.70 | Heros_far/cast_iron_green | 147 | 4.998 |
+| 11.40, 0.06, -2.63 | Heros_far/cast_iron_green | 148 | 5.016 |
+| 9.86, 0.71, -2.52 | Heros_far/cast_iron_green | 148 | 5.016 |
+| 11.40, 0.06, -2.66 | Heros_far/cast_iron_green | 148 | 5.021 |
+| 9.86, 0.71, -2.54 | Heros_far/cast_iron_green | 148 | 5.021 |
+| 11.39, 0.04, -2.67 | Heros_far/cast_iron_green | 148 | 5.021 |
+| 9.86, 0.68, -2.53 | Heros_far/cast_iron_green | 148 | 5.021 |
+| 11.39, 0.03, -2.64 | Heros_far/cast_iron_green | 148 | 5.016 |
+| 9.86, 0.69, -2.51 | Heros_far/cast_iron_green | 148 | 5.016 |
+| 11.66, 0.06, 0.58 | Heros_far/cast_iron_green | 148 | 5.016 |
+| 10.12, 0.71, 0.69 | Heros_far/cast_iron_green | 148 | 5.016 |
+| 11.66, 0.06, 0.55 | Heros_far/cast_iron_green | 148 | 5.021 |
+| 10.12, 0.71, 0.67 | Heros_far/cast_iron_green | 148 | 5.021 |
+| 11.65, 0.04, 0.54 | Heros_far/cast_iron_green | 148 | 5.021 |
+| 10.12, 0.68, 0.68 | Heros_far/cast_iron_green | 148 | 5.021 |
+| 11.65, 0.03, 0.57 | Heros_far/cast_iron_green | 148 | 5.016 |
+| 10.12, 0.69, 0.70 | Heros_far/cast_iron_green | 148 | 5.016 |
 | 1.54, 1.90, 0.29 | Heros_far/plant_grass | 48 | 0.449 |
 | 1.54, 1.90, 0.28 | Heros_far/plant_grass | 48 | 0.448 |
 | 1.42, 1.90, 0.24 | Heros_far/plant_grass | 47 | 0.44 |
@@ -118,22 +118,22 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 1.53, 1.07, -2.97 | Heros_far/stone_blue | 0.42 |
 | 2.97, 1.07, -1.53 | Heros_far/stone_blue | 0.42 |
 | 1.27, 1.16, -2.71 | Heros_far/stone_blue | 2.331 |
-| 8.33, 0.23, -2.29 | Heros_far/stone_blue | 0.673 |
-| 8.58, 0.23, 0.70 | Heros_far/stone_blue | 0.673 |
-| 8.75, 0.05, -2.32 | Heros_far/stone_blue | 0.673 |
-| 8.33, -0.27, -2.29 | Heros_far/stone_blue | 0.673 |
-| 8.99, 0.05, 0.67 | Heros_far/stone_blue | 0.673 |
-| 8.58, -0.27, 0.70 | Heros_far/stone_blue | 0.673 |
-| 9.17, -0.12, -2.36 | Heros_far/stone_blue | 0.673 |
-| 8.75, -0.45, -2.32 | Heros_far/stone_blue | 0.673 |
-| 9.41, -0.12, 0.63 | Heros_far/stone_blue | 0.673 |
-| 8.99, -0.45, 0.67 | Heros_far/stone_blue | 0.673 |
-| 9.59, -0.29, -2.39 | Heros_far/stone_blue | 0.673 |
-| 9.17, -0.62, -2.36 | Heros_far/stone_blue | 0.673 |
-| 9.83, -0.29, 0.60 | Heros_far/stone_blue | 0.673 |
-| 9.41, -0.62, 0.63 | Heros_far/stone_blue | 0.673 |
-| 10.01, -0.47, -2.43 | Heros_far/stone_blue | 0.673 |
-| 9.59, -0.79, -2.39 | Heros_far/stone_blue | 0.673 |
+| 8.33, 0.27, -2.29 | Heros_far/stone_blue | 0.677 |
+| 8.58, 0.27, 0.70 | Heros_far/stone_blue | 0.677 |
+| 8.75, 0.10, -2.32 | Heros_far/stone_blue | 0.678 |
+| 8.33, -0.23, -2.29 | Heros_far/stone_blue | 0.678 |
+| 8.99, 0.10, 0.67 | Heros_far/stone_blue | 0.678 |
+| 8.58, -0.23, 0.70 | Heros_far/stone_blue | 0.678 |
+| 9.17, -0.08, -2.36 | Heros_far/stone_blue | 0.677 |
+| 8.75, -0.41, -2.32 | Heros_far/stone_blue | 0.677 |
+| 9.41, -0.08, 0.63 | Heros_far/stone_blue | 0.677 |
+| 8.99, -0.41, 0.67 | Heros_far/stone_blue | 0.677 |
+| 9.59, -0.26, -2.39 | Heros_far/stone_blue | 0.677 |
+| 9.17, -0.58, -2.36 | Heros_far/stone_blue | 0.677 |
+| 9.83, -0.26, 0.60 | Heros_far/stone_blue | 0.677 |
+| 9.41, -0.58, 0.63 | Heros_far/stone_blue | 0.677 |
+| 10.01, -0.44, -2.43 | Heros_far/stone_blue | 0.678 |
+| 9.59, -0.76, -2.39 | Heros_far/stone_blue | 0.678 |
 
 (44 more in the JSON)
 
@@ -141,23 +141,23 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
-| 8.33, 0.40, -2.26 | Heros_far/stone_blue + Heros_far/stone_blue | 8.72 | 63 | 90 |
-| 8.40, 0.40, 0.68 | Heros_far/stone_blue + Heros_far/stone_blue | 8.72 | 63 | 90 |
+| 8.33, 0.45, -2.26 | Heros_far/stone_blue + Heros_far/stone_blue | 8.76 | 63 | 90 |
+| 8.40, 0.45, 0.68 | Heros_far/stone_blue + Heros_far/stone_blue | 8.76 | 63 | 90 |
 | -10.03, 1.15, 20.49 | Heros_far/stone_blue + Heros_far/stone_blue | 3.34 | 24 | 90 |
 | -12.00, 1.15, 19.21 | Heros_far/stone_blue + Heros_far/stone_blue | 3.34 | 23 | 90 |
 | 0.03, 7.13, -0.18 | Heros_far/stone_blue + Heros_far/bronze_gilt | 1.61 | 18 | 6.5 |
 | 2.81, 1.72, 0.07 | Heros_far/stone_blue + Heros_far/stone_blue | 18.65 | 16 | 90 |
 | 1.08, 1.72, 2.40 | Heros_far/stone_blue + Heros_far/stone_blue | 16.26 | 16 | 90 |
 | 1.36, 1.63, 2.11 | Heros_far/stone_blue + Heros_far/soil_bed | 16.26 | 16 | 90 |
-| 10.64, 0.33, -2.60 | Heros_far/cast_iron_green + Heros_far/cast_iron_green | 0.14 | 14 | 45.1 |
-| 10.90, 0.33, 0.61 | Heros_far/cast_iron_green + Heros_far/cast_iron_green | 0.14 | 14 | 45.1 |
-| 8.09, 1.28, -2.39 | Heros_far/cast_iron_green + Heros_far/cast_iron_green | 0.13 | 12 | 45 |
+| 10.64, 0.36, -2.60 | Heros_far/cast_iron_green + Heros_far/cast_iron_green | 0.14 | 14 | 44.8 |
+| 10.90, 0.36, 0.61 | Heros_far/cast_iron_green + Heros_far/cast_iron_green | 0.14 | 14 | 44.8 |
+| 8.09, 1.33, -2.39 | Heros_far/cast_iron_green + Heros_far/cast_iron_green | 0.13 | 12 | 45 |
 | 13.14, -0.62, -2.80 | Heros_far/cast_iron_green + Heros_far/cast_iron_green | 0.13 | 12 | 45 |
-| 8.35, 1.28, 0.82 | Heros_far/cast_iron_green + Heros_far/cast_iron_green | 0.13 | 12 | 45 |
+| 8.35, 1.33, 0.82 | Heros_far/cast_iron_green + Heros_far/cast_iron_green | 0.13 | 12 | 45 |
 | 13.40, -0.62, 0.41 | Heros_far/cast_iron_green + Heros_far/cast_iron_green | 0.13 | 12 | 45 |
-| 10.62, -0.43, -2.57 | Heros_far/stone_blue + Heros_far/cast_iron_green | 0.14 | 10 | 73.1 |
-| 8.36, 0.52, 0.83 | Heros_far/stone_blue + Heros_far/cast_iron_green | 0.14 | 10 | 90 |
-| 10.90, -0.44, 0.61 | Heros_far/stone_blue + Heros_far/cast_iron_green | 0.14 | 10 | 73.1 |
+| 10.62, -0.40, -2.57 | Heros_far/stone_blue + Heros_far/cast_iron_green | 0.14 | 10 | 72.7 |
+| 8.36, 0.57, 0.83 | Heros_far/stone_blue + Heros_far/cast_iron_green | 0.14 | 10 | 90 |
+| 10.90, -0.41, 0.61 | Heros_far/stone_blue + Heros_far/cast_iron_green | 0.14 | 10 | 72.7 |
 | 3.29, 0.71, -1.07 | Heros_far/stone_blue + Heros_far/stone_blue | 0.81 | 9 | 90 |
 | -3.29, 0.71, -1.07 | Heros_far/stone_blue + Heros_far/stone_blue | 0.81 | 9 | 90 |
 | -1.57, 0.71, -3.08 | Heros_far/stone_blue + Heros_far/stone_blue | 0.81 | 9 | 90 |
@@ -180,7 +180,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -2.77, 1.72, 1.25 | Heros_far/stone_blue + Heros_far/stone_blue | 1.23 | 8 | 90 |
 | 1.07, 1.72, -2.84 | Heros_far/stone_blue + Heros_far/stone_blue | 1.23 | 8 | 90 |
 | -0.77, 1.63, 1.11 | Heros_far/stone_blue + Heros_far/soil_bed | 9.12 | 8 | 90 |
-| 8.09, 0.52, -2.39 | Heros_far/stone_blue + Heros_far/cast_iron_green | 0.14 | 8 | 90 |
+| 8.09, 0.57, -2.39 | Heros_far/stone_blue + Heros_far/cast_iron_green | 0.14 | 8 | 90 |
 
 (95 more in the JSON)
 

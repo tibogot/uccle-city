@@ -1,8 +1,8 @@
 // SQUARE DES HEROS: the bronze group's level of detail (a copy of tools/stalle_statue_pack.mjs that keeps every piece over 1 % of
 // the triangles: the Victory, the soldier, the wings and the rock may be separate shells). THE STATUE'S LEVEL OF DETAIL (meshoptimizer, JavaScript: the project's rule, never Blender's decimate):
-// models/heros/statue_raw.json (tools/blender/stalle_statue.py: one watertight voxel-remeshed surface, ~200k tris)
-//   -> models/heros/statue_mesh.json (the target count, error-bounded), placed on the pedestal by tools/blender/stalle.py.
-//   node tools/stalle_statue_pack.mjs [models/heros] [target tris = 14000] [max error m = 0.004]
+// models/heros/statue_raw.json (tools/blender/heros_statue.py: the voxel-remeshed bronze group, ~860k tris)
+//   -> models/heros/statue_mesh.json (the target count, error-bounded), placed on the obelisk by tools/blender/heros.py.
+//   node tools/heros_statue_pack.mjs models/heros 20000 0.01
 import fs from "fs";
 import path from "path";
 import { MeshoptSimplifier } from "./worker/node_modules/meshoptimizer/meshopt_simplifier.js";

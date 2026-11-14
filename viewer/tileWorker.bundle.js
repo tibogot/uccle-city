@@ -12327,13 +12327,17 @@ function carveFlights(hm, carves) {
     const r = c.ring, [ax, az] = c.from_, [bx, bz] = c.to;
     const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz;
     const xs = r.map((p) => p[0]), zs = r.map((p) => p[1]);
-    const c0 = Math.max(0, Math.floor((Math.min(...xs) - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(...xs) - x0) / step));
-    const r0 = Math.max(0, Math.floor((Math.min(...zs) - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(...zs) - z0) / step));
+    const M = 1;
+    const c0 = Math.max(0, Math.floor((Math.min(...xs) - M - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(...xs) + M - x0) / step));
+    const r0 = Math.max(0, Math.floor((Math.min(...zs) - M - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(...zs) + M - z0) / step));
     for (let j = r0; j <= r1; j++) for (let i = c0; i <= c1; i++) {
       const x = x0 + i * step, z = z0 + j * step;
-      if (!inRing3(r, x, z)) continue;
       const t = Math.min(1, Math.max(0, ((x - ax) * dx + (z - az) * dz) / L2));
-      const h = Math.max(c.floor, c.h_from + (c.h_to - c.h_from) * t), k = j * cols + i;
+      const line = c.h_from + (c.h_to - c.h_from) * t, k = j * cols + i;
+      let h;
+      if (inRing3(r, x, z)) h = Math.max(c.floor, line - 0.27);
+      else if (distRing(r, x, z) < M) h = line + 0.18;
+      else continue;
       if (h < hm.y[k] - 1e-4) {
         hm.y[k] = h;
         n++;
@@ -12342,6 +12346,15 @@ function carveFlights(hm, carves) {
   }
   return n;
 }
+var distRing = (r, x, z) => {
+  let best = Infinity;
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+    const [ax, az] = r[j], [bx, bz] = r[i], dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1;
+    const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2));
+    best = Math.min(best, Math.hypot(x - ax - dx * t, z - az - dz * t));
+  }
+  return best;
+};
 var inRing3 = (r, x, z) => {
   let k = false;
   for (let i = 0, j = r.length - 1; i < r.length; j = i++) {

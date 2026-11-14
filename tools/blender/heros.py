@@ -541,7 +541,7 @@ def all_steps():
     # south: 12 risers from the terrace (50.40 at the top of the OSM line) down to the dolomite path at 48.32 (DTM profile
     # along the line: 50.33 at +0.5 m, 48.34 at +5 m); 3.0 m wide, handrails both sides (OSM handrail=yes; photo c5)
     s = STEPS["w1154611802"]
-    a = flight("south", s["line"], 12, 48.32, 50.40, 0.35, 3.0, True)
+    a = flight("south", s["line"], 12, 48.32, 50.45, 0.35, 3.0, True)     # (the landing 5 cm over the terrace: it stands proud of the dolomite)
     # west: 4 risers from the Avenue Brugmann sidewalk (51.15) down to the path (50.52), 2.4 m wide, no handrail (OSM)
     w = STEPS["w1154611806"]
     b = flight("west", w["line"], 4, 50.52, 51.15, 0.45, 2.4, False)

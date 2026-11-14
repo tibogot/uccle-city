@@ -1,6 +1,6 @@
 # Mesh audit: heros.glb
 
-43,253 triangles, 23,084 welded vertices, 749 open edges, 90,974 rays, 2581 ms.
+43,253 triangles, 23,084 welded vertices, 749 open edges, 90,974 rays, 2524 ms.
 
 **0 blocking**, 1046 warnings. Clean (no blocking item).
 
@@ -139,13 +139,13 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.65, 6.23, -0.51 | Heros/stone_blue | 1.204 |
 | -0.62, 4.28, 0.69 | Heros/stone_blue | 1.484 |
 | -0.55, 6.23, 0.60 | Heros/stone_blue | 1.304 |
-| 8.19, 0.40, -2.28 | Heros/stone_blue | 0.5 |
-| 8.33, 0.23, -2.29 | Heros/stone_blue | 0.673 |
-| 8.58, 0.23, 0.70 | Heros/stone_blue | 0.673 |
-| 8.44, 0.40, 0.71 | Heros/stone_blue | 0.5 |
-| 8.61, 0.23, -2.31 | Heros/stone_blue | 0.42 |
-| 8.75, 0.05, -2.32 | Heros/stone_blue | 0.673 |
-| 8.33, -0.27, -2.29 | Heros/stone_blue | 0.673 |
+| 8.19, 0.45, -2.28 | Heros/stone_blue | 0.5 |
+| 8.33, 0.27, -2.29 | Heros/stone_blue | 0.677 |
+| 8.58, 0.27, 0.70 | Heros/stone_blue | 0.677 |
+| 8.44, 0.45, 0.71 | Heros/stone_blue | 0.5 |
+| 8.61, 0.27, -2.31 | Heros/stone_blue | 0.42 |
+| 8.75, 0.10, -2.32 | Heros/stone_blue | 0.678 |
+| 8.33, -0.23, -2.29 | Heros/stone_blue | 0.678 |
 
 (81 more in the JSON)
 
@@ -175,10 +175,10 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.02, 2.41, -2.64 | Heros/cast_iron_black + Heros/cast_iron_black | 0.15 | 32 | 72 |
 | 1.88, 2.41, -1.85 | Heros/cast_iron_black + Heros/cast_iron_black | 0.15 | 32 | 72 |
 | 2.64, 2.41, 0.02 | Heros/cast_iron_black + Heros/cast_iron_black | 0.15 | 32 | 72 |
-| 10.90, 0.32, 0.61 | Heros/cast_iron_green + Heros/cast_iron_green | 0.16 | 30 | 30.5 |
-| 10.64, 0.32, -2.60 | Heros/cast_iron_green + Heros/cast_iron_green | 0.16 | 29 | 30.9 |
-| 8.09, 1.28, -2.40 | Heros/cast_iron_green + Heros/cast_iron_green | 0.16 | 28 | 28.1 |
-| 8.35, 1.28, 0.81 | Heros/cast_iron_green + Heros/cast_iron_green | 0.16 | 28 | 28.3 |
+| 10.64, 0.35, -2.60 | Heros/cast_iron_green + Heros/cast_iron_green | 0.16 | 31 | 31.1 |
+| 10.90, 0.35, 0.61 | Heros/cast_iron_green + Heros/cast_iron_green | 0.16 | 31 | 30.9 |
+| 8.09, 1.33, -2.40 | Heros/cast_iron_green + Heros/cast_iron_green | 0.16 | 28 | 28.1 |
+| 8.35, 1.33, 0.81 | Heros/cast_iron_green + Heros/cast_iron_green | 0.16 | 28 | 28.3 |
 | 13.15, -0.62, -2.81 | Heros/cast_iron_green + Heros/cast_iron_green | 0.16 | 26 | 28.3 |
 | 13.41, -0.62, 0.40 | Heros/cast_iron_green + Heros/cast_iron_green | 0.16 | 26 | 28.3 |
 | -1.21, 1.30, 3.09 | Heros/stone_blue + Heros/stone_blue | 0.21 | 25 | 52.9 |

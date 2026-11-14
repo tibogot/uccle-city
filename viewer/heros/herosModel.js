@@ -34,7 +34,7 @@ export const HE_LODS = [{ until: 90, band: 15 }, { until: Infinity }];
 const GROUND = 50.55;
 
 const SOURCE = libSource("heros", "../materials/shipped.js");
-export const heLook = { aoStrength: uniform(1.0), aoDirect: uniform(0.55), letters: uniform(1.0), gilt: uniform(0.55), weathered: uniform(1.75) };
+export const heLook = { aoStrength: uniform(1.0), aoDirect: uniform(0.55), letters: uniform(1.0), gilt: uniform(0.55), weathered: uniform(3.8) };
 
 let promise = null;
 export function loadHeros() {
@@ -114,7 +114,9 @@ function lettersMask(L) {
   let at = vec2(0, 0);
   L.cells.forEach((c, k) => {
     const [x0, y0, x1, y1] = c.px, [W, H] = c.size_m;
-    const a = vec2(float(x0).add(s.div(W).clamp(0, 1).mul(x1 - x0)), float(y1).sub(w.y.div(H).clamp(0, 1).mul(y1 - y0))).div(vec2(L.size[0], L.size[1]));
+    // (the texture is flipped on upload, three's default: the image's top row is v = 1)
+    const row = float(y1).sub(w.y.div(H).clamp(0, 1).mul(y1 - y0));
+    const a = vec2(float(x0).add(s.div(W).clamp(0, 1).mul(x1 - x0)).div(L.size[0]), float(1).sub(row.div(L.size[1])));
     at = mix(at, a, float(1).sub(clamp(abs(cell.sub(k)), 0, 1)));
   });
   const on = step(900.0, w.x).mul(isC(codeV(), C.letters));
@@ -133,7 +135,7 @@ function wrapAO(src, aoTex, slot, L) {
   if (slot === "stone_blue" && L) {
     // a century outdoors: the memorial's blue stone has weathered to a light ash grey (all the photos, 2010s-2025), far
     // lighter than the freshly sawn scan of the library; lifted here for this model only
-    base = base.mul(heLook.weathered).min(vec3(0.6));
+    base = base.mul(heLook.weathered).min(vec3(0.5));
     const mk = lettersMask(L).mul(heLook.letters);
     base = mix(base, base.mul(0.38), mk);
     m.roughnessNode = mix(src.roughnessNode ?? float(src.roughness ?? 0.8), float(0.95), mk);
