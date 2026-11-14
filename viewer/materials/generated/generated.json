@@ -448,18 +448,18 @@
   "note": "generated: old horse chestnut: thin grey-brown plates, curling edges, orange under-bark",
   "url": "tools/texturefactory (materials/bark.py, seed 232)",
   "mean_albedo_linear": [
-   0.1479,
-   0.1207,
-   0.0945
+   0.1527,
+   0.124,
+   0.0971
   ],
-  "mean_roughness": 0.866,
-  "lum_std": 0.299,
+  "mean_roughness": 0.862,
+  "lum_std": 0.265,
   "px": 1024,
   "files": "generated/bark_horsechestnut/b/bark_horsechestnut_1k",
-  "albedo_webp_bytes": 163020,
-  "nra_webp_bytes": 2668446,
-  "albedo_ktx2_bytes": 820000,
-  "nra_ktx2_bytes": 1284066
+  "albedo_webp_bytes": 128162,
+  "nra_webp_bytes": 2505952,
+  "albedo_ktx2_bytes": 746068,
+  "nra_ktx2_bytes": 1245603
  },
  "tf_bark_horsechestnut_b_2k": {
   "material": "bark_horsechestnut",
@@ -476,16 +476,16 @@
   "note": "generated: old horse chestnut: thin grey-brown plates, curling edges, orange under-bark",
   "url": "tools/texturefactory (materials/bark.py, seed 232)",
   "mean_albedo_linear": [
-   0.1479,
-   0.1207,
-   0.0945
+   0.1527,
+   0.124,
+   0.0971
   ],
-  "mean_roughness": 0.866,
-  "lum_std": 0.299,
+  "mean_roughness": 0.862,
+  "lum_std": 0.265,
   "px": 2048,
   "files": "generated/bark_horsechestnut/b/bark_horsechestnut_2k",
-  "albedo_webp_bytes": 343648,
-  "nra_webp_bytes": 8716974
+  "albedo_webp_bytes": 265514,
+  "nra_webp_bytes": 8137582
  },
  "tf_bark_lime_a_1k": {
   "material": "bark_lime",

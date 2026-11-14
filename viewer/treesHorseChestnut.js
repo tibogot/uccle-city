@@ -32,11 +32,11 @@ export const CHESTNUT_SEASONS = {
   summer: { leaves: "leaf_horsechestnut", variation: 0.85, top: 1.12, bottom: 0.62, translucencyColor: "#9cc048", translucency: 0.3, fillColor: "#a4b0a0" },
   spring: { leaves: "leaf_horsechestnut_spring", variation: 1, top: 1.1, bottom: 0.66, translucencyColor: "#c4e060", translucency: 0.38, fillColor: "#b0bca8" },
   autumn: { leaves: "leaf_horsechestnut_autumn", variation: 0.95, top: 1.1, bottom: 0.64, translucencyColor: "#e0b050", translucency: 0.34, fillColor: "#b0a898" },
-  winter: { leaves: "leaf_horsechestnut_winter", variation: 1, top: 1.05, bottom: 0.8, translucencyColor: "#806050", translucency: 0.04, fillColor: "#a4a09c" },
+  winter: { leaves: "leaf_horsechestnut_winter", variation: 1, top: 1.6, bottom: 1.15, translucencyColor: "#806050", translucency: 0.04, fillColor: "#a4a09c" },
 };
 const BARK_ID = "tf_horsechestnut";
 // the bark's mean colour (linear): grey-brown, a little darker and browner than the beech's silver-grey
-const BARK_TARGET = [0.135, 0.118, 0.1];
+const BARK_TARGET = [0.095, 0.085, 0.075];
 
 /** The factory textures for one season (cached by treeTextures.js): { season, leaves, bark, gpuBytes, fileBytes }. */
 export async function loadHorseChestnutTextures(renderer, season = "summer") {
@@ -129,9 +129,9 @@ function avenueTree(r) {
   const env = envelope(r, { W, cy, top, yb });
   const trunk = grow(r, V(0, -0.5, 0), V((r() - 0.5) * 0.08, 1, (r() - 0.5) * 0.08), yf + 0.5, 6, { pull: V(0, 1, 0), pullK: 0.1, wiggle: 0.08 });
   // thick and short: ~0.95 m across above the flare (the inventory's old trees: 2-2.4 m round)
-  const trunkR = (t) => 0.48 * (1 - 0.18 * t);
+  const trunkR = (t) => 0.48 * (1 - 0.18 * t) * (1 - 0.45 * Math.max(0, (t - 0.8) / 0.2) ** 1.5);   // narrowing into the fork
   branches.push({ pts: trunk, rad: trunkR, level: 0, flare: true, flareH: 1.4, flareAmp: 0.38, irr: irregular(r, 1, rr(0.9, 1.4) * (r() < 0.5 ? 1 : -1)) });
-  const limbs = [], fork = trunk[trunk.length - 1];
+  const limbs = [], fork = at(trunk, 0.86);
   // the main fork: 3-5 big limbs, ascending (30-55 deg off vertical), the heaviest toward the top of the dome
   const nS = 3 + Math.floor(r() * 3);
   let az = r() * Math.PI * 2;
@@ -139,7 +139,7 @@ function avenueTree(r) {
     az += (Math.PI * 2) / nS + rr(-0.35, 0.35);
     const goal = env(az, rr(35, 65)).multiply(V(0.62, 1, 0.62)).add(V(0, -rr(1, 2.5), 0));
     const pts = grow(r, fork, goal.clone().sub(fork).normalize().lerp(V(0, 1, 0), 0.25), goal.distanceTo(fork), 7, { pull: goal.clone().sub(fork).normalize(), pullK: 0.2, wiggle: 0.14 });
-    const rB = trunkR(1) * rr(0.5, 0.62);
+    const rB = trunkR(0.86) * rr(0.52, 0.62);
     branches.push({ pts, rad: taper(rB, 0.05), level: 1, irr: irregular(r, 0.6) });
     limbs.push({ pts, rB, az, yMid: at(pts, 0.6).y });
   }
@@ -223,7 +223,7 @@ function barkMesh(branches, sidesOf, stride = 1) {
           const ph = a - irr.rot0 - (irr.spiral ? irr.spiral * y : irr.rotK * t);
           rad *= 1 + (irr.ell - 1) * Math.cos(2 * ph);
           // the spiral ridges: 5 of them winding up at ~25-35 deg (spiral ~1-1.5 rad per metre on a 0.43 m trunk)
-          if (irr.spiral) rad *= 1 + 0.045 * Math.cos(5 * ph + 0.7) * Math.min(1, Math.max(0, (y + 0.5) / 1.2));
+          if (irr.spiral) rad *= 1 + 0.07 * Math.cos(5 * ph + 0.7) * Math.min(1, Math.max(0, (y + 0.5) / 1.2));
         }
         if (b.flare) {
           const f = Math.max(0, 1 - (y + 0.5) / (b.flareH ?? 1.6));

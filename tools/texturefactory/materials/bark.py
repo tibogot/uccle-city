@@ -287,7 +287,7 @@ MAPLE = dict(cell=0.025, stretch=6.0, fis_w=0.0025, depth=0.004, ridge_a="#6c686
 OAK = dict(cell=0.06, stretch=3.5, fis_w=0.012, depth=0.02, cross=0.07, ridge_a="#6d675d", ridge_b="#857e72", fis_col="#211d19", algae=0.3)
 CHESTNUT = dict(cell=0.06, a="#6a5e52", b="#7f7366", under="#8a5a3a")
 # the old avenue horse chestnut (Avenue Winston Churchill): grey-brown thin plates, orange-brown under-bark
-CHESTNUT_OLD = dict(cell=0.05, stretch=2.6, plate_h=0.09, fis_w=0.004, depth=0.005, fallen=0.06, a="#655b52", b="#7a7065", under="#8c6a50",
+CHESTNUT_OLD = dict(cell=0.075, stretch=2.6, plate_h=0.13, fis_w=0.004, depth=0.005, fallen=0.06, a="#655b52", b="#7a7065", under="#8c6a50",
                     fis_col="#2c2622", algae=0.3, lichen=0.12)
 
 

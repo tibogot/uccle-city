@@ -280,13 +280,13 @@
    "size_m": 1.0,
    "px": 1024,
    "mean_albedo_linear": [
-    0.1479,
-    0.1207,
-    0.0945
+    0.1527,
+    0.124,
+    0.0971
    ],
-   "mean_roughness": 0.866,
-   "albedo_ktx2_bytes": 820000,
-   "nra_ktx2_bytes": 1284066
+   "mean_roughness": 0.862,
+   "albedo_ktx2_bytes": 746068,
+   "nra_ktx2_bytes": 1245603
   }
  },
  "megascans": {
