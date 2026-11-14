@@ -123,7 +123,7 @@ many places with invisible cars"): find why (parked cars dropped or hidden by LO
 parking lanes dropping parked cars, keep-clear filters...) while their colliders stay: colliders must come from what is
 drawn. TOP PRIORITY with road round 3. (2) Collisions feel off in general; the FALCON should also show its collisions
 with G; the falcon gameplay feels weird. (3) Car tail lights: grainy, sparkling red (shader / aliasing on the light
-texture). (4) Blank party walls look empty, with aliased dashed black lines on them (facade details or wires?).
+texture). [STILL SEEN 2026-11-14 16:21 by the coordinator after VISUAL_FIXES: a TRAFFIC car (motion path, LOD0 7.9k tris, drawn plain, not mid-fade) at ~10 m, brake lit, at (1220, 518) I6: the lens is white-speckled red at eye level. Ruled out: the LOD cross-fade dither (that car was plain), SSR (lamp metalness 0), the bit decoding (per-instance). Suspects: the brake emissive x6 HDR + bloom / MSAA resolve on tiny lens facets, the inner 'rev' split at |x| 0.55, specular on the lens; needs a strafe flicker test on traffic cars, braking and not] (4) Blank party walls look empty, with aliased dashed black lines on them (facade details or wires?).
 (5) Many building TOPS look empty / unfinished (roof furniture, parapets, chimneys, roof details) [MERGED
 claude/roofs 2026-11-14, on by default, ?roofs=old = before: docs/assets/ROOFS.md; left: real PV / AC positions from
 data, back-slope dormers, TV aerials, ~+200 audit items per tile at parapet ends, GPU A/B on GREEN; BUG to fix: tools/blender/gardenKit.py bake_vertex_ao bakes all pieces at the origin together (railings ~30 % too dark), same 2-line fix as roofTopKit.py]. (6) The petrol
