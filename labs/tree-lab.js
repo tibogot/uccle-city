@@ -14,6 +14,11 @@
 // (2026-11-14) + the HORSE CHESTNUT (viewer/treesHorseChestnut.js, docs/trees/HORSE_CHESTNUT.md), the same way: its
 // seasons (spring with the flower candles, summer, early rust autumn, bare winter), the impostor kit, and the layout
 // "Avenue Winston Churchill + Avenue de Fré": its 276 trees of the inventory (data/trees/bm_horse_chestnut.json).
+// (2026-11-14, claude/tree-look) THE LEAF LOOK of both (docs/TREES.md §8, viewer/treeLeafLook.js): the spray's detail
+// fades with the footprint, a soft crown rim, airier crowns; "copperbeech0" / "horsechestnut0" = the species as first
+// merged (A/B: "before"); ?look=0 shows the "before" under the plain names. Far trees: a smaller impostor-kit atlas
+// (LAB_KIT: 12 x 12 views x 48 px, the aux at half size: 13 MB a species; ?kit=city: the city's 16 x 16 x 64), and no
+// old impostor bake for them (64 MB each) unless ?farkit=0. The seasons' textures load when a season is picked.
 import * as THREE from "three/webgpu";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { uniform, vec3, float, mix, select, positionWorld, mx_noise_float, smoothstep } from "three/tsl";
@@ -26,6 +31,7 @@ import { beechDef } from "../viewer/treesBeech.js";
 import { copperBeechDef, loadCopperBeechTextures, COPPER_SEASONS } from "../viewer/treesCopperBeech.js";
 import { horseChestnutDef, loadHorseChestnutTextures, CHESTNUT_SEASONS } from "../viewer/treesHorseChestnut.js";
 import * as K from "../viewer/impostorKit/index.js";
+import { LOOK as LEAF_LOOK } from "../viewer/treeLeafLook.js";
 import { flickerTest, showHeat } from "./flickerTest.js";
 import { IMP, impostorField } from "../viewer/impostors.js";
 import { lodEye } from "../viewer/lodFade.js";
@@ -150,22 +156,29 @@ const S = {
   walkMode: "frozen view (LOD eye walks)", walkD: 2, walkSeconds: 40, walking: false,
   perf: "", passes: "", cpu: "", mem: "", bench: "—", lodNow: "", crownFit: "", pop: "—",
 };
+const LOOK = qp.get("look") !== "0";
+// the factory species: their old impostor atlas only when their far trees are NOT the kit (?farkit=0)
+const kitDef = (def) => ({ ...def, noImpostorBake: def.noImpostorBake && S.farKit });
 const DEFS = {
   street: (seed) => ({ ...STREET.def, params: { ...STREET.def.params, seed } }),
   plane: (seed) => planeDef(seed),
   beech: (seed) => beechDef(seed),
-  copperbeech: (seed) => copperBeechDef(seed, COPPER_TEX[S.cbSeason]),
-  horsechestnut: (seed) => horseChestnutDef(seed, HC_TEX[S.hcSeason]),
+  copperbeech: (seed) => kitDef(copperBeechDef(seed, COPPER_TEX[S.cbSeason], { look: LOOK })),
+  horsechestnut: (seed) => kitDef(horseChestnutDef(seed, HC_TEX[S.hcSeason], { look: LOOK })),
+  // "before" (as first merged), for the A/B buttons
+  copperbeech0: (seed) => kitDef(copperBeechDef(seed, COPPER_TEX[S.cbSeason], { look: false })),
+  horsechestnut0: (seed) => kitDef(horseChestnutDef(seed, HC_TEX[S.hcSeason], { look: false })),
 };
-// the copper beech's factory textures, every season (small: ~1.4 MB GPU per spray, the bark 2.7 MB)
-const COPPER_TEX = {};
-await Promise.all(Object.keys(COPPER_SEASONS).map(async (k) => { COPPER_TEX[k] = await loadCopperBeechTextures(renderer, k); }));
-// the horse chestnut's, every season (spring and winter have their own normal maps)
-const HC_TEX = {};
-await Promise.all(Object.keys(CHESTNUT_SEASONS).map(async (k) => { HC_TEX[k] = await loadHorseChestnutTextures(renderer, k); }));
+// the factory textures, loaded per season when it is first picked (each season ~2.6 MB GPU of spray, the bark 2.7 MB)
+const COPPER_TEX = {}, HC_TEX = {};
+async function seasonTex(key) {
+  if (key.startsWith("copperbeech")) COPPER_TEX[S.cbSeason] ??= await loadCopperBeechTextures(renderer, S.cbSeason);
+  if (key.startsWith("horsechestnut")) HC_TEX[S.hcSeason] ??= await loadHorseChestnutTextures(renderer, S.hcSeason);
+}
+await Promise.all([seasonTex("copperbeech"), seasonTex("horsechestnut")]);
 // the forest patch (tile M8: mostly beech in the Sonian Forest edge) as a mix of species, shares of the LiDAR trees
 const FOREST_MIX = { "all beech": { beech: 1 }, "beech 80 % + street trees 20 %": { beech: 0.8, street: 0.2 } };
-const SPECIES_NAMES = { "street (city today)": "street", "plane (Platanus x acerifolia)": "plane", "copper beech": "copperbeech", "horse chestnut": "horsechestnut" };
+const SPECIES_NAMES = { "street (city today)": "street", "plane (Platanus x acerifolia)": "plane", "copper beech": "copperbeech", "horse chestnut": "horsechestnut", "copper beech (before the look)": "copperbeech0", "horse chestnut (before the look)": "horsechestnut0" };
 const speciesKey = () => (S.species in DEFS ? S.species : SPECIES_NAMES[S.species]);
 const species = {};
 // LOD colours (debug): one per mesh (userData.treeLod: 0-2, 3 = impostor), mixed into every tree material
@@ -263,7 +276,7 @@ function build(keys = [speciesKey()]) {
     if (f.imp) f.imp.mesh.userData.treeLod = 3;
     const entry = { key, sp, f };
     fields.push(entry);
-    if ((key === "copperbeech" || key === "horsechestnut") && S.farKit) attachKit(entry, vf ?? ((i) => sp.variantOfIndex(i)));
+    if ((sp.def.id === "copperbeech" || sp.def.id === "horsechestnut") && S.farKit) attachKit(entry, vf ?? ((i) => sp.variantOfIndex(i)));
   }
   setPits(S.layout === "street of 50" || S.layout === "single tree" || S.layout === "LOD chain side by side"
     ? (S.layout === "LOD chain side by side" ? [-24, -8, 8, 24].map((x) => [x, 0, Y0 + 0.02]) : T.map((t) => [t.x, t.z, Y0 + (S.layout === "street of 50" ? 0.14 : 0.02)])) : []);
@@ -277,6 +290,9 @@ function build(keys = [speciesKey()]) {
  *  hand-over on the same IMP uniforms as the mesh's far mask; today's impostors (viewer/impostors.js) are taken out
  *  of that field. The bake is async: the field's far trees come in when it is ready. */
 const kits = new Map();
+// the lab species' kit atlas (docs/TREES.md §8): 12 x 12 hemi views x 48 px (40 inside the gutter), the aux array at half
+// size: 6 variants = 13.3 MB (the city's preset 16 x 16 x 64: 63.8 MB); ?kit=city for that one (A/B)
+const LAB_KIT = qp.get("kit") === "city" ? K.TYPES.tree : { ...K.TYPES.tree, grid: 12, cell: 48, auxHalf: true };
 function kitFor(sp) {
   if (kits.has(sp)) return kits.get(sp);
   const H = K.makeFade(K.TYPES.tree.fade);
@@ -286,7 +302,7 @@ function kitFor(sp) {
   k.ready = (async () => {
     const t0 = performance.now();
     const src = K.stylizedTreeSource(sp.shared, sp.params().leafMask, { variants: sp.variants, lod: 2, handover: IMP.start.value });
-    k.atlas = await K.bakeAtlas(renderer, src, K.TYPES.tree);
+    k.atlas = await K.bakeAtlas(renderer, src, LAB_KIT);
     src.dispose?.();
     k.bakeMs = performance.now() - t0;
     k.mats = K.impostorMaterials(k.atlas, { ...K.TYPES.tree.material, fade: H, view, shade: K.treeShade(sp.shared.U), name: "tree-kit-lab" });
@@ -346,17 +362,32 @@ function buildChain(sp) {
     items.push({ lod, tp, foot: new THREE.Vector3(xs[lod], Y0 - 0.25, 0), virt: virt[lod], meshes,
       tris: { leaves: base.leaves.index.count / 3, bark: base.trunk.index.count / 3, cards: base.leaves.index.count / 6 } });
   }
-  const imp = impostorField([[xs[3], 0, Y0, rot, scale]], [v], sp.impMatFar, { near: 0 });
-  imp.mesh.userData.treeLod = 3; imp.mesh.frustumCulled = false;
-  g.add(imp.mesh);
+  // the 4th slot: the old impostor, or (a species without that bake: its far trees are the kit) the kit's impostor
+  let imp = null, kitF = null;
+  if (sp.impMatFar) {
+    imp = impostorField([[xs[3], 0, Y0, rot, scale]], [v], sp.impMatFar, { near: 0 });
+    imp.mesh.userData.treeLod = 3; imp.mesh.frustumCulled = false;
+    g.add(imp.mesh);
+  } else {
+    const k = kitFor(sp);
+    k.ready.then(() => {
+      if (!g.parent) return;
+      const mats = K.impostorMaterials(k.atlas, { ...K.TYPES.tree.material, nearFade: false, fade: k.H, view: k.view, shade: K.treeShade(sp.shared.U), name: "tree-kit-lab-chain" });
+      kitF = K.impostorField(mats, [{ x: xs[3], y: Y0 - 0.25, z: 0, yaw: rot, scale, variant: v }], { name: "tree-kit-lab-chain" });
+      kitF.group.traverse((o) => { if (o.isInstancedMesh) o.userData.treeLod = 3; });
+      kitF.mats = mats;
+      g.add(kitF.group);
+    });
+  }
   const P = sp.params();
   const range = [`0-${P.lodDist} m\nmorph ${P.lodDist - P.morph1}-${P.lodDist} m`, `${P.lodDist}-${P.farDist} m\nmorph ${P.farDist - P.morph2}-${P.farDist} m`,
     `${P.farDist}-${IMP.start.value} m\ndither ${IMP.start.value - IMP.band.value}-${IMP.start.value} m`, `${IMP.start.value}-${IMP.end.value} m\ndissolve ${IMP.end.value - IMP.endBand.value}-${IMP.end.value} m`];
   const bk = sp.bake;
   const atlasMB = bk ? (bk.size[0] * bk.size[1] * 4 * 2 * 4 / 3) / 1048576 : 0;
+  const kitTxt = `kit ${LAB_KIT.grid}x${LAB_KIT.grid} views x ${LAB_KIT.cell} px\nfrom LOD 2 at the hand-over\n${range[3]}`;
   const txt = [
     ...items.map((it) => `<b>LOD ${it.lod}</b> ${(it.tris.leaves + it.tris.bark).toLocaleString()} tris\n${it.tris.cards} cards (${it.tris.leaves})\nbark ${it.tris.bark}\n${range[it.lod]}\n${it.lod < 2 ? "casts shadow" : "no shadow"}`),
-    `<b>impostor</b> 2 tris\nfrom LOD 0, 8x8 views\n${range[3]}\natlas ${bk ? bk.size.join("x") : "-"} x2\n${atlasMB.toFixed(0)} MB, no shadow`,
+    bk ? `<b>impostor</b> 2 tris\nfrom LOD 0, 8x8 views\n${range[3]}\natlas ${bk.size.join("x")} x2\n${atlasMB.toFixed(0)} MB, no shadow` : `<b>impostor (kit)</b> 6 tris\n${kitTxt}\nno shadow`,
   ];
   for (let k = 0; k < 4; k++) {
     const el = document.createElement("div"); el.className = "tlabel"; el.innerHTML = txt[k]; document.body.append(el);
@@ -367,14 +398,14 @@ function buildChain(sp) {
     group: g, items, imp,
     update(eye) {
       for (const it of items) { tmp.copy(it.foot).sub(eye).setLength(it.virt).add(eye); it.tp.array.set([tmp.x, tmp.y, tmp.z]); it.tp.needsUpdate = true; }
-      imp.update(eye);
+      imp?.update(eye);
       // (no field writes the LOD uniforms here: the chain holds them at the auto values)
       const U = sp.shared.U;
       U.lod1.value = S.lod1; U.lod2.value = S.lod2; U.morph1.value = S.morph1; U.morph2.value = S.morph2;
       U.sunDir.value.copy(lighting.sunDir);
       const c = lighting.keyColor; U.sunColor.value.set(c.r * 0.18, c.g * 0.18, c.b * 0.18);
     },
-    dispose() { g.removeFromParent(); for (const it of items) for (const m of it.meshes) m.geometry.dispose(); imp.mesh.geometry.dispose(); },
+    dispose() { g.removeFromParent(); for (const it of items) for (const m of it.meshes) m.geometry.dispose(); imp?.mesh.geometry.dispose(); if (kitF) { kitF.dispose(); kitF.mats.colour.dispose(); kitF.mats.depth.dispose(); } },
   };
 }
 
@@ -513,22 +544,24 @@ function lodStateText(d) {
 const ui = new Panel({ title: "Tree Lab" });
 const fs = ui.addFolder("Scene & species");
 fs.add(S, "layout", LAYOUTS).onChange(() => { build(); resetView(); }).listen();
-fs.add(S, "species", ["street", "plane", "beech", "copperbeech", "horsechestnut"]).name("species").onChange(() => build()).listen();
+fs.add(S, "species", ["street", "plane", "beech", "copperbeech", "horsechestnut", "copperbeech0", "horsechestnut0"]).name("species").onChange(() => build()).listen();
 fs.add(S, "cbSeason", Object.keys(COPPER_SEASONS)).name("copper beech season").onChange(() => rebuildCopper()).listen();
 fs.add(S, "hcSeason", Object.keys(CHESTNUT_SEASONS)).name("horse chestnut season").onChange(() => rebuildSeasonal("horsechestnut")).listen();
-fs.add(S, "farKit").name("copper beech / horse chestnut far: impostor kit").onChange(() => build()).listen();
+fs.add(S, "farKit").name("copper beech / horse chestnut far: impostor kit").onChange(() => { for (const k of FACTORY) disposeSpecies(k); build(); }).listen();
 fs.add(S, "variant", ["auto", "auto: 0-3 (plane natural, beech forest)", "auto: 4-5 (plane pollards, beech open-grown)", "0", "1", "2", "3", "4", "5"]).onChange(() => build()).listen();
 fs.add(S, "forestMix", Object.keys(FOREST_MIX).concat(["the selected species"])).name("forest patch species").onChange(() => { if (S.layout.startsWith("forest")) build(); }).listen();
 fs.add(S, "seed", 1, 99999, 1).onChange(() => { for (const k of Object.keys(species)) disposeSpecies(k); build(); });
 /** the copper beech in another season: a new species (its spray, palette and impostor bakes) */
 function rebuildCopper() { rebuildSeasonal("copperbeech"); }
 /** a seasonal species (copper beech, horse chestnut) in another season: a new species (spray, palette, bakes) */
-function rebuildSeasonal(key) {
+async function rebuildSeasonal(key) {
+  await seasonTex(key);
   const shown = fields.map((x) => x.key);
   const wasChain = !!chain;
-  if (species[key]) disposeSpecies(key);
-  if (shown.includes(key) || (wasChain && speciesKey() === key)) build([...new Set(shown.length ? shown : [speciesKey()])]);
+  for (const k of [key, `${key}0`]) if (species[k]) disposeSpecies(k);
+  if (shown.some((k) => k.startsWith(key)) || (wasChain && speciesKey().startsWith(key))) build([...new Set(shown.length ? shown : [speciesKey()])]);
 }
+const FACTORY = ["copperbeech", "horsechestnut", "copperbeech0", "horsechestnut0"];
 fs.add(S, "height", 4, 40, 0.5).name("LiDAR height (m)").onChange(() => { if (["single tree", "LOD chain side by side", "street of 50"].includes(S.layout)) build(); }).listen();
 fs.add(S, "crown", 1, 14, 0.1).name("LiDAR crown r (m)").onChange(applyAll);
 fs.add(S, "crownFit").name("fit").listen();
@@ -588,6 +621,8 @@ fp.add({ f: () => bench("species", { pair: ["plane", "copperbeech"] }) }, "f").n
 fp.add({ f: () => bench("species", { pair: ["copperbeech", "horsechestnut"] }) }, "f").name("benchmark: copper beech vs horse chestnut (A/B)");
 fp.add({ f: () => bench("species", { pair: ["beech", "horsechestnut"] }) }, "f").name("benchmark: beech vs horse chestnut (A/B)");
 fp.add({ f: () => bench("species", { pair: ["plane", "horsechestnut"] }) }, "f").name("benchmark: plane vs horse chestnut (A/B)");
+fp.add({ f: () => bench("species", { pair: ["copperbeech0", "copperbeech"] }) }, "f").name("benchmark: copper beech before vs after the look (A/B)");
+fp.add({ f: () => bench("species", { pair: ["horsechestnut0", "horsechestnut"] }) }, "f").name("benchmark: horse chestnut before vs after the look (A/B)");
 fp.add({ f: () => flicker() }, "f").name("flicker test (24 frames, strafe)");
 fp.add(S, "bench").name("result").listen();
 
@@ -654,7 +689,7 @@ function memText() {
   }
   let kitB = 0;
   for (const k of kits.values()) kitB += k.atlas?.bytes ?? 0;
-  const ct = (species.copperbeech ? COPPER_TEX[S.cbSeason].gpuBytes : 0) + (species.horsechestnut ? HC_TEX[S.hcSeason].gpuBytes : 0);
+  const ct = (species.copperbeech || species.copperbeech0 ? COPPER_TEX[S.cbSeason].gpuBytes : 0) + (species.horsechestnut || species.horsechestnut0 ? HC_TEX[S.hcSeason].gpuBytes : 0);
   return `impostor atlas ${(atlas / 1048576).toFixed(1)} MB · kit atlas ${(kitB / 1048576).toFixed(1)} MB · built trees ${(geo / 1048576).toFixed(2)} MB · leaf masks ${(mask / 1048576).toFixed(2)} MB · factory textures ${(ct / 1048576).toFixed(1)} MB`;
 }
 function updateInfo() {
@@ -758,4 +793,4 @@ async function flicker(o = {}) {
   if (o.heat !== false) showHeat(r);
   return r;
 }
-window.lab = { flicker, kits, COPPER_TEX, HC_TEX, chestnutTrees, dreveTrees, ui, popWalk, photoView, renderer, scene, camera, controls, lighting, S, species, get fields() { return fields; }, get chain() { return chain; }, build, applyAll, bench, alternate, results, startWalk, stopWalk, walkAt, walk, resetView, gpu, lodMorph, IMP, TREE_SHADOW, drawMask, planeLeafMask };
+window.lab = { LOOK: LEAF_LOOK, flicker, kits, COPPER_TEX, HC_TEX, chestnutTrees, dreveTrees, ui, popWalk, photoView, renderer, scene, camera, controls, lighting, S, species, get fields() { return fields; }, get chain() { return chain; }, build, applyAll, bench, alternate, results, startWalk, stopWalk, walkAt, walk, resetView, gpu, lodMorph, IMP, TREE_SHADOW, drawMask, planeLeafMask };

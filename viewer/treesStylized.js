@@ -266,6 +266,9 @@ export function makeSpecies(def) {
       }
       a.needsUpdate = true;
     }
+    // def.leafLook(shared, params): a species' own leaf-look overrides on the shared leaf materials and built cards,
+    // before anything reads them (viewer/treeLeafLook.js: the copper beech and horse chestnut; the others have none)
+    def.leafLook?.(shared, PARAMS);
     let sum = 0, n = 0;
     for (const [key, g] of shared.geoms) {
       if (!key.endsWith(":0")) continue;
@@ -295,7 +298,9 @@ export function makeSpecies(def) {
     if (kitMode && renderer) {
       kit = startTreeKit(renderer, shared, PARAMS.leafMask, VARIANTS);
       window.__treeKit = kit;
-    } else if (useImpostors && renderer) {
+    } else if (useImpostors && renderer && !def.noImpostorBake) {
+      // (def.noImpostorBake: a species whose far trees go through the impostor kit (the Tree Lab's copper beech and
+      // horse chestnut) never draws these: their 64 MB atlas is not baked)
       const t1 = performance.now();
       shared.U.lodScale.value = 0;                // the bake draws LOD 0 as built (no morph toward the bake camera)
       const bake = bakeTreeImpostors(renderer, shared, VARIANTS, PARAMS.leafMask);
