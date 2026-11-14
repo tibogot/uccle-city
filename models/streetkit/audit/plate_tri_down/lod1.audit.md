@@ -1,6 +1,6 @@
 # Mesh audit: streetkit plate_tri_down lod1
 
-186 triangles, 115 welded vertices, 0 open edges, 0 rays, 7 ms.
+186 triangles, 115 welded vertices, 0 open edges, 0 rays, 9 ms.
 
 **0 blocking**, 29 warnings. Clean (no blocking item).
 

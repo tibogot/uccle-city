@@ -469,7 +469,10 @@ def place_villo(T, S, R, v, rank, stats):
             bx, bz = x + tx * u, z + tz * u
             k = kerb_at(bx, bz)
             if k is None: k = k0 if k0 is not None else 0.0
+            if k0 is not None and abs(k - k0) > 1.0: continue          # another kerb (the row ran round a corner)
             dx, dz = bx - nx * (k + off), bz - nz * (k + off)
+            ex, ez = dx + nx * 1.75, dz + nz * 1.75                       # the bike's rear tyre
+            if mode == "sidewalk" and not (S.walkable(dx, dz) and S.walkable(ex, ez)): continue
             ok = T.inside(dx, dz) or True
             poly = S.footprint(dx + nx * 0.95, dz + nz * 0.95, yaw_n, (-0.3, 0.3), (-1.0, 1.0))      # the dock + its bike
             w = []
@@ -486,7 +489,7 @@ def place_villo(T, S, R, v, rank, stats):
         if h01(f"{v['id']}:{i}") < 0.55:
             bx, bz = dx + nx * 0.42, dz + nz * 0.42
             rx, rz = bx + nx * 1.08, bz + nz * 1.08
-            y = max(T.floor_y(bx, bz), T.floor_y(rx, rz)) - 0.01
+            y = max(T.floor_y(bx, bz), T.floor_y(rx, rz)) - 0.035      # (the tyres sit 3.5 cm into the drawn paving: never above it)
             out["bikes"].append({"x": r2(bx), "y": r2(y), "z": r2(bz), "yaw": r4(yaw_n)})
     # the totem: in line with the docks, 1.0 m past the clearer end
     ends = sorted(docks, key=lambda d: d[1])

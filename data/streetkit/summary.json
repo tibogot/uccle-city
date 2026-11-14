@@ -42,7 +42,7 @@
   "slide_door": 3,
   "slide_driveway": 25,
   "slide_tree": 10,
-  "villo_docks": 590,
+  "villo_docks": 470,
   "villo_docks_wanted": 604,
   "villo_lane": 12,
   "villo_no_stands": 1,
@@ -102,8 +102,8 @@
    "plates": 3,
    "posts": 14,
    "villo": 2,
-   "docks": 49,
-   "bikes": 25
+   "docks": 47,
+   "bikes": 24
   },
   "E2": {
    "poles": 13,
@@ -118,16 +118,16 @@
    "plates": 45,
    "posts": 11,
    "villo": 1,
-   "docks": 22,
-   "bikes": 12
+   "docks": 2,
+   "bikes": 1
   },
   "G2": {
    "poles": 15,
    "plates": 15,
    "posts": 8,
    "villo": 1,
-   "docks": 24,
-   "bikes": 10
+   "docks": 18,
+   "bikes": 9
   },
   "H2": {
    "poles": 15,
@@ -158,8 +158,8 @@
    "plates": 26,
    "posts": 25,
    "villo": 1,
-   "docks": 19,
-   "bikes": 13
+   "docks": 9,
+   "bikes": 6
   },
   "D3": {
    "poles": 23,
@@ -182,8 +182,8 @@
    "plates": 35,
    "posts": 13,
    "villo": 1,
-   "docks": 25,
-   "bikes": 16
+   "docks": 20,
+   "bikes": 12
   },
   "G3": {
    "poles": 8,
@@ -198,8 +198,8 @@
    "plates": 40,
    "posts": 3,
    "villo": 1,
-   "docks": 18,
-   "bikes": 9
+   "docks": 16,
+   "bikes": 7
   },
   "I3": {
    "poles": 17,
@@ -214,8 +214,8 @@
    "plates": 15,
    "posts": 9,
    "villo": 2,
-   "docks": 50,
-   "bikes": 29
+   "docks": 14,
+   "bikes": 7
   },
   "B4": {
    "poles": 46,
@@ -230,7 +230,7 @@
    "plates": 16,
    "posts": 2,
    "villo": 1,
-   "docks": 20,
+   "docks": 19,
    "bikes": 11
   },
   "D4": {
@@ -246,8 +246,8 @@
    "plates": 72,
    "posts": 12,
    "villo": 1,
-   "docks": 25,
-   "bikes": 11
+   "docks": 18,
+   "bikes": 8
   },
   "F4": {
    "poles": 22,
@@ -326,7 +326,7 @@
    "plates": 33,
    "posts": 6,
    "villo": 1,
-   "docks": 19,
+   "docks": 17,
    "bikes": 9
   },
   "E5": {
@@ -374,8 +374,8 @@
    "plates": 23,
    "posts": 0,
    "villo": 2,
-   "docks": 47,
-   "bikes": 27
+   "docks": 34,
+   "bikes": 20
   },
   "K5": {
    "poles": 10,
@@ -430,8 +430,8 @@
    "plates": 33,
    "posts": 6,
    "villo": 1,
-   "docks": 24,
-   "bikes": 9
+   "docks": 8,
+   "bikes": 3
   },
   "E6": {
    "poles": 29,

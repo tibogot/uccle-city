@@ -1,6 +1,6 @@
 # Mesh audit: streetkit villo_bike lod2
 
-1,124 triangles, 628 welded vertices, 0 open edges, 0 rays, 46 ms.
+1,124 triangles, 628 welded vertices, 0 open edges, 0 rays, 65 ms.
 
 **0 blocking**, 31 warnings. Clean (no blocking item).
 

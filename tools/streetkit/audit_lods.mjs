@@ -20,7 +20,7 @@ const BANDS = {
   plate_post: { lod: [25, 80, 260], err: [0.002, 0.002], crease: 25 },
   ...Object.fromEntries(["circle", "tri_down", "tri_up", "octagon", "diamond", "square", "rect"].map((s) => ["plate_" + s, PL])),
   villo_totem: { lod: [30, 90, 320], err: [0.001, 0.002], crease: 15 }, villo_dock: { lod: [20, 60, 200], err: [0.003, 0.015], crease: 25 },
-  villo_bike: { lod: [16, 50, 180], err: [0.0025, 0.008], crease: 25 },
+  villo_bike: { lod: [7, 40, 160], err: [0.0025, 0.008], crease: 25 },
 };
 
 // node tools/streetkit/audit_lods.mjs [piece err1 err2]: one piece with other errors (tuning)

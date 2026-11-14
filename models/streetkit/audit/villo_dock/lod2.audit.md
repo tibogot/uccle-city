@@ -1,6 +1,6 @@
 # Mesh audit: streetkit villo_dock lod2
 
-72 triangles, 51 welded vertices, 12 open edges, 228 rays, 1 ms.
+72 triangles, 51 welded vertices, 12 open edges, 228 rays, 2 ms.
 
 **0 blocking**, 2 warnings. Clean (no blocking item).
 

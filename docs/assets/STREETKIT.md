@@ -28,10 +28,10 @@ Triangles per LOD (LOD0 = Blender; LOD1 / 2 = meshoptimizer at load, `viewer/str
 | `plate_diamond` | 1084 / 164 / 20 | idem | B9 (in the atlas; no OSM data placed one) |
 | `plate_square` | 1108 / 176 / 24 | idem | F19, F49, E9a, 600 mm |
 | `plate_rect` | 1108 / 184 / 22 | idem | F4a zone 30, F12a living street, 600 x 900 mm |
-| `plate_post` | 1068 / 382 / 156 | 25 / 80 / 260 | street-name plate post, 60 mm, cap, two clamp brackets |
-| `villo_totem` | (see streetkit.json) | 30 / 90 / 320 | 2.33 m terminal |
+| `plate_post` | 1068 / 382 / 382 | 25 / 80 / 260 | street-name plate post, 60 mm, cap, two clamp brackets (LOD2 = LOD1: coarser broke the 3 mm straps) |
+| `villo_totem` | 2713 / 1183 / 827 | 30 / 90 / 320 | 2.33 m terminal (27 in the city: light LODs not needed) |
 | `villo_dock` | 902 / 306 / 72 | 20 / 60 / 200 | one docking point on its 0.85 m base-rail section |
-| `villo_bike` | ~5.8 k / 2.3 k / 336 | 16 / 50 / 180 | the station bike |
+| `villo_bike` | 9188 / 3854 / 1124 | 7 / 40 / 160 | the station bike (32 spokes, wire basket); casts a shadow at LOD0 only |
 
 Every plate: the 2 mm printed sheet (slot `sign_face`) with its 20 mm folded rim (front edge bevelled 2.5 mm, slot
 `sign_back`, the grey mill-finish back), two extruded aluminium rails across the back (`sign_rail`, body + flanges), a
@@ -53,10 +53,17 @@ UVs; the Villo head band's front maps its strip the same way. No decals, no tran
 (N.V)^3` toward the viewer (bright when looked at head-on, as under headlights); the Villo screens (1.4 x night, 0.35 by
 day) and the docks' status lamps glow. No light added.
 
-**Mesh audit** (`node tools/streetkit/audit_kit.mjs`, tools/mesh_audit per piece at its band end; reports in
-`models/streetkit/audit/<piece>/`): see "Audit" below. **JOINS**: poles, the plate post, the totem plinth and the dock
+**Mesh audit** (tools/mesh_audit): **0 blocking for every piece at LOD0, LOD1 and LOD2.** LOD0:
+`node tools/streetkit/audit_kit.mjs` (each piece alone at its band end); LOD1 / 2: `node tools/streetkit/audit_lods.mjs`
+(the viewer's weld + meshoptimizer + crease steps re-run in Node). Reports in `models/streetkit/audit/<piece>/`. Warnings
+left: slivers (bevel strips, thin tubes), back-to-back faces, seams. Caught and fixed on the way: the pole cap's sleeve
+2 mm round the tube, the rail flanges coplanar with the rail, the station strip face 0.5 mm in front of the head band, the
+screen 0.5 mm off its bezel, the totem's flat front bent by its round corners' normals (faceted corners now), the bike's
+down tube running through the front tyre (frame redrawn with a 70 deg head angle), saddle / bar / main-tube streaks
+(more sides, bent tubes resampled), the chain case crossing the stays, LOD streaks (crease 25 deg), LOD2 collapses
+(smaller errors). **JOINS**: poles, the plate post, the totem plinth and the dock
 rails' skirts run 0.35 / 0.12 / 0.08 m into the ground; each piece stands at the walking surface under its own foot
-(DTM + measured kerb lift) - 1 to 2 cm; a bike stands at the higher of its two tyre contacts - 1 cm (one tyre sinks a
+(DTM + measured kerb lift) - 1 to 2 cm; a bike stands at the higher of its two tyre contacts - 3.5 cm (one tyre sinks a
 little on a slope, never floats).
 
 ## Placement (`tools/streetkit/build_streetkit.py` -> `data/streetkit/<T>.json`, 120 files + `summary.json`, ~0.7 MB)
@@ -65,7 +72,7 @@ little on a slope, never floats).
 C:/Users/tibog/Downloads/venv/Scripts/python.exe tools/streetkit/build_streetkit.py --all --raw C:/Users/tibog/Downloads/uccle-city/data/raw
 ```
 
-~30 s for all of Uccle, deterministic (same md5 on a re-run). It also writes the face atlas (the station strips come
+~30 s for all of Uccle, deterministic (same md5 of I6 and of the atlas on a re-run). It also writes the face atlas (the station strips come
 from the data). The rules are in the script's header; in short (all positions from OSM, ODbL, + UrbIS via the tiles):
 
 - **B1 / B5**: every OSM `highway=give_way` / `stop` node, on the road through it, facing the traffic it addresses:
@@ -91,9 +98,11 @@ from the data). The rules are in the script's header; in short (all positions fr
 - **Villo**: the 27 stations of the street life data (Brussels Mobility WFS `bm_bike:villo`: number, FR / NL names,
   `bike_stands`). Sidewalk >= 3.6 m deep: the dock row 1.95 m behind the kerb, bikes toward the road (15 stations);
   else in the parking lane, 0.3 m out from the kerb (12; the parked cars keep off that space). Docks every 0.85 m
-  (the stand count of the WFS), each one cleared of trees, doors, driveways, crossings (590 of 604 docks placed); the
-  totem 1 m past the clearer end, facing the walkway. **Bikes**: the live occupancy is not data we hold; a fixed hash
-  per dock fills about 55 % of them (318 bikes) as a stand-in, documented here, not data.
+  (the stand count of the WFS), each one cleared of trees, doors, driveways, crossings, kept on the station's own kerb
+  line (a row running round a corner stops there) and, on a sidewalk, on measured paving with its bike: 470 of 604
+  docks placed; the totem 1 m past the clearer end, facing the walkway. **Bikes**: the live occupancy is not data we
+  hold; a fixed hash per dock (FNV + murmur finaliser) fills about 55 % of them (254 bikes) as a stand-in, documented
+  here, not data. Bikes stand 3.5 cm into the paving (never above it).
 
 ### Counts (Uccle, 120 tiles)
 
@@ -103,7 +112,7 @@ from the data). The rules are in the script's header; in short (all positions fr
 | plates | 1,838: C1 447, F19 442, F49 390, B1 189, B15 110, C43 50 110, F12a 98, E9a 14, C43 30 13, B5 9, C43 70 6, D7 5, C3 4, C43 20 1 |
 | not placed | 64 (no room off the carriageway within 5 m, mostly at tight junctions) |
 | street-name plate posts | 782 |
-| Villo stations / docks / bikes | 27 / 590 / 318 |
+| Villo stations / docks / bikes | 27 / 470 / 254 (15 on the sidewalk, 12 in the parking lane) |
 
 ## In the city (`viewer/streetkit/cityStreetKit.js`)
 
@@ -117,6 +126,67 @@ from the data). The rules are in the script's header; in short (all positions fr
   the car, "post" on foot). `viewer/drive/driveMode.js` and `viewer/character/cityHook.js` regexes extended.
 - Parked cars leave the lane stations' space (`keepCarsClear`), lamps keep 0.6 m off the sign poles / 1.2 m off docks
   (`keepLampsClear`, slid 2 / 4 m or dropped).
+
+## Cost (by construction; GPU ms NOT measured: tools/perf/preflight.ps1 was RED, 2.1 GB free, the GPU 39 % busy at rest)
+
+- 13 pieces x 3 LODs = at most 39 instanced meshes, 3 materials (+1 stand-in material, never drawn); count-0 meshes hidden.
+- `renderer.info`, the kit's group on - off, same frame, all passes (main + shadow cascades), around I6 Saint-Job:
+
+| view | draws | triangles |
+|---|---|---|
+| Villo Saint-Job, totem at 3 m (25 docks, 13 bikes in reach) | +6 to +21 | +200 k to +250 k (the bikes: 9.2 k at LOD0 within 7 m, 3.9 k to 40 m) |
+| Villo from across the square, 5.5 m up | +20 to +22 | +128 k to +143 k |
+| street corner with signs and plate posts (Place de Saint-Job) | +19 | +19 k |
+| from the sky, 200 m up | +7 | +5 k |
+
+- Streaming: gather slices 0.1-0.7 ms (budget 0.15 ms / frame, time-sliced).
+- Atlas: 2048 x 2560 RGBA8 sRGB, mipmapped (~27 MB of GPU memory). GLB 1.5 MB uncompressed.
+
+## Checks
+
+- JOINS: `viewer.contactAudit` on every pole, post, totem, dock and bike LOD0 of I6 / I5 / J6 (80 pieces): 0 floating,
+  0 overhang. A raycast down to the drawn roads / terrain of the 9 loaded tiles: every pole origin is at most 0.29 m above
+  the drawn ground (the tube runs 0.35 m in: no gap); docks <= 6 cm (skirt 8 cm), totems <= 2 cm (plinth 12 cm); bikes
+  were up to 6 cm above the drawn paving, now set 3.5 cm into it.
+- Collisions: `viewer.collisionTest("I6")` static: identical with and without the kit (invisible 11 / missing 46, the same
+  items, none of them a kit piece).
+- Console: no errors (day, night, `?streetkit=old`).
+- LOD hand-over: dithered (lodFade.js); the face is mapped from the position at every LOD so the print never changes at a
+  switch. Bikes at 9 m (LOD0) and 12 m (LOD1): `docs/streetkit/villo_bikes_lod0_9m_lod1_12m.jpg`.
+
+## Proof images (`docs/streetkit/`)
+
+| image | what |
+|---|---|
+| `stjob_villo_before_after.jpg` | Place de Saint-Job, the station by the church: before = a box terminal and bare bollard docks; after = the totem, the dock row on its rail, bikes with ochre skirt guards on the church's sidewalk |
+| `stjob_villo_totem.jpg` | the totem: dark oval panel (screen, reader, keypad), ochre head "249 Saint-Job / Sint-Job" from the WFS |
+| `stjob_villo_row.jpg` | the docks and bikes at eye level |
+| `stjob_villo_night.jpg` | night: screens, the docks' green status lamps, the bikes' orange reflectors (emissive only) |
+| `stjob_signs_before_after.jpg` | the corner of Place de Saint-Job / Venelle de Saint-Job: before none; after F12a (living street) over F19 (one-way) |
+| `stjob_plate_post.jpg` | "Place de Saint-Job / Sint-Jobsplein, Uccle - Ukkel" on the galvanised plate post |
+| `fortjaco_giveway_before_after.jpg`, `fortjaco_giveway_close.jpg` | Avenue Alphonse XIII at the Chaussee de Waterloo: the OSM give-way node (direction=backward) gives a B1 on the right beside the painted teeth; an F49 at the main road's crossing |
+| `villo_bikes_lod0_9m_lod1_12m.jpg` | LOD0 vs LOD1 bikes |
+| `models/streetkit/previews/*.jpg` | Blender previews (overview, plate backs with rails and clamps, Villo, grazing light) |
+
+**Street View (look only, nothing stored)**, Sint-Jobsplein 18, April 2024: the real station stands along the church's
+sidewalk with the bikes perpendicular to the road (as placed here); the bikes have light silver frames, a front basket and
+large ochre skirt guards round the rear wheel (the kit's look; the real guards are larger than ours). The 2024 terminal
+was not clearly visible (a white cabinet beside the bikes may be it or a utility box); the Commons photos show the ribbed
+silver totem modelled here. A blue no-parking sign (E1) stands by the church: parking bans are not in OSM, so not placed.
+
+## Weak points / left
+
+- Parking bans (E1 / E3), parking zones, bus lanes, "except local traffic" sub-plates, school / children warnings,
+  signal-post signs (B22 / B23): no data in OSM, none placed. B9 is in the atlas but no OSM data asks for one.
+- F19 / C1 at every junction of a one-way segment (rule): real streets often have fewer. Speed signs follow OSM maxspeed
+  changes; the "Ville 30" region-entry signs are outside Uccle's tiles.
+- 64 signs not placed (no room off the carriageway within 5 m); 338 poles stand on the modelled verge (no measured kerb).
+- The dock row's base rail is stepped on slopes (each 0.85 m section level at its own height; its skirt hides the gap).
+- The Villo bikes are heavy close up (9.2 k triangles at LOD0, within 7 m): a lighter basket / spoke card would halve it.
+  Occupancy is a fixed hash. 134 of 604 docks were dropped (rows that ran off their kerb line or off measured paving).
+- The faces' retroreflection is a view-angle glow by night, not a real headlight response.
+- The plate post's clamps sit at 2.52 / 2.68 m for the street life's 0.30-0.36 m plates at 2.6 m.
+- GPU ms: to measure on a GREEN preflight (`?streetkit=old` A/B).
 
 ## Shared files touched (for a careful merge)
 

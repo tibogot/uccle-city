@@ -1,6 +1,6 @@
 # Mesh audit: streetkit villo_bike lod1
 
-3,854 triangles, 2,256 welded vertices, 366 open edges, 0 rays, 226 ms.
+3,854 triangles, 2,256 welded vertices, 366 open edges, 0 rays, 284 ms.
 
 **0 blocking**, 597 warnings. Clean (no blocking item).
 
@@ -18,11 +18,11 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 | at | parts | separation_mm | overlap_cm2 | angle_deg | maxDistance | need_mm | sameComponent | normal |
 |---|---|---|---|---|---|---|---|---|
-| -0.02, 0.62, 0.22 | villo_bike.lod1 + villo_bike.lod1 | 2.8 | 1.2 | 0 | 50 | 0.38 | false | -1 + 0 + 0 |
-| 0.00, 0.29, 0.68 | villo_bike.lod1 + villo_bike.lod1 | 1.28 | 0.7 | 4.5 | 50 | 0.38 | false | 0 + 0.27 + -0.96 |
-| -0.04, 0.80, 0.12 | villo_bike.lod1 + villo_bike.lod1 | 1.19 | 0.7 | 0.5 | 50 | 0.38 | false | 0 + 1 + 0.01 |
-| 0.00, 0.80, 0.12 | villo_bike.lod1 + villo_bike.lod1 | 1.19 | 0.7 | 0.5 | 50 | 0.38 | false | 0 + 1 + 0.01 |
-| 0.04, 0.80, 0.12 | villo_bike.lod1 + villo_bike.lod1 | 1.22 | 0.5 | 0.5 | 50 | 0.38 | false | 0 + 1 + 0.01 |
+| -0.02, 0.62, 0.22 | villo_bike.lod1 + villo_bike.lod1 | 2.8 | 1.2 | 0 | 45 | 0.34 | false | -1 + 0 + 0 |
+| 0.00, 0.29, 0.68 | villo_bike.lod1 + villo_bike.lod1 | 1.28 | 0.7 | 4.5 | 45 | 0.34 | false | 0 + 0.27 + -0.96 |
+| -0.04, 0.80, 0.12 | villo_bike.lod1 + villo_bike.lod1 | 1.19 | 0.7 | 0.5 | 45 | 0.34 | false | 0 + 1 + 0.01 |
+| 0.00, 0.80, 0.12 | villo_bike.lod1 + villo_bike.lod1 | 1.19 | 0.7 | 0.5 | 45 | 0.34 | false | 0 + 1 + 0.01 |
+| 0.04, 0.80, 0.12 | villo_bike.lod1 + villo_bike.lod1 | 1.22 | 0.5 | 0.5 | 45 | 0.34 | false | 0 + 1 + 0.01 |
 
 ## sliver (warn, 591)
 

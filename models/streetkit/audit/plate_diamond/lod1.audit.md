@@ -1,6 +1,6 @@
 # Mesh audit: streetkit plate_diamond lod1
 
-164 triangles, 104 welded vertices, 0 open edges, 0 rays, 12 ms.
+164 triangles, 104 welded vertices, 0 open edges, 0 rays, 19 ms.
 
 **0 blocking**, 36 warnings. Clean (no blocking item).
 

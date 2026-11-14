@@ -64,7 +64,7 @@ export const BANDS = {
   ...Object.fromEntries(SHAPES.map((s) => ["plate_" + s, PLATE_BAND])),
   villo_totem: { lod: [30, 90, 320], err: [0.001, 0.002], shadow2: true, crease: 15 },
   villo_dock: { lod: [20, 60, 200], err: [0.003, 0.015], shadow2: false, crease: 25 },
-  villo_bike: { lod: [16, 50, 180], err: [0.0025, 0.008], shadow2: false, crease: 25 },
+  villo_bike: { lod: [7, 40, 160], err: [0.0025, 0.008], shadow2: false, crease: 25, shadowLods: 1 },   // (its shadow dithers out with LOD0)
 };
 const ATLAS_W = 2048, ATLAS_H = 2560, CELL = 512;
 
@@ -283,7 +283,7 @@ export class StreetKitPool {
       for (const a of Object.keys(geo.attributes)) g.setAttribute(a, geo.attributes[a]);
       g.setIndex(geo.index);
       const m = new THREE.InstancedMesh(g, mats.opaque[k], 1);
-      m.castShadow = k < 2 || b.shadow2; m.receiveShadow = true; m.frustumCulled = true;
+      m.castShadow = k < (b.shadowLods ?? 2) || b.shadow2; m.receiveShadow = true; m.frustumCulled = true;
       m.boundingSphere = new THREE.Sphere(); m.name = `streetkit-${piece.name}-lod${k}`;
       group.add(m); this.meshes.push(m);
       return { mesh: m, l0: live[k][0], l1: live[k][1], attrs: [["instanceMatrix", "instanceMatrix", 16], ["iBand", "iBand", 4], ["iVar", "iVar", 4]] };

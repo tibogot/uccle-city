@@ -1,6 +1,6 @@
 # Mesh audit: streetkit plate_square lod2
 
-24 triangles, 24 welded vertices, 0 open edges, 0 rays, 1 ms.
+24 triangles, 24 welded vertices, 0 open edges, 0 rays, 2 ms.
 
 **0 blocking**, 1 warnings. Clean (no blocking item).
 

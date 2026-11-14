@@ -1,6 +1,6 @@
 # Mesh audit: streetkit plate_post lod2
 
-382 triangles, 196 welded vertices, 0 open edges, 0 rays, 22 ms.
+382 triangles, 196 welded vertices, 0 open edges, 0 rays, 31 ms.
 
 **0 blocking**, 79 warnings. Clean (no blocking item).
 

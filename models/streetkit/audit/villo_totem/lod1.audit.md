@@ -1,6 +1,6 @@
 # Mesh audit: streetkit villo_totem lod1
 
-1,183 triangles, 696 welded vertices, 119 open edges, 3,712 rays, 81 ms.
+1,183 triangles, 696 welded vertices, 119 open edges, 3,712 rays, 118 ms.
 
 **0 blocking**, 294 warnings. Clean (no blocking item).
 

@@ -1,6 +1,6 @@
 # Mesh audit: streetkit plate_octagon lod1
 
-152 triangles, 98 welded vertices, 0 open edges, 0 rays, 5 ms.
+152 triangles, 98 welded vertices, 0 open edges, 0 rays, 7 ms.
 
 **0 blocking**, 23 warnings. Clean (no blocking item).
 

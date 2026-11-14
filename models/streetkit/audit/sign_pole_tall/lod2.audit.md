@@ -1,6 +1,6 @@
 # Mesh audit: streetkit sign_pole_tall lod2
 
-130 triangles, 52 welded vertices, 0 open edges, 0 rays, 8 ms.
+130 triangles, 52 welded vertices, 0 open edges, 0 rays, 11 ms.
 
 **0 blocking**, 68 warnings. Clean (no blocking item).
 
