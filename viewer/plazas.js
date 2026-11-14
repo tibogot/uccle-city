@@ -11,6 +11,7 @@ import { positionWorld, vec2, vec3, float, mix, smoothstep, uniform, attribute, 
 import { addLampLight } from "./lampLight.js";
 import { courses, n3 } from "./roadPaint.js";
 import { bumpNormal } from "./tslkit.js";
+import { pavingTextures, pavingSample, pavingNormal, regrade, LAYER } from "./streets/paving.js";
 
 /** The Saint-Job setts: { color, rough, height } nodes for world coords rotated to the rows. */
 export function settsLook(a, b, seed = float(0)) {
@@ -70,10 +71,21 @@ function plazaMaterial() {
   const P = positionWorld;
   const a = P.x.mul(dir.x).add(P.z.mul(dir.y));                               // along the rows
   const b = P.z.mul(dir.x).sub(P.x.mul(dir.y));                               // across
-  const L = settsLook(b, a, float(3.0));
-  m.colorNode = L.color;
-  m.roughnessNode = L.rough;
-  m.normalNode = bumpNormal(L.height);
+  if (pavingTextures() && !useScan) {
+    // the street texture array's setts (viewer/streets/paving.js), as the measured squares (cobbles.js texturedSquare):
+    // rows across b, along the square's rows; ?paving=old: the procedural settsLook
+    const S = pavingSample(a, b, float(LAYER.setts), float(1.3));
+    const dirt = n3(P.x.mul(0.45), P.z.mul(0.45), 6.0);
+    m.colorNode = regrade(S.col, "setts", [0.2, 0.198, 0.192], 0.85).mul(dirt.mul(0.08).add(1.0)).mul(mix(float(1), S.ao, 0.5));
+    m.roughnessNode = S.rough.mul(1.05).min(0.97);
+    m.aoNode = S.ao;
+    m.normalNode = pavingNormal(S.n, a, b, float(1));
+  } else {
+    const L = settsLook(b, a, float(3.0));
+    m.colorNode = L.color;
+    m.roughnessNode = L.rough;
+    m.normalNode = bumpNormal(L.height);
+  }
   if (useScan) scanMaterial(m);
   addLampLight(m);
   m.userData.shared = true;

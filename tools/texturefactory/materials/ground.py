@@ -199,6 +199,69 @@ def make_paving(extra=None):
     return build
 
 
+# ------------------------------------------------------------------------------------------------ pavers
+def pavers(T, P):
+    """Brussels grey concrete pavers ("klinkers", 22 x 11 x 8 cm) in stretcher bond: OSM surface=paving_stones roads
+    (the clos, parkings) and many Uccle sidewalks (Street View, Dolezlaan, Verrewinkelstraat). Rows across the tile's
+    y axis, half-bond; 4-5 mm sand joints, 3 mm chamfer, a cement skin with exposed fine aggregate, mixed batches
+    (a few darker anthracite / warmer pavers), oil and tyre stains, sand and moss in the joints."""
+    nrow, nper = P["rows"], P["per_row"]
+    pitch = T.size / nrow
+    U = courses(T, nrow, fixed_count_lengths(lambda c: nper, lambda c: T.size / nper, 0.002),
+                lambda rng, c, l: (c % 2) * T.size / nper / 2 + rng.uniform(-0.004, 0.004),
+                k=1, joint=P["joint"], joint_jit=0.0008, unit_h=pitch - P["joint"], h_jit=0.0008, dy_jit=0.0012,
+                tilt_deg=0.5, corner_r=0.003)
+    ids, n = U["id"], U["n"]
+    pu = lambda k, dist="uniform": T.per_unit(ids, n, 100 + k, dist)
+    lx, ly = U["lx"], U["ly"]
+    cn = T.noise(0.015, 2, octaves=2)
+    chip = smoothstep(0.0, 0.3, cn - 1.7 + 0.5 * pu(1) * P.get("chips", 0.4)) * 0.012
+    chip = chip * smoothstep(-0.02, -0.008, U["d"])
+    d = U["d"] + T.noise(0.008, 3) * 0.0004 + chip
+    inside = smoothstep(0.0005, -0.0005, d)
+    cham = P.get("chamfer", 0.003)
+    t = np.clip(-d / cham, 0, 1)
+    edge = -cham * (1 - t) * 0.9
+    settle = pu(2, "normal") * 0.0012 + pu(3, "normal") * 0.006 * lx + pu(4, "normal") * 0.006 * ly
+    ag = stones(T, 0.0025, 5, presence=0.45, dome_m=0.0002, flat=0.7)
+    surf = T.noise(0.008, 6, octaves=3) * 0.00018 + ag["height"]
+    h_t = edge + settle + surf - smoothstep(0.0, 0.003, chip) * 0.0025
+    h = lerp(np.full_like(d, -0.007) + T.noise(0.003, 7) * 0.0006, h_t, inside)
+    # batches: mostly grey, some darker / warmer pavers
+    pal = [(hexcol(c), w) for c, w in P["colors"]]
+    w = np.array([p[1] for p in pal], f32)
+    pick = np.searchsorted(np.cumsum(w / w.sum()), T.child(200).random(n + 1)).clip(0, len(pal) - 1)
+    col = np.stack([p[0] for p in pal])[pick][ids]
+    col = col * np.exp(pu(5, "normal") * P.get("unit_sd", 0.06))[..., None]
+    col = col * (1 + T.noise(0.05, 8, octaves=4)[..., None] * 0.06 + T.noise(0.004, 9, octaves=2)[..., None] * 0.05)
+    agc = palette_pick(ag["rnd"], [(hexcol("#8f8a82"), 3), (hexcol("#77746e"), 2), (hexcol("#a7a197"), 1.5), (hexcol("#5f5d5a"), 0.6)])
+    col = lerp(col, agc, ag["mask"] * P.get("agg_show", 0.4))
+    stain = smoothstep(0.9, 2.2, T.noise(0.3, 10, octaves=3)) * P.get("stains", 0.45)
+    col = col * (1 - stain[..., None] * 0.35)
+    chipm = smoothstep(0.0, 0.003, chip) * inside
+    col = lerp(col, hexcol("#8a857d"), chipm * 0.5)
+    edge_dirt = smoothstep(-0.008, -0.001, d) * inside
+    col = lerp(col, hexcol("#3b3833"), edge_dirt * 0.4)
+    jcol = hexcol(P.get("joint_col", "#57524a")) * (1 + T.noise(0.004, 16)[..., None] * 0.2)
+    moss = smoothstep(0.5, 1.5, T.noise(0.2, 14, octaves=3)) * P.get("moss", 0.25)
+    jcol = lerp(jcol, hexcol("#3d4629"), moss)
+    col = lerp(jcol, col, inside)
+    rough = lerp(np.full_like(h, 0.95), 0.84 + T.noise(0.03, 17) * 0.04 - stain * 0.08, inside)
+    return col, h, rough
+
+
+PAVERS = dict(rows=16, per_row=8, joint=0.005, chamfer=0.003, chips=0.4, stains=0.55, agg_show=0.35, unit_sd=0.05, moss=0.2,
+              colors=[("#86827b", 4), ("#7b7872", 3), ("#918b82", 2), ("#5e5c59", 0.45), ("#8d8072", 0.35)])
+
+
+def make_pavers(extra=None):
+    def build(T):
+        P = dict(PAVERS, **(extra or {}))
+        col, h, rough = pavers(T, P)
+        return finish(T, col, h, rough, ao_radius=0.012)
+    return build
+
+
 MATERIALS = {
     "asphalt": {"size_m": 2.0, "variants": {
         "a": {"seed": 41, "lattice": None, "note": "aged Brussels asphalt, porphyry chips, worn binder", "build": make_asphalt()},
@@ -214,5 +277,8 @@ MATERIALS = {
         "a": {"seed": 61, "lattice": [6, 6], "note": "Brussels grey 30 cm tiles, gum, stains", "build": make_paving()},
         "b": {"seed": 62, "lattice": [6, 6], "note": "newer, lighter, cleaner", "build": make_paving(dict(color="#9a958c", stains=0.2, gum=0.06, chips=0.3))},
         "c": {"seed": 63, "lattice": [6, 6], "note": "old, darker, chipped, more gum", "build": make_paving(dict(color="#7a766f", stains=0.6, gum=0.2, chips=0.9, tile_sd=0.1))},
+    }},
+    "pavers": {"size_m": 1.8, "variants": {
+        "a": {"seed": 71, "lattice": [8, 16], "note": "Brussels grey concrete pavers 22 x 11 cm, stretcher bond, mixed batches", "build": make_pavers()},
     }},
 }

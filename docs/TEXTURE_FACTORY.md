@@ -65,6 +65,7 @@ The materials are in `materials/*.py`, one parameter set per variant (a, b, c):
 | asphalt | AC-10/14: porphyry 3-10 mm + sand in bitumen | 2.0 m | — | a aged, worn binder · b newer, coated chips · c pale, dusty, sealed cracks, oil |
 | cobbles | Saint-Job setts 10-16 x 12.5 cm, 1.4 cm joints | 1.5 m (12 rows) | [1,12] | a grey-blue porphyry · b warmer sandstone, mossy · c darker, tight, polished |
 | paving_concrete | Brussels 30 x 30 cm tiles, 4 mm joints | 1.8 m (6 x 6) | [6,6] | a grey, gum, stains · b newer · c old, chipped |
+| pavers | Brussels grey concrete pavers 22 x 11 cm, stretcher bond, 5 mm sand joints | 1.8 m (16 rows x 8) | [8,16] | a mixed grey batches, stains, moss (claude/paving: the street layer `pavers`, docs/STREET_SURFACES.md) |
 | stone_white | limestone ashlar, 30 cm courses, 40-95 cm blocks | 3.0 m | [1,10] | a cream, tooled · b whiter, sawn · c warmer, soiled |
 | stone_blue | petit granit, 30 cm courses, drafted 2 cm margin | 2.4 m | [1,8] | a bush-hammered field + margin · b honed, crinoids, veins · c weathered pale |
 | render_white | lime render | 2.0 m | — | a white-washed, cracks, patches · b fresh · c old, coarse |

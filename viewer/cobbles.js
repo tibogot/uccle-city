@@ -13,6 +13,7 @@ import { uv, positionWorld, attribute, float, vec2, vec3, floor, fract, mix, min
 import { addLampLight } from "./lampLight.js";
 import { bumpNormal, noise2D, hash2D } from "./tslkit.js";
 import { n3 } from "./roadPaint.js";
+import { pavingTextures, pavingSample, pavingNormal, regrade, LAYER } from "./streets/paving.js";
 
 const SL = 0.16, SW = 0.13;           // mean stone length along the rows, width across (m)
 // per-cell random in [0, 1): the sin hash on (cell, row) modulo 1024 (large cell numbers lose float precision)
@@ -20,6 +21,7 @@ const H2 = (a, b) => hash2D(vec2(fract(float(a).div(1024)).mul(1024), fract(floa
 
 export function cobbleMaterial() {
   const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  if (pavingTextures()) return texturedSquare(m);
   const P = positionWorld, f = uv();
   const fw = fwidth(P.x).add(fwidth(P.z)).mul(0.7).add(0.0003);        // pixel footprint (m), continuous
   // rows across v (each row its own stone length, 0.75 - 1.3 x), stones along u, every row shifted by a random part of a
@@ -76,6 +78,23 @@ export function cobbleMaterial() {
   const cap = float(1).sub(F1.div(R).pow(2)).max(0);                    // rounded top
   const dome = cap.mul(0.006).add(smoothstep(float(0.0), float(0.03), edge).mul(0.002)).add(rx.mul(tiltX).add(rz.mul(tiltZ))).mul(bumpFade);
   m.normalNode = bumpNormal(dome);
+  return addLampLight(m);
+}
+
+/** The measured squares from the street texture array (viewer/streets/paving.js, ?paving=old: the procedural above):
+ *  the scanned old setts at 1.3 m per repeat (rows 13 cm: Place de Saint-Job's granite setts, ~11-13 x 13-15 cm in
+ *  straight rows, Street View 2026), regraded to the square's light grey granite; rows along the square's own axis
+ *  (uv from viewer/surfaces.js). Big patches of wear and tree shade as before (one cheap noise). */
+export function texturedSquare(m) {
+  const f = uv(), P = positionWorld;
+  const S = pavingSample(f.x, f.y, float(LAYER.setts), float(1.3));
+  const dirt = n3(P.x.mul(0.45), P.z.mul(0.45), 6.0);
+  let col = regrade(S.col, "setts", [0.2, 0.198, 0.192], 0.85).mul(dirt.mul(0.08).add(1.0));
+  col = col.mul(mix(float(1), S.ao, 0.5));
+  m.colorNode = col;
+  m.roughnessNode = S.rough.mul(1.05).min(0.97);
+  m.aoNode = S.ao;
+  m.normalNode = pavingNormal(S.n, f.x, f.y, float(1));
   return addLampLight(m);
 }
 
