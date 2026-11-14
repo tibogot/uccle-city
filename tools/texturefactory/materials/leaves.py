@@ -49,6 +49,22 @@ SPECIES = {
                   spring=[(h("#8cb244"), 3), (h("#9cc052"), 2)],
                   autumn=[(h("#d0a032"), 3), (h("#c9772a"), 2), (h("#b0442a"), 1.2), (h("#e0b844"), 1.5), (h("#8a6a2a"), 0.8)],
                   autumn_edge=h("#7a3a1e")),
+    # (last: the seeds below go by position)
+    # the copper beech (Fagus sylvatica 'Atropunicea' / f. purpurea): the beech's leaf and spray, dark purple-red.
+    # Young leaves ruby, summer leaves maroon to purple-brown with some bronze-green shade leaves, undersides paler
+    # and greener (olive-bronze); autumn copper; winter: marcescent tan-brown leaves held on young / clipped trees
+    # (a sparse spray: `winter_keep` of the leaves stay, the twigs show)
+    "copperbeech": dict(shape="ovate", veins="pinnate", width=0.3, tip=0.75, taper=0.3, teeth=0.045, nteeth=8, nveins=8,
+                        vein_angle=1.0, leaf=0.135, per_twig=10, twigs=8, loose=30, petiole=0.1, zigzag=True, fold=0.35, cup=0.15,
+                        vein_tint=[1.25, 1.05, 0.95],
+                        summer=[(h("#4b2026"), 3), (h("#5a2a2a"), 2), (h("#3e1c22"), 2), (h("#6a3530"), 1), (h("#4a3026"), 0.7)],
+                        spring=[(h("#7e2a36"), 3), (h("#8e3540"), 2), (h("#6a2430"), 2), (h("#9a4a44"), 1)],
+                        autumn=[(h("#8c4a24"), 3), (h("#a0602c"), 2), (h("#6e3a20"), 2), (h("#b8783a"), 1), (h("#5a3020"), 1)],
+                        autumn_edge=h("#4a2a18"),
+                        winter=[(h("#9a6b3e"), 3), (h("#87582f"), 2), (h("#b0814f"), 1.5), (h("#6e4526"), 1)],
+                        winter_edge=h("#5a3a20"), winter_keep=0.22,
+                        under={"summer": (0.1, h("#4e4232")), "spring": (0.12, h("#8a4a4a")), "autumn": (0.12, h("#8a6a3c"))},
+                        petiole_col=[0.42, 0.24, 0.2]),
 }
 
 
@@ -75,31 +91,48 @@ def make_leaf(sp_name):
         nt8 = bleed(nt8, a8)
         cv2.imwrite(os.path.join(src, "normal_thick.png"), cv2.cvtColor(nt8, cv2.COLOR_RGBA2BGRA))
         entries = {}
-        seasons = [("summer", sp["summer"], {}), ("spring", sp["spring"], {}),
-                   ("autumn", sp["autumn"], {"edge": sp.get("autumn_edge"), "spots": sp.get("autumn_spots", 0.25)})]
+        under = sp.get("under", {})
+        seasons = [("summer", sp["summer"], {"under": under.get("summer")}), ("spring", sp["spring"], {"under": under.get("spring")}),
+                   ("autumn", sp["autumn"], {"edge": sp.get("autumn_edge"), "spots": sp.get("autumn_spots", 0.25), "under": under.get("autumn")})]
+        if sp.get("winter"):
+            # winter (marcescent): only `winter_keep` of the leaves stay on (curled, tan), the twigs and petioles show;
+            # its own coverage (the albedo's alpha), the shared normal + thickness
+            hold = (C.leaf < 0) | (table[np.clip(C.leaf, 0, None)][..., 3] < sp["winter_keep"])
+            seasons.append(("winter", sp["winter"], {"edge": sp.get("winter_edge"), "spots": 0.4, "hold": hold}))
         n_bytes = None
         if not quick:
             levels = [np.clip(np.round(l), 0, 255) for l in L.box_mips(nt8.astype(np.float32))]
             n_bytes = L.ktx_levels(levels, os.path.join(web, f"{name}_n.ktx2"), False, work)
         prev = []
         for season, pal, sk in seasons:
-            albL = L.colour(C, table, pal, sp, sk)
+            a_s, a8_s = a, a8
+            if sk.get("hold") is not None:
+                Cw = L.Canvas(C.R)
+                for k in vars(C):
+                    setattr(Cw, k, getattr(C, k))
+                Cw.a = C.a * sk["hold"]
+                Cw.leaf = np.where(sk["hold"], C.leaf, -1)
+                a_s = L.finish_spray(Cw, R)[0]
+                a8_s = np.clip(np.round(a_s * 255), 0, 255).astype(np.uint8)
+                albL = L.colour(Cw, table, pal, sp, sk)
+            else:
+                albL = L.colour(C, table, pal, sp, sk)
             albL = cv2.resize(albL, (R, R), interpolation=cv2.INTER_AREA)
             srgb = np.clip(np.round(lin_to_srgb(albL) * 255), 0, 255).astype(np.float32)
-            srgb = L.bleed(srgb, a8)
-            rgba = np.dstack([srgb, a8.astype(np.float32)]).astype(np.uint8)
+            srgb = L.bleed(srgb, a8_s)
+            rgba = np.dstack([srgb, a8_s.astype(np.float32)]).astype(np.uint8)
             tag = "" if season == "summer" else f"_{season}"
             cv2.imwrite(os.path.join(src, f"albedo{tag}.png"), cv2.cvtColor(rgba, cv2.COLOR_RGBA2BGRA))
-            onL = albL[a > 0.5]
+            onL = albL[a_s > 0.5]
             mean = [round(float(v), 4) for v in onL.mean(0)]
             e = {"material": name, "category": "tree", "kind": "leaf", "source": "texfactory", "id": f"tf_{name}{tag}",
-                 "licence": "CC0 (generated)", "season": season, "px": R, "coverage": round(cov, 4),
-                 "mean_albedo_linear": mean, "mean_thickness": round(float(th[a > 0.5].mean()), 3),
+                 "licence": "CC0 (generated)", "season": season, "px": R, "coverage": round(float((a8_s >= 128).mean()), 4),
+                 "mean_albedo_linear": mean, "mean_thickness": round(float(th[a_s > 0.5].mean()), 3),
                  "files": f"generated/trees/{name}{tag}", "n_file": f"generated/trees/{name}_n.ktx2",
                  "url": f"tools/texturefactory (materials/leaves.py, seed {seed})"}
             if not quick:
                 lv = [rgba]
-                cm = L.coverage_mips(a8)
+                cm = L.coverage_mips(a8_s)
                 cs = L.box_mips(srgb)
                 lv = [np.dstack([np.clip(np.round(c), 0, 255), m.astype(np.float32)]) for c, m in zip(cs, cm)]
                 e["a_ktx2_bytes"] = L.ktx_levels(lv, os.path.join(web, f"{name}{tag}_a.ktx2"), True, work)
@@ -107,7 +140,7 @@ def make_leaf(sp_name):
             entries[e["id"]] = e
             # preview on a mid-grey / sky background
             bg = np.full((R, R, 3), 0.62, f32) * np.array([0.8, 0.9, 1.0], f32)
-            pv = lin_to_srgb(albL * 1.6) * a[..., None] + bg * (1 - a[..., None])
+            pv = lin_to_srgb(albL * 1.6) * a_s[..., None] + bg * (1 - a_s[..., None])
             prev.append((np.clip(pv, 0, 1) * 255).astype(np.uint8))
         cv2.imwrite(os.path.join(src, "preview.png"), cv2.cvtColor(np.hstack(prev), cv2.COLOR_RGB2BGR))
         print(f"{name} {R}px coverage {cov:.3f} {time.time() - t0:.1f}s")

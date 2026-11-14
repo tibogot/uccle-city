@@ -52,7 +52,7 @@ async function load(renderer, file, role, repeat) {
 export async function loadLeafAtlas(renderer, name) {
   const man = await treeTextureManifest(), e = man.leaves[name];
   if (!e) throw new Error(`no leaf spray ${name}`);
-  const [a, n] = await Promise.all([load(renderer, `${name}_a.ktx2`, "colour", false), load(renderer, `${name}_n.ktx2`, "data", false)]);
+  const [a, n] = await Promise.all([load(renderer, `${name}_a.ktx2`, "colour", false), load(renderer, e.n_file ?? `${name}_n.ktx2`, "data", false)]);   // (the factory seasons share one normal: n_file)
   return {
     atlas: { albedo: a.tex, normal: n.tex, mean: e.mean_albedo_linear, meanThick: e.mean_thickness, variation: 1, normalK: 0.8, transK: 1 },
     gpuBytes: a.gpuBytes + n.gpuBytes, fileBytes: e.a_ktx2_bytes + e.n_ktx2_bytes, meta: e,
