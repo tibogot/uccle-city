@@ -1,0 +1,221 @@
+{
+ "summary": {
+  "triangles": 244,
+  "vertices_welded": 128,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 10,
+  "counts": {
+   "sliver": 10,
+   "seam": 2
+  },
+  "ms": 17
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": null,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "mullion",
+   "slot": "paint",
+   "triangles": 244,
+   "maxDistance": 120
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.027,
+     1.12,
+     0.123
+    ],
+    "part": "mullion/paint",
+    "aspect": 84,
+    "longest": 1.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     1.72,
+     0.117
+    ],
+    "part": "mullion/paint",
+    "aspect": 84,
+    "longest": 1.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     1.12,
+     0.135
+    ],
+    "part": "mullion/paint",
+    "aspect": 112,
+    "longest": 1.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.019,
+     1.72,
+     0.133
+    ],
+    "part": "mullion/paint",
+    "aspect": 112,
+    "longest": 1.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.003,
+     1.12,
+     0.138
+    ],
+    "part": "mullion/paint",
+    "aspect": 90,
+    "longest": 1.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.003,
+     1.72,
+     0.138
+    ],
+    "part": "mullion/paint",
+    "aspect": 90,
+    "longest": 1.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.019,
+     1.12,
+     0.133
+    ],
+    "part": "mullion/paint",
+    "aspect": 112,
+    "longest": 1.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     1.72,
+     0.135
+    ],
+    "part": "mullion/paint",
+    "aspect": 112,
+    "longest": 1.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     1.12,
+     0.117
+    ],
+    "part": "mullion/paint",
+    "aspect": 84,
+    "longest": 1.8
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.027,
+     1.72,
+     0.123
+    ],
+    "part": "mullion/paint",
+    "aspect": 84,
+    "longest": 1.8
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.032,
+     0.56,
+     0.03
+    ],
+    "parts": [
+     "mullion/paint",
+     "mullion/paint"
+    ],
+    "length_m": 0.4,
+    "pieces": 31,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.032,
+     2.28,
+     0.109
+    ],
+    "parts": [
+     "mullion/paint",
+     "mullion/paint"
+    ],
+    "length_m": 0.4,
+    "pieces": 31,
+    "min_angle_deg": 90
+   }
+  ]
+ },
+ "file": "shopkit.glb"
+}

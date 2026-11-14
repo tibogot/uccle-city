@@ -1,0 +1,6378 @@
+{
+ "summary": {
+  "triangles": 1352,
+  "vertices_welded": 696,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 24,
+  "warnings": 336,
+  "counts": {
+   "sliver": 328,
+   "bentflat": 12,
+   "nonmanifold": 6,
+   "backtoback": 85,
+   "coplanar": 12,
+   "near": 2,
+   "seam": 37
+  },
+  "ms": 168
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": null,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "front_modern",
+   "slot": "bluestone",
+   "triangles": 216,
+   "maxDistance": 120
+  },
+  {
+   "name": "front_modern",
+   "slot": "alu",
+   "triangles": 1092,
+   "maxDistance": 120
+  },
+  {
+   "name": "front_modern",
+   "slot": "rubber",
+   "triangles": 24,
+   "maxDistance": 120
+  },
+  {
+   "name": "front_modern",
+   "slot": "steel",
+   "triangles": 20,
+   "maxDistance": 120
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.035,
+     -0.002,
+     0.074
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 95,
+    "longest": 0.438
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.037,
+     -0.148,
+     0.074
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 95,
+    "longest": 0.438
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.039,
+     -0.002,
+     0.072
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 95,
+    "longest": 0.438
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.039,
+     -0.148,
+     0.07
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 95,
+    "longest": 0.438
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.035,
+     -0.148,
+     0.001
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 95,
+    "longest": 0.438
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.037,
+     -0.002,
+     0.001
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 95,
+    "longest": 0.438
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.039,
+     -0.148,
+     0.003
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 95,
+    "longest": 0.438
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.039,
+     -0.002,
+     0.005
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 95,
+    "longest": 0.438
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.345,
+     -0.299,
+     0.005
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 450,
+    "longest": 2.068
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.345,
+     -0.299,
+     0.003
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 450,
+    "longest": 2.068
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.345,
+     -0.297,
+     0.001
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 450,
+    "longest": 2.068
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.345,
+     -0.295,
+     0.001
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 450,
+    "longest": 2.068
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.345,
+     0.149,
+     0.005
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 450,
+    "longest": 2.068
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.345,
+     0.149,
+     0.003
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 450,
+    "longest": 2.068
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.345,
+     0.147,
+     0.001
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 450,
+    "longest": 2.068
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.345,
+     0.145,
+     0.001
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 450,
+    "longest": 2.068
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.039,
+     -0.148,
+     0.005
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 95,
+    "longest": 0.438
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.039,
+     -0.002,
+     0.003
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 95,
+    "longest": 0.438
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.037,
+     -0.148,
+     0.001
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 95,
+    "longest": 0.438
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.035,
+     -0.002,
+     0.001
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 95,
+    "longest": 0.438
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.035,
+     -0.148,
+     0.074
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 95,
+    "longest": 0.438
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.037,
+     -0.002,
+     0.074
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 95,
+    "longest": 0.438
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.039,
+     -0.148,
+     0.072
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 95,
+    "longest": 0.438
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.039,
+     -0.002,
+     0.07
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 95,
+    "longest": 0.438
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.345,
+     -0.299,
+     0.07
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 450,
+    "longest": 2.068
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.345,
+     -0.299,
+     0.072
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 450,
+    "longest": 2.068
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.345,
+     -0.297,
+     0.074
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 450,
+    "longest": 2.068
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.345,
+     -0.295,
+     0.074
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 450,
+    "longest": 2.068
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.345,
+     0.149,
+     0.07
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 450,
+    "longest": 2.068
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.345,
+     0.149,
+     0.072
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 450,
+    "longest": 2.068
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.345,
+     0.147,
+     0.074
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 450,
+    "longest": 2.068
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.345,
+     0.145,
+     0.074
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 450,
+    "longest": 2.068
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.347,
+     0.15,
+     0.003
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 680,
+    "longest": 2.082
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.347,
+     0.151,
+     0.002
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 680,
+    "longest": 2.082
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.347,
+     0.152,
+     0.001
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 680,
+    "longest": 2.082
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.347,
+     0.153,
+     0
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 680,
+    "longest": 2.082
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.347,
+     0.17,
+     0.003
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 680,
+    "longest": 2.082
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.347,
+     0.169,
+     0.002
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 680,
+    "longest": 2.082
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.347,
+     0.168,
+     0.001
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 680,
+    "longest": 2.082
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.347,
+     0.167,
+     0
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 680,
+    "longest": 2.082
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.347,
+     0.15,
+     0.082
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 680,
+    "longest": 2.082
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.347,
+     0.151,
+     0.083
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 680,
+    "longest": 2.082
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.347,
+     0.152,
+     0.084
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 680,
+    "longest": 2.082
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.347,
+     0.153,
+     0.085
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 680,
+    "longest": 2.082
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.347,
+     0.17,
+     0.082
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 680,
+    "longest": 2.082
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.347,
+     0.169,
+     0.083
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 680,
+    "longest": 2.082
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.347,
+     0.168,
+     0.084
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 680,
+    "longest": 2.082
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.347,
+     0.167,
+     0.085
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 680,
+    "longest": 2.082
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.347,
+     0.162,
+     0.085
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 174,
+    "longest": 2.082
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.347,
+     0.158,
+     0.085
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 174,
+    "longest": 2.082
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.347,
+     0.162,
+     0
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 174,
+    "longest": 2.082
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.347,
+     0.158,
+     0
+    ],
+    "part": "front_modern/bluestone",
+    "aspect": 174,
+    "longest": 2.082
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.998,
+     1.749,
+     0.11
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.998,
+     0.961,
+     0.109
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.999,
+     1.749,
+     0.108
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1,
+     0.961,
+     0.108
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.998,
+     0.961,
+     0
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.998,
+     1.749,
+     0.001
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.999,
+     0.961,
+     0.002
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1,
+     1.749,
+     0.002
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.94,
+     0.961,
+     0.002
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.941,
+     1.749,
+     0.002
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.942,
+     0.961,
+     0.001
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.942,
+     1.749,
+     0
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.942,
+     0.961,
+     0.11
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.942,
+     1.749,
+     0.109
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.941,
+     0.961,
+     0.108
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.94,
+     1.749,
+     0.108
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.961,
+     1.749,
+     0.11
+    ],
+    "part": "front_modern/alu",
+    "aspect": 44,
+    "longest": 2.365
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.979,
+     0.961,
+     0.11
+    ],
+    "part": "front_modern/alu",
+    "aspect": 44,
+    "longest": 2.365
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.979,
+     1.749,
+     0
+    ],
+    "part": "front_modern/alu",
+    "aspect": 44,
+    "longest": 2.365
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.961,
+     0.961,
+     0
+    ],
+    "part": "front_modern/alu",
+    "aspect": 44,
+    "longest": 2.365
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.038,
+     1.749,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.039,
+     0.951,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.04,
+     1.749,
+     0.011
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.04,
+     0.951,
+     0.01
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.038,
+     0.951,
+     0
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.039,
+     1.749,
+     0
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.04,
+     0.951,
+     0.001
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.04,
+     1.749,
+     0.002
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1,
+     0.951,
+     0.002
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1,
+     1.749,
+     0.001
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.001,
+     0.951,
+     0
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.002,
+     1.749,
+     0
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.002,
+     0.951,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.001,
+     1.749,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1,
+     0.951,
+     0.011
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1,
+     1.749,
+     0.01
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.04,
+     1.749,
+     0.007
+    ],
+    "part": "front_modern/alu",
+    "aspect": 300,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.04,
+     0.951,
+     0.005
+    ],
+    "part": "front_modern/alu",
+    "aspect": 300,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.014,
+     1.749,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 67,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.026,
+     0.951,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 67,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.026,
+     1.749,
+     0
+    ],
+    "part": "front_modern/alu",
+    "aspect": 67,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.014,
+     0.951,
+     0
+    ],
+    "part": "front_modern/alu",
+    "aspect": 67,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1,
+     1.749,
+     0.005
+    ],
+    "part": "front_modern/alu",
+    "aspect": 300,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1,
+     0.951,
+     0.007
+    ],
+    "part": "front_modern/alu",
+    "aspect": 300,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.038,
+     1.749,
+     0.087
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.039,
+     0.951,
+     0.087
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.04,
+     1.749,
+     0.086
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.04,
+     0.951,
+     0.085
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.038,
+     0.951,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.039,
+     1.749,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.04,
+     0.951,
+     0.076
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.04,
+     1.749,
+     0.077
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1,
+     0.951,
+     0.077
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1,
+     1.749,
+     0.076
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.001,
+     0.951,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.002,
+     1.749,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.002,
+     0.951,
+     0.087
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.001,
+     1.749,
+     0.087
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1,
+     0.951,
+     0.086
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1,
+     1.749,
+     0.085
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.04,
+     1.749,
+     0.082
+    ],
+    "part": "front_modern/alu",
+    "aspect": 300,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.04,
+     0.951,
+     0.08
+    ],
+    "part": "front_modern/alu",
+    "aspect": 300,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.014,
+     1.749,
+     0.087
+    ],
+    "part": "front_modern/alu",
+    "aspect": 67,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.026,
+     0.951,
+     0.087
+    ],
+    "part": "front_modern/alu",
+    "aspect": 67,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.026,
+     1.749,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 67,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.014,
+     0.951,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 67,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1,
+     1.749,
+     0.08
+    ],
+    "part": "front_modern/alu",
+    "aspect": 300,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1,
+     0.951,
+     0.082
+    ],
+    "part": "front_modern/alu",
+    "aspect": 300,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.006,
+     1.749,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.007,
+     0.951,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.008,
+     1.749,
+     0.074
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.008,
+     0.951,
+     0.073
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.006,
+     0.951,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.007,
+     1.749,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.008,
+     0.951,
+     0.013
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.008,
+     1.749,
+     0.014
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1,
+     0.951,
+     0.014
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1,
+     1.749,
+     0.013
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.001,
+     0.951,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.002,
+     1.749,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.002,
+     0.951,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.001,
+     1.749,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1,
+     0.951,
+     0.074
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1,
+     1.749,
+     0.073
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.008,
+     1.749,
+     0.053
+    ],
+    "part": "front_modern/alu",
+    "aspect": 41,
+    "longest": 2.397
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.008,
+     0.951,
+     0.034
+    ],
+    "part": "front_modern/alu",
+    "aspect": 41,
+    "longest": 2.397
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.003,
+     1.749,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 599,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.005,
+     0.951,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 599,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.005,
+     1.749,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 599,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.003,
+     0.951,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 599,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1,
+     1.749,
+     0.034
+    ],
+    "part": "front_modern/alu",
+    "aspect": 41,
+    "longest": 2.397
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1,
+     0.951,
+     0.053
+    ],
+    "part": "front_modern/alu",
+    "aspect": 41,
+    "longest": 2.397
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.942,
+     1.749,
+     0.11
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.942,
+     0.961,
+     0.109
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.941,
+     1.749,
+     0.108
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.94,
+     0.961,
+     0.108
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.942,
+     0.961,
+     0
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.942,
+     1.749,
+     0.001
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.941,
+     0.961,
+     0.002
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.94,
+     1.749,
+     0.002
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1,
+     0.961,
+     0.002
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.999,
+     1.749,
+     0.002
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.998,
+     0.961,
+     0.001
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.998,
+     1.749,
+     0
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.998,
+     0.961,
+     0.11
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.998,
+     1.749,
+     0.109
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.999,
+     0.961,
+     0.108
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1,
+     1.749,
+     0.108
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1030,
+    "longest": 2.364
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.979,
+     1.749,
+     0.11
+    ],
+    "part": "front_modern/alu",
+    "aspect": 44,
+    "longest": 2.365
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.961,
+     0.961,
+     0.11
+    ],
+    "part": "front_modern/alu",
+    "aspect": 44,
+    "longest": 2.365
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.961,
+     1.749,
+     0
+    ],
+    "part": "front_modern/alu",
+    "aspect": 44,
+    "longest": 2.365
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.979,
+     0.961,
+     0
+    ],
+    "part": "front_modern/alu",
+    "aspect": 44,
+    "longest": 2.365
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.002,
+     1.749,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.001,
+     0.951,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1,
+     1.749,
+     0.011
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1,
+     0.951,
+     0.01
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.002,
+     0.951,
+     0
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.001,
+     1.749,
+     0
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1,
+     0.951,
+     0.001
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1,
+     1.749,
+     0.002
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.04,
+     0.951,
+     0.002
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.04,
+     1.749,
+     0.001
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.039,
+     0.951,
+     0
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.038,
+     1.749,
+     0
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.038,
+     0.951,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.039,
+     1.749,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.04,
+     0.951,
+     0.011
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.04,
+     1.749,
+     0.01
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1,
+     1.749,
+     0.007
+    ],
+    "part": "front_modern/alu",
+    "aspect": 300,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1,
+     0.951,
+     0.005
+    ],
+    "part": "front_modern/alu",
+    "aspect": 300,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.026,
+     1.749,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 67,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.014,
+     0.951,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 67,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.014,
+     1.749,
+     0
+    ],
+    "part": "front_modern/alu",
+    "aspect": 67,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.026,
+     0.951,
+     0
+    ],
+    "part": "front_modern/alu",
+    "aspect": 67,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.04,
+     1.749,
+     0.005
+    ],
+    "part": "front_modern/alu",
+    "aspect": 300,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.04,
+     0.951,
+     0.007
+    ],
+    "part": "front_modern/alu",
+    "aspect": 300,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.002,
+     1.749,
+     0.087
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.001,
+     0.951,
+     0.087
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1,
+     1.749,
+     0.086
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1,
+     0.951,
+     0.085
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.002,
+     0.951,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.001,
+     1.749,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1,
+     0.951,
+     0.076
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1,
+     1.749,
+     0.077
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.04,
+     0.951,
+     0.077
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.04,
+     1.749,
+     0.076
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.039,
+     0.951,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.038,
+     1.749,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.038,
+     0.951,
+     0.087
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.039,
+     1.749,
+     0.087
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.04,
+     0.951,
+     0.086
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.04,
+     1.749,
+     0.085
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1,
+     1.749,
+     0.082
+    ],
+    "part": "front_modern/alu",
+    "aspect": 300,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1,
+     0.951,
+     0.08
+    ],
+    "part": "front_modern/alu",
+    "aspect": 300,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.026,
+     1.749,
+     0.087
+    ],
+    "part": "front_modern/alu",
+    "aspect": 67,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.014,
+     0.951,
+     0.087
+    ],
+    "part": "front_modern/alu",
+    "aspect": 67,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.014,
+     1.749,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 67,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.026,
+     0.951,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 67,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.04,
+     1.749,
+     0.08
+    ],
+    "part": "front_modern/alu",
+    "aspect": 300,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.04,
+     0.951,
+     0.082
+    ],
+    "part": "front_modern/alu",
+    "aspect": 300,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.002,
+     1.749,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.001,
+     0.951,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1,
+     1.749,
+     0.074
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1,
+     0.951,
+     0.073
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.002,
+     0.951,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.001,
+     1.749,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1,
+     0.951,
+     0.013
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1,
+     1.749,
+     0.014
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.008,
+     0.951,
+     0.014
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.008,
+     1.749,
+     0.013
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.007,
+     0.951,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.006,
+     1.749,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.006,
+     0.951,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.007,
+     1.749,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.008,
+     0.951,
+     0.074
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.008,
+     1.749,
+     0.073
+    ],
+    "part": "front_modern/alu",
+    "aspect": 1565,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1,
+     1.749,
+     0.053
+    ],
+    "part": "front_modern/alu",
+    "aspect": 41,
+    "longest": 2.397
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1,
+     0.951,
+     0.034
+    ],
+    "part": "front_modern/alu",
+    "aspect": 41,
+    "longest": 2.397
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.005,
+     1.749,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 599,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.003,
+     0.951,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "aspect": 599,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.003,
+     1.749,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 599,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.005,
+     0.951,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "aspect": 599,
+    "longest": 2.396
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.008,
+     1.749,
+     0.034
+    ],
+    "part": "front_modern/alu",
+    "aspect": 41,
+    "longest": 2.397
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.008,
+     0.951,
+     0.053
+    ],
+    "part": "front_modern/alu",
+    "aspect": 41,
+    "longest": 2.397
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.312,
+     2.48,
+     0.002
+    ],
+    "part": "front_modern/alu",
+    "aspect": 816,
+    "longest": 1.874
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.312,
+     2.481,
+     0.002
+    ],
+    "part": "front_modern/alu",
+    "aspect": 816,
+    "longest": 1.874
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.312,
+     2.482,
+     0.001
+    ],
+    "part": "front_modern/alu",
+    "aspect": 816,
+    "longest": 1.874
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.312,
+     2.482,
+     0
+    ],
+    "part": "front_modern/alu",
+    "aspect": 816,
+    "longest": 1.874
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.312,
+     2.54,
+     0.002
+    ],
+    "part": "front_modern/alu",
+    "aspect": 816,
+    "longest": 1.874
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.312,
+     2.539,
+     0.002
+    ],
+    "part": "front_modern/alu",
+    "aspect": 816,
+    "longest": 1.874
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.312,
+     2.538,
+     0.001
+    ],
+    "part": "front_modern/alu",
+    "aspect": 816,
+    "longest": 1.874
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.312,
+     2.538,
+     0
+    ],
+    "part": "front_modern/alu",
+    "aspect": 816,
+    "longest": 1.874
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.312,
+     2.48,
+     0.108
+    ],
+    "part": "front_modern/alu",
+    "aspect": 816,
+    "longest": 1.874
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.312,
+     2.481,
+     0.108
+    ],
+    "part": "front_modern/alu",
+    "aspect": 816,
+    "longest": 1.874
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.312,
+     2.482,
+     0.109
+    ],
+    "part": "front_modern/alu",
+    "aspect": 816,
+    "longest": 1.874
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.312,
+     2.482,
+     0.11
+    ],
+    "part": "front_modern/alu",
+    "aspect": 816,
+    "longest": 1.874
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.312,
+     2.54,
+     0.108
+    ],
+    "part": "front_modern/alu",
+    "aspect": 816,
+    "longest": 1.874
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.312,
+     2.539,
+     0.108
+    ],
+    "part": "front_modern/alu",
+    "aspect": 816,
+    "longest": 1.874
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.312,
+     2.538,
+     0.109
+    ],
+    "part": "front_modern/alu",
+    "aspect": 816,
+    "longest": 1.874
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.312,
+     2.538,
+     0.11
+    ],
+    "part": "front_modern/alu",
+    "aspect": 816,
+    "longest": 1.874
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.044,
+     2.551,
+     0.177
+    ],
+    "part": "front_modern/alu",
+    "aspect": 42,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.046,
+     2.552,
+     0.093
+    ],
+    "part": "front_modern/alu",
+    "aspect": 42,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.048,
+     2.554,
+     0.177
+    ],
+    "part": "front_modern/alu",
+    "aspect": 42,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.049,
+     2.556,
+     0.093
+    ],
+    "part": "front_modern/alu",
+    "aspect": 42,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.044,
+     2.981,
+     0.269
+    ],
+    "part": "front_modern/alu",
+    "aspect": 104,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.046,
+     2.769,
+     0.268
+    ],
+    "part": "front_modern/alu",
+    "aspect": 104,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.048,
+     2.981,
+     0.266
+    ],
+    "part": "front_modern/alu",
+    "aspect": 104,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.049,
+     2.769,
+     0.264
+    ],
+    "part": "front_modern/alu",
+    "aspect": 104,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.044,
+     3.199,
+     0.093
+    ],
+    "part": "front_modern/alu",
+    "aspect": 42,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.046,
+     3.198,
+     0.177
+    ],
+    "part": "front_modern/alu",
+    "aspect": 42,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.048,
+     3.196,
+     0.093
+    ],
+    "part": "front_modern/alu",
+    "aspect": 42,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.049,
+     3.194,
+     0.177
+    ],
+    "part": "front_modern/alu",
+    "aspect": 42,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.044,
+     2.769,
+     0.001
+    ],
+    "part": "front_modern/alu",
+    "aspect": 104,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.046,
+     2.981,
+     0.002
+    ],
+    "part": "front_modern/alu",
+    "aspect": 104,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.048,
+     2.769,
+     0.004
+    ],
+    "part": "front_modern/alu",
+    "aspect": 104,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.049,
+     2.981,
+     0.006
+    ],
+    "part": "front_modern/alu",
+    "aspect": 104,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.347,
+     2.551,
+     0.006
+    ],
+    "part": "front_modern/alu",
+    "aspect": 340,
+    "longest": 2.084
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.347,
+     2.552,
+     0.004
+    ],
+    "part": "front_modern/alu",
+    "aspect": 340,
+    "longest": 2.084
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.347,
+     2.554,
+     0.002
+    ],
+    "part": "front_modern/alu",
+    "aspect": 340,
+    "longest": 2.084
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.347,
+     2.556,
+     0.001
+    ],
+    "part": "front_modern/alu",
+    "aspect": 340,
+    "longest": 2.084
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.347,
+     3.199,
+     0.006
+    ],
+    "part": "front_modern/alu",
+    "aspect": 340,
+    "longest": 2.084
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.347,
+     3.198,
+     0.004
+    ],
+    "part": "front_modern/alu",
+    "aspect": 340,
+    "longest": 2.084
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.347,
+     3.196,
+     0.002
+    ],
+    "part": "front_modern/alu",
+    "aspect": 340,
+    "longest": 2.084
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.347,
+     3.194,
+     0.001
+    ],
+    "part": "front_modern/alu",
+    "aspect": 340,
+    "longest": 2.084
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.049,
+     2.769,
+     0.006
+    ],
+    "part": "front_modern/alu",
+    "aspect": 104,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.048,
+     2.981,
+     0.004
+    ],
+    "part": "front_modern/alu",
+    "aspect": 104,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.046,
+     2.769,
+     0.002
+    ],
+    "part": "front_modern/alu",
+    "aspect": 104,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.044,
+     2.981,
+     0.001
+    ],
+    "part": "front_modern/alu",
+    "aspect": 104,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.044,
+     2.551,
+     0.093
+    ],
+    "part": "front_modern/alu",
+    "aspect": 42,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.046,
+     2.552,
+     0.177
+    ],
+    "part": "front_modern/alu",
+    "aspect": 42,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.048,
+     2.554,
+     0.093
+    ],
+    "part": "front_modern/alu",
+    "aspect": 42,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.049,
+     2.556,
+     0.177
+    ],
+    "part": "front_modern/alu",
+    "aspect": 42,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.044,
+     3.199,
+     0.177
+    ],
+    "part": "front_modern/alu",
+    "aspect": 42,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.046,
+     3.198,
+     0.093
+    ],
+    "part": "front_modern/alu",
+    "aspect": 42,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.048,
+     3.196,
+     0.177
+    ],
+    "part": "front_modern/alu",
+    "aspect": 42,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.049,
+     3.194,
+     0.093
+    ],
+    "part": "front_modern/alu",
+    "aspect": 42,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.044,
+     2.769,
+     0.269
+    ],
+    "part": "front_modern/alu",
+    "aspect": 104,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.046,
+     2.981,
+     0.268
+    ],
+    "part": "front_modern/alu",
+    "aspect": 104,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.048,
+     2.769,
+     0.266
+    ],
+    "part": "front_modern/alu",
+    "aspect": 104,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.049,
+     2.981,
+     0.264
+    ],
+    "part": "front_modern/alu",
+    "aspect": 104,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.347,
+     2.551,
+     0.264
+    ],
+    "part": "front_modern/alu",
+    "aspect": 340,
+    "longest": 2.084
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.347,
+     2.552,
+     0.266
+    ],
+    "part": "front_modern/alu",
+    "aspect": 340,
+    "longest": 2.084
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.347,
+     2.554,
+     0.268
+    ],
+    "part": "front_modern/alu",
+    "aspect": 340,
+    "longest": 2.084
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.347,
+     2.556,
+     0.269
+    ],
+    "part": "front_modern/alu",
+    "aspect": 340,
+    "longest": 2.084
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.347,
+     3.199,
+     0.264
+    ],
+    "part": "front_modern/alu",
+    "aspect": 340,
+    "longest": 2.084
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.347,
+     3.198,
+     0.266
+    ],
+    "part": "front_modern/alu",
+    "aspect": 340,
+    "longest": 2.084
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.347,
+     3.196,
+     0.268
+    ],
+    "part": "front_modern/alu",
+    "aspect": 340,
+    "longest": 2.084
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.347,
+     3.194,
+     0.269
+    ],
+    "part": "front_modern/alu",
+    "aspect": 340,
+    "longest": 2.084
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.35,
+     2.593,
+     0.268
+    ],
+    "part": "front_modern/alu",
+    "aspect": 420,
+    "longest": 2.1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.35,
+     2.592,
+     0.268
+    ],
+    "part": "front_modern/alu",
+    "aspect": 420,
+    "longest": 2.1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.35,
+     2.593,
+     0.276
+    ],
+    "part": "front_modern/alu",
+    "aspect": 420,
+    "longest": 2.1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.35,
+     2.592,
+     0.276
+    ],
+    "part": "front_modern/alu",
+    "aspect": 420,
+    "longest": 2.1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.35,
+     2.59,
+     0.271
+    ],
+    "part": "front_modern/alu",
+    "aspect": 263,
+    "longest": 2.1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.35,
+     2.59,
+     0.273
+    ],
+    "part": "front_modern/alu",
+    "aspect": 263,
+    "longest": 2.1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.35,
+     2.595,
+     0.271
+    ],
+    "part": "front_modern/alu",
+    "aspect": 263,
+    "longest": 2.1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.35,
+     2.595,
+     0.273
+    ],
+    "part": "front_modern/alu",
+    "aspect": 263,
+    "longest": 2.1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.313,
+     2.477,
+     0.06
+    ],
+    "part": "front_modern/rubber",
+    "aspect": 188,
+    "longest": 1.88
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.313,
+     2.473,
+     0.06
+    ],
+    "part": "front_modern/rubber",
+    "aspect": 188,
+    "longest": 1.88
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.313,
+     2.477,
+     0.09
+    ],
+    "part": "front_modern/rubber",
+    "aspect": 188,
+    "longest": 1.88
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.313,
+     2.473,
+     0.09
+    ],
+    "part": "front_modern/rubber",
+    "aspect": 188,
+    "longest": 1.88
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.313,
+     2.47,
+     0.07
+    ],
+    "part": "front_modern/rubber",
+    "aspect": 63,
+    "longest": 1.88
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.313,
+     2.47,
+     0.08
+    ],
+    "part": "front_modern/rubber",
+    "aspect": 63,
+    "longest": 1.88
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.313,
+     2.48,
+     0.07
+    ],
+    "part": "front_modern/rubber",
+    "aspect": 63,
+    "longest": 1.88
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.313,
+     2.48,
+     0.08
+    ],
+    "part": "front_modern/rubber",
+    "aspect": 63,
+    "longest": 1.88
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.343,
+     2.55,
+     0.12
+    ],
+    "part": "front_modern/rubber",
+    "aspect": 343,
+    "longest": 2.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.343,
+     2.548,
+     0.12
+    ],
+    "part": "front_modern/rubber",
+    "aspect": 343,
+    "longest": 2.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.343,
+     2.55,
+     0.24
+    ],
+    "part": "front_modern/rubber",
+    "aspect": 343,
+    "longest": 2.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.343,
+     2.548,
+     0.24
+    ],
+    "part": "front_modern/rubber",
+    "aspect": 343,
+    "longest": 2.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.353,
+     3.202,
+     0.303
+    ],
+    "part": "front_modern/steel",
+    "aspect": 103,
+    "longest": 2.12
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.353,
+     3.208,
+     0.302
+    ],
+    "part": "front_modern/steel",
+    "aspect": 103,
+    "longest": 2.12
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.353,
+     3.192,
+     0.302
+    ],
+    "part": "front_modern/steel",
+    "aspect": 300,
+    "longest": 2.12
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.353,
+     3.193,
+     0.303
+    ],
+    "part": "front_modern/steel",
+    "aspect": 300,
+    "longest": 2.12
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.353,
+     3.197,
+     0.293
+    ],
+    "part": "front_modern/steel",
+    "aspect": 150,
+    "longest": 2.12
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.353,
+     3.193,
+     0.297
+    ],
+    "part": "front_modern/steel",
+    "aspect": 150,
+    "longest": 2.12
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.353,
+     3.223,
+     0
+    ],
+    "part": "front_modern/steel",
+    "aspect": 61,
+    "longest": 2.12
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.353,
+     3.212,
+     0
+    ],
+    "part": "front_modern/steel",
+    "aspect": 61,
+    "longest": 2.12
+   }
+  ],
+  "bentflat": [
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.345,
+     -0.002,
+     0.075
+    ],
+    "part": "front_modern/bluestone",
+    "deg": 14.7,
+    "area": 0.4529,
+    "region_m2": 0.91
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.345,
+     -0.148,
+     0.075
+    ],
+    "part": "front_modern/bluestone",
+    "deg": 14.7,
+    "area": 0.4529,
+    "region_m2": 0.91
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.345,
+     -0.002,
+     0
+    ],
+    "part": "front_modern/bluestone",
+    "deg": 14.7,
+    "area": 0.4529,
+    "region_m2": 0.91
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.345,
+     -0.148,
+     0
+    ],
+    "part": "front_modern/bluestone",
+    "deg": 14.7,
+    "area": 0.4529,
+    "region_m2": 0.91
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.347,
+     2.55,
+     0.093
+    ],
+    "part": "front_modern/alu",
+    "deg": 14.7,
+    "area": 0.2647,
+    "region_m2": 0.53
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.347,
+     2.55,
+     0.177
+    ],
+    "part": "front_modern/alu",
+    "deg": 14.7,
+    "area": 0.2647,
+    "region_m2": 0.53
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.347,
+     2.981,
+     0.27
+    ],
+    "part": "front_modern/alu",
+    "deg": 14.7,
+    "area": 0.6606,
+    "region_m2": 1.32
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.347,
+     2.769,
+     0.27
+    ],
+    "part": "front_modern/alu",
+    "deg": 14.7,
+    "area": 0.6606,
+    "region_m2": 1.32
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.347,
+     3.2,
+     0.093
+    ],
+    "part": "front_modern/alu",
+    "deg": 14.7,
+    "area": 0.2647,
+    "region_m2": 0.53
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.347,
+     3.2,
+     0.177
+    ],
+    "part": "front_modern/alu",
+    "deg": 14.7,
+    "area": 0.2647,
+    "region_m2": 0.53
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.347,
+     2.981,
+     0
+    ],
+    "part": "front_modern/alu",
+    "deg": 14.7,
+    "area": 0.6606,
+    "region_m2": 1.32
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.347,
+     2.769,
+     0
+    ],
+    "part": "front_modern/alu",
+    "deg": 14.7,
+    "area": 0.6606,
+    "region_m2": 1.32
+   }
+  ],
+  "nonmanifold": [
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.94,
+     2.537,
+     0.055
+    ],
+    "part": "front_modern/alu",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -1.002,
+     1.35,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -1.002,
+     1.35,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.94,
+     2.537,
+     0.055
+    ],
+    "part": "front_modern/alu",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     1.002,
+     1.35,
+     0.012
+    ],
+    "part": "front_modern/alu",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     1.002,
+     1.35,
+     0.075
+    ],
+    "part": "front_modern/alu",
+    "uses": 4
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.009,
+     0.15,
+     0.017
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/bluestone"
+    ],
+    "area": 0.03411
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.782,
+     0.15,
+     0.03
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/bluestone"
+    ],
+    "area": 0.03103
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1.022,
+     0.15,
+     0.008
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "area": 0.00009
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1.003,
+     0.15,
+     0.041
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "area": 0.00012
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1.005,
+     0.15,
+     0.05
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "area": 0.0001
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.678,
+     0.15,
+     0.046
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/bluestone"
+    ],
+    "area": 0.03955
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.131,
+     0.15,
+     0.059
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/bluestone"
+    ],
+    "area": 0.02559
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.019,
+     0.15,
+     0.008
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "area": 0.00009
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.005,
+     0.15,
+     0.042
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "area": 0.00012
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.003,
+     0.15,
+     0.051
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "area": 0.0001
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.96,
+     0.17,
+     0.041
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "area": 0.00253
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.987,
+     0.17,
+     0.041
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "area": 0.00149
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.971,
+     0.17,
+     0.005
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "area": 0.00014
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.95,
+     0.17,
+     0.079
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "area": 0.00005
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.977,
+     0.17,
+     0.08
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "area": 0.00009
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.981,
+     0.17,
+     0.044
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "area": 0.00244
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.954,
+     0.17,
+     0.044
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "area": 0.00157
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1,
+     2.488,
+     0.007
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00051
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1,
+     2.46,
+     0.01
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1,
+     1.684,
+     0.08
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00873
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1,
+     1.638,
+     0.084
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00545
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1,
+     2.22,
+     0.037
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.03405
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1,
+     1.885,
+     0.067
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.02026
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1,
+     1.793,
+     0.005
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00675
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1,
+     1.113,
+     0.007
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00924
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1,
+     0.502,
+     0.078
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00077
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1,
+     0.456,
+     0.082
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00396
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1,
+     1.038,
+     0.023
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.03597
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1,
+     0.703,
+     0.052
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.04919
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.94,
+     2.524,
+     0.08
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00275
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.94,
+     2.497,
+     0.054
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00281
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.94,
+     2.477,
+     0.08
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/rubber"
+    ],
+    "area": 0.00015
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.94,
+     2.473,
+     0.07
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/rubber"
+    ],
+    "area": 0.00015
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.94,
+     2.51,
+     0.106
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1.005,
+     1.476,
+     0.012
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00474
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1.003,
+     0.811,
+     0.012
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00431
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1.006,
+     0.321,
+     0.012
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00005
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1.004,
+     0.212,
+     0.012
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00048
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1.018,
+     2.55,
+     0.009
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1.026,
+     2.55,
+     0.08
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00014
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1.014,
+     2.55,
+     0.082
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00014
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1.004,
+     2.488,
+     0.075
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00048
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1.006,
+     2.379,
+     0.075
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00005
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1.003,
+     1.889,
+     0.075
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00431
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1.004,
+     1.009,
+     0.075
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00474
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1.005,
+     2.55,
+     0.034
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00012
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1.003,
+     2.55,
+     0.053
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00012
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.94,
+     2.524,
+     0.03
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00275
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.94,
+     2.497,
+     0.056
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00281
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.94,
+     2.477,
+     0.07
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/rubber"
+    ],
+    "area": 0.00015
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.94,
+     2.473,
+     0.08
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/rubber"
+    ],
+    "area": 0.00015
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.94,
+     2.51,
+     0.004
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1,
+     1.595,
+     0.007
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00931
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1,
+     0.914,
+     0.005
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00668
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1,
+     2.254,
+     0.082
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00398
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1,
+     2.208,
+     0.078
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00074
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1,
+     2.006,
+     0.052
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.04952
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1,
+     1.671,
+     0.022
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.03564
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1,
+     0.249,
+     0.01
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00005
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1,
+     0.222,
+     0.007
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00051
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1,
+     1.072,
+     0.084
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00551
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1,
+     1.026,
+     0.08
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00867
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1,
+     0.824,
+     0.067
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.02051
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1,
+     0.489,
+     0.037
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.0338
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.004,
+     2.488,
+     0.012
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00048
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.006,
+     2.379,
+     0.012
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00005
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.003,
+     1.889,
+     0.012
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00431
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.004,
+     1.009,
+     0.012
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00474
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.022,
+     2.55,
+     0.009
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.014,
+     2.55,
+     0.08
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00014
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.026,
+     2.55,
+     0.082
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00014
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.005,
+     1.476,
+     0.075
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00474
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.003,
+     0.811,
+     0.075
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00431
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.006,
+     0.321,
+     0.075
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00005
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.004,
+     0.212,
+     0.075
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00048
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.003,
+     2.55,
+     0.034
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00012
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.005,
+     2.55,
+     0.053
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "area": 0.00012
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.561,
+     2.48,
+     0.063
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/rubber"
+    ],
+    "area": 0.00448
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.696,
+     2.48,
+     0.078
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/rubber"
+    ],
+    "area": 0.01282
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.376,
+     2.48,
+     0.07
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/rubber"
+    ],
+    "area": 0.02363
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.241,
+     2.48,
+     0.085
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/rubber"
+    ],
+    "area": 0.01529
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.103,
+     3.2,
+     0.083
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/steel"
+    ],
+    "area": 0.26375
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.905,
+     3.2,
+     0.023
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/steel"
+    ],
+    "area": 0.00092
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.409,
+     3.2,
+     0.192
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/steel"
+    ],
+    "area": 0.01948
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.475,
+     3.2,
+     0.146
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/steel"
+    ],
+    "area": 0.24518
+   }
+  ],
+  "coplanar": [
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     1.029,
+     0.15,
+     0.006
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 0.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     -1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     1.013,
+     0.15,
+     0.007
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     -1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     1.023,
+     0.15,
+     0.079
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 1,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     -1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     1.005,
+     0.15,
+     0.034
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 1.2,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     -1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     1.003,
+     0.15,
+     0.053
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 1.2,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     -1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -1.01,
+     0.15,
+     0.007
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 0.6,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     -1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -1.026,
+     0.15,
+     0.007
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 1.3,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     -1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -1.015,
+     0.15,
+     0.079
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 1.1,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     -1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -1.003,
+     0.15,
+     0.034
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 1.2,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     -1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -1.005,
+     0.15,
+     0.053
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 1.2,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     -1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -1.02,
+     0.16,
+     0
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 4.3,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     1.02,
+     0.16,
+     0
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 4.3,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   }
+  ],
+  "near": [
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     1.02,
+     0.16,
+     0.085
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "separation_mm": 2,
+    "overlap_cm2": 4.3,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     1
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -1.02,
+     0.16,
+     0.085
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "separation_mm": 2,
+    "overlap_cm2": 4.3,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     1
+    ]
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.039,
+     0.151,
+     0.002
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "length_m": 0.26,
+    "pieces": 60,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.002,
+     0.15,
+     0.004
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "length_m": 0.26,
+    "pieces": 59,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.002,
+     0.15,
+     0.081
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "length_m": 0.2,
+    "pieces": 48,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.002,
+     0.15,
+     0.081
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "length_m": 0.2,
+    "pieces": 48,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.002,
+     0.15,
+     0.043
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "length_m": 0.26,
+    "pieces": 28,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.006,
+     0.15,
+     0.043
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "length_m": 0.26,
+    "pieces": 28,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.042,
+     2.59,
+     0.27
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "length_m": 4.2,
+    "pieces": 16,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.11,
+     2.55,
+     0.12
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/rubber"
+    ],
+    "length_m": 4.36,
+    "pieces": 10,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.97,
+     0.17,
+     0.004
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "length_m": 0.26,
+    "pieces": 8,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.97,
+     0.17,
+     0.004
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "length_m": 0.26,
+    "pieces": 8,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1,
+     0.173,
+     0.077
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "length_m": 4.74,
+    "pieces": 8,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1,
+     0.173,
+     0.014
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "length_m": 4.85,
+    "pieces": 8,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.038,
+     2.55,
+     0.008
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "length_m": 0.08,
+    "pieces": 8,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1,
+     0.173,
+     0.085
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "length_m": 4.74,
+    "pieces": 8,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1,
+     0.173,
+     0.073
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "length_m": 4.85,
+    "pieces": 8,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.937,
+     2.48,
+     0.075
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/rubber"
+    ],
+    "length_m": 3.81,
+    "pieces": 8,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.027,
+     0.15,
+     0.006
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "length_m": 0.07,
+    "pieces": 7,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.002,
+     0.15,
+     0.069
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "length_m": 0.12,
+    "pieces": 7,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1,
+     0.173,
+     0.006
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "length_m": 4.74,
+    "pieces": 7,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1,
+     2.393,
+     0.003
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "length_m": 4.74,
+    "pieces": 7,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.034,
+     0.15,
+     0.038
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/bluestone"
+    ],
+    "length_m": 4.26,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.038,
+     2.55,
+     0.081
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "length_m": 0.09,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.006,
+     2.55,
+     0.043
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "length_m": 0.13,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.002,
+     2.55,
+     0.009
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "length_m": 0.08,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.002,
+     2.55,
+     0.081
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "length_m": 0.09,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.002,
+     2.55,
+     0.043
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "length_m": 0.13,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.042,
+     3.2,
+     0.135
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/steel"
+    ],
+    "length_m": 4.68,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.034,
+     0.15,
+     0.008
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "length_m": 0.07,
+    "pieces": 5,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.006,
+     0.15,
+     0.069
+    ],
+    "parts": [
+     "front_modern/bluestone",
+     "front_modern/alu"
+    ],
+    "length_m": 0.12,
+    "pieces": 5,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.94,
+     2.475,
+     0.06
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/rubber"
+    ],
+    "length_m": 0.08,
+    "pieces": 4,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.94,
+     2.475,
+     0.06
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/rubber"
+    ],
+    "length_m": 0.08,
+    "pieces": 4,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.94,
+     2.483,
+     0.054
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "length_m": 0.1,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.006,
+     1.483,
+     0.012
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "length_m": 2.4,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.006,
+     2.415,
+     0.075
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "length_m": 2.4,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.94,
+     2.483,
+     0.056
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "length_m": 0.1,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.006,
+     2.415,
+     0.012
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "length_m": 2.4,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.006,
+     1.483,
+     0.075
+    ],
+    "parts": [
+     "front_modern/alu",
+     "front_modern/alu"
+    ],
+    "length_m": 2.4,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   }
+  ]
+ },
+ "file": "shopkit.glb"
+}

@@ -24,6 +24,8 @@ export const propFades = new FadeSlots();
 import { SLOTS, KITS } from "./kits.js";
 import { simplifyKit } from "./kitLod.js";
 import { shopInterior } from "../../vendor/slop-street/shopInterior.js";
+import { loadShopKit, ShopPool, stretchCheck } from "../shops/shopKit.js";
+import { loadInteriors, shopWindowMaterial } from "../shops/shopWindow.js";
 
 export const streetUniforms = {
   night: uniform(0),            // 0 day .. 1 night (signs, lightboxes, shop windows, screens)
@@ -73,6 +75,11 @@ export class TextAtlas {
 
 /** 1 near, 0 past the range c.w (from 75 % of it), by the VIEW camera's distance to the instance centre c.xyz */
 const shrinkAt = (c) => smoothstep(c.w, c.w.mul(0.75), length(c.xyz.sub(lodEye)));
+/** the vertex shrunk toward the instance centre c.xyz. three r187 applies the instance matrix BEFORE positionNode
+ *  (positionLocal there is the INSTANCED position, the tile meshes sit at the origin: world space), so the shrink is
+ *  about the centre, not positionLocal.mul(s) (that slid a far box toward the world origin; found 2026-11-14 with the
+ *  shops' stretch, docs/assets/SHOPS.md) */
+export const shrinkToward = (c) => c.xyz.add(positionLocal.sub(c.xyz).mul(shrinkAt(c)));
 
 // ------------------------------------------------------------------------------------------------ the textured box
 /** unit box centred at 0, uv per face; attribute face: 1 = front (+z), 2 = back (-z, uv mirrored so text reads), 0 = sides */
@@ -106,7 +113,7 @@ function boxMaterial(atlas) {
   const iSize = attribute("iSize", "vec4"), iMisc = attribute("iMisc", "vec4"), iCen = attribute("iCen", "vec4");
   // distance LOD without a pop: past 75 % of its range (iCen.w, ~350 x its middle size) a box shrinks to its centre,
   // sub-pixel by then (no discard: early-z stays on; nothing is drawn of it beyond the range)
-  m.positionNode = positionLocal.mul(shrinkAt(iCen));
+  m.positionNode = shrinkToward(iCen);
   const face = attribute("face", "float"), fu = uv();
   const front = step(0.5, face).mul(step(face, 1.5)), back = step(1.5, face);
   const textFace = max(front, back.mul(step(0.5, iMisc.x))).mul(step(0, iRect.x));
@@ -185,7 +192,7 @@ function windowMaterial() {
   m.specularIntensityNode = float(1);
   m.metalnessNode = float(0);
   m.emissiveNode = r.color.mul(mix(float(0.5), float(0.6), U.night)).mul(r.glow.mul(0.3).add(0.75)).mul(U.glow);
-  m.positionNode = positionLocal.mul(shrinkAt(attribute("iWinC", "vec4")));
+  m.positionNode = shrinkToward(attribute("iWinC", "vec4"));
   m.name = "streetlife-window";
   m.userData.shared = true;
   return m;
@@ -193,14 +200,14 @@ function windowMaterial() {
 
 function glassMaterial() {
   const m = new THREE.MeshStandardNodeMaterial({ transparent: true, depthWrite: false, color: 0xcfd8dc, roughness: 0.05, metalness: 0, opacity: 0.16 });
-  m.positionNode = positionLocal.mul(shrinkAt(attribute("iCen", "vec4")));
+  m.positionNode = shrinkToward(attribute("iCen", "vec4"));
   m.name = "streetlife-glass";
   m.userData.shared = true;
   return m;
 }
 
 // ------------------------------------------------------------------------------------------------ the layer
-const BOX_IB = 28, WIN_IB = 8;                         // = streetlifeWorker.js BOX_IB / WIN_IB
+const BOX_IB = 28, WIN_IB = 12;                         // = streetlifeWorker.js BOX_IB / WIN_IB
 const BOX_ATTRS = ["iRect", "iBox", "iBoard", "iInk", "iSize", "iMisc", "iCen"];
 /** past this (m, the camera to the nearest point of a tile mesh's box) every instance in it has shrunk away: not drawn */
 const MESH_RANGE = { boxes: 600, windows: 600, glass: 250 };
@@ -246,8 +253,9 @@ export class StreetLife {
   }
   /** opts: base (data/streetlife/), the atlas (pageW x pageH x atlasPages), propShadows (the kits' own shadow flags;
    *  the signs, plates, numbers, frames and windows never cast one) */
-  constructor(scene, { base = new URL("../../data/streetlife/", import.meta.url), pageW = 2048, pageH = 1024, atlasPages = 16, propShadows = true, stopsBase = null, noBubbles = false, noFuel = false } = {}) {
+  constructor(scene, { base = new URL("../../data/streetlife/", import.meta.url), pageW = 2048, pageH = 1024, atlasPages = 16, propShadows = true, stopsBase = null, noBubbles = false, noFuel = false, shops = true, renderer = null } = {}) {
     this.scene = scene; this.base = base; this.propShadows = propShadows;
+    this.shops = shops; this.renderer = renderer;      // the shopfront kit + interiors (viewer/shops/); false = the old flat fronts (?shops=old)
     this.noFuel = noFuel;                // the petrol station kit on (viewer/fuel/): no box canopy / pumps / pylon here
     this.noBubbles = noBubbles;          // furniture kit 2 on (viewer/furniture2/): its glass banks replace the bubbles
     this.stopsBase = stopsBase;          // data/stops/ when the STIB stops kit is on (viewer/stops/): the stops' text only
@@ -256,7 +264,7 @@ export class StreetLife {
     this.atlas = new TextAtlas(pageW, pageH, atlasPages);
     this.boxGeo = boxGeometry();
     this.boxMat = boxMaterial(this.atlas);
-    this.winMat = windowMaterial();
+    this.winMat = windowMaterial();               // (replaced by the interior-mapped glass in _kits when the shops are on)
     this.glassMat = glassMaterial();
     this.planeGeo = new THREE.PlaneGeometry(1, 1);
     this.tiles = new Map();
@@ -268,7 +276,7 @@ export class StreetLife {
     this.streamer = new Streamer({ name: "streetlife", pools: [], fades: propFades, budget: 0.15 });
   }
   /** every mesh of the layer: the tiles' (boxes, windows, glass) and the prop pools' */
-  get meshes() { return [...this.tileMeshes, ...this.pools.flatMap((p) => p.meshes)]; }
+  get meshes() { return [...this.tileMeshes, ...this.pools.flatMap((p) => p.meshes), ...(this.shopPools || []).flatMap((p) => p.meshes)]; }
   async _kits() {
     const t0 = performance.now();
     this.kit = {};
@@ -287,14 +295,27 @@ export class StreetLife {
       this.kit[kind] = { lods: [geo(a0), geo(a1)], tris: [a0.index.length / 3, a1.index.length / 3], lod: k.lod, shadow: k.shadow };
       this.pools.push(new PropPool(kind, this.kit[kind], this.group, this.propShadows, this.propMats));
     }
-    this.streamer.pools = this.pools.map((p) => p.stream);
+    // the shopfront kit: one pool per piece, riding the same streamer (the tile fades are its slots)
+    this.shopPools = [];
+    if (this.shops) {
+      const [kit, I] = await Promise.all([loadShopKit(propFades), loadInteriors(this.renderer)]);
+      this.shopKit = kit; this.interiors = I;
+      for (const piece of Object.values(kit.pieces)) this.shopPools.push(new ShopPool(piece, kit.mats, this.group));
+      this.winMat = shopWindowMaterial(I, { night: streetUniforms.night, glow: streetUniforms.glow, shrink: shrinkToward });
+      this.shopStretch = stretchCheck(kit);
+      const g = (sx, sy, sz) => { const b = new THREE.BoxGeometry(sx, sy, sz); b.translate(0, sy / 2, 0); b.userData.shared = true; return b; };
+      this.colliderGeo = { table: g(1.75, 0.9, 0.75), parasol: g(0.3, 2.4, 0.3), planter: g(1.06, 0.95, 0.48) };
+      this.colliderMat = new THREE.MeshBasicNodeMaterial(); this.colliderMat.userData.shared = true;
+    }
+    this.streamer.pools = [...this.pools, ...this.shopPools].map((p) => p.stream);
     this.kitMs = performance.now() - t0;
   }
   _work(tile) {
     return new Promise((resolve, reject) => {
       const id = ++this.reqId;
       this.req.set(id, { resolve, reject });
-      this.worker.postMessage({ id, tile, url: new URL(`${tile}.json`, this.base).href, pageW: this.atlas.W, pageH: this.atlas.H, stopsUrl: this.stopsBase ? new URL(`${tile}.json`, this.stopsBase).href : null, noBubbles: this.noBubbles, noFuel: this.noFuel });
+      this.worker.postMessage({ id, tile, url: new URL(`${tile}.json`, this.base).href, pageW: this.atlas.W, pageH: this.atlas.H, stopsUrl: this.stopsBase ? new URL(`${tile}.json`, this.stopsBase).href : null, noBubbles: this.noBubbles, noFuel: this.noFuel,
+        shops: this.shops, terracesUrl: new URL("../shops/terraces.json", this.base).href });
     });
   }
   /** build one tile's layer into `parent` (the city: the tile's own features group, so it fades and is disposed with
@@ -335,6 +356,7 @@ export class StreetLife {
       const ib = new THREE.InstancedInterleavedBuffer(r.winIB, WIN_IB);
       geo.setAttribute("iWin", new THREE.InterleavedBufferAttribute(ib, 4, 0));
       geo.setAttribute("iWinC", new THREE.InterleavedBufferAttribute(ib, 4, 4));
+      geo.setAttribute("iWinT", new THREE.InterleavedBufferAttribute(ib, 4, 8));
       const mesh = new THREE.InstancedMesh(geo, this.winMat, r.nw);
       mesh.instanceMatrix = new THREE.InstancedBufferAttribute(r.winMtx, 16);
       finish(mesh, "windows");
@@ -348,17 +370,29 @@ export class StreetLife {
       mesh.renderOrder = 2;
       finish(mesh, "glass");
     }
+    // ---- terrace colliders (never drawn): the car (viewer/drive featureColliders) and the walker (viewer/character/
+    // cityHook) read instanced meshes named furniture-terrace
+    if (this.shops) for (const [k, a] of Object.entries(r.colliders || {})) {
+      const n = a.length / 4, mesh = new THREE.InstancedMesh(this.colliderGeo[k], this.colliderMat, n), M = new THREE.Matrix4();
+      for (let i = 0; i < n; i++) { M.makeRotationY(a[i * 4 + 3]).setPosition(a[i * 4], a[i * 4 + 1], a[i * 4 + 2]); mesh.setMatrixAt(i, M); }
+      mesh.name = "furniture-terrace"; mesh.visible = false; mesh.userData.collider = k;
+      g.add(mesh);
+    }
     parent.add(g);
     this.tileMeshes.push(...meshes);
     const propCounts = Object.fromEntries(Object.entries(r.props).map(([k, a]) => [k, a.length / 8]));
+    const shopCounts = Object.fromEntries(Object.entries(r.shops || {}).map(([k, a]) => [k, a.length / 12]));
     const stats = {
       tile, worker: Object.fromEntries(Object.entries(r.times).map(([k, v]) => [k, +v.toFixed(1)])), mainMs: +(performance.now() - tm).toFixed(2), totalMs: +(performance.now() - t0).toFixed(1),
-      boxes: r.nb, windows: r.nw, glass: r.ng, props: propCounts, labels: r.labels, labelBytes: r.labelBytes, atlasPages: [], labelPages: r.nPages, atlasUsed: +this.atlas.used.toFixed(3), atlasFull: this.atlas.full, dropped: r.dropped,
+      boxes: r.nb, windows: r.nw, glass: r.ng, props: propCounts, shops: shopCounts, labels: r.labels, labelBytes: r.labelBytes, atlasPages: [], labelPages: r.nPages, atlasUsed: +this.atlas.used.toFixed(3), atlasFull: this.atlas.full, dropped: r.dropped,
       counts: r.counts, skipped: r.skipped, used: r.used, sources: r.sources, draws: meshes.length,
     };
     const rec = { name: tile, group: g, meshes, night: r.night, stats, pages: null, nPages: r.nPages, pagesData: r.pages, ib, text, box: meshes[0]?.boundingBox ?? null, props: r.props, fade: 1 };
     this.tiles.set(tile, rec);
-    this.streamer.addTile(tile, g, (slot) => Object.fromEntries(this.pools.filter((p) => r.props[p.kind]?.length).map((p) => [p.kind, p.source(r.props[p.kind], slot)])));
+    this.streamer.addTile(tile, g, (slot) => Object.fromEntries([
+      ...this.pools.filter((p) => r.props[p.kind]?.length).map((p) => [p.kind, p.source(r.props[p.kind], slot)]),
+      ...this.shopPools.filter((p) => r.shops?.[p.kind]?.length).map((p) => [p.stream.key, p.source(r.shops[p.kind], slot)]),
+    ]));
     // its text pages go into the atlas from update() (a slice of its own: ~1 ms for the copy), once it is near
     stats.mainMs = +(performance.now() - tm).toFixed(2);
     return stats;
@@ -411,6 +445,7 @@ export class StreetLife {
     this.streamer.update(camera);
     for (const t of this.tiles.values()) if (!t.pages && t.nPages && this._place(t, c)) break;   // one tile's text pages per frame
     for (const p of this.pools) for (const m of p.meshes) if (m.visible) visible++;
+    for (const p of this.shopPools) for (const m of p.meshes) if (m.visible) visible++;
     this.visibleMeshes = visible;
   }
   /** the night-lights hook: shop-window and sign light positions of every loaded tile (flat x, y, z arrays) */
