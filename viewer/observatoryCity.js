@@ -9,6 +9,7 @@
 import * as THREE from "three/webgpu";
 import { loadObservatory, OBS_LODS, OBS_SLOTS } from "./observatoryModel.js";
 import { withObjectFade, SMOOTH } from "./lodFade.js";
+import { liteShown } from "./liteShown.js";
 
 export async function addObservatory({ scene, updaters, hide, world, manifest, log, compiler }) {
   const t0 = performance.now();
@@ -36,7 +37,7 @@ export async function addObservatory({ scene, updaters, hide, world, manifest, l
     const ramp = (d, k) => { const s = OBS_LODS[k].until, w = OBS_LODS[k].band; return THREE.MathUtils.smoothstep(d, s - w, s + w); };
     let n = 0, home = false;
     updaters.push((camPos) => {
-      if (n++ % 30 === 0) home = homes.some((h) => world.tiles.some((t) => t.name === h) || !!scene.getObjectByName(`${h}-lite`));
+      if (n++ % 30 === 0) home = homes.some((h) => world.tiles.some((t) => t.name === h) || liteShown(scene, h));
       root.visible = home;
       if (!home) return;
       const d = m.distance(camPos);

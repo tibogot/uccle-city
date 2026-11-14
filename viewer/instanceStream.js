@@ -21,6 +21,19 @@ import { uniformArray } from "three/tsl";
 /** the distance (m) every pool holds beyond its LOD bands; the camera travel (m) that starts a new gather */
 export const MARGIN = 6, TRIGGER = 2;
 
+/** ONE budget a frame (ms) for all the streaming work of the city (these pools, the façade kit's re-bucket, the tree
+ *  fields' re-buckets): every participant asks left(key) each frame (a frame starts when a key comes round again) and
+ *  reports what it spent; past the budget the work waits for the next frame (unless the camera outran its margin) */
+export const frameBudget = {
+  ms: 0.45, seen: new Set(), spent: 0,
+  left(key) {
+    if (this.seen.has(key)) { this.seen.clear(); this.spent = 0; }
+    this.seen.add(key);
+    return this.ms - this.spent;
+  },
+  spend(ms) { this.spent += ms; },
+};
+
 // ------------------------------------------------------------------------------------------------ tile fades
 /** a uniform float per tile (its fade, lodFade.js conventions: 0..1 in, 2..3 out); slot 0 = always 1 (fallback) */
 export class FadeSlots {
@@ -212,11 +225,15 @@ export class Streamer {
       if (f !== t.fade) { t.fade = f; this.fades.set(t.slot, f); }
     }
     if (!this.job && (this.dirty || c.distanceToSquared(this.center) > this.trigger * this.trigger)) this.start(c);
-    if (!this.job) return;
+    if (!this.job) { frameBudget.left(this); return; }
     // outrun (a teleport): what is drawn no longer covers the view; finish at once
     const lim = this.margin * 0.8, force = c.distanceTo(this.jobCenter) > lim || c.distanceTo(this.center) > lim;
     if (force) this.stats.forced++;
-    this.pump(force ? Infinity : this.budget);
+    const left = frameBudget.left(this);
+    if (!force && left < 0.05) return;                 // (the frame's streaming budget is spent: next frame)
+    const t0 = performance.now();
+    this.pump(force ? Infinity : Math.min(this.budget, left));
+    frameBudget.spend(performance.now() - t0);
   }
   start(c) {
     this.dirty = false; this.seq++;

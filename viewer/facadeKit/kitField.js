@@ -18,6 +18,7 @@ import * as THREE from "three/webgpu";
 import { kitOpaqueMaterial, kitGlassMaterial, loadKitMaterialSource } from "./kitMaterials.js";
 import { kitRanges, kitFades } from "./kitFade.js";
 import { STRIDE } from "./placement.js";
+import { frameBudget } from "../instanceStream.js";
 
 const MOVE = 2.5, MARGIN = 5, BUDGET = 0.25;      // m, m, ms a frame (docs/perf/AUDIT.md, instance pools)
 const TURN = (8 * Math.PI) / 180, CONE_MARGIN = (25 * Math.PI) / 180;
@@ -291,12 +292,16 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
       if (camera && (Math.abs(camera.getWorldDirection(dirTmp2).y) > 0.75 || camera.position.distanceTo(eye) > 1)) fwd.set(0, 0, 0);
       job = rebucketJob(jobEye, [...tiles.values()]); job.seq = ++seq;
     }
+    const left = frameBudget.left(group);              // (the city's streaming budget a frame, viewer/instanceStream.js)
     if (!job) return;
     // outrun (a teleport, a fast turn): what is drawn no longer covers the view; finish at once
     let force = eye.distanceTo(last) > MARGIN * 0.9 || eye.distanceTo(jobEye) > MARGIN * 0.9;
     if (!force && fwd.lengthSq() > 0 && dirTmp.lengthSq() > 0 && fwd.dot(dirTmp) < Math.cos(CONE_MARGIN * 0.8)) force = true;
     if (force) stats.forced = (stats.forced || 0) + 1;
-    pump(force ? Infinity : BUDGET);
+    if (!force && left < 0.05) return;
+    const t0 = performance.now();
+    pump(force ? Infinity : Math.min(BUDGET, left));
+    frameBudget.spend(performance.now() - t0);
   }
   /** a tile's kit (tileData kit result) and its kit-walls mesh (facades.js); fades in with the tile unless instant */
   function addTile(name, data, walls, { instant = false } = {}) {

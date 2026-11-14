@@ -11,6 +11,7 @@
 import * as THREE from "three/webgpu";
 import { loadTownHall, TH_LODS, setLodFades } from "./townhallModel.js";
 import { SMOOTH, fadeProxies } from "./lodFade.js";
+import { liteShown } from "./liteShown.js";
 
 export async function addTownHall({ scene, updaters, hide, world, manifest, log, compiler }) {
   const t0 = performance.now();
@@ -37,7 +38,7 @@ export async function addTownHall({ scene, updaters, hide, world, manifest, log,
     const ramp = (d, k) => { const s = TH_LODS[k].until, w = TH_LODS[k].band; return THREE.MathUtils.smoothstep(d, s - w, s + w); };
     let n = 0, home = false;
     updaters.push((camPos) => {
-      if (n++ % 30 === 0) home = homes.some((h) => world.tiles.some((t) => t.name === h) || !!scene.getObjectByName(`${h}-lite`));
+      if (n++ % 30 === 0) home = homes.some((h) => world.tiles.some((t) => t.name === h) || liteShown(scene, h));
       root.visible = home;
       if (!home) return;
       const d = m.distance(camPos);

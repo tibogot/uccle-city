@@ -17,6 +17,13 @@ import { bakeTreeImpostors, impostorMaterial, impostorField, IMPOSTOR_START, IMP
 import { SMOOTH, lodEye, keepBand, rampTo } from "./lodFade.js";
 import { env } from "./lighting.js";
 import { useTreeKit, startTreeKit } from "./treeKitCity.js";
+import { frameBudget } from "./instanceStream.js";
+
+// ---- the tree fields' re-buckets, spread over frames (docs/perf/AUDIT.md "instance pools"): within the city's
+// streaming budget a frame (viewer/instanceStream.js frameBudget, shared with the instance pools and the façade kit)
+const RELOD_DUE = 3, RELOD_URGENT = 4.5;
+const relodTurn = (f) => frameBudget.left(f) > 0.05;
+const relodSpent = (ms) => frameBudget.spend(ms);
 
 // Far LOD: octahedral impostors past IMPOSTOR_START (viewer/impostors.js) with ?impostors=1. OFF by
 // default since 2026-11-04: side by side from Saint-Job (zoomed on 150-400 m) the real LOD 1 / LOD 2
@@ -347,7 +354,17 @@ export function makeSpecies(def) {
     const imp = impostorField(placements, placements.map((_, i) => variantOfIndex(i)), impMatFar, { near: 0 });
     imp.mesh.boundingSphere = fieldSphere(placements);
     imp.mesh.frustumCulled = true;
-    return { ...imp, count: placements.length };
+    // (the far tiles' re-buckets spread over frames like the near fields', see relodTurn)
+    const last = new THREE.Vector3(Infinity, 0, 0);
+    const update = (p) => {
+      const moved = p.distanceToSquared(last), turn = relodTurn(imp);
+      const force = moved > RELOD_DUE * RELOD_DUE && (turn || moved > RELOD_URGENT * RELOD_URGENT);
+      const t0 = force ? performance.now() : 0;
+      if (force) last.copy(p);
+      imp.update(p, force);
+      if (force) relodSpent(performance.now() - t0);
+    };
+    return { ...imp, update, count: placements.length };
   }
 
   /** A tile's trees. opts.variantOf(i): the variant of tree i (the lab; default the vendor's hash of the index). */
@@ -421,6 +438,7 @@ export function makeSpecies(def) {
     window.__stylizedTrees.push(f);
     const cam = { position: new THREE.Vector3() };
     const light = { sunDir, sunColor: sunCol };
+    const mine = { last: new THREE.Vector3(Infinity, 0, 0), nudge: 0, slack: f.params.lodSlack ?? 0 };
     const update = (p) => {
       if (lighting) {
         sunDir.copy(lighting.sunDir);
@@ -434,8 +452,18 @@ export function makeSpecies(def) {
       if (shared.U?.fill) shared.U.fill.value = params().fill * (1 - 0.92 * env.uNight.value);
       cam.position.copy(p);
       if (SMOOTH) f.params.maxDist = IMP.start.value;   // (live: the dev panel's impostor distance)
+      // the re-buckets SPREAD over frames (every loaded tile used to re-bucket in the same frame each 5 m: 1-4 ms):
+      // a tile is due after RELOD_DUE m, served while the frame's budget lasts, at once past RELOD_URGENT m (the
+      // field's own 5 m trigger stays the backstop). The field's re-bucket is forced by a 1e-6 nudge of its lodSlack
+      // (part of its re-bucket key; the vendor file stays as it is)
+      const moved = p.distanceToSquared(mine.last);
+      const turn = relodTurn(f);
+      const force = moved > RELOD_DUE * RELOD_DUE && (turn || moved > RELOD_URGENT * RELOD_URGENT);
+      const t0 = force ? performance.now() : 0;
+      if (force) { mine.nudge ^= 1; f.params.lodSlack = mine.slack + mine.nudge * 1e-6; mine.last.copy(p); }
       f.update(cam, light);
-      imp?.update(p);
+      imp?.update(p, force);
+      if (force) relodSpent(performance.now() - t0);
       for (const [o, d] of twins) d.count = o.count;
       for (const o of insts) o.visible = o.count > 0;
     };

@@ -13,6 +13,7 @@ import * as THREE from "three/webgpu";
 import { loadVanBuuren, VB_LODS, setLodFades, vbLodState } from "./vanbuurenModel.js";
 import { SMOOTH, fadeProxies } from "./lodFade.js";
 import { openParallelPipelines } from "../vendor/engine/parallelPipelines.js";
+import { liteShown } from "./liteShown.js";
 
 /** The SHADOW pass is not in compileAsync: the first frame a level casts a shadow (its first hand-over: the flight's
  *  117 ms frame at 64 m) built its shadow shaders and pipelines on the frame. Warm them before the model shows: every
@@ -81,7 +82,7 @@ export async function addVanBuuren({ scene, updaters, hide, world, manifest, log
     let n = 0, home = false;
     const state = { d: 0, shown: [] };
     updaters.push((camPos) => {
-      if (n++ % 30 === 0) home = homes.some((h) => world.tiles.some((t) => t.name === h) || !!scene.getObjectByName(`${h}-lite`));
+      if (n++ % 30 === 0) home = homes.some((h) => world.tiles.some((t) => t.name === h) || liteShown(scene, h));
       root.visible = home;
       if (!home) return;
       const d = m.distance(camPos);
