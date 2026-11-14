@@ -487,7 +487,8 @@ const ROAD_SURFACES = params.get("roads") !== "engine";
 const PAINT_PARAM = ["v1", "v2"].includes(params.get("paint")) ? params.get("paint") : undefined;
 /** CPU data for a tile: from the worker, or on the main thread (?worker=0, or if the worker fails). */
 function tileData(entry, lite = false) {
-  entry = { ...entry, hide: HIDE_BU_IDS, ponds: PONDS, surface: ROAD_SURFACES, pits: params.get("pits") !== "0",   // ?pits=0: no tree pits (A/B)
+  entry = { ...entry, hide: [...new Set(HIDE_BU_IDS)].sort(), ponds: PONDS,   // (sorted: the landmarks push in any order now, and ?tilecache=1 keys on it)
+    surface: ROAD_SURFACES, pits: params.get("pits") !== "0",   // ?pits=0: no tree pits (A/B)
     kit: cityKit.on && !lite, kitExclude: cityKit.exclude,                                           // the façade kit (viewer/facadeKit/), ?kit=0 off
     streetlife: cityStreetLife.on && !lite,                                                          // the street life's shopfronts (viewer/streetlife/), ?streetlife=0 off
     grass: cityGrass.on && !lite,                                                                    // ?grass=1: the grass types raster, built in the worker
