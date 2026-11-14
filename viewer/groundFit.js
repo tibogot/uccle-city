@@ -95,3 +95,120 @@ export function fitBase(b, faces, doorFace, door, ground, wallFoot, blocked = ()
   y = Math.max(y, wallFoot + 0.05);
   return { base: y, how };
 }
+
+/**
+ * WALL FEET down to the drawn ground (JOINS: no open edge over the ground). The UrbIS solids' walls mostly run ~1 m
+ * under the lowest DTM point, but on small sheds / garages on banks and where the drawn ground is lower than the DTM
+ * (street surfaces, carves) a wall's bottom edge can stand OVER the ground: a visible gap under the wall. Here every
+ * bottom edge of a wall (both ends the lowest wall vertex at their x, z; less steep than 31 deg) is checked along its length against the drawn
+ * ground 0.35 m outside it (every 0.5 m, not inside another building); where the ground there comes closer than SINK
+ * under the edge, both ends go down to that ground - SINK (vertices at the same spot move together: no crack at a
+ * corner). An edge more than MAX_GAP over the ground is left (a passage, a wall standing on something else).
+ * P / I: buildings.bin (modified in place: the worker's own copy, after the colliders and the roof grid read it).
+ * blocked(x, z, b): inside another building. Returns { moved, buildings, maxDrop }.
+ */
+export const FEET = { SINK: 0.3, MAX_GAP: 2.5 };
+export function sinkFeet(bDoc, P, I, ground, blocked = () => false) {
+  let moved = 0, buildings = 0, maxDrop = 0;
+  const key = (v) => `${Math.round(P[v * 3] * 100)}|${Math.round(P[v * 3 + 2] * 100)}`;
+  for (const b of bDoc.buildings) {
+    if (b.attrs?._landmark || !b.walls?.count) continue;
+    const low = new Map();                                  // x|z -> the lowest wall y there
+    for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) for (let k = 0; k < 3; k++) {
+      const v = I[t * 3 + k], q = key(v), y = P[v * 3 + 1];
+      if (!(low.get(q) <= y)) low.set(q, y);
+    }
+    let cx = 0, cz = 0, n = 0;
+    for (const [x, z] of b.footprint[0]) { cx += x; cz += z; n++; }
+    cx /= n; cz /= n;
+    const want = new Map();                                 // x|z|y -> the y it goes down to
+    for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) for (let e = 0; e < 3; e++) {
+      const va = I[t * 3 + e], vb = I[t * 3 + (e + 1) % 3];
+      const ya = P[va * 3 + 1], yb = P[vb * 3 + 1];
+      if (ya > low.get(key(va)) + 0.01 || yb > low.get(key(vb)) + 0.01) continue;
+      const ax = P[va * 3], az = P[va * 3 + 2], bx = P[vb * 3], bz = P[vb * 3 + 2], L = Math.hypot(bx - ax, bz - az);
+      if (L < 0.05 || Math.abs(yb - ya) > 0.6 * L) continue;  // a vertical / steep edge: not a foot
+      const tx = (bx - ax) / L, tz = (bz - az) / L;
+      let nx = tz, nz = -tx;                                // outward: away from the footprint's centre
+      if (((ax + bx) / 2 - cx) * nx + ((az + bz) / 2 - cz) * nz < 0) { nx = -nx; nz = -nz; }
+      let g = Infinity;
+      for (let u = 0; u <= L + 1e-6; u += Math.max(0.05, Math.min(0.5, L / 2))) {
+        const x = ax + tx * u + nx * FIT.OUT, z = az + tz * u + nz * FIT.OUT;
+        if (blocked(x, z, b)) continue;
+        const y = ground(x, z);
+        if (Number.isFinite(y) && y < g) g = y;
+      }
+      const top = Math.max(ya, yb);
+      if (!Number.isFinite(g) || top - g <= -FEET.SINK || Math.min(ya, yb) - g >= FEET.MAX_GAP) continue;
+      for (const v of [va, vb]) { const q = key(v) + "|" + Math.round(P[v * 3 + 1] * 100); want.set(q, Math.min(want.get(q) ?? Infinity, g - FEET.SINK)); }
+    }
+    if (!want.size) continue;
+    buildings++;
+    for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) for (let k = 0; k < 3; k++) {
+      const v = I[t * 3 + k], w = want.get(key(v) + "|" + Math.round(P[v * 3 + 1] * 100));
+      if (w !== undefined && w < P[v * 3 + 1]) { maxDrop = Math.max(maxDrop, P[v * 3 + 1] - w); P[v * 3 + 1] = w; moved++; }
+    }
+  }
+  return { moved, buildings, maxDrop };
+}
+
+/** (x, z, b) -> is (x, z) inside the footprint of a building other than b (a 10 m bucket grid of the footprints) */
+export function footprintIndex(bDoc) {
+  const B = 10, cells = new Map();
+  for (const b of bDoc.buildings) {
+    const r = b.footprint?.[0];
+    if (!r || r.length < 3) continue;
+    let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+    for (const [x, z] of r) { x0 = Math.min(x0, x); z0 = Math.min(z0, z); x1 = Math.max(x1, x); z1 = Math.max(z1, z); }
+    for (let i = Math.floor(x0 / B); i <= Math.floor(x1 / B); i++) for (let j = Math.floor(z0 / B); j <= Math.floor(z1 / B); j++) {
+      const k = i * 100003 + j; let l = cells.get(k); if (!l) cells.set(k, (l = [])); l.push(b);
+    }
+  }
+  const pip = (x, z, r) => { let k = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) k = !k; } return k; };
+  return (x, z, self) => {
+    const l = cells.get(Math.floor(x / B) * 100003 + Math.floor(z / B));
+    if (l) for (const b of l) if (b !== self && pip(x, z, b.footprint[0])) return true;
+    return false;
+  };
+}
+
+/** THE CHECK for sinkFeet (tools/groundfit/scan.mjs): per building, the largest gap between a wall's bottom edge and the
+ *  drawn ground 0.35 m outside it (edges as sinkFeet finds them; gaps up to FEET.MAX_GAP; 0 = closed). Map b -> {gap, at} */
+export function footGaps(bDoc, P, I, ground, blocked = () => false) {
+  const out = new Map();
+  const key = (v) => `${Math.round(P[v * 3] * 100)}|${Math.round(P[v * 3 + 2] * 100)}`;
+  for (const b of bDoc.buildings) {
+    if (!b.walls?.count) continue;
+    const low = new Map();
+    for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) for (let k = 0; k < 3; k++) {
+      const v = I[t * 3 + k], q = key(v), y = P[v * 3 + 1];
+      if (!(low.get(q) <= y)) low.set(q, y);
+    }
+    let cx = 0, cz = 0, n = 0;
+    for (const [x, z] of b.footprint[0]) { cx += x; cz += z; n++; }
+    cx /= n; cz /= n;
+    let gap = 0, at = null;
+    for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) for (let e = 0; e < 3; e++) {
+      const va = I[t * 3 + e], vb = I[t * 3 + (e + 1) % 3], ya = P[va * 3 + 1], yb = P[vb * 3 + 1];
+      if (ya > low.get(key(va)) + 0.01 || yb > low.get(key(vb)) + 0.01) continue;
+      const ax = P[va * 3], az = P[va * 3 + 2], bx = P[vb * 3], bz = P[vb * 3 + 2], L = Math.hypot(bx - ax, bz - az);
+      if (L < 0.05 || Math.abs(yb - ya) > 0.6 * L) continue;
+      const tx = (bx - ax) / L, tz = (bz - az) / L;
+      let nx = tz, nz = -tx;
+      if (((ax + bx) / 2 - cx) * nx + ((az + bz) / 2 - cz) * nz < 0) { nx = -nx; nz = -nz; }
+      let eg = 0, eat = null, gmin = Infinity;
+      for (let u = 0; u <= L + 1e-6; u += Math.max(0.05, Math.min(0.5, L / 2))) {
+        const x = ax + tx * u + nx * FIT.OUT, z = az + tz * u + nz * FIT.OUT;
+        if (blocked(x, z, b)) continue;
+        const g = ground(x, z), y = ya + (yb - ya) * (u / L), d = y - g;
+        if (!Number.isFinite(g)) continue;
+        gmin = Math.min(gmin, g);
+        if (d > eg) { eg = d; eat = [x, z]; }
+      }
+      if (Math.min(ya, yb) - gmin >= FEET.MAX_GAP) continue;          // as sinkFeet: a passage / a wall on something
+      if (eg > gap) { gap = eg; at = eat; }
+    }
+    out.set(b, { gap, at });
+  }
+  return out;
+}

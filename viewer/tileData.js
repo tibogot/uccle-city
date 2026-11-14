@@ -18,7 +18,7 @@ import { prepRail, heroBridgeNames, abutmentFill, underpassCut, underpassGround,
 import { buildTrafficGraph } from "./traffic/trafficGraph.js";
 import { loadTunnels, tunnelRoads, tunnelCut, tunnelRecut, tunnelGround, tunnelTrees, tunnelTerrain, tunnelSurface, tunnelFenceRings } from "./rail/tunnels.js";
 import { grassTypeData } from "./grass/grassTypes.js";
-import { drawnGround } from "./groundFit.js";
+import { drawnGround, sinkFeet, footprintIndex } from "./groundFit.js";
 
 let railP = null;
 let grassKindsP = null;
@@ -354,8 +354,13 @@ export async function buildTileData(entry, base) {
   const fronts = entry.streetlife ? await step("street-life fronts", () => streetlifeFronts(base, entry.name)) : null;
   // entry.roofs !== false: the roof kit (viewer/roofs/roofPlace.js, docs/assets/ROOFS.md; ?roofs=old = the roofs before)
   const roofKit = entry.roofs !== false ? roofCollector() : null;
+  // the walls' feet down to the drawn ground where they stood over it (JOINS; viewer/groundFit.js sinkFeet): the façades
+  // are built from these walls (the drive colliders and the roof grids above already read the solids)
+  const feet = fitGround && bBuf ? await step("wall feet", () => { const dv = new DataView(bBuf), V = dv.getUint32(0, true), T = dv.getUint32(4, true);
+    return sinkFeet(bDoc, new Float32Array(bBuf, 8, V * 3), new Uint32Array(bBuf, 8 + V * 12, T * 3), fitGround, footprintIndex(bDoc)); }) : null;
   const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []) }));
   // what the roof kit stands on the roofs, in the falcon's drawn-roof grid (it collides with what is drawn)
+  if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
   const cover = await step("land cover", () => landCoverData(feats, bounds));
   return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs, drive,

@@ -13,13 +13,13 @@ import { join } from "node:path";
 import { buildTile, tiles, ROOT } from "../roadfix/tile.mjs";
 import { analyseBuildings } from "../../viewer/facadeGeom.js";
 import { faceOpenings } from "../../viewer/interior/facadeWindows.js";
-import { drawnGround } from "../../viewer/groundFit.js";
+import { drawnGround, sinkFeet, footprintIndex, footGaps } from "../../viewer/groundFit.js";
 
 const args = process.argv.slice(2);
 const oi = args.indexOf("--out");
 const out = oi >= 0 ? args[oi + 1] : null;
 const old = args.includes("--old");
-const names = args.filter((a, i) => !a.startsWith("--") && i !== oi + 1);
+const names = args.filter((a, i) => !a.startsWith("--") && (oi < 0 || i !== oi + 1));
 const todo = names.length ? names : tiles.map((t) => t.name);
 const OUT = 0.35;                           // m outside the wall where the ground is read
 
@@ -92,7 +92,10 @@ for (const T of todo) {
   const onRoofAt = (x, z, y) => { const a = []; roofIdx(x, z, a); return a.some((v) => v > y - 0.6 && v < y + 0.3); };
   const faces = new Map();
   const spy = { face(f) { if (!faces.has(f.building)) faces.set(f.building, []); faces.get(f.building).push(f); return { on: 0 }; }, finish: () => null };
-  analyseBuildings(bDoc, bBuf, d.roads, d.feats, { kit: spy, ground: old ? null : drawnGround(hm, d.road.parts) });
+  const G = old ? null : drawnGround(hm, d.road.parts), fpi = footprintIndex(bDoc);
+  if (G) sinkFeet(bDoc, BP, BI, G, fpi);
+  const gaps = footGaps(bDoc, BP, BI, G || drawn, fpi);
+  analyseBuildings(bDoc, bBuf, d.roads, d.feats, { kit: spy, ground: G });
   let nb = 0;
   for (const b of bDoc.buildings) {
     const key = String(b.attrs?.BU_ID ?? b.id);
@@ -114,7 +117,6 @@ for (const T of todo) {
       for (let u = 0.25; u <= f.width - 0.25; u += 0.5) {
         const [x, z] = at(u, OUT), g = drawn(x, z), foot = footAt(Tu, u);
         if (roofIdx(x, z) > g + 1) continue;                    // inside another building: not seen
-        if (foot !== Infinity && foot - g > float && foot - g < 1.5 && !onRoofAt(x, z, foot)) { float = foot - g; floatAt = [x, z]; }
         if (f.street) {
           frontLen += 0.5;
           if (g - fb > 0.15) cutLen += 0.5;
@@ -132,6 +134,8 @@ for (const T of todo) {
         }
       }
     }
+    const fg = gaps.get(b);
+    if (fg) { float = fg.gap; floatAt = fg.at; }
     rows.push({ tile: T, key, c: c.map((v) => +v.toFixed(1)), base: b.base, fitBase: fl[0].base, height: b.height,
       door: door ? +door.rise.toFixed(2) : null, doorAt: door?.at.map((v) => +v.toFixed(1)), doorN: door?.n, doorY: door ? +door.y.toFixed(2) : null,
       front: front === -Infinity ? null : +front.toFixed(2), frontAt: frontAt?.map((v) => +v.toFixed(1)), cutFrac: frontLen ? +(cutLen / frontLen).toFixed(2) : 0,

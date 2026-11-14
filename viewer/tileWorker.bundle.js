@@ -355,6 +355,100 @@ function fitBase(b, faces, doorFace, door, ground, wallFoot, blocked = () => fal
   y = Math.max(y, wallFoot + 0.05);
   return { base: y, how };
 }
+var FEET = { SINK: 0.3, MAX_GAP: 2.5 };
+function sinkFeet(bDoc, P, I, ground, blocked = () => false) {
+  let moved = 0, buildings = 0, maxDrop = 0;
+  const key = (v) => `${Math.round(P[v * 3] * 100)}|${Math.round(P[v * 3 + 2] * 100)}`;
+  for (const b of bDoc.buildings) {
+    if (b.attrs?._landmark || !b.walls?.count) continue;
+    const low = /* @__PURE__ */ new Map();
+    for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) for (let k = 0; k < 3; k++) {
+      const v = I[t * 3 + k], q = key(v), y = P[v * 3 + 1];
+      if (!(low.get(q) <= y)) low.set(q, y);
+    }
+    let cx = 0, cz = 0, n = 0;
+    for (const [x, z] of b.footprint[0]) {
+      cx += x;
+      cz += z;
+      n++;
+    }
+    cx /= n;
+    cz /= n;
+    const want = /* @__PURE__ */ new Map();
+    for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) for (let e = 0; e < 3; e++) {
+      const va = I[t * 3 + e], vb = I[t * 3 + (e + 1) % 3];
+      const ya = P[va * 3 + 1], yb = P[vb * 3 + 1];
+      if (ya > low.get(key(va)) + 0.01 || yb > low.get(key(vb)) + 0.01) continue;
+      const ax = P[va * 3], az = P[va * 3 + 2], bx = P[vb * 3], bz = P[vb * 3 + 2], L2 = Math.hypot(bx - ax, bz - az);
+      if (L2 < 0.05 || Math.abs(yb - ya) > 0.6 * L2) continue;
+      const tx = (bx - ax) / L2, tz = (bz - az) / L2;
+      let nx = tz, nz = -tx;
+      if (((ax + bx) / 2 - cx) * nx + ((az + bz) / 2 - cz) * nz < 0) {
+        nx = -nx;
+        nz = -nz;
+      }
+      let g = Infinity;
+      for (let u = 0; u <= L2 + 1e-6; u += Math.max(0.05, Math.min(0.5, L2 / 2))) {
+        const x = ax + tx * u + nx * FIT.OUT, z = az + tz * u + nz * FIT.OUT;
+        if (blocked(x, z, b)) continue;
+        const y = ground(x, z);
+        if (Number.isFinite(y) && y < g) g = y;
+      }
+      const top = Math.max(ya, yb);
+      if (!Number.isFinite(g) || top - g <= -FEET.SINK || Math.min(ya, yb) - g >= FEET.MAX_GAP) continue;
+      for (const v of [va, vb]) {
+        const q = key(v) + "|" + Math.round(P[v * 3 + 1] * 100);
+        want.set(q, Math.min(want.get(q) ?? Infinity, g - FEET.SINK));
+      }
+    }
+    if (!want.size) continue;
+    buildings++;
+    for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) for (let k = 0; k < 3; k++) {
+      const v = I[t * 3 + k], w = want.get(key(v) + "|" + Math.round(P[v * 3 + 1] * 100));
+      if (w !== void 0 && w < P[v * 3 + 1]) {
+        maxDrop = Math.max(maxDrop, P[v * 3 + 1] - w);
+        P[v * 3 + 1] = w;
+        moved++;
+      }
+    }
+  }
+  return { moved, buildings, maxDrop };
+}
+function footprintIndex(bDoc) {
+  const B = 10, cells = /* @__PURE__ */ new Map();
+  for (const b of bDoc.buildings) {
+    const r = b.footprint?.[0];
+    if (!r || r.length < 3) continue;
+    let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+    for (const [x, z] of r) {
+      x0 = Math.min(x0, x);
+      z0 = Math.min(z0, z);
+      x1 = Math.max(x1, x);
+      z1 = Math.max(z1, z);
+    }
+    for (let i = Math.floor(x0 / B); i <= Math.floor(x1 / B); i++) for (let j = Math.floor(z0 / B); j <= Math.floor(z1 / B); j++) {
+      const k = i * 100003 + j;
+      let l = cells.get(k);
+      if (!l) cells.set(k, l = []);
+      l.push(b);
+    }
+  }
+  const pip3 = (x, z, r) => {
+    let k = false;
+    for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+      const [xi, zi] = r[i], [xj, zj] = r[j];
+      if (zi > z !== zj > z && x < (xj - xi) * (z - zi) / (zj - zi) + xi) k = !k;
+    }
+    return k;
+  };
+  return (x, z, self2) => {
+    const l = cells.get(Math.floor(x / B) * 100003 + Math.floor(z / B));
+    if (l) {
+      for (const b of l) if (b !== self2 && pip3(x, z, b.footprint[0])) return true;
+    }
+    return false;
+  };
+}
 
 // viewer/interior/facadeWindows.js
 var G = 3.4;
@@ -13412,7 +13506,12 @@ async function buildTileData(entry, base) {
   const kit = entry.kit ? kitCollector({ exclude: new Set(entry.kitExclude || []), ground: fitGround || ((x, z) => hm.ground(x, z)) }) : null;
   const fronts = entry.streetlife ? await step("street-life fronts", () => streetlifeFronts(base, entry.name)) : null;
   const roofKit = entry.roofs !== false ? roofCollector() : null;
+  const feet = fitGround && bBuf ? await step("wall feet", () => {
+    const dv = new DataView(bBuf), V = dv.getUint32(0, true), T2 = dv.getUint32(4, true);
+    return sinkFeet(bDoc, new Float32Array(bBuf, 8, V * 3), new Uint32Array(bBuf, 8 + V * 12, T2 * 3), fitGround, footprintIndex(bDoc));
+  }) : null;
   const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []) }));
+  if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
   const cover = await step("land cover", () => landCoverData(feats, bounds));
   return {
