@@ -1,3 +1,6 @@
+// WORKER COST + COLLIDER IDENTITY (docs/GROUND_FIT.md): per tile, buildTileData with ?groundfit=old vs on (median of 3),
+// the ground fit steps, terrain triangles, kit doors / steps, and hashes of the drive colliders / heightmap (must match).
+//   node --import ./tools/road_audit/register.mjs tools/groundfit/cost.mjs TILES...
 import { buildTile } from "../roadfix/tile.mjs";
 import { createHash } from "node:crypto";
 const h = (o) => createHash("md5").update(JSON.stringify(o, (k, v) => (ArrayBuffer.isView(v) ? Array.from(v.subarray(0, 200000)) : v))).digest("hex").slice(0, 10);
