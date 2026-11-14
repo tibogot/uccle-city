@@ -10879,7 +10879,7 @@ function roofCollector(opts = {}) {
         const s = pick(0.9, 0.5);
         if (s) place("dish", s, 1, 1, 1, 0.5, [r(), 0, 0, 0], false, 1.3, dishYaw(r));
       }
-      if (r() < 0.22) flatSolar(spots, y, r, taken, free, 0.4 + r() * 0.5);
+      if (r() < 0.22) flatSolar(spots, y, r, taken, free, 0.4 + r() * 0.5, tx, tz);
     } else if (A >= 8) {
       const u = r();
       if (u < 0.28) {
@@ -10904,33 +10904,47 @@ function roofCollector(opts = {}) {
         const s = pick(0.8, 0.5);
         if (s) place("dish", s, 1, 1, 1, 0.5, [r(), 0, 0, 0], false, 1.3, dishYaw(r));
       }
-      if (A >= 25 && r() < 0.08) flatSolar(spots, y, r, taken, free, 0.5 + r() * 0.5);
+      if (A >= 25 && r() < 0.08) flatSolar(spots, y, r, taken, free, 0.5 + r() * 0.5, tx, tz);
     }
   }
-  function flatSolar(spots, y, r, taken, free, fill) {
+  function flatSolar(spots, y, r, taken, free, fill, ax = 1, az = 0) {
+    let ex = 1, ez = 0;
+    if (Math.abs(az) < 0.574) {
+      ex = ax;
+      ez = az;
+    } else if (Math.abs(ax) < 0.574) {
+      ex = Math.abs(az);
+      ez = -Math.sign(az) * ax;
+    }
+    if (ex < 0) {
+      ex = -ex;
+      ez = -ez;
+    }
+    const sx = -ez, sz = ex;
     const ok = spots.filter((s) => s.clr >= 1.1 && free(s.x, s.z, 0.3));
     if (ok.length < 6) return;
     const P = 1.72, Q = 1.6;
     const c0 = ok[Math.floor(r() * ok.length)];
     const cells = /* @__PURE__ */ new Map();
     for (const s of ok) {
-      const i = Math.round((s.x - c0.x) / P), j = Math.round((s.z - c0.z) / Q), k = i + "," + j;
+      const du = (s.x - c0.x) * ex + (s.z - c0.z) * ez, dv = (s.x - c0.x) * sx + (s.z - c0.z) * sz;
+      const i = Math.round(du / P), j = Math.round(dv / Q), k = i + "," + j;
       if (!cells.has(k)) cells.set(k, { i, j, n: 0 });
       cells.get(k).n++;
     }
     const full = [...cells.values()].filter((c) => c.n >= 6).sort((a, b) => Math.hypot(a.i, a.j) - Math.hypot(b.i, b.j));
     const n = Math.max(2, Math.round(full.length * fill));
+    const tl = 13 * Math.PI / 180, ct = Math.cos(tl), st = Math.sin(tl);
     let placed = 0;
     for (const c of full.slice(0, n)) {
-      const x = c0.x + c.i * P, z = c0.z + c.j * Q;
+      const x = c0.x + ex * c.i * P + sx * c.j * Q, z = c0.z + ez * c.i * P + sz * c.j * Q;
       if (!free(x, z, 0.4)) continue;
-      put("pvframe", yawM(x, y, z, 1, 0, 1, 1, 1), [r(), 0, 0, 0]);
-      const tl = 13 * Math.PI / 180, ct = Math.cos(tl), st = Math.sin(tl);
-      put("pv", basis([x, y + 0.27, z], [0, st, -ct], [0, ct, st], [1, 0, 0]), [r(), 1, 0, 0]);
-      cols.push(x - 0.9, z - 0.55, x + 0.9, z + 0.55, y + 0.45);
+      put("pvframe", yawM(x, y, z, ex, -ez, 1, 1, 1), [r(), 0, 0, 0]);
+      put("pv", basis([x, y + 0.27, z], [-sx * ct, st, -sz * ct], [sx * st, ct, sz * st], [ex, 0, ez]), [r(), 1, 0, 0]);
+      colBox(x, z, 0.9, 0.55, ex, -ez, y + 0.45);
       placed++;
     }
-    for (const c of full.slice(0, n)) taken.push([c0.x + c.i * P, c0.z + c.j * Q, 0.9]);
+    for (const c of full.slice(0, n)) taken.push([c0.x + ex * c.i * P + sx * c.j * Q, c0.z + ez * c.i * P + sz * c.j * Q, 0.9]);
     stats.pv += placed;
     if (placed) stats.pvRoofs++;
   }

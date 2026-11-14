@@ -124,7 +124,9 @@ parking lanes dropping parked cars, keep-clear filters...) while their colliders
 drawn. TOP PRIORITY with road round 3. (2) Collisions feel off in general; the FALCON should also show its collisions
 with G; the falcon gameplay feels weird. (3) Car tail lights: grainy, sparkling red (shader / aliasing on the light
 texture). (4) Blank party walls look empty, with aliased dashed black lines on them (facade details or wires?).
-(5) Many building TOPS look empty / unfinished (roof furniture, parapets, chimneys, roof details). (6) The petrol
+(5) Many building TOPS look empty / unfinished (roof furniture, parapets, chimneys, roof details) [BUILT on
+claude/roofs 2026-11-14, on by default, ?roofs=old = before: docs/assets/ROOFS.md; left: real PV / AC positions from
+data, back-slope dormers, TV aerials, ~+200 audit items per tile at parapet ends]. (6) The petrol
 station (Lukoil) looks far too cheap; there are several in the city: a PETROL STATION KIT (canopy, pumps, shop,
 signage, our own brand look). (7) SQUARE DES HEROS done far too cheaply: make it a hero plaza. (8) SHOPS far too cheap
 (flat fronts with a name): realistic shopfronts, some with an interior; restaurant TERRACES around Place Saint-Job.

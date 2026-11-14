@@ -337,7 +337,7 @@ export function roofCollector(opts = {}) {
       // (the dishes look south-south-east: Astra 19.2 E / Eutelsat from Brussels, azimuth ~ 160-170 deg)
       for (let k = 0; k < nds; k++) { const s = pick(0.9, 0.5); if (s) place("dish", s, 1, 1, 1, 0.5, [r(), 0, 0, 0], false, 1.3, dishYaw(r)); }
       // solar rows on ~22 % of the big flat roofs
-      if (r() < 0.22) flatSolar(spots, y, r, taken, free, 0.4 + r() * 0.5);
+      if (r() < 0.22) flatSolar(spots, y, r, taken, free, 0.4 + r() * 0.5, tx, tz);
     } else if (A >= 8) {
       // a house's flat roof / rear annex: a rooflight, a vent, now and then an AC unit or a dish, solar on some
       const u = r();
@@ -346,40 +346,47 @@ export function roofCollector(opts = {}) {
       if (r() < 0.35) { const s = pick(0.7, 0.25); if (s) place("vent", s, 1, 0.6 + r() * 0.6, 1, 0.25, [r(), 0, 0, 0], false, 1.0); }
       if (r() < 0.06) { const s = pick(0.9, 0.65); if (s) place("cond", s, 1, 1, 1, 0.65, [r(), 0, 0, 0], true, 0.9); }
       if (r() < 0.05) { const s = pick(0.8, 0.5); if (s) place("dish", s, 1, 1, 1, 0.5, [r(), 0, 0, 0], false, 1.3, dishYaw(r)); }
-      if (A >= 25 && r() < 0.08) flatSolar(spots, y, r, taken, free, 0.5 + r() * 0.5);
+      if (A >= 25 && r() < 0.08) flatSolar(spots, y, r, taken, free, 0.5 + r() * 0.5, tx, tz);
     }
   }
 
   /** rows of tilted modules on a flat roof, facing south (rows run east-west), on their A-frames */
-  function flatSolar(spots, y, r, taken, free, fill) {
-    // module 1.7 (along the row) x 1.0 (up its 12-15 deg tilt); rows 1.6 m apart (no self-shading in winter)
+  function flatSolar(spots, y, r, taken, free, fill, ax = 1, az = 0) {
+    // module 1.7 (along the row) x 1.0 (up its 13 deg tilt); rows 1.6 m apart (no self-shading in winter). The rows
+    // run along the roof's own axis when it is within 35 deg of east-west (installers follow the parapets), else
+    // east-west; the modules face the southern side
+    let ex = 1, ez = 0;
+    if (Math.abs(az) < 0.574) { ex = ax; ez = az; } else if (Math.abs(ax) < 0.574) { ex = Math.abs(az); ez = -Math.sign(az) * ax; }
+    if (ex < 0) { ex = -ex; ez = -ez; }
+    const sx = -ez, sz = ex;                                     // the southern side (sz > 0)
     const ok = spots.filter((s) => s.clr >= 1.1 && free(s.x, s.z, 0.3));
     if (ok.length < 6) return;
     const P = 1.72, Q = 1.6;
     const c0 = ok[Math.floor(r() * ok.length)];
     const cells = new Map();
     for (const s of ok) {
-      const i = Math.round((s.x - c0.x) / P), j = Math.round((s.z - c0.z) / Q), k = i + "," + j;
+      const du = (s.x - c0.x) * ex + (s.z - c0.z) * ez, dv = (s.x - c0.x) * sx + (s.z - c0.z) * sz;
+      const i = Math.round(du / P), j = Math.round(dv / Q), k = i + "," + j;
       if (!cells.has(k)) cells.set(k, { i, j, n: 0 });
       cells.get(k).n++;
     }
     // a cell holds a module when its whole rectangle is roof (all the 0.5 m spots in it present: ~ 3 x 3)
     const full = [...cells.values()].filter((c) => c.n >= 6).sort((a, b) => Math.hypot(a.i, a.j) - Math.hypot(b.i, b.j));
     const n = Math.max(2, Math.round(full.length * fill));
+    const tl = 13 * Math.PI / 180, ct = Math.cos(tl), st = Math.sin(tl);
     let placed = 0;
     for (const c of full.slice(0, n)) {
-      const x = c0.x + c.i * P, z = c0.z + c.j * Q;
+      const x = c0.x + ex * c.i * P + sx * c.j * Q, z = c0.z + ez * c.i * P + sz * c.j * Q;
       if (!free(x, z, 0.4)) continue;
-      // yaw 0: local +x = east, local +z = south: the frame lifts the module's north edge (it faces south)
-      put("pvframe", yawM(x, y, z, 1, 0, 1, 1, 1), [r(), 0, 0, 0]);
-      // the module on the frame: tilt 13 deg about x, its centre 0.3 m up
-      const tl = 13 * Math.PI / 180, ct = Math.cos(tl), st = Math.sin(tl);
-      // the module's short side (local x) up the tilt toward the raised north edge, its long side (local z) east
-      put("pv", basis([x, y + 0.27, z], [0, st, -ct], [0, ct, st], [1, 0, 0]), [r(), 1, 0, 0]);   // (its rails on the frame's purlins)
-      cols.push(x - 0.9, z - 0.55, x + 0.9, z + 0.55, y + 0.45);
+      // the frame: local +x along the row, local +z the southern side (it lifts the northern edge)
+      put("pvframe", yawM(x, y, z, ex, -ez, 1, 1, 1), [r(), 0, 0, 0]);
+      // the module on it: its short side (local x) up the tilt toward the raised edge, its long side (local z) along
+      // the row; its rails on the frame's purlins (0.27 m)
+      put("pv", basis([x, y + 0.27, z], [-sx * ct, st, -sz * ct], [sx * st, ct, sz * st], [ex, 0, ez]), [r(), 1, 0, 0]);
+      colBox(x, z, 0.9, 0.55, ex, -ez, y + 0.45);
       placed++;
     }
-    for (const c of full.slice(0, n)) taken.push([c0.x + c.i * P, c0.z + c.j * Q, 0.9]);
+    for (const c of full.slice(0, n)) taken.push([c0.x + ex * c.i * P + sx * c.j * Q, c0.z + ez * c.i * P + sz * c.j * Q, 0.9]);
     stats.pv += placed; if (placed) stats.pvRoofs++;
   }
 
