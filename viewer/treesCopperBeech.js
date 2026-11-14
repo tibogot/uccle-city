@@ -34,7 +34,7 @@ export const COPPER_SEASONS = {
   summer: { leaves: "leaf_copperbeech", topColor: "#4e2a30", bottomColor: "#4a2830", translucencyColor: "#d04a3c", translucency: 0.35, fillColor: "#a8949c" },
   spring: { leaves: "leaf_copperbeech_spring", topColor: "#8a3644", bottomColor: "#5a2632", translucencyColor: "#e85a4a", translucency: 0.45, fillColor: "#b09aa0" },
   autumn: { leaves: "leaf_copperbeech_autumn", topColor: "#a05a2c", bottomColor: "#6c3820", translucencyColor: "#ff9a40", translucency: 0.5, fillColor: "#a8988c" },
-  winter: { leaves: "leaf_copperbeech_winter", topColor: "#9a7048", bottomColor: "#6a4a2e", translucencyColor: "#e8a868", translucency: 0.35, fillColor: "#a09a94" },
+  winter: { leaves: "leaf_copperbeech_winter", topColor: "#9a7048", bottomColor: "#86603c", translucencyColor: "#e8a868", translucency: 0.35, fillColor: "#a09a94" },
 };
 const BARK_ID = "tf_copperbeech";
 // the bark's mean colour (linear) the factory set is graded to: the photos' silver-grey (a touch lighter and warmer

@@ -217,7 +217,7 @@ def spray(sp, R, seed):
     # twigs first (under), then the petioles and the leaves on top
     for pts in segs:
         for a, b in zip(pts[:-1], pts[1:]):
-            draw_line(C, a, b, R * 0.006, twig_col, 1.0)
+            draw_line(C, a, b, R * sp.get("twig_w", 0.006), twig_col, 1.0)
     pet_col = srgb_to_lin(sp.get("petiole_col", [0.55, 0.58, 0.3]))
     for idx, (_, base, ang, size, squash, q) in enumerate(leaves):
         if q is not None:

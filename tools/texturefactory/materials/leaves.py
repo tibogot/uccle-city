@@ -62,7 +62,7 @@ SPECIES = {
                         autumn=[(h("#8c4a24"), 3), (h("#a0602c"), 2), (h("#6e3a20"), 2), (h("#b8783a"), 1), (h("#5a3020"), 1)],
                         autumn_edge=h("#4a2a18"),
                         winter=[(h("#9a6b3e"), 3), (h("#87582f"), 2), (h("#b0814f"), 1.5), (h("#6e4526"), 1)],
-                        winter_edge=h("#5a3a20"), winter_keep=0.22,
+                        winter_edge=h("#5a3a20"), winter_keep=0.05, twig_w=0.009,
                         under={"summer": (0.1, h("#4e4232")), "spring": (0.12, h("#8a4a4a")), "autumn": (0.12, h("#8a6a3c"))},
                         petiole_col=[0.42, 0.24, 0.2]),
 }
