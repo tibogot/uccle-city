@@ -1,0 +1,452 @@
+{
+ "asset": "Square des Heros: the war memorial (L. Grandmoulin 1925, enlarged 1948) and the two flights of steps (tools/blender/heros.py)",
+ "triangles_lod0": 43253,
+ "triangles_far": 2216,
+ "triangles_per_slot_lod0": {
+  "stone_blue": 7854,
+  "bronze_gilt": 19989,
+  "cast_iron_black": 12288,
+  "cast_iron_green": 288,
+  "soil_bed": 12,
+  "plant_grass": 2790,
+  "cobbles": 32
+ },
+ "triangles_per_slot_far": {
+  "stone_blue": 834,
+  "bronze_gilt": 882,
+  "cast_iron_green": 128,
+  "soil_bed": 12,
+  "plant_grass": 360
+ },
+ "slots": [
+  "stone_blue",
+  "bronze_gilt",
+  "cast_iron_black",
+  "cast_iron_green",
+  "soil_bed",
+  "plant_grass",
+  "cobbles"
+ ],
+ "codes": {
+  "COLOR_0.r": "code / 16 + 1/32",
+  "COLOR_0.g": "per-vertex AO of the thin faces (1 elsewhere)",
+  "names": [
+   "plain",
+   "panel",
+   "letters",
+   "nosing",
+   "riser",
+   "tread",
+   "kerb",
+   "relief",
+   "bouquet",
+   "animal",
+   "rail",
+   "post",
+   "finial",
+   "cap",
+   "plinth",
+   "seat"
+  ]
+ },
+ "new_slot_names": {
+  "bronze_gilt": "gilded bronze, the gilding worn to dark bronze in the hollows (photos 2010s-2025)",
+  "cast_iron_black": "black-painted wrought iron (the enclosure's railing)",
+  "soil_bed": "the planted bed's soil",
+  "plant_grass": "ornamental grass blades (straw-green)"
+ },
+ "uv": {
+  "TEXCOORD_0": "world metres, per face; lettered faces (code 'letters'): 1000 (cell + 1) + s, v (metres on the panel)",
+  "TEXCOORD_1": "AO lightmap (thin faces: u > 0.994, AO 1)"
+ },
+ "letters_cells": [
+  "front: the 1914-1918 inscription",
+  "names A",
+  "names B",
+  "names C",
+  "bench backs: names 1940-1945",
+  "1940-1945 (front seat)"
+ ],
+ "lightmap": {
+  "px": 2048,
+  "split_v": [
+   0.86,
+   1.0
+  ],
+  "lod0_px_per_m": 67.3,
+  "far_px_per_m": 35.6
+ },
+ "frame": "glTF Y up; three.js local (u, m TAW - OY, w); node at the city position of the frame origin, height OY, rotation.y = -rotation",
+ "placement": {
+  "city_local_position": [
+   -533.062,
+   50.0,
+   -483.795
+  ],
+  "rotation_y_rad": -1.470292,
+  "hides_solids": [
+   "https://databrussels.be/id/buildingsolid/534309"
+  ],
+  "hides_bu_ids": []
+ },
+ "bounds_city": {
+  "x": [
+   -555.0,
+   -527.7
+  ],
+  "z": [
+   -496.6,
+   -468.2
+  ],
+  "y": [
+   47.7,
+   60.9
+  ]
+ },
+ "levels_taw": {
+  "terrace": 50.55,
+  "platform": 50.709999999999994,
+  "seat": 51.16,
+  "wall_top": 51.78999999999999,
+  "railing_top": 52.529999999999994,
+  "bed": 51.629999999999995,
+  "pedestal": 52.489999999999995,
+  "plinth": 53.029999999999994,
+  "shaft_top": 56.709999999999994,
+  "cap": 57.129999999999995,
+  "statue_top": 60.94
+ },
+ "sizes": {
+  "platform_r": 4.05,
+  "octagon_r": 3.046,
+  "octagon_apothem": 2.814,
+  "wall_t": 0.36,
+  "seat_d": 0.42,
+  "pedestal_half": [
+   1.17,
+   1.11
+  ],
+  "plinth_half": [
+   0.94,
+   0.89
+  ],
+  "shaft_half": [
+   [
+    0.8,
+    0.75
+   ],
+   [
+    0.63,
+    0.58
+   ]
+  ],
+  "cap_half": [
+   [
+    0.73,
+    0.68
+   ],
+   [
+    0.6,
+    0.55
+   ]
+  ]
+ },
+ "colliders": {
+  "platform": {
+   "r": 4.05,
+   "top": 50.709999999999994
+  },
+  "enclosure": {
+   "r": 3.546,
+   "top": 52.53,
+   "seat": 51.16,
+   "seat_r": 3.501
+  },
+  "obelisk": {
+   "half": [
+    1.17,
+    1.11
+   ],
+   "top": 57.129999999999995
+  },
+  "statue": {
+   "half": [
+    0.75,
+    1.5
+   ],
+   "bottom": 57.129999999999995,
+   "top": 60.94
+  }
+ },
+ "flights": [
+  {
+   "name": "south",
+   "risers": 12,
+   "riser_m": 0.173,
+   "run_m": 0.42,
+   "width_m": 3.0,
+   "top": 50.4,
+   "bottom": 48.32,
+   "carve": {
+    "ring": [
+     [
+      -529.821,
+      -476.265
+     ],
+     [
+      -528.833,
+      -470.885
+     ],
+     [
+      -532.217,
+      -470.264
+     ],
+     [
+      -533.205,
+      -475.644
+     ]
+    ],
+    "from_": [
+     -531.423,
+     -475.463
+    ],
+    "to": [
+     -530.588,
+     -470.919
+    ],
+    "h_from": 50.32,
+    "h_to": 48.413,
+    "floor": 48.27
+   },
+   "handrails_blender": [
+    [
+     [
+      7.975,
+      2.371,
+      51.3
+     ],
+     [
+      8.324,
+      2.4,
+      51.3
+     ],
+     [
+      12.929,
+      2.774,
+      49.393
+     ],
+     [
+      13.228,
+      2.798,
+      49.393
+     ]
+    ],
+    [
+     [
+      8.236,
+      -0.838,
+      51.3
+     ],
+     [
+      8.585,
+      -0.81,
+      51.3
+     ],
+     [
+      13.19,
+      -0.435,
+      49.393
+     ],
+     [
+      13.489,
+      -0.411,
+      49.393
+     ]
+    ]
+   ]
+  },
+  {
+   "name": "west",
+   "risers": 4,
+   "riser_m": 0.157,
+   "run_m": 0.42,
+   "width_m": 2.4,
+   "top": 51.15,
+   "bottom": 50.52,
+   "carve": {
+    "ring": [
+     [
+      -553.741,
+      -494.228
+     ],
+     [
+      -551.798,
+      -493.404
+     ],
+     [
+      -552.907,
+      -490.79
+     ],
+     [
+      -554.849,
+      -491.613
+     ]
+    ],
+    "from_": [
+     -553.835,
+     -492.725
+    ],
+    "to": [
+     -552.675,
+     -492.234
+    ],
+    "h_from": 51.07,
+    "h_to": 50.598,
+    "floor": 50.47
+   },
+   "handrails_blender": []
+  }
+ ],
+ "measured": {
+  "frame": {
+   "city": "city local: x = L72 E - 148643, z = 165394 - N (south); heights m TAW",
+   "origin_city": [
+    -533.062,
+    -483.795
+   ],
+   "rotation_rad": 1.470292,
+   "rotation_deg": 84.242,
+   "axes": "u = (cos r, sin r) in city (x, z): toward the monument's front (south, the 12 steps); w = (-sin r, cos r)"
+  },
+  "octagon_city": [
+   [
+    -535.91,
+    -484.741
+   ],
+   [
+    -535.763,
+    -482.405
+   ],
+   [
+    -533.916,
+    -480.824
+   ],
+   [
+    -531.653,
+    -481.135
+   ],
+   [
+    -530.144,
+    -482.903
+   ],
+   [
+    -530.411,
+    -485.273
+   ],
+   [
+    -532.307,
+    -486.753
+   ],
+   [
+    -534.499,
+    -486.487
+   ]
+  ],
+  "obelisk_base_city": [
+   [
+    -534.331,
+    -484.907
+   ],
+   [
+    -534.092,
+    -482.537
+   ],
+   [
+    -531.85,
+    -482.77
+   ],
+   [
+    -532.089,
+    -485.129
+   ]
+  ],
+  "dsm_top": 57.34,
+  "terrace": {
+   "r4.5": {
+    "min": 50.46,
+    "med": 50.55,
+    "max": 50.6
+   },
+   "r6": {
+    "min": 50.45,
+    "med": 50.56,
+    "max": 50.62
+   },
+   "r8": {
+    "min": 50.38,
+    "med": 50.52,
+    "max": 50.6
+   },
+   "r10": {
+    "min": 49.79,
+    "med": 50.11,
+    "max": 50.55
+   }
+  },
+  "steps": {
+   "w1154611802": {
+    "line": [
+     [
+      -531.486,
+      -475.807
+     ],
+     [
+      -530.642,
+      -471.212
+     ]
+    ],
+    "tags": {
+     "handrail": "yes",
+     "highway": "steps",
+     "incline": "down",
+     "lit": "yes",
+     "step_count": "12",
+     "tactile_paving": "no"
+    },
+    "ground": [
+     50.39,
+     48.47
+    ],
+    "length": 4.67
+   },
+   "w1154611806": {
+    "line": [
+     [
+      -554.249,
+      -492.901
+     ],
+     [
+      -553.093,
+      -492.411
+     ]
+    ],
+    "tags": {
+     "handrail": "no",
+     "highway": "steps",
+     "incline": "down",
+     "lit": "yes",
+     "ramp": "no",
+     "step_count": "4",
+     "surface": "paving_stones",
+     "tactile_paving": "no"
+    },
+    "ground": [
+     51.13,
+     50.74
+    ],
+    "length": 1.26
+   }
+  }
+ },
+ "estimated": "every height above the terrace except the obelisk's top (DSM 57.34: the shaft + cap modelled to 57.13, the rock and bronze over it), the platform (one low step, r 4.05 from the DSM ring), the benches' depth and height, the railing's pattern and height, the obelisk's sections and taper, the relief and the animals' forms, the bronze group's size (~3.8 m) and pose, the steps' width (3.0 / 2.4 m), riser counts from OSM, levels from the DTM profiles"
+}

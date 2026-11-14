@@ -1,0 +1,87 @@
+{
+ "about": "tools/heros_letters.py: the war memorial's lettering mask (white = letter). Front + years: the real text; the names' panels: PLACEHOLDER rows of random letters (the real lists are not in our data).",
+ "size": [
+  2048,
+  2048
+ ],
+ "cells": [
+  {
+   "name": "front",
+   "px": [
+    0,
+    0,
+    624,
+    1048
+   ],
+   "size_m": [
+    1.16,
+    1.95
+   ]
+  },
+  {
+   "name": "names_a",
+   "px": [
+    640,
+    0,
+    1264,
+    1048
+   ],
+   "size_m": [
+    1.16,
+    1.95
+   ]
+  },
+  {
+   "name": "names_b",
+   "px": [
+    1280,
+    0,
+    1904,
+    1048
+   ],
+   "size_m": [
+    1.16,
+    1.95
+   ]
+  },
+  {
+   "name": "names_c",
+   "px": [
+    0,
+    1064,
+    624,
+    2032
+   ],
+   "size_m": [
+    1.16,
+    1.95
+   ]
+  },
+  {
+   "name": "bench",
+   "px": [
+    640,
+    1064,
+    1640,
+    1314
+   ],
+   "size_m": [
+    1.65,
+    0.41
+   ]
+  },
+  {
+   "name": "years",
+   "px": [
+    640,
+    1330,
+    1640,
+    1560
+   ],
+   "size_m": [
+    1.65,
+    0.38
+   ]
+  }
+ ]
+}

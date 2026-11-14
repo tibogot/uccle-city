@@ -44,3 +44,36 @@ export function applyParkSquares(surf, ov, bounds) {
   }
   return n;
 }
+
+/** The terrain under the two flights of steps (tools/blender/heros.py "flights[].carve"): the DTM runs as a slope through
+ *  the treads, so every terrain node inside a flight's footprint is lowered under the line through its nosings minus 8 cm
+ *  (h_from at `from_` down to h_to at `to`, never under `floor`): no ground pokes through a tread; the blocks and the cheek
+ *  kerbs go 0.5-0.7 m down, so no gap opens at the sides. Edits hm.y in place (before the terrain mesh is built). */
+export function carveFlights(hm, carves) {
+  const { x0, z0, cols, rows, step } = hm.h;
+  let n = 0;
+  for (const c of carves || []) {
+    const r = c.ring, [ax, az] = c.from_, [bx, bz] = c.to;
+    const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz;
+    const xs = r.map((p) => p[0]), zs = r.map((p) => p[1]);
+    const c0 = Math.max(0, Math.floor((Math.min(...xs) - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(...xs) - x0) / step));
+    const r0 = Math.max(0, Math.floor((Math.min(...zs) - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(...zs) - z0) / step));
+    for (let j = r0; j <= r1; j++) for (let i = c0; i <= c1; i++) {
+      const x = x0 + i * step, z = z0 + j * step;
+      if (!inRing(r, x, z)) continue;
+      const t = Math.min(1, Math.max(0, ((x - ax) * dx + (z - az) * dz) / L2));
+      const h = Math.max(c.floor, c.h_from + (c.h_to - c.h_from) * t), k = j * cols + i;
+      if (h < hm.y[k] - 1e-4) { hm.y[k] = h; n++; }
+    }
+  }
+  return n;
+}
+const inRing = (r, x, z) => { let k = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) k = !k; } return k; };
+
+/** The land-cover raster without the park's own path lines (their dolomite is the hero ground's crisp mesh; the raster's
+ *  1 m strokes would leave a blurred gravel band through the lawns): `ids` = the OSM way ids ("osm:w...") to leave out. */
+export function withoutLines(feats, ids) {
+  if (!ids?.length || !feats.lines) return feats;
+  const s = new Set(ids);
+  return { ...feats, lines: feats.lines.filter((l) => !s.has(l.id)) };
+}

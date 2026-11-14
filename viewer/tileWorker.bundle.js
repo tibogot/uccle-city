@@ -12320,6 +12320,41 @@ function applyParkSquares(surf, ov, bounds) {
   }
   return n;
 }
+function carveFlights(hm, carves) {
+  const { x0, z0, cols, rows, step } = hm.h;
+  let n = 0;
+  for (const c of carves || []) {
+    const r = c.ring, [ax, az] = c.from_, [bx, bz] = c.to;
+    const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz;
+    const xs = r.map((p) => p[0]), zs = r.map((p) => p[1]);
+    const c0 = Math.max(0, Math.floor((Math.min(...xs) - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(...xs) - x0) / step));
+    const r0 = Math.max(0, Math.floor((Math.min(...zs) - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(...zs) - z0) / step));
+    for (let j = r0; j <= r1; j++) for (let i = c0; i <= c1; i++) {
+      const x = x0 + i * step, z = z0 + j * step;
+      if (!inRing3(r, x, z)) continue;
+      const t = Math.min(1, Math.max(0, ((x - ax) * dx + (z - az) * dz) / L2));
+      const h = Math.max(c.floor, c.h_from + (c.h_to - c.h_from) * t), k = j * cols + i;
+      if (h < hm.y[k] - 1e-4) {
+        hm.y[k] = h;
+        n++;
+      }
+    }
+  }
+  return n;
+}
+var inRing3 = (r, x, z) => {
+  let k = false;
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+    const [xi, zi] = r[i], [xj, zj] = r[j];
+    if (zi > z !== zj > z && x < (xj - xi) * (z - zi) / (zj - zi) + xi) k = !k;
+  }
+  return k;
+};
+function withoutLines(feats, ids) {
+  if (!ids?.length || !feats.lines) return feats;
+  const s = new Set(ids);
+  return { ...feats, lines: feats.lines.filter((l) => !s.has(l.id)) };
+}
 
 // viewer/tileData.js
 var railP = null;
@@ -12507,7 +12542,7 @@ async function buildTileData(entry, base) {
   const tunnels = entry.tunnels !== false ? await step("tunnel fetch", () => loadTunnels(base)) : null;
   if (tunnels?.length && feats.trees?.length) feats.trees = tunnelTrees(tunnels, feats.trees);
   if (entry.fuelClear?.length && feats.trees?.length) {
-    const inRing3 = (r, x, z) => {
+    const inRing4 = (r, x, z) => {
       let k = false;
       for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
         const [xi, zi] = r[i], [xj, zj] = r[j];
@@ -12515,7 +12550,7 @@ async function buildTileData(entry, base) {
       }
       return k;
     };
-    feats.trees = feats.trees.filter((t) => t.source !== "urbis-chm" || !entry.fuelClear.some((r) => inRing3(r, t.x, t.z)));
+    feats.trees = feats.trees.filter((t) => t.source !== "urbis-chm" || !entry.fuelClear.some((r) => inRing4(r, t.x, t.z)));
   }
   const surfDoc = (entry.surface || entry.grass) && F.surfaces ? await step("fetch surfaces", () => get(F.surfaces)) : null;
   const surf = entry.surface ? surfDoc : null;
@@ -12596,6 +12631,7 @@ async function buildTileData(entry, base) {
     feats.areas = (feats.areas || []).filter((a) => !ids.has(a.id));
   }
   if (entry.ponds?.length) await step("pond beds", () => carvePonds(hm, entry.ponds.filter((p) => p.ring.some(([x, z]) => x >= x0 - 5 && x <= x1 + 5 && z >= z0 - 5 && z <= z1 + 5))));
+  if (entry.heros?.carves?.length) await step("heros steps", () => carveFlights(hm, entry.heros.carves));
   let railOut = null;
   if (rail) {
     const c = await step("rail carve", () => carveGrid(rail.doc, hm.y, tHdr, bounds, rail.heroes));
@@ -12644,7 +12680,7 @@ async function buildTileData(entry, base) {
   const kit = entry.kit ? kitCollector({ exclude: new Set(entry.kitExclude || []), ground: (x, z) => hm.ground(x, z) }) : null;
   const fronts = entry.streetlife ? await step("street-life fronts", () => streetlifeFronts(base, entry.name)) : null;
   const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts }));
-  const cover = await step("land cover", () => landCoverData(feats, bounds));
+  const cover = await step("land cover", () => landCoverData(withoutLines(feats, entry.heros?.paths), bounds));
   return {
     name: entry.name,
     bounds,
