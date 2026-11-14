@@ -98,7 +98,7 @@ let carsReady = false;
   const data = await new Promise((res, rej) => {
     worker.onmessage = (e) => (e.data.error ? rej(new Error(e.data.error)) : res(e.data));
     worker.onerror = (e) => rej(new Error(e.message || "car worker"));
-    worker.postMessage({ id: 1, url: S.url, S: { welded: S.welded, prune: S.prune, lods: S.lods } });
+    worker.postMessage({ id: 1, url: S.url, S: { welded: S.welded, prune: S.prune, smooth: S.smooth, lods: S.lods } });
   });
   worker.terminate();
   const mat = packMaterial({ paint: "instance", rich: true, lights: { head: attribute("aHead", "float"), tail: attribute("aTail", "float") } });

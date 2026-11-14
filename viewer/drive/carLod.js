@@ -8,15 +8,26 @@
 /** Flat-shaded packs split vertices per face (hard normals): nearly every edge is a border and the simplifier can
  *  hardly move. Simplify on an index WELDED by position + colour + kind instead (normals ignored): colour seams stay
  *  borders (kept closed with LockBorder up close), flat faces merge; then flat face normals again. */
-function simplifyWelded(m, error, MS, prune = false, free = false) {
-  const { P, C, K, I } = m, n = P.length / 3;
+function simplifyWelded(m, error, MS, prune = false, free = false, smooth = false) {
+  const { P, N, C, K, I } = m, n = P.length / 3;
   const map = new Map(), weld = new Uint32Array(n), rep = [];
+  // smooth sources (our faceted family since the visual fixes: weighted split normals). Near LOD (< 2 cm error): the
+  // normal is part of the weld, so hard edges stay seams (meshoptimizer keeps them) and the panels keep their shading
+  // normals. Far LODs: weld as before (position + colour + kind: the same triangle budget as the flat family) and give
+  // each welded vertex the mean of its corners' normals (a crease turns soft, 55 m and more away: a few pixels)
+  const nKey = smooth && error < 0.02, nSum = smooth && !nKey ? [] : null;
   for (let i = 0; i < n; i++) {
     const k = `${Math.round(P[i * 3] * 1e4)},${Math.round(P[i * 3 + 1] * 1e4)},${Math.round(P[i * 3 + 2] * 1e4)}|${K[i]}|` +
-      `${Math.round(C[i * 3] * 500)},${Math.round(C[i * 3 + 1] * 500)},${Math.round(C[i * 3 + 2] * 500)}`;
+      `${Math.round(C[i * 3] * 500)},${Math.round(C[i * 3 + 1] * 500)},${Math.round(C[i * 3 + 2] * 500)}` +
+      (nKey ? `|${Math.round(N[i * 3] * 100)},${Math.round(N[i * 3 + 1] * 100)},${Math.round(N[i * 3 + 2] * 100)}` : "");
     let w = map.get(k);
-    if (w == null) { w = rep.length; map.set(k, w); rep.push(i); }
+    if (w == null) { w = rep.length; map.set(k, w); rep.push(i); if (nSum) nSum.push(0, 0, 0); }
     weld[i] = w;
+    if (nSum) { nSum[w * 3] += N[i * 3]; nSum[w * 3 + 1] += N[i * 3 + 1]; nSum[w * 3 + 2] += N[i * 3 + 2]; }
+  }
+  if (nSum) for (let w = 0; w < rep.length; w++) {
+    const l = Math.hypot(nSum[w * 3], nSum[w * 3 + 1], nSum[w * 3 + 2]) || 1;
+    nSum[w * 3] /= l; nSum[w * 3 + 1] /= l; nSum[w * 3 + 2] /= l;
   }
   const wpos = new Float32Array(rep.length * 3);
   rep.forEach((i, w) => wpos.set(P.subarray(i * 3, i * 3 + 3), w * 3));
@@ -24,15 +35,17 @@ function simplifyWelded(m, error, MS, prune = false, free = false) {
   const flags = error < 0.02 && !free ? ["ErrorAbsolute", "LockBorder"] : ["ErrorAbsolute"];
   if (prune && error >= 0.02) flags.push("Prune");   // far LODs: drop islands under the error (lug nuts, plate glyphs, wipers)
   const [idx] = MS.simplify(widx, wpos, 3, 0, error, flags);
-  return flatten(idx, wpos, (w, o, out) => { const src = rep[w]; out.C.set(C.subarray(src * 3, src * 3 + 3), o * 3); out.K[o] = K[src]; });
+  return flatten(idx, wpos, (w, o, out) => { const src = rep[w]; out.C.set(C.subarray(src * 3, src * 3 + 3), o * 3); out.K[o] = K[src]; },
+    nSum ? (w, o, out) => { out.N[o * 3] = nSum[w * 3]; out.N[o * 3 + 1] = nSum[w * 3 + 1]; out.N[o * 3 + 2] = nSum[w * 3 + 2]; }
+      : smooth ? (w, o, out) => out.N.set(N.subarray(rep[w] * 3, rep[w] * 3 + 3), o * 3) : null);
 }
 
 /** The FAR LOD of a many-coloured mesh (our faceted cars, >= 130 m: 15-25 px): weld on POSITION only, so colour seams
  *  stop being borders, and let simplifyWithAttributes weigh the colour (and a paint flag) so regions keep their place.
  *  Each output triangle gets one kind (paint wins when most of its corners are paint, else the commonest) and the mean
  *  colour of its corners of that kind; flat normals again. */
-function simplifyLoose(m, error, MS, prune = false) {
-  const { P, C, K, I } = m, n = P.length / 3;
+function simplifyLoose(m, error, MS, prune = false, smooth = false) {
+  const { P, N: SN, C, K, I } = m, n = P.length / 3;
   const map = new Map(), weld = new Uint32Array(n), reps = [];
   for (let i = 0; i < n; i++) {
     const k = `${Math.round(P[i * 3] * 1e4)},${Math.round(P[i * 3 + 1] * 1e4)},${Math.round(P[i * 3 + 2] * 1e4)}`;
@@ -41,8 +54,14 @@ function simplifyLoose(m, error, MS, prune = false) {
     reps[w].push(i); weld[i] = w;
   }
   const N = reps.length, wpos = new Float32Array(N * 3), attr = new Float32Array(N * 4), vkind = new Uint8Array(N), vcol = new Float32Array(N * 3);
+  const vn = smooth ? new Float32Array(N * 3) : null;      // smooth: the mean of the corner normals (15-25 px far away)
   reps.forEach((list, w) => {
     wpos.set(P.subarray(list[0] * 3, list[0] * 3 + 3), w * 3);
+    if (vn) {
+      let x = 0, y = 0, z = 0;
+      for (const i of list) { x += SN[i * 3]; y += SN[i * 3 + 1]; z += SN[i * 3 + 2]; }
+      const l = Math.hypot(x, y, z) || 1; vn[w * 3] = x / l; vn[w * 3 + 1] = y / l; vn[w * 3 + 2] = z / l;
+    }
     const cnt = new Map();
     let r = 0, g = 0, b = 0, paint = 0;
     for (const i of list) { r += C[i * 3]; g += C[i * 3 + 1]; b += C[i * 3 + 2]; if (K[i] === 1) paint++; cnt.set(K[i], (cnt.get(K[i]) || 0) + 1); }
@@ -66,11 +85,13 @@ function simplifyLoose(m, error, MS, prune = false) {
     for (const x of w) if (vkind[x] === kd) { cr += vcol[x * 3]; cg += vcol[x * 3 + 1]; cb += vcol[x * 3 + 2]; cm++; }
     triKind[t] = kd; triCol[t * 3] = cr / cm; triCol[t * 3 + 1] = cg / cm; triCol[t * 3 + 2] = cb / cm;
   }
-  return flatten(idx, wpos, (w, o, out, t) => { out.C.set(triCol.subarray(t * 3, t * 3 + 3), o * 3); out.K[o] = triKind[t]; });
+  return flatten(idx, wpos, (w, o, out, t) => { out.C.set(triCol.subarray(t * 3, t * 3 + 3), o * 3); out.K[o] = triKind[t]; },
+    vn ? (w, o, out) => out.N.set(vn.subarray(w * 3, w * 3 + 3), o * 3) : null);
 }
 
-/** Non-indexed output with flat normals; attr(w, corner, out, tri) fills colour + kind per corner. */
-function flatten(idx, wpos, attr) {
+/** Non-indexed output with flat normals (or nrm(w, corner, out): the source's smooth ones); attr(w, corner, out, tri)
+ *  fills colour + kind per corner. */
+function flatten(idx, wpos, attr, nrm = null) {
   const T = idx.length / 3, out = { P: new Float32Array(T * 9), N: new Float32Array(T * 9), C: new Float32Array(T * 9), K: new Float32Array(T * 3) };
   for (let t = 0; t < T; t++) {
     const a = idx[t * 3] * 3, b = idx[t * 3 + 1] * 3, c = idx[t * 3 + 2] * 3;
@@ -82,6 +103,7 @@ function flatten(idx, wpos, attr) {
       const o = t * 3 + k, w = idx[o];
       out.P[o * 3] = wpos[w * 3]; out.P[o * 3 + 1] = wpos[w * 3 + 1]; out.P[o * 3 + 2] = wpos[w * 3 + 2];
       out.N[o * 3] = nx; out.N[o * 3 + 1] = ny; out.N[o * 3 + 2] = nz;
+      if (nrm) nrm(w, o, out);
       attr(w, o, out, t);
     }
   }
@@ -90,10 +112,10 @@ function flatten(idx, wpos, attr) {
 }
 
 /** One LOD of a mesh. opts: { error, welded (always weld), prune, free (no locked borders), loose (position-only weld) } */
-export function lodMesh(m, { error, welded = false, prune = false, free = false, loose = false }, MS) {
+export function lodMesh(m, { error, welded = false, prune = false, free = false, loose = false, smooth = false }, MS) {
   if (!error) return m;
-  if (loose) return simplifyLoose(m, error, MS, prune);
-  if (welded) return simplifyWelded(m, error, MS, prune, free);
+  if (loose) return simplifyLoose(m, error, MS, prune, smooth);
+  if (welded) return simplifyWelded(m, error, MS, prune, free, smooth);
   const [idx] = MS.simplify(new Uint32Array(m.I), m.P, 3, 0, error, ["ErrorAbsolute"]);
   if (idx.length < m.I.length * 0.85) return { ...m, I: idx };
   return simplifyWelded(m, error, MS);
@@ -102,7 +124,7 @@ export function lodMesh(m, { error, welded = false, prune = false, free = false,
 /** The LOD error / flags of part `name` at LOD level `L` of a pack source spec S (carPacks.js PACK_SOURCES). */
 export function lodOpts(S, L, name) {
   const body = name === "Body", e = body ? L.error : L.wheel ?? L.error * 0.6;
-  return { error: e, welded: !!S.welded, prune: !!S.prune, free: !body && L.wheel != null, loose: !!L.loose };
+  return { error: e, welded: !!S.welded, prune: !!S.prune, free: !body && L.wheel != null, loose: !!L.loose, smooth: !!S.smooth };
 }
 
 // ---------------------------------------------------------------------------------------------- GLB (our contract)

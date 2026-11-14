@@ -7,12 +7,27 @@
 // Pole spacing, heights and widths are typical STIB values, not surveyed. Everything is instanced or
 // merged: 4 draw calls for the whole tile.
 import * as THREE from "three/webgpu";
-import { attribute, uv, vec3, color, mix, mx_noise_float } from "three/tsl";
+import { attribute, uv, vec3, color, mix, mx_noise_float, cameraPosition, positionLocal, length, max, normalize, cross, clamp, float, smoothstep } from "three/tsl";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { MODELS } from "./furniture.js";
 import { TRAM_PLATFORM, isTramPlatform, platformRing } from "./drive/colliders.js";
 
-const WIRE_H = 5.8, POLE_STEP = 32, POLE_OFF = 3.4;
+const WIRE_H = 5.8, POLE_STEP = 32, POLE_OFF = 3.4, WIRE_R = 0.012;
+let wireMat = null;
+const OLD_WIRE = typeof location !== "undefined" && /[?&]aawire=0/.test(location.search);
+/** The contact wire's material (shared by every tile): the AA-wire ribbon of viewer/rail/railway.js */
+function wireMaterial() {
+  if (wireMat) return wireMat;
+  const m = new THREE.MeshStandardNodeMaterial({ color: 0x3b4044, roughness: 0.5, metalness: 0.7 });
+  const tan = attribute("aTan", "vec3"), side = attribute("aSide", "float"), r = attribute("aR", "float");
+  const toCam = cameraPosition.sub(positionLocal), dist = length(toCam);
+  const w = max(r, dist.mul(0.0011));                                   // ~1 px at 1080p, 60 deg fov
+  m.positionNode = positionLocal.add(normalize(cross(tan, toCam)).mul(side).mul(w));
+  m.opacityNode = clamp(r.div(w), 0.08, 1).mul(float(1).sub(smoothstep(500, 900, dist)));
+  m.alphaToCoverage = true;
+  m.userData.shared = true;
+  return (wireMat = m);
+}
 
 function densify(line, step) {
   const out = [];
@@ -159,8 +174,8 @@ export function buildTram(feats, surface, bounds, prof = null, onRoadDeck = null
     }
   }
   const up = new THREE.Vector3(0, 1, 0), M = new THREE.Matrix4(), q = new THREE.Quaternion();
-  if (segs.length) {
-    const wire = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.012, 0.012, 1, 4), steel, segs.length);
+  if (segs.length && OLD_WIRE) {                                    // ?aawire=0: the old cylinders (A/B)
+    const wire = new THREE.InstancedMesh(new THREE.CylinderGeometry(WIRE_R, WIRE_R, 1, 4), steel, segs.length);
     const a = new THREE.Vector3(), b = new THREE.Vector3(), dir = new THREE.Vector3(), mid = new THREE.Vector3();
     segs.forEach(([ax, ay, az, bx, by, bz], i) => {
       a.set(ax, ay, az); b.set(bx, by, bz); dir.subVectors(b, a);
@@ -169,7 +184,26 @@ export function buildTram(feats, surface, bounds, prof = null, onRoadDeck = null
       M.compose(mid.addVectors(a, b).multiplyScalar(0.5), q, new THREE.Vector3(1, L, 1));
       wire.setMatrixAt(i, M);
     });
-    wire.computeBoundingSphere();
+    wire.computeBoundingSphere(); wire.name = "tram-wire"; group.add(wire);
+  } else if (segs.length) {
+    // AA WIRE (as the railway's catenary, viewer/rail/railway.js): a camera-facing ribbon on the wire's centre line,
+    // widened to >= ~1 px in the vertex shader, its true width as alpha-to-coverage. It was a 1.2 cm 4-sided cylinder:
+    // sub-pixel from ~10 m, so MSAA caught it on some pixels only: the "aliased dashed black lines" across the blank
+    // party walls behind it (owner playtest 2026-11-14, item 4)
+    const n = segs.length, P = new Float32Array(n * 12), T = new Float32Array(n * 12), Sd = new Float32Array(n * 4), R = new Float32Array(n * 4).fill(WIRE_R), I = new Uint32Array(n * 6);
+    segs.forEach(([ax, ay, az, bx, by, bz], i) => {
+      const L = Math.hypot(bx - ax, by - ay, bz - az) || 1, t = [(bx - ax) / L, (by - ay) / L, (bz - az) / L];
+      P.set([ax, ay, az, ax, ay, az, bx, by, bz, bx, by, bz], i * 12);
+      for (let k = 0; k < 4; k++) { T.set(t, i * 12 + k * 3); Sd[i * 4 + k] = k % 2 ? 1 : -1; }
+      I.set([i * 4, i * 4 + 1, i * 4 + 2, i * 4 + 1, i * 4 + 3, i * 4 + 2], i * 6);   // wound to face the camera (the offset is view-relative)
+    });
+    const g = new THREE.BufferGeometry();
+    const nrm = new Float32Array(n * 12); for (let k = 1; k < nrm.length; k += 3) nrm[k] = 1;
+    g.setAttribute("position", new THREE.BufferAttribute(P, 3)); g.setAttribute("normal", new THREE.BufferAttribute(nrm, 3));
+    g.setAttribute("aTan", new THREE.BufferAttribute(T, 3)); g.setAttribute("aSide", new THREE.BufferAttribute(Sd, 1)); g.setAttribute("aR", new THREE.BufferAttribute(R, 1));
+    g.setIndex(new THREE.BufferAttribute(I, 1));
+    const wire = new THREE.Mesh(g, wireMaterial());
+    wire.frustumCulled = false;                                     // the expansion moves vertices outside the bounding sphere
     wire.name = "tram-wire";
     group.add(wire);
   }

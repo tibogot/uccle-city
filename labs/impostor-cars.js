@@ -98,7 +98,7 @@ const lodData = await new Promise((resolve, reject) => {
   const w = new Worker(new URL("../viewer/carLodWorker.js", import.meta.url), { type: "module" });
   w.onmessage = (e) => { w.terminate(); e.data.error ? reject(new Error(e.data.error)) : resolve(e.data); };
   w.onerror = (e) => reject(new Error(e.message));
-  w.postMessage({ id: 1, url: SRC.url, S: { welded: SRC.welded, prune: SRC.prune, lods: SRC.lods } });
+  w.postMessage({ id: 1, url: SRC.url, S: { welded: SRC.welded, prune: SRC.prune, smooth: SRC.smooth, lods: SRC.lods } });
 });
 const LOD_DIST = SRC.lods.map((l) => l.until);
 const CAR_IDS = lodData.cars.map((c) => c.id);
