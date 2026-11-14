@@ -179,6 +179,10 @@ export function buildCars(roads, feats, ground, bounds, { place = null } = {}) {
     col.setMatrixAt(i, M);
   });
   col.computeBoundingSphere();
+  // the car objects in instance order: every collider made from this mesh keeps a reference to its car, so it is off
+  // while the car is not drawn (pulled out into the traffic) and takes the car's size when another type parks there
+  // (docs/collisions/ROAD_FIX3.md item 1)
+  col.userData.cars = cars;
   group.add(col);
   carFleet.add(group, cars);
   if (CARS_MODE === "ab") {                            // A/B timing: the box cars too, switched live (window.__cars.mode)

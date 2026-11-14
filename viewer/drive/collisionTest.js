@@ -26,6 +26,8 @@ import * as THREE from "three/webgpu";
 import { createCarState, stepCar, HANDLING, BODY } from "./carPhysics.js";
 import { gather, itemContact, heightClear, KIND } from "./colliders.js";
 import { ledgeContact } from "./carEnv.js";
+import { carFleet } from "../carFleet.js";
+const carSizeOf = (t) => carFleet.sizeOf(t);
 
 const CELL = 0.25;
 // walk from 0.28 m: the body steps up 0.25 m (controller stepHeight), anything taller stops it
@@ -108,7 +110,7 @@ export function drawnSolids(scene, tile, carGround, walkGround, tiles = [tile]) 
       mark(ax + (bx - ax) * u + (cx - ax) * v, ay + (by - ay) * u + (cy - ay) * v, az + (bz - az) * u + (cz - az) * v, src);
     }
   };
-  const M = new THREE.Matrix4(), W = new THREE.Matrix4(), v = new THREE.Vector3();
+  const M = new THREE.Matrix4(), W = new THREE.Matrix4(), v = new THREE.Vector3(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), sc = new THREE.Vector3();
   const mesh = (o, src) => {
     if (!o.isMesh || !o.geometry?.attributes?.position || !solidMesh(o)) return;
     const P = o.geometry.attributes.position, I = o.geometry.index, n = I ? I.count : P.count;
@@ -153,9 +155,13 @@ export function drawnSolids(scene, tile, carGround, walkGround, tiles = [tile]) 
     else if (n === "tram-poles" || (p === "tram" && !n)) mesh(o, SRC.tram);
     else if (/^rail-(masts|platform)/.test(n)) mesh(o, SRC.rail);
     else if (n === "parked-cars") {
-      if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+      // the cars the fleet DRAWS (viewer/carFleet.js): a car pulled out into the traffic is not there (road fix round 3:
+      // until then the truth was the collider boxes themselves, so a box with no car drawn could never be "invisible")
+      const cars = o.userData.cars;
       for (let k = 0; k < o.count; k++) {
-        o.getMatrixAt(k, M); W.multiplyMatrices(o.matrixWorld, M);
+        if (cars?.[k]?.hidden) continue;
+        if (cars?.[k]) { const c = cars[k], [w, h, l] = carSizeOf(c.type); W.compose(v.set(c.x, c.y, c.z), q.setFromAxisAngle(up, c.heading), sc.set(w, h, l)); }
+        else { o.getMatrixAt(k, M); W.multiplyMatrices(o.matrixWorld, M); }
         // the box: unit x / z in -0.5..0.5, y 0..1: sample its plan
         for (let u = -0.5; u <= 0.5; u += 0.04) for (let w = -0.5; w <= 0.5; w += 0.04) {
           v.set(u, 0.5, w).applyMatrix4(W);
@@ -177,6 +183,7 @@ export function colliderCells(G, sets) {
   const out = new Uint8Array(G.nx * G.nz), b = G.b;
   for (const col of sets) {
     for (let p = 0; p < col.P; p++) {
+      if (col.pref?.[p]?.hidden) continue;                 // a parked car not drawn now: its box is off (gather)
       const q = p * 4;
       if (col.pbox[q + 2] < b.x0 || col.pbox[q] > b.x1 || col.pbox[q + 3] < b.z0 || col.pbox[q + 1] > b.z1) continue;
       const k0 = Math.max(0, Math.floor((col.pbox[q + 1] - b.z0) / CELL)), k1 = Math.min(G.nz - 1, Math.floor((col.pbox[q + 3] - b.z0) / CELL));
@@ -268,8 +275,34 @@ export function staticCompare(G, truth, colCells) {
 /** Road polylines of a tile (roads.json) with their right driving lane / sidewalk offsets. */
 function roadLines(tile) {
   const R = tile.roads, nodes = new Map(R.nodes.map((n) => [n.id, n])), b = tile.bounds, out = [];
+  // ROUNDABOUTS (road fix round 3, G2 Churchill): roads.json has a roundabout as ONE node (kind "roundabout", ring
+  // radius) whose arms all end at its centre; the engine draws the ring and the traffic drives its ring connectors
+  // (viewer/traffic/trafficGraph.js turn 4, radius ~34 m at Churchill), but these routes ran straight across the
+  // island (the tram site and its platforms at Churchill). The arms now stop at the ring, and the ring itself is a
+  // route, driven anticlockwise (right-hand traffic) on its centre line, walked on its outer sidewalk.
+  const rings = R.nodes.filter((n) => n.kind === "roundabout" && n.ring?.radius > 4);
+  const clipRings = (pts) => {
+    let q = pts;
+    for (const n of rings) {
+      const out2 = (p) => Math.hypot(p[0] - n.x, p[1] - n.z) > n.ring.radius + 2;
+      if (q.every(out2)) continue;
+      const fine = resample(q, 1);
+      // keep the longest run outside the ring (an arm: everything up to the ring's edge)
+      let best = [], cur = [];
+      for (const p of fine) { if (out2(p)) cur.push(p); else { if (cur.length > best.length) best = cur; cur = []; } }
+      if (cur.length > best.length) best = cur;
+      q = best;
+    }
+    return q;
+  };
+  for (const n of rings) {
+    const rc = n.meta?.centerlineRadius ?? n.ring.radius - 2.6, pts = [];
+    for (let k = 0; k <= 96; k++) { const a = k / 96 * Math.PI * 2; pts.push([n.x + rc * Math.cos(a), n.z - rc * Math.sin(a)]); }   // (z points south: anticlockwise on the map)
+    out.push({ id: `ring ${n.id}`, type: "roundabout", pts, lane: 0, walk: [n.ring.radius + 1.5 - rc], passage: false, ring: true });
+  }
   for (const r of R.roads) {
-    const pts = [nodes.get(r.a), ...(r.pts || []), nodes.get(r.b)].filter(Boolean).map((p) => [p.x, p.z]);
+    let pts = [nodes.get(r.a), ...(r.pts || []), nodes.get(r.b)].filter(Boolean).map((p) => [p.x, p.z]);
+    if (rings.length) pts = clipRings(pts);
     if (pts.length < 2) continue;
     const inside = pts.filter(([x, z]) => x > b.x0 + 2 && x < b.x1 - 2 && z > b.z0 + 2 && z < b.z1 - 2).length;
     if (inside < 1) continue;
@@ -396,7 +429,7 @@ export function driveRoutes({ scene, tile, driver, truth, G, maxRoads = Infinity
     return dq != null && dc != null && Math.abs(dq - gq) < 0.3 && dq - dc > 0.5;
   };
   const st0 = { x: 0, z: 0 };
-  for (const L of lines) for (const dir of [1, -1]) {
+  for (const L of lines) for (const dir of L.ring ? [1] : [1, -1]) {
     road = `${L.id} ${L.type}`;
     const center = dir > 0 ? L.pts : L.pts.slice().reverse();
     let path = resample(offsetLine(center, L.lane), 2).filter(([x, z]) => inT(x, z));

@@ -220,7 +220,7 @@ def seam_fill(b: np.ndarray, f: np.ndarray):
     return out, st
 
 
-RESAMPLE = "mosaic"   # "exact": urbis_grid_exact (--resample exact); the data in data/tiles is still "mosaic" (see ROAD_FIX2.md)
+RESAMPLE = "exact"    # the default since road fix round 3 (all 120 tiles rebuilt, docs/collisions/ROAD_FIX3.md); "mosaic" = the old rasterio.merge path
 
 
 def build(tile: str, src: Path, fill_dir: Path | None = FILL_DIR):
@@ -273,7 +273,7 @@ def main():
     ap.add_argument("--src", type=Path, default=RAW / "urbis" / "dtm")
     ap.add_argument("--fill", type=Path, default=FILL_DIR, help="DHMV tiles (fetch_dhmv.py) for cells past the region border")
     ap.add_argument("--no-fill", action="store_true")
-    ap.add_argument("--resample", choices=["mosaic", "exact"], default="mosaic",
+    ap.add_argument("--resample", choices=["mosaic", "exact"], default="exact",
                     help="exact: every corner from its own position (tile edges match; docs/collisions/ROAD_FIX2.md)")
     ap.add_argument("--out", type=Path, default=None, help="write here instead of data/tiles (a trial build)")
     args = ap.parse_args()

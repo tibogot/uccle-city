@@ -73,6 +73,13 @@ export async function start({ walk = false, only = null, maxRoads = Infinity, ti
           .slice(0, maxItems).map((i) => ({ k: i.kind, x: i.x, z: i.z, by: i.by, r: i.road, c: i.collider, d: i.drawn, walk: i.walk || undefined,
             why: diag ? diagnose(i.x, i.z) : undefined }));
       } catch (e) { rec.error = String(e?.message || e); }
+      // parked-car colliders vs the drawn parked cars of the tile (debug/parkedCheck.js: must be 0 / 0)
+      try {
+        const P = await import("./parkedCheck.js");
+        const q = await P.check({ tiles: [t.name], maxItems: 20 });
+        rec.parked = { drawn: q.drawn, drive: q.drive, walk: q.walk };
+        if (q.items.length) rec.parkedItems = q.items;
+      } catch (e) { rec.parkedError = String(e?.message || e); }
       S.out.push(rec); S.done++; save();
     }
     S.running = false; S.current = null;

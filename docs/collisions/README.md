@@ -104,3 +104,9 @@ Root causes of the city-wide drive audit, the fixes and the before / after numbe
 Rough Linkebeek junctions by their lanes, OSM deck abutments and decks across tile edges, area tram platforms, the street
 level through the hero underpasses, building passages, the tile-edge DTM cause and fix, the first city-wide walk pass:
 `ROAD_FIX2.md`.
+
+## Road fix round 3 (2026-11-14)
+Invisible parked cars (tiles streamed in after the boot drew no parked car; pulled-out cars left their boxes) fixed,
+with a city-wide parked-car check (`debug/parkedCheck.js`, 15,888 -> 0 boxes with no car); the falcon on the drawn roof
+surface and its G view; test routes round the roundabouts (Churchill); all 120 terrains rebuilt with the exact resample
+(every tile edge matches): `ROAD_FIX3.md`.

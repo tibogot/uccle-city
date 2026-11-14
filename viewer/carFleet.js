@@ -68,6 +68,7 @@ class CarFleet {
   constructor() {
     this.group = new THREE.Group(); this.group.name = "parked-cars-fleet";
     this.regs = [];
+    this.listeners = new Set();
     this.ready = false; this.failed = null;
     this.stats = { cars: 0, drawn: 0, perLod: [0, 0, 0, 0], fading: 0, culled: 0, far: 0, draws: 0, tris: 0, pops: 0, appears: 0 };   // pops: cumulative, see update
     this.frustum = new THREE.Frustum(); this.pm = new THREE.Matrix4(); this.sphere = new THREE.Sphere(new THREE.Vector3(), 3.2);
@@ -75,8 +76,13 @@ class CarFleet {
     this.update = this.update.bind(this);
   }
   sizeOf(type) { return SIZES[type] || SIZES.hatch_c; }
-  /** Something about a car changed (hidden, type, paint, matrix): redo the batches next update. */
-  touch() { this.dirty = true; }
+  /** Something about a car changed (hidden, type, paint, matrix): redo the batches next update, and tell the collider
+   *  sets (drive, on foot) that hold a box for that car, so a collider exists exactly while its car is drawn. */
+  touch(car) { this.dirty = true; if (car) for (const f of this.listeners) f(car); }
+  /** f(car) after a parked car was hidden / shown / changed type (viewer/drive/driveMode.js, viewer/character/cityHook.js). */
+  onChange(f) { this.listeners.add(f); }
+  /** Is this parked car drawn (in the fleet, not pulled out into the traffic)? The colliders' rule. */
+  drawn(car) { return !car.hidden; }
   /** A tile's cars: [{ x, y, z, heading, type, pv }]; `group` = the tile's car group (dropped when it leaves the scene). */
   add(group, cars) {
     const M = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1), v = new THREE.Vector3();
@@ -172,12 +178,19 @@ class CarFleet {
     if (camera) this.camera ||= camera;
     if (!this.ready || !camera) return;
     if (this.pendingTypes?.length) { this.types[this.pendingTypes.shift()].t0 = performance.now(); this.dirty = true; }
-    // tiles that left the scene
+    // tiles that left the scene. A tile registers its cars BEFORE its group is in the scene (viewer/main.js loadTile:
+    // buildCars, then a frame, then own.features.add): until 2026-11-14 that frame dropped the registration, so every
+    // tile streamed in after the boot drew NO parked car while its collider boxes stood (the owner's "invisible cars",
+    // road fix round 3). A registration now waits for its group, and leaves only once the group has left the scene.
     const attached = (g) => { let o = g; while (o.parent) o = o.parent; return o.isScene; };
-    const before = this.regs.length;
-    this.regs = this.regs.filter((r) => attached(r.group));
-    if (this.regs.length !== before) this.dirty = true;
     const now = performance.now();
+    const before = this.regs.length;
+    this.regs = this.regs.filter((r) => {
+      const on = attached(r.group);
+      if (on && !r.live) { r.live = true; r.t0 = now; this.dirty = true; }        // in the scene: its fade-in starts now
+      return on || (!r.live && now - r.t0 < 120000);    // (a tile dropped while being built: let go after 2 min)
+    });
+    if (this.regs.length !== before) this.dirty = true;
     const fadingIn = this.regs.some((r) => now - r.t0 < FADE_IN_MS) || Object.values(this.types).some((T) => !(now - T.t0 >= FADE_IN_MS));
     camera.updateMatrixWorld();
     const moved = !this.lastCam.equals(camera.matrixWorld);
@@ -194,6 +207,7 @@ class CarFleet {
     const jumped = this.lastPos ? camPos.distanceTo(this.lastPos) > 5 : true;
     (this.lastPos ||= new THREE.Vector3()).copy(camPos);
     for (const r of this.regs) {
+      if (!r.live) continue;                             // its tile is still being built (not in the scene yet)
       const alpha = Math.min(1, (now - r.t0) / FADE_IN_MS);
       for (const c of r.cars) {
         st.cars++;

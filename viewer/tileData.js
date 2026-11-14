@@ -102,6 +102,42 @@ export function roofGrid(bDoc, b) {
   return { data: g, nx, nz, x0: b.x0, z0: b.z0, step: ROOF_STEP };
 }
 
+/**
+ * THE DRAWN ROOF SURFACE for the falcon's collision (viewer/falconFlight/cityStream.js; road fix round 3, the owner:
+ * "the falcon's collision seems weird"): the flat roof grid above is every building's TOP over its whole footprint,
+ * dilated to 2 m cells, so over a pitched roof the bird hit (and landed on) nothing drawn up to 5 m over the eaves, and
+ * bounced off air up to 2 m in front of the facades. Here: the height of the topmost drawn roof triangle at each 1 m
+ * cell's centre (buildings.bin, the solids the city draws: a replaced one is hidden first), Uint16 in 2 cm (0 = no
+ * roof). 0.5 MB a tile.
+ */
+export const ROOF_SURF_STEP = 1, ROOF_SURF_Q = 50;
+export function roofSurface(bDoc, bBuf, b) {
+  const S = ROOF_SURF_STEP, nx = Math.ceil((b.x1 - b.x0) / S), nz = Math.ceil((b.z1 - b.z0) / S);
+  const g = new Uint16Array(nx * nz);
+  if (!bBuf) return null;
+  const dv = new DataView(bBuf), V = dv.getUint32(0, true), T = dv.getUint32(4, true);
+  const P = new Float32Array(bBuf, 8, V * 3), I = new Uint32Array(bBuf, 8 + V * 12, T * 3);
+  for (const bd of bDoc.buildings) {
+    if (!bd.roof) continue;
+    for (let t = bd.roof.first; t < bd.roof.first + bd.roof.count; t++) {
+      const a = I[t * 3] * 3, c = I[t * 3 + 1] * 3, d = I[t * 3 + 2] * 3;
+      const ax = P[a], ay = P[a + 1], az = P[a + 2], bx = P[c], by = P[c + 1], bz = P[c + 2], cx = P[d], cy = P[d + 1], cz = P[d + 2];
+      const den = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+      if (Math.abs(den) < 1e-9) continue;                       // a vertical / degenerate face
+      const i0 = Math.max(0, Math.ceil((Math.min(ax, bx, cx) - b.x0) / S - 0.5)), i1 = Math.min(nx - 1, Math.floor((Math.max(ax, bx, cx) - b.x0) / S - 0.5));
+      const j0 = Math.max(0, Math.ceil((Math.min(az, bz, cz) - b.z0) / S - 0.5)), j1 = Math.min(nz - 1, Math.floor((Math.max(az, bz, cz) - b.z0) / S - 0.5));
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+        const x = b.x0 + (i + 0.5) * S, z = b.z0 + (j + 0.5) * S;
+        const w1 = ((bz - cz) * (x - cx) + (cx - bx) * (z - cz)) / den, w2 = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / den, w3 = 1 - w1 - w2;
+        if (w1 < -1e-6 || w2 < -1e-6 || w3 < -1e-6) continue;
+        const y = w1 * ay + w2 * by + w3 * cy, q = Math.min(65535, Math.max(1, Math.round(y * ROOF_SURF_Q)));
+        if (q > g[j * nx + i]) g[j * nx + i] = q;
+      }
+    }
+  }
+  return { data: g, nx, nz, x0: b.x0, z0: b.z0, step: S, q: ROOF_SURF_Q };
+}
+
 /** Is (x, z) under a building (roof grid cell > 0)? */
 export const onRoof = (g, x, z) => {
   const i = Math.floor((x - g.x0) / g.step), j = Math.floor((z - g.z0) / g.step);
@@ -270,6 +306,7 @@ export async function buildTileData(entry, base) {
   const nb = bDoc.buildings.length;
   const keep = entry.driveKeepHidden ? { buildings: bDoc.buildings.slice() } : null;      // ?colfix=0: the old way
   hideBuildings(bDoc, entry.hide);
+  roofs.surf = await step("roof surface", () => roofSurface(bDoc, bBuf, bounds));      // the falcon's collision (drawn roofs)
   // the railway for the car (viewer/rail/railData.js): fences along the line where it runs on the ground (not on bridges,
   // not over a tunnel, broken at road crossings), and below the line's own surface in the drive grid (rail top, shoulders)
   const fences = rail && !keep && entry.railFix ? await step("rail fences", () => railFences(rail.doc, bounds, rail.heroes, roads, hm.ground)) : null;

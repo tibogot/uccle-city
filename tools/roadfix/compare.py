@@ -18,3 +18,10 @@ for mode in ("drive", "walk"):
         if d: print("  ", t, " ".join(f"{k} {x}->{y}" for k, (x, y) in d.items()))
 errs = [t for t, r in B.items() if r.get("error") or r.get("missingNeighbours")]
 print("errors / missing neighbours after:", errs)
+# parked-car colliders vs drawn parked cars (road fix round 3, debug/parkedCheck.js)
+for mode in ("drive", "walk"):
+    print(f"\nparked cars ({mode}): | check | before | after |")
+    for k in ("colliders", "invisible", "missing", "sizeOff"):
+        a = sum(((r.get("parked") or {}).get(mode) or {}).get(k, 0) for r in A.values()); b = sum(((r.get("parked") or {}).get(mode) or {}).get(k, 0) for r in B.values())
+        print(f"| {k} | {a} | {b} |")
+print("drawn parked cars:", sum((r.get("parked") or {}).get("drawn", 0) for r in A.values()), "->", sum((r.get("parked") or {}).get("drawn", 0) for r in B.values()))

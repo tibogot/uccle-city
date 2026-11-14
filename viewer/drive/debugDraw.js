@@ -16,8 +16,9 @@ export class ColliderDebug {
   constructor(scene) {
     const g = new THREE.BufferGeometry();
     this.pos = new Float32Array(MAX * 3); this.col = new Float32Array(MAX * 3);
-    g.setAttribute("position", new THREE.BufferAttribute(this.pos, 3).setUsage(THREE.DynamicDrawUsage));
-    g.setAttribute("color", new THREE.BufferAttribute(this.col, 3).setUsage(THREE.DynamicDrawUsage));
+    // static usage, written with needsUpdate + the used range (r187 re-uploads a DynamicDrawUsage buffer whole every pass)
+    g.setAttribute("position", new THREE.BufferAttribute(this.pos, 3));
+    g.setAttribute("color", new THREE.BufferAttribute(this.col, 3));
     g.setDrawRange(0, 0);
     this.lines = new THREE.LineSegments(g, new THREE.LineBasicNodeMaterial({ vertexColors: true, depthTest: false, transparent: true }));
     this.lines.frustumCulled = false; this.lines.renderOrder = 999; this.lines.visible = false; this.want = false;
@@ -97,8 +98,7 @@ export class ColliderDebug {
     if (h && performance.now() - h.t < 1500) seg(h.x, c.y + 0.8, h.z, h.x + h.nx * 3, c.y + 0.8, h.z + h.nz * 3, [1, 0.2, 0.2]);
     this.lines.geometry.setDrawRange(0, n);
     this.lines.visible = n > 0;
-    this.lines.geometry.attributes.position.needsUpdate = true;
-    this.lines.geometry.attributes.color.needsUpdate = true;
+    for (const a of [this.lines.geometry.attributes.position, this.lines.geometry.attributes.color]) { a.clearUpdateRanges(); a.addUpdateRange(0, n * 3); a.needsUpdate = true; }
     this.count = this.near.length / 2;
     const names = Object.fromEntries(Object.entries(KIND).map(([k, v]) => [v, k]));
     this.legend.innerHTML = `<b>car colliders within ${radius} m</b><br>` + Object.keys(COLORS).filter((k) => tally[k]).map((k) =>

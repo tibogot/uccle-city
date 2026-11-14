@@ -8,7 +8,8 @@
 import * as THREE from "three/webgpu";
 import { loadCarModel, createCar, carLights, fitBody } from "./carModel.js";
 import { HANDLING, createCarState, stepCar } from "./carPhysics.js";
-import { addCircles, buildColliders, driveHeight, extendColliders, gather, pointInBuilding, KIND } from "./colliders.js";
+import { addCircles, buildColliders, driveHeight, extendColliders, gather, pointInBuilding, setBox, KIND } from "./colliders.js";
+import { carFleet } from "../carFleet.js";
 import { createCarEnv } from "./carEnv.js";
 import { ChaseCamera } from "./chaseCamera.js";
 import { ColliderDebug } from "./debugDraw.js";
@@ -34,9 +35,21 @@ export function tileDrive(drive, roads, bounds, drawn = null, features = null) {
     const f = featureColliders(features, bounds);
     drive.col = extendColliders(drive.col, f.polys, f.circles);
     Object.assign(drive.counts, f.counts);
+    // each parked car knows its box in this set: off while it drives (colliders.js gather skips a hidden ref), its new
+    // type's size when another car parks into the slot (road fix round 3: the G view's "invisible cars")
+    const P = drive.col.pref;
+    if (P) for (let id = 0; id < P.length; id++) if (P[id]) (P[id].driveBox = { col: drive.col, id });
   }
   return drive;
 }
+
+/** The box of a parked car (viewer/carFleet.js car object: x, z, heading, type), as its 4 plan corners. */
+export function parkedCarRing(c) {
+  const [w, , l] = carFleet.sizeOf(c.type), s = Math.sin(c.heading), k = Math.cos(c.heading), hw = w / 2, hl = l / 2;
+  // the fleet's matrix: rotation about y by heading, scale (w, h, l): local x across the car, local z along it
+  return [[-hw, -hl], [hw, -hl], [hw, hl], [-hw, hl]].map(([u, v]) => [c.x + u * k + v * s, c.z - u * s + v * k]);
+}
+carFleet.onChange((c) => { if (c.driveBox && !c.hidden) setBox(c.driveBox.col, c.driveBox.id, parkedCarRing(c)); });
 
 /**
  * What else the tile DRAWS at car height (docs/collisions/README.md: until 2026-11-13 the car went through them): the
@@ -63,8 +76,10 @@ export function featureColliders(features, bounds) {
       if (!inT(o.x, o.z)) continue;
       if (kind === "pole") { circles.push({ x: o.x, z: o.z, r: n === "tram-poles" || n === "rail-masts" ? 0.15 : 0.08, kind: KIND.furniture }); counts.poles++; continue; }
       if (kind === "car") {
-        const ring = [[bb.min.x, bb.min.z], [bb.max.x, bb.min.z], [bb.max.x, bb.max.z], [bb.min.x, bb.max.z]].map(([x, z]) => { v.set(x, bb.min.y, z).applyMatrix4(W); return [v.x, v.z]; });
-        polys.push({ rings: [ring], kind: KIND.car }); counts.cars++;
+        // the car as it is NOW (its type may have changed since the box mesh was made: the traffic parks other cars in)
+        const car = m.userData.cars?.[i] || null;
+        const ring = car ? parkedCarRing(car) : [[bb.min.x, bb.min.z], [bb.max.x, bb.min.z], [bb.max.x, bb.max.z], [bb.min.x, bb.max.z]].map(([x, z]) => { v.set(x, bb.min.y, z).applyMatrix4(W); return [v.x, v.z]; });
+        polys.push({ rings: [ring], kind: KIND.car, ref: car }); counts.cars++;
         continue;
       }
       // benches, bike racks, shelters: what they draw at car height (a shelter's roof overhangs its posts and glass;
