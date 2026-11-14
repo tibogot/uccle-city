@@ -84,8 +84,11 @@ def h01(s, salt=""):
 # brick: 0 red-brown, 1 dark purple-brown (Brussels "klinker"), 2 orange-red, 3 sand / yellow, 4 white render
 # cap: 0 blue-stone slab, 1 white concrete slab, 2 concrete saddle; rail: 0 spear (wrought iron), 1 flat bars (modern),
 # 2 rings band (Art Deco); paint: 0 black, 1 anthracite, 2 dark green
-TERRACE_MIX = [("rail", 0.36), ("railhedge", 0.16), ("wall", 0.22), ("hedge", 0.12), ("modern", 0.06), ("open", 0.08)]
-VILLA_MIX = [("rail", 0.12), ("railhedge", 0.24), ("wall", 0.12), ("hedge", 0.30), ("modern", 0.10), ("open", 0.12)]
+# round 2, after the look check (docs/assets/GARDENS.md "Look check"): Uccle's villa streets are HEDGE streets (Alphonse
+# XIII, Lancaster, Dupuich, Brunard, Brugmann: clipped privet / yew / beech / laurel on the line, often on a low brick
+# wall), the terraces low walls + railings with shrubs behind; tall brick walls are rarer (Henri Pirenne)
+TERRACE_MIX = [("rail", 0.34), ("railhedge", 0.20), ("wall", 0.16), ("wallhedge", 0.10), ("hedge", 0.10), ("modern", 0.05), ("open", 0.05)]
+VILLA_MIX = [("rail", 0.08), ("railhedge", 0.20), ("wall", 0.08), ("wallhedge", 0.14), ("hedge", 0.38), ("modern", 0.06), ("open", 0.06)]
 HEDGE_SPECIES = [("privet", 0.34), ("beech", 0.26), ("laurel", 0.16), ("hornbeam", 0.12), ("box", 0.12)]
 
 
@@ -112,13 +115,16 @@ def make_style(kind, seed, villa):
         s["kind"] = "rail"; s["brick"] = pick([(4, 0.4), (1, 0.3), (3, 0.3)], u("mb"))
         s["wallH"] = 0.3 + 0.3 * u("wh"); s["rail"] = 1; s["railH"] = 0.8 + 0.25 * u("rh"); s["paint"] = 1; s["cap"] = 1 if s["brick"] == 4 else pick([(0, 0.5), (1, 0.5)], u("mc"))
     elif kind == "wall":
-        s["wallH"] = (0.45 + 0.5 * u("wh")) if not villa else (0.6 + 0.9 * u("wh"))
-    if kind in ("railhedge", "hedge"):
+        s["wallH"] = (0.45 + 0.5 * u("wh")) if not villa else (0.7 + 1.1 * u("wh"))
+    elif kind == "wallhedge":                         # a low brick wall with a clipped hedge behind it
+        s["wallH"] = 0.3 + 0.3 * u("wh")
+    if kind in ("railhedge", "hedge", "wallhedge"):
         sp = pick(HEDGE_SPECIES, u("sp"))
         if kind == "railhedge" and sp == "box": sp = "privet"
         s["hedge"] = sp
-        s["hedgeH"] = (0.5 + 0.25 * u("hh")) if sp == "box" else (1.1 + 0.6 * u("hh")) if kind == "railhedge" else (1.0 + 0.8 * u("hh"))
+        s["hedgeH"] = (0.5 + 0.25 * u("hh")) if sp == "box" else (1.1 + 0.6 * u("hh")) if kind in ("railhedge", "wallhedge") else (1.0 + 0.8 * u("hh"))
         if kind == "railhedge": s["kind"] = "rail"
+        if kind == "wallhedge": s["kind"] = "wall"
     if kind == "hedge":
         s["wallH"] = 0.0
     if s["brick"] == 4: s["pillar"] = 2
@@ -171,7 +177,7 @@ class Raster:
                 nb = f"{chr(i0 + di)}{j0 + dj}"
                 d = TILES / nb
                 if not (d / "surfaces.json").exists(): continue
-                for s in json.loads((d / "surfaces.json").read_text(encoding="utf-8"))["surfaces"]:
+                for s in drawn_surfaces(nb):
                     if s["c"] not in STREET_CLASSES or not s["rings"] or len(s["rings"][0]) < 3: continue
                     p = Polygon(s["rings"][0]).buffer(0)
                     if p.is_empty or not p.intersects(box): continue
@@ -232,6 +238,21 @@ class Raster:
 
 
 # ------------------------------------------------------------------------------------------------ inputs
+_DRAWN = {}
+
+
+def drawn_surfaces(name):
+    """a tile's street surfaces AS THE CITY DRAWS THEM (tools/gardens/drawnSurfaces.mjs: surfaces.json after
+    viewer/surfaces.js taperSteps / smoothCurves / rampKerbPoints): the runs stand on the drawn paving's back edge,
+    not on the raw UrbIS edge a splined edge may lie up to ~1 m in front of (the round-1 lawn strip)"""
+    if name not in _DRAWN:
+        if len(_DRAWN) > 24: _DRAWN.clear()
+        r = subprocess.run(["node", str(HERE / "drawnSurfaces.mjs"), name], capture_output=True, text=True, cwd=str(ROOT))
+        if r.returncode: raise RuntimeError(r.stderr[-2000:])
+        _DRAWN[name] = json.loads(r.stdout).get(name, [])
+    return _DRAWN[name]
+
+
 def node_faces(name):
     r = subprocess.run(["node", str(HERE / "faces.mjs"), name], capture_output=True, text=True, cwd=str(ROOT))
     if r.returncode: raise RuntimeError(r.stderr[-2000:])
@@ -529,7 +550,7 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
             kind = dom if (street and h01(bu, "follow") < 0.6) else pick(mix, h01(bu, "kind"))
             seed = (street + "|dom") if (street and kind == dom and h01(bu, "same-look") < 0.65) else bu
             gap = gardens[r["fi"]]
-            if gap < 2.5 and kind in ("railhedge", "hedge"): kind = "rail" if kind == "railhedge" else "wall"   # no hedge in a 1-2.5 m strip
+            if gap < 2.5 and kind in ("railhedge", "hedge", "wallhedge"): kind = "rail" if kind == "railhedge" else "wall"   # no hedge in a 1-2.5 m strip
             st = make_style(kind, seed, villa)
             if st["hedge"] and gap < 4.0: st["hedgeH"] = min(st["hedgeH"], 1.3)
         if st["kind"] == "open":
@@ -547,7 +568,11 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
             if not q.is_empty:
                 q = q if q.geom_type == "Point" else min(getattr(q, "geoms", [q]), key=lambda g: g.distance(Point(dx, dz)))
                 s = ls.project(q if q.geom_type == "Point" else q.centroid)
-                ops.append([s - 0.55, s + 0.55, "ped"]); stats["door_gates"] += 1
+                # round 2: 1.3 m between the pillars' centres (0.94 m clear: a real garden gate, and the walker's 0.6 m
+                # body gets through); no gate where a building stands right behind the line (an annex, a garage)
+                gp = ls.interpolate(s)
+                if R.in_building(gp.x - f["nx"] * 0.6, gp.y - f["nz"] * 0.6): stats["door_gate_blocked"] += 1
+                else: ops.append([s - 0.65, s + 0.65, "ped"]); stats["door_gates"] += 1
             else: stats["door_off_run"] += 1
         for dl in ([drives[k] for k in drive_tree.query(ls.buffer(1.5))] if drive_tree is not None else []):
             if dl.distance(ls) > 1.5: continue

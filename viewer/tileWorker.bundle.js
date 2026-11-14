@@ -6824,13 +6824,17 @@ function smoothCurves(surf) {
       const t = turnAt(l[k - 1], p, l[k + 1]);
       return t >= 1 && t <= 75 ? t : 0;
     });
+    const EDGE_RATIO = 4, edge = li >= nK;
+    const bends = (k, piece, other) => !!curve[k] && (!edge || piece <= EDGE_RATIO * other);
     for (let k = 0; k + 1 < n; k++) {
-      const tb = Math.max(curve[k], curve[k + 1]);
+      const pk = D(l[k], l[k + 1]);
+      const c0 = bends(k, pk, k > 0 ? D(l[k - 1], l[k]) : 0), c1 = bends(k + 1, pk, k + 2 < n ? D(l[k + 1], l[k + 2]) : 0);
+      const tb = Math.max(c0 ? curve[k] : 0, c1 ? curve[k + 1] : 0);
       if (!tb) continue;
       maxTurnBefore = Math.max(maxTurnBefore, tb);
-      const a = l[k], b = l[k + 1], p0 = curve[k] && k > 0 ? l[k - 1] : [2 * a[0] - b[0], 2 * a[1] - b[1]], p3 = curve[k + 1] && k + 2 < n ? l[k + 2] : [2 * b[0] - a[0], 2 * b[1] - a[1]];
-      const radius = (k2) => curve[k2] ? Math.min(D(l[Math.max(0, k2 - 1)], l[k2]), D(l[k2], l[Math.min(n - 1, k2 + 1)])) / (curve[k2] * Math.PI / 180) : Infinity;
-      const R = Math.min(radius(k), radius(k + 1)), piece = Math.max(0.25, Math.sqrt(8 * R * ERR));
+      const a = l[k], b = l[k + 1], p0 = c0 && k > 0 ? l[k - 1] : [2 * a[0] - b[0], 2 * a[1] - b[1]], p3 = c1 && k + 2 < n ? l[k + 2] : [2 * b[0] - a[0], 2 * b[1] - a[1]];
+      const radius = (k2, on) => on ? Math.min(D(l[Math.max(0, k2 - 1)], l[k2]), D(l[k2], l[Math.min(n - 1, k2 + 1)])) / (curve[k2] * Math.PI / 180) : Infinity;
+      const R = Math.min(radius(k, c0), radius(k + 1, c1)), piece = Math.max(0.25, Math.sqrt(8 * R * ERR));
       const m = Math.min(40, Math.ceil(D(a, b) / piece));
       if (m < 2) continue;
       const pts = [];
