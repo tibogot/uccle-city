@@ -10,7 +10,7 @@ import { landCoverData } from "./landcover.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { buildDriveData, tramPlatformSurface } from "./drive/colliders.js";
 import { buildRoadData, applyRoadOverrides, CARVE } from "./roadBuild.js";
-import { bridgeDecks, deckMesh, parapetRings, deckAbutments } from "./streets/bridgeDecks.js";
+import { bridgeDecks, deckMesh, parapetRings, deckAbutments, deckHeight } from "./streets/bridgeDecks.js";
 import { smoothPolyline } from "./track.js";
 import { kitCollector } from "./facadeKit/placement.js";
 import { prepRail, heroBridgeNames, abutmentFill, underpassCut, underpassGround, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins, railDriveSurface, railFences, fenceMesh, FENCE_H } from "./rail/railData.js";
@@ -225,6 +225,12 @@ export async function buildTileData(entry, base) {
   const ownDeck = (d) => { if (!pad) return true; const [mx, mz] = mid(d); return mx >= x0 && mx < x1 && mz >= z0 && mz < z1; };
   // the ground at the decks' ends up to them (bridgeDecks.js deckAbutments; ?abutments=0: the bare DTM, as before)
   const abutCells = entry.deckAbutments === false ? 0 : deckAbutments(osmBridges.decks, [hm.y, hm.orig], tHdr);
+  // no LiDAR "tree" growing up through an OSM deck from the cutting under it (the walker on the Avenue des Tilleuls deck
+  // passed through their trunks once the deck was drawn, road fix round 2); as railKeepClear does for the rail bridges
+  if (osmBridges.decks.length && feats.trees?.length) {
+    const on = osmBridges.decks.map((d) => deckHeight(d, hm.ground, { drawn: true }));
+    feats.trees = feats.trees.filter((t) => !on.some((f) => { const y = f(t.x, t.z); return y != null && y - hm.ground(t.x, t.z) > 1.5; }));
+  }
   // (+ the street level across the hero underpasses, railData.js underpassGround; ?underpasslevel=0: as before)
   const roadGround0 = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
   const roadGround = rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0;

@@ -20,5 +20,5 @@ for (const b of d.bridgeDecks) {
 }
 if (xs) {
   console.log("drive top / dtm around", xs, zs);
-  for (let dz = -6; dz <= 6; dz += 2) { const row = []; for (let dx = -6; dx <= 6; dx += 2) row.push(`${top(+xs + dx, +zs + dz).toFixed(1)}/${hm.ground(+xs + dx, +zs + dz).toFixed(1)}`); console.log("  ", row.join(" ")); }
+  const S = process.env.FINE ? 1 : 2; for (let dz = -6; dz <= 6; dz += S) { const row = []; for (let dx = -6; dx <= 6; dx += S) row.push(`${top(+xs + dx, +zs + dz).toFixed(1)}/${hm.ground(+xs + dx, +zs + dz).toFixed(1)}`); console.log("  ", row.join(" ")); }
 }

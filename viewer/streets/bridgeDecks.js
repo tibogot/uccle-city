@@ -178,7 +178,7 @@ export function parapetRings(d) {
  *  street is drawn on it), with a 1:1 bank beside it; only raised, never lowered, and only where the dip is an
  *  abutment's (at most FILL_MAX under the deck line: a street passing under a deck end is not buried). In place on
  *  every grid of `grids` (the drawn terrain and the road stage's ground), before the roads sample them. Returns cells. */
-const FILL_MAX = 4.0, BANK = 3, UNDER = 1.5;     // UNDER: m of the fill under the slab's end (the abutment), 10 cm under its top:
+const FILL_MAX = 4.0, BANK = FILL_MAX, UNDER = 1.5;     // UNDER: m of the fill under the slab's end (the abutment), 10 cm under its top:
 // the 1 m grid cannot hold a cliff AT the slab's end line, an oblique end cut its cells in two (Bourdon: the car between
 // two rows, one filled, one the cutting's slope 1.5 m down)
 export function deckAbutments(decks, grids, hdr) {
@@ -186,8 +186,9 @@ export function deckAbutments(decks, grids, hdr) {
   let moved = 0;
   for (const d of decks || []) {
     const L = d.cum[d.cum.length - 1] || 1, W = d.half + BANK;
-    for (const [sa, sb, ua, ub] of [[0, d.span[0] + UNDER, d.span[0], d.span[0] + UNDER], [d.span[1] - UNDER, L, d.span[1] - UNDER, d.span[1]]]) {
-      const A = at(d, sa), B = at(d, sb);
+    for (const [sa, sb, ua, ub, first] of [[0, d.span[0] + UNDER, d.span[0], d.span[0] + UNDER, true], [d.span[1] - UNDER, L, d.span[1] - UNDER, d.span[1], false]]) {
+      // (+ BANK m along the span beside the slab: the abutment's wing banks fall 1:1 there too, no cliff beside the deck)
+      const A = at(d, first ? sa : sa - BANK), B = at(d, first ? sb + BANK : sb);
       const c0 = Math.max(0, Math.floor((Math.min(A.x, B.x) - W - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(A.x, B.x) + W - x0) / step));
       const r0 = Math.max(0, Math.floor((Math.min(A.z, B.z) - W - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(A.z, B.z) + W - z0) / step));
       const nc = c1 - c0 + 1, nr = r1 - r0 + 1;
@@ -205,25 +206,26 @@ export function deckAbutments(decks, grids, hdr) {
           // (beyond the line's outer ends: not the approach, the ground there is the street's own)
           if (dist < best) { best = dist; s = d.cum[i - 1] + t * Math.sqrt(l2); past = (i === 1 && t0 < 0) || (i === d.pts.length - 1 && t0 > 1); }
         }
-        if (past || s < sa || s > sb || best > W) continue;
-        const top = profY(d, s) - SLAB.sink - (s > ua && s < ub ? 0.1 : 0) - Math.max(0, best - d.half);
+        const into = first ? s - sb : sa - s;                                    // m into the span past the abutment
+        if (past || best > W || (first ? s < sa : s > sb) || into > BANK || (into > 0 && best < d.half)) continue;
+        const top = profY(d, Math.min(Math.max(s, sa), sb)) - SLAB.sink - (s > ua && s < ub ? 0.1 : 0) - Math.max(0, best - d.half) - Math.max(0, into);
         const k = r * cols + c;
         if (G0[k] < top && top - G0[k] <= FILL_MAX) want[(r - r0) * nc + (c - c0)] = top;
         else if (G0[k] >= top) want[(r - r0) * nc + (c - c0)] = -Infinity;          // already up there: counts as fill
       }
       // no lone cells: a cell is raised only when most of its neighbours are up too (a deep cutting reaching into the
       // approach, J5's railway under the bridge's oblique end, would otherwise get 3-4 m spikes where it is shallow)
+      // ... and no lone pits either (a cell left out among raised ones: a walker fell into a 4 m hole at Avenue des
+      // Tilleuls' east end, E9): an opening (cells with >= 6 of 8 wanted neighbours) then a closing (wanted cells with
+      // >= 4 of 8 kept neighbours)
+      const nb = (arr, i, j, test) => { let n = 0; for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+        if (!di && !dj) continue; const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < nc && jj < nr && test(arr[jj * nc + ii])) n++; } return n; };
+      const keep = new Uint8Array(nc * nr);
+      for (let j = 0; j < nr; j++) for (let i = 0; i < nc; i++) if (want[j * nc + i] > -Infinity && nb(want, i, j, (v) => !Number.isNaN(v)) >= 6) keep[j * nc + i] = 1;
+      for (let j = 0; j < nr; j++) for (let i = 0; i < nc; i++) if (!keep[j * nc + i] && want[j * nc + i] > -Infinity && nb(keep, i, j, (v) => v === 1) >= 4) keep[j * nc + i] = 2;
       for (let j = 0; j < nr; j++) for (let i = 0; i < nc; i++) {
-        const v = want[j * nc + i];
-        if (!(v > -Infinity)) continue;
-        let n = 0;
-        for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
-          if (!di && !dj) continue;
-          const ii = i + di, jj = j + dj;
-          if (ii >= 0 && jj >= 0 && ii < nc && jj < nr && !Number.isNaN(want[jj * nc + ii])) n++;
-        }
-        if (n < 6) continue;
-        const k = (r0 + j) * cols + c0 + i;
+        if (!keep[j * nc + i]) continue;
+        const v = want[j * nc + i], k = (r0 + j) * cols + c0 + i;
         grids.forEach((G) => { if (G[k] < v) { G[k] = v; moved++; } });
       }
     }

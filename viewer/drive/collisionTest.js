@@ -330,6 +330,9 @@ function drawnGround(scene, tile) {
   scene.getObjectByName(`${tile.name}-features`)?.traverse((o) => { if (o.isMesh && /^(rail-ballast|rail-platform|tram-platform)/.test(o.name)) objs.push(o); });
   for (const h of HEROES) { const r = scene.getObjectByName(h); if (r) objs.push(r.children.find((c) => /[-_]lod0$/.test(c.name)) || r); }
   scene.traverse((o) => { if (o.isMesh && /pond|water/i.test(o.name)) objs.push(o); });
+  // the OSM road-bridge decks of EVERY tile (road fix round 2: a deck crossing a tile edge is drawn by the tile holding
+  // its middle, e.g. Avenue des Tilleuls D9 / E9; its other tile's routes drive on it)
+  scene.traverse((o) => { if (o.isMesh && /^road-bridge-deck/.test(o.name) && !o.parent?.name?.startsWith(`${tile.name}-`)) objs.push(o); });
   const v = new THREE.Vector3(), A = [0, 0, 0], B = [0, 0, 0], Cc = [0, 0, 0];
   const put = (q, y) => {                // layers kept sorted, highest first; one per 1.5 m band (its highest surface)
     const o = q * NL;

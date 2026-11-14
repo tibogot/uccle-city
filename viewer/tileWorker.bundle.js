@@ -9880,15 +9880,15 @@ function parapetRings(d) {
   return out;
 }
 var FILL_MAX = 4;
-var BANK = 3;
+var BANK = FILL_MAX;
 var UNDER = 1.5;
 function deckAbutments(decks, grids, hdr) {
   const { x0, z0, cols, rows, step } = hdr, G0 = grids[0];
   let moved = 0;
   for (const d of decks || []) {
     const L2 = d.cum[d.cum.length - 1] || 1, W = d.half + BANK;
-    for (const [sa, sb, ua, ub] of [[0, d.span[0] + UNDER, d.span[0], d.span[0] + UNDER], [d.span[1] - UNDER, L2, d.span[1] - UNDER, d.span[1]]]) {
-      const A = at(d, sa), B = at(d, sb);
+    for (const [sa, sb, ua, ub, first] of [[0, d.span[0] + UNDER, d.span[0], d.span[0] + UNDER, true], [d.span[1] - UNDER, L2, d.span[1] - UNDER, d.span[1], false]]) {
+      const A = at(d, first ? sa : sa - BANK), B = at(d, first ? sb + BANK : sb);
       const c0 = Math.max(0, Math.floor((Math.min(A.x, B.x) - W - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(A.x, B.x) + W - x0) / step));
       const r0 = Math.max(0, Math.floor((Math.min(A.z, B.z) - W - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(A.z, B.z) + W - z0) / step));
       const nc = c1 - c0 + 1, nr = r1 - r0 + 1;
@@ -9908,23 +9908,28 @@ function deckAbutments(decks, grids, hdr) {
             past = i === 1 && t0 < 0 || i === d.pts.length - 1 && t0 > 1;
           }
         }
-        if (past || s < sa || s > sb || best > W) continue;
-        const top = profY(d, s) - SLAB.sink - (s > ua && s < ub ? 0.1 : 0) - Math.max(0, best - d.half);
+        const into = first ? s - sb : sa - s;
+        if (past || best > W || (first ? s < sa : s > sb) || into > BANK || into > 0 && best < d.half) continue;
+        const top = profY(d, Math.min(Math.max(s, sa), sb)) - SLAB.sink - (s > ua && s < ub ? 0.1 : 0) - Math.max(0, best - d.half) - Math.max(0, into);
         const k = r * cols + c;
         if (G0[k] < top && top - G0[k] <= FILL_MAX) want[(r - r0) * nc + (c - c0)] = top;
         else if (G0[k] >= top) want[(r - r0) * nc + (c - c0)] = -Infinity;
       }
-      for (let j = 0; j < nr; j++) for (let i = 0; i < nc; i++) {
-        const v = want[j * nc + i];
-        if (!(v > -Infinity)) continue;
+      const nb = (arr, i, j, test) => {
         let n = 0;
         for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
           if (!di && !dj) continue;
           const ii = i + di, jj = j + dj;
-          if (ii >= 0 && jj >= 0 && ii < nc && jj < nr && !Number.isNaN(want[jj * nc + ii])) n++;
+          if (ii >= 0 && jj >= 0 && ii < nc && jj < nr && test(arr[jj * nc + ii])) n++;
         }
-        if (n < 6) continue;
-        const k = (r0 + j) * cols + c0 + i;
+        return n;
+      };
+      const keep = new Uint8Array(nc * nr);
+      for (let j = 0; j < nr; j++) for (let i = 0; i < nc; i++) if (want[j * nc + i] > -Infinity && nb(want, i, j, (v) => !Number.isNaN(v)) >= 6) keep[j * nc + i] = 1;
+      for (let j = 0; j < nr; j++) for (let i = 0; i < nc; i++) if (!keep[j * nc + i] && want[j * nc + i] > -Infinity && nb(keep, i, j, (v) => v === 1) >= 4) keep[j * nc + i] = 2;
+      for (let j = 0; j < nr; j++) for (let i = 0; i < nc; i++) {
+        if (!keep[j * nc + i]) continue;
+        const v = want[j * nc + i], k = (r0 + j) * cols + c0 + i;
         grids.forEach((G2) => {
           if (G2[k] < v) {
             G2[k] = v;
@@ -12079,6 +12084,13 @@ async function buildTileData(entry, base) {
     return mx >= x0 && mx < x1 && mz >= z0 && mz < z1;
   };
   const abutCells = entry.deckAbutments === false ? 0 : deckAbutments(osmBridges.decks, [hm.y, hm.orig], tHdr);
+  if (osmBridges.decks.length && feats.trees?.length) {
+    const on = osmBridges.decks.map((d) => deckHeight(d, hm.ground, { drawn: true }));
+    feats.trees = feats.trees.filter((t) => !on.some((f) => {
+      const y = f(t.x, t.z);
+      return y != null && y - hm.ground(t.x, t.z) > 1.5;
+    }));
+  }
   const roadGround0 = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
   const roadGround = rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0;
   const rd = await step("roads", () => buildRoadData({
