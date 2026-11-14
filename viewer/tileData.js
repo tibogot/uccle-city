@@ -18,6 +18,7 @@ import { prepRail, heroBridgeNames, abutmentFill, underpassCut, underpassGround,
 import { buildTrafficGraph } from "./traffic/trafficGraph.js";
 import { loadTunnels, tunnelRoads, tunnelCut, tunnelRecut, tunnelGround, tunnelTrees, tunnelTerrain, tunnelSurface, tunnelFenceRings } from "./rail/tunnels.js";
 import { grassTypeData } from "./grass/grassTypes.js";
+import { drawnGround } from "./groundFit.js";
 
 let railP = null;
 let grassKindsP = null;
@@ -343,13 +344,17 @@ export async function buildTileData(entry, base) {
   drive.counts.hidden = nb - bDoc.buildings.length;     // solids a hero model replaces (it collides by its own LOD0)
   // ?kit=1: the façade kit's placement (viewer/facadeKit/placement.js) runs inside the analysis, here in the worker;
   // entry.kitExclude = BU_IDs a hero model or the interior pilot replaces
-  const kit = entry.kit ? kitCollector({ exclude: new Set(entry.kitExclude || []), ground: (x, z) => hm.ground(x, z) }) : null;
+  // the ground AS DRAWN (terrain after carve / weld + the street surfaces): the façades' ground-floor line and the kit's
+  // door steps stand on it (viewer/groundFit.js, docs/GROUND_FIT.md); entry.groundFit === false (?groundfit=old): the
+  // lowest DTM point and the bare DTM, as before
+  const fitGround = entry.groundFit !== false ? await step("ground fit", () => drawnGround(hm, road.parts)) : null;
+  const kit = entry.kit ? kitCollector({ exclude: new Set(entry.kitExclude || []), ground: fitGround || ((x, z) => hm.ground(x, z)) }) : null;
   // entry.streetlife (the street-life layer, viewer/streetlife/, on by default in the city): its shopfronts replace the
   // OSM shop points of the façade analysis (data/streetlife/<T>.json; a tile without one keeps the OSM shops)
   const fronts = entry.streetlife ? await step("street-life fronts", () => streetlifeFronts(base, entry.name)) : null;
   // entry.roofs !== false: the roof kit (viewer/roofs/roofPlace.js, docs/assets/ROOFS.md; ?roofs=old = the roofs before)
   const roofKit = entry.roofs !== false ? roofCollector() : null;
-  const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit }));
+  const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []) }));
   // what the roof kit stands on the roofs, in the falcon's drawn-roof grid (it collides with what is drawn)
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
   const cover = await step("land cover", () => landCoverData(feats, bounds));

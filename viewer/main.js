@@ -492,6 +492,7 @@ function tileData(entry, lite = false) {
   entry = { ...entry, hide: [...new Set(HIDE_BU_IDS)].sort(), ponds: PONDS,   // (sorted: the landmarks push in any order now, and ?tilecache=1 keys on it)
     surface: ROAD_SURFACES, pits: params.get("pits") !== "0",   // ?pits=0: no tree pits (A/B)
     kit: cityKit.on && !lite, kitExclude: cityKit.exclude,                                           // the façade kit (viewer/facadeKit/), ?kit=0 off
+    groundFit: params.get("groundfit") !== "old",                                                  // façades' ground-floor line on the drawn ground (viewer/groundFit.js, docs/GROUND_FIT.md), ?groundfit=old = before
     roofs: cityRoofs.on && !lite,                                                                    // the roof tops (viewer/roofs/, docs/assets/ROOFS.md), ?roofs=old = before
     fuelClear: cityFuel.on ? cityFuel.clear : null,                                                 // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js)
     streetlife: cityStreetLife.on && !lite,                                                          // the street life's shopfronts (viewer/streetlife/), ?streetlife=0 off

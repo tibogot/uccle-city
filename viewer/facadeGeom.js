@@ -1,3 +1,5 @@
+import { fitBase } from "./groundFit.js";
+import { faceBays } from "./interior/facadeWindows.js";
 // Façade analysis, pure JS (no three.js), so it can run in the tile worker (viewer/tileWorker.js).
 // Groups UrbIS wall triangles into faces with façade coordinates, party walls, street faces, shopfronts,
 // and builds the detail geometry (cornices, ridge caps, buttresses, chimneys, eaves, shop fascias).
@@ -393,9 +395,10 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
   const SD = [];                                                                 // strip details, emitted mitred at the end (emitStrips)
   const chimneysAt = [], buttressAt = [], apexAt = [];                                        // one stack per party wall, one buttress per spot
   const R = { position: [], normal: [], aRoof: [], aRoofCol: [] };
-  const stats = { faces: 0, party: 0, street: 0, cornices: 0, buttresses: 0, ridges: 0, chimneys: 0, shops: 0, strips: 0, stripMerged: 0, stripJoins: 0, chimneysShared: 0 };
+  const fitOut = opts.ground ? new Float32Array(doc.buildings.length).fill(NaN) : null;
+  const stats = { fit: {}, faces: 0, party: 0, street: 0, cornices: 0, buttresses: 0, ridges: 0, chimneys: 0, shops: 0, strips: 0, stripMerged: 0, stripJoins: 0, chimneysShared: 0 };
   doc.buildings.forEach((b, bi) => {
-    const base = b.base, eaves = (b.eaves ?? b.top) - base;
+    let base = b.base, eaves = (b.eaves ?? b.top) - base;
     const key = String(b.attrs?.BU_ID ?? b.id);
     const landmark = b.attrs?._landmark;
     const rnd = hash01(key);
@@ -475,6 +478,20 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
     // the widest street face carries the front door (the kit only: the painted façade keeps a door per street face)
     let doorFace = null;
     for (const f of live) if (f.pre.street && f.pre.width >= 1.6 && (!doorFace || f.pre.width > doorFace.pre.width)) doorFace = f;
+    // GROUND FIT (viewer/groundFit.js, docs/GROUND_FIT.md; ?groundfit=old: the lowest DTM point, as before): the
+    // ground-floor line from the drawn ground in front of the front door; the party heights move with it
+    if (opts.ground && !landmark && !opts.fitExclude?.has(key)) {
+      let foot = Infinity;
+      for (let k0 = 0; k0 < wallTris; k0++) for (const q of all[k0].p) foot = Math.min(foot, q[1]);
+      const door = (f) => { const { bw, doorBay } = faceBays({ width: f.pre.width, rnd: Math.fround(rnd) }); return 0.55 + bw * (doorBay + 0.5); };
+      const fit = fitBase(b, live, doorFace, door, opts.ground, foot, (x, z) => otherAt(x, z, bi) >= 0);
+      if (fit.base !== base) {
+        for (const f of live) if (f.pre.partyH > 0 && f.pre.partyH < 999) f.pre.partyH = Math.max(0.01, f.pre.partyH + base - fit.base);
+        base = fit.base; eaves = (b.eaves ?? b.top) - base;
+      }
+      if (fitOut) fitOut[bi] = base;
+      stats.fit[fit.how] = (stats.fit[fit.how] || 0) + 1;
+    }
     for (const f of live) {
       const { tx, tz, u0, u1, cx, cz, top, width, partyH, street } = f.pre;
       // landmarks: windows sized to each wall's own top (a church's LoD2 walls stop low; drums and towers are separate faces)
@@ -608,12 +625,23 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       const k = kit ? kit.face({ key, building: b, doorFace: f === doorFace, wallStyle: style, landmark: !!landmark, rnd, width, eaves: faceEaves, partyH, street, roofAt: (x, z) => roofAt(bi, x, z),
         shopU, shopW, base, top, nx: f.nx, nz: f.nz, tx, tz, u0, tris: f.tris }) : null;
       const T = k?.on ? WK : W;
+      // (ground fit) the painted façade has a door on EVERY street face: one whose door bay stands off the ground (a
+      // second street face along a slope, a gable over a falling garden) or under it gets the window instead
+      let streetA = street;
+      if (opts.ground && street && !k?.on && !landmark) {
+        const { bw, doorBay } = faceBays({ width, rnd: Math.fround(rnd) }), du = 0.55 + bw * (doorBay + 0.5);
+        let dd = 0, nq = 0;
+        for (const { p } of f.tris) for (const q of p) { dd += q[0] * f.nx + q[2] * f.nz; nq++; }
+        dd = dd / nq + 0.35;
+        const gd = opts.ground(tx * (u0 + du) + f.nx * dd, tz * (u0 + du) + f.nz * dd);
+        if (Number.isFinite(gd) && Math.abs(gd - base) > 0.25) { streetA = 0; stats.doorsOff = (stats.doorsOff || 0) + 1; }
+      }
       for (const { p, n: nn, src } of f.tris) for (const q of p) {
         T.position.push(q[0], q[1], q[2]);
         const sn = src ? smooth(src, q) : nn;
         T.normal.push(sn[0], sn[1], sn[2]);
         T.aWall.push(q[0] * tx + q[2] * tz - u0, width, q[1] - base, faceEaves);
-        T.aBld.push(style, partyH, street, rnd);
+        T.aBld.push(style, partyH, streetA, rnd);
         T.aFN.push(f.nx, f.nz, shopU, shopW);                                    // outward normal (xz), shopfront centre / width + 10 * paint
         if (T === WK) WK.aKit.push(1, k.rise, k.doorless, k.french);
       }
@@ -803,6 +831,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
     details: { position: f32(D.position), normal: f32(D.normal), aCol: f32(D.color) },
     roofs: { position: f32(R.position), normal: f32(R.normal), aRoof: f32(R.aRoof), aRoofCol: f32(R.aRoofCol) },
     stats: { ...stats, triangles: T, vertices: V },
+    fit: fitOut,                       // the ground-floor line per building (NaN: kept), opts.ground only
   };
 }
 
