@@ -24,6 +24,7 @@ import { positionGeometry, attribute, vec3, float, mix, smoothstep, mx_noise_flo
 import { beechLeafMask } from "./treesBeech.js";
 import { grow, taper, at } from "./treesPlane.js";
 import { loadBarkScan, loadLeafAtlas, scanBark } from "./treeTextures.js";
+import { fadingLeafAtlas, softenRim, crownGaps } from "./treeLeafLook.js";
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
@@ -35,6 +36,16 @@ export const COPPER_SEASONS = {
   spring: { leaves: "leaf_copperbeech_spring", topColor: "#8a3644", bottomColor: "#5a2632", translucencyColor: "#e85a4a", translucency: 0.45, fillColor: "#b09aa0" },
   autumn: { leaves: "leaf_copperbeech_autumn", topColor: "#a05a2c", bottomColor: "#6c3820", translucencyColor: "#ff9a40", translucency: 0.5, fillColor: "#a8988c" },
   winter: { leaves: "leaf_copperbeech_winter", topColor: "#9a7048", bottomColor: "#86603c", translucencyColor: "#e8a868", translucency: 0.35, fillColor: "#a09a94" },
+};
+/** The look's palette per season (docs/TREES.md §8): the sunlit side went CORAL at golden hour (a saturated red
+ *  palette x a warm sun, glossy sheen, a red glow through the leaves, a pinkish fill). A darker wine-brown (less blue:
+ *  a purple palette x the stronger fill went magenta), the underside a little lighter than the top (the fill lifts
+ *  it), a wine glow at a lower strength, a neutral fill. */
+const COPPER_LOOK = {
+  summer: { topColor: "#42252a", bottomColor: "#4a2a30", translucencyColor: "#8c2c44", translucency: 0.24, fillColor: "#9c949c" },
+  spring: { topColor: "#7a3446", bottomColor: "#552637", translucencyColor: "#b84858", translucency: 0.32, fillColor: "#a49aa0", lookFill: 1.3 },
+  autumn: { lookFill: 1.2 },
+  winter: { lookFill: 1.2 },
 };
 const BARK_ID = "tf_copperbeech";
 // the bark's mean colour (linear) the factory set is graded to: the photos' silver-grey (a touch lighter and warmer
@@ -52,7 +63,7 @@ export async function loadCopperBeechTextures(renderer, season = "summer") {
  *  `tiers` toward horizontal layers (the beech's layered sprays), each grown as a secondary from the nearest limb (in
  *  azimuth and height), a twig off it, the pad at its tip just inside the envelope. Pads OVERLAP (radius ~0.85 of
  *  their spacing) and a second, inner layer fills the gaps: a dense, even crown, not a shell of separate balls. */
-function crownInto(r, { limbs, branches, env, cy, NG, elMin, tiers, padR, inner = 0.18 }) {
+function crownInto(r, { limbs, branches, env, cy, NG, elMin, tiers, padR, inner = 0.18, gaps = null }) {
   const rr = (a, b) => a + (b - a) * r();
   const pads = [];
   const s0 = Math.sin(THREE.MathUtils.degToRad(elMin));
@@ -87,6 +98,8 @@ function crownInto(r, { limbs, branches, env, cy, NG, elMin, tiers, padR, inner 
         if (g2.distanceTo(f2) > 0.6) branches.push({ pts: grow(r, f2, g2.clone().sub(f2).normalize(), g2.distanceTo(f2), 2, { wiggle: 0.25 }), rad: taper(0.018, 0.008), level: 3 });
       }
     }
+    // (the look: a gap in the crown, the secondary bare in it: limbs show, light comes through)
+    if (gaps && !isInner && gaps(a, el)) continue;
     pads.push({ c: goal, r: pr });
   }
   return pads;
@@ -116,7 +129,7 @@ function irregular(r, strength) {
 /** The avenue tree of the Drève de Lorraine (variants 0-3): a straight, clear bole (pruned up to 8-11 m: the old branch
  *  scars are the bark's eyes), 5-7 steep ascending limbs, a V fork high up carrying on as two or three stems, a dense,
  *  tall oval crown ~13 m across. Built ~30 m tall (the inventory's median class). */
-function avenueTree(r, v) {
+function avenueTree(r, v, look) {
   const branches = [];
   const rr = (a, b) => a + (b - a) * r();
   const top = rr(29, 32), yb = rr(7.5, 10.0), W = rr(6.3, 7.5), yf = yb + rr(4, 7);
@@ -152,13 +165,13 @@ function avenueTree(r, v) {
   const area = 2 * Math.PI * W * (W + (top - yb) / 2);
   const padR = [2.2, 2.65];
   const NG = Math.round(area / (2.5 * 1.25) ** 2);
-  const pads = crownInto(r, { limbs, branches, env, cy, NG, elMin: -60, tiers: 5, padR });
+  const pads = crownInto(r, { limbs, branches, env, cy, NG, elMin: -60, tiers: 5, padR, ...(look ? LOOK_CROWN(limbs) : {}) });
   return { branches, pads, fork };
 }
 
 /** The open-grown park copper beech (variants 4-5): a short bole, 5-6 big limbs fanning up and out, the lower ones
  *  long and sweeping down at their tips, a broad dome skirting down to ~2 m. Built ~23 m tall, ~22 m across. */
-function parkTree(r, v) {
+function parkTree(r, v, look) {
   const branches = [];
   const rr = (a, b) => a + (b - a) * r();
   const top = rr(21, 23.5), yb = rr(1.6, 2.6), W = rr(11.5, 13), bole = rr(2.4, 3.4);
@@ -182,7 +195,7 @@ function parkTree(r, v) {
   limbs.push({ pts: trunk.slice(Math.floor(trunk.length * 0.5)), rB: trunkR(0.5), az: 0, leader: true, yMid: top * 0.75 });
   const area = 2 * Math.PI * W * (W + (top - yb) / 2);
   const NG = Math.round(area / (2.85 * 1.25) ** 2);
-  const pads = crownInto(r, { limbs, branches, env, cy, NG, elMin: -62, tiers: 0, padR: [2.5, 3.0], inner: 0.15 });
+  const pads = crownInto(r, { limbs, branches, env, cy, NG, elMin: -62, tiers: 0, padR: [2.5, 3.0], inner: 0.15, ...(look ? LOOK_CROWN(limbs) : {}) });
   return { branches, pads, fork: at(trunk, bole / (top - 5)) };
 }
 
@@ -241,10 +254,13 @@ function barkMesh(branches, sidesOf, stride = 1) {
 // sides per level per LOD (LOD 0 and 1 the same on what they share); LOD 2 coarser, every other ring
 const SIDES = [[14, 8, 4, 3], [14, 8], [7, 4]];
 
-export function copperBeechShape(seedBase) {
+/** The look (docs/TREES.md §8): an airier crown: a thinner inner layer and gaps in clusters (viewer/treeLeafLook.js). */
+const LOOK_CROWN = (limbs) => ({ inner: 0.12, gaps: crownGaps(limbs[0].az + limbs.length * 0.37, { share: 0.08 }) });
+
+export function copperBeechShape(seedBase, look = true) {
   return (r, lod, seed) => {
     const v = Math.round((seed - seedBase) / 97), park = v >= 4;
-    const { branches, pads, fork } = park ? parkTree(r, v) : avenueTree(r, v);
+    const { branches, pads, fork } = park ? parkTree(r, v, look) : avenueTree(r, v, look);
     const bb = new THREE.Box3();
     for (const p of pads) bb.expandByPoint(p.c.clone().addScalar(p.r)).expandByPoint(p.c.clone().addScalar(-p.r));
     const crown = bb.getCenter(new THREE.Vector3()), rad = bb.getSize(new THREE.Vector3()).multiplyScalar(0.5);
@@ -255,7 +271,7 @@ export function copperBeechShape(seedBase) {
       cards: park ? [8, 4, 2] : [7, 4, 2], cardScale: park ? 0.64 : 0.66,
       // the crown reads as ONE dense mass (the copper beech's dark, solid oval): most of the crown's dome in the
       // shading normal (the beech 0.5, the plane 0.2), a gentle overhead occlusion with a floor
-      aoOverhead: 0.94, aoFloor: 0.55, crownNormal: 0.72,
+      aoOverhead: 0.94, aoFloor: look ? 0.62 : 0.55, crownNormal: 0.72,
       trunk: (l) => barkMesh(branches.filter((b) => b.level <= [3, 1, 1][l]), (lv) => SIDES[l][Math.min(lv, SIDES[l].length - 1)], l === 2 ? 2 : 1),
     };
   };
@@ -292,7 +308,7 @@ function eyeNodes() {
 
 /** def.bark: the factory bark (triplanar, graded to the beech's silver-grey, the species' macro variation: algae side,
  *  damp foot, paler limbs) + the eyes on top. */
-export function copperBeechBark(scan) {
+export function copperBeechBark(scan, look = false) {
   const base = scanBark({ scans: [scan], target: BARK_TARGET, species: "beech", hueK: 0.9 });
   return (m) => {
     base(m);
@@ -304,6 +320,9 @@ export function copperBeechBark(scan) {
     col = mix(col, col.mul(0.4), eye.mul(0.7));
     col = mix(col, col.mul(1.25), rim.mul(0.25));
     col = mix(col, col.mul(0.55), chev.mul(0.55));
+    // (the look: the secondaries and twigs, now seen through the crown's gaps, darker and browner than the silver
+    // bole: pale thin lines read as straw in a low sun)
+    if (look) col = mix(col, col.mul(vec3(0.5, 0.46, 0.42)), smoothstep(1.5, 2.5, attribute("bark", "vec4").w));
     m.colorNode = col;
     m.roughnessNode = mix(m.roughnessNode, float(0.95), eye.mul(0.6));
     m.needsUpdate = true;
@@ -313,20 +332,28 @@ export function copperBeechBark(scan) {
 // ------------------------------------------------------------------------------------------------ the species
 /** The species definition for makeSpecies. tex = loadCopperBeechTextures(...) (required: the copper beech is the
  *  factory-textured species). */
-export function copperBeechDef(seedBase = 1000, tex) {
-  const S = COPPER_SEASONS[tex.season];
+export function copperBeechDef(seedBase = 1000, tex, { look = true } = {}) {
+  // o.look (default true): the leaf look of docs/TREES.md §8 (detail fading with the footprint, soft rim, airier
+  // crown, the palette's golden-hour fix, no old impostor bake); false = the species as first merged (the lab's A/B)
+  const S = { ...COPPER_SEASONS[tex.season], ...(look ? COPPER_LOOK[tex.season] : {}) };
+  const atlas = look ? fadingLeafAtlas(tex.leaves.atlas, { variation: 0.65, normalK: 0.75, transK: 1 })
+    : { ...tex.leaves.atlas, variation: 0.65, normalK: 0.75, transK: 1 };
   return {
-    id: "copperbeech", variants: 6, shape: copperBeechShape(seedBase), leafMask: beechLeafMask, bark: copperBeechBark(tex.bark), perVariantHeight: true,
+    id: "copperbeech", variants: 6, shape: copperBeechShape(seedBase, look), leafMask: beechLeafMask, bark: copperBeechBark(tex.bark, look), perVariantHeight: true,
+    leafLook: look ? (shared, P) => softenRim(shared, P) : null,
+    noImpostorBake: look,                       // (the far trees: the impostor kit; the lab turns it back on for farkit=0)
     seasonal: tex.season,                       // (the lab's season slider leaves it alone: its seasons are its sprays)
     impostorAlphaBoost: 0,
-    leafRoughness: 0.7,                         // glossy, a little less than the beech (one big sheen blob on the smooth crown)
+    leafRoughness: look ? 0.86 : 0.7,           // glossy, a little less than the beech (one big sheen blob on the smooth crown);
+                                                // the look: less sheen (a warm low sun's sheen paled the maroon to coral)
     params: {
       seed: seedBase,
       topColor: S.topColor, bottomColor: S.bottomColor, translucencyColor: S.translucencyColor, translucency: S.translucency,
-      tintVar: 0.16, crownLift: 0, fill: 0.55, fillColor: S.fillColor, aoColor: 0.2, trunkColor: [0.27, 0.27, 0.26],
+      tintVar: 0.16, crownLift: 0, fill: look ? S.lookFill ?? 1.6 : 0.55,   // (the look: the shade side lifted)
+      fillColor: S.fillColor, aoColor: 0.2, trunkColor: [0.27, 0.27, 0.26],
       leafTone: 0, shadowLift: 2.2,
       // (two thirds of the spray's own leaf-to-leaf colour spread: the full spread read as confetti close up)
-      leafAtlas: { ...tex.leaves.atlas, variation: 0.65, normalK: 0.75, transK: 1 },
+      leafAtlas: atlas,
     },
   };
 }

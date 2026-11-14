@@ -145,7 +145,9 @@ export function impostorMaterials(atlas, o) {
     const q = clamp(uvT.div(R.mul(2)).add(0.5), 0, 1);
     return vec2(cell.x.mul(C).add(G).add(q.x.mul(IN)), cell.y.mul(C).add(G).add(float(1).sub(q.y).mul(IN))).div(W);
   };
-  const tap = (t, uvA) => t.sample(uvA).depth(layer).level(lodF);
+  // (atlas.auxHalf: the aux array starts at the colour's mip 1: the same uv, one level down)
+  const lodB = atlas.auxHalf ? max(lodF.sub(1), 0) : lodF;
+  const tap = (t, uvA) => t.sample(uvA).depth(layer).level(t === texB ? lodB : lodF);
   const D3 = [vD.x, vD.y, vD.z];
   const frames = [];
   for (let i = 0; i < NF; i++) {

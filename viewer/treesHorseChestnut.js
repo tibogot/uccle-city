@@ -22,17 +22,19 @@
 import * as THREE from "three/webgpu";
 import { planeLeafMask, grow, taper, at } from "./treesPlane.js";
 import { loadBarkScan, loadLeafAtlas, scanBark } from "./treeTextures.js";
+import { fadingLeafAtlas, softenRim, crownGaps } from "./treeLeafLook.js";
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
 // ------------------------------------------------------------------------------------------------ seasons
 /** Per season: the factory spray (viewer/trees/textures/tree_textures.json), how much of its own colour spread is
- *  kept (1 = all: the palette is the spray's mean), the crown's light (top / bottom x the mean) and the light through. */
+ *  kept (1 = all: the palette is the spray's mean), the crown's light (top / bottom x the mean) and the light through;
+ *  the look (docs/TREES.md §8): lookFill (the shade side's lift, default 1.6), lookBottom (the underside x, 1.15). */
 export const CHESTNUT_SEASONS = {
   summer: { leaves: "leaf_horsechestnut", variation: 0.85, top: 1.12, bottom: 0.62, translucencyColor: "#9cc048", translucency: 0.3, fillColor: "#a4b0a0" },
-  spring: { leaves: "leaf_horsechestnut_spring", variation: 1, top: 1.1, bottom: 0.66, translucencyColor: "#c4e060", translucency: 0.38, fillColor: "#b0bca8" },
-  autumn: { leaves: "leaf_horsechestnut_autumn", variation: 0.95, top: 1.1, bottom: 0.64, translucencyColor: "#e0b050", translucency: 0.34, fillColor: "#b0a898" },
-  winter: { leaves: "leaf_horsechestnut_winter", variation: 1, top: 1.6, bottom: 1.15, translucencyColor: "#806050", translucency: 0.04, fillColor: "#a4a09c" },
+  spring: { leaves: "leaf_horsechestnut_spring", lookFill: 1.15, variation: 1, top: 1.1, bottom: 0.66, translucencyColor: "#c4e060", translucency: 0.38, fillColor: "#b0bca8" },
+  autumn: { leaves: "leaf_horsechestnut_autumn", lookFill: 1.3, variation: 0.95, top: 1.1, bottom: 0.64, translucencyColor: "#e0b050", translucency: 0.34, fillColor: "#b0a898" },
+  winter: { leaves: "leaf_horsechestnut_winter", lookBottom: 1, variation: 1, top: 1.6, bottom: 1.15, translucencyColor: "#806050", translucency: 0.04, fillColor: "#a4a09c" },
 };
 const BARK_ID = "tf_horsechestnut";
 // the bark's mean colour (linear): grey-brown, a little darker and browner than the beech's silver-grey
@@ -81,7 +83,7 @@ function envelope(r, { W, cy, top, yb }) {
  *  the nearest limb, its pad just inside the envelope; overlapping pads + an inner layer: a dense, heavy crown). The
  *  secondaries of the horse chestnut rise then level out: big rosette-bearing shoots. No twig layer (cost: the
  *  winter spray carries the fine twigs). */
-function crownInto(r, { limbs, branches, env, cy, NG, elMin, padR, inner = 0.18 }) {
+function crownInto(r, { limbs, branches, env, cy, NG, elMin, padR, inner = 0.18, gaps = null }) {
   const rr = (a, b) => a + (b - a) * r();
   const pads = [];
   const s0 = Math.sin(THREE.MathUtils.degToRad(elMin));
@@ -106,6 +108,8 @@ function crownInto(r, { limbs, branches, env, cy, NG, elMin, padR, inner = 0.18 
       const sp = grow(r, from, sd.clone().normalize().lerp(V(0, 1, 0), 0.2), sl, 3, { pull: sd, pullK: 0.3, wiggle: 0.22, droop: 0.06 });
       branches.push({ pts: sp, rad: taper(Math.max(0.035, L.rB * (0.32 + 0.25 * (1 - t))), 0.02), level: 2 });
     }
+    // (the look: a gap in the crown, the secondary bare in it: limbs show, light comes through)
+    if (gaps && !isInner && gaps(a, el)) continue;
     pads.push({ c: goal, r: pr });
   }
   return pads;
@@ -121,7 +125,7 @@ function irregular(r, strength, spiral = 0) {
 }
 
 /** The avenue horse chestnut (variants 0-3) of the Avenue Winston Churchill: built ~20 m. */
-function avenueTree(r) {
+function avenueTree(r, look) {
   const branches = [];
   const rr = (a, b) => a + (b - a) * r();
   const top = rr(18.5, 20.5), yf = rr(3.0, 4.2), yb = rr(2.6, 3.6), W = rr(7.4, 8.4);
@@ -155,13 +159,13 @@ function avenueTree(r) {
   }
   const area = 2 * Math.PI * W * (W + (top - yb) / 2);
   const NG = Math.round(area / (2.55 * 1.25) ** 2);
-  const pads = crownInto(r, { limbs, branches, env, cy, NG, elMin: -58, padR: [2.2, 2.7] });
+  const pads = crownInto(r, { limbs, branches, env, cy, NG, elMin: -58, padR: [2.2, 2.7], ...(look ? LOOK_CROWN(limbs) : {}) });
   return { branches, pads, fork };
 }
 
 /** The open-grown park horse chestnut (variants 4-5): a huge rounded dome, ~21 m tall and ~27 m across, on a 1.3 m
  *  trunk; 6-8 big limbs, the low ones sweeping far out and down to ~3 m and curving up at their tips. */
-function parkTree(r) {
+function parkTree(r, look) {
   const branches = [];
   const rr = (a, b) => a + (b - a) * r();
   const top = rr(20, 22), yb = rr(3.4, 4.2), W = rr(12.5, 13.5), yf = rr(2.6, 3.4);
@@ -192,9 +196,12 @@ function parkTree(r) {
   limbs.push({ pts: trunk.slice(Math.floor(trunk.length * 0.5)), rB: trunkR(0.5), az: 0, leader: true, yMid: top * 0.75 });
   const area = 2 * Math.PI * W * (W + (top - yb) / 2);
   const NG = Math.round(area / (2.9 * 1.25) ** 2);
-  const pads = crownInto(r, { limbs, branches, env, cy, NG, elMin: -60, padR: [2.5, 3.0], inner: 0.15 });
+  const pads = crownInto(r, { limbs, branches, env, cy, NG, elMin: -60, padR: [2.5, 3.0], inner: 0.15, ...(look ? LOOK_CROWN(limbs) : {}) });
   return { branches, pads, fork: at(trunk, tF) };
 }
+
+/** The look (docs/TREES.md §8): an airier crown: a thinner inner layer and gaps in clusters (viewer/treeLeafLook.js). */
+const LOOK_CROWN = (limbs) => ({ inner: 0.08, gaps: crownGaps(limbs[0].az + limbs.length * 0.37, { share: 0.17 }) });
 
 // ------------------------------------------------------------------------------------------------ bark mesh
 /** The copper beech's barkMesh (irregular sections, all a function of (t, angle): LOD 0 / 1 keep the same outline) +
@@ -255,10 +262,10 @@ function barkMesh(branches, sidesOf, stride = 1) {
 // every other ring. The trunk gets 16 sides (the spiral ridges and the flare need them).
 const SIDES = [[16, 8, 3], [16, 8], [8, 4]];
 
-export function horseChestnutShape(seedBase) {
+export function horseChestnutShape(seedBase, look = true) {
   return (r, lod, seed) => {
     const v = Math.round((seed - seedBase) / 97), park = v >= 4;
-    const { branches, pads, fork } = park ? parkTree(r) : avenueTree(r);
+    const { branches, pads, fork } = park ? parkTree(r, look) : avenueTree(r, look);
     const bb = new THREE.Box3();
     for (const p of pads) bb.expandByPoint(p.c.clone().addScalar(p.r)).expandByPoint(p.c.clone().addScalar(-p.r));
     const crown = bb.getCenter(new THREE.Vector3()), rad = bb.getSize(new THREE.Vector3()).multiplyScalar(0.5);
@@ -267,7 +274,7 @@ export function horseChestnutShape(seedBase) {
       crown, rad, clumps: pads,
       cards: park ? [8, 4, 2] : [7, 4, 2], cardScale: park ? 0.64 : 0.66,
       // a heavy, dense dome, but its billows still read (less of the crown's dome in the shading than the copper beech)
-      aoOverhead: 0.88, aoFloor: 0.45, crownNormal: 0.5,
+      aoOverhead: 0.88, aoFloor: look ? 0.56 : 0.45, crownNormal: 0.5,
       trunk: (l) => barkMesh(branches.filter((b) => b.level <= [2, 1, 1][l]), (lv) => SIDES[l][Math.min(lv, SIDES[l].length - 1)], l === 2 ? 2 : 1),
     };
   };
@@ -276,13 +283,20 @@ export function horseChestnutShape(seedBase) {
 // ------------------------------------------------------------------------------------------------ the species
 const lin = (c) => `#${new THREE.Color().setRGB(...c, THREE.LinearSRGBColorSpace).getHexString()}`;
 
-/** The species definition for makeSpecies. tex = loadHorseChestnutTextures(...). */
-export function horseChestnutDef(seedBase = 1000, tex) {
+/** The species definition for makeSpecies. tex = loadHorseChestnutTextures(...). o.look (default true): the leaf look
+ *  of docs/TREES.md §8 (detail fading with the footprint, soft rim, airier crown, no old impostor bake); false = the
+ *  species as first merged (the lab's "before" for A/B). */
+export function horseChestnutDef(seedBase = 1000, tex, { look = true } = {}) {
   const S = CHESTNUT_SEASONS[tex.season], mean = tex.leaves.meta.mean_albedo_linear;
   // the palette IS the spray's mean (lighter on top, darker below): the spray's colours come through as drawn
-  const top = mean.map((x) => Math.min(1, x * S.top)), bottom = mean.map((x) => x * S.bottom);
+  // (the look: a lighter underside: the crown's inside less of a dark hole)
+  const top = mean.map((x) => Math.min(1, x * S.top)), bottom = mean.map((x) => x * S.bottom * (look ? S.lookBottom ?? 1.15 : 1));
+  const atlas = look ? fadingLeafAtlas(tex.leaves.atlas, { variation: S.variation, normalK: 0.75, transK: 1 })
+    : { ...tex.leaves.atlas, variation: S.variation, normalK: 0.75, transK: 1 };
   return {
-    id: "horsechestnut", variants: 6, shape: horseChestnutShape(seedBase), leafMask: planeLeafMask, perVariantHeight: true,
+    id: "horsechestnut", variants: 6, shape: horseChestnutShape(seedBase, look), leafMask: planeLeafMask, perVariantHeight: true,
+    leafLook: look ? (shared, P) => softenRim(shared, P) : null,
+    noImpostorBake: look,                       // (the far trees: the impostor kit; the lab turns it back on for farkit=0)
     bark: scanBark({ scans: [tex.bark], target: BARK_TARGET, species: "beech", hueK: 0.85 }),
     seasonal: tex.season,
     maxCardSpin: 0.45,                          // upright sprays (+-26 deg): candles up, twig tips up
@@ -291,9 +305,10 @@ export function horseChestnutDef(seedBase = 1000, tex) {
     params: {
       seed: seedBase,
       topColor: lin(top), bottomColor: lin(bottom), translucencyColor: S.translucencyColor, translucency: S.translucency,
-      tintVar: 0.14, crownLift: 0, fill: 0.5, fillColor: S.fillColor, aoColor: 0.25, trunkColor: [0.2, 0.18, 0.16],
+      tintVar: 0.14, crownLift: 0, fill: look ? S.lookFill ?? 1.6 : 0.5,   // (the look: the shade side lifted, the inside no dark hole)
+      fillColor: S.fillColor, aoColor: 0.25, trunkColor: [0.2, 0.18, 0.16],
       leafTone: 0, shadowLift: 2.2,
-      leafAtlas: { ...tex.leaves.atlas, variation: S.variation, normalK: 0.75, transK: 1 },
+      leafAtlas: atlas,
     },
   };
 }

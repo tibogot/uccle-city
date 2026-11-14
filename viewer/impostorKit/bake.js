@@ -82,12 +82,15 @@ const runWorker = (msg, transfer) => new Promise((resolve) => { const id = ++job
  * @param {THREE.WebGPURenderer} renderer
  * @param {object} source  { count, sphere(v) -> THREE.Sphere (object space), object(v) -> Object3D drawn with
  *                          bakeMaterial()s at the identity, done?(v) }
- * @param {object} spec    { grid = 16, cell = 64, gutter = 4, ss = 4, full = false, minCell = 8, label }
+ * @param {object} spec    { grid = 16, cell = 64, gutter = 4, ss = 4, full = false, minCell = 8, label,
+ *                          auxHalf = false: the aux array (normal, depth, the type's scalar) kept from mip 1 down: half
+ *                          the size each way, a quarter of its memory (smooth data: the stylized trees' clump-dome
+ *                          normals and occlusion); the material samples it one level down (the Tree Lab's species) }
  * @returns {Promise<ImpostorAtlas>}
  */
 export async function bakeAtlas(renderer, source, spec = {}) {
   const N = spec.grid ?? 16, C = spec.cell ?? 64, g = spec.gutter ?? 4, ss = spec.ss ?? 4, full = !!spec.full;
-  const inner = C - 2 * g, W = N * C, L = source.count;
+  const inner = C - 2 * g, W = N * C, L = source.count, auxHalf = !!spec.auxHalf;
   const t0 = performance.now();
   let gpuMs = 0, workerMs = 0;
   const mk = (w, h) => {
@@ -176,16 +179,19 @@ export async function bakeAtlas(renderer, source, spec = {}) {
     const A = tight(rA, W), B = tight(rB, W);
     const res = await runWorker({ A: A.buffer, B: B.buffer, size: W, N, C, g, minCell: spec.minCell ?? 8 }, [A.buffer, B.buffer]);
     workerMs += res.ms;
-    layersA.push(res.levels.map((l) => l.a)); layersB.push(res.levels.map((l) => l.b));
+    layersA.push(res.levels.map((l) => l.a)); layersB.push(res.levels.slice(auxHalf ? 1 : 0).map((l) => l.b));
     levelCount = res.levels.length;
     hulls.push(res.hull); stats.push(res.stats);
   }
   strip.dispose(); layer.dispose(); resolve.dispose();
 
-  const texA = arrayTexture(renderer, layersA, W, levelCount), texB = arrayTexture(renderer, layersB, W, levelCount);
-  const bytes = 2 * L * [...Array(levelCount)].reduce((s, _, i) => s + (W >> i) ** 2 * 4, 0);
+  if (auxHalf && levelCount < 2) throw new Error("impostorKit: auxHalf needs at least 2 mip levels (cell / minCell)");
+  const levelsB = auxHalf ? levelCount - 1 : levelCount, WB = auxHalf ? W >> 1 : W;
+  const texA = arrayTexture(renderer, layersA, W, levelCount), texB = arrayTexture(renderer, layersB, WB, levelsB);
+  const lvlBytes = (w, n) => [...Array(n)].reduce((s, _, i) => s + (w >> i) ** 2 * 4, 0);
+  const bytes = L * (lvlBytes(W, levelCount) + lvlBytes(WB, levelsB));
   const atlas = {
-    texA, texB, layers: L, grid: N, cell: C, gutter: g, inner, size: W, full, levels: levelCount, maxLevel: levelCount - 1,
+    texA, texB, layers: L, grid: N, cell: C, gutter: g, inner, size: W, full, levels: levelCount, maxLevel: levelCount - 1, auxHalf,
     spheres, hulls, stats, bytes, ss,
     bakeMs: performance.now() - t0, renderMs: gpuMs, workerMs,
     /** the level-0 pixels of a layer (for the lab's atlas viewer) */

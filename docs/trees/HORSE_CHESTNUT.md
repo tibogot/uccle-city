@@ -187,6 +187,9 @@ colour at 1,100 m over the lab's lawn: the lab, not the tree; the same as the co
 
 ## Weak points / next
 
+- 2026-11-14 (`claude/tree-look`, docs/TREES.md §8): the leaf look (detail fading with distance, soft rim, gaps
+  with limbs, a lighter inside), no old impostor bake, a 12.3 MB kit atlas. The points below predate it.
+
 - **GPU cost not measured** (preflight RED): run the three A/B buttons on a GREEN machine.
 - **Inside the crown** (looking up from below): darker and less see-through than the photo, too few visible limbs
   beyond the main ones.
