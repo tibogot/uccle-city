@@ -102,7 +102,7 @@ export function fitBase(b, faces, doorFace, door, ground, wallFoot, blocked = ()
  * (street surfaces, carves) a wall's bottom edge can stand OVER the ground: a visible gap under the wall. Here every
  * bottom edge of a wall (both ends the lowest wall vertex at their x, z; less steep than 31 deg) is checked along its length against the drawn
  * ground 0.35 m outside it (every 0.5 m, not inside another building); where the ground there comes closer than SINK
- * under the edge, both ends go down to that ground - SINK (vertices at the same spot move together: no crack at a
+ * under the edge, the edge moves down (parallel) until it is SINK under the ground all along (vertices at the same spot move together: no crack at a
  * corner). An edge more than MAX_GAP over the ground is left (a passage, a wall standing on something else).
  * P / I: buildings.bin (modified in place: the worker's own copy, after the colliders and the roof grid read it).
  * blocked(x, z, b): inside another building. Returns { moved, buildings, maxDrop }.
@@ -131,16 +131,18 @@ export function sinkFeet(bDoc, P, I, ground, blocked = () => false) {
       const tx = (bx - ax) / L, tz = (bz - az) / L;
       let nx = tz, nz = -tx;                                // outward: away from the footprint's centre
       if (((ax + bx) / 2 - cx) * nx + ((az + bz) / 2 - cz) * nz < 0) { nx = -nx; nz = -nz; }
-      let g = Infinity;
+      // the shift that puts the whole edge SINK under the ground (the edge moves down parallel: its slope stays)
+      let g = Infinity, sh = -Infinity;
       for (let u = 0; u <= L + 1e-6; u += Math.max(0.05, Math.min(0.5, L / 2))) {
         const x = ax + tx * u + nx * FIT.OUT, z = az + tz * u + nz * FIT.OUT;
         if (blocked(x, z, b)) continue;
         const y = ground(x, z);
-        if (Number.isFinite(y) && y < g) g = y;
+        if (!Number.isFinite(y)) continue;
+        g = Math.min(g, y);
+        sh = Math.max(sh, ya + (yb - ya) * Math.min(u / L, 1) - (y - FEET.SINK));
       }
-      const top = Math.max(ya, yb);
-      if (!Number.isFinite(g) || top - g <= -FEET.SINK || Math.min(ya, yb) - g >= FEET.MAX_GAP) continue;
-      for (const v of [va, vb]) { const q = key(v) + "|" + Math.round(P[v * 3 + 1] * 100); want.set(q, Math.min(want.get(q) ?? Infinity, g - FEET.SINK)); }
+      if (!(sh > 0) || sh > FEET.MAX_GAP + FEET.SINK || Math.min(ya, yb) - g >= FEET.MAX_GAP) continue;
+      for (const v of [va, vb]) { const q = key(v) + "|" + Math.round(P[v * 3 + 1] * 100); want.set(q, Math.min(want.get(q) ?? Infinity, P[v * 3 + 1] - sh)); }
     }
     if (!want.size) continue;
     buildings++;
@@ -205,7 +207,7 @@ export function footGaps(bDoc, P, I, ground, blocked = () => false) {
         gmin = Math.min(gmin, g);
         if (d > eg) { eg = d; eat = [x, z]; }
       }
-      if (Math.min(ya, yb) - gmin >= FEET.MAX_GAP) continue;          // as sinkFeet: a passage / a wall on something
+      if (Math.min(ya, yb) - gmin >= FEET.MAX_GAP || eg > FEET.MAX_GAP) continue;   // as sinkFeet: a passage / a wall on something
       if (eg > gap) { gap = eg; at = eat; }
     }
     out.set(b, { gap, at });

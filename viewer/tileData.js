@@ -41,7 +41,7 @@ export const TERRAIN_ERROR = 0.05;
 // "v1" = the road engine's own (?paint=v1 in the city, the before/after toggle in the Road Lab)
 export const PAINT = "v2";
 
-function terrainArrays(hm) {
+function terrainArrays(hm, fitDiagonals = false) {
   const { x0, z0, cols, rows, step } = hm.h, Y = hm.y;
   const pos = new Float32Array(cols * rows * 3), nrm = new Float32Array(cols * rows * 3);
   for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
@@ -56,6 +56,13 @@ function terrainArrays(hm) {
   let o = 0;
   for (let r = 0; r < rows - 1; r++) for (let c = 0; c < cols - 1; c++) {
     const a = r * cols + c, b = a + cols, cc = a + 1, d = b + 1;   // (a, b, c) faces +y with +z = south
+    // (ground fit, docs/GROUND_FIT.md "blocky") each cell split along its flatter diagonal: a bank or a kerb shoulder
+    // running diagonally across the grid is one straight crease, not a saw-tooth of folds (the split b-c everywhere)
+    if (fitDiagonals && Math.abs(Y[a] - Y[d]) < Math.abs(Y[b] - Y[cc]) - 0.01) {
+      idx[o++] = a; idx[o++] = b; idx[o++] = d;
+      idx[o++] = a; idx[o++] = d; idx[o++] = cc;
+      continue;
+    }
     idx[o++] = a; idx[o++] = b; idx[o++] = cc;
     idx[o++] = cc; idx[o++] = b; idx[o++] = d;
   }
@@ -311,7 +318,7 @@ export async function buildTileData(entry, base) {
   // control from OSM, conflicts). Round 4: built on the roads2 network (rd.net, its lane graph already repaired by
   // viewer/streets/laneGraph.js) and the measured class raster
   const traffic = await step("traffic graph", () => buildTrafficGraph(net, roads, feats, bounds, road.surfaceData?.grid));
-  const terrain = await step("terrain grid", () => terrainArrays(hm));
+  const terrain = await step("terrain grid", () => terrainArrays(hm, entry.groundFit !== false));
   // the tunnels: the drawn earth over the bores (the lid) and the ground clipped at the walls (tunnels.js)
   if (tcut) netInfo.tunnels = await step("tunnel terrain", () => tunnelTerrain(tcut, terrain, hm, rail?.doc, bounds));
   await step("terrain simplify", async () => {

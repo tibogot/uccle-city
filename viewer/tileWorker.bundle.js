@@ -387,18 +387,19 @@ function sinkFeet(bDoc, P, I, ground, blocked = () => false) {
         nx = -nx;
         nz = -nz;
       }
-      let g = Infinity;
+      let g = Infinity, sh = -Infinity;
       for (let u = 0; u <= L2 + 1e-6; u += Math.max(0.05, Math.min(0.5, L2 / 2))) {
         const x = ax + tx * u + nx * FIT.OUT, z = az + tz * u + nz * FIT.OUT;
         if (blocked(x, z, b)) continue;
         const y = ground(x, z);
-        if (Number.isFinite(y) && y < g) g = y;
+        if (!Number.isFinite(y)) continue;
+        g = Math.min(g, y);
+        sh = Math.max(sh, ya + (yb - ya) * Math.min(u / L2, 1) - (y - FEET.SINK));
       }
-      const top = Math.max(ya, yb);
-      if (!Number.isFinite(g) || top - g <= -FEET.SINK || Math.min(ya, yb) - g >= FEET.MAX_GAP) continue;
+      if (!(sh > 0) || sh > FEET.MAX_GAP + FEET.SINK || Math.min(ya, yb) - g >= FEET.MAX_GAP) continue;
       for (const v of [va, vb]) {
         const q = key(v) + "|" + Math.round(P[v * 3 + 1] * 100);
-        want.set(q, Math.min(want.get(q) ?? Infinity, g - FEET.SINK));
+        want.set(q, Math.min(want.get(q) ?? Infinity, P[v * 3 + 1] - sh));
       }
     }
     if (!want.size) continue;
@@ -13193,7 +13194,7 @@ var railDocs = (base, round2 = true) => railP ??= Promise.all([
 ]).then(([doc, heroes]) => ({ doc, heroes }));
 var TERRAIN_ERROR = 0.05;
 var PAINT = "v2";
-function terrainArrays(hm) {
+function terrainArrays(hm, fitDiagonals = false) {
   const { x0, z0, cols, rows, step } = hm.h, Y = hm.y;
   const pos = new Float32Array(cols * rows * 3), nrm = new Float32Array(cols * rows * 3);
   for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
@@ -13212,6 +13213,15 @@ function terrainArrays(hm) {
   let o = 0;
   for (let r = 0; r < rows - 1; r++) for (let c = 0; c < cols - 1; c++) {
     const a = r * cols + c, b = a + cols, cc = a + 1, d = b + 1;
+    if (fitDiagonals && Math.abs(Y[a] - Y[d]) < Math.abs(Y[b] - Y[cc]) - 0.01) {
+      idx[o++] = a;
+      idx[o++] = b;
+      idx[o++] = d;
+      idx[o++] = a;
+      idx[o++] = d;
+      idx[o++] = cc;
+      continue;
+    }
     idx[o++] = a;
     idx[o++] = b;
     idx[o++] = cc;
@@ -13466,7 +13476,7 @@ async function buildTileData(entry, base) {
   }
   if (tcut) tcut.recut = tunnelRecut(tcut, hm);
   const traffic = await step("traffic graph", () => buildTrafficGraph(net, roads, feats, bounds, road.surfaceData?.grid));
-  const terrain = await step("terrain grid", () => terrainArrays(hm));
+  const terrain = await step("terrain grid", () => terrainArrays(hm, entry.groundFit !== false));
   if (tcut) netInfo.tunnels = await step("tunnel terrain", () => tunnelTerrain(tcut, terrain, hm, rail?.doc, bounds));
   await step("terrain simplify", async () => {
     await MeshoptSimplifier.ready;
