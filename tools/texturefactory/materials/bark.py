@@ -110,6 +110,62 @@ def beech_bark(T, P):
     return col, h, rough
 
 
+def beech_skin(T, P):
+    """mature avenue beech (the copper beeches of the Drève de Lorraine): the 'elephant skin'. Smooth silver-grey in
+    big soft mottles, grey-brown stemflow streaks running down, fine horizontal creases in wavy clusters (the skin
+    stretching), short raised lenticel dashes, crustose lichen patches (pale, with a dark rim line) carrying script
+    lichen (Graphis: thin black squiggles), powdery green algae. No branch-scar eyes: the shader puts those on the
+    trunk's own cylinder (they never repeat with the tile)."""
+    # low swellings (the skin over the wood): 12-30 cm, ~1 mm
+    h = T.noise(0.22, 1, octaves=2, gain=0.4) * 0.0009 + T.noise(0.03, 2, octaves=2) * 0.00012
+    # tone: silver / grey big mottles, finer clouds
+    m1 = T.noise(0.32, 3, octaves=3, gain=0.5)
+    m2 = T.noise(0.05, 4, octaves=3, gain=0.55)
+    col = lerp(hexcol(P["silver"]), hexcol(P["grey"]), smoothstep(-1.8, 1.8, m1)[..., None])
+    col = col * (1 + m2[..., None] * 0.035)
+    # stemflow streaks: long vertical cells, darker / browner, soft
+    F1, F2, sid, ns = T.worley(0.06, 5, aniso=(0.45, 5.0))
+    sv = T.per_unit(sid, ns, 6)
+    streak = T.blur(((sv > 0.75) * smoothstep(0.0, 0.02, F2 - F1)).astype(f32), 0.008)
+    streak = streak * smoothstep(-0.6, 0.6, T.noise(0.4, 7))
+    col = lerp(col, hexcol(P["streak"]), np.clip(streak * 0.4, 0, 1)[..., None])
+    # elephant creases: horizontal, gently wavy, in clusters, broken into dashes
+    wv = T.noise(0.2, 8, octaves=2) * 0.005
+    for k, (lam, w, amp) in enumerate([(0.019, 0.0016, 1.0), (0.011, 0.0011, 0.55)]):
+        ph = np.abs(np.sin((T.yy + wv * (1 + k) + T.noise(0.3, 9 + k) * lam * 0.5) * 2 * np.pi / lam)).astype(f32)
+        line = smoothstep(1.0 - w * 45, 1.0, ph)
+        zone = smoothstep(0.2, 1.0, T.noise(0.16, 11 + k, octaves=2))
+        broken = smoothstep(-0.4, 0.3, T.noise(0.07, 13 + k))
+        cr = line * zone * broken * amp
+        h = h - cr * 0.00035
+        col = col * (1 - cr[..., None] * 0.14)
+    # lenticel dashes
+    lF1, lF2, lid, nl = T.worley(0.014, 15, aniso=(2.6, 0.55))
+    dash = smoothstep(0.0011, 0.0004, lF1) * (T.per_unit(lid, nl, 16) < 0.3) * smoothstep(-0.5, 0.5, T.noise(0.15, 17))
+    h = h + dash * 0.00018
+    col = lerp(col, hexcol(P["dash"]), (dash * 0.5)[..., None])
+    # crustose lichen: pale patches 3-15 cm with ragged fractal edges and a dark prothallus line at the rim, script
+    # lichen (thin black squiggles) inside some
+    ln = T.noise(0.3, 18, octaves=5, gain=0.42) + smoothstep(-0.3, 1.2, T.noise(0.6, 24)) * 0.7
+    thr = P.get("lichen_thr", 1.75)
+    lic = smoothstep(thr, thr + 0.12, ln)
+    rim = smoothstep(thr - 0.06, thr, ln) * smoothstep(thr + 0.1, thr + 0.02, ln)
+    lr = smoothstep(-1, 1, T.noise(0.3, 25))
+    licC = lerp(hexcol(P["lichen_a"]), hexcol(P["lichen_b"]), lr[..., None]) * (1 + T.noise(0.008, 26)[..., None] * 0.05)
+    col = lerp(col, licC, (lic * 0.6)[..., None])
+    col = lerp(col, hexcol(P["dark"]), (rim * 0.45)[..., None])
+    sq = np.abs(T.noise(0.014, 19, octaves=2))
+    script = smoothstep(0.07, 0.0, sq) * smoothstep(0.4, 1.0, lic) * (lr < 0.5) * smoothstep(-0.2, 0.3, T.noise(0.02, 20))
+    col = lerp(col, hexcol(P["dark"]) * 0.6, (script * 0.75)[..., None])
+    h = h + lic * 0.00025 - script * 0.0001
+    # powdery green algae in soft clouds
+    alg = smoothstep(0.4, 1.6, T.noise(0.2, 21, octaves=3)) * P.get("algae", 0.4)
+    alg = alg * (0.7 + 0.3 * smoothstep(-1, 1, T.noise(0.006, 22)))
+    col = lerp(col, hexcol(P["algae_col"]), np.clip(alg, 0, 0.75)[..., None])
+    rough = 0.58 + 0.25 * lic + alg * 0.3 + T.noise(0.05, 23) * 0.03
+    return col, h, rough
+
+
 def fissured(T, P):
     """longitudinal fissures + ridges (lime, maple, oak): vertically stretched cells, their borders cut as fissures"""
     asp = P.get("stretch", 4.0)
@@ -184,6 +240,9 @@ def birch(T, P):
 PLANE = dict(cell=0.09, jig=0.35, old=0.3, mid=0.2, fresh=0.14, old_a="#7b7a68", old_b="#8f8a72",
              mid_a="#a9a78e", mid_b="#b5b195", new_a="#d9d5bd", new_b="#e6e1c8", fresh_col="#d2d39a")
 BEECH = dict(color="#9c9c95", dark="#5d5d58", eyes=3, algae=0.35, lichen=0.12)
+# the copper beech: the same bark as the beech (a cultivar), mature avenue trees (beech_skin)
+COPPER = dict(silver="#9a9a95", grey="#8b8a85", streak="#605a52", dash="#6c6a63", dark="#3a3936",
+              lichen_a="#b9bcb0", lichen_b="#a9ad9c", algae_col="#6f7b48", algae=0.22)
 LIME = dict(cell=0.04, stretch=5.0, fis_w=0.004, depth=0.006, ridge_a="#6f665a", ridge_b="#857b6c", fis_col="#2f2a24", algae=0.25)
 MAPLE = dict(cell=0.025, stretch=6.0, fis_w=0.0025, depth=0.004, ridge_a="#6c6862", ridge_b="#7d7870", fis_col="#2d2a27", algae=0.2)
 OAK = dict(cell=0.06, stretch=3.5, fis_w=0.012, depth=0.02, cross=0.07, ridge_a="#6d675d", ridge_b="#857e72", fis_col="#211d19", algae=0.3)
@@ -205,6 +264,9 @@ MATERIALS = {
     "bark_beech": {"size_m": 1.0, "category": "tree", "variants": {
         "a": {"seed": 211, "note": "beech: smooth silver-grey, eyes, algae", "build": mk(beech_bark, BEECH, 0.02)},
         "b": {"seed": 212, "note": "beech, cleaner and paler", "build": mk(beech_bark, dict(BEECH, color="#a7a8a2", algae=0.15, eyes=2), 0.02)},
+    }},
+    "bark_copperbeech": {"size_m": 1.0, "category": "tree", "variants": {
+        "a": {"seed": 271, "note": "copper / mature beech: elephant skin, streaks, creases, script lichen, algae (eyes in the shader)", "build": mk(beech_skin, COPPER, 0.02)},
     }},
     "bark_lime": {"size_m": 1.0, "category": "tree", "variants": {
         "a": {"seed": 221, "note": "lime: shallow interlacing fissures", "build": mk(fissured, LIME)}}},

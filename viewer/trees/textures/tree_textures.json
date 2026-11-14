@@ -59,6 +59,74 @@
    "mean_thickness": 0.3,
    "a_ktx2_bytes": 606459,
    "n_ktx2_bytes": 604951
+  },
+  "leaf_copperbeech": {
+   "what": "copperbeech spray, summer (texture factory, tools/texturefactory/materials/leaves.py)",
+   "licence": "CC0 (generated)",
+   "source": "tools/texturefactory (materials/leaves.py, seed 335)",
+   "season": "summer",
+   "px": 1024,
+   "coverage": 0.3126,
+   "mean_albedo_linear": [
+    0.0679,
+    0.0227,
+    0.02
+   ],
+   "mean_thickness": 0.307,
+   "a_ktx2_bytes": 375014,
+   "n_ktx2_bytes": 433988,
+   "n_file": "leaf_copperbeech_n.ktx2"
+  },
+  "leaf_copperbeech_spring": {
+   "what": "copperbeech spray, spring (texture factory, tools/texturefactory/materials/leaves.py)",
+   "licence": "CC0 (generated)",
+   "source": "tools/texturefactory (materials/leaves.py, seed 335)",
+   "season": "spring",
+   "px": 1024,
+   "coverage": 0.3126,
+   "mean_albedo_linear": [
+    0.1876,
+    0.0332,
+    0.0394
+   ],
+   "mean_thickness": 0.307,
+   "a_ktx2_bytes": 395094,
+   "n_ktx2_bytes": 433988,
+   "n_file": "leaf_copperbeech_n.ktx2"
+  },
+  "leaf_copperbeech_autumn": {
+   "what": "copperbeech spray, autumn (texture factory, tools/texturefactory/materials/leaves.py)",
+   "licence": "CC0 (generated)",
+   "source": "tools/texturefactory (materials/leaves.py, seed 335)",
+   "season": "autumn",
+   "px": 1024,
+   "coverage": 0.3126,
+   "mean_albedo_linear": [
+    0.1955,
+    0.0717,
+    0.0218
+   ],
+   "mean_thickness": 0.307,
+   "a_ktx2_bytes": 410073,
+   "n_ktx2_bytes": 433988,
+   "n_file": "leaf_copperbeech_n.ktx2"
+  },
+  "leaf_copperbeech_winter": {
+   "what": "copperbeech spray, winter (texture factory, tools/texturefactory/materials/leaves.py)",
+   "licence": "CC0 (generated)",
+   "source": "tools/texturefactory (materials/leaves.py, seed 335)",
+   "season": "winter",
+   "px": 1024,
+   "coverage": 0.0338,
+   "mean_albedo_linear": [
+    0.1807,
+    0.0891,
+    0.042
+   ],
+   "mean_thickness": 0.568,
+   "a_ktx2_bytes": 78872,
+   "n_ktx2_bytes": 433988,
+   "n_file": "leaf_copperbeech_n.ktx2"
   }
  },
  "bark": {
@@ -121,6 +189,21 @@
    "mean_roughness": 0.513,
    "albedo_ktx2_bytes": 1183468,
    "nra_ktx2_bytes": 1273117
+  },
+  "tf_copperbeech": {
+   "what": "generated: copper / mature beech: elephant skin, streaks, creases, script lichen, algae (eyes in the shader)",
+   "licence": "CC0 (generated)",
+   "source": "tools/texturefactory (materials/bark.py, seed 271)",
+   "size_m": 1.0,
+   "px": 1024,
+   "mean_albedo_linear": [
+    0.2833,
+    0.2829,
+    0.2564
+   ],
+   "mean_roughness": 0.607,
+   "albedo_ktx2_bytes": 580122,
+   "nra_ktx2_bytes": 956421
   }
  },
  "megascans": {

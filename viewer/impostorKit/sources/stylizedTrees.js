@@ -9,6 +9,7 @@ import * as THREE from "three/webgpu";
 import { attribute, texture, mix, float, smoothstep, normalize, normalGeometry, positionWorld, positionGeometry } from "three/tsl";
 import { bakeMaterial } from "../bake.js";
 import { lodEye } from "../../lodFade.js";
+import { leafAtlasNodes } from "../../../vendor/stylized-trees/stylizedTrees.js";
 
 /**
  * @param {object} shared  the vendor's shared { U, geoms: Map("<variant>:<lod>" -> { leaves, trunk }), leafMat, trunkMat }
@@ -18,9 +19,13 @@ import { lodEye } from "../../lodFade.js";
 export function stylizedTreeSource(shared, leafMask, { variants = 6, lod = 2, handover = 400 } = {}) {
   const U = shared.U;
   const card = attribute("card", "vec4"), spin = attribute("cardSpin", "vec4");
-  const mask = texture(leafMask, card.xy.mul(0.5).add(0.5)).r;
+  // a species with a leaf-spray texture (vendor CHANGES #16: shared.leafAtlas, e.g. the copper beech in the Tree Lab):
+  // its coverage and each leaf's colour, as the leaves draw them; without one (the city's street trees) as before
+  const atlas = shared.leafAtlas ? leafAtlasNodes(shared.leafAtlas, card.xy.mul(0.5).add(0.5)) : null;
+  const mask = atlas ? atlas.alpha : texture(leafMask, card.xy.mul(0.5).add(0.5)).r;
   const hA = card.w, aoA = card.z;
-  const leafAlbedo = mix(U.bottom, U.top, smoothstep(0.0, 1.0, hA)).mul(mix(float(1), aoA, U.aoColor));
+  let leafAlbedo = mix(U.bottom, U.top, smoothstep(0.0, 1.0, hA)).mul(mix(float(1), aoA, U.aoColor));
+  if (atlas) leafAlbedo = leafAlbedo.mul(atlas.variation);
   const leafN = normalGeometry.add(positionWorld.sub(positionGeometry).mul(spin.z).mul(0.7));
   const leafM = bakeMaterial({ albedo: leafAlbedo, normal: leafN, aux: aoA.mul(0.5).add(0.5), discard: mask.lessThan(0.5), positionNode: shared.leafMat.positionNode });
   const barkM = bakeMaterial({ albedo: shared.trunkMat.colorNode, normal: normalGeometry, aux: float(0.25), positionNode: shared.trunkMat.positionNode, side: THREE.FrontSide });

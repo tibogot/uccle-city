@@ -217,7 +217,7 @@ def spray(sp, R, seed):
     # twigs first (under), then the petioles and the leaves on top
     for pts in segs:
         for a, b in zip(pts[:-1], pts[1:]):
-            draw_line(C, a, b, R * 0.006, twig_col, 1.0)
+            draw_line(C, a, b, R * sp.get("twig_w", 0.006), twig_col, 1.0)
     pet_col = srgb_to_lin(sp.get("petiole_col", [0.55, 0.58, 0.3]))
     for idx, (_, base, ang, size, squash, q) in enumerate(leaves):
         if q is not None:
@@ -261,6 +261,13 @@ def colour(C, table, pal, sp, season_k):
         sp_n = (sp_n - sp_n.mean()) / (sp_n.std() + 1e-6)
         spots = np.clip((sp_n - 2.0) * 2, 0, 1) * (t[..., 2] < season_k["spots"])
         base = base * (1 - spots[..., None] * 0.6)
+    if season_k.get("under") is not None:
+        # leaves seen from below (the copper beech: paler, greener undersides; veins standing out)
+        pu, ucol = season_k["under"]
+        und = (t[..., 4] < pu).astype(f32)[..., None]
+        ub = np.asarray(ucol, f32) * np.exp((t[..., 1, None] - 0.5) * 0.3) * (0.85 + 0.25 * np.clip(C.u, 0, 1))[..., None]
+        ub = ub * (1 + 0.5 * C.vein[..., None])
+        base = base * (1 - und) + ub * und
     alb[on] = base[on]
     return alb
 
