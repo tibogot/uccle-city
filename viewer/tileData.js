@@ -361,7 +361,7 @@ export async function buildTileData(entry, base) {
   // door steps stand on it (viewer/groundFit.js, docs/GROUND_FIT.md); entry.groundFit === false (?groundfit=old): the
   // lowest DTM point and the bare DTM, as before
   const fitGround = entry.groundFit !== false ? await step("ground fit", () => drawnGround(hm, road.parts)) : null;
-  const kit = entry.kit ? kitCollector({ exclude: new Set(entry.kitExclude || []), ground: fitGround || ((x, z) => hm.ground(x, z)) }) : null;
+  const kit = entry.kit ? kitCollector({ exclude: new Set(entry.kitExclude || []), ground: fitGround || ((x, z) => hm.ground(x, z)), fit: entry.storeys !== false }) : null;
   // entry.streetlife (the street-life layer, viewer/streetlife/, on by default in the city): its shopfronts replace the
   // OSM shop points of the façade analysis (data/streetlife/<T>.json; a tile without one keeps the OSM shops)
   const fronts = entry.streetlife ? await step("street-life fronts", () => streetlifeFronts(base, entry.name)) : null;
@@ -371,7 +371,7 @@ export async function buildTileData(entry, base) {
   // are built from these walls (the drive colliders and the roof grids above already read the solids)
   const feet = fitGround && bBuf ? await step("wall feet", () => { const dv = new DataView(bBuf), V = dv.getUint32(0, true), T = dv.getUint32(4, true);
     return sinkFeet(bDoc, new Float32Array(bBuf, 8, V * 3), new Uint32Array(bBuf, 8 + V * 12, T * 3), fitGround, footprintIndex(bDoc)); }) : null;
-  const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []) }));
+  const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false }));
   // what the roof kit stands on the roofs, in the falcon's drawn-roof grid (it collides with what is drawn)
   if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);

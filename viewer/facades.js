@@ -15,7 +15,7 @@
 //   materials (TSL)
 //     - wall styles: 0 red brick, 1 brown brick, 2 yellow brick, 3 white render, 4 cream render,
 //       5 grey render/concrete; blue-stone plinth, cornice band under the eaves
-//     - storeys: ground floor 3.4 m, then 3.0 m; window bays sized to each face; white frames with
+//     - storeys: ground floor 3.4 m, then 3.0 m, scaled to fill each face up to its own eaves (storeyK, docs/STOREYS.md); window bays sized to each face; white frames with
 //       glazing bars, stone sills, glass with a sky gradient; one painted door per street face
 //     - roofs: clay tiles, dark glazed tiles or slate in courses down the slope, moss and weathering;
 //       flat roofs bitumen/gravel
@@ -25,7 +25,7 @@
 import * as THREE from "three/webgpu";
 import {
   Fn, If, attribute, positionWorld, normalWorld, cameraPosition, color, float, vec2, vec3, vec4, mix, step, smoothstep, floor, fract,
-  abs, min, max, clamp, fwidth, sin, sign, dot, normalize, length, pow, atan, normalView, mrt, roughness, mod, select,
+  abs, min, max, clamp, fwidth, sin, sign, dot, normalize, length, pow, atan, normalView, mrt, roughness, mod, select, varying,
 } from "three/tsl";
 import { lampLight } from "./lampLight.js";
 import { hash2D, noise2D, bumpNormal, filteredPulse } from "./tslkit.js";
@@ -36,11 +36,28 @@ import { analyseBuildings } from "./facadeGeom.js";
 import { houseCut, cutOpacity } from "./interior/cut.js";
 import { kitShows, wallKitFade } from "./facadeKit/kitFade.js";
 import { FRENCH_SILL } from "./facadeKit/placement.js";
+import { G as G0, S as S0, STOREY_TOP, STOREY_STEP, K_MIN, K_MAX } from "./interior/facadeWindows.js";
 import { facadeLibOn, facadeWallLook, facadeRoofLook } from "./facadeLib.js";
 import { wxMat } from "./weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 export { analyseBuildings };
 
 const C = (r, g, b) => vec3(r, g, b);
+
+// FITTED STOREYS (docs/STOREYS.md; owner 2026-11-14: "very empty at the first or second floor"). The fixed storeys
+// (ground 3.4 m, then 3.0 m) dropped every storey whose window missed the eaves by a few cm: a 6 m house showed its
+// ground floor only, and the ground fit (base at the pavement, the eaves unchanged) took a storey off 1 face in 10.
+// Now the storeys fill the face: n = round((eaves - 0.3) / 3.25), all scaled by one k (= facadeWindows.js storeyFit,
+// KEEP IN SYNC), per vertex (one varying; the face's eaves is a per-face constant). ?storeys=old: k = 1.
+export const STOREYS_OLD = typeof location !== "undefined" && /[?&]storeys=old(&|$)/.test(location.search);
+export function storeyK(eh) {
+  if (STOREYS_OLD) return float(1);
+  const span = eh.sub(STOREY_TOP);
+  const n0 = max(floor(span.div(STOREY_STEP).add(0.5)), 1.0);
+  const k0 = span.div(n0.sub(1).mul(S0).add(G0));
+  const n = select(n0.greaterThan(1.5).and(k0.lessThan(K_MIN)), n0.sub(1), n0);
+  const k = clamp(span.div(n.sub(1).mul(S0).add(G0)), K_MIN, K_MAX);
+  return varying(floor(k.mul(128).add(0.5)).div(128), "v_storeyK");
+}
 
 /**
  * Room behind a window, raycast in metres (interior mapping). Adapted from evaluateApartmentInterior in
@@ -126,10 +143,11 @@ const interiorRoom = Fn(([gx, gy, winUV, cellId, bayW, storeyH, seed, litProb, f
  * same window grid, room (interior mapping), curtains / lace, lit rooms at night, dirt and sky reflection as
  * wallMaterial() paints, from the face the pane sits on, so the kit's windows hand over to the painted ones invisibly.
  * u, h: the pixel's façade coordinates (m along the face from its left end, m above the base); fw: the face width;
- * street: 1 if the face has the door; rnd: the building hash (aBld.w); frCode: the kit's French window (aKit.w).
+ * street: 1 if the face has the door; rnd: the building hash (aBld.w); frCode: the kit's French window (aKit.w);
+ * k: the face's storey scale (storeyK; the kit packs it in aKitF.y).
  * -> { col, emissive, rough }  (KEEP IN SYNC with wallMaterial below)
  */
-export function paintedGlass({ u, h, fw, street, rnd: rndIn, frCode }) {
+export function paintedGlass({ u, h, fw, street, rnd: rndIn, frCode, k = float(1) }) {
   const P = positionWorld;
   const rnd = floor(rndIn.mul(4096.0).add(0.5)).div(4096.0).toVar();
   const pier = float(0.55);
@@ -137,7 +155,7 @@ export function paintedGlass({ u, h, fw, street, rnd: rndIn, frCode }) {
   const nb = max(floor(usable.div(2.6).add(0.5)), float(1)).toVar();
   const bw = usable.div(nb).toVar();
   const gx = u.sub(pier).div(bw).toVar();
-  const G = float(3.4), S = float(3.0);
+  const G = k.mul(G0).toVar(), S = k.mul(S0).toVar();
   const up = step(G, h);
   const gy = mix(h.div(G), h.sub(G).div(S).add(1.0), up).toVar();
   const storeyH = mix(G, S, up);
@@ -203,13 +221,14 @@ export function wallMaterial(opts = {}) {
   const near = float(1).sub(smoothstep(16.0, 150.0, camDist)).toVar();       // relief and fine detail fade with distance
   const grain = n3(P.x.mul(5.0), P.y.mul(5.0), P.z.mul(5.0));
 
-  // ---- window grid: corner piers, whole bays, storeys (ground floor 3.4 m, then 3.0 m)
+  // ---- window grid: corner piers, whole bays, storeys (ground floor 3.4 m, then 3.0 m, x the face's k: storeyK)
   const pier = float(0.55);
   const usable = max(fw.sub(pier.mul(2)), float(0.001));
   const nb = max(floor(usable.div(2.6).add(0.5)), float(1)).toVar();
   const bw = usable.div(nb).toVar();
   const gx = u.sub(pier).div(bw).toVar();                                       // bay coordinate
-  const G = float(3.4), S = float(3.0);
+  const sk = storeyK(eh);
+  const G = sk.mul(G0).toVar(), S = sk.mul(S0).toVar();
   const up = step(G, h);
   const gy = mix(h.div(G), h.sub(G).div(S).add(1.0), up).toVar();              // storey coordinate
   const storeyH = mix(G, S, up);

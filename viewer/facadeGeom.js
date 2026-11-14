@@ -466,13 +466,31 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       }
       cx /= n; cz /= n;
       const width = u1 - u0;
+      // THE FACE'S OWN EAVES (docs/STOREYS.md): the lowest point of its top edge, sampled every 0.4 m across the face
+      // (0.2 m in from its ends): a front under a pitched roof = its top, a gable = its corners. b.eaves is the lowest
+      // roof vertex of the WHOLE building (a rear annex, a porch roof): it took the first floor off many fronts.
+      let topMin = Infinity;
+      // (only where the face rises over the building's eaves: else the max below keeps the building's)
+      if (opts.storeys !== false && !landmark && top > (b.eaves ?? b.top) + 0.05) {
+        const T2 = f.tris.map(({ p }) => p.map((q) => [q[0] * tx + q[2] * tz, q[1]]));
+        for (let uu = u0 + 0.2; uu <= u1 - 0.2 + 1e-6; uu += 0.4) {
+          let hi = -Infinity;
+          for (const t of T2) for (let e = 0; e < 3; e++) {
+            const A = t[e], B = t[(e + 1) % 3];
+            if ((A[0] - uu) * (B[0] - uu) > 0) continue;
+            const y = Math.abs(B[0] - A[0]) < 1e-6 ? Math.max(A[1], B[1]) : A[1] + (B[1] - A[1]) * (uu - A[0]) / (B[0] - A[0]);
+            if (y > hi) hi = y;
+          }
+          if (hi > -Infinity && hi < topMin) topMin = hi;
+        }
+      }
       // party wall: blank below this height above base. Separate houses: the whole wall (property line);
       // parts of the same building or a landmark: only up to the neighbour's top, windows above it.
       const ob = width > 0.3 ? otherAt(cx + f.nx * PARTY_PROBE, cz + f.nz * PARTY_PROBE, bi) : -1;
       const sameBld = ob >= 0 && b.attrs?.BU_ID && doc.buildings[ob].attrs?.BU_ID === b.attrs.BU_ID;
       const partyH = ob < 0 ? 0 : (sameBld || landmark) ? Math.max(0.01, roofAt(ob, cx + f.nx * PARTY_PROBE, cz + f.nz * PARTY_PROBE) - base) : 999;
       const street = partyH < 999 && facesStreet(cx, cz, f.nx, f.nz) ? 1 : 0;
-      f.pre = { tx, tz, u0, u1, cx, cz, top, width, partyH, street };
+      f.pre = { tx, tz, u0, u1, cx, cz, top, width, partyH, street, topMin };
     }
     const terraced = live.some((f) => f.pre.partyH >= 999);        // (the roof kit: a house in a row)
     // the widest street face carries the front door (the kit only: the painted façade keeps a door per street face)
@@ -493,9 +511,10 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       stats.fit[fit.how] = (stats.fit[fit.how] || 0) + 1;
     }
     for (const f of live) {
-      const { tx, tz, u0, u1, cx, cz, top, width, partyH, street } = f.pre;
-      // landmarks: windows sized to each wall's own top (a church's LoD2 walls stop low; drums and towers are separate faces)
-      const faceEaves = landmark ? top - base : eaves;
+      const { tx, tz, u0, u1, cx, cz, top, width, partyH, street, topMin } = f.pre;
+      // landmarks: windows sized to each wall's own top (a church's LoD2 walls stop low; drums and towers are separate faces);
+      // houses: the face's own eaves line, never under the building's (?storeys=old: the building's lowest roof point)
+      const faceEaves = landmark ? top - base : Number.isFinite(topMin) ? Math.max(eaves, topMin - base) : eaves;
       const party = partyH > 0 ? 1 : 0;
       stats.faces++; stats.party += party; stats.street += street;
       // shopfront: an unused shop point inside this building (or up to 6 m in front of the face), within the face's span
@@ -622,7 +641,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         }
       }
       // the façade kit takes this face? (street faces of eligible buildings, every opening on the wall)
-      const k = kit ? kit.face({ key, building: b, doorFace: f === doorFace, wallStyle: style, landmark: !!landmark, rnd, width, eaves: faceEaves, partyH, street, roofAt: (x, z) => roofAt(bi, x, z),
+      const k = kit ? kit.face({ key, building: b, doorFace: f === doorFace, wallStyle: style, landmark: !!landmark, rnd, width, eaves: faceEaves, eavesBld: landmark ? top - base : eaves, partyH, street, roofAt: (x, z) => roofAt(bi, x, z),
         shopU, shopW, base, top, nx: f.nx, nz: f.nz, tx, tz, u0, tris: f.tris }) : null;
       const T = k?.on ? WK : W;
       // (ground fit) the painted façade has a door on EVERY street face: one whose door bay stands off the ground (a

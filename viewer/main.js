@@ -505,6 +505,7 @@ function tileData(entry, lite = false) {
     heros: HEROS ? HEROS_TILE : null,                                                                // Square des Heros: the park cut out of the UrbIS square surface, its steps' carves (viewer/heros/herosSurface.js)
     kit: cityKit.on && !lite, kitExclude: cityKit.exclude,                                           // the façade kit (viewer/facadeKit/), ?kit=0 off
     groundFit: params.get("groundfit") !== "old",                                                  // façades' ground-floor line on the drawn ground (viewer/groundFit.js, docs/GROUND_FIT.md), ?groundfit=old = before
+    storeys: params.get("storeys") !== "old",                                                       // the façade kit's storeys fitted to each face's height (docs/STOREYS.md), ?storeys=old = the fixed 3.4 / 3.0 m storeys
     roofs: cityRoofs.on && !lite,                                                                    // the roof tops (viewer/roofs/, docs/assets/ROOFS.md), ?roofs=old = before
     fuelClear: cityFuel.on ? cityFuel.clear : null,                                                 // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js)
     streetlife: cityStreetLife.on && !lite,                                                          // the street life's shopfronts (viewer/streetlife/), ?streetlife=0 off

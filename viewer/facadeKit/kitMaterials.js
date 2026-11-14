@@ -21,7 +21,7 @@ import {
 } from "three/tsl";
 import { env } from "../lighting.js";
 import { pieceKeep, kitFades } from "./kitFade.js";
-import { paintedGlass } from "../facades.js";
+import { paintedGlass, STOREYS_OLD } from "../facades.js";
 import { libSource } from "../materials/libSwitch.js";
 import { wxMat } from "../weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 
@@ -218,7 +218,7 @@ export function kitOpaqueMaterial(lod, opts = {}) {
 }
 
 /** THE KIT GLASS for LOD `lod`: the painted window's room, curtains, night lights and sky (facades.js paintedGlass)
- *  from the face the pane sits on (aKitF = u0, width, base, rnd + 2 x door street + 4 x French code). */
+ *  from the face the pane sits on (aKitF = u0, width + 256 x (128 storey k - 100), base, rnd + 2 x door street + 4 x French code). */
 export function kitGlassMaterial(lod, opts = {}) {
   const m = new THREE.MeshStandardNodeMaterial();
   m.name = `kit glass lod${lod}`;
@@ -227,7 +227,9 @@ export function kitGlassMaterial(lod, opts = {}) {
   const u = P.x.mul(J.y.negate()).add(P.z.mul(J.x)).sub(F.x);   // t = (-nz, nx): facadeGeom.js
   const h = P.y.sub(F.z);
   const fr = floor(F.w.div(4)), rest = F.w.sub(fr.mul(4)), street = floor(rest.div(2)), rnd = rest.sub(street.mul(2));
-  const g = paintedGlass({ u, h, fw: F.y, street, rnd, frCode: fr });
+  // aKitF.y = width + 256 x (128 k - 100): the face's storey scale k (placement.js; docs/STOREYS.md)
+  const kq = floor(F.y.div(256)), fw = F.y.sub(kq.mul(256));
+  const g = paintedGlass({ u, h, fw, street, rnd, frCode: fr, k: STOREYS_OLD ? float(1) : kq.add(100).div(128) });
   // (roomGlass 0: the plain dark glass of round 1, for A/B)
   const dark = LOOKS.glass_window(uv());
   m.colorNode = mix(dark.col, g.col, kitLook.roomGlass);

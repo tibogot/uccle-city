@@ -2,20 +2,40 @@
 // grid, the storeys, the front door, the frames, the sills). Pure JS, no three.js: used by
 //   tools/interior/houseSpec.mjs    -> models/interior/<house>/house.json (the Blender build cuts the same openings)
 //   viewer/interior/*               the lab's debug view and the city hook's portals
-// KEEP IN SYNC with wallMaterial(): pier 0.55, bays ~2.6 m, ground storey 3.4 m then 3.0 m, window width
+// KEEP IN SYNC with wallMaterial(): pier 0.55, bays ~2.6 m, ground storey 3.4 m then 3.0 m (x k: storeyFit), window width
 // min(1.2, 0.52 bay), sill / head at 0.27 / 0.77 of the ground storey and 0.29 / 0.79 above, the door 1.1 m wide and
 // 0.72 of the ground storey tall in bay floor(rnd_q * bays) of a street face, a whole opening must fit 0.35 m under
 // the eaves, nothing below a party wall's neighbour top + 0.3 m.
 //
 // face = { width, eaves (face eaves above base), partyH (0 none, 999 whole wall, else m above base), street (0/1),
-//          rnd (the building hash, aBld.w: hash01(BU_ID) as float32), landmark (bool), shop: shopW (aFN.w, 0 none) }
+//          rnd (the building hash, aBld.w: hash01(BU_ID) as float32), landmark (bool), shop: shopW (aFN.w, 0 none),
+//          fit (false: ?storeys=old, the fixed storeys) }
 // -> [{ kind: "window" | "door", bay, floor, u0, u1, h0, h1 (the whole opening: frame outer edge),
 //       frame: 0.07, mullion (bool), transom (h of the glazing bar, windows; the door's fanlight bottom),
 //       sill: { u0, u1, h0, h1 } (the blue-stone sill under a window) }]
 export const G = 3.4, S = 3.0, PIER = 0.55, FRAME = 0.07;
 
+// FITTED STOREYS (docs/STOREYS.md; ?storeys=old = the fixed 3.4 / 3.0 m storeys, a storey dropped when its window
+// missed the eaves by a few cm). The storeys fill the face's height: span = eaves - STOREY_TOP (the top storey's
+// ceiling under the eaves line), n = round(span / STOREY_STEP) storeys, all scaled by one k so the ground storey stays
+// 3.4 / 3.0 = 1.13 x the upper ones; k clamped to [K_MIN, K_MAX] (upper storeys 2.6-3.6 m). k is quantised to 1/128
+// (exact in float32: the shader, this file and the kit's glass, which gets k packed in aKitF.y, agree to the bit).
+// KEEP IN SYNC with facades.js storeyFit().
+export const STOREY_TOP = 0.3, STOREY_STEP = 3.25, K_MIN = 0.87, K_MAX = 1.2;
+/** eaves (m above the ground-floor line) -> { n, k, G, S } (fit === false: the fixed storeys, k = 1) */
+export function storeyFit(eaves, fit = true) {
+  if (!fit) return { n: Infinity, k: 1, G, S };
+  const span = Math.fround(eaves - STOREY_TOP);
+  let n = Math.max(1, Math.floor(span / STOREY_STEP + 0.5));
+  if (n > 1 && span / (G + S * (n - 1)) < K_MIN) n--;
+  let k = Math.min(Math.max(span / (G + S * (n - 1)), K_MIN), K_MAX);
+  k = Math.floor(k * 128 + 0.5) / 128;
+  return { n, k, G: G * k, S: S * k };
+}
+
 export function faceOpenings(f) {
   const out = [];
+  const { G, S } = storeyFit(f.eaves, f.fit !== false);
   if (f.landmark || f.partyH >= 999 || f.width < 1.6 || f.eaves < 2.8) return out;
   const usable = Math.max(f.width - PIER * 2, 0.001);
   const nb = Math.max(Math.floor(usable / 2.6 + 0.5), 1);

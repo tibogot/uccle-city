@@ -160,6 +160,7 @@ export const FEATURES = [
   old("shops", "ab", "shopfronts", "Shopfronts before.", { sub: "Places & assets" }),
   old("paving", "ab", "paving", "Sidewalk paving before.", { sub: "Places & assets" }),
   old("groundfit", "ab", "ground fit", "Façades' ground-floor line before (docs/GROUND_FIT.md).", { sub: "Places & assets" }),
+  old("storeys", "ab", "fitted storeys", "Façade storeys before: fixed 3.4 / 3.0 m, a storey dropped when it missed the eaves (docs/STOREYS.md).", { sub: "Places & assets" }),
   old("sky", "ab", "old sky", "The sky before Firmament.", { sub: "Look" }),
   old("skyground", "ab", "sky ground albedo", "Firmament's ground albedo before.", { sub: "Look" }),
   old("vfix2", "ab", "visual fixes 2", "Façades / car packs / trains / ponds before visual fixes round 2.", { sub: "Look" }),

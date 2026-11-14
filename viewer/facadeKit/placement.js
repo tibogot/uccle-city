@@ -28,7 +28,7 @@
 //   bisector (kitMaterials.js sliceDelta shears the end rings), so no run end cap ever lies in the next wall's plane or
 //   overlaps the next run (docs/CITY_MESH_AUDIT.md: the city's own box cornices flicker exactly there). A free end stops
 //   2 mm short. The old cornice corner piece (cornCorner, 4 mm overlaps on both runs) is no longer placed.
-import { faceOpenings } from "../interior/facadeWindows.js";
+import { faceOpenings, storeyFit } from "../interior/facadeWindows.js";
 
 export const STRIDE = 14;
 export const FRENCH_SILL = 0.06;               // a French window's opening starts this far over its storey floor
@@ -38,7 +38,7 @@ export const WINDOW_RISE = 0.13;              // window B's segmental head above
 const MAX_H = 16;                             // no kit on taller buildings (Uccle's flats)
 const JOIN = 0.15;                            // m: run ends this close join (corners, adjoining houses)
 const RUNS = new Set(["cornice", "plinth", "band"]);
-export const BAND_Y = 3.4;                    // the string course's top: the first floor line (facadeWindows.js G)
+export const BAND_Y = 3.4;                    // the string course's top: the first floor line (facadeWindows.js G; x the face's storey k)
 
 function h01(str) {                           // = facadeGeom.js hash01 (kept here: no import cycle with the analysis)
   let h = 2166136261;
@@ -59,15 +59,15 @@ function inTri(u, h, a, b, c) {
 
 /**
  * A collector for one tile. opts: { exclude: Set of BU_IDs, ground(x, z) -> m (the DTM, for the door steps),
- * only: Set of BU_IDs (the lab's test row) }
+ * only: Set of BU_IDs (the lab's test row), fit: false = the fixed storeys (?storeys=old; docs/STOREYS.md) }
  */
 export function kitCollector(opts = {}) {
-  const exclude = opts.exclude || new Set(), only = opts.only || null;
+  const exclude = opts.exclude || new Set(), only = opts.only || null, fit = opts.fit !== false;
   const out = {};                               // piece -> number[]
   const runs = [];                              // cornice runs for the corner pass: { key, A, B, nx, nz, y }
   const stats = { faces: 0, skipped: 0, openings: 0, why: {} };
   const widths = [];
-  // + the face the instance sits on (u0, width, base, rnd + 2 x door street + 4 x French window code): the kit glass recomputes the painted
+  // + the face the instance sits on (u0, width + 256 x (128 storey k - 100), base, rnd + 2 x door street + 4 x French window code): the kit glass recomputes the painted
   // window grid from them, so its rooms are the painted windows' rooms (facades.js paintedGlass)
   let F = [0, 0, 0, 0];
   const put = (piece, x, y, z, nx, nz, w, h, variant, seed) => (out[piece] ??= []).push(x, y, z, nx, nz, w, h, variant, seed, 0, F[0], F[1], F[2], F[3]);
@@ -124,7 +124,9 @@ export function kitCollector(opts = {}) {
     // one front door per house: on its widest street face; the others get a window in that bay (the kit walls paint
     // a window there too: aKit.z)
     const doorStreet = f.street && f.doorFace !== false ? 1 : 0;
-    const ops = faceOpenings({ width: fr(f.width), eaves: fr(f.eaves), partyH: fr(f.partyH), street: doorStreet, rnd, landmark: false, shop: fr(f.shopW), shopU: fr(f.shopU) });
+    const ops = faceOpenings({ width: fr(f.width), eaves: fr(f.eaves), partyH: fr(f.partyH), street: doorStreet, rnd, landmark: false, shop: fr(f.shopW), shopU: fr(f.shopU), fit });
+    // the face's storeys (docs/STOREYS.md: fitted to its height): the first floor line, and k for the kit glass (aKitF.y)
+    const sf = storeyFit(fr(f.eaves), fit), bandY = BAND_Y * sf.k;
     const S = buildingStyle(f.key, f.wallStyle, Math.floor(rnd * 4096 + 0.5) / 4096);
     const rise = S.win === "winB" ? WINDOW_RISE : 0;
     // the French window: the first floor's middle window of a building with a balcony; its opening runs down to the
@@ -138,7 +140,7 @@ export function kitCollector(opts = {}) {
         // a bay window needs its width + 0.9 m within the bay and room for its roof under the eaves; else the French window
         if (S.bay && bw0 >= o.u1 - o.u0 + 1.0 && f.eaves - o.h1 > 1.0) o.kind = "bay";
         else {
-          o.kind = "french"; o.h0 = 3.4 + FRENCH_SILL;               // facadeWindows.js G: storey 1 starts at 3.4 m
+          o.kind = "french"; o.h0 = sf.G + FRENCH_SILL;              // facadeWindows.js storeyFit G: storey 1 starts there
           frCode = o.bay + 1 + 16 * o.floor;
         }
       }
@@ -166,7 +168,8 @@ export function kitCollector(opts = {}) {
       placed.push({ o, d: depthAt((o.u0 + o.u1) / 2, (o.h0 + o.h1) / 2) });
     }
     stats.faces++;
-    F = [f.u0, fr(f.width), f.base, rnd + 2 * doorStreet + 4 * frCode];
+    // aKitF.y = width + 256 x (128 k - 100): the storey scale k (a multiple of 1/128, 0.87-1.2) for the glass's grid
+    F = [f.u0, fr(f.width) + 256 * (Math.round(sf.k * 128) - 100), f.base, rnd + 2 * doorStreet + 4 * frCode];
     const W = (u, d) => [f.tx * (f.u0 + u) + f.nx * d, f.tz * (f.u0 + u) + f.nz * d];
     const seed = S.seed;
     const gaps = [];                                                  // plinth gaps along u
@@ -265,10 +268,10 @@ export function kitCollector(opts = {}) {
         for (const [s0, s1] of segs) putRun("plinth", W(s0, d), W(s1, d), f.base, f.nx, f.nz, 0, seed);
       }
     }
-    // THE STRING COURSE at the first floor line (y = base + BAND_Y), where the face's triangles carry it, minus the French
+    // THE STRING COURSE at the first floor line (y = base + bandY), where the face's triangles carry it, minus the French
     // windows (their balcony slabs sit there) and the bays
-    if (S.band && f.eaves > BAND_Y + 2.4) {
-      const hb = BAND_Y - 0.07;
+    if (S.band && f.eaves > bandY + 2.4) {
+      const hb = bandY - 0.07;
       let segs = [];
       for (const [a, b, c] of T) {        // the face triangles cut by the line h = hb, in u
         const xs = [];
@@ -285,7 +288,7 @@ export function kitCollector(opts = {}) {
       }
       for (const [s0, s1] of parts) {
         const dd = depthAt((s0 + s1) / 2, hb);
-        if (dd !== null) putRun("band", W(s0, dd), W(s1, dd), f.base + BAND_Y, f.nx, f.nz, 0, seed);
+        if (dd !== null) putRun("band", W(s0, dd), W(s1, dd), f.base + bandY, f.nx, f.nz, 0, seed);
       }
     }
     // A DORMER over the middle bay, on a roof that rises from the eaves (sampled behind the façade at 0.6 and 1.6 m: a
