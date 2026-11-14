@@ -77,7 +77,8 @@ matched the photos; the photos' hedges were the big miss.
 - JS pieces (`node tools/gardens/auditJsPieces.mjs`: wall, slab / saddle coping, pillar, pier cap, hedge, 3 LODs each):
   **0 blocking** (the hedge body had smooth section normals over planar strips, "bentflat": now flat per strip).
 - LOD hand-over (`debug/gardensLodFlight.js`): every frame, every instance a LOD's shader band may draw must be in that
-  LOD's pool (re-gathered every 2 m with a 4 m margin; the hand-over is the dithered band). Avenue Alphonse XIII, 169 m at
+  LOD's pool (round 2: re-gathered every 2 m with a 4 m margin; since 2026-11-14 streamed with a 6 m margin, the same
+  check in `debug/driveStutter.js` popCheck; the hand-over is the dithered band). Avenue Alphonse XIII, 169 m at
   14 m/s at eye height (659 frames, 78 re-gathers, 2.04 M instance-LOD checks) and at 30 m/s 30 m up (278 frames,
   0.85 M checks): **0 missing (no pop)**.
 
@@ -106,7 +107,8 @@ City counts: 64.5 km of hedge (round 1: 46.5 km), ~8 000 modules over the 9 tile
 | reference view (`?ring=1&far=1&time=golden&traffic=0`, 1400 x 850) | 369 → 369 | 4.886 M → 4.886 M | nothing drawn (the overview camera is beyond every band); the 0.89 ms "difference" there is the background noise |
 
 Kit per pass at street level: 157-165 k triangles, 32 kit meshes; gather 1.5-4.7 ms every 2 m of travel (9 tiles,
-~60 k instances + 8 k hedge modules). **GPU ms on a GREEN machine: still to re-measure** (the owner's perf session).
+~60 k instances + 8 k hedge modules) - **since 2026-11-14 (claude/gather-perf) streamed time-sliced: <= ~0.5 ms in any
+frame, see Performance**. **GPU ms on a GREEN machine: still to re-measure** (the owner's perf session).
 
 ### 6. Collisions before / after (`window.viewer.collisionTest(tile, { walk: true })`, `ring=0`) and the gate walk
 
@@ -219,9 +221,14 @@ Rules:
 
 ## Performance
 
-- ONE pool per piece for the whole city (13 pieces x 3 LODs = at most 39 meshes), refilled every 2 m of camera travel
-  (or while a tile fades), the tiles' instances sorted into 50 m cells (a pool skips cells out of range: gather 0.4-1.2 ms
-  every 2 m with 9 tiles, ~60 k instances). THREE shared materials (one per LOD) for the whole kit. Static instanced
+- ONE pool per piece for the whole city (15 pieces x 3 LODs), STREAMED by `viewer/instanceStream.js` (2026-11-14,
+  docs/perf/AUDIT.md "Step 9"): each tile's instances become per-piece sources once (columns in the pool's layout,
+  sorted in 50 m cells; a gather copies whole cells / runs, tests instances only in cells on a band edge, allocates
+  nothing); a gather every 2 m of travel, each LOD holding its band + 6 m, TIME-SLICED over 1-4 frames inside the
+  city's streaming budget (0.45 ms a frame shared with the other pools, the façade kit and the trees); the tile fade is
+  a uniform per tile slot (`gardenFades`, iBand.w = the slot): a fading tile never re-gathers. Driving 14 m/s: the
+  gardens' update over 0.5 ms in 1-5 of ~2,700 frames (was 624-688), max 0.6-0.9 ms (was 3.9-9.4); 0 pops
+  (`debug/driveStutter.js` pop check, 6 M instance-LOD checks). THREE shared materials (one per LOD) for the whole kit. Static instanced
   buffers with update ranges over the live count; a pool mesh with nothing to draw is hidden. Shadows: walls / pillars /
   copings from LOD0 + 1, the ironwork from LOD0 only; LOD2 never casts.
 - Early cut-off: the ironwork ends at 150-160 m, walls / pillars at 200-220 m (the façade's painted look then).
@@ -333,5 +340,7 @@ No tile-worker change (no bundle rebuild). New: `viewer/gardens/{gardenGeom,gard
   for the car.
 - The painted façade draws a door on every street face of the buildings the façade kit does not take: those get a gate
   too; a façade-kit house's second street face gets none.
-- Data size (12 MB): could be compacted (integer centimetres, no per-garden list). Gather 1.5-4.7 ms every 2 m of travel
-  with 9 tiles (CPU): could move into cells kept between gathers.
+- Data size (12 MB): could be compacted (integer centimetres, no per-garden list). The gather is time-sliced now (see
+  above); what is left is the draws: ~25-35 garden meshes drawn at street level (+ shadow passes), ~0.8 ms more
+  main-thread render CPU a frame with the gardens on (driving harness, cpu p50 10.3-10.9 vs 9.2-9.7 ms): a BatchedMesh /
+  multi-draw of the pieces that share a material (one per LOD) would cut it.
