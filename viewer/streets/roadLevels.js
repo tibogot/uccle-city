@@ -99,7 +99,8 @@ export function relevelRoads(net, ground, noData = null, { roughLanes = true } =
     // lines is the street level there (?roughlanes=0: skipped as before)
     let lane = null;
     if (fit.rms > RMS_MAX) {
-      lane = roughLanes ? laneFit(node, ground, noData) : null;
+      // (junctions and continuations only: a dead end's one lane may run down a garage ramp the DTM sees, N5)
+      lane = roughLanes && node.arms.length >= 2 ? laneFit(node, ground, noData) : null;
       if (!lane || lane.rms > RMS_MAX) { st.skippedRough = (st.skippedRough || 0) + 1; if (st.debug) (st.rough ??= []).push([node.id, Math.round(node.x), Math.round(node.z), lane && +lane.rms.toFixed(2)]); continue; }
     }
     const y0 = lane ? lane.y : fit.y, d = node.y - y0;

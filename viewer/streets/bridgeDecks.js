@@ -178,31 +178,53 @@ export function parapetRings(d) {
  *  street is drawn on it), with a 1:1 bank beside it; only raised, never lowered, and only where the dip is an
  *  abutment's (at most FILL_MAX under the deck line: a street passing under a deck end is not buried). In place on
  *  every grid of `grids` (the drawn terrain and the road stage's ground), before the roads sample them. Returns cells. */
-const FILL_MAX = 4.0, BANK = 3;
+const FILL_MAX = 4.0, BANK = 3, UNDER = 1.5;     // UNDER: m of the fill under the slab's end (the abutment), 10 cm under its top:
+// the 1 m grid cannot hold a cliff AT the slab's end line, an oblique end cut its cells in two (Bourdon: the car between
+// two rows, one filled, one the cutting's slope 1.5 m down)
 export function deckAbutments(decks, grids, hdr) {
-  const { x0, z0, cols, rows, step } = hdr;
+  const { x0, z0, cols, rows, step } = hdr, G0 = grids[0];
   let moved = 0;
   for (const d of decks || []) {
     const L = d.cum[d.cum.length - 1] || 1, W = d.half + BANK;
-    for (const [sa, sb] of [[0, d.span[0]], [d.span[1], L]]) {
+    for (const [sa, sb, ua, ub] of [[0, d.span[0] + UNDER, d.span[0], d.span[0] + UNDER], [d.span[1] - UNDER, L, d.span[1] - UNDER, d.span[1]]]) {
       const A = at(d, sa), B = at(d, sb);
       const c0 = Math.max(0, Math.floor((Math.min(A.x, B.x) - W - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(A.x, B.x) + W - x0) / step));
       const r0 = Math.max(0, Math.floor((Math.min(A.z, B.z) - W - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(A.z, B.z) + W - z0) / step));
+      const nc = c1 - c0 + 1, nr = r1 - r0 + 1;
+      if (nc <= 0 || nr <= 0) continue;                                          // (off this tile's grid)
+      const want = new Float64Array(nc * nr).fill(NaN);
       for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
         const px = x0 + c * step, pz = z0 + r * step;
         // nearest point of the deck's line (the whole line: a cell beside the span belongs to the span, not the approach)
-        let best = Infinity, s = 0;
+        let best = Infinity, s = 0, past = false;
         for (let i = 1; i < d.pts.length; i++) {
           const [ax, az] = d.pts[i - 1], [bx, bz] = d.pts[i];
           const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
-          const t = Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / l2));
+          const t0 = ((px - ax) * dx + (pz - az) * dz) / l2, t = Math.max(0, Math.min(1, t0));
           const dist = Math.hypot(ax + dx * t - px, az + dz * t - pz);
-          if (dist < best) { best = dist; s = d.cum[i - 1] + t * Math.sqrt(l2); }
+          // (beyond the line's outer ends: not the approach, the ground there is the street's own)
+          if (dist < best) { best = dist; s = d.cum[i - 1] + t * Math.sqrt(l2); past = (i === 1 && t0 < 0) || (i === d.pts.length - 1 && t0 > 1); }
         }
-        if (s < sa || s > sb || best > W) continue;
-        const top = profY(d, s) - SLAB.sink - Math.max(0, best - d.half);
+        if (past || s < sa || s > sb || best > W) continue;
+        const top = profY(d, s) - SLAB.sink - (s > ua && s < ub ? 0.1 : 0) - Math.max(0, best - d.half);
         const k = r * cols + c;
-        grids.forEach((G) => { if (G[k] < top && top - G[k] <= FILL_MAX) { G[k] = top; moved++; } });
+        if (G0[k] < top && top - G0[k] <= FILL_MAX) want[(r - r0) * nc + (c - c0)] = top;
+        else if (G0[k] >= top) want[(r - r0) * nc + (c - c0)] = -Infinity;          // already up there: counts as fill
+      }
+      // no lone cells: a cell is raised only when most of its neighbours are up too (a deep cutting reaching into the
+      // approach, J5's railway under the bridge's oblique end, would otherwise get 3-4 m spikes where it is shallow)
+      for (let j = 0; j < nr; j++) for (let i = 0; i < nc; i++) {
+        const v = want[j * nc + i];
+        if (!(v > -Infinity)) continue;
+        let n = 0;
+        for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+          if (!di && !dj) continue;
+          const ii = i + di, jj = j + dj;
+          if (ii >= 0 && jj >= 0 && ii < nc && jj < nr && !Number.isNaN(want[jj * nc + ii])) n++;
+        }
+        if (n < 6) continue;
+        const k = (r0 + j) * cols + c0 + i;
+        grids.forEach((G) => { if (G[k] < v) { G[k] = v; moved++; } });
       }
     }
   }

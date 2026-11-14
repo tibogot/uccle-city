@@ -2035,7 +2035,20 @@ function driveGround(hm, parts) {
   return { delta, delta2 };
 }
 var TRAM_PLATFORM = { W: 2.6, H: 0.25, step: 2 };
-var isTramPlatform = (l) => l.kind === "platform" && (l.tags?.tram === "yes" || l.tags?.railway === "platform");
+var isTramPlatform = (l) => l.kind === "platform" && l.tags?.tram === "yes" && l.line?.length >= 2;
+function platformRing(l) {
+  const L2 = l.line, a = L2[0], b = L2[L2.length - 1];
+  if (L2.length < 4 || Math.hypot(a[0] - b[0], a[1] - b[1]) > 0.01) return null;
+  return L2.slice(0, -1);
+}
+var inRing2 = (ring2, x, z) => {
+  let inside3 = false;
+  for (let i = 0, j = ring2.length - 1; i < ring2.length; j = i++) {
+    const [xi, zi] = ring2[i], [xj, zj] = ring2[j];
+    if (zi > z !== zj > z && x < (xj - xi) * (z - zi) / (zj - zi) + xi) inside3 = !inside3;
+  }
+  return inside3;
+};
 function densifyLine(line, step) {
   const out = [];
   for (let k = 1; k < line.length; k++) {
@@ -2050,6 +2063,28 @@ function tramPlatformSurface(feats, hm, ground, bounds, carve) {
   let raised = 0;
   for (const l of feats.lines || []) {
     if (!isTramPlatform(l)) continue;
+    const ring2 = platformRing(l);
+    if (ring2) {
+      let bx0 = Infinity, bz0 = Infinity, bx1 = -Infinity, bz1 = -Infinity;
+      for (const [x, z] of ring2) {
+        bx0 = Math.min(bx0, x);
+        bz0 = Math.min(bz0, z);
+        bx1 = Math.max(bx1, x);
+        bz1 = Math.max(bz1, z);
+      }
+      if (bx1 < bounds.x0 - 3 || bx0 > bounds.x1 + 3 || bz1 < bounds.z0 - 3 || bz0 > bounds.z1 + 3) continue;
+      const c0 = Math.max(0, Math.ceil((bx0 - x0) / step)), c1 = Math.min(cols - 1, Math.floor((bx1 - x0) / step));
+      const r0 = Math.max(0, Math.ceil((bz0 - z0) / step)), r1 = Math.min(rows - 1, Math.floor((bz1 - z0) / step));
+      for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+        const px = x0 + c * step, pz = z0 + r * step;
+        if (!inRing2(ring2, px, pz)) continue;
+        const k = r * cols + c, cm = Math.round((hm.surface(px, pz) + carve + H - Y[k]) * 100);
+        if (cm <= D[k] || cm > 400) continue;
+        D[k] = cm;
+        raised++;
+      }
+      continue;
+    }
     const d = densifyLine(l.line, TRAM_PLATFORM.step);
     for (let i = 1; i < d.length; i++) {
       const [ax, az] = d[i - 1], [bx, bz] = d[i];
@@ -9363,7 +9398,8 @@ function widenTightTurns(net, cls = null) {
 // viewer/streets/roadLevels.js
 var MOVE_TOL = 0.2;
 var RMS_MAX = 0.5;
-var MOVE_MAX = 3;
+var MOVE_MAX = 8;
+var MOVE_MAX_OLD = 3;
 function fittedY(node, ground, noData) {
   const R = node.reach || 6, pts = [[0, 0]];
   for (const [f, cnt] of [[0.35, 8], [0.7, 12], [1, 16]]) for (let k = 0; k < cnt; k++) {
@@ -9381,8 +9417,49 @@ function fittedY(node, ground, noData) {
   });
   return { y: y0, rms: Math.sqrt(e / ys.length) };
 }
-function relevelRoads(net, ground, noData = null) {
-  const st = { nodes: 0, maxMove: 0, roads: 0, skippedStructure: 0 };
+var MOVE_MAX_LANE = 8;
+var LANE_GRADE = 0.05;
+function laneFit(node, ground, noData) {
+  const R = node.reach || 6, pts = [[0, 0]];
+  for (const a of node.arms) for (let s = 1; s <= R + 1e-6; s += 1) pts.push([Math.cos(a.th) * s, Math.sin(a.th) * s]);
+  if (pts.length < 4) return null;
+  if (noData && pts.some(([dx, dz]) => noData(node.x + dx, node.z + dz))) return null;
+  const ys = pts.map(([dx, dz]) => ground(node.x + dx, node.z + dz));
+  let n = 0, sx = 0, sz = 0, sy = 0, sxx = 0, szz = 0, sxz = 0, sxy = 0, szy = 0;
+  pts.forEach(([dx, dz], k) => {
+    const y = ys[k];
+    n++;
+    sx += dx;
+    sz += dz;
+    sy += y;
+    sxx += dx * dx;
+    szz += dz * dz;
+    sxz += dx * dz;
+    sxy += dx * y;
+    szy += dz * y;
+  });
+  const lam = 1;
+  const M = [[n, sx, sz], [sx, sxx + lam, sxz], [sz, sxz, szz + lam]], b = [sy, sxy, szy];
+  const det = (m) => m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+  const D = det(M);
+  if (Math.abs(D) < 1e-9) return null;
+  const sol = [0, 1, 2].map((c) => det(M.map((row, r) => row.map((v, k) => k === c ? b[r] : v))) / D);
+  let [y0, gx, gz] = sol;
+  let e = 0;
+  pts.forEach(([dx, dz], k) => {
+    e += (ys[k] - (y0 + gx * dx + gz * dz)) ** 2;
+  });
+  const g = Math.hypot(gx, gz);
+  if (g > LANE_GRADE) {
+    gx *= LANE_GRADE / g;
+    gz *= LANE_GRADE / g;
+  }
+  const mx = sx / n, mz = sz / n;
+  y0 = sy / n - gx * mx - gz * mz;
+  return { y: y0, gx, gz, rms: Math.sqrt(e / n) };
+}
+function relevelRoads(net, ground, noData = null, { roughLanes = true } = {}) {
+  const st = { nodes: 0, maxMove: 0, roads: 0, skippedStructure: 0, ...globalThis.__levelsDebug ? { debug: true } : {} };
   if (!net?.nodes) return st;
   const realSpan = (rr, sp) => {
     if (!noData) return true;
@@ -9405,21 +9482,32 @@ function relevelRoads(net, ground, noData = null) {
       st.skippedNoData = (st.skippedNoData || 0) + 1;
       continue;
     }
+    let lane = null;
     if (fit.rms > RMS_MAX) {
-      st.skippedRough = (st.skippedRough || 0) + 1;
-      continue;
+      lane = roughLanes && node.arms.length >= 2 ? laneFit(node, ground, noData) : null;
+      if (!lane || lane.rms > RMS_MAX) {
+        st.skippedRough = (st.skippedRough || 0) + 1;
+        if (st.debug) (st.rough ??= []).push([node.id, Math.round(node.x), Math.round(node.z), lane && +lane.rms.toFixed(2)]);
+        continue;
+      }
     }
-    const y0 = fit.y, d = node.y - y0;
+    const y0 = lane ? lane.y : fit.y, d = node.y - y0;
     if (Math.abs(d) <= MOVE_TOL) continue;
-    if (Math.abs(d) > MOVE_MAX) {
+    if (Math.abs(d) > (lane ? MOVE_MAX_LANE : roughLanes ? MOVE_MAX : MOVE_MAX_OLD)) {
       st.skippedBig = (st.skippedBig || 0) + 1;
+      if (st.debug) (st.big ??= []).push([node.id, +d.toFixed(2)]);
       continue;
     }
     if (node.arms.some((a) => fixedRoad(a.road))) {
       st.skippedStructure++;
+      if (st.debug) (st.structure ??= []).push(node.id);
       continue;
     }
     node.y = y0;
+    if (lane) {
+      node.plane = { gx: lane.gx, gz: lane.gz };
+      st.laneNodes = (st.laneNodes || 0) + 1;
+    }
     moved.add(node);
     st.nodes++;
     if (Math.abs(d) > st.maxMove) {
@@ -9555,7 +9643,7 @@ function buildRoadData(o) {
     const h = hm.h;
     return x < h.x0 || z < h.z0 || x > h.x0 + (h.cols - 1) * h.step || z > h.z0 + (h.rows - 1) * h.step;
   };
-  const levels = relevelRoads(net, ground, o.noData ?? ((x, z) => offGrid(x, z) || hm.h.min != null && hm.ground(x, z) <= hm.h.min + 0.02));
+  const levels = relevelRoads(net, ground, o.noData ?? ((x, z) => offGrid(x, z) || hm.h.min != null && hm.ground(x, z) <= hm.h.min + 0.02), { roughLanes: o.roughLanes !== false });
   const pv = v2 ? afterNetworkV2(net, ctx, surf) : null;
   if (v2) lap("measured paint");
   const laneGraph = v2 ? refineLaneGraph(net, prep, pv.inventory) : null;
@@ -9790,6 +9878,63 @@ function parapetRings(d) {
     out.push({ ring: [off(a, o), off(b, o), off(b, i), off(a, i)], top: Math.max(a.y, b.y) - SLAB.sink + SLAB.parapetH, base: Math.min(a.y, b.y) - SLAB.sink - SLAB.depth });
   }
   return out;
+}
+var FILL_MAX = 4;
+var BANK = 3;
+var UNDER = 1.5;
+function deckAbutments(decks, grids, hdr) {
+  const { x0, z0, cols, rows, step } = hdr, G0 = grids[0];
+  let moved = 0;
+  for (const d of decks || []) {
+    const L2 = d.cum[d.cum.length - 1] || 1, W = d.half + BANK;
+    for (const [sa, sb, ua, ub] of [[0, d.span[0] + UNDER, d.span[0], d.span[0] + UNDER], [d.span[1] - UNDER, L2, d.span[1] - UNDER, d.span[1]]]) {
+      const A = at(d, sa), B = at(d, sb);
+      const c0 = Math.max(0, Math.floor((Math.min(A.x, B.x) - W - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(A.x, B.x) + W - x0) / step));
+      const r0 = Math.max(0, Math.floor((Math.min(A.z, B.z) - W - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(A.z, B.z) + W - z0) / step));
+      const nc = c1 - c0 + 1, nr = r1 - r0 + 1;
+      if (nc <= 0 || nr <= 0) continue;
+      const want = new Float64Array(nc * nr).fill(NaN);
+      for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+        const px = x0 + c * step, pz = z0 + r * step;
+        let best = Infinity, s = 0, past = false;
+        for (let i = 1; i < d.pts.length; i++) {
+          const [ax, az] = d.pts[i - 1], [bx, bz] = d.pts[i];
+          const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
+          const t0 = ((px - ax) * dx + (pz - az) * dz) / l2, t = Math.max(0, Math.min(1, t0));
+          const dist3 = Math.hypot(ax + dx * t - px, az + dz * t - pz);
+          if (dist3 < best) {
+            best = dist3;
+            s = d.cum[i - 1] + t * Math.sqrt(l2);
+            past = i === 1 && t0 < 0 || i === d.pts.length - 1 && t0 > 1;
+          }
+        }
+        if (past || s < sa || s > sb || best > W) continue;
+        const top = profY(d, s) - SLAB.sink - (s > ua && s < ub ? 0.1 : 0) - Math.max(0, best - d.half);
+        const k = r * cols + c;
+        if (G0[k] < top && top - G0[k] <= FILL_MAX) want[(r - r0) * nc + (c - c0)] = top;
+        else if (G0[k] >= top) want[(r - r0) * nc + (c - c0)] = -Infinity;
+      }
+      for (let j = 0; j < nr; j++) for (let i = 0; i < nc; i++) {
+        const v = want[j * nc + i];
+        if (!(v > -Infinity)) continue;
+        let n = 0;
+        for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+          if (!di && !dj) continue;
+          const ii = i + di, jj = j + dj;
+          if (ii >= 0 && jj >= 0 && ii < nc && jj < nr && !Number.isNaN(want[jj * nc + ii])) n++;
+        }
+        if (n < 6) continue;
+        const k = (r0 + j) * cols + c0 + i;
+        grids.forEach((G2) => {
+          if (G2[k] < v) {
+            G2[k] = v;
+            moved++;
+          }
+        });
+      }
+    }
+  }
+  return moved;
 }
 function bridgeDecks(roadsDoc, ground, keep = () => true) {
   const decks = bridgeDescriptors(roadsDoc, ground).filter(keep);
@@ -10337,6 +10482,26 @@ function heroFrame(h) {
   const ring2 = (h.footprint || [[-L2, -W], [L2, -W], [L2, W], [-L2, W]]).map(([X, Y]) => toWorld(X, Y));
   return { ...h, toLocal, toWorld, ring: ring2, road: py };
 }
+var UP_EXT = 25;
+var UP_SIDE = 4;
+var UP_DROP = 4;
+function underpassGround(heroes, ground) {
+  const ups = (heroes || []).filter((h) => h.underpass).map((h) => {
+    const [ax, az, ay] = h.underpass.a, [bx, bz, by] = h.underpass.b, L2 = Math.hypot(bx - ax, bz - az) || 1;
+    return { ax, az, ay, by, L: L2, tx: (bx - ax) / L2, tz: (bz - az) / L2, w: h.underpass.hw + UP_SIDE };
+  });
+  if (!ups.length) return ground;
+  return (x, z) => {
+    const g = ground(x, z);
+    for (const u of ups) {
+      const dx = x - u.ax, dz = z - u.az, s = dx * u.tx + dz * u.tz;
+      if (s < -UP_EXT || s > u.L + UP_EXT || Math.abs(dx * u.tz - dz * u.tx) > u.w) continue;
+      const lvl = s >= 0 && s <= u.L ? u.ay + (u.by - u.ay) * (s / u.L) : ground(u.ax + u.tx * s, u.az + u.tz * s);
+      return g > lvl && g - lvl <= UP_DROP ? lvl : g;
+    }
+    return g;
+  };
+}
 function roadDeckGround(heroes, ground) {
   const decks = (heroes || []).filter((h) => h.kind === "road_over_rail").map((h) => {
     const f = heroFrame(h), d = h.deck;
@@ -10438,7 +10603,7 @@ function abutmentFill(heroes, grids, hdr) {
   return moved;
 }
 function underpassCut(heroes, grids, hdr) {
-  const { x0, z0, cols, rows, step } = hdr, BANK = 7;
+  const { x0, z0, cols, rows, step } = hdr, BANK2 = 7;
   const rings = (heroes || []).filter((h) => h.underpass || h.style).map((h) => ringBox(heroFrame(h).ring));
   const inBridge = (x, z) => rings.some((b) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && inRing(b.ring, x, z));
   let moved = 0;
@@ -10446,14 +10611,14 @@ function underpassCut(heroes, grids, hdr) {
     const u = h.underpass;
     if (!u) continue;
     const [ax, az, ay] = u.a, [bx, bz, by] = u.b, dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz;
-    const c0 = Math.max(0, Math.floor((Math.min(ax, bx) - u.hw - BANK - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(ax, bx) + u.hw + BANK - x0) / step));
-    const r0 = Math.max(0, Math.floor((Math.min(az, bz) - u.hw - BANK - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(az, bz) + u.hw + BANK - z0) / step));
+    const c0 = Math.max(0, Math.floor((Math.min(ax, bx) - u.hw - BANK2 - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(ax, bx) + u.hw + BANK2 - x0) / step));
+    const r0 = Math.max(0, Math.floor((Math.min(az, bz) - u.hw - BANK2 - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(az, bz) + u.hw + BANK2 - z0) / step));
     for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
       const px = x0 + c * step, pz = z0 + r * step;
       const t = ((px - ax) * dx + (pz - az) * dz) / L2;
       if (t < 0 || t > 1) continue;
       const d = Math.hypot(px - ax - dx * t, pz - az - dz * t) - u.hw;
-      if (d > BANK || d > 0 && inBridge(px, pz)) continue;
+      if (d > BANK2 || d > 0 && inBridge(px, pz)) continue;
       const target = ay + (by - ay) * t - 0.02 + Math.max(0, d);
       const k = r * cols + c;
       for (const G2 of grids) if (G2[k] > target) {
@@ -10550,8 +10715,8 @@ function carveGrid(doc, Y, hdr, bounds, heroes = []) {
       }
     }
   }
-  const FILL_MAX = 18;
-  const rings = bridgeRings(doc, heroes).filter((b) => b.x1 > x0 - FILL_MAX && b.x0 < gx1 + FILL_MAX && b.z1 > z0 - FILL_MAX && b.z0 < gz1 + FILL_MAX);
+  const FILL_MAX2 = 18;
+  const rings = bridgeRings(doc, heroes).filter((b) => b.x1 > x0 - FILL_MAX2 && b.x0 < gx1 + FILL_MAX2 && b.z1 > z0 - FILL_MAX2 && b.z0 < gz1 + FILL_MAX2);
   let near = rings;
   const onBridge = (x, z) => {
     for (const b of near) if (x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && inRing(b.ring, x, z)) return true;
@@ -10561,7 +10726,7 @@ function carveGrid(doc, Y, hdr, bounds, heroes = []) {
     const c = Math.round((x - x0) / step), r = Math.round((z - z0) / step);
     return c >= 0 && r >= 0 && c < cols && r < rows ? Y[r * cols + c] : null;
   };
-  for (const t of tracksIn(doc, bounds, FILL_MAX + 1)) {
+  for (const t of tracksIn(doc, bounds, FILL_MAX2 + 1)) {
     const P = t.pts;
     for (let i = 1; i < P.length; i++) {
       const a = P[i - 1], b = P[i];
@@ -10569,7 +10734,7 @@ function carveGrid(doc, Y, hdr, bounds, heroes = []) {
       if (g == null) continue;
       near = rings;
       if (a[1] + BED - g < 0.4 || onBridge(mx, mz)) continue;
-      const W = Math.min(FILL_MAX, FOOT_HW + 1.5 * (a[1] + BED - g) + 1);
+      const W = Math.min(FILL_MAX2, FOOT_HW + 1.5 * (a[1] + BED - g) + 1);
       near = rings.filter((q) => q.x1 > mx - W - 2 && q.x0 < mx + W + 2 && q.z1 > mz - W - 2 && q.z0 < mz + W + 2);
       const c0 = Math.max(0, Math.floor((Math.min(a[0], b[0]) - W - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(a[0], b[0]) + W - x0) / step));
       const r0 = Math.max(0, Math.floor((Math.min(a[2], b[2]) - W - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(a[2], b[2]) + W - z0) / step));
@@ -11893,14 +12058,29 @@ async function buildTileData(entry, base) {
   const heroDeck = rail ? roadDeckGround(rail.heroes, () => NaN) : () => NaN;
   const hh = hm.h, gx1 = hh.x0 + (hh.cols - 1) * hh.step, gz1 = hh.z0 + (hh.rows - 1) * hh.step;
   const onGrid = (p) => p[0] >= hh.x0 && p[0] <= gx1 && p[1] >= hh.z0 && p[1] <= gz1;
-  const osmBridges = bridgeDecks(roads, hm.ground, (d) => onGrid(d.pts[0]) && onGrid(d.pts[d.pts.length - 1]));
+  const pad = entry.padRoads === false ? null : await step("neighbour ground", () => paddedGround(entry, base, hm));
+  const baseGround = pad ? pad.ground : hm.ground;
+  const known = pad ? (p) => onGrid(p) || !pad.noData(p[0], p[1]) : onGrid;
+  const osmBridges = bridgeDecks(roads, baseGround, (d) => known(d.pts[0]) && known(d.pts[d.pts.length - 1]));
   osmBridges.decks = osmBridges.decks.filter((d) => {
     const m = d.pts[Math.floor(d.pts.length / 2)];
     return Number.isNaN(heroDeck(m[0], m[1]));
   });
-  const pad = entry.padRoads === false ? null : await step("neighbour ground", () => paddedGround(entry, base, hm));
-  const baseGround = pad ? pad.ground : hm.ground;
-  const roadGround = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
+  const mid = (d) => {
+    const L2 = d.cum[d.cum.length - 1] / 2;
+    let i = 1;
+    while (i < d.pts.length - 1 && d.cum[i] < L2) i++;
+    const t = (L2 - d.cum[i - 1]) / (d.cum[i] - d.cum[i - 1] || 1);
+    return [d.pts[i - 1][0] + (d.pts[i][0] - d.pts[i - 1][0]) * t, d.pts[i - 1][1] + (d.pts[i][1] - d.pts[i - 1][1]) * t];
+  };
+  const ownDeck = (d) => {
+    if (!pad) return true;
+    const [mx, mz] = mid(d);
+    return mx >= x0 && mx < x1 && mz >= z0 && mz < z1;
+  };
+  const abutCells = entry.deckAbutments === false ? 0 : deckAbutments(osmBridges.decks, [hm.y, hm.orig], tHdr);
+  const roadGround0 = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
+  const roadGround = rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0;
   const rd = await step("roads", () => buildRoadData({
     roads,
     surf,
@@ -11910,12 +12090,14 @@ async function buildTileData(entry, base) {
     paint,
     ground: roadGround,
     noData: pad?.noData,
+    roughLanes: entry.roughLanes !== false,
     levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees,
     onBuilding: (x, z) => onRoof(roofs, x, z)
   }));
   Object.assign(times, rd.times);
   const { netInfo } = rd;
+  netInfo.deckAbutments = abutCells;
   const road = {
     parts: rd.parts,
     atlas: rd.atlas,
@@ -11996,7 +12178,9 @@ async function buildTileData(entry, base) {
     times,
     rail: railOut,
     grassTypes,
-    bridgeDecks: osmBridges.decks.map((d) => ({ ...d, mesh: deckMesh(d) }))
+    bridgeDecks: osmBridges.decks.filter(ownDeck).map((d) => ({ ...d, mesh: deckMesh(d) })),
+    // OSM road bridges: heights for walk / car + their drawn deck
+    ...entry.keepNet ? { net, hm } : {}
   };
 }
 var WALL = [[0.29, 0.085, 0.05], [0.17, 0.075, 0.045], [0.4, 0.27, 0.14], [0.62, 0.6, 0.55], [0.56, 0.47, 0.32], [0.3, 0.29, 0.27]];

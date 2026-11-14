@@ -3,7 +3,7 @@
 globalThis.__levelsDebug = true;
 import { buildTile } from "./tile.mjs";
 const [T, xs, zs] = process.argv.slice(2);
-const d = await buildTile(T, { keepNet: true });
+const d = await buildTile(T, { keepNet: true, ...(process.env.OLD ? { roughLanes: false, deckAbutments: false, underpassLevel: false } : {}) });
 const { net, hm, drive } = d;
 const h = hm.h, Y = hm.y, g = drive.ground;
 const top = (x, z) => { const c = Math.round((x - h.x0) / h.step), r = Math.round((z - h.z0) / h.step); if (c < 0 || r < 0 || c >= h.cols || r >= h.rows) return NaN; const k = r * h.cols + c; return Y[k] + g.delta[k] / 100; };

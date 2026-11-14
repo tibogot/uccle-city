@@ -3,7 +3,7 @@
 import { buildTile } from "./tile.mjs";
 const [T, xs, zs, rs] = process.argv.slice(2);
 const x = +xs, z = +zs, R = +(rs || 40);
-const d = await buildTile(T, { keepNet: true });
+const d = await buildTile(T, { keepNet: true, ...(process.env.OLD ? { roughLanes: false, deckAbutments: false, underpassLevel: false } : {}) });
 const { net, hm } = d;
 console.log(T, "levels", JSON.stringify(d.netInfo.levels));
 for (const n of net.nodes) {
