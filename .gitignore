@@ -58,3 +58,5 @@ models/rosaire/audit/*.json
 !models/rosaire/audit/*.allow.json
 textures/shops/_work/
 textures/shops/interiors.png
+models/heros/statue_raw.json
+models/heros/*.raw.glb

@@ -17,6 +17,7 @@ import { prepRail, heroBridgeNames, abutmentFill, underpassCut, underpassGround,
 import { buildTrafficGraph } from "./traffic/trafficGraph.js";
 import { loadTunnels, tunnelRoads, tunnelCut, tunnelRecut, tunnelGround, tunnelTrees, tunnelTerrain, tunnelSurface, tunnelFenceRings } from "./rail/tunnels.js";
 import { grassTypeData } from "./grass/grassTypes.js";
+import { applyParkSquares } from "./heros/herosSurface.js";
 
 let railP = null;
 let grassKindsP = null;
@@ -237,6 +238,9 @@ export async function buildTileData(entry, base) {
   // hand corrections (data/overrides.json): road surfaces OSM gets wrong (Place de Saint-Job is setts)
   const ov = await overrides(base);
   applyRoadOverrides(roads, ov);
+  // Square des Heros (viewer/heros/herosSurface.js; ?heros=old: the setts plaza as before): the UrbIS square surface minus
+  // the park, as sidewalk paving; the park is the hero place's own ground
+  if (surf && entry.heros) applyParkSquares(surf, ov, bounds);
   if (tunnels?.length) tunnelRoads(roads, tunnels);                 // the lanes through the bores
   const hm = new Heightmap(tHdr, tBuf);
   // measured markings (pipeline/build_markings.py): crossings, stop lines, lines, OSM crossing / control nodes

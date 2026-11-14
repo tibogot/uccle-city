@@ -485,11 +485,15 @@ const PONDS = [];
 /** Tiles that have surfaces.json draw the measured UrbIS street surfaces (viewer/surfaces.js), the default since
  *  2026-11-05; ?roads=engine: the road engine's own guessed carriageways, sidewalks and kerbs, as before. */
 const ROAD_SURFACES = params.get("roads") !== "engine";
+/** Square des Heros as a hero place (viewer/heros/, docs/landmarks/HEROS.md); ?heros=old: the city as before (the
+ *  square drawn as one raised setts plaza, no memorial). */
+const HEROS = params.get("heros") !== "old";
 const PAINT_PARAM = ["v1", "v2"].includes(params.get("paint")) ? params.get("paint") : undefined;
 /** CPU data for a tile: from the worker, or on the main thread (?worker=0, or if the worker fails). */
 function tileData(entry, lite = false) {
   entry = { ...entry, hide: [...new Set(HIDE_BU_IDS)].sort(), ponds: PONDS,   // (sorted: the landmarks push in any order now, and ?tilecache=1 keys on it)
     surface: ROAD_SURFACES, pits: params.get("pits") !== "0",   // ?pits=0: no tree pits (A/B)
+    heros: HEROS,                                                                                    // Square des Heros: the park cut out of the UrbIS square surface (viewer/heros/herosSurface.js)
     kit: cityKit.on && !lite, kitExclude: cityKit.exclude,                                           // the façade kit (viewer/facadeKit/), ?kit=0 off
     fuelClear: cityFuel.on ? cityFuel.clear : null,                                                 // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js)
     streetlife: cityStreetLife.on && !lite,                                                          // the street life's shopfronts (viewer/streetlife/), ?streetlife=0 off
