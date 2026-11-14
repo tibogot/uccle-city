@@ -19,13 +19,14 @@ import { PROFILE } from "./nightLighting.js";
 import { NearestN, StaticSources, ShadowLamps, smooth01 } from "./lightSelect.js";
 
 /** Moving lights: car i at CAR.STRIDE * i (written by the owner of the cars). */
-export const CAR = { HX: 0, HY: 1, HZ: 2, FX: 3, FY: 4, FZ: 5, TX: 6, TY: 7, TZ: 8, HEAD: 9, TAIL: 10, FADE: 11, STRIDE: 12 };
+export const CAR = { HX: 0, HY: 1, HZ: 2, FX: 3, FY: 4, FZ: 5, TX: 6, TY: 7, TZ: 8, HEAD: 9, TAIL: 10, FADE: 11, GY: 12, STRIDE: 13 };   // GY: the road's y under the car (the dynamic ground layer)
 
 export const nightParams = {
   lamps: true, windows: true, shops: true, signs: true, headlights: true, rear: true, tram: true,
   cones: 'wet only',       // the beams in damp air: 'on' / 'wet only' / 'off' (~0.3 ms when on: additive overdraw)
   lampI: 110, lampRange: 16, lampUp: 0.3, lampBatwing: 0.35,
   windowI: 14, windowRange: 9, shopI: 24, shopRange: 12, signI: 6, signRange: 5, rearRange: 4.5, headI: 1000, headRange: 34, headCone: 0.55, rearI: 1.6, tramI: 900, tramSaloon: 7,
+  shadowShare: 1,         // the share of a shadowed lamp's light its SpotLight carries (the rest stays a pool light: the lantern's up light)
   near0: 40, near1: 60,       // m: static lights real up to near0, gone at near1 (the ground map + wall spill beyond)
   coneDensity: 0.025,     // dry air: a hint; x2.5 when the street is wet (damp air, spray)
 };
@@ -47,7 +48,8 @@ export class NightSources {
     const S = street.sources;
     this.src = S;
     this.grid = {};
-    for (const k of ["lamps", "windows", "shops", "signs"]) this.grid[k] = new StaticSources(S[k].x, S[k].y, S[k].z, 32);
+    // a kind may come with its own query (the city's lamp registry, cityNight.js: tiles added / removed, a fade per source)
+    for (const k of ["lamps", "windows", "shops", "signs"]) this.grid[k] = S[k].query ? S[k] : new StaticSources(S[k].x, S[k].y, S[k].z, 32);
     this.sel = {
       lamps: new NearestN(N.lamps, 70), windows: new NearestN(N.windows, 70), shops: new NearestN(N.shops, 70),
       signs: new NearestN(N.signs, 70), heads: new NearestN(N.heads, 230), rear: new NearestN(N.rear, 120),
@@ -78,12 +80,12 @@ export class NightSources {
       sel.begin(); if (p.lamps) this.grid.lamps.query(cx, cy, cz, sel.maxDist, sel); sel.end();
       this.shadow.update(sel, dt);
       tr.begin();
-      const I = p.lampI;
+      const I = p.lampI, F = S.fade;              // F: per source fade (a streamed tile's lamps fade in), or none
       for (let k = 0; k < this.N.lamps; k++) {
         if (k >= sel.count) { P.weight(b + k, 0); continue; }
-        const id = sel.i[k], w = sel.weight(k) * this.nearFade(sel.d[k]);
+        const id = sel.i[k], w = sel.weight(k) * this.nearFade(sel.d[k]) * (F ? F[id] : 1);
         tr.cur[id] = w;
-        P.set(b + k, S.x[id], S.y[id], S.z[id], p.lampRange, LAMP_RGB[0] * I, LAMP_RGB[1] * I, LAMP_RGB[2] * I, w * (1 - this.shadow.blend(id)), 0.22);
+        P.set(b + k, S.x[id], S.y[id], S.z[id], p.lampRange, LAMP_RGB[0] * I, LAMP_RGB[1] * I, LAMP_RGB[2] * I, w * (1 - this.shadow.blend(id) * p.shadowShare), 0.22);
         P.omni(b + k); P.profile(b + k, PROFILE.LANTERN, p.lampUp, p.lampBatwing); P.baked(b + k, !!this.ground);
         if (C && this.conesOn && w > 0.01) C.write(cone++, S.x[id], S.y[id] - 0.1, S.z[id], 0, -1, 0, S.y[id] - 0.1, 3.4, LAMP_RGB[0] * w, LAMP_RGB[1] * w, LAMP_RGB[2] * w);
       }
@@ -97,7 +99,7 @@ export class NightSources {
         L.position.set(S.x[id], S.y[id], S.z[id]);
         L.target.position.set(S.x[id], S.y[id] - 6, S.z[id]);
         L.target.updateMatrixWorld();
-        L.intensity = I * scale * SH.blend(id);
+        L.intensity = I * scale * SH.blend(id) * p.shadowShare * (F ? F[id] : 1);
         L.distance = p.lampRange;
       }
     }
@@ -123,8 +125,11 @@ export class NightSources {
       for (let i = 0; i < n; i++) {
         const o = i * CAR.STRIDE;
         if (D[o + CAR.FADE] <= 0) continue;
-        if (p.headlights && D[o + CAR.HEAD] > 0) { const dx = D[o] - cx, dy = D[o + 1] - cy, dz = D[o + 2] - cz; sh.offer(i, dx * dx + dy * dy + dz * dz); }
-        if (p.rear && D[o + CAR.TAIL] > 0) { const dx = D[o + 6] - cx, dy = D[o + 7] - cy, dz = D[o + 8] - cz; sr.offer(i, dx * dx + dy * dy + dz * dz); }
+        // a car fading in / out is offered FARTHER by (1 - fade) x 40 m: it joins / leaves the nearest set through the
+        // cut-off's own fade, and never moves the cut-off of the others at a stroke (a weight-0 car taking a slot did)
+        const far = (1 - D[o + CAR.FADE]) * 40;
+        if (p.headlights && D[o + CAR.HEAD] > 0) { const dx = D[o] - cx, dy = D[o + 1] - cy, dz = D[o + 2] - cz, d = Math.sqrt(dx * dx + dy * dy + dz * dz) + far; sh.offer(i, d * d); }
+        if (p.rear && D[o + CAR.TAIL] > 0) { const dx = D[o + 6] - cx, dy = D[o + 7] - cy, dz = D[o + 8] - cz, d = Math.sqrt(dx * dx + dy * dy + dz * dz) + far; sr.offer(i, d * d); }
       }
       sh.end(); sr.end();
       th.begin(); trr.begin();
@@ -157,8 +162,8 @@ export class NightSources {
           const o = i * CAR.STRIDE, f = D[o + CAR.FADE] * scale;
           if (f <= 0) continue;
           const wh = (1 - RH[i]) * f * D[o + CAR.HEAD] * (p.headlights ? 1 : 0), wr = (1 - RR[i]) * f * D[o + CAR.TAIL] * (p.rear ? 1 : 0);
-          if (wh > 0.001) { const I = p.headI * wh; G.writeDyn(q++, 0, D[o], D[o + 1], D[o + 2], D[o + 3], D[o + 4], D[o + 5], p.headRange, HEAD_RGB[0] * I, HEAD_RGB[1] * I, HEAD_RGB[2] * I); }
-          if (wr > 0.001) { const I = p.rearI * D[o + CAR.TAIL] * wr; G.writeDyn(q++, 1, D[o + 6], D[o + 7], D[o + 8], 0, -1, 0, p.rearRange, REAR_RGB[0] * I, REAR_RGB[1] * I, REAR_RGB[2] * I); }
+          if (wh > 0.001) { const I = p.headI * wh; G.writeDyn(q++, 0, D[o], D[o + 1] - D[o + CAR.GY], D[o + 2], D[o + 3], D[o + 4], D[o + 5], p.headRange, HEAD_RGB[0] * I, HEAD_RGB[1] * I, HEAD_RGB[2] * I); }
+          if (wr > 0.001) { const I = p.rearI * D[o + CAR.TAIL] * wr; G.writeDyn(q++, 1, D[o + 6], D[o + 7] - D[o + CAR.GY], D[o + 8], 0, -1, 0, p.rearRange, REAR_RGB[0] * I, REAR_RGB[1] * I, REAR_RGB[2] * I); }
         }
       }
       this.dynCount = q;

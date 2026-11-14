@@ -9,6 +9,7 @@
 import * as THREE from "three/webgpu";
 import { texture, uniform, vec2, vec3, float, positionWorld, color, smoothstep } from "three/tsl";
 import { env } from "./lighting.js";
+import { NIGHT, dynIrradiance, farBand } from "./nightLights/nightMode.js";
 
 export const lampPoolsOn = !/[?&]lamppools=0/.test(location.search);
 const X0 = -3000, Z0 = -2000, W = 7500, H = 6000, TEXEL = 2;     // the manifest's whole grid (all of Uccle, A1..O12)
@@ -63,6 +64,10 @@ export function lampLight(heightAbove = null) {
   const uv = vec2(positionWorld.x, positionWorld.z).sub(uOrigin).mul(uInvSize);
   let k = texture(tex, uv).r.mul(1.6).mul(uLampPower).mul(env.uNight);
   if (heightAbove) k = k.mul(smoothstep(float(7.0), float(1.0), heightAbove));
+  // ?night=1 (nightLights/nightMode.js): near walls get the pool's real lamps instead (faded out over the same band);
+  // the ground keeps the map for the lamps and adds the far cars' headlight pools (the dynamic ground layer)
+  if (NIGHT && heightAbove) k = k.mul(farBand());
+  if (NIGHT && !heightAbove) return WARM.mul(k).add(dynIrradiance().mul(1 / Math.PI));
   return WARM.mul(k);
 }
 
@@ -71,5 +76,6 @@ export function addLampLight(m, heightAbove = null) {
   if (!lampPoolsOn || !m.colorNode) return m;
   const add = m.colorNode.rgb ? m.colorNode.rgb.mul(lampLight(heightAbove)) : m.colorNode.mul(lampLight(heightAbove));
   m.emissiveNode = m.emissiveNode ? m.emissiveNode.add(add) : add;
+  if (NIGHT && !heightAbove) m.userData.groundLight = true;     // the night loop skips the lamps the map already has
   return m;
 }

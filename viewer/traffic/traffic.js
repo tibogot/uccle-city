@@ -64,7 +64,8 @@ export function createTraffic({ scene, renderer, camera, ground, night, cap = 76
     }
     if (acc > STEP) acc = STEP;          // a long hitch: drop the backlog, never fast-forward visibly
     const t1 = performance.now();
-    fleet.update(sim, Math.min(1, acc / STEP), cam.position, cam);
+    T.alpha = Math.min(1, acc / STEP);            // (the draw's interpolation factor: the night lights follow the drawn cars)
+    fleet.update(sim, T.alpha, cam.position, cam);
     T.debug?.update(sim, Math.min(1, acc / STEP));
     const t2 = performance.now();
     const k = 0.05;
