@@ -71,7 +71,7 @@ export function layoutTile(doc, measure, stopsDoc = null, opts = {}) {
   const shops = Object.fromEntries(SHOP_PIECES.map((k) => [k, []])), colliders = { table: [], parasol: [], planter: [] };
   const boxes = [], windows = [], glass = [], labels = [], labelIdx = new Map();
   const props = Object.fromEntries(KIT_KINDS.map((k) => [k, []]));
-  const night = { shops: [], signs: [], spots: [] };
+  const night = { shops: [], signs: [], spots: [], lights: [] };   // lights: the night lights' records (shopLayout.js, ?night=1)
   const used = { names: [], plates: [], numbers: [], stops: [], fuel: [] };
 
   const label = (lines, style) => {

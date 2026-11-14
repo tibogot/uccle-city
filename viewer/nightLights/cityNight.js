@@ -27,6 +27,7 @@ import { LightPool, NightLighting } from "./nightLighting.js";
 import { NearestN, StaticSources, smooth01 } from "./lightSelect.js";
 import { NightSources, CAR, nightParams } from "./nightSources.js";
 import { GroundLight } from "./groundLight.js";
+import { createGlare } from "./glare.js";
 import { nightGround, DYN } from "./nightMode.js";
 import { env } from "../lighting.js";
 import { carFleet } from "../carFleet.js";
@@ -39,13 +40,25 @@ const FADE_FAR = 75;                  // m: a lamp at fade 0 is offered this muc
 const CAR_IN = 1.5, CAR_OUT = 1.2;    // s: a car's lights fade in / out (slow: a fading car is also offered farther, nightSources.js)
 const CAR_CAP = 256;                  // cars offered per frame (nearest first within CAR_R)
 const CAR_R = 250;                    // m
+// step 4, FAR GLARE CARDS (glare.js, GTA V's distant lights): one additive billboard per far lamp head / car front / car
+// rear, 256 at most: the GLARE_LAMPS nearest lamp heads within GLARE_R (NearestN: the cut-off fades, no pop) and the
+// GLARE_CARS nearest cars (front + rear: 2 cards each). Near the camera (< 30-90 m) the emissive glass + bloom carry
+// the glow (the card's own fade). ?nightglare=0: none.
+const GLARE_ON = qp.get("nightglare") !== "0";
+const GLARE_LAMPS = 192, GLARE_CARS = 32, GLARE_R = 600;
 // the lamp shadows' casters: a layer of their own. A shadowed lamp's frustum (155 deg, 24 m) otherwise takes in whole
 // building chunks (detail / wall / kit meshes: ~1.1 M triangles, ~96 draws per lamp, measured on Place Saint-Job) that
 // never throw a shadow a lamp could show (the lamp stands in front of the facade). Tagged: every shadow caster that is
 // street-scale - posts, cars, trees, furniture, people, kiosks (radius < 12 m, or instanced) - not building parts.
 const LAMP_SHADOW_LAYER = 6;
+// round 2: a newly tagged caster also joins WARM_LAYER until it has been drawn once into both lamp shadow maps BY DAY
+// (warmShadows below): its shadow render objects / node builds exist before the first night frame, so the day -> night
+// switch creates none (it made 66-182 ms long tasks: 377 render objects, the first two lamp passes ~45 ms)
+const WARM_LAYER = 7;
+const DEBUG = qp.get("nightdebug") === "1";       // the pop metrics (per lamp / per car weight jumps): off by default (CPU)
+const SHADOW_MODE = qp.get("nightshadow") || "smart";   // "smart" (re-render on change, round 2) | "full" (every frame, round 1)
 const BUILDING = /^(buildings-|kit |facade|roof|terrain|ground|bridge|tunnel)/i;
-function tagCasters(root) {
+function tagCasters(root, warm) {
   let n = 0;
   root.traverse((o) => {
     if (!o.isMesh || !o.castShadow || o.userData.__nightTag) return;
@@ -53,7 +66,7 @@ function tagCasters(root) {
     if (BUILDING.test(o.name || "") || BUILDING.test(o.parent?.name || "")) return;
     let small = o.isInstancedMesh || o.isSkinnedMesh;
     if (!small) { const g = o.geometry; if (!g.boundingSphere) g.computeBoundingSphere(); small = (g.boundingSphere?.radius ?? 1e9) * o.matrixWorld.getMaxScaleOnAxis() < 12; }
-    if (small) { o.layers.enable(LAMP_SHADOW_LAYER); n++; }
+    if (small) { o.layers.enable(LAMP_SHADOW_LAYER); warm.push(o, performance.now()); n++; }
   });
   return n;
 }
@@ -86,11 +99,12 @@ class LampRegistry {
     this.fade = new Float32Array(cap);
     this.free = new Int32Array(cap); this.nFree = cap;
     for (let i = 0; i < cap; i++) this.free[i] = cap - 1 - i;
-    this.tiles = new Map(); this.list = [];
+    this.tiles = new Map(); this.tileList = [];
+    this.list = new Array(cap).fill(null);       // per id: the source's record (shops / signs: normal, size, colour)
     this.onRelease = null;
     this.count = 0;
   }
-  addTile(name, heads, now) {
+  addTile(name, heads, now, items = null) {
     if (this.tiles.has(name) || !heads?.length) return;
     const n = Math.min(heads.length, this.nFree);
     if (n < heads.length) console.warn(`[night] lamp registry full: ${heads.length - n} lamps of ${name} left out`);
@@ -98,6 +112,7 @@ class LampRegistry {
     let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
     for (let k = 0; k < n; k++) {
       const h = heads[k], id = this.free[--this.nFree];
+      if (items) this.list[id] = items[k];
       ids[k] = id; this.x[id] = lx[k] = h.x; this.y[id] = ly[k] = h.y; this.z[id] = lz[k] = h.z; this.fade[id] = 0;
       x0 = Math.min(x0, h.x); x1 = Math.max(x1, h.x); z0 = Math.min(z0, h.z); z1 = Math.max(z1, h.z);
     }
@@ -107,15 +122,15 @@ class LampRegistry {
     const fade = this.fade;
     const adapter = { sel: null, ids, offer(s, d2) { const id = this.ids[s], f = fade[id]; if (f >= 1) this.sel.offer(id, d2); else { const d = Math.sqrt(d2) + (1 - f) * FADE_FAR; this.sel.offer(id, d * d); } } };
     const rec = { name, ids, t0: now, f: 0, grid: new StaticSources(lx, ly, lz, 32), x0, x1, z0, z1, adapter };
-    this.tiles.set(name, rec); this.list.push(rec);
+    this.tiles.set(name, rec); this.tileList.push(rec);
     this.count += n;
   }
   removeTile(name) {
     const rec = this.tiles.get(name);
     if (!rec) return;
-    this.tiles.delete(name); this.list.splice(this.list.indexOf(rec), 1);
+    this.tiles.delete(name); this.tileList.splice(this.tileList.indexOf(rec), 1);
     for (const id of rec.ids) {
-      this.x[id] = this.z[id] = 1e9; this.fade[id] = 0;
+      this.x[id] = this.z[id] = 1e9; this.fade[id] = 0; this.list[id] = null;
       this.onRelease?.(id);
       this.free[this.nFree++] = id;
     }
@@ -124,8 +139,8 @@ class LampRegistry {
   /** the tiles' fade-in, by frame time capped at 1/30 s (a long task while a tile streams in must not jump it) */
   step(dt) {
     const k = Math.min(dt, 1 / 30) / FADE_IN;
-    for (let t = 0; t < this.list.length; t++) {
-      const r = this.list[t];
+    for (let t = 0; t < this.tileList.length; t++) {
+      const r = this.tileList[t];
       if (r.f >= 1) continue;
       r.t = Math.min(1, (r.t ?? 0) + k);
       r.f = smooth01(r.t);
@@ -134,8 +149,8 @@ class LampRegistry {
   }
   /** StaticSources' query, over every tile whose box is within r */
   query(cx, cy, cz, r, sel) {
-    for (let t = 0; t < this.list.length; t++) {
-      const R = this.list[t];
+    for (let t = 0; t < this.tileList.length; t++) {
+      const R = this.tileList[t];
       if (cx < R.x0 - r || cx > R.x1 + r || cz < R.z0 - r || cz > R.z1 + r) continue;
       R.adapter.sel = sel;
       R.grid.query(cx, cy, cz, r, R.adapter);
@@ -143,6 +158,7 @@ class LampRegistry {
   }
 }
 
+const NIGHT_LIGHT_STRIDE = 11;          // kind (0 shop window, 1 sign), x y z, nx nz, half width, half height, r g b
 const EMPTY = () => ({ x: new Float32Array(0), y: new Float32Array(0), z: new Float32Array(0), list: [] });
 
 // ------------------------------------------------------------------------------------------------ the city hookup
@@ -150,7 +166,7 @@ const EMPTY = () => ({ x: new Float32Array(0), y: new Float32Array(0), z: new Fl
  * Steps 1-3. scene: the city scene; updaters: main.js' per-frame list (the night update runs after the traffic's);
  * returns { addTile, removeTile, setTraffic, setDriver, stats, ... }.
  */
-export function startCityNight({ scene, renderer, updaters, log = console.log }) {
+export function startCityNight({ scene, renderer, updaters, groundAt = null, log = console.log }) {
   const lamps = new LampRegistry();
   // step 2: the K shadowed lamps - created now, before the warm-up, never removed
   const shadowLights = [];
@@ -173,33 +189,63 @@ export function startCityNight({ scene, renderer, updaters, log = console.log })
   ground.createDynamic(CAR_CAP);
   const dynMesh = ground.dyn.mesh;
   dynMesh.visible = false;
+  // step 4: the glare cards (compiled off the frame on the first update: their pipeline never builds mid-frame)
+  const glare = createGlare(GLARE_LAMPS + GLARE_CARS * 2);
+  glare.mesh.visible = false;
+  scene.add(glare.mesh);
+  const glareSel = new NearestN(GLARE_LAMPS, GLARE_R);
+  let glareReady = false, glareCompiling = false, gcx = 0, gcz = 0, glareLampsN = -1, glareScale = 0;
+  const dOf = (i) => { const D = night.carData, o = i * CAR.STRIDE; return Math.hypot(D[o] - gcx, D[o + 2] - gcz); };
+  const compileGlare = (cam) => {
+    glareCompiling = true;
+    glare.mesh.count = 1; glare.mesh.visible = true;
+    renderer.compileAsync(glare.mesh, cam, scene).catch((e) => console.warn("[night] glare compile:", e))
+      .finally(() => { glare.mesh.count = 0; glare.mesh.visible = false; glareReady = true; });
+  };
   let dynReady = false, dynLast = -1;
   (async () => {                       // its pipeline compiled for ITS target (half float), off the frame
     dynMesh.count = 1; dynMesh.visible = true;
     const prev = renderer.getRenderTarget();
-    try { renderer.setRenderTarget(nightGround.rt); await renderer.compileAsync(ground.dynScene, ground.cam); }
+    try {
+      renderer.setRenderTarget(nightGround.rt); await renderer.compileAsync(ground.dynScene, ground.cam);
+      renderer.setRenderTarget(prev);
+      // and drawn once (one black quad): its render object, bindings and instance buffers exist before the first night
+      // frame (the first real draw at the day -> night switch took ~14 ms)
+      ground.writeDyn(0, 0, 0, 1, 0, 0, -1, 1, 1, 0, 0, 0);
+      ground.renderDynamic(renderer, 1);
+    }
     catch (e) { console.warn("[night] dyn ground compile:", e); }
     finally { renderer.setRenderTarget(prev); dynMesh.count = 0; dynMesh.visible = false; dynReady = true; }
   })();
 
-  const street = { sources: { lamps, windows: EMPTY(), shops: EMPTY(), signs: EMPTY() } };
+  // step 5: the shop windows (APERTURE lights through the real opening, in the facade's own frame) and the lit signs
+  // (fascia, blade, pharmacy cross) of every loaded tile, from the street life's layout (shopLayout.js night.lights):
+  // registries like the lamps' (a tile's lights fade in, ids stable); none of them is in the ground map (the city's map
+  // holds the lamps only): they light the ground through the loop
+  const shopReg = new LampRegistry(4096), signReg = new LampRegistry(4096);
+  const street = { sources: { lamps, windows: EMPTY(), shops: shopReg, signs: signReg } };
   nightParams.shadowShare = 0.65;
-  const night = new NightSources(pool, street, { cars: CAR_CAP, shadowLights, sizes: { windows: 0, shops: 0, signs: 0 }, ground });
+  nightParams.shopI = 32;              // (the lab's tuned shop value; its default 24 left the sidewalk spill barely visible)
+  const night = new NightSources(pool, street, { cars: CAR_CAP, shadowLights, sizes: { windows: 0, shops: 8, signs: 6 }, ground, baked: { shops: false, signs: false } });
   lamps.onRelease = (id) => night.shadow.release(id);
+  if (!DEBUG) for (const t of Object.values(night.track)) t.on = false;     // (the pop metric: ?nightdebug=1)
   night.tram.on = false;
 
   // ---- cars
-  let traffic = null, driver = null;
+  let traffic = null, driver = null, tram = null;
   const SIM_CAP = 1024;
   // per sim slot, then GHOSTS slots (G0..G1) for cars that left the sim while lit (their lights fade out there)
-  const GHOSTS = 64, G0 = SIM_CAP + 1, G1 = G0 + GHOSTS, NS = G1;
-  const lf = new Float32Array(NS), gen = new Uint32Array(SIM_CAP), wasAlive = new Uint8Array(SIM_CAP);
+  // (round 2: 128 ghosts, and only a car that was within CAR_R gets one: a tile unloading removes many cars at once,
+  // and with the 64 all busy the oldest ghost was overwritten - its light jumped)
+  const GHOSTS = 128, G0 = SIM_CAP + 1, G1 = G0 + GHOSTS, NS = G1;
+  const lf = new Float32Array(NS), gen = new Uint32Array(SIM_CAP), wasAlive = new Uint8Array(SIM_CAP), inR = new Uint8Array(SIM_CAP);
+  let ghostSteal = 0;
   const last = new Float32Array(NS * CAR.STRIDE);                    // each slot's last light data
   let gNext = G0;
   const toGhost = (i) => {
-    let g = -1;
-    for (let k = 0; k < GHOSTS; k++) { const c = G0 + ((gNext - G0 + k) % GHOSTS); if (lf[c] <= 0) { g = c; break; } }
-    if (g < 0) g = gNext;                                              // (all busy: the oldest)
+    let g = -1, lo = 2, gl = G0;
+    for (let k = 0; k < GHOSTS; k++) { const c = G0 + ((gNext - G0 + k) % GHOSTS); if (lf[c] <= 0) { g = c; break; } if (lf[c] < lo) { lo = lf[c]; gl = c; } }
+    if (g < 0) { g = gl; ghostSteal++; }                               // (all busy: the faintest one)
     gNext = G0 + ((g - G0 + 1) % GHOSTS);
     for (let j = 0; j < CAR.STRIDE; j++) last[g * CAR.STRIDE + j] = last[i * CAR.STRIDE + j];
     lf[g] = lf[i];
@@ -208,7 +254,6 @@ export function startCityNight({ scene, renderer, updaters, log = console.log })
   const tmp = new Float32Array(CAR.STRIDE);
   const pick = new NearestN(CAR_CAP, CAR_R);
   const carId = new Int32Array(CAR_CAP);
-  let carPrev = new Float32Array(NS * 2), carCur = new Float32Array(NS * 2);
   /** head / tail lamp centroids of a faceted type, from the parked fleet's vertex kinds (2 head, 3 tail) */
   const typeLamps = (ti, types) => {
     let L = lampsOf.get(ti);
@@ -250,38 +295,110 @@ export function startCityNight({ scene, renderer, updaters, log = console.log })
   };
 
   let tLast = performance.now(), frames = 0, lastScale = 0;
-  const stats = { carJump: 0, carJumpMax: 0, lamps: 0, tiles: 0, cars: 0, real: 0, dyn: 0, ms: 0, msAvg: 0 };
+  const stats = { lamps: 0, tiles: 0, cars: 0, real: 0, dyn: 0, ms: 0, msAvg: 0, shadowRenders: 0, shadowSkips: 0, warmed: 0, ghostSteal: 0, dynFade: 1 };
+  // ---- the lamp shadows' schedule (round 2): a shadowed lamp stands still, so its map only changes when something in
+  // it moves. Re-rendered (a) the frame its lamp changes, (b) every frame a MOVER is within its reach (a traffic car,
+  // the player's car, a tram, the camera itself - the walker / third-person character - moving near it), (c) when the
+  // camera has moved MOVE_REFRESH m since its last render (the trees' cards morph with the view distance; the parked
+  // cars / trees re-bucket their LODs), one of the two maps per frame for that. Otherwise the map is kept as it is.
+  // ?nightshadow=full: every frame (round 1).
+  const MOVER_R = 24 + 7, TRAM_R = 24 + 36, MOVE_REFRESH = 2;
+  const sLamp = new Int32Array(2).fill(-2), sCam = [new THREE.Vector3(1e9, 0, 0), new THREE.Vector3(1e9, 0, 0)];
+  const mover = new Uint8Array(2), lastCam = new THREE.Vector3(1e9, 0, 0);
+  let refreshTurn = 0;
+  // ---- the by-day warm-up of the lamp shadow maps (see WARM_LAYER)
+  // queued casters, each with the time it was tagged: warmed WARM_DELAY ms later (a streamed tile fades in with fading
+  // COPIES of its materials for ~0.9 s, lodFade.js: a render object made then would not be the one the night uses)
+  const WARM_DELAY = 4000;
+  const warmList = [], warmNow = [];
+  let warming = 0;
+  const warmShadows = (camPos) => {
+    if (warming === 1) {                                              // (the warm render happened last frame: restore)
+      for (const L of shadowLights) { L.shadow.camera.layers.set(LAMP_SHADOW_LAYER); L.shadow.camera.far = 26; L.shadow.camera.updateProjectionMatrix(); L.distance = nightParams.lampRange; L.shadow.needsUpdate = false; }
+      for (let i = 0; i < warmNow.length; i++) warmNow[i].layers.disable(WARM_LAYER);
+      stats.warmed += warmNow.length; warmNow.length = 0; warming = 0;
+      return;
+    }
+    if (!warmList.length || frames < 4) return;
+    // the due ones (tagged WARM_DELAY ago) join WARM_LAYER; the list is in tag order (objects and times interleaved)
+    const due = performance.now() - WARM_DELAY;
+    let k = 0;
+    const retry = [];
+    while (k < warmList.length && warmList[k + 1] <= due) {
+      const o = warmList[k];
+      k += 2;
+      if (!o.parent) continue;                                         // (its tile is gone)
+      // drawn as the night will draw it: shown (a streamed tile stays hidden while its shaders compile), not fading
+      // (lodFade's material copies), not an empty instanced bucket; else again later (8 tries, then left out)
+      let shown = !o.userData.fadeOrig && !(o.isInstancedMesh && o.count === 0);
+      for (let q = o; shown && q; q = q.parent) if (!q.visible) shown = false;
+      if (shown) { o.layers.enable(WARM_LAYER); warmNow.push(o); }
+      else if ((o.userData.__nightWarmTries = (o.userData.__nightWarmTries || 0) + 1) < 8) retry.push(o);
+    }
+    if (!k) return;
+    warmList.splice(0, k);
+    for (const o of retry) warmList.push(o, performance.now());
+    if (!warmNow.length) return;
+    // both lamp maps (each light has its own shadow material: its own render objects), from 350 m up looking down, a
+    // 2.5 km deep cone (155 deg): every caster tagged since the last warm-up, nothing else (WARM_LAYER); light 0 W
+    for (const L of shadowLights) {
+      L.position.set(camPos.x, camPos.y + 350, camPos.z); L.target.position.set(camPos.x, camPos.y - 10, camPos.z);
+      L.updateMatrixWorld(); L.target.updateMatrixWorld();
+      // (three's SpotLightShadow re-projects only when ITS far (light.distance || camera.far) differs from the camera's:
+      // set here directly, so the projection is updated here, and again on the way back)
+      L.distance = 0; L.shadow.camera.far = 2500; L.shadow.camera.updateProjectionMatrix(); L.shadow.camera.layers.set(WARM_LAYER);
+      L.shadow.autoUpdate = false; L.shadow.needsUpdate = true;
+    }
+    warming = 1;
+  };
+  // ---- the pop metric per CAR (?nightdebug=1; nightSources' Track is per list position, the city's list is re-sorted
+  // every frame): the largest frame-to-frame change of a car's real head / rear weight, and the worst event's details
+  const dbg = DEBUG ? { carJump: 0, carJumpMax: 0, events: [], prev: new Float32Array(NS * 2), cur: new Float32Array(NS * 2), pos: new Float32Array(NS * 3), ppos: new Float32Array(NS * 3) } : null;
   const update = (camPos, cam) => {
     const t0 = performance.now(), dt = Math.min(0.1, (t0 - tLast) / 1000);
     tLast = t0; frames++;
     const n = env.uNight.value, scale = POOL_ON ? smooth01((n - 0.15) / 0.5) * api.master : 0;
-    lamps.step(dt);
-    // ---- the cars' light data: every live traffic car (drawn pose) + the player's car, nearest first
+    lamps.step(dt); shopReg.step(dt); signReg.step(dt);
+    // the dynamic layer fades out with the height above the ground (120 -> 200 m: its 320 m square's edge would show)
+    const hAbove = groundAt ? camPos.y - groundAt(camPos.x, camPos.z) : 0;
+    const dynFade = 1 - smooth01((hAbove - 120) / 80);
+    // the movers near the two shadowed lamps (their positions of last frame: a lamp change re-renders anyway)
+    const S0 = shadowLights[0].position, S1 = shadowLights[1].position;
+    mover[0] = mover[1] = 0;
+    const near2 = (x, z, P, r) => { const dx = x - P.x, dz = z - P.z; return dx * dx + dz * dz < r * r; };
+    // ---- the cars' light data: every live traffic car (drawn pose) within CAR_R + the player's car, nearest first
     let nc = 0;
     const D = night.carData;
     if (scale > 0) {
       pick.begin();
       const T = traffic?.T, sim = T?.sim;
+      const R2 = (CAR_R + 20) * (CAR_R + 20), fstep = Math.min(dt, 1 / 30);
       if (sim) {
         const a = T.alpha ?? 1, b1 = 1 - a, types = T.types, m = Math.min(sim.cap, SIM_CAP);
         for (let i = 0; i < m; i++) {
           const o = i * CAR.STRIDE;
           if (sim.alive[i]) {
             if (!wasAlive[i] || gen[i] !== sim.gen[i]) {                  // a new car in this slot (the old one, if any, fades as a ghost)
-              if (wasAlive[i] && lf[i] > 0) toGhost(i);
-              lf[i] = 0; gen[i] = sim.gen[i]; wasAlive[i] = 1;
+              if (wasAlive[i] && inR[i] && lf[i] > 0) toGhost(i);
+              lf[i] = 0; gen[i] = sim.gen[i]; wasAlive[i] = 1; inR[i] = 0;
             }
-            lf[i] = Math.min(1, lf[i] + Math.min(dt, 1 / 30) / CAR_IN);
+            lf[i] = Math.min(1, lf[i] + fstep / CAR_IN);
+            const x = sim.px[i] * b1 + sim.x[i] * a, z = sim.pz[i] * b1 + sim.z[i] * a;
+            const cx = x - camPos.x, cz = z - camPos.z;
+            if (cx * cx + cz * cz > R2) { inR[i] = 0; continue; }          // (far: no light data, no ghost; its fade goes on)
+            if (near2(x, z, S0, MOVER_R)) mover[0] = 1;
+            if (near2(x, z, S1, MOVER_R)) mover[1] = 1;
             let yaw = sim.yaw[i]; const py = sim.pyaw[i]; let dyw = yaw - py;
             if (dyw > Math.PI) dyw -= 2 * Math.PI; else if (dyw < -Math.PI) dyw += 2 * Math.PI;
             yaw = py + dyw * a;
-            const x = sim.px[i] * b1 + sim.x[i] * a, y = sim.py[i] * b1 + sim.y[i] * a, z = sim.pz[i] * b1 + sim.z[i] * a;
+            const y = sim.py[i] * b1 + sim.y[i] * a;
             const brake = sim.bits[i] & 1;
             writeCar(o, x, y, z, yaw, sim.ppitch[i] * b1 + sim.pitch[i] * a, typeLamps(sim.type[i], types), 1, brake ? 1.6 : 1, smooth01(lf[i]), y);
+            inR[i] = 1;
           } else if (wasAlive[i]) {                                          // gone (parked in, removed out of sight): a ghost
             wasAlive[i] = 0;
-            if (lf[i] > 0) toGhost(i);
-            lf[i] = 0;
+            if (inR[i] && lf[i] > 0) toGhost(i);
+            lf[i] = 0; inR[i] = 0;
             continue;
           } else continue;
           if (last[o + CAR.FADE] <= 0) continue;
@@ -292,7 +409,7 @@ export function startCityNight({ scene, renderer, updaters, log = console.log })
       // the ghosts: a car that left the sim, its lights fading at its last pose
       for (let g = G0; g < G1; g++) {
         if (lf[g] <= 0) continue;
-        lf[g] = Math.max(0, lf[g] - Math.min(dt, 1 / 30) / CAR_OUT);
+        lf[g] = Math.max(0, lf[g] - fstep / CAR_OUT);
         const o = g * CAR.STRIDE;
         last[o + CAR.FADE] = smooth01(lf[g]);
         if (lf[g] <= 0) continue;
@@ -318,6 +435,8 @@ export function startCityNight({ scene, renderer, updaters, log = console.log })
         D[CAR.TY] = Math.max(D[CAR.TY], c.y + 0.35);
         D[CAR.HEAD] = 1; D[CAR.TAIL] = c.braking ? 1.6 : 1; D[CAR.FADE] = 1; D[CAR.GY] = c.y;
         nc = 1; carId[0] = SIM_CAP;
+        if (near2(e[12], e[14], S0, MOVER_R)) mover[0] = 1;
+        if (near2(e[12], e[14], S1, MOVER_R)) mover[1] = 1;
       }
       for (let k = 0; k < pick.count && nc < CAR_CAP; k++) {
         carId[nc] = pick.i[k];
@@ -325,32 +444,110 @@ export function startCityNight({ scene, renderer, updaters, log = console.log })
         for (let j = 0; j < CAR.STRIDE; j++) D[dst + j] = last[src + j];
         nc++;
       }
+      // the trams (their drawn fronts) and the camera itself moving near a shadowed lamp (the walker / character)
+      const TD = tram?.drawn;
+      if (TD) for (let k = 0; k < TD.n; k++) { const x = TD.xz[k * 2], z = TD.xz[k * 2 + 1]; if (near2(x, z, S0, TRAM_R)) mover[0] = 1; if (near2(x, z, S1, TRAM_R)) mover[1] = 1; }
+      if (camPos.distanceToSquared(lastCam) > 1e-4) { if (near2(camPos.x, camPos.z, S0, MOVER_R)) mover[0] = 1; if (near2(camPos.x, camPos.z, S1, MOVER_R)) mover[1] = 1; }
     }
+    lastCam.copy(camPos);
     night.carCount = nc;
     // ---- the pool (lamps, cars), the shadowed lamps, the far cars' ground pools (by day: once at 0, then nothing)
-    ground.recentre(camPos.x - half, camPos.z - half);
     if (scale > 0 || lastScale > 0 || frames < 4) night.update(camPos, dt, scale, false);
     lastScale = scale;
-    // the pop detector per CAR (nightSources' Track is per list position; the city's list is re-sorted every frame):
-    // the largest frame-to-frame change of a car's real head / rear weight (brake: the weight / TAIL)
-    if (scale > 0) {
-      const sw = carPrev; carPrev = carCur; carCur = sw; carCur.fill(0);
-      const TH = night.track.heads.cur, TR = night.track.rear.cur;
-      for (let k = 0; k < nc; k++) { const o = carId[k] * 2; carCur[o] = TH[k]; carCur[o + 1] = TR[k] / Math.max(1, D[k * CAR.STRIDE + CAR.TAIL]); }
-      let m = 0;
-      for (let i = 0; i < carCur.length; i++) { const d = Math.abs(carCur[i] - carPrev[i]); if (d > m) m = d; }
-      stats.carJump = m; if (m > stats.carJumpMax) stats.carJumpMax = m;
+    if (dbg && scale > 0) popMetric(nc, D, dt, camPos);
+    // ---- step 4: the far glare cards
+    if (!glareReady && !glareCompiling && cam && GLARE_ON) compileGlare(cam);
+    if (glareReady) {
+      let g = 0;
+      if (scale > 0) {
+        // the lamps' cards (static lights, slowly changing weights) every other frame: kept in place in between (their
+        // 600 m query is most of the glare's CPU); the cars' cards every frame, after them
+        if ((frames & 1) || glareLampsN < 0 || Math.abs(scale - glareScale) > 0.01) {
+          glareSel.begin(); lamps.query(camPos.x, camPos.y, camPos.z, GLARE_R, glareSel); glareSel.end();
+          const LX = lamps.x, LY = lamps.y, LZ = lamps.z, F = lamps.fade;
+          for (let k = 0; k < glareSel.count; k++) {
+            const id = glareSel.i[k], w = scale * glareSel.weight(k) * F[id];
+            if (w > 0.002) glare.write(g++, LX[id], LY[id], LZ[id], 0.45, 1.6 * w, 1.25 * w, 0.8 * w);
+          }
+          glareLampsN = g; glareScale = scale;
+        } else g = glareLampsN;
+      } else glareLampsN = -1;
+      if (scale > 0) {
+        // (the list is nearest first: the (GLARE_CARS + 1)-th car's distance is the cut-off, faded as NearestN does)
+        gcx = camPos.x; gcz = camPos.z;
+        const cut = nc > GLARE_CARS ? Math.min(CAR_R, dOf(GLARE_CARS)) : CAR_R;
+        for (let i = 0; i < Math.min(nc, GLARE_CARS); i++) {
+          const o = i * CAR.STRIDE, f = D[o + CAR.FADE] * scale * smooth01((cut - dOf(i)) / (cut * 0.38));
+          if (f <= 0) continue;
+          glare.write(g++, D[o], D[o + 1], D[o + 2], 0.35, 1.6 * f, 1.55 * f, 1.45 * f, D[o + 3], D[o + 4], D[o + 5]);
+          const t = D[o + CAR.TAIL];
+          glare.write(g++, D[o + 6] + D[o + 3] * 0.55, D[o + 7] + 0.15, D[o + 8] + D[o + 5] * 0.55, 0.22, 1.2 * f * t, 0.05 * f * t, 0.03 * f * t);
+        }
+      }
+      if (g > 0 || glare.mesh.count > 0) glare.commit(g, cam, renderer.domElement.height);
     }
-    for (const L of night.shadow.lights) L.shadow.autoUpdate = L.intensity > 0 || frames < 4;   // (no shadow map render without light)
-    nightGround.uDyn.value = scale > 0 ? 1 : 0;
-    const q = scale > 0 && dynReady ? night.dynCount : 0;
-    if (dynReady && (q > 0 || dynLast !== 0)) {                       // (nothing to draw twice in a row: skip the pass)
+    // ---- the lamp shadow maps: rendered only when needed (no light: never)
+    if (scale > 0 && warming) warmShadows(camPos);                    // (night fell during a warm-up frame: restore first)
+    if (scale > 0) {
+      let refreshed = false;
+      for (let k = 0; k < 2; k++) {
+        const L = shadowLights[k], id = night.shadow.lamp[k];
+        L.shadow.autoUpdate = false;
+        if (!(L.intensity > 0)) { sLamp[k] = -2; continue; }
+        let go = api.shadowMode === "full" || id !== sLamp[k] || mover[k] === 1;
+        // (the camera-moved refresh: one map per frame, alternating)
+        if (!go && !refreshed && (refreshTurn & 1) === k && camPos.distanceToSquared(sCam[k]) > MOVE_REFRESH * MOVE_REFRESH) { go = true; refreshed = true; }
+        if (go) { L.shadow.needsUpdate = true; sLamp[k] = id; sCam[k].copy(camPos); stats.shadowRenders++; } else stats.shadowSkips++;
+      }
+      refreshTurn++;
+    } else if (lastScale <= 0 && frames >= 4) {
+      for (const L of shadowLights) if (!warming) L.shadow.autoUpdate = false;
+      sLamp[0] = sLamp[1] = -2;
+      warmShadows(camPos);                                             // by day: warm the casters that arrived
+    } else for (const L of shadowLights) L.shadow.autoUpdate = frames < 4;
+    nightGround.uDyn.value = scale > 0 ? dynFade : 0;
+    const q = scale > 0 && dynReady && dynFade > 0 ? night.dynCount : 0;
+    // the far cars' pools at 30 Hz (the pass's CPU was ~0.2 ms: a whole renderer.render), at once when the camera has
+    // moved far (a jump); the layer's origin follows the camera only when it is drawn, so the texture and the origin the
+    // ground materials read always match
+    const jump = Math.abs(camPos.x - (ground.x0 + half)) > 40 || Math.abs(camPos.z - (ground.z0 + half)) > 40;
+    if (dynReady && (q > 0 || dynLast !== 0) && ((frames & 1) === 0 || jump || q === 0)) {   // (nothing to draw twice in a row: skip)
+      ground.recentre(camPos.x - half, camPos.z - half);
       dynMesh.visible = q > 0;
       ground.renderDynamic(renderer, q);
       dynLast = q;
     }
-    stats.casters = tagged; stats.lamps = lamps.count; stats.tiles = lamps.list.length; stats.cars = nc; stats.real = pool.active; stats.dyn = q;
+    stats.casters = tagged; stats.lamps = lamps.count; stats.tiles = lamps.tileList.length; stats.cars = nc; stats.real = pool.active; stats.dyn = q; stats.dynFade = +dynFade.toFixed(2); stats.ghostSteal = ghostSteal;
     stats.ms = performance.now() - t0; stats.msAvg = stats.msAvg * 0.95 + stats.ms * 0.05;
+  };
+  const popMetric = (nc, D, dt, camPos) => {
+    // (a frame after a hitch (> 50 ms) or a camera jump (> 2 m) is not a pop: counted apart, as `hitchJumpMax`)
+    const step = dbg.cx === undefined ? 0 : Math.hypot(camPos.x - dbg.cx, camPos.z - dbg.cz);
+    dbg.cx = camPos.x; dbg.cz = camPos.z;
+    const clean = dt < 0.05 && step < 2;
+    const sw = dbg.prev; dbg.prev = dbg.cur; dbg.cur = sw; dbg.cur.fill(0);
+    const pw = dbg.ppos; dbg.ppos = dbg.pos; dbg.pos = pw;
+    const TH = night.track.heads.cur, TR = night.track.rear.cur;
+    for (let k = 0; k < nc; k++) {
+      const id = carId[k], o = id * 2, q = k * CAR.STRIDE;
+      dbg.cur[o] = TH[k]; dbg.cur[o + 1] = TR[k] / Math.max(1, D[q + CAR.TAIL]);
+      dbg.pos[id * 3] = D[q]; dbg.pos[id * 3 + 1] = D[q + 2]; dbg.pos[id * 3 + 2] = D[q + CAR.FADE];
+    }
+    let m = 0, at = -1;
+    for (let i = 0; i < dbg.cur.length; i++) { const d = Math.abs(dbg.cur[i] - dbg.prev[i]); if (d > m) { m = d; at = i; } }
+    dbg.carJump = m;
+    dbg.frames = (dbg.frames || 0) + 1;
+    if (!clean) { dbg.hitchFrames = (dbg.hitchFrames || 0) + 1; if (m > (dbg.hitchJumpMax || 0)) dbg.hitchJumpMax = m; return; }
+    dbg.cleanFrames = (dbg.cleanFrames || 0) + 1;
+    if (m > 0.1) dbg.over01 = (dbg.over01 || 0) + 1;
+    if (m > dbg.carJumpMax) dbg.carJumpMax = m;
+    if (m > 0.3 && dbg.events.length < 50) {
+      const id = at >> 1, sim = traffic?.T?.sim;
+      dbg.events.push({ t: Math.round(performance.now()), id, end: at & 1 ? "rear" : "head", kind: id === SIM_CAP ? "player" : id > SIM_CAP ? "ghost" : "sim",
+        w: [+dbg.prev[at].toFixed(3), +dbg.cur[at].toFixed(3)], pos: [dbg.ppos[id * 3], dbg.ppos[id * 3 + 1], dbg.pos[id * 3], dbg.pos[id * 3 + 1]].map((v) => +v.toFixed(1)),
+        fade: [+dbg.ppos[id * 3 + 2].toFixed(3), +dbg.pos[id * 3 + 2].toFixed(3)], alive: id < SIM_CAP ? sim?.alive[id] : null, gen: id < SIM_CAP ? sim?.gen[id] : null,
+        cutoff: +night.sel.heads.cutoff.toFixed(1), rcut: +night.sel.rear.cutoff.toFixed(1), dt: +dt.toFixed(3), step: +step.toFixed(2), ghostSteal, cam: [+lastCam.x.toFixed(1), +lastCam.z.toFixed(1)] });
+    }
   };
   // the player's lamps: from its model's vertex kinds when it has them (a faceted pack car), else its size
   let pLamps = null, pModel = null;
@@ -371,15 +568,32 @@ export function startCityNight({ scene, renderer, updaters, log = console.log })
   updaters.push(update);
   // tag the lamp-shadow casters as things arrive (tiles, fleets, landmarks): a sweep every 2 s, each mesh once
   let tagged = 0;
-  const sweep = () => { tagged += tagCasters(scene); };
+  const sweep = () => { tagged += tagCasters(scene, warmList); };
   setInterval(sweep, 2000);
   const api = {
     master: 1,                          // (A/B in one page: 0 = every night light off, the lighting model kept)
-    pool, night, lamps, ground, shadowLights, stats, nightParams,
+    shadowMode: SHADOW_MODE,            // (A/B in one page: "smart" / "full")
+    pool, night, lamps, ground, shadowLights, stats, nightParams, glare,
     addTile: (name, heads) => lamps.addTile(name, heads, performance.now()),
-    removeTile: (name) => lamps.removeTile(name),
+    removeTile: (name) => { lamps.removeTile(name); shopReg.removeTile(name); signReg.removeTile(name); },
+    /** step 5: a tile's shop / sign lights (Float32Array records of NIGHT_LIGHT_STRIDE, shopLayout.js) */
+    addShops: (name, rec) => {
+      if (!rec?.length) return;
+      const shops = [], shopItems = [], signs = [], signItems = [];
+      for (let o = 0; o + NIGHT_LIGHT_STRIDE <= rec.length; o += NIGHT_LIGHT_STRIDE) {
+        const at = { x: rec[o + 1], y: rec[o + 2], z: rec[o + 3] }, it = { nx: rec[o + 4], nz: rec[o + 5], hw: rec[o + 6], hh: rec[o + 7], col: [rec[o + 8], rec[o + 9], rec[o + 10]], b: 1 };
+        if (rec[o] === 0) { shops.push(at); shopItems.push(it); } else { signs.push(at); signItems.push(it); }
+      }
+      const now = performance.now();
+      shopReg.addTile(name, shops, now, shopItems); signReg.addTile(name, signs, now, signItems);
+    },
+    shops: shopReg, signs: signReg,
     setTraffic: (t) => { traffic = t; },
     setDriver: (d) => { driver = d; },
+    setTram: (t) => { tram = t; },
+    debug: dbg,                        // (?nightdebug=1: the pop metric, its worst events)
+    /** (checks) queue every lamp-shadow caster for the next by-day warm-up */
+    rewarm: () => { const t = performance.now() - WARM_DELAY; scene.traverse((o) => { if (o.isMesh && o.layers.isEnabled(LAMP_SHADOW_LAYER)) warmList.push(o, t); }); return warmList.length / 2; },
     /** the car-lamp offsets in use (check: forward z > 0 for the head, < 0 for the tail) */
     lampOffsets: () => [...lampsOf.entries()].map(([k, v]) => ({ type: traffic?.T?.types?.[k]?.name, ...v })),
   };
