@@ -125,7 +125,12 @@ texture). (4) Blank party walls look empty, with aliased dashed black lines on t
 station (Lukoil) looks far too cheap; there are several in the city: a PETROL STATION KIT (canopy, pumps, shop,
 signage, our own brand look). (7) SQUARE DES HEROS done far too cheaply: make it a hero plaza. (8) SHOPS far too cheap
 (flat fronts with a name): realistic shopfronts, some with an interior; restaurant TERRACES around Place Saint-Job.
-(9) Check whether some of these are solved in labs not yet in the city (docs/INVENTORY.md). (10) CAR FRONTS "all
+(9) Check whether some of these are solved in labs not yet in the city (docs/INVENTORY.md). (11) LAST IN THE QUEUE
+(owner): the new ROBOT CHARACTER from the owner's other chat (branch claude/character2, Y Bot / Mixamo locomotion):
+make sure it works in the city with all its animations (third person: walk / run / stairs / slopes / foot IK,
+collisions), then see whether it can be swapped for another character. The other chat is still working on that branch:
+test it in a separate worktree, report what works / breaks, and do NOT modify or merge claude/character2 without the
+owner. (10) CAR FRONTS "all
 look wrong" (screenshot: the blue faceted hatchback, faceted:hatch_c): the nose reads flat and squashed: the bonnet
 runs straight down into a shallow bumper, tiny headlights at the corners, a low flat grille, hard bright bands across
 the bonnet facets (flat shading / normals?); check the front geometry and normals (inverted or wrongly smoothed
