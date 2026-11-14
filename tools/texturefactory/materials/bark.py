@@ -217,6 +217,45 @@ def scales(T, P):
     return col, h, rough
 
 
+def chestnut_plates(T, P):
+    """old horse chestnut (the Uccle avenue trees): grey-brown bark broken by shallow fissures into thin, irregular,
+    roughly rectangular plates (5-15 cm, taller than wide), some lifting and curling at their edges, a few fallen off
+    showing the orange-brown / pinkish under-bark; fine vertical fibre on the plates, crustose lichen, green algae in
+    the fissures. (The spiral of old trunks is in the shader: viewer/treesHorseChestnut.js twists the mapping.)"""
+    # long vertical cells (the fissures between plate columns), cut by wavy horizontal cracks into plates
+    asp = P.get("stretch", 2.6)
+    wx = T.noise(P["cell"] * 2.0, 1, octaves=2) * P["cell"] * 0.15
+    wy = T.noise(P["cell"] * 2.0, 2, octaves=2) * P["cell"] * 0.3
+    F1, F2, ID, n = T.worley(P["cell"], 3, aniso=(1.0 / np.sqrt(asp), np.sqrt(asp)))
+    e = T.warp((F2 - F1) / np.sqrt(asp), wx, wy) + T.noise(P["cell"] * 0.4, 4) * P["fis_w"] * 0.35
+    IDw = T.warp(ID.astype(f32), wx, wy, interp=0).astype(np.int32)
+    rng = T.child(5)
+    off = rng.random(n + 1).astype(f32)[IDw]                            # each column's own crack phase
+    band = (T.yy + off * P["plate_h"] + T.noise(0.08, 6) * 0.012) / P["plate_h"]
+    cy = np.abs(band - np.round(band)) * P["plate_h"]                   # metres to the nearest cross crack
+    cross = smoothstep(P["fis_w"] * 0.7, 0.0, cy) * (rng.random(n + 1).astype(f32)[IDw] < 0.85)
+    pid = (IDw * 131 + np.round(band).astype(np.int32) * 7) % 9973
+    rnd = T.child(6).random(9973).astype(f32)[pid]
+    fis = smoothstep(P["fis_w"], 0.0, e)
+    inside = np.clip(1 - np.maximum(fis, cross), 0, 1)
+    # lifting edges: the plate's lower / side rims stand proud (curl), paler
+    rim = smoothstep(P["fis_w"] * 2.8, P["fis_w"] * 0.9, np.minimum(e, cy + P["fis_w"] * 0.2)) * inside
+    curl = rim * (rnd > 0.4)
+    fallen = (rnd > 1 - P.get("fallen", 0.06)).astype(f32) * inside
+    h = inside * P["depth"] * (0.75 + 0.5 * rnd) + curl * P["depth"] * 0.35 - fallen * P["depth"] * 0.5
+    h = h + T.noise(0.012, 31, octaves=2) * P["depth"] * 0.08 + T.blur(T.white(32) - 0.5, 0.0004) * P["depth"] * 0.1
+    col = lerp(hexcol(P["a"]), hexcol(P["b"]), rnd[..., None]) * (1 + T.noise(0.05, 33, octaves=3)[..., None] * 0.1)
+    col = lerp(col, hexcol(P["b"]) * 1.12, (curl * 0.4)[..., None])
+    col = lerp(col, hexcol(P["under"]), (fallen * 0.7)[..., None])
+    col = lerp(col, hexcol(P["fis_col"]), ((1 - inside) * 0.85)[..., None])
+    alg = smoothstep(0.4, 1.6, T.noise(0.3, 34, octaves=3)) * P.get("algae", 0.3)
+    col = lerp(col, hexcol("#5e6a3e"), np.clip(alg * (0.3 + (1 - inside)), 0, 0.7)[..., None])
+    lic, lr = lichen(T, 35, 0.08, P.get("lichen", 0.12) * 2, 0.004, 0.018)
+    col = lerp(col, lerp(hexcol("#a2a690"), hexcol("#b8b9a6"), lr[..., None]), lic * 0.55)
+    rough = 0.86 - fallen * 0.1 + (1 - inside) * 0.06
+    return col, h, rough
+
+
 def birch(T, P):
     h = T.noise(0.1, 1, octaves=3) * 0.0003
     lF1, _, lid, nl = T.worley(0.03, 2, aniso=(3.0, 0.5))
@@ -247,6 +286,9 @@ LIME = dict(cell=0.04, stretch=5.0, fis_w=0.004, depth=0.006, ridge_a="#6f665a",
 MAPLE = dict(cell=0.025, stretch=6.0, fis_w=0.0025, depth=0.004, ridge_a="#6c6862", ridge_b="#7d7870", fis_col="#2d2a27", algae=0.2)
 OAK = dict(cell=0.06, stretch=3.5, fis_w=0.012, depth=0.02, cross=0.07, ridge_a="#6d675d", ridge_b="#857e72", fis_col="#211d19", algae=0.3)
 CHESTNUT = dict(cell=0.06, a="#6a5e52", b="#7f7366", under="#8a5a3a")
+# the old avenue horse chestnut (Avenue Winston Churchill): grey-brown thin plates, orange-brown under-bark
+CHESTNUT_OLD = dict(cell=0.05, stretch=2.6, plate_h=0.09, fis_w=0.004, depth=0.005, fallen=0.06, a="#655b52", b="#7a7065", under="#8c6a50",
+                    fis_col="#2c2622", algae=0.3, lichen=0.12)
 
 
 def mk(fn, P, ao=0.02):
@@ -271,7 +313,8 @@ MATERIALS = {
     "bark_lime": {"size_m": 1.0, "category": "tree", "variants": {
         "a": {"seed": 221, "note": "lime: shallow interlacing fissures", "build": mk(fissured, LIME)}}},
     "bark_horsechestnut": {"size_m": 1.0, "category": "tree", "variants": {
-        "a": {"seed": 231, "note": "horse chestnut: lifting squarish scales", "build": mk(scales, CHESTNUT)}}},
+        "a": {"seed": 231, "note": "horse chestnut: lifting squarish scales", "build": mk(scales, CHESTNUT)},
+        "b": {"seed": 232, "note": "old horse chestnut: thin grey-brown plates, curling edges, orange under-bark", "build": mk(chestnut_plates, CHESTNUT_OLD, 0.025)}}},
     "bark_maple": {"size_m": 1.0, "category": "tree", "variants": {
         "a": {"seed": 241, "note": "Norway maple: fine regular fissures", "build": mk(fissured, MAPLE)}}},
     "bark_oak": {"size_m": 1.0, "category": "tree", "variants": {

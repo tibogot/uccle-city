@@ -433,6 +433,60 @@
   "albedo_ktx2_bytes": 2180857,
   "nra_ktx2_bytes": 4722482
  },
+ "tf_bark_horsechestnut_b_1k": {
+  "material": "bark_horsechestnut",
+  "category": "tree",
+  "source": "texfactory",
+  "id": "tf_bark_horsechestnut_b_1k",
+  "name": "Factory bark b 1K",
+  "licence": "CC0 (generated)",
+  "kind": "cc0",
+  "variant": "b",
+  "seed": 232,
+  "size_m": 1.0,
+  "lattice": null,
+  "note": "generated: old horse chestnut: thin grey-brown plates, curling edges, orange under-bark",
+  "url": "tools/texturefactory (materials/bark.py, seed 232)",
+  "mean_albedo_linear": [
+   0.1479,
+   0.1207,
+   0.0945
+  ],
+  "mean_roughness": 0.866,
+  "lum_std": 0.299,
+  "px": 1024,
+  "files": "generated/bark_horsechestnut/b/bark_horsechestnut_1k",
+  "albedo_webp_bytes": 163020,
+  "nra_webp_bytes": 2668446,
+  "albedo_ktx2_bytes": 820000,
+  "nra_ktx2_bytes": 1284066
+ },
+ "tf_bark_horsechestnut_b_2k": {
+  "material": "bark_horsechestnut",
+  "category": "tree",
+  "source": "texfactory",
+  "id": "tf_bark_horsechestnut_b_2k",
+  "name": "Factory bark b 2K",
+  "licence": "CC0 (generated)",
+  "kind": "cc0",
+  "variant": "b",
+  "seed": 232,
+  "size_m": 1.0,
+  "lattice": null,
+  "note": "generated: old horse chestnut: thin grey-brown plates, curling edges, orange under-bark",
+  "url": "tools/texturefactory (materials/bark.py, seed 232)",
+  "mean_albedo_linear": [
+   0.1479,
+   0.1207,
+   0.0945
+  ],
+  "mean_roughness": 0.866,
+  "lum_std": 0.299,
+  "px": 2048,
+  "files": "generated/bark_horsechestnut/b/bark_horsechestnut_2k",
+  "albedo_webp_bytes": 343648,
+  "nra_webp_bytes": 8716974
+ },
  "tf_bark_lime_a_1k": {
   "material": "bark_lime",
   "category": "tree",
@@ -1578,18 +1632,18 @@
   "licence": "CC0 (generated)",
   "season": "summer",
   "px": 1024,
-  "coverage": 0.341,
+  "coverage": 0.3926,
   "mean_albedo_linear": [
-   0.0442,
-   0.0891,
-   0.0145
+   0.0528,
+   0.1112,
+   0.0188
   ],
-  "mean_thickness": 0.323,
+  "mean_thickness": 0.307,
   "files": "generated/trees/leaf_horsechestnut",
   "n_file": "generated/trees/leaf_horsechestnut_n.ktx2",
-  "url": "tools/texturefactory (materials/leaves.py, seed 321)",
-  "a_ktx2_bytes": 409207,
-  "n_ktx2_bytes": 484429
+  "url": "tools/texturefactory (materials/leaves.py make_chestnut + tf/chestnut.py, seed 321)",
+  "a_ktx2_bytes": 513917,
+  "n_ktx2_bytes": 585167
  },
  "tf_leaf_horsechestnut_autumn": {
   "material": "leaf_horsechestnut",
@@ -1600,18 +1654,18 @@
   "licence": "CC0 (generated)",
   "season": "autumn",
   "px": 1024,
-  "coverage": 0.341,
+  "coverage": 0.3535,
   "mean_albedo_linear": [
-   0.2318,
-   0.0984,
-   0.0228
+   0.2322,
+   0.1423,
+   0.0296
   ],
-  "mean_thickness": 0.323,
+  "mean_thickness": 0.307,
   "files": "generated/trees/leaf_horsechestnut_autumn",
   "n_file": "generated/trees/leaf_horsechestnut_n.ktx2",
-  "url": "tools/texturefactory (materials/leaves.py, seed 321)",
-  "a_ktx2_bytes": 452570,
-  "n_ktx2_bytes": 484429
+  "url": "tools/texturefactory (materials/leaves.py make_chestnut + tf/chestnut.py, seed 321)",
+  "a_ktx2_bytes": 539078,
+  "n_ktx2_bytes": 585167
  },
  "tf_leaf_horsechestnut_spring": {
   "material": "leaf_horsechestnut",
@@ -1622,18 +1676,40 @@
   "licence": "CC0 (generated)",
   "season": "spring",
   "px": 1024,
-  "coverage": 0.341,
+  "coverage": 0.4051,
   "mean_albedo_linear": [
-   0.2085,
-   0.3432,
-   0.0456
+   0.2296,
+   0.3624,
+   0.0909
   ],
-  "mean_thickness": 0.323,
+  "mean_thickness": 0.338,
   "files": "generated/trees/leaf_horsechestnut_spring",
-  "n_file": "generated/trees/leaf_horsechestnut_n.ktx2",
-  "url": "tools/texturefactory (materials/leaves.py, seed 321)",
-  "a_ktx2_bytes": 445882,
-  "n_ktx2_bytes": 484429
+  "n_file": "generated/trees/leaf_horsechestnut_spring_n.ktx2",
+  "url": "tools/texturefactory (materials/leaves.py make_chestnut + tf/chestnut.py, seed 321)",
+  "a_ktx2_bytes": 571167,
+  "n_ktx2_bytes": 603690
+ },
+ "tf_leaf_horsechestnut_winter": {
+  "material": "leaf_horsechestnut",
+  "category": "tree",
+  "kind": "leaf",
+  "source": "texfactory",
+  "id": "tf_leaf_horsechestnut_winter",
+  "licence": "CC0 (generated)",
+  "season": "winter",
+  "px": 1024,
+  "coverage": 0.0638,
+  "mean_albedo_linear": [
+   0.1309,
+   0.0963,
+   0.0763
+  ],
+  "mean_thickness": 0.962,
+  "files": "generated/trees/leaf_horsechestnut_winter",
+  "n_file": "generated/trees/leaf_horsechestnut_winter_n.ktx2",
+  "url": "tools/texturefactory (materials/leaves.py make_chestnut + tf/chestnut.py, seed 321)",
+  "a_ktx2_bytes": 129096,
+  "n_ktx2_bytes": 164507
  },
  "tf_leaf_lime": {
   "material": "leaf_lime",
