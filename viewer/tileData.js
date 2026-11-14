@@ -19,6 +19,7 @@ import { buildTrafficGraph } from "./traffic/trafficGraph.js";
 import { loadTunnels, tunnelRoads, tunnelCut, tunnelRecut, tunnelGround, tunnelTrees, tunnelTerrain, tunnelSurface, tunnelFenceRings } from "./rail/tunnels.js";
 import { grassTypeData } from "./grass/grassTypes.js";
 import { applyParkSquares, carveFlights, withoutLines } from "./heros/herosSurface.js";
+import { drawnGround, sinkFeet, footprintIndex } from "./groundFit.js";
 
 let railP = null;
 let grassKindsP = null;
@@ -41,7 +42,7 @@ export const TERRAIN_ERROR = 0.05;
 // "v1" = the road engine's own (?paint=v1 in the city, the before/after toggle in the Road Lab)
 export const PAINT = "v2";
 
-function terrainArrays(hm) {
+function terrainArrays(hm, fitDiagonals = false) {
   const { x0, z0, cols, rows, step } = hm.h, Y = hm.y;
   const pos = new Float32Array(cols * rows * 3), nrm = new Float32Array(cols * rows * 3);
   for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
@@ -56,6 +57,13 @@ function terrainArrays(hm) {
   let o = 0;
   for (let r = 0; r < rows - 1; r++) for (let c = 0; c < cols - 1; c++) {
     const a = r * cols + c, b = a + cols, cc = a + 1, d = b + 1;   // (a, b, c) faces +y with +z = south
+    // (ground fit, docs/GROUND_FIT.md "blocky") each cell split along its flatter diagonal: a bank or a kerb shoulder
+    // running diagonally across the grid is one straight crease, not a saw-tooth of folds (the split b-c everywhere)
+    if (fitDiagonals && Math.abs(Y[a] - Y[d]) < Math.abs(Y[b] - Y[cc]) - 0.01) {
+      idx[o++] = a; idx[o++] = b; idx[o++] = d;
+      idx[o++] = a; idx[o++] = d; idx[o++] = cc;
+      continue;
+    }
     idx[o++] = a; idx[o++] = b; idx[o++] = cc;
     idx[o++] = cc; idx[o++] = b; idx[o++] = d;
   }
@@ -316,7 +324,7 @@ export async function buildTileData(entry, base) {
   // control from OSM, conflicts). Round 4: built on the roads2 network (rd.net, its lane graph already repaired by
   // viewer/streets/laneGraph.js) and the measured class raster
   const traffic = await step("traffic graph", () => buildTrafficGraph(net, roads, feats, bounds, road.surfaceData?.grid));
-  const terrain = await step("terrain grid", () => terrainArrays(hm));
+  const terrain = await step("terrain grid", () => terrainArrays(hm, entry.groundFit !== false));
   // the tunnels: the drawn earth over the bores (the lid) and the ground clipped at the walls (tunnels.js)
   if (tcut) netInfo.tunnels = await step("tunnel terrain", () => tunnelTerrain(tcut, terrain, hm, rail?.doc, bounds));
   await step("terrain simplify", async () => {
@@ -349,14 +357,23 @@ export async function buildTileData(entry, base) {
   drive.counts.hidden = nb - bDoc.buildings.length;     // solids a hero model replaces (it collides by its own LOD0)
   // ?kit=1: the façade kit's placement (viewer/facadeKit/placement.js) runs inside the analysis, here in the worker;
   // entry.kitExclude = BU_IDs a hero model or the interior pilot replaces
-  const kit = entry.kit ? kitCollector({ exclude: new Set(entry.kitExclude || []), ground: (x, z) => hm.ground(x, z) }) : null;
+  // the ground AS DRAWN (terrain after carve / weld + the street surfaces): the façades' ground-floor line and the kit's
+  // door steps stand on it (viewer/groundFit.js, docs/GROUND_FIT.md); entry.groundFit === false (?groundfit=old): the
+  // lowest DTM point and the bare DTM, as before
+  const fitGround = entry.groundFit !== false ? await step("ground fit", () => drawnGround(hm, road.parts)) : null;
+  const kit = entry.kit ? kitCollector({ exclude: new Set(entry.kitExclude || []), ground: fitGround || ((x, z) => hm.ground(x, z)) }) : null;
   // entry.streetlife (the street-life layer, viewer/streetlife/, on by default in the city): its shopfronts replace the
   // OSM shop points of the façade analysis (data/streetlife/<T>.json; a tile without one keeps the OSM shops)
   const fronts = entry.streetlife ? await step("street-life fronts", () => streetlifeFronts(base, entry.name)) : null;
   // entry.roofs !== false: the roof kit (viewer/roofs/roofPlace.js, docs/assets/ROOFS.md; ?roofs=old = the roofs before)
   const roofKit = entry.roofs !== false ? roofCollector() : null;
-  const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit }));
+  // the walls' feet down to the drawn ground where they stood over it (JOINS; viewer/groundFit.js sinkFeet): the façades
+  // are built from these walls (the drive colliders and the roof grids above already read the solids)
+  const feet = fitGround && bBuf ? await step("wall feet", () => { const dv = new DataView(bBuf), V = dv.getUint32(0, true), T = dv.getUint32(4, true);
+    return sinkFeet(bDoc, new Float32Array(bBuf, 8, V * 3), new Uint32Array(bBuf, 8 + V * 12, T * 3), fitGround, footprintIndex(bDoc)); }) : null;
+  const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []) }));
   // what the roof kit stands on the roofs, in the falcon's drawn-roof grid (it collides with what is drawn)
+  if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
   const cover = await step("land cover", () => landCoverData(withoutLines(feats, entry.heros?.paths), bounds));   // (Square des Heros: its paths are the hero ground's)
   return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs, drive,
