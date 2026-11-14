@@ -13234,19 +13234,33 @@ function carveFlights(hm, carves) {
     const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz;
     const xs = r.map((p) => p[0]), zs = r.map((p) => p[1]);
     const M = 1;
-    const c0 = Math.max(0, Math.floor((Math.min(...xs) - M - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(...xs) + M - x0) / step));
-    const r0 = Math.max(0, Math.floor((Math.min(...zs) - M - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(...zs) + M - z0) / step));
+    const R = Math.max(M, c.fill?.reach ?? 0);
+    const c0 = Math.max(0, Math.floor((Math.min(...xs) - R - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(...xs) + R - x0) / step));
+    const r0 = Math.max(0, Math.floor((Math.min(...zs) - R - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(...zs) + R - z0) / step));
     for (let j = r0; j <= r1; j++) for (let i = c0; i <= c1; i++) {
       const x = x0 + i * step, z = z0 + j * step;
       const t = Math.min(1, Math.max(0, ((x - ax) * dx + (z - az) * dz) / L2));
       const line = c.h_from + (c.h_to - c.h_from) * t, k = j * cols + i;
-      let h;
-      if (inRing3(r, x, z)) h = Math.max(c.floor, line - 0.27);
-      else if (distRing(r, x, z) < M) h = line + 0.18;
-      else continue;
-      if (h < hm.y[k] - 1e-4) {
-        hm.y[k] = h;
+      if (inRing3(r, x, z)) {
+        const h = Math.max(c.floor, line - 0.27);
+        if (h < hm.y[k] - 1e-4) {
+          hm.y[k] = h;
+          n++;
+        }
+        continue;
+      }
+      const d = distRing(r, x, z);
+      if (d < M && line + 0.18 < hm.y[k] - 1e-4) {
+        hm.y[k] = line + 0.18;
         n++;
+      }
+      const f = c.fill, tr = ((x - ax) * dx + (z - az) * dz) / L2;
+      if (f && tr >= 0 && tr <= 1 && d < f.reach) {
+        const h = line + f.over_line - Math.max(0, d - f.flat) * f.slope;
+        if (h > hm.y[k] + 1e-4) {
+          hm.y[k] = h;
+          n++;
+        }
       }
     }
   }

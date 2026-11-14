@@ -53,9 +53,9 @@ CODES = ["plain", "panel", "letters", "nosing", "riser", "tread", "kerb", "relie
 (C_PLAIN, C_PANEL, C_LETTERS, C_NOSING, C_RISER, C_TREAD, C_KERB, C_RELIEF, C_BOUQUET, C_ANIMAL, C_RAIL, C_POST,
  C_FINIAL, C_CAP, C_PLINTH, C_SEAT) = range(16)
 FAR = lambda: K.FAR
-# the lettering atlas cells (tools/heros_letters.py writes the same table into textures/heros/heros_letters.json)
-# (ONLY the real texts: the names' panels are uninscribed, no reliable transcription of the monument exists for us)
-CELL_FRONT, CELL_YEARS = range(2)
+# codes re-used with a slot-specific meaning (16 codes max in COLOR_0.r): on plant_grass "finial" = a flower head; on
+# cast_iron_green "panel" = lantern glass, "cap" = the floodlight's grey housing, "seat" = a bin's red band
+C_BLOOM, C_GLASS, C_HOUSING, C_BAND = 12, 1, 13, 15
 
 # ------------------------------------------------------------------------------------------------ LEVELS (m TAW)
 # the terrace: DTM 50.46-50.60 at 4.5-6 m round the centre (median 50.55); the DSM shows the platform ring at ~3.6-4.1 m
@@ -66,20 +66,34 @@ PT = T + 0.16                    # the round platform's top (one low step, bulln
 PLAT_R = SITE.get("platform_r", 4.05)
 SEAT = PT + 0.45                 # the 1948 benches' seats
 WALL_TOP = PT + 1.08             # the benches' backs = the names' panels; coping on top
-RAIL_H = 0.74                    # the wrought-iron railing over the coping
+RAIL_H = 0.62                    # the railing over the coping (the owner's photo: low, dark green, spear-topped bars)
 BED = WALL_TOP - 0.16            # the soil inside the enclosure
 OCT_R = sum(MON["wall_radius"]) / 2      # 3.04: the OSM octagon (outer wall face), vertices at 22.5 + 45 k degrees
 OCT_A = OCT_R * math.cos(math.pi / 8)    # its apothem 2.81
 WALL_T = 0.36
 SEAT_D = 0.42
-# the obelisk (OSM base 2.38 x 2.25; photos: pedestal, moulded plinth, tapering shaft, a two-step cap under the rock)
-PED = (1.17, 1.11, PT + 1.78)    # half sizes u, w; top
-PLI = (0.94, 0.89, PT + 2.32)
-SHAFT0, SHAFT1 = (0.8, 0.75), (0.63, 0.58)
-SHAFT_TOP = PT + 6.0
-CAP1 = (0.73, 0.68, SHAFT_TOP + 0.22)
-CAP2 = (0.6, 0.55, SHAFT_TOP + 0.42)
-STATUE_BASE = CAP2[2]
+# the obelisk (OSM base 2.38 x 2.25; the owner's photos 2026-11: a stout tapering shaft of four stones (a plain top stone,
+# the French inscription, the Dutch one, the Saint Peter relief), its moulded plinth just over the railing's top, a thin
+# cap slab under the rock; shaft ~2.7 x as tall as wide at the top, taper ~0.89)
+PED = (1.17, 1.11, PT + 1.45)    # half sizes u, w; top
+PLI = (0.98, 0.93, PT + 1.95)
+SHAFT0, SHAFT1 = (0.84, 0.79), (0.74, 0.69)
+SHAFT_TOP = PT + 6.2
+JOINTS = [PLI[2] + 1.25, PLI[2] + 2.25, PLI[2] + 3.25]     # the bed joints: relief / NL / FR / top stones
+CAP1 = (0.8, 0.75, SHAFT_TOP + 0.18)
+CAP2 = (0.7, 0.65, SHAFT_TOP + 0.24)
+STATUE_BASE = CAP2[2]            # 57.15 (DSM 57.34 with the rock's foot)
+STATUE_H = 4.5                   # the bronze group incl. its rock, cap top -> the raised wing's tip: ~4.5 m (the owner's
+                                 # photos: 1.0-1.15 x the visible shaft, 3.0-3.2 x the shaft's top width; Commons C2)
+ROCK_H = 0.36                    # the rock under the bronze: grey stone in the photos (not gilded)
+
+# THE LETTERING CELLS (tools/heros_letters.py draws them; textures/heros/heros_letters.json lists the ones with text):
+# fixed indices; every one is a lettered face in the model from the start, so names can be engraved later without
+# rebuilding the model (a cell absent from the atlas reads as plain stone)
+CELL_NAMES = ["front_fr", "front_nl", "years", "shaft_w_1", "shaft_w_2", "shaft_n_1", "shaft_n_2", "shaft_e_1", "shaft_e_2"] + \
+             [f"bench_{k}" for k in range(8)]
+CELL = {n: i for i, n in enumerate(CELL_NAMES)}
+CELL_SIZES = {}                  # name -> (s, v) metres, filled while building LOD0
 
 # ------------------------------------------------------------------------------------------------ helpers
 def PW(u, w, h): return P(u, w, h)
@@ -134,8 +148,15 @@ def letters_face(corners, cell, s_len, v_len, mat=STONE, out=None):
         right = Z.cross(out) if abs(out.z) < 0.9 else Vector((1, 0, 0))   # (a horizontal face: s along the given order)
         if abs(out.z) < 0.9 and (br - bl).dot(right) < 0: bl, br, tr, tl = br, bl, tl, tr
         assert newell_dot([bl, br, tr, tl], out) > 0, "lettered face wound inward"
+    if isinstance(cell, str):
+        CELL_SIZES[cell] = (round(s_len, 4), round(v_len, 4)); cell = CELL[cell]
     o = 1000.0 * (cell + 1)
-    K.B.face([bl, br, tr, tl], mat, C_LETTERS, [(o, 1.0), (o + s_len, 1.0), (o + s_len, 1.0 - v_len), (o, 1.0 - v_len)])
+    # METRIC planar UVs (s along the bottom edge, v up the face, both in metres from the bottom-left corner): a tapered
+    # (trapezoid) face keeps the letters undistorted (corner-pinned UVs sheared one of its two triangles: italic letters);
+    # the narrower top only trims the cell's margins
+    R = (br - bl).normalized(); nrm_ = R.cross(tl - bl).cross(R).normalized()      # (in the face's plane, toward its top)
+    uvs = [(o + (p - bl).dot(R), 1.0 - (p - bl).dot(nrm_)) for p in (bl, br, tr, tl)]
+    K.B.face([bl, br, tr, tl], mat, C_LETTERS, uvs)
 
 # ------------------------------------------------------------------------------------------------ THE PLATFORM
 def platform():
@@ -213,7 +234,7 @@ def enclosure():
                 face_dir([st0, fr.p(s0 + 0.18, hz(SEAT), seat_front - ch), fr.p(s0 + 0.18, hz(SEAT), 0.0), sb0], Z, STONE, C_SEAT)
                 face_dir([fr.p(s1 - 0.18, hz(SEAT), seat_front - ch), st1, sb1, fr.p(s1 - 0.18, hz(SEAT), 0.0)], Z, STONE, C_SEAT)
                 letters_face([fr.p(s0 + 0.18, hz(SEAT), seat_front - ch), fr.p(s1 - 0.18, hz(SEAT), seat_front - ch),
-                              fr.p(s1 - 0.18, hz(SEAT), 0.0), fr.p(s0 + 0.18, hz(SEAT), 0.0)], CELL_YEARS, L, seat_front - ch, out=Z)
+                              fr.p(s1 - 0.18, hz(SEAT), 0.0), fr.p(s0 + 0.18, hz(SEAT), 0.0)], "years", L, seat_front - ch, out=Z)
             else:
                 face_dir([st0, st1, sb1, sb0], Z, STONE, C_SEAT)
         else:
@@ -227,7 +248,11 @@ def enclosure():
             outer_r = rect(-hs, v0, hs, v1); hole = rect(-hs + 0.3, v0 + pf, hs - 0.3, v1 - pf)
             fill2d(fr, [outer_r, list(reversed(hole))], 0.0, STONE, C_PANEL)
             strip2d(fr, hole, 0.0, -0.02, STONE, C_PANEL)
-            fill2d(fr, [hole], -0.02, STONE, C_PANEL)      # uninscribed (the names: no reliable transcription)
+            # the names' panel: a lettered face (cell bench_k) from the start; uninscribed until models/heros/names.json
+            # has the names (tools/heros_letters.py), then they read without rebuilding the model
+            hs0, hv0, hs1, hv1 = -hs + 0.3, v0 + pf, hs - 0.3, v1 - pf
+            letters_face([fr.p(hs0, hv0, -0.02), fr.p(hs1, hv0, -0.02), fr.p(hs1, hv1, -0.02), fr.p(hs0, hv1, -0.02)],
+                         f"bench_{k}", hs1 - hs0, hv1 - hv0, out=fr.N)
     # the coping: ONE octagonal ring slab over the wall (3 cm proud outside and inside), its underside closed
     co = octagon((OCT_A + 0.03) / math.cos(math.pi / 8)); ci = octagon((OCT_A - WALL_T - 0.03) / math.cos(math.pi / 8))
     v1 = WALL_TOP - 0.07
@@ -252,8 +277,8 @@ def enclosure():
     grasses()
 
 def corners():
-    """the corner blocks between the benches: a pedestal at seat height with a small animal (DSC_4602: a frog), the
-    pilaster behind it carved with a bouquet of roses (IMG_0040) up to the panel's top"""
+    """the corner blocks between the benches: a low pedestal at seat height carrying a carved bouquet of roses (the
+    owner's photo, C2; IMG_0040) or, on the two back corners, a small animal (DSC_4602: a frog), a pilaster behind"""
     for k in range(8):
         th = 2 * math.pi * (k + 0.5) / 8           # the octagon's vertex between side k and k + 1
         cu, cw = OCT_R * math.cos(th), OCT_R * math.sin(th)
@@ -266,22 +291,23 @@ def corners():
         box(Vector((c.x, c.y, 0)), t, Z, n, -0.2, 0.2, hz(SEAT + 0.12), hz(WALL_TOP - 0.07), -0.25, 0.14, STONE, C_PLINTH, skip=("bottom",))
         if FAR():
             continue
-        # the bouquet of roses (IMG_0040 / DSC_4602): carved as ONE form in front of the pilaster's top: a fluted sheaf of
-        # stems flaring up into a domed head of roses, the dome scalloped into rose heads (lobes round it and over the top)
-        # with a spiral petal groove in each: reads as a carved bouquet at street distance, no loose blobs
-        bc = c + n * 0.2 + Z * (hz(WALL_TOP) - 0.4)
-        rose_bouquet(bc, n, t)
-        # the animal on the pedestal (alternately a frog and a tortoise; the photos show a frog and leave the rest unclear)
-        ac = c + n * 0.3 + Z * hz(SEAT + 0.12)
-        if k % 2 == 0:
-            blob(ac + Z * 0.07 + n * 0.0, 0.11, 0.1, 0.075, STONE, C_ANIMAL, segs=10, rings=6)          # the body
-            blob(ac + Z * 0.11 + n * 0.08, 0.075, 0.07, 0.055, STONE, C_ANIMAL, segs=10, rings=5)       # the head
-            for e in (-1, 1):
-                blob(ac + Z * 0.15 + n * 0.11 + t * (0.035 * e), 0.02, 0.02, 0.018, STONE, C_ANIMAL, segs=6, rings=3)  # the eyes
-                blob(ac + Z * 0.03 + n * -0.02 + t * (0.11 * e), 0.06, 0.045, 0.035, STONE, C_ANIMAL, segs=7, rings=4)  # the haunches
+        # the corner pieces (the owner's photo from the steps, Commons C2: the carved "pineapple" bouquets of roses sit ON
+        # the low corner pedestals, their crowns near the coping; H4: a frog on its block): bouquets on the six front and
+        # side corners, the frog and a tortoise on the two back ones
+        top = c + Z * hz(SEAT + 0.12)
+        if k in (3, 4):
+            ac = top + n * 0.3
+            if k == 3:
+                blob(ac + Z * 0.07, 0.11, 0.1, 0.075, STONE, C_ANIMAL, segs=10, rings=6)                    # the body
+                blob(ac + Z * 0.11 + n * 0.08, 0.075, 0.07, 0.055, STONE, C_ANIMAL, segs=10, rings=5)       # the head
+                for e in (-1, 1):
+                    blob(ac + Z * 0.15 + n * 0.11 + t * (0.035 * e), 0.02, 0.02, 0.018, STONE, C_ANIMAL, segs=6, rings=3)  # the eyes
+                    blob(ac + Z * 0.03 + n * -0.02 + t * (0.11 * e), 0.06, 0.045, 0.035, STONE, C_ANIMAL, segs=7, rings=4)  # the haunches
+            else:
+                blob(ac + Z * 0.05, 0.14, 0.12, 0.07, STONE, C_ANIMAL, segs=12, rings=5)                   # the shell
+                blob(ac + Z * 0.04 + n * 0.15, 0.045, 0.04, 0.035, STONE, C_ANIMAL, segs=8, rings=4)       # the head
         else:
-            blob(ac + Z * 0.05, 0.14, 0.12, 0.07, STONE, C_ANIMAL, segs=12, rings=5)                   # the shell
-            blob(ac + Z * 0.04 + n * 0.15, 0.045, 0.04, 0.035, STONE, C_ANIMAL, segs=8, rings=4)       # the head
+            rose_bouquet(top + n * 0.27 + Z * 0.255, n, t)
 
 def rose_bouquet(bc, n, t, segs=42, rings=24):
     """a carved bouquet round the vertical axis through bc: a fluted sheaf (z -0.26..-0.04) under a scalloped dome
@@ -324,15 +350,29 @@ def rose_bouquet(bc, n, t, segs=42, rings=24):
     face_dir([grid[0][k] for k in range(segs)], -Z, STONE, C_BOUQUET)
 
 def railing_rails(V8, h0, h1):
-    """the three rails as closed octagonal rings (no box ends overlapping at the corners): a flat bar 35 x 24 mm on top,
-    two 20 x 24 mm bars under it"""
-    for hh, w_, d_ in ((h1, 0.035, 0.012), (h1 - 0.14, 0.02, 0.012), (h0 + 0.07, 0.02, 0.012)):
+    """the two rails as closed octagonal rings (no box ends overlapping at the corners): a flat bar 40 x 14 mm under the
+    spear tips, a 30 x 12 mm bottom rail 8 cm over the coping"""
+    for hh, w_, d_ in ((h1 - 0.02, 0.04, 0.0105), (h0 + 0.08, 0.03, 0.0105)):     # (thicker than the 15 mm bars: they end inside)
         path = [PW(p[0], p[1], hh - w_ / 2) for p in V8] + [PW(V8[0][0], V8[0][1], hh - w_ / 2)]
-        sweep3d(path, [(-d_, -w_ / 2), (d_, -w_ / 2), (d_, w_ / 2), (-d_, w_ / 2), (-d_, -w_ / 2)], Z, IRON, C_RAIL, closed=True, caps=False)
+        sweep3d(path, [(-d_, -w_ / 2), (d_, -w_ / 2), (d_, w_ / 2), (-d_, w_ / 2), (-d_, -w_ / 2)], Z, GREEN, C_RAIL, closed=True, caps=False)
+
+def spear(p, D, S, r, z0, h):
+    """a spear tip on a bar: a square pyramid with a collar (4 + 4 faces), its base buried in the bar's top"""
+    K.B.new_group()
+    c = [p + D * (r * a) + S * (r * b) for a, b in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+    q = [p + D * (r * 1.7 * a) + S * (r * 1.7 * b) for a, b in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+    tip = p + Z * (z0 + h)
+    face_dir([x + Z * (z0 - 0.01) for x in c], -Z, GREEN, C_FINIAL)
+    for i in range(4):
+        a, b = c[i], c[(i + 1) % 4]; qa, qb = q[i], q[(i + 1) % 4]
+        out = ((a + b) / 2 - p); out.z = 0
+        face_dir([a + Z * (z0 - 0.01), b + Z * (z0 - 0.01), qb + Z * (z0 + h * 0.3), qa + Z * (z0 + h * 0.3)], out + Z * 0.3, GREEN, C_FINIAL)
+        face_dir([qa + Z * (z0 + h * 0.3), qb + Z * (z0 + h * 0.3), tip], out + Z * 0.6, GREEN, C_FINIAL)
 
 def railing():
-    """black wrought iron on the coping (IMG_0040, DSC_4594): square posts with a ball finial at every corner and mid-side,
-    a top rail, a second rail 14 cm under it with a row of rings between the two, square bars every 12 cm"""
+    """the railing on the coping (the owner's photo from the steps, C2 2025): dark green painted iron, square posts with a
+    ball finial at every corner and mid-side, round bars every 11 cm rising 8 cm over the top rail to spear tips, a top
+    and a bottom rail (no row of rings any more: the 2025 railing has plain bars)"""
     rc = OCT_A - WALL_T / 2                          # on the coping's centre line
     h0, h1 = WALL_TOP, WALL_TOP + RAIL_H
     rR = rc / math.cos(math.pi / 8)
@@ -342,55 +382,51 @@ def railing():
         a = Vector(V8[k]); b = Vector(V8[(k + 1) % 8])
         A = PW(a.x, a.y, OY); B = PW(b.x, b.y, OY)          # on Blender z = 0: heights added below
         D = (B - A); L = D.length; D.normalize(); S = D.cross(Z)
-        for m in (0.0, 0.5):                       # posts at the corner and mid-side
+        for m in (0.0, 0.5):                       # posts at the corner and mid-side, a little taller, a ball on a neck
             p = A + D * (L * m)
-            wbox(p, D, S, 0.022, 0.022, hz(h0) - 0.02, hz(h1) + 0.031, IRON, C_POST)
-            lathe(p + Z * (hz(h1) + 0.03), [(0.0, 0.0), (0.03, 0.012), (0.035, 0.035), (0.02, 0.06), (0.0, 0.07)], 8, IRON, C_FINIAL)
-        nb = max(2, int(L / 0.12))
+            wbox(p, D, S, 0.02, 0.02, hz(h0) - 0.02, hz(h1) + 0.09, GREEN, C_POST)
+            lathe(p + Z * (hz(h1) + 0.089), [(0.0, 0.0), (0.026, 0.0), (0.026, 0.012), (0.012, 0.02), (0.012, 0.03), (0.026, 0.042),
+                                            (0.03, 0.06), (0.024, 0.078), (0.0, 0.088)], 10, GREEN, C_FINIAL)
+        nb = max(2, round(L / 0.11))
         for j in range(1, nb):
             p = A + D * (L * j / nb)
-            if j * 2 == nb: continue                       # (the mid-side post stands there)
-            wbox(p, D, S, 0.007, 0.007, hz(h0 + 0.06), hz(h1 - 0.145), IRON, C_RAIL)
-        nr = max(2, int(L / 0.14))
-        for j in range(nr):
-            p = A + D * (L * (j + 0.5) / nr) + Z * (hz(h1 - 0.07))
-            lathe_axis(p, S, Z, [(0.055, -0.006), (0.062, -0.006), (0.062, 0.006), (0.055, 0.006), (0.055, -0.006)], 10, IRON, C_RAIL)
+            if abs(L * j / nb - L / 2) < 0.05: continue     # (the mid-side post stands there)
+            lathe_axis(p + Z * (hz(h0) + 0.07), Z, Vector((1, 0, 0)), [(0.0075, 0.0), (0.0075, RAIL_H - 0.07 + 0.06)], 6, GREEN, C_FINIAL,
+                       cap_top=True, cap_bottom=True)    # ("finial" on the iron: the round, smooth-shaded parts)
+            spear(p, D, S, 0.0055, hz(h1) + 0.06, 0.07)
 
 def grasses():
-    """ornamental grasses in the bed (DSC_4594, summer 2025: pale straw clumps above the railing's foot), each a fan of
-    thin wedge blades"""
-    rin = OCT_A - WALL_T - 0.15
-    n = 10 if FAR() else 34
+    """the flower bed (the owner's photo from the steps: low bedding plants filling the bed inside the railing, orange and
+    yellow marigolds, red begonias, ~0.2-0.3 m): overlapping low leafy mounds (the shader dots them with flowers from
+    above) with a few flower heads each; far: fewer, bigger mounds, no heads"""
+    rin = OCT_A - WALL_T - 0.08
     r2 = random.Random(48)
-    for i in range(n):
-        a = 2 * math.pi * (i + r2.random() * 0.6) / n
-        rr = r2.uniform(PED[0] * 1.15, rin)
-        rr = min(rr, rin / max(abs(math.cos(a)), abs(math.sin(a)), 0.92))
-        cu, cw = rr * math.cos(a), rr * math.sin(a)
-        if abs(cu) < PED[0] + 0.12 and abs(cw) < PED[1] + 0.12: continue
-        c = PW(cu, cw, BED - 0.02)
-        nb = 4 if FAR() else 9
-        hgt = r2.uniform(0.55, 0.8)
-        K.B.new_group()
-        for j in range(nb):
-            ang = 2 * math.pi * j / nb + r2.random() * 0.5
-            lean = r2.uniform(0.15, 0.4)
-            d = Vector((math.cos(ang), math.sin(ang), 0))
-            b0 = c + d * 0.035
-            tip = b0 + d * (lean * hgt) + Z * hgt * r2.uniform(0.85, 1.05)
-            side = d.cross(Z).normalized()
-            mid = b0 + d * (lean * hgt * 0.35) + Z * (hgt * 0.6)
-            # a blade: a thin closed wedge (a 2 cm wide strip with a 6 mm keel behind it), tapering to the tip
-            K.B.new_group()
-            a0, a1, k0 = b0 - side * 0.01, b0 + side * 0.01, b0 - d * 0.006
-            m0, m1, km = mid - side * 0.008, mid + side * 0.008, mid - d * 0.005
-            face_dir([a0, a1, m1, m0], d, PLANT, C_PLAIN)
-            face_dir([a1, k0, km, m1], (side - d).normalized(), PLANT, C_PLAIN)
-            face_dir([k0, a0, m0, km], (-side - d).normalized(), PLANT, C_PLAIN)
-            face_dir([m0, m1, tip], d, PLANT, C_PLAIN)
-            face_dir([m1, km, tip], (side - d).normalized(), PLANT, C_PLAIN)
-            face_dir([km, m0, tip], (-side - d).normalized(), PLANT, C_PLAIN)
-            face_dir([a0, k0, a1], -Z, PLANT, C_PLAIN)
+    pitch = 0.62 if FAR() else 0.34
+    pts = []
+    for i in range(-12, 13):
+        for j in range(-12, 13):
+            u = (i + (0.5 if j % 2 else 0.0)) * pitch + r2.uniform(-0.08, 0.08); w = j * pitch * 0.866 + r2.uniform(-0.08, 0.08)
+            a = math.atan2(w, u); r = math.hypot(u, w)
+            # inside the inner octagon (apothem rin), outside the pedestal (+ 8 cm)
+            ap = max(abs(math.cos(a - math.pi / 4 * round(a / (math.pi / 4)))), 1e-3)
+            if r * ap > rin - 0.12 or (abs(u) < PED[0] + 0.1 and abs(w) < PED[1] + 0.1): continue
+            pts.append((u, w))
+    for (u, w) in pts:
+        rr = r2.uniform(0.22, 0.28) * (1.4 if FAR() else 1.0)
+        hh = r2.uniform(0.1, 0.16)
+        c = PW(u, w, BED)
+        # a low dome (its foot 3 cm into the soil), smooth shaded: the shader dots it with round flowers from above
+        foot = -(0.025 + 0.0012 * pts.index((u, w)))     # (every foot at its own depth, 1.2 mm apart: no coplanar bottoms)
+        prof = [(rr, foot), (rr * 0.97, hh * 0.3), (rr * 0.8, hh * 0.65), (rr * 0.45, hh * 0.93), (0.0, hh)]
+        ns = 6 if FAR() else 9
+        lathe(c, prof if not FAR() else [prof[0], prof[2], prof[4]], ns, PLANT, C_PLAIN)
+        face_dir([c + Vector((rr * math.cos(2 * math.pi * k / ns), rr * math.sin(2 * math.pi * k / ns), foot)) for k in range(ns)], -Z, PLANT, C_PLAIN)
+        if FAR(): continue
+        for q in range(2):                       # a couple of heads standing proud of the mound
+            ang = r2.uniform(0, 2 * math.pi); rad = r2.uniform(0.0, 0.6) * rr
+            z = hh * math.sqrt(max(0.0, 1 - (rad / rr) ** 2)) + 0.002
+            hc = c + Vector((math.cos(ang) * rad, math.sin(ang) * rad, z))
+            blob(hc, 0.026, 0.026, 0.015, PLANT, C_BLOOM, segs=5, rings=2)
 
 # ------------------------------------------------------------------------------------------------ THE OBELISK
 def obelisk():
@@ -414,35 +450,74 @@ def obelisk():
     frustum(CAP2[0], CAP2[1], CAP2[0] - 0.02, CAP2[1] - 0.02, CAP1[2], CAP2[2], STONE, C_CAP, top=True)
 
 def shaft():
-    """the tapering shaft, each face split in rows / columns so the lettered panel is its own quad: the front carries the
-    1914-1918 inscription over the Saint Peter relief; the three others (the names of 1914-1918 in reality) uninscribed:
-    no reliable transcription of the monument's lists was found"""
+    """the tapering shaft as its four stones (the owner's photos): bed joints as V grooves (1.6 cm wide, 8 mm deep) all
+    round; every stone face a quad of its own. The front: the top stone plain, the French inscription with 1914-1918 on
+    the next, the Dutch one under it, the Saint Peter relief on the lowest; the three other faces (the names of the 138
+    dead of 1914-1918 in reality) carry LETTERED faces on their two middle stones (cells shaft_<w|n|e>_<1|2>): blank
+    until models/heros/names.json has the names"""
     h0, h1 = PLI[2], SHAFT_TOP
-    def at(su, sw, h):                             # a point on the shaft at fraction (su, sw) of the half sizes, height h
+    def half(h):
         f = (h - h0) / (h1 - h0)
-        a = SHAFT0[0] + (SHAFT1[0] - SHAFT0[0]) * f; b = SHAFT0[1] + (SHAFT1[1] - SHAFT0[1]) * f
-        return PW(su * a, sw * b, h)
-    # faces: (outward normal (u, w), the 4 corners' (su, sw) from the viewer's left to right seen from outside)
-    faces = [((1, 0), ((1, 1), (1, -1)), CELL_FRONT), ((0, -1), ((1, -1), (-1, -1)), None),
-             ((-1, 0), ((-1, -1), (-1, 1)), None), ((0, 1), ((-1, 1), (1, 1)), None)]
-    rows = [h0, h0 + 1.25, h0 + 3.2, h1] if not FAR() else [h0, h1]
+        return SHAFT0[0] + (SHAFT1[0] - SHAFT0[0]) * f, SHAFT0[1] + (SHAFT1[1] - SHAFT0[1]) * f
+    def at(su, sw, h, inset=0.0):                  # a point on the shaft at the corner signs (su, sw), height h
+        a, b = half(h)
+        return PW(su * (a - inset), sw * (b - inset), h)
+    # faces: (outward normal (u, w), the corners' signs from the viewer's left to right seen from outside, cells per stone)
+    faces = [((1, 0), ((1, 1), (1, -1)), [None, "front_nl", "front_fr", None]),
+             ((0, -1), ((1, -1), (-1, -1)), [None, "shaft_e_2", "shaft_e_1", None]),
+             ((-1, 0), ((-1, -1), (-1, 1)), [None, "shaft_n_2", "shaft_n_1", None]),
+             ((0, 1), ((-1, 1), (1, 1)), [None, "shaft_w_2", "shaft_w_1", None])]
+    g, dg = 0.008, 0.008
+    if FAR():
+        rings = [(h0, 0.0), (h1, 0.0)]; stones = [(0, 1, 0)]
+    else:
+        rings = [(h0, 0.0)]
+        for j in JOINTS: rings += [(j - g, 0.0), (j, dg), (j + g, 0.0)]
+        rings.append((h1, 0.0))
+        stones = [(0, 1, 0), (3, 4, 1), (6, 7, 2), (9, 10, 3)]        # (ring index lo, hi, stone k) of each stone's face
     K.B.new_group()
-    for (nu, nw), (L_, R_), cell in faces:
+    for (nu, nw), (L_, R_), cells in faces:
         out = Vector((nu, -nw, 0))
-        for i in range(len(rows) - 1):
-            ha, hb = rows[i], rows[i + 1]
-            lettered = (not FAR()) and i == 1 and cell is not None
-            if lettered:
-                m = 0.16                                # side margins (fraction of the half width)
-                pl = lambda f, h: at(L_[0] + (R_[0] - L_[0]) * f, L_[1] + (R_[1] - L_[1]) * f, h)
-                fa, fb = m / 2, 1 - m / 2
-                face_dir([pl(0, ha), pl(fa, ha), pl(fa, hb), pl(0, hb)], out, STONE, C_PLAIN)
-                face_dir([pl(fb, ha), pl(1, ha), pl(1, hb), pl(fb, hb)], out, STONE, C_PLAIN)
-                c = [pl(fa, ha), pl(fb, ha), pl(fb, hb), pl(fa, hb)]
-                letters_face(c, cell, (c[1] - c[0]).length, hb - ha, out=out)
+        for i in range(len(rings) - 1):
+            (ha, ia), (hb, ib) = rings[i], rings[i + 1]
+            st = next((k for lo, hi, k in stones if lo == i), None)
+            q = [at(*L_, ha, ia), at(*R_, ha, ia), at(*R_, hb, ib), at(*L_, hb, ib)]
+            if st is None:                              # a groove face (slanted in or out)
+                face_dir(q, out + Z * (1.0 if ib > ia else -1.0), STONE, C_PLAIN)
+            elif not FAR() and cells[st]:
+                letters_face(q, cells[st], (q[1] - q[0]).length, hb - ha, out=out)
+            elif not FAR() and st == 0 and nu == 1:
+                relief_stone(q, out, ha, hb)
             else:
-                face_dir([at(*L_, ha), at(*R_, ha), at(*R_, hb), at(*L_, hb)], out, STONE, C_PLAIN)
-    if not FAR(): relief()
+                face_dir(q, out, STONE, C_PLAIN)
+
+def relief_stone(q, out, ha, hb):
+    """the lowest front stone: the face round a sunk square panel (the Saint Peter relief, ~0.66 x 0.78 m: the owner's
+    photos), the panel's reveal 3 cm deep, the relief itself (relief_panel) on the panel's floor"""
+    bl, br, tr, tl = q
+    W, Hh = 0.66, 0.78
+    cv = (ha + hb) / 2 + 0.02
+    def on(fs, h):                                    # fs: -0.5..0.5 across the face at height h (on the tapered face)
+        f = (h - ha) / (hb - ha)
+        l = bl.lerp(tl, f); r = br.lerp(tr, f)
+        return l.lerp(r, 0.5 + fs)
+    wid = (br - bl).length
+    s0, s1 = -W / 2 / wid, W / 2 / wid
+    v0, v1 = cv - Hh / 2, cv + Hh / 2
+    # the frame: four quads round the panel opening
+    face_dir([bl, br, on(0.5, v0), on(-0.5, v0)], out, STONE, C_PLAIN)
+    face_dir([on(-0.5, v1), on(0.5, v1), tr, tl], out, STONE, C_PLAIN)
+    face_dir([on(-0.5, v0), on(s0, v0), on(s0, v1), on(-0.5, v1)], out, STONE, C_PLAIN)
+    face_dir([on(s1, v0), on(0.5, v0), on(0.5, v1), on(s1, v1)], out, STONE, C_PLAIN)
+    # the reveal: the opening's four sides 3 cm into the stone
+    D = 0.03
+    O = [on(s0, v0), on(s1, v0), on(s1, v1), on(s0, v1)]
+    I_ = [p - out * D for p in O]
+    for i in range(4):
+        a, b = O[i], O[(i + 1) % 4]; ai, bi = I_[i], I_[(i + 1) % 4]
+        inward = ((O[(i + 2) % 4] + O[(i + 3) % 4]) / 2 - (a + b) / 2).normalized()
+        face_dir([a, b, bi, ai], inward, STONE, C_RELIEF)
+    relief_panel(I_, out)
 
 def newell_dot(pts, v):
     n = Vector((0, 0, 0))
@@ -451,36 +526,101 @@ def newell_dot(pts, v):
         n += Vector(((a.y - b.y) * (a.z + b.z), (a.z - b.z) * (a.x + b.x), (a.x - b.x) * (a.y + b.y)))
     return n.dot(v)
 
-def relief():
-    """Saint Peter, the patron of Uccle, in low relief on the shaft's front under the inscription (heritage.uccle.be):
-    a framed plaque, the standing saint (robe, mantle, head, halo, the keys held up) proud of its ground"""
-    h0 = PLI[2] + 0.22; h1 = h0 + 0.92
-    f = (h0 - PLI[2]) / (SHAFT_TOP - PLI[2])
-    a = SHAFT0[0] + (SHAFT1[0] - SHAFT0[0]) * f
-    fr = Frame(PW(a, 0.0, OY), Vector((1, 0, 0)))
-    # the shaft leans back 0.17 / 3.68 = 2.6 deg: the plaque stands on its own, its back sunk into the shaft
-    W = 0.36
-    fbox(fr, -W, W, hz(h0), hz(h1), -0.06, 0.035, STONE, C_RELIEF)
-    fbox(fr, -W + 0.05, W - 0.05, hz(h0) + 0.05, hz(h1) - 0.05, 0.035, 0.045, STONE, C_RELIEF, skip=("back",)) if False else None
-    v = lambda y: hz(h0) + 0.08 + y * (h1 - h0 - 0.16)
-    robe = [(-0.13, v(0.0)), (0.13, v(0.0)), (0.1, v(0.45)), (0.12, v(0.62)), (0.09, v(0.74)), (0.05, v(0.78)), (-0.05, v(0.78)),
-            (-0.1, v(0.72)), (-0.11, v(0.55)), (-0.09, v(0.45))]
-    fill2d(fr, [robe], 0.065, STONE, C_RELIEF); strip2d(fr, robe, 0.035, 0.065, STONE, C_RELIEF, inward=False)
-    head = circle(0.0, v(0.86), 0.06, 12)
-    fill2d(fr, [head], 0.07, STONE, C_RELIEF); strip2d(fr, head, 0.035, 0.07, STONE, C_RELIEF, inward=False)
-    halo = circle(0.0, v(0.87), 0.1, 16)
-    fill2d(fr, [halo], 0.045, STONE, C_RELIEF); strip2d(fr, halo, 0.035, 0.045, STONE, C_RELIEF, inward=False)
-    keys = [(0.12, v(0.55)), (0.15, v(0.57)), (0.2, v(0.82)), (0.17, v(0.84))]
-    fill2d(fr, [keys], 0.06, STONE, C_RELIEF); strip2d(fr, keys, 0.035, 0.06, STONE, C_RELIEF, inward=False)
+def relief_height(nx, ny, W, H):
+    """SAINT PETER, seated (the patron of Uccle; the owner's photos: a seated figure in a square sunk panel low on the
+    front): a height field (metres out of the panel's floor) of carved "pillow" forms (each shape's height rises over a
+    soft edge from its outline: the look of a low relief cut in stone) unioned: the throne's back behind him, the halo, the
+    bearded head, the mantle widening to the feet with vertical folds, the knees and lap, the right arm bent with the two
+    keys held up across the chest, the left hand on a book on the knee, the feet on a footstool. x: -W/2..W/2 (the
+    viewer's right), y: 0..H (up); designed on a 0.66 x 0.78 panel"""
+    import numpy as np
+    sx, sy = W / 0.66, H / 0.78
+    X, Y = np.meshgrid(np.linspace(-0.33, 0.33, nx), np.linspace(0, 0.78, ny))
+    def pillow(sd, d, edge, p=0.6):                    # sd < 0 inside: height d * (depth inside / edge)^p, capped
+        return d * np.clip(-sd / edge, 0, 1) ** p
+    def ellipse(cx, cy, rx, ry):                         # approximate signed distance (scaled by the smaller radius)
+        return (np.sqrt(((X - cx) / rx) ** 2 + ((Y - cy) / ry) ** 2) - 1) * min(rx, ry)
+    def capsule(pts, r):
+        best = np.full(X.shape, 9.0)
+        for (ax, ay), (bx, by) in zip(pts, pts[1:]):
+            dx, dy = bx - ax, by - ay; L2 = dx * dx + dy * dy
+            t = np.clip(((X - ax) * dx + (Y - ay) * dy) / L2, 0, 1)
+            best = np.minimum(best, np.hypot(X - ax - dx * t, Y - ay - dy * t))
+        return best - r
+    def polygon(pts):
+        d = np.full(X.shape, 9.0); inside = np.zeros(X.shape, bool)
+        for i in range(len(pts)):
+            (ax, ay), (bx, by) = pts[i - 1], pts[i]
+            dx, dy = bx - ax, by - ay; L2 = dx * dx + dy * dy
+            t = np.clip(((X - ax) * dx + (Y - ay) * dy) / L2, 0, 1)
+            d = np.minimum(d, np.hypot(X - ax - dx * t, Y - ay - dy * t))
+            cross = ((ay > Y) != (by > Y)) & (X < (bx - ax) * (Y - ay) / (by - ay + 1e-12) + ax)
+            inside ^= cross
+        return np.where(inside, -d, d)
+    parts = []
+    parts.append(pillow(polygon([(-0.17, 0.26), (0.17, 0.26), (0.17, 0.64), (0.12, 0.68), (-0.12, 0.68), (-0.17, 0.64)]), 0.008, 0.01))   # throne back
+    parts.append(pillow(polygon([(-0.24, 0.0), (0.24, 0.0), (0.22, 0.035), (-0.22, 0.035)]), 0.016, 0.008))           # footstool
+    halo = np.hypot(X, Y - 0.6)
+    parts.append(0.006 * np.clip((0.1 - halo) / 0.006, 0, 1) * np.clip((halo - 0.0) / 0.006, 0, 1))                     # halo disc
+    parts.append(pillow(np.abs(halo - 0.094) - 0.007, 0.012, 0.006))                                                    # its rim
+    parts.append(pillow(ellipse(0.0, 0.6, 0.05, 0.06), 0.036, 0.03))                                                    # head
+    parts.append(pillow(ellipse(0.0, 0.545, 0.045, 0.045), 0.032, 0.02))                                                # beard
+    robe = polygon([(-0.11, 0.51), (0.11, 0.51), (0.14, 0.42), (0.16, 0.2), (0.17, 0.05), (-0.17, 0.05), (-0.16, 0.2), (-0.14, 0.42)])
+    folds = 1 + 0.16 * np.cos((X / 0.17) * 6.5 * np.pi / 2) * np.clip((0.24 - Y) / 0.18, 0, 1)
+    parts.append(pillow(robe, 0.03, 0.025) * folds)                                                                    # mantle + robe
+    parts.append(pillow(ellipse(0.0, 0.29, 0.17, 0.06), 0.044, 0.03))                                                  # knees / lap
+    parts.append(pillow(ellipse(-0.06, 0.045, 0.045, 0.022), 0.03, 0.015))                                             # feet
+    parts.append(pillow(ellipse(0.06, 0.045, 0.045, 0.022), 0.03, 0.015))
+    parts.append(pillow(capsule([(-0.1, 0.49), (-0.15, 0.4), (-0.07, 0.425)], 0.028), 0.04, 0.02))                     # right arm, bent
+    parts.append(pillow(ellipse(-0.065, 0.43, 0.026, 0.024), 0.046, 0.015))                                            # its hand
+    parts.append(pillow(capsule([(-0.07, 0.43), (-0.16, 0.57)], 0.009), 0.05, 0.006))                                  # the keys, crossed
+    parts.append(pillow(capsule([(-0.06, 0.43), (-0.03, 0.58)], 0.009), 0.05, 0.006))
+    parts.append(pillow(polygon([(-0.19, 0.55), (-0.15, 0.53), (-0.13, 0.57), (-0.17, 0.6)]), 0.05, 0.005))             # their bits
+    parts.append(pillow(polygon([(-0.05, 0.57), (-0.01, 0.56), (-0.01, 0.6), (-0.05, 0.61)]), 0.05, 0.005))
+    parts.append(pillow(capsule([(0.1, 0.49), (0.14, 0.39), (0.1, 0.34)], 0.027), 0.04, 0.02))                         # left arm
+    parts.append(pillow(polygon([(0.03, 0.27), (0.15, 0.27), (0.15, 0.345), (0.03, 0.345)]), 0.05, 0.006))             # the book
+    h = np.zeros(X.shape)
+    for p_ in parts: h = np.maximum(h, p_)
+    hp = np.pad(h, 1, mode="edge")                                                                                     # one light softening pass
+    h = (hp[:-2, 1:-1] + hp[2:, 1:-1] + hp[1:-1, :-2] + hp[1:-1, 2:] + 4 * hp[1:-1, 1:-1]) / 8
+    h[0, :] = h[-1, :] = 0; h[:, 0] = h[:, -1] = 0
+    return h
+
+def relief_panel(I_, out):
+    """the relief's floor as a displaced grid (LOD0 only): ~1.5 cm cells, smooth shaded (code relief: carved)"""
+    bl, br, tr, tl = I_
+    W = (br - bl).length; H = ((tl + tr) / 2 - (bl + br) / 2).length
+    nx, ny = 56, 66
+    h = relief_height(nx, ny, W, H)
+    def P_(i, j): return bl.lerp(br, i / (nx - 1)).lerp(tl.lerp(tr, i / (nx - 1)), j / (ny - 1)) + out * float(h[j, i])
+    K.B.new_group()
+    G_ = [[P_(i, j) for i in range(nx)] for j in range(ny)]
+    for j in range(ny - 1):
+        for i in range(nx - 1):
+            a, b, c, d = G_[j][i], G_[j][i + 1], G_[j + 1][i + 1], G_[j + 1][i]
+            # split along the shorter diagonal (smoother relief)
+            if (a - c).length <= (b - d).length:
+                face_dir([a, b, c], out, STONE, C_RELIEF); face_dir([a, c, d], out, STONE, C_RELIEF)
+            else:
+                face_dir([a, b, d], out, STONE, C_RELIEF); face_dir([b, c, d], out, STONE, C_RELIEF)
 
 # ------------------------------------------------------------------------------------------------ THE BRONZE
 def statue():
+    """our scripted bronze (tools/blender/heros_statue.py), unchanged (3.81 m); the rock under it is grey stone (the
+    photos), not bronze. In the city it gives way to models/heros/statue.glb when
+    that is there (the owner's statue slot: viewer/heros/herosStatue.js, docs/landmarks/HEROS.md)"""
     d = json.load(open(os.path.join(OUT, "statue_far.json" if FAR() else "statue_mesh.json")))
-    V_ = [Vector((x, y, z + hz(STATUE_BASE))) for x, y, z in d["verts"]]
+    k = 1.0           # (the owner, 2026-11-14: keep our bronze as it is (it reads well from afar); the measured STATUE_H is the
+                      #  slot's expected height for a dropped-in statue, ours stays at its modelled 3.81 m)
+    V_ = [Vector((x * k, y * k, z * k + hz(STATUE_BASE))) for x, y, z in d["verts"]]
     K.B.new_group()
+    rock_top = hz(STATUE_BASE) + ROCK_H
     for f in d["faces"]:
-        K.B.face([V_[f[0]], V_[f[1]], V_[f[2]]], BRONZE, C_PLAIN)
-    return d
+        tri = [V_[f[0]], V_[f[1]], V_[f[2]]]
+        if max(v.z for v in tri) < rock_top: K.B.face(tri, BRONZE, C_CAP)        # (the bronze slot's "cap" = the rock, grey stone:
+                                                                                  #  one primitive, hidden with the bronze for a statue slot)
+        else: K.B.face(tri, BRONZE, C_PLAIN)
+    return dict(d, height=d["height"] * k)
 
 # ------------------------------------------------------------------------------------------------ THE STEPS
 def flight(name, line, risers, bottom, top, s_top, width, handrails, run=0.42, cheek=True):
@@ -513,24 +653,33 @@ def flight(name, line, risers, bottom, top, s_top, width, handrails, run=0.42, c
         sa = s_top + (j - 1) * run if j > 0 else s_top - 0.5       # its upper edge (the landing reaches back 0.5 m)
         sb = s_top + j * run                                       # its nosing (the riser down to h - r)
         P_ = lambda s, x, hh: PW(*uw(s, x), hh)
-        nose = 0.14
-        # the block: top (nosing strip in stone, the rest setts), the riser face, the sides (into the cheeks), down 0.5
+        # worn: the tread dips toward its nosing (4-12 mm, the photo: rough, worn, mossy treads), the nosing's edge a 2.5 cm
+        # chamfer; risers from the chamfer's foot down to the next tread
+        wr = 0.0 if FAR() else rnd.uniform(0.004, 0.012)
+        ch = 0.0 if FAR() else 0.025
+        hn = h - wr                                                # the tread's height at its nosing
         K.B.new_group()
         hb_ = h - r - 0.5
         if FAR():
             face_up([P_(sa, -hw, h), P_(sb, -hw, h), P_(sb, hw, h), P_(sa, hw, h)], STONE, C_TREAD)
         else:
-            face_up([P_(sa, -hw, h), P_(sb - nose, -hw, h), P_(sb - nose, hw, h), P_(sa, hw, h)], STONE, C_TREAD)
-            face_up([P_(sb - nose, -hw, h), P_(sb, -hw, h), P_(sb, hw, h), P_(sb - nose, hw, h)], STONE, C_NOSING)
+            nose = 0.14
+            hm = h - wr * (sb - nose - sa) / (sb - sa)             # (one plane: the slope runs on through the nosing strip)
+            face_up([P_(sa, -hw, h), P_(sb - nose, -hw, hm), P_(sb - nose, hw, hm), P_(sa, hw, h)], STONE, C_TREAD)
+            face_up([P_(sb - nose, -hw, hm), P_(sb - ch, -hw, hn), P_(sb - ch, hw, hn), P_(sb - nose, hw, hm)], STONE, C_NOSING)
+            dn0 = Vector((D.x, -D.y, 0))
+            face_dir([P_(sb - ch, -hw, hn), P_(sb, -hw, hn - ch), P_(sb, hw, hn - ch), P_(sb - ch, hw, hn)], dn0 + Z, STONE, C_NOSING)
+        top_r = hn - ch                                            # the riser's top
         dn = Vector((D.x, -D.y, 0))                                # Blender direction down the flight
-        face_dir([P_(sb, -hw, h - r), P_(sb, hw, h - r), P_(sb, hw, h), P_(sb, -hw, h)], dn, STONE, C_RISER)
+        face_dir([P_(sb, -hw, h - r), P_(sb, hw, h - r), P_(sb, hw, top_r), P_(sb, -hw, top_r)], dn, STONE, C_RISER)
         if j == risers - 1:                                        # the bottom riser goes on down into the ground
             face_dir([P_(sb, -hw, hb_), P_(sb, hw, hb_), P_(sb, hw, h - r), P_(sb, -hw, h - r)], dn, STONE, C_RISER)
         if j == 0:                                                 # the landing's back edge (buried in the terrace)
             face_dir([P_(sa, -hw, hb_), P_(sa, hw, hb_), P_(sa, hw, h), P_(sa, -hw, h)], -dn, STONE, C_PLAIN)
         for x, sgn in ((-hw, -1), (hw, 1)):
             sd = Vector((Sx.x, -Sx.y, 0)) * sgn
-            face_dir([P_(sa, x, hb_), P_(sb, x, hb_), P_(sb, x, h), P_(sa, x, h)], sd, STONE, C_PLAIN)
+            if FAR(): face_dir([P_(sa, x, hb_), P_(sb, x, hb_), P_(sb, x, h), P_(sa, x, h)], sd, STONE, C_PLAIN)
+            else: face_dir([P_(sa, x, hb_), P_(sb, x, hb_), P_(sb, x, top_r), P_(sb - ch, x, hn), P_(sb - nose, x, hm), P_(sa, x, h)], sd, STONE, C_PLAIN)
     # the cheek kerbs: 0.22 wide, their top 0.12 over the nosing line, from the landing to the ground at the foot
     if cheek:
         for sgn in (-1, 1):
@@ -552,7 +701,7 @@ def flight(name, line, risers, bottom, top, s_top, width, handrails, run=0.42, c
             x = sgn * (hw + 0.11)
             # posts on the cheeks every ~1.6 m, the rail 0.9 over the nosing line, level ends 0.3 m past the flight
             ends = [(s_top - 0.35, top + 0.12), (s_bot + 0.3, bottom + r + 0.12 - 0.1)]
-            post_s = [s_top - 0.25, s_top + (s_bot - s_top) * 0.5, s_bot + 0.2]
+            post_s = [s_top - 0.25 + (s_bot + 0.45 - s_top) * q / 5 for q in range(6)]     # six posts a side (the owner's photo)
             def hline(s):
                 if s <= s_top: return top
                 if s >= s_bot: return bottom + r
@@ -573,8 +722,9 @@ def flight(name, line, risers, bottom, top, s_top, width, handrails, run=0.42, c
     o = G.city(*uw(s_top, 0.0)); e = G.city(*uw(s_bot, 0.0))
     return dict(name=name, risers=risers, riser_m=round(r, 3), run_m=run, width_m=width, top=top, bottom=bottom,
                 carve=dict(ring=[[round(p[0], 3), round(p[1], 3)] for p in ring], from_=[round(o[0], 3), round(o[1], 3)], to=[round(e[0], 3), round(e[1], 3)],
-                           h_from=round(top - 0.08, 3), h_to=round(bottom + r - 0.08, 3), floor=round(bottom - 0.05, 3)),
-                handrails_blender=rails)
+                           h_from=round(top - 0.08, 3), h_to=round(bottom + r - 0.08, 3), floor=round(bottom - 0.05, 3),
+                           fill=dict(over_line=0.14, flat=0.3, slope=0.6, reach=1.6) if cheek else None),
+                handrails_blender=rails, _frame=dict(ua=ua, wa=wa, D=(D.x, D.y), S=(Sx.x, Sx.y), s_top=s_top, s_bot=s_bot, hw=hw, top=top, bottom=bottom))
 
 STEPS = SITE["steps"]
 def all_steps():
@@ -587,12 +737,90 @@ def all_steps():
     b = flight("west", w["line"], 4, 50.52, 51.15, 0.45, 2.4, False)
     return [a, b]
 
+# ------------------------------------------------------------------------------------------------ THE FURNITURE
+def lathe_ribbed(center, profile, segs, ribs, depth, mat, code_of=lambda i: C_PLAIN, cap_top=True, cap_bottom=True):
+    """a solid of revolution with vertical ribs (r x (1 + depth cos(ribs a)) on the rows flagged in the profile: (r, z, ribbed))"""
+    K.B.new_group()
+    ang = [2 * math.pi * k / segs for k in range(segs)]
+    rings = [[center + Vector((math.cos(a), math.sin(a), 0)) * (r * (1 + (depth * math.cos(ribs * a) if rb else 0.0))) + Z * z for a in ang]
+             for r, z, rb in profile]
+    for i in range(len(rings) - 1):
+        for k in range(segs):
+            a, b, c, d = rings[i][k], rings[i][(k + 1) % segs], rings[i + 1][(k + 1) % segs], rings[i + 1][k]
+            mid = (a + b + c + d) / 4; out = mid - (center + Z * ((profile[i][1] + profile[i + 1][1]) / 2))
+            face_dir([a, b, c, d], out, mat, code_of(i))
+    if cap_top: face_dir(rings[-1], Z, mat, code_of(len(rings) - 2))
+    if cap_bottom: face_dir(rings[0], -Z, mat, code_of(0))
+
+def bin_at(u, w, h):
+    """a Brussels litter bin (Commons C2, 2025: the dark green ribbed cylinder with a domed hood and a red band, ~0.95 m),
+    its foot 5 cm into the ground"""
+    c = PW(u, w, h - 0.05)
+    segs = 10 if FAR() else 24
+    prof = [(0.17, 0.0, False), (0.17, 0.08, False), (0.215, 0.1, False), (0.215, 0.6, True), (0.222, 0.6, False), (0.222, 0.68, False),
+            (0.215, 0.68, False), (0.215, 0.8, True), (0.225, 0.82, False), (0.2, 0.9, False), (0.14, 0.96, False), (0.05, 0.99, False)]
+    lathe_ribbed(c, prof, segs, 12, 0.0 if FAR() else 0.035, GREEN, code_of=lambda i: C_BAND if i == 4 else C_PLAIN, cap_bottom=True)
+
+def lamp_column(u, w, h):
+    """the ornate green cast-iron lamp column at the Brugmann path mouth (Commons C2: a moulded base with a bulging,
+    decorated drum, a fluted shaft, a collar; the lantern from the city's Brussels lamps: a hexagonal glass lantern under a
+    domed roof); ~4.9 m, the glass emissive only at night (no light)"""
+    c = PW(u, w, h - 0.1)
+    segs = 8 if FAR() else 16
+    prof = [(0.21, 0.0, False), (0.21, 0.22, False), (0.17, 0.3, False), (0.16, 0.42, False), (0.19, 0.55, True), (0.2, 0.75, True),
+            (0.16, 0.95, True), (0.12, 1.08, False), (0.13, 1.15, False), (0.095, 1.25, False), (0.09, 1.3, True), (0.07, 3.9, True),
+            (0.09, 3.95, False), (0.09, 4.02, False), (0.06, 4.08, False), (0.05, 4.2, False)]
+    lathe_ribbed(c, prof, segs, 8, 0.0 if FAR() else 0.06, GREEN, cap_bottom=False)
+    # the lantern: a hexagonal frustum of glass between a ring and a domed roof
+    base = c + Z * 4.2
+    lathe(base, [(0.0, 0.0), (0.12, 0.0), (0.12, 0.05)], 6, GREEN, C_PLAIN, a0=math.pi / 6)
+    lathe(base + Z * 0.05, [(0.12, 0.0), (0.2, 0.42)], 6, GREEN, C_GLASS, a0=math.pi / 6)
+    lathe(base + Z * 0.47, [(0.2, 0.0), (0.24, 0.02), (0.22, 0.06), (0.16, 0.16), (0.07, 0.24), (0.025, 0.3), (0.035, 0.36), (0.0, 0.4)],
+          6 if FAR() else 12, GREEN, C_PLAIN, a0=math.pi / 6)
+
+def floodlight(u, w, h, aim):
+    """the monument's floodlight (the owner's photo from the steps: a grey box lamp on a short post on the platform, right
+    of the steps), aimed at the obelisk; no light (a fixed light budget): its glass reads only at night"""
+    c = PW(u, w, h)
+    lathe_axis(c - Z * 0.05, Z, Vector((1, 0, 0)), [(0.03, 0.0), (0.03, 0.33)], 8, GREEN, C_HOUSING, cap_top=True, cap_bottom=True)
+    d = Vector((aim[0] - u, -(aim[1] - w), 0)).normalized(); sd = d.cross(Z)
+    o = c + Z * 0.3
+    # the lamp body: a squat box tilted ~55 deg up toward the obelisk (the glass faces up and in), on a yoke
+    tilt = math.radians(55)
+    fw = (d * math.cos(tilt) + Z * math.sin(tilt)).normalized(); up = fw.cross(sd).normalized()
+    if up.z < 0: up = -up
+    box(o, sd, up, fw, -0.12, 0.12, -0.08, 0.08, -0.06, 0.1, GREEN, C_HOUSING)
+    face_dir([o + sd * -0.1 + up * -0.06 + fw * 0.105, o + sd * 0.1 + up * -0.06 + fw * 0.105, o + sd * 0.1 + up * 0.06 + fw * 0.105,
+              o + sd * -0.1 + up * 0.06 + fw * 0.105], fw, GREEN, C_GLASS)
+
+def furniture(flights):
+    """at the top of the west flight (Commons C2: the path mouth on the Brugmann sidewalk): a bin, the ornate lamp column
+    on the north side; the floodlight on the platform right of the 12 steps (the owner's photo)"""
+    f = next(x for x in flights if x["name"] == "west")["_frame"]
+    D, S = Vector(f["D"]), Vector(f["S"])
+    def at(s, x):
+        q = Vector((f["ua"], f["wa"])) + D * s + S * x
+        return q.x, q.y
+    # the lamp on the north side (smaller u: toward the Square des Heros street), one bin on the south side: the city's
+    # street furniture (viewer/furniture2) already stands a round bin in the middle of this path mouth, so the pair of C2
+    # reads with ours (a second one of ours made three)
+    sides = [at(f["s_top"] - 0.9, x) for x in (-(f["hw"] + 1.6), f["hw"] + 1.6)]
+    u, w = min(sides, key=lambda p: p[0])
+    bs = [at(f["s_top"] - 0.6, x) for x in (-(f["hw"] + 0.55), f["hw"] + 0.55)]
+    bu, bw = max(bs, key=lambda p: p[0])
+    bin_at(bu, bw, max(f["top"], G(bu, bw)))
+    lamp_column(u, w, max(f["top"], G(u, w)))
+    th = -2 * math.pi / 8 * 0.9                       # the platform, right of the steps' top (seen from them: east)
+    r = OCT_R + 0.7
+    floodlight(r * math.cos(th), r * math.sin(th), PT, (0.0, 0.0))
+
 def build_all():
     platform()
     enclosure()
     obelisk()
     st = statue()
     flights = all_steps()
+    furniture(flights)
     return st, flights
 
 STAT, FLIGHTS = build_all()
@@ -622,7 +850,15 @@ def sharpen(o):
     bronze = [i for i, m in enumerate(me.materials) if m and m.name == "bronze_gilt"]
     # carved forms (the rose bouquets, the animals) shade smooth like the bronze: read each face's code from COLOR_0.r
     col = me.color_attributes["Col"]; cd = [0.0] * (4 * len(me.loops)); col.data.foreach_get("color", cd)
-    carved = set(p_.index for p_ in me.polygons if int(cd[4 * p_.loop_indices[0]] * 16) in (C_BOUQUET, C_ANIMAL))
+    carved = set(p_.index for p_ in me.polygons if int(cd[4 * p_.loop_indices[0]] * 16) in (C_BOUQUET, C_ANIMAL, C_RELIEF))
+    # round iron (bars, the lamp column, the bins: 6-24 sided lathes) and the plants shade smooth up to 62 deg; boxes stay
+    # sharp; the lantern's glass panes stay flat
+    soft = [i for i, m in enumerate(me.materials) if m and m.name in ("cast_iron_green", "plant_grass")]
+    plant = [i for i, m in enumerate(me.materials) if m and m.name == "plant_grass"]
+    # round: every plant face; on the iron the lathed parts (bars, finials, the lamp column, the bins: codes finial / plain /
+    # seat), not the rails' and posts' boxes (smoothed at the octagon's corners they streaked)
+    round_ = set(p_.index for p_ in me.polygons if p_.material_index in plant or
+                 (p_.material_index in soft and int(cd[4 * p_.loop_indices[0]] * 16) in (C_FINIAL, C_PLAIN, C_BAND)))
     bm = bmesh.new(); bm.from_mesh(me); bm.faces.ensure_lookup_table()
     n = 0
     for e in bm.edges:
@@ -630,10 +866,14 @@ def sharpen(o):
         if len(lf) != 2: e.smooth = False; continue
         ang = lf[0].normal.angle(lf[1].normal, 0.0)
         isb = (lf[0].material_index in bronze and lf[1].material_index in bronze) or (lf[0].index in carved and lf[1].index in carved)
-        if ang > math.radians(30.0 if isb else 2.5): e.smooth = False; n += 1   # (stone: the platform's 64 segments read as its cut stones)
+        iss = lf[0].index in round_ and lf[1].index in round_
+        lim = 62.0 if iss else 30.0 if isb else 2.5
+        if ang > math.radians(lim): e.smooth = False; n += 1   # (stone: the platform's 64 segments read as its cut stones)
+        else: e.smooth = True                                  # (make_object's 32 deg pass made the plants' and bars' edges sharp)
     for f in bm.faces:
-        if f.material_index not in bronze or len(f.verts) != 3: continue
+        if not (f.material_index in bronze or f.index in round_): continue
         L = [e.calc_length() for e in f.edges]
+        # (stretched faces flat: smooth corner normals streak along them; the bars' long sides are such faces)
         if max(L) > 0 and f.calc_area() * 2 / max(L) < max(L) / 5.0:
             for e in f.edges: e.smooth = False
     bm.to_mesh(me); bm.free()
@@ -651,7 +891,19 @@ def carved(x, z, h):
         t = min(1.0, max(0.0, ((x - ax) * dx + (z - az) * dz) / L2))
         line = c["h_from"] + (c["h_to"] - c["h_from"]) * t
         if SC.inside((x, z), ring): h = min(h, max(c["floor"], line - 0.27))
+        elif c.get("fill") and 0.0 <= ((x - ax) * dx + (z - az) * dz) / L2 <= 1.0:   # the bank built up beside the cheek kerbs
+            fl = c["fill"]; d = dist_ring(ring, x, z)                                  # (herosSurface.js carveFlights)
+            if d < fl["reach"]: h = max(h, line + fl["over_line"] - max(0.0, d - fl["flat"]) * fl["slope"])
     return h
+
+def dist_ring(r, x, z):
+    best = 1e9
+    for i in range(len(r)):
+        (ax, az), (bx, bz) = r[i - 1], r[i]
+        dx, dz = bx - ax, bz - az; L2 = dx * dx + dz * dz or 1.0
+        t = max(0.0, min(1.0, ((x - ax) * dx + (z - az) * dz) / L2))
+        best = min(best, math.hypot(x - ax - dx * t, z - az - dz * t))
+    return best
 
 def load_ground():
     import numpy as np
@@ -759,7 +1011,14 @@ info = {
                        "soil_bed": "the planted bed's soil", "plant_grass": "ornamental grass blades (straw-green)"},
     "uv": {"TEXCOORD_0": "world metres, per face; lettered faces (code 'letters'): 1000 (cell + 1) + s, v (metres on the panel)",
            "TEXCOORD_1": "AO lightmap (thin faces: u > 0.994, AO 1)"},
-    "letters_cells": ["front: the 1914-1918 inscription", "names A", "names B", "names C", "bench backs: names 1940-1945", "1940-1945 (front seat)"],
+    "lettering": {"about": "every lettered face's atlas cell (TEXCOORD_0.x = 1000 (index + 1) + s): tools/heros_letters.py draws the ones "
+                           "with text (the front FR / NL blocks, 1940-1945, and the names from models/heros/names.json)",
+                  "cells": [dict(index=CELL[n], name=n, size_m=list(CELL_SIZES[n]),
+                                 kind="front" if n.startswith("front") or n == "years" else "shaft" if n.startswith("shaft") else "bench")
+                            for n in CELL_NAMES]},
+    "statue_slot": {"about": "the bronze group's place (viewer/heros/herosStatue.js: models/heros/statue.glb replaces our scripted bronze)",
+                    "base_local": [0.0, round(STATUE_BASE - OY, 4), 0.0], "base_taw": STATUE_BASE, "front_local": "+X (u: south, the 12 steps)",
+                    "height_m": STATUE_H, "rock_m": ROCK_H, "cap_top_half_m": [CAP2[0], CAP2[1]]},
     "lightmap": {"px": AO_PX, "split_v": [AO_SPLIT, 1.0], "lod0_px_per_m": round(obj["px_per_m"], 1), "far_px_per_m": round(far["px_per_m"], 1)},
     "frame": "glTF Y up; three.js local (u, m TAW - OY, w); node at the city position of the frame origin, height OY, rotation.y = -rotation",
     "placement": {"city_local_position": [G.ox, OY, G.oz], "rotation_y_rad": -G.rot,
@@ -774,7 +1033,7 @@ info = {
     "colliders": {"platform": {"r": PLAT_R, "top": PT},
                   "enclosure": {"r": round(OCT_R + SEAT_D / math.cos(math.pi / 8) * 0.0 + 0.5, 3), "top": round(WALL_TOP + RAIL_H, 2), "seat": SEAT, "seat_r": round((OCT_A + SEAT_D) / math.cos(math.pi / 8), 3)},
                   "obelisk": {"half": PED[:2], "top": CAP2[2]}, "statue": {"half": [0.75, 1.5], "bottom": CAP2[2], "top": round(STATUE_BASE + STAT["height"], 2)}},
-    "flights": FLIGHTS,
+    "flights": [{k: v for k, v in f_.items() if k != "_frame"} for f_ in FLIGHTS],
     "measured": {"frame": FR, "octagon_city": MON["wall_city"], "obelisk_base_city": MON["base_city"], "dsm_top": MON["dsm_top"], "terrace": MON["terrace"], "steps": STEPS},
     "estimated": "every height above the terrace except the obelisk's top (DSM 57.34: the shaft + cap modelled to 57.13, the rock and bronze "
                  "over it), the platform (one low step, r 4.05 from the DSM ring), the benches' depth and height, the railing's pattern and "

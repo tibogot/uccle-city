@@ -12,7 +12,8 @@
 // Shown while one of its tiles is loaded (full or far).
 import * as THREE from "three/webgpu";
 import { loadHeros, HE_LODS, setLodFades } from "./herosModel.js";
-import { dolomiteGeometry, dolomiteMaterial } from "./herosGround.js";
+import { statueLodState } from "./herosStatue.js";
+import { dolomiteGeometry, dolomiteMaterial, lawnGeometry, lawnMaterial, terrainTrianglesIn } from "./herosGround.js";
 import { SMOOTH, fadeProxies } from "../lodFade.js";
 import { liteShown } from "../liteShown.js";
 
@@ -44,6 +45,14 @@ export async function addHeros({ scene, updaters, hide, tile, world, manifest, l
     const mesh = new THREE.Mesh(g.geometry, dolomiteMaterial());
     mesh.name = "heros-dolomite"; mesh.receiveShadow = true;
     groundRoot.add(mesh);
+    // the lawns, lighter as in the photos (herosGround.js lawnGeometry); ?heroslawn=city keeps the city's lawn
+    if (new URLSearchParams(location.search).get("heroslawn") !== "city") {
+      const lg = lawnGeometry(site, terrainTrianglesIn(scene, parkTiles));
+      const lawn = new THREE.Mesh(lg.geometry, lawnMaterial());
+      lawn.name = "heros-lawn"; lawn.receiveShadow = true;
+      groundRoot.add(lawn);
+      g.tris += lg.tris;
+    }
     await (await waitCompiler())([groundRoot]);
     groundBuilt = { tris: g.tris, mesh };
     log(`Square des Heros: dolomite ground ${g.tris} triangles on the tiles ${parkTiles.join(", ")}`);
@@ -55,6 +64,11 @@ export async function addHeros({ scene, updaters, hide, tile, world, manifest, l
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;
     const levels = HE_LODS.map((_, k) => m.make(k));
     root.add(...levels);
+    // the bronze group's slot (herosStatue.js): the dropped-in statue's three levels, its invisible collider in LOD0
+    // (heroColliders.js / contactAudit.js read the "_lod0" child)
+    const statue = m.slot ? m.slot.make() : null;
+    if (statue) { root.add(statue.group); levels[0].add(...statue.collider); }
+    const statuePos = new THREE.Vector3();
     root.visible = false;
     scene.add(root);
     root.updateMatrixWorld(true);
@@ -84,14 +98,25 @@ export async function addHeros({ scene, updaters, hide, tile, world, manifest, l
         const shown = [t1 < 1, t1 > 0];
         setLodFades(levels, shown, fades);
         state.shown = shown; state.fades = fades;
+        if (statue) {
+          const st = statueLodState(statue.group.getWorldPosition(statuePos).distanceTo(camPos), m.slot.info);
+          setLodFades(statue.levels, st.shown, st.fades);
+          state.statue = st.shown;
+        }
       } else {
         const k = HE_LODS.findIndex((l) => d < l.until);
         levels.forEach((g, i) => { g.visible = i === k; });
         state.shown = levels.map((g) => g.visible);
+        if (statue) {
+          const st = statueLodState(statue.group.getWorldPosition(statuePos).distanceTo(camPos), m.slot.info);
+          const ks = st.shown.lastIndexOf(true);
+          statue.levels.forEach((g, i) => { g.visible = i === ks; });
+        }
       }
       state.d = d;
     });
-    log(`Square des Heros: war memorial + steps, scripted model, LODs ${m.tris.join(" / ")} triangles, ${m.drawCalls.join("/")} draws; loaded ${tLoad.toFixed(0)} ms, shaders ${tComp.toFixed(0)} ms (in the background); long tasks while streaming: ${longTasks.length ? longTasks.join(", ") + " ms" : "none"} (?heros=old: the square as before)`);
-    window.heros = { model: m, root, levels, groundRoot, ground: () => groundBuilt, tLoad, tComp, longTasks, state, site };
+    log(`Square des Heros: war memorial + steps, scripted model, LODs ${m.tris.join(" / ")} triangles, ${m.drawCalls.join("/")} draws; ` +
+      (m.slot ? `bronze group: the statue slot ${m.slot.info.glb} (${m.slot.info.source ?? "?"}), LODs ${m.slot.tris.join(" / ")} triangles (?herostatue=ours: ours); ` : "bronze group: ours (scripted); ") + ` loaded ${tLoad.toFixed(0)} ms, shaders ${tComp.toFixed(0)} ms (in the background); long tasks while streaming: ${longTasks.length ? longTasks.join(", ") + " ms" : "none"} (?heros=old: the square as before)`);
+    window.heros = { model: m, root, levels, statue, groundRoot, ground: () => groundBuilt, tLoad, tComp, longTasks, state, site };
   }).catch((e) => log(`Square des Heros model failed (${e.message}): reload with ?heros=old`));
 }

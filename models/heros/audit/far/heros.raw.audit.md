@@ -1,25 +1,74 @@
 # Mesh audit: heros.raw.glb
 
-2,216 triangles, 1,393 welded vertices, 416 open edges, 85,288 rays, 306 ms.
+3,242 triangles, 1,924 welded vertices, 428 open edges, 85,740 rays, 362 ms.
 
-**0 blocking**, 211 warnings. Clean (no blocking item).
+**0 blocking**, 198 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| sliver | warn | 104 |
+| near | warn | 54 |
+| sliver | warn | 25 |
+| winding | warn | 12 |
 | nonmanifold | warn | 23 |
 | tjunction | warn | 84 |
-| seam | info | 135 |
-| opening | info | 103 |
-| backtoback | info | 65 |
+| seam | info | 198 |
+| opening | info | 111 |
+| backtoback | info | 79 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## sliver (warn, 104)
+## near (warn, 54)
+
+| at | parts | separation_mm | overlap_cm2 | angle_deg | maxDistance | need_mm | sameComponent | normal |
+|---|---|---|---|---|---|---|---|---|
+| -2.14, 1.60, -0.80 | Heros_far/plant_grass + Heros_far/plant_grass | 2.4 | 20.3 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| -2.04, 1.60, -0.76 | Heros_far/plant_grass + Heros_far/plant_grass | 2.4 | 45 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| -2.07, 1.60, -0.80 | Heros_far/plant_grass + Heros_far/plant_grass | 2.4 | 55.7 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| -1.81, 1.60, 0.27 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 22.1 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| -1.70, 1.60, 0.23 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 52.4 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| -1.74, 1.60, 0.27 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 61.6 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| -1.67, 1.60, 0.83 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 97.4 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| -1.82, 1.60, 0.78 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 43 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| -1.72, 1.60, 0.78 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 118.5 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| -0.82, 1.60, -1.89 | Heros_far/plant_grass + Heros_far/plant_grass | 2.4 | 24.9 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| -0.78, 1.60, -1.83 | Heros_far/plant_grass + Heros_far/plant_grass | 2.4 | 5.4 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| -0.79, 1.60, -1.86 | Heros_far/plant_grass + Heros_far/plant_grass | 2.4 | 16.2 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| -0.56, 1.59, -1.85 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 15.3 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| -0.49, 1.59, -1.88 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 21.6 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| -0.51, 1.59, -1.85 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 35.8 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| -0.44, 1.59, 1.93 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 79.1 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| -0.57, 1.59, 1.90 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 25.1 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| -0.48, 1.59, 1.89 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 73.9 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| 0.14, 1.59, -1.85 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 20.4 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| 0.21, 1.59, -1.90 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 15.6 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| 0.18, 1.59, -1.86 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 35.3 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| 0.22, 1.59, 1.90 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 15 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| 0.15, 1.59, 1.82 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 50.8 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| 0.19, 1.59, 1.83 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 44.7 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| 0.74, 1.58, -1.92 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 39 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| 0.79, 1.58, -1.99 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 3.3 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| 0.78, 1.58, -1.97 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 9.9 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| 0.88, 1.58, 1.92 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 29.7 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| 0.79, 1.58, 1.83 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 64.1 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| 0.84, 1.58, 1.84 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 80.8 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| 1.32, 1.58, 0.32 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 95.3 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| 1.51, 1.58, 0.21 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 112.9 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| 1.44, 1.58, 0.30 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 225.6 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| 1.34, 1.58, 0.23 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 18.7 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| 1.42, 1.58, 0.19 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 18.7 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| 1.38, 1.58, 0.21 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 18.7 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| 1.47, 1.58, 0.73 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 68.7 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| 1.35, 1.58, 0.72 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 14.4 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| 1.41, 1.58, 0.72 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 43.3 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+| 1.39, 1.58, 1.33 | Heros_far/plant_grass + Heros_far/plant_grass | 1.2 | 3.2 | 0 | 120 | 0.92 | false | 0 + -1 + 0 |
+
+(14 more in the JSON)
+
+## sliver (warn, 25)
 
 | at | part | aspect | longest |
 |---|---|---|---|
-| -0.36, 7.83, 0.21 | Heros_far/bronze_gilt | 58 | 0.471 |
+| -0.36, 7.85, 0.21 | Heros_far/bronze_gilt | 58 | 0.471 |
 | 11.40, 0.06, -2.63 | Heros_far/cast_iron_green | 148 | 5.016 |
 | 9.86, 0.71, -2.52 | Heros_far/cast_iron_green | 148 | 5.016 |
 | 11.40, 0.06, -2.66 | Heros_far/cast_iron_green | 148 | 5.021 |
@@ -36,59 +85,59 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 10.12, 0.68, 0.68 | Heros_far/cast_iron_green | 148 | 5.021 |
 | 11.65, 0.03, 0.57 | Heros_far/cast_iron_green | 148 | 5.016 |
 | 10.12, 0.69, 0.70 | Heros_far/cast_iron_green | 148 | 5.016 |
-| 1.54, 1.90, 0.29 | Heros_far/plant_grass | 48 | 0.449 |
-| 1.54, 1.90, 0.28 | Heros_far/plant_grass | 48 | 0.448 |
-| 1.42, 1.90, 0.24 | Heros_far/plant_grass | 47 | 0.44 |
-| 1.41, 1.90, 0.24 | Heros_far/plant_grass | 47 | 0.439 |
-| 1.38, 1.90, 0.33 | Heros_far/plant_grass | 47 | 0.44 |
-| 1.39, 1.90, 0.33 | Heros_far/plant_grass | 47 | 0.439 |
-| 1.45, 1.90, 0.38 | Heros_far/plant_grass | 47 | 0.444 |
-| 1.46, 1.90, 0.38 | Heros_far/plant_grass | 47 | 0.442 |
-| 0.46, 1.88, 1.35 | Heros_far/plant_grass | 43 | 0.408 |
-| 0.46, 1.88, 1.34 | Heros_far/plant_grass | 43 | 0.407 |
-| 0.39, 1.88, 1.28 | Heros_far/plant_grass | 44 | 0.41 |
-| 0.38, 1.88, 1.28 | Heros_far/plant_grass | 43 | 0.409 |
-| 0.34, 1.88, 1.37 | Heros_far/plant_grass | 44 | 0.409 |
-| 0.34, 1.88, 1.38 | Heros_far/plant_grass | 43 | 0.408 |
-| 0.43, 1.88, 1.42 | Heros_far/plant_grass | 44 | 0.412 |
-| 0.44, 1.88, 1.42 | Heros_far/plant_grass | 44 | 0.411 |
-| -1.42, 1.87, 0.65 | Heros_far/plant_grass | 43 | 0.404 |
-| -1.43, 1.87, 0.65 | Heros_far/plant_grass | 43 | 0.402 |
-| -1.52, 1.87, 0.63 | Heros_far/plant_grass | 42 | 0.397 |
-| -1.53, 1.87, 0.64 | Heros_far/plant_grass | 42 | 0.396 |
-| -1.57, 1.87, 0.70 | Heros_far/plant_grass | 43 | 0.4 |
-| -1.57, 1.87, 0.71 | Heros_far/plant_grass | 42 | 0.399 |
-| -1.50, 1.87, 0.77 | Heros_far/plant_grass | 43 | 0.404 |
+| -13.79, 4.21, 19.20 | Heros_far/cast_iron_green | 49 | 2.601 |
+| -13.82, 4.21, 19.15 | Heros_far/cast_iron_green | 49 | 2.601 |
+| -13.87, 4.21, 19.14 | Heros_far/cast_iron_green | 49 | 2.601 |
+| -13.92, 4.21, 19.18 | Heros_far/cast_iron_green | 49 | 2.601 |
+| -13.93, 4.21, 19.23 | Heros_far/cast_iron_green | 49 | 2.601 |
+| -13.89, 4.21, 19.28 | Heros_far/cast_iron_green | 49 | 2.601 |
+| -13.84, 4.21, 19.29 | Heros_far/cast_iron_green | 49 | 2.601 |
+| -13.80, 4.21, 19.25 | Heros_far/cast_iron_green | 49 | 2.601 |
 
-(64 more in the JSON)
+## winding (warn, 12)
+
+| at | part |
+|---|---|
+| -9.55, 1.70, 21.01 | Heros_far/cast_iron_green |
+| -9.51, 1.70, 21.14 | Heros_far/cast_iron_green |
+| -9.66, 1.70, 20.93 | Heros_far/cast_iron_green |
+| -9.79, 1.70, 20.93 | Heros_far/cast_iron_green |
+| -9.94, 1.70, 21.14 | Heros_far/cast_iron_green |
+| -9.90, 1.70, 21.27 | Heros_far/cast_iron_green |
+| -9.79, 1.70, 21.35 | Heros_far/cast_iron_green |
+| -9.66, 1.70, 21.35 | Heros_far/cast_iron_green |
+| -9.51, 1.78, 21.14 | Heros_far/cast_iron_green |
+| -9.79, 1.78, 20.93 | Heros_far/cast_iron_green |
+| -9.94, 1.78, 21.14 | Heros_far/cast_iron_green |
+| -9.66, 1.78, 21.35 | Heros_far/cast_iron_green |
 
 ## nonmanifold (warn, 23)
 
 | at | part | uses |
 |---|---|---|
-| -0.02, 10.43, -0.47 | Heros_far/bronze_gilt | 3 |
-| 0.15, 9.06, -0.07 | Heros_far/bronze_gilt | 4 |
-| 0.18, 9.25, -0.06 | Heros_far/bronze_gilt | 4 |
-| -0.22, 8.84, -0.04 | Heros_far/bronze_gilt | 4 |
-| 0.21, 8.97, 0.55 | Heros_far/bronze_gilt | 3 |
-| 0.15, 8.86, -0.06 | Heros_far/bronze_gilt | 4 |
-| 0.27, 8.60, 0.05 | Heros_far/bronze_gilt | 3 |
-| 0.28, 8.51, 0.03 | Heros_far/bronze_gilt | 3 |
-| 0.23, 8.59, 0.06 | Heros_far/bronze_gilt | 3 |
-| 0.57, 8.47, 0.07 | Heros_far/bronze_gilt | 3 |
-| 0.10, 8.80, -0.33 | Heros_far/bronze_gilt | 4 |
-| -0.12, 8.79, -0.32 | Heros_far/bronze_gilt | 4 |
-| -0.06, 8.77, -0.35 | Heros_far/bronze_gilt | 4 |
-| -0.14, 9.03, 0.05 | Heros_far/bronze_gilt | 4 |
-| 0.03, 8.13, -0.33 | Heros_far/bronze_gilt | 4 |
-| 0.59, 8.42, 0.37 | Heros_far/bronze_gilt | 3 |
-| 0.26, 8.45, 0.43 | Heros_far/bronze_gilt | 3 |
-| 0.15, 8.88, 0.11 | Heros_far/bronze_gilt | 3 |
-| 0.10, 8.46, 0.21 | Heros_far/bronze_gilt | 3 |
-| 0.08, 8.34, 0.13 | Heros_far/bronze_gilt | 4 |
-| 0.14, 7.90, -0.21 | Heros_far/bronze_gilt | 4 |
-| 0.02, 7.89, -0.32 | Heros_far/bronze_gilt | 4 |
-| 0.11, 7.78, -0.22 | Heros_far/bronze_gilt | 4 |
+| -0.02, 10.45, -0.47 | Heros_far/bronze_gilt | 3 |
+| 0.15, 9.08, -0.07 | Heros_far/bronze_gilt | 4 |
+| 0.18, 9.27, -0.06 | Heros_far/bronze_gilt | 4 |
+| -0.22, 8.86, -0.04 | Heros_far/bronze_gilt | 4 |
+| 0.21, 8.99, 0.55 | Heros_far/bronze_gilt | 3 |
+| 0.15, 8.88, -0.06 | Heros_far/bronze_gilt | 4 |
+| 0.27, 8.62, 0.05 | Heros_far/bronze_gilt | 3 |
+| 0.28, 8.53, 0.03 | Heros_far/bronze_gilt | 3 |
+| 0.23, 8.61, 0.06 | Heros_far/bronze_gilt | 3 |
+| 0.57, 8.49, 0.07 | Heros_far/bronze_gilt | 3 |
+| 0.10, 8.82, -0.33 | Heros_far/bronze_gilt | 4 |
+| -0.12, 8.80, -0.32 | Heros_far/bronze_gilt | 4 |
+| -0.06, 8.79, -0.35 | Heros_far/bronze_gilt | 4 |
+| -0.14, 9.05, 0.05 | Heros_far/bronze_gilt | 4 |
+| 0.03, 8.15, -0.33 | Heros_far/bronze_gilt | 4 |
+| 0.59, 8.44, 0.37 | Heros_far/bronze_gilt | 3 |
+| 0.26, 8.47, 0.43 | Heros_far/bronze_gilt | 3 |
+| 0.15, 8.90, 0.11 | Heros_far/bronze_gilt | 3 |
+| 0.10, 8.48, 0.21 | Heros_far/bronze_gilt | 3 |
+| 0.08, 8.36, 0.13 | Heros_far/bronze_gilt | 4 |
+| 0.14, 7.92, -0.21 | Heros_far/bronze_gilt | 4 |
+| 0.02, 7.91, -0.32 | Heros_far/bronze_gilt | 4 |
+| 0.11, 7.80, -0.22 | Heros_far/bronze_gilt | 4 |
 
 ## tjunction (warn, 84)
 
@@ -137,7 +186,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (44 more in the JSON)
 
-## seam (info, 135)
+## seam (info, 198)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -145,46 +194,46 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 8.40, 0.45, 0.68 | Heros_far/stone_blue + Heros_far/stone_blue | 8.76 | 63 | 90 |
 | -10.03, 1.15, 20.49 | Heros_far/stone_blue + Heros_far/stone_blue | 3.34 | 24 | 90 |
 | -12.00, 1.15, 19.21 | Heros_far/stone_blue + Heros_far/stone_blue | 3.34 | 23 | 90 |
-| 0.03, 7.13, -0.18 | Heros_far/stone_blue + Heros_far/bronze_gilt | 1.61 | 18 | 6.5 |
+| 0.03, 7.15, -0.18 | Heros_far/stone_blue + Heros_far/bronze_gilt | 1.61 | 18 | 6.5 |
+| 2.87, 0.71, -2.44 | Heros_far/stone_blue + Heros_far/cast_iron_green | 0.18 | 16 | 90 |
 | 2.81, 1.72, 0.07 | Heros_far/stone_blue + Heros_far/stone_blue | 18.65 | 16 | 90 |
 | 1.08, 1.72, 2.40 | Heros_far/stone_blue + Heros_far/stone_blue | 16.26 | 16 | 90 |
 | 1.36, 1.63, 2.11 | Heros_far/stone_blue + Heros_far/soil_bed | 16.26 | 16 | 90 |
-| 10.64, 0.36, -2.60 | Heros_far/cast_iron_green + Heros_far/cast_iron_green | 0.14 | 14 | 44.8 |
-| 10.90, 0.36, 0.61 | Heros_far/cast_iron_green + Heros_far/cast_iron_green | 0.14 | 14 | 44.8 |
-| 8.09, 1.33, -2.39 | Heros_far/cast_iron_green + Heros_far/cast_iron_green | 0.13 | 12 | 45 |
-| 13.14, -0.62, -2.80 | Heros_far/cast_iron_green + Heros_far/cast_iron_green | 0.13 | 12 | 45 |
-| 8.35, 1.33, 0.82 | Heros_far/cast_iron_green + Heros_far/cast_iron_green | 0.13 | 12 | 45 |
-| 13.40, -0.62, 0.41 | Heros_far/cast_iron_green + Heros_far/cast_iron_green | 0.13 | 12 | 45 |
-| 10.62, -0.40, -2.57 | Heros_far/stone_blue + Heros_far/cast_iron_green | 0.14 | 10 | 72.7 |
-| 8.36, 0.57, 0.83 | Heros_far/stone_blue + Heros_far/cast_iron_green | 0.14 | 10 | 90 |
-| 10.90, -0.41, 0.61 | Heros_far/stone_blue + Heros_far/cast_iron_green | 0.14 | 10 | 72.7 |
-| 3.29, 0.71, -1.07 | Heros_far/stone_blue + Heros_far/stone_blue | 0.81 | 9 | 90 |
-| -3.29, 0.71, -1.07 | Heros_far/stone_blue + Heros_far/stone_blue | 0.81 | 9 | 90 |
-| -1.57, 0.71, -3.08 | Heros_far/stone_blue + Heros_far/stone_blue | 0.81 | 9 | 90 |
-| -2.84, 1.72, -1.07 | Heros_far/stone_blue + Heros_far/stone_blue | 1.23 | 9 | 90 |
-| 2.77, 1.72, -1.25 | Heros_far/stone_blue + Heros_far/stone_blue | 1.23 | 9 | 90 |
-| 1.46, 0.71, 3.23 | Heros_far/stone_blue + Heros_far/stone_blue | 0.81 | 8 | 90 |
-| 3.11, 0.71, 1.58 | Heros_far/stone_blue + Heros_far/stone_blue | 0.81 | 8 | 90 |
-| -3.19, 0.71, 1.57 | Heros_far/stone_blue + Heros_far/stone_blue | 0.81 | 8 | 90 |
-| 1.57, 0.71, -3.08 | Heros_far/stone_blue + Heros_far/stone_blue | 0.81 | 8 | 90 |
-| 2.81, 1.37, -0.95 | Heros_far/stone_blue + Heros_far/stone_blue | 1.31 | 8 | 67.5 |
-| 2.81, 1.69, 0.95 | Heros_far/stone_blue + Heros_far/stone_blue | 1.31 | 8 | 67.5 |
-| 1.32, 1.69, 2.66 | Heros_far/stone_blue + Heros_far/stone_blue | 1.31 | 8 | 67.5 |
-| -1.06, 1.72, 2.81 | Heros_far/stone_blue + Heros_far/stone_blue | 1.31 | 8 | 67.5 |
-| -2.66, 1.69, 1.32 | Heros_far/stone_blue + Heros_far/stone_blue | 1.31 | 8 | 67.5 |
-| -2.81, 1.69, -0.95 | Heros_far/stone_blue + Heros_far/stone_blue | 1.31 | 8 | 67.5 |
-| -1.32, 1.69, -2.66 | Heros_far/stone_blue + Heros_far/stone_blue | 1.31 | 8 | 67.5 |
-| 0.95, 1.69, -2.81 | Heros_far/stone_blue + Heros_far/stone_blue | 1.31 | 8 | 67.5 |
-| 2.74, 1.72, 1.28 | Heros_far/stone_blue + Heros_far/stone_blue | 1.23 | 8 | 90 |
-| -1.07, 1.72, 2.84 | Heros_far/stone_blue + Heros_far/stone_blue | 1.23 | 8 | 90 |
-| -2.77, 1.72, 1.25 | Heros_far/stone_blue + Heros_far/stone_blue | 1.23 | 8 | 90 |
-| 1.07, 1.72, -2.84 | Heros_far/stone_blue + Heros_far/stone_blue | 1.23 | 8 | 90 |
-| -0.77, 1.63, 1.11 | Heros_far/stone_blue + Heros_far/soil_bed | 9.12 | 8 | 90 |
-| 8.09, 0.57, -2.39 | Heros_far/stone_blue + Heros_far/cast_iron_green | 0.14 | 8 | 90 |
+| 2.87, 0.96, -2.45 | Heros_far/cast_iron_green + Heros_far/cast_iron_green | 0.2 | 16 | 56.9 |
+| -0.23, 1.63, 2.30 | Heros_far/soil_bed + Heros_far/plant_grass | 2.06 | 16 | 60.8 |
+| 0.44, 1.63, 1.89 | Heros_far/soil_bed + Heros_far/plant_grass | 2.1 | 16 | 63.8 |
+| 1.93, 1.63, 1.32 | Heros_far/soil_bed + Heros_far/plant_grass | 1.87 | 16 | 65 |
+| -1.25, 1.63, -1.73 | Heros_far/soil_bed + Heros_far/plant_grass | 2 | 16 | 65.5 |
+| -1.89, 1.63, 0.42 | Heros_far/plant_grass + Heros_far/plant_grass | 0.81 | 15 | 59 |
+| -0.63, 1.62, 1.44 | Heros_far/plant_grass + Heros_far/plant_grass | 0.84 | 15 | 63.2 |
+| 1.27, 1.61, 0.36 | Heros_far/plant_grass + Heros_far/plant_grass | 1.02 | 15 | 67.5 |
+| 10.10, 0.59, -2.56 | Heros_far/cast_iron_green + Heros_far/cast_iron_green | 0.14 | 14 | 44.8 |
+| 11.12, 0.15, -2.64 | Heros_far/cast_iron_green + Heros_far/cast_iron_green | 0.14 | 14 | 44.8 |
+| 10.37, 0.59, 0.65 | Heros_far/cast_iron_green + Heros_far/cast_iron_green | 0.14 | 14 | 44.8 |
+| 11.38, 0.15, 0.57 | Heros_far/cast_iron_green + Heros_far/cast_iron_green | 0.14 | 14 | 44.8 |
+| -0.83, 1.63, 2.42 | Heros_far/soil_bed + Heros_far/plant_grass | 1.66 | 14 | 61.5 |
+| 0.39, 1.63, 1.99 | Heros_far/soil_bed + Heros_far/plant_grass | 2.02 | 14 | 66.4 |
+| 0.78, 1.63, 1.82 | Heros_far/soil_bed + Heros_far/plant_grass | 1.99 | 14 | 64.3 |
+| -0.18, 1.63, 1.94 | Heros_far/soil_bed + Heros_far/plant_grass | 2.21 | 14 | 63.2 |
+| -1.10, 1.63, 1.43 | Heros_far/soil_bed + Heros_far/plant_grass | 1.81 | 14 | 61.5 |
+| -2.19, 1.63, 1.05 | Heros_far/soil_bed + Heros_far/plant_grass | 2.16 | 14 | 58.9 |
+| 1.29, 1.63, -0.71 | Heros_far/soil_bed + Heros_far/plant_grass | 2.07 | 14 | 63.7 |
+| 1.63, 1.63, -0.10 | Heros_far/soil_bed + Heros_far/plant_grass | 2.12 | 14 | 65.8 |
+| 1.96, 1.63, 0.24 | Heros_far/soil_bed + Heros_far/plant_grass | 1.82 | 14 | 67.7 |
+| -2.30, 1.63, 0.81 | Heros_far/soil_bed + Heros_far/plant_grass | 1.93 | 14 | 64.1 |
+| -1.66, 1.63, -0.29 | Heros_far/soil_bed + Heros_far/plant_grass | 1.8 | 14 | 60 |
+| -1.83, 1.63, 0.28 | Heros_far/soil_bed + Heros_far/plant_grass | 1.97 | 14 | 62.9 |
+| 1.68, 1.63, -0.91 | Heros_far/soil_bed + Heros_far/plant_grass | 1.82 | 14 | 66.1 |
+| 1.18, 1.63, -1.88 | Heros_far/soil_bed + Heros_far/plant_grass | 2.02 | 14 | 63.8 |
+| -0.57, 1.63, -1.40 | Heros_far/soil_bed + Heros_far/plant_grass | 1.86 | 14 | 66.1 |
+| 0.10, 1.63, -1.84 | Heros_far/soil_bed + Heros_far/plant_grass | 2 | 14 | 64.2 |
+| 0.39, 1.63, -1.96 | Heros_far/soil_bed + Heros_far/plant_grass | 1.71 | 14 | 65.8 |
+| 1.89, 1.57, 1.59 | Heros_far/stone_blue + Heros_far/plant_grass | 0.9 | 13 | 26.5 |
+| 1.17, 1.71, -0.04 | Heros_far/stone_blue + Heros_far/plant_grass | 1.41 | 13 | 39.6 |
 
-(95 more in the JSON)
+(158 more in the JSON)
 
-## opening (info, 103)
+## opening (info, 111)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -229,32 +278,32 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.93, 1.28, 2.64 | Heros_far/stone_blue | 0.38 + 0 + -0.92 | 0.4 |
 | -2.56, 1.28, 1.12 | Heros_far/stone_blue | 0.92 + 0 + -0.38 | 0.4 |
 
-(63 more in the JSON)
+(71 more in the JSON)
 
-## backtoback (info, 65)
+## backtoback (info, 79)
 
 | at | parts | area |
 |---|---|---|
 | 1.23, 1.72, 2.70 | Heros_far/stone_blue + Heros_far/stone_blue | 0.02871 |
 | 1.16, 1.72, 2.62 | Heros_far/stone_blue + Heros_far/stone_blue | 0.0195 |
-| 2.73, 1.72, 1.27 | Heros_far/stone_blue + Heros_far/stone_blue | 0.00449 |
 | 2.81, 1.72, 1.21 | Heros_far/stone_blue + Heros_far/stone_blue | 0.00041 |
+| 2.73, 1.72, 1.27 | Heros_far/stone_blue + Heros_far/stone_blue | 0.00449 |
 | -1.03, 1.72, 2.83 | Heros_far/stone_blue + Heros_far/stone_blue | 0.0049 |
-| 1.14, 1.72, 2.82 | Heros_far/stone_blue + Heros_far/stone_blue | 0.00275 |
 | 1.03, 1.72, 2.74 | Heros_far/stone_blue + Heros_far/stone_blue | 0.04546 |
+| 1.14, 1.72, 2.82 | Heros_far/stone_blue + Heros_far/stone_blue | 0.00275 |
 | -1.04, 1.72, 2.77 | Heros_far/stone_blue + Heros_far/stone_blue | 0.02381 |
 | -1.03, 1.72, 2.67 | Heros_far/stone_blue + Heros_far/stone_blue | 0.0195 |
 | -2.73, 1.72, 1.27 | Heros_far/stone_blue + Heros_far/stone_blue | 0.0049 |
 | -1.18, 1.72, 2.80 | Heros_far/stone_blue + Heros_far/stone_blue | 0.00275 |
 | -1.21, 1.72, 2.67 | Heros_far/stone_blue + Heros_far/stone_blue | 0.04546 |
-| 2.66, 1.72, 1.20 | Heros_far/stone_blue + Heros_far/stone_blue | 0.04097 |
 | 2.80, 1.72, 1.18 | Heros_far/stone_blue + Heros_far/stone_blue | 0.00234 |
+| 2.66, 1.72, 1.20 | Heros_far/stone_blue + Heros_far/stone_blue | 0.04097 |
 | -2.69, 1.72, 1.22 | Heros_far/stone_blue + Heros_far/stone_blue | 0.02381 |
 | -2.62, 1.72, 1.16 | Heros_far/stone_blue + Heros_far/stone_blue | 0.0195 |
 | 2.84, 1.72, -1.13 | Heros_far/stone_blue + Heros_far/stone_blue | 0.00041 |
 | 2.83, 1.72, -1.03 | Heros_far/stone_blue + Heros_far/stone_blue | 0.00449 |
-| 2.67, 1.72, 1.03 | Heros_far/stone_blue + Heros_far/stone_blue | 0.0195 |
 | 2.78, 1.72, 1.04 | Heros_far/stone_blue + Heros_far/stone_blue | 0.02871 |
+| 2.67, 1.72, 1.03 | Heros_far/stone_blue + Heros_far/stone_blue | 0.0195 |
 | -2.83, 1.72, -1.03 | Heros_far/stone_blue + Heros_far/stone_blue | 0.0049 |
 | -2.74, 1.72, 1.03 | Heros_far/stone_blue + Heros_far/stone_blue | 0.04546 |
 | -2.82, 1.72, 1.14 | Heros_far/stone_blue + Heros_far/stone_blue | 0.00275 |
@@ -276,7 +325,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 1.04, 1.72, -2.77 | Heros_far/stone_blue + Heros_far/stone_blue | 0.02381 |
 | 1.03, 1.72, -2.67 | Heros_far/stone_blue + Heros_far/stone_blue | 0.0195 |
 
-(25 more in the JSON)
+(39 more in the JSON)
 
 
-Nodes: Heros_far. Distances: {"Heros_far":3000}. Quantum 0.000 mm. Offset 0,0,0.
+Nodes: Heros_far. Distances: {}. Quantum 0.000 mm. Offset 0,0,0.
