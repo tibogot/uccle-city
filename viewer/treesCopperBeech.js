@@ -43,7 +43,9 @@ export const COPPER_SEASONS = {
  *  it), a wine glow at a lower strength, a neutral fill. */
 const COPPER_LOOK = {
   summer: { topColor: "#42252a", bottomColor: "#4a2a30", translucencyColor: "#8c2c44", translucency: 0.24, fillColor: "#9c949c" },
-  spring: { topColor: "#7a3446", bottomColor: "#552637", translucencyColor: "#b84858", translucency: 0.32, fillColor: "#a49aa0" },
+  spring: { topColor: "#7a3446", bottomColor: "#552637", translucencyColor: "#b84858", translucency: 0.32, fillColor: "#a49aa0", lookFill: 1.3 },
+  autumn: { lookFill: 1.2 },
+  winter: { lookFill: 1.2 },
 };
 const BARK_ID = "tf_copperbeech";
 // the bark's mean colour (linear) the factory set is graded to: the photos' silver-grey (a touch lighter and warmer
@@ -347,7 +349,7 @@ export function copperBeechDef(seedBase = 1000, tex, { look = true } = {}) {
     params: {
       seed: seedBase,
       topColor: S.topColor, bottomColor: S.bottomColor, translucencyColor: S.translucencyColor, translucency: S.translucency,
-      tintVar: 0.16, crownLift: 0, fill: look ? 1.6 : 0.55,   // (the look: the shade side lifted)
+      tintVar: 0.16, crownLift: 0, fill: look ? S.lookFill ?? 1.6 : 0.55,   // (the look: the shade side lifted)
       fillColor: S.fillColor, aoColor: 0.2, trunkColor: [0.27, 0.27, 0.26],
       leafTone: 0, shadowLift: 2.2,
       // (two thirds of the spray's own leaf-to-leaf colour spread: the full spread read as confetti close up)

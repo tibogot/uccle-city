@@ -28,12 +28,13 @@ const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
 // ------------------------------------------------------------------------------------------------ seasons
 /** Per season: the factory spray (viewer/trees/textures/tree_textures.json), how much of its own colour spread is
- *  kept (1 = all: the palette is the spray's mean), the crown's light (top / bottom x the mean) and the light through. */
+ *  kept (1 = all: the palette is the spray's mean), the crown's light (top / bottom x the mean) and the light through;
+ *  the look (docs/TREES.md §8): lookFill (the shade side's lift, default 1.6), lookBottom (the underside x, 1.15). */
 export const CHESTNUT_SEASONS = {
   summer: { leaves: "leaf_horsechestnut", variation: 0.85, top: 1.12, bottom: 0.62, translucencyColor: "#9cc048", translucency: 0.3, fillColor: "#a4b0a0" },
-  spring: { leaves: "leaf_horsechestnut_spring", variation: 1, top: 1.1, bottom: 0.66, translucencyColor: "#c4e060", translucency: 0.38, fillColor: "#b0bca8" },
-  autumn: { leaves: "leaf_horsechestnut_autumn", variation: 0.95, top: 1.1, bottom: 0.64, translucencyColor: "#e0b050", translucency: 0.34, fillColor: "#b0a898" },
-  winter: { leaves: "leaf_horsechestnut_winter", variation: 1, top: 1.6, bottom: 1.15, translucencyColor: "#806050", translucency: 0.04, fillColor: "#a4a09c" },
+  spring: { leaves: "leaf_horsechestnut_spring", lookFill: 1.15, variation: 1, top: 1.1, bottom: 0.66, translucencyColor: "#c4e060", translucency: 0.38, fillColor: "#b0bca8" },
+  autumn: { leaves: "leaf_horsechestnut_autumn", lookFill: 1.3, variation: 0.95, top: 1.1, bottom: 0.64, translucencyColor: "#e0b050", translucency: 0.34, fillColor: "#b0a898" },
+  winter: { leaves: "leaf_horsechestnut_winter", lookBottom: 1, variation: 1, top: 1.6, bottom: 1.15, translucencyColor: "#806050", translucency: 0.04, fillColor: "#a4a09c" },
 };
 const BARK_ID = "tf_horsechestnut";
 // the bark's mean colour (linear): grey-brown, a little darker and browner than the beech's silver-grey
@@ -304,7 +305,7 @@ export function horseChestnutDef(seedBase = 1000, tex, { look = true } = {}) {
     params: {
       seed: seedBase,
       topColor: lin(top), bottomColor: lin(bottom), translucencyColor: S.translucencyColor, translucency: S.translucency,
-      tintVar: 0.14, crownLift: 0, fill: look ? 1.6 : 0.5,   // (the look: the shade side lifted, the inside no dark hole)
+      tintVar: 0.14, crownLift: 0, fill: look ? S.lookFill ?? 1.6 : 0.5,   // (the look: the shade side lifted, the inside no dark hole)
       fillColor: S.fillColor, aoColor: 0.25, trunkColor: [0.2, 0.18, 0.16],
       leafTone: 0, shadowLift: 2.2,
       leafAtlas: atlas,

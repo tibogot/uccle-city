@@ -793,4 +793,4 @@ async function flicker(o = {}) {
   if (o.heat !== false) showHeat(r);
   return r;
 }
-window.lab = { LOOK: LEAF_LOOK, flicker, kits, COPPER_TEX, HC_TEX, chestnutTrees, dreveTrees, ui, popWalk, photoView, renderer, scene, camera, controls, lighting, S, species, get fields() { return fields; }, get chain() { return chain; }, build, applyAll, bench, alternate, results, startWalk, stopWalk, walkAt, walk, resetView, gpu, lodMorph, IMP, TREE_SHADOW, drawMask, planeLeafMask };
+window.lab = { LOOK: LEAF_LOOK, rebuildSeasonal, seasonTex, flicker, kits, COPPER_TEX, HC_TEX, chestnutTrees, dreveTrees, ui, popWalk, photoView, renderer, scene, camera, controls, lighting, S, species, get fields() { return fields; }, get chain() { return chain; }, build, applyAll, bench, alternate, results, startWalk, stopWalk, walkAt, walk, resetView, gpu, lodMorph, IMP, TREE_SHADOW, drawMask, planeLeafMask };
