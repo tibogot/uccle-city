@@ -1,0 +1,2229 @@
+{
+ "summary": {
+  "triangles": 770,
+  "vertices_welded": 404,
+  "open_edges": 4,
+  "rays": 384,
+  "blocking": 0,
+  "warnings": 144,
+  "counts": {
+   "sliver": 140,
+   "backtoback": 16,
+   "near": 4,
+   "seam": 7
+  },
+  "ms": 45
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.01,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "paypoint",
+   "slot": "concrete",
+   "triangles": 108,
+   "maxDistance": 120
+  },
+  {
+   "name": "paypoint",
+   "slot": "dispenser_body",
+   "triangles": 108,
+   "maxDistance": 120
+  },
+  {
+   "name": "paypoint",
+   "slot": "brand_primary",
+   "triangles": 108,
+   "maxDistance": 120
+  },
+  {
+   "name": "paypoint",
+   "slot": "plastic_dark",
+   "triangles": 216,
+   "maxDistance": 120
+  },
+  {
+   "name": "paypoint",
+   "slot": "screen",
+   "triangles": 12,
+   "maxDistance": 120
+  },
+  {
+   "name": "paypoint",
+   "slot": "steel_brushed",
+   "triangles": 108,
+   "maxDistance": 120
+  },
+  {
+   "name": "paypoint",
+   "slot": "brand_secondary",
+   "triangles": 108,
+   "maxDistance": 120
+  },
+  {
+   "name": "paypoint__sign",
+   "slot": "sign",
+   "triangles": 2,
+   "maxDistance": 120
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.372,
+     0.079,
+     -0.103
+    ],
+    "part": "paypoint/concrete",
+    "aspect": 81,
+    "longest": 0.62
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.375,
+     0.078,
+     0.103
+    ],
+    "part": "paypoint/concrete",
+    "aspect": 81,
+    "longest": 0.62
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.378,
+     0.075,
+     -0.103
+    ],
+    "part": "paypoint/concrete",
+    "aspect": 81,
+    "longest": 0.62
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.379,
+     0.072,
+     0.103
+    ],
+    "part": "paypoint/concrete",
+    "aspect": 81,
+    "longest": 0.62
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.123,
+     0.079,
+     -0.312
+    ],
+    "part": "paypoint/concrete",
+    "aspect": 97,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.123,
+     0.078,
+     -0.315
+    ],
+    "part": "paypoint/concrete",
+    "aspect": 97,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.123,
+     0.075,
+     -0.318
+    ],
+    "part": "paypoint/concrete",
+    "aspect": 97,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.123,
+     0.072,
+     -0.319
+    ],
+    "part": "paypoint/concrete",
+    "aspect": 97,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.372,
+     0.079,
+     0.103
+    ],
+    "part": "paypoint/concrete",
+    "aspect": 81,
+    "longest": 0.62
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.375,
+     0.078,
+     -0.103
+    ],
+    "part": "paypoint/concrete",
+    "aspect": 81,
+    "longest": 0.62
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.378,
+     0.075,
+     0.103
+    ],
+    "part": "paypoint/concrete",
+    "aspect": 81,
+    "longest": 0.62
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.379,
+     0.072,
+     -0.103
+    ],
+    "part": "paypoint/concrete",
+    "aspect": 81,
+    "longest": 0.62
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.123,
+     0.079,
+     0.312
+    ],
+    "part": "paypoint/concrete",
+    "aspect": 97,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.123,
+     0.078,
+     0.315
+    ],
+    "part": "paypoint/concrete",
+    "aspect": 97,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.123,
+     0.075,
+     0.318
+    ],
+    "part": "paypoint/concrete",
+    "aspect": 97,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.123,
+     0.072,
+     0.319
+    ],
+    "part": "paypoint/concrete",
+    "aspect": 97,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     1.053,
+     0.198
+    ],
+    "part": "paypoint/dispenser_body",
+    "aspect": 93,
+    "longest": 1.43
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.269,
+     0.577,
+     0.196
+    ],
+    "part": "paypoint/dispenser_body",
+    "aspect": 93,
+    "longest": 1.43
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.276,
+     1.053,
+     0.189
+    ],
+    "part": "paypoint/dispenser_body",
+    "aspect": 93,
+    "longest": 1.43
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.278,
+     0.577,
+     0.185
+    ],
+    "part": "paypoint/dispenser_body",
+    "aspect": 93,
+    "longest": 1.43
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     0.577,
+     -0.198
+    ],
+    "part": "paypoint/dispenser_body",
+    "aspect": 93,
+    "longest": 1.43
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.269,
+     1.053,
+     -0.196
+    ],
+    "part": "paypoint/dispenser_body",
+    "aspect": 93,
+    "longest": 1.43
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.276,
+     0.577,
+     -0.189
+    ],
+    "part": "paypoint/dispenser_body",
+    "aspect": 93,
+    "longest": 1.43
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.278,
+     1.053,
+     -0.185
+    ],
+    "part": "paypoint/dispenser_body",
+    "aspect": 93,
+    "longest": 1.43
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.278,
+     0.577,
+     -0.185
+    ],
+    "part": "paypoint/dispenser_body",
+    "aspect": 93,
+    "longest": 1.43
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.276,
+     1.053,
+     -0.189
+    ],
+    "part": "paypoint/dispenser_body",
+    "aspect": 93,
+    "longest": 1.43
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.269,
+     0.577,
+     -0.196
+    ],
+    "part": "paypoint/dispenser_body",
+    "aspect": 93,
+    "longest": 1.43
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     1.053,
+     -0.198
+    ],
+    "part": "paypoint/dispenser_body",
+    "aspect": 93,
+    "longest": 1.43
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     0.577,
+     0.198
+    ],
+    "part": "paypoint/dispenser_body",
+    "aspect": 93,
+    "longest": 1.43
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.269,
+     1.053,
+     0.196
+    ],
+    "part": "paypoint/dispenser_body",
+    "aspect": 93,
+    "longest": 1.43
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.276,
+     0.577,
+     0.189
+    ],
+    "part": "paypoint/dispenser_body",
+    "aspect": 93,
+    "longest": 1.43
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.278,
+     1.053,
+     0.185
+    ],
+    "part": "paypoint/dispenser_body",
+    "aspect": 93,
+    "longest": 1.43
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.09,
+     1.551,
+     -0.194
+    ],
+    "part": "paypoint/brand_primary",
+    "aspect": 47,
+    "longest": 0.54
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.09,
+     1.553,
+     -0.197
+    ],
+    "part": "paypoint/brand_primary",
+    "aspect": 47,
+    "longest": 0.54
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.09,
+     1.558,
+     -0.202
+    ],
+    "part": "paypoint/brand_primary",
+    "aspect": 47,
+    "longest": 0.54
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.09,
+     1.561,
+     -0.204
+    ],
+    "part": "paypoint/brand_primary",
+    "aspect": 47,
+    "longest": 0.54
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.09,
+     1.749,
+     -0.194
+    ],
+    "part": "paypoint/brand_primary",
+    "aspect": 47,
+    "longest": 0.54
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.09,
+     1.747,
+     -0.197
+    ],
+    "part": "paypoint/brand_primary",
+    "aspect": 47,
+    "longest": 0.54
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.09,
+     1.742,
+     -0.202
+    ],
+    "part": "paypoint/brand_primary",
+    "aspect": 47,
+    "longest": 0.54
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.09,
+     1.739,
+     -0.204
+    ],
+    "part": "paypoint/brand_primary",
+    "aspect": 47,
+    "longest": 0.54
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.09,
+     1.551,
+     0.194
+    ],
+    "part": "paypoint/brand_primary",
+    "aspect": 47,
+    "longest": 0.54
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.09,
+     1.553,
+     0.197
+    ],
+    "part": "paypoint/brand_primary",
+    "aspect": 47,
+    "longest": 0.54
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.09,
+     1.558,
+     0.202
+    ],
+    "part": "paypoint/brand_primary",
+    "aspect": 47,
+    "longest": 0.54
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.09,
+     1.561,
+     0.204
+    ],
+    "part": "paypoint/brand_primary",
+    "aspect": 47,
+    "longest": 0.54
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.09,
+     1.749,
+     0.194
+    ],
+    "part": "paypoint/brand_primary",
+    "aspect": 47,
+    "longest": 0.54
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.09,
+     1.747,
+     0.197
+    ],
+    "part": "paypoint/brand_primary",
+    "aspect": 47,
+    "longest": 0.54
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.09,
+     1.742,
+     0.202
+    ],
+    "part": "paypoint/brand_primary",
+    "aspect": 47,
+    "longest": 0.54
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.09,
+     1.739,
+     0.204
+    ],
+    "part": "paypoint/brand_primary",
+    "aspect": 47,
+    "longest": 0.54
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.215,
+     1.278,
+     0.214
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 89,
+    "longest": 0.408
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.217,
+     1.142,
+     0.214
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 89,
+    "longest": 0.408
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.219,
+     1.278,
+     0.212
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 89,
+    "longest": 0.408
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.219,
+     1.142,
+     0.21
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 89,
+    "longest": 0.408
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.215,
+     1.142,
+     0.201
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 89,
+    "longest": 0.408
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.217,
+     1.278,
+     0.201
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 89,
+    "longest": 0.408
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.219,
+     1.142,
+     0.203
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 89,
+    "longest": 0.408
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.219,
+     1.278,
+     0.205
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 89,
+    "longest": 0.408
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.071,
+     1.001,
+     0.205
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 93,
+    "longest": 0.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.071,
+     1.001,
+     0.203
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 93,
+    "longest": 0.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.071,
+     1.003,
+     0.201
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 93,
+    "longest": 0.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.071,
+     1.005,
+     0.201
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 93,
+    "longest": 0.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.071,
+     1.419,
+     0.205
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 93,
+    "longest": 0.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.071,
+     1.419,
+     0.203
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 93,
+    "longest": 0.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.071,
+     1.417,
+     0.201
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 93,
+    "longest": 0.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.071,
+     1.415,
+     0.201
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 93,
+    "longest": 0.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.219,
+     1.142,
+     0.205
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 89,
+    "longest": 0.408
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.219,
+     1.278,
+     0.203
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 89,
+    "longest": 0.408
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.217,
+     1.142,
+     0.201
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 89,
+    "longest": 0.408
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.215,
+     1.278,
+     0.201
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 89,
+    "longest": 0.408
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.215,
+     1.142,
+     0.214
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 89,
+    "longest": 0.408
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.217,
+     1.278,
+     0.214
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 89,
+    "longest": 0.408
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.219,
+     1.142,
+     0.212
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 89,
+    "longest": 0.408
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.219,
+     1.278,
+     0.21
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 89,
+    "longest": 0.408
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.071,
+     1.001,
+     0.21
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 93,
+    "longest": 0.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.071,
+     1.001,
+     0.212
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 93,
+    "longest": 0.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.071,
+     1.003,
+     0.214
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 93,
+    "longest": 0.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.071,
+     1.005,
+     0.214
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 93,
+    "longest": 0.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.071,
+     1.419,
+     0.21
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 93,
+    "longest": 0.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.071,
+     1.419,
+     0.212
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 93,
+    "longest": 0.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.071,
+     1.417,
+     0.214
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 93,
+    "longest": 0.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.071,
+     1.415,
+     0.214
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 93,
+    "longest": 0.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.071,
+     1,
+     0.207
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 143,
+    "longest": 0.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.071,
+     1,
+     0.208
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 143,
+    "longest": 0.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.22,
+     1.278,
+     0.208
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 136,
+    "longest": 0.408
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.22,
+     1.142,
+     0.207
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 136,
+    "longest": 0.408
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.071,
+     1.42,
+     0.207
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 143,
+    "longest": 0.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.071,
+     1.42,
+     0.208
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 143,
+    "longest": 0.428
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.22,
+     1.278,
+     0.207
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 136,
+    "longest": 0.408
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.22,
+     1.142,
+     0.208
+    ],
+    "part": "paypoint/plastic_dark",
+    "aspect": 136,
+    "longest": 0.408
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.06,
+     1.18,
+     0.215
+    ],
+    "part": "paypoint/screen",
+    "aspect": 45,
+    "longest": 0.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.06,
+     1.18,
+     0.217
+    ],
+    "part": "paypoint/screen",
+    "aspect": 45,
+    "longest": 0.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.06,
+     1.4,
+     0.215
+    ],
+    "part": "paypoint/screen",
+    "aspect": 45,
+    "longest": 0.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.06,
+     1.4,
+     0.217
+    ],
+    "part": "paypoint/screen",
+    "aspect": 45,
+    "longest": 0.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.025,
+     2.115,
+     -0.121
+    ],
+    "part": "paypoint/steel_brushed",
+    "aspect": 117,
+    "longest": 0.538
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.027,
+     1.935,
+     -0.121
+    ],
+    "part": "paypoint/steel_brushed",
+    "aspect": 117,
+    "longest": 0.538
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     2.115,
+     -0.123
+    ],
+    "part": "paypoint/steel_brushed",
+    "aspect": 117,
+    "longest": 0.538
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     1.935,
+     -0.125
+    ],
+    "part": "paypoint/steel_brushed",
+    "aspect": 117,
+    "longest": 0.538
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.025,
+     1.935,
+     -0.179
+    ],
+    "part": "paypoint/steel_brushed",
+    "aspect": 117,
+    "longest": 0.538
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.027,
+     2.115,
+     -0.179
+    ],
+    "part": "paypoint/steel_brushed",
+    "aspect": 117,
+    "longest": 0.538
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     1.935,
+     -0.177
+    ],
+    "part": "paypoint/steel_brushed",
+    "aspect": 117,
+    "longest": 0.538
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     2.115,
+     -0.175
+    ],
+    "part": "paypoint/steel_brushed",
+    "aspect": 117,
+    "longest": 0.538
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     1.935,
+     -0.175
+    ],
+    "part": "paypoint/steel_brushed",
+    "aspect": 117,
+    "longest": 0.538
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     2.115,
+     -0.177
+    ],
+    "part": "paypoint/steel_brushed",
+    "aspect": 117,
+    "longest": 0.538
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.027,
+     1.935,
+     -0.179
+    ],
+    "part": "paypoint/steel_brushed",
+    "aspect": 117,
+    "longest": 0.538
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.025,
+     2.115,
+     -0.179
+    ],
+    "part": "paypoint/steel_brushed",
+    "aspect": 117,
+    "longest": 0.538
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.025,
+     1.935,
+     -0.121
+    ],
+    "part": "paypoint/steel_brushed",
+    "aspect": 117,
+    "longest": 0.538
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.027,
+     2.115,
+     -0.121
+    ],
+    "part": "paypoint/steel_brushed",
+    "aspect": 117,
+    "longest": 0.538
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     1.935,
+     -0.123
+    ],
+    "part": "paypoint/steel_brushed",
+    "aspect": 117,
+    "longest": 0.538
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     2.115,
+     -0.125
+    ],
+    "part": "paypoint/steel_brushed",
+    "aspect": 117,
+    "longest": 0.538
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.441,
+     2.301,
+     0.156
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 69,
+    "longest": 0.636
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.444,
+     2.302,
+     -0.056
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 69,
+    "longest": 0.636
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.448,
+     2.306,
+     0.156
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 69,
+    "longest": 0.636
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.449,
+     2.309,
+     -0.056
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 69,
+    "longest": 0.636
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.441,
+     2.379,
+     -0.056
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 69,
+    "longest": 0.636
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.444,
+     2.378,
+     0.156
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 69,
+    "longest": 0.636
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.448,
+     2.374,
+     -0.056
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 69,
+    "longest": 0.636
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.449,
+     2.371,
+     0.156
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 69,
+    "longest": 0.636
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.146,
+     2.301,
+     -0.271
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 95,
+    "longest": 0.876
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.146,
+     2.302,
+     -0.274
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 95,
+    "longest": 0.876
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.146,
+     2.306,
+     -0.278
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 95,
+    "longest": 0.876
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.146,
+     2.309,
+     -0.279
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 95,
+    "longest": 0.876
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.146,
+     2.379,
+     -0.271
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 95,
+    "longest": 0.876
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.146,
+     2.378,
+     -0.274
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 95,
+    "longest": 0.876
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.146,
+     2.374,
+     -0.278
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 95,
+    "longest": 0.876
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.146,
+     2.371,
+     -0.279
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 95,
+    "longest": 0.876
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.441,
+     2.301,
+     -0.056
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 69,
+    "longest": 0.636
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.444,
+     2.302,
+     0.156
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 69,
+    "longest": 0.636
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.448,
+     2.306,
+     -0.056
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 69,
+    "longest": 0.636
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.449,
+     2.309,
+     0.156
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 69,
+    "longest": 0.636
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.441,
+     2.379,
+     0.156
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 69,
+    "longest": 0.636
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.444,
+     2.378,
+     -0.056
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 69,
+    "longest": 0.636
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.448,
+     2.374,
+     0.156
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 69,
+    "longest": 0.636
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.449,
+     2.371,
+     -0.056
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 69,
+    "longest": 0.636
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.146,
+     2.301,
+     0.371
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 95,
+    "longest": 0.876
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.146,
+     2.302,
+     0.374
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 95,
+    "longest": 0.876
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.146,
+     2.306,
+     0.378
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 95,
+    "longest": 0.876
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.146,
+     2.309,
+     0.379
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 95,
+    "longest": 0.876
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.146,
+     2.379,
+     0.371
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 95,
+    "longest": 0.876
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.146,
+     2.378,
+     0.374
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 95,
+    "longest": 0.876
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.146,
+     2.374,
+     0.378
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 95,
+    "longest": 0.876
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.146,
+     2.371,
+     0.379
+    ],
+    "part": "paypoint/brand_secondary",
+    "aspect": 95,
+    "longest": 0.876
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.015,
+     0.08,
+     -0.12
+    ],
+    "parts": [
+     "paypoint/concrete",
+     "paypoint/dispenser_body"
+    ],
+    "area": 0.04274
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.184,
+     0.08,
+     0.045
+    ],
+    "parts": [
+     "paypoint/concrete",
+     "paypoint/dispenser_body"
+    ],
+    "area": 0.05086
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.184,
+     0.08,
+     -0.045
+    ],
+    "parts": [
+     "paypoint/concrete",
+     "paypoint/dispenser_body"
+    ],
+    "area": 0.05086
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.015,
+     0.08,
+     0.12
+    ],
+    "parts": [
+     "paypoint/concrete",
+     "paypoint/dispenser_body"
+    ],
+    "area": 0.04274
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.08,
+     1.335,
+     0.2
+    ],
+    "parts": [
+     "paypoint/dispenser_body",
+     "paypoint/plastic_dark"
+    ],
+    "area": 0.06598
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.063,
+     1.134,
+     0.2
+    ],
+    "parts": [
+     "paypoint/dispenser_body",
+     "paypoint/plastic_dark"
+    ],
+    "area": 0.07992
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.178,
+     1.173,
+     0.2
+    ],
+    "parts": [
+     "paypoint/dispenser_body",
+     "paypoint/plastic_dark"
+    ],
+    "area": 0.02133
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.13,
+     1.04,
+     0.2
+    ],
+    "parts": [
+     "paypoint/dispenser_body",
+     "paypoint/plastic_dark"
+    ],
+    "area": 0.0074
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.001,
+     1.55,
+     -0.12
+    ],
+    "parts": [
+     "paypoint/dispenser_body",
+     "paypoint/brand_primary"
+    ],
+    "area": 0.04642
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.194,
+     1.55,
+     -0.045
+    ],
+    "parts": [
+     "paypoint/dispenser_body",
+     "paypoint/brand_primary"
+    ],
+    "area": 0.04718
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.194,
+     1.55,
+     0.045
+    ],
+    "parts": [
+     "paypoint/dispenser_body",
+     "paypoint/brand_primary"
+    ],
+    "area": 0.04718
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.001,
+     1.55,
+     0.12
+    ],
+    "parts": [
+     "paypoint/dispenser_body",
+     "paypoint/brand_primary"
+    ],
+    "area": 0.04642
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.008,
+     1.75,
+     -0.158
+    ],
+    "parts": [
+     "paypoint/brand_primary",
+     "paypoint/steel_brushed"
+    ],
+    "area": 0.00115
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.008,
+     1.75,
+     -0.142
+    ],
+    "parts": [
+     "paypoint/brand_primary",
+     "paypoint/steel_brushed"
+    ],
+    "area": 0.00115
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.008,
+     2.3,
+     -0.158
+    ],
+    "parts": [
+     "paypoint/steel_brushed",
+     "paypoint/brand_secondary"
+    ],
+    "area": 0.00115
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.008,
+     2.3,
+     -0.142
+    ],
+    "parts": [
+     "paypoint/steel_brushed",
+     "paypoint/brand_secondary"
+    ],
+    "area": 0.00115
+   }
+  ],
+  "near": [
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.176,
+     1.633,
+     0.205
+    ],
+    "parts": [
+     "paypoint/brand_primary",
+     "paypoint__sign/sign"
+    ],
+    "separation_mm": 2,
+    "overlap_cm2": 174.2,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     1
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.006,
+     1.697,
+     0.205
+    ],
+    "parts": [
+     "paypoint/brand_primary",
+     "paypoint__sign/sign"
+    ],
+    "separation_mm": 2,
+    "overlap_cm2": 161.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     1
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.006,
+     1.603,
+     0.205
+    ],
+    "parts": [
+     "paypoint/brand_primary",
+     "paypoint__sign/sign"
+    ],
+    "separation_mm": 2,
+    "overlap_cm2": 161.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     1
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.176,
+     1.668,
+     0.205
+    ],
+    "parts": [
+     "paypoint/brand_primary",
+     "paypoint__sign/sign"
+    ],
+    "separation_mm": 2,
+    "overlap_cm2": 174.2,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     1
+    ]
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.12,
+     1.001,
+     0.203
+    ],
+    "parts": [
+     "paypoint/plastic_dark",
+     "paypoint/plastic_dark"
+    ],
+    "length_m": 0.88,
+    "pieces": 52,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.034,
+     0.981,
+     0.2
+    ],
+    "parts": [
+     "paypoint/dispenser_body",
+     "paypoint/plastic_dark"
+    ],
+    "length_m": 0.7,
+    "pieces": 26,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.18,
+     1.391,
+     0.215
+    ],
+    "parts": [
+     "paypoint/plastic_dark",
+     "paypoint/screen"
+    ],
+    "length_m": 1.16,
+    "pieces": 10,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.26,
+     0.08,
+     0
+    ],
+    "parts": [
+     "paypoint/concrete",
+     "paypoint/dispenser_body"
+    ],
+    "length_m": 1.76,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.26,
+     1.55,
+     0
+    ],
+    "parts": [
+     "paypoint/dispenser_body",
+     "paypoint/brand_primary"
+    ],
+    "length_m": 1.76,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.214,
+     1.409,
+     0.2
+    ],
+    "parts": [
+     "paypoint/dispenser_body",
+     "paypoint/plastic_dark"
+    ],
+    "length_m": 1.67,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.024,
+     2.3,
+     -0.15
+    ],
+    "parts": [
+     "paypoint/steel_brushed",
+     "paypoint/brand_secondary"
+    ],
+    "length_m": 0.19,
+    "pieces": 4,
+    "min_angle_deg": 22.5
+   }
+  ]
+ },
+ "file": "fuelkit.glb"
+}

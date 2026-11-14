@@ -1,0 +1,1001 @@
+{
+ "summary": {
+  "triangles": 1266,
+  "vertices_welded": 652,
+  "open_edges": 4,
+  "rays": 320,
+  "blocking": 0,
+  "warnings": 36,
+  "counts": {
+   "sliver": 32,
+   "backtoback": 22,
+   "near": 4,
+   "seam": 6
+  },
+  "ms": 86
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.01,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "airstand",
+   "slot": "concrete",
+   "triangles": 108,
+   "maxDistance": 120
+  },
+  {
+   "name": "airstand",
+   "slot": "brand_secondary",
+   "triangles": 108,
+   "maxDistance": 120
+  },
+  {
+   "name": "airstand",
+   "slot": "brand_primary",
+   "triangles": 108,
+   "maxDistance": 120
+  },
+  {
+   "name": "airstand",
+   "slot": "plastic_dark",
+   "triangles": 108,
+   "maxDistance": 120
+  },
+  {
+   "name": "airstand",
+   "slot": "screen",
+   "triangles": 12,
+   "maxDistance": 120
+  },
+  {
+   "name": "airstand",
+   "slot": "steel_brushed",
+   "triangles": 296,
+   "maxDistance": 120
+  },
+  {
+   "name": "airstand",
+   "slot": "hose_black",
+   "triangles": 524,
+   "maxDistance": 120
+  },
+  {
+   "name": "airstand__sign",
+   "slot": "sign",
+   "triangles": 2,
+   "maxDistance": 120
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.292,
+     0.079,
+     -0.08
+    ],
+    "part": "airstand/concrete",
+    "aspect": 63,
+    "longest": 0.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.295,
+     0.078,
+     0.08
+    ],
+    "part": "airstand/concrete",
+    "aspect": 63,
+    "longest": 0.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.298,
+     0.075,
+     -0.08
+    ],
+    "part": "airstand/concrete",
+    "aspect": 63,
+    "longest": 0.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.299,
+     0.072,
+     0.08
+    ],
+    "part": "airstand/concrete",
+    "aspect": 63,
+    "longest": 0.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.097,
+     0.079,
+     -0.242
+    ],
+    "part": "airstand/concrete",
+    "aspect": 76,
+    "longest": 0.58
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.097,
+     0.078,
+     -0.245
+    ],
+    "part": "airstand/concrete",
+    "aspect": 76,
+    "longest": 0.58
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.097,
+     0.075,
+     -0.248
+    ],
+    "part": "airstand/concrete",
+    "aspect": 76,
+    "longest": 0.58
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.097,
+     0.072,
+     -0.249
+    ],
+    "part": "airstand/concrete",
+    "aspect": 76,
+    "longest": 0.58
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.292,
+     0.079,
+     0.08
+    ],
+    "part": "airstand/concrete",
+    "aspect": 63,
+    "longest": 0.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.295,
+     0.078,
+     -0.08
+    ],
+    "part": "airstand/concrete",
+    "aspect": 63,
+    "longest": 0.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.298,
+     0.075,
+     0.08
+    ],
+    "part": "airstand/concrete",
+    "aspect": 63,
+    "longest": 0.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.299,
+     0.072,
+     -0.08
+    ],
+    "part": "airstand/concrete",
+    "aspect": 63,
+    "longest": 0.48
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.097,
+     0.079,
+     0.242
+    ],
+    "part": "airstand/concrete",
+    "aspect": 76,
+    "longest": 0.58
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.097,
+     0.078,
+     0.245
+    ],
+    "part": "airstand/concrete",
+    "aspect": 76,
+    "longest": 0.58
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.097,
+     0.075,
+     0.248
+    ],
+    "part": "airstand/concrete",
+    "aspect": 76,
+    "longest": 0.58
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.097,
+     0.072,
+     0.249
+    ],
+    "part": "airstand/concrete",
+    "aspect": 76,
+    "longest": 0.58
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.155,
+     0.853,
+     0.128
+    ],
+    "part": "airstand/brand_secondary",
+    "aspect": 74,
+    "longest": 1.13
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.159,
+     0.477,
+     0.126
+    ],
+    "part": "airstand/brand_secondary",
+    "aspect": 74,
+    "longest": 1.13
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.166,
+     0.853,
+     0.119
+    ],
+    "part": "airstand/brand_secondary",
+    "aspect": 74,
+    "longest": 1.13
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.168,
+     0.477,
+     0.115
+    ],
+    "part": "airstand/brand_secondary",
+    "aspect": 74,
+    "longest": 1.13
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.155,
+     0.477,
+     -0.128
+    ],
+    "part": "airstand/brand_secondary",
+    "aspect": 74,
+    "longest": 1.13
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.159,
+     0.853,
+     -0.126
+    ],
+    "part": "airstand/brand_secondary",
+    "aspect": 74,
+    "longest": 1.13
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.166,
+     0.477,
+     -0.119
+    ],
+    "part": "airstand/brand_secondary",
+    "aspect": 74,
+    "longest": 1.13
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.168,
+     0.853,
+     -0.115
+    ],
+    "part": "airstand/brand_secondary",
+    "aspect": 74,
+    "longest": 1.13
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.168,
+     0.477,
+     -0.115
+    ],
+    "part": "airstand/brand_secondary",
+    "aspect": 74,
+    "longest": 1.13
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.166,
+     0.853,
+     -0.119
+    ],
+    "part": "airstand/brand_secondary",
+    "aspect": 74,
+    "longest": 1.13
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.159,
+     0.477,
+     -0.126
+    ],
+    "part": "airstand/brand_secondary",
+    "aspect": 74,
+    "longest": 1.13
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.155,
+     0.853,
+     -0.128
+    ],
+    "part": "airstand/brand_secondary",
+    "aspect": 74,
+    "longest": 1.13
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.155,
+     0.477,
+     0.128
+    ],
+    "part": "airstand/brand_secondary",
+    "aspect": 74,
+    "longest": 1.13
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.159,
+     0.853,
+     0.126
+    ],
+    "part": "airstand/brand_secondary",
+    "aspect": 74,
+    "longest": 1.13
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.166,
+     0.477,
+     0.119
+    ],
+    "part": "airstand/brand_secondary",
+    "aspect": 74,
+    "longest": 1.13
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.168,
+     0.853,
+     0.115
+    ],
+    "part": "airstand/brand_secondary",
+    "aspect": 74,
+    "longest": 1.13
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.006,
+     0.08,
+     -0.073
+    ],
+    "parts": [
+     "airstand/concrete",
+     "airstand/brand_secondary"
+    ],
+    "area": 0.01556
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.108,
+     0.08,
+     0.027
+    ],
+    "parts": [
+     "airstand/concrete",
+     "airstand/brand_secondary"
+    ],
+    "area": 0.01744
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.108,
+     0.08,
+     -0.027
+    ],
+    "parts": [
+     "airstand/concrete",
+     "airstand/brand_secondary"
+    ],
+    "area": 0.01744
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.006,
+     0.08,
+     0.073
+    ],
+    "parts": [
+     "airstand/concrete",
+     "airstand/brand_secondary"
+    ],
+    "area": 0.01556
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.036,
+     0.656,
+     0.13
+    ],
+    "parts": [
+     "airstand/brand_secondary",
+     "airstand/steel_brushed"
+    ],
+    "area": 0.00008
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.051,
+     0.62,
+     0.13
+    ],
+    "parts": [
+     "airstand/brand_secondary",
+     "airstand/steel_brushed"
+    ],
+    "area": 0.00008
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.034,
+     0.582,
+     0.13
+    ],
+    "parts": [
+     "airstand/brand_secondary",
+     "airstand/steel_brushed"
+    ],
+    "area": 0.00008
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.018,
+     0.66,
+     0.13
+    ],
+    "parts": [
+     "airstand/brand_secondary",
+     "airstand/steel_brushed"
+    ],
+    "area": 0.00051
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.037,
+     0.598,
+     0.13
+    ],
+    "parts": [
+     "airstand/brand_secondary",
+     "airstand/steel_brushed"
+    ],
+    "area": 0.00059
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.025,
+     0.626,
+     0.13
+    ],
+    "parts": [
+     "airstand/brand_secondary",
+     "airstand/steel_brushed"
+    ],
+    "area": 0.00182
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.004,
+     0.672,
+     0.13
+    ],
+    "parts": [
+     "airstand/brand_secondary",
+     "airstand/steel_brushed"
+    ],
+    "area": 0.00005
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.036,
+     0.584,
+     0.13
+    ],
+    "parts": [
+     "airstand/brand_secondary",
+     "airstand/steel_brushed"
+    ],
+    "area": 0.00008
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.051,
+     0.62,
+     0.13
+    ],
+    "parts": [
+     "airstand/brand_secondary",
+     "airstand/steel_brushed"
+    ],
+    "area": 0.00008
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.036,
+     0.656,
+     0.13
+    ],
+    "parts": [
+     "airstand/brand_secondary",
+     "airstand/steel_brushed"
+    ],
+    "area": 0.00008
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.017,
+     0.58,
+     0.13
+    ],
+    "parts": [
+     "airstand/brand_secondary",
+     "airstand/steel_brushed"
+    ],
+    "area": 0.0006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.04,
+     0.637,
+     0.13
+    ],
+    "parts": [
+     "airstand/brand_secondary",
+     "airstand/steel_brushed"
+    ],
+    "area": 0.0006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.017,
+     0.613,
+     0.13
+    ],
+    "parts": [
+     "airstand/brand_secondary",
+     "airstand/steel_brushed"
+    ],
+    "area": 0.0029
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0,
+     0.569,
+     0.13
+    ],
+    "parts": [
+     "airstand/brand_secondary",
+     "airstand/steel_brushed"
+    ],
+    "area": 0.00008
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.007,
+     0.667,
+     0.13
+    ],
+    "parts": [
+     "airstand/brand_secondary",
+     "airstand/steel_brushed"
+    ],
+    "area": 0.00009
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.006,
+     0.619,
+     0.13
+    ],
+    "parts": [
+     "airstand/brand_secondary",
+     "airstand/steel_brushed"
+    ],
+    "area": 0.00109
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.17,
+     0.982,
+     0.005
+    ],
+    "parts": [
+     "airstand/brand_secondary",
+     "airstand/steel_brushed"
+    ],
+    "area": 0.00067
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.17,
+     0.968,
+     -0.005
+    ],
+    "parts": [
+     "airstand/brand_secondary",
+     "airstand/steel_brushed"
+    ],
+    "area": 0.00067
+   }
+  ],
+  "near": [
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.111,
+     1.102,
+     0.135
+    ],
+    "parts": [
+     "airstand/brand_primary",
+     "airstand__sign/sign"
+    ],
+    "separation_mm": 1,
+    "overlap_cm2": 143.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     1
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.011,
+     1.189,
+     0.135
+    ],
+    "parts": [
+     "airstand/brand_primary",
+     "airstand__sign/sign"
+    ],
+    "separation_mm": 1,
+    "overlap_cm2": 125.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     1
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.002,
+     1.063,
+     0.135
+    ],
+    "parts": [
+     "airstand/brand_primary",
+     "airstand__sign/sign"
+    ],
+    "separation_mm": 1,
+    "overlap_cm2": 141.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     1
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.105,
+     1.149,
+     0.135
+    ],
+    "parts": [
+     "airstand/brand_primary",
+     "airstand__sign/sign"
+    ],
+    "separation_mm": 1,
+    "overlap_cm2": 159.3,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     1
+    ]
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.161,
+     1.003,
+     0.126
+    ],
+    "parts": [
+     "airstand/brand_secondary",
+     "airstand/brand_primary"
+    ],
+    "length_m": 1.16,
+    "pieces": 36,
+    "min_angle_deg": 63.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.04,
+     0.8,
+     0.13
+    ],
+    "parts": [
+     "airstand/brand_secondary",
+     "airstand/plastic_dark"
+    ],
+    "length_m": 0.77,
+    "pieces": 26,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.052,
+     0.63,
+     0.13
+    ],
+    "parts": [
+     "airstand/brand_secondary",
+     "airstand/steel_brushed"
+    ],
+    "length_m": 0.34,
+    "pieces": 18,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.069,
+     0.84,
+     0.15
+    ],
+    "parts": [
+     "airstand/plastic_dark",
+     "airstand/screen"
+    ],
+    "length_m": 0.48,
+    "pieces": 10,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.15,
+     0.08,
+     0
+    ],
+    "parts": [
+     "airstand/concrete",
+     "airstand/brand_secondary"
+    ],
+    "length_m": 1.04,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.17,
+     0.954,
+     0
+    ],
+    "parts": [
+     "airstand/brand_secondary",
+     "airstand/steel_brushed"
+    ],
+    "length_m": 0.15,
+    "pieces": 4,
+    "min_angle_deg": 22.5
+   }
+  ]
+ },
+ "file": "fuelkit.glb"
+}

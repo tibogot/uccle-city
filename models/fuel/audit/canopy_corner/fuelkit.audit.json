@@ -1,0 +1,210 @@
+{
+ "summary": {
+  "triangles": 570,
+  "vertices_welded": 286,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 10,
+  "counts": {
+   "sliver": 10
+  },
+  "ms": 54
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.01,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "canopy_corner",
+   "slot": "trim_alu",
+   "triangles": 234,
+   "maxDistance": 120
+  },
+  {
+   "name": "canopy_corner",
+   "slot": "brand_primary",
+   "triangles": 84,
+   "maxDistance": 120
+  },
+  {
+   "name": "canopy_corner",
+   "slot": "canopy_white",
+   "triangles": 84,
+   "maxDistance": 120
+  },
+  {
+   "name": "canopy_corner",
+   "slot": "brand_secondary",
+   "triangles": 84,
+   "maxDistance": 120
+  },
+  {
+   "name": "canopy_corner",
+   "slot": "led_strip",
+   "triangles": 84,
+   "maxDistance": 120
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.349,
+     0,
+     -0.213
+    ],
+    "part": "canopy_corner/trim_alu",
+    "aspect": 113,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.327,
+     0,
+     -0.215
+    ],
+    "part": "canopy_corner/trim_alu",
+    "aspect": 113,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.307,
+     0,
+     -0.22
+    ],
+    "part": "canopy_corner/trim_alu",
+    "aspect": 113,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.287,
+     0,
+     -0.228
+    ],
+    "part": "canopy_corner/trim_alu",
+    "aspect": 113,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.268,
+     0,
+     -0.24
+    ],
+    "part": "canopy_corner/trim_alu",
+    "aspect": 113,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.252,
+     0,
+     -0.254
+    ],
+    "part": "canopy_corner/trim_alu",
+    "aspect": 113,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.238,
+     0,
+     -0.27
+    ],
+    "part": "canopy_corner/trim_alu",
+    "aspect": 113,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.227,
+     0,
+     -0.289
+    ],
+    "part": "canopy_corner/trim_alu",
+    "aspect": 113,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.219,
+     0,
+     -0.309
+    ],
+    "part": "canopy_corner/trim_alu",
+    "aspect": 113,
+    "longest": 0.352
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.214,
+     0,
+     -0.33
+    ],
+    "part": "canopy_corner/trim_alu",
+    "aspect": 113,
+    "longest": 0.352
+   }
+  ]
+ },
+ "file": "fuelkit.glb"
+}

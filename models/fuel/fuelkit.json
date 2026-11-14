@@ -1,0 +1,398 @@
+{
+ "asset": "Petrol station kit (tools/blender/fuelKit.py)",
+ "pieces": {
+  "canopy_fascia": {
+   "slots": [
+    "trim_alu",
+    "brand_primary",
+    "canopy_white",
+    "brand_secondary",
+    "led_strip"
+   ],
+   "triangles": 84,
+   "size_m": [
+    1.0,
+    0.956,
+    0.36
+   ]
+  },
+  "canopy_corner": {
+   "slots": [
+    "trim_alu",
+    "brand_primary",
+    "canopy_white",
+    "brand_secondary",
+    "led_strip"
+   ],
+   "triangles": 570,
+   "size_m": [
+    0.38,
+    0.956,
+    0.38
+   ]
+  },
+  "canopy_deck": {
+   "slots": [
+    "soffit_white",
+    "roof_membrane",
+    "canopy_white"
+   ],
+   "triangles": 32,
+   "size_m": [
+    1.0,
+    0.3,
+    1.0
+   ]
+  },
+  "canopy_light": {
+   "slots": [
+    "trim_alu",
+    "led_panel"
+   ],
+   "triangles": 120,
+   "size_m": [
+    1.24,
+    0.018,
+    0.64
+   ]
+  },
+  "canopy_column": {
+   "slots": [
+    "canopy_white"
+   ],
+   "triangles": 60,
+   "size_m": [
+    0.3,
+    1.0,
+    0.3
+   ]
+  },
+  "column_base": {
+   "slots": [
+    "steel_brushed",
+    "brand_secondary"
+   ],
+   "triangles": 152,
+   "size_m": [
+    0.405,
+    0.91,
+    0.405
+   ]
+  },
+  "solar": {
+   "slots": [
+    "trim_alu",
+    "solar_cell"
+   ],
+   "triangles": 24,
+   "size_m": [
+    1.0,
+    0.045,
+    1.0
+   ]
+  },
+  "fascia_sign": {
+   "slots": [
+    "trim_alu"
+   ],
+   "triangles": 108,
+   "size_m": [
+    3.2,
+    0.62,
+    0.06
+   ]
+  },
+  "island": {
+   "slots": [
+    "concrete",
+    "steel_galv",
+    "safety_yellow"
+   ],
+   "triangles": 292,
+   "size_m": [
+    5.012,
+    0.463,
+    1.312
+   ]
+  },
+  "bumper": {
+   "slots": [
+    "safety_yellow",
+    "rubber_black",
+    "steel_galv"
+   ],
+   "triangles": 804,
+   "size_m": [
+    0.16,
+    1.108,
+    1.0
+   ]
+  },
+  "dispenser": {
+   "slots": [
+    "steel_brushed",
+    "dispenser_body",
+    "plastic_dark",
+    "canopy_white",
+    "screen",
+    "trim_alu",
+    "rubber_black",
+    "grade_green",
+    "chrome",
+    "brand_primary",
+    "brand_secondary",
+    "hose_black"
+   ],
+   "triangles": 10820,
+   "size_m": [
+    1.423,
+    1.94,
+    0.87
+   ]
+  },
+  "totem": {
+   "slots": [
+    "concrete",
+    "steel_brushed",
+    "brand_primary",
+    "trim_alu",
+    "brand_secondary",
+    "plastic_dark"
+   ],
+   "triangles": 648,
+   "size_m": [
+    1.7,
+    6.03,
+    0.64
+   ]
+  },
+  "shopfront": {
+   "slots": [
+    "trim_alu",
+    "plastic_dark",
+    "shop_interior"
+   ],
+   "triangles": 564,
+   "size_m": [
+    1.5,
+    3.05,
+    0.14
+   ]
+  },
+  "shopdoor": {
+   "slots": [
+    "trim_alu",
+    "plastic_dark",
+    "shop_interior",
+    "steel_brushed"
+   ],
+   "triangles": 996,
+   "size_m": [
+    1.5,
+    3.05,
+    0.2
+   ]
+  },
+  "shopsign": {
+   "slots": [
+    "trim_alu",
+    "brand_primary",
+    "brand_secondary",
+    "led_strip"
+   ],
+   "triangles": 64,
+   "size_m": [
+    1.0,
+    0.756,
+    0.265
+   ]
+  },
+  "airstand": {
+   "slots": [
+    "concrete",
+    "brand_secondary",
+    "brand_primary",
+    "plastic_dark",
+    "screen",
+    "steel_brushed",
+    "hose_black"
+   ],
+   "triangles": 1264,
+   "size_m": [
+    0.701,
+    1.612,
+    0.5
+   ]
+  },
+  "paypoint": {
+   "slots": [
+    "concrete",
+    "dispenser_body",
+    "brand_primary",
+    "plastic_dark",
+    "screen",
+    "steel_brushed",
+    "brand_secondary"
+   ],
+   "triangles": 768,
+   "size_m": [
+    0.9,
+    2.73,
+    0.7
+   ]
+  },
+  "bollard": {
+   "slots": [
+    "steel_galv",
+    "safety_yellow"
+   ],
+   "triangles": 368,
+   "size_m": [
+    0.142,
+    1.47,
+    0.142
+   ]
+  },
+  "grate": {
+   "slots": [
+    "steel_galv",
+    "plastic_dark",
+    "cast_iron"
+   ],
+   "triangles": 336,
+   "size_m": [
+    1.0,
+    0.254,
+    0.244
+   ]
+  },
+  "line": {
+   "slots": [
+    "paint_white"
+   ],
+   "triangles": 12,
+   "size_m": [
+    1.0,
+    0.003,
+    0.12
+   ]
+  },
+  "carwash": {
+   "slots": [
+    "concrete",
+    "canopy_white",
+    "brand_secondary",
+    "trim_alu",
+    "brand_primary",
+    "soffit_white",
+    "dispenser_body",
+    "brush_blue",
+    "steel_galv"
+   ],
+   "triangles": 2148,
+   "size_m": [
+    5.4,
+    4.0,
+    8.2
+   ]
+  },
+  "fascia_sign__sign": {
+   "slots": [
+    "sign"
+   ],
+   "triangles": 2,
+   "size_m": [
+    3.14,
+    0.56,
+    0.0
+   ]
+  },
+  "dispenser__sign": {
+   "slots": [
+    "sign"
+   ],
+   "triangles": 12,
+   "size_m": [
+    0.96,
+    0.7,
+    0.552
+   ]
+  },
+  "totem__sign": {
+   "slots": [
+    "sign"
+   ],
+   "triangles": 36,
+   "size_m": [
+    1.16,
+    3.2,
+    0.414
+   ]
+  },
+  "shopfront__glass": {
+   "slots": [
+    "glass"
+   ],
+   "triangles": 24,
+   "size_m": [
+    1.36,
+    2.65,
+    0.01
+   ]
+  },
+  "shopdoor__glass": {
+   "slots": [
+    "glass"
+   ],
+   "triangles": 24,
+   "size_m": [
+    1.36,
+    2.87,
+    0.04
+   ]
+  },
+  "airstand__sign": {
+   "slots": [
+    "sign"
+   ],
+   "triangles": 2,
+   "size_m": [
+    0.3,
+    0.19,
+    0.0
+   ]
+  },
+  "paypoint__sign": {
+   "slots": [
+    "sign"
+   ],
+   "triangles": 2,
+   "size_m": [
+    0.48,
+    0.14,
+    0.0
+   ]
+  },
+  "carwash__sign": {
+   "slots": [
+    "sign"
+   ],
+   "triangles": 4,
+   "size_m": [
+    2.0,
+    0.29,
+    8.104
+   ]
+  }
+ },
+ "scaled": [
+  "canopy_column",
+  "canopy_deck",
+  "canopy_fascia",
+  "line",
+  "shopsign",
+  "solar"
+ ],
+ "frame": "glTF Y up, +Z = the front (Blender -Y); origins: see the script's doc",
+ "sign_uv": "u 0..1 wordmark cell, 1..2 emblem cell (the scheme's row); 2..3 the four grade tabs, 3..4 the LED price window (the shared last row); v 0 bottom (glTF flips v)"
+}

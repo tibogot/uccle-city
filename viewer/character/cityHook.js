@@ -28,7 +28,8 @@ const KIND = (m) => {
   const n = m.name || "", parent = m.parent?.name || "";
   if (/bollard/i.test(n)) return "post";
   if (n === "furniture-shelter" || n === "furniture-adpanel" || (parent === "tram" && !n)) return "mesh";   // (stops kit: viewer/stops/cityStops.js stand-ins)
-  if (/^furniture-garden(wall|gate)$/.test(n)) return "mesh";                    // (front gardens: viewer/gardens/ stand-ins)
+  if (/^furniture-garden(wall|gate)$/.test(n)) return "mesh";
+  if (n === "furniture-fuel") return "mesh";                                      // (petrol stations: viewer/fuel/cityFuel.js stand-ins)                    // (front gardens: viewer/gardens/ stand-ins)
   if (n === "furniture-gardenpillar") return "post";
   if (n === "parked-cars" || n === "furniture-bikebox" || n === "furniture-glassbank") return "prop";   // (furniture kit 2: viewer/furniture2/)
   if (n === "tram-poles" || n === "rail-masts") return "pole";

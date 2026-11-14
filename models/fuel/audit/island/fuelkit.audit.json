@@ -1,0 +1,345 @@
+{
+ "summary": {
+  "triangles": 292,
+  "vertices_welded": 154,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 18,
+  "counts": {
+   "sliver": 18,
+   "seam": 3
+  },
+  "ms": 23
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.01,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "island",
+   "slot": "concrete",
+   "triangles": 128,
+   "maxDistance": 120
+  },
+  {
+   "name": "island",
+   "slot": "steel_galv",
+   "triangles": 84,
+   "maxDistance": 120
+  },
+  {
+   "name": "island",
+   "slot": "safety_yellow",
+   "triangles": 80,
+   "maxDistance": 120
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.612,
+     0.15,
+     -0.648
+    ],
+    "part": "island/concrete",
+    "aspect": 234,
+    "longest": 3.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.617,
+     0.155,
+     -0.647
+    ],
+    "part": "island/concrete",
+    "aspect": 234,
+    "longest": 3.686
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.612,
+     0.15,
+     0.648
+    ],
+    "part": "island/concrete",
+    "aspect": 234,
+    "longest": 3.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.617,
+     0.155,
+     0.647
+    ],
+    "part": "island/concrete",
+    "aspect": 234,
+    "longest": 3.686
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.679,
+     0.16,
+     0.635
+    ],
+    "part": "island/concrete",
+    "aspect": 131,
+    "longest": 3.872
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.679,
+     0.16,
+     -0.635
+    ],
+    "part": "island/concrete",
+    "aspect": 131,
+    "longest": 3.872
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.617,
+     0.113,
+     -0.656
+    ],
+    "part": "island/steel_galv",
+    "aspect": 93,
+    "longest": 3.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.617,
+     0.127,
+     -0.656
+    ],
+    "part": "island/steel_galv",
+    "aspect": 93,
+    "longest": 3.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.617,
+     0.113,
+     0.656
+    ],
+    "part": "island/steel_galv",
+    "aspect": 93,
+    "longest": 3.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.617,
+     0.127,
+     0.656
+    ],
+    "part": "island/steel_galv",
+    "aspect": 93,
+    "longest": 3.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.684,
+     0.14,
+     0.645
+    ],
+    "part": "island/steel_galv",
+    "aspect": 128,
+    "longest": 3.903
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.684,
+     0.14,
+     -0.645
+    ],
+    "part": "island/steel_galv",
+    "aspect": 128,
+    "longest": 3.903
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.684,
+     0.1,
+     0.645
+    ],
+    "part": "island/steel_galv",
+    "aspect": 128,
+    "longest": 3.903
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.684,
+     0.1,
+     -0.645
+    ],
+    "part": "island/steel_galv",
+    "aspect": 128,
+    "longest": 3.903
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.85,
+     0.16,
+     0.21
+    ],
+    "part": "island/safety_yellow",
+    "aspect": 315,
+    "longest": 1.261
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.85,
+     0.162,
+     -0.21
+    ],
+    "part": "island/safety_yellow",
+    "aspect": 315,
+    "longest": 1.261
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.85,
+     0.16,
+     -0.21
+    ],
+    "part": "island/safety_yellow",
+    "aspect": 315,
+    "longest": 1.261
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.85,
+     0.162,
+     0.21
+    ],
+    "part": "island/safety_yellow",
+    "aspect": 315,
+    "longest": 1.261
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     2.05,
+     0.14,
+     0.618
+    ],
+    "parts": [
+     "island/concrete",
+     "island/steel_galv"
+    ],
+    "length_m": 22.93,
+    "pieces": 164,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.925,
+     0.16,
+     0.619
+    ],
+    "parts": [
+     "island/concrete",
+     "island/safety_yellow"
+    ],
+    "length_m": 3.23,
+    "pieces": 44,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.978,
+     0.16,
+     -0.61
+    ],
+    "parts": [
+     "island/concrete",
+     "island/safety_yellow"
+    ],
+    "length_m": 3.23,
+    "pieces": 40,
+    "min_angle_deg": 90
+   }
+  ]
+ },
+ "file": "fuelkit.glb"
+}

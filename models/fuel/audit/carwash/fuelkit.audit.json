@@ -1,0 +1,6401 @@
+{
+ "summary": {
+  "triangles": 2152,
+  "vertices_welded": 1128,
+  "open_edges": 8,
+  "rays": 2944,
+  "blocking": 0,
+  "warnings": 472,
+  "counts": {
+   "sliver": 464,
+   "backtoback": 40,
+   "near": 8,
+   "seam": 45
+  },
+  "ms": 121
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.01,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "carwash",
+   "slot": "concrete",
+   "triangles": 108,
+   "maxDistance": 120
+  },
+  {
+   "name": "carwash",
+   "slot": "canopy_white",
+   "triangles": 216,
+   "maxDistance": 120
+  },
+  {
+   "name": "carwash",
+   "slot": "brand_secondary",
+   "triangles": 24,
+   "maxDistance": 120
+  },
+  {
+   "name": "carwash",
+   "slot": "trim_alu",
+   "triangles": 648,
+   "maxDistance": 120
+  },
+  {
+   "name": "carwash",
+   "slot": "brand_primary",
+   "triangles": 108,
+   "maxDistance": 120
+  },
+  {
+   "name": "carwash",
+   "slot": "soffit_white",
+   "triangles": 12,
+   "maxDistance": 120
+  },
+  {
+   "name": "carwash",
+   "slot": "dispenser_body",
+   "triangles": 324,
+   "maxDistance": 120
+  },
+  {
+   "name": "carwash",
+   "slot": "brush_blue",
+   "triangles": 276,
+   "maxDistance": 120
+  },
+  {
+   "name": "carwash",
+   "slot": "steel_galv",
+   "triangles": 432,
+   "maxDistance": 120
+  },
+  {
+   "name": "carwash__sign",
+   "slot": "sign",
+   "triangles": 4,
+   "maxDistance": 120
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.685,
+     0.058,
+     -1.36
+    ],
+    "part": "carwash/concrete",
+    "aspect": 533,
+    "longest": 8.16
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.689,
+     0.056,
+     1.36
+    ],
+    "part": "carwash/concrete",
+    "aspect": 533,
+    "longest": 8.16
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.696,
+     0.049,
+     -1.36
+    ],
+    "part": "carwash/concrete",
+    "aspect": 533,
+    "longest": 8.16
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.698,
+     0.045,
+     1.36
+    ],
+    "part": "carwash/concrete",
+    "aspect": 533,
+    "longest": 8.16
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.893,
+     0.058,
+     -4.085
+    ],
+    "part": "carwash/concrete",
+    "aspect": 350,
+    "longest": 5.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.893,
+     0.056,
+     -4.089
+    ],
+    "part": "carwash/concrete",
+    "aspect": 350,
+    "longest": 5.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.893,
+     0.049,
+     -4.096
+    ],
+    "part": "carwash/concrete",
+    "aspect": 350,
+    "longest": 5.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.893,
+     0.045,
+     -4.098
+    ],
+    "part": "carwash/concrete",
+    "aspect": 350,
+    "longest": 5.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.685,
+     0.058,
+     1.36
+    ],
+    "part": "carwash/concrete",
+    "aspect": 533,
+    "longest": 8.16
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.689,
+     0.056,
+     -1.36
+    ],
+    "part": "carwash/concrete",
+    "aspect": 533,
+    "longest": 8.16
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.696,
+     0.049,
+     1.36
+    ],
+    "part": "carwash/concrete",
+    "aspect": 533,
+    "longest": 8.16
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.698,
+     0.045,
+     -1.36
+    ],
+    "part": "carwash/concrete",
+    "aspect": 533,
+    "longest": 8.16
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.893,
+     0.058,
+     4.085
+    ],
+    "part": "carwash/concrete",
+    "aspect": 350,
+    "longest": 5.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.893,
+     0.056,
+     4.089
+    ],
+    "part": "carwash/concrete",
+    "aspect": 350,
+    "longest": 5.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.893,
+     0.049,
+     4.096
+    ],
+    "part": "carwash/concrete",
+    "aspect": 350,
+    "longest": 5.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.893,
+     0.045,
+     4.098
+    ],
+    "part": "carwash/concrete",
+    "aspect": 350,
+    "longest": 5.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.492,
+     0.056,
+     1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.495,
+     0.057,
+     -1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.498,
+     0.06,
+     1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.499,
+     0.063,
+     -1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.492,
+     2.245,
+     3.769
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.495,
+     1.155,
+     3.768
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.498,
+     2.245,
+     3.765
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.499,
+     1.155,
+     3.762
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.492,
+     3.344,
+     -1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.495,
+     3.343,
+     1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.498,
+     3.34,
+     -1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.499,
+     3.337,
+     1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.492,
+     1.155,
+     -3.769
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.495,
+     2.245,
+     -3.768
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.498,
+     1.155,
+     -3.765
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.499,
+     2.245,
+     -3.762
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.301,
+     1.155,
+     -3.762
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.302,
+     2.245,
+     -3.765
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.305,
+     1.155,
+     -3.768
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.308,
+     2.245,
+     -3.769
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.308,
+     0.056,
+     -1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.305,
+     0.057,
+     1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.302,
+     0.06,
+     -1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.301,
+     0.063,
+     1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.308,
+     3.344,
+     1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.305,
+     3.343,
+     -1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.302,
+     3.34,
+     1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.301,
+     3.337,
+     -1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.308,
+     1.155,
+     3.769
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.305,
+     2.245,
+     3.768
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.302,
+     1.155,
+     3.765
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.301,
+     2.245,
+     3.762
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.37,
+     0.055,
+     -1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 42,
+    "longest": 7.522
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.43,
+     0.055,
+     1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 42,
+    "longest": 7.522
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.43,
+     3.345,
+     -1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 42,
+    "longest": 7.522
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.37,
+     3.345,
+     1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 42,
+    "longest": 7.522
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.308,
+     0.056,
+     1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.305,
+     0.057,
+     -1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.302,
+     0.06,
+     1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.301,
+     0.063,
+     -1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.308,
+     2.245,
+     3.769
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.305,
+     1.155,
+     3.768
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.302,
+     2.245,
+     3.765
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.301,
+     1.155,
+     3.762
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.308,
+     3.344,
+     -1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.305,
+     3.343,
+     1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.302,
+     3.34,
+     -1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.301,
+     3.337,
+     1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.308,
+     1.155,
+     -3.769
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.305,
+     2.245,
+     -3.768
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.302,
+     1.155,
+     -3.765
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.301,
+     2.245,
+     -3.762
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.499,
+     1.155,
+     -3.762
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.498,
+     2.245,
+     -3.765
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.495,
+     1.155,
+     -3.768
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.492,
+     2.245,
+     -3.769
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.492,
+     0.056,
+     -1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.495,
+     0.057,
+     1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.498,
+     0.06,
+     -1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.499,
+     0.063,
+     1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.492,
+     3.344,
+     1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.495,
+     3.343,
+     -1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.498,
+     3.34,
+     1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.499,
+     3.337,
+     -1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 983,
+    "longest": 7.52
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.492,
+     1.155,
+     3.769
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.495,
+     2.245,
+     3.768
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.498,
+     1.155,
+     3.765
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.499,
+     2.245,
+     3.762
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 427,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.43,
+     0.055,
+     -1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 42,
+    "longest": 7.522
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.37,
+     0.055,
+     1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 42,
+    "longest": 7.522
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.37,
+     3.345,
+     -1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 42,
+    "longest": 7.522
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.43,
+     3.345,
+     1.253
+    ],
+    "part": "carwash/canopy_white",
+    "aspect": 42,
+    "longest": 7.522
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.501,
+     1.4,
+     -3.8
+    ],
+    "part": "carwash/brand_secondary",
+    "aspect": 50,
+    "longest": 0.3
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.499,
+     1.3,
+     -3.8
+    ],
+    "part": "carwash/brand_secondary",
+    "aspect": 50,
+    "longest": 0.3
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.499,
+     1.4,
+     3.8
+    ],
+    "part": "carwash/brand_secondary",
+    "aspect": 50,
+    "longest": 0.3
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.501,
+     1.3,
+     3.8
+    ],
+    "part": "carwash/brand_secondary",
+    "aspect": 50,
+    "longest": 0.3
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.499,
+     1.2,
+     -1.267
+    ],
+    "part": "carwash/brand_secondary",
+    "aspect": 1267,
+    "longest": 7.6
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.501,
+     1.2,
+     1.267
+    ],
+    "part": "carwash/brand_secondary",
+    "aspect": 1267,
+    "longest": 7.6
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.501,
+     1.5,
+     -1.267
+    ],
+    "part": "carwash/brand_secondary",
+    "aspect": 1267,
+    "longest": 7.6
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.499,
+     1.5,
+     1.267
+    ],
+    "part": "carwash/brand_secondary",
+    "aspect": 1267,
+    "longest": 7.6
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.499,
+     1.4,
+     -3.8
+    ],
+    "part": "carwash/brand_secondary",
+    "aspect": 50,
+    "longest": 0.3
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.501,
+     1.3,
+     -3.8
+    ],
+    "part": "carwash/brand_secondary",
+    "aspect": 50,
+    "longest": 0.3
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.501,
+     1.4,
+     3.8
+    ],
+    "part": "carwash/brand_secondary",
+    "aspect": 50,
+    "longest": 0.3
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.499,
+     1.3,
+     3.8
+    ],
+    "part": "carwash/brand_secondary",
+    "aspect": 50,
+    "longest": 0.3
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.501,
+     1.2,
+     -1.267
+    ],
+    "part": "carwash/brand_secondary",
+    "aspect": 1267,
+    "longest": 7.6
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.499,
+     1.2,
+     1.267
+    ],
+    "part": "carwash/brand_secondary",
+    "aspect": 1267,
+    "longest": 7.6
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.499,
+     1.5,
+     -1.267
+    ],
+    "part": "carwash/brand_secondary",
+    "aspect": 1267,
+    "longest": 7.6
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.501,
+     1.5,
+     1.267
+    ],
+    "part": "carwash/brand_secondary",
+    "aspect": 1267,
+    "longest": 7.6
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.524,
+     2.274,
+     4.029
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.526,
+     1.166,
+     4.028
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.528,
+     2.274,
+     4.026
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.529,
+     1.166,
+     4.024
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.524,
+     1.166,
+     3.771
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.526,
+     2.274,
+     3.772
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.528,
+     1.166,
+     3.774
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.529,
+     2.274,
+     3.776
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.271,
+     1.166,
+     3.776
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.272,
+     2.274,
+     3.774
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.274,
+     1.166,
+     3.772
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.276,
+     2.274,
+     3.771
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.276,
+     1.166,
+     4.029
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.274,
+     2.274,
+     4.028
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.272,
+     1.166,
+     4.026
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.271,
+     2.274,
+     4.024
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.524,
+     2.274,
+     -3.771
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.526,
+     1.166,
+     -3.772
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.528,
+     2.274,
+     -3.774
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.529,
+     1.166,
+     -3.776
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.524,
+     1.166,
+     -4.029
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.526,
+     2.274,
+     -4.028
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.528,
+     1.166,
+     -4.026
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.529,
+     2.274,
+     -4.024
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.271,
+     1.166,
+     -4.024
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.272,
+     2.274,
+     -4.026
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.274,
+     1.166,
+     -4.028
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.276,
+     2.274,
+     -4.029
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.276,
+     1.166,
+     -3.771
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.274,
+     2.274,
+     -3.772
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.272,
+     1.166,
+     -3.774
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.271,
+     2.274,
+     -3.776
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.276,
+     2.274,
+     4.029
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.274,
+     1.166,
+     4.028
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.272,
+     2.274,
+     4.026
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.271,
+     1.166,
+     4.024
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.276,
+     1.166,
+     3.771
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.274,
+     2.274,
+     3.772
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.272,
+     1.166,
+     3.774
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.271,
+     2.274,
+     3.776
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.529,
+     1.166,
+     3.776
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.528,
+     2.274,
+     3.774
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.526,
+     1.166,
+     3.772
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.524,
+     2.274,
+     3.771
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.524,
+     1.166,
+     4.029
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.526,
+     2.274,
+     4.028
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.528,
+     1.166,
+     4.026
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.529,
+     2.274,
+     4.024
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.276,
+     2.274,
+     -3.771
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.274,
+     1.166,
+     -3.772
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.272,
+     2.274,
+     -3.774
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.271,
+     1.166,
+     -3.776
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.276,
+     1.166,
+     -4.029
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.274,
+     2.274,
+     -4.028
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.272,
+     1.166,
+     -4.026
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.271,
+     2.274,
+     -4.024
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.529,
+     1.166,
+     -4.024
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.528,
+     2.274,
+     -4.026
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.526,
+     1.166,
+     -4.028
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.524,
+     2.274,
+     -4.029
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.524,
+     1.166,
+     -3.771
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.526,
+     2.274,
+     -3.772
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.528,
+     1.166,
+     -3.774
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.529,
+     2.274,
+     -3.776
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 543,
+    "longest": 3.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.392,
+     2.951,
+     3.757
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.395,
+     2.952,
+     3.643
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.398,
+     2.955,
+     3.757
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.399,
+     2.958,
+     3.643
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.392,
+     3.207,
+     3.879
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.395,
+     3.083,
+     3.878
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.398,
+     3.207,
+     3.875
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.399,
+     3.083,
+     3.872
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.392,
+     3.339,
+     3.643
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.395,
+     3.338,
+     3.757
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.398,
+     3.335,
+     3.643
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.399,
+     3.332,
+     3.757
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.392,
+     3.083,
+     3.521
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.395,
+     3.207,
+     3.522
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.398,
+     3.083,
+     3.525
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.399,
+     3.207,
+     3.528
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.797,
+     2.951,
+     3.528
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.797,
+     2.952,
+     3.525
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.797,
+     2.955,
+     3.522
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.797,
+     2.958,
+     3.521
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.797,
+     3.339,
+     3.528
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.797,
+     3.338,
+     3.525
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.797,
+     3.335,
+     3.522
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.797,
+     3.332,
+     3.521
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.399,
+     3.083,
+     3.528
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.398,
+     3.207,
+     3.525
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.395,
+     3.083,
+     3.522
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.392,
+     3.207,
+     3.521
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.392,
+     2.951,
+     3.643
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.395,
+     2.952,
+     3.757
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.398,
+     2.955,
+     3.643
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.399,
+     2.958,
+     3.757
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.392,
+     3.339,
+     3.757
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.395,
+     3.338,
+     3.643
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.398,
+     3.335,
+     3.757
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.399,
+     3.332,
+     3.643
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.392,
+     3.083,
+     3.879
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.395,
+     3.207,
+     3.878
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.398,
+     3.083,
+     3.875
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.399,
+     3.207,
+     3.872
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.797,
+     2.951,
+     3.872
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.797,
+     2.952,
+     3.875
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.797,
+     2.955,
+     3.878
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.797,
+     2.958,
+     3.879
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.797,
+     3.339,
+     3.872
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.797,
+     3.338,
+     3.875
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.797,
+     3.335,
+     3.878
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.797,
+     3.332,
+     3.879
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.392,
+     2.951,
+     -3.643
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.395,
+     2.952,
+     -3.757
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.398,
+     2.955,
+     -3.643
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.399,
+     2.958,
+     -3.757
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.392,
+     3.207,
+     -3.521
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.395,
+     3.083,
+     -3.522
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.398,
+     3.207,
+     -3.525
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.399,
+     3.083,
+     -3.528
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.392,
+     3.339,
+     -3.757
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.395,
+     3.338,
+     -3.643
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.398,
+     3.335,
+     -3.757
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.399,
+     3.332,
+     -3.643
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.392,
+     3.083,
+     -3.879
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.395,
+     3.207,
+     -3.878
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.398,
+     3.083,
+     -3.875
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.399,
+     3.207,
+     -3.872
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.797,
+     2.951,
+     -3.872
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.797,
+     2.952,
+     -3.875
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.797,
+     2.955,
+     -3.878
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.797,
+     2.958,
+     -3.879
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.797,
+     3.339,
+     -3.872
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.797,
+     3.338,
+     -3.875
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.797,
+     3.335,
+     -3.878
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.797,
+     3.332,
+     -3.879
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.399,
+     3.083,
+     -3.872
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.398,
+     3.207,
+     -3.875
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.395,
+     3.083,
+     -3.878
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.392,
+     3.207,
+     -3.879
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.392,
+     2.951,
+     -3.757
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.395,
+     2.952,
+     -3.643
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.398,
+     2.955,
+     -3.757
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.399,
+     2.958,
+     -3.643
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.392,
+     3.339,
+     -3.643
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.395,
+     3.338,
+     -3.757
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.398,
+     3.335,
+     -3.643
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.399,
+     3.332,
+     -3.757
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 44,
+    "longest": 0.34
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.392,
+     3.083,
+     -3.521
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.395,
+     3.207,
+     -3.522
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.398,
+     3.083,
+     -3.525
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.399,
+     3.207,
+     -3.528
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 48,
+    "longest": 0.37
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.797,
+     2.951,
+     -3.528
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.797,
+     2.952,
+     -3.525
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.797,
+     2.955,
+     -3.522
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.797,
+     2.958,
+     -3.521
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.797,
+     3.339,
+     -3.528
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.797,
+     3.338,
+     -3.525
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.797,
+     3.335,
+     -3.522
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.797,
+     3.332,
+     -3.521
+    ],
+    "part": "carwash/trim_alu",
+    "aspect": 625,
+    "longest": 4.78
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.535,
+     3.352,
+     1.343
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 527,
+    "longest": 8.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.539,
+     3.354,
+     -1.343
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 527,
+    "longest": 8.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.546,
+     3.361,
+     1.343
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 527,
+    "longest": 8.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.548,
+     3.365,
+     -1.343
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 527,
+    "longest": 8.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.535,
+     3.698,
+     -1.343
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 527,
+    "longest": 8.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.539,
+     3.696,
+     1.343
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 527,
+    "longest": 8.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.546,
+     3.689,
+     -1.343
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 527,
+    "longest": 8.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.548,
+     3.685,
+     1.343
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 527,
+    "longest": 8.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.843,
+     3.352,
+     -4.035
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 331,
+    "longest": 5.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.843,
+     3.354,
+     -4.039
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 331,
+    "longest": 5.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.843,
+     3.361,
+     -4.046
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 331,
+    "longest": 5.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.843,
+     3.365,
+     -4.048
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 331,
+    "longest": 5.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.843,
+     3.698,
+     -4.035
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 331,
+    "longest": 5.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.843,
+     3.696,
+     -4.039
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 331,
+    "longest": 5.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.843,
+     3.689,
+     -4.046
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 331,
+    "longest": 5.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.843,
+     3.685,
+     -4.048
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 331,
+    "longest": 5.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.535,
+     3.352,
+     -1.343
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 527,
+    "longest": 8.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.539,
+     3.354,
+     1.343
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 527,
+    "longest": 8.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.546,
+     3.361,
+     -1.343
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 527,
+    "longest": 8.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.548,
+     3.365,
+     1.343
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 527,
+    "longest": 8.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.535,
+     3.698,
+     1.343
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 527,
+    "longest": 8.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.539,
+     3.696,
+     -1.343
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 527,
+    "longest": 8.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.546,
+     3.689,
+     1.343
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 527,
+    "longest": 8.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.548,
+     3.685,
+     -1.343
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 527,
+    "longest": 8.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.843,
+     3.352,
+     4.035
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 331,
+    "longest": 5.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.843,
+     3.354,
+     4.039
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 331,
+    "longest": 5.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.843,
+     3.361,
+     4.046
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 331,
+    "longest": 5.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.843,
+     3.365,
+     4.048
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 331,
+    "longest": 5.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.843,
+     3.698,
+     4.035
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 331,
+    "longest": 5.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.843,
+     3.696,
+     4.039
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 331,
+    "longest": 5.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.843,
+     3.689,
+     4.046
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 331,
+    "longest": 5.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.843,
+     3.685,
+     4.048
+    ],
+    "part": "carwash/brand_primary",
+    "aspect": 331,
+    "longest": 5.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.3,
+     3.353,
+     1.283
+    ],
+    "part": "carwash/soffit_white",
+    "aspect": 385,
+    "longest": 7.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.3,
+     3.347,
+     -1.283
+    ],
+    "part": "carwash/soffit_white",
+    "aspect": 385,
+    "longest": 7.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.767,
+     3.353,
+     -3.85
+    ],
+    "part": "carwash/soffit_white",
+    "aspect": 230,
+    "longest": 4.6
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.767,
+     3.347,
+     -3.85
+    ],
+    "part": "carwash/soffit_white",
+    "aspect": 230,
+    "longest": 4.6
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.3,
+     3.353,
+     -1.283
+    ],
+    "part": "carwash/soffit_white",
+    "aspect": 385,
+    "longest": 7.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.3,
+     3.347,
+     1.283
+    ],
+    "part": "carwash/soffit_white",
+    "aspect": 385,
+    "longest": 7.7
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.767,
+     3.353,
+     3.85
+    ],
+    "part": "carwash/soffit_white",
+    "aspect": 230,
+    "longest": 4.6
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.767,
+     3.347,
+     3.85
+    ],
+    "part": "carwash/soffit_white",
+    "aspect": 230,
+    "longest": 4.6
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.142,
+     0.061,
+     0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.145,
+     0.062,
+     -0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.148,
+     0.065,
+     0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.149,
+     0.068,
+     -0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.142,
+     2.017,
+     0.349
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.145,
+     1.043,
+     0.348
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.148,
+     2.017,
+     0.345
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.149,
+     1.043,
+     0.342
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.142,
+     2.999,
+     -0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.145,
+     2.998,
+     0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.148,
+     2.995,
+     -0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.149,
+     2.992,
+     0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.142,
+     1.043,
+     -0.349
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.145,
+     2.017,
+     -0.348
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.148,
+     1.043,
+     -0.345
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.149,
+     2.017,
+     -0.342
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.851,
+     1.043,
+     -0.342
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.852,
+     2.017,
+     -0.345
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.855,
+     1.043,
+     -0.348
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.858,
+     2.017,
+     -0.349
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.858,
+     0.061,
+     -0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.855,
+     0.062,
+     0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.852,
+     0.065,
+     -0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.851,
+     0.068,
+     0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.858,
+     2.999,
+     0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.855,
+     2.998,
+     -0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.852,
+     2.995,
+     0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.851,
+     2.992,
+     -0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.858,
+     1.043,
+     0.349
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.855,
+     2.017,
+     0.348
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.852,
+     1.043,
+     0.345
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.851,
+     2.017,
+     0.342
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.858,
+     0.061,
+     0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.855,
+     0.062,
+     -0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.852,
+     0.065,
+     0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.851,
+     0.068,
+     -0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.858,
+     2.017,
+     0.349
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.855,
+     1.043,
+     0.348
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.852,
+     2.017,
+     0.345
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.851,
+     1.043,
+     0.342
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.858,
+     2.999,
+     -0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.855,
+     2.998,
+     0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.852,
+     2.995,
+     -0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.851,
+     2.992,
+     0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.858,
+     1.043,
+     -0.349
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.855,
+     2.017,
+     -0.348
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.852,
+     1.043,
+     -0.345
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.851,
+     2.017,
+     -0.342
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.149,
+     1.043,
+     -0.342
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.148,
+     2.017,
+     -0.345
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.145,
+     1.043,
+     -0.348
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.142,
+     2.017,
+     -0.349
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.142,
+     0.061,
+     -0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.145,
+     0.062,
+     0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.148,
+     0.065,
+     -0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.149,
+     0.068,
+     0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.142,
+     2.999,
+     0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.145,
+     2.998,
+     -0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.148,
+     2.995,
+     0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.149,
+     2.992,
+     -0.113
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 89,
+    "longest": 0.68
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.142,
+     1.043,
+     0.349
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.145,
+     2.017,
+     0.348
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.148,
+     1.043,
+     0.345
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.149,
+     2.017,
+     0.342
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 382,
+    "longest": 2.92
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.122,
+     2.751,
+     0.107
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 84,
+    "longest": 0.64
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.125,
+     2.752,
+     -0.107
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 84,
+    "longest": 0.64
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.128,
+     2.755,
+     0.107
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 84,
+    "longest": 0.64
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.129,
+     2.758,
+     -0.107
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 84,
+    "longest": 0.64
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.122,
+     3.049,
+     -0.107
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 84,
+    "longest": 0.64
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.125,
+     3.048,
+     0.107
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 84,
+    "longest": 0.64
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.128,
+     3.045,
+     -0.107
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 84,
+    "longest": 0.64
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.129,
+     3.042,
+     0.107
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 84,
+    "longest": 0.64
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.707,
+     2.751,
+     -0.322
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 554,
+    "longest": 4.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.707,
+     2.752,
+     -0.325
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 554,
+    "longest": 4.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.707,
+     2.755,
+     -0.328
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 554,
+    "longest": 4.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.707,
+     2.758,
+     -0.329
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 554,
+    "longest": 4.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.707,
+     3.049,
+     -0.322
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 554,
+    "longest": 4.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.707,
+     3.048,
+     -0.325
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 554,
+    "longest": 4.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.707,
+     3.045,
+     -0.328
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 554,
+    "longest": 4.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.707,
+     3.042,
+     -0.329
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 554,
+    "longest": 4.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.122,
+     2.751,
+     -0.107
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 84,
+    "longest": 0.64
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.125,
+     2.752,
+     0.107
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 84,
+    "longest": 0.64
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.128,
+     2.755,
+     -0.107
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 84,
+    "longest": 0.64
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.129,
+     2.758,
+     0.107
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 84,
+    "longest": 0.64
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.122,
+     3.049,
+     0.107
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 84,
+    "longest": 0.64
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.125,
+     3.048,
+     -0.107
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 84,
+    "longest": 0.64
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.128,
+     3.045,
+     0.107
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 84,
+    "longest": 0.64
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     2.129,
+     3.042,
+     -0.107
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 84,
+    "longest": 0.64
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.707,
+     2.751,
+     0.322
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 554,
+    "longest": 4.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.707,
+     2.752,
+     0.325
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 554,
+    "longest": 4.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.707,
+     2.755,
+     0.328
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 554,
+    "longest": 4.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.707,
+     2.758,
+     0.329
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 554,
+    "longest": 4.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.707,
+     3.049,
+     0.322
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 554,
+    "longest": 4.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.707,
+     3.048,
+     0.325
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 554,
+    "longest": 4.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.707,
+     3.045,
+     0.328
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 554,
+    "longest": 4.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.707,
+     3.042,
+     0.329
+    ],
+    "part": "carwash/dispenser_body",
+    "aspect": 554,
+    "longest": 4.24
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1.953,
+     0.06,
+     -0.113
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/dispenser_body"
+    ],
+    "area": 0.0952
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -2.047,
+     0.06,
+     0.113
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/dispenser_body"
+    ],
+    "area": 0.0952
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.92,
+     0.06,
+     -1.897
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/steel_galv"
+    ],
+    "area": 0.2142
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.98,
+     0.06,
+     -1.103
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/steel_galv"
+    ],
+    "area": 0.2142
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.928,
+     0.06,
+     0.845
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/steel_galv"
+    ],
+    "area": 0.14955
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1.011,
+     0.06,
+     1.115
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/steel_galv"
+    ],
+    "area": 0.05498
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.973,
+     0.06,
+     -2.104
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/steel_galv"
+    ],
+    "area": 0.15922
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.891,
+     0.06,
+     -1.817
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/steel_galv"
+    ],
+    "area": 0.06465
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.891,
+     0.06,
+     1.817
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/steel_galv"
+    ],
+    "area": 0.06465
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.973,
+     0.06,
+     2.104
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/steel_galv"
+    ],
+    "area": 0.15922
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.011,
+     0.06,
+     -1.115
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/steel_galv"
+    ],
+    "area": 0.05498
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.928,
+     0.06,
+     -0.845
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/steel_galv"
+    ],
+    "area": 0.14955
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.98,
+     0.06,
+     1.103
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/steel_galv"
+    ],
+    "area": 0.2142
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.92,
+     0.06,
+     1.897
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/steel_galv"
+    ],
+    "area": 0.2142
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     2.047,
+     0.06,
+     -0.113
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/dispenser_body"
+    ],
+    "area": 0.0952
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.953,
+     0.06,
+     0.113
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/dispenser_body"
+    ],
+    "area": 0.0952
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -2.378,
+     2.832,
+     3.77
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "area": 0.16375
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -2.34,
+     1.574,
+     3.77
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "area": 0.13055
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -2.46,
+     1.847,
+     3.77
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "area": 0.12695
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -2.423,
+     0.584,
+     3.77
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "area": 0.16735
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -2.422,
+     2.832,
+     -3.77
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "area": 0.16375
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -2.46,
+     1.574,
+     -3.77
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "area": 0.13055
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -2.34,
+     1.847,
+     -3.77
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "area": 0.12695
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -2.377,
+     0.584,
+     -3.77
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "area": 0.16735
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     2.422,
+     2.832,
+     3.77
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "area": 0.16375
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     2.46,
+     1.574,
+     3.77
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "area": 0.13055
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     2.34,
+     1.847,
+     3.77
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "area": 0.12695
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     2.377,
+     0.584,
+     3.77
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "area": 0.16735
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     2.378,
+     2.832,
+     -3.77
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "area": 0.16375
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     2.34,
+     1.574,
+     -3.77
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "area": 0.13055
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     2.46,
+     1.847,
+     -3.77
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "area": 0.12695
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     2.423,
+     0.584,
+     -3.77
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "area": 0.16735
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     2.207,
+     3.34,
+     3.536
+    ],
+    "parts": [
+     "carwash/trim_alu",
+     "carwash/soffit_white"
+    ],
+    "area": 0.00241
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.496,
+     3.34,
+     3.662
+    ],
+    "parts": [
+     "carwash/trim_alu",
+     "carwash/soffit_white"
+    ],
+    "area": 0.77829
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     2.24,
+     3.34,
+     3.645
+    ],
+    "parts": [
+     "carwash/trim_alu",
+     "carwash/soffit_white"
+    ],
+    "area": 0.02818
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.77,
+     3.34,
+     3.75
+    ],
+    "parts": [
+     "carwash/trim_alu",
+     "carwash/soffit_white"
+    ],
+    "area": 0.66312
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.77,
+     3.34,
+     -3.75
+    ],
+    "parts": [
+     "carwash/trim_alu",
+     "carwash/soffit_white"
+    ],
+    "area": 0.66312
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -2.24,
+     3.34,
+     -3.645
+    ],
+    "parts": [
+     "carwash/trim_alu",
+     "carwash/soffit_white"
+    ],
+    "area": 0.02818
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.496,
+     3.34,
+     -3.662
+    ],
+    "parts": [
+     "carwash/trim_alu",
+     "carwash/soffit_white"
+    ],
+    "area": 0.77829
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -2.207,
+     3.34,
+     -3.536
+    ],
+    "parts": [
+     "carwash/trim_alu",
+     "carwash/soffit_white"
+    ],
+    "area": 0.00241
+   }
+  ],
+  "near": [
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.667,
+     3.553,
+     4.05
+    ],
+    "parts": [
+     "carwash/brand_primary",
+     "carwash__sign/sign"
+    ],
+    "separation_mm": 2,
+    "overlap_cm2": 1031.3,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     1
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.25,
+     3.613,
+     4.05
+    ],
+    "parts": [
+     "carwash/brand_primary",
+     "carwash__sign/sign"
+    ],
+    "separation_mm": 2,
+    "overlap_cm2": 1868.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     1
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.25,
+     3.437,
+     4.05
+    ],
+    "parts": [
+     "carwash/brand_primary",
+     "carwash__sign/sign"
+    ],
+    "separation_mm": 2,
+    "overlap_cm2": 1868.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     1
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.667,
+     3.497,
+     4.05
+    ],
+    "parts": [
+     "carwash/brand_primary",
+     "carwash__sign/sign"
+    ],
+    "separation_mm": 2,
+    "overlap_cm2": 1031.3,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     1
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.667,
+     3.553,
+     -4.05
+    ],
+    "parts": [
+     "carwash/brand_primary",
+     "carwash__sign/sign"
+    ],
+    "separation_mm": 2,
+    "overlap_cm2": 1031.3,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.25,
+     3.613,
+     -4.05
+    ],
+    "parts": [
+     "carwash/brand_primary",
+     "carwash__sign/sign"
+    ],
+    "separation_mm": 2,
+    "overlap_cm2": 1868.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.25,
+     3.437,
+     -4.05
+    ],
+    "parts": [
+     "carwash/brand_primary",
+     "carwash__sign/sign"
+    ],
+    "separation_mm": 2,
+    "overlap_cm2": 1868.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.667,
+     3.497,
+     -4.05
+    ],
+    "parts": [
+     "carwash/brand_primary",
+     "carwash__sign/sign"
+    ],
+    "separation_mm": 2,
+    "overlap_cm2": 1031.3,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.078,
+     2.196,
+     -0.379
+    ],
+    "parts": [
+     "carwash/brush_blue",
+     "carwash/brush_blue"
+    ],
+    "length_m": 3.21,
+    "pieces": 79,
+    "min_angle_deg": 23.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.066,
+     2.159,
+     0.375
+    ],
+    "parts": [
+     "carwash/brush_blue",
+     "carwash/brush_blue"
+    ],
+    "length_m": 3.21,
+    "pieces": 75,
+    "min_angle_deg": 23.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -2.305,
+     3.34,
+     3.766
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "length_m": 1.45,
+    "pieces": 38,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     2.305,
+     3.34,
+     -3.766
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "length_m": 1.45,
+    "pieces": 38,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -2.304,
+     3.34,
+     -3.765
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "length_m": 1.45,
+    "pieces": 37,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     2.308,
+     3.34,
+     3.767
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "length_m": 1.45,
+    "pieces": 37,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.86,
+     3,
+     -0.33
+    ],
+    "parts": [
+     "carwash/dispenser_body",
+     "carwash/dispenser_body"
+    ],
+    "length_m": 2.35,
+    "pieces": 37,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.857,
+     2.999,
+     -0.33
+    ],
+    "parts": [
+     "carwash/dispenser_body",
+     "carwash/dispenser_body"
+    ],
+    "length_m": 2.35,
+    "pieces": 37,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -2.27,
+     2.95,
+     3.778
+    ],
+    "parts": [
+     "carwash/trim_alu",
+     "carwash/trim_alu"
+    ],
+    "length_m": 1.23,
+    "pieces": 35,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -2.278,
+     2.95,
+     -3.77
+    ],
+    "parts": [
+     "carwash/trim_alu",
+     "carwash/trim_alu"
+    ],
+    "length_m": 1.23,
+    "pieces": 35,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     2.278,
+     2.95,
+     3.77
+    ],
+    "parts": [
+     "carwash/trim_alu",
+     "carwash/trim_alu"
+    ],
+    "length_m": 1.23,
+    "pieces": 35,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     2.276,
+     2.95,
+     -3.771
+    ],
+    "parts": [
+     "carwash/trim_alu",
+     "carwash/trim_alu"
+    ],
+    "length_m": 1.23,
+    "pieces": 35,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -2.525,
+     3.35,
+     -3.771
+    ],
+    "parts": [
+     "carwash/trim_alu",
+     "carwash/brand_primary"
+    ],
+    "length_m": 1.27,
+    "pieces": 28,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     2.275,
+     3.35,
+     4.029
+    ],
+    "parts": [
+     "carwash/trim_alu",
+     "carwash/brand_primary"
+    ],
+    "length_m": 1.27,
+    "pieces": 28,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -2.496,
+     0.06,
+     -3.765
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/canopy_white"
+    ],
+    "length_m": 15.45,
+    "pieces": 26,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     2.304,
+     0.06,
+     -3.765
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/canopy_white"
+    ],
+    "length_m": 15.45,
+    "pieces": 26,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -2.525,
+     3.35,
+     4.029
+    ],
+    "parts": [
+     "carwash/trim_alu",
+     "carwash/brand_primary"
+    ],
+    "length_m": 1.27,
+    "pieces": 26,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     2.275,
+     3.35,
+     -3.771
+    ],
+    "parts": [
+     "carwash/trim_alu",
+     "carwash/brand_primary"
+    ],
+    "length_m": 1.27,
+    "pieces": 26,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -2.497,
+     1.499,
+     3.767
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/brand_secondary"
+    ],
+    "length_m": 15.67,
+    "pieces": 24,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     2.499,
+     1.2,
+     -3.762
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/brand_secondary"
+    ],
+    "length_m": 15.67,
+    "pieces": 24,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -2.27,
+     3.34,
+     3.778
+    ],
+    "parts": [
+     "carwash/trim_alu",
+     "carwash/soffit_white"
+    ],
+    "length_m": 0.25,
+    "pieces": 19,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -2.278,
+     3.34,
+     -3.77
+    ],
+    "parts": [
+     "carwash/trim_alu",
+     "carwash/soffit_white"
+    ],
+    "length_m": 0.25,
+    "pieces": 19,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     2.278,
+     3.34,
+     3.77
+    ],
+    "parts": [
+     "carwash/trim_alu",
+     "carwash/soffit_white"
+    ],
+    "length_m": 0.25,
+    "pieces": 19,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     2.275,
+     3.34,
+     -3.771
+    ],
+    "parts": [
+     "carwash/trim_alu",
+     "carwash/soffit_white"
+    ],
+    "length_m": 0.25,
+    "pieces": 19,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -2.525,
+     0.06,
+     3.771
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/trim_alu"
+    ],
+    "length_m": 1.02,
+    "pieces": 18,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     2.275,
+     0.06,
+     -4.029
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/trim_alu"
+    ],
+    "length_m": 1.02,
+    "pieces": 18,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -2.525,
+     0.06,
+     -4.029
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/trim_alu"
+    ],
+    "length_m": 1.02,
+    "pieces": 16,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     2.275,
+     0.06,
+     3.771
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/trim_alu"
+    ],
+    "length_m": 1.02,
+    "pieces": 16,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -2.3,
+     3.35,
+     -3.757
+    ],
+    "parts": [
+     "carwash/brand_primary",
+     "carwash/soffit_white"
+    ],
+    "length_m": 24.6,
+    "pieces": 10,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -2.503,
+     1.499,
+     -3.77
+    ],
+    "parts": [
+     "carwash/brand_secondary",
+     "carwash/trim_alu"
+    ],
+    "length_m": 0.61,
+    "pieces": 8,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -2.503,
+     1.351,
+     3.77
+    ],
+    "parts": [
+     "carwash/brand_secondary",
+     "carwash/trim_alu"
+    ],
+    "length_m": 0.61,
+    "pieces": 8,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     2.497,
+     1.499,
+     -3.77
+    ],
+    "parts": [
+     "carwash/brand_secondary",
+     "carwash/trim_alu"
+    ],
+    "length_m": 0.61,
+    "pieces": 8,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     2.497,
+     1.351,
+     3.77
+    ],
+    "parts": [
+     "carwash/brand_secondary",
+     "carwash/trim_alu"
+    ],
+    "length_m": 0.61,
+    "pieces": 8,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     2.204,
+     3.34,
+     3.53
+    ],
+    "parts": [
+     "carwash/trim_alu",
+     "carwash/soffit_white"
+    ],
+    "length_m": 9.84,
+    "pieces": 7,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.096,
+     3.34,
+     -3.53
+    ],
+    "parts": [
+     "carwash/trim_alu",
+     "carwash/soffit_white"
+    ],
+    "length_m": 9.84,
+    "pieces": 7,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.04,
+     0.06,
+     0.947
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/steel_galv"
+    ],
+    "length_m": 5.12,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.86,
+     0.06,
+     -2
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/steel_galv"
+    ],
+    "length_m": 5.12,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -2.49,
+     1.914,
+     3.77
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "length_m": 6.9,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -2.49,
+     3.141,
+     -3.77
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "length_m": 6.9,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     2.31,
+     1.914,
+     3.77
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "length_m": 6.9,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     2.31,
+     3.141,
+     -3.77
+    ],
+    "parts": [
+     "carwash/canopy_white",
+     "carwash/trim_alu"
+    ],
+    "length_m": 6.9,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -2,
+     0.06,
+     -0.34
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/dispenser_body"
+    ],
+    "length_m": 1.92,
+    "pieces": 4,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.04,
+     0.06,
+     -1.5
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/steel_galv"
+    ],
+    "length_m": 5.12,
+    "pieces": 4,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.86,
+     0.06,
+     1.5
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/steel_galv"
+    ],
+    "length_m": 5.12,
+    "pieces": 4,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     2,
+     0.06,
+     -0.34
+    ],
+    "parts": [
+     "carwash/concrete",
+     "carwash/dispenser_body"
+    ],
+    "length_m": 1.92,
+    "pieces": 4,
+    "min_angle_deg": 22.5
+   }
+  ]
+ },
+ "file": "fuelkit.glb"
+}

@@ -1,0 +1,3693 @@
+{
+ "summary": {
+  "triangles": 368,
+  "vertices_welded": 181,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 180,
+  "counts": {
+   "sliver": 40,
+   "nonmanifold": 20,
+   "near": 120,
+   "seam": 2
+  },
+  "ms": 39
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.01,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "bollard",
+   "slot": "steel_galv",
+   "triangles": 216,
+   "maxDistance": 120
+  },
+  {
+   "name": "bollard",
+   "slot": "safety_yellow",
+   "triangles": 152,
+   "maxDistance": 120
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.007,
+     0.533,
+     -0.069
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.014,
+     0.067,
+     -0.068
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.028,
+     0.533,
+     -0.063
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.035,
+     0.067,
+     -0.06
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.046,
+     0.533,
+     -0.051
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.051,
+     0.067,
+     -0.046
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.06,
+     0.533,
+     -0.035
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.063,
+     0.067,
+     -0.028
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.068,
+     0.533,
+     -0.014
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.069,
+     0.067,
+     -0.007
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.069,
+     0.533,
+     0.007
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.068,
+     0.067,
+     0.014
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.063,
+     0.533,
+     0.028
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.06,
+     0.067,
+     0.035
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.051,
+     0.533,
+     0.046
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.046,
+     0.067,
+     0.051
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.035,
+     0.533,
+     0.06
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.028,
+     0.067,
+     0.063
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.014,
+     0.533,
+     0.068
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.007,
+     0.067,
+     0.069
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.007,
+     0.533,
+     0.069
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.067,
+     0.068
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.028,
+     0.533,
+     0.063
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.035,
+     0.067,
+     0.06
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.046,
+     0.533,
+     0.051
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.051,
+     0.067,
+     0.046
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.06,
+     0.533,
+     0.035
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.063,
+     0.067,
+     0.028
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.068,
+     0.533,
+     0.014
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.069,
+     0.067,
+     0.007
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.069,
+     0.533,
+     -0.007
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.068,
+     0.067,
+     -0.014
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.063,
+     0.533,
+     -0.028
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.06,
+     0.067,
+     -0.035
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.051,
+     0.533,
+     -0.046
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.046,
+     0.067,
+     -0.051
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.035,
+     0.533,
+     -0.06
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.028,
+     0.067,
+     -0.063
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.533,
+     -0.068
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.007,
+     0.067,
+     -0.069
+    ],
+    "part": "bollard/steel_galv",
+    "aspect": 64,
+    "longest": 1.4
+   }
+  ],
+  "nonmanifold": [
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.011,
+     1,
+     -0.068
+    ],
+    "part": "bollard/steel_galv",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.031,
+     1,
+     -0.062
+    ],
+    "part": "bollard/steel_galv",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.049,
+     1,
+     -0.049
+    ],
+    "part": "bollard/steel_galv",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.062,
+     1,
+     -0.031
+    ],
+    "part": "bollard/steel_galv",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.068,
+     1,
+     -0.011
+    ],
+    "part": "bollard/steel_galv",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.068,
+     1,
+     0.011
+    ],
+    "part": "bollard/steel_galv",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.062,
+     1,
+     0.031
+    ],
+    "part": "bollard/steel_galv",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.049,
+     1,
+     0.049
+    ],
+    "part": "bollard/steel_galv",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.031,
+     1,
+     0.062
+    ],
+    "part": "bollard/steel_galv",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.011,
+     1,
+     0.068
+    ],
+    "part": "bollard/steel_galv",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.011,
+     1,
+     0.068
+    ],
+    "part": "bollard/steel_galv",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     1,
+     0.062
+    ],
+    "part": "bollard/steel_galv",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.049,
+     1,
+     0.049
+    ],
+    "part": "bollard/steel_galv",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.062,
+     1,
+     0.031
+    ],
+    "part": "bollard/steel_galv",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.068,
+     1,
+     0.011
+    ],
+    "part": "bollard/steel_galv",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.068,
+     1,
+     -0.011
+    ],
+    "part": "bollard/steel_galv",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.062,
+     1,
+     -0.031
+    ],
+    "part": "bollard/steel_galv",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.049,
+     1,
+     -0.049
+    ],
+    "part": "bollard/steel_galv",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.011,
+     1,
+     -0.068
+    ],
+    "part": "bollard/steel_galv",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     1,
+     -0.062
+    ],
+    "part": "bollard/steel_galv",
+    "uses": 3
+   }
+  ],
+  "near": [
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.009,
+     0.816,
+     -0.068
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.16,
+     0,
+     -0.99
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.009,
+     0.791,
+     -0.069
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.16,
+     0,
+     -0.99
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.01,
+     0.917,
+     -0.068
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.16,
+     0,
+     -0.99
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.01,
+     0.892,
+     -0.068
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.16,
+     0,
+     -0.99
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.02,
+     0.803,
+     -0.067
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.16,
+     0,
+     -0.99
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.021,
+     0.904,
+     -0.067
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 0.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.16,
+     0,
+     -0.99
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.816,
+     -0.062
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.45,
+     0,
+     -0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.791,
+     -0.062
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.45,
+     0,
+     -0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.031,
+     0.917,
+     -0.062
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.45,
+     0,
+     -0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.031,
+     0.892,
+     -0.062
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.45,
+     0,
+     -0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.04,
+     0.803,
+     -0.057
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.45,
+     0,
+     -0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.04,
+     0.904,
+     -0.057
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 0.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.45,
+     0,
+     -0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.048,
+     0.816,
+     -0.05
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.71,
+     0,
+     -0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.048,
+     0.791,
+     -0.05
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.71,
+     0,
+     -0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.048,
+     0.917,
+     -0.049
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.71,
+     0,
+     -0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.048,
+     0.892,
+     -0.049
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.71,
+     0,
+     -0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.056,
+     0.803,
+     -0.042
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.71,
+     0,
+     -0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.056,
+     0.904,
+     -0.042
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 0.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.71,
+     0,
+     -0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.061,
+     0.816,
+     -0.033
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.89,
+     0,
+     -0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.061,
+     0.791,
+     -0.033
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.89,
+     0,
+     -0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.061,
+     0.917,
+     -0.032
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.89,
+     0,
+     -0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.061,
+     0.892,
+     -0.032
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.89,
+     0,
+     -0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.066,
+     0.803,
+     -0.023
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.89,
+     0,
+     -0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.066,
+     0.904,
+     -0.022
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 0.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.89,
+     0,
+     -0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.068,
+     0.816,
+     -0.012
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.99,
+     0,
+     -0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.068,
+     0.791,
+     -0.012
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.99,
+     0,
+     -0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.068,
+     0.917,
+     -0.011
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.99,
+     0,
+     -0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.068,
+     0.892,
+     -0.012
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.99,
+     0,
+     -0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.07,
+     0.803,
+     -0.002
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.99,
+     0,
+     -0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.07,
+     0.904,
+     -0.001
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 0.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.99,
+     0,
+     -0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.068,
+     0.816,
+     0.009
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.99,
+     0,
+     0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.069,
+     0.791,
+     0.009
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.99,
+     0,
+     0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.068,
+     0.917,
+     0.01
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.99,
+     0,
+     0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.068,
+     0.892,
+     0.01
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.99,
+     0,
+     0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.067,
+     0.803,
+     0.02
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.99,
+     0,
+     0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.067,
+     0.904,
+     0.021
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 0.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.99,
+     0,
+     0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.062,
+     0.816,
+     0.03
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.89,
+     0,
+     0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.062,
+     0.791,
+     0.03
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.89,
+     0,
+     0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.062,
+     0.917,
+     0.031
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.89,
+     0,
+     0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.062,
+     0.892,
+     0.031
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.89,
+     0,
+     0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.057,
+     0.803,
+     0.04
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.89,
+     0,
+     0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.057,
+     0.904,
+     0.04
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 0.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.89,
+     0,
+     0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.05,
+     0.816,
+     0.048
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.71,
+     0,
+     0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.05,
+     0.791,
+     0.048
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.71,
+     0,
+     0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.049,
+     0.917,
+     0.048
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.71,
+     0,
+     0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.049,
+     0.892,
+     0.048
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.71,
+     0,
+     0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.042,
+     0.803,
+     0.056
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.71,
+     0,
+     0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.042,
+     0.904,
+     0.056
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 0.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.71,
+     0,
+     0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.033,
+     0.816,
+     0.061
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.45,
+     0,
+     0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.033,
+     0.791,
+     0.061
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.45,
+     0,
+     0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.032,
+     0.917,
+     0.061
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.45,
+     0,
+     0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.032,
+     0.892,
+     0.061
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.45,
+     0,
+     0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.023,
+     0.803,
+     0.066
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.45,
+     0,
+     0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.022,
+     0.904,
+     0.066
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 0.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.45,
+     0,
+     0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.012,
+     0.816,
+     0.068
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.16,
+     0,
+     0.99
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.012,
+     0.791,
+     0.068
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.16,
+     0,
+     0.99
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.011,
+     0.917,
+     0.068
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.16,
+     0,
+     0.99
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.012,
+     0.892,
+     0.068
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.16,
+     0,
+     0.99
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.002,
+     0.803,
+     0.07
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.16,
+     0,
+     0.99
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.001,
+     0.904,
+     0.07
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 0.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0.16,
+     0,
+     0.99
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.009,
+     0.816,
+     0.068
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.16,
+     0,
+     0.99
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.009,
+     0.791,
+     0.069
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.16,
+     0,
+     0.99
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.01,
+     0.917,
+     0.068
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.16,
+     0,
+     0.99
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.01,
+     0.892,
+     0.068
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.16,
+     0,
+     0.99
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.02,
+     0.803,
+     0.067
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.16,
+     0,
+     0.99
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.021,
+     0.904,
+     0.067
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 0.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.16,
+     0,
+     0.99
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.816,
+     0.062
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.45,
+     0,
+     0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.791,
+     0.062
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.45,
+     0,
+     0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.917,
+     0.062
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.45,
+     0,
+     0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.892,
+     0.062
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.45,
+     0,
+     0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.04,
+     0.803,
+     0.057
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.45,
+     0,
+     0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.04,
+     0.904,
+     0.057
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 0.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.45,
+     0,
+     0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.048,
+     0.816,
+     0.05
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.71,
+     0,
+     0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.048,
+     0.791,
+     0.05
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.71,
+     0,
+     0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.048,
+     0.917,
+     0.049
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.71,
+     0,
+     0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.048,
+     0.892,
+     0.049
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.71,
+     0,
+     0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.056,
+     0.803,
+     0.042
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.71,
+     0,
+     0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.056,
+     0.904,
+     0.042
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 0.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.71,
+     0,
+     0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.061,
+     0.816,
+     0.033
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.89,
+     0,
+     0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.061,
+     0.791,
+     0.033
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.89,
+     0,
+     0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.061,
+     0.917,
+     0.032
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.89,
+     0,
+     0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.061,
+     0.892,
+     0.032
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.89,
+     0,
+     0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.066,
+     0.803,
+     0.023
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.89,
+     0,
+     0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.066,
+     0.904,
+     0.022
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 0.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.89,
+     0,
+     0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.068,
+     0.816,
+     0.012
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.99,
+     0,
+     0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.068,
+     0.791,
+     0.012
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.99,
+     0,
+     0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.068,
+     0.917,
+     0.011
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.99,
+     0,
+     0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.068,
+     0.892,
+     0.012
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.99,
+     0,
+     0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     0.803,
+     0.002
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.99,
+     0,
+     0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     0.904,
+     0.001
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 0.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.99,
+     0,
+     0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.068,
+     0.816,
+     -0.009
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.99,
+     0,
+     -0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.069,
+     0.791,
+     -0.009
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.99,
+     0,
+     -0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.068,
+     0.917,
+     -0.01
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.99,
+     0,
+     -0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.068,
+     0.892,
+     -0.01
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.99,
+     0,
+     -0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.067,
+     0.803,
+     -0.02
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.99,
+     0,
+     -0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.067,
+     0.904,
+     -0.021
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 0.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.99,
+     0,
+     -0.16
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.062,
+     0.816,
+     -0.03
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.89,
+     0,
+     -0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.062,
+     0.791,
+     -0.03
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.89,
+     0,
+     -0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.062,
+     0.917,
+     -0.031
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.89,
+     0,
+     -0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.062,
+     0.892,
+     -0.031
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.89,
+     0,
+     -0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.057,
+     0.803,
+     -0.04
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.89,
+     0,
+     -0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.057,
+     0.904,
+     -0.04
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 0.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.89,
+     0,
+     -0.45
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.05,
+     0.816,
+     -0.048
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.71,
+     0,
+     -0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.05,
+     0.791,
+     -0.048
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.71,
+     0,
+     -0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.049,
+     0.917,
+     -0.048
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.71,
+     0,
+     -0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.049,
+     0.892,
+     -0.048
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.71,
+     0,
+     -0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.042,
+     0.803,
+     -0.056
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.71,
+     0,
+     -0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.042,
+     0.904,
+     -0.056
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 0.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.71,
+     0,
+     -0.71
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.033,
+     0.816,
+     -0.061
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.45,
+     0,
+     -0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.033,
+     0.791,
+     -0.061
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.45,
+     0,
+     -0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.032,
+     0.917,
+     -0.061
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.45,
+     0,
+     -0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.032,
+     0.892,
+     -0.061
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.45,
+     0,
+     -0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.023,
+     0.803,
+     -0.066
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.45,
+     0,
+     -0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.022,
+     0.904,
+     -0.066
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 0.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.45,
+     0,
+     -0.89
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.012,
+     0.816,
+     -0.068
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.16,
+     0,
+     -0.99
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.012,
+     0.791,
+     -0.068
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.16,
+     0,
+     -0.99
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.011,
+     0.917,
+     -0.068
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 5.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.16,
+     0,
+     -0.99
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.012,
+     0.892,
+     -0.068
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 4.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.16,
+     0,
+     -0.99
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.002,
+     0.803,
+     -0.07
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.16,
+     0,
+     -0.99
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -0.001,
+     0.904,
+     -0.07
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "separation_mm": 0.99,
+    "overlap_cm2": 0.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     -0.16,
+     0,
+     -0.99
+    ]
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.013,
+     0.83,
+     -0.068
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "length_m": 0.88,
+    "pieces": 148,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.013,
+     0.93,
+     -0.068
+    ],
+    "parts": [
+     "bollard/steel_galv",
+     "bollard/safety_yellow"
+    ],
+    "length_m": 0.88,
+    "pieces": 148,
+    "min_angle_deg": 90
+   }
+  ]
+ },
+ "file": "fuelkit.glb"
+}

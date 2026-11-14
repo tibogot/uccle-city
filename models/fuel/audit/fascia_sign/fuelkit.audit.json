@@ -1,0 +1,339 @@
+{
+ "summary": {
+  "triangles": 110,
+  "vertices_welded": 60,
+  "open_edges": 4,
+  "rays": 2368,
+  "blocking": 0,
+  "warnings": 20,
+  "counts": {
+   "sliver": 18,
+   "near": 2
+  },
+  "ms": 20
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.01,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "fascia_sign",
+   "slot": "trim_alu",
+   "triangles": 108,
+   "maxDistance": 120
+  },
+  {
+   "name": "fascia_sign__sign",
+   "slot": "sign",
+   "triangles": 2,
+   "maxDistance": 120
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.594,
+     0.101,
+     0.059
+    ],
+    "part": "fascia_sign/trim_alu",
+    "aspect": 99,
+    "longest": 0.604
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.598,
+     0.101,
+     0.056
+    ],
+    "part": "fascia_sign/trim_alu",
+    "aspect": 99,
+    "longest": 0.604
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.596,
+     0.101,
+     0.002
+    ],
+    "part": "fascia_sign/trim_alu",
+    "aspect": 99,
+    "longest": 0.604
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.599,
+     0.101,
+     0.006
+    ],
+    "part": "fascia_sign/trim_alu",
+    "aspect": 99,
+    "longest": 0.604
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.531,
+     0.309,
+     0.006
+    ],
+    "part": "fascia_sign/trim_alu",
+    "aspect": 520,
+    "longest": 3.184
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.531,
+     0.308,
+     0.004
+    ],
+    "part": "fascia_sign/trim_alu",
+    "aspect": 520,
+    "longest": 3.184
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.531,
+     0.306,
+     0.002
+    ],
+    "part": "fascia_sign/trim_alu",
+    "aspect": 520,
+    "longest": 3.184
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.531,
+     0.304,
+     0.001
+    ],
+    "part": "fascia_sign/trim_alu",
+    "aspect": 520,
+    "longest": 3.184
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.598,
+     0.101,
+     0.004
+    ],
+    "part": "fascia_sign/trim_alu",
+    "aspect": 99,
+    "longest": 0.604
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.594,
+     0.101,
+     0.001
+    ],
+    "part": "fascia_sign/trim_alu",
+    "aspect": 99,
+    "longest": 0.604
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.596,
+     0.101,
+     0.058
+    ],
+    "part": "fascia_sign/trim_alu",
+    "aspect": 99,
+    "longest": 0.604
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.599,
+     0.101,
+     0.054
+    ],
+    "part": "fascia_sign/trim_alu",
+    "aspect": 99,
+    "longest": 0.604
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.531,
+     0.309,
+     0.054
+    ],
+    "part": "fascia_sign/trim_alu",
+    "aspect": 520,
+    "longest": 3.184
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.531,
+     0.308,
+     0.056
+    ],
+    "part": "fascia_sign/trim_alu",
+    "aspect": 520,
+    "longest": 3.184
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.531,
+     0.306,
+     0.058
+    ],
+    "part": "fascia_sign/trim_alu",
+    "aspect": 520,
+    "longest": 3.184
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.531,
+     0.304,
+     0.059
+    ],
+    "part": "fascia_sign/trim_alu",
+    "aspect": 520,
+    "longest": 3.184
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.531,
+     0.31,
+     0.023
+    ],
+    "part": "fascia_sign/trim_alu",
+    "aspect": 72,
+    "longest": 3.184
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.531,
+     0.31,
+     0.037
+    ],
+    "part": "fascia_sign/trim_alu",
+    "aspect": 72,
+    "longest": 3.184
+   }
+  ],
+  "near": [
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     0.031,
+     0.187,
+     0.06
+    ],
+    "parts": [
+     "fascia_sign/trim_alu",
+     "fascia_sign__sign/sign"
+    ],
+    "separation_mm": 2,
+    "overlap_cm2": 4264.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     1
+    ]
+   },
+   {
+    "check": "near",
+    "severity": "warn",
+    "at": [
+     -1.154,
+     0.07,
+     0.06
+    ],
+    "parts": [
+     "fascia_sign/trim_alu",
+     "fascia_sign__sign/sign"
+    ],
+    "separation_mm": 2,
+    "overlap_cm2": 4527.6,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     1
+    ]
+   }
+  ]
+ },
+ "file": "fuelkit.glb"
+}

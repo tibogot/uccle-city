@@ -1,0 +1,710 @@
+{
+ "contract": "fuel-0.1",
+ "built": "2026-11-14",
+ "stations": [
+  {
+   "id": "n13148112304",
+   "name": "Shell Express, Avenue Docteur Decroly",
+   "brand": "Shell",
+   "operator": null,
+   "schemeName": "solenn",
+   "type": "under",
+   "islands": 2,
+   "canopy": null,
+   "shop": null,
+   "wall": {
+    "bu": "https://databrussels.be/id/building/1725757",
+    "u": [
+     13.73,
+     26.73
+    ],
+    "out": 2.6
+   },
+   "notes": [],
+   "counts": {
+    "airstand": 1,
+    "bumper": 4,
+    "dispenser": 2,
+    "fascia_sign": 1,
+    "island": 2,
+    "shopsign": 1,
+    "totem": 1
+   },
+   "tile": "C3"
+  },
+  {
+   "id": "n1346762169",
+   "name": "Q8 easy, Chaussee de Ruisbroek (Flanders)",
+   "brand": "Q8",
+   "operator": null,
+   "schemeName": "kelvo",
+   "type": "canopy",
+   "islands": 1,
+   "canopy": {
+    "cx": -2713.31,
+    "cz": 143.198,
+    "yaw": 0.7385,
+    "w": 14.0,
+    "d": 10.0,
+    "top": 29.447,
+    "h": 5.3,
+    "src": "survey",
+    "pitched": false
+   },
+   "shop": null,
+   "wall": null,
+   "notes": [
+    "canopy from the survey: 14.0 x 10.0 m at the OSM point, along the road, 5.3 m (no DSM)"
+   ],
+   "counts": {
+    "bollard": 2,
+    "bumper": 2,
+    "canopy_column": 1,
+    "canopy_corner": 4,
+    "canopy_deck": 1,
+    "canopy_fascia": 4,
+    "canopy_light": 12,
+    "column_base": 1,
+    "dispenser": 1,
+    "fascia_sign": 4,
+    "grate": 12,
+    "island": 1,
+    "line": 2,
+    "paypoint": 1,
+    "solar": 1,
+    "totem": 1
+   },
+   "tile": "A5"
+  },
+  {
+   "id": "n2446274082",
+   "name": "Esso, Chaussee de Waterloo (24/7)",
+   "brand": "Esso",
+   "operator": null,
+   "schemeName": "rubra",
+   "type": "canopy",
+   "islands": 1,
+   "canopy": {
+    "cx": 1527.265,
+    "cz": -870.666,
+    "yaw": 1.9101,
+    "w": 11.76,
+    "d": 7.5,
+    "top": 113.321,
+    "h": 5.2,
+    "src": "dsm",
+    "pitched": false
+   },
+   "shop": {
+    "bu": "https://databrussels.be/id/building/1753931",
+    "span": 9.0,
+    "bays": 6
+   },
+   "wall": null,
+   "notes": [
+    "canopy from the DSM: 11.8 x 7.5 m, 5.20 m high, fill 0.70"
+   ],
+   "counts": {
+    "airstand": 1,
+    "bollard": 4,
+    "bumper": 2,
+    "canopy_column": 1,
+    "canopy_corner": 4,
+    "canopy_deck": 1,
+    "canopy_fascia": 4,
+    "canopy_light": 8,
+    "column_base": 1,
+    "dispenser": 1,
+    "fascia_sign": 5,
+    "grate": 15,
+    "island": 1,
+    "line": 2,
+    "shopdoor": 1,
+    "shopfront": 5,
+    "shopsign": 1,
+    "solar": 1,
+    "totem": 1
+   },
+   "tile": "J3"
+  },
+  {
+   "id": "n349272406",
+   "name": "Lukoil, Wolvendael / Dieweg",
+   "brand": "Lukoil",
+   "operator": null,
+   "schemeName": "lumo",
+   "type": "canopy",
+   "islands": 2,
+   "canopy": {
+    "cx": -165.02,
+    "cz": 317.062,
+    "yaw": 2.0567,
+    "w": 19.33,
+    "d": 8.21,
+    "top": 89.303,
+    "h": 5.38,
+    "src": "osm+dsm",
+    "pitched": false
+   },
+   "shop": {
+    "bu": "https://databrussels.be/id/building/1689870",
+    "span": 9.0,
+    "bays": 6
+   },
+   "wall": null,
+   "notes": [
+    "canopy: OSM way 1152241587 (building=roof) over the DSM blob: 19.3 x 8.2 m, the DSM's 5.38 m high"
+   ],
+   "counts": {
+    "bollard": 3,
+    "bumper": 4,
+    "canopy_column": 2,
+    "canopy_corner": 4,
+    "canopy_deck": 1,
+    "canopy_fascia": 4,
+    "canopy_light": 12,
+    "column_base": 2,
+    "dispenser": 2,
+    "fascia_sign": 5,
+    "grate": 18,
+    "island": 2,
+    "line": 2,
+    "shopdoor": 1,
+    "shopfront": 5,
+    "shopsign": 1,
+    "totem": 1
+   },
+   "tile": "F5"
+  },
+  {
+   "id": "n3729193961",
+   "name": "Kink United, Beukenstraat (Linkebeek)",
+   "brand": "Kink United",
+   "operator": null,
+   "schemeName": "brook",
+   "type": "canopy",
+   "islands": 1,
+   "canopy": {
+    "cx": -1242.562,
+    "cz": 2996.198,
+    "yaw": 0.6303,
+    "w": 9.0,
+    "d": 6.0,
+    "top": 56.419,
+    "h": 5.3,
+    "src": "survey",
+    "pitched": false
+   },
+   "shop": null,
+   "wall": null,
+   "notes": [
+    "canopy from the survey: 9.0 x 6.0 m at the OSM point, along the road, 5.3 m (no DSM)",
+    "car wash at OSM node 7321826559"
+   ],
+   "counts": {
+    "bollard": 2,
+    "bumper": 2,
+    "canopy_column": 1,
+    "canopy_corner": 4,
+    "canopy_deck": 1,
+    "canopy_fascia": 4,
+    "canopy_light": 6,
+    "carwash": 1,
+    "column_base": 1,
+    "dispenser": 1,
+    "fascia_sign": 4,
+    "grate": 13,
+    "island": 1,
+    "line": 2,
+    "paypoint": 1,
+    "totem": 1
+   },
+   "tile": "D10"
+  },
+  {
+   "id": "n410466355",
+   "name": "Texaco (now Esso colours), Rue du Chateau d'Or",
+   "brand": "Texaco",
+   "operator": null,
+   "schemeName": "rubra",
+   "type": "canopy",
+   "islands": 6,
+   "canopy": {
+    "cx": -1291.087,
+    "cz": 1255.355,
+    "yaw": -2.8198,
+    "w": 27.05,
+    "d": 19.14,
+    "top": 43.257,
+    "h": 5.25,
+    "src": "dsm",
+    "pitched": false
+   },
+   "shop": {
+    "bu": "https://databrussels.be/id/building/1591483",
+    "span": 9.0,
+    "bays": 6
+   },
+   "wall": null,
+   "notes": [
+    "canopy from the DSM: 27.0 x 19.1 m, 5.25 m high, fill 0.84"
+   ],
+   "counts": {
+    "bollard": 4,
+    "bumper": 12,
+    "canopy_column": 6,
+    "canopy_corner": 4,
+    "canopy_deck": 1,
+    "canopy_fascia": 4,
+    "canopy_light": 54,
+    "column_base": 6,
+    "dispenser": 6,
+    "fascia_sign": 5,
+    "grate": 25,
+    "island": 6,
+    "line": 4,
+    "shopdoor": 1,
+    "shopfront": 5,
+    "shopsign": 1,
+    "totem": 1
+   },
+   "tile": "D7"
+  },
+  {
+   "id": "n410936386",
+   "name": "DATS 24 Uccle, Rue de Stalle",
+   "brand": "DATS 24",
+   "operator": "DATS 24",
+   "schemeName": "daxo",
+   "type": "canopy",
+   "islands": 2,
+   "canopy": {
+    "cx": -1807.676,
+    "cz": 279.882,
+    "yaw": 1.3597,
+    "w": 14.52,
+    "d": 6.42,
+    "top": 34.749,
+    "h": 4.91,
+    "src": "dsm",
+    "pitched": false
+   },
+   "shop": null,
+   "wall": null,
+   "notes": [
+    "canopy from the DSM: 14.5 x 6.4 m, 4.91 m high, fill 0.88"
+   ],
+   "counts": {
+    "bollard": 2,
+    "bumper": 4,
+    "canopy_column": 2,
+    "canopy_corner": 4,
+    "canopy_deck": 1,
+    "canopy_fascia": 4,
+    "canopy_light": 10,
+    "column_base": 2,
+    "dispenser": 2,
+    "fascia_sign": 4,
+    "grate": 15,
+    "island": 2,
+    "line": 2,
+    "paypoint": 1,
+    "totem": 1
+   },
+   "tile": "C5"
+  },
+  {
+   "id": "n4373358691",
+   "name": "Q8, Rue Vanderkindere (garage)",
+   "brand": "Q8",
+   "operator": "Q8",
+   "schemeName": "kelvo",
+   "type": "kerbside",
+   "islands": 1,
+   "canopy": null,
+   "shop": null,
+   "wall": {
+    "bu": "https://databrussels.be/id/building/1593644",
+    "u": [
+     0.5,
+     7.0
+    ],
+    "out": 2.4
+   },
+   "notes": [],
+   "counts": {
+    "airstand": 1,
+    "bumper": 2,
+    "dispenser": 1,
+    "island": 1,
+    "totem": 1
+   },
+   "tile": "H1"
+  },
+  {
+   "id": "n495965407",
+   "name": "Texaco Prince d'Orange, Chaussee de Waterloo",
+   "brand": "Texaco",
+   "operator": "EG Group",
+   "schemeName": "pivot",
+   "type": "canopy",
+   "islands": 4,
+   "canopy": {
+    "cx": 2220.214,
+    "cz": 2032.422,
+    "yaw": 2.0344,
+    "w": 17.12,
+    "d": 14.89,
+    "top": 116.345,
+    "h": 5.17,
+    "src": "dsm",
+    "pitched": false
+   },
+   "shop": {
+    "bu": "https://databrussels.be/id/building/1765520",
+    "span": 9.0,
+    "bays": 6
+   },
+   "wall": null,
+   "notes": [
+    "canopy from the DSM: 17.1 x 14.9 m, 5.17 m high, fill 0.86"
+   ],
+   "counts": {
+    "bollard": 3,
+    "bumper": 8,
+    "canopy_column": 4,
+    "canopy_corner": 4,
+    "canopy_deck": 1,
+    "canopy_fascia": 4,
+    "canopy_light": 25,
+    "column_base": 4,
+    "dispenser": 4,
+    "fascia_sign": 5,
+    "grate": 15,
+    "island": 4,
+    "line": 4,
+    "shopdoor": 1,
+    "shopfront": 5,
+    "shopsign": 1,
+    "totem": 1
+   },
+   "tile": "K9"
+  },
+  {
+   "id": "n503139615",
+   "name": "Q8, Chaussee de Waterloo / De Foestraets",
+   "brand": "Q8",
+   "operator": "Q8",
+   "schemeName": "kelvo",
+   "type": "canopy",
+   "islands": 2,
+   "canopy": {
+    "cx": 1861.368,
+    "cz": 1335.718,
+    "yaw": -2.6779,
+    "w": 19.81,
+    "d": 8.4,
+    "top": 101.411,
+    "h": 5.18,
+    "src": "dsm",
+    "pitched": false
+   },
+   "shop": {
+    "bu": "https://databrussels.be/id/building/1793639",
+    "span": 8.61,
+    "bays": 5
+   },
+   "wall": null,
+   "notes": [
+    "canopy from the DSM: 19.8 x 8.4 m, 5.18 m high, fill 0.95"
+   ],
+   "counts": {
+    "bollard": 2,
+    "bumper": 4,
+    "canopy_column": 2,
+    "canopy_corner": 4,
+    "canopy_deck": 1,
+    "canopy_fascia": 4,
+    "canopy_light": 12,
+    "column_base": 2,
+    "dispenser": 2,
+    "fascia_sign": 5,
+    "grate": 18,
+    "island": 2,
+    "line": 2,
+    "shopdoor": 1,
+    "shopfront": 4,
+    "shopsign": 1,
+    "solar": 1,
+    "totem": 1
+   },
+   "tile": "J7"
+  },
+  {
+   "id": "n576656709",
+   "name": "Q8, Chaussee de Waterloo / Groenejagersveld",
+   "brand": "Q8",
+   "operator": "Shell",
+   "schemeName": "kelvo",
+   "type": "under",
+   "islands": 1,
+   "canopy": null,
+   "shop": null,
+   "wall": {
+    "bu": "https://databrussels.be/id/building/1760821",
+    "u": [
+     0.5,
+     7.0
+    ],
+    "out": 2.6
+   },
+   "notes": [],
+   "counts": {
+    "bumper": 2,
+    "dispenser": 1,
+    "fascia_sign": 1,
+    "island": 1,
+    "shopsign": 1,
+    "totem": 1
+   },
+   "tile": "J4"
+  },
+  {
+   "id": "n576656710",
+   "name": "TotalEnergies Cambre, Chaussee de Waterloo",
+   "brand": "TotalEnergies",
+   "operator": "TotalEnergies",
+   "schemeName": "tamaris",
+   "type": "canopy",
+   "islands": 6,
+   "canopy": {
+    "cx": 1631.136,
+    "cz": -578.872,
+    "yaw": 0.0624,
+    "w": 21.6,
+    "d": 20.48,
+    "top": 119.471,
+    "h": 6.33,
+    "src": "dsm",
+    "pitched": true
+   },
+   "shop": null,
+   "wall": null,
+   "notes": [
+    "canopy from the DSM: 21.6 x 20.5 m, 6.33 m high, fill 0.63",
+    "no shop wall within 8 m of the canopy",
+    "car wash at OSM node 10930371708"
+   ],
+   "counts": {
+    "bollard": 2,
+    "bumper": 12,
+    "canopy_column": 6,
+    "canopy_corner": 4,
+    "canopy_deck": 1,
+    "canopy_fascia": 4,
+    "canopy_light": 42,
+    "carwash": 1,
+    "column_base": 6,
+    "dispenser": 6,
+    "fascia_sign": 4,
+    "grate": 26,
+    "island": 6,
+    "line": 6,
+    "totem": 1
+   },
+   "tile": "J3"
+  },
+  {
+   "id": "n6763675396",
+   "name": "Lukoil, Rue du Roetaert",
+   "brand": "Lukoil",
+   "operator": null,
+   "schemeName": "lumo",
+   "type": "canopy",
+   "islands": 2,
+   "canopy": {
+    "cx": -1532.951,
+    "cz": 279.205,
+    "yaw": 0.3805,
+    "w": 15.1,
+    "d": 7.11,
+    "top": 37.218,
+    "h": 5.39,
+    "src": "dsm",
+    "pitched": false
+   },
+   "shop": {
+    "bu": "https://databrussels.be/id/building/1593401",
+    "span": 9.0,
+    "bays": 6
+   },
+   "wall": null,
+   "notes": [
+    "canopy from the DSM: 15.1 x 7.1 m, 5.39 m high, fill 0.89"
+   ],
+   "counts": {
+    "airstand": 1,
+    "bollard": 4,
+    "bumper": 4,
+    "canopy_column": 2,
+    "canopy_corner": 4,
+    "canopy_deck": 1,
+    "canopy_fascia": 4,
+    "canopy_light": 10,
+    "column_base": 2,
+    "dispenser": 2,
+    "fascia_sign": 5,
+    "grate": 13,
+    "island": 2,
+    "line": 2,
+    "shopdoor": 1,
+    "shopfront": 5,
+    "shopsign": 1,
+    "totem": 1
+   },
+   "tile": "C5"
+  },
+  {
+   "id": "n7334366818",
+   "name": "Esso Express (Maes), Avenue du Domaine / Globe (Forest)",
+   "brand": "Esso Express",
+   "operator": "Maes Energy & Mobility",
+   "schemeName": "rubra",
+   "type": "under",
+   "islands": 1,
+   "canopy": null,
+   "shop": null,
+   "wall": {
+    "bu": "https://databrussels.be/id/building/1750150",
+    "u": [
+     3.19,
+     9.69
+    ],
+    "out": 2.6
+   },
+   "notes": [],
+   "counts": {
+    "airstand": 1,
+    "bumper": 2,
+    "dispenser": 1,
+    "fascia_sign": 1,
+    "island": 1,
+    "shopsign": 1,
+    "totem": 1
+   },
+   "tile": "C3"
+  },
+  {
+   "id": "w174996511",
+   "name": "Esso Express, Waterloose Steenweg (Sint-Genesius-Rode)",
+   "brand": "Esso Express",
+   "operator": "G&V",
+   "schemeName": "rubra",
+   "type": "canopy",
+   "islands": 1,
+   "canopy": {
+    "cx": 2315.403,
+    "cz": 3397.696,
+    "yaw": -3.1128,
+    "w": 13.62,
+    "d": 7.55,
+    "top": 128.425,
+    "h": 5.3,
+    "src": "osm",
+    "pitched": false
+   },
+   "shop": null,
+   "wall": null,
+   "notes": [
+    "canopy from OSM way 525142652 (building=roof): 13.6 x 7.5 m, height 5.3 m (no DSM)"
+   ],
+   "counts": {
+    "bollard": 2,
+    "bumper": 2,
+    "canopy_column": 1,
+    "canopy_corner": 4,
+    "canopy_deck": 1,
+    "canopy_fascia": 4,
+    "canopy_light": 8,
+    "column_base": 1,
+    "dispenser": 1,
+    "fascia_sign": 4,
+    "grate": 12,
+    "island": 1,
+    "line": 2,
+    "paypoint": 1,
+    "totem": 1
+   },
+   "tile": "K11"
+  },
+  {
+   "id": "w96066956",
+   "name": "Esso, Chaussee de Waterloo / Globe",
+   "brand": "Esso",
+   "operator": null,
+   "schemeName": "rubra",
+   "type": "canopy",
+   "islands": 2,
+   "canopy": {
+    "cx": 1740.365,
+    "cz": 596.837,
+    "yaw": -2.9885,
+    "w": 20.64,
+    "d": 8.34,
+    "top": 92.984,
+    "h": 5.17,
+    "src": "osm+dsm",
+    "pitched": false
+   },
+   "shop": {
+    "bu": "https://databrussels.be/id/buildingsolid/711704",
+    "span": 9.0,
+    "bays": 6
+   },
+   "wall": null,
+   "notes": [
+    "canopy: OSM way 1011930469 (building=roof) over the DSM blob: 20.6 x 8.3 m, the DSM's 5.17 m high"
+   ],
+   "counts": {
+    "bollard": 4,
+    "bumper": 4,
+    "canopy_column": 2,
+    "canopy_corner": 4,
+    "canopy_deck": 1,
+    "canopy_fascia": 4,
+    "canopy_light": 14,
+    "column_base": 2,
+    "dispenser": 2,
+    "fascia_sign": 5,
+    "grate": 19,
+    "island": 2,
+    "line": 2,
+    "shopdoor": 1,
+    "shopfront": 5,
+    "shopsign": 1,
+    "totem": 1
+   },
+   "tile": "J6"
+  }
+ ],
+ "tiles": [
+  "A5",
+  "C3",
+  "C5",
+  "D10",
+  "D7",
+  "F5",
+  "H1",
+  "J3",
+  "J4",
+  "J6",
+  "J7",
+  "K11",
+  "K9"
+ ],
+ "sources": [
+  "OSM (c) OpenStreetMap contributors, ODbL",
+  "UrbIS DSM / DTM 2021, Paradigm, CC0",
+  "UrbIS buildings 3D, Paradigm, CC0"
+ ]
+}

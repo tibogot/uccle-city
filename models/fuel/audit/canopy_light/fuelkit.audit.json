@@ -1,0 +1,360 @@
+{
+ "summary": {
+  "triangles": 120,
+  "vertices_welded": 64,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 24,
+  "counts": {
+   "sliver": 24
+  },
+  "ms": 13
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.01,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "canopy_light",
+   "slot": "trim_alu",
+   "triangles": 108,
+   "maxDistance": 120
+  },
+  {
+   "name": "canopy_light",
+   "slot": "led_panel",
+   "triangles": 12,
+   "maxDistance": 120
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.618,
+     0,
+     -0.106
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 276,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.618,
+     -0.001,
+     0.106
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 276,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.619,
+     -0.002,
+     -0.106
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 276,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.62,
+     -0.002,
+     0.106
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 276,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.206,
+     0,
+     -0.318
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 537,
+    "longest": 1.234
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.206,
+     -0.001,
+     -0.318
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 537,
+    "longest": 1.234
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.206,
+     -0.002,
+     -0.319
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 537,
+    "longest": 1.234
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.206,
+     -0.002,
+     -0.32
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 537,
+    "longest": 1.234
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.618,
+     0,
+     0.106
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 276,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.618,
+     -0.001,
+     -0.106
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 276,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.619,
+     -0.002,
+     0.106
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 276,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.62,
+     -0.002,
+     -0.106
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 276,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.206,
+     0,
+     0.318
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 537,
+    "longest": 1.234
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.206,
+     -0.001,
+     0.318
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 537,
+    "longest": 1.234
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.206,
+     -0.002,
+     0.319
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 537,
+    "longest": 1.234
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.206,
+     -0.002,
+     0.32
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 537,
+    "longest": 1.234
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.62,
+     -0.006,
+     0.106
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 79,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.62,
+     -0.008,
+     -0.106
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 79,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.206,
+     -0.006,
+     0.32
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 154,
+    "longest": 1.234
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.206,
+     -0.008,
+     0.32
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 154,
+    "longest": 1.234
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.206,
+     -0.006,
+     -0.32
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 154,
+    "longest": 1.234
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.206,
+     -0.008,
+     -0.32
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 154,
+    "longest": 1.234
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.62,
+     -0.006,
+     -0.106
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 79,
+    "longest": 0.634
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.62,
+     -0.008,
+     0.106
+    ],
+    "part": "canopy_light/trim_alu",
+    "aspect": 79,
+    "longest": 0.634
+   }
+  ]
+ },
+ "file": "fuelkit.glb"
+}

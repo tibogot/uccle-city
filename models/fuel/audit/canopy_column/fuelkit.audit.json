@@ -1,0 +1,354 @@
+{
+ "summary": {
+  "triangles": 60,
+  "vertices_welded": 32,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 24,
+  "counts": {
+   "sliver": 24
+  },
+  "ms": 8
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.01,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "canopy_column",
+   "slot": "canopy_white",
+   "triangles": 60,
+   "maxDistance": 120
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.146,
+     0.333,
+     -0.123
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.148,
+     0.667,
+     -0.117
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.135,
+     0.333,
+     -0.14
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.14,
+     0.667,
+     -0.135
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.117,
+     0.333,
+     -0.148
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.123,
+     0.667,
+     -0.146
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.123,
+     0.333,
+     -0.146
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.117,
+     0.667,
+     -0.148
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.14,
+     0.333,
+     -0.135
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.135,
+     0.667,
+     -0.14
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.148,
+     0.333,
+     -0.117
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.146,
+     0.667,
+     -0.123
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.146,
+     0.333,
+     0.123
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.148,
+     0.667,
+     0.117
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.135,
+     0.333,
+     0.14
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.14,
+     0.667,
+     0.135
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.117,
+     0.333,
+     0.148
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.123,
+     0.667,
+     0.146
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.123,
+     0.333,
+     0.146
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.117,
+     0.667,
+     0.148
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.14,
+     0.333,
+     0.135
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.135,
+     0.667,
+     0.14
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.148,
+     0.333,
+     0.117
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.146,
+     0.667,
+     0.123
+    ],
+    "part": "canopy_column/canopy_white",
+    "aspect": 48,
+    "longest": 1
+   }
+  ]
+ },
+ "file": "fuelkit.glb"
+}
