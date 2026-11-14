@@ -70,8 +70,16 @@ read-only (copy into `vendor/` with ORIGIN.md); measure GPU ms before / after (s
 - [x] City `?view=third` defaults to the Y Bot (falls back to the Hoodie); fixed: feet latched mid-air at spawn.
 - [x] 2026-11-10 (owner: "do it the BVHEcctrl way"): runtime leg IK OFF; stair clips baked per riser x tread
       offline; whole-body vertical fit from the planted foot. No knee backwards / locked anywhere, few pops.
-- [ ] Next, small and targeted: tilt the planted foot to a slope (foot bone only: the toe goes ~8 cm into a 15 deg
-      ramp today); lift the swing foot over a kerb face (toe clips it); stair hover / dips of a few cm left.
+- [x] 2026-11-14 (Holden's foot-locking article, `locomotion.js _bodyFit`): planted foot tilted to a slope (foot bone
+      only); the body follows the planted foot needing the LEAST lift, every other foot lifted by a shortening-only
+      two-bone IK (bend axis from the clip's own knee: never flips, never stretches past the clip); jumps in the body
+      height inertialized, smooth drift followed with no lag; going down, the body starts lowering 0.35 s before the
+      touch-down; a foot across a kerb / riser edge slides off it or stands on the top (overhang), and is pushed out of
+      a face if it creeps in during the stance; the swinging foot clears the ground under / just ahead of its toe.
+      Audit `docs/character/audit/loco-round3.txt`: ramp 15 up 75 -> 2 flagged frames, ramp 15 down 73 -> 0, kerb up
+      44 -> 2, no knee backwards anywhere, ~0.07-0.1 ms / frame.
+- [ ] Still open on the ground: stairs at a walk 18-60 flagged frames per flight (touch-downs a few cm high going
+      down, ankle pops entering / leaving); steep test ramps (30 / 45 deg) poor; "kerbs at run" 20.
 - [ ] Better-looking character on the same skeleton: a dressed Mixamo human (drop-in, owner downloads FBX with skin),
       or Quaternius Universal Base Characters + UAL1 (check licence and clip list first).
 - [ ] Stairs at a RUN: 80-95 flagged frames per run (gaps, pops). Ask the owner for a "Running Down Stairs" clip

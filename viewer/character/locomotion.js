@@ -34,9 +34,51 @@ export const LOCO = {
   footIK: false,
   stairClips: true,     // the stair clips, BAKED for the stairs' riser / tread (tools/characters/mixamoClips.mjs): no leg IK
   bodyFit: true,        // the whole body's height from the planted foot's ground (one smooth vertical offset, no leg bent)
+  edgeSlide: true,     // a foot planted across a kerb / riser edge slides off it, or stands on the top (overhang)
+  swingLift: true,     // a swinging foot lifted over the ground under / just ahead of it (kerbs, ramps), knee bend only
+  footTilt: 20,        // max foot tilt to a slope (deg): the foot bone only, while planted
 };
 
-const _v = new THREE.Vector3(), _w = new THREE.Vector3();
+const _v = new THREE.Vector3(), _w = new THREE.Vector3(), _n = new THREE.Vector3(), _UP = new THREE.Vector3(0, 1, 0);
+const _edgeH = new Float64Array(7);
+const _A = new THREE.Vector3(), _B = new THREE.Vector3(), _C = new THREE.Vector3(), _ax0 = new THREE.Vector3(), _ax1 = new THREE.Vector3();
+const _e1 = new THREE.Vector3(), _e2 = new THREE.Vector3(), _e3 = new THREE.Vector3();
+const _r0 = new THREE.Quaternion(), _r1 = new THREE.Quaternion(), _r2 = new THREE.Quaternion(), _qh = new THREE.Quaternion(), _qk = new THREE.Quaternion();
+const _acos = (x) => Math.acos(Math.max(-1, Math.min(1, x)));
+/**
+ * Two-bone leg IK as a MINIMAL change of the clip's pose (D. Holden, "Inverse Kinematics & Foot Locking"): the knee
+ * bends about the clip's own knee axis (fixed: it never flips), then the chain turns to the target. Never stretches the
+ * leg past the clip's own hip-ankle length (a shortening / sideways correction only). The caller restores the foot.
+ */
+function twoBone(L, T, yaw) {
+  L.upper.getWorldPosition(_A); L.lower.getWorldPosition(_B); L.foot.getWorldPosition(_C);
+  const lab = _A.distanceTo(_B), lcb = _B.distanceTo(_C), lac = _A.distanceTo(_C);
+  if (lab < 1e-5 || lcb < 1e-5 || lac < 1e-5) return;
+  const lat = Math.max(Math.abs(lab - lcb) + 1e-4, Math.min(lac, lab + lcb - 1e-4, _A.distanceTo(T)));
+  _e1.subVectors(_C, _A).normalize(); _e2.subVectors(_B, _A).normalize(); _e3.subVectors(T, _A).normalize();
+  const ac_ab0 = _acos(_e1.dot(_e2)), ac_at0 = _acos(_e1.dot(_e3));
+  const ba_bc0 = _acos(_ax0.subVectors(_A, _B).normalize().dot(_ax1.subVectors(_C, _B).normalize()));
+  const ac_ab1 = _acos((lcb * lcb - lab * lab - lat * lat) / (-2 * lab * lat));
+  const ba_bc1 = _acos((lat * lat - lab * lab - lcb * lcb) / (-2 * lab * lcb));
+  // (the knee axis from the clip's pose, the knee nudged toward the body's facing: a straight clip leg still has one)
+  _ax1.set(Math.sin(yaw) * 0.02, 0, Math.cos(yaw) * 0.02).add(_B).sub(_A);
+  _ax0.crossVectors(_e1, _ax1);
+  if (_ax0.lengthSq() < 1e-12) return;
+  _ax0.normalize();
+  _ax1.crossVectors(_e1, _e3);
+  _r0.setFromAxisAngle(_ax0, ac_ab1 - ac_ab0);
+  _r1.setFromAxisAngle(_ax0, ba_bc1 - ba_bc0);
+  if (_ax1.lengthSq() > 1e-12) _r2.setFromAxisAngle(_ax1.normalize(), ac_at0); else _r2.identity();
+  L.upper.getWorldQuaternion(_qh); L.lower.getWorldQuaternion(_qk);
+  _r2.multiply(_r0);                                   // (the hip: r2 * r0)
+  _qk.premultiply(_r1).premultiply(_r2);               // knee world: r2 * r0 * r1 * knee
+  _qh.premultiply(_r2);
+  L.upper.parent.getWorldQuaternion(_qp);
+  L.upper.quaternion.copy(_qp.invert().multiply(_qh));
+  L.lower.quaternion.copy(_qh.invert().multiply(_qk));
+  L.upper.updateMatrixWorld(true);
+}
+const _q = new THREE.Quaternion(), _qf = new THREE.Quaternion(), _qp = new THREE.Quaternion();
 const wrapPi = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const smooth01 = (x) => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
 
@@ -182,7 +224,7 @@ export class Locomotion {
     }
     else if (!this.preview) {          // (no leg IK: the body fit, and the clip's contacts published for the lab's checks)
       this._contacts(this.ikCtx);
-      if (this.p.bodyFit && world) this._bodyFit(dt, world, y, st);
+      if (this.p.bodyFit && world) { this._predictLanding(this.ikCtx, x, z, yaw, st); this._bodyFit(dt, world, y, st, yaw); }
       else for (let i = 0; i < 2; i++) { const L = this.ik.legs[i]; L.contact = st.grounded ? this.ikCtx.contact[i] : 0; L.planted = L.contact > 0.6; }
     }
     if (!this.preview) {
@@ -421,34 +463,176 @@ export class Locomotion {
   }
 
   /**
-   * BODY FIT (no leg IK): the whole body moved up / down so that the planted foot's sole stands on the ground under it
-   * (read once when the foot plants: no per-frame hopping between treads), through a critically damped spring; the legs
-   * keep the clip's pose. In the air, and with nothing planted, it eases back to 0.
+   * BODY FIT + LEG LIFT (Holden's rules: the leg IK only shortens a leg from the clip's pose, never stretches it, and
+   * the hips never drop to reach the ground).
+   * 1. Each planted foot's ground is read once at its touch-down (height + plane: a slope tilts the foot bone).
+   * 2. The whole body moves (critically damped spring) so that the planted foot needing the LEAST lift touches its
+   *    ground; no leg ever has to reach down.
+   * 3. Any other foot below its ground (the uphill foot on a ramp, a swinging toe over a kerb or a ramp) is lifted by a
+   *    two-bone IK that only bends the knee more; the foot keeps its world rotation.
    */
-  _bodyFit(dt, world, y, st) {
-    const ik = this.ik, inner = ik.inner, ctx = this.ikCtx;
+  _bodyFit(dt, world, y, st, yaw = 0) {
+    const ik = this.ik, inner = ik.inner, ctx = this.ikCtx, p = this.p, sinT = Math.sin((p.footTilt ?? 20) * Math.PI / 180);
     inner.position.y = 0; inner.updateMatrixWorld(true);
-    let sum = 0, wsum = 0;
+    let best = Infinity;
     for (let i = 0; i < 2; i++) {
       const L = ik.legs[i], c = st.grounded ? ctx.contact[i] : 0;
       L.contact = c;
       const was = L.planted;
       L.planted = was ? c > 0.3 : c > 0.6;
-      if (!L.planted) continue;
-      L.foot.getWorldPosition(_v); const ax = _v.x, ay = _v.y, az = _v.z; L.toe.getWorldPosition(_w);
-      const sole = Math.min(ay - L.ankleH, _w.y - L.ballH);
-      if (!was) L.gPlant = ik._sole(world, ax, az, _w.x, _w.z, y, null);       // (latched at the touch-down)
-      if (Math.abs(L.gPlant - y) > 0.6) continue;
-      const e = L.gPlant - sole;
-      sum += e * c; wsum += c;
+      L.foot.getWorldPosition(_v); const ax = _v.x, az = _v.z; L.toe.getWorldPosition(_w);
+      const hx = _w.x - ax, hz = _w.z - az, hl = Math.hypot(hx, hz) || 1;
+      L._yaw = yaw;          // (the knee bends toward the BODY's facing: a trailing foot points down / back)
+      if (L.planted && !was) {
+        // (the sole's ground AND its plane: heel and ball on one plane = a slope, else level (a step's edge))
+        L.gPlant = ik._sole(world, ax - hx / hl * L.heelBack, az - hz / hl * L.heelBack, _w.x, _w.z, y, L);
+        L.px = (ax + _w.x) * 0.5; L.pz = (az + _w.z) * 0.5;
+        L.slx = L.slz = 0;
+        if (p.edgeSlide !== false) this._edge(L, world, ax, az, hx / hl, hz / hl, y);
+        if (L.ny < 0.999) {
+          const hh = Math.hypot(L.nx, L.nz);
+          if (hh > sinT) { L.nx *= sinT / hh; L.nz *= sinT / hh; L.ny = Math.sqrt(1 - sinT * sinT); }
+        }
+      }
+      const live = L.planted && Math.abs(L.gPlant - y) < 0.6;
+      // FOOT TILT (the foot bone only, about the ankle), eased in / out so a touch-down or a lift never snaps
+      const tOn = live && L.ny < 0.999 ? 1 : 0;
+      L.tw = (L.tw ?? 0) + (tOn - (L.tw ?? 0)) * (1 - Math.exp(-dt / 0.06));
+      if (tOn) { L.tnx = L.nx; L.tny = L.ny; L.tnz = L.nz; }
+      if (L.tw > 1e-3 && L.tny !== undefined) {
+        _n.set(L.tnx, L.tny, L.tnz).lerp(_UP, 1 - L.tw).normalize();
+        _q.setFromUnitVectors(_UP, _n);
+        L.foot.getWorldQuaternion(_qf).premultiply(_q);
+        L.foot.parent.getWorldQuaternion(_qp);
+        L.foot.quaternion.copy(_qp.invert().multiply(_qf));
+        L.foot.updateMatrixWorld(true);
+        L.toe.getWorldPosition(_w);
+      } else _n.copy(_UP);
+      L.need = null;
+      if (live && p.edgeSlide !== false) {
+        // (during the stance: the clip's foot may creep into a riser / kerb face (toe tip) or back into one (heel);
+        // pushed out by the depth found, 2 cm steps; the slide only grows within a stance)
+        const fx = hx / hl, fz = hz / hl, sx = (L.slx || 0), sz = (L.slz || 0), pny = L.ny ?? 1;
+        // (above the latched PLANE at that point: a ramp rises under the toe, a step's face jumps)
+        const lim = (qx, qz) => L.gPlant + 0.03 - ((L.nx ?? 0) * (qx - L.px) + (L.nz ?? 0) * (qz - L.pz)) / pny;
+        const tf = L.toeFront || 0.08, tx = _w.x + fx * tf + sx, tz = _w.z + fz * tf + sz;
+        let push = 0;
+        if (ik._ray(world, tx, tz, y) > lim(tx, tz)) { push = -0.12; for (let k = 1; k <= 6; k++) { const qx = tx - fx * 0.02 * k, qz = tz - fz * 0.02 * k; if (ik._ray(world, qx, qz, y) <= lim(qx, qz)) { push = -(0.02 * k + 0.01); break; } } }
+        else {
+          const bx = ax - fx * L.heelBack + sx, bz = az - fz * L.heelBack + sz;
+          if (ik._ray(world, bx, bz, y) > lim(bx, bz)) { push = 0.12; for (let k = 1; k <= 6; k++) { const qx = bx + fx * 0.02 * k, qz = bz + fz * 0.02 * k; if (ik._ray(world, qx, qz, y) <= lim(qx, qz)) { push = 0.02 * k + 0.01; break; } } }
+        }
+        if (push) {
+          const nx2 = sx + fx * push, nz2 = sz + fz * push, m = Math.hypot(nx2, nz2);
+          const k2 = m > 0.15 ? 0.15 / m : 1;
+          L.slx = nx2 * k2; L.slz = nz2 * k2;
+        }
+      }
+      if (live) {
+        // the sole's lowest point (ankle down ankleH, ball down ballH, along the tilted foot's up) against the plane
+        const ay = _v.y, nx = L.nx ?? 0, ny = L.ny ?? 1, nz = L.nz ?? 0;
+        const gA = ((ax - _n.x * L.ankleH - L.px) * nx + (ay - _n.y * L.ankleH - L.gPlant) * ny + (az - _n.z * L.ankleH - L.pz) * nz) / ny;
+        const gB = ((_w.x - _n.x * L.ballH - L.px) * nx + (_w.y - _n.y * L.ballH - L.gPlant) * ny + (_w.z - _n.z * L.ballH - L.pz) * nz) / ny;
+        L.need = -Math.min(gA, gB);
+        if (L.need < best) best = L.need;
+      } else if (st.grounded && p.swingLift !== false) {
+        // a swinging foot: the highest ground under its heel, its toe and just ahead of the toe (a kerb's top, a step,
+        // a ramp rising); it must clear that by a centimetre
+        const sole = Math.min(_v.y - L.ankleH, _w.y - L.ballH);
+        if (sole - y < 0.45) {
+          const tf = (L.toeFront || 0.08) + 0.04;
+          const g = Math.max(ik._ray(world, ax - hx / hl * L.heelBack, az - hz / hl * L.heelBack, y),
+            ik._ray(world, _w.x, _w.z, y), ik._ray(world, _w.x + hx / hl * tf, _w.z + hz / hl * tf, y));
+          if (g < y + 0.4) L.need = g + 0.01 - sole;
+        }
+      }
+      L.ay0 = _v.y;
     }
-    const target = st.grounded && wsum > 0 ? Math.max(-0.25, Math.min(0.25, sum / wsum)) : st.grounded ? this._fitT || 0 : 0;
+    // ANTICIPATION (going down: a ramp, a kerb down): the clip's leg cannot reach a lower landing, so the body starts
+    // lowering before the touch-down (the stance knee bends: the lift below), over the swing's last 0.35 s
+    if (best < Infinity && st.grounded) {
+      for (let i = 0; i < 2; i++) {
+        const L = ik.legs[i], ld = ctx.land[i];
+        if (L.planted || !ld.ok || !(ld.tLeft < 0.35)) continue;
+        const g = ik._sole(world, ld.x - ld.hx * 0.1, ld.z - ld.hz * 0.1, ld.x + ld.hx * 0.1, ld.z + ld.hz * 0.1, y, null);
+        const needL = g - (y + ld.h);
+        if (needL < best && needL > -0.3) { const w = 1 - ld.tLeft / 0.35; best += (needL - best) * w * w * (3 - 2 * w); }
+      }
+    }
+    const target = best < Infinity ? Math.max(-0.25, Math.min(0.25, best)) : st.grounded ? this._fitT || 0 : 0;
+    // INERTIALIZATION (Holden): the target's smooth drift (a ramp: the capsule climbs past a planted foot) is followed
+    // exactly; a JUMP (a new foot planted, the lowest foot changing, a step) becomes an offset that decays on a critically
+    // damped spring (faster going down: the body settles onto a lower foot)
+    const dT = target - (this._fitT ?? target);
     this._fitT = target;
-    const om = 14, e = (this.fit || 0) - target, ex = Math.exp(-om * dt), tmp = ((this.fitV || 0) + om * e) * dt;
-    this.fitV = ((this.fitV || 0) - om * tmp) * ex; this.fit = target + (e + tmp) * ex;
+    let d = this.fitD || 0, dv = this.fitDV || 0;
+    if (Math.abs(dT) > 0.012) d -= dT;
+    const om = d > 0 ? 20 : 14, ex = Math.exp(-om * dt), tmp = (dv + om * d) * dt;
+    dv = (dv - om * tmp) * ex; d = (d + tmp) * ex;
+    if (d > 0.3) d = 0.3; else if (d < -0.3) d = -0.3;
+    this.fitD = d; this.fitDV = dv;
+    // (a light final smoothing that follows the drift's velocity: no lag on a ramp, the clip's per-frame sole wobble
+    // and the inertialization's corners filtered out of the pelvis)
+    const raw = target + d, rv = dt > 0 && Math.abs(dT) <= 0.012 ? Math.max(-1.5, Math.min(1.5, dT / dt)) : 0;
+    if (this.fit === undefined || !st.grounded && best === Infinity && Math.abs(raw - this.fit) > 0.3) { this.fit = raw; this.fitV = 0; }
+    else {
+      const w2 = p.fitSmooth ?? 30, e2 = this.fit - raw, v2 = (this.fitV || 0) - rv, x2 = Math.exp(-w2 * dt), t2 = (v2 + w2 * e2) * dt;
+      this.fitV = (v2 - w2 * t2) * x2 + rv; this.fit = raw + (e2 + t2) * x2;
+    }
     const sc = inner.parent.matrixWorld.elements[5] || 1;
     inner.position.y = this.fit / sc; inner.updateMatrixWorld(true);
     ik.pelvis = this.fit;
+    // LEG LIFT: shortening only, eased (fast up, slower down: a foot never sinks first and pops later)
+    for (let i = 0; i < 2; i++) {
+      const L = ik.legs[i];
+      const want = L.need === null ? 0 : Math.max(0, Math.min(0.3, L.need - this.fit));
+      const cur = L.lift || 0;
+      L.lift = cur + (want - cur) * (1 - Math.exp(-dt / (want > cur || L.planted ? 0.02 : 0.08)));
+      // (the edge slide: on while planted, eased; a swinging foot carries none)
+      L.sw = (L.sw || 0) + ((L.planted && (L.slx || L.slz) ? 1 : 0) - (L.sw || 0)) * (1 - Math.exp(-dt / 0.04));
+      if (L.lift < 2e-3 && L.sw < 2e-3) continue;
+      L.foot.getWorldQuaternion(_qf);
+      L.foot.getWorldPosition(_v); _v.y += L.lift; _v.x += (L.slx || 0) * L.sw; _v.z += (L.slz || 0) * L.sw;
+      twoBone(L, _v, yaw);
+      L.foot.parent.getWorldQuaternion(_qp);
+      L.foot.quaternion.copy(_qp.invert().multiply(_qf));
+      L.foot.updateMatrixWorld(true);
+    }
+  }
+
+  /**
+   * A foot planted ACROSS an edge (a kerb, a riser: part of the sole over a higher surface, i.e. inside its face):
+   * sampled heel to toe tip. A small part over the higher side: the foot slides off it (lower ground); most of it: the
+   * foot stands on the top, the rest overhangs (a heel or toes over a drop, as people stand on a kerb's edge).
+   * Sets L.gPlant (level), L.slx / L.slz (world slide of the ankle).
+   */
+  _edge(L, world, ax, az, fx, fz, y) {
+    const ik = this.ik, back = L.heelBack, len = L.soleLen || 0.3;
+    const N = 7, h = _edgeH;
+    let lo = Infinity, hi = -Infinity;
+    for (let k = 0; k < N; k++) {
+      const d = -back + len * k / (N - 1);
+      h[k] = ik._ray(world, ax + fx * d, az + fz * d, y);
+      if (h[k] < lo) lo = h[k]; if (h[k] > hi) hi = h[k];
+    }
+    // (an EDGE is a jump between two neighbouring samples, 5 cm apart; a ramp rises smoothly: not an edge)
+    let jk = -1, jd = 0;
+    for (let k = 1; k < N; k++) { const d = Math.abs(h[k] - h[k - 1]); if (d > jd) { jd = d; jk = k; } }
+    if (jd < 0.04 || hi - lo > 0.35) return;
+    const frontHigh = h[jk] > h[jk - 1], nHi = frontHigh ? N - jk : jk, step = len / (N - 1);
+    lo = frontHigh ? h[jk - 1] : h[jk]; hi = frontHigh ? h[jk] : h[jk - 1];
+    const fHi = nHi / N;
+    L.nx = 0; L.ny = 1; L.nz = 0;
+    let s = 0;
+    if (fHi <= 0.3) { L.gPlant = lo; s = (nHi * step - step * 0.5 + 0.025) * (frontHigh ? -1 : 1); }
+    else {
+      L.gPlant = hi;
+      const over = (N - nHi) * step - step * 0.5, ok = 0.3 * len;      // (the part over the drop; up to 30 % overhangs)
+      if (over > ok) s = (over - ok) * (frontHigh ? 1 : -1);
+    }
+    s = Math.max(-0.12, Math.min(0.12, s));
+    L.slx = fx * s; L.slz = fz * s;
+    L.px += L.slx; L.pz += L.slz;
   }
 
   /** Weights eased to their targets and normalised; clip times written; the mixer applies them. */
@@ -493,11 +677,12 @@ export class Locomotion {
       const sy = Math.sin(yaw), cy = Math.cos(yaw);
       // (the clip's +z is the body's forward, +x its left)
       const lx = best[1], lz = best[2] * warpF;
+      L.hx = sy; L.hz = cy;
       L.x = x + (st.vx || 0) * tLeft + cy * lx + sy * lz;
       L.z = z + (st.vz || 0) * tLeft - sy * lx + cy * lz;
       // the clip's sole at that touch-down, above the root line (a stair clip: a tread up / down, warped)
       L.h = best[3] * (dom === S.clip ? 1 + (S.sR - 1) * S.k : 1);
-      L.ok = tLeft < 1.2;
+      L.ok = tLeft < 1.2; L.tLeft = tLeft;
       L.fwd = (L.x - x) * (st.slopeDx ?? 0) + (L.z - z) * (st.slopeDz ?? 1);
     }
   }
