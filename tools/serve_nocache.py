@@ -14,7 +14,11 @@ class NoCache(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
     def log_message(self, *a): pass
 
+class Server(http.server.ThreadingHTTPServer):
+    request_queue_size = 128        # the default 5 refuses the viewer's module bursts (ERR_CONNECTION_REFUSED, silent kit failures)
+    daemon_threads = True
+
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8791
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    http.server.ThreadingHTTPServer(("127.0.0.1", port), functools.partial(NoCache, directory=root)).serve_forever()
+    Server(("127.0.0.1", port), functools.partial(NoCache, directory=root)).serve_forever()
