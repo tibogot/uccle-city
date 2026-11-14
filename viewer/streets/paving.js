@@ -17,7 +17,7 @@
 // pixels), three only in the blend zones. Explicit gradients (textureGrad): mipmapped + anisotropic 8, so nothing
 // shimmers far away (the mips carry the average; no procedural edge left to alias).
 import * as THREE from "three/webgpu";
-import { Fn, If, float, int, vec2, vec3, vec4, mix, max, clamp, pow, dot, floor, fract, cos, sin, select, normalize, cross,
+import { Fn, If, float, int, vec2, vec3, vec4, mix, max, clamp, smoothstep, pow, dot, floor, fract, cos, sin, select, normalize, cross,
   texture, uniformArray, positionWorld, normalWorld, normalView, cameraViewMatrix } from "three/tsl";
 import { hash22 } from "../materials/antitile.js";
 import { ktxLoader } from "../materials/scans.js";
@@ -86,10 +86,11 @@ const SQ3x2 = 2 * Math.sqrt(3);
  */
 export function pavingSample(a, b, layer, size) {
   const S = PT;
-  const colV = vec3(0.1).toVar(), nV = vec2(0).toVar(), raV = vec2(0.9, 1).toVar();
+  const colV = vec3(0.1).toVar(), nV = vec2(0).toVar(), raV = vec2(0.9, 1).toVar(), tpp = float(1).toVar();
   const run = Fn(() => {
     const st = vec2(a, b).div(size).toVar(), dx = vec2(0).toVar(), dy = vec2(0).toVar();
     dx.assign(st.dFdx()); dy.assign(st.dFdy());
+    tpp.assign(max(dx.length(), dy.length()).mul(1024));                 // texels per pixel (the larger axis)
     const L = int(layer.add(0.5)).toVar();
     const nx = S.latX.element(L).toVar(), ny = S.latY.element(L).toVar(), rk = S.rot.element(L).toVar();
     colV.assign(vec3(0.1)); nV.assign(vec2(0)); raV.assign(vec2(0.9, 1));
@@ -136,9 +137,21 @@ export function pavingSample(a, b, layer, size) {
       const blend = (fn) => taps.map((tp, i) => fn(tp).mul(kk[i])).reduce((p, q) => p.add(q));
       colV.assign(blend((tp) => tp.A.rgb.mul(tp.t))); nV.assign(blend((tp) => tp.n)); raV.assign(blend((tp) => vec2(tp.R.b, tp.R.a)));
     });
+    return colV;
   });
-  run();
-  return { col: colV, n: nV, rough: raV.x, ao: raV.y };
+  // the Fn's RESULT must be in the graph (an uncalled / unused Fn emits nothing): col is it; n / rough / ao are the vars it
+  // assigned (as viewer/ground.js: used after it in the same fragment function)
+  const col = run();
+  // SPECULAR ANTI-ALIASING: once a pixel covers more than ~a texel, the stone arrises' sharp normals sit below the
+  // pixel; their highlights blink from frame to frame (the flicker test). The mips average the normal (a shorter, flatter
+  // normal that the BRDF does not see as rougher), so the roughness goes up with the normal's own variation across the
+  // pixel (Toksvig-like, from its screen derivatives) and with the texel density, and the normal is faded as the
+  // density grows (by then the AO / albedo carry the relief)
+  const nVar = clamp(nV.x.fwidth().add(nV.y.fwidth()), 0, 1);
+  const dens = smoothstep(0.6, 4.0, tpp);
+  const rough = clamp(raV.x.add(nVar.mul(0.9)), 0, 1).max(mix(raV.x, float(0.9), dens));
+  const nFade = float(1).sub(smoothstep(1.0, 8.0, tpp).mul(0.75));
+  return { col, n: nV.mul(nFade), rough, ao: raV.y, tpp };
 }
 
 /** view-space normal for a material from a tangent-space normal x,y in the (a, b) frame (cotangent frame from the

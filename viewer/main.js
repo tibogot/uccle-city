@@ -757,6 +757,10 @@ async function main() {
   const libTex = params.get("libmat") === "0" ? null : Promise.all([import("./materials/scans.js"), import("./materials/shipped.js")]).then(([m, sh]) => m.loadScans(renderer, undefined, { skip: sh.GROUND_HOLD }))
     .then((S) => { log(`material library: ${Object.keys(S).length} shipped texture sets`); return S; })
     .catch((e) => log(`material library textures failed: ${e.message}`));
+  // the street surfaces' baked textures (viewer/streets/paving.js, docs/STREET_SURFACES.md), awaited with the library's
+  // before the first tile's road materials; ?paving=old: the procedural streets
+  const pavingTex = import("./streets/paving.js").then((p) => p.loadPavingTextures(renderer))
+    .then((T) => { if (T) log(`street surfaces: ${T.layers.length} baked layers, ${(T.bytesGPU / 1048576).toFixed(1)} MB GPU, ${T.ms} ms`); return T; });
   const backend = renderer.backend.isWebGPUBackend ? "WebGPU" : "WebGL2 (fallback)";
   log(`renderer: ${backend}`);
 
@@ -853,6 +857,7 @@ async function main() {
     }).catch((e) => log(`Saint-Job model failed (${e.message}): the UrbIS solid is hidden, reload with ?stjob=0`));
   }
   await libTex;                                                    // the library's textures before its first consumer
+  await pavingTex;                                                 // the street textures before the first road material
   await cityKit.start({ scene, updaters, log });                   // ?kit=1: the façade kit (before the first tile and the warm-up)
   await cityStreetLife.start({ scene, updaters, log });            // the street life (shop names, plates, numbers, stops), ?streetlife=0 off
   await cityFurniture.start({ scene, updaters, log });             // benches, bike hoops / boxes, bins, glass banks (viewer/furniture2/), ?furniture=old off

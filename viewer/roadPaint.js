@@ -18,10 +18,12 @@
 import * as THREE from "three/webgpu";
 import {
   attribute, uv, texture, positionWorld, float, vec2, vec3, mix, step, smoothstep, floor, fract, abs, min, max,
-  fwidth, hash, mx_noise_float, uniform,
+  fwidth, hash, mx_noise_float, uniform, select,
 } from "three/tsl";
 import { addLampLight } from "./lampLight.js";
 import { filteredPulse, boxCoverage } from "./tslkit.js";
+import { pavingTextures, pavingSample, pavingNormal, regrade, LAYER } from "./streets/paving.js";
+import { hash22 } from "./materials/antitile.js";
 
 import { SURFACE, hashPhase, surfaceAttribute } from "./roadData.js";
 export { SURFACE, hashPhase, surfaceAttribute };
@@ -74,38 +76,43 @@ export function asphaltMaterial(atlas) {
   // pieces meet or overlap (a junction pad and its arm, an engine strip over the measured base, a narrowing) the
   // asphalt changed shade along a straight edge: the owner's darker wedge, the "faceted" junction
   const patch = n3(x.mul(0.11), float(0.37), z.mul(0.11));
-  const grain = n3(x.mul(7.0), z.mul(7.0), 0.0);
   const speck = n3(x.mul(41.0), z.mul(41.0), 3.0);
   const wheel = smoothstep(float(0.22), float(0.0), abs(abs(lat).sub(0.5)));      // 1 on each wheel path
-  let tone = float(0.068).add(patch.mul(0.016)).add(grain.mul(0.009)).add(speck.mul(0.006)).sub(wheel.mul(0.012));
-  const asphalt = vec3(tone.mul(0.97), tone, tone.mul(1.04));
-  const asphaltRough = float(0.9).sub(wheel.mul(0.12));
+  // the baked street textures (viewer/streets/paving.js, docs/STREET_SURFACES.md); ?paving=old: the procedural below
+  const T = pavingTextures() ? texturedRoad({ s, t, x, z, surf, phase, wheel, patch, speck }) : null;
+  const grain = T ? null : n3(x.mul(7.0), z.mul(7.0), 0.0);
+  let base, rough;
+  if (T) { base = T.col; rough = T.rough; } else {
+    let tone = float(0.068).add(patch.mul(0.016)).add(grain.mul(0.009)).add(speck.mul(0.006)).sub(wheel.mul(0.012));
+    const asphalt = vec3(tone.mul(0.97), tone, tone.mul(1.04));
+    const asphaltRough = float(0.9).sub(wheel.mul(0.12));
 
-  // --- setts (pavés): courses across the road, granite tones, dark joints
-  const sett = courses(s, t, 0.125, 0.15, float(0.018), phase);
-  // Brussels granite setts as on the owner's photos of Place de Saint-Job (2026-11-04): blue-grey to
-  // brown-grey per stone, LIGHT sandy joints (were near-black), as viewer/plazas.js settsLook
-  const settHue = sett.tone.mul(7.31).fract();
-  const settStone = mix(vec3(0.115, 0.125, 0.14), vec3(0.2, 0.185, 0.165), settHue).mul(sett.tone.mul(0.55).add(0.72)).add(speck.mul(0.012));
-  const settCol = mix(settStone, vec3(0.19, 0.18, 0.155), sett.joint);
-  // --- paving stones: 20 x 10 cm concrete pavers
-  const pav = courses(s, t, 0.1, 0.2, float(0.006), phase.add(5.0));
-  const pavCol = mix(mix(vec3(0.2, 0.19, 0.18), vec3(0.28, 0.25, 0.22), pav.tone).add(grain.mul(0.01)), vec3(0.07, 0.065, 0.06), pav.joint);
-  // --- unhewn cobbles: bigger, irregular
-  const cob = courses(s.add(n3(s.mul(3.0), t.mul(3.0), 7.0).mul(0.03)), t, 0.22, 0.26, float(0.025), phase.add(9.0));
-  const cobCol = mix(mix(vec3(0.12, 0.11, 0.1), vec3(0.24, 0.22, 0.19), cob.tone), vec3(0.04, 0.035, 0.03), cob.joint);
-  // --- gravel / compacted
-  const grav = vec3(0.24, 0.21, 0.16).add(speck.mul(0.03)).add(grain.mul(0.02));
+    // --- setts (pavés): courses across the road, granite tones, dark joints
+    const sett = courses(s, t, 0.125, 0.15, float(0.018), phase);
+    // Brussels granite setts as on the owner's photos of Place de Saint-Job (2026-11-04): blue-grey to
+    // brown-grey per stone, LIGHT sandy joints (were near-black), as viewer/plazas.js settsLook
+    const settHue = sett.tone.mul(7.31).fract();
+    const settStone = mix(vec3(0.115, 0.125, 0.14), vec3(0.2, 0.185, 0.165), settHue).mul(sett.tone.mul(0.55).add(0.72)).add(speck.mul(0.012));
+    const settCol = mix(settStone, vec3(0.19, 0.18, 0.155), sett.joint);
+    // --- paving stones: 20 x 10 cm concrete pavers
+    const pav = courses(s, t, 0.1, 0.2, float(0.006), phase.add(5.0));
+    const pavCol = mix(mix(vec3(0.2, 0.19, 0.18), vec3(0.28, 0.25, 0.22), pav.tone).add(grain.mul(0.01)), vec3(0.07, 0.065, 0.06), pav.joint);
+    // --- unhewn cobbles: bigger, irregular
+    const cob = courses(s.add(n3(s.mul(3.0), t.mul(3.0), 7.0).mul(0.03)), t, 0.22, 0.26, float(0.025), phase.add(9.0));
+    const cobCol = mix(mix(vec3(0.12, 0.11, 0.1), vec3(0.24, 0.22, 0.19), cob.tone), vec3(0.04, 0.035, 0.03), cob.joint);
+    // --- gravel / compacted
+    const grav = vec3(0.24, 0.21, 0.16).add(speck.mul(0.03)).add(grain.mul(0.02));
 
-  const k1 = band(surf, 1), k2 = band(surf, 2), k3 = band(surf, 3), k4 = band(surf, 4);
-  let base = asphalt;
-  base = mix(base, settCol, k1);
-  base = mix(base, pavCol, k2);
-  base = mix(base, cobCol, k3);
-  base = mix(base, grav, k4);
-  let rough = asphaltRough;
-  rough = mix(rough, mix(float(0.72), float(0.95), sett.joint), k1);
-  rough = mix(rough, float(0.85), k2.add(k3).add(k4));
+    const k1 = band(surf, 1), k2 = band(surf, 2), k3 = band(surf, 3), k4 = band(surf, 4);
+    base = asphalt;
+    base = mix(base, settCol, k1);
+    base = mix(base, pavCol, k2);
+    base = mix(base, cobCol, k3);
+    base = mix(base, grav, k4);
+    rough = asphaltRough;
+    rough = mix(rough, mix(float(0.72), float(0.95), sett.joint), k1);
+    rough = mix(rough, float(0.85), k2.add(k3).add(k4));
+  }
 
   // --- lines along the road (aEdges)
   const aaT = fwidth(t).add(0.003);
@@ -169,7 +176,52 @@ export function asphaltMaterial(atlas) {
 
   m.colorNode = mix(base, paintCol, paint);
   m.roughnessNode = mix(rough, float(0.62), paint);
+  if (T) { m.normalNode = pavingNormal(T.n, t, s, T.nK.mul(float(1).sub(paint.mul(0.7)))); m.aoNode = mix(T.ao, float(1), paint); }
   return addLampLight(m);
+}
+
+/**
+ * The carriageway from the street texture array (viewer/streets/paving.js). Layer per pixel from aSurf: asphalt;
+ * setts (sett, cobblestone) and unhewn cobbles = the scanned old worn setts, rows ACROSS the road (texture v along
+ * the station s), each road its own stone size (rows 14-18 cm) and stone (blue-grey porphyry to brown-grey sandstone);
+ * paving_stones = the concrete pavers; gravel / compacted stays procedural. On setts: polished, darker wheel paths,
+ * darker damp joints (the scan's AO), and the asphalt repairs of utility trenches (rectangles in 6 m cells).
+ */
+function texturedRoad({ s, t, x, z, surf, phase, wheel, patch, speck }) {
+  const sr = floor(surf.add(0.5));
+  const r1 = fract(phase.mul(0.6180339)), r2 = fract(phase.mul(0.7548777));
+  const isSett = sr.equal(1).or(sr.equal(3)), unhewn = sr.equal(3);
+  // asphalt repairs in sett streets: in ~22 % of 6 m cells along the road, a patch 1.2-3.7 m long, 1.4-3 m wide,
+  // anywhere across the carriageway (gas / water trenches), slightly ragged edges. Drawn OVER the setts as a coverage
+  // (box-filtered over the pixel footprint: no hard layer switch, no aliasing edge far away)
+  const cell = floor(s.div(6)), hc = hash22(vec2(cell, phase)), hd = hash22(vec2(cell.add(17), phase));
+  const ps = cell.mul(6).add(hc.x.mul(3)), pl = hd.x.mul(2.5).add(1.2), pt = hd.y.sub(0.5).mul(4), pw = hc.y.mul(1.6).add(1.4);
+  const rag = s.mul(7.3).add(t.mul(5.1)).sin().mul(0.04).add(t.mul(11.7).sub(s.mul(3.3)).sin().mul(0.03));   // ragged edge, cheap
+  const fS = fwidth(s).mul(0.7).add(0.004), fT = fwidth(t).mul(0.7).add(0.004);
+  const patchOn = select(isSett.and(hash22(vec2(cell.add(5), phase.mul(1.3))).x.lessThan(0.22)), float(1), float(0));
+  const cover = boxCoverage(s.add(rag), ps, ps.add(pl), fS).mul(boxCoverage(t.add(rag), pt.sub(pw.mul(0.5)), pt.add(pw.mul(0.5)), fT)).mul(patchOn);
+  const layer = select(isSett, float(LAYER.setts), select(sr.equal(2), float(LAYER.pavers), float(LAYER.asphalt)));
+  // metres per texture repeat: the setts scan is 10 rows per repeat (rows 14-18 cm per road, unhewn ~22 cm)
+  const size = select(layer.equal(LAYER.setts), select(unhewn, float(2.2), r1.mul(0.4).add(1.4)), select(layer.equal(LAYER.pavers), float(1.8), float(2.0)));
+  const S = pavingSample(t, s, layer, size);
+  // asphalt: metre-scale patchiness (old repairs), polished wheel paths, fresh trench patches darker
+  const asph = S.col.mul(patch.mul(0.18).add(1)).mul(float(1).sub(wheel.mul(0.1)));
+  // setts: regraded per road between blue-grey porphyry and brown-grey sandstone (Street View: Geleytsbeekstraat,
+  // Eikenboslaan, Vossendreef), joints darker and damp, wheel paths polished
+  const porph = regrade(S.col, "setts", [0.105, 0.115, 0.13], 0.6), sand = regrade(S.col, "setts", [0.15, 0.138, 0.118], 0.45);
+  let sett = mix(porph, sand, select(unhewn, float(0.8), smoothstep(0.35, 0.85, r2)));
+  sett = sett.mul(mix(float(1), S.ao, 0.55)).mul(float(1).sub(wheel.mul(0.08)));
+  // the trench patch: dark, slightly worn bitumen with the old binder's chips (a cheap speck), flat
+  const tar = vec3(0.058, 0.057, 0.056).mul(speck.mul(0.12).add(patch.mul(0.1)).add(1));
+  sett = mix(sett, tar, cover);
+  const grav = vec3(0.24, 0.21, 0.16).add(speck.mul(0.03));
+  let col = select(layer.equal(LAYER.setts), sett, select(layer.equal(LAYER.pavers), S.col.mul(0.95), asph));
+  col = select(sr.equal(4), grav, col);
+  let rough = S.rough.mul(1.05).min(0.97);
+  rough = select(layer.equal(LAYER.setts), rough.sub(wheel.mul(0.15)).add(float(1).sub(S.ao).mul(-0.1)), select(layer.equal(LAYER.asphalt), rough.sub(wheel.mul(0.1)), rough));
+  rough = mix(select(sr.equal(4), float(0.85), rough), float(0.86), cover);
+  const nK = select(layer.equal(LAYER.setts), float(1.0), select(layer.equal(LAYER.pavers), float(0.8), float(0.55))).mul(select(sr.equal(4), float(0), float(1))).mul(float(1).sub(cover.mul(0.85)));
+  return { col, rough, n: S.n, ao: S.ao, nK };
 }
 
 // ---------------------------------------------------------------- measured paint (decal mesh)
@@ -230,11 +282,22 @@ export function concreteMaterial({ framed = false } = {}) {
     const band15 = float(1).sub(smoothstep(float(0.15).sub(fw), float(0.15).add(fw), f.y));   // kerb band, AA edge
     kind = mix(kind, band15, isF);                            // framed: kerb band (1) within 15 cm of the kerb, else slab (0)
   }
-  const tiles = courses(ta, tb, 0.3, 0.3, float(0.006), float(2.0), fw);
-  // framed slabs a touch darker and greyer (they read washed out in a low sun next to the asphalt and the houses)
-  const sA = framed ? vec3(0.175, 0.172, 0.165) : vec3(0.24, 0.235, 0.225), sB = framed ? vec3(0.235, 0.228, 0.215) : vec3(0.32, 0.31, 0.295);
   const blot = n3(x.mul(0.6), z.mul(0.6), 8.0);               // low-frequency wear: keeps far sidewalks from going flat
-  const slab = mix(mix(sA, sB, tiles.tone).mul(blot.mul(0.07).add(1.0)).add(grain.mul(0.012)), vec3(0.1, 0.097, 0.092), tiles.joint);
+  // the baked 30 cm slabs (viewer/streets/paving.js layer "slabs", texture factory tf_paving_concrete_a: 6 x 6 tiles per
+  // 1.8 m, so the texture's joints land on the same 30 cm grid as before); ?paving=old: the procedural courses()
+  const TX = pavingTextures() ? pavingSample(ta, tb, float(LAYER.slabs), float(1.8)) : null;
+  let slab, tiles;
+  if (TX) {
+    // regraded a touch darker and greyer (as the old framed slabs: washed out in a low sun next to the asphalt), dirtier
+    // where the AO says joint / chip
+    slab = regrade(TX.col, "slabs", framed ? [0.2, 0.196, 0.186] : [0.26, 0.255, 0.245], 0.35).mul(blot.mul(0.07).add(1.0)).mul(mix(float(1), TX.ao, 0.4));
+    tiles = { joint: float(1).sub(TX.ao).mul(1.5).min(1) };
+  } else {
+    tiles = courses(ta, tb, 0.3, 0.3, float(0.006), float(2.0), fw);
+    // framed slabs a touch darker and greyer (they read washed out in a low sun next to the asphalt and the houses)
+    const sA = framed ? vec3(0.175, 0.172, 0.165) : vec3(0.24, 0.235, 0.225), sB = framed ? vec3(0.235, 0.228, 0.215) : vec3(0.32, 0.31, 0.295);
+    slab = mix(mix(sA, sB, tiles.tone).mul(blot.mul(0.07).add(1.0)).add(grain.mul(0.012)), vec3(0.1, 0.097, 0.092), tiles.joint);
+  }
   // kerbs: Belgian blue stone (petit granit), dark blue-grey with fossil speckle
   const kerb = vec3(0.075, 0.082, 0.095).add(grain.mul(0.012)).add(n3(x.mul(37.0), P.y.mul(37.0), z.mul(37.0)).mul(0.01));
   // roundabout apron: red-brown setts
@@ -259,7 +322,9 @@ export function concreteMaterial({ framed = false } = {}) {
   const kerbStone = mix(mix(mix(kerb.add(stoneTone), kerb.mul(1.9), arris.mul(0.6)), vec3(0.03, 0.032, 0.036), kJoint), vec3(0.11, 0.11, 0.108), kerbFar.mul(0.7));
   m.colorNode = mix(mix(slab, framed ? kerbStone : kerb, isKerb), apron, isApron);
   // framed (?roads=surface): honed blue stone, rougher, so a kerb face toward a low sun does not flare white
-  m.roughnessNode = mix(mix(mix(float(framed ? 0.92 : 0.88), float(0.95), tiles.joint), float(framed ? 0.82 : 0.6), isKerb), float(0.8), isApron);
+  const slabRough = TX ? TX.rough.mul(1.04).min(0.97) : mix(float(framed ? 0.92 : 0.88), float(0.95), tiles.joint);
+  m.roughnessNode = mix(mix(slabRough, float(framed ? 0.82 : 0.6), isKerb), float(0.8), isApron);
+  if (TX) m.normalNode = pavingNormal(TX.n, ta, tb, float(0.9).mul(float(1).sub(isKerb)).mul(float(1).sub(isApron)));
   return addLampLight(m);
 }
 
