@@ -10,7 +10,7 @@ import * as THREE from "three/webgpu";
 import { attribute, uv, vec3, color, mix, mx_noise_float } from "three/tsl";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { MODELS } from "./furniture.js";
-import { TRAM_PLATFORM, isTramPlatform } from "./drive/colliders.js";
+import { TRAM_PLATFORM, isTramPlatform, platformRing } from "./drive/colliders.js";
 
 const WIRE_H = 5.8, POLE_STEP = 32, POLE_OFF = 3.4;
 
@@ -210,6 +210,36 @@ export function buildTram(feats, surface, bounds, prof = null, onRoadDeck = null
   };
   const quad = (out, p0, p1, p2, p3) => out.push(...p0, ...p1, ...p2, ...p0, ...p2, ...p3);
   for (const l of plat) {
+    // an AREA platform (a closed OSM way, road fix round 2): its polygon, kerb faces round its outline, a light strip on
+    // the inside of the edge; the shelter at its middle along its longest side (the line platforms below: a W-wide band)
+    const ring = platformRing(l);
+    if (ring) {
+      let cx = 0, cz = 0, a2 = 0, best = 0, dir = [1, 0];
+      for (let i = 0; i < ring.length; i++) {
+        const [ax, az] = ring[i], [bx, bz] = ring[(i + 1) % ring.length];
+        cx += ax / ring.length; cz += az / ring.length; a2 += ax * bz - bx * az;
+        const L = Math.hypot(bx - ax, bz - az);
+        if (L > best) { best = L; dir = [(bx - ax) / L, (bz - az) / L]; }
+      }
+      if (!inB(cx, cz)) continue;
+      const tris = THREE.ShapeUtils.triangulateShape(ring.map(([x, z]) => new THREE.Vector2(x, z)), []);
+      const top = ([x, z]) => [x, surface(x, z) + H, z];
+      for (const [i, j, k] of tris) slab.push(...top(ring[i]), ...top(ring[j]), ...top(ring[k]));
+      const inward = a2 > 0 ? 1 : -1;                                          // the left of a -> b is inside when a2 > 0
+      const d = densify([...ring, ring[0]], TRAM_PLATFORM.step);
+      for (let i = 1; i < d.length; i++) {
+        const [ax, az] = d[i - 1], [bx, bz] = d[i], L = Math.hypot(bx - ax, bz - az) || 1;
+        const ix = -(bz - az) / L * 0.3 * inward, iz = (bx - ax) / L * 0.3 * inward;
+        const ya = surface(ax, az) + H, yb = surface(bx, bz) + H;
+        quad(edge, [ax, ya - H - 0.1, az], [bx, yb - H - 0.1, bz], [bx, yb + 0.01, bz], [ax, ya + 0.01, az]);
+        quad(edge, [ax, ya + 0.004, az], [bx, yb + 0.004, bz], [bx + ix, yb + 0.004, bz + iz], [ax + ix, ya + 0.004, az + iz]);
+      }
+      if (l.tags?.shelter === "yes") {
+        const nx = -dir[1], nz = dir[0], side = nearestTrackSide(cx, cz, nx, nz);
+        shelters.push({ x: cx, z: cz, y: surface(cx, cz) + H, yaw: Math.atan2(nx * side, nz * side) + Math.PI });
+      }
+      continue;
+    }
     const d = densify(l.line, TRAM_PLATFORM.step);
     if (d.length < 2) continue;
     let total = 0;

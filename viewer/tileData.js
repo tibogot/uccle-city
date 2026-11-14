@@ -10,10 +10,10 @@ import { landCoverData } from "./landcover.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { buildDriveData, tramPlatformSurface } from "./drive/colliders.js";
 import { buildRoadData, applyRoadOverrides, CARVE } from "./roadBuild.js";
-import { bridgeDecks, deckMesh, parapetRings } from "./streets/bridgeDecks.js";
+import { bridgeDecks, deckMesh, parapetRings, deckAbutments } from "./streets/bridgeDecks.js";
 import { smoothPolyline } from "./track.js";
 import { kitCollector } from "./facadeKit/placement.js";
-import { prepRail, heroBridgeNames, abutmentFill, underpassCut, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins, railDriveSurface, railFences, fenceMesh, FENCE_H } from "./rail/railData.js";
+import { prepRail, heroBridgeNames, abutmentFill, underpassCut, underpassGround, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins, railDriveSurface, railFences, fenceMesh, FENCE_H } from "./rail/railData.js";
 import { buildTrafficGraph } from "./traffic/trafficGraph.js";
 import { grassTypeData } from "./grass/grassTypes.js";
 
@@ -210,16 +210,29 @@ export async function buildTileData(entry, base) {
   // and the ends' heights would be wrong (the tile whose grid holds the bridge carries it)
   const hh = hm.h, gx1 = hh.x0 + (hh.cols - 1) * hh.step, gz1 = hh.z0 + (hh.rows - 1) * hh.step;
   const onGrid = (p) => p[0] >= hh.x0 && p[0] <= gx1 && p[1] >= hh.z0 && p[1] <= gz1;
-  const osmBridges = bridgeDecks(roads, hm.ground, (d) => onGrid(d.pts[0]) && onGrid(d.pts[d.pts.length - 1]));
-  osmBridges.decks = osmBridges.decks.filter((d) => { const m = d.pts[Math.floor(d.pts.length / 2)]; return Number.isNaN(heroDeck(m[0], m[1])); });
   // the ground past the tile's edge from the neighbours' grids (paddedGround; ?padroads=0: the clamp, as before)
   const pad = entry.padRoads === false ? null : await step("neighbour ground", () => paddedGround(entry, base, hm));
   const baseGround = pad ? pad.ground : hm.ground;
-  const roadGround = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
-  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, levelPins: rail ? roadDeckPins(rail.heroes) : null,
+  // road fix round 2 (docs/collisions/ROAD_FIX2.md): a bridge crossing a tile edge (Avenue de la Chênaie over the L26,
+  // G6 / G7: its south end 0.8 m into G7) had both ends on NO tile's grid and was drawn by none: a bare road strip 7 m
+  // over the railway, open drops both sides. With the neighbours' grids every tile whose ground covers both ends knows the
+  // deck (its roads' ground, its parapet walls), and the tile holding the deck's middle draws it (one deck, one world deck)
+  const known = pad ? (p) => onGrid(p) || !pad.noData(p[0], p[1]) : onGrid;
+  const osmBridges = bridgeDecks(roads, baseGround, (d) => known(d.pts[0]) && known(d.pts[d.pts.length - 1]));
+  osmBridges.decks = osmBridges.decks.filter((d) => { const m = d.pts[Math.floor(d.pts.length / 2)]; return Number.isNaN(heroDeck(m[0], m[1])); });
+  const mid = (d) => { const L = d.cum[d.cum.length - 1] / 2; let i = 1; while (i < d.pts.length - 1 && d.cum[i] < L) i++;
+    const t = (L - d.cum[i - 1]) / ((d.cum[i] - d.cum[i - 1]) || 1); return [d.pts[i - 1][0] + (d.pts[i][0] - d.pts[i - 1][0]) * t, d.pts[i - 1][1] + (d.pts[i][1] - d.pts[i - 1][1]) * t]; };
+  const ownDeck = (d) => { if (!pad) return true; const [mx, mz] = mid(d); return mx >= x0 && mx < x1 && mz >= z0 && mz < z1; };
+  // the ground at the decks' ends up to them (bridgeDecks.js deckAbutments; ?abutments=0: the bare DTM, as before)
+  const abutCells = entry.deckAbutments === false ? 0 : deckAbutments(osmBridges.decks, [hm.y, hm.orig], tHdr);
+  // (+ the street level across the hero underpasses, railData.js underpassGround; ?underpasslevel=0: as before)
+  const roadGround0 = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
+  const roadGround = rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0;
+  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z) }));
   Object.assign(times, rd.times);
   const { netInfo } = rd;
+  netInfo.deckAbutments = abutCells;
   const road = { parts: rd.parts, atlas: rd.atlas, carvedCells: rd.carvedCells, triangles: rd.triangles, surfaceStats: rd.surfaceStats,
     surfaceData: rd.surfaceData, inventory: rd.inventory ?? null };
   const net = rd.net;              // the live engine network (stays in the worker: drive colliders)
@@ -276,7 +289,8 @@ export async function buildTileData(entry, base) {
   const cover = await step("land cover", () => landCoverData(feats, bounds));
   return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs, drive,
     netInfo, road, terrain, buildings, cover, traffic, times, rail: railOut, grassTypes,
-    bridgeDecks: osmBridges.decks.map((d) => ({ ...d, mesh: deckMesh(d) })) };   // OSM road bridges: heights for walk / car + their drawn deck
+    bridgeDecks: osmBridges.decks.filter(ownDeck).map((d) => ({ ...d, mesh: deckMesh(d) })),   // OSM road bridges: heights for walk / car + their drawn deck
+    ...(entry.keepNet ? { net, hm } : {}) };    // (node checks, tools/roadfix/: the live road network; never posted from the worker)
 }
 
 // ---------------------------------------------------------------- far level of detail

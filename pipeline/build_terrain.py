@@ -98,6 +98,74 @@ def urbis_grid(src: Path, e_w: float, n_n: float, n: int):
     return out, used
 
 
+def urbis_grid_exact(src: Path, e_w: float, n_n: float, n: int, rad: float = 1.0):
+    """--resample exact (road fix round 2, docs/collisions/ROAD_FIX2.md): the same 1 m corner grid, every value a
+    function of its own L72 position only, so two tiles sharing an edge row get identical values.
+
+    Why: urbis_grid mosaics the 0.5 m sheets with rasterio.merge onto bounds that are not on the sheets' pixel grid (the
+    sheets' origins are at x.134 / y.072 m); merge reads each sheet through a fractional window rounded to whole pixels,
+    so the part of the tile taken from the second sheet comes out stretched by a fraction of a pixel, growing away from
+    the sheet seam (H5: rows 394-500, i.e. south of northing 165000, up to 0.09 m mean, 1.4 m on steep ground). The
+    next tile's mosaic starts at its own seam: the shared north-south edge rows differed by 3-9 cm mean, up to 1 m.
+    Here: the sheets are mosaicked on their own pixel grid (bounds snapped outward: a plain copy, no resampling), then
+    each corner is a separable tent (triangle) filter of half-width `rad` m over the 0.5 m pixels round its exact
+    position (GDAL's bilinear when downsampling 0.5 -> 1 m is that tent: the tiles untouched by the bug match it to
+    4 mm mean). NaN where less than half the tent's weight has data. EPSG:31370 sheets only (all of UrbIS's)."""
+    files = find_rasters(src)
+    e1, n1 = e_w + (n - 1) * TERRAIN_STEP, n_n - (n - 1) * TERRAIN_STEP
+    m = rad + 2.0
+    dss = [rasterio.open(f) for f in files]
+    used, use = [], []
+    try:
+        for f, d in zip(files, dss):
+            b = d.bounds
+            if b.right < e_w - m or b.left > e1 + m or b.top < n1 - m or b.bottom > n_n + m:
+                continue
+            if d.crs is not None and d.crs.to_epsg() != 31370:
+                raise SystemExit(f"{f.name}: --resample exact needs EPSG:31370 sheets")
+            use.append(d)
+            used.append({"file": f.relative_to(src).as_posix(), "res": [abs(d.transform.a), abs(d.transform.e)], "crs": str(d.crs)})
+        if not use:
+            return np.full((n, n), np.nan), used
+        t = use[0].transform
+        res = t.a
+        L = t.c + np.floor((e_w - m - t.c) / res) * res
+        R = t.c + np.ceil((e1 + m - t.c) / res) * res
+        T = t.f - np.floor((t.f - (n_n + m)) / res) * res
+        B = t.f - np.ceil((t.f - (n1 - m)) / res) * res
+        mos, mtr = merge(use, bounds=(L, B, R, T), res=res, nodata=np.nan, dtype="float64")
+    finally:
+        for d in dss:
+            d.close()
+    a = mos[0]
+    a[a < -1000] = np.nan
+    px0 = (e_w - mtr.c) / res - 0.5                  # pixel coords (centres on integers) of the first corner
+    py0 = (mtr.f - n_n) / res - 0.5
+    k = int(round(TERRAIN_STEP / res))
+    rp = rad / res
+
+    def taps(p):
+        f = p - np.floor(p)
+        ks = np.arange(int(np.floor(f - rp)) + 1, int(np.ceil(f + rp)))
+        w = np.maximum(0.0, 1 - np.abs(ks - f) / rp)
+        return ks, w / w.sum()
+    kx, wx = taps(px0)
+    ky, wy = taps(py0)
+    ix = int(np.floor(px0)) + np.arange(n) * k
+    iy = int(np.floor(py0)) + np.arange(n) * k
+    acc = np.zeros((n, n))
+    wsum = np.zeros((n, n))
+    for dy, wyv in zip(ky, wy):
+        rows_ = a[iy + dy]
+        for dx, wxv in zip(kx, wx):
+            v = rows_[:, ix + dx]
+            ok = ~np.isnan(v)
+            acc[ok] += v[ok] * (wyv * wxv)
+            wsum[ok] += wyv * wxv
+    out = np.where(wsum >= 0.5, acc / np.maximum(wsum, 1e-12), np.nan)
+    return out, used
+
+
 def fill_grid(path: Path, e_w: float, n_n: float, n: int):
     """The DHMV tile file on the same grid (its pixel centres are whole L72 metres: a plain window read)."""
     with rasterio.open(path) as ds:
@@ -152,7 +220,11 @@ def seam_fill(b: np.ndarray, f: np.ndarray):
     return out, st
 
 
+RESAMPLE = "mosaic"   # "exact": urbis_grid_exact (--resample exact); the data in data/tiles is still "mosaic" (see ROAD_FIX2.md)
+
+
 def build(tile: str, src: Path, fill_dir: Path | None = FILL_DIR):
+    grid = urbis_grid_exact if RESAMPLE == "exact" else urbis_grid
     x0, z0, _, _ = tile_bounds(tile)
     n = int(round(TILE / TERRAIN_STEP)) + 1
     e_w = ORIGIN_E + x0                  # easting of column 0
@@ -161,14 +233,14 @@ def build(tile: str, src: Path, fill_dir: Path | None = FILL_DIR):
     fill_info = None
     if fpath and fpath.exists():
         P = int(round(PAD / TERRAIN_STEP))
-        big, used = urbis_grid(src, e_w - PAD, n_n + PAD, n + 2 * P)
+        big, used = grid(src, e_w - PAD, n_n + PAD, n + 2 * P)
         before = np.isnan(big[P:P + n, P:P + n]).sum()
         big, seam = seam_fill(big, fill_grid(fpath, e_w - PAD, n_n + PAD, n + 2 * P))
         out = big[P:P + n, P:P + n].copy()
         fill_info = {"source": "DHMV II DTM 1 m (Digitaal Vlaanderen)", "file": f"dhmv/tiles/{fpath.name}",
                      "cells": int(before - np.isnan(out).sum()), "feather": FEATHER, "seamResidual": seam}
     else:
-        out, used = urbis_grid(src, e_w, n_n, n)
+        out, used = grid(src, e_w, n_n, n)
     if not used and not fill_info:
         raise SystemExit(f"no DTM raster under {src} covers tile {tile}")
 
@@ -187,6 +259,8 @@ def build(tile: str, src: Path, fill_dir: Path | None = FILL_DIR):
            "cols": n, "rows": n, "encoding": "u16le-cm", "nodata": NODATA,
            "min": round(lo, 2), "max": round(hi, 2), "nodataCount": int((~valid).sum()),
            "source": "urbis-dtm+dhmv2" if fill_info else "urbis-dtm", "inputs": used}
+    if RESAMPLE == "exact":
+        hdr["resample"] = "exact-tent1m"
     if fill_info:
         hdr["fill"] = fill_info
     write_json(tdir / "terrain.json", hdr, indent=1)
@@ -199,7 +273,14 @@ def main():
     ap.add_argument("--src", type=Path, default=RAW / "urbis" / "dtm")
     ap.add_argument("--fill", type=Path, default=FILL_DIR, help="DHMV tiles (fetch_dhmv.py) for cells past the region border")
     ap.add_argument("--no-fill", action="store_true")
+    ap.add_argument("--resample", choices=["mosaic", "exact"], default="mosaic",
+                    help="exact: every corner from its own position (tile edges match; docs/collisions/ROAD_FIX2.md)")
+    ap.add_argument("--out", type=Path, default=None, help="write here instead of data/tiles (a trial build)")
     args = ap.parse_args()
+    global RESAMPLE, TILES
+    RESAMPLE = args.resample
+    if args.out:
+        TILES = args.out
     hdr = build(args.tile.upper(), args.src, None if args.no_fill else args.fill)
     fill = hdr.get("fill")
     extra = f", filled {fill['cells']} cells from DHMV (seam {fill['seamResidual']})" if fill else ""

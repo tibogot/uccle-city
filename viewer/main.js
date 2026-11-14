@@ -308,7 +308,8 @@ const bridgeDeckRefs = new Map();     // road id -> { fn, n }
 function addBridgeDecks(decks, hm) {
   for (const d of decks || []) {
     let e = bridgeDeckRefs.get(d.id);
-    if (!e) { e = { fn: Object.assign(deckHeight(d, (x, z) => hm.ground(x, z), { drawn: true }), { osm: true }), n: 0 }; bridgeDeckRefs.set(d.id, e); worldRef?.decks.push(e.fn); }
+    if (!e) { e = { fn: Object.assign(deckHeight(d, (x, z) => (worldRef?.at ? worldRef.at(x, z).hm.ground(x, z) : hm.ground(x, z)), { drawn: true }), { osm: true }), n: 0 };   // (the nearest tile's ground: a deck may cross a tile edge, road fix round 2)
+     bridgeDeckRefs.set(d.id, e); worldRef?.decks.push(e.fn); }
     e.n++;
   }
 }
@@ -473,7 +474,9 @@ function tileData(entry, lite = false) {
     kit: cityKit.on && !lite, kitExclude: cityKit.exclude,                                           // the façade kit (viewer/facadeKit/), ?kit=0 off
     streetlife: cityStreetLife.on && !lite,                                                          // the street life's shopfronts (viewer/streetlife/), ?streetlife=0 off
     grass: cityGrass.on && !lite,                                                                    // ?grass=1: the grass types raster, built in the worker
-    rail: TRAINS, bridges2: BRIDGES2, railFix: params.get("railcar") !== "0", driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX, padRoads: params.get("padroads") !== "0",         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
+    rail: TRAINS, bridges2: BRIDGES2, railFix: params.get("railcar") !== "0", driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX, padRoads: params.get("padroads") !== "0",
+    // road fix round 2 (docs/collisions/ROAD_FIX2.md): ?roughlanes=0 rough junctions left up, ?abutments=0 OSM deck ends on the bare DTM, ?underpasslevel=0 the street riding the underpass banks
+    roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", underpassLevel: params.get("underpasslevel") !== "0",         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
     paint: PAINT_PARAM,                                                                              // ?paint=v1: the road engine's own markings (A/B)
     cache: params.get("tilecache") === "1" };                                                        // ?tilecache=1: built tiles kept in IndexedDB (viewer/tileCache.js); opt-in until measured on a quiet machine
   const key = `${entry.name}|${lite ? 1 : 0}`;
