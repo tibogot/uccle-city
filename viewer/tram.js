@@ -10,6 +10,7 @@ import * as THREE from "three/webgpu";
 import { attribute, uv, vec3, color, mix, mx_noise_float } from "three/tsl";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { MODELS } from "./furniture.js";
+import { TRAM_PLATFORM, isTramPlatform } from "./drive/colliders.js";
 
 const WIRE_H = 5.8, POLE_STEP = 32, POLE_OFF = 3.4;
 
@@ -195,9 +196,10 @@ export function buildTram(feats, surface, bounds, prof = null, onRoadDeck = null
   }
 
   // ---- platforms
-  const plat = (feats.lines || []).filter((l) => l.kind === "platform" && (l.tags?.tram === "yes" || l.tags?.railway === "platform"));   // bus platforms are the sidewalk
+  // bus platforms are the sidewalk; the same slabs are in the car's drive surface (drive/colliders.js tramPlatformSurface)
+  const plat = (feats.lines || []).filter(isTramPlatform);
   const slab = [], edge = [], shelters = [];
-  const W = 2.6, H = 0.25;
+  const { W, H } = TRAM_PLATFORM;
   const nearestTrackSide = (x, z, nx, nz) => {
     let best = Infinity, side = 1;
     for (const l of tram) for (const [tx, tz] of densify(l.line, 3)) {
@@ -208,7 +210,7 @@ export function buildTram(feats, surface, bounds, prof = null, onRoadDeck = null
   };
   const quad = (out, p0, p1, p2, p3) => out.push(...p0, ...p1, ...p2, ...p0, ...p2, ...p3);
   for (const l of plat) {
-    const d = densify(l.line, 2);
+    const d = densify(l.line, TRAM_PLATFORM.step);
     if (d.length < 2) continue;
     let total = 0;
     for (let i = 1; i < d.length; i++) total += Math.hypot(d[i][0] - d[i - 1][0], d[i][1] - d[i - 1][1]);

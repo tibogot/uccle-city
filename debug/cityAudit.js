@@ -19,7 +19,21 @@ function snake(tiles) {
   return out;
 }
 
-export async function start({ walk = false, only = null, maxRoads = Infinity, timeoutS = 240 } = {}) {
+/** What is under an item (debug/driveProbe.js style, cheap): the car's drive surface there and 2.5 m round it (the
+ *  step a ledge stops at), the hero / OSM deck, the tile the point belongs to, the drawn meshes under it (top 4). */
+function diagnose(x, z) {
+  const D = window.__driver, w = viewer.world;
+  if (!D) return null;
+  const g = (a, b) => +D.ground(a, b).toFixed(2);
+  const y = g(x, z), ring = [];
+  for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; ring.push(+(g(x + 2.5 * Math.sin(a), z + 2.5 * Math.cos(a)) - y).toFixed(2)); }
+  const t = w.at(x, z);
+  return { y, ring, deck: w.deckY(x, z), tile: t.name, terr: +t.hm.surface(x, z).toFixed(2), dtm: +t.hm.ground(x, z).toFixed(2), hits: probeHits(x, z) };
+}
+function probeHits(x, z) { return window.__probeHits ? window.__probeHits(x, z) : undefined; }
+
+export async function start({ walk = false, only = null, maxRoads = Infinity, timeoutS = 240, maxItems = 200, diag = true } = {}) {
+  if (diag && !window.__probeHits) { const P = await import("./driveProbe.js"); window.__probeHits = (x, z) => P.probe(x, z).hits.slice(0, 5).map((h) => `${h.name}@${h.y}${h.up < 0 ? "v" : ""}`); }
   if (S.running) return status();
   const man = await (await fetch("/data/tiles/manifest.json")).json();
   let tiles = man.tiles.filter((t) => t.status === "built");
@@ -41,7 +55,14 @@ export async function start({ walk = false, only = null, maxRoads = Infinity, ti
         if (tile) break;
         await sleep(500);
       }
+      // ... and its built neighbours (the car near an edge stands on the next tile's drive surface: an unloaded one is
+      // a clamp of some other tile's grid, the "17.86 m over" / "29.7 m step" artefacts of the first run)
+      const nb = man.tiles.filter((q) => q.status === "built" && q.name !== t.name && Math.abs(q.i - t.i) <= 1 && Math.abs(q.j - t.j) <= 1).map((q) => q.name);
+      const tn = performance.now();
+      while (tile && performance.now() - tn < 90000 && !nb.every((n) => viewer.world.tiles.some((q) => q.name === n && q.drive))) await sleep(500);
       const rec = { tile: t.name, loadS: Math.round((performance.now() - tq) / 1000) };
+      const missingNb = nb.filter((n) => !viewer.world.tiles.some((q) => q.name === n && q.drive));
+      if (missingNb.length) rec.missingNeighbours = missingNb;
       if (!tile) { rec.error = "tile never loaded"; S.out.push(rec); S.done++; save(); continue; }
       await sleep(2500);                                                          // its furniture / heroes settle
       try {
@@ -49,7 +70,8 @@ export async function start({ walk = false, only = null, maxRoads = Infinity, ti
         const pick = (d) => d && Object.fromEntries(Object.entries(d).filter(([, v]) => typeof v === "number"));
         rec.drive = pick(r.drive); rec.walk = pick(r.walk); rec.static = pick(r.static);
         rec.items = [...(r.drive?.items || []), ...(r.walk?.items || []).map((i) => ({ ...i, walk: true }))]
-          .slice(0, 40).map((i) => ({ k: i.kind, x: i.x, z: i.z, by: i.by, walk: i.walk || undefined }));
+          .slice(0, maxItems).map((i) => ({ k: i.kind, x: i.x, z: i.z, by: i.by, r: i.road, c: i.collider, d: i.drawn, walk: i.walk || undefined,
+            why: diag ? diagnose(i.x, i.z) : undefined }));
       } catch (e) { rec.error = String(e?.message || e); }
       S.out.push(rec); S.done++; save();
     }

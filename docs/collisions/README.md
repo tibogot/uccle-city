@@ -96,3 +96,6 @@ strictly comparable; the drive and static columns use identical test code.
   sidewalks standing 0.4 m proud of the lawn (G10 Avenue Buysdelle (148, 2677)): road joins, roads agent.
 - The character still wades onto the pond bed (only the car is dragged).
 - No before/after collider debug images yet (only the Verrewinkel joins images, `joins/`).
+
+## Drive fix (2026-11-14)
+Root causes of the city-wide drive audit, the fixes and the before / after numbers: `DRIVE_FIX.md`.

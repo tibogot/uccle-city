@@ -87,7 +87,8 @@ export function buildRoadData(o) {
   // round 5: junctions the engine's grade rule lifted / sank off the measured ground go back to it (D10 floated 1.4 m)
   // (no DTM: outside the Brussels region the grid holds its lowest value; off the tile's grid it is clamped to its edge)
   const offGrid = (x, z) => { const h = hm.h; return x < h.x0 || z < h.z0 || x > h.x0 + (h.cols - 1) * h.step || z > h.z0 + (h.rows - 1) * h.step; };
-  const levels = relevelRoads(net, ground, (x, z) => offGrid(x, z) || (hm.h.min != null && hm.ground(x, z) <= hm.h.min + 0.02));
+  // o.noData: the tile worker's (tileData.js paddedGround: the neighbours' grids answer past the edge)
+  const levels = relevelRoads(net, ground, o.noData ?? ((x, z) => offGrid(x, z) || (hm.h.min != null && hm.ground(x, z) <= hm.h.min + 0.02)));
   const pv = v2 ? afterNetworkV2(net, ctx, surf) : null;
   if (v2) lap("measured paint");
   // round 2: the lane graph traffic drives on, repaired (loops, centring, smoothing, hold points at the paint)

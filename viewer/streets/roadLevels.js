@@ -11,7 +11,7 @@
 // Left alone: roads with a bridge or a tunnel (engine structures) or an authored profile, junctions with an authored
 // height, junctions whose ground has no DTM data (outside the region, off the tile's grid), is no plane (RMS > RMS_MAX:
 // a cutting, a wall) or that moved more than MOVE_MAX. Runs between buildRoadNetwork and the meshes (the meshes read node.y / rr.prof).
-import { buildProfile } from "../../vendor/roads/roadProfile.js";
+import { buildProfile, profileAt } from "../../vendor/roads/roadProfile.js";
 import { planeY, pinnedProfile, blendProfileEnds } from "../../vendor/roads/roadSurface.js";
 import { evalAlignment } from "../../vendor/roads/roadAlignment.js";
 
@@ -83,5 +83,41 @@ export function relevelRoads(net, ground, noData = null) {
     st.roads++;
   }
   st.maxMove = Math.round(st.maxMove * 100) / 100;
+  dropLifts(net, ground, noData, fixedRoad, st);
   return st;
+}
+
+// LIFTS (drive fix, docs/collisions/DRIVE_FIX.md): between two junctions the engine's grade limit (local street 12 %)
+// still holds a 'terrain' road up wherever the measured ground falls faster: the Linkebeek sunken lanes (holle wegen:
+// 2-4 m deep trenches, 15-30 % climbs, E10 / F10) and Rue de la Brasserie (C9 / D9) were drawn 3-8 m over the DTM, a
+// causeway the car fell off and drove into the walls of. Here every terrain road (not an OSM bridge / tunnel, not an
+// authored profile) whose profile stands more than LIFT_TOL over the DTM gets its profile again with the steep grade
+// limit STEEP_GRADE, its ground the LOWER of the DTM and its current profile (so it only comes down: a road the grade
+// limit keeps UNDER a hump, e.g. through a cutting under a railway, stays where it is). Its end stretches stay on their
+// junction planes (pinnedProfile). Not where the DTM has no data (a fake pit, off the tile's grid).
+const LIFT_TOL = 1.0;            // m over the DTM
+const STEEP_GRADE = 0.32;        // the steepest measured lanes (Kleindalstraat, the Linkebeek trenches) climb ~30 %
+function dropLifts(net, ground, noData, fixedRoad, st) {
+  st.lifted = 0; st.maxLift = 0;
+  for (const rr of net.roads || []) {
+    const P = rr.prof;
+    if (!P || P.mode !== "terrain" || fixedRoad(rr) || !rr.al || !rr.surf) continue;
+    let lift = 0;
+    for (let i = 0; i < P.s.length; i++) {
+      const d = P.y[i] - P.ground[i];
+      if (d <= LIFT_TOL) continue;
+      if (noData) { const e = evalAlignment(rr.al, P.s[i]); if (noData(e.x, e.z)) continue; }
+      lift = Math.max(lift, d);
+    }
+    if (lift <= LIFT_TOL) continue;
+    const { armA: aA, armB: aB, L, type } = rr;
+    const ya = planeY(rr.A, aA.ox, aA.oz), yb = planeY(rr.B, aB.ox, aB.oz);
+    // (where the DTM has no data, off the tile's grid: the current profile, nothing to come down to)
+    const groundAt = (s) => { const e = evalAlignment(rr.al, s), y = profileAt(P, s).y; return noData && noData(e.x, e.z) ? y : Math.min(y, ground(e.x, e.z)); };
+    const np = buildProfile(rr.src, L, { ya, yb, fixed: pinnedProfile(rr) }, groundAt, Math.max(type.maxGrade, STEEP_GRADE));
+    for (let i = 0; i < np.s.length; i++) { const e = evalAlignment(rr.al, np.s[i]); np.ground[i] = ground(e.x, e.z); }   // the real DTM
+    rr.prof = np;
+    st.lifted++;
+    if (lift > st.maxLift) { st.maxLift = Math.round(lift * 100) / 100; st.maxLiftAt = (() => { const e = evalAlignment(rr.al, L / 2); return [Math.round(e.x), Math.round(e.z)]; })(); }
+  }
 }
