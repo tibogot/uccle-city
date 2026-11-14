@@ -124,7 +124,9 @@ parking lanes dropping parked cars, keep-clear filters...) while their colliders
 drawn. TOP PRIORITY with road round 3. (2) Collisions feel off in general; the FALCON should also show its collisions
 with G; the falcon gameplay feels weird. (3) Car tail lights: grainy, sparkling red (shader / aliasing on the light
 texture). (4) Blank party walls look empty, with aliased dashed black lines on them (facade details or wires?).
-(5) Many building TOPS look empty / unfinished (roof furniture, parapets, chimneys, roof details). [RUNNING 2026-11-14: claude/roofs, docs/assets/ROOFS.md] (6) The petrol
+(5) Many building TOPS look empty / unfinished (roof furniture, parapets, chimneys, roof details) [MERGED
+claude/roofs 2026-11-14, on by default, ?roofs=old = before: docs/assets/ROOFS.md; left: real PV / AC positions from
+data, back-slope dormers, TV aerials, ~+200 audit items per tile at parapet ends, GPU A/B on GREEN; BUG to fix: tools/blender/gardenKit.py bake_vertex_ao bakes all pieces at the origin together (railings ~30 % too dark), same 2-line fix as roofTopKit.py]. (6) The petrol
 station (Lukoil) looks far too cheap; there are several in the city: a PETROL STATION KIT (canopy, pumps, shop,
 signage, our own brand look). (7) SQUARE DES HEROS done far too cheaply: make it a hero plaza. [RUNNING 2026-11-14: claude/heros, docs/landmarks/HEROS.md] (8) [MERGED 2026-11-14: claude/shops, docs/assets/SHOPS.md, ?shops=old = before; left: Le Refuge terrace on lawn (real yard paved), terrace rule ignores trees / lamp posts in the walking strip, shutters at night, glass lettering, goods outside, florist room, GPU A/B on GREEN; real chain names (e.g. Pizza Hut, Beobank) from OSM are shown as plain text in our own sign styles, as before: owner to decide whether to invent names for chains; AUDIT other kits for positionLocal math in positionNode on instanced meshes (r187 applies the instance matrix first: the street-life shrink bug)] SHOPS far too cheap
 (flat fronts with a name): realistic shopfronts, some with an interior; restaurant TERRACES around Place Saint-Job.

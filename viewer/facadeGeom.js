@@ -123,17 +123,19 @@ function box(D, A, B, yTop, height, depth, nx, nz, col, closed = false) {
 // that meet another strip of the same kind and section are MITRED on the bisector (no end cap, no overlap: inside and
 // outside corners, adjoining houses), free ends get their end cap SET BACK a few mm per kind (never in the plane of the
 // next wall nor of another strip's cap). Every face is wound by its normal (front-side culling).
-const STRIP_SETBACK = { eb: 0.002, cu: 0.004, cl: 0.006, gu: 0.008, xx: 0.004 };
+const STRIP_SETBACK = { eb: 0.002, cu: 0.004, cl: 0.006, gu: 0.008, xx: 0.004, pi: 0.012, cp: 0.016 };   // (the roof kit's parapets: a free end is often IN the plane of the next wall, which rises: 12-16 mm clear)
 
 /** a strip along A -> B (xz; any order), its section from yTop - h to yTop, from `off` to `off + depth` along the
  *  outward normal (nx, nz) */
 function addStrip(S, kind, A, B, yTop, h, depth, nx, nz, col, off = 0) {
-  if (h <= 0.01) return;
+  if (h <= 0.01) return {};
   const tx = -nz, tz = nx;                                      // along, left to right seen from outside
   let ax = A[0], az = A[2], bx = B[0], bz = B[2];
   if ((bx - ax) * tx + (bz - az) * tz < 0) [ax, az, bx, bz] = [bx, bz, ax, az];
-  if (Math.hypot(bx - ax, bz - az) < 0.05) return;
-  S.push({ kind, ax, az, bx, bz, y: yTop, h, d: depth, off, nx, nz, col });
+  if (Math.hypot(bx - ax, bz - az) < 0.05) return {};
+  const s = { kind, ax, az, bx, bz, y: yTop, h, d: depth, off, nx, nz, col };
+  S.push(s);
+  return s;
 }
 
 export const _dbg = { strips: null };
@@ -210,7 +212,10 @@ function emitStrips(D, S, stats) {
     // the mitre: each corner (back, front) = where the two strips' own offset lines meet, so every face stays in its
     // strip's plane; near-parallel strips (not merged: planes a few cm apart) keep their own square end
     const det = s1.nx * s2.nz - s1.nz * s2.nx;
-    if (Math.abs(det) < 0.05) { s1["m" + e1] = s2["m" + e2] = { flat: true }; stats.stripJoins++; continue; }
+    // (the roof kit's parapets: UrbIS splits one wall into faces ~1 deg apart; a "flat" joint left a 4-12 mm wedge open
+    // at their outer corner: they mitre down to 0.006 deg)
+    const flatLim = s1.kind === "pi" || s1.kind === "cp" ? 1e-4 : 0.05;
+    if (Math.abs(det) < flatLim) { s1["m" + e1] = s2["m" + e2] = { flat: true }; stats.stripJoins++; continue; }
     const p1 = s1.ax * s1.nx + s1.az * s1.nz, p2 = s2.ax * s2.nx + s2.az * s2.nz;
     const meet = (o) => { const c1 = p1 + o, c2 = p2 + o; return [(c1 * s2.nz - c2 * s1.nz) / det, (s1.nx * c2 - s2.nx * c1) / det]; };
     const m = { back: meet(s1.off), front: meet(s1.off + s1.d) };
@@ -232,10 +237,13 @@ function emitStrips(D, S, stats) {
     };
     const [bA, fA] = corner("A"), [bB, fB] = corner("B");
     const P = (q, y) => [q[0], y, q[1]];
-    pushQuad(D, P(fA, y0), P(fB, y0), P(fB, y1), P(fA, y1), n, col);                 // front
-    pushQuad(D, P(bA, y1), P(fA, y1), P(fB, y1), P(bB, y1), [0, 1, 0], col);         // top
-    pushQuad(D, P(bA, y0), P(bB, y0), P(fB, y0), P(fA, y0), [0, -1, 0], col);        // soffit
-    if (s.off > 0) pushQuad(D, P(bA, y0), P(bA, y1), P(bB, y1), P(bB, y0), [-s.nx, 0, -s.nz], col);   // back (off the wall)
+    // s.mask (the roof kit's parapets): which long faces to draw, "f"ront / "t"op / "s"offit / "b"ack (default: those
+    // three + the back only when the strip stands off the wall)
+    const mk = s.mask, has = (c) => (mk ? mk.includes(c) : c !== "b" || s.off > 0);
+    if (has("f")) pushQuad(D, P(fA, y0), P(fB, y0), P(fB, y1), P(fA, y1), n, col);                 // front
+    if (has("t")) pushQuad(D, P(bA, y1), P(fA, y1), P(fB, y1), P(bB, y1), [0, 1, 0], col);         // top
+    if (has("s")) pushQuad(D, P(bA, y0), P(bB, y0), P(fB, y0), P(fA, y0), [0, -1, 0], col);        // soffit
+    if (has("b")) pushQuad(D, P(bA, y0), P(bA, y1), P(bB, y1), P(bB, y0), [-s.nx, 0, -s.nz], col);   // back
     if (!s.mA) pushQuad(D, P(bA, y0), P(fA, y0), P(fA, y1), P(bA, y1), [-tx, 0, -tz], col);           // free end caps
     if (!s.mB) pushQuad(D, P(bB, y0), P(bB, y1), P(fB, y1), P(fB, y0), [tx, 0, tz], col);
   }
@@ -291,6 +299,9 @@ function apexBlock(D, P, w, h, dirX, dirZ, col) {
  *  (on, arch rise)) and the result gets kit = collector.finish(). */
 export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
   const kit = opts.kit || null;
+  // the roof kit (viewer/roofs/roofPlace.js roofCollector, docs/assets/ROOFS.md): chimney stacks, parapets, roof
+  // windows, solar, flat-roof furniture as instanced pieces; null = the roofs as before (?roofs=old: box chimneys)
+  const roofs = opts.roofs || null;
   const dv = new DataView(buf);
   const V = dv.getUint32(0, true), T = dv.getUint32(4, true);
   const P = new Float32Array(buf, 8, V * 3);
@@ -319,6 +330,23 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
     }
     return best > -Infinity ? best : (b.eaves ?? b.top);
   };
+  /** the roof of building bi exactly at (x, z): the highest roof triangle there, -Infinity off its roof (the roof kit) */
+  const ownRoof = (bi, x, z) => {
+    const b = doc.buildings[bi];
+    let best = -Infinity;
+    for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) {
+      const a = I[t * 3] * 3, c = I[t * 3 + 1] * 3, d = I[t * 3 + 2] * 3;
+      const ax = P[a], az = P[a + 2], bx = P[c], bz = P[c + 2], cx = P[d], cz = P[d + 2];
+      const det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+      if (Math.abs(det) < 1e-9) continue;
+      const l1 = ((bz - cz) * (x - cx) + (cx - bx) * (z - cz)) / det, l2 = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / det, l3 = 1 - l1 - l2;
+      if (l1 < -1e-4 || l2 < -1e-4 || l3 < -1e-4) continue;
+      best = Math.max(best, l1 * P[a + 1] + l2 * P[c + 1] + l3 * P[d + 1]);
+    }
+    return best;
+  };
+  /** a chimney's brick (roof kit tones: 0 red-brown, 1 dark klinker, 2 orange-red, 3 yellow) from the house's wall */
+  const stackTone = (style, rnd) => (style < 0.5 ? 0 : style < 1.5 ? 1 : style < 2.5 ? 3 : [0, 0, 2, 1][Math.floor(rnd * 4) % 4]);
   /** Neighbour at (x, z): its building index or -1 (largest top if several). */
   const otherAt = (x, z, bi) => {
     let best = -1;
@@ -381,6 +409,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
     const roofStyle = hash01(key + "r");
     // real roof colour from the orthophoto (build_roofcolors.py), else a guess from the hash
     const rc = b.roofColor || (roofStyle < 0.4 ? [0.27, 0.085, 0.05] : [0.06, 0.065, 0.075]);
+    let hasStack = false;                              // (the roof kit) a gable / party-wall stack was placed for this building
     const all = [];
     for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) { const o = triOf(P, I, t); if (o) all.push(o); }
     const wallTris = all.length;
@@ -442,6 +471,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       const street = partyH < 999 && facesStreet(cx, cz, f.nx, f.nz) ? 1 : 0;
       f.pre = { tx, tz, u0, u1, cx, cz, top, width, partyH, street };
     }
+    const terraced = live.some((f) => f.pre.partyH >= 999);        // (the roof kit: a house in a row)
     // the widest street face carries the front door (the kit only: the painted façade keeps a door per street face)
     let doorFace = null;
     for (const f of live) if (f.pre.street && f.pre.width >= 1.6 && (!doorFace || f.pre.width > doorFace.pre.width)) doorFace = f;
@@ -532,7 +562,22 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         }
       }
       // chimney stacks: Brussels terraces put them on the party walls, at the highest point of the gable
-      if (!landmark && partyH >= 999 && faceH > 5 && width > 3 && hash01(key + "c" + Math.round(cx) + Math.round(cz)) < 0.7) {
+      // (the roof kit: the same rule as kit pieces, plus a stack on ~40 % of the gables of houses with no neighbour)
+      // (a gable stack: one per house at most, only on houses with no party wall (villas, detached), 45 %)
+      if (roofs && !landmark && faceH > 5 && width > 3 && (partyH >= 999 ? hash01(key + "c" + Math.round(cx) + Math.round(cz)) < 0.7
+        : partyH === 0 && !hasStack && !terraced && width < 14 && hash01(key + "g") < 0.45)) {
+        let hq = null;
+        for (const { p } of f.tris) for (const q of p) if (!hq || q[1] > hq[1]) hq = q;
+        if (hq && hq[1] - base > eaves + 0.8) {
+          const uq = hq[0] * tx + hq[2] * tz;
+          const um = Math.min(Math.max(uq, u0 + 0.8), u1 - 0.8) - uq;
+          const ob = partyH >= 999 ? otherAt(hq[0] + f.nx * PARTY_PROBE, hq[2] + f.nz * PARTY_PROBE, bi) : -1;
+          const st = roofs.gableChimney({ key, x: hq[0] + tx * um, z: hq[2] + tz * um, tx, tz, nx: f.nx, nz: f.nz, top: hq[1], party: partyH >= 999,
+            roofAt: (x, z) => ownRoof(bi, x, z), otherRoof: ob >= 0 ? (x, z) => ownRoof(ob, x, z) : null, tone: stackTone(style, rnd) });
+          if (st) stats.chimneys++;
+          hasStack = true;
+        }
+      } else if (!roofs && !landmark && partyH >= 999 && faceH > 5 && width > 3 && hash01(key + "c" + Math.round(cx) + Math.round(cz)) < 0.7) {
         let hq = null;
         for (const { p } of f.tris) for (const q of p) if (!hq || q[1] > hq[1]) hq = q;
         if (hq && hq[1] - base > eaves + 0.8) {                                     // only on a real gable (pitched roof)
@@ -571,6 +616,97 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         T.aBld.push(style, partyH, street, rnd);
         T.aFN.push(f.nx, f.nz, shopU, shopW);                                    // outward normal (xz), shopfront centre / width + 10 * paint
         if (T === WK) WK.aKit.push(1, k.rise, k.doorless, k.french);
+      }
+    }
+    // --- the roof kit (docs/assets/ROOFS.md): the building's roofs -> parapets, chimneys, solar, roof windows, furniture
+    if (roofs && !landmark) {
+      const ring = b.footprint[0];
+      let fa = 0;
+      for (let k = 0; k < ring.length; k++) { const [x0, z0] = ring[k], [x1, z1] = ring[(k + 1) % ring.length]; fa += (x0 * z1 - x1 * z0) / 2; }
+      const np = roofs.parapets.length;
+      roofs.building({ key, rnd, height: b.height, base, eaves, landmark: !!landmark, style, roofTris: all.slice(wallTris), footArea: Math.abs(fa),
+        hasStack, roofTop: b.top, tone: stackTone(style, rnd), roofColor: rc,
+        streetNormals: live.filter((f) => f.pre.street).map((f) => [f.nx, f.nz]),
+        roofAt: (x, z) => ownRoof(bi, x, z),
+        otherTop: (x, z) => { const ob = otherAt(x, z, bi); return ob >= 0 ? ownRoof(ob, x, z) : -Infinity; } });
+      // the parapets of its flat roofs: the outer face continues the wall below it (the wall material, aWall.w < 0 = a
+      // parapet: no windows, no blind-wall marks), the inner face (the membrane dressed up it) and the coping as strips
+      for (let k = np; k < roofs.parapets.length; k++) {
+        const q = roofs.parapets[k], { A, B, nx, nz, h, t } = q;
+        const y = (A[1] + B[1]) / 2;
+        let face = null, rises = false;
+        const ua = A[0] * -nz + A[2] * nx, ub = B[0] * -nz + B[2] * nx, uLo = Math.min(ua, ub) + 0.05, uHi = Math.max(ua, ub) - 0.05;
+        for (const f of live) {
+          if (f.nx * nx + f.nz * nz < 0.985) continue;
+          const pd = f.tris[0].p[0][0] * f.nx + f.tris[0].p[0][2] * f.nz;
+          if (Math.abs(A[0] * f.nx + A[2] * f.nz - pd) > 0.2) continue;
+          // the building's own wall goes on up in this plane over the edge (a gable, a higher part): no parapet there
+          for (const { p } of f.tris) {
+            const q = p.map((v) => [v[0] * -nz + v[2] * nx, v[1]]);
+            for (let j = 0; j <= 6 && !rises; j++) {
+              const u = uLo + (uHi - uLo) * j / 6;
+              // the triangle's top at u (its edges crossing the vertical line u)
+              for (let e = 0; e < 3; e++) {
+                const [u0, y0] = q[e], [u1, y1] = q[(e + 1) % 3];
+                if ((u0 - u) * (u1 - u) > 0 || Math.abs(u1 - u0) < 1e-6) continue;
+                if (y0 + (y1 - y0) * (u - u0) / (u1 - u0) > y + 0.08) { rises = true; break; }
+              }
+            }
+            if (rises) break;
+          }
+          if (!face && Math.abs(f.pre.top - y) < 0.3) face = f;
+        }
+        if (rises) continue;
+        // an END where a slope of the same building comes down (its eaves board / gutter / ridge beam end there) or one
+        // of its walls rises over the edge (the parapet's end would lie in that wall's plane): stop 30 cm short
+        const conflict = (Q) => {
+          for (let k2 = 0; k2 < all.length; k2++) {
+            const tri = all[k2], wall = k2 < wallTris;
+            if (!wall && tri.n[1] > 0.97) continue;
+            if (!tri.p.some((v) => Math.abs(v[0] - Q[0]) < 0.06 && Math.abs(v[2] - Q[2]) < 0.06)) continue;
+            // a wall triangle at that corner reaching over the edge (anywhere: a sloping wall top rises away from the
+            // corner), or a sloping roof triangle meeting the corner
+            if (wall ? tri.p.some((v) => v[1] > Q[1] + 0.08) : tri.p.some((v) => Math.abs(v[1] - Q[1]) < 0.6)) return true;
+          }
+          return false;
+        };
+        const L0 = Math.hypot(B[0] - A[0], B[2] - A[2]), ex = (B[0] - A[0]) / L0, ez = (B[2] - A[2]) / L0;
+        const cA = conflict(A), cB = conflict(B);
+        if (L0 - (cA ? 0.3 : 0) - (cB ? 0.3 : 0) < 0.6) continue;
+        if (cA) q.A = [A[0] + ex * 0.3, A[1] + (B[1] - A[1]) * 0.3 / L0, A[2] + ez * 0.3];
+        if (cB) q.B = [B[0] - ex * 0.3, B[1] - (B[1] - A[1]) * 0.3 / L0, B[2] - ez * 0.3];
+        emitParapet(q);
+      }
+    }
+    function emitParapet(q) {
+      {
+        const { A, B, nx, nz, h, t } = q;
+        const y = (A[1] + B[1]) / 2;
+        let face = null;
+        for (const f of live) {
+          if (f.nx * nx + f.nz * nz < 0.985) continue;
+          const pd = f.tris[0].p[0][0] * f.nx + f.tris[0].p[0][2] * f.nz;
+          if (Math.abs(A[0] * f.nx + A[2] * f.nz - pd) > 0.2) continue;
+          if (Math.abs(f.pre.top - y) < 0.3) { face = f; break; }
+        }
+        const tx = -nz, tz = nx, u0 = face ? face.pre.u0 : 0, fw = face ? face.pre.width : Math.hypot(B[0] - A[0], B[2] - A[2]);
+        const fstyle = style;
+        const quadW = [[A[0], A[1], A[2]], [B[0], B[1], B[2]], [B[0], B[1] + h, B[2]], [A[0], A[1] + h, A[2]]];
+        const ux = quadW[1][0] - quadW[0][0], uz = quadW[1][2] - quadW[0][2];
+        // wound so its geometric normal faces (nx, nz) (as pushQuad): (B - A) x (B + up - A) . n = h (ux nz - uz nx)
+        const ord = ux * nz - uz * nx >= 0 ? [0, 1, 2, 0, 2, 3] : [0, 2, 1, 0, 3, 2];
+        for (const i of ord) {
+          const v = quadW[i];
+          W.position.push(v[0], v[1], v[2]); W.normal.push(nx, 0, nz);
+          W.aWall.push(v[0] * tx + v[2] * tz - u0, fw, v[1] - base, -Math.max(eaves, 0.01));
+          W.aBld.push(fstyle, 0, 0, rnd); W.aFN.push(nx, nz, 0, 0);
+        }
+        const top = Math.max(A[1], B[1]) + h, inner = [rc[0] * 0.85, rc[1] * 0.85, rc[2] * 0.85];
+        const cope = q.cope < 0.5 ? [0.44, 0.45, 0.46] : q.cope < 0.65 ? [0.38, 0.37, 0.34] : q.cope < 0.8 ? [0.085, 0.09, 0.095] : [0.06, 0.063, 0.068];
+        // (down to 2 cm under the LOWER end: a flat roof's edge may fall a little along its length; JOINS)
+        addStrip(SD, "pi", A, B, top, top - Math.min(A[1], B[1]) + 0.02, t, nx, nz, inner, -t).mask = "b";
+        addStrip(SD, "cp", A, B, top + 0.05, 0.05, t + 0.06, nx, nz, cope, -(t + 0.03)).mask = "ftsb";
+        stats.parapets = (stats.parapets || 0) + 1;
       }
     }
     // --- ridge tiles and hip ribs: convex roof edges shared by two roof faces that meet at > 12°
@@ -632,6 +768,16 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       }
     }
     // --- roofs: slope-aligned coordinates, smoothed shading normals, real colour
+    // (the roof kit: a flat roof's (u, v) run along the footprint's longest side: the membrane's rolls and seams follow it)
+    let fc = 1, fs = 0;
+    if (roofs) {
+      const ring = b.footprint[0];
+      let best = 0;
+      for (let k = 0; k < ring.length; k++) {
+        const [x0, z0] = ring[k], [x1, z1] = ring[(k + 1) % ring.length], L = Math.hypot(x1 - x0, z1 - z0);
+        if (L > best) { best = L; fc = (x1 - x0) / L; fs = (z1 - z0) / L; }
+      }
+    }
     for (let k = wallTris; k < all.length; k++) {
       const tri = all[k], p = tri.p;
       const [nx, ny, nz] = tri.n;
@@ -642,7 +788,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         const sn = smooth(tri, q);
         R.normal.push(sn[0], sn[1], sn[2]);
         R.aRoofCol.push(rc[0], rc[1], rc[2]);
-        if (flat) R.aRoof.push(q[0], q[2], 1, roofStyle);
+        if (flat) R.aRoof.push(q[0] * fc + q[2] * fs, -q[0] * fs + q[2] * fc, 1, roofStyle);
         else R.aRoof.push(q[0] * -dz + q[2] * dx, (q[0] * dx + q[2] * dz) / Math.max(ny, 0.2), 0, roofStyle);
       }
     }
@@ -653,6 +799,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
     walls: { position: f32(W.position), normal: f32(W.normal), aWall: f32(W.aWall), aBld: f32(W.aBld), aFN: f32(W.aFN),
       kit: kit ? { position: f32(WK.position), normal: f32(WK.normal), aWall: f32(WK.aWall), aBld: f32(WK.aBld), aFN: f32(WK.aFN), aKit: f32(WK.aKit) } : null },
     kit: kit ? kit.finish() : null,
+    roofKit: roofs ? roofs.finish() : null,
     details: { position: f32(D.position), normal: f32(D.normal), aCol: f32(D.color) },
     roofs: { position: f32(R.position), normal: f32(R.normal), aRoof: f32(R.aRoof), aRoofCol: f32(R.aRoofCol) },
     stats: { ...stats, triangles: T, vertices: V },

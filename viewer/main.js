@@ -57,6 +57,7 @@ import { cityStops } from "./stops/cityStops.js";
 import { cityFuel } from "./fuel/cityFuel.js";
 import { cityFurniture } from "./furniture2/cityFurniture.js";
 import { cityGardens } from "./gardens/cityGardens.js";
+import { cityRoofs } from "./roofs/cityRoofs.js";
 import { deckHeight } from "./streets/bridgeDecks.js";
 import { cityGrass } from "./grass/cityGrass.js";
 import { liteShown } from "./liteShown.js";
@@ -491,6 +492,7 @@ function tileData(entry, lite = false) {
   entry = { ...entry, hide: [...new Set(HIDE_BU_IDS)].sort(), ponds: PONDS,   // (sorted: the landmarks push in any order now, and ?tilecache=1 keys on it)
     surface: ROAD_SURFACES, pits: params.get("pits") !== "0",   // ?pits=0: no tree pits (A/B)
     kit: cityKit.on && !lite, kitExclude: cityKit.exclude,                                           // the façade kit (viewer/facadeKit/), ?kit=0 off
+    roofs: cityRoofs.on && !lite,                                                                    // the roof tops (viewer/roofs/, docs/assets/ROOFS.md), ?roofs=old = before
     fuelClear: cityFuel.on ? cityFuel.clear : null,                                                 // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js)
     streetlife: cityStreetLife.on && !lite,                                                          // the street life's shopfronts (viewer/streetlife/), ?streetlife=0 off
     grass: cityGrass.on && !lite,                                                                    // ?grass=1: the grass types raster, built in the worker
@@ -745,9 +747,12 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   for (const u of ups) updaters.push(u);
   for (const g of Object.values(own)) if (fadeIn) { g.visible = true; fader.fade(g, +1); }
   cityKit.addTile(entry.name, B.kit, B.kitWalls, !fadeIn);       // ?kit=1: its kit fades in with it
+  const roofStats = cityRoofs.addTile(entry.name, B.roofKit, own.buildings);   // its roof pieces join the roof pools, fading with its buildings
+  if (roofStats) say(`roofs: ${roofStats.stacks} stacks (${roofStats.pots} pots), ${Math.round(roofStats.parapetM)} m of parapet, ${roofStats.velux} roof windows, ${roofStats.pv} solar modules on ${roofStats.pvRoofs} roofs, ${roofStats.flatItems} flat-roof pieces`);
   const dispose = () => {
     removeBridgeDecks(d.bridgeDecks);
     cityKit.removeTile(entry.name);
+    cityRoofs.removeTile(entry.name);               // its instances leave the roof pools
     cityFurniture.removeTile(entry.name);           // its instances leave the furniture pools
     cityGardens.removeTile(entry.name);             // its instances leave the garden pools (stand-ins and hedges go with the groups)
     cityFuel.removeTile(entry.name);                // its instances leave the fuel pools (its slabs / stand-ins go with the groups below)
@@ -960,6 +965,7 @@ async function main() {
     () => cityGardens.start({ scene, updaters, log }),               // front-garden walls, railings, gates, hedges (viewer/gardens/), on by default, ?gardens=0 off
     () => cityStops.start({ scene, updaters, log }),                 // the STIB shelters / poles and the ad panels (viewer/stops/), ?stops=old off
     () => cityFuel.start({ scene, updaters, renderer, log }),        // the petrol stations (viewer/fuel/), ?fuel=old off
+    () => cityRoofs.start({ scene, updaters, log }),                 // the roof tops: stacks, parapets, roof windows, solar, roof furniture (viewer/roofs/), ?roofs=old off
   ]);
   bootStage("landmarks");
   const heroes = [];
