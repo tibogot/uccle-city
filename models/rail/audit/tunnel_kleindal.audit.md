@@ -1,6 +1,6 @@
 # Mesh audit: tunnel_kleindal.glb
 
-1,946 triangles, 1,138 welded vertices, 250 open edges, 147,568 rays, 465 ms.
+1,946 triangles, 1,138 welded vertices, 250 open edges, 147,568 rays, 469 ms.
 
 **0 blocking**, 334 warnings. Clean (no blocking item).
 

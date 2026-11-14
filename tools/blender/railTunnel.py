@@ -341,6 +341,8 @@ for p, sgn in ((0, -1), (1, 1)):
             A1 = [Vector((fx, y, z + zr0)) for y, z in [(ya, zs)] + pts + [(yb, zs)]]
             A2 = [Vector((fx, y, z1f + zr0)) for y, z in [(ya, zs)] + pts + [(yb, zs)]]
             M.quad_strip(A1, A2, BR, out)
+            # the frieze's top over this bay, on the panel's own vertices (welded: no T-junction, no open edge)
+            M.quad_strip(A2, [Vector((X0 - sgn * 0.02, q.y, q.z)) for q in A2], BR, Z)
             # the small arch's soffit (from the face back into the wall), facing the small arch's centre
             S1 = [Vector((fx, y, z + zr0)) for y, z in pts]; S2 = [Vector((X0 - sgn * 0.02, y, z + zr0)) for y, z in pts]
             M.quad_strip(S1, S2, BR, lambda q, ym=ym: Vector((0, ym - (q[0].y + q[1].y) / 2, zs + zr0 - (q[0].z + q[1].z) / 2)))
@@ -350,7 +352,6 @@ for p, sgn in ((0, -1), (1, 1)):
             yc = yc + (w / 2 if k == 0 else -w / 2 if k == nbays else 0)
             M.box((X0 + sgn * fp / 2, yc, (z0f + zs) / 2 + zr0), (fp, w, zs - z0f), BR, skip=(1, 4) if sgn > 0 else (1, 5))   # (no bevel: no slit under the panel)
         # the band's top (the frieze's upper face) and its two ends
-        M.poly([Vector((X0, -WH / 2, z1f + zr0)), Vector((fx, -WH / 2, z1f + zr0)), Vector((fx, WH / 2, z1f + zr0)), Vector((X0, WH / 2, z1f + zr0))], BR, want=Z)
         for side in (1, -1):
             q = [Vector((X0, side * WH / 2, zs + zr0)), Vector((fx, side * WH / 2, zs + zr0)), Vector((fx, side * WH / 2, z1f + zr0)), Vector((X0, side * WH / 2, z1f + zr0))]
             M.poly(q, BR, want=(0, side, 0))
@@ -542,7 +543,7 @@ def ground_model_z(X, Y, lid=False):
     if abs(X) <= L / 2 - EPS and abs(Y) <= WH / 2:    # over the barrel / behind a headwall
         d = L / 2 - abs(X)
         if abs(Y) <= R + EPS and not lid: return zr - 0.02      # the barrel's floor (the lid mesh is the earth over it)
-        return max(min(g, WALL_TOP - 0.1 + max(0.0, d - THK)), CROWN + 0.9, WALL_TOP - 0.1 if d <= THK else -1e9) + zr
+        return max(min(g, WALL_TOP - 0.1 + 2 * max(0.0, d - THK)), CROWN + 0.9, WALL_TOP - 0.1 if d <= THK else -1e9) + zr
     for p, sgn in ((0, -1), (1, 1)):
         if (X - face_x(sgn)) * sgn < -EPS: continue
         wl = [w for w in WINGS if w["portal"] == p]
@@ -564,7 +565,7 @@ def ground_model_z(X, Y, lid=False):
             dd = (X - x0) * w["back"][0] + (Y - y0) * w["back"][1]
             if dd < EPS or dd > 10: continue
             top = w["top0"] + (w["top1"] - w["top0"]) * min(1, max(0, t)) - 0.1
-            v = top if dd <= w["thick"] else min(max(g, top - (dd - w["thick"]) / 1.5), top + (dd - w["thick"]))
+            v = top if dd <= w["thick"] else min(max(g, top - (dd - w["thick"]) / 1.5), top + 2 * (dd - w["thick"]))
             best = v if best is None else max(best, v)
         if best is not None: return best + zr
     return g

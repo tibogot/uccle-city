@@ -11815,26 +11815,33 @@ function classify(t, X, Y) {
     const p = t.portals[i];
     if ((X - p.X) * p.sign > 0 && inPoly(t.approach[i], X, Y)) return { cls: ROAD, portal: i };
   }
-  let lo = -Infinity, hi = Infinity, wall2 = -1, best = Infinity;
+  let lo = -Infinity, hi = Infinity, wall2 = -1, best = Infinity, under = null;
   t.walls.forEach((w, k) => {
     const [u, dd] = wallUV(w, X, Y);
-    const ext = w.kind === "face" ? 0 : 0.6 / w.len;
+    const ext = w.kind === "face" ? 6 / w.len : 0.6 / w.len;
     if (u < -ext || u > 1 + ext || dd < 0 || dd > ZONE) return;
     if (w.kind === "face" && Math.abs(X) > L2) return;
-    const top = w.top(u);
+    const past = w.kind === "face" ? Math.max(0, -u, u - 1) * w.len : 0;
+    const top = w.top(u) - 0.5 * past;
     if (dd <= w.thick) {
       lo = Math.max(lo, top);
       hi = Math.min(hi, top);
     } else {
       lo = Math.max(lo, top - (dd - w.thick) / 1.5);
-      hi = Math.min(hi, top + (dd - w.thick));
+      hi = Math.min(hi, top + 2 * (dd - w.thick));
     }
     if (dd < best) {
       best = dd;
       wall2 = k;
     }
+    if (w.kind === "wing" && dd <= w.thick && u >= 0 && u <= 1) under = top;
   });
+  if (under != null) {
+    lo = under;
+    hi = under;
+  }
   if (wall2 >= 0) return { cls: KEPT, wall: wall2, lo, hi };
+  if (Math.abs(X) <= L2 && Math.abs(Y) <= t.r + 3) return { cls: KEPT, wall: Math.abs(X - t.portals[0].X) < Math.abs(X - t.portals[1].X) ? 0 : 1, lo: -Infinity, hi: Infinity };
   return null;
 }
 function tunnelCut(tunnels, hm, hdr) {
@@ -11890,7 +11897,7 @@ function tunnelCut(tunnels, hm, hdr) {
               lo = Math.max(lo, top);
               hi = Math.min(hi, top);
             } else {
-              hi = Math.min(hi, top + (dd - p.thick));
+              hi = Math.min(hi, top + 2 * (dd - p.thick));
             }
           }
           lid.set(k, Math.min(Math.max(g, lo), Math.max(hi, lo)));
@@ -12023,7 +12030,25 @@ function tunnelTerrain(cut, terrain, hm, railDoc = null, bounds = null) {
       continue;
     }
     const tn = tunnels[owner[earth[0]]];
-    const wk = wallOf[earth[0]];
+    let wk = -1, bestF = -Infinity;
+    const roadK = v.filter((k) => cls[k] === ROAD);
+    tn.walls.forEach((w2, i) => {
+      let fmin = Infinity, ok = true;
+      for (const k of roadK) {
+        const [X, Y] = tn.toLocal(terrain.pos[k * 3], terrain.pos[k * 3 + 2]);
+        const [u, f2] = wallUV(w2, X, Y);
+        if (u < -0.15 || u > 1.15 || f2 > 0.05 || f2 < -1.6) {
+          ok = false;
+          break;
+        }
+        fmin = Math.min(fmin, f2);
+      }
+      if (ok && fmin > bestF) {
+        bestF = fmin;
+        wk = i;
+      }
+    });
+    if (wk < 0) wk = wallOf[earth[0]];
     if (wk < 0) {
       out.push(...v);
       continue;

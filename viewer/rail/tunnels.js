@@ -10,7 +10,7 @@
 //           but the DRAWN terrain is the earth over the barrel (the DTM, at least the vault's top + 0.9 m, the headwalls'
 //           tops near the portals, under the ballast): the "lid" (the tunnel is under the drawn ground)
 //     KEPT  the earth the walls retain: at the wall's top (under its coping) within the wall's thickness, then the DTM,
-//           clamped to slopes of 1:1.5 down / 1:1 up from there (no earth over a coping, no hole behind it)
+//           clamped to slopes of 1:1.5 down / 2:1 up from there (no earth over a coping, no hole behind it)
 //   a 1:1 bank (lower only) round the approaches past the wing tips.
 //   The DRAWN terrain cannot step from the road to a wall's top within one 1 m cell either: every terrain triangle with a
 //   ROAD corner and a LID / KEPT corner is CLIPPED at the wall's face (the road part keeps the road heights) and at the
@@ -102,18 +102,25 @@ function classify(t, X, Y) {
     if ((X - p.X) * p.sign > 0 && inPoly(t.approach[i], X, Y)) return { cls: ROAD, portal: i };
   }
   // behind the walls (their retained earth): the bounds of every wall reaching the point
-  let lo = -Infinity, hi = Infinity, wall = -1, best = Infinity;
+  let lo = -Infinity, hi = Infinity, wall = -1, best = Infinity, under = null;
   t.walls.forEach((w, k) => {
     const [u, dd] = wallUV(w, X, Y);
-    const ext = w.kind === "face" ? 0 : 0.6 / w.len;
+    // a headwall's earth also reaches 6 m past its ends (falling 1:2 sideways: the bank beside it, over a wing's root)
+    const ext = w.kind === "face" ? 6 / w.len : 0.6 / w.len;
     if (u < -ext || u > 1 + ext || dd < 0 || dd > ZONE) return;
     if (w.kind === "face" && Math.abs(X) > L2) return;               // a face's earth is behind it, inside the portal
-    const top = w.top(u);
+    const past = w.kind === "face" ? Math.max(0, -u, u - 1) * w.len : 0;
+    const top = w.top(u) - 0.5 * past;
     if (dd <= w.thick) { lo = Math.max(lo, top); hi = Math.min(hi, top); }
-    else { lo = Math.max(lo, top - (dd - w.thick) / 1.5); hi = Math.min(hi, top + (dd - w.thick)); }
+    else { lo = Math.max(lo, top - (dd - w.thick) / 1.5); hi = Math.min(hi, top + 2 * (dd - w.thick)); }
     if (dd < best) { best = dd; wall = k; }
+    if (w.kind === "wing" && dd <= w.thick && u >= 0 && u <= 1) under = top;   // under a wing's coping: the wing's top wins
   });
+  if (under != null) { lo = under; hi = under; }
   if (wall >= 0) return { cls: KEPT, wall, lo, hi };
+  // beside the barrel, beyond the headwalls' reach: the embankment as the DTM has it (kept: the road stage's carve may
+  // not dig its shoulder cells next to the bore's road into it)
+  if (Math.abs(X) <= L2 && Math.abs(Y) <= t.r + 3) return { cls: KEPT, wall: Math.abs(X - t.portals[0].X) < Math.abs(X - t.portals[1].X) ? 0 : 1, lo: -Infinity, hi: Infinity };
   return null;
 }
 
@@ -165,7 +172,7 @@ export function tunnelCut(tunnels, hm, hdr) {
             const dd = (p.X - X) * p.sign;                          // metres behind this face
             const top = t.road(X) + p.wallTop - 0.1;
             if (dd <= p.thick) { lo = Math.max(lo, top); hi = Math.min(hi, top); }
-            else { hi = Math.min(hi, top + (dd - p.thick)); }
+            else { hi = Math.min(hi, top + 2 * (dd - p.thick)); }
           }
           lid.set(k, Math.min(Math.max(g, lo), Math.max(hi, lo)));
         }
@@ -298,7 +305,21 @@ export function tunnelTerrain(cut, terrain, hm, railDoc = null, bounds = null) {
     if (!hasRoad || !earth.length || v.some((k, i) => cls[k] && owner[k] !== owner[v.find((q) => cls[q])])) { out.push(...v); continue; }
     const tn = tunnels[owner[earth[0]]];
     // the wall: the earth corner's (the nearest to the road corners when they differ)
-    const wk = wallOf[earth[0]];
+    // the wall the triangle's road corners face: the nearest face line in front of which they stand, within its length
+    // (beside a headwall's end the earth is the headwall's, but the road meets the wing there)
+    let wk = -1, bestF = -Infinity;
+    const roadK = v.filter((k) => cls[k] === ROAD);
+    tn.walls.forEach((w2, i) => {
+      let fmin = Infinity, ok = true;
+      for (const k of roadK) {
+        const [X, Y] = tn.toLocal(terrain.pos[k * 3], terrain.pos[k * 3 + 2]);
+        const [u, f] = wallUV(w2, X, Y);
+        if (u < -0.15 || u > 1.15 || f > 0.05 || f < -1.6) { ok = false; break; }
+        fmin = Math.min(fmin, f);
+      }
+      if (ok && fmin > bestF) { bestF = fmin; wk = i; }
+    });
+    if (wk < 0) wk = wallOf[earth[0]];
     if (wk < 0) { out.push(...v); continue; }
     const w = tn.walls[wk];
     const f = v.map((k) => { const [X, Y] = tn.toLocal(terrain.pos[k * 3], terrain.pos[k * 3 + 2]); return wallUV(w, X, Y)[1]; });      // metres behind the face

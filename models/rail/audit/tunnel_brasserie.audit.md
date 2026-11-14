@@ -1,20 +1,20 @@
 # Mesh audit: tunnel_brasserie.glb
 
-4,868 triangles, 3,170 welded vertices, 950 open edges, 168,360 rays, 1039 ms.
+5,392 triangles, 3,436 welded vertices, 954 open edges, 159,112 rays, 898 ms.
 
-**0 blocking**, 1057 warnings. Clean (no blocking item).
+**0 blocking**, 1055 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| sliver | warn | 948 |
-| tjunction | warn | 109 |
-| seam | info | 130 |
-| opening | info | 58 |
+| sliver | warn | 944 |
+| tjunction | warn | 111 |
+| seam | info | 134 |
+| opening | info | 62 |
 | backtoback | info | 120 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## sliver (warn, 948)
+## sliver (warn, 944)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -30,8 +30,6 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -14.93, 8.87, -3.77 | tunnel_brasserie/brick_red_brussels | 43 | 0.706 |
 | -14.93, 8.87, -4.90 | tunnel_brasserie/brick_red_brussels | 43 | 0.706 |
 | -14.93, 8.87, -6.03 | tunnel_brasserie/brick_red_brussels | 43 | 0.706 |
-| -14.89, 9.29, -2.07 | tunnel_brasserie/brick_red_brussels | 95 | 12.401 |
-| -14.84, 9.29, 2.07 | tunnel_brasserie/brick_red_brussels | 95 | 12.401 |
 | 14.80, 7.78, 4.28 | tunnel_brasserie/brick_red_brussels | 40 | 4.221 |
 | 14.93, 9.18, 6.03 | tunnel_brasserie/brick_red_brussels | 43 | 0.706 |
 | 14.93, 9.18, 4.90 | tunnel_brasserie/brick_red_brussels | 43 | 0.706 |
@@ -44,8 +42,6 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.93, 9.18, -2.99 | tunnel_brasserie/brick_red_brussels | 43 | 0.706 |
 | 14.93, 9.18, -4.12 | tunnel_brasserie/brick_red_brussels | 43 | 0.706 |
 | 14.93, 9.18, -5.24 | tunnel_brasserie/brick_red_brussels | 43 | 0.706 |
-| 14.89, 9.61, 2.07 | tunnel_brasserie/brick_red_brussels | 95 | 12.401 |
-| 14.84, 9.61, -2.07 | tunnel_brasserie/brick_red_brussels | 95 | 12.401 |
 | -22.14, -0.83, -11.82 | tunnel_brasserie/brick_red_brussels | 62 | 0.88 |
 | -22.38, -0.82, -11.99 | tunnel_brasserie/brick_red_brussels | 62 | 0.88 |
 | -22.25, -0.82, -12.65 | tunnel_brasserie/brick_red_brussels | 62 | 0.88 |
@@ -58,10 +54,14 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -21.54, 1.28, -12.10 | tunnel_brasserie/brick_red_brussels | 62 | 0.88 |
 | -21.82, 1.28, -12.70 | tunnel_brasserie/brick_red_brussels | 62 | 0.88 |
 | -21.59, 1.29, -12.52 | tunnel_brasserie/brick_red_brussels | 62 | 0.88 |
+| -22.43, 1.28, -12.42 | tunnel_brasserie/brick_red_brussels | 62 | 0.88 |
+| -22.24, 1.29, -12.64 | tunnel_brasserie/brick_red_brussels | 62 | 0.88 |
+| -22.14, 1.28, -11.81 | tunnel_brasserie/brick_red_brussels | 62 | 0.88 |
+| -22.37, 1.29, -12.00 | tunnel_brasserie/brick_red_brussels | 62 | 0.88 |
 
-(908 more in the JSON)
+(904 more in the JSON)
 
-## tjunction (warn, 109)
+## tjunction (warn, 111)
 
 | at | part | edge_m |
 |---|---|---|
@@ -77,6 +77,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -14.80, -0.20, -6.20 | tunnel_brasserie/brick_red_brussels | 3.8 |
 | -14.80, -0.20, 6.20 | tunnel_brasserie/brick_red_brussels | 3.8 |
 | -14.80, 3.04, 4.75 | tunnel_brasserie/brick_red_brussels | 1.93 |
+| -14.80, 9.29, 6.20 | tunnel_brasserie/brick_red_brussels | 0.15 |
 | -14.80, 8.59, 6.04 | tunnel_brasserie/brick_red_brussels | 0.15 |
 | -14.80, 8.59, 5.23 | tunnel_brasserie/brick_red_brussels | 0.15 |
 | -14.80, 8.59, 4.92 | tunnel_brasserie/brick_red_brussels | 0.15 |
@@ -97,23 +98,22 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -14.80, 8.59, -3.79 | tunnel_brasserie/brick_red_brussels | 0.15 |
 | -14.80, 8.59, -4.10 | tunnel_brasserie/brick_red_brussels | 0.15 |
 | -14.80, 8.59, -4.92 | tunnel_brasserie/brick_red_brussels | 0.15 |
+| -14.80, 9.29, -6.20 | tunnel_brasserie/brick_red_brussels | 0.15 |
 | -14.80, 8.59, -5.23 | tunnel_brasserie/brick_red_brussels | 0.15 |
 | -14.80, 8.59, -6.04 | tunnel_brasserie/brick_red_brussels | 0.15 |
 | -14.93, 8.59, 5.07 | tunnel_brasserie/brick_red_brussels | 0.316 |
 | -14.93, 8.59, 3.94 | tunnel_brasserie/brick_red_brussels | 0.316 |
 | -14.93, 8.59, 2.82 | tunnel_brasserie/brick_red_brussels | 0.316 |
 | -14.93, 8.59, 1.69 | tunnel_brasserie/brick_red_brussels | 0.316 |
-| -14.93, 8.59, 0.56 | tunnel_brasserie/brick_red_brussels | 0.316 |
-| -14.93, 8.59, -0.56 | tunnel_brasserie/brick_red_brussels | 0.316 |
 
-(69 more in the JSON)
+(71 more in the JSON)
 
-## seam (info, 130)
+## seam (info, 134)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
-| -14.80, 8.92, -5.87 | tunnel_brasserie/brick_red_brussels + tunnel_brasserie/brick_red_brussels | 29.27 | 304 | 90 |
-| 14.80, 8.61, -6.12 | tunnel_brasserie/brick_red_brussels + tunnel_brasserie/brick_red_brussels | 29.27 | 304 | 90 |
+| -14.80, 8.92, -5.87 | tunnel_brasserie/brick_red_brussels + tunnel_brasserie/brick_red_brussels | 29.27 | 566 | 90 |
+| 14.80, 8.61, -6.12 | tunnel_brasserie/brick_red_brussels + tunnel_brasserie/brick_red_brussels | 29.27 | 566 | 90 |
 | -10.58, -0.16, -4.27 | tunnel_brasserie/brick_red_brussels + tunnel_brasserie/concrete | 67 | 58 | 89.4 |
 | 14.80, 9.82, -6.20 | tunnel_brasserie/brick_red_brussels + tunnel_brasserie/stone_blue | 12.4 | 40 | 90 |
 | 14.76, 6.59, -2.78 | tunnel_brasserie/brick_red_brussels + tunnel_brasserie/stone_blue | 2.21 | 36 | 85.5 |
@@ -153,9 +153,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 9.50, 7.49, 0.04 | tunnel_brasserie/painted_metal_grey + tunnel_brasserie/painted_metal_grey | 0.32 | 6 | 90 |
 | -14.80, 8.29, -3.84 | tunnel_brasserie/brick_red_brussels + tunnel_brasserie/brick_red_brussels | 0.9 | 5 | 90 |
 
-(90 more in the JSON)
+(94 more in the JSON)
 
-## opening (info, 58)
+## opening (info, 62)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -179,6 +179,8 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -14.80, 3.04, 5.11 | tunnel_brasserie/brick_red_brussels | -1 + 0 + 0 | 1.45 |
 | -14.80, 8.34, 6.20 | tunnel_brasserie/brick_red_brussels | 0 + 0 + 1 | 0.294 |
 | -14.80, 8.34, -6.20 | tunnel_brasserie/brick_red_brussels | 0 + 0 + -1 | 0.294 |
+| -14.87, 9.29, -6.20 | tunnel_brasserie/brick_red_brussels | 0 + 0 + -1 | 0.13 |
+| -14.87, 9.29, 6.20 | tunnel_brasserie/brick_red_brussels | 0 + 0 + 1 | 0.13 |
 | -12.90, 7.83, 6.15 | tunnel_brasserie/brick_red_brussels | 1 + 0 + 0 | 12.4 |
 | -12.90, 9.49, 6.20 | tunnel_brasserie/brick_red_brussels | 1 + 0 + 0 | 1.71 |
 | -20.99, -0.82, -11.03 | tunnel_brasserie/brick_red_brussels | -0.62 + 0 + 0.79 | 9 |
@@ -194,13 +196,11 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.80, -0.45, 4.32 | tunnel_brasserie/brick_red_brussels | 1 + 0 + 0 | 1.93 |
 | 14.80, 8.65, 6.20 | tunnel_brasserie/brick_red_brussels | 0 + 0 + 1 | 0.294 |
 | 14.80, 8.65, -6.20 | tunnel_brasserie/brick_red_brussels | 0 + 0 + -1 | 0.294 |
+| 14.87, 9.61, -6.20 | tunnel_brasserie/brick_red_brussels | 0 + 0 + -1 | 0.13 |
+| 14.87, 9.61, 6.20 | tunnel_brasserie/brick_red_brussels | 0 + 0 + 1 | 0.13 |
 | 14.75, 6.85, -6.20 | tunnel_brasserie/brick_red_brussels | 0 + 0 + -1 | 1.9 |
-| 12.95, 6.84, 6.20 | tunnel_brasserie/brick_red_brussels | 0 + 0 + 1 | 1.9 |
-| 12.90, 9.77, -6.20 | tunnel_brasserie/brick_red_brussels | -1 + 0 + 0 | 1.71 |
-| 12.90, 8.11, -6.15 | tunnel_brasserie/brick_red_brussels | -1 + 0 + 0 | 12.4 |
-| 14.85, -0.45, -6.20 | tunnel_brasserie/brick_red_brussels | 0.07 + 0 + 1 | 12.001 |
 
-(18 more in the JSON)
+(22 more in the JSON)
 
 ## backtoback (info, 120)
 

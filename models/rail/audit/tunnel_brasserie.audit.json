@@ -1,19 +1,19 @@
 {
  "summary": {
-  "triangles": 4868,
-  "vertices_welded": 3170,
-  "open_edges": 950,
-  "rays": 168360,
+  "triangles": 5392,
+  "vertices_welded": 3436,
+  "open_edges": 954,
+  "rays": 159112,
   "blocking": 0,
-  "warnings": 1057,
+  "warnings": 1055,
   "counts": {
-   "sliver": 948,
+   "sliver": 944,
    "backtoback": 120,
-   "seam": 130,
-   "tjunction": 109,
-   "opening": 58
+   "seam": 134,
+   "tjunction": 111,
+   "opening": 62
   },
-  "ms": 1039
+  "ms": 898
  },
  "options": {
   "weld": 0.0001,
@@ -58,7 +58,7 @@
   {
    "name": "tunnel_brasserie",
    "slot": "brick_red_brussels",
-   "triangles": 2532,
+   "triangles": 3056,
    "maxDistance": 120
   },
   {
@@ -236,30 +236,6 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -14.887,
-     9.295,
-     -2.067
-    ],
-    "part": "tunnel_brasserie/brick_red_brussels",
-    "aspect": 95,
-    "longest": 12.401
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -14.843,
-     9.295,
-     2.067
-    ],
-    "part": "tunnel_brasserie/brick_red_brussels",
-    "aspect": 95,
-    "longest": 12.401
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
      14.8,
      7.779,
      4.281
@@ -399,30 +375,6 @@
     "part": "tunnel_brasserie/brick_red_brussels",
     "aspect": 43,
     "longest": 0.706
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     14.887,
-     9.605,
-     2.067
-    ],
-    "part": "tunnel_brasserie/brick_red_brussels",
-    "aspect": 95,
-    "longest": 12.401
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     14.843,
-     9.605,
-     -2.067
-    ],
-    "part": "tunnel_brasserie/brick_red_brussels",
-    "aspect": 95,
-    "longest": 12.401
    },
    {
     "check": "sliver",
@@ -4887,6 +4839,54 @@
     "part": "tunnel_brasserie/painted_metal_grey",
     "aspect": 52,
     "longest": 2.062
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -13.137,
+     0.624,
+     -3.08
+    ],
+    "part": "tunnel_brasserie/painted_metal_grey",
+    "aspect": 172,
+    "longest": 2.062
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -12.507,
+     0.351,
+     -3.076
+    ],
+    "part": "tunnel_brasserie/painted_metal_grey",
+    "aspect": 172,
+    "longest": 2.062
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -12.491,
+     0.388,
+     -3.076
+    ],
+    "part": "tunnel_brasserie/painted_metal_grey",
+    "aspect": 172,
+    "longest": 2.062
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -13.122,
+     0.661,
+     -3.08
+    ],
+    "part": "tunnel_brasserie/painted_metal_grey",
+    "aspect": 172,
+    "longest": 2.062
    }
   ],
   "backtoback": [
@@ -6585,7 +6585,7 @@
      "tunnel_brasserie/brick_red_brussels"
     ],
     "length_m": 29.27,
-    "pieces": 304,
+    "pieces": 566,
     "min_angle_deg": 90
    },
    {
@@ -6601,7 +6601,7 @@
      "tunnel_brasserie/brick_red_brussels"
     ],
     "length_m": 29.27,
-    "pieces": 304,
+    "pieces": 566,
     "min_angle_deg": 90
    },
    {
@@ -8576,6 +8576,38 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     -14.79,
+     9.295,
+     6.2
+    ],
+    "parts": [
+     "tunnel_brasserie/brick_red_brussels",
+     "tunnel_brasserie/brick_red_brussels"
+    ],
+    "length_m": 0.02,
+    "pieces": 1,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -14.79,
+     9.295,
+     -6.2
+    ],
+    "parts": [
+     "tunnel_brasserie/brick_red_brussels",
+     "tunnel_brasserie/brick_red_brussels"
+    ],
+    "length_m": 0.02,
+    "pieces": 1,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      -14.8,
      6.695,
      -6.2
@@ -8617,6 +8649,38 @@
      "tunnel_brasserie/stone_blue"
     ],
     "length_m": 6.13,
+    "pieces": 1,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     14.79,
+     9.605,
+     6.2
+    ],
+    "parts": [
+     "tunnel_brasserie/brick_red_brussels",
+     "tunnel_brasserie/brick_red_brussels"
+    ],
+    "length_m": 0.02,
+    "pieces": 1,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     14.79,
+     9.605,
+     -6.2
+    ],
+    "parts": [
+     "tunnel_brasserie/brick_red_brussels",
+     "tunnel_brasserie/brick_red_brussels"
+    ],
+    "length_m": 0.02,
     "pieces": 1,
     "min_angle_deg": 90
    },
@@ -8785,6 +8849,17 @@
     ],
     "part": "tunnel_brasserie/brick_red_brussels",
     "edge_m": 1.93
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -14.8,
+     9.295,
+     6.2
+    ],
+    "part": "tunnel_brasserie/brick_red_brussels",
+    "edge_m": 0.15
    },
    {
     "check": "tjunction",
@@ -9011,6 +9086,17 @@
     "severity": "warn",
     "at": [
      -14.8,
+     9.295,
+     -6.2
+    ],
+    "part": "tunnel_brasserie/brick_red_brussels",
+    "edge_m": 0.15
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -14.8,
      8.589,
      -5.231
     ],
@@ -9137,17 +9223,6 @@
     ],
     "part": "tunnel_brasserie/brick_red_brussels",
     "edge_m": 0.316
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -14.93,
-     9.295,
-     -6.042
-    ],
-    "part": "tunnel_brasserie/brick_red_brussels",
-    "edge_m": 12.4
    },
    {
     "check": "tjunction",
@@ -9385,6 +9460,17 @@
     "severity": "warn",
     "at": [
      14.8,
+     9.605,
+     6.2
+    ],
+    "part": "tunnel_brasserie/brick_red_brussels",
+    "edge_m": 0.15
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     14.8,
      8.899,
      6.042
     ],
@@ -9605,6 +9691,17 @@
     "severity": "warn",
     "at": [
      14.8,
+     9.605,
+     -6.2
+    ],
+    "part": "tunnel_brasserie/brick_red_brussels",
+    "edge_m": 0.15
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     14.8,
      8.899,
      -5.231
     ],
@@ -9731,17 +9828,6 @@
     ],
     "part": "tunnel_brasserie/brick_red_brussels",
     "edge_m": 0.316
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     14.93,
-     9.605,
-     -6.042
-    ],
-    "part": "tunnel_brasserie/brick_red_brussels",
-    "edge_m": 12.4
    },
    {
     "check": "tjunction",
@@ -10179,6 +10265,38 @@
     "check": "opening",
     "severity": "info",
     "at": [
+     -14.865,
+     9.295,
+     -6.2
+    ],
+    "part": "tunnel_brasserie/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.13
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -14.865,
+     9.295,
+     6.2
+    ],
+    "part": "tunnel_brasserie/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 0.13
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
      -12.9,
      7.835,
      6.15
@@ -10414,6 +10532,38 @@
      -1
     ],
     "edge_m": 0.294
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     14.865,
+     9.605,
+     -6.2
+    ],
+    "part": "tunnel_brasserie/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.13
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     14.865,
+     9.605,
+     6.2
+    ],
+    "part": "tunnel_brasserie/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 0.13
    },
    {
     "check": "opening",

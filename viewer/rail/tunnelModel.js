@@ -32,6 +32,16 @@ export function addTunnels(ctx) {
         b.materials.lamp_glow = lampMaterial(LAMP_RGB[name] || [1, 0.8, 0.5]);
         b.materials.lamp_glow.userData.tunnelLamp = true;
       }
+      // the bore is modelled from inside (the earth is outside): its faces look inward, so the sun's shadow pass (front
+      // faces) saw none of them and lit the bore. Both sides cast (these material instances are this tunnel's own)
+      for (const m of Object.values(b.materials)) if (m.name !== "lamp_glow") m.shadowSide = THREE.DoubleSide;
+      // the guard rails and lamp housings: dark grey paint (Street View 2024: near black), not the bridges' mid grey
+      if (b.materials.painted_metal_grey && !b.materials.painted_metal_grey.userData.tunnelPaint) {
+        const m = new THREE.MeshStandardNodeMaterial({ roughness: 0.55, metalness: 0.3 });
+        m.colorNode = color(0.075, 0.08, 0.085); m.aoNode = b.materials.painted_metal_grey.aoNode;
+        m.name = "painted_metal_grey"; m.userData.shared = true; m.userData.tunnelPaint = true; m.shadowSide = THREE.DoubleSide;
+        b.materials.painted_metal_grey = m;
+      }
       const pb = placeBridge(b, { smooth });
       pb.group.name = `tunnel-${name}`;
       for (const l of pb.levels) l.traverse((o) => { if (o.isMesh && o.material?.name === "lamp_glow") o.castShadow = false; });
