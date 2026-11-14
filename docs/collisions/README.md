@@ -99,3 +99,8 @@ strictly comparable; the drive and static columns use identical test code.
 
 ## Drive fix (2026-11-14)
 Root causes of the city-wide drive audit, the fixes and the before / after numbers: `DRIVE_FIX.md`.
+
+## Road fix round 2 (2026-11-14)
+Rough Linkebeek junctions by their lanes, OSM deck abutments and decks across tile edges, area tram platforms, the street
+level through the hero underpasses, building passages, the tile-edge DTM cause and fix, the first city-wide walk pass:
+`ROAD_FIX2.md`.

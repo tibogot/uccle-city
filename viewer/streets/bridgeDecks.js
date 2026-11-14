@@ -178,7 +178,7 @@ export function parapetRings(d) {
  *  street is drawn on it), with a 1:1 bank beside it; only raised, never lowered, and only where the dip is an
  *  abutment's (at most FILL_MAX under the deck line: a street passing under a deck end is not buried). In place on
  *  every grid of `grids` (the drawn terrain and the road stage's ground), before the roads sample them. Returns cells. */
-const FILL_MAX = 4.0, BANK = FILL_MAX, UNDER = 1.5;     // UNDER: m of the fill under the slab's end (the abutment), 10 cm under its top:
+const FILL_MAX = 5.0, BANK = FILL_MAX, UNDER = 1.5;     // UNDER: m of the fill under the slab's end (the abutment), 10 cm under its top:
 // the 1 m grid cannot hold a cliff AT the slab's end line, an oblique end cut its cells in two (Bourdon: the car between
 // two rows, one filled, one the cutting's slope 1.5 m down)
 export function deckAbutments(decks, grids, hdr) {
