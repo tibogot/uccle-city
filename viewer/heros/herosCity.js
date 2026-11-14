@@ -14,7 +14,7 @@ import * as THREE from "three/webgpu";
 import { loadHeros, HE_LODS, setLodFades } from "./herosModel.js";
 import { statueLodState } from "./herosStatue.js";
 import { dolomiteGeometry, dolomiteMaterial, lawnGeometry, lawnMaterial, terrainTrianglesIn } from "./herosGround.js";
-import { SMOOTH, fadeProxies } from "../lodFade.js";
+import { SMOOTH, fadeProxies, settleRamp } from "../lodFade.js";
 import { liteShown } from "../liteShown.js";
 
 export async function addHeros({ scene, updaters, hide, tile, world, manifest, log, compiler, renderer }) {
@@ -79,7 +79,8 @@ export async function addHeros({ scene, updaters, hide, tile, world, manifest, l
     loading = false;
     const homes = manifest.tiles.filter((t) => t.bounds.x[0] < m.boundsWorld.max.x && t.bounds.x[1] > m.boundsWorld.min.x &&
       t.bounds.z[0] < m.boundsWorld.max.z && t.bounds.z[1] > m.boundsWorld.min.z).map((t) => t.name);
-    const ramp = (d, k) => { const s = HE_LODS[k].until, w = HE_LODS[k].band; return THREE.MathUtils.smoothstep(d, s - w, s + w); };
+    const settle = [settleRamp(), settleRamp()], rampD = (d, k) => { const s = HE_LODS[k].until, w = HE_LODS[k].band; return THREE.MathUtils.smoothstep(d, s - w, s + w); };
+    const ramp = (d, k) => settle[k](rampD(d, k));     // (timed: lodFade.js settleRamp, ?lodsettle=0 = the band as before)
     let n = 0, home = false, groundBusy = false;
     const state = { shown: [false, false], fades: [1, 1], d: 0 };
     updaters.push((camPos) => {

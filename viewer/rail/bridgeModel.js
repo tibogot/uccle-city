@@ -17,7 +17,7 @@ import { attribute, uv, texture, float, vec2, vec3, floor, fract, mix, smoothste
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { hash2D, noise2D, filteredPulse, bumpNormal } from "../tslkit.js";
-import { SMOOTH, fadeVariant, fadeProxies } from "../lodFade.js";
+import { SMOOTH, fadeVariant, fadeProxies, settleRamp } from "../lodFade.js";
 import { libOn } from "../materials/libSwitch.js";
 
 export const BRIDGE_LODS = [
@@ -108,7 +108,8 @@ export function placeBridge(b, { smooth = SMOOTH, foot = true } = {}) {
   const levels = BRIDGE_LODS.map((_, k) => b.make(k, { foot }));
   group.add(...levels);
   const BANDS = [0.15, 0.12];
-  const ramp = (d, k) => { const s = BRIDGE_LODS[k].until, w = s * BANDS[k]; return THREE.MathUtils.smoothstep(d, s - w, s + w); };
+  const settle = [settleRamp(), settleRamp()], rampD = (d, k) => { const s = BRIDGE_LODS[k].until, w = s * BANDS[k]; return THREE.MathUtils.smoothstep(d, s - w, s + w); };
+  const ramp = (d, k) => settle[k](rampD(d, k));     // (timed: lodFade.js settleRamp, ?lodsettle=0 = the band as before)
   const c = new THREE.Vector3(), centre = new THREE.Vector3(0, b.info.kind === "road_over_rail" ? 6 : 5, 0);
   const state = { d: 0, shown: [true, false, false], fades: [1, 1, 1] };
   const update = (camPos) => {

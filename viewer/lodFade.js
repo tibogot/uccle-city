@@ -40,6 +40,26 @@ export function rampTo(d, a, w) {
   return saturate(d.sub(a.sub(w)).div(w.max(1e-3)));
 }
 
+/** ?lodsettle=0: the distance-band cross-fades of the landmarks / bridges as before (perf audit 2026-11-14, docs/perf/AUDIT.md
+ *  step 11). A landmark's LOD switch dithered over a band of +-12..15 % of its distance (Saint-Job church: 145-195 m);
+ *  standing anywhere in it left the church half LOD0 / half LOD1 through a static screen dither (a checker at 50 %) and
+ *  drawn twice with the discarding fade copies. settleRamp() turns the band's t into a TIMED fade: the goal is the side
+ *  of the band's middle (with hysteresis), the value moves to it over `seconds` (eased): standing still = one LOD,
+ *  whole, no dither; crossing the switch = a 0.6 s dissolve (Unity's animated LOD cross-fade, Godot's fade). */
+export const LOD_SETTLE = SMOOTH && qs.get("lodsettle") !== "0";
+export function settleRamp(seconds = 0.6) {
+  if (!LOD_SETTLE) return (t) => t;
+  let v = null, goal = 0, last = 0;
+  return (t) => {
+    const now = performance.now();
+    if (v === null) { v = goal = t >= 0.5 ? 1 : 0; last = now; return v; }
+    if (t > 0.55) goal = 1; else if (t < 0.45) goal = 0;
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    v = goal > v ? Math.min(goal, v + dt / seconds) : Math.max(goal, v - dt / seconds);
+    return v * v * (3 - 2 * v);
+  };
+}
+
 /** Per-object time fade (object.userData.fade, default 1 = fully drawn): see the header. */
 export const objectFadeValue = uniform(1).onObjectUpdate(({ object }) => object.userData.fade ?? 1);
 export function objectFadeKeep(n = ditherNoise()) {
@@ -64,10 +84,25 @@ export function withObjectFade(m) {
  *  A discard costs early-z, and on every façade, road and terrain material it cost ~3 ms of GPU time in the
  *  Saint-Job view (measured 2026-11-05), so a tile's meshes draw with these copies only WHILE they fade. */
 const variants = new WeakMap();
+/** ?fadeclone=old: clone with three's own userData copy (perf audit 2026-11-14, docs/perf/AUDIT.md step 11). r187's
+ *  NodeMaterial.copy deep-copies userData through JSON.stringify: a userData holding NODES or typed arrays (the road
+ *  marking atlas, the weather's dry nodes, a fade copy's fadeOf) serialised whole node graphs and DataTextures
+ *  (Array.from of every texel): 100-580 ms per clone, the 300-850 ms long tasks while tiles stream, GBs of garbage.
+ *  Default: clone with an empty userData, then a SHALLOW copy of the source's (nested objects shared, read-only). */
+const FADE_CLONE_OLD = qs.get("fadeclone") === "old";
+export function cloneMaterial(m) {
+  if (FADE_CLONE_OLD) return m.clone();
+  const ud = m.userData;
+  m.userData = {};
+  let c;
+  try { c = m.clone(); } finally { m.userData = ud; }
+  c.userData = { ...ud };
+  return c;
+}
 export function fadeVariant(m) {
   let v = variants.get(m);
   if (!v) {
-    v = withObjectFade(m.clone());
+    v = withObjectFade(cloneMaterial(m));
     v.name = `${m.name || m.type}:fade`;
     v.userData.shared = !!m.userData.shared;
     v.userData.fadeOf = m;
