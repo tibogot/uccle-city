@@ -30,7 +30,9 @@
     "shopsign": 1,
     "totem": 1
    },
-   "tile": "C3"
+   "treesOnCanopy": null,
+   "tile": "C3",
+   "clear": null
   },
   {
    "id": "n1346762169",
@@ -67,14 +69,33 @@
     "column_base": 1,
     "dispenser": 1,
     "fascia_sign": 4,
-    "grate": 12,
+    "grate": 18,
     "island": 1,
     "line": 2,
     "paypoint": 1,
     "solar": 1,
     "totem": 1
    },
-   "tile": "A5"
+   "treesOnCanopy": 0,
+   "tile": "A5",
+   "clear": [
+    [
+     -2723.26,
+     144.15
+    ],
+    [
+     -2711.43,
+     133.38
+    ],
+    [
+     -2703.36,
+     142.25
+    ],
+    [
+     -2715.19,
+     153.02
+    ]
+   ]
   },
   {
    "id": "n2446274082",
@@ -125,7 +146,26 @@
     "solar": 1,
     "totem": 1
    },
-   "tile": "J3"
+   "treesOnCanopy": 2,
+   "tile": "J3",
+   "clear": [
+    [
+     1525.08,
+     -862.6
+    ],
+    [
+     1520.5,
+     -875.57
+    ],
+    [
+     1529.45,
+     -878.73
+    ],
+    [
+     1534.03,
+     -865.76
+    ]
+   ]
   },
   {
    "id": "n349272406",
@@ -166,7 +206,7 @@
     "column_base": 2,
     "dispenser": 2,
     "fascia_sign": 5,
-    "grate": 18,
+    "grate": 21,
     "island": 2,
     "line": 2,
     "shopdoor": 1,
@@ -174,7 +214,26 @@
     "shopsign": 1,
     "totem": 1
    },
-   "tile": "F5"
+   "treesOnCanopy": 2,
+   "tile": "F5",
+   "clear": [
+    [
+     -164.55,
+     328.88
+    ],
+    [
+     -174.51,
+     310.02
+    ],
+    [
+     -165.49,
+     305.25
+    ],
+    [
+     -155.53,
+     324.11
+    ]
+   ]
   },
   {
    "id": "n3729193961",
@@ -213,20 +272,39 @@
     "column_base": 1,
     "dispenser": 1,
     "fascia_sign": 4,
-    "grate": 13,
+    "grate": 12,
     "island": 1,
     "line": 2,
     "paypoint": 1,
     "totem": 1
    },
-   "tile": "D10"
+   "treesOnCanopy": 0,
+   "tile": "D10",
+   "clear": [
+    [
+     -1249.36,
+     2996.21
+    ],
+    [
+     -1240.48,
+     2989.72
+    ],
+    [
+     -1235.76,
+     2996.19
+    ],
+    [
+     -1244.65,
+     3002.67
+    ]
+   ]
   },
   {
    "id": "n410466355",
-   "name": "Texaco (now Esso colours), Rue du Chateau d'Or",
+   "name": "Texaco, Rue du Chateau d'Or",
    "brand": "Texaco",
    "operator": null,
-   "schemeName": "rubra",
+   "schemeName": "pivot",
    "type": "canopy",
    "islands": 6,
    "canopy": {
@@ -268,7 +346,26 @@
     "shopsign": 1,
     "totem": 1
    },
-   "tile": "D7"
+   "treesOnCanopy": 17,
+   "tile": "D7",
+   "clear": [
+    [
+     -1273.96,
+     1260.79
+    ],
+    [
+     -1301.52,
+     1269.98
+    ],
+    [
+     -1308.21,
+     1249.92
+    ],
+    [
+     -1280.65,
+     1240.73
+    ]
+   ]
   },
   {
    "id": "n410936386",
@@ -305,13 +402,32 @@
     "column_base": 2,
     "dispenser": 2,
     "fascia_sign": 4,
-    "grate": 15,
+    "grate": 18,
     "island": 2,
     "line": 2,
     "paypoint": 1,
     "totem": 1
    },
-   "tile": "C5"
+   "treesOnCanopy": 4,
+   "tile": "C5",
+   "clear": [
+    [
+     -1813.52,
+     287.08
+    ],
+    [
+     -1810.06,
+     270.92
+    ],
+    [
+     -1801.83,
+     272.69
+    ],
+    [
+     -1805.29,
+     288.84
+    ]
+   ]
   },
   {
    "id": "n4373358691",
@@ -339,7 +455,9 @@
     "island": 1,
     "totem": 1
    },
-   "tile": "H1"
+   "treesOnCanopy": null,
+   "tile": "H1",
+   "clear": null
   },
   {
    "id": "n495965407",
@@ -388,7 +506,26 @@
     "shopsign": 1,
     "totem": 1
    },
-   "tile": "K9"
+   "treesOnCanopy": 6,
+   "tile": "K9",
+   "clear": [
+    [
+     2216.94,
+     2044.75
+    ],
+    [
+     2208.39,
+     2027.65
+    ],
+    [
+     2223.49,
+     2020.09
+    ],
+    [
+     2232.04,
+     2037.2
+    ]
+   ]
   },
   {
    "id": "n503139615",
@@ -429,7 +566,7 @@
     "column_base": 2,
     "dispenser": 2,
     "fascia_sign": 5,
-    "grate": 18,
+    "grate": 24,
     "island": 2,
     "line": 2,
     "shopdoor": 1,
@@ -438,7 +575,26 @@
     "solar": 1,
     "totem": 1
    },
-   "tile": "J7"
+   "treesOnCanopy": 8,
+   "tile": "J7",
+   "clear": [
+    [
+     1873.45,
+     1335.49
+    ],
+    [
+     1853.94,
+     1345.25
+    ],
+    [
+     1849.29,
+     1335.94
+    ],
+    [
+     1868.8,
+     1326.19
+    ]
+   ]
   },
   {
    "id": "n576656709",
@@ -467,7 +623,9 @@
     "shopsign": 1,
     "totem": 1
    },
-   "tile": "J4"
+   "treesOnCanopy": null,
+   "tile": "J4",
+   "clear": null
   },
   {
    "id": "n576656710",
@@ -512,7 +670,26 @@
     "line": 6,
     "totem": 1
    },
-   "tile": "J3"
+   "treesOnCanopy": 0,
+   "tile": "J3",
+   "clear": [
+    [
+     1618.66,
+     -589.35
+    ],
+    [
+     1642.21,
+     -590.83
+    ],
+    [
+     1643.61,
+     -568.39
+    ],
+    [
+     1620.06,
+     -566.92
+    ]
+   ]
   },
   {
    "id": "n6763675396",
@@ -554,7 +731,7 @@
     "column_base": 2,
     "dispenser": 2,
     "fascia_sign": 5,
-    "grate": 13,
+    "grate": 17,
     "island": 2,
     "line": 2,
     "shopdoor": 1,
@@ -562,7 +739,26 @@
     "shopsign": 1,
     "totem": 1
    },
-   "tile": "C5"
+   "treesOnCanopy": 2,
+   "tile": "C5",
+   "clear": [
+    [
+     -1542.58,
+     278.15
+    ],
+    [
+     -1526.7,
+     271.8
+    ],
+    [
+     -1523.32,
+     280.26
+    ],
+    [
+     -1539.2,
+     286.61
+    ]
+   ]
   },
   {
    "id": "n7334366818",
@@ -592,7 +788,9 @@
     "shopsign": 1,
     "totem": 1
    },
-   "tile": "C3"
+   "treesOnCanopy": null,
+   "tile": "C3",
+   "clear": null
   },
   {
    "id": "w174996511",
@@ -635,7 +833,26 @@
     "paypoint": 1,
     "totem": 1
    },
-   "tile": "K11"
+   "treesOnCanopy": 0,
+   "tile": "K11",
+   "clear": [
+    [
+     2323.35,
+     3402.24
+    ],
+    [
+     2307.73,
+     3402.69
+    ],
+    [
+     2307.46,
+     3393.15
+    ],
+    [
+     2323.07,
+     3392.7
+    ]
+   ]
   },
   {
    "id": "w96066956",
@@ -684,7 +901,26 @@
     "shopsign": 1,
     "totem": 1
    },
-   "tile": "J6"
+   "treesOnCanopy": 3,
+   "tile": "J6",
+   "clear": [
+    [
+     1752.34,
+     600.22
+    ],
+    [
+     1729.97,
+     603.67
+    ],
+    [
+     1728.39,
+     593.45
+    ],
+    [
+     1750.76,
+     590.0
+    ]
+   ]
   }
  ],
  "tiles": [

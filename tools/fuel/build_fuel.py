@@ -21,7 +21,8 @@ Layout (a canopy's frame: local x along its long side, +z toward the nearest nam
                column at one end of each island (alternating), one double-sided dispenser, crash bumpers at both ends
   canopy       deck + soffit, fascia (0.95 m) on the four sides with rounded corners, LED panels on a ~3 m grid, the brand
                sign on both long sides, solar panels on top where seen; its top = the DSM height
-  forecourt    a concrete slab: the canopy rectangle grown by 3 m (2.5 m behind) and shrunk on any side that would enter a
+  forecourt    a slab of concrete pavers: the canopy rectangle grown by 3 m at the ends, 2.5 m behind and up to 10 m toward the
+               road (forecourts run to the kerb), shrunk on any side that would enter a
                building or the carriageway; heights on a 1 m grid = the walking surface + 3 cm; a skirt goes 0.25 m down
   totem        on the road side, 1.2 m behind the kerb, at the canopy's end clear of buildings; faces along the road
   shop         'building': a glazed front (1.5 m bays, a sliding door in the middle) + a signage band on the UrbIS wall
@@ -286,10 +287,11 @@ class Station:
         return Frame(cx, cz, zx, zz)
 
     # ---- the forecourt slab: a rectangle in frame F grown by margins, shrunk where it would enter a building / the road
-    def slab(self, F: Frame, x0, x1, z0, z1, grow=(3.0, 3.0, 2.5, 3.0)):
+    def slab(self, F: Frame, x0, x1, z0, z1, grow=(3.0, 3.0, 2.5, 10.0)):
         T = self.T
-        m = list(grow)            # -x, +x, -z (back), +z (front)
-        for k in range(4):
+        m = [0.0, 0.0, 0.0, 0.0]  # -x, +x, -z (back), +z (front): grown one side at a time (the front first)
+        for k in (3, 2, 0, 1):
+            m[k] = grow[k]
             while m[k] > 0:
                 p = F.rect(x0 - m[0], x1 + m[1], z0 - m[2], z1 + m[3])
                 bad = in_building(T, p, 0.2)
@@ -319,11 +321,14 @@ class Station:
         x, z = F.w(lx, lz)
         y = self.y(x, z)
         self.put("island", x, z, F.yaw, y=y)
-        self.col.append(("island", F.rect(lx - ISLAND[0] / 2, lx + ISLAND[0] / 2, lz - ISLAND[1] / 2, lz + ISLAND[1] / 2), y, y + 0.16))
         top = y + 0.16
+        # (the 16 cm island kerb itself is no collider: the car / walker meet the crash hoops at its ends, the dispenser
+        # and the column on it, all drawn above the kerb)
         for e in (-1, 1):
             bx, bz = F.w(lx + e * (ISLAND[0] / 2 - 0.25), lz)
             self.put("bumper", bx, bz, F.yaw + (0 if e > 0 else math.pi), y=top)
+            ex = lx + e * (ISLAND[0] / 2 - 0.25)
+            self.col.append(("hoop", F.rect(ex - 0.06, ex + 0.06, lz - 0.46, lz + 0.46), top, top + 0.82))
         cs = 1 if k % 2 == 0 else -1
         dx, dz = F.w(lx - cs * 0.55, lz)
         self.put("dispenser", dx, dz, F.yaw, y=top)
@@ -679,7 +684,16 @@ def main():
             print(f"{sid} ({tile}): NOT placed: {S.notes}")
             continue
         per_tile.setdefault(tile, []).append(rec)
-        summary.append({k: rec.get(k) for k in ("id", "name", "brand", "operator", "schemeName", "type", "islands", "canopy", "shop", "wall", "notes", "counts")} | {"tile": tile})
+        # the LiDAR "trees" the canopy itself made (urbis-chm peaks on its roof): the viewer drops them (cityFuel.treesClear)
+        clear = None
+        if rec.get("canopy"):
+            c = rec["canopy"]
+            Fc = Frame(c["cx"], c["cz"], math.sin(c["yaw"]), math.cos(c["yaw"]))
+            poly = Fc.rect(-c["w"] / 2 - 1, c["w"] / 2 + 1, -c["d"] / 2 - 1, c["d"] / 2 + 1)
+            clear = [[r2(a2), r2(b2)] for a2, b2 in list(poly.exterior.coords)[:-1]]
+            ft = json.loads((OUT.parent / "tiles" / tile / "features.json").read_text(encoding="utf-8")).get("trees", [])
+            rec["treesOnCanopy"] = sum(1 for t in ft if t.get("source") == "urbis-chm" and poly.contains(Point(t["x"], t["z"])))
+        summary.append({k: rec.get(k) for k in ("id", "name", "brand", "operator", "schemeName", "type", "islands", "canopy", "shop", "wall", "notes", "counts", "treesOnCanopy")} | {"tile": tile, "clear": clear})
         print(f"{sid} ({tile}) {rec['type']:8s} {rec.get('islands')} islands  {rec['name']}  {rec['counts']}")
         for n in S.notes: print("     ", n)
     OUT.mkdir(parents=True, exist_ok=True)

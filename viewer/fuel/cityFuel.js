@@ -122,13 +122,32 @@ function colliderGeometry(cols) {
   return g;
 }
 
+function inRing(r, x, z) {
+  let inside = false;
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+    const [xi, zi] = r[i], [xj, zj] = r[j];
+    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
 export const cityFuel = {
   on: qs.get("fuel") !== "old",
-  kit: null, pools: [], tiles: new Map(), group: null, streamer: null,
+  kit: null, pools: [], tiles: new Map(), group: null, streamer: null, clear: [], treesDropped: 0,
+  /** a tile's tree list without the LiDAR "trees" the canopies themselves made (urbis-chm peaks on a canopy roof + 1 m:
+   *  data/fuel/summary.json "clear"); the full tile and its far impostors both call it (no pop at the swap) */
+  treesClear(trees) {
+    if (!this.on || !this.clear.length || !trees?.length) return trees;
+    const out = trees.filter((t) => t.source !== "urbis-chm" || !this.clear.some((r) => inRing(r, t.x, t.z)));
+    this.treesDropped += trees.length - out.length;
+    return out;
+  },
   async start({ scene, updaters, renderer = null, log = console.log }) {
     if (!this.on) return null;
     const t0 = performance.now();
     try {
+      const sum = await fetch(new URL("summary.json", DATA)).then((r) => r.json());
+      this.clear = sum.stations.map((s) => s.clear).filter(Boolean);
       if (renderer) await loadPavingTextures(renderer);
       this.kit = await loadFuelKit();
     } catch (e) { log(`fuel: kit failed (${e.message}), ?fuel=old`); this.on = false; return null; }

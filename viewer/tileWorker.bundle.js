@@ -12463,6 +12463,17 @@ async function buildTileData(entry, base) {
   }
   const tunnels = entry.tunnels !== false ? await step("tunnel fetch", () => loadTunnels(base)) : null;
   if (tunnels?.length && feats.trees?.length) feats.trees = tunnelTrees(tunnels, feats.trees);
+  if (entry.fuelClear?.length && feats.trees?.length) {
+    const inRing3 = (r, x, z) => {
+      let k = false;
+      for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+        const [xi, zi] = r[i], [xj, zj] = r[j];
+        if (zi > z !== zj > z && x < (xj - xi) * (z - zi) / (zj - zi) + xi) k = !k;
+      }
+      return k;
+    };
+    feats.trees = feats.trees.filter((t) => t.source !== "urbis-chm" || !entry.fuelClear.some((r) => inRing3(r, t.x, t.z)));
+  }
   const surfDoc = (entry.surface || entry.grass) && F.surfaces ? await step("fetch surfaces", () => get(F.surfaces)) : null;
   const surf = entry.surface ? surfDoc : null;
   const grassTypes = entry.grass ? await step("grass types", async () => grassTypeData(feats, { x0, x1, z0, z1 }, { kinds: await grassKinds(base), surfaces: surfDoc })) : null;

@@ -122,7 +122,7 @@ await load();
 const gpu = { samples: [], pending: false };
 addEventListener("resize", () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
 let frame = 0;
-window.lab = { kit, pools, P, camera, controls, renderer, scene, regather, load, build, views, doc: () => doc,
+window.lab = { kit, pools, P, camera, controls, renderer, scene, regather, load, build, views, applyNight, doc: () => doc,
   gpu: () => { const s = gpu.samples.slice(-120).sort((a, b) => a - b); return s.length ? { n: s.length, avg: +(s.reduce((a, b) => a + b, 0) / s.length).toFixed(3), p50: s[s.length >> 1], p95: s[Math.floor(s.length * 0.95)] } : null; },
   resetGpu: () => { gpu.samples.length = 0; } };
 renderer.setAnimationLoop(() => {

@@ -475,6 +475,7 @@ const PAINT_PARAM = ["v1", "v2"].includes(params.get("paint")) ? params.get("pai
 function tileData(entry, lite = false) {
   entry = { ...entry, hide: HIDE_BU_IDS, ponds: PONDS, surface: ROAD_SURFACES, pits: params.get("pits") !== "0",   // ?pits=0: no tree pits (A/B)
     kit: cityKit.on && !lite, kitExclude: cityKit.exclude,                                           // the façade kit (viewer/facadeKit/), ?kit=0 off
+    fuelClear: cityFuel.on ? cityFuel.clear : null,                                                 // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js)
     streetlife: cityStreetLife.on && !lite,                                                          // the street life's shopfronts (viewer/streetlife/), ?streetlife=0 off
     grass: cityGrass.on && !lite,                                                                    // ?grass=1: the grass types raster, built in the worker
     rail: TRAINS, bridges2: BRIDGES2, railFix: params.get("railcar") !== "0", driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX, padRoads: params.get("padroads") !== "0",
@@ -536,6 +537,7 @@ async function loadLiteTile(entry, group) {
   if (SMOOTH && entry.files.features) {
     const f = await getJSON(entry.files.features).catch(() => null);
     const b = { x0: entry.bounds.x[0], x1: entry.bounds.x[1], z0: entry.bounds.z[0], z1: entry.bounds.z[1] };
+    if (f?.trees) f.trees = cityFuel.treesClear(f.trees);              // as the full tile (viewer/fuel/cityFuel.js)
     const ys = new Map((f?.trees || []).map((t) => [`${t.x},${t.z}`, t.y]));
     trees = f?.trees?.length && ys.values().next().value != null
       ? buildFarTreeField(f.trees, (x, z) => ys.get(`${x},${z}`), (x, z) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1) : null;
@@ -623,6 +625,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const fit = d.road.surfaceData ? streetFit(d.road.surfaceData) : null;
   // a tree on measured ground stands on it (in its pit, viewer/surfaces.js), not on the terrain carved under it
   const treeGround = fit ? (x, z) => (fit.classAt(x, z) >= 0 ? hm.surface(x, z) + CARVE + fit.lift(x, z) : hm.surface(x, z)) : undefined;
+  if (feats?.trees) feats.trees = cityFuel.treesClear(feats.trees);   // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js)
   const fo = featureObjects(feats, hm, bounds, d.road.surfaceStats ? 0.02 : 0.012, treeGround);
   own.features.add(fo);
   await frame("rails");
