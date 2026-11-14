@@ -7,6 +7,10 @@
 // while the LOD eye walks 2 -> 1200 m (or a dolly zoom: the camera really walks, the frame kept by the focal length).
 // Species: the city's street trees ("street", the only ones in the city) and the London plane (viewer/treesPlane.js,
 // lab only), both through the same chain. Panel: viewer/panelUI.js. window.lab for scripts.
+// (2026-11-14) + the COPPER BEECH (viewer/treesCopperBeech.js, docs/trees/COPPER_BEECH.md): factory-textured (leaf
+// sprays per season, bark), its own seasons (spring / summer / autumn / marcescent winter: a rebuild + impostor rebake
+// each), its far trees through the IMPOSTOR KIT as in the city, and the "Drève de Lorraine" layout: the 520 real copper
+// beeches of the Bruxelles Mobilité inventory (data/trees/bm_copper_beech.json) with their heights and crowns.
 import * as THREE from "three/webgpu";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { uniform, vec3, float, mix, select, positionWorld, mx_noise_float, smoothstep } from "three/tsl";
@@ -16,6 +20,9 @@ import { createPipeline } from "../viewer/post.js";
 import { makeSpecies, STREET, TREE_SHADOW, setTreeRenderer, setTreeLighting } from "../viewer/treesStylized.js";
 import { planeDef, planeLeafMask } from "../viewer/treesPlane.js";
 import { beechDef } from "../viewer/treesBeech.js";
+import { copperBeechDef, loadCopperBeechTextures, COPPER_SEASONS } from "../viewer/treesCopperBeech.js";
+import * as K from "../viewer/impostorKit/index.js";
+import { flickerTest, showHeat } from "./flickerTest.js";
 import { IMP, impostorField } from "../viewer/impostors.js";
 import { lodEye } from "../viewer/lodFade.js";
 import { lodMorph } from "../vendor/stylized-trees/stylizedTrees.js";
@@ -114,6 +121,11 @@ const forestTrees = (() => {
   return m8.map((t) => ({ x: t.x - cx, z: t.z - cz - 420, height: t.height, crown: t.crown }));
 })();
 
+// the copper beeches of the Drève de Lorraine (Bruxelles Mobilité inventory, CC0): east of the lab's other layouts
+const DREVE_X = 900;
+const dreve = await fetch("../data/trees/bm_copper_beech.json").then((r) => r.json());
+const dreveTrees = dreve.trees.map(([x, z, h, d]) => ({ x: x + DREVE_X, z, height: h, crown: d / 2 }));
+
 // ------------------------------------------------------------------------------------------------ species
 const S = {
   layout: qp.get("layout") ?? "single tree", species: qp.get("species") ?? "plane", forestMix: qp.get("mix") ?? "the selected species", variant: qp.get("variant") ?? "auto", seed: +(qp.get("seed") ?? 1000),
@@ -122,7 +134,7 @@ const S = {
   lod1: 40, morph1: 14, lod2: 120, morph2: 40,
   impostors: true, impStart: IMP.start.value, impBand: IMP.band.value, impEnd: IMP.end.value, impEndBand: IMP.endBand.value,
   shadows: true, shEnd: TREE_SHADOW.end.value, shBand: TREE_SHADOW.band.value,
-  wind: 0, windSpeed: 1.1, windDir: 30, season: 0,
+  wind: 0, windSpeed: 1.1, windDir: 30, season: 0, cbSeason: COPPER_SEASONS[qp.get("cbseason")] ? qp.get("cbseason") : "summer", farKit: qp.get("farkit") !== "0",
   time: preset, hour: lighting.hour, post: true,
   walkMode: "frozen view (LOD eye walks)", walkD: 2, walkSeconds: 40, walking: false,
   perf: "", passes: "", cpu: "", mem: "", bench: "—", lodNow: "", crownFit: "", pop: "—",
@@ -131,10 +143,14 @@ const DEFS = {
   street: (seed) => ({ ...STREET.def, params: { ...STREET.def.params, seed } }),
   plane: (seed) => planeDef(seed),
   beech: (seed) => beechDef(seed),
+  copperbeech: (seed) => copperBeechDef(seed, COPPER_TEX[S.cbSeason]),
 };
+// the copper beech's factory textures, every season (small: ~1.4 MB GPU per spray, the bark 2.7 MB)
+const COPPER_TEX = {};
+await Promise.all(Object.keys(COPPER_SEASONS).map(async (k) => { COPPER_TEX[k] = await loadCopperBeechTextures(renderer, k); }));
 // the forest patch (tile M8: mostly beech in the Sonian Forest edge) as a mix of species, shares of the LiDAR trees
 const FOREST_MIX = { "all beech": { beech: 1 }, "beech 80 % + street trees 20 %": { beech: 0.8, street: 0.2 } };
-const SPECIES_NAMES = { "street (city today)": "street", "plane (Platanus x acerifolia)": "plane" };
+const SPECIES_NAMES = { "street (city today)": "street", "plane (Platanus x acerifolia)": "plane", "copper beech": "copperbeech" };
 const speciesKey = () => (S.species in DEFS ? S.species : SPECIES_NAMES[S.species]);
 const species = {};
 // LOD colours (debug): one per mesh (userData.treeLod: 0-2, 3 = impostor), mixed into every tree material
@@ -155,7 +171,7 @@ function getSpecies(key) {
   species[key] = sp;
   return sp;
 }
-function disposeSpecies(key) { species[key]?.dispose(); delete species[key]; }
+function disposeSpecies(key) { if (species[key]) disposeKit(species[key]); species[key]?.dispose(); delete species[key]; }
 
 // ------------------------------------------------------------------------------------------------ layouts
 const holder = new THREE.Group(); scene.add(holder);
@@ -166,10 +182,15 @@ const ring = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(Array.f
 scene.add(ring);
 const variantFn = (sp) => {
   const v = S.variant;
+  // the copper beech on auto: the avenue form (0-3) along the street and the Drève, the park form (4-5) in the park
+  if (v === "auto" && sp.def.id === "copperbeech") {
+    if (S.layout.startsWith("street") || S.layout.startsWith("Drève")) return (i) => sp.variantOfIndex(i) % 4;
+    if (S.layout.startsWith("park")) return (i) => 4 + (sp.variantOfIndex(i) % 2);
+  }
   if (v === "auto") return null;
   // the plane and the beech have two forms: variants 0-3 (plane natural, beech forest) and 4-5 (plane pollard,
   // beech open-grown); the street trees have one
-  const forms = sp.def.id === "plane" || sp.def.id === "beech";
+  const forms = sp.def.id === "plane" || sp.def.id === "beech" || sp.def.id === "copperbeech";
   if (v.startsWith("auto: 0-3")) return forms ? (i) => sp.variantOfIndex(i) % 4 : null;
   if (v.startsWith("auto: 4-5")) return forms ? (i) => 4 + (sp.variantOfIndex(i) % 2) : null;
   return () => Math.min(sp.variants - 1, +v);
@@ -180,9 +201,10 @@ function placementsFor(layout) {
   if (layout === "street of 50") for (let i = 0; i < 25; i++) for (const side of [-1, 1]) T.push({ x: -132 + i * 11, z: STREET_Z + side * 8.2, height: S.height * (0.9 + 0.2 * ((i * 7 + (side > 0 ? 3 : 0)) % 5) / 4), crown: S.crown });
   if (layout === "park cluster (LiDAR G4)") T.push(...parkTrees);
   if (layout === "forest patch (LiDAR M8, 4552)") T.push(...forestTrees);
+  if (layout.startsWith("Drève")) T.push(...dreveTrees);
   return T;
 }
-const LAYOUTS = ["single tree", "LOD chain side by side", "street of 50", "park cluster (LiDAR G4)", "forest patch (LiDAR M8, 4552)"];
+const LAYOUTS = ["single tree", "LOD chain side by side", "street of 50", "park cluster (LiDAR G4)", "forest patch (LiDAR M8, 4552)", "Drève de Lorraine (inventory, 520 copper beeches)"];
 /** Build the current layout (keys: the species to build; the first is shown, the others hidden for A/B). */
 function build(keys = [speciesKey()]) {
   for (const { f } of fields) f.dispose();
@@ -218,12 +240,59 @@ function build(keys = [speciesKey()]) {
     holder.add(f.group);
     f.group.traverse((o) => { if (o.isInstancedMesh) o.userData.castsByDefault = o.castShadow; });
     if (f.imp) f.imp.mesh.userData.treeLod = 3;
-    fields.push({ key, sp, f });
+    const entry = { key, sp, f };
+    fields.push(entry);
+    if (key === "copperbeech" && S.farKit) attachKit(entry, vf ?? ((i) => sp.variantOfIndex(i)));
   }
   setPits(S.layout === "street of 50" || S.layout === "single tree" || S.layout === "LOD chain side by side"
     ? (S.layout === "LOD chain side by side" ? [-24, -8, 8, 24].map((x) => [x, 0, Y0 + 0.02]) : T.map((t) => [t.x, t.z, Y0 + (S.layout === "street of 50" ? 0.14 : 0.02)])) : []);
   applyAll();
   updateInfo();
+}
+
+/** The copper beech's far trees through the IMPOSTOR KIT (viewer/impostorKit/, as the city's street trees:
+ *  viewer/treeKitCity.js): one atlas per species (16 x 16 hemi views x 64 px, baked from LOD 2 at the hand-over,
+ *  with its leaf-spray colours: sources/stylizedTrees.js reads shared.leafAtlas), one instanced draw per pass, the
+ *  hand-over on the same IMP uniforms as the mesh's far mask; today's impostors (viewer/impostors.js) are taken out
+ *  of that field. The bake is async: the field's far trees come in when it is ready. */
+const kits = new Map();
+function kitFor(sp) {
+  if (kits.has(sp)) return kits.get(sp);
+  const H = K.makeFade(K.TYPES.tree.fade);
+  H.start = IMP.start; H.band = IMP.band; H.end = IMP.end; H.endBand = IMP.endBand;
+  const view = K.makeView();
+  const k = { H, view, atlas: null, mats: null, bakeMs: 0 };
+  k.ready = (async () => {
+    const t0 = performance.now();
+    const src = K.stylizedTreeSource(sp.shared, sp.params().leafMask, { variants: sp.variants, lod: 2, handover: IMP.start.value });
+    k.atlas = await K.bakeAtlas(renderer, src, K.TYPES.tree);
+    src.dispose?.();
+    k.bakeMs = performance.now() - t0;
+    k.mats = K.impostorMaterials(k.atlas, { ...K.TYPES.tree.material, fade: H, view, shade: K.treeShade(sp.shared.U), name: "tree-kit-lab" });
+    console.log(`[tree lab] kit atlas (${sp.def.id}) ${(k.atlas.bytes / 1048576).toFixed(1)} MB, bake ${k.bakeMs.toFixed(0)} ms`);
+    return k;
+  })();
+  kits.set(sp, k);
+  return k;
+}
+function disposeKit(sp) {
+  const k = kits.get(sp); if (!k) return;
+  kits.delete(sp);
+  k.ready.then(() => { k.mats?.colour.dispose(); k.mats?.depth.dispose(); k.atlas?.dispose?.(); });
+}
+function attachKit(entry, variantOf) {
+  const { sp, f } = entry;
+  if (f.imp) { f.imp.mesh.removeFromParent(); f.imp.mesh.visible = false; }
+  const k = kitFor(sp);
+  k.ready.then(() => {
+    if (!fields.includes(entry)) return;
+    const P = f.placements.map((p, i) => ({ x: p[0], y: p[2] - 0.25, z: p[1], yaw: p[3], scale: p[4], variant: variantOf(i) }));
+    const kf = K.impostorField(k.mats, P, { name: "tree-kit-lab" });
+    kf.group.traverse((o) => { if (o.isInstancedMesh) o.userData.treeLod = 3; });
+    f.group.add(kf.group);
+    entry.kit = { k, kf };
+    const d0 = f.dispose; f.dispose = () => { kf.dispose(); d0(); };
+  });
 }
 
 /** The chain: the SAME built trees and materials as the fields (shared.geoms "<v>:<lod>", the shared leaf / bark
@@ -331,6 +400,7 @@ function applyAll() {
 /** Season hook (stub): 0 summer -> 1 autumn tints the near LODs' leaf colours; the impostor atlas keeps the summer
  *  albedo it was baked with (a rebake per season is the next step: docs/TREES.md). */
 function applySeason(sp) {
+  if (sp.def.seasonal) return;            // the copper beech: its seasons are its sprays (the "copper beech season" control)
   const P = sp.params(), base = sp.def.params;
   const lerp = (a, b) => `#${new THREE.Color(a).lerp(new THREE.Color(b), S.season).getHexString()}`;
   P.topColor = lerp(base.topColor, "#c9a13a"); P.bottomColor = lerp(base.bottomColor, "#5a3a17"); P.translucencyColor = lerp(base.translucencyColor, "#f0b850");
@@ -344,12 +414,18 @@ const VIEWS = {
   "street of 50": () => { camera.position.set(-150, Y0 + 1.7, STREET_Z + 3); controls.target.set(-100, Y0 + 6, STREET_Z); },
   "park cluster (LiDAR G4)": () => { camera.position.set(-40, Y0 + 12, -10); controls.target.set(-90, Y0 + 6, -60); },
   "forest patch (LiDAR M8, 4552)": () => { camera.position.set(0, Y0 + 60, -140); controls.target.set(0, Y0 + 10, -330); },
+  // down the drève from its north end, at eye height
+  "Drève de Lorraine (inventory, 520 copper beeches)": () => {
+    const T = dreveTrees, n = T.reduce((a, t) => (t.z < a.z ? t : a)), m = T.filter((t) => Math.abs(t.z - (n.z + 150)) < 20);
+    const cx = m.reduce((s, t) => s + t.x, 0) / Math.max(1, m.length);
+    camera.position.set(n.x + 2, Y0 + 1.7, n.z - 6); controls.target.set(cx || n.x, Y0 + 10, n.z + 150);
+  },
 };
 /** the preset view of a layout, turned round its target so the sun is behind the camera (front-lit) */
 function resetView() {
   VIEWS[S.layout]?.();
   if (S.layout === "LOD chain side by side") camera.position.set(0, Y0 + 8, Math.sign(lighting.sunDir.z || 1) * 58);   // the row's sunny side
-  else if (S.layout !== "street of 50") {
+  else if (S.layout !== "street of 50" && !S.layout.startsWith("Drève")) {
     const off = camera.position.clone().sub(controls.target), h = Math.hypot(off.x, off.z);
     const sd = new THREE.Vector3(lighting.sunDir.x, 0, lighting.sunDir.z).normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), 0.5);
     camera.position.set(controls.target.x + sd.x * h, camera.position.y, controls.target.z + sd.z * h);
@@ -408,10 +484,19 @@ function lodStateText(d) {
 const ui = new Panel({ title: "Tree Lab" });
 const fs = ui.addFolder("Scene & species");
 fs.add(S, "layout", LAYOUTS).onChange(() => { build(); resetView(); }).listen();
-fs.add(S, "species", ["street", "plane", "beech"]).name("species").onChange(() => build()).listen();
+fs.add(S, "species", ["street", "plane", "beech", "copperbeech"]).name("species").onChange(() => build()).listen();
+fs.add(S, "cbSeason", Object.keys(COPPER_SEASONS)).name("copper beech season").onChange(() => rebuildCopper()).listen();
+fs.add(S, "farKit").name("copper beech far: impostor kit").onChange(() => build()).listen();
 fs.add(S, "variant", ["auto", "auto: 0-3 (plane natural, beech forest)", "auto: 4-5 (plane pollards, beech open-grown)", "0", "1", "2", "3", "4", "5"]).onChange(() => build()).listen();
 fs.add(S, "forestMix", Object.keys(FOREST_MIX).concat(["the selected species"])).name("forest patch species").onChange(() => { if (S.layout.startsWith("forest")) build(); }).listen();
 fs.add(S, "seed", 1, 99999, 1).onChange(() => { for (const k of Object.keys(species)) disposeSpecies(k); build(); });
+/** the copper beech in another season: a new species (its spray, palette and impostor bakes) */
+function rebuildCopper() {
+  const shown = fields.map((x) => x.key);
+  const wasChain = !!chain;
+  if (species.copperbeech) disposeSpecies("copperbeech");
+  if (shown.includes("copperbeech") || (wasChain && speciesKey() === "copperbeech")) build([...new Set(shown.length ? shown : [speciesKey()])]);
+}
 fs.add(S, "height", 4, 40, 0.5).name("LiDAR height (m)").onChange(() => { if (["single tree", "LOD chain side by side", "street of 50"].includes(S.layout)) build(); }).listen();
 fs.add(S, "crown", 1, 14, 0.1).name("LiDAR crown r (m)").onChange(applyAll);
 fs.add(S, "crownFit").name("fit").listen();
@@ -466,6 +551,9 @@ fp.add(S, "mem").name("memory").listen();
 fp.add({ f: () => bench("onoff") }, "f").name("benchmark: trees on / off");
 fp.add({ f: () => bench("species", { pair: ["street", "plane"] }) }, "f").name("benchmark: street vs plane (A/B)");
 fp.add({ f: () => bench("species", { pair: ["street", "beech"] }) }, "f").name("benchmark: street vs beech (A/B)");
+fp.add({ f: () => bench("species", { pair: ["beech", "copperbeech"] }) }, "f").name("benchmark: beech vs copper beech (A/B)");
+fp.add({ f: () => bench("species", { pair: ["plane", "copperbeech"] }) }, "f").name("benchmark: plane vs copper beech (A/B)");
+fp.add({ f: () => flicker() }, "f").name("flicker test (24 frames, strafe)");
 fp.add(S, "bench").name("result").listen();
 
 function drawMask() {
@@ -529,7 +617,10 @@ function memText() {
     if (sp.bake) atlas += sp.bake.size[0] * sp.bake.size[1] * 4 * 2 * 4 / 3;
     const m = sp.params().leafMask; if (m) mask += m.image.width * m.image.height * (m.format === THREE.RGFormat ? 2 : 1) * 4 / 3;
   }
-  return `impostor atlas ${(atlas / 1048576).toFixed(1)} MB · built trees ${(geo / 1048576).toFixed(2)} MB · leaf masks ${(mask / 1048576).toFixed(2)} MB`;
+  let kitB = 0;
+  for (const k of kits.values()) kitB += k.atlas?.bytes ?? 0;
+  const ct = species.copperbeech ? COPPER_TEX[S.cbSeason].gpuBytes : 0;
+  return `impostor atlas ${(atlas / 1048576).toFixed(1)} MB · kit atlas ${(kitB / 1048576).toFixed(1)} MB · built trees ${(geo / 1048576).toFixed(2)} MB · leaf masks ${(mask / 1048576).toFixed(2)} MB · factory textures ${(ct / 1048576).toFixed(1)} MB`;
 }
 function updateInfo() {
   const lines = [`${backend} · layout "${S.layout}" · ${fields.reduce((s, x) => s + (x.f.group.visible ? x.f.count : 0), 0) || (chain ? 4 : 0)} trees`];
@@ -563,6 +654,7 @@ renderer.setAnimationLoop(() => {
   lodEye.value.copy(eye);
   const t0 = performance.now();
   for (const { f } of fields) if (f.group.visible) f.update(eye);
+  for (const k of kits.values()) K.updateView(k.view, camera, renderer);
   chain?.update(eye);
   cpuMs = cpuMs * 0.9 + (performance.now() - t0) * 0.1;
   const focus = S.walking ? walk.target : controls.target;
@@ -617,4 +709,18 @@ function photoView(d = 36, h = 1.6, ty = 9, x = 0, z = 0, turn = 0) {
   const sd = new THREE.Vector3(lighting.sunDir.x, 0, lighting.sunDir.z).normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), turn);
   controls.target.set(x, Y0 + ty, z); camera.position.set(x + sd.x * d, Y0 + h, z + sd.z * d);
 }
-window.lab = { ui, popWalk, photoView, renderer, scene, camera, controls, lighting, S, species, get fields() { return fields; }, get chain() { return chain; }, build, applyAll, bench, alternate, results, startWalk, stopWalk, walkAt, walk, resetView, gpu, lodMorph, IMP, TREE_SHADOW, drawMask, planeLeafMask };
+/** The flicker test (labs/flickerTest.js): frames rendered back to back with time frozen, the camera strafing
+ *  sub-pixel; reports the blinking pixels (shimmer, z-fight, acne) and shows the heat map. */
+async function flicker(o = {}) {
+  controls.autoRotate = false;
+  const renderFrame = () => {
+    lodEye.value.copy(camera.position);
+    for (const { f } of fields) if (f.group.visible) f.update(camera.position);
+    for (const k of kits.values()) K.updateView(k.view, camera, renderer);
+    if (S.post) pipe.render(hazeHook); else renderer.render(scene, camera);
+  };
+  const r = await flickerTest({ renderFrame, canvas: renderer.domElement, camera, controls, frames: 24, move: "strafe", step: 0.0006, ...o });
+  if (o.heat !== false) showHeat(r);
+  return r;
+}
+window.lab = { flicker, kits, COPPER_TEX, dreveTrees, ui, popWalk, photoView, renderer, scene, camera, controls, lighting, S, species, get fields() { return fields; }, get chain() { return chain; }, build, applyAll, bench, alternate, results, startWalk, stopWalk, walkAt, walk, resetView, gpu, lodMorph, IMP, TREE_SHADOW, drawMask, planeLeafMask };
