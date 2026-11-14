@@ -959,6 +959,7 @@ async function main() {
     () => cityFurniture.start({ scene, updaters, log }),             // benches, bike hoops / boxes, bins, glass banks (viewer/furniture2/), ?furniture=old off
     () => cityGardens.start({ scene, updaters, log }),               // front-garden walls, railings, gates, hedges (viewer/gardens/), on by default, ?gardens=0 off
     () => cityStops.start({ scene, updaters, log }),                 // the STIB shelters / poles and the ad panels (viewer/stops/), ?stops=old off
+    () => cityFuel.start({ scene, updaters, renderer, log }),        // the petrol stations (viewer/fuel/), ?fuel=old off
   ]);
   bootStage("landmarks");
   const heroes = [];
