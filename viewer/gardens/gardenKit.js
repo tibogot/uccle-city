@@ -22,14 +22,19 @@ import {
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
 import { boxyPieces, SLOT, CAP_T, PILLAR_W, CAP_W } from "./gardenGeom.js";
+import { hedgeGeometries, hedgeMaterials, hedgeInstances } from "./gardenHedge.js";
 
 export const RAILS = ["spear", "flat", "rings"];
-export const PIECES = ["wall", "cap", "pillar", "pcap", ...RAILS.map((r) => `rail_${r}`), ...RAILS.map((r) => `gate_${r}`), ...RAILS.map((r) => `cargate_${r}`)];
+export const PIECES = ["wall", "cap", "pillar", "pcap", ...RAILS.map((r) => `rail_${r}`), ...RAILS.map((r) => `gate_${r}`), ...RAILS.map((r) => `cargate_${r}`), "hedge", "hedgecard"];
+const IRON = PIECES.slice(4, 4 + 3 * RAILS.length);           // the Blender pieces
 /** LOD bands (m): [switch 0 -> 1, switch 1 -> 2, end]: the walls go by ~220 m (the façade's own painted look takes
  *  over), the ironwork by ~150 m */
 export const BANDS = {
   wall: [35, 90, 220], cap: [35, 90, 220], pillar: [35, 90, 220], pcap: [30, 80, 200],
   rail: [22, 60, 150], gate: [22, 60, 150], cargate: [25, 70, 160],
+  // round 2: the hedges (viewer/gardens/gardenHedge.js): big soft solids, seen far (the end dithers out over 255-300 m);
+  // the leaf cards near only (they shrink into the body by 18 m)
+  hedge: [30, 90, 300], hedgecard: [22, 22, 22],
 };
 export const bandOf = (p) => BANDS[p] || BANDS[p.split("_")[0]];
 const GATE_W = { gate: 1.0, cargate: 1.6 }, GATE_H = { gate: 1.2, cargate: 1.3 };
@@ -69,7 +74,10 @@ export function loadGardenKit(base = new URL("../../", import.meta.url)) {
       pieces[name] = { name, lods, tris: lods.map((g) => (g.index ? g.index.count : g.attributes.position.count) / 3), band: bandOf(name) };
     };
     add("wall", boxy.wall); add("cap", boxy.cap_slab); add("pillar", boxy.pillar); add("pcap", boxy.pcap);
-    for (const p of PIECES.slice(4)) {
+    const hg = hedgeGeometries(), hm = hedgeMaterials();
+    add("hedge", hg.body); add("hedgecard", hg.cards);
+    pieces.hedge.mats = hm.body; pieces.hedgecard.mats = [hm.card];
+    for (const p of IRON) {
       const lods = [0, 1, 2].map((l) => { const r = raw[`${p}_lod${l}`]; if (!r) throw new Error(`gardens kit: ${p}_lod${l} missing`); return mergePrims(r); });
       add(p, lods);
     }
@@ -182,7 +190,7 @@ function materials() {
 function vec4c(r, g, b) { return vec3(r, g, b); }
 
 // ------------------------------------------------------------------------------------------------ data -> instances
-const STRIDE = 20;                     // 16 (matrix, column major) + 4 (iVar)
+export const STRIDE = 24;              // 16 (matrix, column major) + 4 (iVar) + 4 (iAux: the hedges' world side direction; 0 elsewhere)
 /** a style's iVar */
 function styleVar(st, rnd) {
   return [st.brick ?? 0, st.cap === 1 ? 1 : 0, (st.paint ?? 0) + (st.gilded ? 4 : 0), rnd];
@@ -194,13 +202,13 @@ const rnd01 = (x, z) => { let h = Math.imul(Math.round(x * 100) | 0, 73856093) ^
  * stand: { wall: [mat16...], pillar: [...], gate: [...] } (collision stand-ins: unit boxes), counts }.
  * Segments: [x0, y0, z0, x1, y1, z1, style, wallH]; pillars: [x, y, z, yaw, h, style]; gates: [x, y, z, yaw, w, kind, open, style].
  */
-export function gardenInstances(doc, groundAt = null, { hedgeFronts = true } = {}) {
+export function gardenInstances(doc, groundAt = null, { hedgeFronts = true, hedges = true } = {}) {
   const L = Object.fromEntries(PIECES.map((p) => [p, []]));
   const SW = [], SP = [], SG = [];
   const styles = doc.styles || [];
   const segs = groundAt ? settle(doc, groundAt) : (doc.segs || []);
   const pillars = groundAt ? settlePillars(doc, groundAt) : (doc.pillars || []);
-  const push = (arr, m, v) => { for (let k = 0; k < 16; k++) arr.push(m[k]); arr.push(v[0], v[1], v[2], v[3]); };
+  const push = (arr, m, v, aux = null) => { for (let k = 0; k < 16; k++) arr.push(m[k]); arr.push(v[0], v[1], v[2], v[3]); if (aux) arr.push(aux[0], aux[1], aux[2], aux[3]); else arr.push(0, 0, 0, 0); };
   // mitres: consecutive segments of one run that share an end (to 2 cm) and turn < 70 deg overlap by w/2 tan(a/2)
   const ext = new Float32Array(segs.length * 2);
   for (let i = 0; i + 1 < segs.length; i++) {
@@ -270,6 +278,22 @@ export function gardenInstances(doc, groundAt = null, { hedgeFronts = true } = {
       const mm = rot(x, y, z, yaw, 1, 1, 1);
       for (let k = 0; k < 16; k++) SG.push(shear(x, y, z, c * w, 0, -sn * w, H)[k]);
       void mm;
+    }
+  }
+  // the hedges: ~1 m modules on the drawn ground (gardenHedge.js); the leaf cards ride on the same instances
+  if (hedges && groundAt && doc.hedges?.length) {
+    const shearW = (out, x0, y0, z0, dx, dy, dz, sy, w, v) => {
+      const lh = Math.hypot(dx, dz) || 1e-6;
+      m.set([dx, dy, dz, 0, 0, sy, 0, 0, -dz / lh * w, 0, dx / lh * w, 0, x0, y0, z0, 1]);
+      push(out, m, v, [-dz / lh, dx / lh, 0, 0]);
+    };
+    hedgeInstances(doc.hedges, groundAt, shearW, L.hedge);
+    L.hedgecard = L.hedge;
+    // collision stand-ins: each module as a wall box (the unit stand-in is 30 cm thick: scaled to the hedge's width)
+    for (let o = 0; o < L.hedge.length; o += STRIDE) {
+      const q = L.hedge.slice(o, o + 16);
+      q[8] /= 0.3; q[10] /= 0.3;                               // (the module's z column has the hedge's width as length)
+      for (let k = 0; k < 16; k++) SW.push(q[k]);
     }
   }
   const inst = {}, cells = {};
@@ -349,15 +373,16 @@ function sortCells(a) {
  *  to draw is not visible. */
 export class GardenPool {
   constructor(piece, mats, group) {
-    this.piece = piece; this.cap = 0; this.meshes = [];
+    this.piece = piece; this.cap = 0; this.meshes = []; this.aux = piece.name === "hedge";
     this.lod = piece.lods.map((geo, k) => {
       const g = new THREE.BufferGeometry();
       for (const a of Object.keys(geo.attributes)) g.setAttribute(a, geo.attributes[a]);
       g.setIndex(geo.index);
-      const m = new THREE.InstancedMesh(g, mats.opaque[k], 1);
+      const m = new THREE.InstancedMesh(g, (piece.mats || mats.opaque)[k], 1);
       // shadows: the walls / pillars from LOD0 + 1, the ironwork from LOD0 only (its shadow dithers out across the 0-1
       // hand-over: no far shadows for thin bars)
-      m.castShadow = /^(rail|gate|cargate)_/.test(piece.name) ? k === 0 : k < 2;
+      // (the hedges' bodies from LOD0 + 1 like the walls; their leaf cards never: the body carries the shadow)
+      m.castShadow = piece.name === "hedgecard" ? false : /^(rail|gate|cargate)_/.test(piece.name) ? k === 0 : k < 2;
       m.count = 0; m.visible = false; m.receiveShadow = true; m.frustumCulled = true;
       m.boundingSphere = new THREE.Sphere(); m.name = `gardens-${piece.name}-lod${k}`;
       group.add(m); this.meshes.push(m);
@@ -373,6 +398,7 @@ export class GardenPool {
       m.instanceMatrix = new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 16), 16);
       m.geometry.setAttribute("iBand", new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 4), 4));
       m.geometry.setAttribute("iVar", new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 4), 4));
+      if (this.aux) m.geometry.setAttribute("iAux", new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 4), 4));
     }
   }
   /** tiles: [{ inst: { <piece>: Float32Array }, cells, fade }]; c = the camera position */
@@ -392,7 +418,7 @@ export class GardenPool {
     this.grow(total);
     this.lod.forEach((m, li) => {
       const d0 = Math.max(0, lims[li][0]), d1 = lims[li][1];
-      const M = m.instanceMatrix.array, B = m.geometry.attributes.iBand.array, Vv = m.geometry.attributes.iVar.array;
+      const M = m.instanceMatrix.array, B = m.geometry.attributes.iBand.array, Vv = m.geometry.attributes.iVar.array, X = this.aux ? m.geometry.attributes.iAux.array : null;
       let n = 0, x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, z0 = Infinity, z1 = -Infinity, ext = 0;
       for (let q = 0; q < live.length; q += 2) {
         const t = live[q], cl = live[q + 1], a = t.inst[kind];
@@ -408,6 +434,7 @@ export class GardenPool {
           M.set(a.subarray(o, o + 16), n * 16);
           B[n * 4] = s1; B[n * 4 + 1] = s2; B[n * 4 + 2] = end; B[n * 4 + 3] = t.fade;
           Vv[n * 4] = a[o + 16]; Vv[n * 4 + 1] = a[o + 17]; Vv[n * 4 + 2] = a[o + 18]; Vv[n * 4 + 3] = a[o + 19];
+          if (X) { X[n * 4] = a[o + 20]; X[n * 4 + 1] = a[o + 21]; X[n * 4 + 2] = a[o + 22]; X[n * 4 + 3] = a[o + 23]; }
           x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); z0 = Math.min(z0, z); z1 = Math.max(z1, z);
           ext = Math.max(ext, half);
           n++;
@@ -417,7 +444,7 @@ export class GardenPool {
       if (!n) return;
       m.boundingSphere.center.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
       m.boundingSphere.radius = Math.hypot(x1 - x0, y1 - y0, z1 - z0) / 2 + this.r + ext + 2;
-      for (const [att, w] of [[m.instanceMatrix, 16], [m.geometry.attributes.iBand, 4], [m.geometry.attributes.iVar, 4]]) {
+      for (const [att, w] of [[m.instanceMatrix, 16], [m.geometry.attributes.iBand, 4], [m.geometry.attributes.iVar, 4], ...(X ? [[m.geometry.attributes.iAux, 4]] : [])]) {
         att.clearUpdateRanges(); att.addUpdateRange(0, n * w); att.needsUpdate = true;
       }
     });

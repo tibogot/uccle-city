@@ -11,7 +11,6 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { Panel as GUI } from "../viewer/panelUI.js";
 import { loadGardenKit, GardenPool, PIECES, gardenInstances, bandOf } from "../viewer/gardens/gardenKit.js";
 import { CAP_T } from "../viewer/gardens/gardenGeom.js";
-import { buildHedges } from "../viewer/foliage/hedges.js";
 import { wind } from "../viewer/foliage/wind.js";
 import { lodEye } from "../viewer/lodFade.js";
 import { env } from "../viewer/lighting.js";
@@ -127,17 +126,16 @@ function labDoc(x0 = 0, out = { styles: [], segs: [], pillars: [], gates: [], he
 const kit = await loadGardenKit();
 const group = new THREE.Group(); scene.add(group);
 const pools = PIECES.map((p) => new GardenPool(kit.pieces[p], kit.mats, group));
-let hedgeGroup = null, tiles = [], docNow = null;
+let tiles = [], docNow = null;
 function rebuild() {
   buildGround();
   let doc = { styles: [], segs: [], pillars: [], gates: [], hedges: [] };
   if (P.layout === "street") labDoc(0, doc);
   else for (let i = 0; i < 8; i++) labDoc(i * 60, doc);
   docNow = doc;
-  const t = gardenInstances(doc);
+  // (round 2: the hedges are the kit's instanced modules, viewer/gardens/gardenHedge.js, as in the city)
+  const t = gardenInstances(doc, (x, z) => ground(x, z), { hedges: P.hedges, hedgeFronts: true });
   tiles = [{ ...t, fade: 1 }];
-  if (hedgeGroup) { hedgeGroup.removeFromParent(); hedgeGroup.traverse((o) => o.geometry?.dispose?.()); hedgeGroup = null; }
-  if (P.hedges && doc.hedges.length) { const h = buildHedges(doc.hedges, (x, z) => ground(x, z)); hedgeGroup = h.group; scene.add(hedgeGroup); }
   regather(true);
 }
 const last = new THREE.Vector3(1e9, 0, 0);
@@ -155,7 +153,7 @@ function applyNight() {
 const gui = new GUI({ title: "Gardens Lab" });
 gui.add(P, "layout", ["street", "LOD row"]).onChange(rebuild);
 const slopeCtl = gui.add(P, "slope", 0, 0.12, 0.005).name("street slope").onChange(rebuild);
-gui.add(P, "hedges").name("hedges (foliage)").onChange(rebuild);
+gui.add(P, "hedges").name("hedges").onChange(rebuild);
 gui.add(P, "houses").onChange(rebuild);
 gui.add(P, "night").onChange(applyNight);
 gui.add(P, "shadows").onChange((v) => { for (const p of pools) p.lod.forEach((m, k) => { m.castShadow = v && (/^(rail|gate|cargate)_/.test(p.piece.name) ? k === 0 : k < 2); }); });
