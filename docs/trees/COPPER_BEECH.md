@@ -185,6 +185,9 @@ under them, on the lab's lawn the last step shows (the lab, not the tree). Beech
 
 ## Weak points / next
 
+- 2026-11-14 (`claude/tree-look`, docs/TREES.md §8): the leaf look (detail fading with distance, soft rim, gaps,
+  the golden-hour palette), no old impostor bake, a 12.3 MB kit atlas. The points below predate it.
+
 - **Winter**: the branch network is thin (LOD 1 and 2 drop the secondaries' bark, which a bare tree needs at every
   distance); one marcescent density for all trees (young / clipped ones should hold many more leaves).
 - **Late summer** turns bronze-green (August photo): add it as a fifth season or a summer slider.

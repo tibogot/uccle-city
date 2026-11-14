@@ -559,3 +559,128 @@ is the chain's own, a thing to look at separately.
    never be shipped raw.
 6. **Tool ideas.** A photo overlay in the tree lab (as in the church lab); the pop meter as a CI-style check per
    species.
+
+## 8. The leaf look of the factory-sprayed species, and their memory (2026-11-14, branch `claude/tree-look`)
+
+Lab only (the copper beech and the horse chestnut). The plane, the beech and the city's street trees are unchanged:
+the city at Saint-Job loads clean with the same street trees (`docs/trees/look/city_stjob_unchanged.jpg`).
+The owner: "the trees are cool" but "your foliage looks a bit weird" next to the old trees, and "I hope they are not
+too heavy for the city". Code: `viewer/treeLeafLook.js` (new), hooked through `def.leafLook` in `makeSpecies`, and the
+species' `look` option (`copperBeechDef` / `horseChestnutDef(seed, tex, { look })`, default on). The lab keeps the
+species as first merged as `copperbeech0` / `horsechestnut0` ("before the look": species list + A/B buttons), and
+`?look=0` puts the "before" under the plain names. Live knobs: `window.lab.LOOK` (uniforms).
+
+### What changed in the look
+
+| problem (coordinator's analysis) | change |
+|---|---|
+| two styles mixed: a crisp photographic spray with its own per-leaf normal map (0.75) over the soft clump domes: stickers on balls | `fadingLeafAtlas`: the spray's per-leaf terms fade with the card's **pixel footprint** (the mip level from the uv derivatives, `log2(texels per pixel)` 1.7 -> 3.4: crisp to ~10 m, the plain clump dome from ~30 m; continuous, no distance band): its normal map (normalK x detail), each leaf's own colour (35 % of it kept far), the thickness in the light through. Node-valued `params.leafAtlas` fields: the vendor reads them unchanged |
+| leaves too readable from far | the same fade (no per-leaf light and dark), and the **shade side lifted** (`fill` 0.5 -> 1.6 chestnut, 0.55 -> 1.6 copper; spring 1.15-1.3, autumn / winter 1.2-1.3): the gaps between the leaves are no longer black, so the leaf shapes stop reading as cut-outs on a dark ground |
+| a hard, jagged crown silhouette | `softenRim`: the cards at the crown's silhouette (centre on the crown's outer shell, the shell seen edge-on) **shrink toward their centre** by a per-card random share (up to 35 %), continuous with the view (no pops), fading out over 140-260 m (the far LOD and the impostor bake keep the plain crown: the hand-over is untouched). The crown of each built tree comes in through an object uniform keyed by its shared index buffer |
+| a heavy, closed, dark inside | `crownGaps`: outer pads left out in smooth clusters (chestnut 17 %, copper 8 %: the copper beech is a dense tree), their secondary branch kept (limbs show in the gaps); the inner layer thinned (18 % -> 8 % / 12 %); the occlusion floor up (0.45 -> 0.56, 0.55 -> 0.62); the chestnut's underside x 1.15 |
+| a coral copper beech at golden hour | a wine-brown summer palette (`#42252a` / `#4a2a30`, was `#4e2a30` / `#4a2830`), less sheen (leaf roughness 0.7 -> 0.86: the warm low sun's sheen paled the maroon to salmon), a wine glow at 0.24 (was a coral `#d04a3c` at 0.35), a neutral fill; its secondaries and twigs darker than the silver bole (pale lines read as straw through the new gaps) |
+
+Measured and dropped (softer still, but): eroding the rim cards' ALPHA left dithered "dust" where the cut alpha lay
+flat near the threshold; a mid-range alpha mip bias (+0.6) and a wider coverage ramp (x 2.5) tripled the flicker test's
+blinking pixels (the Drève near 79 -> 175 ppm); building the outermost cards 25 % smaller (CPU) raised it from 48 to
+79 ppm (more, smaller leaf-sky edges). None of them ships.
+
+Screenshots (`docs/trees/look/`, 1400 x 850, 50 deg lens, the camera on the sunny side; tiles 5, 15, 40, 120 m, top row
+before, bottom row after): `chestnut_midday_before_after.jpg`, `chestnut_golden_before_after.jpg`,
+`copper_midday_before_after.jpg`, `copper_golden_before_after.jpg`; `old_street_tree_vs_new.jpg` (the city's street tree
+against the new chestnut at 15 / 40 m); `seasons_after_40m.jpg` (chestnut spring, copper autumn);
+`kit_city_vs_lab_450m.jpg` (the far kit, below); `city_stjob_unchanged.jpg`.
+
+Against the old street tree: both now read as soft, lit clumps with a gradient from top to bottom; the new trees keep
+their leaf shapes at the edge and up close, the old one has smaller, simpler leaves. Against reference photos
+(Wikimedia Commons; looked at, not stored, not traced):
+- [Aesculus hippocastanum Paris 3](https://commons.wikimedia.org/wiki/File:Aesculus_hippocastanum_Paris_3.jpg)
+  (Awinch1001, CC0): looking up into a street chestnut: sky through many gaps, dark sinuous limbs. Our 5 m view now has
+  the gaps and the limbs, but our limbs are paler and straighter, and the real leaves seen from below glow yellow-green
+  with the light through them (ours stay mid green: the translucency only works toward the sun).
+- [Fagus sylvatica 'Atropunicea' - Mariemont 1](https://commons.wikimedia.org/wiki/File:Fagus_sylvatica_%27Atropunicea%27_-_Mariemont_1.jpg)
+  (Jean-Pol Grandmont, CC BY 3.0): sunlit copper beech leaves really are orange-copper in a low sun; what read wrong
+  before was the pale, pinkish sheen, not the warmth.
+No Street View look this round.
+
+### Memory
+
+Before, each factory species had TWO far-tree atlases: the impostor kit's (16 x 16 hemi views x 64 px, 6 variants, two
+RGBA8 arrays with mips: **63.8 MB**) and the old `viewer/impostors.js` atlas that `makeSpecies` still baked although
+nothing drew it once the kit was on (**64 MB**).
+- **No old bake** for species whose far trees are the kit (`def.noImpostorBake`; the lab turns it back on for
+  `?farkit=0`; the LOD chain's 4th slot then shows the kit's impostor).
+- **A smaller kit atlas** (`LAB_KIT` in `labs/tree-lab.js`): 12 x 12 views x 48 px (40 inside the 4 px gutter), and the
+  aux array (normal, depth, leaf / AO flag: smooth data) at **half size**, from the colour's mip 1 down (new `bakeAtlas`
+  option `auxHalf`, the material samples it one level down; default off: the city's street-tree kit is unchanged):
+  **12.3 MB** per species (576 x 576 x 6 layers, 3 levels). `?kit=city` bakes the city's preset (A/B).
+- The lab loads a season's textures when it is picked (it preloaded all four of both species).
+
+| per species | before | after |
+|---|---|---|
+| old impostor atlas | 64.0 MB | 0 |
+| kit atlas | 63.8 MB | 12.3 MB |
+| factory textures (one season) | 5.3 MB | 5.3 MB |
+| built trees (6 variants x 3 LODs) | 3.4 MB | 3.1 MB |
+| **far-tree atlases for 8 species** | **1,022 MB** | **99 MB** |
+
+Far atlases + textures for 8 such species: ~1,065 MB -> ~141 MB. Whole-tab check with `nvidia-smi` (both species built
+with their kits, street of 50, minus the blank tab; another agent shared the GPU, so +-100 MB): before +1,277 MiB,
+after +634 MiB.
+
+The hand-over with the smaller kit (`kit_city_vs_lab_450m.jpg`): the same crown, a little softer under a 5 deg
+telephoto (10x the normal lens), much the same at 20 deg; the pop meter's impostor hand-over 1.16 % (copper; 1.27 %
+with the city's kit). A shared atlas across species (one array, per-species layers) saves no bytes by itself (the
+layers are the same) and needs per-layer shading params in `treeShade`: not done.
+
+### Cost (lab, 2026-11-14, 1400 x 850)
+
+**Triangles per tree** (mean of the 6 variants, before -> after): copper beech LOD 0 5,928 -> 5,737 (873 -> 777 cards),
+LOD 1 2,128 -> 2,024, LOD 2 775 -> 723; horse chestnut LOD 0 4,590 -> 4,244 (860 -> 687 cards), LOD 1 2,024 -> 1,837,
+LOD 2 760 -> 667. Draws unchanged (the Drève 76, the chestnut avenue 72). Shader: + a fwidth / log2 per leaf pixel and
+~25 vertex ALU for the rim; no extra texture tap.
+
+**GPU** (`tools/perf/preflight.ps1` YELLOW: the GPU 40 % busy at rest from another agent's tab, so read with care; A/B
+alternated in one page, 5 rounds x 2.5 s, after minus before): street of 50, copper -0.30 ms (spread -2.1..+1.4),
+chestnut +0.08 ms (-4.1..+2.5); the Drève (520 trees) -0.10 ms (-0.46..+0.26); the chestnut avenue (276) -0.12 ms
+(-0.39..+0.07). No measurable cost; if anything cheaper (fewer cards).
+
+**Flicker** (`labs/flickerTest.js`, 24 frames, strafe 0.6 mm, midday, before / after alternated in one page):
+
+| view | copper beech | horse chestnut |
+|---|---|---|
+| near (eye height down the layout) | 48 -> 49 ppm | 24 -> 13 ppm |
+| mid (150 m up, ~200 m away) | 70 -> 68 ppm | 22 -> 8 ppm |
+| far (the kit's impostors) | 0 -> 0 | 0 -> 0 |
+
+(The test's absolute numbers move with the lab's auto-exposure: compare within one run only.)
+
+**LOD walk** (pop meter, copper beech, a 30 m tree at 45 m, 40 deg lens, max step change %): morph 0->1 0.62 (0.81
+before), 1->2 0.92 (1.04), impostor hand-over 1.16 (1.27), the end dissolve 12.2 (14.5: the lab's lawn).
+
+### Shared files touched (for the merge)
+
+- `viewer/treesStylized.js` `makeSpecies.calibrate()`: `def.leafLook?.(shared, PARAMS)` after the `maxCardSpin` block;
+  the old impostor bake skipped when `def.noImpostorBake` (`else if (useImpostors && renderer && !def.noImpostorBake)`).
+  Species without either: unchanged.
+- `viewer/impostorKit/bake.js`: option `auxHalf` (aux layers from level 1, their own size and level count; `bytes`;
+  `atlas.auxHalf`). `viewer/impostorKit/material.js`: the aux taps one level down when `atlas.auxHalf` (`lodB`). Both
+  default off: the city's kit and the impostor lab unchanged.
+- `labs/tree-lab.js`: header; `LEAF_LOOK` import; `LOOK`, `kitDef`, `DEFS` (+ `copperbeech0`, `horsechestnut0`),
+  `seasonTex` (lazy textures, replaces the two preload loops); `SPECIES_NAMES`; the field loop's `attachKit` by
+  `sp.def.id`; `LAB_KIT` + `kitFor`; `buildChain`'s 4th slot (the kit's impostor when there is no old bake; label;
+  dispose); panel (species list, the far-kit toggle disposes the factory species, async `rebuildSeasonal`, `FACTORY`,
+  2 A/B buttons); `memText`; `window.lab` (+ `LOOK`, `rebuildSeasonal`, `seasonTex`).
+- `viewer/treesCopperBeech.js`, `viewer/treesHorseChestnut.js`: the `look` option (shape: `gaps`, `inner`, `aoFloor`;
+  def: `fadingLeafAtlas`, `leafLook`, `noImpostorBake`, fill; the copper beech's palette, roughness and twig colour).
+  New: `viewer/treeLeafLook.js`, `docs/trees/look/`.
+
+### Left
+
+- The light through the leaves from BELOW (looking up into a crown, real leaves glow yellow-green); our translucency
+  only works toward the sun.
+- The chestnut's limbs: paler and straighter than the photos' dark, sinuous ones.
+- The copper beech's thin secondaries still catch a low sun as bright lines in places.
+- 12 x 12 x 48 is softer than 16 x 16 x 64 under a telephoto; if the city's views zoom past ~20 deg, 12 x 12 x 56
+  (~16 MB) is the next step. KTX2 / BC7 for the kit atlas would cut another 4x but needs a GPU encoder.
+- The look is a per-species choice: new species pass `look` (gaps, fill, rim) the same way.
