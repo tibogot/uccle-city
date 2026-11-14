@@ -54,6 +54,7 @@ import { cityKit } from "./facadeKit/cityKit.js";
 import { treeKit } from "./treeKitCity.js";
 import { cityStreetLife } from "./streetlife/cityStreetLife.js";
 import { cityStops } from "./stops/cityStops.js";
+import { cityFuel } from "./fuel/cityFuel.js";
 import { cityFurniture } from "./furniture2/cityFurniture.js";
 import { cityGardens } from "./gardens/cityGardens.js";
 import { deckHeight } from "./streets/bridgeDecks.js";
@@ -490,6 +491,7 @@ function tileData(entry, lite = false) {
   entry = { ...entry, hide: [...new Set(HIDE_BU_IDS)].sort(), ponds: PONDS,   // (sorted: the landmarks push in any order now, and ?tilecache=1 keys on it)
     surface: ROAD_SURFACES, pits: params.get("pits") !== "0",   // ?pits=0: no tree pits (A/B)
     kit: cityKit.on && !lite, kitExclude: cityKit.exclude,                                           // the façade kit (viewer/facadeKit/), ?kit=0 off
+    fuelClear: cityFuel.on ? cityFuel.clear : null,                                                 // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js)
     streetlife: cityStreetLife.on && !lite,                                                          // the street life's shopfronts (viewer/streetlife/), ?streetlife=0 off
     grass: cityGrass.on && !lite,                                                                    // ?grass=1: the grass types raster, built in the worker
     rail: TRAINS, bridges2: BRIDGES2, railFix: params.get("railcar") !== "0", driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX, padRoads: params.get("padroads") !== "0",
@@ -596,6 +598,7 @@ async function loadLiteTile(entry, group) {
   if (SMOOTH && entry.files.features) {
     const f = await getJSON(entry.files.features).catch(() => null);
     const b = { x0: entry.bounds.x[0], x1: entry.bounds.x[1], z0: entry.bounds.z[0], z1: entry.bounds.z[1] };
+    if (f?.trees) f.trees = cityFuel.treesClear(f.trees);              // as the full tile (viewer/fuel/cityFuel.js)
     const ys = new Map((f?.trees || []).map((t) => [`${t.x},${t.z}`, t.y]));
     trees = f?.trees?.length && ys.values().next().value != null
       ? buildFarTreeField(f.trees, (x, z) => ys.get(`${x},${z}`), (x, z) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1) : null;
@@ -631,6 +634,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const t0 = performance.now();
   // the street-life layer (viewer/streetlife/cityStreetLife.js) builds in its own worker meanwhile, into the features group
   const streetLifeP = cityStreetLife.tile(entry.name, own.features);
+  const fuelP = cityFuel.fetchTile(entry.name);         // the petrol stations (viewer/fuel/cityFuel.js), ?fuel=old off
   const stopsP = cityStops.fetchTile(entry.name);       // the STIB stops and ad panels (viewer/stops/cityStops.js), ?stops=old off
   const furnP = cityFurniture.fetchTile(entry.name);    // benches, bike hoops / boxes, bins, glass banks (viewer/furniture2/), ?furniture=old off
   const gardensP = cityGardens.fetchTile(entry.name);   // front-garden walls, railings, gates, hedges (viewer/gardens/), on by default, ?gardens=0 off
@@ -682,6 +686,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const fit = d.road.surfaceData ? streetFit(d.road.surfaceData) : null;
   // a tree on measured ground stands on it (in its pit, viewer/surfaces.js), not on the terrain carved under it
   const treeGround = fit ? (x, z) => (fit.classAt(x, z) >= 0 ? hm.surface(x, z) + CARVE + fit.lift(x, z) : hm.surface(x, z)) : undefined;
+  if (feats?.trees) feats.trees = cityFuel.treesClear(feats.trees);   // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js)
   const fo = featureObjects(feats, hm, bounds, d.road.surfaceStats ? 0.02 : 0.012, treeGround);
   own.features.add(fo);
   await frame("rails");
@@ -711,6 +716,8 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   own.features.add(tram.group);
   const stopCounts = cityStops.addTile(entry.name, stopsDoc, own.features, { shelters: tram.shelterSites });
   const furnCounts = cityFurniture.addTile(entry.name, furnDoc, own.features);
+  const fuelCounts = cityFuel.addTile(entry.name, await fuelP, own.features);
+  if (fuelCounts) say(`fuel: ${fuelCounts.stations} petrol station(s) (data/fuel, viewer/fuel)`);
   const gardenCounts = cityGardens.addTile(entry.name, await gardensP, own.features, (x, z) => hm.surface(x, z));
   if (gardenCounts) say(`gardens: ${Object.entries(gardenCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/gardens, viewer/gardens)`);
   if (furnCounts) say(`furniture2: ${Object.entries(furnCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/furniture, viewer/furniture2)`);
@@ -743,6 +750,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     cityKit.removeTile(entry.name);
     cityFurniture.removeTile(entry.name);           // its instances leave the furniture pools
     cityGardens.removeTile(entry.name);             // its instances leave the garden pools (stand-ins and hedges go with the groups)
+    cityFuel.removeTile(entry.name);                // its instances leave the fuel pools (its slabs / stand-ins go with the groups below)
     cityStops.removeTile(entry.name);               // its instances leave the stop pools (its stand-ins go with the groups below)
     cityStreetLife.removeTile(entry.name);          // its atlas pages and pooled props (its meshes go with the groups below)
     cityGrass.removeTile(entry.name);               // ?grass=1: out of the grass field

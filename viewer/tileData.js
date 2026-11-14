@@ -222,6 +222,12 @@ export async function buildTileData(entry, base) {
   // no LiDAR "tree" in their streets; the ones over a bore moved beside it (they would stand on the street's ground, inside)
   const tunnels = entry.tunnels !== false ? await step("tunnel fetch", () => loadTunnels(base)) : null;
   if (tunnels?.length && feats.trees?.length) feats.trees = tunnelTrees(tunnels, feats.trees);
+  // the petrol stations (viewer/fuel/, data/fuel/summary.json "clear"): no LiDAR "tree" on a canopy roof (the UrbIS
+  // canopy-height model reads a 5 m canopy as crowns); the drive / walk colliders are built from this same list
+  if (entry.fuelClear?.length && feats.trees?.length) {
+    const inRing = (r, x, z) => { let k = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) k = !k; } return k; };
+    feats.trees = feats.trees.filter((t) => t.source !== "urbis-chm" || !entry.fuelClear.some((r) => inRing(r, t.x, t.z)));
+  }
   // ?roads=surface: the measured UrbIS street surfaces of this tile (surfaces.json), when the tile has them
   const surfDoc = (entry.surface || entry.grass) && F.surfaces ? await step("fetch surfaces", () => get(F.surfaces)) : null;
   const surf = entry.surface ? surfDoc : null;

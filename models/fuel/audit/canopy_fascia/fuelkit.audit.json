@@ -1,0 +1,114 @@
+{
+ "summary": {
+  "triangles": 84,
+  "vertices_welded": 52,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 2,
+  "counts": {
+   "sliver": 2
+  },
+  "ms": 10
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.01,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "canopy_fascia",
+   "slot": "trim_alu",
+   "triangles": 36,
+   "maxDistance": 120
+  },
+  {
+   "name": "canopy_fascia",
+   "slot": "brand_primary",
+   "triangles": 12,
+   "maxDistance": 120
+  },
+  {
+   "name": "canopy_fascia",
+   "slot": "canopy_white",
+   "triangles": 12,
+   "maxDistance": 120
+  },
+  {
+   "name": "canopy_fascia",
+   "slot": "brand_secondary",
+   "triangles": 12,
+   "maxDistance": 120
+  },
+  {
+   "name": "canopy_fascia",
+   "slot": "led_strip",
+   "triangles": 12,
+   "maxDistance": 120
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.167,
+     -0.008,
+     0.027
+    ],
+    "part": "canopy_fascia/trim_alu",
+    "aspect": 69,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.167,
+     -0.004,
+     0.025
+    ],
+    "part": "canopy_fascia/trim_alu",
+    "aspect": 69,
+    "longest": 1
+   }
+  ]
+ },
+ "file": "fuelkit.glb"
+}

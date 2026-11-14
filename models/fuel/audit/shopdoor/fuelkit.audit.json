@@ -1,0 +1,2827 @@
+{
+ "summary": {
+  "triangles": 1020,
+  "vertices_welded": 532,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 186,
+  "counts": {
+   "sliver": 184,
+   "nonmanifold": 2,
+   "backtoback": 23,
+   "seam": 11
+  },
+  "ms": 69
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.01,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "shopdoor",
+   "slot": "trim_alu",
+   "triangles": 648,
+   "maxDistance": 120
+  },
+  {
+   "name": "shopdoor",
+   "slot": "plastic_dark",
+   "triangles": 108,
+   "maxDistance": 120
+  },
+  {
+   "name": "shopdoor",
+   "slot": "shop_interior",
+   "triangles": 24,
+   "maxDistance": 120
+  },
+  {
+   "name": "shopdoor",
+   "slot": "steel_brushed",
+   "triangles": 216,
+   "maxDistance": 120
+  },
+  {
+   "name": "shopdoor__glass",
+   "slot": "glass",
+   "triangles": 24,
+   "maxDistance": 120
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.745,
+     1.981,
+     0.139
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.747,
+     0.969,
+     0.139
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.749,
+     1.981,
+     0.137
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.749,
+     0.969,
+     0.135
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.745,
+     0.969,
+     0.001
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.747,
+     1.981,
+     0.001
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.749,
+     0.969,
+     0.003
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.749,
+     1.981,
+     0.005
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.691,
+     0.969,
+     0.005
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.691,
+     1.981,
+     0.003
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.693,
+     0.969,
+     0.001
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.695,
+     1.981,
+     0.001
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.695,
+     0.969,
+     0.139
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.693,
+     1.981,
+     0.139
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.691,
+     0.969,
+     0.137
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.691,
+     1.981,
+     0.135
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.712,
+     1.981,
+     0.14
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 63,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.728,
+     0.969,
+     0.14
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 63,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.728,
+     1.981,
+     0
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 63,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.712,
+     0.969,
+     0
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 63,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.695,
+     1.981,
+     0.139
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.693,
+     0.969,
+     0.139
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.691,
+     1.981,
+     0.137
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.691,
+     0.969,
+     0.135
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.695,
+     0.969,
+     0.001
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.693,
+     1.981,
+     0.001
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.691,
+     0.969,
+     0.003
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.691,
+     1.981,
+     0.005
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.749,
+     0.969,
+     0.005
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.749,
+     1.981,
+     0.003
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.747,
+     0.969,
+     0.001
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.745,
+     1.981,
+     0.001
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.745,
+     0.969,
+     0.139
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.747,
+     1.981,
+     0.139
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.749,
+     0.969,
+     0.137
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.749,
+     1.981,
+     0.135
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.728,
+     1.981,
+     0.14
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 63,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.712,
+     0.969,
+     0.14
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 63,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.712,
+     1.981,
+     0
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 63,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.728,
+     0.969,
+     0
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 63,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.451,
+     0.005
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.451,
+     0.003
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.453,
+     0.001
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.455,
+     0.001
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.549,
+     0.005
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.549,
+     0.003
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.547,
+     0.001
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.545,
+     0.001
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.451,
+     0.135
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.451,
+     0.137
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.453,
+     0.139
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.455,
+     0.139
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.549,
+     0.135
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.549,
+     0.137
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.547,
+     0.139
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.545,
+     0.139
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.921,
+     0.005
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.921,
+     0.003
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.923,
+     0.001
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.925,
+     0.001
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.999,
+     0.005
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.999,
+     0.003
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.997,
+     0.001
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.995,
+     0.001
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.921,
+     0.135
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.921,
+     0.137
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.923,
+     0.139
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.925,
+     0.139
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.999,
+     0.135
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.999,
+     0.137
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.997,
+     0.139
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.995,
+     0.139
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.052,
+     1.642,
+     0.16
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.053,
+     0.838,
+     0.159
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.054,
+     1.642,
+     0.158
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.055,
+     0.838,
+     0.157
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.052,
+     0.838,
+     0.11
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.053,
+     1.642,
+     0.111
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.054,
+     0.838,
+     0.112
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.055,
+     1.642,
+     0.113
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.005,
+     0.838,
+     0.113
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.006,
+     1.642,
+     0.112
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.007,
+     0.838,
+     0.111
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.008,
+     1.642,
+     0.11
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.008,
+     0.838,
+     0.16
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.007,
+     1.642,
+     0.159
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.006,
+     0.838,
+     0.158
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.005,
+     1.642,
+     0.157
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.055,
+     1.642,
+     0.142
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 57,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.055,
+     0.838,
+     0.128
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 57,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.023,
+     1.642,
+     0.16
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 57,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.037,
+     0.838,
+     0.16
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 57,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.037,
+     1.642,
+     0.11
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 57,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.023,
+     0.838,
+     0.11
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 57,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.005,
+     1.642,
+     0.128
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 57,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.005,
+     0.838,
+     0.142
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 57,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.008,
+     1.642,
+     0.16
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.007,
+     0.838,
+     0.159
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.006,
+     1.642,
+     0.158
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.005,
+     0.838,
+     0.157
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.008,
+     0.838,
+     0.11
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.007,
+     1.642,
+     0.111
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.006,
+     0.838,
+     0.112
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.005,
+     1.642,
+     0.113
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.055,
+     0.838,
+     0.113
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.054,
+     1.642,
+     0.112
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.053,
+     0.838,
+     0.111
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.052,
+     1.642,
+     0.11
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.052,
+     0.838,
+     0.16
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.053,
+     1.642,
+     0.159
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.054,
+     0.838,
+     0.158
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.055,
+     1.642,
+     0.157
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 788,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.005,
+     1.642,
+     0.142
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 57,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.005,
+     0.838,
+     0.128
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 57,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.037,
+     1.642,
+     0.16
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 57,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.023,
+     0.838,
+     0.16
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 57,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.023,
+     1.642,
+     0.11
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 57,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.037,
+     0.838,
+     0.11
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 57,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.055,
+     1.642,
+     0.128
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 57,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.055,
+     0.838,
+     0.142
+    ],
+    "part": "shopdoor/trim_alu",
+    "aspect": 57,
+    "longest": 2.412
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.229,
+     0.03,
+     0.003
+    ],
+    "part": "shopdoor/plastic_dark",
+    "aspect": 448,
+    "longest": 1.372
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.229,
+     0.029,
+     0.002
+    ],
+    "part": "shopdoor/plastic_dark",
+    "aspect": 448,
+    "longest": 1.372
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.229,
+     0.028,
+     0.001
+    ],
+    "part": "shopdoor/plastic_dark",
+    "aspect": 448,
+    "longest": 1.372
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.229,
+     0.027,
+     0
+    ],
+    "part": "shopdoor/plastic_dark",
+    "aspect": 448,
+    "longest": 1.372
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.229,
+     0.03,
+     0.117
+    ],
+    "part": "shopdoor/plastic_dark",
+    "aspect": 448,
+    "longest": 1.372
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.229,
+     0.029,
+     0.118
+    ],
+    "part": "shopdoor/plastic_dark",
+    "aspect": 448,
+    "longest": 1.372
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.229,
+     0.028,
+     0.119
+    ],
+    "part": "shopdoor/plastic_dark",
+    "aspect": 448,
+    "longest": 1.372
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.229,
+     0.027,
+     0.12
+    ],
+    "part": "shopdoor/plastic_dark",
+    "aspect": 448,
+    "longest": 1.372
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.689,
+     1.643,
+     0.014
+    ],
+    "part": "shopdoor/shop_interior",
+    "aspect": 121,
+    "longest": 2.418
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.689,
+     0.837,
+     0.008
+    ],
+    "part": "shopdoor/shop_interior",
+    "aspect": 121,
+    "longest": 2.418
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.689,
+     1.643,
+     0.008
+    ],
+    "part": "shopdoor/shop_interior",
+    "aspect": 121,
+    "longest": 2.418
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.689,
+     0.837,
+     0.014
+    ],
+    "part": "shopdoor/shop_interior",
+    "aspect": 121,
+    "longest": 2.418
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.23,
+     0.031,
+     0.008
+    ],
+    "part": "shopdoor/shop_interior",
+    "aspect": 69,
+    "longest": 1.378
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.23,
+     0.031,
+     0.014
+    ],
+    "part": "shopdoor/shop_interior",
+    "aspect": 69,
+    "longest": 1.378
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.23,
+     2.449,
+     0.008
+    ],
+    "part": "shopdoor/shop_interior",
+    "aspect": 69,
+    "longest": 1.378
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.23,
+     2.449,
+     0.014
+    ],
+    "part": "shopdoor/shop_interior",
+    "aspect": 69,
+    "longest": 1.378
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.23,
+     2.551,
+     0.008
+    ],
+    "part": "shopdoor/shop_interior",
+    "aspect": 69,
+    "longest": 1.378
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.23,
+     2.551,
+     0.014
+    ],
+    "part": "shopdoor/shop_interior",
+    "aspect": 69,
+    "longest": 1.378
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.23,
+     2.919,
+     0.008
+    ],
+    "part": "shopdoor/shop_interior",
+    "aspect": 69,
+    "longest": 1.378
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.23,
+     2.919,
+     0.014
+    ],
+    "part": "shopdoor/shop_interior",
+    "aspect": 69,
+    "longest": 1.378
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.129,
+     1.165,
+     0.2
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.13,
+     1.035,
+     0.199
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.131,
+     1.165,
+     0.198
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.132,
+     1.035,
+     0.197
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.129,
+     1.035,
+     0.16
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.13,
+     1.165,
+     0.161
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.131,
+     1.035,
+     0.162
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.132,
+     1.165,
+     0.163
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.108,
+     1.035,
+     0.163
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.109,
+     1.165,
+     0.162
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.11,
+     1.035,
+     0.161
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.111,
+     1.165,
+     0.16
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.111,
+     1.035,
+     0.2
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.11,
+     1.165,
+     0.199
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.109,
+     1.035,
+     0.198
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.108,
+     1.165,
+     0.197
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.111,
+     1.165,
+     0.2
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.11,
+     1.035,
+     0.199
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.109,
+     1.165,
+     0.198
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.108,
+     1.035,
+     0.197
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.111,
+     1.035,
+     0.16
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.11,
+     1.165,
+     0.161
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.109,
+     1.035,
+     0.162
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.108,
+     1.165,
+     0.163
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.132,
+     1.035,
+     0.163
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.131,
+     1.165,
+     0.162
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.13,
+     1.035,
+     0.161
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.129,
+     1.165,
+     0.16
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.129,
+     1.035,
+     0.2
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.13,
+     1.165,
+     0.199
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.131,
+     1.035,
+     0.198
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.132,
+     1.165,
+     0.197
+    ],
+    "part": "shopdoor/steel_brushed",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.68,
+     1.64,
+     0.127
+    ],
+    "part": "shopdoor__glass/glass",
+    "aspect": 240,
+    "longest": 2.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.68,
+     0.84,
+     0.123
+    ],
+    "part": "shopdoor__glass/glass",
+    "aspect": 240,
+    "longest": 2.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.68,
+     1.64,
+     0.123
+    ],
+    "part": "shopdoor__glass/glass",
+    "aspect": 240,
+    "longest": 2.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.68,
+     0.84,
+     0.127
+    ],
+    "part": "shopdoor__glass/glass",
+    "aspect": 240,
+    "longest": 2.4
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.227,
+     0.04,
+     0.123
+    ],
+    "part": "shopdoor__glass/glass",
+    "aspect": 136,
+    "longest": 1.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.227,
+     0.04,
+     0.127
+    ],
+    "part": "shopdoor__glass/glass",
+    "aspect": 136,
+    "longest": 1.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.227,
+     2.44,
+     0.123
+    ],
+    "part": "shopdoor__glass/glass",
+    "aspect": 136,
+    "longest": 1.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.227,
+     2.44,
+     0.127
+    ],
+    "part": "shopdoor__glass/glass",
+    "aspect": 136,
+    "longest": 1.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.227,
+     2.56,
+     0.093
+    ],
+    "part": "shopdoor__glass/glass",
+    "aspect": 136,
+    "longest": 1.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.227,
+     2.56,
+     0.097
+    ],
+    "part": "shopdoor__glass/glass",
+    "aspect": 136,
+    "longest": 1.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.227,
+     2.91,
+     0.093
+    ],
+    "part": "shopdoor__glass/glass",
+    "aspect": 136,
+    "longest": 1.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.227,
+     2.91,
+     0.097
+    ],
+    "part": "shopdoor__glass/glass",
+    "aspect": 136,
+    "longest": 1.36
+   }
+  ],
+  "nonmanifold": [
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.69,
+     2.994,
+     0.07
+    ],
+    "part": "shopdoor/trim_alu",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.69,
+     2.994,
+     0.07
+    ],
+    "part": "shopdoor/trim_alu",
+    "uses": 4
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.69,
+     0.001,
+     0.007
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/plastic_dark"
+    ],
+    "area": 0.0001
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.69,
+     2.52,
+     0.078
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "area": 0.00397
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.69,
+     2.482,
+     0.059
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "area": 0.00546
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.69,
+     2.977,
+     0.101
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "area": 0.00426
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.69,
+     2.943,
+     0.069
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "area": 0.00435
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.69,
+     -0.003,
+     0.073
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/plastic_dark"
+    ],
+    "area": 0.00402
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.69,
+     2.504,
+     0.124
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "area": 0.00166
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.69,
+     2.461,
+     0.119
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "area": 0.00017
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.69,
+     2.967,
+     0.133
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "area": 0.0001
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.69,
+     2.52,
+     0.062
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "area": 0.00397
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.69,
+     2.482,
+     0.081
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "area": 0.00546
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.69,
+     2.977,
+     0.039
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "area": 0.00426
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.69,
+     2.943,
+     0.071
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "area": 0.00435
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.69,
+     -0.009,
+     0.034
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/plastic_dark"
+    ],
+    "area": 0.00389
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.69,
+     2.504,
+     0.016
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "area": 0.00166
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.69,
+     2.461,
+     0.021
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "area": 0.00017
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.69,
+     2.967,
+     0.007
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "area": 0.0001
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.035,
+     2.45,
+     0.124
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "area": 0.00064
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.016,
+     2.45,
+     0.127
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "area": 0.0002
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.025,
+     2.45,
+     0.124
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "area": 0.00064
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.044,
+     2.45,
+     0.127
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "area": 0.0002
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.03,
+     0.03,
+     0.115
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/plastic_dark"
+    ],
+    "area": 0.00008
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.03,
+     0.03,
+     0.115
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/plastic_dark"
+    ],
+    "area": 0.00008
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.055,
+     2.271,
+     0.12
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor__glass/glass"
+    ],
+    "length_m": 9.64,
+    "pieces": 20,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.005,
+     2.271,
+     0.12
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor__glass/glass"
+    ],
+    "length_m": 9.64,
+    "pieces": 20,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.69,
+     2.5,
+     0.006
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "length_m": 0.78,
+    "pieces": 10,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.69,
+     2.5,
+     0.134
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "length_m": 0.78,
+    "pieces": 10,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.69,
+     0.025,
+     0.006
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/plastic_dark"
+    ],
+    "length_m": 0.36,
+    "pieces": 7,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.04,
+     2.45,
+     0.134
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "length_m": 0.12,
+    "pieces": 5,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.02,
+     2.45,
+     0.134
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "length_m": 0.12,
+    "pieces": 5,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.051,
+     0.03,
+     0.115
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/plastic_dark"
+    ],
+    "length_m": 0.09,
+    "pieces": 5,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.009,
+     0.03,
+     0.115
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/plastic_dark"
+    ],
+    "length_m": 0.09,
+    "pieces": 5,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.69,
+     2.926,
+     0.069
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "length_m": 0.13,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.69,
+     2.926,
+     0.071
+    ],
+    "parts": [
+     "shopdoor/trim_alu",
+     "shopdoor/trim_alu"
+    ],
+    "length_m": 0.13,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   }
+  ]
+ },
+ "file": "fuelkit.glb"
+}

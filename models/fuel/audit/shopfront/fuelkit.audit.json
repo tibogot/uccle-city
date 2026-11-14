@@ -1,0 +1,1915 @@
+{
+ "summary": {
+  "triangles": 588,
+  "vertices_welded": 308,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 122,
+  "counts": {
+   "sliver": 120,
+   "nonmanifold": 2,
+   "backtoback": 20,
+   "seam": 5
+  },
+  "ms": 42
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.01,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "shopfront",
+   "slot": "trim_alu",
+   "triangles": 432,
+   "maxDistance": 120
+  },
+  {
+   "name": "shopfront",
+   "slot": "plastic_dark",
+   "triangles": 108,
+   "maxDistance": 120
+  },
+  {
+   "name": "shopfront",
+   "slot": "shop_interior",
+   "triangles": 24,
+   "maxDistance": 120
+  },
+  {
+   "name": "shopfront__glass",
+   "slot": "glass",
+   "triangles": 24,
+   "maxDistance": 120
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.745,
+     1.981,
+     0.139
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.747,
+     0.969,
+     0.139
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.749,
+     1.981,
+     0.137
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.749,
+     0.969,
+     0.135
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.745,
+     0.969,
+     0.001
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.747,
+     1.981,
+     0.001
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.749,
+     0.969,
+     0.003
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.749,
+     1.981,
+     0.005
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.691,
+     0.969,
+     0.005
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.691,
+     1.981,
+     0.003
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.693,
+     0.969,
+     0.001
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.695,
+     1.981,
+     0.001
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.695,
+     0.969,
+     0.139
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.693,
+     1.981,
+     0.139
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.691,
+     0.969,
+     0.137
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.691,
+     1.981,
+     0.135
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.712,
+     1.981,
+     0.14
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 63,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.728,
+     0.969,
+     0.14
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 63,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.728,
+     1.981,
+     0
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 63,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.712,
+     0.969,
+     0
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 63,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.695,
+     1.981,
+     0.139
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.693,
+     0.969,
+     0.139
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.691,
+     1.981,
+     0.137
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.691,
+     0.969,
+     0.135
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.695,
+     0.969,
+     0.001
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.693,
+     1.981,
+     0.001
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.691,
+     0.969,
+     0.003
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.691,
+     1.981,
+     0.005
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.749,
+     0.969,
+     0.005
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.749,
+     1.981,
+     0.003
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.747,
+     0.969,
+     0.001
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.745,
+     1.981,
+     0.001
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.745,
+     0.969,
+     0.139
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.747,
+     1.981,
+     0.139
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.749,
+     0.969,
+     0.137
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.749,
+     1.981,
+     0.135
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 662,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.728,
+     1.981,
+     0.14
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 63,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.712,
+     0.969,
+     0.14
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 63,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.712,
+     1.981,
+     0
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 63,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.728,
+     0.969,
+     0
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 63,
+    "longest": 3.038
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.451,
+     0.005
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.451,
+     0.003
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.453,
+     0.001
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.455,
+     0.001
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.549,
+     0.005
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.549,
+     0.003
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.547,
+     0.001
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.545,
+     0.001
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.451,
+     0.135
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.451,
+     0.137
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.453,
+     0.139
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.455,
+     0.139
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.549,
+     0.135
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.549,
+     0.137
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.547,
+     0.139
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.545,
+     0.139
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.921,
+     0.005
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.921,
+     0.003
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.923,
+     0.001
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.925,
+     0.001
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.999,
+     0.005
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.999,
+     0.003
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.997,
+     0.001
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.995,
+     0.001
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.921,
+     0.135
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.921,
+     0.137
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.923,
+     0.139
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.925,
+     0.139
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.999,
+     0.135
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.999,
+     0.137
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.228,
+     2.997,
+     0.139
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.228,
+     2.995,
+     0.139
+    ],
+    "part": "shopfront/trim_alu",
+    "aspect": 298,
+    "longest": 1.368
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.687,
+     0.149,
+     0.12
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 95,
+    "longest": 0.292
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.688,
+     0.051,
+     0.119
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 95,
+    "longest": 0.292
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.689,
+     0.149,
+     0.118
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 95,
+    "longest": 0.292
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.69,
+     0.051,
+     0.117
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 95,
+    "longest": 0.292
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.687,
+     0.051,
+     0
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 95,
+    "longest": 0.292
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.688,
+     0.149,
+     0.001
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 95,
+    "longest": 0.292
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.689,
+     0.051,
+     0.002
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 95,
+    "longest": 0.292
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.69,
+     0.149,
+     0.003
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 95,
+    "longest": 0.292
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.229,
+     0.25,
+     0.003
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 448,
+    "longest": 1.372
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.229,
+     0.249,
+     0.002
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 448,
+    "longest": 1.372
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.229,
+     0.248,
+     0.001
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 448,
+    "longest": 1.372
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.229,
+     0.247,
+     0
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 448,
+    "longest": 1.372
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.69,
+     0.051,
+     0.003
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 95,
+    "longest": 0.292
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.689,
+     0.149,
+     0.002
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 95,
+    "longest": 0.292
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.688,
+     0.051,
+     0.001
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 95,
+    "longest": 0.292
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.687,
+     0.149,
+     0
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 95,
+    "longest": 0.292
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.687,
+     0.051,
+     0.12
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 95,
+    "longest": 0.292
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.688,
+     0.149,
+     0.119
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 95,
+    "longest": 0.292
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.689,
+     0.051,
+     0.118
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 95,
+    "longest": 0.292
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.69,
+     0.149,
+     0.117
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 95,
+    "longest": 0.292
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.229,
+     0.25,
+     0.117
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 448,
+    "longest": 1.372
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.229,
+     0.249,
+     0.118
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 448,
+    "longest": 1.372
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.229,
+     0.248,
+     0.119
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 448,
+    "longest": 1.372
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.229,
+     0.247,
+     0.12
+    ],
+    "part": "shopfront/plastic_dark",
+    "aspect": 448,
+    "longest": 1.372
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.689,
+     1.716,
+     0.014
+    ],
+    "part": "shopfront/shop_interior",
+    "aspect": 110,
+    "longest": 2.198
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.689,
+     0.984,
+     0.008
+    ],
+    "part": "shopfront/shop_interior",
+    "aspect": 110,
+    "longest": 2.198
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.689,
+     1.716,
+     0.008
+    ],
+    "part": "shopfront/shop_interior",
+    "aspect": 110,
+    "longest": 2.198
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.689,
+     0.984,
+     0.014
+    ],
+    "part": "shopfront/shop_interior",
+    "aspect": 110,
+    "longest": 2.198
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.23,
+     0.251,
+     0.008
+    ],
+    "part": "shopfront/shop_interior",
+    "aspect": 69,
+    "longest": 1.378
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.23,
+     0.251,
+     0.014
+    ],
+    "part": "shopfront/shop_interior",
+    "aspect": 69,
+    "longest": 1.378
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.23,
+     2.449,
+     0.008
+    ],
+    "part": "shopfront/shop_interior",
+    "aspect": 69,
+    "longest": 1.378
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.23,
+     2.449,
+     0.014
+    ],
+    "part": "shopfront/shop_interior",
+    "aspect": 69,
+    "longest": 1.378
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.23,
+     2.551,
+     0.008
+    ],
+    "part": "shopfront/shop_interior",
+    "aspect": 69,
+    "longest": 1.378
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.23,
+     2.551,
+     0.014
+    ],
+    "part": "shopfront/shop_interior",
+    "aspect": 69,
+    "longest": 1.378
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.23,
+     2.919,
+     0.008
+    ],
+    "part": "shopfront/shop_interior",
+    "aspect": 69,
+    "longest": 1.378
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.23,
+     2.919,
+     0.014
+    ],
+    "part": "shopfront/shop_interior",
+    "aspect": 69,
+    "longest": 1.378
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.68,
+     1.713,
+     0.097
+    ],
+    "part": "shopfront__glass/glass",
+    "aspect": 218,
+    "longest": 2.18
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.68,
+     0.987,
+     0.093
+    ],
+    "part": "shopfront__glass/glass",
+    "aspect": 218,
+    "longest": 2.18
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.68,
+     1.713,
+     0.093
+    ],
+    "part": "shopfront__glass/glass",
+    "aspect": 218,
+    "longest": 2.18
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.68,
+     0.987,
+     0.097
+    ],
+    "part": "shopfront__glass/glass",
+    "aspect": 218,
+    "longest": 2.18
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.227,
+     0.26,
+     0.093
+    ],
+    "part": "shopfront__glass/glass",
+    "aspect": 136,
+    "longest": 1.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.227,
+     0.26,
+     0.097
+    ],
+    "part": "shopfront__glass/glass",
+    "aspect": 136,
+    "longest": 1.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.227,
+     2.44,
+     0.093
+    ],
+    "part": "shopfront__glass/glass",
+    "aspect": 136,
+    "longest": 1.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.227,
+     2.44,
+     0.097
+    ],
+    "part": "shopfront__glass/glass",
+    "aspect": 136,
+    "longest": 1.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.227,
+     2.56,
+     0.093
+    ],
+    "part": "shopfront__glass/glass",
+    "aspect": 136,
+    "longest": 1.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.227,
+     2.56,
+     0.097
+    ],
+    "part": "shopfront__glass/glass",
+    "aspect": 136,
+    "longest": 1.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.227,
+     2.91,
+     0.093
+    ],
+    "part": "shopfront__glass/glass",
+    "aspect": 136,
+    "longest": 1.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.227,
+     2.91,
+     0.097
+    ],
+    "part": "shopfront__glass/glass",
+    "aspect": 136,
+    "longest": 1.36
+   }
+  ],
+  "nonmanifold": [
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.69,
+     2.994,
+     0.07
+    ],
+    "part": "shopfront/trim_alu",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.69,
+     2.994,
+     0.07
+    ],
+    "part": "shopfront/trim_alu",
+    "uses": 4
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.69,
+     0.236,
+     0.012
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/plastic_dark"
+    ],
+    "area": 0.00023
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.69,
+     0.136,
+     0.01
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/plastic_dark"
+    ],
+    "area": 0.00154
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.69,
+     2.52,
+     0.078
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/trim_alu"
+    ],
+    "area": 0.00397
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.69,
+     2.482,
+     0.059
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/trim_alu"
+    ],
+    "area": 0.00546
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.69,
+     2.977,
+     0.101
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/trim_alu"
+    ],
+    "area": 0.00426
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.69,
+     2.943,
+     0.069
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/trim_alu"
+    ],
+    "area": 0.00435
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.69,
+     0.123,
+     0.076
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/plastic_dark"
+    ],
+    "area": 0.01611
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.69,
+     0.042,
+     0.046
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/plastic_dark"
+    ],
+    "area": 0.01401
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.69,
+     2.504,
+     0.124
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/trim_alu"
+    ],
+    "area": 0.00166
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.69,
+     2.461,
+     0.119
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/trim_alu"
+    ],
+    "area": 0.00017
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.69,
+     2.967,
+     0.133
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/trim_alu"
+    ],
+    "area": 0.0001
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.69,
+     2.52,
+     0.062
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/trim_alu"
+    ],
+    "area": 0.00397
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.69,
+     2.482,
+     0.081
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/trim_alu"
+    ],
+    "area": 0.00546
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.69,
+     2.977,
+     0.039
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/trim_alu"
+    ],
+    "area": 0.00426
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.69,
+     2.943,
+     0.071
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/trim_alu"
+    ],
+    "area": 0.00435
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.69,
+     0.15,
+     0.043
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/plastic_dark"
+    ],
+    "area": 0.01577
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.69,
+     0.029,
+     0.061
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/plastic_dark"
+    ],
+    "area": 0.01613
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.69,
+     2.504,
+     0.016
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/trim_alu"
+    ],
+    "area": 0.00166
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.69,
+     2.461,
+     0.021
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/trim_alu"
+    ],
+    "area": 0.00017
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.69,
+     2.967,
+     0.007
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/trim_alu"
+    ],
+    "area": 0.0001
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.69,
+     2.5,
+     0.006
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/trim_alu"
+    ],
+    "length_m": 0.78,
+    "pieces": 10,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.69,
+     2.5,
+     0.134
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/trim_alu"
+    ],
+    "length_m": 0.78,
+    "pieces": 10,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.69,
+     0.243,
+     0.006
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/plastic_dark"
+    ],
+    "length_m": 0.8,
+    "pieces": 7,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.69,
+     2.926,
+     0.069
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/trim_alu"
+    ],
+    "length_m": 0.13,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.69,
+     2.926,
+     0.071
+    ],
+    "parts": [
+     "shopfront/trim_alu",
+     "shopfront/trim_alu"
+    ],
+    "length_m": 0.13,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   }
+  ]
+ },
+ "file": "fuelkit.glb"
+}

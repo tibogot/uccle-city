@@ -1,0 +1,114 @@
+{
+ "summary": {
+  "triangles": 12,
+  "vertices_welded": 8,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 4,
+  "counts": {
+   "sliver": 4
+  },
+  "ms": 2
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.01,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "line",
+   "slot": "paint_white",
+   "triangles": 12,
+   "maxDistance": 120
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.167,
+     0.002,
+     -0.06
+    ],
+    "part": "line/paint_white",
+    "aspect": 333,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.167,
+     0.001,
+     -0.06
+    ],
+    "part": "line/paint_white",
+    "aspect": 333,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.167,
+     0.002,
+     0.06
+    ],
+    "part": "line/paint_white",
+    "aspect": 333,
+    "longest": 1
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.167,
+     0.001,
+     0.06
+    ],
+    "part": "line/paint_white",
+    "aspect": 333,
+    "longest": 1
+   }
+  ]
+ },
+ "file": "fuelkit.glb"
+}
