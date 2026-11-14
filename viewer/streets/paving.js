@@ -34,7 +34,10 @@ export function loadPavingTextures(renderer) {
   return (ready ??= build(renderer).catch((e) => { console.warn(`[paving] textures failed (${e.message}): procedural streets`); return null; }));
 }
 /** the loaded set (after loadPavingTextures resolved), else null */
-export const pavingTextures = () => PT;
+export const pavingTextures = () => (off ? null : PT);
+let off = false;
+/** (debug/pavingShots.js A/B: materials made while this is set get the procedural look of ?paving=old) */
+export function setPavingOff(v) { off = !!v; }
 
 async function build(renderer) {
   const t0 = performance.now();
@@ -112,7 +115,11 @@ export function pavingSample(a, b, layer, size) {
       const oy = select(ny.greaterThan(0.5), floor(h.y.mul(ny)).div(ny.max(1)), h.y);
       const ang = h2.x.sub(0.5).mul(2 * Math.PI).mul(rk), cs = cos(ang), sn = sin(ang);
       const rot = (u) => vec2(u.x.mul(cs).sub(u.y.mul(sn)), u.x.mul(sn).add(u.y.mul(cs)));
-      const q = rot(st.sub(cen)).add(cen).add(vec2(ox, oy)), gx = rot(dx), gy = rot(dy);
+      // the sampling coordinate kept SMALL: the pixel's offset from its hex centre + the fractional part of the centre +
+      // offset (whole repeats are invisible). A road's station runs to thousands of metres: sampling at uv ~1000
+      // repeats ran out of the sampler's sub-texel precision and the texels jumped from frame to frame (salt-and-pepper
+      // dots in the flicker test, 2026-11-14)
+      const q = rot(st.sub(cen)).add(fract(cen.add(vec2(ox, oy)))), gx = rot(dx), gy = rot(dy);
       const A = texture(S.albedo, q).depth(L).grad(gx, gy), R = texture(S.nra, q).depth(L).grad(gx, gy);
       const nx2 = R.r.mul(2).sub(1), ny2 = R.g.mul(2).sub(1);
       const n = vec2(nx2.mul(cs).add(ny2.mul(sn)), ny2.mul(cs).sub(nx2.mul(sn)));    // back into the surface frame

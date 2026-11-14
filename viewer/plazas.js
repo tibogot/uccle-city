@@ -76,7 +76,7 @@ function plazaMaterial() {
     // rows across b, along the square's rows; ?paving=old: the procedural settsLook
     const S = pavingSample(a, b, float(LAYER.setts), float(1.3));
     const dirt = n3(P.x.mul(0.45), P.z.mul(0.45), 6.0);
-    m.colorNode = regrade(S.col, "setts", [0.2, 0.196, 0.186], 0.7).mul(dirt.mul(0.08).add(1.0)).mul(mix(float(1), S.ao, 0.5));
+    m.colorNode = regrade(S.col, "setts", [0.2, 0.198, 0.192], 0.85).mul(dirt.mul(0.08).add(1.0)).mul(mix(float(1), S.ao, 0.5));
     m.roughnessNode = S.rough.mul(1.05).min(0.97);
     m.aoNode = S.ao;
     m.normalNode = pavingNormal(S.n, a, b, float(1));

@@ -89,7 +89,7 @@ export function texturedSquare(m) {
   const f = uv(), P = positionWorld;
   const S = pavingSample(f.x, f.y, float(LAYER.setts), float(1.3));
   const dirt = n3(P.x.mul(0.45), P.z.mul(0.45), 6.0);
-  let col = regrade(S.col, "setts", [0.2, 0.196, 0.186], 0.7).mul(dirt.mul(0.08).add(1.0));
+  let col = regrade(S.col, "setts", [0.2, 0.198, 0.192], 0.85).mul(dirt.mul(0.08).add(1.0));
   col = col.mul(mix(float(1), S.ao, 0.5));
   m.colorNode = col;
   m.roughnessNode = S.rough.mul(1.05).min(0.97);

@@ -62,6 +62,7 @@ export function courses(a, b, la, lb, jw, seed, fw = null) {
  */
 export function asphaltMaterial(atlas) {
   const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  m.userData.atlas = atlas;                       // (the A/B in debug/pavingShots.js rebuilds it)
   const P = positionWorld, x = P.x, z = P.z;
   const s = uv().x, t = uv().y;
   const lat = attribute("aLateral", "float");
@@ -189,16 +190,20 @@ export function asphaltMaterial(atlas) {
  */
 function texturedRoad({ s, t, x, z, surf, phase, wheel, patch, speck }) {
   const sr = floor(surf.add(0.5));
-  const r1 = fract(phase.mul(0.6180339)), r2 = fract(phase.mul(0.7548777));
+  // per-road randoms from the road's id phase ROUNDED to its 0.01 grid (roadData hashPhase): the interpolated attribute
+  // carries float noise of ~1e-4 per pixel, and a stone size taken from it straight multiplies a station of hundreds of
+  // metres, so the texture coordinate jittered by whole texels between frames (salt-and-pepper flicker, 2026-11-14)
+  const pid = floor(phase.mul(100).add(0.5));
+  const r1 = hash(pid), r2 = hash(pid.add(0.5));
   const isSett = sr.equal(1).or(sr.equal(3)), unhewn = sr.equal(3);
   // asphalt repairs in sett streets: in ~22 % of 6 m cells along the road, a patch 1.2-3.7 m long, 1.4-3 m wide,
   // anywhere across the carriageway (gas / water trenches), slightly ragged edges. Drawn OVER the setts as a coverage
   // (box-filtered over the pixel footprint: no hard layer switch, no aliasing edge far away)
-  const cell = floor(s.div(6)), hc = hash22(vec2(cell, phase)), hd = hash22(vec2(cell.add(17), phase));
+  const cell = floor(s.div(6)), hc = hash22(vec2(cell, pid)), hd = hash22(vec2(cell.add(17), pid));
   const ps = cell.mul(6).add(hc.x.mul(3)), pl = hd.x.mul(2.5).add(1.2), pt = hd.y.sub(0.5).mul(4), pw = hc.y.mul(1.6).add(1.4);
   const rag = s.mul(7.3).add(t.mul(5.1)).sin().mul(0.04).add(t.mul(11.7).sub(s.mul(3.3)).sin().mul(0.03));   // ragged edge, cheap
   const fS = fwidth(s).mul(0.7).add(0.004), fT = fwidth(t).mul(0.7).add(0.004);
-  const patchOn = select(isSett.and(hash22(vec2(cell.add(5), phase.mul(1.3))).x.lessThan(0.22)), float(1), float(0));
+  const patchOn = select(isSett.and(hash22(vec2(cell.add(5), pid.add(311))).x.lessThan(0.22)), float(1), float(0));
   const cover = boxCoverage(s.add(rag), ps, ps.add(pl), fS).mul(boxCoverage(t.add(rag), pt.sub(pw.mul(0.5)), pt.add(pw.mul(0.5)), fT)).mul(patchOn);
   const layer = select(isSett, float(LAYER.setts), select(sr.equal(2), float(LAYER.pavers), float(LAYER.asphalt)));
   // metres per texture repeat: the setts scan is 10 rows per repeat (rows 14-18 cm per road, unhewn ~22 cm)
