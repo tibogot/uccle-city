@@ -43,8 +43,19 @@ export async function warmBoot(renderer, scene, win) {
 //
 // All compileAsync calls of the page go through ONE queue (installCompileQueue): r187 keeps one precompile
 // state, and two calls in flight take each other's state (game-engine-v1 v3/render/serialCompile.js).
-let rawCompile = null, tail = Promise.resolve(), passFor = null;
-const enqueue = (job) => { const run = tail.then(job); tail = run.catch(() => {}); return run; };
+// Jobs run one at a time in order, except that a job queued with `first` (a streamed TILE: the player waits for it)
+// goes before every queued job without it (a landmark's background compile: measured 2026-11-14, the third tile
+// waited 4.4 s behind eleven landmarks and the bridges).
+let rawCompile = null, passFor = null, running = false;
+const jobs = [];
+const pump = () => {
+  if (running || !jobs.length) return;
+  const i = jobs.findIndex((j) => j.first);
+  const j = jobs.splice(i >= 0 ? i : 0, 1)[0];
+  running = true;
+  Promise.resolve().then(j.job).then(j.resolve, j.reject).finally(() => { running = false; pump(); });
+};
+const enqueue = (job, first = false) => new Promise((resolve, reject) => { jobs.push({ job, first, resolve, reject }); pump(); });
 export function installCompileQueue(renderer) {
   if (rawCompile) return;
   rawCompile = renderer.compileAsync.bind(renderer);
@@ -71,13 +82,13 @@ export function installCompileQueue(renderer) {
 
 /** Compile `roots` (Object3Ds, in the scene or about to be) for `camera` in `scene`, into `target`/`mrt`
  *  (the scene pass), without drawing them. Resolves when their shaders and pipelines are ready. */
-export function precompile(renderer, roots, camera, scene, { target = null, mrt = null } = {}) {
+export function precompile(renderer, roots, camera, scene, { target = null, mrt = null, first = false } = {}) {
   if (!renderer.backend?.isWebGPUBackend) return Promise.resolve();
   installCompileQueue(renderer);
   const rec = globalThis.__boot ? { q: Math.round(performance.now()), name: [].concat(roots).map((r) => r?.name || r?.type || "?").join(",").slice(0, 60) } : null;
   if (rec) (globalThis.__boot.jobs ||= []).push(rec);
   return enqueue(async () => {
-    if (rec) rec.s = Math.round(performance.now());
+    if (rec) { rec.s = Math.round(performance.now()); rec.first = first; }
     try {
     for (const root of [].concat(roots)) {
       if (!root) continue;
@@ -106,7 +117,7 @@ export function precompile(renderer, roots, camera, scene, { target = null, mrt 
       try { await p; } catch (e) { console.warn("[precompile]", e); }
     }
     } finally { if (rec) rec.e = Math.round(performance.now()); }   // (a boot probe's queue record: debug/bootTimeline.js)
-  });
+  }, first);
 }
 
 // ------------------------------------------------------------------ shadow pass: one shader for every opaque material
@@ -136,4 +147,30 @@ export function shareShadowNodes(renderer) {
   };
   renderer.__shadowNodes = { own: orig, shared: renderer._getShadowNodes };   // live A/B: renderer._getShadowNodes = renderer.__shadowNodes.own
   return true;
+}
+
+// ------------------------------------------------------------------ the early warm-up (before the first tile)
+/** Draw `render()` `frames` times NOW with every drawable of `scene` forced visible, one instance, never culled (as
+ *  warmBoot's frames, game-engine-v1 pipelineWarmup.js), then put everything back. Called while the tile worker builds
+ *  the first tiles (the main thread waited idle then): three builds every node material SYNCHRONOUSLY here (one long
+ *  task, under the loading scene, which draws in its own worker) and, with the boot's parallel-pipeline window open,
+ *  hands every render pipeline to the GPU process at once (compileAsync caps that at 16 in flight: 8.5 s for the same
+ *  scene, measured). Returns { drawables, ms }. */
+export function warmNow(scene, render, { frames = 1 } = {}) {
+  const t0 = performance.now();
+  const saved = [];
+  const set = (o, k, v) => { if (o[k] !== v) { saved.push([o, k, o[k]]); o[k] = v; } };
+  let n = 0;
+  scene.traverse((o) => {
+    if (!(o.isMesh || o.isPoints || o.isSprite)) return;
+    n++;
+    set(o, "visible", true);
+    for (let p = o.parent; p; p = p.parent) set(p, "visible", true);
+    set(o, "frustumCulled", false);
+    if (o.isInstancedMesh && o.count === 0) set(o, "count", 1);
+    if (o.geometry?.isInstancedBufferGeometry && o.geometry.instanceCount === 0) set(o.geometry, "instanceCount", 1);
+  });
+  try { for (let i = 0; i < frames; i++) render(); }
+  finally { for (let i = saved.length - 1; i >= 0; i--) { const [o, k, v] = saved[i]; o[k] = v; } }
+  return { drawables: n, ms: Math.round(performance.now() - t0) };
 }

@@ -42,7 +42,7 @@ import { createPipeline } from "./post.js";
 import { buildTrees } from "./trees.js";
 import { buildTreeField } from "./treesSlop.js";
 import { buildStylizedTreeField, setTreeLighting, setTreeRenderer } from "./treesStylized.js";
-import { openBootPipelines, warmBoot, precompile, shareShadowNodes } from "./warmup.js";
+import { openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow } from "./warmup.js";
 import { buildPlazas, loadOverrides } from "./plazas.js";
 import { Flyer } from "./flight.js";
 import { CityFlyer } from "./falconFlight/cityFlyer.js";
@@ -81,19 +81,21 @@ const preCompile = async (roots, fading) => {
   // were then built on the frame its fade ended, after the cover lifted (28 ms, measured). Compiled in the
   // background here, not awaited: the boot does not wait for them.
   if (fader.hold) {
-    const list = [].concat(roots), p = compileFor(list);
+    const list = [].concat(roots), p = compileFor(list, { first: true });
     for (const r of list) r.userData.compiling = p;
     p.finally(() => { for (const r of list) delete r.userData.compiling; });
     return;
   }
-  await compileFor(roots);
-  if (fading) await compileFor([].concat(roots).map(fadeProxies));
+  await compileFor(roots, { first: true });           // (a tile: ahead of the landmarks' background compiles)
+  if (fading) await compileFor([].concat(roots).map(fadeProxies), { first: true });
 };
 const dropMat = (m) => { if (!m.userData?.shared) { dropFadeVariant(m); m.dispose?.(); } };
 
 const $ = (id) => document.getElementById(id);
 const logLines = [];
 const log = (s) => { logLines.push(s); $("log").textContent = logLines.join("\n"); console.log(s); };
+/** the loading scene's readout (viewer/loader/): what the boot is doing now */
+const bootStage = (s, detail) => { try { window.__loader?.stage(s, detail); } catch { /* no loader */ } };
 const timedGlobal = async (label, fn) => { const t = performance.now(); const r = await fn(); log(`${label}: ${(performance.now() - t).toFixed(0)} ms`); return r; };
 const getJSON = async (p) => { const r = await fetch(new URL(p, DATA)); if (!r.ok) throw new Error(`${p}: HTTP ${r.status}`); return r.json(); };
 const getBin = async (p) => { const r = await fetch(new URL(p, DATA)); if (!r.ok) throw new Error(`${p}: HTTP ${r.status}`); return r.arrayBuffer(); };
@@ -456,6 +458,19 @@ if (params.get("worker") !== "0") {
   }
   tileWorker = workers[0] ?? null;
 }
+// ONE MORE WORKER FOR THE FAR TILES ONLY (perf audit step 10): a far tile is a few hundred ms of worker work, a full tile
+// 3-4 s; behind one worker the boot's far tiles waited for the full ones (or the other way round). The far-tile worker
+// never builds a full tile (the 3-worker pool's 7.5 s freeze was full tiles landing together). ?liteworker=0: off.
+let liteWorker = null;
+if (workers.length && params.get("liteworker") !== "0") {
+  try {
+    const w = new Worker(new URL("./tileWorker.bundle.js", import.meta.url), { type: "module" });
+    w.busy = 0;
+    w.onmessage = (e) => { w.busy--; const p = pendingReq.get(e.data.id); pendingReq.delete(e.data.id); e.data.error ? p.reject(new Error(e.data.error)) : p.resolve(e.data.r); };
+    w.onerror = (e) => { log(`far-tile worker failed (${e.message || "error"})`); liteWorker = null; for (const [id, p] of pendingReq) if (p.w === w) { pendingReq.delete(id); p.retry(); } };
+    liteWorker = w;
+  } catch { liteWorker = null; }
+}
 /** worker builds started ahead of loadTile (key "name|lite"): stream() prefetches the next wanted tiles */
 const tilePrefetch = new Map();
 /** UrbIS solids replaced by a scripted model (the Saint-Job church): not drawn, kept in the roof grid. */
@@ -483,10 +498,10 @@ function tileData(entry, lite = false) {
     cache: params.get("tilecache") === "1" };                                                        // ?tilecache=1: built tiles kept in IndexedDB (viewer/tileCache.js); opt-in until measured on a quiet machine
   const key = `${entry.name}|${lite ? 1 : 0}`;
   const pre = tilePrefetch.get(key);
-  if (pre) { tilePrefetch.delete(key); return pre; }
+  if (pre) { tilePrefetch.delete(key); pumpBoot(); return pre; }
   const local = () => import("./tileData.js").then((m) => (lite ? m.buildLiteData : m.buildTileData)(entry, DATA.href));
   if (!workers.length) return local();
-  const w = workers.reduce((a, b) => (b.busy < a.busy ? b : a));
+  const w = lite && liteWorker ? liteWorker : workers.reduce((a, b) => (b.busy < a.busy ? b : a));
   return new Promise((resolve, reject) => {
     const id = ++reqId;
     w.busy++;
@@ -503,6 +518,51 @@ function prefetchTiles(entries, lite = false) {
     p.catch(() => tilePrefetch.delete(key));
     tilePrefetch.set(key, p);
   }
+}
+
+/** BOOT PREFETCH (perf audit step 10): the tiles the boot and the first streaming steps load, in the order they load
+ *  them (the start tile, the ring nearest first, the far tiles the boot shows under the cover), handed to the worker as
+ *  soon as the hide list is complete, so it never idles (it waited ~8 s for the warm-up before). At most BOOT_AHEAD
+ *  full tiles are asked for and not yet taken (each ~37 MB of arrays until it is); stream() keeps the list to what it
+ *  still wants (a teleport drops the rest). ?bootprefetch=0: off. */
+const BOOT_AHEAD = 2;
+let bootRing = null;
+function bootPrefetch(manifest, entry) {
+  if (!workers.length || params.get("bootprefetch") === "0") return;
+  const ring = Math.max(0, Math.min(2, +(params.get("ring") ?? 1))), far = Math.max(ring, Math.min(6, +(params.get("far") ?? 3)));
+  const T = entry.bounds.x[1] - entry.bounds.x[0];
+  const c = (t) => [(t.bounds.x[0] + t.bounds.x[1]) / 2, (t.bounds.z[0] + t.bounds.z[1]) / 2], [hx, hz] = c(entry);
+  const dist = (t) => { const [x, z] = c(t); return Math.max(Math.abs(x - hx), Math.abs(z - hz)) / T; };
+  const built = manifest.tiles.filter((t) => t.status !== "missing");
+  // as the boot and stream() take them: the start tile, its ring as far tiles (under the cover), then the ring in full
+  // (?bootlite=0: one full ring tile and the two nearest far tiles under the cover, as before)
+  const full = built.filter((t) => dist(t) <= ring + 0.01).sort((a, b) => dist(a) - dist(b));
+  if (params.get("bootlite") !== "0" && far > ring) bootRing = [[full[0], false], ...full.slice(1).map((e) => [e, true]), ...full.slice(1).map((e) => [e, false])];
+  else {
+    const lite = far > ring ? built.filter((t) => dist(t) <= far + 0.01 && dist(t) > ring + 0.01).sort((a, b) => dist(a) - dist(b)).slice(0, 2) : [];
+    bootRing = [...full.slice(0, 2).map((e) => [e, false]), ...lite.map((e) => [e, true]), ...full.slice(2).map((e) => [e, false])];
+  }
+  pumpBoot();
+}
+// ONE build at a time per worker: a worker runs every request it holds at once (its handler awaits fetches), so four
+// tiles sent together all finished late (the start tile took 11.7 s instead of 3 s, measured): the next goes when one
+// is done. Full and far tiles are two chains (two workers: liteWorker above)
+const bootBusy = [false, false];
+function pumpBoot() {
+  if (!bootRing) return;
+  for (const lite of [false, true]) {
+    if (bootBusy[+lite] || (lite && !liteWorker && bootBusy[0])) continue;
+    const i = bootRing.findIndex((x) => x[1] === lite);
+    if (i < 0) continue;
+    if (!lite) { let held = 0; for (const k of tilePrefetch.keys()) if (k.endsWith("|0")) held++; if (held >= BOOT_AHEAD) continue; }   // taken by loadTile -> tileData -> pumpBoot()
+    const [e] = bootRing.splice(i, 1)[0];
+    prefetchTiles([e], lite);
+    const p = tilePrefetch.get(`${e.name}|${lite ? 1 : 0}`);
+    if (!p) continue;
+    bootBusy[+lite] = true;
+    p.catch(() => {}).finally(() => { bootBusy[+lite] = false; pumpBoot(); });
+  }
+  if (!bootRing.length) bootRing = null;
 }
 
 /** Far level of detail of a tile (tileData.js buildLiteData): orthophoto-draped 4 m terrain and
@@ -810,6 +870,18 @@ async function main() {
   };
   worldRef = world;
   await cityGrass.start({ scene, renderer, updaters, world, lighting, log });   // ?grass=1 (default off): our grass, docs/GRASS.md
+  const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.3, 6000);
+  // Render pipeline: AO + reflections + bloom + grade (?fx=0: plain render, for slow machines). Set up before the first
+  // tile (pipeReady, below) so the shaders can be built while the tile worker works; ?early=0: after it, as before
+  const fx = params.get("fx") !== "0";
+  let pipe = null, pipeReady = null;
+  const setupPipe = async () => {
+    await lighting.attach(camera);                      // Firmament's sky needs the camera (no-op for ?sky=old)
+    pipe = fx ? createPipeline(renderer, scene, camera, { aoOn: params.get("ao") !== "0", ssrOn: params.get("ssr") !== "0" }) : null;   // ?ao=0 ?ssr=0: A/B
+    if (pipe) { pipe.setExposureScale(lighting.exposureScale); pipe.look(timeId); }
+    if (params.get("precompile") !== "0") compileFor = (roots, o) => precompile(renderer, roots, camera, scene, { target: pipe?.passTarget ?? null, mrt: pipe?.passMRT ?? null, first: !!o?.first });   // ?precompile=0: A/B
+    else { renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = lighting.exposureScale; }
+  };
 
   if (params.get("lampmodel") !== "0") setLampModel(await loadLampModel());   // the Blender lamp (?lampmodel=0: the old cylinders)
   // The Saint-Job church (tools/blender/stjob.py, viewer/stjobModel.js) in place of its UrbIS solid (HIDE_BU_IDS);
@@ -855,48 +927,78 @@ async function main() {
       }
     }).catch((e) => log(`Saint-Job model failed (${e.message}): the UrbIS solid is hidden, reload with ?stjob=0`));
   }
+  // BOOT ORDER (perf audit step 10): the downloads and the systems below start TOGETHER, not one after another (on the
+  // live site each await was a round trip: the ground textures were asked for at 12.7 s, the first tile at 16.3 s).
+  // Only the first consumer waits for what it needs: the library's textures before the kit and the landmarks make
+  // their materials, the landmarks' notes (the UrbIS solids they hide, the Wolvendael pond) before the tile worker
+  // builds a tile, the ground textures before the first tile's terrain. ?bootorder=old: the sequence as before (A/B).
+  const OLD_ORDER = params.get("bootorder") === "old";
+  const groundP = OLD_ORDER ? null : loadGroundTextures(renderer);
+  const trackP = params.get("trackprofile") === "0" ? null : () => loadTrackProfile(new URL("../data/transit/tram_profile.json", import.meta.url)).catch((e) => { log(`tram profile: ${e.message}`); return null; });
+  const trackEarly = OLD_ORDER || !trackP ? null : trackP();
+  bootStage("materials");
   await libTex;                                                    // the library's textures before its first consumer
-  await cityKit.start({ scene, updaters, log });                   // ?kit=1: the façade kit (before the first tile and the warm-up)
-  await cityStreetLife.start({ scene, updaters, log });            // the street life (shop names, plates, numbers, stops), ?streetlife=0 off
-  await cityFurniture.start({ scene, updaters, log });             // benches, bike hoops / boxes, bins, glass banks (viewer/furniture2/), ?furniture=old off
-  await cityGardens.start({ scene, updaters, log });               // front-garden walls, railings, gates, hedges (viewer/gardens/), on by default, ?gardens=0 off
-  await cityStops.start({ scene, updaters, log });                 // the STIB shelters / poles and the ad panels (viewer/stops/), ?stops=old off
+  const together = (fns) => (OLD_ORDER ? fns.reduce((p, f) => p.then(f), Promise.resolve()) : Promise.all(fns.map((f) => f())));
+  await together([
+    () => cityKit.start({ scene, updaters, log }),                   // ?kit=1: the façade kit (before the first tile and the warm-up)
+    () => cityStreetLife.start({ scene, updaters, log }),            // the street life (shop names, plates, numbers, stops), ?streetlife=0 off
+    () => cityFurniture.start({ scene, updaters, log }),             // benches, bike hoops / boxes, bins, glass banks (viewer/furniture2/), ?furniture=old off
+    () => cityGardens.start({ scene, updaters, log }),               // front-garden walls, railings, gates, hedges (viewer/gardens/), on by default, ?gardens=0 off
+    () => cityStops.start({ scene, updaters, log }),                 // the STIB shelters / poles and the ad panels (viewer/stops/), ?stops=old off
+  ]);
+  bootStage("landmarks");
+  const heroes = [];
   // the Chapelle de Stalle + its interior cell (tools/blender/stalle*.py, viewer/stalleCity.js) behind ?stalle=1
-  if (params.get("stalle") !== "0") await addStalle({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, getView: () => ({ camera, lighting }), getThird: () => third });
+  if (params.get("stalle") !== "0") heroes.push(() => addStalle({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, getView: () => ({ camera, lighting }), getThird: () => third }));
   // The Uccle town hall (tools/blender/townhall.py, viewer/townhallCity.js) in place of its UrbIS solid, behind
   // ?townhall=1 for now (its BU_ID joins HIDE_BU_IDS before the first tile is built)
-  if (params.get("townhall") !== "0") await addTownHall({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
+  if (params.get("townhall") !== "0") heroes.push(() => addTownHall({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
   // The Villa van Buuren (tools/blender/vanbuuren.py, viewer/vanbuurenCity.js) in place of UrbIS solid 550409 only,
   // behind ?vanbuuren=1 for now
-  if (params.get("vanbuuren") !== "0") await addVanBuuren({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer });
+  if (params.get("vanbuuren") !== "0") heroes.push(() => addVanBuuren({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer }));
   // The Château de Wolvendael (tools/blender/wolvendael_chateau.py, viewer/wolvendaelCity.js) in place of UrbIS solids
   // 537523 + 538880, and its pond (viewer/water/), behind ?wolvendael=1 for now
-  if (params.get("wolvendael") !== "0") await addWolvendael({ scene, updaters, hide: HIDE_BU_IDS, ponds: PONDS, world, manifest, log, compiler: () => compileFor, renderer, lighting });
+  if (params.get("wolvendael") !== "0") heroes.push(() => addWolvendael({ scene, updaters, hide: HIDE_BU_IDS, ponds: PONDS, world, manifest, log, compiler: () => compileFor, renderer, lighting }));
   // The police station, Rue Rouge 17 (tools/blender/police_rouge.py, viewer/policeCity.js) in place of UrbIS solids 528055 +
   // 528772 (BU 1674458), with its yard, behind ?police=1 for now
-  if (params.get("police") !== "0") await addPolice({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer });
+  if (params.get("police") !== "0") heroes.push(() => addPolice({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer }));
   // The Uccle-Calevoet station building (tools/blender/calevoet_station.py, viewer/calevoetCity.js) in place of UrbIS
   // solid 534568, behind ?calevoet=1 for now
-  if (params.get("calevoet") !== "0") await addCalevoet({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer });
+  if (params.get("calevoet") !== "0") heroes.push(() => addCalevoet({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer }));
   // the Eglise Saint-Pierre (tools/blender/stpierre.py, viewer/stpierreCity.js) behind ?stpierre=1
-  if (params.get("stpierre") !== "0") await addStPierre({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
+  if (params.get("stpierre") !== "0") heroes.push(() => addStPierre({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
   // the Russian Orthodox church of Saint-Job (tools/blender/russian.py, viewer/russianCity.js); ?russian=0 = the UrbIS solid
-  if (params.get("russian") !== "0") await addRussian({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
+  if (params.get("russian") !== "0") heroes.push(() => addRussian({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
   // the Eglise Notre-Dame du Rosaire (tools/blender/rosaire.py, viewer/rosaireCity.js); ?rosaire=0 = the UrbIS solid
-  if (params.get("rosaire") !== "0") await addRosaire({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
+  if (params.get("rosaire") !== "0") heroes.push(() => addRosaire({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
   // The Royal Observatory (tools/blender/observatory.py, viewer/observatoryCity.js) in place of its UrbIS solids,
   // behind ?observatory=1 for now (its solids join HIDE_BU_IDS before the first tile is built)
-  if (params.get("observatory") !== "0") await addObservatory({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor });
+  if (params.get("observatory") !== "0") heroes.push(() => addObservatory({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
   // The Eglise Saint-Augustin at Altitude Cent (Forest, just north of Uccle: tools/blender/augustin.py,
   // viewer/augustinCity.js), the skyline landmark; its UrbIS solid is not in the tiles (outside Uccle), nothing hidden
-  if (params.get("augustin") !== "0") await addAugustin({ scene, updaters, world, manifest, log, compiler: () => compileFor });
+  if (params.get("augustin") !== "0") heroes.push(() => addAugustin({ scene, updaters, world, manifest, log, compiler: () => compileFor }));
+  await together(heroes);                                          // (each awaits only its notes; the models load in the background)
   // flags on the town hall balcony (viewer/flagsCity.js), behind ?flags=1 (needs ?townhall=1); in the background
   if (params.get("flags") !== "0") addFlags({ scene, updaters, renderer, compiler: () => compileFor, log, params }).catch((e) => log(`flags failed: ${e.message}`));
   // the tram tracks' smooth vertical profile, before the first tile's rails (?trackprofile=0: the old per-point ground)
-  if (params.get("trackprofile") !== "0") trackProf = await loadTrackProfile(new URL("../data/transit/tram_profile.json", import.meta.url)).catch((e) => { log(`tram profile: ${e.message}`); return null; });
+  // the tile worker starts on the start tile and its ring NOW (the hide list and the ponds are complete): it builds them
+  // one after another while the main thread does the rest of the boot (it waited idle for the warm-up before)
+  if (!OLD_ORDER) bootPrefetch(manifest, entry);
+  // the camera, the sky and the post pipeline now, then every shader of what is already in the scene (the kit, the
+  // street life, furniture, gardens, stops, cars, lamps, the sky; the landmarks queue theirs as they arrive) through
+  // compileAsync WHILE the worker builds the first tiles; the boot warm-up's forced frames then find them built
+  if (!OLD_ORDER && params.get("early") !== "0") pipeReady = setupPipe().then(() => {
+    if (!bootPipes) return;
+    bootStage("shaders");
+    const w = warmNow(scene, () => (pipe ? pipe.render(null) : renderer.render(scene, camera)));
+    log(`early warm-up: ${w.drawables} drawables built in ${w.ms} ms (their pipelines compile in parallel while the first tile builds)`);
+  });
+  if (trackP) trackProf = await (trackEarly ?? trackP());
   // the ground's cover textures (viewer/materials/groundTex.js; ?groundtex=0: the procedural ground), before the first tile
-  setGroundTextures(await loadGroundTextures(renderer));
+  setGroundTextures(await (groundP ?? loadGroundTextures(renderer)));
+  bootStage("tiles");
   const T0 = await loadTile(entry, { layers, contourOn, verbose: true });
+  bootStage("tile");
   world.tiles.push(T0);
   const { hm, roads, net } = T0;
   if (params.get("trams") !== "0") {
@@ -961,7 +1063,6 @@ async function main() {
   for (const el of document.querySelectorAll("[data-layer]")) el.addEventListener("change", () => { layers[el.dataset.layer].visible = el.checked; });
   $("contours").addEventListener("change", (e) => { contourOn.value = e.target.checked ? 1 : 0; });
 
-  const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.3, 6000);
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.maxPolarAngle = Math.PI * 0.495;
@@ -1156,12 +1257,7 @@ async function main() {
     }).catch(() => {}).finally(() => { gpu.pending = false; });
   };
   // Render pipeline: AO + reflections + bloom + grade (?fx=0: plain render, for slow machines)
-  const fx = params.get("fx") !== "0";
-  await lighting.attach(camera);                      // Firmament's sky needs the camera (no-op for ?sky=old)
-  const pipe = fx ? createPipeline(renderer, scene, camera, { aoOn: params.get("ao") !== "0", ssrOn: params.get("ssr") !== "0" }) : null;   // ?ao=0 ?ssr=0: A/B
-  if (pipe) { pipe.setExposureScale(lighting.exposureScale); pipe.look(timeId); }
-  if (params.get("precompile") !== "0") compileFor = (roots) => precompile(renderer, roots, camera, scene, { target: pipe?.passTarget ?? null, mrt: pipe?.passMRT ?? null });   // ?precompile=0: A/B
-  else { renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = lighting.exposureScale; }
+  await (pipeReady ?? setupPipe());                   // the sky, the post pipeline and compileFor (set up before the first tile: see above)
   const focus = new THREE.Vector3(), fwd = new THREE.Vector3();
   let mapHook = null;                      // ?map=1: the minimap + full map (viewer/map/cityMap.js), set below
   const hazeHook = lighting.firmament ? (rt, d, size) => lighting.hazeHook(rt, d, size) : null;   // ?haze=0: off
@@ -1230,13 +1326,14 @@ async function main() {
     } catch (e) { log(`horizon: ${e.message}`); }
   }
   const pending = new Set();
-  let busy = null, firstLite = !!bootPipes;
+  let busy = null, firstLite = !!bootPipes, liteSide = 0;
+  const BOOT_LITE_RING = params.get("bootlite") !== "0";          // ?bootlite=0: the boot's tiles as before (A/B)
   let streamJump = false;                 // a map teleport: tiles left behind go at once (no far-tile hand-over first)
   /** Fade a tile's groups out, then dispose it (at once with ?tilefade=0). */
   const retire = async (groups, dispose) => {
     if (!TILE_FADE) { dispose(); return; }
     const px = groups.map(fadeProxies).filter(Boolean);     // fading copies it has none of yet: built first
-    if (px.length && compileFor) await compileFor(px);
+    if (px.length && compileFor) await compileFor(px, { first: true });
     let n = groups.length;
     for (const g of groups) fader.fade(g, -1, () => { if (--n === 0) dispose(); });
   };
@@ -1269,7 +1366,17 @@ async function main() {
     const want = built.filter((t) => dist(t) <= ring + 0.01 && !world.tiles.some((w) => w.name === t.name)).sort((a, b) => dist(a) - dist(b));
     // the worker pool builds the next wanted tiles in parallel (one per worker); builds of tiles no longer wanted go
     for (const key of [...tilePrefetch.keys()]) if (key.endsWith("|0") && !want.some((t) => `${t.name}|0` === key)) tilePrefetch.delete(key);
+    if (bootRing) bootRing = bootRing.filter(([e, isLite]) => isLite || want.includes(e));   // the boot prefetch: only tiles still wanted
     if (!liteFirst && workers.length > 1) prefetchTiles(want.filter((t) => !pending.has(t.name)).slice(0, workers.length));
+    // (perf audit step 10) the far ring streams ALONGSIDE the full tiles (two at a time, in the background): it used to
+    // wait until every full tile was in (~35 s), leaving the view past the ring empty
+    if (!liteFirst && want.some((t) => !pending.has(t.name)) && BOOT_LITE_RING) {
+      for (const t of built.filter((t) => dist(t) > ring + 0.01 && dist(t) <= far + 0.01 && !lite.has(t.name) && !pending.has(t.name)).sort((a, b) => dist(a) - dist(b)).slice(0, liteSide < 2 ? 2 - liteSide : 0)) {
+        pending.add(t.name); liteSide++;
+        loadLiteTile(t, liteGroup).then((l) => { lite.set(t.name, l); fader.fade(l.group, +1); }, (e) => log(`far tile ${t.name} failed: ${e.message}`))
+          .finally(() => { pending.delete(t.name); liteSide--; });
+      }
+    }
     if (!liteFirst) for (const t of want) {
       if (pending.has(t.name)) continue;
       pending.add(t.name);
@@ -1296,29 +1403,68 @@ async function main() {
       log(`far LOD: ${lite.size} tiles (out to ring ${far}), full: ${world.tiles.map((t) => t.name).join(" ")}`);
     return wantLite.length > 0;
   };
+  /** the boot's far tiles: every tile of the start tile's ring (as a far tile) plus the nearest of the far ring, at once */
+  const streamBootLites = async () => {
+    const [hx, hz] = centre(entry);
+    const dist = (t) => { const [tx, tz] = centre(t); return Math.max(Math.abs(tx - hx), Math.abs(tz - hz)) / T; };
+    const todo = manifest.tiles.filter((t) => t.status !== "missing" && t !== entry && dist(t) <= ring + 0.01 && !lite.has(t.name) && !pending.has(t.name));
+    await Promise.all(todo.map(async (t) => {
+      pending.add(t.name);
+      try { const l = await loadLiteTile(t, liteGroup); lite.set(t.name, l); if (firstLite) firstLite = false; else fader.fade(l.group, +1); } catch (e) { log(`far tile ${t.name} failed: ${e.message}`); }
+      pending.delete(t.name);
+    }));
+    log(`boot: ${todo.length} far tiles round the start tile under the cover`);
+  };
   // every pipeline compiled under the cover before it lifts; streamed tiles then reuse them.
   // One neighbour tile and the first far tiles load under the cover too: the first material built
   // emits its shared TSL functions in a different order than all later ones (same code, other WGSL
   // text, so one more compile), and far tiles have their own shaders.
+  let landing = null;
   if (bootPipes) {
     // the tiles streamed under the cover hold their fade (smooth LOD): the warm-up then compiles their fading
     // copies too (lodFade.js fadeVariant); the first far tile does not fade, so its own materials compile
     fader.hold = true;
     // ?earlyshow=1 (perf audit 2026-11-13, NOT the default): the far tiles load after the cover lifts (the reveal is ~5 s
     // sooner, but the start tile then shows alone in the void and the first seconds stutter: measured, not kept)
-    if (ring > 0) await stream();
-    if (far > ring && params.get("earlyshow") !== "1") await stream(true);
+    bootStage("neighbours");
+    if (BOOT_LITE_RING && far > ring) {
+      // (perf audit step 10) the start tile's ring comes in as FAR tiles under the cover (orthophoto ground + plain
+      // solids: a few hundred ms of worker each, not 3-4 s), so the first view is the start tile in a whole
+      // neighbourhood, not alone in the void; the full ring tiles then fade in over them one by one (stream(), the
+      // usual far -> full hand-over). Before: one full neighbour + the two nearest far tiles under the cover.
+      await streamBootLites();
+    } else {
+      if (ring > 0) await stream();
+      if (far > ring && params.get("earlyshow") !== "1") await stream(true);
+    }
     // ?interior=1: the interior cell's materials compile under the cover too (stand-in meshes with its exact
     // attribute layouts; the cell streaming in later then builds no shader: viewer/interior/interiorModel.js)
     const interiorWarm = params.get("interior") === "1" ? await import("./interior/interiorModel.js").then((m) => m.interiorWarmup()).catch(() => null) : null;
     if (interiorWarm) scene.add(interiorWarm);
-    const w = await warmBoot(renderer, scene, bootPipes);
+    // the loading scene flies onto the city's first camera meanwhile (viewer/loader/), the readout counts the pipelines
+    bootStage("warmup");
+    { const d = controls.enabled ? camera.position.distanceTo(controls.target) : 60, at = camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(d).add(camera.position);
+      landing = window.__loader?.land({ p: camera.position.toArray(), t: at.toArray(), fov: camera.fov }); }
+    const tick = setInterval(() => bootStage("warmup", { done: bootPipes.created - bootPipes.pending, total: bootPipes.created }), 250);
+    // the full tiles' FADING copies (lodFade.js fadeVariant): with the ring as far tiles no full tile fades in under the
+    // cover, so the start tile's copies are drawn here (stand-ins, removed after): the next full tiles then compile
+    // no new pipeline (measured: the first one after the cover waited 3.3 s on 40 of them)
+    const fadeWarm = TILE_FADE ? world.tiles.flatMap((t) => t.groups.map(fadeProxies)).filter(Boolean) : [];
+    for (const g of fadeWarm) scene.add(g);
+    const w = await warmBoot(renderer, scene, bootPipes).finally(() => clearInterval(tick));
+    for (const g of fadeWarm) g.removeFromParent();
     interiorWarm?.removeFromParent();
     fader.hold = false;
     log(`warm-up: ${w.ms} ms, ${w.warmed} drawables, ${w.parallel} pipelines compiled in parallel, ${w.late} after`);
   }
+  // the hand-over: the loading flight is on the city's first camera (at most 3 s more): the cover (that view) cross-fades
+  // into the city's frames from the same camera (index.html #cover.gone, 1.1 s), then the loader's worker stops
+  if (landing) await Promise.race([landing, new Promise((r) => setTimeout(r, 3000))]);
+  bootStage("ready");
   $("cover").classList.add("gone");
+  document.body.classList.remove("loading");
   window.__coverAt = performance.now();             // (the boot time, for debug/preflight.js and perf runs)
+  setTimeout(() => window.__loader?.finish(), 1400);
   // ?impkit=1: the far trees' atlas bakes in the background (a grid row per frame; under the boot cover, where the
   // tiles build without frames, it doubled the boot: 12 -> 28 s). When it is ready its shaders compile off the frame,
   // then every far tree dithers in over the tile fade (viewer/treeKitCity.js show)
