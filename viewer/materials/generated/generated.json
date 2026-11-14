@@ -1909,6 +1909,66 @@
   "a_ktx2_bytes": 378705,
   "n_ktx2_bytes": 412322
  },
+ "tf_pavers_a_1k": {
+  "material": "pavers",
+  "category": "surface",
+  "source": "texfactory",
+  "id": "tf_pavers_a_1k",
+  "name": "Factory pavers a 1K",
+  "licence": "CC0 (generated)",
+  "kind": "cc0",
+  "variant": "a",
+  "seed": 71,
+  "size_m": 1.8,
+  "lattice": [
+   8,
+   16
+  ],
+  "note": "generated: Brussels grey concrete pavers 22 x 11 cm, stretcher bond, mixed batches",
+  "url": "tools/texturefactory (materials/ground.py, seed 71)",
+  "mean_albedo_linear": [
+   0.2098,
+   0.1955,
+   0.1723
+  ],
+  "mean_roughness": 0.845,
+  "lum_std": 0.256,
+  "px": 1024,
+  "files": "generated/pavers/a/pavers_1k",
+  "albedo_webp_bytes": 150854,
+  "nra_webp_bytes": 2116362,
+  "albedo_ktx2_bytes": 707991,
+  "nra_ktx2_bytes": 1156946
+ },
+ "tf_pavers_a_2k": {
+  "material": "pavers",
+  "category": "surface",
+  "source": "texfactory",
+  "id": "tf_pavers_a_2k",
+  "name": "Factory pavers a 2K",
+  "licence": "CC0 (generated)",
+  "kind": "cc0",
+  "variant": "a",
+  "seed": 71,
+  "size_m": 1.8,
+  "lattice": [
+   8,
+   16
+  ],
+  "note": "generated: Brussels grey concrete pavers 22 x 11 cm, stretcher bond, mixed batches",
+  "url": "tools/texturefactory (materials/ground.py, seed 71)",
+  "mean_albedo_linear": [
+   0.2098,
+   0.1955,
+   0.1723
+  ],
+  "mean_roughness": 0.845,
+  "lum_std": 0.256,
+  "px": 2048,
+  "files": "generated/pavers/a/pavers_2k",
+  "albedo_webp_bytes": 504706,
+  "nra_webp_bytes": 7270994
+ },
  "tf_paving_concrete_a_1k": {
   "material": "paving_concrete",
   "category": "surface",
