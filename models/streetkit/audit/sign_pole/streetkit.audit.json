@@ -1,0 +1,1195 @@
+{
+ "summary": {
+  "triangles": 416,
+  "vertices_welded": 195,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 96,
+  "counts": {
+   "sliver": 64,
+   "nonmanifold": 32
+  },
+  "ms": 52
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.001,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "sign_pole",
+   "slot": "galvanised",
+   "triangles": 128,
+   "maxDistance": 320
+  },
+  {
+   "name": "sign_pole",
+   "slot": "cap_dark",
+   "triangles": 288,
+   "maxDistance": 320
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.038,
+     0.788,
+     -0.005
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.038,
+     1.927,
+     -0.002
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.036,
+     0.788,
+     -0.012
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.037,
+     1.927,
+     -0.01
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.033,
+     0.788,
+     -0.019
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.034,
+     1.927,
+     -0.017
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.028,
+     0.788,
+     -0.025
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     1.927,
+     -0.023
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.023,
+     0.788,
+     -0.03
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.025,
+     1.927,
+     -0.028
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.017,
+     0.788,
+     -0.034
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.019,
+     1.927,
+     -0.033
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.01,
+     0.788,
+     -0.037
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.012,
+     1.927,
+     -0.036
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.002,
+     0.788,
+     -0.038
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.005,
+     1.927,
+     -0.038
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.005,
+     0.788,
+     -0.038
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.002,
+     1.927,
+     -0.038
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.012,
+     0.788,
+     -0.036
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.01,
+     1.927,
+     -0.037
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.019,
+     0.788,
+     -0.033
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.017,
+     1.927,
+     -0.034
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.025,
+     0.788,
+     -0.028
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.023,
+     1.927,
+     -0.03
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.788,
+     -0.023
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.028,
+     1.927,
+     -0.025
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.034,
+     0.788,
+     -0.017
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.033,
+     1.927,
+     -0.019
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.037,
+     0.788,
+     -0.01
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.036,
+     1.927,
+     -0.012
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.038,
+     0.788,
+     -0.002
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.038,
+     1.927,
+     -0.005
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.038,
+     0.788,
+     0.005
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.038,
+     1.927,
+     0.002
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.036,
+     0.788,
+     0.012
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.037,
+     1.927,
+     0.01
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.033,
+     0.788,
+     0.019
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.034,
+     1.927,
+     0.017
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.028,
+     0.788,
+     0.025
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     1.927,
+     0.023
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.023,
+     0.788,
+     0.03
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.025,
+     1.927,
+     0.028
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.017,
+     0.788,
+     0.034
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.019,
+     1.927,
+     0.033
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.01,
+     0.788,
+     0.037
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.012,
+     1.927,
+     0.036
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.002,
+     0.788,
+     0.038
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.005,
+     1.927,
+     0.038
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.005,
+     0.788,
+     0.038
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.002,
+     1.927,
+     0.038
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.012,
+     0.788,
+     0.036
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.01,
+     1.927,
+     0.037
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.019,
+     0.788,
+     0.033
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.017,
+     1.927,
+     0.034
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.025,
+     0.788,
+     0.028
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.023,
+     1.927,
+     0.03
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.788,
+     0.023
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.028,
+     1.927,
+     0.025
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.034,
+     0.788,
+     0.017
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.033,
+     1.927,
+     0.019
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.037,
+     0.788,
+     0.01
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.036,
+     1.927,
+     0.012
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.038,
+     0.788,
+     0.002
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.038,
+     1.927,
+     0.005
+    ],
+    "part": "sign_pole/galvanised",
+    "aspect": 458,
+    "longest": 3.415
+   }
+  ],
+  "nonmanifold": [
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.038,
+     3.065,
+     -0.004
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.036,
+     3.065,
+     -0.011
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.033,
+     3.065,
+     -0.018
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.029,
+     3.065,
+     -0.024
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.024,
+     3.065,
+     -0.029
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.018,
+     3.065,
+     -0.033
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.011,
+     3.065,
+     -0.036
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.004,
+     3.065,
+     -0.038
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.004,
+     3.065,
+     -0.038
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.011,
+     3.065,
+     -0.036
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.018,
+     3.065,
+     -0.033
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.024,
+     3.065,
+     -0.029
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     3.065,
+     -0.024
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.033,
+     3.065,
+     -0.018
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.036,
+     3.065,
+     -0.011
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.038,
+     3.065,
+     -0.004
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.038,
+     3.065,
+     0.004
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.036,
+     3.065,
+     0.011
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.033,
+     3.065,
+     0.018
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     3.065,
+     0.024
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.024,
+     3.065,
+     0.029
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.018,
+     3.065,
+     0.033
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.011,
+     3.065,
+     0.036
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.004,
+     3.065,
+     0.038
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.004,
+     3.065,
+     0.038
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.011,
+     3.065,
+     0.036
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.018,
+     3.065,
+     0.033
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.024,
+     3.065,
+     0.029
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.029,
+     3.065,
+     0.024
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.033,
+     3.065,
+     0.018
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.036,
+     3.065,
+     0.011
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.038,
+     3.065,
+     0.004
+    ],
+    "part": "sign_pole/galvanised",
+    "uses": 3
+   }
+  ]
+ },
+ "file": "streetkit.glb"
+}

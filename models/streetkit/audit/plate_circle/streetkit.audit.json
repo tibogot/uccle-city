@@ -1,0 +1,1438 @@
+{
+ "summary": {
+  "triangles": 1252,
+  "vertices_welded": 648,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 72,
+  "counts": {
+   "sliver": 72,
+   "backtoback": 25,
+   "seam": 8
+  },
+  "ms": 104
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": null,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "plate_circle",
+   "slot": "sign_face",
+   "triangles": 46,
+   "maxDistance": 320
+  },
+  {
+   "name": "plate_circle",
+   "slot": "sign_back",
+   "triangles": 238,
+   "maxDistance": 320
+  },
+  {
+   "name": "plate_circle",
+   "slot": "sign_rail",
+   "triangles": 432,
+   "maxDistance": 320
+  },
+  {
+   "name": "plate_circle",
+   "slot": "galvanised",
+   "triangles": 360,
+   "maxDistance": 320
+  },
+  {
+   "name": "plate_circle",
+   "slot": "bolt_steel",
+   "triangles": 176,
+   "maxDistance": 320
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.076,
+     0.13,
+     -0.039
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.076,
+     0.131,
+     -0.039
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.076,
+     0.132,
+     -0.04
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.076,
+     0.132,
+     -0.041
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.076,
+     0.17,
+     -0.039
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.076,
+     0.169,
+     -0.039
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.076,
+     0.168,
+     -0.04
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.076,
+     0.168,
+     -0.041
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.076,
+     0.13,
+     -0.022
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.076,
+     0.131,
+     -0.022
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.076,
+     0.132,
+     -0.021
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.076,
+     0.132,
+     -0.02
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.076,
+     0.17,
+     -0.022
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.076,
+     0.169,
+     -0.022
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.076,
+     0.168,
+     -0.021
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.076,
+     0.168,
+     -0.02
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.077,
+     0.122,
+     -0.044
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.077,
+     0.122,
+     -0.044
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.077,
+     0.123,
+     -0.045
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.077,
+     0.123,
+     -0.045
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.077,
+     0.178,
+     -0.044
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.077,
+     0.178,
+     -0.044
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.077,
+     0.177,
+     -0.045
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.077,
+     0.177,
+     -0.045
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.077,
+     0.122,
+     -0.042
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.077,
+     0.122,
+     -0.042
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.077,
+     0.123,
+     -0.041
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.077,
+     0.123,
+     -0.041
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.077,
+     0.178,
+     -0.042
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.077,
+     0.178,
+     -0.042
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.077,
+     0.177,
+     -0.041
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.077,
+     0.177,
+     -0.041
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.077,
+     0.122,
+     -0.043
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 465,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.077,
+     0.122,
+     -0.043
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 465,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.077,
+     0.178,
+     -0.043
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 465,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.077,
+     0.178,
+     -0.043
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 465,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.076,
+     -0.17,
+     -0.039
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.076,
+     -0.169,
+     -0.039
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.076,
+     -0.168,
+     -0.04
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.076,
+     -0.168,
+     -0.041
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.076,
+     -0.13,
+     -0.039
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.076,
+     -0.131,
+     -0.039
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.076,
+     -0.132,
+     -0.04
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.076,
+     -0.132,
+     -0.041
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.076,
+     -0.17,
+     -0.022
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.076,
+     -0.169,
+     -0.022
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.076,
+     -0.168,
+     -0.021
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.076,
+     -0.168,
+     -0.02
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.076,
+     -0.13,
+     -0.022
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.076,
+     -0.131,
+     -0.022
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.076,
+     -0.132,
+     -0.021
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.076,
+     -0.132,
+     -0.02
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 198,
+    "longest": 0.454
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.077,
+     -0.178,
+     -0.044
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.077,
+     -0.178,
+     -0.044
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.077,
+     -0.177,
+     -0.045
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.077,
+     -0.177,
+     -0.045
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.077,
+     -0.122,
+     -0.044
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.077,
+     -0.122,
+     -0.044
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.077,
+     -0.123,
+     -0.045
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.077,
+     -0.123,
+     -0.045
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.077,
+     -0.178,
+     -0.042
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.077,
+     -0.178,
+     -0.042
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.077,
+     -0.177,
+     -0.041
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.077,
+     -0.177,
+     -0.041
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.077,
+     -0.122,
+     -0.042
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.077,
+     -0.122,
+     -0.042
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.077,
+     -0.123,
+     -0.041
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.077,
+     -0.123,
+     -0.041
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 405,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.077,
+     -0.178,
+     -0.043
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 465,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.077,
+     -0.178,
+     -0.043
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 465,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.077,
+     -0.122,
+     -0.043
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 465,
+    "longest": 0.465
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.077,
+     -0.122,
+     -0.043
+    ],
+    "part": "plate_circle/sign_rail",
+    "aspect": 465,
+    "longest": 0.465
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.179,
+     -0.135,
+     -0.02
+    ],
+    "parts": [
+     "plate_circle/sign_back",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00033
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.172,
+     -0.152,
+     -0.02
+    ],
+    "parts": [
+     "plate_circle/sign_back",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00242
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.193,
+     0.166,
+     -0.02
+    ],
+    "parts": [
+     "plate_circle/sign_back",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.0001
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.195,
+     0.149,
+     -0.02
+    ],
+    "parts": [
+     "plate_circle/sign_back",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00153
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.223,
+     -0.15,
+     -0.02
+    ],
+    "parts": [
+     "plate_circle/sign_back",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00025
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.22,
+     -0.152,
+     -0.02
+    ],
+    "parts": [
+     "plate_circle/sign_back",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00048
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.223,
+     0.15,
+     -0.02
+    ],
+    "parts": [
+     "plate_circle/sign_back",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00025
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.12,
+     0.154,
+     -0.02
+    ],
+    "parts": [
+     "plate_circle/sign_back",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00558
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.111,
+     0.138,
+     -0.02
+    ],
+    "parts": [
+     "plate_circle/sign_back",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00111
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.166,
+     -0.148,
+     -0.02
+    ],
+    "parts": [
+     "plate_circle/sign_back",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00316
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.169,
+     -0.165,
+     -0.02
+    ],
+    "parts": [
+     "plate_circle/sign_back",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00038
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.056,
+     0.16,
+     -0.02
+    ],
+    "parts": [
+     "plate_circle/sign_back",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00174
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.029,
+     0.143,
+     -0.02
+    ],
+    "parts": [
+     "plate_circle/sign_back",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00319
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.011,
+     -0.141,
+     -0.02
+    ],
+    "parts": [
+     "plate_circle/sign_back",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00397
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.003,
+     -0.158,
+     -0.02
+    ],
+    "parts": [
+     "plate_circle/sign_back",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00441
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.149,
+     0.164,
+     -0.02
+    ],
+    "parts": [
+     "plate_circle/sign_back",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00028
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.141,
+     0.147,
+     -0.02
+    ],
+    "parts": [
+     "plate_circle/sign_back",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00162
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.026,
+     0.161,
+     -0.041
+    ],
+    "parts": [
+     "plate_circle/sign_rail",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00319
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.151,
+     0.154,
+     -0.041
+    ],
+    "parts": [
+     "plate_circle/sign_rail",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00452
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.151,
+     0.146,
+     -0.041
+    ],
+    "parts": [
+     "plate_circle/sign_rail",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00452
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.026,
+     0.139,
+     -0.041
+    ],
+    "parts": [
+     "plate_circle/sign_rail",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00319
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.026,
+     -0.139,
+     -0.041
+    ],
+    "parts": [
+     "plate_circle/sign_rail",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00319
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.151,
+     -0.146,
+     -0.041
+    ],
+    "parts": [
+     "plate_circle/sign_rail",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00452
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.151,
+     -0.154,
+     -0.041
+    ],
+    "parts": [
+     "plate_circle/sign_rail",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00452
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.026,
+     -0.161,
+     -0.041
+    ],
+    "parts": [
+     "plate_circle/sign_rail",
+     "plate_circle/sign_rail"
+    ],
+    "area": 0.00319
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.048,
+     0.154,
+     -0.055
+    ],
+    "parts": [
+     "plate_circle/galvanised",
+     "plate_circle/bolt_steel"
+    ],
+    "length_m": 0.07,
+    "pieces": 34,
+    "min_angle_deg": 23.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.048,
+     0.146,
+     -0.055
+    ],
+    "parts": [
+     "plate_circle/galvanised",
+     "plate_circle/bolt_steel"
+    ],
+    "length_m": 0.07,
+    "pieces": 34,
+    "min_angle_deg": 23.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.048,
+     -0.146,
+     -0.055
+    ],
+    "parts": [
+     "plate_circle/galvanised",
+     "plate_circle/bolt_steel"
+    ],
+    "length_m": 0.07,
+    "pieces": 34,
+    "min_angle_deg": 23.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.048,
+     -0.154,
+     -0.055
+    ],
+    "parts": [
+     "plate_circle/galvanised",
+     "plate_circle/bolt_steel"
+    ],
+    "length_m": 0.07,
+    "pieces": 34,
+    "min_angle_deg": 23.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.164,
+     -0.167,
+     -0.02
+    ],
+    "parts": [
+     "plate_circle/sign_back",
+     "plate_circle/sign_rail"
+    ],
+    "length_m": 0.98,
+    "pieces": 14,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.197,
+     0.133,
+     -0.02
+    ],
+    "parts": [
+     "plate_circle/sign_back",
+     "plate_circle/sign_rail"
+    ],
+    "length_m": 0.98,
+    "pieces": 12,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.227,
+     0.15,
+     -0.041
+    ],
+    "parts": [
+     "plate_circle/sign_rail",
+     "plate_circle/sign_rail"
+    ],
+    "length_m": 0.98,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.227,
+     -0.15,
+     -0.041
+    ],
+    "parts": [
+     "plate_circle/sign_rail",
+     "plate_circle/sign_rail"
+    ],
+    "length_m": 0.98,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   }
+  ]
+ },
+ "file": "streetkit.glb"
+}

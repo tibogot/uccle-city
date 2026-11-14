@@ -253,11 +253,12 @@ export class StreetLife {
   }
   /** opts: base (data/streetlife/), the atlas (pageW x pageH x atlasPages), propShadows (the kits' own shadow flags;
    *  the signs, plates, numbers, frames and windows never cast one) */
-  constructor(scene, { base = new URL("../../data/streetlife/", import.meta.url), pageW = 2048, pageH = 1024, atlasPages = 16, propShadows = true, stopsBase = null, noBubbles = false, noFuel = false, shops = true, renderer = null } = {}) {
+  constructor(scene, { base = new URL("../../data/streetlife/", import.meta.url), pageW = 2048, pageH = 1024, atlasPages = 16, propShadows = true, stopsBase = null, noBubbles = false, noFuel = false, noStreetKit = false, shops = true, renderer = null } = {}) {
     this.scene = scene; this.base = base; this.propShadows = propShadows;
     this.shops = shops; this.renderer = renderer;      // the shopfront kit + interiors (viewer/shops/); false = the old flat fronts (?shops=old)
     this.noFuel = noFuel;                // the petrol station kit on (viewer/fuel/): no box canopy / pumps / pylon here
     this.noBubbles = noBubbles;          // furniture kit 2 on (viewer/furniture2/): its glass banks replace the bubbles
+    this.noStreetKit = noStreetKit;      // the street kit on (viewer/streetkit/): its Villo stations and plate posts replace these
     this.stopsBase = stopsBase;          // data/stops/ when the STIB stops kit is on (viewer/stops/): the stops' text only
     this.group = new THREE.Group(); this.group.name = "streetlife";
     scene.add(this.group);
@@ -314,7 +315,7 @@ export class StreetLife {
     return new Promise((resolve, reject) => {
       const id = ++this.reqId;
       this.req.set(id, { resolve, reject });
-      this.worker.postMessage({ id, tile, url: new URL(`${tile}.json`, this.base).href, pageW: this.atlas.W, pageH: this.atlas.H, stopsUrl: this.stopsBase ? new URL(`${tile}.json`, this.stopsBase).href : null, noBubbles: this.noBubbles, noFuel: this.noFuel,
+      this.worker.postMessage({ id, tile, url: new URL(`${tile}.json`, this.base).href, pageW: this.atlas.W, pageH: this.atlas.H, stopsUrl: this.stopsBase ? new URL(`${tile}.json`, this.stopsBase).href : null, noBubbles: this.noBubbles, noFuel: this.noFuel, noStreetKit: this.noStreetKit,
         shops: this.shops, terracesUrl: new URL("../shops/terraces.json", this.base).href });
     });
   }
