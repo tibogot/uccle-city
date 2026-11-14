@@ -58,6 +58,7 @@ import { cityFurniture } from "./furniture2/cityFurniture.js";
 import { cityGardens } from "./gardens/cityGardens.js";
 import { deckHeight } from "./streets/bridgeDecks.js";
 import { cityGrass } from "./grass/cityGrass.js";
+import { liteShown } from "./liteShown.js";
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -841,7 +842,7 @@ async function main() {
           levels.forEach((g, k) => { g.visible = shown[k]; if (shown[k]) g.traverse((o) => { o.userData.fade = fades[k]; }); });
         }
         if (n++ % 30) return;
-        lod.visible = world.tiles.some((t) => t.name === home) || !!scene.getObjectByName(`${home}-lite`);
+        lod.visible = world.tiles.some((t) => t.name === home) || liteShown(scene, home);
       });
       log(`Saint-Job church: scripted model, LODs ${m.lods.map((l) => l.tris).join(" / ")} triangles (?stjob=0: the UrbIS solid)`);
       // the peregrine family at the church (viewer/falcons.js, Falcon Lab): ?falcons=0 = none
@@ -936,7 +937,7 @@ async function main() {
           updaters.push((camPos) => {
             pb.update(camPos);
             if (n++ % 30) return;
-            pb.group.visible = world.tiles.some((t) => t.name === home) || !!scene.getObjectByName(`${home}-lite`);
+            pb.group.visible = world.tiles.some((t) => t.name === home) || liteShown(scene, home);
           });
           log(`${b.info.kind === "road_over_rail" ? "road bridge" : "railway bridge"} ${name} (${b.info.urbis}, ${b.info.kind === "road_over_rail" ? `${b.info.road} over ${b.info.line}` : `${b.info.line} over ${b.info.road}`}): LODs ${b.lods.map((l) => Math.round(l.tris)).join(" / ")} triangles; warmed in ${Math.round(warm.ms)} ms${warm.err ? ` (${warm.err})` : ""}`);
         }).catch((e) => log(`bridge ${name}: ${e.message}`));
@@ -1442,7 +1443,7 @@ async function main() {
     }
     return m.collisionTest({ scene, world, driver, makeController }, name, opts);
   };
-  window.viewer = { auditColliders, contactAudit, collisionTest, thirdPerson: () => thirdPerson(), getThird: () => third, tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
+  window.viewer = { updaters, auditColliders, contactAudit, collisionTest, thirdPerson: () => thirdPerson(), getThird: () => third, tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
     world, fader, stateAt, groundLook,
     // A/B of the ground: on = textured (default), off = the procedural ground, swapped on every full tile's terrain
     groundAB: (on) => { for (const g of layers.terrain.children) g.traverse((o) => { if (!o.userData.groundAB) return; o.userData.groundTex ??= o.material; o.material = on ? o.userData.groundTex : o.userData.groundAB(); }); }, step: (dt) => stepLoop(dt), freeze: (on) => { stateFreeze = !!on; }, pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop),

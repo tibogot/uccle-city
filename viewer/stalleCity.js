@@ -12,6 +12,7 @@
 import * as THREE from "three/webgpu";
 import { loadStalle, ST_LODS, ST_SLATES, slateFade, ST_SLOTS } from "./stalleModel.js";
 import { withObjectFade, SMOOTH } from "./lodFade.js";
+import { liteShown } from "./liteShown.js";
 
 const FETCH_AT = 120, SHOW_AT = 40, HIDE_AT = 60;
 
@@ -40,7 +41,7 @@ export async function addStalle({ scene, updaters, hide, world, manifest, log, c
     let n = 0, home = false;
     const inner = interior(m);
     updaters.push((camPos) => {
-      if (n++ % 30 === 0) home = homes.some((h) => world.tiles.some((t) => t.name === h) || !!scene.getObjectByName(`${h}-lite`));
+      if (n++ % 30 === 0) home = homes.some((h) => world.tiles.some((t) => t.name === h) || liteShown(scene, h));
       root.visible = home;
       if (!home) return;
       const d = m.distance(camPos);
