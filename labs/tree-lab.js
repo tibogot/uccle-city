@@ -11,6 +11,9 @@
 // sprays per season, bark), its own seasons (spring / summer / autumn / marcescent winter: a rebuild + impostor rebake
 // each), its far trees through the IMPOSTOR KIT as in the city, and the "Drève de Lorraine" layout: the 520 real copper
 // beeches of the Bruxelles Mobilité inventory (data/trees/bm_copper_beech.json) with their heights and crowns.
+// (2026-11-14) + the HORSE CHESTNUT (viewer/treesHorseChestnut.js, docs/trees/HORSE_CHESTNUT.md), the same way: its
+// seasons (spring with the flower candles, summer, early rust autumn, bare winter), the impostor kit, and the layout
+// "Avenue Winston Churchill + Avenue de Fré": its 276 trees of the inventory (data/trees/bm_horse_chestnut.json).
 import * as THREE from "three/webgpu";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { uniform, vec3, float, mix, select, positionWorld, mx_noise_float, smoothstep } from "three/tsl";
@@ -21,6 +24,7 @@ import { makeSpecies, STREET, TREE_SHADOW, setTreeRenderer, setTreeLighting } fr
 import { planeDef, planeLeafMask } from "../viewer/treesPlane.js";
 import { beechDef } from "../viewer/treesBeech.js";
 import { copperBeechDef, loadCopperBeechTextures, COPPER_SEASONS } from "../viewer/treesCopperBeech.js";
+import { horseChestnutDef, loadHorseChestnutTextures, CHESTNUT_SEASONS } from "../viewer/treesHorseChestnut.js";
 import * as K from "../viewer/impostorKit/index.js";
 import { flickerTest, showHeat } from "./flickerTest.js";
 import { IMP, impostorField } from "../viewer/impostors.js";
@@ -125,6 +129,12 @@ const forestTrees = (() => {
 const DREVE_X = 900;
 const dreve = await fetch("../data/trees/bm_copper_beech.json").then((r) => r.json());
 const dreveTrees = dreve.trees.map(([x, z, h, d]) => ({ x: x + DREVE_X, z, height: h, crown: d / 2 }));
+// the horse chestnuts of the Avenue Winston Churchill (233, its central berms), the Avenue de Fré (41) and the Chaussée
+// d'Alsemberg (2): south of the lab's other layouts
+const CHURCHILL_Z = 2700;
+const hcRows = await fetch("../data/trees/bm_horse_chestnut.json").then((r) => r.json());
+const chestnutTrees = hcRows.trees.map(([x, z, h, d, , st]) => ({ x, z: z + CHURCHILL_Z, height: h, crown: d / 2, street: st }));
+const CHESTNUT_LAYOUT = "Avenue Winston Churchill + Avenue de Fré (inventory, 276 horse chestnuts)";
 
 // ------------------------------------------------------------------------------------------------ species
 const S = {
@@ -135,6 +145,7 @@ const S = {
   impostors: true, impStart: IMP.start.value, impBand: IMP.band.value, impEnd: IMP.end.value, impEndBand: IMP.endBand.value,
   shadows: true, shEnd: TREE_SHADOW.end.value, shBand: TREE_SHADOW.band.value,
   wind: 0, windSpeed: 1.1, windDir: 30, season: 0, cbSeason: COPPER_SEASONS[qp.get("cbseason")] ? qp.get("cbseason") : "summer", farKit: qp.get("farkit") !== "0",
+  hcSeason: CHESTNUT_SEASONS[qp.get("hcseason")] ? qp.get("hcseason") : "summer",
   time: preset, hour: lighting.hour, post: true,
   walkMode: "frozen view (LOD eye walks)", walkD: 2, walkSeconds: 40, walking: false,
   perf: "", passes: "", cpu: "", mem: "", bench: "—", lodNow: "", crownFit: "", pop: "—",
@@ -144,13 +155,17 @@ const DEFS = {
   plane: (seed) => planeDef(seed),
   beech: (seed) => beechDef(seed),
   copperbeech: (seed) => copperBeechDef(seed, COPPER_TEX[S.cbSeason]),
+  horsechestnut: (seed) => horseChestnutDef(seed, HC_TEX[S.hcSeason]),
 };
 // the copper beech's factory textures, every season (small: ~1.4 MB GPU per spray, the bark 2.7 MB)
 const COPPER_TEX = {};
 await Promise.all(Object.keys(COPPER_SEASONS).map(async (k) => { COPPER_TEX[k] = await loadCopperBeechTextures(renderer, k); }));
+// the horse chestnut's, every season (spring and winter have their own normal maps)
+const HC_TEX = {};
+await Promise.all(Object.keys(CHESTNUT_SEASONS).map(async (k) => { HC_TEX[k] = await loadHorseChestnutTextures(renderer, k); }));
 // the forest patch (tile M8: mostly beech in the Sonian Forest edge) as a mix of species, shares of the LiDAR trees
 const FOREST_MIX = { "all beech": { beech: 1 }, "beech 80 % + street trees 20 %": { beech: 0.8, street: 0.2 } };
-const SPECIES_NAMES = { "street (city today)": "street", "plane (Platanus x acerifolia)": "plane", "copper beech": "copperbeech" };
+const SPECIES_NAMES = { "street (city today)": "street", "plane (Platanus x acerifolia)": "plane", "copper beech": "copperbeech", "horse chestnut": "horsechestnut" };
 const speciesKey = () => (S.species in DEFS ? S.species : SPECIES_NAMES[S.species]);
 const species = {};
 // LOD colours (debug): one per mesh (userData.treeLod: 0-2, 3 = impostor), mixed into every tree material
@@ -187,10 +202,15 @@ const variantFn = (sp) => {
     if (S.layout.startsWith("street") || S.layout.startsWith("Drève")) return (i) => sp.variantOfIndex(i) % 4;
     if (S.layout.startsWith("park")) return (i) => 4 + (sp.variantOfIndex(i) % 2);
   }
+  // the horse chestnut on auto: the avenue form (0-3) on the streets, the park form (4-5) in the park
+  if (v === "auto" && sp.def.id === "horsechestnut") {
+    if (S.layout.startsWith("street") || S.layout.startsWith("Drève") || S.layout === CHESTNUT_LAYOUT) return (i) => sp.variantOfIndex(i) % 4;
+    if (S.layout.startsWith("park")) return (i) => 4 + (sp.variantOfIndex(i) % 2);
+  }
   if (v === "auto") return null;
   // the plane and the beech have two forms: variants 0-3 (plane natural, beech forest) and 4-5 (plane pollard,
   // beech open-grown); the street trees have one
-  const forms = sp.def.id === "plane" || sp.def.id === "beech" || sp.def.id === "copperbeech";
+  const forms = sp.def.id === "plane" || sp.def.id === "beech" || sp.def.id === "copperbeech" || sp.def.id === "horsechestnut";
   if (v.startsWith("auto: 0-3")) return forms ? (i) => sp.variantOfIndex(i) % 4 : null;
   if (v.startsWith("auto: 4-5")) return forms ? (i) => 4 + (sp.variantOfIndex(i) % 2) : null;
   return () => Math.min(sp.variants - 1, +v);
@@ -202,9 +222,10 @@ function placementsFor(layout) {
   if (layout === "park cluster (LiDAR G4)") T.push(...parkTrees);
   if (layout === "forest patch (LiDAR M8, 4552)") T.push(...forestTrees);
   if (layout.startsWith("Drève")) T.push(...dreveTrees);
+  if (layout === CHESTNUT_LAYOUT) T.push(...chestnutTrees);
   return T;
 }
-const LAYOUTS = ["single tree", "LOD chain side by side", "street of 50", "park cluster (LiDAR G4)", "forest patch (LiDAR M8, 4552)", "Drève de Lorraine (inventory, 520 copper beeches)"];
+const LAYOUTS = ["single tree", "LOD chain side by side", "street of 50", "park cluster (LiDAR G4)", "forest patch (LiDAR M8, 4552)", "Drève de Lorraine (inventory, 520 copper beeches)", CHESTNUT_LAYOUT];
 /** Build the current layout (keys: the species to build; the first is shown, the others hidden for A/B). */
 function build(keys = [speciesKey()]) {
   for (const { f } of fields) f.dispose();
@@ -242,7 +263,7 @@ function build(keys = [speciesKey()]) {
     if (f.imp) f.imp.mesh.userData.treeLod = 3;
     const entry = { key, sp, f };
     fields.push(entry);
-    if (key === "copperbeech" && S.farKit) attachKit(entry, vf ?? ((i) => sp.variantOfIndex(i)));
+    if ((key === "copperbeech" || key === "horsechestnut") && S.farKit) attachKit(entry, vf ?? ((i) => sp.variantOfIndex(i)));
   }
   setPits(S.layout === "street of 50" || S.layout === "single tree" || S.layout === "LOD chain side by side"
     ? (S.layout === "LOD chain side by side" ? [-24, -8, 8, 24].map((x) => [x, 0, Y0 + 0.02]) : T.map((t) => [t.x, t.z, Y0 + (S.layout === "street of 50" ? 0.14 : 0.02)])) : []);
@@ -420,12 +441,20 @@ const VIEWS = {
     const cx = m.reduce((s, t) => s + t.x, 0) / Math.max(1, m.length);
     camera.position.set(n.x + 2, Y0 + 1.7, n.z - 6); controls.target.set(cx || n.x, Y0 + 10, n.z + 150);
   },
+  // along the Avenue Winston Churchill from its west end, at eye height, beside its central rows
+  [CHESTNUT_LAYOUT]: () => {
+    const T = chestnutTrees.filter((t) => t.street === 0), w = T.reduce((a, t) => (t.x < a.x ? t : a));
+    const m = T.filter((t) => { const d = Math.hypot(t.x - w.x, t.z - w.z); return d > 120 && d < 200; });
+    const tx = m.reduce((s, t) => s + t.x, 0) / Math.max(1, m.length), tz = m.reduce((s, t) => s + t.z, 0) / Math.max(1, m.length);
+    const dir = new THREE.Vector3(tx - w.x, 0, tz - w.z).normalize(), side = new THREE.Vector3(-dir.z, 0, dir.x);
+    camera.position.set(w.x - dir.x * 12 + side.x * 9, Y0 + 1.7, w.z - dir.z * 12 + side.z * 9); controls.target.set(tx || w.x, Y0 + 8, tz || w.z);
+  },
 };
 /** the preset view of a layout, turned round its target so the sun is behind the camera (front-lit) */
 function resetView() {
   VIEWS[S.layout]?.();
   if (S.layout === "LOD chain side by side") camera.position.set(0, Y0 + 8, Math.sign(lighting.sunDir.z || 1) * 58);   // the row's sunny side
-  else if (S.layout !== "street of 50" && !S.layout.startsWith("Drève")) {
+  else if (S.layout !== "street of 50" && !S.layout.startsWith("Drève") && S.layout !== CHESTNUT_LAYOUT) {
     const off = camera.position.clone().sub(controls.target), h = Math.hypot(off.x, off.z);
     const sd = new THREE.Vector3(lighting.sunDir.x, 0, lighting.sunDir.z).normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), 0.5);
     camera.position.set(controls.target.x + sd.x * h, camera.position.y, controls.target.z + sd.z * h);
@@ -484,18 +513,21 @@ function lodStateText(d) {
 const ui = new Panel({ title: "Tree Lab" });
 const fs = ui.addFolder("Scene & species");
 fs.add(S, "layout", LAYOUTS).onChange(() => { build(); resetView(); }).listen();
-fs.add(S, "species", ["street", "plane", "beech", "copperbeech"]).name("species").onChange(() => build()).listen();
+fs.add(S, "species", ["street", "plane", "beech", "copperbeech", "horsechestnut"]).name("species").onChange(() => build()).listen();
 fs.add(S, "cbSeason", Object.keys(COPPER_SEASONS)).name("copper beech season").onChange(() => rebuildCopper()).listen();
-fs.add(S, "farKit").name("copper beech far: impostor kit").onChange(() => build()).listen();
+fs.add(S, "hcSeason", Object.keys(CHESTNUT_SEASONS)).name("horse chestnut season").onChange(() => rebuildSeasonal("horsechestnut")).listen();
+fs.add(S, "farKit").name("copper beech / horse chestnut far: impostor kit").onChange(() => build()).listen();
 fs.add(S, "variant", ["auto", "auto: 0-3 (plane natural, beech forest)", "auto: 4-5 (plane pollards, beech open-grown)", "0", "1", "2", "3", "4", "5"]).onChange(() => build()).listen();
 fs.add(S, "forestMix", Object.keys(FOREST_MIX).concat(["the selected species"])).name("forest patch species").onChange(() => { if (S.layout.startsWith("forest")) build(); }).listen();
 fs.add(S, "seed", 1, 99999, 1).onChange(() => { for (const k of Object.keys(species)) disposeSpecies(k); build(); });
 /** the copper beech in another season: a new species (its spray, palette and impostor bakes) */
-function rebuildCopper() {
+function rebuildCopper() { rebuildSeasonal("copperbeech"); }
+/** a seasonal species (copper beech, horse chestnut) in another season: a new species (spray, palette, bakes) */
+function rebuildSeasonal(key) {
   const shown = fields.map((x) => x.key);
   const wasChain = !!chain;
-  if (species.copperbeech) disposeSpecies("copperbeech");
-  if (shown.includes("copperbeech") || (wasChain && speciesKey() === "copperbeech")) build([...new Set(shown.length ? shown : [speciesKey()])]);
+  if (species[key]) disposeSpecies(key);
+  if (shown.includes(key) || (wasChain && speciesKey() === key)) build([...new Set(shown.length ? shown : [speciesKey()])]);
 }
 fs.add(S, "height", 4, 40, 0.5).name("LiDAR height (m)").onChange(() => { if (["single tree", "LOD chain side by side", "street of 50"].includes(S.layout)) build(); }).listen();
 fs.add(S, "crown", 1, 14, 0.1).name("LiDAR crown r (m)").onChange(applyAll);
@@ -553,6 +585,9 @@ fp.add({ f: () => bench("species", { pair: ["street", "plane"] }) }, "f").name("
 fp.add({ f: () => bench("species", { pair: ["street", "beech"] }) }, "f").name("benchmark: street vs beech (A/B)");
 fp.add({ f: () => bench("species", { pair: ["beech", "copperbeech"] }) }, "f").name("benchmark: beech vs copper beech (A/B)");
 fp.add({ f: () => bench("species", { pair: ["plane", "copperbeech"] }) }, "f").name("benchmark: plane vs copper beech (A/B)");
+fp.add({ f: () => bench("species", { pair: ["copperbeech", "horsechestnut"] }) }, "f").name("benchmark: copper beech vs horse chestnut (A/B)");
+fp.add({ f: () => bench("species", { pair: ["beech", "horsechestnut"] }) }, "f").name("benchmark: beech vs horse chestnut (A/B)");
+fp.add({ f: () => bench("species", { pair: ["plane", "horsechestnut"] }) }, "f").name("benchmark: plane vs horse chestnut (A/B)");
 fp.add({ f: () => flicker() }, "f").name("flicker test (24 frames, strafe)");
 fp.add(S, "bench").name("result").listen();
 
@@ -619,7 +654,7 @@ function memText() {
   }
   let kitB = 0;
   for (const k of kits.values()) kitB += k.atlas?.bytes ?? 0;
-  const ct = species.copperbeech ? COPPER_TEX[S.cbSeason].gpuBytes : 0;
+  const ct = (species.copperbeech ? COPPER_TEX[S.cbSeason].gpuBytes : 0) + (species.horsechestnut ? HC_TEX[S.hcSeason].gpuBytes : 0);
   return `impostor atlas ${(atlas / 1048576).toFixed(1)} MB · kit atlas ${(kitB / 1048576).toFixed(1)} MB · built trees ${(geo / 1048576).toFixed(2)} MB · leaf masks ${(mask / 1048576).toFixed(2)} MB · factory textures ${(ct / 1048576).toFixed(1)} MB`;
 }
 function updateInfo() {
@@ -723,4 +758,4 @@ async function flicker(o = {}) {
   if (o.heat !== false) showHeat(r);
   return r;
 }
-window.lab = { flicker, kits, COPPER_TEX, dreveTrees, ui, popWalk, photoView, renderer, scene, camera, controls, lighting, S, species, get fields() { return fields; }, get chain() { return chain; }, build, applyAll, bench, alternate, results, startWalk, stopWalk, walkAt, walk, resetView, gpu, lodMorph, IMP, TREE_SHADOW, drawMask, planeLeafMask };
+window.lab = { flicker, kits, COPPER_TEX, HC_TEX, chestnutTrees, dreveTrees, ui, popWalk, photoView, renderer, scene, camera, controls, lighting, S, species, get fields() { return fields; }, get chain() { return chain; }, build, applyAll, bench, alternate, results, startWalk, stopWalk, walkAt, walk, resetView, gpu, lodMorph, IMP, TREE_SHADOW, drawMask, planeLeafMask };

@@ -5,7 +5,8 @@ shipped copies are committed, like the CC0 tree scans.
     python -E tools/trees/ship_factory_tree_textures.py leaf_copperbeech bark_copperbeech:a
 
 leaf_<sp>: every season the factory built (summer = leaf_<sp>, then leaf_<sp>_spring / _autumn / _winter), all
-sharing leaf_<sp>_n.ktx2 (manifest field n_file). bark_<sp>:<variant>: the 1K KTX2 pair as bark_tf_<sp>_*.
+sharing leaf_<sp>_n.ktx2 (manifest field n_file) unless
+the factory gave a season its own (leaf_<sp>_<season>_n.ktx2). bark_<sp>:<variant>: the 1K KTX2 pair as bark_tf_<sp>_*.
 """
 import json
 import os
@@ -31,11 +32,15 @@ def main():
                 if not e:
                     continue
                 shutil.copyfile(os.path.join(GEN, "trees", f"{name}{tag}_a.ktx2"), os.path.join(DST, f"{name}{tag}_a.ktx2"))
+                # a season with its own normal + thickness (the horse chestnut's spring candles, its bare winter)
+                n_file = os.path.basename(e.get("n_file") or f"{name}_n.ktx2")
+                if n_file != f"{name}_n.ktx2":
+                    shutil.copyfile(os.path.join(GEN, "trees", n_file), os.path.join(DST, n_file))
                 man["leaves"][f"{name}{tag}"] = {
                     "what": f"{name[5:]} spray, {e['season']} (texture factory, tools/texturefactory/materials/leaves.py)",
                     "licence": "CC0 (generated)", "source": e["url"], "season": e["season"], "px": e["px"],
                     "coverage": e["coverage"], "mean_albedo_linear": e["mean_albedo_linear"], "mean_thickness": e["mean_thickness"],
-                    "a_ktx2_bytes": e["a_ktx2_bytes"], "n_ktx2_bytes": e["n_ktx2_bytes"], "n_file": f"{name}_n.ktx2"}
+                    "a_ktx2_bytes": e["a_ktx2_bytes"], "n_ktx2_bytes": e["n_ktx2_bytes"], "n_file": n_file}
                 print("leaf", f"{name}{tag}")
         elif arg.startswith("bark_"):
             mat, var = (arg.split(":") + ["a"])[:2]

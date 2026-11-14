@@ -522,8 +522,9 @@ is the chain's own, a thing to look at separately.
 
 ## 7. Next steps
 
-1. **More species**: the beech is done (§3b); next the copper beech (a preset of it), the lime (*Tilia × euchlora*,
-   common on the Uccle roads) and the horse chestnut. For the city: one `makeSpecies` field per species per tile;
+1. **More species**: the beech is done (§3b), the copper beech and the horse chestnut too (lab only, factory
+   textures, four seasons, the impostor kit: `docs/trees/COPPER_BEECH.md`, `docs/trees/HORSE_CHESTNUT.md`); next
+   the lime (*Tilia × euchlora*, common on the Uccle roads). For the city: one `makeSpecies` field per species per tile;
    the forest tiles all-beech (or mostly) with the forest form, the avenues per the inventory below.
 2. **The real species per tree from open data** (checked 2026-11-06; samples in `data/raw/trees_inventory/`,
    git-ignored):

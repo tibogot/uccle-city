@@ -127,6 +127,74 @@
    "a_ktx2_bytes": 78872,
    "n_ktx2_bytes": 433988,
    "n_file": "leaf_copperbeech_n.ktx2"
+  },
+  "leaf_horsechestnut": {
+   "what": "horsechestnut spray, summer (texture factory, tools/texturefactory/materials/leaves.py)",
+   "licence": "CC0 (generated)",
+   "source": "tools/texturefactory (materials/leaves.py make_chestnut + tf/chestnut.py, seed 321)",
+   "season": "summer",
+   "px": 1024,
+   "coverage": 0.3926,
+   "mean_albedo_linear": [
+    0.0528,
+    0.1112,
+    0.0188
+   ],
+   "mean_thickness": 0.307,
+   "a_ktx2_bytes": 513917,
+   "n_ktx2_bytes": 585167,
+   "n_file": "leaf_horsechestnut_n.ktx2"
+  },
+  "leaf_horsechestnut_spring": {
+   "what": "horsechestnut spray, spring (texture factory, tools/texturefactory/materials/leaves.py)",
+   "licence": "CC0 (generated)",
+   "source": "tools/texturefactory (materials/leaves.py make_chestnut + tf/chestnut.py, seed 321)",
+   "season": "spring",
+   "px": 1024,
+   "coverage": 0.4051,
+   "mean_albedo_linear": [
+    0.2296,
+    0.3624,
+    0.0909
+   ],
+   "mean_thickness": 0.338,
+   "a_ktx2_bytes": 571167,
+   "n_ktx2_bytes": 603690,
+   "n_file": "leaf_horsechestnut_spring_n.ktx2"
+  },
+  "leaf_horsechestnut_autumn": {
+   "what": "horsechestnut spray, autumn (texture factory, tools/texturefactory/materials/leaves.py)",
+   "licence": "CC0 (generated)",
+   "source": "tools/texturefactory (materials/leaves.py make_chestnut + tf/chestnut.py, seed 321)",
+   "season": "autumn",
+   "px": 1024,
+   "coverage": 0.3535,
+   "mean_albedo_linear": [
+    0.2322,
+    0.1423,
+    0.0296
+   ],
+   "mean_thickness": 0.307,
+   "a_ktx2_bytes": 539078,
+   "n_ktx2_bytes": 585167,
+   "n_file": "leaf_horsechestnut_n.ktx2"
+  },
+  "leaf_horsechestnut_winter": {
+   "what": "horsechestnut spray, winter (texture factory, tools/texturefactory/materials/leaves.py)",
+   "licence": "CC0 (generated)",
+   "source": "tools/texturefactory (materials/leaves.py make_chestnut + tf/chestnut.py, seed 321)",
+   "season": "winter",
+   "px": 1024,
+   "coverage": 0.0638,
+   "mean_albedo_linear": [
+    0.1309,
+    0.0963,
+    0.0763
+   ],
+   "mean_thickness": 0.962,
+   "a_ktx2_bytes": 129096,
+   "n_ktx2_bytes": 164507,
+   "n_file": "leaf_horsechestnut_winter_n.ktx2"
   }
  },
  "bark": {
@@ -204,6 +272,21 @@
    "mean_roughness": 0.607,
    "albedo_ktx2_bytes": 580122,
    "nra_ktx2_bytes": 956421
+  },
+  "tf_horsechestnut": {
+   "what": "generated: old horse chestnut: thin grey-brown plates, curling edges, orange under-bark",
+   "licence": "CC0 (generated)",
+   "source": "tools/texturefactory (materials/bark.py, seed 232)",
+   "size_m": 1.0,
+   "px": 1024,
+   "mean_albedo_linear": [
+    0.1527,
+    0.124,
+    0.0971
+   ],
+   "mean_roughness": 0.862,
+   "albedo_ktx2_bytes": 746068,
+   "nra_ktx2_bytes": 1245603
   }
  },
  "megascans": {

@@ -256,6 +256,16 @@ export function makeSpecies(def) {
     if (shared.U) return;
     const t0 = performance.now();
     createStylizedTrees({ scene: new THREE.Group(), trees: [], shared, variants: VARIANTS, params: params() });
+    // def.maxCardSpin (rad): the cards keep their spray near upright, the vendor's random spin scaled down to +- this
+    // (a spray with an up: the horse chestnut's candles and upturned twig tips; viewer/treesHorseChestnut.js)
+    if (def.maxCardSpin != null) for (const g of shared.geoms.values()) {
+      const a = g.leaves.attributes.cardSpin;
+      for (let i = 0; i < a.count; i++) {
+        const x = a.getX(i), y = a.getY(i), s = Math.hypot(x, y), t = Math.atan2(y, x) * (def.maxCardSpin / Math.PI);
+        a.setXY(i, Math.cos(t) * s, Math.sin(t) * s);
+      }
+      a.needsUpdate = true;
+    }
     let sum = 0, n = 0;
     for (const [key, g] of shared.geoms) {
       if (!key.endsWith(":0")) continue;
