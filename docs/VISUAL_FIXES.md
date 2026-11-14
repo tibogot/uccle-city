@@ -167,3 +167,176 @@ one guard earlier (corner normals on a few hidden triangles differ; geometry ide
 - GPU ms before / after on a GREEN preflight.
 - Seen on the way: the white saloon at Montagne de Saint-Job (1136, 690) is parked ON the sidewalk (for the parked-car
   work).
+
+---
+
+# Round 2 (2026-11-14, branch `claude/vfix2`)
+
+Three items: the traffic's tail lamps still grainy, pale blotches on blank brick walls, and an audit of `positionLocal`
+math in `positionNode` on instanced meshes. One switch for every visual change: **`?vfix2=old`** = before. Images in
+`docs/visual-fixes/round2/`. Reference checks were look-only (Google Street View, Place Saint-Job and Rue du Ham);
+nothing from Google was stored. Bench: `debug/tailTest.js` (one traffic car placed by hand with the traffic's own batch
+material, light bits set by hand, camera fixed, shots + the strafe flicker test of `labs/flickerTest.js` on the
+lamps' screen box).
+
+## R2.1 Traffic tail lamps grainy (owner complaint #3)
+
+**Cause: the light bits, decoded per pixel from an interpolated varying.** `packMaterial`'s motion path
+(`viewer/drive/carPacks.js`) decodes the per-instance `motion.z` (1 brake, 2 head forced, 4 / 8 indicators, 16
+reversing) with `mod(floor(motion.z / k), 2)` in the emissive node. `motion` is an instanced attribute, but read in the
+FRAGMENT stage TSL passes it as a varying, and the GPU's interpolation of a constant is not exact: 1 arrives as
+0.99999 on some pixels and 1.00001 on others, so `floor()` turned the brake on and off pixel by pixel. Lit pixels
+(x5 HDR red) went white-pink through ACES, unlit ones stayed dark red: the speckled lens. The same file already
+rounds `_kind` for exactly this reason ("0.99999 / 1.00001 across a face"); `motion` was missed. Unlit cars (bits 0)
+were clean: 0 interpolates to exactly 0.
+
+How it was found: with the post chain off (`?fx=0`) the speckle stayed (so not bloom / MSAA / tone map); normals clean
+(`normalLocal` debug colours); the rounded `_kind` clean; then `floor(motion.z) mod 2` painted as a colour on the bench
+car: per-pixel noise over the WHOLE car. Ruled out on the way: SSR, the LOD cross-fade (bench car = plain batch),
+z-fighting, lens normals, the lamp geometry.
+
+**Fix.** Round first: `bits = floor(motion.z + 0.5)`, `bit(k) = mod(floor((bits + 0.5) / k), 2)`. Then the lamp
+strengths: with the lens lit WHOLE, the old x5 brake read as a flat cream-salmon lens (the grade's contrast + ACES
+turn a bright saturated red orange; measured on the lens at 10 m, golden hour: brake 0.9 -> rgb 255 149 80, 2.2 ->
+255 162 92). Measured levels instead, as `packLook` uniforms (live, no shader rebuild): brake 0.35 (255 74 45; unlit
+122 17 28), night tail 0.4 (227 0 11, a deep red glow) with the brake on top a step brighter (~255 65 35), amber
+indicators 0.5 (255 151 45), reversing 1.8 (white). Mr.doob's slop-newyork `js/cars.js` is in the same range (brake
+2.3 x 0.58 lens + 0.24, reversing 1.8, indicators 2.4); his colour pipeline differs, so ours were set by measurement.
+
+**Proof** (`tail_lamps_before_after.jpg`; bench: hatch_c LOD0, 10 m behind, eye 1.6 m; blinking pixels in the lamp
+box, 170 x 62 px, strafe 24 frames):
+
+| state | day before | day after | night before | night after |
+|---|---|---|---|---|
+| brake (bits 1) | 1006 | 13 | 989 | 1 |
+| unlit (bits 0) | 12 | 12 | 1 | 0 |
+| brake + left indicator (5) | 964 | 12 | 991 | 1 |
+| reversing (16) | 666 | 12 | 714 | 0 |
+| head lamps forced, front (2) | 270 | 5 | 4 | 4 |
+
+The ~12 left by day are the car's silhouette edges against the road (the same with the lamps off). Live traffic (not
+the bench) checked at I6: braking / indicating cars clean. Full frames: `tail_brake_before_full.jpg` /
+`tail_brake_after_full.jpg`. **Parked cars and police cars** (`viewer/carFleet.js`, `viewer/policeCars.js`) build
+`packMaterial` without `motion`: no bits are decoded, they cannot have this bug (their lamps are unlit vertex colour);
+the drive car's lamps come from uniforms (`lights`), exact.
+
+**Not changed:** the drive car's own lamps still use the x5 brake (uniform path, no speckle; it may now look brighter
+than the traffic's); head lamps x5 unchanged. No red bloom halo round the brake at night any more: the bloom
+threshold is on luminance, and a saturated red under ~1.2 luma does not pass it (the old halo came from the white-hot
+speckles).
+
+## R2.2 Grey / white blotches on blank brick walls
+
+**Cause: round 1's own "life on blind walls"** (`viewer/facades.js` `wallMaterial`, section 3 above): inside the ghost
+of the old neighbour, "old room plaster fallen off in patches" was a `noise2D` mask (`loss`) over pale plaster
+colours, and outside it "cement repair patches" were another `noise2D` threshold. On a 10-15 m wall those became large
+pale cloudy shapes (a camouflage pattern); the ghost also covered walls that are blank only above their own eaves
+(cut flat at the eaves line). Not the texture, not the AO, not the library's wall set.
+
+**Real reference (look only).** Place Saint-Job (Street View, Apr 2024 from "1 Sint-Jobsplein", Oct 2020 from
+"28 Sint-Jobsplein"), Rue du Ham 11 and 26: the tall red-brick block on the square (the city's blotched building) shows
+plain brick on its side walls above the lower neighbours, the neighbours' roofs meeting it along a crisp flashing, a
+chimney stack; the Rue du Ham terraces show plain brick or plain white render. No pale cloudy patches anywhere. Where
+Brussels gables do keep a demolished neighbour's ghost, it is crisp and gable-shaped.
+
+**Fix.** Removed the noise-shaped plaster loss and the cement blobs. The ghost stays on TRUE party walls only (the
+whole face blind, `aBld.y = 999`), crisp, in its pitched or flat outline: sheltered brick a touch lighter (x1.07-1.09)
+or a rendered wall slightly darker, the old flue's soot strip, the black flashing along the outline. Walls blank only
+above their own eaves keep the rain streaks only. A bitumen-coated variant (Brussels' black gables) was tried and
+dropped: a black slab at street distance. Images: `partywall_i6_before/after.jpg` (the I6 view of the complaint),
+`partywall_i6_zoom_before_after.jpg` (the tall block, zoomed), `partywall_i6_corner_*` (the corner house beside it),
+`partywall_i6_square_*`, `partywall_stjob_*` (the Saint-Job view: the walls are small at that height; now clean).
+
+**Left:** few true party walls in this area, and I did not get one framed in a shot: the crisp ghost itself (as
+opposed to the removal of the blobs) is checked by code, not on screen. The tall block's side is now plain brick (as
+the real one); it could take the real neighbour's roof line if `facadeGeom.js` passed the neighbour's height (the
+shader does not know it).
+
+## R2.3 Audit: `positionLocal` in `positionNode` on instanced meshes
+
+**The claim, checked in three r187's source** (`src/materials/nodes/NodeMaterial.js` `setupPosition`, read in
+game-engine-v1's node_modules, 0.187.0): morph -> skinning -> displacement map -> `batch()` -> `instancedMesh()`
+(`src/nodes/accessors/Instance.js` `transformInstance`: `positionLocal.assign(instanceMatrix * positionLocal)`, the
+normal likewise) -> THEN `positionLocal.assign(positionNode)`, for `object.isInstancedMesh` with an
+`InstancedBufferAttribute` matrix. So inside a positionNode of an InstancedMesh, `positionLocal` is the instanced
+position (mesh space; = world when the mesh sits at the origin), and `positionGeometry` is the raw vertex. Also,
+`positionLocal` read in COLOUR code is a varying of the final vertex value: instanced there too. Plain Meshes with an
+`InstancedBufferGeometry` (instancing by attributes) are not affected.
+
+| file | node | instanced? | math on positionLocal | verdict |
+|---|---|---|---|---|
+| drive/carPacks.js (traffic) | `positionLocal + R(yaw) * wheelOffset` | InstancedMesh | add only (offset from the raw vertex `p0`, turned by the heading; pitch left out, documented) | OK |
+| facadeKit/kitMaterials.js | `positionLocal + stretch(J)` | InstancedMesh | add only, world direction ("after the instancing") | OK |
+| falconFlight/pigeons.js | `iPos + basis * local * scale` | Mesh + InstancedBufferGeometry | scale / rotate, but positionLocal is raw here | OK |
+| flags/flagField.js | `turn(p) + pose` from textures | Mesh + InstancedBufferGeometry | absolute | OK |
+| foliage/grass.js (3), grass/grass.js | `root + ...` from attributes | attribute instancing | absolute | OK |
+| foliage/hedges.js, ivy.js, gardens/gardenHedge.js cards | `cpos / anchor + axes * corner` | InstancedBufferGeometry | absolute | OK |
+| gardens/gardenHedge.js:213 | `positionLocal + dirW * amp` | InstancedMesh | add only (wind, world direction; its NOTE knows the order) | OK |
+| foliage/plants.js | `root + rot(local * sc)` from `p0` | attribute instancing | absolute, raw vertex | OK |
+| impostorKit/contact.js, material.js, bake.js | from attributes / passed through | InstancedMesh, identity matrices | absolute | OK |
+| impostors.js:196 | `positionLocal + centreW + card` | InstancedMesh, identity matrices, quad at the origin | add only | OK |
+| pedestrians/personMaterial.js, props.js (3) | raw `attribute("position")` + storage poses | storage instancing | absolute | OK |
+| rail/railway.js wire, tram.js wire | `positionLocal + side * w` | plain Mesh at the origin | add only (assumes the mesh at the origin: true) | OK |
+| shops/shopKit.js | `positionLocal + R(yaw) * sliceShift(positionGeometry)` | InstancedMesh | add only, shift from the raw vertex | OK |
+| shops/shopWindow.js, streetlife/streetlife.js (3) | `shrinkToward(c)` | InstancedMesh | scale about the instance's own centre | OK (the shops agent's fix) |
+| tram2Model.js | `positionLocal + R(yaw) * doorOffset(p0)` | InstancedMesh | add only, raw vertex (its comment knows) | OK |
+| treeLeafLook.js | `mix(positionLocal, vendorPos, k)` | InstancedMesh | scale about the card centre (positionLocal = the centre there) | OK |
+| trees.js | `positionLocal + sway` | InstancedMesh | add only | OK |
+| treesStylized.js / impostors.js depth twins | copy the base node | | | OK |
+| weather/precipitation.js (4), snowExtras.js (3), snowLayer.js | from attributes / positionGeometry | InstancedMesh, identity matrices | absolute | OK |
+| weather/snowExtras.js:29 `snowCover` | `(positionNode ?? positionLocal) + normalLocal * t` | any | add along the (instanced) normal | OK |
+| **water/pondWater.js:284 reeds** | `(positionLocal + sway) * uProps` | InstancedMesh | **scale of the instanced position** | **BUG, fixed** |
+| **water/pondWater.js:331 lilies** | `positionLocal * (uProps, 1, uProps)` | InstancedMesh | **scale of the instanced position** | **BUG, fixed** |
+| **rail/trainModel.js (colour code)** | `positionLocal.y / .z` in colour / emissive | InstancedMesh | **reads the instanced position as car-local** | **BUG, fixed** |
+| policeCars.js, stjobModel.js, character/body.js, interior/interiorModel.js (colour code) | `positionLocal` | plain Mesh / SkinnedMesh | true local | OK |
+| gardens, fuel, furniture2, stops, roofs kits; lodFade.js | no positionNode (positionWorld in colour only) | | | n/a |
+
+**The pond (Wolvendael).** Reeds and lilies shrink to nothing between 85 and 110 m (`uProps` 1 -> 0). Multiplying the
+instanced position slid every clump toward the mesh origin (the city origin) instead: at `uProps` 0.5 a reed at
+(-469, 47, -437) was drawn at (-234, 23, -218). Fix: a per-instance `iCen` (the instance's foot) and
+`c + (p - c) * uProps`, as the street life. Proof: `pond_props_shrink_before_after.jpg` (`uProps` frozen at ~0.5,
+seen from 30 m: before, the reeds are gone from the pond's edge; after, half-size in place). Cost: 12 bytes per
+instance.
+
+**The trains.** `rail/trainModel.js` used `positionLocal.y` for the skirt grime (0.5-1.6 m) and the saloon light's
+gradient (1.4-2.9 m), and `positionLocal.z` for the display's LED rows. On the InstancedMesh that is the instanced
+position (~47-52 m TAW on the line), so the grime was never drawn (smoothstep = 1 everywhere), the saloon light was
+flat and the LED rows ran along the world z. Now the raw vertex (`positionGeometry`; car geometry y 0.23-4.41 m above
+the rail). Proof: by the numbers; a before / after pair of the same train could not be framed (the timetable clock did
+not hold between loads), so this one is not shown on screen.
+
+**Latent, same class as R2.1 (not changed):** `viewer/impostors.js` `impostorMaterial` rebuilds the atlas block
+(`variant.mod(2)`, `floor(variant / 2)`) and the sphere (`int(variant)`) in the fragment from the interpolated
+per-instance `impData.z`, unrounded: 2 arriving as 1.9999999 would pick the wrong block / sphere per pixel. It is not
+drawn in the default city (no `impData` mesh in the I6 / Saint-Job views; far trees go through `impostorKit`, which
+already rounds its variant, `variant.add(0.5)`). Round it (`data.z.add(0.5).floor()`) if that material comes back.
+General rule for the kits: **any per-instance integer read in the fragment (bits, slots, variants) must be rounded
+first**; the kits' `slot.add(0.0005).floor()` is safe for errors under 5e-4.
+
+## Cost (round 2)
+
+GPU time: NOT measured. `tools/perf/preflight.ps1` was RED (another agent's tab at 59-62 % GPU at rest, 0.6 GB RAM
+free, GPU power-capped, 76 C), so no GPU ms are quoted. By construction:
+
+- draws, triangles, geometry: unchanged everywhere (no new mesh, no geometry change).
+- traffic material: + 2 adds / 1 floor per fragment; the 4 lamp strengths are uniforms instead of constants.
+- façade walls: CHEAPER (two `noise2D` and one `n3` gone from the blind-wall block; the old code stays behind
+  `?vfix2=old`, not compiled otherwise).
+- pond props: one vec3 instanced attribute (12 B x ~80 instances).
+- trains: none (`positionGeometry` instead of `positionLocal`).
+
+## Shared files touched (round 2)
+
+- `viewer/drive/carPacks.js`: `VFIX2_OLD` (top), `packLook` (+ brake, tailNight, reversing, indicator), the motion
+  block's bit decoding and strengths.
+- `viewer/facades.js` `wallMaterial`: `VFIX2_OLD` after `BLD_SIDE`; the blind-wall block between `flashing` and the
+  rain streaks (small, self-contained; no base / terrain code).
+- `viewer/water/pondWater.js`: `VFIX2_OLD`; `buildReeds` / `buildLilies` positionNode + `iCen`.
+- `viewer/rail/trainModel.js`: import `positionGeometry`, `VFIX2_OLD`, `makeMaterial` (`pRaw`).
+- New: `debug/tailTest.js`, `docs/visual-fixes/round2/`.
+
+## Seen on the way (not touched)
+
+- A dotted white band across façades at shop-sign height on the Saint-Job square (in before and after shots alike).
+- A horizontal checker-dither strip across the frame in a live-traffic shot near I6 (a dithered object close to the
+  camera).
