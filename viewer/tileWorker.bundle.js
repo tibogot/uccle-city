@@ -7939,7 +7939,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       }
     }
     const pts = [b.a, b.b, b.c];
-    let uvs = pts.map((p) => [p[0], p[1]]), frame = -1, uv2 = uvs, fw = [0, 0, 0];
+    let uvs = pts.map((p) => [p[0], p[1]]), frame2 = -1, uv2 = uvs, fw = [0, 0, 0];
     if (paved(cls)) {
       const ok = (ks2) => ks2 && ks2.every(Boolean) && Math.max(...ks2.map((k) => k.s)) - Math.min(...ks2.map((k) => k.s)) < 3 * CELL2;
       let li = sidewalkKerb.get(hostOf(b.si)) ?? -1;
@@ -7951,7 +7951,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       }
       if (ok(ks)) {
         uvs = ks.map((k) => [k.s, k.d]);
-        frame = li;
+        frame2 = li;
         const [tx, tz] = straight.get(hostOf(b.si)) || [1, 0];
         uv2 = pts.map((p) => [p[0] * tx + p[1] * tz, -p[0] * tz + p[1] * tx]);
         const bend = ks.some((k) => Math.abs(k.kap) > 1 / 30 && Math.abs(k.d) < 6) || ks.some((k) => Math.abs(k.d) > 5);
@@ -7961,8 +7961,8 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       const th = (s.course ?? 0) * Math.PI / 180, c = Math.cos(th), sn = Math.sin(th);
       uvs = pts.map((p) => [p[0] * c + p[1] * sn, -p[0] * sn + p[1] * c]);
     }
-    const exOfV = (q) => pname === "asphalt" ? { aPiece: [hashPhase2(s.id || String(b.si)), 0], aSurf: nameSurf.get(s.name) || BASE_SURF[cls] } : pname === "concrete" ? { aKind: frame >= 0 ? KIND3.framed : KIND3.slab, aUv2: uv2[q], aFrameW: fw[q] } : null;
-    const idx = pts.map((p, q) => part.keyed(`${paved(cls) ? hostOf(b.si) : b.si}|${frame}|${fw[0]}|${Math.round(p[0] * 1e3)}|${Math.round(p[1] * 1e3)}`, () => part.vert(p[0], H(p[0], p[1]) + riseAt(cls, p[0], p[1], b.si) - (OVERLAY[cls] ? BASE_DROP : 0), p[1], nrmAt(p[0], p[1]), uvs[q][0], uvs[q][1], exOfV(q))));
+    const exOfV = (q) => pname === "asphalt" ? { aPiece: [hashPhase2(s.id || String(b.si)), 0], aSurf: nameSurf.get(s.name) || BASE_SURF[cls] } : pname === "concrete" ? { aKind: frame2 >= 0 ? KIND3.framed : KIND3.slab, aUv2: uv2[q], aFrameW: fw[q] } : null;
+    const idx = pts.map((p, q) => part.keyed(`${paved(cls) ? hostOf(b.si) : b.si}|${frame2}|${fw[0]}|${Math.round(p[0] * 1e3)}|${Math.round(p[1] * 1e3)}`, () => part.vert(p[0], H(p[0], p[1]) + riseAt(cls, p[0], p[1], b.si) - (OVERLAY[cls] ? BASE_DROP : 0), p[1], nrmAt(p[0], p[1]), uvs[q][0], uvs[q][1], exOfV(q))));
     part.tri(idx[0], idx[1], idx[2], UP2);
   }
   const carveTris = new Float32Array(base.length * 9);
@@ -10609,7 +10609,7 @@ function abutmentFill(heroes, grids, hdr) {
   return moved;
 }
 function underpassCut(heroes, grids, hdr) {
-  const { x0, z0, cols, rows, step } = hdr, BANK2 = 7;
+  const { x0, z0, cols, rows, step } = hdr, BANK3 = 7;
   const rings = (heroes || []).filter((h) => h.underpass || h.style).map((h) => ringBox(heroFrame(h).ring));
   const inBridge = (x, z) => rings.some((b) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && inRing(b.ring, x, z));
   let moved = 0;
@@ -10617,14 +10617,14 @@ function underpassCut(heroes, grids, hdr) {
     const u = h.underpass;
     if (!u) continue;
     const [ax, az, ay] = u.a, [bx, bz, by] = u.b, dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz;
-    const c0 = Math.max(0, Math.floor((Math.min(ax, bx) - u.hw - BANK2 - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(ax, bx) + u.hw + BANK2 - x0) / step));
-    const r0 = Math.max(0, Math.floor((Math.min(az, bz) - u.hw - BANK2 - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(az, bz) + u.hw + BANK2 - z0) / step));
+    const c0 = Math.max(0, Math.floor((Math.min(ax, bx) - u.hw - BANK3 - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(ax, bx) + u.hw + BANK3 - x0) / step));
+    const r0 = Math.max(0, Math.floor((Math.min(az, bz) - u.hw - BANK3 - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(az, bz) + u.hw + BANK3 - z0) / step));
     for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
       const px = x0 + c * step, pz = z0 + r * step;
       const t = ((px - ax) * dx + (pz - az) * dz) / L2;
       if (t < 0 || t > 1) continue;
       const d = Math.hypot(px - ax - dx * t, pz - az - dz * t) - u.hw;
-      if (d > BANK2 || d > 0 && inBridge(px, pz)) continue;
+      if (d > BANK3 || d > 0 && inBridge(px, pz)) continue;
       const target = ay + (by - ay) * t - 0.02 + Math.max(0, d);
       const k = r * cols + c;
       for (const G2 of grids) if (G2[k] > target) {
@@ -11748,6 +11748,339 @@ function fitToSurface(paths, G2, st) {
   });
 }
 
+// viewer/rail/tunnels.js
+var TUNNELS = ["kleindal", "brasserie"];
+var TUNNEL_ROOTS = TUNNELS.map((n) => `tunnel-${n}`);
+var ROAD = 1;
+var LID = 2;
+var KEPT = 3;
+var UNDER2 = 0.02;
+var COVER2 = 0.9;
+var BANK2 = 6;
+var ZONE = 12;
+var docsP = null;
+var loadTunnels = (base) => docsP ??= Promise.all(TUNNELS.map((n) => fetch(new URL(`../../models/rail/tunnel_${n}.json`, base)).then((r) => r.ok ? r.json() : null).catch(() => null))).then((a) => a.filter(Boolean).map(frame));
+function frame(t) {
+  const th = -t.placement.rotation_y_rad, ux = Math.cos(th), uz = Math.sin(th), vx = Math.sin(th), vz = -Math.cos(th);
+  const [px, py, pz] = t.placement.city_local_position;
+  const L2 = t.barrel.length;
+  const toLocal = (x, z) => {
+    const dx = x - px, dz = z - pz;
+    return [dx * ux + dz * uz, dx * vx + dz * vz];
+  };
+  const toWorld = (X, Y) => [px + ux * X + vx * Y, pz + uz * X + vz * Y];
+  const road = (X) => py + t.grade * X;
+  const walls = [];
+  for (const p of t.portals) {
+    const s = p.sign, W = p.width / 2;
+    walls.push({ kind: "face", portal: p, a: [p.X, -W], b: [p.X, W], n: [-s, 0], thick: p.thick, top: () => p.wallTop - 0.1 });
+  }
+  for (const w of t.wings) {
+    walls.push({ kind: "wing", wing: w, a: w.p0, b: w.p1, n: w.back, thick: w.thick, top: (u) => w.top0 + (w.top1 - w.top0) * Math.max(0, Math.min(1, u)) - 0.1 });
+  }
+  for (const w of walls) {
+    const dx = w.b[0] - w.a[0], dy = w.b[1] - w.a[1];
+    w.len = Math.hypot(dx, dy);
+    w.d = [dx / w.len, dy / w.len];
+  }
+  const approach = t.portals.map((p, i) => {
+    const wl = t.wings.filter((w) => w.portal === i), L1 = wl.find((w) => w.side === 1), R1 = wl.find((w) => w.side === -1);
+    return [L1.p0, L1.p1, R1.p1, R1.p0];
+  });
+  const r = t.barrel.r, Wmax = Math.max(...t.portals.map((p) => p.width / 2));
+  const pts = [...t.wings.flatMap((w) => [w.p0, w.p1]), [-L2 / 2, -Wmax], [L2 / 2, Wmax], [-L2 / 2, Wmax], [L2 / 2, -Wmax]];
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (const [X, Y] of pts) for (const [dX, dY] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+    const [x, z] = toWorld(X + dX * (ZONE + BANK2), Y + dY * (ZONE + BANK2));
+    x0 = Math.min(x0, x);
+    x1 = Math.max(x1, x);
+    z0 = Math.min(z0, z);
+    z1 = Math.max(z1, z);
+  }
+  return { ...t, toLocal, toWorld, road, walls, approach, L: L2, r, Wmax, box: { x0, x1, z0, z1 } };
+}
+var inPoly = (P, x, y) => {
+  let c = false;
+  for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+    const [xi, yi] = P[i], [xj, yj] = P[j];
+    if (yi > y !== yj > y && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c;
+  }
+  return c;
+};
+function distPoly(P, x, y) {
+  let d = Infinity;
+  for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+    const [ax, ay] = P[j], [bx, by] = P[i], dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy || 1e-9;
+    const u = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / L2));
+    d = Math.min(d, Math.hypot(x - ax - dx * u, y - ay - dy * u));
+  }
+  return d;
+}
+var wallUV = (w, X, Y) => {
+  const rx = X - w.a[0], ry = Y - w.a[1];
+  return [(rx * w.d[0] + ry * w.d[1]) / w.len, rx * w.n[0] + ry * w.n[1]];
+};
+function classify(t, X, Y) {
+  const L2 = t.L / 2;
+  if (Math.abs(X) <= L2 && Math.abs(Y) <= t.r + 0.3) return { cls: LID, wall: Math.abs(X - t.portals[0].X) < Math.abs(X - t.portals[1].X) ? 0 : 1 };
+  for (let i = 0; i < t.approach.length; i++) {
+    const p = t.portals[i];
+    if ((X - p.X) * p.sign > 0 && inPoly(t.approach[i], X, Y)) return { cls: ROAD, portal: i };
+  }
+  let lo = -Infinity, hi = Infinity, wall2 = -1, best = Infinity;
+  t.walls.forEach((w, k) => {
+    const [u, dd] = wallUV(w, X, Y);
+    const ext = w.kind === "face" ? 0 : 0.6 / w.len;
+    if (u < -ext || u > 1 + ext || dd < 0 || dd > ZONE) return;
+    if (w.kind === "face" && Math.abs(X) > L2) return;
+    const top = w.top(u);
+    if (dd <= w.thick) {
+      lo = Math.max(lo, top);
+      hi = Math.min(hi, top);
+    } else {
+      lo = Math.max(lo, top - (dd - w.thick) / 1.5);
+      hi = Math.min(hi, top + (dd - w.thick));
+    }
+    if (dd < best) {
+      best = dd;
+      wall2 = k;
+    }
+  });
+  if (wall2 >= 0) return { cls: KEPT, wall: wall2, lo, hi };
+  return null;
+}
+function tunnelCut(tunnels, hm, hdr) {
+  const { x0, z0, cols, rows, step } = hdr;
+  const gx1 = x0 + (cols - 1) * step, gz1 = z0 + (rows - 1) * step;
+  const near = (tunnels || []).filter((t) => t.box.x1 >= x0 && t.box.x0 <= gx1 && t.box.z1 >= z0 && t.box.z0 <= gz1);
+  if (!near.length) return null;
+  const cls = new Uint8Array(cols * rows), owner = new Int8Array(cols * rows).fill(-1), wallOf = new Int8Array(cols * rows).fill(-1);
+  const lid = /* @__PURE__ */ new Map();
+  const level = /* @__PURE__ */ new Map();
+  const kept = /* @__PURE__ */ new Map();
+  const dtm = /* @__PURE__ */ new Map();
+  let moved = 0;
+  near.forEach((t) => {
+    const ti = tunnels.indexOf(t);
+    const c0 = Math.max(0, Math.floor((t.box.x0 - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((t.box.x1 - x0) / step));
+    const r0 = Math.max(0, Math.floor((t.box.z0 - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((t.box.z1 - z0) / step));
+    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+      const k = r * cols + c, x = x0 + c * step, z = z0 + r * step;
+      const [X, Y] = t.toLocal(x, z);
+      const q = classify(t, X, Y);
+      const g = hm.orig[k];
+      if (!q) {
+        let d = Infinity;
+        t.approach.forEach((P, i) => {
+          if ((X - t.portals[i].X) * t.portals[i].sign > 0) d = Math.min(d, distPoly(P, X, Y));
+        });
+        if (d > BANK2) continue;
+        const target = t.road(X) - UNDER2 + d;
+        if (g > target) {
+          dtm.set(k, g);
+          for (const G2 of [hm.y, hm.orig]) if (G2[k] > target) G2[k] = target;
+          moved++;
+        }
+        continue;
+      }
+      dtm.set(k, g);
+      cls[k] = q.cls;
+      owner[k] = ti;
+      const zr = t.road(X) - UNDER2;
+      if (q.cls === ROAD || q.cls === LID) {
+        wallOf[k] = q.cls === LID ? q.wall : -1;
+        hm.y[k] = zr;
+        hm.orig[k] = zr;
+        level.set(k, zr);
+        moved++;
+        if (q.cls === LID) {
+          let lo = t.road(X) + t.barrel.crown + COVER2, hi = Infinity;
+          for (const p of t.portals) {
+            const dd = (p.X - X) * p.sign;
+            const top = t.road(X) + p.wallTop - 0.1;
+            if (dd <= p.thick) {
+              lo = Math.max(lo, top);
+              hi = Math.min(hi, top);
+            } else {
+              hi = Math.min(hi, top + (dd - p.thick));
+            }
+          }
+          lid.set(k, Math.min(Math.max(g, lo), Math.max(hi, lo)));
+        }
+      } else {
+        wallOf[k] = q.wall;
+        const zb = t.road(X);
+        const lo = zb + q.lo, hi = zb + q.hi;
+        const v = Math.min(Math.max(g, lo), Math.max(hi, lo));
+        hm.y[k] = v;
+        hm.orig[k] = v;
+        kept.set(k, v);
+        moved++;
+      }
+    }
+  });
+  return { tunnels, near, hdr, cls, owner, wallOf, lid, kept, level, dtm, moved };
+}
+function tunnelRecut(cut, hm) {
+  if (!cut) return 0;
+  let n = 0;
+  for (const [k, v] of cut.level) if (hm.y[k] > v) {
+    hm.y[k] = v;
+    n++;
+  }
+  return n;
+}
+function tunnelGround(tunnels, ground) {
+  if (!tunnels?.length) return ground;
+  return (x, z) => {
+    for (const t of tunnels) {
+      if (x < t.box.x0 || x > t.box.x1 || z < t.box.z0 || z > t.box.z1) continue;
+      const [X, Y] = t.toLocal(x, z);
+      const q = classify(t, X, Y);
+      if (q && (q.cls === ROAD || q.cls === LID)) return t.road(X) - UNDER2;
+    }
+    return ground(x, z);
+  };
+}
+function tunnelTrees(tunnels, trees) {
+  const out = [];
+  for (const tr of trees || []) {
+    let keep = tr;
+    for (const t of tunnels || []) {
+      if (tr.x < t.box.x0 || tr.x > t.box.x1 || tr.z < t.box.z0 || tr.z > t.box.z1) continue;
+      const [X, Y] = t.toLocal(tr.x, tr.z);
+      const road = t.approach.some((P, i) => (X - t.portals[i].X) * t.portals[i].sign > -1 && (inPoly(P, X, Y) || distPoly(P, X, Y) < 1));
+      if (road) {
+        keep = null;
+        break;
+      }
+      const half = t.r + 1.3;
+      if (Math.abs(X) <= t.L / 2 + 0.5 && Math.abs(Y) <= half) {
+        if (Math.abs(X) > t.L / 2 - 2.5) {
+          keep = null;
+          break;
+        }
+        const [x, z] = t.toWorld(X, (Y >= 0 ? 1 : -1) * (half + 0.3));
+        keep = { ...tr, x, z };
+      }
+    }
+    if (keep) out.push(keep);
+  }
+  return out;
+}
+function tunnelRoads(roadsDoc, tunnels) {
+  let n = 0;
+  for (const t of tunnels || []) for (const r of roadsDoc.roads || []) {
+    if (!t.roads.includes(r.meta?.osm)) continue;
+    r.lanes = JSON.parse(JSON.stringify(t.lanes));
+    n++;
+  }
+  return n;
+}
+function tunnelTerrain(cut, terrain, hm, railDoc = null, bounds = null) {
+  if (!cut) return null;
+  const { cls, owner, wallOf, lid, kept, tunnels } = cut;
+  const { x0, z0, cols, rows, step } = cut.hdr;
+  const H = new Float32Array(cols * rows);
+  for (let k = 0; k < H.length; k++) H[k] = terrain.pos[k * 3 + 1];
+  const tracks = railDoc && bounds ? tracksIn(railDoc, bounds, CORRIDOR + 1) : [];
+  const platforms = (railDoc?.platforms || []).filter((pf) => pf.ring.some(([x, z]) => cut.near.some((t) => x >= t.box.x0 - 50 && x <= t.box.x1 + 50 && z >= t.box.z0 - 50 && z <= t.box.z1 + 50)));
+  for (const [k, v0] of [...lid, ...kept]) {
+    let v = v0;
+    const px = x0 + k % cols * step, pz = z0 + Math.floor(k / cols) * step;
+    for (const t of tracks) {
+      const P = t.pts;
+      for (let i = 1; i < P.length; i++) {
+        const a = P[i - 1], b = P[i], dx = b[0] - a[0], dz = b[2] - a[2], L2 = dx * dx + dz * dz || 1e-9;
+        const u = Math.max(0, Math.min(1, ((px - a[0]) * dx + (pz - a[2]) * dz) / L2));
+        const d = Math.hypot(px - a[0] - dx * u, pz - a[2] - dz * u);
+        if (d > CORRIDOR) continue;
+        const rt = a[1] + (b[1] - a[1]) * u;
+        const surf = d < CREST_HW ? rt + CREST : d < FOOT_HW ? rt + CREST + (BED - CREST) * (d - CREST_HW) / (FOOT_HW - CREST_HW) : rt + BED;
+        v = Math.min(v, surf - 0.06);
+      }
+    }
+    for (const pf of platforms) if (inPoly(pf.ring, px, pz)) v = Math.min(v, pf.top - 0.1);
+    H[k] = v;
+    terrain.pos[k * 3 + 1] = v;
+  }
+  const touched = /* @__PURE__ */ new Set([...cut.dtm.keys()]);
+  for (const k of touched) {
+    const r = Math.floor(k / cols), c = k % cols;
+    const cl = Math.max(c - 1, 0), cr = Math.min(c + 1, cols - 1), ru = Math.max(r - 1, 0), rd = Math.min(r + 1, rows - 1);
+    const hx = (H[r * cols + cr] - H[r * cols + cl]) / ((cr - cl) * step), hz = (H[rd * cols + c] - H[ru * cols + c]) / ((rd - ru) * step);
+    const L2 = Math.hypot(hx, 1, hz);
+    terrain.nrm[k * 3] = -hx / L2;
+    terrain.nrm[k * 3 + 1] = 1 / L2;
+    terrain.nrm[k * 3 + 2] = -hz / L2;
+  }
+  const idx = terrain.idx, out = [], newPos = [], newNrm = [];
+  let nv = terrain.pos.length / 3, clipped = 0, dropped = 0;
+  const vmap = /* @__PURE__ */ new Map();
+  const addV = (key, x, y, z, nk) => {
+    let v = vmap.get(key);
+    if (v !== void 0) return v;
+    v = nv++;
+    vmap.set(key, v);
+    newPos.push(x, y, z);
+    newNrm.push(terrain.nrm[nk * 3], terrain.nrm[nk * 3 + 1], terrain.nrm[nk * 3 + 2]);
+    return v;
+  };
+  for (let t3 = 0; t3 < idx.length; t3 += 3) {
+    const v = [idx[t3], idx[t3 + 1], idx[t3 + 2]];
+    const c = v.map((k) => cls[k]);
+    const hasRoad = c.includes(ROAD), earth = v.filter((k, i) => c[i] === LID || c[i] === KEPT);
+    if (!hasRoad || !earth.length || v.some((k, i) => cls[k] && owner[k] !== owner[v.find((q) => cls[q])])) {
+      out.push(...v);
+      continue;
+    }
+    const tn = tunnels[owner[earth[0]]];
+    const wk = wallOf[earth[0]];
+    if (wk < 0) {
+      out.push(...v);
+      continue;
+    }
+    const w = tn.walls[wk];
+    const f = v.map((k) => {
+      const [X, Y] = tn.toLocal(terrain.pos[k * 3], terrain.pos[k * 3 + 2]);
+      return wallUV(w, X, Y)[1];
+    });
+    const back = w.thick - 0.05;
+    clipped++;
+    const clipPart = (keep, edgeHeight, tag) => {
+      const poly = [];
+      for (let i = 0; i < 3; i++) {
+        const j = (i + 1) % 3, a = v[i], b = v[j], fa = f[i], fb = f[j];
+        if (keep(fa)) poly.push(a);
+        if (keep(fa) !== keep(fb)) {
+          const lim = tag === 0 ? 0 : back, s = (lim - fa) / (fb - fa);
+          const x = terrain.pos[a * 3] + (terrain.pos[b * 3] - terrain.pos[a * 3]) * s, z = terrain.pos[a * 3 + 2] + (terrain.pos[b * 3 + 2] - terrain.pos[a * 3 + 2]) * s;
+          const [hy, nk] = edgeHeight(a, b, s);
+          poly.push(addV(`${Math.min(a, b)}_${Math.max(a, b)}_${tag}`, x, hy, z, nk));
+        }
+      }
+      for (let i = 1; i + 1 < poly.length; i++) out.push(poly[0], poly[i], poly[i + 1]);
+      return poly.length;
+    };
+    const roadH = (a, b, s) => cls[a] === ROAD ? [H[a], a] : cls[b] === ROAD ? [H[b], b] : [H[a] + (H[b] - H[a]) * s, a];
+    const earthH = (a, b, s) => cls[a] !== ROAD && cls[b] !== ROAD ? [H[a] + (H[b] - H[a]) * s, a] : cls[a] !== ROAD ? [H[a], a] : [H[b], b];
+    const n1 = clipPart((fv) => fv <= 0, roadH, 0), n2 = clipPart((fv) => fv >= back, earthH, 1);
+    if (n1 < 3 && n2 < 3) dropped++;
+  }
+  if (newPos.length) {
+    const P = new Float32Array(terrain.pos.length + newPos.length);
+    P.set(terrain.pos);
+    P.set(newPos, terrain.pos.length);
+    const N = new Float32Array(terrain.nrm.length + newNrm.length);
+    N.set(terrain.nrm);
+    N.set(newNrm, terrain.nrm.length);
+    terrain.pos = P;
+    terrain.nrm = N;
+  }
+  terrain.idx = Uint32Array.from(out);
+  return { lid: lid.size, clipped, dropped, added: newPos.length / 3 };
+}
+
 // viewer/grass/grassTypes.js
 var VERGE_W = 1.7;
 var LAWN = [1, 0.06, 0, 0];
@@ -12078,17 +12411,21 @@ async function buildTileData(entry, base) {
     railDropped = n - (feats.trees?.length || 0);
     feats.railVerges = railVerges(rail.doc, bounds);
   }
+  const tunnels = entry.tunnels !== false ? await step("tunnel fetch", () => loadTunnels(base)) : null;
+  if (tunnels?.length && feats.trees?.length) feats.trees = tunnelTrees(tunnels, feats.trees);
   const surfDoc = (entry.surface || entry.grass) && F.surfaces ? await step("fetch surfaces", () => get(F.surfaces)) : null;
   const surf = entry.surface ? surfDoc : null;
   const grassTypes = entry.grass ? await step("grass types", async () => grassTypeData(feats, { x0, x1, z0, z1 }, { kinds: await grassKinds(base), surfaces: surfDoc })) : null;
   const ov = await overrides(base);
   applyRoadOverrides(roads, ov);
+  if (tunnels?.length) tunnelRoads(roads, tunnels);
   const hm = new Heightmap(tHdr, tBuf);
   const paint = entry.paint || PAINT;
   const markings = F.markings && paint === "v2" ? await step("fetch markings", () => get(F.markings).catch(() => null)) : null;
   const roofs = await step("roof grid", () => roofGrid(bDoc, bounds));
   if (rail) await step("abutment fill", () => abutmentFill(rail.heroes, [hm.y, hm.orig], tHdr));
   if (rail) await step("underpass cut", () => underpassCut(rail.heroes, [hm.y, hm.orig], tHdr));
+  const tcut = tunnels?.length ? await step("tunnel cut", () => tunnelCut(tunnels, hm, tHdr)) : null;
   const heroDeck = rail ? roadDeckGround(rail.heroes, () => NaN) : () => NaN;
   const hh = hm.h, gx1 = hh.x0 + (hh.cols - 1) * hh.step, gz1 = hh.z0 + (hh.rows - 1) * hh.step;
   const onGrid = (p) => p[0] >= hh.x0 && p[0] <= gx1 && p[1] >= hh.z0 && p[1] <= gz1;
@@ -12121,7 +12458,7 @@ async function buildTileData(entry, base) {
     }));
   }
   const roadGround0 = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
-  const roadGround = rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0;
+  const roadGround = tunnelGround(tunnels, rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0);
   const rd = await step("roads", () => buildRoadData({
     roads,
     surf,
@@ -12161,8 +12498,10 @@ async function buildTileData(entry, base) {
     railOut.stats.carved = c.moved;
     railOut.stats.treesDropped = railDropped;
   }
+  if (tcut) tcut.recut = tunnelRecut(tcut, hm);
   const traffic = await step("traffic graph", () => buildTrafficGraph(net, roads, feats, bounds, road.surfaceData?.grid));
   const terrain = await step("terrain grid", () => terrainArrays(hm));
+  if (tcut) netInfo.tunnels = await step("tunnel terrain", () => tunnelTerrain(tcut, terrain, hm, rail?.doc, bounds));
   await step("terrain simplify", async () => {
     await MeshoptSimplifier.ready;
     const [idx] = MeshoptSimplifier.simplify(terrain.idx, terrain.pos, 3, 0, TERRAIN_ERROR, ["LockBorder", "ErrorAbsolute"]);

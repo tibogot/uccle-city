@@ -27,6 +27,7 @@ import { createCarState, stepCar, HANDLING, BODY } from "./carPhysics.js";
 import { gather, itemContact, heightClear, KIND } from "./colliders.js";
 import { ledgeContact } from "./carEnv.js";
 import { carFleet } from "../carFleet.js";
+import { TUNNEL_ROOTS } from "../rail/tunnels.js";
 const carSizeOf = (t) => carFleet.sizeOf(t);
 
 const CELL = 0.25;
@@ -37,7 +38,8 @@ export const SRC = { building: 1, hero: 2, bridge: 3, furniture: 4, tree: 5, lam
 const SRC_NAME = Object.fromEntries(Object.entries(SRC).map(([k, v]) => [v, k]));
 export const HEROES = ["stjob", "townhall", "stalle", "vanbuuren", "wolvendael", "police", "calevoet", "stpierre", "observatory", "augustin", "russian", "rosaire",
   "bridge-verrewinkel", "bridge-stjob", "bridge-calevoet",
-  "bridge-ruestalle", "bridge-engeland", "bridge-engeland_chord", "bridge-bigarreaux", "bridge-kauwberg", "bridge-linkebeek"];
+  "bridge-ruestalle", "bridge-engeland", "bridge-engeland_chord", "bridge-bigarreaux", "bridge-kauwberg", "bridge-linkebeek",
+  ...TUNNEL_ROOTS];                                   // the road tunnels (viewer/rail/tunnels.js)
 
 /** A plan grid over the tile bounds. */
 function makeGrid(b) {

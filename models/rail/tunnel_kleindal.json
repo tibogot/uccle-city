@@ -1,0 +1,198 @@
+{
+ "asset": "road tunnel 'kleindal' (tools/blender/railTunnel.py)",
+ "kind": "tunnel",
+ "name": "kleindal",
+ "road": "Kleindalstraat - Rue Kleindal",
+ "osm": 430168935,
+ "line": "L124",
+ "tile": "E10",
+ "triangles": 1946,
+ "materials": [
+  "brick_red_brussels",
+  "stone_blue",
+  "concrete",
+  "painted_metal_grey",
+  "lamp_glow"
+ ],
+ "frame": "glTF Y up; +x = along the road (OSM first node -> last, city direction theta), -z = Blender +Y (the road's left); origin = the barrel's centre on its axis at road level",
+ "placement": {
+  "city_local_position": [
+   -662.093,
+   58.882,
+   2866.608
+  ],
+  "rotation_y_rad": -2.3596336300724197
+ },
+ "deck": {
+  "length": 69.357,
+  "width": 6.6
+ },
+ "grade": -0.00646,
+ "railTop": 79.997,
+ "barrel": {
+  "length": 52.0,
+  "r": 2.27,
+  "spring": 1.95,
+  "crown": 4.22,
+  "slab": -0.05,
+  "found": -0.6
+ },
+ "portals": [
+  {
+   "X": -26.0,
+   "sign": -1,
+   "top": 6.7,
+   "wallTop": 6.52,
+   "thick": 1.7,
+   "width": 6.6
+  },
+  {
+   "X": 26.0,
+   "sign": 1,
+   "top": 6.7,
+   "wallTop": 6.52,
+   "thick": 1.7,
+   "width": 6.6
+  }
+ ],
+ "wings": [
+  {
+   "portal": 0,
+   "side": 1,
+   "p0": [
+    -26.0,
+    3.3
+   ],
+   "p1": [
+    -33.632,
+    8.069
+   ],
+   "back": [
+    0.5299,
+    0.848
+   ],
+   "top0": 4.6,
+   "top1": 1.0,
+   "thick": 0.62
+  },
+  {
+   "portal": 0,
+   "side": -1,
+   "p0": [
+    -26.0,
+    -3.3
+   ],
+   "p1": [
+    -34.457,
+    -6.378
+   ],
+   "back": [
+    0.342,
+    -0.9397
+   ],
+   "top0": 4.6,
+   "top1": 1.0,
+   "thick": 0.62
+  },
+  {
+   "portal": 1,
+   "side": 1,
+   "p0": [
+    26.0,
+    3.3
+   ],
+   "p1": [
+    34.679,
+    7.164
+   ],
+   "back": [
+    -0.4067,
+    0.9135
+   ],
+   "top0": 4.6,
+   "top1": 1.0,
+   "thick": 0.62
+  },
+  {
+   "portal": 1,
+   "side": -1,
+   "p0": [
+    26.0,
+    -3.3
+   ],
+   "p1": [
+    33.794,
+    -7.8
+   ],
+   "back": [
+    -0.5,
+    -0.866
+   ],
+   "top0": 4.6,
+   "top1": 1.0,
+   "thick": 0.62
+  }
+ ],
+ "lamps": [
+  [
+   -13.0,
+   -2.07,
+   2.42
+  ],
+  [
+   0.0,
+   -2.07,
+   2.336
+  ],
+  [
+   13.0,
+   -2.07,
+   2.252
+  ]
+ ],
+ "lanes": {
+  "right": [
+   {
+    "type": "driving",
+    "width": 3.2
+   },
+   {
+    "type": "sidewalk",
+    "width": 0.9
+   }
+  ],
+  "left": [
+   {
+    "type": "sidewalk",
+    "width": 0.5
+   }
+  ],
+  "center": {
+   "width": 0,
+   "kind": "none"
+  }
+ },
+ "roads": [
+  430168935,
+  430168931
+ ],
+ "measured": "OSM way (axis, ends), DTM 2021 / DHMV II mosaic of the city tiles (road levels beyond the wing tips, the embankment's toe = the portal faces, the retained earth), rail.json (rail top)",
+ "estimated": "span (= the drawn lanes), springing, headwall size, ring, string course / corbel frieze, wing splay and length, lamps, guard rails: from Street View (looked at only)",
+ "streetview": {
+  "ne": [
+   50.77346,
+   4.34052,
+   226
+  ],
+  "sw": [
+   50.77296,
+   4.33972,
+   46
+  ],
+  "inside": [
+   50.77325,
+   4.3402,
+   226
+  ]
+ }
+}
