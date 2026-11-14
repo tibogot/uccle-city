@@ -147,12 +147,12 @@ def beech_skin(T, P):
     # crustose lichen: pale patches 3-15 cm with ragged fractal edges and a dark prothallus line at the rim, script
     # lichen (thin black squiggles) inside some
     ln = T.noise(0.3, 18, octaves=5, gain=0.42) + smoothstep(-0.3, 1.2, T.noise(0.6, 24)) * 0.7
-    thr = P.get("lichen_thr", 1.6)
+    thr = P.get("lichen_thr", 1.75)
     lic = smoothstep(thr, thr + 0.12, ln)
     rim = smoothstep(thr - 0.06, thr, ln) * smoothstep(thr + 0.1, thr + 0.02, ln)
     lr = smoothstep(-1, 1, T.noise(0.3, 25))
     licC = lerp(hexcol(P["lichen_a"]), hexcol(P["lichen_b"]), lr[..., None]) * (1 + T.noise(0.008, 26)[..., None] * 0.05)
-    col = lerp(col, licC, (lic * 0.85)[..., None])
+    col = lerp(col, licC, (lic * 0.6)[..., None])
     col = lerp(col, hexcol(P["dark"]), (rim * 0.45)[..., None])
     sq = np.abs(T.noise(0.014, 19, octaves=2))
     script = smoothstep(0.07, 0.0, sq) * smoothstep(0.4, 1.0, lic) * (lr < 0.5) * smoothstep(-0.2, 0.3, T.noise(0.02, 20))
@@ -241,7 +241,7 @@ PLANE = dict(cell=0.09, jig=0.35, old=0.3, mid=0.2, fresh=0.14, old_a="#7b7a68",
              mid_a="#a9a78e", mid_b="#b5b195", new_a="#d9d5bd", new_b="#e6e1c8", fresh_col="#d2d39a")
 BEECH = dict(color="#9c9c95", dark="#5d5d58", eyes=3, algae=0.35, lichen=0.12)
 # the copper beech: the same bark as the beech (a cultivar), mature avenue trees (beech_skin)
-COPPER = dict(silver="#9c9c96", grey="#84827c", streak="#605a52", dash="#6c6a63", dark="#3a3936",
+COPPER = dict(silver="#9a9a95", grey="#8b8a85", streak="#605a52", dash="#6c6a63", dark="#3a3936",
               lichen_a="#b9bcb0", lichen_b="#a9ad9c", algae_col="#6f7b48", algae=0.22)
 LIME = dict(cell=0.04, stretch=5.0, fis_w=0.004, depth=0.006, ridge_a="#6f665a", ridge_b="#857b6c", fis_col="#2f2a24", algae=0.25)
 MAPLE = dict(cell=0.025, stretch=6.0, fis_w=0.0025, depth=0.004, ridge_a="#6c6862", ridge_b="#7d7870", fis_col="#2d2a27", algae=0.2)

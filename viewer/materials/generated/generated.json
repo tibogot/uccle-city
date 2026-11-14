@@ -338,18 +338,18 @@
   "note": "generated: copper / mature beech: elephant skin, streaks, creases, script lichen, algae (eyes in the shader)",
   "url": "tools/texturefactory (materials/bark.py, seed 271)",
   "mean_albedo_linear": [
-   0.2807,
-   0.2796,
-   0.2482
+   0.2833,
+   0.2829,
+   0.2564
   ],
-  "mean_roughness": 0.612,
-  "lum_std": 0.197,
+  "mean_roughness": 0.607,
+  "lum_std": 0.133,
   "px": 1024,
   "files": "generated/bark_copperbeech/a/bark_copperbeech_1k",
-  "albedo_webp_bytes": 82176,
-  "nra_webp_bytes": 1173280,
-  "albedo_ktx2_bytes": 632632,
-  "nra_ktx2_bytes": 962255
+  "albedo_webp_bytes": 73074,
+  "nra_webp_bytes": 1149774,
+  "albedo_ktx2_bytes": 580122,
+  "nra_ktx2_bytes": 956421
  },
  "tf_bark_copperbeech_a_2k": {
   "material": "bark_copperbeech",
@@ -366,16 +366,16 @@
   "note": "generated: copper / mature beech: elephant skin, streaks, creases, script lichen, algae (eyes in the shader)",
   "url": "tools/texturefactory (materials/bark.py, seed 271)",
   "mean_albedo_linear": [
-   0.2807,
-   0.2796,
-   0.2482
+   0.2833,
+   0.2829,
+   0.2564
   ],
-  "mean_roughness": 0.612,
-  "lum_std": 0.197,
+  "mean_roughness": 0.607,
+  "lum_std": 0.133,
   "px": 2048,
   "files": "generated/bark_copperbeech/a/bark_copperbeech_2k",
-  "albedo_webp_bytes": 210970,
-  "nra_webp_bytes": 3562220
+  "albedo_webp_bytes": 191580,
+  "nra_webp_bytes": 3497140
  },
  "tf_bark_horsechestnut_a_1k": {
   "material": "bark_horsechestnut",

@@ -31,7 +31,7 @@ const V = (x, y, z) => new THREE.Vector3(x, y, z);
 /** Per season: the factory spray (viewer/trees/textures/tree_textures.json) and the species palette it multiplies
  *  (the spray brings each leaf's colour around its mean; the palette sets the crown's mean, top to bottom). */
 export const COPPER_SEASONS = {
-  summer: { leaves: "leaf_copperbeech", topColor: "#4e2a30", bottomColor: "#3a2026", translucencyColor: "#d04a3c", translucency: 0.35, fillColor: "#a8949c" },
+  summer: { leaves: "leaf_copperbeech", topColor: "#4e2a30", bottomColor: "#4a2830", translucencyColor: "#d04a3c", translucency: 0.35, fillColor: "#a8949c" },
   spring: { leaves: "leaf_copperbeech_spring", topColor: "#8a3644", bottomColor: "#5a2632", translucencyColor: "#e85a4a", translucency: 0.45, fillColor: "#b09aa0" },
   autumn: { leaves: "leaf_copperbeech_autumn", topColor: "#a05a2c", bottomColor: "#6c3820", translucencyColor: "#ff9a40", translucency: 0.5, fillColor: "#a8988c" },
   winter: { leaves: "leaf_copperbeech_winter", topColor: "#9a7048", bottomColor: "#6a4a2e", translucencyColor: "#e8a868", translucency: 0.35, fillColor: "#a09a94" },
@@ -161,7 +161,7 @@ function avenueTree(r, v) {
 function parkTree(r, v) {
   const branches = [];
   const rr = (a, b) => a + (b - a) * r();
-  const top = rr(22, 25), yb = rr(1.6, 2.6), W = rr(10, 11.5), bole = rr(2.4, 3.4);
+  const top = rr(21, 23.5), yb = rr(1.6, 2.6), W = rr(11.5, 13), bole = rr(2.4, 3.4);
   const cy = yb + (top - yb) * 0.4;
   const env = envelope(r, { W, cy, top, yb, flatTop: 0.25 });
   const trunk = grow(r, V(0, -0.5, 0), V((r() - 0.5) * 0.12, 1, (r() - 0.5) * 0.12), top - 5, 11, { pull: V(0, 1, 0), pullK: 0.1, wiggle: 0.09 });
@@ -252,10 +252,10 @@ export function copperBeechShape(seedBase) {
     return {
       crown, rad, clumps: pads,
       // overlapping pads, fewer cards each (the crown's density comes from the pad count, not from piles per pad)
-      cards: park ? [8, 3, 2] : [7, 3, 2], cardScale: park ? 0.6 : 0.62,
+      cards: park ? [8, 4, 2] : [7, 4, 2], cardScale: park ? 0.64 : 0.66,
       // the crown reads as ONE dense mass (the copper beech's dark, solid oval): most of the crown's dome in the
       // shading normal (the beech 0.5, the plane 0.2), a gentle overhead occlusion with a floor
-      aoOverhead: 0.94, aoFloor: 0.5, crownNormal: 0.58,
+      aoOverhead: 0.94, aoFloor: 0.55, crownNormal: 0.72,
       trunk: (l) => barkMesh(branches.filter((b) => b.level <= [3, 1, 1][l]), (lv) => SIDES[l][Math.min(lv, SIDES[l].length - 1)], l === 2 ? 2 : 1),
     };
   };
@@ -298,6 +298,9 @@ export function copperBeechBark(scan) {
     base(m);
     const { eye, rim, chev } = eyeNodes();
     let col = m.colorNode;
+    // a third back toward neutral grey: scanBark's beech algae (x (0.75, 1, 0.55)) and warm zones read yellow-green on
+    // this paler factory set; beech bark is a near-neutral silver-grey with a faint green cast
+    col = mix(col, vec3(dot(col, vec3(0.2126, 0.7152, 0.0722))).mul(vec3(0.99, 1.0, 0.97)), 0.35);
     col = mix(col, col.mul(0.4), eye.mul(0.7));
     col = mix(col, col.mul(1.25), rim.mul(0.25));
     col = mix(col, col.mul(0.55), chev.mul(0.55));
@@ -320,7 +323,7 @@ export function copperBeechDef(seedBase = 1000, tex) {
     params: {
       seed: seedBase,
       topColor: S.topColor, bottomColor: S.bottomColor, translucencyColor: S.translucencyColor, translucency: S.translucency,
-      tintVar: 0.16, crownLift: 0, fill: 0.42, fillColor: S.fillColor, aoColor: 0.25, trunkColor: [0.27, 0.27, 0.26],
+      tintVar: 0.16, crownLift: 0, fill: 0.55, fillColor: S.fillColor, aoColor: 0.2, trunkColor: [0.27, 0.27, 0.26],
       leafTone: 0, shadowLift: 2.2,
       leafAtlas: { ...tex.leaves.atlas, normalK: 0.75, transK: 1 },
     },
