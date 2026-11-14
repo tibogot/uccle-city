@@ -116,6 +116,40 @@ class Furn:
         # footpaths (benches in parks face them), parks
         self.paths = [LineString(r["line"]) for r in T.roads if r["hw"] in ("footway", "path", "pedestrian", "cycleway", "steps") and len(r["line"]) > 1]
         self.parks = [p for p in src["parks"] if p.intersects(Polygon([(T.x0, T.z0), (T.x1, T.z0), (T.x1, T.z1), (T.x0, T.z1)]))]
+        # the measured squares (UrbIS surfaces class 4): a bench on one without an OSM direction sits parallel to the
+        # square's nearest edge and looks INTO the square (2026-11-14: facing the nearest road scattered them, F5 Dieweg)
+        self.squares = []
+        sq = ROOT / "data" / "tiles" / name / "surfaces.json"
+        if sq.exists():
+            for s in json.loads(sq.read_text(encoding="utf-8"))["surfaces"]:
+                if s["c"] == 4 and s["rings"] and len(s["rings"][0]) >= 3:
+                    p = Polygon(s["rings"][0], s["rings"][1:])
+                    if not p.is_valid: p = p.buffer(0)
+                    if not p.is_empty: self.squares.append(p)
+
+    def square_yaw(self, x, z):
+        """yaw looking into the square from its nearest outer edge, for a point on (or within 1 m of) a square; else None"""
+        pt = Point(x, z)
+        for sq in self.squares:
+            if sq.distance(pt) > 1.0: continue
+            geoms = list(sq.geoms) if sq.geom_type == "MultiPolygon" else [sq]
+            best = None
+            for g in geoms:
+                ring = list(g.exterior.coords)
+                for k in range(1, len(ring)):
+                    seg = LineString([ring[k - 1], ring[k]])
+                    d = seg.distance(pt)
+                    if best is None or d < best[0]: best = (d, ring[k - 1], ring[k], g)
+            if not best: continue
+            _, a, b, g = best
+            ex, ez = b[0] - a[0], b[1] - a[1]
+            L = math.hypot(ex, ez)
+            if L < 1e-6: continue
+            nx, nz = -ez / L, ex / L                                  # a normal of the edge; flip it to point inside
+            mx, mz = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
+            if not g.contains(Point(mx + nx * 0.5, mz + nz * 0.5)): nx, nz = -nx, -nz
+            return math.atan2(nx, nz)
+        return None
 
     def near_pts(self, poly, pts, r):
         c = poly.centroid
@@ -166,6 +200,9 @@ def place_benches(F: Furn, nodes, out, stats):
         # a street bench: on a measured sidewalk / square near a road, or just off it (<= 3 m: the point is often drawn
         # at the kerb or on the carriageway); anything farther is a park / garden bench at its own point
         street = not in_park and d is not None and ((d < 20 and S.walkable(x, z)) or (k is not None and d < 12 and k[0] <= 3.0))
+        # on a measured square, more than 3 m in from the kerb: a square bench (parallel to the square's edge, looking
+        # in), not a street bench facing whichever kerb is nearest (that scattered them across F5's Dieweg square)
+        if street and d is not None and d > 3.0 and F.square_yaw(x, z) is not None: street = False
         piece = "bench_backless" if t.get("backrest") == "no" else ("bench_street" if street else "bench_park")
         fp = FOOT[piece]
         metal = 1 if t.get("material") in ("metal", "steel") else 0
@@ -186,6 +223,9 @@ def place_benches(F: Furn, nodes, out, stats):
         else:
             if t.get("direction") and str(t["direction"]).replace(".", "", 1).isdigit():
                 yaw = compass_yaw(t["direction"])
+            elif F.square_yaw(x, z) is not None:
+                yaw = F.square_yaw(x, z)
+                stats["bench_square_edge"] = stats.get("bench_square_edge", 0) + 1
             else:
                 best = None
                 for ln in F.paths:
