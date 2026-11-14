@@ -38,10 +38,11 @@ export const COPPER_SEASONS = {
   winter: { leaves: "leaf_copperbeech_winter", topColor: "#9a7048", bottomColor: "#86603c", translucencyColor: "#e8a868", translucency: 0.35, fillColor: "#a09a94" },
 };
 /** The look's palette per season (docs/TREES.md §8): the sunlit side went CORAL at golden hour (a saturated red
- *  palette x a warm sun, a red glow through the leaves, a pinkish fill). A darker, bluer purple-maroon (the photos'
- *  near-black purple in shade, wine-brown in sun), a wine glow at a lower strength, a neutral fill. */
+ *  palette x a warm sun, glossy sheen, a red glow through the leaves, a pinkish fill). A darker wine-brown (less blue:
+ *  a purple palette x the stronger fill went magenta), the underside a little lighter than the top (the fill lifts
+ *  it), a wine glow at a lower strength, a neutral fill. */
 const COPPER_LOOK = {
-  summer: { topColor: "#3c2032", bottomColor: "#3a2232", translucencyColor: "#8c2c44", translucency: 0.24, fillColor: "#9c949c" },
+  summer: { topColor: "#42252a", bottomColor: "#4a2a30", translucencyColor: "#8c2c44", translucency: 0.24, fillColor: "#9c949c" },
   spring: { topColor: "#7a3446", bottomColor: "#552637", translucencyColor: "#b84858", translucency: 0.32, fillColor: "#a49aa0" },
 };
 const BARK_ID = "tf_copperbeech";
@@ -252,7 +253,7 @@ function barkMesh(branches, sidesOf, stride = 1) {
 const SIDES = [[14, 8, 4, 3], [14, 8], [7, 4]];
 
 /** The look (docs/TREES.md §8): an airier crown: a thinner inner layer and gaps in clusters (viewer/treeLeafLook.js). */
-const LOOK_CROWN = (limbs) => ({ inner: 0.08, gaps: crownGaps(limbs[0].az + limbs.length * 0.37, { share: 0.14 }) });
+const LOOK_CROWN = (limbs) => ({ inner: 0.12, gaps: crownGaps(limbs[0].az + limbs.length * 0.37, { share: 0.08 }) });
 
 export function copperBeechShape(seedBase, look = true) {
   return (r, lod, seed) => {
@@ -346,7 +347,7 @@ export function copperBeechDef(seedBase = 1000, tex, { look = true } = {}) {
     params: {
       seed: seedBase,
       topColor: S.topColor, bottomColor: S.bottomColor, translucencyColor: S.translucencyColor, translucency: S.translucency,
-      tintVar: 0.16, crownLift: 0, fill: look ? 1.4 : 0.55,   // (the look: the shade side lifted)
+      tintVar: 0.16, crownLift: 0, fill: look ? 1.6 : 0.55,   // (the look: the shade side lifted)
       fillColor: S.fillColor, aoColor: 0.2, trunkColor: [0.27, 0.27, 0.26],
       leafTone: 0, shadowLift: 2.2,
       // (two thirds of the spray's own leaf-to-leaf colour spread: the full spread read as confetti close up)
