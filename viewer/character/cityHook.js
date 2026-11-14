@@ -140,10 +140,14 @@ async function buildCityCollision({ scene, world, log }) {
           v.set(cx, bb.min.y, cz).applyMatrix4(W); ring.push([v.x, v.z]); y0 = Math.min(y0, v.y);
           v.set(cx, bb.max.y, cz).applyMatrix4(W); y1 = Math.max(y1, v.y);
         }
+        const car = m.name === "parked-cars" ? m.userData.cars?.[i] : null;
+        if (car) {                                                   // the car as it is now (another type may have parked in)
+          ring.splice(0, 4, ...parkedCarRing(car));
+          y0 = car.y; y1 = car.y + carFleet.sizeOf(car.type)[1];
+          carRefs.push([props.polys.length, car]);                   // (a box, never a circle: >= 1.7 m)
+        }
         const sx = Math.hypot(ring[1][0] - ring[0][0], ring[1][1] - ring[0][1]), sz = Math.hypot(ring[2][0] - ring[1][0], ring[2][1] - ring[1][1]);
         const into = kind === "prop" ? props : posts;
-        const car = m.name === "parked-cars" ? m.userData.cars?.[i] : null;
-        if (car) carRefs.push([props.polys.length, car]);            // (a box, never a circle: >= 1.7 m)
         if (Math.max(sx, sz) < 0.3) into.circles.push({ x: o.x, z: o.z, r: Math.max(0.06, Math.max(sx, sz) / 2), base: y0 - 0.5, top: y1 });
         else into.polys.push({ rings: [ring], base: y0 - 0.5, top: y1, id: `${m.name || "tram-shelter"}#${i}` });
       }

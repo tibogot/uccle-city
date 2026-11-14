@@ -76,8 +76,10 @@ export function featureColliders(features, bounds) {
       if (!inT(o.x, o.z)) continue;
       if (kind === "pole") { circles.push({ x: o.x, z: o.z, r: n === "tram-poles" || n === "rail-masts" ? 0.15 : 0.08, kind: KIND.furniture }); counts.poles++; continue; }
       if (kind === "car") {
-        const ring = [[bb.min.x, bb.min.z], [bb.max.x, bb.min.z], [bb.max.x, bb.max.z], [bb.min.x, bb.max.z]].map(([x, z]) => { v.set(x, bb.min.y, z).applyMatrix4(W); return [v.x, v.z]; });
-        polys.push({ rings: [ring], kind: KIND.car, ref: m.userData.cars?.[i] || null }); counts.cars++;
+        // the car as it is NOW (its type may have changed since the box mesh was made: the traffic parks other cars in)
+        const car = m.userData.cars?.[i] || null;
+        const ring = car ? parkedCarRing(car) : [[bb.min.x, bb.min.z], [bb.max.x, bb.min.z], [bb.max.x, bb.max.z], [bb.min.x, bb.max.z]].map(([x, z]) => { v.set(x, bb.min.y, z).applyMatrix4(W); return [v.x, v.z]; });
+        polys.push({ rings: [ring], kind: KIND.car, ref: car }); counts.cars++;
         continue;
       }
       // benches, bike racks, shelters: what they draw at car height (a shelter's roof overhangs its posts and glass;
