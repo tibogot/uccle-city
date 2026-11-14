@@ -68,6 +68,10 @@ export const FEATURES = [
 
   // ---------------------------------------------------------------- weather
   opt("vfog", "weather", "volumetric fog", "Volumetric valley fog (opt-in).", { live: "volumetric valley fog" }),
+  sel("wx", "weather", "weather", "The weather at start (viewer/weather/cityWeather.js): rain, snow, fog... (clear = the city as before); 'live' = Uccle now (Open-Meteo).",
+    [[null, "clear"], ["overcast", "overcast"], ["drizzle", "drizzle"], ["rain", "rain"], ["storm", "storm"], ["snowfall", "snowfall"], ["snow_cover", "snow cover"], ["fog", "fog"], ["live", "live (Open-Meteo)"]], { live: "weather" }),
+  old("weather", "weather", "no weather system", "?weather=old: the city before the weather hookup (no wet / snow layer in the materials, no rain, no overhead bake)."),
+  num("wxmap", "weather", "weather window (m)", "Size of the overhead map + volumetric snow window round the camera (512 cells; 64 m = 12.5 cm cells).", 64, 32, 128, 16),
   txt("wind", "weather", "wind (flags / falcon)", "Flags: 'speed,deg' (default 5,70); the falcon flight reads the speed (default 4).", "5,70"),
   num("windfrom", "weather", "falcon wind from (°)", "Falcon flight: the wind's direction.", 240, 0, 360, 5),
 

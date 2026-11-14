@@ -13,6 +13,7 @@ import { groundLook } from "../ground.js";
 import { addLampLight } from "../lampLight.js";
 import { n3 } from "../roadPaint.js";
 import { bumpNormal } from "../tslkit.js";
+import { wxMat } from "../weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 
 const LIFT = 0.03, SKIRT = 0.12, EDGE = 0.5;
 
@@ -121,6 +122,7 @@ export function dolomiteMaterial() {
   m.side = THREE.DoubleSide;            // (the skirts face either way: they are a few cm2 of the screen at most)
   addLampLight(m);
   m.userData.shared = true;
+  wxMat(m, { porosity: 0.6, puddles: true, puddleBias: float(-0.05), frost: true, map: true });   // the weather
   return m;
 }
 
@@ -262,5 +264,6 @@ export function lawnMaterial() {
   m.side = THREE.DoubleSide;
   addLampLight(m);
   m.userData.shared = true;
+  wxMat(m, { porosity: 0.85, frost: true, map: true });   // the weather
   return m;
 }

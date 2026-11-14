@@ -65,6 +65,7 @@ import { cityGrass } from "./grass/cityGrass.js";
 import { liteShown } from "./liteShown.js";
 import { NIGHT } from "./nightLights/nightMode.js";   // ?night=1: the clustered night lights (boot flag, docs/NIGHT_HOOKUP.md)
 import { hud, hudLog, setupHud } from "./devHud.js";   // the HUD top left: stats + the searchable dev log
+import { cityWeather } from "./weather/cityWeather.js";   // WEATHER: rain, snow, fog, seasons (docs/WEATHER.md "City hookup"; ?weather=old none, ?wx=rain)
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -1311,6 +1312,9 @@ async function main() {
   };
   // Render pipeline: AO + reflections + bloom + grade (?fx=0: plain render, for slow machines)
   await (pipeReady ?? setupPipe());                   // the sky, the post pipeline and compileFor (set up before the first tile: see above)
+  // ---- WEATHER (viewer/weather/cityWeather.js): one Weather + its systems; clear on load = the city as before
+  cityWeather.start({ scene, renderer, camera, lighting, updaters, world, pipe, log }).catch((e) => log(`weather: ${e.message}`));
+  // ---- /WEATHER
   const focus = new THREE.Vector3(), fwd = new THREE.Vector3();
   let mapHook = null;                      // ?map=1: the minimap + full map (viewer/map/cityMap.js), set below
   const hazeHook = lighting.firmament ? (rt, d, size) => lighting.hazeHook(rt, d, size) : null;   // ?haze=0: off

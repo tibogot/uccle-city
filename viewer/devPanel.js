@@ -18,6 +18,7 @@ import { addSmoothnessFolder } from "./smoothPanel.js";
 import { FEATURES, readSwitch, writeSwitch, isSet } from "./features.js";
 import { PLACES } from "./places.js";
 import { setHudHidden } from "./devHud.js";
+import { cityWeather } from "./weather/cityWeather.js";
 
 const TIMES = ["golden", "midday", "overcast", "twilight", "night", "misty"];
 const CHARS = ["hoodie", "casual", "capsule"];
@@ -323,6 +324,8 @@ export function createDevPanel(ctx) {
   fW.add(S, "fogDensity", 0.001, 0.05, 0.001).name("fog density").onChange((v) => fogSet("density", v));
   fW.add(S, "fogTop", 40, 160, 1).name("fog layer top (m TAW)").onChange((v) => fogSet("top", v));
   fW.add(S, "fogFalloff", 2, 60, 1).name("fog falloff (m)").onChange((v) => fogSet("falloff", v));
+  // rain / snow / fog presets, live weather, the simulated surface state (viewer/weather/cityWeather.js; ?weather=old none)
+  cityWeather.panel(fW, setParam);
   switches(fW, "weather");
 
   // ---------------------------------------------------------------- Night (docs/NIGHT_HOOKUP.md)

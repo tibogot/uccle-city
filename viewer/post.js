@@ -139,6 +139,8 @@ export function createPipeline(renderer, scene, camera, { aoOn = true, ssrOn = t
     setExposureFactor(f) { this.exposureFactor = f; exposure.value = (LOOKS[this.lookId] || LOOKS.golden).exposure * (this.exposureScale || 1) * f * Math.pow(2, this.evBias || 0); },
     /** dev panel handles: AO / SSR weights, bloom pass, exposure bias (stops, this.evBias) */
     get uniforms() { return { ao: uAo, ssr: uSsr }; },
+    /** the grade's uniforms + the looks (the weather blends toward a grey, wet-day grade: viewer/weather/cityWeather.js) */
+    get grade() { return { contrast, saturation, balance, looks: LOOKS }; },
     get bloomPass() { return bloomPass; },
     /** the linear HDR scene target (the sky meters it for its eye adaptation) */
     sceneTarget: hdrRT,

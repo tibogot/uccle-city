@@ -160,7 +160,7 @@ export function createPrecipitation({ renderer, kind = "rain", map = null, trees
     const vdir = normalize(vel), sideF = normalize(cross(vdir, normalize(toCam)));
     const sLen = s.add(length(vel).mul(0.025));
     mat.positionNode = C.add(sideF.mul(positionGeometry.x.mul(s))).add(vdir.mul(positionGeometry.y.mul(sLen)));
-    const energy = varying(s0.div(s).mul(edge).mul(smoothstep(0.4, 1.5, dist)));   // widened -> fainter (linear: a 1.6 px dot keeps its look)
+    const energy = varying(s0.div(s).mul(edge).mul(smoothstep(0.8, 3.0, dist)));   // (city: big cotton flakes right at the lens read wrong: fade them over 0.8-3 m)   // widened -> fainter (linear: a 1.6 px dot keeps its look)
     const q = uv().sub(0.5).mul(2);
     const r = length(vec2(q.x, q.y.mul(0.85)));
     mat.colorNode = vec3(uColor);
@@ -245,6 +245,10 @@ export function createPrecipitation({ renderer, kind = "rain", map = null, trees
       if (splashes) { splashes.count = n; splashes.visible = n > 0; }
       if (n > 0 && dt > 0) renderer.compute(step);
     },
+    /** compile both compute passes now (boot), so the first rain does not stall on a pipeline build */
+    warm() { renderer.compute(init); initialised = true; uDt.value = 0; renderer.compute(step); },
+    /** leaves: move the crown centres (the city's sliding overhead map), [{ x, z, r, y }] up to 8 */
+    setTrees(list) { for (let i = 0; i < treeU.length; i++) { const t = list[i % Math.max(1, list.length)]; if (t) treeU[i].value.set(t.x, t.z, t.r, t.y); } },
     dispose() { geo.dispose(); mat.dispose(); },
   };
 }

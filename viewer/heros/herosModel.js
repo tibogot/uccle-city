@@ -25,6 +25,7 @@ import { loadAO, setLodFades } from "../stpierreModel.js";
 import { libSource } from "../materials/libSwitch.js";
 import { env } from "../lighting.js";
 import { loadStatueSlot } from "./herosStatue.js";
+import { wxMat } from "../weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 
 export { setLodFades };
 export const HE_SLOTS = ["stone_blue", "bronze_gilt", "cast_iron_black", "cast_iron_green", "soil_bed", "plant_grass"];
@@ -125,7 +126,7 @@ function sourceMaterial(name, lib) {
     try { m = lib.createMaterial?.(name, { mapping: "uv" }) ?? lib.getMaterial?.(name) ?? null; }
     catch (e) { console.warn(`[heros] library failed on "${name}":`, e.message); }
   }
-  return m ?? (TEMP[name] ?? TEMP.stone_blue)();
+  return wxMat(m ?? (TEMP[name] ?? TEMP.stone_blue)(), { porosity: 0.4 });   // the weather (a library material has it already)
 }
 
 /** the lettering mask of a face coded "letters" (0 elsewhere): TEXCOORD_0.x = 1000 (cell + 1) + s, .y = v (metres) */

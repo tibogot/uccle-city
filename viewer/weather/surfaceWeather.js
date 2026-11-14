@@ -180,7 +180,7 @@ export function weatherize(m, o = {}) {
       col = mix(col, col.mul(0.6).add(0.02), drop);
       // a bead is a little lens: its normal bulges out from its centre
       const bulge = vec3(f.x.mul(-1.6), 0, f.y.mul(-1.6)).mul(drop);
-      nView = normalize(nView.add(toView(vec3(tang.x.mul(bulge.x), bulge.z, tang.y.mul(bulge.x)))));
+      nView = normalize(nView.add(cameraViewMatrix.mul(vec4(tang.x.mul(bulge.x), bulge.z, tang.y.mul(bulge.x), 0)).xyz));   // (unnormalised: 0 where no drop; normalize(0) = NaN)
     } else {
       col = col.mul(float(1).sub(streak.mul(0.25)));
       rough = mix(rough, float(0.12), streak);

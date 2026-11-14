@@ -19,6 +19,7 @@ import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
 import { FadeSlots, StreamPool, buildSource, MARGIN } from "../instanceStream.js";
 import { brickPattern } from "../gardens/gardenKit.js";
 import { PIECES, STRIDE } from "./roofPlace.js";
+import { wxMat } from "../weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 export { PIECES, STRIDE };
 
 export const roofFades = new FadeSlots();
@@ -194,7 +195,7 @@ function materials() {
     m.name = `roofs-lod${lod}`;
     m.userData.shared = true; m.userData.noFade = true;          // (the tile fade: its slot rides in iBand.w)
     void rnd; void min;
-    return m;
+    return wxMat(m, { porosity: 0.3 });                       // the weather: wet stacks, snow on caps / panels
   });
   return { opaque };
 }

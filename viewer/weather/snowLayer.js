@@ -33,9 +33,11 @@ export function trackSampler(field, map) {
   };
 }
 
-export function createSnowLayer({ renderer, map, track: sharedTrack = null }) {
+export function createSnowLayer({ renderer, map, track: sharedTrack = null, edgeFade = false }) {
   const N = map.res, cell = map.cell;
-  const x0 = map.uOrigin.value.x, z0 = map.uOrigin.value.y;
+  // the grid is built in the map's LOCAL frame (0 .. size) and the group follows the map's origin: the city's map
+  // slides with the camera (overheadMap.bake(scene, at)), the lab's stays put
+  const x0 = 0, z0 = 0;
   const geo = new THREE.PlaneGeometry(map.size - cell, map.size - cell, N - 1, N - 1).rotateX(-Math.PI / 2)
     .translate(x0 + map.size / 2, 0, z0 + map.size / 2);
   geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(x0 + map.size / 2, 0, z0 + map.size / 2), map.size);
@@ -82,7 +84,9 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null }) {
 
   // ---- the layer
   const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.75, metalness: 0 });
-  const gi = positionGeometry.x.sub(uOrigin.x).div(uCell).sub(0.5).round(), gj = positionGeometry.z.sub(uOrigin.y).div(uCell).sub(0.5).round();
+  const gi = positionGeometry.x.div(uCell).sub(0.5).round(), gj = positionGeometry.z.div(uCell).sub(0.5).round();
+  // the city: the layer thins out toward the window's (round) edge and meets the materials' flat cover there
+  const rim = edgeFade ? float(1).sub(smoothstep(map.size * 0.34, map.size * 0.47, positionGeometry.xz.sub(map.size / 2).length())) : float(1);
   const ii = int(gi), jj = int(gj);
   const shelterK = float(SHAPE.shelter).mul(season.uLeafDensity.mul(0.75).add(0.25));
   const depthAt = (i, j) => {
@@ -91,7 +95,7 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null }) {
     const tr = track.element(idx);
     // A = cliff + 2 x road: a salted carriageway keeps only a little (it is slush on the material below)
     const road = s.w.greaterThan(1.5).select(float(1), float(0));
-    const d = wx.uSnowDepth.mul(s.z).mul(float(1).sub(shelterK.mul(s.y))).mul(float(1).sub(road.mul(wx.uSalt)));     // (unevenness is baked in the shape)
+    const d = wx.uSnowDepth.mul(rim).mul(s.z).mul(float(1).sub(shelterK.mul(s.y))).mul(float(1).sub(road.mul(wx.uSalt)));     // (unevenness is baked in the shape)
     return { s, tr, d };
   };
   const C = depthAt(ii, jj), L = depthAt(ii.sub(1), jj), R = depthAt(ii.add(1), jj), U = depthAt(ii, jj.sub(1)), D = depthAt(ii, jj.add(1));
@@ -143,6 +147,7 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null }) {
   const CH = 8, M = N / CH;
   let hMin = Infinity, hMax = -Infinity;
   for (let k = 0; k < N * N; k++) { const h = map.H[k]; if (h > -1000) { hMin = Math.min(hMin, h); hMax = Math.max(hMax, h); } }
+  if (!(hMin < hMax)) { hMin = -100; hMax = 400; }
   for (let cj = 0; cj < CH; cj++) for (let ci = 0; ci < CH; ci++) {
     const n = Math.min(M + 1, N - ci * M), m = Math.min(M + 1, N - cj * M);
     const g = new THREE.PlaneGeometry((n - 1) * cell, (m - 1) * cell, n - 1, m - 1).rotateX(-Math.PI / 2)
@@ -155,9 +160,27 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null }) {
     mesh.add(c);
   }
   geo.dispose();
+  mesh.position.set(map.uOrigin.value.x, 0, map.uOrigin.value.y);
+  /** after a re-bake (the city): the boxes' height range per chunk from the new heights (frustum culling) */
+  function refit() {
+    for (let cj = 0; cj < CH; cj++) for (let ci = 0; ci < CH; ci++) {
+      let lo = Infinity, hi = -Infinity;
+      for (let j = cj * M; j < Math.min(N, (cj + 1) * M + 1); j += 2) for (let i = ci * M; i < Math.min(N, (ci + 1) * M + 1); i += 2) {
+        const h = map.H[j * N + i]; if (h > -1000) { if (h < lo) lo = h; if (h > hi) hi = h; }
+      }
+      if (!(lo <= hi)) { lo = 0; hi = 0; }
+      const g = mesh.children[cj * CH + ci].geometry;
+      g.boundingBox.min.y = lo - 0.5; g.boundingBox.max.y = hi + 1.0;
+      g.boundingBox.getBoundingSphere(g.boundingSphere);
+    }
+  }
 
   return {
-    mesh, track, stampA, stampB, uRefill,
+    mesh, track, stampA, stampB, uRefill, refit,
+    /** compile the three compute passes now (boot) */
+    warm() { uDt.value = 0; for (const b of stampB) b.value.z = 0; renderer.compute(stampPass); renderer.compute(refillPass); renderer.compute(clearPass); },
+    /** follow the map's origin (the city's sliding window): call when a bake has landed */
+    follow() { mesh.position.set(map.uOrigin.value.x, 0, map.uOrigin.value.y); refit(); if (hadSnow) renderer.compute(clearPass); },
     /** stamps: [{ x, z, px, pz, r, strength }] (feet, wheels); dt: s (0 = frozen) */
     update(dt, stamps = []) {
       for (let k = 0; k < NSTAMP; k++) {

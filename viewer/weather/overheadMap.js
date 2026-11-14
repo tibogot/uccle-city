@@ -63,12 +63,17 @@ export function createOverheadMap({ renderer, centre = new THREE.Vector3(), size
     },
     /** Render the two bakes (GPU), read them back, then the shape pass in a worker (no main-thread stall); the map
      *  keeps its old contents until the new ones arrive. */
-    async bake(scene) {
+    // at = { x, y, z } (the city: a new centre round the camera, snapped to whole cells). The NEW data and the new
+    // origin are swapped in together at the end (the materials / layer keep the old window until then: no jump)
+    async bake(scene, at = null) {
       const t0 = performance.now();
+      if (at) { bakeC.set(Math.round(at.x / cell) * cell, at.y, Math.round(at.z / cell) * cell); }
+      else bakeC.copy(map.centre);
+      bakeO.set(bakeC.x - size / 2, bakeC.z - size / 2);
       const solidPx = await pass(scene, SOLID_LAYER);
       const canopyPx = await pass(scene, CANOPY_LAYER);
       const roadPx = await pass(scene, ROAD_LAYER);
-      const job = { solidPx, canopyPx, roadPx, res, cell, origin: [uOrigin.value.x, uOrigin.value.y] };
+      const job = { solidPx, canopyPx, roadPx, res, cell, origin: [bakeO.x, bakeO.y] };
       const t1 = performance.now();
       let r;
       try {
@@ -79,6 +84,7 @@ export function createOverheadMap({ renderer, centre = new THREE.Vector3(), size
         console.warn("[overhead] worker failed, shape pass on the main thread", e);
         r = computeOverheadShape(job); map.inWorker = false;
       }
+      map.centre.copy(bakeC); uOrigin.value.copy(bakeO);
       H.set(r.H); shelter.set(r.shelter); shape.set(r.shape); cliff.set(r.cliff); map.eaves = r.eaves; map.Hs = r.Hs;
       for (let k = 0; k < res * res; k++) { data[k * 4] = r.Hs[k]; data[k * 4 + 1] = shelter[k]; data[k * 4 + 2] = shape[k]; data[k * 4 + 3] = cliff[k] + 2 * r.road[k]; }
       tex.needsUpdate = true;
@@ -89,13 +95,15 @@ export function createOverheadMap({ renderer, centre = new THREE.Vector3(), size
     },
   };
   let worker = null;
+  const bakeC = centre.clone(), bakeO = new THREE.Vector2(centre.x - size / 2, centre.z - size / 2);
+  map.setRenderer = (r) => { renderer = r; };
 
   async function pass(scene, layer) {
     cam.layers.disableAll(); cam.layers.enable(layer);
-    uEnc.value.set(uOrigin.value.x - 1, 0, uOrigin.value.y - 1);
-    cam.position.set(map.centre.x, map.centre.y + height, map.centre.z);
+    uEnc.value.set(bakeO.x - 1, 0, bakeO.y - 1);
+    cam.position.set(bakeC.x, bakeC.y + height, bakeC.z);
     cam.up.set(0, 0, -1);
-    cam.lookAt(map.centre.x, map.centre.y, map.centre.z);
+    cam.lookAt(bakeC.x, bakeC.y, bakeC.z);
     cam.updateMatrixWorld(true);
     const prevRT = renderer.getRenderTarget(), prevMRT = renderer.getMRT?.() ?? null, prevOv = scene.overrideMaterial,
       prevBg = scene.background, prevAuto = renderer.autoClear, prevAlpha = renderer.getClearAlpha(), prevShadow = renderer.shadowMap.autoUpdate;
