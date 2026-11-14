@@ -20,7 +20,7 @@ import {
   sqrt, length, dFdx, dFdy, normalViewGeometry, cameraViewMatrix,
 } from "three/tsl";
 import { env } from "../lighting.js";
-import { pieceKeep } from "./kitFade.js";
+import { pieceKeep, kitFades } from "./kitFade.js";
 import { paintedGlass } from "../facades.js";
 import { libSource } from "../materials/libSwitch.js";
 
@@ -134,7 +134,7 @@ export function specularAA(r, n = normalViewGeometry) {
 /** what every kit material shares: stretch, AO, fades, anti-aliasing */
 function finish(m, lod, opts, { glass = false } = {}) {
   const { dx, dy, k, W } = sliceDelta();
-  const J = attribute("aKitJ", "vec4");                         // (nx, nz, variant + seed, tile fade)
+  const J = attribute("aKitJ", "vec4");                         // (nx, nz, variant + seed, tile fade slot)
   // the stretch, rotated to the world by the wall's normal (local x = (nz, 0, -nx)) and added after the instancing
   m.positionNode = positionLocal.add(vec3(J.y.mul(dx), dy, J.x.negate().mul(dx)));
   if (!glass) {
@@ -152,7 +152,7 @@ function finish(m, lod, opts, { glass = false } = {}) {
     // the geometric specular AA on the bent normal (its screen-space variance)
     m.roughnessNode = specularAA(m.roughnessNode, nBent);
   }
-  if (!opts.raw) m.maskNode = opts.lab ? null : pieceKeep(lod, J.w);
+  if (!opts.raw) m.maskNode = opts.lab ? null : pieceKeep(lod, kitFades.fade(J.w));
   m.userData.shared = true;
   m.userData.lod = lod;
   return m;

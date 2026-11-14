@@ -6,11 +6,17 @@
 //   LOD:      LOD0 up to KIT_LOD1 - KIT_LOD_BAND, cross-fades to LOD1 over KIT_LOD_BAND m; only LOD0 casts shadows, so
 //             the pieces' shadows fade out over that band too;
 //   tile:     a streamed tile's kit fades in / out with the tile (the code of lodFade.js objectFade: f in [0, 1] keeps
-//             n < f, f in [2, 3] keeps n >= f - 2): per instance (aKitJ.w) on the pieces, per mesh (userData.kitFade)
+//             n < f, f in [2, 3] keeps n >= f - 2): per instance (aKitJ.w = the tile's slot in kitFades) on the pieces, per
+//             mesh (userData.kitFade)
 //             on the walls.
 import * as THREE from "three/webgpu";
 import { uniform, float, select, saturate, length, positionWorld } from "three/tsl";
 import { lodEye, ditherNoise, SMOOTH } from "../lodFade.js";
+import { FadeSlots } from "../instanceStream.js";
+
+/** the pieces' tile fades (viewer/instanceStream.js): aKitJ.w = the instance's tile slot (a fading tile changes one
+ *  uniform, it never re-buckets) */
+export const kitFades = new FadeSlots();
 
 export const KIT = {
   far: uniform(115), band: uniform(30),          // kit -> painted façade (round 2: 20 -> 30 m, the glass now matches: a softer hand-over)

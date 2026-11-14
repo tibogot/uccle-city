@@ -45,8 +45,16 @@ const POOLS = {
   streetlife: () => window.__streetlife?.layer,
   facadeKit: () => window.__kit,
 };
-const S = (window.__driveStutter ||= { cost: {}, wrapped: new Set(), long: [], loaf: [] });
+const S = (window.__driveStutter ||= { cost: {}, wrapped: new Set(), long: [], loaf: [], cpu: [] });
 function hookPools() {
+  // the main loop's own CPU time per frame (updates + render submission; GPU-independent): three r187 keeps the
+  // callback in renderer._animation._animationLoop
+  const anim = window.viewer?.renderer?._animation;
+  if (anim && typeof anim._animationLoop === "function" && !anim._animationLoop.__ds) {
+    const f = anim._animationLoop;
+    const w = function (...a) { const t0 = performance.now(); try { return f.apply(this, a); } finally { S.cpu.push(performance.now() - t0); if (S.cpu.length > 50000) S.cpu.splice(0, 25000); } };
+    w.__ds = true; anim._animationLoop = w;
+  }
   for (const [k, get] of Object.entries(POOLS)) {
     const o = get();
     if (!o || S.wrapped.has(k) || typeof o.update !== "function") continue;
@@ -96,7 +104,7 @@ export function popCheck(cam, acc, only = null) {
 async function leg(pts, speed, place, pops = null) {
   const L = pathLength(pts), dur = L / speed;
   const frames = [], cost0 = Object.fromEntries(Object.entries(S.cost).map(([k, a]) => [k, a.length]));
-  const long0 = S.long.length, loaf0 = S.loaf.length;
+  const long0 = S.long.length, loaf0 = S.loaf.length, cpu0 = S.cpu.length;
   let hidden = document.visibilityState !== "visible";
   const onVis = () => { if (document.visibilityState !== "visible") hidden = true; };
   document.addEventListener("visibilitychange", onVis);
@@ -125,7 +133,9 @@ async function leg(pts, speed, place, pops = null) {
   }
   const longs = S.long.slice(long0).filter((x) => x[0] >= t0);
   const g = V.gpuStats?.() || {};
+  const cpu = S.cpu.slice(cpu0).sort((a, b) => a - b);
   return {
+    cpu: { p50: q(cpu, 0.5), p95: q(cpu, 0.95), p99: q(cpu, 0.99), max: q(cpu, 1), over12: cpu.filter((x) => x > 12).length, over16: cpu.filter((x) => x > 16.7).length },
     gpu: { p50: g.p50 != null ? +(+g.p50).toFixed(2) : null, p95: g.p95 != null ? +(+g.p95).toFixed(2) : null, max: g.max != null ? +(+g.max).toFixed(2) : null },
     valid: !hidden && med < 40, seconds: +dur.toFixed(1), frames: s.length,
     ms: { p50: med, p95: q(s, 0.95), p99: q(s, 0.99), max: q(s, 1) },
@@ -174,7 +184,7 @@ export async function run({ path = "boulenger", repeats = 3, settle = 6, warmup 
     valid: legs.every((l) => l.valid), legs: legs.length,
     over33: sum((l) => l.over33), over33PerLeg: arr((l) => l.over33),
     p50: arr((l) => l.ms.p50), p95: arr((l) => l.ms.p95), p99: arr((l) => l.ms.p99), max: arr((l) => l.ms.max),
-    long: sum((l) => l.long), gpuP50: arr((l) => l.gpu.p50), gpuP95: arr((l) => l.gpu.p95),
+    long: sum((l) => l.long), cpuP50: arr((l) => l.cpu.p50), cpuP95: arr((l) => l.cpu.p95), cpuP99: arr((l) => l.cpu.p99), cpuMax: arr((l) => l.cpu.max), cpuOver16: sum((l) => l.cpu.over16), gpuP50: arr((l) => l.gpu.p50), gpuP95: arr((l) => l.gpu.p95),
     pools: Object.fromEntries(Object.keys(S.cost).map((k) => [k, {
       max: Math.max(...legs.map((l) => l.pools[k]?.max ?? 0)), msPerS: +(sum((l) => l.pools[k]?.msPerS ?? 0) / legs.length).toFixed(2), over05: sum((l) => l.pools[k]?.over05 ?? 0),
     }])),
