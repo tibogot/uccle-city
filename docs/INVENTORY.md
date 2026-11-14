@@ -41,5 +41,5 @@ library, drive / walk / third person with their colliders.
 ## Branches not merged
 
 `claude/character2` (17 commits, the owner's other chat: Mixamo locomotion), `claude/character-audit` (13: skeleton /
-retarget pipeline), `claude/police-car` (6: police car round 2), `claude/furniture` (3, 2026-11-04: superseded by
+retarget pipeline), `claude/police-car` (6: police car ROUND 1, lab only: beacon kit, Belgian siren, one blue SpotLight; round 2 (narrow fan beam, no light through walls, a brighter night) was never built; review 2026-11-14: mergeable as a lab with 2 text conflicts (TODO.md, labs/index.html) but 21 MB of images / WAVs: merge together with round 2, after the night lights), `claude/furniture` (3, 2026-11-04: superseded by
 furniture kit 2, can be deleted on the owner's word).
